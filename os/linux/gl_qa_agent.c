@@ -280,10 +280,10 @@ static int32_t ResponseToQA(struct HQA_CMD_FRAME *HqaCmdFrame,
 	    + sizeof((HqaCmdFrame)->Sequence) + ntohs((HqaCmdFrame)->Length);
 
 	if (copy_to_user(prIwReqData->data.pointer, (uint8_t *) (HqaCmdFrame), prIwReqData->data.length)) {
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT copy_to_user() fail in %s\n", __func__);
+		DBGLOG(RFTEST, INFO, "QA_AGENT copy_to_user() fail in %s\n", __func__);
 		return (-EFAULT);
 	}
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA command(0x%04x)[Magic number(0x%08x)] is done\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA command(0x%04x)[Magic number(0x%08x)] is done\n",
 	       ntohs(HqaCmdFrame->Id), ntohl(HqaCmdFrame->MagicNo));
 
 	return 0;
@@ -293,7 +293,7 @@ static int32_t ToDoFunction(struct net_device *prNetDev, IN union iwreq_data *pr
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT ToDoFunction\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT ToDoFunction\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -317,7 +317,7 @@ static int32_t HQA_OpenAdapter(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_OpenAdapter\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_OpenAdapter\n");
 
 	i4Ret = MT_ATEStart(prNetDev, "ATESTART");
 
@@ -346,7 +346,7 @@ static int32_t HQA_CloseAdapter(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CloseAdapter\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CloseAdapter\n");
 
 	i4Ret = MT_ATEStop(prNetDev, "ATESTOP");
 
@@ -373,15 +373,15 @@ static int32_t HQA_StartTx(struct net_device *prNetDev, IN union iwreq_data *prI
 	uint32_t TxCount;
 	uint16_t TxLength;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTx\n");
 
 	memcpy((uint8_t *)&TxCount, HqaCmdFrame->Data + 4 * 0, 4);
 	TxCount = ntohl(TxCount);
 	memcpy((uint8_t *)&TxLength, HqaCmdFrame->Data + 4 * 1, 2);
 	TxLength = ntohs(TxLength);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTx TxCount = %d\n", TxCount);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTx TxLength = %d\n", TxLength);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTx TxCount = %d\n", TxCount);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTx TxLength = %d\n", TxLength);
 
 	i4Ret = MT_ATESetTxCount(prNetDev, TxCount);
 	i4Ret = MT_ATESetTxLength(prNetDev, (uint32_t) TxLength);
@@ -409,7 +409,7 @@ static int32_t HQA_StartTxExt(struct net_device *prNetDev, IN union iwreq_data *
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTxExt\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTxExt\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -434,7 +434,7 @@ static int32_t HQA_StartTxContiTx(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTxContiTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTxContiTx\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -459,7 +459,7 @@ static int32_t HQA_StartTxCarrier(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartTxCarrier\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartTxCarrier\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -482,7 +482,7 @@ static int32_t HQA_StartRx(struct net_device *prNetDev, IN union iwreq_data *prI
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartRx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartRx\n");
 
 	MT_ATESetDBDCBandIndex(prNetDev, 0);
 	MT_ATEStartRX(prNetDev, "RXFRAME");
@@ -508,7 +508,7 @@ static int32_t HQA_StopTx(struct net_device *prNetDev, IN union iwreq_data *prIw
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StopTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StopTx\n");
 
 	MT_ATESetDBDCBandIndex(prNetDev, 0);
 	MT_ATEStopRX(prNetDev, "RXSTOP");
@@ -535,7 +535,7 @@ static int32_t HQA_StopContiTx(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StopContiTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StopContiTx\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -559,7 +559,7 @@ static int32_t HQA_StopTxCarrier(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StopTxCarrier\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StopTxCarrier\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -582,7 +582,7 @@ static int32_t HQA_StopRx(struct net_device *prNetDev, IN union iwreq_data *prIw
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StopRx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StopRx\n");
 
 	MT_ATESetDBDCBandIndex(prNetDev, 0);
 	MT_ATEStopRX(prNetDev, "RXSTOP");
@@ -608,7 +608,7 @@ static int32_t HQA_SetTxPath(struct net_device *prNetDev, IN union iwreq_data *p
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPath\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPath\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -636,7 +636,7 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev, IN union iwreq_data *p
 *	UINT_32 u4BufLen = 0;
 */
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRxPath\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRxPath\n");
 
 #if 0
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -644,7 +644,7 @@ static int32_t HQA_SetRxPath(struct net_device *prNetDev, IN union iwreq_data *p
 	memcpy(&Value, HqaCmdFrame->Data + 4 * 0, 2);
 	Value = ntohs(Value);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRxPath Value : %d\n", Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRxPath Value : %d\n", Value);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_RX_PATH;
 	rRfATInfo.u4FuncData = (uint32_t) ((Value << 16) || (0 & BITS(0, 15)));
@@ -684,12 +684,12 @@ static int32_t HQA_SetTxIPG(struct net_device *prNetDev, IN union iwreq_data *pr
 	int32_t i4Ret = 0;
 	uint32_t u4Aifs = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxIPG\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxIPG\n");
 
 	memcpy(&u4Aifs, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Aifs = ntohs(u4Aifs);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxIPG u4Aifs : %d\n", u4Aifs);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxIPG u4Aifs : %d\n", u4Aifs);
 
 	MT_ATESetTxIPG(prNetDev, u4Aifs);
 
@@ -715,7 +715,7 @@ static int32_t HQA_SetTxPower0(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPower0\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPower0\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -739,7 +739,7 @@ static int32_t HAQ_SetTxPower1(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HAQ_SetTxPower1\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HAQ_SetTxPower1\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -779,11 +779,11 @@ static int32_t HQA_SetTxPowerExt(struct net_device *prNetDev,
 	memcpy(&u4Ant_idx, HqaCmdFrame->Data + 4 * 4, 4);
 	u4Ant_idx = ntohl(u4Ant_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPowerExt u4Power : %d\n", u4Power);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPowerExt u4Dbdc_idx : %d\n", u4Dbdc_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPowerExt u4Channel : %d\n", u4Channel);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPowerExt u4Band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxPowerExt u4Ant_idx : %d\n", u4Ant_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPowerExt u4Power : %d\n", u4Power);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPowerExt u4Dbdc_idx : %d\n", u4Dbdc_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPowerExt u4Channel : %d\n", u4Channel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPowerExt u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxPowerExt u4Ant_idx : %d\n", u4Ant_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Dbdc_idx);
 	MT_ATESetTxPower0(prNetDev, u4Power);
@@ -813,7 +813,7 @@ static int32_t HQA_SetOnOff(struct net_device *prNetDev, IN union iwreq_data *pr
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetOnOff\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetOnOff\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -836,7 +836,7 @@ static int32_t HQA_AntennaSel(struct net_device *prNetDev, IN union iwreq_data *
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_AntennaSel\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_AntennaSel\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -860,7 +860,7 @@ static int32_t HQA_FWPacketCMD_ClockSwitchDisable(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_FWPacketCMD_ClockSwitchDisable\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_FWPacketCMD_ClockSwitchDisable\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -909,12 +909,12 @@ static int32_t HQA_SetChannel(struct net_device *prNetDev, IN union iwreq_data *
 	uint32_t i4SetFreq = 0, i4SetChan = 0;
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetChannel\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetChannel\n");
 
 	memcpy((uint8_t *)&i4SetChan, HqaCmdFrame->Data, 4);
 	i4SetChan = ntohl(i4SetChan);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetChannel Channel = %d\n", i4SetChan);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetChannel Channel = %d\n", i4SetChan);
 
 	i4SetFreq = nicChannelNum2Freq(i4SetChan);
 	i4Ret = MT_ATESetChannel(prNetDev, 0, i4SetFreq);
@@ -942,12 +942,12 @@ static int32_t HQA_SetPreamble(struct net_device *prNetDev,
 	int32_t i4Mode = 0;
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetPreamble\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetPreamble\n");
 
 	memcpy((uint8_t *)&i4Mode, HqaCmdFrame->Data, 4);
 	i4Mode = ntohl(i4Mode);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetPreamble Mode = %d\n", i4Mode);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetPreamble Mode = %d\n", i4Mode);
 
 	i4Ret = MT_ATESetPreamble(prNetDev, i4Mode);
 
@@ -973,7 +973,7 @@ static int32_t HQA_SetRate(struct net_device *prNetDev, IN union iwreq_data *prI
 /*	INT_32 i4Value = 0; */
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRate\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRate\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -996,7 +996,7 @@ static int32_t HQA_SetNss(struct net_device *prNetDev, IN union iwreq_data *prIw
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetNss\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetNss\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1021,12 +1021,12 @@ static int32_t HQA_SetSystemBW(struct net_device *prNetDev,
 	uint32_t i4BW;
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetSystemBW\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetSystemBW\n");
 
 	memcpy((uint8_t *)&i4BW, HqaCmdFrame->Data, 4);
 	i4BW = ntohl(i4BW);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetSystemBW BW = %d\n", i4BW);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetSystemBW BW = %d\n", i4BW);
 
 	i4Ret = MT_ATESetSystemBW(prNetDev, i4BW);
 
@@ -1053,12 +1053,12 @@ static int32_t HQA_SetPerPktBW(struct net_device *prNetDev,
 	int32_t i4Ret = 0;
 	uint32_t u4Perpkt_bw;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetPerPktBW\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetPerPktBW\n");
 
 	memcpy((uint8_t *)&u4Perpkt_bw, HqaCmdFrame->Data, 4);
 	u4Perpkt_bw = ntohl(u4Perpkt_bw);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetPerPktBW u4Perpkt_bw = %d\n", u4Perpkt_bw);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetPerPktBW u4Perpkt_bw = %d\n", u4Perpkt_bw);
 
 	i4Ret = MT_ATESetPerPacketBW(prNetDev, u4Perpkt_bw);
 
@@ -1088,7 +1088,7 @@ static int32_t HQA_SetPrimaryBW(struct net_device *prNetDev,
 	memcpy(&u4Pri_sel, HqaCmdFrame->Data, 4);
 	u4Pri_sel = ntohl(u4Pri_sel);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetPrimaryBW u4Pri_sel : %d\n", u4Pri_sel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetPrimaryBW u4Pri_sel : %d\n", u4Pri_sel);
 
 	i4Ret = MT_ATEPrimarySetting(prNetDev, u4Pri_sel);
 
@@ -1123,7 +1123,7 @@ static int32_t HQA_SetFreqOffset(struct net_device *prNetDev,
 	memcpy(&u4FreqOffset, HqaCmdFrame->Data, 4);
 	u4FreqOffset = ntohl(u4FreqOffset);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetFreqOffset u4FreqOffset : %d\n", u4FreqOffset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetFreqOffset u4FreqOffset : %d\n", u4FreqOffset);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_FRWQ_OFFSET;
 	rRfATInfo.u4FuncData = (uint32_t) u4FreqOffset;
@@ -1162,7 +1162,7 @@ static int32_t HQA_SetAutoResponder(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetAutoResponder\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetAutoResponder\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1186,7 +1186,7 @@ static int32_t HQA_SetTssiOnOff(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTssiOnOff\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTssiOnOff\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1212,7 +1212,7 @@ static int32_t HQA_SetRxHighLowTemperatureCompensation(struct net_device *prNetD
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRxHighLowTemperatureCompensation\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRxHighLowTemperatureCompensation\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1235,7 +1235,7 @@ static int32_t HQA_LowPower(struct net_device *prNetDev, IN union iwreq_data *pr
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_LowPower\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_LowPower\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1275,7 +1275,7 @@ static int32_t HQA_ResetTxRxCounter(struct net_device *prNetDev,
 {
 	uint32_t i4Status;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_ResetTxRxCounter\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_ResetTxRxCounter\n");
 
 	i4Status = MT_ATEResetTXRXCounter(prNetDev);
 
@@ -1301,7 +1301,7 @@ static int32_t HQA_GetStatistics(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetStatistics\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetStatistics\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1325,7 +1325,7 @@ static int32_t HQA_GetRxOKData(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetRxOKData\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxOKData\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1349,7 +1349,7 @@ static int32_t HQA_GetRxOKOther(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetRxOKOther\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxOKOther\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1373,7 +1373,7 @@ static int32_t HQA_GetRxAllPktCount(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetRxAllPktCount\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxAllPktCount\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1397,7 +1397,7 @@ static int32_t HQA_GetTxTransmitted(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetTxTransmitted\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetTxTransmitted\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1421,7 +1421,7 @@ static int32_t HQA_GetHwCounter(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetHwCounter\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetHwCounter\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1445,7 +1445,7 @@ static int32_t HQA_CalibrationOperation(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CalibrationOperation\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CalibrationOperation\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -1481,8 +1481,8 @@ static int32_t HQA_CalibrationBypassExt(struct net_device *prNetDev,
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CalibrationBypassExt u4Item : 0x%08x\n", u4Item);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CalibrationBypassExt u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CalibrationBypassExt u4Item : 0x%08x\n", u4Item);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CalibrationBypassExt u4Band_idx : %d\n", u4Band_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 
@@ -1537,16 +1537,16 @@ static int32_t HQA_SetRXVectorIdx(struct net_device *prNetDev,
 	memcpy(&Group_2, HqaCmdFrame->Data + 4 * 2, 4);
 	Group_2 = ntohl(Group_2);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXVectorIdx band_idx : %d\n", band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXVectorIdx Group_1 : %d\n", Group_1);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXVectorIdx Group_2 : %d\n", Group_2);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXVectorIdx band_idx : %d\n", band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXVectorIdx Group_1 : %d\n", Group_1);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXVectorIdx Group_2 : %d\n", Group_2);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_RXV_INDEX;
 	rRfATInfo.u4FuncData = (uint32_t) (Group_1);
 	rRfATInfo.u4FuncData |= (uint32_t) (Group_2 << 8);
 	rRfATInfo.u4FuncData |= (uint32_t) (band_idx << 16);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXVectorIdx rRfATInfo.u4FuncData : 0x%08x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXVectorIdx rRfATInfo.u4FuncData : 0x%08x\n",
 	       rRfATInfo.u4FuncData);
 
 	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
@@ -1595,8 +1595,8 @@ static int32_t HQA_SetFAGCRssiPath(struct net_device *prNetDev,
 	memcpy(&u4FAGC_Path, HqaCmdFrame->Data + 4 * 1, 4);
 	u4FAGC_Path = ntohl(u4FAGC_Path);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetFAGCRssiPath u4band_idx : %d\n", u4band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetFAGCRssiPath u4FAGC_Path : %d\n", u4FAGC_Path);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetFAGCRssiPath u4band_idx : %d\n", u4band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetFAGCRssiPath u4FAGC_Path : %d\n", u4FAGC_Path);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_FAGC_RSSI_PATH;
 	rRfATInfo.u4FuncData = (uint32_t) ((u4band_idx << 16) || (u4FAGC_Path & BITS(0, 15)));
@@ -1654,12 +1654,12 @@ static int32_t HQA_MacBbpRegRead(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MacBbpRegRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegRead\n");
 
 	memcpy(&u4Offset, HqaCmdFrame->Data, 4);
 	u4Offset = ntohl(u4Offset);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MacBbpRegRead Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegRead Offset = 0x%08lx\n", u4Offset);
 
 	rMcrInfo.u4McrOffset = u4Offset;
 	rMcrInfo.u4McrData = 0;
@@ -1670,7 +1670,7 @@ static int32_t HQA_MacBbpRegRead(struct net_device *prNetDev,
 	if (i4Status == 0) {
 		u4Value = rMcrInfo.u4McrData;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n", u4Offset, u4Value);
+		DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n", u4Offset, u4Value);
 
 		u4Value = ntohl(u4Value);
 		memcpy(HqaCmdFrame->Data + 2, &u4Value, 4);
@@ -1704,7 +1704,7 @@ static int32_t HQA_MacBbpRegWrite(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MacBbpRegWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite\n");
 
 	memcpy(&u4Offset, HqaCmdFrame->Data, 4);
 	memcpy(&u4Value, HqaCmdFrame->Data + 4, 4);
@@ -1712,8 +1712,8 @@ static int32_t HQA_MacBbpRegWrite(struct net_device *prNetDev,
 	u4Offset = ntohl(u4Offset);
 	u4Value = ntohl(u4Value);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MacBbpRegWrite Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MacBbpRegWrite Value = 0x%08lx\n", u4Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MacBbpRegWrite Value = 0x%08lx\n", u4Value);
 
 	rMcrInfo.u4McrOffset = u4Offset;
 	rMcrInfo.u4McrData = u4Value;
@@ -1748,15 +1748,15 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MACBbpRegBulkRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead\n");
 
 	memcpy(&u4Offset, HqaCmdFrame->Data, 4);
 	u4Offset = ntohl(u4Offset);
 	memcpy(&u2Len, HqaCmdFrame->Data + 4, 2);
 	u2Len = ntohs(u2Len);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MACBbpRegBulkRead Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MACBbpRegBulkRead Len = 0x%08lx\n", u2Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead Len = 0x%08lx\n", u2Len);
 
 	for (u4Index = 0; u4Index < u2Len; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
@@ -1769,7 +1769,7 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device *prNetDev,
 		if (i4Status == 0) {
 			u4Value = rMcrInfo.u4McrData;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
+			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -1803,7 +1803,7 @@ static int32_t HQA_RfRegBulkRead(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead\n");
 
 	memcpy(&u4WfSel, HqaCmdFrame->Data, 4);
 	u4WfSel = ntohl(u4WfSel);
@@ -1812,9 +1812,9 @@ static int32_t HQA_RfRegBulkRead(struct net_device *prNetDev,
 	memcpy(&u4Length, HqaCmdFrame->Data + 8, 4);
 	u4Length = ntohl(u4Length);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkRead WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkRead Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkRead Length = %d\n", u4Length);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead WfSel  = %d\n", u4WfSel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead Length = %d\n", u4Length);
 
 	if (u4WfSel == 0)
 		u4Offset = u4Offset | 0x99900000;
@@ -1833,7 +1833,7 @@ static int32_t HQA_RfRegBulkRead(struct net_device *prNetDev,
 		if (i4Status == 0) {
 			u4Value = rMcrInfo.u4McrData;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
+			DBGLOG(RFTEST, INFO, "QA_AGENT Address = 0x%08lx, Result = 0x%08lx\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -1867,7 +1867,7 @@ static int32_t HQA_RfRegBulkWrite(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite\n");
 
 	memcpy(&u4WfSel, HqaCmdFrame->Data, 4);
 	u4WfSel = ntohl(u4WfSel);
@@ -1878,10 +1878,10 @@ static int32_t HQA_RfRegBulkWrite(struct net_device *prNetDev,
 	memcpy(&u4Value, HqaCmdFrame->Data + 12, 4);
 	u4Value = ntohl(u4Value);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkWrite WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkWrite Offset = 0x%08lx\n", u4Offset);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkWrite Length = %d\n", u4Length);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RfRegBulkWrite Value  = 0x%08lx\n", u4Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite WfSel  = %d\n", u4WfSel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Offset = 0x%08lx\n", u4Offset);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Length = %d\n", u4Length);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite Value  = 0x%08lx\n", u4Value);
 
 	if (u4WfSel == 0)
 		u4Offset = u4Offset | 0x99900000;
@@ -1927,7 +1927,7 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev, IN union iwreq_data *
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfo;
 #endif
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadEEPROM\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadEEPROM\n");
 
 	memcpy(&Offset, HqaCmdFrame->Data + 2 * 0, 2);
 	Offset = ntohs(Offset);
@@ -1957,7 +1957,7 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev, IN union iwreq_data *
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 
-		DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadEEPROM u4Value = %x\n", u4Value);
+		DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadEEPROM u4Value = %x\n", u4Value);
 
 		u4Value = ntohl(u4Value);
 		memcpy(HqaCmdFrame->Data + 2, &u4Value, sizeof(u4Value));
@@ -2004,7 +2004,7 @@ static int32_t HQA_WriteEEPROM(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 #if 0
     /* Read */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadEEPROM\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadEEPROM\n");
 	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfoRead.u4Address = (Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 	rStatus = kalIoctl(prGlueInfo,
@@ -2014,7 +2014,7 @@ static int32_t HQA_WriteEEPROM(struct net_device *prNetDev,
 #endif
 
     /* Write */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteEEPROM\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteEEPROM\n");
 	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	u4Index = Offset % EFUSE_BLOCK_SIZE;
 
@@ -2074,33 +2074,33 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 	kalMemSet(&rAccessEfuseInfo, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 #endif
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM\n");
 
 	memcpy(&Offset, HqaCmdFrame->Data + 2 * 0, 2);
 	Offset = ntohs(Offset);
 	memcpy(&Len, HqaCmdFrame->Data + 2 * 1, 2);
 	Len = ntohs(Len);
 	tmp = Offset;
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Offset : %d\n", Offset);
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Len : %d\n", Len);
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Offset : %d\n", Offset);
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Len : %d\n", Len);
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	rAccessEfuseInfo.u4Address = (Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Address : %d\n", rAccessEfuseInfo.u4Address);
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Address : %d\n", rAccessEfuseInfo.u4Address);
 
 	if	((prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal != TRUE)
 		&& (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse == TRUE)) {
 
 		/* Read from Efuse */
-		DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM Efuse Mode\n");
+		DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Efuse Mode\n");
 		rStatus = kalIoctl(prGlueInfo,
 					wlanoidQueryProcessAccessEfuseRead,
 					&rAccessEfuseInfo,
 					sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), TRUE, TRUE, TRUE, &u4BufLen);
 
 		if (rStatus == WLAN_STATUS_FAILURE)
-			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM kal fail\n");
+			DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM kal fail\n");
 
 		Offset = Offset % EFUSE_BLOCK_SIZE;
 
@@ -2113,7 +2113,7 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 		for (u4Loop = 0; u4Loop < Len; u4Loop += 2) {
 			memcpy(&Buffer, prGlueInfo->prAdapter->aucEepromVaule + Offset + u4Loop, 2);
 			Buffer = ntohs(Buffer);
-			DBGLOG(INIT, INFO, "MT6632 :From Efuse  u4Loop=%d  Buffer=%x\n", u4Loop, Buffer);
+			DBGLOG(INIT, INFO, ":From Efuse  u4Loop=%d  Buffer=%x\n", u4Loop, Buffer);
 			memcpy(HqaCmdFrame->Data + 2 + u4Loop, &Buffer, 2);
 		}
 
@@ -2122,7 +2122,7 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device *prNetDev,
 			memcpy(&Buffer, uacEEPROMImage + Offset + u4Loop, 2);
 			Buffer = ntohs(Buffer);
 			memcpy(HqaCmdFrame->Data + 2 + u4Loop, &Buffer, 2);
-			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_ReadBulkEEPROM u4Loop=%d  u4Value=%x\n",
+			DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM u4Loop=%d  u4Value=%x\n",
 				u4Loop, uacEEPROMImage[Offset + u4Loop]);
 		}
 	}
@@ -2211,7 +2211,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM\n");
 
 
 	memcpy(&Offset, HqaCmdFrame->Data + 2 * 0, 2);
@@ -2224,8 +2224,8 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 	testBuffer = ntohs(testBuffer1);
 
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM Offset : %x\n", Offset);
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM Len : %d\n", Len);
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM Offset : %x\n", Offset);
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM Len : %d\n", Len);
 
 
     /* Support Delay Calibraiton */
@@ -2238,7 +2238,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 
 		for (u4Loop = 0; u4Loop < (Len); u4Loop++) {
 
-			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
+			DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM u4Loop=%d  u4Value=%x\n",
 				u4Loop, Buffer[u4Loop]);
 		}
 
@@ -2256,7 +2256,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 		} else {
 			/* EFUSE */
 			/* Read */
-			DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM  Read\n");
+			DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM  Read\n");
 			kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 			rAccessEfuseInfoRead.u4Address = (Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 			rStatus = kalIoctl(prGlueInfo,
@@ -2277,9 +2277,9 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 						u4Index, testBuffer);
 
 				*Buffer = ntohs(*Buffer);
-				DBGLOG(INIT, INFO, "MT6632 : Buffer[0]=%x, Buffer[0]&0xff=%x\n"
+				DBGLOG(INIT, INFO, "Buffer[0]=%x, Buffer[0]&0xff=%x\n"
 					, Buffer[0], Buffer[0]&0xff);
-				DBGLOG(INIT, INFO, "MT6632 : Buffer[0] >> 8 & 0xff=%x\n"
+				DBGLOG(INIT, INFO, "Buffer[0] >> 8 & 0xff=%x\n"
 					, Buffer[0] >> 8 & 0xff);
 
 				prGlueInfo->prAdapter->aucEepromVaule[u4Index] = *Buffer & 0xff;
@@ -2290,7 +2290,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device *prNetDev,
 			rAccessEfuseInfoWrite.u4Address = (Offset / EFUSE_BLOCK_SIZE)*EFUSE_BLOCK_SIZE;
 			for (u4Loop = 0; u4Loop < (EFUSE_BLOCK_SIZE); u4Loop++) {
 
-				DBGLOG(INIT, INFO, "MT6632 :  Loop=%d  aucData=%x\n",
+				DBGLOG(INIT, INFO, " Loop=%d  aucData=%x\n",
 				u4Loop, rAccessEfuseInfoWrite.aucData[u4Loop]);
 			}
 
@@ -2381,7 +2381,7 @@ static int32_t HQA_CheckEfuseMode(struct net_device *prNetDev,
 	int32_t		i4Ret = 0;
 	uint32_t		Value = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CheckEfuseMode\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CheckEfuseMode\n");
 
 	/* Value: 0:eeprom mode, 1:eFuse mode */
 	Value = ntohl(Value);
@@ -2419,7 +2419,7 @@ static int32_t HQA_GetFreeEfuseBlock(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_GetFreeEfuseBlock\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_GetFreeEfuseBlock\n");
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	if (prGlueInfo->prAdapter->fgIsSupportGetFreeEfuseBlockCount == TRUE) {
@@ -2459,7 +2459,7 @@ static int32_t HQA_GetEfuseBlockNr(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetEfuseBlockNr\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetEfuseBlockNr\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -2483,7 +2483,7 @@ static int32_t HQA_WriteEFuseFromBuffer(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_WriteEFuseFromBuffer\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_WriteEFuseFromBuffer\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -2522,9 +2522,9 @@ static int32_t HQA_GetTxPower(struct net_device *prNetDev, IN union iwreq_data *
 	memcpy(&u4Ch_Band, HqaCmdFrame->Data + 4 * 2, 4);
 	u4Ch_Band = ntohl(u4Ch_Band);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetTxPower u4Channel : %d\n", u4Channel);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetTxPower u4Band : %d\n", u4Band);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetTxPower u4Ch_Band : %d\n", u4Ch_Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetTxPower u4Channel : %d\n", u4Channel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetTxPower u4Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetTxPower u4Ch_Band : %d\n", u4Ch_Band);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2580,9 +2580,9 @@ static int32_t HQA_SetCfgOnOff(struct net_device *prNetDev,
 	memcpy(&Band, HqaCmdFrame->Data + 4 * 2, 4);
 	Band = ntohl(Band);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetCfgOnOff Type : %d\n", Type);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetCfgOnOff Enable : %d\n", Enable);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetCfgOnOff Band : %d\n", Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetCfgOnOff Type : %d\n", Type);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetCfgOnOff Enable : %d\n", Enable);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetCfgOnOff Band : %d\n", Band);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TSSI;
 	rRfATInfo.u4FuncData = 0;
@@ -2641,7 +2641,7 @@ static int32_t HQA_GetFreqOffset(struct net_device *prNetDev,
 	if (i4Ret == 0) {
 		u4FreqOffset = rRfATInfo.u4FuncData;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetFreqOffset u4FreqOffset = %d\n", u4FreqOffset);
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetFreqOffset u4FreqOffset = %d\n", u4FreqOffset);
 
 		u4FreqOffset = ntohl(u4FreqOffset);
 		memcpy(HqaCmdFrame->Data + 2, &u4FreqOffset, sizeof(u4FreqOffset));
@@ -2692,16 +2692,16 @@ static int32_t HQA_DBDCTXTone(struct net_device *prNetDev, IN union iwreq_data *
 	memcpy(&i4Digi_Power, HqaCmdFrame->Data + 4 * 9, 4);	/* Digi_Power: (0.25db) -32~31 */
 	i4Digi_Power = ntohl(i4Digi_Power);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone BandIdx = 0x%08lx\n", i4BandIdx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone Control = 0x%08lx\n", i4Control);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone AntIndex = 0x%08lx\n", i4AntIndex);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone ToneType = 0x%08lx\n", i4ToneType);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone ToneFreq = 0x%08lx\n", i4ToneFreq);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone DcOffsetI = 0x%08lx\n", i4DcOffsetI);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone DcOffsetQ = 0x%08lx\n", i4DcOffsetQ);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone Band = 0x%08lx\n", i4Band);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone RF_Power = 0x%08lx\n", i4RF_Power);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCTXTone Digi_Power = 0x%08lx\n", i4Digi_Power);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone BandIdx = 0x%08lx\n", i4BandIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Control = 0x%08lx\n", i4Control);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone AntIndex = 0x%08lx\n", i4AntIndex);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneType = 0x%08lx\n", i4ToneType);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone ToneFreq = 0x%08lx\n", i4ToneFreq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetI = 0x%08lx\n", i4DcOffsetI);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone DcOffsetQ = 0x%08lx\n", i4DcOffsetQ);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Band = 0x%08lx\n", i4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone RF_Power = 0x%08lx\n", i4RF_Power);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCTXTone Digi_Power = 0x%08lx\n", i4Digi_Power);
 
 	/*
 	 * Select TX Antenna
@@ -2782,15 +2782,15 @@ static int32_t HQA_DBDCContinuousTX(struct net_device *prNetDev,
 	memcpy(&u4TxfdMode, HqaCmdFrame->Data + 4 * 8, 4);
 	u4TxfdMode = ntohl(u4TxfdMode);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Band : %d\n", u4Band);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Control : %d\n", u4Control);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4AntMask : %d\n", u4AntMask);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Phymode : %d\n", u4Phymode);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4BW : %d\n", u4BW);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Pri_Ch : %d\n", u4Pri_Ch);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Rate : %d\n", u4Rate);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4Central_Ch : %d\n", u4Central_Ch);	/* ok */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DBDCContinuousTX u4TxfdMode : %d\n", u4TxfdMode);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Band : %d\n", u4Band);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Control : %d\n", u4Control);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4AntMask : %d\n", u4AntMask);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Phymode : %d\n", u4Phymode);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4BW : %d\n", u4BW);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Pri_Ch : %d\n", u4Pri_Ch);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Rate : %d\n", u4Rate);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4Central_Ch : %d\n", u4Central_Ch);	/* ok */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DBDCContinuousTX u4TxfdMode : %d\n", u4TxfdMode);	/* ok */
 
 	if (u4Control) {
 		MT_ATESetDBDCBandIndex(prNetDev, u4Band);
@@ -2808,7 +2808,7 @@ static int32_t HQA_DBDCContinuousTX(struct net_device *prNetDev,
 		if (u4Phymode == 0) {
 			u4Rate |= 0x00000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Rate);
+			DBGLOG(RFTEST, INFO, "QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Rate);
 
 			MT_ATESetRate(prNetDev, u4Rate);
 		} else if (u4Phymode == 1) {
@@ -2820,13 +2820,13 @@ static int32_t HQA_DBDCContinuousTX(struct net_device *prNetDev,
 				u4Rate = 3;
 			u4Rate |= 0x00000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK (short preamble) rate : %d\n", u4Rate);
+			DBGLOG(RFTEST, INFO, "QA_AGENT CCK (short preamble) rate : %d\n", u4Rate);
 
 			MT_ATESetRate(prNetDev, u4Rate);
 		} else if (u4Phymode >= 2 && u4Phymode <= 4) {
 			u4Rate |= 0x80000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HT/VHT rate : %d\n", u4Rate);
+			DBGLOG(RFTEST, INFO, "QA_AGENT HT/VHT rate : %d\n", u4Rate);
 
 			MT_ATESetRate(prNetDev, u4Rate);
 		}
@@ -2929,9 +2929,9 @@ static int32_t HQA_SetRXFilterPktLen(struct net_device *prNetDev,
 	memcpy(&u4RxPktlen, HqaCmdFrame->Data + 4 * 2, 4);
 	u4RxPktlen = ntohl(u4RxPktlen);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXFilterPktLen Band : %d\n", u4Band);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXFilterPktLen Control : %d\n", u4Control);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXFilterPktLen RxPktlen : %d\n", u4RxPktlen);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXFilterPktLen Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXFilterPktLen Control : %d\n", u4Control);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXFilterPktLen RxPktlen : %d\n", u4RxPktlen);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RX_FILTER_PKT_LEN;
 	rRfATInfo.u4FuncData = (uint32_t) (u4RxPktlen & BITS(0, 23));
@@ -2942,7 +2942,7 @@ static int32_t HQA_SetRXFilterPktLen(struct net_device *prNetDev,
 	else
 		rRfATInfo.u4FuncData &= ~BIT(30);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetRXFilterPktLen rRfATInfo.u4FuncData : 0x%08x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetRXFilterPktLen rRfATInfo.u4FuncData : 0x%08x\n",
 	       rRfATInfo.u4FuncData);
 
 	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
@@ -2985,7 +2985,7 @@ static int32_t HQA_GetTXInfo(struct net_device *prNetDev, IN union iwreq_data *p
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetTXInfo\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetTXInfo\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_TXED_COUNT;
 	rRfATInfo.u4FuncData = 0;
@@ -2996,7 +2996,7 @@ static int32_t HQA_GetTXInfo(struct net_device *prNetDev, IN union iwreq_data *p
 	if (i4Status == 0) {
 		u4Txed_band0 = rRfATInfo.u4FuncData;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT u4Txed_band0 packet count = %d\n", u4Txed_band0);
+		DBGLOG(RFTEST, INFO, "QA_AGENT u4Txed_band0 packet count = %d\n", u4Txed_band0);
 
 		u4Txed_band0 = ntohl(u4Txed_band0);
 		memcpy(HqaCmdFrame->Data + 2, &u4Txed_band0, sizeof(u4Txed_band0));
@@ -3012,7 +3012,7 @@ static int32_t HQA_GetTXInfo(struct net_device *prNetDev, IN union iwreq_data *p
 	if (i4Status == 0) {
 		u4Txed_band1 = rRfATInfo.u4FuncData;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT u4Txed_band1 packet count = %d\n", u4Txed_band1);
+		DBGLOG(RFTEST, INFO, "QA_AGENT u4Txed_band1 packet count = %d\n", u4Txed_band1);
 
 		u4Txed_band1 = ntohl(u4Txed_band1);
 		memcpy(HqaCmdFrame->Data + 2 + 4, &u4Txed_band1, sizeof(u4Txed_band1));
@@ -3040,7 +3040,7 @@ static int32_t HQA_GetCfgOnOff(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetCfgOnOff\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetCfgOnOff\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3089,7 +3089,7 @@ static int32_t HQA_ReadTempReferenceValue(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_ReadTempReferenceValue\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_ReadTempReferenceValue\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3128,7 +3128,7 @@ static int32_t HQA_GetThermalValue(struct net_device *prNetDev,
 		u4Value = rRfATInfo.u4FuncData;
 		u4Value = u4Value >> 16;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetThermalValue Value = %d\n", u4Value);
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetThermalValue Value = %d\n", u4Value);
 
 		u4Value = ntohl(u4Value);
 		memcpy(HqaCmdFrame->Data + 2, &u4Value, 4);
@@ -3156,7 +3156,7 @@ static int32_t HQA_SetSideBandOption(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetSideBandOption\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetSideBandOption\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3186,7 +3186,7 @@ static int32_t HQA_GetFWInfo(struct net_device *prNetDev, IN union iwreq_data *p
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetFWInfo\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetFWInfo\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3210,7 +3210,7 @@ static int32_t HQA_StartContinousTx(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartContinousTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartContinousTx\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3233,7 +3233,7 @@ static int32_t HQA_SetSTBC(struct net_device *prNetDev, IN union iwreq_data *prI
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetSTBC\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetSTBC\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3260,7 +3260,7 @@ static int32_t HQA_SetShortGI(struct net_device *prNetDev, IN union iwreq_data *
 	memcpy(&u4ShortGi, HqaCmdFrame->Data, 4);
 	u4ShortGi = ntohl(u4ShortGi);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetShortGI u4ShortGi = %d\n", u4ShortGi);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetShortGI u4ShortGi = %d\n", u4ShortGi);
 
 	i4Ret = MT_ATESetTxGi(prNetDev, u4ShortGi);
 
@@ -3285,7 +3285,7 @@ static int32_t HQA_SetDPD(struct net_device *prNetDev, IN union iwreq_data *prIw
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetDPD\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetDPD\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3315,7 +3315,7 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device *prNetDev,
 	/* memset(&g_HqaRxStat, 0, sizeof(PARAM_RX_STAT_T)); */
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetRxStatisticsAll\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxStatisticsAll\n");
 
 	rRxStatisticsTest.u4SeqNum = u4RxStatSeqNum;
 	rRxStatisticsTest.u4TotalNum = HQA_RX_STATISTIC_NUM + 6;
@@ -3351,7 +3351,7 @@ static int32_t HQA_StartContiTxTone(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StartContiTxTone\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StartContiTxTone\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3375,7 +3375,7 @@ static int32_t HQA_StopContiTxTone(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StopContiTxTone\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StopContiTxTone\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3401,7 +3401,7 @@ static int32_t HQA_CalibrationTestMode(struct net_device *prNetDev,
 	uint32_t u4Mode = 0;
 	uint32_t u4IcapLen = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CalibrationTestMode\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CalibrationTestMode\n");
 
 	memcpy(&u4Mode, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Mode = ntohl(u4Mode);
@@ -3446,8 +3446,8 @@ static int32_t HQA_DoCalibrationTestItem(struct net_device *prNetDev,
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DoCalibrationTestItem item : 0x%08x\n", u4Item);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DoCalibrationTestItem band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DoCalibrationTestItem item : 0x%08x\n", u4Item);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DoCalibrationTestItem band_idx : %d\n", u4Band_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 
@@ -3488,7 +3488,7 @@ static int32_t HQA_eFusePhysicalWrite(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_eFusePhysicalWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_eFusePhysicalWrite\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3512,7 +3512,7 @@ static int32_t HQA_eFusePhysicalRead(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_eFusePhysicalRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_eFusePhysicalRead\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3536,7 +3536,7 @@ static int32_t HQA_eFuseLogicalRead(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_eFuseLogicalRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_eFuseLogicalRead\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3560,7 +3560,7 @@ static int32_t HQA_eFuseLogicalWrite(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_eFuseLogicalWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_eFuseLogicalWrite\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3596,10 +3596,10 @@ static int32_t HQA_TMRSetting(struct net_device *prNetDev, IN union iwreq_data *
 	memcpy(&u4MPIter, HqaCmdFrame->Data + 4 * 3, 4);
 	u4MPIter = ntohl(u4MPIter);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TMRSetting u4Setting : %d\n", u4Setting);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TMRSetting u4Version : %d\n", u4Version);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TMRSetting u4MPThres : %d\n", u4MPThres);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TMRSetting u4MPIter : %d\n", u4MPIter);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TMRSetting u4Setting : %d\n", u4Setting);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TMRSetting u4Version : %d\n", u4Version);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TMRSetting u4MPThres : %d\n", u4MPThres);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TMRSetting u4MPIter : %d\n", u4MPIter);
 
 	i4Ret = MT_ATE_TMRSetting(prNetDev, u4Setting, u4Version, u4MPThres, u4MPIter);
 
@@ -3624,7 +3624,7 @@ static int32_t HQA_GetRxSNR(struct net_device *prNetDev, IN union iwreq_data *pr
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetRxSNR\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxSNR\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3661,7 +3661,7 @@ static int32_t HQA_WriteBufferDone(struct net_device *prNetDev,
 	memcpy(&Value, HqaCmdFrame->Data + 4 * 0, 4);
 	Value = ntohl(Value);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_WriteBufferDone Value : %d\n", Value);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_WriteBufferDone Value : %d\n", Value);
 
 	u4EepromMode = Value;
 
@@ -3705,7 +3705,7 @@ static int32_t HQA_FFT(struct net_device *prNetDev, IN union iwreq_data *prIwReq
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_FFT\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_FFT\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3729,7 +3729,7 @@ static int32_t HQA_SetTxTonePower(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetTxTonePower\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetTxTonePower\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -3759,7 +3759,7 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev, IN union iwreq_data *p
 *	PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo;
 */
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetChipID\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetChipID\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -3767,7 +3767,7 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev, IN union iwreq_data *p
 	g_u4Chip_ID = prChipInfo->chip_id;
 	u4ChipId = 0x00006632;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetChipID ChipId = 0x%08lx\n", u4ChipId);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetChipID ChipId = 0x%08lx\n", u4ChipId);
 
 	u4ChipId = ntohl(u4ChipId);
 	memcpy(HqaCmdFrame->Data + 2, &u4ChipId, 4);
@@ -3804,14 +3804,14 @@ static int32_t HQA_MPSSetSeqData(struct net_device *prNetDev,
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetSeqData u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetSeqData u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetSeqData u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetSeqData u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0 ; i < u4Len ; i++) {
 		u4Offset = 4 + 4 * i;
@@ -3825,7 +3825,7 @@ static int32_t HQA_MPSSetSeqData(struct net_device *prNetDev,
 		u4Mcs = (u4Value & BITS(0, 7));
 
 		DBGLOG(RFTEST, INFO,
-			"MT6632 : QA_AGENT HQA_MPSSetSeqData mps_setting Case %d (Mode : %d / TX Path : %d / MCS : %d)\n"
+			"QA_AGENT HQA_MPSSetSeqData mps_setting Case %d (Mode : %d / TX Path : %d / MCS : %d)\n"
 			, i, u4Mode, u4TxPath, u4Mcs);
 
 		if (u4Mode == 1) {
@@ -3837,7 +3837,7 @@ static int32_t HQA_MPSSetSeqData(struct net_device *prNetDev,
 		if (u4Mode == 0) {
 			u4Mcs |= 0x00000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Mcs);
+			DBGLOG(RFTEST, INFO, "QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Mcs);
 		} else if (u4Mode == 1) {
 			if (u4Mcs == 9)
 				u4Mcs = 1;
@@ -3847,17 +3847,17 @@ static int32_t HQA_MPSSetSeqData(struct net_device *prNetDev,
 				u4Mcs = 3;
 			u4Mcs |= 0x00000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK (short preamble) rate : %d\n", u4Mcs);
+			DBGLOG(RFTEST, INFO, "QA_AGENT CCK (short preamble) rate : %d\n", u4Mcs);
 		} else if (u4Mode >= 2 && u4Mode <= 4) {
 			u4Mcs |= 0x80000000;
 
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HT/VHT rate : %d\n", u4Mcs);
+			DBGLOG(RFTEST, INFO, "QA_AGENT HT/VHT rate : %d\n", u4Mcs);
 		}
 
 		mps_setting[i] = (u4Mcs) | (u4TxPath << 8) | (u4Mode << 24);
 
 		DBGLOG(RFTEST, INFO,
-			"MT6632 : QA_AGENT HQA_MPSSetSeqData mps_setting Case %d (Mode : %d / TX Path : %d / MCS : %d)\n",
+			"QA_AGENT HQA_MPSSetSeqData mps_setting Case %d (Mode : %d / TX Path : %d / MCS : %d)\n",
 			i,
 			(mps_setting[i] & BITS(24, 27)) >> 24,
 			(mps_setting[i] & BITS(8, 23)) >> 8,
@@ -3899,14 +3899,14 @@ static int32_t HQA_MPSSetPayloadLength(struct net_device *prNetDev,
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPayloadLength u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPayloadLength u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPayloadLength u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPayloadLength u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0 ; i < u4Len ; i++) {
 		u4Offset = 4 + 4 * i;
@@ -3916,7 +3916,7 @@ static int32_t HQA_MPSSetPayloadLength(struct net_device *prNetDev,
 		mps_setting[i] = ntohl(u4Value);
 
 		DBGLOG(RFTEST, INFO,
-			"MT6632 : QA_AGENT HQA_MPSSetPayloadLength mps_setting Case %d (Payload Length : %d)\n",
+			"QA_AGENT HQA_MPSSetPayloadLength mps_setting Case %d (Payload Length : %d)\n",
 			i, mps_setting[i]);
 	}
 
@@ -3954,14 +3954,14 @@ static int32_t HQA_MPSSetPacketCount(struct net_device *prNetDev,
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPacketCount u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPacketCount u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPacketCount u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPacketCount u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0 ; i < u4Len ; i++) {
 		u4Offset = 4 + 4 * i;
@@ -3971,7 +3971,7 @@ static int32_t HQA_MPSSetPacketCount(struct net_device *prNetDev,
 		mps_setting[i] = ntohl(u4Value);
 
 		DBGLOG(RFTEST, INFO,
-			"MT6632 : QA_AGENT HQA_MPSSetPacketCount mps_setting Case %d (Packet Count : %d)\n",
+			"QA_AGENT HQA_MPSSetPacketCount mps_setting Case %d (Packet Count : %d)\n",
 			i, mps_setting[i]);
 	}
 
@@ -4009,14 +4009,14 @@ static int32_t HQA_MPSSetPowerGain(struct net_device *prNetDev,
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPowerGain u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPowerGain u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPowerGain u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPowerGain u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0 ; i < u4Len ; i++) {
 		u4Offset = 4 + 4 * i;
@@ -4025,7 +4025,7 @@ static int32_t HQA_MPSSetPowerGain(struct net_device *prNetDev,
 		memcpy(&u4Value, HqaCmdFrame->Data + 4 + 4*i, 4);
 		mps_setting[i] = ntohl(u4Value);
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPowerGain mps_setting Case %d (Power : %d)\n",
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPowerGain mps_setting Case %d (Power : %d)\n",
 			i, mps_setting[i]);
 	}
 
@@ -4055,7 +4055,7 @@ static int32_t HQA_MPSStart(struct net_device *prNetDev, IN union iwreq_data *pr
 	int32_t		i4Ret = 0;
 	uint32_t		u4Band_idx = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSStart\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSStart\n");
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
@@ -4085,7 +4085,7 @@ static int32_t HQA_MPSStop(struct net_device *prNetDev, IN union iwreq_data *prI
 	int32_t		i4Ret = 0;
 	uint32_t		u4Band_idx = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSStop\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSStop\n");
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
@@ -4121,14 +4121,14 @@ static int32_t HQA_MPSSetNss(struct net_device *prNetDev, IN union iwreq_data *p
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetNss u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetNss u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetNss u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetNss u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0; i < u4Len; i++) {
 		u4Offset = 4 + 4 * i;
@@ -4137,7 +4137,7 @@ static int32_t HQA_MPSSetNss(struct net_device *prNetDev, IN union iwreq_data *p
 		memcpy(&u4Value, HqaCmdFrame->Data + 4 + 4*i, 4);
 		mps_setting[i] = ntohl(u4Value);
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetNss mps_setting Case %d (Nss : %d)\n",
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetNss mps_setting Case %d (Nss : %d)\n",
 			i, mps_setting[i]);
 	}
 
@@ -4177,14 +4177,14 @@ static int32_t HQA_MPSSetPerpacketBW(
 
 	u4Len = ntohs(HqaCmdFrame->Length)/sizeof(uint32_t) - 1;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPerpacketBW u4Len : %d\n", u4Len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPerpacketBW u4Len : %d\n", u4Len);
 
 	mps_setting = kmalloc(sizeof(uint32_t)*(u4Len), GFP_KERNEL);
 
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPerpacketBW u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPerpacketBW u4Band_idx : %d\n", u4Band_idx);
 
 	for (i = 0 ; i < u4Len ; i++) {
 		u4Offset = 4 + 4 * i;
@@ -4193,7 +4193,7 @@ static int32_t HQA_MPSSetPerpacketBW(
 		memcpy(&u4Value, HqaCmdFrame->Data + 4 + 4*i, 4);
 		mps_setting[i] = ntohl(u4Value);
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MPSSetPerpacketBW mps_setting Case %d (BW : %d)\n",
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MPSSetPerpacketBW mps_setting Case %d (BW : %d)\n",
 			i, mps_setting[i]);
 	}
 
@@ -4230,8 +4230,8 @@ static int32_t HQA_SetAIFS(struct net_device *prNetDev, IN union iwreq_data *prI
 	memcpy(&SifsTime, HqaCmdFrame->Data + 4 * 1, 4);
 	SifsTime = ntohl(SifsTime);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetAIFS SlotTime = %d\n", SlotTime);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetAIFS SifsTime = %d\n", SifsTime);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetAIFS SlotTime = %d\n", SlotTime);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetAIFS SifsTime = %d\n", SifsTime);
 
 	i4Ret = MT_ATESetTxIPG(prNetDev, SifsTime);
 
@@ -4258,7 +4258,7 @@ static int32_t HQA_CheckEfuseModeType(struct net_device *prNetDev,
 	int32_t		i4Ret = 0;
 	uint32_t		Value = u4EepromMode;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CheckEfuseModeType\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CheckEfuseModeType\n");
 
 	/*
 	* Value:
@@ -4292,7 +4292,7 @@ static int32_t HQA_CheckEfuseNativeModeType(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CheckEfuseNativeModeType\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CheckEfuseNativeModeType\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -4323,8 +4323,8 @@ static int32_t HQA_SetBandMode(struct net_device *prNetDev,
 	memcpy((uint8_t *)&u4Band_type, HqaCmdFrame->Data + 4 * 1, 4);
 	u4Band_type = ntohl(u4Band_type);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetBandMode u4Band_mode : %d\n", u4Band_mode);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_SetBandMode u4Band_type : %d\n", u4Band_type);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetBandMode u4Band_mode : %d\n", u4Band_mode);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetBandMode u4Band_type : %d\n", u4Band_type);
 
 	if (u4Band_mode == 2)
 		g_DBDCEnable = TRUE;
@@ -4362,7 +4362,7 @@ static int32_t HQA_GetBandMode(struct net_device *prNetDev,
 
 	memcpy((uint8_t *)&u4Band_idx, HqaCmdFrame->Data, 4);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetBandMode u4Band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetBandMode u4Band_idx : %d\n", u4Band_idx);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_DBDC_ENABLE;
 	if (g_DBDCEnable)
@@ -4370,7 +4370,7 @@ static int32_t HQA_GetBandMode(struct net_device *prNetDev,
 	else
 		rRfATInfo.u4FuncData = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_GetBandMode g_DBDCEnable = %d\n", g_DBDCEnable);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetBandMode g_DBDCEnable = %d\n", g_DBDCEnable);
 
 	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			 wlanoidRftestSetAutoTest,	/* pfnOidHandler */
@@ -4419,7 +4419,7 @@ static int32_t HQA_RDDStartExt(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RDDStartExt\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RDDStartExt\n");
 
 	DBGLOG(RFTEST, INFO, "[RDD DUMP START]\n");
 
@@ -4447,7 +4447,7 @@ static int32_t HQA_RDDStopExt(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_RDDStopExt\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RDDStopExt\n");
 
 	i4Ret = MT_ATERDDStop(prNetDev, "RDDSTOP");
 
@@ -4486,16 +4486,16 @@ static int32_t HQA_BssInfoUpdate(struct net_device *prNetDev,
 	BssIdx = ntohl(BssIdx);
 	memcpy(ucAddr1, HqaCmdFrame->Data + 4 * 2, 6);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BssInfoUpdate OwnMacIdx : %d\n", OwnMacIdx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BssInfoUpdate BssIdx : %d\n", BssIdx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BssInfoUpdate addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BssInfoUpdate OwnMacIdx : %d\n", OwnMacIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BssInfoUpdate BssIdx : %d\n", BssIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BssInfoUpdate addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   OwnMacIdx, BssIdx, ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_BssInfoUpdate(prNetDev, prInBuf);
 
@@ -4532,16 +4532,16 @@ static int32_t HQA_DevInfoUpdate(struct net_device *prNetDev,
 	OwnMacIdx = ntohl(OwnMacIdx);
 	memcpy(ucAddr1, HqaCmdFrame->Data + 4 * 2, 6);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DevInfoUpdate Band : %d\n", Band);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DevInfoUpdate OwnMacIdx : %d\n", OwnMacIdx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_DevInfoUpdate addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DevInfoUpdate Band : %d\n", Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DevInfoUpdate OwnMacIdx : %d\n", OwnMacIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_DevInfoUpdate addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   OwnMacIdx, ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5], Band);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_DevInfoUpdate(prNetDev, prInBuf);
 
@@ -4579,10 +4579,10 @@ static int32_t HQA_LogOnOff(struct net_device *prNetDev, IN union iwreq_data *pr
 	memcpy(&u4Log_size, HqaCmdFrame->Data + 4 + 4 + 4, 4);
 	u4Log_size = ntohl(u4Log_size);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_LogOnOff band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_LogOnOff log_type : %d\n", u4Log_type);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_LogOnOff log_ctrl : %d\n", u4Log_ctrl);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_LogOnOff log_size : %d\n", u4Log_size);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_LogOnOff band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_LogOnOff log_type : %d\n", u4Log_type);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_LogOnOff log_ctrl : %d\n", u4Log_ctrl);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_LogOnOff log_size : %d\n", u4Log_size);
 
 	i4Ret = MT_ATELogOnOff(prNetDev, u4Log_type, u4Log_ctrl, u4Log_size);
 
@@ -4661,7 +4661,7 @@ static int32_t HQA_TxBfProfileTagInValid(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(invalid), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagInValid\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagInValid\n");
 
 	memcpy(&invalid, HqaCmdFrame->Data, 4);
 	invalid = ntohl(invalid);
@@ -4669,7 +4669,7 @@ static int32_t HQA_TxBfProfileTagInValid(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(invalid));
 	kalSprintf(prInBuf, "%u", invalid);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_InValid(prNetDev, prInBuf);
 
@@ -4687,7 +4687,7 @@ static int32_t HQA_TxBfProfileTagPfmuIdx(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(pfmuidx), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagPfmuIdx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagPfmuIdx\n");
 
 	memcpy(&pfmuidx, HqaCmdFrame->Data, 4);
 	pfmuidx = ntohl(pfmuidx);
@@ -4695,7 +4695,7 @@ static int32_t HQA_TxBfProfileTagPfmuIdx(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(pfmuidx));
 	kalSprintf(prInBuf, "%u", pfmuidx);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_PfmuIdx(prNetDev, prInBuf);
 
@@ -4713,7 +4713,7 @@ static int32_t HQA_TxBfProfileTagBfType(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(bftype), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagBfType\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagBfType\n");
 
 	memcpy(&bftype, HqaCmdFrame->Data, 4);
 	bftype = ntohl(bftype);
@@ -4721,7 +4721,7 @@ static int32_t HQA_TxBfProfileTagBfType(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(bftype));
 	kalSprintf(prInBuf, "%u", bftype);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_BfType(prNetDev, prInBuf);
 
@@ -4739,7 +4739,7 @@ static int32_t HQA_TxBfProfileTagBw(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(tag_bw), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagBw\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagBw\n");
 
 	memcpy(&tag_bw, HqaCmdFrame->Data, 4);
 	tag_bw = ntohl(tag_bw);
@@ -4747,7 +4747,7 @@ static int32_t HQA_TxBfProfileTagBw(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(tag_bw));
 	kalSprintf(prInBuf, "%u", tag_bw);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_DBW(prNetDev, prInBuf);
 
@@ -4765,7 +4765,7 @@ static int32_t HQA_TxBfProfileTagSuMu(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(su_mu), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagSuMu\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagSuMu\n");
 
 	memcpy(&su_mu, HqaCmdFrame->Data, 4);
 	su_mu = ntohl(su_mu);
@@ -4773,7 +4773,7 @@ static int32_t HQA_TxBfProfileTagSuMu(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(su_mu));
 	kalSprintf(prInBuf, "%u", su_mu);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_SuMu(prNetDev, prInBuf);
 
@@ -4792,7 +4792,7 @@ static int32_t HQA_TxBfProfileTagMemAlloc(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagMemAlloc\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagMemAlloc\n");
 
 	memcpy(&col_idx0, HqaCmdFrame->Data + 4 * 0, 4);
 	col_idx0 = ntohl(col_idx0);
@@ -4815,7 +4815,7 @@ static int32_t HQA_TxBfProfileTagMemAlloc(struct net_device *prNetDev,
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   col_idx0, row_idx0, col_idx1, row_idx1, col_idx2, row_idx2, col_idx3, row_idx3);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_Mem(prNetDev, prInBuf);
 
@@ -4833,7 +4833,7 @@ static int32_t HQA_TxBfProfileTagMatrix(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagMatrix\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagMatrix\n");
 
 	memcpy(&nrow, HqaCmdFrame->Data + 4 * 0, 4);
 	nrow = ntohl(nrow);
@@ -4851,7 +4851,7 @@ static int32_t HQA_TxBfProfileTagMatrix(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x", nrow, ncol, ngroup, LM, code_book, htc_exist);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_Matrix(prNetDev, prInBuf);
 
@@ -4869,7 +4869,7 @@ static int32_t HQA_TxBfProfileTagSnr(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagSnr\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagSnr\n");
 
 	memcpy(&snr_sts0, HqaCmdFrame->Data + 4 * 0, 4);
 	snr_sts0 = ntohl(snr_sts0);
@@ -4883,7 +4883,7 @@ static int32_t HQA_TxBfProfileTagSnr(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", snr_sts0, snr_sts1, snr_sts2, snr_sts3);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_SNR(prNetDev, prInBuf);
 
@@ -4901,7 +4901,7 @@ static int32_t HQA_TxBfProfileTagSmtAnt(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(smt_ant), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagSmtAnt\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagSmtAnt\n");
 
 	memcpy(&smt_ant, HqaCmdFrame->Data + 4 * 0, 4);
 	smt_ant = ntohl(smt_ant);
@@ -4909,7 +4909,7 @@ static int32_t HQA_TxBfProfileTagSmtAnt(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(smt_ant));
 	kalSprintf(prInBuf, "%u", smt_ant);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_SmartAnt(prNetDev, prInBuf);
 
@@ -4927,7 +4927,7 @@ static int32_t HQA_TxBfProfileTagSeIdx(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(se_idx), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagSeIdx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagSeIdx\n");
 
 	memcpy(&se_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	se_idx = ntohl(se_idx);
@@ -4935,7 +4935,7 @@ static int32_t HQA_TxBfProfileTagSeIdx(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(se_idx));
 	kalSprintf(prInBuf, "%u", se_idx);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_SeIdx(prNetDev, prInBuf);
 
@@ -4953,7 +4953,7 @@ static int32_t HQA_TxBfProfileTagRmsdThrd(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(rmsd_thrd), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagRmsdThrd\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagRmsdThrd\n");
 
 	memcpy(&rmsd_thrd, HqaCmdFrame->Data + 4 * 0, 4);
 	rmsd_thrd = ntohl(rmsd_thrd);
@@ -4961,7 +4961,7 @@ static int32_t HQA_TxBfProfileTagRmsdThrd(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(rmsd_thrd));
 	kalSprintf(prInBuf, "%u", rmsd_thrd);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_RmsdThrd(prNetDev, prInBuf);
 
@@ -4979,7 +4979,7 @@ static int32_t HQA_TxBfProfileTagMcsThrd(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagMcsThrd\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagMcsThrd\n");
 
 	memcpy(&mcs_lss0, HqaCmdFrame->Data + 4 * 0, 4);
 	mcs_lss0 = ntohl(mcs_lss0);
@@ -4998,7 +4998,7 @@ static int32_t HQA_TxBfProfileTagMcsThrd(struct net_device *prNetDev,
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x", mcs_lss0, mcs_sss0, mcs_lss1, mcs_sss1, mcs_lss2,
 		   mcs_sss2);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_McsThrd(prNetDev, prInBuf);
 
@@ -5016,7 +5016,7 @@ static int32_t HQA_TxBfProfileTagTimeOut(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(bf_tout), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagTimeOut\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagTimeOut\n");
 
 	memcpy(&bf_tout, HqaCmdFrame->Data + 4 * 0, 4);
 	bf_tout = ntohl(bf_tout);
@@ -5024,7 +5024,7 @@ static int32_t HQA_TxBfProfileTagTimeOut(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(bf_tout));
 	kalSprintf(prInBuf, "%x", bf_tout);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_TimeOut(prNetDev, prInBuf);
 
@@ -5042,7 +5042,7 @@ static int32_t HQA_TxBfProfileTagDesiredBw(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(desire_bw), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagDesiredBw\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagDesiredBw\n");
 
 	memcpy(&desire_bw, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_bw = ntohl(desire_bw);
@@ -5050,7 +5050,7 @@ static int32_t HQA_TxBfProfileTagDesiredBw(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(desire_bw));
 	kalSprintf(prInBuf, "%u", desire_bw);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_DesiredBW(prNetDev, prInBuf);
 
@@ -5068,7 +5068,7 @@ static int32_t HQA_TxBfProfileTagDesiredNc(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(desire_nc), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagDesiredNc\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagDesiredNc\n");
 
 	memcpy(&desire_nc, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_nc = ntohl(desire_nc);
@@ -5076,7 +5076,7 @@ static int32_t HQA_TxBfProfileTagDesiredNc(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(desire_nc));
 	kalSprintf(prInBuf, "%u", desire_nc);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_DesiredNc(prNetDev, prInBuf);
 
@@ -5094,7 +5094,7 @@ static int32_t HQA_TxBfProfileTagDesiredNr(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(desire_nr), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagDesiredNr\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagDesiredNr\n");
 
 	memcpy(&desire_nr, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_nr = ntohl(desire_nr);
@@ -5102,7 +5102,7 @@ static int32_t HQA_TxBfProfileTagDesiredNr(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(desire_nr));
 	kalSprintf(prInBuf, "%u", desire_nr);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTag_DesiredNr(prNetDev, prInBuf);
 
@@ -5120,7 +5120,7 @@ static int32_t HQA_TxBfProfileTagWrite(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(idx), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagWrite\n");
 
 	memcpy(&idx, HqaCmdFrame->Data + 4 * 0, 4);
 	idx = ntohl(idx);
@@ -5128,7 +5128,7 @@ static int32_t HQA_TxBfProfileTagWrite(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(idx));
 	kalSprintf(prInBuf, "%u", idx);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTagWrite(prNetDev, prInBuf);
 
@@ -5148,7 +5148,7 @@ static int32_t HQA_TxBfProfileTagRead(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfProfileTagRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfProfileTagRead\n");
 
 	memcpy(&idx, HqaCmdFrame->Data + 4 * 0, 4);
 	idx = ntohl(idx);
@@ -5158,7 +5158,7 @@ static int32_t HQA_TxBfProfileTagRead(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x", idx, isBFer);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileTagRead(prNetDev, prInBuf);
 
@@ -5189,7 +5189,7 @@ static int32_t HQA_StaRecCmmUpdate(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StaRecCmmUpdate\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StaRecCmmUpdate\n");
 
 	memcpy(&wlan_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	wlan_idx = ntohl(wlan_idx);
@@ -5204,7 +5204,7 @@ static int32_t HQA_StaRecCmmUpdate(struct net_device *prNetDev,
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   wlan_idx, bss_idx, aid, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_StaRecCmmUpdate(prNetDev, prInBuf);
 
@@ -5225,7 +5225,7 @@ static int32_t HQA_StaRecBfUpdate(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_StaRecBfUpdate\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_StaRecBfUpdate\n");
 
 	memcpy(&wlan_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	wlan_idx = ntohl(wlan_idx);
@@ -5302,7 +5302,7 @@ static int32_t HQA_StaRecBfUpdate(struct net_device *prNetDev,
 		   cbw, spe_idx, tot_mem_req, mem_req_20m, mem_row0, mem_col0, mem_row1, mem_col1, mem_row2, mem_col2,
 		   mem_row3, mem_col3);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_StaRecBfUpdate(prNetDev, prInBuf);
 
@@ -5324,7 +5324,7 @@ static int32_t HQA_BFProfileDataRead(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BFProfileDataRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BFProfileDataRead\n");
 
 	memcpy(&idx, HqaCmdFrame->Data + 4 * 0, 4);
 	idx = ntohl(idx);
@@ -5347,7 +5347,7 @@ static int32_t HQA_BFProfileDataRead(struct net_device *prNetDev,
 		kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 		kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", idx, fgBFer, SubIdx[1], SubIdx[0]);
 
-		DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+		DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 		i4Ret = Set_TxBfProfileDataRead(prNetDev, prInBuf);
 
@@ -5376,7 +5376,7 @@ static int32_t HQA_BFProfileDataWrite(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BFProfileDataWrite\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BFProfileDataWrite\n");
 
 	memcpy(&pfmuid, HqaCmdFrame->Data + 4 * 0, 4);
 	pfmuid = ntohl(pfmuid);
@@ -5420,7 +5420,7 @@ static int32_t HQA_BFProfileDataWrite(struct net_device *prNetDev,
 		   pfmuid, subcarrier, phi11, psi21, phi21, psi31, phi31, psi41,
 		   phi22, psi32, phi32, psi42, phi33, psi43, snr00, snr01, snr02, snr03);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfProfileDataWrite(prNetDev, prInBuf);
 
@@ -5438,7 +5438,7 @@ static int32_t HQA_BFSounding(struct net_device *prNetDev, IN union iwreq_data *
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_BFSounding\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_BFSounding\n");
 
 	memcpy(&su_mu, HqaCmdFrame->Data + 4 * 0, 4);
 	su_mu = ntohl(su_mu);
@@ -5461,7 +5461,7 @@ static int32_t HQA_BFSounding(struct net_device *prNetDev, IN union iwreq_data *
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   su_mu, mu_num, snd_interval, wlan_id0, wlan_id1, wlan_id2, wlan_id3);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_Trigger_Sounding_Proc(prNetDev, prInBuf);
 
@@ -5475,7 +5475,7 @@ static int32_t HQA_TXBFSoundingStop(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TXBFSoundingStop\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TXBFSoundingStop\n");
 
 	i4Ret = Set_Stop_Sounding_Proc(prNetDev, NULL);
 
@@ -5506,7 +5506,7 @@ static int32_t HQA_TxBfTxApply(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_TxBfTxApply\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_TxBfTxApply\n");
 
 	memcpy(&eBF_enable, HqaCmdFrame->Data + 4 * 0, 4);
 	eBF_enable = ntohl(eBF_enable);
@@ -5520,7 +5520,7 @@ static int32_t HQA_TxBfTxApply(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", wlan_id, eBF_enable, iBF_enable, MuTx_enable);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfTxApply(prNetDev, prInBuf);
 
@@ -5549,7 +5549,7 @@ static int32_t HQA_ManualAssoc(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_ManualAssoc\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_ManualAssoc\n");
 
 	memcpy(&type, HqaCmdFrame->Data + 4 * 0, 4);
 	type = ntohl(type);
@@ -5578,7 +5578,7 @@ static int32_t HQA_ManualAssoc(struct net_device *prNetDev,
 		   ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5], type, wtbl_idx, ownmac_idx,
 		   phymode, bw, nss, pfmuid, marate_mode, marate_mcs, spe_idx, aid, 0);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_TxBfManualAssoc(prNetDev, prInBuf);
 
@@ -5631,7 +5631,7 @@ static int32_t HQA_MUGetInitMCS(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUGetInitMCS\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUGetInitMCS\n");
 
 	memcpy(&u4Gid, HqaCmdFrame->Data, 4);
 	u4Gid = ntohl(u4Gid);
@@ -5639,7 +5639,7 @@ static int32_t HQA_MUGetInitMCS(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(u4Gid));
 	kalSprintf(prInBuf, "%u", u4Gid);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUGetInitMCS(prNetDev, prInBuf);
 
@@ -5679,7 +5679,7 @@ static int32_t HQA_MUCalInitMCS(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUCalInitMCS\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUCalInitMCS\n");
 
 	memcpy(&u4Num_of_user, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Num_of_user = ntohl(u4Num_of_user);
@@ -5713,7 +5713,7 @@ static int32_t HQA_MUCalInitMCS(struct net_device *prNetDev,
 		   u4Num_of_user, u4Bandwidth, u4Nss_of_user0, u4Nss_of_user1, u4Pf_mu_id_of_user0, u4Pf_mu_id_of_user1,
 		   u4Num_of_txer, u4Spe_index, u4Group_index);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUCalInitMCS(prNetDev, prInBuf);
 
@@ -5743,7 +5743,7 @@ static int32_t HQA_MUCalLQ(struct net_device *prNetDev, IN union iwreq_data *prI
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUCalLQ\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUCalLQ\n");
 
 	memcpy(&u4Type, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Type = ntohl(u4Type);
@@ -5779,7 +5779,7 @@ static int32_t HQA_MUCalLQ(struct net_device *prNetDev, IN union iwreq_data *prI
 		   u4Num_of_user, u4Bandwidth, u4Nss_of_user0, u4Nss_of_user1, u4Pf_mu_id_of_user0, u4Pf_mu_id_of_user1,
 		   u4Num_of_txer, u4Spe_index, u4Group_index);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUCalLQ(prNetDev, prInBuf);
 
@@ -5797,9 +5797,9 @@ static int32_t HQA_MUGetLQ(struct net_device *prNetDev, IN union iwreq_data *prI
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUGetLQ\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUGetLQ\n");
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUGetLQ(prNetDev, prInBuf);
 
@@ -5822,7 +5822,7 @@ static int32_t HQA_MUSetSNROffset(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetSNROffset\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetSNROffset\n");
 
 	memcpy(&u4Offset, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Offset = ntohl(u4Offset);
@@ -5830,7 +5830,7 @@ static int32_t HQA_MUSetSNROffset(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x", u4Offset);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetSNROffset(prNetDev, prInBuf);
 
@@ -5848,7 +5848,7 @@ static int32_t HQA_MUSetZeroNss(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetZeroNss\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetZeroNss\n");
 
 	memcpy(&u4Zero_nss, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Zero_nss = ntohl(u4Zero_nss);
@@ -5856,7 +5856,7 @@ static int32_t HQA_MUSetZeroNss(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x", u4Zero_nss);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetZeroNss(prNetDev, prInBuf);
 
@@ -5874,7 +5874,7 @@ static int32_t HQA_MUSetSpeedUpLQ(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetSpeedUpLQ\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetSpeedUpLQ\n");
 
 	memcpy(&u4SpeedUpLq, HqaCmdFrame->Data + 4 * 0, 4);
 	u4SpeedUpLq = ntohl(u4SpeedUpLq);
@@ -5882,7 +5882,7 @@ static int32_t HQA_MUSetSpeedUpLQ(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x", u4SpeedUpLq);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetSpeedUpLQ(prNetDev, prInBuf);
 
@@ -5902,7 +5902,7 @@ static int32_t HQA_MUSetMUTable(struct net_device *prNetDev,
 
 	prTable = kmalloc_array(u2Len, sizeof(uint8_t), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetMUTable\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetMUTable\n");
 
 	u2Len = ntohl(HqaCmdFrame->Length) - sizeof(u4SuMu);
 
@@ -5931,7 +5931,7 @@ static int32_t HQA_MUSetGroup(struct net_device *prNetDev, IN union iwreq_data *
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetGroup\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetGroup\n");
 
 	memcpy(&u4GroupIndex, HqaCmdFrame->Data + 4 * 0, 4);
 	u4GroupIndex = ntohl(u4GroupIndex);
@@ -5997,7 +5997,7 @@ static int32_t HQA_MUSetGroup(struct net_device *prNetDev, IN union iwreq_data *
 		   ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5], ucAddr2[0], ucAddr2[1],
 		   ucAddr2[2], ucAddr2[3], ucAddr2[4], ucAddr2[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetGroup(prNetDev, prInBuf);
 
@@ -6021,7 +6021,7 @@ static int32_t HQA_MUGetQD(struct net_device *prNetDev, IN union iwreq_data *prI
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUGetQD\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUGetQD\n");
 
 	memcpy(&u4SubIdx, HqaCmdFrame->Data, 4);
 	u4SubIdx = ntohl(u4SubIdx);
@@ -6029,7 +6029,7 @@ static int32_t HQA_MUGetQD(struct net_device *prNetDev, IN union iwreq_data *prI
 	kalMemSet(prInBuf, 0, sizeof(u4SubIdx));
 	kalSprintf(prInBuf, "%u", u4SubIdx);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUGetQD(prNetDev, prInBuf);
 
@@ -6058,7 +6058,7 @@ static int32_t HQA_MUSetEnable(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetEnable\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetEnable\n");
 
 	memcpy(&u4Enable, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Enable = ntohl(u4Enable);
@@ -6066,7 +6066,7 @@ static int32_t HQA_MUSetEnable(struct net_device *prNetDev,
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf, "%02x", u4Enable);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetEnable(prNetDev, prInBuf);
 
@@ -6085,7 +6085,7 @@ static int32_t HQA_MUSetGID_UP(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUSetGID_UP\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUSetGID_UP\n");
 
 	memcpy(&au4Gid[0], HqaCmdFrame->Data + 4 * 0, 4);
 	au4Gid[0] = ntohl(au4Gid[0]);
@@ -6104,7 +6104,7 @@ static int32_t HQA_MUSetGID_UP(struct net_device *prNetDev,
 	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x", au4Gid[0], au4Gid[1], au4Up[0], au4Up[1], au4Up[2],
 		   au4Up[3]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUSetGID_UP(prNetDev, prInBuf);
 
@@ -6125,7 +6125,7 @@ static int32_t HQA_MUTriggerTx(struct net_device *prNetDev,
 
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE), GFP_KERNEL);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_MUTriggerTx\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUTriggerTx\n");
 
 	memcpy(&u4BandIdx, HqaCmdFrame->Data + 4 * 0, 4);
 	u4BandIdx = ntohl(u4BandIdx);
@@ -6154,7 +6154,7 @@ static int32_t HQA_MUTriggerTx(struct net_device *prNetDev,
 		   ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5],
 		   ucAddr2[0], ucAddr2[1], ucAddr2[2], ucAddr2[3], ucAddr2[4], ucAddr2[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prInBuf = %s\n", prInBuf);
+	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
 	i4Ret = Set_MUTriggerTx(prNetDev, prInBuf);
 
@@ -6197,284 +6197,480 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device *prNetDev,
 				  IN union iwreq_data *prIwReqData, struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
-	uint32_t u4BufLen = 0;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct ATE_OPS_T *prAteOps = NULL;
 	uint32_t u4Control = 0;
 	uint32_t u4Trigger = 0;
 	uint32_t u4RingCapEn = 0;
-	uint32_t u4TriggerEvent = 0;
-	uint32_t u4CaptureNode = 0;
-	uint32_t u4CaptureLen = 0;
-	uint32_t u4CapStopCycle = 0;
+	uint32_t u4Event = 0;
+	uint32_t u4Node = 0;
+	uint32_t u4Len = 0;
+	uint32_t u4StopCycle = 0;
 	uint32_t u4BW = 0;
-/*	UINT_32 u4MacTriggerEvent = 0; */	/* Temp unused */
-/*	UINT_32 u4TriggerMac = 0; */	/* Temp unused */
+	uint32_t u4MacTriggerEvent = 0;
+	uint32_t u4SourceAddrLSB = 0;
+	uint32_t u4SourceAddrMSB = 0;
+	uint8_t aucSourceAddress[MAC_ADDR_LEN];
+	uint32_t u4Band = 0;
 	uint32_t u4WFNum;
 	uint32_t u4IQ;
-	uint32_t u4TempLen = 0;
-	uint32_t u4DataLen;
-	int32_t i = 0, i4Ret = 0;
-	int32_t *prIQAry;
+	uint32_t u4DataLen = 0;
+	int32_t i4Ret = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prAteOps = prChipInfo->prAteOps;
 
 	memcpy((uint8_t *)&u4Control, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Control = ntohl(u4Control);
-	memcpy((uint8_t *)&u4Trigger, HqaCmdFrame->Data + 4 * 1, 4);
-	u4Trigger = ntohl(u4Trigger);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4Control = %d\n", u4Control);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Control = %d\n", u4Control);
 
-	if (u4Control == 1 && u4Trigger == 1) {
-		memcpy((uint8_t *)&u4RingCapEn, HqaCmdFrame->Data + 4 * 2, 4);
-		u4RingCapEn = ntohl(u4RingCapEn);
-		memcpy((uint8_t *)&u4TriggerEvent, HqaCmdFrame->Data + 4 * 3, 4);
-		u4TriggerEvent = ntohl(u4TriggerEvent);
-		memcpy((uint8_t *)&u4CaptureNode, HqaCmdFrame->Data + 4 * 4, 4);
-		u4CaptureNode = ntohl(u4CaptureNode);
-		memcpy((uint8_t *)&u4CaptureLen, HqaCmdFrame->Data + 4 * 5, 4);
-		u4CaptureLen = ntohl(u4CaptureLen);
-		memcpy((uint8_t *)&u4CapStopCycle, HqaCmdFrame->Data + 4 * 6, 4);
-		u4CapStopCycle = ntohl(u4CapStopCycle);
-		memcpy((uint8_t *)&u4BW, HqaCmdFrame->Data + 4 * 7, 4);
-		u4BW = ntohl(u4BW);
+	if (u4Control == 1) {
+		if (prAteOps->setICapStart) {
+			memcpy((uint8_t *)&u4Trigger, HqaCmdFrame->Data + 4 * 1, 4);
+			u4Trigger = ntohl(u4Trigger);
+			memcpy((uint8_t *)&u4RingCapEn, HqaCmdFrame->Data + 4 * 2, 4);
+			u4RingCapEn = ntohl(u4RingCapEn);
+			memcpy((uint8_t *)&u4Event, HqaCmdFrame->Data + 4 * 3, 4);
+			u4Event = ntohl(u4Event);
+			memcpy((uint8_t *)&u4Node, HqaCmdFrame->Data + 4 * 4, 4);
+			u4Node = ntohl(u4Node);
+			memcpy((uint8_t *)&u4Len, HqaCmdFrame->Data + 4 * 5, 4);
+			u4Len = ntohl(u4Len);
+			memcpy((uint8_t *)&u4StopCycle, HqaCmdFrame->Data + 4 * 6, 4);
+			u4StopCycle = ntohl(u4StopCycle);
+			memcpy((uint8_t *)&u4BW, HqaCmdFrame->Data + 4 * 7, 4);
+			u4BW = ntohl(u4BW);
+			memcpy((uint8_t *)&u4MacTriggerEvent, HqaCmdFrame->Data + 4 * 8, 4);
+			u4MacTriggerEvent = ntohl(u4MacTriggerEvent);
+			memcpy((uint8_t *)&aucSourceAddress, HqaCmdFrame->Data + 4 * 9, MAC_ADDR_LEN);
+			memcpy((uint8_t *)&u4Band, HqaCmdFrame->Data + 4 * 9 + MAC_ADDR_LEN, 4);
+			u4Band = ntohl(u4Band);
 
-		/* AT Command #1, Trigger always = 1 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4Trigger = %d\n", u4Trigger);
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4RingCapEn = %d\n", u4RingCapEn);
-		/* AT Command #81 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4TriggerEvent = %d\n", u4TriggerEvent);
-		/* AT Command #80 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4CaptureNode = %d\n", u4CaptureNode);
-		/* AT Command #83 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4CaptureLen = %d\n", u4CaptureLen);
-		/* AT Command #84 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4CapStopCycle = %d\n", u4CapStopCycle);
-		/* AT Command #71 */
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4BW = %d\n", u4BW);
+			/* AT Command #1, Trigger always = 1 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Trigger = %d\n", u4Trigger);
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4RingCapEn = %d\n", u4RingCapEn);
+			/* AT Command #81 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Event = %d\n", u4Event);
+			/* AT Command #80 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Node = %d\n", u4Node);
+			/* AT Command #83 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Len = %d\n", u4Len);
+			/* AT Command #84 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4StopCycle = %d\n", u4StopCycle);
+			/* AT Command #71 */
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4BW = %d\n", u4BW);
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4Band = %d\n", u4Band);
 
-		/* iwpriv wlan205 set_test_cmd 75 0   (J mode Setting) */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_J_MODE;
-		rRfATInfo.u4FuncData = 0;
+			u4SourceAddrLSB = ((aucSourceAddress[0]) | (aucSourceAddress[1] << 8) |
+					   (aucSourceAddress[2]) << 16 | (aucSourceAddress[3]) << 24);
+			u4SourceAddrMSB = ((aucSourceAddress[4]) | (aucSourceAddress[5] << 8) | (0x1 << 16));
 
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-
-		/* iwpriv wlan205 set_test_cmd 71 0   (Channel Bandwidth) */
-		if (u4BW == 4)
-			u4BW = 3;
-		else if (u4BW == 3)
-			u4BW = 4;
-
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_CBW;
-		rRfATInfo.u4FuncData = u4BW;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-
-		/* iwpriv wlan205 set_test_cmd 24 0     (ADC clock mode) */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_ADC_CLK_MODE;
-		rRfATInfo.u4FuncData = 0;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-
-		/* iwpriv wlan205 set_test_cmd 84 18000   (Internal Capture Trigger Offset) */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_TRIGGER_OFFSET;
-		rRfATInfo.u4FuncData = u4CapStopCycle;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-
-		if (u4CaptureLen == 0)
-			u4CaptureLen = 196615;/* 24000; */
-		/* iwpriv wlan205 set_test_cmd 83 24576   (Internal Capture Size) */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_SIZE;
-		rRfATInfo.u4FuncData = u4CaptureLen;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-		/* iwpriv wlan205 set_test_cmd 80 0   (Internal Capture Content) */
-		if (u4CaptureNode == 0x6)
-			u4CaptureNode = 0x10000006;
-		else if (u4CaptureNode == 0x8)
-			u4CaptureNode = 0x49;
-		else if (u4CaptureNode == 0x9)
-			u4CaptureNode = 0x48;
-
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_CONTENT;
-		rRfATInfo.u4FuncData = u4CaptureNode;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-		/* iwpriv wlan205 set_test_cmd 81 0   (Internal Capture  Trigger mode) */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_MODE;
-		rRfATInfo.u4FuncData = u4TriggerEvent;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_RING;
-		rRfATInfo.u4FuncData = u4RingCapEn;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-		/* iwpriv wlan205 set_test_cmd 1 13 */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
-		rRfATInfo.u4FuncData = RF_AT_COMMAND_CH_SWITCH_FOR_ICAP;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
-		/* iwpriv wlan205 set_test_cmd 1 11 */
-		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
-		rRfATInfo.u4FuncData = RF_AT_COMMAND_ICAP;
-
-		rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
-				   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
-				   &rRfATInfo,	/* pvInfoBuf */
-				   sizeof(rRfATInfo),	/* u4InfoBufLen */
-				   FALSE,	/* fgRead */
-				   FALSE,	/* fgWaitResp */
-				   TRUE,	/* fgCmd */
-				   &u4BufLen);	/* pu4QryInfoLen */
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -EFAULT;
+			prGlueInfo->prAdapter->rIcapInfo.u4CapNode = u4Node;
+			prAteOps->setICapStart(prGlueInfo, u4Trigger, u4RingCapEn, u4Event, u4Node,
+					       u4Len, u4StopCycle, u4BW, u4MacTriggerEvent,
+					       u4SourceAddrLSB, u4SourceAddrMSB, u4Band);
+		} else
+			i4Ret = 1;
 
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	} else if (u4Control == 2) {
-		if (g_bCaptureDone) {
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum Done!!!!!!!!!!!!!!!!!\n");
-			i4Ret = 0;
-			/* Query whether ICAP Done */
-			ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
-		} else {
-			DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum Wait!!!!!!!!!!!!!!!!!\n");
+		if (prAteOps->getICapStatus)
+			i4Ret = prAteOps->getICapStatus(prGlueInfo);
+		else
 			i4Ret = 1;
-			/* Query whether ICAP Done */
-			ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
-		}
+		/* Query whether ICAP Done */
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	} else if (u4Control == 3) {
-		memcpy((uint8_t *)&u4WFNum, HqaCmdFrame->Data + 4 * 1, 4);
-		u4WFNum = ntohl(u4WFNum);
-		memcpy((uint8_t *)&u4IQ, HqaCmdFrame->Data + 4 * 2, 4);
-		u4IQ = ntohl(u4IQ);
-
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4WFNum = %d\n", u4WFNum);
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_CapWiFiSpectrum u4IQ = %d\n", u4IQ);
-
-		if (u4WFNum <= 1) {
-			u4DataLen = 0;
-			GetIQData(&prIQAry, &u4DataLen, u4IQ, u4WFNum);
-			u4TempLen = u4DataLen;
-			u4DataLen /= 4;
-
-			u4Control = ntohl(u4Control);
-			memcpy(HqaCmdFrame->Data + 2 + 4 * 0, (uint8_t *) &u4Control, sizeof(u4Control));
+		if (prAteOps->getICapIQData) {
+			kalMemCopy((uint8_t *)&u4WFNum, HqaCmdFrame->Data + 4 * 1, 4);
 			u4WFNum = ntohl(u4WFNum);
-			memcpy(HqaCmdFrame->Data + 2 + 4 * 1, (uint8_t *) &u4WFNum, sizeof(u4WFNum));
+			kalMemCopy((uint8_t *)&u4IQ, HqaCmdFrame->Data + 4 * 2, 4);
 			u4IQ = ntohl(u4IQ);
-			memcpy(HqaCmdFrame->Data + 2 + 4 * 2, (uint8_t *) &u4IQ, sizeof(u4IQ));
+
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4WFNum = %d\n", u4WFNum);
+			DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum u4IQ = %d\n", u4IQ);
+
+			u4DataLen = prAteOps->getICapIQData(prGlueInfo, HqaCmdFrame->Data + 2 + 4 * 4, u4IQ, u4WFNum);
+			u4Control = ntohl(u4Control);
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 0, (uint8_t *)&u4Control, sizeof(u4Control));
+			u4WFNum = ntohl(u4WFNum);
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 1, (uint8_t *)&u4WFNum, sizeof(u4WFNum));
+			u4IQ = ntohl(u4IQ);
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 2, (uint8_t *)&u4IQ, sizeof(u4IQ));
 			u4DataLen = ntohl(u4DataLen);
-			memcpy(HqaCmdFrame->Data + 2 + 4 * 3, (uint8_t *) &u4DataLen, sizeof(u4DataLen));
-
-			for (i = 0; i < u4TempLen / sizeof(uint32_t); i++)
-				prIQAry[i] = ntohl(prIQAry[i]);
-
-			memcpy(HqaCmdFrame->Data + 2 + 4 * 4, (uint8_t *) &prIQAry[0], u4TempLen);
-		} else {
-			u4TempLen = 0;
-		}
+			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 3, (uint8_t *)&u4DataLen, sizeof(u4DataLen));
+		} else
+			i4Ret = 0;
 
 		/* Get IQ Data and transmit them to UI DLL */
-		ResponseToQA(HqaCmdFrame, prIwReqData, 2 + 4 * 4 + u4TempLen, i4Ret);
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2 + 4 * 4 + u4DataLen, i4Ret);
 	} else {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	}
-	return rStatus;
+	return 0;
 }
+
+int32_t mt6632SetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uint32_t u4RingCapEn,
+			  uint32_t u4Event, uint32_t u4Node, uint32_t u4Len, uint32_t u4StopCycle,
+			  uint32_t u4BW, uint32_t u4MacTriggerEvent, uint32_t u4SourceAddrLSB,
+			  uint32_t u4SourceAddrMSB, uint32_t u4Band)
+{
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	/* iwpriv wlan205 set_test_cmd 75 0   (J mode Setting) */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_J_MODE;
+	rRfATInfo.u4FuncData = 0;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	/* iwpriv wlan205 set_test_cmd 71 0   (Channel Bandwidth) */
+	if (u4BW == 4)
+		u4BW = 3;
+	else if (u4BW == 3)
+		u4BW = 4;
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_CBW;
+	rRfATInfo.u4FuncData = u4BW;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	/* iwpriv wlan205 set_test_cmd 24 0     (ADC clock mode) */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_ADC_CLK_MODE;
+	rRfATInfo.u4FuncData = 0;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	/* iwpriv wlan205 set_test_cmd 84 18000   (Internal Capture Trigger Offset) */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_TRIGGER_OFFSET;
+	rRfATInfo.u4FuncData = u4StopCycle;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	if (u4Len == 0)
+		u4Len = 196615;/* 24000; */
+	/* iwpriv wlan205 set_test_cmd 83 24576   (Internal Capture Size) */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_SIZE;
+	rRfATInfo.u4FuncData = u4Len;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+	/* iwpriv wlan205 set_test_cmd 80 0   (Internal Capture Content) */
+	if (u4Node == 0x6)
+		u4Node = 0x10000006;
+	else if (u4Node == 0x8)
+		u4Node = 0x49;
+	else if (u4Node == 0x9)
+		u4Node = 0x48;
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_CONTENT;
+	rRfATInfo.u4FuncData = u4Node;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	/* iwpriv wlan205 set_test_cmd 81 0   (Internal Capture  Trigger mode) */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_MODE;
+	rRfATInfo.u4FuncData = u4Trigger;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_ICAP_RING;
+	rRfATInfo.u4FuncData = u4RingCapEn;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+	/* iwpriv wlan205 set_test_cmd 1 13 */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
+	rRfATInfo.u4FuncData = RF_AT_COMMAND_CH_SWITCH_FOR_ICAP;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+	/* iwpriv wlan205 set_test_cmd 1 11 */
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
+	rRfATInfo.u4FuncData = RF_AT_COMMAND_ICAP;
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+	return 0;
+}
+
+int32_t mt6632GetICapStatus(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	if (prAdapter->rIcapInfo.fgCaptureDone) {
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum Done!!!!!!!!!!!!!!!!!\n");
+		return 0;
+	}
+	return 1;
+}
+
+int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo, uint32_t u4Trigger, uint32_t u4RingCapEn,
+			  uint32_t u4Event, uint32_t u4Node, uint32_t u4Len, uint32_t u4StopCycle,
+			  uint32_t u4BW, uint32_t u4MacTriggerEvent, uint32_t u4SourceAddrLSB,
+			  uint32_t u4SourceAddrMSB, uint32_t u4Band)
+{
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
+	struct RBIST_CAP_START_T *prICapInfo = NULL;
+	uint32_t u4BufLen = 0, u4IQArrayLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	prICapInfo = &(rRfATInfo.Data.rICapInfo);
+	prICapInfo->u4Trigger = u4Trigger;
+	prICapInfo->u4TriggerEvent = u4Event;
+
+	u4IQArrayLen = MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
+	prGlueInfo->prAdapter->rIcapInfo.prIQArray = kalMemAlloc(u4IQArrayLen, VIR_MEM_TYPE);
+	if (!prGlueInfo->prAdapter->rIcapInfo.prIQArray) {
+		DBGLOG(RFTEST, ERROR, "Not enough memory for IQ_Array\n");
+		return 0;
+	}
+
+	prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
+	prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
+	kalMemZero(prGlueInfo->prAdapter->rIcapInfo.au4ICapDumpIndex,
+				sizeof(prGlueInfo->prAdapter->rIcapInfo.au4ICapDumpIndex));
+	kalMemZero(prGlueInfo->prAdapter->rIcapInfo.prIQArray, u4IQArrayLen);
+
+	if (prICapInfo->u4TriggerEvent == CAP_FREE_RUN)
+		prICapInfo->u4RingCapEn = CAP_RING_MODE_DISABLE;
+	else
+		prICapInfo->u4RingCapEn = CAP_RING_MODE_ENABLE;
+
+	prICapInfo->u4CaptureNode = u4Node;
+	prICapInfo->u4CaptureLen = u4Len;
+	prICapInfo->u4CapStopCycle = u4StopCycle;
+	prICapInfo->u4BW = u4BW;
+	prICapInfo->u4MacTriggerEvent = u4MacTriggerEvent;
+	prICapInfo->u4SourceAddressLSB = u4SourceAddrLSB;
+	prICapInfo->u4SourceAddressMSB = u4SourceAddrMSB;
+	prICapInfo->u4BandIdx = u4Band;
+	prICapInfo->u4EnBitWidth = 0;
+	prICapInfo->u4Architech = 1;
+	prICapInfo->u4PhyIdx = 0;
+
+	DBGLOG(RFTEST, INFO, "%s :\n prICapInfo->u4Trigger = 0x%08x\n prICapInfo->u4RingCapEn = 0x%08x\n"
+			"prICapInfo->u4TriggerEvent = 0x%08x\n prICapInfo->u4CaptureNode = 0x%08x\n"
+			"prICapInfo->u4CaptureLen = 0x%08x\n prICapInfo->u4CapStopCycle = 0x%08x\n"
+			"prICapInfo->ucBW = 0x%08x\n prICapInfo->u4MacTriggerEvent = 0x%08x\n"
+			"prICapInfo->u4SourceAddressLSB = 0x%08x\n prICapInfo->u4SourceAddressMSB = 0x%08x\n"
+			"prICapInfo->u4BandIdx = 0x%08x\n",
+			__func__,
+			prICapInfo->u4Trigger, prICapInfo->u4RingCapEn,
+			prICapInfo->u4TriggerEvent, prICapInfo->u4CaptureNode, prICapInfo->u4CaptureLen,
+			prICapInfo->u4CapStopCycle, prICapInfo->u4BW, prICapInfo->u4MacTriggerEvent,
+			prICapInfo->u4SourceAddressLSB, prICapInfo->u4SourceAddressMSB, prICapInfo->u4BandIdx);
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidExtRfTestICapStart,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+	return 0;
+}
+
+int32_t connacGetICapStatus(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	if (prAdapter->rIcapInfo.fgCaptureDone) {
+		DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum Done!!!!!!!!!!!!!!!!!\n");
+		return 0;
+	}
+
+	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			   wlanoidExtRfTestICapStatus,	/* pfnOidHandler */
+			   &rRfATInfo,	/* pvInfoBuf */
+			   sizeof(rRfATInfo),	/* u4InfoBufLen */
+			   FALSE,	/* fgRead */
+			   FALSE,	/* fgWaitResp */
+			   TRUE,	/* fgCmd */
+			   &u4BufLen);	/* pu4QryInfoLen */
+
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_CapWiFiSpectrum Wait!!!!!!!!!!!!!!!!!\n");
+	return 1;
+}
+
+int32_t commonGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t u4TempLen = 0;
+	uint32_t u4DataLen = 0;
+	int32_t *prIQAry;
+	int32_t i = 0;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	if (u4WFNum <= 1) {
+		GetIQData(prAdapter, &prIQAry, &u4DataLen, u4IQType, u4WFNum);
+		u4TempLen = u4DataLen;
+		u4DataLen /= 4;
+
+		u4DataLen = ntohl(u4DataLen);
+		memcpy(pData + 2 + 4 * 3, (uint8_t *) &u4DataLen, sizeof(u4DataLen));
+
+		for (i = 0; i < u4TempLen / sizeof(uint32_t); i++)
+			prIQAry[i] = ntohl(prIQAry[i]);
+
+		memcpy(pData + 2 + 4 * 4, (uint8_t *) &prIQAry[0], u4TempLen);
+	}
+	return u4TempLen;
+}
+
+int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo, uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum)
+{
+	struct ADAPTER *prAdapter;
+	struct _RBIST_IQ_DATA_T *prIQArray = NULL;
+	struct ICAP_INFO_T *prICapInfo = NULL;
+	int32_t i = 0;
+	uint32_t u4MaxTxCount = 0;
+	uint32_t *pu4DumpIndex = NULL;
+	uint32_t u4Value, u4RespLen = 0;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+	prICapInfo = &prAdapter->rIcapInfo;
+	prIQArray = prICapInfo->prIQArray;
+	ASSERT(prIQArray);
+	pu4DumpIndex = &prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
+
+	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
+	u4MaxTxCount = prICapInfo->u4IQArrayIndex - *pu4DumpIndex;
+	if (u4MaxTxCount > ICAP_EVENT_DATA_SAMPLE)
+		u4MaxTxCount = ICAP_EVENT_DATA_SAMPLE;
+
+	DBGLOG(RFTEST, INFO, "prICapInfo->au4ICapDumpIndex[%d][%c] = %d\n",
+						u4WFNum,
+						(u4IQType == CAP_I_TYPE) ? 'I' : 'Q',
+						*pu4DumpIndex);
+
+	/* 2. Copy to buffer */
+	for (i = 0; i < u4MaxTxCount; i++) {
+		u4Value = ntohl(prIQArray[(*pu4DumpIndex)++].u4IQArray[u4WFNum][u4IQType]);
+		kalMemCopy(pData + u4RespLen, (uint8_t *) &u4Value, sizeof(u4Value));
+		u4RespLen += sizeof(u4Value);
+	}
+
+	DBGLOG(RFTEST, INFO, "u4MaxTxCount = %d\n", u4MaxTxCount);
+	return sizeof(int32_t) * u4MaxTxCount;
+}
+
 
 static HQA_CMD_HANDLER HQA_ICAP_CMDS[] = {
 	HQA_CapWiFiSpectrum,	/* 0x1580 */
@@ -6529,18 +6725,18 @@ static int32_t hqa_set_channel_ext(struct net_device *prNetDev,
 	memcpy(&u4Ch_band, HqaCmdFrame->Data + 4 * 9, 4);
 	u4Ch_band = ntohl(u4Ch_band);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext central_ch0 : %d\n", u4Central_ch0);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext central_ch0 : %d\n", u4Central_ch0);
 	/* for BW80+80 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext central_ch1 : %d\n", u4Central_ch1);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext sys_bw : %d\n", u4Sys_bw);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext perpkt_bw : %d\n", u4Perpkt_bw);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext pri_sel : %d\n", u4Pri_sel);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext reason : %d\n", u4Reason);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext central_ch1 : %d\n", u4Central_ch1);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext sys_bw : %d\n", u4Sys_bw);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext perpkt_bw : %d\n", u4Perpkt_bw);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext pri_sel : %d\n", u4Pri_sel);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext reason : %d\n", u4Reason);
 	/* 0:2.4G    1:5G */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_channel_ext ch_band : %d\n", u4Ch_band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_channel_ext ch_band : %d\n", u4Ch_band);
 
 	/* BW Mapping in QA Tool
 	 * 0: BW20
@@ -6551,7 +6747,7 @@ static int32_t hqa_set_channel_ext(struct net_device *prNetDev,
 	 * 5: BW160C
 	 * 6: BW160NC
 	*/
-	/* BW Mapping in MT6632 FW
+	/* BW Mapping in FW
 	 * 0: BW20
 	 * 1: BW40
 	 * 2: BW80
@@ -6562,7 +6758,7 @@ static int32_t hqa_set_channel_ext(struct net_device *prNetDev,
 	*/
 	/* For POR Cal Setting - 20160601 */
 	if ((u4Central_ch0 == u4Central_ch1) && (u4Sys_bw == 6) && (u4Perpkt_bw == 6)) {
-		DBGLOG(RFTEST, INFO, "MT6632 : Wrong Setting for POR Cal\n");
+		DBGLOG(RFTEST, INFO, "Wrong Setting for POR Cal\n");
 		goto exit;
 	}
 
@@ -6658,26 +6854,26 @@ static int32_t hqa_set_txcontent_ext(struct net_device *prNetDev,
 	memcpy(ucAddr3, HqaCmdFrame->Data + 4 * 9 + 6 * 2, 6);
 	memcpy(&ucPayload, HqaCmdFrame->Data + 4 * 9 + 6 * 3, 1);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext band_idx : %d\n", u4Band_idx);
 	/* Frame Control...0800 : Beacon */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext FC : 0x%x\n", u4FC);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext FC : 0x%x\n", u4FC);
 	/* Duration....NAV */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext dur : 0x%x\n", u4Dur);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext dur : 0x%x\n", u4Dur);
 	/* Sequence Control */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext seq : 0x%x\n", u4Seq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext seq : 0x%x\n", u4Seq);
 	/* Normal:0,Repeat:1,Random:2 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext gen_payload_rule : %d\n", u4Gen_payload_rule);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext txlen : %d\n", u4Txlen);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext payload_len : %d\n", u4Payload_len);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext gen_payload_rule : %d\n", u4Gen_payload_rule);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext txlen : %d\n", u4Txlen);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext payload_len : %d\n", u4Payload_len);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4], ucAddr1[5]);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext addr2:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext addr2:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucAddr2[0], ucAddr2[1], ucAddr2[2], ucAddr2[3], ucAddr2[4], ucAddr2[5]);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_set_txcontent_ext addr3:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_set_txcontent_ext addr3:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucAddr3[0], ucAddr3[1], ucAddr3[2], ucAddr3[3], ucAddr3[4], ucAddr3[5]);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext payload : 0x%x\n", ucPayload);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext payload : 0x%x\n", ucPayload);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 	MT_ATESetMacHeader(prNetDev, u4FC, u4Dur, u4Seq);
@@ -6760,22 +6956,22 @@ static int32_t hqa_start_tx_ext(struct net_device *prNetDev,
 	memcpy(&u4Nss, HqaCmdFrame->Data + 4 * 15, 4);
 	u4Nss = ntohl(u4Nss);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext pkt_cnt : %d\n", u4Pkt_cnt);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext phymode : %d\n", u4Phymode);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext rate : %d\n", u4Rate);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext pwr : %d\n", u4Pwr);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext stbc : %d\n", u4Stbc);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext ldpc : %d\n", u4Ldpc);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext ibf : %d\n", u4iBF);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext ebf : %d\n", u4eBF);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext wlan_id : %d\n", u4Wlan_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext aifs : %d\n", u4Aifs);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext gi : %d\n", u4Gi);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext tx_path : %d\n", u4Tx_path);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_tx_ext nss : %d\n", u4Nss);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext pkt_cnt : %d\n", u4Pkt_cnt);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext phymode : %d\n", u4Phymode);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext rate : %d\n", u4Rate);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext pwr : %d\n", u4Pwr);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext stbc : %d\n", u4Stbc);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext ldpc : %d\n", u4Ldpc);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext ibf : %d\n", u4iBF);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext ebf : %d\n", u4eBF);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext wlan_id : %d\n", u4Wlan_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext aifs : %d\n", u4Aifs);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext gi : %d\n", u4Gi);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext tx_path : %d\n", u4Tx_path);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_tx_ext nss : %d\n", u4Nss);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 	MT_ATESetTxCount(prNetDev, u4Pkt_cnt);
@@ -6791,7 +6987,7 @@ static int32_t hqa_start_tx_ext(struct net_device *prNetDev,
 	if (u4Phymode == 0) {
 		u4Rate |= 0x00000000;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Rate);
+		DBGLOG(RFTEST, INFO, "QA_AGENT CCK/OFDM (normal preamble) rate : %d\n", u4Rate);
 
 		MT_ATESetRate(prNetDev, u4Rate);
 	} else if (u4Phymode == 1) {
@@ -6803,13 +6999,13 @@ static int32_t hqa_start_tx_ext(struct net_device *prNetDev,
 			u4Rate = 3;
 		u4Rate |= 0x00000000;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT CCK (short preamble) rate : %d\n", u4Rate);
+		DBGLOG(RFTEST, INFO, "QA_AGENT CCK (short preamble) rate : %d\n", u4Rate);
 
 		MT_ATESetRate(prNetDev, u4Rate);
 	} else if (u4Phymode >= 2 && u4Phymode <= 4) {
 		u4Rate |= 0x80000000;
 
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HT/VHT rate : %d\n", u4Rate);
+		DBGLOG(RFTEST, INFO, "QA_AGENT HT/VHT rate : %d\n", u4Rate);
 
 		MT_ATESetRate(prNetDev, u4Rate);
 	}
@@ -6873,12 +7069,12 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 
 	memset(&g_HqaRxStat, 0, sizeof(struct PARAM_RX_STAT));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_rx_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_rx_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_rx_ext band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_rx_ext own_mac:%02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_rx_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_rx_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_rx_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_rx_ext own_mac:%02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ucOwn_mac[0], ucOwn_mac[1], ucOwn_mac[2], ucOwn_mac[3], ucOwn_mac[4], ucOwn_mac[5]);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_start_rx_ext rx_path : 0x%x\n", u4Rx_path);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_start_rx_ext rx_path : 0x%x\n", u4Rx_path);
 
 	u4RxStatSeqNum = 0;
 
@@ -6935,9 +7131,9 @@ static int32_t hqa_stop_tx_ext(struct net_device *prNetDev,
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 + 4, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_tx_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_tx_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_tx_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_tx_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_tx_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_tx_ext band_idx : %d\n", u4Band_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 	MT_ATEStopTX(prNetDev, "TXSTOP");
@@ -6976,9 +7172,9 @@ static int32_t hqa_stop_rx_ext(struct net_device *prNetDev,
 	memcpy(&u4Band_idx, HqaCmdFrame->Data + 4 + 4, 4);
 	u4Band_idx = ntohl(u4Band_idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_rx_ext ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_rx_ext param_num : %d\n", u4Param_num);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_stop_rx_ext band_idx : %d\n", u4Band_idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_rx_ext ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_rx_ext param_num : %d\n", u4Param_num);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_stop_rx_ext band_idx : %d\n", u4Band_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 	MT_ATEStopRX(prNetDev, "RXSTOP");
@@ -6994,7 +7190,7 @@ static int32_t HQA_iBFInit(struct net_device *prNetDev, IN union iwreq_data *prI
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_iBFInit\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_iBFInit\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -7006,7 +7202,7 @@ static int32_t HQA_iBFSetValue(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_iBFSetValue\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_iBFSetValue\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -7018,7 +7214,7 @@ static int32_t HQA_iBFGetStatus(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_iBFGetStatus\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_iBFGetStatus\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -7030,7 +7226,7 @@ static int32_t HQA_iBFChanProfUpdate(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_iBFChanProfUpdate\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_iBFChanProfUpdate\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -7042,7 +7238,7 @@ static int32_t HQA_iBFProfileRead(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_iBFProfileRead\n");
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_iBFProfileRead\n");
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
@@ -7078,16 +7274,16 @@ static int32_t HQA_IRRSetADC(struct net_device *prNetDev, IN union iwreq_data *p
 	memcpy(&u4FType, HqaCmdFrame->Data + 4 * 7, 4);
 	u4FType = ntohl(u4FType);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC ext_id : %d\n", u4Ext_id);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4WFIdx : %d\n", u4WFIdx);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4ChFreq : %d\n", u4ChFreq);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4BW : %d\n", u4BW);
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4Sx : %d\n", u4Sx);	/* SX : 0, 2 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4WFIdx : %d\n", u4WFIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4ChFreq : %d\n", u4ChFreq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4BW : %d\n", u4BW);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4Sx : %d\n", u4Sx);	/* SX : 0, 2 */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4Band : %d\n", u4Band);
 	/* RunType : 0 -> QA, 1 -> ATE */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4RunType : %d\n", u4RunType);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4RunType : %d\n", u4RunType);
 	/* FType : 0 -> FI, 1 -> FD */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetADC u4FType : %d\n", u4FType);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetADC u4FType : %d\n", u4FType);
 
 	i4Ret = MT_ATE_IRRSetADC(prNetDev, u4WFIdx, u4ChFreq, u4BW, u4Sx, u4Band, u4RunType, u4FType);
 
@@ -7122,17 +7318,17 @@ static int32_t HQA_IRRSetRxGain(struct net_device *prNetDev,
 	memcpy(&u4Rfdgc, HqaCmdFrame->Data + 4 * 5, 4);
 	u4Rfdgc = ntohl(u4Rfdgc);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain ext_id : %d\n", u4Ext_id);
 	/* PGA is for MT663, LPFG is for MT7615 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain u4PgaLpfg : %d\n", u4PgaLpfg);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain u4PgaLpfg : %d\n", u4PgaLpfg);
 	/* 5 : UH, 4 : H, 3 : M, 2 : L, 1 : UL */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain u4Lna : %d\n", u4Lna);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain u4Lna : %d\n", u4Lna);
 	/* DBDC band0 or band1 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain u4Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain u4Band : %d\n", u4Band);
 	/* (each bit for each WF) */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain u4WF_inx : 0x%x\n", u4WF_inx);
-	/* only for MT6632 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetRxGain u4Rfdgc : %d\n", u4Rfdgc);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain u4WF_inx : 0x%x\n", u4WF_inx);
+	/* only for */
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetRxGain u4Rfdgc : %d\n", u4Rfdgc);
 
 	i4Ret = MT_ATE_IRRSetRxGain(prNetDev, u4PgaLpfg, u4Lna, u4Band, u4WF_inx, u4Rfdgc);
 
@@ -7163,15 +7359,15 @@ static int32_t HQA_IRRSetTTG(struct net_device *prNetDev, IN union iwreq_data *p
 	memcpy(&u4Band, HqaCmdFrame->Data + 4 * 4, 4);
 	u4Band = ntohl(u4Band);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTTG ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTTG ext_id : %d\n", u4Ext_id);
 	/* TTG Power Index:   Power index value 0~15 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTTG u4TTGPwrIdx : %d\n", u4TTGPwrIdx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTTG u4TTGPwrIdx : %d\n", u4TTGPwrIdx);
 	/* Ch Freq: channel frequency value */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTTG u4ChFreq : %d\n", u4ChFreq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTTG u4ChFreq : %d\n", u4ChFreq);
 	/* FI Tone Freq(float): driver calculate TTG Freq(TTG Freq = Ch_freq + FI tone freq) */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTTG u4FIToneFreq : %d\n", u4FIToneFreq);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTTG u4FIToneFreq : %d\n", u4FIToneFreq);
 	/* Band: DBDC band0 or band1 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTTG u4Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTTG u4Band : %d\n", u4Band);
 
 	i4Ret = MT_ATE_IRRSetTTG(prNetDev, u4TTGPwrIdx, u4ChFreq, u4FIToneFreq, u4Band);
 
@@ -7198,13 +7394,13 @@ static int32_t HQA_IRRSetTrunOnTTG(struct net_device *prNetDev,
 	memcpy(&u4Band, HqaCmdFrame->Data + 4 * 2, 4);
 	u4Band = ntohl(u4Band);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTrunOnTTG ext_id : %d\n", u4Ext_id);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTrunOnTTG ext_id : %d\n", u4Ext_id);
 	/* TTG on/off:  0:off,   1: on */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTrunOnTTG u4TTGOnOff : %d\n", u4TTGOnOff);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTrunOnTTG u4TTGOnOff : %d\n", u4TTGOnOff);
 	/* Band: DBDC band0 or band1 */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTrunOnTTG u4Band : %d\n", u4Band);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTrunOnTTG u4Band : %d\n", u4Band);
 	/* (each bit for each WF) */
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT HQA_IRRSetTrunOnTTG u4WF_inx : %d\n", u4WF_inx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_IRRSetTrunOnTTG u4WF_inx : %d\n", u4WF_inx);
 
 	i4Ret = MT_ATE_IRRSetTrunOnTTG(prNetDev, u4TTGOnOff, u4Band, u4WF_inx);
 
@@ -7274,12 +7470,12 @@ static int32_t hqa_ext_cmds(struct net_device *prNetDev, IN union iwreq_data *pr
 	memmove((uint8_t *)&i4Idx, (uint8_t *)&HqaCmdFrame->Data, 4);
 	i4Idx = ntohl(i4Idx);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds index : %d\n", i4Idx);
+	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds index : %d\n", i4Idx);
 
 	if (hqa_ext_cmd_set[i4Idx] != NULL)
 		i4Ret = (*hqa_ext_cmd_set[i4Idx]) (prNetDev, prIwReqData, HqaCmdFrame);
 	else
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n", i4Idx);
+		DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds cmd idx %d is not supported : %d\n", i4Idx);
 
 	return i4Ret;
 }
@@ -7440,7 +7636,7 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 		break;
 	default:
 		i4Status = -EINVAL;
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_AGENT ATEMagicNum Error!!!\n");
+		DBGLOG(RFTEST, INFO, "QA_AGENT ATEMagicNum Error!!!\n");
 		break;
 	}
 

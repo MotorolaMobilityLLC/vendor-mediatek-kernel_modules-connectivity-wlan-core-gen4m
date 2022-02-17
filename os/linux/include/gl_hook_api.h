@@ -83,6 +83,7 @@
 
 int32_t MT_ATEStart(struct net_device *prNetDev, uint8_t *prInBuf);
 int32_t MT_ICAPStart(struct net_device *prNetDev, uint8_t *prInBuf);
+int32_t MT_ICAPCommand(struct net_device *prNetDev, uint8_t *prInBuf);
 int32_t MT_ATEStop(struct net_device *prNetDev, uint8_t *prInBuf);
 int32_t MT_ATEStartTX(struct net_device *prNetDev, uint8_t *prInBuf);
 int32_t MT_ATEStopTX(struct net_device *prNetDev, uint8_t *prInBuf);

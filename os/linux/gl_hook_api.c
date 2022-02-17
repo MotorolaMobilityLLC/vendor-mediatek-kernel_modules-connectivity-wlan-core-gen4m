@@ -127,7 +127,7 @@ int32_t MT_ATEStart(struct net_device *prNetDev, uint8_t *prInBuf)
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -164,7 +164,7 @@ int32_t MT_ICAPStart(struct net_device *prNetDev, uint8_t *prInBuf)
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -185,6 +185,77 @@ int32_t MT_ICAPStart(struct net_device *prNetDev, uint8_t *prInBuf)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief  Hook API for Enter ICAP Mode.
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[in] prInBuf
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EFAULT			If kalIoctl return nonzero.
+*/
+/*----------------------------------------------------------------------------*/
+int32_t MT_ICAPCommand(struct net_device *prNetDev, uint8_t *prInBuf)
+{
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct ATE_OPS_T *prAteOps = NULL;
+	uint32_t *buf = NULL;
+
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	ASSERT(prChipInfo);
+	prAteOps = prChipInfo->prAteOps;
+	ASSERT(prAteOps);
+
+	if (prInBuf[0] == '1') {
+		if (prAteOps->setICapStart)
+			i4Status = prAteOps->setICapStart(prGlueInfo,
+												1,
+												0,
+												0,
+												0x10000006,
+												0,
+												10,
+												0,
+												0x2000,
+												0xefefefef,
+												0x0001efef,
+												0);
+		else
+			i4Status = 1;
+	} else if (prInBuf[0] == '2') {
+		if (prAteOps->getICapStatus)
+			i4Status = prAteOps->getICapStatus(prGlueInfo);
+		else
+			i4Status = 1;
+	} else if (prInBuf[0] == '3') {
+		if (prAteOps->getICapIQData) {
+			buf = kalMemAlloc(1024, VIR_MEM_TYPE);
+			i4Status = prAteOps->getICapIQData(prGlueInfo, (uint8_t *) buf, CAP_I_TYPE, 0);
+			dumpMemory32((uint32_t *)buf, i4Status);
+			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+		} else
+			i4Status = 1;
+	} else if (prInBuf[0] == '4') {
+		if (prAteOps->getICapIQData) {
+			buf = (uint32_t *) kalMemAlloc(1024, VIR_MEM_TYPE);
+			i4Status = prAteOps->getICapIQData(prGlueInfo, (uint8_t *) buf, CAP_Q_TYPE, 0);
+			dumpMemory32((uint32_t *)buf, i4Status);
+			kalMemFree(buf, VIR_MEM_TYPE, 1024);
+		} else
+			i4Status = 1;
+	}
+
+	return i4Status;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief  Hook API for Abort Test Mode.
 *
 * \param[in] prNetDev		Pointer to the Net Device
@@ -201,7 +272,7 @@ int32_t MT_ATEStop(struct net_device *prNetDev, uint8_t *prInBuf)
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -239,7 +310,7 @@ int32_t MT_ATEStartTX(struct net_device *prNetDev, uint8_t *prInBuf)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -280,7 +351,7 @@ int32_t MT_ATEStopTX(struct net_device *prNetDev, uint8_t *prInBuf)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -323,7 +394,7 @@ int32_t MT_ATEStartRX(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_STARTRX;
@@ -364,7 +435,7 @@ int32_t MT_ATEStopRX(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_STOPTEST;
@@ -409,7 +480,7 @@ int32_t MT_ATESetChannel(struct net_device *prNetDev, uint32_t u4SXIdx, uint32_t
 
 	i4SetChan = nicFreq2ChannelNum(u4SetFreq);
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetChannel=%d, Freq=%d\n", i4SetChan, u4SetFreq);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetChannel=%d, Freq=%d\n", i4SetChan, u4SetFreq);
 
 	if (u4SetFreq == 0)
 		return -EINVAL;
@@ -459,7 +530,7 @@ int32_t MT_ATESetPreamble(struct net_device *prNetDev, uint32_t u4Mode)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetPreamble=%d\n", u4Mode);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetPreamble=%d\n", u4Mode);
 
 	if (u4Mode > 4)
 		return -EINVAL;
@@ -505,7 +576,7 @@ int32_t MT_ATESetSystemBW(struct net_device *prNetDev, uint32_t u4BW)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetSystemBW=%d\n", u4BW);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetSystemBW=%d\n", u4BW);
 
 	if (u4BW > 6)
 		return -EINVAL;
@@ -519,7 +590,7 @@ int32_t MT_ATESetSystemBW(struct net_device *prNetDev, uint32_t u4BW)
 	 * 5: BW160C
 	 * 6: BW160NC
 	*/
-	/* BW Mapping in MT6632 FW
+	/* BW Mapping in FW
 	 * 0: BW20
 	 * 1: BW40
 	 * 2: BW80
@@ -583,7 +654,7 @@ int32_t MT_ATESetTxLength(struct net_device *prNetDev, uint32_t u4TxLength)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxLength=%d\n", u4TxLength);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetTxLength=%d\n", u4TxLength);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_PKTLEN;
 	rRfATInfo.u4FuncData = u4TxLength;
@@ -625,7 +696,7 @@ int32_t MT_ATESetTxCount(struct net_device *prNetDev, uint32_t u4TxCount)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxCount=%d\n", u4TxCount);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetTxCount=%d\n", u4TxCount);
 
 	if (u4TxCount < 0)
 		return -EINVAL;
@@ -671,7 +742,7 @@ int32_t MT_ATESetTxIPG(struct net_device *prNetDev, uint32_t u4TxIPG)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxIPG=%d\n", u4TxIPG);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetTxIPG=%d\n", u4TxIPG);
 
 	if (u4TxIPG > 2314 || u4TxIPG < 19)
 		return -EINVAL;
@@ -716,11 +787,11 @@ int32_t MT_ATESetTxPower0(struct net_device *prNetDev, uint32_t u4TxPower0)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxPower0=0x%02x\n", u4TxPower0);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetTxPower0=0x%02x\n", u4TxPower0);
 
 	if (u4TxPower0 > 0x3F) {
 		u4TxPower0 += 128;
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK Negative Power =0x%02x\n", u4TxPower0);
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK Negative Power =0x%02x\n", u4TxPower0);
 	}
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_POWER;
@@ -764,7 +835,7 @@ int32_t MT_ATESetPerPacketBW(struct net_device *prNetDev, uint32_t u4BW)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetPerPacketBW=%d\n", u4BW);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetPerPacketBW=%d\n", u4BW);
 
 	if (u4BW > 6)
 		return -EINVAL;
@@ -778,7 +849,7 @@ int32_t MT_ATESetPerPacketBW(struct net_device *prNetDev, uint32_t u4BW)
 	 * 5: BW160C
 	 * 6: BW160NC
 	*/
-	/* BW Mapping in MT6632 FW
+	/* BW Mapping in FW
 	 * 0: BW20
 	 * 1: BW40
 	 * 2: BW80
@@ -842,7 +913,7 @@ int32_t MT_ATEPrimarySetting(struct net_device *prNetDev, uint32_t u4PrimaryCh)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK PrimarySetting=%d\n", u4PrimaryCh);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK PrimarySetting=%d\n", u4PrimaryCh);
 
 	if (u4PrimaryCh > 7)
 		return -EINVAL;
@@ -887,7 +958,7 @@ int32_t MT_ATESetTxGi(struct net_device *prNetDev, uint32_t u4SetTxGi)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxGi=%d\n", u4SetTxGi);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetTxGi=%d\n", u4SetTxGi);
 
 	if (u4SetTxGi != 0 && u4SetTxGi != 1)
 		return -EINVAL;
@@ -932,7 +1003,7 @@ int32_t MT_ATESetTxPath(struct net_device *prNetDev, uint32_t u4Tx_path)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Tx_path=%d\n", u4Tx_path);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK u4Tx_path=%d\n", u4Tx_path);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TX_PATH;
 	rRfATInfo.u4FuncData = u4Tx_path;
@@ -974,7 +1045,7 @@ int32_t MT_ATESetTxPayLoad(struct net_device *prNetDev, uint32_t u4Gen_payload_r
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK rule=%d, len =0x%x\n", u4Gen_payload_rule, ucPayload);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK rule=%d, len =0x%x\n", u4Gen_payload_rule, ucPayload);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_PAYLOAD;
 	rRfATInfo.u4FuncData = ((u4Gen_payload_rule << 16) | ucPayload);
@@ -1016,7 +1087,7 @@ int32_t MT_ATESetTxSTBC(struct net_device *prNetDev, uint32_t u4Stbc)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Stbc=%d\n", u4Stbc);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK u4Stbc=%d\n", u4Stbc);
 
 	if (u4Stbc > 1)
 		return -EINVAL;
@@ -1061,7 +1132,7 @@ int32_t MT_ATESetTxVhtNss(struct net_device *prNetDev, uint32_t u4VhtNss)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Nss=%d\n", u4VhtNss);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK u4Nss=%d\n", u4VhtNss);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_NSS;
 	rRfATInfo.u4FuncData = u4VhtNss;
@@ -1102,7 +1173,7 @@ int32_t MT_ATESetRate(struct net_device *prNetDev, uint32_t u4Rate)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetRate=0x%08lx\n", u4Rate);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetRate=0x%08lx\n", u4Rate);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RATE;
 	rRfATInfo.u4FuncData = u4Rate;
@@ -1144,7 +1215,7 @@ int32_t MT_ATESetEncodeMode(struct net_device *prNetDev, uint32_t u4Ldpc)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetEncodeMode=%d\n", u4Ldpc);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetEncodeMode=%d\n", u4Ldpc);
 
 	if (u4Ldpc != 0 && u4Ldpc != 1)
 		return -EINVAL;
@@ -1189,7 +1260,7 @@ int32_t MT_ATESetiBFEnable(struct net_device *prNetDev, uint32_t u4iBF)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetiBFEnable=%d\n", u4iBF);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetiBFEnable=%d\n", u4iBF);
 
 	if (u4iBF != 0 && u4iBF != 1)
 		return -EINVAL;
@@ -1234,7 +1305,7 @@ int32_t MT_ATESeteBFEnable(struct net_device *prNetDev, uint32_t u4eBF)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SeteBFEnable=%d\n", u4eBF);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SeteBFEnable=%d\n", u4eBF);
 
 	if (u4eBF != 0 && u4eBF != 1)
 		return -EINVAL;
@@ -1279,7 +1350,7 @@ int32_t MT_ATESetMACAddress(struct net_device *prNetDev, uint32_t u4Type, uint8_
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, ERROR, "MT6632 : QA_ATE_HOOK SetMACAddress Type = %d, Addr = %02x:%02x:%02x:%02x:%02x:%02x\n",
+	DBGLOG(RFTEST, ERROR, "QA_ATE_HOOK SetMACAddress Type = %d, Addr = %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       u4Type, ucAddr[0], ucAddr[1], ucAddr[2], ucAddr[3], ucAddr[4], ucAddr[5]);
 
 #if 1
@@ -1339,29 +1410,29 @@ int32_t MT_ATELogOnOff(struct net_device *prNetDev, uint32_t u4Type, uint32_t u4
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff\n");
 
 	switch (u4Type) {
 	case ATE_LOG_RXV:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RXV\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RXV\n\n");
 		break;
 	case ATE_LOG_RDD:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RDD\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RDD\n\n");
 		break;
 	case ATE_LOG_RE_CAL:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RE_CAL\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RE_CAL\n\n");
 		break;
 	case ATE_LOG_RXINFO:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RXINFO\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_RXINFO\n\n");
 		break;
 	case ATE_LOG_TXDUMP:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_TXDUMP\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_TXDUMP\n\n");
 		break;
 	case ATE_LOG_TEST:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_TEST\n\n");
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATELogOnOff : ATE_LOG_TEST\n\n");
 		break;
 	default:
-		DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK log type %d not supported\n\n", u4Type);
+		DBGLOG(RFTEST, INFO, "QA_ATE_HOOK log type %d not supported\n\n", u4Type);
 	}
 
 	if ((u4On_off == ATE_LOG_DUMP) && (u4Type == ATE_LOG_RXV)) {
@@ -1374,12 +1445,12 @@ int32_t MT_ATELogOnOff(struct net_device *prNetDev, uint32_t u4Type, uint32_t u4
 
 		if (i4Status == 0) {
 			i4TargetLength = rRfATInfo.u4FuncData * 36;
-			DBGLOG(RFTEST, ERROR, "MT6632 : QA_ATE_HOOK Get RX Vector Total size = %d\n", i4TargetLength);
+			DBGLOG(RFTEST, ERROR, "QA_ATE_HOOK Get RX Vector Total size = %d\n", i4TargetLength);
 
 			if (i4TargetLength >= (i4MaxDumpRXVCnt * 36))
 				i4TargetLength = (i4MaxDumpRXVCnt * 36);
 		} else {
-			DBGLOG(RFTEST, ERROR, "MT6632 : QA_ATE_HOOK Get RX Vector Total Size Error!!!!\n\n");
+			DBGLOG(RFTEST, ERROR, "QA_ATE_HOOK Get RX Vector Total Size Error!!!!\n\n");
 		}
 
 		TOOL_PRINTLOG(RFTEST, ERROR, "[LOG DUMP START]\n");
@@ -1431,7 +1502,7 @@ int32_t MT_ATEResetTXRXCounter(struct net_device *prNetDev)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEResetTXRXCounter\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEResetTXRXCounter\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_RESETTXRXCOUNTER;
 	rRfATInfo.u4FuncData = 0;
@@ -1472,7 +1543,7 @@ int32_t MT_ATESetDBDCBandIndex(struct net_device *prNetDev, uint32_t u4BandIdx)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetDBDCBandIndex\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetDBDCBandIndex\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_DBDC_BAND_IDX;
 	rRfATInfo.u4FuncData = u4BandIdx;
@@ -1513,7 +1584,7 @@ int32_t MT_ATESetBand(struct net_device *prNetDev, int32_t i4Band)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetBand\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetBand\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_BAND;
 	rRfATInfo.u4FuncData = i4Band;
@@ -1554,7 +1625,7 @@ int32_t MT_ATESetTxToneType(struct net_device *prNetDev, int32_t i4ToneType)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneType\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetTxToneType\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TONE_TYPE;
 	rRfATInfo.u4FuncData = i4ToneType;
@@ -1595,7 +1666,7 @@ int32_t MT_ATESetTxToneBW(struct net_device *prNetDev, int32_t i4ToneFreq)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneBW\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetTxToneBW\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TONE_BW;
 	rRfATInfo.u4FuncData = i4ToneFreq;
@@ -1637,7 +1708,7 @@ int32_t MT_ATESetTxToneDCOffset(struct net_device *prNetDev, int32_t i4DcOffsetI
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneDCOffset\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetTxToneDCOffset\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TONE_DC_OFFSET;
 	rRfATInfo.u4FuncData = i4DcOffsetQ << 16 | i4DcOffsetI;
@@ -1680,7 +1751,7 @@ int32_t MT_ATESetDBDCTxTonePower(struct net_device *prNetDev, int32_t i4AntIndex
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetDBDCTxTonePower\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetDBDCTxTonePower\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TONE_RF_GAIN;
 	rRfATInfo.u4FuncData = i4AntIndex << 16 | i4RF_Power;
@@ -1734,7 +1805,7 @@ int32_t MT_ATEDBDCTxTone(struct net_device *prNetDev, int32_t i4Control)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEDBDCTxTone\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEDBDCTxTone\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -1780,7 +1851,7 @@ int32_t MT_ATESetMacHeader(struct net_device *prNetDev, uint32_t u4FrameCtrl, ui
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetMacHeader\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATESetMacHeader\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -1840,7 +1911,7 @@ int32_t MT_ATE_IRRSetADC(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetADC\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATE_IRRSetADC\n");
 
 	if (u4BW == 3 || u4BW == 4 || u4BW > 5)
 		return -EINVAL;
@@ -1900,7 +1971,7 @@ int32_t MT_ATE_IRRSetRxGain(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetRxGain\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATE_IRRSetRxGain\n");
 
 	au4Param[0] = u4PgaLpfg;
 	au4Param[1] = u4Lna;
@@ -1952,7 +2023,7 @@ int32_t MT_ATE_IRRSetTTG(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetTTG\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATE_IRRSetTTG\n");
 
 	au4Param[0] = u4ChFreq;
 	au4Param[1] = u4FIToneFreq;
@@ -2002,7 +2073,7 @@ int32_t MT_ATE_IRRSetTrunOnTTG(struct net_device *prNetDev, uint32_t u4TTGOnOff,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetTrunOnTTG\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATE_IRRSetTrunOnTTG\n");
 
 	au4Param[0] = u4TTGOnOff;
 	au4Param[1] = u4Band;
@@ -2051,7 +2122,7 @@ int32_t MT_ATE_TMRSetting(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_TMRSetting\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATE_TMRSetting\n");
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TMR_ROLE;
 	rRfATInfo.u4FuncData = u4Setting;
@@ -2134,7 +2205,7 @@ int32_t MT_ATEMPSSetSeqData(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetSeqData\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetSeqData\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2191,7 +2262,7 @@ int32_t MT_ATEMPSSetPayloadLength(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPayloadLength\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetPayloadLength\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2233,7 +2304,7 @@ int32_t MT_ATEMPSSetPacketCount(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPacketCount\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetPacketCount\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2275,7 +2346,7 @@ int32_t MT_ATEMPSSetPowerGain(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPowerGain\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetPowerGain\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2317,7 +2388,7 @@ int32_t MT_ATEMPSSetNss(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetNss\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetNss\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2359,7 +2430,7 @@ int32_t MT_ATEMPSSetPerpacketBW(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPerpacketBW\n");
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK MT_ATEMPSSetPerpacketBW\n");
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2402,7 +2473,7 @@ int32_t MT_ATERDDStart(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_RDD;
@@ -2441,7 +2512,7 @@ int32_t MT_ATERDDStop(struct net_device *prNetDev, uint8_t *prInBuf)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_RDD_OFF;
@@ -2492,7 +2563,7 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev, uint16_t u2Offset, uint16_
 
 
 	/* Read */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM  Read\n");
+	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM  Read\n");
 	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfoRead.u4Address = (u2Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 	i4Status = kalIoctl(prGlueInfo,
@@ -2512,10 +2583,10 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev, uint16_t u2Offset, uint16_
 	kalMemCopy(rAccessEfuseInfoWrite.aucData, prGlueInfo->prAdapter->aucEepromVaule, 16);
 
 	for (u4Loop = 0; u4Loop < (EFUSE_BLOCK_SIZE); u4Loop++) {
-		DBGLOG(INIT, INFO, "MT6632 : QA_AGENT aucEepromVaule u4Loop=%d  u4Value=%x\n",
+		DBGLOG(INIT, INFO, "QA_AGENT aucEepromVaule u4Loop=%d  u4Value=%x\n",
 			u4Loop, prGlueInfo->prAdapter->aucEepromVaule[u4Loop]);
 
-		DBGLOG(INIT, INFO, "MT6632 : QA_AGENT rAccessEfuseInfoWrite.aucData u4Loop=%d  u4Value=%x\n",
+		DBGLOG(INIT, INFO, "QA_AGENT rAccessEfuseInfoWrite.aucData u4Loop=%d  u4Value=%x\n",
 			u4Loop, rAccessEfuseInfoWrite.aucData[u4Loop]);
 	}
 
@@ -2558,7 +2629,7 @@ int32_t MT_ATESetTxTargetPower(struct net_device *prNetDev, uint8_t ucTxTargetPo
 
 
 	/* Set Target Power Base */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set Tx Target Power= %x dbm\n", ucTxTargetPower);
+	DBGLOG(INIT, INFO, "QA_AGENT Set Tx Target Power= %x dbm\n", ucTxTargetPower);
 	rSetTxTargetPwr.ucTxTargetPwr = ucTxTargetPower;
 
 	i4Status = kalIoctl(prGlueInfo,
@@ -2597,7 +2668,7 @@ int32_t MT_ATESetRddReport(struct net_device *prNetDev, uint8_t ucDbdcIdx)
 	kalMemSet(&rSetRddReport, 0, sizeof(struct PARAM_CUSTOM_SET_RDD_REPORT));
 
 	/* Set Rdd Report */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set RDD Report - Band: %d\n", ucDbdcIdx);
+	DBGLOG(INIT, INFO, "QA_AGENT Set RDD Report - Band: %d\n", ucDbdcIdx);
 	rSetRddReport.ucDbdcIdx = ucDbdcIdx;
 
 	i4Status = kalIoctl(prGlueInfo,
@@ -2635,7 +2706,7 @@ int32_t MT_ATESetRadarDetectMode(struct net_device *prNetDev, uint8_t ucRadarDet
 	kalMemSet(&rSetRadarDetectMode, 0, sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE));
 
 	/* Set Rdd Report */
-	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set Radar Detect Mode: %d\n", ucRadarDetectMode);
+	DBGLOG(INIT, INFO, "QA_AGENT Set Radar Detect Mode: %d\n", ucRadarDetectMode);
 	rSetRadarDetectMode.ucRadarDetectMode = ucRadarDetectMode;
 
 	i4Status = kalIoctl(prGlueInfo,
@@ -2839,94 +2910,94 @@ int32_t TxBfProfileTagWrite(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : au4RawData[0] = 0x%08x\n", prPfmuTag1->au4RawData[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : au4RawData[1] = 0x%08x\n", prPfmuTag1->au4RawData[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : au4RawData[2] = 0x%08x\n", prPfmuTag1->au4RawData[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : au4RawData[3] = 0x%08x\n", prPfmuTag1->au4RawData[3]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : au4RawData[0] = 0x%08x\n", prPfmuTag1->au4RawData[0]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : au4RawData[1] = 0x%08x\n", prPfmuTag1->au4RawData[1]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : au4RawData[2] = 0x%08x\n", prPfmuTag1->au4RawData[2]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : au4RawData[3] = 0x%08x\n", prPfmuTag1->au4RawData[3]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag2 : au4RawData[0] = 0x%08x\n", prPfmuTag2->au4RawData[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag2 : au4RawData[1] = 0x%08x\n", prPfmuTag2->au4RawData[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag2 : au4RawData[2] = 0x%08x\n", prPfmuTag2->au4RawData[2]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag2 : au4RawData[0] = 0x%08x\n", prPfmuTag2->au4RawData[0]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag2 : au4RawData[1] = 0x%08x\n", prPfmuTag2->au4RawData[1]);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag2 : au4RawData[2] = 0x%08x\n", prPfmuTag2->au4RawData[2]);
 
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag1 : prPfmuTag1->rField.ucProfileID= %d\n", prPfmuTag1->rField.ucProfileID);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucTxBf= %d\n", prPfmuTag1->rField.ucTxBf);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucDBW= %d\n", prPfmuTag1->rField.ucDBW);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucSU_MU= %d\n", prPfmuTag1->rField.ucSU_MU);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucInvalidProf= %d\n",
+		"prPfmuTag1 : prPfmuTag1->rField.ucProfileID= %d\n", prPfmuTag1->rField.ucProfileID);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucTxBf= %d\n", prPfmuTag1->rField.ucTxBf);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucDBW= %d\n", prPfmuTag1->rField.ucDBW);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucSU_MU= %d\n", prPfmuTag1->rField.ucSU_MU);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucInvalidProf= %d\n",
 	       prPfmuTag1->rField.ucInvalidProf);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucRMSD= %d\n", prPfmuTag1->rField.ucRMSD);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr1ColIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucRMSD= %d\n", prPfmuTag1->rField.ucRMSD);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr1ColIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr1ColIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr1RowIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr1RowIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr1RowIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2ColIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2ColIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr2ColIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2RowIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2RowIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr2RowIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2RowIdxMsb= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr2RowIdxMsb= %d\n",
 	       prPfmuTag1->rField.ucMemAddr2RowIdxMsb);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr3ColIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr3ColIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr3ColIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr3RowIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr3RowIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr3RowIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr4ColIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr4ColIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr4ColIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucMemAddr4RowIdx= %d\n",
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucMemAddr4RowIdx= %d\n",
 	       prPfmuTag1->rField.ucMemAddr4RowIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucReserved= %d\n", prPfmuTag1->rField.ucReserved);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucNrow= %d\n", prPfmuTag1->rField.ucNrow);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucNcol= %d\n", prPfmuTag1->rField.ucNcol);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucNgroup= %d\n", prPfmuTag1->rField.ucNgroup);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucLM= %d\n", prPfmuTag1->rField.ucLM);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucCodeBook= %d\n", prPfmuTag1->rField.ucCodeBook);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucHtcExist= %d\n", prPfmuTag1->rField.ucHtcExist);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucReserved= %d\n", prPfmuTag1->rField.ucReserved);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucNrow= %d\n", prPfmuTag1->rField.ucNrow);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucNcol= %d\n", prPfmuTag1->rField.ucNcol);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucNgroup= %d\n", prPfmuTag1->rField.ucNgroup);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucLM= %d\n", prPfmuTag1->rField.ucLM);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucCodeBook= %d\n", prPfmuTag1->rField.ucCodeBook);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucHtcExist= %d\n", prPfmuTag1->rField.ucHtcExist);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag1 : prPfmuTag1->rField.ucReserved1= %d\n", prPfmuTag1->rField.ucReserved1);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS0= %d\n", prPfmuTag1->rField.ucSNR_STS0);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS1= %d\n", prPfmuTag1->rField.ucSNR_STS1);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS2= %d\n", prPfmuTag1->rField.ucSNR_STS2);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS3= %d\n", prPfmuTag1->rField.ucSNR_STS3);
+		"prPfmuTag1 : prPfmuTag1->rField.ucReserved1= %d\n", prPfmuTag1->rField.ucReserved1);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS0= %d\n", prPfmuTag1->rField.ucSNR_STS0);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS1= %d\n", prPfmuTag1->rField.ucSNR_STS1);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS2= %d\n", prPfmuTag1->rField.ucSNR_STS2);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag1 : prPfmuTag1->rField.ucSNR_STS3= %d\n", prPfmuTag1->rField.ucSNR_STS3);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag1 : prPfmuTag1->rField.ucIBfLnaIdx= %d\n", prPfmuTag1->rField.ucIBfLnaIdx);
+		"prPfmuTag1 : prPfmuTag1->rField.ucIBfLnaIdx= %d\n", prPfmuTag1->rField.ucIBfLnaIdx);
 
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.u2SmartAnt = %d\n", prPfmuTag2->rField.u2SmartAnt);
+		"prPfmuTag2 : prPfmuTag2->rField.u2SmartAnt = %d\n", prPfmuTag2->rField.u2SmartAnt);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucReserved0 = %d\n", prPfmuTag2->rField.ucReserved0);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag2 : prPfmuTag2->rField.ucSEIdx = %d\n", prPfmuTag2->rField.ucSEIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag2 : prPfmuTag2->rField.ucRMSDThd = %d\n", prPfmuTag2->rField.ucRMSDThd);
+		"prPfmuTag2 : prPfmuTag2->rField.ucReserved0 = %d\n", prPfmuTag2->rField.ucReserved0);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag2 : prPfmuTag2->rField.ucSEIdx = %d\n", prPfmuTag2->rField.ucSEIdx);
+	DBGLOG(RFTEST, ERROR, "prPfmuTag2 : prPfmuTag2->rField.ucRMSDThd = %d\n", prPfmuTag2->rField.ucRMSDThd);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucReserved1 = %d\n", prPfmuTag2->rField.ucReserved1);
+		"prPfmuTag2 : prPfmuTag2->rField.ucReserved1 = %d\n", prPfmuTag2->rField.ucReserved1);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThL1SS = %d\n", prPfmuTag2->rField.ucMCSThL1SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThL1SS = %d\n", prPfmuTag2->rField.ucMCSThL1SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThS1SS = %d\n", prPfmuTag2->rField.ucMCSThS1SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThS1SS = %d\n", prPfmuTag2->rField.ucMCSThS1SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThL2SS = %d\n", prPfmuTag2->rField.ucMCSThL2SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThL2SS = %d\n", prPfmuTag2->rField.ucMCSThL2SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThS2SS = %d\n", prPfmuTag2->rField.ucMCSThS2SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThS2SS = %d\n", prPfmuTag2->rField.ucMCSThS2SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThL3SS = %d\n", prPfmuTag2->rField.ucMCSThL3SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThL3SS = %d\n", prPfmuTag2->rField.ucMCSThL3SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucMCSThS3SS = %d\n", prPfmuTag2->rField.ucMCSThS3SS);
+		"prPfmuTag2 : prPfmuTag2->rField.ucMCSThS3SS = %d\n", prPfmuTag2->rField.ucMCSThS3SS);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.uciBfTimeOut = %d\n",
+		"prPfmuTag2 : prPfmuTag2->rField.uciBfTimeOut = %d\n",
 	       prPfmuTag2->rField.uciBfTimeOut);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucReserved2 = %d\n", prPfmuTag2->rField.ucReserved2);
+		"prPfmuTag2 : prPfmuTag2->rField.ucReserved2 = %d\n", prPfmuTag2->rField.ucReserved2);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucReserved3 = %d\n", prPfmuTag2->rField.ucReserved3);
+		"prPfmuTag2 : prPfmuTag2->rField.ucReserved3 = %d\n", prPfmuTag2->rField.ucReserved3);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.ucReserved4 = %d\n", prPfmuTag2->rField.ucReserved4);
+		"prPfmuTag2 : prPfmuTag2->rField.ucReserved4 = %d\n", prPfmuTag2->rField.ucReserved4);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.uciBfDBW = %d\n", prPfmuTag2->rField.uciBfDBW);
+		"prPfmuTag2 : prPfmuTag2->rField.uciBfDBW = %d\n", prPfmuTag2->rField.uciBfDBW);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.uciBfNcol = %d\n", prPfmuTag2->rField.uciBfNcol);
+		"prPfmuTag2 : prPfmuTag2->rField.uciBfNcol = %d\n", prPfmuTag2->rField.uciBfNcol);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.uciBfNrow = %d\n", prPfmuTag2->rField.uciBfNrow);
+		"prPfmuTag2 : prPfmuTag2->rField.uciBfNrow = %d\n", prPfmuTag2->rField.uciBfNrow);
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 prPfmuTag2 : prPfmuTag2->rField.u2Reserved5 = %d\n", prPfmuTag2->rField.u2Reserved5);
+		"prPfmuTag2 : prPfmuTag2->rField.u2Reserved5 = %d\n", prPfmuTag2->rField.u2Reserved5);
 
 	rTxBfActionInfo.rProfileTagWrite.ucTxBfCategory = BF_PFMU_TAG_WRITE;
 	rTxBfActionInfo.rProfileTagWrite.ucPfmuId = profileIdx;
@@ -2954,8 +3025,8 @@ int32_t TxBfProfileTagRead(struct net_device *prNetDev, uint8_t profileIdx, uint
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileTagRead : profileIdx = 0x%08x\n", profileIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileTagRead : fgBFer = 0x%08x\n", fgBFer);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileTagRead : profileIdx = 0x%08x\n", profileIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileTagRead : fgBFer = 0x%08x\n", fgBFer);
 
 	rTxBfActionInfo.rProfileTagRead.ucTxBfCategory = BF_PFMU_TAG_READ;
 	rTxBfActionInfo.rProfileTagRead.ucProfileIdx = profileIdx;
@@ -3138,10 +3209,10 @@ int32_t TxBfProfileDataRead(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataRead : ucPfmuIdx = 0x%08x\n", profileIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataRead : fgBFer = 0x%08x\n", fgBFer);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataRead : ucSubCarrIdxMsb = 0x%08x\n", ucSubCarrIdxMsb);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataRead : ucSubCarrIdxLsb = 0x%08x\n", ucSubCarrIdxLsb);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataRead : ucPfmuIdx = 0x%08x\n", profileIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataRead : fgBFer = 0x%08x\n", fgBFer);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataRead : ucSubCarrIdxMsb = 0x%08x\n", ucSubCarrIdxMsb);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataRead : ucSubCarrIdxLsb = 0x%08x\n", ucSubCarrIdxLsb);
 
 	rTxBfActionInfo.rProfileDataRead.ucTxBfCategory = BF_PROFILE_READ;
 	rTxBfActionInfo.rProfileDataRead.ucPfmuIdx = profileIdx;
@@ -3172,27 +3243,27 @@ int32_t TxBfProfileDataWrite(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : u2SubCarrIdx = 0x%08x\n", u2SubCarrIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : u2SubCarrIdx = 0x%08x\n", u2SubCarrIdx);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[0] = 0x%08x\n", au2Phi[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[1] = 0x%08x\n", au2Phi[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[2] = 0x%08x\n", au2Phi[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[3] = 0x%08x\n", au2Phi[3]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[4] = 0x%08x\n", au2Phi[4]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : au2Phi[5] = 0x%08x\n", au2Phi[5]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[0] = 0x%08x\n", au2Phi[0]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[1] = 0x%08x\n", au2Phi[1]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[2] = 0x%08x\n", au2Phi[2]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[3] = 0x%08x\n", au2Phi[3]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[4] = 0x%08x\n", au2Phi[4]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : au2Phi[5] = 0x%08x\n", au2Phi[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[0] = 0x%08x\n", aucPsi[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[1] = 0x%08x\n", aucPsi[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[2] = 0x%08x\n", aucPsi[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[3] = 0x%08x\n", aucPsi[3]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[4] = 0x%08x\n", aucPsi[4]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucPsi[5] = 0x%08x\n", aucPsi[5]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[0] = 0x%08x\n", aucPsi[0]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[1] = 0x%08x\n", aucPsi[1]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[2] = 0x%08x\n", aucPsi[2]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[3] = 0x%08x\n", aucPsi[3]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[4] = 0x%08x\n", aucPsi[4]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucPsi[5] = 0x%08x\n", aucPsi[5]);
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucDSnr[0] = 0x%x\n", aucDSnr[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucDSnr[1] = 0x%x\n", aucDSnr[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucDSnr[2] = 0x%x\n", aucDSnr[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : aucDSnr[3] = 0x%x\n", aucDSnr[3]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucDSnr[0] = 0x%x\n", aucDSnr[0]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucDSnr[1] = 0x%x\n", aucDSnr[1]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucDSnr[2] = 0x%x\n", aucDSnr[2]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfileDataWrite : aucDSnr[3] = 0x%x\n", aucDSnr[3]);
 
 	rTxBfActionInfo.rProfileDataWrite.ucTxBfCategory = BF_PROFILE_WRITE;
 	rTxBfActionInfo.rProfileDataWrite.ucPfmuIdx = profileIdx;
@@ -3236,7 +3307,7 @@ int32_t TxBfProfilePnRead(struct net_device *prNetDev, uint8_t profileIdx)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnRead : ucPfmuIdx = 0x%08x\n", profileIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnRead : ucPfmuIdx = 0x%08x\n", profileIdx);
 
 	rTxBfActionInfo.rProfilePnRead.ucTxBfCategory = BF_PN_READ;
 	rTxBfActionInfo.rProfilePnRead.ucPfmuIdx = profileIdx;
@@ -3262,20 +3333,20 @@ int32_t TxBfProfilePnWrite(struct net_device *prNetDev, uint8_t profileIdx, uint
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : u2bw = 0x%08x\n", u2bw);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[0] = 0x%08x\n", au2XSTS[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[1] = 0x%08x\n", au2XSTS[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[2] = 0x%08x\n", au2XSTS[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[3] = 0x%08x\n", au2XSTS[3]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[4] = 0x%08x\n", au2XSTS[4]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[5] = 0x%08x\n", au2XSTS[5]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[6] = 0x%08x\n", au2XSTS[6]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[7] = 0x%08x\n", au2XSTS[7]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[8] = 0x%08x\n", au2XSTS[8]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[9] = 0x%08x\n", au2XSTS[9]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[10] = 0x%08x\n", au2XSTS[10]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : au2XSTS[11] = 0x%08x\n", au2XSTS[11]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : u2bw = 0x%08x\n", u2bw);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[0] = 0x%08x\n", au2XSTS[0]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[1] = 0x%08x\n", au2XSTS[1]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[2] = 0x%08x\n", au2XSTS[2]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[3] = 0x%08x\n", au2XSTS[3]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[4] = 0x%08x\n", au2XSTS[4]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[5] = 0x%08x\n", au2XSTS[5]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[6] = 0x%08x\n", au2XSTS[6]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[7] = 0x%08x\n", au2XSTS[7]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[8] = 0x%08x\n", au2XSTS[8]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[9] = 0x%08x\n", au2XSTS[9]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[10] = 0x%08x\n", au2XSTS[10]);
+	DBGLOG(RFTEST, ERROR, "TxBfProfilePnWrite : au2XSTS[11] = 0x%08x\n", au2XSTS[11]);
 
 	rTxBfActionInfo.rProfilePnWrite.ucTxBfCategory = BF_PN_WRITE;
 	rTxBfActionInfo.rProfilePnWrite.ucPfmuIdx = profileIdx;
@@ -3311,13 +3382,13 @@ int32_t TxBfSounding(struct net_device *prNetDev, uint8_t ucSuMu,	/* 0/1/2/3 */
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucSuMu = 0x%08x\n", ucSuMu);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucNumSta = 0x%08x\n", ucNumSta);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucSndInterval = 0x%08x\n", ucSndInterval);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucWLan0 = 0x%08x\n", ucWLan0);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucWLan1 = 0x%08x\n", ucWLan1);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucWLan2 = 0x%08x\n", ucWLan2);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucWLan3 = 0x%08x\n", ucWLan3);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucSuMu = 0x%08x\n", ucSuMu);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucNumSta = 0x%08x\n", ucNumSta);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucSndInterval = 0x%08x\n", ucSndInterval);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucWLan0 = 0x%08x\n", ucWLan0);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucWLan1 = 0x%08x\n", ucWLan1);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucWLan2 = 0x%08x\n", ucWLan2);
+	DBGLOG(RFTEST, ERROR, "TxBfSounding : ucWLan3 = 0x%08x\n", ucWLan3);
 
 	switch (ucSuMu) {
 	case MU_SOUNDING:
@@ -3376,7 +3447,7 @@ int32_t TxBfSoundingStop(struct net_device *prNetDev)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSoundingStop\n");
+	DBGLOG(RFTEST, ERROR, "TxBfSoundingStop\n");
 
 	rTxBfActionInfo.rTxBfSoundingStop.ucTxBfCategory = BF_SOUNDING_OFF;
 	rTxBfActionInfo.rTxBfSoundingStop.ucSndgStop = 1;
@@ -3403,7 +3474,7 @@ int32_t TxBfTxApply(struct net_device *prNetDev, uint8_t ucWlanId, uint8_t fgETx
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR,
-	       "MT6632 TxBfTxApply : ucWlanId = 0x%08x, fgETxBf = 0x%08x,fgITxBf = 0x%08x,fgMuTxBf = 0x%08x\n",
+	       "TxBfTxApply : ucWlanId = 0x%08x, fgETxBf = 0x%08x,fgITxBf = 0x%08x,fgMuTxBf = 0x%08x\n",
 	       ucWlanId, fgETxBf, fgITxBf, fgMuTxBf);
 
 	rTxBfActionInfo.rTxBfTxApply.ucTxBfCategory = BF_DATA_PACKET_APPLY;
@@ -3434,7 +3505,7 @@ int32_t TxBfPfmuMemAlloc(struct net_device *prNetDev, uint8_t ucSuMuMode, uint8_
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR,
-		"MT6632 TxBfPfmuMemAlloc : ucSuMuMode = 0x%08x, ucWlanIdx = 0x%08x\n", ucSuMuMode, ucWlanIdx);
+		"TxBfPfmuMemAlloc : ucSuMuMode = 0x%08x, ucWlanIdx = 0x%08x\n", ucSuMuMode, ucWlanIdx);
 
 	rTxBfActionInfo.rTxBfPfmuMemAlloc.ucTxBfCategory = BF_PFMU_MEM_ALLOCATE;
 	rTxBfActionInfo.rTxBfPfmuMemAlloc.ucSuMuMode = ucSuMuMode;
@@ -3461,7 +3532,7 @@ int32_t TxBfPfmuMemRelease(struct net_device *prNetDev, uint8_t ucWlanId)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfPfmuMemRelease : ucWlanId = 0x%08x\n", ucWlanId);
+	DBGLOG(RFTEST, ERROR, "TxBfPfmuMemRelease : ucWlanId = 0x%08x\n", ucWlanId);
 
 	rTxBfActionInfo.rTxBfPfmuMemRls.ucTxBfCategory = BF_PFMU_MEM_RELEASE;
 	rTxBfActionInfo.rTxBfPfmuMemRls.ucWlanId = ucWlanId;
@@ -3488,14 +3559,14 @@ int32_t TxBfBssInfoUpdate(struct net_device *prNetDev, uint8_t ucOwnMacIdx, uint
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucOwnMacIdx = 0x%08x\n", ucOwnMacIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssIdx = 0x%08x\n", ucBssIdx);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[0] = 0x%08x\n", ucBssId[0]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[1] = 0x%08x\n", ucBssId[1]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[2] = 0x%08x\n", ucBssId[2]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[3] = 0x%08x\n", ucBssId[3]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[4] = 0x%08x\n", ucBssId[4]);
-	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucBssId[5] = 0x%08x\n", ucBssId[5]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucOwnMacIdx = 0x%08x\n", ucOwnMacIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssIdx = 0x%08x\n", ucBssIdx);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[0] = 0x%08x\n", ucBssId[0]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[1] = 0x%08x\n", ucBssId[1]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[2] = 0x%08x\n", ucBssId[2]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[3] = 0x%08x\n", ucBssId[3]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[4] = 0x%08x\n", ucBssId[4]);
+	DBGLOG(RFTEST, ERROR, "TxBfBssInfoUpdate : ucBssId[5] = 0x%08x\n", ucBssId[5]);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
@@ -3598,7 +3669,7 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev, uint8_t ucLm, uint8_t u
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, ERROR,
-	       "MT6632 TxBfPseudoTagUpdate : ucLm = 0x%08x, ucNr = 0x%08x, ucNc = 0x%08x, ucBw = 0x%08x, ucCodeBook = 0x%08x, ucGroup = 0x%08x\n",
+	       "TxBfPseudoTagUpdate : ucLm = 0x%08x, ucNr = 0x%08x, ucNc = 0x%08x, ucBw = 0x%08x, ucCodeBook = 0x%08x, ucGroup = 0x%08x\n",
 	       ucLm, ucNr, ucNc, ucBw, ucCodeBook, ucGroup);
 
 	rTxBfActionInfo.rTxBfProfileSwTagWrite.ucTxBfCategory = BF_PFMU_SW_TAG_WRITE;

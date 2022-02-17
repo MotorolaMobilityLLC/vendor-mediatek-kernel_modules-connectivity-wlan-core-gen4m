@@ -991,6 +991,9 @@ struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
 	struct TX_DESC_OPS_T *prTxDescOps;
+#if CFG_SUPPORT_QA_TOOL
+	struct ATE_OPS_T *prAteOps;
+#endif
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
