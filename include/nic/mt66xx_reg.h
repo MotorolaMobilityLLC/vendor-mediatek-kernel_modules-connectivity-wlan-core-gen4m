@@ -1392,6 +1392,10 @@ enum enum_workAround {
 	WORKAROUND_NUM
 };
 
+enum ENUM_CHIP_CAPABILITY {
+	CHIP_CAPA_FW_LOG_TIME_SYNC
+};
+
 struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
@@ -1535,6 +1539,7 @@ struct mt66xx_chip_info {
 		uint8_t ucWfResetEnable);
 	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 	uint32_t u4ADieVer;
+	uint64_t chip_capability;
 };
 
 struct mt66xx_hif_driver_data {
