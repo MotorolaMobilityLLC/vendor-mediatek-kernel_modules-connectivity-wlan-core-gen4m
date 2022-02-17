@@ -403,7 +403,7 @@ void nic_txd_v3_compose(
 
 		HAL_MAC_CONNAC3X_TXD_SET_SUB_TYPE(
 			prTxDesc,
-			prStaRec->fgIsQoS ?
+			(prStaRec && prStaRec->fgIsQoS) ?
 				MAC_FRAME_QOS_DATA >> 4 : MAC_FRAME_DATA >> 4);
 	}
 
