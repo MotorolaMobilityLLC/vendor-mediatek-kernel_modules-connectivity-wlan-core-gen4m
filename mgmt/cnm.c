@@ -4063,6 +4063,27 @@ cnmOpModeSetTRxNss(
 			ucOpBwFinal = MAX_BW_80MHZ;
 		}
 
+		if (eNewReq == CNM_OPMODE_REQ_COEX) {
+			if (fgEnable) {
+				if (ucOpBwFinal == MAX_BW_40MHZ &&
+					prBssInfo->eBand == BAND_2G4) {
+					prBssInfo->ucVhtChannelWidthBackup =
+						ucOpBwFinal;
+					ucOpBwFinal = MAX_BW_20MHZ;
+					DBGLOG(CNM, INFO,
+						"COEX HT20 activated\n");
+				}
+			} else {
+				if (prBssInfo->ucVhtChannelWidthBackup) {
+					ucOpBwFinal =
+					   prBssInfo->ucVhtChannelWidthBackup;
+					DBGLOG(CNM, INFO,
+						"COEX HT20 restored\n");
+					prBssInfo->ucVhtChannelWidthBackup = 0;
+				}
+			}
+		}
+
 		/* Step 4. Execute OpMode change function for alive BSS */
 		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
