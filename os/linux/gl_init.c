@@ -3075,6 +3075,10 @@ int set_p2p_mode_handler(struct net_device *netdev,
 			if (!prP2PInfo || !prP2PInfo->prDevHandler)
 				continue;
 
+			/* Only restore sap part */
+			if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
+				continue;
+
 			g_u4DevIdx[i] =
 				prP2PInfo->prDevHandler->ifindex;
 		}
