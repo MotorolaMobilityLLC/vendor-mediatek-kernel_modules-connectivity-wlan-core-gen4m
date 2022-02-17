@@ -1936,12 +1936,12 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	kalMemZero(aucDate, 32);
 	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
 	u4Offset += snprintf(pcBuf + u4Offset,
-			     i4TotalLen - u4Offset,
-			     "\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
-			     aucBuf,
-			     (uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
-			     (prVerInfo->u2FwOwnVersion & BITS(0, 7)),
-			     prVerInfo->ucFwBuildNumber, aucDate);
+			i4TotalLen - u4Offset,
+			"\nN9 FW version %s-%u.%u.%u[DEC] (%s)\n",
+			aucBuf,
+			(uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
+			(uint32_t)(prVerInfo->u2FwOwnVersion & BITS(0, 7)),
+			prVerInfo->ucFwBuildNumber, aucDate);
 
 	if (prFwDlOps->getFwDlInfo)
 		u4Offset += prFwDlOps->getFwDlInfo(prAdapter,
@@ -1967,9 +1967,9 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 			     aucDate);
 
 	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
-			     "Drv version %u.%u[DEC]\n",
-			     (uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
-			     (prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+			"Drv version %u.%u[DEC]\n",
+			(uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
+			(uint32_t)(prVerInfo->u2FwPeerVersion & BITS(0, 7)));
 	return u4Offset;
 }
 
