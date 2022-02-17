@@ -27,7 +27,7 @@
 #define BELLWETHER_TX_DESC_APPEND_LENGTH				32
 #define BELLWETHER_RX_INIT_DESC_LENGTH					32
 #define BELLWETHER_RX_DESC_LENGTH					32
-#define BELLWETHER_CHIP_ID						0x7961
+#define BELLWETHER_CHIP_ID						0x7903 /* align chip id for bellwether_rebb */
 #define CONNAC3X_TOP_HCR					0x88000000
 #define CONNAC3X_TOP_HVR					0x88000000
 #define CONNAC3X_TOP_FVR					0x88000004
