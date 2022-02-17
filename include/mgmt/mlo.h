@@ -50,17 +50,17 @@
 	(_u2ctrl & (ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
 
-#define MLCIE(fp)              ((struct _MULTI_LINK_CONTROL_IE *) fp)
+#define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
-struct _MULTI_LINK_CONTROL_IE {
+struct IE_MULTI_LINK_CONTROL {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int8_t  ucExtId;
-	u_int16_t ctrl;	/* control field - BITS(0, 2): type, BIT(3): reserved, BITS(4, 15): presence bitmap*/
-	u_int8_t commonInfo[1];	/* common field - varied by presence bitmap of control field*/
-};
+	u_int16_t u2Ctrl;	/* control field - BITS(0, 2): type, BIT(3): reserved, BITS(4, 15): presence bitmap*/
+	u_int8_t aucCommonInfo[0];	/* common field - varied by presence bitmap of control field*/
+} __KAL_ATTRIB_PACKED__;
 
-#define MLSTAIE(fp)              ((struct _MULTI_LINK_INFO_STA_CONTROL_IE *) fp)
+#define MLSTAIE(fp)              ((struct IE_MULTI_LINK_INFO_STA_CONTROL *) fp)
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
 {\
@@ -92,32 +92,38 @@ struct _MULTI_LINK_CONTROL_IE {
 	(_u2ctrl & ML_STA_CTRL_MAC_ADDR_PRESENT)
 
 
-struct _MULTI_LINK_INFO_STA_CONTROL_IE {
+struct IE_MULTI_LINK_INFO_STA_CONTROL {
 	u_int8_t ucSubID;	/* 0: Per-STA Profile */
 	u_int8_t ucLength;
-	u_int16_t staCtrl;	/* control field - BITS(0, 3): link ID, BIT(4): complete profile, BITS(5, 8): presence bitmap, BITS(9): NSTR bitmap size*/
-	u_int8_t staInfo[1];
-};
+	u_int16_t u2StaCtrl;	/* control field - BITS(0, 3): link ID, BIT(4): complete profile, BITS(5, 8): presence bitmap, BITS(9): NSTR bitmap size*/
+	u_int8_t aucStaInfo[0];
+} __KAL_ATTRIB_PACKED__;
 
 void beReqGenerateMLIE(
 	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo);
+	struct MSDU_INFO *prMsduInfo,
+	u_int8_t type,
+	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
+	uint16_t txIENums);
 
-void beReqGenerateMultiLinkCommonInfo(
-        struct ADAPTER *prAdapter,
-        struct MSDU_INFO *prMsduInfo);
-
-void beReqGenerateMultiLinkSTAInfo(
+struct IE_MULTI_LINK_CONTROL *beReqGenerateMultiLinkCommonInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-//TODO: remove this define
-#define MLD_MAC_ADDR "\x00\x11\x22\x33\x44\x55"
-#define MLD_STA1_MAC_ADDR "\x00\x11\x22\x33\x11\x11"
-#define MLD_STA2_MAC_ADDR "\x00\x11\x22\x33\x22\x22"
-#define MLD_CAP 0x33
-#define STA1_LINK_ID 9
-#define STA2_LINK_ID 10
+void beReqGenerateMultiLinkSTAInfo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
+	u_int8_t type,
+	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
+	uint16_t txIENums);
+
+enum ENUM_MLO_CONNECT {
+	TYPE_AUTH,
+	TYPE_ASSOC,
+	TYPE_NUM
+};
+
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
