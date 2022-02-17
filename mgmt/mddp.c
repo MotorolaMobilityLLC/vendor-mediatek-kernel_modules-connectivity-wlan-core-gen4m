@@ -475,14 +475,17 @@ void mddpNotifyWifiOnStart(void)
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
 }
 
-void mddpNotifyWifiOnEnd(void)
+int32_t mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret;
 
 	clear_md_wifi_on_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
 	if (ret == 0)
-		wait_for_md_on_complete();
+		ret = wait_for_md_on_complete() ?
+				WLAN_STATUS_SUCCESS :
+				WLAN_STATUS_FAILURE;
+	return ret;
 }
 
 void mddpNotifyWifiOffStart(void)
@@ -534,9 +537,14 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	if (prMdInfo->info_type == 1) {
 		uint32_t i;
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+		int32_t ret;
 
 		mddpNotifyWifiOnStart();
-		mddpNotifyWifiOnEnd();
+		ret = mddpNotifyWifiOnEnd();
+		if (ret != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
+			return 0;
+		}
 		mddpNotifyDrvMac(prAdapter);
 
 		/* Notify STA's TXD to MD */
@@ -675,15 +683,26 @@ static bool wait_for_md_on_complete(void)
 {
 	uint32_t u4Value = 0;
 	uint32_t u4StartTime, u4CurTime;
-	bool fgTimeout = false;
+	bool fgCompletion = false;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	u4StartTime = kalGetTimeTick();
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(gPrDev));
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return false;
+	}
 
 	do {
 		wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
 
 		if ((u4Value & MD_STATUS_ON_SYNC_BIT) > 0) {
 			DBGLOG(INIT, INFO, "md on end.\n");
+			fgCompletion = true;
+			break;
+		} else if (!prGlueInfo->u4ReadyFlag) {
+			DBGLOG(INIT, WARN, "Skip waiting due to ready flag.\n");
+			fgCompletion = false;
 			break;
 		}
 
@@ -691,14 +710,14 @@ static bool wait_for_md_on_complete(void)
 		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
 				MD_ON_OFF_TIMEOUT)) {
 			DBGLOG(INIT, ERROR, "wait for md on timeout\n");
-			fgTimeout = true;
+			fgCompletion = false;
 			break;
 		}
 
 		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
 	} while (TRUE);
 
-	return !fgTimeout;
+	return fgCompletion;
 }
 
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
