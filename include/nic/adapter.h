@@ -1468,10 +1468,6 @@ struct ADAPTER {
 #endif
 
 	struct PARAM_LINK_SPEED_EX rLinkQuality;
-	OS_SYSTIME rLinkQualityUpdateTime;
-	u_int8_t fgIsLinkQualityValid;
-	OS_SYSTIME rLinkRateUpdateTime;
-	u_int8_t fgIsLinkRateValid;
 
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;
