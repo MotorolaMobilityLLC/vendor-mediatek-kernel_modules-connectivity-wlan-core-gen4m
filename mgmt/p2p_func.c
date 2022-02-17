@@ -1370,11 +1370,11 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
 		if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
-			prCmdRddOnOffCtrl->ucRegDomain = REG_JP_53;
+			prCmdRddOnOffCtrl->ucSetVal = REG_JP_53;
 		else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
-			prCmdRddOnOffCtrl->ucRegDomain = REG_JP_56;
+			prCmdRddOnOffCtrl->ucSetVal = REG_JP_56;
 	} else {
-		prCmdRddOnOffCtrl->ucRegDomain = REG_DEFAULT;
+		prCmdRddOnOffCtrl->ucSetVal = REG_DEFAULT;
 	}
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
