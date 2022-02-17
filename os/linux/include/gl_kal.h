@@ -1229,6 +1229,7 @@ VOID kalPerMonHandler(IN P_ADAPTER_T prAdapter, ULONG ulParam);
 UINT_32 kalPerMonGetInfo(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max);
 INT_32 kalBoostCpu(IN P_ADAPTER_T prAdapter, IN UINT_32 u4TarPerfLevel, IN UINT_32 u4BoostCpuTh);
 INT_32 kalSetCpuNumFreq(UINT_32 u4CoreNum, UINT_32 u4Freq);
+INT_32 kalPerMonSetForceEnableFlag(UINT_8 uFlag);
 INT_32 kalFbNotifierReg(IN P_GLUE_INFO_T prGlueInfo);
 VOID kalFbNotifierUnReg(VOID);
 
