@@ -260,7 +260,7 @@ BUS_INFO mt7668_bus_info = {
 #endif /* _HIF_SDIO */
 };
 
-struct firmware_download_operations mt7668_fw_dl_ops = {
+struct FWDL_OPS_T mt7668_fw_dl_ops = {
 	.tailer_format = HARVARD_TAILER_FORMAT,
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
 	.downloadFirmware = wlanHarvardFormatDownload,

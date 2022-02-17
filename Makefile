@@ -159,6 +159,8 @@ endif
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
 CHIPS       := chips/
+CHIPS_CMM   := $(CHIPS)common/
+
 
 # ---------------------------------------------------
 # Objects List
@@ -227,7 +229,9 @@ MGMT_OBJS := $(MGMT_DIR)ais_fsm.o \
 MGMT_OBJS += $(MGMT_DIR)stats.o
 
 
-CHIPS_OBJS += $(CHIPS)common/cmm_asic_connac.o
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
+CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
+
 ifneq ($(findstring 6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
 endif
