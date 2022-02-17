@@ -278,11 +278,18 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 	}
 
 	if (prCmdInfo) {
-		DBGLOG(MEM, LOUD,
+		DBGLOG(MEM, TRACE,
 		       "CMD[0x%p] allocated! LEN[%04u], Rest[%u]\n",
 		       prCmdInfo, u4Length, prAdapter->rFreeCmdList.u4NumElem);
+
 	} else {
-		DBGLOG(MEM, ERROR,
+		struct CHIP_DBG_OPS *prDbgOps;
+
+		prDbgOps = prAdapter->chip_info->prDebugOps;
+		if (prDbgOps && prDbgOps->showPdmaInfo)
+			prDbgOps->showPdmaInfo(prAdapter);
+
+			DBGLOG(MEM, ERROR,
 		       "CMD allocation failed! LEN[%04u], Rest[%u]\n",
 		       u4Length, prAdapter->rFreeCmdList.u4NumElem);
 	}
