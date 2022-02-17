@@ -3126,6 +3126,10 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			   IN struct MSDU_INFO *prMsduInfo, IN void *prPacket)
 {
 	struct GLUE_INFO *prGlueInfo;
+	u_int8_t fgIsLowestRate = FALSE;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	u_int8_t fgIsHighPrioQ = FALSE;
+#endif
 
 	ASSERT(prAdapter);
 
@@ -3145,6 +3149,11 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 	else
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 	prMsduInfo->ucUserPriority = GLUE_GET_PKT_TID(prPacket);
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
+		prMsduInfo->ucMacHeaderLength = WLAN_MAC_MGMT_HEADER_LEN;
+	else
+#endif
 	prMsduInfo->ucMacHeaderLength = GLUE_GET_PKT_HEADER_LEN(
 						prPacket);
 	prMsduInfo->u2FrameLength = (uint16_t)
@@ -3162,6 +3171,10 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 					ENUM_PKT_802_3) ? TRUE : FALSE;
 		prMsduInfo->fgIsVlanExists = GLUE_TEST_PKT_FLAG(prPacket,
 			ENUM_PKT_VLAN_EXIST) ? TRUE : FALSE;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		prMsduInfo->fgIs802_11 = GLUE_TEST_PKT_FLAG(prPacket,
+					 ENUM_PKT_802_11_MGMT) ? TRUE : FALSE;
+#endif
 
 		if (prMsduInfo->fgIs802_1x)
 			prMsduInfo->eEapolKeyType = secGetEapolKeyType(((
@@ -3181,6 +3194,10 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			prMsduInfo->ucPktType = ENUM_PKT_TDLS;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DNS))
 			prMsduInfo->ucPktType = ENUM_PKT_DNS;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
+			prMsduInfo->ucPktType = ENUM_PKT_802_11_MGMT;
+#endif
 
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 		if (prMsduInfo->ucPktType != ENUM_PKT_ICMP) {
@@ -3195,7 +3212,14 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			if (!nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 			prMsduInfo->pfTxDoneHandler = wlanPktTxDone;
-			prMsduInfo->ucTxSeqNum = GLUE_GET_PKT_SEQ_NO(prPacket);
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+			if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
+				prMsduInfo->ucTxSeqNum =
+					nicIncreaseTxSeqNum(prAdapter);
+			else
+#endif
+				prMsduInfo->ucTxSeqNum =
+					GLUE_GET_PKT_SEQ_NO(prPacket);
 #if CFG_SUPPORT_LIMITED_PKT_PID
 			} else {
 				TX_INC_CNT(&prAdapter->rTxCtrl,
@@ -3204,17 +3228,41 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 		}
 
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT)) {
+			fgIsLowestRate = TRUE;
+			fgIsHighPrioQ = TRUE;
+		}
+#endif
 #if CFG_SUPPORT_WIFI_SYSDVT
-		if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF)
-			;
-		else
+		/* must be the last check action */
+		if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF) {
+			fgIsLowestRate = FALSE;
+			fgIsHighPrioQ = FALSE;
+		}
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
+
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
+			fgIsLowestRate = TRUE;
+		}
+
+		if (fgIsLowestRate)
 			/* Set BSS/STA lowest basic rate */
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
-		}
+
+#if CFG_SUPPORT_WIFI_SYSDVT || CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		if (fgIsHighPrioQ)
+			/* Set higher priority */
+			prMsduInfo->ucUserPriority =
+					NIC_TX_CRITICAL_DATA_TID;
+#endif
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
+			prMsduInfo->u8Cookie =
+				GLUE_GET_PKT_COOKIE(prPacket);
+#endif
 	}
 
 	/* Add dummy Tx done */

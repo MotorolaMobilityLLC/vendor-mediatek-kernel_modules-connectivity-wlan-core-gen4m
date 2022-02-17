@@ -10469,6 +10469,11 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 {
 	OS_SYSTIME rCurrent = kalGetTimeTick();
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+	struct sk_buff *prSkb = NULL;
+	u_int8_t fgIsSuccess = FALSE;
+#endif
 
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
 		(uint8_t *) DISP_STRING("INVALID"),
@@ -10481,7 +10486,10 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		(uint8_t *) DISP_STRING("ARP"),
 		(uint8_t *) DISP_STRING("ICMP"),
 		(uint8_t *) DISP_STRING("TDLS"),
-		(uint8_t *) DISP_STRING("DNS")
+		(uint8_t *) DISP_STRING("DNS"),
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		(uint8_t *) DISP_STRING("802_11_MGMT")
+#endif
 	};
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
@@ -10531,6 +10539,27 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		TdlsHandleTxDoneStatus(prAdapter, rTxDoneStatus);
 #endif /* CFG_SUPPORT_TDLS */
 
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
+		prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+		skb_pull(prSkb, prSkb->len - prMsduInfo->u2FrameLength);
+		prWlanHeader =
+				(struct WLAN_MAC_HEADER *)((unsigned long)
+				prSkb->data);
+		if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
+			prWlanHeader->u2FrameCtrl &=
+				~MASK_FC_PROTECTED_FRAME;
+		fgIsSuccess = (rTxDoneStatus == TX_RESULT_SUCCESS) ?
+				TRUE : FALSE;
+		kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
+					prMsduInfo->u8Cookie,
+					fgIsSuccess,
+					(void *)prSkb->data,
+					(uint32_t)
+					prMsduInfo->u2FrameLength,
+					prMsduInfo->ucBssIndex);
+	}
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 
