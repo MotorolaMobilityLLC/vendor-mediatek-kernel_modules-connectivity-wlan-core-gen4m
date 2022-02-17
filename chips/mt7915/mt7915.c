@@ -242,6 +242,44 @@ static void wlanHarrierInitPcieInt(
 		0xF11AC,
 		u4MacVal);
 }
+
+static bool mt7915WfdmaAllocRxRing(
+	struct GLUE_INFO *prGlueInfo,
+	bool fgAllocMem)
+{
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_2,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_3,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_0,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_1,
+			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_2,
+			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	return true;
+}
+
 #endif /* _HIF_PCIE */
 
 void mt7915DumpSerDummyCR(
@@ -407,6 +445,7 @@ struct BUS_INFO mt7915_bus_info = {
 	.initPcieInt = wlanHarrierInitPcieInt,
 	.devReadIntStatus = asicConnac2xReadExtIntStatus,
 	.pcieDmaShdlInit = NULL,
+	.wfdmaAllocRxRing = mt7915WfdmaAllocRxRing,
 #endif				/* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC2X_UDMA_WLCFG_0,
@@ -511,7 +550,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
-	.is_support_wfdma = TRUE,
+	.is_support_wfdma1 = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),

@@ -98,8 +98,7 @@
 #define CONNAC_PCIe_DEVICE_ID	0x3280
 #define NIC7915_PCIe_DEVICE_ID	0x7915
 #define NICSOC3_0_PCIe_DEVICE_ID  0x0789
-/* Using PID 0x7915 for bitfile WF-3 */
-#define NIC7961_PCIe_DEVICE_ID	0x7915
+#define NIC7961_PCIe_DEVICE_ID	0x7961
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
