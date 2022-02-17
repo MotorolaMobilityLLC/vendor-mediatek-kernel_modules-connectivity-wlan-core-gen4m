@@ -75,25 +75,11 @@
 #include <linux/wireless.h>
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
-
-#include "gl_os.h"
-
-#include "wlan_lib.h"
-#include "gl_wext.h"
 #include <linux/can/netlink.h>
 #include <net/netlink.h>
-
-#if CFG_SUPPORT_WAPI
-extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
-#else
-extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
-#endif
-/* workaround for some ANR CRs. if suppliant is blocked longer than 10s, wifi hal will tell wifiMonitor
-* to teminate. for the case which can block supplicant 10s is to del key more than 5 times. the root cause
-* is that there is no resource in TC4, so del key command was not able to set, and then oid
-* timeout was happed. if we found the root cause why fw couldn't release TC resouce, we will remove this
-* workaround
-*/
+#include "gl_os.h"
+#include "wlan_lib.h"
+#include "gl_wext.h"
 
 
 /*******************************************************************************
@@ -153,8 +139,20 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_ENABLE_ROAMING				/* 0x000b */
 };
 
+enum RTT_SUB_COMMAND {
+	RTT_SUBCMD_SET_CONFIG = ANDROID_NL80211_SUBCMD_RTT_RANGE_START,
+	RTT_SUBCMD_CANCEL_CONFIG,
+	RTT_SUBCMD_GETCAPABILITY,
+};
+
 enum LSTATS_SUB_COMMAND {
 	LSTATS_SUBCMD_GET_INFO = ANDROID_NL80211_SUBCMD_LSTATS_RANGE_START,
+};
+
+enum WIFI_OFFLOAD_SUB_COMMAND {
+	WIFI_OFFLOAD_START_MKEEP_ALIVE =
+		ANDROID_NL80211_SUBCMD_WIFI_OFFLOAD_RANGE_START,
+	WIFI_OFFLOAD_STOP_MKEEP_ALIVE,
 };
 
 enum WIFI_VENDOR_EVENT {
@@ -164,11 +162,12 @@ enum WIFI_VENDOR_EVENT {
 	GSCAN_EVENT_FULL_SCAN_RESULTS,
 	RTT_EVENT_COMPLETE,
 	GSCAN_EVENT_COMPLETE_SCAN,
-	GSCAN_EVENT_HOTLIST_RESULTS_LOST
+	GSCAN_EVENT_HOTLIST_RESULTS_LOST,
+	WIFI_EVENT_RSSI_MONITOR
 };
 
 enum WIFI_ATTRIBUTE {
-	WIFI_ATTRIBUTE_BAND,
+	WIFI_ATTRIBUTE_BAND = 1,
 	WIFI_ATTRIBUTE_NUM_CHANNELS,
 	WIFI_ATTRIBUTE_CHANNEL_LIST,
 
@@ -178,6 +177,10 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_NODFS_VALUE,
 	WIFI_ATTRIBUTE_COUNTRY_CODE,
 
+	WIFI_ATTRIBUTE_MAX_RSSI,
+	WIFI_ATTRIBUTE_MIN_RSSI,
+	WIFI_ATTRIBUTE_RSSI_MONITOR_START,
+
 	WIFI_ATTRIBUTE_ROAMING_CAPABILITIES,
 	WIFI_ATTRIBUTE_ROAMING_BLACKLIST_NUM,
 	WIFI_ATTRIBUTE_ROAMING_BLACKLIST_BSSID,
@@ -186,8 +189,42 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_ROAMING_STATE
 };
 
+enum RTT_ATTRIBUTE {
+	RTT_ATTRIBUTE_CAPABILITIES = 1,
+
+	RTT_ATTRIBUTE_TARGET_CNT = 10,
+	RTT_ATTRIBUTE_TARGET_INFO,
+	RTT_ATTRIBUTE_TARGET_MAC,
+	RTT_ATTRIBUTE_TARGET_TYPE,
+	RTT_ATTRIBUTE_TARGET_PEER,
+	RTT_ATTRIBUTE_TARGET_CHAN,
+	RTT_ATTRIBUTE_TARGET_PERIOD,
+	RTT_ATTRIBUTE_TARGET_NUM_BURST,
+	RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST,
+	RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTM,
+	RTT_ATTRIBUTE_TARGET_NUM_RETRY_FTMR,
+	RTT_ATTRIBUTE_TARGET_LCI,
+	RTT_ATTRIBUTE_TARGET_LCR,
+	RTT_ATTRIBUTE_TARGET_BURST_DURATION,
+	RTT_ATTRIBUTE_TARGET_PREAMBLE,
+	RTT_ATTRIBUTE_TARGET_BW,
+	RTT_ATTRIBUTE_RESULTS_COMPLETE = 30,
+	RTT_ATTRIBUTE_RESULTS_PER_TARGET,
+	RTT_ATTRIBUTE_RESULT_CNT,
+	RTT_ATTRIBUTE_RESULT
+};
+
 enum LSTATS_ATTRIBUTE {
 	LSTATS_ATTRIBUTE_STATS = 2,
+};
+
+enum WIFI_MKEEP_ALIVE_ATTRIBUTE {
+	MKEEP_ALIVE_ATTRIBUTE_ID = 1,
+	MKEEP_ALIVE_ATTRIBUTE_IP_PKT_LEN,
+	MKEEP_ALIVE_ATTRIBUTE_IP_PKT,
+	MKEEP_ALIVE_ATTRIBUTE_SRC_MAC_ADDR,
+	MKEEP_ALIVE_ATTRIBUTE_DST_MAC_ADDR,
+	MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC
 };
 
 enum WIFI_SCAN_EVENT {
@@ -214,7 +251,11 @@ enum QCA_SET_BAND {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-
+#if CFG_SUPPORT_WAPI
+extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
+#else
+extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
+#endif
 
 /*******************************************************************************
 *                           MACROS
@@ -423,6 +464,22 @@ struct WIFI_WMM_AC_STAT_ {
 	uint32_t contention_num_samples;
 };
 
+/* RTT Capabilities */
+struct PARAM_WIFI_RTT_CAPABILITIES {
+	/* if 1-sided rtt data collection is supported */
+	uint8_t rtt_one_sided_supported;
+	/* if ftm rtt data collection is supported */
+	uint8_t rtt_ftm_supported;
+	/* if initiator supports LCI request. Applies to 2-sided RTT */
+	uint8_t lci_support;
+	/* if initiator supports LCR request. Applies to 2-sided RTT */
+	uint8_t lcr_support;
+	/* bit mask indicates what preamble is supported by initiator */
+	uint8_t preamble_support;
+	/* bit mask indicates what BW is supported by initiator */
+	uint8_t bw_support;
+};
+
 /* interface statistics */
 struct WIFI_IFACE_STAT {
 	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
@@ -438,7 +495,6 @@ struct WIFI_IFACE_STAT {
 	struct WIFI_PEER_INFO peer_info[];
 };
 
-
 enum ENUM_NLA_PUT_DATE_TYPE {
 	NLA_PUT_DATE_U8 = 0,
 	NLA_PUT_DATE_U16,
@@ -446,6 +502,32 @@ enum ENUM_NLA_PUT_DATE_TYPE {
 	NLA_PUT_DATE_U64,
 };
 
+/* RSSI Monitoring */
+struct PARAM_RSSI_MONITOR_T {
+	bool enable;	/* 1=Start, 0=Stop*/
+	int8_t max_rssi_value;
+	int8_t min_rssi_value;
+	uint8_t reserved[1];
+	uint8_t reserved2[4]; /* reserved for MT6632 */
+};
+
+struct PARAM_RSSI_MONITOR_EVENT {
+	uint8_t version;
+	int8_t rssi;
+	uint8_t BSSID[PARAM_MAC_ADDR_LEN];
+};
+
+/* Packet Keep Alive */
+struct PARAM_PACKET_KEEPALIVE_T {
+	bool enable;	/* 1=Start, 0=Stop*/
+	uint8_t index;
+	int16_t u2IpPktLen;
+	uint8_t pIpPkt[256];
+	uint8_t ucSrcMacAddr[PARAM_MAC_ADDR_LEN];
+	uint8_t ucDstMacAddr[PARAM_MAC_ADDR_LEN];
+	uint32_t u4PeriodMsec;
+	uint8_t reserved[8]; /* reserved for MT6632 */
+};
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -492,6 +574,9 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy, struct wireless_de
 int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_dev *wdev,
 					 const void *data, int data_len);
 
+int mtk_cfg80211_vendor_get_rtt_capabilities(
+		struct wiphy *wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
 
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
@@ -509,6 +594,18 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				 struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
-				 struct wireless_dev *wdev, const void *data, int data_len);
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_rssi_monitoring(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_packet_keep_alive_start(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_packet_keep_alive_stop(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_event_rssi_beyond_range(struct wiphy *wiphy,
+		struct wireless_dev *wdev, int rssi);
 
 #endif /* _GL_VENDOR_H */
