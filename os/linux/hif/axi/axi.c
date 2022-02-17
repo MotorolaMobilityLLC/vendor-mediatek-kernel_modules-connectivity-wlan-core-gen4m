@@ -244,7 +244,7 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
  *******************************************************************************
  */
 
-static struct mt66xx_hif_driver_data *get_platform_driver_data()
+static struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
 	ASSERT(g_prPlatDev);
 	if (!g_prPlatDev)
