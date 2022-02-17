@@ -1086,7 +1086,13 @@
 #define ELEM_ID_RESERVED \
 	255	/* Reserved */
 
-#if CFG_SUPPORT_MBO
+#define ELEM_EXT_ID_ESP	\
+	11 /* Estimated Service Parameters */
+
+#define ELEM_EXT_ID_FILS_REQUEST_PARA \
+	2 /* FILS Request Parameters */
+
+
 /* MBO v0.0_r19, 4.2: MBO Attributes */
 /* Table 4-5: MBO Attributes */
 /* OCE v0.0.10, Table 4-3: OCE Attributes */
@@ -1103,8 +1109,9 @@ enum MBO_ATTR_ID {
 	OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT = 102,
 	OCE_ATTR_ID_REDUCED_WAN_METRICS = 103,
 	OCE_ATTR_ID_RNR_COMPLETENESS = 104,
+	OCE_ATTR_ID_SUPPRESSION_BSSID = 105,
+	OCE_ATTR_ID_SUPPRESSION_SSID = 106,
 };
-#endif
 
 /* 7.3.2.1 SSID element */
 #define ELEM_MAX_LEN_SSID                           32
@@ -1772,6 +1779,9 @@ enum BEACON_REPORT_DETAIL {
 #define VENDOR_OUI_TYPE_WPS                         4
 #define VENDOR_OUI_TYPE_P2P                         9
 #define VENDOR_OUI_TYPE_WFD                         10
+#define VENDOR_OUI_TYPE_MBO                         22
+
+#define VENDOR_IE_TYPE_MBO                          0x506f9a16
 
 /* Epigram IE */
 #define VENDOR_IE_EPIGRAM_OUI                      0x00904c
@@ -2391,7 +2401,7 @@ struct IE_BSS_LOAD {
 } __KAL_ATTRIB_PACKED__;
 
 /* 8.4.2.39 Neighbor Report Element */
-struct  IE_NEIGHBOR_REPORT {
+struct IE_NEIGHBOR_REPORT {
 	uint8_t ucId;		/* Element ID */
 	uint8_t ucLength;	/* Length */
 	uint8_t aucBSSID[MAC_ADDR_LEN];	/* OUI */
@@ -3525,6 +3535,22 @@ struct IE_MBSSID_INDEX {
 	uint8_t      ucDtimCount;
 } __KAL_ATTRIB_PACKED__;
 
+/** 9.4.2.178 FILS Request Parameters element */
+struct IE_FILS_REQ_FRAME {
+	uint8_t ucId;             /* Element ID */
+	uint8_t ucLength;         /* Length */
+	uint8_t ucExtId;          /* Element ID Extension */
+	uint8_t ucCtrlBitMap;     /* Parameter Control Bitmap */
+	uint8_t ucMaxChannelTime; /* Max Channel Time */
+} __KAL_ATTRIB_PACKED__;
+
+struct IE_OCE_SUPPRESSION_BSSID {
+	uint8_t ucAttrId;		/* Attribute ID */
+	uint8_t ucAttrLength;		/* Attribute Length */
+	uint8_t aucAttrBssIds[1];	/* Suppression BSSIDs */
+} __KAL_ATTRIB_PACKED__;
+
+
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()
 #endif
@@ -3624,6 +3650,10 @@ struct IE_MBSSID_INDEX {
 
 #define MBSSID_IE(fp)                 ((struct IE_MBSSID *) fp)
 #define MBSSID_INDEX_IE(fp)           ((struct IE_MBSSID_INDEX *) fp)
+
+#define OCE_OUI_SUP_BSSID(fp)	((struct IE_OCE_SUPPRESSION_BSSID *) fp)
+#define OCE_IE_OUI_TYPE(fp)	(((struct IE_MBO_OCE *)(fp))->ucOuiType)
+#define OCE_IE_OUI(fp)		(((struct IE_MBO_OCE *)(fp))->aucOui)
 
 /* The macro to check if the MAC address is B/MCAST Address */
 #define IS_BMCAST_MAC_ADDR(_pucDestAddr)            \
