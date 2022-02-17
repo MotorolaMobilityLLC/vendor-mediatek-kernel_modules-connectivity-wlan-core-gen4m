@@ -779,18 +779,10 @@ struct GLUE_INFO {
 	uint16_t u2MetUdpPort;
 #endif
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	uint8_t fgIsEnableMon;
-	uint8_t ucPriChannel;
-	uint8_t ucChannelS1;
-	uint8_t ucChannelS2;
-	uint8_t ucBand;
-	uint8_t ucChannelWidth;
-	uint8_t ucSco;
-	uint8_t ucBandIdx;
-	uint8_t fgDropFcsErrorFrame;
-	uint16_t u2Aid;
-	uint32_t u4AmpduRefNum;
+#if CFG_SUPPORT_SNIFFER
+	u_int8_t fgIsEnableMon;
+	struct net_device *prMonDevHandler;
+	struct work_struct monWork;
 #endif
 
 	int32_t i4RssiCache[BSSID_NUM];
@@ -1494,17 +1486,11 @@ enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 int connsys_power_event_notification(enum conn_pwr_event_type type, void *data);
 #endif
 
-<<<<<<< HEAD   (35b651 [ALPS05574842] nic: remove starec by bssinfo)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 uint32_t getFWLogOnOff(void);
 uint32_t getFWLogLevel(void);
 uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
 	void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
-=======
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-int32_t sysCreateMonDbgFs(struct GLUE_INFO *prGlueInfo);
-void sysRemoveMonDbgFs(void);
->>>>>>> CHANGE (4d4204 [ALPS05977350] radiotap sniffer: support 802.11 be)
 #endif
 
 #endif /* _GL_OS_H */

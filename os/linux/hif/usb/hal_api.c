@@ -837,7 +837,11 @@ uint32_t halRxUSBEnqueueRFB(
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
 					spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
-					nicRxProcessDataPacket(
+					if (HAL_MON_EN(prAdapter))
+						nicRxProcessMonitorPacket(
+							prAdapter, prSwRfb);
+					else
+						nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
 					spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 					break;

@@ -13152,6 +13152,60 @@ wlanoidSetHS20BssidPool(IN struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 
+#if CFG_SUPPORT_SNIFFER
+uint32_t
+wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
+		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen) {
+	struct PARAM_CUSTOM_MONITOR_SET_STRUCT *prMonitorSetInfo;
+	struct CMD_MONITOR_SET_INFO rCmdMonitorSetInfo;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidSetMonitor");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct
+				PARAM_CUSTOM_MONITOR_SET_STRUCT);
+
+	if (u4SetBufferLen < sizeof(struct
+				    PARAM_CUSTOM_MONITOR_SET_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prMonitorSetInfo = (struct PARAM_CUSTOM_MONITOR_SET_STRUCT
+			    *) pvSetBuffer;
+
+	rCmdMonitorSetInfo.ucEnable = prMonitorSetInfo->ucEnable;
+	rCmdMonitorSetInfo.ucBand = prMonitorSetInfo->ucBand;
+	rCmdMonitorSetInfo.ucPriChannel =
+		prMonitorSetInfo->ucPriChannel;
+	rCmdMonitorSetInfo.ucSco = prMonitorSetInfo->ucSco;
+	rCmdMonitorSetInfo.ucChannelWidth =
+		prMonitorSetInfo->ucChannelWidth;
+	rCmdMonitorSetInfo.ucChannelS1 =
+		prMonitorSetInfo->ucChannelS1;
+	rCmdMonitorSetInfo.ucChannelS2 =
+		prMonitorSetInfo->ucChannelS2;
+
+	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
+					  CMD_ID_SET_MONITOR,
+					  TRUE,
+					  FALSE,
+					  TRUE,
+					  nicCmdEventSetCommon,
+					  nicOidCmdTimeoutCommon,
+					  sizeof(struct CMD_MONITOR_SET_INFO),
+					  (uint8_t *) &rCmdMonitorSetInfo,
+					  pvSetBuffer,
+					  u4SetBufferLen);
+
+	return rWlanStatus;
+}
+#endif
+
 #if CFG_SUPPORT_MSP
 uint32_t
 wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
@@ -15501,50 +15555,6 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		    MSG_SEND_METHOD_BUF);
 	return WLAN_STATUS_SUCCESS;
 }
-
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
-		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-		  OUT uint32_t *pu4SetInfoLen)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_MONITOR_SET_INFO *prCmdMonitor;
-
-	prCmdMonitor = kalMemAlloc(
-		sizeof(struct CMD_MONITOR_SET_INFO), VIR_MEM_TYPE);
-	if (!prCmdMonitor) {
-		log_dbg(OID, ERROR, "alloc CmdMonitor fail\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	prCmdMonitor->ucEnable = prGlueInfo->fgIsEnableMon;
-	prCmdMonitor->ucBand = prGlueInfo->ucBand;
-	prCmdMonitor->ucPriChannel = prGlueInfo->ucPriChannel;
-	prCmdMonitor->ucSco = prGlueInfo->ucSco;
-	prCmdMonitor->ucChannelWidth = prGlueInfo->ucChannelWidth;
-	prCmdMonitor->ucChannelS1 = prGlueInfo->ucChannelS1;
-	prCmdMonitor->ucChannelS2 = prGlueInfo->ucChannelS2;
-	prCmdMonitor->ucBandIdx = prGlueInfo->ucBandIdx;
-	prCmdMonitor->u2Aid = prGlueInfo->u2Aid;
-	prCmdMonitor->fgDropFcsErrorFrame = prGlueInfo->fgDropFcsErrorFrame;
-
-	return wlanSendSetQueryCmd(prAdapter,
-		CMD_ID_SET_MONITOR,
-		TRUE,
-		FALSE,
-		TRUE,
-		nicCmdEventSetCommon,
-		nicOidCmdTimeoutCommon,
-		sizeof(struct CMD_MONITOR_SET_INFO),
-		(uint8_t *)prCmdMonitor, pvSetBuffer, u4SetBufferLen);
-
-	kalMemFree(prCmdMonitor, VIR_MEM_TYPE, sizeof(struct CMD_MONITOR_SET_INFO));
-}
-#endif
 
 uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 				    void *pvSetBuffer, uint32_t u4SetBufferLen,

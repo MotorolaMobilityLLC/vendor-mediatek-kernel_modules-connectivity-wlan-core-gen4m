@@ -1144,7 +1144,10 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	}
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
-
+#if CFG_SUPPORT_SNIFFER
+	if (prGlueInfo->fgIsEnableMon)
+		prNetDev = prGlueInfo->prMonDevHandler;
+#endif
 	if (prNetDev->dev_addr == NULL) {
 		DBGLOG(RX, WARN, "dev_addr == NULL\n");
 		return WLAN_STATUS_FAILURE;
@@ -1202,7 +1205,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	prNetDev->last_rx = jiffies;
 #endif
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#if CFG_SUPPORT_SNIFFER
 	if (prGlueInfo->fgIsEnableMon) {
 		skb_reset_mac_header(prSkb);
 		prSkb->ip_summed = CHECKSUM_UNNECESSARY;
@@ -7707,10 +7710,7 @@ inline int32_t kalPerMonStart(IN struct GLUE_INFO
 			      *prGlueInfo)
 {
 	struct PERF_MONITOR *prPerMonitor;
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	if (prGlueInfo->fgIsEnableMon)
-		return 0;
-#endif
+
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
 	DBGLOG(SW4, TEMP, "enter %s\n", __func__);
 
