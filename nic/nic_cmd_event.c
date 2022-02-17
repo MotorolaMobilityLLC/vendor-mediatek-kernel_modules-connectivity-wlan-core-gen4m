@@ -2987,9 +2987,23 @@ uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
 	prAdapter->fgIsHwSupport6G = pr6gCap->ucIsSupport6G;
 	prAdapter->rWifiFemCfg.u2WifiPath6G = (uint16_t)(pr6gCap->ucHwWifiPath);
 
-	DBGLOG(INIT, INFO, "fgIsHwSupport6G = %d, u2WifiPath6G = %d\n",
+	prAdapter->rWifiFemCfg.u2WifiDBDCAwithA =
+		(uint16_t)(pr6gCap->ucWifiDBDCAwithA);
+
+	/* Frequency unit is 5 (due to char8), need to x5 to original value */
+	prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval =
+		(uint16_t)((pr6gCap->ucWifiDBDCAwithAMinimumFrqInterval)*5);
+
+	/* Force set to support DBDC A+A and interval for TEST
+	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithA = 1;
+	 * prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval = 360;
+	 */
+	DBGLOG(INIT, INFO, "fgIsHwSupport6G = %d, u2WifiPath6G=%d\n",
 		prAdapter->fgIsHwSupport6G,
 		prAdapter->rWifiFemCfg.u2WifiPath6G);
+	DBGLOG(INIT, INFO, "u2WifiDBDCAwithA = %d minimumFre=%d\n",
+		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
+		prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval);
 
 	return WLAN_STATUS_SUCCESS;
 }
