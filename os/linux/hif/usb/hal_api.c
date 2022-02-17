@@ -273,13 +273,15 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 
 	if ((TFCB_FRAME_PAD_TO_DW(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen) + LEN_USB_UDMA_TX_TERMINATOR) >
 	    prBufCtrl->u4BufSize) {
-		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
+		DBGLOG(HAL, ERROR, "TX CMD CID[0x%X] buffer underflow!\n",
+		       prCmdInfo->ucCID);
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, prUsbReq,
 				&prHifInfo->rTxCmdQLock, FALSE);
 		return WLAN_STATUS_RESOURCES;
 	}
 
-	DBGLOG(HAL, INFO, "TX URB[0x%p]\n", prUsbReq->prUrb);
+	DBGLOG(HAL, INFO, "TX CMD CID[0x%X] URB[0x%p]\n", prCmdInfo->ucCID,
+	       prUsbReq->prUrb);
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxDescOps = prChipInfo->prTxDescOps;
