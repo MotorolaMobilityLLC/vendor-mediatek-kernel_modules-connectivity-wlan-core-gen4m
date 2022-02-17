@@ -597,13 +597,6 @@ struct BSS_INFO {
 	enum ENUM_BAND eBandGranted;
 	uint8_t ucPrimaryChannelGranted;
 	struct PARAM_CUSTOM_ACL rACL;
-
-#if CFG_SUPPORT_RN
-		OS_SYSTIME rConnTime;
-		uint8_t fgDisConnReassoc;
-#endif
-
-
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
