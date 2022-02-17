@@ -969,16 +969,9 @@ int soc3_0_Trigger_fw_assert(void)
 	int value;
 	uint32_t waitRet = 0;
 
-	g_IsConninfraBusHang = conninfra_is_bus_hang();
-	DBGLOG(HAL, INFO,
-		"g_IsConninfraBusHang = [%d].\n", g_IsConninfraBusHang);
-	if (g_IsConninfraBusHang > 0) {
-		DBGLOG(HAL, INFO,
-			"Trigger whole chip reset due to bus hang.\n");
-		soc3_0_DumpWfsysInfo();
-		soc3_0_DumpWfsysdebugflag();
-		glSetRstReasonString("conninfra bus hang");
-		soc3_0_Trigger_whole_chip_rst(g_reason);
+	ret = soc3_0_CheckBusHang();
+
+	if (ret != 0) {
 		return ret;
 	} else {
 		DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
@@ -1055,6 +1048,40 @@ int soc3_0_CheckWfBusHang(void)
 	return isHang;
 }
 
+void soc3_0_CheckBusHangUT(void)
+{
+#define BUS_HANG_UT_WAIT_COUNT 30
+
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t count = 0;
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+
+	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	prAdapter = prGlueInfo->prAdapter;
+
+	HAL_MCR_RD(prAdapter, 0x7c00162c, &u4Value);
+	RegValue = u4Value | BIT(0);
+	HAL_MCR_WR(prAdapter, 0x7c00162c, RegValue);
+
+	while (count < BUS_HANG_UT_WAIT_COUNT) {
+		HAL_MCR_RD(prAdapter, 0x7c00162c, &u4Value);
+		DBGLOG(HAL, INFO, "%s: 0x7c00162c = 0x%08x\n",
+				__func__, u4Value);
+
+		if ((u4Value&BIT(3)) == BIT(3)) {
+			DBGLOG(HAL, ERROR, "%s: 0x7c00162c = 0x%08x\n",
+					__func__, u4Value);
+			break;
+		}
+		count++;
+	}
+
+	/* Trigger Hang */
+	HAL_MCR_RD(prAdapter, 0x7c060000, &u4Value);
+}
+
 int soc3_0_CheckBusHang(void)
 {
 	int ret = 0;
@@ -1080,6 +1107,8 @@ int soc3_0_CheckBusHang(void)
 	if (ret != 0) {
 		DBGLOG(HAL, ERROR,
 			"soc3_0_CheckWfBusHang, WFSYS reset\n");
+
+		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, "bus hang");
 		return ret;
 	}
 
