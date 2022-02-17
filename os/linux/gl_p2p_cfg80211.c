@@ -363,7 +363,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #if CFG_ENABLE_UNIFY_WIPHY
 		if (type == NL80211_IFTYPE_AP) {
 			prNetDevPriv->ucIsP2p = FALSE;
-#if IS_ENABLED(CONFIG_MTK_MDDP_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
 			prNetDevPriv->ucMddpSupport = TRUE;
 #else
 			prNetDevPriv->ucMddpSupport = FALSE;
