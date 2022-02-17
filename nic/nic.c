@@ -3014,7 +3014,8 @@ void nicSetAvailablePhyTypeSet(IN struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
 
-	if (prAdapter->rWifiVar.eDesiredPhyConfig >= PHY_CONFIG_NUM) {
+	if (prAdapter->rWifiVar.eDesiredPhyConfig >= PHY_CONFIG_NUM
+		|| prAdapter->rWifiVar.eDesiredPhyConfig < 0) {
 		ASSERT(0);
 		return;
 	}

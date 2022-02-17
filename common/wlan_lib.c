@@ -4239,7 +4239,8 @@ void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	if (GET_BSS_INFO_BY_INDEX(prAdapter,
+	if (prMsduInfo->ucBssIndex < MAX_BSSID_NUM
+		&& GET_BSS_INFO_BY_INDEX(prAdapter,
 				  prMsduInfo->ucBssIndex)->eNetworkType ==
 	    NETWORK_TYPE_AIS
 	    &&
