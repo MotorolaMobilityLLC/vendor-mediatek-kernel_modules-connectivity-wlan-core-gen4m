@@ -412,6 +412,7 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.add_key = mtk_cfg_add_key,
 	.get_key = mtk_cfg_get_key,
 	.del_key = mtk_cfg_del_key,
+	.set_default_mgmt_key = mtk_cfg_set_default_mgmt_key,
 	.set_default_key = mtk_cfg_set_default_key,
 	.get_station = mtk_cfg_get_station,
 #if CFG_SUPPORT_TDLS
