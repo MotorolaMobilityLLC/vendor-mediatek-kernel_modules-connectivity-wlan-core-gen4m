@@ -79,8 +79,7 @@
 #define MT7663_CHIP_ID                          (0x7663)
 #define MT7663_SW_SYNC0                         CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define MT7663_SW_SYNC0_RDY_OFFSET              CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-/* TODO: assign correct setting for mt7663 after receive correct information @2016/12/20 */
-#define MT7663_PATCH_START_ADDR                 (0x000C8000)
+#define MT7663_PATCH_START_ADDR                 (0x000DC000)
 #define MT7663_TOP_CFG_BASE			CONN_CFG_BASE
 #define MT7663_TX_DESC_APPEND_LENGTH            32
 
