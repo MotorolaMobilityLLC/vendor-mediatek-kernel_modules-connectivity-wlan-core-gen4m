@@ -444,8 +444,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid, &arBssid[0], sizeof(arBssid), &u4BufLen);
 
-	/* 1. check BSSID */
-	if (UNEQUAL_MAC_ADDR(arBssid, mac)) {
+	/* 1. check input MAC address */
+	/* On Android O, this might be wlan0 address */
+	if (UNEQUAL_MAC_ADDR(arBssid, mac) && UNEQUAL_MAC_ADDR(prGlueInfo->prAdapter->rWifiVar.aucMacAddress, mac)) {
 		/* wrong MAC address */
 		DBGLOG(REQ, WARN,
 			"incorrect BSSID: [" MACSTR "] currently connected BSSID[" MACSTR "]\n",
