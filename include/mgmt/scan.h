@@ -935,11 +935,11 @@ void scanLogCacheAddBSS(struct LINK *prList,
 	struct SCAN_LOG_ELEM_BSS *prListBuf,
 	enum ENUM_SCAN_LOG_PREFIX prefix,
 	uint8_t bssId[], uint16_t seq);
-void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
-	const uint16_t logBufLen);
+void scanLogCacheFlushBSS(struct LINK *prList,
+			enum ENUM_SCAN_LOG_PREFIX prefix);
 void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
-	enum ENUM_SCAN_LOG_PREFIX prefix, const uint16_t logBufLen);
+	enum ENUM_SCAN_LOG_PREFIX prefix);
 
 void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 			       IN struct BSS_DESC *prBssDesc,
