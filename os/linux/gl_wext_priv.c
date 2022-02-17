@@ -1320,20 +1320,20 @@ priv_get_int(IN struct net_device *prNetDev,
 
 		DBGLOG(RLM, INFO, "Domain: Query Channel List.\n");
 		aucChannelList = (struct RF_CHANNEL_INFO *)
-			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*50,
-				VIR_MEM_TYPE);
+			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)
+				*ucMaxChannelNum, VIR_MEM_TYPE);
 		if (!aucChannelList) {
 			DBGLOG(REQ, ERROR,
 				"Can not alloc memory for rf channel info\n");
 			return -ENOMEM;
 		}
 		kalMemZero(aucChannelList,
-			sizeof(struct RF_CHANNEL_INFO)*50);
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum,
 				  &NumOfChannel, aucChannelList);
-		if (NumOfChannel > 50)
-			NumOfChannel = 50;
+		if (NumOfChannel > ucMaxChannelNum)
+			NumOfChannel = ucMaxChannelNum;
 
 		if (kalIsAPmode(prGlueInfo)) {
 			for (i = 0; i < NumOfChannel; i++) {
@@ -1352,7 +1352,7 @@ priv_get_int(IN struct net_device *prNetDev,
 				ch[j] = (int32_t)aucChannelList[j].ucChannelNum;
 		}
 		kalMemFree(aucChannelList, VIR_MEM_TYPE,
-			sizeof(struct RF_CHANNEL_INFO)*50);
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		prIwReqData->data.length = j;
 		if (copy_to_user(prIwReqData->data.pointer, ch,
@@ -1537,15 +1537,29 @@ priv_get_ints(IN struct net_device *prNetDev,
 		uint16_t i;
 		uint8_t NumOfChannel = 50;
 		uint8_t ucMaxChannelNum = 50;
-		struct RF_CHANNEL_INFO aucChannelList[50];
+		struct RF_CHANNEL_INFO *aucChannelList;
+
+		aucChannelList = (struct RF_CHANNEL_INFO *)
+			kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)
+				*ucMaxChannelNum, VIR_MEM_TYPE);
+		if (!aucChannelList) {
+			DBGLOG(REQ, ERROR,
+				"Can not alloc memory for rf channel info\n");
+			return -ENOMEM;
+		}
+		kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		kalGetChannelList(prGlueInfo, BAND_NULL, ucMaxChannelNum,
 				  &NumOfChannel, aucChannelList);
-		if (NumOfChannel > 50)
-			NumOfChannel = 50;
+		if (NumOfChannel > ucMaxChannelNum)
+			NumOfChannel = ucMaxChannelNum;
 
 		for (i = 0; i < NumOfChannel; i++)
 			ch[i] = (int32_t) aucChannelList[i].ucChannelNum;
+
+		kalMemFree(aucChannelList, VIR_MEM_TYPE,
+			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
 		prIwReqData->data.length = NumOfChannel;
 		if (copy_to_user(prIwReqData->data.pointer, ch,
@@ -12636,11 +12650,148 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 
 }
 
+
+typedef int(*PRIV_CMD_FUNCTION) (
+		IN struct net_device *prNetDev,
+		IN char *pcCommand,
+		IN int i4TotalLen);
+
+struct PRIV_CMD_HANDLER {
+	uint8_t *pcCmdStr;
+	PRIV_CMD_FUNCTION pfHandler;
+};
+
+struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
+	{CMD_RSSI, NULL /*wl_android_get_rssi*/},
+	{CMD_AP_START, priv_driver_set_ap_start},
+	{CMD_LINKSPEED, priv_driver_get_linkspeed},
+	{CMD_PNOSSIDCLR_SET, NULL /*Nothing*/},
+	{CMD_PNOSETUP_SET, NULL /*Nothing*/},
+	{CMD_PNOENABLE_SET, NULL /*Nothing*/},
+	{CMD_SETSUSPENDOPT, NULL /*wl_android_set_suspendopt*/},
+	{CMD_SETSUSPENDMODE, priv_driver_set_suspend_mode},
+	{CMD_SETBAND, priv_driver_set_band},
+	{CMD_GETBAND, NULL /*wl_android_get_band*/},
+	{CMD_SET_TXPOWER, priv_driver_set_txpower},
+	{CMD_COUNTRY, priv_driver_set_country},
+	{CMD_CSA, priv_driver_set_csa},
+	{CMD_GET_COUNTRY, priv_driver_get_country},
+	{CMD_GET_CHANNELS, priv_driver_get_channels},
+	{CMD_MIRACAST, priv_driver_set_miracast},
+	/* Mediatek private command */
+	{CMD_SET_SW_CTRL, priv_driver_set_sw_ctrl},
+#if (CFG_SUPPORT_RA_GEN == 1)
+	{CMD_SET_FIXED_FALLBACK, priv_driver_set_fixed_fallback},
+	{CMD_SET_RA_DBG, priv_driver_set_ra_debug_proc},
+#endif
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+	{CMD_GET_TX_POWER_INFO, priv_driver_get_txpower_info},
+#endif
+	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
+	{CMD_GET_SW_CTRL, priv_driver_get_sw_ctrl},
+	{CMD_SET_MCR, priv_driver_set_mcr},
+	{CMD_GET_MCR, priv_driver_get_mcr},
+	{CMD_SET_DRV_MCR, priv_driver_set_drv_mcr},
+	{CMD_GET_DRV_MCR, priv_driver_get_drv_mcr},
+	{CMD_SET_TEST_MODE, priv_driver_set_test_mode},
+	{CMD_SET_TEST_CMD, priv_driver_set_test_cmd},
+	{CMD_GET_TEST_RESULT, priv_driver_get_test_result},
+	{CMD_GET_STA_STAT2, priv_driver_get_sta_stat2},
+	{CMD_GET_STA_STAT, priv_driver_get_sta_stat},
+	{CMD_GET_STA_RX_STAT, priv_driver_show_rx_stat},
+	{CMD_SET_ACL_POLICY, priv_driver_set_acl_policy},
+	{CMD_ADD_ACL_ENTRY, priv_driver_add_acl_entry},
+	{CMD_DEL_ACL_ENTRY, priv_driver_del_acl_entry},
+	{CMD_SHOW_ACL_ENTRY, priv_driver_show_acl_entry},
+	{CMD_CLEAR_ACL_ENTRY, priv_driver_clear_acl_entry},
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	{CMD_SHOW_DFS_STATE, priv_driver_show_dfs_state},
+	{CMD_SHOW_DFS_RADAR_PARAM, priv_driver_show_dfs_radar_param},
+	{CMD_SHOW_DFS_HELP, priv_driver_show_dfs_help},
+	{CMD_SHOW_DFS_CAC_TIME, priv_driver_show_dfs_cac_time},
+#endif
+#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
+	{CMD_SET_CALBACKUP_TEST_DRV_FW, priv_driver_set_calbackup_test_drv_fw},
+#endif
+#if CFG_WOW_SUPPORT
+	{CMD_WOW_START, priv_driver_set_wow},
+	{CMD_SET_WOW_ENABLE, priv_driver_set_wow_enable},
+	{CMD_SET_WOW_PAR, priv_driver_set_wow_par},
+	{CMD_SET_WOW_UDP, priv_driver_set_wow_udpport},
+	{CMD_SET_WOW_TCP, priv_driver_set_wow_tcpport},
+	{CMD_GET_WOW_PORT, priv_driver_get_wow_port},
+#endif
+	{CMD_SET_ADV_PWS, priv_driver_set_adv_pws},
+	{CMD_SET_MDTIM, priv_driver_set_mdtim},
+#if CFG_SUPPORT_QA_TOOL
+	{CMD_GET_RX_STATISTICS, priv_driver_get_rx_statistics},
+#if CFG_SUPPORT_BUFFER_MODE
+	{CMD_SETBUFMODE, priv_driver_set_efuse_buffer_mode},
+#endif
+#endif
+#if CFG_SUPPORT_MSP
+#if 0
+	{CMD_GET_STAT, priv_driver_get_stat},
+#endif
+	{CMD_GET_STA_STATISTICS, priv_driver_get_sta_statistics},
+	{CMD_GET_BSS_STATISTICS, priv_driver_get_bss_statistics},
+	{CMD_GET_STA_IDX, priv_driver_get_sta_index},
+	{CMD_GET_STA_INFO, priv_driver_get_sta_info},
+	{CMD_GET_WTBL_INFO, priv_driver_get_wtbl_info},
+	{CMD_GET_MIB_INFO, priv_driver_get_mib_info},
+	{CMD_SET_FW_LOG, priv_driver_set_fw_log},
+#endif
+	{CMD_SET_CFG, priv_driver_set_cfg},
+	{CMD_GET_CFG, priv_driver_get_cfg},
+	{CMD_SET_CHIP, priv_driver_set_chip_config},
+	{CMD_GET_CHIP, priv_driver_get_chip_config},
+	{CMD_GET_VERSION, priv_driver_get_version},
+	{CMD_GET_CNM, priv_driver_get_cnm},
+#if CFG_SUPPORT_DBDC
+	{CMD_SET_DBDC, priv_driver_set_dbdc},
+#endif /*CFG_SUPPORT_DBDC*/
+#if CFG_SUPPORT_SNIFFER
+	{CMD_SETMONITOR, priv_driver_set_monitor},
+#endif
+	{CMD_GET_QUE_INFO, priv_driver_get_que_info},
+	{CMD_GET_MEM_INFO, priv_driver_get_mem_info},
+	{CMD_GET_HIF_INFO, priv_driver_get_hif_info},
+	{CMD_GET_TP_INFO, priv_driver_get_tp_info},
+#if CFG_AUTO_CHANNEL_SEL_SUPPORT
+	{CMD_GET_CH_RANK_LIST, priv_driver_get_ch_rank_list},
+	{CMD_GET_CH_DIRTINESS, priv_driver_get_ch_dirtiness},
+#endif
+	{CMD_EFUSE, priv_driver_efuse_ops},
+#if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)
+	{CMD_CCCR, priv_driver_cccr_ops},
+#endif /* _HIF_SDIO && (MTK_WCN_HIF_SDIO == 0) */
+#if CFG_SUPPORT_ADVANCE_CONTROL
+	{CMD_SET_NOISE, priv_driver_set_noise},
+	{CMD_GET_NOISE, priv_driver_get_noise},
+	{CMD_SET_POP, priv_driver_set_pop},
+	{CMD_SET_ED, priv_driver_set_ed},
+	{CMD_SET_PD, priv_driver_set_pd},
+	{CMD_SET_MAX_RFGAIN, priv_driver_set_maxrfgain},
+#endif
+	{CMD_SET_DRV_SER, priv_driver_set_drv_ser},
+	{CMD_SET_SW_AMSDU_NUM, priv_driver_set_amsdu_num},
+	{CMD_SET_SW_AMSDU_SIZE, priv_driver_set_amsdu_size},
+#if CFG_ENABLE_WIFI_DIRECT
+	{CMD_P2P_SET_PS, priv_driver_set_p2p_ps},
+	{CMD_P2P_SET_NOA, priv_driver_set_p2p_noa},
+#endif
+#ifdef UT_TEST_MODE
+	{CMD_RUN_UT, priv_driver_run_ut},
+#endif /* UT_TEST_MODE */
+};
+
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 IN int32_t i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
+	int32_t i4CmdFound = 0;
+	int i;
 
 	if (g_u4HaltFlag) {
 		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
@@ -12649,310 +12800,32 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
+
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
+	for (i = 0; i < sizeof(priv_cmd_handlers) / sizeof(struct
+			PRIV_CMD_HANDLER); i++) {
+		if (strnicmp(pcCommand,
+				priv_cmd_handlers[i].pcCmdStr,
+				strlen(priv_cmd_handlers[i].pcCmdStr)) == 0) {
+
+			if (priv_cmd_handlers[i].pfHandler != NULL) {
+				i4BytesWritten =
+					priv_cmd_handlers[i].pfHandler(
+					prNetDev,
+					pcCommand,
+					i4TotalLen);
+			}
+			i4CmdFound = 1;
+		}
+	}
+
+	if (i4CmdFound == 0) {
+		i4CmdFound = 1;
 		if (strnicmp(pcCommand, CMD_RSSI, strlen(CMD_RSSI)) == 0) {
 			/* i4BytesWritten =
 			 *  wl_android_get_rssi(net, command, i4TotalLen);
 			 */
-		} else if (strnicmp(pcCommand, CMD_AP_START,
-			   strlen(CMD_AP_START)) == 0) {
-			i4BytesWritten = priv_driver_set_ap_start(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_LINKSPEED,
-			   strlen(CMD_LINKSPEED)) == 0) {
-			i4BytesWritten = priv_driver_get_linkspeed(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_PNOSSIDCLR_SET,
-			   strlen(CMD_PNOSSIDCLR_SET)) == 0) {
-			/* ToDo:: Nothing */
-		} else if (strnicmp(pcCommand, CMD_PNOSETUP_SET,
-			   strlen(CMD_PNOSETUP_SET)) == 0) {
-			/* ToDo:: Nothing */
-		} else if (strnicmp(pcCommand, CMD_PNOENABLE_SET,
-			   strlen(CMD_PNOENABLE_SET)) == 0) {
-			/* ToDo:: Nothing */
-		} else if (strnicmp(pcCommand, CMD_SETSUSPENDOPT,
-			   strlen(CMD_SETSUSPENDOPT)) == 0) {
-			/* i4BytesWritten = wl_android_set_suspendopt(net,
-			 *				pcCommand, i4TotalLen);
-			 */
-		} else if (strnicmp(pcCommand, CMD_SETSUSPENDMODE,
-			   strlen(CMD_SETSUSPENDMODE)) == 0) {
-			i4BytesWritten = priv_driver_set_suspend_mode(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SETBAND,
-			   strlen(CMD_SETBAND)) == 0) {
-			i4BytesWritten = priv_driver_set_band(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GETBAND,
-			   strlen(CMD_GETBAND)) == 0) {
-			/* i4BytesWritten = wl_android_get_band(net, pcCommand,
-			 *				i4TotalLen);
-			 */
-		} else if (strnicmp(pcCommand, CMD_SET_TXPOWER,
-			   strlen(CMD_SET_TXPOWER)) == 0) {
-			i4BytesWritten = priv_driver_set_txpower(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_COUNTRY,
-			   strlen(CMD_COUNTRY)) == 0) {
-			i4BytesWritten = priv_driver_set_country(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_CSA,
-				strlen(CMD_CSA)) == 0) {
-			i4BytesWritten = priv_driver_set_csa(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_COUNTRY,
-			   strlen(CMD_GET_COUNTRY)) == 0) {
-			i4BytesWritten = priv_driver_get_country(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_CHANNELS,
-			   strlen(CMD_GET_CHANNELS)) == 0) {
-			i4BytesWritten = priv_driver_get_channels(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_MIRACAST,
-			   strlen(CMD_MIRACAST)) == 0) {
-			i4BytesWritten = priv_driver_set_miracast(prNetDev,
-							pcCommand, i4TotalLen);
-		}
-		/* Mediatek private command */
-		else if (strnicmp(pcCommand, CMD_SET_SW_CTRL,
-			 strlen(CMD_SET_SW_CTRL)) == 0) {
-			i4BytesWritten = priv_driver_set_sw_ctrl(prNetDev,
-							pcCommand, i4TotalLen);
-#if (CFG_SUPPORT_RA_GEN == 1)
-		} else if (strnicmp(pcCommand, CMD_SET_FIXED_FALLBACK,
-			   strlen(CMD_SET_FIXED_FALLBACK)) == 0) {
-			i4BytesWritten = priv_driver_set_fixed_fallback(
-							prNetDev, pcCommand,
-							i4TotalLen);
-		} else if (strnicmp(pcCommand,  CMD_SET_RA_DBG,
-			   strlen(CMD_SET_RA_DBG)) == 0) {
-			i4BytesWritten = priv_driver_set_ra_debug_proc(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-#if (CFG_SUPPORT_TXPOWER_INFO == 1)
-		} else if (strnicmp(pcCommand,  CMD_GET_TX_POWER_INFO,
-			   strlen(CMD_GET_TX_POWER_INFO)) == 0) {
-			i4BytesWritten = priv_driver_get_txpower_info(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		} else if (strnicmp(pcCommand, CMD_SET_FIXED_RATE,
-			   strlen(CMD_SET_FIXED_RATE)) == 0) {
-			i4BytesWritten = priv_driver_set_fixed_rate(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_SW_CTRL,
-			   strlen(CMD_GET_SW_CTRL)) == 0) {
-			i4BytesWritten = priv_driver_get_sw_ctrl(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_MCR,
-			   strlen(CMD_SET_MCR)) == 0) {
-			i4BytesWritten = priv_driver_set_mcr(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_MCR,
-			   strlen(CMD_GET_MCR)) == 0) {
-			i4BytesWritten = priv_driver_get_mcr(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_DRV_MCR,
-			   strlen(CMD_SET_DRV_MCR)) == 0) {
-			i4BytesWritten = priv_driver_set_drv_mcr(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_DRV_MCR,
-			   strlen(CMD_GET_DRV_MCR)) == 0) {
-			i4BytesWritten = priv_driver_get_drv_mcr(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_TEST_MODE,
-			   strlen(CMD_SET_TEST_MODE)) == 0) {
-			i4BytesWritten = priv_driver_set_test_mode(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_TEST_CMD,
-			   strlen(CMD_SET_TEST_CMD)) == 0) {
-			i4BytesWritten = priv_driver_set_test_cmd(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_TEST_RESULT,
-			   strlen(CMD_GET_TEST_RESULT)) == 0) {
-			i4BytesWritten = priv_driver_get_test_result(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_STA_STAT2,
-			   strlen(CMD_GET_STA_STAT2)) == 0) {
-			i4BytesWritten = priv_driver_get_sta_stat2(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_STA_STAT,
-			   strlen(CMD_GET_STA_STAT)) == 0) {
-			i4BytesWritten = priv_driver_get_sta_stat(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_STA_RX_STAT,
-			   strlen(CMD_GET_STA_RX_STAT)) == 0) {
-			i4BytesWritten = priv_driver_show_rx_stat(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_ACL_POLICY,
-			   strlen(CMD_SET_ACL_POLICY)) == 0) {
-			i4BytesWritten = priv_driver_set_acl_policy(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_ADD_ACL_ENTRY,
-			   strlen(CMD_ADD_ACL_ENTRY)) == 0) {
-			i4BytesWritten = priv_driver_add_acl_entry(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_DEL_ACL_ENTRY,
-			   strlen(CMD_DEL_ACL_ENTRY)) == 0) {
-			i4BytesWritten = priv_driver_del_acl_entry(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SHOW_ACL_ENTRY,
-			   strlen(CMD_SHOW_ACL_ENTRY)) == 0) {
-			i4BytesWritten = priv_driver_show_acl_entry(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_CLEAR_ACL_ENTRY,
-			   strlen(CMD_CLEAR_ACL_ENTRY)) == 0) {
-			i4BytesWritten = priv_driver_clear_acl_entry(prNetDev,
-							pcCommand, i4TotalLen);
-		}
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		else if (strnicmp(pcCommand, CMD_SHOW_DFS_STATE,
-			 strlen(CMD_SHOW_DFS_STATE)) == 0) {
-			i4BytesWritten = priv_driver_show_dfs_state(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_RADAR_PARAM,
-			   strlen(CMD_SHOW_DFS_RADAR_PARAM)) == 0) {
-			i4BytesWritten = priv_driver_show_dfs_radar_param(
-							prNetDev, pcCommand,
-							i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_HELP,
-			   strlen(CMD_SHOW_DFS_HELP)) == 0) {
-			i4BytesWritten = priv_driver_show_dfs_help(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SHOW_DFS_CAC_TIME,
-			   strlen(CMD_SHOW_DFS_CAC_TIME)) == 0) {
-			i4BytesWritten = priv_driver_show_dfs_cac_time(prNetDev,
-							pcCommand, i4TotalLen);
-		}
-#endif
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-		else if (strnicmp(pcCommand,
-			 CMD_SET_CALBACKUP_TEST_DRV_FW,
-			 strlen(CMD_SET_CALBACKUP_TEST_DRV_FW)) == 0)
-			i4BytesWritten = priv_driver_set_calbackup_test_drv_fw(
-							prNetDev, pcCommand,
-							i4TotalLen);
-#endif
-#if CFG_WOW_SUPPORT
-		else if (strnicmp(pcCommand, CMD_WOW_START,
-			 strlen(CMD_WOW_START)) == 0)
-			i4BytesWritten = priv_driver_set_wow(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_WOW_ENABLE,
-			 strlen(CMD_SET_WOW_ENABLE)) == 0)
-			i4BytesWritten = priv_driver_set_wow_enable(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_WOW_PAR,
-			 strlen(CMD_SET_WOW_PAR)) == 0)
-			i4BytesWritten = priv_driver_set_wow_par(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_WOW_UDP,
-			 strlen(CMD_SET_WOW_UDP)) == 0)
-			i4BytesWritten = priv_driver_set_wow_udpport(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_WOW_TCP,
-			 strlen(CMD_SET_WOW_TCP)) == 0)
-			i4BytesWritten = priv_driver_set_wow_tcpport(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_WOW_PORT,
-			 strlen(CMD_GET_WOW_PORT)) == 0)
-			i4BytesWritten = priv_driver_get_wow_port(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		else if (strnicmp(pcCommand, CMD_SET_ADV_PWS,
-			 strlen(CMD_SET_ADV_PWS)) == 0)
-			i4BytesWritten = priv_driver_set_adv_pws(
-							prNetDev, pcCommand,
-							i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_MDTIM,
-			 strlen(CMD_SET_MDTIM)) == 0)
-			i4BytesWritten = priv_driver_set_mdtim(
-							prNetDev, pcCommand,
-							i4TotalLen);
-#if CFG_SUPPORT_QA_TOOL
-		else if (strnicmp(pcCommand, CMD_GET_RX_STATISTICS,
-			 strlen(CMD_GET_RX_STATISTICS)) == 0)
-			i4BytesWritten = priv_driver_get_rx_statistics(
-							prNetDev, pcCommand,
-							i4TotalLen);
-#if CFG_SUPPORT_BUFFER_MODE
-		else if (strnicmp(pcCommand, CMD_SETBUFMODE,
-			 strlen(CMD_SETBUFMODE)) == 0)
-			i4BytesWritten = priv_driver_set_efuse_buffer_mode(
-							prNetDev, pcCommand,
-							i4TotalLen);
-#endif
-#endif
-#if CFG_SUPPORT_MSP
-#if 0
-		else if (strnicmp(pcCommand, CMD_GET_STAT,
-			 strlen(CMD_GET_STAT)) == 0)
-			i4BytesWritten = priv_driver_get_stat(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		else if (strnicmp(pcCommand, CMD_GET_STA_STATISTICS,
-			 strlen(CMD_GET_STA_STATISTICS)) == 0)
-			i4BytesWritten = priv_driver_get_sta_statistics(
-							prNetDev, pcCommand,
-							i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_BSS_STATISTICS,
-			 strlen(CMD_GET_BSS_STATISTICS)) == 0)
-			i4BytesWritten = priv_driver_get_bss_statistics(
-							prNetDev, pcCommand,
-							i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_STA_IDX,
-			 strlen(CMD_GET_STA_IDX)) == 0)
-			i4BytesWritten = priv_driver_get_sta_index(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_STA_INFO,
-			 strlen(CMD_GET_STA_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_sta_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_WTBL_INFO,
-			 strlen(CMD_GET_WTBL_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_wtbl_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_MIB_INFO,
-			 strlen(CMD_GET_MIB_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_mib_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_FW_LOG,
-			 strlen(CMD_SET_FW_LOG)) == 0)
-			i4BytesWritten = priv_driver_set_fw_log(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		else if (strnicmp(pcCommand, CMD_SET_CFG,
-			 strlen(CMD_SET_CFG)) == 0) {
-			i4BytesWritten = priv_driver_set_cfg(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_CFG,
-			   strlen(CMD_GET_CFG)) == 0) {
-			i4BytesWritten = priv_driver_get_cfg(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_SET_CHIP,
-			   strlen(CMD_SET_CHIP)) == 0) {
-			i4BytesWritten = priv_driver_set_chip_config(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_CHIP,
-			   strlen(CMD_GET_CHIP)) == 0) {
-			i4BytesWritten = priv_driver_get_chip_config(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_VERSION,
-			   strlen(CMD_GET_VERSION)) == 0) {
-			i4BytesWritten = priv_driver_get_version(prNetDev,
-							pcCommand, i4TotalLen);
-		} else if (strnicmp(pcCommand, CMD_GET_CNM,
-			   strlen(CMD_GET_CNM)) == 0) {
-			i4BytesWritten = priv_driver_get_cnm(prNetDev,
-							pcCommand, i4TotalLen);
-#if CFG_SUPPORT_DBDC
-
-		} else if (strnicmp(pcCommand, CMD_SET_DBDC,
-			   strlen(CMD_SET_DBDC)) == 0) {
-			i4BytesWritten = priv_driver_set_dbdc(prNetDev,
-							pcCommand, i4TotalLen);
-#endif /*CFG_SUPPORT_DBDC*/
 #if CFG_SUPPORT_BATCH_SCAN
 		} else if (strnicmp(pcCommand, CMD_BATCH_SET,
 			   strlen(CMD_BATCH_SET)) == 0) {
@@ -13022,100 +12895,6 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
 #endif
 		}
-#if CFG_SUPPORT_SNIFFER
-		else if (strnicmp(pcCommand, CMD_SETMONITOR,
-			 strlen(CMD_SETMONITOR)) == 0)
-			i4BytesWritten = priv_driver_set_monitor(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		else if (strnicmp(pcCommand, CMD_GET_QUE_INFO,
-			 strlen(CMD_GET_QUE_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_que_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_MEM_INFO,
-			 strlen(CMD_GET_MEM_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_mem_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_HIF_INFO,
-			 strlen(CMD_GET_HIF_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_hif_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_TP_INFO,
-			 strlen(CMD_GET_TP_INFO)) == 0)
-			i4BytesWritten = priv_driver_get_tp_info(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_CNM,
-			 strlen(CMD_GET_CNM)) == 0)
-			i4BytesWritten = priv_driver_get_cnm(prNetDev,
-							pcCommand, i4TotalLen);
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		else if (strnicmp(pcCommand, CMD_GET_CH_RANK_LIST,
-			 strlen(CMD_GET_CH_RANK_LIST)) == 0)
-			i4BytesWritten = priv_driver_get_ch_rank_list(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_CH_DIRTINESS,
-			 strlen(CMD_GET_CH_DIRTINESS)) == 0)
-			i4BytesWritten = priv_driver_get_ch_dirtiness(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-		else if (strnicmp(pcCommand, CMD_EFUSE,
-			 sizeof(CMD_EFUSE)-1) == 0)
-			i4BytesWritten = priv_driver_efuse_ops(prNetDev,
-							pcCommand, i4TotalLen);
-#if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)
-		else if (strnicmp(pcCommand, CMD_CCCR,
-			 strlen(CMD_CCCR)) == 0)
-			i4BytesWritten = priv_driver_cccr_ops(prNetDev,
-							pcCommand, i4TotalLen);
-#endif /* _HIF_SDIO && (MTK_WCN_HIF_SDIO == 0) */
-#if CFG_SUPPORT_ADVANCE_CONTROL
-		else if (strnicmp(pcCommand, CMD_SET_NOISE,
-			 strlen(CMD_SET_NOISE)) == 0)
-			i4BytesWritten = priv_driver_set_noise(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_GET_NOISE,
-			 strlen(CMD_GET_NOISE)) == 0)
-			i4BytesWritten = priv_driver_get_noise(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_POP,
-			 strlen(CMD_SET_POP)) == 0)
-			i4BytesWritten = priv_driver_set_pop(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_ED,
-			 strlen(CMD_SET_ED)) == 0)
-			i4BytesWritten = priv_driver_set_ed(prNetDev, pcCommand,
-							i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_PD,
-			 strlen(CMD_SET_PD)) == 0)
-			i4BytesWritten = priv_driver_set_pd(prNetDev, pcCommand,
-							i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_MAX_RFGAIN,
-			 strlen(CMD_SET_MAX_RFGAIN)) == 0)
-			i4BytesWritten = priv_driver_set_maxrfgain(prNetDev,
-							pcCommand, i4TotalLen);
-#endif
-#if CFG_ENABLE_WIFI_DIRECT
-		else if (strnicmp(pcCommand, CMD_P2P_SET_PS,
-			 strlen(CMD_P2P_SET_PS)) == 0)
-			i4BytesWritten = priv_driver_set_p2p_ps(prNetDev,
-							pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_P2P_SET_NOA,
-			 strlen(CMD_P2P_SET_NOA)) == 0)
-			i4BytesWritten = priv_driver_set_p2p_noa(prNetDev,
-							pcCommand, i4TotalLen);
-#endif /* CFG_ENABLE_WIFI_DIRECT */
-		else if (strnicmp(pcCommand, CMD_SET_DRV_SER,
-				strlen(CMD_SET_DRV_SER)) == 0)
-			i4BytesWritten = priv_driver_set_drv_ser(
-				prNetDev, pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_SW_AMSDU_NUM,
-				strlen(CMD_SET_SW_AMSDU_NUM)) == 0)
-			i4BytesWritten = priv_driver_set_amsdu_num(
-				prNetDev, pcCommand, i4TotalLen);
-		else if (strnicmp(pcCommand, CMD_SET_SW_AMSDU_SIZE,
-				  strlen(CMD_SET_SW_AMSDU_SIZE)) == 0)
-			i4BytesWritten = priv_driver_set_amsdu_size(
-				prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_DBG_SHOW_TR_INFO,
 				strlen(CMD_DBG_SHOW_TR_INFO)) == 0) {
 			kalIoctl(prGlueInfo,
@@ -13168,16 +12947,10 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
 				 FALSE, &i4BytesWritten);
-#ifdef UT_TEST_MODE
-		} else if (strnicmp(pcCommand, CMD_RUN_UT,
-				    strlen(CMD_RUN_UT)) == 0) {
-			i4BytesWritten = priv_driver_run_ut(prNetDev,
-							    pcCommand,
-							    i4TotalLen);
-#endif /* UT_TEST_MODE */
 		} else
 				i4BytesWritten = priv_cmd_not_support
 				(prNetDev, pcCommand, i4TotalLen);
+	}
 
 	if (i4BytesWritten >= 0) {
 		if ((i4BytesWritten == 0) && (i4TotalLen > 0)) {
