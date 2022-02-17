@@ -23,9 +23,10 @@
 #endif
 
 #define DEFAULT_CPU_FREQ (-1)
-#define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
+#define CPU_X_CORE (0x80)
+#define CPU_HP_CORE (CPU_BIG_CORE - CPU_X_CORE)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
@@ -200,6 +201,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
+	uint32_t u4CpuFreq = prAdapter->rWifiVar.au4CpuBoostMinFreq * 1000;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4BoostLittleCpuTh = prAdapter->rWifiVar.u4BoostLittleCpuTh;
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
@@ -216,10 +218,11 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	if (u4TarPerfLevel >= u4BoostLittleCpuTh &&
 		u4TarPerfLevel < u4BoostCpuTh &&
 		fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
-		pr_info("kalBoostCpu start little (%u>=%u)\n",
-			u4TarPerfLevel, u4BoostLittleCpuTh);
+		pr_info("Boost little (%u>=%u) freq=%u\n",
+			u4TarPerfLevel, u4BoostLittleCpuTh, u4CpuFreq/1000);
 		fgRequested = ENUM_CPU_BOOST_STATUS_START_LITTLE;
 
+		kalSetCpuFreq(u4CpuFreq, CPU_LITTLE_CORE);
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
@@ -228,7 +231,6 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
 		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
-		kalSetCpuFreq(MAX_CPU_FREQ, CPU_LITTLE_CORE);
 		kalSetDramBoost(prAdapter, TRUE);
 	} else if (u4TarPerfLevel >= u4BoostCpuTh &&
 		(fgRequested == ENUM_CPU_BOOST_STATUS_STOP ||
@@ -237,19 +239,20 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	if (u4TarPerfLevel >= u4BoostCpuTh &&
 		fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-		pr_info("kalBoostCpu start all (%u>=%u)\n",
-			u4TarPerfLevel, u4BoostCpuTh);
+		pr_info("Boost and migrate big (%u>=%u) freq=%u\n",
+			u4TarPerfLevel, u4BoostCpuTh, u4CpuFreq/1000);
 		fgRequested = ENUM_CPU_BOOST_STATUS_START_ALL;
 
+		kalSetCpuFreq(u4CpuFreq, CPU_BIG_CORE);
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_BIG_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_BIG_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_BIG_CORE);
+		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_LITTLE_CORE);
 
 		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
 		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
 		kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
-		kalSetCpuFreq(MAX_CPU_FREQ, CPU_ALL_CORE);
 		kalSetDramBoost(prAdapter, TRUE);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	} else if (u4TarPerfLevel < u4BoostCpuTh &&
