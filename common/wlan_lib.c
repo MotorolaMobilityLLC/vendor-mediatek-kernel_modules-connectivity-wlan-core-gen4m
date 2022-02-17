@@ -7852,6 +7852,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
 
+	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapChannelSwitchPolicy",
+		P2P_CHANNEL_SWITCH_POLICY_SCC);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 
