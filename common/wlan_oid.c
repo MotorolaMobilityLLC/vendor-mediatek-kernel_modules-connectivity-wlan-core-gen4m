@@ -10146,7 +10146,6 @@ void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *
 	void *pvSetBuffer = NULL;
 	int32_t rStatus;
 
-	DBGLOG(RFTEST, INFO, "wlanoidRfTestICapRawDataProc\n");
 	ASSERT(prAdapter);
 
 	prRfATInfo = &(rCmdTestCtrl.u.rRfATInfo);
