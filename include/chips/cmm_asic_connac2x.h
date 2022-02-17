@@ -1031,6 +1031,9 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 	IN uint8_t ucRcpiMode,
 	IN struct SW_RFB *prSwRfb);
+void asicConnac2xWfdmaReInit(
+	struct ADAPTER *prAdapter);
+
 /*******************************************************************************
 *                  D E B U G F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
