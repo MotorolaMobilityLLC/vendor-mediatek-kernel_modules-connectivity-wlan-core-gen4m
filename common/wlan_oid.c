@@ -15303,7 +15303,7 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 	if (u4SetBufferLen == 0 || !pucSSID) {
-		rlmTxNeighborReportRequest(prAdapter,
+		rrmTxNeighborReportRequest(prAdapter,
 					   prAisBssInfo->prStaRecOfAP, NULL);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -15320,7 +15320,7 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 	kalMemCopy(&prSSIDIE->rSubIE.aucOptInfo[0], pucSSID,
 		   (uint8_t)u4SetBufferLen);
 	DBGLOG(OID, INFO, "Send Neighbor Request, SSID=%s\n", pucSSID);
-	rlmTxNeighborReportRequest(prAdapter, prAisBssInfo->prStaRecOfAP,
+	rrmTxNeighborReportRequest(prAdapter, prAisBssInfo->prStaRecOfAP,
 				   prSSIDIE);
 	kalMemFree(prSSIDIE, PHY_MEM_TYPE, ucSSIDIELen);
 	return WLAN_STATUS_SUCCESS;
@@ -15335,7 +15335,7 @@ uint32_t wlanoidSync11kCapabilities(struct ADAPTER *prAdapter,
 	kalMemZero(&rCmdRrmCapa, sizeof(rCmdRrmCapa));
 	rCmdRrmCapa.ucCmdVer = 0x1;
 	rCmdRrmCapa.ucRrmEnable = 1;
-	rlmFillRrmCapa(&rCmdRrmCapa.ucCapabilities[0]);
+	rrmFillRrmCapa(&rCmdRrmCapa.ucCapabilities[0]);
 	rCmdRrmCapa.ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	return wlanSendSetQueryCmd(
 		prAdapter, CMD_ID_SET_RRM_CAPABILITY, TRUE, FALSE, TRUE,
@@ -15593,7 +15593,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	}
 
 	if (!kalStrniCmp(pucSavedPtr, "RM-IT ", 6)) {
-		process_func = rlmProcessRadioMeasurementRequest;
+		process_func = rrmProcessRadioMeasurementRequest;
 		pucSavedPtr += 6;
 	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT ", 7)) {
 		process_func = wnmRecvBTMRequest;
