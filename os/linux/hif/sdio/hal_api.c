@@ -2533,8 +2533,12 @@ u_int8_t halIsPendingTxDone(IN struct ADAPTER *prAdapter)
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
-	halPrintMailbox(prAdapter);
-	halPollDbgCr(prAdapter, LP_DBGCR_POLL_ROUND);
+	if (prAdapter->u4HifDbgFlag & DEG_HIF_ALL ||
+		prAdapter->u4HifDbgFlag & DEG_HIF_DEFAULT_DUMP) {
+		halPrintMailbox(prAdapter);
+		halPollDbgCr(prAdapter, LP_DBGCR_POLL_ROUND);
+	}
+	prAdapter->u4HifDbgFlag = 0;
 }
 
 u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)
