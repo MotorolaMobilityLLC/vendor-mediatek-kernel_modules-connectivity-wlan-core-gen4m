@@ -1075,7 +1075,6 @@ u_int8_t wmmParseQosAction(IN struct ADAPTER *prAdapter,
 				} else {
 					DBGLOG(WMM, INFO,
 					       "can't parse Tspec IE?!\n");
-					ASSERT(FALSE);
 				}
 				break;
 			default:
