@@ -5083,19 +5083,16 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		       .ucThreadScheduling);
 	}
 
-	if (!bAtResetFlow) {
+	if (!bAtResetFlow)
 		g_u4HaltFlag = 0;
 
-#if CFG_SUPPORT_BUFFER_MODE
-#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-		if (prChipInfo->downloadBufferBin) {
-			if (prChipInfo->downloadBufferBin(prAdapter) !=
-					WLAN_STATUS_SUCCESS)
-				return -1;
-		}
+#if CFG_SUPPORT_BUFFER_MODE && (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+
+	if (prChipInfo->downloadBufferBin &&
+	    (prChipInfo->downloadBufferBin(prAdapter) != WLAN_STATUS_SUCCESS))
+		return -1;
+
 #endif
-#endif
-	}
 
 #if CFG_SUPPORT_NAN
 	if (!bAtResetFlow)
