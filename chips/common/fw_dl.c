@@ -2424,10 +2424,10 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
-	kalMemZero(aucBuf, 32);
-	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, 4);
-	kalMemZero(aucDate, 32);
-	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, 16);
+	kalMemZero(aucBuf, sizeof(aucBuf));
+	kalStrnCpy(aucBuf, prVerInfo->aucFwBranchInfo, sizeof(aucBuf) - 1);
+	kalMemZero(aucDate, sizeof(aucDate));
+	kalStrnCpy(aucDate, prVerInfo->aucFwDateCode, sizeof(aucDate) - 1);
 
 	u4Offset += snprintf(pcBuf + u4Offset,
 			i4TotalLen - u4Offset,
@@ -2449,11 +2449,12 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 		wlanGetPatchInfo(prAdapter);
 	}
 
-	kalMemZero(aucBuf, 32);
-	kalMemZero(aucDate, 32);
-	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform, 4);
+	kalMemZero(aucBuf, sizeof(aucBuf));
+	kalMemZero(aucDate, sizeof(aucDate));
+	kalStrnCpy(aucBuf, prVerInfo->rPatchHeader.aucPlatform,
+			sizeof(aucBuf) - 1);
 	kalStrnCpy(aucDate, prVerInfo->rPatchHeader.aucBuildDate,
-		   16);
+			sizeof(aucDate) - 1);
 	u4Offset += snprintf(pcBuf + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "Patch platform %s version 0x%04X %s\n",
