@@ -1388,6 +1388,38 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand, uint8_t ucChannel)
+{
+	uint8_t i, j;
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+
+	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
+	ASSERT(prDomainInfo);
+
+	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+		prSubband = &prDomainInfo->rSubBand[i];
+
+		if (prSubband->ucBand == BAND_5G
+			&& !prAdapter->fgEnable5GBand)
+			continue;
+
+		if (prSubband->ucBand == eBand
+			&& prSubband->fgDfs == TRUE) {
+			for (j = 0; j < prSubband->ucNumChannels; j++) {
+				if ((prSubband->ucFirstChannelNum + j *
+					prSubband->ucChannelSpan)
+					== ucChannel) {
+					return TRUE;
+				}
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
