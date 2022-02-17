@@ -1012,7 +1012,7 @@ int soc3_0_CheckWfBusHang(void)
 *  (enable wf monflg debug)
 * Write Address : 0x1806_0094[4:0],   Data : 0x7  default 0x0
 *  (switch monflg mux)
-* Read Address : 0x1806_021c[0] shoulde be 1'b0
+* Read Address : 0x1806_021c[0] shoulde be 1'b1 = Hang
 */
 
 	wf_ioremap_read(0x1806009c, &u4Value);
@@ -1033,7 +1033,7 @@ int soc3_0_CheckWfBusHang(void)
 
 	wf_ioremap_read(0x1806021c, &u4Value);
 
-	if ((u4Value&BIT(0)) == 0) {
+	if ((u4Value&BIT(0)) != 0) {
 		DBGLOG(HAL, ERROR,
 			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
 			u4Value);
@@ -1099,7 +1099,6 @@ int soc3_0_CheckBusHang(void)
 	if (ret == CONNINFRA_ERR_RST_ONGOING) {
 		DBGLOG(HAL, ERROR,
 			"conninfra_is_bus_hang, CONNINFRA_ERR_RST_ONGOING\n");
-		return ret;
 	}
 
 	ret = soc3_0_CheckWfBusHang();
