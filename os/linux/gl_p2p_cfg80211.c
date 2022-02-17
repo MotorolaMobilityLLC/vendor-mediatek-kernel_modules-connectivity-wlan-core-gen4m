@@ -1359,6 +1359,9 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_start_radar_detection.\n");
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
+			break;
+
 		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef = (struct cfg80211_chan_def *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
@@ -1368,9 +1371,6 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 				cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
 		}
-
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
-			break;
 
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->center_freq1 = chandef->center_freq1;
@@ -1469,6 +1469,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_channel_switch.\n");
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
+			break;
+
 		/*DFS todo 20161220_DFS*/
 		netif_carrier_on(dev);
 		netif_tx_start_all_queues(dev);
@@ -1488,10 +1491,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width = params->chandef.width;
 		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan, params->chandef.chan,
 							sizeof(struct ieee80211_channel));
-
-
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
-			break;
 
 		if (params) {
 			mtk_p2p_cfg80211func_channel_format_switch(&params->chandef,
