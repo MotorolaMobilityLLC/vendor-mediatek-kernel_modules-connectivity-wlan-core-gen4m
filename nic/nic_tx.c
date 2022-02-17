@@ -548,7 +548,7 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 			(prTc->au4FreePageCount[ucTC] / u4MaxPageCntPerFrame);
 		prQM->au4QmTcUsedPageCounter[ucTC] += u4PageCount;
 
-		DBGLOG(TX, TEMP,
+		DBGLOG(TX, LOUD,
 		       "Acquire: TC%d AcquirePageCnt[%u] FreeBufferCnt[%u] FreePageCnt[%u]\n",
 		       ucTC, u4PageCount, prTc->au4FreeBufferCount[ucTC],
 		       prTc->au4FreePageCount[ucTC]);

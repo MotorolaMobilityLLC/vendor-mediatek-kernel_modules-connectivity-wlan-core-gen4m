@@ -960,7 +960,6 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
 			(void *) GLUE_GET_PKT_DESCRIPTOR(
 				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
-		RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT, 1);
 		if (fgIsRetained)
 			RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT, 1);
 	} else {
@@ -1677,7 +1676,7 @@ static void nicRxProcessDropPacket(IN struct ADAPTER *prAdapter,
 		return;
 
 	u2FrameCtrl = prWlanHeader->u2FrameCtrl;
-	DBGLOG(NIC, TRACE,
+	DBGLOG(RX, TEMP,
 		"TA: " MACSTR " RA: " MACSTR " bssid: " MACSTR " fc: 0x%x\n",
 		MAC2STR(prWlanHeader->aucAddr2),
 		MAC2STR(prWlanHeader->aucAddr1),
@@ -3456,6 +3455,7 @@ static void nicRxProcessPacketType(
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
+
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
 		if (HAL_IS_RX_DIRECT(prAdapter)
@@ -3644,8 +3644,6 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 			}
 
 			if (prRxCtrl->ucNumIndPacket > 0) {
-				RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT,
-					   prRxCtrl->ucNumIndPacket);
 				RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT,
 					   prRxCtrl->ucNumRetainedPacket);
 #if !CFG_SUPPORT_MULTITHREAD
