@@ -1,67 +1,13 @@
-/******************************************************************************
- *
- * This file is provided under a dual license.  When you use or
- * distribute this software, you may choose to be licensed under
- * version 2 of the GNU General Public License ("GPLv2 License")
- * or BSD License.
- *
- * GPLv2 License
- *
- * Copyright(C) 2016 MediaTek Inc.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of version 2 of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See http://www.gnu.org/licenses/gpl-2.0.html for more details.
- *
- * BSD LICENSE
- *
- * Copyright(C) 2016 MediaTek Inc. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *  * Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in
- *    the documentation and/or other materials provided with the
- *    distribution.
- *  * Neither the name of the copyright holder nor the names of its
- *    contributors may be used to endorse or promote products derived
- *    from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *****************************************************************************/
 /*
- * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/scan.c#4
- */
-
-/*! \file   "scan.c"
- *    \brief  This file defines the scan profile and the processing function of
- *    scan result for SCAN Module.
- *
- *    The SCAN Profile selection is part of SCAN MODULE and responsible for
- *    defining SCAN Parameters - e.g. MIN_CHANNEL_TIME, number of scan channels.
- *    In this file we also define the process of SCAN Result including adding,
- *    searching and removing SCAN record from the list.
- */
+* This program is free software; you can redistribute it and/or modify
+* it under the terms of the GNU General Public License version 2 as
+* published by the Free Software Foundation.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+* See http://www.gnu.org/licenses/gpl-2.0.html for more details.
+*/
 
 
 /*******************************************************************************
@@ -79,11 +25,10 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
-#define REPLICATED_BEACON_FRESH_PERIOD          (10000)
 #define REPLICATED_BEACON_STRENGTH_THRESHOLD    (32)
-
 #define ROAMING_NO_SWING_RCPI_STEP              (10)
+#define REPLICATED_BEACON_FRESH_PERIOD          (10000)
+#define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -198,6 +143,8 @@ void scnInit(IN struct ADAPTER *prAdapter)
 
 	/* reset NLO state */
 	prScanInfo->fgNloScanning = FALSE;
+	/*Support AP Selection */
+	prScanInfo->u4ScanUpdateIdx = 0;
 }	/* end of scnInit() */
 
 void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter)
@@ -830,6 +777,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 	struct LINK *prBSSDescList;
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc;
+	/* Support AP Selection*/
+	struct LINK *prEssList;
 
 	ASSERT(prAdapter);
 
@@ -837,6 +786,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
+	/* Support AP Selection*/
+	prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
 
 #if 0 /* TODO: Remove this */
 	DBGLOG(SCN, TRACE, ("Before Remove - Number Of SCAN Result = %ld\n",
@@ -877,12 +828,25 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					rCurrentTime, prBssDesc->rUpdateTime));
 #undef __STR_FMT__
 #endif
+				/* Support AP Selection */
+				if (!prBssDesc->prBlack)
+					aisQueryBlackList(prAdapter, prBssDesc);
+				if (prBssDesc->prBlack)
+					prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+				/* end Support AP Selection */
 
 				/* Remove this BSS Desc from
 				 * the BSS Desc list
 				 */
 				LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
 					prBssDesc);
+
+				/* Support AP Selection */
+				/* Remove this BSS Desc from the Ess Desc List */
+				if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+					LINK_REMOVE_KNOWN_ENTRY(prEssList,
+						&prBssDesc->rLinkEntryEss);
+				/* end Support AP Selection */
 
 				/* Return this BSS Desc to the
 				 * free BSS Desc list.
@@ -932,9 +896,22 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				prBssDescOldest->rUpdateTime);
 #undef __STR_FMT__
 #endif
+			/* Support AP Selection */
+			if (!prBssDescOldest->prBlack)
+				aisQueryBlackList(prAdapter, prBssDescOldest);
+			if (prBssDescOldest->prBlack)
+				prBssDescOldest->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+			/* end Support AP Selection */
 
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDescOldest);
+
+			/* Support AP Selection */
+			/* Remove this BSS Desc from the Ess Desc List */
+			if (LINK_ENTRY_IS_VALID(&prBssDescOldest->rLinkEntryEss))
+				LINK_REMOVE_KNOWN_ENTRY(prEssList,
+					&prBssDescOldest->rLinkEntryEss);
+			/* end Support AP Selection */
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1004,9 +981,23 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 #undef __STR_FMT__
 #endif
 
+			/* Support AP Selection */
+			if (!prBssDescWeakest->prBlack)
+				aisQueryBlackList(prAdapter, prBssDescWeakest);
+			if (prBssDescWeakest->prBlack)
+				prBssDescWeakest->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+			/* end Support AP Selection */
+
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList,
 				prBssDescWeakest);
+
+			/* Support AP Selection */
+			/* Remove this BSS Desc from the Ess Desc List */
+			if (LINK_ENTRY_IS_VALID(&prBssDescWeakest->rLinkEntryEss))
+				LINK_REMOVE_KNOWN_ENTRY(prEssList,
+					&prBssDescWeakest->rLinkEntryEss);
+			/* end Support AP Selection */
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1015,6 +1006,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 	}
 	if (u4RemovePolicy & SCN_RM_POLICY_ENTIRE) {
 		struct BSS_DESC *prBSSDescNext;
+		/* Support AP Selection */
+		uint32_t u4Current = (uint32_t)kalGetBootTime();
 
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
@@ -1027,8 +1020,21 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				 */
 				continue;
 			}
+			/* Support AP Selection */
+			if (!prBssDesc->prBlack)
+				aisQueryBlackList(prAdapter, prBssDesc);
+			if (prBssDesc->prBlack)
+				prBssDesc->prBlack->u4DisapperTime = u4Current;
+			/* end Support AP Selection */
+
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+
+			/* Support AP Selection */
+			/* Remove this BSS Desc from the Ess Desc List */
+			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
+			/* end Support AP Selection */
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1056,6 +1062,8 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	struct LINK *prFreeBSSDescList;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct BSS_DESC *prBSSDescNext;
+	/* Support AP Selection */
+	struct LINK *prEssList = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(aucBSSID);
@@ -1063,15 +1071,26 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
+	/* Support AP Selection */
+	prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
 
 	/* Check if such BSS Descriptor exists in a valid list */
 	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
+			/* Support AP Selection */
+			if (!prBssDesc->prBlack)
+				aisQueryBlackList(prAdapter, prBssDesc);
+			if (prBssDesc->prBlack)
+				prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
 
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+
+			/* Remove this BSS Desc from the Ess Desc List */
+			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1155,8 +1174,21 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
 		}
 
 		if (fgToRemove == TRUE) {
+			/* Support AP Selection */
+			struct LINK *prEssList = &prAdapter->rWifiVar.rAisSpecificBssInfo.
+				rCurEssLink;
+
+			if (!prBssDesc->prBlack)
+				aisQueryBlackList(prAdapter, prBssDesc);
+			if (prBssDesc->prBlack)
+				prBssDesc->prBlack->u4DisapperTime = (uint32_t)kalGetBootTime();
+
 			/* Remove this BSS Desc from the BSS Desc list */
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
+
+			/* Remove this BSS Desc from the Ess Desc List */
+			if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+				LINK_REMOVE_KNOWN_ENTRY(prEssList, &prBssDesc->rLinkEntryEss);
 
 			/* Return this BSS Desc to the free BSS Desc list. */
 			LINK_INSERT_TAIL(prFreeBSSDescList,
@@ -1589,6 +1621,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prBssDesc->ucCenterFreqS1 = 0;
 	prBssDesc->ucCenterFreqS2 = 0;
 
+	/* Support AP Selection */
+	prBssDesc->fgExsitBssLoadIE = FALSE;
+	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
 	/* 4 <3.1> Full IE parsing on SW_RFB_T */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
 	/* pucDumpIE = pucIE; */
@@ -1699,9 +1734,30 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_HT_CAP:
-			prBssDesc->fgIsHTPresent = TRUE;
-			break;
+		{
+			/* Support AP Selection */
+			struct IE_HT_CAP *prHtCap = (struct IE_HT_CAP *)pucIE;
+			uint8_t ucSpatial = 0;
+			uint8_t i = 0;
+			/* end Support AP Selection */
 
+			prBssDesc->fgIsHTPresent = TRUE;
+
+			/* Support AP Selection */
+			if (prBssDesc->fgMultiAnttenaAndSTBC)
+				break;
+
+			for (; i < 4; i++) {
+				if (prHtCap->rSupMcsSet.aucRxMcsBitmask[i] > 0)
+					ucSpatial++;
+			}
+
+			prBssDesc->fgMultiAnttenaAndSTBC =
+				((ucSpatial > 1) && (prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
+			/* end Support AP Selection */
+
+			break;
+		}
 		case ELEM_ID_HT_OP:
 			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_OP) - 2))
 				break;
@@ -1714,6 +1770,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			}
 			break;
 		case ELEM_ID_VHT_CAP:
+		{
+			/* Support AP Selection*/
+			struct IE_VHT_CAP *prVhtCap = (struct IE_VHT_CAP *)pucIE;
+			uint16_t u2TxMcsSet = prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
+			uint8_t ucSpatial = 0;
+			uint8_t i = 0;
+			/* end Support AP Selection */
 			prBssDesc->fgIsVHTPresent = TRUE;
 #if CFG_SUPPORT_BFEE
 #define __LOCAL_VAR__ \
@@ -1725,8 +1788,19 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 				>> __LOCAL_VAR__;
 #undef __LOCAL_VAR__
 #endif
+			/* Support AP Selection*/
+			if (prBssDesc->fgMultiAnttenaAndSTBC)
+				break;
+			for (; i < 8; i++) {
+				if ((u2TxMcsSet & BITS(2*i, 2*i+1)) != 3)
+					ucSpatial++;
+			}
+			prBssDesc->fgMultiAnttenaAndSTBC =
+				((ucSpatial > 1) && (prVhtCap->u4VhtCapInfo &
+					VHT_CAP_INFO_TX_STBC));
+			/* end Support AP Selection */
 			break;
-
+		}
 		case ELEM_ID_VHT_OP:
 			if (IE_LEN(pucIE) != (sizeof(struct IE_VHT_OP) - 2))
 				break;
@@ -1756,6 +1830,18 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 				prBssDesc->fgIEWAPI = TRUE;
 			break;
 #endif
+		/* Support AP Selection */
+		case ELEM_ID_BSS_LOAD:
+		{
+			struct IE_BSS_LOAD *prBssLoad = (struct IE_BSS_LOAD *)pucIE;
+
+			prBssDesc->u2StaCnt = prBssLoad->u2StaCnt;
+			prBssDesc->ucChnlUtilization = prBssLoad->ucChnlUtilizaion;
+			prBssDesc->u2AvaliableAC = prBssLoad->u2AvailabeAC;
+			prBssDesc->fgExsitBssLoadIE = TRUE;
+			break;
+		}
+		/* end Support AP Selection */
 
 		case ELEM_ID_VENDOR:	/* ELEM_ID_P2P, ELEM_ID_WMM */
 			{
@@ -1960,6 +2046,17 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		}
 	}
 
+	/* Support AP Selection */
+	/* update update-index and reset seen-probe-response */
+	if (prBssDesc->u4UpdateIdx != prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx) {
+		prBssDesc->fgSeenProbeResp = FALSE;
+		prBssDesc->u4UpdateIdx = prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
+	}
+
+	/* check if it is a probe response frame */
+	if ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_PROBE_RSP)
+		prBssDesc->fgSeenProbeResp = TRUE;
+	/* end Support AP Selection */
 	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
 	GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
 
@@ -3511,3 +3608,4 @@ void scanReportScanResultToAgps(struct ADAPTER *prAdapter)
 	kalMemFree(prAgpsApList, VIR_MEM_TYPE, sizeof(struct AGPS_AP_LIST));
 }
 #endif /* CFG_SUPPORT_AGPS_ASSIST */
+

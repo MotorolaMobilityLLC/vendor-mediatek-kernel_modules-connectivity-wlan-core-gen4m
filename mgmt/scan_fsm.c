@@ -191,6 +191,8 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 			break;
 
 		case SCAN_STATE_SCANNING:
+			/* Support AP Selection */
+			prScanInfo->u4ScanUpdateIdx++;
 			if (prScanParam->fgIsScanV2 == FALSE)
 				scnSendScanReq(prAdapter);
 			else

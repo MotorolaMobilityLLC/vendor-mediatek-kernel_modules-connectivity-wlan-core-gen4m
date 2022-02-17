@@ -104,6 +104,8 @@
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
 
 #define AIS_WAIT_OKC_PMKID_SEC              1000 /* unit: ms */
+/* Support AP Selection*/
+#define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -178,6 +180,22 @@ struct AIS_MGMT_TX_REQ_INFO {
 	struct MSDU_INFO *prMgmtTxMsdu;
 	uint64_t u8Cookie;
 };
+
+/* Support AP Selection */
+struct AIS_BLACKLIST_ITEM {
+	struct LINK_ENTRY rLinkEntry;
+
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint16_t u2DeauthReason;
+	uint16_t u2AuthStatus;
+	uint8_t ucCount;
+	uint8_t ucSSIDLen;
+	uint8_t aucSSID[32];
+	OS_SYSTIME rAddTime;
+	uint32_t u4DisapperTime;
+	u_int8_t fgIsInFWKBlacklist;
+};
+/* end Support AP Selection */
 
 struct AIS_FSM_INFO {
 	enum ENUM_AIS_STATE ePreviousState;
@@ -254,6 +272,9 @@ struct AIS_FSM_INFO {
 	/* for roaming target */
 	struct PARAM_SSID rRoamingSSID;
 
+	/* Support AP Selection */
+	uint8_t ucJoinFailCntAfterScan;
+	/* end Support AP Selection */
 };
 
 /*******************************************************************************
@@ -489,5 +510,21 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 void aisTest(void);
 #endif /* CFG_TEST_MGMT_FSM */
 
+/* Support AP Selection */
+void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter);
+struct AIS_BLACKLIST_ITEM *aisAddBlacklist(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
+void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter);
+struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+/* end Support AP Selection */
+
+/*******************************************************************************
+*                              F U N C T I O N S
+********************************************************************************
+*/
 
 #endif /* _AIS_FSM_H */
