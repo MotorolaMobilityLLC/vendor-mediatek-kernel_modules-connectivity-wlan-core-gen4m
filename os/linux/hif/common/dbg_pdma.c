@@ -176,28 +176,29 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 		return;
 	}
 
-	if (!halIsFwReadyDump(prAdapter)) {
+	if (halIsFwReadyDump(prAdapter)) {
+		if (prDbgOps && prDbgOps->setFwDebug) {
+			/* set drv print log sync flag */
+			prDbgOps->setFwDebug(
+				prAdapter, false, 0, DBG_PLE_INT_DRV_SYNC_MASK);
+		}
+
+		if (prDbgOps && prDbgOps->dumpMacInfo)
+			prDbgOps->dumpMacInfo(prAdapter);
+
+		if (u4DebugLevel & DBG_CLASS_TRACE)
+			haldumpPhyInfo(prAdapter);
+
+		if (prDbgOps && prDbgOps->setFwDebug) {
+			/* clr drv print log sync flag */
+			prDbgOps->setFwDebug(
+				prAdapter, false, DBG_PLE_INT_DRV_SYNC_MASK, 0);
+		}
+	} else {
 		DBGLOG(HAL, ERROR, "Fw not ready to dump log\n");
-		return;
 	}
 
 	if (prDbgOps && prDbgOps->setFwDebug) {
-		/* set drv print log sync flag */
-		prDbgOps->setFwDebug(
-			prAdapter, false, 0, DBG_PLE_INT_DRV_SYNC_MASK);
-	}
-
-	if (prDbgOps && prDbgOps->dumpMacInfo)
-		prDbgOps->dumpMacInfo(prAdapter);
-
-	if (u4DebugLevel & DBG_CLASS_TRACE)
-		haldumpPhyInfo(prAdapter);
-
-	if (prDbgOps && prDbgOps->setFwDebug) {
-		/* clr drv print log sync flag */
-		prDbgOps->setFwDebug(
-			prAdapter, false, DBG_PLE_INT_DRV_SYNC_MASK, 0);
-
 		/* trigger tx debug sop */
 		prDbgOps->setFwDebug(
 			prAdapter,
