@@ -264,7 +264,7 @@ uint32_t asicGetChipID(struct ADAPTER *prAdapter)
 		   ((prChipInfo->u4ChipIpVersion & 0x000F0000) >>  0) |
 		   ((prChipInfo->u4ChipIpVersion & 0x00000F00) <<  4) |
 		   ((prChipInfo->u4ChipIpVersion & 0x0000000F) <<  8) |
-		   CONNAC_CHIP_ADIE_INFO;
+		   (prChipInfo->u2ADieChipVersion & 0xFF);
 
 	log_dbg(HAL, INFO, "ChipID = [0x%08x]\n", u4ChipID);
 	return u4ChipID;
