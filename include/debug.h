@@ -409,6 +409,7 @@ struct PSE_TOP_CR {
 	struct CODA_CR_INFO rFsmPeekCr09;
 	struct CODA_CR_INFO rHif0PgInfoHif0RsvCnt;
 	struct CODA_CR_INFO rHif0PgInfoHif0SrcCnt;
+	struct CODA_CR_INFO rIntN9Sts;
 	struct CODA_CR_INFO rIntN9Err1Sts;
 	struct CODA_CR_INFO rIntN9ErrSts;
 	struct CODA_CR_INFO rPbufCtrl;
