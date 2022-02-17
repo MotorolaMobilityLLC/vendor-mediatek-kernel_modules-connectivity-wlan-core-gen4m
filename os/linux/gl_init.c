@@ -99,6 +99,11 @@
 #include "fw_log_wifi.h"
 #endif
 
+#if CFG_POWER_OFF_CTRL_SUPPORT
+#include <linux/reboot.h>
+#endif
+
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -6609,6 +6614,11 @@ static int initWlan(void)
 #endif /* CFG_SUPPORT_ICS */
 
 	g_u4WlanInitFlag = 1;
+
+#if CFG_POWER_OFF_CTRL_SUPPORT
+	wlanRegisterRebootNotifier();
+#endif
+
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 
 	return ret;
@@ -6711,9 +6721,134 @@ static void exitWlan(void)
 #endif /* CFG_SUPPORT_ICS */
 
 	g_u4WlanInitFlag = 0;
+
+#if CFG_POWER_OFF_CTRL_SUPPORT
+	wlanUnregisterRebootNotifier();
+#endif
 	DBGLOG(INIT, INFO, "exitWlan\n");
 
 }				/* end of exitWlan() */
+
+#if CFG_POWER_OFF_CTRL_SUPPORT
+static int wf_pdwnc_notify(struct notifier_block *nb,
+		unsigned long event, void *unused)
+{
+	if (event == SYS_RESTART) {
+		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
+#if defined(_HIF_USB) || CFG_SUPPORT_PERSIST_NETDEV
+		struct GLUE_INFO *prGlueInfo = NULL;
+#endif
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+		uint32_t u4Idx = 0;
+		struct wiphy *wiphy = NULL;
+#endif
+
+#if CFG_MTK_MDDP_SUPPORT
+		mddpUninit();
+#endif
+		wlanUnregisterNetdevNotifier();
+		kalFbNotifierUnReg();
+
+#if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
+		kalBatNotifierUnReg();
+#endif
+
+#if CFG_CHIP_RESET_SUPPORT
+		glResetUninit();
+#endif
+
+#if defined(_HIF_USB)
+		/* for USB remove ko case, Power off Wifi CMD need to be DONE
+		* before unregister bus, or connsys cannot enter deep sleep
+		* after rmmod
+		*/
+		prGlueInfo = wlanGetGlueInfo();
+		if (prGlueInfo != NULL)
+			wlanPowerOffWifi(prGlueInfo->prAdapter);
+#endif
+
+#if (CFG_MTK_ANDROID_WMT == 0)
+		glBusFunOff();
+#endif
+		glUnregisterBus(wlanRemove);
+#if CFG_SUPPORT_PERSIST_NETDEV
+		wiphy = wlanGetWiphy();
+		WIPHY_PRIV(wiphy, prGlueInfo);
+
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+				wlanClearDevIdx(gprWdev[u4Idx]->netdev);
+				DBGLOG(INIT, INFO,
+					"Unregister wlan%d netdev start.\n",
+					u4Idx);
+				unregister_netdev(gprWdev[u4Idx]->netdev);
+				DBGLOG(INIT, INFO,
+					"Unregister wlan%d netdev end.\n",
+					u4Idx);
+			}
+		}
+
+		prGlueInfo->fgIsRegistered = FALSE;
+
+		DBGLOG(INIT, INFO, "Free wlan device..\n");
+		wlanFreeNetDev();
+#endif
+
+		/* free pre-allocated memory */
+		kalUninitIOBuffer();
+
+		/* For single wiphy case, it's hardly to
+		* free wdev & wiphy in 2 func.
+		* So that, use wlanDestroyAllWdev
+		* to replace wlanDestroyWirelessDevice
+		* and glP2pDestroyWirelessDevice.
+		*/
+		wlanDestroyAllWdev();
+
+#if WLAN_INCLUDE_SYS
+		sysUninitSysFs();
+#endif
+
+#if WLAN_INCLUDE_PROC
+		procUninitProcFs();
+#endif
+#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
+		kfree((const void *)gConEmiPhyBase);
+#endif
+
+#if (CFG_SUPPORT_ICS == 1)
+		IcsDeInit();
+#endif /* CFG_SUPPORT_ICS */
+
+		g_u4WlanInitFlag = 0;
+
+		DBGLOG(HAL, STATE, "wf_pdwnc_notify() done\n");
+	}
+	return 0;
+}
+
+static struct notifier_block wf_pdwnc_notifier = {
+	.notifier_call = wf_pdwnc_notify,
+	.next = NULL,
+	.priority = 0,
+};
+
+void wlanRegisterRebootNotifier(void)
+{
+	DBGLOG(HAL, STATE, "wlanRegisterRebootNotifier()\n");
+	register_reboot_notifier(&wf_pdwnc_notifier);
+	DBGLOG(HAL, STATE, "wlanRegisterRebootNotifier() done\n");
+}
+
+void wlanUnregisterRebootNotifier(void)
+{
+	DBGLOG(HAL, STATE, "wlanUnregisterRebootNotifier()\n");
+	unregister_reboot_notifier(&wf_pdwnc_notifier);
+	DBGLOG(HAL, STATE, "wlanUnregisterRebootNotifier() done\n");
+}
+
+#endif
 
 #if ((MTK_WCN_HIF_SDIO == 1) && (CFG_BUILT_IN_DRIVER == 1)) || \
 	((MTK_WCN_HIF_AXI == 1) && (CFG_BUILT_IN_DRIVER == 1))
