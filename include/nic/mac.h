@@ -1228,10 +1228,10 @@ enum BEACON_REPORT_DETAIL {
 #define MEASUREMENT_REPORT_MODE_REJECT_REFUSED BIT(2)
 
 /* 7.3.2.25 RSN information element */
-/* one pairwise, one AKM suite, one PMKID */
-#define ELEM_MAX_LEN_WPA                            34
-/* one pairwise, one AKM suite, one PMKID */
-#define ELEM_MAX_LEN_RSN                            38
+/* two pairwise, one AKM suite, one PMKID */
+#define ELEM_MAX_LEN_WPA                            38
+/* two pairwise, one AKM suite, one PMKID */
+#define ELEM_MAX_LEN_RSN                            42
 /* one pairwise, one AKM suite, one BKID */
 #define ELEM_MAX_LEN_WAPI                           38
 /* one pairwise, one AKM suite, one BKID */
