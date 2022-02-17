@@ -2278,7 +2278,7 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
 					(prTcqStatus->au4FreePageCount_PLE[i] /
 						NIX_TX_PLE_PAGE_CNT_PER_FRAME);
 				prTcqStatus->au4MaxNumOfBuffer_PLE[i] =
-					(prTcqStatus->au4MaxNumOfBuffer_PLE[i] /
+					(prTcqStatus->au4MaxNumOfPage_PLE[i] /
 						NIX_TX_PLE_PAGE_CNT_PER_FRAME);
 
 				i4TotalExtraQuota = 0;
@@ -2796,7 +2796,9 @@ void qmCheckForFastTcResourceCtrl(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	u_int8_t fgTrigger = FALSE;
 
-	if (!prAdapter->rTxCtrl.rTc.au4FreeBufferCount[ucTc]) {
+	if (!prAdapter->rTxCtrl.rTc.au4FreeBufferCount[ucTc]
+	|| ((prAdapter->rTxCtrl.rTc.fgNeedPleCtrl) &&
+	(!prAdapter->rTxCtrl.rTc.au4FreeBufferCount_PLE[ucTc]))) {
 		if (!prQM->au4CurrentTcResource[ucTc] ||
 			nicTxGetAdjustableResourceCnt(prAdapter))
 			fgTrigger = TRUE;
