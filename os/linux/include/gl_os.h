@@ -321,6 +321,7 @@ extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #define GLUE_FLAG_RX_TO_OS_BIT				(14)
 #define GLUE_FLAG_HIF_FW_OWN_BIT			(15)
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT	(16)
+#define GLUE_FLAG_UPDATE_WMM_QUOTA			(17)
 #endif
 
 #define GLUE_BOW_KFIFO_DEPTH        (1024)

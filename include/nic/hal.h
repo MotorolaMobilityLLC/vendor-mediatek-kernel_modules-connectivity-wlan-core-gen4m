@@ -1199,6 +1199,9 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter,
 	IN u_int8_t isIncr, IN uint8_t ucTc, IN uint32_t u4Len);
 void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
+uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
+void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
