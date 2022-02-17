@@ -7746,7 +7746,6 @@ wlanoidSetEepromWrite(IN struct ADAPTER *prAdapter,
 
 } /* wlanoidSetEepromWrite */
 
-#define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000200	/* for WPDWifi DLL */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query current the OID interface version,
@@ -7778,7 +7777,7 @@ wlanoidQueryOidInterfaceVersion(IN struct ADAPTER *
 	ASSERT(pu4QueryInfoLen);
 
 	*(uint32_t *) pvQueryBuffer =
-		MTK_CUSTOM_OID_INTERFACE_VERSION;
+		prAdapter->chip_info->custom_oid_interface_version;
 	*pu4QueryInfoLen = sizeof(uint32_t);
 
 	DBGLOG(REQ, WARN, "Custom OID interface version: %#08X\n",
