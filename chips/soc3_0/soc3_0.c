@@ -402,7 +402,8 @@ static void soc3_0asicConnac2xWfdmaControl(
 
 void soc3_0asicConnac2xWpdmaConfig(
 	struct GLUE_INFO *prGlueInfo,
-	u_int8_t enable)
+	u_int8_t enable,
+	bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
