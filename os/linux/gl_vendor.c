@@ -1884,7 +1884,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
 	struct GLUE_INFO *prGlueInfo;
 #endif
-	struct sk_buff *skb;
+	struct sk_buff *skb = NULL;
 	uint32_t *puBuffer = NULL;
 	int32_t i4Status = -EINVAL;
 	uint32_t u4BufLen;
