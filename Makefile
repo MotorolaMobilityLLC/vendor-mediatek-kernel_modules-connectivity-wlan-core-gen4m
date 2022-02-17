@@ -134,6 +134,12 @@ CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=1
 endif
 
+ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=1
+else
+    ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC2X=1
 else
