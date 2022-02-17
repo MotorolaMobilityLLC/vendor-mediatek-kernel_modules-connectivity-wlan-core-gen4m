@@ -1987,6 +1987,13 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 	}
 
+	DBGLOG(AAA, TRACE, "Dump assoc response frame\n");
+
+	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+			(uint32_t) prMsduInfo->u2FrameLength);
+	}
+
 #if CFG_SUPPORT_WFD
 	/* TODO put WFD IE in assoc resp if driver will send assoc resp */
 
