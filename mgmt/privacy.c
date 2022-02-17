@@ -831,8 +831,8 @@ u_int8_t secPrivacySeekForEntry(
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
-	/* reserve wtbl IDX 0, 1 for BIP*/
-	ucStartIDX = 2;
+	/* reserve wtbl IDX 0~3 for BIP*/
+	ucStartIDX = 4;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
@@ -1114,8 +1114,8 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 		prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
 		fgCheckKeyId);
 
-	/* reserve wtbl IDX 0, 1 for BIP*/
-	ucStartIDX = 2;
+	/* reserve wtbl IDX 0~3 for BIP*/
+	ucStartIDX = 4;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	if (ucAlg == CIPHER_SUITE_BIP) {
