@@ -158,6 +158,8 @@ struct ROAMING_INFO {
 
 	u_int8_t fgDrvRoamingAllow;
 	struct TIMER rWaitCandidateTimer;
+	enum ENUM_ROAMING_REASON eReason;
+	uint8_t ucPER;
 };
 
 /*******************************************************************************
