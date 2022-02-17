@@ -171,6 +171,9 @@ struct MT6885_DMASHDL_CFG rMT6885DmashdlCfg = {
 		MT6885_DMASHDL_PRIORITY14_GROUP,
 		MT6885_DMASHDL_PRIORITY15_GROUP,
 	},
+
+	.u2HifAckCntTh = MT6885_DMASHDL_HIF_ACK_CNT_TH,
+	.u2HifGupActMap = MT6885_DMASHDL_HIF_GUP_ACT_MAP,
 };
 
 void mt6885HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
@@ -446,6 +449,26 @@ void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 		pktin_cnt, ask_cnt);
 }
 
+void mt6885HalDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
+		uint16_t u2HifAckCntTh, uint16_t u2HifGupActMap)
+{
+	uint32_t u4Addr, u4Val;
+
+	u4Addr = WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR;
+
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_MASK;
+	u4Val |= (u2HifAckCntTh <<
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ACK_CNT_TH_SHFT);
+
+	u4Val &= ~WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_MASK;
+	u4Val |= (u2HifGupActMap <<
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_GUP_ACT_MAP_SHFT);
+
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 void mt6885DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
@@ -474,6 +497,10 @@ void mt6885DmashdlInit(struct ADAPTER *prAdapter)
 
 	mt6885HalDmashdlSetSlotArbiter(prAdapter,
 				       rMT6885DmashdlCfg.fgSlotArbiterEn);
+
+	mt6885HalDmashdlSetOptionalControl(prAdapter,
+		rMT6885DmashdlCfg.u2HifAckCntTh,
+		rMT6885DmashdlCfg.u2HifGupActMap);
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
