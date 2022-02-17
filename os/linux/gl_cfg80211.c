@@ -876,12 +876,23 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	uint32_t old_num_ssid = 0;
 	uint32_t u4ValidIdx = 0;
 	uint32_t wildcard_flag = 0;
+#if CFG_SUPPORT_QA_TOOL
+	struct ADAPTER *prAdapter = NULL;
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_scan\n");
 
+#if CFG_SUPPORT_QA_TOOL
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter)
+	if (prAdapter->fgIcapMode) {
+		DBGLOG(REQ, ERROR, "prAdapter->fgIcapMode == TRUE\n");
+		return -EBUSY;
+	}
+#endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	if (prGlueInfo->prAdapter == NULL) {
 		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
