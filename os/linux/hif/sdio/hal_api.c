@@ -602,8 +602,9 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	if (prAdapter->fgIsFwOwn == TRUE)
 		goto unlock;
 
-	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) && !nicSerIsWaitingReset(prAdapter)) {
-		DBGLOG(INIT, STATE, "FW OWN Skipped due to pending INT\n");
+	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) &&
+	     !nicSerIsWaitingReset(prAdapter)) {
+		DBGLOG(INIT, INFO, "FW OWN Skipped due to pending INT\n");
 		/* pending interrupts */
 		goto unlock;
 	}
