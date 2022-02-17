@@ -1102,9 +1102,6 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pFuncStopComplete\n");
 
-		kalP2pNotifyStopApComplete(prAdapter,
-				prP2pBssInfo->u4PrivateData);
-
 		/* GO: It would stop Beacon TX.
 		 * GC: Stop all BSS related PS function.
 		 */
@@ -1122,6 +1119,9 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
 
 		/* Point StaRecOfAP to NULL when GC role stop Complete */
 		prP2pBssInfo->prStaRecOfAP = NULL;
+
+		kalP2pNotifyStopApComplete(prAdapter,
+				prP2pBssInfo->u4PrivateData);
 	} while (FALSE);
 
 }				/* p2pFuncStopComplete */
