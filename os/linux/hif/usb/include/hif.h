@@ -116,6 +116,8 @@ typedef enum _ENUM_USB_END_POINT_T {
 #define HIF_TX_PAGE_SIZE                 2048	/* in unit of bytes */
 #endif
 
+#define USB_EVENT_TYPE                  (EVENT_EP_TYPE_UNKONW)
+
 #define USB_CMD_EP_OUT                  (USB_DATA_BULK_OUT_EP8)
 #define USB_EVENT_EP_IN                 (0x85)
 #define USB_DATA_EP_IN                  (0x84)
@@ -265,6 +267,7 @@ typedef struct _GL_HIF_INFO_T {
 	struct mutex vendor_req_sem;
 	BOOLEAN fgIntReadClear;
 	BOOLEAN fgMbxReadClear;
+	BOOLEAN fgEventEpDetected;
 	EVENT_EP_TYPE eEventEpType;
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
 
