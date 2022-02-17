@@ -5747,7 +5747,7 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 	UINT_32 ch_idx, start_idx, end_idx;
 	struct channel *pCh;
 	UINT_32 ch_num = 0;
-	UINT_8	old_format = 0;
+	UINT_8 maxbw = 160;
 #endif
 
 	ASSERT(prNetDev);
@@ -5759,33 +5759,28 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (!regd_is_single_sku_en()) {
-		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Not Supported.")
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Not Supported.");
 		return i4BytesWritten;
 	}
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if ((apcArgv[1][0] == '2') && (apcArgv[1][1] == 'g')) {
+	/**
+	 * Usage: iwpriv wlan0 driver "get_channels [2g |5g |ch_num]"
+	 **/
+	if (i4Argc >= 2 && (apcArgv[1][0] == '2') && (apcArgv[1][1] == 'g')) {
 		start_idx = 0;
 		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
-	} else if ((apcArgv[1][0] == '5') && (apcArgv[1][1] == 'g')) {
+	} else if (i4Argc >= 2 && (apcArgv[1][0] == '5') && (apcArgv[1][1] == 'g')) {
 		start_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
 		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ)
-					+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
+				+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
 	} else {
 		start_idx = 0;
 		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ)
-					+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
-	}
-
-	if (i4Argc == 3) {
-		/*specific channel detail information*/
-		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
-	} else if (i4Argc == 2) {
-		/*show active channels only*/
-		old_format = 0;
-	} else {
-		/* old format: 7662*/
-		old_format = 1;
+				+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
+		if (i4Argc >= 2)
+			/* Dump only specified channel */
+			u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
 	}
 
 	if (regd_is_single_sku_en()) {
@@ -5795,90 +5790,30 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 
 			pCh = (rlmDomainGetActiveChannels() + ch_idx);
 
-			if ((ch_num != pCh->chNum) && (ch_num != 0))
+			if (ch_num && (ch_num != pCh->chNum))
 				continue; /*show specific channel information*/
 
-			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "CH-%d: ",
+			/* Channel number */
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "CH-%d:",
 					pCh->chNum);
 
-			if ((ch_num == 0) && (!old_format))
-				continue; /*show all active channels*/
+			/* Active/Passive */
+			if (pCh->flags & IEEE80211_CHAN_PASSIVE_FLAG) {
+				/* passive channel */
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, " " IEEE80211_CHAN_PASSIVE_STR);
+			} else
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, " ACTIVE");
 
-
-			if (old_format) {
-				UINT_8 passive_scan = 0;
-				UINT_8 bw = 160;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
-				passive_scan = ((pCh->flags & IEEE80211_CHAN_PASSIVE_SCAN)?1:0);
-#else
-				passive_scan = ((pCh->flags & IEEE80211_CHAN_NO_IR)?1:0);
-#endif
-				if (passive_scan) {
-					/*passive*/
-					LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Status = Passive, ");
-				} else {
-					/*active*/
-					LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "Status = Active, ");
-				}
-
-				/*max bandwidth detection*/
-				if ((pCh->flags & IEEE80211_CHAN_NO_160MHZ) == IEEE80211_CHAN_NO_160MHZ)
-					bw = 80;
-
-				if ((pCh->flags & IEEE80211_CHAN_NO_80MHZ) == IEEE80211_CHAN_NO_80MHZ)
-					bw = 40;
-
-				if ((pCh->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
-					bw = 20;
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "MaxBw = %d\n", bw);
-			} else {
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_IR/PASSIVE SCAN = %d\n",
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
-						(pCh->flags & IEEE80211_CHAN_PASSIVE_SCAN)?1:0);
-#else
-						(pCh->flags & IEEE80211_CHAN_NO_IR)?1:0);
-#endif
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tRADAR_DETECT = %d\n",
-						(pCh->flags & IEEE80211_CHAN_RADAR)?1:0);
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_HT40 = %d\n",
-#if 1
-						((pCh->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)?1:0);
-#else
-						((pCh->flags & IEEE80211_CHAN_NO_HT40PLUS) &&
-						(pCh->flags & IEEE80211_CHAN_NO_HT40MINUS))?1:0);
-#endif
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_OFDM = %d\n",
-						(pCh->flags & IEEE80211_CHAN_NO_OFDM)?1:0);
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_80MHZ = %d\n",
-						(pCh->flags & IEEE80211_CHAN_NO_80MHZ)?1:0);
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_160MHZ = %d\n",
-						(pCh->flags & IEEE80211_CHAN_NO_160MHZ)?1:0);
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 15, 0)
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tINDOOR_ONLY = %d\n",
-						(pCh->flags & IEEE80211_CHAN_INDOOR_ONLY)?1:0);
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(4, 1, 0)
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tIR_CONCURRENT = %d\n",
-						(pCh->flags & IEEE80211_CHAN_IR_CONCURRENT)?1:0);
-#else
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tIR_CONCURRENT = %d\n",
-						(pCh->flags & IEEE80211_CHAN_GO_CONCURRENT)?1:0);
-#endif
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_20MHZ = %d\n",
-						(pCh->flags & IEEE80211_CHAN_NO_20MHZ)?1:0);
-
-				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\tNO_10MHz = %d\n",
-						(pCh->flags & IEEE80211_CHAN_NO_10MHZ)?1:0);
-#endif
-			}
+			/* Max BW */
+			if ((pCh->flags & IEEE80211_CHAN_NO_160MHZ) == IEEE80211_CHAN_NO_160MHZ)
+				maxbw = 80;
+			if ((pCh->flags & IEEE80211_CHAN_NO_80MHZ) == IEEE80211_CHAN_NO_80MHZ)
+				maxbw = 40;
+			if ((pCh->flags & IEEE80211_CHAN_NO_HT40) == IEEE80211_CHAN_NO_HT40)
+				maxbw = 20;
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, " BW_%dMHz", maxbw);
+			/* Channel flags */
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "  (flags=0x%x)\n", pCh->flags);
 		}
 	}
 #endif
