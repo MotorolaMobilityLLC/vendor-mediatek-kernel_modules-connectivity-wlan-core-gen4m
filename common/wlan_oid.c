@@ -12602,3 +12602,68 @@ WLAN_STATUS wlanoidSerExtCmd(IN P_ADAPTER_T prAdapter, UINT_8 ucAction, UINT_8 u
 					 (PUINT_8)&rCmdSer, NULL, 0);
 	return rStatus;
 }
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to set rdd report.
+*
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+*                           the query.
+* \param[in] u4QueryBufLen The length of the query buffer.
+* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+*                            bytes written into the query buffer. If the call
+*                            failed due to invalid length of the query buffer,
+*                            returns the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+wlanoidQueryTxPowerInfo(IN P_ADAPTER_T prAdapter,
+			  IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen)
+{
+	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo = NULL;
+	struct CMD_TX_POWER_SHOW_INFO_T rCmdTxPowerShowInfo;
+	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+	if (!pvQueryBuffer)
+		return WLAN_STATUS_FAILURE;
+	if (!pu4QueryInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T)) {
+		*pu4QueryInfoLen = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
+
+	prTxPowerInfo = (struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *) pvQueryBuffer;
+
+	kalMemSet(&rCmdTxPowerShowInfo, 0, sizeof(struct CMD_TX_POWER_SHOW_INFO_T));
+
+	rCmdTxPowerShowInfo.ucPowerCtrlFormatId = TX_POWER_SHOW_INFO;
+	rCmdTxPowerShowInfo.ucTxPowerInfoCatg = prTxPowerInfo->ucTxPowerCategory;
+	rCmdTxPowerShowInfo.ucBandIdx = prTxPowerInfo->ucBandIdx;
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+					CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					EXT_CMD_ID_TX_POWER_FEATURE_CTRL,
+					FALSE,   /* Query Bit:  True->write  False->read*/
+					TRUE,
+					TRUE,
+					nicCmdEventQueryTxPowerInfo,
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_TX_POWER_SHOW_INFO_T),
+					(PUINT_8) (&rCmdTxPowerShowInfo),
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	return rWlanStatus;
+}
+#endif

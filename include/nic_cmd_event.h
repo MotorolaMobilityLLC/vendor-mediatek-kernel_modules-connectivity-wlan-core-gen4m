@@ -128,6 +128,10 @@
 #define RDD_IN_SEL_1                    1
 #endif
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define TXPOWER_EVENT_SHOW_ALL_RATE_TXPOWER_INFO    0x5
+#endif
+
 #if CFG_SUPPORT_QA_TOOL
 #define IQ_FILE_LINE_OFFSET     18
 #define IQ_FILE_IQ_STR_LEN	 8
@@ -326,8 +330,8 @@ typedef enum _ENUM_EXT_CMD_ID_T {
 #endif /* CFG_SUPPORT_MU_MIMO */
 
 	EXT_CMD_ID_EFUSE_FREE_BLOCK = 0x4F,
+	EXT_CMD_ID_TX_POWER_FEATURE_CTRL = 0x58,
 	EXT_CMD_ID_SER = 0x81,
-
 } ENUM_EXT_CMD_ID_T, *P_ENUM_EXT_CMD_ID_T;
 
 typedef enum _NDIS_802_11_WEP_STATUS {
@@ -871,6 +875,10 @@ typedef struct _CMD_RX_PACKET_FILTER {
 #define EXT_EVENT_TARGET_TX_POWER  0x1
 
 /*#endif*/
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define EXT_EVENT_ID_TX_POWER_FEATURE_CTRL  0x58
+#endif
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -3052,6 +3060,30 @@ struct CMD_TDLS_PS_T {
 	UINT_8	aucReserved[3];
 };
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+struct CMD_TX_POWER_SHOW_INFO_T {
+	UINT_8 ucPowerCtrlFormatId;
+	UINT_8 ucTxPowerInfoCatg;
+	UINT_8 ucBandIdx;
+	UINT_8 ucReserved;
+};
+
+struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T {
+	UINT_8 ucTxPowerCategory;
+	UINT_8 ucBandIdx;
+	UINT_8 ucChBand;
+	UINT_8 ucReserved;
+
+	/* Rate power info */
+	struct FRAME_POWER_CONFIG_INFO_T rRatePowerInfo;
+
+	/* tx Power Max/Min Limit info */
+	INT_8 icPwrMaxBnd;
+	INT_8 icPwrMinBnd;
+	UINT_8 ucReserved2;
+};
+#endif
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -3176,6 +3208,10 @@ VOID nicCmdEventBatchScanResult(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdI
 #endif
 
 VOID nicEventRddPulseDump(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf);
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+VOID nicCmdEventQueryTxPowerInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+#endif
 
 VOID nicCmdEventQueryWlanInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
 
