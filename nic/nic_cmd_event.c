@@ -81,7 +81,10 @@ const NIC_CAPABILITY_V2_REF_TABLE_T gNicCapabilityV2InfoTable[] = {
 	{TAG_CAP_TX_RESOURCE, nicCmdEventQueryNicTxResource},
 	{TAG_CAP_TX_EFUSEADDRESS, nicCmdEventQueryNicEfuseAddr},
 	{TAG_CAP_COEX_FEATURE, nicCmdEventQueryNicCoexFeature},
-	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware}
+	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware},
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
+#endif
 };
 
 /*******************************************************************************
@@ -2316,13 +2319,27 @@ VOID nicCmdEventQueryMibInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 }
 #endif
 
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+WLAN_STATUS nicCmdEventQueryNicCsumOffload(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
+{
+	P_NIC_CSUM_OFFLOAD_T prChecksumOffload = (P_NIC_CSUM_OFFLOAD_T)pucEventBuf;
+
+	prAdapter->fgIsSupportCsumOffload = prChecksumOffload->ucIsSupportCsumOffload;
+
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCsumOffload: ucIsSupportCsumOffload = %x\n",
+						prAdapter->fgIsSupportCsumOffload);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 WLAN_STATUS nicCmdEventQueryNicCoexFeature(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf)
 {
 	P_NIC_COEX_FEATURE_T prCoexFeature = (P_NIC_COEX_FEATURE_T)pucEventBuf;
 
 	prAdapter->u4FddMode = prCoexFeature->u4FddMode;
 
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCoexFeature: u4FddMode = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicCoexFeature: u4FddMode = %x\n",
 						prAdapter->u4FddMode);
 
 	return WLAN_STATUS_SUCCESS;
@@ -2335,9 +2352,9 @@ WLAN_STATUS nicCmdEventQueryNicEfuseAddr(IN P_ADAPTER_T prAdapter, IN PUINT_8 pu
 	prAdapter->u4EfuseStartAddress = prTxResource->u4EfuseStartAddress;
 	prAdapter->u4EfuseEndAddress = prTxResource->u4EfuseEndAddress;
 
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseStartAddress = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseStartAddress = %x\n",
 						prAdapter->u4EfuseStartAddress);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseEndAddress = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicEfuseAddr: u4EfuseEndAddress = %x\n",
 						prAdapter->u4EfuseEndAddress);
 
 	return WLAN_STATUS_SUCCESS;
@@ -2353,13 +2370,13 @@ WLAN_STATUS nicCmdEventQueryNicTxResource(IN P_ADAPTER_T prAdapter, IN PUINT_8 p
 	prAdapter->nicTxReousrce.u4LmacTotalResource = prTxResource->u4LmacTotalResource;
 	prAdapter->nicTxReousrce.u4LmacResourceUnit = prTxResource->u4LmacResourceUnit;
 
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuTotalResource = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuTotalResource = %x\n",
 						prAdapter->nicTxReousrce.u4McuTotalResource);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuResourceUnit = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4McuResourceUnit = %x\n",
 						prAdapter->nicTxReousrce.u4McuResourceUnit);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacTotalResource = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacTotalResource = %x\n",
 						prAdapter->nicTxReousrce.u4LmacTotalResource);
-	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacResourceUnit = %x",
+	DBGLOG(INIT, INFO, "nicCmdEventQueryNicTxResource: u4LmacResourceUnit = %x\n",
 						prAdapter->nicTxReousrce.u4LmacResourceUnit);
 
 	return WLAN_STATUS_SUCCESS;
