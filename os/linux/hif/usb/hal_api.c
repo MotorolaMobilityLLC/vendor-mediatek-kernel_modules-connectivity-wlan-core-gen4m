@@ -450,15 +450,8 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 
 	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
 		prHifInfo->state == USB_STATE_READY)) {
-		list_del_init(&prUsbReq->list);
-		list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataCompleteQ);
-
-#if CFG_USB_TX_HANDLE_IN_HIF_THREAD
-		kalSetIntEvent(prGlueInfo);
-#else
-		/*tasklet_hi_schedule(&prGlueInfo->rTxCompleteTask);*/
-		tasklet_schedule(&prGlueInfo->rTxCompleteTask);
-#endif
+		/* No need to dequeue prUsbReq because LINK is not up */
+		prBufCtrl->u4WrIdx = 0;
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -478,7 +471,7 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 		DBGLOG(HAL, ERROR,
 			"glUsbSubmitUrb() reports error (%d) [%s] (EP%d OUT)\n",
 			ret, __func__, arTcToUSBEP[ucTc]);
-		halTxUSBProcessMsduDone(prHifInfo->prGlueInfo, prUsbReq);
+		halTxUSBProcessMsduDone(prGlueInfo, prUsbReq);
 		prBufCtrl->u4WrIdx = 0;
 		usb_unanchor_urb(prUsbReq->prUrb);
 		list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataCompleteQ);
