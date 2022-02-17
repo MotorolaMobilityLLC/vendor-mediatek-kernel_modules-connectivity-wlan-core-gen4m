@@ -60,6 +60,15 @@ struct mddp_drv_handle_t gMddpFunc = {
 	.change_state = mddpChangeState,
 };
 
+#define MD_OFF_TIMEOUT 1000
+#ifdef SOC3_0
+#define MD_STATUS_SYNC_CR 0x180600F4
+#else
+#define MD_STATUS_SYNC_CR 0x1800701C
+#endif
+#define MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT BIT(0)
+#define MD_STATUS_OFF_SYNC_BIT BIT(1)
+
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************
@@ -78,10 +87,15 @@ uint8_t aucMacAddr[MAC_ADDR_LEN];
 uint8_t txd_length;
 uint8_t txd[0];
 } __packed;
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
+
+static bool md_support_status_sync_cr(void);
+static bool wait_for_md_off_complete(void);
+static void set_md_off_completion_flag(void);
 
 int32_t mddpRegisterCb(IN struct ADAPTER *prAdapter)
 {
@@ -388,7 +402,13 @@ void mddpNotifyWifiOnEnd(void)
 
 void mddpNotifyWifiOffStart(void)
 {
+	bool status_sync_support = md_support_status_sync_cr();
+
+	if (status_sync_support)
+		set_md_off_completion_flag();
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
+	if (status_sync_support)
+		wait_for_md_off_complete();
 }
 
 void mddpNotifyWifiOffEnd(void)
@@ -510,6 +530,54 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 
 	return 0;
 
+}
+
+static bool md_support_status_sync_cr(void)
+{
+	uint32_t u4Value = 0;
+
+	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+	return u4Value & MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT;
+}
+
+static bool wait_for_md_off_complete(void)
+{
+	uint32_t u4Value = 0;
+	uint32_t u4StartTime, u4CurTime;
+	bool fgTimeout = false;
+
+	u4StartTime = kalGetTimeTick();
+
+	do {
+		wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+
+		if ((u4Value & MD_STATUS_OFF_SYNC_BIT) == 0) {
+			DBGLOG(INIT, INFO, "md off end.\n");
+			break;
+		}
+
+		u4CurTime = kalGetTimeTick();
+		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
+				MD_OFF_TIMEOUT)) {
+			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
+			fgTimeout = true;
+			break;
+		}
+
+		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
+	} while (TRUE);
+
+	return !fgTimeout;
+}
+
+static void set_md_off_completion_flag(void)
+{
+	uint32_t u4Value = 0;
+
+	DBGLOG(INIT, INFO, "md off start.\n");
+	wf_ioremap_read(MD_STATUS_SYNC_CR, &u4Value);
+	u4Value |= MD_STATUS_OFF_SYNC_BIT;
+	wf_ioremap_write(MD_STATUS_SYNC_CR, u4Value);
 }
 
 #endif
