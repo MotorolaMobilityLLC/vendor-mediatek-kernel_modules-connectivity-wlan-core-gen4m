@@ -1754,11 +1754,9 @@ void p2pRoleFsmRunEventSetNewChannel(IN struct ADAPTER *prAdapter,
 		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
 	prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth =
 		prMsgP2pSetNewChannelMsg->eChannelWidth;
-	prP2pBssInfo->ucPrimaryChannel =
-		prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
 
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS1 =
-		nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel,
+		nicGetVhtS1(prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum,
 		prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
 
 	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
