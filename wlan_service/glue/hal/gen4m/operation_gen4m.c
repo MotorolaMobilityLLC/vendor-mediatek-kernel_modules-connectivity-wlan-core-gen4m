@@ -2651,6 +2651,9 @@ s_int32 mt_op_get_rx_stat_band(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
 	rx_stat_test.seq_num = 0;
 	rx_stat_test.total_num = 72;
 
