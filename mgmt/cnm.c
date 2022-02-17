@@ -2351,10 +2351,10 @@ void cnmDbdcOpModeChangeDoneCallback(
  *
  * @param (none)
  *
- * @return (none)
+ * @return (uint32_t)
  */
 /*----------------------------------------------------------------------------*/
-void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
+uint32_t cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 			  IN u_int8_t fgDbdcEn)
 {
 	struct CMD_DBDC_SETTING rDbdcSetting;
@@ -2433,6 +2433,12 @@ void cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 
 				      NULL, /* pvSetQueryBuffer */
 				      0 /* u4SetQueryBufferLen */);
+
+	if (rStatus != WLAN_STATUS_PENDING)
+		DBGLOG(CNM, WARN,
+			"cnmUpdateDbdcSetting set cmd fail %d\n", rStatus);
+
+	return rStatus;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2551,10 +2557,18 @@ cnmDbdcFsmEntryFunc_WAIT_PROTOCOL_ENABLE(IN struct ADAPTER *prAdapter)
 static void
 cnmDbdcFsmEntryFunc_WAIT_HW_ENABLE(IN struct ADAPTER *prAdapter)
 {
+	uint32_t rStatus;
+
 	if (!cnmDBDCIsReqPeivilegeLock())
 		cnmDBDCFsmActionReqPeivilegeLock();
 
-	cnmUpdateDbdcSetting(prAdapter, TRUE);
+	rStatus = cnmUpdateDbdcSetting(prAdapter, TRUE);
+
+	if (rStatus != WLAN_STATUS_PENDING) {
+		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+			DBDC_FSM_EVENT_ERR);
+	}
 }
 
 static void
@@ -2594,12 +2608,20 @@ cnmDbdcFsmEntryFunc_ENABLE_IDLE(
 static void
 cnmDbdcFsmEntryFunc_WAIT_HW_DISABLE(IN struct ADAPTER *prAdapter)
 {
+	uint32_t rStatus;
+
 #if (CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE)
 	if (!cnmDBDCIsReqPeivilegeLock())
 		cnmDBDCFsmActionReqPeivilegeLock();
 #endif
 
-	cnmUpdateDbdcSetting(prAdapter, FALSE);
+	rStatus = cnmUpdateDbdcSetting(prAdapter, FALSE);
+
+	if (rStatus != WLAN_STATUS_PENDING) {
+		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+		DBDC_FSM_EVENT_HANDLER(prAdapter,
+			DBDC_FSM_EVENT_ERR);
+	}
 }
 
 static void
@@ -2756,7 +2778,13 @@ cnmDbdcFsmEventHandler_WAIT_HW_ENABLE(
 
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
 		g_rDbdcInfo.eDbdcFsmNextState =
-		ENUM_DBDC_FSM_STATE_ENABLE_GUARD;
+			ENUM_DBDC_FSM_STATE_ENABLE_GUARD;
+		break;
+
+	case DBDC_FSM_EVENT_ERR:
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		g_rDbdcInfo.fgPostpondLeaveAG = FALSE;
 		break;
 
 	default:
@@ -2909,7 +2937,13 @@ cnmDbdcFsmEventHandler_WAIT_HW_DISABLE(
 
 	case DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE:
 		g_rDbdcInfo.eDbdcFsmNextState =
-		ENUM_DBDC_FSM_STATE_DISABLE_GUARD;
+			ENUM_DBDC_FSM_STATE_DISABLE_GUARD;
+		break;
+
+	case DBDC_FSM_EVENT_ERR:
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+		g_rDbdcInfo.fgPostpondEnterAG = FALSE;
 		break;
 
 	default:
