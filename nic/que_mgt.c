@@ -1695,6 +1695,9 @@ P_MSDU_INFO_T qmDequeueTxPacketsMthread(IN P_ADAPTER_T prAdapter, IN P_TX_TCQ_ST
 		prMsduInfo = prNextMsduInfo;
 	}
 
+	if (prReturnedPacketListHead)
+		wlanTxProfilingTagMsdu(prAdapter, prReturnedPacketListHead, TX_PROF_TAG_DRV_DEQUE);
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
 	return prReturnedPacketListHead;
@@ -2420,6 +2423,9 @@ P_SW_RFB_T qmHandleRxPackets(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfbList
 			fgIsHTran = TRUE;
 			pucEthDestAddr = prCurrSwRfb->pvHeader;
 			if (prCurrSwRfb->prRxStatusGroup4 == NULL) {
+				DBGLOG(QM, ERROR, "H/W did Header Trans but prRxStatusGroup4 is NULL !!!\n");
+				DBGLOG_MEM8(QM, ERROR, prCurrSwRfb->pucRecvBuff,
+					    HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prCurrSwRfb);
 				DBGLOG(RX, WARN,
@@ -2429,8 +2435,10 @@ P_SW_RFB_T qmHandleRxPackets(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfbList
 					DBGLOG_MEM8(RX, WARN, prCurrSwRfb->pvHeader,
 						prCurrSwRfb->u2PacketLen > 32 ? 32:prCurrSwRfb->u2PacketLen);
 #if 0
+#if CFG_CHIP_RESET_SUPPORT
 				glGetRstReason(RST_GROUP4_NULL);
-				GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+				glResetTrigger(prAdapter);
+#endif
 #endif
 				continue;
 			}
