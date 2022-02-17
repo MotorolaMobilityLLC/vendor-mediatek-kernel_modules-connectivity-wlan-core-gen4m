@@ -963,6 +963,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter = NULL;
 #endif
 	uint8_t ucBssIndex = 0;
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	if (kalIsResetting())
 		return -EBUSY;
@@ -990,8 +991,13 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 
 #if CFG_SUPPORT_QA_TOOL
 	if (prAdapter->fgTestMode) {
-		DBGLOG(REQ, ERROR, "skip scan, TestMode running\n");
-		return -EBUSY;
+		DBGLOG(REQ, ERROR,
+			"directly return scan done, TestMode running\n");
+
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		kalCfg80211ScanDone(request, FALSE);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		return 0;
 	}
 	if (prAdapter->rIcapInfo.eIcapState != ICAP_STATE_INIT) {
 		DBGLOG(REQ, ERROR, "skip scan, ICAP In State(%d)\n",
