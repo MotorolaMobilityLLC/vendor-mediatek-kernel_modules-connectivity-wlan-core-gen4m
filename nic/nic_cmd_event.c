@@ -762,6 +762,33 @@ void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 	}
 
 }
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+void nicCmdEventSetIpv6Address(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4Count;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	u4Count = (prCmdInfo->u4SetInfoLen - OFFSET_OF(
+		struct CMD_IPV6_NETWORK_ADDRESS_LIST, arNetAddress))
+		/ sizeof(struct CMD_IPV6_NETWORK_ADDRESS);
+
+	if (prCmdInfo->fgIsOid) {
+		/* Update Set Information Length */
+		kalOidComplete(prAdapter->prGlueInfo,
+			prCmdInfo->fgSetQuery,
+			OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST,
+			arAddress) + u4Count *
+			(OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
+				sizeof(struct PARAM_NETWORK_ADDRESS_IPV6)),
+			WLAN_STATUS_SUCCESS);
+	}
+}
+#endif /* fos_change end */
+
 
 void nicCmdEventQueryRfTestATInfo(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,

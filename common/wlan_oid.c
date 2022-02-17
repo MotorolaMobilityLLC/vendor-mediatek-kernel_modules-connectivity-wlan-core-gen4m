@@ -9472,6 +9472,150 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 	return rStatus;
 }
 
+/* fos_change begin */
+#if CFG_SUPPORT_SET_IPV6_NETWORK
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Setting the IPV6 address for pattern search function.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \return WLAN_STATUS_SUCCESS
+ * \return WLAN_STATUS_ADAPTER_NOT_READY
+ * \return WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
+			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t i, u4CmdSize;
+	uint32_t u4IPv6AddrCount = 0;
+	struct CMD_IPV6_NETWORK_ADDRESS_LIST *prCmdIPv6NetworkAddressList;
+	struct PARAM_NETWORK_ADDRESS_LIST *prNetworkAddressList =
+		(struct PARAM_NETWORK_ADDRESS_LIST *) pvSetBuffer;
+	struct PARAM_NETWORK_ADDRESS *prNetworkAddress;
+
+	DEBUGFUNC("wlanoidSetIPv6NetworkAddress");
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = 4;
+
+	if (u4SetBufferLen < OFFSET_OF(struct
+				       PARAM_NETWORK_ADDRESS_LIST, arAddress))
+		return WLAN_STATUS_INVALID_DATA;
+
+	*pu4SetInfoLen = 0;
+
+	/* 4 <1.1> Get IPv6 address count */
+	prNetworkAddress = prNetworkAddressList->arAddress;
+	for (i = 0; i < prNetworkAddressList->u4AddressCount; i++) {
+		if ((prNetworkAddress->u2AddressType ==
+		     PARAM_PROTOCOL_ID_TCP_IP) &&
+		    (prNetworkAddress->u2AddressLength == IPV6_ADDR_LEN)) {
+			u4IPv6AddrCount++;
+		}
+
+		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+			((unsigned long) prNetworkAddress +
+			(unsigned long) (prNetworkAddress->u2AddressLength +
+			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
+	}
+
+	/* 4 <2> Calculate command buffer size */
+	/* construct payload of command packet */
+	if (u4IPv6AddrCount == 0)
+		u4CmdSize = sizeof(struct CMD_IPV6_NETWORK_ADDRESS_LIST);
+	else
+		u4CmdSize =
+			OFFSET_OF(struct CMD_IPV6_NETWORK_ADDRESS_LIST,
+				  arNetAddress) +
+			(sizeof(struct CMD_IPV6_NETWORK_ADDRESS) *
+			u4IPv6AddrCount);
+
+	/* 4 <3> Allocate command buffer */
+	prCmdIPv6NetworkAddressList =
+		(struct CMD_IPV6_NETWORK_ADDRESS_LIST *)
+		kalMemAlloc(u4CmdSize, VIR_MEM_TYPE);
+
+	if (prCmdIPv6NetworkAddressList == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	/* 4 <4> Fill P_CMD_SET_NETWORK_ADDRESS_LIST */
+	prCmdIPv6NetworkAddressList->ucBssIndex =
+		prNetworkAddressList->ucBssIdx;
+
+	/* only to set IP address to FW once ARP filter is enabled */
+	if (prAdapter->fgEnArpFilter) {
+		prCmdIPv6NetworkAddressList->ucAddressCount =
+			(uint8_t) u4IPv6AddrCount;
+		prNetworkAddress = prNetworkAddressList->arAddress;
+
+		for (i = 0, u4IPv6AddrCount = 0;
+		     i < prNetworkAddressList->u4AddressCount; i++) {
+			if (prNetworkAddress->u2AddressType ==
+			    PARAM_PROTOCOL_ID_TCP_IP &&
+			    prNetworkAddress->u2AddressLength ==
+			    IPV6_ADDR_LEN) {
+
+				kalMemCopy(prCmdIPv6NetworkAddressList
+				->arNetAddress[u4IPv6AddrCount].aucIpAddr,
+				prNetworkAddress->aucAddress,
+				sizeof(struct CMD_IPV6_NETWORK_ADDRESS));
+
+				DBGLOG(INIT, INFO,
+				       "%s: IPv6 Addr [%u][" IPV6STR "]\n",
+				       __func__, u4IPv6AddrCount,
+				       IPV6TOSTR(prNetworkAddress->aucAddress));
+
+				u4IPv6AddrCount++;
+			}
+
+			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+			    ((unsigned long)prNetworkAddress +
+			    (unsigned long)(prNetworkAddress->u2AddressLength +
+			    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+				      aucAddress)));
+		}
+
+	} else {
+		prCmdIPv6NetworkAddressList->ucAddressCount = 0;
+	}
+
+	DBGLOG(INIT, INFO,
+	       "Set %u IPv6 address for BSS[%u]\n",
+	       u4IPv6AddrCount,
+	       prCmdIPv6NetworkAddressList->ucBssIndex);
+
+	/* 4 <5> Send command */
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+				      CMD_ID_SET_IPV6_ADDRESS,
+				      TRUE,
+				      FALSE,
+				      TRUE,
+				      nicCmdEventSetIpv6Address,
+				      nicOidCmdTimeoutCommon,
+				      u4CmdSize,
+				      (uint8_t *) prCmdIPv6NetworkAddressList,
+				      pvSetBuffer,
+				      u4SetBufferLen);
+
+	kalMemFree(prCmdIPv6NetworkAddressList, VIR_MEM_TYPE, u4CmdSize);
+	return rStatus;
+}
+#endif /* fos_change end */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set driver to switch into RF test mode
