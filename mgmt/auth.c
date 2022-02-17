@@ -475,6 +475,9 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
+	nicTxSetPktLifeTime(prMsduInfo, 100);
+	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
+	nicTxSetForceRts(prMsduInfo, TRUE);
 
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
@@ -1128,8 +1131,8 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	}
 #endif
 	nicTxSetPktLifeTime(prMsduInfo, 100);
-
 	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
+	nicTxSetForceRts(prMsduInfo, TRUE);
 
 	/* 4 <7> Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,

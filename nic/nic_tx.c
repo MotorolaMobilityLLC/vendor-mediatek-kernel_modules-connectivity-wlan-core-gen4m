@@ -3884,6 +3884,15 @@ void nicTxSetPktRetryLimit(struct MSDU_INFO *prMsduInfo,
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_RETRY_LIMIT;
 }
 
+void nicTxSetForceRts(IN struct MSDU_INFO *prMsduInfo,
+				int8_t fgForceRts)
+{
+	if (fgForceRts)
+		prMsduInfo->u4Option |= MSDU_OPT_FORCE_RTS;
+	else
+		prMsduInfo->u4Option &= ~MSDU_OPT_FORCE_RTS;
+}
+
 void nicTxSetPktPowerOffset(struct MSDU_INFO *prMsduInfo,
 			    int8_t cPowerOffset)
 {
