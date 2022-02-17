@@ -7764,6 +7764,12 @@ int32_t __weak kalGetFwFlavor(uint8_t *flavor)
 	return 0;
 }
 
+int32_t __weak kalGetConnsysVerId(void)
+{
+	DBGLOG(SW4, WARN, "NO CONNSYS version ID.\n");
+	return 0;
+}
+
 void __weak kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	DBGLOG(SW4, WARN, "EMI MPU function is not defined\n");

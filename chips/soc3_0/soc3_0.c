@@ -2038,7 +2038,7 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
 	check = 0;
 	polling_count = 0;
-	while (value != CONNSYS_VERSION_ID) {
+	while (value != kalGetConnsysVerId()) {
 		if (polling_count > 10) {
 			check = -1;
 			ret = -1;
@@ -2188,7 +2188,7 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_read(WFSYS_VERSION_ID_ADDR, &value);
 	check = 0;
 	polling_count = 0;
-	while (value != CONNSYS_VERSION_ID) {
+	while (value != WFSYS_VERSION_ID) {
 		if (polling_count > 10) {
 			check = -1;
 			ret = -1;
@@ -2323,7 +2323,7 @@ int wf_pwr_off_consys_mcu(void)
 	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
 	check = 0;
 	polling_count = 0;
-	while (value != CONNSYS_VERSION_ID) {
+	while (value != kalGetConnsysVerId()) {
 		if (polling_count > 10) {
 			check = -1;
 			ret = -1;
