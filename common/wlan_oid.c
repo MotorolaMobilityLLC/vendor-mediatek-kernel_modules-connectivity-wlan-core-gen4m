@@ -93,7 +93,17 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	/*format :
 	 *: {"firmware config parameter", "firmware config value"}
 	 */
-	{"AdapScan", "0x0"}
+	{"AdapScan", "0x0"},
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	/*IOT AP, Ralink/MTK AP*/
+	{"IOTAP27", "80:000c43:::::2::1:1"},
+	/*IOT AP, Athreros/Qcom AP*/
+	{"IOTAP28", "80:00037f:::::3:2:1:1"},
+	{"IOTAP29", "80:00037f:::::4:2:1:1"},
+	/*IOT AP, Broadcom AP*/
+	{"IOTAP30", "80:001018:02fff02c0000:ff00ffffffff:::2::1:1"},
+	{"IOTAP31", "80:001018:02ff040c0000:ff00ffffffff:::2::1:1"},
+#endif
 };
 
 
