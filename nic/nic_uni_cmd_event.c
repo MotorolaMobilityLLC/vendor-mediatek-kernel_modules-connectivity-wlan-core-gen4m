@@ -691,8 +691,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
 	if (info->ucCID != CMD_ID_BSS_ACTIVATE_CTRL ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd) ||
-	    cmd->ucBssIndex != 0)
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	/* update devinfo */
@@ -866,7 +865,7 @@ uint32_t nicUniCmdSetRxFilter(struct ADAPTER *ad,
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_BAND_CONFIG *) entry->pucInfoBuffer;
-	uni_cmd->ucDbdcIdx = ENUM_BAND_0; // TODO: uni cmd
+	uni_cmd->ucDbdcIdx = ENUM_BAND_ALL;
 	tag = (struct UNI_CMD_BAND_CONFIG_SET_RX_FILTER *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BAND_CONFIG_TAG_SET_RX_FILTER;
 	tag->u2Length = sizeof(*tag);
