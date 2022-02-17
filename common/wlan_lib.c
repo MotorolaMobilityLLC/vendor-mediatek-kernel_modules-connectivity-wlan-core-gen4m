@@ -6819,6 +6819,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "DisBcnLostDetection", 0);
 	prWifiVar->fgDisRoaming = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "DisRoaming", 0);
+	prWifiVar->u4AisRoamingNumber = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "AisRoamingNumber",
+					KAL_AIS_NUM);
 	prWifiVar->fgEnArpFilter = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "EnArpFilter",
 					FEATURE_ENABLED);
