@@ -533,6 +533,7 @@ uint32_t nicUniCmdScanTagReq(struct ADAPTER *ad,
 	tag->u2ChannelDwellTime = cmd->u2ChannelDwellTime;
 	tag->u2TimeoutValue = cmd->u2TimeoutValue;
 	tag->u2ProbeDelayTime = cmd->u2ProbeDelayTime;
+	tag->u4ScnFuncMaskExtend = cmd->u4ScnFuncMaskExtend;
 	return tag->u2Length;
 }
 

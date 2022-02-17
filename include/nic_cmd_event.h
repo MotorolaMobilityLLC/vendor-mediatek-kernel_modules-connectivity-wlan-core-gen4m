@@ -522,6 +522,11 @@ enum ENUM_SCN_FUNC_MASK {
 	ENUM_SCN_OCE_SCAN_EN = (1 << 7),
 };
 
+enum ENUM_SCN_FUNC_EXT_MASK {
+	ENUM_SCN_MDT_SCAN = (1 << 0),
+	ENUM_SCN_ML_PROBE = (1 << 1),
+};
+
 struct CMD_PACKET_FILTER_CAP {
 	uint8_t			ucCmd;
 	uint16_t			packet_cap_type;

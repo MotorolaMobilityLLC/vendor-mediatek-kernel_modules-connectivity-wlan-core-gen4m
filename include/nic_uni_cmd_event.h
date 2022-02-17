@@ -1939,6 +1939,7 @@ struct UNI_CMD_SCAN_REQ {
 	uint16_t u2ChannelDwellTime;
 	uint16_t u2TimeoutValue;
 	uint16_t u2ProbeDelayTime;
+	uint32_t u4ScnFuncMaskExtend;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_CANCEL {
@@ -1966,6 +1967,8 @@ struct UNI_CMD_SCAN_BSSID {
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	uint8_t ucBssidMatchCh;
 	uint8_t ucBssidMatchSsidInd;
+	uint8_t ucRcpi;
+	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_CHANNEL_INFO {

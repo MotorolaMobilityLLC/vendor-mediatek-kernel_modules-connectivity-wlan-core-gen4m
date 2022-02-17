@@ -552,6 +552,7 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 
 	/* random mac */
 	uint8_t ucScnFuncMask;
+	uint32_t u4ScnFuncMaskExtend;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 
 	/* Feedback information */
@@ -697,6 +698,7 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint8_t ucChannelListNum;
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
+	uint32_t u4ScnFuncMaskExtend;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];	/* random mac */
 
 	/* pass from PARAM_SCAN_REQUEST_ADV.aucBssid */

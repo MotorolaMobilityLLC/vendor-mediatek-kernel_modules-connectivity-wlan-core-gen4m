@@ -2482,6 +2482,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 	struct RF_CHANNEL_INFO
 		arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucScnFuncMask;
+	uint32_t u4ScnFuncMaskExtend;
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t ucBssIndex;
 	uint32_t u4Flags;
