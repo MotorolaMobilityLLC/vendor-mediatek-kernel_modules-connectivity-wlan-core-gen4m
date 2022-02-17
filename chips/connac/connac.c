@@ -201,9 +201,16 @@ struct FWDL_OPS_T connac_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 };
 
+struct TX_DESC_OPS_T connacTxDescOps = {
+	.fillNicAppend = fillNicTxDescAppend,
+	.fillHifAppend = fillTxDescAppendByHostV2,
+	.fillTxByteCount = fillTxDescTxByteCount,
+};
+
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.bus_info = &connac_bus_info,
 	.fw_dl_ops = &connac_fw_dl_ops,
+	.prTxDescOps = &connacTxDescOps,
 
 	.chip_id = CONNAC_CHIP_ID,
 	.should_verify_chip_id = FALSE,
@@ -217,7 +224,6 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.fillTxDescAppend = fillTxDescAppendByHostV2,
 	.is_support_hw_amsdu = FALSE,
 };
 
