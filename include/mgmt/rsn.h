@@ -108,7 +108,9 @@
 #define WLAN_AKM_SUITE_FT_PSK           0x000FAC04
 #endif
 /* Add AKM SUITE for OWE since kernel haven't defined it. */
+#if KERNEL_VERSION(5, 7, 0) > CFG80211_VERSION_CODE
 #define WLAN_AKM_SUITE_OWE              0x000FAC12
+#endif
 #if CFG_SUPPORT_802_11W
 #define RSN_AKM_SUITE_802_1X_SHA256     0x05AC0F00
 #define RSN_AKM_SUITE_PSK_SHA256        0x06AC0F00

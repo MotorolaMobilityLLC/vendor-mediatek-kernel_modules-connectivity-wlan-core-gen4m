@@ -452,8 +452,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 
 	request_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal, "WIFI-EMI");
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
-	pucEmiBaseAddr =
-		ioremap_nocache(gConEmiPhyBaseFinal, gConEmiSizeFinal);
+	pucEmiBaseAddr = ioremap(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 	DBGLOG_LIMITED(INIT, INFO,
 	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
 	       (uint64_t)gConEmiPhyBaseFinal, u4Offset, gConEmiSizeFinal,

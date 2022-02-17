@@ -502,7 +502,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.cancel_remain_on_channel = mtk_cfg_cancel_remain_on_channel,
 	.mgmt_tx = mtk_cfg_mgmt_tx,
 	/* .mgmt_tx_cancel_wait        = mtk_cfg80211_mgmt_tx_cancel_wait, */
+#if KERNEL_VERSION(5, 8, 0) > CFG80211_VERSION_CODE
 	.mgmt_frame_register = mtk_cfg_mgmt_frame_register,
+#endif
 
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_cfg_testmode_cmd,

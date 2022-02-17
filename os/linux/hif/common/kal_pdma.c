@@ -976,7 +976,7 @@ int wf_ioremap_read(size_t addr, unsigned int *val)
 {
 	void *vir_addr = NULL;
 
-	vir_addr = ioremap_nocache(addr, 0x10);
+	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
 		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
 		return -1;
@@ -993,7 +993,7 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 {
 	void *vir_addr = NULL;
 
-	vir_addr = ioremap_nocache(addr, 0x10);
+	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
 		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
 		return -1;

@@ -7,6 +7,11 @@ LOCAL_MODULE := wlan_drv_gen4m.ko
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_MODULE_OWNER := mtk
 LOCAL_REQUIRED_MODULES := wmt_chrdev_wifi.ko
+ifeq ($(CONNAC_VER), 2_0)
+LOCAL_REQUIRED_MODULES += conninfra.ko
+else
+LOCAL_REQUIRED_MODULES += wmt_drv.ko
+endif
 
 include $(MTK_KERNEL_MODULE)
 

@@ -138,7 +138,7 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 	uint64_t u8IntTime = 0;
 	uint64_t u8RxTime = 0;
 	uint32_t u4Delay = 0;
-	struct timeval tval;
+	struct timespec64 tval;
 	struct rtc_time tm;
 
 	u2EthType = (pucEth[ETH_TYPE_LEN_OFFSET] << 8)
@@ -165,8 +165,8 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 	u8IntTime = GLUE_RX_GET_PKT_INT_TIME(prSkb);
 	u4Delay = ((uint32_t)(sched_clock() - u8IntTime))/NSEC_PER_USEC;
 	u8RxTime = GLUE_RX_GET_PKT_RX_TIME(prSkb);
-	do_gettimeofday(&tval);
-	rtc_time_to_tm(tval.tv_sec, &tm);
+	ktime_get_ts64(&tval);
+	rtc_time64_to_tm(tval.tv_sec, &tm);
 
 	switch (ucIpProto) {
 	case IP_PRO_TCP:
@@ -182,13 +182,13 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		DBGLOG(RX, INFO,
-	"IPID 0x%04x src %d dst %d UP %d,delay %u us,int2rx %lu us,IntTime %llu,%u/%u,leave at %02d:%02d:%02d.%06ld\n",
+	"IPID 0x%04x src %d dst %d UP %d,delay %u us,int2rx %lu us,IntTime %llu,%u/%u,leave at %02d:%02d:%02d.%09ld\n",
 			u2IPID, u2UdpSrcPort, u2UdpDstPort,
 			((pucEth[1] & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET),
 			u4Delay,
 			((uint32_t)(u8RxTime - u8IntTime))/NSEC_PER_USEC,
 			u8IntTime, u4NoDelayRx, u4TotalRx,
-			tm.tm_hour, tm.tm_min, tm.tm_sec, tval.tv_usec);
+			tm.tm_hour, tm.tm_min, tm.tm_sec, tval.tv_nsec);
 		break;
 	default:
 		break;
