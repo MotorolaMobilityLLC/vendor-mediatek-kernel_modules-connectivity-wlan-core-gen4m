@@ -933,6 +933,9 @@ int wlanPreCalPwrOn(void)
 			DBGLOG(INIT, WARN,
 				"Failed to sync kernel time to FW: unhandled CMD ID 0x%x.\n",
 					INIT_CMD_ID_LOG_TIME_SYNC);
+		} else {
+			prGlueInfo->prAdapter->u4FWLastUpdateTime =
+				(unsigned int)time.tv_sec;
 		}
 	}
 
