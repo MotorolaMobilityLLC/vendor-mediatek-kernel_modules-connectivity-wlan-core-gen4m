@@ -115,6 +115,12 @@
 #define MT7961_HOST_RX_WM_EVENT_FROM_PSE_RX_RING4_SIZE	32
 #endif
 
+/*------------------------------------------------------------------------------
+ * MACRO for WFDMA INFO GET
+ *------------------------------------------------------------------------------
+ */
+#define MT7961_WFDMA_COUNT 1
+
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -142,8 +148,12 @@
 void mt7961_show_ple_info(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
+
 void mt7961_show_pse_info(
 	struct ADAPTER *prAdapter);
+
+void mt7961_show_wfdma_info(
+	IN struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S

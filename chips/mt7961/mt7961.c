@@ -1312,7 +1312,7 @@ struct TX_DESC_OPS_T mt7961TxDescOps = {
 struct RX_DESC_OPS_T mt7961RxDescOps = {};
 
 struct CHIP_DBG_OPS mt7961DebugOps = {
-	.showPdmaInfo = NULL,
+	.showPdmaInfo = mt7961_show_wfdma_info,
 	.showPseInfo = mt7961_show_pse_info,
 	.showPleInfo = mt7961_show_ple_info,
 	.showTxdInfo = connac2x_show_txd_Info,
