@@ -176,10 +176,10 @@ void beGenerateAuthMldIE(
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_AUTH_IE_FUNC pfnComposeIE);
 
-void beGenerateExternalAuthMldIE(
+uint8_t beGenerateExternalAuthMldIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	struct MSDU_INFO *prMsduInfo);
+	uint8_t *pucBuf);
 
 void beGenerateBeaconMldIE(
 	struct ADAPTER *prAdapter,
@@ -295,5 +295,8 @@ struct BSS_INFO *mldGetBssInfoByLinkID(
 	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t ucLinkIndex,
 	uint8_t fgPeerSta);
+
+uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
 #endif /* !_MLO_H */

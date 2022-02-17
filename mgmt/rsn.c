@@ -1850,7 +1850,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
 			} else  {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-				if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE) {
+				if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
 					DBGLOG(RSN, INFO, "Use mld addr!");
 					entry = rsnSearchPmkidEntry(prAdapter,
 					      prStaRec->aucMldAddr, ucBssIndex);

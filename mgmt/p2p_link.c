@@ -121,7 +121,7 @@ uint32_t p2pLinkProcessAuthReqFrame(
 			"ProcessAuthReq");
 
 	if (!prMlInfo->ucValid || prMlInfo->ucLinkNum <= 1) {
-		DBGLOG(SAA, INFO, "Invalid mld_info, ignore pkt!\n");
+		DBGLOG(SAA, INFO, "Invalid mld_info, skip!\n");
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
