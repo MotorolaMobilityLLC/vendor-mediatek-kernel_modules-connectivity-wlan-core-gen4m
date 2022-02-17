@@ -472,6 +472,10 @@ enum ENUM_HIF_TX_INDEX {
 	HIF_TX_NUM
 };
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define HIF_TX_AC3X_INDEX HIF_TX_RSV0_INDEX
+#endif
+
 enum ENUM_TXD_LEN_PAGE {
 	TXD_LEN_1_PAGE,
 	TXD_LEN_2_PAGE,
@@ -646,6 +650,9 @@ struct TX_TCQ_STATUS {
 	uint32_t au4FreeBufferCount[TC_NUM];
 	uint32_t au4MaxNumOfBuffer[TC_NUM];
 
+	uint32_t au4PseCtrlEnMap;
+	uint32_t au4PleCtrlEnMap;
+
 	/*
 	 * PLE part
 	 */
@@ -664,6 +671,10 @@ struct TX_TCQ_STATUS {
 	/* buffer count */
 	uint32_t au4FreeBufferCount_PLE[TC_NUM];
 	uint32_t au4MaxNumOfBuffer_PLE[TC_NUM];
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	uint8_t ucNextHifWmmIdx;
+#endif
 };
 
 struct TX_TCQ_ADJUST {
@@ -2072,9 +2083,14 @@ uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
 
 uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucTC);
+uint32_t nicTxResourceGetPseFreeCount(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
 u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucTC);
+u_int8_t nicTxResourceIsPseCtrlNeeded(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
 void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter);
+void nicTxResourceUpdate_v2(IN struct ADAPTER *prAdapter);
 
 int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 			IN struct TX_VECTOR_BBP_LATCH *prTxV);
@@ -2084,6 +2100,19 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 
 u_int8_t nicTxIsPrioPackets(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo);
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define NIC_TX_RES_IS_ACTIVE(__prAdapter, __u4TcIdx) \
+	(nicTxResourceIsPseCtrlNeeded(__prAdapter, __u4TcIdx) \
+	|| nicTxResourceIsPleCtrlNeeded(__prAdapter, __u4TcIdx))
+#else
+#define NIC_TX_RES_IS_ACTIVE(__prAdapter, __u4TcIdx) (TRUE)
+#endif
+uint8_t nicTxWmmTc2ResTc(struct ADAPTER *prAdapter,
+	uint8_t ucWmmSet, uint8_t ucWmmTC);
+uint8_t nicTxResTc2WmmTc(uint8_t ucResTC);
+uint8_t nicTxGetWmmIdxByTc(uint8_t ucTC);
+uint8_t nicTxGetAcIdxByTc(uint8_t ucTC);
 
 /*******************************************************************************
  *                              F U N C T I O N S

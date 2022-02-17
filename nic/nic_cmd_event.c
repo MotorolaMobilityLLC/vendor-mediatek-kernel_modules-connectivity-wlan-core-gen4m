@@ -3037,6 +3037,11 @@ struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
 	{NIC_TX_RESOURCE_REPORT_VERSION_1,
 	nicEventQueryTxResource_v1,
 	nicTxResourceUpdate_v1},
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	{NIC_TX_RESOURCE_REPORT_VERSION_2,
+	nicEventQueryTxResource_v2,
+	nicTxResourceUpdate_v2},
+#endif
 };
 
 uint32_t nicEventQueryTxResource(IN struct ADAPTER
@@ -3047,7 +3052,7 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER
 
 	i_max = sizeof(nicTxRsrcEvtHdlrTbl) / sizeof(
 			struct nicTxRsrcEvtHdlr);
-	for (i = 0; i < i_max; i += 2) {
+	for (i = 0; i < i_max; i++) {
 		if (version == nicTxRsrcEvtHdlrTbl[i].u4Version) {
 			/* assign callback to do the resource init. */
 			prAdapter->nicTxReousrce.txResourceInit =
@@ -3060,7 +3065,7 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER
 
 	/* invalid version, cannot find the handler */
 	DBGLOG(INIT, ERROR,
-	       "nicEventQueryTxResource(): Invaalid version.\n");
+	       "Invalid version. (0x%X)\n", version);
 	prAdapter->nicTxReousrce.txResourceInit = NULL;
 
 	return WLAN_STATUS_NOT_SUPPORTED;
@@ -3101,6 +3106,13 @@ uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
 		prAdapter->rTxCtrl.rTc.fgNeedPleCtrl =
 			NIC_TX_RESOURCE_CTRL_PLE;
 	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicEventQueryTxResource_v2(IN struct ADAPTER
+				    *prAdapter, IN uint8_t *pucEventBuf)
+{
+	/* Follow V1 as default */
+	return nicEventQueryTxResource_v1(prAdapter, pucEventBuf);
 }
 
 void nicParsingNicCapV2(IN struct ADAPTER *prAdapter,

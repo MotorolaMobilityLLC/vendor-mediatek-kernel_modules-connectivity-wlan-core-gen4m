@@ -101,7 +101,21 @@ static const struct TX_RESOURCE_CONTROL
 	{PORT_INDEX_LMAC, MAC_TXQ_AC1_INDEX, HIF_TX_AC1_INDEX},
 	{PORT_INDEX_LMAC, MAC_TXQ_AC2_INDEX, HIF_TX_AC2_INDEX},
 	{PORT_INDEX_LMAC, MAC_TXQ_AC3_INDEX, HIF_TX_AC3_INDEX},
-	{PORT_INDEX_MCU, MCU_Q1_INDEX, HIF_TX_CPU_INDEX},
+	{PORT_INDEX_MCU, MCU_Q0_INDEX, HIF_TX_CPU_INDEX},
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+		{PORT_INDEX_LMAC, MAC_TXQ_AC10_INDEX, HIF_TX_AC10_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC11_INDEX, HIF_TX_AC11_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC12_INDEX, HIF_TX_AC12_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC13_INDEX, HIF_TX_AC13_INDEX},
+
+		{PORT_INDEX_LMAC, MAC_TXQ_AC20_INDEX, HIF_TX_AC20_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC21_INDEX, HIF_TX_AC21_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC22_INDEX, HIF_TX_AC22_INDEX},
+		{PORT_INDEX_LMAC, MAC_TXQ_AC23_INDEX, HIF_TX_AC23_INDEX},
+
+		{PORT_INDEX_LMAC, MAC_TXQ_AC30_INDEX, HIF_TX_AC3X_INDEX},
+#endif
 
 	/* Second HW queue */
 #if NIC_TX_ENABLE_SECOND_HW_QUEUE
@@ -412,9 +426,30 @@ u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER
 	if ((ucTC == 0) && (prAdapter->fgIsFwDownloaded == FALSE))
 		return FALSE;
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	return !!(prTc->au4PleCtrlEnMap & (1<<ucTC));
+#else
 	return TRUE;
+#endif
 }
 
+u_int8_t nicTxResourceIsPseCtrlNeeded(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucTC)
+{
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	return !!(prTc->au4PseCtrlEnMap & (1<<ucTC));
+#else
+	return TRUE;
+#endif
+}
 
 uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER
 				      *prAdapter, IN uint8_t ucTC)
@@ -433,6 +468,25 @@ uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER
 	}
 
 	return prTc->au4FreePageCount_PLE[ucTC];
+}
+
+uint32_t nicTxResourceGetPseFreeCount(IN struct ADAPTER
+				      *prAdapter, IN uint8_t ucTC)
+{
+	struct TX_CTRL *prTxCtrl;
+	struct TX_TCQ_STATUS *prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+	if (!nicTxResourceIsPseCtrlNeeded(prAdapter, ucTC)) {
+		/* unlimited value*/
+		return 0xFFFFFFFF;
+	}
+
+	return prTc->au4FreePageCount[ucTC];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -531,6 +585,11 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 #if 1
 	prQM = &prAdapter->rQM;
+
+	/* Force skip PSE page acuire */
+	if (!nicTxResourceIsPseCtrlNeeded(prAdapter, ucTC))
+		u4PageCount = 0;
+
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
 
 		if (nicTxAcquireResourcePLE(prAdapter,
@@ -619,6 +678,9 @@ uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter,
 	if (ucTC >= TC_NUM)
 		return WLAN_STATUS_FAILURE;
 
+	if (!nicTxResourceIsPseCtrlNeeded(prAdapter, ucTC))
+		return WLAN_STATUS_SUCCESS;
+
 	if (prTxCtrl->rTc.au4FreeBufferCount[ucTC] > 0)
 		return WLAN_STATUS_SUCCESS;
 
@@ -696,6 +758,9 @@ u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
 
 	/* No need to do PLE resource control */
 	if (fgPLE && !nicTxResourceIsPleCtrlNeeded(prAdapter, ucTc))
+		return TRUE;
+	/* No need to do PSE resource control */
+	else if (!fgPLE && !nicTxResourceIsPseCtrlNeeded(prAdapter, ucTc))
 		return TRUE;
 
 	prTcqStatus = &prAdapter->rTxCtrl.rTc;
@@ -1134,13 +1199,35 @@ uint8_t nicTxGetTxDestQIdxByTc(IN uint8_t ucTc)
 
 uint32_t nicTxGetRemainingTxTimeByTc(IN uint8_t ucTc)
 {
+	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	ucTc = nicTxResTc2WmmTc(ucTc);
+#endif
+	if (ucTc >= ucMaxLen) {
+		DBGLOG(TX, WARN,
+			"Invalid TC%d, fallback to TC%d\n",
+			ucTc, ucTc % ucMaxLen);
+		ucTc %= ucMaxLen;
+	}
 	return arTcTrafficSettings[ucTc].u4RemainingTxTime;
 }
 
 uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc)
 {
+	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	ucTc = nicTxResTc2WmmTc(ucTc);
+#endif
+	if (ucTc >= ucMaxLen) {
+		DBGLOG(TX, WARN,
+			"Invalid TC%d, fallback to TC%d\n",
+			ucTc, ucTc % ucMaxLen);
+		ucTc %= ucMaxLen;
+	}
+
 	return arTcTrafficSettings[ucTc].ucTxCountLimit;
 }
+
 uint8_t nicTxDescLengthByTc(IN uint8_t ucTc)
 {
 	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
@@ -1685,8 +1772,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t u4Idx, u4IsNotAllQueneEmpty, i, j;
 	uint8_t ucPortIdx;
-	uint32_t au4TxCnt[BSS_DEFAULT_NUM][TX_PORT_NUM], u4Offset = 0;
-	char aucLogBuf[512];
+	uint32_t au4TxCnt[BSS_DEFAULT_NUM][TX_PORT_NUM];
 	struct BSS_INFO	*prBssInfo;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
@@ -1697,7 +1783,6 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	prDataPort1 = &qDataPort1;
 	QUEUE_INITIALIZE(prDataPort0);
 	QUEUE_INITIALIZE(prDataPort1);
-	kalMemZero(aucLogBuf, 512);
 
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
@@ -1799,15 +1884,6 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 		}
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
-		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
-			u4Offset += snprintf(
-				aucLogBuf + u4Offset, 512 - u4Offset,
-				"TC[%u]:%u ", u4Idx, au4TxCnt[i][u4Idx]);
-		}
-	}
-	DBGLOG_LIMITED(NIC, LOUD, "%s\n", aucLogBuf);
 }
 
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
@@ -2214,10 +2290,10 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 			if (prAdapter->rWifiVar.ucTcRestrict < TC_NUM)
 				ucTc = prAdapter->rWifiVar.ucTcRestrict;
 			else
-				ucTc =
-					arNetwork2TcResource[
-						prStaRec->ucBssIndex][
-						aucTid2ACI[ucTid]];
+				ucTc = nicTxWmmTc2ResTc(prAdapter,
+					prStaRec->ucBssIndex,
+					aucTid2ACI[ucTid]);
+
 			u4TxDescSize = nicTxDescLengthByTc(ucTc);
 
 			/* Include TxD append */
@@ -2252,9 +2328,9 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 			if (prAdapter->rWifiVar.ucTcRestrict < TC_NUM)
 				ucTc = prAdapter->rWifiVar.ucTcRestrict;
 			else
-				ucTc = arNetwork2TcResource[
-					prStaRec->ucBssIndex][
-					NET_TC_WMM_AC_BE_INDEX];
+				ucTc = nicTxWmmTc2ResTc(prAdapter,
+					prStaRec->ucBssIndex,
+					NET_TC_WMM_AC_BE_INDEX);
 
 			/* ucTxDescSize =
 			 * arTcTrafficSettings[ucTc].ucTxDescLength;
@@ -3429,9 +3505,11 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
 					u4MaxDataPageCntPerFrame;
 		}
 	}
+	/* Default bitmap */
+	prTxCtrl->rTc.au4PseCtrlEnMap = BITS(TC0_INDEX, TC_NUM-1);
+	prTxCtrl->rTc.au4PleCtrlEnMap = BITS(TC0_INDEX, TC_NUM-1);
 
 	return WLAN_STATUS_SUCCESS;
-
 }
 
 #endif
@@ -5261,10 +5339,8 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 		switch (prMsduInfo->ucStaRecIndex) {
 		case STA_REC_INDEX_BMCAST:
-			ucTC =
-				arNetwork2TcResource[
-					prMsduInfo->ucBssIndex][
-					NET_TC_BMC_INDEX];
+			ucTC = nicTxWmmTc2ResTc(prAdapter,
+				prMsduInfo->ucBssIndex, NET_TC_BMC_INDEX);
 
 			/* Always set BMC packet retry limit to unlimited */
 			if (!(prMsduInfo->u4Option
@@ -5704,10 +5780,17 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 	uint32_t u4share, u4remains;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t *pau4TcPageCount;
+	uint8_t ucMaxTcNum = TC_NUM;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	struct TX_TCQ_STATUS *prTc = &prAdapter->rTxCtrl.rTc;
 
+	ucMaxTcNum = TC4_INDEX + 1;
+	prTc->au4PseCtrlEnMap = BITS(TC0_INDEX, ucMaxTcNum-1);
+	prTc->au4PleCtrlEnMap = BITS(TC0_INDEX, ucMaxTcNum-1) & ~(1<<TC4_INDEX);
+#endif
 
 	/*
 	 * Use the settings in config file first,
@@ -5719,7 +5802,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 	 * 1. assign PSE/PLE free page count for each TC
 	 */
 
-	tc_num = (TC_NUM - 1); /* except TC4_INDEX */
+	tc_num = (ucMaxTcNum - 1); /* except TC4_INDEX */
 	for (i = 0; i < 2; i++) {
 		if (i == 0) {
 			/* PSE CMD*/
@@ -5750,7 +5833,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 		}
 
 		/* assign free page count for each TC, except TC_4 */
-		for (idx = TC0_INDEX; idx < TC_NUM; idx++) {
+		for (idx = TC0_INDEX; idx < ucMaxTcNum; idx++) {
 			if (idx != TC4_INDEX)
 				pau4TcPageCount[idx] = u4share;
 		}
@@ -5765,7 +5848,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 	 */
 
 	/* 2 1. update guaranteed page count in QM */
-	for (idx = 0; idx < TC_NUM; idx++)
+	for (idx = 0; idx < ucMaxTcNum; idx++)
 		prQM->au4GuaranteedTcResource[idx] =
 			prWifiVar->au4TcPageCount[idx];
 #endif
@@ -5779,7 +5862,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 	 */
 
 	/* 3 1. update for free page count */
-	for (idx = 0; idx < TC_NUM; idx++) {
+	for (idx = 0; idx < ucMaxTcNum; idx++) {
 
 		/* construct prefix: Tc0Page, Tc1Page... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
@@ -5798,7 +5881,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 3 2. update for guaranteed page count */
-	for (idx = 0; idx < TC_NUM; idx++) {
+	for (idx = 0; idx < ucMaxTcNum; idx++) {
 
 		/* construct prefix: Tc0Grt, Tc1Grt... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
@@ -5844,7 +5927,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 			       NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 
 		/* equally giving to each TC */
-		for (idx = 0; idx < TC_NUM; idx++) {
+		for (idx = 0; idx < ucMaxTcNum; idx++) {
 			if (idx == TC4_INDEX)
 				continue;
 
@@ -5862,6 +5945,146 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 		prWifiVar->au4TcPageCountPle[TC1_INDEX] += u4pleRemain;
 	}
 }
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+void nicTxResourceUpdate_v2(IN struct ADAPTER *prAdapter)
+{
+	uint8_t string[32];
+	uint8_t ucMaxTcNum = TC_NUM;
+
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t idx;
+	uint8_t ucPleCtrlNum = 0;
+	uint16_t u2PleAvail = 0;
+	uint16_t u2PseAvail = 0;
+	uint16_t u2PsePerPtk;
+	uint16_t u2MaxTxDataLen = 0;
+	struct tx_resource_info *prTxRes = &prAdapter->nicTxReousrce;
+	struct mt66xx_chip_info *prChipInfo;
+	struct TX_TCQ_STATUS *prTc = &prAdapter->rTxCtrl.rTc;
+
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	struct QUE_MGT *prQM = &prAdapter->rQM;
+#endif
+
+	/* Hardcode sanity. TC# should be 14 */
+	if (ucMaxTcNum != 14)
+		DBGLOG(TX, ERROR,
+			"V2 TC_NUM should be 14 (%d)\n",
+			ucMaxTcNum);
+
+	/* 1. Remap default PSE/PLE enable bits */
+	prTc->au4PseCtrlEnMap = (1<<TC4_INDEX);
+	prTc->au4PleCtrlEnMap =
+		BITS(TC0_INDEX, ucMaxTcNum-1) & ~(1<<TC4_INDEX);
+
+	/*
+	 * 2. assign PSE/PLE free page count for each TC
+	 */
+	prChipInfo = prAdapter->chip_info;
+	/* ETHER_MAX_PKT_SZ=1514 for VLAN case? ETH_802_3_MAX_LEN=1500 */
+	u2MaxTxDataLen = ETHER_MAX_PKT_SZ;
+
+	/* Reset all PSE/PLE resource */
+	for (idx = TC0_INDEX; idx < ucMaxTcNum; idx++) {
+		prWifiVar->au4TcPageCount[idx] = 0;
+		prWifiVar->au4TcPageCountPle[idx] = 0;
+		if (nicTxResourceIsPleCtrlNeeded(prAdapter, idx))
+			ucPleCtrlNum++;
+	}
+	/* TC4 have PSE only */
+	prWifiVar->au4TcPageCount[TC4_INDEX] =
+				prAdapter->nicTxReousrce.u4CmdTotalResource;
+	/* PLE rearrange */
+	u2PseAvail = prTxRes->u4DataTotalResource;
+	u2PsePerPtk = (((u2MaxTxDataLen) + (prTxRes->u4DataResourceUnit) - 1)
+		/ (prTxRes->u4DataResourceUnit));
+	u2PleAvail = u2PseAvail / u2PsePerPtk;
+
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 0)
+	/* Remain pages to TC4 */
+	prWifiVar->au4TcPageCount[TC4_INDEX] += u2PseAvail % u2PsePerPtk;
+#endif
+
+	/* Resource balance to all PLE-TC */
+	for (idx = TC0_INDEX; idx < ucMaxTcNum; idx++) {
+		if (!nicTxResourceIsPleCtrlNeeded(prAdapter, idx))
+			continue;
+		prWifiVar->au4TcPageCountPle[idx] = (u2PleAvail / ucPleCtrlNum);
+	}
+	prWifiVar->au4TcPageCountPle[TC3_INDEX] += u2PleAvail % ucPleCtrlNum;
+
+#if CFG_SUPPORT_CFG_FILE
+	/*
+	 * 3. Use the settings in config file first,
+	 *	  else, use the settings reported from firmware.
+	 */
+
+	/* 3 1. update for free page count */
+	for (idx = 0; idx < ucMaxTcNum; idx++) {
+
+		/* construct prefix: Tc0Page, Tc1Page... */
+		memset(string, 0, sizeof(string) / sizeof(uint8_t));
+		snprintf(string, sizeof(string) / sizeof(uint8_t),
+			 "Tc%dPage", idx);
+
+		/* update the final value */
+		prWifiVar->au4TcPageCount[idx] =
+			(uint32_t) wlanCfgGetUint32(prAdapter,
+	    string, prWifiVar->au4TcPageCount[idx]);
+	}
+
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	/* 3 2. update for guaranteed page count */
+	for (idx = 0; idx < ucMaxTcNum; idx++) {
+
+		/* construct prefix: Tc0Grt, Tc1Grt... */
+		memset(string, 0, sizeof(string) / sizeof(uint8_t));
+		snprintf(string, sizeof(string) / sizeof(uint8_t),
+			 "Tc%dGrt", idx);
+
+		/* update the final value */
+		prQM->au4GuaranteedTcResource[idx] =
+			(uint32_t) wlanCfgGetUint32(prAdapter,
+	    string, prQM->au4GuaranteedTcResource[idx]);
+	}
+#endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
+#endif /* end of #if CFG_SUPPORT_CFG_FILE */
+
+
+	/*
+	 * 4. Peak throughput settings.
+	 *    Give most of the resource to TC1_INDEX.
+	 *    Reference to arNetwork2TcResource[], AC_BE uses TC1_INDEX.
+	 */
+	if (prAdapter->rWifiVar.ucTpTestMode ==
+	    ENUM_TP_TEST_MODE_THROUGHPUT) {
+		uint32_t u4plePageCnt, u4pleRemain;
+#define DEFAULT_PACKET_NUM 5
+
+		/* Skip PSE part in V2 */
+		/* ple */
+		u4pleRemain = u2PleAvail;
+		u4plePageCnt = DEFAULT_PACKET_NUM *
+			       NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+		/* equally giving to each TC */
+		for (idx = 0; idx < ucMaxTcNum; idx++) {
+			if (idx == TC4_INDEX)
+				continue;
+			if (!nicTxResourceIsPleCtrlNeeded(prAdapter, idx))
+				continue;
+
+			/* ple */
+			prWifiVar->au4TcPageCountPle[idx] = u4plePageCnt;
+			u4pleRemain -= u4plePageCnt;
+		}
+
+		/* remaings are to TC1_INDEX */
+		prWifiVar->au4TcPageCountPle[TC1_INDEX] += u4pleRemain;
+	}
+}
+#endif /* (CFG_TX_RSRC_WMM_ENHANCE == 1) */
 
 void nicTxChangeDataPortByAc(
 	struct ADAPTER *prAdapter,
@@ -6043,5 +6266,76 @@ u_int8_t nicTxIsPrioPackets(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo)
 {
 	return prMsduInfo && prMsduInfo->ucTC == TC3_INDEX;
+}
+
+uint8_t nicTxGetWmmIdxByTc(uint8_t ucTC)
+{
+	uint8_t ucAc;
+
+	if (ucTC >= TC_NUM) {
+		DBGLOG(TX, ERROR, "Invalid TC%d\n", ucTC);
+		return 0;
+	}
+
+	if (ucTC == TC4_INDEX) {
+		/* TC4 is meaningless for WMM, return 0 only */
+		DBGLOG(TX, TRACE, "TC%d fall to WMM0\n", ucTC);
+		return 0;
+	}
+
+	ucAc = nicTxGetTxDestQIdxByTc(ucTC);
+	return (ucAc/WMM_AC_INDEX_NUM);
+}
+
+uint8_t nicTxGetAcIdxByTc(uint8_t ucTC)
+{
+	uint8_t ucAc;
+
+	if (ucTC >= TC_NUM) {
+		DBGLOG(TX, ERROR, "Invalid TC%d\n", ucTC);
+		return WMM_AC_BE_INDEX;
+	}
+
+	ucAc = nicTxGetTxDestQIdxByTc(ucTC);
+	return (ucAc%WMM_AC_INDEX_NUM);
+}
+
+uint8_t nicTxWmmTc2ResTc(struct ADAPTER *prAdapter,
+	uint8_t ucWmmSet, uint8_t ucWmmTC)
+{
+	uint8_t ucTC;
+
+	if (ucWmmSet >= MAX_BSSID_NUM + 1
+		|| ucWmmTC >= NET_TC_NUM) {
+		DBGLOG(TX, ERROR, "Invalid WmmSet:%d WmmTC:%d\n",
+			ucWmmSet, ucWmmTC);
+		return TC0_INDEX;
+	}
+
+	ucTC = arNetwork2TcResource[ucWmmSet][ucWmmTC];
+
+	/* If TC is disabled, return WMM0-AC as default */
+	if (!NIC_TX_RES_IS_ACTIVE(prAdapter, ucTC))
+		ucTC = arNetwork2TcResource[0][ucWmmTC];
+
+	return ucTC;
+}
+
+uint8_t nicTxResTc2WmmTc(uint8_t ucResTC)
+{
+	uint8_t ucSetIdx;
+	uint8_t ucTcIdx;
+
+	ucSetIdx = nicTxGetWmmIdxByTc(ucResTC);
+
+	/* TCx is meaningless for BMC, do not need to cover BMC case */
+	for (ucTcIdx = 0;
+		ucTcIdx < ARRAY_SIZE(arNetwork2TcResource[0]);
+		ucTcIdx++) {
+		if (ucResTC == arNetwork2TcResource[ucSetIdx][ucTcIdx])
+			break;
+	}
+
+	return ucTcIdx;
 }
 

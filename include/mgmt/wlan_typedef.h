@@ -118,6 +118,20 @@ enum ENUM_TRAFFIC_CLASS_INDEX {
 	TC3_INDEX,		/* HIF TX: AC3 packets */
 	TC4_INDEX,		/* HIF TX: CPU packets */
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	TC5_INDEX,		/* HIF TX: AC10 packets */
+	TC6_INDEX,		/* HIF TX: AC11 packets */
+	TC7_INDEX,		/* HIF TX: AC12 packets */
+	TC8_INDEX,		/* HIF TX: AC13 packets */
+
+	TC9_INDEX,		/* HIF TX: AC20 packets */
+	TC10_INDEX,		/* HIF TX: AC21 packets */
+	TC11_INDEX,		/* HIF TX: AC22 packets */
+	TC12_INDEX,		/* HIF TX: AC23 packets */
+
+	TC13_INDEX,		/* HIF TX: AC3X packets */
+#endif
+
 #if NIC_TX_ENABLE_SECOND_HW_QUEUE
 	/* Second HW queue */
 	TC5_INDEX,		/* HIF TX: AC10 packets */
@@ -128,6 +142,11 @@ enum ENUM_TRAFFIC_CLASS_INDEX {
 
 	TC_NUM			/* Maximum number of Traffic Classes. */
 };
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define HIF_WMM_SET_NUM		 HW_WMM_NUM
+#endif
+
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
