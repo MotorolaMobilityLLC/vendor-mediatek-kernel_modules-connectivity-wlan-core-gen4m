@@ -1580,6 +1580,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 	int32_t i4DevIdx = -1;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
+	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prWdev);
 
@@ -1588,11 +1589,16 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			break;
 
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
+		prAdapter = prGlueInfo->prAdapter;
 		i4DevIdx = wlanGetDevIdx(prWdev->netdev);
 		if (i4DevIdx < 0) {
 			DBGLOG(INIT, ERROR, "net_device number exceeds!\n");
 			break;
 		}
+
+		if (prAdapter && prAdapter->rWifiVar.ucWow)
+			kalInitDevWakeup(prGlueInfo->prAdapter,
+				wiphy_dev(prWdev->wiphy));
 
 		if (register_netdev(prWdev->netdev) < 0) {
 			DBGLOG(INIT, ERROR, "Register net_device failed\n");
