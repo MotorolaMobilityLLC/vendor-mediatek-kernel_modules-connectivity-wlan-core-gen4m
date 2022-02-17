@@ -675,6 +675,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 			u4Addr);
 
+#if 0
 		if (eDlIdx == IMG_DL_IDX_PATCH) {
 			do {
 				u4Val = 0;
@@ -698,6 +699,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 				return WLAN_STATUS_NOT_ACCEPTED;
 			}
 		}
+#endif
 
 		memcpy_toio((void *)(prHifInfo->CSRBaseAddress+0x500000),
 			(void *)pucStartPtr, u4Len);
@@ -741,6 +743,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 			CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 			u4Addr);
 
+#if 0
 		if (eDlIdx == IMG_DL_IDX_PATCH) {
 			do {
 				u4Val = 0;
@@ -761,6 +764,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 				return WLAN_STATUS_NOT_ACCEPTED;
 			}
 		}
+#endif
 
 		/* because
 		* soc3_0_bus2chip_cr_mapping =
