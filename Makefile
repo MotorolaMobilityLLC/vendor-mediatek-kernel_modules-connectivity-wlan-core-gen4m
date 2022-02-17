@@ -254,16 +254,16 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE=1
-    ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
-        ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=1
-        ifneq ($(CONFIG_MLD_LINK_MAX),)
-            ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
-        endif
-    else
-        ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
-    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=1
+    ifneq ($(CONFIG_MLD_LINK_MAX),)
+        ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
+    endif
+else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
 endif
 
