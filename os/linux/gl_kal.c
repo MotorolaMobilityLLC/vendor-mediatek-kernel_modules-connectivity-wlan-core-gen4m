@@ -1053,6 +1053,14 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 
 	prNetDev->stats.rx_bytes += prSkb->len;
 	prNetDev->stats.rx_packets++;
+#if CFG_SUPPORT_PERF_IND
+	if (GLUE_GET_PKT_BSS_IDX(prSkb) < BSS_DEFAULT_NUM) {
+	/* update Performance Indicator statistics*/
+		prGlueInfo->PerfIndCache.u4CurRxBytes
+			[GLUE_GET_PKT_BSS_IDX(prSkb)] += prSkb->len;
+	}
+#endif
+
 #else
 	if (GLUE_GET_PKT_IS_P2P(prSkb)) {
 		/* P2P */
@@ -2041,6 +2049,10 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	/* Update NetDev statisitcs */
 	prDev->stats.tx_bytes += u4SkbLen;
 	prDev->stats.tx_packets++;
+#if CFG_SUPPORT_PERF_IND
+	/* update Performance Indicator statistics*/
+	prGlueInfo->PerfIndCache.u4CurTxBytes[ucBssIndex] += u4SkbLen;
+#endif
 
 	DBGLOG(TX, LOUD,
 	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
@@ -6821,6 +6833,97 @@ void kalPerMonDump(IN struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
+#define PERF_UPDATE_PERIOD      1000 /* ms */
+#if (CFG_SUPPORT_PERF_IND == 1)
+void kalPerfIndReset(IN struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.u4CurRxBytes[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.u2CurRxRate[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i] = 0;
+		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i] = 0;
+	}
+} /* kalPerfIndReset */
+
+void kalSetPerfReport(IN struct ADAPTER *prAdapter)
+{
+	struct CMD_PERF_IND *prCmdPerfReport;
+	uint8_t i;
+	uint32_t u4CurrentTp = 0;
+
+	DEBUGFUNC("kalSetPerfReport()");
+
+	prCmdPerfReport = (struct CMD_PERF_IND *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+		sizeof(struct CMD_PERF_IND));
+
+	if (!prCmdPerfReport) {
+		DBGLOG(SW4, ERROR,
+			"cnmMemAlloc for kalSetPerfReport failed!\n");
+		return;
+	}
+	kalMemZero(prCmdPerfReport, sizeof(struct CMD_PERF_IND));
+
+	prCmdPerfReport->ucCmdVer = 0;
+	prCmdPerfReport->u2CmdLen = sizeof(struct CMD_PERF_IND);
+
+	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
+
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		prCmdPerfReport->ulCurTxBytes[i] =
+			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
+		prCmdPerfReport->ulCurRxBytes[i] =
+			prAdapter->prGlueInfo->PerfIndCache.u4CurRxBytes[i];
+		prCmdPerfReport->u2CurRxRate[i] =
+			prAdapter->prGlueInfo->PerfIndCache.u2CurRxRate[i];
+		prCmdPerfReport->ucCurRxRCPI0[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i];
+		prCmdPerfReport->ucCurRxRCPI1[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i];
+		prCmdPerfReport->ucCurRxNss[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i];
+		u4CurrentTp += (prCmdPerfReport->ulCurTxBytes[i] +
+			prCmdPerfReport->ulCurRxBytes[i]);
+	}
+	if (u4CurrentTp != 0) {
+		DBGLOG(SW4, INFO,
+			"Total TP[%d] TX-Byte[%d][%d][%d][%d],RX-Byte[%d][%d][%d][%d]\n",
+			u4CurrentTp,
+			prCmdPerfReport->ulCurTxBytes[0],
+			prCmdPerfReport->ulCurTxBytes[1],
+			prCmdPerfReport->ulCurTxBytes[2],
+			prCmdPerfReport->ulCurTxBytes[3],
+			prCmdPerfReport->ulCurRxBytes[0],
+			prCmdPerfReport->ulCurRxBytes[1],
+			prCmdPerfReport->ulCurRxBytes[2],
+			prCmdPerfReport->ulCurRxBytes[3]);
+		DBGLOG(SW4, INFO,
+			"Rate[%d][%d][%d][%d] RCPI[%d][%d][%d][%d]\n",
+			prCmdPerfReport->u2CurRxRate[0],
+			prCmdPerfReport->u2CurRxRate[1],
+			prCmdPerfReport->u2CurRxRate[2],
+			prCmdPerfReport->u2CurRxRate[3],
+			prCmdPerfReport->ucCurRxRCPI0[0],
+			prCmdPerfReport->ucCurRxRCPI0[1],
+			prCmdPerfReport->ucCurRxRCPI0[2],
+			prCmdPerfReport->ucCurRxRCPI0[3]);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_PERF_IND,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdPerfReport),
+			(uint8_t *) prCmdPerfReport, NULL, 0);
+	}
+	cnmMemFree(prAdapter, prCmdPerfReport);
+}				/* kalSetPerfReport */
+#endif
 
 inline int32_t kalPerMonInit(IN struct GLUE_INFO
 			     *prGlueInfo)
@@ -6845,6 +6948,10 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 				(PFN_MGMT_TIMEOUT_FUNC) kalPerMonHandler,
 				(unsigned long) NULL,
 				TIMER_WAKELOCK_NONE);
+#if CFG_SUPPORT_PERF_IND
+	kalPerfIndReset(prGlueInfo->prAdapter);
+#endif
+
 	DBGLOG(SW4, TRACE, "exit %s\n", __func__);
 	return 0;
 }
@@ -6892,7 +6999,10 @@ inline int32_t kalPerMonStart(IN struct GLUE_INFO
 	DBGLOG(SW4, TEMP, "enter %s\n", __func__);
 
 	if (!wlan_perf_monitor_force_enable &&
-	    (wlan_fb_power_down || prGlueInfo->fgIsInSuspendMode))
+		(wlan_fb_power_down
+		|| prGlueInfo->fgIsInSuspendMode
+		))
+
 		return 0;
 
 	if (KAL_TEST_BIT(PERF_MON_DISABLE_BIT,
@@ -7002,7 +7112,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	prPerMonitor = &prAdapter->rPerMonitor;
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
 
-#if CFG_SUPPORT_PERF_IND
+#if (CFG_SUPPORT_PERF_IND == 1)
 	if (prWifiVar->fgPerfIndicatorEn)
 		kalSetPerfReport(prAdapter);
 	for (a = 0; a < BSS_DEFAULT_NUM; a++) {
@@ -7106,6 +7216,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	}
 
 	if (!wlan_perf_monitor_force_enable &&
+#if (CFG_SUPPORT_PERF_IND == 1)
+			!prWifiVar->fgPerfIndicatorEn &&
+#endif
 			(wlan_fb_power_down ||
 			prGlueInfo->fgIsInSuspendMode ||
 			!keep_alive))
