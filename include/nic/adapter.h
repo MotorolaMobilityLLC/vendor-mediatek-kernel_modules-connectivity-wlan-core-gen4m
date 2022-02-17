@@ -951,6 +951,7 @@ struct WIFI_VAR {
 	uint8_t ucAdvPws; /* enable LP multiple DTIM function, default enable */
 	uint8_t ucWowOnMdtim; /* multiple DTIM if WOW enable, default 1 */
 	uint8_t ucWowOffMdtim; /* multiple DTIM if WOW disable, default 3 */
+	uint32_t u4TxHangFullDumpMode;
 
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
@@ -1708,6 +1709,9 @@ struct ADAPTER {
 
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
+	uint32_t u4HifTxHangDumpBitmap;
+	uint32_t u4HifTxHangDumpIdx;
+	uint32_t u4HifTxHangDumpNum;
 	uint32_t u4NoMoreRfb;
 
 	/* Only for PCIE DmaSchdl usage so far. */
