@@ -613,7 +613,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #if (KERNEL_VERSION(4, 9, 0) <= LINUX_VERSION_CODE)
 #if (KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE)
 #define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName) \
-	_prWakeLock = wakeup_source_register(_pcName);
+	_prWakeLock = wakeup_source_register(NULL, _pcName);
 
 #define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
 { \
