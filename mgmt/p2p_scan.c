@@ -110,14 +110,14 @@
 ********************************************************************************
 */
 
-VOID
-scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
-				 IN P_SW_RFB_T prSwRfb,
-				 IN P_WLAN_STATUS prStatus,
-				 IN P_BSS_DESC_T prBssDesc, IN P_WLAN_BEACON_FRAME_T prWlanBeaconFrame)
+void
+scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
+				 IN struct SW_RFB *prSwRfb,
+				 IN uint32_t *prStatus,
+				 IN struct BSS_DESC *prBssDesc, IN struct WLAN_BEACON_FRAME *prWlanBeaconFrame)
 {
-	BOOLEAN fgIsSkipThisBeacon = FALSE;
-	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
+	u_int8_t fgIsSkipThisBeacon = FALSE;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = (struct P2P_DEV_FSM_INFO *) NULL;
 
 	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
 
@@ -125,13 +125,13 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 		if ((prBssDesc->fgIsConnected) &&	/* P2P GC connected. */
 		    ((prWlanBeaconFrame->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_BEACON)	/* TX Beacon */
 		    ) {
-			UINT_32 u4Idx = 0;
-			P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+			uint32_t u4Idx = 0;
+			struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 			for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
 				/* Check BSS for P2P. */
 				/* Check BSSID. */
-				prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, (UINT_8) u4Idx);
+				prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, (uint8_t) u4Idx);
 
 				if (!IS_BSS_ACTIVE(prP2pBssInfo))
 					continue;
@@ -158,7 +158,7 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 		}
 
 		do {
-			RF_CHANNEL_INFO_T rChannelInfo;
+			struct RF_CHANNEL_INFO rChannelInfo;
 
 			ASSERT_BREAK((prSwRfb != NULL) && (prBssDesc != NULL));
 
@@ -181,53 +181,53 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 					prBssDesc->aucSSID, prBssDesc->ucChannelNum);
 
 			kalP2PIndicateBssInfo(prAdapter->prGlueInfo,
-					      (PUINT_8) prSwRfb->pvHeader,
-					      (UINT_32) prSwRfb->u2PacketLen,
+					      (uint8_t *) prSwRfb->pvHeader,
+					      (uint32_t) prSwRfb->u2PacketLen,
 					      &rChannelInfo, RCPI_TO_dBm(prBssDesc->ucRCPI));
 
 		} while (FALSE);
 	}
 }
 
-VOID scnEventReturnChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucScnSeqNum)
+void scnEventReturnChannel(IN struct ADAPTER *prAdapter, IN uint8_t ucScnSeqNum)
 {
 
-	CMD_SCAN_CANCEL rCmdScanCancel;
+	struct CMD_SCAN_CANCEL rCmdScanCancel;
 
 	/* send cancel message to firmware domain */
 	rCmdScanCancel.ucSeqNum = ucScnSeqNum;
-	rCmdScanCancel.ucIsExtChannel = (UINT_8) FALSE;
+	rCmdScanCancel.ucIsExtChannel = (uint8_t) FALSE;
 
 	wlanSendSetQueryCmd(prAdapter,
 			    CMD_ID_SCAN_CANCEL,
 			    TRUE,
-			    FALSE, FALSE, NULL, NULL, sizeof(CMD_SCAN_CANCEL), (PUINT_8)&rCmdScanCancel, NULL, 0);
+			    FALSE, FALSE, NULL, NULL, sizeof(struct CMD_SCAN_CANCEL), (uint8_t *)&rCmdScanCancel, NULL, 0);
 }				/* scnEventReturnChannel */
 
-VOID scanRemoveAllP2pBssDesc(IN P_ADAPTER_T prAdapter)
+void scanRemoveAllP2pBssDesc(IN struct ADAPTER *prAdapter)
 {
-	P_LINK_T prBSSDescList;
-	P_BSS_DESC_T prBssDesc;
-	P_BSS_DESC_T prBSSDescNext;
+	struct LINK *prBSSDescList;
+	struct BSS_DESC *prBssDesc;
+	struct BSS_DESC *prBSSDescNext;
 
 	ASSERT(prAdapter);
 
 	prBSSDescList = &(prAdapter->rWifiVar.rScanInfo.rBSSDescList);
 
 	/* Search BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList, rLinkEntry, BSS_DESC_T) {
+	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList, rLinkEntry, struct BSS_DESC) {
 		scanRemoveP2pBssDesc(prAdapter, prBssDesc);
 	}
 }				/* scanRemoveAllP2pBssDesc */
 
-VOID scanRemoveP2pBssDesc(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
+void scanRemoveP2pBssDesc(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDesc)
 {
 }				/* scanRemoveP2pBssDesc */
 
-P_BSS_DESC_T scanP2pSearchDesc(IN P_ADAPTER_T prAdapter, IN P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo)
+struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter, IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo)
 {
-	P_BSS_DESC_T prCandidateBssDesc = (P_BSS_DESC_T) NULL, prBssDesc = (P_BSS_DESC_T) NULL;
-	P_LINK_T prBssDescList = (P_LINK_T) NULL;
+	struct BSS_DESC *prCandidateBssDesc = (struct BSS_DESC *) NULL, *prBssDesc = (struct BSS_DESC *) NULL;
+	struct LINK *prBssDescList = (struct LINK *) NULL;
 
 	do {
 		if ((prAdapter == NULL) || (prConnReqInfo == NULL))
@@ -240,7 +240,7 @@ P_BSS_DESC_T scanP2pSearchDesc(IN P_ADAPTER_T prAdapter, IN P_P2P_CONNECTION_REQ
 		       "Connecting to SSID:%s, length:%d\n", prConnReqInfo->rSsidStruct.aucSsid,
 		       prConnReqInfo->rSsidStruct.ucSsidLen);
 
-		LINK_FOR_EACH_ENTRY(prBssDesc, prBssDescList, rLinkEntry, BSS_DESC_T) {
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBssDescList, rLinkEntry, struct BSS_DESC) {
 			DBGLOG(P2P, LOUD, "Checking BSS: " MACSTR "\n", MAC2STR(prBssDesc->aucBSSID));
 
 			if (prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE) {

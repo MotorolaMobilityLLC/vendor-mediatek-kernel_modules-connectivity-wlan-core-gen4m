@@ -82,24 +82,24 @@
 
 #if CFG_ENABLE_GTK_FRAME_FILTER
 /*For GTK Frame Filter*/
-typedef struct _IPV4_NETWORK_ADDRESS_LIST {
-	UINT_8 ucAddrCount;
-	IPV4_NETWORK_ADDRESS arNetAddr[1];
-} IPV4_NETWORK_ADDRESS_LIST, *P_IPV4_NETWORK_ADDRESS_LIST;
+struct IPV4_NETWORK_ADDRESS_LIST {
+	uint8_t ucAddrCount;
+	struct IPV4_NETWORK_ADDRESS arNetAddr[1];
+};
 #endif
 
 /* Entry of BSSID Pool - For SIGMA Test */
-typedef struct _BSSID_ENTRY_T {
-	UINT_8 aucBSSID[MAC_ADDR_LEN];
-} BSSID_ENTRY_T, P_HS20_BSSID_POOL_ENTRY_T;
+struct BSSID_ENTRY {
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+};
 
-struct _HS20_INFO_T {
+struct HS20_INFO {
 	/*Hotspot 2.0 Information */
-	UINT_8 aucHESSID[MAC_ADDR_LEN];
-	UINT_8 ucAccessNetworkOptions;
-	UINT_8 ucVenueGroup;	/* VenueInfo - Group */
-	UINT_8 ucVenueType;
-	UINT_8 ucHotspotConfig;
+	uint8_t aucHESSID[MAC_ADDR_LEN];
+	uint8_t ucAccessNetworkOptions;
+	uint8_t ucVenueGroup;	/* VenueInfo - Group */
+	uint8_t ucVenueType;
+	uint8_t ucHotspotConfig;
 
 	/*Roaming Consortium Information */
 	/* PARAM_HS20_ROAMING_CONSORTIUM_INFO rRCInfo; */
@@ -113,9 +113,9 @@ struct _HS20_INFO_T {
 
 	/* For SIGMA Test */
 	/* BSSID Pool */
-	BSSID_ENTRY_T arBssidPool[BSSID_POOL_MAX_SIZE];
-	UINT_8 ucNumBssidPoolEntry;
-	BOOLEAN fgIsHS2SigmaMode;
+	struct BSSID_ENTRY arBssidPool[BSSID_POOL_MAX_SIZE];
+	uint8_t ucNumBssidPoolEntry;
+	u_int8_t fgIsHS2SigmaMode;
 };
 
 /*******************************************************************************
@@ -137,8 +137,8 @@ struct _HS20_INFO_T {
 #if DBG
 #define FREE_IPV4_NETWORK_ADDR_LIST(_prAddrList)    \
 	{   \
-		UINT_32 u4Size = OFFSET_OF(IPV4_NETWORK_ADDRESS_LIST, arNetAddr) +  \
-				 (((_prAddrList)->ucAddrCount) * sizeof(IPV4_NETWORK_ADDRESS));  \
+		uint32_t u4Size = OFFSET_OF(struct IPV4_NETWORK_ADDRESS_LIST, arNetAddr) +  \
+				 (((_prAddrList)->ucAddrCount) * sizeof(struct IPV4_NETWORK_ADDRESS));  \
 		kalMemFree((_prAddrList), VIR_MEM_TYPE, u4Size);    \
 		(_prAddrList) = NULL;   \
 	}
@@ -155,35 +155,35 @@ struct _HS20_INFO_T {
  ********************************************************************************
  */
 
-VOID hs20GenerateInterworkingIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo);
+void hs20GenerateInterworkingIE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo);
 
-VOID hs20GenerateRoamingConsortiumIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo);
+void hs20GenerateRoamingConsortiumIE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo);
 
-VOID hs20GenerateHS20IE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo);
+void hs20GenerateHS20IE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo);
 
-VOID hs20FillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO_T prMsduInfo);
+void hs20FillExtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
 
-VOID hs20FillProreqExtCapIE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE);
+void hs20FillProreqExtCapIE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE);
 
-VOID hs20FillHS20IE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE);
+void hs20FillHS20IE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE);
 
-UINT_32 hs20CalculateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTargetBSSID);
+uint32_t hs20CalculateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter, IN uint8_t *pucTargetBSSID);
 
-WLAN_STATUS hs20GenerateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTargetBSSID, OUT PUINT_8 prIE);
+uint32_t hs20GenerateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter, IN uint8_t *pucTargetBSSID, OUT uint8_t *prIE);
 
-BOOLEAN hs20IsGratuitousArp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prCurrSwRfb);
+u_int8_t hs20IsGratuitousArp(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prCurrSwRfb);
 
-BOOLEAN hs20IsUnsolicitedNeighborAdv(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prCurrSwRfb);
+u_int8_t hs20IsUnsolicitedNeighborAdv(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prCurrSwRfb);
 
 #if CFG_ENABLE_GTK_FRAME_FILTER
-BOOLEAN hs20IsForgedGTKFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_SW_RFB_T prCurrSwRfb);
+u_int8_t hs20IsForgedGTKFrame(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb);
 #endif
 
-BOOLEAN hs20IsUnsecuredFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_SW_RFB_T prCurrSwRfb);
+u_int8_t hs20IsUnsecuredFrame(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb);
 
-BOOLEAN hs20IsFrameFilterEnabled(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+u_int8_t hs20IsFrameFilterEnabled(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-WLAN_STATUS hs20SetBssidPool(IN P_ADAPTER_T prAdapter, IN PVOID pvBuffer, IN ENUM_KAL_NETWORK_TYPE_INDEX_T eNetTypeIdx);
+uint32_t hs20SetBssidPool(IN struct ADAPTER *prAdapter, IN void *pvBuffer, IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx);
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 #endif

@@ -94,9 +94,9 @@
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-static PUCHAR ifname = P2P_INF_NAME;
-static PUCHAR ifname2 = P2P_INF_NAME;
-static UINT_16 mode = RUNNING_P2P_MODE;
+static uint8_t *ifname = P2P_INF_NAME;
+static uint8_t *ifname2 = P2P_INF_NAME;
+static uint16_t mode = RUNNING_P2P_MODE;
 
 
 /*******************************************************************************
@@ -114,7 +114,7 @@ static UINT_16 mode = RUNNING_P2P_MODE;
 ********************************************************************************
 */
 
-VOID p2pSetSuspendMode(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
+void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
 	struct net_device *prDev = NULL;
 
@@ -144,7 +144,7 @@ VOID p2pSetSuspendMode(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
 * \retval 1     Success
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN p2pLaunch(P_GLUE_INFO_T prGlueInfo)
+u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE) {
 		DBGLOG(P2P, INFO, "p2p is already registered\n");
@@ -161,10 +161,10 @@ BOOLEAN p2pLaunch(P_GLUE_INFO_T prGlueInfo)
 	return TRUE;
 }
 
-VOID p2pSetMode(IN UINT_8 ucAPMode)
+void p2pSetMode(IN uint8_t ucAPMode)
 {
-	PUCHAR prAPInfName = AP_INF_NAME;
-	PUCHAR prP2PInfName = P2P_INF_NAME;
+	uint8_t *prAPInfName = AP_INF_NAME;
+	uint8_t *prP2PInfName = P2P_INF_NAME;
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 
@@ -209,7 +209,7 @@ VOID p2pSetMode(IN UINT_8 ucAPMode)
 * \retval 1     Success
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN p2pRemove(P_GLUE_INFO_T prGlueInfo)
+u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(P2P, INFO, "p2p is not registered\n");

@@ -83,7 +83,7 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-NON_HT_PHY_ATTRIBUTE_T rNonHTPhyAttributes[] = {
+const struct NON_HT_PHY_ATTRIBUTE rNonHTPhyAttributes[] = {
 	{RATE_SET_HR_DSSS, TRUE, FALSE}
 	,			/* For PHY_TYPE_HR_DSSS_INDEX(0) */
 	{RATE_SET_ERP, TRUE, TRUE}
@@ -94,7 +94,7 @@ NON_HT_PHY_ATTRIBUTE_T rNonHTPhyAttributes[] = {
 	,			/* For PHY_TYPE_OFDM_INDEX(3) */
 };
 
-NON_HT_ADHOC_MODE_ATTRIBUTE_T rNonHTAdHocModeAttributes[AD_HOC_MODE_NUM] = {
+const struct NON_HT_ATTRIBUTE rNonHTAdHocModeAttributes[AD_HOC_MODE_NUM] = {
 	{PHY_TYPE_HR_DSSS_INDEX, BASIC_RATE_SET_HR_DSSS}
 	,			/* For AD_HOC_MODE_11B(0) */
 	{PHY_TYPE_ERP_INDEX, BASIC_RATE_SET_HR_DSSS_ERP}
@@ -105,7 +105,7 @@ NON_HT_ADHOC_MODE_ATTRIBUTE_T rNonHTAdHocModeAttributes[AD_HOC_MODE_NUM] = {
 	,			/* For AD_HOC_MODE_11A(3) */
 };
 
-NON_HT_AP_MODE_ATTRIBUTE_T rNonHTApModeAttributes[AP_MODE_NUM] = {
+const struct NON_HT_ATTRIBUTE rNonHTApModeAttributes[AP_MODE_NUM] = {
 	{PHY_TYPE_HR_DSSS_INDEX, BASIC_RATE_SET_HR_DSSS}
 	,			/* For AP_MODE_11B(0) */
 	{PHY_TYPE_ERP_INDEX, BASIC_RATE_SET_HR_DSSS_ERP}

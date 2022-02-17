@@ -75,19 +75,19 @@
  *                              C O N S T A N T S
  ********************************************************************************
  */
-PUINT_8 apucConnacFwName[] = {
-	(PUINT_8) CFG_FW_FILENAME "_soc1_0",
+uint8_t *apucConnacFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_soc1_0",
 	NULL
 };
 
-ECO_INFO_T connac_eco_table[] = {
+struct ECO_INFO connac_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0xA, 0x1}, /* E1 */
 	{0x00, 0x00, 0x0}	/* End of table */
 };
 
 #if defined(_HIF_PCIE)
-PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
@@ -133,10 +133,10 @@ PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE */
 
-VOID connacConstructFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
-				 PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
+void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable,
+				 uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
-	UINT_8 ucIdx = 0;
+	uint8_t ucIdx = 0;
 
 	for (ucIdx = 0; apucConnacFwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) < ucMaxNameIdx) {
@@ -169,13 +169,13 @@ VOID connacConstructFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTabl
 	}
 }
 
-VOID connacConstructPatchName(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucName, PUINT_8 pucNameIdx)
+void connacConstructPatchName(struct GLUE_INFO *prGlueInfo, uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	snprintf(apucName[(*pucNameIdx)], CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
 		wlanGetEcoVersion(prGlueInfo->prAdapter));
 }
 
-BUS_INFO connac_bus_info = {
+struct BUS_INFO connac_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
 	.bus2chip = connac_bus2chip_cr_mapping,

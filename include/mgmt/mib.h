@@ -82,74 +82,73 @@
  ********************************************************************************
  */
 /* Entry in SMT AuthenticationAlgorithms Table: dot11AuthenticationAlgorithmsEntry */
-typedef struct _DOT11_AUTHENTICATION_ALGORITHMS_ENTRY {
-	BOOLEAN dot11AuthenticationAlgorithmsEnable;	/* dot11AuthenticationAlgorithmsEntry 3 */
-} DOT11_AUTHENTICATION_ALGORITHMS_ENTRY, *P_DOT11_AUTHENTICATION_ALGORITHMS_ENTRY;
+struct DOT11_AUTHENTICATION_ALGORITHMS_ENTRY {
+	u_int8_t dot11AuthenticationAlgorithmsEnable;	/* dot11AuthenticationAlgorithmsEntry 3 */
+};
 
 /* Entry in SMT dot11RSNAConfigPairwiseCiphersTalbe Table: dot11RSNAConfigPairwiseCiphersEntry */
-typedef struct _DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY {
-	UINT_32 dot11RSNAConfigPairwiseCipher;	/* dot11RSNAConfigPairwiseCiphersEntry 2 */
-	BOOLEAN dot11RSNAConfigPairwiseCipherEnabled;	/* dot11RSNAConfigPairwiseCiphersEntry 3 */
-} DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY, *P_DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY;
+struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY {
+	uint32_t dot11RSNAConfigPairwiseCipher;	/* dot11RSNAConfigPairwiseCiphersEntry 2 */
+	u_int8_t dot11RSNAConfigPairwiseCipherEnabled;	/* dot11RSNAConfigPairwiseCiphersEntry 3 */
+};
 
 /* Entry in SMT dot11RSNAConfigAuthenticationSuitesTalbe Table: dot11RSNAConfigAuthenticationSuitesEntry */
-typedef struct _DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY {
-	UINT_32 dot11RSNAConfigAuthenticationSuite;	/* dot11RSNAConfigAuthenticationSuitesEntry 2 */
-	BOOLEAN dot11RSNAConfigAuthenticationSuiteEnabled;	/* dot11RSNAConfigAuthenticationSuitesEntry 3 */
-} DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY, *P_DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY;
+struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY {
+	uint32_t dot11RSNAConfigAuthenticationSuite;	/* dot11RSNAConfigAuthenticationSuitesEntry 2 */
+	u_int8_t dot11RSNAConfigAuthenticationSuiteEnabled;	/* dot11RSNAConfigAuthenticationSuitesEntry 3 */
+};
 
 /* ----- IEEE 802.11 MIB Major sections ----- */
-typedef struct _IEEE_802_11_MIB_T {
+struct IEEE_802_11_MIB {
 	/* dot11PrivacyTable                            (dot11smt 5) */
-	UINT_8 dot11WEPDefaultKeyID;	/* dot11PrivacyEntry 2 */
-	BOOLEAN dot11TranmitKeyAvailable;
-	UINT_32 dot11WEPICVErrorCount;	/* dot11PrivacyEntry 5 */
-	UINT_32 dot11WEPExcludedCount;	/* dot11PrivacyEntry 6 */
+	uint8_t dot11WEPDefaultKeyID;	/* dot11PrivacyEntry 2 */
+	u_int8_t dot11TranmitKeyAvailable;
+	uint32_t dot11WEPICVErrorCount;	/* dot11PrivacyEntry 5 */
+	uint32_t dot11WEPExcludedCount;	/* dot11PrivacyEntry 6 */
 
 	/* dot11RSNAConfigTable                         (dot11smt 8) */
-	UINT_32 dot11RSNAConfigGroupCipher;	/* dot11RSNAConfigEntry 4 */
+	uint32_t dot11RSNAConfigGroupCipher;	/* dot11RSNAConfigEntry 4 */
 
 	/* dot11RSNAConfigPairwiseCiphersTable          (dot11smt 9) */
-	DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY dot11RSNAConfigPairwiseCiphersTable[MAX_NUM_SUPPORTED_CIPHER_SUITES];
+	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY dot11RSNAConfigPairwiseCiphersTable[MAX_NUM_SUPPORTED_CIPHER_SUITES];
 
 	/* dot11RSNAConfigAuthenticationSuitesTable     (dot11smt 10) */
-	 DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
+	 struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
 	    dot11RSNAConfigAuthenticationSuitesTable[MAX_NUM_SUPPORTED_AKM_SUITES];
 
 #if 0				/* SUPPORT_WAPI */
-	BOOLEAN fgWapiKeyInstalled;
-	PARAM_WPI_KEY_T rWapiPairwiseKey[2];
-	BOOLEAN fgPairwiseKeyUsed[2];
-	UINT_8 ucWpiActivedPWKey;	/* Must be 0 or 1, by wapi spec */
-	PARAM_WPI_KEY_T rWapiGroupKey[2];
-	BOOLEAN fgGroupKeyUsed[2];
+	u_int8_t fgWapiKeyInstalled;
+	struct PARAM_WPI_KEY rWapiPairwiseKey[2];
+	u_int8_t fgPairwiseKeyUsed[2];
+	uint8_t ucWpiActivedPWKey;	/* Must be 0 or 1, by wapi spec */
+	struct PARAM_WPI_KEY rWapiGroupKey[2];
+	u_int8_t fgGroupKeyUsed[2];
 #endif
-} IEEE_802_11_MIB_T, *P_IEEE_802_11_MIB_T;
+};
 
 /* ------------------ IEEE 802.11 non HT PHY characteristics ---------------- */
-typedef const struct _NON_HT_PHY_ATTRIBUTE_T {
-	UINT_16 u2SupportedRateSet;
+struct NON_HT_PHY_ATTRIBUTE {
+	uint16_t u2SupportedRateSet;
 
-	BOOLEAN fgIsShortPreambleOptionImplemented;
+	u_int8_t fgIsShortPreambleOptionImplemented;
 
-	BOOLEAN fgIsShortSlotTimeOptionImplemented;
-} NON_HT_PHY_ATTRIBUTE_T, *P_NON_HT_PHY_ATTRIBUTE_T;
+	u_int8_t fgIsShortSlotTimeOptionImplemented;
+};
 
-typedef const struct _NON_HT_ADHOC_MODE_ATTRIBUTE_T {
-	ENUM_PHY_TYPE_INDEX_T ePhyTypeIndex;
+struct NON_HT_ATTRIBUTE {
+	enum ENUM_PHY_TYPE_INDEX ePhyTypeIndex;
 
-	UINT_16 u2BSSBasicRateSet;
-} NON_HT_ADHOC_MODE_ATTRIBUTE_T, *P_NON_HT_ADHOC_MODE_ATTRIBUTE_T;
+	uint16_t u2BSSBasicRateSet;
+};
 
-typedef NON_HT_ADHOC_MODE_ATTRIBUTE_T NON_HT_AP_MODE_ATTRIBUTE_T;
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
  ********************************************************************************
  */
-extern NON_HT_PHY_ATTRIBUTE_T rNonHTPhyAttributes[];
-extern NON_HT_ADHOC_MODE_ATTRIBUTE_T rNonHTAdHocModeAttributes[];
-extern NON_HT_AP_MODE_ATTRIBUTE_T rNonHTApModeAttributes[];
+extern const struct NON_HT_PHY_ATTRIBUTE rNonHTPhyAttributes[];
+extern const struct NON_HT_ATTRIBUTE rNonHTAdHocModeAttributes[];
+extern const struct NON_HT_ATTRIBUTE rNonHTApModeAttributes[];
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A

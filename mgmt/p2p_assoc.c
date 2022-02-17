@@ -116,9 +116,9 @@
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-PUINT_8 p2pBuildReAssocReqFrameCommonIEs(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN PUINT_8 pucBuffer)
+uint8_t *p2pBuildReAssocReqFrameCommonIEs(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucBuffer)
 {
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 

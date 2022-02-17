@@ -74,7 +74,7 @@
 ********************************************************************************
 */
 
-ECO_INFO_T mt7668_eco_table[] = {
+struct ECO_INFO mt7668_eco_table[] = {
 	/* HW version,  ROM version,    Factory version, Eco version */
 	{0x00, 0x00, 0xA, 0x1},	/* E1 */
 	{0x10, 0x01, 0xB, 0x2},	/* E2 */
@@ -83,7 +83,7 @@ ECO_INFO_T mt7668_eco_table[] = {
 };
 
 #if defined(_HIF_PCIE)
-PCIE_CHIP_CR_MAPPING mt7668_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING mt7668_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x82060000, 0x00008000, 0x00000450}, /* WF_PLE */
 	{0x82068000, 0x0000c000, 0x00000450}, /* WF_PSE */
@@ -127,13 +127,13 @@ PCIE_CHIP_CR_MAPPING mt7668_bus2chip_cr_mapping[] = {
 ********************************************************************************
 */
 
-VOID
-mt7668ConstructFirmwarePrio(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
-PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
+void
+mt7668ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable,
+uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
-	UINT_32 chip_id = prChipInfo->chip_id;
-	UINT_8 sub_idx = 0;
+	uint32_t chip_id = prChipInfo->chip_id;
+	uint8_t sub_idx = 0;
 
 	for (sub_idx = 0; apucNameTable[sub_idx]; sub_idx++) {
 		if (((*pucNameIdx) + 3) < ucMaxNameIdx) {
@@ -166,9 +166,9 @@ PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx)
 	}
 }
 
-VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
+void mt7668CapInit(IN struct ADAPTER *prAdapter)
 {
-	P_GLUE_INFO_T prGlueInfo;
+	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
@@ -201,16 +201,16 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
-UINT_32 mt7668GetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen)
+uint32_t mt7668GetFwDlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen)
 {
-	P_WIFI_VER_INFO_T prVerInfo = &prAdapter->rVerInfo;
+	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	struct TAILER_FORMAT_T_2 *prTailer;
 #else
 	struct TAILER_FORMAT_T *prTailer;
 #endif
-	UINT_32 u4Offset = 0;
-	UINT_8 aucBuf[32];
+	uint32_t u4Offset = 0;
+	uint8_t aucBuf[32];
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	prTailer = &prVerInfo->rN9Compressedtailer;
@@ -241,11 +241,11 @@ UINT_32 mt7668GetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen)
 
 #if defined(_HIF_PCIE)
 
-VOID mt7668PdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+void mt7668PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 {
-	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	WPDMA_GLO_CFG_STRUCT GloCfg;
-	WPMDA_INT_MASK IntMask;
+	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	union WPDMA_INT_MASK IntMask;
 
 	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
 
@@ -308,26 +308,26 @@ VOID mt7668PdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 }
 
-VOID mt7668LowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+void mt7668LowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 {
-	UINT_32 u4RegValue;
+	uint32_t u4RegValue;
 
 	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4RegValue);
 	*pfgResult = ((u4RegValue & WPDMA_FW_CLR_OWN_INT) ? TRUE : FALSE);
 }
 
-VOID mt7668LowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+void mt7668LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 {
-	UINT_32 u4RegValue;
+	uint32_t u4RegValue;
 
 	HAL_MCR_WR(prAdapter, CFG_PCIE_LPCR_HOST, PCIE_LPCR_HOST_SET_OWN);
 	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
 	*pfgResult = (u4RegValue == 0);
 }
 
-VOID mt7668LowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
+void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 {
-	UINT_32 u4RegValue;
+	uint32_t u4RegValue;
 
 	HAL_MCR_WR(prAdapter, CFG_PCIE_LPCR_HOST, PCIE_LPCR_HOST_CLR_OWN);
 	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
@@ -335,7 +335,7 @@ VOID mt7668LowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)
 }
 #endif /* _HIF_PCIE */
 
-BUS_INFO mt7668_bus_info = {
+struct BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
 	.bus2chip = mt7668_bus2chip_cr_mapping,

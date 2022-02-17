@@ -139,7 +139,7 @@ MODULE_DEVICE_TABLE(usb, mtk_usb_ids);
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
 
-static BOOLEAN g_fgDriverProbed = FALSE;
+static u_int8_t g_fgDriverProbed = FALSE;
 
 static struct usb_driver mtk_usb_driver = {
 	.name = "wlan",		/* "MTK USB WLAN Driver" */
@@ -191,7 +191,7 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 	dev = usb_get_dev(dev);
 
 	DBGLOG(HAL, EVENT, "wlan_probe()\n");
-	if (pfWlanProbe((PVOID) intf, (PVOID) id->driver_info) != WLAN_STATUS_SUCCESS) {
+	if (pfWlanProbe((void *) intf, (void *) id->driver_info) != WLAN_STATUS_SUCCESS) {
 		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */
 		pfWlanRemove();
 		DBGLOG(HAL, ERROR, "wlan_probe() failed\n");
@@ -214,12 +214,12 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 /*----------------------------------------------------------------------------*/
 static void mtk_usb_disconnect(struct usb_interface *intf)
 {
-	P_GLUE_INFO_T prGlueInfo;
+	struct GLUE_INFO *prGlueInfo;
 
 	DBGLOG(HAL, STATE, "mtk_usb_disconnect()\n");
 
 	ASSERT(intf);
-	prGlueInfo  = (P_GLUE_INFO_T)usb_get_intfdata(intf);
+	prGlueInfo  = (struct GLUE_INFO *)usb_get_intfdata(intf);
 
 	prGlueInfo->rHifInfo.state = USB_STATE_LINK_DOWN;
 
@@ -236,9 +236,9 @@ static void mtk_usb_disconnect(struct usb_interface *intf)
 
 int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
-	UINT_8 count = 0;
-	P_BUS_INFO prBusInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
+	uint8_t count = 0;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
@@ -287,7 +287,7 @@ int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 int mtk_usb_resume(struct usb_interface *intf)
 {
 	int ret = 0;
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T)usb_get_intfdata(intf);
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume()\n");
 
@@ -349,11 +349,11 @@ int mtk_usb_reset_resume(struct usb_interface *intf)
 *         non-zero   if fail, the return value of usb_control_msg()
 */
 /*----------------------------------------------------------------------------*/
-BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddress, IN UCHAR RequestType,
-			    IN UCHAR Request, IN UINT_16 Value, IN UINT_16 Index, IN PVOID TransferBuffer,
-			    IN UINT_32 TransferBufferLength)
+u_int8_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo, IN uint8_t uEndpointAddress, IN uint8_t RequestType,
+			    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index, IN void *TransferBuffer,
+			    IN uint32_t TransferBufferLength)
 {
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* refer to RTUSB_VendorRequest */
 	int ret = 0;
@@ -406,10 +406,10 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-static int mtk_usb_bulk_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR *buffer, int InEp)
+static int mtk_usb_bulk_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, OUT uint8_t *buffer, int InEp)
 {
 	int ret = 0;
-	UINT_32 count;
+	uint32_t count;
 
 	if (in_interrupt()) {
 		DBGLOG(REQ, ERROR, "BUG: mtk_usb_bulk_in_msg is called from invalid context\n");
@@ -438,10 +438,10 @@ static int mtk_usb_bulk_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT
 	return ret;
 }
 
-static int mtk_usb_intr_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT UCHAR *buffer, int InEp)
+static int mtk_usb_intr_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, OUT uint8_t *buffer, int InEp)
 {
 	int ret = 0;
-	UINT_32 count;
+	uint32_t count;
 
 	if (in_interrupt()) {
 		DBGLOG(REQ, ERROR, "BUG: mtk_usb_intr_in_msg is called from invalid context\n");
@@ -482,10 +482,10 @@ static int mtk_usb_intr_in_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, OUT
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-static int mtk_usb_bulk_out_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, IN UCHAR *buffer, int OutEp)
+static int mtk_usb_bulk_out_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, IN uint8_t *buffer, int OutEp)
 {
 	int ret = 0;
-	UINT_32 count;
+	uint32_t count;
 
 	if (in_interrupt()) {
 		DBGLOG(REQ, ERROR, "BUG: mtk_usb_bulk_out_msg is called from invalid context\n");
@@ -524,7 +524,7 @@ static int mtk_usb_bulk_out_msg(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_32 len, IN
 * \return The result of registering USB bus
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
 	int ret = 0;
 
@@ -555,7 +555,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glUnregisterBus(remove_card pfRemove)
+void glUnregisterBus(remove_card pfRemove)
 {
 	if (g_fgDriverProbed) {
 		pfRemove();
@@ -564,10 +564,10 @@ VOID glUnregisterBus(remove_card pfRemove)
 	usb_deregister(&mtk_usb_driver);
 }				/* end of glUnregisterBus() */
 
-VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+void glUdmaTxRxEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 {
-	UINT_32 u4Value = 0;
-	P_BUS_INFO prBusInfo;
+	uint32_t u4Value = 0;
+	struct BUS_INFO *prBusInfo;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	kalDevRegRead(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, &u4Value);
@@ -581,10 +581,10 @@ VOID glUdmaTxRxEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 	kalDevRegWrite(prGlueInfo, prBusInfo->u4UdmaWlCfg_0_Addr, u4Value);
 }
 
-VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+void glUdmaRxAggEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
 {
-	UINT_32 u4Value = 0;
-	P_BUS_INFO prBusInfo;
+	uint32_t u4Value = 0;
+	struct BUS_INFO *prBusInfo;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	if (enable) {
@@ -609,14 +609,14 @@ VOID glUdmaRxAggEnable(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 	}
 }
 
-PVOID glUsbInitQ(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, UINT_32 u4Cnt)
+void *glUsbInitQ(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, uint32_t u4Cnt)
 {
-	UINT_32 i;
-	P_USB_REQ_T prUsbReqs, prUsbReq;
+	uint32_t i;
+	struct USB_REQ *prUsbReqs, *prUsbReq;
 
 	INIT_LIST_HEAD(prHead);
 
-	prUsbReqs = kcalloc(u4Cnt, sizeof(struct _USB_REQ_T), GFP_ATOMIC);
+	prUsbReqs = kcalloc(u4Cnt, sizeof(struct USB_REQ), GFP_ATOMIC);
 	prUsbReq = prUsbReqs;
 
 	for (i = 0; i < u4Cnt; ++i) {
@@ -634,12 +634,12 @@ PVOID glUsbInitQ(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, UINT_32 u4
 		prUsbReq++;
 	}
 
-	return (PVOID) prUsbReqs;
+	return (void *) prUsbReqs;
 }
 
 void glUsbUnInitQ(struct list_head *prHead)
 {
-	P_USB_REQ_T prUsbReq, prUsbReqNext;
+	struct USB_REQ *prUsbReq, *prUsbReqNext;
 
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, prHead, list) {
 		usb_free_urb(prUsbReq->prUrb);
@@ -647,8 +647,8 @@ void glUsbUnInitQ(struct list_head *prHead)
 	}
 }
 
-VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq, spinlock_t *prLock,
-		     BOOLEAN fgHead)
+void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, struct USB_REQ *prUsbReq, spinlock_t *prLock,
+		     u_int8_t fgHead)
 {
 	unsigned long flags;
 
@@ -660,9 +660,9 @@ VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_
 	spin_unlock_irqrestore(prLock, flags);
 }
 
-P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, spinlock_t *prLock)
+struct USB_REQ *glUsbDequeueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, spinlock_t *prLock)
 {
-	P_USB_REQ_T prUsbReq;
+	struct USB_REQ *prUsbReq;
 	unsigned long flags;
 
 	spin_lock_irqsave(prLock, flags);
@@ -670,7 +670,7 @@ P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead,
 		spin_unlock_irqrestore(prLock, flags);
 		return NULL;
 	}
-	prUsbReq = list_entry(prHead->next, struct _USB_REQ_T, list);
+	prUsbReq = list_entry(prHead->next, struct USB_REQ, list);
 	list_del_init(prHead->next);
 	spin_unlock_irqrestore(prLock, flags);
 
@@ -688,16 +688,16 @@ P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc)
+u_int8_t glUsbBorrowFfaReq(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc)
 {
-	P_USB_REQ_T prUsbReq;
+	struct USB_REQ *prUsbReq;
 
 	if (list_empty(&prHifInfo->rTxDataFfaQ))
 		return FALSE;
-	prUsbReq = list_entry(prHifInfo->rTxDataFfaQ.next, struct _USB_REQ_T, list);
+	prUsbReq = list_entry(prHifInfo->rTxDataFfaQ.next, struct USB_REQ, list);
 	list_del_init(prHifInfo->rTxDataFfaQ.next);
 
-	*((PUINT_8)&prUsbReq->prPriv) = FFA_MASK | ucTc;
+	*((uint8_t *)&prUsbReq->prPriv) = FFA_MASK | ucTc;
 	list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ[ucTc]);
 
 	return TRUE;
@@ -713,16 +713,16 @@ BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
 	struct usb_host_interface *alts;
 	struct usb_host_endpoint *ep;
 	struct usb_endpoint_descriptor *ep_desc;
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
-	P_USB_REQ_T prUsbReq, prUsbReqNext;
-	UINT_32 i;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct USB_REQ *prUsbReq, *prUsbReqNext;
+	uint32_t i;
 #if CFG_USB_TX_AGG
-	UINT_8 ucTc;
+	uint8_t ucTc;
 #endif
 
 	prHifInfo->eEventEpType = USB_EVENT_TYPE;
@@ -781,7 +781,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 
 	/* TX CMD */
 	prHifInfo->prTxCmdReqHead = glUsbInitQ(prHifInfo, &prHifInfo->rTxCmdFreeQ, USB_REQ_TX_CMD_CNT);
-	prUsbReq = list_entry(prHifInfo->rTxCmdFreeQ.next, struct _USB_REQ_T, list);
+	prUsbReq = list_entry(prHifInfo->rTxCmdFreeQ.next, struct USB_REQ, list);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxCmdFreeQ, list) {
 		prUsbReq->prBufCtrl = &prHifInfo->rTxCmdBufCtrl[i];
@@ -807,7 +807,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFfaQ, list) {
 		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
-		*((PUINT_8)&prUsbReq->prPriv) = FFA_MASK;
+		*((uint8_t *)&prUsbReq->prPriv) = FFA_MASK;
 		prUsbReq->prBufCtrl = &prHifInfo->rTxDataFfaBufCtrl[i];
 #if CFG_USB_CONSISTENT_DMA
 		prUsbReq->prBufCtrl->pucBuf =
@@ -837,7 +837,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 		list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ[ucTc], list) {
 			QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
 			/* TODO: every endpoint should has an unique and only TC */
-			*((PUINT_8)&prUsbReq->prPriv) = ucTc;
+			*((uint8_t *)&prUsbReq->prPriv) = ucTc;
 			prUsbReq->prBufCtrl = &prHifInfo->rTxDataBufCtrl[ucTc][i];
 #if CFG_USB_CONSISTENT_DMA
 			prUsbReq->prBufCtrl->pucBuf =
@@ -860,7 +860,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 	}
 #else
 	glUsbInitQ(prHifInfo, &prHifInfo->rTxDataFreeQ, USB_REQ_TX_DATA_CNT);
-	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ.next, struct _USB_REQ_T, list);
+	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ.next, struct USB_REQ, list);
 	i = 0;
 	list_for_each_entry_safe(prUsbReq, prUsbReqNext, &prHifInfo->rTxDataFreeQ, list) {
 		QUEUE_INITIALIZE(&prUsbReq->rSendingDataMsduInfoList);
@@ -935,16 +935,16 @@ error:
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
 	/* P_GL_HIF_INFO_T prHifInfo = NULL; */
 	/* ASSERT(prGlueInfo); */
 	/* prHifInfo = &prGlueInfo->rHifInfo; */
 #if CFG_USB_TX_AGG
-	UINT_8 ucTc;
+	uint8_t ucTc;
 #endif
-	P_USB_REQ_T prUsbReq, prUsbReqNext;
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+	struct USB_REQ *prUsbReq, *prUsbReqNext;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 
 #if CFG_USB_TX_AGG
 	for (ucTc = 0; ucTc < USB_TC_NUM; ++ucTc) {
@@ -1053,7 +1053,7 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOL glBusInit(PVOID pvData)
+u_int8_t glBusInit(void *pvData)
 {
 	return TRUE;
 }				/* end of glBusInit() */
@@ -1067,7 +1067,7 @@ BOOL glBusInit(PVOID pvData)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusRelease(PVOID pvData)
+void glBusRelease(void *pvData)
 {
 }				/* end of glBusRelease() */
 
@@ -1083,20 +1083,20 @@ VOID glBusRelease(PVOID pvData)
 *         NEGATIVE_VALUE   if fail
 */
 /*----------------------------------------------------------------------------*/
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
 	int ret = 0;
 
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(pvData);
 	if (!pvData)
 		return -1;
 
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		return -1;
@@ -1116,11 +1116,11 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
+void glBusFreeIrq(void *pvData, void *pvCookie)
 {
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(pvData);
 	if (!pvData) {
@@ -1128,7 +1128,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 		return;
 	}
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
 		/* printk(KERN_INFO DRV_NAME"%s no glue info\n", __FUNCTION__); */
@@ -1138,7 +1138,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 }				/* end of glBusreeIrq() */
 
-BOOLEAN glIsReadClearReg(UINT_32 u4Address)
+u_int8_t glIsReadClearReg(uint32_t u4Address)
 {
 	switch (u4Address) {
 	case MCR_WHISR:
@@ -1160,27 +1160,27 @@ BOOLEAN glIsReadClearReg(UINT_32 u4Address)
 	}
 }
 
-UINT_16 glGetUsbDeviceVendorId(struct usb_device *dev)
+uint16_t glGetUsbDeviceVendorId(struct usb_device *dev)
 {
 	return dev->descriptor.idVendor;
 }				/* end of glGetUsbDeviceVendorId() */
 
-UINT_16 glGetUsbDeviceProductId(struct usb_device *dev)
+uint16_t glGetUsbDeviceProductId(struct usb_device *dev)
 {
 	return dev->descriptor.idProduct;
 }				/* end of glGetUsbDeviceProductId() */
 
-INT_32 glGetUsbDeviceManufacturerName(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen)
+int32_t glGetUsbDeviceManufacturerName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen)
 {
 	return usb_string(dev, dev->descriptor.iManufacturer, buffer, bufLen);
 }				/* end of glGetUsbDeviceManufacturerName() */
 
-INT_32 glGetUsbDeviceProductName(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen)
+int32_t glGetUsbDeviceProductName(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen)
 {
 	return usb_string(dev, dev->descriptor.iProduct, buffer, bufLen);
 }				/* end of glGetUsbDeviceManufacturerName() */
 
-INT_32 glGetUsbDeviceSerialNumber(struct usb_device *dev, UCHAR *buffer, UINT_32 bufLen)
+int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint32_t bufLen)
 {
 	return usb_string(dev, dev->descriptor.iSerialNumber, buffer, bufLen);
 }				/* end of glGetUsbDeviceSerialNumber() */
@@ -1198,10 +1198,10 @@ INT_32 glGetUsbDeviceSerialNumber(struct usb_device *dev, UCHAR *buffer, UINT_32
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT_32 pu4Value)
+u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
 	int ret = 0;
-	UINT_8 ucRetryCount = 0;
+	uint8_t ucRetryCount = 0;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
@@ -1245,10 +1245,10 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_32 u4Value)
+u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
 {
 	int ret = 0;
-	UINT_8 ucRetryCount = 0;
+	uint8_t ucRetryCount = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1291,12 +1291,12 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
-	       IN UINT_16 u2Port, IN UINT_32 u4Len, OUT PUINT_8 pucBuf, IN UINT_32 u4ValidOutBufSize)
+u_int8_t
+kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
+	       IN uint16_t u2Port, IN uint32_t u4Len, OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucDst = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucDst = NULL;
 	/* int count = u4Len; */
 	int ret = 0;
 	/* int bNum = 0; */
@@ -1358,12 +1358,12 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
-		IN UINT_16 u2Port, IN UINT_32 u4Len, IN PUINT_8 pucBuf, IN UINT_32 u4ValidInBufSize)
+u_int8_t
+kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
+		IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf, IN uint32_t u4ValidInBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucSrc = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucSrc = NULL;
 	/* int count = u4Len; */
 	int ret = 0;
 	/* int bNum = 0; */
@@ -1414,7 +1414,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
@@ -1429,7 +1429,7 @@ VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
+u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
 {
 	halTxUSBSendData(prGlueInfo, prMsduInfo);
 	return TRUE;
@@ -1445,7 +1445,7 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
+u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 {
 #if 0
 	halTxUSBKickData(prGlueInfo);
@@ -1465,13 +1465,13 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
+u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
 	halTxUSBSendCmd(prGlueInfo, ucTC, prCmdInfo);
 	return TRUE;
 }
 
-void glGetDev(PVOID ctx, struct device **dev)
+void glGetDev(void *ctx, struct device **dev)
 {
 	struct usb_interface *prUsbIntf = (struct usb_interface *) ctx;
 	struct usb_device *prUsbDev = interface_to_usbdev(prUsbIntf);
@@ -1479,7 +1479,7 @@ void glGetDev(PVOID ctx, struct device **dev)
 	*dev = &prUsbDev->dev;
 }
 
-void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev)
+void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->udev->dev);
 }

@@ -96,14 +96,14 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-ECO_INFO_T mt7663_eco_table[] = {
+struct ECO_INFO mt7663_eco_table[] = {
 	/* HW version,  ROM version,    Factory version */
 	{0x00, 0x00, 0x0A, 0x01},	/* E1 */
 	{0x00, 0x00, 0x00, 0x00}	/* End of table */
 };
 
 #if defined(_HIF_PCIE)
-PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
+struct PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
 	/* chip addr, bus addr, range */
 	{0x80000000, 0x00002000, 0x00001000}, /* MCU_CFG */
 
@@ -150,7 +150,7 @@ PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE */
 
-BUS_INFO mt7663_bus_info = {
+struct BUS_INFO mt7663_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7663_TOP_CFG_BASE,
 	.bus2chip = mt7663_bus2chip_cr_mapping,

@@ -115,10 +115,10 @@
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	UINT_8 i;
-	UINT_8 ucMaxBw = 0;
+	uint8_t i;
+	uint8_t ucMaxBw = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -145,8 +145,8 @@ VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 			prBssInfo->fg40mBwAllowed = TRUE;
 			prBssInfo->fgAssoc40mBwAllowed = TRUE;
 
-			prBssInfo->ucHtOpInfo1 = (UINT_8)
-			    (((UINT_32) prBssInfo->eBssSCO) | HT_OP_INFO1_STA_CHNL_WIDTH);
+			prBssInfo->ucHtOpInfo1 = (uint8_t)
+			    (((uint32_t) prBssInfo->eBssSCO) | HT_OP_INFO1_STA_CHNL_WIDTH);
 
 			rlmUpdateBwByChListForAP(prAdapter, prBssInfo);
 		}
@@ -202,11 +202,11 @@ VOID rlmBssInitForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmRspGenerateObssScanIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
+void rlmRspGenerateObssScanIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 {
-	P_BSS_INFO_T prBssInfo;
-	P_IE_OBSS_SCAN_PARAM_T prObssScanIe;
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
+	struct BSS_INFO *prBssInfo;
+	struct IE_OBSS_SCAN_PARAM *prObssScanIe;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -225,12 +225,12 @@ VOID rlmRspGenerateObssScanIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) &&
 	    prBssInfo->eBand == BAND_2G4 && prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 
-		prObssScanIe = (P_IE_OBSS_SCAN_PARAM_T)
-		    (((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+		prObssScanIe = (struct IE_OBSS_SCAN_PARAM *)
+		    (((uint8_t *) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
 
 		/* Add 20/40 BSS coexistence IE */
 		prObssScanIe->ucId = ELEM_ID_OBSS_SCAN_PARAMS;
-		prObssScanIe->ucLength = sizeof(IE_OBSS_SCAN_PARAM_T) - ELEM_HDR_LEN;
+		prObssScanIe->ucLength = sizeof(struct IE_OBSS_SCAN_PARAM) - ELEM_HDR_LEN;
 
 		prObssScanIe->u2ScanPassiveDwell = dot11OBSSScanPassiveDwell;
 		prObssScanIe->u2ScanActiveDwell = dot11OBSSScanActiveDwell;
@@ -255,10 +255,10 @@ VOID rlmRspGenerateObssScanIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN rlmUpdateBwByChListForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	UINT_8 ucLevel;
-	BOOLEAN fgBwChange;
+	uint8_t ucLevel;
+	u_int8_t fgBwChange;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -274,8 +274,8 @@ BOOLEAN rlmUpdateBwByChListForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 		/* Forced to 20MHz, so extended channel is SCN and STA width is zero */
 		prBssInfo->fgObssActionForcedTo20M = TRUE;
 
-		if (prBssInfo->ucHtOpInfo1 != (UINT_8) CHNL_EXT_SCN) {
-			prBssInfo->ucHtOpInfo1 = (UINT_8) CHNL_EXT_SCN;
+		if (prBssInfo->ucHtOpInfo1 != (uint8_t) CHNL_EXT_SCN) {
+			prBssInfo->ucHtOpInfo1 = (uint8_t) CHNL_EXT_SCN;
 			fgBwChange = TRUE;
 		}
 
@@ -304,21 +304,21 @@ BOOLEAN rlmUpdateBwByChListForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
+void rlmProcessPublicAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
-	P_ACTION_20_40_COEXIST_FRAME prRxFrame;
-	P_IE_20_40_COEXIST_T prCoexist;
-	P_IE_INTOLERANT_CHNL_REPORT_T prChnlReport;
-	P_BSS_INFO_T prBssInfo;
-	P_STA_RECORD_T prStaRec;
-	PUINT_8 pucIE;
-	UINT_16 u2IELength, u2Offset;
-	UINT_8 i, j;
+	struct ACTION_20_40_COEXIST_FRAME *prRxFrame;
+	struct IE_20_40_COEXIST *prCoexist;
+	struct IE_INTOLERANT_CHNL_REPORT *prChnlReport;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t *pucIE;
+	uint16_t u2IELength, u2Offset;
+	uint8_t i, j;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prRxFrame = (P_ACTION_20_40_COEXIST_FRAME) prSwRfb->pvHeader;
+	prRxFrame = (struct ACTION_20_40_COEXIST_FRAME *) prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
 	if (!(prSwRfb->prStaRec)) {
@@ -355,13 +355,13 @@ VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	}
 
 	/* Process intolerant channel report IE */
-	pucIE = (PUINT_8) &prRxFrame->rChnlReport;
+	pucIE = (uint8_t *) &prRxFrame->rChnlReport;
 	u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_MGMT_HEADER_LEN + 5);
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_20_40_INTOLERANT_CHNL_REPORT:
-			prChnlReport = (P_IE_INTOLERANT_CHNL_REPORT_T) pucIE;
+			prChnlReport = (struct IE_INTOLERANT_CHNL_REPORT *) pucIE;
 
 			if (prChnlReport->ucLength <= 1)
 				break;
@@ -406,9 +406,9 @@ VOID rlmProcessPublicAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmHandleObssStatusEventPkt(P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T prObssStatus)
+void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter, struct EVENT_AP_OBSS_STATUS *prObssStatus)
 {
-	P_BSS_INFO_T prBssInfo;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prObssStatus);
@@ -419,11 +419,11 @@ VOID rlmHandleObssStatusEventPkt(P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T
 	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
 		return;
 
-	prBssInfo->fgObssErpProtectMode = (BOOLEAN) prObssStatus->ucObssErpProtectMode;
-	prBssInfo->eObssHtProtectMode = (ENUM_HT_PROTECT_MODE_T) prObssStatus->ucObssHtProtectMode;
-	prBssInfo->eObssGfOperationMode = (ENUM_GF_MODE_T) prObssStatus->ucObssGfOperationMode;
-	prBssInfo->fgObssRifsOperationMode = (BOOLEAN) prObssStatus->ucObssRifsOperationMode;
-	prBssInfo->fgObssBeaconForcedTo20M = (BOOLEAN) prObssStatus->ucObssBeaconForcedTo20M;
+	prBssInfo->fgObssErpProtectMode = (u_int8_t) prObssStatus->ucObssErpProtectMode;
+	prBssInfo->eObssHtProtectMode = (enum ENUM_HT_PROTECT_MODE) prObssStatus->ucObssHtProtectMode;
+	prBssInfo->eObssGfOperationMode = (enum ENUM_GF_MODE) prObssStatus->ucObssGfOperationMode;
+	prBssInfo->fgObssRifsOperationMode = (u_int8_t) prObssStatus->ucObssRifsOperationMode;
+	prBssInfo->fgObssBeaconForcedTo20M = (u_int8_t) prObssStatus->ucObssBeaconForcedTo20M;
 
 	/* Check if Beacon content need to be updated */
 	rlmUpdateParamsForAP(prAdapter, prBssInfo, TRUE);
@@ -438,15 +438,15 @@ VOID rlmHandleObssStatusEventPkt(P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgUpdateBeacon)
+void rlmUpdateParamsForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, u_int8_t fgUpdateBeacon)
 {
-	P_LINK_T prStaList;
-	P_STA_RECORD_T prStaRec;
-	BOOLEAN fgErpProtectMode, fgSta40mIntolerant;
-	BOOLEAN fgUseShortPreamble, fgUseShortSlotTime;
-	ENUM_HT_PROTECT_MODE_T eHtProtectMode;
-	ENUM_GF_MODE_T eGfOperationMode;
-	UINT_8 ucHtOpInfo1;
+	struct LINK *prStaList;
+	struct STA_RECORD *prStaRec;
+	u_int8_t fgErpProtectMode, fgSta40mIntolerant;
+	u_int8_t fgUseShortPreamble, fgUseShortSlotTime;
+	enum ENUM_HT_PROTECT_MODE eHtProtectMode;
+	enum ENUM_GF_MODE eGfOperationMode;
+	uint8_t ucHtOpInfo1;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -460,11 +460,11 @@ VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN
 	fgSta40mIntolerant = FALSE;
 	fgUseShortPreamble = prBssInfo->fgIsShortPreambleAllowed;
 	fgUseShortSlotTime = TRUE;
-	ucHtOpInfo1 = (UINT_8) CHNL_EXT_SCN;
+	ucHtOpInfo1 = (uint8_t) CHNL_EXT_SCN;
 
 	prStaList = &prBssInfo->rStaRecOfClientList;
 
-	LINK_FOR_EACH_ENTRY(prStaRec, prStaList, rLinkEntry, STA_RECORD_T) {
+	LINK_FOR_EACH_ENTRY(prStaRec, prStaList, rLinkEntry, struct STA_RECORD) {
 		if (!prStaRec) {
 			DBGLOG(P2P, WARN, "NULL STA_REC ptr in BSS client list\n");
 			bssDumpClientList(prAdapter, prBssInfo);
@@ -515,8 +515,8 @@ VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN
 		if (/*!LINK_IS_EMPTY(prStaList) && */ !fgSta40mIntolerant &&
 		    !prBssInfo->fgObssActionForcedTo20M && !prBssInfo->fgObssBeaconForcedTo20M) {
 
-			ucHtOpInfo1 = (UINT_8)
-			    (((UINT_32) prBssInfo->eBssSCO) | HT_OP_INFO1_STA_CHNL_WIDTH);
+			ucHtOpInfo1 = (uint8_t)
+			    (((uint32_t) prBssInfo->eBssSCO) | HT_OP_INFO1_STA_CHNL_WIDTH);
 		}
 	}
 
@@ -560,16 +560,16 @@ VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN
 * \return boolean value if probe response frame is
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
+void rlmFuncInitialChannelList(IN struct ADAPTER *prAdapter)
 {
-	P_P2P_CONNECTION_SETTINGS_T prP2pConnSetting = (P_P2P_CONNECTION_SETTINGS_T) NULL;
-	P_DOMAIN_INFO_ENTRY prDomainInfoEntry = (P_DOMAIN_INFO_ENTRY) NULL;
-	P_DOMAIN_SUBBAND_INFO prDomainSubBand = (P_DOMAIN_SUBBAND_INFO) NULL;
-	P_CHANNEL_ENTRY_FIELD_T prChannelEntryField = (P_CHANNEL_ENTRY_FIELD_T) NULL;
-	UINT_32 u4Idx = 0, u4IdxII = 0;
-	UINT_8 ucBufferSize = P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE;
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSetting = (struct P2P_CONNECTION_SETTINGS *) NULL;
+	struct DOMAIN_INFO_ENTRY *prDomainInfoEntry = (struct DOMAIN_INFO_ENTRY *) NULL;
+	struct DOMAIN_SUBBAND_INFO *prDomainSubBand = (struct DOMAIN_SUBBAND_INFO *) NULL;
+	struct CHANNEL_ENTRY_FIELD *prChannelEntryField = (struct CHANNEL_ENTRY_FIELD *) NULL;
+	uint32_t u4Idx = 0, u4IdxII = 0;
+	uint8_t ucBufferSize = P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE;
 #if 0
-	UINT_8 ucSocialChnlSupport = 0, ucAutoChnl = 0;
+	uint8_t ucSocialChnlSupport = 0, ucAutoChnl = 0;
 #endif
 
 	do {
@@ -584,7 +584,7 @@ VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
 
 		ASSERT_BREAK((prDomainInfoEntry != NULL) && (prP2pConnSetting != NULL));
 
-		prChannelEntryField = (P_CHANNEL_ENTRY_FIELD_T) prP2pConnSetting->aucChannelEntriesField;
+		prChannelEntryField = (struct CHANNEL_ENTRY_FIELD *) prP2pConnSetting->aucChannelEntriesField;
 
 		for (u4Idx = 0; u4Idx < MAX_SUBBAND_NUM; u4Idx++) {
 			prDomainSubBand = &prDomainInfoEntry->rSubBand[u4Idx];
@@ -630,9 +630,9 @@ VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
 				break;
 
 			prChannelEntryField =
-			    (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntryField +
+			    (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntryField +
 						       P2P_ATTRI_LEN_CHANNEL_ENTRY +
-						       (ULONG) prChannelEntryField->ucNumberOfChannels);
+						       (unsigned long) prChannelEntryField->ucNumberOfChannels);
 
 		}
 
@@ -665,7 +665,7 @@ VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
 
 			ucBufferSize = prP2pConnSetting->ucRfChannelListSize;
 
-			prChannelEntryField = (P_CHANNEL_ENTRY_FIELD_T) prP2pConnSetting->aucChannelEntriesField;
+			prChannelEntryField = (struct CHANNEL_ENTRY_FIELD *) prP2pConnSetting->aucChannelEntriesField;
 
 			while (ucBufferSize != 0) {
 				if (prChannelEntryField->ucNumberOfChannels != 0) {
@@ -675,8 +675,8 @@ VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
 
 				else {
 					prChannelEntryField =
-					    (P_CHANNEL_ENTRY_FIELD_T) ((UINT_32) prChannelEntryField
-								       + P2P_ATTRI_LEN_CHANNEL_ENTRY + (UINT_32)
+					    (struct CHANNEL_ENTRY_FIELD *) ((uint32_t) prChannelEntryField
+								       + P2P_ATTRI_LEN_CHANNEL_ENTRY + (uint32_t)
 								       prChannelEntryField->ucNumberOfChannels);
 
 					ucBufferSize -=
@@ -712,15 +712,15 @@ VOID rlmFuncInitialChannelList(IN P_ADAPTER_T prAdapter)
 * \return boolean value if probe response frame is
 */
 /*----------------------------------------------------------------------------*/
-VOID
-rlmFuncCommonChannelList(IN P_ADAPTER_T prAdapter,
-			 IN P_CHANNEL_ENTRY_FIELD_T prChannelEntryII, IN UINT_8 ucChannelListSize)
+void
+rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter,
+			 IN struct CHANNEL_ENTRY_FIELD *prChannelEntryII, IN uint8_t ucChannelListSize)
 {
-	P_P2P_CONNECTION_SETTINGS_T prP2pConnSetting = (P_P2P_CONNECTION_SETTINGS_T) NULL;
-	P_CHANNEL_ENTRY_FIELD_T prChannelEntryI =
-	    (P_CHANNEL_ENTRY_FIELD_T) NULL, prChannelEntryIII = (P_CHANNEL_ENTRY_FIELD_T) NULL;
-	UINT_8 aucCommonChannelList[P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE];
-	UINT_8 ucOriChnlSize = 0, ucNewChnlSize = 0;
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSetting = (struct P2P_CONNECTION_SETTINGS *) NULL;
+	struct CHANNEL_ENTRY_FIELD *prChannelEntryI =
+	    (struct CHANNEL_ENTRY_FIELD *) NULL, prChannelEntryIII = (struct CHANNEL_ENTRY_FIELD *) NULL;
+	uint8_t aucCommonChannelList[P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE];
+	uint8_t ucOriChnlSize = 0, ucNewChnlSize = 0;
 
 	do {
 
@@ -728,11 +728,11 @@ rlmFuncCommonChannelList(IN P_ADAPTER_T prAdapter,
 
 		prP2pConnSetting = prAdapter->rWifiVar.prP2PConnSettings;
 
-		prChannelEntryIII = (P_CHANNEL_ENTRY_FIELD_T) aucCommonChannelList;
+		prChannelEntryIII = (struct CHANNEL_ENTRY_FIELD *) aucCommonChannelList;
 
 		while (ucChannelListSize > 0) {
 
-			prChannelEntryI = (P_CHANNEL_ENTRY_FIELD_T) prP2pConnSetting->aucChannelEntriesField;
+			prChannelEntryI = (struct CHANNEL_ENTRY_FIELD *) prP2pConnSetting->aucChannelEntriesField;
 			ucOriChnlSize = prP2pConnSetting->ucRfChannelListSize;
 
 			while (ucOriChnlSize > 0) {
@@ -750,25 +750,25 @@ rlmFuncCommonChannelList(IN P_ADAPTER_T prAdapter,
 					    P2P_ATTRI_LEN_CHANNEL_ENTRY + prChannelEntryIII->ucNumberOfChannels;
 
 					prChannelEntryIII =
-					    (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntryIII +
+					    (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntryIII +
 								       P2P_ATTRI_LEN_CHANNEL_ENTRY +
-								       (ULONG) prChannelEntryIII->ucNumberOfChannels);
+								       (unsigned long) prChannelEntryIII->ucNumberOfChannels);
 				}
 
 				ucOriChnlSize -= (P2P_ATTRI_LEN_CHANNEL_ENTRY + prChannelEntryI->ucNumberOfChannels);
 
 				prChannelEntryI =
-				    (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntryI +
+				    (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntryI +
 							       P2P_ATTRI_LEN_CHANNEL_ENTRY +
-							       (ULONG) prChannelEntryI->ucNumberOfChannels);
+							       (unsigned long) prChannelEntryI->ucNumberOfChannels);
 
 			}
 
 			ucChannelListSize -= (P2P_ATTRI_LEN_CHANNEL_ENTRY + prChannelEntryII->ucNumberOfChannels);
 
-			prChannelEntryII = (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntryII +
+			prChannelEntryII = (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntryII +
 								      P2P_ATTRI_LEN_CHANNEL_ENTRY +
-								      (ULONG) prChannelEntryII->ucNumberOfChannels);
+								      (unsigned long) prChannelEntryII->ucNumberOfChannels);
 
 		}
 
@@ -787,19 +787,19 @@ rlmFuncCommonChannelList(IN P_ADAPTER_T prAdapter,
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 rlmFuncFindOperatingClass(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChannelNum)
+uint8_t rlmFuncFindOperatingClass(IN struct ADAPTER *prAdapter, IN uint8_t ucChannelNum)
 {
-	UINT_8 ucRegulatoryClass = 0, ucBufferSize = 0;
-	P_P2P_CONNECTION_SETTINGS_T prP2pConnSetting = (P_P2P_CONNECTION_SETTINGS_T) NULL;
-	P_CHANNEL_ENTRY_FIELD_T prChannelEntryField = (P_CHANNEL_ENTRY_FIELD_T) NULL;
-	UINT_32 u4Idx = 0;
+	uint8_t ucRegulatoryClass = 0, ucBufferSize = 0;
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSetting = (struct P2P_CONNECTION_SETTINGS *) NULL;
+	struct CHANNEL_ENTRY_FIELD *prChannelEntryField = (struct CHANNEL_ENTRY_FIELD *) NULL;
+	uint32_t u4Idx = 0;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
 
 		prP2pConnSetting = prAdapter->rWifiVar.prP2PConnSettings;
 		ucBufferSize = prP2pConnSetting->ucRfChannelListSize;
-		prChannelEntryField = (P_CHANNEL_ENTRY_FIELD_T) prP2pConnSetting->aucChannelEntriesField;
+		prChannelEntryField = (struct CHANNEL_ENTRY_FIELD *) prP2pConnSetting->aucChannelEntriesField;
 
 		while (ucBufferSize != 0) {
 
@@ -814,9 +814,9 @@ UINT_8 rlmFuncFindOperatingClass(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChannelNu
 			if (ucRegulatoryClass != 0)
 				break;	/* while */
 			prChannelEntryField =
-			    (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntryField +
+			    (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntryField +
 						       P2P_ATTRI_LEN_CHANNEL_ENTRY +
-						       (ULONG) prChannelEntryField->ucNumberOfChannels);
+						       (unsigned long) prChannelEntryField->ucNumberOfChannels);
 
 			ucBufferSize -= (P2P_ATTRI_LEN_CHANNEL_ENTRY + prChannelEntryField->ucNumberOfChannels);
 
@@ -836,15 +836,15 @@ UINT_8 rlmFuncFindOperatingClass(IN P_ADAPTER_T prAdapter, IN UINT_8 ucChannelNu
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN
-rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter,
-			    IN UINT_8 ucCheckChnl,
-			    IN PUINT_8 pucSuggestChannel, IN BOOLEAN fgIsSocialChannel, IN BOOLEAN fgIsDefaultChannel)
+u_int8_t
+rlmFuncFindAvailableChannel(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucCheckChnl,
+			    IN uint8_t *pucSuggestChannel, IN u_int8_t fgIsSocialChannel, IN u_int8_t fgIsDefaultChannel)
 {
-	BOOLEAN fgIsResultAvailable = FALSE;
-	P_CHANNEL_ENTRY_FIELD_T prChannelEntry = (P_CHANNEL_ENTRY_FIELD_T) NULL;
-	P_P2P_CONNECTION_SETTINGS_T prP2pConnSetting = (P_P2P_CONNECTION_SETTINGS_T) NULL;
-	UINT_8 ucBufferSize = 0, ucIdx = 0, ucChannelSelected = 0;
+	u_int8_t fgIsResultAvailable = FALSE;
+	struct CHANNEL_ENTRY_FIELD *prChannelEntry = (struct CHANNEL_ENTRY_FIELD *) NULL;
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSetting = (struct P2P_CONNECTION_SETTINGS *) NULL;
+	uint8_t ucBufferSize = 0, ucIdx = 0, ucChannelSelected = 0;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -854,7 +854,7 @@ rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter,
 
 		prP2pConnSetting = prAdapter->rWifiVar.prP2PConnSettings;
 		ucBufferSize = prP2pConnSetting->ucRfChannelListSize;
-		prChannelEntry = (P_CHANNEL_ENTRY_FIELD_T) prP2pConnSetting->aucChannelEntriesField;
+		prChannelEntry = (struct CHANNEL_ENTRY_FIELD *) prP2pConnSetting->aucChannelEntriesField;
 
 		while ((ucBufferSize != 0) && (!fgIsResultAvailable)) {
 
@@ -883,9 +883,9 @@ rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter,
 
 			ucBufferSize -= (P2P_ATTRI_LEN_CHANNEL_ENTRY + prChannelEntry->ucNumberOfChannels);
 
-			prChannelEntry = (P_CHANNEL_ENTRY_FIELD_T) ((ULONG) prChannelEntry +
+			prChannelEntry = (struct CHANNEL_ENTRY_FIELD *) ((unsigned long) prChannelEntry +
 								    P2P_ATTRI_LEN_CHANNEL_ENTRY +
-								    (ULONG) prChannelEntry->ucNumberOfChannels);
+								    (unsigned long) prChannelEntry->ucNumberOfChannels);
 
 		}
 
@@ -912,14 +912,14 @@ rlmFuncFindAvailableChannel(IN P_ADAPTER_T prAdapter,
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	P_DOMAIN_SUBBAND_INFO prSubband;
-	P_DOMAIN_INFO_ENTRY prDomainInfo;
-	UINT_8 ucSecondChannel, i, j;
-	ENUM_CHNL_EXT_T eSCO;
-	ENUM_CHNL_EXT_T eTempSCO;
-	UINT_8 ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
+	struct DOMAIN_SUBBAND_INFO *prSubband;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	uint8_t ucSecondChannel, i, j;
+	enum ENUM_CHNL_EXT eSCO;
+	enum ENUM_CHNL_EXT eTempSCO;
+	uint8_t ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
 
 	eSCO = CHNL_EXT_SCN;
 	eTempSCO = CHNL_EXT_SCN;
@@ -969,13 +969,13 @@ ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 		/* AP mode */
 		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData])) {
 			if (prAdapter->rWifiVar.ucApSco == CHNL_EXT_SCA || prAdapter->rWifiVar.ucApSco == CHNL_EXT_SCB)
-				eTempSCO = (ENUM_CHNL_EXT_T) prAdapter->rWifiVar.ucApSco;
+				eTempSCO = (enum ENUM_CHNL_EXT) prAdapter->rWifiVar.ucApSco;
 		}
 		/* P2P mode */
 		else {
 			if (prAdapter->rWifiVar.ucP2pGoSco == CHNL_EXT_SCA ||
 			    prAdapter->rWifiVar.ucP2pGoSco == CHNL_EXT_SCB) {
-				eTempSCO = (ENUM_CHNL_EXT_T) prAdapter->rWifiVar.ucP2pGoSco;
+				eTempSCO = (enum ENUM_CHNL_EXT) prAdapter->rWifiVar.ucP2pGoSco;
 			}
 		}
 
@@ -1021,15 +1021,15 @@ ENUM_CHNL_EXT_T rlmDecideScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 * \return ENUM_CHNL_EXT_T AP secondary channel offset
 */
 /*----------------------------------------------------------------------------*/
-ENUM_CHNL_EXT_T rlmGetScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	ENUM_BAND_T eBand;
-	UINT_8 ucChannel;
-	ENUM_CHNL_EXT_T eSCO;
-	INT_32 i4DeltaBw;
-	UINT_32 u4AndOneSCO;
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+	enum ENUM_BAND eBand;
+	uint8_t ucChannel;
+	enum ENUM_CHNL_EXT eSCO;
+	int32_t i4DeltaBw;
+	uint32_t u4AndOneSCO;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, prBssInfo->ucBssIndex);
 
@@ -1084,12 +1084,12 @@ ENUM_CHNL_EXT_T rlmGetScoForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 * \return UINT_8 AP channel number of Channel Center Frequency Segment 0
 */
 /*----------------------------------------------------------------------------*/
-UINT_8 rlmGetVhtS1ForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	UINT_32 ucFreq1Channel;
-	UINT_8 ucPrimaryChannel = prBssInfo->ucPrimaryChannel;
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+	uint32_t ucFreq1Channel;
+	uint8_t ucPrimaryChannel = prBssInfo->ucPrimaryChannel;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
 
 	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, prBssInfo->ucBssIndex);
 

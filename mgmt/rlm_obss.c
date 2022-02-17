@@ -99,7 +99,7 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr);
+static void rlmObssScanTimeout(struct ADAPTER *prAdapter, unsigned long ulParamPtr);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -115,10 +115,10 @@ static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr);
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmObssInit(P_ADAPTER_T prAdapter)
+void rlmObssInit(struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 i;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 
@@ -126,7 +126,7 @@ VOID rlmObssInit(P_ADAPTER_T prAdapter)
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		cnmTimerInitTimer(prAdapter, &prBssInfo->rObssScanTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) rlmObssScanTimeout, (ULONG) prBssInfo);
+				  (PFN_MGMT_TIMEOUT_FUNC) rlmObssScanTimeout, (unsigned long) prBssInfo);
 	}
 }
 
@@ -139,7 +139,7 @@ VOID rlmObssInit(P_ADAPTER_T prAdapter)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN rlmObssUpdateChnlLists(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
+u_int8_t rlmObssUpdateChnlLists(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	return TRUE;
 }
@@ -153,17 +153,17 @@ BOOLEAN rlmObssUpdateChnlLists(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmObssScanDone(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
+void rlmObssScanDone(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
-	P_MSG_SCN_SCAN_DONE prScanDoneMsg;
-	P_BSS_INFO_T prBssInfo;
-	P_MSDU_INFO_T prMsduInfo;
-	P_ACTION_20_40_COEXIST_FRAME prTxFrame;
-	UINT_16 i, u2PayloadLen;
+	struct MSG_SCN_SCAN_DONE *prScanDoneMsg;
+	struct BSS_INFO *prBssInfo;
+	struct MSDU_INFO *prMsduInfo;
+	struct ACTION_20_40_COEXIST_FRAME *prTxFrame;
+	uint16_t i, u2PayloadLen;
 
 	ASSERT(prMsgHdr);
 
-	prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
+	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
 	prBssInfo = prAdapter->aprBssInfo[prScanDoneMsg->ucBssIndex];
 	ASSERT(prBssInfo);
 
@@ -197,11 +197,11 @@ VOID rlmObssScanDone(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 		DBGLOG(RLM, INFO, "Send 20/40 coexistence mgmt(20mReq=%d, NonHt=%d)\n",
 		       prBssInfo->auc2G_20mReqChnlList[0], prBssInfo->auc2G_NonHtChnlList[0]);
 
-		prMsduInfo = (P_MSDU_INFO_T) cnmMgtPktAlloc(prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
+		prMsduInfo = (struct MSDU_INFO *) cnmMgtPktAlloc(prAdapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
 
 		if (prMsduInfo) {
-			prTxFrame = (P_ACTION_20_40_COEXIST_FRAME)
-			    ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			prTxFrame = (struct ACTION_20_40_COEXIST_FRAME *)
+			    ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 			prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 			COPY_MAC_ADDR(prTxFrame->aucDestAddr, prBssInfo->aucBSSID);
@@ -268,11 +268,11 @@ VOID rlmObssScanDone(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr)
+static void rlmObssScanTimeout(struct ADAPTER *prAdapter, unsigned long ulParamPtr)
 {
-	P_BSS_INFO_T prBssInfo;
+	struct BSS_INFO *prBssInfo;
 
-	prBssInfo = (P_BSS_INFO_T) ulParamPtr;
+	prBssInfo = (struct BSS_INFO *) ulParamPtr;
 	ASSERT(prBssInfo);
 
 #if CFG_ENABLE_WIFI_DIRECT
@@ -290,7 +290,7 @@ static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 #if CFG_SUPPORT_WFD
 	/* WFD streaming */
 	else {
-		P_WFD_CFG_SETTINGS_T prWfdCfgSettings = &prAdapter->rWifiVar.rWfdConfigureSettings;
+		struct WFD_CFG_SETTINGS *prWfdCfgSettings = &prAdapter->rWifiVar.rWfdConfigureSettings;
 
 		/* If WFD is enabled & connected */
 		if (prWfdCfgSettings->ucWfdEnable) {
@@ -323,14 +323,14 @@ static VOID rlmObssScanTimeout(P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+void rlmObssTriggerScan(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
-	P_MSG_SCN_SCAN_REQ_V2 prScanReqMsg;
+	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg;
 
 	ASSERT(prBssInfo);
 
-	prScanReqMsg = (P_MSG_SCN_SCAN_REQ_V2)
-	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SCN_SCAN_REQ_V2));
+	prScanReqMsg = (struct MSG_SCN_SCAN_REQ_V2 *)
+	    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_SCN_SCAN_REQ_V2));
 	ASSERT(prScanReqMsg);
 
 	if (!prScanReqMsg) {
@@ -344,7 +344,7 @@ VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	 * OBSS scan interval is limited to OBSS_SCAN_MIN_INTERVAL (min 10 sec)
 	 * and scan module don't care seqNum of OBSS scanning
 	 */
-	kalMemZero(prScanReqMsg, sizeof(MSG_SCN_SCAN_REQ_V2));
+	kalMemZero(prScanReqMsg, sizeof(struct MSG_SCN_SCAN_REQ_V2));
 	prScanReqMsg->rMsgHdr.eMsgId = MID_RLM_SCN_SCAN_REQ_V2;
 	prScanReqMsg->ucSeqNum = 0x33;
 	prScanReqMsg->ucBssIndex = prBssInfo->ucBssIndex;
@@ -354,7 +354,7 @@ VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	prScanReqMsg->eScanChannel = SCAN_CHANNEL_2G4;
 	prScanReqMsg->u2IELen = 0;
 
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prScanReqMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
 	DBGLOG(RLM, INFO, "Timeout to trigger OBSS scan (NetIdx=%d)!!\n", prBssInfo->ucBssIndex);
 }

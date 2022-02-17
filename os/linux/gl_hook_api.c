@@ -121,15 +121,15 @@ enum {
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStart(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStart(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			    wlanoidRftestSetTestMode,	/* pfnOidHandler */
@@ -158,15 +158,15 @@ INT_32 MT_ATEStart(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ICAPStart(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ICAPStart(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			    wlanoidRftestSetTestIcapMode,	/* pfnOidHandler */
@@ -195,15 +195,15 @@ INT_32 MT_ICAPStart(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStop(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStop(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			    wlanoidRftestSetAbortTestMode,	/* pfnOidHandler */
@@ -232,16 +232,16 @@ INT_32 MT_ATEStop(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStartTX(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStartTX(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_STARTTX;
@@ -273,16 +273,16 @@ INT_32 MT_ATEStartTX(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStopTX(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStopTX(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
 	rRfATInfo.u4FuncData = RF_AT_COMMAND_STOPTEST;
@@ -314,14 +314,14 @@ INT_32 MT_ATEStopTX(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStartRX(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStartRX(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
@@ -355,14 +355,14 @@ INT_32 MT_ATEStartRX(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEStopRX(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATEStopRX(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
@@ -397,15 +397,15 @@ INT_32 MT_ATEStopRX(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetChannel(struct net_device *prNetDev, UINT_32 u4SXIdx, UINT_32 u4SetFreq)
+int32_t MT_ATESetChannel(struct net_device *prNetDev, uint32_t u4SXIdx, uint32_t u4SetFreq)
 {
-	UINT_32 u4BufLen = 0;
-	UINT_32 i4SetChan;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	uint32_t i4SetChan;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	i4SetChan = nicFreq2ChannelNum(u4SetFreq);
 
@@ -450,14 +450,14 @@ INT_32 MT_ATESetChannel(struct net_device *prNetDev, UINT_32 u4SXIdx, UINT_32 u4
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetPreamble(struct net_device *prNetDev, UINT_32 u4Mode)
+int32_t MT_ATESetPreamble(struct net_device *prNetDev, uint32_t u4Mode)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetPreamble=%d\n", u4Mode);
 
@@ -495,15 +495,15 @@ INT_32 MT_ATESetPreamble(struct net_device *prNetDev, UINT_32 u4Mode)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetSystemBW(struct net_device *prNetDev, UINT_32 u4BW)
+int32_t MT_ATESetSystemBW(struct net_device *prNetDev, uint32_t u4BW)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 u4BWMapping;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BWMapping;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetSystemBW=%d\n", u4BW);
 
@@ -574,14 +574,14 @@ INT_32 MT_ATESetSystemBW(struct net_device *prNetDev, UINT_32 u4BW)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxLength(struct net_device *prNetDev, UINT_32 u4TxLength)
+int32_t MT_ATESetTxLength(struct net_device *prNetDev, uint32_t u4TxLength)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxLength=%d\n", u4TxLength);
 
@@ -616,14 +616,14 @@ INT_32 MT_ATESetTxLength(struct net_device *prNetDev, UINT_32 u4TxLength)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxCount(struct net_device *prNetDev, UINT_32 u4TxCount)
+int32_t MT_ATESetTxCount(struct net_device *prNetDev, uint32_t u4TxCount)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxCount=%d\n", u4TxCount);
 
@@ -662,14 +662,14 @@ INT_32 MT_ATESetTxCount(struct net_device *prNetDev, UINT_32 u4TxCount)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxIPG(struct net_device *prNetDev, UINT_32 u4TxIPG)
+int32_t MT_ATESetTxIPG(struct net_device *prNetDev, uint32_t u4TxIPG)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxIPG=%d\n", u4TxIPG);
 
@@ -707,14 +707,14 @@ INT_32 MT_ATESetTxIPG(struct net_device *prNetDev, UINT_32 u4TxIPG)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxPower0(struct net_device *prNetDev, UINT_32 u4TxPower0)
+int32_t MT_ATESetTxPower0(struct net_device *prNetDev, uint32_t u4TxPower0)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxPower0=0x%02x\n", u4TxPower0);
 
@@ -754,15 +754,15 @@ INT_32 MT_ATESetTxPower0(struct net_device *prNetDev, UINT_32 u4TxPower0)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetPerPacketBW(struct net_device *prNetDev, UINT_32 u4BW)
+int32_t MT_ATESetPerPacketBW(struct net_device *prNetDev, uint32_t u4BW)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 u4BWMapping;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t u4BWMapping;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetPerPacketBW=%d\n", u4BW);
 
@@ -833,14 +833,14 @@ INT_32 MT_ATESetPerPacketBW(struct net_device *prNetDev, UINT_32 u4BW)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEPrimarySetting(struct net_device *prNetDev, UINT_32 u4PrimaryCh)
+int32_t MT_ATEPrimarySetting(struct net_device *prNetDev, uint32_t u4PrimaryCh)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK PrimarySetting=%d\n", u4PrimaryCh);
 
@@ -878,14 +878,14 @@ INT_32 MT_ATEPrimarySetting(struct net_device *prNetDev, UINT_32 u4PrimaryCh)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxGi(struct net_device *prNetDev, UINT_32 u4SetTxGi)
+int32_t MT_ATESetTxGi(struct net_device *prNetDev, uint32_t u4SetTxGi)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetTxGi=%d\n", u4SetTxGi);
 
@@ -923,14 +923,14 @@ INT_32 MT_ATESetTxGi(struct net_device *prNetDev, UINT_32 u4SetTxGi)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxPath(struct net_device *prNetDev, UINT_32 u4Tx_path)
+int32_t MT_ATESetTxPath(struct net_device *prNetDev, uint32_t u4Tx_path)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Tx_path=%d\n", u4Tx_path);
 
@@ -965,14 +965,14 @@ INT_32 MT_ATESetTxPath(struct net_device *prNetDev, UINT_32 u4Tx_path)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxPayLoad(struct net_device *prNetDev, UINT_32 u4Gen_payload_rule, UINT_8 ucPayload)
+int32_t MT_ATESetTxPayLoad(struct net_device *prNetDev, uint32_t u4Gen_payload_rule, uint8_t ucPayload)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK rule=%d, len =0x%x\n", u4Gen_payload_rule, ucPayload);
 
@@ -1007,14 +1007,14 @@ INT_32 MT_ATESetTxPayLoad(struct net_device *prNetDev, UINT_32 u4Gen_payload_rul
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxSTBC(struct net_device *prNetDev, UINT_32 u4Stbc)
+int32_t MT_ATESetTxSTBC(struct net_device *prNetDev, uint32_t u4Stbc)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Stbc=%d\n", u4Stbc);
 
@@ -1052,14 +1052,14 @@ INT_32 MT_ATESetTxSTBC(struct net_device *prNetDev, UINT_32 u4Stbc)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxVhtNss(struct net_device *prNetDev, UINT_32 u4VhtNss)
+int32_t MT_ATESetTxVhtNss(struct net_device *prNetDev, uint32_t u4VhtNss)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK u4Nss=%d\n", u4VhtNss);
 
@@ -1093,14 +1093,14 @@ INT_32 MT_ATESetTxVhtNss(struct net_device *prNetDev, UINT_32 u4VhtNss)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetRate(struct net_device *prNetDev, UINT_32 u4Rate)
+int32_t MT_ATESetRate(struct net_device *prNetDev, uint32_t u4Rate)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetRate=0x%08lx\n", u4Rate);
 
@@ -1135,14 +1135,14 @@ INT_32 MT_ATESetRate(struct net_device *prNetDev, UINT_32 u4Rate)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetEncodeMode(struct net_device *prNetDev, UINT_32 u4Ldpc)
+int32_t MT_ATESetEncodeMode(struct net_device *prNetDev, uint32_t u4Ldpc)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetEncodeMode=%d\n", u4Ldpc);
 
@@ -1180,14 +1180,14 @@ INT_32 MT_ATESetEncodeMode(struct net_device *prNetDev, UINT_32 u4Ldpc)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetiBFEnable(struct net_device *prNetDev, UINT_32 u4iBF)
+int32_t MT_ATESetiBFEnable(struct net_device *prNetDev, uint32_t u4iBF)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetiBFEnable=%d\n", u4iBF);
 
@@ -1225,14 +1225,14 @@ INT_32 MT_ATESetiBFEnable(struct net_device *prNetDev, UINT_32 u4iBF)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESeteBFEnable(struct net_device *prNetDev, UINT_32 u4eBF)
+int32_t MT_ATESeteBFEnable(struct net_device *prNetDev, uint32_t u4eBF)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SeteBFEnable=%d\n", u4eBF);
 
@@ -1270,14 +1270,14 @@ INT_32 MT_ATESeteBFEnable(struct net_device *prNetDev, UINT_32 u4eBF)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetMACAddress(struct net_device *prNetDev, UINT_32 u4Type, PUINT_8 ucAddr)
+int32_t MT_ATESetMACAddress(struct net_device *prNetDev, uint32_t u4Type, uint8_t *ucAddr)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, ERROR, "MT6632 : QA_ATE_HOOK SetMACAddress Type = %d, Addr = %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       u4Type, ucAddr[0], ucAddr[1], ucAddr[2], ucAddr[3], ucAddr[4], ucAddr[5]);
@@ -1330,14 +1330,14 @@ INT_32 MT_ATESetMACAddress(struct net_device *prNetDev, UINT_32 u4Type, PUINT_8 
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATELogOnOff(struct net_device *prNetDev, UINT_32 u4Type, UINT_32 u4On_off, UINT_32 u4Size)
+int32_t MT_ATELogOnOff(struct net_device *prNetDev, uint32_t u4Type, uint32_t u4On_off, uint32_t u4Size)
 {
-	INT_32 i4Status = 0, i, i4TargetLength = 0, i4MaxDumpRXVCnt = 500;
-	UINT_32 u4BufLen = 0, rxv;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	int32_t i4Status = 0, i, i4TargetLength = 0, i4MaxDumpRXVCnt = 500;
+	uint32_t u4BufLen = 0, rxv;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATELogOnOff\n");
 
@@ -1422,14 +1422,14 @@ INT_32 MT_ATELogOnOff(struct net_device *prNetDev, UINT_32 u4Type, UINT_32 u4On_
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEResetTXRXCounter(struct net_device *prNetDev)
+int32_t MT_ATEResetTXRXCounter(struct net_device *prNetDev)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEResetTXRXCounter\n");
 
@@ -1463,14 +1463,14 @@ INT_32 MT_ATEResetTXRXCounter(struct net_device *prNetDev)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetDBDCBandIndex(struct net_device *prNetDev, UINT_32 u4BandIdx)
+int32_t MT_ATESetDBDCBandIndex(struct net_device *prNetDev, uint32_t u4BandIdx)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetDBDCBandIndex\n");
 
@@ -1504,14 +1504,14 @@ INT_32 MT_ATESetDBDCBandIndex(struct net_device *prNetDev, UINT_32 u4BandIdx)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetBand(struct net_device *prNetDev, INT_32 i4Band)
+int32_t MT_ATESetBand(struct net_device *prNetDev, int32_t i4Band)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetBand\n");
 
@@ -1545,14 +1545,14 @@ INT_32 MT_ATESetBand(struct net_device *prNetDev, INT_32 i4Band)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxToneType(struct net_device *prNetDev, INT_32 i4ToneType)
+int32_t MT_ATESetTxToneType(struct net_device *prNetDev, int32_t i4ToneType)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneType\n");
 
@@ -1586,14 +1586,14 @@ INT_32 MT_ATESetTxToneType(struct net_device *prNetDev, INT_32 i4ToneType)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxToneBW(struct net_device *prNetDev, INT_32 i4ToneFreq)
+int32_t MT_ATESetTxToneBW(struct net_device *prNetDev, int32_t i4ToneFreq)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneBW\n");
 
@@ -1628,14 +1628,14 @@ INT_32 MT_ATESetTxToneBW(struct net_device *prNetDev, INT_32 i4ToneFreq)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxToneDCOffset(struct net_device *prNetDev, INT_32 i4DcOffsetI, INT_32 i4DcOffsetQ)
+int32_t MT_ATESetTxToneDCOffset(struct net_device *prNetDev, int32_t i4DcOffsetI, int32_t i4DcOffsetQ)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetTxToneDCOffset\n");
 
@@ -1671,14 +1671,14 @@ INT_32 MT_ATESetTxToneDCOffset(struct net_device *prNetDev, INT_32 i4DcOffsetI, 
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetDBDCTxTonePower(struct net_device *prNetDev, INT_32 i4AntIndex, INT_32 i4RF_Power, INT_32 i4Digi_Power)
+int32_t MT_ATESetDBDCTxTonePower(struct net_device *prNetDev, int32_t i4AntIndex, int32_t i4RF_Power, int32_t i4Digi_Power)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetDBDCTxTonePower\n");
 
@@ -1727,16 +1727,16 @@ INT_32 MT_ATESetDBDCTxTonePower(struct net_device *prNetDev, INT_32 i4AntIndex, 
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEDBDCTxTone(struct net_device *prNetDev, INT_32 i4Control)
+int32_t MT_ATEDBDCTxTone(struct net_device *prNetDev, int32_t i4Control)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEDBDCTxTone\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	if (i4Control) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_COMMAND;
@@ -1773,16 +1773,16 @@ INT_32 MT_ATEDBDCTxTone(struct net_device *prNetDev, INT_32 i4Control)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetMacHeader(struct net_device *prNetDev, UINT_32 u4FrameCtrl, UINT_32 u4DurationID, UINT_32 u4SeqCtrl)
+int32_t MT_ATESetMacHeader(struct net_device *prNetDev, uint32_t u4FrameCtrl, uint32_t u4DurationID, uint32_t u4SeqCtrl)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATESetMacHeader\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MAC_HEADER;
 	rRfATInfo.u4FuncData = u4FrameCtrl || (u4DurationID << 16);
@@ -1827,18 +1827,18 @@ INT_32 MT_ATESetMacHeader(struct net_device *prNetDev, UINT_32 u4FrameCtrl, UINT
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATE_IRRSetADC(struct net_device *prNetDev,
-			UINT_32 u4WFIdx,
-			UINT_32 u4ChFreq,
-			UINT_32 u4BW, UINT_32 u4Sx, UINT_32 u4Band, UINT_32 u4RunType, UINT_32 u4FType)
+int32_t MT_ATE_IRRSetADC(struct net_device *prNetDev,
+			uint32_t u4WFIdx,
+			uint32_t u4ChFreq,
+			uint32_t u4BW, uint32_t u4Sx, uint32_t u4Band, uint32_t u4RunType, uint32_t u4FType)
 {
-	UINT_32 u4BufLen = 0, i = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 au4Param[7];
+	uint32_t u4BufLen = 0, i = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t au4Param[7];
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetADC\n");
 
@@ -1889,16 +1889,16 @@ INT_32 MT_ATE_IRRSetADC(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATE_IRRSetRxGain(struct net_device *prNetDev,
-			   UINT_32 u4PgaLpfg, UINT_32 u4Lna, UINT_32 u4Band, UINT_32 u4WF_inx, UINT_32 u4Rfdgc)
+int32_t MT_ATE_IRRSetRxGain(struct net_device *prNetDev,
+			   uint32_t u4PgaLpfg, uint32_t u4Lna, uint32_t u4Band, uint32_t u4WF_inx, uint32_t u4Rfdgc)
 {
-	UINT_32 u4BufLen = 0, i = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 au4Param[5];
+	uint32_t u4BufLen = 0, i = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t au4Param[5];
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetRxGain\n");
 
@@ -1941,16 +1941,16 @@ INT_32 MT_ATE_IRRSetRxGain(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATE_IRRSetTTG(struct net_device *prNetDev,
-			UINT_32 u4TTGPwrIdx, UINT_32 u4ChFreq, UINT_32 u4FIToneFreq, UINT_32 u4Band)
+int32_t MT_ATE_IRRSetTTG(struct net_device *prNetDev,
+			uint32_t u4TTGPwrIdx, uint32_t u4ChFreq, uint32_t u4FIToneFreq, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 au4Param[4];
+	uint32_t u4BufLen = 0, i = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t au4Param[4];
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetTTG\n");
 
@@ -1992,15 +1992,15 @@ INT_32 MT_ATE_IRRSetTTG(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATE_IRRSetTrunOnTTG(struct net_device *prNetDev, UINT_32 u4TTGOnOff, UINT_32 u4Band, UINT_32 u4WF_inx)
+int32_t MT_ATE_IRRSetTrunOnTTG(struct net_device *prNetDev, uint32_t u4TTGOnOff, uint32_t u4Band, uint32_t u4WF_inx)
 {
-	UINT_32 u4BufLen = 0, i = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
-	UINT_32 au4Param[3];
+	uint32_t u4BufLen = 0, i = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	uint32_t au4Param[3];
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_IRRSetTrunOnTTG\n");
 
@@ -2041,15 +2041,15 @@ INT_32 MT_ATE_IRRSetTrunOnTTG(struct net_device *prNetDev, UINT_32 u4TTGOnOff, U
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATE_TMRSetting(struct net_device *prNetDev,
-			 UINT_32 u4Setting, UINT_32 u4Version, UINT_32 u4MPThres, UINT_32 u4MPIter)
+int32_t MT_ATE_TMRSetting(struct net_device *prNetDev,
+			 uint32_t u4Setting, uint32_t u4Version, uint32_t u4MPThres, uint32_t u4MPIter)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATE_TMRSetting\n");
 
@@ -2126,17 +2126,17 @@ INT_32 MT_ATE_TMRSetting(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetSeqData(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4Phy, UINT_32 u4Band)
+int32_t MT_ATEMPSSetSeqData(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4Phy, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetSeqData\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_SIZE;
 	rRfATInfo.u4FuncData = u4TestNum;
@@ -2183,17 +2183,17 @@ INT_32 MT_ATEMPSSetSeqData(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetPayloadLength(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4Length, UINT_32 u4Band)
+int32_t MT_ATEMPSSetPayloadLength(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4Length, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPayloadLength\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	for (i = 0 ; i < u4TestNum ; i++) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_PAYLOAD_LEN | (i << 16);
@@ -2225,17 +2225,17 @@ INT_32 MT_ATEMPSSetPayloadLength(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetPacketCount(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4PktCnt, UINT_32 u4Band)
+int32_t MT_ATEMPSSetPacketCount(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4PktCnt, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPacketCount\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	for (i = 0 ; i < u4TestNum ; i++) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_PKT_CNT | (i << 16);
@@ -2267,17 +2267,17 @@ INT_32 MT_ATEMPSSetPacketCount(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetPowerGain(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4PwrGain, UINT_32 u4Band)
+int32_t MT_ATEMPSSetPowerGain(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4PwrGain, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPowerGain\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	for (i = 0 ; i < u4TestNum ; i++) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_PWR_GAIN | (i << 16);
@@ -2309,17 +2309,17 @@ INT_32 MT_ATEMPSSetPowerGain(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetNss(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4Nss, UINT_32 u4Band)
+int32_t MT_ATEMPSSetNss(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4Nss, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetNss\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	for (i = 0 ; i < u4TestNum ; i++) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_NSS | (i << 16);
@@ -2351,17 +2351,17 @@ INT_32 MT_ATEMPSSetNss(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEMPSSetPerpacketBW(struct net_device *prNetDev,
-			UINT_32 u4TestNum, UINT_32 *pu4PerPktBW, UINT_32 u4Band)
+int32_t MT_ATEMPSSetPerpacketBW(struct net_device *prNetDev,
+			uint32_t u4TestNum, uint32_t *pu4PerPktBW, uint32_t u4Band)
 {
-	UINT_32 u4BufLen = 0, i;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0, i;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK MT_ATEMPSSetPerpacketBW\n");
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	for (i = 0 ; i < u4TestNum ; i++) {
 		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_MPS_PACKAGE_BW | (i << 16);
@@ -2393,14 +2393,14 @@ INT_32 MT_ATEMPSSetPerpacketBW(struct net_device *prNetDev,
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATERDDStart(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATERDDStart(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
@@ -2432,14 +2432,14 @@ INT_32 MT_ATERDDStart(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EFAULT			If kalIoctl return nonzero.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATERDDStop(struct net_device *prNetDev, UINT_8 *prInBuf)
+int32_t MT_ATERDDStop(struct net_device *prNetDev, uint8_t *prInBuf)
 {
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	PARAM_MTK_WIFI_TEST_STRUCT_T rRfATInfo;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, INFO, "MT6632 : QA_ATE_HOOK SetATE = %s\n", prInBuf);
 
@@ -2477,32 +2477,32 @@ INT_32 MT_ATERDDStop(struct net_device *prNetDev, UINT_8 *prInBuf)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATEWriteEfuse(struct net_device *prNetDev, UINT_16 u2Offset, UINT_16 u2Content)
+int32_t MT_ATEWriteEfuse(struct net_device *prNetDev, uint16_t u2Offset, uint16_t u2Content)
 {
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_ACCESS_EFUSE_T rAccessEfuseInfoRead, rAccessEfuseInfoWrite;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
-	UINT_8  u4Index = 0, u4Loop = 0;
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoRead, rAccessEfuseInfoWrite;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
+	uint8_t  u4Index = 0, u4Loop = 0;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
-	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
-	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
 
 
 	/* Read */
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT HQA_WriteBulkEEPROM  Read\n");
-	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
+	kalMemSet(&rAccessEfuseInfoRead, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	rAccessEfuseInfoRead.u4Address = (u2Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 	i4Status = kalIoctl(prGlueInfo,
 				wlanoidQueryProcessAccessEfuseRead,
 				&rAccessEfuseInfoRead,
-				sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), TRUE, TRUE, TRUE, &u4BufLen);
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), TRUE, TRUE, TRUE, &u4BufLen);
 
 
 	/* Write */
-	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T));
+	kalMemSet(&rAccessEfuseInfoWrite, 0, sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 	u4Index = u2Offset % EFUSE_BLOCK_SIZE;
 
 
@@ -2524,7 +2524,7 @@ INT_32 MT_ATEWriteEfuse(struct net_device *prNetDev, UINT_16 u2Offset, UINT_16 u
 	i4Status = kalIoctl(prGlueInfo,
 				wlanoidQueryProcessAccessEfuseWrite,
 				&rAccessEfuseInfoWrite,
-				sizeof(PARAM_CUSTOM_ACCESS_EFUSE_T), FALSE, TRUE, TRUE, &u4BufLen);
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), FALSE, TRUE, TRUE, &u4BufLen);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -2546,15 +2546,15 @@ INT_32 MT_ATEWriteEfuse(struct net_device *prNetDev, UINT_16 u2Offset, UINT_16 u
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetTxTargetPower(struct net_device *prNetDev, UINT_8 ucTxTargetPower)
+int32_t MT_ATESetTxTargetPower(struct net_device *prNetDev, uint8_t ucTxTargetPower)
 {
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_SET_TX_TARGET_POWER_T rSetTxTargetPwr;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_SET_TX_TARGET_POWER rSetTxTargetPwr;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
-	kalMemSet(&rSetTxTargetPwr, 0, sizeof(PARAM_CUSTOM_SET_TX_TARGET_POWER_T));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rSetTxTargetPwr, 0, sizeof(struct PARAM_CUSTOM_SET_TX_TARGET_POWER));
 
 
 	/* Set Target Power Base */
@@ -2564,7 +2564,7 @@ INT_32 MT_ATESetTxTargetPower(struct net_device *prNetDev, UINT_8 ucTxTargetPowe
 	i4Status = kalIoctl(prGlueInfo,
 				wlanoidQuerySetTxTargetPower,
 				&rSetTxTargetPwr,
-				sizeof(PARAM_CUSTOM_SET_TX_TARGET_POWER_T), FALSE, FALSE, TRUE, &u4BufLen);
+				sizeof(struct PARAM_CUSTOM_SET_TX_TARGET_POWER), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -2586,15 +2586,15 @@ INT_32 MT_ATESetTxTargetPower(struct net_device *prNetDev, UINT_8 ucTxTargetPowe
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx)
+int32_t MT_ATESetRddReport(struct net_device *prNetDev, uint8_t ucDbdcIdx)
 {
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_SET_RDD_REPORT_T rSetRddReport;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_SET_RDD_REPORT rSetRddReport;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
-	kalMemSet(&rSetRddReport, 0, sizeof(PARAM_CUSTOM_SET_RDD_REPORT_T));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rSetRddReport, 0, sizeof(struct PARAM_CUSTOM_SET_RDD_REPORT));
 
 	/* Set Rdd Report */
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set RDD Report - Band: %d\n", ucDbdcIdx);
@@ -2603,7 +2603,7 @@ INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx)
 	i4Status = kalIoctl(prGlueInfo,
 				wlanoidQuerySetRddReport,
 				&rSetRddReport,
-				sizeof(PARAM_CUSTOM_SET_RDD_REPORT_T), FALSE, FALSE, TRUE, &u4BufLen);
+				sizeof(struct PARAM_CUSTOM_SET_RDD_REPORT), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -2624,15 +2624,15 @@ INT_32 MT_ATESetRddReport(struct net_device *prNetDev, UINT_8 ucDbdcIdx)
 * \retval -EINVAL			If invalid argument.
 */
 /*----------------------------------------------------------------------------*/
-INT_32 MT_ATESetRadarDetectMode(struct net_device *prNetDev, UINT_8 ucRadarDetectMode)
+int32_t MT_ATESetRadarDetectMode(struct net_device *prNetDev, uint8_t ucRadarDetectMode)
 {
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T rSetRadarDetectMode;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	WLAN_STATUS i4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE rSetRadarDetectMode;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t i4Status = WLAN_STATUS_SUCCESS;
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
-	kalMemSet(&rSetRadarDetectMode, 0, sizeof(PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	kalMemSet(&rSetRadarDetectMode, 0, sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE));
 
 	/* Set Rdd Report */
 	DBGLOG(INIT, INFO, "MT6632 : QA_AGENT Set Radar Detect Mode: %d\n", ucRadarDetectMode);
@@ -2641,7 +2641,7 @@ INT_32 MT_ATESetRadarDetectMode(struct net_device *prNetDev, UINT_8 ucRadarDetec
 	i4Status = kalIoctl(prGlueInfo,
 				wlanoidQuerySetRadarDetectMode,
 				&rSetRadarDetectMode,
-				sizeof(PARAM_CUSTOM_SET_RADAR_DETECT_MODE_T), FALSE, FALSE, TRUE, &u4BufLen);
+				sizeof(struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE), FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -2652,55 +2652,55 @@ INT_32 MT_ATESetRadarDetectMode(struct net_device *prNetDev, UINT_8 ucRadarDetec
 #endif
 
 #if CFG_SUPPORT_TX_BF
-INT_32 TxBfProfileTag_InValid(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucInValid)
+int32_t TxBfProfileTag_InValid(struct net_device *prNetDev, union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t ucInValid)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucInvalidProf = ucInValid;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_PfmuIdx(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucProfileIdx)
+int32_t TxBfProfileTag_PfmuIdx(struct net_device *prNetDev, union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t ucProfileIdx)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucProfileID = ucProfileIdx;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_TxBfType(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucBFType)
+int32_t TxBfProfileTag_TxBfType(struct net_device *prNetDev, union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t ucBFType)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucTxBf = ucBFType;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_DBW(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucBW)
+int32_t TxBfProfileTag_DBW(struct net_device *prNetDev, union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t ucBW)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucDBW = ucBW;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_SuMu(struct net_device *prNetDev, P_PFMU_PROFILE_TAG1 prPfmuTag1, UINT_8 ucSuMu)
+int32_t TxBfProfileTag_SuMu(struct net_device *prNetDev, union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t ucSuMu)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucSU_MU = ucSuMu;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_Mem(struct net_device *prNetDev,
-			  P_PFMU_PROFILE_TAG1 prPfmuTag1, PUINT_8 aucMemAddrColIdx, PUINT_8 aucMemAddrRowIdx)
+int32_t TxBfProfileTag_Mem(struct net_device *prNetDev,
+			  union PFMU_PROFILE_TAG1 *prPfmuTag1, uint8_t *aucMemAddrColIdx, uint8_t *aucMemAddrRowIdx)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucMemAddr1ColIdx = aucMemAddrColIdx[0];
 	prPfmuTag1->rField.ucMemAddr1RowIdx = aucMemAddrRowIdx[0];
@@ -2715,12 +2715,12 @@ INT_32 TxBfProfileTag_Mem(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_Matrix(struct net_device *prNetDev,
-			     P_PFMU_PROFILE_TAG1 prPfmuTag1,
-			     UINT_8 ucNrow,
-			     UINT_8 ucNcol, UINT_8 ucNgroup, UINT_8 ucLM, UINT_8 ucCodeBook, UINT_8 ucHtcExist)
+int32_t TxBfProfileTag_Matrix(struct net_device *prNetDev,
+			     union PFMU_PROFILE_TAG1 *prPfmuTag1,
+			     uint8_t ucNrow,
+			     uint8_t ucNcol, uint8_t ucNgroup, uint8_t ucLM, uint8_t ucCodeBook, uint8_t ucHtcExist)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucNrow = ucNrow;
 	prPfmuTag1->rField.ucNcol = ucNcol;
@@ -2732,11 +2732,11 @@ INT_32 TxBfProfileTag_Matrix(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_SNR(struct net_device *prNetDev,
-			  P_PFMU_PROFILE_TAG1 prPfmuTag1,
-			  UINT_8 ucSNR_STS0, UINT_8 ucSNR_STS1, UINT_8 ucSNR_STS2, UINT_8 ucSNR_STS3)
+int32_t TxBfProfileTag_SNR(struct net_device *prNetDev,
+			  union PFMU_PROFILE_TAG1 *prPfmuTag1,
+			  uint8_t ucSNR_STS0, uint8_t ucSNR_STS1, uint8_t ucSNR_STS2, uint8_t ucSNR_STS3)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag1->rField.ucSNR_STS0 = ucSNR_STS0;
 	prPfmuTag1->rField.ucSNR_STS1 = ucSNR_STS1;
@@ -2746,37 +2746,37 @@ INT_32 TxBfProfileTag_SNR(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_SmtAnt(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucSmartAnt)
+int32_t TxBfProfileTag_SmtAnt(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucSmartAnt)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.u2SmartAnt = ucSmartAnt;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_SeIdx(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucSeIdx)
+int32_t TxBfProfileTag_SeIdx(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucSeIdx)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.ucSEIdx = ucSeIdx;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_RmsdThd(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucRmsdThrd)
+int32_t TxBfProfileTag_RmsdThd(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucRmsdThrd)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.ucRMSDThd = ucRmsdThrd;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_McsThd(struct net_device *prNetDev,
-			     P_PFMU_PROFILE_TAG2 prPfmuTag2, PUINT_8 pMCSThLSS, PUINT_8 pMCSThSSS)
+int32_t TxBfProfileTag_McsThd(struct net_device *prNetDev,
+			     union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t *pMCSThLSS, uint8_t *pMCSThSSS)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.ucMCSThL1SS = pMCSThLSS[0];
 	prPfmuTag2->rField.ucMCSThS1SS = pMCSThSSS[0];
@@ -2788,55 +2788,55 @@ INT_32 TxBfProfileTag_McsThd(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_TimeOut(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucTimeOut)
+int32_t TxBfProfileTag_TimeOut(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucTimeOut)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.uciBfTimeOut = ucTimeOut;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_DesiredBW(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucDesiredBW)
+int32_t TxBfProfileTag_DesiredBW(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucDesiredBW)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.uciBfDBW = ucDesiredBW;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_DesiredNc(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucDesiredNc)
+int32_t TxBfProfileTag_DesiredNc(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucDesiredNc)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.uciBfNcol = ucDesiredNc;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTag_DesiredNr(struct net_device *prNetDev, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 ucDesiredNr)
+int32_t TxBfProfileTag_DesiredNr(struct net_device *prNetDev, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t ucDesiredNr)
 {
-	INT_32 i4Status = 0;
+	int32_t i4Status = 0;
 
 	prPfmuTag2->rField.uciBfNrow = ucDesiredNr;
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileTagWrite(struct net_device *prNetDev,
-			   P_PFMU_PROFILE_TAG1 prPfmuTag1, P_PFMU_PROFILE_TAG2 prPfmuTag2, UINT_8 profileIdx)
+int32_t TxBfProfileTagWrite(struct net_device *prNetDev,
+			   union PFMU_PROFILE_TAG1 *prPfmuTag1, union PFMU_PROFILE_TAG2 *prPfmuTag2, uint8_t profileIdx)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 prPfmuTag1 : au4RawData[0] = 0x%08x\n", prPfmuTag1->au4RawData[0]);
@@ -2930,8 +2930,8 @@ INT_32 TxBfProfileTagWrite(struct net_device *prNetDev,
 
 	rTxBfActionInfo.rProfileTagWrite.ucTxBfCategory = BF_PFMU_TAG_WRITE;
 	rTxBfActionInfo.rProfileTagWrite.ucPfmuId = profileIdx;
-	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer, prPfmuTag1, sizeof(PFMU_PROFILE_TAG1));
-	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer[16], prPfmuTag2, sizeof(PFMU_PROFILE_TAG2));
+	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer, prPfmuTag1, sizeof(union PFMU_PROFILE_TAG1));
+	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer[16], prPfmuTag2, sizeof(union PFMU_PROFILE_TAG2));
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidTxBfAction,
@@ -2940,18 +2940,18 @@ INT_32 TxBfProfileTagWrite(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileTagRead(struct net_device *prNetDev, UINT_8 profileIdx, UINT_8 fgBFer)
+int32_t TxBfProfileTagRead(struct net_device *prNetDev, uint8_t profileIdx, uint8_t fgBFer)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileTagRead : profileIdx = 0x%08x\n", profileIdx);
@@ -2967,24 +2967,24 @@ INT_32 TxBfProfileTagRead(struct net_device *prNetDev, UINT_8 profileIdx, UINT_8
 	return i4Status;
 }
 
-INT_32 StaRecCmmUpdate(struct net_device *prNetDev,
-		       UINT_8 ucWlanId, UINT_8 ucBssId, UINT_8 u4Aid, UINT_8 aucMacAddr[MAC_ADDR_LEN]
+int32_t StaRecCmmUpdate(struct net_device *prNetDev,
+		       uint8_t ucWlanId, uint8_t ucBssId, uint8_t u4Aid, uint8_t aucMacAddr[MAC_ADDR_LEN]
 )
 {
-	CMD_STAREC_COMMON_T rStaRecCmm;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
+	struct STAREC_COMMON rStaRecCmm;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	kalMemZero(&rStaRecCmm, sizeof(CMD_STAREC_COMMON_T));
+	kalMemZero(&rStaRecCmm, sizeof(struct STAREC_COMMON));
 	/* Tag assignment */
 	rStaRecCmm.u2Tag = STA_REC_BASIC;
-	rStaRecCmm.u2Length = sizeof(CMD_STAREC_COMMON_T);
+	rStaRecCmm.u2Length = sizeof(struct STAREC_COMMON);
 
 	/* content */
 	kalMemCopy(rStaRecCmm.aucPeerMacAddr, aucMacAddr, MAC_ADDR_LEN);
@@ -2996,31 +2996,31 @@ INT_32 StaRecCmmUpdate(struct net_device *prNetDev,
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidStaRecUpdate,
-			    &rStaRecCmm, sizeof(CMD_STAREC_COMMON_T), FALSE, FALSE, TRUE, &u4BufLen);
+			    &rStaRecCmm, sizeof(struct STAREC_COMMON), FALSE, FALSE, TRUE, &u4BufLen);
 
 	return i4Status;
 }
 
-INT_32 StaRecBfUpdate(struct net_device *prNetDev,
-		      STA_REC_BF_UPD_ARGUMENT rStaRecBfUpdArg, UINT_8 aucMemRow[4], UINT_8 aucMemCol[4]
+int32_t StaRecBfUpdate(struct net_device *prNetDev,
+		      struct STA_REC_BF_UPD_ARGUMENT rStaRecBfUpdArg, uint8_t aucMemRow[4], uint8_t aucMemCol[4]
 )
 {
-	CMD_STAREC_BF rStaRecBF;
+	struct CMD_STAREC_BF rStaRecBF;
 	/* PARAM_CUSTOM_STA_REC_UPD_STRUCT_T rStaRecUpdateInfo = {0}; */
 	/* P_STA_RECORD_T                        prStaRec; */
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	kalMemZero(&rStaRecBF, sizeof(CMD_STAREC_BF));
+	kalMemZero(&rStaRecBF, sizeof(struct CMD_STAREC_BF));
 	/* Tag assignment */
 	rStaRecBF.u2Tag = STA_REC_BF;
-	rStaRecBF.u2Length = sizeof(CMD_STAREC_BF);
+	rStaRecBF.u2Length = sizeof(struct CMD_STAREC_BF);
 	rStaRecBF.ucReserved[0] = rStaRecBfUpdArg.u4BssId;
 	rStaRecBF.ucReserved[1] = rStaRecBfUpdArg.u4WlanId;
 	/* content */
@@ -3059,27 +3059,27 @@ INT_32 StaRecBfUpdate(struct net_device *prNetDev,
 	rStaRecBF.rTxBfPfmuInfo.uciBfNrow = 0;
 
 	i4Status = kalIoctl(prGlueInfo,
-			    wlanoidStaRecBFUpdate, &rStaRecBF, sizeof(CMD_STAREC_BF), FALSE, FALSE, TRUE, &u4BufLen);
+			    wlanoidStaRecBFUpdate, &rStaRecBF, sizeof(struct CMD_STAREC_BF), FALSE, FALSE, TRUE, &u4BufLen);
 
 	return i4Status;
 }
 
-INT_32 DevInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8 fgBand, UINT_8 aucMacAddr[MAC_ADDR_LEN])
+int32_t DevInfoUpdate(struct net_device *prNetDev, uint8_t ucOwnMacIdx, uint8_t fgBand, uint8_t aucMacAddr[MAC_ADDR_LEN])
 {
-	CMD_DEVINFO_ACTIVE_T rDevInfo;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
+	struct CMD_DEVINFO_ACTIVE rDevInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	kalMemZero(&rDevInfo, sizeof(CMD_DEVINFO_ACTIVE_T));
+	kalMemZero(&rDevInfo, sizeof(struct CMD_DEVINFO_ACTIVE));
 	/* Tag assignment */
 	rDevInfo.u2Tag = DEV_INFO_ACTIVE;
-	rDevInfo.u2Length = sizeof(CMD_DEVINFO_ACTIVE_T);
+	rDevInfo.u2Length = sizeof(struct CMD_DEVINFO_ACTIVE);
 	/* content */
 	kalMemCopy(rDevInfo.aucOwnMacAddr, aucMacAddr, MAC_ADDR_LEN);
 	rDevInfo.ucActive = TRUE;
@@ -3088,27 +3088,27 @@ INT_32 DevInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8 fgB
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidDevInfoActive,
-			    &rDevInfo, sizeof(CMD_DEVINFO_ACTIVE_T), FALSE, FALSE, TRUE, &u4BufLen);
+			    &rDevInfo, sizeof(struct CMD_DEVINFO_ACTIVE), FALSE, FALSE, TRUE, &u4BufLen);
 
 	return i4Status;
 }
 
-INT_32 BssInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8 ucBssIdx, UINT_8 ucBssId[MAC_ADDR_LEN])
+int32_t BssInfoUpdate(struct net_device *prNetDev, uint8_t ucOwnMacIdx, uint8_t ucBssIdx, uint8_t ucBssId[MAC_ADDR_LEN])
 {
-	CMD_BSSINFO_BASIC_T rBssInfo;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
+	struct BSSINFO_BASIC rBssInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	kalMemZero(&rBssInfo, sizeof(CMD_BSSINFO_BASIC_T));
+	kalMemZero(&rBssInfo, sizeof(struct BSSINFO_BASIC));
 	/* Tag assignment */
 	rBssInfo.u2Tag = BSS_INFO_BASIC;
-	rBssInfo.u2Length = sizeof(CMD_BSSINFO_BASIC_T);
+	rBssInfo.u2Length = sizeof(struct BSSINFO_BASIC);
 	/* content */
 	kalMemCopy(rBssInfo.aucBSSID, ucBssId, MAC_ADDR_LEN);
 	rBssInfo.ucBcMcWlanidx = ucBssIdx;
@@ -3118,24 +3118,24 @@ INT_32 BssInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8 ucB
 	rBssInfo.ucDtimPeriod = 1;
 
 	i4Status = kalIoctl(prGlueInfo,
-			    wlanoidBssInfoBasic, &rBssInfo, sizeof(CMD_BSSINFO_BASIC_T), FALSE, FALSE, TRUE, &u4BufLen);
+			    wlanoidBssInfoBasic, &rBssInfo, sizeof(struct BSSINFO_BASIC), FALSE, FALSE, TRUE, &u4BufLen);
 
 	return i4Status;
 }
 
-INT_32 TxBfProfileDataRead(struct net_device *prNetDev,
-			   UINT_8 profileIdx, UINT_8 fgBFer, UINT_8 ucSubCarrIdxMsb, UINT_8 ucSubCarrIdxLsb)
+int32_t TxBfProfileDataRead(struct net_device *prNetDev,
+			   uint8_t profileIdx, uint8_t fgBFer, uint8_t ucSubCarrIdxMsb, uint8_t ucSubCarrIdxLsb)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataRead : ucPfmuIdx = 0x%08x\n", profileIdx);
@@ -3155,21 +3155,21 @@ INT_32 TxBfProfileDataRead(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfileDataWrite(struct net_device *prNetDev,
-			    UINT_8 profileIdx,
-			    UINT_16 u2SubCarrIdx, UINT_16 au2Phi[6], UINT_8 aucPsi[6], UINT_8 aucDSnr[4]
+int32_t TxBfProfileDataWrite(struct net_device *prNetDev,
+			    uint8_t profileIdx,
+			    uint16_t u2SubCarrIdx, uint16_t au2Phi[6], uint8_t aucPsi[6], uint8_t aucDSnr[4]
 )
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfileDataWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
@@ -3222,18 +3222,18 @@ INT_32 TxBfProfileDataWrite(struct net_device *prNetDev,
 	return i4Status;
 }
 
-INT_32 TxBfProfilePnRead(struct net_device *prNetDev, UINT_8 profileIdx)
+int32_t TxBfProfilePnRead(struct net_device *prNetDev, uint8_t profileIdx)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnRead : ucPfmuIdx = 0x%08x\n", profileIdx);
@@ -3248,18 +3248,18 @@ INT_32 TxBfProfilePnRead(struct net_device *prNetDev, UINT_8 profileIdx)
 	return i4Status;
 }
 
-INT_32 TxBfProfilePnWrite(struct net_device *prNetDev, UINT_8 profileIdx, UINT_16 u2bw, UINT_16 au2XSTS[12])
+int32_t TxBfProfilePnWrite(struct net_device *prNetDev, uint8_t profileIdx, uint16_t u2bw, uint16_t au2XSTS[12])
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfProfilePnWrite : ucPfmuIdx = 0x%08x\n", profileIdx);
@@ -3280,7 +3280,7 @@ INT_32 TxBfProfilePnWrite(struct net_device *prNetDev, UINT_8 profileIdx, UINT_1
 	rTxBfActionInfo.rProfilePnWrite.ucTxBfCategory = BF_PN_WRITE;
 	rTxBfActionInfo.rProfilePnWrite.ucPfmuIdx = profileIdx;
 	rTxBfActionInfo.rProfilePnWrite.u2bw = u2bw;
-	memcpy(&rTxBfActionInfo.rProfilePnWrite.ucBuf[0], &au2XSTS, sizeof(UINT_16)*12);
+	memcpy(&rTxBfActionInfo.rProfilePnWrite.ucBuf[0], &au2XSTS, sizeof(uint16_t)*12);
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidTxBfAction,
@@ -3289,26 +3289,26 @@ INT_32 TxBfProfilePnWrite(struct net_device *prNetDev, UINT_8 profileIdx, UINT_1
 	return i4Status;
 }
 
-INT_32 TxBfSounding(struct net_device *prNetDev, UINT_8 ucSuMu,	/* 0/1/2/3 */
-		    UINT_8 ucNumSta,	/* 00~04 */
-		    UINT_8 ucSndInterval,	/* 00~FF */
-		    UINT_8 ucWLan0,	/* 00~7F */
-		    UINT_8 ucWLan1,	/* 00~7F */
-		    UINT_8 ucWLan2,	/* 00~7F */
+int32_t TxBfSounding(struct net_device *prNetDev, uint8_t ucSuMu,	/* 0/1/2/3 */
+		    uint8_t ucNumSta,	/* 00~04 */
+		    uint8_t ucSndInterval,	/* 00~FF */
+		    uint8_t ucWLan0,	/* 00~7F */
+		    uint8_t ucWLan1,	/* 00~7F */
+		    uint8_t ucWLan2,	/* 00~7F */
 
-		    UINT_8 ucWLan3	/* 00~7F */
+		    uint8_t ucWLan3	/* 00~7F */
 )
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSounding : ucSuMu = 0x%08x\n", ucSuMu);
@@ -3362,18 +3362,18 @@ INT_32 TxBfSounding(struct net_device *prNetDev, UINT_8 ucSuMu,	/* 0/1/2/3 */
 	return i4Status;
 }
 
-INT_32 TxBfSoundingStop(struct net_device *prNetDev)
+int32_t TxBfSoundingStop(struct net_device *prNetDev)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfSoundingStop\n");
@@ -3388,18 +3388,18 @@ INT_32 TxBfSoundingStop(struct net_device *prNetDev)
 	return i4Status;
 }
 
-INT_32 TxBfTxApply(struct net_device *prNetDev, UINT_8 ucWlanId, UINT_8 fgETxBf, UINT_8 fgITxBf, UINT_8 fgMuTxBf)
+int32_t TxBfTxApply(struct net_device *prNetDev, uint8_t ucWlanId, uint8_t fgETxBf, uint8_t fgITxBf, uint8_t fgMuTxBf)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR,
@@ -3419,18 +3419,18 @@ INT_32 TxBfTxApply(struct net_device *prNetDev, UINT_8 ucWlanId, UINT_8 fgETxBf,
 	return i4Status;
 }
 
-INT_32 TxBfPfmuMemAlloc(struct net_device *prNetDev, UINT_8 ucSuMuMode, UINT_8 ucWlanIdx)
+int32_t TxBfPfmuMemAlloc(struct net_device *prNetDev, uint8_t ucSuMuMode, uint8_t ucWlanIdx)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR,
@@ -3447,18 +3447,18 @@ INT_32 TxBfPfmuMemAlloc(struct net_device *prNetDev, UINT_8 ucSuMuMode, UINT_8 u
 	return i4Status;
 }
 
-INT_32 TxBfPfmuMemRelease(struct net_device *prNetDev, UINT_8 ucWlanId)
+int32_t TxBfPfmuMemRelease(struct net_device *prNetDev, uint8_t ucWlanId)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfPfmuMemRelease : ucWlanId = 0x%08x\n", ucWlanId);
@@ -3473,19 +3473,19 @@ INT_32 TxBfPfmuMemRelease(struct net_device *prNetDev, UINT_8 ucWlanId)
 	return i4Status;
 }
 
-INT_32 TxBfBssInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8 ucBssIdx, UINT_8 ucBssId[MAC_ADDR_LEN])
+int32_t TxBfBssInfoUpdate(struct net_device *prNetDev, uint8_t ucOwnMacIdx, uint8_t ucBssIdx, uint8_t ucBssId[MAC_ADDR_LEN])
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	/* UINT_32 u4BufLen = 0; */
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
-	P_BSS_INFO_T prBssInfo;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
+	struct BSS_INFO *prBssInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR, "MT6632 TxBfBssInfoUpdate : ucOwnMacIdx = 0x%08x\n", ucOwnMacIdx);
@@ -3512,31 +3512,31 @@ INT_32 TxBfBssInfoUpdate(struct net_device *prNetDev, UINT_8 ucOwnMacIdx, UINT_8
 /* iwpriv ra0 set assoc=[mac:hh:hh:hh:hh:hh:hh]-[wtbl:dd]-
 *[ownmac:dd]-[type:xx]-[mode:mmm]-[bw:dd]-[nss:ss]-[maxrate:kkk_dd]
 */
-INT_32 TxBfManualAssoc(struct net_device *prNetDev, UINT_8 aucMac[MAC_ADDR_LEN], UINT_8 ucType,	/* no use */
-		       UINT_8 ucWtbl,
-		       UINT_8 ucOwnmac,
-		       UINT_8 ucMode,
-		       UINT_8 ucBw,
-		       UINT_8 ucNss, UINT_8 ucPfmuId, UINT_8 ucMarate, UINT_8 ucSpeIdx, UINT_8 ucRca2, UINT_8 ucRv)
+int32_t TxBfManualAssoc(struct net_device *prNetDev, uint8_t aucMac[MAC_ADDR_LEN], uint8_t ucType,	/* no use */
+		       uint8_t ucWtbl,
+		       uint8_t ucOwnmac,
+		       uint8_t ucMode,
+		       uint8_t ucBw,
+		       uint8_t ucNss, uint8_t ucPfmuId, uint8_t ucMarate, uint8_t ucSpeIdx, uint8_t ucRca2, uint8_t ucRv)
 {
-	CMD_MANUAL_ASSOC_STRUCT_T rManualAssoc;
+	struct CMD_MANUAL_ASSOC_STRUCT rManualAssoc;
 	/* P_STA_RECORD_T prStaRec; */
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_ADAPTER_T prAdapter = NULL;
-	UINT_32 u4BufLen = 0;
-	INT_32 i4Status = 0;
-	/* UINT_8 ucNsts;
-	 * UINT_32 i;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
+	/* uint8_t ucNsts;
+	 * uint32_t i;
 	 */
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	kalMemZero(&rManualAssoc, sizeof(CMD_MANUAL_ASSOC_STRUCT_T));
+	kalMemZero(&rManualAssoc, sizeof(struct CMD_MANUAL_ASSOC_STRUCT));
 	/* Tag assignment */
 	rManualAssoc.u2Tag = STA_REC_MAUNAL_ASSOC;
-	rManualAssoc.u2Length = sizeof(CMD_MANUAL_ASSOC_STRUCT_T);
+	rManualAssoc.u2Length = sizeof(struct CMD_MANUAL_ASSOC_STRUCT);
 	/* content */
 	kalMemCopy(rManualAssoc.aucMac, aucMac, MAC_ADDR_LEN);
 	rManualAssoc.ucType = ucType;
@@ -3573,29 +3573,29 @@ INT_32 TxBfManualAssoc(struct net_device *prNetDev, UINT_8 aucMac[MAC_ADDR_LEN],
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidStaRecUpdate,
 			    &rStaRecUpdateInfo,
-			    sizeof(PARAM_CUSTOM_STA_REC_UPD_STRUCT_T), FALSE, FALSE, TRUE, &u4BufLen);
+			    sizeof(struct PARAM_CUSTOM_STA_REC_UPD_STRUCT), FALSE, FALSE, TRUE, &u4BufLen);
 #endif
 
 	i4Status = kalIoctl(prGlueInfo,
 			    wlanoidManualAssoc,
-			    &rManualAssoc, sizeof(CMD_MANUAL_ASSOC_STRUCT_T), FALSE, FALSE, TRUE, &u4BufLen);
+			    &rManualAssoc, sizeof(struct CMD_MANUAL_ASSOC_STRUCT), FALSE, FALSE, TRUE, &u4BufLen);
 
 	return i4Status;
 }
 
 #if CFG_SUPPORT_TX_BF_FPGA
-INT_32 TxBfPseudoTagUpdate(struct net_device *prNetDev, UINT_8 ucLm, UINT_8 ucNr,
-				UINT_8 ucNc, UINT_8 ucBw, UINT_8 ucCodeBook, UINT_8 ucGroup)
+int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev, uint8_t ucLm, uint8_t ucNr,
+				uint8_t ucNc, uint8_t ucBw, uint8_t ucCodeBook, uint8_t ucGroup)
 {
-	INT_32 i4Status = 0;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	UINT_32 u4BufLen = 0;
-	PARAM_CUSTOM_TXBF_ACTION_STRUCT_T rTxBfActionInfo;
+	int32_t i4Status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
 
 	kalMemZero(&rTxBfActionInfo, sizeof(rTxBfActionInfo));
 
 	ASSERT(prNetDev);
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	DBGLOG(RFTEST, ERROR,
 	       "MT6632 TxBfPseudoTagUpdate : ucLm = 0x%08x, ucNr = 0x%08x, ucNc = 0x%08x, ucBw = 0x%08x, ucCodeBook = 0x%08x, ucGroup = 0x%08x\n",

@@ -88,107 +88,107 @@
 /*
 * type definition of pointer to p2p structure
 */
-/* typedef struct _GL_P2P_INFO_T   GL_P2P_INFO_T, *P_GL_P2P_INFO_T; */
-typedef struct _P2P_INFO_T P2P_INFO_T, *P_P2P_INFO_T;
+/* typedef struct GL_P2P_INFO   GL_P2P_INFO_T, *P_GL_P2P_INFO_T; */
+struct P2P_INFO;	/* declare P2P_INFO_T */
 
-typedef struct _P2P_FSM_INFO_T P2P_FSM_INFO_T, *P_P2P_FSM_INFO_T;
+struct P2P_FSM_INFO;	/* declare P2P_FSM_INFO_T */
 
-typedef struct _P2P_DEV_FSM_INFO_T P2P_DEV_FSM_INFO_T, *P_P2P_DEV_FSM_INFO_T;
+struct P2P_DEV_FSM_INFO;	/* declare P2P_DEV_FSM_INFO_T */
 
-typedef struct _P2P_ROLE_FSM_INFO_T P2P_ROLE_FSM_INFO_T, *P_P2P_ROLE_FSM_INFO_T;
+struct P2P_ROLE_FSM_INFO;	/* declare P2P_ROLE_FSM_INFO_T */
 
-typedef struct _P2P_CONNECTION_SETTINGS_T P2P_CONNECTION_SETTINGS_T, *P_P2P_CONNECTION_SETTINGS_T;
+struct P2P_CONNECTION_SETTINGS;	/* declare P2P_CONNECTION_SETTINGS_T */
 
 /* Type definition for function pointer to p2p function*/
-typedef BOOLEAN(*P2P_LAUNCH) (P_GLUE_INFO_T prGlueInfo);
+typedef u_int8_t(*P2P_LAUNCH) (struct GLUE_INFO *prGlueInfo);
 
-typedef BOOLEAN(*P2P_REMOVE) (P_GLUE_INFO_T prGlueInfo, BOOLEAN fgIsWlanLaunched);
+typedef u_int8_t(*P2P_REMOVE) (struct GLUE_INFO *prGlueInfo, u_int8_t fgIsWlanLaunched);
 
-typedef BOOLEAN(*KAL_P2P_GET_CIPHER) (IN P_GLUE_INFO_T prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
 
-typedef BOOLEAN(*KAL_P2P_GET_TKIP_CIPHER) (IN P_GLUE_INFO_T prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_TKIP_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
 
-typedef BOOLEAN(*KAL_P2P_GET_CCMP_CIPHER) (IN P_GLUE_INFO_T prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_CCMP_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
 
-typedef BOOLEAN(*KAL_P2P_GET_WSC_MODE) (IN P_GLUE_INFO_T prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_WSC_MODE) (IN struct GLUE_INFO *prGlueInfo);
 
-typedef struct net_device *(*KAL_P2P_GET_DEV_HDLR) (P_GLUE_INFO_T prGlueInfo);
+typedef struct net_device *(*KAL_P2P_GET_DEV_HDLR) (struct GLUE_INFO *prGlueInfo);
 
-typedef VOID(*KAL_P2P_SET_MULTICAST_WORK_ITEM) (P_GLUE_INFO_T prGlueInfo);
+typedef void(*KAL_P2P_SET_MULTICAST_WORK_ITEM) (struct GLUE_INFO *prGlueInfo);
 
-typedef VOID(*P2P_NET_REGISTER) (P_GLUE_INFO_T prGlueInfo);
+typedef void(*P2P_NET_REGISTER) (struct GLUE_INFO *prGlueInfo);
 
-typedef VOID(*P2P_NET_UNREGISTER) (P_GLUE_INFO_T prGlueInfo);
+typedef void(*P2P_NET_UNREGISTER) (struct GLUE_INFO *prGlueInfo);
 
-typedef VOID(*KAL_P2P_UPDATE_ASSOC_INFO) (IN P_GLUE_INFO_T prGlueInfo,
-					  IN PUINT_8 pucFrameBody,
-					  IN UINT_32 u4FrameBodyLen, IN BOOLEAN fgReassocRequest);
+typedef void(*KAL_P2P_UPDATE_ASSOC_INFO) (IN struct GLUE_INFO *prGlueInfo,
+					  IN uint8_t *pucFrameBody,
+					  IN uint32_t u4FrameBodyLen, IN u_int8_t fgReassocRequest);
 
-typedef BOOLEAN(*P2P_VALIDATE_AUTH) (IN P_ADAPTER_T prAdapter,
-				     IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode);
+typedef u_int8_t(*P2P_VALIDATE_AUTH) (IN struct ADAPTER *prAdapter,
+				     IN struct SW_RFB *prSwRfb, IN struct STA_RECORD **pprStaRec, OUT uint16_t *pu2StatusCode);
 
-typedef BOOLEAN(*P2P_VALIDATE_ASSOC_REQ) (IN P_ADAPTER_T prAdapter,
-					  IN P_SW_RFB_T prSwRfb, OUT PUINT_16 pu4ControlFlags);
+typedef u_int8_t(*P2P_VALIDATE_ASSOC_REQ) (IN struct ADAPTER *prAdapter,
+					  IN struct SW_RFB *prSwRfb, OUT uint16_t *pu4ControlFlags);
 
-typedef VOID(*P2P_RUN_EVENT_AAA_TX_FAIL) (IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+typedef void(*P2P_RUN_EVENT_AAA_TX_FAIL) (IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-typedef BOOLEAN(*P2P_PARSE_CHECK_FOR_P2P_INFO_ELEM) (IN P_ADAPTER_T prAdapter,
-						     IN PUINT_8 pucBuf, OUT PUINT_8 pucOuiType);
+typedef u_int8_t(*P2P_PARSE_CHECK_FOR_P2P_INFO_ELEM) (IN struct ADAPTER *prAdapter,
+						     IN uint8_t *pucBuf, OUT uint8_t *pucOuiType);
 
-typedef WLAN_STATUS(*P2P_RUN_EVENT_AAA_COMPLETE) (IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+typedef uint32_t(*P2P_RUN_EVENT_AAA_COMPLETE) (IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-typedef VOID(*P2P_PROCESS_EVENT_UPDATE_NOA_PARAM) (IN P_ADAPTER_T prAdapter,
-						   UINT_8 ucNetTypeIndex,
-						   P_EVENT_UPDATE_NOA_PARAMS_T prEventUpdateNoaParam);
+typedef void(*P2P_PROCESS_EVENT_UPDATE_NOA_PARAM) (IN struct ADAPTER *prAdapter,
+						   uint8_t ucNetTypeIndex,
+						   struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam);
 
-typedef VOID(*SCAN_P2P_PROCESS_BEACON_AND_PROBE_RESP) (IN P_ADAPTER_T prAdapter,
-						       IN P_SW_RFB_T prSwRfb,
-						       IN P_WLAN_STATUS prStatus,
-						       IN P_BSS_DESC_T prBssDesc,
-						       IN P_WLAN_BEACON_FRAME_T prWlanBeaconFrame);
+typedef void(*SCAN_P2P_PROCESS_BEACON_AND_PROBE_RESP) (IN struct ADAPTER *prAdapter,
+						       IN struct SW_RFB *prSwRfb,
+						       IN uint32_t *prStatus,
+						       IN struct BSS_DESC *prBssDesc,
+						       IN struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 
-typedef VOID(*P2P_RX_PUBLIC_ACTION_FRAME) (P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+typedef void(*P2P_RX_PUBLIC_ACTION_FRAME) (struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-typedef VOID(*RLM_RSP_GENERATE_OBSS_SCAN_IE) (P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+typedef void(*RLM_RSP_GENERATE_OBSS_SCAN_IE) (struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-typedef VOID(*RLM_UPDATE_BW_BY_CH_LIST_FOR_AP) (P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+typedef void(*RLM_UPDATE_BW_BY_CH_LIST_FOR_AP) (struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-typedef VOID(*RLM_PROCESS_PUBLIC_ACTION) (P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+typedef void(*RLM_PROCESS_PUBLIC_ACTION) (struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
-typedef VOID(*RLM_PROCESS_HT_ACTION) (P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+typedef void(*RLM_PROCESS_HT_ACTION) (struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
-typedef VOID(*RLM_UPDATE_PARAMS_FOR_AP) (P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgUpdateBeacon);
+typedef void(*RLM_UPDATE_PARAMS_FOR_AP) (struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, u_int8_t fgUpdateBeacon);
 
-typedef VOID(*RLM_HANDLE_OBSS_STATUS_EVENT_PKT) (P_ADAPTER_T prAdapter, P_EVENT_AP_OBSS_STATUS_T prObssStatus);
+typedef void(*RLM_HANDLE_OBSS_STATUS_EVENT_PKT) (struct ADAPTER *prAdapter, struct EVENT_AP_OBSS_STATUS *prObssStatus);
 
-typedef BOOLEAN(*P2P_FUNC_VALIDATE_PROBE_REQ) (IN P_ADAPTER_T prAdapter,
-					       IN P_SW_RFB_T prSwRfb, OUT PUINT_32 pu4ControlFlags);
+typedef u_int8_t(*P2P_FUNC_VALIDATE_PROBE_REQ) (IN struct ADAPTER *prAdapter,
+					       IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags);
 
-typedef VOID(*RLM_BSS_INIT_FOR_AP) (P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+typedef void(*RLM_BSS_INIT_FOR_AP) (struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-typedef UINT_32(*P2P_GET_PROB_RSP_IE_TABLE_SIZE) (VOID);
+typedef uint32_t(*P2P_GET_PROB_RSP_IE_TABLE_SIZE) (void);
 
-typedef PUINT_8(*P2P_BUILD_REASSOC_REQ_FRAME_COMMON_IES) (IN P_ADAPTER_T prAdapter,
-							  IN P_MSDU_INFO_T prMsduInfo, IN PUINT_8 pucBuffer);
+typedef uint8_t *(*P2P_BUILD_REASSOC_REQ_FRAME_COMMON_IES) (IN struct ADAPTER *prAdapter,
+							  IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucBuffer);
 
-typedef VOID(*P2P_FUNC_DISCONNECT) (IN P_ADAPTER_T prAdapter,
-				    IN P_STA_RECORD_T prStaRec, IN BOOLEAN fgSendDeauth, IN UINT_16 u2ReasonCode);
+typedef void(*P2P_FUNC_DISCONNECT) (IN struct ADAPTER *prAdapter,
+				    IN struct STA_RECORD *prStaRec, IN u_int8_t fgSendDeauth, IN uint16_t u2ReasonCode);
 
-typedef VOID(*P2P_FSM_RUN_EVENT_RX_DEAUTH) (IN P_ADAPTER_T prAdapter,
-					    IN P_STA_RECORD_T prStaRec, IN P_SW_RFB_T prSwRfb);
+typedef void(*P2P_FSM_RUN_EVENT_RX_DEAUTH) (IN struct ADAPTER *prAdapter,
+					    IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb);
 
-typedef VOID(*P2P_FSM_RUN_EVENT_RX_DISASSOC) (IN P_ADAPTER_T prAdapter,
-					      IN P_STA_RECORD_T prStaRec, IN P_SW_RFB_T prSwRfb);
+typedef void(*P2P_FSM_RUN_EVENT_RX_DISASSOC) (IN struct ADAPTER *prAdapter,
+					      IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb);
 
-typedef BOOLEAN(*P2P_FUN_IS_AP_MODE) (IN P_P2P_FSM_INFO_T prP2pFsmInfo);
+typedef u_int8_t(*P2P_FUN_IS_AP_MODE) (IN struct P2P_FSM_INFO *prP2pFsmInfo);
 
-typedef VOID(*P2P_FSM_RUN_EVENT_BEACON_TIMEOUT) (IN P_ADAPTER_T prAdapter);
+typedef void(*P2P_FSM_RUN_EVENT_BEACON_TIMEOUT) (IN struct ADAPTER *prAdapter);
 
-typedef VOID(*P2P_FUNC_STORE_ASSOC_RSP_IE_BUFFER) (IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+typedef void(*P2P_FUNC_STORE_ASSOC_RSP_IE_BUFFER) (IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-typedef VOID(*P2P_GENERATE_P2P_IE) (IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+typedef void(*P2P_GENERATE_P2P_IE) (IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
-typedef UINT_32(*P2P_CALCULATE_P2P_IE_LEN) (IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_STA_RECORD_T prStaRec);
+typedef uint32_t(*P2P_CALCULATE_P2P_IE_LEN) (IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

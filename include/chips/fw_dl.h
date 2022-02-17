@@ -89,64 +89,64 @@ enum ENUM_IMG_DL_IDX_T {
 };
 
 struct FWDL_OPS_T {
-	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable, PPUINT_8 apucName,
-				      PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx); /* load firmware bin priority */
-	void (*constructPatchName)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucName, PUINT_8 pucNameIdx);
+	void (*constructFirmwarePrio)(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable, uint8_t **apucName,
+				      uint8_t *pucNameIdx, uint8_t ucMaxNameIdx); /* load firmware bin priority */
+	void (*constructPatchName)(struct GLUE_INFO *prGlueInfo, uint8_t **apucName, uint8_t *pucNameIdx);
 
-	WLAN_STATUS (*downloadPatch)(IN P_ADAPTER_T prAdapter);
-	WLAN_STATUS (*downloadFirmware)(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-	void (*getFwInfo)(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
-			  OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			  OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
-	unsigned int (*getFwDlInfo)(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
+	uint32_t (*downloadPatch)(IN struct ADAPTER *prAdapter);
+	uint32_t (*downloadFirmware)(IN struct ADAPTER *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+	void (*getFwInfo)(IN struct ADAPTER *prAdapter, IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+			  OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
+			  OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
+	unsigned int (*getFwDlInfo)(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)
 #define LEN_4_BYTE_CRC	(4)
 
 struct TAILER_COMMON_FORMAT_T {
-	UINT_8 ucChipInfo;
-	UINT_8 ucEcoCode;
-	UINT_8 ucRegionNum;
-	UINT_8 aucReserved[4];
-	UINT_8 aucRamVersion[10];
-	UINT_8 aucRamBuiltDate[15];
-	UINT_32 u4CRC;
+	uint8_t ucChipInfo;
+	uint8_t ucEcoCode;
+	uint8_t ucRegionNum;
+	uint8_t aucReserved[4];
+	uint8_t aucRamVersion[10];
+	uint8_t aucRamBuiltDate[15];
+	uint32_t u4CRC;
 };
 
 struct TAILER_REGION_FORMAT_T {
-	UINT_32 u4CRC;
-	UINT_32 u4RealSize;
-	UINT_32 u4BlockSize;
-	UINT_8 aucReserved1[4];
-	UINT_32 u4Addr;
-	UINT_32 u4Len;
-	UINT_8 ucFeatureSet;
-	UINT_8 aucReserved2[15];
+	uint32_t u4CRC;
+	uint32_t u4RealSize;
+	uint32_t u4BlockSize;
+	uint8_t aucReserved1[4];
+	uint32_t u4Addr;
+	uint32_t u4Len;
+	uint8_t ucFeatureSet;
+	uint8_t aucReserved2[15];
 };
 
 struct TAILER_FORMAT_T {
-	UINT_32 addr;
-	UINT_8 chip_info;
-	UINT_8 feature_set;
-	UINT_8 eco_code;
-	UINT_8 ram_version[10];
-	UINT_8 ram_built_date[15];
-	UINT_32 len;
+	uint32_t addr;
+	uint8_t chip_info;
+	uint8_t feature_set;
+	uint8_t eco_code;
+	uint8_t ram_version[10];
+	uint8_t ram_built_date[15];
+	uint32_t len;
 };
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 struct TAILER_FORMAT_T_2 {
-	UINT_32 crc;
-	UINT_32 addr;
-	UINT_32 block_size;
-	UINT_32 real_size;
-	UINT_8  chip_info;
-	UINT_8  feature_set;
-	UINT_8  eco_code;
-	UINT_8  ram_version[10];
-	UINT_8  ram_built_date[15];
-	UINT_32 len;
+	uint32_t crc;
+	uint32_t addr;
+	uint32_t block_size;
+	uint32_t real_size;
+	uint8_t  chip_info;
+	uint8_t  feature_set;
+	uint8_t  eco_code;
+	uint8_t  ram_version[10];
+	uint8_t  ram_built_date[15];
+	uint32_t len;
 };
 
 struct FW_IMAGE_TAILER_T_2 {
@@ -155,22 +155,22 @@ struct FW_IMAGE_TAILER_T_2 {
 };
 
 struct FW_IMAGE_TAILER_CHECK {
-	UINT_8	chip_info;
-	UINT_8	feature_set;
-	UINT_8	eco_code;
-	UINT_8	ram_version[10];
-	UINT_8	ram_built_date[15];
-	UINT_32 len;
+	uint8_t	chip_info;
+	uint8_t	feature_set;
+	uint8_t	eco_code;
+	uint8_t	ram_version[10];
+	uint8_t	ram_built_date[15];
+	uint32_t len;
 };
 #endif
 
 struct PATCH_FORMAT_T {
-	UINT_8 aucBuildDate[16];
-	UINT_8 aucPlatform[4];
-	UINT_32 u4SwHwVersion;
-	UINT_32 u4PatchVersion;
-	UINT_16 u2CRC;		/* CRC calculated for image only */
-	UINT_8 ucPatchImage[0];
+	uint8_t aucBuildDate[16];
+	uint8_t aucPlatform[4];
+	uint32_t u4SwHwVersion;
+	uint32_t u4PatchVersion;
+	uint16_t u2CRC;		/* CRC calculated for image only */
+	uint8_t ucPatchImage[0];
 };
 
 #endif
@@ -181,67 +181,67 @@ struct PATCH_FORMAT_T {
 */
 
 #if CFG_ENABLE_FW_DOWNLOAD
-UINT_32 wlanGetDataMode(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx, IN UINT_8 ucFeatureSet);
+uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx, IN uint8_t ucFeatureSet);
 
-VOID wlanGetHarvardFwInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
-			 OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			 OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
+void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter, IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+			 OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
+			 OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
 
-VOID wlanGetConnacFwInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
-			 OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
-			 OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
+void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter, IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+			 OUT uint32_t *pu4Addr, OUT uint32_t *pu4Len,
+			 OUT uint32_t *pu4DataMode, OUT u_int8_t *pfgIsEMIDownload);
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
-WLAN_STATUS wlanCompressedImageSectionDownloadStage(IN P_ADAPTER_T prAdapter,
-						    IN PVOID pvFwImageMapFile, IN UINT_32 u4FwImageFileLength,
-						    UINT_8 ucSectionNumber, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
-						    OUT PUINT_8 ucIsCompressed,
-						    OUT P_INIT_CMD_WIFI_DECOMPRESSION_START prFwImageInFo);
+uint32_t wlanCompressedImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
+						    IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
+						    uint8_t ucSectionNumber, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+						    OUT uint8_t *ucIsCompressed,
+						    OUT struct INIT_CMD_WIFI_DECOMPRESSION_START *prFwImageInFo);
 #endif
-WLAN_STATUS wlanImageSectionDownloadStage(IN P_ADAPTER_T prAdapter, IN PVOID pvFwImageMapFile,
-					  IN UINT_32 u4FwImageFileLength, IN UINT_8 ucSectionNumber,
+uint32_t wlanImageSectionDownloadStage(IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
+					  IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
 					  IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanDownloadSection(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Addr, IN UINT_32 u4Len,
-				IN UINT_32 u4DataMode, IN PUINT_8 pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter, IN uint32_t u4Addr, IN uint32_t u4Len,
+				IN uint32_t u4DataMode, IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanDownloadEMISection(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Len,
-				   IN UINT_32 u4DestAddr, IN PUINT_8 pucStartPtr);
+uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter, IN uint32_t u4Len,
+				   IN uint32_t u4DestAddr, IN uint8_t *pucStartPtr);
 
-WLAN_STATUS wlanGetHarvardTailerInfo(IN P_ADAPTER_T prAdapter, IN PVOID prFwBuffer, IN UINT_32 u4FwSize,
-				     IN UINT_32 ucTotSecNum, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER *prAdapter, IN void *prFwBuffer, IN uint32_t u4FwSize,
+				     IN uint32_t ucTotSecNum, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanGetConnacTailerInfo(IN P_ADAPTER_T prAdapter, IN PVOID prFwBuffer,
-				    IN UINT_32 u4FwSize, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER *prAdapter, IN void *prFwBuffer,
+				    IN uint32_t u4FwSize, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
-				   IN UINT_32 u4DestAddr, IN UINT_32 u4ImgSecSize, IN UINT_32 u4DataMode,
+uint32_t wlanImageSectionConfig(IN struct ADAPTER *prAdapter,
+				   IN uint32_t u4DestAddr, IN uint32_t u4ImgSecSize, IN uint32_t u4DataMode,
 				   IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanImageSectionDownload(IN P_ADAPTER_T prAdapter, IN UINT_32 u4ImgSecSize, IN PUINT_8 pucImgSecBuf);
+uint32_t wlanImageSectionDownload(IN struct ADAPTER *prAdapter, IN uint32_t u4ImgSecSize, IN uint8_t *pucImgSecBuf);
 
-WLAN_STATUS wlanImageQueryStatus(IN P_ADAPTER_T prAdapter);
+uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS wlanConfigWifiFuncStatus(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCmdSeqNum);
+uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER *prAdapter, IN uint8_t ucCmdSeqNum);
 
-WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
-			       IN BOOLEAN fgEnable, IN UINT_32 u4StartAddress, IN UINT_8 ucPDA);
+uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
+			       IN u_int8_t fgEnable, IN uint32_t u4StartAddress, IN uint8_t ucPDA);
 
-UINT_32 wlanCRC32(PUINT_8 buf, UINT_32 len);
+uint32_t wlanCRC32(uint8_t *buf, uint32_t len);
 
-WLAN_STATUS wlanDownloadCR4FW(IN P_ADAPTER_T prAdapter, PVOID prFwBuffer);
+uint32_t wlanDownloadCR4FW(IN struct ADAPTER *prAdapter, void *prFwBuffer);
 
-WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter);
+uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS wlanDownloadPatch(IN P_ADAPTER_T prAdapter);
+uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS wlanHarvardFormatDownload(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t wlanHarvardFormatDownload(IN struct ADAPTER *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanConnacFormatDownload(IN P_ADAPTER_T prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t wlanConnacFormatDownload(IN struct ADAPTER *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 
-WLAN_STATUS wlanGetPatchInfo(IN P_ADAPTER_T prAdapter);
+uint32_t wlanGetPatchInfo(IN struct ADAPTER *prAdapter);
 
-UINT_32 fwDlGetFwdlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
+uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen);
 
 #endif
 

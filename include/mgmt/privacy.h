@@ -125,40 +125,40 @@
  ********************************************************************************
  */
 
-typedef struct _IEEE_802_1X_HDR {
-	UINT_8 ucVersion;
-	UINT_8 ucType;
-	UINT_16 u2Length;
+struct IEEE_802_1X_HDR {
+	uint8_t ucVersion;
+	uint8_t ucType;
+	uint16_t u2Length;
 	/* followed by length octets of data */
-} IEEE_802_1X_HDR, *P_IEEE_802_1X_HDR;
+};
 
-typedef struct _EAPOL_KEY {
-	UINT_8 ucType;
+struct EAPOL_KEY {
+	uint8_t ucType;
 	/* Note: key_info, key_length, and key_data_length are unaligned */
-	UINT_8 aucKeyInfo[2];	/* big endian */
-	UINT_8 aucKeyLength[2];	/* big endian */
-	UINT_8 aucReplayCounter[8];
-	UINT_8 aucKeyNonce[16];
-	UINT_8 aucKeyIv[16];
-	UINT_8 aucKeyRsc[8];
-	UINT_8 aucKeyId[8];	/* Reserved in IEEE 802.11i/RSN */
-	UINT_8 aucKeyMic[16];
-	UINT_8 aucKeyDataLength[2];	/* big endian */
+	uint8_t aucKeyInfo[2];	/* big endian */
+	uint8_t aucKeyLength[2];	/* big endian */
+	uint8_t aucReplayCounter[8];
+	uint8_t aucKeyNonce[16];
+	uint8_t aucKeyIv[16];
+	uint8_t aucKeyRsc[8];
+	uint8_t aucKeyId[8];	/* Reserved in IEEE 802.11i/RSN */
+	uint8_t aucKeyMic[16];
+	uint8_t aucKeyDataLength[2];	/* big endian */
 	/* followed by key_data_length bytes of key_data */
-} EAPOL_KEY, *P_EAPOL_KEY;
+};
 
 /* WPA2 PMKID candicate structure */
-typedef struct _PMKID_CANDICATE_T {
-	UINT_8 aucBssid[MAC_ADDR_LEN];
-	UINT_32 u4PreAuthFlags;
-} PMKID_CANDICATE_T, *P_PMKID_CANDICATE_T;
+struct PMKID_CANDICATE {
+	uint8_t aucBssid[MAC_ADDR_LEN];
+	uint32_t u4PreAuthFlags;
+};
 
 #if 0
 /* WPA2 PMKID cache structure */
-typedef struct _PMKID_ENTRY_T {
-	PARAM_BSSID_INFO_T rBssidInfo;
-	BOOLEAN fgPmkidExist;
-} PMKID_ENTRY_T, *P_PMKID_ENTRY_T;
+struct PMKID_ENTRY {
+	struct PARAM_BSSID_INFO rBssidInfo;
+	u_int8_t fgPmkidExist;
+};
 #endif
 
 /*******************************************************************************
@@ -181,70 +181,70 @@ typedef struct _PMKID_ENTRY_T {
  ********************************************************************************
  */
 
-VOID secInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-VOID secSetPortBlocked(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta, IN BOOLEAN fgPort);
+void secSetPortBlocked(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta, IN u_int8_t fgPort);
 
-BOOL secCheckClassError(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN P_STA_RECORD_T prStaRec);
+u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN struct STA_RECORD *prStaRec);
 
-BOOL secTxPortControlCheck(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN P_STA_RECORD_T prStaRec);
+u_int8_t secTxPortControlCheck(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN struct STA_RECORD *prStaRec);
 
-BOOLEAN secRxPortControlCheck(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSWRfb);
+u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSWRfb);
 
-VOID secSetCipherSuite(IN P_ADAPTER_T prAdapter, IN UINT_32 u4CipherSuitesFlags);
+void secSetCipherSuite(IN struct ADAPTER *prAdapter, IN uint32_t u4CipherSuitesFlags);
 
-BOOLEAN secIsProtectedFrame(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsdu, IN P_STA_RECORD_T prStaRec);
+u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsdu, IN struct STA_RECORD *prStaRec);
 
-VOID secClearPmkid(IN P_ADAPTER_T prAdapter);
+void secClearPmkid(IN struct ADAPTER *prAdapter);
 
-BOOLEAN secRsnKeyHandshakeEnabled(IN P_ADAPTER_T prAdapter);
+u_int8_t secRsnKeyHandshakeEnabled(IN struct ADAPTER *prAdapter);
 
-UINT_8 secGetBmcWlanIndex(IN P_ADAPTER_T prAdapter, IN ENUM_NETWORK_TYPE_T eNetType, IN P_STA_RECORD_T prStaRec);
+uint8_t secGetBmcWlanIndex(IN struct ADAPTER *prAdapter, IN enum ENUM_NETWORK_TYPE eNetType, IN struct STA_RECORD *prStaRec);
 
-BOOLEAN secTransmitKeyExist(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta);
+u_int8_t secTransmitKeyExist(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta);
 
-BOOLEAN secEnabledInAis(IN P_ADAPTER_T prAdapter);
+u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter);
 
-BOOL secPrivacySeekForEntry(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSta);
+u_int8_t secPrivacySeekForEntry(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prSta);
 
-VOID secPrivacyFreeForEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucEntry);
+void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter, IN uint8_t ucEntry);
 
-VOID secPrivacyFreeSta(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+void secPrivacyFreeSta(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-VOID secRemoveBssBcEntry(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN BOOL fgRoam);
+void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN u_int8_t fgRoam);
 
-UINT_8
-secPrivacySeekForBcEntry(IN P_ADAPTER_T prAdapter,
-			 IN UINT_8 ucBssIndex,
-			 IN PUINT_8 pucAddr, IN UINT_8 ucStaIdx, IN UINT_8 ucAlg, IN UINT_8 ucKeyId);
+uint8_t
+secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
+			 IN uint8_t ucBssIndex,
+			 IN uint8_t *pucAddr, IN uint8_t ucStaIdx, IN uint8_t ucAlg, IN uint8_t ucKeyId);
 
-UINT_8 secGetStaIdxByWlanIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlanIdx);
+uint8_t secGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIdx);
 
-UINT_8 secGetBssIdxByWlanIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlanIdx);
+uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIdx);
 
-UINT_8 secLookupStaRecIndexFromTA(P_ADAPTER_T prAdapter, PUINT_8 pucMacAddress);
+uint8_t secLookupStaRecIndexFromTA(struct ADAPTER *prAdapter, uint8_t *pucMacAddress);
 
-void secPrivacyDumpWTBL(IN P_ADAPTER_T prAdapter);
+void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter);
 
-BOOLEAN secCheckWTBLAssign(IN P_ADAPTER_T prAdapter);
+u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter);
 
-BOOLEAN secIsProtected1xFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-BOOLEAN secIsProtectedBss(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-BOOLEAN tkipMicDecapsulate(IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucMicKey);
+u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
 
-BOOLEAN tkipMicDecapsulateInRxHdrTransMode(IN P_SW_RFB_T prSwRfb, IN PUINT_8 pucMicKey);
+u_int8_t tkipMicDecapsulateInRxHdrTransMode(IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
 
-void secPostUpdateAddr(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo);
+void secPostUpdateAddr(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo);
 
-enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(PUINT_8 pucPacket);
+enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPacket);
 
-VOID secHandleRxEapolPacket(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prRetSwRfb,
-		IN P_STA_RECORD_T prStaRec);
+void secHandleRxEapolPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRetSwRfb,
+		IN struct STA_RECORD *prStaRec);
 
-VOID secHandleEapolTxStatus(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-		IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+void secHandleEapolTxStatus(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 /*******************************************************************************
  *                              F U N C T I O N S

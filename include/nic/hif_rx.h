@@ -137,7 +137,7 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static __KAL_INLINE__ VOID hifDataTypeCheck(VOID);
+static __KAL_INLINE__ void hifDataTypeCheck(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -148,7 +148,7 @@ static __KAL_INLINE__ VOID hifDataTypeCheck(VOID);
  * It will check automatically while at compile time.
  * We'll need this for porting driver to different RTOS.
  */
-static __KAL_INLINE__ VOID hifDataTypeCheck(VOID)
+static __KAL_INLINE__ void hifDataTypeCheck(void)
 {
 }
 

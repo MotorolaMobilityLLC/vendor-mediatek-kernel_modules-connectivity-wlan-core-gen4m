@@ -86,8 +86,8 @@
 
 /* Miscellaneous Equates */
 #ifndef FALSE
-#define FALSE               ((BOOL) 0)
-#define TRUE                ((BOOL) 1)
+#define FALSE               ((u_int8_t) 0)
+#define TRUE                ((u_int8_t) 1)
 #endif /* FALSE */
 
 #ifndef NULL
@@ -108,52 +108,39 @@ typedef void (*late_resume_callback) (struct early_suspend *h);
 ********************************************************************************
 */
 /* Type definition for void */
-typedef void VOID, *PVOID, **PPVOID;
 
 /* Type definition for Boolean */
-typedef unsigned char BOOL, *PBOOL, BOOLEAN, *PBOOLEAN;
 
 /* Type definition for signed integers */
-typedef signed char CHAR, *PCHAR, **PPCHAR;
-typedef signed char INT_8, *PINT_8, **PPINT_8;
-typedef signed short INT_16, *PINT_16, **PPINT_16;
-typedef signed int INT_32, *PINT_32, **PPINT_32;
-typedef signed long LONG, *PLONG, **PPLONG;
-typedef signed long long INT_64, *PINT_64, **PPINT_64;
 
 /* Type definition for unsigned integers */
-typedef unsigned char UCHAR, *PUCHAR, **PPUCHAR;
-typedef unsigned char UINT_8, *PUINT_8, **PPUINT_8, *P_UINT_8;
-typedef unsigned short UINT_16, *PUINT_16, **PPUINT_16;
-typedef unsigned int UINT_32, *PUINT_32, **PPUINT_32;
-typedef unsigned long ULONG, *PULONG, *PPULONG;
-typedef unsigned long long UINT_64, *PUINT_64, **PPUINT_64;
 
-typedef unsigned int OS_SYSTIME, *POS_SYSTIME, **PPOS_SYSTIME;
+
+#define OS_SYSTIME uint32_t
 
 /* Type definition of large integer (64bits) union to be comptaible with
  * Windows definition, so we won't apply our own coding style to these data types.
  * NOTE: LARGE_INTEGER must NOT be floating variable.
  * <TODO>: Check for big-endian compatibility.
  */
-typedef union _LARGE_INTEGER {
+union LARGE_INTEGER {
 	struct {
-		UINT_32 LowPart;
-		INT_32 HighPart;
+		uint32_t LowPart;
+		int32_t HighPart;
 	} u;
-	INT_64 QuadPart;
-} LARGE_INTEGER, *PLARGE_INTEGER;
+	int64_t QuadPart;
+};
 
-typedef union _ULARGE_INTEGER {
+union ULARGE_INTEGER {
 	struct {
-		UINT_32 LowPart;
-		UINT_32 HighPart;
+		uint32_t LowPart;
+		uint32_t HighPart;
 	} u;
-	UINT_64 QuadPart;
-} ULARGE_INTEGER, *PULARGE_INTEGER;
+	uint64_t QuadPart;
+};
 
-typedef INT_32(*probe_card) (PVOID pvData, PVOID pvDriverData);
-typedef VOID(*remove_card) (VOID);
+typedef int32_t(*probe_card) (void *pvData, void *pvDriverData);
+typedef void(*remove_card) (void);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -177,7 +164,7 @@ typedef VOID(*remove_card) (VOID);
 #define __KAL_ATTRIB_ALIGN_4__          __aligned(4)
 
 #ifndef BIT
-#define BIT(n)                          ((UINT_32) 1UL << (n))
+#define BIT(n)                          ((uint32_t) 1UL << (n))
 #endif /* BIT */
 
 #ifndef BITS
@@ -206,7 +193,7 @@ typedef VOID(*remove_card) (VOID);
  */
 #ifndef ENTRY_OF
 #define ENTRY_OF(_addrOfField, _type, _field) \
-	((_type *)((PINT_8)(_addrOfField) - (PINT_8)OFFSET_OF(_type, _field)))
+	((_type *)((int8_t *)(_addrOfField) - (int8_t *)OFFSET_OF(_type, _field)))
 #endif /* ENTRY_OF */
 
 /* This macro align the input value to the DW boundary.

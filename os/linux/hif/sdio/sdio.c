@@ -113,26 +113,26 @@
  *
  */
 
-static INT_32 mtk_sdio_probe(MTK_WCN_HIF_SDIO_CLTCTX, const MTK_WCN_HIF_SDIO_FUNCINFO *);
+static int32_t mtk_sdio_probe(unsigned long, const struct MTK_WCN_HIF_SDIO_FUNCINFO *);
 
-static INT_32 mtk_sdio_remove(MTK_WCN_HIF_SDIO_CLTCTX);
-static INT_32 mtk_sdio_interrupt(MTK_WCN_HIF_SDIO_CLTCTX);
+static int32_t mtk_sdio_remove(unsigned long);
+static int32_t mtk_sdio_interrupt(unsigned long);
 
 /*
  * sdio function info table
  */
 
-static MTK_WCN_HIF_SDIO_FUNCINFO funcInfo[] = {
+static struct MTK_WCN_HIF_SDIO_FUNCINFO funcInfo[] = {
 	{MTK_WCN_HIF_SDIO_FUNC(0x037a, 0x6602, 0x1, 512)},
 };
 
-static MTK_WCN_SDIO_DRIVER_DATA_MAPPING sdio_driver_data_mapping[] = {
+static struct MTK_WCN_SDIO_DRIVER_DATA_MAPPING sdio_driver_data_mapping[] = {
 	{0x6602, &mt66xx_driver_data_mt6632},
 };
 
-static MTK_WCN_HIF_SDIO_CLTINFO cltInfo = {
+static struct MTK_WCN_HIF_SDIO_CLTINFO cltInfo = {
 	.func_tbl = funcInfo,
-	.func_tbl_size = sizeof(funcInfo) / sizeof(MTK_WCN_HIF_SDIO_FUNCINFO),
+	.func_tbl_size = sizeof(funcInfo) / sizeof(struct MTK_WCN_HIF_SDIO_FUNCINFO),
 	.hif_clt_probe = mtk_sdio_probe,
 	.hif_clt_remove = mtk_sdio_remove,
 	.hif_clt_irq = mtk_sdio_interrupt,
@@ -230,10 +230,10 @@ static struct sdio_driver mtk_sdio_driver = {
 
 #if MTK_WCN_HIF_SDIO
 
-static INT_32 mtk_sdio_interrupt(MTK_WCN_HIF_SDIO_CLTCTX cltCtx)
+static int32_t mtk_sdio_interrupt(unsigned long cltCtx)
 {
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	INT_32 ret = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t ret = 0;
 
 	prGlueInfo = mtk_wcn_hif_sdio_get_drvdata(cltCtx);
 
@@ -267,7 +267,7 @@ static INT_32 mtk_sdio_interrupt(MTK_WCN_HIF_SDIO_CLTCTX cltCtx)
 #else
 static void mtk_sdio_interrupt(struct sdio_func *func)
 {
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	int ret = 0;
 
@@ -307,13 +307,13 @@ static void mtk_sdio_interrupt(struct sdio_func *func)
 #if MTK_WCN_HIF_SDIO
 
 /* FIXME: global variable */
-static const MTK_WCN_HIF_SDIO_FUNCINFO *prFunc;
+static const struct MTK_WCN_HIF_SDIO_FUNCINFO *prFunc;
 
-static INT_32 mtk_sdio_probe(MTK_WCN_HIF_SDIO_CLTCTX cltCtx, const MTK_WCN_HIF_SDIO_FUNCINFO *prFuncInfo)
+static int32_t mtk_sdio_probe(unsigned long cltCtx, const struct MTK_WCN_HIF_SDIO_FUNCINFO *prFuncInfo)
 {
-	INT_32 ret = HIF_SDIO_ERR_SUCCESS;
-	INT_32 i = 0;
-	INT_32 dd_table_len = sizeof(sdio_driver_data_mapping) / sizeof(MTK_WCN_SDIO_DRIVER_DATA_MAPPING);
+	int32_t ret = HIF_SDIO_ERR_SUCCESS;
+	int32_t i = 0;
+	int32_t dd_table_len = sizeof(sdio_driver_data_mapping) / sizeof(struct MTK_WCN_SDIO_DRIVER_DATA_MAPPING);
 	struct mt66xx_hif_driver_data *sdio_driver_data = NULL;
 
 	prFunc = prFuncInfo;
@@ -330,7 +330,7 @@ static INT_32 mtk_sdio_probe(MTK_WCN_HIF_SDIO_CLTCTX cltCtx, const MTK_WCN_HIF_S
 		return HIF_SDIO_ERR_UNSUP_CARD_ID;
 	}
 
-	if (pfWlanProbe((PVOID)&cltCtx, (PVOID) sdio_driver_data) != WLAN_STATUS_SUCCESS) {
+	if (pfWlanProbe((void *)&cltCtx, (void *) sdio_driver_data) != WLAN_STATUS_SUCCESS) {
 		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */
 		pfWlanRemove();
 		ret = -(HIF_SDIO_ERR_FAIL);
@@ -380,7 +380,7 @@ static int mtk_sdio_probe(struct sdio_func *func, const struct sdio_device_id *i
 	}
 	/* printk(KERN_INFO DRV_NAME"sdio_enable_func done!\n"); */
 
-	if (pfWlanProbe((PVOID) func, (PVOID) id->driver_data) != WLAN_STATUS_SUCCESS) {
+	if (pfWlanProbe((void *) func, (void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
 		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */
 		pfWlanRemove();
 		ret = -1;
@@ -393,9 +393,9 @@ out:
 #endif
 
 #if MTK_WCN_HIF_SDIO
-static INT_32 mtk_sdio_remove(MTK_WCN_HIF_SDIO_CLTCTX cltCtx)
+static int32_t mtk_sdio_remove(unsigned long cltCtx)
 {
-	INT_32 ret = HIF_SDIO_ERR_SUCCESS;
+	int32_t ret = HIF_SDIO_ERR_SUCCESS;
 	/* printk(KERN_INFO DRV_NAME"pfWlanRemove done\n"); */
 	pfWlanRemove();
 
@@ -424,7 +424,7 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 {
 	int ret = 0, wait = 0;
 	struct sdio_func *func;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	DBGLOG(HAL, STATE, "==>\n");
 
@@ -543,7 +543,7 @@ int mtk_sdio_async_irq_enable(struct sdio_func *func)
 * \return The result of registering sdio bus
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
 	int ret = 0;
 
@@ -583,7 +583,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glUnregisterBus(remove_card pfRemove)
+void glUnregisterBus(remove_card pfRemove)
 {
 	ASSERT(pfRemove);
 	pfRemove();
@@ -606,10 +606,10 @@ VOID glUnregisterBus(remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
-	P_GL_HIF_INFO_T prHif = NULL;
-	UINT_8 ucIdx;
+	struct GL_HIF_INFO *prHif = NULL;
+	uint8_t ucIdx;
 
 	prHif = &prGlueInfo->rHifInfo;
 
@@ -620,7 +620,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 #if MTK_WCN_HIF_SDIO
 	/* prHif->prFuncInfo = ((MTK_WCN_HIF_SDIO_FUNCINFO *) u4Cookie); */
 	prHif->prFuncInfo = prFunc;
-	prHif->cltCtx = *((MTK_WCN_HIF_SDIO_CLTCTX *) ulCookie);
+	prHif->cltCtx = *((unsigned long *) ulCookie);
 	mtk_wcn_hif_sdio_set_drvdata(prHif->cltCtx, prGlueInfo);
 
 #else
@@ -637,7 +637,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 #endif
 
 	/* Reset statistic counter */
-	kalMemZero(&prHif->rStatCounter, sizeof(SDIO_STAT_COUNTER_T));
+	kalMemZero(&prHif->rStatCounter, sizeof(struct SDIO_STAT_COUNTER));
 
 	for (ucIdx = HIF_TXC_IDX_0; ucIdx < HIF_TXC_IDX_NUM; ucIdx++)
 		prHif->au4PendingTxDoneCount[ucIdx] = 0;
@@ -658,7 +658,7 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
 	/* P_GL_HIF_INFO_T prHif = NULL; */
 	/* ASSERT(prGlueInfo); */
@@ -676,7 +676,7 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOL glBusInit(PVOID pvData)
+u_int8_t glBusInit(void *pvData)
 {
 #if (MTK_WCN_HIF_SDIO == 0)
 	int ret = 0;
@@ -734,7 +734,7 @@ BOOL glBusInit(PVOID pvData)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusRelease(PVOID pvData)
+void glBusRelease(void *pvData)
 {
 }				/* end of glBusRelease() */
 
@@ -750,20 +750,20 @@ VOID glBusRelease(PVOID pvData)
 *         NEGATIVE_VALUE   if fail
 */
 /*----------------------------------------------------------------------------*/
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
 	int ret = 0;
 
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(pvData);
 	if (!pvData)
 		return -1;
 
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo)
 		return -1;
@@ -796,11 +796,11 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
+void glBusFreeIrq(void *pvData, void *pvCookie)
 {
 	struct net_device *prNetDevice = NULL;
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_GL_HIF_INFO_T prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(pvData);
 	if (!pvData) {
@@ -808,7 +808,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 		return;
 	}
 	prNetDevice = (struct net_device *)pvData;
-	prGlueInfo = (P_GLUE_INFO_T) pvCookie;
+	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
 		/* printk(KERN_INFO DRV_NAME"%s no glue info\n", __FUNCTION__); */
@@ -825,7 +825,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 #endif
 }				/* end of glBusreeIrq() */
 
-BOOLEAN glIsReadClearReg(UINT_32 u4Address)
+u_int8_t glIsReadClearReg(uint32_t u4Address)
 {
 	switch (u4Address) {
 	case MCR_WHISR:
@@ -859,17 +859,17 @@ BOOLEAN glIsReadClearReg(UINT_32 u4Address)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT_32 pu4Value)
+u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
 	int ret = 0;
-	UINT_8 ucRetryCount = 0;
+	uint8_t ucRetryCount = 0;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
 	do {
 #if MTK_WCN_HIF_SDIO
-		ret = mtk_wcn_hif_sdio_readl(prGlueInfo->rHifInfo.cltCtx, u4Register, (PUINT_32) pu4Value);
+		ret = mtk_wcn_hif_sdio_readl(prGlueInfo->rHifInfo.cltCtx, u4Register, (uint32_t *) pu4Value);
 #else
 		sdio_claim_host(prGlueInfo->rHifInfo.func);
 		*pu4Value = sdio_readl(prGlueInfo->rHifInfo.func, u4Register, &ret);
@@ -914,10 +914,10 @@ BOOL kalDevRegRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegRead_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT PUINT_32 pu4Value)
+u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
 {
-	UINT_32 value;
-	UINT_32 u4Time, u4Current;
+	uint32_t value;
+	uint32_t u4Time, u4Current;
 
     /* progrqm h2d mailbox0 as interested register address */
 	kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
@@ -931,7 +931,7 @@ BOOL kalDevRegRead_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT P
 	kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
 	kalDevRegWrite(prGlueInfo, MCR_WHIER, (value & ~SDIO_MAILBOX_FUNC_READ_REG_IDX));
 
-	u4Time = (UINT_32) kalGetTimeTick();
+	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit16 of WHISR assert for read register response */
@@ -955,7 +955,7 @@ BOOL kalDevRegRead_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT P
 		}
 
 		/* timeout exceeding check */
-		u4Current = (UINT_32) kalGetTimeTick();
+		u4Current = (uint32_t) kalGetTimeTick();
 
 		if (((u4Current > u4Time) && ((u4Current - u4Time) > HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT))
 			|| (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time))
@@ -981,10 +981,10 @@ BOOL kalDevRegRead_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, OUT P
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_32 u4Value)
+u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
 {
 	int ret = 0;
-	UINT_8 ucRetryCount = 0;
+	uint8_t ucRetryCount = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1031,10 +1031,10 @@ BOOL kalDevRegWrite(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevRegWrite_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN UINT_32 u4Value)
+u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
 {
-	UINT_32 value;
-	UINT_32 u4Time, u4Current;
+	uint32_t value;
+	uint32_t u4Time, u4Current;
 
 	/* progrqm h2d mailbox0 as interested register address */
 	kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
@@ -1051,7 +1051,7 @@ BOOL kalDevRegWrite_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN U
 	kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
 	kalDevRegWrite(prGlueInfo, MCR_WHIER, (value & ~SDIO_MAILBOX_FUNC_WRITE_REG_IDX));
 
-	u4Time = (UINT_32) kalGetTimeTick();
+	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit17 of WHISR assert for response */
@@ -1071,7 +1071,7 @@ BOOL kalDevRegWrite_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN U
 		}
 
 		/* timeout exceeding check */
-		u4Current = (UINT_32) kalGetTimeTick();
+		u4Current = (uint32_t) kalGetTimeTick();
 
 		if (((u4Current > u4Time) && ((u4Current - u4Time) > HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT))
 			|| (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time))
@@ -1099,12 +1099,12 @@ BOOL kalDevRegWrite_mac(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Register, IN U
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
-	       IN UINT_16 u2Port, IN UINT_32 u4Len, OUT PUINT_8 pucBuf, IN UINT_32 u4ValidOutBufSize)
+u_int8_t
+kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
+	       IN uint16_t u2Port, IN uint32_t u4Len, OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucDst = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucDst = NULL;
 	int count = u4Len;
 	int ret = 0;
 	int bNum = 0;
@@ -1169,10 +1169,10 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 
 	if (bNum > 0) {
 		ret =
-		    mtk_wcn_hif_sdio_read_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (PUINT_32) pucDst,
+		    mtk_wcn_hif_sdio_read_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (uint32_t *) pucDst,
 					      ((prGlueInfo->rHifInfo).prFuncInfo->blk_sz) * bNum);
 	} else {
-		ret = mtk_wcn_hif_sdio_read_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (PUINT_32) pucDst, count);
+		ret = mtk_wcn_hif_sdio_read_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (uint32_t *) pucDst, count);
 	}
 #endif
 
@@ -1202,12 +1202,12 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL
-kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
-		IN UINT_16 u2Port, IN UINT_32 u4Len, IN PUINT_8 pucBuf, IN UINT_32 u4ValidInBufSize)
+u_int8_t
+kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
+		IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf, IN uint32_t u4ValidInBufSize)
 {
-	P_GL_HIF_INFO_T prHifInfo = NULL;
-	PUINT_8 pucSrc = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint8_t *pucSrc = NULL;
 	int count = u4Len;
 	int ret = 0;
 	int bNum = 0;
@@ -1272,9 +1272,9 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 	if (bNum > 0) {		/* block mode */
 		ret =
 		    mtk_wcn_hif_sdio_write_buf(prGlueInfo->rHifInfo.cltCtx, u2Port,
-					       (PUINT_32) pucSrc, ((prGlueInfo->rHifInfo).prFuncInfo->blk_sz) * bNum);
+					       (uint32_t *) pucSrc, ((prGlueInfo->rHifInfo).prFuncInfo->blk_sz) * bNum);
 	} else {		/* byte mode */
-		ret = mtk_wcn_hif_sdio_write_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (PUINT_32) pucSrc, count);
+		ret = mtk_wcn_hif_sdio_write_buf(prGlueInfo->rHifInfo.cltCtx, u2Port, (uint32_t *) pucSrc, count);
 	}
 #endif
 
@@ -1302,12 +1302,12 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
+void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus)
 {
 #if CFG_SDIO_INTR_ENHANCE
-	P_SDIO_CTRL_T prSDIOCtrl;
-	P_SDIO_STAT_COUNTER_T prStatCounter;
-	BOOLEAN fgPendingInt = FALSE;
+	struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl;
+	struct SDIO_STAT_COUNTER *prStatCounter;
+	u_int8_t fgPendingInt = FALSE;
 
 	SDIO_TIME_INTERVAL_DEC();
 
@@ -1328,8 +1328,8 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 	}
 	else {
 		SDIO_REC_TIME_START();
-		HAL_PORT_RD(prAdapter, MCR_WHISR, sizeof(ENHANCE_MODE_DATA_STRUCT_T),
-			(PUINT_8) prSDIOCtrl, sizeof(ENHANCE_MODE_DATA_STRUCT_T));
+		HAL_PORT_RD(prAdapter, MCR_WHISR, sizeof(struct ENHANCE_MODE_DATA_STRUCT),
+			(uint8_t *) prSDIOCtrl, sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 		SDIO_REC_TIME_END();
 		SDIO_ADD_TIME_INTERVAL(prStatCounter->u4IntReadTime);
 		prStatCounter->u4IntReadCnt++;
@@ -1374,7 +1374,7 @@ VOID kalDevReadIntStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4IntStatus)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevWriteWithSdioCmd52(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Addr, IN UINT_8 ucData)
+u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Addr, IN uint8_t ucData)
 {
 	int ret = 0;
 
@@ -1395,7 +1395,7 @@ BOOL kalDevWriteWithSdioCmd52(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Addr, IN
 
 }				/* end of kalDevWriteWithSdioCmd52() */
 
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
@@ -1410,17 +1410,17 @@ VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
+u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
-	P_TX_CTRL_T prTxCtrl;
-	PUINT_8 pucOutputBuf = (PUINT_8) NULL;
-	UINT_32 u4PaddingLength;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t *pucOutputBuf = (uint8_t *) NULL;
+	uint32_t u4PaddingLength;
 	struct sk_buff *skb;
-	UINT_8 *pucBuf;
-	UINT_32 u4Length;
-	UINT_8 ucTC;
+	uint8_t *pucBuf;
+	uint32_t u4Length;
+	uint8_t ucTC;
 
 	SDIO_TIME_INTERVAL_DEC();
 
@@ -1435,7 +1435,7 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	if (prTxCtrl->u4WrIdx + ALIGN_4(u4Length) > prAdapter->u4CoalescingBufCachedSize) {
 		if ((prAdapter->u4CoalescingBufCachedSize - ALIGN_4(prTxCtrl->u4WrIdx)) >= HIF_TX_TERMINATOR_LEN) {
 			/* fill with single dword of zero as TX-aggregation termination */
-			*(PUINT_32) (&((pucOutputBuf)[ALIGN_4(prTxCtrl->u4WrIdx)])) = 0;
+			*(uint32_t *) (&((pucOutputBuf)[ALIGN_4(prTxCtrl->u4WrIdx)])) = 0;
 		}
 
 		if (HAL_TEST_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR) == FALSE) {
@@ -1486,12 +1486,12 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
+u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
-	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
-	P_TX_CTRL_T prTxCtrl;
-	PUINT_8 pucOutputBuf = (PUINT_8) NULL;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t *pucOutputBuf = (uint8_t *) NULL;
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 	pucOutputBuf = prTxCtrl->pucTxCoalescingBufPtr;
@@ -1501,7 +1501,7 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 
 	if ((prAdapter->u4CoalescingBufCachedSize - ALIGN_4(prTxCtrl->u4WrIdx)) >= HIF_TX_TERMINATOR_LEN) {
 		/* fill with single dword of zero as TX-aggregation termination */
-		*(PUINT_32) (&((pucOutputBuf)[ALIGN_4(prTxCtrl->u4WrIdx)])) = 0;
+		*(uint32_t *) (&((pucOutputBuf)[ALIGN_4(prTxCtrl->u4WrIdx)])) = 0;
 	}
 
 	if (HAL_TEST_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR) == FALSE) {
@@ -1532,13 +1532,13 @@ BOOL kalDevKickData(IN P_GLUE_INFO_T prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC)
+u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
-	P_ADAPTER_T prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 /*	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo; */
-	P_TX_CTRL_T prTxCtrl;
-	PUINT_8 pucOutputBuf = (PUINT_8) NULL;
-	UINT_16 u2OverallBufferLength = 0;
+	struct TX_CTRL *prTxCtrl;
+	uint8_t *pucOutputBuf = (uint8_t *) NULL;
+	uint16_t u2OverallBufferLength = 0;
 /*	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS; */
 
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -1565,7 +1565,7 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 
 	if ((prAdapter->u4CoalescingBufCachedSize - ALIGN_4(u2OverallBufferLength)) >= HIF_TX_TERMINATOR_LEN) {
 		/* fill with single dword of zero as TX-aggregation termination */
-		*(PUINT_32) (&((pucOutputBuf)[ALIGN_4(u2OverallBufferLength)])) = 0;
+		*(uint32_t *) (&((pucOutputBuf)[ALIGN_4(u2OverallBufferLength)])) = 0;
 	}
 	if (HAL_TEST_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR) == FALSE) {
 		if (kalDevPortWrite(prGlueInfo, MCR_WTDR1, TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength),
@@ -1584,16 +1584,16 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 	return TRUE;
 }
 
-void glGetDev(PVOID ctx, struct device **dev)
+void glGetDev(void *ctx, struct device **dev)
 {
 #if MTK_WCN_HIF_SDIO
-	mtk_wcn_hif_sdio_get_dev(*((MTK_WCN_HIF_SDIO_CLTCTX *) ctx), dev);
+	mtk_wcn_hif_sdio_get_dev(*((unsigned long *) ctx), dev);
 #else
 	*dev = &((struct sdio_func *)ctx)->dev;
 #endif
 }
 
-void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev)
+void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 #if MTK_WCN_HIF_SDIO
 	mtk_wcn_hif_sdio_get_dev(prHif->cltCtx, dev);
@@ -1602,9 +1602,9 @@ void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev)
 #endif
 }
 
-BOOLEAN glWakeupSdio(P_GLUE_INFO_T prGlueInfo)
+u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo)
 {
-	BOOLEAN fgSuccess = TRUE;
+	u_int8_t fgSuccess = TRUE;
 
 #if (HIF_SDIO_SUPPORT_GPIO_SLEEP_MODE && MTK_WCN_HIF_SDIO)
 	#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE

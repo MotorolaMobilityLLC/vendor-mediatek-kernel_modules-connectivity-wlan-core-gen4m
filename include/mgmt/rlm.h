@@ -71,12 +71,12 @@
 ********************************************************************************
 */
 
-extern BOOLEAN g_bIcapEnable;
-extern BOOLEAN g_bCaptureDone;
-extern UINT_16 g_u2DumpIndex;
+extern u_int8_t g_bIcapEnable;
+extern u_int8_t g_bCaptureDone;
+extern uint16_t g_u2DumpIndex;
 #if CFG_SUPPORT_QA_TOOL
-extern UINT_32 g_au4Offset[2][2];
-extern UINT_32 g_au4IQData[256];
+extern uint32_t g_au4Offset[2][2];
+extern uint32_t g_au4IQData[256];
 #endif
 
 /*******************************************************************************
@@ -193,32 +193,32 @@ extern UINT_32 g_au4IQData[256];
 ********************************************************************************
 */
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-typedef struct _RLM_CAL_RESULT_ALL_V2_T {
+struct RLM_CAL_RESULT_ALL_V2 {
 	/* Used for checking the Cal Data is damaged */
-	UINT_32 u4MagicNum1;
+	uint32_t u4MagicNum1;
 
 	/* Thermal Value when do these Calibration */
-	UINT_32 u4ThermalInfo;
+	uint32_t u4ThermalInfo;
 
 	/* Total Rom Data Length Backup in Host Side */
-	UINT_32 u4ValidRomCalDataLength;
+	uint32_t u4ValidRomCalDataLength;
 
 	/* Total Ram Data Length Backup in Host Side */
-	UINT_32 u4ValidRamCalDataLength;
+	uint32_t u4ValidRamCalDataLength;
 
 	/* All Rom Cal Data Dumpped by FW */
-	UINT_32 au4RomCalData[10000];
+	uint32_t au4RomCalData[10000];
 
 	/* All Ram Cal Data Dumpped by FW */
-	UINT_32 au4RamCalData[10000];
+	uint32_t au4RamCalData[10000];
 
 	/* Used for checking the Cal Data is damaged */
-	UINT_32 u4MagicNum2;
-} RLM_CAL_RESULT_ALL_V2_T, *P_RLM_CAL_RESULT_ALL_V2_T;
-extern RLM_CAL_RESULT_ALL_V2_T g_rBackupCalDataAllV2;
+	uint32_t u4MagicNum2;
+};
+extern struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
 #endif
 
-typedef VOID (*PFN_OPMODE_NOTIFY_DONE_FUNC)(P_ADAPTER_T, UINT_8, BOOLEAN);
+typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(struct ADAPTER *, uint8_t, u_int8_t);
 
 enum ENUM_OP_NOTIFY_TYPE_T {
 	OP_NOTIFY_TYPE_VHT_NSS_BW = 0,
@@ -286,72 +286,72 @@ enum ENUM_OP_CHANGE_STATUS_T {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID rlmFsmEventInit(P_ADAPTER_T prAdapter);
+void rlmFsmEventInit(struct ADAPTER *prAdapter);
 
-VOID rlmFsmEventUninit(P_ADAPTER_T prAdapter);
+void rlmFsmEventUninit(struct ADAPTER *prAdapter);
 
-VOID rlmReqGenerateHtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmReqGenerateHtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmReqGenerateExtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateHtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateHtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateExtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateHtOpIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateHtOpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateErpIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateErpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmGenerateMTKOuiIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-BOOLEAN rlmParseCheckMTKOuiIE(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN PUINT_32 pu4Cap);
+u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t *pu4Cap);
 
-VOID rlmGenerateCsaIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmProcessBcn(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE, UINT_16 u2IELength);
+void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
 
-VOID rlmProcessAssocRsp(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE, UINT_16 u2IELength);
+void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
 
-VOID rlmProcessHtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 #if CFG_SUPPORT_802_11AC
-VOID rlmProcessVhtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif
 
-VOID rlmFillSyncCmdParam(P_CMD_SET_BSS_RLM_PARAM_T prCmdBody, P_BSS_INFO_T prBssInfo);
+void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody, struct BSS_INFO *prBssInfo);
 
-VOID rlmSyncOperationParams(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void rlmSyncOperationParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-VOID rlmBssInitForAPandIbss(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
-VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE, UINT_16 u2IELength);
+void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, uint8_t *pucIE, uint16_t u2IELength);
 
-VOID rlmBssAborted(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 #if CFG_SUPPORT_TDLS
-UINT_32
-rlmFillHtCapIEByParams(BOOLEAN fg40mAllowed,
-		       BOOLEAN fgShortGIDisabled,
-		       UINT_8 u8SupportRxSgi20,
-		       UINT_8 u8SupportRxSgi40, UINT_8 u8SupportRxGf, ENUM_OP_MODE_T eCurrentOPMode, UINT_8 *pOutBuf);
+uint32_t
+rlmFillHtCapIEByParams(u_int8_t fg40mAllowed,
+		       u_int8_t fgShortGIDisabled,
+		       uint8_t u8SupportRxSgi20,
+		       uint8_t u8SupportRxSgi40, uint8_t u8SupportRxGf, enum ENUM_OP_MODE eCurrentOPMode, uint8_t *pOutBuf);
 
-UINT_32 rlmFillHtCapIEByAdapter(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, UINT_8 *pOutBuf);
+uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
 
-UINT_32 rlmFillVhtCapIEByAdapter(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, UINT_8 *pOutBuf);
+uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
 
 #endif
 
 #if CFG_SUPPORT_802_11AC
-VOID rlmReqGenerateVhtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateVhtCapIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateVhtCapIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateVhtOpIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateVhtOpIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmFillVhtOpIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO_T prMsduInfo);
+void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
 
-VOID rlmRspGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
-VOID rlmReqGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo);
+void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
+void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
 
 
@@ -359,69 +359,69 @@ VOID rlmReqGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMs
 #endif
 
 #if CFG_SUPPORT_DFS
-VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb);
+void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif
 
-VOID
-rlmSendOpModeNotificationFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UINT_8 ucChannelWidth, UINT_8 ucNss);
+void
+rlmSendOpModeNotificationFrame(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t ucChannelWidth, uint8_t ucNss);
 
-VOID
-rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UINT_8 ucNss);
+void
+rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t ucNss);
 
-WLAN_STATUS
-rlmNotifyVhtOpModeTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-WLAN_STATUS
-rlmSmPowerSaveTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-WLAN_STATUS
-rlmNotifyChannelWidthtTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+uint32_t
+rlmNotifyChannelWidthtTxDone(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-UINT_8
-rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo);
+uint8_t
+rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo);
 
-UINT_8
-rlmGetVhtOpBwByBssOpBw(UINT_8 ucBssOpBw);
+uint8_t
+rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw);
 
-VOID
-rlmFillVhtOpInfoByBssOpBw(P_BSS_INFO_T prBssInfo, UINT_8 ucChannelWidth);
+void
+rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucChannelWidth);
 
 enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(
-	P_ADAPTER_T prAdapter,
-	UINT_8 ucBssIndex,
-	UINT_8 ucChannelWidth,
-	UINT_8 ucNss,
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucChannelWidth,
+	uint8_t ucNss,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 	);
 
-VOID
-rlmDummyChangeOpHandler(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, BOOLEAN fgIsChangeSuccess);
+void
+rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex, u_int8_t fgIsChangeSuccess);
 
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-WLAN_STATUS rlmCalBackup(
-	P_ADAPTER_T prAdapter,
-	UINT_8		ucReason,
-	UINT_8		ucAction,
-	UINT_8		ucRomRam
+uint32_t rlmCalBackup(
+	struct ADAPTER *prAdapter,
+	uint8_t		ucReason,
+	uint8_t		ucAction,
+	uint8_t		ucRomRam
 	);
 
-WLAN_STATUS rlmTriggerCalBackup(
-	P_ADAPTER_T prAdapter,
-	BOOLEAN		fgIsCalDataBackuped
+uint32_t rlmTriggerCalBackup(
+	struct ADAPTER *prAdapter,
+	u_int8_t		fgIsCalDataBackuped
 	);
 #endif
 
-VOID rlmModifyVhtBwPara(PUINT_8 pucVhtChannelFrequencyS1, PUINT_8 pucVhtChannelFrequencyS2, PUINT_8 pucVhtChannelWidth);
+void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1, uint8_t *pucVhtChannelFrequencyS2, uint8_t *pucVhtChannelWidth);
 
-VOID rlmReviseMaxBw(
-	P_ADAPTER_T prAdapter,
-	UINT_8 ucBssIndex,
-	P_ENUM_CHNL_EXT_T peExtend,
-	P_ENUM_CHANNEL_WIDTH_P peChannelWidth,
-	PUINT_8 pucS1,
-	PUINT_8 pucPrimaryCh);
+void rlmReviseMaxBw(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	enum ENUM_CHNL_EXT *peExtend,
+	enum ENUM_CHANNEL_WIDTH *peChannelWidth,
+	uint8_t *pucS1,
+	uint8_t *pucPrimaryCh);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -429,7 +429,7 @@ VOID rlmReviseMaxBw(
 */
 
 #ifndef _lint
-static __KAL_INLINE__ VOID rlmDataTypeCheck(VOID)
+static __KAL_INLINE__ void rlmDataTypeCheck(void)
 {
 }
 #endif /* _lint */
