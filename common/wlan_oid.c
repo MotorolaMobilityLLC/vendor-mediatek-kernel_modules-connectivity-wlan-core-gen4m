@@ -9815,7 +9815,11 @@ uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
 	kalMemCopy(prCmdICapInfo, &(prRfATInfo->Data.rICapInfo),
 		   sizeof(struct RBIST_CAP_START_T));
 
-	prAdapter->rIcapInfo.eIcapState = ICAP_STATE_START;
+	if (prCmdICapInfo->u4Trigger == TRUE)
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_START;
+	else
+		/* ICAP STOP, reset state to INIT state*/
+		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_INIT;
 
 	rStatus = wlanSendSetQueryExtCmd(prAdapter,
 			 CMD_ID_LAYER_0_EXT_MAGIC_NUM,
@@ -9860,6 +9864,10 @@ uint32_t wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter,
 	rCmdTestCtrl.ucAction = ACTION_IN_RFTEST;
 	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex =
 		GET_ICAP_CAPTURE_STATUS;
+
+
+	prAdapter->rIcapInfo.eIcapState = ICAP_STATE_QUERY_STATUS;
+
 
 	prCmdICapInfo = &(rCmdTestCtrl.u.rRfATInfo.Data.rICapInfo);
 	kalMemCopy(prCmdICapInfo, &(prRfATInfo->Data.rICapInfo),
@@ -9959,6 +9967,10 @@ uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
 	pData = prRbistDump->pucIcapData;
 
 	u4DumpIndex = prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
+
+	prICapInfo->eIcapState = ICAP_STATE_QA_TOOL_CAPTURE;
+
+
 
 	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
 	u4MaxIQDataCount = prICapInfo->u4IQArrayIndex - u4DumpIndex;
