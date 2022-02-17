@@ -242,6 +242,7 @@ int wf_ioremap_read(size_t addr, unsigned int *val);
 
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
+int soc3_0_CheckBusHang(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);
 int wlanConnacPccifoff(void);

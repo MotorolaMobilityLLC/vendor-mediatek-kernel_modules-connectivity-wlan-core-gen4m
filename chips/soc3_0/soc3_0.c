@@ -693,6 +693,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	.getCalResult = soc3_0_wlanGetCalResult,
 #endif
+	.checkbushang = soc3_0_CheckBusHang,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
@@ -1004,6 +1005,87 @@ int soc3_0_Trigger_fw_assert(void)
 	}
 	return ret;
 }
+
+int soc3_0_CheckWfBusHang(void)
+{
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+	int isHang = 0;
+/*
+* Write Address : 0x1806_009c[6:0],   Data : 0x60 default 0x00
+* Write Address : 0x1806_009c[28],    Data : 0x1  default 0x0
+*  (wf_mcu_dbg enable)
+* Write Address : 0x1806_0094[20],    Data : 0x1  default 0x0
+*  (enable wf monflg debug)
+* Write Address : 0x1806_0094[4:0],   Data : 0x7  default 0x0
+*  (switch monflg mux)
+* Read Address : 0x1806_021c[0] shoulde be 1'b0
+*/
+
+	wf_ioremap_read(0x1806009c, &u4Value);
+	RegValue = u4Value&BITS(7, 31) + 0x60;
+	wf_ioremap_write(0x1806009c, RegValue);
+
+	wf_ioremap_read(0x1806009c, &u4Value);
+	RegValue = u4Value|BIT(28);
+	wf_ioremap_write(0x1806009c, RegValue);
+
+	wf_ioremap_read(0x18060094, &u4Value);
+	RegValue = u4Value|BIT(20);
+	wf_ioremap_write(0x18060094, RegValue);
+
+	wf_ioremap_read(0x18060094, &u4Value);
+	RegValue = u4Value&BITS(5, 31) + 0x7;
+	wf_ioremap_write(0x18060094, RegValue);
+
+	wf_ioremap_read(0x1806021c, &u4Value);
+
+	if ((u4Value&BIT(0)) == 0) {
+		DBGLOG(HAL, ERROR,
+			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
+			u4Value);
+
+		isHang = 1;
+	} else {
+		DBGLOG(HAL, INFO,
+			"Bus hang WF dump: 0x1806021c = 0x%08x\n",
+			u4Value);
+	}
+
+	return isHang;
+}
+
+int soc3_0_CheckBusHang(void)
+{
+	int ret = 0;
+
+	ret = conninfra_is_bus_hang();
+
+	if (ret > 0) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_is_bus_hang, CR dump, Chip reset\n");
+
+		conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, "bus hang");
+		return ret;
+	}
+
+	if (ret == CONNINFRA_ERR_RST_ONGOING) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_is_bus_hang, CONNINFRA_ERR_RST_ONGOING\n");
+		return ret;
+	}
+
+	ret = soc3_0_CheckWfBusHang();
+
+	if (ret != 0) {
+		DBGLOG(HAL, ERROR,
+			"soc3_0_CheckWfBusHang, WFSYS reset\n");
+		return ret;
+	}
+
+	return ret;
+}
+
 int wf_pwr_on_consys_mcu(void)
 {
 	int check;
