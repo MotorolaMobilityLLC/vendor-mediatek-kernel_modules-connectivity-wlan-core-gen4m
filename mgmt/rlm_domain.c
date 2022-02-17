@@ -1138,6 +1138,11 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     !prAdapter->fgEnable5GBand))
 			continue;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prSubband->ucBand == BAND_6G && !prAdapter->fgIsHwSupport6G)
+			continue;
+#endif
+
 		/* repoert to upper layer only non-DFS channel
 		 * for ap mode usage
 		 */
@@ -1594,6 +1599,11 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 
 		if (prSubband->ucBand == BAND_5G && !prAdapter->fgEnable5GBand)
 			continue;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prSubband->ucBand == BAND_6G && !prAdapter->fgIsHwSupport6G)
+			continue;
+#endif
 
 		if (prSubband->ucBand == eBand) {
 			for (j = 0; j < prSubband->ucNumChannels; j++) {

@@ -106,7 +106,9 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	{TAG_CAP_P2P, nicCfgChipP2PCap},
 #endif
 	{TAG_CAP_HOST_STATUS_EMI_OFFSET, nicCmdEventHostStatusEmiOffset},
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	{TAG_CAP_6G_CAP, nicCfgChipCap6GCap},
+#endif
 };
 
 /*******************************************************************************
@@ -2648,6 +2650,21 @@ uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_ANT_SWAP */
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucEventBuf)
+{
+	struct CAP_6G_CAP *pr6gCap = (struct CAP_6G_CAP *)pucEventBuf;
+
+	ASSERT(prAdapter);
+
+	prAdapter->fgIsHwSupport6G = pr6gCap->ucIsSupport6G;
+
+	DBGLOG(INIT, INFO, "fgIsHwSupport6G=%d\n", prAdapter->fgIsHwSupport6G);
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_WIFI_6G */
 
 struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
 	{NIC_TX_RESOURCE_REPORT_VERSION_1,
