@@ -156,6 +156,10 @@
 #define CFG_MET_TAG_SUPPORT             0
 #endif
 
+#ifndef CFG_SUPPORT_PERF_IND
+#define CFG_SUPPORT_PERF_IND            0
+#endif
+
 /* Support AP Selection */
 #define CFG_SUPPORT_RSN_SCORE		0
 #define CFG_SELECT_BSS_BASE_ON_MULTI_PARAM	1
