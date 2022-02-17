@@ -6256,7 +6256,7 @@ void p2pFuncSwitchSapChannel(
 	/* Assume only one sap bss info */
 	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
 	if (!prP2pBssInfo) {
-		DBGLOG(P2P, WARN, "SAP is not active\n");
+		DBGLOG(P2P, TRACE, "SAP is not active\n");
 		goto exit;
 	}
 	prP2pRoleFsmInfo =
