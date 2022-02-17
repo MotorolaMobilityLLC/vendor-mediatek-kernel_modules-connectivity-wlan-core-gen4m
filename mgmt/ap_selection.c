@@ -753,7 +753,8 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 
 static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
-	IN struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
+	IN struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
+	enum ENUM_BAND eBand)
 {
 	struct SCAN_INFO *info;
 	struct SCAN_PARAM *param;
@@ -794,7 +795,8 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 			dwell = CHNL_DWELL_TIME_DEFAULT;
 
 		for (i = 0; i < info->ucSparseChannelArrayValidNum; i++) {
-			if (prBssDesc->ucChannelNum == info->aucChannelNum[i]) {
+			if (prBssDesc->ucChannelNum == info->aucChannelNum[i] &&
+					eBand == info->aeChannelBand[i]) {
 				slot = info->au2ChannelIdleTime[i];
 				idle = (slot * 9 * 100) / (dwell * 1000);
 				if (eRoamType == ROAM_TYPE_PER) {
@@ -929,7 +931,8 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		cRssi, eRoamType);
 	u2ScoreSaa = scanCalculateScoreBySaa(prAdapter, prBssDesc, eRoamType);
 	u2ScoreIdleTime = scanCalculateScoreByIdleTime(prAdapter,
-		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex);
+		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex,
+		prBssDesc->eBand);
 	u2BlackListScore =
 	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
 #if (CFG_SUPPORT_802_11AX == 1)
