@@ -137,6 +137,12 @@
 #define WMMCU_WIFI_ROM_EMI_DATE_ADDR 0xF027F0F0
 #define DATE_CODE_SIZE 16
 
+#define WF_PP_TOP_BASE             0x820CC000
+#define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00F0)
+#define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x00F8)
+#define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x00FC)
+#define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x0100)
+
 #if CFG_MTK_ANDROID_EMI
 extern phys_addr_t gConEmiPhyBaseFinal;
 extern unsigned long long gConEmiSizeFinal;
@@ -242,6 +248,7 @@ extern u_int8_t g_IsNeedWaitCoredump;
 
 extern struct PLE_TOP_CR rSoc3_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc3_0_PseTopCr;
+extern struct PP_TOP_CR rSoc3_0_PpTopCr;
 /*******************************************************************************
 *                           P R I V A T E   D A T A
 ********************************************************************************

@@ -437,6 +437,13 @@ struct PSE_TOP_CR {
 	struct CODA_CR_INFO rQueueEmptySfdParkQueueEmpty;
 };
 
+struct PP_TOP_CR {
+	struct CODA_CR_INFO rDbgCtrl;
+	struct CODA_CR_INFO rDbgCs0;
+	struct CODA_CR_INFO rDbgCs1;
+	struct CODA_CR_INFO rDbgCs2;
+};
+
 enum _ENUM_WFDMA_TYPE_T {
 	WFDMA_TYPE_HOST = 0,
 	WFDMA_TYPE_WM

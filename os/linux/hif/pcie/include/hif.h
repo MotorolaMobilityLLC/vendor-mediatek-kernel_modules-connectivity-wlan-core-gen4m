@@ -259,6 +259,7 @@ struct BUS_INFO {
 	struct DMASHDL_CFG *prDmashdlCfg;
 	struct PLE_TOP_CR *prPleTopCr;
 	struct PSE_TOP_CR *prPseTopCr;
+	struct PP_TOP_CR *prPpTopCr;
 	struct pse_group_info *prPseGroup;
 	const uint32_t u4PseGroupLen;
 

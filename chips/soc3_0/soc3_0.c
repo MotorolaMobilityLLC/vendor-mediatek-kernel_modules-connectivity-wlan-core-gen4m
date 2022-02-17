@@ -913,6 +913,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.prDmashdlCfg = &rMT6885DmashdlCfg,
 	.prPleTopCr = &rSoc3_0_PleTopCr,
 	.prPseTopCr = &rSoc3_0_PseTopCr,
+	.prPpTopCr = &rSoc3_0_PpTopCr,
 	.prPseGroup = rSoc3_0_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(rSoc3_0_pse_group),
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
@@ -1379,7 +1380,7 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 
 	u4Cr = 0x18060204;
 	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
-	u4Index = (u4Value&BITS(17, 21)) >> 17;
+	u4Index = ((u4Value&BITS(17, 21)) >> 17) + 1;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
 
@@ -1415,7 +1416,7 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 
 	u4Cr = 0x18060208;
 	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
-	u4Index = (u4Value&BITS(17, 21)) >> 17;
+	u4Index = ((u4Value&BITS(17, 21)) >> 17) + 1;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
 
