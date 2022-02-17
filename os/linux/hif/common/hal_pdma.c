@@ -1008,7 +1008,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
 	DBGLOG(HAL, INFO, "Enable Host CSR timeout mechanism.\n");
-	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80FFFFFF);
+	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80EFFFFF);
 #endif
 
 	prHifInfo->fgIsPowerOff = false;
