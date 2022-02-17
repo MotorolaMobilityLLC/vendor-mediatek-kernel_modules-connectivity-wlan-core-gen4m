@@ -275,11 +275,7 @@
 
 #define CFG_SUPPORT_HE_ER               1
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #define CFG_SUPPORT_ICS                 1
-#else
-#define CFG_SUPPORT_ICS                 0
-#endif
 
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT

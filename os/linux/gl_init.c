@@ -92,6 +92,9 @@
 #if CFG_SUPPORT_NAN
 #include "gl_vendor_ndp.h"
 #endif
+#if (CFG_SUPPORT_ICS == 1)
+#include "ics.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -4144,13 +4147,69 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-
 #if (CFG_SUPPORT_ICS == 1)
 #define ICS_LOG_CMD_ON_OFF        0
 static uint32_t u4IcsLogOnOffCache;
+
+static void ics_log_event_notification(int cmd, int value)
+{
+	struct net_device *prDev = gPrDev;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+
+	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
+		gPrDev, cmd, value);
+
+	if (cmd == ICS_LOG_CMD_ON_OFF)
+		u4IcsLogOnOffCache = value;
+
+	if (kalIsHalted() || !prDev) {
+		DBGLOG(INIT, INFO, "device not ready return");
+		return;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
+	if (!prGlueInfo) {
+		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL return");
+		return;
+	}
+
+	if (cmd == ICS_LOG_CMD_ON_OFF) {
+		kalMemZero(&rSniffer, sizeof(
+			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
+		rSniffer.ucModule = 2;
+		rSniffer.ucAction = (value == 0) ? 0 : 1;
+		rSniffer.ucFilter = 0;
+		rSniffer.ucOperation = 0;
+		rSniffer.ucCondition[0] = 2;
+		rSniffer.ucCondition[1] = 0;
+		rSniffer.ucCondition[2] = 0;
+		rSniffer.ucCondition[3] = 0;
+		rSniffer.ucCondition[4] = 0;
+		rSniffer.ucCondition[5] = 0;
+
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidSetIcsSniffer,
+			&rSniffer, sizeof(rSniffer),
+			FALSE, FALSE, TRUE, &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
+	} else {
+		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
+	}
+}
 #endif /* CFG_SUPPORT_ICS */
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 static uint32_t u4LogOnOffCache;
 static uint32_t u4LogLevelCache = -1;
 
@@ -4277,65 +4336,6 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 	return WLAN_STATUS_SUCCESS;
 }
-
-#if (CFG_SUPPORT_ICS == 1)
-static void ics_log_event_notification(int cmd, int value)
-{
-	struct net_device *prDev = gPrDev;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT rSniffer;
-	uint32_t u4BufLen = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
-
-	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
-		gPrDev, cmd, value);
-
-	if (cmd == ICS_LOG_CMD_ON_OFF)
-		u4IcsLogOnOffCache = value;
-
-	if (kalIsHalted() || !prDev) {
-		DBGLOG(INIT, INFO, "device not ready return");
-		return;
-	}
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
-	if (!prGlueInfo) {
-		DBGLOG(INIT, INFO, "prGlueInfo is NULL return");
-		return;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(INIT, INFO, "prAdapter is NULL return");
-		return;
-	}
-
-	if (cmd == ICS_LOG_CMD_ON_OFF) {
-		kalMemZero(&rSniffer, sizeof(
-			struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
-		rSniffer.ucModule = 2;
-		rSniffer.ucAction = (value == 0) ? 0 : 1;
-		rSniffer.ucFilter = 0;
-		rSniffer.ucOperation = 0;
-		rSniffer.ucCondition[0] = 2;
-		rSniffer.ucCondition[1] = 0;
-		rSniffer.ucCondition[2] = 0;
-		rSniffer.ucCondition[3] = 0;
-		rSniffer.ucCondition[4] = 0;
-		rSniffer.ucCondition[5] = 0;
-
-		rStatus = kalIoctl(prGlueInfo,
-			wlanoidSetIcsSniffer,
-			&rSniffer, sizeof(rSniffer),
-			FALSE, FALSE, TRUE, &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
-	} else {
-		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
-	}
-}
-#endif /* CFG_SUPPORT_ICS */
 
 static void consys_log_event_notification(int cmd, int value)
 {
@@ -4922,10 +4922,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		consys_log_event_notification((int)FW_LOG_CMD_SET_LEVEL,
 			u4LogLevelCache);
 	}
+#endif
+
 #if (CFG_SUPPORT_ICS == 1)
 	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
 		u4IcsLogOnOffCache);
-#endif
 #endif
 
 #if CFG_CHIP_RESET_HANG
@@ -6048,14 +6049,21 @@ static int initWlan(void)
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
-#if (CFG_SUPPORT_ICS == 1)
-	wifi_ics_event_func_register(ics_log_event_notification);
-#endif /* CFG_SUPPORT_ICS */
 #endif
 
 #if CFG_MTK_MDDP_SUPPORT
 	mddpInit();
 #endif
+
+#if (CFG_SUPPORT_ICS == 1)
+	ret = IcsInit();
+	if (ret < 0) {
+		DBGLOG(INIT, INFO, "ics log node init failed!");
+		return ret;
+	}
+
+	wifi_ics_event_func_register(ics_log_event_notification);
+#endif /* CFG_SUPPORT_ICS */
 
 	g_u4WlanInitFlag = 1;
 	DBGLOG(INIT, INFO, "initWlan::End\n");
@@ -6133,6 +6141,10 @@ static void exitWlan(void)
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	kfree((const void *)gConEmiPhyBase);
 #endif
+
+#if (CFG_SUPPORT_ICS == 1)
+	IcsDeInit();
+#endif /* CFG_SUPPORT_ICS */
 
 	g_u4WlanInitFlag = 0;
 	DBGLOG(INIT, INFO, "exitWlan\n");

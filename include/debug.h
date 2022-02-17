@@ -223,6 +223,9 @@ enum ENUM_DBG_MODULE {
 #if CFG_SUPPORT_NAN
 	DBG_NAN_IDX,
 #endif
+#if (CFG_SUPPORT_ICS == 1)
+	DBG_ICS_IDX,
+#endif /* CFG_SUPPORT_ICS */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
