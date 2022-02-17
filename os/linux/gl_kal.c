@@ -7564,7 +7564,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
 	uint64_t throughput = 0;
-	char *buf = NULL, *head1, *head2, *head3;
+	char *buf = NULL, *head1, *head2, *head3, *head4;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 
@@ -7639,10 +7639,13 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	 *    [-2147483647, +2147483647]
 	 * 2. "[%d:...:%d]" for pending frame num, %d range is [-32767, 32767]
 	 * 3. "[%u]" for each TX ring, %u range is [0, 65536]
+	 * 4. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
+	 *    [0, 4294967295]
 	 */
 	slen = (11 * 4 + 5) * BSS_DEFAULT_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
-	       (5 + 2) * NUM_OF_TX_RING + 1;
+	       (5 + 2) * NUM_OF_TX_RING + 1 +
+	       (10 * 4 + 5) * BSS_DEFAULT_NUM + 1;
 	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -7664,9 +7667,8 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 			pos += kalSnprintf(pos, end - pos, "%d:",
 				glue->ai4TxPendingFrameNumPerQueue[i][j]);
 		}
-		pos += kalSnprintf(pos, end - pos, "%d",
+		pos += kalSnprintf(pos, end - pos, "%d]",
 			glue->ai4TxPendingFrameNumPerQueue[i][j]);
-		pos += kalSnprintf(pos, end - pos, "]");
 	}
 	pos++;
 	head3 = pos;
@@ -7674,10 +7676,19 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		pos += kalSnprintf(pos, end - pos, "[%u]",
 			hif->TxRing[i].u4UsedCnt);
 	}
+	pos++;
+	head4 = pos;
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		pos += kalSnprintf(pos, end - pos, "[%lu:%lu:%lu:%lu]",
+			ndev->stats.tx_dropped,
+			atomic_long_read(&ndev->tx_dropped),
+			ndev->stats.rx_dropped,
+			atomic_long_read(&ndev->rx_dropped));
+	}
 
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%lu.%03lumbps) %s Pending: %d/%d %s Used: " \
-	"%u/%d/%d %s LQ[%lu:%lu:%lu] lv:%u th:%u fg:0x%lx\n"
+	"%u/%d/%d %s LQ[%lu:%lu:%lu] Drop: %s lv:%u th:%u fg:0x%lx\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	perf->ulThroughput,
 		(unsigned long) (perf->ulThroughput >> 20),
@@ -7686,7 +7697,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4NetifStopTh, head2,
 		hif->rTokenInfo.u4UsedCnt, HIF_TX_MSDU_TOKEN_NUM,
 		TX_RING_SIZE, head3, lq->u8TxTotalCount, lq->u8RxTotalCount,
-		lq->u8DiffIdleSlotCount, perf->u4CurrPerfLevel,
+		lq->u8DiffIdleSlotCount, head4, perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag);
 #undef TEMP_LOG_TEMPLATE
@@ -7980,13 +7991,15 @@ int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value)
 {
-	int32_t i = 0;
+	int32_t i = 0, j = 0;
 	struct net_device *dev = NULL;
 
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 		dev = wlanGetNetDev(glue, i);
-		if (dev)
-			wlan_set_rps_map(dev->_rx, value);
+		if (dev) {
+			for (j = 0; j < dev->real_num_rx_queues; ++j)
+				wlan_set_rps_map(&dev->_rx[j], value);
+		}
 	}
 }
 
