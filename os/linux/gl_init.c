@@ -1857,7 +1857,8 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	uint8_t i, j;
 	uint8_t ucNumOfChannel;
-	struct RF_CHANNEL_INFO aucChannelList[ARRAY_SIZE(mtk_5ghz_channels)];
+	struct RF_CHANNEL_INFO aucChannelList[
+			ARRAY_SIZE(mtk_5ghz_channels)] = {};
 
 	DBGLOG(INIT, INFO, "r: %d, chnl %u, b: %d, s: %d, freq: %d\n",
 			ucRoleIdx, ucChannel, ucBandWidth, eBssSCO,
@@ -4515,7 +4516,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
 		DBGLOG(INIT, INFO,
-		       "wlanProbe: probe success, feature set: 0x%x\n",
+		       "wlanProbe: probe success, feature set: 0x%llx\n",
 		       wlanGetSupportedFeatureSet(prGlueInfo));
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",

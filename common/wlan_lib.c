@@ -3004,7 +3004,7 @@ u_int8_t wlanIsHandlerAllowedInRFTest(IN PFN_OID_HANDLER_FUNC pfnOidHandler,
 
 uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 {
-	uint32_t hw_version, sw_version = 0;
+	uint32_t hw_version = 0, sw_version = 0;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;
 	/* WLAN_STATUS status; */
@@ -6950,7 +6950,7 @@ void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
 	const int8_t acDelim[] = " ";
 	int8_t *pcPtr = NULL;
 	int8_t *pcDupValue = NULL;
-	uint32_t au4Values[2];
+	uint32_t au4Values[2] = {};
 	uint32_t u4TokenCount = 0;
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
