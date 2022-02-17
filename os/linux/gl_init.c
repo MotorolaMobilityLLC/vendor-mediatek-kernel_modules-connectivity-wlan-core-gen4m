@@ -3767,7 +3767,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	rlmDomainSendInfoToFirmware(prAdapter);
 
 	/* set MAC address */
-	{
+	if (!bAtResetFlow) {
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
 		struct sockaddr MacAddr;
 		uint32_t u4SetInfoLen = 0;
