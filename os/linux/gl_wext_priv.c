@@ -2330,6 +2330,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_SHOW_ACL_ENTRY      "SHOW_ACL_ENTRY"
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 #define CMD_SET_RA_DBG		    "RADEBUG"
+#define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -4903,6 +4904,204 @@ static INT_32 priv_driver_set_ra_debug_proc(IN struct net_device *prNetDev, IN c
 	return i4BytesWritten;
 }
 
+int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	/* INT_32 u4Ret = 0; */
+	UINT_32 u4WCID = 0;
+	UINT_32 u4Mode = 0, u4Bw = 0, u4Mcs = 0, u4VhtNss = 0;
+	UINT_32 u4SGI = 0, u4Preamble = 0, u4STBC = 0, u4LDPC = 0, u4SpeEn = 0;
+	INT_32 i4Recv = 0;
+	CHAR *this_char = NULL;
+	UINT_32 u4Id = 0xa0660000;
+	UINT_32 u4Data = 0x80000000;
+	UINT_32 u4Id2 = 0xa0600000;
+	UINT_8 u4Nsts = 1;
+	BOOLEAN fgStatus = TRUE;
+
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	if (strnicmp(this_char, "auto", strlen("auto")) == 0) {
+		i4Recv = 1;
+	} else {
+		i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d", &(u4WCID),
+					&(u4Mode), &(u4Bw), &(u4Mcs), &(u4VhtNss),
+					&(u4SGI), &(u4Preamble), &(u4STBC), &(u4LDPC), &(u4SpeEn));
+
+		DBGLOG(REQ, LOUD, "u4WCID=%d\nu4Mode=%d\nu4Bw=%d\n", u4WCID, u4Mode, u4Bw);
+	    DBGLOG(REQ, LOUD, "u4Mcs=%d\nu4VhtNss=%d\nu4SGI=%d\n", u4Mcs, u4VhtNss, u4SGI);
+	    DBGLOG(REQ, LOUD, "u4Preamble=%d\nu4STBC=%d\n", u4Preamble, u4STBC);
+	    DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\n", u4LDPC, u4SpeEn);
+	}
+
+	if (i4Recv == 1) {
+		rSwCtrlInfo.u4Id = u4Id2;
+		rSwCtrlInfo.u4Data = 0;
+
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetSwCtrlWrite,
+					&rSwCtrlInfo, sizeof(rSwCtrlInfo),
+					FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else if (i4Recv == 10) {
+		rSwCtrlInfo.u4Id = u4Id;
+		rSwCtrlInfo.u4Data = u4Data;
+
+		if (u4SGI)
+			rSwCtrlInfo.u4Data |= BIT(30);
+		if (u4LDPC)
+			rSwCtrlInfo.u4Data |= BIT(29);
+		if (u4SpeEn)
+			rSwCtrlInfo.u4Data |= BIT(28);
+		if (u4STBC)
+			rSwCtrlInfo.u4Data |= BIT(11);
+
+		if (u4Bw <= 3)
+			rSwCtrlInfo.u4Data |= ((u4Bw << 26) & BITS(26, 27));
+		else {
+			fgStatus = FALSE;
+			DBGLOG(INIT, ERROR, "Wrong BW! BW20=0, BW40=1, BW80=2,BW160=3\n");
+		}
+		if (u4Mode <= 4) {
+			rSwCtrlInfo.u4Data |= ((u4Mode << 6) & BITS(6, 8));
+
+			switch (u4Mode) {
+			case 0:
+				if (u4Mcs <= 3)
+					rSwCtrlInfo.u4Data |= u4Mcs;
+				else {
+					fgStatus = FALSE;
+					DBGLOG(INIT, ERROR, "CCK mode but wrong MCS!\n");
+				}
+
+				if (u4Preamble)
+					rSwCtrlInfo.u4Data |= BIT(2);
+				else
+					rSwCtrlInfo.u4Data &= ~BIT(2);
+			break;
+			case 1:
+				switch (u4Mcs) {
+				case 0:
+					/* 6'b001011 */
+					rSwCtrlInfo.u4Data |= 11;
+					break;
+				case 1:
+					/* 6'b001111 */
+					rSwCtrlInfo.u4Data |= 15;
+					break;
+				case 2:
+					/* 6'b001010 */
+					rSwCtrlInfo.u4Data |= 10;
+					break;
+				case 3:
+					/* 6'b001110 */
+					rSwCtrlInfo.u4Data |= 14;
+					break;
+				case 4:
+					/* 6'b001001 */
+					rSwCtrlInfo.u4Data |= 9;
+					break;
+				case 5:
+					/* 6'b001101 */
+					rSwCtrlInfo.u4Data |= 13;
+					break;
+				case 6:
+					/* 6'b001000 */
+					rSwCtrlInfo.u4Data |= 8;
+					break;
+				case 7:
+					/* 6'b001100 */
+					rSwCtrlInfo.u4Data |= 12;
+					break;
+				default:
+					fgStatus = FALSE;
+					DBGLOG(INIT, ERROR, "OFDM mode but wrong MCS!\n");
+				break;
+				}
+			break;
+			case 2:
+			case 3:
+				if (u4Mcs <= 32)
+					rSwCtrlInfo.u4Data |= u4Mcs;
+				else {
+					fgStatus = FALSE;
+					DBGLOG(INIT, ERROR, "HT mode but wrong MCS!\n");
+				}
+
+				if (u4Mcs != 32) {
+					u4Nsts += (u4Mcs >> 3);
+					if (u4STBC && (u4Nsts == 1))
+						u4Nsts++;
+				}
+				break;
+			case 4:
+				if (u4Mcs <= 9)
+					rSwCtrlInfo.u4Data |= u4Mcs;
+				else {
+				    fgStatus = FALSE;
+				    DBGLOG(INIT, ERROR, "VHT mode but wrong MCS!\n");
+				}
+				if (u4STBC && (u4VhtNss == 1))
+					u4Nsts++;
+				else
+					u4Nsts = u4VhtNss;
+			break;
+			default:
+				break;
+			}
+		} else {
+			fgStatus = FALSE;
+			DBGLOG(INIT, ERROR, "Wrong TxMode! CCK=0, OFDM=1, HT=2, GF=3, VHT=4\n");
+		}
+
+		rSwCtrlInfo.u4Data |= (((u4Nsts - 1) << 9) & BITS(9, 10));
+
+		if (fgStatus) {
+			rStatus = kalIoctl(prGlueInfo,
+								wlanoidSetSwCtrlWrite,
+								&rSwCtrlInfo, sizeof(rSwCtrlInfo),
+								FALSE, FALSE, TRUE, &u4BufLen);
+		}
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver FixedRate=Option\n");
+		DBGLOG(INIT, ERROR,
+			"Option:[WCID]-[Mode]-[BW]-[MCS]-[VhtNss]-[SGI]-[Preamble]-[STBC]-[LDPC]-[SPE_EN]\n");
+		DBGLOG(INIT, ERROR, "[WCID]Wireless Client ID\n");
+		DBGLOG(INIT, ERROR, "[Mode]CCK=0, OFDM=1, HT=2, GF=3, VHT=4\n");
+		DBGLOG(INIT, ERROR, "[BW]BW20=0, BW40=1, BW80=2,BW160=3\n");
+		DBGLOG(INIT, ERROR, "[MCS]CCK=0~3, OFDM=0~7, HT=0~32, VHT=0~9\n");
+		DBGLOG(INIT, ERROR, "[VhtNss]VHT=1~4, Other=ignore\n");
+		DBGLOG(INIT, ERROR, "[Preamble]Long=0, Other=Short\n");
+	}
+
+	return i4BytesWritten;
+}
 #endif
 static int priv_driver_get_sta_stat(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
@@ -6376,11 +6575,10 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev, IN char *pcComman
 					DBGLOG(INIT, ERROR, "CCK mode but wrong MCS!\n");
 				}
 
-			if (u4Preamble)
-				rSwCtrlInfo.u4Data |= BIT(2);
-			else
-				rSwCtrlInfo.u4Data &= ~BIT(2);
-
+				if (u4Preamble)
+					rSwCtrlInfo.u4Data |= BIT(2);
+				else
+					rSwCtrlInfo.u4Data &= ~BIT(2);
 			break;
 			case 1:
 				switch (u4Mcs) {
@@ -6441,8 +6639,8 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev, IN char *pcComman
 				if (u4Mcs <= 9)
 					rSwCtrlInfo.u4Data |= u4Mcs;
 				else {
-				fgStatus = FALSE;
-				DBGLOG(INIT, ERROR, "VHT mode but wrong MCS!\n");
+				    fgStatus = FALSE;
+				    DBGLOG(INIT, ERROR, "VHT mode but wrong MCS!\n");
 				}
 				if (u4STBC && (u4VhtNss == 1))
 					u4Nsts++;
@@ -9077,6 +9275,12 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		/* Mediatek private command */
 		else if (strnicmp(pcCommand, CMD_SET_SW_CTRL, strlen(CMD_SET_SW_CTRL)) == 0) {
 			i4BytesWritten = priv_driver_set_sw_ctrl(prNetDev, pcCommand, i4TotalLen);
+#if (CFG_SUPPORT_RA_GEN == 1)
+		} else if (strnicmp(pcCommand, CMD_SET_FIXED_FALLBACK, strlen(CMD_SET_FIXED_FALLBACK)) == 0) {
+			i4BytesWritten = priv_driver_set_fixed_fallback(prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand,  CMD_SET_RA_DBG, strlen(CMD_SET_RA_DBG)) == 0) {
+			i4BytesWritten = priv_driver_set_ra_debug_proc(prNetDev, pcCommand, i4TotalLen);
+#endif
 		} else if (strnicmp(pcCommand, CMD_SET_FIXED_RATE, strlen(CMD_SET_FIXED_RATE)) == 0) {
 			i4BytesWritten = priv_driver_set_fixed_rate(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_SW_CTRL, strlen(CMD_GET_SW_CTRL)) == 0) {
@@ -9101,10 +9305,6 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_sta_stat(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_GET_STA_RX_STAT, strlen(CMD_GET_STA_RX_STAT)) == 0) {
 			i4BytesWritten = priv_driver_show_rx_stat(prNetDev, pcCommand, i4TotalLen);
-#if (CFG_SUPPORT_RA_GEN == 1)
-		} else if (strnicmp(pcCommand,  CMD_SET_RA_DBG, strlen(CMD_SET_RA_DBG)) == 0) {
-			i4BytesWritten = priv_driver_set_ra_debug_proc(prNetDev, pcCommand, i4TotalLen);
-#endif
 		} else if (strnicmp(pcCommand, CMD_SET_ACL_POLICY, strlen(CMD_SET_ACL_POLICY)) == 0) {
 			i4BytesWritten = priv_driver_set_acl_policy(prNetDev, pcCommand, i4TotalLen);
 		} else if (strnicmp(pcCommand, CMD_ADD_ACL_ENTRY, strlen(CMD_ADD_ACL_ENTRY)) == 0) {

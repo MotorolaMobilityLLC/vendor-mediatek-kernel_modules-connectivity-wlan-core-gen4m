@@ -960,7 +960,12 @@ VOID cnmStaSendUpdateCmd(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, P_TXBF_
 	prCmdContent->u2MaxLinkSpeed = prStaRec->u2MaxLinkSpeed;
 	prCmdContent->u2MinLinkSpeed = prStaRec->u2MinLinkSpeed;
 	prCmdContent->u4Flags = prStaRec->u4Flags;
-
+#if CFG_SUPPORT_MTK_SYNERGY
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucMtkOui)) {
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucGbandProbe256QAM))
+			prCmdContent->u4Flags |= MTK_SYNERGY_CAP_SUPPORT_24G_MCS89_PROBING;
+	}
+#endif
 	prCmdContent->ucTxAmpdu = prAdapter->rWifiVar.ucAmpduTx;
 	prCmdContent->ucRxAmpdu = prAdapter->rWifiVar.ucAmpduRx;
 

@@ -757,6 +757,7 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucMtkOui;
 	UINT_32 u4MtkOuiCap;
 	UINT_8 aucMtkFeature[4];
+	BOOLEAN ucGbandProbe256QAM;
 #endif
 
 	BOOLEAN fgCsaInProgress;
