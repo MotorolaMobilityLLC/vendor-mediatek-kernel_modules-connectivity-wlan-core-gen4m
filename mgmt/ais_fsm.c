@@ -1924,10 +1924,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				    (struct MSG_HDR *)prScanReqMsg,
 				    MSG_SEND_METHOD_BUF);
 
+			/* reset prAisFsmInfo->rScanRequest */
 			kalMemZero(prAisFsmInfo->aucScanIEBuf,
 				   sizeof(prAisFsmInfo->aucScanIEBuf));
 			prScanRequest->u4SsidNum = 0;
-			prScanRequest->ucScanType = 0;
+			prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 			prScanRequest->u4IELength = 0;
 			prScanRequest->u4ChannelNum = 0;
 			prScanRequest->ucScnFuncMask = 0;
