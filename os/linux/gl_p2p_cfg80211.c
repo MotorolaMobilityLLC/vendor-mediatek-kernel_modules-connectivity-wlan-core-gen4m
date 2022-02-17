@@ -312,12 +312,13 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	P_GL_P2P_INFO_T prP2pInfo = (P_GL_P2P_INFO_T) NULL;
 	P_GL_HIF_INFO_T prHif = NULL;
 	P_MSG_P2P_SWITCH_OP_MODE_T prSwitchModeMsg = (P_MSG_P2P_SWITCH_OP_MODE_T) NULL;
-	struct wireless_dev *prWdev = NULL;
+	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
 	PARAM_MAC_ADDRESS rMacAddr;
 	P_MSG_P2P_ACTIVE_DEV_BSS_T prMsgActiveBss = (P_MSG_P2P_ACTIVE_DEV_BSS_T) NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	struct wireless_dev *prOrigWdev = NULL;
 
 	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_add_iface\n");
 
@@ -383,14 +384,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 		if (!prWdev) {
 			DBGLOG(P2P, ERROR, "allocate p2p wireless device fail, no memory\n");
-#if CFG_ENABLE_UNIFY_WIPHY
-			/* FIXME: why the original design doesn't free
-			 *	  the prNewNetDevice?
-			 */
+			prWdev = ERR_PTR(-ENOMEM);
 			free_netdev(prP2pInfo->aprRoleHandler);
 			prP2pInfo->aprRoleHandler = NULL;
-#endif
-			return FALSE;
+			break;
 		}
 		kalMemCopy(prWdev, gprP2pWdev, sizeof(struct wireless_dev));
 		prWdev->netdev = prNewNetDevice;
@@ -399,6 +396,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		/* register destructor function for virtual interface */
 		prNewNetDevice->destructor = mtk_vif_destructor;
 
+		/* The prOrigWdev is used to do error handle. If return fail,
+		 * set the gprP2pRoleWdev[u4Idx] to original value.
+		 * Expect that the gprP2pRoleWdev[0] = gprP2pWdev, and the
+		 * other is NULL.
+		 */
+		prOrigWdev = gprP2pRoleWdev[u4Idx];
 		gprP2pRoleWdev[u4Idx] = prWdev;
 		/*prP2pInfo->prRoleWdev[0] = prWdev;*//* TH3 multiple P2P */
 #endif
@@ -419,11 +422,13 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
 
 			free_netdev(prP2pInfo->aprRoleHandler);
-#if CFG_ENABLE_UNIFY_WIPHY
 			kfree(prWdev);
+			prWdev = ERR_PTR(-ENOMEM);
 			prP2pInfo->aprRoleHandler = NULL;
-#endif
 			prNewNetDevice = NULL;
+			/* FIXME: What is the error handler? */
+			gprP2pRoleWdev[u4Idx] = prOrigWdev;
+			break;
 		} else {
 			DBGLOG(P2P, TRACE, "register_netdev OK\n");
 			prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
@@ -471,11 +476,13 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			DBGLOG(INIT, WARN, "unable to alloc msg\n");
 
 			free_netdev(prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler);
-#if CFG_ENABLE_UNIFY_WIPHY
 			kfree(prWdev);
+			prWdev = ERR_PTR(-ENOMEM);
 			prP2pInfo->aprRoleHandler = NULL;
-#endif
 			prNewNetDevice = NULL;
+			/* FIXME: What is the error handler? */
+			gprP2pRoleWdev[u4Idx] = prOrigWdev;
+			break;
 		} else {
 			prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
 			prSwitchModeMsg->ucRoleIdx = 0;
@@ -509,24 +516,23 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		/* Send Msg to DevFsm and active P2P dev BSS */
 		prMsgActiveBss = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(MSG_P2P_ACTIVE_DEV_BSS_T));
-#if CFG_ENABLE_UNIFY_WIPHY
+
 		if (prMsgActiveBss == NULL) {
 			DBGLOG(INIT, WARN, "unable to alloc prMsgActiveBss\n");
 			kfree(prWdev);
+			prWdev = ERR_PTR(-ENOMEM);
 			free_netdev(prP2pInfo->aprRoleHandler);
 			prP2pInfo->aprRoleHandler = NULL;
-			/* FIMXE: What is the error handler?
-			 * The gprP2pRoleWdev[0] is default as gprP2pWdev.
-			 */
-			gprP2pRoleWdev[u4Idx] = gprP2pWdev;
+			/* FIXME: What is the error handler? */
+			gprP2pRoleWdev[u4Idx] = prOrigWdev;
 			break;
 		}
-#endif
+
 		prMsgActiveBss->rMsgHdr.eMsgId = MID_MNY_P2P_ACTIVE_BSS;
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgActiveBss, MSG_SEND_METHOD_BUF);
 	} while (FALSE);
 
-	return gprP2pRoleWdev[u4Idx];
+	return prWdev;
 }				/* mtk_p2p_cfg80211_add_iface */
 
 int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
