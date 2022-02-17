@@ -7244,4 +7244,5 @@ uint8_t *
 		return apucDebugAisState[eCurrentState];
 
 	ASSERT(0);
+	return (uint8_t *) NULL;
 }
