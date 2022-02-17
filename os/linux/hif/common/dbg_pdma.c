@@ -192,16 +192,6 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	/* Only dump all hif log once */
-	if (prAdapter->u4HifDbgFlag & DEG_HIF_ALL) {
-		if (!prAdapter->fgEnHifDbgInfo) {
-			DBGLOG(HAL, ERROR, "return due to HifDbg is NULL\n");
-			prAdapter->u4HifDbgFlag = 0;
-			return;
-		}
-		prAdapter->fgEnHifDbgInfo = false;
-	}
-
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
 
