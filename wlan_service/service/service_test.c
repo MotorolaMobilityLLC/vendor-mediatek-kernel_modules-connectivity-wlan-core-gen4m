@@ -63,6 +63,12 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_do_cal_item = mt_op_do_cal_item;
 	ops->op_set_band_mode = mt_op_set_band_mode;
 	ops->op_get_chipid = mt_op_get_chipid;
+	ops->op_mps_start = mt_op_mps_start;
+	ops->op_mps_set_nss = mt_op_mps_set_nss;
+	ops->op_mps_set_per_packet_bw = mt_op_mps_set_per_packet_bw;
+	ops->op_mps_set_packet_count = mt_op_mps_set_packet_count;
+	ops->op_mps_set_payload_length = mt_op_mps_set_payload_length;
+	ops->op_mps_set_power_gain = mt_op_mps_set_power_gain;
 	ops->op_mps_set_seq_data = mt_op_mps_set_seq_data;
 	ops->op_get_tx_pwr = mt_op_get_tx_pwr;
 	ops->op_set_tx_pwr = mt_op_set_tx_pwr;
@@ -1976,30 +1982,48 @@ s_int32 mt_serv_mps_operation(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
 
-	switch (item) {
-	case SERV_TEST_MPS_START_TX:
-		ret = net_ad_mps_tx_operation(serv_test->test_winfo,
-			&serv_test->test_config[ctrl_band_idx],
-			TRUE);
+	if (!serv_test->engine_offload) {
+		switch (item) {
+		case SERV_TEST_MPS_START_TX:
+			ret = net_ad_mps_tx_operation(serv_test->test_winfo,
+				&serv_test->test_config[ctrl_band_idx],
+				TRUE);
 
-		if (ret)
-			return ret;
+			if (ret)
+				return ret;
 
-		if (!serv_test->engine_offload) {
 			ret = mt_engine_start_tx(serv_test->test_winfo,
 					&serv_test->test_config[ctrl_band_idx],
 					serv_test->test_op, ctrl_band_idx);
+			break;
+
+		case SERV_TEST_MPS_STOP_TX:
+			ret = net_ad_mps_tx_operation(serv_test->test_winfo,
+				&serv_test->test_config[ctrl_band_idx],
+				FALSE);
+			break;
+
+		default:
+			return SERV_STATUS_SERV_TEST_INVALID_PARAM;
 		}
-		break;
+	} else {
+		switch (item) {
+		case SERV_TEST_MPS_START_TX:
+			ret = serv_test->test_op->op_mps_start(
+				serv_test->test_winfo,
+				ctrl_band_idx);
+			break;
 
-	case SERV_TEST_MPS_STOP_TX:
-		ret = net_ad_mps_tx_operation(serv_test->test_winfo,
-			&serv_test->test_config[ctrl_band_idx],
-			FALSE);
-		break;
+		case SERV_TEST_MPS_STOP_TX:
+			ret = serv_test->test_op->op_stop_tx(
+				serv_test->test_winfo,
+				ctrl_band_idx);
+			break;
 
-	default:
-		return SERV_STATUS_SERV_TEST_INVALID_PARAM;
+		default:
+			return SERV_STATUS_SERV_TEST_INVALID_PARAM;
+		}
+
 	}
 
 	if (ret)
@@ -2016,6 +2040,133 @@ s_int32 mt_serv_get_chipid(
 
 	ret = serv_test->test_op->op_get_chipid(
 			serv_test->test_winfo);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_mps_set_nss(
+	struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *test_config;
+	struct test_mps_cb *mps_cb;
+	u_int32 len;
+
+	test_config = &serv_test->test_config[ctrl_band_idx];
+	mps_cb = &test_config->mps_cb;
+	len = mps_cb->mps_cnt;
+
+	ret = serv_test->test_op->op_mps_set_nss(
+			serv_test->test_winfo,
+			mps_cb->mps_cnt,
+			mps_cb->mps_setting);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_mps_set_per_packet_bw(
+	struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *test_config;
+	struct test_mps_cb *mps_cb;
+	u_int32 len;
+
+	test_config = &serv_test->test_config[ctrl_band_idx];
+	mps_cb = &test_config->mps_cb;
+	len = mps_cb->mps_cnt;
+
+	ret = serv_test->test_op->op_mps_set_per_packet_bw(
+			serv_test->test_winfo,
+			mps_cb->mps_cnt,
+			mps_cb->mps_setting);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_mps_set_packet_count(
+	struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *test_config;
+	struct test_mps_cb *mps_cb;
+	u_int32 len;
+
+	test_config = &serv_test->test_config[ctrl_band_idx];
+	mps_cb = &test_config->mps_cb;
+	len = mps_cb->mps_cnt;
+
+	ret = serv_test->test_op->op_mps_set_packet_count(
+			serv_test->test_winfo,
+			mps_cb->mps_cnt,
+			mps_cb->mps_setting);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+
+s_int32 mt_serv_mps_set_payload_length(
+	struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *test_config;
+	struct test_mps_cb *mps_cb;
+	u_int32 len;
+
+	test_config = &serv_test->test_config[ctrl_band_idx];
+	mps_cb = &test_config->mps_cb;
+	len = mps_cb->mps_cnt;
+
+	ret = serv_test->test_op->op_mps_set_payload_length(
+			serv_test->test_winfo,
+			mps_cb->mps_cnt,
+			mps_cb->mps_setting);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+
+s_int32 mt_serv_mps_set_power_gain(
+	struct service_test *serv_test)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
+	struct test_configuration *test_config;
+	struct test_mps_cb *mps_cb;
+	u_int32 len;
+
+	test_config = &serv_test->test_config[ctrl_band_idx];
+	mps_cb = &test_config->mps_cb;
+	len = mps_cb->mps_cnt;
+
+	ret = serv_test->test_op->op_mps_set_power_gain(
+			serv_test->test_winfo,
+			mps_cb->mps_cnt,
+			mps_cb->mps_setting);
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
