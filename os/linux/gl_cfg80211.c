@@ -5967,7 +5967,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen;
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_suspend\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_suspend\n");
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	wlanWakeDumpRes();
@@ -6025,7 +6025,7 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus, u4InfoLen;
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_resume\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_resume\n");
 
 	if (kalHaltTryLock())
 		return 0;
