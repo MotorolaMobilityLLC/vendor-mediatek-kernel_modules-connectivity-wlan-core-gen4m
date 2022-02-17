@@ -79,35 +79,41 @@
  *******************************************************************************
  */
 
+#if defined(_HIF_USB)
 /*
- * Common Default Setting
- * TODO: This table can be modified by command or cfg file.
+ * USB Endpoint OUT/DMA Scheduler Group Mapping (HW Define)
+ * EP#4 / Group0  (DATA)
+ * EP#5 / Group1  (DATA)
+ * EP#6 / Group2  (DATA)
+ * EP#7 / Group3  (DATA)
+ * EP#9 / Group4  (DATA)
+ * EP#8 / Group15 (CMD)
  */
 uint8_t arAcQIdx2GroupId[MAC_TXQ_NUM] = {
 	GROUP0_INDEX,    /* MAC_TXQ_AC0_INDEX */
 	GROUP1_INDEX,    /* MAC_TXQ_AC1_INDEX */
 	GROUP2_INDEX,    /* MAC_TXQ_AC2_INDEX */
-	GROUP4_INDEX,    /* MAC_TXQ_AC3_INDEX */
+	GROUP3_INDEX,    /* MAC_TXQ_AC3_INDEX */
 
-	GROUP0_INDEX,    /* MAC_TXQ_AC10_INDEX */
-	GROUP1_INDEX,    /* MAC_TXQ_AC11_INDEX */
-	GROUP2_INDEX,    /* MAC_TXQ_AC12_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC10_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC11_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC12_INDEX */
 	GROUP4_INDEX,    /* MAC_TXQ_AC13_INDEX */
 
-	GROUP0_INDEX,    /* MAC_TXQ_AC20_INDEX */
-	GROUP1_INDEX,    /* MAC_TXQ_AC21_INDEX */
-	GROUP2_INDEX,    /* MAC_TXQ_AC22_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC20_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC21_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC22_INDEX */
 	GROUP4_INDEX,    /* MAC_TXQ_AC23_INDEX */
 
-	GROUP0_INDEX,    /* MAC_TXQ_AC30_INDEX */
-	GROUP1_INDEX,    /* MAC_TXQ_AC31_INDEX */
-	GROUP2_INDEX,    /* MAC_TXQ_AC32_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC30_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC31_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_AC32_INDEX */
 	GROUP4_INDEX,    /* MAC_TXQ_AC33_INDEX */
 
-	GROUP5_INDEX,    /* MAC_TXQ_ALTX_0_INDEX */
-	GROUP5_INDEX,    /* MAC_TXQ_BMC_0_INDEX */
-	GROUP5_INDEX,    /* MAC_TXQ_BCN_0_INDEX */
-	GROUP5_INDEX,    /* MAC_TXQ_PSMP_0_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_ALTX_0_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_BMC_0_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_BCN_0_INDEX */
+	GROUP4_INDEX,    /* MAC_TXQ_PSMP_0_INDEX */
 
 	GROUP5_INDEX,    /* Reserved */
 	GROUP5_INDEX,    /* Reserved */
@@ -117,6 +123,7 @@ uint8_t arAcQIdx2GroupId[MAC_TXQ_NUM] = {
 	GROUP5_INDEX,    /* Reserved */
 	GROUP5_INDEX,    /* Reserved */
 };
+#endif /* _HIF_USB */
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -817,24 +824,6 @@ void asicUsbDmaShdlInit(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	u4BaseAddr = prChipInfo->u4HifDmaShdlBaseAddr;
-
-	/*
-	 * USB Endpoint OUT/DMA Scheduler Group Mapping (HW Define)
-	 * EP#4 / Group0  (DATA)
-	 * EP#5 / Group1  (DATA)
-	 * EP#6 / Group2  (DATA)
-	 * EP#7 / Group3  (DATA)
-	 * EP#9 / Group4  (DATA)
-	 * EP#8 / Group15 (CMD)
-	 */
-	arAcQIdx2GroupId[MAC_TXQ_AC3_INDEX] = GROUP3_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_AC13_INDEX] = GROUP3_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_AC23_INDEX] = GROUP3_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_AC33_INDEX] = GROUP3_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_ALTX_0_INDEX] = GROUP4_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_BMC_0_INDEX] = GROUP4_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_BCN_0_INDEX] = GROUP4_INDEX;
-	arAcQIdx2GroupId[MAC_TXQ_PSMP_0_INDEX] = GROUP4_INDEX;
 
 	/*
 	 * Enable refill control group 0, 1, 2, 3, 4.
