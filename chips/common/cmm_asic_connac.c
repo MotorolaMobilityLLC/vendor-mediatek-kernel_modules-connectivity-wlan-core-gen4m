@@ -1637,7 +1637,7 @@ void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN struct SW_RFB *prSwRfb,
 			       IN uint8_t ucBssIndex)
 {
-    /* This Feature First MP on Lafite*/
+	/* This Feature First MP on MT6779 */
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	uint8_t ucRxRate;
 	uint8_t ucRxMode;
