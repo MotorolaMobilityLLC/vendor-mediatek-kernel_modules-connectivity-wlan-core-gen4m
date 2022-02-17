@@ -304,7 +304,7 @@ void
 nicAddScanResult(IN struct ADAPTER *prAdapter,
 		 IN uint8_t rMacAddr[PARAM_MAC_ADDR_LEN],
 		 IN struct PARAM_SSID *prSsid,
-		 IN uint32_t u4Privacy,
+		 IN uint16_t u2CapInfo,
 		 IN int32_t rRssi,
 		 IN enum ENUM_PARAM_NETWORK_TYPE eNetworkType,
 		 IN struct PARAM_802_11_CONFIG *prConfiguration,

@@ -334,11 +334,15 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy, IN void *data, I
 /*#error "Please ENABLE kernel config (CONFIG_NL80211_TESTMODE) to support Wi-Fi Direct"*/
 #endif
 
+#if CFG_SUPPORT_SCHED_SCAN
 int
 mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
-			      IN struct net_device *ndev, IN struct cfg80211_sched_scan_request *request);
+			IN struct net_device *ndev,
+			IN struct cfg80211_sched_scan_request *request);
 
-int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy, IN struct net_device *ndev);
+int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
+			IN struct net_device *ndev);
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 
 int mtk_cfg80211_assoc(struct wiphy *wiphy, struct net_device *ndev, struct cfg80211_assoc_request *req);
 
@@ -475,6 +479,16 @@ int mtk_cfg_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request);
 #if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
 void mtk_cfg_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev);
 #endif
+
+#if CFG_SUPPORT_SCHED_SCAN
+int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
+			IN struct net_device *ndev,
+			IN struct cfg80211_sched_scan_request *request);
+
+int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
+		IN struct net_device *ndev);
+#endif /* CFG_SUPPORT_SCHED_SCAN */
+
 int mtk_cfg_connect(struct wiphy *wiphy, struct net_device *ndev,
 	struct cfg80211_connect_params *sme);
 int mtk_cfg_disconnect(struct wiphy *wiphy, struct net_device *ndev,

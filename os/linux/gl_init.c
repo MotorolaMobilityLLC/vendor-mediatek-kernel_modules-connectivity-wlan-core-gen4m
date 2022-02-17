@@ -382,10 +382,10 @@ static struct cfg80211_ops mtk_wlan_ops = {
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_cfg80211_testmode_cmd,
 #endif
-#if 0				/* Remove schedule_scan because we need more verification for NLO */
+#if CFG_SUPPORT_SCHED_SCAN
 	.sched_scan_start = mtk_cfg80211_sched_scan_start,
 	.sched_scan_stop = mtk_cfg80211_sched_scan_stop,
-#endif
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 #if CFG_SUPPORT_TDLS
 	.tdls_oper = mtk_cfg80211_tdls_oper,
 	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
@@ -412,6 +412,11 @@ static struct cfg80211_ops mtk_cfg_ops = {
 #if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
 	.abort_scan = mtk_cfg_abort_scan,
 #endif
+#if CFG_SUPPORT_SCHED_SCAN
+	.sched_scan_start = mtk_cfg_sched_scan_start,
+	.sched_scan_stop = mtk_cfg_sched_scan_stop,
+#endif /* CFG_SUPPORT_SCHED_SCAN */
+
 	.connect = mtk_cfg_connect,
 	.disconnect = mtk_cfg_disconnect,
 	.join_ibss = mtk_cfg_join_ibss,
@@ -437,10 +442,6 @@ static struct cfg80211_ops mtk_cfg_ops = {
 
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_cfg_testmode_cmd,
-#endif
-#if 0	/* Remove schedule_scan because we need more verification for NLO */
-	.sched_scan_start = mtk_cfg80211_sched_scan_start,
-	.sched_scan_stop = mtk_cfg80211_sched_scan_stop,
 #endif
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
@@ -1545,6 +1546,7 @@ static void wlanCreateWirelessDevice(void)
 {
 	struct wiphy *prWiphy = NULL;
 	struct wireless_dev *prWdev = NULL;
+	unsigned int u4SupportSchedScanFlag = 0;
 
 	/* 4 <1.1> Create wireless_dev */
 	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
@@ -1570,6 +1572,12 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->n_iface_combinations = mtk_iface_combinations_sta_num;
 	prWiphy->max_scan_ssids = SCN_SSID_MAX_NUM + 1; /* include one wildcard ssid */
 	prWiphy->max_scan_ie_len = 512;
+#if CFG_SUPPORT_SCHED_SCAN
+	prWiphy->max_sched_scan_ssids     = CFG_SCAN_HIDDEN_SSID_MAX_NUM;
+	prWiphy->max_match_sets           = CFG_SCAN_SSID_MATCH_MAX_NUM;
+	prWiphy->max_sched_scan_ie_len    = CFG_CFG80211_IE_BUF_LEN;
+	u4SupportSchedScanFlag            = WIPHY_FLAG_SUPPORTS_SCHED_SCAN;
+#endif /* CFG_SUPPORT_SCHED_SCAN */
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_ADHOC);
 	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
 	/* always assign 5Ghz bands here, if the chip is not support 5Ghz,
@@ -1580,12 +1588,20 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->cipher_suites = (const u32 *)mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY
+			| WIPHY_FLAG_SUPPORTS_FW_ROAM
+			| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+			| u4SupportSchedScanFlag;
 #else
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM
+			| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+			| WIPHY_FLAG_HAS_CHANNEL_SWITCH
+			| u4SupportSchedScanFlag;
 #else
-	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
+	prWiphy->flags = WIPHY_FLAG_SUPPORTS_FW_ROAM
+			| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
+			| u4SupportSchedScanFlag;
 #endif
 	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
 #endif
