@@ -6,6 +6,10 @@ WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
 
+ifeq ($(MTK_COMBO_CHIP),)
+MTK_COMBO_CHIP = MT6632
+endif
+
 #WLAN_CHIP_ID=$(MTK_COMBO_CHIP)
 #WLAN_CHIP_ID=MT6632
 WLAN_CHIP_ID=$(word 1, $(MTK_COMBO_CHIP))
