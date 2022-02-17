@@ -119,8 +119,10 @@
 #define CONNAC_UDMA_WLCFG_1                      (CONNAC_UDMA_BASE + 0xc)
 #define CONNAC_UDMA_WLCFG_0                      (CONNAC_UDMA_BASE + 0x18)
 
+#define UDMA_WLCFG_0_TX_BUSY_MASK               (0x1 << 31)
 #define UDMA_WLCFG_0_1US_TIMER_EN_MASK          (0x1 << 20)
 #define UDMA_WLCFG_0_1US_TIMER_EN(p)            (((p) & 0x1) << 20)
+#define UDMA_WLCFG_0_RX_FLUSH_MASK              (0x1 << 19)
 #define UDMA_WLCFG_0_TX_TIMEOUT_EN_MASK          (0x1 << 16)
 
 #define UDMA_WLCFG_1_TX_TIMEOUT_LIMIT_MASK      (0xFFFFF << 8)
@@ -128,6 +130,24 @@
 #define UDMA_TX_TIMEOUT_STATUS_MASK             (0x1 << 13)
 
 #define UDMA_TX_TIMEOUT_LIMIT			(50000)
+
+#define UDMA_TX_IDLE_MASK                       0x00003f00
+
+#define PDMA_IF_MISC                            0x500000a8
+#define PDMA_IF_MISC_TX_ENABLE_MASK             0x00000001
+
+#define PDMA_HIF_RESET                          0x50000100
+#define DPMA_HIF_LOGIC_RESET_MASK               (0x1 << 4)
+
+#define PDMA_DEBUG_EN                           0x50000124
+#define PDMA_DEBUG_STATUS                       0x50000128
+#define PDMA_DEBUG_TX_STATUS_MASK               0x004c0000 /* 0x00400000 */
+#define PDMA_DEBUG_DMASHDL_REQUEST_DONE_MASK    0x00100000
+
+#define PDMA_BUSY_STATUS                        0x50000168
+#define PDMA_TX_BUSY_MASK                       0x00000001
+
+#define PDMA_TX_IDLE_WAIT_COUNT                 30
 #endif /* _HIF_USB */
 
 #define PLE_PKT_MAX_SIZE_MASK (0xfff << 0)

@@ -90,6 +90,9 @@ VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
 /* DMS Scheduler Init */
 VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter);
 VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter);
+BOOLEAN asicUsbSuspend(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo);
+VOID asicUdmaRxFlush(IN P_ADAPTER_T prAdapter, IN BOOLEAN bEnable);
+VOID asicPdmaHifReset(IN P_ADAPTER_T prAdapter, IN BOOLEAN bRelease);
 VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen);
 #endif /* _HIF_USB */
 #endif /* _CMM_ASIC_CONNAC_H */
