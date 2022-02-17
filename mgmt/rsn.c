@@ -889,16 +889,13 @@ u_int8_t rsnPerformPolicySelection(
 #if CFG_SUPPORT_PASSPOINT
 	} else if (eAuthMode ==
 		   AUTH_MODE_WPA_OSEN) {
-		/* OSEN is mutual exclusion with RSN,
-		 * so we can reuse RSN's flag and variables
-		 */
-		if (prBss->fgIEOsen) {
-			prBssRsnInfo = &prBss->rRSNInfo;
-		} else {
-			DBGLOG(RSN, WARN,
-			       "OSEN Information Element does not exist.\n");
-			return FALSE;
-		}
+		prBssRsnInfo = &prBss->rRSNInfo;
+		aisGetConnSettings(prAdapter, ucBssIndex)->fgAuthOsenWithRSN =
+			(prBss->fgIEOsen ? FALSE : TRUE);
+		if (prBss->fgIEOsen)
+			DBGLOG(RSN, WARN, "HS20: using OSEN\n");
+		else
+			DBGLOG(RSN, WARN, "RSN: using OSEN (within RSN)\n");
 #endif
 	} else if (eEncStatus != ENUM_ENCRYPTION1_ENABLED) {
 		/* If the driver is configured to use WEP only,
@@ -1485,6 +1482,16 @@ uint32_t _addRSNIE_impl(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+static uint8_t rsnIsOsenAuthModeWithRSN(IN struct ADAPTER *prAdapter,
+					IN uint8_t ucBssIndex)
+{
+	if (aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA_OSEN &&
+		aisGetConnSettings(prAdapter, ucBssIndex)->fgAuthOsenWithRSN)
+		return TRUE;
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  *
@@ -1682,7 +1689,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		   (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eNetworkType ==
 		    NETWORK_TYPE_AIS /* prCurrentBss->fgIERSN */  &&
-		    rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex))) {
+		    (rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex) ||
+		    rsnIsOsenAuthModeWithRSN(prAdapter, ucBssIndex)))) {
 		/* Construct a RSN IE for association request frame. */
 		RSN_IE(pucBuffer)->ucElemId = ELEM_ID_RSN;
 		RSN_IE(pucBuffer)->ucLength = ELEM_ID_RSN_LEN_FIXED;
