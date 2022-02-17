@@ -2237,10 +2237,30 @@ static void soc5_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
+static void soc5_0_DumpDebguCtrlCr(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0, u4Addr = 0, u4Idx;
+
+	/* CONN2WF remapping
+	 * 0x1840_0120 = 32'h810F0000
+	 */
+	wf_ioremap_write(WF_MCU_BUS_CR_AP2WF_REMAP_1,
+			 WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_BASE);
+	/* READ debug information from debug_ctrl_ao CR
+	 * dump DEBUG_CTRL_RESULT_2~19 (0x1850_0408~0x1850_044C)
+	 */
+	u4Addr = 0x18500408;
+	for (u4Idx = 2; u4Idx <= 19; u4Idx++) {
+		connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+		DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+		u4Addr += 0x04;
+	}
+}
+
 static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
-	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4Addr;
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx;
 
 	DBGLOG(HAL, INFO,
 		"Host_CSR - mailbox and other CRs");
@@ -2255,16 +2275,6 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 
 	/* 1. Driver dump CRs of sheet "Debug ctrl setting */
 	connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
-
-	/* CONN2WF remapping */
-	connac2x_DbgCrWrite(prAdapter, 0x18400120, 0x810F0000);
-	/* READ debug information from debug_ctrl_ao CR */
-	u4Addr = 0x18500408;
-	for (u4Idx = 2; u4Idx < 20; u4Idx++) {
-		connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
-		DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
-		u4Addr += 0x04;
-	}
 
 	/* READ debug information from HOST CSR */
 	DBGLOG(HAL, ERROR, "Dump 0x1806_0164\n");
@@ -2411,16 +2421,33 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 
 			break;
 		}
-
-		if ((prAdapter != NULL) && (prAdapter->fgIsFwDownloaded)) {
-			/* if(0x1806_016C[0]==1, wifi axi bus hang) */
-			connac2x_DbgCrRead(prAdapter, 0x1806016c, &u4Value);
-			if ((u4Value&BIT(0)) == BIT(0))
-				break;
-		} else {
-			DBGLOG(HAL, INFO,
-				"Before fgIsFwDownloaded\n");
-			soc5_0_DumpHostCr(prAdapter);
+/*
+ * 2. Check conn2wf sleep protect
+` *  - 0x1800_1544[31] (sleep protect enable ready), should be 1'b0
+ */
+		connac2x_DbgCrRead(prAdapter, 0x18001544, &u4Value);
+		if (u4Value & BIT(31)) {
+			DBGLOG(HAL, ERROR, "0x18001544[31]=1'b1\n");
+			break;
+		}
+/*
+ * 3. Read WF IP version
+` *  - Read 184F_0000 = 02050000
+ */
+		wf_ioremap_read(WF_MCU_CFG_LS_BASE_ADDR, &u4Value);
+		if (u4Value != 0x02050000) {
+			DBGLOG(HAL, ERROR, "184F_0000 != 02050000\n");
+			break;
+		}
+/*
+ * 4. Check wf_mcusys bus hang irq status
+` *  - 0x1806_016C[0] =1'b0
+ */
+		connac2x_DbgCrRead(prAdapter, 0x1806016c, &u4Value);
+		if (u4Value & BIT(0)) {
+			DBGLOG(HAL, ERROR, "0x1806_016C[0]=1'b1\n");
+			soc5_0_DumpDebguCtrlCr(prAdapter);
+			break;
 		}
 
 		DBGLOG(HAL, TRACE, "Bus hang check: Done\n");
