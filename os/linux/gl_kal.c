@@ -3173,6 +3173,10 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
 
+	KAL_TIME_INTERVAL_DECLARATION();
+
+	KAL_REC_TIME_START();
+
 	if (kalIsResetting())
 		return WLAN_STATUS_SUCCESS;
 
@@ -3302,8 +3306,6 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 			ret = prGlueInfo->rPendStatus;
 		else
 			ret = prIoReq->rStatus;
-		if (ret != WLAN_STATUS_SUCCESS)
-			DBGLOG(OID, WARN, "kalIoctl: ret ErrCode: %x\n", ret);
 	} else {
 
 #if 0
@@ -3329,6 +3331,12 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 
 	up(&prGlueInfo->ioctl_sem);
 	up(&g_halt_sem);
+
+	KAL_REC_TIME_END();
+	if (ret != WLAN_STATUS_SUCCESS)
+		DBGLOG(OID, WARN, "ret(%x) time: %lu us\n",
+			ret,
+			KAL_GET_TIME_INTERVAL());
 
 	return ret;
 }
@@ -4798,6 +4806,8 @@ void kalOidCmdClearance(IN struct GLUE_INFO *prGlueInfo)
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
 
 	if (prCmdInfo) {
+		DBGLOG(OID, INFO, "Clear pending OID CMD ID[0x%02X] SEQ[%u]\n",
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		if (prCmdInfo->pfCmdTimeoutHandler)
 			prCmdInfo->pfCmdTimeoutHandler(prGlueInfo->prAdapter,
 						       prCmdInfo);
