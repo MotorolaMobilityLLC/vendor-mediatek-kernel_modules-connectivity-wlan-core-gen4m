@@ -5029,7 +5029,7 @@ int main_thread(void *data)
 		kalClearSecurityFrames(prGlueInfo);
 
 	/* remove pending oid */
-	wlanReleasePendingOid(prGlueInfo->prAdapter, 0);
+	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
 	complete(&prGlueInfo->rHaltComp);
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
