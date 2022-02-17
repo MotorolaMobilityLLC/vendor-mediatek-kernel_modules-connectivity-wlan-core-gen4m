@@ -1505,7 +1505,7 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 
 #if 1				/* DBG */
 	DBGLOG_LIMITED(RSN, INFO,
-	       "[wlan index]=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
+	       "[BSS index]=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,
 	       prBssInfo->ucOwnMacIndex,
@@ -1573,7 +1573,7 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucBMCWlanIndex;
 
 	DBGLOG_LIMITED(RSN, INFO,
-	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
+	       "[BSS index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
 	       ucBssIndex,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
