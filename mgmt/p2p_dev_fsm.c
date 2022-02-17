@@ -296,8 +296,8 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
 			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingTxMsdu */
-		nicFreePendingTxMsduInfoByBssIdx(prAdapter,
-			prP2pBssInfo->ucBssIndex);
+		nicFreePendingTxMsduInfo(prAdapter,
+			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
