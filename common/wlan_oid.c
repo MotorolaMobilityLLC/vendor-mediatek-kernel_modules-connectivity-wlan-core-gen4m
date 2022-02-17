@@ -6922,6 +6922,7 @@ wlanoidSetDrvMcrWrite(IN struct ADAPTER *prAdapter,
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	HAL_MCR_WR(prAdapter, (prMcrWrInfo->u4McrOffset & BITS(2,
 			       31)), prMcrWrInfo->u4McrData);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 	DBGLOG(INIT, TRACE,
 	       "DRV MCR Write: Offset = %#08x, Data = %#08x\n",
