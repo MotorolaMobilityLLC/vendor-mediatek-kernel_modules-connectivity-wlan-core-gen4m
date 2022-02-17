@@ -111,7 +111,7 @@
 #define HIF_RX_HW_APPENDED_LEN              4
 
 /* For DW 2, Byte 3 - ucHwChannelNum */
-#define HW_CHNL_NUM_MAX_2G4                 14
+#define HW_CHNL_NUM_MAX_2G4                 (14)
 #define HW_CHNL_NUM_MAX_4G_5G               (255 - HW_CHNL_NUM_MAX_2G4)
 
 /*******************************************************************************
