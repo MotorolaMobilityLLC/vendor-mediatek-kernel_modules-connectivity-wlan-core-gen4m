@@ -2564,19 +2564,24 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
 		prParams = (struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS
 			    *) data;
 
-	if (!prParams->aucMacAddr) {
-		DBGLOG(QM, TRACE, "%s MAC Address is NULL\n", __func__);
+	if (prParams == NULL) {
+		DBGLOG(QM, ERROR, "prParams is NULL, data=%p, len=%d\n",
+		       data, len);
+		return -EINVAL;
+	} else if (prParams->aucMacAddr == NULL) {
+		DBGLOG(QM, ERROR,
+		       "prParams->aucMacAddr is NULL, data=%p, len=%d\n",
+		       data, len);
 		return -EINVAL;
 	}
 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy,
 				sizeof(struct PARAM_GET_STA_STATISTICS) + 1);
-
 	if (!skb) {
-		DBGLOG(QM, TRACE, "%s allocate skb failed:%x\n", __func__,
-		       rStatus);
+		DBGLOG(QM, ERROR, "allocate skb failed:%x\n", rStatus);
 		return -ENOMEM;
 	}
+
 	DBGLOG(QM, TRACE, "Get [" MACSTR "] STA statistics\n",
 	       MAC2STR(prParams->aucMacAddr));
 
