@@ -654,13 +654,17 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum);
 		return FALSE;
 	}
-
-	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
-		SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
+#if CFG_SUPPORT_RN
+	if (prAisBssInfo->fgDisConnReassoc == FALSE)
+#endif
+	{
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
+			SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
 			SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC))) {
-		log_dbg(SCN, WARN, MACSTR " description is too old.\n",
-			MAC2STR(prBssDesc->aucBSSID));
-		return FALSE;
+			log_dbg(SCN, WARN, MACSTR " description is too old.\n",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
 	}
 
 #if CFG_SUPPORT_WAPI

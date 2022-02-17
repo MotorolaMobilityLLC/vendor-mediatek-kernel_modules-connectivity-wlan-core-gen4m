@@ -932,6 +932,49 @@ void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
 			    (struct SW_RFB *) NULL);
 }				/* end of saaFsmRunEventRxRespTimeOut() */
 
+#if CFG_SUPPORT_RN
+static u_int8_t saaCheckOverLoadRN(IN struct ADAPTER *prAdapter,
+			IN struct STA_RECORD *prStaRec,
+			IN enum ENUM_AA_STATE eFrmType)
+{
+	static uint32_t u4OverLoadRN;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct BSS_INFO *prAisBssInfo;
+	uint8_t ucBssIndex = 0;
+
+	if (!IS_AP_STA(prStaRec))
+		return FALSE;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	if (!prAisBssInfo->fgDisConnReassoc) {
+		u4OverLoadRN = 0;
+		return FALSE;
+	}
+	if (prStaRec->u2StatusCode != STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD)
+		return FALSE;
+	DBGLOG(SAA, INFO, "<SAA> eFrmType: %d, u4OverLoadRN times: %d\n",
+			eFrmType, u4OverLoadRN);
+	if (u4OverLoadRN >= JOIN_MAX_RETRY_OVERLOAD_RN)
+		return FALSE;
+	prBssDesc = prAdapter->rWifiVar.rAisFsmInfo[ucBssIndex].prTargetBssDesc;
+	if (prBssDesc) {
+		aisAddBlacklist(prAdapter, prBssDesc);
+		if (prBssDesc->prBlack)
+			prBssDesc->prBlack->u2AuthStatus =
+			prStaRec->u2StatusCode;
+	} else
+		DBGLOG(SAA, INFO, "<drv> prBssDesc is NULL!\n");
+	u4OverLoadRN++;
+	aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_RADIO_LOST,
+		TRUE, ucBssIndex);
+	return TRUE;
+}
+#endif
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will process the Rx Auth Response Frame and then
@@ -1020,6 +1063,12 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 
 			/* Reset Send Auth/(Re)Assoc Frame Count */
 			prStaRec->ucTxAuthAssocRetryCount = 0;
+#if CFG_SUPPORT_RN
+			if (IS_STA_IN_AIS(prStaRec) &&
+				saaCheckOverLoadRN(prAdapter, prStaRec,
+					SAA_STATE_SEND_AUTH1))
+				break;
+#endif
 
 			saaFsmSteps(prAdapter, prStaRec, eNextState,
 				    (struct SW_RFB *) NULL);
@@ -1214,6 +1263,11 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 					prAdapter, RCPI_MODE_MAX, prSwRfb);
 
 			eNextState = AA_STATE_IDLE;
+#if CFG_SUPPORT_RN
+			if (saaCheckOverLoadRN(prAdapter, prStaRec,
+				SAA_STATE_SEND_ASSOC1))
+				break;
+#endif
 
 			saaFsmSteps(prAdapter, prStaRec,
 				    eNextState, prRetainedSwRfb);
@@ -1227,6 +1281,105 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 	return rStatus;
 
 }				/* end of saaFsmRunEventRxAssoc() */
+#if CFG_SUPPORT_RN
+static void saaAutoReConnect(IN struct ADAPTER *prAdapter,
+					IN struct STA_RECORD *prStaRec,
+					IN struct BSS_INFO *prAisBssInfo,
+					IN enum ENUM_AA_FRM_TYPE eFrmType)
+
+{
+	OS_SYSTIME rCurrentTime;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex = 0;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	prConnSettings = &(prAdapter->rWifiVar.rConnSettings[ucBssIndex]);
+	GET_CURRENT_SYSTIME(&rCurrentTime);
+
+	/*
+	 * TODO: maybe AP is in DFS channel, it wants to switch channels?
+	 * Wait for beacon timeout?
+	 * Need to do partial scan for the AP channel.
+	 */
+
+	if ((!CHECK_FOR_TIMEOUT(rCurrentTime, prAisBssInfo->rConnTime,
+				  SEC_TO_SYSTIME(AIS_AUTORN_MIN_INTERVAL)) &&
+		/* maybe some packets are queued in HW,
+		**we will get many de-auth
+		*/
+		(prAisBssInfo->fgDisConnReassoc == FALSE)) ||
+		/* if encryption type is wep, no need to reconnect
+		**because AP may change it's password,
+		** so even we auto reconnect succuess, data link
+		**can not work
+		*/
+		prConnSettings->eEncStatus == ENUM_ENCRYPTION1_ENABLED) {
+		DBGLOG(SAA, INFO, "<drv> AP deauth ok 0x%x %x %x\n",
+			rCurrentTime, prAisBssInfo->rConnTime,
+			SEC_TO_SYSTIME(AIS_AUTORN_MIN_INTERVAL));
+		saaSendDisconnectMsgHandler(prAdapter, prStaRec,
+			prAisBssInfo, eFrmType);
+	} else {
+		DBGLOG(SAA, INFO, "<drv> reassociate\n");
+		/* Report a lowest RSSI value to wlan framework,
+		**who will transfer it to modem and then
+		** modem can make a decision if need to
+		**switch to LTE data link.
+		*/
+		mtk_cfg80211_vendor_event_rssi_beyond_range(
+			priv_to_wiphy(prAdapter->prGlueInfo),
+					prAdapter->prGlueInfo->
+					prDevHandler->ieee80211_ptr, -127);
+
+		if (prAisBssInfo->fgDisConnReassoc == FALSE) {
+			struct BSS_DESC *prBssDesc;
+			/* during reassoc, FW send null then we maybe get
+			**deauth again  in the case,
+			**we will send deauth to supplicant,
+			**not here  avoid re-scan
+			*/
+			prAisBssInfo->fgDisConnReassoc = TRUE;
+			prAisBssInfo->u2DeauthReason = prStaRec->u2ReasonCode;
+			prBssDesc = prAdapter->rWifiVar.rAisFsmInfo[ucBssIndex].
+						prTargetBssDesc;
+			if (prBssDesc) {
+				if (prStaRec->u2ReasonCode ==
+					REASON_CODE_DISASSOC_AP_OVERLOAD) {
+					struct AIS_BLACKLIST_ITEM *prBlackList
+						= aisAddBlacklist(prAdapter,
+							prBssDesc);
+
+					if (prBlackList) {
+						prBlackList->u2DeauthReason =
+							prStaRec->u2ReasonCode;
+						prBlackList->fgDeauthLastTime =
+							TRUE;
+					}
+				}
+			} else
+				DBGLOG(SAA, INFO, "<drv> prBssDesc is NULL!\n");
+
+			aisFsmStateAbort(prAdapter,
+				DISCONNECT_REASON_CODE_RADIO_LOST,
+				TRUE, ucBssIndex);
+		} else if (!CHECK_FOR_TIMEOUT(rCurrentTime,
+			prAisBssInfo->rConnTime,
+			SEC_TO_SYSTIME(AIS_AUTORN_MIN_INTERVAL + 10))) {
+
+			DBGLOG(SAA, INFO,
+				"<drv> AP deau ok under reassoc 0x%x %x %x\n",
+				rCurrentTime, prAisBssInfo->rConnTime,
+				SEC_TO_SYSTIME(AIS_AUTORN_MIN_INTERVAL + 10));
+
+			prAisBssInfo->fgDisConnReassoc = FALSE;
+			saaSendDisconnectMsgHandler(prAdapter, prStaRec,
+				prAisBssInfo, eFrmType);
+		}
+		/* else, we are reassociating, skip the deauth */
+	}
+}
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1336,10 +1489,15 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 						return WLAN_STATUS_SUCCESS;
 					}
 #endif
+#if CFG_SUPPORT_RN
+					saaAutoReConnect(prAdapter, prStaRec,
+						prAisBssInfo, FRM_DEAUTH);
+#else
 					saaSendDisconnectMsgHandler(prAdapter,
 					      prStaRec,
 					      prAisBssInfo,
 					      FRM_DEAUTH);
+#endif
 				}
 			}
 		}
@@ -1575,10 +1733,15 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 						prAdapter->deauth_rx_count
 						[prStaRec->u2ReasonCode]++;
 #endif /* fos_change end */
+#if CFG_SUPPORT_RN
+					saaAutoReConnect(prAdapter, prStaRec,
+						prAisBssInfo, FRM_DISASSOC);
+#else
 					saaSendDisconnectMsgHandler(prAdapter,
 					      prStaRec,
 					      prAisBssInfo,
 					      FRM_DISASSOC);
+#endif
 				}
 			}
 		}
