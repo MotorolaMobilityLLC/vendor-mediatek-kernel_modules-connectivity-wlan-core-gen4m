@@ -912,6 +912,7 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 	uint32_t setRoaming = 0;
 	uint32_t u4BufLen = 0;
 	int32_t i4Status = -EINVAL;
+	uint8_t ucBssIndex = 0;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -922,6 +923,7 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 	attr = (struct nlattr *)data;
 	setRoaming = nla_get_u32(attr);
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, INFO,
@@ -929,10 +931,11 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 	       data_len, *((uint32_t *) data), *((uint32_t *) data + 1),
 	       setRoaming);
 
-	rStatus = kalIoctl(prGlueInfo,
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
 			   wlanoidSetDrvRoamingPolicy,
 			   &setRoaming, sizeof(uint32_t), FALSE, FALSE, TRUE,
-			   &u4BufLen);
+			   &u4BufLen,
+			   ucBssIndex);
 
 	return rStatus;
 
