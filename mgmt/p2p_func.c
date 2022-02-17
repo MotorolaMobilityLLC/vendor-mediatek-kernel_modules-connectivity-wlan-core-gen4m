@@ -1479,10 +1479,12 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 #else
 				COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 					prAdapter->rWifiVar
-						.aucInterfaceAddress);
+						.aucInterfaceAddress[
+						prP2pBssInfo->u4PrivateData]);
 				COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
 					prAdapter->rWifiVar
-						.aucInterfaceAddress);
+						.aucInterfaceAddress[
+						prP2pBssInfo->u4PrivateData]);
 #endif
 				break;
 			case OP_MODE_P2P_DEVICE:

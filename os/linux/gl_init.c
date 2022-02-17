@@ -1595,7 +1595,7 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 	if (!ndev || !addr) {
 		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
 		       (ndev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
-		return WLAN_STATUS_INVALID_DATA;
+		return -EINVAL;
 	}
 
 	/**********************************************************************
