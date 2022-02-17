@@ -4722,274 +4722,47 @@ bool is_world_regdom(const char *alpha2)
 }
 #endif
 
-enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
-{
-	switch (pRequest->initiator) {
-	case NL80211_REGDOM_SET_BY_USER:
-		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_USER\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_USER,
-						pRequest);
-
-	case NL80211_REGDOM_SET_BY_DRIVER:
-		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_DRIVER\n");
-
-		return rlmDomainStateTransition(
-			       REGD_STATE_SET_COUNTRY_DRIVER, pRequest);
-
-	case NL80211_REGDOM_SET_BY_CORE:
-		DBGLOG(RLM, INFO,
-		       "regd_state_machine: NL80211_REGDOM_SET_BY_CORE\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE,
-						pRequest);
-
-	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
-		DBGLOG(RLM, WARN,
-		       "============== WARNING ==============\n");
-		DBGLOG(RLM, WARN,
-		       "regd_state_machine: SET_BY_COUNTRY_IE\n");
-		DBGLOG(RLM, WARN, "Regulatory rule is updated by IE.\n");
-		DBGLOG(RLM, WARN,
-		       "============== WARNING ==============\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE,
-						pRequest);
-
-	default:
-		return rlmDomainStateTransition(REGD_STATE_INVALID,
-						pRequest);
-	}
-}
-
-
-void
-mtk_apply_custom_regulatory(IN struct wiphy *pWiphy,
-			    IN const struct ieee80211_regdomain *pRegdom)
-{
-	u32 band_idx, ch_idx;
-	struct ieee80211_supported_band *sband;
-	struct ieee80211_channel *chan;
-
-	DBGLOG(RLM, INFO, "%s()\n", __func__);
-
-	/* to reset cha->flags*/
-	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
-		sband = pWiphy->bands[band_idx];
-		if (!sband)
-			continue;
-
-		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
-			chan = &sband->channels[ch_idx];
-
-			/*reset chan->flags*/
-			chan->flags = 0;
-		}
-
-	}
-
-	/* update to kernel */
-	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
-}
-
 void
 mtk_reg_notify(IN struct wiphy *pWiphy,
 	       IN struct regulatory_request *pRequest)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
 	struct ADAPTER *prAdapter;
-	enum regd_state old_state;
 	struct wiphy *pBaseWiphy = wlanGetWiphy();
+	uint32_t u4CountryCode = 0;
 
 	if (g_u4HaltFlag) {
-		DBGLOG(RLM, WARN, "wlan is halt, skip reg callback\n");
+		DBGLOG(RLM, ERROR, "wlan is halt, skip reg callback\n");
 		return;
 	}
 
-	if (!pWiphy) {
-		DBGLOG(RLM, ERROR, "pWiphy = NULL!\n");
+	if (!rlmDomainCountryCodeUpdateSanity(
+		prGlueInfo, pBaseWiphy, &prAdapter)) {
+		DBGLOG(RLM, ERROR, "sanity check failed, skip!\n");
 		return;
 	}
 
-	/*
-	 * Awlays use wlan0's base wiphy pointer to update reg notifier.
-	 * Because only one reg state machine is handled.
-	 */
-	if (pBaseWiphy && (pWiphy != pBaseWiphy)) {
-		pWiphy = pBaseWiphy;
-		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=%p)\n",
-			pBaseWiphy);
-	}
-
-	old_state = rlmDomainGetCtrlState();
-
-	/*
-	 * Magic flow for driver to send inband command after kernel's calling
-	 * reg_notifier callback
-	 */
-	if (!pRequest) {
-		/*triggered by our driver in wlan initial process.*/
-
-		if (old_state == REGD_STATE_INIT) {
-			if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-				DBGLOG(RLM, WARN,
-				       "County Code is not assigned. Use default WW.\n");
-				goto DOMAIN_SEND_CMD;
-
-			} else {
-				DBGLOG(RLM, ERROR,
-				       "Invalid REG state happened. state = 0x%x\n",
-				       old_state);
-				return;
-			}
-		} else if ((old_state == REGD_STATE_SET_WW_CORE) ||
-			   (old_state == REGD_STATE_SET_COUNTRY_USER) ||
-			   (old_state == REGD_STATE_SET_COUNTRY_DRIVER)) {
-			goto DOMAIN_SEND_CMD;
-		} else {
-			DBGLOG(RLM, ERROR,
-			       "Invalid REG state happened. state = 0x%x\n",
-			       old_state);
-			return;
-		}
-	}
-
-	/*
-	 * Ignore the CORE's WW setting when using local data base of regulatory
-	 * rules
-	 */
-	if ((pRequest->initiator == NL80211_REGDOM_SET_BY_CORE) &&
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	    (pWiphy->flags & WIPHY_FLAG_CUSTOM_REGULATORY))
-#else
-	    (pWiphy->regulatory_flags & REGULATORY_CUSTOM_REG))
-#endif
-		return;/*Ignore the CORE's WW setting*/
-
-	/*
-	 * State machine transition
-	 */
 	DBGLOG(RLM, INFO,
-	       "request->alpha2=%s, initiator=%x, intersect=%d\n",
-	       pRequest->alpha2, pRequest->initiator, pRequest->intersect);
+		"request->alpha2=%s, initiator=%x, intersect=%d\n",
+		pRequest->alpha2, pRequest->initiator, pRequest->intersect);
 
-	regd_state_machine(pRequest);
+	if (rlmDomainIsSameCountryCode(pRequest->alpha2, 2)) {
+		char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 
-	if (rlmDomainGetCtrlState() == old_state) {
-		if (((old_state == REGD_STATE_SET_COUNTRY_USER)
-		     || (old_state == REGD_STATE_SET_COUNTRY_DRIVER))
-		    && (!(rlmDomainIsSameCountryCode(pRequest->alpha2,
-					     sizeof(pRequest->alpha2)))))
-			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
-		else
-			/* Change to same state or same country, ignore */
-			return;
-	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
-		DBGLOG(RLM, ERROR,
-		       "\n%s():\n---> WARNING. Transit to invalid state.\n",
-		       __func__);
-		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
-		rlmDomainAssert(0);
+		rlmDomainU32ToAlpha(
+			rlmDomainGetCountryCode(), acCountryCodeStr);
+		DBGLOG(RLM, WARN,
+			"Same as current country %s, skip!\n",
+			acCountryCodeStr);
+		return;
 	}
 
-	/*
-	 * Set country code
-	 */
-	if (pRequest->initiator != NL80211_REGDOM_SET_BY_DRIVER) {
-		rlmDomainSetCountryCode(pRequest->alpha2,
-					sizeof(pRequest->alpha2));
-	} else {
-		/*SET_BY_DRIVER*/
+	rlmDomainSetCountryCode(pRequest->alpha2, 2);
 
-		if (rlmDomainIsEfuseUsed()) {
-			if (!rlmDomainIsUsingLocalRegDomainDataBase())
-				DBGLOG(RLM, WARN,
-				       "[WARNING!!!] Local DB must be used if country code from efuse.\n");
-		} else {
-			/* iwpriv case */
-			if (rlmDomainIsUsingLocalRegDomainDataBase() &&
-			    (!rlmDomainIsEfuseUsed())) {
-				/*iwpriv set country but local data base*/
-				u32 country_code =
-						rlmDomainGetTempCountryCode();
-
-				rlmDomainSetCountryCode((char *)&country_code,
-							sizeof(country_code));
-			} else {
-				/*iwpriv set country but query CRDA*/
-				rlmDomainSetCountryCode(pRequest->alpha2,
-						sizeof(pRequest->alpha2));
-			}
-		}
-	}
+	u4CountryCode = rlmDomainAlpha2ToU32(pRequest->alpha2, 2);
+	rlmDomainCountryCodeUpdate(prAdapter, pBaseWiphy, u4CountryCode);
 
 	rlmDomainSetDfsRegion(pRequest->dfs_region);
-
-
-DOMAIN_SEND_CMD:
-	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = 0x%x\n",
-	       rlmDomainGetCountryCode());
-
-	/*
-	 * Check if using customized regulatory rule
-	 */
-	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-		const struct ieee80211_regdomain *pRegdom;
-		u32 country_code = rlmDomainGetCountryCode();
-		char alpha2[4];
-
-		/*fetch regulatory rules from local data base*/
-		alpha2[0] = country_code & 0xFF;
-		alpha2[1] = (country_code >> 8) & 0xFF;
-		alpha2[2] = (country_code >> 16) & 0xFF;
-		alpha2[3] = (country_code >> 24) & 0xFF;
-
-		pRegdom = rlmDomainSearchRegdomainFromLocalDataBase(alpha2);
-		if (!pRegdom) {
-			DBGLOG(RLM, ERROR,
-			       "%s(): Error, Cannot find the correct RegDomain. country = %u\n",
-			       __func__, rlmDomainGetCountryCode());
-
-			rlmDomainAssert(0);
-			return;
-		}
-
-		mtk_apply_custom_regulatory(pWiphy, pRegdom);
-	}
-
-	/*
-	 * Parsing channels
-	 */
-	rlmDomainParsingChannel(pWiphy); /*real regd update*/
-
-	/*
-	 * Check if firmawre support single sku.
-	 * no need to send information to FW due to FW is not supported.
-	 */
-	if (!regd_is_single_sku_en())
-		return;
-
-	/*
-	 * Always use the wlan GlueInfo as parameter.
-	 */
-	prGlueInfo = rlmDomainGetGlueInfo();
-	if (!prGlueInfo) {
-		DBGLOG(RLM, ERROR, "prGlueInfo is NULL!\n");
-		return; /*interface is not up yet.*/
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
-		return; /*interface is not up yet.*/
-	}
-
-	/*
-	 * Send commands to firmware
-	 */
-	prAdapter->rWifiVar.u2CountryCode =
-		(uint16_t)rlmDomainGetCountryCode();
-	rlmDomainSendCmd(prAdapter);
 }
 
 void
@@ -5037,7 +4810,6 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 	 */
 	rlmDomainResetCtrlInfo(FALSE);
 }
-
 #else
 void
 cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)

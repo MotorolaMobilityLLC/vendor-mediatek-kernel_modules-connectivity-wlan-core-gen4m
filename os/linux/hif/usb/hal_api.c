@@ -1377,6 +1377,21 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prBusInfo->DmaShdlInit)
+		prBusInfo->DmaShdlInit(prAdapter);
+
+	if (prChipInfo->asicUsbInit)
+		prChipInfo->asicUsbInit(prAdapter, prChipInfo);
+
+	if (prBusInfo->asicUdmaRxFlush)
+		prBusInfo->asicUdmaRxFlush(prAdapter, FALSE);
+
 	return true;
 }
 

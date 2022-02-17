@@ -204,8 +204,6 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 		prChipInfo->u4ExtraTxByteCount =
 			EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
-		if (prBusInfo->DmaShdlInit)
-			prBusInfo->DmaShdlInit(prAdapter);
 		asicUdmaTxTimeoutEnable(prAdapter);
 		asicUdmaRxFlush(prAdapter, FALSE);
 		asicPdmaHifReset(prAdapter, TRUE);

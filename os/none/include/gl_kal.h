@@ -1775,5 +1775,11 @@ u_int8_t kalIsResetting(void);
 void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+void
+kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
+	IN const struct ieee80211_regdomain *pRegdom);
+#endif
+
 #endif /* _GL_KAL_H */
 

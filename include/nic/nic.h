@@ -530,6 +530,7 @@ void nicApplyLinkAddress(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* ECO Version                                                                */
 /*----------------------------------------------------------------------------*/
+uint8_t nicGetChipSwVer(void);
 uint8_t nicGetChipEcoVer(IN struct ADAPTER *prAdapter);
 u_int8_t nicIsEcoVerEqualTo(IN struct ADAPTER *prAdapter,
 			    uint8_t ucEcoVer);

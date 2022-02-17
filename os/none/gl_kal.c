@@ -128,3 +128,10 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 	DBGLOG(INIT, WARN, "[SER][L0] not support..\n");
 }
 #endif
+
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+void
+kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
+	IN const struct ieee80211_regdomain *pRegdom) { }
+#endif
+

@@ -597,12 +597,25 @@
 #define UNII8_LOWER_BOUND    189
 #define UNII8_UPPER_BOUND    233
 
+#define MAX_COUNTRY_CODE_LEN 4
+
+
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #define POWER_LIMIT_TABLE_NULL			0xFFFF
+#if (CFG_SUPPORT_CONNAC2X == 1)
+#define MAX_TX_POWER				127
+#define MIN_TX_POWER				-128
+#else
 #define MAX_TX_POWER				63
 #define MIN_TX_POWER				-64
-/*align Frimware Max Power Limit CH Num*/
-#define MAX_CMD_SUPPORT_CHANNEL_NUM			64
+#endif
+
+#define MAX_CMD_SUPPORT_160NC_CHANNEL_NUM	12 /* BW160NC combination NUM */
+#define MAX_CMD_SUPPORT_FCC_CHANNEL_NUM		60
+#define MAX_CMD_SUPPORT_CHANNEL_NUM			\
+	(MAX_CMD_SUPPORT_FCC_CHANNEL_NUM		\
+		+ MAX_CMD_SUPPORT_160NC_CHANNEL_NUM + 1)
+/* FCC sub-band channel + BW160NC channel + CH50 for BW160C */
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -1018,17 +1031,12 @@ enum regd_state {
 	REGD_STATE_INVALID
 };
 
-enum regd_control_flag {
-	REGD_CTRL_FLAG_SUPPORT_LOCAL_REGD_DB = (0x1 << 0)
-};
-
 struct mtk_regd_control {
 	u_int8_t en;
 	u_int8_t isEfuseCountryCodeUsed;
 	enum regd_state state;
-	u32 alpha2;
-	u32 tmp_alpha2; /*store country code set by iwpriv "country XX"*/
-	u32 flag; /*enum regd_control_flag*/
+	uint32_t alpha2;
+	uint32_t tmp_alpha2; /*store country code set by iwpriv "country XX"*/
 	struct GLUE_INFO *pGlueInfo; /*wlan GlueInfo*/
 	u8 n_channel_active_2g;
 	u8 n_channel_active_5g;
@@ -1132,10 +1140,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
 extern struct ieee80211_supported_band mtk_band_2ghz;
 extern struct ieee80211_supported_band mtk_band_5ghz;
 
-u_int8_t rlmDomainIsCtrlStateEqualTo(enum regd_state state);
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void);
-enum regd_state rlmDomainStateTransition(enum regd_state
-		request_state, struct regulatory_request *pRequest);
 void rlmDomainSetCountryCode(char *alpha2,
 			     u8 size_of_alpha2);
 void rlmDomainSetDfsRegion(enum nl80211_dfs_regions
@@ -1184,8 +1189,17 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter,
 			    char *country, u8 size_of_country);
 u32 rlmDomainGetCountryCode(void);
-u32 rlmDomainGetTempCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
+void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha);
+uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size);
+uint8_t rlmDomainCountryCodeUpdateSanity(
+	struct GLUE_INFO *prGlueInfo, struct wiphy *pWiphy,
+	struct ADAPTER **prAdapter);
+void rlmDomainCountryCodeUpdate(struct ADAPTER *prAdapter,
+	struct wiphy *pWiphy, uint32_t u4CountryCode);
+void rlmDomainSetCountry(struct ADAPTER *prAdapter);
+uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	struct wiphy *pWiphy, uint32_t u4CountryCode);
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */

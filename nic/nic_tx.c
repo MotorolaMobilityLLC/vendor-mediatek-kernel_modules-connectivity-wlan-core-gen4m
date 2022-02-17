@@ -4786,9 +4786,6 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
-	ucActivedTspec =
-		wmmHasActiveTspec(aisGetWMMInfo(prAdapter, ucBssIndex));
-
 	if (prSkb) {
 		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);
 
@@ -4850,6 +4847,10 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			wlanProcessQueuedMsduInfo(prAdapter, prMsduInfo);
 			return WLAN_STATUS_FAILURE;
 		default:
+			ucActivedTspec =
+				wmmHasActiveTspec(aisGetWMMInfo(prAdapter,
+						prMsduInfo->ucBssIndex));
+
 			prTxQue = qmDetermineStaTxQueue(prAdapter, prMsduInfo,
 							ucActivedTspec, &ucTC);
 			break;	/*default */

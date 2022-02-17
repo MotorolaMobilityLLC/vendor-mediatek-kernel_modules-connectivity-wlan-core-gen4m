@@ -77,7 +77,7 @@
 
 #define CONNAC2X_TOP_HCR 0x70010200
 #define CONNAC2X_TOP_HVR 0x70010204
-#define CONNAC2X_TOP_FVR 0x70010208
+#define CONNAC2X_TOP_FVR 0x88000004
 #define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
 #define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
 	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
@@ -93,6 +93,16 @@
 #define MT7961_RX_DESC_LENGTH   24
 #define MT7961_ARB_AC_MODE_ADDR (0x820E315C)
 
+#define MT7961_A_DIE_VER_ADDR 0x70010020
+#define MT7961_A_DIE_VER_BIT  BIT(7)
+#define MT7961_A_DIE_7921     0
+#define MT7961_A_DIE_7920     BIT(7)
+#define MT7961_A_DIE_7921_FLAVOR 0x1
+#define MT7961_A_DIE_7920_FLAVOR 0x1a
+
+#define MT7961_BT_FW_VER_ADDR 0x7C812004
+#define MT7961_BT_FW_VER_MASK 0xFF
+
 /*------------------------------------------------------------------------------
  * MACRO for WTBL INFO GET
  *------------------------------------------------------------------------------
@@ -100,6 +110,10 @@
 
 #define MT7961_WIFI_LWTBL_BASE 0x820d4200
 #define MT7961_WIFI_UWTBL_BASE 0x820c4094
+
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+#define MT7961_HOST_RX_WM_EVENT_FROM_PSE_RX_RING4_SIZE	32
+#endif
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
