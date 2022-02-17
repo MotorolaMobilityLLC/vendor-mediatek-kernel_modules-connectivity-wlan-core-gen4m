@@ -3819,6 +3819,52 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
+#if (CFG_SUPPORT_ICS == 1)
+static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb)
+{
+	struct ICS_AGG_HEADER *prIcsAggHeader;
+	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
+	void *pvPacket = NULL;
+	uint32_t u4Size = 0;
+	uint8_t *pucRecvBuff;
+	ssize_t ret;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prIcsAggHeader = (struct ICS_AGG_HEADER *)prSwRfb->prRxStatus;
+	u4Size = prIcsAggHeader->rxByteCount + sizeof(
+			struct ICS_BIN_LOG_HDR);
+	pvPacket = kalPacketAlloc(prAdapter->prGlueInfo, u4Size,
+			&pucRecvBuff);
+
+	if (pvPacket) {
+		/* prepare ICS header */
+		prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucRecvBuff;
+		prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+		prIcsBinLogHeader->u4Timestamp = 0;
+		prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_ICS;
+		prIcsBinLogHeader->u2Length = prIcsAggHeader->rxByteCount;
+
+		/* prepare ICS frame */
+		kalMemCopy(pucRecvBuff + sizeof(struct ICS_BIN_LOG_HDR),
+				prIcsAggHeader,
+				prIcsAggHeader->rxByteCount);
+
+		DBGLOG(NIC, INFO, "rxByteCount:%d\n",
+			prIcsAggHeader->rxByteCount);
+
+		/* write to ring, ret: written */
+		ret = wifi_ics_fwlog_write(pucRecvBuff, u4Size);
+		if (ret != u4Size)
+			DBGLOG(NIC, INFO,
+				"dropped written:%d rxByteCount:%d\n",
+				ret, prIcsAggHeader->rxByteCount);
+	}
+}
+#endif /* CFG_SUPPORT_ICS */
+
 static void nicRxProcessPacketType(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
@@ -3939,6 +3985,15 @@ static void nicRxProcessPacketType(
 		nicRxProcessRxReport(prAdapter, prSwRfb);
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
+
+#if (CFG_SUPPORT_ICS == 1)
+	case RX_PKT_TYPE_ICS:
+		if ((prAdapter->fgEnTmacICS
+			|| prAdapter->fgEnRmacICS) == TRUE)
+			nicRxProcessIcsLog(prAdapter, prSwRfb);
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		break;
+#endif /* CFG_SUPPORT_ICS */
 
 	/* case HIF_RX_PKT_TYPE_TX_LOOPBACK: */
 	/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
