@@ -3792,8 +3792,18 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 					"%s, ", HW_TX_RATE_BW[0]);
 			else
-				i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-					"%s, ", prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+				if (i > prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN)
+					i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					  i4TotalLen - i4BytesWritten, "%s, ",
+					  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
+						(prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability > BW_20 ?
+						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability - 1] :
+						HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability]) :
+						HW_TX_RATE_BW[4]);
+				else
+					i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+					  i4TotalLen - i4BytesWritten, "%s, ",
+					  prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability < 4 ?
 					HW_TX_RATE_BW[prHwWlanInfo->rWtblPeerCap.ucFrequencyCapability] :
 					HW_TX_RATE_BW[4]);
 		}
@@ -3898,7 +3908,7 @@ INT_32 priv_driver_rx_rate_info(P_ADAPTER_T prAdapter, IN char *pcCommand, IN in
 			"%s,", sgi == 0 ? "LGI" : "SGI");
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"%s", stbc == 0 ? " " : "STBC, ");
+		"%s", stbc == 0 ? " " : " STBC, ");
 
 	if (mu) {
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -4301,6 +4311,9 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 #endif
 		}
 	}
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"%-20s%s%d\n", "CBRN", " = ", prHwWlanInfo->rWtblPeerCap.ucChangeBWAfterRateN);
 
 	/* Rate1~Rate8 */
 	i4BytesWritten += priv_driver_tx_rate_info(pcCommand + i4BytesWritten,
