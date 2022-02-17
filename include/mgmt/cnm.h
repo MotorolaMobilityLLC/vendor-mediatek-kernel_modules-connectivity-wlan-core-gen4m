@@ -335,7 +335,7 @@ uint8_t cnmGetDbdcBwCapability(
 	uint8_t ucBssIndex
 );
 
-void cnmDbdcEnableDecision(
+void cnmDbdcPreConnectionEnableDecision(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucChangedBssIndex,
 	IN enum ENUM_BAND eRfBand,
@@ -343,7 +343,7 @@ void cnmDbdcEnableDecision(
 	IN uint8_t ucWmmQueIdx
 );
 
-void cnmDbdcDisableDecision(IN struct ADAPTER *prAdapter,
+void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucChangedBssIndex);
 void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
 	IN unsigned long plParamPtr);
