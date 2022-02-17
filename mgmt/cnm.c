@@ -1002,7 +1002,9 @@ uint8_t cnmDecideSapNewChannel(
 		u4LteSafeChnBitMask_2G = BITS(1, 14);
 #if CFG_SUPPORT_IDC_CROSS_BAND_SWITCH
 		/* Choose 5G non-RDD Channel */
-		if (u4LteSafeChnBitMask_5G_1 || u4LteSafeChnBitMask_5G_2) {
+		if ((u4LteSafeChnBitMask_5G_1 || u4LteSafeChnBitMask_5G_2)
+			&& prGlueInfo->prAdapter->rWifiVar
+			.fgCrossBandSwitchEn) {
 			ucSwitchMode = CH_SWITCH_5G;
 			DBGLOG(P2P, WARN,
 				"Switch to 5G channel instead\n");
@@ -1277,6 +1279,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 			ASSERT(FALSE);
 			return -1;
 		}
+		kalMemZero(prP2pBcnUpdateMsg,
+			sizeof(struct MSG_P2P_BEACON_UPDATE));
 
 		prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
 		prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
@@ -1322,6 +1326,9 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	uint32_t u4Ret = 0;
 	OS_SYSTIME rCurrentTime = 0;
 	bool fgCsaCoolDown = FALSE;
+	uint8_t ucColdDownTime = 0;
+	struct WIFI_VAR *prWifiVar =
+		(struct WIFI_VAR *)NULL;
 
 	prEventBody = (struct EVENT_LTE_SAFE_CHN *)(
 		prEvent->aucBuffer);
@@ -1346,12 +1353,18 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 				au4SafeChannelBitmask[ucIdx]);
 		}
 	}
+	prWifiVar = &prAdapter->rWifiVar;
+	if (prWifiVar->ucChannelSwtichColdownTime)
+		ucColdDownTime = prWifiVar->ucChannelSwtichColdownTime;
+	else
+		ucColdDownTime = IDC_CSA_GUARD_TIME;
+
 
 	/* Only allow to switch channel once each minute*/
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 	if ((CHECK_FOR_TIMEOUT(rCurrentTime,
 			g_rLastCsaSysTime,
-			SEC_TO_SYSTIME(IDC_CSA_GUARD_TIME)))
+			SEC_TO_SYSTIME(ucColdDownTime)))
 			|| (g_rLastCsaSysTime == 0)) {
 		fgCsaCoolDown = TRUE;
 	}
@@ -1361,7 +1374,7 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 			"[CSA]CsaCoolDown not Finish yet,rCurrentTime=%d,g_rLastCsaSysTime=%d,IDC_CSA_GUARD_TIME=%d\n",
 			rCurrentTime,
 			g_rLastCsaSysTime,
-			SEC_TO_SYSTIME(IDC_CSA_GUARD_TIME));
+			SEC_TO_SYSTIME(ucColdDownTime));
 		return;
 	}
 
