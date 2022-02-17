@@ -6899,10 +6899,16 @@ nla_put_failure:
 
 uint64_t kalGetBootTime(void)
 {
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+	struct timespec64 ts;
+#else
 	struct timespec ts;
+#endif
 	uint64_t bootTime = 0;
 
-#if KERNEL_VERSION(2, 6, 39) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+	ktime_get_boottime_ts64(&ts);
+#elif KERNEL_VERSION(2, 6, 39) <= LINUX_VERSION_CODE
 	get_monotonic_boottime(&ts);
 #else
 	ts = ktime_to_timespec(ktime_get());
@@ -7946,7 +7952,7 @@ int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 #if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
 	struct rps_map *old_map, *map;
 	cpumask_var_t mask;
-	int cpu, i, len;
+	int cpu, i;
 	static DEFINE_MUTEX(rps_map_mutex);
 
 	if (!alloc_cpumask_var(&mask, GFP_KERNEL))
@@ -7977,16 +7983,24 @@ int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 				mutex_is_locked(&rps_map_mutex));
 	rcu_assign_pointer(queue->rps_map, map);
 	if (map)
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		static_branch_inc(&rps_needed);
+#else
 		static_key_slow_inc(&rps_needed);
+#endif
 	if (old_map)
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		static_branch_dec(&rps_needed);
+#else
 		static_key_slow_dec(&rps_needed);
+#endif
 	mutex_unlock(&rps_map_mutex);
 
 	if (old_map)
 		kfree_rcu(old_map, rcu);
 	free_cpumask_var(mask);
 
-	return map ? len : 0;
+	return 0;
 #else
 	return 0;
 #endif
@@ -8670,3 +8684,14 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	va_end(ap);
 	return (retval < 0)?(0):(retval);
 }
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+void kal_do_gettimeofday(struct timeval *tv)
+{
+	struct timespec64 now;
+
+	ktime_get_real_ts64(&now);
+	tv->tv_sec = now.tv_sec;
+	tv->tv_usec = now.tv_nsec / NSEC_PER_USEC;
+}
+#endif
+
