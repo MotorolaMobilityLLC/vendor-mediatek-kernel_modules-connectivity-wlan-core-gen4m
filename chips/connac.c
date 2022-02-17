@@ -123,7 +123,7 @@ PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE */
 
-BUS_INFO bus_info_connac = {
+BUS_INFO connac_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = CONNAC_TOP_CFG_BASE,
 	.is_pcie_32dw_read = CONNAC_IS_PCIE_32DW_READ, /* Litien */
@@ -138,8 +138,17 @@ BUS_INFO bus_info_connac = {
 #endif /* _HIF_USB */
 };
 
+struct firmware_download_operations connac_fw_dl_ops = {
+	.tailer_format = CONNAC_TAILER_FORMAT,
+	.constructFirmwarePrio = NULL,
+	.downloadFirmware = wlanConnacFormatDownload,
+	.getFwInfo = wlanGetConnacFwInfo,
+};
+
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
-	.bus_info = &bus_info_connac,
+	.bus_info = &connac_bus_info,
+	.fw_dl_ops = &connac_fw_dl_ops,
+
 	.chip_id = CONNAC_CHIP_ID,
 	.sw_sync0 = CONNAC_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
@@ -149,7 +158,6 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
 	.eco_info = connac_eco_table,
 
-	.constructFirmwarePrio = NULL,
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.fillTxDescAppend = fillTxDescAppendByHostV2,
