@@ -2822,7 +2822,23 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 	return true;
 }
 
-void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+void halWpdmaFreeMsduTasklet(unsigned long data)
+{
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+	struct MSDU_INFO *prMsduInfo;
+
+	while (KAL_FIFO_OUT(&prGlueInfo->rTxMsduRetFifo, prMsduInfo)) {
+		if (!prMsduInfo) {
+			DBGLOG(RX, ERROR, "prMsduInfo null\n");
+			break;
+		}
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, FALSE);
+	}
+}
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+
+void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent)
 {
@@ -2875,7 +2891,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 			list_del(prCurList);
 			prHifInfo->u4TxDataQLen[u2Port]--;
 		}
-		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
 
 		return false;
 	}
@@ -2896,7 +2912,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 			list_del(prCurList);
 			prHifInfo->u4TxDataQLen[u2Port]--;
 		}
-		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
 
 		return false;
 	}
@@ -2950,7 +2966,16 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	if (prMsduInfo->pfHifTxMsduDoneCb)
 		prMsduInfo->pfHifTxMsduDoneCb(prGlueInfo->prAdapter,
 				prMsduInfo);
-	halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+	if (prMsduInfo->pfTxDoneHandler == NULL &&
+		KAL_FIFO_IN(&prGlueInfo->rTxMsduRetFifo, prMsduInfo))
+		tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
+	else {
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+	}
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 	return true;
 }
@@ -3051,7 +3076,16 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 		if (prMsduInfo->pfHifTxMsduDoneCb)
 			prMsduInfo->pfHifTxMsduDoneCb(prGlueInfo->prAdapter,
 					prMsduInfo);
-		halWpdamFreeMsdu(prGlueInfo, prMsduInfo, true);
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+		if (prMsduInfo->pfTxDoneHandler == NULL &&
+			KAL_FIFO_IN(&prGlueInfo->rTxMsduRetFifo, prMsduInfo))
+			tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
+		else {
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+			halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+		}
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 		prCur = prNext;
 	}
 
