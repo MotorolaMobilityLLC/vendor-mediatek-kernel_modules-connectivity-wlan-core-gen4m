@@ -1977,6 +1977,14 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 	rCmdSetBssInfo.ucMBSSIDIndex = prBssInfo->ucMBSSIDIndex;
 #endif
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	rCmdSetBssInfo.ucHeChannelWidth = prBssInfo->ucHeChannelWidth;
+	rCmdSetBssInfo.ucHeChannelFrequencyS1 =
+		prBssInfo->ucHeChannelFrequencyS1;
+	rCmdSetBssInfo.ucHeChannelFrequencyS2 =
+		prBssInfo->ucHeChannelFrequencyS2;
+#endif
+
 	DBGLOG(BSS, INFO,
 	       "Update Bss[%u] ConnState[%u] OPmode[%u] BSSID[" MACSTR
 	       "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n", ucBssIndex,

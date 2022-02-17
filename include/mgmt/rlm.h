@@ -524,7 +524,7 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
 	IN uint8_t ucChannelWidth,
-	OUT enum ENUM_CHANNEL_WIDTH *peChannelWidth,
+	OUT uint8_t *pucChannelWidth,
 	OUT uint8_t *pucCenterFreqS1,
 	OUT uint8_t *pucCenterFreqS2,
 	OUT enum ENUM_CHNL_EXT *peSco);
