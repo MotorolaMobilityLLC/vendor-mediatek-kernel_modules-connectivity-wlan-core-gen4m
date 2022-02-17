@@ -109,6 +109,9 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"ATETXMCS", SetATETxMcs},
 	{"ATETXMODE", SetATETxMode},
 	{"ATEIPG", SetATEIpg},
+	{"ATEVHTNSS", SetATETxVhtNss},
+	{"ATETXANT", SetATETxPath},
+	{"ATERXANT", SetATERxPath},
 #if CFG_SUPPORT_ANT_SWAP
 	{"ATEANTSWP", SetATEAntSwp},
 #endif
@@ -615,6 +618,93 @@ int SetATEIpg(struct net_device *prNetDev, uint8_t *prInBuf)
 	rv = kstrtoint(prInBuf, 0, &i4SetTxIPG);
 	if (rv == 0)
 		i4Status = MT_ATESetTxIPG(prNetDev, i4SetTxIPG);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  This routine is called to Set Inter-Packet Guard Interval.
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prInBuf		A pointer to the command string buffer
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int SetATETxVhtNss(struct net_device *prNetDev, uint8_t *prInBuf)
+{
+	uint32_t i4SetTVhtNSS = 0;
+	int32_t i4Status;
+	int32_t rv;
+
+	DBGLOG(REQ, INFO, "ATE_AGENT iwpriv SetATETxVhtNss\n");
+
+	rv = kstrtoint(prInBuf, 0, &i4SetTVhtNSS);
+	if (rv == 0)
+		i4Status = MT_ATESetTxVhtNss(prNetDev, i4SetTVhtNSS);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  This routine is called to Set Inter-Packet Guard Interval.
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prInBuf		A pointer to the command string buffer
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int SetATETxPath(struct net_device *prNetDev, uint8_t *prInBuf)
+{
+	uint32_t i4TxPath = 0;
+	int32_t i4Status;
+	int32_t rv;
+
+	DBGLOG(REQ, INFO, "ATE_AGENT iwpriv SetATETxPath\n");
+
+	rv = kstrtoint(prInBuf, 0, &i4TxPath);
+	if (rv == 0)
+		i4Status = MT_ATESetTxPath(prNetDev, i4TxPath);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  This routine is called to Set Inter-Packet Guard Interval.
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prInBuf		A pointer to the command string buffer
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int SetATERxPath(struct net_device *prNetDev, uint8_t *prInBuf)
+{
+	uint32_t i4RxPath = 0;
+	int32_t i4Status;
+	int32_t rv;
+
+	DBGLOG(REQ, INFO, "ATE_AGENT iwpriv SetATERxPath\n");
+
+	rv = kstrtoint(prInBuf, 0, &i4RxPath);
+	if (rv == 0)
+		i4Status = MT_ATESetRxPath(prNetDev, i4RxPath);
 	else
 		return -EINVAL;
 

@@ -1084,6 +1084,49 @@ int32_t MT_ATESetTxPath(struct net_device *prNetDev,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Hook API for Set RX Path.
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] u4Tx_path
+ * \param[out] None
+ *
+ * \retval 0				On success.
+ * \retval -EFAULT			If kalIoctl return nonzero.
+ * \retval -EINVAL			If invalid argument.
+ */
+/*----------------------------------------------------------------------------*/
+int32_t MT_ATESetRxPath(struct net_device *prNetDev, uint32_t u4Rx_path)
+{
+	uint32_t u4BufLen = 0;
+	int32_t i4Status;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(RFTEST, INFO, "QA_ATE_HOOK u4Rx_path=%d\n", u4Rx_path);
+
+	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_RX_PATH;
+	rRfATInfo.u4FuncData = u4Rx_path;
+
+	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
+			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
+			    &rRfATInfo,	/* pvInfoBuf */
+			    sizeof(rRfATInfo),	/* u4InfoBufLen */
+			    FALSE,	/* fgRead */
+			    FALSE,	/* fgWaitResp */
+			    TRUE,	/* fgCmd */
+			    &u4BufLen);	/* pu4QryInfoLen */
+
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	return i4Status;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Hook API for Set TX Payload Fix/Random.
  *
  * \param[in] prNetDev		Pointer to the Net Device
