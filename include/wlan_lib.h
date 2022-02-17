@@ -1106,6 +1106,34 @@ struct PARAM_GET_CNM_T {
 	uint8_t	au4Reserved[65]; /*Total 160 byte*/
 };
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+struct WIFI_LINK_QUALITY_INFO {
+	uint32_t u4CurTxRate;		/* current tx link speed */
+	uint64_t u8TxTotalCount;	/* tx total accumulated count */
+	uint64_t u8TxRetryCount;	/* tx retry count */
+	uint64_t u8TxFailCount;		/* tx fail count */
+	uint64_t u8TxRtsFailCount;	/* tx RTS fail count */
+	uint64_t u8TxAckFailCount;	/* tx ACK fail count */
+
+	uint32_t u4CurRxRate;		/* current rx link speed */
+	uint64_t u8RxTotalCount;	/* rx total packages */
+	uint32_t u4RxDupCount;		/* rx duplicate package count */
+	uint64_t u8RxErrCount;		/* rx fcs fail count */
+
+	uint32_t u4CurTxPer;		/* current Tx PER */
+	uint64_t u8MdrdyCount;
+	uint64_t u8IdleSlotCount;	/* congestion stats: idle slot */
+	uint64_t u8DiffIdleSlotCount;
+
+	uint32_t u4PhyMode;
+	uint16_t u2LinkSpeed;
+
+	uint64_t u8LastTxTotalCount;
+	uint64_t u8LastTxFailCount;
+	uint64_t u8LastIdleSlotCount;
+};
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 enum ENUM_WLAN_IOT_AP_FLAG_T {
 	WLAN_IOT_AP_FG_VERSION = 0,
@@ -1438,6 +1466,11 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter, IN void *pvQueryBuffer,
 		       OUT uint32_t *pu4QueryInfoLen,
 		       u_int8_t fgIsOid);
 
+uint32_t
+wlanQueryStatistics(IN struct ADAPTER *prAdapter,
+		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		       OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid);
+
 /*----------------------------------------------------------------------------*/
 /* query NIC resource information from chip and reset Tx resource for normal  */
 /* operation                                                                  */
@@ -1666,3 +1699,16 @@ wlanSortChannel(IN struct ADAPTER *prAdapter);
 
 void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
 void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);
+
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+int wlanSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
+			struct STA_RECORD *prStaRec);
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
+		 IN uint32_t *pu4CurRate, IN uint32_t *pu4MaxRate);
+uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
+void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
