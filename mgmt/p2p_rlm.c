@@ -198,7 +198,7 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	/* We may limit AP/GO Nss by RfBand in some case, ex CoAnt.
 	 * Recalculte Nss when channel is selected.
 	 */
-	cnmGetOpTRxNss(prAdapter,
+	cnmOpModeGetTRxNss(prAdapter,
 		prBssInfo->ucBssIndex,
 		&prBssInfo->ucOpRxNss,
 		&prBssInfo->ucOpTxNss);

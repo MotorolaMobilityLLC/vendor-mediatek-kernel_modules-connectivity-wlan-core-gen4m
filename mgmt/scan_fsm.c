@@ -269,6 +269,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucRandomMac,
 			prScanParam->aucRandomMac, MAC_ADDR_LEN);
 	}
+	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
+		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
 
 	/* Set SSID to scan request */
 	if (prScanParam->ucSSIDNum <= SCAN_CMD_SSID_NUM) {

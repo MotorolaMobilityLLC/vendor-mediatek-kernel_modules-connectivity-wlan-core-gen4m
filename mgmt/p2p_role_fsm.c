@@ -1305,7 +1305,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
 
-	cnmGetOpTRxNss(
+	cnmOpModeGetTRxNss(
 		prAdapter, prP2pBssInfo->ucBssIndex,
 		&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 	prP2pBssInfo->eHiddenSsidType = prP2pStartAPMsg->ucHiddenSsidType;
@@ -1612,7 +1612,7 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 	);
 #endif /*CFG_SUPPORT_DBDC*/
 
-	cnmGetOpTRxNss(
+	cnmOpModeGetTRxNss(
 		prAdapter, prP2pBssInfo->ucBssIndex,
 		&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 
@@ -1958,7 +1958,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucWmmQueSet);
 #endif /* CFG_SUPPORT_DBDC */
 
-		cnmGetOpTRxNss(
+		cnmOpModeGetTRxNss(
 			prAdapter, prP2pBssInfo->ucBssIndex,
 			&prP2pBssInfo->ucOpRxNss, &prP2pBssInfo->ucOpTxNss);
 
@@ -2595,7 +2595,7 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo->ucWmmQueSet);
 #endif /* CFG_SUPPORT_DBDC */
 
-				cnmGetOpTRxNss(
+				cnmOpModeGetTRxNss(
 					prAdapter, prP2pRoleFsmInfo->ucBssIndex,
 					&prP2pBssInfo->ucOpRxNss,
 					&prP2pBssInfo->ucOpTxNss);
