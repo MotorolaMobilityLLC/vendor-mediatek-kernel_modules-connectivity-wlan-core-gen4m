@@ -3185,8 +3185,6 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
 			&prAdapter->rWifiVar.rP2pDevInfo;
 	}
-	DBGLOG(INIT, INFO, "ucHwBssIdNum: %d.\n",
-	       prMacCap->ucHwBssIdNum);
 
 	if (prMacCap->ucWtblEntryNum > 0
 	    && prMacCap->ucWtblEntryNum <= WTBL_SIZE) {
@@ -3194,13 +3192,14 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum
 						  - 1;
 	}
-	DBGLOG(INIT, INFO, "ucWtblEntryNum: %d.\n",
-	       prMacCap->ucWtblEntryNum);
 
 	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
 		prMacCap->ucWmmSet : 1;
-	DBGLOG(INIT, INFO, "ucWmmSetNum: %d.\n",
-	       prMacCap->ucWmmSet);
+	DBGLOG(INIT, INFO,
+		"ucHwBssIdNum: %d, ucWtblEntryNum: %d, ucWmmSetNum: %d.\n",
+			prMacCap->ucHwBssIdNum,
+			prMacCap->ucWtblEntryNum,
+			prMacCap->ucWmmSet);
 
 	return WLAN_STATUS_SUCCESS;
 }

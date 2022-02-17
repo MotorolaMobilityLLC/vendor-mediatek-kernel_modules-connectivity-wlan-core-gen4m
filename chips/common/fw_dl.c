@@ -2045,18 +2045,19 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 	kalMemCopy(&prVerInfo->rCommonTailer, prComTailer,
 		   sizeof(struct TAILER_COMMON_FORMAT_T));
 
-	/* Dump image information */
-	DBGLOG(INIT, INFO,
-	       "%s INFO: chip_info[%u:E%u] region_num[%d]\n",
-	       (eDlIdx == IMG_DL_IDX_N9_FW) ? "N9" : "CR4",
-	       prComTailer->ucChipInfo,
-	       prComTailer->ucEcoCode + 1, prComTailer->ucRegionNum);
-
 	kalMemZero(aucBuf, 32);
 	kalStrnCpy(aucBuf, prComTailer->aucRamVersion,
 		   sizeof(prComTailer->aucRamVersion));
-	DBGLOG(INIT, INFO, "date[%s] version[%s]\n",
-	       prComTailer->aucRamBuiltDate, aucBuf);
+
+	/* Dump image information */
+	DBGLOG(INIT, INFO,
+		"%s: chip_info[%u:E%u] region_num[%d] date[%s] version[%s]\n",
+			(eDlIdx == IMG_DL_IDX_N9_FW) ? "N9" : "CR4",
+			prComTailer->ucChipInfo,
+			prComTailer->ucEcoCode + 1,
+			prComTailer->ucRegionNum,
+			prComTailer->aucRamBuiltDate,
+			aucBuf);
 
 	if (prComTailer->ucRegionNum > MAX_FWDL_SECTION_NUM) {
 		DBGLOG(INIT, INFO,
