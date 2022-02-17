@@ -336,10 +336,13 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 	uint32_t i, u4Channel, eBand, u4Index;
 	/*print channel info for debugging */
 	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
+	struct SCAN_INFO *prScanInfo;
 #if CFG_SUPPORT_FULL2PARTIAL_SCAN
 	uint8_t fgIsFull2Partial = FALSE;
+	OS_SYSTIME rCurrentTime;
+
+	GET_CURRENT_SYSTIME(&rCurrentTime);
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
-	struct SCAN_INFO *prScanInfo;
 	bool fgIsLowSpanScan = FALSE;
 
 	ASSERT(u4ScanChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
@@ -356,9 +359,6 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 	 */
 	if (fgIsOnlineScan && (u4ScanChannelNum == 0 ||
 		u4ScanChannelNum > SCAN_FULL2PARTIAL_CHANNEL_NUM)) {
-		OS_SYSTIME rCurrentTime;
-
-		GET_CURRENT_SYSTIME(&rCurrentTime);
 
 		/* Do full scan when
 		 * 1. did not do full scan yet OR
@@ -398,19 +398,25 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 			start = HW_CHNL_NUM_MAX_2G4 + 1;
 
 		u4Index = 0;
-		for (u4Channel = start; u4Channel <= end; u4Channel++) {
-			if (scanIsBitSet(u4Channel,
+		/* If partial scan list are too old, do full scan */
+		if (!CHECK_FOR_TIMEOUT(rCurrentTime,
+			prScanInfo->u4LastFullScanTime,
+			SEC_TO_SYSTIME(CFG_SCAN_FULL2PARTIAL_PERIOD))) {
+			for (u4Channel = start; u4Channel <= end; u4Channel++) {
+				if (scanIsBitSet(u4Channel,
 					prScanInfo->au4ChannelBitMap,
 					sizeof(prScanInfo->au4ChannelBitMap))) {
-				eBand = (u4Channel <= HW_CHNL_NUM_MAX_2G4) ?
-					BAND_2G4 : BAND_5G;
-				prScanReqMsg->arChnlInfoList[u4Index].
-					ucChannelNum = u4Channel;
-				prScanReqMsg->arChnlInfoList[u4Index].
-					eBand = eBand;
-				scanSetBit(u4Channel, au4ChannelBitMap,
-					sizeof(au4ChannelBitMap));
-				u4Index++;
+					eBand = (u4Channel <=
+						HW_CHNL_NUM_MAX_2G4) ?
+						BAND_2G4 : BAND_5G;
+					prScanReqMsg->arChnlInfoList[u4Index].
+						ucChannelNum = u4Channel;
+					prScanReqMsg->arChnlInfoList[u4Index].
+						eBand = eBand;
+					scanSetBit(u4Channel, au4ChannelBitMap,
+						sizeof(au4ChannelBitMap));
+					u4Index++;
+				}
 			}
 		}
 
