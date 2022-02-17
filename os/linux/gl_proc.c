@@ -542,9 +542,11 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	 * the content for next DriverCmdRead will be
 	 *  in : g_aucProcBuf with length : g_u4NextDriverReadLen
 	 */
-	g_i4NextDriverReadLen =
-		priv_driver_cmds(prGlueInfo->prDevHandler, g_aucProcBuf,
-		sizeof(g_aucProcBuf));
+	if (strlen(g_aucProcBuf) > 0) {
+		g_i4NextDriverReadLen =
+			priv_driver_cmds(prGlueInfo->prDevHandler, g_aucProcBuf,
+			sizeof(g_aucProcBuf));
+	}
 
 	return count;
 }
