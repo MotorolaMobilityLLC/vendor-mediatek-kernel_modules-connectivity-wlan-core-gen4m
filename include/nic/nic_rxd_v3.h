@@ -147,5 +147,11 @@ void nic_rxd_v3_check_wakeup_reason(
 	struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+uint8_t nic_rxd_v3_fill_radiotap(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+#endif
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 #endif /* _NIC_RXD_v3_H */

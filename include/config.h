@@ -511,6 +511,11 @@
 /* TODO: it should be 4096 under emulation mode */
 #define CFG_RX_MAX_PKT_SIZE	(28 + 2312 + 12 /*HIF_RX_HEADER_T*/)
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#define CFG_RX_MAX_MPDU_SIZE	7991 /* support amsdu 4 */
+#else
+#define CFG_RX_MAX_MPDU_SIZE	CFG_RX_MAX_PKT_SIZE
+#endif
 /*! Minimum RX packet size, if lower than this value, drop incoming packet */
 #define CFG_RX_MIN_PKT_SIZE	10 /*!< 802.11 Control Frame is 10 bytes */
 
@@ -1137,12 +1142,6 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_SCAN_RANDOM_MAC        (1)
-
-/*------------------------------------------------------------------------------
- * Flags of Sniffer SUPPORT
- *------------------------------------------------------------------------------
- */
-#define CFG_SUPPORT_SNIFFER                 1
 
 #define WLAN_INCLUDE_PROC                   1
 

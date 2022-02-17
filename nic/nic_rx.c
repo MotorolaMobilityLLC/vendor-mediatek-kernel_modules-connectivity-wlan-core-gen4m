@@ -73,9 +73,13 @@
 #include "precomp.h"
 #include "que_mgt.h"
 #include "wnm.h"
+<<<<<<< HEAD   (35b651 [ALPS05574842] nic: remove starec by bssinfo)
 #if CFG_SUPPORT_NAN
 #include "nan_data_engine.h"
 #endif
+=======
+#include "radiotap.h"
+>>>>>>> CHANGE (4d4204 [ALPS05977350] radiotap sniffer: support 802.11 be)
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1399,6 +1403,7 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 
 }
 
+<<<<<<< HEAD   (35b651 [ALPS05574842] nic: remove starec by bssinfo)
 #if CFG_SUPPORT_SNIFFER
 void nicRxFillRadiotapMCS(IN OUT struct MONITOR_RADIOTAP
 			  *prMonitorRadiotap,
@@ -1785,6 +1790,8 @@ void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+=======
+>>>>>>> CHANGE (4d4204 [ALPS05977350] radiotap sniffer: support 802.11 be)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process & Parsing RXV for traffic indicator
@@ -1963,7 +1970,6 @@ void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process HIF data packet
@@ -1994,6 +2000,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prAdapter->prGlueInfo->fgIsEnableMon) {
+		radiotapFillRadiotap(prAdapter, prSwRfb);
+		return;
+	}
+#endif
 	nicRxFillRFB(prAdapter, prSwRfb);
 
 	fgDrop = FALSE;
@@ -3897,20 +3909,6 @@ static void nicRxProcessPacketType(
 
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
-		if (HAL_IS_RX_DIRECT(prAdapter)
-			&& HAL_MON_EN(prAdapter)) {
-			spin_lock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
-			nicRxProcessMonitorPacket(
-				prAdapter, prSwRfb);
-			spin_unlock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
-			break;
-		} else if (HAL_MON_EN(prAdapter)) {
-			nicRxProcessMonitorPacket(
-				prAdapter, prSwRfb);
-			break;
-		}
 		if (HAL_IS_RX_DIRECT(prAdapter)) {
 			spin_lock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
@@ -3965,20 +3963,12 @@ static void nicRxProcessPacketType(
 				if (HAL_IS_RX_DIRECT(prAdapter)) {
 					spin_lock_bh(&prGlueInfo->rSpinLock[
 						SPIN_LOCK_RX_DIRECT]);
-					if (HAL_MON_EN(prAdapter))
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-					else
-						nicRxProcessDataPacket(
+					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
 					spin_unlock_bh(&prGlueInfo->rSpinLock[
 						SPIN_LOCK_RX_DIRECT]);
 				} else {
-					if (HAL_MON_EN(prAdapter))
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-					else
-						nicRxProcessDataPacket(
+					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
 				}
 			}
@@ -4154,7 +4144,7 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 		pvPacket = kalPacketAlloc(prAdapter->prGlueInfo,
-					  CFG_RX_MAX_PKT_SIZE, &pucRecvBuff);
+					  CFG_RX_MAX_MPDU_SIZE, &pucRecvBuff);
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;
 

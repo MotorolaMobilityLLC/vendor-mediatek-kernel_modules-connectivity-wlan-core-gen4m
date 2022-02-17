@@ -2202,6 +2202,45 @@ struct UNI_CMD_FRM_IND_FROM_HOST_PARM
     uint8_t  aucPadding4[64];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_SNIFFER_MODE {
+	/* fixed field */
+	uint8_t ucBandIdx;
+	uint8_t ucReserved[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Sniffer mode command TLV List */
+enum ENUM_UNI_CMD_SNIFFER_MODE_TAG {
+	UNI_CMD_SNIFFER_MODE_TAG_ENABLE = 0,
+	UNI_CMD_SNIFFER_MODE_TAG_CONFIG = 1,
+	UNI_CMD_SNIFFER_MODE_TAG_NUM
+};
+
+/* Set sniffer mode parameters (Tag0) */
+struct UNI_CMD_SNIFFER_MODE_ENABLE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSNEnable;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set sniffer mode parameters (Tag1) */
+struct UNI_CMD_SNIFFER_MODE_CONFIG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2Aid;
+	uint8_t ucBand;
+	uint8_t ucChannelWidth;
+	uint8_t ucPriChannel;
+	uint8_t ucSco;
+	uint8_t ucChannelS1;
+	uint8_t ucChannelS2;
+	uint8_t fgDropFcsErrorFrame;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -3043,6 +3082,8 @@ uint32_t nicUniCmdOffloadIPV4(struct ADAPTER *ad,
 uint32_t nicUniCmdOffloadIPV6(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
