@@ -3397,6 +3397,14 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 		DBGLOG(INIT, INFO, "process SER...\n");
 	}
 #endif
+
+	if (prBusInfo->setDmaIntMask)
+		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
+			BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),
+			FALSE);
+
+	nicDisableInterrupt(prAdapter);
+
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
@@ -3424,12 +3432,6 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	rStatus = wlanCheckWifiFunc(prAdapter, FALSE);
 
-	if (prBusInfo->setDmaIntMask)
-		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
-			BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),
-			FALSE);
-
-	nicDisableInterrupt(prAdapter);
 	if (prBusInfo->disableSwInterrupt)
 		prBusInfo->disableSwInterrupt(prAdapter);
 

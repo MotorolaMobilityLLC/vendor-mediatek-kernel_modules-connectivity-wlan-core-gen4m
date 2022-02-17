@@ -181,7 +181,16 @@ struct PCIE_CHIP_CR_MAPPING mt7961_bus2chip_cr_mapping[] = {
 static void mt7961EnableInterrupt(
 	struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4HostWpdamBase = 0;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	prAdapter->fgIsIntEnable = TRUE;
 
@@ -203,6 +212,14 @@ static void mt7961EnableInterrupt(
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
 
+	if (prChipInfo->is_support_asic_lp)
+		HAL_MCR_WR_FIELD(prAdapter,
+				 CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
+				 (u4HostWpdamBase),
+				 BITS(0, 15),
+				 0,
+				 BITS(0, 15));
+
 	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
 } /* end of nicEnableInterrupt() */
 
@@ -210,11 +227,19 @@ static void mt7961DisableInterrupt(
 	struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
 	union WPDMA_INT_MASK IntMask;
+	uint32_t u4HostWpdamBase = 0;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_wfdma1)
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_1_BASE;
+	else
+		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
 	IntMask.word = 0;
 
@@ -222,6 +247,14 @@ static void mt7961DisableInterrupt(
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
 	HAL_MCR_RD(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
+
+	if (prChipInfo->is_support_asic_lp)
+		HAL_MCR_WR_FIELD(prAdapter,
+				 CONNAC2X_WPDMA_MCU2HOST_SW_INT_MASK
+				 (u4HostWpdamBase),
+				 0,
+				 0,
+				 BITS(0, 15));
 
 	prAdapter->fgIsIntEnable = FALSE;
 
