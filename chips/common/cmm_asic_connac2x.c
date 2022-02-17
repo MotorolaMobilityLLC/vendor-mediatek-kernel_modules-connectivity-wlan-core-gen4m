@@ -1966,6 +1966,7 @@ uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 void asicConnac2xDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
 				      uint16_t u2MaxPage)
 {
@@ -2328,6 +2329,7 @@ void asicConnac2xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
+#endif
 
 #if defined(_HIF_AXI)
 bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
