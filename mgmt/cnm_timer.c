@@ -571,7 +571,6 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK *prTimerList;
 	struct LINK_ENTRY *prLinkEntry;
-	struct LINK callbackList;
 	struct TIMER *prTimer;
 	OS_SYSTIME rCurSysTime;
 	PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
@@ -596,8 +595,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 		= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
 	log_dbg(CNM, INFO, "loop start [%d]\n", prTimerList->u4NumElem);
-
-	LINK_INITIALIZE(&callbackList);
+	gDoTimeOut = TRUE;
 
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
 		if (prLinkEntry == NULL)
@@ -622,8 +620,20 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 					LINK_INSERT_TAIL(prTimerList,
 						&prTimer->rLinkEntry);
 				} else if (pfMgmtTimeOutFunc) {
-					LINK_INSERT_TAIL(&callbackList,
-						&prTimer->rLinkEntry);
+					KAL_RELEASE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TIMER);
+				#ifdef UT_TEST_MODE
+				if (testTimerTimeout(prAdapter,
+						     pfMgmtTimeOutFunc,
+						     ulTimeoutDataPtr))
+				#endif
+				log_dbg(CNM, INFO, "timer timeout, timer %p func %pf\n",
+					prTimer, prTimer->pfMgmtTimeOutFunc);
+
+					(pfMgmtTimeOutFunc) (prAdapter,
+						ulTimeoutDataPtr);
+					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TIMER);
 				}
 			} else {
 				log_dbg(CNM, WARN, "timer was re-inited, timer %p func %pf\n",
@@ -655,6 +665,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 	}	/* end of for loop */
 
 	log_dbg(CNM, INFO, "loop end");
+	gDoTimeOut = false;
 
 	/* Setup the prNext timeout event. It is possible the timer was already
 	 * set in the above timeout callback function.
@@ -677,22 +688,4 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 
 	/* release spin lock */
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
-
-	/* modify callback at end of function */
-	gDoTimeOut = TRUE;
-	LINK_FOR_EACH(prLinkEntry, prTimerList) {
-		if (prLinkEntry == NULL)
-			break;
-		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
-
-		pfMgmtTimeOutFunc = prTimer->pfMgmtTimeOutFunc;
-		ulTimeoutDataPtr = prTimer->ulDataPtr;
-
-		log_dbg(CNM, INFO, "timer timeout, timer %p func %pf\n",
-					prTimer, prTimer->pfMgmtTimeOutFunc);
-
-		(pfMgmtTimeOutFunc) (prAdapter,
-			ulTimeoutDataPtr);
-	}
-	gDoTimeOut = false;
 }
