@@ -578,7 +578,8 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	if (prAdapter->fgIsFwOwn == TRUE)
 		return;
 
-	if (nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
+	if (!prHifInfo->fgIsPowerOff &&
+		nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
 		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
 		return;
