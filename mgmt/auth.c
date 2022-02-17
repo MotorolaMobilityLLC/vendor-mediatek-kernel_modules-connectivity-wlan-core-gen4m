@@ -513,8 +513,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(SAA, INFO,
-	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d\n",
-	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum);
+	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d, Algo: %d\n",
+	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum, ucAuthAlgNum);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */

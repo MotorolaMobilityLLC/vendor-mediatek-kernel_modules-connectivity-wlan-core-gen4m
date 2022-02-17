@@ -568,7 +568,6 @@ static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
 /*----------------------------------------------------------------------------*/
 void cnmInit(struct ADAPTER *prAdapter)
 {
-	struct CNM_INFO *prCnmInfo;
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
 	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
@@ -576,9 +575,6 @@ void cnmInit(struct ADAPTER *prAdapter)
 	uint8_t ucBssIndex, ucWmmIndex;
 
 	ASSERT(prAdapter);
-
-	prCnmInfo = &prAdapter->rCnmInfo;
-	prCnmInfo->fgChGranted = FALSE;
 
 	if (prAdapter->ucHwBssIdNum > BSS_DEFAULT_NUM) {
 		/* Unexpected! out of bounds access may happen... */
@@ -682,8 +678,8 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		LINK_INSERT_TAIL(&g_rDbdcInfo.rPendingMsgList,
 				 &prMsgHdr->rLinkEntry);
 		log_dbg(CNM, INFO,
-		       "[DBDC] ChReq: queued BSS %u Token %u REQ\n",
-		       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID);
+		       "[DBDC] ChReq: queued Token %u REQ\n",
+		       prMsgChReq->ucTokenID);
 
 		/* Trigger EE dump if PeivilegeLock was held for more than 5s */
 		rChReqQueueTime = kalGetTimeTick();
@@ -787,7 +783,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				      /* pucInfoBuffer */
 				      (uint8_t *)prCmdBody,
 
-				      NULL,	/* pvSetQueryBuffer */
+				      prMsgHdr,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 				     );
 
@@ -812,7 +808,6 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 {
 	struct MSG_CH_ABORT *prMsgChAbort;
 	struct CMD_CH_PRIVILEGE *prCmdBody;
-	struct CNM_INFO *prCnmInfo;
 	uint32_t rStatus;
 #if CFG_SISO_SW_DEVELOP
 	struct BSS_INFO *prBssInfo;
@@ -838,16 +833,12 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 			/* Find matched request and check
 			 * if it is being served.
 			 */
-			if (prPendingMsg->ucBssIndex == prMsgChAbort->ucBssIndex
-			    && prPendingMsg->ucTokenID
-				== prMsgChAbort->ucTokenID) {
-
+			if (prPendingMsg->ucTokenID == prMsgChAbort->ucTokenID) {
 				LINK_REMOVE_KNOWN_ENTRY(
 					&g_rDbdcInfo.rPendingMsgList,
 					&prPendingMsg->rMsgHdr.rLinkEntry);
 
-				log_dbg(CNM, INFO, "[DBDC] ChAbort: remove BSS %u Token %u REQ)\n",
-					prPendingMsg->ucBssIndex,
+				log_dbg(CNM, INFO, "[DBDC] ChAbort: remove Token %u REQ)\n",
 					prPendingMsg->ucTokenID);
 
 				cnmMemFree(prAdapter, prPendingMsg);
@@ -858,15 +849,6 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-
-	/* Check if being granted channel privilege is aborted */
-	prCnmInfo = &prAdapter->rCnmInfo;
-	if (prCnmInfo->fgChGranted &&
-	    prCnmInfo->ucBssIndex == prMsgChAbort->ucBssIndex
-	    && prCnmInfo->ucTokenID == prMsgChAbort->ucTokenID) {
-
-		prCnmInfo->fgChGranted = FALSE;
-	}
 
 	prCmdBody = (struct CMD_CH_PRIVILEGE *)
 		    cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
@@ -913,7 +895,7 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 				      /* pucInfoBuffer */
 				      (uint8_t *)prCmdBody,
 
-				      NULL,	/* pvSetQueryBuffer */
+				      prMsgHdr,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 				     );
 
@@ -947,7 +929,6 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	struct EVENT_CH_PRIVILEGE *prEventBody;
 	struct MSG_CH_GRANT *prChResp;
 	struct BSS_INFO *prBssInfo;
-	struct CNM_INFO *prCnmInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
@@ -966,10 +947,13 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	}
 
 	log_dbg(CNM, INFO,
-	       "ChGrant net=%d token=%d ch=%d sco=%d u4GrantInterval=%d\n",
-	       prEventBody->ucBssIndex, prEventBody->ucTokenID,
+	       "ChGrant net=%d band=%d token=%d ch=%d sco=%d u4GrantInterval=%d\n",
+	       prEventBody->ucBssIndex,
+	       prEventBody->ucDBDCBand,
+	       prEventBody->ucTokenID,
 	       prEventBody->ucPrimaryChannel,
-	       prEventBody->ucRfSco, prEventBody->u4GrantInterval);
+	       prEventBody->ucRfSco,
+	       prEventBody->u4GrantInterval);
 
 	ASSERT(prEventBody->ucBssIndex <=
 	       prAdapter->ucHwBssIdNum);
@@ -1015,19 +999,13 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		prEventBody->ucRfCenterFreqSeg2;
 	prChResp->eReqType = (enum ENUM_CH_REQ_TYPE)
 			     prEventBody->ucReqType;
-	prChResp->eDBDCBand = (enum ENUM_DBDC_BN)
+	prChResp->eDBDCBand = (enum ENUM_MBMC_BN)
 			      prEventBody->ucDBDCBand;
 	prChResp->u4GrantInterval =
 		prEventBody->u4GrantInterval;
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_BUF);
-
-	/* Record current granted BSS for TXM's reference */
-	prCnmInfo = &prAdapter->rCnmInfo;
-	prCnmInfo->ucBssIndex = prEventBody->ucBssIndex;
-	prCnmInfo->ucTokenID = prEventBody->ucTokenID;
-	prCnmInfo->fgChGranted = TRUE;
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2011,11 +1989,14 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-			      enum ENUM_NETWORK_TYPE eNetworkType,
-			      uint8_t ucWdevIndex, u_int8_t fgIsP2pDevice)
+	enum ENUM_NETWORK_TYPE eNetworkType,
+	uint8_t ucMldGroupIdx,
+	uint8_t ucWdevIndex,
+	u_int8_t fgIsP2pDevice)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
+	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByIdx(prAdapter, ucMldGroupIdx);
 
 	ASSERT(prAdapter);
 
@@ -2041,6 +2022,13 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		return prBssInfo;
 	}
 
+	if (prMldBssInfo && prMldBssInfo->ucOmacIdx != INVALID_OMAC_IDX) {
+		ucOwnMacIdx = prMldBssInfo->ucOmacIdx;
+		DBGLOG(CNM, INFO, "Use mld omac idx %d instead\n",
+			ucOwnMacIdx);
+		goto omac_chosed;
+	}
+
 	/* Find available HW set  with the order 1,2,..*/
 	do {
 		for (ucBssIndex = 0;
@@ -2064,6 +2052,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum)
 		return NULL;
 
+omac_chosed:
 	/* Find available BSS_INFO */
 	for (ucBssIndex = 0;
 	     ucBssIndex < prAdapter->ucHwBssIdNum;
@@ -2075,6 +2064,9 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
+			prBssInfo->eBandIdx = ENUM_BAND_AUTO;
+			prBssInfo->ucOwnMldId = ucBssIndex;
+			prBssInfo->ucGroupMldId = ucMldGroupIdx;
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
@@ -2088,16 +2080,21 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				prBssInfo->wepkeyUsed[i] = FALSE;
 			}
 			prBssInfo->ucWdevIndex = ucWdevIndex;
+#if CFG_SUPPORT_DFS
 			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rCsaTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 				(unsigned long)ucBssIndex);
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
-			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d\n",
+#endif
+			if (prMldBssInfo && prMldBssInfo->ucOmacIdx == INVALID_OMAC_IDX)
+				prMldBssInfo->ucOmacIdx = ucOwnMacIdx;
+			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d,omld=%d\n",
 				prBssInfo->ucBssIndex,
 				prBssInfo->eNetworkType,
-				prBssInfo->ucOwnMacIndex);
+				prBssInfo->ucOwnMacIndex,
+				prBssInfo->ucOwnMldId);
 			break;
 		}
 	}
@@ -2641,8 +2638,7 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 		if (prMsgHdr) {
 			prPendingMsg = (struct MSG_CH_REQ *)prMsgHdr;
 
-			log_dbg(CNM, INFO, "[DBDC] ChReq: send queued REQ of BSS %u Token %u\n",
-				prPendingMsg->ucBssIndex,
+			log_dbg(CNM, INFO, "[DBDC] ChReq: send queued REQ of Token %u\n",
 				prPendingMsg->ucTokenID);
 
 			cnmChMngrRequestPrivilege(prAdapter,
@@ -3765,12 +3761,12 @@ error:
 * @return
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t cnmWmmIndexDecision(
+uint8_t cnmWmmIndexDecision(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
 #if (CFG_HW_WMM_BY_BSS == 1)
-	u_int8_t ucWmmIndex;
+	uint8_t ucWmmIndex;
 
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
 		if (prBssInfo && prBssInfo->fgIsInUse &&
@@ -3782,6 +3778,7 @@ u_int8_t cnmWmmIndexDecision(
 			}
 		}
 	}
+	DBGLOG(CNM, INFO, "ucWmmIndex: %d\n", ucWmmIndex);
 	return (ucWmmIndex < HW_WMM_NUM) ? ucWmmIndex : MAX_HW_WMM_INDEX;
 
 #else
@@ -3811,6 +3808,8 @@ void cnmFreeWmmIndex(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
+	DBGLOG(CNM, INFO, "ucWmmQueSet: %d\n", prBssInfo->ucWmmQueSet);
+
 #if (CFG_HW_WMM_BY_BSS == 1)
 	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
 #endif
@@ -4646,3 +4645,21 @@ void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 	}
 }
 #endif
+
+uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter)
+{
+	return ++prAdapter->ucCnmTokenID;
+}
+
+void cnmUpdateMbmcIdx(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucBandIdx)
+{
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIdx);
+
+	DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n", ucBssIdx, ucBandIdx);
+
+	if (prBssInfo)
+		prBssInfo->eBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
+}

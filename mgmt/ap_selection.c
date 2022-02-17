@@ -1181,7 +1181,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11BE == 1)
-void scanFillSecondayLink(struct ADAPTER *prAdapter,
+void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet)
 {
 	struct LINK *prBSSDescList =
@@ -1444,7 +1444,7 @@ done:
 			prBssDescSet->prMainBssDesc = prCandBssDesc;
 
 #if (CFG_SUPPORT_802_11BE == 1)
-			scanFillSecondayLink(prAdapter, prBssDescSet);
+			scanFillSecondaryLink(prAdapter, prBssDescSet);
 #endif
 		} else {
 			prBssDescSet->ucLinkNum = 0;

@@ -113,14 +113,17 @@ struct MSG_CH_REQ {
 	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
 	enum ENUM_CH_REQ_TYPE eReqType;
 	uint32_t u4MaxInterval;	/* In unit of ms */
-	enum ENUM_DBDC_BN eDBDCBand;
+	enum ENUM_MBMC_BN eDBDCBand;
+	uint8_t ucExtraChReqNum;
+	uint8_t aucBuffer[0];
 };
 
 struct MSG_CH_ABORT {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucBssIndex;
 	uint8_t ucTokenID;
-	enum ENUM_DBDC_BN eDBDCBand;
+	enum ENUM_MBMC_BN eDBDCBand;
+	uint8_t ucExtraChReqNum;
 };
 
 struct MSG_CH_GRANT {
@@ -138,7 +141,7 @@ struct MSG_CH_GRANT {
 	uint8_t ucRfCenterFreqSeg2;	/* To support 80/160MHz bandwidth */
 	enum ENUM_CH_REQ_TYPE eReqType;
 	uint32_t u4GrantInterval;	/* In unit of ms */
-	enum ENUM_DBDC_BN eDBDCBand;
+	enum ENUM_MBMC_BN eDBDCBand;
 };
 
 struct MSG_CH_REOCVER {
@@ -225,7 +228,6 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_MAX_CAP    = 8 /* just for coding */
 };
 
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -240,10 +242,6 @@ enum ENUM_CNM_OPMODE_REQ_T {
  *                                 M A C R O S
  *******************************************************************************
  */
-#define CNM_CH_GRANTED_FOR_BSS(_prAdapter, _ucBssIndex) \
-	((_prAdapter)->rCnmInfo.fgChGranted && \
-	 (_prAdapter)->rCnmInfo.ucBssIndex == (_ucBssIndex))
-
 /* True if our TxNss > 1 && peer support 2ss rate && peer no Rx limit. */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #define IS_CONNECTION_NSS2(prBssInfo, prStaRec) \
@@ -329,16 +327,19 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-	enum ENUM_NETWORK_TYPE eNetworkType, uint8_t ucRoleIndex,
-	uint8_t fgIsP2pDevice);
+	enum ENUM_NETWORK_TYPE eNetworkType,
+	uint8_t ucMldGroupIdx,
+	uint8_t ucWdevIndex,
+	u_int8_t fgIsP2pDevice);
 
 void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE
 u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 #endif
 
-u_int8_t cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
+uint8_t cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
 void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
@@ -412,6 +413,10 @@ void cnmPowerControlErrorHandling(
 	struct BSS_INFO *prBssInfo
 );
 #endif
+
+void cnmUpdateMbmcIdx(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucBandIdx);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -457,5 +462,7 @@ static __KAL_INLINE__ void cnmMsgDataTypeCheck(void)
 			== OFFSET_OF(struct MSG_CH_REOCVER, eReqType));
 }
 #endif /* _lint */
+
+uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter);
 
 #endif /* _CNM_H */

@@ -271,4 +271,401 @@ void beReqGenerateMultiLinkSTAInfo(
 
 }
 
+int8_t mldBssRegister(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBssInfo)
+{
+	struct LINK *prBssList = NULL;
+
+	if (!prMldBssInfo)
+		return -EINVAL;
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	DBGLOG(INIT, INFO, "prMldBssInfo: %d, prBssInfo: %d\n",
+		prMldBssInfo->ucGroupMldId, prBssInfo->ucBssIndex);
+
+	if (prBssList->u4NumElem == 0) {
+		DBGLOG(INIT, INFO, "prMldBssInfo: %d, macAddr: " MACSTR "\n",
+			prMldBssInfo->ucGroupMldId,
+			MAC2STR(prBssInfo->aucOwnMacAddr));
+		COPY_MAC_ADDR(prMldBssInfo->aucOwnMldAddr,
+			prBssInfo->aucOwnMacAddr);
+	}
+
+	prBssInfo->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
+
+	return 0;
+}
+
+void mldBssUnregister(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBss)
+{
+	struct BSS_INFO *prCurrBssInfo;
+	struct LINK *prBssList = NULL;
+
+	if (!prMldBssInfo)
+		return;
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	DBGLOG(INIT, INFO, "prMldBssInfo: %d, prBss: %d\n",
+		prMldBssInfo->ucGroupMldId, prBss->ucBssIndex);
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+			rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		if (prBss != prCurrBssInfo)
+			continue;
+
+		LINK_REMOVE_KNOWN_ENTRY(prBssList,
+			&prCurrBssInfo->rLinkEntryMld);
+	}
+}
+
+int8_t mldBssAlloc(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO **pprMldBssInfo)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++) {
+		prMldBssInfo = &prAdapter->aprMldBssInfo[i];
+
+		if (prMldBssInfo->fgIsInUse)
+			continue;
+
+		LINK_INITIALIZE(&prMldBssInfo->rBssList);
+		prMldBssInfo->fgIsInUse = TRUE;
+		prMldBssInfo->ucGroupMldId = i;
+		prMldBssInfo->ucOmRemapIdx = i;
+		prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
+
+		*pprMldBssInfo = prMldBssInfo;
+		break;
+	}
+	if (prMldBssInfo)
+		DBGLOG(INIT, INFO, "ucGroupMldId: %d, ucOmRemapIdx: %d\n",
+			prMldBssInfo->ucGroupMldId,
+			prMldBssInfo->ucOmRemapIdx);
+	return 0;
+}
+
+void mldBssFree(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
+{
+	struct BSS_INFO *prCurrBssInfo;
+	struct LINK *prBssList = NULL;
+
+	if (!prMldBssInfo)
+		return;
+
+	prBssList = &prMldBssInfo->rBssList;
+
+	DBGLOG(INIT, INFO, "ucGroupMldId: %d\n",
+		prMldBssInfo->ucGroupMldId);
+
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		LINK_REMOVE_KNOWN_ENTRY(prBssList,
+			&prCurrBssInfo->rLinkEntryMld);
+	}
+	prMldBssInfo->fgIsInUse = FALSE;
+	prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
+}
+
+struct MLD_BSS_INFO *mldBssGetByBss(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+
+	if (prBssInfo->ucGroupMldId == MLD_GROUP_NONE)
+		return NULL;
+
+	prMldBssInfo = &prAdapter->aprMldBssInfo[prBssInfo->ucGroupMldId];
+
+	if (prMldBssInfo->fgIsInUse)
+		return prMldBssInfo;
+	else
+		return NULL;
+}
+
+struct MLD_BSS_INFO *mldBssGetByIdx(struct ADAPTER *prAdapter,
+	uint8_t ucIdx)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+
+	if (ucIdx == MLD_GROUP_NONE)
+		return NULL;
+
+	prMldBssInfo = &prAdapter->aprMldBssInfo[ucIdx];
+
+	if (prMldBssInfo->fgIsInUse)
+		return prMldBssInfo;
+	else
+		return NULL;
+}
+
+int8_t mldBssInit(struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "\n");
+	kalMemZero(prAdapter->aprMldBssInfo,
+		sizeof(prAdapter->aprMldBssInfo));
+	return 0;
+}
+
+void mldBssUninit(struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "\n");
+}
+
+void mldStarecDump(struct ADAPTER *prAdapter)
+{
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
+		struct MLD_STA_RECORD *prMldStarec = &prAdapter->aprMldStarec[i];
+		struct STA_RECORD *prCurrStarec;
+		struct LINK *prStarecList;
+
+		if (!prMldStarec->fgIsInUse)
+			continue;
+
+		DBGLOG(INIT, INFO, "idx: %d, pri_mld: %d, sec_mld: %d, setup: %d, emlmr: %d, emlsr: %d, str: [0x%x,0x%x,0x%x], mac: " MACSTR "\n",
+			prMldStarec->ucIdx,
+			prMldStarec->u2PrimaryMldId,
+			prMldStarec->u2SecondMldId,
+			prMldStarec->u2SetupWlanId,
+			prMldStarec->ucEmlmrBitmap,
+			prMldStarec->ucEmlsrBitmap,
+			prMldStarec->aucStrBitmap[0],
+			prMldStarec->aucStrBitmap[1],
+			prMldStarec->aucStrBitmap[2],
+			prMldStarec->aucPeerMldAddr);
+
+		prStarecList = &prMldStarec->rStarecList;
+		LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
+		    struct STA_RECORD) {
+			DBGLOG(INIT, INFO, "\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
+				prCurrStarec->ucIndex,
+				prCurrStarec->ucWlanIndex,
+				prCurrStarec->ucBssIndex,
+				prCurrStarec->aucMacAddr);
+		}
+	}
+}
+
+static struct MLD_STA_RECORD *mldStarecGetByAddr(struct ADAPTER *prAdapter,
+	uint8_t aucMacAddr[])
+{
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
+	uint8_t i = 0;
+
+	if (EQUAL_MAC_ADDR(aucZeroMacAddr, aucMacAddr))
+		return NULL;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
+		struct MLD_STA_RECORD *prMldStarec =
+			&prAdapter->aprMldStarec[i];
+
+		if (prMldStarec->fgIsInUse &&
+				EQUAL_MAC_ADDR(prMldStarec->aucPeerMldAddr,
+				aucMacAddr))
+			return prMldStarec;
+	}
+
+	return NULL;
+}
+
+int8_t mldStarecRegister(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStarec)
+{
+	int8_t rStatus = 0;
+	struct MLD_STA_RECORD *prMldStarec = NULL;
+	struct LINK *prStarecList = NULL;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
+
+	if (EQUAL_MAC_ADDR(aucZeroMacAddr, prStarec->aucMldAddr))
+		return -EINVAL;
+
+	prMldStarec = mldStarecGetByAddr(prAdapter, prStarec->aucMldAddr);
+	if (!prMldStarec) {
+		rStatus = mldStarecAlloc(prAdapter, &prMldStarec, prStarec->aucMldAddr);
+		if (rStatus)
+			goto exit;
+	}
+
+	prStarecList = &prMldStarec->rStarecList;
+
+	if (prStarecList->u4NumElem == 0)
+		prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
+	else if (prStarecList->u4NumElem == 1)
+		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
+
+	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
+	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
+
+	DBGLOG(INIT, INFO, "prMldStarec: %d, prStarec: %d, pri_mld: %d, sec_mld: %d, mld_mac: " MACSTR "\n",
+		prMldStarec->ucIdx,
+		prStarec->ucIndex,
+		prMldStarec->u2PrimaryMldId,
+		prMldStarec->u2SecondMldId,
+		MAC2STR(prMldStarec->aucPeerMldAddr));
+
+exit:
+	return rStatus;
+}
+
+void mldStarecUnregister(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStarec)
+{
+	struct MLD_STA_RECORD *prMldStarec;
+	struct LINK *prStarecList;
+	struct STA_RECORD *prCurrStarec;
+
+	if (!prStarec || prStarec->ucMldStaIndex == MLD_GROUP_NONE)
+		return;
+
+	prMldStarec = mldStarecGetByStarec(prAdapter,
+		prStarec);
+
+	if (!prMldStarec)
+		return;
+
+	nicUniCmdMldStaTeardown(prAdapter, prStarec);
+
+	prStarecList = &prMldStarec->rStarecList;
+
+	DBGLOG(INIT, INFO, "prMldStarec: %d, prStarec: %d\n",
+		prMldStarec->ucIdx, prStarec->ucIndex);
+
+	LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
+	    struct STA_RECORD) {
+		if (prStarec != prCurrStarec)
+			continue;
+
+		prCurrStarec->ucMldStaIndex = MLD_GROUP_NONE;
+		LINK_REMOVE_KNOWN_ENTRY(prStarecList, &prCurrStarec->rLinkEntryMld);
+		break;
+	}
+
+	if (prStarecList->u4NumElem == 0)
+		mldStarecFree(prAdapter, prMldStarec);
+}
+
+int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD **pprMldStarec,
+	uint8_t *aucMacAddr)
+{
+	struct MLD_STA_RECORD *prMldStarec = NULL;
+	uint8_t i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
+		prMldStarec = &prAdapter->aprMldStarec[i];
+
+		if (prMldStarec->fgIsInUse)
+			continue;
+
+		LINK_INITIALIZE(&prMldStarec->rStarecList);
+		prMldStarec->fgIsInUse = TRUE;
+		prMldStarec->ucIdx = i;
+
+		/* TODO */
+		prMldStarec->fgNSEP = FALSE;
+		prMldStarec->ucEmlmrBitmap = 0;
+		prMldStarec->ucEmlsrBitmap = 0;
+#ifdef BELLWETHER
+		prMldStarec->aucStrBitmap[0] = BIT(2);
+		prMldStarec->aucStrBitmap[1] = BIT(1);
+		prMldStarec->aucStrBitmap[2] = BIT(0);
+#else
+		prMldStarec->aucStrBitmap[0] = BIT(1);
+		prMldStarec->aucStrBitmap[1] = BIT(0);
+		prMldStarec->aucStrBitmap[2] = BIT(2);
+#endif
+
+		COPY_MAC_ADDR(prMldStarec->aucPeerMldAddr, aucMacAddr);
+
+		*pprMldStarec = prMldStarec;
+		break;
+	}
+
+	if (prMldStarec)
+		DBGLOG(INIT, INFO, "ucIdx: %d, aucMacAddr: " MACSTR ", str[0x%x,0x%x,0x%x]\n",
+			prMldStarec->ucIdx,
+			MAC2STR(prMldStarec->aucPeerMldAddr),
+			prMldStarec->aucStrBitmap[0],
+			prMldStarec->aucStrBitmap[1],
+			prMldStarec->aucStrBitmap[2]);
+
+	return 0;
+}
+
+void mldStarecFree(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStarec)
+{
+	DBGLOG(INIT, INFO, "prMldStarec: %d\n",
+			prMldStarec->ucIdx);
+
+	kalMemZero(prMldStarec, sizeof(struct MLD_STA_RECORD));
+	prMldStarec->fgIsInUse = FALSE;
+}
+
+struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+	struct MLD_STA_RECORD *prMldStarec;
+
+	if (!prAdapter || !prStaRec)
+		return NULL;
+
+	if (prStaRec->ucMldStaIndex == MLD_GROUP_NONE ||
+			prStaRec->ucMldStaIndex >
+			ARRAY_SIZE(prAdapter->aprMldStarec))
+		return NULL;
+
+	prMldStarec = &prAdapter->aprMldStarec[prStaRec->ucMldStaIndex];
+	if (!prMldStarec->fgIsInUse)
+		return NULL;
+
+	return prMldStarec;
+}
+
+int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+	struct MLD_STA_RECORD *prMldStarec = mldStarecGetByStarec(prAdapter,
+		prStaRec);
+
+	if (!prAdapter || !prMldStarec)
+		return -EINVAL;
+
+	DBGLOG(INIT, INFO, "prMldStarec: %d, ucIdx: %d\n",
+			prMldStarec->ucIdx, prStaRec->ucWlanIndex);
+
+	prMldStarec->u2SetupWlanId = prStaRec->ucWlanIndex;
+
+	return 0;
+}
+
+int8_t mldStarecInit(struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "\n");
+	kalMemZero(prAdapter->aprMldStarec, sizeof(prAdapter->aprMldStarec));
+	return 0;
+}
+
+void mldStarecUninit(struct ADAPTER *prAdapter)
+{
+	DBGLOG(INIT, INFO, "\n");
+}
+
 #endif /* CFG_SUPPORT_802_11BE == 1 */

@@ -6879,7 +6879,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"P2pUapsd", FEATURE_ENABLED);
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RegP2pIfAtProbe", FEATURE_ENABLED);
+					"RegP2pIfAtProbe", FEATURE_DISABLED);
 #else
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"RegP2pIfAtProbe", FEATURE_DISABLED);
@@ -7314,7 +7314,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_DBDC
 	prWifiVar->eDbdcMode = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "DbdcMode",
-					ENUM_DBDC_MODE_DYNAMIC);
+					DEFAULT_DBDC_MODE);
 #endif /*CFG_SUPPORT_DBDC*/
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	prWifiVar->ucEfuseBufferModeCal = (uint8_t) wlanCfgGetUint32(

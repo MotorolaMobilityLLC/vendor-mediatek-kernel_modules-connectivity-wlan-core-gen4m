@@ -26,7 +26,7 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	}
 
 	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_NAN,
-					    FALSE);
+					    MLD_GROUP_NONE, 0, FALSE);
 	prNANSpecInfo =
 		prAdapter->rWifiVar.aprNanSpecificBssInfo[ucIdx];
 	prNANInfo = prAdapter->prGlueInfo->aprNANDevInfo[ucIdx];
@@ -528,7 +528,7 @@ nanDevSendEnableRequestToCnm(IN struct ADAPTER *prAdapter)
 
 	prMsgChReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 	prMsgChReq->ucBssIndex = prNANSpecInfo->ucBssIndex;
-	prMsgChReq->ucTokenID = ++prAdapter->ucNanReqTokenId;
+	prMsgChReq->ucTokenID = prAdapter->ucNanReqTokenId = cnmIncreaseTokenId(prAdapter);
 	prMsgChReq->ucPrimaryChannel = prnanBssInfo->ucPrimaryChannel;
 	prMsgChReq->eRfSco = prnanBssInfo->eBssSCO;
 	prMsgChReq->eRfBand = prnanBssInfo->eBand;

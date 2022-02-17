@@ -171,7 +171,7 @@ struct WLAN_INFO {
 };
 
 struct BSS_INFO {
-
+	struct LINK_ENTRY rLinkEntryMld;
 	enum ENUM_NETWORK_TYPE eNetworkType;
 
 	/* index of a ais/p2p/ap... wdev which owns this bssinfo */
@@ -528,6 +528,10 @@ struct BSS_INFO {
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
 
+	enum ENUM_MBMC_BN eBandIdx;
+	uint8_t ucGroupMldId;
+	uint8_t ucOwnMldId;
+
 	uint8_t ucVhtChannelWidthBackup;
 
 #if CFG_SUPPORT_DFS
@@ -535,6 +539,15 @@ struct BSS_INFO {
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
 	uint8_t fgHasStopTx;
 #endif
+};
+
+struct MLD_BSS_INFO {
+	struct LINK rBssList;
+	u_int8_t fgIsInUse;
+	uint8_t ucOmacIdx;
+	uint8_t ucGroupMldId;
+	uint8_t ucOmRemapIdx;
+	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
 };
 
 struct NEIGHBOR_AP {
@@ -668,8 +681,7 @@ struct WIFI_VAR {
 
 	/* Current Wi-Fi Settings and Flags */
 	uint8_t aucPermanentAddress[MAC_ADDR_LEN];
-	uint8_t aucMacAddress[MAC_ADDR_LEN];
-	uint8_t aucMacAddress1[MAC_ADDR_LEN];
+	uint8_t aucMacAddress[KAL_AIS_NUM][MAC_ADDR_LEN];
 	uint8_t aucDeviceAddress[MAC_ADDR_LEN];
 	uint8_t aucInterfaceAddress[KAL_P2P_NUM][MAC_ADDR_LEN];
 
@@ -1322,7 +1334,6 @@ struct ADAPTER {
 #endif
 
 	struct STA_RECORD arStaRec[CFG_STA_REC_NUM];
-	struct MLD_STAREC arMldStaRec[CFG_MLD_STAREC_NUM];
 
 	/* Element for TX PATH */
 	struct TX_CTRL rTxCtrl;
@@ -1484,8 +1495,6 @@ struct ADAPTER {
 
 	/* QM */
 	struct QUE_MGT rQM;
-
-	struct CNM_INFO rCnmInfo;
 
 	uint32_t u4PowerMode;
 
@@ -1748,6 +1757,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	struct LINK rNeighborAPInfoList;
 #endif
+	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
+	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
+
+	uint8_t ucCnmTokenID;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

@@ -261,16 +261,10 @@ struct STA_PMF_CFG {
 };
 #endif
 
-struct MLD_STAREC {
-	uint16_t ucMldStaIndex;
-	uint8_t aucMldAddr[MAC_ADDR_LEN];
-	uint32_t u4ValidStaNum;
-	uint8_t ucStaIndex[MLD_LINK_MAX];
-};
-
 /* Define STA record structure */
 struct STA_RECORD {
 	struct LINK_ENTRY rLinkEntry;
+	struct LINK_ENTRY rLinkEntryMld;
 	uint8_t ucIndex;	/* Not modify it except initializing */
 	uint8_t ucWlanIndex;	/* WLAN table index */
 
@@ -298,6 +292,13 @@ struct STA_RECORD {
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucMldStaIndex;	/* MLD_STAREC index */
 	uint8_t ucLinkIndex;
+	/*
+	 * the tid-to-link bitmap,  BIT0 for TID0, BIT1 for TID1...
+	 *     1'b1: supoort transmission for the TID in this link
+	 *     1'b0: NOT support transmission for the TID in this link
+	 */
+	uint8_t ucTidBitmap;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
 #endif
 
 	uint8_t ucStaState;	/* STATE_1,2,3 */
@@ -771,6 +772,20 @@ struct STA_RECORD {
 	unsigned char fgNanSendTimeExpired;
 	atomic_t NanRefCount;
 #endif
+};
+
+struct MLD_STA_RECORD {
+	u_int8_t fgIsInUse;
+	uint8_t ucIdx;
+	uint8_t aucPeerMldAddr[MAC_ADDR_LEN];
+	uint16_t u2PrimaryMldId;
+	uint16_t u2SecondMldId;
+	uint16_t u2SetupWlanId;
+	u_int8_t fgNSEP;
+	uint8_t ucEmlmrBitmap;
+	uint8_t ucEmlsrBitmap;
+	uint8_t aucStrBitmap[3];
+	struct LINK rStarecList;
 };
 
 #if 0

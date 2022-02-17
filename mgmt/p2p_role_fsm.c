@@ -159,7 +159,9 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 #endif
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_P2P, 0,
+			NETWORK_TYPE_P2P,
+			MLD_GROUP_NONE,
+			0,
 			FALSE);
 
 		if (!prP2pBssInfo) {
