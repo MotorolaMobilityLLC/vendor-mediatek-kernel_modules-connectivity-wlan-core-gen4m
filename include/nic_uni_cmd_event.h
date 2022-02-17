@@ -126,6 +126,9 @@
 #define UNI_IS_RFCR(_addr) (((_addr) & BITS(24,31)) == 0x99000000)
 #define UNI_STREAM_FROM_RFCR(_addr) (((_addr) & BITS(16,23)) >> 16)
 
+/* UNI_CMD for PH_TPUT */
+#define MDVT_MODULE_PH_TPUT 64
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2428,6 +2431,38 @@ struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE config;
 } __KAL_ATTRIB_PACKED__;
 
+/* Set DVT config Tag */
+enum ENUM_UNI_CMD_DVT_TYPE_TAG {
+	UNI_CMD_MODULE_DVT = 0,
+	UNI_CMD_SYSTEM_DVT = 1,
+	UNI_CMD_DVT_TYPE_TAG_MAX_NUM
+};
+
+enum ENUM_UNI_CMD_DVT_TAG {
+	UNI_CMD_DVT_TAG_SET_PARA = 0,
+	UNI_CMD_DVT_TAG_SET_TRB_BLOCK = 1,
+	UNI_CMD_DVT_TAG_SET_BLOCK_MODE = 2,
+	UNI_CMD_DVT_TAG_GET_DMA_RESULT = 3,
+	UNI_CMD_DVT_TAG_SET_LPON_TEST_START = 4,
+	UNI_CMD_DVT_TAG_GET_LPON_TSF_RESULT = 5,
+	UNI_CMD_DVT_TAG_SET_WTBL_DURING_TEST = 6,
+	UNI_CMD_DVT_TAG_GET_WTBL_RESULT = 7,
+	UNI_CMD_DVT_TAG_MAX_NUM
+};
+
+struct UNI_CMD_DVT {
+	uint8_t ucTestType;
+	uint8_t aucPadding[3];
+	uint8_t aucTlvBuffer[0];
+};
+
+struct UNI_CMD_MDVT_PARA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2ModuleId;
+	uint16_t u2CaseId;
+};
+
 struct UNI_CMD_RA {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -3979,6 +4014,8 @@ uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
 uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTdls(struct ADAPTER *ad,
+                struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetMdvt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetP2pNoa(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

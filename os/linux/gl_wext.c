@@ -252,6 +252,8 @@ static const struct iw_priv_args rIwPrivTable[] = {
 #endif
 	{PRIV_CMD_SHOW_CHANNEL, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 	"show_Channel"},
+	{PRIV_CMD_SET_MDVT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2, 0,
+	"set_mdvt"},
 };
 
 static const iw_handler rIwPrivHandler[] = {

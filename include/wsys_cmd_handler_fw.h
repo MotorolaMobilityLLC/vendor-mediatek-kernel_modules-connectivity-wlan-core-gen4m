@@ -387,6 +387,9 @@ enum ENUM_CMD_ID {
 
 	CMD_ID_SET_MONITOR = 0xFC,          /* 0xfc (Set) */
 	CMD_ID_SET_CCK_1M_PWR = 0xFD,	/* 0xFC (Set) */
+
+	/* For trigger MDVT */
+	CMD_ID_SET_MDVT = 0xFE,
 	CMD_ID_END
 };
 

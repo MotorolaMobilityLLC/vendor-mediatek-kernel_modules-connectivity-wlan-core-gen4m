@@ -702,6 +702,11 @@ struct PARAM_CUSTOM_MCR_RW_STRUCT {
 	uint32_t u4McrData;
 };
 
+struct PARAM_MDVT_STRUCT {
+	uint32_t u4ModuleId;
+	uint32_t u4CaseId;
+};
+
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 /*
  * Description of Each Parameters :
@@ -4338,4 +4343,8 @@ wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
 #endif
+uint32_t
+wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
 #endif /* _WLAN_OID_H */
