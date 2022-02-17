@@ -508,36 +508,25 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 }
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-UINT_16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
-			void *accel_priv, select_queue_fallback_t fallback)
+#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
+		    void *accel_priv, select_queue_fallback_t fallback)
 {
-	UINT_16 au16Wlan1dToQueueIdx[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
-
-	/* Use Linux wireless utility function */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
-	skb->priority = cfg80211_classify8021d(skb);
-#else
-	skb->priority = cfg80211_classify8021d(skb, NULL);
-#endif
-
-	return au16Wlan1dToQueueIdx[skb->priority];
+	return mtk_wlan_ndev_select_queue(skb);
+}
+#elif KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
+		    void *accel_priv)
+{
+	return mtk_wlan_ndev_select_queue(skb);
 }
 #else
-UINT_16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb)
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb)
 {
-	UINT_16 au16Wlan1dToQueueIdx[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
-
-	/* Use Linux wireless utility function */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
-	skb->priority = cfg80211_classify8021d(skb);
-#else
-	skb->priority = cfg80211_classify8021d(skb, NULL);
-#endif
-
-	return au16Wlan1dToQueueIdx[skb->priority];
+	return mtk_wlan_ndev_select_queue(skb);
 }
 #endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief Load NVRAM data and translate it into REG_INFO_T

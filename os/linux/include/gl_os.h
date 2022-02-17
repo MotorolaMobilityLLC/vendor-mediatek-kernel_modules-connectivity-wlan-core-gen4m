@@ -874,6 +874,19 @@ static __KAL_INLINE__ VOID glPacketDataTypeCheck(VOID)
 	DATA_STRUCT_INSPECTING_ASSERT(sizeof(PACKET_PRIVATE_DATA) <= sizeof(((struct sk_buff *) 0)->cb));
 }
 
+static inline u16 mtk_wlan_ndev_select_queue(struct sk_buff *skb)
+{
+	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
+
+	/* cfg80211_classify8021d returns 0~7 */
+#if KERNEL_VERSION(3, 14, 0) > LINUX_VERSION_CODE
+	skb->priority = cfg80211_classify8021d(skb);
+#else
+	skb->priority = cfg80211_classify8021d(skb, NULL);
+#endif
+	return ieee8021d_to_queue[skb->priority];
+}
+
 #if KERNEL_VERSION(2, 6, 34) > LINUX_VERSION_CODE
 #define netdev_for_each_mc_addr(mclist, dev) \
 	for (mclist = dev->mc_list; mclist; mclist = mclist->next)
@@ -892,7 +905,6 @@ static __KAL_INLINE__ VOID glPacketDataTypeCheck(VOID)
 #define LIST_FOR_EACH_IPV6_ADDR(_prIfa, _ip6_ptr) \
 	for (_prIfa = ((struct inet6_dev *) _ip6_ptr)->addr_list; _prIfa; _prIfa = _prIfa->if_next)
 #endif
-
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -923,11 +935,14 @@ void p2pSetMulticastListWorkQueueWrapper(P_GLUE_INFO_T prGlueInfo);
 
 P_GLUE_INFO_T wlanGetGlueInfo(VOID);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0)
-UINT_16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
-			void *accel_priv, select_queue_fallback_t fallback);
+#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
+		    void *accel_priv, select_queue_fallback_t fallback);
+#elif KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb,
+		    void *accel_priv);
 #else
-UINT_16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb);
+u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb);
 #endif
 
 VOID wlanDebugInit(VOID);
