@@ -1222,6 +1222,8 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter);
 uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 				     *prAdapter);
 
+uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter);
+
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************

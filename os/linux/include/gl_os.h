@@ -1424,6 +1424,8 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter);
 
 uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 				     *prAdapter);
+
+uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_CONNAC3X == 1)
 uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter);
 #endif
