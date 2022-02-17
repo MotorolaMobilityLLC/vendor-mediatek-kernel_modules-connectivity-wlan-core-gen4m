@@ -597,6 +597,7 @@ struct CHIP_DBG_OPS mt7961DebugOps = {
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 	.dumpMacInfo = NULL,
+	.dumpTxdInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
