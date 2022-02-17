@@ -153,6 +153,9 @@ void asicConnac3xCapInit(
 		heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
 	}
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	ehtRlmInit(prAdapter);
+#endif
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
