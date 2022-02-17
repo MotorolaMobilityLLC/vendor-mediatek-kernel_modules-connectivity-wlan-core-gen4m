@@ -2712,6 +2712,14 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		if (timerPendingTimer(&prMsduInfo->rLifetimeTimer)) {
+			DBGLOG(NIC, WARN, "re-init msdu life timer %p\n",
+				&prMsduInfo->rLifetimeTimer);
+			cnmTimerStopTimer(prAdapter,
+				&prMsduInfo->rLifetimeTimer);
+			dump_stack();
+		}
+
 		/* Reset MSDU_INFO fields */
 		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
