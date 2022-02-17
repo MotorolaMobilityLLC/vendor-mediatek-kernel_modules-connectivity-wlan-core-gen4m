@@ -177,6 +177,7 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	P_RX_CTRL_T prRxCtrl;
 	BOOL ret = FALSE;
+	P_BUS_INFO prBusInfo;
 
 	DEBUGFUNC("halRxWaitResponse");
 
@@ -184,46 +185,52 @@ halRxWaitResponse(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPortIdx, OUT PUINT_8 puc
 	ASSERT(pucRspBuffer);
 
 	prRxCtrl = &prAdapter->rRxCtrl;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
-	if (prHifInfo->fgEventEpDetected == FALSE) {
-		/* NOTE: This is temporary compatiable code with old/new CR4 FW to detect which EVENT endpoint that
-		 *       CR4 FW is using. If the new EP4IN-using CR4 FW works without any issue for a while,
-		 *       this code block will be removed.
-		 */
-		if (prAdapter->fgIsCr4FwDownloaded) {
-			ucPortIdx = USB_DATA_EP_IN;
-			ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
-				ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
-				prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
-
-			if (ret == TRUE) {
-				prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
-			} else {
-				ucPortIdx = USB_EVENT_EP_IN;
+	if (prBusInfo->asicUsbEventEpDetected)
+		ucPortIdx = prBusInfo->asicUsbEventEpDetected(prAdapter);
+	else {
+		if (prHifInfo->fgEventEpDetected == FALSE) {
+			/* NOTE: This is temporary compatiable code with old/new CR4 FW to detect
+			 *       which EVENT endpoint that.
+			 *       CR4 FW is using. If the new EP4IN-using CR4 FW works without
+			 *       any issue for a while,
+			 *       this code block will be removed.
+			 */
+			if (prAdapter->fgIsCr4FwDownloaded) {
+				ucPortIdx = USB_DATA_EP_IN;
 				ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
 					ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
 					prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+
+				if (ret == TRUE) {
+					prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+				} else {
+					ucPortIdx = USB_EVENT_EP_IN;
+					ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
+						ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
+						prRxCtrl->pucRxCoalescingBufPtr, HIF_RX_COALESCING_BUFFER_SIZE);
+				}
+				prHifInfo->fgEventEpDetected = TRUE;
+
+				kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
+				*pu4Length = u4MaxRespBufferLen;
+
+				if (ret == FALSE)
+					u4Status = WLAN_STATUS_FAILURE;
+				return u4Status;
 			}
-			prHifInfo->fgEventEpDetected = TRUE;
 
-			kalMemCopy(pucRspBuffer, prRxCtrl->pucRxCoalescingBufPtr, u4MaxRespBufferLen);
-			*pu4Length = u4MaxRespBufferLen;
-
-			if (ret == FALSE)
-				u4Status = WLAN_STATUS_FAILURE;
-			return u4Status;
-		}
-
-		ucPortIdx = USB_EVENT_EP_IN;
-	} else {
-		if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP)
-			if (prAdapter->fgIsCr4FwDownloaded)
-				ucPortIdx = USB_DATA_EP_IN;
+			ucPortIdx = USB_EVENT_EP_IN;
+		} else {
+			if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP)
+				if (prAdapter->fgIsCr4FwDownloaded)
+					ucPortIdx = USB_DATA_EP_IN;
+				else
+					ucPortIdx = USB_EVENT_EP_IN;
 			else
 				ucPortIdx = USB_EVENT_EP_IN;
-		else
-			ucPortIdx = USB_EVENT_EP_IN;
-
+		}
 	}
 	ret = kalDevPortRead(prAdapter->prGlueInfo, ucPortIdx,
 		ALIGN_4(u4MaxRespBufferLen) + LEN_USB_RX_PADDING_CSO,
