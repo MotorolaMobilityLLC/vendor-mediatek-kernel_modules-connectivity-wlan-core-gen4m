@@ -399,6 +399,9 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 		if ((i & (LP_OWN_BACK_CLR_OWN_ITERATION - 1)) == 0) {
 			/* Software get LP ownership - per 256 iterations */
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+
+			if (i)
+				DBGLOG(INIT, WARN, "Abnormal: LP_CLR_OWN again.\n");
 		}
 
 		/* Delay for LP engine to complete its operation. */
