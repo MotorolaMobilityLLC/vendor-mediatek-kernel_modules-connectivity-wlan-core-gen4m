@@ -1217,6 +1217,14 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
 	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NAN
+	},
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = NL80211_VENDOR_SUBCMD_NDP
+	}
 };
 #endif
 
@@ -4897,11 +4905,8 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 
-	if ((!ucEnable) && (kalIsResetting() == FALSE)) {
-		nanNetUnregister(prGlueInfo, FALSE);
-		wlanOnP2pRegistration(prGlueInfo,
-			prGlueInfo->prAdapter, gprWdev[0]);
-	}
+	if (kalIsResetting())
+		return 0;
 
 	if (ucEnable) {
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
@@ -4910,6 +4915,9 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 		rSetP2P.u4Enable = 0;
 		set_p2p_mode_handler(netdev, rSetP2P);
 	}
+
+	if (!ucEnable)
+		nanNetUnregister(prGlueInfo, FALSE);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
 			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
@@ -4921,9 +4929,12 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	 * in this case, kalIOCTL return success always,
 	 * and prGlueInfo->prP2PInfo[0] may be NULL
 	 */
-	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
-	    (kalIsResetting() == FALSE))
+	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered))
 		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
+
+	if (!ucEnable)
+		wlanOnP2pRegistration(prGlueInfo,
+			prGlueInfo->prAdapter, gprWdev[0]);
 
 	return 0;
 }
