@@ -377,6 +377,7 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 {
 	u_int32 bw_mapping = 0;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	/* BW Mapping in QA Tool
 	 * 0: BW20
 	 * 1: BW40
@@ -385,6 +386,10 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 	 * 4: BW5
 	 * 5: BW160C
 	 * 6: BW160NC
+	 * 7: BW0_5
+	 * 8: BW1
+	 * 9: BW6
+	 * 10: BW7
 	 * 12: BW320
 	 */
 	/* BW Mapping in FW
@@ -395,7 +400,45 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 	 * 4: BW160NC
 	 * 5: BW5
 	 * 6: BW10
-	 * 8: BW320
+	 * 7: BW320
+	 */
+	if (bw == 0)
+		bw_mapping = 0;
+	else if (bw == 1)
+		bw_mapping = 1;
+	else if (bw == 2)
+		bw_mapping = 2;
+	else if (bw == 3)
+		bw_mapping = 6;
+	else if (bw == 4)
+		bw_mapping = 5;
+	else if (bw == 5)
+		bw_mapping = 3;
+	else if (bw == 6)
+		bw_mapping = 4;
+	else if (bw == 12)
+		bw_mapping = 7;
+#else
+
+	/* BW Mapping in QA Tool
+	 * 0: BW20
+	 * 1: BW40
+	 * 2: BW80
+	 * 3: BW10
+	 * 4: BW5
+	 * 5: BW160C
+	 * 6: BW160NC
+	 * 12: BW320 (radar)
+	 */
+	/* BW Mapping in FW
+	 * 0: BW20
+	 * 1: BW40
+	 * 2: BW80
+	 * 3: BW160C
+	 * 4: BW160NC
+	 * 5: BW5
+	 * 6: BW10
+	 * 8: BW320 (radar)
 	 */
 	if (bw == 0)
 		bw_mapping = 0;
@@ -413,6 +456,7 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 		bw_mapping = 4;
 	else if (bw == 12)
 		bw_mapping = 8;
+#endif
 
 	return bw_mapping;
 }
