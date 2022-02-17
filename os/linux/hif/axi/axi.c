@@ -50,26 +50,26 @@
  *
  *****************************************************************************/
 /******************************************************************************
-*[File]             pcie.c
-*[Version]          v1.0
-*[Revision Date]    2010-03-01
-*[Author]
-*[Description]
-*    The program provides PCIE HIF driver
-*[Copyright]
-*    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
-******************************************************************************/
+ *[File]             pcie.c
+ *[Version]          v1.0
+ *[Revision Date]    2010-03-01
+ *[Author]
+ *[Description]
+ *    The program provides PCIE HIF driver
+ *[Copyright]
+ *    Copyright (C) 2010 MediaTek Incorporation. All Rights Reserved.
+ ******************************************************************************/
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 #include "gl_os.h"
 
@@ -92,9 +92,9 @@
 #include <linux/of.h>
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 static const struct platform_device_id mtk_axi_ids[] = {
 #ifdef CONNAC
@@ -107,19 +107,19 @@ static const struct platform_device_id mtk_axi_ids[] = {
 MODULE_DEVICE_TABLE(axi, mtk_axi_ids);
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 static struct platform_device *prPlatDev;
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
@@ -139,19 +139,19 @@ static u_int8_t g_fgDriverProbed = FALSE;
 static uint32_t g_u4DmaMask = 32;
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 static int hifAxiProbe(void)
 {
@@ -171,14 +171,16 @@ static int hifAxiProbe(void)
 	DBGLOG(INIT, INFO, "driver.name = %s\n", prPlatDev->id_entry->name);
 
 	if (pfWlanProbe((void *)prPlatDev,
-			(void *)prPlatDev->id_entry->driver_data) != WLAN_STATUS_SUCCESS) {
+			(void *)prPlatDev->id_entry->driver_data) !=
+			WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
 		pfWlanRemove();
 		ret = -1;
 		goto out;
 	}
 
-	prChipInfo = ((struct mt66xx_hif_driver_data *)mtk_axi_ids[0].driver_data)->chip_info;
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
 	g_fgDriverProbed = TRUE;
 	g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 out:
@@ -209,12 +211,12 @@ static int hifAxiRemove(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a AXI interrupt callback function
-*
-* \param[in] func  pointer to AXI handle
-*
-* \return void
-*/
+ * \brief This function is a AXI interrupt callback function
+ *
+ * \param[in] func  pointer to AXI handle
+ *
+ * \return void
+ */
 /*----------------------------------------------------------------------------*/
 static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 {
@@ -247,13 +249,13 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is a AXI probe function
-*
-* \param[in] func   pointer to AXI handle
-* \param[in] id     pointer to AXI device id table
-*
-* \return void
-*/
+ * \brief This function is a AXI probe function
+ *
+ * \param[in] func   pointer to AXI handle
+ * \param[in] id     pointer to AXI device id table
+ *
+ * \return void
+ */
 /*----------------------------------------------------------------------------*/
 static int mtk_axi_probe(IN struct platform_device *pdev)
 {
@@ -279,7 +281,8 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 	return 0;
 }
 
-static int mtk_axi_suspend(IN struct platform_device *pdev, IN pm_message_t state)
+static int mtk_axi_suspend(IN struct platform_device *pdev,
+	IN pm_message_t state)
 {
 	return 0;
 }
@@ -291,13 +294,13 @@ int mtk_axi_resume(IN struct platform_device *pdev)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will register pci bus to the os
-*
-* \param[in] pfProbe    Function pointer to detect card
-* \param[in] pfRemove   Function pointer to remove card
-*
-* \return The result of registering pci bus
-*/
+ * \brief This function will register pci bus to the os
+ *
+ * \param[in] pfProbe    Function pointer to detect card
+ * \param[in] pfRemove   Function pointer to remove card
+ *
+ * \return The result of registering pci bus
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
@@ -315,27 +318,30 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_axi_driver.suspend = mtk_axi_suspend;
 	mtk_axi_driver.resume = mtk_axi_resume;
 
-	ret = (platform_driver_register(&mtk_axi_driver) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	ret = (platform_driver_register(&mtk_axi_driver) == 0)
+		? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 	DBGLOG(INIT, INFO, "platform_driver_register ret = %d\n", ret);
 	DBGLOG(INIT, INFO, "bus_type = %s\n", mtk_axi_driver.driver.bus->name);
 	if (!ret)
-		ret = ((prPlatDev = platform_device_alloc("CONNAC", -1)) != NULL)
+		ret = ((prPlatDev =
+			platform_device_alloc("CONNAC", -1)) != NULL)
 			? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 
 	DBGLOG(INIT, INFO, "platform_device_alloc ret = %d\n", ret);
-	ret = (platform_device_add(prPlatDev) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+	ret = (platform_device_add(prPlatDev) == 0)
+		? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 	DBGLOG(INIT, INFO, "platform_device_add ret = %d\n", ret);
 	return ret;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will unregister pci bus to the os
-*
-* \param[in] pfRemove Function pointer to remove card
-*
-* \return (none)
-*/
+ * \brief This function will unregister pci bus to the os
+ *
+ * \param[in] pfRemove Function pointer to remove card
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glUnregisterBus(remove_card pfRemove)
 {
@@ -350,13 +356,13 @@ void glUnregisterBus(remove_card pfRemove)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function stores hif related info, which is initialized before.
-*
-* \param[in] prGlueInfo Pointer to glue info structure
-* \param[in] u4Cookie   Pointer to UINT_32 memory base variable for _HIF_HPI
-*
-* \return (none)
-*/
+ * \brief This function stores hif related info, which is initialized before.
+ *
+ * \param[in] prGlueInfo Pointer to glue info structure
+ * \param[in] u4Cookie   Pointer to UINT_32 memory base variable for _HIF_HPI
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
@@ -390,12 +396,12 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function clears hif related info.
-*
-* \param[in] prGlueInfo Pointer to glue info structure
-*
-* \return (none)
-*/
+ * \brief This function clears hif related info.
+ *
+ * \param[in] prGlueInfo Pointer to glue info structure
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
@@ -423,14 +429,15 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Initialize bus operation and hif related information, request resources.
-*
-* \param[out] pvData    A pointer to HIF-specific data type buffer.
-*                       For eHPI, pvData is a pointer to UINT_32 type and stores a
-*                       mapped base address.
-*
-* \return (none)
-*/
+ * \brief Initialize bus operation and hif related information, request
+ *        resources.
+ *
+ * \param[out] pvData    A pointer to HIF-specific data type buffer.
+ *                       For eHPI, pvData is a pointer to UINT_32 type and
+ *                       stores a mapped base address.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t glBusInit(void *pvData)
 {
@@ -494,7 +501,8 @@ u_int8_t glBusInit(void *pvData)
 	return TRUE;
 
 err_out_free_res:
-	release_mem_region(axi_resource_start(pdev, 0), axi_resource_len(pdev, 0));
+	release_mem_region(axi_resource_start(pdev, 0),
+		axi_resource_len(pdev, 0));
 
 	axi_disable_device(pdev);
 
@@ -503,12 +511,12 @@ err_out_free_res:
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Stop bus operation and release resources.
-*
-* \param[in] pvData A pointer to struct net_device.
-*
-* \return (none)
-*/
+ * \brief Stop bus operation and release resources.
+ *
+ * \param[in] pvData A pointer to struct net_device.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glBusRelease(void *pvData)
 {
@@ -516,15 +524,15 @@ void glBusRelease(void *pvData)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Setup bus interrupt operation and interrupt handler for os.
-*
-* \param[in] pvData     A pointer to struct net_device.
-* \param[in] pfnIsr     A pointer to interrupt handler function.
-* \param[in] pvCookie   Private data for pfnIsr function.
-*
-* \retval WLAN_STATUS_SUCCESS   if success
-*         NEGATIVE_VALUE   if fail
-*/
+ * \brief Setup bus interrupt operation and interrupt handler for os.
+ *
+ * \param[in] pvData     A pointer to struct net_device.
+ * \param[in] pfnIsr     A pointer to interrupt handler function.
+ * \param[in] pvCookie   Private data for pfnIsr function.
+ *
+ * \retval WLAN_STATUS_SUCCESS   if success
+ *         NEGATIVE_VALUE   if fail
+ */
 /*----------------------------------------------------------------------------*/
 
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
@@ -556,29 +564,32 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
 	if (node) {
 		prHifInfo->u4IrqId = irq_of_parse_and_map(node, 0);
-		DBGLOG(INIT, INFO, "WIFI-OF: get wifi irq(%d)\n", prHifInfo->u4IrqId);
+		DBGLOG(INIT, INFO,
+			"WIFI-OF: get wifi irq(%d)\n", prHifInfo->u4IrqId);
 	} else
-		DBGLOG(INIT, ERROR, "WIFI-OF: get wifi device node fail\n");
+		DBGLOG(INIT, ERROR,
+			"WIFI-OF: get wifi device node fail\n");
 #endif
 	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
 	       prHifInfo->u4IrqId);
 	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED,
 			  prNetDevice->name, prGlueInfo);
 	if (ret != 0)
-		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+		DBGLOG(INIT, INFO,
+			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
 
 	return ret;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Stop bus interrupt operation and disable interrupt handling for os.
-*
-* \param[in] pvData     A pointer to struct net_device.
-* \param[in] pvCookie   Private data for pfnIsr function.
-*
-* \return (none)
-*/
+ * \brief Stop bus interrupt operation and disable interrupt handling for os.
+ *
+ * \param[in] pvData     A pointer to struct net_device.
+ * \param[in] pvCookie   Private data for pfnIsr function.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void glBusFreeIrq(void *pvData, void *pvCookie)
 {

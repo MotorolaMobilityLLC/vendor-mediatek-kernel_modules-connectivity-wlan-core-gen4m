@@ -49,15 +49,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*
-** Id:
-*/
-
 /*! \file   "connac_reg.h"
  *   \brief  The common register definition of MT6630
  *
  *   N/A
-*/
+ */
 
 
 
@@ -65,50 +61,57 @@
 #define _CONNAC_REG_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
-#define CONN_CFG_BASE                                          0x80020000
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
+#define CONN_CFG_BASE			0x80020000
 
-#define CONN_CFG_ON_BASE                                       0x81021000
+#define CONN_CFG_ON_BASE	0x81021000
 
-#define CONN_CFG_ON_CONN_ON_MISC_ADDR                          (CONN_CFG_ON_BASE + 0x140)
+#define CONN_CFG_ON_CONN_ON_MISC_ADDR		(CONN_CFG_ON_BASE + 0x140)
 
-#define CONN_MCU_CONFG_ON_BASE                                 0x81030000
+#define CONN_MCU_CONFG_ON_BASE					0x81030000
 
-#define CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR                 (CONN_MCU_CONFG_ON_BASE + 0x100)
+#define CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR \
+	(CONN_MCU_CONFG_ON_BASE + 0x100)
 
 /*
-* =====================================================================================
-*
-*  ---CONN_ON_MISC (0x81021000 + 0x140)---
-*
-*    HOST_LPCR_FW_OWN[0]          - (W1C)  xxx
-*    DRV_FM_STAT_SYNC[3..1]       - (RW)  xxx
-*    RBIST_MODE[4]                - (RW)  xxx
-*    RESERVED5[31..5]             - (RO) Reserved bits
-*
-* =====================================================================================
-*/
-#define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_ADDR  CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_MASK               0x00000010/*RBIST_MODE[4]*/
+ * ============================================================================
+ *
+ *  ---CONN_ON_MISC (0x81021000 + 0x140)---
+ *
+ *    HOST_LPCR_FW_OWN[0]          - (W1C)  xxx
+ *    DRV_FM_STAT_SYNC[3..1]       - (RW)  xxx
+ *    RBIST_MODE[4]                - (RW)  xxx
+ *    RESERVED5[31..5]             - (RO) Reserved bits
+ *
+ * ============================================================================
+ */
+#define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_ADDR \
+	CONN_CFG_ON_CONN_ON_MISC_ADDR
+#define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_MASK \
+	0x00000010/*RBIST_MODE[4]*/
 #define CONN_CFG_ON_CONN_ON_MISC_RBIST_MODE_SHFT               4
-#define CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_ADDR         CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_MASK         0x0000000E/*DRV_FM_STAT_SYNC[3..1]*/
+#define CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_ADDR \
+	CONN_CFG_ON_CONN_ON_MISC_ADDR
+#define CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_MASK \
+	0x0000000E/*DRV_FM_STAT_SYNC[3..1]*/
 #define CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         1
-#define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_ADDR         CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK         0x00000001/*HOST_LPCR_FW_OWN[0]*/
+#define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_ADDR \
+	CONN_CFG_ON_CONN_ON_MISC_ADDR
+#define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK \
+	0x00000001/*HOST_LPCR_FW_OWN[0]*/
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_SHFT         0
 
 #define CONN_HIF_BASE                           0x7000

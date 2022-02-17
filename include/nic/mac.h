@@ -49,34 +49,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/mac.h#1
-*/
-
 /*! \file   "mac.h"
-*    \brief  Brief description.
-*
-*    Detail description.
-*/
+ *  \brief  Brief description.
+ *
+ *  Detail description.
+ */
 
 
 #ifndef _MAC_H
 #define _MAC_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* 3 --------------- Constants for Ethernet/802.11 MAC --------------- */
 /* MAC Address */
 #define MAC_ADDR_LEN                            6
@@ -86,7 +82,8 @@
 #define ETH_P_IPV4                              0x0800
 #define ETH_P_ARP                               0x0806
 #define ETH_P_IPX                               0x8137	/* Novell IPX */
-#define ETH_P_AARP                              0x80F3	/* AppleTalk Address Resolution Protocol (AARP) */
+/* AppleTalk Address Resolution Protocol (AARP) */
+#define ETH_P_AARP                              0x80F3
 #define ETH_P_IPV6                              0x86DD
 #define ETH_P_VLAN                              0x8100
 
@@ -190,10 +187,11 @@
 
 #define TDLS_ACTION_CODE_OFFSET                 2
 
-#define LLC_LEN                                 8	/* LLC(3) + SNAP(3) + EtherType(2) */
+/* LLC(3) + SNAP(3) + EtherType(2) */
+#define LLC_LEN                                 8
 
-#define NULL_MAC_ADDR                           {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
-#define BC_MAC_ADDR                             {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+#define NULL_MAC_ADDR     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+#define BC_MAC_ADDR       {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 
 #if 1
 
@@ -210,7 +208,8 @@
 
 #define SOURCE_PORT_LEN                         2
 
-#define LOOK_AHEAD_LEN                          (ETH_HLEN + IP_HEADER_LEN + SOURCE_PORT_LEN)
+#define LOOK_AHEAD_LEN \
+	(ETH_HLEN + IP_HEADER_LEN + SOURCE_PORT_LEN)
 
 #endif
 
@@ -232,7 +231,8 @@
 #define ETH_LLC_SSAP_SNAP                       0xAA
 #define ETH_LLC_CONTROL_UNNUMBERED_INFORMATION  0x03
 #define ETH_LLC                                 \
-	{ETH_LLC_DSAP_SNAP, ETH_LLC_SSAP_SNAP, ETH_LLC_CONTROL_UNNUMBERED_INFORMATION}
+	{ETH_LLC_DSAP_SNAP, ETH_LLC_SSAP_SNAP, \
+	ETH_LLC_CONTROL_UNNUMBERED_INFORMATION}
 
 /* Bluetooth SNAP */
 #define ETH_SNAP_OFFSET                         (ETHER_HEADER_LEN + ETH_LLC_LEN)
@@ -241,24 +241,34 @@
 #define ETH_SNAP_BT_SIG_OUI_0                   0x00
 #define ETH_SNAP_BT_SIG_OUI_1                   0x19
 #define ETH_SNAP_BT_SIG_OUI_2                   0x58
-#define ETH_SNAP_BT_SIG_OUI                     {ETH_SNAP_BT_SIG_OUI_0, ETH_SNAP_BT_SIG_OUI_1, ETH_SNAP_BT_SIG_OUI_2}
+#define ETH_SNAP_BT_SIG_OUI \
+	{ETH_SNAP_BT_SIG_OUI_0, ETH_SNAP_BT_SIG_OUI_1, ETH_SNAP_BT_SIG_OUI_2}
 
 #define BOW_PROTOCOL_ID_SECURITY_FRAME          0x0003
 
 /* IEEE 802.11 WLAN Frame Field Size, in byte */
-#define WLAN_MAC_HEADER_LEN                     24	/* Address 4 excluded */
-#define WLAN_MAC_HEADER_A4_LEN                  30	/* Address 4 included */
-#define WLAN_MAC_HEADER_QOS_LEN                 26	/* QoS Control included */
-#define WLAN_MAC_HEADER_QOS_HTC_LEN             30	/* QoS Control and HTC included */
-#define WLAN_MAC_HEADER_A4_QOS_LEN              32	/* Address 4 and QoS Control included */
-#define WLAN_MAC_HEADER_A4_QOS_HTC_LEN          36	/* Address 4, QoS Control and HTC included */
-#define WLAN_MAC_MGMT_HEADER_LEN                24	/* Address 4 excluded */
-#define WLAN_MAC_MGMT_HEADER_HTC_LEN            28	/* HTC included */
+/* Address 4 excluded */
+#define WLAN_MAC_HEADER_LEN                     24
+/* Address 4 included */
+#define WLAN_MAC_HEADER_A4_LEN                  30
+/* QoS Control included */
+#define WLAN_MAC_HEADER_QOS_LEN                 26
+/* QoS Control and HTC included */
+#define WLAN_MAC_HEADER_QOS_HTC_LEN             30
+/* Address 4 and QoS Control included */
+#define WLAN_MAC_HEADER_A4_QOS_LEN              32
+/* Address 4, QoS Control and HTC included */
+#define WLAN_MAC_HEADER_A4_QOS_HTC_LEN          36
+/* Address 4 excluded */
+#define WLAN_MAC_MGMT_HEADER_LEN                24
+/* HTC included */
+#define WLAN_MAC_MGMT_HEADER_HTC_LEN            28
 
 #define QOS_CTRL_LEN                            2
 #define HT_CTRL_LEN                             4
 
-#define WLAN_MAC_CTS_ACK_LEN			(WLAN_MAC_CTS_ACK_FRAME_HEADER_LEN + FCS_LEN)
+#define WLAN_MAC_CTS_ACK_LEN \
+	(WLAN_MAC_CTS_ACK_FRAME_HEADER_LEN + FCS_LEN)
 
 /* 6.2.1.1.2 Semantics of the service primitive */
 #define MSDU_MAX_LENGTH                         2304
@@ -270,7 +280,8 @@
 #define FCS_LEN                                 4
 
 /* 7.3.1.6 Listen Interval field */
-#define DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD  2	/* In unit of AP's DTIM interval, */
+/* In unit of AP's DTIM interval, */
+#define DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD  2
 #define DEFAULT_LISTEN_INTERVAL                 10
 
 /* 7.3.2.1 Broadcast(Wildcard) SSID */
@@ -278,26 +289,30 @@
 #define BC_SSID_LEN                             0
 
 /* 7.3.2.2 Data Rate Value */
-#define RATE_1M                                 2	/* 1M in unit of 500kb/s */
-#define RATE_2M                                 4	/* 2M */
-#define RATE_5_5M                               11	/* 5.5M */
-#define RATE_11M                                22	/* 11M */
-#define RATE_22M                                44	/* 22M */
-#define RATE_33M                                66	/* 33M */
-#define RATE_6M                                 12	/* 6M */
-#define RATE_9M                                 18	/* 9M */
-#define RATE_12M                                24	/* 12M */
-#define RATE_18M                                36	/* 18M */
-#define RATE_24M                                48	/* 24M */
-#define RATE_36M                                72	/* 36M */
-#define RATE_48M                                96	/* 48M */
-#define RATE_54M                                108	/* 54M */
+#define RATE_1M                             2	/* 1M in unit of 500kb/s */
+#define RATE_2M                             4	/* 2M */
+#define RATE_5_5M                           11	/* 5.5M */
+#define RATE_11M                            22	/* 11M */
+#define RATE_22M                            44	/* 22M */
+#define RATE_33M                            66	/* 33M */
+#define RATE_6M                             12	/* 6M */
+#define RATE_9M                             18	/* 9M */
+#define RATE_12M                            24	/* 12M */
+#define RATE_18M                            36	/* 18M */
+#define RATE_24M                            48	/* 24M */
+#define RATE_36M                            72	/* 36M */
+#define RATE_48M                            96	/* 48M */
+#define RATE_54M                            108	/* 54M */
 /* 7.3.2.14 BSS membership selector */
 
-#define RATE_VHT_PHY                            126	/* BSS Selector - Clause 22. HT PHY */
-#define RATE_HT_PHY                             127	/* BSS Selector - Clause 20. HT PHY */
-#define RATE_MASK                               BITS(0, 6)	/* mask bits for the rate */
-#define RATE_BASIC_BIT                          BIT(7)	/* mask bit for the rate belonging to the BSSBasicRateSet */
+/* BSS Selector - Clause 22. HT PHY */
+#define RATE_VHT_PHY                            126
+/* BSS Selector - Clause 20. HT PHY */
+#define RATE_HT_PHY                             127
+/* mask bits for the rate */
+#define RATE_MASK                               BITS(0, 6)
+/* mask bit for the rate belonging to the BSSBasicRateSet */
+#define RATE_BASIC_BIT                          BIT(7)
 
 /* 8.3.2.2 TKIP MPDU formats */
 #define TKIP_MIC_LEN                            8
@@ -306,9 +321,12 @@
 #define DIFS                                    2	/* 2 x aSlotTime */
 
 /* 11.3 STA Authentication and Association */
-#define STA_STATE_1                             0	/* Accept Class 1 frames */
-#define STA_STATE_2                             1	/* Accept Class 1 & 2 frames */
-#define STA_STATE_3                             2	/* Accept Class 1,2 & 3 frames */
+/* Accept Class 1 frames */
+#define STA_STATE_1                             0
+/* Accept Class 1 & 2 frames */
+#define STA_STATE_2                             1
+/* Accept Class 1,2 & 3 frames */
+#define STA_STATE_3                             2
 
 /* 15.4.8.5 802.11k RCPI-dBm mapping*/
 #define NDBM_LOW_BOUND_FOR_RCPI                 110
@@ -318,25 +336,39 @@
 
 /* PHY characteristics */
 /* 17.4.4/18.3.3/19.8.4 Slot Time (aSlotTime) */
-#define SLOT_TIME_LONG                          20	/* Long Slot Time */
-#define SLOT_TIME_SHORT                         9	/* Short Slot Time */
+/* Long Slot Time */
+#define SLOT_TIME_LONG                          20
+/* Short Slot Time */
+#define SLOT_TIME_SHORT                         9
 
-#define SLOT_TIME_HR_DSSS                       SLOT_TIME_LONG	/* 802.11b aSlotTime */
-#define SLOT_TIME_OFDM                          SLOT_TIME_SHORT	/* 802.11a aSlotTime(20M Spacing) */
-#define SLOT_TIME_OFDM_10M_SPACING              13	/* 802.11a aSlotTime(10M Spacing) */
-#define SLOT_TIME_ERP_LONG                      SLOT_TIME_LONG	/* 802.11g aSlotTime(Long) */
-#define SLOT_TIME_ERP_SHORT                     SLOT_TIME_SHORT	/* 802.11g aSlotTime(Short) */
+/* 802.11b aSlotTime */
+#define SLOT_TIME_HR_DSSS                       SLOT_TIME_LONG
+/* 802.11a aSlotTime(20M Spacing) */
+#define SLOT_TIME_OFDM                          SLOT_TIME_SHORT
+/* 802.11a aSlotTime(10M Spacing) */
+#define SLOT_TIME_OFDM_10M_SPACING              13
+/* 802.11g aSlotTime(Long) */
+#define SLOT_TIME_ERP_LONG                      SLOT_TIME_LONG
+/* 802.11g aSlotTime(Short) */
+#define SLOT_TIME_ERP_SHORT                     SLOT_TIME_SHORT
 
 /* 17.4.4/18.3.3/19.8.4 Contention Window (aCWmin & aCWmax) */
-#define CWMIN_OFDM                              15	/* 802.11a aCWmin */
-#define CWMAX_OFDM                              1023	/* 802.11a aCWmax */
+/* 802.11a aCWmin */
+#define CWMIN_OFDM                              15
+/* 802.11a aCWmax */
+#define CWMAX_OFDM                              1023
 
-#define CWMIN_HR_DSSS                           31	/* 802.11b aCWmin */
-#define CWMAX_HR_DSSS                           1023	/* 802.11b aCWmax */
+/* 802.11b aCWmin */
+#define CWMIN_HR_DSSS                           31
+/* 802.11b aCWmax */
+#define CWMAX_HR_DSSS                           1023
 
-#define CWMIN_ERP_0                             31	/* 802.11g aCWmin(0) - for only have 1/2/5/11Mbps Rates */
-#define CWMIN_ERP_1                             15	/* 802.11g aCWmin(1) */
-#define CWMAX_ERP                               1023	/* 802.11g aCWmax */
+/* 802.11g aCWmin(0) - for only have 1/2/5/11Mbps Rates */
+#define CWMIN_ERP_0                             31
+/* 802.11g aCWmin(1) */
+#define CWMIN_ERP_1                             15
+/* 802.11g aCWmax */
+#define CWMAX_ERP                               1023
 
 /* Short Inter-Frame Space (aSIFSTime) */
 /* 15.3.3 802.11b aSIFSTime */
@@ -384,8 +416,10 @@
 /* Annex D - dot11OperationEntry 6 */
 #define DOT11_TRANSMIT_MSDU_LIFETIME_TU_MIN     1
 #define DOT11_TRANSMIT_MSDU_LIFETIME_TU_MAX     0xFFFFffff
-#define DOT11_TRANSMIT_MSDU_LIFETIME_TU_DEFAULT 4095	/* 802.11 define 512 */
-						     /* MT5921 only aceept N <= 4095 */
+
+/* 802.11 define 512 */
+/* MT5921 only aceept N <= 4095 */
+#define DOT11_TRANSMIT_MSDU_LIFETIME_TU_DEFAULT 4095
 
 /* Annex D - dot11OperationEntry 7 */
 #define DOT11_RECEIVE_LIFETIME_TU_MIN           1
@@ -428,7 +462,8 @@
 #define MASK_FC_ORDER                           BIT(15)
 
 #define MASK_FRAME_TYPE                         (MASK_FC_TYPE | MASK_FC_SUBTYPE)
-#define MASK_TO_DS_FROM_DS                      (MASK_FC_TO_DS | MASK_FC_FROM_DS)
+#define MASK_TO_DS_FROM_DS \
+	(MASK_FC_TO_DS | MASK_FC_FROM_DS)
 
 #define MAX_NUM_OF_FC_SUBTYPES                  16
 #define OFFSET_OF_FC_SUBTYPE                    4
@@ -437,7 +472,8 @@
 #define MAC_FRAME_TYPE_MGT                      0
 #define MAC_FRAME_TYPE_CTRL                     BIT(2)
 #define MAC_FRAME_TYPE_DATA                     BIT(3)
-#define MAC_FRAME_TYPE_QOS_DATA                 (MAC_FRAME_TYPE_DATA | MASK_FC_SUBTYPE_QOS_DATA)
+#define MAC_FRAME_TYPE_QOS_DATA \
+	(MAC_FRAME_TYPE_DATA | MASK_FC_SUBTYPE_QOS_DATA)
 
 #define MAC_FRAME_ASSOC_REQ                     (MAC_FRAME_TYPE_MGT | 0x0000)
 #define MAC_FRAME_ASSOC_RSP                     (MAC_FRAME_TYPE_MGT | 0x0010)
@@ -489,9 +525,11 @@
 #define MASK_SC_SEQ_NUM                         BITS(4, 15)
 #define MASK_SC_SEQ_NUM_OFFSET                  4
 #define MASK_SC_FRAG_NUM                        BITS(0, 3)
-#define INVALID_SEQ_CTRL_NUM                    0x000F	/* According to 6.2.1.1.2
-							 * FRAG_NUM won't equal to 15
-							 */
+
+/* According to 6.2.1.1.2
+ * FRAG_NUM won't equal to 15
+ */
+#define INVALID_SEQ_CTRL_NUM                    0x000F
 
 /* 7.1.3.5 QoS Control field */
 #define TID_NUM                                 16
@@ -564,9 +602,10 @@
 /* 7.3.1.1 Authentication Algorithm Number field */
 #define AUTH_ALGORITHM_NUM_FIELD_LEN                2
 
-#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM              0	/* Open System */
-#define AUTH_ALGORITHM_NUM_SHARED_KEY               1	/* Shared Key */
-#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION      2	/* Fast BSS Transition */
+#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0	/* Open System */
+#define AUTH_ALGORITHM_NUM_SHARED_KEY           1	/* Shared Key */
+#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  \
+	2	/* Fast BSS Transition */
 
 /* 7.3.1.2 Authentication Transaction Sequence Number field */
 #define AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN      2
@@ -582,10 +621,12 @@
 #define CAP_INFO_FIELD_LEN                          2
 #define CAP_INFO_ESS                                BIT(0)
 #define CAP_INFO_IBSS                               BIT(1)
-#define CAP_INFO_BSS_TYPE                           (CAP_INFO_ESS | CAP_INFO_IBSS)
+#define CAP_INFO_BSS_TYPE \
+	(CAP_INFO_ESS | CAP_INFO_IBSS)
 #define CAP_INFO_CF_POLLABLE                        BIT(2)
 #define CAP_INFO_CF_POLL_REQ                        BIT(3)
-#define CAP_INFO_CF                                 (CAP_INFO_CF_POLLABLE | CAP_INFO_CF_POLL_REQ)
+#define CAP_INFO_CF \
+	(CAP_INFO_CF_POLLABLE | CAP_INFO_CF_POLL_REQ)
 #define CAP_INFO_PRIVACY                            BIT(4)
 #define CAP_INFO_SHORT_PREAMBLE                     BIT(5)
 #define CAP_INFO_PBCC                               BIT(6)
@@ -606,7 +647,8 @@
 /* STA: CF-Pollable, requesting on the CF-Polling list */
 #define CAP_CF_STA_ON_LIST                          CAP_INFO_CF_POLLABLE
 /* STA: CF-Pollable, requesting never to be polled */
-#define CAP_CF_STA_NEVER_POLLED                     (CAP_INFO_CF_POLLABLE | CAP_INFO_CF_POLL_REQ)
+#define CAP_CF_STA_NEVER_POLLED \
+	(CAP_INFO_CF_POLLABLE | CAP_INFO_CF_POLL_REQ)
 
 /* AP usage of CF-Pollable and CF-Poll Request subfields */
 /* AP: No point coordinator (PC) */
@@ -625,35 +667,57 @@
 /* 7.3.1.7 Reason Code field */
 #define REASON_CODE_FIELD_LEN                       2
 
-#define REASON_CODE_RESERVED                        0	/* Reseved */
-#define REASON_CODE_UNSPECIFIED                     1	/* Unspecified reason */
-#define REASON_CODE_PREV_AUTH_INVALID               2	/* Previous auth no longer valid */
-#define REASON_CODE_DEAUTH_LEAVING_BSS              3	/* Deauth because sending STA is leaving BSS */
-#define REASON_CODE_DISASSOC_INACTIVITY             4	/* Disassoc due to inactivity */
-#define REASON_CODE_DISASSOC_AP_OVERLOAD            5	/* Disassoc because AP is unable to handle all assoc STAs */
-#define REASON_CODE_CLASS_2_ERR                     6	/* Class 2 frame rx from nonauth STA */
-#define REASON_CODE_CLASS_3_ERR                     7	/* Class 3 frame rx from nonassoc STA */
-#define REASON_CODE_DISASSOC_LEAVING_BSS            8	/* Disassoc because sending STA is leaving BSS */
-#define REASON_CODE_ASSOC_BEFORE_AUTH               9	/* STA requesting (re)assoc is not auth with responding STA */
+/* Reseved */
+#define REASON_CODE_RESERVED                        0
+/* Unspecified reason */
+#define REASON_CODE_UNSPECIFIED                     1
+/* Previous auth no longer valid */
+#define REASON_CODE_PREV_AUTH_INVALID               2
+/* Deauth because sending STA is leaving BSS */
+#define REASON_CODE_DEAUTH_LEAVING_BSS              3
+/* Disassoc due to inactivity */
+#define REASON_CODE_DISASSOC_INACTIVITY             4
+/* Disassoc because AP is unable to handle all assoc STAs */
+#define REASON_CODE_DISASSOC_AP_OVERLOAD            5
+/* Class 2 frame rx from nonauth STA */
+#define REASON_CODE_CLASS_2_ERR                     6
+/* Class 3 frame rx from nonassoc STA */
+#define REASON_CODE_CLASS_3_ERR                     7
+/* Disassoc because sending STA is leaving BSS */
+#define REASON_CODE_DISASSOC_LEAVING_BSS            8
+/* STA requesting (re)assoc is not auth with responding STA */
+#define REASON_CODE_ASSOC_BEFORE_AUTH               9
 /* Disassoc because the info in Power Capability is unacceptable */
 #define REASON_CODE_DISASSOC_PWR_CAP_UNACCEPTABLE   10
 /* Disassoc because the info in Supported Channels is unacceptable */
 #define REASON_CODE_DISASSOC_SUP_CHS_UNACCEPTABLE   11
-#define REASON_CODE_INVALID_INFO_ELEM               13	/* Invalid information element */
-#define REASON_CODE_MIC_FAILURE                     14	/* MIC failure */
-#define REASON_CODE_4_WAY_HANDSHAKE_TIMEOUT         15	/* 4-way handshake timeout */
-#define REASON_CODE_GROUP_KEY_UPDATE_TIMEOUT        16	/* Group key update timeout */
+/* Invalid information element */
+#define REASON_CODE_INVALID_INFO_ELEM               13
+/* MIC failure */
+#define REASON_CODE_MIC_FAILURE                     14
+/* 4-way handshake timeout */
+#define REASON_CODE_4_WAY_HANDSHAKE_TIMEOUT         15
+/* Group key update timeout */
+#define REASON_CODE_GROUP_KEY_UPDATE_TIMEOUT        16
 /* Info element in 4-way handshake different from */
 /* (Re-)associate request/Probe response/Beacon */
 #define REASON_CODE_DIFFERENT_INFO_ELEM             17
-#define REASON_CODE_MULTICAST_CIPHER_NOT_VALID      18	/* Multicast Cipher is not valid */
-#define REASON_CODE_UNICAST_CIPHER_NOT_VALID        19	/* Unicast Cipher is not valid */
-#define REASON_CODE_AKMP_NOT_VALID                  20	/* AKMP is not valid */
-#define REASON_CODE_UNSUPPORTED_RSNE_VERSION        21	/* Unsupported RSNE version */
-#define REASON_CODE_INVALID_RSNE_CAPABILITIES       22	/* Invalid RSNE Capabilities */
-#define REASON_CODE_IEEE_802_1X_AUTH_FAILED         23	/* IEEE 802.1X Authentication failed */
-#define REASON_CODE_CIPHER_REJECT_SEC_POLICY        24	/* Cipher suite rejected because of the security policy */
-#define REASON_CODE_DISASSOC_UNSPECIFIED_QOS        32	/* Disassoc for unspecified, QoS-related reason */
+/* Multicast Cipher is not valid */
+#define REASON_CODE_MULTICAST_CIPHER_NOT_VALID      18
+/* Unicast Cipher is not valid */
+#define REASON_CODE_UNICAST_CIPHER_NOT_VALID        19
+/* AKMP is not valid */
+#define REASON_CODE_AKMP_NOT_VALID                  20
+/* Unsupported RSNE version */
+#define REASON_CODE_UNSUPPORTED_RSNE_VERSION        21
+/* Invalid RSNE Capabilities */
+#define REASON_CODE_INVALID_RSNE_CAPABILITIES       22
+/* IEEE 802.1X Authentication failed */
+#define REASON_CODE_IEEE_802_1X_AUTH_FAILED         23
+/* Cipher suite rejected because of the security policy */
+#define REASON_CODE_CIPHER_REJECT_SEC_POLICY        24
+/* Disassoc for unspecified, QoS-related reason */
+#define REASON_CODE_DISASSOC_UNSPECIFIED_QOS        32
 /* Disassoc because QAP lacks sufficient bandwidth for this QSTA */
 #define REASON_CODE_DISASSOC_LACK_OF_BANDWIDTH      33
 /* Disassoc because of too many ACKs lost for AP transmissions */
@@ -661,12 +725,18 @@
 #define REASON_CODE_DISASSOC_ACK_LOST_POOR_CHANNEL  34
 /* Disassoc because QSTA is transmitting outside the limits of its TXOPs */
 #define REASON_CODE_DISASSOC_TX_OUTSIDE_TXOP_LIMIT  35
-#define REASON_CODE_PEER_WHILE_LEAVING              36	/* QSTA is leaving the QBSS or resetting */
-#define REASON_CODE_PEER_REFUSE_DLP                 37	/* Peer does not want to use this mechanism */
-#define REASON_CODE_PEER_SETUP_REQUIRED             38	/* Frames received but a setup is reqired */
-#define REASON_CODE_PEER_TIME_OUT                   39	/* Time out */
-#define REASON_CODE_PEER_CIPHER_UNSUPPORTED         45	/* Peer does not support the requested cipher suite */
-#define REASON_CODE_BEACON_TIMEOUT		    100	/* for beacon timeout, defined by mediatek */
+/* QSTA is leaving the QBSS or resetting */
+#define REASON_CODE_PEER_WHILE_LEAVING              36
+/* Peer does not want to use this mechanism */
+#define REASON_CODE_PEER_REFUSE_DLP                 37
+/* Frames received but a setup is reqired */
+#define REASON_CODE_PEER_SETUP_REQUIRED             38
+/* Time out */
+#define REASON_CODE_PEER_TIME_OUT                   39
+/* Peer does not support the requested cipher suite */
+#define REASON_CODE_PEER_CIPHER_UNSUPPORTED         45
+/* for beacon timeout, defined by mediatek */
+#define REASON_CODE_BEACON_TIMEOUT		              100
 /* 7.3.1.8 AID field */
 #define AID_FIELD_LEN                               2
 #define AID_MASK                                    BITS(0, 13)
@@ -676,19 +746,24 @@
 
 /* 7.3.1.9 Status Code field */
 #define STATUS_CODE_FIELD_LEN                       2
-
-#define STATUS_CODE_RESERVED                        0	/* Reserved - Used by TX Auth */
-#define STATUS_CODE_SUCCESSFUL                      0	/* Successful */
-#define STATUS_CODE_UNSPECIFIED_FAILURE             1	/* Unspecified failure */
-#define STATUS_CODE_CAP_NOT_SUPPORTED               10	/* Cannot support all requested cap in the Cap Info field */
+/* Reserved - Used by TX Auth */
+#define STATUS_CODE_RESERVED                        0
+/* Successful */
+#define STATUS_CODE_SUCCESSFUL                      0
+/* Unspecified failure */
+#define STATUS_CODE_UNSPECIFIED_FAILURE             1
+/* Cannot support all requested cap in the Cap Info field */
+#define STATUS_CODE_CAP_NOT_SUPPORTED               10
 /* Reassoc denied due to inability to confirm that assoc exists */
 #define STATUS_CODE_REASSOC_DENIED_WITHOUT_ASSOC    11
-#define STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD   12	/* Assoc denied due to reason outside the scope of this std. */
+/* Assoc denied due to reason outside the scope of this std. */
+#define STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD   12
 /* Responding STA does not support the specified auth algorithm */
 #define STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED    13
 /* Rx an auth frame with auth transaction seq num out of expected seq */
 #define STATUS_CODE_AUTH_OUT_OF_SEQ                 14
-#define STATUS_CODE_AUTH_REJECTED_CHAL_FAIL         15	/* Auth rejected because of challenge failure */
+/* Auth rejected because of challenge failure */
+#define STATUS_CODE_AUTH_REJECTED_CHAL_FAIL         15
 /* Auth rejected due to timeout waiting for next frame in sequence */
 #define STATUS_CODE_AUTH_REJECTED_TIMEOUT           16
 /* Assoc denied because AP is unable to handle additional assoc STAs */
@@ -697,10 +772,12 @@
 #define STATUS_CODE_ASSOC_DENIED_RATE_NOT_SUPPORTED 18
 /* Assoc denied due to requesting STA not supporting short preamble */
 #define STATUS_CODE_ASSOC_DENIED_NO_SHORT_PREAMBLE  19
-#define STATUS_CODE_ASSOC_DENIED_NO_PBCC            20	/* Assoc denied due to requesting STA not supporting PBCC */
+/* Assoc denied due to requesting STA not supporting PBCC */
+#define STATUS_CODE_ASSOC_DENIED_NO_PBCC            20
 /* Assoc denied due to requesting STA not supporting channel agility */
 #define STATUS_CODE_ASSOC_DENIED_NO_CH_AGILITY      21
-#define STATUS_CODE_ASSOC_REJECTED_NO_SPEC_MGT      22	/* Assoc rejected because Spectrum Mgt capability is required */
+/* Assoc rejected because Spectrum Mgt capability is required */
+#define STATUS_CODE_ASSOC_REJECTED_NO_SPEC_MGT      22
 /* Assoc rejected because the info in Power Capability is unacceptable */
 #define STATUS_CODE_ASSOC_REJECTED_PWR_CAP          23
 /* Assoc rejected because the info in Supported Channels is unacceptable */
@@ -710,65 +787,97 @@
 /* Assoc denied due to requesting STA not supporting DSSS-OFDM */
 #define STATUS_CODE_ASSOC_DENIED_NO_DSSS_OFDM       26
 #if CFG_SUPPORT_802_11W
-#define STATUS_CODE_ASSOC_REJECTED_TEMPORARILY      30	/*  IEEE 802.11w, Assoc denied due to the SA query */
+/*  IEEE 802.11w, Assoc denied due to the SA query */
+#define STATUS_CODE_ASSOC_REJECTED_TEMPORARILY      30
 /* IEEE 802.11w, Assoc denied due to the MFP select policy */
 #define STATUS_CODE_ROBUST_MGMT_FRAME_POLICY_VIOLATION 31
 #endif
-#define STATUS_CODE_UNSPECIFIED_QOS_FAILURE         32	/* Unspecified, QoS-related failure */
+/* Unspecified, QoS-related failure */
+#define STATUS_CODE_UNSPECIFIED_QOS_FAILURE         32
 /* Assoc denied due to insufficient bandwidth to handle another QSTA */
 #define STATUS_CODE_ASSOC_DENIED_BANDWIDTH          33
-/* Assoc denied due to excessive frame loss rates and/or poor channel conditions */
+/* Assoc denied due to excessive frame loss
+ * rates and/or poor channel conditions
+ */
 #define STATUS_CODE_ASSOC_DENIED_POOR_CHANNEL       34
 /* Assoc denied due to requesting STA not supporting QoS facility */
 #define STATUS_CODE_ASSOC_DENIED_NO_QOS_FACILITY    35
-#define STATUS_CODE_REQ_DECLINED                    37	/* Request has been declined */
-/* Request has not been successful as one or more parameters have invalid values */
+/* Request has been declined */
+#define STATUS_CODE_REQ_DECLINED                    37
+/* Request has not been successful as one
+ * or more parameters have invalid values
+ */
 #define STATUS_CODE_REQ_INVALID_PARAMETER_VALUE     38
 /* TS not created because request cannot be honored. */
 /* Suggested TSPEC provided. */
 #define STATUS_CODE_REQ_NOT_HONORED_TSPEC           39
-#define STATUS_CODE_INVALID_INFO_ELEMENT            40	/* Invalid information element */
-#define STATUS_CODE_INVALID_GROUP_CIPHER            41	/* Invalid group cipher */
-#define STATUS_CODE_INVALID_PAIRWISE_CIPHER         42	/* Invalid pairwise cipher */
-#define STATUS_CODE_INVALID_AKMP                    43	/* Invalid AKMP */
-#define STATUS_CODE_UNSUPPORTED_RSN_IE_VERSION      44	/* Unsupported RSN information element version */
-#define STATUS_CODE_INVALID_RSN_IE_CAP              45	/* Invalid RSN information element capabilities */
-#define STATUS_CODE_CIPHER_SUITE_REJECTED           46	/* Cipher suite rejected because of security policy */
+/* Invalid information element */
+#define STATUS_CODE_INVALID_INFO_ELEMENT            40
+/* Invalid group cipher */
+#define STATUS_CODE_INVALID_GROUP_CIPHER            41
+/* Invalid pairwise cipher */
+#define STATUS_CODE_INVALID_PAIRWISE_CIPHER         42
+/* Invalid AKMP */
+#define STATUS_CODE_INVALID_AKMP                    43
+/* Unsupported RSN information element version */
+#define STATUS_CODE_UNSUPPORTED_RSN_IE_VERSION      44
+/* Invalid RSN information element capabilities */
+#define STATUS_CODE_INVALID_RSN_IE_CAP              45
+/* Cipher suite rejected because of security policy */
+#define STATUS_CODE_CIPHER_SUITE_REJECTED           46
 /* TS not created because request cannot be honored. */
 /* Attempt to create a TS later. */
 #define STATUS_CODE_REQ_NOT_HONORED_TS_DELAY        47
-#define STATUS_CODE_DIRECT_LINK_NOT_ALLOWED         48	/* Direct Link is not allowed in the BSS by policy */
-#define STATUS_CODE_DESTINATION_STA_NOT_PRESENT     49	/* Destination STA is not present within this QBSS */
-#define STATUS_CODE_DESTINATION_STA_NOT_QSTA        50	/* Destination STA is not a QSTA */
-#define STATUS_CODE_ASSOC_DENIED_LARGE_LIS_INTERVAL 51	/* Association denied because the ListenInterval is too large */
+/* Direct Link is not allowed in the BSS by policy */
+#define STATUS_CODE_DIRECT_LINK_NOT_ALLOWED         48
+/* Destination STA is not present within this QBSS */
+#define STATUS_CODE_DESTINATION_STA_NOT_PRESENT     49
+/* Destination STA is not a QSTA */
+#define STATUS_CODE_DESTINATION_STA_NOT_QSTA        50
+/* Association denied because the ListenInterval is too large */
+#define STATUS_CODE_ASSOC_DENIED_LARGE_LIS_INTERVAL 51
 
 /* proprietary definition of reserved field of Status Code */
-#define STATUS_CODE_JOIN_FAILURE                    0xFFF0	/* Join failure */
-#define STATUS_CODE_JOIN_TIMEOUT                    0xFFF1	/* Join timeout */
-#define STATUS_CODE_AUTH_TIMEOUT                    0xFFF2	/* Authentication timeout */
-#define STATUS_CODE_ASSOC_TIMEOUT                   0xFFF3	/* (Re)Association timeout */
-#define STATUS_CODE_CCX_CCKM_REASSOC_FAILURE        0xFFF4	/* CCX CCKM reassociation failure */
+/* Join failure */
+#define STATUS_CODE_JOIN_FAILURE                    0xFFF0
+/* Join timeout */
+#define STATUS_CODE_JOIN_TIMEOUT                    0xFFF1
+/* Authentication timeout */
+#define STATUS_CODE_AUTH_TIMEOUT                    0xFFF2
+/* (Re)Association timeout */
+#define STATUS_CODE_ASSOC_TIMEOUT                   0xFFF3
+/* CCX CCKM reassociation failure */
+#define STATUS_CODE_CCX_CCKM_REASSOC_FAILURE        0xFFF4
 
 /* 7.3.1.10 Timestamp field */
 #define TIMESTAMP_FIELD_LEN                         8
 
 /* 7.3.1.11 Category of Action field */
 #define CATEGORY_SPEC_MGT                           0
-#define CATEGORY_QOS_ACTION                         1	/* QoS action */
-#define CATEGORY_DLS_ACTION                         2	/* Direct Link Protocol (DLP) action */
-#define CATEGORY_BLOCK_ACK_ACTION                   3	/* Block ack action */
-#define CATEGORY_PUBLIC_ACTION                      4	/* Public action */
-#define CATEGORY_RM_ACTION                          5	/* Radio measurement action */
+/* QoS action */
+#define CATEGORY_QOS_ACTION                         1
+/* Direct Link Protocol (DLP) action */
+#define CATEGORY_DLS_ACTION                         2
+/* Block ack action */
+#define CATEGORY_BLOCK_ACK_ACTION                   3
+/* Public action */
+#define CATEGORY_PUBLIC_ACTION                      4
+/* Radio measurement action */
+#define CATEGORY_RM_ACTION                          5
 #define CATEGORY_HT_ACTION                          7
 #if CFG_SUPPORT_802_11W
 #define CATEGORY_SA_QUERY_ACTION                    8
 #define CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION    9
 #endif
-#define CATEGORY_WNM_ACTION                         10	/* 802.11v Wireless Network Management */
-#define CATEGORY_UNPROTECTED_WNM_ACTION             11	/* 802.11v Wireless Network Management */
-#define CATEGORY_WME_MGT_NOTIFICATION               17	/* WME management notification */
+/* 802.11v Wireless Network Management */
+#define CATEGORY_WNM_ACTION                         10
+/* 802.11v Wireless Network Management */
+#define CATEGORY_UNPROTECTED_WNM_ACTION             11
+/* WME management notification */
+#define CATEGORY_WME_MGT_NOTIFICATION               17
 
-#define CATEGORY_VHT_ACTION                         21	/* VHT action */
+/* VHT action */
+#define CATEGORY_VHT_ACTION                         21
 
 #if CFG_SUPPORT_802_11W
 #define CATEGORY_VENDOR_SPECIFIC_ACTION_PROTECTED   126
@@ -790,71 +899,129 @@
 /* 7.3.2 Element IDs of information elements */
 #define ELEM_HDR_LEN                                2
 
-#define ELEM_ID_SSID                                0	/* SSID */
-#define ELEM_ID_SUP_RATES                           1	/* Supported rates */
-#define ELEM_ID_FH_PARAM_SET                        2	/* FH parameter set */
-#define ELEM_ID_DS_PARAM_SET                        3	/* DS parameter set */
-#define ELEM_ID_CF_PARAM_SET                        4	/* CF parameter set */
-#define ELEM_ID_TIM                                 5	/* TIM */
-#define ELEM_ID_IBSS_PARAM_SET                      6	/* IBSS parameter set */
-#define ELEM_ID_COUNTRY_INFO                        7	/* Country information */
-#define ELEM_ID_HOPPING_PATTERN_PARAM               8	/* Hopping pattern parameters */
-#define ELEM_ID_HOPPING_PATTERN_TABLE               9	/* Hopping pattern table */
-#define ELEM_ID_REQUEST                             10	/* Request */
-#define ELEM_ID_BSS_LOAD                            11	/* BSS load */
-#define ELEM_ID_EDCA_PARAM_SET                      12	/* EDCA parameter set */
-#define ELEM_ID_TSPEC                               13	/* Traffic specification (TSPEC) */
-#define ELEM_ID_TCLAS                               14	/* Traffic classification (TCLAS) */
-#define ELEM_ID_SCHEDULE                            15	/* Schedule */
-#define ELEM_ID_CHALLENGE_TEXT                      16	/* Challenge text */
+#define ELEM_ID_SSID \
+	0	/* SSID */
+#define ELEM_ID_SUP_RATES \
+	1	/* Supported rates */
+#define ELEM_ID_FH_PARAM_SET \
+	2	/* FH parameter set */
+#define ELEM_ID_DS_PARAM_SET \
+	3	/* DS parameter set */
+#define ELEM_ID_CF_PARAM_SET \
+	4	/* CF parameter set */
+#define ELEM_ID_TIM \
+	5	/* TIM */
+#define ELEM_ID_IBSS_PARAM_SET \
+	6	/* IBSS parameter set */
+#define ELEM_ID_COUNTRY_INFO \
+	7	/* Country information */
+#define ELEM_ID_HOPPING_PATTERN_PARAM \
+	8	/* Hopping pattern parameters */
+#define ELEM_ID_HOPPING_PATTERN_TABLE \
+	9	/* Hopping pattern table */
+#define ELEM_ID_REQUEST \
+	10	/* Request */
+#define ELEM_ID_BSS_LOAD \
+	11	/* BSS load */
+#define ELEM_ID_EDCA_PARAM_SET \
+	12	/* EDCA parameter set */
+#define ELEM_ID_TSPEC \
+	13	/* Traffic specification (TSPEC) */
+#define ELEM_ID_TCLAS \
+	14	/* Traffic classification (TCLAS) */
+#define ELEM_ID_SCHEDULE \
+	15	/* Schedule */
+#define ELEM_ID_CHALLENGE_TEXT \
+	16	/* Challenge text */
 
-#define ELEM_ID_PWR_CONSTRAINT                      32	/* Power constraint */
-#define ELEM_ID_PWR_CAP                             33	/* Power capability */
-#define ELEM_ID_TPC_REQ                             34	/* TPC request */
-#define ELEM_ID_TPC_REPORT                          35	/* TPC report */
-#define ELEM_ID_SUP_CHS                             36	/* Supported channels */
-#define ELEM_ID_CH_SW_ANNOUNCEMENT                  37	/* Channel switch announcement */
-#define ELEM_ID_MEASUREMENT_REQ                     38	/* Measurement request */
-#define ELEM_ID_MEASUREMENT_REPORT                  39	/* Measurement report */
-#define ELEM_ID_QUIET                               40	/* Quiet */
-#define ELEM_ID_IBSS_DFS                            41	/* IBSS DFS */
-#define ELEM_ID_ERP_INFO                            42	/* ERP information */
-#define ELEM_ID_TS_DELAY                            43	/* TS delay */
-#define ELEM_ID_TCLAS_PROCESSING                    44	/* TCLAS processing */
-#define ELEM_ID_HT_CAP                              45	/* HT Capabilities subelement */
-#define ELEM_ID_QOS_CAP                             46	/* QoS capability */
-#define ELEM_ID_RSN                                 48	/* RSN IE */
-#define ELEM_ID_EXTENDED_SUP_RATES                  50	/* Extended supported rates */
+#define ELEM_ID_PWR_CONSTRAINT \
+	32	/* Power constraint */
+#define ELEM_ID_PWR_CAP \
+	33	/* Power capability */
+#define ELEM_ID_TPC_REQ \
+	34	/* TPC request */
+#define ELEM_ID_TPC_REPORT \
+	35	/* TPC report */
+#define ELEM_ID_SUP_CHS \
+	36	/* Supported channels */
+#define ELEM_ID_CH_SW_ANNOUNCEMENT \
+	37	/* Channel switch announcement */
+#define ELEM_ID_MEASUREMENT_REQ \
+	38	/* Measurement request */
+#define ELEM_ID_MEASUREMENT_REPORT \
+	39	/* Measurement report */
+#define ELEM_ID_QUIET \
+	40	/* Quiet */
+#define ELEM_ID_IBSS_DFS \
+	41	/* IBSS DFS */
+#define ELEM_ID_ERP_INFO \
+	42	/* ERP information */
+#define ELEM_ID_TS_DELAY \
+	43	/* TS delay */
+#define ELEM_ID_TCLAS_PROCESSING \
+	44	/* TCLAS processing */
+#define ELEM_ID_HT_CAP \
+	45	/* HT Capabilities subelement */
+#define ELEM_ID_QOS_CAP \
+	46	/* QoS capability */
+#define ELEM_ID_RSN \
+	48	/* RSN IE */
+#define ELEM_ID_EXTENDED_SUP_RATES \
+	50	/* Extended supported rates */
 #if CFG_SUPPORT_802_11W
-#define ELEM_ID_TIMEOUT_INTERVAL                    56	/* 802.11w SA Timeout interval */
+#define ELEM_ID_TIMEOUT_INTERVAL \
+	56	/* 802.11w SA Timeout interval */
 #endif
-#define ELEM_ID_SUP_OPERATING_CLASS					59	/* Supported Operating Classes */
+#define ELEM_ID_SUP_OPERATING_CLASS \
+	59	/* Supported Operating Classes */
 
-#define ELEM_ID_HT_OP                               61	/* HT Operation */
-#define ELEM_ID_SCO                                 62	/* Secondary Channel Offset */
-#define ELEM_ID_RRM_ENABLED_CAP                     70	/* Radio Resource Management Enabled Capabilities */
-#define ELEM_ID_20_40_BSS_COEXISTENCE               72	/* 20/40 BSS Coexistence */
-#define ELEM_ID_20_40_INTOLERANT_CHNL_REPORT        73	/* 20/40 BSS Intolerant Channel Report */
-#define ELEM_ID_OBSS_SCAN_PARAMS                    74	/* Overlapping BSS Scan Parameters */
-#define ELEM_ID_EXTENDED_CAP                        127	/* Extended capabilities */
+#define ELEM_ID_HT_OP \
+	61	/* HT Operation */
+#define ELEM_ID_SCO \
+	62	/* Secondary Channel Offset */
+#define ELEM_ID_RRM_ENABLED_CAP \
+	70	/* Radio Resource Management Enabled Capabilities */
+#define ELEM_ID_20_40_BSS_COEXISTENCE \
+	72	/* 20/40 BSS Coexistence */
+#define ELEM_ID_20_40_INTOLERANT_CHNL_REPORT \
+	73	/* 20/40 BSS Intolerant Channel Report */
+#define ELEM_ID_OBSS_SCAN_PARAMS \
+	74	/* Overlapping BSS Scan Parameters */
+#define ELEM_ID_EXTENDED_CAP \
+	127	/* Extended capabilities */
 
-#define ELEM_ID_INTERWORKING                        107	/* Interworking with External Network */
-#define ELEM_ID_ADVERTISEMENT_PROTOCOL              108	/* Advertisement Protocol */
-#define ELEM_ID_QOS_MAP_SET                         110 /* QoS Map Set */
-#define ELEM_ID_ROAMING_CONSORTIUM                  111	/* Roaming Consortium */
-#define ELEM_ID_EXTENDED_CAP                        127	/* Extended capabilities */
+#define ELEM_ID_INTERWORKING \
+	107	/* Interworking with External Network */
+#define ELEM_ID_ADVERTISEMENT_PROTOCOL \
+	108	/* Advertisement Protocol */
+#define ELEM_ID_QOS_MAP_SET \
+	110 /* QoS Map Set */
+#define ELEM_ID_ROAMING_CONSORTIUM \
+	111	/* Roaming Consortium */
+#define ELEM_ID_EXTENDED_CAP \
+	127	/* Extended capabilities */
 
-#define ELEM_ID_VENDOR                              221	/* Vendor specific IE */
-#define ELEM_ID_WPA                                 ELEM_ID_VENDOR	/* WPA IE */
-#define ELEM_ID_WMM                                 ELEM_ID_VENDOR	/* WMM IE */
-#define ELEM_ID_P2P                                 ELEM_ID_VENDOR	/* WiFi Direct */
-#define ELEM_ID_WSC                                 ELEM_ID_VENDOR	/* WSC IE */
+#define ELEM_ID_VENDOR \
+	221	/* Vendor specific IE */
+#define ELEM_ID_WPA \
+	ELEM_ID_VENDOR	/* WPA IE */
+#define ELEM_ID_WMM \
+	ELEM_ID_VENDOR	/* WMM IE */
+#define ELEM_ID_P2P \
+	ELEM_ID_VENDOR	/* WiFi Direct */
+#define ELEM_ID_WSC \
+	ELEM_ID_VENDOR	/* WSC IE */
 
-#define ELEM_ID_VHT_CAP                             191	/* VHT Capabilities subelement */
-#define ELEM_ID_VHT_OP                              192	/* VHT Operation information */
-#define ELEM_ID_WIDE_BAND_CHANNEL_SWITCH            194	/*Wide Bandwidth Channel Switch */
-#define ELEM_ID_OP_MODE                             199	/* Operation Mode Notification */
-#define ELEM_ID_RESERVED                            255	/* Reserved */
+#define ELEM_ID_VHT_CAP \
+	191	/* VHT Capabilities subelement */
+#define ELEM_ID_VHT_OP \
+	192	/* VHT Operation information */
+#define ELEM_ID_WIDE_BAND_CHANNEL_SWITCH \
+	194	/*Wide Bandwidth Channel Switch */
+#define ELEM_ID_OP_MODE \
+	199	/* Operation Mode Notification */
+#define ELEM_ID_RESERVED \
+	255	/* Reserved */
 
 /* 7.3.2.1 SSID element */
 #define ELEM_MAX_LEN_SSID                           32
@@ -880,7 +1047,9 @@
 #define ELEM_MAX_LEN_CHALLENGE_TEXT                 253
 
 /* 7.3.2.9 Country Information element */
-/* Country IE should contain at least 3-bytes country code string and one subband triplet. */
+/* Country IE should contain at least 3-bytes country
+ * code string and one subband triplet.
+ */
 #define ELEM_MIN_LEN_COUNTRY_INFO                   6
 
 #define ELEM_ID_COUNTRY_INFO_TRIPLET_LEN_FIXED              3
@@ -890,9 +1059,12 @@
 /* 7.3.2.13 ERP Information element */
 #define ELEM_MAX_LEN_ERP                            1
 /* -- bits in the ERP Information element */
-#define ERP_INFO_NON_ERP_PRESENT                    BIT(0)	/* NonERP_Present bit */
-#define ERP_INFO_USE_PROTECTION                     BIT(1)	/* Use_Protection bit */
-#define ERP_INFO_BARKER_PREAMBLE_MODE               BIT(2)	/* Barker_Preamble_Mode bit */
+/* NonERP_Present bit */
+#define ERP_INFO_NON_ERP_PRESENT                    BIT(0)
+/* Use_Protection bit */
+#define ERP_INFO_USE_PROTECTION                     BIT(1)
+/* Barker_Preamble_Mode bit */
+#define ERP_INFO_BARKER_PREAMBLE_MODE               BIT(2)
 
 #define ELEM_MAX_LEN_SUPPORTED_CHANNELS            9
 
@@ -925,10 +1097,14 @@
 #define ELEM_RM_TYPE_TS_REPORT                      9
 
 /* 7.3.2.25 RSN information element */
-#define ELEM_MAX_LEN_WPA                            34	/* one pairwise, one AKM suite, one PMKID */
-#define ELEM_MAX_LEN_RSN                            38	/* one pairwise, one AKM suite, one PMKID */
-#define ELEM_MAX_LEN_WAPI                           38	/* one pairwise, one AKM suite, one BKID */
-#define ELEM_MAX_LEN_WSC                            200	/* one pairwise, one AKM suite, one BKID */
+/* one pairwise, one AKM suite, one PMKID */
+#define ELEM_MAX_LEN_WPA                            34
+/* one pairwise, one AKM suite, one PMKID */
+#define ELEM_MAX_LEN_RSN                            38
+/* one pairwise, one AKM suite, one BKID */
+#define ELEM_MAX_LEN_WAPI                           38
+/* one pairwise, one AKM suite, one BKID */
+#define ELEM_MAX_LEN_WSC                            200
 
 #if CFG_SUPPORT_802_11W
 #define ELEM_WPA_CAP_MFPR                           BIT(6)
@@ -952,7 +1128,8 @@
 #define ELEM_MAX_LEN_EXT_CAP                        (8)
 
 /* 7.3.2.30 TSPEC element */
-#define TS_INFO_TRAFFIC_TYPE_MASK                   BIT(0)	/* WMM: 0 (Asynchronous TS of low-duty cycles) */
+/* WMM: 0 (Asynchronous TS of low-duty cycles) */
+#define TS_INFO_TRAFFIC_TYPE_MASK                   BIT(0)
 #define TS_INFO_TID_OFFSET                          1
 #define TS_INFO_TID_MASK                            BITS(1, 4)
 #define TS_INFO_DIRECTION_OFFSET                    5
@@ -968,7 +1145,8 @@
 #define TS_INFO_SCHEDULE_MASK                       16
 
 /* 7.3.2.56 HT capabilities element */
-#define ELEM_MAX_LEN_HT_CAP                         (28 - ELEM_HDR_LEN)	/* sizeof(IE_HT_CAP_T)-2 */
+#define ELEM_MAX_LEN_HT_CAP \
+	(28 - ELEM_HDR_LEN)	/* sizeof(IE_HT_CAP_T)-2 */
 
 /* 7.3.2.56.2 HT capabilities Info field */
 #define HT_CAP_INFO_LDPC_CAP                        BIT(0)
@@ -991,40 +1169,43 @@
 #define HT_CAP_INFO_RX_STBC_2_SS                    BIT(9)
 #define HT_CAP_INFO_RX_STBC_3_SS                    HT_CAP_INFO_RX_STBC
 
-#define ELEM_MAX_LEN_VHT_CAP                         (14 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_CAP_T)-2 */
+#define ELEM_MAX_LEN_VHT_CAP \
+	(14 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_CAP_T)-2 */
 /* 8.4.2.161 VHT Operation element */
-#define ELEM_MAX_LEN_VHT_OP                          (7 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_T)-2 */
+#define ELEM_MAX_LEN_VHT_OP \
+	(7 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_T)-2 */
 
-#define ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION        (3 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_MODE_T)-2 */
+#define ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION \
+	(3 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_MODE_T)-2 */
 
 /*8.4.2.160.3 VHT Supported MCS Set field*/
 
 /*8.4.2.160.2 VHT Capabilities Info field*/
-#define VHT_CAP_INFO_MAX_MPDU_LEN_3K							0
-#define VHT_CAP_INFO_MAX_MPDU_LEN_8K							BIT(0)
-#define VHT_CAP_INFO_MAX_MPDU_LEN_11K						    BIT(1)
-#define VHT_CAP_INFO_MAX_MPDU_LEN_MASK							BITS(0, 1)
+#define VHT_CAP_INFO_MAX_MPDU_LEN_3K          0
+#define VHT_CAP_INFO_MAX_MPDU_LEN_8K          BIT(0)
+#define VHT_CAP_INFO_MAX_MPDU_LEN_11K         BIT(1)
+#define VHT_CAP_INFO_MAX_MPDU_LEN_MASK        BITS(0, 1)
 
-#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_NONE				0
-#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160				BIT(2)
-#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80		BIT(3)
-#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_MASK					BITS(2, 3)
+#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_NONE       0
+#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160        BIT(2)
+#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80  BIT(3)
+#define VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_MASK           BITS(2, 3)
 
-#define VHT_CAP_INFO_RX_LDPC									BIT(4)
-#define VHT_CAP_INFO_SHORT_GI_80								BIT(5)
-#define VHT_CAP_INFO_SHORT_GI_160_80P80							BIT(6)
-#define VHT_CAP_INFO_TX_STBC									BIT(7)
+#define VHT_CAP_INFO_RX_LDPC                  BIT(4)
+#define VHT_CAP_INFO_SHORT_GI_80              BIT(5)
+#define VHT_CAP_INFO_SHORT_GI_160_80P80       BIT(6)
+#define VHT_CAP_INFO_TX_STBC                  BIT(7)
 
-#define VHT_CAP_INFO_RX_STBC_NONE								0
-#define VHT_CAP_INFO_RX_STBC_MASK								BITS(8, 10)
-#define VHT_CAP_INFO_RX_STBC_OFFSET								8
-#define VHT_CAP_INFO_RX_STBC_ONE_STREAM							BIT(8)
-#define VHT_CAP_INFO_RX_STBC_TWO_STREAM							BIT(9)
-#define VHT_CAP_INFO_RX_STBC_THREE_STREAM						BITS(8, 9)
-#define VHT_CAP_INFO_RX_STBC_FOUR_STREAM						BIT(10)
+#define VHT_CAP_INFO_RX_STBC_NONE             0
+#define VHT_CAP_INFO_RX_STBC_MASK             BITS(8, 10)
+#define VHT_CAP_INFO_RX_STBC_OFFSET           8
+#define VHT_CAP_INFO_RX_STBC_ONE_STREAM       BIT(8)
+#define VHT_CAP_INFO_RX_STBC_TWO_STREAM       BIT(9)
+#define VHT_CAP_INFO_RX_STBC_THREE_STREAM     BITS(8, 9)
+#define VHT_CAP_INFO_RX_STBC_FOUR_STREAM      BIT(10)
 
-#define VHT_CAP_INFO_SU_BEAMFORMER_CAPABLE						BIT(11)
-#define VHT_CAP_INFO_SU_BEAMFORMEE_CAPABLE						BIT(12)
+#define VHT_CAP_INFO_SU_BEAMFORMER_CAPABLE    BIT(11)
+#define VHT_CAP_INFO_SU_BEAMFORMEE_CAPABLE    BIT(12)
 
 #define VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUPPOERTED_OFFSET 13
 #define VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUPPOERTED BITS(13, 15)
@@ -1032,53 +1213,53 @@
 #define VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_3_SUPPOERTED BIT(14)
 #define VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUPPOERTED BITS(13, 14)
 
-#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET		16
-#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS				BITS(16, 18)
-#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_2_SUPPORTED	BIT(16)
-#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_3_SUPPORTED	BIT(17)
-#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_4_SUPPORTED	BITS(16, 17)
+#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET      16
+#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS             BITS(16, 18)
+#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_2_SUPPORTED BIT(16)
+#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_3_SUPPORTED BIT(17)
+#define VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_4_SUPPORTED BITS(16, 17)
 
-#define	VHT_CAP_INFO_MU_BEAMFOMER_CAPABLE						BIT(19)
-#define VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE						BIT(20)
-#define VHT_CAP_INFO_VHT_TXOP_PS								BIT(21)
-#define VHT_CAP_INFO_HTC_VHT_CAPABLE							BIT(22)
+#define	VHT_CAP_INFO_MU_BEAMFOMER_CAPABLE       BIT(19)
+#define VHT_CAP_INFO_MU_BEAMFOMEE_CAPABLE       BIT(20)
+#define VHT_CAP_INFO_VHT_TXOP_PS                BIT(21)
+#define VHT_CAP_INFO_HTC_VHT_CAPABLE            BIT(22)
 
-#define VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET                    23
+#define VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET                  23
 
-#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_NOFEEDBACK				0
-#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_UNSOLICITED				BITS(27)
-#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_BOTH						BITS(26, 27)
+#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_NOFEEDBACK   0
+#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_UNSOLICITED  BITS(27)
+#define VHT_CAP_INFO_VHT_LINK_ADAPTATION_CAPABLE_BOTH         BITS(26, 27)
 
 #define VHT_CAP_INFO_RX_ANTENNA_PATTERN_CONSISTENCY			BIT(28)
 #define VHT_CAP_INFO_TX_ANTENNA_PATTERN_CONSISTENCY			BIT(29)
 
-#define VHT_CAP_INFO_MCS_MAP_MCS7								0
-#define VHT_CAP_INFO_MCS_MAP_MCS8								BIT(0)
-#define VHT_CAP_INFO_MCS_MAP_MCS9								BIT(1)
-#define VHT_CAP_INFO_MCS_NOT_SUPPORTED							BITS(0, 1)
+#define VHT_CAP_INFO_MCS_MAP_MCS7           0
+#define VHT_CAP_INFO_MCS_MAP_MCS8           BIT(0)
+#define VHT_CAP_INFO_MCS_MAP_MCS9           BIT(1)
+#define VHT_CAP_INFO_MCS_NOT_SUPPORTED      BITS(0, 1)
 
-#define VHT_CAP_INFO_MCS_1SS_OFFSET						0
-#define VHT_CAP_INFO_MCS_2SS_OFFSET						2
-#define VHT_CAP_INFO_MCS_3SS_OFFSET						4
-#define VHT_CAP_INFO_MCS_4SS_OFFSET						6
-#define VHT_CAP_INFO_MCS_5SS_OFFSET						8
-#define VHT_CAP_INFO_MCS_6SS_OFFSET						10
-#define VHT_CAP_INFO_MCS_7SS_OFFSET						12
-#define VHT_CAP_INFO_MCS_8SS_OFFSET						14
+#define VHT_CAP_INFO_MCS_1SS_OFFSET         0
+#define VHT_CAP_INFO_MCS_2SS_OFFSET         2
+#define VHT_CAP_INFO_MCS_3SS_OFFSET         4
+#define VHT_CAP_INFO_MCS_4SS_OFFSET         6
+#define VHT_CAP_INFO_MCS_5SS_OFFSET         8
+#define VHT_CAP_INFO_MCS_6SS_OFFSET         10
+#define VHT_CAP_INFO_MCS_7SS_OFFSET         12
+#define VHT_CAP_INFO_MCS_8SS_OFFSET         14
 
-#define VHT_CAP_INFO_MCS_1SS_MASK						BITS(0, 1)
-#define VHT_CAP_INFO_MCS_2SS_MASK						BITS(2, 3)
-#define VHT_CAP_INFO_MCS_3SS_MASK						BITS(4, 5)
-#define VHT_CAP_INFO_MCS_4SS_MASK						BITS(6, 7)
-#define VHT_CAP_INFO_MCS_5SS_MASK						BITS(8, 9)
-#define VHT_CAP_INFO_MCS_6SS_MASK						BITS(10, 11)
-#define VHT_CAP_INFO_MCS_7SS_MASK						BITS(12, 13)
-#define VHT_CAP_INFO_MCS_8SS_MASK						BITS(14, 15)
+#define VHT_CAP_INFO_MCS_1SS_MASK           BITS(0, 1)
+#define VHT_CAP_INFO_MCS_2SS_MASK           BITS(2, 3)
+#define VHT_CAP_INFO_MCS_3SS_MASK           BITS(4, 5)
+#define VHT_CAP_INFO_MCS_4SS_MASK           BITS(6, 7)
+#define VHT_CAP_INFO_MCS_5SS_MASK           BITS(8, 9)
+#define VHT_CAP_INFO_MCS_6SS_MASK           BITS(10, 11)
+#define VHT_CAP_INFO_MCS_7SS_MASK           BITS(12, 13)
+#define VHT_CAP_INFO_MCS_8SS_MASK           BITS(14, 15)
 
-#define VHT_OP_CHANNEL_WIDTH_20_40						0
-#define VHT_OP_CHANNEL_WIDTH_80							1
-#define VHT_OP_CHANNEL_WIDTH_160						2
-#define VHT_OP_CHANNEL_WIDTH_80P80						3
+#define VHT_OP_CHANNEL_WIDTH_20_40          0
+#define VHT_OP_CHANNEL_WIDTH_80             1
+#define VHT_OP_CHANNEL_WIDTH_160            2
+#define VHT_OP_CHANNEL_WIDTH_80P80          3
 
 /*8.4.1.50 Operating Mode Field*/
 #define VHT_OP_MODE_CHANNEL_WIDTH                   BITS(0, 1)
@@ -1096,7 +1277,8 @@
 
 /* 8.4.1.22 SM Power Control field*/
 #define HT_SM_POWER_SAVE_CONTROL_ENABLED            BIT(0)
-#define HT_SM_POWER_SAVE_CONTROL_SM_MODE            BIT(1) /* 0:static, 1:dynamic */
+/* 0:static, 1:dynamic */
+#define HT_SM_POWER_SAVE_CONTROL_SM_MODE            BIT(1)
 #define HT_SM_POWER_SAVE_CONTROL_SM_MODE_OFFSET     1
 
 /* 8.4.1.21 Channel Width field */
@@ -1196,7 +1378,8 @@
 #define ASEL_CAP_TX_SOUNDING_CAPABLE                BIT(6)
 
 /* 7.3.2.57 HT Operation element */
-#define ELEM_MAX_LEN_HT_OP                          (24 - ELEM_HDR_LEN)	/* sizeof(IE_HT_OP_T)-2 */
+/* sizeof(IE_HT_OP_T)-2 */
+#define ELEM_MAX_LEN_HT_OP                          (24 - ELEM_HDR_LEN)
 
 #define HT_OP_INFO1_SCO                             BITS(0, 1)
 #define HT_OP_INFO1_STA_CHNL_WIDTH                  BIT(2)
@@ -1247,7 +1430,8 @@
 #define ELEM_MIN_LEN_HS20_INDICATION                4
 
 /* Hotspot Configuration*/
-#define ELEM_HS_CONFIG_DGAF_DISABLED_MASK           BIT(0)	/* Downstream Group-Addressed Forwarding */
+/* Downstream Group-Addressed Forwarding */
+#define ELEM_HS_CONFIG_DGAF_DISABLED_MASK           BIT(0)
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 /* MTK Vendor Specific OUI */
@@ -1255,7 +1439,8 @@
 #define VENDOR_OUI_MTK                              { 0x00, 0x0C, 0xE7 }
 #define MTK_SYNERGY_CAP_SUPPORT_24G_MCS89           BIT(3)
 #define MTK_SYNERGY_CAP_SUPPORT_24G_MCS89_PROBING	BIT(4)
-#define MTK_SYNERGY_CAP0                            (MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)
+#define MTK_SYNERGY_CAP0 \
+	(MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)
 #define MTK_SYNERGY_CAP1                            0x0
 #define MTK_SYNERGY_CAP2                            0x0
 #define MTK_SYNERGY_CAP3                            0x0
@@ -1265,11 +1450,16 @@
 
 /* 3 Management frame body components (III): 7.4 Action frame format details. */
 /* 7.4.1 Spectrum Measurement Action frame details */
-#define ACTION_MEASUREMENT_REQ                      0	/* Spectrum measurement request */
-#define ACTION_MEASUREMENT_REPORT                   1	/* Spectrum measurement report */
-#define ACTION_TPC_REQ                              2	/* TPC request */
-#define ACTION_TPC_REPORT                           3	/* TPC report */
-#define ACTION_CHNL_SWITCH                          4	/* Channel Switch Announcement */
+/* Spectrum measurement request */
+#define ACTION_MEASUREMENT_REQ                      0
+/* Spectrum measurement report */
+#define ACTION_MEASUREMENT_REPORT                   1
+/* TPC request */
+#define ACTION_TPC_REQ                              2
+/* TPC report */
+#define ACTION_TPC_REPORT                           3
+/* Channel Switch Announcement */
+#define ACTION_CHNL_SWITCH                          4
 
 #define ACTION_SM_TPC_REQ_LEN                       5
 #define ACTION_SM_TPC_REPORT_LEN                    7
@@ -1278,7 +1468,8 @@
 #define ACTION_SM_BASIC_REPORT_LEN                  12
 #define ACTION_SM_CCA_REPORT_LEN                    12
 #define ACTION_SM_PRI_REPORT_LEN                    19
-#define MIN_RCV_PWR                                 100 /* Negative value ((dBm) */
+/* Negative value ((dBm) */
+#define MIN_RCV_PWR                                 100
 
 /* 7.4.2 QoS Action frame details */
 #define ACTION_ADDTS_REQ                            0	/* ADDTS request */
@@ -1287,8 +1478,10 @@
 #define ACTION_SCHEDULE                             3	/* Schedule */
 #define ACTION_QOS_MAP_CONFIGURE                    4	/*Qos Map Configure*/
 
-#define ACTION_ADDTS_REQ_FRAME_LEN                  (24+3+63)	/* WMM TSPEC IE: 63 */
-#define ACTION_ADDTS_RSP_FRAME_LEN                  (24+4+63)	/* WMM Status Code: 1; WMM TSPEC IE: 63 */
+/* WMM TSPEC IE: 63 */
+#define ACTION_ADDTS_REQ_FRAME_LEN                  (24+3+63)
+/* WMM Status Code: 1; WMM TSPEC IE: 63 */
+#define ACTION_ADDTS_RSP_FRAME_LEN                  (24+4+63)
 
 /* 7.4.3 DLS Action frame details */
 #define ACTION_DLS_REQ                              0	/* DLS request */
@@ -1309,15 +1502,22 @@
 #define ACTION_DELBA_FRAME_LEN                      (24+6)
 
 /* 7.4.6 Radio Measurement Action frame details */
-#define ACTION_RM_REQ                               0	/* Radio measurement request */
-#define ACTION_RM_REPORT                            1	/* Radio measurement report */
-#define ACTION_LM_REQ                               2	/* Link measurement request */
-#define ACTION_LM_REPORT                            3	/* Link measurement report */
-#define ACTION_NEIGHBOR_REPORT_REQ                  4	/* Neighbor report request */
-#define ACTION_NEIGHBOR_REPORT_RSP                  5	/* Neighbor report response */
+/* Radio measurement request */
+#define ACTION_RM_REQ                               0
+/* Radio measurement report */
+#define ACTION_RM_REPORT                            1
+/* Link measurement request */
+#define ACTION_LM_REQ                               2
+/* Link measurement report */
+#define ACTION_LM_REPORT                            3
+/* Neighbor report request */
+#define ACTION_NEIGHBOR_REPORT_REQ                  4
+/* Neighbor report response */
+#define ACTION_NEIGHBOR_REPORT_RSP                  5
 
 /* 7.4.7 Public Action frame details */
-#define ACTION_PUBLIC_20_40_COEXIST                 0	/* 20/40 BSS coexistence */
+/* 20/40 BSS coexistence */
+#define ACTION_PUBLIC_20_40_COEXIST                 0
 
 #if CFG_SUPPORT_802_11W
 /* SA Query Action frame (IEEE 802.11w/D8.0, 7.4.9) */
@@ -1333,14 +1533,22 @@
 #endif
 
 /* 7.4.10.1 HT action frame details */
-#define ACTION_HT_NOTIFY_CHANNEL_WIDTH              0	/* Notify Channel Width */
-#define ACTION_HT_SM_POWER_SAVE                     1	/* SM Power Save */
-#define ACTION_HT_PSMP                              2	/* PSMP */
-#define ACTION_HT_SET_PCO_PHASE                     3	/* Set PCO Phase */
-#define ACTION_HT_CSI                               4	/* CSI */
-#define ACTION_HT_NON_COMPRESSED_BEAMFORM           5	/* Non-compressed Beamforming */
-#define ACTION_HT_COMPRESSED_BEAMFORM               6	/* Compressed Beamforming */
-#define ACTION_HT_ANT_SEL_INDICES_FB                7	/* Antenna Selection Indices Feedback */
+/* Notify Channel Width */
+#define ACTION_HT_NOTIFY_CHANNEL_WIDTH              0
+/* SM Power Save */
+#define ACTION_HT_SM_POWER_SAVE                     1
+/* PSMP */
+#define ACTION_HT_PSMP                              2
+/* Set PCO Phase */
+#define ACTION_HT_SET_PCO_PHASE                     3
+/* CSI */
+#define ACTION_HT_CSI                               4
+/* Non-compressed Beamforming */
+#define ACTION_HT_NON_COMPRESSED_BEAMFORM           5
+/* Compressed Beamforming */
+#define ACTION_HT_COMPRESSED_BEAMFORM               6
+/* Antenna Selection Indices Feedback */
+#define ACTION_HT_ANT_SEL_INDICES_FB                7
 
 #define ACTION_WNM_NOTIFICATION_REQUEST			26
 /* 802.11v Wireless Network Management */
@@ -1369,43 +1577,50 @@
 #define VENDOR_OUI_TYPE_HS20                        16
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#define VENDOR_OUI_TYPE_LEN                         4	/* Length of OUI and Type */
+/* Length of OUI and Type */
+#define VENDOR_OUI_TYPE_LEN                         4
 
-/* VERSION(2 octets for WPA) / SUBTYPE(1 octet)-VERSION(1 octet) fields for WMM in WFA IE */
-#define VERSION_WPA                                 0x0001	/* Little Endian Format */
-#define VENDOR_OUI_SUBTYPE_VERSION_WMM_INFO         0x0100
-#define VENDOR_OUI_SUBTYPE_VERSION_WMM_PARAM        0x0101
+/* VERSION(2 octets for WPA) / SUBTYPE(1 octet)-VERSION(1 octet)
+ * fields for WMM in WFA IE
+ */
+/* Little Endian Format */
+#define VERSION_WPA                             0x0001
+#define VENDOR_OUI_SUBTYPE_VERSION_WMM_INFO     0x0100
+#define VENDOR_OUI_SUBTYPE_VERSION_WMM_PARAM    0x0101
 
 /* SUBTYPE(1 octet) for WMM */
-#define VENDOR_OUI_SUBTYPE_WMM_INFO                 0x00	/* WMM Spec version 1.1 */
-#define VENDOR_OUI_SUBTYPE_WMM_PARAM                0x01
-#define VENDOR_OUI_SUBTYPE_WMM_TSPEC                0x02
+/* WMM Spec version 1.1 */
+#define VENDOR_OUI_SUBTYPE_WMM_INFO             0x00
+#define VENDOR_OUI_SUBTYPE_WMM_PARAM            0x01
+#define VENDOR_OUI_SUBTYPE_WMM_TSPEC            0x02
 
 /* VERSION(1 octet) for WMM */
-#define VERSION_WMM                                 0x01	/* WMM Spec version 1.1 */
+/* WMM Spec version 1.1 */
+#define VERSION_WMM                             0x01
 
 /* WMM-2.1.6 QoS Control Field */
-#define WMM_QC_UP_MASK                              BITS(0, 2)
-#define WMM_QC_EOSP                                 BIT(4)
-#define WMM_QC_ACK_POLICY_MASK                      BITS(5, 6)
-#define WMM_QC_ACK_POLICY_OFFSET                    5
-#define WMM_QC_ACK_POLICY_ACKNOWLEDGE               0
-#define WMM_QC_ACK_POLICY_NOT_ACKNOWLEDGE           (1 << WMM_QC_ACK_POLICY_OFFSET)
+#define WMM_QC_UP_MASK                          BITS(0, 2)
+#define WMM_QC_EOSP                             BIT(4)
+#define WMM_QC_ACK_POLICY_MASK                  BITS(5, 6)
+#define WMM_QC_ACK_POLICY_OFFSET                5
+#define WMM_QC_ACK_POLICY_ACKNOWLEDGE           0
+#define WMM_QC_ACK_POLICY_NOT_ACKNOWLEDGE	\
+	(1 << WMM_QC_ACK_POLICY_OFFSET)
 
 /* WMM-2.2.1 WMM Information Element */
-#define ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE           6
+#define ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE       6
 
 /* 3 Control frame body */
 /* 7.2.1.7 BlockAckReq */
-#define CTRL_BAR_BAR_CONTROL_OFFSET                 16
-#define CTRL_BAR_BAR_CONTROL_TID_OFFSET             12
-#define CTRL_BAR_BAR_INFORMATION_OFFSET             18
-#define CTRL_BAR_BAR_INFORMATION_SSN_OFFSET         4
+#define CTRL_BAR_BAR_CONTROL_OFFSET             16
+#define CTRL_BAR_BAR_CONTROL_TID_OFFSET         12
+#define CTRL_BAR_BAR_INFORMATION_OFFSET         18
+#define CTRL_BAR_BAR_INFORMATION_SSN_OFFSET     4
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack(1)
 #endif
@@ -1664,7 +1879,8 @@ struct WLAN_AUTH_FRAME {
 	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* Authentication frame body */
 	uint16_t u2AuthAlgNum;	/* Authentication algorithm number */
-	uint16_t u2AuthTransSeqNo;	/* Authentication transaction sequence number */
+	/* Authentication transaction sequence number */
+	uint16_t u2AuthTransSeqNo;
 	uint16_t u2StatusCode;	/* Status code */
 	uint8_t aucInfoElem[1];	/* Various IEs for Fast BSS Transition */
 } __KAL_ATTRIB_PACKED__;
@@ -1748,10 +1964,14 @@ struct IE_CHALLENGE_TEXT {
 
 /* 7.3.2.9 Country information element */
 #if CFG_SUPPORT_802_11D
-/*! \brief COUNTRY_INFO_TRIPLET is defined for the COUNTRY_INFO_ELEM structure. */
+/*! \brief COUNTRY_INFO_TRIPLET
+ * is defined for the COUNTRY_INFO_ELEM structure.
+ */
 struct COUNTRY_INFO_TRIPLET {
-	uint8_t ucParam1;	/*!< If param1 >= 201, this triplet is referred to as */
-				/* Regulatory Triplet in 802_11J. */
+	/*!< If param1 >= 201, this triplet is referred to as
+	 * Regulatory Triplet in 802_11J.
+	 */
+	uint8_t ucParam1;
 	uint8_t ucParam2;
 	uint8_t ucParam3;
 } __KAL_ATTRIB_PACKED__;
@@ -1766,7 +1986,8 @@ struct COUNTRY_INFO_REGULATORY_TRIPLET {
 	uint8_t ucRegExtId;	/*!< Regulatory Extension Identifier, should */
 				/* be greater than or equal to 201 */
 	uint8_t ucRegClass;	/*!< Regulatory Class */
-	uint8_t ucCoverageClass;	/*!< Coverage Class, unsigned 1-octet value 0~31 */
+	/*!< Coverage Class, unsigned 1-octet value 0~31 */
+	uint8_t ucCoverageClass;
 				/* , 32~255 reserved */
 } __KAL_ATTRIB_PACKED__;
 
@@ -2459,8 +2680,10 @@ struct ACTION_20_40_COEXIST_FRAME {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 
-	struct IE_20_40_COEXIST rBssCoexist;	/* 20/40 BSS coexistence element */
-	struct IE_INTOLERANT_CHNL_REPORT rChnlReport;	/* Intolerant channel report */
+	/* 20/40 BSS coexistence element */
+	struct IE_20_40_COEXIST rBssCoexist;
+	/* Intolerant channel report */
+	struct IE_INTOLERANT_CHNL_REPORT rChnlReport;
 
 } __KAL_ATTRIB_PACKED__;
 
@@ -2634,30 +2857,33 @@ struct IE_MTK_OUI {
 #endif
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 /* Convert the ECWmin(max) to CWmin(max) */
 #define ECW_TO_CW(_ECW)         ((1 << (_ECW)) - 1)
 
 /* Convert the RCPI to dBm */
 #define RCPI_TO_dBm(_rcpi)                          \
-	((int32_t)(((_rcpi) > RCPI_HIGH_BOUND ? RCPI_HIGH_BOUND : (_rcpi)) >> 1) - NDBM_LOW_BOUND_FOR_RCPI)
+	((int32_t)(((_rcpi) > RCPI_HIGH_BOUND ? \
+	RCPI_HIGH_BOUND : (_rcpi)) >> 1) - NDBM_LOW_BOUND_FOR_RCPI)
 
 /* Convert the dBm to RCPI */
 #define dBm_TO_RCPI(_dbm)                           \
-	(uint8_t)(((((int32_t)(_dbm) + NDBM_LOW_BOUND_FOR_RCPI) << 1) > RCPI_HIGH_BOUND) ? RCPI_HIGH_BOUND : \
-	((((int32_t)(_dbm) + NDBM_LOW_BOUND_FOR_RCPI) << 1) < RCPI_LOW_BOUND ? RCPI_LOW_BOUND : \
+	(uint8_t)(((((int32_t)(_dbm) + NDBM_LOW_BOUND_FOR_RCPI) << 1) \
+	> RCPI_HIGH_BOUND) ? RCPI_HIGH_BOUND : \
+	((((int32_t)(_dbm) + NDBM_LOW_BOUND_FOR_RCPI) << 1) \
+	< RCPI_LOW_BOUND ? RCPI_LOW_BOUND : \
 	(((int32_t)(_dbm) + NDBM_LOW_BOUND_FOR_RCPI) << 1)))
 
 /* Convert an unsigned char pointer to an information element pointer */
@@ -2750,14 +2976,17 @@ struct IE_MTK_OUI {
 	((ucSsidLen1) != (ucSsidLen2)) || \
 	kalMemCmp(pucSsid1, pucSsid2, ucSsidLen1))
 
-/* The macro to copy the SSID, the length of pucDestSsid should have at least 32 bytes */
+/* The macro to copy the SSID, the length of pucDestSsid
+ * should have at least 32 bytes
+ */
 #define COPY_SSID(pucDestSsid, ucDestSsidLen, pucSrcSsid, ucSrcSsidLen) \
 	do { \
 		ucDestSsidLen = ucSrcSsidLen; \
 		if (ucSrcSsidLen) { \
 			ASSERT(ucSrcSsidLen <= ELEM_MAX_LEN_SSID); \
 			kalMemCopy(pucDestSsid, pucSrcSsid,	\
-			((ucSrcSsidLen > ELEM_MAX_LEN_SSID) ? ELEM_MAX_LEN_SSID : ucSrcSsidLen)); \
+			((ucSrcSsidLen > ELEM_MAX_LEN_SSID) \
+			? ELEM_MAX_LEN_SSID : ucSrcSsidLen)); \
 		} \
 	} while (FALSE)
 
@@ -2770,26 +2999,27 @@ struct IE_MTK_OUI {
 	} while (FALSE)
 
 #define IE_FOR_EACH(_pucIEsBuf, _u2IEsBufLen, _u2Offset) \
-	for ((_u2Offset) = 0;	\
-		((((_u2Offset) + 2) <= (_u2IEsBufLen)) && (((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen))); \
-		(_u2Offset) += IE_SIZE(_pucIEsBuf), (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
+for ((_u2Offset) = 0;	\
+	((((_u2Offset) + 2) <= (_u2IEsBufLen)) && \
+	(((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen))); \
+	(_u2Offset) += IE_SIZE(_pucIEsBuf), (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
 
 #define SET_EXT_CAP(_aucField, _ucFieldLength, _ucBit) \
-			do { \
-				if ((_ucBit) < ((_ucFieldLength) * 8)) { \
-					uint8_t *aucExtCap = (uint8_t *)(_aucField); \
-					((aucExtCap)[(_ucBit) / 8]) |= BIT((_ucBit) % 8); \
-				} \
-			} while (FALSE)
+do { \
+	if ((_ucBit) < ((_ucFieldLength) * 8)) { \
+		uint8_t *aucExtCap = (uint8_t *)(_aucField); \
+		((aucExtCap)[(_ucBit) / 8]) |= BIT((_ucBit) % 8); \
+	} \
+} while (FALSE)
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                               F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _MAC_H */

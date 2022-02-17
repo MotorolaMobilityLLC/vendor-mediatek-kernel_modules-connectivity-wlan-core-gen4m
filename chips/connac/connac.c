@@ -50,22 +50,23 @@
  *
  *****************************************************************************/
 /*! \file   connac.c
- *    \brief  Internal driver stack will export the required procedures here for GLUE Layer.
+ *  \brief  Internal driver stack will export the required procedures here
+ *          for GLUE Layer.
  *
- *    This file contains all routines which are exported from MediaTek 802.11 Wireless
- *    LAN driver stack to GLUE Layer.
+ *  This file contains all routines which are exported from MediaTek 802.11
+ *  Wireless LAN driver stack to GLUE Layer.
  */
 
 #ifdef CONNAC
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
+ *******************************************************************************
  */
 #include "precomp.h"
 
@@ -73,7 +74,7 @@
 
 /*******************************************************************************
  *                              C O N S T A N T S
- ********************************************************************************
+ *******************************************************************************
  */
 uint8_t *apucConnacFwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc1_0",
@@ -136,8 +137,9 @@ int connacGetIpSetVersion(struct GLUE_INFO *prGlueInfo)
 	return 1;
 }
 
-void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNameTable,
-				 uint8_t **apucName, uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
+void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucNameTable, uint8_t **apucName,
+	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	uint8_t ucIdx = 0;
 
@@ -148,7 +150,8 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNam
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u",
 					apucConnacFwName[ucIdx],
 					connacGetIpSetVersion(prGlueInfo),
-					wlanGetEcoVersion(prGlueInfo->prAdapter));
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 
 			/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
@@ -156,7 +159,8 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNam
 					CFG_FW_NAME_MAX_LEN, "%s_%u_%u.bin",
 					apucConnacFwName[ucIdx],
 					connacGetIpSetVersion(prGlueInfo),
-					wlanGetEcoVersion(prGlueInfo->prAdapter));
+					wlanGetEcoVersion(
+						prGlueInfo->prAdapter));
 			(*pucNameIdx) += 1;
 
 			/* Type 3. WIFI_RAM_CODE_soc1_0 */
@@ -172,15 +176,18 @@ void connacConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo, uint8_t **apucNam
 			(*pucNameIdx) += 1;
 		} else {
 			/* the table is not large enough */
-			DBGLOG(INIT, ERROR, "kalFirmwareImageMapping >> file name array is not enough.\n");
+			DBGLOG(INIT, ERROR,
+				"kalFirmwareImageMapping >> file name array is not enough.\n");
 			ASSERT(0);
 		}
 	}
 }
 
-void connacConstructPatchName(struct GLUE_INFO *prGlueInfo, uint8_t **apucName, uint8_t *pucNameIdx)
+void connacConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
 {
-	snprintf(apucName[(*pucNameIdx)], CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
+	snprintf(apucName[(*pucNameIdx)],
+		CFG_FW_NAME_MAX_LEN, "mtsoc1_0_patch_e%x_hdr.bin",
 		wlanGetEcoVersion(prGlueInfo->prAdapter));
 }
 

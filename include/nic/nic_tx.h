@@ -50,35 +50,36 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/nic_tx.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *			MT6620_WIFI_DRIVER_V2_3/include/nic/nic_tx.h#1
+ */
 
 /*! \file   nic_tx.h
-*    \brief  Functions that provide TX operation in NIC's point of view.
-*
-*    This file provides TX functions which are responsible for both Hardware and
-*    Software Resource Management and keep their Synchronization.
-*
-*/
+ *    \brief  Functions that provide TX operation in NIC's point of view.
+ *
+ *    This file provides TX functions which are responsible for both Hardware
+ *    and Software Resource Management and keep their Synchronization.
+ *
+ */
 
 
 #ifndef _NIC_TX_H
 #define _NIC_TX_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define UNIFIED_MAC_TX_FORMAT               1
 
@@ -90,12 +91,18 @@
 #define NIC_TX_CMD_INFO_RESERVED_COUNT      4
 
 /* Maximum buffer count for individual HIF TCQ */
-#define NIC_TX_PAGE_COUNT_TC0           (NIC_TX_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_PAGE_COUNT_TC1           (NIC_TX_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_PAGE_COUNT_TC2           (NIC_TX_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_PAGE_COUNT_TC3           (NIC_TX_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_PAGE_COUNT_TC4           (NIC_TX_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_PAGE_COUNT_TC5           (NIC_TX_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC0 \
+	(NIC_TX_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC1 \
+	(NIC_TX_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC2 \
+	(NIC_TX_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC3 \
+	(NIC_TX_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC4 \
+	(NIC_TX_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_PAGE_COUNT_TC5 \
+	(NIC_TX_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
 
 #define NIC_TX_BUFF_COUNT_TC0           HIF_TX_BUFF_COUNT_TC0
 #define NIC_TX_BUFF_COUNT_TC1           HIF_TX_BUFF_COUNT_TC1
@@ -104,8 +111,10 @@
 #define NIC_TX_BUFF_COUNT_TC4           HIF_TX_BUFF_COUNT_TC4
 #define NIC_TX_BUFF_COUNT_TC5           HIF_TX_BUFF_COUNT_TC5
 
-#define NIC_TX_RESOURCE_CTRL            HIF_TX_RESOURCE_CTRL /* to enable/disable TX resource control */
-#define NIC_TX_RESOURCE_CTRL_PLE        HIF_TX_RESOURCE_CTRL_PLE /* to enable/disable TX resource control */
+#define NIC_TX_RESOURCE_CTRL \
+	HIF_TX_RESOURCE_CTRL /* to enable/disable TX resource control */
+#define NIC_TX_RESOURCE_CTRL_PLE \
+	HIF_TX_RESOURCE_CTRL_PLE /* to enable/disable TX resource control */
 
 
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -124,12 +133,18 @@
 						NIC_TX_INIT_BUFF_COUNT_TC4 + \
 						NIC_TX_INIT_BUFF_COUNT_TC5)
 
-#define NIC_TX_INIT_PAGE_COUNT_TC0           (NIC_TX_INIT_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_INIT_PAGE_COUNT_TC1           (NIC_TX_INIT_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_INIT_PAGE_COUNT_TC2           (NIC_TX_INIT_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_INIT_PAGE_COUNT_TC3           (NIC_TX_INIT_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_INIT_PAGE_COUNT_TC4           (NIC_TX_INIT_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
-#define NIC_TX_INIT_PAGE_COUNT_TC5           (NIC_TX_INIT_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC0 \
+	(NIC_TX_INIT_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC1 \
+	(NIC_TX_INIT_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC2 \
+	(NIC_TX_INIT_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC3 \
+	(NIC_TX_INIT_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC4 \
+	(NIC_TX_INIT_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
+#define NIC_TX_INIT_PAGE_COUNT_TC5 \
+	(NIC_TX_INIT_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
 
 #endif
 
@@ -144,7 +159,8 @@
 #define NIC_TX_PAGE_SIZE                        HIF_TX_PAGE_SIZE
 
 /* For development only */
-#define NIC_TX_MAX_SIZE_PER_FRAME               1532	/* calculated by MS native 802.11 format */
+/* calculated by MS native 802.11 format */
+#define NIC_TX_MAX_SIZE_PER_FRAME		1532
 #define NIC_TX_MAX_PAGE_PER_FRAME \
 	((NIC_TX_DESC_AND_PADDING_LENGTH + NIC_TX_DESC_HEADER_PADDING_LENGTH + \
 	NIC_TX_MAX_SIZE_PER_FRAME + NIC_TX_PAGE_SIZE - 1) / NIC_TX_PAGE_SIZE)
@@ -157,22 +173,29 @@
 /*------------------------------------------------------------------------*/
 
 /* Frame Buffer
-*  |<--Tx Descriptor-->|<--Tx descriptor padding-->|<--802.3/802.11 Header-->|<--Header padding-->|<--Payload-->|
-*/
+ *  |<--Tx Descriptor-->|<--Tx descriptor padding-->|
+ *  <--802.3/802.11 Header-->|<--Header padding-->|<--Payload-->|
+ */
 
 /* Tx descriptor length by format (TXD.FT) */
-#define NIC_TX_DESC_LONG_FORMAT_LENGTH_DW       8	/* in unit of double word */
-#define NIC_TX_DESC_LONG_FORMAT_LENGTH          DWORD_TO_BYTE(NIC_TX_DESC_LONG_FORMAT_LENGTH_DW)
-#define NIC_TX_DESC_SHORT_FORMAT_LENGTH_DW      3	/* in unit of double word */
-#define NIC_TX_DESC_SHORT_FORMAT_LENGTH         DWORD_TO_BYTE(NIC_TX_DESC_SHORT_FORMAT_LENGTH_DW)
+/* in unit of double word */
+#define NIC_TX_DESC_LONG_FORMAT_LENGTH_DW		8
+#define NIC_TX_DESC_LONG_FORMAT_LENGTH \
+	DWORD_TO_BYTE(NIC_TX_DESC_LONG_FORMAT_LENGTH_DW)
+/* in unit of double word */
+#define NIC_TX_DESC_SHORT_FORMAT_LENGTH_DW	3
+#define NIC_TX_DESC_SHORT_FORMAT_LENGTH \
+	DWORD_TO_BYTE(NIC_TX_DESC_SHORT_FORMAT_LENGTH_DW)
 
 /* Tx descriptor padding length (DMA.MICR.TXDSCR_PAD) */
-#define NIC_TX_DESC_PADDING_LENGTH_DW           0	/* in unit of double word */
-#define NIC_TX_DESC_PADDING_LENGTH              DWORD_TO_BYTE(NIC_TX_DESC_PADDING_LENGTH_DW)
+#define NIC_TX_DESC_PADDING_LENGTH_DW       0	/* in unit of double word */
+#define NIC_TX_DESC_PADDING_LENGTH \
+	DWORD_TO_BYTE(NIC_TX_DESC_PADDING_LENGTH_DW)
 
 #define NIC_TX_PSE_HEADER_LENGTH                4
 
-#define NIC_TX_DESC_AND_PADDING_LENGTH          (NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH)
+#define NIC_TX_DESC_AND_PADDING_LENGTH \
+	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH)
 
 /* Tx header padding (TXD.HeaderPadding)  */
 /* Warning!! To use MAC header padding, every Tx packet must be decomposed */
@@ -185,30 +208,36 @@
 #define NIC_TX_DATA_DEFAULT_RETRY_COUNT_LIMIT   30
 #define NIC_TX_MGMT_DEFAULT_RETRY_COUNT_LIMIT   30
 
-#define NIC_TX_AC_BE_REMAINING_TX_TIME          TX_DESC_TX_TIME_NO_LIMIT	/* in unit of ms */
-#define NIC_TX_AC_BK_REMAINING_TX_TIME          TX_DESC_TX_TIME_NO_LIMIT	/* in unit of ms */
-#define NIC_TX_AC_VO_REMAINING_TX_TIME          TX_DESC_TX_TIME_NO_LIMIT	/* in unit of ms */
-#define NIC_TX_AC_VI_REMAINING_TX_TIME          TX_DESC_TX_TIME_NO_LIMIT	/* in unit of ms */
-#define NIC_TX_MGMT_REMAINING_TX_TIME           2000						/* in unit of ms */
+/* in unit of ms */
+#define NIC_TX_AC_BE_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
+#define NIC_TX_AC_BK_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
+#define NIC_TX_AC_VO_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
+#define NIC_TX_AC_VI_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
+#define NIC_TX_MGMT_REMAINING_TX_TIME		2000
 
 #define NIC_TX_CRITICAL_DATA_TID                7
 
 #define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
-#define NIC_TX_HEAD_ROOM                        (NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
-						 + HW_MAC_TX_DESC_APPEND_T_LENGTH)
+#define NIC_TX_HEAD_ROOM \
+	(NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
+	+ HW_MAC_TX_DESC_APPEND_T_LENGTH)
 
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */
 /*------------------------------------------------------------------------*/
 
 /* Tx status header & content length */
-#define NIC_TX_STATUS_HEADER_LENGTH_DW          1       /* in unit of double word */
-#define NIC_TX_STATUS_HEADER_LENGTH             DWORD_TO_BYTE(NIC_TX_STATUS_HEADER_LENGTH_DW)
-#define NIC_TX_STATUS_LENGTH_DW                 7       /* in unit of double word */
-#define NIC_TX_STATUS_LENGTH                    DWORD_TO_BYTE(NIC_TX_STATUS_LENGTH_DW)
+#define NIC_TX_STATUS_HEADER_LENGTH_DW \
+	1       /* in unit of double word */
+#define NIC_TX_STATUS_HEADER_LENGTH	\
+	DWORD_TO_BYTE(NIC_TX_STATUS_HEADER_LENGTH_DW)
+#define NIC_TX_STATUS_LENGTH_DW \
+	7       /* in unit of double word */
+#define NIC_TX_STATUS_LENGTH \
+	DWORD_TO_BYTE(NIC_TX_STATUS_LENGTH_DW)
 
 /*------------------------------------------------------------------------*/
-/* Tx descriptor field related information                                                                 */
+/* Tx descriptor field related information                                */
 /*------------------------------------------------------------------------*/
 /* DW 0 */
 #define TX_DESC_TX_BYTE_COUNT_MASK              BITS(0, 15)
@@ -218,8 +247,6 @@
 #define TX_DESC_ETHER_TYPE_OFFSET_OFFSET        0
 #define TX_DESC_IP_CHKSUM_OFFLOAD               BIT(7)
 #define TX_DESC_TCP_UDP_CHKSUM_OFFLOAD          BIT(0)
-/*#define TX_DESC_USB_NEXT_VLD                    BIT(1)*//* USB HIF doesn't use this field. */
-/*#define TX_DESC_USB_TX_BURST                    BIT(2)*//* USB TX Burst is defined in DW1[20] */
 #define TX_DESC_QUEUE_INDEX_MASK                BITS(2, 6)
 #define TX_DESC_QUEUE_INDEX_OFFSET              2
 #define TX_DESC_PORT_INDEX                      BIT(7)
@@ -236,8 +263,10 @@
 
 #define HEADER_FORMAT_NON_802_11                0	/* Non-802.11 */
 #define HEADER_FORMAT_COMMAND                   1	/* Command */
-#define HEADER_FORMAT_802_11_NORMAL_MODE        2	/* 802.11 (normal mode) */
-#define HEADER_FORMAT_802_11_ENHANCE_MODE       3	/* 802.11 (Enhancement mode) */
+#define HEADER_FORMAT_802_11_NORMAL_MODE \
+	2	/* 802.11 (normal mode) */
+#define HEADER_FORMAT_802_11_ENHANCE_MODE \
+	3	/* 802.11 (Enhancement mode) */
 #define HEADER_FORMAT_802_11_MASK               BIT(1)
 
 #define TX_DESC_NON_802_11_MORE_DATA            BIT(0)
@@ -300,7 +329,8 @@
 #define TX_DESC_TX_TIME_NO_LIMIT                0
 /* Unit of life time calculation of Tx descriptor */
 #define TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2    5
-#define TX_DESC_LIFE_TIME_UNIT                  POWER_OF_2(TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2)
+#define TX_DESC_LIFE_TIME_UNIT \
+	POWER_OF_2(TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2)
 #define TX_DESC_POWER_OFFSET_MASK               BITS(0, 4)
 #define TX_DESC_BA_DISABLE                      BIT(5)
 #define TX_DESC_TIMING_MEASUREMENT              BIT(6)
@@ -376,12 +406,12 @@
 #define NIC_TX_INIT_CMD_PORT                    HIF_TX_INIT_CMD_PORT
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* 3 *//* Session for TX QUEUES */
-/* The definition in this ENUM is used to categorize packet's Traffic Class according
- * to the their TID(User Priority).
+/* The definition in this ENUM is used to categorize packet's Traffic
+ * Class according to the their TID(User Priority).
  * In order to achieve QoS goal, a particular TC should not block the process of
  * another packet with different TC.
  * In current design we will have 5 categories(TCs) of SW resource.
@@ -692,7 +722,8 @@ enum ENUM_TX_PACKET_SRC {
 
 /* TX Call Back Function  */
 typedef uint32_t(*PFN_TX_DONE_HANDLER) (IN struct ADAPTER *prAdapter,
-					   IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+	IN struct MSDU_INFO *prMsduInfo,
+	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 struct PKT_PROFILE {
@@ -732,18 +763,21 @@ enum ENUM_KEY_ACTION_TYPE_T {
  *    [CMD_INFO_T] - [prPacket] - in skb or NDIS_PACKET form
  *
  * 2) MMPDU
- *    [CMD_INFO_T] - [prPacket] - [MSDU_INFO_T] - [prPacket] - direct buffer for frame body
+ *    [CMD_INFO_T] - [prPacket] - [MSDU_INFO_T] - [prPacket] - direct
+ *    buffer for frame body
  *
  * 3) Command Packets
- *    [CMD_INFO_T] - [pucInfoBuffer] - direct buffer for content of command packet
+ *    [CMD_INFO_T] - [pucInfoBuffer] - direct buffer for content
+ *    of command packet
  *
  * 4) Normal data frame
  *    [MSDU_INFO_T] - [prPacket] - in skb or NDIS_PACKET form
  */
 
 /* PS_FORWARDING_TYPE_NON_PS means that the receiving STA is in Active Mode
-*   from the perspective of host driver (maybe not synchronized with FW --> SN is needed)
-*/
+ * from the perspective of host driver
+ * (maybe not synchronized with FW --> SN is needed)
+ */
 
 struct MSDU_INFO {
 	struct QUE_ENTRY rQueEntry;
@@ -761,15 +795,11 @@ struct MSDU_INFO {
 	uint8_t ucPacketFormat;  /* TXD.DW1[25:24] Packet Format */
 
 	u_int8_t fgIs802_1x;	/* TRUE: 802.1x frame */
-	u_int8_t fgIs802_1x_NonProtected;	/* TRUE: 802.1x frame - Non-Protected */
+	/* TRUE: 802.1x frame - Non-Protected */
+	u_int8_t fgIs802_1x_NonProtected;
 	u_int8_t fgIs802_11;	/* TRUE: 802.11 header is present */
 	u_int8_t fgIs802_3;	/* TRUE: 802.3 frame */
 	u_int8_t fgIsVlanExists;	/* TRUE: VLAN tag is exists */
-
-	/* BOOLEAN                     fgIsBIP;                *//* Management Frame Protection */
-	/* BOOLEAN                     fgIsBasicRate;      *//* Force Basic Rate Transmission */
-	/* BOOLEAN                     fgIsMoreData;      *//* More data */
-	/* BOOLEAN                     fgIsEOSP;            *//* End of service period */
 
 	/* Special Option */
 	uint32_t u4Option;	/* Special option in bitmask, no ACK, etc... */
@@ -783,15 +813,18 @@ struct MSDU_INFO {
 
 	/* Fixed Rate Option */
 	uint8_t ucRateMode;	/* Rate mode: AUTO, MANUAL_DESC, MANUAL_CR */
-	uint32_t u4FixedRateOption;	/* The rate option, rate code, GI, etc... */
+	/* The rate option, rate code, GI, etc... */
+	uint32_t u4FixedRateOption;
 
-	u_int8_t fgIsTXDTemplateValid;	/* There is a valid Tx descriptor for this packet */
+	/* There is a valid Tx descriptor for this packet */
+	u_int8_t fgIsTXDTemplateValid;
 
 	/* flattened from PACKET_INFO_T */
 	uint8_t ucMacHeaderLength;	/* MAC header legth */
 	uint8_t ucLlcLength;	/* w/o EtherType */
 	uint16_t u2FrameLength;	/* Total frame length */
-	uint8_t aucEthDestAddr[MAC_ADDR_LEN];	/* Ethernet Destination Address */
+	/* Ethernet Destination Address */
+	uint8_t aucEthDestAddr[MAC_ADDR_LEN];
 	uint32_t u4PageCount;	/* Required page count for this MSDU */
 
 	/* for TX done tracking */
@@ -811,7 +844,8 @@ struct MSDU_INFO {
 	/* UINT_16 u2PalLLH; */ /* PAL Logical Link Header (for BOW network) */
 	/* UINT_16 u2AclSN; */ /* ACL Sequence Number (for BOW network) */
 	uint8_t ucPsForwardingType; /* See ENUM_PS_FORWARDING_TYPE_T */
-	/* UINT_8 ucPsSessionID; */ /* PS Session ID specified by the FW for the STA */
+	/* PS Session ID specified by the FW for the STA */
+	/* UINT_8 ucPsSessionID; */
 	/* TRUE means this is the last packet of the burst for (STA, TID) */
 	/* BOOLEAN fgIsBurstEnd; */
 #if CFG_M0VE_BA_TO_DRIVER
@@ -864,7 +898,8 @@ union HW_MAC_TX_DESC_APPEND {
 	} CR4_APPEND;
 
 	struct {
-		uint16_t au2MsduId[NUM_OF_MSDU_ID_IN_TXD];   /* Bit15 indicate valid */
+		/* Bit15 indicate valid */
+		uint16_t au2MsduId[NUM_OF_MSDU_ID_IN_TXD];
 		struct TXD_PTR_LEN arPtrLen[TXD_MAX_BUF_NUM / 2];
 	} CONNAC_APPEND;
 };
@@ -874,19 +909,26 @@ struct HW_MAC_TX_DESC {
 	/* DW 0 */
 	uint16_t u2TxByteCount;
 	uint8_t ucEtherOffset;	/* Ether-Type Offset,  IP checksum offload */
-	uint8_t ucPortIdx_QueueIdx;	/* UDP/TCP checksum offload,  USB NextVLD/TxBURST, Queue index, Port index */
+	/* UDP/TCP checksum offload,
+	 * USB NextVLD/TxBURST, Queue index, Port index
+	 */
+	uint8_t ucPortIdx_QueueIdx;
 	/* DW 1 */
 	uint8_t ucWlanIdx;
-	uint8_t ucHeaderFormat;	/* Header format, TX descriptor format */
-	uint8_t ucHeaderPadding;	/* Header padding, no ACK, TID, Protect frame */
+	/* Header format, TX descriptor format */
+	uint8_t ucHeaderFormat;
+	/* Header padding, no ACK, TID, Protect frame */
+	uint8_t ucHeaderPadding;
 	uint8_t ucOwnMAC;
 
 	/* Long Format, the following structure is for long format ONLY */
 	/* DW 2 */
 	uint8_t ucType_SubType;	/* Type, Sub-type, NDP, NDPA */
-	uint8_t ucFrag;		/* Sounding, force RTS/CTS, BMC, BIP, Duration, HTC exist, Fragment */
+	/* Sounding, force RTS/CTS, BMC, BIP, Duration, HTC exist, Fragment */
+	uint8_t ucFrag;
 	uint8_t ucRemainingMaxTxTime;
-	uint8_t ucPowerOffset;	/* Power offset, Disable BA, Timing measurement, Fixed rate */
+	/* Power offset, Disable BA, Timing measurement, Fixed rate */
+	uint8_t ucPowerOffset;
 	/* DW 3 */
 	uint16_t u2TxCountLimit;	/* TX count limit */
 	uint16_t u2SN;		/* SN, HW own, PN valid, SN valid */
@@ -894,11 +936,15 @@ struct HW_MAC_TX_DESC {
 	uint32_t u4PN1;
 	/* DW 5 */
 	uint8_t ucPID;
-	uint8_t ucTxStatus;	/* TXS format, TXS to mcu, TXS to host, DA source, BAR SSN, Power management */
+	/* TXS format, TXS to mcu,
+	 * TXS to host, DA source, BAR SSN, Power management
+	 */
+	uint8_t ucTxStatus;
 	uint16_t u2PN2;
 	/* DW 6 */
 	uint16_t u2AntID;	/* Fixed rate, Antenna ID */
-	uint16_t u2FixedRate;	/* Explicit/implicit beamforming, Fixed rate table, LDPC, GI */
+	/* Explicit/implicit beamforming, Fixed rate table, LDPC, GI */
+	uint16_t u2FixedRate;
 	/* DW 7 */
 	uint16_t u2SwTxTime;	/* Sw Tx time[9:0], SPE_IDX[15:11] */
 	uint16_t u2PseFid;	/* indicate frame ID in PSE for this TXD */
@@ -918,73 +964,90 @@ struct TX_TC_TRAFFIC_SETTING {
 	uint8_t ucTxCountLimit;
 };
 
-typedef void (*PFN_TX_DATA_DONE_CB) (IN struct GLUE_INFO *prGlueInfo, IN struct QUE *prQue);
+typedef void (*PFN_TX_DATA_DONE_CB) (IN struct GLUE_INFO *prGlueInfo,
+	IN struct QUE *prQue);
 
 struct tx_resource_info {
 	/* PSE */
-	uint32_t u4CmdTotalResource;  /* the total usable resource for MCU port */
-	uint32_t u4CmdResourceUnit;   /* the unit of a MCU resource */
-	uint32_t u4DataTotalResource; /* the total usable resource for LMAC port */
-	uint32_t u4DataResourceUnit;  /* the unit of a LMAC resource */
+	/* the total usable resource for MCU port */
+	uint32_t u4CmdTotalResource;
+	/* the unit of a MCU resource */
+	uint32_t u4CmdResourceUnit;
+	/* the total usable resource for LMAC port */
+	uint32_t u4DataTotalResource;
+	/* the unit of a LMAC resource */
+	uint32_t u4DataResourceUnit;
 
 	/* PLE */
-	uint32_t u4CmdTotalResourcePle;  /* the total usable resource for MCU port */
-	uint32_t u4CmdResourceUnitPle;   /* the unit of a MCU resource */
-	uint32_t u4DataTotalResourcePle; /* the total usable resource for LMAC port */
-	uint32_t u4DataResourceUnitPle;  /* the unit of a LMAC resource */
+	/* the total usable resource for MCU port */
+	uint32_t u4CmdTotalResourcePle;
+	/* the unit of a MCU resource */
+	uint32_t u4CmdResourceUnitPle;
+	/* the total usable resource for LMAC port */
+	uint32_t u4DataTotalResourcePle;
+	/* the unit of a LMAC resource */
+	uint32_t u4DataResourceUnitPle;
 
-	/* Packet Processor 0x8206C000[15:8] * 4. Extra PSE resource is needed for HW.*/
+	/* Packet Processor 0x8206C000[15:8]
+	 * 4. Extra PSE resource is needed for HW.
+	 */
 	uint8_t  ucPpTxAddCnt;/* in unit of byte */
 
 	/* update resource callback */
-	void(*txResourceInit)(IN struct ADAPTER *prAdapter);
+	void (*txResourceInit)(IN struct ADAPTER *prAdapter);
 };
 
 struct TX_DESC_OPS_T {
-	void (*fillNicAppend)(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				       OUT uint8_t *prTxDescBuffer);
-	void (*fillHifAppend)(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-			      IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-			      OUT uint8_t *pucBuffer);
-	void (*fillTxByteCount)(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				struct HW_MAC_TX_DESC *prTxDesc);
+	void (*fillNicAppend)(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo,
+		OUT uint8_t *prTxDescBuffer);
+	void (*fillHifAppend)(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+		IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+		OUT uint8_t *pucBuffer);
+	void (*fillTxByteCount)(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo,
+		struct HW_MAC_TX_DESC *prTxDesc);
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 extern PFN_TX_DATA_DONE_CB g_pfTxDataDoneCb;
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #define TX_INC_CNT(prTxCtrl, eCounter)              \
 	{((struct TX_CTRL *)prTxCtrl)->au4Statistics[eCounter]++; }
 
 #define TX_ADD_CNT(prTxCtrl, eCounter, u8Amount)    \
-	{((struct TX_CTRL *)prTxCtrl)->au4Statistics[eCounter] += (uint32_t)u8Amount; }
+	{((struct TX_CTRL *)prTxCtrl)->au4Statistics[eCounter] += \
+	(uint32_t)u8Amount; }
 
 #define TX_GET_CNT(prTxCtrl, eCounter)              \
 	(((struct TX_CTRL *)prTxCtrl)->au4Statistics[eCounter])
 
 #define TX_RESET_ALL_CNTS(prTxCtrl)                 \
-	{kalMemZero(&prTxCtrl->au4Statistics[0], sizeof(prTxCtrl->au4Statistics)); }
+	{kalMemZero(&prTxCtrl->au4Statistics[0], \
+	sizeof(prTxCtrl->au4Statistics)); }
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 
 #if CFG_PRINT_PKT_LIFETIME_PROFILE
 #define PRINT_PKT_PROFILE(_pkt_profile, _note) \
 do { \
 	if (!(_pkt_profile)->fgIsPrinted) { \
-		DBGLOG(TX, TRACE, "X[%lu] E[%lu] D[%lu] HD[%lu] B[%d] RTP[%d] %s\n", \
+		DBGLOG(TX, TRACE, \
+		"X[%lu] E[%lu] D[%lu] HD[%lu] B[%d] RTP[%d] %s\n", \
 		(uint32_t)((_pkt_profile)->rHardXmitArrivalTimestamp), \
 		(uint32_t)((_pkt_profile)->rEnqueueTimestamp), \
 		(uint32_t)((_pkt_profile)->rDequeueTimestamp), \
@@ -1000,15 +1063,22 @@ do { \
 #endif
 
 #define CHK_PROFILES_DELTA(_pkt1, _pkt2, _delta) \
-	(CHECK_FOR_TIMEOUT((_pkt1)->rHardXmitArrivalTimestamp, (_pkt2)->rHardXmitArrivalTimestamp, (_delta)) || \
-	 CHECK_FOR_TIMEOUT((_pkt1)->rEnqueueTimestamp, (_pkt2)->rEnqueueTimestamp, (_delta)) || \
-	 CHECK_FOR_TIMEOUT((_pkt1)->rDequeueTimestamp, (_pkt2)->rDequeueTimestamp, (_delta)) || \
-	 CHECK_FOR_TIMEOUT((_pkt1)->rHifTxDoneTimestamp, (_pkt2)->rHifTxDoneTimestamp, (_delta)))
+	(CHECK_FOR_TIMEOUT((_pkt1)->rHardXmitArrivalTimestamp, \
+		(_pkt2)->rHardXmitArrivalTimestamp, (_delta)) || \
+	CHECK_FOR_TIMEOUT((_pkt1)->rEnqueueTimestamp, \
+		(_pkt2)->rEnqueueTimestamp, (_delta)) || \
+	CHECK_FOR_TIMEOUT((_pkt1)->rDequeueTimestamp, \
+		(_pkt2)->rDequeueTimestamp, (_delta)) || \
+	CHECK_FOR_TIMEOUT((_pkt1)->rHifTxDoneTimestamp, \
+		(_pkt2)->rHifTxDoneTimestamp, (_delta)))
 
 #define CHK_PROFILE_DELTA(_pkt, _delta) \
-	(CHECK_FOR_TIMEOUT((_pkt)->rEnqueueTimestamp, (_pkt)->rHardXmitArrivalTimestamp, (_delta)) || \
-	 CHECK_FOR_TIMEOUT((_pkt)->rDequeueTimestamp, (_pkt)->rEnqueueTimestamp, (_delta)) || \
-	 CHECK_FOR_TIMEOUT((_pkt)->rHifTxDoneTimestamp, (_pkt)->rDequeueTimestamp, (_delta)))
+	(CHECK_FOR_TIMEOUT((_pkt)->rEnqueueTimestamp, \
+		(_pkt)->rHardXmitArrivalTimestamp, (_delta)) || \
+	CHECK_FOR_TIMEOUT((_pkt)->rDequeueTimestamp, \
+		(_pkt)->rEnqueueTimestamp, (_delta)) || \
+	CHECK_FOR_TIMEOUT((_pkt)->rHifTxDoneTimestamp, \
+		(_pkt)->rDequeueTimestamp, (_delta)))
 #endif
 
 /*------------------------------------------------------------------------------
@@ -1030,56 +1100,74 @@ do { \
 	(_rHwMacTxDescField) |= (((_value) << (_offset)) & (_mask)); \
 }
 
-#define HAL_MAC_TX_DESC_SET_DW(_prHwMacTxDesc, _ucOffsetInDw, _ucLengthInDw, _pucValueAddr) \
+#define HAL_MAC_TX_DESC_SET_DW(_prHwMacTxDesc, _ucOffsetInDw, \
+	 _ucLengthInDw, _pucValueAddr) \
 	kalMemCopy((uint32_t *)(_prHwMacTxDesc) + (_ucOffsetInDw),	\
 	(uint8_t *)(_pucValueAddr), DWORD_TO_BYTE(_ucLengthInDw))
-#define HAL_MAC_TX_DESC_GET_DW(_prHwMacTxDesc, _ucOffsetInDw, _ucLengthInDw, _pucValueAddr) \
+#define HAL_MAC_TX_DESC_GET_DW(_prHwMacTxDesc, _ucOffsetInDw, \
+	_ucLengthInDw, _pucValueAddr) \
 	kalMemCopy((uint8_t *)(_pucValueAddr),		\
-	(uint32_t *)(_prHwMacTxDesc) + (_ucOffsetInDw), DWORD_TO_BYTE(_ucLengthInDw))
+	(uint32_t *)(_prHwMacTxDesc) + (_ucOffsetInDw), \
+	DWORD_TO_BYTE(_ucLengthInDw))
 
 /* DW 0 */
-#define HAL_MAC_TX_DESC_GET_TX_BYTE_COUNT(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxByteCount)
+#define HAL_MAC_TX_DESC_GET_TX_BYTE_COUNT(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxByteCount)
 #define HAL_MAC_TX_DESC_SET_TX_BYTE_COUNT(_prHwMacTxDesc, _u2TxByteCount) \
 	(((_prHwMacTxDesc)->u2TxByteCount) = ((uint16_t)_u2TxByteCount))
 
 #define HAL_MAC_TX_DESC_GET_ETHER_TYPE_OFFSET(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucEtherOffset, \
-			  TX_DESC_ETHER_TYPE_OFFSET_MASK, TX_DESC_ETHER_TYPE_OFFSET_OFFSET)
-#define HAL_MAC_TX_DESC_SET_ETHER_TYPE_OFFSET(_prHwMacTxDesc, _ucEtherTypeOffset) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucEtherOffset), ((uint8_t)_ucEtherTypeOffset), \
-			  TX_DESC_ETHER_TYPE_OFFSET_MASK, TX_DESC_ETHER_TYPE_OFFSET_OFFSET)
+	TX_DESC_ETHER_TYPE_OFFSET_MASK, \
+	TX_DESC_ETHER_TYPE_OFFSET_OFFSET)
+#define HAL_MAC_TX_DESC_SET_ETHER_TYPE_OFFSET(_prHwMacTxDesc, \
+	_ucEtherTypeOffset) \
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucEtherOffset), \
+	((uint8_t)_ucEtherTypeOffset), \
+	TX_DESC_ETHER_TYPE_OFFSET_MASK, TX_DESC_ETHER_TYPE_OFFSET_OFFSET)
 
 #define HAL_MAC_TX_DESC_IS_IP_CHKSUM_ENABLED(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucEtherOffset & TX_DESC_IP_CHKSUM_OFFLOAD)?FALSE:TRUE)
-#define HAL_MAC_TX_DESC_SET_IP_CHKSUM(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucEtherOffset |= TX_DESC_IP_CHKSUM_OFFLOAD)
-#define HAL_MAC_TX_DESC_UNSET_IP_CHKSUM(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucEtherOffset &= ~TX_DESC_IP_CHKSUM_OFFLOAD)
+	(((_prHwMacTxDesc)->ucEtherOffset & TX_DESC_IP_CHKSUM_OFFLOAD) \
+	? FALSE : TRUE)
+#define HAL_MAC_TX_DESC_SET_IP_CHKSUM(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucEtherOffset |= TX_DESC_IP_CHKSUM_OFFLOAD)
+#define HAL_MAC_TX_DESC_UNSET_IP_CHKSUM(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucEtherOffset &= ~TX_DESC_IP_CHKSUM_OFFLOAD)
 
 #define HAL_MAC_TX_DESC_IS_TCP_UDP_CHKSUM_ENABLED(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)?FALSE:TRUE)
+	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & \
+	TX_DESC_TCP_UDP_CHKSUM_OFFLOAD) ? FALSE : TRUE)
 #define HAL_MAC_TX_DESC_SET_TCP_UDP_CHKSUM(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPortIdx_QueueIdx |= TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)
 #define HAL_MAC_TX_DESC_UNSET_TCP_UDP_CHKSUM(_prHwMacTxDesc) \
-	((_prHwMacTxDesc)->ucPortIdx_QueueIdx &= ~TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)
+	((_prHwMacTxDesc)->ucPortIdx_QueueIdx &= \
+	~TX_DESC_TCP_UDP_CHKSUM_OFFLOAD)
 
 #if 0 /* USB HIF doesn't use this field. */
 #define HAL_MAC_TX_DESC_IS_USB_NEXT_VLD_ENABLED(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & TX_DESC_USB_NEXT_VLD)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_USB_NEXT_VLD(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPortIdx_QueueIdx |= TX_DESC_USB_NEXT_VLD)
+	(((_prHwMacTxDesc)->ucPortIdx_QueueIdx & TX_DESC_USB_NEXT_VLD) \
+	? TRUE : FALSE)
+#define HAL_MAC_TX_DESC_SET_USB_NEXT_VLD(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPortIdx_QueueIdx |= TX_DESC_USB_NEXT_VLD)
 #define HAL_MAC_TX_DESC_UNSET_USB_NEXT_VLD(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPortIdx_QueueIdx &= ~TX_DESC_USB_NEXT_VLD)
 #endif /* if 0 */
 
 #define HAL_MAC_TX_DESC_GET_QUEUE_INDEX(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPortIdx_QueueIdx, TX_DESC_QUEUE_INDEX_MASK, TX_DESC_QUEUE_INDEX_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPortIdx_QueueIdx, \
+	TX_DESC_QUEUE_INDEX_MASK, TX_DESC_QUEUE_INDEX_OFFSET)
 #define HAL_MAC_TX_DESC_SET_QUEUE_INDEX(_prHwMacTxDesc, _ucQueueIndex) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPortIdx_QueueIdx), ((uint8_t)_ucQueueIndex), \
-			  TX_DESC_QUEUE_INDEX_MASK, TX_DESC_QUEUE_INDEX_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPortIdx_QueueIdx), \
+	((uint8_t)_ucQueueIndex), \
+	TX_DESC_QUEUE_INDEX_MASK, TX_DESC_QUEUE_INDEX_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_PORT_INDEX(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPortIdx_QueueIdx, TX_DESC_PORT_INDEX, TX_DESC_PORT_INDEX_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPortIdx_QueueIdx, \
+	TX_DESC_PORT_INDEX, TX_DESC_PORT_INDEX_OFFSET)
 #define HAL_MAC_TX_DESC_SET_PORT_INDEX(_prHwMacTxDesc, _ucPortIndex) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPortIdx_QueueIdx), ((uint8_t)_ucPortIndex), \
-			  TX_DESC_PORT_INDEX, TX_DESC_PORT_INDEX_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPortIdx_QueueIdx), \
+	((uint8_t)_ucPortIndex), \
+	TX_DESC_PORT_INDEX, TX_DESC_PORT_INDEX_OFFSET)
 
 /* DW 1 */
 #define HAL_MAC_TX_DESC_GET_WLAN_INDEX(_prHwMacTxDesc) \
@@ -1087,38 +1175,49 @@ do { \
 #define HAL_MAC_TX_DESC_SET_WLAN_INDEX(_prHwMacTxDesc, _ucWlanIdx) \
 	(((_prHwMacTxDesc)->ucWlanIdx) = (_ucWlanIdx))
 
-#define HAL_MAC_TX_DESC_IS_LONG_FORMAT(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_FORMAT)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_LONG_FORMAT(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_FORMAT)
-#define HAL_MAC_TX_DESC_SET_SHORT_FORMAT(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_FORMAT)
+#define HAL_MAC_TX_DESC_IS_LONG_FORMAT(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_FORMAT)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_LONG_FORMAT(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_FORMAT)
+#define HAL_MAC_TX_DESC_SET_SHORT_FORMAT(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_FORMAT)
 
 #define HAL_MAC_TX_DESC_GET_HEADER_FORMAT(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderFormat, TX_DESC_HEADER_FORMAT_MASK, TX_DESC_HEADER_FORMAT_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderFormat, \
+	TX_DESC_HEADER_FORMAT_MASK, TX_DESC_HEADER_FORMAT_OFFSET)
 #define HAL_MAC_TX_DESC_SET_HEADER_FORMAT(_prHwMacTxDesc, _ucHdrFormat) \
 	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderFormat), \
-	((uint8_t)_ucHdrFormat), TX_DESC_HEADER_FORMAT_MASK, TX_DESC_HEADER_FORMAT_OFFSET)
+	((uint8_t)_ucHdrFormat), TX_DESC_HEADER_FORMAT_MASK, \
+	TX_DESC_HEADER_FORMAT_OFFSET)
 
 /* HF = 0x00, 802.11 normal mode */
 #define HAL_MAC_TX_DESC_IS_MORE_DATA(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_MORE_DATA)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_MORE_DATA) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_MORE_DATA(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_MORE_DATA)
 #define HAL_MAC_TX_DESC_UNSET_MORE_DATA(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_MORE_DATA)
 
 #define HAL_MAC_TX_DESC_IS_REMOVE_VLAN(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_REMOVE_VLAN)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_REMOVE_VLAN) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_REMOVE_VLAN(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_REMOVE_VLAN)
 #define HAL_MAC_TX_DESC_UNSET_REMOVE_VLAN(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_REMOVE_VLAN)
 
 #define HAL_MAC_TX_DESC_IS_VLAN(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_VLAN_FIELD)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_VLAN(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_VLAN_FIELD)
-#define HAL_MAC_TX_DESC_UNSET_VLAN(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_VLAN_FIELD)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_VLAN_FIELD) \
+	? TRUE : FALSE)
+#define HAL_MAC_TX_DESC_SET_VLAN(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_VLAN_FIELD)
+#define HAL_MAC_TX_DESC_UNSET_VLAN(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_VLAN_FIELD)
 
 #define HAL_MAC_TX_DESC_IS_ETHERNET_II(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_ETHERNET_II)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_ETHERNET_II) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_ETHERNET_II(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_ETHERNET_II)
 #define HAL_MAC_TX_DESC_UNSET_ETHERNET_II(_prHwMacTxDesc) \
@@ -1126,110 +1225,158 @@ do { \
 
 /* HF = 0x00/0x11, 802.11 normal/enhancement mode */
 #define HAL_MAC_TX_DESC_IS_EOSP(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_EOSP)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_EOSP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_EOSP)
-#define HAL_MAC_TX_DESC_UNSET_EOSP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_EOSP)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_NON_802_11_EOSP) \
+	? TRUE : FALSE)
+#define HAL_MAC_TX_DESC_SET_EOSP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_NON_802_11_EOSP)
+#define HAL_MAC_TX_DESC_UNSET_EOSP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_NON_802_11_EOSP)
 
 /* HF = 0x11, 802.11 enhancement mode */
 #define HAL_MAC_TX_DESC_IS_AMSDU(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_ENH_802_11_AMSDU)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_ENH_802_11_AMSDU)
-#define HAL_MAC_TX_DESC_UNSET_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_ENH_802_11_AMSDU)
+	(((_prHwMacTxDesc)->ucHeaderFormat & TX_DESC_ENH_802_11_AMSDU) \
+	? TRUE : FALSE)
+#define HAL_MAC_TX_DESC_SET_AMSDU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat |= TX_DESC_ENH_802_11_AMSDU)
+#define HAL_MAC_TX_DESC_UNSET_AMSDU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucHeaderFormat &= ~TX_DESC_ENH_802_11_AMSDU)
 
 /* HF = 0x10, non-802.11 */
 #define HAL_MAC_TX_DESC_GET_802_11_HEADER_LENGTH(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderFormat, \
-			  TX_DESC_NOR_802_11_HEADER_LENGTH_MASK, TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET)
-#define HAL_MAC_TX_DESC_SET_802_11_HEADER_LENGTH(_prHwMacTxDesc, _ucHdrLength) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderFormat), ((uint8_t)_ucHdrLength), \
-			  TX_DESC_NOR_802_11_HEADER_LENGTH_MASK, TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET)
+	TX_DESC_NOR_802_11_HEADER_LENGTH_MASK, \
+	TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET)
+#define HAL_MAC_TX_DESC_SET_802_11_HEADER_LENGTH(_prHwMacTxDesc, \
+	 _ucHdrLength) \
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderFormat), \
+	((uint8_t)_ucHdrLength), \
+	TX_DESC_NOR_802_11_HEADER_LENGTH_MASK, \
+	TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_TXD_LENGTH(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, TX_DESC_TXD_LENGTH_MASK, TX_DESC_TXD_LENGTH_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, \
+	TX_DESC_TXD_LENGTH_MASK, TX_DESC_TXD_LENGTH_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TXD_LENGTH(_prHwMacTxDesc, _ucHdrPadding) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), ((uint8_t)_ucHdrPadding), \
-			  TX_DESC_TXD_LENGTH_MASK, TX_DESC_TXD_LENGTH_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), \
+	((uint8_t)_ucHdrPadding), \
+	TX_DESC_TXD_LENGTH_MASK, TX_DESC_TXD_LENGTH_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_TXD_EXTEND_LENGTH(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, \
-			  TX_DESC_TXD_EXTEND_LENGTH_MASK, TX_DESC_TXD_EXTEND_LENGTH_OFFSET)
+	TX_DESC_TXD_EXTEND_LENGTH_MASK, \
+	TX_DESC_TXD_EXTEND_LENGTH_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TXD_EXTEND_LENGTH(_prHwMacTxDesc, _ucHdrPadding) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), ((uint8_t)_ucHdrPadding), \
-			  TX_DESC_TXD_EXTEND_LENGTH_MASK, TX_DESC_TXD_EXTEND_LENGTH_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), \
+	((uint8_t)_ucHdrPadding), \
+	TX_DESC_TXD_EXTEND_LENGTH_MASK, TX_DESC_TXD_EXTEND_LENGTH_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_HEADER_PADDING(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, \
-			  TX_DESC_HEADER_PADDING_LENGTH_MASK, TX_DESC_HEADER_PADDING_LENGTH_OFFSET)
+	TX_DESC_HEADER_PADDING_LENGTH_MASK, \
+	TX_DESC_HEADER_PADDING_LENGTH_OFFSET)
 #define HAL_MAC_TX_DESC_SET_HEADER_PADDING(_prHwMacTxDesc, _ucHdrPadding) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), ((uint8_t)_ucHdrPadding), \
-			  TX_DESC_HEADER_PADDING_LENGTH_MASK, TX_DESC_HEADER_PADDING_LENGTH_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), \
+	((uint8_t)_ucHdrPadding), \
+	TX_DESC_HEADER_PADDING_LENGTH_MASK, \
+	TX_DESC_HEADER_PADDING_LENGTH_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_UTXB_AMSDU(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, TX_DESC_TXD_UTXB_AMSDU_MASK, TX_DESC_TXD_UTXB_AMSDU_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, \
+	TX_DESC_TXD_UTXB_AMSDU_MASK, TX_DESC_TXD_UTXB_AMSDU_OFFSET)
 #define HAL_MAC_TX_DESC_SET_UTXB_AMSDU(_prHwMacTxDesc, _ucHdrPadding) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), ((uint8_t)_ucHdrPadding), \
-			  TX_DESC_TXD_UTXB_AMSDU_MASK, TX_DESC_TXD_UTXB_AMSDU_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), \
+	((uint8_t)_ucHdrPadding), \
+	TX_DESC_TXD_UTXB_AMSDU_MASK, TX_DESC_TXD_UTXB_AMSDU_OFFSET)
 
 #define HAL_MAC_TX_DESC_IS_HEADER_PADDING_IN_THE_HEAD(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucHeaderPadding & TX_DESC_HEADER_PADDING_MODE)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucHeaderPadding & TX_DESC_HEADER_PADDING_MODE) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_HEADER_PADDING_IN_THE_HEAD(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderPadding |= TX_DESC_HEADER_PADDING_MODE)
 #define HAL_MAC_TX_DESC_SET_HEADER_PADDING_IN_THE_TAIL(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucHeaderPadding &= ~TX_DESC_HEADER_PADDING_MODE)
 
 #define HAL_MAC_TX_DESC_GET_TID(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, TX_DESC_TID_MASK, TX_DESC_TID_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucHeaderPadding, \
+	TX_DESC_TID_MASK, TX_DESC_TID_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TID(_prHwMacTxDesc, _ucTID) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), ((uint8_t)_ucTID), TX_DESC_TID_MASK, TX_DESC_TID_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucHeaderPadding), \
+	((uint8_t)_ucTID), TX_DESC_TID_MASK, TX_DESC_TID_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_PKT_FORMAT(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucOwnMAC, TX_DESC_PACKET_FORMAT_MASK, TX_DESC_PACKET_FORMAT_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucOwnMAC, \
+	TX_DESC_PACKET_FORMAT_MASK, \
+	TX_DESC_PACKET_FORMAT_OFFSET)
 #define HAL_MAC_TX_DESC_SET_PKT_FORMAT(_prHwMacTxDesc, _ucPktFormat) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucOwnMAC), ((uint8_t)_ucPktFormat), \
-			  TX_DESC_PACKET_FORMAT_MASK, TX_DESC_PACKET_FORMAT_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucOwnMAC), \
+	((uint8_t)_ucPktFormat), \
+	TX_DESC_PACKET_FORMAT_MASK, TX_DESC_PACKET_FORMAT_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_OWN_MAC_INDEX(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucOwnMAC, TX_DESC_OWN_MAC_MASK, TX_DESC_OWN_MAC_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucOwnMAC, \
+	TX_DESC_OWN_MAC_MASK, TX_DESC_OWN_MAC_OFFSET)
 #define HAL_MAC_TX_DESC_SET_OWN_MAC_INDEX(_prHwMacTxDesc, _ucOwnMacIdx) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucOwnMAC), ((uint8_t)_ucOwnMacIdx), \
-			  TX_DESC_OWN_MAC_MASK, TX_DESC_OWN_MAC_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucOwnMAC), \
+	((uint8_t)_ucOwnMacIdx), \
+	TX_DESC_OWN_MAC_MASK, TX_DESC_OWN_MAC_OFFSET)
 
 /* DW 2 */
 #define HAL_MAC_TX_DESC_GET_SUB_TYPE(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucType_SubType, TX_DESC_SUB_TYPE_MASK, TX_DESC_SUB_TYPE_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucType_SubType, \
+	TX_DESC_SUB_TYPE_MASK, TX_DESC_SUB_TYPE_OFFSET)
 #define HAL_MAC_TX_DESC_SET_SUB_TYPE(_prHwMacTxDesc, _ucSubType) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucType_SubType), ((uint8_t)_ucSubType), \
-			  TX_DESC_SUB_TYPE_MASK, TX_DESC_SUB_TYPE_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucType_SubType), \
+	((uint8_t)_ucSubType), \
+	TX_DESC_SUB_TYPE_MASK, TX_DESC_SUB_TYPE_OFFSET)
 
 #define HAL_MAC_TX_DESC_GET_TYPE(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucType_SubType, TX_DESC_TYPE_MASK, TX_DESC_TYPE_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucType_SubType, \
+	TX_DESC_TYPE_MASK, TX_DESC_TYPE_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TYPE(_prHwMacTxDesc, _ucType) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucType_SubType), ((uint8_t)_ucType), TX_DESC_TYPE_MASK, TX_DESC_TYPE_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucType_SubType), \
+	((uint8_t)_ucType), TX_DESC_TYPE_MASK, TX_DESC_TYPE_OFFSET)
 
-#define HAL_MAC_TX_DESC_IS_NDP(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucType_SubType & TX_DESC_NDP)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_NDP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucType_SubType |= TX_DESC_NDP)
-#define HAL_MAC_TX_DESC_UNSET_NDP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucType_SubType &= ~TX_DESC_NDP)
+#define HAL_MAC_TX_DESC_IS_NDP(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucType_SubType & TX_DESC_NDP)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_NDP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucType_SubType |= TX_DESC_NDP)
+#define HAL_MAC_TX_DESC_UNSET_NDP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucType_SubType &= ~TX_DESC_NDP)
 
-#define HAL_MAC_TX_DESC_IS_NDPA(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucType_SubType & TX_DESC_NDPA)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_NDPA(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucType_SubType |= TX_DESC_NDPA)
-#define HAL_MAC_TX_DESC_UNSET_NDPA(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucType_SubType &= ~TX_DESC_NDPA)
+#define HAL_MAC_TX_DESC_IS_NDPA(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucType_SubType & TX_DESC_NDPA)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_NDPA(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucType_SubType |= TX_DESC_NDPA)
+#define HAL_MAC_TX_DESC_UNSET_NDPA(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucType_SubType &= ~TX_DESC_NDPA)
 
-#define HAL_MAC_TX_DESC_IS_SOUNDING_FRAME(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucFrag & TX_DESC_SOUNDING)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_SOUNDING_FRAME(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag |= TX_DESC_SOUNDING)
-#define HAL_MAC_TX_DESC_UNSET_SOUNDING_FRAME(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_SOUNDING)
+#define HAL_MAC_TX_DESC_IS_SOUNDING_FRAME(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucFrag & TX_DESC_SOUNDING)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_SOUNDING_FRAME(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag |= TX_DESC_SOUNDING)
+#define HAL_MAC_TX_DESC_UNSET_SOUNDING_FRAME(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_SOUNDING)
 
 #define HAL_MAC_TX_DESC_IS_FORCE_RTS_CTS_EN(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucFrag & TX_DESC_FORCE_RTS_CTS)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_FORCE_RTS_CTS(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag |= TX_DESC_FORCE_RTS_CTS)
-#define HAL_MAC_TX_DESC_UNSET_FORCE_RTS_CTS(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_FORCE_RTS_CTS)
+#define HAL_MAC_TX_DESC_SET_FORCE_RTS_CTS(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag |= TX_DESC_FORCE_RTS_CTS)
+#define HAL_MAC_TX_DESC_UNSET_FORCE_RTS_CTS(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_FORCE_RTS_CTS)
 
-#define HAL_MAC_TX_DESC_IS_BMC(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucFrag & TX_DESC_BROADCAST_MULTICAST)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_BMC(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag |= TX_DESC_BROADCAST_MULTICAST)
-#define HAL_MAC_TX_DESC_UNSET_BMC(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_BROADCAST_MULTICAST)
+#define HAL_MAC_TX_DESC_IS_BMC(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucFrag & TX_DESC_BROADCAST_MULTICAST)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_BMC(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->ucFrag |= TX_DESC_BROADCAST_MULTICAST)
+#define HAL_MAC_TX_DESC_UNSET_BMC(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_BROADCAST_MULTICAST)
 
-#define HAL_MAC_TX_DESC_IS_BIP(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucFrag & TX_DESC_BIP_PROTECTED)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_BIP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag |= TX_DESC_BIP_PROTECTED)
-#define HAL_MAC_TX_DESC_UNSET_BIP(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_BIP_PROTECTED)
+#define HAL_MAC_TX_DESC_IS_BIP(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucFrag & TX_DESC_BIP_PROTECTED)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_BIP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag |= TX_DESC_BIP_PROTECTED)
+#define HAL_MAC_TX_DESC_UNSET_BIP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_BIP_PROTECTED)
 
 #define HAL_MAC_TX_DESC_IS_DURATION_CONTROL_BY_SW(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucFrag & TX_DESC_DURATION_FIELD_CONTROL)?TRUE:FALSE)
@@ -1238,48 +1385,64 @@ do { \
 #define HAL_MAC_TX_DESC_SET_DURATION_CONTROL_BY_HW(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_DURATION_FIELD_CONTROL)
 
-#define HAL_MAC_TX_DESC_IS_HTC_EXIST(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucFrag & TX_DESC_HTC_EXISTS)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_HTC_EXIST(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag |= TX_DESC_HTC_EXISTS)
-#define HAL_MAC_TX_DESC_UNSET_HTC_EXIST(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_HTC_EXISTS)
+#define HAL_MAC_TX_DESC_IS_HTC_EXIST(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucFrag & TX_DESC_HTC_EXISTS)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_HTC_EXIST(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->ucFrag |= TX_DESC_HTC_EXISTS)
+#define HAL_MAC_TX_DESC_UNSET_HTC_EXIST(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucFrag &= ~TX_DESC_HTC_EXISTS)
 
-#define HAL_MAC_TX_DESC_IS_FRAG_PACKET(_prHwMacTxDesc) (((_prHwMacTxDesc)->ucFrag & TX_DESC_FRAGMENT_MASK)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_IS_FRAG_PACKET(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->ucFrag & TX_DESC_FRAGMENT_MASK)?TRUE:FALSE)
 #define HAL_MAC_TX_DESC_GET_FRAG_PACKET_POS(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucFrag, TX_DESC_FRAGMENT_MASK, TX_DESC_FRAGMENT_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucFrag, \
+	TX_DESC_FRAGMENT_MASK, TX_DESC_FRAGMENT_OFFSET)
 #define HAL_MAC_TX_DESC_SET_FRAG_PACKET_POS(_prHwMacTxDesc, _ucFragPos) \
 	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucFrag), ((uint8_t)_ucFragPos), \
 			  TX_DESC_FRAGMENT_MASK, TX_DESC_FRAGMENT_OFFSET)
 
 /* For driver */
 /* in unit of 32TU */
-#define HAL_MAC_TX_DESC_GET_REMAINING_LIFE_TIME(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucRemainingMaxTxTime)
+#define HAL_MAC_TX_DESC_GET_REMAINING_LIFE_TIME(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucRemainingMaxTxTime)
 #define HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME(_prHwMacTxDesc, _ucLifeTime) \
 	((_prHwMacTxDesc)->ucRemainingMaxTxTime = (_ucLifeTime))
 /* in unit of ms (minimal value is about 40ms) */
 #define HAL_MAC_TX_DESC_GET_REMAINING_LIFE_TIME_IN_MS(_prHwMacTxDesc) \
-	(TU_TO_MSEC(HAL_MAC_TX_DESC_GET_REMAINING_LIFE_TIME(_prHwMacTxDesc) << TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2))
-#define HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME_IN_MS(_prHwMacTxDesc, _u4LifeTimeMs) \
+	(TU_TO_MSEC(HAL_MAC_TX_DESC_GET_REMAINING_LIFE_TIME(_prHwMacTxDesc) \
+	<< TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2))
+#define HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME_IN_MS(_prHwMacTxDesc, \
+	_u4LifeTimeMs) \
 do { \
-	uint32_t u4LifeTimeInUnit = ((MSEC_TO_USEC(_u4LifeTimeMs) / USEC_PER_TU) \
+	uint32_t u4LifeTimeInUnit = \
+		((MSEC_TO_USEC(_u4LifeTimeMs) / USEC_PER_TU) \
 				    >> TX_DESC_LIFE_TIME_UNIT_IN_POWER_OF_2); \
 	if (u4LifeTimeInUnit >= BIT(8)) \
 		u4LifeTimeInUnit = BITS(0, 7); \
-	else if ((_u4LifeTimeMs != TX_DESC_TX_TIME_NO_LIMIT) && (u4LifeTimeInUnit == TX_DESC_TX_TIME_NO_LIMIT)) \
+	else if ((_u4LifeTimeMs != TX_DESC_TX_TIME_NO_LIMIT) && \
+		(u4LifeTimeInUnit == TX_DESC_TX_TIME_NO_LIMIT)) \
 		u4LifeTimeInUnit = 1; \
-	HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME(_prHwMacTxDesc, (uint8_t)u4LifeTimeInUnit); \
+	HAL_MAC_TX_DESC_SET_REMAINING_LIFE_TIME(_prHwMacTxDesc, \
+	(uint8_t)u4LifeTimeInUnit); \
 } while (0)
 
 #define HAL_MAC_TX_DESC_GET_POWER_OFFSET(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPowerOffset, TX_DESC_POWER_OFFSET_MASK, 0)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucPowerOffset, \
+	TX_DESC_POWER_OFFSET_MASK, 0)
 #define HAL_MAC_TX_DESC_SET_POWER_OFFSET(_prHwMacTxDesc, _ucPowerOffset) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPowerOffset), ((uint8_t)_ucPowerOffset), TX_DESC_POWER_OFFSET_MASK, 0)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucPowerOffset), \
+	((uint8_t)_ucPowerOffset), TX_DESC_POWER_OFFSET_MASK, 0)
 
 #define HAL_MAC_TX_DESC_IS_BA_DISABLE(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_BA_DISABLE)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_BA_DISABLE(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_BA_DISABLE)
-#define HAL_MAC_TX_DESC_SET_BA_ENABLE(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_BA_DISABLE)
+#define HAL_MAC_TX_DESC_SET_BA_DISABLE(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_BA_DISABLE)
+#define HAL_MAC_TX_DESC_SET_BA_ENABLE(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_BA_DISABLE)
 
 #define HAL_MAC_TX_DESC_IS_TIMING_MEASUREMENT(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_TIMING_MEASUREMENT)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_TIMING_MEASUREMENT) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_TIMING_MEASUREMENT(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_TIMING_MEASUREMENT)
 #define HAL_MAC_TX_DESC_UNSET_TIMING_MEASUREMENT(_prHwMacTxDesc) \
@@ -1287,21 +1450,30 @@ do { \
 
 #define HAL_MAC_TX_DESC_IS_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_FIXED_RATE)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_FIXED_RATE)
-#define HAL_MAC_TX_DESC_SET_FIXED_RATE_DISABLE(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_FIXED_RATE)
+#define HAL_MAC_TX_DESC_SET_FIXED_RATE_ENABLE(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_FIXED_RATE)
+#define HAL_MAC_TX_DESC_SET_FIXED_RATE_DISABLE(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_FIXED_RATE)
 
 /* DW 3 */
-#define HAL_MAC_TX_DESC_IS_NO_ACK(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_NO_ACK)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_NO_ACK(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_NO_ACK)
-#define HAL_MAC_TX_DESC_UNSET_NO_ACK(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_NO_ACK)
+#define HAL_MAC_TX_DESC_IS_NO_ACK(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_NO_ACK)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_NO_ACK(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_NO_ACK)
+#define HAL_MAC_TX_DESC_UNSET_NO_ACK(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_NO_ACK)
 
 #define HAL_MAC_TX_DESC_IS_PROTECTION(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_PROTECTED_FRAME)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_PROTECTION(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_PROTECTED_FRAME)
-#define HAL_MAC_TX_DESC_UNSET_PROTECTION(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_PROTECTED_FRAME)
+	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_PROTECTED_FRAME) \
+	? TRUE : FALSE)
+#define HAL_MAC_TX_DESC_SET_PROTECTION(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_PROTECTED_FRAME)
+#define HAL_MAC_TX_DESC_UNSET_PROTECTION(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_PROTECTED_FRAME)
 
 #define HAL_MAC_TX_DESC_IS_EXTEND_MORE_DATA(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_EXTEND_MORE_DATA)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_EXTEND_MORE_DATA) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_EXTEND_MORE_DATA(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_EXTEND_MORE_DATA)
 #define HAL_MAC_TX_DESC_UNSET_EXTEND_MORE_DATA(_prHwMacTxDesc) \
@@ -1309,39 +1481,56 @@ do { \
 
 #define HAL_MAC_TX_DESC_IS_EXTEND_EOSP(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->u2TxCountLimit & TX_DESC_EXTEND_EOSP)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_EXTEND_EOSP(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_EXTEND_EOSP)
-#define HAL_MAC_TX_DESC_UNSET_EXTEND_EOSP(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_EXTEND_EOSP)
+#define HAL_MAC_TX_DESC_SET_EXTEND_EOSP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit |= TX_DESC_EXTEND_EOSP)
+#define HAL_MAC_TX_DESC_UNSET_EXTEND_EOSP(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2TxCountLimit &= ~TX_DESC_EXTEND_EOSP)
 
 #define HAL_MAC_TX_DESC_GET_SW_RESERVED(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2TxCountLimit, TX_DESC_SW_RESERVED_MASK, TX_DESC_SW_RESERVED_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2TxCountLimit, \
+	TX_DESC_SW_RESERVED_MASK, TX_DESC_SW_RESERVED_OFFSET)
 #define HAL_MAC_TX_DESC_SET_SW_RESERVED(_prHwMacTxDesc, _ucSwReserved) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), ((uint8_t)_ucSwReserved), \
-			  TX_DESC_SW_RESERVED_MASK, TX_DESC_SW_RESERVED_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), \
+	((uint8_t)_ucSwReserved), \
+	TX_DESC_SW_RESERVED_MASK, TX_DESC_SW_RESERVED_OFFSET)
 #define HAL_MAC_TX_DESC_GET_TX_COUNT(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2TxCountLimit, TX_DESC_TX_COUNT_MASK, TX_DESC_TX_COUNT_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2TxCountLimit, \
+	TX_DESC_TX_COUNT_MASK, TX_DESC_TX_COUNT_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TX_COUNT(_prHwMacTxDesc, _ucTxCountLimit) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), ((uint8_t)_ucTxCountLimit), \
-			  TX_DESC_TX_COUNT_MASK, TX_DESC_TX_COUNT_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), \
+	((uint8_t)_ucTxCountLimit), \
+	TX_DESC_TX_COUNT_MASK, TX_DESC_TX_COUNT_OFFSET)
 #define HAL_MAC_TX_DESC_GET_REMAINING_TX_COUNT(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2TxCountLimit, \
-			  TX_DESC_REMAINING_TX_COUNT_MASK, TX_DESC_REMAINING_TX_COUNT_OFFSET)
-#define HAL_MAC_TX_DESC_SET_REMAINING_TX_COUNT(_prHwMacTxDesc, _ucTxCountLimit) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), ((uint8_t)_ucTxCountLimit), \
-			  TX_DESC_REMAINING_TX_COUNT_MASK, TX_DESC_REMAINING_TX_COUNT_OFFSET)
+	TX_DESC_REMAINING_TX_COUNT_MASK, \
+	TX_DESC_REMAINING_TX_COUNT_OFFSET)
+#define HAL_MAC_TX_DESC_SET_REMAINING_TX_COUNT(_prHwMacTxDesc, \
+	_ucTxCountLimit) \
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2TxCountLimit), \
+	((uint8_t)_ucTxCountLimit), \
+	TX_DESC_REMAINING_TX_COUNT_MASK, \
+	TX_DESC_REMAINING_TX_COUNT_OFFSET)
 #define HAL_MAC_TX_DESC_GET_SEQUENCE_NUMBER(_prHwMacTxDesc) \
 	TX_DESC_GET_FIELD((_prHwMacTxDesc)->u2SN, TX_DESC_SEQUENCE_NUMBER, 0)
 #define HAL_MAC_TX_DESC_SET_SEQUENCE_NUMBER(_prHwMacTxDesc, _u2SN) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SN), ((uint16_t)_u2SN), TX_DESC_SEQUENCE_NUMBER, 0)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SN), ((uint16_t)_u2SN), \
+	TX_DESC_SEQUENCE_NUMBER, 0)
 #define HAL_MAC_TX_DESC_SET_HW_RESERVED(_prHwMacTxDesc, _ucHwReserved) \
 	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SN), ((uint8_t)_ucHwReserved), \
 			  TX_DESC_HW_RESERVED_MASK, TX_DESC_HW_RESERVED_OFFSET)
-#define HAL_MAC_TX_DESC_IS_TXD_SN_VALID(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2SN & TX_DESC_SN_IS_VALID)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_TXD_SN_VALID(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2SN |= TX_DESC_SN_IS_VALID)
-#define HAL_MAC_TX_DESC_SET_TXD_SN_INVALID(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2SN &= ~TX_DESC_SN_IS_VALID)
+#define HAL_MAC_TX_DESC_IS_TXD_SN_VALID(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->u2SN & TX_DESC_SN_IS_VALID)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_TXD_SN_VALID(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2SN |= TX_DESC_SN_IS_VALID)
+#define HAL_MAC_TX_DESC_SET_TXD_SN_INVALID(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2SN &= ~TX_DESC_SN_IS_VALID)
 
-#define HAL_MAC_TX_DESC_IS_TXD_PN_VALID(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2SN & TX_DESC_PN_IS_VALID)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_TXD_PN_VALID(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2SN |= TX_DESC_PN_IS_VALID)
-#define HAL_MAC_TX_DESC_SET_TXD_PN_INVALID(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2SN &= ~TX_DESC_PN_IS_VALID)
+#define HAL_MAC_TX_DESC_IS_TXD_PN_VALID(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->u2SN & TX_DESC_PN_IS_VALID)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_TXD_PN_VALID(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2SN |= TX_DESC_PN_IS_VALID)
+#define HAL_MAC_TX_DESC_SET_TXD_PN_INVALID(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2SN &= ~TX_DESC_PN_IS_VALID)
 
 #define HAL_MAC_TX_DESC_ASSIGN_SN_BY_SW(_prHwMacTxDesc, _u2SN) \
 { \
@@ -1366,10 +1555,10 @@ do { \
 	(_prHwMacTxDesc)->u2PN2 = ((uint16_t)_u2PN_32_47); \
 }
 
-#define HAL_MAC_TX_DESC_ASSIGN_PN_BY_SW(_prHwMacTxDesc, _u4PN_0_31, _u2PN_32_47) \
+#define HAL_MAC_TX_DESC_ASSIGN_PN_BY_SW(_prTxDesc, _u4PN_0_31, _u2PN_32_47) \
 { \
-	HAL_MAC_TX_DESC_SET_PN(_prHwMacTxDesc, _u4PN_0_31, _u2PN_32_47); \
-	HAL_MAC_TX_DESC_SET_TXD_PN_VALID(_prHwMacTxDesc); \
+	HAL_MAC_TX_DESC_SET_PN(_prTxDesc, _u4PN_0_31, _u2PN_32_47); \
+	HAL_MAC_TX_DESC_SET_TXD_PN_VALID(_prTxDesc); \
 }
 #define HAL_MAC_TX_DESC_ASSIGN_PSN_BY_HW(_prHwMacTxDesc) \
 { \
@@ -1384,28 +1573,37 @@ do { \
 	(((_prHwMacTxDesc)->ucPID) = (_ucPID))
 
 #define HAL_MAC_TX_DESC_GET_TXS_FORMAT(_prHwMacTxDesc) \
-	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucTxStatus, TX_DESC_TX_STATUS_FORMAT, TX_DESC_TX_STATUS_FORMAT_OFFSET)
+	TX_DESC_GET_FIELD((_prHwMacTxDesc)->ucTxStatus, \
+	TX_DESC_TX_STATUS_FORMAT, TX_DESC_TX_STATUS_FORMAT_OFFSET)
 #define HAL_MAC_TX_DESC_SET_TXS_FORMAT(_prHwMacTxDesc, _ucTXSFormat) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucTxStatus), ((uint8_t)_ucTXSFormat), \
-			  TX_DESC_TX_STATUS_FORMAT, TX_DESC_TX_STATUS_FORMAT_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->ucTxStatus), \
+	((uint8_t)_ucTXSFormat), \
+	TX_DESC_TX_STATUS_FORMAT, TX_DESC_TX_STATUS_FORMAT_OFFSET)
 
 #define HAL_MAC_TX_DESC_IS_TXS_TO_MCU(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucTxStatus & TX_DESC_TX_STATUS_TO_MCU)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_TXS_TO_MCU(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_TX_STATUS_TO_MCU)
-#define HAL_MAC_TX_DESC_UNSET_TXS_TO_MCU(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_TX_STATUS_TO_MCU)
+#define HAL_MAC_TX_DESC_SET_TXS_TO_MCU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_TX_STATUS_TO_MCU)
+#define HAL_MAC_TX_DESC_UNSET_TXS_TO_MCU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_TX_STATUS_TO_MCU)
 
 #define HAL_MAC_TX_DESC_IS_TXS_TO_HOST(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucTxStatus & TX_DESC_TX_STATUS_TO_HOST)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_TXS_TO_HOST(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_TX_STATUS_TO_HOST)
-#define HAL_MAC_TX_DESC_UNSET_TXS_TO_HOST(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_TX_STATUS_TO_HOST)
+#define HAL_MAC_TX_DESC_SET_TXS_TO_HOST(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_TX_STATUS_TO_HOST)
+#define HAL_MAC_TX_DESC_UNSET_TXS_TO_HOST(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_TX_STATUS_TO_HOST)
 
 #define HAL_MAC_TX_DESC_IS_DA_FROM_WTBL(_prHwMacTxDesc) \
 	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_DA_SOURCE)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_DA_FROM_WTBL(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_DA_SOURCE)
-#define HAL_MAC_TX_DESC_SET_DA_FROM_MSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_DA_SOURCE)
+#define HAL_MAC_TX_DESC_SET_DA_FROM_WTBL(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_DA_SOURCE)
+#define HAL_MAC_TX_DESC_SET_DA_FROM_MSDU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_DA_SOURCE)
 
 #define HAL_MAC_TX_DESC_IS_SW_PM_CONTROL(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_POWER_MANAGEMENT_CONTROL)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_POWER_MANAGEMENT_CONTROL) \
+	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_SW_PM_CONTROL(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_POWER_MANAGEMENT_CONTROL)
 #define HAL_MAC_TX_DESC_SET_HW_PM_CONTROL(_prHwMacTxDesc) \
@@ -1413,18 +1611,21 @@ do { \
 
 /* DW 6 */
 #define HAL_MAC_TX_DESC_SET_FR_BW(_prHwMacTxDesc, ucBw) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2AntID), ((uint8_t)ucBw), TX_DESC_BANDWIDTH_MASK, TX_DESC_BANDWIDTH_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2AntID), \
+	((uint8_t)ucBw), TX_DESC_BANDWIDTH_MASK, TX_DESC_BANDWIDTH_OFFSET)
 
 #define HAL_MAC_TX_DESC_SET_FR_DYNAMIC_BW_RTS(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->u2AntID |= TX_DESC_DYNAMIC_BANDWIDTH)
 
 #define HAL_MAC_TX_DESC_SET_FR_ANTENNA_ID(_prHwMacTxDesc, _ucAntId) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2AntID), ((uint8_t)_ucAntId), \
-			  TX_DESC_ANTENNA_INDEX_MASK, TX_DESC_ANTENNA_INDEX_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2AntID), \
+	((uint8_t)_ucAntId), \
+	TX_DESC_ANTENNA_INDEX_MASK, TX_DESC_ANTENNA_INDEX_OFFSET)
 
 #define HAL_MAC_TX_DESC_SET_FR_RATE(_prHwMacTxDesc, _u2RatetoFixed) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2FixedRate), ((uint8_t)_u2RatetoFixed), \
-			  TX_DESC_FIXDE_RATE_MASK, TX_DESC_FIXDE_RATE_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2FixedRate), \
+	((uint8_t)_u2RatetoFixed), \
+	TX_DESC_FIXDE_RATE_MASK, TX_DESC_FIXDE_RATE_OFFSET)
 
 #define HAL_MAC_TX_DESC_SET_FR_BF(_prHwMacTxDesc) \
 	((_prHwMacTxDesc)->u2FixedRate |= TX_DESC_BF)
@@ -1448,38 +1649,49 @@ do { \
 
 /* DW 7 */
 #define HAL_MAC_TX_DESC_SET_SPE_IDX(_prHwMacTxDesc, _ucSpeIdx) \
-	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SwTxTime), ((uint16_t)_ucSpeIdx), \
-		TX_DESC_SPE_EXT_IDX_MASK, TX_DESC_SPE_EXT_IDX_OFFSET)
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SwTxTime), \
+	((uint16_t)_ucSpeIdx), \
+	TX_DESC_SPE_EXT_IDX_MASK, TX_DESC_SPE_EXT_IDX_OFFSET)
 
-#define HAL_MAC_TX_DESC_IS_HW_AMSDU(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2PseFid & TX_DESC_HW_AMSDU)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_HW_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HW_AMSDU)
-#define HAL_MAC_TX_DESC_UNSET_HW_AMSDU(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HW_AMSDU)
+#define HAL_MAC_TX_DESC_IS_HW_AMSDU(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->u2PseFid & TX_DESC_HW_AMSDU)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_HW_AMSDU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HW_AMSDU)
+#define HAL_MAC_TX_DESC_UNSET_HW_AMSDU(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HW_AMSDU)
 
-#define HAL_MAC_TX_DESC_IS_HIF_ERR(_prHwMacTxDesc) (((_prHwMacTxDesc)->u2PseFid & TX_DESC_HIF_ERR)?TRUE:FALSE)
-#define HAL_MAC_TX_DESC_SET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HIF_ERR)
-#define HAL_MAC_TX_DESC_UNSET_HIF_ERR(_prHwMacTxDesc) ((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HIF_ERR)
+#define HAL_MAC_TX_DESC_IS_HIF_ERR(_prHwMacTxDesc) \
+	(((_prHwMacTxDesc)->u2PseFid & TX_DESC_HIF_ERR)?TRUE:FALSE)
+#define HAL_MAC_TX_DESC_SET_HIF_ERR(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2PseFid |= TX_DESC_HIF_ERR)
+#define HAL_MAC_TX_DESC_UNSET_HIF_ERR(_prHwMacTxDesc) \
+	((_prHwMacTxDesc)->u2PseFid &= ~TX_DESC_HIF_ERR)
 
 
 #define nicTxReleaseResource_PSE(prAdapter, ucTc, u4PageCount, fgReqLock) \
-		nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, FALSE)
+	nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, FALSE)
 
 #define nicTxReleaseResource_PLE(prAdapter, ucTc, u4PageCount, fgReqLock) \
-		nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, TRUE)
+	nicTxReleaseResource(prAdapter, ucTc, u4PageCount, fgReqLock, TRUE)
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 void nicTxInitialize(IN struct ADAPTER *prAdapter);
 
-uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC, IN uint32_t u4PageCount,
+uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC, IN uint32_t u4PageCount,
 	IN u_int8_t fgReqLock);
 
-uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC);
+uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
 
-u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTc, IN uint32_t u4PageCount,
+u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTc, IN uint32_t u4PageCount,
 	IN u_int8_t fgReqLock, IN u_int8_t fgPLE);
 
-void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
+void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead);
 
 uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter);
 
@@ -1487,168 +1699,215 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter);
 uint32_t nicTxGetAdjustableResourceCnt(IN struct ADAPTER *prAdapter);
 #endif
 
-uint16_t nicTxGetResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC);
+uint16_t nicTxGetResource(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
 
-uint8_t nicTxGetFrameResourceType(IN uint8_t eFrameType, IN struct MSDU_INFO *prMsduInfo);
+uint8_t nicTxGetFrameResourceType(IN uint8_t eFrameType,
+	IN struct MSDU_INFO *prMsduInfo);
 
 uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO *prCmdInfo);
 
 u_int8_t nicTxSanityCheckResource(IN struct ADAPTER *prAdapter);
 
-void nicTxFillDesc(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, OUT uint8_t *prTxDescBuffer,
+void nicTxFillDesc(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, OUT uint8_t *prTxDescBuffer,
 	OUT uint32_t *pu4TxDescLength);
 
-void nicTxFillDataDesc(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
 
-void nicTxComposeSecurityFrameDesc(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo,
+void nicTxComposeSecurityFrameDesc(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo,
 	OUT uint8_t *prTxDescBuffer, OUT uint8_t *pucTxDescLength);
 
-uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
+uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead);
 
 uint8_t nicTxGetTxQByTc(IN struct ADAPTER *prAdapter, IN uint8_t ucTc);
 
 #if CFG_SUPPORT_MULTITHREAD
-uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
+uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead);
 
 uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter);
 
 uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER *prAdapter);
 #endif
 
-uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter, uint8_t ucPortIdx, struct QUE *prQue);
+uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
+	uint8_t ucPortIdx, struct QUE *prQue);
 
-uint32_t nicTxCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
+uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
 
-void nicTxRelease(IN struct ADAPTER *prAdapter, IN u_int8_t fgProcTxDoneHandler);
+void nicTxRelease(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgProcTxDoneHandler);
 
 void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter);
 
-void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
+void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead);
 
-void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfoListHead);
+void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead);
 
-u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN void *prNdisPacket);
+u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN void *prNdisPacket);
 
 uint32_t nicTxAdjustTcq(IN struct ADAPTER *prAdapter);
 
 uint32_t nicTxFlush(IN struct ADAPTER *prAdapter);
 
 #if CFG_ENABLE_FW_DOWNLOAD
-uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint16_t u2Port);
+uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint16_t u2Port);
 
 uint32_t nicTxInitResetResource(IN struct ADAPTER *prAdapter);
 #endif
 
-uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
 
-uint8_t nicTxGetWlanIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);
+uint8_t nicTxGetWlanIdx(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);
 
 u_int8_t nicTxIsMgmtResourceEnough(IN struct ADAPTER *prAdapter);
 
 uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter);
 
-uint32_t nicTxGetPageCount(IN struct ADAPTER *prAdapter, IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
+uint32_t nicTxGetPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
 
-uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo);
 
-uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec);
 
-void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
+void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec);
 
 void nicTxSetHwAmsduDescTemplate(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec, IN uint8_t ucTid, IN u_int8_t fgSet);
+	IN struct STA_RECORD *prStaRec,
+	IN uint8_t ucTid, IN u_int8_t fgSet);
 
-void nicTxFreePacket(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN u_int8_t fgDrop);
+void nicTxFreePacket(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN u_int8_t fgDrop);
 
-void
-nicTxSetMngPacket(IN struct ADAPTER *prAdapter,
-		  IN struct MSDU_INFO *prMsduInfo,
-		  IN uint8_t ucBssIndex,
-		  IN uint8_t ucStaRecIndex,
-		  IN uint8_t ucMacHeaderLength,
-		  IN uint16_t u2FrameLength, IN PFN_TX_DONE_HANDLER pfTxDoneHandler, IN uint8_t ucRateMode);
+void nicTxSetMngPacket(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN uint8_t ucBssIndex,
+	IN uint8_t ucStaRecIndex,
+	IN uint8_t ucMacHeaderLength,
+	IN uint16_t u2FrameLength,
+	IN PFN_TX_DONE_HANDLER pfTxDoneHandler,
+	IN uint8_t ucRateMode);
 
-void
-nicTxSetDataPacket(IN struct ADAPTER *prAdapter,
-		   IN struct MSDU_INFO *prMsduInfo,
-		   IN uint8_t ucBssIndex,
-		   IN uint8_t ucStaRecIndex,
-		   IN uint8_t ucMacHeaderLength,
-		   IN uint16_t u2FrameLength,
-		   IN PFN_TX_DONE_HANDLER pfTxDoneHandler,
-		   IN uint8_t ucRateMode,
-		   IN enum ENUM_TX_PACKET_SRC eSrc, IN uint8_t ucTID, IN u_int8_t fgIs802_11Frame, IN u_int8_t fgIs1xFrame);
+void nicTxSetDataPacket(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN uint8_t ucBssIndex,
+	IN uint8_t ucStaRecIndex,
+	IN uint8_t ucMacHeaderLength,
+	IN uint16_t u2FrameLength,
+	IN PFN_TX_DONE_HANDLER pfTxDoneHandler,
+	IN uint8_t ucRateMode,
+	IN enum ENUM_TX_PACKET_SRC eSrc, IN uint8_t ucTID,
+	IN u_int8_t fgIs802_11Frame, IN u_int8_t fgIs1xFrame);
 
-void nicTxFillDescByPktOption(IN struct MSDU_INFO *prMsduInfo, IN struct HW_MAC_TX_DESC *prTxDesc);
+void nicTxFillDescByPktOption(IN struct MSDU_INFO *prMsduInfo,
+	IN struct HW_MAC_TX_DESC *prTxDesc);
 
-void nicTxConfigPktOption(IN struct MSDU_INFO *prMsduInfo, IN uint32_t u4OptionMask, IN u_int8_t fgSetOption);
+void nicTxConfigPktOption(IN struct MSDU_INFO *prMsduInfo,
+	IN uint32_t u4OptionMask, IN u_int8_t fgSetOption);
 
-void nicTxFillDescByPktControl(struct MSDU_INFO *prMsduInfo, struct HW_MAC_TX_DESC *prTxDesc);
+void nicTxFillDescByPktControl(struct MSDU_INFO *prMsduInfo,
+	struct HW_MAC_TX_DESC *prTxDesc);
 
-void nicTxConfigPktControlFlag(IN struct MSDU_INFO *prMsduInfo, IN uint8_t ucControlFlagMask, IN u_int8_t fgSetFlag);
+void nicTxConfigPktControlFlag(IN struct MSDU_INFO *prMsduInfo,
+	IN uint8_t ucControlFlagMask, IN u_int8_t fgSetFlag);
 
-void nicTxSetPktLifeTime(IN struct MSDU_INFO *prMsduInfo, IN uint32_t u4TxLifeTimeInMs);
+void nicTxSetPktLifeTime(IN struct MSDU_INFO *prMsduInfo,
+	IN uint32_t u4TxLifeTimeInMs);
 
-void nicTxSetPktRetryLimit(IN struct MSDU_INFO *prMsduInfo, IN uint8_t ucRetryLimit);
+void nicTxSetPktRetryLimit(IN struct MSDU_INFO *prMsduInfo,
+	IN uint8_t ucRetryLimit);
 
-void nicTxSetPktPowerOffset(IN struct MSDU_INFO *prMsduInfo, IN int8_t cPowerOffset);
+void nicTxSetPktPowerOffset(IN struct MSDU_INFO *prMsduInfo,
+	IN int8_t cPowerOffset);
 
-void nicTxSetPktSequenceNumber(IN struct MSDU_INFO *prMsduInfo, IN uint16_t u2SN);
+void nicTxSetPktSequenceNumber(IN struct MSDU_INFO *prMsduInfo,
+	IN uint16_t u2SN);
 
-void nicTxSetPktMacTxQue(IN struct MSDU_INFO *prMsduInfo, IN uint8_t ucMacTxQue);
+void nicTxSetPktMacTxQue(IN struct MSDU_INFO *prMsduInfo,
+	IN uint8_t ucMacTxQue);
 
 void nicTxSetPktFixedRateOptionFull(struct MSDU_INFO *prMsduInfo,
-				    uint16_t u2RateCode, uint8_t ucBandwidth, u_int8_t fgShortGI, u_int8_t fgLDPC,
-				    u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming, uint8_t ucAntennaIndex);
+	uint16_t u2RateCode, uint8_t ucBandwidth, u_int8_t fgShortGI,
+	u_int8_t fgLDPC, u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming,
+	uint8_t ucAntennaIndex);
 
 void nicTxSetPktFixedRateOption(IN struct MSDU_INFO *prMsduInfo,
-				IN uint16_t u2RateCode, IN uint8_t ucBandwidth, IN u_int8_t fgShortGI,
-				IN u_int8_t fgDynamicBwRts);
+	IN uint16_t u2RateCode, IN uint8_t ucBandwidth,
+	IN u_int8_t fgShortGI,
+	IN u_int8_t fgDynamicBwRts);
 
-void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
 
-void nicTxSetPktMoreData(IN struct MSDU_INFO *prCurrentMsduInfo, IN u_int8_t fgSetMoreDataBit);
+void nicTxSetPktMoreData(IN struct MSDU_INFO *prCurrentMsduInfo,
+	IN u_int8_t fgSetMoreDataBit);
 
-void nicTxSetPktEOSP(IN struct MSDU_INFO *prCurrentMsduInfo, IN u_int8_t fgSetEOSPBit);
+void nicTxSetPktEOSP(IN struct MSDU_INFO *prCurrentMsduInfo,
+	IN u_int8_t fgSetEOSPBit);
 
-uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex);
+uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWlanIndex);
 
 uint32_t
-nicTxDummyTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+nicTxDummyTxDone(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 void nicTxUpdateBssDefaultRate(IN struct BSS_INFO *prBssInfo);
 
 void nicTxUpdateStaRecDefaultRate(IN struct STA_RECORD *prStaRec);
 
-void
-nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
-		 IN struct MSDU_INFO *prMsduInfo, IN void *prPacket, IN uint32_t u4PacketLen, IN u_int8_t bFreeSkb);
+void nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN void *prPacket,
+	IN uint32_t u4PacketLen, IN u_int8_t bFreeSkb);
 
-void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter, IN struct WIFI_EVENT *prEvent);
+void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
 
 void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo, IN struct QUE *prQue);
 
-void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo);
 uint32_t nicTxGetMaxPageCntPerFrame(IN struct ADAPTER *prAdapter);
 
 /* TX Direct functions : BEGIN */
 void nicTxDirectStartCheckQTimer(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearSkbQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter);
-void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter, uint8_t ucStaRecIndex);
-void nicTxDirectClearBssAbsentQ(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIndex);
+void nicTxDirectClearBssAbsentQ(IN struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectTimerCheckSkbQ(unsigned long data);
 void nicTxDirectTimerCheckHifQ(unsigned long data);
-uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb, struct GLUE_INFO *prGlueInfo);
+uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
+	struct GLUE_INFO *prGlueInfo);
 /* TX Direct functions : END */
 
-uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER *prAdapter, IN uint8_t ucTC);
-u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER *prAdapter, IN uint8_t ucTC);
+uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
+u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucTC);
 void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter);
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _NIC_TX_H */

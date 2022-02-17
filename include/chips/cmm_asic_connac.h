@@ -50,46 +50,56 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/chips/connac.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *			MT6620_WIFI_DRIVER_V2_3/include/chips/connac.h#1
+ */
 
 /*! \file  connac.h
-*    \brief This file contains the info of CONNAC
-*/
+ *    \brief This file contains the info of CONNAC
+ */
 
 #ifndef _CMM_ASIC_CONNAC_H
 #define _CMM_ASIC_CONNAC_H
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define USB_HIF_TXD_LEN    4
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 void asicCapInit(IN struct ADAPTER *prAdapter);
-uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen);
-void asicEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable);
-void fillNicTxDescAppend(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-			 OUT uint8_t *prTxDescBuffer);
-void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				OUT uint8_t *prTxDescBuffer);
-void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-			    IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-			    OUT uint8_t *pucBuffer);
-void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-			      IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-			      OUT uint8_t *pucBuffer);
-void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-			   IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-			   OUT uint8_t *pucBuffer);
-void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-			   struct HW_MAC_TX_DESC *prTxDesc);
-void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				  struct HW_MAC_TX_DESC *prTxDesc);
+uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
+	char *pcBuf, int i4TotalLen);
+void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgEnable);
+void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	OUT uint8_t *prTxDescBuffer);
+void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	OUT uint8_t *prTxDescBuffer);
+void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	OUT uint8_t *pucBuffer);
+void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	OUT uint8_t *pucBuffer);
+void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	OUT uint8_t *pucBuffer);
+void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	struct HW_MAC_TX_DESC *prTxDesc);
+void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	struct HW_MAC_TX_DESC *prTxDesc);
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 /* DMS Scheduler Init */
@@ -99,7 +109,8 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
-void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
+void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
+	OUT u_int8_t *pfgResult);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
 #endif /* _HIF_PCIE */
 
@@ -107,11 +118,12 @@ void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
 /* DMS Scheduler Init */
 void asicUsbDmaShdlInit(IN struct ADAPTER *prAdapter);
 void asicUdmaTxTimeoutEnable(IN struct ADAPTER *prAdapter);
-u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
+u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter,
+	IN struct GLUE_INFO *prGlueInfo);
 uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter);
 void asicUdmaRxFlush(IN struct ADAPTER *prAdapter, IN u_int8_t bEnable);
 void asicPdmaHifReset(IN struct ADAPTER *prAdapter, IN u_int8_t bRelease);
-void fillUsbHifTxDesc(IN uint8_t ** pDest, IN uint16_t *pInfoBufLen);
+void fillUsbHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 #endif /* _HIF_USB */
 #endif /* _CMM_ASIC_CONNAC_H */
 

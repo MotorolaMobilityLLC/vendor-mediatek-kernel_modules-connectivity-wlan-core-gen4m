@@ -69,20 +69,24 @@
 #define __HIF_PDMA_H__
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define NUM_OF_TX_RING				4
 #define NUM_OF_RX_RING				2
 
 #define TX_RING_SIZE				4095
-#define RX_RING_SIZE				256	/* Max Rx ring size */
+/* Max Rx ring size */
+#define RX_RING_SIZE				256
 
-#define RX_RING0_SIZE				256	/* Data Rx ring */
-#define RX_RING1_SIZE				16	/* Event/MSDU_report Rx ring */
+/* Data Rx ring */
+#define RX_RING0_SIZE				256
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				16
 
-#define TXD_SIZE					16	/* TXD_SIZE = TxD + TxInfo */
+/* TXD_SIZE = TxD + TxInfo */
+#define TXD_SIZE					16
 #define RXD_SIZE					16
 
 #define RX_BUFFER_AGGRESIZE			3840
@@ -94,7 +98,8 @@
 
 #define HIF_NUM_OF_QM_RX_PKT_NUM			4096
 #define HIF_IST_LOOP_COUNT					32
-#define HIF_IST_TX_THRESHOLD				1 /* Min msdu count to trigger Tx during INT polling state */
+/* Min msdu count to trigger Tx during INT polling state */
+#define HIF_IST_TX_THRESHOLD				1
 
 #define HIF_TX_BUFF_COUNT_TC0				4096
 #define HIF_TX_BUFF_COUNT_TC1				4096
@@ -103,12 +108,15 @@
 #define HIF_TX_BUFF_COUNT_TC4				(TX_RING_SIZE - 1)
 #define HIF_TX_BUFF_COUNT_TC5				4096
 
-#define HIF_TX_RESOURCE_CTRL                1 /* enable/disable TX resource control */
-#define HIF_TX_RESOURCE_CTRL_PLE            0 /* enable/disable TX resource control PLE */
+/* enable/disable TX resource control */
+#define HIF_TX_RESOURCE_CTRL                1
+/* enable/disable TX resource control PLE */
+#define HIF_TX_RESOURCE_CTRL_PLE            0
 
 
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2		11
-#define HIF_TX_PAGE_SIZE					2048	/* in unit of bytes */
+/* in unit of bytes */
+#define HIF_TX_PAGE_SIZE					2048
 
 #define HIF_EXTRA_IO_BUFFER_SIZE			0
 
@@ -151,9 +159,9 @@
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #define INC_RING_INDEX(_idx, _RingSize)		\
 { \
@@ -171,9 +179,9 @@
 }
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 enum ENUM_TX_RING_IDX {
 	TX_RING_DATA0_IDX_0 = 0,
@@ -188,26 +196,26 @@ enum ENUM_RX_RING_IDX {
 };
 
 /* ============================================================================
-*   PCI/RBUS TX / RX Frame Descriptors format
-*
-*   Memory Layout
-*
-*   1. Tx Descriptor
-*   TxD (12 bytes) + TXINFO (4 bytes)
-*   2. Packet Buffer
-*   TXWI + 802.11
-*   31                                                                         0
-*   +--------------------------------------------------------------------------+
-*   |                                   SDP0[31:0]                             |
-*   +-+--+---------------------+-+--+------------------------------------------+
-*   |D |L0|       SDL0[13:0]              |B|L1|                    SDL1[13:0] |
-*   +-+--+---------------------+-+--+------------------------------------------+
-*   |                                   SDP1[31:0]                             |
-*   +--------------------------------------------------------------------------+
-*   |                                  TX / RX INFO                            |
-*   +--------------------------------------------------------------------------+
-*   =========================================================================
-*/
+ * PCI/RBUS TX / RX Frame Descriptors format
+ *
+ * Memory Layout
+ *
+ * 1. Tx Descriptor
+ * TxD (12 bytes) + TXINFO (4 bytes)
+ * 2. Packet Buffer
+ * TXWI + 802.11
+ * 31                                                                         0
+ * +--------------------------------------------------------------------------+
+ * |                                   SDP0[31:0]                             |
+ * +-+--+---------------------+-+--+------------------------------------------+
+ * |D |L0|       SDL0[13:0]              |B|L1|                    SDL1[13:0] |
+ * +-+--+---------------------+-+--+------------------------------------------+
+ * |                                   SDP1[31:0]                             |
+ * +--------------------------------------------------------------------------+
+ * |                                  TX / RX INFO                            |
+ * +--------------------------------------------------------------------------+
+ * =========================================================================
+ */
 /*
  *  TX descriptor format for Tx Data/Mgmt Rings
  */
@@ -254,9 +262,9 @@ struct RXD_STRUCT {
 };
 
 /*
-*	Data buffer for DMA operation, the buffer must be contiguous physical memory
-*	Both DMA to / from CPU use the same structure.
-*/
+ *	Data buffer for DMA operation, the buffer must be contiguous
+ *	physical memory Both DMA to / from CPU use the same structure.
+ */
 struct RTMP_DMABUF {
 	unsigned long AllocSize;
 	void *AllocVa;		/* TxBuf virtual address */
@@ -264,13 +272,15 @@ struct RTMP_DMABUF {
 };
 
 /*
-*	Control block (Descriptor) for all ring descriptor DMA operation, buffer must be
-*	contiguous physical memory. NDIS_PACKET stored the binding Rx packet descriptor
-*	which won't be released, driver has to wait until upper layer return the packet
-*	before giveing up this rx ring descriptor to ASIC. NDIS_BUFFER is assocaited pair
-*	to describe the packet buffer. For Tx, NDIS_PACKET stored the tx packet descriptor
-*	which driver should ACK upper layer when the tx is physically done or failed.
-*/
+ *	Control block (Descriptor) for all ring descriptor DMA operation,
+ *	buffer must be contiguous physical memory. NDIS_PACKET stored the
+ *	binding Rx packet descriptor which won't be released, driver has to
+ *	wait until upper layer return the packet before giveing up this rx
+ *	ring descriptor to ASIC. NDIS_BUFFER is assocaited pair to describe
+ *	the packet buffer. For Tx, NDIS_PACKET stored the tx packet descriptor
+ *  which driver should ACK upper layer when the tx is physically done or
+ *  failed.
+ */
 struct RTMP_DMACB {
 	unsigned long AllocSize;	/* Control block size */
 	void *AllocVa;		/* Control block virtual address */
