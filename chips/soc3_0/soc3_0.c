@@ -1962,8 +1962,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 			break;
 		}
 
-		DBGLOG(HAL, INFO,
-			"Bus hang check: Done\n");
+		DBGLOG(HAL, TRACE, "Bus hang check: Done\n");
 
 		ret = 0;
 	} while (FALSE);
