@@ -6700,7 +6700,7 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
 int32_t __weak kalBoostCpu(IN struct ADAPTER *prAdapter,
 			   IN uint32_t u4TarPerfLevel, IN uint32_t u4BoostCpuTh)
 {
-	DBGLOG(SW4, WARN, "enter kalBoostCpu\n");
+	DBGLOG(SW4, INFO, "enter kalBoostCpu\n");
 	return 0;
 }
 
