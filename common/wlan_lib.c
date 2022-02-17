@@ -7727,6 +7727,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
+
+#if ARP_MONITER_ENABLE
+	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ArpMonitorNumber", 20);
+	prWifiVar->uArpMonitorRxPktNum = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ArpMonitorRxPktNum", 0);
+#endif /* ARP_MONITER_ENABLE */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
