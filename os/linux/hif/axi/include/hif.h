@@ -336,6 +336,11 @@ struct BUS_INFO {
 #endif
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
+
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+	u_int8_t (*checkPortForRxEventFromPse)(struct ADAPTER *prAdapter,
+		uint8_t u2Port);
+#endif
 };
 
 struct HIF_PREALLOC_MEM {

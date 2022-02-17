@@ -341,6 +341,11 @@ struct BUS_INFO {
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,
 		u_int8_t fgEnable);
 #endif
+
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+	u_int8_t (*checkPortForRxEventFromPse)(struct ADAPTER *prAdapter,
+		uint8_t u2Port);
+#endif
 };
 
 struct HIF_PREALLOC_MEM {
