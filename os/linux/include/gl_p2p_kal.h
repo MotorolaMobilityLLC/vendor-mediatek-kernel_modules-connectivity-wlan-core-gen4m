@@ -365,4 +365,7 @@ u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
 
 void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
 
+void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+
 #endif /* _GL_P2P_KAL_H */
