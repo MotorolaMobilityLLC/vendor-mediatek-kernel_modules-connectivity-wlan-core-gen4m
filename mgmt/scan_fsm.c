@@ -259,6 +259,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
 	prCmdScanReq->ucScanType = (uint8_t) prScanParam->eScanType;
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
+	prCmdScanReq->ucSSIDNum = prScanParam->ucSSIDNum;
 
 	for (i = 0; i < prScanParam->ucSSIDNum; i++) {
 		COPY_SSID(prCmdScanReq->arSSID[i].aucSsid,
@@ -309,7 +310,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	DBGLOG(SCN, INFO, __STR_FMT__,
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
-		prScanParam->ucSSIDNum,
+		prCmdScanReq->ucSSIDNum,
 		prCmdScanReq->ucChannelType,
 		prCmdScanReq->ucChannelListNum);
 #undef __STR_FMT__

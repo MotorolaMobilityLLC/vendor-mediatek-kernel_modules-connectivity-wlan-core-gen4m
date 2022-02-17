@@ -229,6 +229,7 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucScanSSIDNum;
 	struct PARAM_SSID arScanSSID[SCN_SSID_MAX_NUM];
+	enum ENUM_SCAN_TYPE eScanType;
 
 	uint32_t u4ScanIELength;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
@@ -447,8 +448,9 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
 		       IN uint32_t u4IeLength);
 
 void
-aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
-		     IN uint8_t ucSsidNum, IN struct PARAM_SSID *prSsid,
+aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
+		     IN struct PARAM_SSID *prSsid,
+		     IN enum ENUM_SCAN_TYPE eScanType,
 		     IN uint8_t *pucIe, IN uint32_t u4IeLength);
 
 /*----------------------------------------------------------------------------*/

@@ -1252,29 +1252,30 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 #else
 			if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN
 			    || prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
-				if (prAisFsmInfo->ucScanSSIDNum == 0) {
-#if CFG_SUPPORT_AIS_PASSIVE_SCAN
-					prScanReqMsg->eScanType = SCAN_TYPE_PASSIVE_SCAN;
+				uint8_t ucScanSSIDNum;
+				enum ENUM_SCAN_TYPE eScanType;
+
+				ucScanSSIDNum = prAisFsmInfo->ucScanSSIDNum;
+				eScanType = prAisFsmInfo->eScanType;
+
+				if (eScanType == SCAN_TYPE_ACTIVE_SCAN
+					&& ucScanSSIDNum == 0) {
+					prScanReqMsg->eScanType = eScanType;
+
+					prScanReqMsg->ucSSIDType
+						= SCAN_REQ_SSID_WILDCARD;
+					prScanReqMsg->ucSSIDNum = 0;
+				} else if (eScanType == SCAN_TYPE_PASSIVE_SCAN
+					&& ucScanSSIDNum == 0) {
+					prScanReqMsg->eScanType = eScanType;
 
 					prScanReqMsg->ucSSIDType = 0;
-					prScanReqMsg->ucSSIDNum = 0;
-#else
-					prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-
-					prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
-					prScanReqMsg->ucSSIDNum = 0;
-#endif
-				} else if (prAisFsmInfo->ucScanSSIDNum == 1
-					   && prAisFsmInfo->arScanSSID[0].u4SsidLen == 0) {
-					prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-
-					prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 					prScanReqMsg->ucSSIDNum = 0;
 				} else {
 					prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 
 					prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
-					prScanReqMsg->ucSSIDNum = prAisFsmInfo->ucScanSSIDNum;
+					prScanReqMsg->ucSSIDNum = ucScanSSIDNum;
 					prScanReqMsg->prSsid = prAisFsmInfo->arScanSSID;
 				}
 			} else {
@@ -3456,8 +3457,10 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 */
 /*----------------------------------------------------------------------------*/
 void
-aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
-		     IN uint8_t ucSsidNum, IN struct PARAM_SSID *prSsid, IN uint8_t *pucIe, IN uint32_t u4IeLength)
+aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
+		     IN struct PARAM_SSID *prSsid,
+		     IN enum ENUM_SCAN_TYPE eScanType,
+		     IN uint8_t *pucIe, IN uint32_t u4IeLength)
 {
 	uint32_t i;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -3492,6 +3495,7 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
 					  prSsid[i].aucSsid, prSsid[i].u4SsidLen);
 			}
 		}
+		prAisFsmInfo->eScanType = eScanType;
 
 		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
 			prAisFsmInfo->u4ScanIELength = u4IeLength;
