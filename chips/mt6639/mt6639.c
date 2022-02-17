@@ -73,6 +73,8 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639EnableFwDlMode(struct ADAPTER *prAdapter);
 
+static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter);
+
 static void mt6639WfdmaRxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
@@ -307,6 +309,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.setRxRingHwAddr = mt6639SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6639WfdmaAllocRxRing,
 	//.enablefwdlmode = mt6639EnableFwDlMode,
+	.setupMcuEmiAddr = mt6639SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
 };
 
@@ -737,5 +740,15 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK);
 }
 #endif
+
+static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo =
+		&prAdapter->prGlueInfo->rHifInfo;
+
+	HAL_MCR_WR(prAdapter,
+		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
+		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
+}
 
 #endif  /* MT6639 */
