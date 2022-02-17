@@ -1291,7 +1291,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	ASSERT(prAdapter);
 
 	if ((ucApMode == RUNNING_DUAL_AP_MODE) ||
-	    (ucApMode == RUNNING_P2P_AP_MODE)) {
+	    (ucApMode == RUNNING_P2P_AP_MODE) ||
+	    (ucApMode == RUNNING_DUAL_P2P_MODE)) {
 		ucRegisterNum = 2;
 		glP2pCreateWirelessDevice(prGlueInfo);
 	}
@@ -1309,10 +1310,12 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			/* RUNNING_AP_MODE
 			 * RUNNING_DUAL_AP_MODE
 			 * RUNNING_P2P_MODE
+			 * RUNNING_DUAL_P2P_MODE
 			 */
 			prSetDevName = prDevName;
 
-			if (ucApMode == RUNNING_P2P_MODE)
+			if (ucApMode == RUNNING_P2P_MODE ||
+				ucApMode == RUNNING_DUAL_P2P_MODE)
 				fgIsApMode = FALSE;
 			else
 				fgIsApMode = TRUE;
