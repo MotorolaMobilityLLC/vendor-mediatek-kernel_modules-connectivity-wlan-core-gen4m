@@ -796,6 +796,32 @@ void *kal_vmalloc(size_t size);
 
 void kal_kfree(void *addr);
 void kal_vfree(void *addr);
+
+/*
+ * kal_irqs_disabled: is irqs disabled, os-dependent
+ * nic/nic_tx.c
+ * nic/que_mgt.c
+ */
+bool kal_irqs_disabled(void);
+#define irqs_disabled() kal_irqs_disabled()
+
+/*
+ * kal_spin_lock: lock in irqs disabled, os-dependent
+ * nic/nic_tx.c
+ * nic/que_mgt.c
+ */
+void kal_spin_lock(spinlock_t *lock);
+#define spin_lock(_lock) kal_spin_lock(_lock)
+
+/*
+ * kal_spin_unlock: unlock in irqs disabled, os-dependent
+ * paired with kal_spin_lock
+ * nic/nic_tx.c
+ * nic/que_mgt.c
+ */
+void kal_spin_unlock(spinlock_t *lock);
+#define spin_unlock(_lock) kal_spin_unlock(_lock)
+
 /*
  * kal_spin_lock_bh: lock in bottom half, os-dependent
  * nic/nic_tx.c

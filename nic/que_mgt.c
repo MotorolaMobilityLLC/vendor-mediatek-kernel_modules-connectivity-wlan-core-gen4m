@@ -247,7 +247,10 @@ do { \
 		break; \
 	if (dbg) \
 		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_LOCK %d\n", __LINE__); \
-	spin_lock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
+	if (irqs_disabled()) \
+		spin_lock(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+	else \
+		spin_lock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
 } while (0)
 
 #define RX_DIRECT_REORDER_UNLOCK(pad, dbg) \
@@ -257,7 +260,10 @@ do { \
 		break; \
 	if (dbg) \
 		DBGLOG(QM, EVENT, "RX_DIRECT_REORDER_UNLOCK %u\n", __LINE__); \
-	spin_unlock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+	if (irqs_disabled()) \
+		spin_unlock(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]); \
+	else \
+		spin_unlock_bh(&_glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
 } while (0)
 
 /*******************************************************************************
