@@ -3464,7 +3464,7 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
+	u4EventSize = INIT_EVENT_RXD_LEN + prChipInfo->init_event_size +
 		sizeof(struct INIT_EVENT_ACCESS_REG);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 	if (!aucBuffer) {
@@ -3535,7 +3535,7 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 					    aucBuffer, u4EventSize);
 	if (ucSetQuery == 0) {
 		prInitEvent = (struct INIT_WIFI_EVENT *)
-			(aucBuffer + prChipInfo->rxd_size);
+			(aucBuffer + INIT_EVENT_RXD_LEN);
 		prInitEventAccessReg = (struct INIT_EVENT_ACCESS_REG *)
 			prInitEvent->aucBuffer;
 
@@ -3603,7 +3603,7 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
 			prInitEvent = (struct INIT_WIFI_EVENT *)
-				(prEvent + prChipInfo->rxd_size);
+				(prEvent + INIT_EVENT_RXD_LEN);
 
 			/* EID / SeqNum check */
 			if (((prInitEvent->ucEID != INIT_EVENT_ID_CMD_RESULT) &&
