@@ -5503,6 +5503,28 @@ uint8_t wlanGetEcoVersion(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This function is to query ROM version from HIFSYS CR
+ *
+ * @param prAdapter      Pointer of Adapter Data Structure
+ *
+ * @return zero      Unable to retrieve ROM version information
+ *         non-zero  ROM version (1-based)
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t wlanGetRomVersion(IN struct ADAPTER *prAdapter)
+{
+	uint8_t ucRomVersion;
+
+	ASSERT(prAdapter);
+
+	ucRomVersion = nicGetChipSwVer();
+	DBGLOG(INIT, TRACE, "%s: %u\n", __func__, ucRomVersion);
+	return ucRomVersion;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This function is to
  *        set preferred band configuration corresponding to network type
  *

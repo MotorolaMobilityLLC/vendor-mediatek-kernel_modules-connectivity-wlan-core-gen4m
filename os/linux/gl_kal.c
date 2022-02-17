@@ -528,7 +528,7 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 					  1]; /* extra +1, for the purpose of
 					       * detecting the end of the array
 					       */
-	uint8_t idx = 0, max_idx,
+	uint8_t idx = 0, max_idx, ucRomVer = 0,
 		aucNameBody[FILE_NAME_TOTAL][FILE_NAME_MAX], sub_idx = 0;
 	struct mt66xx_chip_info *prChipInfo =
 			prGlueInfo->prAdapter->chip_info;
@@ -587,11 +587,13 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 			if (prChipInfo->fw_dl_ops->constructPatchName)
 				prChipInfo->fw_dl_ops->constructPatchName(
 					prGlueInfo, apucName, &idx);
-			else
+			else {
+				ucRomVer = wlanGetRomVersion(
+						prGlueInfo->prAdapter) + 1;
 				kalSnprintf(apucName[idx], FILE_NAME_MAX,
 					"mt%x_patch_e%x_hdr.bin", chip_id,
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
+					ucRomVer);
+			}
 			idx += 1;
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 		} else if (eDlIdx == IMG_DL_IDX_BT_PATCH) {

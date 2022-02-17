@@ -136,7 +136,7 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7990;
 #define GET_RESC_CID(p)      (((p) & RESC_CID_MASK) >> 28)
 
 #define TOP_FVR              (TOP_CFG_BASE + 0x1004)
-#define FW_VER_MASK          (0xffff)
+#define FW_VER_MASK          (0xff)
 #define GET_FW_VER(p)        (((p) & FW_VER_MASK))
 
 #define TOP_HCR              (TOP_CFG_BASE + 0x1008)
