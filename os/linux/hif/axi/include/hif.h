@@ -59,7 +59,6 @@
 #define _HIF_H
 
 #include "hif_pdma.h"
-#include "connac.h"
 
 #if defined(_HIF_AXI)
 #define HIF_NAME "AXI"
@@ -93,8 +92,7 @@ extern unsigned long long gWifiRsvMemSize;
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
 
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
-					   NIC_TX_DESC_AND_PADDING_LENGTH + \
-					   CONNAC_TX_DESC_APPEND_LENGTH)
+					   NIC_TX_DESC_AND_PADDING_LENGTH)
 
 #define AXI_TX_CMD_BUFF_SIZE              4096
 #define AXI_WLAN_IRQ_NUMBER               16
