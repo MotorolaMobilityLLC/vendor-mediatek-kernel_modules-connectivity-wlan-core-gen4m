@@ -783,7 +783,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4Line,
 				event->pucFuncName);
 		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
-		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag);
+		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag
+			| RST_FLAG_DO_CORE_DUMP);
 	} else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
 			prMdInfo->info_type);
