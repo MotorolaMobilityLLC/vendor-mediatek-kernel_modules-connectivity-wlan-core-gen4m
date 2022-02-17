@@ -1310,6 +1310,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prConnSettings->fgOkcEnabled = FALSE;
 	prConnSettings->fgOkcPmksaReady = FALSE;
 
+	prGlueInfo->non_wfa_vendor_ie_len = 0;
 	if (sme->ie && sme->ie_len > 0) {
 		uint32_t rStatus;
 		uint32_t u4BufLen;
@@ -1397,6 +1398,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				} else
 					prGlueInfo->rWpaInfo.ucRSNMfpCap = 0;
 			}
+		}
+		/* Find non-wfa vendor specific ies set from upper layer */
+		if (cfg80211_get_non_wfa_vendor_ie(prGlueInfo, pucIEStart,
+			sme->ie_len) > 0) {
+			DBGLOG(RSN, INFO, "Found non-wfa vendor ie (len=%u)\n",
+				   prGlueInfo->non_wfa_vendor_ie_len);
 		}
 
 		wextSrchOkcAndPMKID(pucIEStart, sme->ie_len,
@@ -6181,4 +6188,82 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 }
 #endif /* (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0) */
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
+/*-----------------------------------------------------------------------*/
+/*!
+ * @brief This function goes through the provided ies buffer, and
+ *        collects those non-wfa vendor specific ies into driver's
+ *        internal buffer (non_wfa_vendor_ie_buf), to be sent in
+ *        AssocReq in AIS mode.
+ *        The non-wfa vendor specific ies are those with ie_id = 0xdd
+ *        and ouis are different from wfa's oui. (i.e., it could be
+ *        customer's vendor ie ...etc.
+ *
+ * @param prGlueInfo    driver's private glueinfo
+ *        ies           ie buffer
+ *        len           length of ie
+ *
+ * @retval length of the non_wfa vendor ie
+ */
+/*-----------------------------------------------------------------------*/
+uint16_t cfg80211_get_non_wfa_vendor_ie(struct GLUE_INFO *prGlueInfo,
+	uint8_t *ies, int32_t len)
+{
+	const uint8_t *pos = ies, *end = ies+len;
+	struct ieee80211_vendor_ie *ie;
+	int32_t ie_oui = 0;
+	uint16_t *ret_len, max_len;
+	uint8_t *w_pos;
+
+	if (!prGlueInfo || !ies || !len)
+		return 0;
+	w_pos = prGlueInfo->non_wfa_vendor_ie_buf;
+	ret_len = &prGlueInfo->non_wfa_vendor_ie_len;
+	max_len = (uint16_t)sizeof(prGlueInfo->non_wfa_vendor_ie_buf);
+
+	while (pos < end) {
+		pos = cfg80211_find_ie(WLAN_EID_VENDOR_SPECIFIC, pos,
+				       end - pos);
+		if (!pos)
+			break;
+
+		ie = (struct ieee80211_vendor_ie *)pos;
+
+		/* Make sure we can access ie->len */
+		BUILD_BUG_ON(offsetof(struct ieee80211_vendor_ie, len) != 1);
+
+		if (ie->len < sizeof(*ie))
+			goto cont;
+
+		ie_oui = ie->oui[0] << 16 | ie->oui[1] << 8 | ie->oui[2];
+		/*
+		 * If oui is other than: 0x0050f2 & 0x506f9a,
+		 * we consider it is non-wfa oui.
+		 */
+		if (ie_oui != WLAN_OUI_MICROSOFT && ie_oui != WLAN_OUI_WFA) {
+			/*
+			 * If remaining buf len is capable, we copy
+			 * this ie to the buf.
+			 */
+			if (max_len-(*ret_len) >= ie->len+2) {
+				DBGLOG(AIS, TRACE,
+					   "vendor ie(len=%d, oui=0x%06x)\n",
+					   ie->len, ie_oui);
+				memcpy(w_pos, pos, ie->len+2);
+				w_pos += (ie->len+2);
+				(*ret_len) += ie->len+2;
+			} else {
+				/* Otherwise we give an error msg
+				 * and return.
+				 */
+				DBGLOG(AIS, ERROR,
+					"Insufficient buf for vendor ie, exit!\n");
+				break;
+			}
+		}
+cont:
+		pos += 2 + ie->len;
+	}
+	return *ret_len;
+}
 
