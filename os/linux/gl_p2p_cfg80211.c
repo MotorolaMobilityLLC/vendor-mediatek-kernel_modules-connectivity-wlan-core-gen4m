@@ -1918,10 +1918,6 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			}
 		}
 
-		/*DFS todo 20161220_DFS*/
-		netif_carrier_on(dev);
-		netif_tx_start_all_queues(dev);
-
 		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
 				(struct cfg80211_chan_def *)

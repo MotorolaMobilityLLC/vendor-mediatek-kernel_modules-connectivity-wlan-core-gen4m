@@ -2723,4 +2723,6 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 	cfg80211_ch_switch_notify(
 		prNetdevice,
 		prP2PInfo->chandef);
+	netif_carrier_on(prP2PInfo->prDevHandler);
+	netif_tx_start_all_queues(prP2PInfo->prDevHandler);
 }
