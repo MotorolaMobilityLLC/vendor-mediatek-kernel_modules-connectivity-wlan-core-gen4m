@@ -322,6 +322,16 @@ else
     ccflags-y += -DCFG_TC1_FEATURE=0
 endif
 
+ifneq ($(filter 6779, $(WLAN_CHIP_ID)),)
+    ifneq ($(filter MT6631, $(MTK_CONSYS_ADIE)),)
+        ccflags-y += -DCFG_FLAVOR_FIRMWARE=1
+    else
+        ccflags-y += -DCFG_FLAVOR_FIRMWARE=0
+    endif
+else
+    ccflags-y += -DCFG_FLAVOR_FIRMWARE=0
+endif
+
 ifeq ($(MODULE_NAME),)
 	MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
