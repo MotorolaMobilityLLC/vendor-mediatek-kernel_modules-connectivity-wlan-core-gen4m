@@ -636,10 +636,8 @@ VOID nicProcessAbnormalInterrupt(IN P_ADAPTER_T prAdapter)
 	prAdapter->prGlueInfo->IsrAbnormalCnt++;
 
 	halProcessAbnormalInterrupt(prAdapter);
-#if CFG_CHIP_RESET_SUPPORT
 	glGetRstReason(RST_PROCESS_ABNORMAL_INT);
 	GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1406,8 +1404,7 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	rCmdSetBssInfo.ucNss = prBssInfo->ucNss;
 
 	if (prBssInfo->fgBcDefaultKeyExist) {
-		if (prBssInfo->wepkeyUsed[prBssInfo->ucBcDefaultKeyIdx] &&
-			prBssInfo->wepkeyWlanIdx < NIC_TX_DEFAULT_WLAN_INDEX)
+		if (prBssInfo->wepkeyWlanIdx < NIC_TX_DEFAULT_WLAN_INDEX)
 			rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->wepkeyWlanIdx;
 		else if (prBssInfo->ucBMCWlanIndexSUsed[prBssInfo->ucBcDefaultKeyIdx])
 			rCmdSetBssInfo.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndexS[prBssInfo->ucBcDefaultKeyIdx];
