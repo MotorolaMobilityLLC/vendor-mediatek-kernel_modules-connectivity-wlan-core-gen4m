@@ -1593,6 +1593,8 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
 
 #if CFG_ASSERT_DUMP
+void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter, u_int8_t fgIsResetN9);
+
 void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter, u_int8_t fgIsResetN9);
 
 void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,

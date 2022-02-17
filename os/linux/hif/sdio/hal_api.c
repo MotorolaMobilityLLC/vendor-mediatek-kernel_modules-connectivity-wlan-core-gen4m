@@ -442,13 +442,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 				prAdapter->u4OwnFailedLogCount++;
 				if (prAdapter->u4OwnFailedLogCount > LP_OWN_BACK_FAILED_RESET_CNT) {
 					/* Trigger RESET */
-					fgWmtCoreDump = glIsWmtCodeDump();
-					if (!fgWmtCoreDump) {
-						glGetRstReason(RST_DRV_OWN_FAIL);
-						GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
-					} else
-						DBGLOG(NIC, WARN,
-								"[Driver own fail!] WMT is code dumping !STOP AEE & chip reset\n");
+					glSetRstReason(RST_DRV_OWN_FAIL);
+					GL_RESET_TRIGGER(prAdapter,
+						RST_FLAG_DO_CORE_DUMP);
 				}
 				GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 			}
@@ -515,13 +511,9 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 				if (fgTimeout) {
 					/* Trigger RESET */
-					fgWmtCoreDump = glIsWmtCodeDump();
-					if (!fgWmtCoreDump) {
-						glGetRstReason(RST_DRV_OWN_FAIL);
-						GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
-					} else
-						DBGLOG(NIC, WARN,
-								"[Driver own fail!] WMT is code dumping !STOP AEE & chip reset\n");
+					glSetRstReason(RST_DRV_OWN_FAIL);
+					GL_RESET_TRIGGER(prAdapter,
+						RST_FLAG_DO_CORE_DUMP);
 				}
 
 				break;
