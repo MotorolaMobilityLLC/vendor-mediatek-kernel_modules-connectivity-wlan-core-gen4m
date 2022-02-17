@@ -1,4 +1,8 @@
+ifeq ($(CONFIG_MTK_PLATFORM),)
+	CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
+endif
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
+
 # ---------------------------------------------------
 # OS option
 # ---------------------------------------------------
