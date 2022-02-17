@@ -1315,7 +1315,7 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 
 	u2Port &= MTK_USB_PORT_MASK;
 	if (u2Port >= MTK_USB_BULK_OUT_MIN_EP && u2Port <= MTK_USB_BULK_OUT_MAX_EP) {
-		ret = mtk_usb_bulk_out_msg(&prGlueInfo->rHifInfo, u4Len, pucSrc, 8);
+		ret = mtk_usb_bulk_out_msg(&prGlueInfo->rHifInfo, u4Len, pucSrc, u2Port/*8*/);
 		if (ret != u4Len) {
 			DBGLOG(HAL, WARN, "usb_bulk_msg(OUT=%d) Warning. Data is not completed. (receive %d/%u)\n",
 			       u2Port, ret, u4Len);
