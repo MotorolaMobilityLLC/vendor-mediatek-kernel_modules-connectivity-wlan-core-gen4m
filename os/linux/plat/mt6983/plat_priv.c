@@ -28,6 +28,11 @@
 #define CPU_BIG_CORE (0xf0)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
 
+#if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
+#include <linux/regulator/consumer.h>
+#endif
+#include <linux/platform_device.h>
+
 enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_INIT = 0,
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
@@ -331,3 +336,51 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 	mtk_emimpu_free_region(&region);
 }
 #endif
+
+int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
+		IN uint8_t uBssIndex)
+{
+#if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11AX == 1)
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucPhyType;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct platform_device *pdev = NULL;
+	struct regulator *dvfsrc_vcore_power;
+
+	prBssInfo = prAdapter->aprBssInfo[uBssIndex];
+	ucPhyType = prBssInfo->ucPhyTypeSet;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	pdev = prHifInfo->pdev;
+	DBGLOG(BSS, INFO, "Vcore boost checking: AX + BW160\n");
+	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED
+		&& ucPhyType & PHY_TYPE_SET_802_11AX
+		&& (prBssInfo->ucVhtChannelWidth ==
+				VHT_OP_CHANNEL_WIDTH_160)) {
+		if (prAdapter->ucVcoreBoost == FALSE) {
+			DBGLOG(BSS, INFO, "Vcore boost to 0.65v\n");
+			prAdapter->ucVcoreBoost = TRUE;
+			dvfsrc_vcore_power = regulator_get(&pdev->dev,
+					"dvfsrc-vcore");
+			/* Raise VCORE to 0.65v */
+			regulator_set_voltage(dvfsrc_vcore_power,
+					650000, INT_MAX);
+			return TRUE;
+		}
+	} else {
+		if (prAdapter->ucVcoreBoost == TRUE) {
+			DBGLOG(BSS, INFO, "Vcore back to 0.575v\n");
+			prAdapter->ucVcoreBoost = FALSE;
+			dvfsrc_vcore_power = regulator_get(&pdev->dev,
+					"dvfsrc-vcore");
+			/* Adjust VCORE back to normal*/
+			regulator_set_voltage(dvfsrc_vcore_power,
+					575000, INT_MAX);
+			return FALSE;
+		}
+	}
+	return FALSE;
+#else
+	return FALSE;
+#endif
+}
