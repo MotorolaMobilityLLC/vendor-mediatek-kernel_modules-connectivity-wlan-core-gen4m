@@ -4275,7 +4275,6 @@ static int32_t wlanOffAtReset(void)
 
 	DBGLOG(INIT, INFO, "Driver Off during Reset\n");
 
-	kalSetHalted(TRUE);
 	if (u4WlanDevNum > 0
 		&& u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
 		prDev = arWlanDevInfo[u4WlanDevNum - 1].prDev;
@@ -4845,6 +4844,7 @@ static void wlanRemove(void)
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
 
+	kalSetHalted(TRUE);
 
 	/*reset NVRAM State to ready for the next wifi-no*/
 	if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
@@ -4866,8 +4866,6 @@ static void wlanRemove(void)
 		}
 	}
 #endif
-
-	kalSetHalted(TRUE);
 
 	/* 4 <0> Sanity check */
 	ASSERT(u4WlanDevNum <= CFG_MAX_WLAN_DEVICES);
