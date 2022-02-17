@@ -772,6 +772,7 @@ struct PARAM_EXTERNAL_AUTH_INFO {
 	uint32_t key_mgmt_suite;
 	uint32_t action;
 	uint8_t da[PARAM_MAC_ADDR_LEN];
+	uint8_t ext_ie[0];
 } __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************

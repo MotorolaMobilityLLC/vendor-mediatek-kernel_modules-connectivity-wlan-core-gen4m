@@ -169,6 +169,11 @@ void beGenerateAuthMldIE(
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_AUTH_IE_FUNC pfnComposeIE);
 
+void beGenerateExternalAuthMldIE(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct MSDU_INFO *prMsduInfo);
+
 void beGenerateBeaconMldIE(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
