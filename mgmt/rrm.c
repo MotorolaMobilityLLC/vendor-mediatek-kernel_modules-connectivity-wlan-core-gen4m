@@ -579,7 +579,7 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
 	struct RM_BCN_REQ *prBeaconReq = NULL;
 	uint16_t u2RemainLen = 0;
-	uint8_t *pucSubIE = NULL;
+	uint8_t *pucSubIE = NULL, i;
 
 	static struct PARAM_SSID rBcnReqSsid;
 
@@ -741,6 +741,18 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 		pucSubIE += IE_SIZE(pucSubIE);
 	}
 
+	for (i = 0; i < prMsg->ucChannelListNum; i++) {
+		if (!rlmIsValidChnl(prAdapter,
+				prMsg->arChnlInfoList[i].ucChannelNum,
+				prMsg->arChnlInfoList[i].eBand)) {
+			DBGLOG(RRM, WARN, "ch%d illegal! set to FULL scan\n",
+				prMsg->arChnlInfoList[i].ucChannelNum);
+			prMsg->eScanChannel = SCAN_CHANNEL_FULL;
+			prMsg->ucChannelListNum = 0;
+			break;
+		}
+	}
+
 	GET_CURRENT_SYSTIME(&prRmReq->rScanStartTime);
 	DBGLOG(RRM, INFO,
 	       "SSIDtype %d, ScanType %d, Dwell %d, MinDwell %d, ChnlType %d, ChnlNum %d\n",
@@ -896,9 +908,10 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 		DBGLOG(RRM, INFO, "StaRec is NULL, ignore request\n");
 		return;
 	}
-	DBGLOG(RRM, INFO, "RM Request From "MACSTR", DialogToken %d\n",
+	DBGLOG(RRM, INFO, "RM Request From "MACSTR", DialogToken %d, rpt %d\n",
 			MAC2STR(prRmReqFrame->aucSrcAddr),
-			prRmReqFrame->ucDialogToken);
+			prRmReqFrame->ucDialogToken,
+			prRmReqFrame->u2Repetitions);
 	eNewPriority = rrmGetRmRequestPriority(prRmReqFrame->aucDestAddr);
 	if (prRmReqParam->ePriority > eNewPriority) {
 		DBGLOG(RRM, INFO, "ignore lower precedence rm request\n");
@@ -930,6 +943,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 			    &prRmReqParam->u2Repetitions);
 	prRmReqParam->pucReqIeBuf =
 		kalMemAlloc(prRmReqParam->u2RemainReqLen, VIR_MEM_TYPE);
+
 	if (!prRmReqParam->pucReqIeBuf) {
 		DBGLOG(RRM, ERROR,
 		       "Alloc %d bytes Req IE Buffer failed, No Memory\n",
@@ -938,6 +952,9 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	}
 	kalMemCopy(prRmReqParam->pucReqIeBuf, &prRmReqFrame->aucInfoElem[0],
 		   prRmReqParam->u2RemainReqLen);
+
+	dumpMemory8(prRmReqParam->pucReqIeBuf, prRmReqParam->u2RemainReqLen);
+
 	prRmReqParam->prCurrMeasElem =
 		(struct IE_MEASUREMENT_REQ *)prRmReqParam->pucReqIeBuf;
 	prRmReqParam->fgInitialLoop = TRUE;
