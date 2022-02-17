@@ -1964,8 +1964,10 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(SAA, INFO,
-	       "Send Assoc Resp to " MACSTR ", Seq: %d\n",
-	       MAC2STR(prStaRec->aucMacAddr), prMsduInfo->ucTxSeqNum);
+			"Send Assoc Resp to " MACSTR ", Seq: %d, status: %d\n",
+			MAC2STR(prStaRec->aucMacAddr),
+			prMsduInfo->ucTxSeqNum,
+			prStaRec->u2StatusCode);
 
 	return WLAN_STATUS_SUCCESS;
 
