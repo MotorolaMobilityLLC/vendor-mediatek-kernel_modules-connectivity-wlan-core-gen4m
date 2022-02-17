@@ -1373,6 +1373,21 @@ enum ENUM_UNI_CMD_WSYS_CONFIG_TAG
 	UNI_CMD_WSYS_CONFIG_TAG_NUM
 };
 
+/* FW Log Basic Setting (Tag0) */
+struct UNI_CMD_FW_LOG_CTRL_BASIC
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucFwLog2HostCtrl;
+	uint8_t ucFwLog2HostInterval;
+	/**<
+	  *      Time takes effect only if these conditions are true:
+	  *      1. FW log destinations include host
+	  *      2. ucFwLog2HostInterval > 0 (Unit: second)
+	  */
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 /* FW Log UI Setting (Tag2) */
 struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL
 {
@@ -2625,6 +2640,37 @@ struct UNI_EVENT_CMD_RESULT {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_FW_LOG2HOST
+{
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                              | ID  | structure
+        *   ---------------------------------|-----|--------------
+        *   UNI_EVENT_FW_LOG_FORMAT          | 0x0 | UNI_EVENT_FW_LOG_FORMAT (Should always be the last TLV element)
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* FW Log 2 Host event Tag */
+enum ENUM_UNI_EVENT_FWLOG2HOST_TAG
+{
+	UNI_EVENT_FWLOG2HOST_TAG_FORMAT = 0,
+	UNI_EVENT_FWLOG2HOST_TAG_NUM
+};
+
+/* FW Log with Format (Tag0) */
+struct UNI_EVENT_FW_LOG_FORMAT
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucMsgFmt;
+	uint8_t ucReserved[3];
+	uint8_t acMsg[0];
+};
+
 struct UNI_EVENT_ROAMING
 {
 	/* fixed field */
@@ -3531,6 +3577,8 @@ uint32_t nicUniCmdCnmGetInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdWsysFwLogUI(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdWsysFwLog2Host(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdWsysFwBasicConfig(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetSuspendMode(struct ADAPTER *ad,
@@ -3654,6 +3702,9 @@ void nicUniEventRoaming(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventAddKeyDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+void nicUniEventFwLog2Host(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+
 
 /*******************************************************************************
  *                              F U N C T I O N S
