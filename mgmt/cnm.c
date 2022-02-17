@@ -3550,6 +3550,7 @@ cnmOpModeMapEvtReason(
 		break;
 	case EVENT_OPMODE_CHANGE_REASON_COEX:
 		eReqIdx = CNM_OPMODE_REQ_COEX;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
