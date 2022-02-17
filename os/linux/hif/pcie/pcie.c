@@ -92,13 +92,10 @@
 #define MTK_PCI_VENDOR_ID	0x14C3
 #define NIC6632_PCIe_DEVICE_ID	0x6632
 #define NIC7668_PCIe_DEVICE_ID	0x7668
-#ifdef MT7663
+#define MT7663_PCI_PFGA2_VENDOR_ID	0x0E8D
 #define NIC7663_PCIe_DEVICE_ID	0x7663
-#endif /* MT7663 */
-#ifdef CONNAC
 #define CONNAC_PCI_VENDOR_ID	0x0E8D
 #define CONNAC_PCIe_DEVICE_ID	0x3280
-#endif /* CONNAC */
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -110,7 +107,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7668},
 #endif /* MT7668 */
 #ifdef MT7663
-	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
+	/* For FPGA2 temparay */
+	{	PCI_DEVICE(MT7663_PCI_PFGA2_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
 #endif /* MT7663 */
 #ifdef CONNAC
