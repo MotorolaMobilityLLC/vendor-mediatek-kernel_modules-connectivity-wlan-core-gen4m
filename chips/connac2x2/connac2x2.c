@@ -265,7 +265,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	.rx_ring_ext_ctrl = asicPdmaRxRingExtCtrl,
 	.hifRst = NULL,
 	.initPcieInt = NULL,
-	.pcieDmaShdlInit = asicPcieDmaShdlInit,
+	.DmaShdlInit = asicPcieDmaShdlInit,
 #endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -281,6 +281,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	.asicUsbResume = NULL,
 	.asicUsbEventEpDetected = NULL,
 	.asicUsbRxByteCount = NULL,
+	.DmaShdlInit = NULL, /* for owner to hook */
 #endif /* _HIF_USB */
 };
 

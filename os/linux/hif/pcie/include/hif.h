@@ -270,7 +270,7 @@ struct BUS_INFO {
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4IntStatus);
-	void (*pcieDmaShdlInit)(IN struct ADAPTER *prAdapter);
+	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
 	uint8_t (*setRxRingHwAddr)(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo,
 		uint32_t u4SwRingIdx);
