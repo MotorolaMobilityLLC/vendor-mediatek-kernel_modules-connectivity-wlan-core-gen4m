@@ -9,7 +9,7 @@
 
 #ifndef _MLO_H
 #define _MLO_H
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 #define BE_SET_ML_CTRL_TYPE(_u2ctrl, _ctrl_type) \
 {\
@@ -174,41 +174,6 @@ int8_t mldStarecInit(struct ADAPTER *prAdapter);
 
 void mldStarecUninit(struct ADAPTER *prAdapter);
 
-#else
-
-static inline
-int8_t mldBssRegister(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo,
-	struct BSS_INFO *prBss)
-{
-	return 0;
-}
-
-static inline
-int8_t mldBssAlloc(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO **pprMldBss)
-{
-	return 0;
-}
-
-#define mldBssUnregister(_a, _b, _c)
-#define mldBssFree(_a, _b)
-#define mldBssInit(_a)
-#define mldBssUninit(_a)
-
-static inline
-struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec)
-{
-	return NULL;
-}
-
-#define mldStarecRegister(_a, _b)
-#define mldStarecUnregister(_a, _b)
-#define mldStarecSetSetupIdx(_a, _b)
-#define mldStarecInit(_a)
-#define mldStarecUninit(_a)
-
-#endif /* CFG_SUPPORT_802_11BE == 1 */
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
 
 #endif /* !_MLO_H */

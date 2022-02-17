@@ -665,7 +665,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 #endif
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_STA_IN_AIS(prStaRec)
 		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
 		//add MLIE estimated length
@@ -742,7 +742,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 #endif
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_STA_IN_AIS(prStaRec)) {
 		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_ASSOC,
 			txAssocReqIETable, txAssocReqIENums);
@@ -1094,7 +1094,7 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 		/* Update the information in the structure used to query and set
 		 *  OID_802_11_ASSOCIATION_INFORMATION.
 		 */
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		uint16_t u2IELength;
 		int8_t *pucIE;
 		uint16_t u2Offset = 0;
@@ -1106,7 +1106,7 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 						prSwRfb->u2HeaderLen,
 					prStaRec->ucBssIndex);
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		/* TODO: check MLIE in STA profile for accepted AP MLD */
 		u2IELength = prSwRfb->u2PacketLen -
 			(uint16_t) OFFSET_OF(struct WLAN_ASSOC_RSP_FRAME,

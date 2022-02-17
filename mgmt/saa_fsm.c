@@ -540,7 +540,9 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(SAA, LOUD, "EVENT-START: Trigger SAA FSM.\n");
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecSetSetupIdx(prAdapter, prStaRec);
+#endif
 
 	/* record sequence number of request message */
 	prStaRec->ucAuthAssocReqSeqNum = prSaaFsmStartMsg->ucSeqNum;

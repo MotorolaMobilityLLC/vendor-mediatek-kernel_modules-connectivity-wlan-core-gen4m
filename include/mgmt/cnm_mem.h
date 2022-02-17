@@ -289,7 +289,7 @@ struct STA_RECORD {
 
 	uint8_t ucBssIndex;	/* BSS_INFO_I index */
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint8_t ucMldStaIndex;	/* MLD_STAREC index */
 	uint8_t ucLinkIndex;
 	/*
@@ -778,6 +778,7 @@ struct STA_RECORD {
 #endif
 };
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_STA_RECORD {
 	u_int8_t fgIsInUse;
 	uint8_t ucIdx;
@@ -791,6 +792,7 @@ struct MLD_STA_RECORD {
 	uint8_t aucStrBitmap[3];
 	struct LINK rStarecList;
 };
+#endif
 
 #if 0
 /* use nic_tx.h instead */

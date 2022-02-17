@@ -408,7 +408,9 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 {
 	IN struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -429,13 +431,18 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucAisIndex = ucAisIndex;
 	if (ucAisIndex == AIS_DEFAULT_INDEX)
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssAlloc(prAdapter, &prMldBssInfo);
 	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
+#endif
+
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_AIS,
-			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId : MLD_GROUP_NONE,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId :
+#endif
+			MLD_GROUP_NONE,
 			ucAisIndex,
 			FALSE);
 		if (!prAisBssInfo) {
@@ -449,7 +456,9 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 		wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
 			prAisBssInfo->ucBssIndex,
 			(void *)gprWdev[ucAisIndex]->netdev);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssRegister(prAdapter, prMldBssInfo, prAisBssInfo);
+#endif
 	}
 
 	aisClearAllLink(prAisFsmInfo);
@@ -694,15 +703,18 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 					prAisBssInfo->prBeacon);
 				prAisBssInfo->prBeacon = NULL;
 			}
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 			mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo,
 				prAisBssInfo);
+#endif
 			cnmFreeBssInfo(prAdapter, prAisBssInfo);
 			aisSetLinkBssInfo(prAisFsmInfo, NULL, i);
 		}
 	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssFree(prAdapter, prAisFsmInfo->prMldBssInfo);
 	prAisFsmInfo->prMldBssInfo = NULL;
+#endif
 } /* end of aisFsmUninit() */
 
 /*----------------------------------------------------------------------------*/

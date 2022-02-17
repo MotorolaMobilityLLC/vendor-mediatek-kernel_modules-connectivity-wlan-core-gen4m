@@ -416,7 +416,7 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_STA_IN_AIS(prStaRec)
 		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
 		u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
@@ -506,7 +506,7 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 	}
 
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (IS_STA_IN_AIS(prStaRec)) {
 		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_AUTH,
 			txAuthIETable,
