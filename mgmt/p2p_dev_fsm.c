@@ -385,10 +385,13 @@ p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
 		fgIsLeaveState = fgIsLeaveState ? FALSE : TRUE;
 
 		if (!fgIsLeaveState) {
-			DBGLOG(P2P, STATE,
-				"[P2P_DEV]TRANSITION: [%s] -> [%s]\n",
-			apucDebugP2pDevState[prP2pDevFsmInfo->eCurrentState],
-			apucDebugP2pDevState[eNextState]);
+			/* Print log with state changed */
+			if (prP2pDevFsmInfo->eCurrentState != eNextState)
+				DBGLOG(P2P, STATE,
+					"[P2P_DEV]TRANSITION: [%s] -> [%s]\n",
+					apucDebugP2pDevState
+					[prP2pDevFsmInfo->eCurrentState],
+					apucDebugP2pDevState[eNextState]);
 
 			/* Transition into current state. */
 			prP2pDevFsmInfo->eCurrentState = eNextState;
