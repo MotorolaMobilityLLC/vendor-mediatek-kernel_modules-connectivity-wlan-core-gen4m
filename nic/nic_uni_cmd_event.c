@@ -4642,7 +4642,7 @@ uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_STA_STATISTICS *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_STA;
 	tag->u2Length = sizeof(*tag);
-	tag->u1Index = cmd->ucIndex;
+	tag->u1Index = secGetWlanIdxByStaIdx(ad, cmd->ucIndex);
 	tag->ucReadClear = cmd->ucReadClear;
 	tag->ucLlsReadClear = cmd->ucLlsReadClear;
 	tag->ucResetCounter = cmd->ucResetCounter;
@@ -4664,7 +4664,6 @@ uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 	if (info->ucCID != CMD_ID_GET_STATISTICS)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	// TODO: uni cmd, handle query result
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_STATISTICS,
 		max_cmd_len, nicUniEventStatistics, nicUniCmdTimeoutCommon);
 	if (!entry)
@@ -5553,8 +5552,31 @@ void nicUniEventStatistics(IN struct ADAPTER
 		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
 	struct UNI_EVENT_GET_STATISTICS *tag =
 		(struct UNI_EVENT_GET_STATISTICS *) evt->aucTlvBuffer;
+	struct UNI_EVENT_BASIC_STATISTICS *basic =
+		(struct UNI_EVENT_BASIC_STATISTICS *)tag->aucBuffer;
+	struct EVENT_STATISTICS legacy;
 
-	nicCmdEventQueryStatistics(prAdapter, prCmdInfo, tag->aucBuffer);
+	kalMemSet(&legacy, 0, sizeof(legacy));
+	legacy.rTransmittedFragmentCount.QuadPart =
+		basic->u8TransmittedFragmentCount;
+	legacy.rMulticastTransmittedFrameCount.QuadPart =
+		basic->u8MulticastTransmittedFrameCount;
+	legacy.rFailedCount.QuadPart = basic->u8FailedCount;
+	legacy.rRetryCount.QuadPart = basic->u8RetryCount;
+	legacy.rMultipleRetryCount.QuadPart = basic->u8MultipleRetryCount;
+	legacy.rRTSSuccessCount.QuadPart = basic->u8RTSSuccessCount;
+	legacy.rRTSFailureCount.QuadPart = basic->u8RTSFailureCount;
+	legacy.rACKFailureCount.QuadPart = basic->u8ACKFailureCount;
+	legacy.rFrameDuplicateCount.QuadPart = basic->u8FrameDuplicateCount;
+	legacy.rReceivedFragmentCount.QuadPart = basic->u8ReceivedFragmentCount;
+	legacy.rMulticastReceivedFrameCount.QuadPart =
+		basic->u8MulticastReceivedFrameCount;
+	legacy.rFCSErrorCount.QuadPart = basic->u8FCSErrorCount;
+	legacy.rMdrdyCnt.QuadPart = basic->u8MdrdyCnt;
+	legacy.rChnlIdleCnt.QuadPart = basic->u8ChnlIdleCnt;
+	legacy.u4HwMacAwakeDuration = basic->u4HwMacAwakeDuration;
+
+	nicCmdEventQueryStatistics(prAdapter, prCmdInfo, (uint8_t*)&legacy);
 }
 
 void nicUniEventLinkQuality(IN struct ADAPTER
