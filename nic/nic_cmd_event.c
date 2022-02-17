@@ -4418,7 +4418,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	       prEvtLowLatencyInfo->fgTxDupEnable,
 	       prAdapter->fgEnTxDupDetect,
 	       tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
-	       tm.tm_min, tm.tm_sec, (unsigned int)NSEC_TO_USEC(tv.tv_nsec));
+	       tm.tm_min, tm.tm_sec, (unsigned int)KAL_GET_USEC(tv));
 	if (prAdapter->fgTxDupCertificate != prEvtLowLatencyInfo->fgTxDupCert) {
 
 		prAdapter->fgTxDupCertificate =
@@ -4428,7 +4428,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		ret = sprintf(event, "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
 			tm.tm_sec,
-			(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
+			(unsigned int)KAL_GET_USEC(tv));
 		if (ret < 0 || ret > sizeof(event)) {
 			DBGLOG_LIMITED(NIC, INFO, "sprintf failed:%d\n", ret);
 			return;
@@ -4455,12 +4455,12 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_ON,
 					tm.tm_sec,
-					(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
+					(unsigned int)KAL_GET_USEC(tv));
 			} else {
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_OFF,
 					tm.tm_sec,
-					(unsigned int)NSEC_TO_USEC(tv.tv_nsec));
+					(unsigned int)KAL_GET_USEC(tv));
 			}
 			if (ret < 0 || ret > sizeof(event)) {
 				DBGLOG_LIMITED(NIC, INFO,

@@ -113,11 +113,7 @@ uint8_t nic_txd_v3_long_format_op(
 	void *prTxDesc,
 	uint8_t fgSet)
 {
-	if (fgSet)
-		HAL_MAC_CONNAC3X_TXD_SET_LONG_FORMAT(
-			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
-	return HAL_MAC_CONNAC3X_TXD_IS_LONG_FORMAT(
-			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
+	return TRUE;
 }
 
 uint8_t nic_txd_v3_tid_op(
@@ -126,9 +122,9 @@ uint8_t nic_txd_v3_tid_op(
 	uint8_t fgSet)
 {
 	if (fgSet)
-		HAL_MAC_CONNAC3X_TXD_SET_TID(
+		HAL_MAC_CONNAC3X_TXD_SET_TID_MGMT_TYPE(
 			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc, ucTid);
-	return HAL_MAC_CONNAC3X_TXD_GET_TID(
+	return HAL_MAC_CONNAC3X_TXD_GET_TID_MGMT_TYPE(
 			(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc);
 }
 
@@ -179,14 +175,11 @@ void nic_txd_v3_fill_by_pkt_option(
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc =
 				(struct HW_MAC_CONNAC3X_TX_DESC *)prTxD;
 	uint32_t u4PktOption = prMsduInfo->u4Option;
-	u_int8_t fgIsLongFormat;
 	u_int8_t fgProtected = FALSE;
 
 	/* Skip this function if no options is set */
 	if (!u4PktOption)
 		return;
-
-	fgIsLongFormat = HAL_MAC_CONNAC3X_TXD_IS_LONG_FORMAT(prTxDesc);
 
 	/* Fields in DW0 and DW1 (Short Format) */
 	if (u4PktOption & MSDU_OPT_NO_ACK)
@@ -233,30 +226,12 @@ void nic_txd_v3_fill_by_pkt_option(
 		break;
 	}
 
-	if (!fgIsLongFormat)
-		return;
-
 	/* Fields in DW2~6 (Long Format) */
 	if (u4PktOption & MSDU_OPT_NO_AGGREGATE)
 		HAL_MAC_CONNAC3X_TXD_SET_BA_DISABLE(prTxDesc);
 
-	if (u4PktOption & MSDU_OPT_TIMING_MEASURE)
-		HAL_MAC_CONNAC3X_TXD_SET_TIMING_MEASUREMENT(prTxDesc);
-
-	if (u4PktOption & MSDU_OPT_NDP)
-		HAL_MAC_CONNAC3X_TXD_SET_NDP(prTxDesc);
-
-	if (u4PktOption & MSDU_OPT_NDPA)
-		HAL_MAC_CONNAC3X_TXD_SET_NDPA(prTxDesc);
-
-	if (u4PktOption & MSDU_OPT_SOUNDING)
-		HAL_MAC_CONNAC3X_TXD_SET_SOUNDING_FRAME(prTxDesc);
-
 	if (u4PktOption & MSDU_OPT_FORCE_RTS)
 		HAL_MAC_CONNAC3X_TXD_SET_FORCE_RTS_CTS(prTxDesc);
-
-	if (u4PktOption & MSDU_OPT_BIP)
-		HAL_MAC_CONNAC3X_TXD_SET_BIP(prTxDesc);
 
 	/* SW field */
 	if (u4PktOption & MSDU_OPT_SW_DURATION)
@@ -267,10 +242,7 @@ void nic_txd_v3_fill_by_pkt_option(
 
 	if (u4PktOption & MSDU_OPT_SW_HTC)
 		HAL_MAC_CONNAC3X_TXD_SET_HTC_EXIST(prTxDesc);
-#if 0
-	if (u4PktOption & MSDU_OPT_SW_BAR_SN)
-		HAL_MAC_TX_DESC_SET_SW_BAR_SSN(prTxDesc);
-#endif
+
 	if (u4PktOption & MSDU_OPT_MANUAL_SN) {
 		HAL_MAC_CONNAC3X_TXD_SET_TXD_SN_VALID(prTxDesc);
 		HAL_MAC_CONNAC3X_TXD_SET_SEQUENCE_NUMBER
@@ -300,7 +272,6 @@ void nic_txd_v3_compose(
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
-	u_int8_t ucEtherTypeOffsetInWord;
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
@@ -325,83 +296,42 @@ void nic_txd_v3_compose(
 
 	kalMemZero(prTxDesc, u4TxDescAndPaddingLength);
 
-	/* Ether-type offset */
-	if (prMsduInfo->fgIs802_11) {
-		ucEtherTypeOffsetInWord =
-			(prAdapter->chip_info->pse_header_length
-				+ prMsduInfo->ucMacHeaderLength
-				+ prMsduInfo->ucLlcLength) >> 1;
-	} else {
-		ucEtherTypeOffsetInWord =
-			((ETHER_HEADER_LEN - ETHER_TYPE_LEN)
-				+ prAdapter->chip_info->pse_header_length) >> 1;
-	}
-	HAL_MAC_CONNAC3X_TXD_SET_ETHER_TYPE_OFFSET(
-		prTxDesc,
-		ucEtherTypeOffsetInWord);
-
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
-#if defined(SOC3_0)
-	if (ucTarPort == PORT_INDEX_MCU &&
-		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
-		/* To MCU packet with always tx flag */
-		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-	} else
-#endif
-	{
-		ucWmmQueSet = prBssInfo->ucWmmQueSet;
-		if (fgIsTemplate != TRUE
-			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
-			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
-			DBGLOG(RSN, ERROR,
-				"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
-				prMsduInfo->ucStaRecIndex,
-				ucWmmQueSet, prMsduInfo->ucWmmQueSet);
-		}
 
-		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-		if (ucTarPort == PORT_INDEX_LMAC)
-			ucTarQueue +=
-				(ucWmmQueSet * WMM_AC_INDEX_NUM);
+	/** DW0 **/
+	/* Packet Format */
+	ucWmmQueSet = prBssInfo->ucWmmQueSet;
+	if (fgIsTemplate != TRUE
+		&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
+		&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
+		DBGLOG(RSN, ERROR,
+			"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
+			prMsduInfo->ucStaRecIndex,
+			ucWmmQueSet, prMsduInfo->ucWmmQueSet);
 	}
 
-#if (CFG_SUPPORT_DMASHDL_SYSDVT)
-	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
-		/* send packets to specific mapping queue for DMASHDL DVT */
-		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prAdapter)) {
-			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
-			prMsduInfo->ucTarQueue = ucTarQueue;
-			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
-				(ucTarQueue + 1) % MAC_TXQ_AC33_INDEX);
-		} else if (DMASHDL_DVT_QUEUE_MAPPING_TYPE2(prAdapter)) {
-			ucTarQueue = DMASHDL_DVT_GET_MAPPING_QID(prAdapter);
-			prMsduInfo->ucTarQueue = ucTarQueue;
-			DMASHDL_DVT_SET_MAPPING_QID(prAdapter,
-				(ucTarQueue + 1) % MAC_TXQ_AC2_INDEX);
-		}
-	}
-#endif
+	ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+	if (ucTarPort == PORT_INDEX_LMAC)
+		ucTarQueue +=
+			(ucWmmQueSet * WMM_AC_INDEX_NUM);
 
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
-	/* BMC packet */
-	if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST) {
-		HAL_MAC_CONNAC3X_TXD_SET_BMC(prTxDesc);
+	/* Packet Format */
+	HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(
+		prTxDesc, prMsduInfo->ucPacketFormat);
 
-		/* Must set No ACK to mask retry bit in FC */
-		HAL_MAC_CONNAC3X_TXD_SET_NO_ACK(prTxDesc);
+	/** DW1 **/
+	/* MLDID-legacy */
+	{
+		prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
+			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
+		HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(
+			prTxDesc, prMsduInfo->ucWlanIndex);
 	}
-	/* WLAN index */
-	prMsduInfo->ucWlanIndex = nicTxGetWlanIdx(prAdapter,
-		prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
 
-#if 0				/* DBG */
-	DBGLOG(RSN, INFO,
-	       "Tx WlanIndex = %d eAuthMode = %d\n", prMsduInfo->ucWlanIndex,
-	       prAdapter->rWifiVar.rConnSettings.eAuthMode);
-#endif
-	HAL_MAC_CONNAC3X_TXD_SET_WLAN_INDEX(
-		prTxDesc, prMsduInfo->ucWlanIndex);
+	/* MLDID-by TID */
+	// TODO: ADD MLDID by TID
 
 	/* Header format */
 	if (prMsduInfo->fgIs802_11) {
@@ -409,15 +339,15 @@ void nic_txd_v3_compose(
 			prTxDesc, HEADER_FORMAT_802_11_NORMAL_MODE);
 		HAL_MAC_CONNAC3X_TXD_SET_802_11_HEADER_LENGTH(
 			prTxDesc, (prMsduInfo->ucMacHeaderLength >> 1));
+		HAL_MAC_CONNAC3X_TXD_SET_HEADER_PADDING(
+			prTxDesc, NIC_TX_DESC_HEADER_PADDING_TAIL_PAD);
 	} else {
 		HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(
 			prTxDesc, HEADER_FORMAT_NON_802_11);
 		HAL_MAC_CONNAC3X_TXD_SET_ETHERNET_II(prTxDesc);
+		HAL_MAC_CONNAC3X_TXD_SET_HEADER_PADDING(
+			prTxDesc, NIC_TX_DESC_HEADER_PADDING_PAD_HEAD_PAD);
 	}
-
-	/* Header Padding */
-	HAL_MAC_CONNAC3X_TXD_SET_HEADER_PADDING(
-		prTxDesc, NIC_TX_DESC_HEADER_PADDING_LENGTH);
 
 	/* TID mgmt type */
 	if (prMsduInfo->fgIs802_11) {
@@ -469,7 +399,7 @@ void nic_txd_v3_compose(
 		prTxDesc, prMsduInfo->cPowerOffset);
 
 	/* OM MAP */
-	HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
+	//HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
 
 	/** DW3 **/
 	/* Tx count limit */
@@ -514,53 +444,11 @@ void nic_txd_v3_compose(
 			DBGLOG(RSN, LOUD, "Protect BMC frame!\n");
 		}
 	}
-#if (UNIFIED_MAC_TX_FORMAT == 1)
-	/* Packet Format */
-	HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(
-		prTxDesc, prMsduInfo->ucPacketFormat);
-#endif
-
-	/* Own MAC */
-	HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
-		prTxDesc, prBssInfo->ucOwnMacIndex);
-
-	if (u4TxDescLength == NIC_TX_DESC_SHORT_FORMAT_LENGTH) {
-		HAL_MAC_CONNAC3X_TXD_SET_SHORT_FORMAT(prTxDesc);
-
-		/* Update Packet option */
-		nic_txd_v3_fill_by_pkt_option(prMsduInfo, prTxDesc);
-
-		/* Short format, Skip DW 2~6 */
-		return;
-	}
-		HAL_MAC_CONNAC3X_TXD_SET_LONG_FORMAT(prTxDesc);
 
 	/* Update Packet option */
 	nic_txd_v3_fill_by_pkt_option(prMsduInfo, prTxDesc);
 
-	/* Type */
-	if (prMsduInfo->fgIs802_11) {
-		struct WLAN_MAC_HEADER *prWlanHeader =
-			(struct WLAN_MAC_HEADER *)
-			((unsigned long)
-			(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
-
-		HAL_MAC_CONNAC3X_TXD_SET_TYPE(
-			prTxDesc,
-			(prWlanHeader->u2FrameCtrl & MASK_FC_TYPE) >> 2);
-		HAL_MAC_CONNAC3X_TXD_SET_SUB_TYPE(
-			prTxDesc,
-			(prWlanHeader->u2FrameCtrl & MASK_FC_SUBTYPE)
-				>> OFFSET_OF_FC_SUBTYPE);
-
-		HAL_MAC_CONNAC3X_TXD7_SET_TYPE(
-			prTxDesc,
-			(prWlanHeader->u2FrameCtrl & MASK_FC_TYPE) >> 2);
-		HAL_MAC_CONNAC3X_TXD7_SET_SUB_TYPE(
-			prTxDesc,
-			(prWlanHeader->u2FrameCtrl & MASK_FC_SUBTYPE)
-				>> OFFSET_OF_FC_SUBTYPE);
-	}
+	/** DW5 **/
 	/* PID */
 	if (prMsduInfo->pfTxDoneHandler) {
 		prMsduInfo->ucPID = nicTxAssignPID(
@@ -577,88 +465,18 @@ void nic_txd_v3_compose(
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 	}
 
-#if CFG_SUPPORT_WIFI_SYSDVT
-	if (prMsduInfo->pfTxDoneHandler) {
-		DBGLOG(REQ, LOUD, "PacketType=%d\n",
-			prMsduInfo->ucPacketType);
-		if (is_frame_test(prAdapter, 0) == 1 &&
-			prMsduInfo->ucPacketType == 0) { /* Data */
-			prMsduInfo->ucPID = prAdapter->auto_dvt->txs.pid;
-			HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc,
-				prAdapter->auto_dvt->txs.pid);
-			HAL_MAC_CONNAC3X_TXD_SET_TXS_FORMAT(prTxDesc,
-				prAdapter->auto_dvt->txs.format);
-			send_add_txs_queue(prAdapter->auto_dvt->txs.pid,
-				prMsduInfo->ucWlanIndex);
-			DBGLOG(REQ, LOUD,
-				"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
-				prMsduInfo->ucPID,
-				prAdapter->auto_dvt->txs.format);
-		} else if (is_frame_test(prAdapter, 0) == 2 &&
-			prMsduInfo->ucPacketType == 1) { /* Mgmt */
-			struct WLAN_MAC_HEADER *prWlanHeader =
-			(struct WLAN_MAC_HEADER *)
-			((unsigned long)(prMsduInfo->prPacket) +
-			MAC_TX_RESERVED_FIELD);
+	// TODO: ADD ForceLink(DW5 BIT15)
 
-			if (((prWlanHeader->u2FrameCtrl &
-				MASK_FC_TYPE) >> 2) == 0 &&
-				((prWlanHeader->u2FrameCtrl & MASK_FC_SUBTYPE)
-				>> OFFSET_OF_FC_SUBTYPE) == 8)
-				;/* FC_TYPE_MGMT=0, SUBTYPE_BEACON=8 */
-			else if (((prWlanHeader->u2FrameCtrl &
-				MASK_FC_TYPE) >> 2) == 0) {
-				prMsduInfo->ucPID =
-					prAdapter->auto_dvt->txs.pid;
-				HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc,
-					prAdapter->auto_dvt->txs.pid);
-				HAL_MAC_CONNAC3X_TXD_SET_TXS_FORMAT(prTxDesc,
-					prAdapter->auto_dvt->txs.format);
-				send_add_txs_queue(prAdapter->auto_dvt->txs.pid,
-					prMsduInfo->ucWlanIndex);
-				DBGLOG(REQ, LOUD,
-					"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
-					prMsduInfo->ucPID,
-					prAdapter->auto_dvt->txs.format);
-			} else {
-				prMsduInfo->ucPID =
-					prAdapter->auto_dvt->txs.pid;
-				HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc,
-					prAdapter->auto_dvt->txs.pid);
-				HAL_MAC_CONNAC3X_TXD_SET_TXS_FORMAT(prTxDesc,
-					prAdapter->auto_dvt->txs.format);
-				HAL_MAC_CONNAC3X_TXD_SET_NO_ACK(prTxDesc);
-					send_add_txs_queue(
-					prAdapter->auto_dvt->txs.pid,
-					prMsduInfo->ucWlanIndex);
-				DBGLOG(REQ, LOUD,
-					"Send_add_txs_queue pid=%d auto_txs_format=%d\n",
-					prMsduInfo->ucPID,
-					prAdapter->auto_dvt->txs.format);
-			}
-		}
-	}
-#endif /* AUTOMATION */
+	/** DW6 **/
+	/* Disable MLD to link address translation */
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+		HAL_MAC_CONNAC3X_TXD_SET_DIS_MAT(prTxDesc);
 
-	/* Remaining TX time */
-	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))
-		prMsduInfo->u4RemainingLifetime =
-			nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
-	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(
-		prTxDesc, prMsduInfo->u4RemainingLifetime);
+	/* Msdu count */
+	HAL_MAC_CONNAC3X_TXD_SET_MSDU_COUNT(prTxDesc, 1);
 
-	/* Tx count limit */
-	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_RETRY_LIMIT)) {
-		/* Note: BMC packet retry limit is set to unlimited */
-		prMsduInfo->ucRetryLimit =
-			nicTxGetTxCountLimitByTc(prMsduInfo->ucTC);
-	}
-	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_TX_COUNT(
-		prTxDesc, prMsduInfo->ucRetryLimit);
-
-	/* Power Offset */
-	HAL_MAC_CONNAC3X_TXD_SET_POWER_OFFSET(
-		prTxDesc, prMsduInfo->cPowerOffset);
+	/** DW7 **/
+	HAL_MAC_CONNAC3X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
 
 	/* Fix rate */
 	DBGLOG(TX, INFO, "Rate mode[%d]\n", prMsduInfo->ucRateMode);
@@ -669,10 +487,6 @@ void nic_txd_v3_compose(
 		// TODO: by band configure
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc, 0);
 	case MSDU_RATE_MODE_MANUAL_CR:
-		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_MODE_TO_CR(prTxDesc);
-		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
-		break;
-
 	case MSDU_RATE_MODE_AUTO:
 	default:
 		break;
@@ -710,8 +524,7 @@ void nic_txd_v3_compose_security_frame(
 			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
 
 	/* UC to a connected peer */
-	HAL_MAC_CONNAC3X_TXD_SET_WLAN_INDEX(prTxDesc,
-		prMsduInfo->ucWlanIndex);
+	HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(prTxDesc, prMsduInfo->ucWlanIndex);
 
 	/* Tx byte count */
 	HAL_MAC_CONNAC3X_TXD_SET_TX_BYTE_COUNT(prTxDesc,
@@ -734,9 +547,6 @@ void nic_txd_v3_compose_security_frame(
 	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(prTxDesc,
 		HEADER_FORMAT_NON_802_11);
 
-	/* Long Format */
-	HAL_MAC_CONNAC3X_TXD_SET_LONG_FORMAT(prTxDesc);
-
 	/* Update Packet option */
 	nic_txd_v3_fill_by_pkt_option(prMsduInfo, prTxDesc);
 
@@ -748,8 +558,8 @@ void nic_txd_v3_compose_security_frame(
 	HAL_MAC_CONNAC3X_TXD_SET_HEADER_PADDING(prTxDesc,
 		NIC_TX_DESC_HEADER_PADDING_LENGTH);
 
-	/* TID */
-	HAL_MAC_CONNAC3X_TXD_SET_TID(prTxDesc, ucTid);
+	/* TID mgmt type */
+	HAL_MAC_CONNAC3X_TXD_SET_TID_MGMT_TYPE(prTxDesc, ucTid);
 
 	/* Remaining TX time */
 	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(prTxDesc,
@@ -759,12 +569,6 @@ void nic_txd_v3_compose_security_frame(
 	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_TX_COUNT(prTxDesc,
 		nicTxGetTxCountLimitByTc(ucTempTC));
 
-	/* Set lowest BSS basic rate */
-	HAL_MAC_CONNAC3X_TXD_SET_FR_RATE(prTxDesc,
-		prBssInfo->u2HwDefaultFixedRateCode);
-#if 0 /* FALCON_TODO */
-	HAL_MAC_FALCON_TX_DESC_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
-#endif
 	HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 
 	/* Packet Format */

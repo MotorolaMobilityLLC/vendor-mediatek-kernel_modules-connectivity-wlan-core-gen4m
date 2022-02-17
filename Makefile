@@ -218,13 +218,6 @@ CONFIG_NUM_OF_WFDMA_TX_RING=0
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 endif
 
-
-ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
-ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
-else
-ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
-endif
-
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC2X=1
 else
@@ -603,8 +596,6 @@ COMMON_OBJS := 	$(COMMON_DIR)dump.o \
 
 NIC_OBJS := 	$(NIC_DIR)nic.o \
 		$(NIC_DIR)nic_tx.o \
-		$(NIC_DIR)nic_txd_v1.o \
-		$(NIC_DIR)nic_rxd_v1.o \
 		$(NIC_DIR)nic_rx.o \
 		$(NIC_DIR)nic_pwr_mgt.o \
 		$(NIC_DIR)nic_rate.o \
@@ -676,28 +667,27 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 # ---------------------------------------------------
 MGMT_OBJS += $(MGMT_DIR)stats.o
 
-CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o
-CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac.o
-ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
-CHIPS_OBJS += $(CHIPS_CMM)dbg_connac2x.o
-CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
-endif
-ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
-CHIPS_OBJS +=  $(CHIPS_CMM)dbg_connac3x.o
-endif
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
-CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o \
+              $(CHIPS_CMM)dbg_connac2x.o \
+              $(CHIPS_CMM)pre_cal.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
-			$(NIC_DIR)nic_txd_v2.o \
-			$(NIC_DIR)nic_rxd_v2.o
-endif
-
-ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
-CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o
+            $(NIC_DIR)nic_txd_v2.o \
+            $(NIC_DIR)nic_rxd_v2.o
+else ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
+              $(CHIPS_CMM)dbg_connac3x.o \
+              $(CHIPS_CMM)dbg_wtbl_connac3x.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
-			$(NIC_DIR)nic_txd_v3.o \
-			$(NIC_DIR)nic_rxd_v3.o
+            $(NIC_DIR)nic_txd_v3.o \
+            $(NIC_DIR)nic_rxd_v3.o
+else
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac.o \
+              $(CHIPS_CMM)dbg_connac.o
+NIC_OBJS += $(NIC_DIR)nic_txd_v1.o \
+            $(NIC_DIR)nic_rxd_v1.o
 endif
 
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o

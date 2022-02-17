@@ -126,7 +126,7 @@ uint8_t nic_rxd_v3_get_packet_type(
 uint8_t nic_rxd_v3_get_wlan_idx(
 	void *prRxStatus)
 {
-	return HAL_MAC_CONNAC3X_RX_STATUS_GET_WLAN_IDX(
+	return HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(
 		(struct HW_MAC_CONNAC3X_RX_DESC *)prRxStatus);
 }
 
@@ -277,9 +277,9 @@ void nic_rxd_v3_fill_rfb(
 	prSwRfb->u2HeaderLen = (uint16_t)
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_HEADER_LEN(prRxStatus);
 	prSwRfb->ucWlanIdx =
-		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_WLAN_IDX(prRxStatus);
+		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus);
 	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
-		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_WLAN_IDX(prRxStatus));
+		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
 		prSwRfb->ucStaRecIdx);
 	prSwRfb->ucTid =
@@ -381,7 +381,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 	} else {
 		uint8_t ucBssIndex =
 			secGetBssIdxByWlanIdx(prAdapter,
-			HAL_MAC_CONNAC3X_RX_STATUS_GET_WLAN_IDX(prRxStatus));
+			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 
 		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
@@ -403,6 +403,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 			}
 		} else if (HAL_MAC_CONNAC3X_RX_STATUS_IS_LLC_MIS(prRxStatus)
 			 && !HAL_MAC_CONNAC3X_RX_STATUS_IS_ERROR(prRxStatus)
+			 && !HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus)
 			 && !FEAT_SUP_LLC_VLAN_RX(prChipInfo)) {
 			uint16_t *pu2EtherType;
 

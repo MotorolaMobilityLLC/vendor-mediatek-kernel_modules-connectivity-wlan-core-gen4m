@@ -453,9 +453,11 @@ int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
 	else if (prTs1->tv_sec < prTs2->tv_sec)
 		return -1;
 	/* sec part is equal */
-	else if (prTs1->tv_nsec > prTs2->tv_nsec)
+	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) >
+		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
 		return 1;
-	else if (prTs1->tv_nsec < prTs2->tv_nsec)
+	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) <
+		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
 		return -1;
 	return 0;
 }
@@ -518,9 +520,9 @@ static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prWifiVar = &prAdapter->rWifiVar;
 
 	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
-	rTimeout.tv_nsec = 0;
+	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
 	rLongest.tv_sec = 0;
-	rLongest.tv_nsec = 0;
+	KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) = 0;
 	ktime_get_ts64(&rNowTs);
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
@@ -533,12 +535,19 @@ static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			continue;
 
 		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		rTime.tv_nsec = rNowTs.tv_nsec;
-		if (prToken->rTs.tv_nsec > rNowTs.tv_nsec) {
+		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs);
+		if (KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs) >
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs)) {
 			rTime.tv_sec -= 1;
-			rTime.tv_nsec += SEC_TO_NSEC(1);
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) += SEC_TO_NSEC(1);
+#else
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) += SEC_TO_USEC(1);
+#endif
 		}
-		rTime.tv_nsec -= prToken->rTs.tv_nsec;
+		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
+			KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs);
 
 		if (halTimeCompare(&rTime, &rTimeout) >= 0)
 			fgIsTimeout = true;
@@ -546,7 +555,8 @@ static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		/* rTime > rLongest */
 		if (halTimeCompare(&rTime, &rLongest) > 0) {
 			rLongest.tv_sec = rTime.tv_sec;
-			rLongest.tv_nsec = rTime.tv_nsec;
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) =
+				KAL_GET_TIME_OF_USEC_OR_NSEC(rTime);
 			u4TokenId = u4Idx;
 		}
 	}

@@ -228,6 +228,8 @@ static void asicConnac3xFillInitCmdTxdInfo(
 						INIT_PKT_FT_CMD)
 	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(prInitHifTxHeaderPadding,
 						HEADER_FORMAT_COMMAND);
+	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prInitHifTxHeaderPadding, 0x20);
+
 	prInitHifTxHeader->rInitWifiCmd.ucCID = prCmdInfo->ucCID;
 	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID = prCmdInfo->ucPktTypeID;
 	prInitHifTxHeader->rInitWifiCmd.ucSeqNum =
@@ -264,6 +266,8 @@ static void asicConnac3xFillCmdTxdInfo(
 	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(
 		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
 		HEADER_FORMAT_COMMAND);
+	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0x20);
 
 	prWifiCmd->ucCID = prCmdInfo->ucCID;
 	prWifiCmd->ucExtenCID = prCmdInfo->ucExtCID;

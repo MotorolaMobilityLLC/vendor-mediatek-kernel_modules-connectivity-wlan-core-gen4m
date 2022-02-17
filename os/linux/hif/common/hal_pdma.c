@@ -980,7 +980,7 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 
 	rTimeout.tv_sec = HIF_MSDU_REPORT_RETURN_TIMEOUT;
-	rTimeout.tv_nsec = 0;
+	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
 	ktime_get_ts64(&rNowTs);
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
@@ -993,18 +993,27 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 			continue;
 
 		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		rTime.tv_nsec = rNowTs.tv_nsec;
-		if (prToken->rTs.tv_nsec > rNowTs.tv_nsec) {
+		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs);
+		if (KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs) >
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs)) {
 			rTime.tv_sec -= 1;
-			rTime.tv_nsec += SEC_TO_NSEC(1);
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) +=
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+				SEC_TO_NSEC(1);
+#else
+				SEC_TO_USEC(1);
+#endif
 		}
-		rTime.tv_nsec -= prToken->rTs.tv_nsec;
+		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
+			KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs);
 
 		/* Return token to free stack */
 		if (halTimeCompare(&rTime, &rTimeout) >= 0) {
 			DBGLOG(HAL, INFO,
 			       "Free TokenId[%u] timeout[sec:%ld, nsec:%ld]\n",
-			       u4Idx, rTime.tv_sec, rTime.tv_nsec);
+			       u4Idx, rTime.tv_sec,
+			       KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
 			halReturnMsduToken(prAdapter, u4Idx);
 		}
 	}

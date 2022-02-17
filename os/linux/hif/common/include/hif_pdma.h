@@ -415,7 +415,7 @@ struct PCIE_CHIP_CR_MAPPING {
 struct MSDU_TOKEN_ENTRY {
 	uint32_t u4Token;
 	u_int8_t fgInUsed;
-	struct timespec64 rTs;	/* token tx timestamp */
+	struct timespec64 rTs;
 	uint32_t u4CpuIdx;	/* tx ring cell index */
 	struct MSDU_INFO *prMsduInfo;
 	void *prPacket;

@@ -696,7 +696,7 @@ static void bellwetherWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr;
-	uint32_t idx;
+	uint32_t idx = 0;
 
 	asicConnac3xWfdmaControl(prGlueInfo, 0, enable);
 	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, 0);
