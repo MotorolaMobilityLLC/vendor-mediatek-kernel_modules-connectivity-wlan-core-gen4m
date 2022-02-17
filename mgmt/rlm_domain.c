@@ -775,6 +775,7 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 	}
 };
 
+#if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
 struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 
 	{BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0}
@@ -788,7 +789,7 @@ struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0}
 				/* ch149,151,153,....,165 */
 };
-
+#endif
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
