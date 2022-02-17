@@ -1897,6 +1897,8 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 
 	/* Event cannot be found in event handler table, use default action */
 	if (u4Idx >= u4Size) {
+		DBGLOG(RX, INFO, "Not static config event: id=0x%02X, seq=%u",
+				prEvent->ucEID, prEvent->ucSeqNum);
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 						 prEvent->ucSeqNum);
 

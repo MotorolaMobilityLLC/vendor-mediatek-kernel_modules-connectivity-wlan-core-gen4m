@@ -868,6 +868,10 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 
+	if (prCmdInfo)
+		DBGLOG(TX, INFO, "Get command: %p, %ps, cmd=0x%02X, seq=%u",
+				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 	return prCmdInfo;
 }
 
