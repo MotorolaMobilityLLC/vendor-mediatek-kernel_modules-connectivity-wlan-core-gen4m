@@ -7617,6 +7617,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
 			u4PlatformBoostCpuTh);
 
+	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
+						"PerfMonPendingTh", 80);
+
+	prWifiVar->u4PerfMonUsedTh = (uint8_t)wlanCfgGetUint32(prAdapter,
+						"PerfMonUsedTh", 80);
+
 	/* for SER */
 	prWifiVar->fgEnableSer = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"SerEnable", FEATURE_ENABLED);

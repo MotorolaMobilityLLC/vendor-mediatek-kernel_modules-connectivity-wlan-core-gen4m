@@ -86,6 +86,17 @@
 #include <tc1_partition.h>
 #endif
 
+/* for rps */
+#include <linux/netdevice.h>
+#include <linux/ip.h>
+#include <linux/tcp.h>
+#include <linux/ipv6.h>
+#include <net/ipv6.h>
+#include <net/sch_generic.h>
+#include <linux/skbuff.h>
+#include <linux/module.h>
+#include <linux/debugfs.h>
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -7612,7 +7623,28 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			!keep_alive))
 		kalPerMonStop(prGlueInfo);
 	else {
-		if ((prPerMonitor->u4TarPerfLevel !=
+		if (kalCheckTputLoad(prAdapter,
+			prPerMonitor->u4CurrPerfLevel,
+			prPerMonitor->u4TarPerfLevel,
+			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
+			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt))) {
+
+			DBGLOG(SW4, INFO,
+			"PerfMon overloading total:%3lu.%03lu mbps lv:%u th:%u fg:0x%lx Pending[%d], Used[%d]\n",
+			(unsigned long) (prPerMonitor->ulThroughput >> 20),
+			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
+					& BITS(0, 9)),
+			prPerMonitor->u4TarPerfLevel,
+			prAdapter->rWifiVar.u4BoostCpuTh,
+			prPerMonitor->ulPerfMonFlag,
+			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
+			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt));
+
+			/* boost current level due to overloading */
+			kalBoostCpu(prAdapter,
+				prPerMonitor->u4TarPerfLevel,
+				prPerMonitor->u4TarPerfLevel);
+		} else if ((prPerMonitor->u4TarPerfLevel !=
 		     prPerMonitor->u4CurrPerfLevel) &&
 		    (prAdapter->rWifiVar.u4BoostCpuTh <
 		     PERF_MON_TP_MAX_THRESHOLD)) {
@@ -7629,6 +7661,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			kalBoostCpu(prAdapter, prPerMonitor->u4TarPerfLevel,
 				    prAdapter->rWifiVar.u4BoostCpuTh);
 		}
+
 		prPerMonitor->u4UpdatePeriod =
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
 #if CFG_SUPPORT_PERF_IND
@@ -7753,6 +7786,80 @@ void __weak kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 				      uint32_t size)
 {
 	DBGLOG(SW4, WARN, "DRV EMI MPU function is not defined\n");
+}
+
+int32_t __weak kalCheckTputLoad(IN struct ADAPTER *prAdapter,
+			 IN uint32_t u4CurrPerfLevel,
+			 IN uint32_t u4TarPerfLevel,
+			 IN int32_t i4Pending,
+			 IN uint32_t u4Used)
+{
+	DBGLOG(SW4, TRACE, "enter kalCheckTputLoad\n");
+	return FALSE;
+}
+
+/* mimic store_rps_map as net-sysfs.c does */
+int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
+{
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+	struct rps_map *old_map, *map;
+	cpumask_var_t mask;
+	int cpu, i, len;
+	static DEFINE_MUTEX(rps_map_mutex);
+
+	if (!alloc_cpumask_var(&mask, GFP_KERNEL))
+		return -ENOMEM;
+
+	*cpumask_bits(mask) = rps_value;
+	map = kzalloc(max_t(unsigned int,
+			RPS_MAP_SIZE(cpumask_weight(mask)), L1_CACHE_BYTES),
+			GFP_KERNEL);
+	if (!map) {
+		free_cpumask_var(mask);
+		return -ENOMEM;
+	}
+
+	i = 0;
+	for_each_cpu_and(cpu, mask, cpu_online_mask)
+		map->cpus[i++] = cpu;
+
+	if (i) {
+		map->len = i;
+	} else {
+		kfree(map);
+		map = NULL;
+	}
+
+	mutex_lock(&rps_map_mutex);
+	old_map = rcu_dereference_protected(queue->rps_map,
+				mutex_is_locked(&rps_map_mutex));
+	rcu_assign_pointer(queue->rps_map, map);
+	if (map)
+		static_key_slow_inc(&rps_needed);
+	if (old_map)
+		static_key_slow_dec(&rps_needed);
+	mutex_unlock(&rps_map_mutex);
+
+	if (old_map)
+		kfree_rcu(old_map, rcu);
+	free_cpumask_var(mask);
+
+	return map ? len : 0;
+#else
+	return 0;
+#endif
+}
+
+void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value)
+{
+	int32_t i = 0;
+	struct net_device *dev = NULL;
+
+	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		dev = wlanGetNetDev(glue, i);
+		if (dev)
+			wlan_set_rps_map(dev->_rx, value);
+	}
 }
 
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
