@@ -163,10 +163,8 @@
 
 #include "mt66xx_reg.h"
 
-#ifdef CONNAC_MAC
 #include "connac_reg.h"
 #include "cmm_asic_connac.h"
-#endif /* CONNAC_MAC */
 
 #include "rlm.h"
 #include "rlm_domain.h"

@@ -188,15 +188,18 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	P_NETDEV_PRIVATE_GLUE_INFO prNetDevPriv = (P_NETDEV_PRIVATE_GLUE_INFO) NULL;
 	PARAM_MAC_ADDRESS rMacAddr;
 	P_MSG_P2P_ACTIVE_DEV_BSS_T prMsgActiveBss = (P_MSG_P2P_ACTIVE_DEV_BSS_T) NULL;
+	struct mt66xx_chip_info *prChipInfo;
 
 	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_add_iface\n");
 
 	do {
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
-		prAdapter = prGlueInfo->prAdapter;
 
 		if (prGlueInfo == NULL)
 			break;
+
+		prAdapter = prGlueInfo->prAdapter;
+		prChipInfo = prAdapter->chip_info;
 
 		for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
 			if (prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler ==
@@ -233,7 +236,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		*((P_GLUE_INFO_T *) netdev_priv(prNewNetDevice)) = prGlueInfo;
 
-		prNewNetDevice->needed_headroom += NIC_TX_HEAD_ROOM;
+		prNewNetDevice->needed_headroom += NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 		prNewNetDevice->netdev_ops = &p2p_netdev_ops;
 
 		prHif = &prGlueInfo->rHifInfo;

@@ -1104,7 +1104,7 @@ WLAN_STATUS wlanSendCommand(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
 		ucTC = nicTxGetCmdResourceType(prCmdInfo);
 
 		/* <1.2> Check if pending packet or resource was exhausted */
-		rStatus = nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prCmdInfo), TRUE);
+		rStatus = nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 		if (rStatus == WLAN_STATUS_RESOURCES) {
 			DBGLOG(INIT, INFO, "NO Resource:%d\n", ucTC);
 			break;
@@ -1168,7 +1168,7 @@ WLAN_STATUS wlanSendCommandMthread(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 		ucTC = nicTxGetCmdResourceType(prCmdInfo);
 
 		/* <1.2> Check if pending packet or resource was exhausted */
-		rStatus = nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prCmdInfo), TRUE);
+		rStatus = nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 		if (rStatus == WLAN_STATUS_RESOURCES) {
 #if 0
 			DBGLOG(INIT, WARN, "%s: NO Resource for CMD TYPE[%u] ID[0x%02X] SEQ[%u] TC[%u]\n",
@@ -1364,7 +1364,7 @@ VOID wlanClearTxCommandQueue(IN P_ADAPTER_T prAdapter)
 
 		/* Release Tx resource for CMD which resource is allocated but not used */
 		nicTxReleaseResource(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
-			nicTxGetCmdPageCount(prCmdInfo), TRUE);
+			nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -1408,7 +1408,7 @@ VOID wlanClearTxOidCommand(IN P_ADAPTER_T prAdapter)
 
 			/* Release Tx resource for CMD which resource is allocated but not used */
 			nicTxReleaseResource(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
-				nicTxGetCmdPageCount(prCmdInfo), TRUE);
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 
@@ -2207,7 +2207,7 @@ WLAN_STATUS wlanSendNicPowerCtrlCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucPowerM
 			break;
 		}
 		/* 3.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prCmdInfo), TRUE)
+		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE)
 			== WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -2853,8 +2853,8 @@ WLAN_STATUS wlanPatchSendComplete(IN P_ADAPTER_T prAdapter)
 	/* 5. Seend WIFI start command */
 	while (1) {
 		/* 5.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
-			== WLAN_STATUS_RESOURCES) {
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -2968,8 +2968,8 @@ WLAN_STATUS wlanImageSectionConfig(IN P_ADAPTER_T prAdapter,
 	/* 6. Send FW_Download command */
 	while (1) {
 		/* 6.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
-			== WLAN_STATUS_RESOURCES) {
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -3118,8 +3118,8 @@ WLAN_STATUS wlanImageQueryStatus(IN P_ADAPTER_T prAdapter)
 	/* 5. Send command */
 	while (1) {
 		/* 5.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
-			== WLAN_STATUS_RESOURCES) {
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -3303,8 +3303,8 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter,
 	/* 5. Seend WIFI start command */
 	while (1) {
 		/* 5.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
-			== WLAN_STATUS_RESOURCES) {
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -3411,8 +3411,8 @@ wlanCompressedFWConfigWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable,
 
 	while (1) {
 		/* 5.1 Acquire TX Resource */
-		if (nicTxAcquireResource(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
-			== WLAN_STATUS_RESOURCES) {
+		if (nicTxAcquireResource(prAdapter, ucTC,
+			nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR, "Fail to get TX resource return within timeout\n");
@@ -3528,7 +3528,8 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 	PVOID prFwBuffer = NULL;
 	BOOLEAN fgReady;
 	WLAN_STATUS rDlStatus = 0;
-	WLAN_STATUS	rCfgStatus = 0;
+	WLAN_STATUS rCfgStatus = 0;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	const UINT_32 ready_bits = prAdapter->chip_info->sw_ready_bits;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	BOOLEAN fgIsCompressed = FALSE;
@@ -3585,33 +3586,33 @@ WLAN_STATUS wlanDownloadFW(IN P_ADAPTER_T prAdapter)
 			break;
 		/* wlanCheckWifiN9Func(prAdapter); */
 
-#ifdef CR4_SUPPORT
-		/* CR4 bin */
-		kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer, &u4FwSize, IMG_DL_IDX_CR4_FW);
-		if (prFwBuffer == NULL) {
-			DBGLOG(INIT, WARN, "FW[%u] load error!\n", IMG_DL_IDX_CR4_FW);
-			break;
-		}
+		if (prChipInfo->is_support_cr4) {
+			/* CR4 bin */
+			kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer, &u4FwSize, IMG_DL_IDX_CR4_FW);
+			if (prFwBuffer == NULL) {
+				DBGLOG(INIT, WARN, "FW[%u] load error!\n", IMG_DL_IDX_CR4_FW);
+				break;
+			}
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
-		rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
-				u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW, &fgIsCompressed, &rFwImageInFo);
-		prAdapter->fgIsCr4FwDownloaded = TRUE;
-		if (fgIsCompressed == TRUE)
-			rCfgStatus = wlanCompressedFWConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4, &rFwImageInFo);
-		else
-			rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
-
+			rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer, u4FwSize,
+				CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW, &fgIsCompressed, &rFwImageInFo);
+			prAdapter->fgIsCr4FwDownloaded = TRUE;
+			if (fgIsCompressed == TRUE)
+				rCfgStatus = wlanCompressedFWConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4,
+						&rFwImageInFo);
+			else
+				rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
 #else
-		rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
-			u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW);
-		prAdapter->fgIsCr4FwDownloaded = TRUE;
-		rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
+			rDlStatus = wlanImageSectionDownloadStage(prAdapter, prFwBuffer,
+				u4FwSize, CR4_FWDL_SECTION_NUM, IMG_DL_IDX_CR4_FW);
+			prAdapter->fgIsCr4FwDownloaded = TRUE;
+			rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, PDA_CR4);
 #endif
-		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
+			kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
 
-		if ((rDlStatus != WLAN_STATUS_SUCCESS) || (rCfgStatus != WLAN_STATUS_SUCCESS))
-			break;
-#endif /* CR4_SUPPORT */
+			if ((rDlStatus != WLAN_STATUS_SUCCESS) || (rCfgStatus != WLAN_STATUS_SUCCESS))
+				break;
+		}
 	} while (0);
 	DBGLOG(INIT, INFO, "FW download End\n");
 
@@ -3812,7 +3813,7 @@ WLAN_STATUS wlanAccessRegister(IN P_ADAPTER_T prAdapter,
 	while (1) {
 		/* 6.1 Acquire TX Resource */
 		if (nicTxAcquireResource
-			(prAdapter, ucTC, nicTxGetPageCount(prCmdInfo->u2InfoBufLen, TRUE), TRUE)
+			(prAdapter, ucTC, nicTxGetPageCount(prAdapter, prCmdInfo->u2InfoBufLen, TRUE), TRUE)
 				== WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter, ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
