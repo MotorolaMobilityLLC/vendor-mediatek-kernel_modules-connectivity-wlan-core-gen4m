@@ -912,6 +912,9 @@ void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
 			 */
 			prMsduInfo->pfTxDoneHandler = NULL;
 		}
+		if (timerPendingTimer(&prMsduInfo->rLifetimeTimer))
+			cnmTimerStopTimer(prAdapter,
+					&prMsduInfo->rLifetimeTimer);
 		prNextMsduInfo = QM_TX_GET_NEXT_MSDU_INFO(prMsduInfo);
 		QUEUE_INSERT_TAIL(prTempQue, (struct QUE_ENTRY *) prMsduInfo);
 		prMsduInfo = prNextMsduInfo;
