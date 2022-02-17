@@ -1725,7 +1725,6 @@ s_int32 mt_op_dbdc_continuous_tx(
 	u_char band_idx,
 	struct test_configuration *configs)
 {
-	s_int32 SetFreq = 0;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 tx_mode = configs->tx_mode;
@@ -1738,11 +1737,11 @@ s_int32 mt_op_dbdc_continuous_tx(
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
 			(u_int32)band_idx);
-
+#if 0
 		SetFreq = tm_ch_num_to_freq(configs->channel);
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_CHNL_FREQ, SetFreq);
-
+#endif
 		tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_PRIMARY_CH,
 			configs->pri_sel);
