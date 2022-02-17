@@ -112,7 +112,7 @@ void qosParseQosMapSet(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec, IN uint8_t *qosMapSet);
 
 uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo,
-		      IN int type, IN int dscp);
+		      IN uint8_t ucBssIndex, IN int dscp);
 
 /*******************************************************************************
  *                              F U N C T I O N S
