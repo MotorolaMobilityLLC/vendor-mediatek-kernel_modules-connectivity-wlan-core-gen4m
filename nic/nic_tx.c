@@ -4220,18 +4220,20 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 
-	if (u4StaPsBitmap)
-		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
-		     ++ucStaRecIndex) {
-			if (QUEUE_IS_NOT_EMPTY(
-				    &prAdapter->rStaPsQueue[ucStaRecIndex])) {
-				nicTxDirectClearBssAbsentQ(prAdapter,
-					ucStaRecIndex);
-				u4StaPsBitmap &= ~BIT(ucStaRecIndex);
-			}
-			if (u4StaPsBitmap == 0)
-				break;
+	if (!u4StaPsBitmap)
+		return;
+
+	for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
+		++ucStaRecIndex) {
+		if (QUEUE_IS_NOT_EMPTY(
+			&prAdapter->rStaPsQueue[ucStaRecIndex])) {
+			nicTxDirectClearStaPsQ(prAdapter,
+				ucStaRecIndex);
+			u4StaPsBitmap &= ~BIT(ucStaRecIndex);
 		}
+		if (u4StaPsBitmap == 0)
+			break;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
