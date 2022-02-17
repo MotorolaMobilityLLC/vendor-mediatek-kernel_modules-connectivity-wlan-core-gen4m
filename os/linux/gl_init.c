@@ -4077,17 +4077,19 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		/* wlan1 */
 		if (KAL_AIS_NUM > 1) {
 			prDevHandler = wlanGetNetDev(prGlueInfo, 1);
-			kalMemCopy(prDevHandler->dev_addr,
-				&prAdapter->rWifiVar.aucMacAddress1,
-				ETH_ALEN);
-			kalMemCopy(prDevHandler->perm_addr,
-				prDevHandler->dev_addr,
-				ETH_ALEN);
+			if (prDevHandler) {
+				kalMemCopy(prDevHandler->dev_addr,
+					&prAdapter->rWifiVar.aucMacAddress1,
+					ETH_ALEN);
+				kalMemCopy(prDevHandler->perm_addr,
+					prDevHandler->dev_addr,
+					ETH_ALEN);
 #if CFG_SHOW_MACADDR_SOURCE
-			DBGLOG(INIT, INFO,
-				"MAC1 address: " MACSTR,
-				MAC2STR(prDevHandler->dev_addr));
+				DBGLOG(INIT, INFO,
+					"MAC1 address: " MACSTR,
+					MAC2STR(prDevHandler->dev_addr));
 #endif
+			}
 		}
 	}
 
