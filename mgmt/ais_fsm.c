@@ -1647,6 +1647,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				   AIS_REQUEST_ROAMING_CONNECT
 				   || prAisReq->eReqType ==
 				   AIS_REQUEST_ROAMING_SEARCH) {
+				fgIsTransition = TRUE;
 				/* ignore */
 				/* free the message */
 				cnmMemFree(prAdapter, prAisReq);
