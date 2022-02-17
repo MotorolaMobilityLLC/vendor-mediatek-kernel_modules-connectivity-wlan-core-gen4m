@@ -189,26 +189,27 @@ int mtk_cfg80211_nla_put_type(struct sk_buff *skb,
 	return 0;
 }
 
-int mtk_cfg80211_vendor_get_channel_list(struct wiphy
-		*wiphy, struct wireless_dev *wdev, const void *data,
-		int data_len)
+int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
+					 struct wireless_dev *wdev,
+					 const void *data, int data_len)
 {
+#define CHN_ARRAY_MAX_NUM (((MAX_5G_BAND_CHN_NUM) > (MAX_2G_BAND_CHN_NUM)) ?\
+			   (MAX_5G_BAND_CHN_NUM) : (MAX_2G_BAND_CHN_NUM))
 	struct GLUE_INFO *prGlueInfo;
 	struct nlattr *attr;
 	uint32_t band = 0;
 	uint8_t ucNumOfChannel, i, j;
-	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM];
+	struct RF_CHANNEL_INFO aucChannelList[CHN_ARRAY_MAX_NUM];
 	uint32_t num_channels;
-	uint32_t channels[MAX_CHN_NUM];
+	uint32_t channels[CHN_ARRAY_MAX_NUM];
 	struct sk_buff *skb;
+	uint16_t u2CountryCode;
 
 	ASSERT(wiphy && wdev);
 	if ((data == NULL) || !data_len)
 		return -EINVAL;
 
-	DBGLOG(REQ, INFO,
-	       "vendor command: data_len=%d, iftype=%d\n", data_len,
-	       wdev->iftype);
+	DBGLOG(REQ, INFO, "data_len=%d, iftype=%d\n", data_len, wdev->iftype);
 
 	attr = (struct nlattr *)data;
 	if (attr->nla_type == WIFI_ATTRIBUTE_BAND)
@@ -217,7 +218,10 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy
 	DBGLOG(REQ, INFO, "Get channel list for band: %d\n", band);
 
 #if CFG_ENABLE_UNIFY_WIPHY
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	if (wdev->iftype == NL80211_IFTYPE_AP)
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+	else
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 #else	/* CFG_ENABLE_UNIFY_WIPHY */
 	if (wdev == gprWdev)	/* wlan0 */
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
@@ -228,42 +232,55 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy
 	if (!prGlueInfo)
 		return -EFAULT;
 
-	if (band == 0) { /* 2.4G band */
+	switch (band) {
+	case 1: /* 2.4G band */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
 			     MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
-	} else { /* 5G band */
+		break;
+	case 2: /* 5G band without DFS channels */
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
 			     MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+		break;
+	case 4: /* 5G band DFS channels only */
+		rlmDomainGetDfsChnls(prGlueInfo->prAdapter, MAX_CHN_NUM,
+				     &ucNumOfChannel, aucChannelList);
+		break;
+	default:
+		ucNumOfChannel = 0;
+		break;
 	}
 
 	kalMemZero(channels, sizeof(channels));
+	u2CountryCode = prGlueInfo->prAdapter->
+			rWifiVar.rConnSettings.u2CountryCode;
 	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
 		/* We need to report frequency list to HAL */
-		channels[j] = nicChannelNum2Freq(
-				      aucChannelList[i].ucChannelNum) / 1000;
+		channels[j] =
+		    nicChannelNum2Freq(aucChannelList[i].ucChannelNum) / 1000;
 		if (channels[j] == 0)
 			continue;
-		else if ((
-			 prGlueInfo->prAdapter->rWifiVar.rConnSettings
-			 .u2CountryCode == COUNTRY_CODE_TW) &&
+		else if ((u2CountryCode == COUNTRY_CODE_TW) &&
 			 (channels[j] >= 5180 && channels[j] <= 5260)) {
-			/* Taiwan NCC has resolution to follow FCC spec to
-			 * support 5G Band 1/2/3/4
+			/* Taiwan NCC has resolution to follow FCC spec
+			 * to support 5G Band 1/2/3/4
 			 * (CH36~CH48, CH52~CH64, CH100~CH140, CH149~CH165)
 			 * Filter CH36~CH52 for compatible with some old
 			 * devices.
 			 */
+			DBGLOG(REQ, TRACE, "skip channels[%d]=%d, country=%d\n",
+			       j, channels[j], u2CountryCode);
 			continue;
 		} else {
-			DBGLOG(REQ, INFO, "channels[%d] = %d\n", j,
-								channels[j]);
+			DBGLOG(REQ, TRACE, "channels[%d] = %d\n", j,
+			       channels[j]);
 			j++;
 		}
 	}
 	num_channels = j;
+	DBGLOG(REQ, INFO, "Get channel list for band: %d, num_channels=%d\n",
+	       band, num_channels);
 
-	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
-			sizeof(channels));
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(channels));
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
@@ -283,8 +300,6 @@ nla_put_failure:
 	kfree_skb(skb);
 	return -EFAULT;
 }
-
-
 
 int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,
