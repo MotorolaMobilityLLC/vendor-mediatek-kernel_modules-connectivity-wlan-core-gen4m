@@ -503,6 +503,10 @@ do { \
 	} \
 }
 
+#define HAL_IS_TX_DIRECT(_prAdapter) FALSE
+
+#define HAL_IS_RX_DIRECT(_prAdapter) FALSE
+
 #endif
 
 #if defined(_HIF_SDIO)
@@ -868,6 +872,10 @@ do { \
 	halWakeUpWiFi(_prAdapter);\
 }
 
+#define HAL_IS_TX_DIRECT(_prAdapter) FALSE
+
+#define HAL_IS_RX_DIRECT(_prAdapter) FALSE
+
 #endif
 
 #if defined(_HIF_USB)
@@ -999,6 +1007,12 @@ do { \
 		_pucBuf, \
 		_u4ValidBufSize/*temp!!*//*4KByte*/) \
 }
+
+#define HAL_IS_TX_DIRECT(_prAdapter) \
+	((CFG_TX_DIRECT_USB) ? TRUE : FALSE)
+
+#define HAL_IS_RX_DIRECT(_prAdapter) \
+	((CFG_RX_DIRECT_USB) ? TRUE : FALSE)
 
 #endif
 

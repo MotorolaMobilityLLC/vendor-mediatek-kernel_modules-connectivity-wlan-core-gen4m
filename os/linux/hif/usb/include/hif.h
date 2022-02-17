@@ -124,13 +124,17 @@ typedef enum _ENUM_USB_END_POINT_T {
 
 #define HIF_TX_INIT_CMD_PORT             USB_CMD_EP_OUT
 
+#ifdef CFG_USB_REQ_TX_DATA_FFA_CNT
+#define USB_REQ_TX_DATA_FFA_CNT         (CFG_USB_REQ_TX_DATA_FFA_CNT)	/* platform specific USB_REQ_TX_DATA_FFA_CNT */
+#else
 #define USB_REQ_TX_DATA_FFA_CNT         (10)
+#endif
 
 #ifdef CFG_USB_REQ_TX_DATA_CNT
 #define USB_REQ_TX_DATA_CNT             (CFG_USB_REQ_TX_DATA_CNT)	/* platform specific USB_REQ_TX_DATA_CNT */
 #else
 #if CFG_USB_TX_AGG
-#define USB_REQ_TX_DATA_CNT             (32*4)	/* must be >= 2 */
+#define USB_REQ_TX_DATA_CNT             (2)	/* must be >= 2 */
 #else
 #define USB_REQ_TX_DATA_CNT             (CFG_TX_MAX_PKT_NUM)
 #endif
@@ -141,7 +145,7 @@ typedef enum _ENUM_USB_END_POINT_T {
 #ifdef CFG_USB_REQ_RX_DATA_CNT
 #define USB_REQ_RX_DATA_CNT             (CFG_USB_REQ_RX_DATA_CNT)	/* platform specific USB_REQ_RX_DATA_CNT */
 #else
-#define USB_REQ_RX_DATA_CNT             (32)
+#define USB_REQ_RX_DATA_CNT             (2)
 #endif
 
 #define USB_RX_AGGREGTAION_LIMIT        (32)	/* Unit: K-bytes */
@@ -157,9 +161,9 @@ typedef enum _ENUM_USB_END_POINT_T {
 #endif
 #define USB_RX_EVENT_BUF_SIZE           (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO + 4)
 #define USB_RX_DATA_BUF_SIZE            (CFG_RX_MAX_PKT_SIZE + \
-					min(USB_RX_AGGREGTAION_LIMIT * 1024, \
-					    (USB_RX_AGGREGTAION_PKT_LIMIT * \
-					     (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)))
+					 min(USB_RX_AGGREGTAION_LIMIT * 1024, \
+					     (USB_RX_AGGREGTAION_PKT_LIMIT * \
+					      (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)))
 
 #define LEN_USB_UDMA_TX_TERMINATOR      (4)	/*HW design spec */
 #define LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */

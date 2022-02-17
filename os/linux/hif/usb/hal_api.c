@@ -713,9 +713,11 @@ VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
 #endif
 	spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
 
-	if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo) > 0 || wlanGetTxPendingFrameCount(prAdapter) > 0)
-		kalSetEvent(prAdapter->prGlueInfo);
-	kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+	if (!HAL_IS_TX_DIRECT(prAdapter)) {
+		if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo) > 0 || wlanGetTxPendingFrameCount(prAdapter) > 0)
+			kalSetEvent(prAdapter->prGlueInfo);
+		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+	}
 }
 
 UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Length,
@@ -768,11 +770,32 @@ UINT_32 halRxUSBEnqueueRFB(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_
 			DBGLOG(RX, TRACE, "Rx status flag = %x wlan index = %d SecMode = %d\n",
 			       prRxStatus->u2StatusFlag, prRxStatus->ucWlanIdx, HAL_RX_STATUS_GET_SEC_MODE(prRxStatus));
 #endif
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-			QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-			u4EnqCnt++;
-
+			if (HAL_IS_RX_DIRECT(prAdapter)) {
+				switch (prSwRfb->ucPacketType) {
+				case RX_PKT_TYPE_RX_DATA:
+#if CFG_SUPPORT_SNIFFER
+					if (prGlueInfo->fgIsEnableMon) {
+						nicRxProcessMonitorPacket(prAdapter, prSwRfb);
+						break;
+					}
+#endif
+					spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+					nicRxProcessDataPacket(prAdapter, prSwRfb);
+					spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+					break;
+				default:
+					KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+					QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
+					KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+					u4EnqCnt++;
+					break;
+				}
+			} else {
+				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+				QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
+				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+				u4EnqCnt++;
+			}
 			RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		} else {
 			DBGLOG(RX, WARN, "Rx byte count:%u exceeds SW_RFB max length:%u\n!",
