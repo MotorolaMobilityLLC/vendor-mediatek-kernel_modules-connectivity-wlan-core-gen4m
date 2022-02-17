@@ -2747,13 +2747,13 @@ uint32_t nicUniCmdStaRecTagRA(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdStaRecTagBA(struct ADAPTER *ad,
+uint32_t nicUniCmdStaRecTagBAOffload(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
 	struct UNI_CMD_STAREC_BA_OFFLOAD_INFO *tag =
 		(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO *)buf;
 
-	tag->u2Tag = UNI_CMD_STAREC_TAG_BA;
+	tag->u2Tag = UNI_CMD_STAREC_TAG_BA_OFFLOAD;
 	tag->u2Length = sizeof(*tag);
 	tag->ucTxAmpdu = cmd->ucTxAmpdu;
 	tag->ucRxAmpdu = cmd->ucRxAmpdu;
@@ -2799,7 +2799,8 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_STATE_INFO), nicUniCmdStaRecTagState},
 	{sizeof(struct UNI_CMD_STAREC_PHY_INFO), nicUniCmdStaRecTagPhyInfo},
 	{sizeof(struct UNI_CMD_STAREC_RA_INFO), nicUniCmdStaRecTagRA},
-	{sizeof(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO), nicUniCmdStaRecTagBA},
+	{sizeof(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO),
+	 nicUniCmdStaRecTagBAOffload},
 	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd},
 #if (CFG_SUPPORT_802_11BE == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_BASIC), nicUniCmdStaRecTagEhtInfo},
