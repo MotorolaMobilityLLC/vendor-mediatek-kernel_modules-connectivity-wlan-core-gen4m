@@ -121,7 +121,8 @@ void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 
 		prCurCmd->u.rMgmtFrame.u2FrameCtl = prMgmt->u2FrameCtrl;
 		prCurCmd->u.rMgmtFrame.u2DurationID = prMgmt->u2Duration;
-	} else if (prCmd->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
+	} else if (prCmd->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+			prCmd->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 		uint8_t *pucPkt = (uint8_t *)((struct sk_buff *)
 					      prCmd->prPacket)->data;
 
