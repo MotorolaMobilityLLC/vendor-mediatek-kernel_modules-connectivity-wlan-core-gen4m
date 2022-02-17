@@ -1182,16 +1182,14 @@ u_int8_t rsnPerformPolicySelection(
 			prAdapter->rWifiVar.rAisSpecificBssInfo.
 			    fgMgmtProtection = TRUE;
 	} else {
-		if (prBssRsnInfo->fgRsnCapPresent
-		    && (prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
-			if (prAdapter->rWifiVar.rAisSpecificBssInfo.
-			    fgMgmtProtection == FALSE) {
-				DBGLOG(RSN, WARN,
-				       "[MFP] Skip RSN IE, No MFP Required Capability\n");
-				return FALSE;
-			}
+		if ((prBssRsnInfo->fgRsnCapPresent) &&
+		(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
+			DBGLOG(RSN, INFO,
+			       "[MFP] Skip RSN IE, No MFP Required Capability\n");
+			return FALSE;
 		}
 	}
+
 	DBGLOG(RSN, INFO,
 	       "setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
 	       kalGetMfpSetting(prAdapter->prGlueInfo),
@@ -1503,6 +1501,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
+	uint8_t fgPmkCacheExist = FALSE;
 
 	DEBUGFUNC("rsnGenerateRSNIE");
 
@@ -1563,13 +1562,14 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
 				    ucBssIndex)->u4RsnSelectedAKMSuite);
 		cp += 4;
-#if CFG_SUPPORT_802_11W
+
 		/* Capabilities */
 		WLAN_SET_FIELD_16(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
 				  ucBssIndex)->u2RsnSelectedCapInfo);
 		DBGLOG(RSN, TRACE,
 		       "Gen RSN IE = %x\n", GET_BSS_INFO_BY_INDEX(prAdapter,
 				       ucBssIndex)->u2RsnSelectedCapInfo);
+ #if CFG_SUPPORT_802_11W
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 			ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS) {
 			if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo) ==
@@ -1596,28 +1596,28 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 			/* AP PMF */
 			/* for AP mode, keep origin RSN IE content w/o update */
 		}
-#else
-		/* Capabilities */
-		WLAN_SET_FIELD_16(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-				    ucBssIndex)->u2RsnSelectedCapInfo);
 #endif
 		cp += 2;
 
+		/* Fill PMKID and Group Management Cipher for AIS */
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS)
+				ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS) {
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 						prMsduInfo->ucStaRecIndex);
 
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex)->eNetworkType ==
-		    NETWORK_TYPE_AIS
-		    && rsnSearchPmkidEntry(prAdapter, prStaRec->aucMacAddr,
-					   &u4Entry)) {
+			if (rsnSearchPmkidEntry(prAdapter,
+				prStaRec->aucMacAddr, &u4Entry)) {
+				if (prAdapter->rWifiVar.
+					rAisSpecificBssInfo.
+					arPmkidCache[u4Entry].fgPmkidExist)
+					fgPmkCacheExist = TRUE;
+			}
 
-			if (prAdapter->rWifiVar.rAisSpecificBssInfo.
-				arPmkidCache[u4Entry].fgPmkidExist) {
+			/* Fill PMKID Count and List field */
+			if (fgPmkCacheExist) {
 				RSN_IE(pucBuffer)->ucLength = 38;
-				WLAN_SET_FIELD_16(cp, 1);/* PMKID count */
+				/* Fill PMKID Count field */
+				WLAN_SET_FIELD_16(cp, 1);
 				cp += 2;
 				DBGLOG(RSN, TRACE,
 				       "BSSID " MACSTR " ind=%d\n",
@@ -1629,52 +1629,41 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 						rAisSpecificBssInfo.
 						arPmkidCache[u4Entry].
 						rBssidInfo.arPMKID));
+				/* Fill PMKID List field */
 				kalMemCopy(cp,
 					(void *) prAdapter->rWifiVar.
 						rAisSpecificBssInfo.
 						arPmkidCache[u4Entry].
 						rBssidInfo.arPMKID,
 					(sizeof(uint8_t) * 16));
-				/* ucExpendedLen = 40; */
-			} else {
-				WLAN_SET_FIELD_16(cp, 0); /* PMKID count */
-				/* ucExpendedLen = ELEM_ID_RSN_LEN_FIXED + 2 */
-#if CFG_SUPPORT_802_11W
-				cp += 2;
-				RSN_IE(pucBuffer)->ucLength += 2;
-#endif
+				cp += 16;
 			}
-		} else {
-			WLAN_SET_FIELD_16(cp, 0);	/* PMKID count */
-			/* ucExpendedLen = ELEM_ID_RSN_LEN_FIXED + 2; */
 #if CFG_SUPPORT_802_11W
-			if ((GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS)
-			    && prAdapter->rWifiVar.rAisSpecificBssInfo.
-				fgMgmtProtection
-			    && (kalGetMfpSetting(prAdapter->prGlueInfo) !=
-				RSN_AUTH_MFP_DISABLED)
-			    /* (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) */
-			    ) {
-				cp += 2;
-				RSN_IE(pucBuffer)->ucLength += 2;
-			}
-#endif
-		}
+			else {
+				/* Follow supplicant flow to
+				* fill PMKID Count field = 0 only when
+				* Group Management Cipher field
+				* need to be filled
+				*/
+				if (prAdapter->rWifiVar.
+					rAisSpecificBssInfo.fgMgmtProtection) {
+					WLAN_SET_FIELD_16(cp, 0)
 
-#if CFG_SUPPORT_802_11W
-		if ((GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS)
-		    && prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection
-		    && (kalGetMfpSetting(prAdapter->prGlueInfo) !=
-			RSN_AUTH_MFP_DISABLED)
-		    /* (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) */
-		    ) {
-			WLAN_SET_FIELD_32(cp, RSN_CIPHER_SUITE_AES_128_CMAC);
-			cp += 4;
-			RSN_IE(pucBuffer)->ucLength += 4;
-		}
+					cp += 2;
+					RSN_IE(pucBuffer)->ucLength += 2;
+				}
+			}
+
+			/* Fill Group Management Cipher field */
+			if (prAdapter->rWifiVar.
+				rAisSpecificBssInfo.fgMgmtProtection) {
+				WLAN_SET_FIELD_32(cp,
+					RSN_CIPHER_SUITE_AES_128_CMAC);
+				cp += 4;
+				RSN_IE(pucBuffer)->ucLength += 4;
+			}
 #endif
+		}
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
 
