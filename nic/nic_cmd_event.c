@@ -3657,6 +3657,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	case EXT_EVENT_ID_EFUSE_FREE_BLOCK:
 	{
 		struct EXT_EVENT_EFUSE_FREE_BLOCK *prEventGetFreeBlock;
+		struct PARAM_CUSTOM_EFUSE_FREE_BLOCK *prFreeBlock;
 
 		u4QueryInfoLen = sizeof(struct
 					PARAM_CUSTOM_EFUSE_FREE_BLOCK);
@@ -3664,8 +3665,18 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 						 prEvent->ucSeqNum);
 		prEventGetFreeBlock = (struct EXT_EVENT_EFUSE_FREE_BLOCK *)
 				      (prEvent->aucBuffer);
+
+		if (prCmdInfo != NULL) {
+			prFreeBlock = (struct PARAM_CUSTOM_EFUSE_FREE_BLOCK *)
+				prCmdInfo->pvInformationBuffer;
+			prFreeBlock->ucGetFreeBlock =
+				prEventGetFreeBlock->ucFreeBlockNum;
+			prFreeBlock->ucGetTotalBlock =
+				prEventGetFreeBlock->ucTotalBlockNum;
+		}
+
 		prAdapter->u4FreeBlockNum =
-			prEventGetFreeBlock->u2FreeBlockNum;
+			prEventGetFreeBlock->ucFreeBlockNum;
 		break;
 	}
 

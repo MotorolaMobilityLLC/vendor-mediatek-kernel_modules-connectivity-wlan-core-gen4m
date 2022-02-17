@@ -579,6 +579,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
 	.eco_info = mt7915_eco_table,
 	.isNicCapV1 = FALSE,
+	.is_support_efuse = TRUE,
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
