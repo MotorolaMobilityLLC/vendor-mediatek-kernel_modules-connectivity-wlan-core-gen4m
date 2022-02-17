@@ -1499,8 +1499,29 @@
 #ifndef CFG_SUPPORT_POWER_THROTTLING
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
+
 #if (CFG_SUPPORT_CONNINFRA == 0)
 #define CFG_SUPPORT_POWER_THROTTLING 0
+#endif
+/*------------------------------------------------------------------------------
+ * Support NAN or not.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_NAN
+#define CFG_SUPPORT_NAN  0
+#endif
+
+#if (CFG_SUPPORT_NAN == 1)
+#define CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL 1
+#define CFG_SUPPORT_NAN_CARRIER_ON_INIT 1
+#define CFG_NAN_BSS_SEPARATE_SEC_ROLE 0
+#define CFG_NAN_PMF_PATCH 1 /* special handle for peer send PMF w/ NMI */
+#define CFG_NAN_ACTION_FRAME_ADDR                                              \
+	1 /* 0: use NDI if available, 1: always use NMI */
+
+#define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 1
+#else
+#define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 0
 #endif
 
 /*******************************************************************************

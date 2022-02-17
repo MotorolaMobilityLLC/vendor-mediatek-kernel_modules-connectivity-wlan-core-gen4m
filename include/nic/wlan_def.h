@@ -469,6 +469,7 @@ enum ENUM_NETWORK_TYPE {
 	NETWORK_TYPE_P2P,
 	NETWORK_TYPE_BOW,
 	NETWORK_TYPE_MBSS,
+	NETWORK_TYPE_NAN,
 	NETWORK_TYPE_NUM
 };
 
@@ -477,6 +478,9 @@ enum ENUM_STA_TYPE_INDEX {
 	STA_TYPE_LEGACY_INDEX = 0,
 	STA_TYPE_P2P_INDEX,
 	STA_TYPE_BOW_INDEX,
+#if CFG_SUPPORT_NAN
+	STA_TYPE_NAN_INDEX,
+#endif
 	STA_TYPE_INDEX_NUM
 };
 
@@ -656,6 +660,7 @@ enum ENUM_OP_MODE {
 	OP_MODE_ACCESS_POINT,	/* For GO */
 	OP_MODE_P2P_DEVICE,	/* P2P Device */
 	OP_MODE_BOW,
+	OP_MODE_NAN,
 	OP_MODE_NUM
 };
 
@@ -720,6 +725,9 @@ enum ENUM_CH_REQ_TYPE {
 	CH_REQ_TYPE_GO_START_BSS,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	CH_REQ_TYPE_DFS_CAC,
+#endif
+#if (CFG_SUPPORT_NAN == 1)
+	CH_REQ_TYPE_NAN_ON,
 #endif
 	CH_REQ_TYPE_NUM
 };
@@ -903,6 +911,16 @@ enum ENUM_PARAM_AP_MODE {
 	AP_MODE_NUM		/* 4 */
 };
 
+#if CFG_SUPPORT_NAN
+enum ENUM_PARAM_NAN_MODE_T {
+	NAN_MODE_11B = 0,
+	NAN_MODE_MIXED_11BG,
+	NAN_MODE_11G,
+	NAN_MODE_11A,
+	NAN_MODE_NUM
+};
+#endif /* CFG_SUPPORT_NAN */
+
 /* Masks for determining the Network Type
  * or the Station Role, given the ENUM_STA_TYPE_T
  */
@@ -913,6 +931,9 @@ enum ENUM_PARAM_AP_MODE {
 #define STA_TYPE_CLIENT_MASK                BIT(STA_ROLE_CLIENT_INDEX)
 #define STA_TYPE_AP_MASK                    BIT(STA_ROLE_AP_INDEX)
 #define STA_TYPE_DLS_MASK                   BIT(STA_ROLE_DLS_INDEX)
+#if CFG_SUPPORT_NAN
+#define STA_TYPE_NAN_MASK BIT(STA_TYPE_NAN_INDEX)
+#endif
 
 /* Macros for obtaining the Network Type
  * or the Station Role, given the ENUM_STA_TYPE_T
@@ -937,6 +958,9 @@ enum ENUM_PARAM_AP_MODE {
 	((_prStaRec->eStaType) & STA_TYPE_AP_MASK)
 #define IS_DLS_STA(_prStaRec) \
 	((_prStaRec->eStaType) & STA_TYPE_DLS_MASK)
+#if CFG_SUPPORT_NAN
+#define IS_STA_NAN_TYPE(_prStaRec) ((_prStaRec->eStaType) & STA_TYPE_NAN_MASK)
+#endif
 
 /* The ENUM_STA_TYPE_T accounts for
  * ENUM_NETWORK_TYPE_T and ENUM_STA_ROLE_INDEX_T.
@@ -955,6 +979,9 @@ enum ENUM_STA_TYPE {
 	STA_TYPE_BOW_CLIENT = (STA_TYPE_BOW_MASK | STA_TYPE_CLIENT_MASK),
 #endif
 	STA_TYPE_DLS_PEER = (STA_TYPE_LEGACY_MASK | STA_TYPE_DLS_MASK),
+#if CFG_SUPPORT_NAN
+	STA_TYPE_NAN = (STA_TYPE_NAN_MASK),
+#endif
 };
 
 /* The type of BSS we discovered */

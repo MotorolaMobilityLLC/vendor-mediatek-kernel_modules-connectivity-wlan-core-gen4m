@@ -268,6 +268,9 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = priv_set_ints,
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
 	[IOCTL_GET_DRIVER - SIOCIWFIRSTPRIV] = priv_set_driver,
+#if CFG_SUPPORT_NAN
+	[IOCTL_NAN_STRUCT - SIOCIWFIRSTPRIV] = priv_nan_struct,
+#endif
 	[IOC_AP_GET_STA_LIST - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_MAC_FLTR - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_CFG - SIOCIWFIRSTPRIV] = priv_set_ap,

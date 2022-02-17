@@ -256,6 +256,19 @@
 #include "auth.h"
 #include "assoc.h"
 
+#if CFG_SUPPORT_NAN
+#include "gl_nan_os.h"
+#include "gl_vendor_nan.h"
+#include "nanDiscovery.h"
+#include "nanScheduler.h"
+#include "nanReg.h"
+#include "nan_base.h"
+#include "nan_data_engine.h"
+#include "nan_dev.h"
+#include "nan_intf.h"
+#include "nan_ranging.h"
+#endif
+
 #if CFG_SUPPORT_ROAMING
 #include "roaming_fsm.h"
 #endif /* CFG_SUPPORT_ROAMING */

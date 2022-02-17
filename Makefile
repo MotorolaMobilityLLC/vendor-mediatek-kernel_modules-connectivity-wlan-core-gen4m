@@ -151,6 +151,9 @@ CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=1
 endif
 
+CONFIG_MTK_WIFI_NAN=n
+
+
 ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=1
 else
@@ -437,6 +440,12 @@ else
     ccflags-y += -DCFG_TC1_FEATURE=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_NAN), y)
+ccflags-y += -DCFG_SUPPORT_NAN=1
+else
+ccflags-y += -DCFG_SUPPORT_NAN=0
+endif
+
 ifeq ($(MODULE_NAME),)
 	MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
@@ -444,6 +453,9 @@ endif
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
+ifeq ($(CONFIG_MTK_WIFI_NAN), y)
+ccflags-y += -I$(src)/include/nan -I$(src)/include/nan/wpa_supp
+endif
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
 ccflags-y += -I$(src)/include/dvt
 endif
@@ -524,6 +536,7 @@ HIF_DIR	    := os/$(os)/hif/none/
 endif
 NIC_DIR     := nic/
 MGMT_DIR    := mgmt/
+NAN_DIR     := nan/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 
@@ -706,6 +719,49 @@ MGMT_OBJS += $(MGMT_DIR)p2p_dev_fsm.o\
 MGMT_OBJS += $(MGMT_DIR)wapi.o
 
 # ---------------------------------------------------
+# NAN Objects List
+# ---------------------------------------------------
+ifeq ($(CONFIG_MTK_WIFI_NAN), y)
+OS_OBJS  += $(OS_DIR)gl_nan.o \
+            $(OS_DIR)gl_vendor_nan.o \
+            $(OS_DIR)gl_vendor_ndp.o
+NAN_OBJS := $(NAN_DIR)nan_dev.o \
+            $(NAN_DIR)nanDiscovery.o\
+            $(NAN_DIR)nanScheduler.o\
+            $(NAN_DIR)nanReg.o\
+            $(NAN_DIR)nan_data_engine.o\
+            $(NAN_DIR)nan_data_engine_util.o\
+            $(NAN_DIR)nan_ranging.o\
+            $(NAN_DIR)nan_txm.o
+
+NAN_SEC_OBJS := $(NAN_DIR)nan_sec.o\
+                $(NAN_DIR)wpa_supp/FourWayHandShake.o\
+                $(NAN_DIR)wpa_supp/src/ap/wpa_auth.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha1.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha1-internal.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha1-prf.o\
+                $(NAN_DIR)wpa_supp/src/common/wpa_common.o\
+                $(NAN_DIR)wpa_supp/src/crypto/aes-wrap.o\
+                $(NAN_DIR)wpa_supp/src/crypto/aes-internal.o\
+                $(NAN_DIR)wpa_supp/src/utils/common.o\
+                $(NAN_DIR)wpa_supp/src/rsn_supp/wpa.o\
+                $(NAN_DIR)wpa_supp/src/crypto/aes-unwrap.o\
+                $(NAN_DIR)wpa_supp/src/crypto/aes-internal-enc.o\
+                $(NAN_DIR)wpa_supp/src/crypto/aes-internal-dec.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha256.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha256-prf.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha256-internal.o\
+                $(NAN_DIR)wpa_supp/wpa_supplicant/wpas_glue.o\
+                $(NAN_DIR)wpa_supp/wpa_supplicant/wpa_supplicant.o\
+                $(NAN_DIR)wpa_supp/src/ap/wpa_auth_glue.o\
+                $(NAN_DIR)wpa_supp/src/crypto/pbkdf2-sha256.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha384-internal.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha512-internal.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha384-prf.o\
+                $(NAN_DIR)wpa_supp/src/crypto/sha384.o
+endif
+
+# ---------------------------------------------------
 # HE Objects List
 # ---------------------------------------------------
 
@@ -816,6 +872,8 @@ $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
 $(MODULE_NAME)-objs  += $(SYSDVT_OBJS)
+$(MODULE_NAME)-objs  += $(NAN_OBJS)
+$(MODULE_NAME)-objs  += $(NAN_SEC_OBJS)
 
 ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
 include $(src)/test/ut.make

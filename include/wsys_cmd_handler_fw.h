@@ -341,6 +341,10 @@ enum ENUM_CMD_ID {
 
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
+#if CFG_SUPPORT_NAN
+	CMD_ID_NAN_EXT_CMD = 0XEB,
+#endif
+
 	CMD_ID_LAYER_0_EXT_MAGIC_NUM    = 0xED,
 	/* magic number for Extending MT6630 original CMD header  */
 	/*CMD_ID_LAYER_1_MAGIC_NUM      = 0xEE, */
@@ -501,6 +505,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_WTBL_INFO = 0xCD,              /* 0xCD (Query) */
 	EVENT_ID_MIB_INFO = 0xCE,               /* 0xCE (Query) */
 
+#if CFG_SUPPORT_NAN
+	EVENT_ID_NAN_EXT_EVENT = 0xEB,
+#endif
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,
 	/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 	EVENT_ID_LAYER_0_EXT_MAGIC_NUM  = 0xED,

@@ -845,6 +845,10 @@ struct MSDU_INFO {
 	uint8_t aucTxDescBuffer[NIC_TX_DESC_AND_PADDING_LENGTH];
 #endif
 
+#if CFG_SUPPORT_NAN
+	uint8_t ucTxToNafQueFlag;
+#endif
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct MSDU_TOKEN_ENTRY *prToken;
 	struct TX_DATA_REQ rTxReq;

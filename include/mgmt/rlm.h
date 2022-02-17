@@ -343,6 +343,13 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter,
 void rlmProcessHtAction(struct ADAPTER *prAdapter,
 			struct SW_RFB *prSwRfb);
 
+#if CFG_SUPPORT_NAN
+uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
+			   struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
+uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, uint8_t *pOutBuf);
+#endif
+
 #if CFG_SUPPORT_802_11AC
 void rlmProcessVhtAction(struct ADAPTER *prAdapter,
 			 struct SW_RFB *prSwRfb);

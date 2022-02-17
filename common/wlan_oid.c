@@ -73,6 +73,10 @@
 #include "mgmt/rsn.h"
 #include "debug.h"
 #include <linux/kmemleak.h>
+#if CFG_SUPPORT_NAN
+#include "cmd_buf.h"
+#include "nan_txm.h"
+#endif
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -8089,6 +8093,85 @@ wlanoidSetMulticastList(IN struct ADAPTER *prAdapter,
 				   pvSetBuffer, u4SetBufferLen);
 }				/* end of wlanoidSetMulticastList() */
 
+#if CFG_SUPPORT_NAN
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to set Multicast Address List.
+*
+* \param[in] prAdapter      Pointer to the Adapter structure.
+* \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be set.
+* \param[in] u4SetBufferLen The length of the set buffer.
+* \param[out] pu4SetInfoLen If the call is successful, returns the number of
+*                           bytes read from the set buffer. If the call failed
+*                           due to invalid length of the set buffer, returns
+*                           the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_INVALID_LENGTH
+* \retval WLAN_STATUS_ADAPTER_NOT_READY
+* \retval WLAN_STATUS_MULTICAST_FULL
+*/
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetNANMulticastList(IN struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
+
+	if (!prAdapter || !pu4SetInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	/* The data must be a multiple of the Ethernet address size. */
+	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
+		DBGLOG(REQ, WARN, "Invalid MC list length %ld\n",
+		       u4SetBufferLen);
+
+		*pu4SetInfoLen =
+			(((u4SetBufferLen + MAC_ADDR_LEN) - 1) / MAC_ADDR_LEN) *
+			MAC_ADDR_LEN;
+
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4SetInfoLen = u4SetBufferLen;
+
+	/* Verify if we can support so many multicast addresses. */
+	if (u4SetBufferLen > MAX_NUM_GROUP_ADDR * MAC_ADDR_LEN) {
+		DBGLOG(REQ, WARN, "Too many MC addresses\n");
+
+		return WLAN_STATUS_MULTICAST_FULL;
+	}
+
+	/* NOTE(Kevin): Windows may set u4SetBufferLen == 0 &&
+	 * pvSetBuffer == NULL to clear exist Multicast List.
+	 */
+	if (u4SetBufferLen)
+		if (pvSetBuffer == NULL) {
+			DBGLOG(REQ, ERROR, "pvSetBuffer is NULL\n");
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+		       "Fail in set multicast list! (Adapter not ready). ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	rCmdMacMcastAddr.u4NumOfGroupAddr = u4SetBufferLen / MAC_ADDR_LEN;
+	rCmdMacMcastAddr.ucBssIndex = ucBssIdx;
+	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer, u4SetBufferLen);
+
+	return wlanSendSetQueryCmd(
+		prAdapter, CMD_ID_MAC_MCAST_ADDR, TRUE, FALSE, FALSE,
+		nicCmdEventSetCommon, nicOidCmdTimeoutCommon,
+		sizeof(struct CMD_MAC_MCAST_ADDR), (uint8_t *)&rCmdMacMcastAddr,
+		pvSetBuffer, u4SetBufferLen);
+} /* end of wlanoidSetMulticastList() */
+
+#endif
+
 uint32_t
 wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
@@ -12661,6 +12744,67 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 
 	return status;
 
+}
+#endif
+
+#if CFG_SUPPORT_NAN
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is used to set the nan mode.
+*
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+* \param[in] u4SetBufferLen The length of the set buffer.
+* \param[out] pu4SetInfoLen If the call is successful, returns the number of
+*                          bytes read from the set buffer. If the call failed
+*                          due to invalid length of the set buffer, returns
+*                          the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetNANMode(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t *prEnable = (uint32_t *)NULL;
+	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg = */
+	/* (P_MSG_P2P_NETDEV_REGISTER_T)NULL; */
+	DEBUGFUNC("wlanoidSetnanMode");
+
+	if (!prAdapter || !pu4SetInfoLen || !pvSetBuffer)
+		return WLAN_STATUS_FAILURE;
+
+	*pu4SetInfoLen = sizeof(uint32_t);
+	if (u4SetBufferLen < sizeof(uint32_t)) {
+		DBGLOG(REQ, WARN, "Invalid length %ld\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	prEnable = (uint32_t *)pvSetBuffer;
+
+	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
+
+	if (*prEnable) {
+		nanSchedInit(prAdapter);
+		nanDiscInit(prAdapter);
+		if (nanLaunch(prAdapter->prGlueInfo)) {
+			/* ToDo:: ASSERT */
+			if (!prAdapter->fgIsNANRegistered) {
+				DBGLOG(REQ, ERROR,
+					"fgIsNANRegistered is NULL\n");
+				return WLAN_STATUS_FAILURE;
+			}
+		} else {
+			status = WLAN_STATUS_FAILURE;
+		}
+	} else {
+		if (prAdapter->fgIsNANRegistered)
+			nanRemove(prAdapter->prGlueInfo);
+	}
+	return status;
 }
 #endif
 

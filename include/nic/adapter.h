@@ -723,6 +723,24 @@ struct BOW_SPECIFIC_BSS_INFO {
 	uint16_t u2Reserved;	/* Reserved for Data Type Check */
 };
 
+#if CFG_SUPPORT_NAN
+struct _NAN_SPECIFIC_BSS_INFO_T {
+	uint8_t ucBssIndex;
+	uint16_t u2Reserved; /* Reserved for Data Type Check */
+	uint32_t u4ModuleUsed;
+	uint8_t aucClusterId[MAC_ADDR_LEN];
+	struct _NAN_ATTR_MASTER_INDICATION_T rMasterIndAttr;
+
+	/*
+ *	struct NAN_CRB_NEGO_CTRL_T rNanSchNegoCtrl;
+ *	struct NAN_PEER_SCHEDULE_RECORD_T
+ *			 arNanPeerSchedRecord[NAN_MAX_CONN_CFG];
+ *	struct NAN_TIMELINE_MGMT_T rNanTimelineMgmt;
+ *	struct NAN_SCHEDULER_T rNanScheduler;
+ */
+};
+#endif
+
 #if CFG_SLT_SUPPORT
 struct SLT_INFO {
 
@@ -787,6 +805,11 @@ struct WIFI_VAR {
 	struct BSS_INFO rP2pDevInfo;
 
 	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo[KAL_AIS_NUM];
+
+#if CFG_SUPPORT_NAN
+	struct _NAN_SPECIFIC_BSS_INFO_T
+		*aprNanSpecificBssInfo[NAN_BSS_INDEX_NUM];
+#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_CONNECTION_SETTINGS *prP2PConnSettings[BSS_P2P_NUM];
@@ -1169,6 +1192,27 @@ struct WIFI_VAR {
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgAllowSameBandDualSta;
+
+#if CFG_SUPPORT_NAN
+	uint8_t ucMasterPref;
+	uint8_t ucConfig5gChannel;
+	uint8_t ucChannel5gVal;
+	uint8_t ucAisQuotaVal;	 /* Unit: NAN slot */
+	uint8_t ucDftNdlQuotaVal;      /* Unit: NAN slot */
+	uint8_t ucDftRangQuotaVal;     /* Unit: NAN slot */
+	uint8_t ucDftQuotaStartOffset; /* Unit: NAN slot */
+	uint8_t ucDftNdcStartOffset;
+	uint8_t ucNanFixChnl;
+	unsigned char fgEnableNDPE;
+	uint8_t ucDftNdlQosQuotaVal;    /* Unit: NAN slot */
+	uint16_t u2DftNdlQosLatencyVal; /* Unit: NAN slot */
+	uint8_t ucNanBandwidth;
+	uint8_t fgEnNanVHT;
+	uint8_t ucNanFtmBw;
+	uint8_t ucNanDiscBcnInterval;
+	uint8_t ucNanCommittedDw;
+	unsigned char fgNoPmf;
+#endif
 };
 
 /* cnm_timer module */
@@ -1508,6 +1552,20 @@ struct ADAPTER {
 
 	/* WLAN Info for DRIVER_CORE OID query */
 	struct WLAN_INFO rWlanInfo;
+
+#if CFG_SUPPORT_NAN
+	enum ENUM_NET_REG_STATE rNanNetRegState;
+	unsigned char fgIsNANRegistered;
+	unsigned char fgIsNANfromHAL;
+	bool fgIsNanSendRequestToCnm;
+	uint8_t ucNanReqTokenId;
+
+	/* Container for Data Engine */
+	struct _NAN_DATA_PATH_INFO_T rDataPathInfo;
+
+	/* Container for Ranging Engine */
+	struct _NAN_RANGING_INFO_T rRangingInfo;
+#endif
 
 #if CFG_ENABLE_WIFI_DIRECT
 	uint8_t u4P2pMode;

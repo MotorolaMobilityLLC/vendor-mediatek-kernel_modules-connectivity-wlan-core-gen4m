@@ -270,6 +270,11 @@
 #include <linux/time.h>
 #include <linux/fb.h>
 
+#if CFG_SUPPORT_NAN
+#include "nan_base.h"
+#include "nan_intf.h"
+#endif
+
 #if (CONFIG_WLAN_SERVICE == 1)
 #include "agent.h"
 #endif
@@ -356,6 +361,12 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_RST_END_BIT 19
 
 #endif
+
+#if CFG_SUPPORT_NAN /* notice the bit differnet with 7668 */
+#define GLUE_FLAG_NAN_MULTICAST_BIT (20)
+#define GLUE_FLAG_NAN_MULTICAST BIT(20)
+#endif
+
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
 #define GLUE_BOW_DEVICE_NAME        "ampc0"
@@ -719,6 +730,9 @@ struct GLUE_INFO {
 	struct iw_statistics rP2pIwStats;
 #endif
 #endif
+#if CFG_SUPPORT_NAN
+	struct _GL_NAN_INFO_T *aprNANDevInfo[NAN_BSS_INDEX_NUM];
+#endif
 
 	/* NVRAM availability */
 	u_int8_t fgNvramAvailable;
@@ -827,6 +841,10 @@ struct GLUE_INFO {
 	/*service for test mode*/
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct service rService;
+#endif
+
+#if CFG_SUPPORT_NAN
+	struct sock *NetLinkSK;
 #endif
 };
 
@@ -948,6 +966,9 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	spinlock_t napi_spinlock;
 #endif
 	struct net_device_stats stats;
+#if CFG_SUPPORT_NAN
+	unsigned char ucIsNan;
+#endif
 };
 
 struct PACKET_PRIVATE_DATA {
@@ -1408,6 +1429,10 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
 int set_p2p_mode_handler(struct net_device *netdev,
 			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);
+#endif
+
+#if CFG_SUPPORT_NAN
+int set_nan_handler(struct net_device *netdev, uint32_t ucEnable);
 #endif
 
 #if CFG_ENABLE_UNIFY_WIPHY

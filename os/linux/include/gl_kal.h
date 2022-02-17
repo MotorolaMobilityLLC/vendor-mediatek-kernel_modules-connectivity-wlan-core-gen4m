@@ -276,6 +276,9 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 
 	SPIN_LOCK_BSSLIST_FW,
 	SPIN_LOCK_BSSLIST_CFG,
+#if CFG_SUPPORT_NAN
+	SPIN_LOCK_NAN_NEGO_CRB,
+#endif
 	SPIN_LOCK_NUM
 };
 
@@ -1195,6 +1198,15 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 			     *prGlueInfo, IN void *pvPkt);
 
+#if CFG_SUPPORT_NAN
+int kalIndicateNetlink2User(IN struct GLUE_INFO *prGlueInfo, IN void *pvBuf,
+			    IN uint32_t u4BufLen);
+void kalCreateUserSock(IN struct GLUE_INFO *prGlueInfo);
+void kalReleaseUserSock(IN struct GLUE_INFO *prGlueInfo);
+void kalNanIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo,
+				     IN uint32_t eStatus, IN uint8_t ucRoleIdx);
+#endif
+
 void
 kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			     *prGlueInfo,
@@ -1818,6 +1830,10 @@ void kalRemoveBss(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 			   IN uint8_t uBssIndex);
+#endif
+
+#if CFG_SUPPORT_NAN
+void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer);
 #endif
 
 int kalWlanUeventInit(void);
