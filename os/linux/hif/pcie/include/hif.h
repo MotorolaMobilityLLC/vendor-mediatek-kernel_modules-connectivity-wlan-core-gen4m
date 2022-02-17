@@ -350,6 +350,8 @@ void glGetDev(void *ctx, struct device **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
+struct mt66xx_hif_driver_data *get_platform_driver_data(void);
+
 void glGetChipInfo(void **prChipInfo);
 
 /*******************************************************************************
