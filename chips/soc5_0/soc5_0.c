@@ -1776,10 +1776,9 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
-	HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW, &value);
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value |= 0x00000001;
-	HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-		value);
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
 
 	/* Check CONNSYS version ID
 	 * (polling "10 times" and each polling interval is "1ms")
@@ -1787,7 +1786,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	 * Data: 0x02060002
 	 * Action: polling
 	 */
-	HAL_MCR_RD(prAdapter, CONN_HW_VER_ADDR_CONNCYS_VIEW, &value);
+	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
 	check = 0;
 	polling_count = 0;
 	while (value != CONNSYS_VERSION_ID) {
@@ -1797,7 +1796,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 			break;
 		}
 		udelay(1000);
-		HAL_MCR_RD(prAdapter, CONN_HW_VER_ADDR_CONNCYS_VIEW, &value);
+		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
 		polling_count++;
 	}
 	if (check != 0) {
@@ -1821,16 +1820,14 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		}
 	}
 
-	HAL_MCR_RD(prAdapter, AP2WF_PCCIF_RCHNUM_CONNCYS_VIEW, &sw_int_value);
+	wf_ioremap_read(AP2WF_PCCIF_RCHNUM, &sw_int_value);
 	DBGLOG(HAL, TRACE, "SW INT happened!!!!!(0x%x)\n", sw_int_value);
-	HAL_MCR_WR(prAdapter, AP2WF_PCCIF_ACK_CONNCYS_VIEW, sw_int_value);
+	wf_ioremap_write(AP2WF_PCCIF_ACK, sw_int_value);
 
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
-	HAL_MCR_RD(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-		&value);
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
-	HAL_MCR_WR(prAdapter, CONN_INFRA_WAKEUP_WF_ADDR_CONNCYS_VIEW,
-		value);
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	if (sw_int_value & BIT(0))
