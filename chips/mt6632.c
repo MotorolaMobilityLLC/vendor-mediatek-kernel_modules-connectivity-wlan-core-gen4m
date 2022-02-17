@@ -92,6 +92,7 @@ ECO_INFO_T mt6632_eco_table[] = {
 struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.chip_id = MT6632_CHIP_ID,
 	.sw_sync0 = MT6632_SW_SYNC0,
+	.sw_ready_bits = WIFI_FUNC_READY_BITS,
 	.sw_ready_bit_offset = MT6632_SW_SYNC0_RDY_OFFSET,
 	.patch_addr = MT6632_PATCH_START_ADDR,
 	.is_pcie_32dw_read = MT6632_IS_PCIE_32DW_READ, /* Litien */
