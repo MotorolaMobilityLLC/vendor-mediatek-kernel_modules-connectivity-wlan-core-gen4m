@@ -936,10 +936,6 @@ int wlanPreCalPwrOn(void)
 			HAL_PHY_ACTION_TAG_NVRAM,
 			0);
 
-		wlanSendPhyAction(prAdapter,
-			HAL_PHY_ACTION_TAG_COM_FEM,
-			0);
-
 		eFailReason = POWER_ON_INIT_DONE;
 	} while (FALSE);
 
