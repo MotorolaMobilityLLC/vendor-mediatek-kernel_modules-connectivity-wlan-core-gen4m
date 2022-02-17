@@ -4962,6 +4962,11 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 
 	/*ignore the hint from IE*/
 	prWiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE;
+
+#ifdef CFG_SUPPORT_DISABLE_BCN_HINTS
+	/*disable beacon hint to avoid channel flag be changed*/
+	prWiphy->regulatory_flags |= REGULATORY_DISABLE_BEACON_HINTS;
+#endif
 #endif
 
 
