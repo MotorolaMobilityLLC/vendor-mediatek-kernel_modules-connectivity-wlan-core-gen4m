@@ -246,7 +246,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prScanParam = &prScanInfo->rScanParam;
+	prScanParam = &(prScanInfo->rScanParam);
 
 	prCmdScanReq = kalMemAlloc(
 		sizeof(struct CMD_SCAN_REQ_V2), VIR_MEM_TYPE);
@@ -261,13 +261,44 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
 	prCmdScanReq->ucScanType = (uint8_t) prScanParam->eScanType;
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
-	prCmdScanReq->ucSSIDNum = prScanParam->ucSSIDNum;
+	prCmdScanReq->auVersion[0] = 1;
 
-	for (i = 0; i < prScanParam->ucSSIDNum; i++) {
+	/* Set SSID to scan request */
+	if (prScanParam->ucSSIDNum <= SCAN_CMD_SSID_NUM) {
+		prCmdScanReq->ucSSIDNum = prScanParam->ucSSIDNum;
+		prCmdScanReq->ucSSIDExtNum = 0;
+	} else if (prScanParam->ucSSIDNum <= CFG_SCAN_SSID_MAX_NUM) {
+		prCmdScanReq->ucSSIDNum = SCAN_CMD_SSID_NUM;
+		prCmdScanReq->ucSSIDExtNum = prScanParam->ucSSIDNum
+			- SCAN_CMD_SSID_NUM;
+	} else {
+		DBGLOG(SCN, WARN, "Too many SSID %u\n",
+					prScanParam->ucSSIDNum);
+		prCmdScanReq->ucSSIDNum = SCAN_CMD_SSID_NUM;
+		prCmdScanReq->ucSSIDExtNum = SCAN_CMD_EXT_SSID_NUM;
+	}
+
+	for (i = 0; i < prCmdScanReq->ucSSIDNum; i++) {
 		COPY_SSID(prCmdScanReq->arSSID[i].aucSsid,
 			prCmdScanReq->arSSID[i].u4SsidLen,
 			prScanParam->aucSpecifiedSSID[i],
 			prScanParam->ucSpecifiedSSIDLen[i]);
+		DBGLOG(SCN, TRACE,
+			"Ssid=%s, SsidLen=%d\n",
+			prCmdScanReq->arSSID[i].aucSsid,
+			prCmdScanReq->arSSID[i].u4SsidLen);
+	}
+	for (i = 0; i < prCmdScanReq->ucSSIDExtNum; i++) {
+		COPY_SSID(prCmdScanReq->arSSIDExtend[i].aucSsid,
+			prCmdScanReq->arSSIDExtend[i].u4SsidLen,
+			prScanParam->aucSpecifiedSSID
+			[prCmdScanReq->ucSSIDNum+i],
+			prScanParam->ucSpecifiedSSIDLen
+			[prCmdScanReq->ucSSIDNum+i]);
+		DBGLOG(SCN, TRACE,
+			"Ssid=%s, SsidLen=%d\n",
+			prCmdScanReq->arSSIDExtend[i].aucSsid,
+			prCmdScanReq->arSSIDExtend[i].u4SsidLen);
 	}
 
 	prCmdScanReq->u2ProbeDelayTime
@@ -275,13 +306,26 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucChannelType
 		= (uint8_t) prScanParam->eScanChannel;
 
+	/* Set channel info to scan request */
 	if (prScanParam->eScanChannel == SCAN_CHANNEL_SPECIFIED) {
-		/* P2P would use:
-		 * 1. Specified Listen Channel of passive scan for LISTEN state.
-		 * 2. Specified Listen Channel of Target Device of active scan
-		 *    for SEARCH state. (Target != NULL)
-		 */
-		prCmdScanReq->ucChannelListNum = prScanParam->ucChannelListNum;
+		if (prScanParam->ucChannelListNum <= SCAN_CMD_CHNL_NUM) {
+			prCmdScanReq->ucChannelListNum =
+				prScanParam->ucChannelListNum;
+			prCmdScanReq->ucChannelListExtNum = 0;
+		} else if (prScanParam->ucChannelListNum <=
+				MAXIMUM_OPERATION_CHANNEL_LIST) {
+			prCmdScanReq->ucChannelListNum =
+				SCAN_CMD_CHNL_NUM;
+			prCmdScanReq->ucChannelListExtNum =
+				prScanParam->ucChannelListNum -
+				SCAN_CMD_CHNL_NUM;
+		} else {
+			DBGLOG(SCN, WARN, "Too many Channel %u\n",
+				prScanParam->ucChannelListNum);
+			prCmdScanReq->ucChannelListNum = 0;
+			prCmdScanReq->ucChannelListExtNum = 0;
+			prCmdScanReq->ucChannelType = SCAN_CHANNEL_FULL;
+		}
 
 		for (i = 0; i < prCmdScanReq->ucChannelListNum; i++) {
 			prCmdScanReq->arChannelList[i].ucBand
@@ -290,6 +334,19 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 
 			prCmdScanReq->arChannelList[i].ucChannelNum
 				= (uint8_t) prScanParam->arChnlInfoList[i]
+					.ucChannelNum;
+		}
+		for (i = 0; i < prCmdScanReq->ucChannelListExtNum; i++) {
+			prCmdScanReq->arChannelListExtend[i].ucBand
+				= (uint8_t)prScanParam
+					->arChnlInfoList
+					[prCmdScanReq->ucChannelListNum+i]
+					.eBand;
+
+			prCmdScanReq->arChannelListExtend[i].ucChannelNum
+				= (uint8_t) prScanParam
+					->arChnlInfoList
+					[prCmdScanReq->ucChannelListNum+i]
 					.ucChannelNum;
 		}
 	}
@@ -307,14 +364,17 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
 #define __STR_FMT__ \
-"ScanReqV2: ScanType=%d, SSIDType=%d, Num=%d, ChannelType=%d, Num=%d"
+"ScanReqV2: ScanType=%d,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u"
 
 	DBGLOG(SCN, INFO, __STR_FMT__,
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucSSIDType,
 		prCmdScanReq->ucSSIDNum,
+		prCmdScanReq->ucSSIDExtNum,
 		prCmdScanReq->ucChannelType,
-		prCmdScanReq->ucChannelListNum);
+		prCmdScanReq->ucChannelListNum,
+		prCmdScanReq->ucChannelListExtNum,
+		prCmdScanReq->ucSeqNum);
 #undef __STR_FMT__
 
 	wlanSendSetQueryCmd(prAdapter,
@@ -324,9 +384,10 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		FALSE,
 		NULL,
 		NULL,
-		OFFSET_OF(struct CMD_SCAN_REQ_V2, aucIE)
-			+ prCmdScanReq->u2IELen,
+		sizeof(struct CMD_SCAN_REQ_V2),
 		(uint8_t *)prCmdScanReq, NULL, 0);
+	DBGLOG(SCN, TRACE, "Send %zu bytes\n", sizeof(struct CMD_SCAN_REQ_V2));
+
 
 	kalMemFree(prCmdScanReq, VIR_MEM_TYPE, sizeof(struct CMD_SCAN_REQ_V2));
 
@@ -705,14 +766,15 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	if (fgIsNewVersion) {
 #define __STR_FMT__ \
-"scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u]\n"
+"scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n"
 
 		DBGLOG(SCN, INFO, __STR_FMT__,
 			prScanDone->ucScanDoneVersion,
 			sizeof(struct EVENT_SCAN_DONE),
 			prScanDone->ucCompleteChanCount,
 			prScanDone->ucCurrentState,
-			prScanDone->u4ScanDurBcnCnt);
+			prScanDone->u4ScanDurBcnCnt,
+			prScanDone->ucSeqNum);
 #undef __STR_FMT__
 
 		if (prScanDone->ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {

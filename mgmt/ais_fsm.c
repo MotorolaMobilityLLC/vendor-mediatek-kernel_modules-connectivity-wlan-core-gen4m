@@ -1691,7 +1691,9 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 	eNextState = prAisFsmInfo->eCurrentState;
 
 	if (ucSeqNumOfCompMsg != prAisFsmInfo->ucSeqNumOfScanReq) {
-		DBGLOG(AIS, WARN, "SEQ NO of AIS SCN DONE MSG is not matched.\n");
+		DBGLOG(AIS, WARN,
+			"SEQ NO of AIS SCN DONE MSG is not matched %u %u\n",
+			ucSeqNumOfCompMsg, prAisFsmInfo->ucSeqNumOfScanReq);
 	} else {
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 		switch (prAisFsmInfo->eCurrentState) {
@@ -2046,7 +2048,7 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 			eNextState = aisFsmJoinCompleteAction(prAdapter, prMsgHdr);
 #if DBG
 		else
-			DBGLOG(AIS, WARN, "SEQ NO of AIS JOIN COMP MSG is not matched.\n");
+			DBGLOG(AIS, WARN, "SEQ NO of AIS JOIN COMP MSG is not matched\n");
 #endif /* DBG */
 	}
 	/* Support AP Selection*/
