@@ -113,8 +113,9 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
-				  struct CMD_INFO *prCmdInfo, uint8_t ucTC);
+static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
+		struct GLUE_INFO *prGlueInfo, struct CMD_INFO *prCmdInfo,
+		uint8_t ucTC);
 static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 				   struct MSDU_INFO *prMsduInfo);
 static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo);
@@ -517,7 +518,7 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
 
 }
 
-u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -531,8 +532,9 @@ u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	return halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
 }
 
-static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
-				  struct CMD_INFO *prCmdInfo, uint8_t ucTC)
+static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
+		struct GLUE_INFO *prGlueInfo, struct CMD_INFO *prCmdInfo,
+		uint8_t ucTC)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_CMD_REQ *prTxReq;
@@ -544,16 +546,14 @@ static bool kalDevWriteCmdByQueue(struct GLUE_INFO *prGlueInfo,
 	if (prTxReq == NULL) {
 		DBGLOG(HAL, ERROR, "kmalloc() TX_CMD_REQ error\n");
 		halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
-		goto error;
+		return CMD_TX_RESULT_FAILED;
 	}
 
 	prTxReq->prCmdInfo = prCmdInfo;
 	prTxReq->ucTC = ucTC;
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxCmdQ);
 
-error:
-
-	return true;
+	return CMD_TX_RESULT_QUEUED;
 }
 
 bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
@@ -561,15 +561,24 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxReq;
+	enum ENUM_CMD_TX_RESULT ret;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
-		if (prTxReq->prCmdInfo)
-			halWpdmaWriteCmd(prGlueInfo,
+		if (prTxReq->prCmdInfo) {
+			ret = halWpdmaWriteCmd(prGlueInfo,
 				prTxReq->prCmdInfo, prTxReq->ucTC);
+			if (ret == CMD_TX_RESULT_SUCCESS)
+				if (prTxReq->prCmdInfo->pfHifTxCmdDoneCb)
+					prTxReq->prCmdInfo->pfHifTxCmdDoneCb(
+						prGlueInfo->prAdapter,
+						prTxReq->prCmdInfo);
+			else
+				DBGLOG(HAL, ERROR, "ret: %d\n", ret);
+		}
 		list_del(prCur);
 		kfree(prTxReq);
 	}
