@@ -952,6 +952,8 @@ struct mt66xx_chip_info {
 
 	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
 	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);/* load firmware bin priority */
+	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
+	void (*asicDevInit)(IN P_ADAPTER_T prAdapter);
 };
 
 struct mt66xx_hif_driver_data {

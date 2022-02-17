@@ -121,29 +121,6 @@ PCIE_CHIP_CR_MAPPING connac_bus2chip_cr_mapping[] = {
 
 	{0x0, 0x0, 0x0}
 };
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Set bypass dmashdl resource control for firmware download.
- *
- * @param[in] fgEnable 1 for fw download, 0 for normal data operation.
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-VOID enableRing3BypassMode(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
-{
-	P_GLUE_INFO_T prGlueInfo = prAdapter->prGlueInfo;
-	WPDMA_GLO_CFG_STRUCT GloCfg;
-
-	ASSERT(prAdapter);
-
-	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
-
-	GloCfg.field_conn.bypass_dmashdl_txring3 = fgEnable;
-
-	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
-}
 #endif /* _HIF_PCIE */
 
 BUS_INFO bus_info_connac = {
@@ -154,7 +131,6 @@ BUS_INFO bus_info_connac = {
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
-	.enableFWDownload = enableRing3BypassMode,
 #endif /* _HIF_PCIE */
 };
 
@@ -167,6 +143,8 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.patch_addr = CONNAC_PATCH_START_ADDR,
 	.eco_info = connac_eco_table,
 	.constructFirmwarePrio = NULL,
+	.asicEnableFWDownload = asicEnableFWDownload,
+	.asicDevInit = asicDevInit,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_connac = {
