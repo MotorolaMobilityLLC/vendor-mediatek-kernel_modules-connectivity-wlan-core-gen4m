@@ -1526,6 +1526,36 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 			if ((fgSyncToFW) && (eOpMode != OP_MODE_ACCESS_POINT))
 				nicUpdateBss(prAdapter,
 					prP2pBssInfo->ucBssIndex);
+		} else if (prP2pBssInfo->eCurrentOPMode == eOpMode &&
+				eOpMode == OP_MODE_INFRASTRUCTURE) {
+			/*
+			 * Sometimes the interface is changed from P2P_CLIENT
+			 * to STATION, but GC's connection flow is still in
+			 * processing. We must force stop previous connection
+			 * request to avoid unexpected behavior.
+			 */
+			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+					(struct P2P_ROLE_FSM_INFO *) NULL;
+			struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
+					(struct P2P_CONNECTION_REQ_INFO *) NULL;
+
+			prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+					prAdapter, prP2pBssInfo->u4PrivateData);
+			if (prP2pRoleFsmInfo == NULL)
+				break;
+
+			prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+			if (prConnReqInfo == NULL)
+				break;
+
+			if (prConnReqInfo->eConnRequest ==
+					P2P_CONNECTION_TYPE_GC) {
+				log_dbg(P2P, INFO, "Force stop connection request since mode switch.\n");
+				prConnReqInfo->eConnRequest =
+						P2P_CONNECTION_TYPE_IDLE;
+				p2pRoleFsmRunEventAbort(prAdapter,
+						prP2pRoleFsmInfo);
+			}
 		}
 
 	} while (FALSE);
