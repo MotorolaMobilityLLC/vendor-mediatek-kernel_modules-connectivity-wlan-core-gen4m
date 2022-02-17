@@ -229,6 +229,7 @@ extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;
 extern bool g_IsTriggerTimeout;
 extern u_int8_t fgIsResetting;
+extern u_int8_t g_fgRstRecover;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
