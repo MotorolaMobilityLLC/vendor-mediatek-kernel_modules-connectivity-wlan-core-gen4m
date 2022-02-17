@@ -50,48 +50,48 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/cnm_mem.c#2
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/cnm_mem.c#2
+ */
 
 /*! \file   "cnm_mem.c"
-*    \brief  This file contain the management function of packet buffers and
-*	    generic memory alloc/free functioin for mailbox message.
-*
-*	    A data packet has a fixed size of buffer, but a management
-*	    packet can be equipped with a variable size of buffer.
-*/
+ *    \brief  This file contain the management function of packet buffers and
+ *    generic memory alloc/free functioin for mailbox message.
+ *
+ *    A data packet has a fixed size of buffer, but a management
+ *    packet can be equipped with a variable size of buffer.
+ */
 
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 static uint8_t *apucStaRecType[STA_TYPE_INDEX_NUM] = {
 	(uint8_t *) "LEGACY",
@@ -129,56 +129,62 @@ const uint8_t aucValidDataRate[] = {
 #endif
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec);
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
-static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
 static void
 cnmStaSendRemoveCmd(struct ADAPTER *prAdapter,
-		    enum ENUM_STA_REC_CMD_ACTION eActionType, uint8_t ucStaRecIndex, uint8_t ucBssIndex);
+	enum ENUM_STA_REC_CMD_ACTION eActionType, uint8_t ucStaRecIndex,
+	uint8_t ucBssIndex);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter, uint32_t u4Length, uint8_t *pucStr)
+struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
+	uint32_t u4Length, uint8_t *pucStr)
 {
 	struct MSDU_INFO *prMsduInfo;
 
 	prMsduInfo = cnmPktAlloc(prAdapter, u4Length);
-	DBGLOG(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n", prMsduInfo, pucStr);
+	DBGLOG(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n",
+		prMsduInfo, pucStr);
 
 	return prMsduInfo;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, uint8_t *pucStr)
+void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+	uint8_t *pucStr)
 {
 	DBGLOG(MEM, LOUD, "Free MSDU_INFO[0x%p] by [%s]\n", prMsduInfo, pucStr);
 
@@ -187,12 +193,12 @@ void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo, 
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 {
@@ -211,13 +217,17 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 	if (prMsduInfo) {
 		if (u4Length) {
-			prMsduInfo->prPacket = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4Length);
+			prMsduInfo->prPacket = cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, u4Length);
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 
 			if (prMsduInfo->prPacket == NULL) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
-				QUEUE_INSERT_TAIL(prQueList, &prMsduInfo->rQueEntry);
-				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
+				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TX_MSDU_INFO_LIST);
+				QUEUE_INSERT_TAIL(prQueList,
+					&prMsduInfo->rQueEntry);
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_TX_MSDU_INFO_LIST);
 				prMsduInfo = NULL;
 			}
 		} else {
@@ -230,9 +240,14 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 		DBGLOG(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
 
 #if CFG_DBG_MGT_BUF
-		DBGLOG(MEM, WARN, "rMgtBufInfo: alloc#=%ld, free#=%ld, null#=%ld\n",
-		       prAdapter->rMgtBufInfo.u4AllocCount,
-		       prAdapter->rMgtBufInfo.u4FreeCount, prAdapter->rMgtBufInfo.u4AllocNullCount);
+#define __STR_FMT__ \
+"rMgtBufInfo: alloc#=%ld, free#=%ld, null#=%ld\n"
+
+		DBGLOG(MEM, WARN, __STR_FMT__,
+			prAdapter->rMgtBufInfo.u4AllocCount,
+			prAdapter->rMgtBufInfo.u4FreeCount,
+			prAdapter->rMgtBufInfo.u4AllocNullCount);
+#undef __STR_FMT__
 #endif
 
 		DBGLOG(MEM, WARN, "\n");
@@ -244,12 +259,12 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 {
@@ -277,12 +292,12 @@ void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is used to initial the MGMT/MSG memory pool.
-*
-* \param (none)
-*
-* \return (none)
-*/
+ * \brief This function is used to initial the MGMT/MSG memory pool.
+ *
+ * \param (none)
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void cnmMemInit(struct ADAPTER *prAdapter)
 {
@@ -294,7 +309,8 @@ void cnmMemInit(struct ADAPTER *prAdapter)
 	prBufInfo->pucBuf = prAdapter->pucMgtBufCached;
 
 	/* Setup available memory blocks. 1 indicates FREE */
-	prBufInfo->rFreeBlocksBitmap = (uint32_t) BITS(0, MAX_NUM_OF_BUF_BLOCKS - 1);
+	prBufInfo->rFreeBlocksBitmap = (uint32_t) BITS(0,
+		MAX_NUM_OF_BUF_BLOCKS - 1);
 
 	/* Initialize Message buffer pool */
 	prBufInfo = &prAdapter->rMsgBufInfo;
@@ -302,38 +318,43 @@ void cnmMemInit(struct ADAPTER *prAdapter)
 	prBufInfo->pucBuf = &prAdapter->aucMsgBuf[0];
 
 	/* Setup available memory blocks. 1 indicates FREE */
-	prBufInfo->rFreeBlocksBitmap = (uint32_t) BITS(0, MAX_NUM_OF_BUF_BLOCKS - 1);
+	prBufInfo->rFreeBlocksBitmap = (uint32_t) BITS(0,
+		MAX_NUM_OF_BUF_BLOCKS - 1);
 
 	return;
 
-}				/* end of cnmMemInit() */
+}	/* end of cnmMemInit() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Allocate MGMT/MSG memory pool.
-*
-* \param[in] eRamType       Target RAM type.
-*                           TCM blk_sz= 16bytes, BUF blk_sz= 256bytes
-* \param[in] u4Length       Length of the buffer to allocate.
-*
-* \retval !NULL    Pointer to the start address of allocated memory.
-* \retval NULL     Fail to allocat memory
-*/
+ * \brief Allocate MGMT/MSG memory pool.
+ *
+ * \param[in] eRamType       Target RAM type.
+ *                           TCM blk_sz= 16bytes, BUF blk_sz= 256bytes
+ * \param[in] u4Length       Length of the buffer to allocate.
+ *
+ * \retval !NULL    Pointer to the start address of allocated memory.
+ * \retval NULL     Fail to allocat memory
+ */
 /*----------------------------------------------------------------------------*/
-void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, IN uint32_t u4Length)
+void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
+	IN uint32_t u4Length)
 {
 	struct BUF_INFO *prBufInfo;
 	uint32_t rRequiredBitmap;
 	uint32_t u4BlockNum;
 	uint32_t i, u4BlkSzInPower;
 	void *pvMemory;
+	enum ENUM_SPIN_LOCK_CATEGORY_E eLockBufCat;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 
 	if (u4Length == 0) {
-		DBGLOG(MEM, WARN, "%s: Length to be allocated is ZERO, skip!\n", __func__);
+		DBGLOG(MEM, WARN,
+			"%s: Length to be allocated is ZERO, skip!\n",
+			__func__);
 		return NULL;
 	}
 
@@ -342,7 +363,7 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 		u4BlkSzInPower = MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 
 		u4BlockNum = (u4Length + MSG_BUF_BLOCK_SIZE - 1)
-		    >> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
+			>> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 
 		ASSERT(u4BlockNum <= MAX_NUM_OF_BUF_BLOCKS);
 	} else {
@@ -352,7 +373,7 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 		u4BlkSzInPower = MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 
 		u4BlockNum = (u4Length + MGT_BUF_BLOCK_SIZE - 1)
-		    >> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
+			>> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 
 		ASSERT(u4BlockNum <= MAX_NUM_OF_BUF_BLOCKS);
 	}
@@ -361,7 +382,12 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 	prBufInfo->u4AllocCount++;
 #endif
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
+	if (eRamType == RAM_TYPE_MSG)
+		eLockBufCat = SPIN_LOCK_MSG_BUF;
+	else
+		eLockBufCat = SPIN_LOCK_MGT_BUF;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, eLockBufCat);
 
 	if ((u4BlockNum > 0) && (u4BlockNum <= MAX_NUM_OF_BUF_BLOCKS)) {
 
@@ -372,20 +398,25 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 
 			/* Have available memory blocks */
 			if ((prBufInfo->rFreeBlocksBitmap & rRequiredBitmap)
-			    == rRequiredBitmap) {
+				== rRequiredBitmap) {
 
-				/* Clear corresponding bits of allocated memory blocks */
-				prBufInfo->rFreeBlocksBitmap &= ~rRequiredBitmap;
+				/* Clear corresponding bits of allocated
+				 * memory blocks
+				 */
+				prBufInfo->rFreeBlocksBitmap
+					&= ~rRequiredBitmap;
 
 				/* Store how many blocks be allocated */
-				prBufInfo->aucAllocatedBlockNum[i] = (uint8_t) u4BlockNum;
+				prBufInfo->aucAllocatedBlockNum[i]
+					= (uint8_t) u4BlockNum;
 
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-						      eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
+				KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
-				/* Return the start address of allocated memory */
-				return (void *) (prBufInfo->pucBuf + (i << u4BlkSzInPower));
-
+				/* Return the start address of
+				 * allocated memory
+				 */
+				return (void *) (prBufInfo->pucBuf
+					+ (i << u4BlkSzInPower));
 			}
 
 			rRequiredBitmap <<= 1;
@@ -393,7 +424,7 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 	}
 
 	/* kalMemAlloc() shall not included in spin_lock */
-	KAL_RELEASE_SPIN_LOCK(prAdapter, eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
 #ifdef LINUX
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
@@ -410,16 +441,16 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType, 
 
 	return pvMemory;
 
-}				/* end of cnmMemAlloc() */
+}	/* end of cnmMemAlloc() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Release memory to MGT/MSG memory pool.
-*
-* \param pucMemory  Start address of previous allocated memory
-*
-* \return (none)
-*/
+ * \brief Release memory to MGT/MSG memory pool.
+ *
+ * \param pucMemory  Start address of previous allocated memory
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 {
@@ -427,6 +458,7 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 	uint32_t u4BlockIndex;
 	uint32_t rAllocatedBlocksBitmap;
 	enum ENUM_RAM_TYPE eRamType;
+	enum ENUM_SPIN_LOCK_CATEGORY_E eLockBufCat;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -436,19 +468,26 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 		return;
 
 	/* Judge it belongs to which RAM type */
-	if (((unsigned long) pvMemory >= (unsigned long)&prAdapter->aucMsgBuf[0]) &&
-	    ((unsigned long) pvMemory <= (unsigned long)&prAdapter->aucMsgBuf[MSG_BUFFER_SIZE - 1])) {
+	if (((unsigned long) pvMemory
+		>= (unsigned long)&prAdapter->aucMsgBuf[0])
+		&& ((unsigned long) pvMemory
+		<= (unsigned long)&prAdapter->aucMsgBuf[MSG_BUFFER_SIZE - 1])) {
 
 		prBufInfo = &prAdapter->rMsgBufInfo;
-		u4BlockIndex = ((unsigned long) pvMemory - (unsigned long) prBufInfo->pucBuf)
-		    >> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
+		u4BlockIndex = ((unsigned long) pvMemory
+			- (unsigned long) prBufInfo->pucBuf)
+			>> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_MSG;
-	} else if (((unsigned long) pvMemory >= (unsigned long) prAdapter->pucMgtBufCached) &&
-		   ((unsigned long) pvMemory <= ((unsigned long) prAdapter->pucMgtBufCached + MGT_BUFFER_SIZE - 1))) {
+	} else if (((unsigned long) pvMemory
+		>= (unsigned long) prAdapter->pucMgtBufCached)
+		&& ((unsigned long) pvMemory
+		<= ((unsigned long) prAdapter->pucMgtBufCached
+		 + MGT_BUFFER_SIZE - 1))) {
 		prBufInfo = &prAdapter->rMgtBufInfo;
-		u4BlockIndex = ((unsigned long) pvMemory - (unsigned long) prBufInfo->pucBuf)
-		    >> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
+		u4BlockIndex = ((unsigned long) pvMemory
+			- (unsigned long) prBufInfo->pucBuf)
+			>> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_BUF;
 	} else {
@@ -456,7 +495,9 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 		/* For Linux, it is supported because size is not needed */
 		kalMemFree(pvMemory, PHY_MEM_TYPE, 0);
 #else
-		/* For Windows, it is not supported because of no size argument */
+		/* For Windows, it is not supported because of
+		 * no size argument
+		 */
 		ASSERT(0);
 #endif
 
@@ -466,7 +507,12 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 		return;
 	}
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
+	if (eRamType == RAM_TYPE_MSG)
+		eLockBufCat = SPIN_LOCK_MSG_BUF;
+	else
+		eLockBufCat = SPIN_LOCK_MGT_BUF;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, eLockBufCat);
 
 #if CFG_DBG_MGT_BUF
 	prBufInfo->u4FreeCount++;
@@ -475,7 +521,8 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 	/* Convert number of block into bit cluster */
 	ASSERT(prBufInfo->aucAllocatedBlockNum[u4BlockIndex] > 0);
 
-	rAllocatedBlocksBitmap = BITS(0, prBufInfo->aucAllocatedBlockNum[u4BlockIndex] - 1);
+	rAllocatedBlocksBitmap
+		= BITS(0, prBufInfo->aucAllocatedBlockNum[u4BlockIndex] - 1);
 	rAllocatedBlocksBitmap <<= u4BlockIndex;
 
 	/* Clear saved block count for this memory segment */
@@ -484,20 +531,20 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 	/* Set corresponding bit of released memory block */
 	prBufInfo->rFreeBlocksBitmap |= rAllocatedBlocksBitmap;
 
-	KAL_RELEASE_SPIN_LOCK(prAdapter, eRamType == RAM_TYPE_MSG ? SPIN_LOCK_MSG_BUF : SPIN_LOCK_MGT_BUF);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
 	return;
 
-}				/* end of cnmMemFree() */
+}	/* end of cnmMemFree() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void cnmStaRecInit(struct ADAPTER *prAdapter)
 {
@@ -517,14 +564,15 @@ void cnmStaRecInit(struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter, enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
+struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
+	enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t i, k;
@@ -561,9 +609,12 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter, enum ENUM_STA_TYPE 
 #endif
 
 			for (k = 0; k < NUM_OF_PER_STA_TX_QUEUES; k++) {
-				QUEUE_INITIALIZE(&prStaRec->arTxQueue[k]);
-				QUEUE_INITIALIZE(&prStaRec->arPendingTxQueue[k]);
-				prStaRec->aprTargetQueue[k] = &prStaRec->arTxQueue[k];
+				QUEUE_INITIALIZE(
+					&prStaRec->arTxQueue[k]);
+				QUEUE_INITIALIZE(
+					&prStaRec->arPendingTxQueue[k]);
+				prStaRec->aprTargetQueue[k]
+					= &prStaRec->arTxQueue[k];
 			}
 
 			break;
@@ -591,12 +642,12 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter, enum ENUM_STA_TYPE 
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
 void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 {
@@ -614,7 +665,8 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 
 	cnmStaRoutinesForAbort(prAdapter, prStaRec);
 
-	cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA, ucStaRecIndex, ucBssIndex);
+	cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
+		ucStaRecIndex, ucBssIndex);
 #if DSCP_SUPPORT
 	if (prStaRec->qosMapSet) {
 		QosMapSetRelease(prStaRec);
@@ -625,14 +677,15 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
+static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	ASSERT(prAdapter);
 
@@ -647,7 +700,8 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter, struct STA_RECORD 
 	prStaRec->fgSetPwrMgtBit = FALSE;
 
 	if (prStaRec->pucAssocReqIe) {
-		kalMemFree(prStaRec->pucAssocReqIe, VIR_MEM_TYPE, prStaRec->u2AssocReqIeLen);
+		kalMemFree(prStaRec->pucAssocReqIe,
+			VIR_MEM_TYPE, prStaRec->u2AssocReqIeLen);
 		prStaRec->pucAssocReqIe = NULL;
 		prStaRec->u2AssocReqIeLen = 0;
 	}
@@ -662,20 +716,22 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter, struct STA_RECORD 
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex, uint8_t ucStaRecIndexExcluded)
+void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	uint8_t ucStaRecIndexExcluded)
 {
 #if CFG_ENABLE_WIFI_DIRECT
 	struct BSS_INFO *prBssInfo;
 #endif
 	struct STA_RECORD *prStaRec;
 	uint16_t i;
+	enum ENUM_STA_REC_CMD_ACTION eAction;
 
 	if (ucBssIndex > prAdapter->ucHwBssIdNum)
 		return;
@@ -683,14 +739,19 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex, ui
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
 
-		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex && i != ucStaRecIndexExcluded)
+		if (prStaRec->fgIsInUse && prStaRec->ucBssIndex == ucBssIndex
+			&& i != ucStaRecIndexExcluded)
 			cnmStaRoutinesForAbort(prAdapter, prStaRec);
-	}			/* end of for loop */
+	}	/* end of for loop */
+
+	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)
+		eAction = STA_REC_CMD_ACTION_BSS_EXCLUDE_STA;
+	else
+		eAction = STA_REC_CMD_ACTION_BSS;
 
 	cnmStaSendRemoveCmd(prAdapter,
-			    (ucStaRecIndexExcluded < CFG_STA_REC_NUM) ?
-			    STA_REC_CMD_ACTION_BSS_EXCLUDE_STA : STA_REC_CMD_ACTION_BSS,
-			    ucStaRecIndexExcluded, ucBssIndex);
+		eAction,
+		ucStaRecIndexExcluded, ucBssIndex);
 
 #if CFG_ENABLE_WIFI_DIRECT
 	/* To do: Confirm if it is invoked here or other location, but it should
@@ -698,27 +759,33 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex, ui
 	 * Update system operation parameters for AP mode
 	 */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (prAdapter->fgIsP2PRegistered && prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+	if (prAdapter->fgIsP2PRegistered
+		&& prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 		rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE);
+	}
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
-*
-* \param[in]
-*
-* \return none
-*/
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
 /*----------------------------------------------------------------------------*/
-struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter, uint8_t ucIndex)
+struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
+	uint8_t ucIndex)
 {
 	struct STA_RECORD *prStaRec;
 
 	ASSERT(prAdapter);
 
-	prStaRec = (ucIndex < CFG_STA_REC_NUM) ? &prAdapter->arStaRec[ucIndex] : NULL;
+	if (ucIndex < CFG_STA_REC_NUM)
+		prStaRec = &prAdapter->arStaRec[ucIndex];
+	else
+		prStaRec = NULL;
 
 	if (prStaRec && prStaRec->fgIsInUse == FALSE)
 		prStaRec = NULL;
@@ -728,14 +795,15 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter, uint8_t ucInde
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Get STA_RECORD_T by Peer MAC Address(Usually TA).
-*
-* @param[in] pucPeerMacAddr      Given Peer MAC Address.
-*
-* @retval   Pointer to STA_RECORD_T, if found. NULL, if not found
-*/
+ * @brief Get STA_RECORD_T by Peer MAC Address(Usually TA).
+ *
+ * @param[in] pucPeerMacAddr      Given Peer MAC Address.
+ *
+ * @retval   Pointer to STA_RECORD_T, if found. NULL, if not found
+ */
 /*----------------------------------------------------------------------------*/
-struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter, uint8_t ucBssIndex, uint8_t *pucPeerMacAddr)
+struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t *pucPeerMacAddr)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t i;
@@ -748,8 +816,10 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter, uint8_t ucBs
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		prStaRec = &prAdapter->arStaRec[i];
 
-		if (prStaRec->fgIsInUse &&
-		    prStaRec->ucBssIndex == ucBssIndex && EQUAL_MAC_ADDR(prStaRec->aucMacAddr, pucPeerMacAddr)) {
+		if (prStaRec->fgIsInUse
+			&& prStaRec->ucBssIndex == ucBssIndex
+			&& EQUAL_MAC_ADDR(
+				prStaRec->aucMacAddr, pucPeerMacAddr)) {
 			break;
 		}
 	}
@@ -759,16 +829,17 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter, uint8_t ucBs
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will change the ucStaState of STA_RECORD_T and also do
-*        event indication to HOST to sync the STA_RECORD_T in driver.
-*
-* @param[in] prStaRec       Pointer to the STA_RECORD_T
-* @param[in] u4NewState     New STATE to change.
-*
-* @return (none)
-*/
+ * @brief This function will change the ucStaState of STA_RECORD_T and also do
+ *        event indication to HOST to sync the STA_RECORD_T in driver.
+ *
+ * @param[in] prStaRec       Pointer to the STA_RECORD_T
+ * @param[in] u4NewState     New STATE to change.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t ucNewState)
+void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
+	, uint8_t ucNewState)
 {
 	u_int8_t fgNeedResp;
 
@@ -781,15 +852,17 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 	}
 
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n", __func__, prStaRec->ucIndex);
+		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
+			__func__, prStaRec->ucIndex);
 		return;
 	}
 
 	/* Do nothing when following state transitions happen,
 	 * other 6 conditions should be sync to FW, including 1-->1, 3-->3
 	 */
-	if ((ucNewState == STA_STATE_2 && prStaRec->ucStaState != STA_STATE_3) ||
-	    (ucNewState == STA_STATE_1 && prStaRec->ucStaState == STA_STATE_2)) {
+	if ((ucNewState == STA_STATE_2 && prStaRec->ucStaState != STA_STATE_3)
+		|| (ucNewState == STA_STATE_1
+		&& prStaRec->ucStaState == STA_STATE_2)) {
 		prStaRec->ucStaState = ucNewState;
 		return;
 	}
@@ -802,7 +875,8 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 			cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
 		}
 	} else {
-		if (ucNewState != prStaRec->ucStaState && prStaRec->ucStaState == STA_STATE_3)
+		if (ucNewState != prStaRec->ucStaState
+			&& prStaRec->ucStaState == STA_STATE_3)
 			qmDeactivateStaRec(prAdapter, prStaRec);
 		fgNeedResp = FALSE;
 	}
@@ -810,7 +884,7 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 
 	cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, fgNeedResp);
 
-#if 1				/* Marked for MT6630 */
+#if 1	/* Marked for MT6630 */
 #if CFG_ENABLE_WIFI_DIRECT
 	/* To do: Confirm if it is invoked here or other location, but it should
 	 *        be invoked after state sync of STA_REC
@@ -819,7 +893,8 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 	if (prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
 		struct BSS_INFO *prBssInfo;
 
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
 
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 			rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE);
@@ -830,14 +905,15 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief
-*
-* @param[in]
-*
-* @return (none)
-*/
+ * @brief
+ *
+ * @param[in]
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct EVENT_ACTIVATE_STA_REC *prEventContent;
 	struct STA_RECORD *prStaRec;
@@ -846,7 +922,8 @@ static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter, struct CMD_INFO *
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prEventContent->ucStaRecIdx);
 
 	if (prStaRec && prStaRec->ucStaState == STA_STATE_3 &&
-	    !kalMemCmp(&prStaRec->aucMacAddr[0], &prEventContent->aucMacAddr[0], MAC_ADDR_LEN)) {
+		!kalMemCmp(&prStaRec->aucMacAddr[0],
+			&prEventContent->aucMacAddr[0], MAC_ADDR_LEN)) {
 
 		qmActivateStaRec(prAdapter, prStaRec);
 	}
@@ -855,15 +932,15 @@ static void cnmStaRecHandleEventPkt(struct ADAPTER *prAdapter, struct CMD_INFO *
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief
-*
-* @param[in]
-*
-* @return (none)
-*/
+ * @brief
+ *
+ * @param[in]
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, struct TXBF_PFMU_STA_INFO *prTxBfPfmuStaInfo,
-			 u_int8_t fgNeedResp)
+void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	struct TXBF_PFMU_STA_INFO *prTxBfPfmuStaInfo, u_int8_t fgNeedResp)
 {
 	struct CMD_UPDATE_STA_RECORD *prCmdContent;
 	uint32_t rStatus;
@@ -877,35 +954,44 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	}
 
 	if (!prStaRec->fgIsInUse) {
-		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n", __func__, prStaRec->ucIndex);
+		DBGLOG(MEM, WARN, "%s: StaRec[%u] is not in use, skip!\n",
+			__func__, prStaRec->ucIndex);
 		return;
 	}
 
-	/* To do: come out a mechanism to limit one STA_REC sync once for AP mode
-	 *        to avoid buffer empty case when many STAs are associated
+	/* To do: come out a mechanism to limit one STA_REC sync once for AP
+	 *        mode to avoid buffer empty case when many STAs are associated
 	 *        simultaneously.
 	 */
 
 	/* To do: how to avoid 2 times of allocated memory. Use Stack?
 	 *        One is here, the other is in wlanSendQueryCmd()
 	 */
-	prCmdContent = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sizeof(struct CMD_UPDATE_STA_RECORD));
+	prCmdContent = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+		sizeof(struct CMD_UPDATE_STA_RECORD));
 
 	/* To do: exception handle */
 	if (!prCmdContent) {
-		DBGLOG(MEM, WARN, "%s: CMD_ID_UPDATE_STA_RECORD command allocation failed\n", __func__);
+#define __STR_FMT__ \
+"%s: CMD_ID_UPDATE_STA_RECORD command allocation failed\n"
+		DBGLOG(MEM, WARN, __STR_FMT__, __func__);
+#undef __STR_FMT__
+
 		return;
 	}
 
 	/* Reset command buffer */
 	kalMemZero(prCmdContent, sizeof(struct CMD_UPDATE_STA_RECORD));
 
-	if (prTxBfPfmuStaInfo)
-		memcpy(&prCmdContent->rTxBfPfmuInfo, prTxBfPfmuStaInfo, sizeof(struct TXBF_PFMU_STA_INFO));
+	if (prTxBfPfmuStaInfo) {
+		memcpy(&prCmdContent->rTxBfPfmuInfo, prTxBfPfmuStaInfo,
+			sizeof(struct TXBF_PFMU_STA_INFO));
+	}
 
 	prCmdContent->ucStaIndex = prStaRec->ucIndex;
 	prCmdContent->ucStaType = (uint8_t) prStaRec->eStaType;
-	kalMemCopy(&prCmdContent->aucMacAddr[0], &prStaRec->aucMacAddr[0], MAC_ADDR_LEN);
+	kalMemCopy(&prCmdContent->aucMacAddr[0], &prStaRec->aucMacAddr[0],
+		MAC_ADDR_LEN);
 	prCmdContent->u2AssocId = prStaRec->u2AssocId;
 	prCmdContent->u2ListenInterval = prStaRec->u2ListenInterval;
 	prCmdContent->ucBssIndex = prStaRec->ucBssIndex;
@@ -915,11 +1001,14 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prCmdContent->u2BSSBasicRateSet = prStaRec->u2BSSBasicRateSet;
 	prCmdContent->ucMcsSet = prStaRec->ucMcsSet;
 	prCmdContent->ucSupMcs32 = (uint8_t) prStaRec->fgSupMcs32;
-	prCmdContent->u2HwDefaultFixedRateCode = prStaRec->u2HwDefaultFixedRateCode;
+	prCmdContent->u2HwDefaultFixedRateCode
+		= prStaRec->u2HwDefaultFixedRateCode;
 
+	/* Size is SUP_MCS_RX_BITMASK_OCTET_NUM */
 	kalMemCopy(prCmdContent->aucRxMcsBitmask, prStaRec->aucRxMcsBitmask,
-		   sizeof(prCmdContent->aucRxMcsBitmask) /*SUP_MCS_RX_BITMASK_OCTET_NUM */);
-	prCmdContent->u2RxHighestSupportedRate = prStaRec->u2RxHighestSupportedRate;
+		sizeof(prCmdContent->aucRxMcsBitmask));
+	prCmdContent->u2RxHighestSupportedRate
+		= prStaRec->u2RxHighestSupportedRate;
 	prCmdContent->u4TxRateInfo = prStaRec->u4TxRateInfo;
 
 	prCmdContent->u2HtCapInfo = prStaRec->u2HtCapInfo;
@@ -929,19 +1018,19 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (prAdapter->rWifiVar.eRateSetting != FIXED_RATE_NONE) {
 		/* override rate configuration */
 		nicUpdateRateParams(prAdapter,
-				    prAdapter->rWifiVar.eRateSetting,
-				    &(prCmdContent->ucDesiredPhyTypeSet),
-				    &(prCmdContent->u2DesiredNonHTRateSet),
-				    &(prCmdContent->u2BSSBasicRateSet),
-				    &(prCmdContent->ucMcsSet),
-				    &(prCmdContent->ucSupMcs32), &(prCmdContent->u2HtCapInfo));
+			prAdapter->rWifiVar.eRateSetting,
+			&(prCmdContent->ucDesiredPhyTypeSet),
+			&(prCmdContent->u2DesiredNonHTRateSet),
+			&(prCmdContent->u2BSSBasicRateSet),
+			&(prCmdContent->ucMcsSet),
+			&(prCmdContent->ucSupMcs32),
+			&(prCmdContent->u2HtCapInfo));
 	}
 #endif
 
 	prCmdContent->ucIsQoS = prStaRec->fgIsQoS;
 	prCmdContent->ucIsUapsdSupported = prStaRec->fgIsUapsdSupported;
 	prCmdContent->ucStaState = prStaRec->ucStaState;
-
 	prCmdContent->ucAmpduParam = prStaRec->ucAmpduParam;
 	prCmdContent->u2HtExtendedCap = prStaRec->u2HtExtendedCap;
 	prCmdContent->u4TxBeamformingCap = prStaRec->u4TxBeamformingCap;
@@ -950,12 +1039,15 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	prCmdContent->u4VhtCapInfo = prStaRec->u4VhtCapInfo;
 	prCmdContent->u2VhtRxMcsMap = prStaRec->u2VhtRxMcsMap;
-	prCmdContent->u2VhtRxHighestSupportedDataRate = prStaRec->u2VhtRxHighestSupportedDataRate;
+	prCmdContent->u2VhtRxHighestSupportedDataRate
+		= prStaRec->u2VhtRxHighestSupportedDataRate;
 	prCmdContent->u2VhtTxMcsMap = prStaRec->u2VhtTxMcsMap;
-	prCmdContent->u2VhtTxHighestSupportedDataRate = prStaRec->u2VhtTxHighestSupportedDataRate;
+	prCmdContent->u2VhtTxHighestSupportedDataRate
+		= prStaRec->u2VhtTxHighestSupportedDataRate;
 	prCmdContent->ucVhtOpMode = prStaRec->ucVhtOpMode;
 
-	prCmdContent->ucUapsdAc = prStaRec->ucBmpTriggerAC | (prStaRec->ucBmpDeliveryAC << 4);
+	prCmdContent->ucUapsdAc
+		= prStaRec->ucBmpTriggerAC | (prStaRec->ucBmpDeliveryAC << 4);
 	prCmdContent->ucUapsdSp = prStaRec->ucUapsdSp;
 
 	prCmdContent->ucWlanIndex = prStaRec->ucWlanIndex;
@@ -971,8 +1063,11 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prCmdContent->u4Flags = prStaRec->u4Flags;
 #if CFG_SUPPORT_MTK_SYNERGY
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucMtkOui)) {
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucGbandProbe256QAM))
-			prCmdContent->u4Flags |= MTK_SYNERGY_CAP_SUPPORT_24G_MCS89_PROBING;
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucGbandProbe256QAM)) {
+			prCmdContent->u4Flags
+				|= MTK_SYNERGY_CAP_SUPPORT_24G_MCS89_PROBING;
+		}
 	}
 #endif
 	prCmdContent->ucTxAmpdu = prAdapter->rWifiVar.ucAmpduTx;
@@ -984,15 +1079,20 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if ((prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC) ||
 		(prStaRec->u4Flags & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)) {
 		/* VHT pear AMSDU in AMPDU configuration */
-		prCmdContent->ucTxAmsduInAmpdu &= prAdapter->rWifiVar.ucVhtAmsduInAmpduTx;
-		prCmdContent->ucRxAmsduInAmpdu &= prAdapter->rWifiVar.ucVhtAmsduInAmpduRx;
+		prCmdContent->ucTxAmsduInAmpdu
+			&= prAdapter->rWifiVar.ucVhtAmsduInAmpduTx;
+		prCmdContent->ucRxAmsduInAmpdu
+			&= prAdapter->rWifiVar.ucVhtAmsduInAmpduRx;
 	} else if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11N) {
 		/* HT peer AMSDU in AMPDU configuration */
-		prCmdContent->ucTxAmsduInAmpdu &= prAdapter->rWifiVar.ucHtAmsduInAmpduTx;
-		prCmdContent->ucRxAmsduInAmpdu &= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
+		prCmdContent->ucTxAmsduInAmpdu
+			&= prAdapter->rWifiVar.ucHtAmsduInAmpduTx;
+		prCmdContent->ucRxAmsduInAmpdu
+			&= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
 	}
 
-	prCmdContent->u4TxMaxAmsduInAmpduLen = prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
+	prCmdContent->u4TxMaxAmsduInAmpduLen
+		= prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
 
 	prCmdContent->ucTxBaSize = prAdapter->rWifiVar.ucTxBaSize;
 
@@ -1010,45 +1110,58 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	} else
 		prCmdContent->ucRtsPolicy = RTS_POLICY_LEGACY;
 
-	DBGLOG(REQ, INFO, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
-	       prCmdContent->ucStaIndex,
-	       prCmdContent->ucWlanIndex,
-	       prCmdContent->ucStaState, prCmdContent->ucStaType, prCmdContent->ucBssIndex, prCmdContent->u2AssocId);
+#define __STR_FMT__ \
+"Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n"
+
+	DBGLOG(REQ, INFO, __STR_FMT__,
+		prCmdContent->ucStaIndex,
+		prCmdContent->ucWlanIndex,
+		prCmdContent->ucStaState,
+		prCmdContent->ucStaType,
+		prCmdContent->ucBssIndex,
+		prCmdContent->u2AssocId);
+#undef __STR_FMT__
 
 	DBGLOG(REQ, INFO, "Update StaRec[%u] QoS[%u] UAPSD[%u]\n",
-	       prCmdContent->ucStaIndex, prCmdContent->ucIsQoS, prCmdContent->ucIsUapsdSupported);
+		prCmdContent->ucStaIndex,
+		prCmdContent->ucIsQoS,
+		prCmdContent->ucIsUapsdSupported);
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-				      CMD_ID_UPDATE_STA_RECORD,	/* ucCID */
-				      TRUE,	/* fgSetQuery */
-				      fgNeedResp,	/* fgNeedResp */
-				      FALSE,	/* fgIsOid */
-				      fgNeedResp ? cnmStaRecHandleEventPkt : NULL, NULL,
-				      /* pfCmdTimeoutHandler */
-				      sizeof(struct CMD_UPDATE_STA_RECORD),	/* u4SetQueryInfoLen */
-				      (uint8_t *) prCmdContent,	/* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
-	    );
+		CMD_ID_UPDATE_STA_RECORD,		/* ucCID */
+		TRUE,					/* fgSetQuery */
+		fgNeedResp,				/* fgNeedResp */
+		FALSE,					/* fgIsOid */
+		fgNeedResp ? cnmStaRecHandleEventPkt : NULL, NULL,
+		/* pfCmdTimeoutHandler */
+		sizeof(struct CMD_UPDATE_STA_RECORD),	/* u4SetQueryInfoLen */
+		(uint8_t *) prCmdContent,	/* pucInfoBuffer */
+		NULL,				/* pvSetQueryBuffer */
+		0				/* u4SetQueryBufferLen */
+	);
 
 	cnmMemFree(prAdapter, prCmdContent);
 
-	if (rStatus != WLAN_STATUS_PENDING)
-		DBGLOG(MEM, WARN, "%s: CMD_ID_UPDATE_STA_RECORD result 0x%08x\n", __func__, rStatus);
+	if (rStatus != WLAN_STATUS_PENDING) {
+		DBGLOG(MEM, WARN,
+			"%s: CMD_ID_UPDATE_STA_RECORD result 0x%08x\n",
+			__func__, rStatus);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief
-*
-* @param[in]
-*
-* @return (none)
-*/
+ * @brief
+ *
+ * @param[in]
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 static void
 cnmStaSendRemoveCmd(struct ADAPTER *prAdapter,
-		    enum ENUM_STA_REC_CMD_ACTION eActionType, uint8_t ucStaRecIndex, uint8_t ucBssIndex)
+	enum ENUM_STA_REC_CMD_ACTION eActionType,
+	uint8_t ucStaRecIndex, uint8_t ucBssIndex)
 {
 	struct CMD_REMOVE_STA_RECORD rCmdContent;
 	uint32_t rStatus;
@@ -1061,20 +1174,23 @@ cnmStaSendRemoveCmd(struct ADAPTER *prAdapter,
 	rCmdContent.ucReserved = 0;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
-				      CMD_ID_REMOVE_STA_RECORD,	/* ucCID */
-				      TRUE,	/* fgSetQuery */
-				      FALSE,	/* fgNeedResp */
-				      FALSE,	/* fgIsOid */
-				      NULL,	/* pfCmdDoneHandler */
-				      NULL,	/* pfCmdTimeoutHandler */
-				      sizeof(struct CMD_REMOVE_STA_RECORD),	/* u4SetQueryInfoLen */
-				      (uint8_t *) &rCmdContent,	/* pucInfoBuffer */
-				      NULL,	/* pvSetQueryBuffer */
-				      0	/* u4SetQueryBufferLen */
+		CMD_ID_REMOVE_STA_RECORD,		/* ucCID */
+		TRUE,	/* fgSetQuery */
+		FALSE,	/* fgNeedResp */
+		FALSE,	/* fgIsOid */
+		NULL,	/* pfCmdDoneHandler */
+		NULL,	/* pfCmdTimeoutHandler */
+		sizeof(struct CMD_REMOVE_STA_RECORD),	/* u4SetQueryInfoLen */
+		(uint8_t *) &rCmdContent,		/* pucInfoBuffer */
+		NULL,	/* pvSetQueryBuffer */
+		0	/* u4SetQueryBufferLen */
 	    );
 
-	if (rStatus != WLAN_STATUS_PENDING)
-		DBGLOG(MEM, WARN, "%s: CMD_ID_REMOVE_STA_RECORD result 0x%08x\n", __func__, rStatus);
+	if (rStatus != WLAN_STATUS_PENDING) {
+		DBGLOG(MEM, WARN,
+			"%s: CMD_ID_REMOVE_STA_RECORD result 0x%08x\n",
+			__func__, rStatus);
+	}
 }
 
 uint8_t *cnmStaRecGetTypeString(enum ENUM_STA_TYPE eStaType)
@@ -1095,26 +1211,34 @@ uint8_t *cnmStaRecGetRoleString(enum ENUM_STA_TYPE eStaType)
 {
 	uint8_t *pucRoleString = NULL;
 
-	if (eStaType & STA_TYPE_ADHOC_MASK)
-		pucRoleString = apucStaRecRole[STA_ROLE_ADHOC_INDEX - STA_ROLE_BASE_INDEX];
-	if (eStaType & STA_TYPE_CLIENT_MASK)
-		pucRoleString = apucStaRecRole[STA_ROLE_CLIENT_INDEX - STA_ROLE_BASE_INDEX];
-	if (eStaType & STA_TYPE_AP_MASK)
-		pucRoleString = apucStaRecRole[STA_ROLE_AP_INDEX - STA_ROLE_BASE_INDEX];
-	if (eStaType & STA_TYPE_DLS_MASK)
-		pucRoleString = apucStaRecRole[STA_ROLE_DLS_INDEX - STA_ROLE_BASE_INDEX];
+	if (eStaType & STA_TYPE_ADHOC_MASK) {
+		pucRoleString = apucStaRecRole[
+			STA_ROLE_ADHOC_INDEX - STA_ROLE_BASE_INDEX];
+	}
+	if (eStaType & STA_TYPE_CLIENT_MASK) {
+		pucRoleString = apucStaRecRole[
+			STA_ROLE_CLIENT_INDEX - STA_ROLE_BASE_INDEX];
+	}
+	if (eStaType & STA_TYPE_AP_MASK) {
+		pucRoleString = apucStaRecRole[
+			STA_ROLE_AP_INDEX - STA_ROLE_BASE_INDEX];
+	}
+	if (eStaType & STA_TYPE_DLS_MASK) {
+		pucRoleString = apucStaRecRole[
+			STA_ROLE_DLS_INDEX - STA_ROLE_BASE_INDEX];
+	}
 
 	return pucRoleString;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief
-*
-* @param[in]
-*
-* @return (none)
-*/
+ * @brief
+ *
+ * @param[in]
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 {
@@ -1128,7 +1252,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 
 	if (!prStaRec) {
-		DBGLOG(SW4, INFO, "Invalid StaRec index[%u], skip dump!\n", ucStaRecIdx);
+		DBGLOG(SW4, INFO, "Invalid StaRec index[%u], skip dump!\n",
+			ucStaRecIdx);
 		return;
 	}
 
@@ -1137,85 +1262,169 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 
 	ASSERT(prBssInfo);
 
-	DBGLOG(SW4, INFO, "============= DUMP STA[%u] ===========\n", ucStaRecIdx);
-	/* [1]STA_IDX                  [2]BSS_IDX          [3]MAC                   [4]TYPE           [5]WTBL */
-	/* [6]USED                     [7]State            [8]QoS                   [9]HT/VHT         [10] AID */
-	/* [11]WMM                     [12]UAPSD           [13]SEC                  [14]PhyTypeSet    [15]Desired */
-	/* [16]NonHtBasic              [17]BssBasic        [18]Operational          [19]DesiredNonHT  [20]Df FixedRate*/
-	/* [21]HT Cap                  [22]ExtCap          [23]BeemCap              [24]MCS           [25]MCS32 */
-	/* [26]VHT Cap                 [27]TxMCS           [28]RxMCS                [29]VhtOpMode     [30]RCPI */
-	/* [31]InPS                    [32]TxAllowed       [33]KeyRdy               [34]AMPDU         [35]TxQLEN TC */
-	/* [36]BMP AC Delivery/Trigger [37]FreeQuota:Total [38]Delivery/NonDelivery [39]aucRxMcsBitmask */
+	DBGLOG(SW4, INFO, "============= DUMP STA[%u] ===========\n",
+		ucStaRecIdx);
+	/* [1]STA_IDX                  [2]BSS_IDX
+	 * [3]MAC                      [4]TYPE
+	 * [5]WTBL                     [6]USED
+	 * [7]State                    [8]QoS
+	 * [9]HT/VHT                   [10]AID
+	 * [11]WMM                     [12]UAPSD
+	 * [13]SEC                     [14]PhyTypeSet
+	 * [15]Desired                 [16]NonHtBasic
+	 * [17]BssBasic                [18]Operational
+	 * [19]DesiredNonHT            [20]Df FixedRate
+	 * [21]HT Cap                  [22]ExtCap
+	 * [23]BeemCap                 [24]MCS
+	 * [25]MCS32                   [26]VHT Cap
+	 * [27]TxMCS                   [28]RxMCS
+	 * [29]VhtOpMode               [30]RCPI
+	 * [31]InPS                    [32]TxAllowed
+	 * [33]KeyRdy                  [34]AMPDU
+	 * [35]TxQLEN TC               [36]BMP AC Delivery/Trigger
+	 * [37]FreeQuota:Total         [38]Delivery/NonDelivery
+	 * [39]aucRxMcsBitmask
+	 */
 
-	DBGLOG(SW4, INFO,
-	"[1][%u],[2][%u],[3][" MACSTR "],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n",
-		prStaRec->ucIndex, prStaRec->ucBssIndex, MAC2STR(prStaRec->aucMacAddr),
-		cnmStaRecGetTypeString(prStaRec->eStaType), cnmStaRecGetRoleString(prStaRec->eStaType),
-		ucWTEntry, prStaRec->fgIsInUse, prStaRec->ucStaState, prStaRec->fgIsQoS,
-		(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11N) ? TRUE : FALSE,
-		(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC) ? TRUE : FALSE, prStaRec->u2AssocId);
+#define __STR_FMT__ \
+"[1][%u],[2][%u],[3][%pM],[4][%s %s],[5][%u],[6][%u],[7][%u],[8][%u],[9][%u/%u],[10][%u]\n"
 
-	DBGLOG(SW4, INFO,
-	"[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n",
-		prStaRec->fgIsWmmSupported, prStaRec->fgIsUapsdSupported, secIsProtectedBss(prAdapter, prBssInfo),
-		prBssInfo->ucPhyTypeSet, prStaRec->ucDesiredPhyTypeSet, prStaRec->ucNonHTBasicPhyType,
-		prBssInfo->u2BSSBasicRateSet, prStaRec->u2OperationalRateSet,
-		prStaRec->u2DesiredNonHTRateSet, prStaRec->u2HwDefaultFixedRateCode);
+	DBGLOG(SW4, INFO, __STR_FMT__,
+		prStaRec->ucIndex,
+		prStaRec->ucBssIndex,
+		MAC2STR(prStaRec->aucMacAddr),
+		cnmStaRecGetTypeString(prStaRec->eStaType),
+		cnmStaRecGetRoleString(prStaRec->eStaType),
+		ucWTEntry, prStaRec->fgIsInUse,
+		prStaRec->ucStaState, prStaRec->fgIsQoS,
+		(prStaRec->ucDesiredPhyTypeSet
+			& PHY_TYPE_SET_802_11N) ? TRUE : FALSE,
+		(prStaRec->ucDesiredPhyTypeSet
+			& PHY_TYPE_SET_802_11AC) ? TRUE : FALSE,
+		prStaRec->u2AssocId);
+#undef __STR_FMT__
 
-	DBGLOG(SW4, TRACE,
-	"[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n",
-		prStaRec->u2HtCapInfo, prStaRec->u2HtExtendedCap, prStaRec->u4TxBeamformingCap,
-		prStaRec->ucMcsSet, prStaRec->fgSupMcs32, prStaRec->u4VhtCapInfo, prStaRec->u2VhtTxMcsMap,
-		prStaRec->u2VhtRxMcsMap, prStaRec->ucVhtOpMode, prStaRec->ucRCPI);
+#define __STR_FMT__ \
+"[11][%u],[12][%u],[13][%u],[14][0x%x],[15][0x%x],[16][0x%x],[17][0x%x],[18][0x%x],[19][0x%x],[20][0x%x]\n"
 
-	DBGLOG(SW4, INFO,
-	"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n",
-		prStaRec->fgIsInPS, prStaRec->fgIsTxAllowed, prStaRec->fgIsTxKeyReady,
-		prStaRec->fgTxAmpduEn, prStaRec->fgRxAmpduEn,
-		prStaRec->aprTargetQueue[0]->u4NumElem, prStaRec->aprTargetQueue[1]->u4NumElem,
-		prStaRec->aprTargetQueue[2]->u4NumElem, prStaRec->aprTargetQueue[3]->u4NumElem,
-		prStaRec->ucBmpDeliveryAC, prStaRec->ucBmpTriggerAC, prStaRec->ucFreeQuota,
-		prStaRec->ucFreeQuotaForDelivery, prStaRec->ucFreeQuotaForNonDelivery,
-		prStaRec->aucRxMcsBitmask[0], prStaRec->aucRxMcsBitmask[1]);
+	DBGLOG(SW4, INFO, __STR_FMT__,
+		prStaRec->fgIsWmmSupported,
+		prStaRec->fgIsUapsdSupported,
+		secIsProtectedBss(prAdapter, prBssInfo),
+		prBssInfo->ucPhyTypeSet,
+		prStaRec->ucDesiredPhyTypeSet,
+		prStaRec->ucNonHTBasicPhyType,
+		prBssInfo->u2BSSBasicRateSet,
+		prStaRec->u2OperationalRateSet,
+		prStaRec->u2DesiredNonHTRateSet,
+		prStaRec->u2HwDefaultFixedRateCode);
+#undef __STR_FMT__
+
+#define __STR_FMT__ \
+"[21][0x%x],[22][0x%x],[23][0x%x],[24][0x%x],[25][%u],[26][0x%x],[27][0x%x],[28][0x%x],[29][0x%x],[30][%u]\n"
+
+	DBGLOG(SW4, TRACE, __STR_FMT__,
+		prStaRec->u2HtCapInfo,
+		prStaRec->u2HtExtendedCap,
+		prStaRec->u4TxBeamformingCap,
+		prStaRec->ucMcsSet,
+		prStaRec->fgSupMcs32,
+		prStaRec->u4VhtCapInfo,
+		prStaRec->u2VhtTxMcsMap,
+		prStaRec->u2VhtRxMcsMap,
+		prStaRec->ucVhtOpMode,
+		prStaRec->ucRCPI);
+#undef __STR_FMT__
+
+#define __STR_FMT__ \
+"[31][%u],[32][%u],[33][%u],[34][%u/%u],[35][%u:%u:%u:%u],[36][%x/%x],[37][%u],[38][%u/%u],[39][0x%x][0x%x]\n"
+
+	DBGLOG(SW4, INFO, __STR_FMT__,
+		prStaRec->fgIsInPS,
+		prStaRec->fgIsTxAllowed,
+		prStaRec->fgIsTxKeyReady,
+		prStaRec->fgTxAmpduEn,
+		prStaRec->fgRxAmpduEn,
+		prStaRec->aprTargetQueue[0]->u4NumElem,
+		prStaRec->aprTargetQueue[1]->u4NumElem,
+		prStaRec->aprTargetQueue[2]->u4NumElem,
+		prStaRec->aprTargetQueue[3]->u4NumElem,
+		prStaRec->ucBmpDeliveryAC,
+		prStaRec->ucBmpTriggerAC,
+		prStaRec->ucFreeQuota,
+		prStaRec->ucFreeQuotaForDelivery,
+		prStaRec->ucFreeQuotaForNonDelivery,
+		prStaRec->aucRxMcsBitmask[0],
+		prStaRec->aucRxMcsBitmask[1]);
+#undef __STR_FMT__
 
 	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
 		if (prStaRec->aprRxReorderParamRefTbl[i]) {
-			DBGLOG(SW4, INFO,
-			"TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u]\n",
-			prStaRec->aprRxReorderParamRefTbl[i]->ucTid,
-			prStaRec->aprRxReorderParamRefTbl[i]->fgIsValid,
-			prStaRec->aprRxReorderParamRefTbl[i]->u2WinStart,
-			prStaRec->aprRxReorderParamRefTbl[i]->u2WinEnd,
-			prStaRec->aprRxReorderParamRefTbl[i]->u2WinSize,
-			prStaRec->aprRxReorderParamRefTbl[i]->rReOrderQue.u4NumElem,
-			prStaRec->aprRxReorderParamRefTbl[i]->fgHasBubble,
-			prStaRec->aprRxReorderParamRefTbl[i]->u2FirstBubbleSn);
+#define __STR_FMT__ \
+"TID[%u],Valid[%u],WinStart/End[%u/%u],WinSize[%u],ReOrderQueLen[%u],Bubble Exist[%u],SN[%u]\n"
+
+			DBGLOG(SW4, INFO, __STR_FMT__,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->ucTid,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->fgIsValid,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->u2WinStart,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->u2WinEnd,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->u2WinSize,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->rReOrderQue.u4NumElem,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->fgHasBubble,
+				prStaRec->aprRxReorderParamRefTbl[i]
+					->u2FirstBubbleSn);
+#undef __STR_FMT__
 		}
 	}
 	DBGLOG(SW4, INFO, "============= DUMP END ===========\n");
 }
 
-uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Max)
+uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
+	IN uint32_t u4Max)
 {
 	uint32_t u4Len = 0;
 #if CFG_DBG_MGT_BUF
 	struct BUF_INFO *prBufInfo;
 
 	LOGBUF(pucBuf, u4Max, u4Len, "\n");
-	LOGBUF(pucBuf, u4Max, u4Len, "============= DUMP Memory Status =============\n");
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"============= DUMP Memory Status =============\n");
 
-	LOGBUF(pucBuf, u4Max, u4Len, "Dynamic alloc OS memory count: alloc[%u] free[%u]\n",
-		prAdapter->u4MemAllocDynamicCount, prAdapter->u4MemFreeDynamicCount);
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"Dynamic alloc OS memory count: alloc[%u] free[%u]\n",
+		prAdapter->u4MemAllocDynamicCount,
+		prAdapter->u4MemFreeDynamicCount);
 
 	prBufInfo = &prAdapter->rMsgBufInfo;
-	LOGBUF(pucBuf, u4Max, u4Len, "MSG memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n",
-		prBufInfo->u4AllocCount, prBufInfo->u4FreeCount,
-		prBufInfo->u4AllocNullCount, (uint32_t) prBufInfo->rFreeBlocksBitmap);
+
+#define __STR_FMT__ \
+"MSG memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
+
+	LOGBUF(pucBuf, u4Max, u4Len, __STR_FMT__,
+		prBufInfo->u4AllocCount,
+		prBufInfo->u4FreeCount,
+		prBufInfo->u4AllocNullCount,
+		(uint32_t) prBufInfo->rFreeBlocksBitmap);
+#undef __STR_FMT__
 
 	prBufInfo = &prAdapter->rMgtBufInfo;
-	LOGBUF(pucBuf, u4Max, u4Len, "MGT memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n",
-		prBufInfo->u4AllocCount, prBufInfo->u4FreeCount,
-		prBufInfo->u4AllocNullCount, (uint32_t) prBufInfo->rFreeBlocksBitmap);
+
+#define __STR_FMT__ \
+"MGT memory count: alloc[%u] free[%u] null[%u] bitmap[0x%08x]\n"
+
+	LOGBUF(pucBuf, u4Max, u4Len, __STR_FMT__,
+		prBufInfo->u4AllocCount,
+		prBufInfo->u4FreeCount,
+		prBufInfo->u4AllocNullCount,
+		(uint32_t) prBufInfo->rFreeBlocksBitmap);
+#undef __STR_FMT__
 
 	LOGBUF(pucBuf, u4Max, u4Len, "============= DUMP END =============\n");
 
@@ -1227,23 +1436,24 @@ uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, I
 #if CFG_SUPPORT_TDLS
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is called to add a peer record.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
-*                           the query.
-* \param[in] u4QueryBufLen The length of the query buffer.
-* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
-*                            bytes written into the query buffer. If the call
-*                            failed due to invalid length of the query buffer,
-*                            returns the amount of storage needed.
-*
-* \retval WLAN_STATUS_SUCCESS
-* \retval WLAN_STATUS_INVALID_LENGTH
-*/
+ * \brief This routine is called to add a peer record.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
 /*----------------------------------------------------------------------------*/
-uint32_t			/* TDLS_STATUS  //prStaRec->ucNetTypeIndex */
-cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+uint32_t	/* TDLS_STATUS, prStaRec->ucNetTypeIndex */
+cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct CMD_PEER_ADD *prCmd;
 	struct BSS_INFO *prAisBssInfo;
@@ -1251,7 +1461,8 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen
 
 	/* sanity check */
 
-	if ((prAdapter == NULL) || (pvSetBuffer == NULL) || (pu4SetInfoLen == NULL))
+	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
+		|| (pu4SetInfoLen == NULL))
 		return TDLS_STATUS_FAIL;
 
 	/* init */
@@ -1262,12 +1473,15 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen
 	if (!prAisBssInfo)
 		return TDLS_STATUS_FAIL;
 
-	prStaRec = cnmGetStaRecByAddress(prAdapter, (uint8_t) prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeerMac);
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+		(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+		prCmd->aucPeerMac);
 
 	if (prStaRec == NULL) {
 		prStaRec =
-		    cnmStaRecAlloc(prAdapter, STA_TYPE_DLS_PEER,
-				   (uint8_t) prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeerMac);
+		cnmStaRecAlloc(prAdapter, STA_TYPE_DLS_PEER,
+			(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+			prCmd->aucPeerMac);
 
 		if (prStaRec == NULL)
 			return TDLS_STATUS_RESOURCES;
@@ -1281,9 +1495,11 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen
 
 		prStaRec->u2BSSBasicRateSet = prAisBssInfo->u2BSSBasicRateSet;
 
-		prStaRec->u2DesiredNonHTRateSet = prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+		prStaRec->u2DesiredNonHTRateSet
+			= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
 
-		prStaRec->u2OperationalRateSet = prAisBssInfo->u2OperationalRateSet;
+		prStaRec->u2OperationalRateSet
+			= prAisBssInfo->u2OperationalRateSet;
 		prStaRec->ucPhyTypeSet = prAisBssInfo->ucPhyTypeSet;
 		prStaRec->eStaType = prCmd->eStaType;
 
@@ -1291,7 +1507,8 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
 	} else {
-		if ((prStaRec->ucStaState > STA_STATE_1) && (IS_DLS_STA(prStaRec))) {
+		if ((prStaRec->ucStaState > STA_STATE_1)
+			&& (IS_DLS_STA(prStaRec))) {
 			/* TODO: Teardown the peer */
 			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 		}
@@ -1301,23 +1518,24 @@ cnmPeerAdd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is called to update a peer record.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
-*                           the query.
-* \param[in] u4QueryBufLen The length of the query buffer.
-* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
-*                            bytes written into the query buffer. If the call
-*                            failed due to invalid length of the query buffer,
-*                            returns the amount of storage needed.
-*
-* \retval WLAN_STATUS_SUCCESS
-* \retval WLAN_STATUS_INVALID_LENGTH
-*/
+ * \brief This routine is called to update a peer record.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
 /*----------------------------------------------------------------------------*/
-uint32_t			/* TDLS_STATUS */
-cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+uint32_t	/* TDLS_STATUS */
+cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 
 	struct CMD_PEER_UPDATE *prCmd;
@@ -1340,7 +1558,9 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
 
-	prStaRec = cnmGetStaRecByAddress(prAdapter, (uint8_t) prAdapter->prAisBssInfo->ucBssIndex, prCmd->aucPeerMac);
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+		(uint8_t) prAdapter->prAisBssInfo->ucBssIndex,
+		prCmd->aucPeerMac);
 
 	if ((!prStaRec) || !(prStaRec->fgIsInUse))
 		return TDLS_STATUS_FAIL;
@@ -1358,12 +1578,12 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 
 	/* update Station Record - Status/Reason Code */
 	prStaRec->u2StatusCode = prCmd->u2StatusCode;
-	prStaRec->u2AssocId = 0;	/* no use */
-	prStaRec->u2ListenInterval = 0;	/* unknown */
+	prStaRec->u2AssocId = 0;		/* no use */
+	prStaRec->u2ListenInterval = 0;		/* unknown */
 	prStaRec->fgIsQoS = TRUE;
 	prStaRec->fgIsUapsdSupported = (prCmd->UapsdBitmap == 0) ? FALSE : TRUE;
 	prStaRec->u4TxBeamformingCap = 0;	/* no use */
-	prStaRec->ucAselCap = 0;	/* no use */
+	prStaRec->ucAselCap = 0;		/* no use */
 	prStaRec->ucRCPI = 120;
 	prStaRec->ucBmpTriggerAC = prCmd->UapsdBitmap;
 	prStaRec->ucBmpDeliveryAC = prCmd->UapsdBitmap;
@@ -1376,7 +1596,8 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 			if (prCmd->aucSupRate[i]) {
 				ucRate = prCmd->aucSupRate[i] & RATE_MASK;
 				/* Search all valid data rates */
-				for (j = 0; j < sizeof(aucValidDataRate) / sizeof(uint8_t); j++) {
+				for (j = 0; j < sizeof(aucValidDataRate)
+					/ sizeof(uint8_t); j++) {
 					if (ucRate == aucValidDataRate[j]) {
 						u2OperationalRateSet |= BIT(j);
 						break;
@@ -1398,16 +1619,24 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 			/* if not 11n only */
-			if (!(prStaRec->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
+			if (!(prStaRec->u2BSSBasicRateSet
+				& RATE_SET_BIT_HT_PHY)) {
 				/* check if support 11g */
-				if ((prStaRec->u2OperationalRateSet & RATE_SET_OFDM))
-					prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_ERP;
+				if ((prStaRec->u2OperationalRateSet
+					& RATE_SET_OFDM)) {
+					prStaRec->ucPhyTypeSet
+						|= PHY_TYPE_BIT_ERP;
+				}
 
 				/* if not 11g only */
-				if (!(prStaRec->u2BSSBasicRateSet & RATE_SET_OFDM)) {
+				if (!(prStaRec->u2BSSBasicRateSet
+					& RATE_SET_OFDM)) {
 					/* check if support 11b */
-					if ((prStaRec->u2OperationalRateSet & RATE_SET_HR_DSSS))
-						prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HR_DSSS;
+					if ((prStaRec->u2OperationalRateSet
+						 & RATE_SET_HR_DSSS)) {
+						prStaRec->ucPhyTypeSet
+							|= PHY_TYPE_BIT_HR_DSSS;
+					}
 				}
 			}
 		} else {
@@ -1418,19 +1647,23 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
 			/* if not 11n only */
-			if (!(prStaRec->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
+			if (!(prStaRec->u2BSSBasicRateSet
+				& RATE_SET_BIT_HT_PHY)) {
 				/* Support 11a definitely */
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 			}
 		}
 
 		if (IS_STA_IN_AIS(prStaRec)) {
-			if (!((prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION3_ENABLED)
-			      || (prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
-			      || (prAdapter->rWifiVar.rConnSettings.eEncStatus == ENUM_ENCRYPTION_DISABLED)
-			      || (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
+			if (!((prAdapter->rWifiVar.rConnSettings
+				.eEncStatus == ENUM_ENCRYPTION3_ENABLED)
+				|| (prAdapter->rWifiVar.rConnSettings
+				.eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
+				|| (prAdapter->rWifiVar.rConnSettings
+				.eEncStatus == ENUM_ENCRYPTION_DISABLED)
+				|| (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
 #if CFG_SUPPORT_WAPI
-			      || (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
+				|| (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
 #endif
 			    )) {
 
@@ -1438,25 +1671,33 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 			}
 		}
 
-		prStaRec->ucDesiredPhyTypeSet = prStaRec->ucPhyTypeSet & prAdapter->rWifiVar.ucAvailablePhyTypeSet;
-		ucNonHTPhyTypeSet = prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11ABG;
+		prStaRec->ucDesiredPhyTypeSet = prStaRec->ucPhyTypeSet
+			& prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+		ucNonHTPhyTypeSet = prStaRec->ucDesiredPhyTypeSet
+			& PHY_TYPE_SET_802_11ABG;
 
 		/* Check for Target BSS's non HT Phy Types */
 		if (ucNonHTPhyTypeSet) {
 			if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_ERP)
-				prStaRec->ucNonHTBasicPhyType = PHY_TYPE_ERP_INDEX;
+				prStaRec->ucNonHTBasicPhyType
+					= PHY_TYPE_ERP_INDEX;
 			else if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_OFDM)
-				prStaRec->ucNonHTBasicPhyType = PHY_TYPE_OFDM_INDEX;
+				prStaRec->ucNonHTBasicPhyType
+					= PHY_TYPE_OFDM_INDEX;
 			else
-				prStaRec->ucNonHTBasicPhyType = PHY_TYPE_HR_DSSS_INDEX;
+				prStaRec->ucNonHTBasicPhyType
+				= PHY_TYPE_HR_DSSS_INDEX;
 
 			prStaRec->fgHasBasicPhyType = TRUE;
 		} else {
 			/* Use mandatory for 11N only BSS */
 			ASSERT(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N);
 			{
-				/* TODO(Kevin): which value should we set for 11n ? ERP ? */
-				prStaRec->ucNonHTBasicPhyType = PHY_TYPE_HR_DSSS_INDEX;
+				/* TODO(Kevin): which value should we set
+				 * for 11n ? ERP ?
+				 */
+				prStaRec->ucNonHTBasicPhyType
+					= PHY_TYPE_HR_DSSS_INDEX;
 			}
 
 			prStaRec->fgHasBasicPhyType = FALSE;
@@ -1476,8 +1717,13 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 		prStaRec->u4TxBeamformingCap = prCmd->rHtCap.u4TxBfCapInfo;
 		prStaRec->ucAselCap = prCmd->rHtCap.ucAntennaSelInfo;
 		prStaRec->ucMcsSet = prCmd->rHtCap.rMCS.arRxMask[0];
-		prStaRec->fgSupMcs32 = (prCmd->rHtCap.rMCS.arRxMask[32 / 8] & BIT(0)) ? TRUE : FALSE;
-		kalMemCopy(prStaRec->aucRxMcsBitmask, prCmd->rHtCap.rMCS.arRxMask, sizeof(prStaRec->aucRxMcsBitmask));
+		if (prCmd->rHtCap.rMCS.arRxMask[32 / 8] & BIT(0))
+			prStaRec->fgSupMcs32 = TRUE;
+		else
+			prStaRec->fgSupMcs32 = FALSE;
+		kalMemCopy(prStaRec->aucRxMcsBitmask,
+			prCmd->rHtCap.rMCS.arRxMask,
+			sizeof(prStaRec->aucRxMcsBitmask));
 	}
 	/* TODO ++VHT */
 
@@ -1488,14 +1734,15 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBuffer
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Get TDLS peer STA_RECORD_T by Peer MAC Address(Usually TA).
-*
-* @param[in] pucPeerMacAddr      Given Peer MAC Address.
-*
-* @retval   Pointer to STA_RECORD_T, if found. NULL, if not found
-*/
+ * @brief Get TDLS peer STA_RECORD_T by Peer MAC Address(Usually TA).
+ *
+ * @param[in] pucPeerMacAddr      Given Peer MAC Address.
+ *
+ * @retval   Pointer to STA_RECORD_T, if found. NULL, if not found
+ */
 /*----------------------------------------------------------------------------*/
-struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter, uint8_t ucBssIndex, uint8_t aucPeerMACAddress[])
+struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[])
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t i;
@@ -1506,9 +1753,10 @@ struct STA_RECORD *cnmGetTdlsPeerByAddress(struct ADAPTER *prAdapter, uint8_t uc
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		prStaRec = &prAdapter->arStaRec[i];
 		if (prStaRec) {
-			if (prStaRec->fgIsInUse &&
-			    prStaRec->eStaType == STA_TYPE_DLS_PEER &&
-			    EQUAL_MAC_ADDR(prStaRec->aucMacAddr, aucPeerMACAddress)) {
+			if (prStaRec->fgIsInUse
+				&& prStaRec->eStaType == STA_TYPE_DLS_PEER
+				&& EQUAL_MAC_ADDR(prStaRec->aucMacAddr,
+					aucPeerMACAddress)) {
 				break;
 			}
 		}
