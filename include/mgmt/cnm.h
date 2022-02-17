@@ -336,6 +336,7 @@ void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
 	IN unsigned long plParamPtr);
 void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
+u_int8_t cnmDBDCIsReqPeivilegeLock(void);
 #endif /*CFG_SUPPORT_DBDC*/
 
 enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo);
