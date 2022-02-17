@@ -320,7 +320,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	DBGLOG(NAN, INFO, "Send NDP Initiator Rsp event\n");
+	DBGLOG(NAN, INFO, "[%s] Send NDP Initiator Rsp event\n", __func__);
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -783,6 +783,14 @@ nanNdpInitiatorReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 		/* nla_get_u32(tb[MTK_WLAN_VENDOR_ATTR_NDP_CONFIG_QOS]); */
 	}
 
+	/* Peer mac Addr */
+	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]) {
+		kalMemCopy(rNanCmdDataRequest.aucResponderDataAddress,
+			nla_data(
+			tb[MTK_WLAN_VENDOR_ATTR_NDP_PEER_DISCOVERY_MAC_ADDR]),
+			MAC_ADDR_LEN);
+	}
+
 	rNanCmdDataRequest.fgNDPE = g_ndpReqNDPE.fgEnNDPE;
 	if (rNanCmdDataRequest.fgNDPE) {
 		/* Ipv6: vendor cmd did not fill this attribute,
@@ -880,10 +888,10 @@ nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 	/* App Info */
 	if (tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]) {
 		rNanCmdDataResponse.u2SpecificInfoLength =
-			nla_len(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]);
+			IPV6MACLEN;
 		kalMemCopy(rNanCmdDataResponse.aucSpecificInfo,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
-			rNanCmdDataResponse.u2SpecificInfoLength);
+			IPV6MACLEN);
 		kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
 			nla_data(tb[MTK_WLAN_VENDOR_ATTR_NDP_APP_INFO]),
 			IPV6MACLEN);
