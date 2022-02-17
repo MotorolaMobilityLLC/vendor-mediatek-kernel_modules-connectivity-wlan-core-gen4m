@@ -6151,8 +6151,7 @@ rlmChangeOperationMode(
 		 * No action frame is needed if we only changed OpTxNss.
 		 */
 #if CFG_SUPPORT_802_11AC
-		if (RLM_NET_IS_11AC(prBssInfo) && prStaRec &&
-			(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC) &&
+		if (RLM_NET_IS_11AC(prBssInfo) &&
 			(fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
