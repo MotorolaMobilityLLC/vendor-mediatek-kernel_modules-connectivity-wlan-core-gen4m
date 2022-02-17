@@ -633,6 +633,7 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)ap_selection.o \
 		$(MGMT_DIR)wmm.o \
 		$(MGMT_DIR)mddp.o \
+		$(MGMT_DIR)thrm.o \
 
 # ---------------------------------------------------
 # Chips Objects List

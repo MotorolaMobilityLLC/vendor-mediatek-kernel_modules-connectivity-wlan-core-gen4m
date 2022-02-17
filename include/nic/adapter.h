@@ -73,7 +73,9 @@
 #include "hs20.h"
 #endif /* CFG_SUPPORT_PASSPOINT */
 #include "gl_os.h"
-
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#include "thrm.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1893,6 +1895,7 @@ struct ADAPTER {
 	struct LINK rPwrLevelHandlerList;
 	uint32_t u4PwrLevel;
 	struct conn_pwr_event_max_temp *rTempInfo;
+	struct THRM_PROT_CFG_CONTEXT rThrmProtCfg;
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
