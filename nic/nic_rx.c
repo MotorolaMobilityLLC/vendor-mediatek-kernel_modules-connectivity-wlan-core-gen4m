@@ -4903,7 +4903,7 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	case CATEGORY_SPEC_MGT: {
 		if (prAdapter->fgEnable5GBand) {
 			DBGLOG(RLM, INFO,
-			       "[Channel Switch]nicRxProcessActionFrame\n");
+			       "[CSA]nicRxProcessActionFrame\n");
 			rlmProcessSpecMgtAction(prAdapter, prSwRfb);
 		}
 	}
