@@ -102,6 +102,15 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	{"IOTAP30", "80:001018:02fff02c0000:ff00ffffffff:::2::1:1"},
 	{"IOTAP31", "80:001018:02ff040c0000:ff00ffffffff:::2::1:1"},
 #endif
+
+#if CFG_TC3_FEATURE
+	{"ScreenOnBeaconTimeoutCount", "20"},
+	{"ScreenOffBeaconTimeoutCount", "10"},
+	{"AgingPeriod", "0x19"},
+	{"DropPacketsIPV4Low", "0x1"},
+	{"DropPacketsIPV6Low", "0x1"},
+	{"Sta2gBw", "1"},
+#endif
 };
 
 
@@ -1335,6 +1344,13 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 					CONNECT_BY_BSSID_HINT;
 				COPY_MAC_ADDR(prConnSettings->aucBSSIDHint,
 					pParamConn->pucBssidHint);
+#if CFG_TC3_FEATURE
+				if (EQUAL_MAC_ADDR(
+					prCurrBssid->arMacAddress,
+					pParamConn->pucBssidHint))
+					fgEqualBssid = TRUE;
+#endif
+
 			} else {
 				prConnSettings->eConnectionPolicy =
 					CONNECT_BY_BSSID;
