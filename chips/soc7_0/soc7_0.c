@@ -109,6 +109,7 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
 static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
+static int soc7_0_ConnacPccifon(void);
 static int soc7_0_ConnacPccifoff(void);
 #endif
 
@@ -527,6 +528,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 #endif
 	.triggerfwassert = soc7_0_Trigger_fw_assert,
 #if (CFG_SUPPORT_CONNINFRA == 1)
+	.coexpccifon = soc7_0_ConnacPccifon,
 	.coexpccifoff = soc7_0_ConnacPccifoff,
 	.get_sw_interrupt_status = soc7_0_get_sw_interrupt_status,
 #endif
@@ -1726,9 +1728,22 @@ static int wf_pwr_off_consys_mcu(void)
 }
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
+static int soc7_0_ConnacPccifon(void)
+{
+	int ret = 0;
+
+	/* clear bit 16:18 */
+	wf_ioremap_write(0x10001BF0, BITS(16, 18));
+
+	return ret;
+}
+
 static int soc7_0_ConnacPccifoff(void)
 {
 	int ret = 0;
+
+	/* clear bit 16:18 */
+	wf_ioremap_write(0x10001BF0, BITS(16, 18));
 
 	/*reset WiFi power on status to MD*/
 	ret = wf_ioremap_write(0x1024c014, 0x0ff);
