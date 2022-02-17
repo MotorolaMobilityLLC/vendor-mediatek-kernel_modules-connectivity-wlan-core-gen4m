@@ -224,8 +224,8 @@ VOID halEnableInterrupt(IN P_ADAPTER_T prAdapter)
 
 	IntMask.field.rx_done_0 = 1;
 	IntMask.field.rx_done_1 = 1;
-	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
-		BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
+	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+		BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
 	IntMask.field.tx_coherent = 0;
 	IntMask.field.rx_coherent = 0;
 	IntMask.field.tx_dly_int = 0;
@@ -445,14 +445,6 @@ VOID halSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt)
 	} else {
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
-		if (fgResult) {
-			/* if set firmware own not successful (possibly pending interrupts), */
-			/* indicate an own clear event */
-			HAL_LP_OWN_CLR(prAdapter, &fgResult);
-
-			return;
-		}
-
 		prAdapter->fgIsFwOwn = TRUE;
 
 		DBGLOG(INIT, INFO, "FW OWN\n");
@@ -667,6 +659,8 @@ VOID halReturnMsduToken(IN P_ADAPTER_T prAdapter, UINT_32 u4TokenNum)
 
 VOID halHifSwInfoInit(IN P_ADAPTER_T prAdapter)
 {
+	halWpdmaAllocRing(prAdapter->prGlueInfo);
+	halWpdmaInitRing(prAdapter->prGlueInfo);
 	halInitMsduTokenInfo(prAdapter);
 }
 
@@ -977,7 +971,8 @@ VOID halWpdmaAllocRxRing(P_GLUE_INFO_T prGlueInfo, UINT_32 u4Num, UINT_32 u4Size
 
 		/* Write RxD buffer address & allocated buffer length */
 		pRxD = (RXD_STRUCT *) dma_cb->AllocVa;
-		pRxD->SDP0 = pDmaBuf->AllocPa;
+		pRxD->SDP0 = pDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+		pRxD->SDP1 = ((UINT_64)pDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 		pRxD->SDL0 = u4BufSize;
 		pRxD->DDONE = 0;
 	}
@@ -1151,6 +1146,27 @@ VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo)
 	}
 }
 
+VOID halLoopBackWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
+{
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	UINT_32 word = 1;
+
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+	GloCfg.field_conn.bypass_dmashdl_txring3 = 1;
+	GloCfg.field_conn.pdma_addr_ext_en = 0;
+	GloCfg.field_conn.omit_rx_info = 1;
+	GloCfg.field_conn.omit_tx_info = 1;
+	GloCfg.field_conn.multi_dma_en = 0;
+	GloCfg.field_conn.pdma_addr_ext_en = 0;
+	GloCfg.field_conn.tx_dma_en = 1;
+	GloCfg.field_conn.rx_dma_en = 1;
+	GloCfg.field_conn.multi_dma_en = 0;
+
+	kalDevRegWrite(prGlueInfo, WPDMA_FIFO_TEST_MOD, word);
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+}
+
 VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 {
 	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
@@ -1164,6 +1180,7 @@ VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 		GloCfg.field_conn.tx_dma_en = 1;
 		GloCfg.field_conn.rx_dma_en = 1;
 		GloCfg.field_conn.pdma_bt_size = 3;
+		GloCfg.field_conn.pdma_addr_ext_en = (prBusInfo->u4DmaMask > 32) ? 1 : 0;
 		GloCfg.field_conn.tx_wb_ddone = 1;
 		GloCfg.field_conn.multi_dma_en = 3;
 		GloCfg.field_conn.fifo_little_endian = 1;
@@ -1171,8 +1188,8 @@ VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
-			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
 		IntMask.field.tx_dly_int = 0;
 	} else {
 		GloCfg.field_conn.tx_dma_en = 0;
@@ -1217,8 +1234,8 @@ VOID halEnhancedWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
-			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
 		IntMask.field.tx_dly_int = 0;
 	} else {
 		GloCfg.field_1.EnableRxDMA = 0;
@@ -1277,8 +1294,8 @@ VOID halWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
 
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
-		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) &
-			BIT(prBusInfo->tx_ring_cmd_idx) & BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
 	} else {
 		GloCfg.field.EnableRxDMA = 0;
 		GloCfg.field.EnableTxDMA = 0;
@@ -1341,6 +1358,7 @@ VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 	RTMP_TX_RING *tx_ring;
 	RTMP_RX_RING *rx_ring;
 	UINT_32 phy_addr, offset, i;
+	UINT_32 phy_addr_ext, ext_offset = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1361,15 +1379,20 @@ VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 			offset = prBusInfo->tx_ring_cmd_idx * MT_RINGREG_DIFF;
 		else
 			offset = i * MT_RINGREG_DIFF;
-		phy_addr = prHifInfo->TxRing[i].Cell[0].AllocPa;
+		phy_addr = (UINT_32)(prHifInfo->TxRing[i].Cell[0].AllocPa & DMA_LOWER_32BITS_MASK);
+		phy_addr_ext = (UINT_32)(((UINT_64)prHifInfo->TxRing[i].Cell[0].AllocPa >> DMA_BITS_OFFSET)
+					 & DMA_HIGHER_4BITS_MASK);
+		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		tx_ring->TxSwUsedIdx = 0;
 		tx_ring->u4UsedCnt = 0;
 		tx_ring->TxCpuIdx = 0;
 		tx_ring->hw_desc_base = MT_TX_RING_BASE + offset;
+		tx_ring->hw_desc_base_ext = MT_TX_RING_BASE_EXT + ext_offset;
 		tx_ring->hw_cidx_addr = MT_TX_RING_CIDX + offset;
 		tx_ring->hw_didx_addr = MT_TX_RING_DIDX + offset;
 		tx_ring->hw_cnt_addr = MT_TX_RING_CNT + offset;
 		kalDevRegWrite(prGlueInfo, tx_ring->hw_desc_base, phy_addr);
+		kalDevRegWrite(prGlueInfo, tx_ring->hw_desc_base_ext, phy_addr_ext);
 		kalDevRegWrite(prGlueInfo, tx_ring->hw_cidx_addr, tx_ring->TxCpuIdx);
 		kalDevRegWrite(prGlueInfo, tx_ring->hw_cnt_addr, TX_RING_SIZE);
 
@@ -1383,14 +1406,19 @@ VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo)
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		rx_ring = &prHifInfo->RxRing[i];
 		offset = i * MT_RINGREG_DIFF;
-		phy_addr = rx_ring->Cell[0].AllocPa;
+		phy_addr = (UINT_32) (rx_ring->Cell[0].AllocPa & DMA_LOWER_32BITS_MASK);
+		phy_addr_ext = (UINT_32)(((UINT_64)rx_ring->Cell[0].AllocPa >> DMA_BITS_OFFSET)
+					 & DMA_HIGHER_4BITS_MASK);
+		ext_offset = i * MT_RINGREG_EXT_DIFF;
 		rx_ring->RxSwReadIdx = 0;
 		rx_ring->RxCpuIdx = rx_ring->u4RingSize - 1;
 		rx_ring->hw_desc_base = MT_RX_RING_BASE + offset;
+		rx_ring->hw_desc_base_ext = MT_RX_RING_BASE_EXT + ext_offset;
 		rx_ring->hw_cidx_addr = MT_RX_RING_CIDX + offset;
 		rx_ring->hw_didx_addr = MT_RX_RING_DIDX + offset;
 		rx_ring->hw_cnt_addr = MT_RX_RING_CNT + offset;
 		kalDevRegWrite(prGlueInfo, rx_ring->hw_desc_base, phy_addr);
+		kalDevRegWrite(prGlueInfo, rx_ring->hw_desc_base_ext, phy_addr_ext);
 		kalDevRegWrite(prGlueInfo, rx_ring->hw_cidx_addr, rx_ring->RxCpuIdx);
 		kalDevRegWrite(prGlueInfo, rx_ring->hw_cnt_addr, rx_ring->u4RingSize);
 
@@ -1527,8 +1555,9 @@ VOID halDumpTxRing(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4
 
 	pTxD = (TXD_STRUCT *) prTxRing->Cell[u4Idx].AllocVa;
 
-	DBGLOG(SW4, INFO, "TX Ring[%u] Idx[%04u] SDP0[0x%08x] SDL0[%u] LS[%u] B[%u] DDONE[%u]\n",
-		u2Port, u4Idx, pTxD->SDPtr0, pTxD->SDLen0, pTxD->LastSec0, pTxD->Burst, pTxD->DMADONE);
+	DBGLOG(SW4, INFO, "TX Ring[%u] Idx[%04u] SDP0[0x%08x] SDL0[%u] LS[%u] B[%u] DDONE[%u] SDP0_EXT[%u]\n",
+	       u2Port, u4Idx, pTxD->SDPtr0, pTxD->SDLen0, pTxD->LastSec0,
+	       pTxD->Burst, pTxD->DMADONE, pTxD->SDPtr0Ext);
 }
 
 UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max)

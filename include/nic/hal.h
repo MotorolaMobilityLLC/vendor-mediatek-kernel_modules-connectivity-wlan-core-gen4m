@@ -355,17 +355,9 @@ do { \
 
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
-	struct mt66xx_chip_info *prChipInfo; \
-	UINT_32 u4Value; \
 	BOOLEAN fgLpOwnResult; \
-	if (!_prAdapter->chip_info) \
-		ASSERT(0); \
-	*_pfgResult = FALSE; \
-	prChipInfo = _prAdapter->chip_info; \
-	HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value); \
-	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) == 0) { \
-		*_pfgResult = TRUE; \
-	} else { \
+	HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult); \
+	if (*_pfgResult) { \
 		HAL_LP_OWN_RD(_prAdapter, &fgLpOwnResult); \
 		if (fgLpOwnResult == FALSE) { \
 			DBGLOG(INIT, INFO, "HAL_LP_OWN_RD %d\n", fgLpOwnResult); \
@@ -373,6 +365,7 @@ do { \
 			DBGLOG(INIT, INFO, "HAL_LP_OWN_SET %d\n", fgLpOwnResult); \
 		} \
 	} \
+	*_pfgResult = !*_pfgResult; \
 } while (0)
 
 #define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
