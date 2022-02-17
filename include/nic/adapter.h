@@ -573,6 +573,7 @@ struct _AIS_SPECIFIC_BSS_INFO_T {
 	TIMER_T rSaQueryTimer;
 	BOOLEAN fgBipKeyInstalled;
 #endif
+	UINT_8 ucKeyAlgorithmId;
 };
 
 struct _BOW_SPECIFIC_BSS_INFO_T {
