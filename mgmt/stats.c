@@ -1015,7 +1015,7 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	struct STATS_TX_TIME_STAT_T *prTimeStat;
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	struct TX_LATENCY_REPORT_STATS *stats;
+	struct TX_LATENCY_STATS *stats;
 	uint8_t i;
 #endif
 
@@ -1024,7 +1024,7 @@ statsTxTimeHdlr(struct GLUE_INFO *prGlueInfo,
 	kalMemZero(prTimeStat, sizeof(*prTimeStat));
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
-	stats = (struct TX_LATENCY_REPORT_STATS *)&prAdapter->rMsduReportStats;
+	stats = &prAdapter->rMsduReportStats.rCounting;
 	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
 		prTimeStat->au4Success[i] = GLUE_GET_REF_CNT(
 					    stats->au4ConnsysLatency[i]);
