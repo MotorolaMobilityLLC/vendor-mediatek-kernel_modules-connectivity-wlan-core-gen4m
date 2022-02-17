@@ -55,6 +55,10 @@ export CONFIG_MTK_COMBO_PLAT_PATH=x86
 # Define to enable Android wake_lock
 #CFG_ENABLE_WAKE_LOCK=0
 
+# For wpa_supplicant w/o MTK priv lib
+# y: enable, n: disable
+CFG_ANDROID_AOSP_PRIV_CMD=n
+
 #CFG_DEFAULT_DBG_LEVEL=0xF
 
 CFG_TX_DIRECT_USB=1
@@ -81,6 +85,10 @@ CFG_DRIVER_INF_NAME_CHANGE=n
 
 # Support firmware auto roaming
 #CFG_SUPPORT_ROAMING=0
+
+ifeq ($(CFG_ANDROID_AOSP_PRIV_CMD), y)
+PLATFORM_FLAGS += -DCFG_ANDROID_AOSP_PRIV_CMD
+endif
 
 #/***** Manage configs into compile options ******/
 ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_STA),)
