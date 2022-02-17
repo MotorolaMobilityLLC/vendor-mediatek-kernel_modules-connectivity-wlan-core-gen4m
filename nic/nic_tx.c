@@ -290,6 +290,110 @@ BOOLEAN nicTxSanityCheckResource(IN P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief Condition check if the PLE resource control is needed or not
+*
+* \param[in] prAdapter              Pointer to the Adapter structure.
+* \param[in] ucTC                   Specify the resource of TC
+*
+* \retval FALSE   Resource control is not needed.
+* \retval TRUE    Resource is not needed.
+*/
+/*----------------------------------------------------------------------------*/
+
+BOOLEAN nicTxResourceIsPleCtrlNeeded(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+{
+	P_TX_CTRL_T prTxCtrl;
+	P_TX_TCQ_STATUS_T prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+	/* no PLE resource control */
+	if (!prTc->fgNeedPleCtrl)
+		return FALSE;
+
+	/* CMD doesn't have PLE */
+	if (ucTC == 4)
+		return FALSE;
+
+	/* rom stage inbabd command use TC0. need refine a good method */
+	if ((ucTC == 0) && (prAdapter->fgIsFwDownloaded == FALSE))
+		return FALSE;
+
+	return TRUE;
+}
+
+
+UINT_32 nicTxResourceGetPleFreeCount(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+{
+	P_TX_CTRL_T prTxCtrl;
+	P_TX_TCQ_STATUS_T prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTC)) {
+		/* unlimited value*/
+		return 0xFFFFFFFF;
+	}
+
+	return prTc->au4FreePageCount_PLE[ucTC];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Driver maintain a variable that is synchronous with the usage of individual
+*        TC Buffer Count. This function will check if has enough TC Buffer for incoming
+*        packet and then update the value after promise to provide the resources.
+*
+* \param[in] prAdapter              Pointer to the Adapter structure.
+* \param[in] ucTC                   Specify the resource of TC
+*
+* \retval WLAN_STATUS_SUCCESS   Resource is available and been assigned.
+* \retval WLAN_STATUS_RESOURCES Resource is not available.
+*/
+/*----------------------------------------------------------------------------*/
+
+WLAN_STATUS nicTxAcquireResourcePLE(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
+{
+	P_TX_CTRL_T prTxCtrl;
+	P_TX_TCQ_STATUS_T prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTC))
+		return WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, INFO, "Acquire PLE: TC%d AcquirePageCnt[%u] FreeBufferCnt[%u] FreePageCnt[%u]\n",
+		ucTC, NIX_TX_PLE_PAGE_CNT_PER_FRAME, prTc->au4FreeBufferCount_PLE[ucTC],
+		prTc->au4FreePageCount_PLE[ucTC]);
+
+
+	/* PLE Acquire */
+	if (prTc->au4FreePageCount_PLE[ucTC] >= NIX_TX_PLE_PAGE_CNT_PER_FRAME) {
+		prTc->au4FreePageCount_PLE[ucTC] -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	DBGLOG(INIT, ERROR, "Acquire PLE FAILURE. TC%d AcquirePageCnt[%u] FreeBufferCnt[%u] FreePageCnt[%u]\n",
+		ucTC, NIX_TX_PLE_PAGE_CNT_PER_FRAME, prTc->au4FreeBufferCount_PLE[ucTC],
+		prTc->au4FreePageCount_PLE[ucTC]);
+
+
+	return WLAN_STATUS_RESOURCES;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Driver maintain a variable that is synchronous with the usage of individual
 *        TC Buffer Count. This function will check if has enough TC Buffer for incoming
 *        packet and then update the value after promise to provide the resources.
@@ -323,6 +427,11 @@ WLAN_STATUS nicTxAcquireResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC, IN UI
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 #if 1
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
+
+		if (nicTxAcquireResourcePLE(prAdapter, ucTC) != WLAN_STATUS_SUCCESS)
+			return WLAN_STATUS_RESOURCES;
+
+		/* This update must be AFTER the PLE-resource-check */
 		prTc->au4FreePageCount[ucTC] -= u4PageCount;
 		prTc->au4FreeBufferCount[ucTC] = (prTc->au4FreePageCount[ucTC] / u4MaxPageCntPerFrame);
 
@@ -424,7 +533,7 @@ WLAN_STATUS nicTxPollingResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTC)
 */
 /*----------------------------------------------------------------------------*/
 BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_32 u4PageCount,
-	IN BOOLEAN fgReqLock)
+	IN BOOLEAN fgReqLock, IN BOOLEAN fgPLE)
 {
 	P_TX_TCQ_STATUS_T prTcqStatus;
 	BOOLEAN bStatus = FALSE;
@@ -432,19 +541,30 @@ BOOLEAN nicTxReleaseResource(IN P_ADAPTER_T prAdapter, IN UINT_8 ucTc, IN UINT_3
 
 	KAL_SPIN_LOCK_DECLARATION();
 
+	ASSERT(prAdapter);
 	/* enable/disable TX resource control */
 	if (!prAdapter->rTxCtrl.fgIsTxResourceCtrl)
 		return TRUE;
 
-	ASSERT(prAdapter);
+	/* No need to do PLE resource control */
+	if (fgPLE && !nicTxResourceIsPleCtrlNeeded(prAdapter, ucTc))
+		return TRUE;
+
 	prTcqStatus = &prAdapter->rTxCtrl.rTc;
 
 	/* Return free Tc page count */
 	if (fgReqLock)
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
-	prTcqStatus->au4FreePageCount[ucTc] += u4PageCount;
-	prTcqStatus->au4FreeBufferCount[ucTc] = (prTcqStatus->au4FreePageCount[ucTc] / u4MaxPageCntPerFrame);
+	if (fgPLE) {
+		prTcqStatus->au4FreePageCount_PLE[ucTc] += u4PageCount;
+		prTcqStatus->au4FreeBufferCount_PLE[ucTc] =
+			(prTcqStatus->au4FreePageCount_PLE[ucTc] / NIX_TX_PLE_PAGE_CNT_PER_FRAME);
+	} else {
+		prTcqStatus->au4FreePageCount[ucTc] += u4PageCount;
+		prTcqStatus->au4FreeBufferCount[ucTc] =
+			(prTcqStatus->au4FreePageCount[ucTc] / u4MaxPageCntPerFrame);
+	}
 
 	if (fgReqLock)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
@@ -474,8 +594,11 @@ VOID nicTxReleaseMsduResource(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 	while (prMsduInfo) {
 		prNextMsduInfo = (P_MSDU_INFO_T) QUEUE_GET_NEXT_ENTRY((P_QUE_ENTRY_T) prMsduInfo);
 
-		nicTxReleaseResource(prAdapter, prMsduInfo->ucTC,
+		nicTxReleaseResource_PSE(prAdapter, prMsduInfo->ucTC,
 			nicTxGetPageCount(prAdapter, prMsduInfo->u2FrameLength, FALSE), FALSE);
+
+		nicTxReleaseResource_PLE(prAdapter, prMsduInfo->ucTC,
+					NIX_TX_PLE_PAGE_CNT_PER_FRAME, FALSE);
 
 		prMsduInfo = prNextMsduInfo;
 	};
@@ -552,6 +675,8 @@ WLAN_STATUS nicTxResetResource(IN P_ADAPTER_T prAdapter)
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
+	if (!prAdapter->fgIsNicTxReousrceValid)
+		prAdapter->nicTxReousrce.ucPpTxAddCnt = NIC_TX_LEN_ADDING_LENGTH;
 	DBGLOG(TX, TRACE, "Reset TCQ free resource to Page:Buf [%u:%u %u:%u %u:%u %u:%u %u:%u %u:%u ]\n",
 	       prTxCtrl->rTc.au4FreePageCount[TC0_INDEX],
 	       prTxCtrl->rTc.au4FreeBufferCount[TC0_INDEX],

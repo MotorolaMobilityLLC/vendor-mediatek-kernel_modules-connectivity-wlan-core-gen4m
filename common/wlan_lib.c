@@ -1364,7 +1364,7 @@ VOID wlanClearTxCommandQueue(IN P_ADAPTER_T prAdapter)
 			wlanReleaseCommand(prAdapter, prCmdInfo, TX_RESULT_QUEUE_CLEARANCE);
 
 		/* Release Tx resource for CMD which resource is allocated but not used */
-		nicTxReleaseResource(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
+		nicTxReleaseResource_PSE(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
 			nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 
 		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -1408,7 +1408,7 @@ VOID wlanClearTxOidCommand(IN P_ADAPTER_T prAdapter)
 				wlanReleaseCommand(prAdapter, prCmdInfo, TX_RESULT_QUEUE_CLEARANCE);
 
 			/* Release Tx resource for CMD which resource is allocated but not used */
-			nicTxReleaseResource(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
+			nicTxReleaseResource_PSE(prAdapter, nicTxGetCmdResourceType(prCmdInfo),
 				nicTxGetCmdPageCount(prAdapter, prCmdInfo), TRUE);
 
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
@@ -6407,9 +6407,9 @@ VOID wlanSetNicResourceParameters(IN P_ADAPTER_T prAdapter)
 
 	/* 1 1. update free page count in TC control: MCU and LMAC */
 	prWifiVar->au4TcPageCount[TC4_INDEX] =
-			prAdapter->nicTxReousrce.u4McuTotalResource * u4MaxPageCntPerFrame;	 /* MCU */
+			prAdapter->nicTxReousrce.u4CmdTotalResource * u4MaxPageCntPerFrame;	 /* MCU */
 
-	u4share = prAdapter->nicTxReousrce.u4LmacTotalResource/(TC_NUM - 1); /* LMAC. Except TC_4, which is MCU */
+	u4share = prAdapter->nicTxReousrce.u4DataTotalResource/(TC_NUM - 1); /* LMAC. Except TC_4, which is MCU */
 	for (idx = TC0_INDEX; idx < TC_NUM; idx++) {
 		if (idx != TC4_INDEX)
 			prWifiVar->au4TcPageCount[idx] = u4share * u4MaxPageCntPerFrame;
@@ -6417,7 +6417,7 @@ VOID wlanSetNicResourceParameters(IN P_ADAPTER_T prAdapter)
 
 	/* 1 2. if there is remaings, give them to TC_3, which is VO */
 	prWifiVar->au4TcPageCount[TC3_INDEX] +=
-			(prAdapter->nicTxReousrce.u4LmacTotalResource%(TC_NUM - 1)) * u4MaxPageCntPerFrame;
+			(prAdapter->nicTxReousrce.u4DataTotalResource%(TC_NUM - 1)) * u4MaxPageCntPerFrame;
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/*
