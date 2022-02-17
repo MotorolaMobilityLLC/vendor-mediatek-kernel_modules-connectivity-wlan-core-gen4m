@@ -485,6 +485,7 @@ struct FWDL_OPS_T mt7668_fw_dl_ops = {
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetHarvardFwInfo,
 	.getFwDlInfo = mt7668GetFwDlInfo,
+	.phyAction = NULL,
 };
 
 struct TX_DESC_OPS_T mt7668TxDescOps = {
