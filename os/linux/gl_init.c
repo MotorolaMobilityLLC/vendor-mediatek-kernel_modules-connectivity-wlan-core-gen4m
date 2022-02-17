@@ -3136,6 +3136,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		cnmInitDbdcSetting(prAdapter);
 #endif /*CFG_SUPPORT_DBDC*/
 
+		/* send regulatory information to firmware */
+		rlmDomainSendInfoToFirmware(prAdapter);
+
 		/* set MAC address */
 		{
 			uint32_t rStatus = WLAN_STATUS_FAILURE;
