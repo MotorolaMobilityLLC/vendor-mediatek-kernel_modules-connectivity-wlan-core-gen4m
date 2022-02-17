@@ -159,9 +159,7 @@ static int32_t mddpRegisterCb(void)
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
 
-#if (CFG_SUPPORT_CONNAC2X == 0)
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
-#endif
 
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
@@ -511,9 +509,7 @@ void mddpNotifyWifiOffStart(void)
 
 	mddpSetMDFwOwn();
 
-#if (CFG_SUPPORT_CONNAC2X == 0)
 	mtk_ccci_register_md_state_cb(NULL);
-#endif
 	clear_md_wifi_off_bit();
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_OFF_START);
 }

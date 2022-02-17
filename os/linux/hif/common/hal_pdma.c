@@ -3222,13 +3222,26 @@ void halDisableSlpProt(struct GLUE_INFO *prGlueInfo)
 
 void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
 	if (!prAdapter) {
 		DBGLOG(HAL, ERROR, "Null prAdapter.\n");
 		return;
 	}
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
 	DBGLOG(HAL, INFO, "halNotifyMdCrash.\n");
-	kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
-			MCU_INT_NOTIFY_MD_CRASH);
+
+	if (prBusInfo->softwareInterruptMcu) {
+		prBusInfo->softwareInterruptMcu(
+			prAdapter, MCU_INT_NOTIFY_MD_CRASH);
+	} else {
+		kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
+			       MCU_INT_NOTIFY_MD_CRASH);
+	}
 }
 
 bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
