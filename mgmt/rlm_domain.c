@@ -4665,9 +4665,10 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 			/* ToDo:: Nothing */
 		}
 
-		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
+		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0) {
+			pucConfigBuf[u4ConfigReadLen] = 0;
 			txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
-		else
+		} else
 			DBGLOG(RLM, INFO,
 			       "no txpowerctrl.cfg or file is empty\n");
 
