@@ -2728,14 +2728,26 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	prAdapter->rWifiVar.ucStaEht &= prPhyCap->ucEht;
-	wlanCfgSetUint32(prAdapter, "StaEHT", prAdapter->rWifiVar.ucStaEht);
-	prAdapter->rWifiVar.ucApEht &= prPhyCap->ucEht;
-	wlanCfgSetUint32(prAdapter, "ApEHT", prAdapter->rWifiVar.ucApEht);
-	prAdapter->rWifiVar.ucP2pGoEht &= prPhyCap->ucEht;
-	wlanCfgSetUint32(prAdapter, "P2pGoEHT", prAdapter->rWifiVar.ucP2pGoEht);
-	prAdapter->rWifiVar.ucP2pGcEht &= prPhyCap->ucEht;
-	wlanCfgSetUint32(prAdapter, "P2pGcEHT", prAdapter->rWifiVar.ucP2pGcEht);
+	if (prAdapter->rWifiVar.ucStaEht != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucStaEht &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "StaEHT",
+			prAdapter->rWifiVar.ucStaEht);
+	}
+	if (prAdapter->rWifiVar.ucApEht != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucApEht &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "ApEHT",
+			prAdapter->rWifiVar.ucApEht);
+	}
+	if (prAdapter->rWifiVar.ucP2pGoEht != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucP2pGoEht &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "P2pGoEHT",
+			prAdapter->rWifiVar.ucP2pGoEht);
+	}
+	if (prAdapter->rWifiVar.ucP2pGcEht != FEATURE_FORCE_ENABLED) {
+		prAdapter->rWifiVar.ucP2pGcEht &= prPhyCap->ucEht;
+		wlanCfgSetUint32(prAdapter, "P2pGcEHT",
+			prAdapter->rWifiVar.ucP2pGcEht);
+	}
 #endif
 	/* Overwrite bandwidth settings by phy capability */
 	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {
