@@ -2326,11 +2326,7 @@ uint32_t kalResetStats(IN struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 void *kalGetStats(IN struct net_device *prDev)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
-
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			netdev_priv(prDev);
-	return (void *) &prNetDevPrivate->stats;
+	return (void *) &prDev->stats;
 }				/* end of wlanGetStats() */
 
 /*----------------------------------------------------------------------------*/
