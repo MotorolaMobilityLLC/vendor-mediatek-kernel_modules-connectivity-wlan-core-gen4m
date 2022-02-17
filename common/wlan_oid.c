@@ -15342,87 +15342,113 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 	switch (u4CmdId) {
 	case SER_USER_CMD_DISABLE:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET,
-				 SER_SET_DISABLE);
+				 SER_SET_DISABLE, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE:
-		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET, SER_SET_ENABLE);
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET, SER_SET_ENABLE, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_TRACKING_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
-				 SER_ENABLE_TRACKING);
+				 SER_ENABLE_TRACKING, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_L1_RECOVER_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
-				 SER_ENABLE_TRACKING | SER_ENABLE_L1_RECOVER);
+				 SER_ENABLE_TRACKING | SER_ENABLE_L1_RECOVER,
+				 0);
+		break;
+
+	case SER_USER_CMD_ENABLE_MASK_L2_RECOVER_ONLY:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
+				 SER_ENABLE_TRACKING | SER_ENABLE_L2_RECOVER,
+				 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_L3_RX_ABORT_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
-				 SER_ENABLE_TRACKING | SER_ENABLE_L3_RX_ABORT);
+				 SER_ENABLE_TRACKING | SER_ENABLE_L3_RX_ABORT,
+				 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_L3_TX_ABORT_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
-				 SER_ENABLE_TRACKING | SER_ENABLE_L3_TX_ABORT);
+				 SER_ENABLE_TRACKING | SER_ENABLE_L3_TX_ABORT,
+				 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_L3_TX_DISABLE_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
 				 SER_ENABLE_TRACKING |
-				 SER_ENABLE_L3_TX_DISABLE);
+				 SER_ENABLE_L3_TX_DISABLE, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_L3_BFRECOVER_ONLY:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
 				 SER_ENABLE_TRACKING |
-				 SER_ENABLE_L3_BF_RECOVER);
+				 SER_ENABLE_L3_BF_RECOVER, 0);
 		break;
 
 	case SER_USER_CMD_ENABLE_MASK_RECOVER_ALL:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET_ENABLE_MASK,
 				 (SER_ENABLE_TRACKING |
 				  SER_ENABLE_L1_RECOVER |
+				  SER_ENABLE_L2_RECOVER |
 				  SER_ENABLE_L3_RX_ABORT |
 				  SER_ENABLE_L3_TX_ABORT |
 				  SER_ENABLE_L3_TX_DISABLE |
-				  SER_ENABLE_L3_BF_RECOVER));
+				  SER_ENABLE_L3_BF_RECOVER), 0);
 		break;
 
 	case SER_USER_CMD_L1_RECOVER:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L1_RECOVER);
+				 SER_SET_L1_RECOVER, 0);
 		break;
 
-	case SER_USER_CMD_L3_RX_ABORT:
+	case SER_USER_CMD_L2_BN0_RECOVER:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_RX_ABORT);
+				 SER_SET_L2_RECOVER, ENUM_BAND_0);
 		break;
+
+	case SER_USER_CMD_L2_BN1_RECOVER:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+				 SER_SET_L2_RECOVER, ENUM_BAND_1);
+		break;
+
+	case SER_USER_CMD_L3_RX0_ABORT:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+				 SER_SET_L3_RX_ABORT, ENUM_BAND_0);
+		break;
+
+	case SER_USER_CMD_L3_RX1_ABORT:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
+				 SER_SET_L3_RX_ABORT, ENUM_BAND_1);
+		break;
+
 	case SER_USER_CMD_L3_TX0_ABORT:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_TX0_ABORT);
+				 SER_SET_L3_TX_ABORT, ENUM_BAND_0);
 		break;
 
 	case SER_USER_CMD_L3_TX1_ABORT:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_TX1_ABORT);
+				 SER_SET_L3_TX_ABORT, ENUM_BAND_1);
 		break;
 
 	case SER_USER_CMD_L3_TX0_DISABLE:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_TX0_DISABLE);
+				 SER_SET_L3_TX_DISABLE, ENUM_BAND_0);
 		break;
 
 	case SER_USER_CMD_L3_TX1_DISABLE:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_TX1_DISABLE);
+				 SER_SET_L3_TX_DISABLE, ENUM_BAND_1);
 		break;
 
 	case SER_USER_CMD_L3_BF_RECOVER:
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				 SER_SET_L3_BF_RECOVER);
+				 SER_SET_L3_BF_RECOVER, 0);
 		break;
 
 	default:
@@ -15432,13 +15458,14 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t wlanoidSerExtCmd(IN struct ADAPTER *prAdapter,
-			  uint8_t ucAction, uint8_t ucSerSet) {
+uint32_t wlanoidSerExtCmd(IN struct ADAPTER *prAdapter, uint8_t ucAction,
+			 uint8_t ucSerSet, uint8_t ucDbdcIdx) {
 	struct EXT_CMD_SER_T rCmdSer = {0};
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	rCmdSer.ucAction = ucAction;
 	rCmdSer.ucSerSet = ucSerSet;
+	rCmdSer.ucDbdcIdx = ucDbdcIdx;
 
 	rStatus = wlanSendSetQueryExtCmd(prAdapter,
 					 CMD_ID_LAYER_0_EXT_MAGIC_NUM,
