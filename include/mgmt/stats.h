@@ -31,11 +31,79 @@
  *						C O N S T A N T S
  *******************************************************************************
  */
+#define AIR_LAT_LVL_NUM 5
 
 /*******************************************************************************
  *            D A T A   T Y P E S
  *******************************************************************************
  */
+
+enum ENUM_STATS_TX_TLV_TAG_ID_T {
+	STATS_TX_TAG_QUEUE          = 0,
+	STATS_TX_TAG_BAND0          = 1,
+	STATS_TX_TAG_BSS0          = 2,
+	STATS_TX_TAG_MAX_NUM
+};
+
+enum ENUM_STATS_RX_TLV_TAG_ID_T {
+	STATS_RX_TAG_REORDER_DROP          = 0,
+	STATS_RX_TAG_BAND0          = 1,
+	STATS_RX_TAG_MAX_NUM
+};
+
+enum ENUM_STATS_CGS_TLV_TAG_ID_T {
+	STATS_CGS_TAG_B0_IDLE_SLOT          = 0,
+	STATS_CGS_TAG_AIR_LATENCY_LVL          = 1,
+	STATS_CGS_TAG_AIR_LATENCY_PPDU_CNT_PER_LVL          = 2,
+	STATS_CGS_TAG_AIR_LATENCY_MPDU_CNT_PER_LVL          = 3,
+	STATS_CGS_TAG_MAX_NUM
+};
+
+enum ENUM_STATS_FLAG_TLV_TAG_ID_T {
+	STATS_FLAG_TAG_SCANNING          = 0,
+	STATS_FLAG_TAG_MAX_NUM
+};
+
+/* TLV */
+struct STATS_TRX_TLV_T {
+	uint32_t u4Tag;
+	uint32_t u4Len;
+	uint8_t  aucBuffer[0];
+};
+
+typedef void(*PFN_STATS_HANDLE)(struct GLUE_INFO*,
+	struct STATS_TRX_TLV_T*, uint32_t);
+typedef uint32_t(*PFN_STATS_GET_LENGTH)(void);
+
+/* Tx Queue statistics */
+struct STATS_TX_QUEUE_STAT_T {
+	uint32_t u4MsduTokenUsed;
+	uint32_t u4MsduTokenRsvd;
+	uint32_t u4PleHifUsed;
+	uint32_t u4PleHifRsvd;
+};
+
+/* tx per band statistics */
+struct STATS_TX_PER_BAND_STAT_T {
+	uint64_t u8Total;
+};
+
+/* rx per band statistics */
+struct STATS_RX_PER_BAND_STAT_T {
+	uint64_t u8Total;
+};
+
+/* tx per bss statistics */
+struct STATS_TX_PER_BSS_STAT_T {
+	uint64_t u8Retry;
+	uint64_t u8RtsFail;
+	uint64_t u8AckFail;
+};
+
+struct STATS_TLV_HDLR_T {
+	PFN_STATS_GET_LENGTH pfnTlvGetLen;
+	PFN_STATS_HANDLE pfnStstsTlvHdl;
+};
 
 /*******************************************************************************
  *            M A C R O   D E C L A R A T I O N S
@@ -54,6 +122,46 @@
  *            F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+/* common tlv length */
+uint32_t statsGetTlvU2Len(void);
+uint32_t statsGetTlvU4Len(void);
+uint32_t statsGetTlvU8Len(void);
+
+/* tx tlv length */
+uint32_t statsTxGetQueuetLen(void);
+uint32_t statsTxGetPerBandLen(void);
+uint32_t statsTxGetPerBssLen(void);
+
+/* rx tlv length */
+uint32_t statsRxGetPerBandLen(void);
+
+/* congestion tlv length */
+uint32_t statsCgsGetLatLvLen(void);
+uint32_t statsCgsGetLatCntPerLvLen(void);
+
+void statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsTxBand0Hdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+
+void statsRxReorderDropHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsRxBand0Hdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+
+void statsCgsB0IdleSlotHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsCgsLatLvHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsCgsLatPpduHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+void statsCgsLatMpduHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
+
+void statsFgScanHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *prTlvList, uint32_t u4TlvLen);
 
 /*******************************************************************************
  *						P R I V A T E   D A T A
@@ -69,6 +177,7 @@
  *						P U B L I C  F U N C T I O N S
  *******************************************************************************
  */
+
 
 #define STATS_TX_TIME_ARRIVE(__Skb__)	\
 do { \
@@ -102,4 +211,24 @@ void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag,
 			 OUT uint8_t *pucRxIpProto,
 			 OUT uint16_t *pu2RxUdpPort,
 			 OUT uint32_t *pu4RxDelayThreshold);
+
+uint32_t statsTxGetTlvStatTotalLen(void);
+uint32_t statsRxGetTlvStatTotalLen(void);
+uint32_t statsCgstnGetTlvStatTotalLen(void);
+uint32_t statsFlagGetTlvStatTotalLen(void);
+
+uint32_t statsTxGetTlvStatTotalLen(void);
+uint32_t statsRxGetTlvStatTotalLen(void);
+uint32_t statsCgsGetTlvStatTotalLen(void);
+uint32_t statsFlagGetTlvStatTotalLen(void);
+
+void statsGetTxInfoHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *paucTxTlvList);
+void statsGetRxInfoHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *paucRxTlvList);
+void statsGetCgsInfoHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *paucCgsTlvList);
+void statsGetFgInfoHdlr(struct GLUE_INFO *prGlueInfo,
+	struct STATS_TRX_TLV_T *paucFlagTlvList);
+
 /* End of stats.h */
