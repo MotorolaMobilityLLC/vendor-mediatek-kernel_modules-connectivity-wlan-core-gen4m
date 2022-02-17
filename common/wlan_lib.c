@@ -720,7 +720,7 @@ void wlanAdapterDestroy(IN struct ADAPTER *prAdapter)
 void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 			  IN const u_int8_t bAtResetFlow)
 {
-	uint32_t i = 0;
+	uint32_t i = 0, j = 0;
 
 	DBGLOG(INIT, TRACE, "start.\n");
 
@@ -776,8 +776,9 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
 	QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
-	for (i = 0; i < TX_PORT_NUM; i++)
-		QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i]);
+	for (i = 0; i < BSS_DEFAULT_NUM; i++)
+		for (j = 0; j < TX_PORT_NUM; j++)
+			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
 	QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
@@ -2439,33 +2440,42 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 #else
 
-		struct QUE qDataPort[TX_PORT_NUM];
-		struct QUE *prDataPort[TX_PORT_NUM];
+		struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+		struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
 		struct MSDU_INFO *prMsduInfo;
-		int32_t i;
+		int32_t i, j;
 
 		KAL_SPIN_LOCK_DECLARATION();
 
-		for (i = 0; i < TX_PORT_NUM; i++) {
-			prDataPort[i] = &qDataPort[i];
-			QUEUE_INITIALIZE(prDataPort[i]);
+		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+			for (j = 0; j < TX_PORT_NUM; j++) {
+				prDataPort[i][j] = &qDataPort[i][j];
+				QUEUE_INITIALIZE(prDataPort[i][j]);
+			}
 		}
 
 		/* <1> Move whole list of CMD_INFO to temp queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		for (i = 0; i < TX_PORT_NUM; i++) {
-			QUEUE_MOVE_ALL(prDataPort[i], &prAdapter->rTxPQueue[i]);
-			kalTraceEvent("Move TxPQueue%d %d", i,
-				prDataPort[i]->u4NumElem);
+		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+			for (j = 0; j < TX_PORT_NUM; j++) {
+				QUEUE_MOVE_ALL(prDataPort[i][j],
+					&prAdapter->rTxPQueue[i][j]);
+				kalTraceEvent("Move TxPQueue%d_%d %d", i, j,
+					prDataPort[i][j]->u4NumElem);
+			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 		/* <2> Return sk buffer */
-		for (i = 0; i < TX_PORT_NUM; i++) {
-			nicTxReleaseMsduResource(prAdapter, (struct MSDU_INFO *)
-						QUEUE_GET_HEAD(prDataPort[i]));
-			nicTxReturnMsduInfo(prAdapter, (struct MSDU_INFO *)
-						QUEUE_GET_HEAD(prDataPort[i]));
+		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+			for (j = 0; j < TX_PORT_NUM; j++) {
+				nicTxReleaseMsduResource(prAdapter,
+					(struct MSDU_INFO *)
+					QUEUE_GET_HEAD(prDataPort[i][j]));
+				nicTxReturnMsduInfo(prAdapter,
+					(struct MSDU_INFO *)
+					QUEUE_GET_HEAD(prDataPort[i][j]));
+			}
 		}
 
 		/* <3> Clear pending MSDU info in data done queue */
