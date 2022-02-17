@@ -182,6 +182,20 @@
 /* wifi type: 11g, 11n, ... */
 #define  PRIV_CMD_GET_WIFI_TYPE		41
 
+/* fos_change begin */
+#define PRIV_CMD_CONNSTATUS			42
+#if CFG_SUPPORT_STAT_STATISTICS
+#define PRIV_CMD_STAT				43
+#endif
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+#define PRIV_CMD_INT_STAT			44
+#endif
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+#define PRIV_CMD_EXCEPTION_STAT		45
+#endif
+
+
+
 /* 802.3 Objects (Ethernet) */
 #define OID_802_3_CURRENT_ADDRESS           0x01010102
 
@@ -367,6 +381,13 @@ int
 priv_get_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo,
 		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+
+/* fos_change begin */
+int
+priv_get_string(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+/* fos_change end */
 
 int
 priv_set_driver(IN struct net_device *prNetDev,

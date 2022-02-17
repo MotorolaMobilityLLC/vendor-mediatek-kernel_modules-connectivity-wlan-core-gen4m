@@ -481,6 +481,11 @@ void nic_rxd_v2_check_wakeup_reason(
 			CONNAC2X_RX_STATUS_PKT_TYPE_SW_EVENT) {
 			prEvent = (struct WIFI_EVENT *)
 				(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
+			/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+			nicUpdateWakeupStatistics(prAdapter, RX_EVENT_INT);
+			prAdapter->wake_event_count[prEvent->ucEID]++;
+#endif
 			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
 				prEvent->ucEID);
 			break;
@@ -491,6 +496,11 @@ void nic_rxd_v2_check_wakeup_reason(
 			uint8_t ucSubtype;
 			struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
 			uint16_t u2Temp = prChipInfo->rxd_size;
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+			nicUpdateWakeupStatistics(prAdapter, RX_MGMT_INT);
+#endif /* fos_change end */
+
 
 			u2PktLen =
 				HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(
@@ -540,6 +550,10 @@ void nic_rxd_v2_check_wakeup_reason(
 	case RX_PKT_TYPE_RX_DATA:
 	{
 		uint16_t u2Temp = 0;
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+		nicUpdateWakeupStatistics(prAdapter, RX_DATA_INT);
+#endif /* fos_change end */
 
 		u2PktLen =
 			HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus);
@@ -618,6 +632,10 @@ void nic_rxd_v2_check_wakeup_reason(
 	}
 
 	default:
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+		nicUpdateWakeupStatistics(prAdapter, RX_OTHERS_INT);
+#endif
 		DBGLOG(RX, WARN, "Unknown Packet %d wakeup host\n",
 			prSwRfb->ucPacketType);
 		break;

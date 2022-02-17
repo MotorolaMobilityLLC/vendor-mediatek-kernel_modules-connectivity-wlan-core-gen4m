@@ -1789,6 +1789,24 @@ struct ADAPTER {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	unsigned int u4FWLastUpdateTime;
 #endif
+
+/* fos_change begin */
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	struct WAKEUP_STATISTIC arWakeupStatistic[WAKEUP_TYPE_NUM];
+	uint32_t wake_event_count[EVENT_ID_END];
+#endif
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+	uint32_t total_beacon_timeout_count;
+	uint32_t beacon_timeout_count[BEACON_TIMEOUT_DUE_2_NUM];
+	uint32_t total_tx_done_fail_count;
+	uint32_t tx_done_fail_count[TX_RESULT_NUM];
+	uint32_t total_deauth_rx_count;
+	uint32_t deauth_rx_count[REASON_CODE_BEACON_TIMEOUT + 1];
+	uint32_t total_scandone_timeout_count;
+	uint32_t total_mgmtTX_timeout_count;
+	uint32_t total_mgmtRX_timeout_count;
+#endif
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

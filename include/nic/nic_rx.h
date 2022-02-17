@@ -821,7 +821,7 @@ struct SW_RFB {
 	void *prRxStatus;
 	struct HW_MAC_RX_STS_GROUP_1 *prRxStatusGroup1;
 	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
-	void *prRxStatusGroup3;
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4;
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	struct HW_MAC_RX_STS_GROUP_5 *prRxStatusGroup5;

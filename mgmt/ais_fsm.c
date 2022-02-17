@@ -4272,6 +4272,13 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisFsmRunEventScanDoneTimeOut()");
 
+	ASSERT(prAdapter);
+
+/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+		prAdapter->total_scandone_timeout_count++;
+#endif /* fos_change end */
+
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
