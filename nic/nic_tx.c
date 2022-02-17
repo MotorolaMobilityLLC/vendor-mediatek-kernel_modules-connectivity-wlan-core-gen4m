@@ -2333,6 +2333,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
+	struct QUE qDataTemp, *prDataTemp = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prQue);
@@ -2343,6 +2344,9 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	prTxCtrl->u4TotalTxAccessNum++;
 	prTxCtrl->u4TotalTxPacketNum += prQue->u4NumElem;
 #endif
+
+	prDataTemp = &qDataTemp;
+	QUEUE_INITIALIZE(prDataTemp);
 
 	while (QUEUE_IS_NOT_EMPTY(prQue)) {
 		u_int8_t fgTxDoneHandler;
@@ -2358,6 +2362,13 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			QUEUE_INSERT_HEAD(prQue,
 				(struct QUE_ENTRY *) prMsduInfo);
 			break;
+		}
+
+		if (prMsduInfo->ucBssIndex < BSS_DEFAULT_NUM &&
+		    halIsTxBssCntFull(prAdapter, prMsduInfo->ucBssIndex)) {
+			QUEUE_INSERT_TAIL(prDataTemp,
+					  (struct QUE_ENTRY *) prMsduInfo);
+			continue;
 		}
 
 		fgTxDoneHandler = prMsduInfo->pfTxDoneHandler ?
@@ -2385,6 +2396,11 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
+
+	if (QUEUE_IS_NOT_EMPTY(prQue))
+		QUEUE_CONCATENATE_QUEUES(prDataTemp, prQue);
+
+	QUEUE_CONCATENATE_QUEUES(prQue, prDataTemp);
 
 	return WLAN_STATUS_SUCCESS;
 }

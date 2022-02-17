@@ -369,6 +369,8 @@ u_int8_t cnmP2pIsActive(IN struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter);
 
+bool cnmIsMccMode(IN struct ADAPTER *prAdapter);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
