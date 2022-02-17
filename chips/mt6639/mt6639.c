@@ -21,6 +21,15 @@
 #include "coda/mt6639/conn_infra_bus_cr_on.h"
 #include "hal_dmashdl_mt6639.h"
 
+#define CFG_SUPPORT_VCODE_VDFS 0
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+#include <linux/pm_qos.h>
+
+#include <linux/platform_device.h>
+#include <linux/regulator/consumer.h>
+#endif /*#ifndef CFG_SUPPORT_VCODE_VDFS*/
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -352,11 +361,28 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
 };
 
+#if CFG_SUPPORT_QA_TOOL
+struct ATE_OPS_T mt6639_AteOps = {
+	/* ICapStart phase out , wlan_service instead */
+	.setICapStart = connacSetICapStart,
+	/* ICapStatus phase out , wlan_service instead */
+	.getICapStatus = connacGetICapStatus,
+	/* CapIQData phase out , wlan_service instead */
+	.getICapIQData = connacGetICapIQData,
+	.getRbistDataDumpEvent = nicExtEventICapIQData,
+	.icapRiseVcoreClockRate = mt6639_icapRiseVcoreClockRate,
+	.icapDownVcoreClockRate = mt6639_icapDownVcoreClockRate,
+};
+#endif /* CFG_SUPPORT_QA_TOOL */
+
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.fw_dl_ops = &mt6639_fw_dl_ops,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+#if CFG_SUPPORT_QA_TOOL
+	.prAteOps = &mt6639_AteOps,
+#endif /* CFG_SUPPORT_QA_TOOL */
 	.prTxDescOps = &mt6639_TxDescOps,
 	.prRxDescOps = &mt6639_RxDescOps,
 	.prDebugOps = &mt6639_DebugOps,
@@ -401,6 +427,114 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {
 	.chip_info = &mt66xx_chip_info_mt6639,
 };
+
+void mt6639_icapRiseVcoreClockRate(void)
+{
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+	int value = 0;
+
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+	/* Implementation for kernel-5.4 */
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+	struct mt66xx_chip_info *prChipInfo;
+	void *pdev;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
+		->chip_info;
+	pdev = (void *)prChipInfo->pdev;
+
+	dvfsrc_vcore_power = regulator_get(
+		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
+
+	/* Enable VCore to 0.725 */
+	regulator_set_voltage(dvfsrc_vcore_power, 725000, INT_MAX);
+#else
+	/* init */
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/* update Vcore */
+	pm_qos_update_request(&wifi_req, 0);
+#endif
+
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
+
+	/* Seq2: update clock rate sel bus clock to 213MHz */
+
+	/* 0x1801_2050[6:4]=3'b111 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value |= 0x00000070;
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	/* Seq3: enable clock select sw mode */
+
+	/* 0x1801_2050[0]=1'b1 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value |= 0x1;
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+#else
+	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate skip\n");
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+}
+
+void mt6639_icapDownVcoreClockRate(void)
+{
+
+#if (CFG_SUPPORT_VCODE_VDFS == 1)
+	int value = 0;
+
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+	/* Implementation for kernel-5.4 */
+	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+	void *pdev;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
+		->chip_info;
+	pdev = (void *)prChipInfo->pdev;
+
+	dvfsrc_vcore_power = regulator_get(
+		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
+
+	/* resume to default Vcore value */
+	regulator_set_voltage(dvfsrc_vcore_power, 575000, INT_MAX);
+#else
+	/*init*/
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*restore to default Vcore*/
+	pm_qos_update_request(&wifi_req,
+		PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+#endif
+
+	/*disable VCore to normal setting*/
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
+
+	/* Seq2: update clock rate sel bus clock to default value */
+
+	/* 0x1801_2050[6:4]=3'b000 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value &= ~(0x00000070);
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+	/* Seq3: disble clock select sw mode */
+
+	/* 0x1801_2050[0]=1'b0 */
+	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
+	value &= ~(0x1);
+	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
+
+#else
+	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
+#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
+}
 
 static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,

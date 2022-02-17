@@ -2980,7 +2980,7 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
 	union {
 		uint32_t u4OpMode;
 		uint32_t u4ChannelFreq;
-		struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+		struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	}u;
 }__KAL_ATTRIB_PACKED__;
 
@@ -4394,12 +4394,18 @@ enum UNI_EVENT_TESTMODE_CTRL_TAG {
  * @param[in] aucBuffer            Icap , recal event
  */
 /* Testmode RF status (Tag0) */
-struct UNI_EVENT_RF_TEST_RESULT {
+struct UNI_EVENT_RF_TEST_TLV {
     uint16_t u2Tag;
     uint16_t u2Length;
 
     uint8_t  aucBuffer[0];
 
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_RF_TEST_RESULT {
+	uint32_t u4FuncIndex;
+	uint32_t u4PayloadLength;
+	uint8_t  aucEvent[0];
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -4745,6 +4751,8 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
