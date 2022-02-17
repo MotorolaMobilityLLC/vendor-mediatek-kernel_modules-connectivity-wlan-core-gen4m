@@ -1148,6 +1148,9 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 			prSwRfbDuplicated->ucPacketType = RX_PKT_TYPE_RX_DATA;
 			prSwRfbDuplicated->ucStaRecIdx = prSwRfb->ucStaRecIdx;
 			nicRxFillRFB(prAdapter, prSwRfbDuplicated);
+			GLUE_COPY_PRIV_DATA(
+				prSwRfbDuplicated->pvPacket,
+				prSwRfb->pvPacket);
 
 			/* 2. Modify eDst */
 			prSwRfbDuplicated->eDst = RX_PKT_DESTINATION_FORWARD;
