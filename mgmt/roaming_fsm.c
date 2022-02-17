@@ -478,8 +478,8 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 			struct BSS_DESC *prBssDesc =
 				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
 			/* if AP supports Neighbor AP report, then it can used
-			** to assist roaming candicate selection
-			*/
+			 * to assist roaming candicate selection
+			 */
 			if (prBssInfo && prBssInfo->prStaRecOfAP) {
 				if (prBssDesc &&
 				    (prBssDesc->aucRrmCap[0] &
