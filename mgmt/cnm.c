@@ -2416,6 +2416,9 @@ static u_int8_t cnmDbdcDecideIsAAConcurrent(
 	uint16_t u2MiminmunFrequency =
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithAMinimumFrqInterval;
 
+	if (prAdapter->rWifiFemCfg.u2WifiDBDCAwithA == FALSE)
+		return FALSE;
+
 	/*5G Channel start form 5000, EX: CH36 = 5180, CH132 = 5660*/
 	ucFrequency5G = uc5gCH * 5 + 5000;
 
@@ -2456,13 +2459,15 @@ static u_int8_t cnmDbdcIsConcurrent(
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex;
-	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
-	uint8_t ucCHCompare = ucPrimaryCHConnecting;
+	uint8_t ucBandCount[BAND_NUM] = {0};
 	u_int8_t fgDBDCConcurrent = FALSE;
 	enum ENUM_BAND eBssBand[MAX_BSSID_NUM + 1] = {BAND_NULL};
-	uint8_t ucBssPrimaryCH[MAX_BSSID_NUM + 1] = {0};
 	enum ENUM_BAND eBandBss;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	uint8_t ucBssPrimaryCH[MAX_BSSID_NUM + 1] = {0};
 	uint8_t ucPrimaryChBss;
+	uint8_t uc5gCH = 0, uc6gCH = 0;
+#endif
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	uint8_t ucBssNum = prAdapter->ucHwBssIdNum + 1;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
@@ -2478,6 +2483,16 @@ static u_int8_t cnmDbdcIsConcurrent(
 		return FALSE;
 	}
 #endif
+
+	if (eRfBand_Connecting > BAND_NULL && eRfBand_Connecting < BAND_NUM) {
+		ucBandCount[eRfBand_Connecting]++;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+		if (eRfBand_Connecting == BAND_5G)
+			uc5gCH = ucPrimaryCHConnecting;
+		else if (eRfBand_Connecting == BAND_6G)
+			uc6gCH = ucPrimaryCHConnecting;
+#endif
+	}
 
 	for (ucBssIndex = 0;
 			ucBssIndex < ucBssNum; ucBssIndex++) {
@@ -2511,122 +2526,90 @@ static u_int8_t cnmDbdcIsConcurrent(
 		if ((ucBssIndex == prAdapter->ucP2PDevBssIdx) &&
 			prP2pDevFsmInfo) {
 			eBandBss = prP2pDevFsmInfo->eReqBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 			ucPrimaryChBss = prP2pDevFsmInfo->ucReqChannelNum;
+#endif
 		} else
 #endif
 		{
 			eBandBss = prBssInfo->eBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 			ucPrimaryChBss = prBssInfo->ucPrimaryChannel;
+#endif
 		}
 
-		if (eBandBss != BAND_2G4
-			&& eBandBss != BAND_5G
+		if (eBandBss > BAND_NULL && eBandBss < BAND_NUM) {
+			eBssBand[ucBssIndex] = eBandBss;
+			ucBandCount[eBandBss]++;
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-			&& eBandBss != BAND_6G
+			ucBssPrimaryCH[ucBssIndex] = ucPrimaryChBss;
+			if (eBandBss == BAND_5G &&
+				ucPrimaryChBss > uc5gCH)
+				uc5gCH = ucPrimaryChBss;
+			if (eBandBss == BAND_6G &&
+				(uc6gCH == 0 || ucPrimaryChBss < uc6gCH))
+				uc6gCH = ucPrimaryChBss;
 #endif
-		)
-			continue;
-
-		/* Record eRFBand and Primary Channel  */
-		eBssBand[ucBssIndex] = eBandBss;
-		ucBssPrimaryCH[ucBssIndex] = ucPrimaryChBss;
-
-
-		log_dbg(CNM, INFO, "Set Bssid[%u] eBand=%u,ePrimaryCH=%u\n",
-	       ucBssIndex, eBssBand[ucBssIndex], ucBssPrimaryCH[ucBssIndex]);
-
-
-		if (eBandCompare != BAND_2G4 && eBandCompare != BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-			&& eBandCompare != BAND_6G
-#endif
-		){
-			eBandCompare = eBandBss;
-			ucCHCompare = ucPrimaryChBss;
-
-			log_dbg(CNM, INFO, "Set Bssid[%u] eBandCompare=%u,ucCHCompare=%u\n",
-	       ucBssIndex, eBandCompare, ucCHCompare);
-
-		}
-
-		if (eBandCompare != eBandBss) {
-			log_dbg(CNM, INFO, "check Compare Band[%u]CH[%u], BSS Band[%u]CH[%u]\n",
-				eBandCompare, ucCHCompare,
-				eBandBss,
-				ucPrimaryChBss);
-
-			/* Initial AAMode */
-			g_rDbdcInfo.fgIsDBDCAAMode = 0;
-			/* Check DBDC for A+G */
-			if ((eBandBss == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-				||	eBandBss == BAND_6G
-#endif
-			)
-				&& eBandCompare == BAND_2G4){
-				fgDBDCConcurrent = TRUE;	/*A+G*/
-			} else if (eBandBss == BAND_2G4 &&
-				(eBandCompare == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-				|| eBandCompare == BAND_6G
-#endif
-				)){
-				fgDBDCConcurrent = TRUE;	/*A+G*/
-			}
-
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-			/* Check DBDC for A+A when HW support */
-			if (fgDBDCConcurrent == FALSE &&
-				prAdapter->rWifiFemCfg.u2WifiDBDCAwithA
-								== TRUE){
-
-				u_int8_t uc5gCH = 0;
-				u_int8_t uc6gCH = 0;
-
-				if (eBandCompare == BAND_5G &&
-					eBandBss == BAND_6G){
-					uc5gCH = ucCHCompare;
-					uc6gCH = ucPrimaryChBss;
-				} else if (eBandBss == BAND_5G &&
-					eBandCompare == BAND_6G){
-					uc5gCH = ucPrimaryChBss;
-					uc6gCH = ucCHCompare;
-				}
-
-				if (cnmDbdcDecideIsAAConcurrent(prAdapter,
-						uc5gCH, uc6gCH) == TRUE){
-					fgDBDCConcurrent = TRUE;
-					g_rDbdcInfo.fgIsDBDCAAMode = 1;
-				}
-				log_dbg(CNM, INFO, "Check Band[%d][%d],5G[%d],6G[%d],DBDCCon[%d]\n",
-					eBandCompare, eBandBss, uc5gCH,
-					uc6gCH, fgDBDCConcurrent);
-			}
-#endif /* CFG_SUPPORT_WIFI_6G && CFG_SUPPORT_WIFI_DBDC6G */
 		}
 	}
 
-	log_dbg(CNM, INFO, "[DBDC]MaxBSS %d AG Band[%u.%u.%u.%u.%u][Con %u], p2pLis[%u]\n",
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	g_rDbdcInfo.fgIsDBDCAAMode = 0;
+#endif
+
+	/* DBDC decision */
+	if (ucBandCount[BAND_2G4] > 0) {
+		/* 2.4G + 5G / 6G => enable DBDC */
+		/* 2.4G + 5G + 6G => enable DBDC */
+		if (ucBandCount[BAND_5G] > 0
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				|| ucBandCount[BAND_6G] > 0
+#endif
+		   )
+			fgDBDCConcurrent = TRUE;
+		else /* 2.4G only */
+			fgDBDCConcurrent = FALSE;
+	} else {
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+		/* Check DBDC A+A when HW support */
+		if (ucBandCount[BAND_5G] > 0 && uc5gCH > 0 &&
+		    ucBandCount[BAND_6G] > 0 && uc6gCH > 0 &&
+		    cnmDbdcDecideIsAAConcurrent(prAdapter, uc5gCH, uc6gCH)) {
+			fgDBDCConcurrent = TRUE;
+			g_rDbdcInfo.fgIsDBDCAAMode = 1;
+		} else {
+			fgDBDCConcurrent = FALSE;
+		}
+#else
+		/* 5G / 6G => disable DBDC */
+		/* 5G + 6G => Do not supportf A+A, disable DBDC, */
+		fgDBDCConcurrent = FALSE;
+#endif
+	}
+
+	log_dbg(CNM, INFO, "[DBDC] %d BSS (P2P Listen = %u), Band[%u.%u.%u.%u.%u][New Band = %u, CH = %u], enable = %u\n",
 			ucBssNum,
+			fgDbdcP2pListening,
 			eBssBand[BSSID_0],
 			eBssBand[BSSID_1],
 			eBssBand[BSSID_2],
 			eBssBand[BSSID_3],
 			eBssBand[MAX_BSSID_NUM],
 			eRfBand_Connecting,
-			fgDbdcP2pListening);
+			ucPrimaryCHConnecting,
+			fgDBDCConcurrent);
 
-	log_dbg(CNM, INFO, "[DBDC]MaxBSS %d AG CH[%u.%u.%u.%u.%u][Comp %u], fgDBDC[%u], AAMode[%u], p2pLis[%u]\n",
-			ucBssNum,
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	log_dbg(CNM, INFO, "[DBDC] CH[%u.%u.%u.%u.%u], 5G MAX = %u, 6G min = %u, AAMode[%u]\n",
 			ucBssPrimaryCH[BSSID_0],
 			ucBssPrimaryCH[BSSID_1],
 			ucBssPrimaryCH[BSSID_2],
 			ucBssPrimaryCH[BSSID_3],
 			ucBssPrimaryCH[MAX_BSSID_NUM],
-			ucCHCompare,
-			fgDBDCConcurrent,
-			g_rDbdcInfo.fgIsDBDCAAMode,
-			fgDbdcP2pListening);
+			uc5gCH,
+			uc6gCH,
+			g_rDbdcInfo.fgIsDBDCAAMode);
+#endif
 
 	return fgDBDCConcurrent;
 }
