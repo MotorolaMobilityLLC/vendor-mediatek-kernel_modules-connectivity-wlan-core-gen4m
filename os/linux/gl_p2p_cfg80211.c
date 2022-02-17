@@ -3187,7 +3187,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		case NL80211_IFTYPE_P2P_CLIENT:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
 			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
-			/* This case need to fall through */
+			/* fallthrough */
 		case NL80211_IFTYPE_STATION:
 			if (type == NL80211_IFTYPE_STATION) {
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
@@ -3200,7 +3200,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 			prSwitchModeMsg->eIftype = IFTYPE_AP;
-			/* This case need to fall through */
+			/* fallthrough */
 		case NL80211_IFTYPE_P2P_GO:
 			if (type == NL80211_IFTYPE_P2P_GO) {
 				DBGLOG(P2P, TRACE,

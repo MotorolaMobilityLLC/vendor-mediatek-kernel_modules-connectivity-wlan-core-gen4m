@@ -17,7 +17,6 @@ ccflags-y += -Wno-unused-result
 ccflags-y += -Wno-format
 ccflags-y += -Wno-parentheses
 
-ccflags-y += -Wno-implicit-fallthrough
 ccflags-y += -Wframe-larger-than=2048
 ccflags-y += -Wno-unused-function
 

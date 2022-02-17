@@ -8389,6 +8389,7 @@ textresume:
 					x++;
 					continue;
 				}
+				/* fallthrough */
 			case '\n':
 				/* \ <lf> -> line continuation */
 				x++;

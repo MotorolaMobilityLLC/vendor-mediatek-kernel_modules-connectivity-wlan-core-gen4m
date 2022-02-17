@@ -8294,10 +8294,10 @@ wlanoidSetAcpiDevicePowerState(IN struct ADAPTER *
 		break;
 	case ParamDeviceStateD1:
 		DBGLOG(REQ, INFO, "Set Power State: D1\n");
-	/* no break here */
+		/* fallthrough */
 	case ParamDeviceStateD2:
 		DBGLOG(REQ, INFO, "Set Power State: D2\n");
-	/* no break here */
+		/* fallthrough */
 	case ParamDeviceStateD3:
 		DBGLOG(REQ, INFO, "Set Power State: D3\n");
 		fgRetValue = nicpmSetAcpiPowerD3(prAdapter);
