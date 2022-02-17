@@ -3050,6 +3050,15 @@ void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER
 
 }				/* wlanReleasePendingCMDbyBssIdx */
 
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+void wlanReturnPacketDelaySetupTasklet(unsigned long data)
+{
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+
+	wlanReturnPacketDelaySetupTimeout(prGlueInfo->prAdapter, 0);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the indicated packet buffer and reallocate one to the RFB
@@ -3077,7 +3086,7 @@ void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
 	ASSERT(prRxCtrl);
 
 	prQueList = &prRxCtrl->rIndicatedRfbList;
-	DBGLOG(RX, WARN, "%s: IndicatedRfbList num = %u\n",
+	DBGLOG(RX, TRACE, "%s: IndicatedRfbList num = %u\n",
 	       __func__, prQueList->u4NumElem);
 
 	while (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rIndicatedRfbList)) {

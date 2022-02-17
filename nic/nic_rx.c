@@ -1243,6 +1243,16 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 #endif
 		prSwRfb->pvPacket = NULL;
 
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	/* Move SKB allocation to another context to reduce RX latency,
+	 * only if SKB is NULL.
+	 */
+	if (!prSwRfb->pvPacket) {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+		return;
+	}
+#endif
 
 	/* Return RFB */
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
