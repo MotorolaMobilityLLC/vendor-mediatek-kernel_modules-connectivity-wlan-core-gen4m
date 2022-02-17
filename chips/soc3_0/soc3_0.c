@@ -303,75 +303,135 @@ static bool soc3_0WfdmaAllocRxRing(
 	return true;
 }
 
-void soc3_0EnableInterrupt(
-	struct ADAPTER *prAdapter)
+static void soc3_0asicConnac2xInterruptSettings(
+	struct ADAPTER *prAdapter,
+	IN u_int8_t enable)
 {
 	union soc3_0_WPDMA_INT_MASK IntMask;
-
-	prAdapter->fgIsIntEnable = TRUE;
-
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR, &IntMask.word);
-	IntMask.word = 0;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_0 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_1 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_2 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_3 = 1;
-	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR, IntMask.word);
-
-	IntMask.word = 0;
-
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_HOST_DMA1_HOST_INT_ENA_SET_ADDR, &IntMask.word);
-	IntMask.word = 0;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_0 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_1 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
-	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA1_HOST_INT_ENA_SET_ADDR, IntMask.word);
-} /* end of nicEnableInterrupt() */
-
-void soc3_0DisableInterrupt(
-	struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	union soc3_0_WPDMA_INT_MASK IntMask;
-
 	ASSERT(prAdapter);
 
-	prGlueInfo = prAdapter->prGlueInfo;
+	if (enable) {
+		IntMask.word = 0;
 
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR, &IntMask.word);
-	IntMask.word = 0;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_0 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_1 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_2 = 1;
-	IntMask.field_wfdma0_ena.wfdma0_rx_done_3 = 1;
-	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR, IntMask.word);
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_0 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_1 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_2 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_3 = 1;
+		HAL_MCR_WR(prAdapter,
+			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR, IntMask.word);
 
-	IntMask.word = 0;
+		IntMask.word = 0;
 
-	HAL_MCR_RD(prAdapter,
-		WF_WFDMA_HOST_DMA1_HOST_INT_ENA_CLR_ADDR, &IntMask.word);
-	IntMask.word = 0;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_0 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_1 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
-	IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
-	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA1_HOST_INT_ENA_CLR_ADDR, IntMask.word);
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_0 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_1 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
+		HAL_MCR_WR(prAdapter,
+			WF_WFDMA_HOST_DMA1_HOST_INT_ENA_SET_ADDR, IntMask.word);
+	} else {
 
-	prAdapter->fgIsIntEnable = FALSE;
+		IntMask.word = 0;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_0 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_1 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_2 = 1;
+		IntMask.field_wfdma0_ena.wfdma0_rx_done_3 = 1;
+		HAL_MCR_WR(prAdapter,
+			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR, IntMask.word);
 
-	DBGLOG(HAL, TRACE, "%s\n", __func__);
+		IntMask.word = 0;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_0 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_1 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_16 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_tx_done_17 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_rx_done_0 = 1;
+		IntMask.field_wfdma1_ena.wfdma1_mcu2host_sw_int_en = 1;
+		HAL_MCR_WR(prAdapter,
+			WF_WFDMA_HOST_DMA1_HOST_INT_ENA_CLR_ADDR, IntMask.word);
+	}
+
+}
+
+static void soc3_0asicConnac2xWfdmaControl(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t ucDmaIdx,
+	u_int8_t enable)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	uint32_t u4DmaCfgCr;
+	uint32_t u4DmaRstDtxPtrCr;
+	uint32_t u4DmaRstDrxPtrCr;
+
+	ASSERT(ucDmaIdx < CONNAC2X_WFDMA_COUNT);
+	u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, ucDmaIdx);
+	u4DmaRstDtxPtrCr =
+		asicConnac2xWfdmaIntRstDtxPtrAddrGet(prGlueInfo, ucDmaIdx);
+	u4DmaRstDrxPtrCr =
+		asicConnac2xWfdmaIntRstDrxPtrAddrGet(prGlueInfo, ucDmaIdx);
+
+	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
+	if (enable == TRUE) {
+		GloCfg.field_conn2x.pdma_bt_size = 3;
+		GloCfg.field_conn2x.tx_wb_ddone = 1;
+		GloCfg.field_conn2x.fifo_little_endian = 1;
+		GloCfg.field_conn2x.clk_gate_dis = 1;
+		GloCfg.field_conn2x.omit_tx_info = 1;
+		if (ucDmaIdx == 1)
+			GloCfg.field_conn2x.omit_rx_info = 1;
+		GloCfg.field_conn2x.csr_disp_base_ptr_chain_en = 1;
+		GloCfg.field_conn2x.omit_rx_info_pfet2 = 1;
+	} else {
+		GloCfg.field_conn2x.tx_dma_en = 0;
+		GloCfg.field_conn2x.rx_dma_en = 0;
+		GloCfg.field_conn2x.csr_disp_base_ptr_chain_en = 0;
+		GloCfg.field_conn2x.omit_tx_info = 0;
+		GloCfg.field_conn2x.omit_rx_info = 0;
+		GloCfg.field_conn2x.omit_rx_info_pfet2 = 0;
+	}
+	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+
+	if (!enable) {
+		asicConnac2xWfdmaWaitIdle(prGlueInfo, ucDmaIdx, 100, 1000);
+		/* Reset DMA Index */
+		HAL_MCR_WR(prAdapter, u4DmaRstDtxPtrCr, 0xFFFFFFFF);
+		HAL_MCR_WR(prAdapter, u4DmaRstDrxPtrCr, 0xFFFFFFFF);
+	}
+}
+
+void soc3_0asicConnac2xWpdmaConfig(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t enable)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
+	uint32_t u4DmaCfgCr;
+	uint32_t idx;
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+		if (!chip_info->is_support_wfdma1 && idx)
+			break;
+		soc3_0asicConnac2xWfdmaControl(prGlueInfo, idx, enable);
+		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg[idx].word);
+	}
+
+	/* set interrupt Mask */
+	soc3_0asicConnac2xInterruptSettings(prAdapter, enable);
+
+	if (enable) {
+		for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+			if (!chip_info->is_support_wfdma1 && idx)
+				break;
+			u4DmaCfgCr =
+				asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
+			GloCfg[idx].field_conn2x.tx_dma_en = 1;
+			GloCfg[idx].field_conn2x.rx_dma_en = 1;
+			HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg[idx].word);
+		}
+	}
 }
 
 void soc3_0ReadExtIntStatus(
@@ -681,11 +741,10 @@ struct BUS_INFO soc3_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-	.pdmaSetup = asicConnac2xWpdmaConfig,
-	.enableInterrupt = asicConnac2xEnableExtInterrupt,
-	.disableInterrupt = asicConnac2xDisableExtInterrupt,
-	.enableInterrupt = soc3_0EnableInterrupt,
-	.disableInterrupt = soc3_0DisableInterrupt,
+	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
+	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
+	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
+
 	.processTxInterrupt = soc3_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc3_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
