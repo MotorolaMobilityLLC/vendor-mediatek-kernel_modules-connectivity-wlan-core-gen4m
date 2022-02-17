@@ -9319,8 +9319,7 @@ wlanoidRftestSetTestMode(IN struct ADAPTER *prAdapter,
 	*pu4SetInfoLen = 0;
 
 	if (u4SetBufferLen == 0) {
-		if ((prAdapter->fgTestMode == FALSE)
-		    || (prAdapter->fgIcapMode == TRUE)) {
+		if (prAdapter->fgTestMode == FALSE) {
 			/* switch to RF Test mode */
 			rCmdTestCtrl.ucAction = 0;	/* Switch mode */
 			rCmdTestCtrl.u.u4OpMode = 1;	/* RF test mode */
@@ -9371,19 +9370,22 @@ wlanoidRftestSetTestIcapMode(IN struct ADAPTER *prAdapter,
 			     OUT uint32_t *pu4SetInfoLen) {
 	uint32_t rStatus;
 	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct ICAP_INFO_T *prIcapInfo = NULL;
 
 	DEBUGFUNC("wlanoidRftestSetTestIcapMode");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
+	prIcapInfo = &prAdapter->rIcapInfo;
+	ASSERT(prIcapInfo);
 
 	*pu4SetInfoLen = 0;
 
 	if (u4SetBufferLen == 0) {
-		if (prAdapter->fgIcapMode == FALSE) {
+		if (prIcapInfo->eIcapState == ICAP_STATE_INIT) {
 			/* switch to RF Test mode */
 			rCmdTestCtrl.ucAction = 0;	/* Switch mode */
-			rCmdTestCtrl.u.u4OpMode = 2;	/* RF test mode */
+			rCmdTestCtrl.u.u4OpMode = 2;	/* ICAP mode */
 
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 					      CMD_ID_TEST_CTRL,
@@ -9397,6 +9399,9 @@ wlanoidRftestSetTestIcapMode(IN struct ADAPTER *prAdapter,
 					      pvSetBuffer, u4SetBufferLen);
 		} else {
 			/* already in ICAP mode .. */
+			DBGLOG(RFTEST, WARN,
+		       "Switch ICAP FAil in State(%d)\n",
+		       prIcapInfo->eIcapState);
 			rStatus = WLAN_STATUS_SUCCESS;
 		}
 	} else {
@@ -9692,10 +9697,10 @@ uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
 	rStatus = wlanSendSetQueryExtCmd(prAdapter,
 			 CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			 EXT_CMD_ID_RF_TEST,
-			 FALSE, /* Query Bit: True->write False->read */
-			 FALSE,
-			 TRUE,
-			 NULL, /* No Tx done function wait until fw ack */
+			 TRUE, /* Query Bit: True->write False->read */
+			 FALSE,/*fgNeedRsp*/
+			 TRUE, /*fgIsOid*/
+			 nicCmdEventSetCommon,
 			 nicOidCmdTimeoutCommon,
 			 sizeof(struct CMD_TEST_CTRL_EXT_T),
 			 (uint8_t *)&rCmdTestCtrl, pvSetBuffer,
