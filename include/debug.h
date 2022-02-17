@@ -531,9 +531,9 @@ struct CHIP_DBG_OPS {
 		struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 		uint8_t fgResetCnt,
 		uint32_t u4StatGroup);
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	void (*show_wfdma_dbg_probe_info)(IN struct ADAPTER *prAdapter,
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	void (*show_wfdma_wrapper_info)(IN struct ADAPTER *prAdapter,
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 #endif

@@ -7257,7 +7257,7 @@ static void exitWlan(void)
 	 * after rmmod
 	 */
 	prGlueInfo = wlanGetGlueInfo();
-	if (prGlueInfo != NULL)
+	if (prGlueInfo != NULL && prGlueInfo->prAdapter != NULL)
 		wlanPowerOffWifi(prGlueInfo->prAdapter);
 #endif
 

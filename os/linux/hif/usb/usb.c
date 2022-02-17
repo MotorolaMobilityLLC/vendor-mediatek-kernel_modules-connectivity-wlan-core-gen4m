@@ -127,6 +127,10 @@ static const struct usb_device_id mtk_usb_ids[] = {
 		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7961},
 #endif /* MT7961 */
 	/* If customer usb id is presented, add to the table. */
+#ifdef MT6639
+	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x6639, 0xff, 0xff, 0xff),
+		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt6639},
+#endif /* MT6639 */
 	CUST_USB_ID_TABLES
 	{ /* end: all zeroes */ },
 };

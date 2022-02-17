@@ -12898,8 +12898,7 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 			  prLinkQualityInfo->u8LastTxFailCount) : 0;
 	if (u8TxTotalCntDif >= u8TxFailCntDif)
 		prLinkQualityInfo->u4CurTxPer = (u8TxTotalCntDif == 0) ? 0 :
-			((uint32_t)(u8TxFailCntDif * 100) /
-				(uint32_t)u8TxTotalCntDif);
+			((u8TxFailCntDif * 100) / u8TxTotalCntDif);
 	else
 		prLinkQualityInfo->u4CurTxPer = 0;
 

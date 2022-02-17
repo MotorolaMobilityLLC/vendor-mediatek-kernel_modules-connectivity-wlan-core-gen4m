@@ -187,11 +187,7 @@ void asicConnac3xCapInit(
 		prChipInfo->fillHifTxDesc = fillUsbHifTxDesc;
 		prChipInfo->u2TxInitCmdPort = USB_DATA_BULK_OUT_EP8;
 		prChipInfo->u2TxFwDlPort = USB_DATA_BULK_OUT_EP4;
-		if (prChipInfo->is_support_wacpu)
-			prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
-		else
-			prChipInfo->ucPacketFormat =
-						TXD_PKT_FORMAT_TXD_PAYLOAD;
+		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD_PAYLOAD;
 		prChipInfo->u4ExtraTxByteCount =
 				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
@@ -426,14 +422,6 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 		if (prChipInfo->is_support_asic_lp &&
 		    prChipInfo->asicUsbInit)
 			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
-
-		if (prChipInfo->is_support_wacpu) {
-			/* command packet forward to TX ring 17 (WMCPU) or
-			 *	  TX ring 20 (WACPU)
-			 */
-			asicConnac2xEnableUsbCmdTxRing(prAdapter,
-				CONNAC2X_USB_CMDPKT2WA);
-		}
 	}
 #endif
 }
@@ -930,6 +918,219 @@ void asicConnac3xHifRst(
 	kalDevRegWrite(prGlueInfo, u4HifRstCr, 0x00000030);
 }
 #endif /* _HIF_PCIE */
+
+#if defined(_HIF_USB)
+/*
+ * tx_ring config
+ * 1.1tx_ring_ext_ctrl
+ * 7c025600[31:0]: 0x00800004 (ring 0 BASE_PTR & max_cnt for EP4)
+ * 7c025604[31:0]: 0x00c00004 (ring 1 BASE_PTR & max_cnt for EP5)
+ * 7c025608[31:0]: 0x01000004 (ring 2 BASE_PTR & max_cnt for EP6)
+ * 7c02560c[31:0]: 0x01400004 (ring 3 BASE_PTR & max_cnt for EP7)
+ * 7c025610[31:0]: 0x01800004 (ring 4 BASE_PTR & max_cnt for EP9)
+ * 7c025640[31:0]: 0x02800004 (ring 16 BASE_PTR & max_cnt for EP4/FWDL)
+ * 7c02563C[31:0]: 0x02c00004 (ring 15 BASE_PTR & max_cnt for EP8/WMCPU)
+ * 7c025650[31:0]: 0x03800004 (ring 20 BASE_PTR & max_cnt for EP8/WACPU)
+ *
+ * WFDMA_GLO_CFG Setting
+ * 2.1 WFDMA_GLO_CFG: 7c025208[28][27]=2'b11;
+ * 2.2 WFDMA_GLO_CFG: 7c025208[20]=1'b1;
+ * 2.3 WFDMA_GLO_CFG: 7c025208[9]=1'b1;
+ *
+ * 3.	trx_dma_en:
+ * 3.1 WFDMA_GLO_CFG: 7c025208[2][0]=1'b1;
+ */
+void asicConnac3xWfdmaInitForUSB(
+	struct ADAPTER *prAdapter,
+	struct mt66xx_chip_info *prChipInfo)
+{
+	struct BUS_INFO *prBusInfo;
+	uint32_t idx;
+	uint32_t u4WfdmaAddr, u4WfdmaCr;
+
+	prBusInfo = prChipInfo->bus_info;
+
+	/* HAL_MCR_RD(prAdapter, 0x7c00e400, &u4WfdmaCr); */
+	/* HAL_MCR_WR(prAdapter, 0x7c00e400, 0xFF); */
+
+	HAL_MCR_RD(prAdapter, 0x7c021100, &u4WfdmaCr);
+	HAL_MCR_WR(prAdapter, 0x7c021100, 0x0);
+
+	if (prChipInfo->is_support_wfdma1) {
+		u4WfdmaAddr =
+		CONNAC3X_TX_RING_EXT_CTRL_BASE(CONNAC3X_HOST_WPDMA_1_BASE);
+	} else {
+		u4WfdmaAddr =
+		CONNAC3X_TX_RING_EXT_CTRL_BASE(CONNAC3X_HOST_WPDMA_0_BASE);
+	}
+	/*
+	 * HOST_DMA1_WPDMA_TX_RING0_EXT_CTRL ~ HOST_DMA1_WPDMA_TX_RING4_EXT_CTRL
+	 */
+	for (idx = 0; idx < USB_TX_EPOUT_NUM; idx++) {
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr + (idx*4), &u4WfdmaCr);
+		u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
+		u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
+		u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
+		u4WfdmaCr |= (0x008 + 0x4 * idx)<<20;
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr + (idx*4), u4WfdmaCr);
+	}
+
+	/* HOST_DMA1_WPDMA_TX_RING16_EXT_CTRL_ADDR */
+	HAL_MCR_RD(prAdapter, u4WfdmaAddr + 0x40, &u4WfdmaCr);
+	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
+	u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
+	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
+	u4WfdmaCr |= 0x02800000;
+	HAL_MCR_WR(prAdapter, u4WfdmaAddr + 0x40, u4WfdmaCr);
+
+	/* HOST_DMA1_WPDMA_TX_RING15_EXT_CTRL_ADDR */
+	HAL_MCR_RD(prAdapter, u4WfdmaAddr + 0x3c, &u4WfdmaCr);
+	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_MAX_CNT_MASK;
+	u4WfdmaCr |= CONNAC3X_TX_RING_DISP_MAX_CNT;
+	u4WfdmaCr &= ~CONNAC3X_WFDMA_DISP_BASE_PTR_MASK;
+	u4WfdmaCr |= 0x02c00000;
+	HAL_MCR_WR(prAdapter, u4WfdmaAddr + 0x3c, u4WfdmaCr);
+
+	if (prChipInfo->is_support_wfdma1) {
+		u4WfdmaAddr =
+			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_1_BASE);
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		u4WfdmaCr |=
+			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
+			 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO |
+			 CONNAC3X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl |
+			 CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN |
+			 CONNAC3X_WPDMA1_GLO_CFG_TX_DMA_EN);
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
+
+		/* Enable WFDMA0 RX for receiving data frame */
+		u4WfdmaAddr =
+			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		u4WfdmaCr |=
+			(CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN);
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
+	} else {
+		u4WfdmaAddr =
+			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		u4WfdmaCr &= ~(CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO);
+		u4WfdmaCr |=
+			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
+			 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO_PFET2 |
+			 CONNAC3X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl |
+			 CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN |
+			 CONNAC3X_WPDMA1_GLO_CFG_TX_DMA_EN);
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
+
+	}
+
+	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
+				    "DmaShdlEnable",
+				    FEATURE_ENABLED);
+	if (!prChipInfo->is_support_dma_shdl) {
+		/*
+		 *	To disable 0x7C0252B0[6] DMASHDL
+		 */
+		if (prChipInfo->is_support_wfdma1) {
+			u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
+					CONNAC3X_HOST_WPDMA_1_BASE);
+		} else {
+			u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
+					CONNAC3X_HOST_WPDMA_0_BASE);
+		}
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		u4WfdmaCr &= ~CONNAC3X_WPDMA1_GLO_CFG_EXT0_TX_DMASHDL_EN;
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
+
+		/*
+		 *	[28]DMASHDL_BYPASS
+		 *	DMASHDL host ask and quota control function bypass
+		 *	0: Disable
+		 *	1: Enable
+		 */
+		u4WfdmaAddr = CONNAC3X_HOST_DMASHDL_SW_CONTROL(
+					CONNAC3X_HOST_DMASHDL);
+		HAL_MCR_RD(prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+		u4WfdmaCr |= CONNAC3X_HIF_DMASHDL_BYPASS_EN;
+		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
+	}
+
+	if (prChipInfo->asicUsbInit_ic_specific)
+		prChipInfo->asicUsbInit_ic_specific(prAdapter, prChipInfo);
+}
+
+uint8_t asicConnac3xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+{
+	return USB_DATA_EP_IN;
+}
+
+#if CFG_ENABLE_FW_DOWNLOAD
+void asicConnac3xEnableUsbFWDL(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo;
+	struct mt66xx_chip_info *prChipInfo;
+
+	uint32_t u4Value = 0;
+
+	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaTxQsel, &u4Value);
+	if (fgEnable)
+		u4Value |= FW_DL_EN;
+	else
+		u4Value &= ~FW_DL_EN;
+
+	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaTxQsel, u4Value);
+}
+#endif /* CFG_ENABLE_FW_DOWNLOAD */
+
+void asicConnac3xUdmaRxFlush(
+	struct ADAPTER *prAdapter,
+	u_int8_t bEnable)
+{
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Value;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	HAL_MCR_RD(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr,
+		   &u4Value);
+	if (bEnable)
+		u4Value |= UDMA_WLCFG_0_RX_FLUSH_MASK;
+	else
+		u4Value &= ~UDMA_WLCFG_0_RX_FLUSH_MASK;
+	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr,
+		   u4Value);
+}
+
+uint16_t asicConnac3xUsbRxByteCount(
+	struct ADAPTER *prAdapter,
+	struct BUS_INFO *prBusInfo,
+	uint8_t *pRXD)
+{
+
+	uint16_t u2RxByteCount;
+	uint8_t ucPacketType;
+
+	ucPacketType = HAL_MAC_CONNAC3X_RX_STATUS_GET_PKT_TYPE(
+		(struct HW_MAC_CONNAC3X_RX_DESC *)pRXD);
+	u2RxByteCount = HAL_MAC_CONNAC3X_RX_STATUS_GET_RX_BYTE_CNT(
+		(struct HW_MAC_CONNAC3X_RX_DESC *)pRXD);
+
+	u2RxByteCount = ALIGN_16(u2RxByteCount) + LEN_USB_RX_PADDING_CSO;
+
+	return u2RxByteCount;
+}
+
+#endif /* _HIF_USB */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 void fillConnac3xNicTxDescAppendWithSdo(

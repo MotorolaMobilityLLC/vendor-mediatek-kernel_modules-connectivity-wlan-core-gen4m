@@ -1676,6 +1676,13 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *
 
 }
 
+u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Token,
+	IN struct QUE *prFreeQueue)
+{
+	return 0;
+}
+
 static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
