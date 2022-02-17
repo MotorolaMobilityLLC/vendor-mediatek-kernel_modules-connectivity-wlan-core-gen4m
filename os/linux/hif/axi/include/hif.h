@@ -75,17 +75,6 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
-#else
-struct MTK_WCN_WLAN_CB_INFO;
-extern int mtk_wcn_wlan_reg(
-	struct MTK_WCN_WLAN_CB_INFO *pWlanCbInfo);
-extern int mtk_wcn_wlan_unreg(void);
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-#endif /*end of CFG_MTK_ANDROID_WMT */
-
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern wait_queue_head_t g_waitq_rst;
 extern unsigned long g_ulFlag;
@@ -375,16 +364,6 @@ struct HIF_PREALLOC_MEM {
 	uint32_t u4Offset;
 };
 
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 1)
-struct MTK_WCN_WLAN_CB_INFO {
-	int (*wlan_probe_cb)(void);
-	int (*wlan_remove_cb)(void);
-};
-
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-#endif /*end of CFG_MTK_ANDROID_WMT */
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -435,6 +414,9 @@ void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
+
+int32_t glBusFunOn(void);
+void glBusFunOff(void);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -297,16 +297,6 @@ extern const int32_t mtk_iface_combinations_p2p_num;
 extern uint8_t g_aucNvram[];
 extern uint8_t g_aucNvram_OnlyPreCal[];
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-typedef void (*wifi_fwlog_event_func_cb)(int, int);
-/* adaptor ko */
-extern int  wifi_fwlog_onoff_status(void);
-extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
-#endif
-#if CFG_MTK_ANDROID_WMT
-extern void update_driver_loaded_status(uint8_t loaded);
-#endif
-
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1042,6 +1032,15 @@ struct CMD_CONNSYS_FW_LOG {
 	u_int8_t fgEarlySet;
 };
 
+#if CFG_MTK_ANDROID_WMT
+#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+struct MTK_WCN_WLAN_CB_INFO {
+	int (*wlan_probe_cb)(void);
+	int (*wlan_remove_cb)(void);
+};
+#endif
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1531,7 +1530,7 @@ enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 int connsys_power_event_notification(enum conn_pwr_event_type type, void *data);
 #endif
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 uint32_t getFWLogOnOff(void);
 uint32_t getFWLogLevel(void);
 uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
@@ -1543,5 +1542,21 @@ void sysRemoveMonDbgFs(void);
 #endif
 
 extern void WfsysResetHdlr(struct work_struct *work);
+
+#if CFG_MTK_ANDROID_WMT
+extern void update_driver_loaded_status(uint8_t loaded);
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
+#else
+extern int mtk_wcn_wlan_reg(
+	struct MTK_WCN_WLAN_CB_INFO *pWlanCbInfo);
+extern int mtk_wcn_wlan_unreg(void);
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+typedef void (*wifi_fwlog_event_func_cb)(int, int);
+extern int  wifi_fwlog_onoff_status(void);
+extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+#endif /* CFG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+#endif /* CFG_SUPPORT_CONNAC1X */
+#endif /* CFG_MTK_ANDROID_WMT */
 
 #endif /* _GL_OS_H */

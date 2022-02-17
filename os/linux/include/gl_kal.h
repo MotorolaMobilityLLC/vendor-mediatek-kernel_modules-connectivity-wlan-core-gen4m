@@ -1841,7 +1841,7 @@ void tracing_mark_write(const char *fmt, ...);
 uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER
 	*prAdapter, IN u_int8_t fgSuspend);
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 extern uint32_t getFWLogOnOff(void);
 #endif
 
