@@ -8435,12 +8435,12 @@ uint32_t wlanCfgGet(IN struct ADAPTER *prAdapter,
 
 	if (prWlanCfgEntry) {
 		kalStrnCpy(pucValue, prWlanCfgEntry->aucValue,
-			   WLAN_CFG_VALUE_LEN_MAX - 1);
+			   WLAN_CFG_VALUE_LEN_MAX);
 		return WLAN_STATUS_SUCCESS;
 	}
 	if (pucValueDef)
 		kalStrnCpy(pucValue, pucValueDef,
-			   WLAN_CFG_VALUE_LEN_MAX - 1);
+			   WLAN_CFG_VALUE_LEN_MAX);
 	return WLAN_STATUS_FAILURE;
 
 
