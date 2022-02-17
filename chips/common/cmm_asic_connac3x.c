@@ -521,6 +521,37 @@ uint32_t asicConnac3xWfdmaHifRstAddrGet(
 		return CONNAC3X_WPDMA_HIF_RST(prBusInfo->host_dma1_base);
 }
 
+void asicConnac3xWfdmaStop(struct GLUE_INFO *prGlueInfo, u_int8_t enable)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	uint32_t u4DmaCfgCr;
+
+	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, 0);
+	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
+
+	if (enable == TRUE) {
+		GloCfg.field_conn3x.tx_dma_en = 0;
+		GloCfg.field_conn3x.rx_dma_en = 0;
+	} else {
+		GloCfg.field_conn3x.tx_dma_en = 1;
+		GloCfg.field_conn3x.rx_dma_en = 1;
+	}
+
+	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+}
+
+u_int8_t asicConnac3xWfdmaPollingAllIdle(struct GLUE_INFO *prGlueInfo)
+{
+	if (!asicConnac3xWfdmaWaitIdle(prGlueInfo, 0, 100, 1000)) {
+		DBGLOG(HAL, WARN,
+		       "Polling PDMA idle Timeout!!\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 void asicConnac3xWfdmaControl(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t ucDmaIdx,

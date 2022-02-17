@@ -1317,11 +1317,15 @@ enum WIFI_SCAN_EVENT {
 };
 
 struct CMD_HIF_CTRL {
-	uint8_t          ucHifType;
-	uint8_t          ucHifDirection;
-	uint8_t          ucHifStop;
-	uint8_t          ucHifSuspend;
-	uint8_t          aucReserved2[32];
+	uint8_t ucHifType;
+	uint8_t ucHifDirection;
+	uint8_t ucHifStop;
+	uint8_t ucHifSuspend;
+	uint32_t u4WakeupHifType;  /* refer to ENUM_CMD_HIF_WAKEUP_TYPE_T */
+	uint32_t u4Gpio;
+	uint32_t u4GpioTimer;
+	uint32_t u4Parameter;
+	uint8_t aucReserved2[16];
 };
 
 struct CMD_MU_EDCA_PARAMS {

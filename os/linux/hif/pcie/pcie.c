@@ -187,6 +187,7 @@ static struct pci_driver mtk_pci_driver = {
 	.remove = NULL,
 };
 
+static struct GLUE_INFO *g_prGlueInfo;
 static u_int8_t g_fgDriverProbed = FALSE;
 static uint32_t g_u4DmaMask = 32;
 struct pci_dev *g_prDev;
@@ -243,6 +244,14 @@ static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
+
+static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
+static void halPcieResumeCmd(struct ADAPTER *prAdapter);
+static void halPciePreSuspendDone(struct ADAPTER *prAdapter,
+				  struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf);
+static void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
+				     struct CMD_INFO *prCmdInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -387,11 +396,175 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+	uint32_t count = 0;
+	int wait = 0;
+	struct ADAPTER *prAdapter = NULL;
+	uint8_t drv_own_fail = FALSE;
+
+	DBGLOG(HAL, STATE, "mtk_pci_suspend()\n");
+
+	prGlueInfo = g_prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+	/* Stop upper layers calling the device hard_start_xmit routine. */
+	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
+
+#if CFG_ENABLE_WAKE_LOCK
+	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_SUSPEND_ENTERING;
+#endif
+
+	/* wait wiphy device do cfg80211 suspend done, then start hif suspend */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanWaitCfg80211SuspendDone(prGlueInfo);
+
+	wlanSuspendPmHandle(prGlueInfo);
+
+#if !CFG_ENABLE_WAKE_LOCK
+	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_PRE_SUSPEND_WAITING;
+#endif
+
+	halPciePreSuspendCmd(prAdapter);
+
+	while (prGlueInfo->rHifInfo.eSuspendtate !=
+		PCIE_STATE_PRE_SUSPEND_DONE) {
+		if (count > 500) {
+			DBGLOG(HAL, ERROR, "pcie pre_suspend timeout\n");
+			return -EAGAIN;
+		}
+		kalMsleep(2);
+		count++;
+	}
+	DBGLOG(HAL, ERROR, "pcie pre_suspend done\n");
+
+	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_SUSPEND;
+
+	/* Polling until HIF side PDMAs are all idle */
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->pdmaPollingIdle) {
+		if (prBusInfo->pdmaPollingIdle(prGlueInfo) != TRUE)
+			return -EAGAIN;
+	} else
+		DBGLOG(HAL, ERROR, "PDMA polling idle API didn't register\n");
+
+	/* Disable HIF side PDMA TX/RX */
+	if (prBusInfo->pdmaStop)
+		prBusInfo->pdmaStop(prGlueInfo, TRUE);
+	else
+		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
+
+	halDisableInterrupt(prAdapter);
+
+	/* FW own */
+	/* Set FW own directly without waiting sleep notify */
+	prAdapter->fgWiFiInSleepyState = TRUE;
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	/* Wait for
+	*  1. The other unfinished ownership handshakes
+	*  2. FW own back
+	*/
+	while (wait < 500) {
+		if ((prAdapter->u4PwrCtrlBlockCnt == 0) &&
+		    (prAdapter->fgIsFwOwn == TRUE) &&
+		    (drv_own_fail == FALSE)) {
+			DBGLOG(HAL, STATE, "*********************\n");
+			DBGLOG(HAL, STATE, "* Enter PCIE Suspend *\n");
+			DBGLOG(HAL, STATE, "*********************\n");
+			DBGLOG(HAL, INFO, "wait = %d\n\n", wait);
+			break;
+		}
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		/* Prevent that suspend without FW Own:
+		 * Set Drv own has failed,
+		 * and then Set FW Own is skipped
+		 */
+		if (prAdapter->fgIsFwOwn == FALSE)
+			drv_own_fail = FALSE;
+		else
+			drv_own_fail = TRUE;
+		/* For single core CPU */
+		/* let hif_thread can be completed */
+		usleep_range(1000, 3000);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+		wait++;
+	}
+
+	if (wait >= 500) {
+		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
+		return -EAGAIN;
+	}
+
+	pci_save_state(pdev);
+	pci_set_power_state(pdev, pci_choose_state(pdev, state));
+
+	DBGLOG(HAL, STATE, "mtk_pci_suspend() done!\n");
+
+	/* pending cmd will be kept in queue and no one to handle it after HIF resume.
+	 * In STR, it will result in cmd buf full and then cmd buf alloc fail .
+	 */
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.ucWow))
+		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
+
 	return 0;
 }
 
+
 int mtk_pci_resume(struct pci_dev *pdev)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+
+	DBGLOG(HAL, STATE, "mtk_pci_resume()\n");
+
+	prGlueInfo = g_prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -1;
+	}
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	pci_set_power_state(pdev, PCI_D0);
+	pci_restore_state(pdev);
+
+	/* Driver own */
+	/* Include restore PDMA settings */
+	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+
+	if (prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(prGlueInfo);
+
+	halEnableInterrupt(prGlueInfo->prAdapter);
+
+	/* Enable HIF side PDMA TX/RX */
+	if (prBusInfo->pdmaStop)
+		prBusInfo->pdmaStop(prGlueInfo, FALSE);
+	else
+		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
+
+	halPcieResumeCmd(prGlueInfo->prAdapter);
+
+	wlanResumePmHandle(prGlueInfo);
+
+	/* FW own */
+	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
+
+	/* Allow upper layers to call the device hard_start_xmit routine. */
+	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
+
+	DBGLOG(HAL, STATE, "mtk_pci_resume() done!\n");
+
 	return 0;
 }
 
@@ -465,6 +638,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->pdev = (struct pci_dev *)ulCookie;
 	prMemOps = &prHif->rMemOps;
 	prHif->prDmaDev = prHif->pdev;
+
+	g_prGlueInfo = prGlueInfo;
 
 	prHif->CSRBaseAddress = CSRBaseAddress;
 
@@ -915,3 +1090,77 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
+static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
+{
+	struct CMD_HIF_CTRL rCmdHifCtrl;
+	uint32_t rStatus;
+
+	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_PCIE;
+	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
+	rCmdHifCtrl.ucHifStop = TRUE;
+	rCmdHifCtrl.ucHifSuspend = TRUE;
+	rCmdHifCtrl.u4WakeupHifType = ENUM_CMD_HIF_WAKEUP_TYPE_PCIE;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_HIF_CTRL,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			sizeof(struct CMD_HIF_CTRL), /* u4SetQueryInfoLen */
+			(uint8_t *)&rCmdHifCtrl, /* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+			);
+
+	ASSERT(rStatus == WLAN_STATUS_PENDING);
+}
+
+static void halPcieResumeCmd(struct ADAPTER *prAdapter)
+{
+	struct CMD_HIF_CTRL rCmdHifCtrl;
+	uint32_t rStatus;
+
+	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_PCIE;
+	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
+	rCmdHifCtrl.ucHifStop = FALSE;
+	rCmdHifCtrl.ucHifSuspend = FALSE;
+	rCmdHifCtrl.u4WakeupHifType = ENUM_CMD_HIF_WAKEUP_TYPE_PCIE;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			CMD_ID_HIF_CTRL,	/* ucCID */
+			TRUE,	/* fgSetQuery */
+			FALSE,	/* fgNeedResp */
+			FALSE,	/* fgIsOid */
+			NULL,	/* pfCmdDoneHandler */
+			NULL,	/* pfCmdTimeoutHandler */
+			sizeof(struct CMD_HIF_CTRL), /* u4SetQueryInfoLen */
+			(uint8_t *)&rCmdHifCtrl, /* pucInfoBuffer */
+			NULL,	/* pvSetQueryBuffer */
+			0	/* u4SetQueryBufferLen */
+			);
+
+	ASSERT(rStatus == WLAN_STATUS_PENDING);
+}
+
+static void halPciePreSuspendDone(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf)
+{
+	ASSERT(prAdapter);
+
+	prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+		PCIE_STATE_PRE_SUSPEND_DONE;
+}
+
+static void halPciePreSuspendTimeout(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo)
+{
+	ASSERT(prAdapter);
+
+	prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+		PCIE_STATE_PRE_SUSPEND_FAIL;
+}
