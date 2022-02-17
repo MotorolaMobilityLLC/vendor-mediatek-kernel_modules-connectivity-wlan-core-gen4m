@@ -50,8 +50,9 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/mib.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/
+ *							include/mgmt/mib.h#1
+ */
 
 /*! \file  mib.h
  *  \brief This file contains the IEEE 802.11 family related MIB definition
@@ -64,38 +65,49 @@
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                              C O N S T A N T S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                         D A T A   T Y P E S
- ********************************************************************************
+ *******************************************************************************
  */
-/* Entry in SMT AuthenticationAlgorithms Table: dot11AuthenticationAlgorithmsEntry */
+/* Entry in SMT AuthenticationAlgorithms Table:
+ *	dot11AuthenticationAlgorithmsEntry
+ */
 struct DOT11_AUTHENTICATION_ALGORITHMS_ENTRY {
-	u_int8_t dot11AuthenticationAlgorithmsEnable;	/* dot11AuthenticationAlgorithmsEntry 3 */
+	/* dot11AuthenticationAlgorithmsEntry 3 */
+	u_int8_t dot11AuthenticationAlgorithmsEnable;
 };
 
-/* Entry in SMT dot11RSNAConfigPairwiseCiphersTalbe Table: dot11RSNAConfigPairwiseCiphersEntry */
+/* Entry in SMT dot11RSNAConfigPairwiseCiphersTalbe Table:
+ *	dot11RSNAConfigPairwiseCiphersEntry
+ */
 struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY {
-	uint32_t dot11RSNAConfigPairwiseCipher;	/* dot11RSNAConfigPairwiseCiphersEntry 2 */
-	u_int8_t dot11RSNAConfigPairwiseCipherEnabled;	/* dot11RSNAConfigPairwiseCiphersEntry 3 */
+	/* dot11RSNAConfigPairwiseCiphersEntry 2 */
+	uint32_t dot11RSNAConfigPairwiseCipher;
+	/* dot11RSNAConfigPairwiseCiphersEntry 3 */
+	u_int8_t dot11RSNAConfigPairwiseCipherEnabled;
 };
 
-/* Entry in SMT dot11RSNAConfigAuthenticationSuitesTalbe Table: dot11RSNAConfigAuthenticationSuitesEntry */
+/* Entry in SMT dot11RSNAConfigAuthenticationSuitesTalbe Table:
+ *	dot11RSNAConfigAuthenticationSuitesEntry
+ */
 struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY {
-	uint32_t dot11RSNAConfigAuthenticationSuite;	/* dot11RSNAConfigAuthenticationSuitesEntry 2 */
-	u_int8_t dot11RSNAConfigAuthenticationSuiteEnabled;	/* dot11RSNAConfigAuthenticationSuitesEntry 3 */
+	/* dot11RSNAConfigAuthenticationSuitesEntry 2 */
+	uint32_t dot11RSNAConfigAuthenticationSuite;
+	/* dot11RSNAConfigAuthenticationSuitesEntry 3 */
+	u_int8_t dot11RSNAConfigAuthenticationSuiteEnabled;
 };
 
 /* ----- IEEE 802.11 MIB Major sections ----- */
@@ -110,11 +122,12 @@ struct IEEE_802_11_MIB {
 	uint32_t dot11RSNAConfigGroupCipher;	/* dot11RSNAConfigEntry 4 */
 
 	/* dot11RSNAConfigPairwiseCiphersTable          (dot11smt 9) */
-	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY dot11RSNAConfigPairwiseCiphersTable[MAX_NUM_SUPPORTED_CIPHER_SUITES];
+	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY
+	 dot11RSNAConfigPairwiseCiphersTable[MAX_NUM_SUPPORTED_CIPHER_SUITES];
 
 	/* dot11RSNAConfigAuthenticationSuitesTable     (dot11smt 10) */
-	 struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
-	    dot11RSNAConfigAuthenticationSuitesTable[MAX_NUM_SUPPORTED_AKM_SUITES];
+	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
+	 dot11RSNAConfigAuthenticationSuitesTable[MAX_NUM_SUPPORTED_AKM_SUITES];
 
 #if 0				/* SUPPORT_WAPI */
 	u_int8_t fgWapiKeyInstalled;
@@ -144,30 +157,33 @@ struct NON_HT_ATTRIBUTE {
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
- ********************************************************************************
+ *******************************************************************************
  */
-extern const struct NON_HT_PHY_ATTRIBUTE rNonHTPhyAttributes[];
-extern const struct NON_HT_ATTRIBUTE rNonHTAdHocModeAttributes[];
-extern const struct NON_HT_ATTRIBUTE rNonHTApModeAttributes[];
+extern const struct NON_HT_PHY_ATTRIBUTE
+	rNonHTPhyAttributes[];
+extern const struct NON_HT_ATTRIBUTE
+	rNonHTAdHocModeAttributes[];
+extern const struct NON_HT_ATTRIBUTE
+	rNonHTApModeAttributes[];
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                                 M A C R O S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
+ *******************************************************************************
  */
 
 /*******************************************************************************
  *                              F U N C T I O N S
- ********************************************************************************
+ *******************************************************************************
  */
 
 #endif /* _MIB_H */

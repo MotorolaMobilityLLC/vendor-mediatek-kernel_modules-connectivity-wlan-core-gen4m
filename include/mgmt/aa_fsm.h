@@ -50,32 +50,34 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/mgmt/aa_fsm.h#1
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/
+ *							include/mgmt/aa_fsm.h#1
+ */
 
 /*! \file   aa_fsm.h
-*    \brief  Declaration of functions and finite state machine for SAA/AAA Module.
-*
-*    Declaration of functions and finite state machine for SAA/AAA Module.
-*/
+ *    \brief  Declaration of functions and finite state machine for
+ *							SAA/AAA Module.
+ *
+ *    Declaration of functions and finite state machine for SAA/AAA Module.
+ */
 
 #ifndef _AA_FSM_H
 #define _AA_FSM_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Retry interval for retransmiting authentication-request MMPDU. */
 #define TX_AUTHENTICATION_RETRY_TIMEOUT_TU          100	/* TU. */
 
@@ -89,7 +91,8 @@
 #define DOT11_ASSOCIATION_RESPONSE_TIMEOUT_TU       512	/* TU. */
 
 /* The maximum time to wait for JOIN process complete. */
-#define JOIN_FAILURE_TIMEOUT_BEACON_INTERVAL        20	/* Beacon Interval, 20 * 100TU = 2 sec. */
+/* Beacon Interval, 20 * 100TU = 2 sec. */
+#define JOIN_FAILURE_TIMEOUT_BEACON_INTERVAL        20
 
 /* Retry interval for next JOIN request. */
 #define JOIN_RETRY_INTERVAL_SEC                     10	/* Seconds */
@@ -102,9 +105,9 @@
 #define TX_ASSOCIATE_TIMEOUT_TU        512 /* TU. */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum ENUM_AA_STATE {
 	AA_STATE_IDLE = 0,
 	SAA_STATE_SEND_AUTH1,
@@ -114,9 +117,11 @@ enum ENUM_AA_STATE {
 	SAA_STATE_SEND_ASSOC1,
 	SAA_STATE_WAIT_ASSOC2,
 	AAA_STATE_SEND_AUTH2,
-	AAA_STATE_SEND_AUTH4,	/* We may not use, because P2P GO didn't support WEP and 11r */
+	AAA_STATE_SEND_AUTH4,	/* We may not use,			     */
+				/* because P2P GO didn't support WEP and 11r */
 	AAA_STATE_SEND_ASSOC2,
-	AA_STATE_RESOURCE,	/* A state for debugging the case of out of msg buffer. */
+	AA_STATE_RESOURCE,	/* A state for debugging the case of	     */
+				/* out of msg buffer.			     */
 	AA_STATE_NUM
 };
 
@@ -126,78 +131,97 @@ enum ENUM_AA_FRM_TYPE {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+
 /*----------------------------------------------------------------------------*/
 /* Routines in saa_fsm.c                                                      */
 /*----------------------------------------------------------------------------*/
 void
 saaFsmSteps(IN struct ADAPTER *prAdapter,
-	    IN struct STA_RECORD *prStaRec, IN enum ENUM_AA_STATE eNextState, IN struct SW_RFB *prRetainedSwRfb);
+	    IN struct STA_RECORD *prStaRec,
+	    IN enum ENUM_AA_STATE eNextState,
+	    IN struct SW_RFB *prRetainedSwRfb);
 
 uint32_t
 saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
-			    uint32_t rJoinStatus, struct STA_RECORD *prStaRec, struct SW_RFB *prSwRfb);
+			    uint32_t rJoinStatus, struct STA_RECORD *prStaRec,
+			    struct SW_RFB *prSwRfb);
 
-void saaFsmRunEventStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
+			 IN struct MSG_HDR *prMsgHdr);
 
 uint32_t
-saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
+		     IN struct MSDU_INFO *prMsduInfo,
+		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter, IN unsigned long plParamPtr);
+void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER
+				*prAdapter, IN unsigned long plParamPtr);
 
-void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
+void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER
+				 *prAdapter, IN unsigned long ulParamPtr);
 
-void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
+			  IN struct SW_RFB *prSwRfb);
 
-uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSwRfb);
 
-uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER
+				*prAdapter, IN struct SW_RFB *prSwRfb);
 
-uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER
+				  *prAdapter, IN struct SW_RFB *prSwRfb);
 
-void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
+			 IN struct MSG_HDR *prMsgHdr);
 
-void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, IN struct STA_RECORD *prStaRec);
+void saaChkDeauthfrmParamHandler(IN struct ADAPTER
+				 *prAdapter, IN struct SW_RFB *prSwRfb,
+				 IN struct STA_RECORD *prStaRec);
 
 void
 saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
-			      IN struct WLAN_DISASSOC_FRAME *prDisassocFrame, IN struct STA_RECORD *prStaRec,
+			      IN struct WLAN_DISASSOC_FRAME *prDisassocFrame,
+			      IN struct STA_RECORD *prStaRec,
 			      IN struct SW_RFB *prSwRfb);
 
 void
-saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct BSS_INFO *prAisBssInfo,
+saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
+			    IN struct STA_RECORD *prStaRec,
+			    IN struct BSS_INFO *prAisBssInfo,
 			    IN enum ENUM_AA_FRM_TYPE eFrmType);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in aaa_fsm.c                                                      */
 /*----------------------------------------------------------------------------*/
-void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
+			  IN struct SW_RFB *prSwRfb);
 
-uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
+			       IN struct SW_RFB *prSwRfb);
 
 uint32_t
-aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
+		     IN struct MSDU_INFO *prMsduInfo,
+		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
 
 #endif /* _AA_FSM_H */

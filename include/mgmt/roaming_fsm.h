@@ -50,33 +50,33 @@
  *
  *****************************************************************************/
 /*
-** Id:
-*/
+ * Id:
+ */
 
 /*! \file   "roaming_fsm.h"
-*    \brief  This file defines the FSM for Roaming MODULE.
-*
-*    This file defines the FSM for Roaming MODULE.
-*/
+ *    \brief  This file defines the FSM for Roaming MODULE.
+ *
+ *    This file defines the FSM for Roaming MODULE.
+ */
 
 
 #ifndef _ROAMING_FSM_H
 #define _ROAMING_FSM_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Roaming Discovery interval, SCAN result need to be updated */
 #define ROAMING_DISCOVERY_TIMEOUT_SEC               5	/* Seconds. */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
@@ -85,9 +85,9 @@
 
 /* #define ROAMING_NO_SWING_RCPI_STEP                  5 //rcpi */
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum ENUM_ROAMING_FAIL_REASON {
 	ROAMING_FAIL_REASON_CONNLIMIT = 0,
 	ROAMING_FAIL_REASON_NOCANDIDATE,
@@ -134,9 +134,9 @@ struct CMD_ROAMING_CTRL {
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 struct CMD_ROAMING_SKIP_ONE_AP {
-	  uint8_t	  fgIsRoamingSkipOneAP;
-	  uint8_t	  aucReserved[3];
-	  uint8_t	  aucReserved2[8];
+	uint8_t	  fgIsRoamingSkipOneAP;
+	uint8_t	  aucReserved[3];
+	uint8_t	  aucReserved2[8];
 };
 #endif
 
@@ -159,19 +159,19 @@ struct ROAMING_INFO {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #if CFG_SUPPORT_ROAMING
 #define IS_ROAMING_ACTIVE(prAdapter) \
@@ -181,34 +181,35 @@ struct ROAMING_INFO {
 #endif /* CFG_SUPPORT_ROAMING */
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 void roamingFsmInit(IN struct ADAPTER *prAdapter);
 
 void roamingFsmUninit(IN struct ADAPTER *prAdapter);
 
-void roamingFsmSendCmd(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
+void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
+				IN struct CMD_ROAMING_TRANSIT *prTransit);
 
 void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter);
 
-void roamingFsmSteps(IN struct ADAPTER *prAdapter, IN enum ENUM_ROAMING_STATE eNextState);
+void roamingFsmSteps(IN struct ADAPTER *prAdapter,
+				IN enum ENUM_ROAMING_STATE eNextState);
 
 void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter);
 
-void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
+void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
+				IN struct CMD_ROAMING_TRANSIT *prTransit);
 
 void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter);
 
-void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter, IN uint32_t u4Reason);
+void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
+				IN uint32_t u4Reason);
 
 void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter);
 
-uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
+uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
+				IN struct CMD_ROAMING_TRANSIT *prTransit);
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
 
 #endif /* _ROAMING_FSM_H */
