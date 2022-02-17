@@ -1631,6 +1631,52 @@ struct UNI_CMD_POWER_OFF
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* RRM_11K command (0x11) */
+struct UNI_CMD_RRM_11K {
+	/* fixed field */
+	uint8_t ucBssInfoIdx;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+	*
+	*  TAG					| ID   | structure
+	*  ------------------------------------ | -----| -------------
+	*  UNI_CMD_SET_RRM_CAPABILITY		| 0x0  | UNI_CMD_SET_RRM_CAPABILITY_T
+	*  UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT	| 0x1  | UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* RRM 11K command Tag */
+enum ENUM_UNI_CMD_RRM_11K_TAG {
+	UNI_CMD_SET_RRM_CAPABILITY = 0,
+	UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT =  1,
+	UNI_CMD_RRM_11K_MAX_NUM
+};
+
+/* RRM capability Information (Tag0) */
+struct UNI_CMD_SET_RRM_CAPABILITY_PARAM {
+	/* Tag = 0x00 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t  ucRrmEnable;
+	uint8_t  ucCapabilities[5];
+	uint8_t  aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+/* AP constraint power limit Information (Tag1) */
+struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM {
+	/* Tag = 0x01 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucPwrSetEnable;
+	int8_t cMaxTxPwr;
+	int8_t cMinTxPwr;
+	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
 /* Rx header translation command (0x12) */
 struct UNI_CMD_SER
 {
@@ -4003,6 +4049,10 @@ uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 		struct STA_RECORD *prStaRec);
+uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
