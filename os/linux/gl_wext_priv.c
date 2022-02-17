@@ -2907,7 +2907,7 @@ priv_ate_set(IN struct net_device *prNetDev,
 static u_int8_t reqSearchSupportedOidEntry(IN uint32_t rOid,
 		OUT struct WLAN_REQ_ENTRY **ppWlanReqEntry)
 {
-	int32_t i, j, k;
+	uint32_t i, j, k;
 
 	i = 0;
 	j = NUM_SUPPORTED_OIDS - 1;
@@ -6278,10 +6278,10 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "string = %s\n", this_char);
 
-	u4ParamNum = sscanf(this_char, "%d:%d", &ucParam, &ucBandIdx);
-	if (u4ParamNum < 0)
+	u4ParamNum = sscanf(this_char, "%hhu:%hhu", &ucParam, &ucBandIdx);
+	if (u4ParamNum != 2)
 		return -1;
-	DBGLOG(REQ, INFO, "ParamNum=%d,Param=%d,Band=%d\n",
+	DBGLOG(REQ, INFO, "ParamNum=%u,Param=%u,Band=%u\n",
 		u4ParamNum, ucParam, ucBandIdx);
 
 	u4Size = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
@@ -6355,8 +6355,10 @@ static int32_t priv_driver_txpower_man_set(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, INFO, "string = %s\n", this_char);
 
-	u4ParamNum = sscanf(this_char, "%d:%d:%d:%d", &ucPhyMode, &ucTxRate,
-		&ucBw, &iTargetPwr);
+	u4ParamNum = sscanf(this_char, "%hhu:%hhu:%hhu:%hhu",
+		&ucPhyMode, &ucTxRate, &ucBw, &iTargetPwr);
+	if (u4ParamNum != 4)
+		return -1;
 
 	if (u4ParamNum < 0) {
 		DBGLOG(REQ, WARN, "sscanf input fail\n");
@@ -12235,7 +12237,7 @@ int priv_driver_set_mcsmap(IN struct net_device *prNetDev, IN char *pcCommand,
 
 		ucTxMcsMap = (uint8_t) u4Parse;
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (ucTxMcsMap >= 0 && ucTxMcsMap <= 2) {
+		if (ucTxMcsMap <= 2) {
 			prAdapter = prGlueInfo->prAdapter;
 			prAdapter->ucMcsMapSetFromSigma = ucTxMcsMap;
 
