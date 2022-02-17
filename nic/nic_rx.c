@@ -3849,13 +3849,10 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 				prIcsAggHeader,
 				prIcsAggHeader->rxByteCount);
 
-		DBGLOG(NIC, INFO, "rxByteCount:%d\n",
-			prIcsAggHeader->rxByteCount);
-
 		/* write to ring, ret: written */
 		ret = wifi_ics_fwlog_write(pucRecvBuff, u4Size);
 		if (ret != u4Size)
-			DBGLOG(NIC, INFO,
+			DBGLOG_LIMITED(NIC, INFO,
 				"dropped written:%d rxByteCount:%d\n",
 				ret, prIcsAggHeader->rxByteCount);
 	}
@@ -3988,6 +3985,7 @@ static void nicRxProcessPacketType(
 		if ((prAdapter->fgEnTmacICS
 			|| prAdapter->fgEnRmacICS) == TRUE)
 			nicRxProcessIcsLog(prAdapter, prSwRfb);
+		RX_INC_CNT(prRxCtrl, RX_ICS_LOG_COUNT);
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 #endif /* CFG_SUPPORT_ICS */
