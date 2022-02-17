@@ -980,7 +980,7 @@ enum ENUM_ANTENNA_NUM {
 /* #endif */
 
 /* max number of supported cipher suites */
-#define MAX_NUM_SUPPORTED_CIPHER_SUITES 10
+#define MAX_NUM_SUPPORTED_CIPHER_SUITES 11
 #if CFG_SUPPORT_802_11W
 /* max number of supported AKM suites */
 #define MAX_NUM_SUPPORTED_AKM_SUITES    15
