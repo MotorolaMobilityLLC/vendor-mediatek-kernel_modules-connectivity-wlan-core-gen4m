@@ -135,6 +135,9 @@ extern unsigned long long gConEmiSizeFinal;
 #define HQA_ANT_NUM 4
 #define HQA_USER_NUM	16
 
+#define BUFFER_BIN_MODE 0x0
+#define EFUSE_MODE 0x2
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
