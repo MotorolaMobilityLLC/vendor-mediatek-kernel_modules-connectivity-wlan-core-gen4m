@@ -1518,7 +1518,10 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
 		!wlanIsChipNoAck(prAdapter)
 		&& !kalIsCardRemoved(prAdapter->prGlueInfo)) {
 		wlanPowerOffWifi(prAdapter);
-	 }
+	} else {
+		DBGLOG(INIT, ERROR, "Cannot WF pwr-off, release HIF TRX-res");
+		HAL_CANCEL_TX_RX(prAdapter);
+	}
 
 	halHifSwInfoUnInit(prAdapter->prGlueInfo);
 	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
