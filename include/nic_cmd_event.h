@@ -87,10 +87,6 @@
 #define CMD_STATUS_REJECTED     1
 #define CMD_STATUS_UNKNOWN      2
 
-#define EVENT_HDR_WITHOUT_RXD_SIZE \
-		(OFFSET_OF(struct WIFI_EVENT, aucBuffer[0]) - \
-			OFFSET_OF(struct WIFI_EVENT, u2PacketLength))
-
 #define MAX_IE_LENGTH       (600)
 #define MAX_WSC_IE_LENGTH   (400)
 
@@ -1041,9 +1037,6 @@ struct WIFI_CMD {
 /* for Command Packet (via HIF-TX) */
 /* following CM's documentation v0.7 */
 struct WIFI_EVENT {
-#if 1
-	uint32_t au4HwMacRxDesc[4];
-#endif
 	uint16_t u2PacketLength;
 	uint16_t u2PacketType;	/* Must be filled with 0xE000 (EVENT Packet) */
 	uint8_t ucEID;
