@@ -384,11 +384,11 @@
  */
 #define CFG_SDIO_RX_AGG                              1
 
-/* 1: Enable SDIO RX Tasklet De-Aggregation
+/* 1: Enable SDIO RX Workqueue De-Aggregation
  * 0(default): Disable
  */
-#ifndef CFG_SDIO_RX_AGG_TASKLET
-#define CFG_SDIO_RX_AGG_TASKLET                      0
+#ifndef CFG_SDIO_RX_AGG_WORKQUE
+#define CFG_SDIO_RX_AGG_WORKQUE                      0
 #endif
 
 #if (CFG_SDIO_RX_AGG == 1) && (CFG_SDIO_INTR_ENHANCE == 0)

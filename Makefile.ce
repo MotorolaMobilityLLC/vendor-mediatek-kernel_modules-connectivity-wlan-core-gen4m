@@ -126,9 +126,9 @@ CFG_P2P_SCAN_REPORT_ALL_BSS=0
 # eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
-# 1: Enable SDIO RX Tasklet De-Aggregation
+# 1: Enable SDIO RX Workqueue De-Aggregation
 # 0: Disable (default)
-CFG_SDIO_RX_AGG_TASKLET=0
+CFG_SDIO_RX_AGG_WORKQUE=0
 
 #CFG_SUPPORT_SINGLE_SKU_LOCAL_DB=0
 
@@ -206,8 +206,8 @@ ifneq ($(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB),)
 PLATFORM_FLAGS += -DCFG_SUPPORT_SINGLE_SKU_LOCAL_DB=$(CFG_SUPPORT_SINGLE_SKU_LOCAL_DB)
 endif
 
-ifneq ($(CFG_SDIO_RX_AGG_TASKLET),)
-PLATFORM_FLAGS += -DCFG_SDIO_RX_AGG_TASKLET=$(CFG_SDIO_RX_AGG_TASKLET)
+ifneq ($(CFG_SDIO_RX_AGG_WORKQUE),)
+PLATFORM_FLAGS += -DCFG_SDIO_RX_AGG_WORKQUE=$(CFG_SDIO_RX_AGG_WORKQUE)
 endif
 
 ##############################################################
