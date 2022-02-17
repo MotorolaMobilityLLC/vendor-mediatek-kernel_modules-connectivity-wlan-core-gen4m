@@ -11979,8 +11979,7 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate)
 {
 	struct ADAPTER *prAdapter;
-	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
-	uint32_t groupid = 0, mu = 0;
+	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nss = 0;
 	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
 	uint8_t ucWlanIdx, ucStaIdx;
 	int rv;
@@ -12015,15 +12014,11 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
 	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
 	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
+	nss = ((u4RxVector0 & RX_VT_NUM_RX_MASK) >> RX_VT_NUM_RX_OFFSET);
 	sgi = u4RxVector0 & RX_VT_SHORT_GI;
-	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
-	if (groupid && groupid != 63) {
-		mu = 1;
-	} else {
-		mu = 0;
-		nsts += 1;
-	}
+
+	/*0 means 1R, 1 means 2R ...*/
+	nss += 1;
 	sgi = (sgi == 0) ? 0 : 1;
 	if (frmode >= 4) {
 		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
@@ -12031,11 +12026,10 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	DBGLOG(SW4, TRACE,
-		   "rxmode=[%u], rate=[%u], bandwidth=[%u], sgi=[%u], nsts=[%u]\n",
-		   rxmode, rate, frmode, sgi, nsts
-	);
+	       "rxmode=%u rate=%u bandwidth=%u sgi=%u nss=%u\n",
+	       rxmode, rate, frmode, sgi, nss);
 
-	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
+	rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nss,
 				 pu4CurRate, pu4MaxRate);
 	if (rv < 0)
 		goto errhandle;
@@ -12045,8 +12039,8 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 errhandle:
 	/* soc3_0 known issue */
 	DBGLOG(SW4, TRACE,
-		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nsts=[%u]\n",
-		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nsts
+		"u4RxVector0=[%x], u4RxVector1=[%x], rxmode=[%u], rate=[%u], frmode=[%u], sgi=[%u], nss=[%u]\n",
+		u4RxVector0, u4RxVector1, rxmode, rate, frmode, sgi, nss
 	);
 	return -1;
 }
