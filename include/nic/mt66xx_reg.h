@@ -1551,11 +1551,23 @@ struct mt66xx_chip_info {
 	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 	uint32_t u4ADieVer;
 	uint64_t chip_capability;
+
 #if CFG_CHIP_RESET_SUPPORT
 	u_int8_t (*asicWfsysRst)(struct ADAPTER *prAdapter,
 				 u_int8_t fgAssertRst);
 	u_int8_t (*asicPollWfsysSwInitDone)(struct ADAPTER *prAdapter);
 #endif
+
+	/* If you want to explicitly specify the max AMPDU length exponent in
+	 * HE CAP IE instead of using default one specified by
+	 * prWifiVar->ucMaxAmpduLenExp, then you shall set
+	 * is_specify_he_cap_max_ampdu_len_exp TRUE, set 2.4G value and 5G/6G
+	 * value in uc2G4HeCapMaxAmpduLenExp and uc5GHeCapMaxAmpduLenExp
+	 * respectively.
+	 */
+	u_int8_t is_specify_he_cap_max_ampdu_len_exp;
+	uint8_t uc2G4HeCapMaxAmpduLenExp;
+	uint8_t uc5GHeCapMaxAmpduLenExp;    /* parameter for both 5G and 6G */
 };
 
 struct mt66xx_hif_driver_data {
