@@ -1915,13 +1915,13 @@ typedef struct _PARAM_CHN_LOAD_INFO {
 	/* Per-CHN Load */
 	UINT_8 ucChannel;
 	UINT_16 u2APNum;
-	UINT_32 u4Dirtyness;
+	UINT_32 u4Dirtiness;
 	UINT_8 ucReserved;
 } PARAM_CHN_LOAD_INFO, *P_PARAM_CHN_LOAD_INFO;
 
 typedef struct _PARAM_CHN_RANK_INFO {
 	UINT_8 ucChannel;
-	UINT_32 u4Dirtyness;
+	UINT_32 u4Dirtiness;
 	UINT_8 ucReserved;
 } PARAM_CHN_RANK_INFO, *P_PARAM_CHN_RANK_INFO;
 
@@ -2716,7 +2716,7 @@ WLAN_STATUS
 wlanoidQueryLteSafeChannel(IN P_ADAPTER_T prAdapter,
 			   IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 WLAN_STATUS
-wlanCalculateAllChannelDirtyness(IN P_ADAPTER_T prAdapter);
+wlanCalculateAllChannelDirtiness(IN P_ADAPTER_T prAdapter);
 VOID
 wlanInitChnLoadInfoChannelList(IN P_ADAPTER_T prAdapter);
 UINT_8
