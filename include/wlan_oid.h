@@ -2551,9 +2551,10 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint8_t ucBssIndex;
 	uint32_t u4Flags;
 	uint8_t aucBssid[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
-	/* For 6G OOB discovery*/
+	/* For OOB discovery*/
 	uint8_t ucBssidMatchCh[CFG_SCAN_OOB_MAX_NUM];
 	uint8_t ucBssidMatchSsidInd[CFG_SCAN_OOB_MAX_NUM];
+	u_int8_t fgOobRnrParseEn;
 };
 
 /*--------------------------------------------------------------*/

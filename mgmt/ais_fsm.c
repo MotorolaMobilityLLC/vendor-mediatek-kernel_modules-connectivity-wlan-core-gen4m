@@ -2325,6 +2325,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prScanRequest->ucBssidMatchSsidInd,
 				CFG_SCAN_OOB_MAX_NUM);
 
+			prScanReqMsg->fgOobRnrParseEn =
+				prScanRequest->fgOobRnrParseEn;
+
 			/* check if tethering is running and need to fix on
 			 * specific channel
 			 */
