@@ -1468,14 +1468,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		fgIsNewBssDesc = TRUE;
 
 		do {
-			/* check if it is a beacon frame */
-			if (!fgIsProbeResp && !fgIsValidSsid) {
-				log_dbg(SCN, LOUD, "scanAddToBssDescssid is NULL Beacon, don't add hidden BSS("
-					MACSTR ")\n",
-					MAC2STR((uint8_t *)
-					prWlanBeaconFrame->aucBSSID));
-				return NULL;
-			}
 			/* 4 <1.2.1> First trial of allocation */
 			prBssDesc = scanAllocateBssDesc(prAdapter);
 			if (prBssDesc)
@@ -1599,7 +1591,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	prBssDesc->fgIsValidSSID = fgIsValidSsid;
 	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
 	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE) {
 		prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
@@ -1609,11 +1600,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		DBGLOG(SCN, WARN,
 			"Pkt len(%u) > Max RAW buffer size(%u), truncate it!\n",
 			prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
-}
-	if (fgIsProbeResp || fgIsValidSsid) {
-		kalMemCopy(prBssDesc->aucRawBuf, prWlanBeaconFrame,
-			prBssDesc->u2RawLength);
 	}
+	kalMemCopy(prBssDesc->aucRawBuf,
+		prWlanBeaconFrame, prBssDesc->u2RawLength);
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
@@ -2444,7 +2433,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (prBssDesc->fgIsValidSSID && prBssDesc->u2RawLength != 0) {
+	if (prBssDesc->u2RawLength != 0) {
 		kalIndicateBssInfo(prAdapter->prGlueInfo,
 			   prBssDesc->aucRawBuf,
 			   prBssDesc->u2RawLength,
@@ -3515,21 +3504,18 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 				return;
 			}
 
-			log_dbg(SCN, TRACE, "Report specific SSID[%s] ValidSSID[%u]\n",
-				SpecificprBssDesc->aucSSID,
-				SpecificprBssDesc->fgIsValidSSID);
+			log_dbg(SCN, TRACE, "Report specific SSID[%s]\n",
+				SpecificprBssDesc->aucSSID);
 
 			if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
-				if (SpecificprBssDesc->fgIsValidSSID) {
-					kalIndicateBssInfo(
-						prAdapter->prGlueInfo,
-						(uint8_t *)
-						SpecificprBssDesc->aucRawBuf,
-						SpecificprBssDesc->u2RawLength,
-						SpecificprBssDesc->ucChannelNum,
-						RCPI_TO_dBm(
-						SpecificprBssDesc->ucRCPI));
-				}
+				kalIndicateBssInfo(
+					prAdapter->prGlueInfo,
+					(uint8_t *)
+					SpecificprBssDesc->aucRawBuf,
+					SpecificprBssDesc->u2RawLength,
+					SpecificprBssDesc->ucChannelNum,
+					RCPI_TO_dBm(
+					SpecificprBssDesc->ucRCPI));
 			} else {
 
 				rChannelInfo.ucChannelNum
@@ -3566,19 +3552,19 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    && (prBssDesc->fgIsP2PReport == TRUE))
 #endif
 			    ) {
-
-				log_dbg(SCN, TRACE, "Report " MACSTR " SSID[%s %u] eBSSType[%d] ValidSSID[%u] u2RawLength[%d] fgIsP2PReport[%d]\n",
+#define TEMP_LOG_TEMPLATE "Report " MACSTR " SSID[%s %u] eBSSType[%d] " \
+		"u2RawLength[%d] fgIsP2PReport[%d]\n"
+				log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
 						MAC2STR(prBssDesc->aucBSSID),
 						prBssDesc->aucSSID,
 						prBssDesc->ucChannelNum,
 						prBssDesc->eBSSType,
-						prBssDesc->fgIsValidSSID,
 						prBssDesc->u2RawLength,
 						prBssDesc->fgIsP2PReport);
+#undef TEMP_LOG_TEMPLATE
 
 				if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
-					if (prBssDesc->u2RawLength != 0 &&
-						prBssDesc->fgIsValidSSID) {
+					if (prBssDesc->u2RawLength != 0) {
 						kalIndicateBssInfo(
 							prAdapter->prGlueInfo,
 							(uint8_t *)
