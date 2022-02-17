@@ -4767,6 +4767,9 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
 	case CATEGORY_WME_MGT_NOTIFICATION:
 		wmmParseQosAction(prAdapter, prSwRfb);
 		break;
+	case CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
+		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		break;
 	default:
 		break;
 	}			/* end of switch case */
