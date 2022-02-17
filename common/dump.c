@@ -117,51 +117,53 @@
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpMemory8(IN uint8_t *pucStartAddr, IN uint32_t u4Length)
+void dumpMemory8(IN uint8_t *pucStartAddr,
+		 IN uint32_t u4Length)
 {
 	ASSERT(pucStartAddr);
 
-	LOG_FUNC("DUMP8 ADDRESS: %p, Length: %d\n", pucStartAddr, u4Length);
+	LOG_FUNC("DUMP8 ADDRESS: %p, Length: %d\n", pucStartAddr,
+		 u4Length);
 
-	#define case16 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case16 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x %02x  %02x %02x %02x %02x\n"
 
-	#define case07 "(%p) %02x %02x %02x %02x  %02x %02x %02x\n"
+#define case07 "(%p) %02x %02x %02x %02x  %02x %02x %02x\n"
 
-	#define case08 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x\n"
+#define case08 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x\n"
 
-	#define case09 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case09 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x\n"
 
-	#define case10 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case10 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x\n"
 
-	#define case11 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case11 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x\n"
 
-	#define case12 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case12 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x %02x\n"
 
-	#define case13 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case13 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x %02x  %02x\n"
 
-	#define case14 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case14 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x %02x  %02x %02x\n"
 
-	#define case15 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
+#define case15 "(%p) %02x %02x %02x %02x  %02x %02x %02x %02x" \
 			" - %02x %02x %02x %02x  %02x %02x %02x\n"
 
 	while (u4Length > 0) {
 		if (u4Length >= 16) {
 			LOG_FUNC
-			    (case16,
-			     pucStartAddr, pucStartAddr[0], pucStartAddr[1],
-			     pucStartAddr[2], pucStartAddr[3], pucStartAddr[4],
-			     pucStartAddr[5], pucStartAddr[6], pucStartAddr[7],
-			     pucStartAddr[8], pucStartAddr[9], pucStartAddr[10],
-			     pucStartAddr[11], pucStartAddr[12],
-			     pucStartAddr[13], pucStartAddr[14],
-			     pucStartAddr[15]);
+			(case16,
+			 pucStartAddr, pucStartAddr[0], pucStartAddr[1],
+			 pucStartAddr[2], pucStartAddr[3], pucStartAddr[4],
+			 pucStartAddr[5], pucStartAddr[6], pucStartAddr[7],
+			 pucStartAddr[8], pucStartAddr[9], pucStartAddr[10],
+			 pucStartAddr[11], pucStartAddr[12],
+			 pucStartAddr[13], pucStartAddr[14],
+			 pucStartAddr[15]);
 			u4Length -= 16;
 			pucStartAddr += 16;
 		} else {
@@ -194,104 +196,104 @@ void dumpMemory8(IN uint8_t *pucStartAddr, IN uint32_t u4Length)
 				break;
 			case 6:
 				LOG_FUNC
-				    ("(%p) %02x %02x %02x %02x  %02x %02x\n",
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5]);
+				("(%p) %02x %02x %02x %02x  %02x %02x\n",
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5]);
 				break;
 			case 7:
 				LOG_FUNC
-				    (case07,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6]);
+				(case07,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6]);
 				break;
 			case 8:
 				LOG_FUNC
-				    (case08,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7]);
+				(case08,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7]);
 				break;
 			case 9:
 				LOG_FUNC
-				    (case09,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8]);
+				(case09,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8]);
 				break;
 			case 10:
 				LOG_FUNC
-				    (case10,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9]);
+				(case10,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9]);
 				break;
 			case 11:
 				LOG_FUNC
-				    (case11,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9], pucStartAddr[10]);
+				(case11,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9], pucStartAddr[10]);
 				break;
 			case 12:
 				LOG_FUNC
-				    (case12,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9], pucStartAddr[10],
-				     pucStartAddr[11]);
+				(case12,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9], pucStartAddr[10],
+				 pucStartAddr[11]);
 				break;
 			case 13:
 				LOG_FUNC
-				    (case13,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9], pucStartAddr[10],
-				     pucStartAddr[11], pucStartAddr[12]);
+				(case13,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9], pucStartAddr[10],
+				 pucStartAddr[11], pucStartAddr[12]);
 				break;
 			case 14:
 				LOG_FUNC
-				    (case14,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9], pucStartAddr[10],
-				     pucStartAddr[11], pucStartAddr[12],
-				     pucStartAddr[13]);
+				(case14,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9], pucStartAddr[10],
+				 pucStartAddr[11], pucStartAddr[12],
+				 pucStartAddr[13]);
 				break;
 			case 15:
 			default:
 				LOG_FUNC
-				    (case15,
-				     pucStartAddr, pucStartAddr[0],
-				     pucStartAddr[1], pucStartAddr[2],
-				     pucStartAddr[3], pucStartAddr[4],
-				     pucStartAddr[5], pucStartAddr[6],
-				     pucStartAddr[7], pucStartAddr[8],
-				     pucStartAddr[9], pucStartAddr[10],
-				     pucStartAddr[11], pucStartAddr[12],
-				     pucStartAddr[13], pucStartAddr[14]);
+				(case15,
+				 pucStartAddr, pucStartAddr[0],
+				 pucStartAddr[1], pucStartAddr[2],
+				 pucStartAddr[3], pucStartAddr[4],
+				 pucStartAddr[5], pucStartAddr[6],
+				 pucStartAddr[7], pucStartAddr[8],
+				 pucStartAddr[9], pucStartAddr[10],
+				 pucStartAddr[11], pucStartAddr[12],
+				 pucStartAddr[13], pucStartAddr[14]);
 				break;
 			}
 			u4Length = 0;
@@ -313,20 +315,22 @@ void dumpMemory8(IN uint8_t *pucStartAddr, IN uint32_t u4Length)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpMemory32(IN uint32_t *pu4StartAddr, IN uint32_t u4Length)
+void dumpMemory32(IN uint32_t *pu4StartAddr,
+		  IN uint32_t u4Length)
 {
 	uint8_t *pucAddr;
 
 	ASSERT(pu4StartAddr);
 
-	LOG_FUNC("DUMP32 ADDRESS: %p, Length: %d\n", pu4StartAddr, u4Length);
+	LOG_FUNC("DUMP32 ADDRESS: %p, Length: %d\n", pu4StartAddr,
+		 u4Length);
 
 	if (IS_NOT_ALIGN_4((unsigned long)pu4StartAddr)) {
 		uint32_t u4ProtrudeLen =
-		    sizeof(uint32_t) - ((unsigned long)pu4StartAddr % 4);
+			sizeof(uint32_t) - ((unsigned long)pu4StartAddr % 4);
 
 		u4ProtrudeLen =
-		    ((u4Length < u4ProtrudeLen) ? u4Length : u4ProtrudeLen);
+			((u4Length < u4ProtrudeLen) ? u4Length : u4ProtrudeLen);
 		LOG_FUNC("pu4StartAddr is not at DW boundary.\n");
 		pucAddr = (uint8_t *) &pu4StartAddr[0];
 
@@ -348,7 +352,7 @@ void dumpMemory32(IN uint32_t *pu4StartAddr, IN uint32_t u4Length)
 
 		u4Length -= u4ProtrudeLen;
 		pu4StartAddr = (uint32_t *)
-		    ((unsigned long)pu4StartAddr + u4ProtrudeLen);
+			       ((unsigned long)pu4StartAddr + u4ProtrudeLen);
 	}
 
 	while (u4Length > 0) {
@@ -369,7 +373,7 @@ void dumpMemory32(IN uint32_t *pu4StartAddr, IN uint32_t u4Length)
 			case 2:
 				pucAddr = (uint8_t *) &pu4StartAddr[0];
 				LOG_FUNC("(%p) ----%02x%02x\n", pu4StartAddr,
-				 pucAddr[1], pucAddr[0]);
+					 pucAddr[1], pucAddr[0]);
 				break;
 			case 3:
 				pucAddr = (uint8_t *) &pu4StartAddr[0];
