@@ -121,7 +121,9 @@
 
 #define HIF_TX_PAYLOAD_LENGTH				72
 
-#define HIF_SER_TIMEOUT				10000
+#define HIF_MSDU_REPORT_DUMP_TIMEOUT		1	/* sec */
+#define HIF_MSDU_REPORT_RETURN_TIMEOUT		10	/* sec */
+#define HIF_SER_TIMEOUT				10000	/* msec */
 
 #define MAX_PCIE_BUS_STATIC_MAP_ADDR		0x00040000
 
@@ -291,6 +293,7 @@ struct RTMP_DMACB {
 	void *pBuffer;
 	phys_addr_t PacketPa;
 	struct RTMP_DMABUF DmaBuf;	/* Associated DMA buffer structure */
+	struct MSDU_TOKEN_ENTRY *prToken;
 };
 
 struct RTMP_TX_RING {
@@ -331,6 +334,8 @@ struct PCIE_CHIP_CR_MAPPING {
 struct MSDU_TOKEN_ENTRY {
 	uint32_t u4Token;
 	u_int8_t fgInUsed;
+	struct timeval rTs;	/* token tx timestamp */
+	uint32_t u4CpuIdx;	/* tx ring cell index */
 	struct MSDU_INFO *prMsduInfo;
 	void *prPacket;
 	phys_addr_t rDmaAddr;
@@ -411,6 +416,7 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
 					      uint32_t u4TokenNum);
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,
@@ -440,21 +446,28 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent);
+
+void halSetDrvSer(struct ADAPTER *prAdapter);
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
-void halShowPdmaInfo(IN struct ADAPTER *prAdapter,
-		     bool fgTxContent, bool fgRxContent);
+
+bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
+		    struct SW_RFB *prSwRfb);
+bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
+
+/* Debug functions */
+int halTimeCompare(struct timeval *prTs1, struct timeval *prTs2);
+void halShowPdmaInfo(IN struct ADAPTER *prAdapter);
 void halShowPseInfo(IN struct ADAPTER *prAdapter);
 void halShowPleInfo(IN struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
-void halDumpHifDebugLog(struct GLUE_INFO *prGlueInfo, bool fgTx, bool fgRx);
-bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
-		    struct SW_RFB *prSwRfb);
-bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_TX_RING *prTxRing,
 		   uint32_t u4Num, bool fgDumpContent);
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_RX_RING *prRxRing,
 		   uint32_t u4Num, bool fgDumpContent);
+void haldumpMacInfo(IN struct ADAPTER *prAdapter);
+void haldumpPhyInfo(struct ADAPTER *prAdapter);
+
 #endif /* HIF_PDMA_H__ */

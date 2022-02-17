@@ -3895,6 +3895,10 @@ wlanoidAbortScan(IN struct ADAPTER *prAdapter,
 		 IN uint32_t u4QueryBufferLen,
 		 OUT uint32_t *pu4QueryInfoLen);
 
+uint32_t wlanoidSetDrvSer(IN struct ADAPTER *prAdapter,
+			  IN void *pvSetBuffer,
+			  IN uint32_t u4SetBufferLen,
+			  OUT uint32_t *pu4SetInfoLen);
 uint32_t wlanoidSetAmsduNum(IN struct ADAPTER *prAdapter,
 			    IN void *pvSetBuffer,
 			    IN uint32_t u4SetBufferLen,
