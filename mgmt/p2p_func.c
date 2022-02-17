@@ -7212,10 +7212,7 @@ uint8_t p2pFuncIsTimingCriticalFrames(
 	case MAC_FRAME_ACTION:
 		switch (eConnState) {
 		case P2P_CNN_GO_NEG_REQ:
-		case P2P_CNN_GO_NEG_RESP:
-		case P2P_CNN_GO_NEG_CONF:
 		case P2P_CNN_INVITATION_REQ:
-		case P2P_CNN_INVITATION_RESP:
 			fgIsTimingCritical = TRUE;
 			break;
 		default:
@@ -7223,7 +7220,6 @@ uint8_t p2pFuncIsTimingCriticalFrames(
 		}
 		break;
 	case MAC_FRAME_PROBE_REQ:
-	case MAC_FRAME_PROBE_RSP:
 		fgIsTimingCritical = TRUE;
 		break;
 	default:
