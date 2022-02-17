@@ -1725,6 +1725,7 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	 */
 	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
 		if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
 			prCmdRddOnOffCtrl->ucSetVal = REG_JP_53;
@@ -1733,6 +1734,9 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	} else {
 		prCmdRddOnOffCtrl->ucSetVal = REG_DEFAULT;
 	}
+#else
+	prCmdRddOnOffCtrl->ucSetVal = REG_DEFAULT;
+#endif
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
@@ -2046,6 +2050,7 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 	eChannelWidth = prChnlReqInfo->eChannelWidth;
 	eChnlSco = prChnlReqInfo->eChnlSco;
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
 		if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
 			if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
@@ -2058,6 +2063,7 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 				return TRUE; /* ch116, 120 BW40 */
 		}
 	}
+#endif
 
 	return FALSE;
 }
@@ -2114,6 +2120,7 @@ void p2pFuncShowRadarInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 			"Radar detected in DBDC band%d\n",
 				g_rP2pRadarInfo.ucRddIdx);
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 		switch (rlmDomainGetDfsRegion()) {
 		case NL80211_DFS_FCC:
 			DBGLOG(P2P, INFO, "Regulation domain: FCC\n");
@@ -2136,6 +2143,7 @@ void p2pFuncShowRadarInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 		default:
 			break;
 		}
+#endif
 
 		DBGLOG(P2P, INFO, "Radar Content:\n");
 
