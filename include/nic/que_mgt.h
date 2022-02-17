@@ -362,6 +362,7 @@ struct RX_BA_ENTRY {
 	uint16_t u2WinSize;
 	uint16_t u2BarSSN;
 	uint16_t u2LastRcvdSN;
+	uint16_t u2LastFallBehindDropSN;
 
 	/* For identifying the RX BA agreement */
 	uint8_t ucStaRecIdx;
