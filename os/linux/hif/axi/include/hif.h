@@ -80,6 +80,7 @@ struct MTK_WCN_WMT_WLAN_CB_INFO;
 extern int mtk_wcn_wmt_wlan_reg(
 	struct MTK_WCN_WMT_WLAN_CB_INFO *pWmtWlanCbInfo);
 extern int mtk_wcn_wmt_wlan_unreg(void);
+extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
 #endif
 
 extern phys_addr_t gWifiRsvMemPhyBase;
