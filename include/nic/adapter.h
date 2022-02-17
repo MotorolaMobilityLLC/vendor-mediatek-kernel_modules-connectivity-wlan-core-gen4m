@@ -160,7 +160,7 @@ struct WLAN_INFO {
 	uint32_t eRtsThreshold;
 
 	/* Network Type */
-	uint8_t ucNetworkType[KAL_AIS_NUM];
+	uint8_t ucNetworkType[MAX_BSSID_NUM];
 
 	/* Network Type In Use */
 	uint8_t ucNetworkTypeInUse;
