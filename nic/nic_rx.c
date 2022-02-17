@@ -3916,6 +3916,7 @@ static void nicRxProcessPacketType(
 				prSwRfb->prRxStatus)
 			& prChipInfo->u2RxSwPktBitMap)
 			== prChipInfo->u2RxSwPktFrame){
+
 			/* OFLD pkts should go data flow
 			 * 1: EAPOL
 			 * 2: ARP / NS
@@ -3926,7 +3927,12 @@ static void nicRxProcessPacketType(
 				prSwRfb->ucOFLD,
 				get_ofld,
 				prSwRfb->prRxStatus);
-			if (prSwRfb->ucOFLD) {
+			RX_STATUS_GET(
+				prChipInfo->prRxDescOps,
+				prSwRfb->fgHdrTran,
+				get_HdrTrans,
+				prSwRfb->prRxStatus);
+			if ((prSwRfb->ucOFLD) || (prSwRfb->fgHdrTran)) {
 				if (HAL_IS_RX_DIRECT(prAdapter)) {
 					spin_lock_bh(&prGlueInfo->rSpinLock[
 						SPIN_LOCK_RX_DIRECT]);
