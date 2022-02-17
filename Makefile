@@ -42,7 +42,11 @@ ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
 endif
 
-ifeq ($(MTK_ANDROID_WMT), yes)
+ifeq ($(WIFI_ENABLE_GCOV), y)
+GCOV_PROFILE := y
+endif
+
+ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
