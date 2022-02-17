@@ -185,7 +185,10 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 		prBssInfo->ucBssColorInfo |=
 			BIT(HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT);
 
-		prBssInfo->u2HeBasicMcsSet |= (HE_CAP_INFO_MCS_MAP_MCS11 << 0);
+		prBssInfo->ucBssColorInfo |=
+			BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
+
+		prBssInfo->u2HeBasicMcsSet |= (HE_CAP_INFO_MCS_MAP_MCS7 << 0);
 		for (i = 1; i < 8; i++)
 			prBssInfo->u2HeBasicMcsSet |=
 				(HE_CAP_INFO_MCS_NOT_SUPPORTED << 2 * i);
