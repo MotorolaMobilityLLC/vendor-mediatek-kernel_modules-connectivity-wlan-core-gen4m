@@ -524,6 +524,7 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			switch (*prRstMsg) {
 			case WMTRSTMSG_RESET_START:
 				DBGLOG(INIT, WARN, "Whole chip reset start!\n");
+				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
 				wifi_reset_start();
 				break;
