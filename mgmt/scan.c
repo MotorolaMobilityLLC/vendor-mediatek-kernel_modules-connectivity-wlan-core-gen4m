@@ -1645,6 +1645,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
 	struct SCAN_PARAM *prScanParam;
+	struct SCAN_PARAM *prAdapterScanParam;
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
@@ -1792,6 +1793,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			ucNewLink = TRUE;
 		}
 		prScanParam = &prNeighborAPInfo->rScanParam;
+		prAdapterScanParam =
+			&(prAdapter->rWifiVar.rScanInfo.rScanParam);
 		prIeShortSsidList = (struct IE_SHORT_SSID_LIST *)
 					prScanParam->aucIE;
 
@@ -1809,11 +1812,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			*  (IEID and Length)
 			*/
 			prScanParam->u2IELen = IE_SIZE(prIeShortSsidList);
-			prScanParam->ucScnFuncMask |=
-						ENUM_SCN_USE_PADDING_AS_BSSID;
 			prScanParam->ucBssIndex =
 					prScanInfo->rScanParam.ucBssIndex;
-			prScanParam->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
 			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0
 			*  will let FW confuse to match SSID ind 0.
@@ -1821,6 +1821,33 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			kalMemSet(prScanParam->ucBssidMatchSsidInd,
 				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanParam->ucBssidMatchSsidInd));
+
+			if (prAdapterScanParam->ucSSIDType &
+					SCAN_REQ_SSID_SPECIFIED) {
+				for (i = 0; i < prAdapterScanParam->ucSSIDNum &&
+						i < SCN_SSID_MAX_NUM; i++) {
+					prScanParam->ucSSIDNum++;
+					COPY_SSID(
+						prScanParam->
+							aucSpecifiedSSID[i],
+						prScanParam->
+							ucSpecifiedSSIDLen[i],
+						prAdapterScanParam->
+							aucSpecifiedSSID[i],
+						prAdapterScanParam->
+							ucSpecifiedSSIDLen[i]);
+				}
+				prScanParam->ucSSIDType =
+					SCAN_REQ_SSID_SPECIFIED;
+				DBGLOG(SCN, STATE,
+					"OOB scan specific SSIDNum %d\n",
+					prScanParam->ucSSIDNum);
+			} else {
+				prScanParam->ucScnFuncMask |=
+					ENUM_SCN_USE_PADDING_AS_BSSID;
+				prScanParam->ucSSIDType =
+					SCAN_REQ_SSID_WILDCARD;
+			}
 		}
 
 		/* Get RNR channel */
@@ -1844,7 +1871,10 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			 * bypass it.
 			 */
 			ucScanEnable = TRUE;
-			prBssDescTemp = scanSearchBssDescByBssid(prAdapter,
+			if (prScanParam->ucScnFuncMask &
+					ENUM_SCN_USE_PADDING_AS_BSSID)
+				prBssDescTemp = scanSearchBssDescByBssid(
+						prAdapter,
 						&prNeighborAPInfoField->
 						aucTbttInfoSet[j + 1]);
 			if ((prBssDescTemp &&
@@ -1864,13 +1894,18 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				continue;
 
 			if (ucBssidNum < CFG_SCAN_OOB_MAX_NUM) {
-				kalMemCopy(prScanParam->aucBSSID[ucBssidNum],
-					&prNeighborAPInfoField->
-					aucTbttInfoSet[j + 1],
-					MAC_ADDR_LEN);
-				prScanParam->ucBssidMatchCh[ucBssidNum] =
-					ucRnrChNum;
-				ucBssidNum++;
+				if (prScanParam->ucScnFuncMask &
+					ENUM_SCN_USE_PADDING_AS_BSSID) {
+					kalMemCopy(prScanParam->
+						aucBSSID[ucBssidNum],
+						&prNeighborAPInfoField->
+						aucTbttInfoSet[j + 1],
+						MAC_ADDR_LEN);
+					prScanParam->
+						ucBssidMatchCh[ucBssidNum] =
+						ucRnrChNum;
+					ucBssidNum++;
+				}
 			} else {
 				/* This NeighborAPInfo saved BSSID = MAX,
 				*  re-generate one. Remaining TBTT Info in this
@@ -1905,8 +1940,10 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				prScanParam->ucShortSSIDNum++;
 			}
 			if (ucBssParamOffset != 0 &&
-				prScanParam->ucSSIDNum < CFG_SCAN_OOB_MAX_NUM
-				&& (prNeighborAPInfoField->aucTbttInfoSet[j +
+				prScanParam->ucSSIDNum < CFG_SCAN_OOB_MAX_NUM &&
+				(prScanParam->ucScnFuncMask &
+				 ENUM_SCN_USE_PADDING_AS_BSSID) &&
+				(prNeighborAPInfoField->aucTbttInfoSet[j +
 				ucBssParamOffset] &
 				TBTT_INFO_BSS_PARAM_SAME_SSID))
 				scanHandleRnrSsid(prScanParam, prBssDesc,
