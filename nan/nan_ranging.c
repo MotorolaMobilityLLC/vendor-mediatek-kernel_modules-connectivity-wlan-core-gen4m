@@ -553,7 +553,7 @@ nanRangingFrameCompose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	/* Get BSS info */
 	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_WOSEC);
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
 
@@ -938,7 +938,7 @@ nanRangingFrameSend(struct ADAPTER *prAdapter, uint8_t *PeerAddr,
 		pfTxDoneHandler = (PFN_TX_DONE_HANDLER)nanRangingReportTxDone;
 
 	prNanSpecificBssInfo =
-		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_WOSEC);
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter, prMsduInfo, prNanSpecificBssInfo->ucBssIndex,

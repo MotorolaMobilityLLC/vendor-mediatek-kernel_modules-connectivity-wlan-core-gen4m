@@ -951,16 +951,10 @@ nanDataUpdateNdpLocalNDI(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prNDP->fgSecurityRequired == FALSE)
-		prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-							  prAdapter,
-							  NAN_BSS_INDEX_WOSEC)
-							  ->ucBssIndex];
-	else
-		prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-							  prAdapter,
-							  NAN_BSS_INDEX_WSEC)
-							  ->ucBssIndex];
+	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+						  prAdapter,
+						  NAN_BSS_INDEX_BAND0)
+						  ->ucBssIndex];
 
 	if (UNEQUAL_MAC_ADDR(prNDP->aucLocalNDIAddr, prBssInfo->aucOwnMacAddr))
 		COPY_MAC_ADDR(prNDP->aucLocalNDIAddr, prBssInfo->aucOwnMacAddr);
@@ -1222,7 +1216,7 @@ void
 nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
 	uint8_t i, j;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -1266,8 +1260,7 @@ nanDataEngineInit(struct ADAPTER *prAdapter, IN uint8_t *pu1NMIAddress) {
 	prDataPathInfo->prLocalHtCap = NULL;
 	prDataPathInfo->prLocalVhtCap = NULL;
 
-	for (eRole = 0; eRole < NAN_BSS_INDEX_NUM; eRole++)
-		atomic_set(&(prDataPathInfo->NetDevRefCount[eRole]), 0);
+	atomic_set(&(prDataPathInfo->NetDevRefCount[eRole]), 0);
 	g_ndpReqNDPE.fgEnNDPE = FALSE;
 #if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
 	prDataPathInfo->fgAutoHandleDPRequest = FALSE;
@@ -1289,7 +1282,7 @@ void
 nanDataEngineUninit(struct ADAPTER *prAdapter) {
 	uint8_t i, j;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
-	enum NAN_BSS_ROLE_INDEX eRole;
+	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -1303,13 +1296,11 @@ nanDataEngineUninit(struct ADAPTER *prAdapter) {
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 
-	for (eRole = 0; eRole < NAN_BSS_INDEX_NUM; eRole++) {
-		if (atomic_read(&(prDataPathInfo->NetDevRefCount[eRole])) > 0) {
-			/* netif_carrier_off */
-			kalNanIndicateStatusAndComplete(
-				prAdapter->prGlueInfo,
-				WLAN_STATUS_MEDIA_DISCONNECT, eRole);
-		}
+	if (atomic_read(&(prDataPathInfo->NetDevRefCount[eRole])) > 0) {
+		/* netif_carrier_off */
+		kalNanIndicateStatusAndComplete(
+			prAdapter->prGlueInfo,
+			WLAN_STATUS_MEDIA_DISCONNECT, eRole);
 	}
 
 	for (i = 0; i < NAN_MAX_SUPPORT_NDL_NUM; i++) {
@@ -3309,7 +3300,7 @@ void nanSetNdpPmkid(
 	/* Get BSS info */
 	prNanSpecificBssInfo = nanGetSpecificBssInfo(
 		prAdapter,
-		NAN_BSS_INDEX_WOSEC);
+		NAN_BSS_INDEX_BAND0);
 	if (prNanSpecificBssInfo == NULL) {
 		DBGLOG(NAN, ERROR, "prNanSpecificBssInfo is null\n");
 		return;
@@ -5833,7 +5824,7 @@ nanDataEngineSendNAF(IN struct ADAPTER *prAdapter,
 		prAdapter, prMsduInfo,
 		(prSelectStaRec != NULL)
 			? (prSelectStaRec->ucBssIndex)
-			: nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN)
+			: nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0)
 				  ->ucBssIndex,
 		(prSelectStaRec != NULL) ? (prSelectStaRec->ucIndex)
 					 : (STA_REC_INDEX_NOT_FOUND),
@@ -6269,7 +6260,7 @@ nanDataEngineGetECAttr(struct ADAPTER *prAdapter, uint8_t **ppucECAttr,
 	}
 
 	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-						  prAdapter, NAN_BSS_INDEX_MAIN)
+				prAdapter, NAN_BSS_INDEX_BAND0)
 						  ->ucBssIndex];
 
 	return nanDataEngineGetECAttrImpl(prAdapter, ppucECAttr,
