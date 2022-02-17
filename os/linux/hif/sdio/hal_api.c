@@ -258,6 +258,13 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter,
 
 #if (CFG_ENABLE_READ_EXTRA_4_BYTES == 1)
 #if CFG_SDIO_RX_AGG
+			/* If rx enhanced mode is enabled, need to read
+			 *  enhanced mode information even if don't need
+			 *  this, because hw will error.
+			 */
+#if CFG_SDIO_RX_ENHANCE
+			u4PktLen += sizeof(struct ENHANCE_MODE_DATA_STRUCT);
+#endif
 			/* decide copy length */
 			if (u4PktLen > u4MaxRespBufferLen)
 				u4CpyLen = u4MaxRespBufferLen;
@@ -665,7 +672,7 @@ void halDevInit(IN struct ADAPTER *prAdapter)
 
 	HAL_MCR_WR(prAdapter, MCR_WHIER, WHIER_DEFAULT);
 
-	HAL_CFG_MAX_HIF_RX_LEN_NUM(prAdapter, HIF_RX_MAX_AGG_NUM);
+	HAL_CFG_MAX_HIF_RX_LEN_NUM(prAdapter, HIF_RX_CFG_AGG_NUM);
 
 }
 
@@ -1468,7 +1475,7 @@ void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter)
 		u2RxPktNum = (rxNum == 0 ? prEnhDataStr->rRxInfo.u.u2NumValidRx0Len :
 			prEnhDataStr->rRxInfo.u.u2NumValidRx1Len);
 
-		if (u2RxPktNum > HIF_RX_MAX_AGG_NUM) {
+		if (u2RxPktNum > HIF_RX_CFG_AGG_NUM) {
 			halProcessAbnormalInterrupt(prAdapter);
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SDIO_RX_ERROR);
 			return;
@@ -1822,7 +1829,8 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN u
 
 		if (prIntSts->rRxInfo.u.u2NumValidRx1Len) {
 			LOGBUF(pucBuf, u4Max, u4Len, "Rx1StsLen[");
-			for (ucPktIdx = 0; ucPktIdx < HIF_RX_MAX_AGG_NUM; ucPktIdx++)
+			for (ucPktIdx = 0; ucPktIdx < HIF_RX_CFG_AGG_NUM;
+			  ucPktIdx++)
 				LOGBUF(pucBuf, u4Max, u4Len, "%4u:", prIntSts->rRxInfo.u.au2Rx1Len[ucPktIdx]);
 			LOGBUF(pucBuf, u4Max, u4Len, "]\n");
 		}
@@ -1987,10 +1995,7 @@ uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	if (HIF_TX_COALESCING_BUFFER_SIZE > HIF_RX_COALESCING_BUFFER_SIZE)
-		u4BufSize = HIF_TX_COALESCING_BUFFER_SIZE;
-	else
-		u4BufSize = HIF_RX_COALESCING_BUFFER_SIZE;
+	u4BufSize = HIF_TX_COALESCING_BUFFER_SIZE;
 
 #if (MTK_WCN_HIF_SDIO == 0)
 	prSdioFunc = prHifInfo->func;
@@ -2194,8 +2199,10 @@ void halDumpIntLog(IN struct ADAPTER *prAdapter)
 		DBGLOG(INTR, ERROR, "INT IDX[%u] STS[0x%08x] FG[0x%08x] Rx Pkt[%u] Sts0/1[%u:%u]\n",
 			prIntLog->u4Idx, prIntSts->u4WHISR, prIntLog->u4Flag, prIntLog->ucRxPktCnt,
 			prIntSts->rRxInfo.u.u2NumValidRx0Len, prIntSts->rRxInfo.u.u2NumValidRx1Len);
-		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au2RxPktLen[0], sizeof(uint16_t) * HIF_RX_MAX_AGG_NUM);
-		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au4RxPktInfo[0], sizeof(uint32_t) * HIF_RX_MAX_AGG_NUM);
+		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au2RxPktLen[0],
+			sizeof(uint16_t) * HIF_RX_CFG_AGG_NUM);
+		DBGLOG_MEM32(INTR, ERROR, &prIntLog->au4RxPktInfo[0],
+			sizeof(uint32_t) * HIF_RX_CFG_AGG_NUM);
 		DBGLOG_MEM32(INTR, ERROR, prIntSts, sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 	}
 
@@ -2653,7 +2660,11 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 			kalMdelay(10);
 
 			/* force firmware reset via software interrupt */
-			kalDevRegWrite(prAdapter->prGlueInfo, MCR_WSICR, WSICR_H2D_SW_INT_SET);
+			/* Not set mailbox r/w interrupt */
+			kalDevRegWrite(prAdapter->prGlueInfo,
+			  MCR_WSICR, WSICR_H2D_SW_INT_SET
+			  & ~(SDIO_MAILBOX_FUNC_READ_REG_IDX
+			  | SDIO_MAILBOX_FUNC_WRITE_REG_IDX));
 
 			/* force release firmware own */
 			kalDevRegWrite(prAdapter->prGlueInfo, MCR_WHLPCR, WHLPCR_FW_OWN_REQ_SET);

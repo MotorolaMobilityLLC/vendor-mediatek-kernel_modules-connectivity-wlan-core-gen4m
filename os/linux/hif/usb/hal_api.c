@@ -1412,12 +1412,17 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
-	u_int8_t fgResult;
+	u_int8_t fgResult = FALSE;
 	uint8_t ucCount = 0;
 
 	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");
 
-	HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
+	/* Remove check, because just check fw is dl state or not,
+	*  but fw change to dl state is not only by wakeup cmd, and
+	*  fw new cal flow need driver to notice fw wifi driver is
+	*  insert, so it need issue this cmd always when wifi is
+	*  insert.
+	*/
 
 	while (!fgResult) {
 		HAL_WIFI_FUNC_POWER_ON(prAdapter);
