@@ -803,7 +803,6 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_WEP_STATUS eEncStatus;
 
 	DEBUGFUNC("rsnPerformPolicySelection");
-	DBGLOG(RSN, TRACE, "ucBssIndex = %d\n", ucBssIndex);
 
 	prBss->u4RsnSelectedPairwiseCipher = 0;
 	prBss->u4RsnSelectedGroupCipher = 0;
