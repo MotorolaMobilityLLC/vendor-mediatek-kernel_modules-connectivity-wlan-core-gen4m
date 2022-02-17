@@ -1,4 +1,4 @@
-/******************************************************************************
+/*******************************************************************************
  *
  * This file is provided under a dual license.  When you use or
  * distribute this software, you may choose to be licensed under
@@ -48,28 +48,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *****************************************************************************/
+ ******************************************************************************/
 /*
-** Log: gl_vendor.h
-**
-** 10 14 2014
-** add vendor declaration
-**
+ * Log: gl_vendor.h
  *
-*/
+ * 10 14 2014
+ * add vendor declaration
+ *
+ *
+ */
 
 #ifndef _GL_VENDOR_H
 #define _GL_VENDOR_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
 #include <linux/wireless.h>
@@ -82,9 +82,9 @@
 
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 #define GOOGLE_OUI 0x001A11
 #define OUI_QCA 0x001374
 
@@ -242,42 +242,46 @@ enum QCA_SET_BAND {
 #define MAX_FW_ROAMING_WHITELIST_SIZE	16
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_WAPI
-extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
+extern uint8_t
+keyStructBuf[1024];	/* add/remove key shared buffer */
 #else
-extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
+extern uint8_t
+keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
 /*******************************************************************************
-*                           MACROS
-********************************************************************************
-*/
+ *                           MACROS
+ *******************************************************************************
+ */
 
 #if KERNEL_VERSION(3, 5, 0) <= LINUX_VERSION_CODE
 /*
-* #define NLA_PUT(skb, attrtype, attrlen, data) \
-*	do { \
-*		if (unlikely(nla_put(skb, attrtype, attrlen, data) < 0)) \
-*			goto nla_put_failure; \
-*	} while (0)
-*
-*#define NLA_PUT_TYPE(skb, type, attrtype, value) \
-*	do { \
-*		type __tmp = value; \
-*		NLA_PUT(skb, attrtype, sizeof(type), &__tmp); \
-*	} while (0)
-*/
-#define NLA_PUT(skb, attrtype, attrlen, data) mtk_cfg80211_NLA_PUT(skb, attrtype, attrlen, data)
+ * #define NLA_PUT(skb, attrtype, attrlen, data) \
+ *	do { \
+ *		if (unlikely(nla_put(skb, attrtype, attrlen, data) < 0)) \
+ *			goto nla_put_failure; \
+ *	} while (0)
+ *
+ *#define NLA_PUT_TYPE(skb, type, attrtype, value) \
+ *	do { \
+ *		type __tmp = value; \
+ *		NLA_PUT(skb, attrtype, sizeof(type), &__tmp); \
+ *	} while (0)
+ */
+#define NLA_PUT(skb, attrtype, attrlen, data) \
+	mtk_cfg80211_NLA_PUT(skb, attrtype, attrlen, data)
 
-#define NLA_PUT_TYPE(skb, type, attrtype, value) mtk_cfg80211_nla_put_type(skb, type, attrtype, value)
+#define NLA_PUT_TYPE(skb, type, attrtype, value) \
+	mtk_cfg80211_nla_put_type(skb, type, attrtype, value)
 
 #define NLA_PUT_U8(skb, attrtype, value) \
 	NLA_PUT_TYPE(skb, NLA_PUT_DATE_U8, attrtype, value)
@@ -293,10 +297,11 @@ extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
 
 #endif
 
-/********************************************************************************
-*				P R I V A T E   D A T A
-*
-********************************************************************************/
+/*******************************************************************************
+ *				P R I V A T E   D A T A
+ *
+ *******************************************************************************
+ */
 struct PARAM_WIFI_CHANGE_RESULT {
 	uint16_t flags;
 	uint16_t channel;
@@ -356,12 +361,12 @@ struct WIFI_RADIO_STAT {
 
 /* wifi rate */
 struct WIFI_RATE {
-	uint32_t preamble:3;
-	uint32_t nss:2;
-	uint32_t bw:3;
-	uint32_t rateMcsIdx:8;
+	uint32_t preamble: 3;
+	uint32_t nss: 2;
+	uint32_t bw: 3;
+	uint32_t rateMcsIdx: 8;
 
-	uint32_t reserved:16;
+	uint32_t reserved: 16;
 	uint32_t bitrate;
 };
 
@@ -529,82 +534,107 @@ struct PARAM_PACKET_KEEPALIVE_T {
 };
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype, int attrlen, const void *data);
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype,
+			 int attrlen, const void *data);
 
-int mtk_cfg80211_nla_put_type(struct sk_buff *skb, enum ENUM_NLA_PUT_DATE_TYPE type, int attrtype, const void *value);
+int mtk_cfg80211_nla_put_type(struct sk_buff *skb,
+			      enum ENUM_NLA_PUT_DATE_TYPE type, int attrtype,
+			      const void *value);
 
-int mtk_cfg80211_vendor_get_capabilities(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_set_config(struct wiphy *wiphy, struct wireless_dev *wdev,
-				   const void *data, int data_len);
-
-int mtk_cfg80211_vendor_set_scan_config(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_set_significant_change(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_set_hotlist(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_enable_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_enable_full_scan_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_get_scan_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
-
-int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_dev *wdev,
-					 const void *data, int data_len);
-
-int mtk_cfg80211_vendor_get_rtt_capabilities(
-		struct wiphy *wiphy, struct wireless_dev *wdev,
+int mtk_cfg80211_vendor_get_capabilities(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
 		const void *data, int data_len);
 
-int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_dev *wdev,
+int mtk_cfg80211_vendor_set_config(struct wiphy *wiphy,
+				   struct wireless_dev *wdev,
+				   const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_scan_config(struct wiphy *wiphy,
+					struct wireless_dev *wdev,
 					const void *data, int data_len);
 
-int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
+int mtk_cfg80211_vendor_set_significant_change(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
 
-int mtk_cfg80211_vendor_set_roaming_policy(struct wiphy *wiphy, struct wireless_dev *wdev,
-					const void *data, int data_len);
+int mtk_cfg80211_vendor_set_hotlist(struct wiphy *wiphy,
+				    struct wireless_dev *wdev,
+				    const void *data, int data_len);
 
-int mtk_cfg80211_vendor_get_roaming_capabilities(struct wiphy *wiphy,
-				 struct wireless_dev *wdev, const void *data, int data_len);
+int mtk_cfg80211_vendor_enable_scan(struct wiphy *wiphy,
+				    struct wireless_dev *wdev,
+				    const void *data, int data_len);
+
+int mtk_cfg80211_vendor_enable_full_scan_results(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_scan_results(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_channel_list(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_country_code(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_rtt_capabilities(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_llstats_get_info(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
+				 struct wireless_dev *wdev,
+				 const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_roaming_policy(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_roaming_capabilities(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
-				 struct wireless_dev *wdev, const void *data, int data_len);
+				       struct wireless_dev *wdev,
+				       const void *data,
+				       int data_len);
 
 int mtk_cfg80211_vendor_enable_roaming(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int data_len);
+				       struct wireless_dev *wdev,
+				       const void *data,
+				       int data_len);
 
-int mtk_cfg80211_vendor_set_rssi_monitoring(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int data_len);
+int mtk_cfg80211_vendor_set_rssi_monitoring(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
 
-int mtk_cfg80211_vendor_packet_keep_alive_start(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int data_len);
+int mtk_cfg80211_vendor_packet_keep_alive_start(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
 
-int mtk_cfg80211_vendor_packet_keep_alive_stop(struct wiphy *wiphy,
-		struct wireless_dev *wdev, const void *data, int data_len);
+int mtk_cfg80211_vendor_packet_keep_alive_stop(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len);
 
-int mtk_cfg80211_vendor_event_rssi_beyond_range(struct wiphy *wiphy,
-		struct wireless_dev *wdev, int rssi);
+int mtk_cfg80211_vendor_event_rssi_beyond_range(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev, int rssi);
 
 #endif /* _GL_VENDOR_H */
