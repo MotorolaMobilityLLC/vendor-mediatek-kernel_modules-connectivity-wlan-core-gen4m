@@ -9,6 +9,7 @@
 #include <linux/completion.h>
 #include <linux/skbuff.h>
 #include <linux/utsname.h>
+#include <linux/delay.h>
 
 /*****************************************************************************
  *	Type definition
