@@ -111,6 +111,11 @@
 #define IOCTL_IWPRIV_ATE                (SIOCIWFIRSTPRIV + 17)
 #endif
 
+#define IOC_AP_GET_STA_LIST     (SIOCIWFIRSTPRIV+19)
+#define IOC_AP_SET_MAC_FLTR     (SIOCIWFIRSTPRIV+21)
+#define IOC_AP_SET_CFG          (SIOCIWFIRSTPRIV+23)
+#define IOC_AP_STA_DISASSOC     (SIOCIWFIRSTPRIV+25)
+
 #define PRIV_CMD_REG_DOMAIN             0
 #define PRIV_CMD_BEACON_PERIOD          1
 #define PRIV_CMD_ADHOC_MODE             2
@@ -376,6 +381,11 @@ uint8_t CmdString2HexParse(IN uint8_t *InStr,
 
 int
 priv_set_driver(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+
+int
+priv_set_ap(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo,
 		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
