@@ -12781,10 +12781,17 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 	uint32_t i4BytesWritten = 0;
 	int8_t ucIdx = 0, ucIdx2 = 0, ucChannelNum = 0,
 		ucNumOf2gChannel = 0, ucNumOf5gChannel = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	int8_t ucNumOf6gChannel = 0;
+#endif
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = NULL;
 	struct RF_CHANNEL_INFO *prChannelList = NULL,
 		auc2gChannelList[MAX_2G_BAND_CHN_NUM],
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		auc6gChannelList[MAX_6G_BAND_CHN_NUM],
+#endif
 		auc5gChannelList[MAX_5G_BAND_CHN_NUM];
+	enum ENUM_BAND eChBand;
 
 	ASSERT(prNetDev);
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -12797,16 +12804,39 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
 			     MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel,
 			     auc5gChannelList);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_6G, TRUE,
+			     MAX_6G_BAND_CHN_NUM, &ucNumOf6gChannel,
+			     auc6gChannelList);
+#endif
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ucIdx++) {
+		if (ucIdx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ))
+			eChBand = BAND_2G4;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (ucIdx < rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ))
+			eChBand = BAND_5G;
+		else
+			eChBand = BAND_6G;
+#else
+		else
+			eChBand = BAND_5G;
+#endif
 
-		if (prChnLoadInfo->rChnRankList[ucIdx].ucChannel > 14) {
+		if (eChBand == BAND_2G4) {
 			prChannelList = auc5gChannelList;
 			ucChannelNum = ucNumOf5gChannel;
-		} else {
+		} else if (eChBand == BAND_5G) {
 			prChannelList = auc2gChannelList;
 			ucChannelNum = ucNumOf2gChannel;
 		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eChBand == BAND_6G) {
+			prChannelList = auc6gChannelList;
+			ucChannelNum = ucNumOf6gChannel;
+		}
+#endif
 
 		for (ucIdx2 = 0; ucIdx2 < ucChannelNum; ucIdx2++) {
 			if (prChnLoadInfo->rChnRankList[ucIdx].ucChannel ==

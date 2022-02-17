@@ -270,7 +270,11 @@ uint16_t assocBuildCapabilityInfo(IN struct ADAPTER *prAdapter,
 		 * In TGn 5.2.22, spectrum management bit should set to 1
 		 * to pass the UCC's check.
 		 */
-		if (prBssInfo && prBssInfo->eBand == BAND_5G)
+		if (prBssInfo && (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prBssInfo->eBand == BAND_6G
+#endif
+		))
 			u2CapInfo |= CAP_INFO_SPEC_MGT;
 #endif
 

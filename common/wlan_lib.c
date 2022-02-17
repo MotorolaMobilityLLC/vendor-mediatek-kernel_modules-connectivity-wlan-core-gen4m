@@ -7166,7 +7166,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucTWTStaBandBitmap = (uint8_t)
 		wlanCfgGetUint32(prAdapter,
 			"TWTStaBandBitmap",
-			BAND_2G4|BAND_5G);
+			BIT(BAND_2G4) | BIT(BAND_5G)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			| BIT(BAND_6G)
+#endif
+		);
 #endif
 
 	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,
