@@ -73,6 +73,7 @@
  */
 #include "precomp.h"
 #include "radiotap.h"
+#include "coda/tx_free_done_event_besra.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -803,4 +804,97 @@ uint8_t nic_rxd_v3_fill_radiotap(
 	return TRUE;
 }
 #endif
+
+static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
+	struct tx_free_done_rpt *rpt,
+	struct QUE *prFreeQueue)
+{
+	uint16_t len = HAL_TX_FREE_DONE_GET_RX_BYTE_COUNT(rpt->dw0);
+	uint16_t msdu_cnt = HAL_TX_FREE_DONE_GET_MSDU_ID_COUNT(rpt->dw0);
+	uint16_t txd_cnt = HAL_TX_FREE_DONE_GET_TXD_COUNT(rpt->dw1);
+	uint16_t serial = HAL_TX_FREE_DONE_GET_SERIAL_ID(rpt->dw1);
+	uint8_t msdu_cnt_handled = 0, txd_cnt_handled = 0;
+	uint16_t wlan_idx = 0, qid = 0;
+	uint16_t tx_delay = 0, air_delay = 0, tx_cnt = 0;
+	uint8_t stat = 0;
+	uint8_t pair = 0, header = 0;
+	uint32_t msdu0 = WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK;
+	uint32_t msdu1 = WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK;
+	uint32_t *pos = (uint32_t *)rpt;
+	uint32_t *end = (uint32_t *)rpt + len / 4;
+
+	DBGLOG_MEM8(HAL, TEMP, rpt, len);
+	DBGLOG(HAL, TEMP, "len: %d, msdu_cnt: %d, txd_cnt: %d, serial: %d\n",
+		len, msdu_cnt, txd_cnt, serial);
+
+	pos += 2;
+	do {
+		pair = HAL_TX_FREE_DONE_GET_P3(*pos);
+		header = HAL_TX_FREE_DONE_GET_H3(*pos);
+
+		if (pair == 1) {
+			wlan_idx = HAL_TX_FREE_DONE_GET_WLAN_ID(*pos);
+			qid = HAL_TX_FREE_DONE_GET_QID(*pos);
+		} else if (header == 1) {
+			tx_delay = HAL_TX_FREE_DONE_GET_TRANSMIT_DELAY(*pos);
+			air_delay = HAL_TX_FREE_DONE_GET_AIR_DELAY(*pos);
+			tx_cnt = HAL_TX_FREE_DONE_GET_TX_COUNT(*pos);
+			stat = HAL_TX_FREE_DONE_GET_STAT(*pos);
+			txd_cnt_handled++;
+		} else {
+			msdu0 = HAL_TX_FREE_DONE_GET_MSDU_ID0(*pos);
+			msdu1 = HAL_TX_FREE_DONE_GET_MSDU_ID1(*pos);
+
+			if (msdu0 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
+				halProcessToken(prAdapter, msdu0, prFreeQueue);
+				msdu_cnt_handled++;
+			}
+
+			if (msdu1 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
+				halProcessToken(prAdapter, msdu1, prFreeQueue);
+				msdu_cnt_handled++;
+			}
+		}
+
+#define TEMP_LOG_TEMPLATE "wlan_idx: %d, qid: %d, tx_delay: %d, " \
+				"air_delay: %d, tx_cnt: %d, stat: %d, " \
+				"msdu0: %d, msdu1: %d\n"
+			DBGLOG(HAL, TEMP, TEMP_LOG_TEMPLATE,
+				wlan_idx,
+				qid,
+				tx_delay,
+				air_delay,
+				tx_cnt,
+				stat,
+				msdu0,
+				msdu1);
+#undef TEMP_LOG_TEMPLATE
+		pos += 1;
+	} while (pos < end);
+
+	if (msdu_cnt_handled != msdu_cnt || txd_cnt_handled != txd_cnt) {
+		DBGLOG(HAL, WARN, "Unpected msdu_cnt[%d/%d] txd_cnt[%d/%d]\n",
+			msdu_cnt_handled, msdu_cnt, txd_cnt_handled, txd_cnt);
+		DBGLOG_MEM8(HAL, WARN, rpt, len);
+	}
+}
+
+void nic_rxd_v3_handle_host_rpt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct QUE *prFreeQueue)
+{
+	struct tx_free_done_rpt *rpt = (struct tx_free_done_rpt *)prSwRfb->pucRecvBuff;
+	uint8_t ver = HAL_TX_FREE_DONE_GET_VER(rpt->dw1);
+
+	switch (ver) {
+	case TFD_EVT_VER_5:
+		handle_host_rpt_v5(prAdapter, rpt, prFreeQueue);
+		break;
+	default:
+		DBGLOG(RX, ERROR, "Unsupported ver: %d\n",
+			ver);
+		break;
+	}
+}
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

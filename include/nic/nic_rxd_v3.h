@@ -113,6 +113,12 @@ struct HW_MAC_RX_STS_GROUP_5 {
 	uint32_t u4RxVector[24];
 };
 
+struct tx_free_done_rpt {
+	uint32_t dw0;
+	uint32_t dw1;
+	void *arIdSets[0];
+};
+
 uint16_t nic_rxd_v3_get_rx_byte_count(
 	void *prRxStatus);
 uint8_t nic_rxd_v3_get_packet_type(
@@ -146,6 +152,9 @@ void nic_rxd_v3_check_wakeup_reason(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
+void nic_rxd_v3_handle_host_rpt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct QUE *prFreeQueue);
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 uint8_t nic_rxd_v3_fill_radiotap(
