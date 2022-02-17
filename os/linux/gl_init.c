@@ -825,6 +825,10 @@ static const struct wiphy_vendor_command
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
 				| WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_dfs_capability
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
 	},
 #endif
 	{
