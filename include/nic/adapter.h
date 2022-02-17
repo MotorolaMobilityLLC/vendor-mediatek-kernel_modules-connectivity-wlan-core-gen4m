@@ -550,6 +550,7 @@ struct NEIGHBOR_AP {
 	uint8_t ucPreference;
 	uint8_t ucChannel;
 	uint64_t u8TermTsf;
+	enum ENUM_BAND eBand;
 };
 
 struct BOW_SPECIFIC_BSS_INFO {

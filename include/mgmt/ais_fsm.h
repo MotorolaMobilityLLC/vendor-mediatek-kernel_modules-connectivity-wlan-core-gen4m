@@ -196,6 +196,7 @@ struct ESS_CHNL_INFO {
 	uint8_t ucChannel;
 	uint8_t ucUtilization;
 	uint8_t ucApNum;
+	enum ENUM_BAND eBand;
 };
 
 struct AIS_SPECIFIC_BSS_INFO {
