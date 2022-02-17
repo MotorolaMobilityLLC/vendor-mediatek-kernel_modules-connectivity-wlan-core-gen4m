@@ -900,6 +900,8 @@ static ssize_t procPktDelayDbgCfgWrite(struct file *file, const char *buffer,
 	g_aucProcBuf[u4CopySize] = '\0';
 
 	while (temp) {
+		kalMemSet(aucModule, 0, MODULE_NAME_LENGTH);
+
 		/* pick up a string and teminated after meet : */
 		if (sscanf
 		    (temp, "%6s %x %d %d", aucModule, &u4IpProto, &u4PortNum,
