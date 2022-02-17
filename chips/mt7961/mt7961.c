@@ -1519,6 +1519,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.event_hdr_size = CONNAC2X_RX_EVENT_HDR_LENGTH,
 	.eco_info = mt7961_eco_table,
 	.isNicCapV1 = FALSE,
+	.is_support_efuse = TRUE,
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
