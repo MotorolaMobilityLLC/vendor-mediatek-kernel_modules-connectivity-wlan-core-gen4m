@@ -1852,61 +1852,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			}
 			break;
 		case ELEM_ID_VHT_CAP:
-		{
-			/* Support AP Selection*/
-			struct IE_VHT_CAP *prVhtCap =
-				(struct IE_VHT_CAP *)pucIE;
-			uint16_t u2TxMcsSet =
-				prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
-			uint8_t ucSpatial = 0;
-			uint8_t i = 0;
-			/* end Support AP Selection */
-			prBssDesc->fgIsVHTPresent = TRUE;
-#if CFG_SUPPORT_BFEE
-#define __LOCAL_VAR__ \
-VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
-
-			prBssDesc->ucVhtCapNumSoundingDimensions =
-				((((struct IE_VHT_CAP *) pucIE)->u4VhtCapInfo)
-				& VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS)
-				>> __LOCAL_VAR__;
-#undef __LOCAL_VAR__
-#endif
-			/* Support AP Selection*/
-			if (prBssDesc->fgMultiAnttenaAndSTBC)
-				break;
-			for (; i < 8; i++) {
-				if ((u2TxMcsSet & BITS(2*i, 2*i+1)) != 3)
-					ucSpatial++;
-			}
-			prBssDesc->fgMultiAnttenaAndSTBC =
-				((ucSpatial > 1) && (prVhtCap->u4VhtCapInfo &
-					VHT_CAP_INFO_TX_STBC));
-			/* end Support AP Selection */
+			scanParseVHTCapIE(pucIE, prBssDesc);
 			break;
-		}
+
 		case ELEM_ID_VHT_OP:
-			if (IE_LEN(pucIE) != (sizeof(struct IE_VHT_OP) - 2))
-				break;
-
-			prBssDesc->eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
-				(((struct IE_VHT_OP *) pucIE)
-					->ucVhtOperation[0]);
-			prBssDesc->ucCenterFreqS1 = (enum ENUM_CHANNEL_WIDTH)
-				(((struct IE_VHT_OP *) pucIE)
-					->ucVhtOperation[1]);
-			prBssDesc->ucCenterFreqS2 = (enum ENUM_CHANNEL_WIDTH)
-				(((struct IE_VHT_OP *) pucIE)
-					->ucVhtOperation[2]);
-
-			 /*add IEEE BW160 patch*/
-			rlmModifyVhtBwPara(&prBssDesc->ucCenterFreqS1,
-				&prBssDesc->ucCenterFreqS2,
-				(uint8_t *)&prBssDesc->eChannelWidth);
-
-
-
+			scanParseVHTOpIE(pucIE, prBssDesc);
 			break;
+
 #if CFG_SUPPORT_WAPI
 		case ELEM_ID_WAPI:
 			if (wapiParseWapiIE(WAPI_IE(pucIE),
@@ -1930,47 +1882,50 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		/* end Support AP Selection */
 
 		case ELEM_ID_VENDOR:	/* ELEM_ID_P2P, ELEM_ID_WMM */
-			{
-				uint8_t ucOuiType;
-				uint16_t u2SubTypeVersion;
+		{
+			uint8_t ucOuiType;
+			uint16_t u2SubTypeVersion;
 
-				if (rsnParseCheckForWFAInfoElem(prAdapter,
-					pucIE, &ucOuiType, &u2SubTypeVersion)) {
-					if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
-						&& (u2SubTypeVersion
-						== VERSION_WPA)
-						&& (rsnParseWpaIE(prAdapter,
-							WPA_IE(pucIE),
-							&prBssDesc
-								->rWPAInfo))) {
-						prBssDesc->fgIEWPA = TRUE;
-					}
+			if (rsnParseCheckForWFAInfoElem(prAdapter,
+				pucIE, &ucOuiType, &u2SubTypeVersion)) {
+				if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
+					&& (u2SubTypeVersion
+					== VERSION_WPA)
+					&& (rsnParseWpaIE(prAdapter,
+						WPA_IE(pucIE),
+						&prBssDesc
+							->rWPAInfo))) {
+					prBssDesc->fgIEWPA = TRUE;
 				}
+			}
+
+			if (prBssDesc->fgIsVHTPresent == FALSE)
+				scanCheckEpigramVhtIE(pucIE, prBssDesc);
 #if CFG_SUPPORT_PASSPOINT
-				/* since OSEN is mutual exclusion with RSN, so
-				 * we reuse RSN here
-				 */
-				if ((pucIE[1] >= 10)
-					&& (kalMemCmp(pucIE+2,
-						"\x50\x6f\x9a\x12", 4) == 0)
-					&& (rsnParseOsenIE(prAdapter,
-						(struct IE_WFA_OSEN *)pucIE,
-							&prBssDesc->rRSNInfo)))
-					prBssDesc->fgIEOsen = TRUE;
+			/* since OSEN is mutual exclusion with RSN, so
+			 * we reuse RSN here
+			 */
+			if ((pucIE[1] >= 10)
+				&& (kalMemCmp(pucIE+2,
+					"\x50\x6f\x9a\x12", 4) == 0)
+				&& (rsnParseOsenIE(prAdapter,
+					(struct IE_WFA_OSEN *)pucIE,
+						&prBssDesc->rRSNInfo)))
+				prBssDesc->fgIEOsen = TRUE;
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
-				if (prAdapter->fgIsP2PRegistered) {
-					if ((p2pFuncParseCheckForP2PInfoElem(
-						prAdapter, pucIE, &ucOuiType))
-						&& (ucOuiType
-						== VENDOR_OUI_TYPE_P2P)) {
-						prBssDesc->fgIsP2PPresent
-							= TRUE;
-					}
+			if (prAdapter->fgIsP2PRegistered) {
+				if ((p2pFuncParseCheckForP2PInfoElem(
+					prAdapter, pucIE, &ucOuiType))
+					&& (ucOuiType
+					== VENDOR_OUI_TYPE_P2P)) {
+					prBssDesc->fgIsP2PPresent
+						= TRUE;
 				}
-#endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 			break;
+		}
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
 			{
@@ -1979,7 +1934,6 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 			}
 			break;
 #endif
-
 		case ELEM_ID_PWR_CONSTRAINT:
 		{
 			struct IE_POWER_CONSTRAINT *prPwrConstraint =
@@ -2211,56 +2165,37 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 	/* 4 <6> PHY type setting */
 	prBssDesc->ucPhyTypeSet = 0;
 
-	if (prBssDesc->eBand == BAND_2G4) {
-		/* check if support 11n */
-		if (prBssDesc->fgIsHTPresent)
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
+	/* check if support 11n */
+	if (prBssDesc->fgIsVHTPresent)
+		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+
+	if (prBssDesc->fgIsHTPresent)
+		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
+
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (prBssDesc->fgIsHEPresent)
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	if (prBssDesc->fgIsHEPresent)
+		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 #endif
 
-		/* if not 11n only */
-		if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
+	/* if not 11n only */
+	if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
+		if (prBssDesc->eBand == BAND_2G4) {
 			/* check if support 11g */
 			if ((prBssDesc->u2OperationalRateSet & RATE_SET_OFDM)
-				|| prBssDesc->fgIsERPPresent)
+			    || prBssDesc->fgIsERPPresent)
 				prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_ERP;
 
 			/* if not 11g only */
 			if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_OFDM)) {
 				/* check if support 11b */
-				if ((prBssDesc->u2OperationalRateSet
-					& RATE_SET_HR_DSSS)) {
+				if (prBssDesc->u2OperationalRateSet
+				    & RATE_SET_HR_DSSS)
 					prBssDesc->ucPhyTypeSet
 						|= PHY_TYPE_BIT_HR_DSSS;
-				}
 			}
 		}
-	} else {	/* (BAND_5G == prBssDesc->eBande) */
-
-#if (CFG_SUPPORT_802_11AX == 1)
-		if (prBssDesc->fgIsHEPresent)
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
-#endif
-
-		/* check if support 11n */
-		if (prBssDesc->fgIsVHTPresent)
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-
-		if (prBssDesc->fgIsHTPresent)
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
-
-		/* if not 11n only */
-		if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
-			/* Support 11a definitely */
-			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
-
-#if 0 /* TODO: Remove this */
-			ASSERT(!(prBssDesc->u2OperationalRateSet
-				& RATE_SET_HR_DSSS));
-#endif
-		}
+	} else {
+		prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 	}
 
 	/* Support AP Selection */
@@ -4113,3 +4048,107 @@ void scanResetBssDesc(IN struct ADAPTER *prAdapter,
 		prBssDesc,
 		TRUE);
 }	/* end of scanResetBssDesc() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Check if VHT IE exists in Vendor Epigram IE.
+ *
+ * @param[in] pucBuf     Pointer to the Vendor IE.
+ * @param[in] prBssDesc  Pointer to the BSS_DESC structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
+{
+	uint32_t u4EpigramOui;
+	uint16_t u2EpigramVendorType;
+	struct IE_VENDOR_EPIGRAM_IE *prEpiIE;
+	uint8_t *pucIE;
+	uint16_t u2IELength;
+	uint16_t u2Offset = 0;
+
+	if (pucBuf == NULL) {
+		DBGLOG(RLM, WARN, "[Epigram] pucBuf is NULL, skip!\n");
+		return;
+	}
+	if (prBssDesc == NULL) {
+		DBGLOG(RLM, WARN, "[Epigram] prBssDesc is NULL, skip!\n");
+		return;
+	}
+
+	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
+	u2IELength = prEpiIE->ucLength;
+	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
+	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
+	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI ||
+	    u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE)
+		return;
+
+	pucIE = prEpiIE->pucData;
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_VHT_CAP:
+			scanParseVHTCapIE(pucIE, prBssDesc);
+			break;
+		case ELEM_ID_VHT_OP:
+			scanParseVHTOpIE(pucIE, prBssDesc);
+			break;
+		default:
+			break;
+		}
+	}
+}
+
+void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
+{
+	struct IE_VHT_CAP *prVhtCap = NULL;
+	uint16_t u2TxMcsSet = 0;
+	uint8_t ucSpatial = 0;
+	uint8_t j = 0;
+
+	prVhtCap = (struct IE_VHT_CAP *) pucIE;
+	u2TxMcsSet = prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
+	prBssDesc->fgIsVHTPresent = TRUE;
+#if CFG_SUPPORT_BFEE
+#define __LOCAL_VAR__ \
+VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
+
+	prBssDesc->ucVhtCapNumSoundingDimensions =
+		(prVhtCap->u4VhtCapInfo
+		& VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS)
+		>> __LOCAL_VAR__;
+#undef __LOCAL_VAR__
+#endif
+	/* Support AP Selection*/
+	if (prBssDesc->fgMultiAnttenaAndSTBC)
+		return;
+
+	for (; j < 8; j++) {
+		if ((u2TxMcsSet & BITS(2 * j, 2 * j + 1)) != 3)
+			ucSpatial++;
+	}
+	prBssDesc->fgMultiAnttenaAndSTBC =
+		((ucSpatial > 1) && (prVhtCap->u4VhtCapInfo &
+			VHT_CAP_INFO_TX_STBC));
+}
+
+void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
+{
+	struct IE_VHT_OP *prVhtOp = NULL;
+
+	prVhtOp = (struct IE_VHT_OP *) pucIE;
+	if (IE_LEN(prVhtOp) != (sizeof(struct IE_VHT_OP) - 2))
+		return;
+	prBssDesc->eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
+		(prVhtOp->ucVhtOperation[0]);
+	prBssDesc->ucCenterFreqS1 = (enum ENUM_CHANNEL_WIDTH)
+		(prVhtOp->ucVhtOperation[1]);
+	prBssDesc->ucCenterFreqS2 = (enum ENUM_CHANNEL_WIDTH)
+		(prVhtOp->ucVhtOperation[2]);
+
+	/*add IEEE BW160 patch*/
+	rlmModifyVhtBwPara(&prBssDesc->ucCenterFreqS1,
+			   &prBssDesc->ucCenterFreqS2,
+			   (uint8_t *)&prBssDesc->eChannelWidth);
+}
