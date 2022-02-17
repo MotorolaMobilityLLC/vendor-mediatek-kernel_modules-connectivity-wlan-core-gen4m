@@ -570,7 +570,6 @@ void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
 			uint8_t *pucHe6gChannelWidth);
 #endif
 
-
 void rlmReviseMaxBw(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
@@ -579,12 +578,11 @@ void rlmReviseMaxBw(
 	uint8_t *pucS1,
 	uint8_t *pucPrimaryCh);
 
-uint8_t rlmReviseChFreqS1_160to80(IN struct BSS_INFO *prBssInfo,
-	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
-	IN uint8_t ucMaxBandwidth);
-
-uint8_t rlmReviseChFreqS1_320to160(IN struct BSS_INFO *prBssInfo,
-	IN uint8_t ucPrimaryCh, IN uint8_t ucOriginS1,
+enum ENUM_CHNL_EXT rlmReviseSco(
+	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	IN uint8_t ucPrimaryCh,
+	IN uint8_t ucS1,
+	IN enum ENUM_CHNL_EXT eScoOrigin,
 	IN uint8_t ucMaxBandwidth);
 
 void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
