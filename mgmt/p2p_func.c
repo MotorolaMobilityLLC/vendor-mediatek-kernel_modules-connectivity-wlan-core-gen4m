@@ -1220,26 +1220,18 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 
 		if (prBssInfo->eBand == BAND_5G) {
 			/* Depend on eBand */
-			prBssInfo->ucPhyTypeSet =
-				(prAdapter->rWifiVar.ucAvailablePhyTypeSet
-					& PHY_TYPE_SET_802_11AN);
+			prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
 			/* Depend on eCurrentOPMode and ucPhyTypeSet */
 			prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;
 		} else if (prP2pConnReqInfo->eConnRequest
 			== P2P_CONNECTION_TYPE_PURE_AP) {
-			/* Depend on eBand */
-			prBssInfo->ucPhyTypeSet =
-				(prAdapter->rWifiVar.ucAvailablePhyTypeSet
-					& PHY_TYPE_SET_802_11BGN);
+			prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11BG;
 			/* Depend on eCurrentOPMode and ucPhyTypeSet */
 			prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 		} else {
 			ASSERT(prP2pConnReqInfo->eConnRequest
 				== P2P_CONNECTION_TYPE_GO);
-			/* Depend on eBand */
-			prBssInfo->ucPhyTypeSet =
-				(prAdapter->rWifiVar.ucAvailablePhyTypeSet
-					& PHY_TYPE_SET_802_11GN);
+			prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11G;
 			/* Depend on eCurrentOPMode and ucPhyTypeSet */
 			prBssInfo->ucConfigAdHocAPMode = AP_MODE_11G_P2P;
 		}
@@ -1248,6 +1240,8 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		bssDetermineApBssInfoPhyTypeSet(prAdapter,
 			(prP2pConnReqInfo->eConnRequest ==
 			P2P_CONNECTION_TYPE_PURE_AP) ? TRUE : FALSE, prBssInfo);
+
+		DBGLOG(P2P, TRACE, "Phy type: 0x%x\n", prBssInfo->ucPhyTypeSet);
 
 		prBssInfo->ucNonHTBasicPhyType = (uint8_t)
 			rNonHTApModeAttributes
@@ -1840,16 +1834,11 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	if (prBssInfo->eBand == BAND_5G) {
 		/* Depend on eBand */
-		prBssInfo->ucPhyTypeSet =
-			(prAdapter->rWifiVar.ucAvailablePhyTypeSet
-				& PHY_TYPE_SET_802_11AN);
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;
 	} else { /* Only SAP mode should enter this function */
-		/* Depend on eBand */
-		prBssInfo->ucPhyTypeSet =
-			(prAdapter->rWifiVar.ucAvailablePhyTypeSet
-				& PHY_TYPE_SET_802_11BGN);
+		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11BG;
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 	}
@@ -3892,6 +3881,8 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						"    ucERP: %x.\n",
 						ERP_INFO_IE(pucIE)->ucERP);
 
+					prP2pBssInfo->ucPhyTypeSet |=
+							PHY_TYPE_SET_802_11G;
 #else
 					/* This IE would dynamic change due to
 					 * FW detection change is required.
@@ -3935,6 +3926,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						HT_CAP_IE(pucIE)
 							->u4TxBeamformingCap,
 						HT_CAP_IE(pucIE)->ucAselCap);
+
+					prP2pBssInfo->ucPhyTypeSet |=
+							PHY_TYPE_SET_802_11N;
 #else
 					prP2pBssInfo->ucPhyTypeSet |=
 						PHY_TYPE_SET_802_11N;
@@ -4101,6 +4095,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						HT_OP_IE(pucIE)->ucInfo1,
 						HT_OP_IE(pucIE)->u2Info2,
 						HT_OP_IE(pucIE)->u2Info3);
+
+					prP2pBssInfo->ucPhyTypeSet |=
+							PHY_TYPE_SET_802_11N;
 #else
 					uint16_t u2Info2 = 0;
 
@@ -4190,6 +4187,14 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					 * except for WMM Param.
 					 */
 				}
+				break;
+			case ELEM_ID_VHT_CAP:
+				prP2pBssInfo->ucPhyTypeSet |=
+						PHY_TYPE_SET_802_11AC;
+				break;
+			case ELEM_ID_VHT_OP:
+				prP2pBssInfo->ucPhyTypeSet |=
+						PHY_TYPE_SET_802_11AC;
 				break;
 			default:
 				DBGLOG(P2P, TRACE,
