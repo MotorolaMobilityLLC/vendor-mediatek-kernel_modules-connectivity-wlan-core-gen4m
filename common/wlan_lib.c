@@ -69,6 +69,9 @@
  */
 #include "precomp.h"
 #include "mgmt/ais_fsm.h"
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+#include "mddp.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1178,6 +1181,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 #endif
 			break;
 		}
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		setMddpSupportRegister(prAdapter);
+#endif
 
 		if (!bAtResetFlow) {
 			/* 4 <1> Initialize the Adapter */
