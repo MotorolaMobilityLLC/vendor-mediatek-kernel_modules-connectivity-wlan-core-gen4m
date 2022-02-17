@@ -18,13 +18,15 @@
 /* Service DBDC configuration */
 #define TEST_DBDC_BAND0		0
 #define TEST_DBDC_BAND1		1
+#define TEST_DBDC_BAND2		2	/* CFG_SUPPORT_CONNAC3X */
+#define TEST_DBDC_BAND3		3
 
 /* #ifdef DBDC_MODE  */
 #if 1
 #define SET_TEST_DBDC(_test_winfo, _boolean)	\
 	(_test_winfo->dbdc_mode = _boolean)
 #define IS_TEST_DBDC(_test_winfo)	_test_winfo->dbdc_mode
-#define TEST_DBDC_BAND_NUM		2
+#define TEST_DBDC_BAND_NUM		4	/* CFG_SUPPORT_CONNAC3X */
 #else
 #define IS_TEST_DBDC(_test_winfo)	FALSE
 #define TEST_DBDC_BAND_NUM		1
@@ -766,8 +768,9 @@ struct GNU_PACKED hqa_comm_rx_stat {
 /* Test capability */
 /* VER 0x0001: Init version */
 /* VER 0x0002: Add hw_tx support, channel_band_dbdc */
+/* VER 0x0003: CFG_SUPPORT_CONNAC3X: Add little core support, channel_band_dbdc_ext  */
 
-#define GET_CAPABILITY_VER		0x0002
+#define GET_CAPABILITY_VER		0x0003
 #define GET_CAPABILITY_TAG_NUM	2
 
 /* phy capability */
@@ -804,11 +807,15 @@ struct test_capability_ph_cap {
 	/* BIT3: BW160C, BIT4: BW80+80(BW160NC) */
 	u_int32 bandwidth;
 
-	/* BIT0: Band0 2.4G, BIT1: Band1 5G, BIT2: Band0 6G */
+	/* BIT0: Band0 2.4G, BIT1: Band0 5G, BIT2: Band0 6G */
 	/* BIT16: Band1 2.4G, BIT17: Band1 5G, BIT18: Band1 6G */
 	u_int32 channel_band_dbdc;
 
-	u_int32 reserved[9];
+	/* BIT0: Band2 2.4G, BIT1: Band2 5G, BIT2: Band2 6G */
+	/* BIT16: Band3 2.4G, BIT17: Band3 5G, BIT18: Band3 6G */
+	u_int32 channel_band_dbdc_ext;	/* CFG_SUPPORT_CONNAC3X */
+
+	u_int32 reserved[8];
 };
 
 struct test_capability_ext_cap {
@@ -820,6 +827,7 @@ struct test_capability_ext_cap {
 
 	/* BIT0: AntSwap */
 	/* BIT1: HW TX support */
+	/* BIT2: Little core support */
 	u_int32 feature1;
 	u_int32 reserved[15];
 };
