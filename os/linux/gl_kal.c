@@ -2416,7 +2416,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		    [u2QueueIdx] <= u4StartTh) {
 			netif_wake_subqueue(prDev, u2QueueIdx);
-			DBGLOG(TX, TRACE,
+			DBGLOG(TX, INFO,
 				"WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 				ucBssIndex, u2QueueIdx, prSkb->len,
 				GLUE_GET_REF_CNT(
@@ -7579,7 +7579,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 
 	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
 	    !CHECK_FOR_TIMEOUT(now, last,
-			SEC_TO_SYSTIME(MSEC_TO_SEC(perf->u4UpdatePeriod))))
+			MSEC_TO_SYSTIME(perf->u4UpdatePeriod)))
 		return WLAN_STATUS_PENDING;
 
 	perf->rLastUpdateTime = now;
@@ -7711,6 +7711,9 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		perf->ulPerfMonFlag);
 #undef TEMP_LOG_TEMPLATE
 
+	kalTraceEvent("Tput: %lu.%03lumbps",
+		(unsigned long) (perf->ulThroughput >> 20),
+		(unsigned long) ((perf->ulThroughput >> 10) & BITS(0, 9)));
 	kalMemFree(buf, VIR_MEM_TYPE, slen);
 	return WLAN_STATUS_SUCCESS;
 fail:
