@@ -506,8 +506,9 @@ void nic_txd_v3_compose(
 	switch (prMsduInfo->ucRateMode) {
 	case MSDU_RATE_MODE_MANUAL_DESC:
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
-		// TODO: by band configure
-		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc, 0);
+		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc,
+				prBssInfo->eBand == BAND_2G4 ? 0x6 : 0x8);
+		HAL_MAC_CONNAC3X_TXD_SET_FR_BW(prTxDesc, 0x8);
 	case MSDU_RATE_MODE_MANUAL_CR:
 	case MSDU_RATE_MODE_AUTO:
 	default:
