@@ -5769,6 +5769,7 @@ static int32_t HQA_RDDStopExt(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+#if CFG_SUPPORT_TX_BF
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  QA Agent For
@@ -5878,6 +5879,7 @@ static int32_t HQA_DevInfoUpdate(struct net_device
 
 	return i4Ret;
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6064,8 +6066,13 @@ static HQA_CMD_HANDLER HQA_CMD_SET5[] = {
 	HQA_RDDStartExt,	/* 0x152E */
 	HQA_RDDStopExt,		/* 0x152F */
 	ToDoFunction,		/* 0x1530 */
+#if CFG_SUPPORT_TX_BF
 	HQA_BssInfoUpdate,	/* 0x1531 */
 	HQA_DevInfoUpdate,	/* 0x1532 */
+#else
+	ToDoFunction,		/* 0x1531 */
+	ToDoFunction,		/* 0x1532 */
+#endif
 	HQA_LogOnOff,		/* 0x1533 */
 	ToDoFunction,		/* 0x1534 */
 	ToDoFunction,		/* 0x1535 */
