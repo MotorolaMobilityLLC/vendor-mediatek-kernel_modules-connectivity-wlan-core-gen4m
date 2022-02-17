@@ -901,7 +901,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		nicTxInitResetResource(prAdapter);
 
 		u4Status = wlanDownloadFW(prAdapter);
-
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			eFailReason = RAM_CODE_DOWNLOAD_FAIL;
 #if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
@@ -1028,24 +1027,30 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
 		DBGLOG(INIT, WARN, "Fail reason: %d\n", eFailReason);
-		/* release allocated memory */
-		switch (eFailReason) {
-		case WAIT_FIRMWARE_READY_FAIL:
-		case RAM_CODE_DOWNLOAD_FAIL:
-		case INIT_HIFINFO_FAIL:
-			nicRxUninitialize(prAdapter);
-			nicTxRelease(prAdapter, FALSE);
-			/* System Service Uninitialization */
-			nicUninitSystemService(prAdapter);
-		/* fallthrough */
-		case INIT_ADAPTER_FAIL:
-		/* fallthrough */
-		case DRIVER_OWN_FAIL:
-			nicReleaseAdapterMemory(prAdapter);
-			break;
-		case ALLOC_ADAPTER_MEM_FAIL:
-		default:
-			break;
+
+		/* Don't do error handling in chip reset flow, leave it to
+		 * coming wlanRemove for full clean
+		 */
+		if (!bAtResetFlow) {
+			/* release allocated memory */
+			switch (eFailReason) {
+			case WAIT_FIRMWARE_READY_FAIL:
+			case RAM_CODE_DOWNLOAD_FAIL:
+			case INIT_HIFINFO_FAIL:
+				nicRxUninitialize(prAdapter);
+				nicTxRelease(prAdapter, FALSE);
+				/* System Service Uninitialization */
+				nicUninitSystemService(prAdapter);
+			/* fallthrough */
+			case INIT_ADAPTER_FAIL:
+			/* fallthrough */
+			case DRIVER_OWN_FAIL:
+				nicReleaseAdapterMemory(prAdapter);
+				break;
+			case ALLOC_ADAPTER_MEM_FAIL:
+			default:
+				break;
+			}
 		}
 	}
 
