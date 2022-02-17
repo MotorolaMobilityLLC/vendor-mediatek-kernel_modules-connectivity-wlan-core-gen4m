@@ -117,7 +117,9 @@ extern unsigned long long gConEmiSizeFinal;
 #ifdef MAX_EEPROM_BUFFER_SIZE
 #undef MAX_EEPROM_BUFFER_SIZE
 #endif
-#define MAX_EEPROM_BUFFER_SIZE	1200
+
+//For Bellwether, Modify from 1200 to 6K and align to linux
+#define MAX_EEPROM_BUFFER_SIZE	6144 //6K
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S

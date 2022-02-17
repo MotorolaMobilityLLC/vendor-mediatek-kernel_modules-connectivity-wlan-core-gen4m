@@ -4654,6 +4654,12 @@ wlanoidConnacSetEfusBufferMode(IN struct ADAPTER *prAdapter,
 	prCmdSetEfuseBufModeInfo->u2Count =
 		prSetEfuseBufModeInfo->u2Count;
 
+	DBGLOG(OID, INFO, "[%d] ucSourceMode = %d, ucContentFormat = 0x%x, u2Count = %d\n"
+		, __LINE__,
+		prCmdSetEfuseBufModeInfo->ucSourceMode,
+		prCmdSetEfuseBufModeInfo->ucContentFormat,
+		prCmdSetEfuseBufModeInfo->u2Count);
+
 	u4EfuseContentSize = prCmdSetEfuseBufModeInfo->u2Count;
 
 	u4QueryInfoLen = OFFSET_OF(struct
