@@ -73,16 +73,27 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS	(100)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+enum ERR_RECOVERY_STATE {
+	ERR_RECOV_STOP_IDLE = 0,
+	ERR_RECOV_STOP_PDMA0,
+	ERR_RECOV_RESET_PDMA0,
+	ERR_RECOV_WAIT_MCU_NORMAL,
+	ERR_RECOV_STATE_NUM
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if defined(_HIF_USB)
+extern struct TIMER rSerSyncTimer;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -1146,4 +1157,8 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter,
 	IN u_int8_t isIncr, IN uint8_t ucTc, IN uint32_t u4Len);
 void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
+#if defined(_HIF_USB)
+void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr);
+#endif
 #endif /* _HAL_H */
