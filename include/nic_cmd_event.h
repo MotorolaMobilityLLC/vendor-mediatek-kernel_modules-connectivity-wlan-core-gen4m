@@ -1367,7 +1367,7 @@ union CMD_TXBF_ACTION {
 #define CMD_DEVINFO_UPDATE_HDR_SIZE 8
 struct CMD_DEV_INFO_UPDATE {
 	uint8_t ucOwnMacIdx;
-	uint8_t ucReserve;
+	uint8_t ucDbdcIdx;
 	uint16_t u2TotalElementNum;
 	uint8_t ucAppendCmdTLV;
 	uint8_t aucReserve[3];

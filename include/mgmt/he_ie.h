@@ -192,6 +192,7 @@
 #define HE_PHY_CAP4_BFMEE_STS_GT_80M_SHFT              5
 
 /* HE PHY Capablilites byte5 */
+#define HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_MASK   BITS(0, 2)
 #define HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_SHFT   0
 #define HE_PHY_CAP5_NUM_OF_SND_DIM_GT_80M_SHFT         3
 #define HE_PHY_CAP5_NG_16_SU_FB                        BIT(6)
@@ -484,6 +485,14 @@ enum ENUM_HEBA_TYPE {
 #define HE_UNSET_PHY_CAP_SU_BFMER(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[3] &= ~HE_PHY_CAP3_SU_BFMER)
 
+#define HE_SET_PHY_CAP_SU_BFMER(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[3] |= HE_PHY_CAP3_SU_BFMER)
+
+#define HE_GET_PHY_CAP_SU_BFMER(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[3] &= HE_PHY_CAP3_SU_BFMER) \
+	>> HE_PHY_CAP3_SU_BFMER_SHFT)
+
+
 /* set to 0 if DCM is not supported */
 /* set to 1 for BPSK */
 /* set to 2 for QPSK */
@@ -519,6 +528,10 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_SU_BFMEE(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[4] |= HE_PHY_CAP4_SU_BFMEE)
 
+#define HE_GET_PHY_CAP_SU_BFMEE(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[4] & HE_PHY_CAP4_SU_BFMEE) \
+	>> HE_PHY_CAP4_SU_BFMEE_SHFT)
+
 #define HE_UNSET_PHY_CAP_MU_BFMER(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[4] &= ~HE_PHY_CAP4_MU_BFMER)
 
@@ -528,6 +541,18 @@ enum ENUM_HEBA_TYPE {
 	_aucHePhyCapInfo[4] |= \
 		((_ucSts << HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_SHFT) \
 			& HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_MASK); \
+}
+
+#define HE_GET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(_aucHePhyCapInfo) \
+	((_aucHePhyCapInfo[4] & HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_MASK) \
+	>> HE_PHY_CAP4_BFMEE_STS_LT_OR_EQ_80M_SHFT)
+
+#define HE_SET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(_aucHePhyCapInfo, _ucNum) \
+{ \
+	_aucHePhyCapInfo[5] &= ~(HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_MASK); \
+	_aucHePhyCapInfo[5] |= \
+		((_ucNum << HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_SHFT) \
+			& HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_MASK); \
 }
 
 #define HE_SET_PHY_CAP_NG_16_SU_FB(_aucHePhyCapInfo) \

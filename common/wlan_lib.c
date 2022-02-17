@@ -7230,7 +7230,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		prWifiVar->ucStaHeBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-						"StaHEBfee", FEATURE_ENABLED);
+					"StaHEBfee", FEATURE_ENABLED);
+		prWifiVar->ucStaHeSuBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"StaHESUBfer", FEATURE_DISABLED);
 	}
 #endif
 

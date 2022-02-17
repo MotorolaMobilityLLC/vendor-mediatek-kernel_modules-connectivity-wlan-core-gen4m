@@ -534,6 +534,23 @@ void qmUpdateStaRec(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <x> Update StaRec */
 	qmSetStaRecTxAllowed(prAdapter, prStaRec, fgIsTxAllowed);
+
+#if CFG_SUPPORT_BFER
+#if (CFG_SUPPORT_802_11AX == 1)
+	if ((IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer) ||
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer) ||
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer)) &&
+		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3)) {
+#else
+	if ((IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer) ||
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer)) &&
+		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3)) {
+#endif
+		rlmETxBfTriggerPeriodicSounding(prAdapter);
+		rlmBfStaRecPfmuUpdate(prAdapter, prStaRec);
+	}
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/

@@ -222,7 +222,7 @@
 /* 802.11n RX HT green-field capability */
 #define CFG_SUPPORT_RX_HT_GF	1
 
-#define CFG_SUPPORT_BFER	0
+#define CFG_SUPPORT_BFER	1
 #define CFG_SUPPORT_BFEE	1
 /* Enable Bfee only when AP's Nss > STA's Nss */
 #define CFG_SUPPORT_CONDITIONAL_BFEE	1

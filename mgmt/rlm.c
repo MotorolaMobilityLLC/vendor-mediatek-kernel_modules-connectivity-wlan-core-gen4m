@@ -7353,3 +7353,406 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }
 
+#if CFG_SUPPORT_BFER
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec)
+{
+	uint8_t ucBFerMaxNr, ucBFeeMaxNr, ucMode = 0;
+	struct BSS_INFO *prBssInfo;
+	struct CMD_STAREC_BF *prStaRecBF;
+	struct CMD_STAREC_UPDATE *prStaRecUpdateInfo;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetBufferLen = sizeof(struct CMD_STAREC_BF);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	ASSERT(prBssInfo);
+
+	if (RLM_NET_IS_11AC(prBssInfo) &&
+	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer))
+		ucMode = MODE_VHT;
+	else if (RLM_NET_IS_11N(prBssInfo) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer))
+		ucMode = MODE_HT;
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (RLM_NET_IS_11AX(prBssInfo) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer))
+		ucMode = MODE_HE_SU;
+#endif
+
+	prStaRecBF =
+	    (struct CMD_STAREC_BF *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, u4SetBufferLen);
+
+	if (!prStaRecBF) {
+		DBGLOG(RLM, ERROR, "STA Rec memory alloc fail\n");
+		return;
+	}
+
+	prStaRecUpdateInfo =
+	    (struct CMD_STAREC_UPDATE *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, (CMD_STAREC_UPDATE_HDR_SIZE + u4SetBufferLen));
+
+	if (!prStaRecUpdateInfo) {
+		cnmMemFree(prAdapter, prStaRecBF);
+		DBGLOG(RLM, ERROR, "STA Rec Update Info memory alloc fail\n");
+		return;
+	}
+
+	prStaRec->rTxBfPfmuStaInfo.u2PfmuId = 0xFFFF;
+
+	switch (ucMode) {
+#if (CFG_SUPPORT_802_11AX == 1)
+case MODE_HE_SU:
+	prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
+	prStaRec->rTxBfPfmuStaInfo.u1TxBfCap =
+			HE_GET_PHY_CAP_SU_BFMEE(prStaRec->ucHePhyCapInfo);
+
+	if (prStaRec->rTxBfPfmuStaInfo.u1TxBfCap) {
+		/* OFDM, NDPA/Report Poll/CTS2Self tx mode */
+		prStaRec->rTxBfPfmuStaInfo.ucSoundingPhy =
+						TX_RATE_MODE_OFDM;
+
+		/* 9: OFDM 24M */
+		prStaRec->rTxBfPfmuStaInfo.ucNdpaRate = PHY_RATE_24M;
+
+		/* VHT mode, NDP tx mode */
+		prStaRec->rTxBfPfmuStaInfo.ucTxMode = TX_RATE_MODE_HE_SU;
+
+		/* 0: MCS0 */
+		prStaRec->rTxBfPfmuStaInfo.ucNdpRate = PHY_RATE_MCS0;
+
+		/* 9: OFDM 24M */
+		prStaRec->rTxBfPfmuStaInfo.ucReptPollRate = PHY_RATE_24M;
+
+		switch (prBssInfo->ucVhtChannelWidth) {
+		case VHT_OP_CHANNEL_WIDTH_80:
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+			break;
+
+		case VHT_OP_CHANNEL_WIDTH_20_40:
+		default:
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+				prStaRec->rTxBfPfmuStaInfo.ucCBW =
+							MAX_BW_40MHZ;
+			break;
+		}
+
+		ucBFerMaxNr = 1;
+		ucBFeeMaxNr = HE_GET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prStaRec->ucHePhyCapInfo);
+		prStaRec->rTxBfPfmuStaInfo.ucNr =
+			(ucBFerMaxNr < ucBFeeMaxNr) ?
+				ucBFerMaxNr : ucBFeeMaxNr;
+
+		if (RLM_NET_IS_11AC(prBssInfo)) {
+			prStaRec->rTxBfPfmuStaInfo.ucNc =
+				((prStaRec->u2VhtRxMcsMap &
+				VHT_CAP_INFO_MCS_2SS_MASK) !=
+						BITS(2, 3)) ? 1 : 0;
+		} else if (RLM_NET_IS_11N(prBssInfo)) {
+			prStaRec->rTxBfPfmuStaInfo.ucNc =
+				(prStaRec->aucRxMcsBitmask[1] > 0) ? 1 : 0;
+		}
+	}
+	break;
+
+#endif
+	case MODE_VHT:
+		prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
+		prStaRec->rTxBfPfmuStaInfo.u1TxBfCap =
+				rlmClientSupportsVhtETxBF(prStaRec);
+
+		if (prStaRec->rTxBfPfmuStaInfo.u1TxBfCap) {
+			/* OFDM, NDPA/Report Poll/CTS2Self tx mode */
+			prStaRec->rTxBfPfmuStaInfo.ucSoundingPhy =
+							TX_RATE_MODE_OFDM;
+
+			/* 9: OFDM 24M */
+			prStaRec->rTxBfPfmuStaInfo.ucNdpaRate = PHY_RATE_24M;
+
+			/* VHT mode, NDP tx mode */
+			prStaRec->rTxBfPfmuStaInfo.ucTxMode = TX_RATE_MODE_VHT;
+
+			/* 0: MCS0 */
+			prStaRec->rTxBfPfmuStaInfo.ucNdpRate = PHY_RATE_MCS0;
+
+			/* 9: OFDM 24M */
+			prStaRec->rTxBfPfmuStaInfo.ucReptPollRate = PHY_RATE_24M;
+
+			switch (prBssInfo->ucVhtChannelWidth) {
+			case VHT_OP_CHANNEL_WIDTH_80:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+				break;
+
+			case VHT_OP_CHANNEL_WIDTH_20_40:
+			default:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+				if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+					prStaRec->rTxBfPfmuStaInfo.ucCBW =
+								MAX_BW_40MHZ;
+				break;
+			}
+
+			ucBFerMaxNr = 1;
+			ucBFeeMaxNr = rlmClientSupportsVhtBfeeStsCap(prStaRec);
+			prStaRec->rTxBfPfmuStaInfo.ucNr =
+				(ucBFerMaxNr < ucBFeeMaxNr) ?
+					ucBFerMaxNr : ucBFeeMaxNr;
+			prStaRec->rTxBfPfmuStaInfo.ucNc =
+				((prStaRec->u2VhtRxMcsMap &
+					VHT_CAP_INFO_MCS_2SS_MASK) !=
+							BITS(2, 3)) ? 1 : 0;
+		}
+		break;
+
+	case MODE_HT:
+		prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
+		prStaRec->rTxBfPfmuStaInfo.u1TxBfCap =
+				rlmClientSupportsHtETxBF(prStaRec);
+
+		if (prStaRec->rTxBfPfmuStaInfo.u1TxBfCap) {
+			/* HT mode, NDPA/NDP tx mode */
+			prStaRec->rTxBfPfmuStaInfo.ucTxMode =
+						TX_RATE_MODE_HTMIX;
+
+			/* 0: HT MCS0 */
+			prStaRec->rTxBfPfmuStaInfo.ucNdpaRate = PHY_RATE_MCS0;
+
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_40MHZ;
+
+			ucBFerMaxNr = 1;
+			ucBFeeMaxNr =
+				(prStaRec->u4TxBeamformingCap &
+				TXBF_COMPRESSED_TX_ANTENNANUM_SUPPORTED) >>
+				TXBF_COMPRESSED_TX_ANTENNANUM_SUPPORTED_OFFSET;
+			prStaRec->rTxBfPfmuStaInfo.ucNr =
+				(ucBFerMaxNr < ucBFeeMaxNr) ?
+					ucBFerMaxNr : ucBFeeMaxNr;
+			prStaRec->rTxBfPfmuStaInfo.ucNc =
+				(prStaRec->aucRxMcsBitmask[1] > 0) ? 1 : 0;
+			prStaRec->rTxBfPfmuStaInfo.ucNdpRate =
+				prStaRec->rTxBfPfmuStaInfo.ucNr * 8;
+		}
+		break;
+	default:
+		cnmMemFree(prAdapter, prStaRecBF);
+		cnmMemFree(prAdapter, prStaRecUpdateInfo);
+		return;
+	}
+
+	DBGLOG(RLM, INFO, "ucMode=%d\n", ucMode);
+	DBGLOG(RLM, INFO, "rlmClientSupportsVhtETxBF(prStaRec)=%d\n",
+				rlmClientSupportsVhtETxBF(prStaRec));
+	DBGLOG(RLM, INFO, "rlmClientSupportsVhtBfeeStsCap(prStaRec)=%d\n",
+				rlmClientSupportsVhtBfeeStsCap(prStaRec));
+	DBGLOG(RLM, INFO, "prStaRec->u2VhtRxMcsMap=%x\n",
+				prStaRec->u2VhtRxMcsMap);
+
+	DBGLOG(RLM, INFO,
+	    "====================== BF StaRec Info =====================\n");
+	DBGLOG(RLM, INFO, "u2PfmuId       =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.u2PfmuId);
+	DBGLOG(RLM, INFO, "fgSU_MU        =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.fgSU_MU);
+	DBGLOG(RLM, INFO, "u1TxBfCap     =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.u1TxBfCap);
+	DBGLOG(RLM, INFO, "ucSoundingPhy  =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucSoundingPhy);
+	DBGLOG(RLM, INFO, "ucNdpaRate     =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucNdpaRate);
+	DBGLOG(RLM, INFO, "ucNdpRate      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucNdpRate);
+	DBGLOG(RLM, INFO, "ucReptPollRate =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucReptPollRate);
+	DBGLOG(RLM, INFO, "ucTxMode       =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucTxMode);
+	DBGLOG(RLM, INFO, "ucNc           =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucNc);
+	DBGLOG(RLM, INFO, "ucNr           =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucNr);
+	DBGLOG(RLM, INFO, "ucCBW          =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucCBW);
+	DBGLOG(RLM, INFO, "ucTotMemRequire=%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucTotMemRequire);
+	DBGLOG(RLM, INFO, "ucMemRequire20M=%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemRequire20M);
+	DBGLOG(RLM, INFO, "ucMemRow0      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemRow0);
+	DBGLOG(RLM, INFO, "ucMemCol0      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemCol0);
+	DBGLOG(RLM, INFO, "ucMemRow1      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemRow1);
+	DBGLOG(RLM, INFO, "ucMemCol1      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemCol1);
+	DBGLOG(RLM, INFO, "ucMemRow2      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemRow2);
+	DBGLOG(RLM, INFO, "ucMemCol2      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemCol2);
+	DBGLOG(RLM, INFO, "ucMemRow3      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemRow3);
+	DBGLOG(RLM, INFO, "ucMemCol3      =%d\n",
+				prStaRec->rTxBfPfmuStaInfo.ucMemCol3);
+	DBGLOG(RLM, INFO,
+	    "===========================================================\n");
+
+
+
+	prStaRecBF->u2Tag = STA_REC_BF;
+	prStaRecBF->u2Length = u4SetBufferLen;
+	kalMemCopy(&prStaRecBF->rTxBfPfmuInfo,
+		&prStaRec->rTxBfPfmuStaInfo, sizeof(struct TXBF_PFMU_STA_INFO));
+
+
+	prStaRecUpdateInfo->ucBssIndex = prStaRec->ucBssIndex;
+	prStaRecUpdateInfo->ucWlanIdx = prStaRec->ucWlanIndex;
+	prStaRecUpdateInfo->u2TotalElementNum = 1;
+	kalMemCopy(prStaRecUpdateInfo->aucBuffer, prStaRecBF, u4SetBufferLen);
+
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+			     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			     EXT_CMD_ID_STAREC_UPDATE,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     nicCmdEventSetCommon,
+			     nicOidCmdTimeoutCommon,
+			     (CMD_STAREC_UPDATE_HDR_SIZE + u4SetBufferLen),
+			     (uint8_t *) prStaRecUpdateInfo, NULL, 0);
+
+	if (rWlanStatus == WLAN_STATUS_FAILURE)
+		DBGLOG(RLM, ERROR, "Send BF sounding cmd fail\n");
+
+	cnmMemFree(prAdapter, prStaRecBF);
+	cnmMemFree(prAdapter, prStaRecUpdateInfo);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void rlmETxBfTriggerPeriodicSounding(struct ADAPTER *prAdapter)
+{
+	uint32_t u4SetBufferLen = sizeof(union PARAM_CUSTOM_TXBF_ACTION_STRUCT);
+	union PARAM_CUSTOM_TXBF_ACTION_STRUCT rTxBfActionInfo;
+	union CMD_TXBF_ACTION rCmdTxBfActionInfo;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(RLM, INFO, "rlmETxBfTriggerPeriodicSounding\n");
+
+	rTxBfActionInfo.rTxBfSoundingStart.ucCmdCategoryID =
+								BF_SOUNDING_ON;
+
+	rTxBfActionInfo.rTxBfSoundingStart.ucSuMuSndMode =
+						    AUTO_SU_PERIODIC_SOUNDING;
+
+	rTxBfActionInfo.rTxBfSoundingStart.u4SoundingInterval = 0;
+
+	rTxBfActionInfo.rTxBfSoundingStart.ucStaNum = 0;
+
+	kalMemCopy(&rCmdTxBfActionInfo, &rTxBfActionInfo,
+					sizeof(union CMD_TXBF_ACTION));
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+					     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					     EXT_CMD_ID_BF_ACTION,
+					     TRUE,
+					     FALSE,
+					     FALSE,
+					     nicCmdEventSetCommon,
+					     nicOidCmdTimeoutCommon,
+					     sizeof(union CMD_TXBF_ACTION),
+					     (uint8_t *) &rCmdTxBfActionInfo,
+					     &rTxBfActionInfo, u4SetBufferLen);
+
+	if (rWlanStatus == WLAN_STATUS_FAILURE)
+		DBGLOG(RLM, ERROR, "Send BF sounding cmd fail\n");
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+bool
+rlmClientSupportsVhtETxBF(struct STA_RECORD *prStaRec)
+{
+	uint8_t ucVhtCapSuBfeeCap;
+
+	ucVhtCapSuBfeeCap =
+		(prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SU_BEAMFORMEE_CAPABLE)
+		>> VHT_CAP_INFO_SU_BEAMFORMEE_CAPABLE_OFFSET;
+
+	return (ucVhtCapSuBfeeCap) ? TRUE : FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+uint8_t
+rlmClientSupportsVhtBfeeStsCap(struct STA_RECORD *prStaRec)
+{
+	uint8_t ucVhtCapBfeeStsCap;
+
+	ucVhtCapBfeeStsCap =
+	    (prStaRec->u4VhtCapInfo &
+VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUP) >>
+VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUP_OFF;
+
+	return ucVhtCapBfeeStsCap;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+bool
+rlmClientSupportsHtETxBF(struct STA_RECORD *prStaRec)
+{
+	uint32_t u4RxNDPCap, u4ComBfFbkCap;
+
+	u4RxNDPCap = (prStaRec->u4TxBeamformingCap & TXBF_RX_NDP_CAPABLE)
+						>> TXBF_RX_NDP_CAPABLE_OFFSET;
+
+	/* Support compress feedback */
+	u4ComBfFbkCap = (prStaRec->u4TxBeamformingCap &
+			TXBF_EXPLICIT_COMPRESSED_FEEDBACK_IMMEDIATE_CAPABLE)
+			>> TXBF_EXPLICIT_COMPRESSED_FEEDBACK_CAPABLE_OFFSET;
+
+	return (u4RxNDPCap == 1) && (u4ComBfFbkCap > 0);
+}
+
+#endif

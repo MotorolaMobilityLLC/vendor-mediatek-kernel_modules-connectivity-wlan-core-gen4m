@@ -897,9 +897,29 @@ enum BF_ACTION_CATEGORY {
 	BF_PN_READ,
 	BF_PN_WRITE,
 	BF_PFMU_MEM_ALLOC_MAP_READ,
-#if CFG_SUPPORT_TX_BF_FPGA
-	BF_PFMU_SW_TAG_WRITE = 23
-#endif
+	BF_AID_SET,
+	BF_STA_REC_READ,
+	BF_PHASE_CALIBRATION,
+	BF_IBF_PHASE_COMP,
+	BF_LNA_GAIN_CONFIG,
+	BF_PROFILE_WRITE_20M_ALL,
+	BF_APCLIENT_CLUSTER,
+	BF_AWARE_CTRL,
+	BF_HW_ENABLE_STATUS_UPDATE,
+	BF_REPT_CLONED_STA_TO_NORMAL_STA,
+	BF_GET_QD,
+	BF_BFEE_HW_CTRL,
+	BF_PFMU_SW_TAG_WRITE,
+	BF_MOD_EN_CTRL,
+	BF_DYNSND_EN_INTR,
+	BF_DYNSND_CFG_DMCS_TH,
+	BF_DYNSND_EN_PFID_INTR,
+	BF_CONFIG,
+	BF_PFMU_DATA_WRITE,
+	BF_FBRPT_DBG_INFO_READ,
+	BF_CMD_TXSND_INFO,
+	BF_CMD_PLY_INFO,
+	BF_CMD_MU_METRIC
 };
 
 enum {
@@ -928,118 +948,122 @@ enum {
 
 union PFMU_PROFILE_TAG1 {
 	struct {
-		/* [6:0] : 0 ~ 63 */
-		uint32_t ucProfileID: 7;
-
-		/* [7] : 0: iBF, 1: eBF */
-		uint32_t ucTxBf: 1;
-
-		/* [9:8] : 0/1/2/3: DW20/40/80/160NC */
-		uint32_t ucDBW: 2;
-
-		/* [10] : 0:SU, 1: MU */
-		uint32_t ucSU_MU: 1;
-
-		/* [11] : 0: default, 1: This profile number is invalid by SW */
-		uint32_t ucInvalidProf:	1;
-
-		/* [14:12] : RMSD value from CE */
-		uint32_t ucRMSD: 3;
-
-		/* [17 : 15] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr1ColIdx: 3;
-
-		/* [23 : 18] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr1RowIdx: 6;
-
-		/* [26 : 24] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr2ColIdx: 3;
-
-		/* [31 : 27] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr2RowIdx: 5;
-
-		/* [32] : MSB of row index */
-		uint32_t ucMemAddr2RowIdxMsb: 1;
-
-		/* [35 : 33] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr3ColIdx: 3;
-
-		/* [41 : 36] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr3RowIdx: 6;
-
-		/* [44 : 42] : column index : 0 ~ 5 */
-		uint32_t ucMemAddr4ColIdx: 3;
-
-		/* [50 : 45] : row index : 0 ~ 63 */
-		uint32_t ucMemAddr4RowIdx: 6;
-
-		/* [51] : Reserved */
-		uint32_t ucReserved: 1;
-
-		/* [53 : 52] : Nrow */
-		uint32_t ucNrow: 2;
-
-		/* [55 : 54] : Ncol */
-		uint32_t ucNcol: 2;
-
-		/* [57 : 56] : Ngroup */
-		uint32_t ucNgroup: 2;
-
-		/* [59 : 58] : 0/1/2 */
-		uint32_t ucLM: 2;
-
-		/* [61:60] : Code book */
-		uint32_t ucCodeBook: 2;
-
-		/* [62] : HtcExist */
-		uint32_t ucHtcExist: 1;
-
-		/* [63] : Reserved */
-		uint32_t ucReserved1: 1;
-
-		/* [71:64] : SNR_STS0 */
-		uint32_t ucSNR_STS0: 8;
-
-		/* [79:72] : SNR_STS1 */
-		uint32_t ucSNR_STS1: 8;
-
-		/* [87:80] : SNR_STS2 */
-		uint32_t ucSNR_STS2: 8;
-
-		/* [95:88] : SNR_STS3 */
-		uint32_t ucSNR_STS3: 8;
-
-		/* [103:96] : iBF LNA index */
-		uint32_t ucIBfLnaIdx: 8;
+		uint32_t ucProfileID         : 10;
+		/* [9:0]     : 0 ~ 1023 */
+		uint32_t ucTxBf              : 1;
+		/* [10]      : 0: iBF, 1: eBF */
+		uint32_t ucDBW               : 2;
+		/* [12:11]   : 0/1/2/3: DW20/40/80/160NC */
+		uint32_t ucLM                : 2;
+		/* [14:13]   : 0/1/2/3: Legacy/HT/VHT/HE */
+		uint32_t ucSU_MU             : 1;
+		/* [15]      : 0:SU, 1: MU */
+		uint32_t ucNrow              : 3;
+		/* [18:16]   : Nrow 3bits for 8x8 */
+		uint32_t ucNcol              : 3;
+		/* [21:19]   : Ncol 3bits for 8x8 */
+		uint32_t ucCodeBook          : 2;
+		/* [23:22]   : Code book */
+		uint32_t ucNgroup            : 2;
+		/* [25:24]   : Ngroup */
+		uint32_t ucReserved          : 2;
+		/* [27:26]   : Reserved */
+		uint32_t ucInvalidProf       : 1;
+		/* [28]      : 0:default,
+		 *	       1: This profile number is invalid by SW
+		 */
+		uint32_t ucRMSD              : 3;
+		/* [31:29]   : RMSD value from CE */
+		uint32_t ucMemAddr1ColIdx    : 6;
+		/* [37:32]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr1RowIdx    : 10;
+		/* [47:38]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr2ColIdx    : 6;
+		/* [53:48]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr2RowIdx    : 10;
+		/* [63:54]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr3ColIdx    : 6;
+		/* [69:64]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr3RowIdx    : 10;
+		/* [79:70]   : row index : 0 ~ 63 */
+		uint32_t ucMemAddr4ColIdx    : 6;
+		/* [85:80]   : column index : 0 ~ 5 */
+		uint32_t ucMemAddr4RowIdx    : 10;
+		/* [95:86]   : row index : 0 ~ 63 */
+		uint32_t ucRuStartIdx        : 7;
+		/* [102:96]  : 0~73, only for HE profile (V matrix RU index) */
+		uint32_t ucReserved1         : 1;
+		/* [113]     : Reserved */
+		uint32_t ucRuEndIdx          : 7;
+		/* [110:104] : 0~73, only for HE profile (V matrix RU index) */
+		uint32_t ucReserved2         : 1;
+		/* [111]     : Reserved */
+		uint32_t ucMobCalEn          : 1;
+		/* [112]     : Mobility detection calculation enable */
+		uint32_t ucReserved3         : 15;
+		/* [127:113] : Reserved */
+		uint32_t ucSNR_STS0          : 8;
+		/* [135:128] : SNR_STS0 */
+		uint32_t ucSNR_STS1          : 8;
+		/* [143:136] : SNR_STS1 */
+		uint32_t ucSNR_STS2          : 8;
+		/* [151:144] : SNR_STS2 */
+		uint32_t ucSNR_STS3          : 8;
+		/* [159:152] : SNR_STS3 */
+		uint32_t ucSNR_STS4          : 8;
+		/* [167:160] : SNR_STS4 */
+		uint32_t ucSNR_STS5          : 8;
+		/* [175:168] : SNR_STS5 */
+		uint32_t ucSNR_STS6          : 8;
+		/* [183:176] : SNR_STS6 */
+		uint32_t ucSNR_STS7          : 8;
+		/* [191:184] : SNR_STS7 */
 	} rField;
-	uint32_t au4RawData[4];
+	uint32_t au4RawData[7];
 };
 
 union PFMU_PROFILE_TAG2 {
 	struct {
-		uint32_t u2SmartAnt: 12;/* [11:0] : Smart Ant config */
-		uint32_t ucReserved0: 3;/* [14:12] : Reserved */
-		uint32_t ucSEIdx: 5;	/* [19:15] : SE index */
-		uint32_t ucRMSDThd: 3;	/* [22:20] : RMSD Threshold */
-		uint32_t ucReserved1: 1;/* [23] : Reserved */
-		uint32_t ucMCSThL1SS: 4;/* [27:24] : MCS TH long 1SS */
-		uint32_t ucMCSThS1SS: 4;/* [31:28] : MCS TH short 1SS */
-		uint32_t ucMCSThL2SS: 4;/* [35:32] : MCS TH long 2SS */
-		uint32_t ucMCSThS2SS: 4;/* [39:36] : MCS TH short 2SS */
-		uint32_t ucMCSThL3SS: 4;/* [43:40] : MCS TH long 3SS */
-		uint32_t ucMCSThS3SS: 4;/* [47:44] : MCS TH short 3SS */
-		uint32_t uciBfTimeOut: 8;/* [55:48] : iBF timeout limit */
-		uint32_t ucReserved2: 8;/* [63:56] : Reserved */
-		uint32_t ucReserved3: 8;/* [71:64] : Reserved */
-		uint32_t ucReserved4: 8;/* [79:72] : Reserved */
-		uint32_t uciBfDBW: 2;	/* [81:80] : iBF desired DBW 0/1/2/3 :
-					 *           BW20/40/80/160NC
-					 */
-		uint32_t uciBfNcol: 2;	/* [83:82] : iBF desired Ncol = 1 ~ 3 */
-		uint32_t uciBfNrow: 2;	/* [85:84] : iBF desired Nrow = 1 ~ 4 */
-		uint32_t u2Reserved5: 10;/* [95:86] : Reserved */
+		uint32_t u2SmartAnt       : 24;
+		/* [23:0]    : Smart Ant config */
+		uint32_t ucSEIdx          : 5;
+		/* [28:24]   : SE index */
+		uint32_t ucReserved       : 3;
+		/* [31:29]   : Reserved */
+		uint32_t ucReserved1      : 8;
+		/* [39:32]   : Reserved */
+		uint32_t ucRMSDThd        : 3;
+		/* [42:40]   : RMSD Threshold */
+		uint32_t ucReserved2      : 5;
+		/* [47:43]   : Reserved */
+		uint32_t uciBfTimeOut     : 8;
+		/* [55:48]   : iBF timeout limit */
+		uint32_t ucReserved3      : 8;
+		/* [63:56]   : Reserved */
+		uint32_t ucReserved4      : 16;
+		/* [79:64]   : Reserved */
+		uint32_t uciBfDBW         : 2;
+		/* [81:80]   : iBF desired DBW 0/1/2/3 : BW20/40/80/160NC */
+		uint32_t uciBfNcol        : 3;
+		/* [84:82]   : iBF desired Ncol = 1 ~ 8 */
+		uint32_t uciBfNrow        : 3;
+		/* [87:85]   : iBF desired Nrow = 1 ~ 8 */
+		uint32_t uciBfRu          : 8;
+		/* [95:88]   : Desired RX packet RU index, only for HE profile
+		 *		(OFDMA data RU index, not V matrix RU index)
+		 */
+		uint32_t ucMobDeltaT      : 8;
+		/* [103:96]  : Mobility detection delta T value.
+		 *		Resolution: 1ms. Max = 255ms.
+		 */
+		uint32_t ucMobLQResult    : 7;
+		/* [110:104] : Mobility detection calculation result. U1.6 */
+		uint32_t ucReserved5      : 1;
+		/* [111]     : Reserved */
+		uint32_t ucReserved6      : 16;
+		/* [127:112] : Reserved */
 	} rField;
-	uint32_t au4RawData[3];
+	uint32_t au4RawData[7];
 };
 
 union PFMU_DATA {
@@ -1065,17 +1089,45 @@ union PFMU_DATA {
 	uint32_t au4RawData[5];
 };
 
+struct PFMU_HE_INFO {
+	uint32_t u4Config;
+	uint8_t fgSU_MU;
+	uint8_t u1RuStartIdx;
+	uint8_t u1RuEndIdx;
+	uint8_t fgTriggerSu;
+	uint8_t fgTriggerMu;
+	uint8_t fgNg16Su;
+	uint8_t fgNg16Mu;
+	uint8_t fgCodebook42Su;
+	uint8_t fgCodebook75Mu;
+	uint8_t u1HeLtf;
+	uint8_t uciBfNcol;
+	uint8_t uciBfNrow;
+};
+
+enum PFMU_HE_MANUAL_CONF {
+	MANUAL_HE_SU_MU = 0,
+	MANUAL_HE_RU_RANGE,
+	MANUAL_HE_TRIGGER,
+	MANUAL_HE_NG16,
+	MANUAL_HE_CODEBOOK,
+	MANUAL_HE_LTF,
+	MANUAL_HE_IBF
+};
+
 struct PROFILE_TAG_READ {
 	uint8_t ucTxBfCategory;
 	uint8_t ucProfileIdx;
-	u_int8_t fgBfer;
+	uint8_t fgBfer;
 	uint8_t ucRsv;
 };
 
 struct PROFILE_TAG_WRITE {
 	uint8_t ucTxBfCategory;
 	uint8_t ucPfmuId;
-	uint8_t ucBuffer[28];
+	uint8_t fgBFer;
+	uint8_t ucBandIdx;
+	uint8_t ucBuffer[64];
 };
 
 struct PROFILE_DATA_READ {
@@ -1112,22 +1164,13 @@ enum BF_SOUNDING_MODE {
 	SU_SOUNDING = 0,
 	MU_SOUNDING,
 	SU_PERIODIC_SOUNDING,
-	MU_PERIODIC_SOUNDING
-};
-
-struct EXT_CMD_ETXBf_SND_PERIODIC_TRIGGER_CTRL {
-	uint8_t ucCmdCategoryID;
-	uint8_t ucSuMuSndMode;
-	uint8_t ucWlanIdx;
-	uint32_t u4SoundingInterval;	/* By ms */
-};
-
-struct EXT_CMD_ETXBf_MU_SND_PERIODIC_TRIGGER_CTRL {
-	uint8_t ucCmdCategoryID;
-	uint8_t ucSuMuSndMode;
-	uint8_t ucWlanId[4];
-	uint8_t ucStaNum;
-	uint32_t u4SoundingInterval;	/* By ms */
+	MU_PERIODIC_SOUNDING,
+	AUTO_SU_PERIODIC_SOUNDING,
+	TXCMD_NONTB_SU_SOUNDING,
+	TXCMD_VHT_MU_SOUNDING,
+	TXCMD_TB_PER_BRP_SOUNDING,
+	TXCMD_TB_SOUNDING,
+	SOUNDING_MAX
 };
 
 /* Device information (Tag0) */
@@ -1137,7 +1180,8 @@ struct CMD_DEVINFO_ACTIVE {
 	uint8_t ucActive;
 	uint8_t ucBandNum;
 	uint8_t aucOwnMacAddr[6];
-	uint8_t aucReserve[4];
+	uint8_t ucOwnMacIdx;
+	uint8_t aucReserve[3];
 };
 
 struct BSSINFO_BASIC {
@@ -1158,10 +1202,24 @@ struct BSSINFO_BASIC {
 	uint8_t acuReserve[6];
 };
 
+struct BSSINFO_CONNECT_OWN_DEV
+{
+    uint16_t u2Tag;      /* Tag = 0x00 */
+    uint16_t u2Length;
+    uint8_t  ucHwBSSIndex;
+    uint8_t  ucOwnMacIdx;
+    uint8_t  ucDbdcIdx;
+    uint8_t  aucReserve;
+    uint32_t u4ConnectionType;
+    uint32_t u4Reserved;
+};
+
 struct TXBF_PFMU_STA_INFO {
 	uint16_t u2PfmuId;	/* 0xFFFF means no access right for PFMU */
 	uint8_t fgSU_MU;		/* 0 : SU, 1 : MU */
-	uint8_t fgETxBfCap;	/* 0 : ITxBf, 1 : ETxBf */
+	uint8_t u1TxBfCap;      /* BIT(0) = 1 if ETxBf is supported :
+				 * BIT(1) = 1 if ITxBf is supported
+				 */
 	uint8_t ucSoundingPhy;	/* 0: legacy, 1: OFDM, 2: HT, 4: VHT */
 	uint8_t ucNdpaRate;
 	uint8_t ucNdpRate;
@@ -1182,11 +1240,22 @@ struct TXBF_PFMU_STA_INFO {
 	uint8_t ucMemCol3;
 	uint16_t u2SmartAnt;
 	uint8_t ucSEIdx;
+	uint8_t ucAutoSoundingCtrl;
 	uint8_t uciBfTimeOut;
 	uint8_t uciBfDBW;
 	uint8_t uciBfNcol;
 	uint8_t uciBfNrow;
-	uint8_t aucReserved[3];
+	uint8_t u1NrBw160;
+	uint8_t u1NcBw160;
+	uint8_t u1RuStartIdx;
+	uint8_t u1RuEndIdx;
+	uint8_t fgTriggerSu;
+	uint8_t fgTriggerMu;
+	uint8_t fgNg16Su;
+	uint8_t fgNg16Mu;
+	uint8_t fgCodebook42Su;
+	uint8_t fgCodebook75Mu;
+	uint8_t u1HeLtf;
 };
 
 struct STA_REC_UPD_ENTRY {
@@ -1205,7 +1274,7 @@ struct STAREC_COMMON {
 	uint8_t ucIsQBSS;
 	uint16_t u2AID;
 	uint8_t aucPeerMacAddr[6];
-	uint16_t u2Reserve1;
+	uint16_t u2ExtraInfo;
 };
 
 struct CMD_STAREC_BF {
@@ -1240,12 +1309,12 @@ struct CMD_MANUAL_ASSOC_STRUCT {
 };
 
 struct TX_BF_SOUNDING_START {
-	union {
-		struct EXT_CMD_ETXBf_SND_PERIODIC_TRIGGER_CTRL
-			rExtCmdExtBfSndPeriodicTriggerCtrl;
-		struct EXT_CMD_ETXBf_MU_SND_PERIODIC_TRIGGER_CTRL
-			rExtCmdExtBfMuSndPeriodicTriggerCtrl;
-	} rTxBfSounding;
+	uint8_t ucCmdCategoryID;
+	uint8_t ucSuMuSndMode;
+	uint8_t ucStaNum;
+	uint8_t ucReserved;
+	uint8_t ucWlanId[4];
+	uint32_t u4SoundingInterval;	/* By ms */
 };
 
 struct TX_BF_SOUNDING_STOP {
@@ -1285,6 +1354,7 @@ struct TX_BF_PROFILE_SW_TAG_WRITE {
 	uint8_t ucBw;
 	uint8_t ucCodebook;
 	uint8_t ucgroup;
+	uint8_t ucTxBf;
 	uint8_t ucReserved;
 };
 #endif
@@ -3084,6 +3154,11 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 
 uint32_t
 wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer,
+		    IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidBssInfoConOwnDev(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer,
 		    IN uint32_t u4SetBufferLen,
 		    OUT uint32_t *pu4SetInfoLen);
