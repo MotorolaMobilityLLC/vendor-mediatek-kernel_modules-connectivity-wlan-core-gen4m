@@ -2573,6 +2573,11 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 
 	prMsduInfo->prPacket = prPacket;
 	prMsduInfo->ucBssIndex = GLUE_GET_PKT_BSS_IDX(prPacket);
+#if CFG_SUPPORT_WIFI_SYSDVT
+	if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF)
+		prMsduInfo->ucUserPriority = prAdapter->ucTxTestUP;
+	else
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 	prMsduInfo->ucUserPriority = GLUE_GET_PKT_TID(prPacket);
 	prMsduInfo->ucMacHeaderLength = GLUE_GET_PKT_HEADER_LEN(
 						prPacket);
@@ -2611,11 +2616,23 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DNS))
 			prMsduInfo->ucPktType = ENUM_PKT_DNS;
 
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+		if (prMsduInfo->ucPktType != ENUM_PKT_ICMP) {
+			/* blocking non ICMP packets at DMASHDL DVT items */
+			if (DMASHDL_DVT_ALLOW_PING_ONLY(prAdapter))
+				return FALSE;
+		}
+#endif
 		if (prMsduInfo->ucPktType != 0) {
 			prMsduInfo->pfTxDoneHandler = wlanPktTxDone;
 			prMsduInfo->ucTxSeqNum = GLUE_GET_PKT_SEQ_NO(prPacket);
 		}
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+		if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF)
+			;
+		else
+#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
@@ -3101,6 +3118,18 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	wnmReportTimingMeas(prAdapter, prMsduInfo->ucStaRecIndex,
 			    prTxDone->au4Reserved1,
 			    prTxDone->au4Reserved1 + prTxDone->au4Reserved2);
+#endif
+
+#if CFG_SUPPORT_WIFI_SYSDVT
+	if (is_frame_test(prAdapter, 1) != 0) {
+		prAdapter->auto_dvt->txs.received_pid = prTxDone->ucPacketSeq;
+		receive_del_txs_queue(prTxDone->u2SequenceNumber,
+			prTxDone->ucPacketSeq, prTxDone->ucWlanIndex,
+			prTxDone->u4Timestamp);
+		DBGLOG(REQ, LOUD,
+			"Done receive_del_txs_queue pid=%d timestamp=%d\n",
+			prTxDone->ucPacketSeq, prTxDone->u4Timestamp);
+	}
 #endif
 
 	if (prMsduInfo) {

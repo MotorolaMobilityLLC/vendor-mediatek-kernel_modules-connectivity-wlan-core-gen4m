@@ -236,6 +236,9 @@ endif
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
+ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
+ccflags-y += -I$(src)/include/dvt
+endif
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/performance/include/
@@ -306,6 +309,7 @@ CHIPS_CMM   := $(CHIPS)common/
 ifneq ($(MTK_PLATFORM),)
 PLAT_DIR    := os/$(os)/plat/$(MTK_PLATFORM)/
 endif
+SYSDVT_DIR  := dvt/
 
 # ---------------------------------------------------
 # Objects List
@@ -491,6 +495,15 @@ endif
 endif
 
 # ---------------------------------------------------
+# System Dvt Objects List
+# ---------------------------------------------------
+ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
+SYSDVT_OBJS += $(SYSDVT_DIR)dvt_common.o
+
+ifeq ($(CFG_SUPPORT_DMASHDL_SYSDVT), 1)
+SYSDVT_OBJS += $(SYSDVT_DIR)dvt_dmashdl.o
+endif
+endif
 
 # ---------------------------------------------------
 # Service git List
@@ -530,6 +543,7 @@ $(MODULE_NAME)-objs  += $(OS_OBJS)
 $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
+$(MODULE_NAME)-objs  += $(SYSDVT_OBJS)
 
 ifneq ($(findstring UT_TEST_MODE,$(MTK_COMBO_CHIP)),)
 include $(src)/test/ut.make

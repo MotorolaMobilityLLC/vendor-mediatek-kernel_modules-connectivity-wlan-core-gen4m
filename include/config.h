@@ -1236,6 +1236,17 @@
  */
 #define CFG_REPORT_MAX_TX_RATE	0
 
+/*------------------------------------------------------------------------------
+ * Driver supports SYS DVT automation
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_WIFI_SYSDVT
+#define CFG_SUPPORT_WIFI_SYSDVT  0
+#endif
+
+#ifndef CFG_SUPPORT_DMASHDL_SYSDVT
+#define CFG_SUPPORT_DMASHDL_SYSDVT  0
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
