@@ -1250,6 +1250,15 @@ static s_int32 mt_engine_store_tx_info(
 		goto err_out;
 	}
 
+	if (tx_info == NULL) {
+		ret = -1;
+		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_ERROR,
+			("%s: test_tx_info is NULL\n",
+			__func__));
+
+		goto err_out;
+	}
+
 	if (is_mt_engine_stack_full(configs) == FALSE) {
 		if (tx_info) {
 			net_ad_fill_phy_info(virtual_wtbl, tx_info);
