@@ -1650,6 +1650,12 @@
 #define DEFAULT_NSS (2)
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 0)
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#undef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#endif
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
