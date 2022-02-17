@@ -1222,6 +1222,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint8_t ucBssIndex = 0;
 	struct PARAM_BSSID_EX *prCurrBssid;
+	struct ROAMING_INFO *roam;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -1256,6 +1257,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prCurrBssid = aisGetCurrBssId(prAdapter,
 		ucBssIndex);
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	if (pParamConn->u4SsidLen > 32) {
 		cnmMemFree(prAdapter, prAisAbortMsg);
@@ -1346,6 +1348,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		if (fgEqualSsid) {
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_ROAMING;
+			roam->eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
 			if (fgEqualBssid) {
 				kalSetMediaStateIndicated(prGlueInfo,
 					MEDIA_STATE_TO_BE_INDICATED,

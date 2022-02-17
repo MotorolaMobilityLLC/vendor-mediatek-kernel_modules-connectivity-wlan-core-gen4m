@@ -2968,6 +2968,8 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 		if (prAisBssInfo->prStaRecOfAP)
 			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
 
+		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
+
 		COPY_SSID(rSsid.aucSsid,
 			  rSsid.u4SsidLen,
 			  prAisBssInfo->aucSSID,
@@ -3042,7 +3044,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
 			    MEDIA_STATE_CONNECTED) {
-
+				roamingFsmNotifyEvent(prAdapter,
+						ucBssIndex, FALSE,
+						prAisFsmInfo->prTargetBssDesc);
 #if CFG_SUPPORT_ROAMING
 				/* 2. Deactivate previous BSS */
 				aisFsmRoamingDisconnectPrevAP(prAdapter,
@@ -3054,6 +3058,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 							     prAssocRspSwRfb);
 #endif /* CFG_SUPPORT_ROAMING */
 			} else {
+				if (aisFsmIsInProcessPostpone(prAdapter,
+					ucBssIndex)) {
+					roamingFsmNotifyEvent(prAdapter,
+						ucBssIndex, FALSE,
+						prAisFsmInfo->prTargetBssDesc);
+				}
 				kalResetStats(
 					wlanGetNetDev(
 					prAdapter->prGlueInfo,
