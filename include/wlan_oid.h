@@ -175,6 +175,56 @@
 #define NUM_OF_MODUL            5
 #endif /* CFG_SUPPORT_MU_MIMO */
 
+#define SER_ACTION_QUERY                    0
+#define SER_ACTION_SET                      1
+#define SER_ACTION_SET_ENABLE_MASK          2
+#define SER_ACTION_RECOVER                  3
+
+/* SER_ACTION_SET sub action */
+#define SER_SET_DISABLE         0
+#define SER_SET_ENABLE          1
+
+/* SER_ACTION_SET_ENABLE_MASK mask define */
+#define SER_ENABLE_TRACKING         BIT(0)
+#define SER_ENABLE_L1_RECOVER       BIT(1)
+#define SER_ENABLE_L2_RECOVER       BIT(2)
+#define SER_ENABLE_L3_RX_ABORT      BIT(3)
+#define SER_ENABLE_L3_TX_ABORT      BIT(4)
+#define SER_ENABLE_L3_TX_DISABLE    BIT(5)
+#define SER_ENABLE_L3_BF_RECOVER    BIT(6)
+
+/* SER_ACTION_RECOVER recover method */
+#define SER_SET_L0_RECOVER         0
+#define SER_SET_L1_RECOVER         1
+#define SER_SET_L2_RECOVER         2
+#define SER_SET_L3_RX_ABORT        3
+#define SER_SET_L3_TX0_ABORT       4
+#define SER_SET_L3_TX1_ABORT       5
+#define SER_SET_L3_TX0_DISABLE     6
+#define SER_SET_L3_TX1_DISABLE     7
+#define SER_SET_L3_BF_RECOVER      8
+
+/* SER user command */
+#define SER_USER_CMD_DISABLE         0
+#define SER_USER_CMD_ENABLE          1
+
+#define SER_USER_CMD_ENABLE_MASK_TRACKING_ONLY      (201)
+#define SER_USER_CMD_ENABLE_MASK_L1_RECOVER_ONLY    (202)
+#define SER_USER_CMD_ENABLE_MASK_L3_RX_ABORT_ONLY   (203)
+#define SER_USER_CMD_ENABLE_MASK_L3_TX_ABORT_ONLY   (204)
+#define SER_USER_CMD_ENABLE_MASK_L3_TX_DISABLE_ONLY (205)
+#define SER_USER_CMD_ENABLE_MASK_L3_BFRECOVER_ONLY  (206)
+#define SER_USER_CMD_ENABLE_MASK_RECOVER_ALL        (207)
+
+#define SER_USER_CMD_L1_RECOVER          995 /* Use a magic number to prevent human mistake */
+#define SER_USER_CMD_L2_RECOVER          (302)
+#define SER_USER_CMD_L3_RX_ABORT         (303)
+#define SER_USER_CMD_L3_TX0_ABORT        (304)
+#define SER_USER_CMD_L3_TX1_ABORT        (305)
+#define SER_USER_CMD_L3_TX0_DISABLE      (306)
+#define SER_USER_CMD_L3_TX1_DISABLE      (307)
+#define SER_USER_CMD_L3_BF_RECOVER       (308)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -2032,6 +2082,12 @@ typedef struct _CNM_CH_LIST_T {
 	UINT_8              ucChNum[4];
 } CNM_CH_LIST_T, *P_CNM_CH_LIST_T;
 
+struct EXT_CMD_SER_T {
+	UINT_8 ucAction;
+	UINT_8 ucSerSet;
+	UINT_8 aucReserve[2];
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -2810,6 +2866,9 @@ wlanoidLinkDown(IN P_ADAPTER_T prAdapter,
 WLAN_STATUS
 wlanoidDisableTdlsPs(IN P_ADAPTER_T prAdapter,
 			 IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+WLAN_STATUS wlanoidSetSer(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer,
+			  IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen);
+WLAN_STATUS wlanoidSerExtCmd(IN P_ADAPTER_T prAdapter, UINT_8 ucAction, UINT_8 ucSerSet);
 
 WLAN_STATUS
 wlanoidAbortScan(IN P_ADAPTER_T prAdapter,

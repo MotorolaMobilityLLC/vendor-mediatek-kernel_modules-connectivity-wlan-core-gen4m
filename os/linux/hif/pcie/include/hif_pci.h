@@ -186,18 +186,18 @@ typedef struct _TXD_STRUCT {
  */
 typedef struct _RXD_STRUCT {
 	/* Word 0 */
-	UINT_32 SDP0;
+	UINT_32 SDPtr0;
 
 	/* Word 1 */
-	UINT_32 SDL1:14;
-	UINT_32 LS1:1;
-	UINT_32 BURST:1;
-	UINT_32 SDL0:14;
-	UINT_32 LS0:1;
-	UINT_32 DDONE:1;
+	UINT_32 SDLen1:14;
+	UINT_32 LastSec1:1;
+	UINT_32 Burst:1;
+	UINT_32 SDLen0:14;
+	UINT_32 LastSec0:1;
+	UINT_32 DMADONE:1;
 
 	/* Word 2 */
-	UINT_32 SDP1;
+	UINT_32 SDPtr1;
 
 	/* Word 3 */
 	UINT_32 RXINFO;
