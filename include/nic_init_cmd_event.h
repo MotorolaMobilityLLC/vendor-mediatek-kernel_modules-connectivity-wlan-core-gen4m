@@ -145,6 +145,7 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL = 0x11,
 	INIT_CMD_ID_ZB_PATCH_SEMAPHORE_CONTROL = 0x12,
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
+	INIT_CMD_ID_LOG_BUF_CTRL = 0x21,
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	INIT_CMD_ID_DYN_MEM_MAP_PATCH_FINISH = 0x40,
@@ -164,7 +165,8 @@ enum ENUM_INIT_EVENT_ID {
 	INIT_EVENT_ID_PATCH_SEMA_CTRL,
 	INIT_EVENT_ID_PHY_ACTION,
 	INIT_EVENT_ID_BT_PATCH_SEMA_CTRL = 6,
-	INIT_EVENT_ID_ZB_PATCH_SEMA_CTRL = 7
+	INIT_EVENT_ID_ZB_PATCH_SEMA_CTRL = 7,
+	INIT_EVENT_ID_LOG_BUF_CTRL,
 };
 
 enum ENUM_INIT_PATCH_STATUS {
@@ -342,6 +344,40 @@ struct INIT_HIF_RX_HEADER {
 struct INIT_EVENT_ACCESS_REG {
 	uint32_t u4Address;
 	uint32_t u4Data;
+};
+
+enum FW_LOG_CMD_CTRL_TYPE {
+	FW_LOG_CTRL_CMD_GET_BASE_ADDR,
+	FW_LOG_CTRL_CMD_UPDATE_MCU_READ,
+	FW_LOG_CTRL_CMD_UPDATE_WIFI_READ,
+	FW_LOG_CTRL_CMD_UPDATE_BT_READ,
+	FW_LOG_CTRL_CMD_UPDATE_GPS_READ,
+	FW_LOG_CTRL_CMD_NUM
+};
+
+struct INIT_CMD_LOG_BUF_CTRL {
+	uint32_t u4Address_MCU;
+	uint32_t u4Address_WIFI;
+	uint32_t u4Address_BT;
+	uint32_t u4Address_GPS;
+	/*
+	 * BIT[0]:Log buffer control block base address
+	 * BIT[1~4]: Update MCU/WiFi/BT/GPS read pointer
+	 */
+	uint8_t ucType;
+	uint8_t aucReserved[3];
+};
+
+struct INIT_WIFI_EVENT_LOG_BUF_CTRL {
+	/*
+	 * BIT[0]:Log buffer control block base address
+	 * BIT[1~4]: Update MCU/WiFi/BT/GPS read pointer
+	 */
+	uint8_t ucType;
+	uint8_t ucStatus;
+	uint8_t aucReserved[2];
+	uint32_t u4Address;
+	uint32_t u4Reserved;
 };
 
 /*******************************************************************************

@@ -5158,6 +5158,100 @@ uint32_t nicUniCmdNan(struct ADAPTER *ad,
 #endif
 }
 
+uint32_t nicUniCmdFwLogQueryBase(struct ADAPTER *ad,
+	uint32_t *addr)
+{
+	struct UNI_CMD_WSYS_CONFIG *uni_cmd;
+	struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_WSYS_CONFIG) +
+		sizeof(struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_WSYS_CONFIG *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_BUFFER_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucType = BIT(FW_LOG_CTRL_CMD_GET_BASE_ADDR);
+
+	status = wlanSendSetQueryUniCmd(ad,
+			UNI_CMD_ID_WSYS_CONFIG,
+			TRUE,
+			TRUE,
+			FALSE,
+			nicUniEventFwLogQueryBase,
+			nicUniCmdTimeoutCommon,
+			max_cmd_len,
+			(void *)uni_cmd,
+			addr,
+			sizeof(*addr));
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
+uint32_t nicUniCmdFwLogUpdateRead(struct ADAPTER *ad,
+	enum FW_LOG_CMD_CTRL_TYPE type,
+	uint32_t addr)
+{
+	struct UNI_CMD_WSYS_CONFIG *uni_cmd;
+	struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_WSYS_CONFIG) +
+		sizeof(struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_WSYS_CONFIG *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_BUFFER_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucType = BIT(type);
+	switch (type) {
+	case FW_LOG_CTRL_CMD_UPDATE_MCU_READ:
+		tag->u4MCUAddr = addr;
+		break;
+	case FW_LOG_CTRL_CMD_UPDATE_WIFI_READ:
+		tag->u4WFAddr = addr;
+		break;
+	case FW_LOG_CTRL_CMD_UPDATE_BT_READ:
+		tag->u4BTAddr = addr;
+		break;
+	case FW_LOG_CTRL_CMD_UPDATE_GPS_READ:
+		tag->u4GPSAddr = addr;
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "Unsupported type: %d\n", type);
+		goto exit;
+	}
+
+	status = wlanSendSetQueryUniCmd(ad,
+			UNI_CMD_ID_WSYS_CONFIG,
+			TRUE,
+			FALSE,
+			FALSE,
+			nicUniCmdEventSetCommon,
+			nicUniCmdTimeoutCommon,
+			max_cmd_len,
+			(void *)uni_cmd, NULL, 0);
+
+exit:
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
 
 /*******************************************************************************
  *                                 Event
@@ -5870,6 +5964,32 @@ void nicUniEventEfuseControl(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
 	//TODO: Support Unify command
+}
+
+void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
+	IN struct CMD_INFO *cmd, IN uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_WSYS_CONFIG *evt;
+	struct UNI_EVENT_FW_LOG_BUFFER_CTRL *tag;
+	uint32_t *addr;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_WSYS_CONFIG)
+		return;
+
+	evt = (struct UNI_EVENT_WSYS_CONFIG *)uni_evt->aucBuffer;
+	tag = (struct UNI_EVENT_FW_LOG_BUFFER_CTRL *)evt->aucTlvBuffer;
+	if (tag->u2Tag != UNI_EVENT_FW_LOG_BUFFER_CTRL)
+		return;
+
+	if (tag->ucType != BIT(FW_LOG_CTRL_CMD_GET_BASE_ADDR))
+		return;
+
+	addr = (uint32_t *)cmd->pvInformationBuffer;
+
+	if (addr)
+		*addr = tag->u4Address;
 }
 
 /*******************************************************************************
