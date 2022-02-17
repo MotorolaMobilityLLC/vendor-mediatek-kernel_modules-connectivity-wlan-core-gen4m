@@ -2865,7 +2865,7 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 		}
 	}
 
-	DBGLOG(RLM, STATE, "Build Default Limit(%c%c)ChNum=%d,typde=%d\n",
+	DBGLOG(RLM, TRACE, "Build Default Limit(%c%c)ChNum=%d,typde=%d\n",
 				((prCmd->u2CountryCode &
 				0xff00) >> 8),
 				(prCmd->u2CountryCode &
@@ -4877,7 +4877,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 			    &prCmdHE->u2CountryCode);
 
 	if (prCmd->u2CountryCode == COUNTRY_CODE_NULL)
-		DBGLOG(RLM, WARN,
+		DBGLOG(RLM, TRACE,
 			   "CC={0x00,0x00},Power Limit use Default setting!");
 
 
@@ -4916,7 +4916,7 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 	prCmdHE);
 #endif
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 	       "Domain: ValidCC=%c%c, PwrLimitCC=%c%c, PwrLimitChNum=%d\n",
 	       (prAdapter->rWifiVar.u2CountryCode & 0xff00) >> 8,
 	       (prAdapter->rWifiVar.u2CountryCode & 0x00ff),
