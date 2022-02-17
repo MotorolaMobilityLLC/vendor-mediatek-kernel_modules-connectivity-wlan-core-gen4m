@@ -568,6 +568,8 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 void aisSendNeighborRequest(struct ADAPTER *prAdapter);
 /* end Support 11K */
 
+u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
