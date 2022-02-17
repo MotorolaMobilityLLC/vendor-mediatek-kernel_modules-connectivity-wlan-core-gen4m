@@ -11773,7 +11773,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	       /* congestion stats */
 	       prLinkQualityInfo->u8IdleSlotCount, /* idle slot */
 	       prLinkQualityInfo->u8DiffIdleSlotCount, /* idle slot diff */
-	       prLinkQualityInfo->u8HwMacAwakeDuration
+	       prLinkQualityInfo->u4HwMacAwakeDuration
 	);
 
 	return u4Status;

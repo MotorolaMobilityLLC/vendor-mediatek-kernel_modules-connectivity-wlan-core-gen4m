@@ -1891,7 +1891,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	outputData.u4RxDupCount = rLinkQualityInfo.u4RxDupCount;
 	outputData.u8RxErrCount = rLinkQualityInfo.u8RxErrCount;
 	outputData.u8IdleSlotCount = rLinkQualityInfo.u8IdleSlotCount;
-	outputData.u8HwMacAwakeDuration = rLinkQualityInfo.u8HwMacAwakeDuration;
+	outputData.u8HwMacAwakeDuration = rLinkQualityInfo.u4HwMacAwakeDuration;
 	outputData.u2FlagScanning = rLinkQualityInfo.u2FlagScanning;
 
 	DBGLOG(REQ, INFO,

@@ -1135,7 +1135,7 @@ struct WIFI_LINK_QUALITY_INFO {
 	uint64_t u8MdrdyCount;
 	uint64_t u8IdleSlotCount;	/* congestion stats: idle slot */
 	uint64_t u8DiffIdleSlotCount;
-	uint8_t u8HwMacAwakeDuration;
+	uint32_t u4HwMacAwakeDuration;
 	uint16_t u2FlagScanning;
 
 	uint32_t u4PhyMode;
@@ -1166,6 +1166,9 @@ enum ENUM_WLAN_IOT_AP_HANDLE_ACTION {
 	WLAN_IOT_AP_VOID = 0,
 	WLAN_IOT_AP_DBDC_1SS,
 	WLAN_IOT_AP_DIS_SG,
+	WLAN_IOT_AP_COEX_CTS2SELF,
+	WLAN_IOT_AP_FIX_MODE,
+	WLAN_IOT_AP_DIS_2GHT40,
 	WLAN_IOT_AP_ACT_MAX
 };
 
