@@ -3869,6 +3869,8 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 			DBGLOG_LIMITED(NIC, INFO,
 				"dropped written:%d rxByteCount:%d\n",
 				ret, prIcsAggHeader->rxByteCount);
+
+		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
 	}
 }
 #endif /* CFG_SUPPORT_ICS */
