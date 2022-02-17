@@ -59,5 +59,8 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint8_t scanCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+uint8_t scanBeaconTimeoutFilterPolicyForAis(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+u_int8_t scanApOverload(uint16_t status, uint16_t reason);
 
 #endif

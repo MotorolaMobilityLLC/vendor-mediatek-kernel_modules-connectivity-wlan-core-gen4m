@@ -585,8 +585,6 @@ void aisRemoveBlackList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter);
 struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
-uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
 /* end Support AP Selection */
 
 /* Support 11K */
@@ -598,9 +596,6 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 void aisSendNeighborRequest(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 /* end Support 11K */
-
-u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S
