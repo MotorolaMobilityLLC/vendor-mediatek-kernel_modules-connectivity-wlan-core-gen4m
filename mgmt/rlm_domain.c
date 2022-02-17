@@ -5060,7 +5060,12 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	struct ieee80211_channel *chan;
 	struct CMD_DOMAIN_CHANNEL *pCh;
 	char chan_flag_string[64] = {0};
-
+#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
+	struct GLUE_INFO *prGlueInfo;
+	bool fgDisconnection = FALSE;
+	uint8_t ucChannelNum = 0;
+	uint32_t rStatus, u4BufLen;
+#endif
 
 	if (!pWiphy) {
 		DBGLOG(RLM, ERROR, "%s():  ERROR. pWiphy = NULL.\n", __func__);
@@ -5068,7 +5073,16 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 		return;
 	}
 
-
+#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
+	/* Retrieve connected channel */
+	prGlueInfo = rlmDomainGetGlueInfo();
+	if (prGlueInfo && kalGetMediaStateIndicated(prGlueInfo) ==
+	    PARAM_MEDIA_STATE_CONNECTED) {
+		ucChannelNum =
+			wlanGetChannelNumberByNetwork(prGlueInfo->prAdapter,
+			   prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
+	}
+#endif
 	/*
 	 * Ready to parse the channel for bands
 	 */
@@ -5095,6 +5109,11 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 				    band_idx, ch_idx, chan->hw_value,
 				    chan->center_freq, chan->flags,
 				    chan_flag_string);
+#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
+				/* Disconnect AP in the end of this function*/
+				if (chan->hw_value == ucChannelNum)
+					fgDisconnection = TRUE;
+#endif
 				continue;
 			}
 
@@ -5121,6 +5140,18 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 		}
 
 	}
+#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
+	/* Disconnect with AP if connected channel is disabled in new country */
+	if (fgDisconnection) {
+		DBGLOG(RLM, STATE, "%s(): Disconnect! CH%d is DISABLED\n",
+		    __func__, ucChannelNum);
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
+				   NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(RLM, WARN, "disassociate error:%lx\n", rStatus);
+	}
+#endif
 }
 void rlmExtractChannelInfo(u32 max_ch_count,
 			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff)
