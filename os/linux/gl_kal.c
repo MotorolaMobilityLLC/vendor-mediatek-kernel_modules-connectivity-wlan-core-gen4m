@@ -4399,7 +4399,6 @@ kalGetIPv6Address(IN struct net_device *prDev,
 	UINT_32 u4NumIPv6 = 0;
 	UINT_32 u4AddrLen = IPV6_ADDR_LEN;
 	struct inet6_ifaddr *prIfa;
-	struct list_head *prAddrList;
 
 	/* 4 <1> Sanity check of netDevice */
 	if (!prDev || !(prDev->ip6_ptr)) {
@@ -4409,10 +4408,9 @@ kalGetIPv6Address(IN struct net_device *prDev,
 		return FALSE;
 	}
 
-	prAddrList = &((struct inet6_dev *)(prDev->ip6_ptr))->addr_list;
 
 	/* 4 <2> copy the IPv6 address */
-	list_for_each_entry(prIfa, prAddrList, if_list) {
+	LIST_FOR_EACH_IPV6_ADDR(prIfa, prDev->ip6_ptr) {
 		kalMemCopy(&pucIpv6Addrs[u4NumIPv6 * u4AddrLen], &prIfa->addr, u4AddrLen);
 
 		DBGLOG(INIT, INFO,
