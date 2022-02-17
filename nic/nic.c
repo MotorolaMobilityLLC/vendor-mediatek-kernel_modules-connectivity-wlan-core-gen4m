@@ -2239,15 +2239,31 @@ nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
 
 	u4Flag = prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex];
 
-	/* set send command flag */
-	if (ePowerMode != Param_PowerModeCAM) {
-		if ((u4Flag & 0x00FFFFFF) == BIT(ucCaller))
+	if (ucCaller == PS_CALLER_WOW) {
+		/* For WOW,
+		 * must switch to sleep mode for low power
+		 */
+		if (ePowerMode == Param_PowerModeCAM) {
+			u4Flag &= ~BIT(ucCaller);
+			/* WOW disable, if other callers request to CAM --> sync to FW */
+			if ((u4Flag & PS_CALLER_ACTIVE) != 0)
+				u4Flag |= PS_SYNC_WITH_FW;
+		} else {
+			/* WOW enable */
+			u4Flag |= BIT(ucCaller);
 			u4Flag |= PS_SYNC_WITH_FW;
-		u4Flag &= ~BIT(ucCaller);
+		}
 	} else {
-		if (u4Flag == 0)
-			u4Flag |= PS_SYNC_WITH_FW;
-		u4Flag |= BIT(ucCaller);
+		/* set send command flag */
+		if (ePowerMode != Param_PowerModeCAM) {
+			u4Flag &= ~BIT(ucCaller);
+			if ((u4Flag & PS_CALLER_ACTIVE) == 0)
+				u4Flag |= PS_SYNC_WITH_FW;
+		} else {
+			if ((u4Flag & PS_CALLER_ACTIVE) == 0)
+				u4Flag |= PS_SYNC_WITH_FW;
+			u4Flag |= BIT(ucCaller);
+		}
 	}
 
 	DBGLOG(NIC, INFO,

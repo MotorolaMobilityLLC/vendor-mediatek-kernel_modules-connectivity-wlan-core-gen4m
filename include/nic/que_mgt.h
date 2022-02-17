@@ -391,6 +391,10 @@ struct RX_BA_ENTRY {
 	u_int8_t fgNoDrop;
 	uint32_t u4SNOverlapCount;
 #endif
+#if CFG_WOW_SUPPORT
+	u_int8_t fgFirstSnToWinStart;
+#endif
+
 };
 
 typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter,

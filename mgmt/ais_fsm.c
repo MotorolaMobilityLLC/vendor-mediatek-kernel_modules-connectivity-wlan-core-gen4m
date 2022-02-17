@@ -1772,6 +1772,14 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prAisFsmInfo->u4SleepInterval =
 			    AIS_BG_SCAN_INTERVAL_MIN_SEC;
 
+#if (CFG_WOW_SUPPORT == 1)
+			if (prAdapter->fgWowLinkDownPendFlag == TRUE) {
+				prAdapter->fgWowLinkDownPendFlag = FALSE;
+				kalOidComplete(prAdapter->prGlueInfo,
+					NULL, 0, WLAN_STATUS_SUCCESS);
+			}
+#endif
+
 			break;
 
 		case AIS_STATE_SEARCH:
@@ -7398,4 +7406,106 @@ u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prBlacklistItem);
 	}
 	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Trigger when cfg80211_suspend
+ *                1. cancel scan and report scan done event
+ *                2. linkdown if wow is disable (not yet)
+ *
+ * @param prAdapter
+ *        eReqType
+ *        bRemove
+ *
+ * @return TRUE
+ *         FALSE
+ */
+/*----------------------------------------------------------------------------*/
+void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prAisBssInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct SCAN_INFO *prScanInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prMsgChnlAbort;
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL)
+		return;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (prGlueInfo == NULL)
+		return;
+
+	/* report scan abort */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prGlueInfo->prScanRequest) {
+		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
+		prGlueInfo->prScanRequest = NULL;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	/* cancel scan */
+	aisFsmStateAbort_SCAN(prAdapter,
+		prScanInfo->rScanParam.ucBssIndex);
+
+#if CFG_WOW_SUPPORT
+	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d, state:%d\n",
+		prAdapter->rWifiVar.ucWow,
+		prAdapter->rWowCtrl.fgWowEnable,
+		kalGetMediaStateIndicated(prGlueInfo, AIS_DEFAULT_INDEX));
+
+	/* 1) wifi cfg "Wow" must be true,
+	 * 2) wow is disable
+	 * 3) AdvPws is disable
+	 * 4) WIfI connected => execute link down flow
+	 */
+	/* link down AIS */
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+
+	if (!prAisBssInfo)
+		return;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->ucWow) &&
+		IS_FEATURE_DISABLED(prAdapter->rWowCtrl.fgWowEnable) &&
+		IS_FEATURE_DISABLED(prWifiVar->ucAdvPws))
+	{
+		/* wow off, link down */
+		DBGLOG(REQ, STATE, "CFG80211 suspend link down\n");
+		aisBssLinkDown(prAdapter, prAisBssInfo->ucBssIndex);
+		return;
+	}
+
+	/* WOW keep connection case: check AIS state.
+	 * must switch backt to working channel for Rx WOW packets in suspend mode.
+	 * Off-channel Tx from wpa_suppicant may be sent after resume.
+	 */
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+		prAisBssInfo->ucBssIndex);
+
+	if ((prAisFsmInfo->eCurrentState == AIS_STATE_REMAIN_ON_CHANNEL) ||
+		(prAisFsmInfo->eCurrentState ==
+		 AIS_STATE_REQ_REMAIN_ON_CHANNEL)) {
+		prMsgChnlAbort =
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_CANCEL_REMAIN_ON_CHANNEL));
+		if (prMsgChnlAbort == NULL)
+			DBGLOG(REQ, ERROR, "ChnlAbort Msg allocate fail!\n");
+		else {
+			prMsgChnlAbort->rMsgHdr.eMsgId =
+				MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL;
+			prMsgChnlAbort->u8Cookie =
+				prAisFsmInfo->rChReqInfo.u8Cookie;
+
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prMsgChnlAbort,
+				MSG_SEND_METHOD_BUF);
+		}
+	}
+#endif
 }

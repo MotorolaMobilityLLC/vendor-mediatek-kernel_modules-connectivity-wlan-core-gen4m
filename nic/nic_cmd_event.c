@@ -4391,6 +4391,37 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 			       0, WLAN_STATUS_FAILURE);
 }
 #endif
+#if (CFG_WOW_SUPPORT == 1)
+void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_WOW_WAKEUP_REASON_INFO *prWakeUpReason;
+	struct GLUE_INFO *prGlueInfo;
+
+	DBGLOG(NIC, INFO, "nicEventWakeUpReason\n");
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	/* Driver receives EVENT_ID_WOW_WAKEUP_REASON after fw wake up host
+	 * The possible Wakeup Reason define in FW as following:
+	 * (Orignal design re-use _ENUM_PF_TYPE_T in firmware
+	 *    --> keep the value the same as 7668/7663.)
+	 * 0:  MAGIC PACKET
+	 * 3:  GTK_REKEY
+	 * 8:  DISCONNECT
+	 * 9:  IPV4_UDP PACKET
+	 * 10: IPV4_TCP PACKET
+	 * 11: IPV6_UDP PACKET
+	 * 12: IPV6_TCP PACKET
+	 * 13: BEACON LOST
+	 * 14: IPV6_ICMP PACKET
+	 */
+	prWakeUpReason =
+		(struct EVENT_WOW_WAKEUP_REASON_INFO *) (prEvent->aucBuffer);
+	prGlueInfo->prAdapter->rWowCtrl.ucReason = prWakeUpReason->reason;
+	DBGLOG(NIC, INFO, "nicEventWakeUpReason:%d\n",
+		prGlueInfo->prAdapter->rWowCtrl.ucReason);
+}
+#endif
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/

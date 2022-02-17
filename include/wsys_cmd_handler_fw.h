@@ -473,6 +473,9 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_RDD_REPORT = 0x60,
 	EVENT_ID_CSA_DONE = 0x61,
 
+#if (CFG_WOW_SUPPORT == 1)
+	EVENT_ID_WOW_WAKEUP_REASON = 0x62,
+#endif
 	EVENT_ID_OPMODE_CHANGE = 0x63,
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	EVENT_ID_LTE_IDC_REPORT = 0x64,
@@ -2073,6 +2076,24 @@ struct CMD_SET_FORCE_RTS {
 	uint8_t aucReserved[2];
 };
 
+#if (CFG_WOW_SUPPORT == 1)
+/* event of wake up reason */
+struct EVENT_WOW_WAKEUP_REASON_INFO {
+	uint8_t reason;
+	/*
+	 * 0:  MAGIC PACKET
+	 * 3:  GTK_REKEY
+	 * 8:  DISCONNECT
+	 * 9:  IPV4_UDP PACKET
+	 * 10: IPV4_TCP PACKET
+	 * 11: IPV6_UDP PACKET
+	 * 12: IPV6_TCP PACKET
+	 * 13: BEACON LOST
+	 * 14: IPV6_ICMP PACKET
+	 */
+
+	uint8_t aucReserved[3];
+};
+#endif
+
 #endif /* _WSYS_CMD_HANDLER_FW_H */
-
-
