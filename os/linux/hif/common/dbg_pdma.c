@@ -121,7 +121,7 @@ struct wfdma_ring_info {
  */
 static void halCheckHifState(struct ADAPTER *prAdapter);
 static void halDumpHifDebugLog(struct ADAPTER *prAdapter);
-static bool halIsTxHang(struct ADAPTER *prAdapter);
+static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -155,12 +155,16 @@ static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
 	return (u4Val == DBG_PLE_INT_FW_READY) || (u4Val == 0);
 }
 
-static void halDumpTxHangLog(struct ADAPTER *prAdapter)
+static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 {
 	struct CHIP_DBG_OPS *prDbgOps;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	struct MSDU_TOKEN_ENTRY *prToken;
 	uint32_t u4DebugLevel = 0, u4Val = 0;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
+	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	prToken = &prTokenInfo->arToken[u4TokenId];
 	wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
 
 	/* check fw is dumping log */
@@ -196,18 +200,25 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter)
 
 		/* trigger tx debug sop */
 		prDbgOps->setFwDebug(
-			prAdapter, true, 0xffff, DBG_PLE_INT_TX_MASK);
+			prAdapter,
+			true,
+			0xffff,
+			DBG_PLE_INT_TX_MASK |
+			(1 << DBG_PLE_INT_VER_SHIFT) |
+			(prToken->ucBssIndex << DBG_PLE_INT_BAND_BSS_SHIFT)
+			);
 	}
 }
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t u4TokenId = 0;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
-		if (halIsTxHang(prAdapter)) {
+		if (halIsTxHang(prAdapter, &u4TokenId)) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
 
@@ -223,7 +234,7 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			if (prDbgOps && prDbgOps->showDmaschInfo)
 				prDbgOps->showDmaschInfo(prAdapter);
 
-			halDumpTxHangLog(prAdapter);
+			halDumpTxHangLog(prAdapter, u4TokenId);
 		}
 	}
 
@@ -478,7 +489,7 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
  * @retval true          tx is hang because msdu report too long
  */
 /*----------------------------------------------------------------------------*/
-static bool halIsTxHang(struct ADAPTER *prAdapter)
+static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
@@ -546,6 +557,8 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 	} else {
 		kalMemZero(prHistory, sizeof(struct MSDU_TOKEN_HISTORY_INFO));
 	}
+
+	*u4Token = u4TokenId;
 
 	return fgIsTimeout;
 }
