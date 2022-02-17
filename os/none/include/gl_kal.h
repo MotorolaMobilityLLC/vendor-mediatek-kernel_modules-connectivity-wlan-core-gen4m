@@ -1611,34 +1611,10 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
 /* file opetation                                                             */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalWriteToFile(_pucPath, _fgDoAppend, _pucData, _u4Size) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kalCheckPath(_pucPath) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kalTrunkPath(_pucPath) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kalReadToFile(_pucPath, _pucData, _u4Size, _pu4ReadSize) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 /* used only under os folder */
 #define kalRequestFirmware(_pucPath, _pucData, _u4Size, _pu4ReadSize, _dev) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-uint32_t kalWriteToFile(const uint8_t *pucPath,
-			u_int8_t fgDoAppend,
-			uint8_t *pucData, uint32_t u4Size);
-
-uint32_t kalCheckPath(const uint8_t *pucPath);
-
-uint32_t kalTrunkPath(const uint8_t *pucPath);
-
-int32_t kalReadToFile(const uint8_t *pucPath,
-		      uint8_t *pucData,
-		      uint32_t u4Size, uint32_t *pu4ReadSize);
-
 /* used only under os folder */
 int32_t kalRequestFirmware(const uint8_t *pucPath,
 			   uint8_t *pucData,
@@ -1728,28 +1704,6 @@ void *kalGetStats(IN struct net_device *prDev);
 void kalResetPacket(IN struct GLUE_INFO *prGlueInfo,
 		    IN void *prPacket);
 
-#if CFG_SUPPORT_QA_TOOL
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalFileOpen(_path, _flags, _rights) \
-((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__))
-
-#define kalFileClose(_file) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kalFileRead(_file, _offset, _data, _size) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#else
-struct file *kalFileOpen(const char *path, int flags,
-			 int rights);
-
-void kalFileClose(struct file *file);
-
-uint32_t kalFileRead(struct file *file,
-		     unsigned long long offset,
-		     unsigned char *data, unsigned int size);
-#endif
-#endif
-
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 /*----------------------------------------------------------------------------*/
 /* SDIO Read/Write Pattern Support                                            */
@@ -1783,24 +1737,6 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
 			 u_int8_t fgDriverTriggerd);
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
-#endif
-
-#if CFG_ASSERT_DUMP
-#ifdef CFG_REMIND_IMPLEMENT
-#define kalOpenCorDumpFile(_fgIsN9) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalWriteCorDumpFile(_pucBuffer, _u2Size, _fgIsN9) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define kalCloseCorDumpFile(_fgIsN9) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#else
-/* Core Dump out put file */
-uint32_t kalOpenCorDumpFile(u_int8_t fgIsN9);
-uint32_t kalWriteCorDumpFile(uint8_t *pucBuffer,
-			     uint16_t u2Size,
-			     u_int8_t fgIsN9);
-uint32_t kalCloseCorDumpFile(u_int8_t fgIsN9);
-#endif
 #endif
 /*******************************************************************************
  *                              F U N C T I O N S

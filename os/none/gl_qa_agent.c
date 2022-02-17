@@ -148,9 +148,3 @@ int32_t mt6632GetICapStatus(struct GLUE_INFO *prGlueInfo)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
-
-int32_t commonGetICapIQData(struct GLUE_INFO *prGlueInfo,
-	uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
