@@ -7472,10 +7472,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	uint32_t u4Idx = 0;
 	uint8_t	i =	0;
 	bool keep_alive = FALSE;
-#if CFG_SUPPORT_PERF_IND
-	uint32_t u4CurrentTp = 0;
-	u_int8_t a;
-#endif
+
 	signed long latestTxBytes[BSS_DEFAULT_NUM],
 		latestRxBytes[BSS_DEFAULT_NUM],
 		txDiffBytes[BSS_DEFAULT_NUM],
@@ -7495,13 +7492,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_PERF_IND == 1)
 	if (prWifiVar->fgPerfIndicatorEn)
 		kalSetPerfReport(prAdapter);
-	for (a = 0; a < BSS_DEFAULT_NUM; a++) {
-		u4CurrentTp +=
-			(prAdapter->prGlueInfo->
-			PerfIndCache.u4CurTxBytes[a] +
-			prAdapter->prGlueInfo->
-			PerfIndCache.u4CurRxBytes[a]);
-	}
+
 	kalPerfIndReset(prAdapter);
 #endif
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
@@ -7623,9 +7614,6 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	}
 
 	if (!wlan_perf_monitor_force_enable &&
-#if (CFG_SUPPORT_PERF_IND == 1)
-			!prWifiVar->fgPerfIndicatorEn &&
-#endif
 			(wlan_fb_power_down ||
 			prGlueInfo->fgIsInSuspendMode ||
 			!keep_alive))
@@ -7672,20 +7660,11 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 		prPerMonitor->u4UpdatePeriod =
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
-#if CFG_SUPPORT_PERF_IND
-		/* Only routine start timer when Tput exist*/
-		if (u4CurrentTp > PERF_MON_TP_CONDITION)
-			cnmTimerStartTimer(prGlueInfo->prAdapter,
-					&prPerMonitor->rPerfMonTimer,
-					prPerMonitor->u4UpdatePeriod);
-		else
-			KAL_CLR_BIT(PERF_MON_RUNNING_BIT,
-				prPerMonitor->ulPerfMonFlag);
-#else
+
 		cnmTimerStartTimer(prGlueInfo->prAdapter,
 				&prPerMonitor->rPerfMonTimer,
 				prPerMonitor->u4UpdatePeriod);
-#endif
+
 	}
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
