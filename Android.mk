@@ -160,6 +160,20 @@ LOCAL_POST_INSTALL_CMD := $(hide)$(TARGET_STRIP) --strip-unneeded $(LOCAL_MODULE
 
 include $(BUILD_SYSTEM)/base_rules.mk
 
+
+ifeq ($(MTK_WLAN_UT_TEST_MODE), yes)
+LOCAL_SRC_UT_FILES := $(shell find $(LOCAL_PATH)_ut/ -type f -name '*')
+LOCAL_DST_UT_FILES := $(patsubst $(LOCAL_PATH)_ut/%,$(intermediates)/LINKED/%,$(LOCAL_SRC_UT_FILES))
+$(LOCAL_DST_UT_FILES): $(intermediates)/LINKED/% : $(LOCAL_PATH)_ut/%
+	$(copy-file-to-target)
+
+$(linked_module): $(LOCAL_DST_UT_FILES)
+
+WIFI_HIF := ut
+WIFI_CHIP := UT_TEST_MODE
+endif
+
+
 WIFI_NAME := wlan_drv_gen4m
 WIFI_OPTS := CONFIG_MTK_COMBO_WIFI_HIF=$(WIFI_HIF) MODULE_NAME=$(WIFI_NAME) MTK_COMBO_CHIP=$(WIFI_CHIP) MTK_ANDROID_WMT=$(WIFI_WMT) MTK_ANDROID_EMI=$(WIFI_EMI) WIFI_ENABLE_GCOV=$(WIFI_ENABLE_GCOV) MTK_ANDROID_EMI=y
 
