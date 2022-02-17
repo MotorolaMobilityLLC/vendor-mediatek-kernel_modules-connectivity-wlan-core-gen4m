@@ -173,6 +173,18 @@ void mltwtReqFsmRunEventStartAllLinks(
 void mltwtReqFsmRunEventStart(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
+
+void mltwtReqFsmRunEventRxSetup(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE,
+	uint16_t u2IELength);
+
+void mltwtReqFsmSync(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum _ENUM_TWT_REQUESTER_STATE_T eNextState,
+	u_int8_t ucTWTFlowId);
 #endif
 /*******************************************************************************
 *                              F U N C T I O N S
