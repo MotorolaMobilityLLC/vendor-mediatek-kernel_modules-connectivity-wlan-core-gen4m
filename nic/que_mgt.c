@@ -7940,18 +7940,13 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 						sizeof(gatewayIp));
 				return;
 			} else if (prBootp->aucOptions[i + 6] == 0x05) {
-				struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 				uint8_t ucBssIndex =
 					secGetBssIdxByRfb(
 					prAdapter, prSwRfb);
-				prAisFsmInfo =
-					aisGetAisFsmInfo(prAdapter,
-					ucBssIndex);
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
 				qmReleaseCHAtFinishedDhcp(prAdapter,
-					&prAisFsmInfo->rJoinTimeoutTimer,
 					ucBssIndex);
 			}
 			dhcpTypeGot = 1;
@@ -8350,13 +8345,31 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 }
 
 void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
-	struct TIMER *prTimer, uint8_t ucBssIndex)
+			uint8_t ucBssIndex)
 {
-	if (!timerPendingTimer(prTimer)) {
-		DBGLOG(QM, ERROR, "No channel occupation\n");
-	} else {
-		DBGLOG(QM, INFO, "Dhcp done, stop join timer.\n");
-		cnmTimerStopTimer(prAdapter, prTimer);
-		aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
+	struct BSS_INFO *prBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *) NULL;
+
+	if (prAdapter == NULL)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prBssInfo == NULL)
+		return;
+
+	if (IS_BSS_AIS(prBssInfo)) { /* STA */
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			DBGLOG(QM, ERROR, "No channel occupation\n");
+		} else {
+			DBGLOG(QM, INFO, "Dhcp done, stop join timer.\n");
+			cnmTimerStopTimer(prAdapter,
+				&prAisFsmInfo->rJoinTimeoutTimer);
+			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
+		}
+	} else if (IS_BSS_P2P(prBssInfo)) { /* GC */
+		DBGLOG(QM, INFO, "Dhcp done, stop GC join timer\n");
+		p2pRoleFsmNotifyDhcpDone(prAdapter, ucBssIndex);
 	}
 }

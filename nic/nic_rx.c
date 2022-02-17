@@ -1864,11 +1864,16 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 					if (prStaRec &&
 						IS_STA_IN_AIS(prStaRec)) {
 #if ARP_MONITER_ENABLE
-						qmHandleRxArpPackets(prAdapter,
-							prRetSwRfb);
-						qmHandleRxDhcpPackets(prAdapter,
+						qmHandleRxArpPackets(
+							prAdapter,
 							prRetSwRfb);
 #endif
+					}
+
+					if (prStaRec) { /* STA or GC */
+						qmHandleRxDhcpPackets(
+							prAdapter,
+							prRetSwRfb);
 					}
 #if CFG_SUPPORT_WIFI_SYSDVT
 #if (CFG_SUPPORT_CONNAC2X == 1)
