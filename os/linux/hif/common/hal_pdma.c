@@ -223,7 +223,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 	OUT uint32_t *pu4Length)
 {
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4PktLen = 0, u4Value = 0, u4Time;
+	uint32_t u4PktLen = 0, u4Time;
 	u_int8_t fgStatus;
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -260,10 +260,14 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 		}
 
 		if (halIsTimeout(u4Time, RX_RESPONSE_TIMEOUT)) {
+#if (CFG_SUPPORT_CONNAC2X == 0)
+			uint32_t u4Value = 0;
+
 			kalDevRegRead(prGlueInfo, CONN_HIF_ON_DBGCR01,
 				      &u4Value);
 			DBGLOG(HAL, ERROR, "CONN_HIF_ON_DBGCR01[0x%x]\n",
 			       u4Value);
+#endif
 			return WLAN_STATUS_FAILURE;
 		}
 

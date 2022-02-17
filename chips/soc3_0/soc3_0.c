@@ -291,7 +291,7 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
-struct wfdma_group_info wfmda_host_tx_group[] = {
+struct wfdma_group_info soc3_0_wfmda_host_tx_group[] = {
 	{"P1T0:AP DATA0", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
 	{"P1T1:AP DATA1", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
 	{"P1T16:FWDL", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING16_CTRL0_ADDR},
@@ -300,7 +300,7 @@ struct wfdma_group_info wfmda_host_tx_group[] = {
 	{"P1T18:MD CMD", WF_WFDMA_HOST_DMA1_WPDMA_TX_RING18_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_host_rx_group[] = {
+struct wfdma_group_info soc3_0_wfmda_host_rx_group[] = {
 	{"P0R0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
 	{"P0R1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"P0R2:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
@@ -313,13 +313,13 @@ struct wfdma_group_info wfmda_host_rx_group[] = {
 	{"P1R1:MD EVENT", WF_WFDMA_HOST_DMA1_WPDMA_RX_RING1_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_wm_tx_group[] = {
+struct wfdma_group_info soc3_0_wfmda_wm_tx_group[] = {
 	{"P0T0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
 	{"P1T0:AP EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING0_CTRL0_ADDR},
 	{"P1T1:MD EVENT", WF_WFDMA_MCU_DMA1_WPDMA_TX_RING1_CTRL0_ADDR},
 };
 
-struct wfdma_group_info wfmda_wm_rx_group[] = {
+struct wfdma_group_info soc3_0_wfmda_wm_rx_group[] = {
 	{"P0R0:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
 	{"P0R1:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 	{"P1R0:FWDL", WF_WFDMA_MCU_DMA1_WPDMA_RX_RING0_CTRL0_ADDR},
@@ -819,14 +819,15 @@ struct BUS_INFO soc3_0_bus_info = {
 	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
 #endif
 	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
-	.wfmda_host_tx_group = wfmda_host_tx_group,
-	.wfmda_host_tx_group_len = ARRAY_SIZE(wfmda_host_tx_group),
-	.wfmda_host_rx_group = wfmda_host_rx_group,
-	.wfmda_host_rx_group_len = ARRAY_SIZE(wfmda_host_rx_group),
-	.wfmda_wm_tx_group = wfmda_wm_tx_group,
-	.wfmda_wm_tx_group_len = ARRAY_SIZE(wfmda_wm_tx_group),
-	.wfmda_wm_rx_group = wfmda_wm_rx_group,
-	.wfmda_wm_rx_group_len = ARRAY_SIZE(wfmda_wm_rx_group),
+	.wfmda_host_tx_group = soc3_0_wfmda_host_tx_group,
+	.wfmda_host_tx_group_len = ARRAY_SIZE(soc3_0_wfmda_host_tx_group),
+	.wfmda_host_rx_group = soc3_0_wfmda_host_rx_group,
+	.wfmda_host_rx_group_len = ARRAY_SIZE(soc3_0_wfmda_host_rx_group),
+	.wfmda_wm_tx_group = soc3_0_wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(soc3_0_wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = soc3_0_wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(soc3_0_wfmda_wm_rx_group),
+	.prDmashdlCfg = &rMT6885DmashdlCfg,
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -925,7 +926,7 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
-	.showDmaschInfo = soc3_0_show_dmashdl_info,
+	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.dumpMacInfo = soc3_0_dump_mac_info,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
@@ -1006,7 +1007,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
-	.dumpwfsyscpupcr = soc3_0_DumpWfsyscpupcr,
+	.dumpwfsyscpupcr = connac2x_DumpWfsyscpupcr,
 
 	.coantSetWiFi = wlanCoAntWiFi,
 	.coantSetMD = wlanCoAntMD,
@@ -1054,15 +1055,19 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
 
-		kalSnprintf(log_buf_pc[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
-					log_sec,
-					log_nsec,
-					var_pc);
+		kalSnprintf(log_buf_pc[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_pc);
 
-		kalSnprintf(log_buf_lp[i], CPUPCR_BUF_SZ, "%llu.%06llu/0x%08x;",
-					log_sec,
-					log_nsec,
-					var_lp);
+		kalSnprintf(log_buf_lp[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_lp);
 	}
 
 	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",

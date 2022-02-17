@@ -225,6 +225,71 @@ enum ENUM_DBG_ASSERT_PATH {
 struct wfdma_group_info {
 	char name[20];
 	u_int32_t hw_desc_base;
+	bool dump_ring_content;
+
+	uint32_t cnt;
+	uint32_t cidx;
+	uint32_t didx;
+};
+
+struct CODA_CR_INFO {
+	uint32_t u4Addr;
+	uint32_t u4Mask;
+	uint32_t u4Shift;
+};
+
+enum ENUM_MT6885_DMASHDL_GROUP_IDX {
+	ENUM_DMASHDL_GROUP_0 = 0,
+	ENUM_DMASHDL_GROUP_1,
+	ENUM_DMASHDL_GROUP_2,
+	ENUM_DMASHDL_GROUP_3,
+	ENUM_DMASHDL_GROUP_4,
+	ENUM_DMASHDL_GROUP_5,
+	ENUM_DMASHDL_GROUP_6,
+	ENUM_DMASHDL_GROUP_7,
+	ENUM_DMASHDL_GROUP_8,
+	ENUM_DMASHDL_GROUP_9,
+	ENUM_DMASHDL_GROUP_10,
+	ENUM_DMASHDL_GROUP_11,
+	ENUM_DMASHDL_GROUP_12,
+	ENUM_DMASHDL_GROUP_13,
+	ENUM_DMASHDL_GROUP_14,
+	ENUM_DMASHDL_GROUP_15,
+	ENUM_DMASHDL_GROUP_NUM
+};
+
+struct DMASHDL_CFG {
+	u_int8_t fgSlotArbiterEn;
+	uint16_t u2PktPleMaxPage;
+	uint16_t u2PktPseMaxPage;
+	u_int8_t afgRefillEn[ENUM_DMASHDL_GROUP_NUM];
+	uint16_t au2MaxQuota[ENUM_DMASHDL_GROUP_NUM];
+	uint16_t au2MinQuota[ENUM_DMASHDL_GROUP_NUM];
+	uint8_t aucQueue2Group[ENUM_DMASHDL_GROUP_NUM * 2];
+	uint8_t aucPriority2Group[ENUM_DMASHDL_GROUP_NUM];
+	uint16_t u2HifAckCntTh;
+	uint16_t u2HifGupActMap;
+	uint32_t u4GroupNum;
+
+	struct CODA_CR_INFO rPlePacketMaxSize;
+	struct CODA_CR_INFO rPsePacketMaxSize;
+	struct CODA_CR_INFO rGroup0RefillDisable;
+	struct CODA_CR_INFO rGroup0ControlMaxQuota;
+	struct CODA_CR_INFO rGroup0ControlMinQuota;
+	struct CODA_CR_INFO rQueueMapping0Queue0;
+	struct CODA_CR_INFO rGroup0MaxQuota;
+	struct CODA_CR_INFO rPageSettingGroupSeqOrderType;
+	struct CODA_CR_INFO rSchdulerSetting0Priority0Group;
+	struct CODA_CR_INFO rStatusRdGp0RsvCnt;
+	struct CODA_CR_INFO rStatusRdGp0SrcCnt;
+	struct CODA_CR_INFO rRdGroupPktCnt0;
+	struct CODA_CR_INFO rOptionalControlCrHifAckCntTh;
+	struct CODA_CR_INFO rOptionalControlCrHifGupActMap;
+	struct CODA_CR_INFO rErrorFlagCtrl;
+	struct CODA_CR_INFO rStatusRdFfaCnt;
+	struct CODA_CR_INFO rStatusRdFreePageCnt;
+	struct CODA_CR_INFO rHifPgInfoHifRsvCnt;
+	struct CODA_CR_INFO rHifPgInfoHifSrcCnt;
 };
 
 enum _ENUM_WFDMA_TYPE_T {
@@ -632,6 +697,9 @@ void connac2x_show_wfdma_ring_info(
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 
 void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
+
+void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

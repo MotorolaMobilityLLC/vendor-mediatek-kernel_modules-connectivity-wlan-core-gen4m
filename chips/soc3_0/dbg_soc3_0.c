@@ -1306,19 +1306,19 @@ void soc3_0_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO, "DMASHDL info:\n");
 
-	mt6885HalDmashdlGetRefill(prAdapter);
-	mt6885HalDmashdlGetPktMaxPage(prAdapter);
+	asicConnac2xDmashdlGetRefill(prAdapter);
+	asicConnac2xDmashdlGetPktMaxPage(prAdapter);
 
 	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, &value);
 	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
 		WF_HIF_DMASHDL_TOP_ERROR_FLAG_CTRL_ADDR, value);
 
-	for (idx = 0; idx < ENUM_MT6885_DMASHDL_GROUP_2; idx++) {
+	for (idx = 0; idx < ENUM_DMASHDL_GROUP_2; idx++) {
 		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
-		mt6885HalDmashdlGetGroupControl(prAdapter, idx);
-		rsv_cnt = mt6885HalDmashdlGetRsvCount(prAdapter, idx);
-		src_cnt = mt6885HalDmashdlGetSrcCount(prAdapter, idx);
-		mt6885HalDmashdlGetPKTCount(prAdapter, idx);
+		asicConnac2xDmashdlGetGroupControl(prAdapter, idx);
+		rsv_cnt = asicConnac2xDmashdlGetRsvCount(prAdapter, idx);
+		src_cnt = asicConnac2xDmashdlGetSrcCount(prAdapter, idx);
+		asicConnac2xDmashdlGetPKTCount(prAdapter, idx);
 		total_src_cnt += src_cnt;
 		total_rsv_cnt += rsv_cnt;
 	}
