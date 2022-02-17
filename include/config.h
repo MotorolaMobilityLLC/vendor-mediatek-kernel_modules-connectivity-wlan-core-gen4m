@@ -902,8 +902,10 @@
 
 #if BUILD_QA_DBG
 #define CFG_SHOW_FULL_MACADDR     1
+#define CFG_SHOW_FULL_IPADDR			1
 #else
 #define CFG_SHOW_FULL_MACADDR     0
+#define CFG_SHOW_FULL_IPADDR			0
 #endif
 
 #ifndef CFG_SUPPORT_VO_ENTERPRISE

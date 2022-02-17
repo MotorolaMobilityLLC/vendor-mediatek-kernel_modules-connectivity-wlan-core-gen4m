@@ -554,11 +554,16 @@ enum WAKE_DATA_TYPE {
 #define MAC2STR(a)   ((uint8_t *)a)[0], ((uint8_t *)a)[1], ((uint8_t *)a)[5]
 #endif
 #define PMKSTR "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%03x%02x%02x"
+#if CFG_SHOW_FULL_IPADDR
 /* Debug print format string for the IPv4 Address */
 #define IPV4STR		"%pI4"
 /* Debug print argument for the IPv4 Address */
 #define IPV4TOSTR(a)	a
 /* Debug print format string for the IPv6 Address */
+#else
+#define IPV4STR		"%d.***.***.%d"
+#define IPV4TOSTR(a)    ((uint8_t *)a)[0], ((uint8_t *)a)[3]
+#endif
 #define IPV6STR		"%pI6"
 /* Debug print argument for the IPv6 Address */
 #define IPV6TOSTR(a)	a
