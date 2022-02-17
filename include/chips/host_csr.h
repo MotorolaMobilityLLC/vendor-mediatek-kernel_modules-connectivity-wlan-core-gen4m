@@ -71,4 +71,13 @@
 #define HOST_CSR_AP2CONN_AHB_HADDR	(HOST_CSR_DRIVER_OWN_INFO + 0x4C)
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+/* Modem LP control */
+#define HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR (HOST_CSR_DRIVER_OWN_INFO + 0x30)
+/* Modem interrupt enable */
+#define HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR (HOST_CSR_DRIVER_OWN_INFO + 0x34)
+/* Modem interrupt status */
+#define HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR (HOST_CSR_DRIVER_OWN_INFO + 0x38)
+#endif
+
 #endif /* __HOST_CSR_H__ */
