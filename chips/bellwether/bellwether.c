@@ -262,9 +262,12 @@ struct BUS_INFO bellwether_bus_info = {
 	.host_int_status_addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR,
 
 	.host_int_txdone_bits =
-	(WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_0_MASK |
+	(
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_0_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_1_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_2_MASK |
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_17_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_subsys_int_sts_MASK |
@@ -698,11 +701,15 @@ static void bellwetherReadIntStatus(struct ADAPTER *prAdapter,
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
 	}
 
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+	prHifInfo->u4IntStatus = u4WrValue;
+#else
 	prHifInfo->u4IntStatus = u4RegValue;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4WrValue);
+		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
 }
 
 static void bellwetherConfigIntMask(struct GLUE_INFO *prGlueInfo,
@@ -722,9 +729,11 @@ static void bellwetherConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		IntMask.field_conn3x.wfdma0_rx_done_7 = 1;
 		IntMask.field_conn3x.wfdma0_rx_done_8 = 1;
 		IntMask.field_conn3x.wfdma0_rx_done_9 = 1;
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 		IntMask.field_conn3x.wfdma0_tx_done_0 = 1;
 		IntMask.field_conn3x.wfdma0_tx_done_1 = 1;
 		IntMask.field_conn3x.wfdma0_tx_done_2 = 1;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 		IntMask.field_conn3x.wfdma0_tx_done_17 = 1;
 		IntMask.field_conn3x.wfdma0_tx_done_16 = 1;
 		IntMask.field_conn3x.wfdma0_mcu2host_sw_int_en = 1;
