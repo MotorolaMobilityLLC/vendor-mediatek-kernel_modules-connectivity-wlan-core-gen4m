@@ -109,6 +109,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_INDICATE_PM_BSS_CONNECTED] = nicUniCmdPmEnable,
 	[CMD_ID_UPDATE_BEACON_CONTENT] = nicUniCmdBcnContent,
 	[CMD_ID_SET_BSS_INFO] = nicUniCmdSetBssInfo,
+	[CMD_ID_SET_WMM_PS_TEST_PARMS] = nicUniCmdSetWmmPsTestParams,
 	[CMD_ID_UPDATE_STA_RECORD] = nicUniCmdUpdateStaRec,
 	[CMD_ID_CH_PRIVILEGE] = nicUniCmdChPrivilege,
 	[CMD_ID_GET_CNM] = nicUniCmdCnmGetInfo,
@@ -2320,6 +2321,49 @@ uint32_t nicUniCmdPowerSaveMode(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_POWER_SAVE;
 	tag->u2Length = sizeof(*tag);
 	tag->ucPsProfile = cmd->ucPsProfile;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetWmmPsTestParams(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_WMM_PS_TEST_STRUCT *cmd;
+	struct UNI_CMD_BSSINFO *uni_cmd;
+	struct UNI_CMD_BSSINFO_UAPSD *uapsd;
+	struct UNI_CMD_BSSINFO_WMM_PS_TEST *wmm;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
+			       sizeof(struct UNI_CMD_BSSINFO_UAPSD);
+	     		       sizeof(struct UNI_CMD_BSSINFO_WMM_PS_TEST);
+
+	if (info->ucCID != CMD_ID_SET_WMM_PS_TEST_PARMS ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_WMM_PS_TEST_STRUCT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
+			max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_BSSINFO *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
+
+	uapsd = (struct UNI_CMD_BSSINFO_UAPSD *) uni_cmd->aucTlvBuffer;
+	uapsd->u2Tag = UNI_CMD_BSSINFO_TAG_UAPSD;
+	uapsd->u2Length = sizeof(*uapsd);
+	uapsd->ucBmpDeliveryAC = (cmd->bmfgApsdEnAc & BITS(4, 7)) >> 4;
+	uapsd->ucBmpTriggerAC = cmd->bmfgApsdEnAc & BITS(0, 3);
+
+	wmm = (struct UNI_CMD_BSSINFO_WMM_PS_TEST *)
+		(uni_cmd->aucTlvBuffer + sizeof(*uapsd));
+	wmm->u2Tag = UNI_CMD_BSSINFO_TAG_WMM_PS_TEST;
+	wmm->u2Length = sizeof(*wmm);
+	wmm->ucIsEnterPsAtOnce = cmd->ucIsEnterPsAtOnce;
+	wmm->ucIsDisableUcTrigger = cmd->ucIsDisableUcTrigger;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
