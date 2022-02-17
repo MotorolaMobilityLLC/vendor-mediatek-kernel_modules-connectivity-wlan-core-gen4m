@@ -553,7 +553,6 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	u_int8_t fgResult;
 
 	ASSERT(prAdapter);
-	ASSERT(prAdapter->u4PwrCtrlBlockCnt != 0);
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 
