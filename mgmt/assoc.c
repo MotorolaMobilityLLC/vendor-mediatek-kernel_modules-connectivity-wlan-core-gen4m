@@ -772,7 +772,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_RESOURCES;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	beGenerateAssocMldIE(prAdapter, prStaRec, prMsduInfo,
+	mldGenerateAssocIE(prAdapter, prStaRec, prMsduInfo,
 		assocComposeReAssocReqFrame);
 #endif
 
@@ -1068,7 +1068,7 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
 		DBGLOG(SAA, WARN, "Discard Assoc frame with wrong ML IE\n");
 		return WLAN_STATUS_FAILURE;
@@ -1466,7 +1466,7 @@ uint32_t assocProcessRxAssocReqFrame(
 		return WLAN_STATUS_FAILURE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!beSanityCheckMld(prAdapter, prAssocReqSwRfb->pvHeader,
+	if (!mldSanityCheck(prAdapter, prAssocReqSwRfb->pvHeader,
 		prAssocReqSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
 		DBGLOG(AAA, WARN, "Discard Assoc frame with wrong ML IE\n");
 		return WLAN_STATUS_FAILURE;
@@ -1495,7 +1495,7 @@ uint32_t assocProcessRxAssocReqFrame(
 						starec,
 						pu2StatusCode);
 			} else {
-				prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+				prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
 					prAssocReqSwRfb, starec);
 				if (!prSwRfb)
 					return WLAN_STATUS_RESOURCES;
@@ -2189,7 +2189,7 @@ uint32_t assocSendReAssocRespFrame(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_RESOURCES;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	beGenerateAssocMldIE(prAdapter, prStaRec, prMsduInfo,
+	mldGenerateAssocIE(prAdapter, prStaRec, prMsduInfo,
 		assocComposeReAssocRespFrame);
 #endif
 

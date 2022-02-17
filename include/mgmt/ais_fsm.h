@@ -929,6 +929,7 @@ void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC *prBssDesc, uint8_t ucLinkIdx);
 struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
+uint8_t aisGetLinkNum(IN struct AIS_FSM_INFO *prAisFsmInfo);
 struct BSS_DESC *aisGetMainLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo);
 void aisSetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	 struct STA_RECORD *prStaRec, uint8_t ucLinkIdx);

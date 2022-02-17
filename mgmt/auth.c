@@ -91,7 +91,7 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	{0, beCalculateMldIELen, beGenerateMldIE}
+	{0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
 
 };
@@ -295,13 +295,13 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	for (i = 0;
 	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
 	     i++) {
-		if (txAssocRespIETable[i].u2EstimatedFixedIELen != 0)
+		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
 			u2EstimatedExtraIELen +=
 				txAssocRespIETable[i].u2EstimatedFixedIELen;
-		else if (txAssocRespIETable[i].pfnCalculateVariableIELen !=
+		else if (txAuthIETable[i].pfnCalculateVariableIELen !=
 			 NULL)
 			u2EstimatedExtraIELen +=
-				(uint16_t)txAssocRespIETable[i]
+				(uint16_t)txAuthIETable[i]
 					.pfnCalculateVariableIELen(
 						prAdapter, prStaRec->ucBssIndex,
 						prStaRec);
@@ -755,7 +755,7 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
 		DBGLOG(SAA, WARN, "Discard Auth frame with wrong ML IE\n");
 		*pu2StatusCode = STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED;
@@ -1354,7 +1354,7 @@ authProcessRxAuthFrame(IN struct ADAPTER *prAdapter,
 		u2ReturnStatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!beSanityCheckMld(prAdapter, prSwRfb->pvHeader,
+	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 		prSwRfb->u2PacketLen, NULL, prBssInfo->ucBssIndex)) {
 		DBGLOG(AAA, WARN, "Discard Auth frame with wrong ML IE\n");
 		return WLAN_STATUS_FAILURE;

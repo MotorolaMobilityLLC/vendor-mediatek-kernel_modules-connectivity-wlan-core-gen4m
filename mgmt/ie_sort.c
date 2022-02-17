@@ -1057,7 +1057,7 @@ void sortQuickSort(struct IE_ORDER_TABLE_INFO *arr,
 void sortIE(IN struct ADAPTER *prAdapter,
 	    IN struct MSDU_INFO *prMsduInfo,
 	    IN uint16_t *apu2OrderTable,
-	    IN const char* pucIeDesc)
+	    IN const char *pucIeDesc)
 {
 	uint16_t u2Offset = 0, u2IEsBufLen;
 	uint8_t *pucBuf, *pucDst;

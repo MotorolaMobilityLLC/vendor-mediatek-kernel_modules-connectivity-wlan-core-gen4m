@@ -1379,14 +1379,16 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN const uint8_t *pucIE)
+void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
+	IN const uint8_t *pucIE, IN uint16_t u2FrameCtrl)
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 	uint8_t i;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
-	beParseMldElement(prMlInfo, pucIE, prBssDesc->aucBSSID, "SCAN");
+	mldParseBasicMlIE(prMlInfo, pucIE, prBssDesc->aucBSSID,
+		u2FrameCtrl, "RxBcnProbRsp");
 
 	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
@@ -2840,7 +2842,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
 				scanEhtParsingMldElement(prBssDesc,
-					(const uint8_t *)pucIE);
+					(const uint8_t *)pucIE,
+					prWlanBeaconFrame->u2FrameCtrl &
+					MASK_FRAME_TYPE);
 #endif
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
@@ -2863,6 +2867,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
 						prHeCap->ucHePhyCap);
+					DBGLOG(SCN, TRACE,
+						"ER: BSSID:" MACSTR
+						" SSID:%s,rx:%x, er:%x\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->aucSSID,
+						prBssDesc->ucDCMMaxConRx,
+						prBssDesc->fgIsERSUDisable);
 				}
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
 					prHeOp = (struct _IE_HE_OP_T *) pucIE;
@@ -2876,6 +2887,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					prBssDesc->fgIsERSUDisable =
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
+
+					DBGLOG(SCN, TRACE,
+						"ER: BSSID:" MACSTR
+						" SSID:%s,rx:%x, er:%x\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->aucSSID,
+						prBssDesc->ucDCMMaxConRx,
+						prBssDesc->fgIsERSUDisable);
 				}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
@@ -2883,13 +2902,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						prBssDesc, eHwBand);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
-				DBGLOG(SCN, TRACE,
-					"ER: BSSID:" MACSTR
-					" SSID:%s,rx:%x, er:%x\n",
-					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->aucSSID,
-					prBssDesc->ucDCMMaxConRx,
-					prBssDesc->fgIsERSUDisable);
 #else
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -3774,7 +3786,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		}
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		beProcessBeaconAndProbeResp(prAdapter, prSwRfb);
+		mldProcessBeaconAndProbeResp(prAdapter, prSwRfb);
 #endif
 	}
 

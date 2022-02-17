@@ -5877,7 +5877,7 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		kalMemZero(aucIe, 100);
-		beGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
+		mldGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
 		prScanRequest->pucIE = aucIe;
 		DBGLOG(ML, INFO, "Dump ML probe IE\n");
 		DBGLOG_MEM8(ML, INFO, prScanRequest->pucIE,
