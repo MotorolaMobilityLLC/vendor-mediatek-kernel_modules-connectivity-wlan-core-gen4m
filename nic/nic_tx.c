@@ -2624,9 +2624,11 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
-		DBGLOG(NIC, INFO, "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u] TID[%u] SN[%u] CNT[%u] RATE[0x%04x]\n",
+		DBGLOG(NIC, INFO,
+			"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u] TID[%u] SN[%u] CNT[%u] RATE[0x%04x] Flush[%u]\n",
 			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq, prTxDone->ucStatus, prTxDone->ucTid,
-			prTxDone->u2SequenceNumber, prTxDone->ucTxCount, prTxDone->u2TxRate);
+			prTxDone->u2SequenceNumber, prTxDone->ucTxCount, prTxDone->u2TxRate,
+			prTxDone->ucFlushReason);
 
 		if (prTxDone->ucFlag & BIT(TXS_IS_EXIST)) {
 			UINT_8 ucNss, ucStbc;
