@@ -472,11 +472,21 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	/* if direct trx,  set drv/fw own will be called
+	*  in softirq/tasklet/thread context,
+	*  if normal trx, set drv/fw own will only
+	*  be called in thread context
+	*/
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_lock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
 	if (prAdapter->fgIsFwOwn == FALSE)
-		return fgStatus;
+		goto end;
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
 	KAL_REC_TIME_START();
@@ -549,6 +559,13 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO,
 		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
 
+end:
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_unlock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
 	return fgStatus;
 }
 
@@ -572,20 +589,31 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
+	/* if direct trx,  set drv/fw own will be called
+	*  in softirq/tasklet/thread context,
+	*  if normal trx, set drv/fw own will only
+	*  be called in thread context
+	*/
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_lock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 	if (!(prAdapter->fgWiFiInSleepyState &&
 		(prAdapter->u4PwrCtrlBlockCnt == 0)))
-		return;
+		goto unlock;
 
 	if (prAdapter->fgIsFwOwn == TRUE)
-		return;
+		goto unlock;
 
 	if (!prHifInfo->fgIsPowerOff &&
 		nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
 		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
-		return;
+		goto unlock;
 	}
 
 	if (fgEnableGlobalInt) {
@@ -603,6 +631,14 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
 		       fgResult, prHifInfo->u4WakeupIntSta);
 	}
+
+unlock:
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_unlock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
+	else
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
 }
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
