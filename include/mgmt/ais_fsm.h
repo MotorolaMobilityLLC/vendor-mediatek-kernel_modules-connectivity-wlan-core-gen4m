@@ -916,7 +916,7 @@ void aisSetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
 struct STA_RECORD *aisGetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
 struct STA_RECORD *aisGetMainLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo);
-void aisResetAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo);
+void aisClearAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo);
 void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
 			IN struct AIS_FSM_INFO *prAisFsmInfo);
 
