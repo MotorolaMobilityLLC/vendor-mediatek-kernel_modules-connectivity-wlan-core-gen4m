@@ -1226,7 +1226,7 @@ __priv_get_int(IN struct net_device *prNetDev,
 	uint32_t u4BufLen = 0;
 	int status = 0;
 	struct NDIS_TRANSPORT_STRUCT *prNdisReq;
-	int32_t ch[50];
+	int32_t ch[50] = {0};
 
 	ASSERT(prNetDev);
 	ASSERT(prIwReqInfo);
@@ -11325,8 +11325,11 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			   TRUE, TRUE, TRUE, &u4BufLen);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
-	if (rStatus != WLAN_STATUS_SUCCESS)
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		kalMemFree(prCnmInfo,
+			VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));
 		return -1;
+	}
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten,
