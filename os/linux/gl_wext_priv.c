@@ -12869,6 +12869,7 @@ static int priv_driver_run_hqa(
 	} else {
 		DBGLOG(REQ, ERROR,
 		"priv_driver_run_hqa not support\n");
+		kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
 		return -1;
 	}
 
@@ -12896,6 +12897,7 @@ static int priv_driver_run_hqa(
 	DBGLOG(REQ, ERROR,
 	"wlan_service not support\n");
 #endif
+	kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
 	return i4BytesWritten;
 
 }
