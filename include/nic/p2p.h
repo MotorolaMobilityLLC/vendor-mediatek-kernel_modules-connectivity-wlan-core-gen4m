@@ -50,26 +50,26 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/TRUNK/WiFi_P2P_Driver/include/nic/p2p.h#3
-*/
+ ** Id: //Department/DaVinci/TRUNK/WiFi_P2P_Driver/include/nic/p2p.h#3
+ */
 
 
 #ifndef _P2P_H
 #define _P2P_H
 
-/*******************************************************************************
+/******************************************************************************
  *                         C O M P I L E R   F L A G S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                              C O N S T A N T S
- ********************************************************************************
+ ******************************************************************************
  */
 
 /* refer to 'Config Methods' in WPS */
@@ -100,7 +100,7 @@
 #define P2P_MAXIMUM_CLIENT_COUNT                    10
 #define P2P_MAXIMUM_NOA_COUNT                       8
 
-#define P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE            51	/* Contains 6 sub-band. */
+#define P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE 51	/* Contains 6 sub-band. */
 
 /* Memory Size Definition. */
 #define P2P_MAXIMUM_ATTRIBUTES_CACHE_SIZE           768
@@ -109,7 +109,8 @@
 #define P2P_WILDCARD_SSID           "DIRECT-"
 
 /* Device Charactoristic. */
-#define P2P_AP_CHNL_HOLD_TIME_MS 5000	/* 1000 is too short , the deauth would block in the queue */
+#define P2P_AP_CHNL_HOLD_TIME_MS 5000
+/* 1000 is too short , the deauth would block in the queue */
 #define P2P_DEFAULT_LISTEN_CHANNEL                   1
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -118,9 +119,9 @@
 
 #define P2P_DEAUTH_TIMEOUT_TIME_MS 1000
 
-/*******************************************************************************
+/******************************************************************************
  *                                 M A C R O S
- ********************************************************************************
+ ******************************************************************************
  */
 
 #if DBG
@@ -139,9 +140,9 @@
 #define p2pChangeMediaState(_prAdapter, _prP2pBssInfo, _eNewMediaState) \
 	(_prP2pBssInfo->eConnectionState = (_eNewMediaState))
 
-/*******************************************************************************
+/******************************************************************************
  *                             D A T A   T Y P E S
- ********************************************************************************
+ ******************************************************************************
  */
 /* if driver need wait for a longger time when do p2p connection */
 enum ENUM_P2P_CONNECT_STATE {
@@ -226,7 +227,8 @@ struct P2P_SCAN_REQ_INFO {
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
 	uint8_t ucSsidNum;
-	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];	/* Currently we can only take one SSID scan request */
+	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];
+	/* Currently we can only take one SSID scan request */
 };
 
 struct P2P_CHNL_REQ_INFO {
@@ -279,7 +281,7 @@ struct P2P_SPECIFIC_BSS_INFO {
 	/*UINT_16 u2SmallestAID;*//* TH3 multiple P2P */
 	/*UINT_16 u2LargestAID;*//* TH3 multiple P2P */
 	/*UINT_8 ucBitmapCtrl;*//* TH3 multiple P2P */
-	/* UINT_8                  aucPartialVirtualBitmap[MAX_LEN_TIM_PARTIAL_BMP]; */
+	/* UINT_8 aucPartialVirtualBitmap[MAX_LEN_TIM_PARTIAL_BMP]; */
 
 	/* For GC/GO OppPS */
 	u_int8_t fgEnableOppPS;
@@ -293,7 +295,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgIsNoaAttrExisted;
 
 	/* For P2P Device */
-	/*UINT_8 ucRegClass;*//* TH3 multiple P2P */	/* Regulatory Class for channel. */
+	/*UINT_8 ucRegClass;*/
+	/* TH3 multiple P2P */	/* Regulatory Class for channel. */
 	/* Linten Channel only on channels 1, 6 and 11 in the 2.4 GHz. */
 	/*UINT_8 ucListenChannel;*//* TH3 multiple P2P */
 
@@ -311,7 +314,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	uint8_t aucAttributesCache[P2P_MAXIMUM_ATTRIBUTES_CACHE_SIZE];
 
 	/*UINT_16 u2WscAttributeLen;*//* TH3 multiple P2P */
-	/*UINT_8 aucWscAttributesCache[WPS_MAXIMUM_ATTRIBUTES_CACHE_SIZE];*//* TH3 multiple P2P */
+	/*UINT_8 aucWscAttributesCache[WPS_MAXIMUM_ATTRIBUTES_CACHE_SIZE];*/
+	/* TH3 multiple P2P */
 
 	/*UINT_8 aucGroupID[MAC_ADDR_LEN];*//* TH3 multiple P2P */
 	uint16_t u2GroupSsidLen;
@@ -324,19 +328,19 @@ struct P2P_SPECIFIC_BSS_INFO {
 	uint8_t aucWpaIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_WPA];
 };
 
-/*******************************************************************************
+/******************************************************************************
  *                            P U B L I C   D A T A
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                           P R I V A T E   D A T A
- ********************************************************************************
+ ******************************************************************************
  */
 
-/*******************************************************************************
+/******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
- ********************************************************************************
+ ******************************************************************************
  */
 
 #endif	/*_P2P_H */
