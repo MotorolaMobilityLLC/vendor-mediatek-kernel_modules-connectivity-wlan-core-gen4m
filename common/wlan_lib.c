@@ -10554,7 +10554,7 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 {
 	struct PARAM_GET_CHN_INFO *prChnLoadInfo = &
 			(prAdapter->rWifiVar.rChnLoadInfo);
-	uint8_t ucIdx = 0, ucRoot = 0, ucChild = 0;
+	int8_t ucIdx = 0, ucRoot = 0, ucChild = 0;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	uint8_t i = 0, ucBandIdx = 0, ucNumOfChannel = 0, uc2gChNum = 0;
 	struct RF_CHANNEL_INFO aucChannelList[MAX_CHN_NUM];
