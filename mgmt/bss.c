@@ -1213,6 +1213,8 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 
 	}
 
+	sortMgmtFrameIE(prAdapter, prMsduInfo);
+
 	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
 
 	DBGLOG(P2P, TRACE, "Dump beacon content to FW, method:%d\n", eMethod);
