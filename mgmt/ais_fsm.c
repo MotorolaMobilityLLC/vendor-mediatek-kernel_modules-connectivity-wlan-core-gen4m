@@ -5086,7 +5086,8 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->fgIsChannelGranted = TRUE;
 	} else {		/* mismatched grant */
 		/* 2. return channel privilege to CNM immediately */
-		aisFsmReleaseCh(prAdapter, ucBssIndex);
+		/* aisFsmReleaseCh(prAdapter, ucBssIndex); */
+		DBGLOG(AIS, WARN, "channel grant token mismatch\n");
 	}
 }				/* end of aisFsmRunEventChGrant() */
 
