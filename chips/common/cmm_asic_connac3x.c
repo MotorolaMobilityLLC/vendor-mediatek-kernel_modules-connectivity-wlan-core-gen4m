@@ -986,6 +986,9 @@ void asicConnac3xInitRxdHook(
 	prRxDescOps->nic_rxd_sanity_check = nic_rxd_v3_sanity_check;
 	prRxDescOps->nic_rxd_check_wakeup_reason =
 		nic_rxd_v3_check_wakeup_reason;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	prRxDescOps->nic_rxd_fill_radiotap = nic_rxd_v3_fill_radiotap;
+#endif
 }
 
 #if (CFG_SUPPORT_MSP == 1)

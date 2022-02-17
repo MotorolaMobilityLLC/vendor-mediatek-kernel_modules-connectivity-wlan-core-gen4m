@@ -968,6 +968,9 @@ struct SW_RFB {
 	/*QUE_T rAmsduQue;*/
 #endif
 	uint64_t rIntTime;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	struct IEEE80211_RADIOTAP_INFO *prRadiotapInfo;
+#endif
 };
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -1019,10 +1022,6 @@ struct RX_CTRL {
 
 #if CFG_RX_PKTS_DUMP
 	uint32_t u4RxPktsDumpTypeMask;
-#endif
-
-#if CFG_SUPPORT_SNIFFER
-	uint32_t u4AmpduRefNum;
 #endif
 
 	/* Store SysTime of Last Rx */
@@ -1080,6 +1079,11 @@ struct RX_DESC_OPS_T {
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	uint8_t (*nic_rxd_fill_radiotap)(
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+#endif
 };
 
 struct ACTION_FRAME_SIZE_MAP {
@@ -1497,8 +1501,6 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
 
-void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
 #if CFG_SUPPORT_PERF_IND
 void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb,
