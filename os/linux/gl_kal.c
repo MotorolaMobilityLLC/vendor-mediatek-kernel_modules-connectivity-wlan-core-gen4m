@@ -7569,6 +7569,12 @@ int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 	return 0;
 }
 
+int32_t __weak kalGetFwFlavor(uint8_t *flavor)
+{
+	DBGLOG(SW4, INFO, "NO firmware flavor build.\n");
+	return 0;
+}
+
 void __weak kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 	DBGLOG(SW4, WARN, "EMI MPU function is not defined\n");
