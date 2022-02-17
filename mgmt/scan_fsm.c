@@ -854,7 +854,9 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		print_info(SCN, LOUD, "IdleTime : %s\n", au2ChannelIdleTime);
 		print_info(SCN, LOUD, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
 		print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
-
+		if (prScanDone->ucScanDoneVersion >= 4)
+			print_info(SCN, LOUD,
+				"ScanTime : %s\n", au2ChannelScanTime);
 #undef	print_scan_info
 	} else {
 		prScanInfo->fgIsSparseChannelValid = FALSE;
