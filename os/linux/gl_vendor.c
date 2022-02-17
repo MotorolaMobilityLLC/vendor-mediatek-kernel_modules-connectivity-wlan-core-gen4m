@@ -1791,6 +1791,35 @@ exit:
 	return rStatus;
 }
 
+int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	uint32_t dfs_capability = 0;
+	struct sk_buff *reply_skb;
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+#if CFG_SUPPORT_DFS_MASTER
+	dfs_capability = 1;
+#endif
+
+	reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+			sizeof(uint32_t) + NLMSG_HDRLEN);
+
+	if (!reply_skb)
+		goto nla_put_failure;
+
+	if (nla_put_u32(reply_skb, QCA_ATTR_DFS_CAPAB, dfs_capability))
+		goto nla_put_failure;
+
+	return cfg80211_vendor_cmd_reply(reply_skb);
+
+nla_put_failure:
+	kfree_skb(reply_skb);
+	return -EINVAL;
+}
+
 int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {

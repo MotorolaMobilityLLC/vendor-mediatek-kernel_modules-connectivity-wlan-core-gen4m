@@ -93,6 +93,7 @@
 
 #define NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST 103
 #define NL80211_VENDOR_SUBCMD_ACS 54
+#define NL80211_VENDOR_SUBCMD_DFS_CAPABILITY 11
 #define NL80211_VENDOR_SUBCMD_GET_FEATURES 55
 #define QCA_NL80211_VENDOR_SUBCMD_ROAM 64
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
@@ -301,6 +302,11 @@ enum QCA_ATTR_ROAMING_PARAMS {
 	QCA_ATTR_ROAMING_PARAM_AFTER_LAST,
 	QCA_ATTR_ROAMING_PARAM_MAX =
 	QCA_ATTR_ROAMING_PARAM_AFTER_LAST - 1,
+};
+
+enum QCA_ATTR_DFS_PARAMS {
+	/* used by NL80211_VENDOR_SUBCMD_DFS_CAPABILITY */
+	QCA_ATTR_DFS_CAPAB = 1,
 };
 
 enum WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST {
@@ -798,6 +804,9 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		int data_len);
 
 int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_dfs_capability(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
