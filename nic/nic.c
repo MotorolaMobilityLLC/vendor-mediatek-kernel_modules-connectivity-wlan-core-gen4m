@@ -1736,7 +1736,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 			ucRetValNss = wlanGetSupportNss(prAdapter,
 							ucBssIndex);
 			DBGLOG(SW4, INFO,
-					"[SG]Hit SG Get NSS,%d\n", ucRetValNss);
+					"[SG]SG Get NSS,%d\n", ucRetValNss);
 			if (IS_BSS_AIS(prBssInfo)) {
 				prBssDesc = prAisFsmInfo->prTargetBssDesc;
 				if (prBssDesc != NULL && bssGetIotApAction
