@@ -201,6 +201,7 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_SMART_GEAR
 	{EVENT_ID_SG_STATUS, cnmEventSGStatus},
 #endif
+	{EVENT_ID_COEX_CTRL, nicEventCoexCtrl},
 #if (CFG_WOW_SUPPORT == 1)
 	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
 #endif

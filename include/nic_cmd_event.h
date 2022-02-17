@@ -1415,6 +1415,51 @@ struct CMD_MDVT_CFG {
 	uint32_t u4CaseId;
 };
 
+#define COEX_CTRL_BUF_LEN 460
+#define COEX_INFO_LEN 115
+
+/* CMD_COEX_HANDLER & EVENT_COEX_HANDLER */
+/************************************************/
+/*  UINT_32 u4SubCmd : Coex Ctrl Sub Command    */
+/*  UINT_8 aucBuffer : Reserve for Sub Command  */
+/*                    Data Structure            */
+/************************************************/
+struct COEX_CMD_HANDLER {
+	uint32_t u4SubCmd;
+	uint8_t aucBuffer[COEX_CTRL_BUF_LEN];
+};
+
+#if (CFG_WIFI_ISO_DETECT == 1)
+/* Sub Command Data Structure */
+/************************************************/
+/*  UINT_32 u4IsoPath : BITS[7:0]:WF Path (WF0/WF1)*/
+/*                      BITS[15:8]:BT Path (BT0/BT1)*/
+/*  UINT_32 u4Channel : WF Channel*/
+/*  UINT_32 u4Isolation  : Isolation value*/
+/************************************************/
+struct COEX_CMD_ISO_DETECT {
+	uint32_t u4IsoPath;
+	uint32_t u4Channel;
+	uint32_t u4Isolation;
+};
+#endif
+/************************************************/
+/*  PCHAR   pucCoexInfo : CoexInfoTag           */
+/************************************************/
+struct CMD_COEX_GET_INFO {
+	uint32_t   u4CoexInfo[COEX_INFO_LEN];
+};
+
+/* Coex Command Used  */
+enum ENUM_COEX_CMD_CTRL {
+	/* Set */
+	COEX_CMD_SET_RX_DATA_INFO = 0x00,
+	/* Get */
+	COEX_CMD_GET_ISO_DETECT = 0x80,
+	COEX_CMD_GET_INFO = 0x81,
+	COEX_CMD_NUM
+};
+
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 /* CMD_ID_CAL_BACKUP_IN_HOST_V2 & EVENT_ID_CAL_BACKUP_IN_HOST_V2 */
 struct CMD_CAL_BACKUP_STRUCT_V2 {
@@ -3896,6 +3941,8 @@ void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
+void nicEventCoexCtrl(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent);
 #if CFG_SUPPORT_REPLAY_DETECTION
 void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
 		uint8_t ucKeyId, uint8_t ucKeyType, uint8_t ucBssIdx);
@@ -3969,6 +4016,10 @@ void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
 			IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
 			IN uint16_t u2WinSize, IN uint16_t u2WinStart);
 
+#if (CFG_WIFI_ISO_DETECT == 1)
+void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

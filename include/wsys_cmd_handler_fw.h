@@ -315,6 +315,7 @@ enum ENUM_CMD_ID {
 	CMD_ID_TDLS_PS = 0x75,              /* 0x75 (Set) */
 
 	CMD_ID_GET_CNM = 0x79,
+	CMD_ID_COEX_CTRL = 0x7C, /* 0x7C (Set/Query) */
 
 	CMD_ID_FRM_IND_FROM_HOST = 0x7D,    /* 0x7D (Set) */
 	CMD_ID_PERF_IND = 0x7E,     /* 0x7E(Set) */
@@ -530,6 +531,7 @@ enum ENUM_EVENT_ID {
 	/*query info from cmd.*/
 	EVENT_ID_DBDC_SWITCH_DONE = 0x78,
 	EVENT_ID_GET_CNM = 0x79,
+	EVENT_ID_COEX_CTRL = 0x7C,
 
 	EVENT_ID_FRM_IND_FROM_HOST = 0x7D,
 

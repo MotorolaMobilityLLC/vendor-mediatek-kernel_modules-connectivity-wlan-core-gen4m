@@ -4825,6 +4825,29 @@ void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void nicEventCoexCtrl(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+	struct CMD_INFO *prCmdInfo;
+
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+					 prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+						    prEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo,
+					prCmdInfo,
+					0,
+					WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+}
+
 void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent)
 {
@@ -5700,5 +5723,47 @@ void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
 	if (prBusInfo->setWfdmaCoalescingInt)
 		prBusInfo->setWfdmaCoalescingInt(prAdapter,
 						prEventCf->fgEnable);
+}
+#endif /* CFG_WIFI_TXPWR_TBL_DUMP */
+
+#if (CFG_WIFI_ISO_DETECT == 1)
+void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+
+	struct COEX_CMD_HANDLER *prCoexCmdHandler;
+	struct COEX_CMD_ISO_DETECT *prCoexCmdIsoDetect;
+	struct PARAM_COEX_HANDLER *prParaCoexHandler;
+	struct PARAM_COEX_ISO_DETECT *prCoexIsoDetect;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	/* 4 <2> Update information of OID */
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prCoexCmdHandler = (struct COEX_CMD_HANDLER *) (pucEventBuf);
+		u4QueryInfoLen  = sizeof(struct PARAM_COEX_HANDLER);
+		prCoexCmdIsoDetect =
+	(struct COEX_CMD_ISO_DETECT *) &prCoexCmdHandler->aucBuffer[0];
+
+		prParaCoexHandler =
+	(struct PARAM_COEX_HANDLER *) prCmdInfo->pvInformationBuffer;
+		prCoexIsoDetect  =
+	(struct PARAM_COEX_ISO_DETECT *) &prParaCoexHandler->aucBuffer[0];
+		prCoexIsoDetect->u4IsoPath = prCoexCmdIsoDetect->u4IsoPath;
+		prCoexIsoDetect->u4Channel = prCoexCmdIsoDetect->u4Channel;
+		prCoexIsoDetect->u4Isolation = prCoexCmdIsoDetect->u4Isolation;
+
+		kalOidComplete(prGlueInfo,
+				prCmdInfo,
+				u4QueryInfoLen,
+				WLAN_STATUS_SUCCESS);
+
+	}
+
 }
 #endif
