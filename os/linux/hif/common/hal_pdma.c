@@ -3017,7 +3017,7 @@ void halTxCompleteTasklet(unsigned long data)
 uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Retry = 0;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 
@@ -3039,8 +3039,17 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma && prSwWfdmaInfo->rOps.writeCmd) {
-		while (prSwWfdmaInfo->rOps.writeCmd(prAdapter->prGlueInfo))
-			DBGLOG(INIT, INFO, "Handle remaining cmd!\n");
+		while (prSwWfdmaInfo->rOps.writeCmd(prAdapter->prGlueInfo)) {
+			if (u4Retry >= SW_WFDMA_MAX_RETRY_COUNT) {
+				if (prSwWfdmaInfo->rOps.dumpDebugLog)
+					prSwWfdmaInfo->rOps.dumpDebugLog(
+						prAdapter->prGlueInfo);
+				break;
+			}
+			DBGLOG(INIT, INFO, "Try to sent cmd to fw\n");
+			kalMsleep(SW_WFDMA_RETRY_TIME);
+			u4Retry++;
+		}
 	}
 
 	prHifInfo->fgIsPowerOff = true;

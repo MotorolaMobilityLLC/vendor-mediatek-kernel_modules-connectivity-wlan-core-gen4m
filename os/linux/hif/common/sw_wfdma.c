@@ -188,7 +188,7 @@ void halSwWfdmaRestore(struct GLUE_INFO *prGlueInfo)
 		       ucCID);
 
 		/* trigger ccif channel 4 interrupt */
-		if (wf_ioremap_write(SW_WFDMA_MD_PCCIF_TCHNUM,
+		if (wf_ioremap_write(SW_WFDMA_PCCIF_TCHNUM,
 				     SW_WFDMA_CCIF_CHANNEL_NUM))
 			DBGLOG(HAL, ERROR, "ioremap write fail!\n");
 	}
@@ -321,7 +321,7 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 		DBGLOG_MEM32(HAL, TRACE, prBuf, u4Size);
 
 		/* trigger ccif channel 4 interrupt */
-		if (wf_ioremap_write(SW_WFDMA_MD_PCCIF_TCHNUM,
+		if (wf_ioremap_write(SW_WFDMA_PCCIF_TCHNUM,
 				     SW_WFDMA_CCIF_CHANNEL_NUM))
 			DBGLOG(HAL, ERROR, "ioremap write fail!\n");
 	}
@@ -358,7 +358,7 @@ void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo)
 	if (!prSwWfDmad)
 		return;
 
-	wf_ioremap_read(SW_WFDMA_MD_PCCIF_START, &u4Val);
+	wf_ioremap_read(SW_WFDMA_PCCIF_START, &u4Val);
 	DBGLOG(HAL, INFO, "DRV[%u] FW[%u] STA[0x%X]\n",
 	       prSwWfDmad->u4DrvIdx, prSwWfDmad->u4FwIdx, u4Val);
 	for (u4Idx = 0; u4Idx < SW_WFDMA_CMD_NUM; u4Idx++) {

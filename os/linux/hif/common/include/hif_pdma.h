@@ -193,10 +193,11 @@
 #define SW_WFDMA_CMD_PKT_SIZE		1600
 #define SW_WFDMA_EMI_OFFSET		0x974ffc
 #define SW_WFDMA_EMI_SIZE	(SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE + 8)
-#define SW_WFDMA_MD_PCCIF_START		0x1024D008
-#define SW_WFDMA_MD_PCCIF_TCHNUM	0x1024D00C
+#define SW_WFDMA_PCCIF_START		0x1024D008
+#define SW_WFDMA_PCCIF_TCHNUM		0x1024D00C
 #define SW_WFDMA_CCIF_CHANNEL_NUM	4
-
+#define	SW_WFDMA_MAX_RETRY_COUNT	10
+#define	SW_WFDMA_RETRY_TIME		100
 
 /*******************************************************************************
  *                                 M A C R O S
