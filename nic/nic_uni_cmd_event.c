@@ -3330,6 +3330,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_CNM_CH_PRIVILEGE_REQ *)&uni_cmd->aucTlvBuffer[0];
 	for (i = 0; i < msg->ucExtraChReqNum + 1; i++, tag++) {
 		struct MSG_CH_REQ *sub_req = NULL;
+		enum ENUM_UNI_CMD_CNM_CHANNEL_WIDTH eWidth;
 
 		if (i == 0) {
 			sub_req = (struct MSG_CH_REQ *)msg;
@@ -3345,7 +3346,27 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucBssIndex = sub_req->ucBssIndex;
 		tag->ucRfBand = sub_req->eRfBand;
 		tag->ucPrimaryChannel = sub_req->ucPrimaryChannel;
-		tag->ucRfChannelWidth = sub_req->eRfChannelWidth;
+		switch (sub_req->eRfChannelWidth) {
+		case CW_20_40MHZ:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
+			break;
+		case CW_80MHZ:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ;
+			break;
+		case CW_160MHZ:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ;
+			break;
+		case CW_80P80MHZ:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ;
+			break;
+		case CW_320MHZ:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ;
+			break;
+		default:
+			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ;
+			break;
+		}
+		tag->ucRfChannelWidth = (uint8_t)eWidth;
 		tag->ucRfSco = sub_req->eRfSco;
 		tag->ucRfCenterFreqSeg1 = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2 = sub_req->ucRfCenterFreqSeg2;
@@ -5989,7 +6010,26 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			legacy.ucPrimaryChannel = grant->ucPrimaryChannel;
 			legacy.ucRfSco = grant->ucRfSco;
 			legacy.ucRfBand = grant->ucRfBand;
-			legacy.ucRfChannelWidth = grant->ucRfChannelWidth;
+			switch (grant->ucRfChannelWidth) {
+			case UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ:
+				legacy.ucRfChannelWidth = CW_20_40MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ:
+				legacy.ucRfChannelWidth = CW_80MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ:
+				legacy.ucRfChannelWidth = CW_160MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ:
+				legacy.ucRfChannelWidth = CW_80P80MHZ;
+				break;
+			case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
+				legacy.ucRfChannelWidth = CW_320MHZ;
+				break;
+			default:
+				legacy.ucRfChannelWidth = CW_20_40MHZ;
+				break;
+			}
 			legacy.ucRfCenterFreqSeg1 = grant->ucRfCenterFreqSeg1;
 			legacy.ucRfCenterFreqSeg2 = grant->ucRfCenterFreqSeg2;
 			legacy.ucReqType = grant->ucReqType;
