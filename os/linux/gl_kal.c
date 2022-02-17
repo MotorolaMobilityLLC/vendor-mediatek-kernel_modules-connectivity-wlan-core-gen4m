@@ -2017,6 +2017,9 @@ kalIoctl(IN P_GLUE_INFO_T prGlueInfo,
 		return WLAN_STATUS_SUCCESS;
 #endif
 
+	if (wlanIsChipAssert(prGlueInfo->prAdapter))
+		return WLAN_STATUS_SUCCESS;
+
 	/* GLUE_SPIN_LOCK_DECLARATION(); */
 	ASSERT(prGlueInfo);
 

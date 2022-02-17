@@ -1260,6 +1260,11 @@ BOOLEAN wlanIsChipNoAck(IN P_ADAPTER_T prAdapter);
 
 BOOLEAN wlanIsChipRstRecEnabled(IN P_ADAPTER_T prAdapter);
 
+BOOLEAN wlanIsChipAssert(IN P_ADAPTER_T prAdapter);
+
+VOID wlanChipRstPreAct(IN P_ADAPTER_T prAdapter);
+
+
 VOID wlanTxProfilingTagPacket(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prPacket, IN ENUM_TX_PROFILING_TAG_T eTag);
 
 VOID wlanTxProfilingTagMsdu(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_PROFILING_TAG_T eTag);

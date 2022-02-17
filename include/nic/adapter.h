@@ -1061,6 +1061,7 @@ struct _ADAPTER_T {
 	ROOT_TIMER rRootTimer;
 
 	BOOLEAN fgIsChipNoAck;
+	BOOLEAN fgIsChipAssert;
 
 	/* RLM maintenance */
 	ENUM_CHNL_EXT_T eRfSco;
