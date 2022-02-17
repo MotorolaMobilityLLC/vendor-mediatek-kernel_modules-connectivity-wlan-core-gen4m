@@ -2099,7 +2099,8 @@ netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (!wlanIsDriverReady(prGlueInfo)) {
+	if (!wlanIsDriverReady(prGlueInfo,
+		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
 		DBGLOG(INIT, WARN,
 		"u4ReadyFlag:%u, kalIsResetting():%d, dropping the packet\n",
 		prGlueInfo->u4ReadyFlag, kalIsResetting());

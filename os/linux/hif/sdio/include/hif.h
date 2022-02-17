@@ -279,6 +279,18 @@ struct SDIO_INT_LOG_T {
 	uint8_t ucRxPktCnt;
 };
 
+enum sdio_state {
+	SDIO_STATE_WIFI_OFF, /* Hif power off wifi */
+	SDIO_STATE_LINK_DOWN,
+	SDIO_STATE_PRE_SUSPEND_START,
+	SDIO_STATE_PRE_SUSPEND_DONE,
+	SDIO_STATE_PRE_SUSPEND_FAIL,
+	SDIO_STATE_SUSPEND,
+	SDIO_STATE_PRE_RESUME,
+	SDIO_STATE_LINK_UP,
+	SDIO_STATE_READY
+};
+
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
  */
@@ -290,6 +302,11 @@ struct GL_HIF_INFO {
 #else
 	struct sdio_func *func;
 #endif
+
+	enum sdio_state state;
+
+	spinlock_t rStateLock;
+	spinlock_t rSuspendLock;
 
 	struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl;
 
@@ -426,6 +443,7 @@ void halDumpIntLog(IN struct ADAPTER *prAdapter);
 void halTagIntLog(IN struct ADAPTER *prAdapter, IN enum HIF_SDIO_INT_STS eTag);
 void halRecIntLog(IN struct ADAPTER *prAdapter, IN struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl);
 struct SDIO_INT_LOG_T *halGetIntLog(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx);
+void glSdioSetState(struct GL_HIF_INFO *prHifInfo, enum sdio_state state);
 
 static inline int32_t glBusFunOn(void)
 {

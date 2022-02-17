@@ -1387,6 +1387,7 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter);
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
 #endif /* defined(_HIF_USB) */
+u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState);
 bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter);
 bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter);
 

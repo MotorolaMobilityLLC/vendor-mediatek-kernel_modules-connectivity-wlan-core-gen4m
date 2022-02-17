@@ -330,6 +330,10 @@ struct TPENHANCE_PKT_MAP {
 #define HIF_SUSPEND_MAX_WAIT_TIME 50 /* unit: 5ms */
 #endif
 
+#define WLAN_DRV_READY_CHECK_WLAN_ON       BIT(0)
+#define WLAN_DRV_READY_CHECK_HIF_SUSPEND   BIT(1)
+#define WLAN_DRV_READY_CHECK_RESET         BIT(2)
+
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
 	CMD_VER_1_EXT
@@ -1906,7 +1910,7 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid);
 void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
-u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo);
+u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Check);
 void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 				IN const u_int8_t bAtResetFlow);
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
