@@ -179,8 +179,7 @@ extern const uint8_t *apucACI2Str[4];
  *   Indeed, even if network subqueue is not stopped when no MSDU resource, the
  *   new arriving skb will be queued in prGlueInfo->rTxQueue and not be dropped.
  */
-#define QM_FWD_PKT_QUE_THRESHOLD \
-	(CFG_TX_MAX_PKT_NUM - 2 * CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD)
+#define QM_FWD_PKT_QUE_THRESHOLD            (CFG_TX_MAX_PKT_NUM >> 1)
 
 /* 1 WMM-related */
 /* WMM FLAGS */
