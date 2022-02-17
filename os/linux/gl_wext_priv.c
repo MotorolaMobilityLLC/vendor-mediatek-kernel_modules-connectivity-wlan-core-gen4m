@@ -2849,6 +2849,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_AP_WPS_P2P_IE		"SET_AP_WPS_P2P_IE"
 #define CMD_SETROAMMODE			"SETROAMMODE"
 #define CMD_MIRACAST			"MIRACAST"
+#define CMD_SETCASTMODE			"SET_CAST_MODE"
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 #define CMD_SHOW_DFS_STATE		"SHOW_DFS_STATE"
@@ -13525,6 +13526,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_COUNTRY, priv_driver_get_country},
 	{CMD_GET_CHANNELS, priv_driver_get_channels},
 	{CMD_MIRACAST, priv_driver_set_miracast},
+	{CMD_SETCASTMODE, priv_driver_set_miracast},
 	/* Mediatek private command */
 	{CMD_SET_SW_CTRL, priv_driver_set_sw_ctrl},
 #if (CFG_SUPPORT_RA_GEN == 1)
