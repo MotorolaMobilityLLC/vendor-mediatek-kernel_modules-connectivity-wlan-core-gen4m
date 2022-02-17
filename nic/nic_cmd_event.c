@@ -1719,8 +1719,14 @@ int32_t GetIQData(struct ADAPTER *prAdapter,
 	*prIQAry = prAdapter->rIcapInfo.au4IQData;
 
 	/* sprintf(aucPath, "/pattern.txt");             // CSD's Pattern */
-	sprintf(aucPath, "/dump_out_%05hu_WF%u.txt",
+	sprintf(aucPath, "/tmp/dump_out_%05hu_WF%u.txt",
 		prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
+	if (kalCheckPath(aucPath) == -1) {
+		snprintf(aucPath, sizeof(aucPath),
+			"/data/dump_out_%05ld_WF%d.txt",
+			prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
+	}
+
 	DBGLOG(INIT, INFO,
 	       "iCap Read Dump File dump_out_%05hu_WF%u.txt\n",
 	       prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
