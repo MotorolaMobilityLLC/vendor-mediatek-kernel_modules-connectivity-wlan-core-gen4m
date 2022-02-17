@@ -832,7 +832,7 @@ struct MLD_STA_RECORD {
 	uint8_t ucEmlsrBitmap;
 	uint8_t aucStrBitmap[3];
 	struct LINK rStarecList;
-	uint64_t aucRxPktCnt[MLD_LINK_MAX];
+	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 };
 #endif
 
