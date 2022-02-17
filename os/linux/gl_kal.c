@@ -3947,9 +3947,9 @@ int hif_thread(void *data)
 		wlanAcquirePowerControl(prAdapter);
 
 		/* Handle Interrupt */
-		fgEnInt = (prGlueInfo->ulFlag & BIT(GLUE_FLAG_INT_BIT)) != 0;
-		if (test_and_clear_bit(GLUE_FLAG_INT_BIT,
-				       &prGlueInfo->ulFlag) ||
+		fgEnInt = test_and_clear_bit(
+			GLUE_FLAG_INT_BIT, &prGlueInfo->ulFlag);
+		if (fgEnInt ||
 		    test_and_clear_bit(GLUE_FLAG_DRV_INT_BIT,
 				       &prGlueInfo->ulFlag)) {
 			kalTraceBegin("INT");
