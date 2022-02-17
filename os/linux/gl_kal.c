@@ -7945,13 +7945,6 @@ u_int8_t kalParseRandomMac(const struct net_device *ndev,
 		return FALSE;
 	}
 
-	if (!kalIsOuiMask(pucMacAddrMask) && !prBssInfo->fgIsScanOuiSet) {
-		eth_zero_addr(pucRandomMac);
-		eth_zero_addr(pucMacAddrMask);
-		log_dbg(SCN, INFO, "random mac enabled.\n");
-		return TRUE;
-	}
-
 	if (pucMacAddr)
 		COPY_MAC_ADDR(ucMacAddr, pucMacAddr);
 	else
