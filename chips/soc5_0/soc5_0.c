@@ -2239,7 +2239,7 @@ static void soc5_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
 #define	HANG_OTHER_LOG_NUM		2
-	uint32_t u4WrVal = 0, u4Val = 0, u4Idx;
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4Addr;
 
 	DBGLOG(HAL, INFO,
 		"Host_CSR - mailbox and other CRs");
@@ -2253,14 +2253,26 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	connac2x_DumpCrRange(NULL, 0x18053000, 16, "conninfra Sysram WF");
 
 	/* 1. Driver dump CRs of sheet "Debug ctrl setting */
-	connac2x_DbgCrRead(prAdapter, 0x18060164, &u4Val);
+	connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
+
+	/* CONN2WF remapping */
+	connac2x_DbgCrWrite(prAdapter, 0x18400120, 0x810F0000);
+	/* READ debug information from debug_ctrl_ao CR */
+	u4Addr = 0x18500408;
+	for (u4Idx = 2; u4Idx < 20; u4Idx++) {
+		connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+		DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+		u4Addr += 0x04;
+	}
+
+	/* READ debug information from HOST CSR */
 	DBGLOG(HAL, ERROR, "Dump 0x1806_0164\n");
 	u4WrVal = 0x00010001;
 	for (u4Idx = 0; u4Idx < 16; u4Idx++) {
 		connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
 		connac2x_DbgCrRead(prAdapter, 0x18060168, &u4Val);
 		DBGLOG(HAL, ERROR,
-		       "\tW0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
+		       "\tW 0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
 		       u4WrVal, u4Val);
 		u4WrVal += 0x00010000;
 	}
@@ -2308,6 +2320,42 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR, "0x18003008=[0x%08x]\n", u4Val);
 	connac2x_DbgCrRead(prAdapter, 0x18003124, &u4Val);
 	DBGLOG(HAL, ERROR, "0x18003124=[0x%08x]\n", u4Val);
+
+	/* Check wfsys osc_en status to classify which module don't sleep */
+	u4WrVal = 0x00100000;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x00100001;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x00100010;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x00100017;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x0010001D;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+
+	/* WF_SYSSTRAP_RD_DBG */
+	connac2x_DbgCrRead(prAdapter, 0x18060200, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18060200=[0x%08x]\n", u4Val);
 }
 
 static void soc5_0_DumpHostCr(struct ADAPTER *prAdapter)
@@ -2341,12 +2389,11 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
  *   & Check "AP2CONN_INFRA OFF step is ok"
  */
 		conninfra_read_ret = conninfra_reg_readable();
+		conninfra_hang_ret = conninfra_is_bus_hang();
 		if (!conninfra_read_ret) {
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail(%d)\n",
 				conninfra_read_ret);
-
-			conninfra_hang_ret = conninfra_is_bus_hang();
 
 			if (conninfra_hang_ret > 0) {
 				conninfra_reset = TRUE;
