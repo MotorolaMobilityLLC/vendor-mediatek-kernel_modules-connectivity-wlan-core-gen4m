@@ -5512,6 +5512,7 @@ void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	struct regulatory_request request;
+	kalMemZero(&request, sizeof(request));
 
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		rlmDomainSetTempCountryCode(country, size_of_country);
