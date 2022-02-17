@@ -220,8 +220,8 @@ void beReqGenerateMultiLinkSTAInfo(
 	last_frame_index = 0;
 	for (t = 0; t < txMloAssocReqIENums; t++) {
 		DBGLOG(RLM, INFO, "last_frame_index:  %d\n", last_frame_index);
-		if (txMloAssocReqIETable[i].pfnAppendIE)
-			txMloAssocReqIETable[i].pfnAppendIE(prAdapter,
+		if (txMloAssocReqIETable[t].pfnAppendIE)
+			txMloAssocReqIETable[t].pfnAppendIE(prAdapter,
 							 prMsduInfoSta);
 		/* Append non-wfa vendor specific ies for AIS mode */
 		assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfoSta);
