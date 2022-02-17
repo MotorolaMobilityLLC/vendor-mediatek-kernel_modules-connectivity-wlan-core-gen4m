@@ -1188,6 +1188,14 @@ int32_t procInitProcfs(struct net_device *prDev,
 		       char *pucDevName);
 #endif /* WLAN_INCLUDE_PROC */
 
+#if WLAN_INCLUDE_SYS
+int32_t sysCreateFsEntry(struct GLUE_INFO *prGlueInfo);
+int32_t sysRemoveSysfs(void);
+int32_t sysInitFs(void);
+int32_t sysUninitSysFs(void);
+void sysMacAddrOverride(uint8_t *prMacAddr);
+#endif /* WLAN_INCLUDE_SYS */
+
 #if CFG_ENABLE_BT_OVER_WIFI
 u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo);
 
