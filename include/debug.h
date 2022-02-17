@@ -238,7 +238,7 @@ struct CODA_CR_INFO {
 	uint32_t u4Shift;
 };
 
-enum ENUM_MT6885_DMASHDL_GROUP_IDX {
+enum ENUM_DMASHDL_GROUP_IDX {
 	ENUM_DMASHDL_GROUP_0 = 0,
 	ENUM_DMASHDL_GROUP_1,
 	ENUM_DMASHDL_GROUP_2,
@@ -700,6 +700,15 @@ void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
 
 void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
 void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
+void connac2x_DbgCrRead(
+	struct ADAPTER *prAdapter, size_t addr, unsigned int *val);
+void connac2x_DbgCrWrite(
+	struct ADAPTER *prAdapter, phys_addr_t addr, unsigned int val);
+void connac2x_dump_format_memory32(
+	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo);
+void connac2x_DumpCrRange(
+	struct ADAPTER *prAdapter,
+	uint32_t cr_start, uint32_t word_count, char *str);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
