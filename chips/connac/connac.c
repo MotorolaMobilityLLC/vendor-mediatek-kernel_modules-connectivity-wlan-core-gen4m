@@ -350,6 +350,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
 	.rxd_size = CONNAC_RX_DESC_LENGTH,
+	.init_evt_rxd_size = CONNAC_INIT_EVT_RX_DESC_LENGTH,
 	.pse_header_length = NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC_RX_INIT_EVENT_LENGTH,
 	.event_hdr_size = CONNAC_RX_EVENT_HDR_LENGTH,

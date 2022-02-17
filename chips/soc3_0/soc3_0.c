@@ -859,7 +859,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.is_support_wacpu = FALSE,
 	.txd_append_size = SOC3_0_TX_DESC_APPEND_LENGTH,
 	.rxd_size = SOC3_0_RX_DESC_LENGTH,
-
+	.init_evt_rxd_size = SOC3_0_RX_DESC_LENGTH,
 	.pse_header_length = CONNAC2X_NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = CONNAC2X_RX_INIT_EVENT_LENGTH,
 	.eco_info = soc3_0_eco_table,
