@@ -2046,9 +2046,13 @@ uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	/* 4 <5> Memory for enhanced interrupt response */
+#ifdef CFG_PREALLOC_MEMORY
+	prHifInfo->prSDIOCtrl = (struct ENHANCE_MODE_DATA_STRUCT *)
+		preallocGetMem(MEM_ID_IO_CTRL);
+#else
 	prHifInfo->prSDIOCtrl = (struct ENHANCE_MODE_DATA_STRUCT *)
 		kalAllocateIOBuffer(sizeof(struct ENHANCE_MODE_DATA_STRUCT));
-
+#endif
 	if (prHifInfo->prSDIOCtrl == NULL) {
 		DBGLOG(HAL, ERROR,
 			"Could not allocate %d bytes for interrupt response.\n",
@@ -2064,7 +2068,11 @@ uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
 		prRxBuf->u4PktCount = 0;
 
 		prRxBuf->u4BufSize = HIF_RX_COALESCING_BUFFER_SIZE;
+#ifdef CFG_PREALLOC_MEMORY
+		prRxBuf->pvRxCoalescingBuf = preallocGetMem(MEM_ID_RX_DATA);
+#else
 		prRxBuf->pvRxCoalescingBuf = kalAllocateIOBuffer(prRxBuf->u4BufSize);
+#endif
 		if (!prRxBuf->pvRxCoalescingBuf) {
 			DBGLOG(HAL, ERROR, "Rx coalescing alloc failed!\n");
 			continue;
@@ -2087,13 +2095,17 @@ uint32_t halReleaseIOBuffer(IN struct ADAPTER *prAdapter)
 	/* Release coalescing buffer */
 	for (ucIdx = 0; ucIdx < HIF_RX_COALESCING_BUF_COUNT; ucIdx++) {
 		prRxBuf = &prHifInfo->rRxCoalesingBuf[ucIdx];
+#ifndef CFG_PREALLOC_MEMORY
 		kalReleaseIOBuffer(prRxBuf->pvRxCoalescingBuf, prRxBuf->u4BufSize);
+#endif
 		prRxBuf->pvRxCoalescingBuf = NULL;
 	}
 
 	/* 4 <5> Memory for enhanced interrupt response */
 	if (prHifInfo->prSDIOCtrl) {
+#ifndef CFG_PREALLOC_MEMORY
 		kalReleaseIOBuffer((void *) prHifInfo->prSDIOCtrl, sizeof(struct ENHANCE_MODE_DATA_STRUCT));
+#endif
 		prHifInfo->prSDIOCtrl = (struct ENHANCE_MODE_DATA_STRUCT *) NULL;
 	}
 
