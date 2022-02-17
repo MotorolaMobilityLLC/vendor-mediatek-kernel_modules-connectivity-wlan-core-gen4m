@@ -92,6 +92,16 @@ extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
 
+/*
+ * patch format:
+ * PATCH_FORMAT_V1 support 7636, 7637, 7615, 7622, CONNAC (p18, 7663)
+ * PATCH_FORMAT_V2 support CONNANC2.0 (7915)
+ */
+/* Magic number, means use this multi-address patch header format*/
+#define PATCH_VERSION_MAGIC_NUM 0xffffffff
+#define PATCH_SEC_TYPE_MASK	0x0000ffff
+#define PATCH_SEC_TYPE_BIN_INFO	0x2
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
@@ -195,6 +205,53 @@ struct PATCH_FORMAT_T {
 	uint32_t u4PatchVersion;
 	uint16_t u2CRC;		/* CRC calculated for image only */
 	uint8_t ucPatchImage[0];
+};
+
+struct PATCH_FORMAT_V2_T {
+	uint8_t aucBuildDate[16];
+	uint8_t aucPlatform[4];
+	uint32_t u4SwHwVersion;
+	uint32_t u4PatchVersion;
+	uint16_t u2Reserved;
+	uint16_t u2CRC;		/* CRC calculated for image only */
+};
+
+/* multi-addr patch format */
+struct PATCH_GLO_DESC {
+	uint32_t patch_ver;
+	uint32_t subsys;
+	uint32_t feature;
+	uint32_t section_num;
+	uint32_t crc;
+	uint32_t reserved[11];
+};
+
+struct PATCH_SEC_MAP {
+	uint32_t section_type;
+	uint32_t section_offset;
+	uint32_t section_size;
+	union {
+		uint32_t section_spec[13];
+		struct {
+			uint32_t dl_addr;
+			uint32_t dl_size;
+			uint32_t sec_key_idx;
+			uint32_t align_len;
+			uint32_t reserved[9];
+		} bin_info_spec;
+	};
+};
+
+struct patch_dl_buf {
+	uint8_t *img_ptr;
+	uint32_t img_dest_addr;
+	uint32_t img_size;
+	bool check_crc;
+};
+
+struct patch_dl_target {
+	struct patch_dl_buf *patch_region;
+	uint8_t num_of_region;
 };
 
 #endif
