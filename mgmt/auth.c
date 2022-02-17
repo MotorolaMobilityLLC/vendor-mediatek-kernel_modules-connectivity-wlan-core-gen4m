@@ -1423,3 +1423,51 @@ uint32_t authAddRSNIE_impl(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
+/*---------------------------------------------------------------------------*/
+/*!
+ * @brief This function will validate the Rx Auth Frame and then return
+ *        the status code to AAA to indicate
+ *        if need to perform following actions
+ *        when the specified conditions were matched.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prSwRfb            Pointer to SW RFB data structure.
+ *
+ * @retval TRUE      Reply the Auth
+ * @retval FALSE     Don't reply the Auth
+ */
+/*---------------------------------------------------------------------------*/
+u_int8_t
+authFloodingCheck(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prP2pBssInfo,
+		IN struct SW_RFB *prSwRfb)
+{
+
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
+
+	DBGLOG(SAA, TRACE, "authFloodingCheck Authentication Frame\n");
+
+	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+
+	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
+		(prP2pBssInfo->eIntendOPMode != OP_MODE_NUM)) {
+		/* We are not under AP Mode yet. */
+		DBGLOG(P2P, WARN,
+			"Current OP mode is not under AP mode. (%d)\n",
+			prP2pBssInfo->eCurrentOPMode);
+		return FALSE;
+	}
+
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+		prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
+
+	if (!prStaRec) {
+		DBGLOG(SAA, TRACE, "Need reply.\n");
+		return TRUE;
+	}
+
+	DBGLOG(SAA, WARN, "Auth Flooding Attack, don't reply.\n");
+	return FALSE;
+}
+
