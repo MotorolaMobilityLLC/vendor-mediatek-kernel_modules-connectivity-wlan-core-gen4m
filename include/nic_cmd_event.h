@@ -1209,6 +1209,7 @@ enum NIC_CAPABILITY_V2_TAG {
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 struct NIC_CSUM_OFFLOAD {
 	uint8_t ucIsSupportCsumOffload;  /* 1: Support, 0: Not Support */
+	uint8_t aucReseved[3];
 };
 #endif
 
