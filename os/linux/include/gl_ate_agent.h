@@ -129,6 +129,8 @@ struct ATE_OPS_T {
 				 uint32_t u4WFNum);
 	void (*getRbistDataDumpEvent)(struct ADAPTER *prAdapter,
 				      uint8_t *pucEventBuf);
+	void (*icapRiseVcoreClockRate)(void);
+	void (*icapDownVcoreClockRate)(void);
 };
 
 
