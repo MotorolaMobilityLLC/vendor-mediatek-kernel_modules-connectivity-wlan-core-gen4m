@@ -2765,7 +2765,13 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 	kalMemSet(&rAccessEfuseInfoWrite, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
-
+	if (prGlueInfo &&
+	    prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		log_dbg(RFTEST, WARN, "Efuse not support\n");
+		return -EFAULT;
+	}
 
 	/* Read */
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_WriteBulkEEPROM  Read\n");

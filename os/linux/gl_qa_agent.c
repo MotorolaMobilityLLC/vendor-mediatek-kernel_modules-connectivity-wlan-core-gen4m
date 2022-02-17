@@ -2235,7 +2235,6 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 	kalMemSet(&rAccessEfuseInfo, 0,
 		sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
-
 	rAccessEfuseInfo.u4Address =
 		(Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 
