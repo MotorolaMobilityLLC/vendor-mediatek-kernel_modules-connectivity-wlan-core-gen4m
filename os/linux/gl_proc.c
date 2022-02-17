@@ -839,13 +839,13 @@ static ssize_t procPktDelayDbgCfgRead(struct file *filp, char __user *buf,
 	uint8_t *temp = &g_aucProcBuf[0];
 	uint8_t *str = NULL;
 	uint32_t u4CopySize = 0;
-	uint8_t ucTxRxFlag;
-	uint8_t ucTxIpProto;
-	uint16_t u2TxUdpPort;
-	uint32_t u4TxDelayThreshold;
-	uint8_t ucRxIpProto;
-	uint16_t u2RxUdpPort;
-	uint32_t u4RxDelayThreshold;
+	uint8_t ucTxRxFlag = 0;
+	uint8_t ucTxIpProto = 0;
+	uint16_t u2TxUdpPort = 0;
+	uint32_t u4TxDelayThreshold = 0;
+	uint8_t ucRxIpProto = 0;
+	uint16_t u2RxUdpPort = 0;
+	uint32_t u4RxDelayThreshold = 0;
 	uint32_t u4StrLen = 0;
 
 	/* if *f_ops>0, we should return 0 to make cat command exit */
