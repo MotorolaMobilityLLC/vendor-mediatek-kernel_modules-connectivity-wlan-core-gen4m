@@ -519,6 +519,7 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
+	prDmaBuf = &pRxCell->DmaBuf;
 
 	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port) == 0)
 		return FALSE;
@@ -549,9 +550,23 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (pRxD->SDLen0 > u4Len) {
+		uint8_t *prBuffer = NULL;
+
 		DBGLOG(HAL, WARN,
 			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
 			pRxD->SDLen0, u4Len);
+		dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
+		prBuffer = kalMemAlloc(pRxD->SDLen0, VIR_MEM_TYPE);
+		if (prBuffer) {
+			if (prMemOps->copyEvent &&
+			    prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
+						prDmaBuf, prBuffer,
+						pRxD->SDLen0)) {
+				DBGLOG(RX, ERROR, "Dump RX payload\n");
+				DBGLOG_MEM8(RX, ERROR, prBuffer, pRxD->SDLen0);
+			}
+			kalMemFree(prBuffer, VIR_MEM_TYPE, pRxD->SDLen0);
+		}
 		goto skip;
 	}
 
@@ -560,7 +575,6 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 #endif
 
-	prDmaBuf = &pRxCell->DmaBuf;
 	if (prMemOps->copyEvent &&
 	    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
 				 prDmaBuf, pucBuf, u4Len)) {
