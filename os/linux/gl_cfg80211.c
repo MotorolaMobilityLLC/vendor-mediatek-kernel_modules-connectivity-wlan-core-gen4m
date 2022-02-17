@@ -807,6 +807,22 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 		return -ENOMEM;
 
 	}
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
+		return -EINVAL;
+	}
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan
+		&& PARAM_MEDIA_STATE_CONNECTED
+			== kalGetMediaStateIndicated(prGlueInfo)) {
+		DBGLOG(REQ, INFO,
+			"mtk_cfg80211_scan LowLatency reject scan\n");
+		return -EBUSY;
+	}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
 	if (request->n_ssids == 0) {
@@ -2800,6 +2816,22 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
+
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prAdapter is NULL");
+		return -EINVAL;
+	}
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	if (!prGlueInfo->prAdapter->fgEnCfg80211Scan
+		&& PARAM_MEDIA_STATE_CONNECTED
+			== kalGetMediaStateIndicated(prGlueInfo)) {
+		DBGLOG(REQ, INFO,
+			"sched_scan_start LowLatency reject scan\n");
+		return -EBUSY;
+	}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 	if (prGlueInfo->prSchedScanRequest != NULL) {
 		DBGLOG(SCN, ERROR, "GlueInfo->prSchedScanRequest != NULL\n");
 		return -EBUSY;
