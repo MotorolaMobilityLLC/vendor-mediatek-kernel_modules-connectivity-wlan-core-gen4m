@@ -594,9 +594,12 @@ void ehtRlmRecOperation(
 	}
 
 	// TODO: The format of EHT operation Information subfield is missing in spec D1.1
-	// assume receiving EHT BW320 if EHT operation present for testing purpose
-	prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_320;
-	DBGLOG(RLM, INFO, "assuming VHT channel width 320\n");
+	if (prEhtOp->ucEhtOpParams[0] == 0 || prEhtOp->ucEhtOpParams[0] == 1)
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+	else
+		prBssInfo->ucVhtChannelWidth = prEhtOp->ucEhtOpParams[0];
+	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
+		prBssInfo->ucVhtChannelWidth);
 
 	memcpy(prBssInfo->ucEhtOpParams, prEhtOp->ucEhtOpParams,
 		HE_OP_BYTE_NUM);
