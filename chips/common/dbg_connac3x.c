@@ -2393,7 +2393,7 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 		(ple_buf_ctrl & WF_PLE_TOP_PBUF_CTRL_PBUF_OFFSET_MASK) >> WF_PLE_TOP_PBUF_CTRL_PBUF_OFFSET_SHFT);
 	pg_num = (ple_buf_ctrl & WF_PLE_TOP_PBUF_CTRL_TOTAL_PAGE_NUM_MASK) >> WF_PLE_TOP_PBUF_CTRL_TOTAL_PAGE_NUM_SHFT;
 	DBGLOG(HAL, INFO, "\t\tTotal Page=%d pages\n", pg_num);
-	for (i = 0; i <= 10; i++) {
+	for (i = 0; i <= 8; i++) {
 		uint32_t addr = WF_PLE_TOP_PEEK_CR_00_ADDR + i * 4;
 		uint32_t value = 0;
 
@@ -2476,9 +2476,6 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 
 	if ((ple_stat[0] & WF_PLE_TOP_QUEUE_EMPTY_ALL_AC_EMPTY_MASK) == 0) {
 		for (j = 0; j < ALL_CR_NUM_OF_ALL_AC; j++) {
-			if (j % CR_NUM_OF_AC == 0)
-				DBGLOG(HAL, INFO, "\tNonempty AC%d Q of STA#: ", j / CR_NUM_OF_AC);
-
 			for (i = 0; i < 32; i++) {
 				uint32_t ctrl = 0;
 

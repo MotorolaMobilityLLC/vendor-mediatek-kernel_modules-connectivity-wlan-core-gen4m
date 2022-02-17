@@ -2806,14 +2806,14 @@ static void halDefaultProcessSoftwareInterrupt(
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	kalDevRegRead(prGlueInfo, MCU2HOST_SW_INT_STA, &u4Status);
+	DBGLOG(HAL, INFO, "SER status[0x%x].\n", u4Status);
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {
 		prErrRecoveryCtrl->u4Status = u4Status;
 		kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_STA,
 			ERROR_DETECT_MASK);
 		halHwRecoveryFromError(prAdapter);
-	} else
-		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
+	}
 }
 
 void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
