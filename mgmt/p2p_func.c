@@ -1971,8 +1971,14 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	/* Setup channel and bandwidth */
 	rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 
-	/* Update Beacon again for network phy type confirmed. */
+	/* Update Beacon to FW. Note that we have to set Op mode Rx
+	 * flag to TRUE in order to update VHT OP Notification IE.
+	 * Otherwise, clients will not be able to process VHT OP
+	 * Notification IE and assume wrong Rx NSS.
+	 */
+	prBssInfo->fgIsOpChangeRxNss = TRUE;
 	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
 	/* Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
