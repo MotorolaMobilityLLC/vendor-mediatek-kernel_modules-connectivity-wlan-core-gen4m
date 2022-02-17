@@ -1624,7 +1624,11 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 
 	if (u4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "FW_START EVT failed\n");
+#if (CFG_SUPPORT_CONNINFRA == 0)
 		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
+#endif
 	} else {
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
 
@@ -1758,8 +1762,14 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 
 	u4Status = wlanConfigWifiFuncStatus(prAdapter, ucCmdSeqNum);
 
-	if (u4Status != WLAN_STATUS_SUCCESS)
+	if (u4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "FW_START EVT failed\n");
+#if (CFG_SUPPORT_CONNINFRA == 0)
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+#else
+		GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
+#endif
+	}
 	else
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
 
