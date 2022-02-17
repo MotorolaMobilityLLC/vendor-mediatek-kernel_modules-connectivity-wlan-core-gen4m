@@ -124,9 +124,6 @@
 #define UNI_IS_RFCR(_addr) (((_addr) & BITS(24,31)) == 0x99000000)
 #define UNI_STREAM_FROM_RFCR(_addr) (((_addr) & BITS(16,23)) >> 16)
 
-/* UNI_CMD for PH_TPUT */
-#define MDVT_MODULE_PH_TPUT 64
-
 /* UNI_CMD_ID_EFUSE_CONTROL usage */
 #define BUFFER_MODE_CONTENT_MAX 1024
 

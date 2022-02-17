@@ -81,6 +81,83 @@
 struct AUTOMATION_DVT automation_dvt;
 struct TXS_FREE_LIST_POOL TxsFreeEntrylist;
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+
+const struct _MDVT_MODULE_T arMdvtModuleTable[] = {
+	{MDVT_MODULE_WFARB,			"arb"},
+	{MDVT_MODULE_AGG,			"agg"},
+	{MDVT_MODULE_DMA,			"dma"},
+	{MDVT_MODULE_WFMIMO,			"mimo"},
+	{MDVT_MODULE_WFCTRL,			"ctrl"},
+	{MDVT_MODULE_WFETXBF,			"txbf"},
+	{MDVT_MODULE_WFCFG,			"cfg"},
+	{MDVT_MODULE_WFHIF,			"hif"},
+	{MDVT_MODULE_WFOFF,			"off"},
+	{MDVT_MODULE_WFON			"on"},
+	{MDVT_MODULE_WFPF,			"pf"},
+	{MDVT_MODULE_WFRMAC,			"rmac"},
+	{MDVT_MODULE_WFUMAC_PLE,		"ple"},
+	{MDVT_MODULE_WFUMAC_PSE,		"pse"},
+	{MDVT_MODULE_WFUMAC_PP,			"pp"},
+	{MDVT_MODULE_WFUMAC_AMSDU,		"amsdu"},
+	{MDVT_MODULE_WFSEC,			"sec"},
+	{MDVT_MODULE_WFTMAC,			"tmac"},
+	{MDVT_MODULE_WFTMAC_TXPWR,		"txpwr"},
+	{MDVT_MODULE_WFTXCR,			"txcr"},
+	{MDVT_MODULE_WFMIB,			"mib"},
+	{MDVT_MODULE_WFSYSON,			"syson"},
+	{MDVT_MODULE_WFLPON,			"lpon"},
+	{MDVT_MODULE_WFINT,			"int"},
+	{MDVT_MODULE_CONNCFG,			"conncfg"},
+	{MDVT_MODULE_MUCOP,			"mucop"},
+	{MDVT_MODULE_WFMDP,			"mdp"},
+	{MDVT_MODULE_WFRDM_PHYRX,		"phyrx"},
+	{MDVT_MODULE_WFRDM_PHYDFS,		"phydfs"},
+	{MDVT_MODULE_WFRDM_PHYRX_COMM,		"phyrxcomm"},
+	{MDVT_MODULE_WFRDM_WTBLOFF,		"wtbloff"},
+	{MDVT_MODULE_PHYDFE_CTRL_WF_TSSI,	"tssi"},
+	{MDVT_MODULE_PHYDFE_RFINTF_WF_CMM,	"wfcmm"},
+	{MDVT_MODULE_PHYRX_CTRL_WF_COMM_RDD,	"rdd"},
+	{MDVT_MODULE_PHYRX_CTRL_WF_COMM_CSI,	"csi"},
+	{MDVT_MODULE_PHYRX_CTRL_WF_COMM_CMM,	"cmm"},
+	{MDVT_MODULE_PHYRX_CTRL_WF_COMM_TOAE,	"toae"},
+	{MDVT_MODULE_PHYRX_CSD_WF_COMM_CMM,	"cmm"},
+	{MDVT_MODULE_PHYRX_POST_CMM,		"postcmm"},
+	{MDVT_MODULE_PHYDFS_WF_COMM_RDD,	"rdd"},
+	{MDVT_MODULE_PHYRX_CTRL_TOAE,		"toae"},
+	{MDVT_MODULE_PHYRX_CTRL_MURU,		"muru"},
+	{MDVT_MODULE_PHYRX_CTRL_RDD,		"rdd"},
+	{MDVT_MODULE_PHYRX_CTRL_MULQ,		"mulq"},
+	{MDVT_MODULE_PHYRX_CTRL_CMM,		"ctrlcmm"},
+	{MDVT_MODULE_PHYRX_CTRL_CSI,		"csi"},
+	{MDVT_MODULE_PHYDFE_CTRL_PWR_REGU,	"requ"},
+	{MDVT_MODULE_PHYRX_CTRL_BF,		"bf"},
+	{MDVT_MODULE_PHYDFE_CTRL_CMM,		"dfectrlcmm"},
+	{MDVT_MODULE_WFRBIST,			"rbist"},
+	{MDVT_MODULE_WTBL,			"wtbl"},
+	{MDVT_MODULE_RX,			"rx"},
+	{MDVT_MODULE_LPON,			"lpon"},
+	{MDVT_MODULE_MDP_RX,			"mdprx"},
+	{MDVT_MODULE_TXCMD,			"txcmd"},
+	{MDVT_MODULE_SEC_ECC,			"sececc"},
+	{MDVT_MODULE_MIB,			"mib"},
+	{MDVT_MODULE_WFTWT,			"twt"},
+	{MDVT_MODULE_DRR,			"drr"},
+	{MDVT_MODULE_RUOFDMA,			"ruofdma"},
+	{MDVT_MODULE_WFCMDRPTTX,		"cmdrpttx"},
+	{MDVT_MODULE_WFCMDRPT_TRIG,		"cmdrpttrig"},
+	{MDVT_MODULE_MLO,			"mlo"},
+	{MDVT_MODULE_TXD,			"txd"},
+	{MDVT_MODULE_PH_TPUT,			"tput"},
+	{MDVT_MODULE_MAX,			"all"}
+};
+
+uint32_t u4MdvtTableSize =
+	sizeof(arMdvtModuleTable) / sizeof(struct _MDVT_MODULE_T);
+
+
+#endif /*CFG_SUPPORT_WIFI_SYSDVT*/
+
 /*******************************************************************************
  *                    F U N C T I O N S
  *******************************************************************************
