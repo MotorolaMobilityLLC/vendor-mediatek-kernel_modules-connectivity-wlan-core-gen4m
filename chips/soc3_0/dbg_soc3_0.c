@@ -1503,6 +1503,17 @@ void show_wfdma_dbg_log(
 
 void soc3_0_show_wfdma_info(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	if (prSwWfdmaInfo->rOps.dumpDebugLog)
+		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
+
 	/* dump WFDMA info by host or WM*/
 	show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_HOST);
 	show_wfdma_dbg_log(prAdapter, WFDMA_TYPE_WM);
