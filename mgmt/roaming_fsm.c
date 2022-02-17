@@ -129,7 +129,7 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter)
 	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DBGLOG(ROAMING, LOUD,
-	       "->roamingFsmInit(): Current Time = %ld\n",
+	       "->roamingFsmInit(): Current Time = %d\n",
 	       kalGetTimeTick());
 
 	prRoamingFsmInfo = (struct ROAMING_INFO *) &
@@ -158,7 +158,7 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter)
 	struct ROAMING_INFO *prRoamingFsmInfo;
 
 	DBGLOG(ROAMING, LOUD,
-	       "->roamingFsmUninit(): Current Time = %ld\n",
+	       "->roamingFsmUninit(): Current Time = %d\n",
 	       kalGetTimeTick());
 
 	prRoamingFsmInfo = (struct ROAMING_INFO *) &
@@ -184,7 +184,7 @@ void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus;
 
 	DBGLOG(ROAMING, LOUD,
-	       "->roamingFsmSendCmd(): Current Time = %ld\n",
+	       "->roamingFsmSendCmd(): Current Time = %d\n",
 	       kalGetTimeTick());
 
 	prRoamingFsmInfo = (struct ROAMING_INFO *) &
@@ -230,7 +230,7 @@ void roamingFsmScanResultsUpdate(IN struct ADAPTER
 
 
 	DBGLOG(ROAMING, LOUD,
-	       "->roamingFsmScanResultsUpdate(): Current Time = %ld\n",
+	       "->roamingFsmScanResultsUpdate(): Current Time = %d\n",
 	       kalGetTimeTick());
 
 	GET_CURRENT_SYSTIME(
@@ -497,7 +497,7 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter)
 		return;
 
 	DBGLOG(ROAMING, EVENT,
-	       "EVENT-ROAMING START: Current Time = %ld\n",
+	       "EVENT-ROAMING START: Current Time = %d\n",
 	       kalGetTimeTick());
 
 	/* IDLE, ROAM -> DECISION */
@@ -541,7 +541,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(ROAMING, EVENT,
-	       "EVENT-ROAMING DISCOVERY: Current Time = %ld\n",
+	       "EVENT-ROAMING DISCOVERY: Current Time = %d\n",
 	       kalGetTimeTick());
 
 	/* DECISION -> DISCOVERY */
@@ -613,7 +613,7 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter)
 
 
 	DBGLOG(ROAMING, EVENT,
-	       "EVENT-ROAMING ROAM: Current Time = %ld\n",
+	       "EVENT-ROAMING ROAM: Current Time = %d\n",
 	       kalGetTimeTick());
 
 	/* IDLE, ROAM -> DECISION */
@@ -659,7 +659,7 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
 
 
 	DBGLOG(ROAMING, STATE,
-	       "EVENT-ROAMING FAIL: reason %x Current Time = %ld\n",
+	       "EVENT-ROAMING FAIL: reason %x Current Time = %d\n",
 	       u4Param, kalGetTimeTick());
 
 	/* IDLE, ROAM -> DECISION */
@@ -704,7 +704,7 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter)
 
 
 	DBGLOG(ROAMING, EVENT,
-	       "EVENT-ROAMING ABORT: Current Time = %ld\n",
+	       "EVENT-ROAMING ABORT: Current Time = %d\n",
 	       kalGetTimeTick());
 
 	eNextState = ROAMING_STATE_IDLE;
@@ -733,7 +733,7 @@ uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 			IN struct CMD_ROAMING_TRANSIT *prTransit)
 {
 	DBGLOG(ROAMING, LOUD,
-	       "ROAMING Process Events: Current Time = %ld\n",
+	       "ROAMING Process Events: Current Time = %d\n",
 	       kalGetTimeTick());
 
 	if (prTransit->u2Event == ROAMING_EVENT_DISCOVERY) {
