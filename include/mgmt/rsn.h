@@ -139,7 +139,6 @@
 #define CIPHER_FLAG_WEP104                      0x00000010	/* BIT 5 */
 #define CIPHER_FLAG_WEP128                      0x00000020	/* BIT 6 */
 
-#define WAIT_TIME_IND_PMKID_CANDICATE_SEC       6	/* seconds */
 #define TKIP_COUNTERMEASURE_SEC                 60	/* seconds */
 
 #if CFG_SUPPORT_802_11W
@@ -229,26 +228,23 @@ void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
 			     IN struct STA_RECORD *prSta,
 			     IN u_int8_t fgErrorKeyType);
 
-void rsnSelectPmkidCandidateList(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_DESC *prBssDesc);
-
-void rsnUpdatePmkidCandidateList(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_DESC *prBssDesc);
-
-u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucBssid, OUT uint32_t *pu4EntryIndex);
-
-u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER
-				*prAdapter);
+struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucBssid);
 
 void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter,
 			IN struct BSS_DESC *prBss);
 
-void rsnGeneratePmkidIndication(IN struct ADAPTER
-				*prAdapter);
+void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
+				IN struct PARAM_PMKID_CANDIDATE *prCandi);
 
-void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr);
+uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
+		     IN struct PARAM_PMKID *prPmkid);
+
+uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
+		     IN struct PARAM_PMKID *prPmkid);
+
+uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter);
+
 #if CFG_SUPPORT_WPS2
 void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter,
 		      IN struct MSDU_INFO *prMsduInfo);

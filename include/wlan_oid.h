@@ -435,9 +435,22 @@ struct PARAM_AUTH_REQUEST {
 	uint32_t u4Flags;	/*!< Definitions are as follows */
 };
 
-struct PARAM_AUTH_EVENT {
+struct PARAM_PMKID {
+	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
+	uint8_t arPMKID[IW_PMKID_LEN];
+};
+
+struct PARAM_PMKID_CANDIDATE {
+	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
+	uint32_t u4Flags;
+};
+
+struct PARAM_INDICATION_EVENT {
 	struct PARAM_STATUS_INDICATION rStatus;
-	struct PARAM_AUTH_REQUEST arRequest[1];
+	union {
+		struct PARAM_AUTH_REQUEST rAuthReq;
+		struct PARAM_PMKID_CANDIDATE rCandi;
+	};
 };
 
 /*! \brief Capabilities, privacy, rssi and IEs of each BSSID */
@@ -586,18 +599,6 @@ struct PARAM_LINK_SPEED_EX {
 };
 
 /*--------------------------------------------------------------*/
-/*! \brief Set/Query testing type.                              */
-/*--------------------------------------------------------------*/
-struct PARAM_802_11_TEST {
-	uint32_t u4Length;
-	uint32_t u4Type;
-	union {
-		struct PARAM_AUTH_EVENT AuthenticationEvent;
-		int32_t RssiTrigger;
-	} u;
-};
-
-/*--------------------------------------------------------------*/
 /*! \brief Set/Query authentication and encryption capability.  */
 /*--------------------------------------------------------------*/
 struct PARAM_AUTH_ENCRYPTION {
@@ -608,31 +609,10 @@ struct PARAM_AUTH_ENCRYPTION {
 struct PARAM_CAPABILITY {
 	uint32_t u4Length;
 	uint32_t u4Version;
-	uint32_t u4NoOfPMKIDs;
 	uint32_t u4NoOfAuthEncryptPairsSupported;
 	struct PARAM_AUTH_ENCRYPTION
 		arAuthenticationEncryptionSupported[1];
 };
-
-struct PARAM_PMKID {
-	uint32_t u4Length;
-	uint32_t u4BSSIDInfoCount;
-	struct PARAM_BSSID_INFO arBSSIDInfo[1];
-};
-
-/*! \brief PMKID candidate lists. */
-struct PARAM_PMKID_CANDIDATE {
-	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
-	uint32_t u4Flags;
-};
-
-/* #ifdef LINUX */
-struct PARAM_PMKID_CANDIDATE_LIST {
-	uint32_t u4Version;	/*!< Version */
-	uint32_t u4NumCandidates;	/*!< How many candidates follow */
-	struct PARAM_PMKID_CANDIDATE arCandidateList[1];
-};
-/* #endif */
 
 #define NL80211_KCK_LEN                 16
 #define NL80211_KEK_LEN                 16
@@ -2678,12 +2658,6 @@ wlanoidSetReloadDefaults(IN struct ADAPTER *prAdapter,
 			 OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetTest(IN struct ADAPTER *prAdapter,
-	       IN void *pvSetBuffer,
-	       IN uint32_t u4SetBufferLen,
-	       OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
 wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 		       OUT void *pvQueryBuffer,
 		       IN uint32_t u4QueryBufferLen,
@@ -2770,13 +2744,19 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER
 				   OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryPmkid(IN struct ADAPTER *prAdapter,
-		  OUT void *pvQueryBuffer,
-		  IN uint32_t u4QueryBufferLen,
-		  OUT uint32_t *pu4QueryInfoLen);
+wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
+wlanoidDelPmkid(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidFlushPmkid(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);

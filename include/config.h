@@ -526,13 +526,6 @@
 #define CFG_SUPPORT_DROP_MC_PACKET		1
 
 /*------------------------------------------------------------------------------
- * 802.11i RSN Pre-authentication PMKID cahce maximun number
- *------------------------------------------------------------------------------
- */
-/*!< max number of PMKID cache 16(default) : The Max PMKID cache */
-#define CFG_MAX_PMKID_CACHE                     16
-
-/*------------------------------------------------------------------------------
  * Auto Channel Selection maximun channel number
  *------------------------------------------------------------------------------
  */

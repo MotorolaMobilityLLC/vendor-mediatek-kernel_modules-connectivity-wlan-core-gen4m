@@ -537,8 +537,6 @@ void aisFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
 void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb);
 
-void aisFsmRunEventSetOkcPmk(IN struct ADAPTER *prAdapter);
-
 void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
 
