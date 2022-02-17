@@ -2023,6 +2023,38 @@ struct UNI_CMD_SET_TDLS_CH_SW {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* Smart gear command (0x21) */
+struct UNI_CMD_SMART_GEAR {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *   TAG                        | ID  | structure
+        *   ---------------------------|-----|--------------
+        *   UNI_CMD_SMART_GEAR_PARAM   | 0x00| UNI_CMD_SMART_GEAR_PARAM_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* Smart gear command TLV List */
+enum ENUM_UNI_CMD_SMART_GEAR_TAG {
+	UNI_CMD_SMART_GEAR_TAG_PARAM = 0,
+	UNI_CMD_SMART_GEAR_TAG_NUM
+};
+
+/* Set smart gear parameters (Tag0) */
+struct UNI_CMD_SMART_GEAR_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSGEnable;
+	uint8_t ucSGSpcCmd;
+	uint8_t ucNSSCap;
+	uint8_t ucSGCfg;
+	uint8_t ucSG24GFavorANT;
+	uint8_t ucSG5GFavorANT;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_GET_STATISTICS {
 	/*fixed field*/
 	uint8_t ucReserved[4];
@@ -3697,6 +3729,8 @@ uint32_t nicUniCmdOffloadIPV4(struct ADAPTER *ad,
 uint32_t nicUniCmdOffloadIPV6(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

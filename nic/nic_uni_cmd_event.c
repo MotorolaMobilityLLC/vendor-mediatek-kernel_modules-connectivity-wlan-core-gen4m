@@ -136,6 +136,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
 	[CMD_ID_PERF_IND] = nicUniCmdNotSupport,
+	[CMD_ID_SG_PARAM] = nicUniCmdSetSGParam,
 	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
 	[CMD_ID_ADD_REMOVE_KEY] = nicUniCmdInstallKey,
 	[CMD_ID_DEFAULT_KEY_ID] = nicUniCmdInstallDefaultKey,
@@ -3381,6 +3382,46 @@ uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if CFG_SUPPORT_SMART_GEAR
+	struct CMD_SMART_GEAR_PARAM *cmd;
+	struct UNI_CMD_SMART_GEAR *uni_cmd;
+	struct UNI_CMD_SMART_GEAR_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SMART_GEAR) +
+	     		       sizeof(struct UNI_CMD_SMART_GEAR_PARAM);
+
+	if (info->ucCID != CMD_ID_SG_PARAM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SMART_GEAR_PARAM *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SMART_GEAR,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SMART_GEAR *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SMART_GEAR_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SMART_GEAR_TAG_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSGEnable = cmd->ucSGEnable;
+	tag->ucSGSpcCmd = cmd->ucSGSpcCmd;
+	tag->ucNSSCap = cmd->ucNSSCap;
+	tag->ucSGCfg = cmd->ucSGCfg;
+	tag->ucSG24GFavorANT = cmd->ucSG24GFavorANT;
+	tag->ucSG5GFavorANT = cmd->ucSG5GFavorANT;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
