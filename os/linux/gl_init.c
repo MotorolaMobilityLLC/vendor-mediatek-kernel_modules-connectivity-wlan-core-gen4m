@@ -2353,7 +2353,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->features |= NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR;
 #endif
 
-#if KERNEL_VERSION(4, 9, 0) < CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 10, 0) < CFG80211_VERSION_CODE
 	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_LOW_SPAN_SCAN);
 #endif
 	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;
