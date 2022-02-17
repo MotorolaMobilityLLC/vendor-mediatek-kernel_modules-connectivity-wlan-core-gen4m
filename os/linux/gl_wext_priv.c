@@ -9352,6 +9352,8 @@ int priv_driver_set_csa(IN struct net_device *prNetDev,
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
