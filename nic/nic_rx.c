@@ -230,7 +230,10 @@ VOID nicRxInitialize(IN P_ADAPTER_T prAdapter)
 	for (i = CFG_RX_MAX_PKT_NUM; i != 0; i--) {
 		prSwRfb = (P_SW_RFB_T) pucMemHandle;
 
-		nicRxSetupRFB(prAdapter, prSwRfb);
+		if (nicRxSetupRFB(prAdapter, prSwRfb)) {
+			DBGLOG(RX, ERROR, "nicRxInitialize failed: Cannot allocate packet buffer for SwRfb!\n");
+			return;
+		}
 		nicRxReturnRFB(prAdapter, prSwRfb);
 
 		pucMemHandle += ALIGN_4(sizeof(SW_RFB_T));
@@ -908,12 +911,14 @@ VOID nicRxProcessPktWithoutReorder(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 	prRxCtrl->ucNumIndPacket++;
 #endif
 
+#ifndef LINUX
 	if (fgIsRetained) {
 		prRxCtrl->apvRetainedPacket[prRxCtrl->ucNumRetainedPacket] = prSwRfb->pvPacket;
 		prRxCtrl->ucNumRetainedPacket++;
-	} else {
+	} else
+#endif
 		prSwRfb->pvPacket = NULL;
-	}
+
 
 	/* Return RFB */
 	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
