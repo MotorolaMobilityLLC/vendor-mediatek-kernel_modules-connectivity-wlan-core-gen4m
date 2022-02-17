@@ -1168,6 +1168,7 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
 	uint8_t fgSapCheckPmkidInDriver;
+	uint8_t fgAllowSameBandDualSta;
 };
 
 /* cnm_timer module */
