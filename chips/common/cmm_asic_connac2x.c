@@ -69,9 +69,15 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-#include "coda/mt7915/wf_wfdma_host_dma0.h"
-#include "coda/mt7915/wf_wfdma_host_dma1.h"
 
+#ifdef MT7961
+#include "coda/mt7961/wf_wfdma_host_dma0.h"
+#endif
+
+#ifdef MT7915
+#include "coda/mt7915/wf_wfdma_host_dma0.h"
+#endif
+#include "coda/mt7915/wf_wfdma_host_dma1.h"
 
 #include "precomp.h"
 #include "wlan_lib.h"
@@ -97,6 +103,52 @@
 */
 
 #define USB_ACCESS_RETRY_LIMIT           1
+
+#if defined(_HIF_USB)
+#define MAX_POLLING_LOOP 2
+uint32_t g_au4UsbPollAddrTbl[] = {
+	CONNAC2X_U3D_RX4CSR0,
+	CONNAC2X_U3D_RX5CSR0,
+	CONNAC2X_U3D_RX6CSR0,
+	CONNAC2X_U3D_RX7CSR0,
+	CONNAC2X_U3D_RX8CSR0,
+	CONNAC2X_U3D_RX9CSR0,
+	CONNAC2X_UDMA_WLCFG_0,
+	CONNAC2X_UDMA_WL_TX_SCH_ADDR,
+	CONNAC2X_UDMA_AR_CMD_FIFO_ADDR,
+	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_ADDR,
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_ADDR,
+	CONNAC2X_UDMA_WL_STOP_DP_OUT_ADDR
+};
+uint32_t g_au4UsbPollMaskTbl[] = {
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_UDMA_WLCFG_0_WL_TX_BUSY_MASK,
+	CONNAC2X_UDMA_WL_TX_SCH_MASK,
+	CONNAC2X_UDMA_AR_CMD_FIFO_MASK,
+	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_MASK,
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_MASK,
+	CONNAC2X_UDMA_WL_STOP_DP_OUT_DROP_MASK
+};
+uint32_t g_au4UsbPollValueTbl[] = {
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	CONNAC2X_U3D_RX_FIFOEMPTY,
+	0,
+	CONNAC2X_UDMA_WL_TX_SCH_IDLE,
+	CONNAC2X_UDMA_AR_CMD_FIFO_MASK,
+	0,
+	0,
+	0
+};
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -1619,8 +1671,12 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 {
 	uint8_t count = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4Value, u4Idx, u4Loop;
+	uint32_t u4PollingFail = FALSE;
+	struct CHIP_DBG_OPS *prDbgOps;
 
 	prChipInfo = prAdapter->chip_info;
+	prDbgOps = prChipInfo->prDebugOps;
 
 #if 0 /* enable it if need to do bug fixing by vender request */
 	/* NOTE: USB bus may not really do suspend and resume*/
@@ -1642,13 +1698,40 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 	if (prChipInfo->asicWfdmaReInit)
 		prChipInfo->asicWfdmaReInit(prAdapter);
 
+
+	for (u4Loop = 0; u4Loop < MAX_POLLING_LOOP; u4Loop++) {
+		for (u4Idx = 0;
+			u4Idx < sizeof(g_au4UsbPollAddrTbl)/sizeof(uint32_t);
+			u4Idx++) {
+			HAL_MCR_RD(prAdapter,
+				g_au4UsbPollAddrTbl[u4Idx], &u4Value);
+			if ((u4Value & g_au4UsbPollMaskTbl[u4Idx])
+				!= g_au4UsbPollValueTbl[u4Idx]) {
+				DBGLOG(HAL, ERROR,
+					"Polling [0x%08x] VALUE [0x%08x]\n",
+					g_au4UsbPollAddrTbl[u4Idx], u4Value);
+				u4PollingFail = TRUE;
+			}
+		}
+		if (u4PollingFail == TRUE) {
+			if (u4Loop == (MAX_POLLING_LOOP - 1)) {
+				if (prDbgOps && prDbgOps->showPdmaInfo)
+					prDbgOps->showPdmaInfo(prAdapter);
+			} else {
+				u4PollingFail = FALSE;
+				msleep(100);
+			}
+		} else
+			break;
+	}
+
 	/* To trigger CR4 path */
-	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
-	halEnableInterrupt(prGlueInfo->prAdapter);
+	wlanSendDummyCmd(prAdapter, FALSE);
+	halEnableInterrupt(prAdapter);
 
 	/* using inband cmd to inform FW instead of vendor request */
 	/* All Resume operations move to FW */
-	halUSBPreResumeCmd(prGlueInfo->prAdapter);
+	halUSBPreResumeCmd(prAdapter);
 
 	while (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) {
 		if (count > 50) {
