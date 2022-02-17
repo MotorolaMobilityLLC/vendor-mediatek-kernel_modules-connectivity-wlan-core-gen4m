@@ -7808,6 +7808,10 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (glue->fgIsEnableMon)
+		return WLAN_STATUS_SUCCESS;
+#endif
 	GET_BOOT_SYSTIME(&now);
 	last = perf->rLastUpdateTime;
 
@@ -9051,6 +9055,10 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return;
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prAdapter->prGlueInfo->fgIsEnableMon)
+		return;
+#endif
 	prHifStats = &prAdapter->rHifStats;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRxCtrl = &prAdapter->rRxCtrl;
