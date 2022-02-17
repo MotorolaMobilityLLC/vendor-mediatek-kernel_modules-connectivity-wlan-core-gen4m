@@ -750,6 +750,9 @@ struct STA_RECORD {
 	/* TWT Requester state */
 	enum _ENUM_TWT_REQUESTER_STATE_T aeTWTReqState;
 	struct _TWT_FLOW_T arTWTFlow[TWT_MAX_FLOW_NUM];
+#if (CFG_SUPPORT_BTWT == 1)
+	uint32_t au4Timestamp[2];
+#endif
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	struct HE_A_CTRL_OM_T arHeACtrlOm;

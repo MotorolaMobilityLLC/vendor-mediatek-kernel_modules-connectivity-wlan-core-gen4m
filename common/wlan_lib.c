@@ -6943,6 +6943,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #endif
 		);
 #endif
+#if (CFG_SUPPORT_BTWT == 1)
+	prWifiVar->ucBTWTSupport = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "BTWTSupport", FEATURE_DISABLED);
+#endif
 
 	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"SigTaRts", FEATURE_DISABLED);

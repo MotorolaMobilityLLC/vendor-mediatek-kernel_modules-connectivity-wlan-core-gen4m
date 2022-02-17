@@ -772,6 +772,9 @@ struct WIFI_VAR {
 #if (CFG_TWT_SMART_STA == 1)
 	uint8_t ucTWTSmartSta;
 #endif
+#if (CFG_SUPPORT_BTWT == 1)
+	uint8_t ucBTWTSupport;
+#endif
 	uint8_t ucTspec;
 	uint8_t ucUapsd;
 	uint8_t ucStaUapsd;

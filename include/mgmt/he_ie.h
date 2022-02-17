@@ -102,6 +102,7 @@
 #define HE_MAC_CAP2_ALL_ACK_SHFT                       1
 #define HE_MAC_CAP2_TRS_SHFT                           2
 #define HE_MAC_CAP2_BSR_SHFT                           3
+#define HE_MAC_CAP2_BTWT                               BIT(4)
 #define HE_MAC_CAP2_BTWT_SHFT                          4
 #define HE_MAC_CAP2_32BIT_BA_BITMAP_SHFT               5
 #define HE_MAC_CAP2_MU_CASCAD_SHFT                     6
@@ -447,6 +448,12 @@ enum ENUM_HEBA_TYPE {
 		((_ucDur << HE_MAC_CAP1_TRIGGER_PAD_DURATION_SHFT) \
 			& HE_MAC_CAP1_TRIGGER_PAD_DURATION_MASK); \
 }
+
+#define HE_SET_MAC_CAP_BTWT_SUPT(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[2] |=  HE_MAC_CAP2_BTWT)
+
+#define HE_IS_MAC_CAP_BTWT_SUPT(_aucHeMacCapInfo) \
+	(_aucHeMacCapInfo[2] &  HE_MAC_CAP2_BTWT)
 
 #define HE_IS_MAC_CAP_FLEXIBLE_TWT_SHDL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] & HE_MAC_CAP3_FLEXIBLE_TWT_SHDL)

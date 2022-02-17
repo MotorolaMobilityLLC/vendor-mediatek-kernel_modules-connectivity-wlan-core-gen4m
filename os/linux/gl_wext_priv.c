@@ -13859,10 +13859,13 @@ static int priv_driver_set_twtparams(
 
 			g_IsWfaTestBed = (uint8_t)au4Setting[1];
 
+			g_IsTwtLogo = 1;
+
 			return 0;
 	} else if ((IS_TWT_PARAM_ACTION_DEL(au4Setting[0]) ||
-		IS_TWT_PARAM_ACTION_SUSPEND(au4Setting[0])) &&
-		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+		IS_TWT_PARAM_ACTION_SUSPEND(au4Setting[0]) ||
+		IS_TWT_PARAM_ACTION_ADD_BTWT(au4Setting[0]))
+		&& (i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
 
 		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO, "TWT Flow ID=%d\n", au4Setting[1]);
