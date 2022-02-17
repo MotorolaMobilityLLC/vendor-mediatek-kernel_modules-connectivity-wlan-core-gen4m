@@ -2312,21 +2312,20 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state, struct r
 			DBGLOG(RLM, ERROR, "Invalid old state = %d\n", old_state);
 		break;
 	case REGD_STATE_SET_COUNTRY_DRIVER:
-		/*check if country is the same as previous one*/
-		if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-			u32 coutry_code = rlmDomainGetTempCountryCode();
-
-			the_same = rlmDomainIsSameCountryCode((char *)&coutry_code, sizeof(coutry_code));
-		} else {
-			/*query CRDA case*/
-			the_same = rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2));
+		if (old_state == REGD_STATE_SET_COUNTRY_USER) {
+			/*
+			 * Error.
+			 * Mixing using set_country_by_user and set_country_by_driver
+			 * is not allowed.
+			 */
+			break;
 		}
-		if ((old_state == REGD_STATE_SET_WW_CORE) || (old_state == REGD_STATE_INIT))
-			next_state = request_state;
-		else if ((old_state == request_state)
-				 && (the_same))
-			next_state = old_state;
 
+		next_state = request_state;
+		break;
+
+	case REGD_STATE_SET_COUNTRY_IE:
+		next_state = request_state;
 		break;
 
 	default:
@@ -2552,6 +2551,15 @@ const struct ieee80211_regdomain *rlmDomainSearchRegdomainFromLocalDataBase(char
 #endif
 }
 
+
+const struct ieee80211_regdomain *rlmDomainGetLocalDefaultRegd(void)
+{
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+	return &default_regdom_ww;
+#else
+	return NULL;
+#endif
+}
 P_GLUE_INFO_T rlmDomainGetGlueInfo(void)
 {
 	return g_mtk_regd_control.pGlueInfo;
