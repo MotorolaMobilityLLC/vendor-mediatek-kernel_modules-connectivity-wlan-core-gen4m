@@ -2927,6 +2927,10 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 #endif
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
+#ifdef CONNAC
+	kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
+			MCU_INT_NOTIFY_POWER_OFF);
+#endif
 
 	prHifInfo->fgIsPowerOff = true;
 
