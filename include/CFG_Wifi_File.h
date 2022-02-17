@@ -91,251 +91,276 @@
  */
 /* Connac define */
 struct WIFI_NVRAM_2G4_TX_POWER_T {
-	uint8_t uc24GhzTxPowerForCck1M;
-	uint8_t uc24GhzTxPowerForCck2M;
-	uint8_t uc24GhzTxPowerForCck55M;
-	uint8_t uc24GhzTxPowerForCck11M;
-	uint8_t uc24GhzTxPowerForOfdm6M;
-	uint8_t uc24GhzTxPowerForOfdm9M;
-	uint8_t uc24GhzTxPowerForOfdm12M;
-	uint8_t uc24GhzTxPowerForOfdm18M;
-	uint8_t uc24GhzTxPowerForOfdm24M;
-	uint8_t uc24GhzTxPowerForOfdm36M;
-	uint8_t uc24GhzTxPowerForOfdm48M;
-	uint8_t uc24GhzTxPowerForOfdm54M;
-	uint8_t uc24GTxPowerForHt20Mcs0_8_16_24;
-	uint8_t uc24GTxPowerForHt20Mcs1_9_17_25;
-	uint8_t uc24GTxPowerForHt20Mcs2_10_18_26;
-	uint8_t uc24GTxPowerForHt20Mcs3_11_19_27;
-	uint8_t uc24GTxPowerForHt20Mcs4_12_20_28;
-	uint8_t uc24GTxPowerForHt20Mcs5_13_21_29;
-	uint8_t uc24GTxPowerForHt20Mcs6_14_22_30;
-	uint8_t uc24GTxPowerForHt20Mcs7_15_23_31;
-	uint8_t uc24GTxPowerForHt40Mcs0_8_16_24;
-	uint8_t uc24GTxPowerForHt40Mcs1_9_17_25;
-	uint8_t uc24GTxPowerForHt40Mcs2_10_18_26;
-	uint8_t uc24GTxPowerForHt40Mcs3_11_19_27;
-	uint8_t uc24GTxPowerForHt40Mcs4_12_20_28;
-	uint8_t uc24GTxPowerForHt40Mcs5_13_21_29;
-	uint8_t uc24GTxPowerForHt40Mcs6_14_22_30;
-	uint8_t uc24GTxPowerForHt40Mcs7_15_23_31;
-	uint8_t uc24GTxPowerForVht20Mcs0;
-	uint8_t uc24GTxPowerForVht20Mcs1;
-	uint8_t uc24GTxPowerForVht20Mcs2;
-	uint8_t uc24GTxPowerForVht20Mcs3;
-	uint8_t uc24GTxPowerForVht20Mcs4;
-	uint8_t uc24GTxPowerForVht20Mcs5;
-	uint8_t uc24GTxPowerForVht20Mcs6;
-	uint8_t uc24GTxPowerForVht20Mcs7;
-	uint8_t uc24GTxPowerForVht20Mcs8;
-	uint8_t uc24GTxPowerForVht20Mcs9;
-	uint8_t uc24GTxPowerForVht40Mcs0;
-	uint8_t uc24GTxPowerForVht40Mcs1;
-	uint8_t uc24GTxPowerForVht40Mcs2;
-	uint8_t uc24GTxPowerForVht40Mcs3;
-	uint8_t uc24GTxPowerForVht40Mcs4;
-	uint8_t uc24GTxPowerForVht40Mcs5;
-	uint8_t uc24GTxPowerForVht40Mcs6;
-	uint8_t uc24GTxPowerForVht40Mcs7;
-	uint8_t uc24GTxPowerForVht40Mcs8;
-	uint8_t uc24GTxPowerForVht40Mcs9;
-	uint8_t uc24GTxPowerForHt40Mcs32;
-	uint8_t uc24GTxPowerDeltaForLgVht40DuplicateMode;
+	uint8_t uc2G4TxPwrCck1M;
+	uint8_t uc2G4TxPwrCck2M;
+	uint8_t uc2G4TxPwrCck5M;
+	uint8_t uc2G4TxPwrCck11M;
+	uint8_t uc2G4TxPwrOfdm6M;
+	uint8_t uc2G4TxPwrOfdm9M;
+	uint8_t uc2G4TxPwrOfdm12M;
+	uint8_t uc2G4TxPwrOfdm18M;
+	uint8_t uc2G4TxPwrOfdm24M;
+	uint8_t uc2G4TxPwrOfdm36M;
+	uint8_t uc2G4TxPwrOfdm48M;
+	uint8_t uc2G4TxPwrOfdm54M;
+	uint8_t uc2G4TxPwrHt20Mcs0;
+	uint8_t uc2G4TxPwrHt20Mcs1;
+	uint8_t uc2G4TxPwrHt20Mcs2;
+	uint8_t uc2G4TxPwrHt20Mcs3;
+	uint8_t uc2G4TxPwrHt20Mcs4;
+	uint8_t uc2G4TxPwrHt20Mcs5;
+	uint8_t uc2G4TxPwrHt20Mcs6;
+	uint8_t uc2G4TxPwrHt20Mcs7;
+	uint8_t uc2G4TxPwrHt40Mcs0;
+	uint8_t uc2G4TxPwrHt40Mcs1;
+	uint8_t uc2G4TxPwrHt40Mcs2;
+	uint8_t uc2G4TxPwrHt40Mcs3;
+	uint8_t uc2G4TxPwrHt40Mcs4;
+	uint8_t uc2G4TxPwrHt40Mcs5;
+	uint8_t uc2G4TxPwrHt40Mcs6;
+	uint8_t uc2G4TxPwrHt40Mcs7;
+	uint8_t uc2G4TxPwrHt40Mcs32;
+	uint8_t uc2G4TxPwrVht20Mcs0;
+	uint8_t uc2G4TxPwrVht20Mcs1;
+	uint8_t uc2G4TxPwrVht20Mcs2;
+	uint8_t uc2G4TxPwrVht20Mcs3;
+	uint8_t uc2G4TxPwrVht20Mcs4;
+	uint8_t uc2G4TxPwrVht20Mcs5;
+	uint8_t uc2G4TxPwrVht20Mcs6;
+	uint8_t uc2G4TxPwrVht20Mcs7;
+	uint8_t uc2G4TxPwrVht20Mcs8;
+	uint8_t uc2G4TxPwrVht20Mcs9;
+	uint8_t uc2G4TxPwrVht40Mcs0;
+	uint8_t uc2G4TxPwrVht40Mcs1;
+	uint8_t uc2G4TxPwrVht40Mcs2;
+	uint8_t uc2G4TxPwrVht40Mcs3;
+	uint8_t uc2G4TxPwrVht40Mcs4;
+	uint8_t uc2G4TxPwrVht40Mcs5;
+	uint8_t uc2G4TxPwrVht40Mcs6;
+	uint8_t uc2G4TxPwrVht40Mcs7;
+	uint8_t uc2G4TxPwrVht40Mcs8;
+	uint8_t uc2G4TxPwrVht40Mcs9;
+	uint8_t uc2G4TxPwrRU26Mcs0;
+	uint8_t uc2G4TxPwrRU26Mcs1;
+	uint8_t uc2G4TxPwrRU26Mcs2;
+	uint8_t uc2G4TxPwrRU26Mcs3;
+	uint8_t uc2G4TxPwrRU26Mcs4;
+	uint8_t uc2G4TxPwrRU26Mcs5;
+	uint8_t uc2G4TxPwrRU26Mcs6;
+	uint8_t uc2G4TxPwrRU26Mcs7;
+	uint8_t uc2G4TxPwrRU26Mcs8;
+	uint8_t uc2G4TxPwrRU26Mcs9;
+	uint8_t uc2G4TxPwrRU26Mcs10;
+	uint8_t uc2G4TxPwrRU26Mcs11;
+
+	uint8_t uc2G4TxPwrRU52Mcs0;
+	uint8_t uc2G4TxPwrRU52Mcs1;
+	uint8_t uc2G4TxPwrRU52Mcs2;
+	uint8_t uc2G4TxPwrRU52Mcs3;
+	uint8_t uc2G4TxPwrRU52Mcs4;
+	uint8_t uc2G4TxPwrRU52Mcs5;
+	uint8_t uc2G4TxPwrRU52Mcs6;
+	uint8_t uc2G4TxPwrRU52Mcs7;
+	uint8_t uc2G4TxPwrRU52Mcs8;
+	uint8_t uc2G4TxPwrRU52Mcs9;
+	uint8_t uc2G4TxPwrRU52Mcs10;
+	uint8_t uc2G4TxPwrRU52Mcs11;
+
+	uint8_t uc2G4TxPwrRU106Mcs0;
+	uint8_t uc2G4TxPwrRU106Mcs1;
+	uint8_t uc2G4TxPwrRU106Mcs2;
+	uint8_t uc2G4TxPwrRU106Mcs3;
+	uint8_t uc2G4TxPwrRU106Mcs4;
+	uint8_t uc2G4TxPwrRU106Mcs5;
+	uint8_t uc2G4TxPwrRU106Mcs6;
+	uint8_t uc2G4TxPwrRU106Mcs7;
+	uint8_t uc2G4TxPwrRU106Mcs8;
+	uint8_t uc2G4TxPwrRU106Mcs9;
+	uint8_t uc2G4TxPwrRU106Mcs10;
+	uint8_t uc2G4TxPwrRU106Mcs11;
+
+	uint8_t uc2G4TxPwrRU242Mcs0;
+	uint8_t uc2G4TxPwrRU242Mcs1;
+	uint8_t uc2G4TxPwrRU242Mcs2;
+	uint8_t uc2G4TxPwrRU242Mcs3;
+	uint8_t uc2G4TxPwrRU242Mcs4;
+	uint8_t uc2G4TxPwrRU242Mcs5;
+	uint8_t uc2G4TxPwrRU242Mcs6;
+	uint8_t uc2G4TxPwrRU242Mcs7;
+	uint8_t uc2G4TxPwrRU242Mcs8;
+	uint8_t uc2G4TxPwrRU242Mcs9;
+	uint8_t uc2G4TxPwrRU242Mcs10;
+	uint8_t uc2G4TxPwrRU242Mcs11;
+
+	uint8_t uc2G4TxPwrRU484Mcs0;
+	uint8_t uc2G4TxPwrRU484Mcs1;
+	uint8_t uc2G4TxPwrRU484Mcs2;
+	uint8_t uc2G4TxPwrRU484Mcs3;
+	uint8_t uc2G4TxPwrRU484Mcs4;
+	uint8_t uc2G4TxPwrRU484Mcs5;
+	uint8_t uc2G4TxPwrRU484Mcs6;
+	uint8_t uc2G4TxPwrRU484Mcs7;
+	uint8_t uc2G4TxPwrRU484Mcs8;
+	uint8_t uc2G4TxPwrRU484Mcs9;
+	uint8_t uc2G4TxPwrRU484Mcs10;
+	uint8_t uc2G4TxPwrRU484Mcs11;
+
+	uint8_t uc2G4TxPwrLGBW40DuplucateMode;
+
 };
 
 struct WIFI_NVRAM_5G_TX_POWER_T {
-	uint8_t uc5GhzTxPowerForOfdm6M;
-	uint8_t uc5GhzTxPowerForOfdm9M;
-	uint8_t uc5GhzTxPowerForOfdm12M;
-	uint8_t uc5GhzTxPowerForOfdm18M;
-	uint8_t uc5GhzTxPowerForOfdm24M;
-	uint8_t uc5GhzTxPowerForOfdm36M;
-	uint8_t uc5GhzTxPowerForOfdm48M;
-	uint8_t uc5GhzTxPowerForOfdm54M;
-	uint8_t uc5GTxPowerForHt20Mcs0_8_16_24;
-	uint8_t uc5GTxPowerForHt20Mcs1_9_17_25;
-	uint8_t uc5GTxPowerForHt20Mcs2_10_18_26;
-	uint8_t uc5GTxPowerForHt20Mcs3_11_19_27;
-	uint8_t uc5GTxPowerForHt20Mcs4_12_20_28;
-	uint8_t uc5GTxPowerForHt20Mcs5_13_21_29;
-	uint8_t uc5GTxPowerForHt20Mcs6_14_22_30;
-	uint8_t uc5GTxPowerForHt20Mcs7_15_23_31;
-	uint8_t uc5GTxPowerForHt40Mcs0_8_16_24;
-	uint8_t uc5GTxPowerForHt40Mcs1_9_17_25;
-	uint8_t uc5GTxPowerForHt40Mcs2_10_18_26;
-	uint8_t uc5GTxPowerForHt40Mcs3_11_19_27;
-	uint8_t uc5GTxPowerForHt40Mcs4_12_20_28;
-	uint8_t uc5GTxPowerForHt40Mcs5_13_21_29;
-	uint8_t uc5GTxPowerForHt40Mcs6_14_22_30;
-	uint8_t uc5GTxPowerForHt40Mcs7_15_23_31;
-	uint8_t uc5GTxPowerForVht20Mcs0;
-	uint8_t uc5GTxPowerForVht20Mcs1;
-	uint8_t uc5GTxPowerForVht20Mcs2;
-	uint8_t uc5GTxPowerForVht20Mcs3;
-	uint8_t uc5GTxPowerForVht20Mcs4;
-	uint8_t uc5GTxPowerForVht20Mcs5;
-	uint8_t uc5GTxPowerForVht20Mcs6;
-	uint8_t uc5GTxPowerForVht20Mcs7;
-	uint8_t uc5GTxPowerForVht20Mcs8;
-	uint8_t uc5GTxPowerForVht20Mcs9;
-	uint8_t uc5GTxPowerForVht40Mcs0;
-	uint8_t uc5GTxPowerForVht40Mcs1;
-	uint8_t uc5GTxPowerForVht40Mcs2;
-	uint8_t uc5GTxPowerForVht40Mcs3;
-	uint8_t uc5GTxPowerForVht40Mcs4;
-	uint8_t uc5GTxPowerForVht40Mcs5;
-	uint8_t uc5GTxPowerForVht40Mcs6;
-	uint8_t uc5GTxPowerForVht40Mcs7;
-	uint8_t uc5GTxPowerForVht40Mcs8;
-	uint8_t uc5GTxPowerForVht40Mcs9;
-	uint8_t uc5GTxPowerForVht80Mcs0;
-	uint8_t uc5GTxPowerForVht80Mcs1;
-	uint8_t uc5GTxPowerForVht80Mcs2;
-	uint8_t uc5GTxPowerForVht80Mcs3;
-	uint8_t uc5GTxPowerForVht80Mcs4;
-	uint8_t uc5GTxPowerForVht80Mcs5;
-	uint8_t uc5GTxPowerForVht80Mcs6;
-	uint8_t uc5GTxPowerForVht80Mcs7;
-	uint8_t uc5GTxPowerForVht80Mcs8;
-	uint8_t uc5GTxPowerForVht80Mcs9;
-	uint8_t uc5GTxPowerForVht160Mcs0;
-	uint8_t uc5GTxPowerForVht160Mcs1;
-	uint8_t uc5GTxPowerForVht160Mcs2;
-	uint8_t uc5GTxPowerForVht160Mcs3;
-	uint8_t uc5GTxPowerForVht160Mcs4;
-	uint8_t uc5GTxPowerForVht160Mcs5;
-	uint8_t uc5GTxPowerForVht160Mcs6;
-	uint8_t uc5GTxPowerForVht160Mcs7;
-	uint8_t uc5GTxPowerForVht160Mcs8;
-	uint8_t uc5GTxPowerForVht160Mcs9;
-	uint8_t uc5GTxPowerForHt40Mcs32;
-	uint8_t uc5GTxPowerDeltaForLgVht40DuplicateMode;
-	uint8_t uc5GTxPowerDeltaForLgVht80DuplicateMode;
-	uint8_t uc5GTxPowerDeltaForLgVht160DuplicateMode;
-	uint8_t uc20_5BwTxPowerDeltaFor5G;
-	uint8_t uc20_10BwTxPowerDeltaFor5G;
+	uint8_t uc5GTxPwrOfdm6M;
+	uint8_t uc5GTxPwrOfdm9M;
+	uint8_t uc5GTxPwrOfdm12M;
+	uint8_t uc5GTxPwrOfdm18M;
+	uint8_t uc5GTxPwrOfdm24M;
+	uint8_t uc5GTxPwrOfdm36M;
+	uint8_t uc5GTxPwrOfdm48M;
+	uint8_t uc5GTxPwrOfdm54M;
+	uint8_t uc5GTxPwrHt20Mcs0;
+	uint8_t uc5GTxPwrHt20Mcs1;
+	uint8_t uc5GTxPwrHt20Mcs2;
+	uint8_t uc5GTxPwrHt20Mcs3;
+	uint8_t uc5GTxPwrHt20Mcs4;
+	uint8_t uc5GTxPwrHt20Mcs5;
+	uint8_t uc5GTxPwrHt20Mcs6;
+	uint8_t uc5GTxPwrHt20Mcs7;
+	uint8_t uc5GTxPwrHt40Mcs0;
+	uint8_t uc5GTxPwrHt40Mcs1;
+	uint8_t uc5GTxPwrHt40Mcs2;
+	uint8_t uc5GTxPwrHt40Mcs3;
+	uint8_t uc5GTxPwrHt40Mcs4;
+	uint8_t uc5GTxPwrHt40Mcs5;
+	uint8_t uc5GTxPwrHt40Mcs6;
+	uint8_t uc5GTxPwrHt40Mcs7;
+	uint8_t uc5GTxPwrHt40Mcs32;
+
+	uint8_t uc5GTxPwrVht20Mcs0;
+	uint8_t uc5GTxPwrVht20Mcs1;
+	uint8_t uc5GTxPwrVht20Mcs2;
+	uint8_t uc5GTxPwrVht20Mcs3;
+	uint8_t uc5GTxPwrVht20Mcs4;
+	uint8_t uc5GTxPwrVht20Mcs5;
+	uint8_t uc5GTxPwrVht20Mcs6;
+	uint8_t uc5GTxPwrVht20Mcs7;
+	uint8_t uc5GTxPwrVht20Mcs8;
+	uint8_t uc5GTxPwrVht20Mcs9;
+	uint8_t uc5GTxPwrVht40Mcs0;
+	uint8_t uc5GTxPwrVht40Mcs1;
+	uint8_t uc5GTxPwrVht40Mcs2;
+	uint8_t uc5GTxPwrVht40Mcs3;
+	uint8_t uc5GTxPwrVht40Mcs4;
+	uint8_t uc5GTxPwrVht40Mcs5;
+	uint8_t uc5GTxPwrVht40Mcs6;
+	uint8_t uc5GTxPwrVht40Mcs7;
+	uint8_t uc5GTxPwrVht40Mcs8;
+	uint8_t uc5GTxPwrVht40Mcs9;
+	uint8_t uc5GTxPwrVht80Mcs0;
+	uint8_t uc5GTxPwrVht80Mcs1;
+	uint8_t uc5GTxPwrVht80Mcs2;
+	uint8_t uc5GTxPwrVht80Mcs3;
+	uint8_t uc5GTxPwrVht80Mcs4;
+	uint8_t uc5GTxPwrVht80Mcs5;
+	uint8_t uc5GTxPwrVht80Mcs6;
+	uint8_t uc5GTxPwrVht80Mcs7;
+	uint8_t uc5GTxPwrVht80Mcs8;
+	uint8_t uc5GTxPwrVht80Mcs9;
+	uint8_t uc5GTxPwrVht160Mcs0;
+	uint8_t uc5GTxPwrVht160Mcs1;
+	uint8_t uc5GTxPwrVht160Mcs2;
+	uint8_t uc5GTxPwrVht160Mcs3;
+	uint8_t uc5GTxPwrVht160Mcs4;
+	uint8_t uc5GTxPwrVht160Mcs5;
+	uint8_t uc5GTxPwrVht160Mcs6;
+	uint8_t uc5GTxPwrVht160Mcs7;
+	uint8_t uc5GTxPwrVht160Mcs8;
+	uint8_t uc5GTxPwrVht160Mcs9;
+
+	uint8_t uc5GTxPwrRU26Mcs0;
+	uint8_t uc5GTxPwrRU26Mcs1;
+	uint8_t uc5GTxPwrRU26Mcs2;
+	uint8_t uc5GTxPwrRU26Mcs3;
+	uint8_t uc5GTxPwrRU26Mcs4;
+	uint8_t uc5GTxPwrRU26Mcs5;
+	uint8_t uc5GTxPwrRU26Mcs6;
+	uint8_t uc5GTxPwrRU26Mcs7;
+	uint8_t uc5GTxPwrRU26Mcs8;
+	uint8_t uc5GTxPwrRU26Mcs9;
+	uint8_t uc5GTxPwrRU26Mcs10;
+	uint8_t uc5GTxPwrRU26Mcs11;
+
+	uint8_t uc5GTxPwrRU52Mcs0;
+	uint8_t uc5GTxPwrRU52Mcs1;
+	uint8_t uc5GTxPwrRU52Mcs2;
+	uint8_t uc5GTxPwrRU52Mcs3;
+	uint8_t uc5GTxPwrRU52Mcs4;
+	uint8_t uc5GTxPwrRU52Mcs5;
+	uint8_t uc5GTxPwrRU52Mcs6;
+	uint8_t uc5GTxPwrRU52Mcs7;
+	uint8_t uc5GTxPwrRU52Mcs8;
+	uint8_t uc5GTxPwrRU52Mcs9;
+	uint8_t uc5GTxPwrRU52Mcs10;
+	uint8_t uc5GTxPwrRU52Mcs11;
+
+	uint8_t uc5GTxPwrRU106Mcs0;
+	uint8_t uc5GTxPwrRU106Mcs1;
+	uint8_t uc5GTxPwrRU106Mcs2;
+	uint8_t uc5GTxPwrRU106Mcs3;
+	uint8_t uc5GTxPwrRU106Mcs4;
+	uint8_t uc5GTxPwrRU106Mcs5;
+	uint8_t uc5GTxPwrRU106Mcs6;
+	uint8_t uc5GTxPwrRU106Mcs7;
+	uint8_t uc5GTxPwrRU106Mcs8;
+	uint8_t uc5GTxPwrRU106Mcs9;
+	uint8_t uc5GTxPwrRU106Mcs10;
+	uint8_t uc5GTxPwrRU106Mcs11;
+
+	uint8_t uc5GTxPwrRU242Mcs0;
+	uint8_t uc5GTxPwrRU242Mcs1;
+	uint8_t uc5GTxPwrRU242Mcs2;
+	uint8_t uc5GTxPwrRU242Mcs3;
+	uint8_t uc5GTxPwrRU242Mcs4;
+	uint8_t uc5GTxPwrRU242Mcs5;
+	uint8_t uc5GTxPwrRU242Mcs6;
+	uint8_t uc5GTxPwrRU242Mcs7;
+	uint8_t uc5GTxPwrRU242Mcs8;
+	uint8_t uc5GTxPwrRU242Mcs9;
+	uint8_t uc5GTxPwrRU242Mcs10;
+	uint8_t uc5GTxPwrRU242Mcs11;
+
+	uint8_t uc5GTxPwrRU484Mcs0;
+	uint8_t uc5GTxPwrRU484Mcs1;
+	uint8_t uc5GTxPwrRU484Mcs2;
+	uint8_t uc5GTxPwrRU484Mcs3;
+	uint8_t uc5GTxPwrRU484Mcs4;
+	uint8_t uc5GTxPwrRU484Mcs5;
+	uint8_t uc5GTxPwrRU484Mcs6;
+	uint8_t uc5GTxPwrRU484Mcs7;
+	uint8_t uc5GTxPwrRU484Mcs8;
+	uint8_t uc5GTxPwrRU484Mcs9;
+	uint8_t uc5GTxPwrRU484Mcs10;
+	uint8_t uc5GTxPwrRU484Mcs11;
+
+	uint8_t uc5GTxPwrRU996Mcs0;
+	uint8_t uc5GTxPwrRU996Mcs1;
+	uint8_t uc5GTxPwrRU996Mcs2;
+	uint8_t uc5GTxPwrRU996Mcs3;
+	uint8_t uc5GTxPwrRU996Mcs4;
+	uint8_t uc5GTxPwrRU996Mcs5;
+	uint8_t uc5GTxPwrRU996Mcs6;
+	uint8_t uc5GTxPwrRU996Mcs7;
+	uint8_t uc5GTxPwrRU996Mcs8;
+	uint8_t uc5GTxPwrRU996Mcs9;
+	uint8_t uc5GTxPwrRU996Mcs10;
+	uint8_t uc5GTxPwrRU996Mcs11;
+
+	uint8_t uc5GTxPwrLGBW40DuplucateMode;
+	uint8_t uc5GTxPwrLGBW80DuplucateMode;
+	uint8_t uc5GTxPwrLGBW1600DuplucateMode;
+	uint8_t uc5GBw5MTxPwrDelta;
+	uint8_t uc5GBw10MTxPwrDelta;
 };
-
-struct WIFI_NVRAM_FE_LOSS_T {
-	uint8_t u1TxFeLoss;
-	uint8_t u1RxFeLoss;
-};
-
-struct WIFI_NVRAM_TSSI_T {
-	uint8_t u1PATssiSlope;
-	uint8_t u1PATssiOffset;
-	uint8_t u1TxTargetPower;
-};
-
-
-struct WIFI_NVRAM_2G4_WF0_PATH_T {
-	struct WIFI_NVRAM_FE_LOSS_T rFeLoss[14]; /*CH1 ~ CH14*/
-	struct WIFI_NVRAM_TSSI_T rTssi[1];
-
-	uint8_t uc2G4Tx0TssiOffTxPower;
-	uint8_t aucTx2G4TxPowerOffsetLowCh[14];
-	uint8_t aucTx2G4DpdG0OffsetrateH_L[6];
-	uint8_t auc2G4Wf0Lna_Gain_CalDiff[2];
-	uint8_t aucReserved0[2];
-};
-
-struct WIFI_NVRAM_5G_TX_POWER_OFFSET_T {
-	uint8_t ucTxPowerOffsetLow;
-	uint8_t ucTxPowerOffsetHigh;
-};
-
-struct WIFI_NVRAM_5G_TX_DPD_G0_OFFSET_T {
-	uint8_t ucTxPowerOffsetLow;
-	uint8_t ucTxPowerOffsetHigh;
-};
-
-struct WIFI_NVRAM_5G_WF0_PATH_T {
-	struct WIFI_NVRAM_FE_LOSS_T rFeLoss[8];	/*Group 1 ~ Group 8*/
-	struct WIFI_NVRAM_TSSI_T rTssi[8];		 /*Group 1 ~ Group 8*/
-	uint8_t uc5GTx0TssiOffTxPower;
-	/*Group 1 ~ Group 8*/
-	struct WIFI_NVRAM_5G_TX_POWER_OFFSET_T rTxPowerOffset[8];
-
-	uint8_t aucTx5GDpdG0OffsetrateH_L[48];
-	uint8_t auc5GWf0Lna_Gain_CalDiff[16];
-	uint8_t aucReserved3[3];
-
-};
-
-struct WIFI_NVRAM_TSSI_PA_CELL_OFFSET_T {
-	uint8_t  ucTssiPACellOffsetHPA;
-	uint8_t  ucTssiPACellOffsetMPA;
-};
-
-
-struct WIFI_NVRAM_DYNAMIC_IPA_SWITCH_T {
-	uint8_t  ucPACckThreshold;
-	uint8_t  ucPALowRateThreshold;
-	uint8_t  ucPAMidRateThreshold;
-	uint8_t  ucPAHighRateThreshold;
-};
-
-struct WIFI_NVRAM_2G4_ELNA_PARAM_T {
-	uint8_t  ucELNAReceivedModeGain;
-	uint8_t  ucELNAReceivedModeP1dB;
-	uint8_t  ucELNABypassModeGain;
-	uint8_t  ucELNABypassdModeP1dB;
-};
-
-struct WIFI_NVRAM_THERMO_COMP_T {
-	uint8_t uc24GTssiOffMinus7StepNumber;
-	uint8_t uc24GTssiOffMinus6StepNumber;
-	uint8_t uc24GTssiOffMinus5StepNumber;
-	uint8_t uc24GTssiOffMinus4StepNumber;
-	uint8_t uc24GTssiOffMinus3StepNumber;
-	uint8_t uc24GTssiOffMinus2StepNumber;
-	uint8_t uc24GTssiOffMinus1StepNumber;
-	uint8_t uc24GTssiOffMinus0StepNumber;
-	uint8_t uc24GTssiOff24GReferenceStep;
-	uint8_t uc24GTssiOff24GReferenceTemp;
-	uint8_t uc24GTssiOffPlus1StepNumber;
-	uint8_t uc24GTssiOffPlus2StepNumber;
-	uint8_t uc24GTssiOffPlus3StepNumber;
-	uint8_t uc24GTssiOffPlus4StepNumber;
-	uint8_t uc24GTssiOffPlus5StepNumber;
-	uint8_t uc24GTssiOffPlus6StepNumber;
-	uint8_t uc24GTssiOffPlus7StepNumber;
-};
-
-struct WIFI_NVRAM_EPA_DPD_BOUND_T {
-	uint8_t ucEpaDpdOnLowrBound;
-	uint8_t ucEpaDpdOnUpperBound;
-	uint8_t ucEpaDpdProtection[2];
-};
-
-struct WIFI_NVRAM_2G4_COMMON_T {
-	struct WIFI_NVRAM_TSSI_PA_CELL_OFFSET_T rTssiPACellOffset[1];
-	struct WIFI_NVRAM_DYNAMIC_IPA_SWITCH_T rDynamIPASwitch[3];
-	struct WIFI_NVRAM_2G4_ELNA_PARAM_T r2G4ELNAParam[1];
-	struct WIFI_NVRAM_THERMO_COMP_T rThermoComp;
-	struct WIFI_NVRAM_EPA_DPD_BOUND_T rEPADpdBound[3];
-	uint8_t aucReserved0[1];
-};
-
-struct WIFI_NVRAM_5G_ELNA_PARAM_T {
-	uint8_t ucElnaReceivedModeGain;
-	uint8_t ucElnaReceivedModeNf;
-	uint8_t ucElnaReceivedModeP1Db;
-	uint8_t ucElnaBypassModeGain;
-	uint8_t ucElnaBypassModeNf;
-	uint8_t ucElnaBypassModeP1Db;
-};
-
-struct WIFI_NVRAM_5G_COMMON_T {
-	/*Group 1 ~ Group 8*/
-	struct WIFI_NVRAM_TSSI_PA_CELL_OFFSET_T rTssiPACellOffset[8];
-	struct WIFI_NVRAM_DYNAMIC_IPA_SWITCH_T rDynamIPASwitch[3];
-	struct WIFI_NVRAM_5G_ELNA_PARAM_T r5GELNAParam[3];
-	struct WIFI_NVRAM_THERMO_COMP_T rThermoComp;
-	struct WIFI_NVRAM_EPA_DPD_BOUND_T rEPADpdBound[3];
-	uint8_t aucReserved5[5];
-};
-
 
 /* end Connac TX Power define */
 
@@ -476,6 +501,13 @@ struct NEW_EFUSE_MAPPING2NVRAM {
 	uint8_t ucReverse5[40];
 };
 
+struct WIFI_NVRAM_CONTROL_T {
+	uint8_t ucControl; /*0: disable, 1: enable*/
+	uint8_t ucTotalSizeLSB;
+	uint8_t ucTotalSizeMSB;
+};
+
+
 struct WIFI_CFG_PARAM_STRUCT {
 	/* NVRAM offset[0] ~ offset[255] */
 	uint16_t u2Part1OwnVersion;
@@ -493,36 +525,19 @@ struct WIFI_CFG_PARAM_STRUCT {
 	uint8_t ucEnable5GBand;	/* move from 256+ offset to here */
 	uint8_t aucReserved0[256 - 241];
 
-	/* NVRAM offset[256] ~ offset[511] */
 	uint8_t ucTypeID0;
-	uint8_t ucTypeLen0;
-	uint8_t ucTxPowerControl; /*0: disable, 1: enable*/
-	uint16_t u2PowerTotalSize;
+	uint8_t ucTypeLen0LSB;
+	uint8_t ucTypeLen0MSB;
+	struct WIFI_NVRAM_CONTROL_T rCtrl;
 	uint8_t ucTypeID1;
-	uint8_t ucTypeLen1;
-	struct WIFI_NVRAM_2G4_TX_POWER_T r2G4TxPower;
+	uint8_t ucTypeLen1LSB;
+	uint8_t ucTypeLen1MSB;
+	struct WIFI_NVRAM_2G4_TX_POWER_T r2G4Pwr;
 	uint8_t ucTypeID2;
-	uint8_t ucTypeLen2;
-	struct WIFI_NVRAM_5G_TX_POWER_T r5GTxpower;
-	uint8_t ucTypeID3;
-	uint8_t ucTypeLen3;
-	struct WIFI_NVRAM_2G4_WF0_PATH_T r2G4WF0path;
-	uint8_t ucTypeID4;
-	uint8_t ucTypeLen4;
-	struct WIFI_NVRAM_5G_WF0_PATH_T  r5GWF0path;
-	uint8_t ucTypeID5;
-	uint8_t ucTypeLen5;
-	struct WIFI_NVRAM_2G4_COMMON_T r2G4Cmm;
-	uint8_t ucTypeID6;
-	uint8_t ucTypeLen6;
-	struct WIFI_NVRAM_5G_COMMON_T r5GCmm;
-
-	/* NVRAM offset[768] ~ offset[1023] */
-	/* NVRAM offset[1024] ~ offset[1279] */
-	/* NVRAM offset[1280] ~ offset[1535] */
-	/* NVRAM offset[1536] ~ offset[1791] */
-	/* NVRAM offset[1792] ~ offset[2047] */
-	uint8_t aucReserved1[1346];
+	uint8_t ucTypeLen2LSB;
+	uint8_t ucTypeLen2MSB;
+	struct WIFI_NVRAM_5G_TX_POWER_T r5GPwr;
+	uint8_t aucReserved1[1528];
 };
 
 struct WIFI_NVRAM_TAG_FORMAT {
@@ -565,7 +580,6 @@ static __KAL_INLINE__ void nvramOffsetCheck(void)
 {
 	DATA_STRUCT_INSPECTING_ASSERT(
 		OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0) == 256);
-
 	DATA_STRUCT_INSPECTING_ASSERT(
 		sizeof(struct WIFI_CFG_PARAM_STRUCT) == 2048);
 }

@@ -103,6 +103,12 @@ struct NVRAM_TAG_FRAGMENT_GROUP {
 	uint8_t u1EndTagID;
 };
 
+struct NVRAM_FRAGMENT_RANGE {
+	uint32_t startOfs;
+	uint32_t endOfs;
+};
+
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4391,6 +4397,183 @@ static int32_t wlanCal6628EfuseForm(IN struct ADAPTER
 }
 
 #endif
+
+#define NVRAM_OFS(elment) OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, elment)
+
+uint32_t wlanGetMiniTxPower(IN struct ADAPTER *prAdapter,
+				  IN enum ENUM_BAND eBand,
+				  IN enum ENUM_PHY_MODE_TYPE ePhyMode,
+				  OUT int8_t *pTxPwr)
+{
+#ifdef SOC3_0
+	struct REG_INFO *prRegInfo;
+	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+	uint8_t *pu1Addr;
+	int8_t bandIdx = 0;
+
+	int8_t minTxPwr = 0x7F;
+	int8_t nvTxPwr = 0;
+	uint32_t rateIdx = 0;
+	uint32_t startOfs = 0;
+	uint32_t endOfs = 0;
+
+	struct NVRAM_FRAGMENT_RANGE arRange[2][PHY_MODE_TYPE_NUM] = {
+		/*BAND2G4*/
+		{
+			/*CCK*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrCck1M),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrCck11M)},
+			/*OFDM*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrOfdm6M),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrOfdm54M)},
+			/*HT20*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrHt20Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrHt20Mcs7)},
+			/*HT40*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrHt40Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrHt40Mcs32)},
+			/*VHT20*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrVht20Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrVht20Mcs9)},
+			/*VHT40*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrVht40Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrVht40Mcs9)},
+			/*VHT80*/
+			{0, 0},
+			/*SU20*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU242Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU242Mcs11)},
+			/*SU40*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU484Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU484Mcs11)},
+			/*SU80*/
+			{0, 0},
+			/*RU26*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU26Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU26Mcs11)},
+			/*RU52*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU52Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU52Mcs11)},
+			/*RU106*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU106Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU106Mcs11)},
+			/*RU242*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU242Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU242Mcs11)},
+			/*RU484*/
+			{NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU484Mcs0),
+			NVRAM_OFS(r2G4Pwr.uc2G4TxPwrRU484Mcs11)},
+			/*RU996*/
+			{0, 0},
+		},
+		/*BAND5G*/
+		{
+			/*CCK*/
+			{0, 0},
+			/*OFDM*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrOfdm6M),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrOfdm54M)},
+			/*HT20*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrHt20Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrHt20Mcs7)},
+			/*HT40*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrHt40Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrHt40Mcs32)},
+			/*VHT20*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrVht20Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrVht20Mcs9)},
+			/*VHT40*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrVht40Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrVht40Mcs9)},
+			/*VHT80*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrVht80Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrVht80Mcs9)},
+			/*SU20*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU242Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU242Mcs11)},
+			/*SU40*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU484Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU484Mcs11)},
+			/*SU80*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU996Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU996Mcs11)},
+			/*RU26*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU26Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU26Mcs11)},
+			/*RU52*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU52Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU52Mcs11)},
+			/*RU106*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU106Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU106Mcs11)},
+			/*RU242*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU242Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU242Mcs11)},
+			/*RU484*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU484Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU484Mcs11)},
+			/*RU996*/
+			{NVRAM_OFS(r5GPwr.uc5GTxPwrRU996Mcs0),
+			NVRAM_OFS(r5GPwr.uc5GTxPwrRU996Mcs11)},
+		}
+	};
+
+	ASSERT(prAdapter);
+	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
+
+	ASSERT(prRegInfo);
+	prNvramSettings = prRegInfo->prNvramSettings;
+	ASSERT(prNvramSettings);
+
+	if (prAdapter->prGlueInfo->fgNvramAvailable == FALSE) {
+		DBGLOG(INIT, WARN, "check Nvram fail\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (eBand == BAND_2G4)
+		bandIdx = 0;
+	else if (eBand == BAND_5G)
+		bandIdx = 1;
+	else {
+		DBGLOG(INIT, WARN, "check Band fail(%d)\n",
+			eBand);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+	if (ePhyMode >= PHY_MODE_TYPE_NUM) {
+		DBGLOG(INIT, WARN, "check phy mode fail(%d)\n",
+			ePhyMode);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	startOfs = arRange[bandIdx][ePhyMode].startOfs;
+	endOfs = arRange[bandIdx][ePhyMode].endOfs;
+
+
+	/*NVRAM start addreess :0*/
+	pu1Addr = (uint8_t *)&prNvramSettings->u2Part1OwnVersion;
+
+	for (rateIdx = startOfs; rateIdx <= endOfs; rateIdx++) {
+		nvTxPwr = *(pu1Addr + rateIdx);
+
+		if (nvTxPwr < minTxPwr)
+			minTxPwr = nvTxPwr;
+	}
+
+	/*NVRAM resolution is S6.1 format*/
+	*pTxPwr = minTxPwr >> 1;
+
+	DBGLOG(INIT, INFO, "Band[%s],PhyMode[%d],get mini txpwr=%d\n",
+		(eBand == BAND_2G4)?"2G4":"5G",
+		ePhyMode,
+		*pTxPwr);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	DBGLOG(INIT, WARN, "Not supported!");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
