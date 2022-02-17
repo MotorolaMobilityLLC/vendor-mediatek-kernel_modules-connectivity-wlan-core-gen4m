@@ -31,6 +31,8 @@
 #define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
 #define IS_6G_PSC_CHANNEL(_ch) \
 	(((_ch - 5) % 16) == 0)
+#define IS_6G_OP_CLASS(_opClass) \
+	((_opClass >= 131) && (_opClass <= 135))
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -162,7 +164,7 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/*Support AP Selection */
 	prScanInfo->u4ScanUpdateIdx = 0;
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	LINK_INITIALIZE(&prAdapter->rNeighborAPInfoList);
 #endif
 }	/* end of scnInit() */
@@ -210,7 +212,7 @@ void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter)
 void scnUninit(IN struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
 #endif
 
@@ -240,7 +242,7 @@ void scnUninit(IN struct ADAPTER *prAdapter)
 	LINK_INITIALIZE(&prScanInfo->rFreeBSSDescList);
 	LINK_INITIALIZE(&prScanInfo->rBSSDescList);
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	while (!LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList)) {
 		LINK_REMOVE_HEAD(&prAdapter->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
@@ -1354,7 +1356,8 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1607,7 +1610,8 @@ void scanEhtDuplicateBssDesc(IN struct ADAPTER *prAdapter,
 			}
 		} else {
 			log_dbg(SCN, INFO, "ML link(%d), "MACSTR" exist!\n",
-				prProfiles->ucLinkId);
+				prProfiles->ucLinkId,
+				MAC2STR(prProfiles->aucLinkAddr));
 			continue;
 		}
 
@@ -1772,6 +1776,7 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 void scanHandleRnrSsid(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssidNum)
 {
@@ -2150,7 +2155,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				ucScanEnable = FALSE;
 
 			if (EQUAL_MAC_ADDR(&prNeighborAPInfoField->
-				aucTbttInfoSet[j + 1], aucNullAddr))
+					aucTbttInfoSet[j + 1], aucNullAddr))
 				ucScanEnable = FALSE;
 
 			if (!ucScanEnable)
@@ -2209,7 +2214,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		ucCurrentLength += 4 + (u2TbttInfoCount * u2TbttInfoLength);
 
 		/* Only handle RnR with BSSID */
-		if ((ucHasBssid && ucScanEnable)) {
+		if (ucHasBssid && ucScanEnable) {
 			scanProcessRnrChannel(ucRnrChNum,
 				prNeighborAPInfoField->ucOpClass,
 				prScanRequest);
@@ -2219,7 +2224,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 						&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
-			log_dbg(SCN, TRACE, "6G RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
+			log_dbg(SCN, INFO, "6G RnR for ch[%d,%d,%d,%d]Match[%d %d %d %d][%d %d %d %d] (IE Length:%d)into list(%d)\n",
 				    prScanRequest->arChannel[0].ucChannelNum,
 				    prScanRequest->arChannel[1].ucChannelNum,
 				    prScanRequest->arChannel[2].ucChannelNum,
@@ -2236,10 +2241,11 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				    prAdapter->rNeighborAPInfoList.u4NumElem);
 			ucHasBssid = FALSE;
 		}
-		if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
-			cnmMemFree(prAdapter, prNeighborAPInfo);
 	}
+	if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
+		cnmMemFree(prAdapter, prNeighborAPInfo);
 }
+
 #endif
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2335,7 +2341,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	struct _IE_HE_OP_T *prHeOp;
 	struct _IE_HE_CAP_T *prHeCap;
 #endif
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 	uint8_t aucRnrIe[MAX_LEN_OF_MLIE];
 	uint8_t ucRnrIeExist = FALSE;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -3176,7 +3182,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 		case ELEM_ID_RNR:
 			ucRnrIeExist = TRUE;
 			kalMemCopy(aucRnrIe, pucIE, IE_LEN(pucIE) + 2);
@@ -3448,7 +3454,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
 	}
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* Both MLD IE and RNR IE exist, need to handle both */
 	if (ucMldIeExist && ucRnrIeExist) {
