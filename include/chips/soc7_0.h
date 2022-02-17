@@ -65,6 +65,8 @@
 #define WMMCU_WIFI_ROM_EMI_DATE_ADDR		0xF04954F0
 #define DATE_CODE_SIZE 16
 
+#define WF_CONN_INFA_BUS_CLOCK_RATE 0x18012050
+
 extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
 extern struct PP_TOP_CR rSoc7_0_PpTopCr;
