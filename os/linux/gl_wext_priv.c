@@ -962,7 +962,6 @@ __priv_set_int(IN struct net_device *prNetDev,
 
 	switch (u4SubCmd) {
 	case PRIV_CMD_TEST_MODE:
-		/* printk("TestMode=%ld\n", pu4IntBuf[1]); */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		if (pu4IntBuf[1] == PRIV_CMD_TEST_MAGIC_KEY) {
@@ -983,9 +982,6 @@ __priv_set_int(IN struct net_device *prNetDev,
 		break;
 
 	case PRIV_CMD_TEST_CMD:
-		/* printk("CMD=0x%08lx, data=0x%08lx\n", pu4IntBuf[1],
-		 *        pu4IntBuf[2]);
-		 */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		kalMemCopy(&prNdisReq->ndisOidContent[0], &pu4IntBuf[1], 8);
@@ -1000,9 +996,6 @@ __priv_set_int(IN struct net_device *prNetDev,
 
 #if CFG_SUPPORT_PRIV_MCR_RW
 	case PRIV_CMD_ACCESS_MCR:
-		/* printk("addr=0x%08lx, data=0x%08lx\n", pu4IntBuf[1],
-		 *        pu4IntBuf[2]);
-		 */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		if (!prGlueInfo->fgMcrAccessAllowed) {
@@ -1031,9 +1024,6 @@ __priv_set_int(IN struct net_device *prNetDev,
 #endif
 
 	case PRIV_CMD_SW_CTRL:
-		/* printk("addr=0x%08lx, data=0x%08lx\n", pu4IntBuf[1],
-		 *        pu4IntBuf[2]);
-		 */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		kalMemCopy(&prNdisReq->ndisOidContent[0], &pu4IntBuf[1], 8);
@@ -1275,9 +1265,6 @@ __priv_get_int(IN struct net_device *prNetDev,
 
 	switch (u4SubCmd) {
 	case PRIV_CMD_TEST_CMD:
-		/* printk("CMD=0x%08lx, data=0x%08lx\n", pu4IntBuf[1],
-		 *        pu4IntBuf[2]);
-		 */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		kalMemCopy(&prNdisReq->ndisOidContent[0], &pu4IntBuf[1], 8);
@@ -1288,25 +1275,14 @@ __priv_get_int(IN struct net_device *prNetDev,
 
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
-			/* printk("Result=%ld\n",
-			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
-			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
-			/*
-			 *  if (copy_to_user(prIwReqData->data.pointer,
-			 *      &prNdisReq->ndisOidContent[4], 4)) {
-			 *      printk(KERN_NOTICE
-			 *      "priv_get_int() copy_to_user oidBuf fail(3)\n");
-			 *      return -EFAULT;
-			 *  }
-			 */
+
 		}
 		return status;
 
 #if CFG_SUPPORT_PRIV_MCR_RW
 	case PRIV_CMD_ACCESS_MCR:
-		/* printk("addr=0x%08lx\n", pu4IntBuf[1]); */
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		if (!prGlueInfo->fgMcrAccessAllowed) {
@@ -1322,9 +1298,6 @@ __priv_get_int(IN struct net_device *prNetDev,
 
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
-			/* printk("Result=%ld\n",
-			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
-			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
 		}
@@ -1338,8 +1311,6 @@ __priv_get_int(IN struct net_device *prNetDev,
 		return status;
 
 	case PRIV_CMD_SW_CTRL:
-		/* printk(" addr=0x%08lx\n", pu4IntBuf[1]); */
-
 		prNdisReq = (struct NDIS_TRANSPORT_STRUCT *) &aucOidBuf[0];
 
 		kalMemCopy(&prNdisReq->ndisOidContent[0], &pu4IntBuf[1], 8);
@@ -1350,9 +1321,6 @@ __priv_get_int(IN struct net_device *prNetDev,
 
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
-			/* printk("Result=%ld\n",
-			 *        *(uint32_t *)&prNdisReq->ndisOidContent[4]);
-			 */
 			prIwReqData->mode = *(uint32_t *)
 					    &prNdisReq->ndisOidContent[4];
 		}
@@ -2039,9 +2007,6 @@ __priv_get_struct(IN struct net_device *prNetDev,
 		status = priv_get_ndis(prNetDev, prNdisReq, &u4BufLen);
 		if (status == 0) {
 			prNdisReq->outNdisOidLength = u4BufLen;
-			/* printk("len=%d Result=%08lx\n", u4BufLen,
-			 * *(uint32_t *)&prNdisReq->ndisOidContent[4]);
-			 */
 
 			if (copy_to_user(prIwReqData->data.pointer,
 					 &prNdisReq->ndisOidContent[4], 4))
@@ -9677,7 +9642,6 @@ int priv_driver_set_band(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return 0;
 }
-
 
 int priv_driver_set_country(IN struct net_device *prNetDev,
 			    IN char *pcCommand, IN int i4TotalLen)

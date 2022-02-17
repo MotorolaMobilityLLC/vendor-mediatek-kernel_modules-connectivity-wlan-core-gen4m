@@ -734,7 +734,7 @@ void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
 			u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
 			get_logtoomuch_enable()) {
 		DBGLOG(OID, TRACE,
-			"Disable printk to much. driver: %d, fw: %d\n",
+			"Disable print log too much. driver: %d, fw: %d\n",
 			u4DriverLevel,
 			u4FwLevel);
 		set_logtoomuch_enable(0);

@@ -330,7 +330,6 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 			}
 		}
 
-		/* printk("TDLS_ENABLE_LINK %d\n", i); */
 		break;
 	case TDLS_DISABLE_LINK:
 
@@ -338,7 +337,6 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 				prBssInfo->ucBssIndex,
 				prCmd->aucPeerMac);
 
-		/* printk("TDLS_ENABLE_LINK %d\n", prStaRec->ucTdlsIndex); */
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 		if (IS_DLS_STA(prStaRec))
 			cnmStaRecFree(prAdapter, prStaRec);
@@ -535,7 +533,6 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 
 	ReasonCode = u2StatusCode;
 
-	/* printk("\n\n ReasonCode = %u\n\n",ReasonCode ); */
 
 	kalMemCopy(pPkt, &ReasonCode, 2);
 	pPkt = pPkt + 2;
@@ -573,8 +570,6 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 
 	/* 5. Update packet length */
 	prMsduInfo->len = u4PktLen;
-
-	/* printk(" TdlsDataFrameSend_TearDown !!\n"); */
 
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);

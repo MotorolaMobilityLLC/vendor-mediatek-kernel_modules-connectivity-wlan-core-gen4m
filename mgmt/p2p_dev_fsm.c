@@ -764,11 +764,6 @@ void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(P2P, TRACE, "p2pDevFsmRunEventChannelRequest\n");
 
-		/* printk(
-		 * "p2pDevFsmRunEventChannelRequest check cookie =%lld\n",
-		 * prChnlReqInfo->u8Cookie);
-		 */
-
 		if (!LINK_IS_EMPTY(&prChnlReqInfo->rP2pChnlReqLink)) {
 			struct LINK_ENTRY *prLinkEntry =
 				(struct LINK_ENTRY *) NULL;

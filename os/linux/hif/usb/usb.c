@@ -221,7 +221,6 @@ static int mtk_usb_probe(struct usb_interface *intf, const struct usb_device_id 
 
 	DBGLOG(HAL, EVENT, "wlan_probe()\n");
 	if (pfWlanProbe((void *) intf, (void *) id->driver_info) != WLAN_STATUS_SUCCESS) {
-		/* printk(KERN_WARNING DRV_NAME"pfWlanProbe fail!call pfWlanRemove()\n"); */
 		pfWlanRemove();
 		DBGLOG(HAL, ERROR, "wlan_probe() failed\n");
 		ret = -1;
@@ -1405,14 +1404,12 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 	ASSERT(pvData);
 	if (!pvData) {
-		/* printk(KERN_INFO DRV_NAME"%s null pvData\n", __FUNCTION__); */
 		return;
 	}
 	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *) pvCookie;
 	ASSERT(prGlueInfo);
 	if (!prGlueInfo) {
-		/* printk(KERN_INFO DRV_NAME"%s no glue info\n", __FUNCTION__); */
 		return;
 	}
 

@@ -1852,9 +1852,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		    u4AkmSuite) {
 			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
 									TRUE;
-			/* printk("match AuthenticationSuite = 0x%x",
-			 *        u4AkmSuite);
-			 */
 		} else {
 			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
 									FALSE;
@@ -2968,18 +2965,10 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 		prWpiKey->u4KeyIndex = prParams->key_index;
 		prWpiKey->u4KeyIndex--;
 		if (prWpiKey->u4KeyIndex > 1) {
-			/* key id is out of range */
-			/* printk(KERN_INFO "[wapi] add key error:
-			 * key_id invalid %d\n", prWpiKey->ucKeyID);
-			 */
 			return -EINVAL;
 		}
 
 		if (prIWEncExt->key_len != 32) {
-			/* key length not valid */
-			/* printk(KERN_INFO "[wapi] add key error:
-			 * key_len invalid %d\n", prIWEncExt->key_len);
-			 */
 			return -EINVAL;
 		}
 		prWpiKey->u4KeyLength = prIWEncExt->key_len;
@@ -3014,9 +3003,6 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 				FALSE, FALSE, TRUE, &u4BufLen);
 
 		if (rstatus != WLAN_STATUS_SUCCESS) {
-			/* printk(KERN_INFO "[wapi] add key error:%x\n",
-			 * rStatus);
-			 */
 			fgIsValid = -EFAULT;
 		}
 
