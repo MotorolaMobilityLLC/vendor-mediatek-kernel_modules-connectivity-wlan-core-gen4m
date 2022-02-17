@@ -907,7 +907,7 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				(uint8_t)prBssInfo->u4PrivateData);
 			DBGLOG(AAA, INFO, "[OWE] Forward RxAssoc\n");
 		} else
-		assocSendReAssocRespFrame(prAdapter, prStaRec);
+			assocSendReAssocRespFrame(prAdapter, prStaRec);
 
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
