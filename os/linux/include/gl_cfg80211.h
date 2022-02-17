@@ -752,6 +752,9 @@ const uint8_t *mtk_cfg80211_find_ie_match_mask(uint8_t eid,
 				int match_len, int match_offset,
 				const uint8_t *match_mask);
 
+int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
+			  struct net_device *ndev);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
