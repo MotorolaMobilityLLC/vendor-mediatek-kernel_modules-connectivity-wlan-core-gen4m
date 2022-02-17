@@ -2571,7 +2571,7 @@ priv_set_driver(IN struct net_device *prNetDev,
 			return -EFAULT;
 		}
 		/* prIwReqData->data.length include the terminate '\0' */
-		pcExtra[prIwReqData->data.length - 1] = 0;
+		pcExtra[prIwReqData->data.length] = 0;
 	}
 
 	if (pcExtra) {
@@ -2995,6 +2995,12 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
 #define CMD_GET_STA_IDX         "GET_STA_IDX"
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
+
+/* neptune doens't support "show" entry, use "driver" to handle
+ * MU GET request, and MURX_PKTCNT comes from RX_STATS,
+ * so this command will reuse RX_STAT's flow
+ */
+#define CMD_GET_MU_RX_PKTCNT	"hqa_get_murx_pktcnt"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START		"WOW_START"
@@ -7732,6 +7738,7 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	au4LengthMismatch[ENUM_BAND_1] += htonl(
 					g_HqaRxStat.LengthMismatchCount_B1);
 
+	DBGLOG(INIT, INFO, "fgResetCnt = %d\n", fgResetCnt);
 	if (fgResetCnt) {
 		kalMemZero(au4MacMdrdy, sizeof(au4MacMdrdy));
 		kalMemZero(au4FcsError, sizeof(au4FcsError));
@@ -7758,35 +7765,72 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	} else{
 		fgSkipRxV = TRUE;
 	}
+	DBGLOG(INIT, INFO, "g_HqaRxStat.MAC_Mdrdy = %d\n",
+		htonl(g_HqaRxStat.MAC_Mdrdy));
+	DBGLOG(INIT, INFO, "au4MacMdrdy[ENUM_BAND_0] = %d\n",
+		au4MacMdrdy[ENUM_BAND_0]);
+	DBGLOG(INIT, INFO, "g_HqaRxStat.PhyMdrdyOFDM = %d\n",
+		htonl(g_HqaRxStat.PhyMdrdyOFDM));
+	DBGLOG(INIT, INFO, "g_HqaRxStat.MAC_FCS_Err= %d\n",
+		htonl(g_HqaRxStat.MAC_FCS_Err));
+	DBGLOG(INIT, INFO, "au4FcsError[ENUM_BAND_0]= %d\n",
+		au4FcsError[ENUM_BAND_0]);
+	DBGLOG(INIT, INFO, "g_HqaRxStat.FCSErr_OFDM = %d\n",
+		htonl(g_HqaRxStat.FCSErr_OFDM));
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%s", "\n\nRX Stat:\n");
-#if 0
+#if 1
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "PER0", " = ",
-			g_HqaRxStat.PER0);
+			htonl(g_HqaRxStat.PER0));
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "PER1", " = ",
-			g_HqaRxStat.PER1);
+			htonl(g_HqaRxStat.PER1));
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX OK0", " = ",
-			g_HqaRxStat.RXOK0);
+			au4MacMdrdy[ENUM_BAND_0] - au4FcsError[ENUM_BAND_0]);
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX OK1", " = ",
-			g_HqaRxStat.RXOK1);
+			au4MacMdrdy[ENUM_BAND_1] - au4FcsError[ENUM_BAND_1]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RCPI0", " = ",
+			htonl(g_HqaRxStat.RCPI0));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "RCPI1", " = ",
+			htonl(g_HqaRxStat.RCPI1));
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MuRxCnt", " = ",
+			htonl(g_HqaRxStat.MRURxCount));
 #endif
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy0 diff", " = ",
+			htonl(g_HqaRxStat.MAC_Mdrdy));
+
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "MAC Mdrdy0", " = ",
 			au4MacMdrdy[ENUM_BAND_0]);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "MAC Mdrdy1 diff", " = ",
+			htonl(g_HqaRxStat.MAC_Mdrdy1));
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -7896,11 +7940,13 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	} else{
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "FAGC RSSI W", " = ", "N/A");
+			"%-20s%s%d\n", "FAGC RSSI W", " = ",
+			htonl(g_HqaRxStat.FAGCRssiWBR0));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%-20s%s%s\n", "FAGC RSSI I", " = ", "N/A");
+			"%-20s%s%d\n", "FAGC RSSI I", " = ",
+			htonl(g_HqaRxStat.FAGCRssiIBR0));
 	}
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
@@ -7977,22 +8023,25 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ?
 			(0) : ((uint32_t)(u4RxVector3 & BITS(24, 31)) >> 24));
 	} else{
-#if 0
+#if 1
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					      i4TotalLen - i4BytesWritten,
-					      "%-20s%s%s\n", "Driver RX Cnt0",
-					      " = ", "N/A");
+					      "%-20s%s%d\n", "Driver RX Cnt0",
+					      " = ",
+					      htonl(g_HqaRxStat.DriverRxCount));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					      i4TotalLen - i4BytesWritten,
 					      "%-20s%s%s\n", "Driver RX Cnt1",
-					      " = ", "N/A");
+					      " = ",
+					     htonl(g_HqaRxStat.DriverRxCount1));
 #endif
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					      i4TotalLen - i4BytesWritten,
-					      "%-20s%s%s\n",
+					      "%-20s%s%d\n",
 					      "Freq Offset From RX",
-					      " = ", "N/A");
+					      " = ",
+					   htonl(g_HqaRxStat.FreqOffsetFromRX));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					      i4TotalLen - i4BytesWritten,
@@ -8125,7 +8174,9 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	DBGLOG(INIT, ERROR, "MT6632 : priv_driver_show_rx_stat\n");
+	DBGLOG(INIT, ERROR,
+		"MT6632 : priv_driver_show_rx_stat %s, i4Argc[%d]\n",
+		pcCommand, i4Argc);
 
 	if (i4Argc >= 2) {
 		if (strnicmp(apcArgv[1], CMD_STAT_RESET_CNT,
@@ -14406,6 +14457,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_FWTBL_UMAC, priv_driver_get_umac_fwtbl},
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	{CMD_SHOW_TXD_INFO, priv_driver_show_txd_info},
+	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
