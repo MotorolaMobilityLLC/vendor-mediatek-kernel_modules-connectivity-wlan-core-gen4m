@@ -1375,16 +1375,17 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				ASSERT(0);
 			}
 
-			/* set channel to scan request message
-			 * We set channel according to current eScanChannel
-			 */
 			switch (prScanReqMsg->eScanChannel) {
 			case SCAN_CHANNEL_FULL:
 			case SCAN_CHANNEL_2G4:
 			case SCAN_CHANNEL_5G:
 				scanSetRequestChannel(
+					prAdapter,
 					prAisFsmInfo->u4ScanChannelNum,
-					prAisFsmInfo->arChannel, prScanReqMsg);
+					prAisFsmInfo->arChannel,
+					(prAisFsmInfo->eCurrentState ==
+					AIS_STATE_ONLINE_SCAN),
+					prScanReqMsg);
 				break;
 			default:
 				break;
@@ -3242,7 +3243,8 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
-	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d]\n", prAisFsmInfo->eCurrentState);
+	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d] Seq=%u\n",
+		prAisFsmInfo->eCurrentState, prAisFsmInfo->ucSeqNumOfScanReq);
 
 	/* try to stop scan in CONNSYS */
 	aisFsmStateAbort_SCAN(prAdapter);
