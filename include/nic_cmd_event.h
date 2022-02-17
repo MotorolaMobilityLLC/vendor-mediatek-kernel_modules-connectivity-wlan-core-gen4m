@@ -1024,12 +1024,10 @@ typedef struct _CMD_GTK_REKEY_DATA_T {
 	UINT_8 aucReplayCtr[8];
 } CMD_GTK_REKEY_DATA_T, *P_CMD_GTK_REKEY_DATA_T;
 
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
 typedef struct _CMD_CSUM_OFFLOAD_T {
 	UINT_16 u2RxChecksum;	/* bit0: IP, bit1: UDP, bit2: TCP */
 	UINT_16 u2TxChecksum;	/* bit0: IP, bit1: UDP, bit2: TCP */
 } CMD_CSUM_OFFLOAD_T, *P_CMD_CSUM_OFFLOAD_T;
-#endif
 
 /* CMD_BASIC_CONFIG */
 typedef struct _CMD_BASIC_CONFIG_T {
