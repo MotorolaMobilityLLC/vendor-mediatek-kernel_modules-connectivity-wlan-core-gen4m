@@ -5602,6 +5602,44 @@ void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+void nicCmdEventLatchTSF(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf) {
+		DBGLOG(NIC, ERROR, "NULL pucEventBuf!\n");
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		kalMemCopy(prCmdInfo->pvInformationBuffer,
+			pucEventBuf, sizeof(struct CMD_TSF_SYNC));
+		u4QueryInfoLen = sizeof(struct CMD_TSF_SYNC);
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+	return;
+
+}
+#endif
+
 #if (CFG_COALESCING_INTERRUPT == 1)
 void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_EVENT *prEvent)

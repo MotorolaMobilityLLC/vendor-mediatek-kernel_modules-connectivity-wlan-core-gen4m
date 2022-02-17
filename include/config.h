@@ -1767,6 +1767,10 @@
 #define CFG_MTK_WIFI_WFDMA_BK_RS		0
 #endif
 
+#ifndef CFG_SUPPORT_TSF_SYNC
+#define CFG_SUPPORT_TSF_SYNC    0
+#endif
+
 /* 1(default): Run on big core when tput over threshold
  * 0: Disable (Let system scheduler decide)
  */

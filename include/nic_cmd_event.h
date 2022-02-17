@@ -1680,6 +1680,20 @@ struct CMD_LOW_LATENCY_MODE_HEADER {
 };
 #endif
 
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+struct CMD_TSF_SYNC {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;       /* cmd size including common part and body. */
+
+	/* DWORD_1 ~ x - Command Body */
+	uint64_t u8TsfValue;
+	uint8_t fgIsLatch;
+	uint8_t ucBssIndex;
+	uint8_t aucReserved[2];
+};
+#endif
 
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 /* EVENT_LINK_QUALITY */
@@ -3935,6 +3949,11 @@ void tputEventFactorHandler(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+void nicCmdEventLatchTSF(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 #endif
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
