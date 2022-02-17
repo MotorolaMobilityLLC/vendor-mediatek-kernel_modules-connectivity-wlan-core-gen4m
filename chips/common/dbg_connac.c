@@ -118,7 +118,7 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 	uint32_t pse_stat = 0, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
-	uint32_t i, page_offset, addr, value;
+	uint32_t i, page_offset, addr, value = 0;
 	uint32_t txd_payload_info[16] = {0};
 
 	HAL_MCR_RD(prAdapter, PSE_PBUF_CTRL, &pse_buf_ctrl);
@@ -413,7 +413,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	uint32_t sta_pause[4] = {0}, dis_sta_map[4] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
 	uint32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
-	uint32_t i, j, addr, value;
+	uint32_t i, j, addr, value = 0;
 	uint32_t txd_info[16] = {0};
 
 	HAL_MCR_RD(prAdapter, PLE_PBUF_CTRL, &ple_buf_ctrl[0]);
