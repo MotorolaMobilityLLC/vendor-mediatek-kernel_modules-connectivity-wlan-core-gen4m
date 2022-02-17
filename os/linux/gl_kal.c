@@ -5195,6 +5195,11 @@ kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		if (!prChannel) {
+			DBGLOG(AIS, ERROR, "prChannel is NULL, return!");
+			return;
+		}
+
 		cfg80211_ready_on_channel(
 			prGlueInfo->prDevHandler->ieee80211_ptr,
 			u8Cookie, prChannel, u4DurationMs, GFP_KERNEL);
@@ -5255,6 +5260,11 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 		default:
 			rChannelType = NL80211_CHAN_HT20;
 			break;
+		}
+
+		if (!prChannel) {
+			DBGLOG(AIS, ERROR, "prChannel is NULL, return!");
+			return;
 		}
 
 		cfg80211_remain_on_channel_expired(
