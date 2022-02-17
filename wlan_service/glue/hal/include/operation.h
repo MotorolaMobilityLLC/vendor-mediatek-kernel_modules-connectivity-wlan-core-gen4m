@@ -59,7 +59,8 @@ struct param_mtk_wifi_test_struct {
 struct param_custom_access_rx_stat {
 	u_int16 seq_num;
 	u_int8  band_idx;
-	u_int8  data;	//bit[0] in event structure will tell new / old firmware format 
+	/* bit[0] in event structure will tell new / old firmware format */
+	u_int8  data;
 	u_int32 total_num;
 };
 
