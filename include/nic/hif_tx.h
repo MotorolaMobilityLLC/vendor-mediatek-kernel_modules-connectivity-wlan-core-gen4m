@@ -50,29 +50,31 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/hif_tx.h#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *      MT6620_WIFI_DRIVER_V2_3/include/nic/hif_tx.h#1
+ */
 
 
 #ifndef _HIF_TX_H
 #define _HIF_TX_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* Maximum buffer size for individual HIF TCQ Buffer */
-#define HIF_TX_BUFF_MAX_SIZE                1552	/* Reserved field was not included */
+/* Reserved field was not included */
+#define HIF_TX_BUFF_MAX_SIZE                1552
 
 /* Maximum buffer count for individual HIF TCQ */
 #if 0
@@ -87,7 +89,8 @@
 
 #define CMD_HDR_SIZE                        sizeof(struct WIFI_CMD)
 
-#define CMD_PKT_SIZE_FOR_IMAGE              2048	/* !< 2048 Bytes CMD payload buffer */
+/* !< 2048 Bytes CMD payload buffer */
+#define CMD_PKT_SIZE_FOR_IMAGE              2048
 
 /*! NIC_HIF_TX_HEADER_T (for short-header format) */
 /* DW 0, Byte 0,1 */
@@ -105,9 +108,9 @@
 #define HIF_TX_HDR_PORT_IDX_OFFSET          7
 
 /*******************************************************************************
-*                         D A T A   T Y P E S
-********************************************************************************
-*/
+ *                         D A T A   T Y P E S
+ *******************************************************************************
+ */
 struct HIF_HW_TX_HEADER {
 	uint16_t u2TxByteCount;
 	uint8_t ucEtherTypeOffset;
@@ -136,27 +139,27 @@ enum ENUM_HIF_OOB_CTRL_PKT_TYPE {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 #define TFCB_FRAME_PAD_TO_DW(u2Length)      ALIGN_4(u2Length)
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
-/* Kevin: we don't have to call following function to inspect the data structure.
- * It will check automatically while at compile time.
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+/* Kevin: we don't have to call following function to inspect the data
+ * structure. It will check automatically while at compile time.
  */
 static __KAL_INLINE__ void hif_txDataTypeCheck(void);
 
