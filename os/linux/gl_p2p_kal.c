@@ -1190,7 +1190,8 @@ void kalP2PIndicateScanDone(IN struct GLUE_INFO *prGlueInfo,
 		KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		if (prP2pGlueDevInfo->prScanRequest != NULL) {
+		if ((prP2pGlueDevInfo->prScanRequest != NULL)
+			&& (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE)) {
 			prScanRequest = prP2pGlueDevInfo->prScanRequest;
 			kalCfg80211ScanDone(prScanRequest, fgIsAbort);
 			prP2pGlueDevInfo->prScanRequest = NULL;
