@@ -687,7 +687,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	uint8_t ch_list[] = {1, 6, 11,
 			  36, 40, 44, 52, 64, 100, 149, 153, 157, 161};
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t ch_list_6g[] = {37};
+	uint8_t ch_list_6g[] = {1, 31, 37};
 #endif
 #endif /* CFG_MTK_FPGA_PLATFORM */
 
