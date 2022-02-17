@@ -72,7 +72,7 @@
 #include "coda/soc3_0/wf_wfdma_host_dma0.h"
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+#if (CFG_SUPPORT_CONNINFRA == 1)
 #include "coda/soc3_0/conn_infra_cfg.h"
 #endif
 
@@ -117,6 +117,7 @@ static struct sub_drv_ops_cb g_conninfra_wf_cb;
 *                              F U N C T I O N S
 ********************************************************************************
 */
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 static uint8_t *soc3_0_apucFwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_MT",
 	NULL
@@ -126,6 +127,7 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 	(uint8_t *) CFG_CR4_FW_FILENAME "_MT",
 	NULL
 };
+#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -507,7 +509,11 @@ struct BUS_INFO soc3_0_bus_info = {
 
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T soc3_0_fw_dl_ops = {
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 	.constructFirmwarePrio = soc3_0_ConstructFirmwarePrio,
+#else
+	.constructFirmwarePrio = NULL,
+#endif
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
@@ -1242,7 +1248,11 @@ void soc3_0_Conninfra_cb_register(void)
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	/* Register conninfra call back */
 	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = hifWmmcuPwrOn;
+
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
+#endif /* (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1) */
+
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
@@ -2418,7 +2428,7 @@ int soc3_0_wlanPreCal(void)
 		* copy only the mandatory task
 		* in wlanOnPostNicInitAdapter(prAdapter, FALSE)::Begin
 		*/
-		nicInitSystemService(prAdapter);
+		nicInitSystemService(prAdapter, FALSE);
 
 		/* Initialize Tx */
 		nicTxInitialize(prAdapter);
