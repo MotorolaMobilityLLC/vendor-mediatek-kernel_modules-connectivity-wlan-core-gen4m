@@ -1762,4 +1762,9 @@ void asicConnac3xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
+{
+	return TRUE;
+}
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

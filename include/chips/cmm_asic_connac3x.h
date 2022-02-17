@@ -1205,6 +1205,7 @@ void asicConnac3xDmashdlSetOptionalControl(
 	struct ADAPTER *prAdapter,
 	uint16_t u2HifAckCntTh,
 	uint16_t u2HifGupActMap);
+u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 #endif /* _CMM_ASIC_CONNAC3X_H */
 
