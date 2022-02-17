@@ -161,6 +161,7 @@ void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo)
 		SW_WFDMA_EMI_SIZE);
 #endif /* CFG_MTK_ANDROID_EMI */
 	prSwWfdmaInfo->pucIoremapAddr = NULL;
+	prSwWfdmaInfo->prDmad = NULL;
 }
 
 void halSwWfdmaEn(struct GLUE_INFO *prGlueInfo, bool fgEn)
