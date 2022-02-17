@@ -4043,7 +4043,13 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_BTM_QUERY				"bss-transition-query"
 #endif
 
+#define CMD_GET_MCU_INFO		"GET_MCU_INFO"
+
 #define CMD_GET_BAINFO           "GET_BAINFO"
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+#define CMD_GET_SLEEP_INFO		"GET_SLEEP_INFO"
+#endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 #define CMD_PRESET_LINKID	"PRESET_LINKID"
@@ -14077,6 +14083,66 @@ int priv_driver_set_sta1ss(IN struct net_device *prNetDev, IN char *pcCommand,
 
 #endif /*CFG_SUPPORT_DBDC*/
 
+int priv_driver_get_mcu_info(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct CHIP_DBG_OPS *prChipDbg = NULL;
+	uint32_t i4BytesWritten = 0;
+	uint8_t result = 0;
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipDbg = prGlueInfo->prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg->show_mcu_debug_info) {
+		result = prChipDbg->show_mcu_debug_info(prGlueInfo->prAdapter,
+			pcCommand, i4TotalLen, DBG_MCU_DBG_ALL,
+			&i4BytesWritten);
+		if (!result)
+			DBGLOG(INIT, WARN,
+				"show_mcu_debug_info fail!\n");
+	} else {
+		DBGLOG(INIT, WARN,
+			"Function not defined or not support!\n");
+	}
+
+	return i4BytesWritten;
+}
+
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+static int priv_driver_get_sleep_dbg_info(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct CHIP_DBG_OPS *prChipDbg = NULL;
+	uint32_t i4BytesWritten = 0;
+	uint8_t result = 0;
+
+	if (prNetDev == NULL) {
+		DBGLOG(INIT, WARN, "prNetDev is NULL!\n");
+
+		return i4BytesWritten;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prChipDbg = prGlueInfo->prAdapter->chip_info->prDebugOps;
+
+	if (prChipDbg->show_debug_sop_info) {
+		result = prChipDbg->show_debug_sop_info(prGlueInfo->prAdapter,
+			SLEEP);
+		if (!result)
+			DBGLOG(INIT, WARN,
+				"show_debug_sop_info fail!\n");
+	} else {
+		DBGLOG(INIT, WARN,
+			"Function not defined or not support!\n");
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 #if CFG_SUPPORT_BATCH_SCAN
 #define CMD_BATCH_SET           "WLS_BATCHING SET"
 #define CMD_BATCH_GET           "WLS_BATCHING GET"
@@ -17021,6 +17087,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_BAINFO, priv_driver_get_bainfo},
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 	{CMD_GET_TSF_VALUE, priv_driver_get_tsf_value},
+#endif
+	{CMD_GET_MCU_INFO, priv_driver_get_mcu_info},
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	{CMD_GET_SLEEP_INFO, priv_driver_get_sleep_dbg_info},
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{CMD_PRESET_LINKID, priv_driver_preset_linkid},

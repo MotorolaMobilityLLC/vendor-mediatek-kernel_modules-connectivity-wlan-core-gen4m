@@ -963,7 +963,19 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 {
 	uint32_t value;
 	uint32_t u4Time, u4Current;
-	uint8_t ucResult;/* For Unchecked return value*/
+	u_int8_t ucResult;/* For Unchecked return value*/
+	u_int8_t fgOwnStatus = 0;
+
+	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
+	if (!fgOwnStatus) {
+		fgOwnStatus = nicpmSetDriverOwn(prGlueInfo->prAdapter);
+		if (!fgOwnStatus) {
+			DBGLOG(HAL, ERROR,
+				"Driver own fail before R/W mailbox CR!");
+			ucResult = FALSE;
+			goto Exit;
+		}
+	}
 
     /* progrqm h2d mailbox0 as interested register address */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
@@ -994,7 +1006,9 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegRead_mac():register address mis-match");
 				DBGLOG(HAL, ERROR, "(u4Register = 0x%08x, reported register = 0x%08x)\n",
 				u4Register, value);
-				return  FALSE;
+
+				ucResult = FALSE;
+				goto Exit;
 			}
 
 			/* read d2h mailbox1 for the value of the register */
@@ -1003,7 +1017,7 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 			*pu4Value = value;
 			/* Set MCR_H2DSM0R to 0 for ack to FW. */
 			ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, 0);
-			return	TRUE;
+			goto Exit;
 		}
 
 		/* timeout exceeding check */
@@ -1013,12 +1027,19 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 			|| (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time))
 			> HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT))) {
 			DBGLOG(HAL, ERROR, "ERROR: kalDevRegRead_mac(): response timeout\n");
-			return	FALSE;
+			ucResult = FALSE;
+			goto Exit;
 		}
 
 		/* Response packet is not ready */
 		kalUdelay(50);
 	} while (1);
+
+Exit:
+	if (fgOwnStatus)
+		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+
+	return ucResult;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1088,6 +1109,18 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 	uint32_t value;
 	uint32_t u4Time, u4Current;
 	uint8_t ucResult; /* For Unchecked return value*/
+	u_int8_t fgOwnStatus = 0;
+
+	HAL_LP_OWN_RD(prGlueInfo->prAdapter, &fgOwnStatus);
+	if (!fgOwnStatus) {
+		fgOwnStatus = nicpmSetDriverOwn(prGlueInfo->prAdapter);
+		if (!fgOwnStatus) {
+			DBGLOG(HAL, ERROR,
+				"Driver own fail before R/W mailbox CR!");
+			ucResult = FALSE;
+			goto Exit;
+		}
+	}
 
 	/* progrqm h2d mailbox0 as interested register address */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
@@ -1121,11 +1154,13 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegWrite_mac():register address mis-match");
 				DBGLOG(HAL, ERROR, "(u4Register = 0x%08x, reported register = 0x%08x)\n",
 				u4Register, value);
-				return  FALSE;
+
+				ucResult = FALSE;
+				goto Exit;
 			}
 			/* Set MCR_H2DSM0R to 0 for ack to FW. */
 			ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, 0);
-			return	TRUE;
+			goto Exit;
 		}
 
 		/* timeout exceeding check */
@@ -1135,12 +1170,19 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 			|| (u4Current < u4Time && ((u4Current + (0xFFFFFFFF - u4Time))
 			> HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT))) {
 			DBGLOG(HAL, ERROR, "ERROR: kalDevRegWrite_mac(): response timeout\n");
-			return	FALSE;
+			ucResult = FALSE;
+			goto Exit;
 		}
 
 		/* Response packet is not ready */
 		kalUdelay(50);
 	} while (1);
+
+Exit:
+	if (fgOwnStatus)
+		nicpmSetFWOwn(prGlueInfo->prAdapter, FALSE);
+
+	return ucResult;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -5256,6 +5256,8 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	wlanGetConfig(prAdapter);
 #endif
 
+	prAdapter->CurNoResSeqID = 0;
+
 	/* Init Chip Capability */
 	if (prChipInfo->asicCapInit)
 		prChipInfo->asicCapInit(prAdapter);
@@ -6518,6 +6520,8 @@ static void wlanRemove(void)
 	 * or will fail on the case with insert different A-DIE card.
 	 */
 	prAdapter->chip_info->u4ADieVer = 0xFFFFFFFF;
+
+	prAdapter->CurNoResSeqID = 0;
 
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed

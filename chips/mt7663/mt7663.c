@@ -271,6 +271,7 @@ struct CHIP_DBG_OPS mt7663_debug_ops = {
 	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
+	.show_mcu_debug_info = NULL,
 };
 
 /* Litien code refine to support multi chip */
