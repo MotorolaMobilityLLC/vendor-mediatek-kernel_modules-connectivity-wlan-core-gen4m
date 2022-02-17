@@ -1559,6 +1559,19 @@ struct CMD_PERF_IND {
 	uint32_t au4Reserve[63];
 };
 
+#if CFG_SUPPORT_SMART_GEAR
+struct CMD_SMART_GEAR_PARAM {
+	uint8_t ucSGEnable;/*0: disable, 1: Enable, 2: Action for ucSGSpcCmd*/
+	uint8_t ucSGSpcCmd;/* 1: Force 1x1, 2: Force 2x2, 0: Automatic*/
+	uint8_t ucSGCfg;/* DON'T SET, IT IS USED FOR WIFI.CFG WIFI*/
+};
+
+struct EVENT_SMART_GEAT_STATE {
+	bool fgIsEnable;
+	uint32_t  u4StateIdx;
+};
+#endif
+
 /* EVENT_BT_OVER_WIFI */
 struct EVENT_BT_OVER_WIFI {
 	uint8_t ucLinkStatus;
