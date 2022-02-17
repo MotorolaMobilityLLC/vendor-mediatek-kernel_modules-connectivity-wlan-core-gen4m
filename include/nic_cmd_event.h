@@ -1646,7 +1646,7 @@ struct CMD_CHANNEL_POWER_LIMIT {
 	uint8_t ucCentralCh;
 
 	int8_t cPwrLimitCCK;
-#ifdef CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING == 1)
 	int8_t cPwrLimitOFDM_L; /* OFDM_L,  6M ~ 18M */
 	int8_t cPwrLimitOFDM_H; /* OFDM_H, 24M ~ 54M */
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_OFDM_SETTING */
