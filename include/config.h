@@ -81,17 +81,15 @@
 /* 2 Flags for OS capability */
 
 #if defined(_HIF_SDIO)
-#ifdef LINUX
-#ifdef CONFIG_X86
-#define MTK_WCN_HIF_SDIO        0
+/* #ifdef CONFIG_X86 */
+/*Kernel-3.10-ARM did not provide X86_FLAG & HIF shouldn't bind platform*/
+#if (CFG_MTK_ANDROID_WMT)
+#define MTK_WCN_HIF_SDIO		1
 #else
-#define MTK_WCN_HIF_SDIO        1
+#define MTK_WCN_HIF_SDIO		0
 #endif
 #else
-#define MTK_WCN_HIF_SDIO            0
-#endif
-#else
-#define MTK_WCN_HIF_SDIO	0
+#define MTK_WCN_HIF_SDIO		0
 #endif
 
 /* Android build-in driver switch, Mike 2016/11/11*/
