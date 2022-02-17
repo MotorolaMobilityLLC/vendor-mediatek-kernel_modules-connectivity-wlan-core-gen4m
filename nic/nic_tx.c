@@ -2161,8 +2161,7 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
  * @retval VOID
  */
 /*----------------------------------------------------------------------------*/
-void nicTxSetHwAmsduDescTemplate(IN struct ADAPTER
-	*prAdapter,
+void nicTxSetHwAmsduDescTemplate(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
 	IN u_int8_t fgSet)
 {

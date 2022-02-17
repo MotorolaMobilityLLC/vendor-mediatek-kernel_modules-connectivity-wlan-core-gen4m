@@ -117,6 +117,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac},
 #endif /* CONNAC */
+#ifdef CONNAC2X2
+	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac2x2},
+#endif /* CONNAC */
 	{ /* end: all zeroes */ },
 };
 
@@ -158,6 +162,49 @@ static uint32_t g_u4DmaMask = 32;
  *******************************************************************************
  */
 
+static void pcieAllocDesc(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMABUF *prDescRing,
+			  uint32_t u4Num);
+static void *pcieAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDmaBuf,
+			    uint32_t u4Num, uint32_t u4Idx);
+static void pcieAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken,
+			       uint32_t u4Idx);
+static void *pcieAllocRuntimeMem(uint32_t u4SrcLen);
+static bool pcieCopyCmd(struct GL_HIF_INFO *prHifInfo,
+			struct RTMP_DMACB *prTxCell, void *pucBuf,
+			void *pucSrc1, uint32_t u4SrcLen1,
+			void *pucSrc2, uint32_t u4SrcLen2);
+static bool pcieCopyEvent(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMACB *pRxCell,
+			  struct RXD_STRUCT *pRxD,
+			  struct RTMP_DMABUF *prDmaBuf,
+			  uint8_t *pucDst, uint32_t u4Len);
+static bool pcieCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			   void *pucSrc, uint32_t u4Len);
+static bool pcieCopyRxData(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMACB *pRxCell,
+			   struct RTMP_DMABUF *prDmaBuf,
+			   struct SW_RFB *prSwRfb);
+static phys_addr_t pcieMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+static phys_addr_t pcieMapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
+static void pcieUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+static void pcieUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len);
+static void pcieFreeDesc(struct GL_HIF_INFO *prHifInfo,
+			 struct RTMP_DMABUF *prDescRing);
+static void pcieFreeBuf(void *pucSrc, uint32_t u4Len);
+static void pcieFreePacket(void *pvPacket);
+static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_TX_RING *prTxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_RX_RING *prRxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -172,12 +219,11 @@ static uint32_t g_u4DmaMask = 32;
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-static uint8_t *CSRBaseAddress;
+static void *CSRBaseAddress;
 
 static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t u4RegValue;
 
 	prGlueInfo = (struct GLUE_INFO *) dev_instance;
 	if (!prGlueInfo) {
@@ -185,18 +231,12 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
-	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_INT_STA, &u4RegValue);
-	if (!u4RegValue)
-		return IRQ_HANDLED;
-
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
 		return IRQ_NONE;
 	}
-
-	DBGLOG(HAL, TRACE, "%s INT[0x%08x]\n", __func__, u4RegValue);
 
 	kalSetIntEvent(prGlueInfo);
 
@@ -339,10 +379,12 @@ void glUnregisterBus(remove_card pfRemove)
 void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
 	struct GL_HIF_INFO *prHif = NULL;
+	struct HIF_MEM_OPS *prMemOps;
 
 	prHif = &prGlueInfo->rHifInfo;
 
 	prHif->pdev = (struct pci_dev *)ulCookie;
+	prMemOps = &prHif->rMemOps;
 	prHif->prDmaDev = prHif->pdev;
 
 	prHif->CSRBaseAddress = CSRBaseAddress;
@@ -362,8 +404,33 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	INIT_LIST_HEAD(&prHif->rTxCmdQ);
 	INIT_LIST_HEAD(&prHif->rTxDataQ);
+	prHif->u4TxDataQLen = 0;
 	spin_lock_init(&prHif->rTxCmdQLock);
 	spin_lock_init(&prHif->rTxDataQLock);
+
+	prHif->fgIsPowerOff = true;
+	prHif->fgIsDumpLog = false;
+
+	prMemOps->allocTxDesc = pcieAllocDesc;
+	prMemOps->allocRxDesc = pcieAllocDesc;
+	prMemOps->allocTxCmdBuf = NULL;
+	prMemOps->allocTxDataBuf = pcieAllocTxDataBuf;
+	prMemOps->allocRxBuf = pcieAllocRxBuf;
+	prMemOps->allocRuntimeMem = pcieAllocRuntimeMem;
+	prMemOps->copyCmd = pcieCopyCmd;
+	prMemOps->copyEvent = pcieCopyEvent;
+	prMemOps->copyTxData = pcieCopyTxData;
+	prMemOps->copyRxData = pcieCopyRxData;
+	prMemOps->flushCache = NULL;
+	prMemOps->mapTxBuf = pcieMapTxBuf;
+	prMemOps->mapRxBuf = pcieMapRxBuf;
+	prMemOps->unmapTxBuf = pcieUnmapTxBuf;
+	prMemOps->unmapRxBuf = pcieUnmapRxBuf;
+	prMemOps->freeDesc = pcieFreeDesc;
+	prMemOps->freeBuf = pcieFreeBuf;
+	prMemOps->freePacket = pcieFreePacket;
+	prMemOps->dumpTx = pcieDumpTx;
+	prMemOps->dumpRx = pcieDumpRx;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -379,23 +446,22 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct list_head *prCur, *prNext;
-	struct TX_CMD_REQ_T *prTxCmdReq;
-	struct TX_DATA_REQ_T *prTxDataReq;
+	struct TX_CMD_REQ *prTxCmdReq;
+	struct TX_DATA_REQ *prTxDataReq;
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);
-	halHifRst(prGlueInfo);
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
-		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ_T, list);
+		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		list_del(prCur);
 		kfree(prTxCmdReq);
 	}
 
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
-		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ_T, list);
+		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ, list);
 		list_del(prCur);
-		kfree(prTxDataReq);
+		prHifInfo->u4TxDataQLen--;
 	}
 }
 
@@ -433,7 +499,7 @@ u_int8_t glBusInit(void *pvData)
 	}
 
 	/* map physical address to virtual address for accessing register */
-	CSRBaseAddress = (uint8_t *) ioremap(pci_resource_start(pdev, 0),
+	CSRBaseAddress = ioremap(pci_resource_start(pdev, 0),
 		pci_resource_len(pdev, 0));
 	DBGLOG(INIT, INFO, "ioremap for device %s, region 0x%lX @ 0x%lX\n",
 		pci_name(pdev), (unsigned long) pci_resource_len(pdev, 0),
@@ -509,7 +575,8 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
-	ret = request_irq(pdev->irq, mtk_pci_interrupt,
+	prHifInfo->u4IrqId = pdev->irq;
+	ret = request_irq(prHifInfo->u4IrqId, mtk_pci_interrupt,
 		IRQF_SHARED, prNetDevice->name, prGlueInfo);
 	if (ret != 0)
 		DBGLOG(INIT, INFO,
@@ -568,10 +635,270 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 
 void glGetDev(void *ctx, struct device **dev)
 {
+
 	*dev = &((struct pci_dev *)ctx)->dev;
 }
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->pdev->dev);
+}
+
+static void pcieAllocDesc(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMABUF *prDescRing,
+			  uint32_t u4Num)
+{
+	dma_addr_t rAddr;
+
+	prDescRing->AllocVa = KAL_DMA_ALLOC_COHERENT(
+		prHifInfo->prDmaDev, prDescRing->AllocSize, &rAddr);
+	prDescRing->AllocPa = (phys_addr_t)rAddr;
+	if (prDescRing->AllocVa)
+		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
+}
+
+static void pcieAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx)
+{
+	prToken->prPacket = kalMemAlloc(prToken->u4DmaLength, PHY_MEM_TYPE);
+	prToken->rDmaAddr = 0;
+}
+
+static void *pcieAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDmaBuf,
+			    uint32_t u4Num, uint32_t u4Idx)
+{
+	struct sk_buff *pkt = dev_alloc_skb(prDmaBuf->AllocSize);
+	dma_addr_t rAddr;
+
+	if (!pkt) {
+		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
+		       prDmaBuf->AllocSize);
+		prDmaBuf->AllocPa = 0;
+		prDmaBuf->AllocVa = NULL;
+		return NULL;
+	}
+
+	prDmaBuf->AllocVa = (void *)pkt->data;
+	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
+
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
+				   prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
+		dev_kfree_skb(pkt);
+		return NULL;
+	}
+	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+	return (void *)pkt;
+}
+
+static void *pcieAllocRuntimeMem(uint32_t u4SrcLen)
+{
+	return kalMemAlloc(u4SrcLen, PHY_MEM_TYPE);
+}
+
+static bool pcieCopyCmd(struct GL_HIF_INFO *prHifInfo,
+			struct RTMP_DMACB *prTxCell, void *pucBuf,
+			void *pucSrc1, uint32_t u4SrcLen1,
+			void *pucSrc2, uint32_t u4SrcLen2)
+{
+	dma_addr_t rAddr;
+	uint32_t u4TotalLen = u4SrcLen1 + u4SrcLen2;
+
+	prTxCell->pBuffer = pucBuf;
+
+	memcpy(pucBuf, pucSrc1, u4SrcLen1);
+	if (pucSrc2 != NULL && u4SrcLen2 > 0)
+		memcpy(pucBuf + u4SrcLen1, pucSrc2, u4SrcLen2);
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBuf,
+				   u4TotalLen, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return false;
+	}
+
+	prTxCell->PacketPa = (phys_addr_t)rAddr;
+
+	return true;
+}
+
+static bool pcieCopyEvent(struct GL_HIF_INFO *prHifInfo,
+			  struct RTMP_DMACB *pRxCell,
+			  struct RXD_STRUCT *pRxD,
+			  struct RTMP_DMABUF *prDmaBuf,
+			  uint8_t *pucDst, uint32_t u4Len)
+{
+	struct sk_buff *prSkb = NULL;
+	void *pRxPacket = NULL;
+	dma_addr_t rAddr;
+
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)prDmaBuf->AllocPa,
+			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+
+	pRxPacket = pRxCell->pPacket;
+	ASSERT(pRxPacket)
+
+	prSkb = (struct sk_buff *)pRxPacket;
+	memcpy(pucDst, (uint8_t *)prSkb->data, u4Len);
+
+	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
+				   prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return false;
+	}
+	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+	return true;
+}
+
+static bool pcieCopyTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			   void *pucSrc, uint32_t u4Len)
+{
+	memcpy(prToken->prPacket, pucSrc, u4Len);
+	return true;
+}
+
+static bool pcieCopyRxData(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMACB *pRxCell,
+			   struct RTMP_DMABUF *prDmaBuf,
+			   struct SW_RFB *prSwRfb)
+{
+	void *pRxPacket = NULL;
+	dma_addr_t rAddr;
+
+	pRxPacket = pRxCell->pPacket;
+	ASSERT(pRxPacket);
+
+	pRxCell->pPacket = prSwRfb->pvPacket;
+
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)prDmaBuf->AllocPa,
+			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	prSwRfb->pvPacket = pRxPacket;
+
+	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
+	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
+		prDmaBuf->AllocVa, prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		ASSERT(0);
+		return false;
+	}
+	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
+
+	return true;
+}
+
+static phys_addr_t pcieMapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
+{
+	dma_addr_t rDmaAddr;
+
+	rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBuf + u4Offset,
+				      u4Len, KAL_DMA_TO_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return 0;
+	}
+
+	return (phys_addr_t)rDmaAddr;
+}
+
+static phys_addr_t pcieMapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len)
+{
+	dma_addr_t rDmaAddr;
+
+	rDmaAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, pucBuf + u4Offset,
+				      u4Len, KAL_DMA_FROM_DEVICE);
+	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rDmaAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
+		return 0;
+	}
+
+	return (phys_addr_t)rDmaAddr;
+}
+
+static void pcieUnmapTxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len)
+{
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)rDmaAddr,
+			     u4Len, KAL_DMA_TO_DEVICE);
+}
+
+static void pcieUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
+			   phys_addr_t rDmaAddr, uint32_t u4Len)
+{
+	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
+			     (dma_addr_t)rDmaAddr,
+			     u4Len, KAL_DMA_FROM_DEVICE);
+}
+
+static void pcieFreeDesc(struct GL_HIF_INFO *prHifInfo,
+			 struct RTMP_DMABUF *prDescRing)
+{
+	if (prDescRing->AllocVa == NULL)
+		return;
+
+	KAL_DMA_FREE_COHERENT(prHifInfo->prDmaDev,
+			      prDescRing->AllocSize,
+			      prDescRing->AllocVa,
+			      (dma_addr_t)prDescRing->AllocPa);
+	memset(prDescRing, 0, sizeof(struct RTMP_DMABUF));
+}
+
+static void pcieFreeBuf(void *pucSrc, uint32_t u4Len)
+{
+	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
+}
+
+static void pcieFreePacket(void *pvPacket)
+{
+	kalPacketFree(NULL, pvPacket);
+}
+
+static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_TX_RING *prTxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen)
+{
+	struct RTMP_DMACB *prTxCell;
+	struct RTMP_DMABUF *prDmaBuf;
+
+	prTxCell = &prTxRing->Cell[u4Idx];
+
+	if (!prTxCell->pPacket)
+		return;
+
+	prDmaBuf = &prTxCell->DmaBuf;
+	pcieUnmapTxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
+
+	DBGLOG_MEM32(HAL, INFO, prTxCell->pPacket, u4DumpLen);
+
+	prDmaBuf->AllocPa = pcieMapTxBuf(prHifInfo, prDmaBuf->AllocVa,
+					0, prDmaBuf->AllocSize);
+}
+
+static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
+		       struct RTMP_RX_RING *prRxRing,
+		       uint32_t u4Idx, uint32_t u4DumpLen)
+{
+	struct RTMP_DMACB *prRxCell;
+	struct RTMP_DMABUF *prDmaBuf;
+
+	prRxCell = &prRxRing->Cell[u4Idx];
+	prDmaBuf = &prRxCell->DmaBuf;
+
+	if (!prRxCell->pPacket)
+		return;
+
+	pcieUnmapRxBuf(prHifInfo, prDmaBuf->AllocPa, prDmaBuf->AllocSize);
+
+	DBGLOG_MEM32(HAL, INFO, ((struct sk_buff *)prRxCell->pPacket)->data,
+		     u4DumpLen);
+
+	prDmaBuf->AllocPa = pcieMapRxBuf(prHifInfo, prDmaBuf->AllocVa,
+					0, prDmaBuf->AllocSize);
 }

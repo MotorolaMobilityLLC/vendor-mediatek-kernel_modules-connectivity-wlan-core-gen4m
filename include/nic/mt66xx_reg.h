@@ -81,6 +81,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663;
 #ifdef CONNAC
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #endif /* CONNAC */
+#ifdef CONNAC2X2
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac2x2;
+#endif /* CONNAC2X2 */
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -459,7 +462,10 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 /* HIF Sys Revision */
 #define HIF_SYS_REV		(PCIE_HIF_BASE + 0x0000)
 
-#define CONN_HIF_RST	(PCIE_HIF_BASE + 0x0100)
+/* Check Enter Slepp Mode Register */
+#define CONN_DUMMY_CR		(PCIE_HIF_BASE + 0x00A8)
+
+#define CONN_HIF_RST		(PCIE_HIF_BASE + 0x0100)
 
 #define WPDMA_FIFO_TEST_MOD				(PCIE_HIF_BASE + 0x0140)
 
@@ -1018,6 +1024,7 @@ enum enum_mt66xx_chip {
 };
 
 enum enum_workAround {
+	WORKAROUND_MT7663_BRINGUP_20171205 = 0,
 	WORKAROUND_NUM
 };
 
@@ -1028,6 +1035,7 @@ struct mt66xx_chip_info {
 #if CFG_SUPPORT_QA_TOOL
 	struct ATE_OPS_T *prAteOps;
 #endif
+	struct CHIP_DBG_OPS *prDebugOps;
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
@@ -1038,6 +1046,7 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int isNicCapV1;
+	const unsigned int is_support_efuse; /* efuse support */
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */
@@ -1049,17 +1058,22 @@ struct mt66xx_chip_info {
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
+	/* chip ip version from FW */
+	uint32_t u4ChipIpVersion;
+	uint32_t u4ChipIpConfig;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgEnable);
+	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 	void (*showTaskStack)(IN struct task_struct *tsk,
-				IN unsigned long *sp);
+			      IN unsigned long *sp);
 
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
+	uint8_t ucMaxSwAmsduNum;
 	uint32_t workAround;
 };
 
