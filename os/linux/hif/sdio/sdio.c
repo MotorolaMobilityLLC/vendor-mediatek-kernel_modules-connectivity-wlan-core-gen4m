@@ -287,8 +287,6 @@ static void mtk_sdio_interrupt(struct sdio_func *func)
 
 	sdio_writeb(prGlueInfo->rHifInfo.func, WHLPCR_INT_EN_CLR, MCR_WHLPCR, &ret);
 
-	prGlueInfo->rHifInfo.fgIsPendingInt = FALSE;
-
 	kalSetIntEvent(prGlueInfo);
 }
 #endif
