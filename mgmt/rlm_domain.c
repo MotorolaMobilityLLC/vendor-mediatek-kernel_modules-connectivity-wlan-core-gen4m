@@ -7319,21 +7319,58 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 						 enum ENUM_BAND band,
 						 u8 primary_ch)
 {
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	u8 below_ch, above_ch;
+	if (band == BAND_5G) {
+		switch ((uint32_t)primary_ch) {
+		case 36:
+		case 44:
+		case 52:
+		case 60:
+		case 100:
+		case 108:
+		case 116:
+		case 124:
+		case 132:
+		case 140:
+		case 149:
+		case 157:
+			eSCO = CHNL_EXT_SCA;
+			break;
+		case 40:
+		case 48:
+		case 56:
+		case 64:
+		case 104:
+		case 112:
+		case 120:
+		case 128:
+		case 136:
+		case 144:
+		case 153:
+		case 161:
+			eSCO = CHNL_EXT_SCB;
+			break;
+		case 165:
+		default:
+			eSCO = CHNL_EXT_SCN;
+			break;
+		}
+	} else {
+		u8 below_ch, above_ch;
 
-	below_ch = primary_ch - CHNL_SPAN_20;
-	above_ch = primary_ch + CHNL_SPAN_20;
+		below_ch = primary_ch - CHNL_SPAN_20;
+		above_ch = primary_ch + CHNL_SPAN_20;
 
-	if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
-		return CHNL_EXT_SCA;
+		if (rlmDomainIsLegalChannel(prAdapter, band, above_ch))
+			return CHNL_EXT_SCA;
 
-	if (rlmDomainIsLegalChannel(prAdapter, band, below_ch))
-		return CHNL_EXT_SCB;
+		if (rlmDomainIsLegalChannel(prAdapter, band, below_ch))
+			return CHNL_EXT_SCB;
+	}
 
 #endif
-
-	return CHNL_EXT_SCN;
+	return eSCO;
 }
 
 void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
