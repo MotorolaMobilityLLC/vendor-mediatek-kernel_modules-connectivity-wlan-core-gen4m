@@ -1046,34 +1046,34 @@ u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    struct net_device *sb_dev)
 {
-	return mtk_wlan_ndev_select_queue(skb);
+	return mtk_wlan_ndev_select_queue(dev, skb);
 }
 #elif KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    struct net_device *sb_dev, select_queue_fallback_t fallback)
 {
-	return mtk_wlan_ndev_select_queue(skb);
+	return mtk_wlan_ndev_select_queue(dev, skb);
 }
 #elif KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    void *accel_priv, select_queue_fallback_t fallback)
 {
-	return mtk_wlan_ndev_select_queue(skb);
+	return mtk_wlan_ndev_select_queue(dev, skb);
 }
 #elif KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,
 		    void *accel_priv)
 {
-	return mtk_wlan_ndev_select_queue(skb);
+	return mtk_wlan_ndev_select_queue(dev, skb);
 }
 #else
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb)
 {
-	return mtk_wlan_ndev_select_queue(skb);
+	return mtk_wlan_ndev_select_queue(dev, skb);
 }
 #endif
 
