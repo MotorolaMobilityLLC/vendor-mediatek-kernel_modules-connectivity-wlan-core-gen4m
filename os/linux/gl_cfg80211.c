@@ -555,24 +555,29 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return 0;
 	}
 
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				   wlanoidQueryMaxLinkSpeed, &rLinkSpeed,
-				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
-				   &u4BufLen, ucBssIndex);
-#else
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 				   wlanoidQueryLinkSpeedEx, &rLinkSpeed,
 				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
 				   &u4BufLen, ucBssIndex);
-#endif /* CFG_REPORT_MAX_TX_RATE */
-	if (ucBssIndex < BSSID_NUM)
-		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 
+#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+	/*rewrite LinkSpeed with Max LinkSpeed*/
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+			       wlanoidQueryMaxLinkSpeed, &rLinkSpeed,
+			       sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+			       &u4BufLen, ucBssIndex);
+#endif /* CFG_REPORT_MAX_TX_RATE */
+
+	if (IS_BSS_INDEX_VALID(ucBssIndex)) {
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
+		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
+	}
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #else
 	sinfo->filled |= STATION_INFO_TX_BITRATE;
+	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
 		/* unable to retrieve link speed */
@@ -583,20 +588,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->txrate.legacy = u4Rate / 1000;
 		prGlueInfo->u4LinkSpeedCache[ucBssIndex] = u4Rate / 1000;
 	}
-
-	/* 3. fill RSSI */
-	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				   wlanoidQueryRssi,
-				   &rLinkSpeed, sizeof(rLinkSpeed),
-				   TRUE, FALSE, FALSE,
-				   &u4BufLen, ucBssIndex);
-	if (IS_BSS_INDEX_VALID(ucBssIndex))
-		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
-#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
-#else
-	sinfo->filled |= STATION_INFO_SIGNAL;
-#endif
 
 	if (rStatus != WLAN_STATUS_SUCCESS || i4Rssi == 0) {
 		DBGLOG(REQ, WARN,
@@ -649,10 +640,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr, arBssid);
 		rQueryStaStatistics.ucReadClear = TRUE;
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidQueryStaStatistics,
-				   &rQueryStaStatistics,
-				   sizeof(rQueryStaStatistics),
-				   TRUE, FALSE, TRUE, &u4BufLen);
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidQueryStaStatistics,
+				&rQueryStaStatistics,
+				sizeof(rQueryStaStatistics),
+				TRUE, FALSE, TRUE, &u4BufLen, ucBssIndex);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
