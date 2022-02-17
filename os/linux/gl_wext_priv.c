@@ -9701,6 +9701,7 @@ int priv_driver_set_country(IN struct net_device *prNetDev,
 	return 0;
 }
 
+#if CFG_SUPPORT_IDC_CH_SWITCH
 int priv_driver_set_csa(IN struct net_device *prNetDev,
 				IN char *pcCommand, IN int i4TotalLen)
 {
@@ -9732,6 +9733,7 @@ int priv_driver_set_csa(IN struct net_device *prNetDev,
 
 	return 0;
 }
+#endif
 
 int priv_driver_get_country(IN struct net_device *prNetDev,
 			    IN char *pcCommand, IN int i4TotalLen)
@@ -16048,7 +16050,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SETBAND, priv_driver_set_band},
 	{CMD_GETBAND, NULL /*wl_android_get_band*/},
 	{CMD_COUNTRY, priv_driver_set_country},
+#if CFG_SUPPORT_IDC_CH_SWITCH
 	{CMD_CSA, priv_driver_set_csa},
+#endif
 	{CMD_GET_COUNTRY, priv_driver_get_country},
 	{CMD_GET_CHANNELS, priv_driver_get_channels},
 	{CMD_MIRACAST, priv_driver_set_miracast},
