@@ -432,6 +432,7 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.show_stat_info = connac2x_show_stat_info,
 	.show_wfdma_dbg_probe_info = soc5_0_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = soc5_0_show_wfdma_wrapper_info,
+	.dumpMacInfo = soc5_0_dump_mac_info,
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
