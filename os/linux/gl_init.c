@@ -261,6 +261,18 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	.max_power          = 30,					\
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define CHAN6G(_channel, _flags)					\
+{									\
+	.band               = KAL_BAND_6GHZ,				\
+	.center_freq        = (5950 + (5 * (_channel))),	\
+	.hw_value           = (_channel),				\
+	.flags              = (_flags),					\
+	.max_antenna_gain   = 0,					\
+	.max_power          = 30,					\
+}
+#endif
+
 static struct ieee80211_channel mtk_5ghz_channels[] = {
 	/* UNII-1 */
 	CHAN5G(36, 0),
@@ -292,6 +304,76 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 	CHAN5G(161, 0),
 	CHAN5G(165, 0)
 };
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+static struct ieee80211_channel mtk_6ghz_channels[] = {
+	/* UNII-5 */
+	CHAN6G(1, 0),
+	CHAN6G(5, 0),
+	CHAN6G(9, 0),
+	CHAN6G(13, 0),
+	CHAN6G(17, 0),
+	CHAN6G(21, 0),
+	CHAN6G(25, 0),
+	CHAN6G(29, 0),
+	CHAN6G(33, 0),
+	CHAN6G(37, 0),
+	CHAN6G(41, 0),
+	CHAN6G(45, 0),
+	CHAN6G(49, 0),
+	CHAN6G(53, 0),
+	CHAN6G(57, 0),
+	CHAN6G(61, 0),
+	CHAN6G(65, 0),
+	CHAN6G(69, 0),
+	CHAN6G(73, 0),
+	CHAN6G(77, 0),
+	CHAN6G(81, 0),
+	CHAN6G(85, 0),
+	CHAN6G(89, 0),
+	CHAN6G(93, 0),
+	/* UNII-6 */
+	CHAN6G(97, 0),
+#if 0 /* Harrier currently not support */
+	CHAN6G(101, 0),
+	CHAN6G(105, 0),
+	CHAN6G(109, 0),
+	CHAN6G(113, 0),
+	CHAN6G(117, 0),
+	/* UNII-7 */
+	CHAN6G(121, 0),
+	CHAN6G(125, 0),
+	CHAN6G(129, 0),
+	CHAN6G(133, 0),
+	CHAN6G(137, 0),
+	CHAN6G(141, 0),
+	CHAN6G(145, 0),
+	CHAN6G(149, 0),
+	CHAN6G(153, 0),
+	CHAN6G(157, 0),
+	CHAN6G(161, 0),
+	CHAN6G(165, 0),
+	CHAN6G(169, 0),
+	CHAN6G(173, 0),
+	CHAN6G(177, 0),
+	CHAN6G(181, 0),
+	CHAN6G(185, 0),
+	/* UNII-8 */
+	CHAN6G(189, 0),
+	CHAN6G(193, 0),
+	CHAN6G(197, 0),
+	CHAN6G(201, 0),
+	CHAN6G(205, 0),
+	CHAN6G(209, 0),
+	CHAN6G(213, 0),
+	CHAN6G(217, 0),
+	CHAN6G(221, 0),
+	CHAN6G(225, 0),
+	CHAN6G(229, 0),
+	CHAN6G(233, 0)
+#endif
+};
+#endif
 
 #define RATETAB_ENT(_rate, _rateid, _flags)	\
 {						\
@@ -432,6 +514,19 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 #endif
 #endif
 };
+
+/* public for both Legacy Wi-Fi / P2P access */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+struct ieee80211_supported_band mtk_band_6ghz = {
+	.band = KAL_BAND_6GHZ,
+	.channels = mtk_6ghz_channels,
+	.n_channels = ARRAY_SIZE(mtk_6ghz_channels),
+	.bitrates = mtk_a_rates,
+	.n_bitrates = mtk_a_rates_size,
+	.ht_cap = WLAN_HT_CAP,
+	.vht_cap = WLAN_VHT_CAP,
+};
+#endif
 
 const uint32_t mtk_cipher_suites[] = {
 	/* keep WEP first, it may be removed below */
@@ -2055,42 +2150,19 @@ void wlanMonWorkHandler(struct work_struct *work)
 }
 #endif
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Update Channel table for cfg80211 for Wi-Fi Direct based on current
- *        country code
- *
- * \param[in] prGlueInfo      Pointer to glue info
- *
- * \return   none
- */
-/*----------------------------------------------------------------------------*/
-void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
+void wlanUpdateChannelFlagByBand(struct GLUE_INFO *prGlueInfo,
+				enum ENUM_BAND eBand)
 {
 	uint8_t i, j;
 	uint8_t ucNumOfChannel;
-	struct RF_CHANNEL_INFO aucChannelList[ARRAY_SIZE(
-			mtk_2ghz_channels) + ARRAY_SIZE(mtk_5ghz_channels)];
+	struct RF_CHANNEL_INFO aucChannelList[MAX_PER_BAND_CHN_NUM];
 
 	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
-	/* 1. Disable all channels */
-	for (i = 0; i < ARRAY_SIZE(mtk_2ghz_channels); i++) {
-		mtk_2ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
-		mtk_2ghz_channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(mtk_5ghz_channels); i++) {
-		mtk_5ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
-		mtk_5ghz_channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
-	}
-
 	/* 2. Get current domain channel list */
 	rlmDomainGetChnlList(prGlueInfo->prAdapter,
-			     BAND_NULL, FALSE,
-			     ARRAY_SIZE(mtk_2ghz_channels) + ARRAY_SIZE(
-				     mtk_5ghz_channels),
-			     &ucNumOfChannel, aucChannelList);
+			eBand, FALSE, MAX_PER_BAND_CHN_NUM,
+			&ucNumOfChannel, aucChannelList);
 
 	/* 3. Enable specific channel based on domain channel list */
 	for (i = 0; i < ucNumOfChannel; i++) {
@@ -2098,7 +2170,7 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 		case BAND_2G4:
 			for (j = 0; j < ARRAY_SIZE(mtk_2ghz_channels); j++) {
 				if (mtk_2ghz_channels[j].hw_value ==
-				    aucChannelList[i].ucChannelNum) {
+					aucChannelList[i].ucChannelNum) {
 					mtk_2ghz_channels[j].flags &=
 						~IEEE80211_CHAN_DISABLED;
 					mtk_2ghz_channels[j].orig_flags &=
@@ -2111,7 +2183,7 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 		case BAND_5G:
 			for (j = 0; j < ARRAY_SIZE(mtk_5ghz_channels); j++) {
 				if (mtk_5ghz_channels[j].hw_value ==
-				    aucChannelList[i].ucChannelNum) {
+					aucChannelList[i].ucChannelNum) {
 					mtk_5ghz_channels[j].flags &=
 						~IEEE80211_CHAN_DISABLED;
 					mtk_5ghz_channels[j].orig_flags &=
@@ -2121,8 +2193,9 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 						!= NL80211_DFS_USABLE) ?
 					     NL80211_DFS_USABLE :
 					     NL80211_DFS_UNAVAILABLE;
+
 					if (mtk_5ghz_channels[j].dfs_state ==
-							NL80211_DFS_USABLE)
+						NL80211_DFS_USABLE)
 						mtk_5ghz_channels[j].flags |=
 							IEEE80211_CHAN_RADAR;
 					else
@@ -2133,13 +2206,64 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 			}
 			break;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case BAND_6G:
+			for (j = 0; j < ARRAY_SIZE(mtk_6ghz_channels); j++) {
+				if (mtk_6ghz_channels[j].hw_value ==
+					aucChannelList[i].ucChannelNum) {
+					mtk_6ghz_channels[j].flags &=
+						~IEEE80211_CHAN_DISABLED;
+					mtk_6ghz_channels[j].orig_flags
+						&= ~IEEE80211_CHAN_DISABLED;
+					break;
+				}
+			}
+			break;
+#endif
+
 		default:
 			DBGLOG(INIT, WARN, "Unknown band %d\n",
-			       aucChannelList[i].eBand);
+				aucChannelList[i].eBand);
 			break;
 		}
 	}
+}
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update Channel table for cfg80211 for Wi-Fi Direct based on current
+ *        country code
+ *
+ * \param[in] prGlueInfo      Pointer to glue info
+ *
+ * \return   none
+ */
+/*----------------------------------------------------------------------------*/
+void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t i;
+	uint8_t ucBandIdx;
+
+	/* 1. Disable all channels */
+	for (i = 0; i < ARRAY_SIZE(mtk_2ghz_channels); i++) {
+		mtk_2ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
+		mtk_2ghz_channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(mtk_5ghz_channels); i++) {
+		mtk_5ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
+		mtk_5ghz_channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	for (i = 0; i < ARRAY_SIZE(mtk_6ghz_channels); i++) {
+		mtk_6ghz_channels[i].flags |= IEEE80211_CHAN_DISABLED;
+		mtk_6ghz_channels[i].orig_flags |= IEEE80211_CHAN_DISABLED;
+	}
+#endif
+
+	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++)
+		wlanUpdateChannelFlagByBand(prGlueInfo, ucBandIdx);
 }
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
@@ -2572,6 +2696,10 @@ static void wlanCreateWirelessDevice(void)
 	 *  bands[KAL_BAND_5GHZ] will be assign to NULL
 	 */
 	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWiphy->bands[KAL_BAND_6GHZ] = &mtk_band_6ghz;
+	DBGLOG(INIT, INFO, "Support 6G\n");
+#endif
 	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
 	prWiphy->cipher_suites = (const u32 *)mtk_cipher_suites;
 	prWiphy->n_cipher_suites = ARRAY_SIZE(mtk_cipher_suites);

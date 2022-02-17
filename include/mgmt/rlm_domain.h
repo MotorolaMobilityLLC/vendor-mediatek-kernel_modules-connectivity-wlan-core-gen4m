@@ -969,6 +969,7 @@ struct mtk_regd_control {
 	struct GLUE_INFO *pGlueInfo; /*wlan GlueInfo*/
 	u8 n_channel_active_2g;
 	u8 n_channel_active_5g;
+	u8 n_channel_active_6g;
 	struct CMD_DOMAIN_CHANNEL channels[MAX_SUPPORTED_CH_COUNT];
 	enum nl80211_dfs_regions dfs_region;
 };

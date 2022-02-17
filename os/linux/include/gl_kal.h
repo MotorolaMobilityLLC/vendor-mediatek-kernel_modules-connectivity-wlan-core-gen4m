@@ -584,6 +584,9 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
  */
 #define KAL_BAND_2GHZ NL80211_BAND_2GHZ
 #define KAL_BAND_5GHZ NL80211_BAND_5GHZ
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#define KAL_BAND_6GHZ NL80211_BAND_6GHZ
+#endif
 #define KAL_NUM_BANDS NUM_NL80211_BANDS
 #else
 #define KAL_BAND_2GHZ IEEE80211_BAND_2GHZ
@@ -1265,7 +1268,7 @@ kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 void
 kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 			IN enum ENUM_CHNL_EXT eSco,
-			IN uint8_t ucChannelNum);
+			IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand);
 #endif
 
 void
@@ -1631,7 +1634,8 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 void
 kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		   IN uint8_t *pucFrameBuf, IN uint32_t u4BufLen,
-		   IN uint8_t ucChannelNum, IN int32_t i4SignalStrength);
+		   IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand,
+		   IN int32_t i4SignalStrength);
 
 /*----------------------------------------------------------------------------*/
 /* Net device                                                                 */

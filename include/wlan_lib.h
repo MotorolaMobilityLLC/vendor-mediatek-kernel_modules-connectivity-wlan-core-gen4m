@@ -1519,6 +1519,12 @@ uint8_t wlanGetChannelNumberByNetwork(IN struct ADAPTER *prAdapter,
 				      IN uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
+/* get currently operating band information                                */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanGetBandIndexByNetwork(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex);
+
+/*----------------------------------------------------------------------------*/
 /* check for system configuration to generate message on scan list            */
 /*----------------------------------------------------------------------------*/
 uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER *prAdapter);

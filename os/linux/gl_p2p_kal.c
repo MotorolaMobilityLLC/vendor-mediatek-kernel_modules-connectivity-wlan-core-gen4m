@@ -1822,6 +1822,19 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(
 					wiphy->bands[KAL_BAND_5GHZ]->n_channels;
 			}
 			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case BAND_6G:
+			if (wiphy->bands[KAL_BAND_6GHZ] == NULL)
+				DBGLOG(P2P, ERROR,
+					"kalP2pFuncGetChannelEntry 6G NULL Bands!!\n");
+			else {
+				prTargetChannelEntry =
+					wiphy->bands[KAL_BAND_6GHZ]->channels;
+				u4TblSize =
+					wiphy->bands[KAL_BAND_6GHZ]->n_channels;
+			}
+			break;
+#endif
 		default:
 			break;
 		}
@@ -2304,9 +2317,22 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		}
 
 		/* Fill chan def */
-		prP2PInfo->chandef->chan->band =
-				(prBssInfo->eBand == BAND_5G) ?
-					KAL_BAND_5GHZ : KAL_BAND_2GHZ;
+		switch (prBssInfo->eBand) {
+		case BAND_2G4:
+			prP2PInfo->chandef->chan->band = KAL_BAND_2GHZ;
+			break;
+		case BAND_5G:
+			prP2PInfo->chandef->chan->band = KAL_BAND_5GHZ;
+			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case BAND_6G:
+			prP2PInfo->chandef->chan->band = KAL_BAND_6GHZ;
+			break;
+#endif
+		default:
+			prP2PInfo->chandef->chan->band = KAL_BAND_2GHZ;
+			break;
+		}
 		prP2PInfo->chandef->chan->center_freq = nicChannelNum2Freq(
 				prBssInfo->ucPrimaryChannel) / 1000;
 

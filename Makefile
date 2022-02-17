@@ -222,6 +222,16 @@ else
     ccflags-y += -DCFG_SUPPORT_802_11AX=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
+    ifeq ($(CONFIG_MTK_WIFI_6G_SUPPORT), y)
+        ccflags-y += -DCFG_SUPPORT_WIFI_6G=1
+    else
+        ccflags-y += -DCFG_SUPPORT_WIFI_6G=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_WIFI_6G=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_TWT=1
     ifeq ($(CONFIG_MTK_WIFI_TWT_SMART_STA), y)
