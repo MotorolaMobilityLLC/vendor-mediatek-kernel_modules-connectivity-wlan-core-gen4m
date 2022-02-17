@@ -2343,7 +2343,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus;
 	uint8_t ucBssIdx;
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	uint32_t *prLevel;
+	uint32_t u4Level = 0;
 #endif
 
 	DEBUGFUNC("nicEnterCtiaMode");
@@ -2389,9 +2389,9 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		/* 6. Disable Connsys Power Throttling feature. */
 		conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
-		*prLevel = CONN_PWR_THR_LV_0;
+		u4Level = CONN_PWR_THR_LV_0;
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
-							&prLevel);
+							&u4Level);
 #endif
 	} else {
 		/* 1. Enaable On-Lin Scan */
@@ -2433,7 +2433,8 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 		conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
 			(CONN_PWR_EVENT_CB)connsys_power_event_notification);
 		conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI,
-						&(prAdapter->u4PwrLevel));
+						&u4Level);
+		prAdapter->u4PwrLevel = u4Level;
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
 						&(prAdapter->u4PwrLevel));
 #endif
