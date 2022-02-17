@@ -1313,6 +1313,15 @@ struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL
 	uint8_t  aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+/* FW Debug Level Setting (Tag3) */
+struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2RxChecksum;   /* bit0: IP, bit1: UDP, bit2: TCP */
+	uint16_t u2TxChecksum;   /* bit0: IP, bit1: UDP, bit2: TCP */
+	uint8_t ucCtrlFlagAssertPath;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
 
 /* Chip Config set command (0x0E) */
 struct UNI_CMD_CHIP_CONFIG
@@ -2915,7 +2924,9 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdChPrivilege(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
-uint32_t nicUniCmdWsysConfig(struct ADAPTER *ad,
+uint32_t nicUniCmdWsysFwLogUI(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdWsysFwBasicConfig(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetSuspendMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
