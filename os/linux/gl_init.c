@@ -2455,6 +2455,29 @@ static void wlan_late_resume(struct early_suspend *h)
 
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC)
 
+void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
+{
+	struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if (!prGlueInfo)
+		return;
+
+	rSetP2P.u4Enable = 0;
+	rSetP2P.u4Mode = 0;
+
+	p2pNetUnregister(prGlueInfo, FALSE);
+
+	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
+			(void *) &rSetP2P,
+			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
+			FALSE, FALSE, TRUE, &u4BufLen);
+
+	DBGLOG(INIT, INFO,
+			"ret = 0x%08x\n", (uint32_t) rWlanStatus);
+}
+
 int set_p2p_mode_handler(struct net_device *netdev,
 			 struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode)
 {
@@ -2474,6 +2497,14 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	}
 #endif /*CFG_MTK_ANDROID_WMT*/
 
+	/* Resetting p2p mode if registered to avoid launch KE */
+	if (p2pmode.u4Enable
+		&& prGlueInfo->prAdapter->fgIsP2PRegistered
+		&& !kalIsResetting()) {
+		DBGLOG(INIT, WARN, "Resetting p2p mode\n");
+		reset_p2p_mode(prGlueInfo);
+	}
+
 	rSetP2P.u4Enable = p2pmode.u4Enable;
 	rSetP2P.u4Mode = p2pmode.u4Mode;
 
@@ -2485,8 +2516,11 @@ int set_p2p_mode_handler(struct net_device *netdev,
 			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
 			FALSE, FALSE, TRUE, &u4BufLen);
 
-	DBGLOG(INIT, INFO, "set_p2p_mode_handler ret = 0x%08x\n",
-	       (uint32_t) rWlanStatus);
+	DBGLOG(INIT, INFO,
+			"ret = 0x%08x, p2p reg = %d, resetting = %d\n",
+			(uint32_t) rWlanStatus,
+			prGlueInfo->prAdapter->fgIsP2PRegistered,
+			kalIsResetting());
 
 
 	/* Need to check fgIsP2PRegistered, in case of whole chip reset.
