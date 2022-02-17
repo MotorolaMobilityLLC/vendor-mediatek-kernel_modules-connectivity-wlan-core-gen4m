@@ -1445,10 +1445,11 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_REMOVE_STA_RECORD *) info->pucInfoBuffer;
-	sta = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
-	if (!sta)
+	/* don't use cnmGetStaRecByIndex because starec is not in-use */
+	if (cmd->ucStaIndex < CFG_STA_REC_NUM)
+		sta = &ad->arStaRec[cmd->ucStaIndex];
+	else
 		return WLAN_STATUS_INVALID_DATA;
-
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
 			max_cmd_len, NULL, NULL);
 	if (!entry)
