@@ -2108,7 +2108,7 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 	uint8_t ucTxDescSize;
 	struct HW_MAC_TX_DESC *prTxDesc;
 
-	DBGLOG(QM, INFO, "Free TXD template for STA[%u] QoS[%u]\n",
+	DBGLOG(QM, TRACE, "Free TXD template for STA[%u] QoS[%u]\n",
 	       prStaRec->ucIndex, prStaRec->fgIsQoS);
 
 	if (prStaRec->fgIsQoS) {
