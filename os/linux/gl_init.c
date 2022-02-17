@@ -3894,7 +3894,11 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf;
 	uint32_t u4ConfigReadLen;
-
+#ifndef CFG_WIFI_CFG_FN
+#define WIFI_CFG_FN	"wifi.cfg"
+#else
+#define WIFI_CFG_FN	CFG_WIFI_CFG_FN
+#endif
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	pucConfigBuf = (uint8_t *) kalMemAlloc(
 			       WLAN_CFG_FILE_BUF_SIZE, VIR_MEM_TYPE);
@@ -3905,7 +3909,7 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
-		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
+		} else if (kalRequestFirmware(WIFI_CFG_FN, pucConfigBuf,
 			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 			   prAdapter->prGlueInfo->prDev) == 0) {
 			/* ToDo:: Nothing */
