@@ -251,12 +251,12 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
 				       prGlueInfo->prDev);
 
 		if (ret) {
-			DBGLOG(INIT, ERROR,
+			DBGLOG(INIT, TRACE,
 			       "Request FW image: %s failed, errno[%d]\n",
 			       apucNameTable[ucNameIdx], fgResult);
 			continue;
 		} else {
-			DBGLOG(INIT, TRACE, "Request FW image: %s done\n",
+			DBGLOG(INIT, INFO, "Request FW image: %s done\n",
 			       apucNameTable[ucNameIdx]);
 			fgResult = TRUE;
 			break;
@@ -5508,7 +5508,7 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 	ret = request_firmware(&fw, pucPath, dev);
 
 	if (ret != 0) {
-		DBGLOG(INIT, INFO, "kalRequestFirmware %s Fail, errno[%d]!!\n",
+		DBGLOG(INIT, TRACE, "kalRequestFirmware %s Fail, errno[%d]!!\n",
 		       pucPath, ret);
 		pucData = NULL;
 		*pu4ReadSize = 0;
