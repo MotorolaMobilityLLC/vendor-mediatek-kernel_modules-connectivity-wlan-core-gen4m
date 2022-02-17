@@ -1082,9 +1082,14 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 				DBGLOG(SCN, ERROR, "prChannel is NULL and ucChannelNum is %d\n", ucChannelNum);
 
 			/* ensure BSS exists */
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo), prChannel, arBssid,
+					       ssid.aucSsid, ssid.u4SsidLen, IEEE80211_BSS_TYPE_ESS,
+					       IEEE80211_PRIVACY_ANY);
+#else
 			bss = cfg80211_get_bss(priv_to_wiphy(prGlueInfo), prChannel, arBssid,
 					       ssid.aucSsid, ssid.u4SsidLen, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
-
+#endif
 			if (bss == NULL) {
 				/* create BSS on-the-fly */
 				prBssDesc = ((P_AIS_FSM_INFO_T)
@@ -1123,8 +1128,14 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 			** from A to B
 			**/
 			while (ucLoopCnt--) {
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+				bss_others = cfg80211_get_bss(priv_to_wiphy(prGlueInfo), NULL, arBssid,
+						ssid.aucSsid, ssid.u4SsidLen, IEEE80211_BSS_TYPE_ESS,
+						IEEE80211_PRIVACY_ANY);
+#else
 				bss_others = cfg80211_get_bss(priv_to_wiphy(prGlueInfo), NULL, arBssid,
 						ssid.aucSsid, ssid.u4SsidLen, WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
+#endif
 				if (bss && bss_others && bss_others != bss) {
 					DBGLOG(SCN, INFO, "remove BSSes that only channel different\n");
 					cfg80211_unlink_bss(priv_to_wiphy(prGlueInfo), bss_others);
