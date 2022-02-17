@@ -232,32 +232,32 @@ void connac2x_dump_tmac_info(
 
 	/* DW0 */
 	/* TX Byte Count [15:0]  */
-	DBGLOG(HAL, INFO, "\t\tTxByteCnt = %d\n",
-		((txd->u4DW0 & CONNAC2X_TX_DESC_TX_BYTE_COUNT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tTxByteCnt = 0x%x\n",
+		(uint16_t)((txd->u4DW0 & CONNAC2X_TX_DESC_TX_BYTE_COUNT_MASK) >>
 		CONNAC2X_TX_DESC_TX_BYTE_COUNT_OFFSET));
 
 	/* PKT_FT: Packet Format [24:23] */
-	DBGLOG(HAL, INFO, "\t\tpkt_ft = %d(%s)\n",
-	((txd->u4DW0 & CONNAC2X_TX_DESC_PACKET_FORMAT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tpkt_ft = 0x%x(%s)\n",
+	(uint8_t)((txd->u4DW0 & CONNAC2X_TX_DESC_PACKET_FORMAT_MASK) >>
 		CONNAC2X_TX_DESC_PACKET_FORMAT_OFFSET),
 	pkt_ft_str[((txd->u4DW0 & CONNAC2X_TX_DESC_PACKET_FORMAT_MASK) >>
 		CONNAC2X_TX_DESC_PACKET_FORMAT_OFFSET)]);
 
 	/* Q_IDX [31:25]  */
-	DBGLOG(HAL, INFO, "\t\tQueID =0x%x\n",
-		((txd->u4DW0 & CONNAC2X_TX_DESC_QUEUE_INDEX_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tQueID = 0x%x\n",
+		(uint8_t)((txd->u4DW0 & CONNAC2X_TX_DESC_QUEUE_INDEX_MASK) >>
 		CONNAC2X_TX_DESC_QUEUE_INDEX_OFFSET));
 
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_1:\n");
 	/* DW1 */
 	/* WLAN Indec [9:0] */
-	DBGLOG(HAL, INFO, "\t\tWlan Index = %d\n",
-		((txd->u4DW1 & CONNAC2X_TX_DESC_WLAN_INDEX_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tWlan Index = 0x%x\n",
+		(uint16_t)((txd->u4DW1 & CONNAC2X_TX_DESC_WLAN_INDEX_MASK) >>
 		CONNAC2X_TX_DESC_WLAN_INDEX_OFFSET));
 
 	/* HF: Header Format [17:16] */
-	DBGLOG(HAL, INFO, "\t\tHdrFmt = %d(%s)\n",
-	((txd->u4DW1 & CONNAC2X_TX_DESC_HEADER_FORMAT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tHdrFmt = 0x%x(%s)\n",
+	(uint8_t)((txd->u4DW1 & CONNAC2X_TX_DESC_HEADER_FORMAT_MASK) >>
 		CONNAC2X_TX_DESC_HEADER_FORMAT_OFFSET),
 	hdr_fmt_str[((txd->u4DW1 & CONNAC2X_TX_DESC_HEADER_FORMAT_MASK) >>
 		CONNAC2X_TX_DESC_HEADER_FORMAT_OFFSET)]);
@@ -277,8 +277,9 @@ void connac2x_dump_tmac_info(
 
 	case TMI_HDR_FT_NOR_80211:
 		/* HEADER_LENGTH [15:11] */
-		DBGLOG(HAL, INFO, "\t\t\tHeader Len = %d(WORD)\n",
-		((txd->u4DW1 & CONNAC2X_TX_DESC_NOR_802_11_HEADER_LENGTH_MASK)
+		DBGLOG(HAL, INFO, "\t\t\tHeader Len = 0x%x(WORD)\n",
+		(uint8_t)((txd->u4DW1
+			& CONNAC2X_TX_DESC_NOR_802_11_HEADER_LENGTH_MASK)
 			>> CONNAC2X_TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET));
 		break;
 
@@ -293,13 +294,14 @@ void connac2x_dump_tmac_info(
 	/* Header Padding [19:18] */
 	DBGLOG(HAL, INFO, "\t\tHdrPad Mode = %d\n",
 		(txd->u4DW1 & CONNAC2X_TX_DESC_HEADER_PADDING_MODE) ? 1 : 0);
-	DBGLOG(HAL, INFO, "\t\tHdrPad Len = %d\n",
-		((txd->u4DW1 & CONNAC2X_TX_DESC_HEADER_PADDING_LENGTH_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tHdrPad Len = 0x%x\n",
+		(uint8_t)((txd->u4DW1
+			& CONNAC2X_TX_DESC_HEADER_PADDING_LENGTH_MASK) >>
 		CONNAC2X_TX_DESC_HEADER_PADDING_LENGTH_OFFSET));
 
 	/* TID [22:20] */
-	DBGLOG(HAL, INFO, "\t\tTID = %d\n",
-		((txd->u4DW1 & CONNAC2X_TX_DESC_TID_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tTID = 0x%x\n",
+		(uint8_t)((txd->u4DW1 & CONNAC2X_TX_DESC_TID_MASK) >>
 		CONNAC2X_TX_DESC_TID_OFFSET));
 
 	/* UtxB/AMSDU_C/AMSDU [23] */
@@ -307,8 +309,8 @@ void connac2x_dump_tmac_info(
 		((txd->u4DW1 & CONNAC2X_TX_DESC_TXD_UTXB_AMSDU_MASK) ? 1 : 0));
 
 	/* OM [29:24] */
-	DBGLOG(HAL, INFO, "\t\town_mac = %d\n",
-		((txd->u4DW1 & CONNAC2X_TX_DESC_OWN_MAC_MASK) >>
+	DBGLOG(HAL, INFO, "\t\town_mac = 0x%x\n",
+		(uint8_t)((txd->u4DW1 & CONNAC2X_TX_DESC_OWN_MAC_MASK) >>
 		CONNAC2X_TX_DESC_OWN_MAC_OFFSET));
 
 	/* FT [31] */
@@ -318,13 +320,13 @@ void connac2x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_2:\n");
 	/* DW2 */
 	/* Subtype [3:0] */
-	DBGLOG(HAL, INFO, "\t\tsub_type = %d\n",
-		((txd->u4DW2 & CONNAC2X_TX_DESC_SUB_TYPE_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tsub_type = 0x%x\n",
+		(uint8_t)((txd->u4DW2 & CONNAC2X_TX_DESC_SUB_TYPE_MASK) >>
 		CONNAC2X_TX_DESC_SUB_TYPE_OFFSET));
 
 	/* Type[5:4] */
-	DBGLOG(HAL, INFO, "\t\tfrm_type = %d\n",
-		((txd->u4DW2 & CONNAC2X_TX_DESC_TYPE_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tfrm_type = 0x%x\n",
+		(uint8_t)((txd->u4DW2 & CONNAC2X_TX_DESC_TYPE_MASK) >>
 		CONNAC2X_TX_DESC_TYPE_OFFSET));
 
 	/* NDP [6] */
@@ -360,18 +362,19 @@ void connac2x_dump_tmac_info(
 		((txd->u4DW2 & CONNAC2X_TX_DESC_HTC_EXISTS) ? 1 : 0));
 
 	/* FRAG [15:14] */
-	DBGLOG(HAL, INFO, "\t\tFRAG = %d\n",
-		((txd->u4DW2 & CONNAC2X_TX_DESC_FRAGMENT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tFRAG = 0x%x\n",
+		(uint8_t)((txd->u4DW2 & CONNAC2X_TX_DESC_FRAGMENT_MASK) >>
 		CONNAC2X_TX_DESC_FRAGMENT_OFFSET));
 
 	/* Remaining Life Time [23:16]*/
-	DBGLOG(HAL, INFO, "\t\tReamingLife/MaxTx time = %d\n",
-		((txd->u4DW2 & CONNAC2X_TX_DESC_REMAINING_MAX_TX_TIME_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tReamingLife/MaxTx time = 0x%x\n",
+		(uint16_t)((txd->u4DW2
+			& CONNAC2X_TX_DESC_REMAINING_MAX_TX_TIME_MASK) >>
 		CONNAC2X_TX_DESC_REMAINING_MAX_TX_TIME_OFFSET));
 
 	/* Power Offset [29:24] */
-	DBGLOG(HAL, INFO, "\t\tpwr_offset = %d\n",
-		((txd->u4DW2 & CONNAC2X_TX_DESC_POWER_OFFSET_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tpwr_offset = 0x%x\n",
+		(uint8_t)((txd->u4DW2 & CONNAC2X_TX_DESC_POWER_OFFSET_MASK) >>
 		CONNAC2X_TX_DESC_POWER_OFFSET_OFFSET));
 
 	/* FRM [30] */
@@ -409,18 +412,20 @@ void connac2x_dump_tmac_info(
 		(txd->u4DW3 & CONNAC2X_TX_DESC_TIMING_MEASUREMENT) ? 1 : 0);
 
 	/* TX Count [10:6] */
-	DBGLOG(HAL, INFO, "\t\ttx_cnt = %d\n",
-		((txd->u4DW3 & CONNAC2X_TX_DESC_TX_COUNT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\ttx_cnt = 0x%x\n",
+		(uint8_t)((txd->u4DW3 & CONNAC2X_TX_DESC_TX_COUNT_MASK) >>
 		CONNAC2X_TX_DESC_TX_COUNT_OFFSET));
 
 	/* Remaining TX Count [15:11] */
-	DBGLOG(HAL, INFO, "\t\tremain_tx_cnt = %d\n",
-		((txd->u4DW3 & CONNAC2X_TX_DESC_REMAINING_TX_COUNT_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tremain_tx_cnt = 0x%x\n",
+		(uint8_t)((txd->u4DW3
+			& CONNAC2X_TX_DESC_REMAINING_TX_COUNT_MASK) >>
 		CONNAC2X_TX_DESC_REMAINING_TX_COUNT_OFFSET));
 
 	/* SN [27:16] */
-	DBGLOG(HAL, INFO, "\t\tsn = %d\n",
-		((txd->u4DW3 & CONNAC2X_TX_DESC_SEQUENCE_NUMBER_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tsn = 0x%x\n",
+		(uint16_t)((txd->u4DW3
+			& CONNAC2X_TX_DESC_SEQUENCE_NUMBER_MASK) >>
 		CONNAC2X_TX_DESC_SEQUENCE_NUMBER_MASK_OFFSET));
 
 	/* BA_DIS [28] */
@@ -452,8 +457,8 @@ void connac2x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\t\tpn_high = 0x%x\n", txd->u2PN2);
 
 	/* PID [7:0] */
-	DBGLOG(HAL, INFO, "\t\tpid = %d\n",
-		(txd->u2DW5_0 & CONNAC2X_TX_DESC_PACKET_ID_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tpid = 0x%x\n",
+		(uint16_t)(txd->u2DW5_0 & CONNAC2X_TX_DESC_PACKET_ID_MASK) >>
 			CONNAC2X_TX_DESC_PACKET_ID_OFFSET);
 
 	/* TXSFM [8] */
@@ -472,18 +477,20 @@ void connac2x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_6:\n");
 	if (txd->u4DW2 & CONNAC2X_TX_DESC_FIXED_RATE) {
 		/* Fixed BandWidth mode [2:0] */
-		DBGLOG(HAL, INFO, "\t\tbw = %d\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_BANDWIDTH_MASK) >>
+		DBGLOG(HAL, INFO, "\t\tbw = 0x%x\n",
+			(uint8_t)(txd->u4DW6
+				& CONNAC2X_TX_DESC_BANDWIDTH_MASK) >>
 				CONNAC2X_TX_DESC_BANDWIDTH_OFFSET);
 
 		/* DYN_BW [3] */
-		DBGLOG(HAL, INFO, "\t\tdyn_bw = %d\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_DYNAMIC_BANDWIDTH)
+		DBGLOG(HAL, INFO, "\t\tdyn_bw = 0x%x\n",
+		(uint8_t)(txd->u4DW6 & CONNAC2X_TX_DESC_DYNAMIC_BANDWIDTH)
 				? 1 : 0);
 
 		/* ANT_ID [7:4] */
-		DBGLOG(HAL, INFO, "\t\tant_id = %d\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_ANTENNA_INDEX_MASK) >>
+		DBGLOG(HAL, INFO, "\t\tant_id = 0x%x\n",
+			(uint8_t)(txd->u4DW6
+			& CONNAC2X_TX_DESC_ANTENNA_INDEX_MASK) >>
 			CONNAC2X_TX_DESC_ANTENNA_INDEX_OFFSET);
 
 		/* SPE_IDX_SEL [10] */
@@ -495,18 +502,19 @@ void connac2x_dump_tmac_info(
 			(txd->u4DW6 & CONNAC2X_TX_DESC_LDPC) ? 1 : 0);
 
 		/* HELTF Type[13:12] */
-		DBGLOG(HAL, INFO, "\t\tHELTF Type = %d\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_HE_LTF_MASK) >>
+		DBGLOG(HAL, INFO, "\t\tHELTF Type = 0x%x\n",
+			(uint8_t)(txd->u4DW6 & CONNAC2X_TX_DESC_HE_LTF_MASK) >>
 				CONNAC2X_TX_DESC_HE_LTF_OFFSET);
 
 		/* GI Type [15:14] */
-		DBGLOG(HAL, INFO, "\t\tGI = %d\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_GI_TYPE) >>
+		DBGLOG(HAL, INFO, "\t\tGI = 0x%x\n",
+			(uint8_t)(txd->u4DW6 & CONNAC2X_TX_DESC_GI_TYPE) >>
 				CONNAC2X_TX_DESC_GI_TYPE_OFFSET);
 
 		/* Rate to be Fixed [29:16] */
 		DBGLOG(HAL, INFO, "\t\ttx_rate = 0x%x\n",
-			(txd->u4DW6 & CONNAC2X_TX_DESC_FIXDE_RATE_MASK) >>
+			(uint16_t)(txd->u4DW6
+				& CONNAC2X_TX_DESC_FIXDE_RATE_MASK) >>
 				CONNAC2X_TX_DESC_FIXDE_RATE_OFFSET);
 	}
 
@@ -522,8 +530,9 @@ void connac2x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_7:\n");
 
 	/* TXD Arrival Time [9:0] */
-	DBGLOG(HAL, INFO, "\t\tarrival time = %d\n",
-		txd->u4DW7 & CONNAC2X_TX_DESC_TXD_ARRIVAL_TIME_MASK);
+	DBGLOG(HAL, INFO, "\t\tarrival time = 0x%x\n",
+		(uint16_t)(txd->u4DW7
+				& CONNAC2X_TX_DESC_TXD_ARRIVAL_TIME_MASK));
 
 	/* HW_AMSDU_CAP [10] */
 	DBGLOG(HAL, INFO, "\t\thw amsdu cap = %d\n",
@@ -532,27 +541,28 @@ void connac2x_dump_tmac_info(
 	/* SPE_IDX [15:11] */
 	if (txd->u4DW2 & CONNAC2X_TX_DESC_FIXED_RATE)
 		DBGLOG(HAL, INFO, "\t\tspe_idx = 0x%x\n",
-			((txd->u4DW7 & CONNAC2X_TX_DESC_SPE_EXT_IDX_MASK) >>
+			(uint8_t)((txd->u4DW7
+				& CONNAC2X_TX_DESC_SPE_EXT_IDX_MASK) >>
 			CONNAC2X_TX_DESC_SPE_EXT_IDX_OFFSET));
 
 	/* PSE_FID [27:16], Indicate frame ID in PSE for this TXD */
 	DBGLOG(HAL, INFO, "\t\tpse_fid = 0x%x\n",
-		((txd->u4DW7 & CONNAC2X_TX_DESC_PSE_FID_MASK) >>
+		(uint16_t)((txd->u4DW7 & CONNAC2X_TX_DESC_PSE_FID_MASK) >>
 		CONNAC2X_TX_DESC_PSE_FID_OFFSET));
 
 	/* Subtype [19:16], HW reserved, PP use only */
-	DBGLOG(HAL, INFO, "\t\tpp_sub_type=%d\n",
-		((txd->u4DW7 & CONNAC2X_TX_DESC7_SUB_TYPE_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tpp_sub_type=0x%x\n",
+		(uint8_t)((txd->u4DW7 & CONNAC2X_TX_DESC7_SUB_TYPE_MASK) >>
 		CONNAC2X_TX_DESC7_SUB_TYPE_OFFSET));
 
 	/* Type [21:20], HW reserved, PP use only */
-	DBGLOG(HAL, INFO, "\t\tpp_type=%d\n",
-		((txd->u4DW7 & CONNAC2X_TX_DESC7_TYPE_MASK) >>
+	DBGLOG(HAL, INFO, "\t\tpp_type=0x%x\n",
+		(uint8_t)((txd->u4DW7 & CONNAC2X_TX_DESC7_TYPE_MASK) >>
 		CONNAC2X_TX_DESC7_TYPE_OFFSET));
 
 	/* CTXD_CNT [25:23], overwritten with PSE_FID by PP */
 	DBGLOG(HAL, INFO, "\t\tctxd cnt=0x%x\n",
-		((txd->u4DW7 & CONNAC2X_TX_DESC_CTXD_CNT_MASK) >>
+		(uint8_t)((txd->u4DW7 & CONNAC2X_TX_DESC_CTXD_CNT_MASK) >>
 		CONNAC2X_TX_DESC_CTXD_CNT_OFFSET));
 
 	/* CTXD [26], overwritten with PSE_FID by PP */
@@ -568,8 +578,8 @@ void connac2x_dump_tmac_info(
 		(txd->u4DW7 & CONNAC2X_TX_DESC_TCP_UDP_CHKSUM_OFFLOAD) ? 1 : 0);
 
 	/* TXDLEN [31:30] */
-	DBGLOG(HAL, INFO, "\t\ttxd len= %d\n",
-		((txd->u4DW7 & CONNAC2X_TX_DESC_TXD_LENGTH_MASK) >>
+	DBGLOG(HAL, INFO, "\t\ttxd len= 0x%x\n",
+		(uint8_t)((txd->u4DW7 & CONNAC2X_TX_DESC_TXD_LENGTH_MASK) >>
 		CONNAC2X_TX_DESC_TXD_LENGTH_OFFSET));
 }
 
@@ -1471,11 +1481,11 @@ static void connac2x_print_wtbl_info(
 			"\tFCAP_20_40_MHZ:%d\n"
 			"\tFCAP_20_TO_160_MHZ:%d\n"
 			"\tFCAP_20_TO_80_MHZ:%d\n",
-			pwtbl->trx_cap.wtbl_d9.field.fcap,
-			((pwtbl->trx_cap.wtbl_d9.field.fcap) &
+			(uint8_t)(pwtbl->trx_cap.wtbl_d9.field.fcap),
+			(uint8_t)((pwtbl->trx_cap.wtbl_d9.field.fcap) &
 			(BIT(0))),
-			pwtbl->trx_cap.wtbl_d9.field.fcap,
-			(((pwtbl->trx_cap.wtbl_d9.field.fcap) &
+			(uint8_t)pwtbl->trx_cap.wtbl_d9.field.fcap,
+			(uint8_t)(((pwtbl->trx_cap.wtbl_d9.field.fcap) &
 			(BIT(1))) >> 1));
 
 		/* Rate Info (DW10~13) */
@@ -1678,7 +1688,7 @@ int32_t connac2x_show_umac_wtbl_info(
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"UWTBL DW 0,1\n\tpn:%llu\n\tcom_sn:%d\n",
 		pn,
-		puwtbl->serial_no.wtbl_d1.field.com_sn);
+		(uint32_t)puwtbl->serial_no.wtbl_d1.field.com_sn);
 
 	/* UMAC WTBL DW 5 */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
