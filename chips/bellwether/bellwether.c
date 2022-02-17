@@ -103,8 +103,21 @@ struct ECO_INFO bellwether_eco_table[] = {
 };
 
 uint8_t *apucbellwetherFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_bellwether_1a",
 	(uint8_t *) CFG_FW_FILENAME "_bellwether_sta",
 	(uint8_t *) CFG_FW_FILENAME "_bellwether",
+	NULL
+};
+
+uint8_t *apucBellFwRomName[] = {
+	(uint8_t *) "wf_rom_1a.bin",
+	(uint8_t *) "wf_rom.bin",
+	NULL
+};
+
+uint8_t *apucBellFwRomSramName[] = {
+	(uint8_t *) "wf_rom_1a_sram.bin",
+	(uint8_t *) "wf_rom_sram.bin",
 	NULL
 };
 
@@ -811,29 +824,51 @@ static void bellwetherInitPcieInt(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
-	uint8_t *name, uint32_t addr)
+static int __load_rom_binary(struct ADAPTER *prAdapter,
+	const struct firmware **fw,
+	uint8_t **name_table)
 {
-	const struct firmware *fw;
+	const struct firmware *temp;
+	uint8_t idx = 0;
+	int ret = 0;
+
+	for (idx = 0; name_table[idx]; idx++) {
+		ret = request_firmware(&temp, name_table[idx],
+					  prAdapter->prGlueInfo->prDev);
+
+		if (ret) {
+			DBGLOG(INIT, WARN,
+				"Request FW image: %s failed, ret: %d\n",
+				name_table[idx], ret);
+			continue;
+		} else if (!temp || !temp->data || !temp->size) {
+			DBGLOG(INIT, ERROR,
+				"Invalid ROM, name: %s.\n",
+				name_table[idx]);
+			break;
+		}
+
+		DBGLOG(INIT, INFO,
+			"Request FW ROM image: %s done, size: 0x%zx\n",
+			name_table[idx],
+			temp->size);
+		*fw = temp;
+		return 0;
+	}
+	return -EINVAL;
+}
+
+static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
+	uint8_t **name_table, uint32_t addr)
+{
+	const struct firmware *fw = NULL;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 
-	ret = request_firmware(&fw, name, prAdapter->prGlueInfo->prDev);
+	ret = __load_rom_binary(prAdapter, &fw, name_table);
 	if (ret) {
-		DBGLOG(INIT, ERROR, "Request FW %s failed.\n", name);
 		ret = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
-
-	if (!fw || !fw->data) {
-		DBGLOG(INIT, ERROR, "Invalid ROM, name: %s.\n", name);
-		ret = WLAN_STATUS_FAILURE;
-		goto exit;
-	}
-
-	DBGLOG(INIT, INFO, "name: %s, fw->data: 0x%p, fw->size: 0x%zx\n",
-		name,
-		fw->data,
-		fw->size);
 
 	kalDevRegWriteRange(prAdapter->prGlueInfo,
 		addr, (void *)fw->data, fw->size);
@@ -1023,13 +1058,13 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 	} while(true);
 
 	ret = __load_rom_code(prAdapter,
-		BELLWETHER_FIRMWARE_ROM,
+		apucBellFwRomName,
 		BELLWETHER_FIRMWARE_ROM_ADDR);
 	if (ret != WLAN_STATUS_SUCCESS)
 		goto exit1;
 
 	ret = __load_rom_code(prAdapter,
-		BELLWETHER_FIRMWARE_ROM_SRAM,
+		apucBellFwRomSramName,
 		BELLWETHER_FIRMWARE_ROM_SRAM_ADDR);
 	if (ret != WLAN_STATUS_SUCCESS)
 		goto exit1;
