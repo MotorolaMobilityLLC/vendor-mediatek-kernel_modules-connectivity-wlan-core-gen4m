@@ -167,6 +167,14 @@ static int priv_driver_set_power_control(IN struct net_device *prNetDev,
 static int priv_driver_set_sw_wfdma(
 	IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen);
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static int priv_driver_set_pwr_level(
+	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
+
+static int priv_driver_set_pwr_temp(
+	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
+#endif
 /*******************************************************************************
  *                       P R I V A T E   D A T A
  *******************************************************************************
@@ -3341,6 +3349,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
+#define CMD_SET_PWR_TEMP	"SET_PWR_TEMP"
+#endif
 
 #if (CFG_SUPPORT_ICS == 1)
 #define CMD_SET_SNIFFER         "SNIFFER"
@@ -14154,6 +14167,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
 	{CMD_GET_HAPD_CHANNEL, priv_driver_get_hapd_channel},
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	{CMD_SET_PWR_LEVEL, priv_driver_set_pwr_level},
+	{CMD_SET_PWR_TEMP, priv_driver_set_pwr_temp},
+#endif
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
@@ -14806,3 +14823,114 @@ static int priv_driver_set_sw_wfdma(
 	}
 	return i4BytesWritten;
 }				/* priv_driver_set_sw_wfdma */
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static int priv_driver_set_pwr_level(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct MSG_PWR_LEVEL_NOTIFY *prMsgNotify;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 1;
+	int level;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &level);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		prMsgNotify = (struct MSG_PWR_LEVEL_NOTIFY *)
+				kalMemAlloc(sizeof(struct MSG_PWR_LEVEL_NOTIFY),
+						VIR_MEM_TYPE);
+
+		if (!prMsgNotify) {
+			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
+			return -1;
+		}
+
+		kalMemSet(prMsgNotify, 0, sizeof(struct MSG_PWR_LEVEL_NOTIFY));
+		prMsgNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_LEVEL;
+		prMsgNotify->level = level;
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prMsgNotify,
+				MSG_SEND_METHOD_BUF);
+	}
+
+	return i4BytesWritten;
+}
+
+static int priv_driver_set_pwr_temp(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct MSG_PWR_TEMP_NOTIFY *prMsgNotify;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 2;
+	uint32_t u4MaxTemp;
+	uint32_t u4RecoveryTemp;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4MaxTemp);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4RecoveryTemp);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		prMsgNotify = (struct MSG_PWR_TEMP_NOTIFY *)
+				kalMemAlloc(sizeof(struct MSG_PWR_TEMP_NOTIFY),
+						VIR_MEM_TYPE);
+
+		if (!prMsgNotify) {
+			DBGLOG(INIT, WARN, "prMsgNotify memory alloc fail!\n");
+			return -1;
+		}
+
+		kalMemSet(prMsgNotify, 0, sizeof(struct MSG_PWR_TEMP_NOTIFY));
+		prMsgNotify->rMsgHdr.eMsgId = MID_CNS_DRV_PWR_TEMP;
+		prMsgNotify->u4RecoveryTemp = u4RecoveryTemp;
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+				(struct MSG_HDR *) prMsgNotify,
+				MSG_SEND_METHOD_BUF);
+	}
+
+	return i4BytesWritten;
+}
+#endif
