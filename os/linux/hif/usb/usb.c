@@ -961,7 +961,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	spin_lock_init(&prHifInfo->rRxEventQLock);
 	spin_lock_init(&prHifInfo->rRxDataQLock);
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp)
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp)
 		spin_lock_init(&prHifInfo->rRxWdtQLock);
 #endif
 	spin_lock_init(&prHifInfo->rStateLock);
@@ -986,7 +986,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	init_usb_anchor(&prHifInfo->rRxDataAnchor);
 	init_usb_anchor(&prHifInfo->rRxEventAnchor);
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp)
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp)
 		init_usb_anchor(&prHifInfo->rRxWdtAnchor);
 #endif
 
@@ -1151,7 +1151,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 #if CFG_CHIP_RESET_SUPPORT
 	/* RX WDT interrupt */
-	if (prBusInfo->fgIsSupportWdtEp) {
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp) {
 		prHifInfo->prRxWdtReqHead = glUsbInitQ(prHifInfo,
 						       &prHifInfo->rRxWdtFreeQ,
 						       USB_REQ_RX_WDT_CNT);
@@ -1175,7 +1175,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxEventCompleteQ, 0);
 	glUsbInitQ(prHifInfo, &prHifInfo->rRxDataCompleteQ, 0);
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp)
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp)
 		glUsbInitQ(prHifInfo, &prHifInfo->rRxWdtCompleteQ, 0);
 #endif
 
@@ -1305,7 +1305,7 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp) {
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp) {
 		list_for_each_entry_safe(prUsbReq, prUsbReqNext,
 					 &prHifInfo->rRxWdtFreeQ, list) {
 			kfree(prUsbReq->prBufCtrl->pucBuf);
@@ -1325,7 +1325,7 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp) {
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp) {
 		list_for_each_entry_safe(prUsbReq, prUsbReqNext,
 					 &prHifInfo->rRxWdtCompleteQ, list) {
 			kfree(prUsbReq->prBufCtrl->pucBuf);
@@ -1341,7 +1341,7 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	kfree(prHifInfo->prRxEventReqHead);
 	kfree(prHifInfo->prRxDataReqHead);
 #if CFG_CHIP_RESET_SUPPORT
-	if (prBusInfo->fgIsSupportWdtEp)
+	if (prChipInfo->fgIsSupportL0p5Reset && prBusInfo->fgIsSupportWdtEp)
 		kfree(prHifInfo->prRxWdtReqHead);
 #endif
 	mutex_destroy(&prHifInfo->vendor_req_sem);
@@ -1970,6 +1970,34 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 				func_name, WIFI_DONGLE_RESET_GPIO_PIN, 1);
 		pFunc(WIFI_DONGLE_RESET_GPIO_PIN, 1);
 	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief API for set L0.5 reset flag. If flag is TRUE, then it means L0.5 reset
+ *        is on-going.
+ *
+ * \param[in] prAdapter
+ * \param[in] fgIsReset
+ *
+ * \return void
+ */
+/*----------------------------------------------------------------------------*/
+void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset)
+{
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	/* fgIsWfsysReset is used to prevent any USB EP0 request on mcu during
+	 * WF subsys reset. We shall use mutex here to prevent race condition
+	 * in USB.
+	 */
+	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+
+	prAdapter->fgIsWfsysReset = fgIsReset;
+
+	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
 }
 #endif
 

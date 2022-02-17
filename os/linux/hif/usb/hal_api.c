@@ -456,22 +456,11 @@ void halCancelTxRx(IN struct ADAPTER *prAdapter)
 #if CFG_CHIP_RESET_SUPPORT
 void halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 
-	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
-
-	/* fgIsWfsysReset is used to prevent any USB EP0 request on mcu during
-	 * WF subsys reset.
-	 */
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
-
-	prAdapter->fgIsWfsysReset = TRUE;
-
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
 
 	/* set USB EP_RST_OPT as reset scope excludes toggle bit,
 	 * sequence number, etc.
@@ -493,12 +482,6 @@ void halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 	if (prChipInfo->asicPollWfsysSwInitDone)
 		if (!prChipInfo->asicPollWfsysSwInitDone(prAdapter))
 			DBGLOG(HAL, ERROR, "WF L0.5 Reset FAIL\n");
-
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
-
-	prAdapter->fgIsWfsysReset = FALSE;
-
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
@@ -1113,8 +1096,7 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxWdtFreeQ, prUsbReq,
 				&prHifInfo->rRxWdtQLock, FALSE);
 
-		if (prBusInfo->fgIsSupportWdtEp)
-			halRxUSBReceiveWdt(prGlueInfo->prAdapter);
+		halRxUSBReceiveWdt(prGlueInfo->prAdapter);
 	}
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
@@ -1362,7 +1344,8 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 		halRxUSBReceiveEvent(prAdapter, TRUE);
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset &&
+	    prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
 		halRxUSBReceiveWdt(prAdapter);
 #endif
 
@@ -1390,7 +1373,8 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 	usb_kill_anchored_urbs(&prHifInfo->rRxDataAnchor);
 	usb_kill_anchored_urbs(&prHifInfo->rRxEventAnchor);
 #if CFG_CHIP_RESET_SUPPORT
-	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset &&
+	    prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
 		usb_kill_anchored_urbs(&prHifInfo->rRxWdtAnchor);
 #endif
 
@@ -1762,7 +1746,8 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	}
 
 #if CFG_CHIP_RESET_SUPPORT
-	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp) {
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset &&
+	    prAdapter->chip_info->bus_info->fgIsSupportWdtEp) {
 		halRxUSBProcessWdtComplete(prAdapter,
 					   &prHifInfo->rRxWdtCompleteQ,
 					   &prHifInfo->rRxWdtFreeQ,

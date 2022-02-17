@@ -219,14 +219,19 @@ int32_t glIsWmtCodeDump(void);
 
 #define glResetTrigger(prAdapter, u4RstFlag, pucFile, u4Line) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define WfsysResetHdlr(_work) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 		    eReason);
 
 int glSetRstReason(void);
-u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
-			uint32_t u4RstFlag, const uint8_t *pucFile,
-			uint32_t u4Line);
+void glResetTrigger(struct ADAPTER *prAdapter,
+		    uint32_t u4RstFlag, const uint8_t *pucFile,
+		    uint32_t u4Line);
+
+void WfsysResetHdlr(struct work_struct *work);
 #endif
 
 #endif /* _GL_RST_H */

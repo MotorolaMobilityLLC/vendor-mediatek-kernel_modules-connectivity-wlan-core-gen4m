@@ -1196,12 +1196,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR, "nicpmSetDriverOwn() failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = DRIVER_OWN_FAIL;
-			glSetRstReason(RST_WIFI_ON_DRV_OWN_FAIL);
-#if (CFG_SUPPORT_CONNINFRA == 0)
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-#else
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
-#endif
+			GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						 RST_WIFI_ON_DRV_OWN_FAIL);
 			break;
 		}
 
@@ -1266,12 +1262,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		u4Status = wlanDownloadFW(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 			eFailReason = RAM_CODE_DOWNLOAD_FAIL;
-			glSetRstReason(RST_FW_DL_FAIL);
-#if (CFG_SUPPORT_CONNINFRA == 0)
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-#else
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
-#endif
+
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_DL_FAIL);
 			break;
 		}
 #endif
@@ -1688,9 +1680,8 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			DBGLOG(INIT, ERROR,
 			       "Waiting for %s: Timeout, Status=0x%08x\n",
 			       fgRdyChk ? "ready bit" : "power off", u4Result);
-			glSetRstReason(RST_CHECK_READY_BIT_TIMEOUT);
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP |
-					RST_FLAG_PREVENT_POWER_OFF);
+			GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						 RST_CHECK_READY_BIT_TIMEOUT);
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
 		}
@@ -2842,11 +2833,6 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 				DBGLOG(INIT, WARN,
 				       "No response from chip for %u times, set NoAck flag!\n",
 				       prAdapter->ucOidTimeoutCount);
-#if 0
-				glSetRstReason(RST_OID_TIMEOUT);
-				GL_RESET_TRIGGER(prAdapter,
-						 RST_FLAG_CHIP_RESET);
-#endif
 			}
 
 			prAdapter->fgIsChipNoAck = TRUE;
@@ -3618,10 +3604,9 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 			u4Status = WLAN_STATUS_FAILURE;
 		} else if (nicRxWaitResponse(prAdapter, ucPortIdx, prEvent,
 		    u4EventLen, &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
-			glSetRstReason(RST_ACCESS_REG_FAIL);
-			GL_RESET_TRIGGER(prAdapter,
-					 RST_FLAG_DO_CORE_DUMP |
-					 RST_FLAG_PREVENT_POWER_OFF);
+			GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						 RST_ACCESS_REG_FAIL);
+
 			u4Status = WLAN_STATUS_FAILURE;
 		} else {
 			prInitEvent = (struct INIT_WIFI_EVENT *)
@@ -3632,20 +3617,16 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 			     (ucSetQuery == 1)) ||
 			    ((prInitEvent->ucEID != INIT_EVENT_ID_ACCESS_REG)
 				&& (ucSetQuery == 0))) {
-				glSetRstReason(RST_ACCESS_REG_FAIL);
-				GL_RESET_TRIGGER(prAdapter,
-						 RST_FLAG_DO_CORE_DUMP |
-						 RST_FLAG_PREVENT_POWER_OFF);
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							 RST_ACCESS_REG_FAIL);
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR,
 				       "wlanAccessRegisterStatus: incorrect ucEID. ucSetQuery = 0x%x\n",
 				       ucSetQuery);
 			} else if (prInitEvent->ucSeqNum != ucCmdSeqNum) {
 				u4Status = WLAN_STATUS_FAILURE;
-				glSetRstReason(RST_ACCESS_REG_FAIL);
-				GL_RESET_TRIGGER(prAdapter,
-						 RST_FLAG_DO_CORE_DUMP |
-						 RST_FLAG_PREVENT_POWER_OFF);
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							 RST_ACCESS_REG_FAIL);
 				DBGLOG(INIT, ERROR,
 				       "wlanAccessRegisterStatus: incorrect ucCmdSeqNum. = 0x%x\n",
 				       ucCmdSeqNum);

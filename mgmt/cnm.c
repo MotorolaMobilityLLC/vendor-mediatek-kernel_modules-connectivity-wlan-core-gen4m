@@ -713,8 +713,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 				"[DBDC] ChReq: long peivilege lock at %d, %d\n",
 				g_rDbdcInfo.rPeivilegeLockTime,
 				rChReqQueueTime);
-			glSetRstReason(RST_REQ_CHL_FAIL);
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_REQ_CHL_FAIL);
 		}
 		return;
 	}

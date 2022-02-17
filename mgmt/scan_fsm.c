@@ -1693,18 +1693,6 @@ scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
 			 * (ucScnZeroMdrdySerCnt >= 2)
 			 * do subsys reset if no connection.
 			 */
-#if 0
-			else if (prScanInfo->ucScnZeroMdrdySubsysResetCnt < 1) {
-				if (prAisBssInfo->eConnectionState
-					== MEDIA_STATE_DISCONNECTED) {
-					prScanInfo->
-						ucScnZeroMdrdySubsysResetCnt++;
-					glSetRstReason(RST_SCAN_RECOVERY);
-					GL_RESET_TRIGGER(prAdapter,
-						RST_FLAG_CHIP_RESET);
-				}
-			}
-#endif
 	}
 	/* Normal: Mdrdy>0 and beacon+ProbReq>0 case */
 	else {
@@ -1746,9 +1734,7 @@ scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
 		if (prScanInfo->ucScnTimeoutSubsysResetCnt < 1 &&
 		   prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
 			prScanInfo->ucScnTimeoutSubsysResetCnt++;
-			glSetRstReason(RST_SCAN_RECOVERY);
-			GL_RESET_TRIGGER(prAdapter,
-				RST_FLAG_CHIP_RESET);
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SCAN_RECOVERY);
 		}
 	}
 }

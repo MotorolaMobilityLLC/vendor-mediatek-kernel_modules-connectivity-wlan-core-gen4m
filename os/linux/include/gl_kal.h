@@ -1417,6 +1417,8 @@ void kalFirmwareImageUnmapping(IN struct GLUE_INFO
 
 #if CFG_CHIP_RESET_SUPPORT
 void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
+
+void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Card Removal Check                                                         */

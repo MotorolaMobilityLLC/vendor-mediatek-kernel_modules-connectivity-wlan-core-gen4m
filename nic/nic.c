@@ -755,8 +755,7 @@ static void nicProcessDefaultAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 #endif /* fos_change end */
 
 	halProcessAbnormalInterrupt(prAdapter);
-	glSetRstReason(RST_PROCESS_ABNORMAL_INT);
-	GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_PROCESS_ABNORMAL_INT);
 }
 
 /*----------------------------------------------------------------------------*/

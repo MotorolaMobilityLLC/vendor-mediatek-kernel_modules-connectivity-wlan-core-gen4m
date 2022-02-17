@@ -1717,5 +1717,21 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 	mmc_add_host(host);
 
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief API for set L0.5 reset flag. If flag is TRUE, then it means L0.5 reset
+ *        is on-going.
+ *
+ * \param[in] prAdapter
+ * \param[in] fgIsReset
+ *
+ * \return void
+ */
+/*----------------------------------------------------------------------------*/
+void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset)
+{
+	prAdapter->fgIsWfsysReset = fgIsReset;
+}
 #endif
 
