@@ -178,12 +178,10 @@ struct GL_HIF_INFO {
 	/* Shared memory for Tx descriptors */
 	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];
 	struct RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
-	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */
 
 	/* Shared memory for RX descriptors */
 	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
-	spinlock_t RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
 
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
@@ -192,17 +190,12 @@ struct GL_HIF_INFO {
 
 	struct MSDU_TOKEN_INFO rTokenInfo;
 
-	spinlock_t rDynMapRegLock;
-
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	u_int8_t fgIsErrRecovery;
-	spinlock_t rSerLock;
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
 	uint32_t u4TxDataQLen;
-	spinlock_t rTxCmdQLock;
-	spinlock_t rTxDataQLock;
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
