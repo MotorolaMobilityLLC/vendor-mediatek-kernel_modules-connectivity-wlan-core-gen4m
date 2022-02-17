@@ -4934,7 +4934,7 @@ static uint32_t nicTxDirectStartXmitMain(struct sk_buff
 		}
 	}
 
-	while (1) {
+	while (prMsduInfo) {
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
 			QUEUE_INSERT_HEAD(
 				&prAdapter->rTxDirectHifQueue[ucHifTc],
