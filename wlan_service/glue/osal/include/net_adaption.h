@@ -278,6 +278,12 @@ enum test_bw_type {
 	TEST_BW_5,
 	TEST_BW_160C,
 	TEST_BW_160NC,
+	TEST_BW_0_5,
+	TEST_BW_1,
+	TEST_BW_6,
+	TEST_BW_7,
+	TEST_BW_8,
+	TEST_BW_320,
 	TEST_BW_NUM
 };
 

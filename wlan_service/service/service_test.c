@@ -486,6 +486,7 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 	const s_int8 bw40_sel[] = { -2, 2};
 	const s_int8 bw80_sel[] = { -6, -2, 2, 6};
 	const s_int8 bw160_sel[] = { -14, -10, -6, -2, 2, 6, 10, 14};
+    const s_int8 bw320_sel[] = { -30, -26, -22, -18, -14, -10, -6, -2, 2, 6, 10, 14, 18, 22, 26, 30};
 
 	configs = &serv_test->test_config[ctrl_band_idx];
 
@@ -568,6 +569,12 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 
 				ch_offset = bw160_sel[pri_sel];
 				break;
+            case TEST_BW_320:
+  				if (pri_sel >= 16)
+  					goto error;
+
+  				ch_offset = bw320_sel[pri_sel];
+  				break;
 			default: /* BW_40 */
 				if (pri_sel > 1)
 					goto error;
@@ -589,7 +596,7 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 	case TEST_BW_160NC:
 		if (pri_sel >= 8)
 			goto error;
-
+    
 		if (!channel_2nd)
 			goto error2;
 
@@ -629,6 +636,14 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 		ch_offset = bw160_sel[pri_sel];
 
 		break;
+    case TEST_BW_320:
+  		if (pri_sel >= 16)
+  			goto error;
+
+  		configs->ctrl_ch = channel + bw320_sel[pri_sel];
+  		ch_offset = bw320_sel[pri_sel];
+
+  		break;
 
 	default:
 		goto error3;
