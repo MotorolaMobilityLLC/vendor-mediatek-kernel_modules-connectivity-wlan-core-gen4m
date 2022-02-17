@@ -4610,8 +4610,7 @@ void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 
 
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-		prAisFsmInfo = &prAdapter->rWifiVar.rAisFsmInfo[i];
-
+		prAisFsmInfo = aisFsmGetInstance(prAdapter, i);
 
 		/* Timer 1: rJoinTimeoutTimer
 		 * Driver couldn't get any CH_GRANT event of CH_REQ after resume
@@ -4626,7 +4625,7 @@ void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			/* Release Channel */
 			aisFsmReleaseCh(prAdapter,
-			       aisGetMainLinkBssInfo(prAisFsmInfo)->ucBssIndex);
+			       aisGetMainLinkBssIndex(prAisFsmInfo));
 		}
 
 

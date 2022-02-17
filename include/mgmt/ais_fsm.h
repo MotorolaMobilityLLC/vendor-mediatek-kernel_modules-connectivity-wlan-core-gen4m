@@ -414,9 +414,6 @@ struct AIS_FSM_INFO {
 
 	struct AIS_LINK_INFO aprLinkInfo[MLD_LINK_MAX];
 
-	struct AIS_LINK_INFO *prMainLink;
-	uint8_t ucMainBssIndex;
-
 	struct CONNECTION_SETTINGS rConnSettings;
 
 #if CFG_SUPPORT_ROAMING
@@ -578,11 +575,10 @@ void aisInitializeConnectionSettings(IN struct ADAPTER
 		IN uint8_t ucBssIndex);
 
 void aisFsmInit(IN struct ADAPTER *prAdapter,
-		IN struct AIS_FSM_INFO *prAisFsmInfo,
 		IN struct REG_INFO *prRegInfo,
 		IN uint8_t ucAisIndex);
 
-void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex);
 
 bool aisFsmIsInProcessPostpone(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
@@ -894,6 +890,8 @@ struct STA_RECORD *aisGetTargetStaRec(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
+struct AIS_FSM_INFO *aisFsmGetInstance(
+	IN struct ADAPTER *prAdapter, IN uint8_t ucAisIndex);
 struct AIS_FSM_INFO *aisGetDefaultAisInfo(IN struct ADAPTER *prAdapter);
 struct AIS_LINK_INFO *aisGetDefaultLink(IN struct ADAPTER *prAdapter);
 struct BSS_INFO *aisGetDefaultLinkBssInfo(IN struct ADAPTER *prAdapter);
@@ -906,6 +904,7 @@ void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
 struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo);
+uint8_t aisGetMainLinkBssIndex(IN struct AIS_FSM_INFO *prAisFsmInfo);
 void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC *prBssDesc, uint8_t ucLinkIdx);
 struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
