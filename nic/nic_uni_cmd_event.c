@@ -104,7 +104,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_CHIP_CONFIG] = nicUniCmdChipCfg,
 	[CMD_ID_SW_DBG_CTRL] = nicUniCmdSwDbgCtrl,
 	[CMD_ID_REMOVE_STA_RECORD] = nicUniCmdRemoveStaRec,
-	[CMD_ID_INDICATE_PM_BSS_CREATED] = nicUniCmdBcnContent,
+	[CMD_ID_INDICATE_PM_BSS_CREATED] = nicUniCmdNotSupport,
 	[CMD_ID_INDICATE_PM_BSS_ABORT] = nicUniCmdPmDisable,
 	[CMD_ID_INDICATE_PM_BSS_CONNECTED] = nicUniCmdPmEnable,
 	[CMD_ID_UPDATE_BEACON_CONTENT] = nicUniCmdBcnContent,
@@ -1826,51 +1826,46 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
+	struct CMD_BEACON_TEMPLATE_UPDATE *cmd;
 	struct UNI_CMD_BSSINFO *uni_cmd;
 	struct UNI_CMD_BSSINFO_BCN_CONTENT *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	struct BSS_INFO *bss;
-	struct WLAN_BEACON_FRAME *bcn;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
 	     		       sizeof(struct UNI_CMD_BSSINFO_BCN_CONTENT);
-	uint16_t bcn_len;
-	uint8_t bss_idx;
 
-	if (info->ucCID != CMD_ID_INDICATE_PM_BSS_CREATED ||
-	    info->ucCID != CMD_ID_UPDATE_BEACON_CONTENT)
+	if (info->ucCID != CMD_ID_UPDATE_BEACON_CONTENT)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	if (info->ucCID == CMD_ID_INDICATE_PM_BSS_CREATED)
-		bss_idx = ((struct CMD_INDICATE_PM_BSS_CREATED *)
-				info->pucInfoBuffer)->ucBssIndex;
-	else
-		bss_idx = ((struct CMD_BEACON_TEMPLATE_UPDATE *)
-				info->pucInfoBuffer)->ucBssIndex;
-	bss = GET_BSS_INFO_BY_INDEX(ad, bss_idx);
-	if (!bss->prBeacon)
-		return WLAN_STATUS_INVALID_DATA;
-
-	bcn = (struct WLAN_BEACON_FRAME *)bss->prBeacon->prPacket;
-	bcn_len = ALIGN_4(bss->prBeacon->u2FrameLength -
-		OFFSET_OF(struct WLAN_BEACON_FRAME, u2CapInfo));
-	max_cmd_len += bcn_len;
+	cmd = (struct CMD_BEACON_TEMPLATE_UPDATE *) info->pucInfoBuffer;
+	max_cmd_len += (2 + cmd->u2IELen); /* 2 for u2CapInfo */
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_BSSINFO *) entry->pucInfoBuffer;
-	uni_cmd->ucBssInfoIdx = bss_idx;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
 	tag = (struct UNI_CMD_BSSINFO_BCN_CONTENT *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BCN_CONTENT;
-	tag->u2Length = sizeof(*tag) + bcn_len;
-	tag->ucAction = BCN_ACTION_ENABLE;
-	tag->u2PktLength = bcn_len;
+	tag->u2Length = sizeof(*tag) + 2 + cmd->u2IELen;
+	if (cmd->ucUpdateMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP)
+		tag->ucAction = UPDATE_PROBE_RSP;
+	else if (cmd->ucUpdateMethod == IE_UPD_METHOD_DELETE_ALL)
+		tag->ucAction = BCN_ACTION_DISABLE;
+	else
+		tag->ucAction = BCN_ACTION_ENABLE;
+	tag->u2PktLength = 2 + cmd->u2IELen;
 	/* the aucPktContent field only include
 	 * capablity field and followed IEs
 	 */
 	tag->aucPktContentType = 1;
-	kalMemCopy(tag->aucPktContent, &bcn ->u2CapInfo, bcn_len);
+	kalMemCopy(tag->aucPktContent, &cmd->u2Capability, 2);
+	kalMemCopy(tag->aucPktContent + 2, cmd->aucIE, cmd->u2IELen);
+
+	DBGLOG(INIT, INFO, "Bss=%d, Action=%d, PktLen=%d\n",
+		cmd->ucBssIndex,
+		tag->ucAction,
+		tag->u2PktLength);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
