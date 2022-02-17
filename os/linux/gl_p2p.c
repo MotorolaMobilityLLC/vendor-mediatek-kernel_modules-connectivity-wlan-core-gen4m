@@ -2291,6 +2291,10 @@ skip_role:
 			"[%d] Set random macaddr to " MACSTR ".\n",
 			ucBssIdx,
 			MAC2STR(prBssInfo->aucOwnMacAddr));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateMldAddrByMainBss(prAdapter,
+			mldBssGetByBss(prAdapter, prBssInfo));
+#endif
 	}
 
 	return WLAN_STATUS_SUCCESS;

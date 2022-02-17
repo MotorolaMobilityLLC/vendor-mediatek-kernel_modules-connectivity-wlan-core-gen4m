@@ -72,6 +72,7 @@ void p2pRoleStateAbort_SCAN(IN struct ADAPTER *prAdapter,
 void
 p2pRoleStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 void

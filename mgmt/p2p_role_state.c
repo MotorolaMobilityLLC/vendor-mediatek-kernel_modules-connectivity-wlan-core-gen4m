@@ -142,13 +142,19 @@ void p2pRoleStateAbort_SCAN(IN struct ADAPTER *prAdapter,
 void
 p2pRoleStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
 
-		p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
+		if (prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_JOIN)
+			p2pLinkAcquireChJoin(prAdapter,
+				prP2pRoleFsmInfo,
+				prChnlReqInfo);
+		else
+			p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
 
 	} while (FALSE);
 }				/* p2pRoleStateInit_REQING_CHANNEL */
@@ -361,16 +367,11 @@ p2pRoleStateInit_GC_JOIN(IN struct ADAPTER *prAdapter,
 		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	/* P_MSG_JOIN_REQ_T prJoinReqMsg = (P_MSG_JOIN_REQ_T)NULL; */
-	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
 			&& (prP2pRoleFsmInfo != NULL)
 			&& (prChnlReqInfo != NULL));
-
-		prP2pBssInfo =
-			GET_BSS_INFO_BY_INDEX(prAdapter,
-				prP2pRoleFsmInfo->ucBssIndex);
 
 		/* Setup a join timer. */
 		DBGLOG(P2P, TRACE, "Start a join init timer\n");
@@ -380,7 +381,7 @@ p2pRoleStateInit_GC_JOIN(IN struct ADAPTER *prAdapter,
 				- AIS_JOIN_CH_GRANT_THRESHOLD));
 
 		p2pFuncGCJoin(prAdapter,
-			prP2pBssInfo,
+			prP2pRoleFsmInfo,
 			&(prP2pRoleFsmInfo->rJoinInfo));
 
 	} while (FALSE);
@@ -397,8 +398,6 @@ p2pRoleStateAbort_GC_JOIN(IN struct ADAPTER *prAdapter,
 		if (prJoinInfo->fgIsJoinComplete == FALSE) {
 			struct MSG_SAA_FSM_ABORT *prJoinAbortMsg =
 				(struct MSG_SAA_FSM_ABORT *) NULL;
-			struct BSS_DESC *prBssDesc =
-				(struct BSS_DESC *) NULL;
 
 			prJoinAbortMsg =
 				(struct MSG_SAA_FSM_ABORT *) cnmMemAlloc(
@@ -417,11 +416,8 @@ p2pRoleStateAbort_GC_JOIN(IN struct ADAPTER *prAdapter,
 			prJoinAbortMsg->prStaRec = prJoinInfo->prTargetStaRec;
 
 			/* Reset the flag to clear target BSS state */
-			prBssDesc = prJoinInfo->prTargetBssDesc;
-			if (prBssDesc != NULL) {
-				prBssDesc->fgIsConnecting &=
-					~BIT(prP2pRoleFsmInfo->ucBssIndex);
-			}
+			p2pTargetBssDescResetConnecting(prAdapter,
+				prP2pRoleFsmInfo);
 
 			mboxSendMsg(prAdapter,
 				MBOX_ID_0,

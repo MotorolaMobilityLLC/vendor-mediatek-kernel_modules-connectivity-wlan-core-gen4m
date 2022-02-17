@@ -3436,6 +3436,10 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 		aisFsmInit(prAdapter, prRegInfo, i);
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	p2pMldBssInit(prAdapter);
+#endif
+
 #if CFG_SUPPORT_SWCR
 	swCrDebugInit(prAdapter);
 #endif /* CFG_SUPPORT_SWCR */
@@ -3456,6 +3460,10 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	uint8_t i;
 
 	ASSERT(prAdapter);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	p2MldBssUninit(prAdapter);
+#endif
 
 #if CFG_SUPPORT_SWCR
 	swCrDebugUninit(prAdapter);

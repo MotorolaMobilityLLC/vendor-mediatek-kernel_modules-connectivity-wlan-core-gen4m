@@ -723,8 +723,12 @@ void beGenerateRnrIE(struct ADAPTER *prAdapter,
 		 * 10: Neighbor AP TBTT Offset + BSSID + MLD Para
 		 */
 		info->u2TbttInfoHdr = 10 << TBTT_INFO_HDR_LENGTH_OFFSET;
-		info->ucOpClass = 0;
-		info->ucChannelNum = 0;
+		info->ucOpClass =
+			rlmGetOpClassForChannel(
+				bss->ucPrimaryChannel,
+				bss->eBand);
+		info->ucChannelNum = bss->ucPrimaryChannel;
+
 		cp = info->aucTbttInfoSet;
 
 		/* Neighbor AP TBTT Offset*/
