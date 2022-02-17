@@ -3170,11 +3170,11 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
 			  &prStaRec->rPmfCfg.rSAQueryTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)rsnApStartSaQueryTimer,
 			  (unsigned long) prStaRec);
-	}
 
-	if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
-		rsnApStartSaQueryTimer(prAdapter, prStaRec,
-				       (unsigned long)NULL);
+		if (prStaRec->rPmfCfg.u4SAQueryCount == 0)
+			rsnApStartSaQueryTimer(prAdapter, prStaRec,
+						(unsigned long)NULL);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
