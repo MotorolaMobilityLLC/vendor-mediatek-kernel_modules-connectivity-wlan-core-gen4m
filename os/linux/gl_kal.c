@@ -144,6 +144,8 @@ void *wlan_fb_notifier_priv_data;
  *******************************************************************************
  */
 
+static void recycleMgmtTxQueue(IN struct ADAPTER *prAdapter);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -3891,7 +3893,7 @@ int hif_thread(void *data)
 			halPrintHifDbgInfo(prAdapter);
 
 		/* Update Tx Quota */
-		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA,
+		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT,
 					&prGlueInfo->ulFlag))
 			halUpdateTxMaxQuota(prAdapter);
 
@@ -3899,6 +3901,10 @@ int hif_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
 			prAdapter->fgWiFiInSleepyState = TRUE;
+
+		if (test_and_clear_bit(GLUE_FLAG_HIF_RECYCLE_MGMT_TX_QUEUE_BIT,
+				       &prGlueInfo->ulFlag))
+			recycleMgmtTxQueue(prAdapter);
 
 		/* Release to FW own */
 		wlanReleasePowerControl(prAdapter);
@@ -4240,7 +4246,7 @@ int main_thread(void *data)
 			}
 		}
 
-		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA,
+		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT,
 					&prGlueInfo->ulFlag))
 			halUpdateTxMaxQuota(prGlueInfo->prAdapter);
 #endif
@@ -4969,7 +4975,7 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
 {
-	set_bit(GLUE_FLAG_UPDATE_WMM_QUOTA, &pr->ulFlag);
+	set_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT, &pr->ulFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
@@ -5048,6 +5054,19 @@ void kalSetRxProcessEvent(struct GLUE_INFO *pr)
 	/* do we need wake lock here ? */
 	set_bit(GLUE_FLAG_RX_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq);
+}
+
+void kalSetMgmtTxRecyclingEvent2Hif(struct GLUE_INFO *pr)
+{
+	if (!pr->hif_thread)
+		return;
+
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
+			      MSEC_TO_JIFFIES(
+			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
+
+	set_bit(GLUE_FLAG_HIF_RECYCLE_MGMT_TX_QUEUE_BIT, &pr->ulFlag);
+	wake_up_interruptible(&pr->waitq_hif);
 }
 #endif
 /*----------------------------------------------------------------------------*/
@@ -8285,3 +8304,52 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	return (retval < 0)?(0):(retval);
 }
 
+static void recycleMgmtTxQueue(IN struct ADAPTER *prAdapter)
+{
+	struct QUE *prRecyclingQue;
+	struct QUE_ENTRY *prQueueEntry;
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
+	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfoListHead = NULL, *prMsduInfoListTail = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prAdapter)
+		return;
+
+	prRecyclingQue = &(prAdapter->rTxCtrl.rTxMgmtRecyclingQueue);
+
+	if (prRecyclingQue->u4NumElem == 0)
+		return;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RECYCLING_MGMT_LIST);
+	QUEUE_MOVE_ALL(prTempQue, prRecyclingQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RECYCLING_MGMT_LIST);
+
+	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
+
+	while (prQueueEntry) {
+		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
+		if (prMsduInfo->pfTxDoneHandler)
+			DBGLOG(TX, WARN,
+				"Unexpected handler 0x%p WIDX:PID[%u:%u]\n",
+					prMsduInfo,
+					prMsduInfo->ucWlanIndex,
+					prMsduInfo->ucPID);
+		if (prMsduInfoListHead == NULL) {
+			prMsduInfoListHead = prMsduInfoListTail = prMsduInfo;
+		} else {
+			QM_TX_SET_NEXT_MSDU_INFO(prMsduInfoListTail,
+						 prMsduInfo);
+			prMsduInfoListTail = prMsduInfo;
+		}
+
+		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
+	}
+
+	if (prMsduInfoListHead) {
+		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfoListHead);
+		nicTxReturnMsduInfo(prAdapter, prMsduInfoListHead);
+	}
+}

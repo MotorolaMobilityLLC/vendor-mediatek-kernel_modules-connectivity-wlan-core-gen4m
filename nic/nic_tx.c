@@ -2313,10 +2313,11 @@ void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
 	prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
 			 prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 	if (prMsduInfo) {
-		nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		nicFreePendingTxMsduInfo(prAdapter, prMsduInfo);
 	} else {
-		DBGLOG(TX, ERROR, "Not in pending tx queue\n");
+		DBGLOG(TX, ERROR, "WIDX:PID[%u:%u] not in pending tx queue.\n",
+				prMsduInfo->ucWlanIndex,
+				prMsduInfo->ucPID);
 	}
 }
 
@@ -3383,25 +3384,12 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 #endif
 
 	if (prMsduInfo) {
-		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
-	    (enum ENUM_TX_RESULT_CODE) (prTxDone->ucStatus));
-
-		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
-			cnmMgtPktFree(prAdapter, prMsduInfo);
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		else if (prMsduInfo->prToken)
-			prMsduInfo->pfTxDoneHandler = NULL;
-#endif
-		else {
-			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-		}
-
 		if (prTxDone->ucStatus == 0 &&
 			prMsduInfo->ucBssIndex < MAX_BSSID_NUM)
 			GET_CURRENT_SYSTIME(
 				&prTxCtrl->u4LastTxTime
 				[prMsduInfo->ucBssIndex]);
+		nicFreePendingTxMsduInfo(prAdapter, prMsduInfo);
 	}
 }
 

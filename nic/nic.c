@@ -890,6 +890,48 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 }
 
 void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfoListHead)
+{
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+
+	if (!prAdapter || !prMsduInfoListHead)
+		return;
+
+	QUEUE_INITIALIZE(prTempQue);
+	prMsduInfo = prMsduInfoListHead;
+
+	/* <1> Consume msdu's tx done handler first */
+	while (prMsduInfo) {
+		if (prMsduInfo->pfTxDoneHandler) {
+			prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
+					TX_RESULT_DROPPED_IN_DRIVER);
+			/* Clear this handler to prevent hif thread to execute
+			 * again
+			 */
+			prMsduInfo->pfTxDoneHandler = NULL;
+		}
+		prNextMsduInfo = QM_TX_GET_NEXT_MSDU_INFO(prMsduInfo);
+		QUEUE_INSERT_TAIL(prTempQue, (struct QUE_ENTRY *) prMsduInfo);
+		prMsduInfo = prNextMsduInfo;
+	}
+
+	/* <2> Notify hif thread to recycle msdu if any */
+	if (QUEUE_IS_NOT_EMPTY(prTempQue)) {
+		struct QUE *prRecyclingQue;
+
+		KAL_SPIN_LOCK_DECLARATION();
+
+		prRecyclingQue = &(prAdapter->rTxCtrl.rTxMgmtRecyclingQueue);
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RECYCLING_MGMT_LIST);
+		QUEUE_CONCATENATE_QUEUES(prRecyclingQue, prTempQue);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RECYCLING_MGMT_LIST);
+		kalSetMgmtTxRecyclingEvent2Hif(prAdapter->prGlueInfo);
+	}
+}
+
+void nicFreePendingTxMsduInfoByType(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucIndex, IN enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType)
 {
 	struct QUE *prTxingQue;
@@ -961,11 +1003,7 @@ void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 
-	/* free */
-	if (prMsduInfoListHead) {
-		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfoListHead);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfoListHead);
-	}
+	nicFreePendingTxMsduInfo(prAdapter, prMsduInfoListHead);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1473,15 +1511,6 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
 #endif
 
-	/* Free the pending msdu in rTxMgmtTxingQueue.
-	 * Move this action from "deactive" to "active" to avoid the KE issue.
-	 * Deactive remove pending msdu but HIF thread use it after deactive.
-	 */
-	nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
-		MSDU_REMOVE_BY_BSS_INDEX);
-	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
-				       ucBssIndex);
-
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_BSS_ACTIVATE_CTRL,
 				   TRUE,
@@ -1567,6 +1596,10 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 		nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
 	else
 		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
+	nicFreePendingTxMsduInfoByType(prAdapter, ucBssIndex,
+		MSDU_REMOVE_BY_BSS_INDEX);
+	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+				       ucBssIndex);
 
 	cnmFreeWmmIndex(prAdapter, prBssInfo);
 	return u4Status;
