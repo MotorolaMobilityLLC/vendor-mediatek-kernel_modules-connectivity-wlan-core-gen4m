@@ -239,6 +239,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.asicCapInit = mt6632CapInit,
 	.asicEnableFWDownload = NULL,
 	.fillTxDescAppend = fillTxDescAppendByCR4,
+	.features = 0,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6632 = {

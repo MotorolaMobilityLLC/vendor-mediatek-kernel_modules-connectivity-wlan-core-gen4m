@@ -4268,9 +4268,11 @@ BOOLEAN wlanProcessTxFrame(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prPacket
 	UINT_32 u4SysTime;
 	UINT_8 ucMacHeaderLen;
 	TX_PACKET_INFO rTxPacketInfo;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prPacket);
+	prChipInfo = prAdapter->chip_info;
 
 	if (kalQoSFrameClassifierAndPacketInfo(prAdapter->prGlueInfo, prPacket, &rTxPacketInfo)) {
 
@@ -4301,7 +4303,8 @@ BOOLEAN wlanProcessTxFrame(IN P_ADAPTER_T prAdapter, IN P_NATIVE_PACKET prPacket
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_802_3))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_802_3);
 
-			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_VLAN_EXIST))
+			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_VLAN_EXIST)
+				&& FEAT_SUP_LLC_VLAN_TX(prChipInfo))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_VLAN_EXIST);
 
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_DHCP))

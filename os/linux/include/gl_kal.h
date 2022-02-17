@@ -583,6 +583,9 @@ typedef struct _MONITOR_RADIOTAP_T {
 /* Zero specific memory block */
 #define kalMemZero(pvAddr, u4Size)                  memset(pvAddr, 0, u4Size)
 
+/* Move memory block with specific size */
+#define kalMemMove(pvDst, pvSrc, u4Size)            memmove(pvDst, pvSrc, u4Size)
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 #define strnicmp(s1, s2, n)                         strncasecmp(s1, s2, n)
 #endif

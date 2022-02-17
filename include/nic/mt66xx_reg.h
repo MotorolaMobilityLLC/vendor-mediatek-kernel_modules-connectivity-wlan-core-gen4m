@@ -923,6 +923,19 @@ typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
 #define WMTCR_TEST_MODE_STATUS          BIT(8)
 #define WMTCR_TEST_MODE_SELECT          BITS(0, 1)
 
+
+
+/* Support features */
+/* Options for VLAN-over-ethernet pkt to/from 802.11 LLC VLAN pkt.
+ * This should depend on the configurations of HW-header-translation.
+ */
+#define FEAT_BITS_LLC_VLAN_TX           BIT(0)
+#define FEAT_BITS_LLC_VLAN_RX           BIT(1)
+
+/* Support features API */
+#define FEAT_SUP_LLC_VLAN_TX(__chip_info) ((__chip_info)->features & FEAT_BITS_LLC_VLAN_TX)
+#define FEAT_SUP_LLC_VLAN_RX(__chip_info) ((__chip_info)->features & FEAT_BITS_LLC_VLAN_RX)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -983,6 +996,8 @@ struct mt66xx_chip_info {
 	void (*fillTxDescAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 				 IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
+
+	const UINT_32 features;	/* feature bits */
 };
 
 struct mt66xx_hif_driver_data {
