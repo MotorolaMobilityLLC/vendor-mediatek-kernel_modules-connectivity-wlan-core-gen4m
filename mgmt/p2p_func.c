@@ -1282,8 +1282,6 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 {
 	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
 	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	UINT_8 ucCountryChar[2];
-	UINT_16 u2CountryCode;
 	UINT_8 ucReqChnlNum;
 
 	DEBUGFUNC("p2pFuncStartRdd()");
@@ -1303,12 +1301,7 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
 
-		ucCountryChar[0] = (UINT_8) prAdapter->rWifiVar.rConnSettings.u2CountryCode;
-		ucCountryChar[1] = (UINT_8) (prAdapter->rWifiVar.rConnSettings.u2CountryCode >> 8);
-		u2CountryCode = (((UINT_16) ucCountryChar[0]) << 8) | ((UINT_16) ucCountryChar[1]);
-		DBGLOG(P2P, INFO, "Country code =  %x\n", u2CountryCode);
-
-		if (u2CountryCode == COUNTRY_CODE_JP) {
+		if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
 			if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
 				prCmdRddOnOffCtrl->ucRegDomain = REG_JP_53;
 			else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
@@ -1402,6 +1395,33 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 
 	} while (FALSE);
 }				/* p2pFuncDfsSwitchCh */
+
+BOOLEAN p2pFuncCheckWeatherRadarBand(IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
+{
+	UINT_8 ucReqChnlNum;
+	UINT_8 ucCenterFreqS1;
+	ENUM_CHANNEL_WIDTH_T eChannelWidth;
+	ENUM_CHNL_EXT_T eChnlSco;
+
+
+	ucReqChnlNum = prChnlReqInfo->ucReqChnlNum;
+	ucCenterFreqS1 = prChnlReqInfo->ucCenterFreqS1;
+	eChannelWidth = prChnlReqInfo->eChannelWidth;
+	eChnlSco = prChnlReqInfo->eChnlSco;
+
+	if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
+		if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
+			return TRUE;
+	} else {
+		if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
+			return TRUE;
+		else if (ucReqChnlNum == 116 && eChnlSco == CHNL_EXT_SCA) /* ch116, 120 BW40 */
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 #endif
 
 #if 0
