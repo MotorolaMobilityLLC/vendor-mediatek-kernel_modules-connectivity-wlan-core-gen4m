@@ -8686,7 +8686,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
 	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
 		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
-	params.key_mgmt_suite = RSN_CIPHER_SUITE_SAE;
+	params.key_mgmt_suite = RSN_AKM_SUITE_SAE;
 	DBGLOG(AIS, INFO, "[WPA3] "MACSTR" %s %d %d %02x-%02x-%02x-%02x",
 	       MAC2STR(params.bssid), params.ssid.ssid,
 	       params.ssid.ssid_len, params.action,
