@@ -328,6 +328,18 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	DBGLOG(HAL, STATE, "mtk_usb_suspend()\n");
 
+	if (!prGlueInfo || !prGlueInfo->prDevHandler)
+		return -EPERM;
+
+	/* TODO : support auto-suspend in stopped dev?
+	* ref : history of __dev_open()
+	*/
+	if (PMSG_IS_AUTO(message) &&
+		!netif_running(prGlueInfo->prDevHandler)) {
+		DBGLOG(HAL, WARN, "unable suspend w/o ruuning dev\n");
+		return -EPERM;
+	}
+
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 
 	/* Stop upper layers calling the device hard_start_xmit routine. */
