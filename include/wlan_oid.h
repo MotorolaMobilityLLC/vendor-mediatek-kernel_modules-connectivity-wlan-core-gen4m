@@ -615,6 +615,18 @@ enum ENUM_POWER_SAVE_PROFILE {
 	ENUM_PSP_NUM
 };
 
+struct LINK_SPEED_EX_ {
+	int8_t cRssi;
+	int8_t cLinkQuality;
+	uint32_t u2LinkSpeed;
+	uint8_t ucMediumBusyPercentage;
+	uint8_t ucIsLQ0Rdy;
+};
+
+struct PARAM_LINK_SPEED_EX {
+	struct LINK_SPEED_EX_ rLq[BSSID_NUM];
+};
+
 /*--------------------------------------------------------------*/
 /*! \brief Set/Query testing type.                              */
 /*--------------------------------------------------------------*/
@@ -2854,6 +2866,12 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN void *pvQueryBuffer,
 		      IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
+			  IN void *pvQueryBuffer,
+			  IN uint32_t u4QueryBufferLen,
+			  OUT uint32_t *pu4QueryInfoLen);
 
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
