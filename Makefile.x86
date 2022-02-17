@@ -1,7 +1,7 @@
 LINUX_SRC=/lib/modules/$(shell uname -r)/build
 
 export CONFIG_MTK_COMBO_PLATFORM=x86
-export MTK_COMBO_CHIP=CONNAC
+export MTK_COMBO_CHIP=MT6632 CONNAC
 
 PWD=$(shell pwd)
 DRIVER_DIR=$(PWD)
