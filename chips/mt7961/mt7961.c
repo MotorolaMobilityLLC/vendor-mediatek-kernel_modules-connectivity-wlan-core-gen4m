@@ -74,6 +74,7 @@
 #include "precomp.h"
 #include "mt7961.h"
 #include "hal_dmashdl_mt7961.h"
+#include "hal_wfsys_reset_mt7961.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -1306,6 +1307,8 @@ struct BUS_INFO mt7961_bus_info = {
 	     CONNAC2X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
 	     CONNAC2X_UDMA_WLCFG_0_TICK_1US_EN(1)),
 	.u4UdmaTxQsel = CONNAC2X_UDMA_TX_QSEL,
+	.u4UdmaConnInfraStatusSelAddr = CONNAC2X_UDMA_CONN_INFRA_STATUS_SEL,
+	.u4UdmaConnInfraStatusAddr = CONNAC2X_UDMA_CONN_INFRA_STATUS,
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
 	.asicUsbEventEpDetected = mt7961Connac2xUsbEventEpDetected,
@@ -1315,6 +1318,9 @@ struct BUS_INFO mt7961_bus_info = {
 	.prDmashdlCfg = &rMT7961DmashdlCfg,
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.asicUdmaRxFlush = asicConnac2xUdmaRxFlush,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = mt7961HalUsbEpctlRstOpt,
+#endif
 #endif
 };
 
@@ -1417,6 +1423,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.ucTxPwrLimitBatchSize = 8,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.dmashdlQuotaDecision = mt7961dmashdlQuotaDecision,
+#endif
+
+#if CFG_CHIP_RESET_SUPPORT
+	.asicWfsysRst = mt7961HalCbtopRguWfRst,
+	.asicPollWfsysSwInitDone = mt7961HalPollWfsysSwInitDone,
 #endif
 };
 

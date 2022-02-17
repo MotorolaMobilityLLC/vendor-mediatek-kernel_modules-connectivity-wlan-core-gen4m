@@ -644,6 +644,10 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
 
+#define HAL_CANCEL_TX_RX(_prAdapter)
+
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)
+
 #endif
 
 #if defined(_HIF_SDIO)
@@ -1027,6 +1031,10 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
 
+#define HAL_CANCEL_TX_RX(_prAdapter)
+
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)
+
 #endif
 
 #if defined(_HIF_USB)
@@ -1174,6 +1182,7 @@ do { \
 
 #define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)	\
 { \
+	*_pucSts = FALSE;			       \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
@@ -1183,12 +1192,19 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)	\
 { \
+	*_pucSts = FALSE;			       \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
 	*_pucSts = kalDevUhwRegWrite(_prAdapter->prGlueInfo, _u4Offset, \
 				     _u4Value); \
 }
+
+#define HAL_CANCEL_TX_RX(_prAdapter)    \
+	halCancelTxRx(_prAdapter)
+
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
+	halToggleWfsysRst(_prAdapter)
 
 #endif
 
@@ -1234,6 +1250,13 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pfgSts)	\
 	kal_virt_uhw_wr(_prAdapter, _u4Offset, _u4Value, _pfgSts)
+
+#define HAL_CANCEL_TX_RX(_prAdapter)    \
+	kal_virt_cancel_tx_rx(_prAdapter)
+
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
+	kal_virt_toggle_wfsys_rst(_prAdapter)
+
 #endif
 #define INVALID_VERSION 0xFFFF /* used by HW/FW version */
 /*******************************************************************************
@@ -1269,6 +1292,8 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter);
 void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
 void halTxCancelAllSending(IN struct ADAPTER *prAdapter);
+void halCancelTxRx(IN struct ADAPTER *prAdapter);
+void halToggleWfsysRst(IN struct ADAPTER *prAdapter);
 u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halProcessTxInterrupt(IN struct ADAPTER *prAdapter);

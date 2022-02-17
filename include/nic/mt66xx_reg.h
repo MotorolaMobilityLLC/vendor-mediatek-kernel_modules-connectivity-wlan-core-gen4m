@@ -1542,6 +1542,11 @@ struct mt66xx_chip_info {
 	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 	uint32_t u4ADieVer;
 	uint64_t chip_capability;
+#if CFG_CHIP_RESET_SUPPORT
+	u_int8_t (*asicWfsysRst)(struct ADAPTER *prAdapter,
+				 u_int8_t fgAssertRst);
+	u_int8_t (*asicPollWfsysSwInitDone)(struct ADAPTER *prAdapter);
+#endif
 };
 
 struct mt66xx_hif_driver_data {
