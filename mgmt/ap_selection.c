@@ -476,6 +476,27 @@ try_again:
 			if (!scanSanityCheckBssDesc(prAdapter, prBssDesc,
 				eBand, ucChannel, fgIsFixedChannel))
 				continue;
+
+			/* Make sure to match with SSID if supplied.
+			 * Some old dualband APs share a single BSSID
+			 * among different BSSes.
+			 */
+			if ((prBssDesc->ucSSIDLen > 0 &&
+				prConnSettings->ucSSIDLen > 0 &&
+				EQUAL_SSID(prBssDesc->aucSSID,
+					prBssDesc->ucSSIDLen,
+					prConnSettings->aucSSID,
+					prConnSettings->ucSSIDLen)) ||
+				prConnSettings->ucSSIDLen == 0)
+				log_dbg(SCN, LOUD, "%s: BSSID/SSID pair matched\n",
+						__func__);
+			else {
+				log_dbg(SCN, ERROR, "%s: BSSID/SSID pair unmatched ("
+					MACSTR
+					")\n", __func__,
+					MAC2STR(prBssDesc->aucBSSID));
+				continue;
+			}
 			prCandBssDesc = prBssDesc;
 			break;
 		}
