@@ -5279,11 +5279,19 @@ int testmode_add_roam_scn_chnl(
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	struct CFG_SCAN_CHNL rRoamScnChnl;
+	struct CFG_SCAN_CHNL *prRoamScnChnl;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wiphy);
 
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
 	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	prRoamScnChnl = kalMemAlloc(sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
+	if (prRoamScnChnl == NULL) {
+		DBGLOG(REQ, ERROR, "alloc roaming scan channel fail\n");
+		return -1;
+
+	}
+	kalMemZero(prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL));
 
 	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc is %i, cmd is %s\n", i4Argc,
@@ -5295,7 +5303,7 @@ int testmode_add_roam_scn_chnl(
 			return WLAN_STATUS_INVALID_DATA;
 		}
 
-		rRoamScnChnl.ucChannelListNum = u4ChnlInfo;
+		prRoamScnChnl->ucChannelListNum = u4ChnlInfo;
 		DBGLOG(REQ, INFO, "ChannelListNum is %d\n", u4ChnlInfo);
 		if (i4Argc != u4ChnlInfo + 2) {
 			DBGLOG(REQ, ERROR, "param mismatch %d\n",
@@ -5306,7 +5314,7 @@ int testmode_add_roam_scn_chnl(
 			i4Ret = kalkStrtou32(apcArgv[i], 0, &u4ChnlInfo);
 			if (i4Ret) {
 				while (i != 2) {
-					rRoamScnChnl.arChnlInfoList[i]
+					prRoamScnChnl->arChnlInfoList[i]
 					.ucChannelNum = 0;
 					i--;
 				}
@@ -5319,13 +5327,13 @@ int testmode_add_roam_scn_chnl(
 				       "t = %d, channel value=%d\n",
 				       t, u4ChnlInfo);
 				if ((u4ChnlInfo >= 1) && (u4ChnlInfo <= 14))
-					rRoamScnChnl.arChnlInfoList[t].eBand =
+					prRoamScnChnl->arChnlInfoList[t].eBand =
 								BAND_2G4;
 				else
-					rRoamScnChnl.arChnlInfoList[t].eBand =
+					prRoamScnChnl->arChnlInfoList[t].eBand =
 								BAND_5G;
 
-				rRoamScnChnl.arChnlInfoList[t].ucChannelNum =
+				prRoamScnChnl->arChnlInfoList[t].ucChannelNum =
 								u4ChnlInfo;
 				t++;
 			}
@@ -5333,8 +5341,11 @@ int testmode_add_roam_scn_chnl(
 		}
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidAddRoamScnChnl,
-			&rRoamScnChnl, sizeof(struct CFG_SCAN_CHNL),
+			prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL),
 			FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+		kalMemFree(prRoamScnChnl,
+			sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR,
