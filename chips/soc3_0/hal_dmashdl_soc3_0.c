@@ -390,7 +390,7 @@ uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 
 	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD_GP%d(0x%08x): 0x%08x\n",
 		ucGroup, u4Addr, u4Val);
-	DBGLOG(HAL, INFO, "\trsv_cnt = 0x%03x\n", rsv_cnt);
+	DBGLOG(HAL, TRACE, "\trsv_cnt = 0x%03x\n", rsv_cnt);
 	return rsv_cnt;
 }
 
@@ -406,7 +406,7 @@ uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter, uint8_t ucGroup)
 	src_cnt = (u4Val & WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_MASK) >>
 			WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_SHFT;
 
-	DBGLOG(HAL, INFO, "\tsrc_cnt = 0x%03x\n", src_cnt);
+	DBGLOG(HAL, TRACE, "\tsrc_cnt = 0x%03x\n", src_cnt);
 	return src_cnt;
 }
 
