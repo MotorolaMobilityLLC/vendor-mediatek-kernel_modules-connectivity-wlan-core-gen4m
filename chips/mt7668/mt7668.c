@@ -193,8 +193,11 @@ void mt7668CapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u4ExtraTxByteCount = 0;
 	prChipInfo->asicFillInitCmdTxd = asicFillInitCmdTxd;
 	prChipInfo->asicFillCmdTxd = asicFillCmdTxd;
-	prChipInfo->asicParseInitEventRxInfo = asicParseInitEventRxInfo;
-	prChipInfo->asicParseEventRxInfo = asicParseEventRxInfo;
+	prChipInfo->u2CmdTxHdrSize = sizeof(struct WIFI_CMD);
+	prChipInfo->u2RxSwPktBitMap = RXM_RXD_PKT_TYPE_SW_BITMAP;
+	prChipInfo->u2RxSwPktEvent = RXM_RXD_PKT_TYPE_SW_EVENT;
+	prChipInfo->u2RxSwPktFrame = RXM_RXD_PKT_TYPE_SW_FRAME;
+	asicInitTxdHook(prChipInfo->prTxDescOps);
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)

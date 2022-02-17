@@ -157,8 +157,11 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	prChipInfo->u4ExtraTxByteCount = 0;
 	prChipInfo->asicFillInitCmdTxd = asicFillInitCmdTxd;
 	prChipInfo->asicFillCmdTxd = asicFillCmdTxd;
-	prChipInfo->asicParseInitEventRxInfo = asicParseInitEventRxInfo;
-	prChipInfo->asicParseEventRxInfo = asicParseEventRxInfo;
+	prChipInfo->u2CmdTxHdrSize = sizeof(struct WIFI_CMD);
+	prChipInfo->u2RxSwPktBitMap = RXM_RXD_PKT_TYPE_SW_BITMAP;
+	prChipInfo->u2RxSwPktEvent = RXM_RXD_PKT_TYPE_SW_EVENT;
+	prChipInfo->u2RxSwPktFrame = RXM_RXD_PKT_TYPE_SW_FRAME;
+	asicInitTxdHook(prChipInfo->prTxDescOps);
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1333,37 +1336,9 @@ void asicFillCmdTxd(
 		*pCmdBuf = &prWifiCmd->aucBuffer[0];
 }
 
-void asicParseInitEventRxInfo(
-	struct ADAPTER *prAdapter,
-	u_int8_t *paucInBuffer,
-	struct WIFI_EVENT_INFO *prEventInfo)
+void asicInitTxdHook(
+	struct TX_DESC_OPS_T *prTxDescOps)
 {
-	struct mt66xx_chip_info *prChipInfo;
-	struct INIT_HIF_RX_HEADER *prInitEvent;
-
-	prChipInfo = prAdapter->chip_info;
-	prInitEvent = (struct INIT_HIF_RX_HEADER *)
-			(paucInBuffer + prChipInfo->rxd_size);
-	prEventInfo->ucEID = prInitEvent->rInitWifiEvent.ucEID;
-	prEventInfo->ucSeqNum = prInitEvent->rInitWifiEvent.ucSeqNum;
-	prEventInfo->pucInfoBuffer = &prInitEvent->rInitWifiEvent.aucBuffer[0];
+	prTxDescOps->nic_txd_long_format_op = nic_txd_v1_long_format_op;
 }
 
-void asicParseEventRxInfo(
-	struct ADAPTER *prAdapter,
-	u_int8_t *paucInBuffer,
-	struct WIFI_EVENT_INFO *prEventInfo)
-{
-	struct mt66xx_chip_info *prChipInfo;
-	struct WIFI_EVENT *prWifiEvent;
-
-	prChipInfo = prAdapter->chip_info;
-	prWifiEvent = (struct WIFI_EVENT *)
-			(paucInBuffer + prChipInfo->rxd_size);
-	prEventInfo->u2PacketType = prWifiEvent->u2PacketType;
-	prEventInfo->ucEID = prWifiEvent->ucEID;
-	prEventInfo->ucExtEID = prWifiEvent->ucExtenEID;
-	prEventInfo->ucSeqNum = prWifiEvent->ucSeqNum;
-	prEventInfo->pucInfoBuffer = &prWifiEvent->aucBuffer[0];
-	prEventInfo->u2InfoBufLen = prWifiEvent->u2PacketLength;
-}

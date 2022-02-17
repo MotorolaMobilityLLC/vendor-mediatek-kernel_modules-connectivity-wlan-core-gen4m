@@ -124,6 +124,7 @@
 #include "hif_tx.h"
 
 #include "nic_tx.h"
+#include "nic_txd_v1.h"
 
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */
 #include "nic_rx.h"
