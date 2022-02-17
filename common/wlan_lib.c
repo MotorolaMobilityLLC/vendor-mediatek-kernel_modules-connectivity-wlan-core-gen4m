@@ -473,6 +473,40 @@ struct axDataRateMappingTable_t {
 } } } } }
 };
 
+struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rEmCfgBk[WLAN_CFG_REC_ENTRY_NUM_MAX];
+
+
+struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
+	/*format :
+	*: {
+	*	"firmware config parameter",
+	*	"firmware config value",
+	*	"Operation:default 0"
+	*   }
+	*/
+	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	/*IOT AP, Ralink/MTK AP*/
+	{"IOTAP27", "80:000c43:::::2::1:1", WLAN_CFG_DEFAULT},
+	/*IOT AP, Athreros/Qcom AP*/
+	{"IOTAP28", "80:00037f:::::3:2:1:1", WLAN_CFG_DEFAULT},
+	{"IOTAP29", "80:00037f:::::4:2:1:1", WLAN_CFG_DEFAULT},
+	/*IOT AP, Broadcom AP*/
+	{"IOTAP30", "80:001018:02fff02c0000:ff00ffffffff:::2::1:1",
+		WLAN_CFG_DEFAULT},
+	{"IOTAP31", "80:001018:02ff040c0000:ff00ffffffff:::2::1:1",
+		WLAN_CFG_DEFAULT},
+#endif
+#if CFG_TC3_FEATURE
+	{"ScreenOnBeaconTimeoutCount", "20"},
+	{"ScreenOffBeaconTimeoutCount", "10"},
+	{"AgingPeriod", "0x19"},
+	{"DropPacketsIPV4Low", "0x1"},
+	{"DropPacketsIPV6Low", "0x1"},
+	{"Sta2gBw", "1"},
+#endif
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -4993,7 +5027,6 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	uint8_t u1LenLSB;
 	uint8_t u1LenMSB;
 	uint8_t fgSupportFragment = FALSE;
-
 	uint32_t u4NvramStartOffset = 0, u4NvramOffset = 0;
 	uint32_t u4NvramFragmentSize = 0;
 	struct CMD_NVRAM_FRAGMENT *prCmdNvramFragment;
@@ -7852,18 +7885,23 @@ void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter)
 
 struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter,
 				       const int8_t *pucKey,
-				       u_int8_t fgGetCfgRec)
+				       uint32_t u4Flags)
 {
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	struct WLAN_CFG *prWlanCfg = NULL;
 	struct WLAN_CFG_REC *prWlanCfgRec = NULL;
+	struct WLAN_CFG *prWlanCfgEm = NULL;
 	uint32_t i, u32MaxNum;
 
-	if (fgGetCfgRec) {
+	if (u4Flags == WLAN_CFG_REC) {
 		prWlanCfgRec = prAdapter->prWlanCfgRec;
 		u32MaxNum = WLAN_CFG_REC_ENTRY_NUM_MAX;
 		ASSERT(prWlanCfgRec);
+	} else if (u4Flags == WLAN_CFG_EM) {
+		prWlanCfgEm = prAdapter->prWlanCfgEm;
+		u32MaxNum = WLAN_CFG_REC_ENTRY_NUM_MAX;
+		ASSERT(prWlanCfgEm);
 	} else {
 		prWlanCfg = prAdapter->prWlanCfg;
 		u32MaxNum = WLAN_CFG_ENTRY_NUM_MAX;
@@ -7876,8 +7914,10 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter,
 	prWlanCfgEntry = NULL;
 
 	for (i = 0; i < u32MaxNum; i++) {
-		if (fgGetCfgRec)
+		if (u4Flags == WLAN_CFG_REC)
 			prWlanCfgEntry = &prWlanCfgRec->arWlanCfgBuf[i];
+		else if (u4Flags == WLAN_CFG_EM)
+			prWlanCfgEntry = &prWlanCfgEm->arWlanCfgBuf[i];
 		else
 			prWlanCfgEntry = &prWlanCfg->arWlanCfgBuf[i];
 
@@ -7892,6 +7932,24 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntry(IN struct ADAPTER *prAdapter,
 
 }
 
+uint32_t wlanCfgGetTotalCfgNum(
+	IN struct ADAPTER *prAdapter, uint32_t flag)
+{
+	uint32_t i = 0;
+	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
+	uint32_t count = 0;
+
+	for (i = 0; i < WLAN_CFG_REC_ENTRY_NUM_MAX; i++) {
+		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, flag);
+
+		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
+			break;
+
+		count++;
+	}
+	return count;
+}
+
 
 struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(
 	IN struct ADAPTER *prAdapter, const uint8_t ucIdx,
@@ -7901,19 +7959,24 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	struct WLAN_CFG *prWlanCfg;
 	struct WLAN_CFG_REC *prWlanCfgRec;
+	struct WLAN_CFG *prWlanCfgEm;
 
 
 	prWlanCfg = prAdapter->prWlanCfg;
 	prWlanCfgRec = prAdapter->prWlanCfgRec;
+	prWlanCfgEm = prAdapter->prWlanCfgEm;
 
 	ASSERT(prWlanCfg);
 	ASSERT(prWlanCfgRec);
+	ASSERT(prWlanCfgEm);
 
 
 	prWlanCfgEntry = NULL;
 
-	if (flag & WLAN_CFG_REC_FLAG_BIT)
+	if (flag == WLAN_CFG_REC)
 		prWlanCfgEntry = &prWlanCfgRec->arWlanCfgBuf[ucIdx];
+	else if (flag == WLAN_CFG_EM)
+		prWlanCfgEntry = &prWlanCfgEm->arWlanCfgBuf[ucIdx];
 	else
 		prWlanCfgEntry = &prWlanCfg->arWlanCfgBuf[ucIdx];
 
@@ -7937,15 +8000,11 @@ uint32_t wlanCfgGet(IN struct ADAPTER *prAdapter,
 {
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
-	struct WLAN_CFG *prWlanCfg;
 
-	prWlanCfg = prAdapter->prWlanCfg;
-
-	ASSERT(prWlanCfg);
 	ASSERT(pucValue);
 
 	/* Find the exist */
-	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, FALSE);
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, u4Flags);
 
 	if (prWlanCfgEntry) {
 		kalStrnCpy(pucValue, prWlanCfgEntry->aucValue,
@@ -7966,14 +8025,14 @@ void wlanCfgRecordValue(IN struct ADAPTER *prAdapter,
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	uint8_t aucBuf[WLAN_CFG_VALUE_LEN_MAX];
 
-	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, TRUE);
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_REC);
 
 	kalMemZero(aucBuf, sizeof(aucBuf));
 
 	kalSnprintf(aucBuf, WLAN_CFG_VALUE_LEN_MAX, "0x%x",
 		    (unsigned int)u4Value);
 
-	wlanCfgSet(prAdapter, pucKey, aucBuf, 1);
+	wlanCfgSet(prAdapter, pucKey, aucBuf, WLAN_CFG_REC);
 }
 
 
@@ -7992,7 +8051,7 @@ uint32_t wlanCfgGetUint32(IN struct ADAPTER *prAdapter,
 
 	u4Value = u4ValueDef;
 	/* Find the exist */
-	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, FALSE);
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_DEFAULT);
 
 	if (prWlanCfgEntry) {
 		/* u4Ret = kalStrtoul(prWlanCfgEntry->aucValue, NULL, 0); */
@@ -8021,7 +8080,7 @@ int32_t wlanCfgGetInt32(IN struct ADAPTER *prAdapter,
 
 	i4Value = i4ValueDef;
 	/* Find the exist */
-	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, FALSE);
+	prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_DEFAULT);
 
 	if (prWlanCfgEntry) {
 		/* i4Ret = kalStrtol(prWlanCfgEntry->aucValue, NULL, 0); */
@@ -8042,24 +8101,32 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter,
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
 	struct WLAN_CFG *prWlanCfg = NULL;
+	struct WLAN_CFG *prWlanCfgEm = NULL;
 	struct WLAN_CFG_REC *prWlanCfgRec = NULL;
 	uint32_t u4EntryIndex;
 	uint32_t i;
 	uint8_t ucExist;
-	u_int8_t fgGetCfgRec = FALSE;
 
-	fgGetCfgRec = u4Flags & WLAN_CFG_REC_FLAG_BIT;
 
 	ASSERT(pucKey);
 
+	DBGLOG(INIT, LOUD, "[%s]:[%s] OP:%d\n", pucKey, pucValue, u4Flags);
+
 	/* Find the exist */
 	ucExist = 0;
-	if (fgGetCfgRec) {
-		prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, TRUE);
+	if (u4Flags == WLAN_CFG_REC) {
+		prWlanCfgEntry =
+			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_REC);
 		prWlanCfgRec = prAdapter->prWlanCfgRec;
 		ASSERT(prWlanCfgRec);
+	} else if (u4Flags == WLAN_CFG_EM) {
+		prWlanCfgEntry =
+			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_EM);
+		prWlanCfgEm = prAdapter->prWlanCfgEm;
+		ASSERT(prWlanCfgEm);
 	} else {
-		prWlanCfgEntry = wlanCfgGetEntry(prAdapter, pucKey, FALSE);
+		prWlanCfgEntry =
+			wlanCfgGetEntry(prAdapter, pucKey, WLAN_CFG_DEFAULT);
 		prWlanCfg = prAdapter->prWlanCfg;
 		ASSERT(prWlanCfg);
 	}
@@ -8067,19 +8134,25 @@ uint32_t wlanCfgSet(IN struct ADAPTER *prAdapter,
 	if (!prWlanCfgEntry) {
 		/* Find the empty */
 		for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
-			if (fgGetCfgRec)
+			if (u4Flags == WLAN_CFG_REC)
 				prWlanCfgEntry = &prWlanCfgRec->arWlanCfgBuf[i];
+			else if (u4Flags == WLAN_CFG_EM)
+				prWlanCfgEntry = &prWlanCfgEm->arWlanCfgBuf[i];
 			else
 				prWlanCfgEntry = &prWlanCfg->arWlanCfgBuf[i];
+
 			if (prWlanCfgEntry->aucKey[0] == '\0')
 				break;
 		}
 
 		u4EntryIndex = i;
 		if (u4EntryIndex < WLAN_CFG_ENTRY_NUM_MAX) {
-			if (fgGetCfgRec)
+			if (u4Flags == WLAN_CFG_REC)
 				prWlanCfgEntry =
 				    &prWlanCfgRec->arWlanCfgBuf[u4EntryIndex];
+			else if (u4Flags == WLAN_CFG_EM)
+				prWlanCfgEntry =
+				    &prWlanCfgEm->arWlanCfgBuf[u4EntryIndex];
 			else
 				prWlanCfgEntry =
 				    &prWlanCfg->arWlanCfgBuf[u4EntryIndex];
@@ -8181,7 +8254,7 @@ uint32_t wlanCfgSetUint32(IN struct ADAPTER *prAdapter,
 	kalSnprintf(aucBuf, WLAN_CFG_VALUE_LEN_MAX, "0x%x",
 		    (unsigned int)u4Value);
 
-	return wlanCfgSet(prAdapter, pucKey, aucBuf, 0);
+	return wlanCfgSet(prAdapter, pucKey, aucBuf, WLAN_CFG_DEFAULT);
 }
 
 enum {
@@ -8460,7 +8533,7 @@ wlanCfgParseAddEntry(IN struct ADAPTER *prAdapter,
 
 	kalStrnCpy(aucValue, pucValueHead, u4Len);
 
-	return wlanCfgSet(prAdapter, aucKey, aucValue, 0);
+	return wlanCfgSet(prAdapter, aucKey, aucValue, WLAN_CFG_DEFAULT);
 }
 
 enum {
@@ -8582,7 +8655,7 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
+void wlanFeatureToFw(IN struct ADAPTER *prAdapter, uint32_t u4Flag)
 {
 
 	struct WLAN_CFG_ENTRY *prWlanCfgEntry;
@@ -8607,7 +8680,7 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 
 	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
 
-		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, 0);
+		prWlanCfgEntry = wlanCfgGetEntryByIndex(prAdapter, i, u4Flag);
 
 		if (prWlanCfgEntry) {
 
@@ -9177,6 +9250,8 @@ uint32_t wlanCfgInit(IN struct ADAPTER *prAdapter,
 {
 	struct WLAN_CFG *prWlanCfg;
 	struct WLAN_CFG_REC *prWlanCfgRec;
+	struct WLAN_CFG *prWlanCfgEm;
+
 	/* P_WLAN_CFG_ENTRY_T prWlanCfgEntry; */
 	prAdapter->prWlanCfg = &prAdapter->rWlanCfg;
 	prWlanCfg = prAdapter->prWlanCfg;
@@ -9184,8 +9259,15 @@ uint32_t wlanCfgInit(IN struct ADAPTER *prAdapter,
 	prAdapter->prWlanCfgRec = &prAdapter->rWlanCfgRec;
 	prWlanCfgRec = prAdapter->prWlanCfgRec;
 
+	prAdapter->prWlanCfgEm = &prAdapter->rWlanCfgEm;
+	prWlanCfgEm = prAdapter->prWlanCfgEm;
+
 	kalMemZero(prWlanCfg, sizeof(struct WLAN_CFG));
 	ASSERT(prWlanCfg);
+
+	kalMemZero(prWlanCfgEm, sizeof(struct WLAN_CFG));
+	ASSERT(prWlanCfgEm);
+
 	prWlanCfg->u4WlanCfgEntryNumMax = WLAN_CFG_ENTRY_NUM_MAX;
 	prWlanCfg->u4WlanCfgKeyLenMax = WLAN_CFG_KEY_LEN_MAX;
 	prWlanCfg->u4WlanCfgValueLenMax = WLAN_CFG_VALUE_LEN_MAX;
@@ -9197,16 +9279,22 @@ uint32_t wlanCfgInit(IN struct ADAPTER *prAdapter,
 	prWlanCfgRec->u4WlanCfgValueLenMax =
 		WLAN_CFG_VALUE_LEN_MAX;
 
+	prWlanCfgEm->u4WlanCfgEntryNumMax = WLAN_CFG_ENTRY_NUM_MAX;
+	prWlanCfgEm->u4WlanCfgKeyLenMax = WLAN_CFG_KEY_LEN_MAX;
+	prWlanCfgEm->u4WlanCfgValueLenMax = WLAN_CFG_VALUE_LEN_MAX;
+
+
 	DBGLOG(INIT, INFO, "Init wifi config len %u max entry %u\n",
 	       u4ConfigBufLen, prWlanCfg->u4WlanCfgEntryNumMax);
 #if DBG
 	/* self test */
-	wlanCfgSet(prAdapter, "ConfigValid", "0x123", 0);
-	if (wlanCfgGetUint32(prAdapter, "ConfigValid", 0) != 0x123)
+	wlanCfgSet(prAdapter, "ConfigValid", "0x123", WLAN_CFG_DEFAULT);
+	if (wlanCfgGetUint32(prAdapter, "ConfigValid", WLAN_CFG_DEFAULT)
+		!= 0x123)
 		DBGLOG(INIT, INFO, "wifi config error %u\n", __LINE__);
 
-	wlanCfgSet(prAdapter, "ConfigValid", "1", 0);
-	if (wlanCfgGetUint32(prAdapter, "ConfigValid", 0) != 1)
+	wlanCfgSet(prAdapter, "ConfigValid", "1", WLAN_CFG_DEFAULT);
+	if (wlanCfgGetUint32(prAdapter, "ConfigValid", WLAN_CFG_DEFAULT) != 1)
 		DBGLOG(INIT, INFO, "wifi config error %u\n", __LINE__);
 
 #endif
@@ -12032,4 +12120,125 @@ uint32_t wlanSetForceRTS(
 	);
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+void
+wlanLoadDefaultCustomerSetting(IN struct ADAPTER *
+	prAdapter)
+{
+
+	uint8_t ucItemNum, i;
+
+	/* default setting*/
+	ucItemNum = (sizeof(g_rDefaulteSetting) / sizeof(
+		struct PARAM_CUSTOM_KEY_CFG_STRUCT));
+
+	DBGLOG(INIT, STATE, "Default firmware setting %d item\n",
+			ucItemNum);
+
+
+	for (i = 0; i < ucItemNum; i++) {
+		wlanCfgSet(prAdapter,
+			g_rDefaulteSetting[i].aucKey,
+			g_rDefaulteSetting[i].aucValue,
+			g_rDefaulteSetting[i].u4Flag);
+		DBGLOG(INIT, INFO, "%s with %s\n",
+			g_rDefaulteSetting[i].aucKey,
+			g_rDefaulteSetting[i].aucValue);
+	}
+
+
+#if 1
+	/*If need to re-parsing , included wlanInitFeatureOption*/
+	wlanInitFeatureOption(prAdapter);
+#endif
+}
+/*wlan on*/
+void
+wlanResoreEmCfgSetting(IN struct ADAPTER *
+	prAdapter)
+{
+	uint8_t i;
+
+	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
+
+		if (g_rEmCfgBk[i].aucKey[0] == '\0')
+			continue;
+
+		wlanCfgSet(prAdapter, g_rEmCfgBk[i].aucKey,
+			g_rEmCfgBk[i].aucValue, WLAN_CFG_EM);
+
+		DBGLOG(INIT, STATE,
+			   "cfg restore:(%s,%s) op:%d\n",
+			   g_rEmCfgBk[i].aucKey,
+			   g_rEmCfgBk[i].aucValue,
+			   g_rEmCfgBk[i].u4Flag);
+
+	}
+
+}
+
+/*wlan off*/
+void
+wlanBackupEmCfgSetting(IN struct ADAPTER *
+	prAdapter)
+{
+	uint8_t i;
+	struct WLAN_CFG_ENTRY *prWlanCfgEntry = NULL;
+
+	kalMemZero(&g_rEmCfgBk, sizeof(g_rEmCfgBk));
+
+	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
+		prWlanCfgEntry =
+			wlanCfgGetEntryByIndex(prAdapter, i, WLAN_CFG_EM);
+
+		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
+			break;
+
+
+		kalStrnCpy(g_rEmCfgBk[i].aucKey, prWlanCfgEntry->aucKey,
+			WLAN_CFG_KEY_LEN_MAX - 1);
+		prWlanCfgEntry->aucKey[WLAN_CFG_KEY_LEN_MAX - 1] = '\0';
+
+		kalStrnCpy(g_rEmCfgBk[i].aucValue, prWlanCfgEntry->aucValue,
+			WLAN_CFG_VALUE_LEN_MAX - 1);
+		prWlanCfgEntry->aucValue[WLAN_CFG_VALUE_LEN_MAX - 1] = '\0';
+
+
+		g_rEmCfgBk[i].u4Flag = WLAN_CFG_EM;
+
+		DBGLOG(INIT, STATE,
+			   "cfg backup:(%s,%s) op:%d\n",
+			   g_rEmCfgBk[i].aucKey,
+			   g_rEmCfgBk[i].aucValue,
+			   g_rEmCfgBk[i].u4Flag);
+
+	}
+
+
+}
+
+void
+wlanCleanAllEmCfgSetting(IN struct ADAPTER *
+	prAdapter)
+{
+	uint8_t i;
+	struct WLAN_CFG_ENTRY *prWlanCfgEntry = NULL;
+
+	for (i = 0; i < WLAN_CFG_ENTRY_NUM_MAX; i++) {
+		prWlanCfgEntry =
+			wlanCfgGetEntryByIndex(prAdapter, i, WLAN_CFG_EM);
+
+		if ((!prWlanCfgEntry) || (prWlanCfgEntry->aucKey[0] == '\0'))
+			break;
+
+		DBGLOG(INIT, STATE,
+			   "cfg clean:(%s,%s) op:%d\n",
+			   prWlanCfgEntry->aucKey,
+			   prWlanCfgEntry->aucValue,
+			   prWlanCfgEntry->u4Flags);
+
+		kalMemZero(prWlanCfgEntry, sizeof(struct WLAN_CFG_ENTRY));
+
+	}
 }

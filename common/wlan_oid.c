@@ -87,32 +87,6 @@
  *                            P U B L I C   D A T A
  ******************************************************************************
  */
-struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
-	/*format :
-	 *: {"firmware config parameter", "firmware config value"}
-	 */
-	{"AdapScan", "0x0"},
-#if CFG_SUPPORT_IOT_AP_BLACKLIST
-	/*IOT AP, Ralink/MTK AP*/
-	{"IOTAP27", "80:000c43:::::2::1:1"},
-	/*IOT AP, Athreros/Qcom AP*/
-	{"IOTAP28", "80:00037f:::::3:2:1:1"},
-	{"IOTAP29", "80:00037f:::::4:2:1:1"},
-	/*IOT AP, Broadcom AP*/
-	{"IOTAP30", "80:001018:02fff02c0000:ff00ffffffff:::2::1:1"},
-	{"IOTAP31", "80:001018:02ff040c0000:ff00ffffffff:::2::1:1"},
-#endif
-
-#if CFG_TC3_FEATURE
-	{"ScreenOnBeaconTimeoutCount", "20"},
-	{"ScreenOffBeaconTimeoutCount", "10"},
-	{"AgingPeriod", "0x19"},
-	{"DropPacketsIPV4Low", "0x1"},
-	{"DropPacketsIPV6Low", "0x1"},
-	{"Sta2gBw", "1"},
-#endif
-};
-
 
 /******************************************************************************
  *                           P R I V A T E   D A T A
@@ -7529,33 +7503,6 @@ wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
 	return rWlanStatus;
 } /* wlanoidSetChipConfig */
 
-void
-wlanLoadDefaultCustomerSetting(IN struct ADAPTER *
-			       prAdapter) {
-
-	uint8_t ucItemNum, i;
-
-
-	ucItemNum = (sizeof(g_rDefaulteSetting) / sizeof(
-			     struct PARAM_CUSTOM_KEY_CFG_STRUCT));
-	DBGLOG(INIT, TRACE, "Default firmware setting %d item\n",
-	       ucItemNum);
-
-
-	for (i = 0; i < ucItemNum; i++) {
-		wlanCfgSet(prAdapter, g_rDefaulteSetting[i].aucKey,
-			   g_rDefaulteSetting[i].aucValue, 0);
-		DBGLOG(INIT, TRACE, "%s with %s\n",
-		       g_rDefaulteSetting[i].aucKey,
-		       g_rDefaulteSetting[i].aucValue);
-	}
-
-#if 1
-	/*If need to re-parsing , included wlanInitFeatureOption*/
-	wlanInitFeatureOption(prAdapter);
-#endif
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to set cfg and callback
@@ -7599,7 +7546,7 @@ wlanoidSetKeyCfg(IN struct ADAPTER *prAdapter,
 		wlanGetConfig(prAdapter); /* Reload config file */
 	else
 		wlanCfgSet(prAdapter, prKeyCfgInfo->aucKey,
-			   prKeyCfgInfo->aucValue, 0);
+			   prKeyCfgInfo->aucValue, prKeyCfgInfo->u4Flag);
 
 	wlanInitFeatureOption(prAdapter);
 
@@ -7621,7 +7568,7 @@ wlanoidSetKeyCfg(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucTxStbc,
 		prAdapter->rWifiVar.ucRxStbc);
 #if CFG_SUPPORT_EASY_DEBUG
-	wlanFeatureToFw(prAdapter);
+	wlanFeatureToFw(prAdapter, prKeyCfgInfo->u4Flag);
 #endif
 
 	return rWlanStatus;
