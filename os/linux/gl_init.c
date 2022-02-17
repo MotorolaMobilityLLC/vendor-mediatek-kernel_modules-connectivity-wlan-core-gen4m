@@ -4091,6 +4091,12 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 	uint8_t aucEeprom[32];
 	uint32_t retWlanStat = WLAN_STATUS_FAILURE;
 
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+	uint32_t u4Efuse_addr = 0;
+	struct PARAM_CUSTOM_ACCESS_EFUSE *prAccessEfuseInfo
+			= NULL;
+#endif
+
 	if (prAdapter->fgIsSupportPowerOnSendBufferModeCMD ==
 	    TRUE) {
 		DBGLOG(INIT, INFO, "Start Efuse Buffer Mode ..\n");
@@ -4115,7 +4121,42 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 		kalMemZero(prSetEfuseBufModeInfo,
 			   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
-		if (prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+		/* allocate memory for Access Efuse Info */
+		prAccessEfuseInfo =
+			(struct PARAM_CUSTOM_ACCESS_EFUSE *)
+			kalMemAlloc(sizeof(
+				    struct PARAM_CUSTOM_ACCESS_EFUSE),
+				    VIR_MEM_TYPE);
+		if (prAccessEfuseInfo == NULL)
+			goto label_exit;
+		kalMemZero(prAccessEfuseInfo,
+			   sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+
+		if (prAdapter->rWifiVar.ucEfuseBufferModeCal == LOAD_AUTO) {
+			prAccessEfuseInfo->u4Address = (u4Efuse_addr /
+				EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
+			rStatus = kalIoctl(prGlueInfo,
+				wlanoidQueryProcessAccessEfuseRead,
+				prAccessEfuseInfo,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				TRUE, TRUE, TRUE, &u4BufLen);
+			if (prGlueInfo->prAdapter->aucEepromVaule[1]
+				== (chip_id>>8)) {
+				prAdapter->rWifiVar.ucEfuseBufferModeCal
+					= LOAD_EFUSE;
+				DBGLOG(INIT, STATE,
+					"[EFUSE AUTO] EFUSE Mode\n");
+			} else {
+				prAdapter->rWifiVar.ucEfuseBufferModeCal
+					= LOAD_EEPROM_BIN;
+				DBGLOG(INIT, STATE,
+					"[EFUSE AUTO] Buffer Mode\n");
+			}
+		}
+#endif
+		if (prAdapter->rWifiVar.ucEfuseBufferModeCal
+			== LOAD_EEPROM_BIN) {
 			int ret = 0;
 
 			/* Buffer mode */
@@ -4201,6 +4242,12 @@ label_exit:
 		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
 			   MAX_EEPROM_BUFFER_SIZE);
 
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+	if (prAccessEfuseInfo != NULL)
+		kalMemFree(prAccessEfuseInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+#endif
+
 	return retWlanStat;
 }
 
@@ -4229,6 +4276,12 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 	uint8_t aucEeprom[32];
 	uint32_t retWlanStat = WLAN_STATUS_FAILURE;
 
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+	uint32_t u4Efuse_addr = 0;
+	struct PARAM_CUSTOM_ACCESS_EFUSE *prAccessEfuseInfo
+			= NULL;
+#endif
+
 	if (prAdapter->fgIsSupportPowerOnSendBufferModeCMD == FALSE)
 		return WLAN_STATUS_SUCCESS;
 
@@ -4254,7 +4307,43 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 	kalMemZero(prSetEfuseBufModeInfo,
 		   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
 
-	if (prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+	/* allocate memory for Access Efuse Info */
+	prAccessEfuseInfo =
+		(struct PARAM_CUSTOM_ACCESS_EFUSE *)
+			kalMemAlloc(sizeof(
+				struct PARAM_CUSTOM_ACCESS_EFUSE),
+					VIR_MEM_TYPE);
+	if (prAccessEfuseInfo == NULL)
+		goto label_exit;
+	kalMemZero(prAccessEfuseInfo,
+		sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+
+	if (prAdapter->rWifiVar.ucEfuseBufferModeCal == LOAD_AUTO) {
+		prAccessEfuseInfo->u4Address = (u4Efuse_addr /
+			EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
+		rStatus = kalIoctl(prGlueInfo,
+			wlanoidQueryProcessAccessEfuseRead,
+			prAccessEfuseInfo,
+			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+			TRUE, TRUE, TRUE, &u4BufLen);
+		if (prGlueInfo->prAdapter->aucEepromVaule[1]
+			== (chip_id>>8)) {
+			prAdapter->rWifiVar.ucEfuseBufferModeCal
+				= LOAD_EFUSE;
+			DBGLOG(INIT, STATE,
+				"[EFUSE AUTO] EFUSE Mode\n");
+		} else {
+			prAdapter->rWifiVar.ucEfuseBufferModeCal
+				= LOAD_EEPROM_BIN;
+			DBGLOG(INIT, STATE,
+				"[EFUSE AUTO] Buffer Mode\n");
+		}
+	}
+#endif
+
+	if (prAdapter->rWifiVar.ucEfuseBufferModeCal
+		== LOAD_EEPROM_BIN) {
 		int ret = 0;
 
 		/* Buffer mode */
@@ -4334,6 +4423,12 @@ label_exit:
 	if (pucConfigBuf != NULL)
 		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
 			   MAX_EEPROM_BUFFER_SIZE);
+
+#if CFG_EFUSE_AUTO_MODE_SUPPORT
+	if (prAccessEfuseInfo != NULL)
+		kalMemFree(prAccessEfuseInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+#endif
 
 	return retWlanStat;
 }
