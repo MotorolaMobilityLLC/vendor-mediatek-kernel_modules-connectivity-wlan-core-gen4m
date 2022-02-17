@@ -361,6 +361,12 @@ void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
 			/* Force RTS to protect WFD packet */
 			wlanSetForceRTS(prAdapter,
 				prWfdCfgSettings->ucWfdEnable);
+
+			/* Update WMM to add BA immediately */
+			if (prWfdCfgSettings->ucWfdEnable == 1) {
+				nicQmUpdateWmmParms(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex);
+			}
 		}
 #endif
 
