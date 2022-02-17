@@ -3331,7 +3331,12 @@ void cnmDbdcPreConnectionEnableDecision(
 			g_rDbdcInfo.eDdbcGuardTimerType =
 				ENUM_DBDC_GUARD_TIMER_NONE;
 		} else {
-			log_dbg(CNM, INFO, "[DBDC Debug] Guard Time Return");
+			log_dbg(CNM, INFO, "[DBDC Debug] Guard Time extend Return");
+			cnmTimerStopTimer(prAdapter,
+					  &g_rDbdcInfo.rDbdcGuardTimer);
+			cnmTimerStartTimer(prAdapter,
+					   &g_rDbdcInfo.rDbdcGuardTimer,
+					   DBDC_ENABLE_GUARD_TIME);
 			return;
 		}
 	}
