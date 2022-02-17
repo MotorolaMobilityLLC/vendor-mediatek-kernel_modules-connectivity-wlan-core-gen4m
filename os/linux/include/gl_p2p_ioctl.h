@@ -481,10 +481,12 @@ mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
 				  IN const u8 *peer, IN const struct cfg80211_bitrate_mask *mask);
 
 #ifdef CONFIG_NL80211_TESTMODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-int mtk_p2p_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN struct wireless_dev *wdev, IN void *data, IN int len);
+#if KERNEL_VERSION(3, 12, 0) <= LINUX_VERSION_CODE
+int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
+				  struct wireless_dev *wdev, void *data,
+				  int len);
 #else
-int mtk_p2p_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN void *data, IN int len);
+int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len);
 #endif
 int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void *data, IN int len);
 
