@@ -553,6 +553,13 @@ ifeq ($(CONFIG_SUPPORT_PCIE_ASPM), y)
 else
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=0
 endif
+
+ifeq ($(CONFIG_CONTROL_ASPM_BY_FW), y)
+    ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=1
+else
+    ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=0
+endif
+
 ifeq ($(WIFI_ENABLE_GCOV), y)
     GCOV_PROFILE := y
 endif
