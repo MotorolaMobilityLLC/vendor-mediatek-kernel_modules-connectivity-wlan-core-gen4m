@@ -1538,6 +1538,10 @@
 #define CFG_ROM_PATCH_NO_SEM_CTRL 0
 #endif
 
+#ifndef CFG_SUPPORT_MDDP_AOR
+#define CFG_SUPPORT_MDDP_AOR 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Disconnect with disable channel based on REGD update
  *------------------------------------------------------------------------------
