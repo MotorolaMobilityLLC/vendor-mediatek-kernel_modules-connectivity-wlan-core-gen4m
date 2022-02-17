@@ -9141,7 +9141,7 @@ uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter,
 			break;
 
 		case STATE_TEXT:
-			if (i4Nargs >= 0 && i4Nargs < WLAN_CFG_ARGV_MAX) {
+			if (i4Nargs > 0 && i4Nargs < WLAN_CFG_ARGV_MAX) {
 				ppcArgs[i4Nargs++] = state.text;
 				arcArgv_size[i4Nargs - 1] = state.textsize;
 				state.textsize = 0;
