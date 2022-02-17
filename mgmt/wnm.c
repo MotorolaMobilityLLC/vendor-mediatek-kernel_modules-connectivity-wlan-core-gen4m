@@ -150,6 +150,8 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 #endif
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	case ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ:
+		DBGLOG(RX, TRACE, "WNM: BTM request is ignored");
+		break;
 #endif
 	case ACTION_WNM_NOTIFICATION_REQUEST:
 	default:
