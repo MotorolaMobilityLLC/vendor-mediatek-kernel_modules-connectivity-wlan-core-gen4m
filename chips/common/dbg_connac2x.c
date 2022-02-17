@@ -762,9 +762,7 @@ static int32_t connac2x_wtbl_rate_to_string(
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s, ",
-			(pWtbl->trx_cap.wtbl_d9.field.fcap < 4) ?
-			HW_TX_RATE_BW[pWtbl->trx_cap.wtbl_d9.field.fcap] :
-			HW_TX_RATE_BW[4]);
+			HW_TX_RATE_BW[pWtbl->trx_cap.wtbl_d9.field.fcap]);
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalSnprintf(
