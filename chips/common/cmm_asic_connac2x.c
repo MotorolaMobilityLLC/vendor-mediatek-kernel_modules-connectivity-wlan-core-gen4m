@@ -130,8 +130,6 @@ void asicConnac2xCapInit(
 	asicConnac2xInitTxdHook(prChipInfo->prTxDescOps);
 	asicConnac2xInitRxdHook(prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-	prChipInfo->asicRxProcessRxvChkRst
-		= asicConnac2xRxProcessRxvChkRst;
 	prChipInfo->asicRxProcessRxvforMSP = asicConnac2xRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =
@@ -1603,54 +1601,7 @@ void asicConnac2xInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac2xRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb) {
-	uint32_t u4RetV;
-	struct RX_CTRL *prRxCtrl;
-	struct mt66xx_chip_info *prChipInfo;
-	OS_SYSTIME u4CurrentTime;
-	static OS_SYSTIME u4PreTime = 1;
-
-	#define RXV_CHK_RST_CNT   1024
-	#define RXV_CHK_RST_INTV  1  /*unit: ms*/
-	GET_CURRENT_SYSTIME(&u4CurrentTime);
-	prRxCtrl = &prAdapter->rRxCtrl;
-	prChipInfo = prAdapter->chip_info;
-
-	if (prChipInfo->asicRxProcessRxvforMSP) {
-		u4RetV =
-			prChipInfo->asicRxProcessRxvforMSP(
-				prAdapter, prRetSwRfb);
-		if (u4RetV == WLAN_STATUS_SUCCESS) {
-			if (RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT) > 0) {
-				DBGLOG(RX, WARN,
-					"RxvChkRst CntRst %d->0, reason RxOk\n",
-					RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
-			}
-			RX_RESET_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
-
-		} else {
-			if (CHECK_FOR_TIMEOUT(u4CurrentTime, u4PreTime,
-			SEC_TO_SYSTIME(MSEC_TO_SEC(RXV_CHK_RST_INTV)))) {
-				DBGLOG(RX, WARN,
-					"RxvChkRst CntRst %d->0, reason RxFail\n",
-					RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
-				RX_RESET_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
-			}
-			RX_INC_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
-			DBGLOG(RX, WARN, "RxvChkRst Cnt %d\n",
-				RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
-			u4PreTime = u4CurrentTime;
-
-			if (RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT)
-					>= (RXV_CHK_RST_CNT)) {
-				GL_RESET_TRIGGER(prAdapter,
-					RST_FLAG_CHIP_RESET);
-			}
-		}
-	}
-}
-uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
+void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	  IN OUT struct SW_RFB *prRetSwRfb) {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 
@@ -1658,7 +1609,7 @@ uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		DBGLOG(RX, LOUD,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
-		return WLAN_STATUS_FAILURE;
+		return;
 	}
 
 	prGroup3 =
@@ -1707,7 +1658,6 @@ uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
 	}
-	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 
