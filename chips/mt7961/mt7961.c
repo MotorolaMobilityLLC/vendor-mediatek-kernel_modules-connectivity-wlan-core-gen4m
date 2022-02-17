@@ -424,19 +424,19 @@ static void mt7961ReadIntStatus(
 		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA_IDX_0\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_2)) {
+	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_3 = 1;
-		DBGLOG(HAL, ERROR, "retry process WFDMA0_RX_RING_IDX_2\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA1_IDX_2\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(WFDMA0_RX_RING_IDX_3)) {
+	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_4 = 1;
-		DBGLOG(HAL, ERROR, "retry process WFDMA0_RX_RING_IDX_3\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE0_IDX_3\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(WFDMA1_RX_RING_IDX_0)) {
+	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_5 = 1;
-		DBGLOG(HAL, ERROR, "retry process WFDMA1_RX_RING_IDX_0\n");
+		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE1_IDX_4\n");
 	}
 
 	prHifInfo->u4IntStatus = u4RegValue;
