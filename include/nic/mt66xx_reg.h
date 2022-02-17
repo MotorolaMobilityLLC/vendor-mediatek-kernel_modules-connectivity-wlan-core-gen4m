@@ -1419,6 +1419,7 @@ struct mt66xx_chip_info {
 
 struct mt66xx_hif_driver_data {
 	struct mt66xx_chip_info *chip_info;
+	const char *fw_flavor;
 };
 
 /*******************************************************************************
