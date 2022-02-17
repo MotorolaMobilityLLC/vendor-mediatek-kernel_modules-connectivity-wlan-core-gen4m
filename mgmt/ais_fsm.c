@@ -1369,7 +1369,8 @@ VOID aisFsmSteps(IN P_ADAPTER_T prAdapter, ENUM_AIS_STATE_T eNextState)
 			prAdapter->rWifiVar.rConnSettings.eReConnectLevel = RECONNECT_LEVEL_MIN;
 			prConnSettings->fgIsDisconnectedByNonRequest = TRUE;
 
-			nicMediaJoinFailure(prAdapter, prAdapter->prAisBssInfo->ucBssIndex, WLAN_STATUS_JOIN_TIMEOUT);
+			nicMediaJoinFailure(prAdapter, prAdapter->prAisBssInfo->ucBssIndex,
+						WLAN_STATUS_JOIN_FAILURE);
 
 			eNextState = AIS_STATE_IDLE;
 			fgIsTransition = TRUE;
@@ -1936,6 +1937,7 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 	struct _SW_RFB_T *prAssocRspSwRfb;
 	struct _BSS_INFO_T *prAisBssInfo;
 	OS_SYSTIME rCurrentTime;
+	P_CONNECTION_SETTINGS_T prConnSettings;
 
 	DEBUGFUNC("aisFsmJoinCompleteAction()");
 
@@ -1949,6 +1951,7 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	eNextState = prAisFsmInfo->eCurrentState;
+	prConnSettings = &prAdapter->rWifiVar.rConnSettings;
 
 	do {
 		/* 4 <1> JOIN was successful */
@@ -2042,8 +2045,15 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 				if (prBssDesc == NULL)
 					break;
 
+				DBGLOG(AIS, TRACE,
+				"ucJoinFailureCount=%d %d, Status=%d Reason=%d, eConnectionState=%d",
+					prStaRec->ucJoinFailureCount, prBssDesc->ucJoinFailureCount,
+					prStaRec->u2StatusCode, prStaRec->u2ReasonCode,
+					prAisBssInfo->eConnectionState);
+
 				/* ASSERT(prBssDesc); */
 				/* ASSERT(prBssDesc->fgIsConnecting); */
+				prBssDesc->u2JoinStatus = prStaRec->u2StatusCode;
 				prBssDesc->ucJoinFailureCount++;
 				if (prBssDesc->ucJoinFailureCount > SCN_BSS_JOIN_FAIL_THRESOLD) {
 					GET_CURRENT_SYSTIME(&prBssDesc->rJoinFailTime);
@@ -2067,10 +2077,16 @@ enum _ENUM_AIS_STATE_T aisFsmJoinCompleteAction(IN struct _ADAPTER_T *prAdapter,
 #if CFG_SUPPORT_ROAMING
 					eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 #endif /* CFG_SUPPORT_ROAMING */
-				} else
-				    if (CHECK_FOR_TIMEOUT
+					if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID
+						&& prBssDesc->u2JoinStatus)
+						eNextState = AIS_STATE_JOIN_FAILURE;
+				} else if (prAisFsmInfo->rJoinReqTime != 0 && CHECK_FOR_TIMEOUT
 					(rCurrentTime, prAisFsmInfo->rJoinReqTime, SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
 					/* 4.a temrminate join operation */
+					eNextState = AIS_STATE_JOIN_FAILURE;
+				} else if (prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD
+					&& prBssDesc->u2JoinStatus) {
+					/* AP reject STA for STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD, or AP block STA */
 					eNextState = AIS_STATE_JOIN_FAILURE;
 				} else {
 					/* 4.b send reconnect request */
@@ -3165,7 +3181,7 @@ VOID aisFsmRunEventJoinTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 			/* 3.2 Retreat to AIS_STATE_WAIT_FOR_NEXT_SCAN state for next try */
 			eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 		} else
-		    if (!CHECK_FOR_TIMEOUT
+		    if (prAisFsmInfo->rJoinReqTime != 0 && !CHECK_FOR_TIMEOUT
 			(rCurrentTime, prAisFsmInfo->rJoinReqTime, SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
 			/* 3.3 Retreat to AIS_STATE_WAIT_FOR_NEXT_SCAN state for next try */
 			eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
