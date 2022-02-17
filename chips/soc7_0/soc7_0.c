@@ -935,7 +935,7 @@ int soc7_0_Trigger_fw_assert(void)
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 
 	if (g_IsWfsysBusHang == TRUE) {
@@ -2025,7 +2025,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 	pvData = (void *)prChipInfo->pdev;
 
 	if (fgSimplifyResetFlow) {
-		prGlueInfo = (struct GLUE_INFO *)wiphy_priv(wlanGetWiphy());
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 		prAdapter = prGlueInfo->prAdapter;
 
 		if (prChipInfo->pwrondownload) {
@@ -2050,8 +2050,7 @@ int32_t soc7_0_wlanPowerOnInit(void)
 			i4Status = -NET_CREATE_FAIL;
 		} else {
 			/* Set the ioaddr to HIF Info */
-			prGlueInfo = (struct GLUE_INFO *)
-				wiphy_priv(prWdev->wiphy);
+			WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 
 			prAdapter = prGlueInfo->prAdapter;
 

@@ -647,7 +647,7 @@ int wlanPreCalPwrOn(void)
 		}
 
 		/* Set the ioaddr to HIF Info */
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(grWdev->wiphy);
+		WIPHY_PRIV(grWdev->wiphy, prGlueInfo);
 
 		/* Should we need this??? to be conti... */
 		gPrDev = prGlueInfo->prDevHandler;
@@ -883,7 +883,7 @@ int wlanPreCal(void)
 	DBGLOG(INIT, INFO, "PreCal begin\n");
 
 	/* Set the ioaddr to HIF Info */
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(grWdev->wiphy);
+	WIPHY_PRIV(grWdev->wiphy, prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	glGetChipInfo((void **)&prChipInfo);
 
