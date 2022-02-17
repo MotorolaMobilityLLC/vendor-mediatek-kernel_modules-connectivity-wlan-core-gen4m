@@ -153,7 +153,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT] = nicUniCmdSetCountryPwrLimit,
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE] = nicUniCmdSetCountryPwrLimitPerRate,
 	[CMD_ID_SET_MDVT] = nicUniCmdSetMdvt,
-	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdSetNvramSettings,
+	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdNotSupport,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
