@@ -1411,6 +1411,10 @@ void scanHandleRnrSsid(IN struct SCAN_PARAM *prScanParam,
 
 	prScanParam->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
 
+	/* For coverity check, ucBssidNum shall not smaller than 1 */
+	if (ucBssidNum < 1)
+		ucBssidNum = 1;
+
 	/* Check this SSID has recorded or not */
 	for (i = 0; i < prScanParam->ucSSIDNum; i++) {
 		if (EQUAL_SSID(prScanParam->aucSpecifiedSSID[i],
@@ -1466,7 +1470,11 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 	IN struct SCAN_PARAM *prScanParam)
 {
 	uint8_t i, ucHasSameCh = FALSE;
-	enum nl80211_band band;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	enum nl80211_band band = NL80211_BAND_6GHZ;
+#else
+	enum nl80211_band band = NL80211_BAND_2GHZ;
+#endif
 
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
