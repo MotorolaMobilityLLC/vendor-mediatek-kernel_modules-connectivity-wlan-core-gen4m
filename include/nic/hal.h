@@ -1195,7 +1195,6 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter,
 void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
 #if defined(_HIF_USB)
-void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr);
+void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
 #endif
 #endif /* _HAL_H */

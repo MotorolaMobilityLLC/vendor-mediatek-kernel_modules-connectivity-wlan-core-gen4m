@@ -124,6 +124,11 @@ struct ECO_INFO g_eco_info = {0xFF};
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+#if defined(_HIF_USB)
+struct TIMER rSerSyncTimer = {
+	.rLinkEntry = {0}
+};
+#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -4574,3 +4579,49 @@ void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter)
 		DBGLOG(NIC, INFO, "SER beacon frame is updated\n");
 	}
 }
+
+#if defined(_HIF_USB)
+void nicSerTimerHandler(IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr)
+{
+	halSerSyncTimerHandler(prAdapter);
+	cnmTimerStartTimer(prAdapter,
+		&rSerSyncTimer,
+		WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+}
+#endif
+
+void nicSerInit(IN struct ADAPTER *prAdapter)
+{
+#if defined(_HIF_USB)
+	/* check SER is supported or not */
+	if (prAdapter->rWifiVar.fgEnableSer == TRUE &&
+	    prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
+		cnmTimerInitTimer(prAdapter,
+			&rSerSyncTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
+			(unsigned long) NULL);
+		cnmTimerStartTimer(prAdapter,
+			&rSerSyncTimer,
+			WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+	}
+#endif
+	/* if ser is not enabled, disable this feature in FW */
+	if (prAdapter->rWifiVar.fgEnableSer == FALSE
+#if defined(_HIF_USB)
+	    || prAdapter->chip_info->u4SerUsbMcuEventAddr == 0
+#endif
+	) {
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_SET,
+				SER_SET_DISABLE, 0);
+	}
+
+}
+
+void nicSerDeInit(IN struct ADAPTER *prAdapter)
+{
+#if defined(_HIF_USB)
+	cnmTimerStopTimer(prAdapter, &rSerSyncTimer);
+#endif
+}
+

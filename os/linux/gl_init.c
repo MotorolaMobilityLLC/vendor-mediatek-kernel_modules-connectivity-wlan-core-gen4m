@@ -3940,9 +3940,7 @@ static void wlanRemove(void)
 	if (kalIsResetting())
 		wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-#if defined(_HIF_USB)
-	cnmTimerStopTimer(prAdapter, &rSerSyncTimer);
-#endif
+	nicSerDeInit(prGlueInfo->prAdapter);
 
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsNetRegistered) {
