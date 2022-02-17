@@ -1506,7 +1506,6 @@ typedef uint8_t (*file_buf_handler) (void *ctx,
 extern void register_file_buf_handler(file_buf_handler handler,
 			void *ctx,
 			uint8_t ucType);
-
 /* extern from wifi wmt cdev wifi */
 extern uint32_t get_low_latency_mode(void);
 
@@ -1558,5 +1557,10 @@ extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
 #endif /* CFG_MTK_CONNSYS_DEDICATED_LOG_PATH */
 #endif /* CFG_SUPPORT_CONNAC1X */
 #endif /* CFG_MTK_ANDROID_WMT */
+
+#if CFG_SUPPORT_CUSTOM_NETLINK
+extern void glCustomGenlInit(void);
+extern void glCustomGenlDeinit(void);
+#endif
 
 #endif /* _GL_OS_H */
