@@ -903,7 +903,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgDoRegister = FALSE;
 	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
-	u_int8_t ret;
+	u_int8_t ret = FALSE;
 	uint32_t i;
 
 	GLUE_SPIN_LOCK_DECLARATION();
