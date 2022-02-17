@@ -4187,6 +4187,11 @@ static s_int32 hqa_start_tx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.hw_tx_enable),
 				&data, (u_char *)&param.hw_tx_enable);
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	get_param_and_shift_buf(TRUE, sizeof(param.puncture),
+				&data, (u_char *)&param.puncture);
+#endif
+
 	if (!param.pkt_cnt)
 		param.pkt_cnt = 0x8fffffff;
 
@@ -4220,6 +4225,12 @@ static s_int32 hqa_start_tx_ext(
 		CONFIG_SET_PARAM(serv_test, tx_pwr[ant_idx],
 			(u_int32)param.pwr, param.band_idx);
 	WINFO_SET_PARAM(serv_test, hw_tx_enable, param.hw_tx_enable);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	CONFIG_SET_PARAM(serv_test, puncture,
+			(u_char)param.puncture, param.band_idx);
+#endif
+
 	if (mt_serv_submit_tx(serv_test) != SERV_STATUS_SUCCESS)
 		goto err_out;
 
@@ -4235,8 +4246,14 @@ static s_int32 hqa_start_tx_ext(
 		("%s: ibf=%u, ebf=%u, wlan_id=%u, aifs=%u\n",
 		__func__, param.ibf, param.ebf, param.wlan_id, param.aifs));
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-		("%s: gi=%u, nss=%u hwtx=%u\n",
-		__func__, param.gi, param.nss, param.hw_tx_enable));
+		("%s: gi=%u, nss=%u hwtx=%u puncture=%u\n",
+		__func__, param.gi, param.nss, param.hw_tx_enable,
+			param.puncture));
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: puncture=%u\n", __func__, param.puncture));
+#endif
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem(hqa_frame->data + 2, &param.ext_id,

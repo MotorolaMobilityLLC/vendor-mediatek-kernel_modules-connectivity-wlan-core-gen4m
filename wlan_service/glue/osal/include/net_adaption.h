@@ -1085,6 +1085,9 @@ struct test_configuration {
 	u_int64 hetb_rx_csd;
 	u_int8 user_idx;
 
+    /* 11be */
+	u_int16 puncture;
+
 	/* Tx power */
 	struct test_txpwr_param pwr_param;
 	s_int8 tx_pwr[TEST_ANT_NUM];
