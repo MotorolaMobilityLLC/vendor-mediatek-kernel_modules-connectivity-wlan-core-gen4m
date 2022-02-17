@@ -2037,10 +2037,13 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			    prAisReq->eReqType == AIS_REQUEST_RECONNECT) {
 				aisDeactivateAllLink(prAdapter, prAisFsmInfo);
 				if (prAisReq != NULL) {
+#if CFG_SUPPORT_DBDC
 					if (cnmDBDCIsReqPeivilegeLock()) {
 						DBGLOG(AIS, INFO,
 						"DBDC lock: skip activate\n");
-					} else {
+					} else
+#endif
+					{
 					    SET_NET_ACTIVE(prAdapter,
 						prAisBssInfo->
 						ucBssIndex);
@@ -8028,7 +8031,11 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->ucPrimaryChannel = prBssDesc->ucChannelNum;
 		prSubReq->eRfSco = prBssDesc->eSco;
 		prSubReq->eRfBand = prBssDesc->eBand;
+#if CFG_SUPPORT_DBDC
 		ucRfBw = cnmGetDbdcBwCapability(prAdapter, prBss->ucBssIndex);
+#else
+		ucRfBw = cnmGetBssMaxBw(prAdapter, prBss->ucBssIndex);
+#endif
 		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 		if (ucRfBw > prBssDesc->eChannelWidth)
 			ucRfBw = prBssDesc->eChannelWidth;
