@@ -590,8 +590,8 @@ int priv_driver_txs_test(
 		automation_dvt.txs.format = txs_test_format;
 		/* aisFsmSteps(prAdapter, AIS_STATE_DISCONNECTING); */
 		authSendDeauthFrame(prAdapter,
-			prAdapter->prAisBssInfo,
-			prAdapter->prAisBssInfo->prStaRecOfAP,
+			prAdapter->aprBssInfo[0],
+			prAdapter->aprBssInfo[0]->prStaRecOfAP,
 			(struct SW_RFB *) NULL,
 			REASON_CODE_DEAUTH_LEAVING_BSS,
 			aisDeauthXmitComplete);
