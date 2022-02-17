@@ -2243,6 +2243,9 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	u_int8_t fgReady;
 	struct mt66xx_chip_info *prChipInfo;
 	struct FWDL_OPS_T *prFwDlOps;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	uint32_t rPccifstatus = 0;
+#endif
 
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
@@ -2281,6 +2284,13 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		    && rStatus == WLAN_STATUS_SUCCESS)
 			rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						IMG_DL_IDX_CR4_FW);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		if (prChipInfo->coexpccifon && rStatus == WLAN_STATUS_SUCCESS) {
+			rPccifstatus = prChipInfo->coexpccifon();
+			if (rPccifstatus != 0)
+			DBGLOG(INIT, WARN, "pccif on fail\n");
+		}
+#endif
 	} else
 		DBGLOG(INIT, WARN, "Without downlaod firmware Ops\n");
 
