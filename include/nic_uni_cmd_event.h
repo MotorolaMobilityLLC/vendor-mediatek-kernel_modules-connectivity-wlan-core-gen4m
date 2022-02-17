@@ -281,7 +281,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_EAP_CTRL		= 0x51, /* EAP */
 	UNI_CMD_ID_PHY_STATE_INFO	= 0x52, /* PHY_STATE */
 	UNI_CMD_ID_LED			= 0x53, /* LED */
-	UNI_CMD_ID_FAST_PATH		= 0x54	/* Fast Path */
+	UNI_CMD_ID_FAST_PATH		= 0x54,	/* Fast Path */
+	UNI_CMD_ID_NAN			= 0x56	/* NAN */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -3201,6 +3202,75 @@ struct UNI_CMD_EFUSE_BUFFER_MODE_READ {
 	uint32_t u2Count;            /* Read Total Counts */
 }__KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_NAN
+/* NAN set command (0x56) */
+struct UNI_CMD_NAN {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                      | ID  | structure
+	*   -------------------------|-----|--------------
+	*   UNI_CMD_NAN              | 0x0 | UNI_CMD_NAN_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* NAN set command Tag */
+enum ENUM_UNI_CMD_NAN_TAG {
+	UNI_CMD_NAN_TAG_SET_MASTER_PREFERENCE = 0,
+	UNI_CMD_NAN_TAG_PUBLISH = 1,
+	UNI_CMD_NAN_TAG_CANCEL_PUBLISH = 2,
+	UNI_CMD_NAN_TAG_UPDATE_PUBLISH = 3,
+	UNI_CMD_NAN_TAG_SUBSCRIBE = 4,
+	UNI_CMD_NAN_TAG_CANCEL_SUBSCRIBE = 5,
+	UNI_CMD_NAN_TAG_TRANSMIT = 6,
+	UNI_CMD_NAN_TAG_ENABLE_REQUEST = 7,
+	UNI_CMD_NAN_TAG_DISABLE_REQUEST = 8,
+	UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY = 9,
+	UNI_CMD_NAN_TAG_UPDATE_CRB = 10,
+	UNI_CMD_NAN_TAG_CRB_HANDSHAKE_TOKEN = 11,
+	UNI_CMD_NAN_TAG_MANAGE_PEER_SCH_RECORD = 12,
+	UNI_CMD_NAN_TAG_MAP_STA_RECORD = 13,
+	UNI_CMD_NAN_TAG_RANGING_REPORT_DISC = 14,
+	UNI_CMD_NAN_TAG_FTM_PARAM = 15,
+	UNI_CMD_NAN_TAG_UPDATE_PEER_UAW = 16,
+	UNI_CMD_NAN_TAG_UPDATE_ATTR = 17,
+	UNI_CMD_NAN_TAG_UPDATE_PHY_SETTING = 18,
+	UNI_CMD_NAN_TAG_UPDATE_POTENTIAL_CHNL_LIST = 19,
+	UNI_CMD_NAN_TAG_UPDATE_AVAILABILITY_CTRL = 20,
+	UNI_CMD_NAN_TAG_UPDATE_PEER_CAPABILITY = 21,
+	UNI_CMD_NAN_TAG_ADD_CSID = 22,
+	UNI_CMD_NAN_TAG_MANAGE_SCID = 23,
+	UNI_CMD_NAN_TAG_CHANGE_ADDRESS = 24,
+	UNI_CMD_NAN_TAG_MAX_NUM
+};
+
+/* Set Master Performance (Tag0) */
+struct UNI_CMD_NAN_SET_MASTER_PREFERENCE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucMasterPreference;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* Enable NAN (Tag7) */
+struct UNI_CMD_NAN_ENABLE_REQUEST {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct NanEnableRequest request;
+} __KAL_ATTRIB_PACKED__;
+
+/* Disable NAN (Tag8) */
+struct UNI_CMD_NAN_DISABLE_REQUEST {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucPadding[4];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -3298,6 +3368,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PHY_STATE_INFO  = 0x52,
 	UNI_EVENT_ID_BSS_ER	     = 0x53,
 	UNI_EVENT_ID_FAST_PATH	     = 0x54,
+	UNI_EVENT_ID_NAN	     = 0x56,
 	UNI_EVENT_ID_NUM
 };
 
@@ -4742,6 +4813,58 @@ struct UNI_EVENT_EFUSE_ACCESS {
 	uint8_t aucData[32];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_NAN
+struct UNI_EVENT_NAN {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_NAN_TAG {
+	UNI_EVENT_NAN_TAG_DISCOVERY_RESULT = 0,
+	UNI_EVENT_NAN_TAG_FOLLOW_EVENT = 1,
+	UNI_EVENT_NAN_TAG_MASTER_IND_ATTR = 2,
+	UNI_EVENT_NAN_TAG_CLUSTER_ID_UPDATE = 3,
+	UNI_EVENT_NAN_TAG_REPLIED_EVENT = 4,
+	UNI_EVENT_NAN_TAG_PUBLISH_TERMINATE_EVENT = 5,
+	UNI_EVENT_NAN_TAG_SUBSCRIBE_TERMINATE_EVENT = 6,
+	UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG = 7,
+	UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY = 8,
+	UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY = 9,
+	UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN = 10,
+	UNI_EVENT_NAN_TAG_ID_DATA_NOTIFY = 11,
+	UNI_EVENT_NAN_TAG_FTM_DONE = 12,
+	UNI_EVENT_NAN_TAG_RANGING_BY_DISC = 13,
+	UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL = 14,
+	UNI_EVENT_NAN_TAG_DW_INTERVAL = 15,
+	UNI_EVENT_NAN_TAG_NDL_DISCONNECT = 16,
+	UNI_EVENT_NAN_TAG_ID_PEER_CIPHER_SUITE_INFO = 17,
+	UNI_EVENT_NAN_TAG_ID_PEER_SEC_CONTEXT_INFO = 18,
+	UNI_EVENT_NAN_TAG_ID_DE_EVENT_IND = 19,
+	UNI_EVENT_NAN_TAG_SELF_FOLLOW_EVENT = 20,
+	UNI_EVENT_NAN_TAG_DISABLE_IND = 21,
+	UNI_EVENT_NAN_TAG_NUM
+};
+
+struct UNI_EVENT_NAN_DISCOVERY_EVENT {
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint16_t u2SubscribeID;
+	uint16_t u2PublishID;
+	uint16_t u2Service_info_len;
+	uint8_t aucSerive_specificy_info[255];
+	uint16_t u2Service_update_indicator;
+	uint8_t aucNanAddress[MAC_ADDR_LEN];
+	uint8_t ucRange_measurement;
+	uint8_t ucFSDType;
+	uint8_t ucDataPathParm;
+	uint8_t aucSecurityInfo[32];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5023,6 +5146,8 @@ uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdNan(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -5135,6 +5260,8 @@ void nicUniEventBssER(struct ADAPTER *ad,
 void nicUniEventRssiMonitor(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventHifCtrl(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventNan(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
