@@ -268,7 +268,7 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
 
 void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
-	struct WIFI_EVENT *prEvent);
+	struct EVENT_CH_PRIVILEGE *prEventBody);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
@@ -282,7 +282,7 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
 
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+	IN struct EVENT_LTE_SAFE_CHN *prEventBody);
 #endif
 #endif
 
@@ -350,8 +350,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucChangedBssIndex);
 void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
 	IN unsigned long plParamPtr);
-void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter);
 u_int8_t cnmDBDCIsReqPeivilegeLock(void);
 #endif /*CFG_SUPPORT_DBDC*/
 
@@ -378,7 +377,7 @@ void cnmEventSGStatus(
 
 void cnmOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent
+	IN struct EVENT_OPMODE_CHANGE *prEvtOpMode
 );
 
 u_int8_t cnmP2pIsActive(IN struct ADAPTER *prAdapter);

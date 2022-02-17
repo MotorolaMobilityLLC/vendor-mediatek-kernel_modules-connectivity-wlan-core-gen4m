@@ -322,9 +322,35 @@ void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prCmdInfo)
-		DBGLOG(MEM, LOUD, "CMD[0x%p] freed! Rest[%u]\n", prCmdInfo,
-		       prAdapter->rFreeCmdList.u4NumElem);
+		DBGLOG(MEM, LOUD, "CMD[0x%d] SEQ[%d] freed! Rest[%u]\n",
+			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum,
+			prAdapter->rFreeCmdList.u4NumElem);
 
 	return;
 
 }				/* end of cmdBufFreeCmdPacket() */
+
+uint32_t
+wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
+		    uint8_t ucCID,
+		    u_int8_t fgSetQuery,
+		    u_int8_t fgNeedResp,
+		    u_int8_t fgIsOid,
+		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
+		    uint32_t u4SetQueryInfoLen,
+		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
+		    IN uint32_t u4SetQueryBufferLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return wlanSendSetQueryCmdHelper(
+#else
+	return wlanSendSetQueryCmdAdv(
+#endif
+		prAdapter, ucCID, 0, fgSetQuery,
+		fgNeedResp, fgIsOid, pfCmdDoneHandler,
+		pfCmdTimeoutHandler, u4SetQueryInfoLen,
+		pucInfoBuffer, pvSetQueryBuffer, u4SetQueryBufferLen,
+		CMD_SEND_METHOD_ENQUEUE);
+}
+

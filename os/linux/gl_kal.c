@@ -1625,7 +1625,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				rRoamInfo.resp_ie = prConnSettings->aucRspIe;
 				rRoamInfo.resp_ie_len =
 					prConnSettings->u4RspIeLength;
-#if KERNEL_VERSION(4, 19, 0) > CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 15, 0) > CFG80211_VERSION_CODE
 				rRoamInfo.authorized = *(uint8_t *) pvBuf;
 #endif
 				cfg80211_roamed(prDevHandler,

@@ -3850,6 +3850,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_PWR_CTRL        "SET_PWR_CTRL"
 #define PRIV_CMD_SIZE 512
 #define CMD_SET_FIXED_RATE      "FixedRate"
+#define CMD_SET_AUTO_RATE       "AutoRate"
 #define CMD_GET_VERSION         "VER"
 #define CMD_SET_TEST_MODE	"SET_TEST_MODE"
 #define CMD_SET_TEST_CMD	"SET_TEST_CMD"
@@ -8030,6 +8031,184 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 }
 #endif /* CFG_SUPPORT_ICS */
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int priv_driver_set_unified_fixed_rate(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4WCID = 0;
+	uint32_t u4Mode = 0, u4Bw = 0, u4Mcs = 0, u4Nss = 0, u2HeLtf = 0;
+	uint32_t u4SGI = 0, u4Preamble = 0, u4STBC = 0, u4LDPC = 0, u4SpeEn = 0;
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d-%d",
+			&(u4WCID), &(u4Mode), &(u4Bw), &(u4Mcs),
+			&(u4Nss), &(u4SGI), &(u4Preamble), &(u4STBC),
+			&(u4LDPC), &(u4SpeEn), &(u2HeLtf));
+
+	DBGLOG(REQ, LOUD, "u4WCID=%d\nu4Mode=%d\nu4Bw=%d\n",
+	       u4WCID, u4Mode, u4Bw);
+	DBGLOG(REQ, LOUD, "u4Mcs=%d\nu4Nss=%d\nu4SGI=%d\n",
+	       u4Mcs, u4Nss, u4SGI);
+	DBGLOG(REQ, LOUD, "u4Preamble=%d\nu4STBC=%d\n",
+	       u4Preamble, u4STBC);
+	DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\nu2HeLtf=%d\n",
+	       u4LDPC, u4SpeEn, (u2HeLtf));
+
+	if (i4Recv == 11) {
+		struct UNI_CMD_RA_SET_FIXED_RATE_V1 rate;
+
+#define HT_LDPC BIT(0)
+#define VHT_LDPC BIT(1)
+#define HE_LDPC BIT(2)
+
+		rate.u2WlanIdx = u4WCID;
+		rate.u2HeLtf = u2HeLtf;
+		rate.u2ShortGi = u4SGI;
+		rate.u1PhyMode = u4Mode;
+		rate.u1Stbc = u4STBC;
+		rate.u1Bw = u4Bw;
+		if (u4LDPC)
+			rate.u1Ecc = HT_LDPC | VHT_LDPC | HE_LDPC;
+		else
+			rate.u1Ecc = 0;
+		rate.u1Mcs = u4Mcs;
+		rate.u1Nss = u4Nss;
+		rate.u1Spe = u4SpeEn;
+		rate.u1ShortPreamble = u4Preamble;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+			"Apply WCID %d\n", u4WCID);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetFixRate,
+					   &rate, sizeof(rate),
+					   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(REQ, ERROR, "iwpriv wlanXX driver FixedRate=Option\n");
+		DBGLOG(REQ, ERROR,
+			"Option:[WCID]-[Mode]-[BW]-[MCS]-[Nss]-[SGI]-[Preamble]-[STBC]-[LDPC]-[SPE_EN]-[HeLtf]\n");
+		DBGLOG(REQ, ERROR, "[WCID]Wireless Client ID\n");
+		DBGLOG(REQ, ERROR,
+			"[Mode]CCK=0, OFDM=1, HT=2, GF=3, VHT=4, PLR=5, HE_SU=8, HE_ER_SU=9, HE_TRIG=10, HE_MU=11, EHT_ER=13, EHT_TB=14, EHT_SU and EHT_MU=15\n");
+		DBGLOG(REQ, ERROR, "[BW]BW20=0, BW40=1, BW80=2,BW160=3 BW320=4\n");
+		DBGLOG(REQ, ERROR,
+		       "[MCS]CCK=0~3, OFDM=0~7, HT=0~32, VHT=0~9 HE=0~11 EHT=0~13 EHT_ER=14~15\n");
+		DBGLOG(REQ, ERROR, "[Nss]1~8\n");
+		DBGLOG(REQ, ERROR, "[GI]HT/VHT: 0:Long, 1:Short, ");
+		DBGLOG(REQ, ERROR,
+			"HE: SGI=0(0.8us), MGI=1(1.6us), LGI=2(3.2us)\n");
+		DBGLOG(REQ, ERROR, "[Preamble]Long=0, Other=Short\n");
+		DBGLOG(REQ, ERROR, "[STBC]Enable=1, Disable=0\n");
+		DBGLOG(REQ, ERROR, "[LDPC]BCC=0, LDPC=1\n");
+		DBGLOG(REQ, ERROR, "[HE-LTF]1X=0, 2X=1, 4X=2\n");
+		DBGLOG(REQ, ERROR, "[HE-ER-DCM]Enable=1, Disable=0\n");
+		DBGLOG(REQ, ERROR, "[HE-ER-106]106-tone=1\n");
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+					"Wrong param\n");
+	}
+
+	return i4BytesWritten;
+}	/* priv_driver_set_fixed_rate */
+
+int priv_driver_set_unified_auto_rate(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4WCID = 0;
+	uint8_t ucAutoRateEn = 0, ucMode = 0;
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d-%d-%d",
+			&(u4WCID), &(ucAutoRateEn), &(ucMode));
+
+	DBGLOG(REQ, LOUD, "u4WCID=%d\nucAutoRateEn=%d\nucMode=%d\n",
+	       u4WCID, ucAutoRateEn, ucMode);
+
+
+	if (i4Recv == 3) {
+		struct UNI_CMD_RA_SET_AUTO_RATE rate;
+
+		rate.u2WlanIdx = u4WCID;
+		rate.u1AutoRateEn = ucAutoRateEn;
+		rate.u1Mode = ucMode;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+			"Apply WCID %d\n", u4WCID);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetAutoRate,
+					   &rate, sizeof(rate),
+					   FALSE, FALSE, TRUE, &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver AutoRate=Option\n");
+		DBGLOG(INIT, ERROR,
+			"Option:[WCID]-[AutoRateEn]-[Mode]\n");
+		DBGLOG(INIT, ERROR, "[WCID]Wireless Client ID\n");
+		DBGLOG(INIT, ERROR, "[AutoRateEn]\n");
+		DBGLOG(INIT, ERROR, "[Mode]\n");
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+					"Wrong param\n");
+	}
+
+	return i4BytesWritten;
+}	/* priv_driver_set_fixed_rate */
+
+#else
+
 int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
@@ -8092,7 +8271,6 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 			&(rFixedRate.u4HeLTF),
 			&(rFixedRate.u4HeErDCM),
 			&(rFixedRate.u4HeEr106t));
-
 
 		DBGLOG(REQ, LOUD, "u4WCID=%d\nu4Mode=%d\nu4Bw=%d\n", u4WCID,
 			rFixedRate.u4Mode, rFixedRate.u4Bw);
@@ -8189,6 +8367,8 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }	/* priv_driver_set_fixed_rate */
+
+#endif
 
 int priv_driver_set_em_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
 			IN int i4TotalLen)
@@ -14925,7 +15105,12 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_TX_POWER_INFO, priv_driver_get_txpower_info},
 #endif
 	{CMD_TX_POWER_MANUAL_SET, priv_driver_txpower_man_set},
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	{CMD_SET_FIXED_RATE, priv_driver_set_unified_fixed_rate},
+	{CMD_SET_AUTO_RATE, priv_driver_set_unified_auto_rate},
+#else
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
+#endif
 #if (CFG_SUPPORT_ICS == 1)
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
 #endif /* CFG_SUPPORT_ICS */

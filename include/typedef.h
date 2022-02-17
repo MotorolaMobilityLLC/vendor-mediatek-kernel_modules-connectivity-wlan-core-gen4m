@@ -162,6 +162,8 @@ struct STA_RECORD;	/* declare STA_RECORD_T */
  */
 struct CMD_INFO;	/* declare CMD_INFO_T */
 
+struct WIFI_UNI_CMD_INFO;
+
 /* Following typedef should be removed later, because Glue Layer
  * should not be aware of following data type.
  */

@@ -1646,9 +1646,7 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
-
-	kalMemZero(&rCmdActivateCtrl.ucReserved,
-		   sizeof(rCmdActivateCtrl.ucReserved));
+	rCmdActivateCtrl.ucDbdcIdx = ENUM_BAND_AUTO;
 
 #if 1
 	DBGLOG(RSN, INFO,
@@ -2826,10 +2824,9 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 			  IN uint8_t ucBssIndex, IN uint16_t u2Capability,
 			  IN uint8_t *aucIe, IN uint16_t u2IELen)
 {
-	struct CMD_BEACON_TEMPLATE_UPDATE *prCmdBcnUpdate;
-	uint16_t u2CmdBufLen = 0, cmd_size;
+	struct CMD_BEACON_TEMPLATE_UPDATE rCmdBcnUpdate;
+	uint16_t u2CmdBufLen = 0;
 	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
 	struct mt66xx_chip_info *prChipInfo;
 
 	DEBUGFUNC("wlanUpdateBeaconIETemplate");
@@ -2858,51 +2855,25 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* prepare command info */
-	cmd_size = prChipInfo->u2CmdTxHdrSize + u2CmdBufLen;
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = NULL;	/* @FIXME */
-	prCmdInfo->pfCmdTimeoutHandler = NULL;	/* @FIXME */
-	prCmdInfo->fgIsOid = FALSE;
-	prCmdInfo->ucCID = CMD_ID_UPDATE_BEACON_CONTENT;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = u2CmdBufLen;
-	prCmdInfo->pvInformationBuffer = NULL;
-	prCmdInfo->u4InformationBufferLength = 0;
-
-	/* Setup WIFI_CMD_T (no payload) */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&prCmdBcnUpdate, FALSE, 0, S2D_INDEX_CMD_H2N);
-
 	/* fill beacon updating command */
-	prCmdBcnUpdate->ucUpdateMethod = (uint8_t) eIeUpdMethod;
-	prCmdBcnUpdate->ucBssIndex = ucBssIndex;
-	prCmdBcnUpdate->u2Capability = u2Capability;
-	prCmdBcnUpdate->u2IELen = u2IELen;
+	rCmdBcnUpdate.ucUpdateMethod = (uint8_t) eIeUpdMethod;
+	rCmdBcnUpdate.ucBssIndex = ucBssIndex;
+	rCmdBcnUpdate.u2Capability = u2Capability;
+	rCmdBcnUpdate.u2IELen = u2IELen;
 	if (u2IELen > 0)
-		kalMemCopy(prCmdBcnUpdate->aucIE, aucIe, u2IELen);
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
+		kalMemCopy(rCmdBcnUpdate.aucIE, aucIe, u2IELen);
 
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_UPDATE_BEACON_CONTENT,
+		TRUE,
+		FALSE,
+		FALSE,
+		NULL,
+		NULL,
+		u2CmdBufLen,
+		(uint8_t *)&rCmdBcnUpdate,
+		NULL,
+		0);
 }
 
 /*----------------------------------------------------------------------------*/

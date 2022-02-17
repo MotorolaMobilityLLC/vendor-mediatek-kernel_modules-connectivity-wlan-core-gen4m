@@ -437,6 +437,27 @@ struct CONNAC2X_WIFI_CMD {
 	uint8_t aucBuffer[0];
 };
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct CONNAC2X_WIFI_UNI_CMD {
+	struct HW_MAC_CONNAC2X_TX_DESC rWifiCmdTxD;
+
+	uint16_t u2Length;
+	uint16_t u2CID;
+
+	uint8_t aucReserved[1];
+	uint8_t ucPktTypeID;	/* Must be 0xA0 (CMD Packet) */
+	uint8_t ucFragNum;
+	uint8_t ucSeqNum;
+
+	uint16_t u2Checksum;
+	uint8_t ucS2DIndex;	/* Index for Src to Dst in CMD usage */
+	uint8_t ucOption;	/* CID option */
+
+	uint8_t aucReserved2[4];
+	uint8_t aucBuffer[0];
+};
+#endif
+
 union WTBL_LMAC_DW0 {
 	struct {
 		uint32_t addr_4:8;
@@ -1076,6 +1097,14 @@ void asicConnac2xFillCmdTxd(
 	struct WIFI_CMD_INFO *prCmdInfo,
 	uint8_t *pucSeqNum,
 	void **pCmdBuf);
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void asicConnac2xFillUniCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_UNI_CMD_INFO *prCmdInfo,
+	uint8_t *pucSeqNum,
+	void **pCmdBuf);
+#endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 uint32_t asicConnac2xWfdmaCfgAddrGet(

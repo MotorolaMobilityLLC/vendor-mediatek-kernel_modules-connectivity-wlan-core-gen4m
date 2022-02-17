@@ -2933,12 +2933,6 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid);
 
 uint32_t
-wlanoidSetReloadDefaults(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer,
-			 IN uint32_t u4SetBufferLen,
-			 OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
 wlanoidQueryCapability(IN struct ADAPTER *prAdapter,
 		       OUT void *pvQueryBuffer,
 		       IN uint32_t u4QueryBufferLen,
@@ -3196,6 +3190,12 @@ uint32_t wlanoidStaRecBFUpdate(IN struct ADAPTER *prAdapter,
 			       IN void *pvSetBuffer,
 			       IN uint32_t u4SetBufferLen,
 			       OUT uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidStaRecBFRead(IN struct ADAPTER *prAdapter,
+			       IN void *pvSetBuffer,
+			       IN uint32_t u4SetBufferLen,
+			       OUT uint32_t *pu4SetInfoLen);
+
 #endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
@@ -3261,6 +3261,20 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer,
 		      IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetFixRate(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
+
+
+uint32_t
+wlanoidSetAutoRate(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen);
+
 
 uint32_t
 wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,

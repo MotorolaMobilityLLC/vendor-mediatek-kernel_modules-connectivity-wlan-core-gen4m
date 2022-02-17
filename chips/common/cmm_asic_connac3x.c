@@ -120,6 +120,10 @@ void asicConnac3xCapInit(
 	prChipInfo->u2CmdTxHdrSize = sizeof(struct CONNAC3X_WIFI_CMD);
 	prChipInfo->asicFillInitCmdTxd = asicConnac3xFillInitCmdTxd;
 	prChipInfo->asicFillCmdTxd = asicConnac3xFillCmdTxd;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prChipInfo->u2UniCmdTxHdrSize = sizeof(struct CONNAC3X_WIFI_UNI_CMD);
+	prChipInfo->asicFillUniCmdTxd = asicConnac3xFillUniCmdTxd;
+#endif
 	prChipInfo->u2RxSwPktBitMap = CONNAC3X_RX_STATUS_PKT_TYPE_SW_BITMAP;
 	prChipInfo->u2RxSwPktEvent = CONNAC3X_RX_STATUS_PKT_TYPE_SW_EVENT;
 	prChipInfo->u2RxSwPktFrame = CONNAC3X_RX_STATUS_PKT_TYPE_SW_FRAME;
@@ -246,7 +250,6 @@ static void asicConnac3xFillInitCmdTxdInfo(
 			prCmdInfo->u2InfoBufLen);
 }
 
-
 static void asicConnac3xFillCmdTxdInfo(
 	struct ADAPTER *prAdapter,
 	struct WIFI_CMD_INFO *prCmdInfo,
@@ -291,6 +294,46 @@ static void asicConnac3xFillCmdTxdInfo(
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prCmdInfo->u2InfoBufLen);
 }
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+static void asicConnac3xFillUniCmdTxdInfo(
+	struct ADAPTER *prAdapter,
+	struct WIFI_UNI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum)
+{
+	struct CONNAC3X_WIFI_UNI_CMD *prWifiCmd;
+	uint32_t u4TxdLen = sizeof(struct HW_MAC_CONNAC3X_TX_DESC);
+
+	prWifiCmd = (struct CONNAC3X_WIFI_UNI_CMD *)prCmdInfo->pucInfoBuffer;
+
+	HAL_MAC_CONNAC3X_TXD_SET_TX_BYTE_COUNT(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
+		prCmdInfo->u2InfoBufLen);
+	HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
+		INIT_PKT_FT_CMD);
+	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd,
+		HEADER_FORMAT_COMMAND);
+	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prWifiCmd, 0x20);
+
+	prWifiCmd->u2CID = prCmdInfo->u2CID;
+	prWifiCmd->ucPktTypeID = prCmdInfo->ucPktTypeID;
+	prWifiCmd->ucSeqNum = nicIncreaseCmdSeqNum(prAdapter);
+	prWifiCmd->ucS2DIndex = prCmdInfo->ucS2DIndex;
+	prWifiCmd->u2Length = prCmdInfo->u2InfoBufLen - u4TxdLen;
+	prWifiCmd->ucOption = prCmdInfo->ucOption;
+
+	if (pucSeqNum)
+		*pucSeqNum = prWifiCmd->ucSeqNum;
+
+	DBGLOG(TX, TRACE, "TX CMD: ID[0x%04X] SEQ[%u] OPT[0x%02X] LEN[%u]\n",
+			prWifiCmd->u2CID, prWifiCmd->ucSeqNum,
+			prWifiCmd->ucOption, prCmdInfo->u2InfoBufLen);
+}
+
+#endif
 
 void asicConnac3xFillInitCmdTxd(
 	struct ADAPTER *prAdapter,
@@ -411,6 +454,23 @@ void asicConnac3xFillCmdTxd(
 	if (pCmdBuf)
 		*pCmdBuf = &prWifiCmd->aucBuffer[0];
 }
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void asicConnac3xFillUniCmdTxd(
+	struct ADAPTER *prAdapter,
+	struct WIFI_UNI_CMD_INFO *prCmdInfo,
+	u_int8_t *pucSeqNum,
+	void **pCmdBuf)
+{
+	struct CONNAC3X_WIFI_UNI_CMD *prWifiCmd;
+
+	/* 2. Setup common CMD Info Packet */
+	prWifiCmd = (struct CONNAC3X_WIFI_UNI_CMD *)prCmdInfo->pucInfoBuffer;
+	asicConnac3xFillUniCmdTxdInfo(prAdapter, prCmdInfo, pucSeqNum);
+	if (pCmdBuf)
+		*pCmdBuf = &prWifiCmd->aucBuffer[0];
+}
+#endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 uint32_t asicConnac3xWfdmaCfgAddrGet(

@@ -131,23 +131,23 @@ apfnProcessRxMgtFrame[MAX_NUM_OF_FC_SUBTYPES] = {
 #endif
 
 static struct RX_EVENT_HANDLER arEventTable[] = {
-	{EVENT_ID_RX_ADDBA,	qmHandleEventRxAddBa},
-	{EVENT_ID_DBDC_SWITCH_DONE, cnmDbdcEventHwSwitchDone},
-	{EVENT_ID_RX_DELBA,	qmHandleEventRxDelBa},
+	{EVENT_ID_RX_ADDBA, nicEventRxAddBa},
+	{EVENT_ID_DBDC_SWITCH_DONE, nicEventDbdcSwitchDone},
+	{EVENT_ID_RX_DELBA, nicEventRxDelBa},
 	{EVENT_ID_LINK_QUALITY, nicEventLinkQuality},
 	{EVENT_ID_LAYER_0_EXT_MAGIC_NUM, nicEventLayer0ExtMagic},
-	{EVENT_ID_MIC_ERR_INFO,	nicEventMicErrorInfo},
+	{EVENT_ID_MIC_ERR_INFO, nicEventMicErrorInfo},
 	{EVENT_ID_SCAN_DONE, nicEventScanDone},
 	{EVENT_ID_SCHED_SCAN_DONE, nicEventSchedScanDone},
-	{EVENT_ID_TX_DONE, nicTxProcessTxDoneEvent},
-	{EVENT_ID_SLEEPY_INFO, nicEventSleepyNotify},
+	{EVENT_ID_TX_DONE, nicEventTxDone},
+	{EVENT_ID_SLEEPY_INFO, nicEventSleepNotify},
 #if CFG_ENABLE_BT_OVER_WIFI
 	{EVENT_ID_BT_OVER_WIFI, nicEventBtOverWifi},
 #endif
 	{EVENT_ID_STATISTICS, nicEventStatistics},
 	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO, nicEventMibInfo},
-	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
+	{EVENT_ID_CH_PRIVILEGE, nicEventChPrivilege},
 	{EVENT_ID_BSS_ABSENCE_PRESENCE, qmHandleEventBssAbsencePresence},
 	{EVENT_ID_STA_CHANGE_PS_MODE, qmHandleEventStaChangePsMode},
 	{EVENT_ID_STA_UPDATE_FREE_QUOTA, qmHandleEventStaUpdateFreeQuota},
@@ -177,12 +177,12 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RDD_REPORT, cnmRadarDetectEvent},
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 #if CFG_SUPPORT_IDC_CH_SWITCH
-	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
+	{EVENT_ID_LTE_IDC_REPORT, nicEventIdcReport},
 #endif
 #endif
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
-	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
+	{EVENT_ID_TX_ADDBA, nicEventTxAddBa},
 	{EVENT_ID_GET_CNM, nicEventCnmInfo},
 #if CFG_SUPPORT_SMART_GEAR
 	{EVENT_ID_SG_STATUS, cnmEventSGStatus},
@@ -190,7 +190,7 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_WOW_SUPPORT == 1)
 	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
 #endif
-	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
+	{EVENT_ID_OPMODE_CHANGE, nicEventCnmOpModeChange},
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif
@@ -3932,9 +3932,13 @@ static void nicRxProcessPacketType(
 			prSwRfb->prRxStatus) &
 		     prChipInfo->u2RxSwPktBitMap) ==
 		    prChipInfo->u2RxSwPktEvent) {
-			nicRxProcessEventPacket(
-				prAdapter,
-				prSwRfb);
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			if (IS_UNI_EVENT(prSwRfb->pucRecvBuff +
+					prChipInfo->rxd_size))
+				nicRxProcessUniEventPacket(prAdapter, prSwRfb);
+			else
+#endif
+				nicRxProcessEventPacket(prAdapter, prSwRfb);
 		}
 		/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
 		else if ((NIC_RX_GET_U2_SW_PKT_TYPE(
@@ -4470,9 +4474,9 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 			(pucRspBuffer + prChipInfo->rxd_size);
 
 		DBGLOG(INIT, TRACE,
-		       "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+		       "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u] VER[%d]\n",
 		       prEvent->ucEID, prEvent->ucSeqNum,
-		       prEvent->u2PacketLength);
+		       prEvent->u2PacketLength, prEvent->ucEventVersion);
 	} else {
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
