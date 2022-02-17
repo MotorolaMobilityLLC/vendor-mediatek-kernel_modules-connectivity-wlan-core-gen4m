@@ -4873,21 +4873,15 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct IE_TPC_REPORT *prTpcRepIE;
 	struct IE_MEASUREMENT_REQ *prMeasurementReqIE;
 	struct IE_MEASUREMENT_REPORT *prMeasurementRepIE;
-	struct ACTION_SM_REQ_FRAME *prRxFrame;
 	u_int8_t fgHasWideBandIE = FALSE;
 	u_int8_t fgHasSCOIE = FALSE;
 	u_int8_t fgHasChannelSwitchIE = FALSE;
+	struct WLAN_ACTION_FRAME *prActFrame;
+	u_int8_t ucAction;
 
 	DBGLOG(RLM, INFO, "[Mgt Action]rlmProcessSpecMgtAction\n");
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
-
-	u2IELength =
-		prSwRfb->u2PacketLen -
-		(uint16_t)OFFSET_OF(struct ACTION_SM_REQ_FRAME, aucInfoElem[0]);
-
-	prRxFrame = (struct ACTION_SM_REQ_FRAME *)prSwRfb->pvHeader;
-	pucIE = prRxFrame->aucInfoElem;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec)
@@ -4896,12 +4890,34 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
 		return;
 
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	if (prActFrame->ucAction == ACTION_CHNL_SWITCH) {
+		struct ACTION_CHANNEL_SWITCH_FRAME *prRxFrame;
+
+		u2IELength = prSwRfb->u2PacketLen -
+			(uint16_t)OFFSET_OF(struct ACTION_CHANNEL_SWITCH_FRAME,
+					aucInfoElem[0]);
+		prRxFrame =
+		    (struct ACTION_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
+		pucIE = prRxFrame->aucInfoElem;
+		ucAction = prRxFrame->ucAction;
+	} else {
+		struct ACTION_SM_REQ_FRAME *prRxFrame;
+
+		u2IELength = prSwRfb->u2PacketLen -
+			(uint16_t)OFFSET_OF(struct ACTION_SM_REQ_FRAME,
+					aucInfoElem[0]);
+		prRxFrame =
+		    (struct ACTION_SM_REQ_FRAME *)prSwRfb->pvHeader;
+		pucIE = prRxFrame->aucInfoElem;
+		ucAction = prRxFrame->ucAction;
+		prStaRec->ucSmDialogToken = prRxFrame->ucDialogToken;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	prStaRec->ucSmDialogToken = prRxFrame->ucDialogToken;
-
 	DBGLOG_MEM8(RLM, INFO, pucIE, u2IELength);
-	switch (prRxFrame->ucAction) {
+	switch (ucAction) {
 	case ACTION_MEASUREMENT_REQ:
 		DBGLOG(RLM, INFO, "[Mgt Action] Measure Request\n");
 		prMeasurementReqIE = SM_MEASUREMENT_REQ_IE(pucIE);
