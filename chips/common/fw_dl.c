@@ -2322,7 +2322,10 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 
 /* Dynamic memory map::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-		wlanPatchDynMemMapSendComplete(prAdapter);
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			wlanPatchDynMemMapSendComplete(prAdapter);
+		else if (u4Status == WLAN_STATUS_NOT_ACCEPTED)
+			u4Status = WLAN_STATUS_SUCCESS; /* already download*/
 #else
 		wlanPatchSendComplete(prAdapter);
 #endif
