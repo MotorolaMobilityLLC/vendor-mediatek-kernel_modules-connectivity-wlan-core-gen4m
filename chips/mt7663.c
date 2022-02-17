@@ -120,7 +120,7 @@ BUS_INFO mt7663_bus_info = {
 };
 
 struct firmware_download_operations mt7663_fw_dl_ops = {
-	.tailer_format = HARVARD_TAILER_FORMAT,
+	.tailer_format = CONNAC_TAILER_FORMAT,
 	.constructFirmwarePrio = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,

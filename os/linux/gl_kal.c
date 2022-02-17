@@ -135,7 +135,6 @@ const struct firmware *fw_entry;
 /* Default */
 static PUINT_8 apucFwName[] = {
 	(PUINT_8) CFG_FW_FILENAME "_MT",
-	(PUINT_8) CFG_FW_FILENAME "_CONNAC",
 	NULL
 };
 
