@@ -161,25 +161,19 @@ struct PCIE_CHIP_CR_MAPPING bellwether_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 };
+#endif
 
 struct L1_CR_REMAPPING bellwether_l1_remapping = {
 	.u4Base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
 	.u4Mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
 	.u4Shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
-	.u4RemapBase = 0x50000,
+	.u4RemapBase = 0x7c500000,
 };
-#endif
 
 struct L2_CR_REMAPPING bellwether_l2_remapping = {
 	.u4Base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
 	.u4Mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
 	.u4Shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
-	.u4RemapBase = 0x18500000,
-#if defined(_HIF_PCIE)
-	.u4RemapBusBase = 0x50000,
-#else
-	.u4RemapBusBase = (0x18500000 - 0x18000000),
-#endif
 };
 
 struct PCIE_CHIP_CR_REMAPPING bellwether_bus2chip_cr_remapping = {
@@ -819,6 +813,7 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 	const struct L2_CR_REMAPPING *prL2Remapping =
 		(prRemapping != NULL ? prRemapping->l2_remapping : NULL);
 	uint32_t offset = 0;
+	uint32_t offset_addr = 0;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 
 	ret = request_firmware(&fw, name, prAdapter->prGlueInfo->prDev);
@@ -843,9 +838,18 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 	u4BkValue = u4Value;
 
 	u4Value &= ~prL1Remapping->u4Mask;
-	u4Value |= (GET_L1_REMAP_BASE(prL2Remapping->u4RemapBase) <<
+	u4Value |= (GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
+		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		prL1Remapping->u4Shift);
 	HAL_MCR_WR(prAdapter, prL1Remapping->u4Base, u4Value);
+
+	if (!halChipToStaticMapBusAddr(prAdapter->chip_info,
+			prL1Remapping->u4RemapBase,
+			&offset_addr)) {
+		DBGLOG(INIT, ERROR, "map bus address fail.\n");
+		ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
 
 	while (true) {
 		uint32_t size;
@@ -861,7 +865,7 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 			(addr + offset));
 
 		RTMP_IO_MEM_COPY(&prAdapter->prGlueInfo->rHifInfo,
-			prL2Remapping->u4RemapBusBase,
+			offset_addr,
 			(void *)(fw->data + offset), size);
 
 		offset += PCIE_REMAP_SZ;

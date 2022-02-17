@@ -425,8 +425,6 @@ struct L2_CR_REMAPPING {
 	uint32_t u4Base;
 	uint32_t u4Mask;
 	uint32_t u4Shift;
-	uint32_t u4RemapBase;
-	uint32_t u4RemapBusBase;
 };
 
 struct PCIE_CHIP_CR_REMAPPING {
