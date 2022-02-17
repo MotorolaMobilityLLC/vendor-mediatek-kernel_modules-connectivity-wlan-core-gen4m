@@ -1510,3 +1510,34 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 	return ucFreq1Channel;
 }
 
+void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
+	IN uint8_t ucCh,
+	IN uint8_t ucBssIdx,
+	OUT struct RF_CHANNEL_INFO *prRfChnlInfo)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	enum ENUM_BAND eBandOrig, eBandCsa;
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	prRfChnlInfo->ucChannelNum = ucCh;
+
+	eBandCsa = eBand;
+	prRfChnlInfo->eBand = eBandCsa;
+
+	/* temp replace BSS eBand to get BW of CSA band */
+	eBandOrig = prBssInfo->eBand;
+	prBssInfo->eBand = eBandCsa;
+	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+	prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
+
+	prRfChnlInfo->u2PriChnlFreq =
+		nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
+	prRfChnlInfo->u4CenterFreq1 =
+		nicGetS1Freq(
+			eBandCsa,
+			prRfChnlInfo->ucChannelNum,
+			rlmGetVhtOpBwByBssOpBw(prRfChnlInfo->ucChnlBw));
+	prRfChnlInfo->u4CenterFreq2 = 0;
+}

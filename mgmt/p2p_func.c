@@ -6160,16 +6160,21 @@ static u_int8_t p2pFuncSwitchSapChannelToDbdc(
 #endif
 	)) {
 		struct RF_CHANNEL_INFO rRfChnlInfo;
-
-		rRfChnlInfo.ucChannelNum = 6;
-		rRfChnlInfo.eBand = BAND_2G4;
-		rRfChnlInfo.ucChnlBw =
-			rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
+		uint8_t ucBssIdx = 0;
 
 		DBGLOG(P2P, INFO,
 			"[DBDC] StaCH(%d), SapCH(%d)\n",
 			ucStaChannelNum,
 			ucSapChannelNum);
+
+		if (p2pFuncRoleToBssIdx(
+			prAdapter, prP2pBssInfo->u4PrivateData,
+			&ucBssIdx) != WLAN_STATUS_SUCCESS)
+			return FALSE;
+
+		rlmGetChnlInfoForCSA(prAdapter,
+			BAND_2G4, 6,
+			ucBssIdx, &rRfChnlInfo);
 
 		cnmSapChannelSwitchReq(prAdapter,
 			&rRfChnlInfo,
@@ -6446,12 +6451,7 @@ void p2pFuncSwitchSapChannel(
 		/* Otherwise, switch to STA channel, i.e. SCC */
 
 		struct RF_CHANNEL_INFO rRfChnlInfo;
-
-		/* Use sta ch info to do sap ch switch */
-		rRfChnlInfo.ucChannelNum = ucStaChannelNum;
-		rRfChnlInfo.eBand = eStaBand;
-		rRfChnlInfo.ucChnlBw =
-			rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
+		uint8_t ucBssIdx = 0;
 
 		if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
 			P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
@@ -6466,6 +6466,16 @@ void p2pFuncSwitchSapChannel(
 		DBGLOG(P2P, INFO,
 			"[SCC] StaCH(%d), SapCH(%d)(dfs: %u)\n",
 			ucStaChannelNum, ucSapChannelNum, fgIsSapDfs);
+
+		/* Use sta ch info to do sap ch switch */
+		if (p2pFuncRoleToBssIdx(
+			prAdapter, prP2pBssInfo->u4PrivateData,
+			&ucBssIdx) != WLAN_STATUS_SUCCESS)
+			goto exit;
+
+		rlmGetChnlInfoForCSA(prAdapter,
+			eStaBand, ucStaChannelNum,
+			ucBssIdx, &rRfChnlInfo);
 
 		cnmSapChannelSwitchReq(prAdapter,
 			&rRfChnlInfo,
