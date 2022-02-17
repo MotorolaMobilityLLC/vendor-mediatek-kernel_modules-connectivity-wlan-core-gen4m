@@ -153,7 +153,7 @@ typedef struct _GL_HIF_INFO_T {
 	RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
 	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */
 
-	RTMP_DMABUF RxDescRing[2];	/* Shared memory for RX descriptors */
+	RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];	/* Shared memory for RX descriptors */
 	RTMP_RX_RING RxRing[NUM_OF_RX_RING];
 	spinlock_t RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
 
@@ -166,6 +166,16 @@ typedef struct _GL_HIF_INFO_T {
 
 	spinlock_t rDynMapRegLock;
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
+
+typedef struct _BUS_INFO {
+	const unsigned int top_cfg_base;	/* TOP_CFG_BASE address */
+	const unsigned char is_pcie_32dw_read;	/* diff PDMA config */
+	const unsigned int tx_ring_cmd_idx;
+	const unsigned int tx_ring_fwdl_idx;
+	const unsigned int tx_ring_data_idx;
+
+	void (*enableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
+} BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

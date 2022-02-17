@@ -451,8 +451,8 @@ do { \
 #define HAL_GET_MAILBOX_FROM_ENHANCE_MODE_STRUCT(pvInBuf, pu4Mailbox0, pu4Mailbox1)
 
 #define HAL_IS_TX_DONE_INTR(u4IntrStatus) \
-	((u4IntrStatus & (WPDMA_TX_DONE_INT0 | WPDMA_TX_DONE_INT1 | WPDMA_TX_DONE_INT2 | WPDMA_TX_DONE_INT3)) \
-	? TRUE : FALSE)
+	((u4IntrStatus & (WPDMA_TX_DONE_INT0 | WPDMA_TX_DONE_INT1 | WPDMA_TX_DONE_INT2 | WPDMA_TX_DONE_INT3 | \
+	WPDMA_TX_DONE_INT15)) ? TRUE : FALSE)
 
 #define HAL_IS_RX_DONE_INTR(u4IntrStatus) \
 	((u4IntrStatus & (WPDMA_RX_DONE_INT0 | WPDMA_RX_DONE_INT1)) ? TRUE : FALSE)
@@ -480,7 +480,10 @@ do { \
 
 #define HAL_HIF_INIT(prAdapter)
 
-#define HAL_ENABLE_FWDL(_prAdapter, _fgEnable)
+#define HAL_ENABLE_FWDL(_prAdapter, _fgEnable) \
+{ \
+	halEnableFWDownload(_prAdapter, _fgEnable);	\
+}
 
 #define HAL_WAKE_UP_WIFI(_prAdapter) \
 { \

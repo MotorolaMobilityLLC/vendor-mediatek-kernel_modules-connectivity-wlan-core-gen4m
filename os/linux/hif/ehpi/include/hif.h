@@ -93,6 +93,10 @@ typedef struct _GL_HIF_INFO_T {
 	BOOLEAN fgMbxReadClear;
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
 
+typedef struct _BUS_INFO {
+
+} BUS_INFO, *P_BUS_INFO;
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
