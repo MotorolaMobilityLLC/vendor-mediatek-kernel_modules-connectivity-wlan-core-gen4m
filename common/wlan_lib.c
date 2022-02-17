@@ -10979,7 +10979,7 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 #if CFG_SISO_SW_DEVELOP
 	enum ENUM_BAND eBand = BAND_NULL;
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
 		DBGLOG(INIT, TRACE, "Force 1 Nss\n",
 		       ucBssIndex);

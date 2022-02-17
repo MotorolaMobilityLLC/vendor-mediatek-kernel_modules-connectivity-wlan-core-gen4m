@@ -5667,7 +5667,7 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 			/* Clear retry count when retry count > TX limit */
 			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
 
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 			/* for power control error handling, */
 			/* retry fail but before rollback parameter */
 			if (prAdapter->fgPowerNeedDisconnect) {
