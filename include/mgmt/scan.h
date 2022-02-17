@@ -455,6 +455,11 @@ struct BSS_DESC {
 
 	/* Support AP Selection */
 	struct AIS_BLACKLIST_ITEM *prBlack;
+
+#if CFG_SUPPORT_802_11K
+	struct NEIGHBOR_AP *prNeighbor;
+	uint8_t fgQueriedCandidates;
+#endif
 #if CFG_SUPPORT_MBO
 	uint8_t fgIsDisallowed;
 	uint8_t fgExistEspIE;
