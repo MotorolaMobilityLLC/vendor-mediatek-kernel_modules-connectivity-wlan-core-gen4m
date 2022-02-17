@@ -149,7 +149,11 @@ module_param_named(ap, gprifnameap, charp, 0000);
 #endif /* CFG_DRIVER_INF_NAME_CHANGE */
 
 /* NIC interface name */
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define NIC_INF_NAME    "ra%d"
+#else
 #define NIC_INF_NAME    "wlan%d"
+#endif
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 /* Kernel IFNAMESIZ is 16, we use 5 in case some protocol might auto gen
