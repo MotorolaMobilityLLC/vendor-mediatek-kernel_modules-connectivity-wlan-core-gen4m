@@ -535,12 +535,27 @@ uint32_t nicSetFixedRateData(
 	uint32_t u4Data = 0;
 	uint8_t u4Nsts = 1;
 	uint8_t u1FormatVer;
-	uint8_t u1TxModeMcsNumMax[ENUM_TX_MODE_NUM]
-		= {4, 8, 33, 33, 10
+	uint8_t u1TxModeMcsNumMax[ENUM_TX_MODE_NUM];
+
+	kalMemZero(u1TxModeMcsNumMax, ENUM_TX_MODE_NUM);
+	/* u1TxModeMcsNumMax[ENUM_TX_MODE_NUM] = {4, 8, 33, 33, 10}; */
+	u1TxModeMcsNumMax[ENUM_TX_MODE_CCK] = 4;
+	u1TxModeMcsNumMax[ENUM_TX_MODE_OFDM] = 8;
+	u1TxModeMcsNumMax[ENUM_TX_MODE_MM] = 33;
+	u1TxModeMcsNumMax[ENUM_TX_MODE_GF] = 33;
+	u1TxModeMcsNumMax[ENUM_TX_MODE_VHT] = 10;
+
 #if (CFG_SUPPORT_802_11AX == 1)
-		, 2, 0, 0, 12, 12, 12, 12
+	if (fgEfuseCtrlAxOn == 1) {
+	/* u1TxModeMcsNumMax[ENUM_TX_MODE_NUM] */
+		/* = {4, 8, 33, 33, 10, 2, 0, 0, 12, 12, 12, 12}; */
+		u1TxModeMcsNumMax[ENUM_TX_MODE_PLR] = 2;
+		u1TxModeMcsNumMax[ENUM_TX_MODE_HE_SU] = 12;
+		u1TxModeMcsNumMax[ENUM_TX_MODE_HE_ER] = 12;
+		u1TxModeMcsNumMax[ENUM_TX_MODE_HE_TRIG] = 12;
+		u1TxModeMcsNumMax[ENUM_TX_MODE_HE_MU] = 12;
+	}
 #endif
-		};
 
 	u4Data |= RA_FIXEDRATE;
 

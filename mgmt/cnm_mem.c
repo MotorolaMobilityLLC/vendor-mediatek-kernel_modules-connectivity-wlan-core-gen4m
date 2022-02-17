@@ -1126,12 +1126,14 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prCmdContent->ucTxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduTx;
 	prCmdContent->ucRxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduRx;
 #if (CFG_SUPPORT_802_11AX == 1)
+	/* prStaRec->ucDesiredPhyTypeSet firm in */
+		/* bssDetermineStaRecPhyTypeSet() in advance */
 	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
 		/* HE peer AMSDU in AMPDU configuration */
 		prCmdContent->ucTxAmsduInAmpdu &=
 			prAdapter->rWifiVar.ucHeAmsduInAmpduTx;
 		prCmdContent->ucRxAmsduInAmpdu &=
-			prAdapter->rWifiVar.ucHeAmsduInAmpduRx;
+		prAdapter->rWifiVar.ucHeAmsduInAmpduRx;
 	} else
 #endif
 	if ((prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC) ||
@@ -1181,7 +1183,9 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucRtsPolicy = RTS_POLICY_LEGACY;
 
 #if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
 	cnmStaRecCmdHeContentFill(prStaRec, prCmdContent);
+	}
 #endif
 
 	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",

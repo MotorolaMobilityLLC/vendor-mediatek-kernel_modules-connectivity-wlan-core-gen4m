@@ -1741,11 +1741,13 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	memcpy(rCmdSetBssInfo.ucHeOpParams, prBssInfo->ucHeOpParams,
-			HE_OP_BYTE_NUM);
-	rCmdSetBssInfo.ucBssColorInfo = prBssInfo->ucBssColorInfo;
-	rCmdSetBssInfo.u2HeBasicMcsSet =
-		CPU_TO_LE16(prBssInfo->u2HeBasicMcsSet);
+	if (fgEfuseCtrlAxOn == 1) {
+		memcpy(rCmdSetBssInfo.ucHeOpParams, prBssInfo->ucHeOpParams,
+				HE_OP_BYTE_NUM);
+		rCmdSetBssInfo.ucBssColorInfo = prBssInfo->ucBssColorInfo;
+		rCmdSetBssInfo.u2HeBasicMcsSet =
+			CPU_TO_LE16(prBssInfo->u2HeBasicMcsSet);
+	}
 #endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
