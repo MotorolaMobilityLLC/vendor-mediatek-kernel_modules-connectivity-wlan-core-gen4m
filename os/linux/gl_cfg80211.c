@@ -4532,13 +4532,13 @@ void mtk_cfg_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		return;
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0)
 		mtk_p2p_cfg80211_abort_scan(wiphy, wdev);
-	/* STA Mode */
-	mtk_cfg80211_abort_scan(wiphy, wdev);
+	else	/* STA Mode */
+		mtk_cfg80211_abort_scan(wiphy, wdev);
 }
 #endif
 
