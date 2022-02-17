@@ -806,7 +806,6 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
-	uint32_t u4ChCnt = 0;
 	KAL_SPIN_LOCK_DECLARATION();
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
@@ -841,44 +840,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	/* buffer empty channel information */
 	if (prScanDone->ucSparseChannelValid) {
-		int num = 0;
-		char strbuf[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
-
-		prScanInfo->fgIsSparseChannelValid = TRUE;
-		prScanInfo->rSparseChannel.eBand
-			= (enum ENUM_BAND) prScanDone->rSparseChannel.ucBand;
-		prScanInfo->rSparseChannel.ucChannelNum
-			= prScanDone->rSparseChannel.ucChannelNum;
-		num = prScanInfo->ucSparseChannelArrayValidNum
-			= prScanDone->ucSparseChannelArrayValidNum;
-		log_dbg(SCN, INFO, "Country Code = %c%c, Detected_Channel_Num = %d\n",
-			((prAdapter->rWifiVar.u2CountryCode
-				& 0xff00) >> 8),
-			(prAdapter->rWifiVar.u2CountryCode
-				& 0x00ff), num);
-
-#define print_info(_Mod, _Clz, _Fmt, var) \
-		do { \
-			int written = 0; \
-		    int totalLen = SCN_SCAN_DONE_PRINT_BUFFER_LENGTH; \
-			for (u4ChCnt = 0; u4ChCnt < num; u4ChCnt++) { \
-				prScanInfo->var[u4ChCnt] \
-					= prScanDone->var[u4ChCnt]; \
-				written += kalSnprintf(strbuf + written, \
-					totalLen - written, "%7d", \
-					prScanInfo->var[u4ChCnt]); \
-			} \
-			log_dbg(_Mod, _Clz, _Fmt, strbuf); \
-		} while (0)
-
-		print_info(SCN, INFO, "Channel  : %s\n", aucChannelNum);
-		print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
-		print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
-		print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
-		if (prScanDone->ucScanDoneVersion >= 4)
-			print_info(SCN, LOUD,
-				"ScanTime : %s\n", au2ChannelScanTime);
-#undef	print_scan_info
+		scnFsmDumpScanDoneInfo(prAdapter, prScanDone);
 	} else {
 		prScanInfo->fgIsSparseChannelValid = FALSE;
 	}
@@ -933,6 +895,86 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 #endif
 
 }	/* end of scnEventScanDone */
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void
+scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_SCAN_DONE *prScanDone)
+{
+	uint8_t ucScanChNum = 0;
+	uint8_t ucChCnt = 0;
+	struct SCAN_INFO *prScanInfo;
+	struct SCAN_PARAM *prScanParam;
+	char strbuf[SCN_SCAN_DONE_PRINT_BUFFER_LENGTH];
+
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	prScanParam = &prScanInfo->rScanParam;
+
+	prScanInfo->fgIsSparseChannelValid = TRUE;
+	prScanInfo->rSparseChannel.eBand
+		= (enum ENUM_BAND) prScanDone->rSparseChannel.ucBand;
+	prScanInfo->rSparseChannel.ucChannelNum
+		= prScanDone->rSparseChannel.ucChannelNum;
+	ucScanChNum = prScanInfo->ucSparseChannelArrayValidNum
+		= prScanDone->ucSparseChannelArrayValidNum;
+
+	if (prAdapter->rWifiVar.u2CountryCode) {
+		log_dbg(SCN, INFO,
+			"Country Code = %c%c, Detected_Channel_Num = %d\n",
+			((prAdapter->rWifiVar.u2CountryCode
+				& 0xff00) >> 8),
+			(prAdapter->rWifiVar.u2CountryCode
+				& 0x00ff), ucScanChNum);
+	} else {
+		log_dbg(SCN, INFO,
+			"Country Code is NULL, Detected_Channel_Num = %d\n",
+			ucScanChNum);
+	}
+
+#define print_info(_Mod, _Clz, _Fmt, var) \
+	do { \
+		uint16_t u2Written = 0; \
+		uint16_t u2TotalLen = SCN_SCAN_DONE_PRINT_BUFFER_LENGTH; \
+		for (ucChCnt = 0; ucChCnt < ucScanChNum; ucChCnt++) { \
+			prScanInfo->var[ucChCnt] \
+				= prScanDone->var[ucChCnt]; \
+			u2Written += kalSnprintf(strbuf + u2Written, \
+				u2TotalLen - u2Written, "%7d", \
+				prScanInfo->var[ucChCnt]); \
+		} \
+		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+	} while (0)
+
+	/* If FW scan channel count more than Driver request,
+	*  means this scan done event might have something wrong,
+	*  not to print it to avoid unexpected issue
+	*/
+	if (ucScanChNum > prScanParam->ucChannelListNum) {
+		log_dbg(SCN, INFO,
+			"Driver request %d ch, but FW scan %d ch!\n",
+			prScanParam->ucChannelListNum,
+			ucScanChNum);
+		return;
+	}
+
+	print_info(SCN, INFO, "Channel	: %s\n", aucChannelNum);
+	print_info(SCN, INFO, "IdleTime : %s\n", au2ChannelIdleTime);
+	print_info(SCN, INFO, "MdrdyCnt : %s\n", aucChannelMDRDYCnt);
+	print_info(SCN, INFO, "BAndPCnt : %s\n", aucChannelBAndPCnt);
+	if (prScanDone->ucScanDoneVersion >= 4)
+		print_info(SCN, LOUD,
+			"ScanTime : %s\n", au2ChannelScanTime);
+#undef	print_scan_info
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

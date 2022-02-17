@@ -971,4 +971,7 @@ void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
 void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
 	IN struct CMD_SCAN_REQ_V2 *prCmdScanReq);
 
+void scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_SCAN_DONE *prScanDone);
+
 #endif /* _SCAN_H */
