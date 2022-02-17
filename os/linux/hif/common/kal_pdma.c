@@ -571,13 +571,14 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 		if (prTxReq->prCmdInfo) {
 			ret = halWpdmaWriteCmd(prGlueInfo,
 				prTxReq->prCmdInfo, prTxReq->ucTC);
-			if (ret == CMD_TX_RESULT_SUCCESS)
+			if (ret == CMD_TX_RESULT_SUCCESS) {
 				if (prTxReq->prCmdInfo->pfHifTxCmdDoneCb)
 					prTxReq->prCmdInfo->pfHifTxCmdDoneCb(
 						prGlueInfo->prAdapter,
 						prTxReq->prCmdInfo);
-			else
+			} else {
 				DBGLOG(HAL, ERROR, "ret: %d\n", ret);
+			}
 		}
 		list_del(prCur);
 		kfree(prTxReq);
