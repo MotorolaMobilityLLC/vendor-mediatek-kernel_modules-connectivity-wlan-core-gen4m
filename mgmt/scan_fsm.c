@@ -520,6 +520,7 @@ void scnFsmHandleScanMsg(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &prScanInfo->rScanParam;
 
+	kalMemZero(prScanParam, sizeof(*prScanParam));
 	prScanParam->eScanType = prScanReqMsg->eScanType;
 	prScanParam->ucBssIndex = prScanReqMsg->ucBssIndex;
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
@@ -604,6 +605,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &prScanInfo->rScanParam;
 
+	kalMemZero(prScanParam, sizeof(*prScanParam));
 	prScanParam->eScanType = prScanReqMsg->eScanType;
 	prScanParam->ucBssIndex = prScanReqMsg->ucBssIndex;
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
