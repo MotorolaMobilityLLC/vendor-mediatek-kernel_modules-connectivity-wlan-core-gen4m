@@ -949,6 +949,7 @@ struct WIFI_VAR {
 	uint8_t ucApAllowHtVhtTkip;
 
 	uint8_t ucNSS;
+	uint8_t fgSta1NSS; /* Less or euqal than ucNss */
 	uint8_t ucAp5gNSS; /* Less or euqal than ucNss */
 	uint8_t ucAp2gNSS; /* Less or euqal than ucNss */
 	uint8_t ucGo5gNSS; /* Less or euqal than ucNss */
