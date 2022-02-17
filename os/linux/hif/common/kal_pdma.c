@@ -494,7 +494,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
 	OUT uint32_t *pu4IntStatus)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	*pu4IntStatus = 0;
