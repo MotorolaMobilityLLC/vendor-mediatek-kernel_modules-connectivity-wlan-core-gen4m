@@ -84,6 +84,7 @@
 
 #if CFG_MTK_ANDROID_WMT
 extern phys_addr_t gConEmiPhyBase;
+extern unsigned long long gConEmiSize;
 #endif
 
 enum ENUM_IMG_DL_IDX_T {
