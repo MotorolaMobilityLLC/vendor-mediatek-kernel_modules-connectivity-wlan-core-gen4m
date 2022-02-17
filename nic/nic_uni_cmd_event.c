@@ -2535,22 +2535,25 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_STAREC_UPDATE *cmd;
-	struct CMD_STAREC_BF *bf;
 	struct UNI_CMD_STAREC *uni_cmd;
-	struct UNI_CMD_STAREC_BF *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
-	     		       sizeof(struct UNI_CMD_STAREC_BF);
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC);
 
 	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
 	    info->ucExtCID != EXT_CMD_ID_STAREC_UPDATE)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_STAREC_UPDATE *) info->pucInfoBuffer;
-	bf = (struct CMD_STAREC_BF *) cmd->aucBuffer;
-
-	if (bf->u2Tag != STA_REC_BF)
+	switch (TAG_ID(cmd->aucBuffer)) {
+	case STA_REC_BASIC:
+		max_cmd_len += sizeof(struct UNI_CMD_STAREC_BASIC);
+		break;
+	case STA_REC_BF:
+		max_cmd_len += sizeof(struct UNI_CMD_STAREC_BF);
+		break;
+	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO, max_cmd_len,
 			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
@@ -2562,49 +2565,83 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
 		cmd->ucWlanIdx);
 
-	tag = (struct UNI_CMD_STAREC_BF *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_STAREC_TAG_BF;
-	tag->u2Length = sizeof(*tag);
-	tag->rTxBfPfmuInfo.u2PfmuId = bf->rTxBfPfmuInfo.u2PfmuId;
-	tag->rTxBfPfmuInfo.fgSU_MU = bf->rTxBfPfmuInfo.fgSU_MU;
-	tag->rTxBfPfmuInfo.u1TxBfCap = bf->rTxBfPfmuInfo.u1TxBfCap;
-	tag->rTxBfPfmuInfo.ucSoundingPhy = bf->rTxBfPfmuInfo.ucSoundingPhy;
-	tag->rTxBfPfmuInfo.ucNdpaRate = bf->rTxBfPfmuInfo.ucNdpaRate;
-	tag->rTxBfPfmuInfo.ucNdpRate = bf->rTxBfPfmuInfo.ucNdpRate;
-	tag->rTxBfPfmuInfo.ucReptPollRate = bf->rTxBfPfmuInfo.ucReptPollRate;
-	tag->rTxBfPfmuInfo.ucTxMode = bf->rTxBfPfmuInfo.ucTxMode;
-	tag->rTxBfPfmuInfo.ucNc = bf->rTxBfPfmuInfo.ucNc;
-	tag->rTxBfPfmuInfo.ucNr = bf->rTxBfPfmuInfo.ucNr;
-	tag->rTxBfPfmuInfo.ucCBW = bf->rTxBfPfmuInfo.ucCBW;
-	tag->rTxBfPfmuInfo.ucTotMemRequire = bf->rTxBfPfmuInfo.ucTotMemRequire;
-	tag->rTxBfPfmuInfo.ucMemRequire20M = bf->rTxBfPfmuInfo.ucMemRequire20M;
-	tag->rTxBfPfmuInfo.ucMemRow0 = bf->rTxBfPfmuInfo.ucMemRow0;
-	tag->rTxBfPfmuInfo.ucMemCol0 = bf->rTxBfPfmuInfo.ucMemCol0;
-	tag->rTxBfPfmuInfo.ucMemRow1 = bf->rTxBfPfmuInfo.ucMemRow1;
-	tag->rTxBfPfmuInfo.ucMemCol1 = bf->rTxBfPfmuInfo.ucMemCol1;
-	tag->rTxBfPfmuInfo.ucMemRow2 = bf->rTxBfPfmuInfo.ucMemRow2;
-	tag->rTxBfPfmuInfo.ucMemCol2 = bf->rTxBfPfmuInfo.ucMemCol2;
-	tag->rTxBfPfmuInfo.ucMemRow3 = bf->rTxBfPfmuInfo.ucMemRow3;
-	tag->rTxBfPfmuInfo.ucMemCol3 = bf->rTxBfPfmuInfo.ucMemCol3;
-	tag->rTxBfPfmuInfo.u2SmartAnt = bf->rTxBfPfmuInfo.u2SmartAnt;
-	tag->rTxBfPfmuInfo.ucSEIdx = bf->rTxBfPfmuInfo.ucSEIdx;
-	tag->rTxBfPfmuInfo.ucAutoSoundingCtrl =
-		bf->rTxBfPfmuInfo.ucAutoSoundingCtrl;
-	tag->rTxBfPfmuInfo.uciBfTimeOut = bf->rTxBfPfmuInfo.uciBfTimeOut;
-	tag->rTxBfPfmuInfo.uciBfDBW = bf->rTxBfPfmuInfo.uciBfDBW;
-	tag->rTxBfPfmuInfo.uciBfNcol = bf->rTxBfPfmuInfo.uciBfNcol;
-	tag->rTxBfPfmuInfo.uciBfNrow = bf->rTxBfPfmuInfo.uciBfNrow;
-	tag->rTxBfPfmuInfo.nr_bw160 = bf->rTxBfPfmuInfo.u1NrBw160;
-	tag->rTxBfPfmuInfo.nc_bw160 = bf->rTxBfPfmuInfo.u1NcBw160;
-	tag->rTxBfPfmuInfo.ru_start_idx = bf->rTxBfPfmuInfo.u1RuStartIdx;
-	tag->rTxBfPfmuInfo.ru_end_idx = bf->rTxBfPfmuInfo.u1RuEndIdx;
-	tag->rTxBfPfmuInfo.trigger_su = bf->rTxBfPfmuInfo.fgTriggerSu;
-	tag->rTxBfPfmuInfo.trigger_mu = bf->rTxBfPfmuInfo.fgTriggerMu;
-	tag->rTxBfPfmuInfo.ng16_su = bf->rTxBfPfmuInfo.fgNg16Su;
-	tag->rTxBfPfmuInfo.ng16_mu = bf->rTxBfPfmuInfo.fgNg16Mu;
-	tag->rTxBfPfmuInfo.codebook42_su = bf->rTxBfPfmuInfo.fgCodebook42Su;
-	tag->rTxBfPfmuInfo.codebook75_mu = bf->rTxBfPfmuInfo.fgCodebook75Mu;
-	tag->rTxBfPfmuInfo.he_ltf = bf->rTxBfPfmuInfo.u1HeLtf;
+	switch (TAG_ID(cmd->aucBuffer)) {
+	case STA_REC_BASIC: {
+		struct STAREC_COMMON *cmn;
+		struct UNI_CMD_STAREC_BASIC *tag;
+
+		cmn = (struct STAREC_COMMON *) cmd->aucBuffer;
+		tag = (struct UNI_CMD_STAREC_BASIC *) uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_STAREC_TAG_BASIC;
+		tag->u2Length = sizeof(*tag);
+		COPY_MAC_ADDR(tag->aucPeerMacAddr, cmn->aucPeerMacAddr);
+		tag->u4ConnectionType = cmn->u4ConnectionType;
+		tag->ucConnectionState = cmn->ucConnectionState;
+		tag->ucIsQBSS = cmn->ucIsQBSS;
+		tag->u2AID = cmn->u2AID;
+		tag->u2ExtraInfo = cmn->u2ExtraInfo;
+	}
+		break;
+	case STA_REC_BF: {
+		struct CMD_STAREC_BF *bf;
+		struct UNI_CMD_STAREC_BF *tag;
+
+		bf = (struct CMD_STAREC_BF *) cmd->aucBuffer;
+		tag = (struct UNI_CMD_STAREC_BF *) uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_STAREC_TAG_BF;
+		tag->u2Length = sizeof(*tag);
+		tag->rTxBfPfmuInfo.u2PfmuId = bf->rTxBfPfmuInfo.u2PfmuId;
+		tag->rTxBfPfmuInfo.fgSU_MU = bf->rTxBfPfmuInfo.fgSU_MU;
+		tag->rTxBfPfmuInfo.u1TxBfCap = bf->rTxBfPfmuInfo.u1TxBfCap;
+		tag->rTxBfPfmuInfo.ucSoundingPhy =
+			bf->rTxBfPfmuInfo.ucSoundingPhy;
+		tag->rTxBfPfmuInfo.ucNdpaRate = bf->rTxBfPfmuInfo.ucNdpaRate;
+		tag->rTxBfPfmuInfo.ucNdpRate = bf->rTxBfPfmuInfo.ucNdpRate;
+		tag->rTxBfPfmuInfo.ucReptPollRate =
+			bf->rTxBfPfmuInfo.ucReptPollRate;
+		tag->rTxBfPfmuInfo.ucTxMode = bf->rTxBfPfmuInfo.ucTxMode;
+		tag->rTxBfPfmuInfo.ucNc = bf->rTxBfPfmuInfo.ucNc;
+		tag->rTxBfPfmuInfo.ucNr = bf->rTxBfPfmuInfo.ucNr;
+		tag->rTxBfPfmuInfo.ucCBW = bf->rTxBfPfmuInfo.ucCBW;
+		tag->rTxBfPfmuInfo.ucTotMemRequire =
+			bf->rTxBfPfmuInfo.ucTotMemRequire;
+		tag->rTxBfPfmuInfo.ucMemRequire20M =
+			bf->rTxBfPfmuInfo.ucMemRequire20M;
+		tag->rTxBfPfmuInfo.ucMemRow0 = bf->rTxBfPfmuInfo.ucMemRow0;
+		tag->rTxBfPfmuInfo.ucMemCol0 = bf->rTxBfPfmuInfo.ucMemCol0;
+		tag->rTxBfPfmuInfo.ucMemRow1 = bf->rTxBfPfmuInfo.ucMemRow1;
+		tag->rTxBfPfmuInfo.ucMemCol1 = bf->rTxBfPfmuInfo.ucMemCol1;
+		tag->rTxBfPfmuInfo.ucMemRow2 = bf->rTxBfPfmuInfo.ucMemRow2;
+		tag->rTxBfPfmuInfo.ucMemCol2 = bf->rTxBfPfmuInfo.ucMemCol2;
+		tag->rTxBfPfmuInfo.ucMemRow3 = bf->rTxBfPfmuInfo.ucMemRow3;
+		tag->rTxBfPfmuInfo.ucMemCol3 = bf->rTxBfPfmuInfo.ucMemCol3;
+		tag->rTxBfPfmuInfo.u2SmartAnt = bf->rTxBfPfmuInfo.u2SmartAnt;
+		tag->rTxBfPfmuInfo.ucSEIdx = bf->rTxBfPfmuInfo.ucSEIdx;
+		tag->rTxBfPfmuInfo.ucAutoSoundingCtrl =
+			bf->rTxBfPfmuInfo.ucAutoSoundingCtrl;
+		tag->rTxBfPfmuInfo.uciBfTimeOut =
+			bf->rTxBfPfmuInfo.uciBfTimeOut;
+		tag->rTxBfPfmuInfo.uciBfDBW = bf->rTxBfPfmuInfo.uciBfDBW;
+		tag->rTxBfPfmuInfo.uciBfNcol = bf->rTxBfPfmuInfo.uciBfNcol;
+		tag->rTxBfPfmuInfo.uciBfNrow = bf->rTxBfPfmuInfo.uciBfNrow;
+		tag->rTxBfPfmuInfo.nr_bw160 = bf->rTxBfPfmuInfo.u1NrBw160;
+		tag->rTxBfPfmuInfo.nc_bw160 = bf->rTxBfPfmuInfo.u1NcBw160;
+		tag->rTxBfPfmuInfo.ru_start_idx =
+			bf->rTxBfPfmuInfo.u1RuStartIdx;
+		tag->rTxBfPfmuInfo.ru_end_idx = bf->rTxBfPfmuInfo.u1RuEndIdx;
+		tag->rTxBfPfmuInfo.trigger_su = bf->rTxBfPfmuInfo.fgTriggerSu;
+		tag->rTxBfPfmuInfo.trigger_mu = bf->rTxBfPfmuInfo.fgTriggerMu;
+		tag->rTxBfPfmuInfo.ng16_su = bf->rTxBfPfmuInfo.fgNg16Su;
+		tag->rTxBfPfmuInfo.ng16_mu = bf->rTxBfPfmuInfo.fgNg16Mu;
+		tag->rTxBfPfmuInfo.codebook42_su =
+			bf->rTxBfPfmuInfo.fgCodebook42Su;
+		tag->rTxBfPfmuInfo.codebook75_mu =
+			bf->rTxBfPfmuInfo.fgCodebook75Mu;
+		tag->rTxBfPfmuInfo.he_ltf = bf->rTxBfPfmuInfo.u1HeLtf;
+
+	}
+		break;
+	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
