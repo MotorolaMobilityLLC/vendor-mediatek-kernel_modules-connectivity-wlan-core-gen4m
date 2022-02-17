@@ -535,6 +535,32 @@ VOID p2pDevFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsg
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
+VOID p2pDevFsmRunEventScanAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo = (P_P2P_DEV_FSM_INFO_T) NULL;
+
+	do {
+		ASSERT_BREAK(prAdapter != NULL);
+
+		DBGLOG(P2P, TRACE, "p2pDevFsmRunEventScanAbort\n");
+
+		prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+		if (prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_SCAN) {
+			P_P2P_SCAN_REQ_INFO_T prScanReqInfo = &(prP2pDevFsmInfo->rScanReqInfo);
+
+			prScanReqInfo->fgIsAbort = TRUE;
+
+			p2pDevFsmStateTransition(prAdapter, prP2pDevFsmInfo, P2P_DEV_STATE_IDLE);
+		}
+
+	} while (FALSE);
+
+	if (prMsgHdr)
+		cnmMemFree(prAdapter, prMsgHdr);
+
+}				/* p2pDevFsmRunEventScanAbort */
+
 VOID
 p2pDevFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo)
 {
