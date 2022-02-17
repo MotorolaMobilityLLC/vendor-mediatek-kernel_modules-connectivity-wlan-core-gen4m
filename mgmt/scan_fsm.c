@@ -256,9 +256,6 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	kalMemZero(prCmdScanReq, sizeof(struct CMD_SCAN_REQ_V2));
 	/* Modify channelList number from 32 to 54 */
 	COPY_MAC_ADDR(prCmdScanReq->aucBSSID, prScanParam->aucBSSID);
-	if (!EQUAL_MAC_ADDR(prCmdScanReq->aucBSSID, "\xff\xff\xff\xff\xff\xff"))
-		DBGLOG(SCN, INFO, "Include BSSID "MACSTR" in probe request\n",
-			MAC2STR(prCmdScanReq->aucBSSID));
 
 	prCmdScanReq->ucSeqNum = prScanParam->ucSeqNum;
 	prCmdScanReq->ucBssIndex = prScanParam->ucBssIndex;
@@ -384,8 +381,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-	log_dbg(SCN, INFO, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,Func=0x%X,Mac="
-		MACSTR "\n",
+	log_dbg(SCN, TRACE, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,Func=0x%X,Mac="
+		MACSTR ",BSSID:"MACSTR"\n",
 		prCmdScanReq->ucScanType,
 		prCmdScanReq->ucBssIndex,
 		prCmdScanReq->ucSSIDType,
@@ -398,7 +395,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->u2ChannelDwellTime,
 		prCmdScanReq->u2ChannelMinDwellTime,
 		prCmdScanReq->ucScnFuncMask,
-		MAC2STR(prCmdScanReq->aucRandomMac));
+		MAC2STR(prCmdScanReq->aucRandomMac),
+		MAC2STR(prCmdScanReq->aucBSSID));
 
 	scanLogCacheFlushAll(prAdapter, &(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F);
