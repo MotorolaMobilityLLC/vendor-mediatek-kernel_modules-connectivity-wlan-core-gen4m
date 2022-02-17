@@ -163,6 +163,44 @@ VOID mt6632CapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
+UINT_32 mt6632GetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen)
+{
+	P_WIFI_VER_INFO_T prVerInfo = &prAdapter->rVerInfo;
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	struct TAILER_FORMAT_T_2 *prTailer;
+#else
+	struct TAILER_FORMAT_T *prTailer;
+#endif
+	UINT_32 u4Offset = 0;
+	UINT_8 aucBuf[32];
+
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	prTailer = &prVerInfo->rN9Compressedtailer;
+#else
+	prTailer = &prVerInfo->rN9tailer[0];
+#endif
+	kalMemZero(aucBuf, 32);
+	kalMemCopy(aucBuf, prTailer->ram_version, 10);
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+		"N9 tailer version %s (%s) info %u:E%u\n",
+		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
+		prTailer->eco_code + 1);
+
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	prTailer = &prVerInfo->rCR4Compressedtailer;
+#else
+	prTailer = &prVerInfo->rCR4tailer[0];
+#endif
+	kalMemZero(aucBuf, 32);
+	kalMemCopy(aucBuf, prTailer->ram_version, 10);
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+		"CR4 tailer version %s (%s) info %u:E%u\n",
+		aucBuf, prTailer->ram_built_date, prTailer->chip_info,
+		prTailer->eco_code + 1);
+
+	return u4Offset;
+}
+
 #if defined(_HIF_PCIE)
 
 VOID mt6632PdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable)
@@ -246,6 +284,7 @@ BUS_INFO mt6632_bus_info = {
 	.lowPowerOwnRead = mt6632LowPowerOwnRead,
 	.lowPowerOwnSet = mt6632LowPowerOwnSet,
 	.lowPowerOwnClear = mt6632LowPowerOwnClear,
+	.getMailboxStatus = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -264,10 +303,11 @@ BUS_INFO mt6632_bus_info = {
 };
 
 struct FWDL_OPS_T mt6632_fw_dl_ops = {
-	.tailer_format = HARVARD_TAILER_FORMAT,
 	.constructFirmwarePrio = NULL,
+	.downloadPatch = NULL,
 	.downloadFirmware = wlanHarvardFormatDownload,
 	.getFwInfo = wlanGetHarvardFwInfo,
+	.getFwDlInfo = mt6632GetFwDlInfo,
 };
 
 struct TX_DESC_OPS_T mt6632TxDescOps = {
