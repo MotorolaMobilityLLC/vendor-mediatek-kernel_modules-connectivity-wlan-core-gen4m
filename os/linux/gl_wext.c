@@ -444,12 +444,16 @@ static const iw_handler mtk_std_handler[] = {
 
 const struct iw_handler_def wext_handler_def = {
 	.num_standard = (__u16) sizeof(mtk_std_handler) / sizeof(iw_handler),
+#ifdef CONFIG_WEXT_PRIV
 	.num_private = (__u16) sizeof(rIwPrivHandler) / sizeof(iw_handler),
 	.num_private_args = (__u16) sizeof(rIwPrivTable) /
 						sizeof(struct iw_priv_args),
+#endif
 	.standard = (iw_handler *) mtk_std_handler,
+#ifdef CONFIG_WEXT_PRIV
 	.private = rIwPrivHandler,
 	.private_args = rIwPrivTable,
+#endif
 	.get_wireless_stats = wext_get_wireless_stats,
 };
 
