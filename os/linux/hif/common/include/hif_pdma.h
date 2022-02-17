@@ -162,7 +162,7 @@
 
 #define HIF_TX_INIT_CMD_PORT				TX_RING_FWDL_IDX_4
 
-#if defined(SOC2_1X1) || defined(SOC2_2X2)
+#if defined(SOC2_1X1) || defined(SOC2_2X2) || (CFG_SUPPORT_CONNAC3X == 1)
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 3)
 #else
 #define HIF_TX_MSDU_TOKEN_NUM				(TX_RING_SIZE * 2)
