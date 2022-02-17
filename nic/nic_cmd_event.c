@@ -4299,6 +4299,21 @@ void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_REPORT_U_EVENT *prEventData;
+
+	prEventData = (struct EVENT_REPORT_U_EVENT *) (prEvent->aucBuffer);
+
+	if (prEventData != NULL) {
+		DBGLOG(NIC, TRACE, "UEvent: %s\n",
+		prEventData->aucData);
+		kalSendUevent(prEventData->aucData);
+	}
+}
+
+
 #if CFG_SUPPORT_REPLAY_DETECTION
 void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
