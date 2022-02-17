@@ -1987,6 +1987,7 @@ uint32_t nicUniCmdSetBssRlmImpl(struct ADAPTER *ad,
 	rlm_tag->ucRxStream = cmd->ucRxNss;
 	rlm_tag->ucHtOpInfo1 = cmd->ucHtOpInfo1;
 	rlm_tag->ucSCO = cmd->ucRfSco;
+	rlm_tag->ucRfBand = cmd->ucRfBand;
 	rlm_tag->ucBandwidth = BW_20;
 	switch (cmd->ucVhtChannelWidth) {
 	case VHT_OP_CHANNEL_WIDTH_320:
@@ -2846,19 +2847,16 @@ uint32_t nicUniCmdStaRecTagHeBasic(struct ADAPTER *ad,
 uint32_t nicUniCmdStaRecTagHe6gCap(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
-#if 0
 	struct UNI_CMD_STAREC_HE_6G_CAP *tag =
 		(struct UNI_CMD_STAREC_HE_6G_CAP *)buf;
 
-	// TODO: uni cmd
+	if (cmd->u2He6gBandCapInfo == 0)
+		return 0;
 
 	tag->u2Tag = UNI_CMD_STAREC_TAG_HE_6G_CAP;
 	tag->u2Length = sizeof(*tag);
-	tag->u2He6gBandCapInfo = 0;
+	tag->u2He6gBandCapInfo = cmd->u2He6gBandCapInfo;
 	return tag->u2Length;
-#else
-	return 0;
-#endif
 }
 #endif
 
@@ -4161,6 +4159,13 @@ void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
 	prChipInfo = prAdapter->chip_info;
 	prEvent = (struct WIFI_UNI_EVENT *)
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
+
+	if (prEvent->ucEID != UNI_EVENT_ID_FW_LOG_2_HOST) {
+		DBGLOG(NIC, TRACE,
+			"RX UNI EVENT: ID[0x%02X] SEQ[%u] LEN[%u] OPT[0x%x]\n",
+			prEvent->ucEID, prEvent->ucSeqNum,
+			prEvent->u2PacketLength, prEvent->ucOption);
+	}
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 	wlanWakeLogEvent(prEvent->ucEID);
