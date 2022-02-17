@@ -189,6 +189,11 @@ p2pRoleStateAbort_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
 					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			}
+		} else if (eNextState == P2P_ROLE_STATE_SCAN) {
+			/* Abort channel anyway */
+			p2pFuncReleaseCh(prAdapter,
+				prP2pRoleFsmInfo->ucBssIndex,
+				&(prP2pRoleFsmInfo->rChnlReqInfo));
 		}
 	} while (FALSE);
 
