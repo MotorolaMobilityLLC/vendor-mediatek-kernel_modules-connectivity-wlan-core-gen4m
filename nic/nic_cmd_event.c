@@ -2110,6 +2110,8 @@ VOID nicCmdEventQueryStaStatistics(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prC
 				sizeof(prEvent->rTxVector));
 			kalMemCopy(&prStaStatistics->rMibInfo, &prEvent->rMibInfo,
 				sizeof(prEvent->rMibInfo));
+			prStaStatistics->fgIsForceTxStream = prEvent->fgIsForceTxStream;
+			prStaStatistics->fgIsForceSeOff = prEvent->fgIsForceSeOff;
 
 			prStaRec = cnmGetStaRecByIndex(prAdapter, prEvent->ucStaRecIdx);
 

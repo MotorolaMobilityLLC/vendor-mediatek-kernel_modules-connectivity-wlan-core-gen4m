@@ -3847,18 +3847,34 @@ INT_32 priv_driver_tx_rate_info(IN char *pcCommand, IN int i4TotalLen, BOOLEAN f
 				stbc ? ", STBC, " : ", ",
 				priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0 ? "BCC" : "LDPC");
 		} else if (prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]] == 0xFF) {
+#if (CFG_SUPPORT_RA_GEN == 0)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s   (--)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
 				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
+#else
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+				stbc ? ", STBC, " : ", ",
+				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
+				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
+#endif
 		} else {
+#if (CFG_SUPPORT_RA_GEN == 0)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 				"%s%s%s   (%d)\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
 				stbc ? ", STBC, " : ", ",
 				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
 				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC",
 				prQueryStaStatistics->aucArRatePer[prQueryStaStatistics->aucRateEntryIndex[i]]);
+#else
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%s%s%s\n", txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+				stbc ? ", STBC, " : ", ",
+				((priv_driver_get_ldpc_info(&prHwWlanInfo->rWtblTxConfig) == 0) ||
+				(txmode == TX_RATE_MODE_CCK) || (txmode == TX_RATE_MODE_OFDM)) ? "BCC" : "LDPC");
+#endif
 		}
 
 		if (!fgDumpAll)
@@ -4009,7 +4025,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 	PARAM_RSSI rRssi;
 	UINT_16 u2LinkSpeed;
 	UINT_32 u4Per, u4RxPer[ENUM_BAND_NUM], u4AmpduPer[ENUM_BAND_NUM], u4InstantPer;
-	UINT_8 ucDbdcIdx, ucStaIdx;
+	UINT_8 ucDbdcIdx;
 	UINT_8 ucSkipAr;
 	static UINT_32 u4TotalTxCnt, u4TotalFailCnt;
 	static UINT_32 u4Rate1TxCnt, u4Rate1FailCnt;
@@ -4020,7 +4036,9 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 	static UINT_32 au4AmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
 	P_RX_CTRL_T prRxCtrl;
 	UINT_32 u4InstantRxPer[ENUM_BAND_NUM];
-
+#if (CFG_SUPPORT_RA_GEN == 0)
+	UINT_8 ucStaIdx;
+#endif
 	ucSkipAr = prQueryStaStatistics->ucSkipAr;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -4041,12 +4059,18 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 					(0) : (1000 * (prHwWlanInfo->rWtblTxCounter.u2Rate1FailCnt) /
 					(prHwWlanInfo->rWtblTxCounter.u2Rate1TxCnt));
 	} else {
+#if (CFG_SUPPORT_RA_GEN == 0)
 		u4Per = (prQueryStaStatistics->u4Rate1TxCnt == 0) ?
 					(0) : (1000 * (prQueryStaStatistics->u4Rate1FailCnt) /
 					(prQueryStaStatistics->u4Rate1TxCnt));
 
 		u4InstantPer = (prQueryStaStatistics->ucPer == 0) ?
 					(0) : (prQueryStaStatistics->ucPer);
+#else
+		u4Per = 0;
+		u4InstantPer =  (prQueryStaStatistics->ucPer == 0) ?
+					(0) : (prQueryStaStatistics->ucPer);
+#endif
 	}
 
 	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
@@ -4088,7 +4112,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Tx Fail Cnt", " = ", ucSkipAr ?
 		(u4TotalFailCnt):(prQueryStaStatistics->u4TransmitFailCount));
-
+#if (CFG_SUPPORT_RA_GEN == 0)
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"%-20s%s%d\n", "Rate1 Tx Cnt", " = ", ucSkipAr ?
 		(u4Rate1TxCnt):(prQueryStaStatistics->u4Rate1TxCnt));
@@ -4101,7 +4125,19 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d%%\n", "Rate1 Fail Cnt", " = ",
 			prQueryStaStatistics->u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer);
+#else
+	if (ucSkipAr) {
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"%-20s%s%d\n", "Rate1 Tx Cnt", " = ", u4Rate1TxCnt);
 
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n", "Rate1 Fail Cnt", " = ",
+			u4Rate1FailCnt, u4Per/10, u4Per%10, u4InstantPer/10, u4InstantPer%10);
+	} else {
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d%%\n", "Rate1 instant PER", " = ", u4InstantPer);
+	}
+#endif
 	if ((ucSkipAr) && (fgResetCnt)) {
 		u4TotalTxCnt = 0;
 		u4TotalFailCnt = 0;
@@ -4192,7 +4228,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				"%-20s%s%ld.%1ld dBm\n", "MAC TX Power", " = ",
 				TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) >> 1,
 				5 * (TX_VECTOR_GET_TX_PWR(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) % 2));
-
+#if 0
 		if (prQueryStaStatistics->rTxVector[ucDbdcIdx].u4TxVector2 == 0xFFFFFFFF)
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "Beamform Enable", " = ", "N/A");
@@ -4216,6 +4252,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				"%-20s%s%d\n", "Sounding Pkt", " = ",
 				TX_VECTOR_GET_NO_SOUNDING(&prQueryStaStatistics->rTxVector[ucDbdcIdx]) ? FALSE : TRUE);
 		}
+#endif
 	}
 
     /* RX Reorder */
@@ -4238,7 +4275,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%s\n", "RateTable", " = ", prQueryStaStatistics->ucArTableIdx < 6 ?
 			RATE_TBLE[prQueryStaStatistics->ucArTableIdx] : RATE_TBLE[6]);
-
+#if (CFG_SUPPORT_RA_GEN == 0)
 		if (wlanGetStaIdxByWlanIdx(prAdapter, (UINT_8)(prHwWlanInfo->u4Index), &ucStaIdx) ==
 			WLAN_STATUS_SUCCESS){
 			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -4246,7 +4283,7 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				(prAdapter->arStaRec[ucStaIdx].u4Flags & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ?
 				1 : 0);
 		}
-
+#endif
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"%-20s%s%d%%\n", "Rate1 instantPer", " = ", u4InstantPer);
 
@@ -4334,6 +4371,17 @@ static INT_32 priv_driver_dump_stat_info(P_ADAPTER_T prAdapter, IN char *pcComma
 				prQueryStaStatistics->ucRateEntryIdx);
 #endif
 		}
+#if (CFG_SUPPORT_RA_GEN == 0)
+		if (prQueryStaStatistics->fgIsForceTxStream == 0)
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "Force Tx Stream", " = ", "N/A");
+		else
+			i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "Force Tx Stream", " = ", prQueryStaStatistics->fgIsForceTxStream);
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%-20s%s%d\n", "Force SE off", " = ", prQueryStaStatistics->fgIsForceSeOff);
+#endif
 	}
 
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
