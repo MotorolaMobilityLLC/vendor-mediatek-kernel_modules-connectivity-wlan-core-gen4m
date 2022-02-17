@@ -1154,7 +1154,7 @@ void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
 {
 #define SORT(x) \
 	case MAC_FRAME_##x: sortIE(prAdapter, prMsduInfo, x##_IE_ORDER, #x); \
-	break;
+	break
 
 	struct WLAN_MAC_MGMT_HEADER *prMgmtFrame;
 	uint16_t u2TxFrameCtrl;

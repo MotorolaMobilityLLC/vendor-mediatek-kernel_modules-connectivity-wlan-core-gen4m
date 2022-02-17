@@ -1602,16 +1602,17 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet)
 {
 	uint8_t i;
-	struct BSS_INFO *prAisBssInfo;
-	struct BSS_DESC *prBssDesc;
+	struct BSS_INFO *prMainBss;
 
-	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
-	if (prAisBssInfo->fgIsWmmInited == FALSE)
-		prAisBssInfo->ucWmmQueSet = cnmWmmIndexDecision(prAdapter, prAisBssInfo);
+	/* main bss must assign wmm first */
+	prMainBss = aisGetMainLinkBssInfo(prAisFsmInfo);
+	cnmWmmIndexDecision(prAdapter, prMainBss);
 
 	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
-		prAisBssInfo = prAisFsmInfo->aprLinkInfo[i].prBssInfo;
-		prBssDesc = prBssDescSet->aprBssDesc[i];
+		struct BSS_INFO *prAisBssInfo =
+			prAisFsmInfo->aprLinkInfo[i].prBssInfo;
+		struct BSS_DESC *prBssDesc =
+			prBssDescSet->aprBssDesc[i];
 
 		prAisBssInfo->u4RsnSelectedGroupCipher =
 			prBssDesc->u4RsnSelectedGroupCipher;
@@ -1620,10 +1621,15 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
 		prAisBssInfo->eBand = prBssDesc->eBand;
-		if (prAisBssInfo->fgIsWmmInited == FALSE) {
-			prAisBssInfo->fgIsWmmInited = TRUE;
-			prAisBssInfo->ucWmmQueSet = aisGetMainLinkBssInfo(prAisFsmInfo)->ucWmmQueSet;
-		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+		/* connac3 MLO all bss use the same wmm index as main bss use */
+		prAisBssInfo->fgIsWmmInited = TRUE;
+		prAisBssInfo->ucWmmQueSet = prMainBss->ucWmmQueSet;
+#else
+		/* connac2 always assign different wmm index to bssinfo */
+		cnmWmmIndexDecision(prAdapter, prAisBssInfo);
+#endif
 
 		prAisBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
