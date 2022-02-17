@@ -131,7 +131,8 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 	prStats = &prNetDevPrivate->stats;
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 
-	if (!prGlueInfo || !prGlueInfo->prAdapter ||
+	if (!prGlueInfo || (prGlueInfo->u4ReadyFlag == 0) ||
+			!prGlueInfo->prAdapter ||
 			!prGlueInfo->prAdapter->fgMddpActivated)
 		return 0;
 
