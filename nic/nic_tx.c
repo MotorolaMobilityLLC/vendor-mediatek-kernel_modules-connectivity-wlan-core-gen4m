@@ -6056,11 +6056,6 @@ void nicTxResourceUpdate_v2(IN struct ADAPTER *prAdapter)
 		/ (prTxRes->u4DataResourceUnit));
 	u2PleAvail = u2PseAvail / u2PsePerPtk;
 
-#if (CFG_SUPPORT_CMD_OVER_WFDMA == 0)
-	/* Remain pages to TC4 */
-	prWifiVar->au4TcPageCount[TC4_INDEX] += u2PseAvail % u2PsePerPtk;
-#endif
-
 	/* Resource balance to all PLE-TC */
 	for (idx = TC0_INDEX; idx < ucMaxTcNum; idx++) {
 		if (!nicTxResourceIsPleCtrlNeeded(prAdapter, idx))

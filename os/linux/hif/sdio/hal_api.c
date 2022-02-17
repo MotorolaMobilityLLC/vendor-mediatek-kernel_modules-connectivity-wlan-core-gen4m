@@ -440,6 +440,15 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	glWakeupSdio(prAdapter->prGlueInfo);
 
 	while (1) {
+		u4WriteTickTemp = kalGetTimeTick();
+		if ((i == 0) || TIME_AFTER(u4WriteTickTemp,
+			(u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
+			/* Driver get LP ownership per 200 ms, to avoid
+			*  iteration time not accurate
+			*/
+			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+			u4WriteTick = u4WriteTickTemp;
+		}
 		HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		if (TIME_BEFORE(kalGetTimeTick(), u4CurrTick)) { /* To prevent timer wraparound */
@@ -499,14 +508,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 			fgStatus = FALSE;
 			break;
 		}
-
-		u4WriteTickTemp = kalGetTimeTick();
-		if ((i == 0) || TIME_AFTER(u4WriteTickTemp, (u4WriteTick + LP_OWN_REQ_CLR_INTERVAL_MS))) {
-			/* Driver get LP ownership per 200 ms, to avoid iteration time not accurate */
-			HAL_LP_OWN_CLR(prAdapter, &fgResult);
-			u4WriteTick = u4WriteTickTemp;
-		}
-
 		/* Delay for LP engine to complete its operation. */
 		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US, LP_OWN_BACK_LOOP_DELAY_MAX_US);
 		i++;
@@ -624,6 +625,15 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
+#if CFG_CE_ASSERT_DUMP
+	/* During core dump, can't issue fw own, will result
+	 * driver own fail (MCU can't process it).
+	 */
+	if (prAdapter->fgN9AssertDumpOngoing == TRUE) {
+		goto unlock;
+	}
+#endif
+
 	if (prAdapter->u4PwrCtrlBlockCnt != 0) {
 		DBGLOG(INIT, TRACE, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
 			prAdapter->u4PwrCtrlBlockCnt);
@@ -653,6 +663,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 			/* if set firmware own not successful (possibly pending interrupts), */
 			/* indicate an own clear event */
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+			DBGLOG(INIT, WARN, "FW OWN fail due to pending INT\n");
 		} else {
 			prAdapter->fgIsFwOwn = TRUE;
 
@@ -1874,7 +1885,7 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN u
 
 	for (u4Idx = 0; u4Idx < CFG_SDIO_INT_LOG_CNT; u4Idx++) {
 		struct SDIO_INT_LOG_T *prIntLog = &prHifInfo->arIntLog[u4Idx];
-		struct ENHANCE_MODE_DATA_STRUCT *prIntSts = (struct ENHANCE_MODE_DATA_STRUCT *)&prIntLog->aucIntSts[0];
+		struct ENHANCE_MODE_DATA_STRUCT *prIntSts = &prIntLog->rIntSts;
 		uint8_t ucPktIdx;
 
 		LOGBUF(pucBuf, u4Max, u4Len, "INT IDX[%u] STS[0x%08x] FG[0x%08x] Rx Pkt[%u] Sts0/1[%u:%u]\n",
@@ -2267,7 +2278,7 @@ void halDumpIntLog(IN struct ADAPTER *prAdapter)
 
 	for (u4Idx = 0; u4Idx < CFG_SDIO_INT_LOG_CNT; u4Idx++) {
 		prIntLog = &prHifInfo->arIntLog[u4Idx];
-		prIntSts = (struct ENHANCE_MODE_DATA_STRUCT *)&prIntLog->aucIntSts[0];
+		prIntSts = &prIntLog->rIntSts;
 
 		DBGLOG(INTR, ERROR, "INT IDX[%u] STS[0x%08x] FG[0x%08x] Rx Pkt[%u] Sts0/1[%u:%u]\n",
 			prIntLog->u4Idx, prIntSts->u4WHISR, prIntLog->u4Flag, prIntLog->ucRxPktCnt,
@@ -2302,7 +2313,8 @@ void halRecIntLog(IN struct ADAPTER *prAdapter, IN struct ENHANCE_MODE_DATA_STRU
 
 	prIntLog->u4Idx = prHifInfo->u4IntLogIdx;
 	prHifInfo->ucIntLogEntry = ucLogEntry;
-	kalMemCopy(&prIntLog->aucIntSts[0], prSDIOCtrl, sizeof(struct ENHANCE_MODE_DATA_STRUCT));
+	kalMemCopy(&prIntLog->rIntSts, prSDIOCtrl,
+		sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 }
 
 struct SDIO_INT_LOG_T *halGetIntLog(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx)
@@ -2883,6 +2895,8 @@ void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
 	}
 
 	HAL_READ_INTR_STATUS(prAdapter, sizeof(uint32_t), (uint8_t *)pu4WHISR);
+
+	/* TXQ count CR access type is read clear. */
 	if (HAL_IS_TX_DONE_INTR(*pu4WHISR))
 		HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
 
@@ -3057,7 +3071,10 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter, IN uint16_t *au2Tx
 		u2ReturnCnt = au2TxDoneCnt[i];
 
 		ucTc = HIF_TXC_IDX_2_TC_IDX_PLE(i);
-		nicTxReleaseResource_PLE(prAdapter, ucTc, u2ReturnCnt, FALSE);
+
+		if (ucTc < TC_NUM)
+			nicTxReleaseResource_PLE(prAdapter,
+			  ucTc, u2ReturnCnt, FALSE);
 
 		if (u2ReturnCnt)
 			DBGLOG(NIC, TRACE, "TC%d TXQ%d -%d\n",
