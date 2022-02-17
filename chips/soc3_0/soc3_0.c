@@ -2055,6 +2055,17 @@ int wf_pwr_on_consys_mcu(void)
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
 
+	/*enable BPLLL 0x18003008[21] = 1'b1*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value |= 0x00200000;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+	udelay(30);
+	/*enable WPLL 0x18003008[20] = 1b'1*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value |= 0x00100000;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+	udelay(50);
+
 	/* Turn on wfsys_top_on
 	 * 0x18000000[31:16] = 0x57460000,
 	 * 0x18000000[7] = 1'b1
@@ -2105,7 +2116,7 @@ int wf_pwr_on_consys_mcu(void)
 		return -1;
 	}
 	/* Turn off "conn_infra to wfsys"/ wfsys to conn_infra" bus
-	 * sleep protect 0x218001620[0] = 1'b0
+	 * sleep protect 0x18001620[0] = 1'b0
 	 */
 	wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
 	value &= 0xFFFFFFFE;
@@ -2245,6 +2256,16 @@ int wf_pwr_on_consys_mcu(void)
 
 	conninfra_config_setup();
 
+	/*disable WPLL 0x18003008[20] = 0*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value &= 0xFFEFFFFF;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+
+	/*disable BPLL 0x18003008[21] = 0*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value &= 0xFFDFFFFF;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
@@ -2258,6 +2279,7 @@ int wf_pwr_off_consys_mcu(void)
 	int check;
 	int value;
 	int ret = 0;
+	int conninfra_hang_ret = 0;
 	int polling_count;
 
 	DBGLOG(INIT, INFO, "wmmcu power-off start.\n");
@@ -2288,6 +2310,20 @@ int wf_pwr_off_consys_mcu(void)
 	if (check != 0) {
 		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
 		return ret;
+	}
+
+	if (!conninfra_reg_readable()) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_reg_readable fail\n");
+
+		conninfra_hang_ret = conninfra_is_bus_hang();
+
+		if (conninfra_hang_ret > 0) {
+
+			DBGLOG(HAL, ERROR,
+				"conninfra_is_bus_hang, Chip reset\n");
+		}
+		return -1;
 	}
 
 	/* Check CONNSYS version ID
@@ -2385,6 +2421,15 @@ int wf_pwr_off_consys_mcu(void)
 		soc3_0_DumpWfsysInfo();
 		soc3_0_DumpWfsysdebugflag();
 	}
+	/*disable WPLL 0x18003008[20] = 0*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value &= 0xFFEFFFFF;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
+
+	/*disable BPLL 0x18003008[21] = 0*/
+	wf_ioremap_read(CONN_AFE_CTL_RG_DIG_EN_ADDR, &value);
+	value &= 0xFFDFFFFF;
+	wf_ioremap_write(CONN_AFE_CTL_RG_DIG_EN_ADDR, value);
 
 	/* Turn off wfsys_top_on
 	 * 0x18000000[31:16] = 0x57460000,
@@ -2468,12 +2513,6 @@ int hifWmmcuPwrOn(void)
 	if (ret != 0)
 		return ret;
 
-#if 0
-	/* Power on download ROM patch*/
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
-#endif
-#endif
 	/* set FW own after power on consys mcu to
 	 * keep Driver/FW/HW state sync
 	 */
