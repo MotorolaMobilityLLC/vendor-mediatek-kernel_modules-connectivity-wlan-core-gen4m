@@ -61,7 +61,6 @@
 
 #include "nic_cmd_event.h"
 #include "wlan_typedef.h"
-#include "nic_tx.h"
 
 enum ENUM_USB_END_POINT {
 	USB_DATA_BULK_OUT_EP4 = 4,
