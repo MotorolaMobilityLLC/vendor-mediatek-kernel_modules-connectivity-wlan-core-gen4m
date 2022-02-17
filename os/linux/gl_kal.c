@@ -2143,12 +2143,10 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 							prGlueInfo->prAdapter);
 				GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 
-				DBGLOG(TX, INFO,
-				       "DHCP PKT[0x%p] XID[0x%08x] OPT[%u] TYPE[%u], SeqNo: %d\n",
-				       prPacket, u4Xid, prBootp->aucOptions[4],
-				       prBootp->aucOptions[6],
-				       ucSeqNo);
-
+				DBGLOG_LIMITED(TX, INFO,
+					"DHCP PKT[0x%p] XID[0x%08x] OPT[%u] TYPE[%u], SeqNo: %d\n",
+					prPacket, u4Xid, prBootp->aucOptions[4],
+					prBootp->aucOptions[6], ucSeqNo);
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
 			}
 		} else if (u2DstPort == UDP_PORT_DNS) {
@@ -2159,9 +2157,9 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 
 			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-			DBGLOG(TX, INFO,
-			       "<TX> DNS: [0x%p] IPID[0x%02x] TransID[0x%04x] SeqNo[%d]\n",
-			       prPacket, u2IpId, u2TransId, ucSeqNo);
+			DBGLOG_LIMITED(TX, INFO,
+				"<TX> DNS: [0x%p] IPID[0x%02x] TransID[0x%04x] SeqNo[%d]\n",
+				prPacket, u2IpId, u2TransId, ucSeqNo);
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DNS);
 		}
 	} else if (ucIpProto == IP_PRO_ICMP) {
@@ -2180,10 +2178,9 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 
 		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-		DBGLOG(TX, INFO,
+		DBGLOG_LIMITED(TX, INFO,
 			"<TX> ICMP: IPID[0x%04x] Type %d, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
-			u2IpId, ucIcmpType, u2IcmpId,
-			u2IcmpSeq, ucSeqNo);
+			u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);
 	}
 	return TRUE;
