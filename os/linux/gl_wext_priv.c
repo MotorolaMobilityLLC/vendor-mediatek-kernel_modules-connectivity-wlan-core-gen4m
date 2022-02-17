@@ -13057,6 +13057,10 @@ static int priv_driver_efuse_ops(IN struct net_device *prNetDev,
 
 efuse_op_invalid:
 
+#if CFG_SUPPORT_TPENHANCE_MODE
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
 	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
 				"\nHelp menu\n");
 	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,

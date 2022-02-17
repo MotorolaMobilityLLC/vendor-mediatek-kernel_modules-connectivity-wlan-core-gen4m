@@ -573,16 +573,6 @@ enum gfp_t {
 /* needed by include/nic/adapter.h
  * for DIRECT_TX implementation in os folder
  */
-struct timer_list {
-	/* TODO: from the comment in linux/timer.h. Its difficult to implement
-	 * All fields that change during normal runtime grouped to the
-	 * same cacheline
-	 */
-};
-
-/* needed by include/nic/adapter.h
- * for DIRECT_TX implementation in os folder
- */
 struct sk_buff_head {
 	/* These two members must be first. */
 	/* struct sk_buff	*next; */

@@ -2359,6 +2359,14 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
+#if CFG_SUPPORT_TPENHANCE_MODE
+	if (!wlanTpeProcess(prGlueInfo,
+			prSkb,
+			prDev)) {
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
 		GLUE_SPIN_LOCK_DECLARATION();
 
@@ -2731,21 +2739,26 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);
 	}
-#if CFG_SUPPORT_WIFI_SYSDVT
-#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
 	else if (ucIpProto == IP_PRO_TCP) {
 		uint8_t *pucTcpHdr;
 
 		pucTcpHdr = &pucIpHdr[IPV4_HDR_LEN];
+#if CFG_SUPPORT_WIFI_SYSDVT
+#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
 		/* set TCP CHECKSUM to 0xff for verify CSO function */
 		if (prAdapter->u4CSUMFlags & CSUM_OFFLOAD_EN_TX_TCP
 			&& CSO_TX_TCP_ENABLED(prAdapter)) {
 			pucTcpHdr[TCP_HDR_TCP_CSUM_OFFSET] = 0xff;
 			pucTcpHdr[TCP_HDR_TCP_CSUM_OFFSET+1] = 0xff;
 		}
-	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
+
+#if CFG_SUPPORT_TPENHANCE_MODE
+		if (pucTcpHdr[TCP_HDR_FLAG_OFFSET] & TCP_HDR_FLAG_ACK_BIT)
+			GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_TCP_ACK);
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+	}
 
 	return TRUE;
 }
