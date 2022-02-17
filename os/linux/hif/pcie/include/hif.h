@@ -398,6 +398,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie);
 
 void glClearHifInfo(struct GLUE_INFO *prGlueInfo);
 
+void glResetHifInfo(struct GLUE_INFO *prGlueInfo);
+
 u_int8_t glBusInit(void *pvData);
 
 void glBusRelease(void *pData);

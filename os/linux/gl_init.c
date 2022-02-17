@@ -5599,6 +5599,8 @@ static int32_t wlanOnAtReset(void)
 		prGlueInfo->i4TxPendingCmdNum = 0;
 		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
 
+		glResetHifInfo(prGlueInfo);
+
 		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "Set IRQ error\n");

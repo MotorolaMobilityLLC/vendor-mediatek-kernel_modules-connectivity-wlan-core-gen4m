@@ -1133,6 +1133,20 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief This function reset necessary hif related info when chip reset.
+*
+* \param[in] prGlueInfo Pointer to glue info structure
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+void glResetHifInfo(struct GLUE_INFO *prGlueInfo)
+{
+	ASSERT(prGlueInfo);
+} /* end of glResetHifInfo() */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Initialize bus operation and hif related information, request
  *        resources.
  *
