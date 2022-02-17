@@ -189,6 +189,15 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
 		prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
 	}
+
+#if (CFG_DUMP_TXD == 1)
+	DBGLOG(HAL, INFO, "Dump DATA TXD: \n");
+	dumpMemory8((uint8_t *)pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
+#endif
+#if (CFG_DUMP_TXP == 1)
+	DBGLOG(HAL, INFO, "Dump DATA TXP: \n");
+	dumpMemory8((uint8_t *)prHwTxDescAppend, sizeof(prHwTxDescAppend->CONNAC_APPEND));
+#endif
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};
