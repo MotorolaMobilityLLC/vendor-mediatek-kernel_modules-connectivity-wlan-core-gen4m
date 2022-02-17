@@ -83,6 +83,12 @@
 	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
 #define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         0
 
+/*
+ * 0 is MT7915 E1 RX padding rule
+ * 1 is 8 bytes RX padding rule for MT7915e2 and chips after MT7915e2
+ */
+#define CONNAC2X_WFDMA_RX_CSO_OPTION BIT(8)
+
 #define MT7915_CHIP_ID                 (0x7915)
 #define MT7915_SW_SYNC0                CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define MT7915_SW_SYNC0_RDY_OFFSET \

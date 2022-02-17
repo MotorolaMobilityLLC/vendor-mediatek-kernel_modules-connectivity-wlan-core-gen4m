@@ -352,8 +352,32 @@ void mt7915CheckAsicCap(
 		 */
 		prChipInfo->group5_size =
 			sizeof(struct HW_MAC_RX_STS_HARRIER_E1_GROUP_5);
+
+		/* MT7915U E1 cannot support CS0 RX. */
+		prAdapter->u4CSUMFlags = CSUM_OFFLOAD_EN_TX_MASK;
 	}
 }
+
+#if defined(_HIF_USB)
+void mt7915Connac2xWfdmaInitForUSB(
+	struct ADAPTER *prAdapter,
+	struct mt66xx_chip_info *prChipInfo)
+{
+	uint32_t u4WfdmaCr;
+
+	/* 7915U E1 Workaround. TODO: check chip version */
+	/* Driver need to write rx ring cpu index for receiving data */
+	HAL_MCR_WR(prAdapter,
+		CONNAC2X_RX_RING_CIDX(CONNAC2X_HOST_WPDMA_0_BASE), 0x1);
+
+	/* enable RX CSO option bit for E2 RX padding, only work after E2 */
+	HAL_MCR_RD(prAdapter,
+		CONNAC2X_WFDMA_HOST_CONFIG_ADDR, &u4WfdmaCr);
+	u4WfdmaCr |= CONNAC2X_WFDMA_RX_CSO_OPTION;
+	HAL_MCR_WR(prAdapter,
+		CONNAC2X_WFDMA_HOST_CONFIG_ADDR, u4WfdmaCr);
+}
+#endif
 
 struct BUS_INFO mt7915_bus_info = {
 #if defined(_HIF_PCIE)
@@ -541,6 +565,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.asicCapInit = asicConnac2xCapInit,
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac2xWfdmaInitForUSB,
+	.asicUsbInit_ic_specific = mt7915Connac2xWfdmaInitForUSB,
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
