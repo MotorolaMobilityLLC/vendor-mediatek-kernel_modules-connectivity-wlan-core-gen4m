@@ -5544,6 +5544,7 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prCancelRemainOnChannel;
+	u_int8_t rReturn = TRUE;
 
 	ASSERT(prAdapter);
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
@@ -5572,8 +5573,11 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 		}
 
 		/* 3. clear pending request of remain_on_channel */
-		aisFsmIsRequestPending(prAdapter, AIS_REQUEST_REMAIN_ON_CHANNEL,
-				       TRUE);
+		rReturn = aisFsmIsRequestPending(prAdapter,
+				AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE);
+
+		DBGLOG(AIS, TRACE,
+			"rReturn of aisFsmIsRequestPending is %d", rReturn);
 
 		/* 4. decide which state to retreat */
 		if (prAisFsmInfo->eCurrentState ==
