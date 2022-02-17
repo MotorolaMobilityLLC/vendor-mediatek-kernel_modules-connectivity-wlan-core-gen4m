@@ -993,6 +993,11 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	if (prGlueInfo->fgIsEnableMon)
 		prNetDev = prGlueInfo->prMonDevHandler;
 #endif
+	if (prNetDev->dev_addr == NULL) {
+		DBGLOG(RX, WARN, "dev_addr == NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prNetDev->stats.rx_bytes += prSkb->len;
 	prNetDev->stats.rx_packets++;
 #else
