@@ -6389,7 +6389,7 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 
 	LINK_FOR_EACH_ENTRY(prEntry, prBlackList, rLinkEntry,
 			    struct AIS_BLACKLIST_ITEM) {
-		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry) &&
+		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry->aucBSSID) &&
 		    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
 			       prEntry->aucSSID, prEntry->ucSSIDLen))
 			return prEntry;
