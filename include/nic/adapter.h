@@ -1624,6 +1624,9 @@ struct ADAPTER {
 	/* host status EMI offset*/
 	uint32_t u4HostStatusEmiOffset;
 
+	/* Casan load type */
+	uint32_t u4CasanLoadType;
+
 #if CFG_WOW_SUPPORT
 	struct WOW_CTRL	rWowCtrl;
 	u_int8_t fgWowLinkDownPendFlag;

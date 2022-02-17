@@ -116,6 +116,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_SUPPORT_LLS
 	{TAG_CAP_LLS_DATA_EMI_OFFSET, nicCmdEventLinkStatsEmiOffset},
 #endif
+	{TAG_CAP_CASAN_LOAD_TYPE, nicCmdEventCasanLoadType},
 };
 
 /*******************************************************************************
@@ -2874,6 +2875,22 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+
+	struct CAP_CASAN_LOAD_TYPE_T *prLoadType =
+		(struct CAP_CASAN_LOAD_TYPE_T *)pucEventBuf;
+
+	prAdapter->u4CasanLoadType = prLoadType->u4CasanLoadType;
+
+	DBGLOG(INIT, INFO,
+	       "Casan load type = %x\n",
+	       prAdapter->u4CasanLoadType);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)

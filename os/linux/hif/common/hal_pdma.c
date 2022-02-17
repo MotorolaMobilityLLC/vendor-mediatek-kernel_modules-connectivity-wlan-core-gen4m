@@ -388,13 +388,21 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CHIP_DBG_OPS *prChipDbgOps;
+	uint32_t u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
+
+	if (prAdapter->u4CasanLoadType == 1)
+		u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
+
+	DBGLOG(INIT, INFO,
+		   "Driver own timeout %u ms\n",
+		   u4DrvOwnTimeoutMs);
 
 	prChipInfo = prAdapter->chip_info;
 	prChipDbgOps = prChipInfo->prDebugOps;
 
 	if ((prAdapter->u4OwnFailedCount == 0) ||
 	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
-			      MSEC_TO_SYSTIME(LP_OWN_BACK_FAILED_LOG_SKIP_MS))
+			      MSEC_TO_SYSTIME(u4DrvOwnTimeoutMs))
 		) {
 		DBGLOG(INIT, ERROR,
 		       "LP cannot be own back, Timeout[%u](%ums), BusAccessError[%u]",
@@ -409,7 +417,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		       prAdapter->u4OwnFailedCount);
 		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
-		       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
+		       u4DrvOwnTimeoutMs);
 		if (prAdapter->chip_info->dumpwfsyscpupcr)
 			prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 
