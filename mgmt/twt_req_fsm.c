@@ -689,8 +689,12 @@ twtReqFsmRunEventTxDone(
 
 	case TWT_REQ_STATE_TEARING_DOWN:
 
-		if (rTxDoneStatus == TX_RESULT_SUCCESS)
-			eNextState = TWT_REQ_STATE_IDLE;
+		/*
+		* if (rTxDoneStatus == TX_RESULT_SUCCESS)
+		* Even it is a failure TWT teardown case,
+		* the state machine goes to TWT_REQ_STATE_IDLE
+		*/
+		eNextState = TWT_REQ_STATE_IDLE;
 
 		ucTWTFlowId = twtGetTxTeardownFlowId(prMsduInfo);
 		twtReqFsmSteps(prAdapter, prStaRec, eNextState,
