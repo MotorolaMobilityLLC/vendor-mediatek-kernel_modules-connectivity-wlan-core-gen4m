@@ -1147,6 +1147,10 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	struct net_device *prP2pDev = NULL;
 	struct wiphy *prWiphy = NULL;
 	const char *prSetDevName;
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
+	struct GL_HIF_INFO *prHif = NULL;
+	struct device *prDev;
+#endif
 
 	ASSERT(prGlueInfo);
 
@@ -1227,6 +1231,14 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			free_netdev(prP2pDev);
 			return FALSE;
 		}
+
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
+		prHif = &prGlueInfo->rHifInfo;
+		glGetHifDev(prHif, &prDev);
+		if (!prDev)
+			DBGLOG(INIT, ERROR, "P2P[%d] parent dev is NULL\n", i);
+		set_wiphy_dev(prWiphy, prDev);
+#endif
 
 		i++;
 		/* prP2pInfo is alloc at glSetupP2P()->p2PAllocInfo() */

@@ -1846,12 +1846,13 @@ static void wlanDestroyAllWdev(void)
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		if (gprP2pRoleWdev[i] == NULL)
 			continue;
+#if CFG_ENABLE_UNIFY_WIPHY
 		if (gprP2pRoleWdev[i] == gprWdev) {
 			/* This is AIS/AP Interface */
 			gprP2pRoleWdev[i] = NULL;
 			continue;
 		}
-
+#endif
 		/* Do wiphy_unregister here. Take care the case that the
 		 * gprP2pRoleWdev[i] is created by the cfg80211 add iface ops,
 		 * And the base P2P dev is in the gprP2pWdev.
@@ -1865,7 +1866,6 @@ static void wlanDestroyAllWdev(void)
 #if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pRoleWdev[i]->wiphy;
 #else
-		/* Trunk doesn't set_wiphy_dev for AIS, but does that for P2P */
 		set_wiphy_dev(gprP2pRoleWdev[i]->wiphy, NULL);
 		wiphy_unregister(gprP2pRoleWdev[i]->wiphy);
 		wiphy_free(gprP2pRoleWdev[i]->wiphy);
@@ -2003,12 +2003,10 @@ static struct wireless_dev *wlanNetCreate(void *pvData,
 	glGetDev(pvData, &prDev);
 	if (!prDev)
 		DBGLOG(INIT, ERROR, "unable to get struct dev for wlan\n");
-	/* don't set prDev as parent of wiphy->dev, because we have done
-	 * device_add in driver init. if we set parent here, parent will be not
-	 * able to know this child, and may occurs a KE in device_shutdown, to
-	 * free wiphy->dev, because his parent has been freed.
+	/* Some kernel API (ex: cfg80211_get_drvinfo) will use wiphy_dev().
+	 * Without set_wiphy_dev(prWdev->wiphy, prDev), those API will crash.
 	 */
-	/* set_wiphy_dev(prWdev->wiphy, prDev); */
+	set_wiphy_dev(prWdev->wiphy, prDev);
 
 	/* 4 <2> Create Glue structure */
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
@@ -2209,6 +2207,18 @@ static void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* prGlueInfo is allocated with net_device */
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 	ASSERT(prGlueInfo);
+
+	/* prWdev: base AIS dev
+	 * Because the interface dev (ex: usb_device) would be free
+	 * after un-plug event. Should set the wiphy->dev->parent which
+	 * pointer to the interface dev to NULL. Otherwise, the corresponding
+	 * system operation (poweroff, suspend) might reference it.
+	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
+	 * The set_wiphy_dev(prWdev->wiphy, prDev) is done in wlanNetCreate.
+	 * But that is after wiphy_register, and will cause exception in
+	 * wiphy_unregister(), if do not set_wiphy_dev(wiphy, NULL).
+	 */
+	set_wiphy_dev(prWdev->wiphy, NULL);
 
 	/* destroy kal OS timer */
 	kalCancelTimer(prGlueInfo);
