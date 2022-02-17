@@ -430,6 +430,7 @@ struct AMSDU_MAC_TX_DESC {
 struct ERR_RECOVERY_CTRL_T {
 	uint8_t eErrRecovState;
 	uint32_t u4Status;
+	uint32_t u4BackupStatus;
 };
 
 struct SW_WFDMA_INFO;
