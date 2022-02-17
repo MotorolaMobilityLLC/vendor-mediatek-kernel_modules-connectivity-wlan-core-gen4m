@@ -331,7 +331,8 @@ uint32_t wlanCompressedImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
 uint32_t wlanImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
 	IN void *pvFwImageMapFile,
 	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+	OUT u_int8_t *pfgIsDynamicMemMap);
 
 uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter);
 
