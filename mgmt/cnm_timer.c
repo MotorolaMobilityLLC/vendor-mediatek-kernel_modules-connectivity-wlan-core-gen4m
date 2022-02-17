@@ -224,6 +224,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 			IN unsigned long ulDataPtr,
 			IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType)
 {
+	KAL_SPIN_LOCK_DECLARATION();
 	ASSERT(prAdapter);
 
 	ASSERT(prTimer);
@@ -251,6 +252,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 	if (prTimer->pfMgmtTimeOutFunc == pfFunc
 		&& prTimer->rLinkEntry.prNext) {
 		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
@@ -262,6 +264,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 	prTimer->pfMgmtTimeOutFunc = pfFunc;
 	prTimer->ulDataPtr = ulDataPtr;
 	prTimer->eType = eType;
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 }
 
 /*----------------------------------------------------------------------------*/
