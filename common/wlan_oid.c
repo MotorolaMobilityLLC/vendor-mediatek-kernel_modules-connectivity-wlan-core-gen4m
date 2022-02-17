@@ -9032,9 +9032,12 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 				   IN void *pvSetBuffer,
 				   IN uint32_t u4SetBufferLen,
 				   OUT uint32_t *pu4SetInfoLen) {
-	uint32_t status;
+	uint32_t status = WLAN_STATUS_SUCCESS;
 	struct PARAM_POWER_MODE_ *prPowerMode;
 	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 
 	const uint8_t *apucPsMode[Param_PowerModeMax] = {
 		(uint8_t *) "CAM",
@@ -9106,16 +9109,48 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 	    (prPowerMode->ePowerMode >= Param_PowerModeMAX_PSP))
 		prPowerMode->ePowerMode = Param_PowerModeMAX_PSP;
 
-	status = nicConfigPowerSaveProfile(prAdapter, prPowerMode->ucBssIdx,
-					   prPowerMode->ePowerMode,
-					   TRUE, PS_CALLER_COMMON);
 
-	if (prBssInfo->eNetworkType < 0 ||
-		prBssInfo->eNetworkType >= NETWORK_TYPE_NUM) {
-		DBGLOG(INIT, WARN,
-			   "Invalid eNetworkType: %d\n",
-			   prBssInfo->eNetworkType);
-	} else if (prPowerMode->ePowerMode >= 0 &&
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prMldBssInfo) {
+		struct BSS_INFO *bss;
+
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+					rLinkEntryMld, struct BSS_INFO) {
+			if (bss->eNetworkType < 0 ||
+			    bss->eNetworkType >= NETWORK_TYPE_NUM ||
+			    bss->eNetworkType != prBssInfo->eNetworkType) {
+				DBGLOG(INIT, WARN,
+					   "Bss%d invalid eNetworkType: %d\n",
+					   bss->ucBssIndex,
+					   bss->eNetworkType);
+				return WLAN_STATUS_NOT_ACCEPTED;
+			}
+
+			status = nicConfigPowerSaveProfile(prAdapter,
+				bss->ucBssIndex,
+				prPowerMode->ePowerMode,
+				bss == LINK_PEEK_TAIL(&prMldBssInfo->rBssList,
+				struct BSS_INFO, rLinkEntryMld),
+				PS_CALLER_COMMON);
+		}
+	} else
+#endif
+	{
+		if (prBssInfo->eNetworkType < 0 ||
+		    prBssInfo->eNetworkType >= NETWORK_TYPE_NUM) {
+			DBGLOG(INIT, WARN,
+				   "Invalid eNetworkType: %d\n",
+				   prBssInfo->eNetworkType);
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+
+		status = nicConfigPowerSaveProfile(prAdapter,
+			prPowerMode->ucBssIdx, prPowerMode->ePowerMode,
+			TRUE, PS_CALLER_COMMON);
+	}
+
+	if (prPowerMode->ePowerMode >= 0 &&
 		prPowerMode->ePowerMode < Param_PowerModeMax) {
 		DBGLOG(INIT, TRACE,
 		       "Set %s Network BSS(%u) PS mode to %s (%d)\n",
@@ -9132,7 +9167,6 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 	}
 
 	return status;
-
 } /* end of wlanoidSetAcpiDevicePowerStateMode() */
 
 /*----------------------------------------------------------------------------*/
