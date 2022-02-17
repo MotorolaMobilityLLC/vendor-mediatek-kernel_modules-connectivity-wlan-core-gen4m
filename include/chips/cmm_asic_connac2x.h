@@ -1142,8 +1142,10 @@ void asicConnac2xEnablePlatformIRQ(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisablePlatformIRQ(
 	struct ADAPTER *prAdapter);
+#if defined(_HIF_AXI)
 void asicConnac2xDisablePlatformSwIRQ(
 	struct ADAPTER *prAdapter);
+#endif
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisableExtInterrupt(
