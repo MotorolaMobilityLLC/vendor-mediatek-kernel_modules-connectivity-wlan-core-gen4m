@@ -454,4 +454,18 @@ void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 
 void p2pFunCalAcsChnScores(IN struct ADAPTER *prAdapter);
 
+enum ENUM_CHNL_SWITCH_POLICY
+p2pFunDetermineChnlSwitchPolicy(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx,
+		IN struct RF_CHANNEL_INFO *prNewChannelInfo);
+
+void
+p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx,
+		enum ENUM_CHNL_SWITCH_POLICY ePolicy,
+		IN struct RF_CHANNEL_INFO *prNewChannelInfo);
+
+void
+p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter);
+
 #endif
