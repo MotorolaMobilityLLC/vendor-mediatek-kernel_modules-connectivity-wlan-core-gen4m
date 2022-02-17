@@ -796,11 +796,6 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 			   OUT uint32_t *pu4SetInfoLen)
 {
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
-	struct PARAM_SSID rSsid[CFG_SCAN_SSID_MAX_NUM];
-	uint8_t *pucIe;
-	uint8_t ucSsidNum;
-	enum ENUM_SCAN_TYPE eScanType;
-	uint32_t i, u4IeLength;
 
 	DEBUGFUNC("wlanoidSetBssidListScanAdv()");
 
@@ -832,38 +827,13 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 	prScanRequest = (struct PARAM_SCAN_REQUEST_ADV *)
 			pvSetBuffer;
 
-	ucSsidNum = (uint8_t) (prScanRequest->u4SsidNum);
-	for (i = 0; i < prScanRequest->u4SsidNum; i++) {
-		if (prScanRequest->rSsid[i].u4SsidLen > ELEM_MAX_LEN_SSID) {
-			DBGLOG(OID, ERROR,
-			       "[%s] SSID(%s) Length(%u) is over than ELEM_MAX_LEN_SSID(%d)\n",
-			       __func__, prScanRequest->rSsid[i].aucSsid,
-			       prScanRequest->rSsid[i].u4SsidLen,
-			       ELEM_MAX_LEN_SSID);
-			DBGLOG_MEM8(REQ, ERROR, prScanRequest,
-				    sizeof(struct PARAM_SCAN_REQUEST_ADV));
-
-		}
-		COPY_SSID(rSsid[i].aucSsid,
-			  rSsid[i].u4SsidLen, prScanRequest->rSsid[i].aucSsid,
-			  prScanRequest->rSsid[i].u4SsidLen);
-	}
-	eScanType = (enum ENUM_SCAN_TYPE)prScanRequest->ucScanType;
-
-	pucIe = prScanRequest->pucIE;
-	u4IeLength = prScanRequest->u4IELength;
-
 #if CFG_SUPPORT_RDD_TEST_MODE
 	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE)
 		    && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-			    != PARAM_MEDIA_STATE_CONNECTED) {
-				aisFsmScanRequestAdv(prAdapter, ucSsidNum,
-					rSsid, eScanType, pucIe, u4IeLength,
-					prScanRequest->u4ChannelNum,
-					&prScanRequest->arChannel[0],
-					prScanRequest->aucRandomMac);
+					!= PARAM_MEDIA_STATE_CONNECTED) {
+				aisFsmScanRequestAdv(prAdapter, prScanRequest);
 			} else
 				return WLAN_STATUS_FAILURE;
 		} else
@@ -872,18 +842,10 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 #endif
 	{
 		if (prAdapter->fgEnOnlineScan == TRUE) {
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-					eScanType, pucIe, u4IeLength,
-					prScanRequest->u4ChannelNum,
-					&prScanRequest->arChannel[0],
-					prScanRequest->aucRandomMac);
+			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-			   != PARAM_MEDIA_STATE_CONNECTED) {
-			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-					eScanType, pucIe, u4IeLength,
-					prScanRequest->u4ChannelNum,
-					&prScanRequest->arChannel[0],
-					prScanRequest->aucRandomMac);
+				!= PARAM_MEDIA_STATE_CONNECTED) {
+			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else
 			return WLAN_STATUS_FAILURE;
 	}
@@ -12017,13 +11979,25 @@ wlanoidSetScanMacOui(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen)
 {
+	struct PARAM_BSS_MAC_OUI *prParamMacOui;
+	struct BSS_INFO *prBssInfo;
+
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 	ASSERT(pvSetBuffer);
-	ASSERT(u4SetBufferLen == MAC_OUI_LEN);
+	ASSERT(u4SetBufferLen == sizeof(struct PARAM_BSS_MAC_OUI));
 
-	kalMemCopy(prAdapter->prGlueInfo->ucScanOui, pvSetBuffer, MAC_OUI_LEN);
-	prAdapter->prGlueInfo->fgIsScanOuiSet = TRUE;
+	prParamMacOui = (struct PARAM_BSS_MAC_OUI *)pvSetBuffer;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prParamMacOui->ucBssIndex);
+	if (!prBssInfo) {
+		log_dbg(REQ, ERROR, "Invalid bss info (ind=%u)\n",
+			prParamMacOui->ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	kalMemCopy(prBssInfo->ucScanOui, prParamMacOui->ucMacOui, MAC_OUI_LEN);
+	prBssInfo->fgIsScanOuiSet = TRUE;
 	*pu4SetInfoLen = MAC_OUI_LEN;
 
 	return WLAN_STATUS_SUCCESS;

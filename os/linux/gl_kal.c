@@ -6712,93 +6712,133 @@ void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)
 		device_init_wakeup(prDev, TRUE);
 }
 
-u_int8_t kalIsOuiMask(IN uint8_t pucMacAddrMask[MAC_ADDR_LEN])
+u_int8_t kalIsOuiMask(const uint8_t pucMacAddrMask[MAC_ADDR_LEN])
 {
 	return (pucMacAddrMask[0] == 0xFF &&
 		pucMacAddrMask[1] == 0xFF &&
 		pucMacAddrMask[2] == 0xFF);
 }
 
-u_int8_t kalIsValidMacAddr(IN const uint8_t *addr)
+u_int8_t kalIsValidMacAddr(const uint8_t *addr)
 {
-	return is_valid_ether_addr(addr);
+	return (addr != NULL) && is_valid_ether_addr(addr);
 }
 
 #if (KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE)
-void kalParseRandomMac(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN uint32_t u4flags, IN uint8_t *pucMacAddr, IN uint8_t *pucMacAddrMask,
-	IN uint8_t *pucBssid,
-	OUT uint8_t *pucRandomMac, OUT uint8_t *pucRandomMacMask)
+u_int8_t kalParseRandomMac(const struct net_device *ndev,
+		uint8_t *pucMacAddr, uint8_t *pucMacAddrMask,
+		uint8_t *pucRandomMac)
 {
-	u_int8_t fgIsRandomMac = FALSE;
-	u_int8_t fgIsBssSet = FALSE;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucMacAddr[MAC_ADDR_LEN];
+
+	if (!ndev) {
+		log_dbg(SCN, ERROR, "Invalid net device\n");
+		return FALSE;
+	}
+
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(ndev);
+
+	if (!prNetDevPrivate || !(prNetDevPrivate->prGlueInfo)
+		|| !(prNetDevPrivate->prGlueInfo->prAdapter)) {
+		log_dbg(SCN, ERROR, "Invalid private param\n");
+		return FALSE;
+	}
+
+	prAdapter = prNetDevPrivate->prGlueInfo->prAdapter;
+	ucBssIndex = prNetDevPrivate->ucBssIdx;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo) {
+		log_dbg(SCN, WARN, "Invalid bss info (ind=%u)\n", ucBssIndex);
+		return FALSE;
+	}
+
+	if (!kalIsOuiMask(pucMacAddrMask) && !prBssInfo->fgIsScanOuiSet) {
+		eth_zero_addr(pucRandomMac);
+		eth_zero_addr(pucMacAddrMask);
+		log_dbg(SCN, INFO, "random mac enabled.\n");
+		return TRUE;
+	}
+
+	if (prBssInfo->fgIsScanOuiSet) {
+		kalMemCopy(ucMacAddr, prBssInfo->ucScanOui, MAC_OUI_LEN);
+		kalMemSet(pucMacAddrMask, 0xFF, MAC_OUI_LEN);
+	}
+	get_random_mask_addr(pucRandomMac, ucMacAddr, pucMacAddrMask);
+	log_dbg(SCN, INFO, "random mac=" MACSTR ", mac_addr=" MACSTR
+		", mac_addr_mask=%pM\n", MAC2STR(pucRandomMac),
+		MAC2STR(ucMacAddr), pucMacAddrMask);
+
+	return TRUE;
+}
+
+u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_scan_request *request, uint8_t *pucRandomMac)
+{
 	uint8_t ucMacAddr[MAC_ADDR_LEN];
 	uint8_t ucMacAddrMask[MAC_ADDR_LEN];
 
-	ASSERT(pucMacAddr);
-	ASSERT(pucMacAddrMask);
+	ASSERT(request);
 	ASSERT(pucRandomMac);
 
-	fgIsRandomMac =
-		(u4flags & NL80211_SCAN_FLAG_RANDOM_ADDR) ? TRUE : FALSE;
-	if (!fgIsRandomMac) {
-		eth_zero_addr(pucRandomMac);
-		if (pucRandomMacMask)
-			eth_zero_addr(pucRandomMacMask);
-		return;
+	if (!(request->flags & NL80211_SCAN_FLAG_RANDOM_ADDR)) {
+		log_dbg(SCN, TRACE, "Scan random mac is not set\n");
+		return FALSE;
 	}
-
-	kalMemCopy(ucMacAddr, pucMacAddr, MAC_ADDR_LEN);
-	kalMemCopy(ucMacAddrMask, pucMacAddrMask, MAC_ADDR_LEN);
-	if (!kalIsOuiMask(ucMacAddrMask) && prGlueInfo->fgIsScanOuiSet) {
-		kalMemCopy(ucMacAddr, prGlueInfo->ucScanOui, MAC_OUI_LEN);
-		kalMemSet(ucMacAddrMask, 0xFF, MAC_OUI_LEN);
-	}
-	if (pucBssid && kalIsValidMacAddr(pucBssid)) {
-		fgIsBssSet = TRUE;
-		kalMemCopy(pucRandomMac, pucBssid, MAC_ADDR_LEN);
-	} else {
-		get_random_mask_addr(pucRandomMac, ucMacAddr, ucMacAddrMask);
-	}
-	if (pucRandomMacMask)
-		kalMemCopy(pucRandomMacMask, ucMacAddrMask, MAC_ADDR_LEN);
-
-	log_dbg(SCN, INFO, "random mac=" MACSTR "(bss=%u), mac_addr=" MACSTR
-		", mac_addr_mask=%pM\n", MAC2STR(pucRandomMac), fgIsBssSet,
-		MAC2STR(ucMacAddr), ucMacAddrMask);
-}
-#endif
-
-void kalScanParseRandomMac(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN struct cfg80211_scan_request *request,
-	OUT uint8_t *pucRandomMac)
-{
-#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
-	uint8_t *pucBssid = NULL;
-
 #if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
-	pucBssid = request->bssid;
+	{
+		uint8_t ucFullMask[MAC_ADDR_LEN];
+
+		if (kalIsValidMacAddr(request->bssid)) {
+			COPY_MAC_ADDR(pucRandomMac, request->bssid);
+			log_dbg(SCN, INFO, "random mac=" MACSTR "\n",
+				pucRandomMac);
+			return TRUE;
+		}
+	}
 #endif
-	kalParseRandomMac(prGlueInfo, request->flags, request->mac_addr,
-		request->mac_addr_mask, pucBssid, pucRandomMac, NULL);
-#else
-	if (pucRandomMac)
-		eth_zero_addr(pucRandomMac);
-#endif
+	COPY_MAC_ADDR(ucMacAddr, request->mac_addr);
+	COPY_MAC_ADDR(ucMacAddrMask, request->mac_addr_mask);
+
+	return kalParseRandomMac(ndev, ucMacAddr, ucMacAddrMask, pucRandomMac);
 }
 
-void kalSchedScanParseRandomMac(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN struct cfg80211_sched_scan_request *request,
-	OUT uint8_t *pucRandomMac, OUT uint8_t *pucRandomMacMask)
+u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_sched_scan_request *request,
+	uint8_t *pucRandomMac, uint8_t *pucRandomMacMask)
 {
-#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
-	kalParseRandomMac(prGlueInfo, request->flags, request->mac_addr,
-		request->mac_addr_mask, NULL, pucRandomMac, pucRandomMacMask);
-#else
-	if (pucRandomMac)
-		eth_zero_addr(pucRandomMac);
-#endif
+	uint8_t ucMacAddr[MAC_ADDR_LEN];
+
+	ASSERT(request);
+	ASSERT(pucRandomMac);
+	ASSERT(pucRandomMacMask);
+
+	if (!(request->flags & NL80211_SCAN_FLAG_RANDOM_ADDR)) {
+		log_dbg(SCN, TRACE, "Scan random mac is not set\n");
+		return FALSE;
+	}
+	COPY_MAC_ADDR(ucMacAddr, request->mac_addr);
+	COPY_MAC_ADDR(pucRandomMacMask, request->mac_addr_mask);
+
+	return kalParseRandomMac(ndev, ucMacAddr,
+		pucRandomMacMask, pucRandomMac);
 }
+#else /* if (KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE) */
+u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_scan_request *request, uint8_t *pucRandomMac)
+{
+	return FALSE;
+}
+
+u_int8_t kalSchedScanParseRandomMac(const struct net_device *ndev,
+	const struct cfg80211_sched_scan_request *request,
+	uint8_t *pucRandomMac, uint8_t *pucRandomMacMask)
+{
+	return FALSE;
+}
+#endif
