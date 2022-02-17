@@ -81,6 +81,10 @@
 #include "ics.h"
 #endif
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+#include "hif_pdma.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3811,14 +3815,24 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 {
 	void *pvPacket;
 	uint8_t *pucRecvBuff;
+#if CFG_SUPPORT_RX_PAGE_POOL
+	struct sk_buff *prSkb;
+	dma_addr_t prAddr;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
+#if CFG_SUPPORT_RX_PAGE_POOL
+		prSkb = kalAllocRxSkb(&prAddr);
+		pvPacket = (void *)prSkb;
+		pucRecvBuff = (uint8_t *)prSkb->data;
+#else
 		pvPacket = kalPacketAlloc(prAdapter->prGlueInfo,
 					  CFG_RX_MAX_MPDU_SIZE, &pucRecvBuff);
+#endif
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;
 
