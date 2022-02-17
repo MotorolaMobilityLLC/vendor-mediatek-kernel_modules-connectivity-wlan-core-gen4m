@@ -2898,7 +2898,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 
 	log_dbg(SCN, INFO, "SEARCH: Bss Num: %d, Look for SSID: %s, "
 		MACSTR " Band=%d, channel=%d\n",
-		(uint32_t) prBSSDescList->u4NumElem, prConnSettings->aucSSID,
+		(uint32_t) prBSSDescList->u4NumElem,
+		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prConnSettings->aucBSSID), eBand, ucChannel);
 
 	/* 4 <1> The outer loop to search for a candidate. */
@@ -3288,7 +3289,7 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 				log_dbg(SCN, LOUD, "SEARCH: Found BSS by SSID, ["
 					MACSTR "], SSID:%s\n",
 					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->aucSSID);
+					HIDE(prBssDesc->aucSSID));
 			}
 			break;
 
@@ -3556,7 +3557,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 				SpecificprBssDesc)) {
 				log_dbg(SCN, TRACE,
 					"Remove specific SSID[%s %d]\n",
-					SpecificprBssDesc->aucSSID,
+					HIDE(SpecificprBssDesc->aucSSID),
 					SpecificprBssDesc->ucChannelNum);
 				return;
 			}
@@ -3598,7 +3599,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			/* check BSSID is legal channel */
 			if (!scanCheckBssIsLegal(prAdapter, prBssDesc)) {
 				log_dbg(SCN, TRACE, "Remove SSID[%s %d]\n",
-					prBssDesc->aucSSID,
+					HIDE(prBssDesc->aucSSID),
 					prBssDesc->ucChannelNum);
 				continue;
 			}
@@ -3613,7 +3614,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 		"u2RawLength[%d] fgIsP2PReport[%d]\n"
 				log_dbg(SCN, TRACE, TEMP_LOG_TEMPLATE,
 						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->aucSSID,
+						HIDE(prBssDesc->aucSSID),
 						prBssDesc->ucChannelNum,
 						prBssDesc->eBSSType,
 						prBssDesc->u2RawLength,

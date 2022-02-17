@@ -1050,7 +1050,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			DBGLOG(REQ, TRACE,
 			       "i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
 			       i, u4ValidIdx,
-			       prScanRequest->rSsid[u4ValidIdx].aucSsid,
+			       HIDE(prScanRequest->rSsid[u4ValidIdx].aucSsid),
 			       prScanRequest->rSsid[u4ValidIdx].u4SsidLen);
 
 			u4ValidIdx++;
@@ -5414,7 +5414,7 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 			pucSSID = cmd + 22;
 			u4SSIDLen = len - 22;
 			DBGLOG(REQ, INFO, "cmd=%s, ssid len %u, ssid=%s\n", cmd,
-			       u4SSIDLen, pucSSID);
+			       u4SSIDLen, HIDE(pucSSID));
 		}
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				   wlanoidSendNeighborRequest,

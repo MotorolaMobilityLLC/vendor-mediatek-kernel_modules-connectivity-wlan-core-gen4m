@@ -280,7 +280,7 @@ struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
 			MAC2STR(prConnReqInfo->aucBssid));
 		DBGLOG(P2P, LOUD,
 			"Connecting to SSID:%s, length:%d\n",
-			prConnReqInfo->rSsidStruct.aucSsid,
+			HIDE(prConnReqInfo->rSsidStruct.aucSsid),
 			prConnReqInfo->rSsidStruct.ucSsidLen);
 
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBssDescList,
@@ -314,11 +314,12 @@ struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
 					MAC2STR(prConnReqInfo->aucBssid));
 				DBGLOG(P2P, TRACE,
 					"Connecting to SSID:%s, length:%d\n",
-					prConnReqInfo->rSsidStruct.aucSsid,
+					HIDE(
+					  prConnReqInfo->rSsidStruct.aucSsid),
 					prConnReqInfo->rSsidStruct.ucSsidLen);
 				DBGLOG(P2P, TRACE,
 					"Checking SSID:%s, length:%d\n",
-					prBssDesc->aucSSID,
+					HIDE(prBssDesc->aucSSID),
 					prBssDesc->ucSSIDLen);
 				DBGLOG(P2P, TRACE,
 					"Ignore mismatch SSID, (But BSSID match).\n");

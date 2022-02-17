@@ -570,7 +570,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 				DBGLOG(REQ, INFO,
 					"Gets roaming blacklist SSID=%s addr="
 					MACSTR "\n",
-					prBssDesc->aucSSID,
+					HIDE(prBssDesc->aucSSID),
 					MAC2STR(prBssDesc->aucBSSID));
 			} else {
 				DBGLOG(REQ, ERROR,

@@ -297,7 +297,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 			prScanParam->ucSpecifiedSSIDLen[i]);
 		log_dbg(SCN, TRACE,
 			"Ssid=%s, SsidLen=%d\n",
-			prCmdScanReq->arSSID[i].aucSsid,
+			HIDE(prCmdScanReq->arSSID[i].aucSsid),
 			prCmdScanReq->arSSID[i].u4SsidLen);
 	}
 	for (i = 0; i < prCmdScanReq->ucSSIDExtNum; i++) {
@@ -1114,7 +1114,8 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < prSchedScanCmd->ucSsidNum; i++) {
 		kalMemCopy(&(prSsid[i]), &(prRequest->arSsid[i]),
 			sizeof(struct PARAM_SSID));
-		log_dbg(SCN, TRACE, "ssid set(%d) %s\n", i, prSsid[i].aucSsid);
+		log_dbg(SCN, TRACE, "ssid set(%d) %s\n", i,
+			HIDE(prSsid[i].aucSsid));
 	}
 
 	prSchedScanCmd->ucMatchSsidNum = prRequest->u4MatchSsidNum;

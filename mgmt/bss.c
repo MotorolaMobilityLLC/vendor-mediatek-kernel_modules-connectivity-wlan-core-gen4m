@@ -2307,7 +2307,7 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 
 	DBGLOG(SW4, INFO, "OWNMAC[" MACSTR "] BSSID[" MACSTR "] SSID[%s]\n",
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID),
-	       prBssInfo->aucSSID);
+	       HIDE(prBssInfo->aucSSID));
 
 	if (prBssInfo->eNetworkType >= 0
 			&& prBssInfo->eNetworkType < NETWORK_TYPE_NUM
