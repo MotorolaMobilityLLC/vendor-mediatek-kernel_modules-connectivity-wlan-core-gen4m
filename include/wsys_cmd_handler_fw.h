@@ -1220,7 +1220,7 @@ struct CMD_HIF_CTRL {
 	uint8_t          ucHifType;
 	uint8_t          ucHifDirection;
 	uint8_t          ucHifStop;
-	uint8_t          aucReserved1;
+	uint8_t          ucHifSuspend;
 	uint8_t          aucReserved2[32];
 };
 

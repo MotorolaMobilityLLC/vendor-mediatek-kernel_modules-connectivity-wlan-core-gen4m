@@ -1621,3 +1621,6 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
 
 void
 wlanSortChannel(IN struct ADAPTER *prAdapter);
+
+void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo);
+void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo);
