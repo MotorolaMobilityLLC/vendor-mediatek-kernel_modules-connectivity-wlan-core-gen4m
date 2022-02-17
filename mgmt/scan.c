@@ -1990,10 +1990,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HE_ER == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
 					prHeCap = (struct _IE_HE_CAP_T *) pucIE;
-					if (IE_LEN(prHeCap) !=
-					    (sizeof(struct _IE_HE_CAP_T) - 2)) {
+					if (IE_SIZE(prHeCap)
+					    < (sizeof(struct _IE_HE_CAP_T))) {
 						DBGLOG(SCN, WARN,
-							"HE_CAP IE_LEN err!\n");
+						    "HE_CAP IE_LEN err(%d)!\n",
+						    IE_LEN(prHeCap));
 						break;
 					}
 					prBssDesc->fgIsHEPresent = TRUE;
@@ -2009,10 +2010,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
 					prHeOp = (struct _IE_HE_OP_T *) pucIE;
-					if (IE_LEN(prHeOp) !=
-					    (sizeof(struct _IE_HE_OP_T) - 2)) {
+					if (IE_SIZE(prHeOp)
+					    < (sizeof(struct _IE_HE_OP_T))) {
 						DBGLOG(SCN, WARN,
-							"HE_OP IE_LEN err!\n");
+						    "HE_OP IE_LEN err(%d)!\n",
+						    IE_LEN(prHeOp));
 						break;
 					}
 					prBssDesc->fgIsERSUDisable =
