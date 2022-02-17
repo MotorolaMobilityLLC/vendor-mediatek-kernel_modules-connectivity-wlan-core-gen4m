@@ -3642,7 +3642,7 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 #define FW_LOG_CMD_ON_OFF        0
 #define FW_LOG_CMD_SET_LEVEL     1
-static uint32_t u4LogOnOffCache = -1;
+static uint32_t u4LogOnOffCache;
 
 struct CMD_CONNSYS_FW_LOG {
 	int32_t fgCmd;
@@ -4200,9 +4200,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #if CFG_MTK_ANDROID_WMT
 		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 #endif
-
-	if (!bAtResetFlow)
-		kalSetHalted(FALSE);
+	kalSetHalted(FALSE);
 
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW,
 				 &u4LogLevel);
@@ -4225,9 +4223,8 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	/* sync log status with firmware */
-	if (u4LogOnOffCache != -1) /* -1: connsysD does not set */
-		consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
-			u4LogOnOffCache);
+	consys_log_event_notification((int)FW_LOG_CMD_ON_OFF,
+		u4LogOnOffCache);
 #endif
 
 #if CFG_CHIP_RESET_HANG
