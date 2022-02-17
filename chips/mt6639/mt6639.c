@@ -369,6 +369,9 @@ struct ATE_OPS_T mt6639_AteOps = {
 	/* CapIQData phase out , wlan_service instead */
 	.getICapIQData = connacGetICapIQData,
 	.getRbistDataDumpEvent = nicExtEventICapIQData,
+#if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
+	.getICapDataDumpCmdEvent = nicExtCmdEventSolicitICapIQData,
+#endif
 	.icapRiseVcoreClockRate = mt6639_icapRiseVcoreClockRate,
 	.icapDownVcoreClockRate = mt6639_icapDownVcoreClockRate,
 };

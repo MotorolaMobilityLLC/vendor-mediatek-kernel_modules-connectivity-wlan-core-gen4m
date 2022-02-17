@@ -2127,8 +2127,8 @@ s_int32 mt_op_get_icap_data(
 
 	r_dump_iq.wf_num = wf_num;
 	r_dump_iq.iq_type = iq_type;
-	r_dump_iq.icap_cnt = 0;
-	r_dump_iq.icap_data_len = 0;
+	r_dump_iq.icap_cnt = 0; /* QATool's IQNumberCount */
+	r_dump_iq.icap_data_len = 0; /* QATool's IQNumberTotalCount */
 	r_dump_iq.picap_data = (s_int8 *)icap_data;
 
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
