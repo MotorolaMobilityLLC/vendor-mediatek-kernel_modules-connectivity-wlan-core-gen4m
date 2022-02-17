@@ -121,6 +121,13 @@
 
 #define UDMA_WLCFG_0_1US_TIMER_EN_MASK          (0x1 << 20)
 #define UDMA_WLCFG_0_1US_TIMER_EN(p)            (((p) & 0x1) << 20)
+#define UDMA_WLCFG_0_TX_TIMEOUT_EN_MASK          (0x1 << 16)
+
+#define UDMA_WLCFG_1_TX_TIMEOUT_LIMIT_MASK      (0xFFFFF << 8)
+#define UDMA_WLCFG_1_TX_TIMEOUT_LIMIT(p)        (((p) & 0xFFFFF) << 8)
+#define UDMA_TX_TIMEOUT_STATUS_MASK             (0x1 << 13)
+
+#define UDMA_TX_TIMEOUT_LIMIT			(50000)
 #endif /* _HIF_USB */
 
 #define PLE_PKT_MAX_SIZE_MASK (0xfff << 0)
