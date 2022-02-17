@@ -6372,10 +6372,23 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 				aucChannelList[i].ucChannelNum) / 1000;
 			(*num_freq_list)++;
 		}
+	} else if (prAdapter->rWifiVar.eDbdcMode ==
+		ENUM_DBDC_MODE_DISABLED) {
+		/* DBDC disabled */
+		DBGLOG(P2P, INFO,
+			"Prefer SCC, STA operating channel: %d, conn state: %d",
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->eConnectionState);
+		freq_list[0] = nicChannelNum2Freq(
+			prAisBssInfo->ucPrimaryChannel) / 1000;
+		(*num_freq_list)++;
 	} else {
-		DBGLOG(P2P, INFO, "STA operating channel: %d, band: %d",
-				prAisBssInfo->ucPrimaryChannel,
-				prAisBssInfo->eBand);
+		/* DBDC enabled */
+		DBGLOG(P2P, INFO,
+			"STA operating channel: %d, band: %d, conn state: %d",
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->eBand,
+			prAisBssInfo->eConnectionState);
 		if (prAisBssInfo->eBand == BAND_2G4) {
 			/* Prefer 5G if STA is connected at 2G band */
 			rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
@@ -6388,29 +6401,18 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 				(*num_freq_list)++;
 			}
 
-			/* Add SCC channel if DBDC enabled */
-			if (prAdapter->rWifiVar.eDbdcMode !=
-					ENUM_DBDC_MODE_DISABLED) {
-				freq_list[i] = nicChannelNum2Freq(
-					prAisBssInfo->ucPrimaryChannel) / 1000;
+			/* Add SCC channel */
+			freq_list[i] = nicChannelNum2Freq(
+				prAisBssInfo->ucPrimaryChannel) / 1000;
 				(*num_freq_list)++;
-			}
 		} else {
-			enum ENUM_BAND eSpecificBand;
-
 			/* Prefer SCC if STA is connected at 5G band */
 			freq_list[0] = nicChannelNum2Freq(
 				prAisBssInfo->ucPrimaryChannel) / 1000;
 			(*num_freq_list)++;
 
-			/* Add 2G channels if DBDC enabled,
-			 * otherwise, 5G channels
-			 */
-			eSpecificBand = prAdapter->rWifiVar.eDbdcMode !=
-					ENUM_DBDC_MODE_DISABLED ?
-						BAND_2G4 :
-						BAND_5G;
-			rlmDomainGetChnlList(prAdapter, eSpecificBand, TRUE,
+			/* Add 2G channels */
+			rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
 					MAX_CHN_NUM,
 					&ucNumOfChannel,
 					aucChannelList);
