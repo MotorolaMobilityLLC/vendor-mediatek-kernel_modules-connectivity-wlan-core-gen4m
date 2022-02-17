@@ -158,7 +158,6 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdNotSupport,
 	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
 	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
-	[CMD_ID_STATS_LOG] = nicUniCmdNotSupport,
 	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdNotSupport,
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
