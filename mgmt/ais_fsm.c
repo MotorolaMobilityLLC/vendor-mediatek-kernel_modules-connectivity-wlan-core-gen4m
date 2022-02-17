@@ -4955,6 +4955,14 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	/* Notify completion after encrypted deauth frame tx done */
+	if (prAdapter->prGlueInfo->encryptedDeauthIsInProcess == TRUE) {
+		if (!completion_done(&prAdapter->prGlueInfo->rDeauthComp)) {
+			DBGLOG(AIS, EVENT, "Complete rDeauthComp\n");
+			complete(&prAdapter->prGlueInfo->rDeauthComp);
+		}
+	}
+	prAdapter->prGlueInfo->encryptedDeauthIsInProcess = FALSE;
 	if (rTxDoneStatus == TX_RESULT_SUCCESS)
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 

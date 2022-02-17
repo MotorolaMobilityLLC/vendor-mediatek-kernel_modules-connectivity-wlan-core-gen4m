@@ -362,6 +362,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 	uint32_t u4BufLen = 0;
 	int32_t i4Rslt = -EINVAL;
 	uint8_t ucBssIndex = 0;
+	uint32_t waitRet = 0;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -375,7 +376,6 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
- #if DBG
 	if (mac_addr) {
 		DBGLOG_LIMITED(RSN, TRACE,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n",
@@ -385,7 +385,6 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 			"keyIdx = %d pairwise = %d null mac\n",
 		       key_index, pairwise);
 	}
-#endif
 
 	kalMemZero(&rRemoveKey, sizeof(struct PARAM_REMOVE_KEY));
 	rRemoveKey.u4KeyIndex = key_index;
@@ -399,6 +398,18 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 		return i4Rslt;
 
 	rRemoveKey.ucBssIdx = ucBssIndex;
+
+	/* if encrypted deauth frame is in process, pending remove key */
+	if (prGlueInfo->encryptedDeauthIsInProcess == TRUE) {
+		waitRet = wait_for_completion_timeout(
+				&prGlueInfo->rDeauthComp,
+				MSEC_TO_JIFFIES(1000));
+		if (!waitRet) {
+			DBGLOG(RSN, WARN, "timeout\n");
+			prGlueInfo->encryptedDeauthIsInProcess = FALSE;
+		} else
+			DBGLOG(RSN, INFO, "complete\n");
+	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey, &rRemoveKey,
 			rRemoveKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);

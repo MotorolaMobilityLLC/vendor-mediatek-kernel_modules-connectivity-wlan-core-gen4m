@@ -794,6 +794,9 @@ struct GLUE_INFO {
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct service rService;
 #endif
+	/* for deauth with PMF enabled */
+	struct completion rDeauthComp;
+	u_int8_t encryptedDeauthIsInProcess;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
