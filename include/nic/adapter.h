@@ -1771,6 +1771,9 @@ struct ADAPTER {
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 #endif
 	uint8_t ucCnmTokenID;
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+	bool fgIsNeedAvoidDesenseFreq;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
