@@ -1745,6 +1745,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	uint16_t u2QueueIdx = 0;
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
+	uint32_t u4SkbLen = 0;
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
@@ -1797,6 +1798,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 
 	/* Handle normal data frame */
 	u2QueueIdx = skb_get_queue_mapping(prSkb);
+	u4SkbLen = prSkb->len;
 
 	if (u2QueueIdx >= CFG_MAX_TXQ_NUM) {
 		DBGLOG(INIT, INFO,
@@ -1825,7 +1827,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 
 		DBGLOG(TX, INFO,
 		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
-		       ucBssIndex, u2QueueIdx, prSkb->len,
+		       ucBssIndex, u2QueueIdx, u4SkbLen,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 		       GLUE_GET_REF_CNT(
 			       prGlueInfo->ai4TxPendingFrameNumPerQueue
@@ -1833,12 +1835,12 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	}
 
 	/* Update NetDev statisitcs */
-	prDev->stats.tx_bytes += prSkb->len;
+	prDev->stats.tx_bytes += u4SkbLen;
 	prDev->stats.tx_packets++;
 
 	DBGLOG(TX, LOUD,
 	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
-	       ucBssIndex, u2QueueIdx, prSkb->len,
+	       ucBssIndex, u2QueueIdx, u4SkbLen,
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(
 		       prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
