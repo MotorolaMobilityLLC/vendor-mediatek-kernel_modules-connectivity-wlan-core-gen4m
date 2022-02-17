@@ -2279,6 +2279,11 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (value & BIT(0))
 		fw_log_wifi_irq_handler();
 #endif
+	if (get_wifi_process_status() == 1) {
+		DBGLOG(HAL, ERROR,
+			"Wi-Fi on/off process is ongoing, ignore interrupt.\n");
+		return;
+	}
 	if (value & BIT(1)) {
 		if (kalIsResetting()) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
