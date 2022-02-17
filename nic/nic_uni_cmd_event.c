@@ -173,6 +173,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_BSS_IS_ABSENCE] = nicUniEventBssIsAbsence,
 	[UNI_EVENT_ID_PS_SYNC] = nicUniEventPsSync,
 	[UNI_EVENT_ID_SAP] = nicUniEventSap,
+	[UNI_EVENT_ID_OBSS_UPDATE] = nicUniEventOBSS,
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
@@ -5187,8 +5188,16 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
-		case UNI_EVENT_SAP_TAG_AGING_TIMEOUT:
-			// TODO: uni cmd
+		case UNI_EVENT_SAP_TAG_AGING_TIMEOUT: {
+			struct UNI_EVENT_SAP_AGING_TIMEOUT *aging =
+				(struct UNI_EVENT_SAP_AGING_TIMEOUT *) tag;
+			struct EVENT_STA_AGING_TIMEOUT legacy;
+
+			legacy.ucStaRecIdx = aging->u2StaRecIdx;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_STA_AGING_TIMEOUT,
+								&legacy);
+		}
 			break;
 		case UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA: {
 			struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *quota =
@@ -5200,6 +5209,55 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucFreeQuota = quota->ucFreeQuota;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_STA_UPDATE_FREE_QUOTA,
+								&legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventOBSS(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_OBSS_UPDATE);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	struct UNI_EVENT_OBSS_UPDATE *obss;
+	struct EVENT_AP_OBSS_STATUS legacy;
+
+	obss = (struct UNI_EVENT_OBSS_UPDATE *) data;
+	legacy.ucBssIndex = obss->ucBssIndex;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_OBSS_UPDATE_TAG_STATUS: {
+			struct UNI_EVENT_OBSS_STATUS *status =
+				(struct UNI_EVENT_OBSS_STATUS *) tag;
+
+			legacy.ucObssErpProtectMode =
+				status->ucObssErpProtectMode;
+			legacy.ucObssHtProtectMode =
+				status->ucObssHtProtectMode;
+			legacy.ucObssGfOperationMode =
+				status->ucObssGfOperationMode;
+			legacy.ucObssRifsOperationMode =
+				status->ucObssRifsOperationMode;
+			legacy.ucObssBeaconForcedTo20M =
+				status->ucObssBeaconForcedTo20M;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_AP_OBSS_STATUS,
 								&legacy);
 		}
 			break;
