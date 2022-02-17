@@ -469,7 +469,7 @@ void beGenerateMldSTAInfo(
 	struct BSS_INFO *bss;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint8_t i, link, *cp, *pucBuf, *pos;
-	uint16_t frame_ctrl, control = 0, u2Offset = 0, u2IEsBufLen;
+	uint16_t frame_ctrl, control = 0, u2Offset = 0, u2IEsBufLen, u2CapInfo;
 	const uint8_t *primary, *start, *end;
 	uint8_t neid_arr[ELEM_ID_MAX_NUM], neid = 0;
 	uint8_t nexid_arr[ELEM_ID_MAX_NUM], nexid = 0;
@@ -552,6 +552,11 @@ void beGenerateMldSTAInfo(
 
 	/* start to fill STA profile field */
 	pos = cp;
+
+	/* Fill the Capability Information field. */
+	u2CapInfo = assocBuildCapabilityInfo(prAdapter, starec);
+	WLAN_SET_FIELD_16(cp, u2CapInfo);
+	cp += 2;
 
 	/* handle inheritance ie */
 	start = (uint8_t *) prMsduInfo->prPacket + u4BeginOffset;
@@ -906,6 +911,9 @@ void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 				ucStaInfoLen);
 			prMlInfo->ucLinkNum--;
 		} else {
+			WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
+			pos += 2;
+
 			/* (tail - pos) is length of STA Profile
 			 * copy STA profile in Per-STA profile subelement.
 			 */

@@ -135,6 +135,7 @@ struct STA_PROFILE {
 	uint16_t u2NstrBmp;
 	struct RF_CHANNEL_INFO rChnlInfo;
 	uint8_t ucChangeSeq;
+	uint16_t u2CapInfo;
 	uint8_t ucIEbufLen;
 	uint8_t aucIEbuf[256];
 };
