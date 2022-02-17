@@ -1858,7 +1858,6 @@ void nicEventHifCtrlv2(IN struct ADAPTER *prAdapter,
 void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent)
 {
-#if defined(_HIF_USB)
 	struct EVENT_HIF_CTRL *prEventHifCtrl;
 	struct BUS_INFO *prBusInfo;
 
@@ -1874,6 +1873,7 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 	       prEventHifCtrl->ucHifTxTrafficStatus,
 	       prEventHifCtrl->ucHifRxTrafficStatus);
 
+#if defined(_HIF_USB)
 	if (prBusInfo->u4SuspendVer == SUSPEND_V2) {
 		/* Suspend V2, control state of HIF here */
 		nicEventHifCtrlv2(prAdapter, prEvent);
@@ -1890,6 +1890,30 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 			halUSBPreSuspendTimeout(prAdapter, NULL);
 		}
 	}
+#endif
+
+#if defined(_HIF_PCIE)
+	/* if PCIE suspend, polling sequence */
+	if ((prEventHifCtrl->ucHifType == ENUM_HIF_TYPE_PCIE) &&
+		(prEventHifCtrl->ucHifSuspend)) {
+		if (prEventHifCtrl->ucHifTxTrafficStatus ==
+		  ENUM_HIF_TRAFFIC_IDLE &&
+		  prEventHifCtrl->ucHifRxTrafficStatus ==
+		  ENUM_HIF_TRAFFIC_IDLE) {
+			/* success */
+			halPciePreSuspendDone(
+			  prAdapter, NULL,
+			  prEvent->aucBuffer);
+		} else {
+			/* busy */
+			/* invalid */
+			halPciePreSuspendTimeout(prAdapter, NULL);
+		}
+	}
+#endif
+
+#if defined(_HIF_SDIO)
+	/* TODO */
 #endif
 }
 

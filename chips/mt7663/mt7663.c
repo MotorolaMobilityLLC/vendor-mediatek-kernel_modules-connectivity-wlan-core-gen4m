@@ -182,6 +182,8 @@ struct BUS_INFO mt7663_bus_info = {
 	.u4DmaMask = 36,
 
 	.pdmaSetup = asicPdmaConfig,
+	.pdmaStop = NULL,
+	.pdmaPollingIdle = NULL,
 	.updateTxRingMaxQuota = NULL,
 	.enableInterrupt = asicEnableInterrupt,
 	.disableInterrupt = asicDisableInterrupt,

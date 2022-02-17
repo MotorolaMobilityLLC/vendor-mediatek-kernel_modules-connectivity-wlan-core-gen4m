@@ -1852,6 +1852,8 @@ void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
 	rCmdHifCtrl.ucHifStop = 1;
 	rCmdHifCtrl.ucHifSuspend = 1;
+	rCmdHifCtrl.u4WakeupHifType = ENUM_CMD_HIF_WAKEUP_TYPE_USB;
+
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_HIF_CTRL,	/* ucCID */
 				      TRUE,	/* fgSetQuery */
@@ -1887,6 +1889,7 @@ void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter)
 	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
 	rCmdHifCtrl.ucHifStop = 0;
 	rCmdHifCtrl.ucHifSuspend = 0;
+	rCmdHifCtrl.u4WakeupHifType = ENUM_CMD_HIF_WAKEUP_TYPE_USB;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
 				CMD_ID_HIF_CTRL,	/* ucCID */
