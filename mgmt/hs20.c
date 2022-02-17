@@ -429,12 +429,12 @@ u_int8_t hs20IsUnsolicitedNeighborAdv(IN struct ADAPTER *prAdapter,
 u_int8_t hs20IsForgedGTKFrame(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb)
 {
+	/* 3 TODO: Need to verify this function before enable it */
+	return FALSE;
+#if 0
 	struct CONNECTION_SETTINGS *prConnSettings =
 		aisGetConnSettings(prAdapter, prBssInfo->ucBssIndex);
 	uint8_t *pucEthDestAddr = prCurrSwRfb->pvHeader;
-
-	/* 3 TODO: Need to verify this function before enable it */
-	return FALSE;
 
 	if ((prConnSettings->eEncStatus != ENUM_ENCRYPTION_DISABLED)
 	    && IS_BMCAST_MAC_ADDR(pucEthDestAddr)) {
@@ -492,6 +492,7 @@ u_int8_t hs20IsForgedGTKFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	return FALSE;
+#endif
 }
 #endif
 

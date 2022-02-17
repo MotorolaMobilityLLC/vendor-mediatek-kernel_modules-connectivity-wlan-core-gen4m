@@ -1054,7 +1054,8 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
 
 	prExtCap->ucLength = 3 - ELEM_HDR_LEN;
-	kalMemZero(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP);
+	kalMemZero(prExtCap->aucCapabilities,
+				sizeof(prExtCap->aucCapabilities));
 
 	prExtCap->aucCapabilities[0] = ELEM_EXT_CAP_DEFAULT_VAL;
 
