@@ -3958,9 +3958,8 @@ void cnmEventSGStatus(
 	IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent)
 {
+#if CFG_SUPPORT_DATA_STALL
 	struct EVENT_SMART_GEAT_STATE *prSGState;
-
-	#if CFG_SUPPORT_DATA_STALL
 	enum ENUM_VENDOR_DRIVER_EVENT eEvent;
 
 	ASSERT(prAdapter);
@@ -3985,7 +3984,7 @@ void cnmEventSGStatus(
 			eEvent, (uint16_t)sizeof(u_int8_t),
 			0,
 			TRUE);
-	#endif /* CFG_SUPPORT_DATA_STALL */
+#endif /* CFG_SUPPORT_DATA_STALL */
 }
 #endif
 
