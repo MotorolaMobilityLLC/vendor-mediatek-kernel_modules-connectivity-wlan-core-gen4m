@@ -468,6 +468,7 @@ static void heRlmFillHeCapIE(
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet;
 	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_CAP_T, aucVarInfo[0]);
 	u_int8_t fgBfEn = TRUE;
+	uint32_t soundingDim = 0;
 
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #if (CFG_RX_PPE_THRESHOLD == 1)
@@ -581,8 +582,20 @@ static void heRlmFillHeCapIE(
 		(IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL)) {
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
 			prBssInfo->ucBssIndex);
+		soundingDim =
+			HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(
+						prHeCap->ucHePhyCap) ?
+			HE_GET_PHY_CAP5_NUM_OF_SND_DIM_GT_80M(
+						prBssDesc->ucHePhyCapInfo) :
+			HE_GET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(
+						prBssDesc->ucHePhyCapInfo);
+
+		DBGLOG(RLM, INFO, "bssGetRxNss: %d, soundingDim: %d\n",
+			bssGetRxNss(prAdapter, prBssDesc), soundingDim);
 		if (prBssDesc != NULL && (bssGetRxNss(prAdapter, prBssDesc) ==
-			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))) {
+			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
+			&& (bssGetRxNss(prAdapter, prBssDesc) ==
+				soundingDim + 1)) {
 			fgBfEn = FALSE;
 			DBGLOG(SW4, ERROR,
 				"Disable Bfee due to same Nss between STA and AP\n");
