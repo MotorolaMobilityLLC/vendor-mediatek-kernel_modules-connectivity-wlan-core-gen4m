@@ -348,6 +348,7 @@ enum ENUM_UNI_CMD_BSSINFO_TAG {
 	UNI_CMD_BSSINFO_TAG_OFFLOAD_PKT = 0x19,
 	UNI_CMD_BSSINFO_TAG_MLD = 0x1A,
 	UNI_CMD_BSSINFO_TAG_PM_DISABLE = 0x1B,
+	UNI_CMD_BSSINFO_TAG_MAX_IDLE_PERIOD = 0x1D,
 	UNI_CMD_BSSINFO_NUM
 };
 
@@ -712,6 +713,15 @@ struct UNI_CMD_BSSINFO_MLD {
 	 */
 	uint8_t  ucOmRemapIdx;
 	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* BssInfo Max Idle Period element (Tag 0x1D) */
+struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2MaxIdlePeriod;
+	uint8_t  ucIdleOptions;
+	uint8_t  ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo STA PM disable (Tag 0x1B) */
