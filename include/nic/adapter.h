@@ -1720,9 +1720,7 @@ struct ADAPTER {
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS)
 
 #define IS_BSS_INDEX_AIS(_prAdapter, _BssIndex) \
-	((_BssIndex < KAL_AIS_NUM) || \
-	(IS_BSS_INDEX_VALID(_BssIndex) && \
-	IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex))))
+	(_BssIndex < KAL_AIS_NUM)
 
 #define IS_BSS_P2P(_prBssInfo) \
 	((_prBssInfo)->eNetworkType == NETWORK_TYPE_P2P)
