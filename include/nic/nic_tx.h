@@ -687,6 +687,8 @@ struct TX_CTRL {
 
 	/* Number to track forwarding frames */
 	int32_t i4PendingFwdFrameCount;
+	/* Number to track forwarding frames for WMM resource control */
+	int32_t i4PendingFwdFrameWMMCount[TC_NUM];
 
 	/* enable/disable TX resource control */
 	u_int8_t fgIsTxResourceCtrl;
