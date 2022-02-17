@@ -190,6 +190,10 @@ void rrmScheduleNextRm(struct ADAPTER *prAdapter,
 
 void rrmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t rrmCheckIs6GOpClass(uint8_t ucOpClass);
+#endif
+
 void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssIndex);
 

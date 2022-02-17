@@ -2421,7 +2421,7 @@ struct PARAM_SCHED_SCAN_REQUEST {
 	uint8_t *pucIE;
 	uint16_t u2ScanInterval;	/* in second */
 	uint8_t ucChnlNum;
-	uint8_t *pucChannels;
+	struct CHANNEL_INFO aucChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint8_t ucBssIndex;
 };
 #endif /* CFG_SUPPORT_SCHED_SCAN */

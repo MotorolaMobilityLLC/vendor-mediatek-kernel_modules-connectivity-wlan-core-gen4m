@@ -1439,8 +1439,10 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength,
 	case 6:
 	case 7:
 	case 8:
+	case 9:
 	case 11:
 	case 12:
+	case 13:
 		ucValidInfo = TRUE;
 		break;
 	default:
@@ -1495,13 +1497,14 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	uint8_t *pucProfileIE, i = 0, j = 0, ucNewLink = FALSE;
 	uint8_t ucShortSsidOffset, ucBssParamOffset;
 	uint8_t ucBssidNum = 0, ucCurrentLength = 0, ucShortSsidNum = 0;
-	uint8_t uc6gChNum, ucHasBssid = FALSE;
+	uint8_t uc6gChNum, ucHasBssid = FALSE, ucScanEnable = TRUE;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
+	struct BSS_DESC *prBssDescTemp = NULL;
 
 
 	while (ucCurrentLength < IE_LEN(pucIE)) {
@@ -1604,22 +1607,35 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			j = i * u2TbttInfoLength;
 
 			switch (u2TbttInfoLength) {
+			/* 7: Neighbor AP TBTT Offset + BSSID */
 			case 7:
 				ucShortSsidOffset = 0;
 				ucBssParamOffset = 0;
 				ucHasBssid = TRUE;
 				break;
+			/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
+			 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
+			 *    + 20MHz PSD
+			 */
 			case 8:
+			case 9:
 				ucShortSsidOffset = 0;
 				ucBssParamOffset = 7;
 				ucHasBssid = TRUE;
 				break;
+			/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
 			case 11:
 				ucShortSsidOffset = 7;
 				ucBssParamOffset = 0;
 				ucHasBssid = TRUE;
 				break;
+			/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
+			 *     + BSS parameters
+			 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
+			 *     + BSS parameters + 20MHz PSD
+			 */
 			case 12:
+			case 13:
 				ucShortSsidOffset = 7;
 				ucBssParamOffset = 11;
 				ucHasBssid = TRUE;
@@ -1635,16 +1651,24 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				MAC2STR(&prNeighborAPInfoField->
 					aucTbttInfoSet[j + 1]));
 
-			/* If this BSSID has been saved or existed in
-			* current scan request, bypass it.
-			*/
-			if (scanSearchBssDescByBssid(prAdapter,
+			/* If this BSSID existed and update time diff is
+			 * smaller than 20s, or existed in current scan request,
+			 * bypass it.
+			 */
+			ucScanEnable = TRUE;
+			prBssDescTemp = scanSearchBssDescByBssid(prAdapter,
 						&prNeighborAPInfoField->
-						aucTbttInfoSet[j + 1]) ||
+						aucTbttInfoSet[j + 1]);
+			if ((prBssDescTemp &&
+			    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+				prBssDescTemp->rUpdateTime,
+				SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) ||
 			    scanSearchBssidInCurrentList(prScanRequest,
-						&prNeighborAPInfoField->
-						aucTbttInfoSet[j + 1],
-						ucBssidNum))
+				&prNeighborAPInfoField->aucTbttInfoSet[j + 1],
+				ucBssidNum))
+				ucScanEnable = FALSE;
+
+			if (ucScanEnable)
 				continue;
 
 			if (ucBssidNum < CFG_SCAN_SSID_MAX_NUM) {

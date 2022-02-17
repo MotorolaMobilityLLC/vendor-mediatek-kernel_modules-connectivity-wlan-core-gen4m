@@ -3516,7 +3516,7 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
-	uint32_t i, u4BufLen;
+	uint32_t i, j = 0, u4BufLen;
 	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
 	uint32_t num = 0;
 	uint8_t ucBssIndex = 0;
@@ -3676,22 +3676,42 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 			request->interval);
 #endif
 
-	prSchedScanRequest->ucChnlNum = (uint8_t)
-					request->n_channels;
-	prSchedScanRequest->pucChannels =
-		kalMemAlloc(request->n_channels, VIR_MEM_TYPE);
-	if (!prSchedScanRequest->pucChannels) {
-		DBGLOG(SCN, ERROR, "pucChannels kalMemAlloc fail\n");
-		prSchedScanRequest->ucChnlNum = 0;
-	} else {
-		for (i = 0; i < request->n_channels; i++) {
-			uint32_t freq =
-				request->channels[i]->center_freq * 1000;
-
-			prSchedScanRequest->pucChannels[i] =
-				nicFreq2ChannelNum(freq);
+	/* 6G only need to scan PSC channel, transform channel list first*/
+	for (i = 0; i < request->n_channels; i++) {
+		uint32_t u4channel =
+			nicFreq2ChannelNum(request->channels[i]->center_freq *
+									1000);
+		if (u4channel == 0) {
+			DBGLOG(REQ, WARN, "Wrong Channel[%d] freq=%u\n",
+			       i, request->channels[i]->center_freq);
+			continue;
 		}
+		prSchedScanRequest->aucChannel[i].ucChannelNum = u4channel;
+		switch ((request->channels[i])->band) {
+		case KAL_BAND_2GHZ:
+			prSchedScanRequest->aucChannel[j].ucBand = BAND_2G4;
+			break;
+		case KAL_BAND_5GHZ:
+			prSchedScanRequest->aucChannel[j].ucBand = BAND_5G;
+			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case KAL_BAND_6GHZ:
+			/* find out 6G PSC channel */
+			if (((u4channel - 5) % 16) != 0)
+				continue;
+
+			prSchedScanRequest->aucChannel[j].ucBand = BAND_6G;
+			break;
+#endif
+		default:
+			DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
+			       request->channels[i]->band, u4channel);
+			prSchedScanRequest->aucChannel[j].ucBand = BAND_NULL;
+			break;
+		}
+		j++;
 	}
+	prSchedScanRequest->ucChnlNum = j;
 
 	prSchedScanRequest->ucBssIndex = ucBssIndex;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetStartSchedScan,
@@ -3701,8 +3721,6 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "scheduled scan error:%x\n", rStatus);
-		kalMemFree(prSchedScanRequest->pucChannels,
-			VIR_MEM_TYPE, request->n_channels);
 		kalMemFree(prSchedScanRequest->pucIE,
 			VIR_MEM_TYPE, request->ie_len);
 		kalMemFree(prSchedScanRequest,
