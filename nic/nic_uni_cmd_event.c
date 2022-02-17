@@ -204,6 +204,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_TDLS] = nicUniEventTdls,
 	[UNI_EVENT_ID_BSS_ER] = nicUniEventBssER,
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
+	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -6509,13 +6510,12 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
-
 void nicUniEventRssiMonitor(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	int32_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_ID_RSSI_MONITOR);
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_RSSI_MONITOR);
 	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint32_t fail_cnt = 0;
@@ -6532,6 +6532,46 @@ void nicUniEventRssiMonitor(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_RSSI_MONITOR,
 				&info->cRssi);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_HIF_CTRL);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_HIF_CTRL_TAG_BASIC: {
+			struct UNI_EVENT_HIF_CTRL_BASIC *basic =
+			    (struct UNI_EVENT_HIF_CTRL_BASIC *)tag;
+			struct EVENT_HIF_CTRL legacy;
+
+			legacy.ucHifType = basic->ucHifType;
+			legacy.ucHifTxTrafficStatus =
+				basic->ucHifTxTrafficStatus;
+			legacy.ucHifRxTrafficStatus =
+				basic->ucHifRxTrafficStatus;
+			legacy.ucHifSuspend = basic->ucHifSuspend;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_HIF_CTRL,	&legacy);
 		}
 			break;
 		default:

@@ -3168,6 +3168,34 @@ struct UNI_EVENT_CMD_RESULT {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_HIF_CTRL {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* HIF_CTRL event Tag */
+enum ENUM_UNI_EVENT_HIF_CTRL_TAG {
+	UNI_EVENT_HIF_CTRL_TAG_BASIC = 0,
+	UNI_EVENT_HIF_CTRL_TAG_NUM
+};
+
+struct UNI_EVENT_HIF_CTRL_BASIC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucCID;
+	uint8_t aucPadding[3];
+	uint32_t u4Status;
+	uint8_t ucHifType;
+	uint8_t ucHifTxTrafficStatus;
+	uint8_t ucHifRxTrafficStatus;
+	uint8_t ucHifSuspend;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_FW_LOG2HOST {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -3853,7 +3881,7 @@ struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint8_t  ucFreeQuota;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_ID_RSSI_MONITOR {
+struct UNI_EVENT_RSSI_MONITOR {
 	/* fixed field */
 	uint8_t aucReserved[4];
 
@@ -4842,6 +4870,8 @@ void nicUniEventTdls(struct ADAPTER *ad,
 void nicUniEventBssER(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventRssiMonitor(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventHifCtrl(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
