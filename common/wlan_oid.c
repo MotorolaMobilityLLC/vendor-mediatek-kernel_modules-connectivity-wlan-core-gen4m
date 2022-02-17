@@ -988,7 +988,7 @@ wlanoidSetBssid(IN struct ADAPTER *prAdapter,
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
 			prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_AIS_ABORT));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1146,7 +1146,7 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
 			prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_AIS_ABORT));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1234,7 +1234,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	prAisAbortMsg = (struct MSG_AIS_ABORT *) cnmMemAlloc(
 			prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_AIS_ABORT));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in allocating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	prAisAbortMsg->rMsgHdr.eMsgId = MID_OID_AIS_FSM_JOIN_REQ;
@@ -8985,7 +8985,7 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 						prAdapter, RAM_TYPE_MSG,
 						sizeof(struct MSG_AIS_ABORT));
 	if (!prAisAbortMsg) {
-		ASSERT(0);
+		DBGLOG(REQ, ERROR, "Fail in creating AisAbortMsg.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 

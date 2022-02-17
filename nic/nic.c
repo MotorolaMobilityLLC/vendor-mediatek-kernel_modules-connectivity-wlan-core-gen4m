@@ -2486,7 +2486,7 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		       "update for probe response offload to firmware\n");
 #endif
 	} else {
-		ASSERT(0);
+		DBGLOG(INIT, ERROR, "Unknown IeUpdMethod.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
