@@ -119,6 +119,77 @@ static char *SGI_UNSP_STATE_TBLE[] = {"INITIAL", "PROBING", "SUCCESS",
 static char *BW_STATE_TBLE[] = {"UNCHANGED", "DOWN", "N/A"};
 #endif
 
+static struct EMPTY_QUEUE_INFO ple_queue_empty_info[] = {
+	{"CPU Q0", MCU_Q0_INDEX, ENUM_UMAC_CTX_Q_0},
+	{"CPU Q1", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_1},
+	{"CPU Q2", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_2},
+	{"CPU Q3", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_3},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0}, /* 4~7 not defined */
+	{"ALTX Q0", ENUM_UMAC_LMAC_PORT_2,
+	 ENUM_UMAC_LMAC_PLE_TX_Q_ALTX_0}, /* Q16 */
+	{"BMC Q0", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_BMC_0},
+	{"BCN Q0", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_BNC_0},
+	{"PSMP Q0", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_PSMP_0},
+	{"ALTX Q1", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_ALTX_1},
+	{"BMC Q1", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_BMC_1},
+	{"BCN Q1", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_BNC_1},
+	{"PSMP Q1", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_PSMP_1},
+	{"NAF Q", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_NAF},
+	{"NBCN Q", ENUM_UMAC_LMAC_PORT_2, ENUM_UMAC_LMAC_PLE_TX_Q_NBCN},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0}, /* 18~29 not defined */
+	{"RLS Q", ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1E},
+	{"RLS2 Q", ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F} };
+
+static struct EMPTY_QUEUE_INFO pse_queue_empty_info[] = {
+	{"CPU Q0", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_0},
+	{"CPU Q1", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_1},
+	{"CPU Q2", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_2},
+	{"CPU Q3", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_3},
+	{"HIF Q8", ENUM_UMAC_HIF_PORT_0, 8},
+	{"HIF Q9", ENUM_UMAC_HIF_PORT_0, 9},
+	{"HIF Q10", ENUM_UMAC_HIF_PORT_0, 10},
+	{"HIF Q11", ENUM_UMAC_HIF_PORT_0, 11},
+	{"HIF Q0", ENUM_UMAC_HIF_PORT_0, 0}, /*bit 8*/
+	{"HIF Q1", ENUM_UMAC_HIF_PORT_0, 1},
+	{"HIF Q2", ENUM_UMAC_HIF_PORT_0, 2},
+	{"HIF Q3", ENUM_UMAC_HIF_PORT_0, 3},
+	{"HIF Q4", ENUM_UMAC_HIF_PORT_0, 4},
+	{"HIF Q5", ENUM_UMAC_HIF_PORT_0, 5},
+	{"HIF Q6", ENUM_UMAC_HIF_PORT_0, 6},
+	{"HIF Q7", ENUM_UMAC_HIF_PORT_0, 7},
+	{"LMAC Q", ENUM_UMAC_LMAC_PORT_2, 0}, /*bit 16*/
+	{"MDP TX Q", ENUM_UMAC_LMAC_PORT_2, 1},
+	{"MDP RX Q", ENUM_UMAC_LMAC_PORT_2, 2},
+	{"SEC TX Q", ENUM_UMAC_LMAC_PORT_2, 3},
+	{"SEC RX Q", ENUM_UMAC_LMAC_PORT_2, 4},
+	{"SFD_PARK Q", ENUM_UMAC_LMAC_PORT_2, 5},
+	{"MDP_TXIOC Q", ENUM_UMAC_LMAC_PORT_2, 6},
+	{"MDP_RXIOC Q", ENUM_UMAC_LMAC_PORT_2, 7},
+	{"MDP_TX1 Q", ENUM_UMAC_LMAC_PORT_2, 17}, /*bit 24*/
+	{"SEC_TX1 Q", ENUM_UMAC_LMAC_PORT_2, 19},
+	{"MDP_TXIOC1 Q", ENUM_UMAC_LMAC_PORT_2, 22},
+	{"MDP_RXIOC1 Q", ENUM_UMAC_LMAC_PORT_2, 23},
+	{NULL, 0, 0},
+	{NULL, 0, 0},
+	{NULL, 0, 0}, /* 28~30 not defined */
+	{"RLS Q", ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F} };
+
+static u_int8_t *sta_ctrl_reg[] = {"ENABLE", "DISABLE", "PAUSE"};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -3194,6 +3265,522 @@ void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
 
+void connac2x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	u_int32_t int_n9_err = 0;
+	u_int32_t int_n9_err1 = 0;
+	u_int32_t ple_buf_ctrl = 0, pg_sz, pg_num;
+	u_int32_t ple_stat[25] = {0}, pg_flow_ctrl[10] = {0};
+	u_int32_t sta_pause[6] = {0}, dis_sta_map[6] = {0};
+	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
+	u_int32_t rpg_hif, upg_hif, cpu_max_q, cpu_min_q, rpg_cpu, upg_cpu;
+	u_int32_t i, j, value = 0;
+	u_int32_t ple_peek[12] = {0};
+	u_int32_t ple_empty = 0;
+	u_int32_t ple_txd_empty = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts.u4Addr, &int_n9_err);
+	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts1.u4Addr, &int_n9_err1);
+	HAL_MCR_RD(prAdapter, prCr->rQueueEmpty.u4Addr, &ple_empty);
+	HAL_MCR_RD(prAdapter, prCr->rTxdQueueEmpty.u4Addr, &ple_txd_empty);
+
+	HAL_MCR_RD(prAdapter, prCr->rPbufCtrl.u4Addr, &ple_buf_ctrl);
+	HAL_MCR_RD(prAdapter, prCr->rQueueEmpty.u4Addr, &ple_stat[0]);
+	HAL_MCR_RD(prAdapter, prCr->rAc0QueueEmpty0.u4Addr, &ple_stat[1]);
+	HAL_MCR_RD(prAdapter, prCr->rAc1QueueEmpty0.u4Addr, &ple_stat[7]);
+	HAL_MCR_RD(prAdapter, prCr->rAc2QueueEmpty0.u4Addr, &ple_stat[13]);
+	HAL_MCR_RD(prAdapter, prCr->rAc3QueueEmpty0.u4Addr, &ple_stat[19]);
+	HAL_MCR_RD(prAdapter, prCr->rFreepgCnt.u4Addr, &pg_flow_ctrl[0]);
+	HAL_MCR_RD(prAdapter, prCr->rFreepgHeadTail.u4Addr,
+		   &pg_flow_ctrl[1]);
+	HAL_MCR_RD(prAdapter, prCr->rPgHifGroup.u4Addr, &pg_flow_ctrl[2]);
+	HAL_MCR_RD(prAdapter, prCr->rHifPgInfo.u4Addr, &pg_flow_ctrl[3]);
+	HAL_MCR_RD(prAdapter, prCr->rPgCpuGroup.u4Addr, &pg_flow_ctrl[4]);
+	HAL_MCR_RD(prAdapter, prCr->rCpuPgInfo.u4Addr, &pg_flow_ctrl[5]);
+	HAL_MCR_RD(prAdapter, prCr->rPgHifTxcmdGroup.u4Addr,
+		   &pg_flow_ctrl[6]);
+	HAL_MCR_RD(prAdapter, prCr->rHifTxcmdPgInfo.u4Addr,
+		   &pg_flow_ctrl[7]);
+	HAL_MCR_RD(prAdapter, prCr->rPgHifWmtxdGroup.u4Addr,
+		   &pg_flow_ctrl[8]);
+	HAL_MCR_RD(prAdapter, prCr->rHifWmtxdPgInfo.u4Addr,
+		   &pg_flow_ctrl[9]);
+
+	HAL_MCR_RD(prAdapter, prCr->rDisStaMap0.u4Addr, &dis_sta_map[0]);
+	HAL_MCR_RD(prAdapter, prCr->rStationPause0.u4Addr, &sta_pause[0]);
+
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr00.u4Addr, &ple_peek[0]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr01.u4Addr, &ple_peek[1]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr02.u4Addr, &ple_peek[2]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr03.u4Addr, &ple_peek[3]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr04.u4Addr, &ple_peek[4]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr05.u4Addr, &ple_peek[5]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr06.u4Addr, &ple_peek[6]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr07.u4Addr, &ple_peek[7]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr08.u4Addr, &ple_peek[8]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr09.u4Addr, &ple_peek[9]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr10.u4Addr, &ple_peek[10]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr11.u4Addr, &ple_peek[11]);
+
+	/* Error Status Info */
+	DBGLOG(HAL, INFO,
+	"PLE Error Status(0x%08x):0x%08x,Error Status1(0x%08x):0x%08x\n",
+			prCr->rIntN9ErrSts.u4Addr, int_n9_err,
+			prCr->rIntN9ErrSts1.u4Addr, int_n9_err1);
+
+	/* FSM PEEK CR */
+	DBGLOG(HAL, INFO,
+	"00(0x%08x):0x%08x,01(0x%08x):0x%08x,02(0x%08x):0x%08x,03(0x%08x):0x%08x,04(0x%08x):0x%08x,05(0x%08x):0x%08x,",
+			prCr->rFsmPeekCr00.u4Addr, ple_peek[0],
+			prCr->rFsmPeekCr01.u4Addr, ple_peek[1],
+			prCr->rFsmPeekCr02.u4Addr, ple_peek[2],
+			prCr->rFsmPeekCr03.u4Addr, ple_peek[3],
+			prCr->rFsmPeekCr04.u4Addr, ple_peek[4],
+			prCr->rFsmPeekCr05.u4Addr, ple_peek[5]);
+
+	DBGLOG(HAL, INFO,
+	"06(0x%08x):0x%08x,07(0x%08x):0x%08x,08(0x%08x):0x%08x,09(0x%08x):0x%08x,10(0x%08x):0x%08x,11(0x%08x):0x%08x\n",
+			prCr->rFsmPeekCr06.u4Addr, ple_peek[6],
+			prCr->rFsmPeekCr07.u4Addr, ple_peek[7],
+			prCr->rFsmPeekCr08.u4Addr, ple_peek[8],
+			prCr->rFsmPeekCr09.u4Addr, ple_peek[9],
+			prCr->rFsmPeekCr10.u4Addr, ple_peek[10],
+			prCr->rFsmPeekCr11.u4Addr, ple_peek[11]);
+
+	/* Configuration Info */
+
+	pg_sz = (ple_buf_ctrl & prCr->rPbufCtrlPageSizeCfg.u4Mask) >>
+		prCr->rPbufCtrlPageSizeCfg.u4Shift;
+	pg_num = (ple_buf_ctrl & prCr->rPbufCtrlTotalPageNum.u4Mask) >>
+			 prCr->rPbufCtrlTotalPageNum.u4Shift;
+
+	DBGLOG(HAL, INFO,
+	"Buffer Control(0x%08x):0x%08x,Page Size=%d, Page Offset=%d, Total Page=%d\n",
+		prCr->rPbufCtrl.u4Addr,
+		ple_buf_ctrl,
+		pg_sz,
+		(ple_buf_ctrl & prCr->rPbufCtrlPbufOffset.u4Mask) >>
+		       prCr->rPbufCtrlPbufOffset.u4Shift,
+		pg_num);
+
+	/* Flow-Control: Page Flow Control */
+	fpg_cnt = (pg_flow_ctrl[0] & prCr->rFreepgCntFreepgCnt.u4Mask) >>
+		prCr->rFreepgCntFreepgCnt.u4Shift;
+	ffa_cnt = (pg_flow_ctrl[0] & prCr->rFreepgCntFfaCnt.u4Mask) >>
+		  prCr->rFreepgCntFfaCnt.u4Shift;
+
+	DBGLOG(HAL, INFO,
+	"Free page counter(0x%08x):0x%08x,The toal page number of free=0x%03x,The free page numbers of free for all=0x%03x\n",
+		prCr->rFreepgCnt.u4Addr,
+		pg_flow_ctrl[0], fpg_cnt, ffa_cnt);
+
+	/* PLE tail / head FID */
+	fpg_head = (pg_flow_ctrl[1] &
+		    prCr->rFreepgHeadTailFreepgHead.u4Mask) >>
+		   prCr->rFreepgHeadTailFreepgHead.u4Shift;
+	fpg_tail = (pg_flow_ctrl[1] &
+		    prCr->rFreepgHeadTailFreepgTail.u4Mask) >>
+		   prCr->rFreepgHeadTailFreepgTail.u4Shift;
+	DBGLOG(HAL, INFO,
+	"Free page tail/head FID(0x%08x):0x%08x,The tail/head page of free page list=0x%03x/0x%03x\n",
+		prCr->rFreepgHeadTail.u4Addr,
+		pg_flow_ctrl[1], fpg_tail, fpg_head);
+
+	/* Flow-Control: Show PLE HIF Group information */
+	DBGLOG(HAL, INFO,
+	"Reserved page counter of HIF group(0x%08x):0x%08x,status(0x%08x):0x%08x\n",
+		prCr->rPgHifGroup.u4Addr, pg_flow_ctrl[2],
+		prCr->rHifPgInfo.u4Addr, pg_flow_ctrl[3]);
+
+	hif_min_q = (pg_flow_ctrl[2] &
+		     prCr->rPgHifGroupHifMinQuota.u4Mask) >>
+		    prCr->rPgHifGroupHifMinQuota.u4Shift;
+	hif_max_q = (pg_flow_ctrl[2] &
+		     prCr->rPgHifGroupHifMaxQuota.u4Mask) >>
+		    prCr->rPgHifGroupHifMaxQuota.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe max/min quota pages of HIF group=0x%03x/0x%03x\n",
+	       hif_max_q, hif_min_q);
+	rpg_hif = (pg_flow_ctrl[3] & prCr->rHifPgInfoHifRsvCnt.u4Mask) >>
+		  prCr->rHifPgInfoHifRsvCnt.u4Shift;
+	upg_hif = (pg_flow_ctrl[3] & prCr->rHifPgInfoHifSrcCnt.u4Mask) >>
+		  prCr->rHifPgInfoHifSrcCnt.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe used/reserved pages of HIF group=0x%03x/0x%03x\n",
+	       upg_hif, rpg_hif);
+
+	/* Flow-Control: Show PLE CPU Group information */
+	DBGLOG(HAL, INFO,
+	"Reserved page counter of CPU group(0x%08x):0x%08x,status(0x%08x):0x%08x\n",
+		prCr->rPgCpuGroup.u4Addr, pg_flow_ctrl[4],
+		prCr->rCpuPgInfo.u4Addr, pg_flow_ctrl[5]);
+
+	cpu_min_q = (pg_flow_ctrl[4] &
+		     prCr->rPgCpuGroupCpuMinQuota.u4Mask) >>
+		    prCr->rPgCpuGroupCpuMinQuota.u4Shift;
+	cpu_max_q = (pg_flow_ctrl[4] &
+		     prCr->rPgCpuGroupCpuMaxQuota.u4Mask) >>
+		    prCr->rPgCpuGroupCpuMaxQuota.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe max/min quota pages of CPU group=0x%03x/0x%03x\n",
+	       cpu_max_q, cpu_min_q);
+	rpg_cpu = (pg_flow_ctrl[5] & prCr->rCpuPgInfoCpuRsvCnt.u4Mask) >>
+		  prCr->rCpuPgInfoCpuRsvCnt.u4Shift;
+	upg_cpu = (pg_flow_ctrl[5] & prCr->rCpuPgInfoCpuSrcCnt.u4Mask) >>
+		  prCr->rCpuPgInfoCpuSrcCnt.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe used/reserved pages of CPU group=0x%03x/0x%03x\n",
+	       upg_cpu, rpg_cpu);
+
+	/* Flow-Control: Show PLE WMTXD Group information */
+	DBGLOG(HAL, INFO,
+	"Reserved page counter of HIF_WMTXD group(0x%08x):0x%08x,status(0x%08x):0x%08x\n",
+	prCr->rPgHifWmtxdGroup.u4Addr, pg_flow_ctrl[8],
+	prCr->rHifWmtxdPgInfo.u4Addr, pg_flow_ctrl[9]);
+	cpu_min_q = (pg_flow_ctrl[8] &
+		     prCr->rPgHifWmtxdGroupHifWmtxdMinQuota.u4Mask) >>
+		    prCr->rPgHifWmtxdGroupHifWmtxdMinQuota.u4Shift;
+	cpu_max_q = (pg_flow_ctrl[8] &
+		     prCr->rPgHifWmtxdGroupHifWmtxdMaxQuota.u4Mask) >>
+		    prCr->rPgHifWmtxdGroupHifWmtxdMaxQuota.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe max/min quota pages of HIF_WMTXD group=0x%03x/0x%03x\n",
+	       cpu_max_q, cpu_min_q);
+	rpg_cpu = (pg_flow_ctrl[9] &
+		 prCr->rHifWmtxdPgInfoHifWmtxdRsvCnt.u4Mask) >>
+		prCr->rHifWmtxdPgInfoHifWmtxdRsvCnt.u4Shift;
+	upg_cpu = (pg_flow_ctrl[9] &
+		 prCr->rHifWmtxdPgInfoHifWmtxdSrcCnt.u4Mask) >>
+		prCr->rHifWmtxdPgInfoHifWmtxdSrcCnt.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\tThe used/reserved pages of HIF_WMTXD group=0x%03x/0x%03x\n",
+	       upg_cpu, rpg_cpu);
+
+	/* Flow-Control: Show PLE TXCMD Group information */
+	DBGLOG(HAL, INFO,
+	"Reserved page counter of HIF_TXCMD group(0x%08x):0x%08x,status(0x%08x):0x%08x\n",
+	prCr->rPgHifTxcmdGroup.u4Addr, pg_flow_ctrl[6],
+	prCr->rHifTxcmdPgInfo.u4Addr, pg_flow_ctrl[7]);
+	cpu_min_q = (pg_flow_ctrl[6] &
+		     prCr->rPgHifTxcmdGroupHifTxcmdMinQuota.u4Mask) >>
+		    prCr->rPgHifTxcmdGroupHifTxcmdMinQuota.u4Shift;
+	cpu_max_q = (pg_flow_ctrl[6] &
+		     prCr->rPgHifTxcmdGroupHifTxcmdMaxQuota.u4Mask) >>
+		    prCr->rPgHifTxcmdGroupHifTxcmdMaxQuota.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\t\tThe max/min quota pages of HIF_TXCMD group=0x%03x/0x%03x\n",
+	       cpu_max_q, cpu_min_q);
+	rpg_cpu = (pg_flow_ctrl[7] &
+		   prCr->rHifTxcmdPgInfoHifTxcmdSrcCnt.u4Mask) >>
+		  prCr->rHifTxcmdPgInfoHifTxcmdSrcCnt.u4Shift;
+	upg_cpu = (pg_flow_ctrl[7] &
+		   prCr->rHifTxcmdPgInfoHifTxcmdRsvCnt.u4Mask) >>
+		  prCr->rHifTxcmdPgInfoHifTxcmdRsvCnt.u4Shift;
+	DBGLOG(HAL, TRACE,
+	       "\t\tThe used/reserved pages of HIF_TXCMD group=0x%03x/0x%03x\n",
+	       upg_cpu, rpg_cpu);
+
+	if ((ple_stat[0] & prCr->rQueueEmptyAllAcEmpty.u4Mask) == 0) {
+		for (j = 0; j < 24; j = j + 6) {
+			if (j % 6 == 0) {
+				DBGLOG(HAL, INFO,
+					"\tNonempty AC%d Q of STA#: ", j / 6);
+			}
+
+			for (i = 0; i < 32; i++) {
+				if (((ple_stat[j + 1] & (0x1 << i)) >> i) ==
+				    0) {
+					DBGLOG(HAL, INFO, "%d ",
+						i + (j % 6) * 32);
+				}
+			}
+		}
+		DBGLOG(HAL, INFO, ", ");
+	}
+
+	/* Queue Empty Status */
+	DBGLOG(HAL, INFO,
+	"QUEUE_EMPTY(0x%08x):0x%08xTXD QUEUE_EMPTY(0x%08x):0x%08x\n",
+			prCr->rQueueEmpty.u4Addr, ple_empty,
+			prCr->rTxdQueueEmpty.u4Addr, ple_txd_empty);
+
+	/* Nonempty Queue Status */
+	DBGLOG(HAL, INFO, "Nonempty Q info:");
+
+	for (i = 0; i < 31; i++) {
+		if (((ple_stat[0] & (0x1 << i)) >> i) == 0) {
+			if (ple_queue_empty_info[i].QueueName != NULL)
+				DBGLOG(HAL, INFO, "\t%s: ",
+					ple_queue_empty_info[i].QueueName);
+		}
+	}
+
+	for (j = 0; j < 24; j = j + 6) { /* show AC Q info */
+		for (i = 0; i < 32; i++) {
+			if (((ple_stat[j + 1] & (0x1 << i)) >> i) == 0) {
+				uint32_t ac_num = j / 6, ctrl = 0;
+				uint32_t sta_num = i + (j % 6) * 32;
+
+				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ", sta_num,
+				       ac_num);
+
+				if (((sta_pause[j % 6] & 0x1 << i) >> i) == 1)
+					ctrl = 2;
+
+				if (((dis_sta_map[j % 6] & 0x1 << i) >> i) == 1)
+					ctrl = 1;
+
+				DBGLOG(HAL, INFO, " ctrl = %s",
+						   sta_ctrl_reg[ctrl]);
+			}
+		}
+	}
+
+	/* Trigger Fw dump log */
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &value);
+	value = (~value & prCr->rToN9IntToggle.u4Mask) |
+		(value & ~prCr->rToN9IntToggle.u4Mask);
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, value);
+}
+
+void connac2x_show_pse_info(struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PSE_TOP_CR *prCr;
+	u_int32_t int_n9_err = 0;
+	u_int32_t int_n9_err1 = 0;
+	u_int32_t pse_buf_ctrl = 0;
+	u_int32_t pg_sz = 0;
+	u_int32_t pg_num = 0;
+	u_int32_t pse_stat = 0;
+	u_int32_t pse_stat_mask = 0;
+	u_int32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
+	u_int32_t max_q, min_q, rsv_pg, used_pg;
+	u_int32_t i;
+	u_int32_t group_quota = 0;
+	u_int32_t group_info = 0;
+	u_int32_t freepg_cnt = 0;
+	u_int32_t freepg_head_tail = 0;
+	struct pse_group_info *pse_group;
+	struct pse_group_info *group;
+	char *str;
+	u_int32_t pse_peek[10] = {0};
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	pse_group = prBusInfo->prPseGroup;
+	prCr = prBusInfo->prPseTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rPbufCtrl.u4Addr, &pse_buf_ctrl);
+	HAL_MCR_RD(prAdapter, prCr->rQueueEmpty.u4Addr, &pse_stat);
+	HAL_MCR_RD(prAdapter, prCr->rQueueEmpty.u4Mask, &pse_stat_mask);
+	HAL_MCR_RD(prAdapter, prCr->rFreepgCnt.u4Addr, &freepg_cnt);
+	HAL_MCR_RD(prAdapter, prCr->rFreepgHeadTail.u4Addr,
+		   &freepg_head_tail);
+
+	HAL_MCR_RD(prAdapter, prCr->rIntN9ErrSts.u4Addr, &int_n9_err);
+	HAL_MCR_RD(prAdapter, prCr->rIntN9Err1Sts.u4Addr, &int_n9_err1);
+
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr00.u4Addr, &pse_peek[0]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr01.u4Addr, &pse_peek[1]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr02.u4Addr, &pse_peek[2]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr03.u4Addr, &pse_peek[3]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr04.u4Addr, &pse_peek[4]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr05.u4Addr, &pse_peek[5]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr06.u4Addr, &pse_peek[6]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr07.u4Addr, &pse_peek[7]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr08.u4Addr, &pse_peek[8]);
+	HAL_MCR_RD(prAdapter, prCr->rFsmPeekCr09.u4Addr, &pse_peek[9]);
+
+	/* Error Status Info */
+	DBGLOG(HAL, INFO,
+	"PSE Error Status(0x%08x):0x%08x,PSE Error 1 Status(0x%08x):0x%08x\n",
+			prCr->rIntN9ErrSts.u4Addr, int_n9_err,
+			prCr->rIntN9Err1Sts.u4Addr, int_n9_err1);
+
+	DBGLOG(HAL, INFO,
+	"00(0x%08x):0x%08x,01(0x%08x):0x%08x02(0x%08x):0x%08x,03(0x%08x):0x%08x04(0x%08x):0x%08x,05(0x%08x):0x%08x\n",
+				prCr->rFsmPeekCr00.u4Addr, pse_peek[0],
+				prCr->rFsmPeekCr01.u4Addr, pse_peek[1],
+				prCr->rFsmPeekCr02.u4Addr, pse_peek[2],
+				prCr->rFsmPeekCr03.u4Addr, pse_peek[3],
+				prCr->rFsmPeekCr04.u4Addr, pse_peek[4],
+				prCr->rFsmPeekCr05.u4Addr, pse_peek[5]);
+
+	DBGLOG(HAL, INFO,
+	"06(0x%08x):0x%08x,07(0x%08x):0x%08x08(0x%08x):0x%08x,09(0x%08x):0x%08x\n",
+				prCr->rFsmPeekCr06.u4Addr, pse_peek[6],
+				prCr->rFsmPeekCr07.u4Addr, pse_peek[7],
+				prCr->rFsmPeekCr08.u4Addr, pse_peek[8],
+				prCr->rFsmPeekCr09.u4Addr, pse_peek[9]);
+
+	/* Configuration Info */
+	pg_sz = (pse_buf_ctrl & prCr->rPbufCtrlPageSizeCfg.u4Mask) >>
+		prCr->rPbufCtrlPageSizeCfg.u4Shift;
+	pg_num = (pse_buf_ctrl & prCr->rPbufCtrlTotalPageNum.u4Mask) >>
+		 prCr->rPbufCtrlTotalPageNum.u4Shift;
+
+	DBGLOG(HAL, INFO,
+	"Packet Buffer Control(0x%08x): 0x%08x,Page Size=%d, Page Offset=%d, Total page=%d\n",
+		prCr->rPbufCtrl.u4Addr,
+		pse_buf_ctrl, pg_sz,
+		((pse_buf_ctrl & prCr->rPbufCtrlPbufOffset.u4Mask) >>
+		       prCr->rPbufCtrlPbufOffset.u4Shift),
+		pg_num);
+
+	/* Page Flow Control */
+	fpg_cnt = (freepg_cnt & prCr->rFreepgCntFreepgCnt.u4Mask) >>
+		prCr->rFreepgCntFreepgCnt.u4Shift;
+
+	ffa_cnt = (freepg_cnt & prCr->rFreepgCntFfaCnt.u4Mask) >>
+		prCr->rFreepgCntFfaCnt.u4Shift;
+
+
+	DBGLOG(HAL, INFO,
+	"Free page counter(0x%08x): 0x%08x,The toal page number of free=0x%03x,The free page numbers of free for all=0x%03x\n",
+		prCr->rFreepgCnt.u4Addr, freepg_cnt,
+		fpg_cnt, ffa_cnt);
+
+	/* PLE tail / head FID */
+	fpg_head = (freepg_head_tail &
+		prCr->rFreepgHeadTailFreepgHead.u4Mask) >>
+		prCr->rFreepgHeadTailFreepgHead.u4Shift;
+	fpg_tail = (freepg_head_tail &
+		prCr->rFreepgHeadTailFreepgTail.u4Mask) >>
+		prCr->rFreepgHeadTailFreepgTail.u4Shift;
+
+	DBGLOG(HAL, INFO,
+		"Free page tail/head(0x%08x): 0x%08x,The tail/head page of free page list=0x%03x/0x%03x\n",
+		prCr->rFreepgHeadTail.u4Addr, freepg_head_tail,
+		fpg_tail, fpg_head);
+
+	/*Each Group page status */
+	for (i = 0; i < prBusInfo->u4PseGroupLen; i++) {
+		group = &pse_group[i];
+		HAL_MCR_RD(prAdapter, group->quota_addr, &group_quota);
+		HAL_MCR_RD(prAdapter, group->pg_info_addr, &group_info);
+
+		DBGLOG(HAL, INFO,
+		"Reserved page counter of %s group(0x%08x):0x%08x,status(0x%08x):0x%08x\n",
+		       group->name, group->quota_addr, group_quota,
+		       group->pg_info_addr, group_info);
+		min_q = (group_quota &
+			prCr->rPgHif0GroupHif0MinQuota.u4Mask) >>
+			prCr->rPgHif0GroupHif0MinQuota.u4Shift;
+		max_q = (group_quota &
+			prCr->rPgHif0GroupHif0MaxQuota.u4Mask) >>
+			prCr->rPgHif0GroupHif0MaxQuota.u4Shift;
+		DBGLOG(HAL, TRACE,
+		     "\tThe max/min quota pages of %s group=0x%03x/0x%03x\n",
+		       group->name, max_q, min_q);
+		rsv_pg =
+		(group_info & prCr->rHif0PgInfoHif0RsvCnt.u4Mask) >>
+		prCr->rHif0PgInfoHif0RsvCnt.u4Shift;
+		used_pg =
+		(group_info & prCr->rHif0PgInfoHif0SrcCnt.u4Mask) >>
+		prCr->rHif0PgInfoHif0SrcCnt.u4Shift;
+		DBGLOG(HAL, TRACE,
+		       "\tThe used/reserved pages of %s group=0x%03x/0x%03x\n",
+		       group->name, used_pg, rsv_pg);
+	}
+
+	/* Queue Empty Status */
+	DBGLOG(HAL, INFO,
+	"QUEUE_EMPTY(0x%08x):0x%08x,QUEUE_EMPTY_MASK(0x%08x):0x%08x\n",
+		prCr->rQueueEmpty.u4Addr, pse_stat,
+		prCr->rQueueEmpty.u4Mask, pse_stat_mask);
+
+	DBGLOG(HAL, TRACE, "\t\tCPU Q0/1/2/3 empty=%d/%d/%d/%d\n",
+	       (pse_stat & prCr->rQueueEmptyCpuQ0Empty.u4Mask) >>
+		       prCr->rQueueEmptyCpuQ0Empty.u4Shift,
+	       ((pse_stat & prCr->rQueueEmptyCpuQ1Empty.u4Mask) >>
+		prCr->rQueueEmptyCpuQ1Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyCpuQ2Empty.u4Mask) >>
+		prCr->rQueueEmptyCpuQ2Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyCpuQ3Empty.u4Mask) >>
+		prCr->rQueueEmptyCpuQ3Empty.u4Shift));
+	str = "\t\tHIF Q0/1/2/3/4/5/6/7/8/9/10/11";
+	DBGLOG(HAL, TRACE,
+		"%s empty=%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d/%d\n", str,
+	       ((pse_stat & prCr->rQueueEmptyHif0Empty.u4Mask) >>
+		prCr->rQueueEmptyHif0Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif1Empty.u4Mask) >>
+		prCr->rQueueEmptyHif1Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif2Empty.u4Mask) >>
+		prCr->rQueueEmptyHif2Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif3Empty.u4Mask) >>
+		prCr->rQueueEmptyHif3Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif4Empty.u4Mask) >>
+		prCr->rQueueEmptyHif4Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif5Empty.u4Mask) >>
+		prCr->rQueueEmptyHif5Empty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyHif6Empty.u4Mask) >>
+		prCr->rQueueEmptyHif6Empty.u4Shift),
+		((pse_stat & prCr->rQueueEmptyHif7Empty.u4Mask) >>
+		prCr->rQueueEmptyHif7Empty.u4Shift),
+		((pse_stat & prCr->rQueueEmptyHif8Empty.u4Mask) >>
+		prCr->rQueueEmptyHif8Empty.u4Shift),
+		((pse_stat & prCr->rQueueEmptyHif9Empty.u4Mask) >>
+		prCr->rQueueEmptyHif9Empty.u4Shift),
+		((pse_stat & prCr->rQueueEmptyHif10Empty.u4Mask) >>
+		prCr->rQueueEmptyHif10Empty.u4Shift),
+		((pse_stat & prCr->rQueueEmptyHif11Empty.u4Mask) >>
+		prCr->rQueueEmptyHif11Empty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tLMAC TX Q empty=%d\n",
+	       ((pse_stat & prCr->rQueueEmptyLmacTxQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyLmacTxQueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tMDP TX Q/RX Q empty=%d/%d\n",
+	       ((pse_stat & prCr->rQueueEmptyMdpTxQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpTxQueueEmpty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptyMdpRxQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpRxQueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tSEC TX Q/RX Q empty=%d/%d\n",
+	       ((pse_stat & prCr->rQueueEmptySecTxQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptySecTxQueueEmpty.u4Shift),
+	       ((pse_stat & prCr->rQueueEmptySecRxQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptySecRxQueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tSFD PARK Q empty=%d\n",
+	       ((pse_stat & prCr->rQueueEmptySfdParkQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptySfdParkQueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tMDP TXIOC Q/RXIOC Q empty=%d/%d\n",
+	       ((pse_stat &
+		 prCr->rQueueEmptyMdpTxiocQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpTxiocQueueEmpty.u4Shift),
+	       ((pse_stat &
+		 prCr->rQueueEmptyMdpRxiocQueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpRxiocQueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tMDP TX1 Q empty=%d\n",
+	       ((pse_stat &
+		 prCr->rQueueEmptyMdpTx1QueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpTx1QueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tSEC TX1 Q empty=%d\n",
+	       ((pse_stat & prCr->rQueueEmptySecTx1QueueEmpty.u4Mask) >>
+		prCr->rQueueEmptySecTx1QueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tMDP TXIOC1 Q/RXIOC1 Q empty=%d/%d\n",
+	       ((pse_stat &
+		 prCr->rQueueEmptyMdpTxioc1QueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpTxioc1QueueEmpty.u4Shift),
+	       ((pse_stat &
+		 prCr->rQueueEmptyMdpRxioc1QueueEmpty.u4Mask) >>
+		prCr->rQueueEmptyMdpRxioc1QueueEmpty.u4Shift));
+	DBGLOG(HAL, TRACE, "\t\tRLS Q empty=%d\n",
+	       ((pse_stat & prCr->rQueueEmptyRlsQEmtpy.u4Mask) >>
+		prCr->rQueueEmptyRlsQEmtpy.u4Shift));
+
+	/* Nonempty Queue Status */
+	DBGLOG(HAL, INFO, "Nonempty Q info:");
+	for (i = 0; i < 31; i++) {
+		if (((pse_stat & (0x1 << i)) >> i) == 0) {
+			if (pse_queue_empty_info[i].QueueName != NULL)
+				DBGLOG(HAL, INFO, "\t%s: ",
+				       pse_queue_empty_info[i].QueueName);
+		}
+	}
+}
 
 void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 {

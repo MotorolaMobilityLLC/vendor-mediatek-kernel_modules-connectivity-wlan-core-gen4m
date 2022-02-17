@@ -44,6 +44,9 @@
 #define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR \
 	(0x7C00E000 + 0x068)
 
+extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
+extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
