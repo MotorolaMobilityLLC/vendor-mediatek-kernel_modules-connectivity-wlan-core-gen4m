@@ -1320,6 +1320,28 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	uint8_t ucColdDownTime = 0;
 	struct WIFI_VAR *prWifiVar =
 		(struct WIFI_VAR *)NULL;
+#if CFG_TC10_FEATURE
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+#endif
+
+#if CFG_TC10_FEATURE
+	prBssInfo = cnmGetSapBssInfo(prAdapter);
+	if (!prBssInfo) {
+		DBGLOG(CNM, WARN,
+			"[CSA]SoftAp Not Exist\n");
+		return;
+	}
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(CNM, WARN,
+			"[CSA]SoftAp fsm Not Exist\n");
+		return;
+	} else if (!prP2pRoleFsmInfo->fgIsChannelSelectByAcs) {
+		DBGLOG(P2P, INFO, "Do not switch channel since not ACS\n");
+		return;
+	}
+#endif
 
 	prEventBody = (struct EVENT_LTE_SAFE_CHN *)(
 		prEvent->aucBuffer);
