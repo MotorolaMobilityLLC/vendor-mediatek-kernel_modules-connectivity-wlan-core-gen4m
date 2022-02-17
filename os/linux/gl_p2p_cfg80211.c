@@ -2082,14 +2082,13 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 			}
 
 			if (info->tail_len != 0) {
-				uint8_t ucLen = info->tail_len;
-
 				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
 				kalMemCopy(pucBuffer,
 					info->tail,
 					info->tail_len);
 
-				prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
+				prP2pBcnUpdateMsg->u4BcnBodyLen =
+					info->tail_len;
 
 				pucBuffer += info->tail_len;
 			} else {
