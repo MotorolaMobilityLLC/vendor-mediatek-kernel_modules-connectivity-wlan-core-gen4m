@@ -986,11 +986,12 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			HAL_WIFI_FUNC_OFF_CHECK(prAdapter,
 					ready_bits /* WIFI_FUNC_READY_BITS */,
 					&fgResult);
-
+#if defined(_HIF_USB) || defined(_HIF_SDIO)
 			if (nicProcessIST(prAdapter) !=
-			    WLAN_STATUS_NOT_INDICATING)
+				WLAN_STATUS_NOT_INDICATING)
 				DBGLOG(INIT, INFO,
 				       "Handle pending interrupt\n");
+#endif /* _HIF_USB or _HIF_SDIO */
 		}
 		u4CurTime = kalGetTimeTick();
 
