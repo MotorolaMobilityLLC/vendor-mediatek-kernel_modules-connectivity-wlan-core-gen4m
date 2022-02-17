@@ -15528,6 +15528,7 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmMgt = NULL;
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
+	int32_t u4Ret = 0;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
@@ -15548,10 +15549,13 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 	prBtmMgt = aisGetBTMParam(prAdapter, ucBssIndex);
 	prBtmMgt->ucDialogToken = wnmGetBtmToken();
-	if (pvSetBuffer)
-		kalkStrtou8(pvSetBuffer, 0, &prBtmMgt->ucQueryReason);
-	else
+	if (pvSetBuffer) {
+		u4Ret = kalkStrtou8(pvSetBuffer, 0, &prBtmMgt->ucQueryReason);
+		if (u4Ret)
+			DBGLOG(OID, WARN, "parse reason u4Ret=%d\n", u4Ret);
+	} else {
 		prBtmMgt->ucQueryReason = BSS_TRANSITION_LOW_RSSI;
+	}
 	DBGLOG(OID, INFO, "Send BssTransitionManagementQuery, Reason %d\n",
 	       prBtmMgt->ucQueryReason);
 	wnmSendBTMQueryFrame(prAdapter, prStaRec);
