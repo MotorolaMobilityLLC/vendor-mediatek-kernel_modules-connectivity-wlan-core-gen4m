@@ -336,6 +336,7 @@ struct BSS_INFO {
 	uint16_t u2AssocId;
 
 	uint8_t ucDTIMPeriod;	/* For Infra/AP Mode */
+	u_int8_t fgTIMPresent;
 
 	/* For AP Mode, it is the DTIM value we should carried in
 	 * the Beacon of next TBTT.
