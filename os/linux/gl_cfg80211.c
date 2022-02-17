@@ -461,7 +461,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryLinkSpeed, &u4Rate, sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen);
 
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
 #else
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
@@ -489,7 +489,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryRssi, &i4Rssi, sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
 
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #else
 		sinfo->filled |= STATION_INFO_SIGNAL;
@@ -510,7 +510,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 
 	if (prDevStats) {
 		/* 4. fill RX_PACKETS */
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
 #else
 		sinfo->filled |= STATION_INFO_RX_PACKETS;
@@ -518,7 +518,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 		sinfo->rx_packets = prDevStats->rx_packets;
 
 		/* 5. fill TX_PACKETS */
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
 #else
 		sinfo->filled |= STATION_INFO_TX_PACKETS;
@@ -544,7 +544,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, const
 			u4TotalError = rQueryStaStatistics.u4TxFailCount + rQueryStaStatistics.u4TxLifeTimeoutCount;
 			prDevStats->tx_errors += u4TotalError;
 		}
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
 #else
 		sinfo->filled |= STATION_INFO_TX_FAILED;
