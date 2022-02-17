@@ -1200,6 +1200,16 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 		kalSetTxEvent2Rx(prAdapter->prGlueInfo);
 	}
 #else
+#if defined(_HIF_USB)
+	if (HAL_IS_RX_DIRECT(prAdapter)) {
+		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
+			(void *) GLUE_GET_PKT_DESCRIPTOR(
+				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
+		RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT, 1);
+		if (fgIsRetained)
+			RX_ADD_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT, 1);
+	}
+#endif
 	prRxCtrl->apvIndPacket[prRxCtrl->ucNumIndPacket] =
 		prSwRfb->pvPacket;
 	prRxCtrl->ucNumIndPacket++;

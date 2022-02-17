@@ -1413,9 +1413,11 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 	rCmdUapsdParam.ucMaxSpLen = prUapsdParam->ucMaxSpLen;
 	prPmProfSetupInfo->ucUapsdSp = prUapsdParam->ucMaxSpLen;
 
+#if CFG_SUPPORT_MULTITHREAD
 	if (prAdapter->prGlueInfo)
 		fgIsOid = (prAdapter->prGlueInfo->u4TxThreadPid
 				!= KAL_GET_CURRENT_THREAD_ID());
+#endif
 
 #if 0
 	return wlanSendSetQueryCmd(prAdapter,

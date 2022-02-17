@@ -1525,8 +1525,13 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 	}
 
 	SDIO_REC_TIME_START();
+#if CFG_SUPPORT_MULTITHREAD
 	if (!prMsduInfo->pfTxDoneHandler)
 		kalFreeTxMsdu(prAdapter, prMsduInfo);
+#else
+	nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+	nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+#endif
 	SDIO_REC_TIME_END();
 	SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4TxDataFreeTime);
 

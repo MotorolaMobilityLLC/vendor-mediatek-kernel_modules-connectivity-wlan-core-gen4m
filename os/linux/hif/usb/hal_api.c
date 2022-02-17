@@ -821,7 +821,9 @@ void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *p
 	if (!HAL_IS_TX_DIRECT(prAdapter)) {
 		if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo) > 0 || wlanGetTxPendingFrameCount(prAdapter) > 0)
 			kalSetEvent(prAdapter->prGlueInfo);
+#if CFG_SUPPORT_MULTITHREAD
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 	}
 }
 
@@ -938,7 +940,6 @@ uint32_t halRxUSBEnqueueRFB(
 		set_bit(GLUE_FLAG_RX_BIT, &(prGlueInfo->ulFlag));
 		wake_up_interruptible(&(prGlueInfo->waitq));
 	}
-
 	return u4Length;
 }
 

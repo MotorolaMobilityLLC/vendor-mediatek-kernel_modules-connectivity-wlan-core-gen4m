@@ -4791,6 +4791,10 @@ int main_thread(void *data)
 			}
 			kalTraceEnd();
 		}
+		/* Read chip status when chip no response */
+		if (test_and_clear_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT,
+				       &prGlueInfo->ulFlag))
+			halPrintHifDbgInfo(prGlueInfo->prAdapter);
 
 		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT,
 					&prGlueInfo->ulFlag))
@@ -4871,16 +4875,14 @@ int main_thread(void *data)
 #ifdef UT_TEST_MODE
 		testProcessRFBs(prGlueInfo->prAdapter);
 #endif
-
-		if (test_and_clear_bit(GLUE_FLAG_RX_BIT,
-				       &prGlueInfo->ulFlag))
-			TRACE(nicRxProcessRFBs(prGlueInfo->prAdapter), "RX");
-
 		if (test_and_clear_bit(GLUE_FLAG_TX_CMD_DONE_BIT,
 				       &prGlueInfo->ulFlag))
 			TRACE(wlanTxCmdDoneMthread(prGlueInfo->prAdapter),
 				"TX_CMD");
 #endif
+		if (test_and_clear_bit(GLUE_FLAG_RX_BIT,
+					   &prGlueInfo->ulFlag))
+			TRACE(nicRxProcessRFBs(prGlueInfo->prAdapter), "RX");
 
 		/* Process RX, In linux, we don't need to free sk_buff by
 		 * ourself
@@ -7628,7 +7630,7 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 
 }
 #endif
-
+#if CFG_SUPPORT_MULTITHREAD
 void kalFreeTxMsduWorker(struct work_struct *work)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -7669,7 +7671,7 @@ void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 
 	schedule_work(&prAdapter->prGlueInfo->rTxMsduFreeWork);
 }
-
+#endif
 int32_t kalHaltLock(uint32_t waitMs)
 {
 	int32_t i4Ret = 0;

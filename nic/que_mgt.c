@@ -7242,7 +7242,7 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 		prAdapter->rRxCtrl.ucNumIndPacket);
 	LOGBUF(pucBuf, u4Max, u4Len, "ucNumRetainedPacket[%u]\n",
 		prAdapter->rRxCtrl.ucNumRetainedPacket);
-
+#if CFG_SUPPORT_MULTITHREAD
 	LOGBUF(pucBuf, u4Max, u4Len,
 		"---------------------------------\n");
 	LOGBUF(pucBuf, u4Max, u4Len,
@@ -7262,10 +7262,11 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 
 	LOGBUF(pucBuf, u4Max, u4Len,
 		"---------------------------------\n");
+
 	if (prGlueInfo->rCmdQueue.u4NumElem > 0)
 		cmdBufDumpCmdQueue(&prGlueInfo->rCmdQueue,
 				"waiting Tx CMD queue");
-
+#endif
 	return u4Len;
 }
 

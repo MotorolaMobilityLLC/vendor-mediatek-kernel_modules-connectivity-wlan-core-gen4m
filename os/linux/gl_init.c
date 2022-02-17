@@ -5048,11 +5048,10 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,
 				halDeAggRxPktWorker);
 	}
-	INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
-
 	prGlueInfo->main_thread = kthread_run(main_thread,
-			prGlueInfo->prDevHandler, "main_thread");
+		prGlueInfo->prDevHandler, "main_thread");
 #if CFG_SUPPORT_MULTITHREAD
+	INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
 	prGlueInfo->hif_thread = kthread_run(hif_thread,
 			prGlueInfo->prDevHandler, "hif_thread");
 	prGlueInfo->rx_thread = kthread_run(rx_thread,
@@ -5496,10 +5495,10 @@ static int32_t wlanOffAtReset(void)
 	 *	 requests
 	 */
 	set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
-
+#if CFG_SUPPORT_MULTITHREAD
 	/* Stop works */
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
-
+#endif
 	wlanOffStopWlanThreads(prGlueInfo);
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
@@ -6222,7 +6221,9 @@ static void wlanRemove(void)
 	set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
 
 	/* Stop works */
+#if CFG_SUPPORT_MULTITHREAD
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
+#endif
 	cancel_delayed_work_sync(&prGlueInfo->rRxPktDeAggWork);
 #if CFG_CHIP_RESET_SUPPORT
 	cancel_work_sync(&prGlueInfo->rWfsysResetWork);
