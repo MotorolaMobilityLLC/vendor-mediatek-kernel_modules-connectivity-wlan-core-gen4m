@@ -2963,6 +2963,7 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	const u8 *bssid = NULL;
 	struct ieee80211_channel *channel = NULL;
+	struct cfg80211_bss *bss = NULL;
 
 	do {
 		if ((wiphy == NULL) || (dev == NULL) || (sme == NULL))
@@ -2982,9 +2983,29 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 #endif
 
 		if ((bssid == NULL) || (channel == NULL)) {
-			DBGLOG(P2P, ERROR,
-				"Reject connect since bssid/channel null.\n");
-			break;
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			bss = cfg80211_get_bss(wiphy, NULL, NULL,
+				sme->ssid, sme->ssid_len,
+				IEEE80211_BSS_TYPE_ESS, IEEE80211_PRIVACY_ANY);
+#else
+			bss = cfg80211_get_bss(wiphy, NULL, NULL,
+				sme->ssid, sme->ssid_len,
+				WLAN_CAPABILITY_ESS, WLAN_CAPABILITY_ESS);
+#endif
+			if (bss == NULL) {
+				DBGLOG(P2P, ERROR,
+				"Reject connect without bssid/channel/bss.\n");
+				break;
+			}
+
+			bssid = bss->bssid;
+			channel = bss->channel;
+
+			if ((bssid == NULL) || (channel == NULL)) {
+				DBGLOG(P2P, ERROR,
+				"Reject connect: no bssid/channel in bss.\n");
+				break;
+			}
 		}
 
 		DBGLOG(P2P, INFO,
@@ -3048,6 +3069,9 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 				DBGLOG(REQ, WARN,
 					"invalid cipher pairwise (%d)\n",
 					sme->crypto.ciphers_pairwise[0]);
+				/* do cfg80211_put_bss before return */
+				if (bss)
+					cfg80211_put_bss(wiphy, bss);
 				return -EINVAL;
 			}
 		}
@@ -3064,6 +3088,10 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 
 		i4Rslt = 0;
 	} while (FALSE);
+
+	/* do cfg80211_put_bss before return */
+	if (bss)
+		cfg80211_put_bss(wiphy, bss);
 
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_connect */
