@@ -186,7 +186,10 @@ static void mtk_vif_destructor(struct net_device *dev)
 				 * be NULL, if the 2nd P2P dev isn't created.
 				 */
 				DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
-				gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
+				if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
+					gprP2pRoleWdev[u4Idx] = NULL;
+				else
+					gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
 				break;
 			}
 			kfree(prWdev);
@@ -602,7 +605,10 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	/* Wait for kalSendCompleteAndAwakeQueue() complete */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
+		prP2pInfo->aprRoleHandler = NULL;
+	else
+		prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
 	/* Restore */
 	prP2pInfo->prWdev = gprP2pWdev[u4Idx];
 #if 1

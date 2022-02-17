@@ -349,12 +349,17 @@ u_int8_t p2pUnregisterToWlan(struct GLUE_INFO *prGlueInfo);
 
 #define p2pSetMode(_ucAPMode) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define p2pGetMode(void)  \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo);
 
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo);
 
 void p2pSetMode(IN uint8_t ucAPMode);
+
+uint8_t p2pGetMode(void);
 #endif
 
 u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo,
@@ -366,7 +371,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo,
 		struct wireless_dev *prP2pWdev,
 		struct net_device *prP2pDev,
 		uint8_t u4Idx,
-		u_int8_t fgIsApMode);
+		u_int8_t fgIsApMode,
+		u_int8_t fgSkipRole);
 
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx);
 

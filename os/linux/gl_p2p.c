@@ -1117,7 +1117,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
  */
 /*---------------------------------------------------------------------------*/
 int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
-		struct net_device *prP2pDev, uint8_t u4Idx, u_int8_t fgIsApMode)
+	struct net_device *prP2pDev, uint8_t u4Idx, u_int8_t fgIsApMode, u_int8_t fgSkipRole)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
@@ -1233,6 +1233,10 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	p2pDevFsmInit(prAdapter);
+
+	if (fgSkipRole)
+		goto exit;
+
 	prP2PInfo->aprRoleHandler = prP2PInfo->prDevHandler;
 
 	DBGLOG(P2P, INFO,
@@ -1255,6 +1259,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* setup running mode */
 	p2pFuncInitConnectionSettings(prAdapter,
 		prAdapter->rWifiVar.prP2PConnSettings[u4Idx], fgIsApMode);
+
+exit:
 
 	return 0;
 }
@@ -1284,6 +1290,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	struct GL_HIF_INFO *prHif = NULL;
 	struct device *prDev;
 #endif
+	u_int8_t fgSkipRole =
+		(ucApMode == RUNNING_P2P_DEV_MODE) ? TRUE : FALSE;
 
 	ASSERT(prGlueInfo);
 
@@ -1292,7 +1300,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 
 	if ((ucApMode == RUNNING_DUAL_AP_MODE) ||
 	    (ucApMode == RUNNING_P2P_AP_MODE) ||
-	    (ucApMode == RUNNING_DUAL_P2P_MODE)) {
+	    (ucApMode == RUNNING_DUAL_P2P_MODE) ||
+	    (ucApMode == RUNNING_P2P_DEV_MODE)) {
 		ucRegisterNum = 2;
 		glP2pCreateWirelessDevice(prGlueInfo);
 	}
@@ -1311,11 +1320,13 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			 * RUNNING_DUAL_AP_MODE
 			 * RUNNING_P2P_MODE
 			 * RUNNING_DUAL_P2P_MODE
+			 * RUNNING_P2P_DEV_MODE
 			 */
 			prSetDevName = prDevName;
 
 			if (ucApMode == RUNNING_P2P_MODE ||
-				ucApMode == RUNNING_DUAL_P2P_MODE)
+				ucApMode == RUNNING_DUAL_P2P_MODE ||
+				ucApMode == RUNNING_P2P_DEV_MODE)
 				fgIsApMode = FALSE;
 			else
 				fgIsApMode = TRUE;
@@ -1362,8 +1373,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		kalMemCopy(prP2pDev->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
 
-		if (glSetupP2P(prGlueInfo, prP2pWdev, prP2pDev, i, fgIsApMode)
-				 != 0) {
+		if (glSetupP2P(prGlueInfo, prP2pWdev, prP2pDev, i,
+			fgIsApMode, fgSkipRole) != 0) {
 			DBGLOG(INIT, WARN, "glSetupP2P FAILED\n");
 			free_netdev(prP2pDev);
 			return FALSE;

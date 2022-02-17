@@ -358,6 +358,8 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo);
 
 void p2pSetMode(IN uint8_t ucAPMode);
 
+uint8_t p2pGetMode(void);
+
 u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo,
 		const char *prDevName,
 		const char *prDevName2,
@@ -367,7 +369,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo,
 		struct wireless_dev *prP2pWdev,
 		struct net_device *prP2pDev,
 		uint8_t u4Idx,
-		u_int8_t fgIsApMode);
+		u_int8_t fgIsApMode,
+		u_int8_t fgSkipRole);
 
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx);
 
