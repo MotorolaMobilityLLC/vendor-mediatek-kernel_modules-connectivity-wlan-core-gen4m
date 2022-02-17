@@ -40,7 +40,7 @@ CFLAGS += -I$(CC_INCLUDE)
 #CFLAGS += -I/usr/include
 
 # Build driver default option
-hif := virtual
+hif := none
 MTK_COMBO_CHIP := MT6632
 
 export MTK_COMBO_CHIP
