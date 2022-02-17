@@ -202,6 +202,11 @@
 /* HT PHY (clause 22) */
 #define PHY_TYPE_BIT_VHT        BIT(PHY_TYPE_VHT_INDEX)
 
+#if (CFG_SUPPORT_802_11AX == 1)
+/* HE PHY */
+#define PHY_TYPE_BIT_HE         BIT(PHY_TYPE_HE_INDEX)
+#endif
+
 /* PHY TYPE set definitions */
 #define PHY_TYPE_SET_802_11ABGN (PHY_TYPE_BIT_OFDM | \
 				 PHY_TYPE_BIT_HR_DSSS | \
@@ -244,6 +249,17 @@
 				   PHY_TYPE_BIT_ERP | \
 				   PHY_TYPE_BIT_HT | \
 				   PHY_TYPE_BIT_VHT)
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#define PHY_TYPE_SET_802_11AX   (PHY_TYPE_BIT_HE)
+
+#define PHY_TYPE_SET_802_11ABGNACAX (PHY_TYPE_BIT_OFDM | \
+				   PHY_TYPE_BIT_HR_DSSS | \
+				   PHY_TYPE_BIT_ERP | \
+				   PHY_TYPE_BIT_HT | \
+				   PHY_TYPE_BIT_VHT | \
+				   PHY_TYPE_BIT_HE)
+#endif /* CFG_SUPPORT_802_11AX == 1 */
 
 /* Rate set bit definitions */
 #define RATE_SET_BIT_1M         BIT(RATE_1M_SW_INDEX)	/* Bit 0: 1M */
@@ -473,6 +489,10 @@ enum ENUM_PHY_TYPE_INDEX {
 	PHY_TYPE_OFDM_INDEX,	/* OFDM 5 GHz PHY (clause 17) */
 	PHY_TYPE_HT_INDEX,	/* HT PHY (clause 20) */
 	PHY_TYPE_VHT_INDEX,	/* HT PHY (clause 22) */
+#if (CFG_SUPPORT_802_11AX == 1)
+	PHY_TYPE_HE_INDEX,	/* HE PHY */
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
 	PHY_TYPE_INDEX_NUM	/* 6 */
 };
 
