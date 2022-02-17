@@ -3199,66 +3199,36 @@ u_int8_t kalIsCardRemoved(IN struct GLUE_INFO *prGlueInfo)
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo, IN OUT uint8_t *prMacAddr[PARAM_MAC_ADDR_LEN])
+u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
+			IN OUT uint8_t *prMacAddr[PARAM_MAC_ADDR_LEN])
 {
 	ASSERT(prGlueInfo);
 
 	/* Get MAC address override from wlan feature option */
-	prGlueInfo->fgIsMacAddrOverride = prGlueInfo->prAdapter->rWifiVar.ucMacAddrOverride;
+	prGlueInfo->fgIsMacAddrOverride =
+		prGlueInfo->prAdapter->rWifiVar.ucMacAddrOverride;
 
-	wlanHwAddrToBin(prGlueInfo->prAdapter->rWifiVar.aucMacAddrStr, prGlueInfo->rMacAddrOverride);
+	wlanHwAddrToBin(prGlueInfo->prAdapter->rWifiVar.aucMacAddrStr,
+				prGlueInfo->rMacAddrOverride);
 
 	if (prGlueInfo->fgIsMacAddrOverride == FALSE) {
 
 #ifdef CFG_ENABLE_EFUSE_MAC_ADDR
 		if (prGlueInfo->prAdapter->fgIsEmbbededMacAddrValid) {
-			COPY_MAC_ADDR(prMacAddr, prGlueInfo->prAdapter->rWifiVar.aucMacAddress);
+			COPY_MAC_ADDR(prMacAddr,
+			prGlueInfo->prAdapter->rWifiVar.aucMacAddress);
 			return TRUE;
 		} else {
 			return FALSE;
 		}
 #else
-
-#if !defined(CONFIG_X86)
-		uint32_t i;
-		u_int8_t fgIsReadError = FALSE;
-
-		for (i = 0; i < MAC_ADDR_LEN; i += 2) {
-			if (kalCfgDataRead16(prGlueInfo,
-					     OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
-					     (uint16_t *) (((uint8_t *) prMacAddr) + i)) == FALSE) {
-				fgIsReadError = TRUE;
-				break;
-			}
-		}
-
-		if (fgIsReadError == TRUE)
+		if (prGlueInfo->fgNvramAvailable == FALSE) {
+			DBGLOG(INIT, INFO, "glLoadNvram fail\n");
 			return FALSE;
-		else
-			return TRUE;
-#else
-		/* x86 Linux doesn't need to override network address so far */
-		/*return FALSE;*/
-
-		/*Modify for Linux PC support NVRAM Setting*/
-		uint32_t i;
-		u_int8_t fgIsReadError = FALSE;
-
-		for (i = 0; i < MAC_ADDR_LEN; i += 2) {
-			if (kalCfgDataRead16(prGlueInfo,
-						 OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, aucMacAddress) + i,
-						 (uint16_t *) (((uint8_t *) prMacAddr) + i)) == FALSE) {
-				fgIsReadError = TRUE;
-				break;
-			}
 		}
-
-		if (fgIsReadError == TRUE)
-			return FALSE;
-		else
-			return TRUE;
-
-#endif
+		kalMemCopy(prMacAddr, prGlueInfo->rRegInfo.aucMacAddr,
+				PARAM_MAC_ADDR_LEN*sizeof(uint8_t));
+		return TRUE;
 #endif
 	} else {
 		COPY_MAC_ADDR(prMacAddr, prGlueInfo->rMacAddrOverride);
@@ -3747,46 +3717,6 @@ struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO *prGlueInfo)
 	ASSERT(prGlueInfo);
 
 	return &(prGlueInfo->rRegInfo);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
-* \brief to retrieve version information of corresponding configuration file
-*
-* \param[in]
-*           prGlueInfo
-*
-* \param[out]
-*           pu2Part1CfgOwnVersion
-*           pu2Part1CfgPeerVersion
-*           pu2Part2CfgOwnVersion
-*           pu2Part2CfgPeerVersion
-*
-* \return
-*           NONE
-*/
-/*----------------------------------------------------------------------------*/
-void
-kalGetConfigurationVersion(IN struct GLUE_INFO *prGlueInfo,
-			   OUT uint16_t *pu2Part1CfgOwnVersion,
-			   OUT uint16_t *pu2Part1CfgPeerVersion,
-			   OUT uint16_t *pu2Part2CfgOwnVersion, OUT uint16_t *pu2Part2CfgPeerVersion)
-{
-	ASSERT(prGlueInfo);
-
-	ASSERT(pu2Part1CfgOwnVersion);
-	ASSERT(pu2Part1CfgPeerVersion);
-	ASSERT(pu2Part2CfgOwnVersion);
-	ASSERT(pu2Part2CfgPeerVersion);
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part1OwnVersion), pu2Part1CfgOwnVersion);
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part1PeerVersion), pu2Part1CfgPeerVersion);
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part2OwnVersion), pu2Part2CfgOwnVersion);
-
-	kalCfgDataRead16(prGlueInfo, OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, u2Part2PeerVersion), pu2Part2CfgPeerVersion);
-
 }
 
 /*----------------------------------------------------------------------------*/
