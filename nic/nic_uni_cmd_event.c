@@ -1721,6 +1721,7 @@ uint32_t nicUniCmdBssInfoTagP2p(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
+#if (CFG_SUPPORT_802_11AX == 1)
 uint32_t nicUniCmdBssInfoTagHe(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -1763,6 +1764,8 @@ uint32_t nicUniCmdBssInfoTagBssColor(struct ADAPTER *ad,
 			>> HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
 	return tag->u2Length;
 }
+
+#endif
 
 uint32_t nicUniCmdBssInfoTagMBSSID(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
@@ -1816,8 +1819,10 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 	{sizeof(struct UNI_CMD_BSSINFO_QBSS), nicUniCmdBssInfoTagQbss},
 	{sizeof(struct UNI_CMD_BSSINFO_SAP), nicUniCmdBssInfoTagSap},
 	{sizeof(struct UNI_CMD_BSSINFO_P2P), nicUniCmdBssInfoTagP2p},
+#if (CFG_SUPPORT_802_11AX == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_HE), nicUniCmdBssInfoTagHe},
 	{sizeof(struct UNI_CMD_BSSINFO_BSS_COLOR), nicUniCmdBssInfoTagBssColor},
+#endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
 	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld}
@@ -1931,6 +1936,7 @@ uint32_t nicUniCmdPowerSaveMode(struct ADAPTER *ad,
 uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
+#if (CFG_SUPPORT_TWT == 1)
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *cmd;
 	struct UNI_CMD_TWT *uni_cmd;
 	struct UNI_CMD_TWT_ARGT_UPDATE *tag;
@@ -1977,6 +1983,9 @@ uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
@@ -2283,6 +2292,7 @@ uint32_t nicUniCmdStaRecTagVhtInfo(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
+#if (CFG_SUPPORT_802_11AX == 1)
 uint32_t nicUniCmdStaRecTagHeBasic(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
@@ -2325,6 +2335,7 @@ uint32_t nicUniCmdStaRecTagHe6gCap(struct ADAPTER *ad,
 	return 0;
 #endif
 }
+#endif
 
 uint32_t nicUniCmdStaRecTagRA(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
@@ -2382,8 +2393,10 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_BASIC), nicUniCmdStaRecTagBasic},
 	{sizeof(struct UNI_CMD_STAREC_HT_INFO), nicUniCmdStaRecTagHtInfo},
 	{sizeof(struct UNI_CMD_STAREC_VHT_INFO), nicUniCmdStaRecTagVhtInfo},
+#if (CFG_SUPPORT_802_11AX == 1)
 	{sizeof(struct UNI_CMD_STAREC_HE_BASIC), nicUniCmdStaRecTagHeBasic},
 	{sizeof(struct UNI_CMD_STAREC_HE_6G_CAP), nicUniCmdStaRecTagHe6gCap},
+#endif
 	{sizeof(struct UNI_CMD_STAREC_STATE_INFO), nicUniCmdStaRecTagState},
 	{sizeof(struct UNI_CMD_STAREC_PHY_INFO), nicUniCmdStaRecTagPhyInfo},
 	{sizeof(struct UNI_CMD_STAREC_RA_INFO), nicUniCmdStaRecTagRA},
@@ -2644,6 +2657,7 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
+#if (CFG_SUPPORT_802_11AX == 1)
 	struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T *cmd;
 	struct UNI_CMD_MQM_UPDATE_MU_EDCA *uni_cmd;
 	struct UNI_CMD_UPDATE_MU_EDCA *tag;
@@ -2686,6 +2700,9 @@ uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t nicUniCmdOffloadIPV4(struct ADAPTER *ad,
