@@ -5471,6 +5471,55 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 	return rStatus;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define CMD_SET_LINK_ID_FOR_KEY	"SET_LINK_ID_FOR_KEY"
+int testmode_set_link_id_for_key(IN struct wiphy *wiphy, IN char *pcCommand,
+				IN int i4TotalLen)
+{
+	uint32_t u4Param = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = -1;
+	uint32_t u4SetInfoLen = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
+		       apcArgv[1]);
+		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+			       i4BytesWritten);
+			i4BytesWritten = -1;
+		} else {
+			DBGLOG(INIT, TRACE, "set link id %d\n", u4Param);
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetLinkIdForKey,
+				&u4Param, sizeof(uint32_t),
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, ERROR,
+				       "set link id fail 0x%x\n", rStatus);
+			else
+				DBGLOG(INIT, TRACE,
+				       "set link id successed\n");
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "set link id failed\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+}
+
+#endif
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len)
 {
@@ -5632,6 +5681,11 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	} else if (strnicmp(cmd, CMD_SET_AX_BLACKLIST,
 			    strlen(CMD_SET_AX_BLACKLIST)) == 0) {
 		return testmode_set_ax_blacklist(wiphy, cmd, len);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	} else if (strnicmp(cmd, CMD_SET_LINK_ID_FOR_KEY,
+			    strlen(CMD_SET_LINK_ID_FOR_KEY)) == 0) {
+		return testmode_set_link_id_for_key(wiphy, cmd, len);
+#endif
 	} else
 		return -EOPNOTSUPP;
 

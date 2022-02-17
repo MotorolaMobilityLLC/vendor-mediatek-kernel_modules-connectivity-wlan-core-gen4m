@@ -1380,6 +1380,82 @@ int kalIndicateNetlink2User(IN struct GLUE_INFO *prGlueInfo, IN void *pvBuf,
 }
 #endif
 
+struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
+	struct ieee80211_channel *prChannel, uint8_t *arBssid,
+	uint8_t ucBssIndex)
+{
+	uint8_t *pos = NULL, *buf = NULL;
+	uint16_t len = 0;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct STA_RECORD *prStaRec;
+	struct cfg80211_bss *bss;
+
+	/* create BSS on-the-fly */
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+
+	if (!prBssDesc || !prChannel || !prStaRec)
+		return NULL;
+
+	pos = prBssDesc->aucIEBuf;
+	len = prBssDesc->u2IELength;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE) {
+		len += 6;
+		buf = pos = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, len);
+		if (buf == NULL) {
+			DBGLOG(ML, INFO,
+			       "No PKT_INFO_T for indicate mlo bssdesc.\n");
+		} else {
+			uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+
+			kalMemCopy(pos, prBssDesc->aucIEBuf,
+				prBssDesc->u2IELength);
+			pos += prBssDesc->u2IELength;
+			*pos++ = ELEM_ID_VENDOR;
+			*pos++ = 4;
+			kalMemCopy(pos, aucMtkOui, 3);
+			pos += 3;
+			*pos++ = 1;
+			pos = buf;
+
+			DBGLOG(ML, INFO, "Indicate bssdesc by mlo addr.\n");
+		}
+	}
+#endif
+
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+	bss = cfg80211_inform_bss(
+		wlanGetWiphy(),
+		prChannel,
+		CFG80211_BSS_FTYPE_PRESP,
+		arBssid,
+		0, /* TSF */
+		prBssDesc->u2CapInfo,
+		prBssDesc->u2BeaconInterval, /* beacon interval */
+		pos, /* IE */
+		len, /* IE Length */
+		RCPI_TO_dBm(prBssDesc->ucRCPI) * 100, /* MBM */
+		GFP_KERNEL);
+#else
+	bss = cfg80211_inform_bss(
+		wlanGetWiphy(),
+		prChannel,
+		arBssid,
+		0, /* TSF */
+		prBssDesc->u2CapInfo,
+		prBssDesc->u2BeaconInterval, /* beacon interval */
+		pos, /* IE */
+		len, /* IE Length */
+		RCPI_TO_dBm(prBssDesc->ucRCPI) * 100, /* MBM */
+		GFP_KERNEL);
+#endif
+	cnmMemFree(prAdapter, buf);
+
+	return bss;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Called by driver to indicate event to upper layer, for example, the
@@ -1409,7 +1485,6 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss = NULL;
 	uint8_t ucChannelNum;
-	struct BSS_DESC *prBssDesc = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
@@ -1539,41 +1614,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				WLAN_CAPABILITY_ESS,
 				WLAN_CAPABILITY_ESS);
 #endif
-			if (bss == NULL) {
-				/* create BSS on-the-fly */
-				prBssDesc =
-					aisGetTargetBssDesc(prAdapter,
-					ucBssIndex);
-
-				if (prBssDesc != NULL && prChannel != NULL) {
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
-					bss = cfg80211_inform_bss(
-			wlanGetWiphy(),
-			prChannel,
-			CFG80211_BSS_FTYPE_PRESP,
-			arBssid,
-			0, /* TSF */
-			prBssDesc->u2CapInfo,
-			prBssDesc->u2BeaconInterval, /* beacon interval */
-			prBssDesc->aucIEBuf, /* IE */
-			prBssDesc->u2IELength, /* IE Length */
-			RCPI_TO_dBm(prBssDesc->ucRCPI) * 100, /* MBM */
-			GFP_KERNEL);
-#else
-					bss = cfg80211_inform_bss(
-			wlanGetWiphy(),
-			prChannel,
-			arBssid,
-			0, /* TSF */
-			prBssDesc->u2CapInfo,
-			prBssDesc->u2BeaconInterval, /* beacon interval */
-			prBssDesc->aucIEBuf, /* IE */
-			prBssDesc->u2IELength, /* IE Length */
-			RCPI_TO_dBm(prBssDesc->ucRCPI) * 100, /* MBM */
-			GFP_KERNEL);
-#endif
-				}
-			}
+			if (bss == NULL)
+				bss = kalInformConnectionBss(prAdapter,
+					prChannel, arBssid, ucBssIndex);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 			StatsResetTxRx();
@@ -8954,7 +8997,65 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	       (uint8_t) ((params.key_mgmt_suite >> 24) & 0x000000FF));
 	return cfg80211_external_auth_request(ndev, &params, GFP_KERNEL);
 }
-#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int kalVendorExternalAuthRequest(IN struct ADAPTER *prAdapter,
+			   IN uint8_t ucBssIndex)
+{
+	struct PARAM_EXTERNAL_AUTH_INFO params;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct STA_RECORD *prStaRec;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(SAA, WARN,
+		       "SAE auth failed with NULL prAisFsmInfo\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	if (!prBssDesc) {
+		DBGLOG(SAA, WARN,
+		       "SAE auth failed without prTargetBssDesc\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
+	if (!prStaRec) {
+		DBGLOG(SAA, WARN,
+		       "SAE auth failed without StaRec\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	wdev = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex)->ieee80211_ptr;
+	wiphy = wdev->wiphy;
+
+	params.id = GRID_EXTERNAL_AUTH;
+	params.len = sizeof(params) - 2;
+	params.action = NL80211_EXTERNAL_AUTH_START;
+	COPY_MAC_ADDR(params.bssid, prStaRec->aucMldAddr);
+	COPY_SSID(params.ssid, params.ssid_len,
+		  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+	params.key_mgmt_suite = RSN_AKM_SUITE_SAE;
+	COPY_MAC_ADDR(params.da, prBssDesc->aucBSSID);
+	DBGLOG(SAA, INFO,
+		"[WPA3] "MACSTR" (da="MACSTR") %s %d %d %02x-%02x-%02x-%02x",
+		MAC2STR(params.bssid), params.da, params.ssid,
+		params.ssid_len, params.action,
+		(uint8_t) (params.key_mgmt_suite & 0xFF),
+		(uint8_t) ((params.key_mgmt_suite >> 8) & 0xFF),
+		(uint8_t) ((params.key_mgmt_suite >> 16) & 0xFF),
+		(uint8_t) ((params.key_mgmt_suite >> 24) & 0xFF));
+
+	return mtk_cfg80211_vendor_event_generic_response(
+		wiphy, wdev, sizeof(params), (uint8_t *)&params);
+}
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+#endif /* CFG_SUPPORT_WPA3 */
 
 const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				const uint8_t *ies, int len,

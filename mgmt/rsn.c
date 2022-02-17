@@ -1856,8 +1856,15 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 			if (!prStaRec) {
 				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
 			} else  {
-				entry = rsnSearchPmkidEntry(prAdapter,
-					prStaRec->aucMacAddr, ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE) {
+					DBGLOG(RSN, INFO, "Use mld addr!");
+					entry = rsnSearchPmkidEntry(prAdapter,
+					      prStaRec->aucMldAddr, ucBssIndex);
+				} else
+#endif
+					entry = rsnSearchPmkidEntry(prAdapter,
+					      prStaRec->aucMacAddr, ucBssIndex);
 			}
 			/* Fill PMKID Count and List field */
 			if (entry) {
