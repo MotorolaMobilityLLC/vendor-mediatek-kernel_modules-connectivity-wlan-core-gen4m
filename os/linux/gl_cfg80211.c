@@ -87,6 +87,8 @@
  *******************************************************************************
  */
 
+extern const struct net_device_ops wlan_netdev_ops;
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -6399,6 +6401,183 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 #endif
 #endif
 
+static void mtk_vif_destructor(struct net_device *dev)
+{
+	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
+	uint32_t u4Idx = 0;
+	if (dev) {
+		DBGLOG(AIS, TRACE, "mtk_vif_destructor\n");
+		prWdev = dev->ieee80211_ptr;
+		free_netdev(dev);
+		if (prWdev) {
+			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+				if (prWdev == gprWdev[u4Idx]) {
+					kfree(prWdev);
+					gprWdev[u4Idx] = NULL;
+				}
+
+			}
+		}
+	}
+}
+
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
+		const char *name, unsigned char name_assign_type,
+		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+#else
+struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
+		const char *name,
+		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+#endif
+{
+	struct ADAPTER *prAdapter;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct net_device *prDevHandler = NULL;
+	struct wireless_dev *prWdev = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint8_t ucAisIndex;
+	uint32_t u4SetInfoLen;
+	struct sockaddr MacAddr;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (prGlueInfo == NULL)
+		return ERR_PTR(-EINVAL);
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+
+	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
+		if (gprWdev[ucAisIndex] == NULL)
+			break;
+	}
+
+	DBGLOG(AIS, TRACE, "%s: u4Idx=%d\n", __func__, ucAisIndex);
+
+	if (ucAisIndex == KAL_AIS_NUM) {
+		DBGLOG(INIT, ERROR, "wdev num reaches limit\n");
+		goto fail;
+	}
+
+	/* prepare wireless dev */
+	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
+	if (!prWdev) {
+		DBGLOG(INIT, ERROR,
+			"Allocating memory to wireless_dev context failed\n");
+		goto fail;
+	}
+
+	memset(prWdev, 0, sizeof(struct wireless_dev));
+	prWdev->iftype = NL80211_IFTYPE_STATION;
+	prWdev->wiphy = wiphy;
+
+	/* prepare netdev */
+	prDevHandler = alloc_netdev_mq(
+		sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name,
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+		NET_NAME_PREDICTABLE,
+#endif
+		ether_setup, CFG_MAX_TXQ_NUM);
+
+
+	if (!prDevHandler) {
+		DBGLOG(INIT, ERROR,
+			"Allocating memory to net_device context failed\n");
+		goto fail;
+	}
+
+#if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
+	prDevHandler->priv_destructor = mtk_vif_destructor;
+#else
+	prDevHandler->destructor = mtk_vif_destructor;
+#endif
+
+	/* Device can help us to save at most 3000 packets,
+	 * after we stopped queue
+	 */
+	prDevHandler->tx_queue_len = 3000;
+	DBGLOG(INIT, INFO, "net_device prDev(0x%p) allocated\n", prDevHandler);
+
+	prDevHandler->needed_headroom =
+		NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
+	prDevHandler->netdev_ops = &wlan_netdev_ops;
+#ifdef CONFIG_WIRELESS_EXT
+	prDevHandler->wireless_handlers =
+		&wext_handler_def;
+#endif
+	netif_carrier_off(prDevHandler);
+	netif_tx_stop_all_queues(prDevHandler);
+	kalResetStats(prDevHandler);
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	if (prAdapter->fgIsSupportCsumOffload)
+		prDevHandler->features |=
+			NETIF_F_IP_CSUM |
+			NETIF_F_IPV6_CSUM |
+			NETIF_F_RXCSUM;
+#endif
+
+	if (prAdapter->rWifiVar.u4MTU > 0 &&
+	    prAdapter->rWifiVar.u4MTU <= ETH_DATA_LEN) {
+		prDevHandler->mtu = prAdapter->rWifiVar.u4MTU;
+	}
+
+	/* 4 <3.1.3> co-relate net device & prDev */
+	prDevHandler->ieee80211_ptr = prWdev;
+	prWdev->netdev = prDevHandler;
+	SET_NETDEV_DEV(prDevHandler, wiphy_dev(prWdev->wiphy));
+
+	/* prepare private netdev */
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDevHandler);
+	prNetDevPrivate->prGlueInfo = prGlueInfo;
+
+	u4SetInfoLen = ucAisIndex;
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryCurrentAddr,
+			&MacAddr.sa_data, PARAM_MAC_ADDR_LEN,
+			TRUE, TRUE, TRUE, &u4SetInfoLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, WARN, "set MAC%f addr fail 0x%x\n",
+			ucAisIndex, rStatus);
+	} else {
+		kalMemCopy(prDevHandler->dev_addr,
+			&MacAddr.sa_data, ETH_ALEN);
+		kalMemCopy(prDevHandler->perm_addr,
+			prDevHandler->dev_addr, ETH_ALEN);
+#if CFG_SHOW_MACADDR_SOURCE
+		DBGLOG(INIT, INFO, "MAC%d address: " MACSTR, ucAisIndex,
+		MAC2STR(&MacAddr.sa_data));
+#endif
+	}
+
+	if (register_netdevice(prDevHandler) < 0) {
+		DBGLOG(INIT, ERROR, "Register netdev %d failed\n", ucAisIndex);
+		goto fail;
+	}
+
+	/* netdev and wdev are ready */
+	gprWdev[ucAisIndex] = prWdev;
+
+	/* prepare aisfsm/bssinfo */
+	kalIoctl(prGlueInfo, wlanoidInitAisFsm, &ucAisIndex, 1,
+				FALSE, FALSE, FALSE, &u4SetInfoLen);
+
+	return prWdev;
+fail:
+	if (prDevHandler != NULL)
+		free_netdev(prDevHandler);
+
+	if (prWdev != NULL)
+		kfree(prWdev);
+
+	return ERR_PTR(-EINVAL);
+}
+
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 				       const char *name,
@@ -6432,6 +6611,16 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 		return ERR_PTR(-EFAULT);
 	}
 
+	if (type == NL80211_IFTYPE_STATION)
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+		return mtk_cfg80211_add_iface(wiphy, name,
+						  name_assign_type, type,
+						  flags, params);
+#else	/* KERNEL_VERSION > (4, 1, 0) */
+		return mtk_cfg80211_add_iface(wiphy, name, type, flags,
+						  params);
+#endif	/* KERNEL_VERSION */
+
 	/* TODO: error handele for the non-P2P interface */
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 == 0)
@@ -6449,6 +6638,60 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 #endif  /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
 }
 
+int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+	struct net_device *prDevHandler = NULL;
+	struct wireless_dev *prWdev = NULL;
+	uint32_t rStatus;
+	uint8_t ucBssIndex = 0;
+	uint8_t ucAisIndex = 0;
+	uint32_t u4SetInfoLen;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	ASSERT(prGlueInfo);
+
+	ucBssIndex = wlanGetBssIdx(wdev->netdev);
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex) ||
+	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return -EINVAL;
+
+	ucAisIndex = AIS_INDEX(prAdapter, ucBssIndex);
+	if (!wlanGetAisNetDev(prGlueInfo, ucAisIndex)) {
+		DBGLOG(REQ, INFO, "bss = %d, ais=%d no netdev\n",
+			ucBssIndex, ucAisIndex);
+		return -EINVAL;
+	}
+
+	prWdev = gprWdev[ucAisIndex];
+	prDevHandler = prWdev->netdev;
+
+	/* make sure netdev is disconnected */
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate, NULL,
+			   0, FALSE, FALSE, TRUE, &u4SetInfoLen, ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm, NULL, 0,
+			FALSE, FALSE, FALSE, &u4SetInfoLen, ucBssIndex);
+
+	/* prepare for removal */
+	if (netif_carrier_ok(prDevHandler))
+		netif_carrier_off(prDevHandler);
+
+	netif_tx_stop_all_queues(prDevHandler);
+
+	unregister_netdevice(prDevHandler);
+
+	/* netdev and wdev will be freed at mtk_vif_destructor */
+	return 0;
+}
+
 int mtk_cfg_del_iface(struct wiphy *wiphy,
 		      struct wireless_dev *wdev)
 {
@@ -6461,13 +6704,12 @@ int mtk_cfg_del_iface(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	/* TODO: error handele for the non-P2P interface */
-#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 == 0)
-	DBGLOG(REQ, WARN, "P2P is not supported\n");
-	return -EINVAL;
-#else	/* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
-	return mtk_p2p_cfg80211_del_iface(wiphy, wdev);
-#endif  /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
+		return mtk_p2p_cfg80211_del_iface(wiphy, wdev);
+	}
+	/* STA Mode */
+	return mtk_cfg80211_del_iface(wiphy, wdev);
 }
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE

@@ -1725,6 +1725,9 @@ uint8_t wlanGetBssIdx(struct net_device *ndev);
 struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 	IN uint8_t ucBssIndex);
 
+struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucAisIndex);
+
 struct wiphy *wlanGetWiphy(void);
 
 u_int8_t wlanIsAisDev(struct net_device *prDev);

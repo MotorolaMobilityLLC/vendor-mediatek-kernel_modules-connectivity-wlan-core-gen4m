@@ -861,9 +861,12 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 		if (!prAdapter)
 			return count;
 
-		for (i = 0; i < KAL_AIS_NUM; i++)
+		for (i = 0; i < KAL_AIS_NUM; i++) {
+			if (!wlanGetAisNetDev(prGlueInfo, i))
+				continue;
 			nicConfigProcSetCamCfgWrite(prAdapter, fgSetCamCfg,
 			      AIS_MAIN_BSS_INDEX(prAdapter, i));
+		}
 	}
 
 	return count;

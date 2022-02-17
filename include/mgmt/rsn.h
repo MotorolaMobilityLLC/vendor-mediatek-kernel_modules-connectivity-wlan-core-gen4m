@@ -275,7 +275,7 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 
 void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter,
 			IN struct BSS_DESC *prBss,
-			IN uint8_t ucBssIndex);
+			IN uint8_t ucAisIndex);
 
 void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
 				IN struct PARAM_PMKID_CANDIDATE *prCandi,

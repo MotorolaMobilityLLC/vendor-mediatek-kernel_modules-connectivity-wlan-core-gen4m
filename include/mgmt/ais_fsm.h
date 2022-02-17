@@ -109,7 +109,7 @@
 #define AIS_AUTORN_MIN_INTERVAL		    20
 
 #define AIS_MAIN_BSS_INDEX(_adapter, _ais_idx) \
-	aisGetMainLinkBssIndex(aisFsmGetInstance(_adapter, _ais_idx))
+	aisGetMainLinkBssIndex(_adapter, aisFsmGetInstance(_adapter, _ais_idx))
 
 #define AIS_INDEX(_adapter, _bss_idx) \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucAisIndex
@@ -168,6 +168,7 @@ enum ENUM_AIS_REQUEST_TYPE {
 	AIS_REQUEST_ROAMING_SEARCH,
 	AIS_REQUEST_ROAMING_CONNECT,
 	AIS_REQUEST_REMAIN_ON_CHANNEL,
+	AIS_REQUEST_UNINIT,
 	AIS_REQUEST_NUM
 };
 
@@ -918,7 +919,8 @@ void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
 struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo);
-uint8_t aisGetMainLinkBssIndex(IN struct AIS_FSM_INFO *prAisFsmInfo);
+uint8_t aisGetMainLinkBssIndex(IN struct ADAPTER *prAdapter,
+	IN struct AIS_FSM_INFO *prAisFsmInfo);
 void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC *prBssDesc, uint8_t ucLinkIdx);
 struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,

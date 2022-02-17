@@ -1102,6 +1102,9 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 
 	/* 0. always indicate disconnection */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, u4Idx))
+			continue;
+
 		if (kalGetMediaStateIndicated(
 			prAdapter->prGlueInfo,
 			AIS_MAIN_BSS_INDEX(prAdapter, u4Idx)) !=
@@ -1254,6 +1257,9 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 
 	/* 8. Indicate as disconnected */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, u4Idx))
+			continue;
+
 		if (kalGetMediaStateIndicated(
 			prAdapter->prGlueInfo,
 			AIS_MAIN_BSS_INDEX(prAdapter, u4Idx)) !=
@@ -4189,8 +4195,12 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	       prEventCoexStatus->fgIsBAND2G4Coex);
 	/*AIS only feature*/
 	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
-		uint8_t ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
+		uint8_t ucBssIndex;
 
+		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex))
+			continue;
+
+		ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
 		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);

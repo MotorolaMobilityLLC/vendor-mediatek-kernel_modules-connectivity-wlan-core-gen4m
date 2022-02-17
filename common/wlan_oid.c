@@ -4301,7 +4301,7 @@ wlanoidQueryCurrentAddr(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	COPY_MAC_ADDR(pvQueryBuffer,
-		      prAdapter->rWifiVar.aucMacAddress);
+		      prAdapter->rWifiVar.aucMacAddress[*pu4QueryInfoLen]);
 	*pu4QueryInfoLen = MAC_ADDR_LEN;
 
 	return WLAN_STATUS_SUCCESS;
@@ -5349,6 +5349,47 @@ wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prDevInfoUpdateActive);
 
 	return rWlanStatus;
+}
+
+uint32_t
+wlanoidInitAisFsm(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen)
+{
+	uint8_t ucAisIndex;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	ucAisIndex = *((uint8_t *)pvSetBuffer);
+
+	aisFsmInit(prAdapter, &prAdapter->prGlueInfo->rRegInfo, ucAisIndex);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+wlanoidUninitAisFsm(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t ucBssIndex;
+
+	ASSERT(prAdapter);
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE)
+		aisFsmUninit(prAdapter, AIS_INDEX(prAdapter, ucBssIndex));
+	else
+		aisFsmInsertRequestToHead(prAdapter,
+			AIS_REQUEST_UNINIT, ucBssIndex);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t
@@ -8506,6 +8547,11 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 		       "Fail in set disassociate! (Adapter not ready). ACPI=D%d, Radio=%d\n",
 		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		DBGLOG(REQ, WARN, "ucBssIndex %d not ais\n", ucBssIndex);
+		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
@@ -15602,30 +15648,6 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 	rrmTxNeighborReportRequest(prAdapter, prAisBssInfo->prStaRecOfAP,
 				   prSSIDIE);
 	kalMemFree(prSSIDIE, PHY_MEM_TYPE, ucSSIDIELen);
-	return WLAN_STATUS_SUCCESS;
-}
-
-uint32_t wlanoidSync11kCapabilities(struct ADAPTER *prAdapter,
-				    void *pvSetBuffer, uint32_t u4SetBufferLen,
-				    uint32_t *pu4SetInfoLen)
-{
-	struct CMD_SET_RRM_CAPABILITY rCmdRrmCapa;
-
-	kalMemZero(&rCmdRrmCapa, sizeof(rCmdRrmCapa));
-	rCmdRrmCapa.ucCmdVer = 0x1;
-	rCmdRrmCapa.ucRrmEnable = 1;
-	rrmFillRrmCapa(&rCmdRrmCapa.ucCapabilities[0]);
-	rCmdRrmCapa.ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_RRM_CAPABILITY,
-			    TRUE,
-			    FALSE,
-			    TRUE,
-			    NULL,
-			    nicOidCmdTimeoutCommon,
-			    sizeof(struct CMD_SET_RRM_CAPABILITY),
-			    (uint8_t *)&rCmdRrmCapa,
-			    pvSetBuffer, u4SetBufferLen);
 	return WLAN_STATUS_SUCCESS;
 }
 
