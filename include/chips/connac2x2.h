@@ -90,7 +90,7 @@
 #define CONNAC2X2_RX_INIT_EVENT_LENGTH             8
 #define CONNAC2X2_RX_EVENT_HDR_LENGTH              12
 #define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000200	/* for WPDWifi DLL */
-
+#define MTK_EM_INTERFACE_VERSION		0x0001
 
 /*******************************************************************************
  *                         D A T A   T Y P E S

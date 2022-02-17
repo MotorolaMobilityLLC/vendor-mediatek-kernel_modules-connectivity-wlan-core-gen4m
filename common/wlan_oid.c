@@ -9965,8 +9965,11 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		prTestStatus = (union EVENT_TEST_STATUS *) pvQueryBuffer;
 
 		prTestStatus->rATInfo.u4FuncData =
-			(prAdapter->rVerInfo.u2FwProductID << 16) |
-			(prAdapter->rVerInfo.u2FwOwnVersion);
+				prAdapter->chip_info->em_interface_version;
+
+		DBGLOG(RFTEST, INFO, "RF_AT_FUNCID_FW_INFO=0x%x\n",
+					prTestStatus->rATInfo.u4FuncData);
+
 		u4QueryBufferLen = sizeof(union EVENT_TEST_STATUS);
 
 		return WLAN_STATUS_SUCCESS;
