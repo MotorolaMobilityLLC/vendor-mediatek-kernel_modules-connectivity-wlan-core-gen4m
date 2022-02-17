@@ -497,6 +497,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4BufLen, u4Rate;
 	int32_t i4Rssi;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t u4TotalError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
@@ -538,14 +539,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 #if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryMaxLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				   wlanoidQueryMaxLinkSpeed, &u4Rate,
+				   sizeof(u4Rate), TRUE, FALSE, FALSE,
+				   &u4BufLen, ucBssIndex);
 #else
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				   wlanoidQueryLinkSpeedEx, &rLinkSpeed,
+				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
+				   &u4BufLen, ucBssIndex);
+	if (ucBssIndex < BSSID_NUM)
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -669,6 +672,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4BufLen, u4Rate;
 	int32_t i4Rssi;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	uint32_t u4TotalError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
@@ -711,9 +715,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				ucBssIndex);
 #else
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+					   wlanoidQueryLinkSpeedEx,
+					   &rLinkSpeed, sizeof(rLinkSpeed),
+					   TRUE, FALSE, FALSE,
+					   &u4BufLen, ucBssIndex);
+		if (ucBssIndex < BSSID_NUM)
+			u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
