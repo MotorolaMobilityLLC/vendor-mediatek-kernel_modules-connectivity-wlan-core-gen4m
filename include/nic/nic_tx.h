@@ -105,6 +105,8 @@
 #define NIC_TX_BUFF_COUNT_TC5           HIF_TX_BUFF_COUNT_TC5
 
 #define NIC_TX_RESOURCE_CTRL            HIF_TX_RESOURCE_CTRL /* to enable/disable TX resource control */
+#define NIC_TX_RESOURCE_CTRL_PLE        HIF_TX_RESOURCE_CTRL_PLE /* to enable/disable TX resource control */
+
 
 #if CFG_ENABLE_FW_DOWNLOAD
 
