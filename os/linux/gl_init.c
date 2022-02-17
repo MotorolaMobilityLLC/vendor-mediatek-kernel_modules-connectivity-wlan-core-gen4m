@@ -3605,35 +3605,6 @@ int set_p2p_mode_handler(struct net_device *netdev,
 
 #endif
 
-#if CFG_SUPPORT_NAN
-int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
-{
-	struct GLUE_INFO *prGlueInfo =
-		*((struct GLUE_INFO **)netdev_priv(netdev));
-	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4BufLen = 0;
-
-	if ((!ucEnable) && (kalIsResetting() == FALSE))
-		nanNetUnregister(prGlueInfo, FALSE);
-
-	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
-			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
-
-	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08lx\n",
-	       (uint32_t)rWlanStatus);
-
-	/* Need to check fgIsNANRegistered, in case of whole chip reset.
-	 * in this case, kalIOCTL return success always,
-	 * and prGlueInfo->prP2PInfo[0] may be NULL
-	 */
-	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
-	    (kalIsResetting() == FALSE))
-		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
-
-	return 0;
-}
-#endif
-
 #if CFG_SUPPORT_EASY_DEBUG
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4971,6 +4942,46 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		kalSetSuspendFlagToEMI(prAdapter, FALSE);
 	return 0;
 }
+
+#if CFG_SUPPORT_NAN
+int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
+{
+	struct GLUE_INFO *prGlueInfo =
+		*((struct GLUE_INFO **)netdev_priv(netdev));
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if ((!ucEnable) && (kalIsResetting() == FALSE)) {
+		nanNetUnregister(prGlueInfo, FALSE);
+		wlanOnP2pRegistration(prGlueInfo,
+			prGlueInfo->prAdapter, gprWdev[0]);
+	}
+
+	if (ucEnable) {
+		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
+
+		rSetP2P.u4Mode = 0;
+		rSetP2P.u4Enable = 0;
+		set_p2p_mode_handler(netdev, rSetP2P);
+	}
+
+	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
+			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
+
+	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08lx\n",
+	       (uint32_t)rWlanStatus);
+
+	/* Need to check fgIsNANRegistered, in case of whole chip reset.
+	 * in this case, kalIOCTL return success always,
+	 * and prGlueInfo->prP2PInfo[0] may be NULL
+	 */
+	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
+	    (kalIsResetting() == FALSE))
+		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
+
+	return 0;
+}
+#endif
 
 void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
