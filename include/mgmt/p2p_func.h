@@ -162,6 +162,10 @@ VOID p2pFuncShowRadarInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
 PUINT_8 p2pFuncJpW53RadarType(VOID);
 
 PUINT_8 p2pFuncJpW56RadarType(VOID);
+
+VOID p2pFuncSetRadarDetectMode(IN UINT_8 ucRadarDetectMode);
+
+UINT_8 p2pFuncGetRadarDetectMode(VOID);
 #endif
 
 VOID p2pFuncSetChannel(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx, IN P_RF_CHANNEL_INFO_T prRfChannelInfo);
