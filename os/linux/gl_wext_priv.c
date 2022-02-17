@@ -6608,15 +6608,15 @@ int priv_driver_get_channels(IN struct net_device *prNetDev, IN char *pcCommand,
 	 **/
 	if (i4Argc >= 2 && (apcArgv[1][0] == '2') && (apcArgv[1][1] == 'g')) {
 		start_idx = 0;
-		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
 	} else if (i4Argc >= 2 && (apcArgv[1][0] == '5') && (apcArgv[1][1] == 'g')) {
-		start_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
-		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
 	} else {
 		start_idx = 0;
-		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ)
-				+ rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
+				+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ);
 		if (i4Argc >= 2)
 			/* Dump only specified channel */
 			u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);

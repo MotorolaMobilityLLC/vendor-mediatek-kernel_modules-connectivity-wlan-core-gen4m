@@ -1050,8 +1050,8 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
 	prWiphy->n_iface_combinations = mtk_iface_combinations_p2p_num;
 
-	prWiphy->bands[IEEE80211_BAND_2GHZ] = &mtk_band_2ghz;
-	prWiphy->bands[IEEE80211_BAND_5GHZ] = &mtk_band_5ghz;
+	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
+	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
 
 	prWiphy->mgmt_stypes = mtk_cfg80211_default_mgmt_stypes;
 	prWiphy->max_remain_on_channel_duration = 5000;
@@ -1366,7 +1366,7 @@ static int p2pStop(IN struct net_device *prDev)
 
 	if (prScanRequest) {
 		DBGLOG(INIT, INFO, "p2pStop and abort scan!!\n");
-		cfg80211_scan_done(prScanRequest, TRUE);
+		kalCfg80211ScanDone(prScanRequest, TRUE);
 	}
 
 	/* 1. stop TX queue */

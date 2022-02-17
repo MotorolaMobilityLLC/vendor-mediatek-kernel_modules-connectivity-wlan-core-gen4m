@@ -998,7 +998,7 @@ VOID kalP2PIndicateScanDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex, 
 			scanReportBss2Cfg80211(prGlueInfo->prAdapter, BSS_TYPE_P2P_DEVICE, NULL);
 
 			DBGLOG(INIT, INFO, "DBG:p2p_cfg_scan_done\n");
-			cfg80211_scan_done(prScanRequest, fgIsAbort);
+			kalCfg80211ScanDone(prScanRequest, fgIsAbort);
 		}
 		KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
 
@@ -1403,12 +1403,12 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(IN P_GL_P2P_INFO_T prP2pInfo
 
 		switch (prChannelInfo->eBand) {
 		case BAND_2G4:
-			prTargetChannelEntry = wiphy->bands[IEEE80211_BAND_2GHZ]->channels;
-			u4TblSize = wiphy->bands[IEEE80211_BAND_2GHZ]->n_channels;
+			prTargetChannelEntry = wiphy->bands[KAL_BAND_2GHZ]->channels;
+			u4TblSize = wiphy->bands[KAL_BAND_2GHZ]->n_channels;
 			break;
 		case BAND_5G:
-			prTargetChannelEntry = wiphy->bands[IEEE80211_BAND_5GHZ]->channels;
-			u4TblSize = wiphy->bands[IEEE80211_BAND_5GHZ]->n_channels;
+			prTargetChannelEntry = wiphy->bands[KAL_BAND_5GHZ]->channels;
+			u4TblSize = wiphy->bands[KAL_BAND_5GHZ]->n_channels;
 			break;
 		default:
 			break;
