@@ -1329,8 +1329,6 @@ struct mt66xx_chip_info {
 	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
-	void (*showTaskStack)(IN struct task_struct *tsk,
-			      IN unsigned long *sp);
 	void (*asicRxProcessRxvChkRst)(IN struct ADAPTER *prAdapter,
 		IN OUT struct SW_RFB *prRetSwRfb);
 	uint32_t (*asicRxProcessRxvforMSP)(IN struct ADAPTER *prAdapter,

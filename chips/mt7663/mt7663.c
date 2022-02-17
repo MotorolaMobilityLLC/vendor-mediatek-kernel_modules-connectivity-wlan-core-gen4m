@@ -300,7 +300,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
-	.showTaskStack = NULL,
 	.is_support_hw_amsdu = TRUE,
 	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
