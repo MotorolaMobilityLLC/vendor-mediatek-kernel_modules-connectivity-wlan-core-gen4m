@@ -212,18 +212,6 @@ static struct BSS_OPTRX_BW_CONTROL_T g_arBssOpTRxBwControl[BSS_DEFAULT_NUM];
  */
 
 #if CFG_SUPPORT_DBDC
-#define DBDC_IS_BSS_ALIVE(_prBssInfo) \
-	(_prBssInfo->fgIsInUse && \
-	_prBssInfo->fgIsNetActive && \
-	(_prBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED || \
-	_prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT))
-
-#define DBDC_IS_BSS_NOT_ALIVE(_prBssInfo) \
-	(!_prBssInfo->fgIsInUse || \
-	!_prBssInfo->fgIsNetActive || \
-	(_prBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED && \
-	_prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT))
-
 #define DBDC_SET_GUARD_TIME(_prAdapter) { \
 	cnmTimerStartTimer(_prAdapter, \
 		&g_rDbdcInfo.rDbdcGuardTimer, \
@@ -2128,7 +2116,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-		if (DBDC_IS_BSS_NOT_ALIVE(prBssInfo))
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
 		if (prBssInfo->eBand != BAND_2G4
@@ -2183,7 +2171,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 		ucTRxNss = fgDbdcEn ?
 			1 : wlanGetSupportNss(prAdapter, ucBssIndex);
 
-		if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 			eBssOpmodeChange = cnmSetOpTRxNssBw(prAdapter,
 					ucBssIndex,
 					BSS_OPTRX_BW_CHANGE_BY_DBDC,
@@ -3496,7 +3484,7 @@ cnmSetOpTRxNssBw(
 	 * If you want to change OpBw in the future, please make sure
 	 * you can restore to current peer's OpBw.
 	 */
-	if (DBDC_IS_BSS_ALIVE(prBssInfo)) {
+	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC].fgEnable)
 			ucOpBwFinal = ucOpBwFinal > MAX_BW_80MHZ ?
