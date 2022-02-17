@@ -1761,6 +1761,9 @@ nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 				prChipInfo->txd_append_size);
 
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
+	/* dump TXD to debug TX issue */
+	if (prAdapter->rWifiVar.ucDataTxDone == 1)
+		halDumpTxdInfo(prAdapter, (uint32_t *)pucOutputBuf);
 }
 
 void
