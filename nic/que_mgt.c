@@ -3035,19 +3035,6 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						prCurrSwRfb->ucWlanIdx));
 			}
 
-			if (prCurrSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
-				log_dbg(QM, ERROR, "TID from RXD = %d, out of range !!!\n",
-					prCurrSwRfb->ucTid);
-				DBGLOG_MEM8(QM, ERROR,
-					prCurrSwRfb->pucRecvBuff,
-					HAL_RX_STATUS_GET_RX_BYTE_CNT(
-					prRxStatus));
-				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
-				continue;
-			}
-
 			if (prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem >
 				(CFG_RX_MAX_PKT_NUM -
 					CFG_NUM_OF_QM_RX_PKT_NUM) || TRUE) {
@@ -3275,8 +3262,19 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			 * enqueued into the reordering queue in the STA_REC
 			 * rather than into the rReturnedQue.
 			 */
-			qmProcessPktWithReordering(prAdapter, prCurrSwRfb,
-				prReturnedQue);
+			if (prCurrSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
+				log_dbg(QM, ERROR,
+					"TID from RXD = %d, out of range !!!\n",
+					prCurrSwRfb->ucTid);
+				DBGLOG_MEM8(QM, ERROR,
+					prCurrSwRfb->pucRecvBuff,
+					HAL_RX_STATUS_GET_RX_BYTE_CNT(
+					prRxStatus));
+				QUEUE_INSERT_TAIL(prReturnedQue,
+					(struct QUE_ENTRY *) prCurrSwRfb);
+			} else
+				qmProcessPktWithReordering(prAdapter,
+					prCurrSwRfb, prReturnedQue);
 
 		} else if (prCurrSwRfb->fgDataFrame) {
 			/* Check Class Error */
@@ -3285,7 +3283,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 				prCurrSwRfb->prStaRec) == TRUE)) {
 				struct RX_BA_ENTRY *prReorderQueParm = NULL;
 
-				if (!fgIsBMC && fgIsHTran &&
+				if ((prCurrSwRfb->ucTid < CFG_RX_MAX_BA_TID_NUM)
+					&& !fgIsBMC && fgIsHTran &&
 					(HAL_RX_STATUS_GET_FRAME_CTL_FIELD(
 					prCurrSwRfb->prRxStatusGroup4) &
 					MASK_FRAME_TYPE) != MAC_FRAME_DATA) {
