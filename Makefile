@@ -385,6 +385,7 @@ ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 #CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
 #CONFIG_MTK_WIFI_FW_LOG_CTRL=y
+#CONFIG_MTK_WIFI_PMIC_QUERY=y
 endif
 
 ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
@@ -430,6 +431,9 @@ ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=1
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=0
+    ifeq ($(CONFIG_MTK_WIFI_PMIC_QUERY), y)
+        ccflags-y += -DCFG_MTK_WIFI_PMIC_QUERY=1
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1

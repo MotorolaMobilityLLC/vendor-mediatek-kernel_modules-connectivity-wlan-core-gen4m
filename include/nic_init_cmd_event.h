@@ -146,6 +146,7 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_ZB_PATCH_SEMAPHORE_CONTROL = 0x12,
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
 	INIT_CMD_ID_LOG_BUF_CTRL = 0x21,
+	INIT_CMD_ID_QUERY_INFO = 0x22,
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	INIT_CMD_ID_DYN_MEM_MAP_PATCH_FINISH = 0x40,
@@ -167,6 +168,7 @@ enum ENUM_INIT_EVENT_ID {
 	INIT_EVENT_ID_BT_PATCH_SEMA_CTRL = 6,
 	INIT_EVENT_ID_ZB_PATCH_SEMA_CTRL = 7,
 	INIT_EVENT_ID_LOG_BUF_CTRL,
+	INIT_EVENT_ID_QUERY_INFO_RESULT,
 };
 
 enum ENUM_INIT_PATCH_STATUS {
@@ -378,6 +380,33 @@ struct INIT_WIFI_EVENT_LOG_BUF_CTRL {
 	uint8_t aucReserved[2];
 	uint32_t u4Address;
 	uint32_t u4Reserved;
+};
+
+enum INIT_CMD_QUERY_TYPE {
+	INIT_CMD_QUERY_TYPE_PMIC_INFO = 0,
+};
+
+struct INIT_CMD_QUERY_INFO {
+	uint32_t u4QueryBitmap;
+	uint8_t aucReserved[4];
+};
+
+struct INIT_EVENT_QUERY_INFO {
+	uint16_t u2TotalElementNum;
+	uint16_t u2Length;
+	uint8_t aucTlvBuffer[0];
+};
+
+struct INIT_EVENT_TLV_GENERAL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucBuffer[0];
+};
+
+struct INIT_EVENT_QUERY_INFO_PMIC {
+	uint32_t u4PmicId;
+	uint32_t u4Length;
+	uint8_t aucPMICCoreDumpbuf[0];
 };
 
 /*******************************************************************************
