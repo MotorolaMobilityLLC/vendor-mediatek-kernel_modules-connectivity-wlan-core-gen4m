@@ -3151,6 +3151,16 @@ uint32_t
 wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		    OUT uint32_t *pu4SetInfoLen) {
+	DEBUGFUNC("wlanoidSetRemoveKey");
+
+	return wlanSetRemoveKey(prAdapter, pvSetBuffer, u4SetBufferLen,
+				pu4SetInfoLen, TRUE);
+}				/* wlanoidSetRemoveKey */
+
+uint32_t
+wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid) {
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
 	struct PARAM_REMOVE_KEY *prRemovedKey;
@@ -3165,7 +3175,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	uint16_t cmd_size;
 
-	DEBUGFUNC("wlanoidSetRemoveKey");
+	DEBUGFUNC("wlanSetRemoveKey");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -3287,7 +3297,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
 	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
+	prCmdInfo->fgIsOid = fgIsOid;
 	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
@@ -3332,7 +3342,7 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 	GLUE_SET_EVENT(prGlueInfo);
 
 	return WLAN_STATUS_PENDING;
-}				/* wlanoidSetRemoveKey */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
