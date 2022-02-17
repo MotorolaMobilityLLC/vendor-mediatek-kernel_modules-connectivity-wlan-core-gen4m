@@ -1283,6 +1283,10 @@ struct ADAPTER {
 	u_int8_t fgIsFwOwn;
 	u_int8_t fgWiFiInSleepyState;
 
+	/* Set by callback to make sure WOW done before system suspend */
+	u_int8_t fgSetPfCapabilityDone;
+	u_int8_t fgSetWowDone;
+
 	OS_SYSTIME rLastOwnFailedLogTime;
 	uint32_t u4OwnFailedCount;
 	uint32_t u4OwnFailedLogCount;
