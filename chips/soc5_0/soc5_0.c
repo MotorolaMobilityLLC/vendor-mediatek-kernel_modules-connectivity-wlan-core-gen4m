@@ -179,6 +179,7 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x74030000, 0x10000, 0x10000},
 	{0x7c400000, 0x00000, 0x10000},
+	{0x0, 0x0, 0x0} /* End */
 };
 #elif defined(_HIF_AXI)
 struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
@@ -236,6 +237,7 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 	{0x83010000, 0x4e0000, 0x10000},   /* WF_PHY_MAP4 */
 	{0x88000000, 0x4f0000, 0x10000},   /* WF_MCU_CFG_LS */
 	{0x7c000000, 0x000000, 0x1000000}, /* CONN_INFRA */
+	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 
