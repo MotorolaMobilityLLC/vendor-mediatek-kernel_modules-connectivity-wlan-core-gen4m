@@ -1414,7 +1414,12 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 				prNetdevice);
 
 		if (!prGlueInfo->fgIsRegistered ||
+			(prGlueInfo->ulFlag & GLUE_FLAG_HALT) ||
+			!prGlueInfo->prAdapter->fgIsP2PRegistered ||
+			(prGlueInfo->prAdapter->rP2PNetRegState !=
+				ENUM_NET_REG_STATE_REGISTERED) ||
 			(prNetdevice == NULL) ||
+			(prNetdevice->reg_state != NETREG_REGISTERED) ||
 			(prNetdevice->ieee80211_ptr == NULL)) {
 			DBGLOG(P2P, WARN,
 				"prNetdevice is not ready or NULL!\n");
