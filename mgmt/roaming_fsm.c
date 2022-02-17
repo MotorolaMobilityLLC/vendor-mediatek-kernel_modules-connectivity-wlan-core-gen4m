@@ -337,6 +337,10 @@ VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextStat
 	ENUM_ROAMING_STATE_T ePreviousState;
 	BOOLEAN fgIsTransition = (BOOLEAN) FALSE;
 	BOOLEAN fgIsNeedScan = FALSE;
+#if CFG_SUPPORT_NCHO
+	UINT32 u4ScnResultsTimeout = ROAMING_DISCOVERY_TIMEOUT_SEC;
+	UINT_32 u4ReqScan = FALSE;
+#endif
 
 	prRoamingFsmInfo = (P_ROAMING_INFO_T) &(prAdapter->rWifiVar.rRoamingInfo);
 
@@ -364,6 +368,22 @@ VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextStat
 
 		case ROAMING_STATE_DISCOVERY:
 			{
+#if CFG_SUPPORT_NCHO
+				if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE) {
+					u4ScnResultsTimeout = prAdapter->rNchoInfo.u4RoamScanPeriod;
+					DBGLOG(ROAMING, TRACE, "NCHO u4ScnResultsTimeout is %d\n", u4ScnResultsTimeout);
+				}
+
+				if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prRoamingFsmInfo->rRoamingDiscoveryUpdateTime,
+							  SEC_TO_SYSTIME(u4ScnResultsTimeout))) {
+					DBGLOG(ROAMING, LOUD, "DiscoveryUpdateTime Timeout");
+					u4ReqScan =  TRUE;
+				} else {
+					DBGLOG(ROAMING, LOUD, "DiscoveryUpdateTime Updated");
+						u4ReqScan = FALSE;
+				}
+				aisFsmRunEventRoamingDiscovery(prAdapter, u4ReqScan);
+#else
 				OS_SYSTIME rCurrentTime;
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 				fgIsNeedScan = roamingFsmIsNeedScan(prAdapter);
@@ -381,6 +401,7 @@ VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextStat
 					DBGLOG(ROAMING, LOUD, "roamingFsmSteps: DiscoveryUpdateTime Updated\n");
 					aisFsmRunEventRoamingDiscovery(prAdapter, FALSE);
 				}
+#endif /* CFG_SUPPORT_NCHO */
 			}
 			break;
 

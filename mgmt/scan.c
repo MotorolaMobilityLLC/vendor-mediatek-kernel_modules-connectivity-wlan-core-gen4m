@@ -577,11 +577,6 @@ VOID scanSearchBssDescOfRoamSsid(IN P_ADAPTER_T prAdapter)
 	UINT_32	u4SameSSIDCount = 0;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
-
-	/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
-	if (prAisBssInfo == NULL)
-		return;
-
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 
@@ -1466,30 +1461,23 @@ P_BSS_DESC_T scanAddToBssDesc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb)
 
 		case ELEM_ID_VENDOR:	/* ELEM_ID_P2P, ELEM_ID_WMM */
 			{
-			UINT_8 ucOuiType;
-			UINT_16 u2SubTypeVersion;
+				UINT_8 ucOuiType;
+				UINT_16 u2SubTypeVersion;
 
-			if (rsnParseCheckForWFAInfoElem(prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
-				if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
-				    && (u2SubTypeVersion == VERSION_WPA)
-				    && (rsnParseWpaIE(prAdapter, WPA_IE(pucIE), &prBssDesc->rWPAInfo))) {
-					prBssDesc->fgIEWPA = TRUE;
+				if (rsnParseCheckForWFAInfoElem(prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
+					if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
+					    && (u2SubTypeVersion == VERSION_WPA)
+					    && (rsnParseWpaIE(prAdapter, WPA_IE(pucIE), &prBssDesc->rWPAInfo))) {
+						prBssDesc->fgIEWPA = TRUE;
+					}
 				}
-			}
-#if CFG_SUPPORT_PASSPOINT
-			/* since OSEN is mutual exclusion with RSN, so we reuse RSN here */
-			if ((pucIE[1] >= 10)
-				&& (kalMemCmp(pucIE+2, "\x50\x6f\x9a\x12", 4) == 0)
-				&& (rsnParseOsenIE(prAdapter, (struct IE_WFA_OSEN *)pucIE, &prBssDesc->rRSNInfo)))
-				prBssDesc->fgIEOsen = TRUE;
-#endif
 #if CFG_ENABLE_WIFI_DIRECT
-			if (prAdapter->fgIsP2PRegistered) {
-				if ((p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType))
-				    && (ucOuiType == VENDOR_OUI_TYPE_P2P)) {
-					prBssDesc->fgIsP2PPresent = TRUE;
+				if (prAdapter->fgIsP2PRegistered) {
+					if ((p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType))
+					    && (ucOuiType == VENDOR_OUI_TYPE_P2P)) {
+						prBssDesc->fgIsP2PPresent = TRUE;
+					}
 				}
-			}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
 			break;
@@ -1913,9 +1901,7 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 
 	if (prBssDesc) {
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
-		if ((prAisBssInfo != NULL) &&
-		    (prAisBssInfo->eConnectionState ==
-		     PARAM_MEDIA_STATE_CONNECTED) &&
+		if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))
 		    && EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)
@@ -1956,9 +1942,7 @@ WLAN_STATUS scanProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_
 				aisBssBeaconTimeout(prAdapter);
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
-		if ((prAisBssInfo != NULL) &&
-		    (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) &&
-		      (prConnSettings->eOPMode != NET_TYPE_IBSS))
+		if (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
 			if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 
@@ -2070,6 +2054,9 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBss
 	ENUM_BAND_T eBand = BAND_2G4;
 	UINT_8 ucChannel = 0;
 	UINT_32 u4ScnAdhocBssDescTimeout = 0;
+#if CFG_SUPPORT_NCHO
+	UINT_8 ucRCPIStep = ROAMING_NO_SWING_RCPI_STEP;
+#endif
 
 	ASSERT(prAdapter);
 
@@ -2522,6 +2509,10 @@ P_BSS_DESC_T scanSearchBssDescByPolicy(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBss
 				/* NOTE: To prevent SWING, we do roaming only if target AP
 				 * has at least 5dBm larger than us.
 				 */
+#if CFG_SUPPORT_NCHO
+				if (prAdapter->rNchoInfo.fgECHOEnabled == TRUE)
+					ucRCPIStep = 2 * prAdapter->rNchoInfo.i4RoamDelta;
+#endif
 				if (prCandidateBssDesc->fgIsConnected) {
 					if ((prCandidateBssDesc->ucRCPI + ROAMING_NO_SWING_RCPI_STEP <=
 					     prPrimaryBssDesc->ucRCPI)

@@ -1915,6 +1915,10 @@ static struct wireless_dev *wlanNetCreate(PVOID pvData, PVOID pvDriverData)
 	init_completion(&prGlueInfo->rRxHaltComp);
 #endif
 
+#if CFG_SUPPORT_NCHO
+	init_completion(&prGlueInfo->rAisChGrntComp);
+#endif
+
 	/* initialize timer for OID timeout checker */
 	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
 

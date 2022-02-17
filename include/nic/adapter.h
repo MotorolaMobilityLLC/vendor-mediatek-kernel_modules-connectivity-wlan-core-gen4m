@@ -945,6 +945,74 @@ typedef struct _P2P_FUNCTION_LINKER {
 
 #endif
 
+#if CFG_SUPPORT_NCHO
+enum _ENUM_NCHO_ITEM_SET_TYPE_T {
+	ITEM_SET_TYPE_NUM,
+	ITEM_SET_TYPE_STR
+};
+
+enum _ENUM_NCHO_BAND_T {
+	NCHO_BAND_AUTO = 0,
+	NCHO_BAND_5G,
+	NCHO_BAND_2G4,
+	NCHO_BAND_NUM
+};
+
+enum _ENUM_NCHO_DFS_SCN_MODE_T {
+	NCHO_DFS_SCN_DISABLE = 0,
+	NCHO_DFS_SCN_ENABLE1,
+	NCHO_DFS_SCN_ENABLE2,
+	NCHO_DFS_SCN_NUM
+};
+
+struct _CFG_NCHO_RE_ASSOC_T {
+	UINT_32 u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	UINT_8 aucSsid[ELEM_MAX_LEN_SSID];
+	UINT_8 aucBssid[MAC_ADDR_LEN];
+	UINT_32 u4CenterFreq;
+};
+
+struct _CFG_NCHO_SCAN_CHNL_T {
+	UINT_8 ucChannelListNum;
+	RF_CHANNEL_INFO_T arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+};
+
+struct _NCHO_ACTION_FRAME_PARAMS_T {
+	UCHAR aucBssid[MAC_ADDR_LEN];
+	INT_32 i4channel;
+	INT_32 i4DwellTime;
+	INT_32 i4len;
+	UCHAR aucData[520];
+};
+
+struct _NCHO_AF_INFO_T {
+	PUCHAR aucBssid;
+	INT_32 i4channel;
+	INT_32 i4DwellTime;
+	INT_32 i4len;
+	PUCHAR pucData;
+};
+
+struct _NCHO_INFO_T {
+	BOOLEAN fgECHOEnabled;
+	BOOLEAN fgChGranted;
+	BOOLEAN fgIsSendingAF;
+	INT_32 i4RoamTrigger;		/* db */
+	INT_32 i4RoamDelta;		/* db */
+	UINT32 u4RoamScanPeriod;	/* ms */
+	UINT32 u4ScanChannelTime;	/* ms */
+	UINT32 u4ScanHomeTime;		/* ms */
+	UINT32 u4ScanHomeawayTime;	/* ms */
+	UINT32 u4ScanNProbes;
+	UINT32 u4WesMode;
+	enum _ENUM_NCHO_BAND_T eBand;
+	enum _ENUM_NCHO_DFS_SCN_MODE_T eDFSScnMode;
+	UINT32 u4RoamScanControl;
+	struct _CFG_NCHO_SCAN_CHNL_T rRoamScnChnl;
+	struct _NCHO_ACTION_FRAME_PARAMS_T rParamActionFrame;
+};
+#endif
+
 typedef struct _WIFI_FEM_CFG_T {
 	/* WiFi FEM path */
 	UINT_16 u2WifiPath;
@@ -1262,6 +1330,10 @@ struct _ADAPTER_T {
 
 #if CFG_WOW_SUPPORT
 	WOW_CTRL_T	rWowCtrl;
+#endif
+
+#if CFG_SUPPORT_NCHO			/*  NCHO information */
+	struct _NCHO_INFO_T rNchoInfo;
 #endif
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
