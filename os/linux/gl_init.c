@@ -256,6 +256,7 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	.max_antenna_gain   = 0,					\
 	.max_power          = 30,					\
 }
+
 static struct ieee80211_channel mtk_5ghz_channels[] = {
 	/* UNII-1 */
 	CHAN5G(36, 0),
@@ -331,7 +332,6 @@ static struct ieee80211_rate mtk_rates[] = {
 	.tx_highest     = cpu_to_le16(867),			\
 }
 
-
 #define WLAN_HT_CAP						\
 {								\
 	.ht_supported   = true,					\
@@ -359,6 +359,43 @@ static struct ieee80211_rate mtk_rates[] = {
 	.vht_mcs        = WLAN_VHT_MCS_INFO,				\
 }
 
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#if (CFG_SUPPORT_802_11AX == 1)
+
+#define WLAN_HE_CAP_ELEM_INFO					\
+{								\
+	.mac_cap_info[0] =					\
+		IEEE80211_HE_MAC_CAP0_HTC_HE,			\
+	.mac_cap_info[3] =					\
+		IEEE80211_HE_MAC_CAP3_OMI_CONTROL,		\
+	.phy_cap_info[0] =					\
+		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G,    \
+}
+
+#define WLAN_HE_MCS_NSS_SUPP_INFO				\
+{								\
+	.rx_mcs_80 = cpu_to_le16(0xFFFA),			\
+	.tx_mcs_80 = cpu_to_le16(0xFFFA),			\
+}
+
+#define WLAN_HE_CAP_INFO					\
+{								\
+	.has_he = true,						\
+	.he_cap_elem = WLAN_HE_CAP_ELEM_INFO,			\
+	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
+}
+
+static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
+	{
+		.types_mask =
+			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+		.he_cap = WLAN_HE_CAP_INFO,
+	},
+};
+
+#endif
+#endif
+
 /* public for both Legacy Wi-Fi / P2P access */
 struct ieee80211_supported_band mtk_band_2ghz = {
 	.band = KAL_BAND_2GHZ,
@@ -367,6 +404,12 @@ struct ieee80211_supported_band mtk_band_2ghz = {
 	.bitrates = mtk_g_rates,
 	.n_bitrates = mtk_g_rates_size,
 	.ht_cap = WLAN_HT_CAP,
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#if (CFG_SUPPORT_802_11AX == 1)
+	.n_iftype_data = 1,
+	.iftype_data = mtk_he_cap,
+#endif
+#endif
 };
 
 /* public for both Legacy Wi-Fi / P2P access */
@@ -378,6 +421,12 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 	.n_bitrates = mtk_a_rates_size,
 	.ht_cap = WLAN_HT_CAP,
 	.vht_cap = WLAN_VHT_CAP,
+#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#if (CFG_SUPPORT_802_11AX == 1)
+	.n_iftype_data = 1,
+	.iftype_data = mtk_he_cap,
+#endif
+#endif
 };
 
 const uint32_t mtk_cipher_suites[] = {
