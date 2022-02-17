@@ -248,13 +248,15 @@ void wlanGetEpaElnaFromNvram(
 	uint32_t *pu4DataLen)
 {
 #define MAX_NVRAM_READY_COUNT 10
-#define MAX_NVRAM_FEM_MAX 1024
+#define MAX_NVRAM_FEM_MAX 512
 
 	/* ePA /eLNA */
-	uint8_t index;
 	uint8_t u1TypeID;
 	uint8_t u1LenLSB;
 	uint8_t u1LenMSB;
+	uint8_t u1Total_Size_LSB, u1Total_Size_MSB;
+	uint32_t u4Tag7_9_data_len, u46GCOMM_len;
+	uint16_t u2NVRAM_Toal_Size = 0;
 	uint32_t u4NvramStartOffset = 0, u4NvramOffset = 0;
 	uint8_t *pu1Addr;
 	struct WIFI_NVRAM_TAG_FORMAT *prTagDataCurr;
@@ -276,9 +278,14 @@ void wlanGetEpaElnaFromNvram(
 		NVRAM_TAG_5G_WF0_AUX_PATH = 13,
 		NVRAM_TAG_2G4_WF1_AUX_PATH = 14,
 		NVRAM_TAG_5G_WF1_AUX_PATH = 15,
+		NVRAM_TAG_6G_TX_POWER = 16,
+		NVRAM_TAG_6G_WF0_PATH = 17,
+		NVRAM_TAG_6G_WF1_PATH = 18,
+		NVRAM_TAG_6G_WF0_AUX_PATH = 19,
+		NVRAM_TAG_6G_WF1_AUX_PATH = 20,
+		NVRAM_TAG_6G_COMMON = 21,
 		NVRAM_TAG_NUMBER
 	};
-	/* Need sync same as CFG_Wifi_File.h */
 
 	while (g_NvramFsm != NVRAM_STATE_READY) {
 		kalMsleep(100);
@@ -299,11 +306,24 @@ void wlanGetEpaElnaFromNvram(
 		(struct WIFI_NVRAM_TAG_FORMAT *)(pu1Addr
 		+ u4NvramOffset);
 
+    /* Shift to Tag ID 0 to get NVRAM total length */
+	u1TypeID = prTagDataCurr->u1NvramTypeID;
+	if (u1TypeID == NVRAM_TAG_NVRAM_CTRL) {
+		u1Total_Size_LSB = g_aucNvram[u4NvramOffset + 4];
+		u1Total_Size_MSB = g_aucNvram[u4NvramOffset + 5];
+		u2NVRAM_Toal_Size = ((uint16_t)u1Total_Size_MSB << 8)
+			 | ((uint16_t)u1Total_Size_LSB);
+		u2NVRAM_Toal_Size += 256;  /* NVRAM BASIC data len */
+	}
+
 	/* Shift to NVRAM Tag 7 - 9, r2G4Cmm, r5GCmm , rSys*/
-	for (index = 0; index < NVRAM_TAG_NUMBER; index++) {
+	while (u4NvramOffset < u2NVRAM_Toal_Size) {
 		u1TypeID = prTagDataCurr->u1NvramTypeID;
 		u1LenLSB = prTagDataCurr->u1NvramTypeLenLsb;
 		u1LenMSB = prTagDataCurr->u1NvramTypeLenMsb;
+		DBGLOG(INIT, TRACE, "CurOfs[%d]:Next(%d)Len:%d\n",
+			u4NvramOffset, u1TypeID,
+			(u1LenMSB << 8) | (u1LenLSB));
 
 		/*sanity check*/
 		if ((u1TypeID == 0) &&
@@ -316,45 +336,54 @@ void wlanGetEpaElnaFromNvram(
 		if (u1TypeID == NVRAM_TAG_2G4_COMMON) {
 			u4NvramStartOffset = u4NvramOffset;
 			DBGLOG(INIT, TRACE,
-				"NVRAM tag(%d) exist! current idx:%d, ofst %x\n",
-				u1TypeID, index, u4NvramStartOffset);
+			"NVRAM tag(%d) exist! ofst %x\n",
+			u1TypeID, u4NvramStartOffset);
 		}
 
-		if (u1TypeID == NVRAM_TAG_CO_ANT)
-			break;
+		if (u1TypeID == NVRAM_TAG_CO_ANT) {
+			*pu1DataPointer = pu1Addr + u4NvramStartOffset;
+			*pu4DataLen = u4NvramOffset - u4NvramStartOffset;
+			DBGLOG(INIT, TRACE,
+			"NVRAM datapointer %x tag7 ofst %x tag7-9 Len %x\n",
+			*pu1DataPointer, u4NvramStartOffset, *pu4DataLen);
+			kalMemCopy(&g_aucNvram_OnlyPreCal[0],
+				&g_aucNvram[u4NvramStartOffset], *pu4DataLen);
+			u4Tag7_9_data_len = *pu4DataLen;
+		}
 
+		if (u1TypeID == NVRAM_TAG_6G_COMMON) {
+			/* Only to get 6G COMMON TLV */
+			*pu1DataPointer = pu1Addr + u4NvramOffset;
+			u46GCOMM_len = sizeof(struct WIFI_NVRAM_TAG_FORMAT);
+			u46GCOMM_len += (u1LenMSB << 8) | (u1LenLSB);
+			kalMemCopy(&g_aucNvram_OnlyPreCal[u4Tag7_9_data_len],
+			 &g_aucNvram[u4NvramOffset], u46GCOMM_len);
+			*pu4DataLen += u46GCOMM_len;
+			DBGLOG(INIT, TRACE,
+				"NVRAM tag(%d) u46GCOMM_len %d, u4NvramOffset %d, pu4DataLen %d\n",
+				u1TypeID, u46GCOMM_len, pu4DataLen);
+		}
 		u4NvramOffset += sizeof(struct WIFI_NVRAM_TAG_FORMAT);
 		u4NvramOffset += (u1LenMSB << 8) | (u1LenLSB);
 
 		/*get the nex TLV format*/
 		prTagDataCurr = (struct WIFI_NVRAM_TAG_FORMAT *)
 			(pu1Addr + u4NvramOffset);
-
-
-		DBGLOG(INIT, TRACE,
-			"(%d)CurOfs[0x%08X]:Next(%d)Len:%d\n",
-			index,
-			u4NvramOffset,
-			u1TypeID,
-			(u1LenMSB << 8) | (u1LenLSB));
-
 	}
 
-	*pu1DataPointer = pu1Addr + u4NvramStartOffset;
-	*pu4DataLen = u4NvramOffset - u4NvramStartOffset;
+	/* Get NVRAM Start Addr */
+	pu1Addr = (uint8_t *)
+		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram_OnlyPreCal[0];
+	*pu1DataPointer = pu1Addr;
 
 	if (*pu4DataLen > MAX_NVRAM_FEM_MAX) {
 		*pu4DataLen = MAX_NVRAM_FEM_MAX;
 		DBGLOG(INIT, WARN,
-			"NVRAM datapointer Len adjust (%x) for command max\n",
+			"NVRAM datapointer Len(test) adjust (%x) for command max\n",
 			*pu4DataLen);
 	}
 
 	DBGLOG_MEM8(INIT, TRACE, *pu1DataPointer, *pu4DataLen);
-	DBGLOG(INIT, TRACE,
-		"NVRAM datapointer %x tag7 ofst %x tag7-9 Len %x\n",
-		*pu1DataPointer, u4NvramStartOffset, *pu4DataLen);
-
 }
 
 uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,

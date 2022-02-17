@@ -104,6 +104,7 @@ int g_u4WlanInitFlag;
 enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
+uint8_t g_aucNvram_OnlyPreCal[MAX_CFG_FILE_WIFI_RECAL_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 
 #if CFG_SUPPORT_PERSIST_NETDEV
@@ -2619,6 +2620,7 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 	}
 
 	kalMemZero(&g_aucNvram, sizeof(g_aucNvram));
+	kalMemZero(&g_aucNvram_OnlyPreCal, sizeof(g_aucNvram_OnlyPreCal));
 	if (copy_from_user(g_aucNvram, buf, length)) {
 		DBGLOG(INIT, ERROR, "copy nvram fail\n");
 		g_NvramFsm = NVRAM_STATE_INIT;
