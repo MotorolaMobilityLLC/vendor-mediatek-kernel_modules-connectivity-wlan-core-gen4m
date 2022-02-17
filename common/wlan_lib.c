@@ -7661,6 +7661,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgSapOverwriteAcsChnlBw = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapOverwriteAcsChnlBw", FEATURE_ENABLED);
 
+	prWifiVar->fgSapAddTPEIE = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapAddTPEIE", FEATURE_DISABLED);
+
 	prWifiVar->ucDfsRegion = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DfsRegion", NL80211_DFS_UNSET);
 	if (prWifiVar->ucDfsRegion)

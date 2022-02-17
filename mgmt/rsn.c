@@ -1949,6 +1949,45 @@ void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
 	}
 }
 
+void rsnGenerateOWEIE(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo)
+{
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo)
+		return;
+
+	/* AP + GO */
+	if (!IS_BSS_APGO(prBssInfo))
+		return;
+
+	prP2pSpecBssInfo =
+		prAdapter->rWifiVar.
+		prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+
+	if (prP2pSpecBssInfo &&
+		(prP2pSpecBssInfo->u2OweIeLen != 0)) {
+		uint8_t *pucBuffer =
+			(uint8_t *) ((unsigned long)
+			prMsduInfo->prPacket + (unsigned long)
+			prMsduInfo->u2FrameLength);
+
+		kalMemCopy(pucBuffer,
+			prP2pSpecBssInfo->aucOweIeBuffer,
+			prP2pSpecBssInfo->u2OweIeLen);
+		prMsduInfo->u2FrameLength +=
+			prP2pSpecBssInfo->u2OweIeLen;
+
+		DBGLOG(RSN, INFO,
+			"[OWE] Keep supplicant OWEIE content w/o update\n");
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Parse the given IE buffer and check if it is WFA IE and return Type

@@ -176,8 +176,9 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
 
 		/* Disable BSS color support*/
-		prBssInfo->ucBssColorInfo |=
-			BIT(HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT);
+		if (!prAdapter->rWifiVar.fgSapAddTPEIE)
+			prBssInfo->ucBssColorInfo |=
+				BIT(HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT);
 
 		prBssInfo->ucBssColorInfo |=
 			BIT(HE_OP_BSSCOLOR_BSS_COLOR_SHFT);
@@ -186,6 +187,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		for (i = 1; i < 8; i++)
 			prBssInfo->u2HeBasicMcsSet |=
 				(HE_CAP_INFO_MCS_NOT_SUPPORTED << 2 * i);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G) {
 			DBGLOG(RLM, INFO, "Set 6G operating info\n");

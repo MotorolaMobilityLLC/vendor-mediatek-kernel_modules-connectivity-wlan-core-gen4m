@@ -1277,6 +1277,7 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 		uint8_t ucRfBw =
 			prAdapter->rWifiVar.ucAp5gBandwidth;
 
+		/* Downgrade */
 		if (p2pFuncIsDualAPMode(prAdapter) &&
 			(ucRfBw >= MAX_BW_160MHZ))
 			ucRfBw = MAX_BW_80MHZ;
@@ -1285,7 +1286,8 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 		if (nicGetVhtS1(
 			ucChannelNum,
-			ucRfBw))
+			ucRfBw) &&
+			(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
 			bSkipCac = FALSE;
 	}
 
@@ -1480,8 +1482,9 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE,
 		"p2pRoleFsmRunEventStartAP: start AP CH[%u]",
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
-	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u].\n",
-		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss);
+	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u]. Hidden[%u]\n",
+		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss,
+		prP2pBssInfo->eHiddenSsidType);
 	/*
 	 * beacon content is related with Nss number ,
 	 * need to update because of modification
@@ -1900,11 +1903,13 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		else
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 	} else {
-		struct RF_CHANNEL_INFO aucChannelList
-			[MAX_5G_BAND_CHN_NUM] = {};
 		uint8_t ucNumOfChannel;
 		uint8_t ch_idx = 0;
 		uint8_t ucChannelNum = 36;
+		struct RF_CHANNEL_INFO aucChannelList
+			[MAX_5G_BAND_CHN_NUM] = {};
+		struct RF_CHANNEL_INFO aucChannelListRdd
+			[MAX_5G_BAND_CHN_NUM] = {};
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pRoleFsmStateTransition(prAdapter,
@@ -1925,19 +1930,37 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			MAX_5G_BAND_CHN_NUM,
 			&ucNumOfChannel,
 			aucChannelList);
+
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		p2pFuncChannelListFiltering(prAdapter,
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+			prP2pBssInfo->ucVhtChannelWidth,
+			ucNumOfChannel,
+			aucChannelList,
+			&ucNumOfChannel,
+			aucChannelListRdd);
+
 		ch_idx = kalRandomNumber() % ucNumOfChannel;
 		if (ch_idx < MAX_5G_BAND_CHN_NUM)
-			ucChannelNum = aucChannelList[ch_idx].ucChannelNum;
+			ucChannelNum = aucChannelListRdd[ch_idx].ucChannelNum;
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
-		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
 		/* Use rConnReqInfo bw */
-		prP2pConnReqInfo->rChannelInfo.ucChnlBw = MAX_BW_80MHZ;
 
+		if (IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prP2pBssInfo->ucBssIndex)) {
+
+			cnmSapChannelSwitchReq(prAdapter,
+				&prP2pConnReqInfo->rChannelInfo,
+				prP2pBssInfo->u4PrivateData);
+			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
+					prP2pBssInfo);
+		} else {
 		p2pRoleFsmRunEventStartAP(prAdapter,
 			(struct MSG_HDR *)
 			&prP2pConnReqInfo->rMsgStartAp);
-
+		}
 	}
 
 error:
@@ -2445,6 +2468,14 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					"Disconnecting: " MACSTR "\n",
 					MAC2STR(prCurrStaRec->aucMacAddr));
 
+				if ((prP2pBssInfo->u4RsnSelectedAKMSuite ==
+					RSN_AKM_SUITE_OWE)) {
+					DBGLOG(P2P, INFO,
+						"[OWE] Ignore deauth in %d\n",
+						prCurrStaRec->eAuthAssocState);
+					break;
+				}
+
 				/* Glue layer indication. */
 				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo,
 				 * prCurrStaRec, FALSE);
@@ -2791,8 +2822,6 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 	/* Do we need to be in IDLE state? */
 	/* p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo); */
 
-	ASSERT(prScanReqInfo->fgIsScanRequest == FALSE);
-
 	prScanReqInfo->fgIsAbort = TRUE;
 	prScanReqInfo->eScanType = prP2pScanReqMsg->eScanType;
 
@@ -2991,7 +3020,8 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN,
 			"Unexpected scan done for state [%s].\n",
 			p2pRoleFsmGetFsmState(prP2pRoleFsmInfo->eCurrentState));
-		break;
+		prScanReqInfo->fgIsScanRequest = FALSE;
+		goto error;
 	}
 
 	prScanReqInfo->fgIsScanRequest = FALSE;
@@ -3425,6 +3455,13 @@ p2pRoleFsmRunEventAAASuccess(IN struct ADAPTER *prAdapter,
 		prP2pRoleFsmInfo =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 				prP2pBssInfo->u4PrivateData);
+
+		if (prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE) {
+			DBGLOG(P2P, INFO,
+				"[OWE] Bypass new_sta\n");
+			break;
+		}
 
 		/* Glue layer indication. */
 		kalP2PGOStationUpdate(prAdapter->prGlueInfo,
@@ -4168,8 +4205,7 @@ static void initAcsParams(IN struct ADAPTER *prAdapter,
 		}
 	}
 	if (!prAcsReqInfo->fgIsVhtEnable &&
-			(prAcsReqInfo->eChnlBw == MAX_BW_80MHZ ||
-				prAcsReqInfo->eChnlBw == MAX_BW_160MHZ)) {
+			(prAcsReqInfo->eChnlBw >= MAX_BW_80MHZ)) {
 		if (prAcsReqInfo->fgIsHtEnable &&
 				prAcsReqInfo->fgIsHt40Enable) {
 			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
@@ -4212,14 +4248,8 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 			prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 		else
 			prAcsReqInfo->eChnlBw = MAX_BW_40MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
+	} else if (prAisBssInfo->ucVhtChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
 		prAcsReqInfo->eChnlBw = MAX_BW_80MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_160) {
-		prAcsReqInfo->eChnlBw = MAX_BW_160MHZ;
-	} else if (prAisBssInfo->ucVhtChannelWidth ==
-			VHT_OP_CHANNEL_WIDTH_80P80) {
-		prAcsReqInfo->eChnlBw = MAX_BW_80_80_MHZ;
 	} else {
 		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 	}
@@ -4231,6 +4261,21 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 		prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 
 	prAcsReqInfo->fgIsAis = TRUE;
+
+	if ((prAdapter->rWifiVar.fgSapChannelSwitchPolicy ==
+		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS) &&
+		(prAcsReqInfo->eBand == BAND_5G) &&
+		(rlmDomainIsLegalDfsChannel(
+		prAdapter,
+		prAcsReqInfo->eBand,
+		prAcsReqInfo->ucPrimaryCh) ||
+		(prAcsReqInfo->eChnlBw >= MAX_BW_160MHZ))) {
+		DBGLOG(P2P, INFO,
+			"[SKIP] StaCH(%d), Band(%d)\n",
+			prAcsReqInfo->ucPrimaryCh,
+			prAcsReqInfo->eBand);
+		prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_5G;
+	}
 
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
@@ -4429,21 +4474,37 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-#if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
 		struct BSS_INFO *prAisBssInfo;
 
 		DBGLOG(P2P, INFO, "Report SCC channel\n");
 
 		prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
-		if (prAisBssInfo) {
+		if (prAisBssInfo &&
+			prAisBssInfo->eBand == BAND_2G4 &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 			prAisBssInfo);
 			goto exit;
+		} else if (prAisBssInfo &&
+			prAisBssInfo->eBand == BAND_5G &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+			prAisBssInfo);
+			goto exit;
+#if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
+		} else if (prAisBssInfo &&
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+			prAisBssInfo);
+			goto exit;
+#endif
 		}
 	}
-#endif
+
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
@@ -4552,11 +4613,6 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
 	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
 
-	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
-		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
-		prScanReqInfo->fgIsScanRequest = FALSE;
-	}
-
 	if (!p2pRoleFsmIsAcsProcessing(prAdapter, prMsgAcsRequest->ucRoleIdx))
 		return;
 
@@ -4564,6 +4620,11 @@ p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 			prScanReqInfo->eScanReason == SCAN_REASON_ACS) {
 		DBGLOG(P2P, INFO, "Cancel current ACS scan.\n");
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
+
+	if (prScanReqInfo && prScanReqInfo->fgIsScanRequest) {
+		DBGLOG(P2P, ERROR, "Clear old scan req.\n");
+		prScanReqInfo->fgIsScanRequest = FALSE;
 	}
 }
 

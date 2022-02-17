@@ -52,6 +52,9 @@
 
 #include "precomp.h"
 
+#define IS_6G_PSC_CHANNEL(_ch) \
+	(((_ch - 5) % 16) == 0)
+
 struct APPEND_VAR_ATTRI_ENTRY txAssocRspAttributesTable[] = {
 	{(P2P_ATTRI_HDR_LEN + P2P_ATTRI_MAX_LEN_STATUS), NULL,
 		p2pFuncAppendAttriStatusForAssocRsp}
@@ -84,6 +87,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rlmRspGenerateVhtCapIE}	/*191 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
 			rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+			rlmGenerateVhtTPEIE}	/* 195 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
 			rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
@@ -107,6 +112,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNXIE}	/* 244 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateOWEIE}
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -116,6 +123,7 @@ uint32_t g_u4CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
+uint8_t g_ucBssIdx;
 static uint8_t *apucDfsState[DFS_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("DFS_STATE_INACTIVE"),
 	(uint8_t *) DISP_STRING("DFS_STATE_CHECKING"),
@@ -1338,6 +1346,12 @@ SKIP_START_RDD:
 		}
 
 		bssInitForAP(prAdapter, prBssInfo, TRUE);
+		if (prBssInfo->fgEnableH2E) {
+			prBssInfo->aucAllSupportedRates
+				[prBssInfo->ucAllSupportedRatesLen]
+				= RATE_H2E_ONLY_VAL;
+			prBssInfo->ucAllSupportedRatesLen++;
+		}
 
 		DBGLOG(P2P, TRACE, "Phy type: 0x%x, %d, %d\n",
 			prBssInfo->ucPhyTypeSet,
@@ -1391,7 +1405,8 @@ SKIP_START_RDD:
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
-
+		if (prP2pChnlReqInfo->eBand == BAND_5G)
+			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 	} while (FALSE);
 }				/* p2pFuncStartGO() */
 
@@ -1955,10 +1970,12 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	) {
 		/* Depend on eBand */
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11A;
+		prBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11BG);
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;
 	} else { /* Only SAP mode should enter this function */
 		prBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11BG;
+		prBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11A);
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 	}
@@ -1991,6 +2008,16 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		prBssInfo->u2BSSBasicRateSet,
 		prBssInfo->aucAllSupportedRates,
 		&prBssInfo->ucAllSupportedRatesLen);
+
+	bssInitForAP(prAdapter, prBssInfo, TRUE);
+	if (prBssInfo->fgEnableH2E) {
+		prBssInfo->aucAllSupportedRates
+			[prBssInfo->ucAllSupportedRatesLen]
+			= RATE_H2E_ONLY_VAL;
+		prBssInfo->ucAllSupportedRatesLen++;
+	}
+
+	nicQmUpdateWmmParms(prAdapter, prBssInfo->ucBssIndex);
 #endif
 
 	/* Setup channel and bandwidth */
@@ -2003,7 +2030,19 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	 */
 	prBssInfo->fgIsOpChangeRxNss = TRUE;
 
-	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	if (fgIsPureAp)
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	else /* if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE) */
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		/* Update unsolicited probe response as beacon */
+		bssUpdateBeaconContentEx(prAdapter,
+			prBssInfo->ucBssIndex,
+			IE_UPD_METHOD_UNSOL_PROBE_RSP);
+	}
+#endif
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
@@ -2071,6 +2110,7 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Check DBDC status */
 	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
+	cnmIdcSwitchSapChannel(prAdapter);
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
@@ -2089,8 +2129,8 @@ u_int8_t p2pFuncCheckWeatherRadarBand(
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_ETSI) {
-		if (eChannelWidth == VHT_OP_CHANNEL_WIDTH_80) {
-			if (ucCenterFreqS1 >= 120 && ucCenterFreqS1 <= 128)
+		if (eChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) {
+			if (ucCenterFreqS1 >= 114 && ucCenterFreqS1 <= 128)
 				return TRUE;
 		} else {
 			if ((ucReqChnlNum >= 120 && ucReqChnlNum <= 128))
@@ -2171,6 +2211,19 @@ uint8_t p2pFuncGetDfsState(void)
 	return g_ucDfsState;
 }
 
+uint8_t p2pFuncGetCsaBssIndex(void)
+{
+	return g_ucBssIdx;
+}
+
+void p2pFuncSetCsaBssIndex(IN uint8_t ucBssIdx)
+{
+	DBGLOG(P2P, TRACE,
+		"ucBssIdx = %d\n", ucBssIdx);
+
+	g_ucBssIdx = ucBssIdx;
+}
+
 uint8_t *p2pFuncShowDfsState(void)
 {
 	return apucDfsState[g_ucDfsState];
@@ -2193,7 +2246,75 @@ uint32_t p2pFuncGetCacRemainingTime(void)
 
 	return u4CacRemainingTime;
 }
+
+void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
+		IN uint16_t ucFilteredCh, IN uint8_t ucFilteredBw,
+		IN uint8_t pucNumOfChannel,
+		IN struct RF_CHANNEL_INFO *paucChannelList,
+		OUT uint8_t *pucOutNumOfChannel,
+		OUT struct RF_CHANNEL_INFO *paucOutChannelList)
+{
+	uint8_t i;
+	uint8_t j;
+	uint8_t rddS1;
+
+	if (ucFilteredBw == VHT_OP_CHANNEL_WIDTH_20_40) {
+		for (i = 0; i < pucNumOfChannel; i++)
+			paucOutChannelList[i] = paucChannelList[i];
+		return;
+	}
+
+	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
+	if (rddS1 == 0)
+		return;
+
+	j = 0;
+	for (i = 0; i < pucNumOfChannel; i++) {
+		if (nicGetS1(BAND_5G, paucChannelList[i].ucChannelNum,
+			ucFilteredBw) != rddS1) {
+			paucOutChannelList[j] = paucChannelList[i];
+			DBGLOG(RLM, TRACE,
+				"ch: %d, s1: %d, is_dfs: %d, rdds1: %d\n",
+				paucOutChannelList[j].ucChannelNum,
+				nicGetS1(BAND_5G,
+				paucOutChannelList[j].ucChannelNum,
+				ucFilteredBw),
+				paucOutChannelList[j].eDFS,
+				rddS1);
+			j++;
+		}
+	}
+	*pucOutNumOfChannel = j;
+}
+
 #endif
+
+void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
+{
+	if (prP2pBssInfo) {
+		uint32_t i;
+
+		prP2pBssInfo->fgEnableH2E = FALSE;
+
+		for (i = 0;
+			i < prP2pBssInfo->ucAllSupportedRatesLen;
+			i++) {
+			DBGLOG(P2P, LOUD,
+				"Rate [%d] = %d\n",
+				i,
+				prP2pBssInfo->aucAllSupportedRates[i]);
+			if (prP2pBssInfo->aucAllSupportedRates[i] ==
+				RATE_H2E_ONLY_VAL) {
+				prP2pBssInfo->fgEnableH2E = TRUE;
+				break;
+			}
+		}
+
+		DBGLOG(P2P, TRACE,
+			"fgEnableH2E = %d\n",
+			prP2pBssInfo->fgEnableH2E);
+	}
+}
 
 #if 0
 uint32_t
@@ -2391,6 +2512,8 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 			(uint8_t *) prBcnFrame->aucInfoElem,
 			(prBcnMsduInfo->u2FrameLength -
 			OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem)));
+
+		p2pFuncParseH2E(prP2pBssInfo);
 
 #if 1
 		/* bssUpdateBeaconContent(prAdapter, NETWORK_TYPE_P2P_INDEX); */
@@ -3822,6 +3945,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		prP2pSpecificBssInfo->u2WpaIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnIeLen = 0;
 		prP2pSpecificBssInfo->u2RsnxIeLen = 0;
+		prP2pSpecificBssInfo->u2OweIeLen = 0;
 
 		ASSERT_BREAK(pucIEInfo != NULL);
 
@@ -4378,6 +4502,19 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 
 				prP2pSpecificBssInfo->u2AttributeLen +=
 					IE_SIZE(pucIE);
+			} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
+				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+					DBGLOG(P2P, ERROR,
+						"RSN IE length is unexpected !!\n");
+					return;
+				}
+				kalMemCopy(
+					prP2pSpecificBssInfo->aucOweIeBuffer,
+					pucIE, IE_SIZE(pucIE));
+				prP2pSpecificBssInfo->u2OweIeLen
+					= IE_SIZE(pucIE);
+				DBGLOG(P2P, INFO,
+					"[OWE] Trans IE in supplicant\n");
 			} else {
 				DBGLOG(P2P, TRACE,
 					"Unknown 50-6F-9A-%d IE.\n",
@@ -6538,7 +6675,7 @@ void p2pFuncSwitchSapChannel(
 #endif
 
 	if (!prAdapter
-		|| !cnmSapIsActive(prAdapter)
+		|| !cnmSapIsConcurrent(prAdapter)
 		|| !fgEnable) {
 		DBGLOG(P2P, TRACE, "Not support concurrent STA + SAP\n");
 		goto exit;
@@ -6547,16 +6684,6 @@ void p2pFuncSwitchSapChannel(
 	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
 	if (!prAisBssInfo) {
 		ucStaChannelNum = 0;
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			-1, /* p2p role index */
-			0, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
-#endif
 	} else {
 		/* Get current channel info */
 		ucStaChannelNum = prAisBssInfo->ucPrimaryChannel;
@@ -6565,11 +6692,14 @@ void p2pFuncSwitchSapChannel(
 		/* restore DFS channels table */
 		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
 			-1, /* p2p role index */
-			ucStaChannelNum, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
+			prAisBssInfo->ucPrimaryChannel,
+			prAisBssInfo->ucVhtChannelWidth,
+			prAisBssInfo->eBssSCO,
+			nicChannelNum2Freq(
+				prAisBssInfo->ucVhtChannelFrequencyS1,
+				prAisBssInfo->eBand) / 1000,
+			prAisBssInfo->eBand
+			);
 #endif
 		if (eStaBand <= BAND_NULL || eStaBand >= BAND_NUM) {
 			DBGLOG(P2P, WARN, "STA has invalid band\n");
@@ -6602,7 +6732,12 @@ void p2pFuncSwitchSapChannel(
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
 		DBGLOG(P2P, TRACE, "SAP is during initialization\n");
 		goto exit;
+	} else if (kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, INFO, "SAP is during uninitialization\n");
+		goto exit;
 	}
+
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pBssInfo->u4PrivateData);
@@ -6639,11 +6774,37 @@ void p2pFuncSwitchSapChannel(
 				"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
 				fgIsSapDfs,
 				fgIsSapDesense);
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+			/* restore DFS channels table */
+			wlanUpdateDfsChannelTable(
+				prAdapter->prGlueInfo,
+				-1, /* p2p role index */
+				0, /* primary channel */
+				0, /* bandwidth */
+				0, /* sco */
+				0, /* center frequency */
+				0 /* eBand */);
+#endif
 		} else {
 			DBGLOG(P2P, WARN, "STA is not connected\n");
 			goto exit;
 		}
 	}
+
+#ifdef CFG_SUPPORT_SKIP_NONPSC
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+		eStaBand == BAND_6G &&
+		!IS_6G_PSC_CHANNEL(ucStaChannelNum)) {
+		DBGLOG(P2P, INFO,
+			"[DBDC] STA non-psc: %d -> 6\n",
+			ucStaChannelNum);
+		ucStaChannelNum = 6;
+		eStaBand = BAND_2G4;
+		prP2pBssInfo->fgEnableH2E = FALSE;
+	}
+#endif
+#endif
 
 #if CFG_TC1_FEATURE
 	if (p2pFuncSwitchSapChannelToDbdc(
@@ -7640,19 +7801,22 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
+	uint8_t ucBssIndex;
 
 	if (!prAdapter)
 		return;
 
 	/* Check SAP interface */
-	prBssInfo = cnmGetSapBssInfo(prAdapter);
-	if (!prBssInfo) {
-		/* Check p2p interface */
-		prBssInfo = cnmGetP2pBssInfo(prAdapter);
-		if (!prBssInfo) {
-			log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
-			return;
-		}
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
+		return;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		ucBssIndex);
+	if (!prBssInfo || !IS_BSS_P2P(prBssInfo)) {
+		log_dbg(CNM, ERROR, "No SAP/P2P bss is active when CSA done!\n");
+		return;
 	}
 
 	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) cnmMemAlloc(prAdapter,
@@ -7664,7 +7828,8 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 		return;
 	}
 
-	DBGLOG(CNM, INFO, "ucBssIndex = %d\n", prBssInfo->ucBssIndex);
+	DBGLOG(CNM, INFO, "p2pFuncSwitch Done, ucBssIndex = %d\n",
+		prBssInfo->ucBssIndex);
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
 	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;
