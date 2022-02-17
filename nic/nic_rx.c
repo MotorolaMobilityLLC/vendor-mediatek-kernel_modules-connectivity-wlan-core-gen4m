@@ -3777,6 +3777,109 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This routine is called to acquire a RFB from free swrfb list
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ * @param num          num of swrfb to acquire
+ *
+ * @return swrfb
+ */
+/*----------------------------------------------------------------------------*/
+
+struct SW_RFB * nicRxAcquireRFB(IN struct ADAPTER *prAdapter, uint16_t num)
+{
+	uint16_t i;
+	struct QUE tmp, *que = &tmp;
+	struct SW_RFB *rfb = NULL;
+	struct RX_CTRL *ctrl;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	ctrl = &prAdapter->rRxCtrl;
+
+	QUEUE_INITIALIZE(que);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	for (i = 0; i < num; i++) {
+		QUEUE_REMOVE_HEAD(&ctrl->rFreeSwRfbList, rfb, struct SW_RFB *);
+		if (!rfb) {
+			DBGLOG_LIMITED(RX, WARN,
+				"No More RFB caller=%pS\n", KAL_TRACE);
+			goto fail;
+		}
+		QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+
+	return (struct SW_RFB *)QUEUE_GET_HEAD(que);
+fail:
+	while (QUEUE_IS_NOT_EMPTY(que)) {
+		QUEUE_REMOVE_HEAD(que, rfb, struct SW_RFB *);
+		nicRxReturnRFB(prAdapter, rfb);
+	}
+	return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine is called to add a new received rfb
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ * @param rfb          received swrfb, it could be a list of swrfb
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+
+void nicRxReceiveRFB(IN struct ADAPTER *prAdapter, struct SW_RFB *rfb)
+{
+	struct SW_RFB *next = NULL;
+	struct RX_CTRL *ctrl;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!rfb)
+		return;
+
+	ctrl = &prAdapter->rRxCtrl;
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+
+	while(rfb) {
+		next = (struct SW_RFB *) QUEUE_GET_NEXT_ENTRY((
+					 struct QUE_ENTRY *) rfb);
+		QUEUE_INSERT_TAIL(&ctrl->rReceivedRfbList, &rfb->rQueEntry);
+		rfb = next;
+	}
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine is called to copy swrfb data to another
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ * @param prDst          destination
+ * @param prSrc          source
+ *
+ * @return status
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t nicRxCopyRFB(IN struct ADAPTER *prAdapter,
+		       IN struct SW_RFB *prDst, IN struct SW_RFB *prSrc)
+{
+	kalMemCopy(prDst->pucRecvBuff, prSrc->pucRecvBuff,
+	       ALIGN_4(prSrc->u2RxByteCount + HIF_RX_HW_APPENDED_LEN));
+	prDst->ucPacketType = prSrc->ucPacketType;
+	nicRxFillRFB(prAdapter, prDst);
+	GLUE_COPY_PRIV_DATA(prDst->pvPacket, prSrc->pvPacket);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This routine is called to put a RFB back onto the "RFB with Buffer"
  *        list or "RFB without buffer" list according to pvPacket.
  *
@@ -3795,7 +3898,10 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
+
+	if (!prSwRfb)
+		return;
+
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prQueEntry = &prSwRfb->rQueEntry;
 

@@ -271,6 +271,8 @@ void nic_rxd_v1_fill_rfb(
 	prSwRfb->fgIsAmpdu = HAL_RX_STATUS_IS_AMPDU_FORMAT(prRxStatus);
 	prSwRfb->ucRxvSeqNo = HAL_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus);
 	prSwRfb->ucChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
+	prSwRfb->eRfBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
+	prSwRfb->ucTcl = HAL_RX_STATUS_GET_TCL(prRxStatus);
 
 #if 0
 	if (prHifRxHdr->ucReorder &

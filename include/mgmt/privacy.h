@@ -254,6 +254,9 @@ uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb);
 
+struct BSS_INFO * secGetBssByRfb(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
+
 uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
 				   *prAdapter, uint8_t *pucMacAddress);
 

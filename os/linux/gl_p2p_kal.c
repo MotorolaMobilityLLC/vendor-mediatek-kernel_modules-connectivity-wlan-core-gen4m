@@ -1379,11 +1379,7 @@ kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
 
 		prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
-		RX_STATUS_GET(
-			prRxDescOps,
-			eBand,
-			get_rf_band,
-			prSwRfb->prRxStatus);
+		eBand = prSwRfb->eRfBand;
 
 		nicRxdChNumTranslate(eBand, &ucChnlNum);
 

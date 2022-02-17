@@ -885,6 +885,8 @@ struct SW_RFB {
 	uint8_t ucChanFreq;
 	uint8_t ucRxvSeqNo;
 	uint8_t ucChnlNum;
+	enum ENUM_BAND eRfBand;
+	uint8_t ucTcl;
 
 	/* rx sta record */
 	uint8_t ucWlanIdx;
@@ -1434,6 +1436,13 @@ void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
 
 uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
+
+struct SW_RFB * nicRxAcquireRFB(IN struct ADAPTER *prAdapter, uint16_t num);
+
+void nicRxReceiveRFB(IN struct ADAPTER *prAdapter, struct SW_RFB *rfb);
+
+uint32_t nicRxCopyRFB(IN struct ADAPTER *prAdapter,
+		       IN struct SW_RFB *prDst, IN struct SW_RFB *prSrc);
 
 void nicRxReturnRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
 

@@ -37,6 +37,13 @@
 	(_u2ctrl & (ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT << \
 		ML_CTRL_PRE_BMP_SHIFT))
 
+#define BE_IS_ML_CTRL_PRESENCE_MEDIUM_SYN_DELAY_INFO(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT << \
+		ML_CTRL_PRE_BMP_SHIFT))
+
+#define BE_IS_ML_CTRL_PRESENCE_EML_CAP(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_EML_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
+
 #define BE_IS_ML_CTRL_PRESENCE_MLD_CAP(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
@@ -51,7 +58,7 @@ struct IE_MULTI_LINK_CONTROL {
 	u_int8_t aucCommonInfo[0];	/* common field - varied by presence bitmap of control field*/
 } __KAL_ATTRIB_PACKED__;
 
-#define MLSTAIE(fp)              ((struct IE_MULTI_LINK_INFO_STA_CONTROL *) fp)
+#define MLSTAIE(fp)              ((struct IE_MULTI_LINK_STA_CONTROL *) fp)
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
 {\
@@ -97,22 +104,7 @@ struct IE_MULTI_LINK_CONTROL {
 #define BE_IS_ML_STA_CTRL_PRESENCE_NSTR(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
-struct IE_ML_PER_STA_PROFILE_INFO {
-	uint16_t u2StaCtrl;
-	/* Include STA info and STA profile */
-	uint8_t aucMultiLinkVarIe[0];
-} __KAL_ATTRIB_PACKED__;
-
-struct IE_MULTI_LINK_INFO {
-	uint8_t ucId;
-	uint8_t ucLength;
-	uint8_t ucExtId;
-	uint16_t u2MlCtrl;
-	/* Include Common info and Link info */
-	uint8_t aucMultiLinkVarIe[0];
-} __KAL_ATTRIB_PACKED__;
-
-struct IE_MULTI_LINK_INFO_STA_CONTROL {
+struct IE_MULTI_LINK_STA_CONTROL {
 	u_int8_t ucSubID;	/* 0: Per-STA Profile */
 	u_int8_t ucLength;
 	u_int16_t u2StaCtrl;	/* control field - BITS(0, 3): link ID, BIT(4): complete profile, BITS(5, 8): presence bitmap, BITS(9): NSTR bitmap size*/
@@ -128,6 +120,7 @@ struct IE_NON_INHERITANCE {
 
 struct STA_PROFILE {
 	uint16_t u2StaCtrl;
+	uint8_t ucComplete;
 	uint8_t ucLinkId;
 	uint8_t aucLinkAddr[MAC_ADDR_LEN];
 	uint16_t u2BcnIntv;
@@ -135,6 +128,7 @@ struct STA_PROFILE {
 	uint16_t u2NstrBmp;
 	struct RF_CHANNEL_INFO rChnlInfo;
 	uint8_t ucChangeSeq;
+	uint8_t ucIEbufLen;
 	uint8_t aucIEbuf[256];
 };
 
@@ -203,8 +197,15 @@ uint32_t beCalculateRnrIELen(
 void beGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
-	IN uint8_t *pucIE);
+void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
+	IN const uint8_t *pucIE, IN const uint8_t *paucBssId);
+
+void beProcessBeaconAndProbeResp(
+	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
+
+struct SW_RFB * beDuplicateAssocSwRfb(
+	struct ADAPTER *prAapter, struct SW_RFB *prSrc,
+	struct STA_RECORD *prStaRec);
 
 void mldBssDump(struct ADAPTER *prAdapter);
 

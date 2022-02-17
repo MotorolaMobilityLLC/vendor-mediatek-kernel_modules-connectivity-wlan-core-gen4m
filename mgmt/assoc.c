@@ -1698,11 +1698,7 @@ uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER *prAdapter,
 		prStaRec->u2DesiredNonHTRateSet =
 			(prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
 
-		RX_STATUS_GET(
-			prRxDescOps,
-			eBand,
-			get_rf_band,
-			prSwRfb->prRxStatus);
+		eBand = prSwRfb->eRfBand;
 		if (eBand == BAND_2G4) {
 			if (prStaRec->u2OperationalRateSet &
 				RATE_SET_OFDM)
