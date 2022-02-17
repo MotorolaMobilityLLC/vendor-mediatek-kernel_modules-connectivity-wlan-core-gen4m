@@ -343,7 +343,8 @@ int32_t StaRecBfHeUpdate(struct net_device *prNetDev,
 			uint8_t ucTriggerMu, uint8_t ucNg16Su,
 			uint8_t ucNg16Mu, uint8_t ucCodebook42Su,
 			uint8_t ucCodebook75Mu,	uint8_t ucHeLtf,
-			uint8_t uciBfNcol, uint8_t uciBfNrow);
+			uint8_t uciBfNcol, uint8_t uciBfNrow,
+			uint8_t ucNrBw160, uint8_t ucNcBw160);
 
 #if CFG_SUPPORT_TX_BF_FPGA
 int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,

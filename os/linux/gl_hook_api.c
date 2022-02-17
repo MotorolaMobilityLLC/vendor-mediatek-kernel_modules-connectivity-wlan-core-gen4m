@@ -3570,6 +3570,8 @@ int32_t StaRecBfUpdate(struct net_device *prNetDev,
 	rStaRecBF.rTxBfPfmuInfo.uciBfDBW = rStaRecBfUpdArg.u4iBfDBW;
 	rStaRecBF.rTxBfPfmuInfo.uciBfNcol = rStaRecBfUpdArg.u4iBfNcol;
 	rStaRecBF.rTxBfPfmuInfo.uciBfNrow = rStaRecBfUpdArg.u4iBfNrow;
+	rStaRecBF.rTxBfPfmuInfo.u1NrBw160 = rStaRecBfUpdArg.u4NrBw160;
+	rStaRecBF.rTxBfPfmuInfo.u1NcBw160 = rStaRecBfUpdArg.u4NcBw160;
 	rStaRecBF.rTxBfPfmuInfo.u1RuStartIdx = rStaRecBfUpdArg.u4RuStartIdx;
 	rStaRecBF.rTxBfPfmuInfo.u1RuEndIdx = rStaRecBfUpdArg.u4RuEndIdx;
 	rStaRecBF.rTxBfPfmuInfo.fgTriggerSu = rStaRecBfUpdArg.u4TriggerSu;
@@ -3595,7 +3597,8 @@ int32_t StaRecBfHeUpdate(struct net_device *prNetDev,
 			uint8_t ucTriggerMu, uint8_t ucNg16Su,
 			uint8_t ucNg16Mu, uint8_t ucCodebook42Su,
 			uint8_t ucCodebook75Mu, uint8_t ucHeLtf,
-			uint8_t uciBfNcol, uint8_t uciBfNrow)
+			uint8_t uciBfNcol, uint8_t uciBfNrow,
+			uint8_t ucNrBw160, uint8_t ucNcBw160)
 {
 	int32_t i4Status = 0;
 
@@ -3612,6 +3615,8 @@ int32_t StaRecBfHeUpdate(struct net_device *prNetDev,
 	prPfmuHeInfo->u1HeLtf = ucHeLtf;
 	prPfmuHeInfo->uciBfNcol = uciBfNcol;
 	prPfmuHeInfo->uciBfNrow = uciBfNrow;
+	prPfmuHeInfo->ucNrBw160 = ucNrBw160;
+	prPfmuHeInfo->ucNcBw160 = ucNcBw160;
 
 	return i4Status;
 }
