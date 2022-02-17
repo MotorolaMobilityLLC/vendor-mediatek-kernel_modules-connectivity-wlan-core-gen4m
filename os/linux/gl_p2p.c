@@ -904,7 +904,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
 	u_int8_t ret;
-	uint32_t i, u4DeviceNum;
+	uint32_t i;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -927,11 +927,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		fgRollbackRtnlLock = TRUE;
 	}
 
-	u4DeviceNum =
-		(prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum == KAL_P2P_NUM &&
-		 KAL_P2P_NUM == 2) ? 2 : 1;
-
-	for (i = 0; i < u4DeviceNum; i++) {
+	for (i = 0; i < prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum; i++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prDevHandler = prGlueInfo->prP2PInfo[i]->prDevHandler;
 
@@ -1018,17 +1014,23 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		fgRollbackRtnlLock = TRUE;
 
 	for (ucRoleIdx = 0; ucRoleIdx < KAL_P2P_NUM; ucRoleIdx++) {
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-		if (prP2PInfo == NULL)
+		if (prP2PInfo == NULL) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
+		}
 
 #if CFG_ENABLE_UNIFY_WIPHY
 		/* don't unregister the dev that share with the AIS */
-		if (wlanIsAisDev(prP2PInfo->prDevHandler))
+		if (wlanIsAisDev(prP2PInfo->prDevHandler)) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
+		}
 #endif
 
 		prRoleDev = prP2PInfo->aprRoleHandler;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prRoleDev != NULL) {
 			/* info cfg80211 disconnect */
 			prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -1120,6 +1122,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	DBGLOG(INIT, TRACE, "setup the p2p dev\n");
 
 	if ((prGlueInfo == NULL) ||
@@ -1170,6 +1174,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		prP2pWdev->wiphy->bands[KAL_BAND_6GHZ] = NULL;
 #endif
 
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	/* setup netdev */
 	/* Point to shared glue structure */
 	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -1225,6 +1230,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* finish */
 	/* bind netdev pointer to netdev index */
 	prP2PInfo->prDevHandler = prP2pDev;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	p2pDevFsmInit(prAdapter);
@@ -1623,10 +1629,14 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 
 	/* 4 <3> Free Wiphy & netdev */
 	for (ucRoleIdx = i4Start; ucRoleIdx < i4End; ucRoleIdx++) {
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 
-		if (prP2PInfo == NULL)
+		if (prP2PInfo == NULL) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
+		}
+
 		/* For P2P interfaces, prDevHandler points to the net_device of
 		 * p2p0 interface. And aprRoleHandler points to the net_device
 		 * of p2p virtual interface (i.e., p2p1) when it was created.
@@ -1657,6 +1667,8 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			if (wlanIsAisDev(prP2PInfo->prDevHandler))
 				gprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
+				GLUE_RELEASE_SPIN_LOCK(prGlueInfo,
+					SPIN_LOCK_NET_DEV);
 				if (prP2PInfo->prDevHandler->reg_state
 					== NETREG_REGISTERED) {
 					DBGLOG(INIT, WARN,
@@ -1667,19 +1679,20 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 						ENUM_NET_REG_STATE_UNREGISTERED;
 				}
 				free_netdev(prP2PInfo->prDevHandler);
+				GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo,
+					SPIN_LOCK_NET_DEV);
 			}
 			prP2PInfo->prDevHandler = NULL;
 		}
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		/* 4 <4> Free P2P internal memory */
 		if (!p2PFreeInfo(prGlueInfo, ucRoleIdx)) {
 			/* FALSE: (fgIsP2PRegistered!=FALSE)||(ucRoleIdx err) */
 			DBGLOG(INIT, ERROR, "p2PFreeInfo FAILED\n");
-			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			return FALSE;
 		}
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
 	}
 
 	return TRUE;
