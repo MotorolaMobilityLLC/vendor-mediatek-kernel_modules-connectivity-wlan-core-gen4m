@@ -364,7 +364,7 @@ int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 	else
 		band = BAND_NULL;
 
-	prGlueInfo->prAdapter->aeSetBand[NETWORK_TYPE_AIS] = band;
+	prGlueInfo->prAdapter->aePreferBand[NETWORK_TYPE_AIS] = band;
 	return 0;
 
 nla_put_failure:
