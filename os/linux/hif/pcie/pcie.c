@@ -130,7 +130,7 @@ static const struct pci_device_id mtk_pci_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7915},
 #endif /* MT7915 */
 #ifdef SOC3_0
-	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, NICSOC3_0_PCIe_DEVICE_ID),
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICSOC3_0_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc3_0 },
 #endif /* SOC3_0 */
 #ifdef MT7961
