@@ -165,23 +165,25 @@ void kal_virt_get_int_status(struct ADAPTER *ad, uint32_t *status)
 void kal_virt_uhw_rd(struct ADAPTER *ad, uint32_t u4Offset, uint32_t *pu4Value,
 		     u_int8_t *pfgSts)
 {
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad, u4Offset, pu4Value,
+			   pfgSts);
 }
 
 void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
 		     u_int8_t *pfgSts)
 {
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad, u4Offset, u4Value,
+			   pfgSts);
 }
 
 void kal_virt_cancel_tx_rx(struct ADAPTER *ad)
 {
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad);
 }
 
-void kal_virt_toggle_wfsys_rst(struct ADAPTER *ad)
+uint32_t kal_virt_toggle_wfsys_rst(struct ADAPTER *ad)
 {
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad);
 }
 
 /* the following functions are defined in include/nic/hal.h

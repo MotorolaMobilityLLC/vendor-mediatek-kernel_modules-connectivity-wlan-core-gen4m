@@ -268,7 +268,8 @@ u_int8_t mt7961HalPollWfsysSwInitDone(struct ADAPTER *prAdapter)
 			break;
 
 		if (u4ResetTimeCnt >= u4ResetTimeTmout) {
-			DBGLOG(INIT, ERROR, "WF L0.5 Reset FAIL\n");
+			DBGLOG(INIT, ERROR,
+			       "L0.5 Reset polling sw init done timeout\n");
 
 			fgSwInitDone = FALSE;
 

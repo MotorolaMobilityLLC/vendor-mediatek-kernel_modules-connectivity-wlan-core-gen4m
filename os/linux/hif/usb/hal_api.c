@@ -454,7 +454,7 @@ void halCancelTxRx(IN struct ADAPTER *prAdapter)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-void halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -480,8 +480,13 @@ void halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 		prChipInfo->asicWfsysRst(prAdapter, FALSE);
 
 	if (prChipInfo->asicPollWfsysSwInitDone)
-		if (!prChipInfo->asicPollWfsysSwInitDone(prAdapter))
-			DBGLOG(HAL, ERROR, "WF L0.5 Reset FAIL\n");
+		if (!prChipInfo->asicPollWfsysSwInitDone(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "L0.5 reset polling sw init done fail\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 

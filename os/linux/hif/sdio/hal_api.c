@@ -3107,3 +3107,16 @@ bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 void halDumpHifStats(IN struct ADAPTER *prAdapter)
 {}
 
+#if CFG_CHIP_RESET_SUPPORT
+uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+{
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "ADAPTER is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* TODO */
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_CHIP_RESET_SUPPORT */
