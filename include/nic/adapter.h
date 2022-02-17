@@ -1150,6 +1150,17 @@ struct WIFI_VAR {
 	/* Only scan all 6g channels, including PSC and non-PSC */
 	u_int8_t fgEnOnlyScan6g;
 #endif
+
+#define LATENCY_STATS_MAX_SLOTS 5
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	bool fgPacketLatencyLog;
+	uint32_t u4MsduStatsUpdateInterval; /* in ms */
+	uint32_t u4ContinuousTxFailThreshold;
+
+	uint32_t au4MacTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+	uint32_t au4DriverTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+#endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 };
 
 /* cnm_timer module */
@@ -1350,6 +1361,15 @@ struct HIF_STATS {
 
 struct OID_HANDLER_RECORD {
 	uint8_t aucName[100];
+};
+
+struct TX_LATENCY_REPORT_STATS {
+	uint32_t au2DriverLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au2ConnsysLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t au2MacLatency[LATENCY_STATS_MAX_SLOTS];
+	uint32_t u2TxFail;
+	uint32_t u2ContinuousTxFail;
+	u_int8_t fgTxLatencyEnabled;
 };
 
 /*
@@ -1811,6 +1831,8 @@ struct ADAPTER {
 	u_int8_t fgEnDbgPowerMode;
 
 	struct HIF_STATS rHifStats;
+
+	struct TX_LATENCY_REPORT_STATS rMsduReportStats;
 
 	unsigned int u4FWLastUpdateTime;
 
