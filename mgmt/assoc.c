@@ -1467,6 +1467,11 @@ uint32_t assocProcessRxAssocReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
+	if (p2pLinkProcessRxAssocReqFrame(prAdapter,
+		GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex),
+		prStaRec, prAssocReqSwRfb) == WLAN_STATUS_SUCCESS)
+		mldStarecSetSetupIdx(prAdapter, prStaRec);
+
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mld_starec) {
 		struct LINK *links =

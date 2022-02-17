@@ -15,9 +15,16 @@ struct MLD_BSS_INFO *p2pGetMldBssInfo(
 	IN struct ADAPTER *prAdapter,
 	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 
-uint32_t p2pLinkProcessAuthReqFrame(
+uint32_t p2pLinkProcessRxAuthReqFrame(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo,
+	IN struct STA_RECORD *prStaRec,
+	IN struct SW_RFB *prSwRfb);
+
+uint32_t p2pLinkProcessRxAssocReqFrame(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo,
+	IN struct STA_RECORD *prStaRec,
 	IN struct SW_RFB *prSwRfb);
 
 int8_t p2pMldBssInit(struct ADAPTER *prAdapter);

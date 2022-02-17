@@ -3699,11 +3699,14 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 
 	prStaRec->ucJoinFailureCount = 0;
 
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (p2pLinkProcessAuthReqFrame(prAdapter,
-		prP2pBssInfo,
-		prSwRfb) == WLAN_STATUS_SUCCESS)
-		mldStarecSetSetupIdx(prAdapter, prStaRec);
+	if (p2pLinkProcessRxAuthReqFrame(prAdapter,
+		prP2pBssInfo, prStaRec, prSwRfb) != WLAN_STATUS_SUCCESS) {
+		cnmStaRecFree(prAdapter, prStaRec);
+		*pu2StatusCode = STATUS_CODE_DENIFED_EHT_NOT_SUPPORTED;
+		return FALSE;
+	}
 #endif
 
 	*pprStaRec = prStaRec;
