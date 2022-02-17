@@ -2005,8 +2005,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			      enum ENUM_NETWORK_TYPE eNetworkType,
 			      uint8_t ucWdevIndex, u_int8_t fgIsP2pDevice)
 {
-	struct BSS_INFO *prBssInfo;
-	uint8_t i, ucBssIndex, ucOwnMacIdx;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
 
 	ASSERT(prAdapter);
 
@@ -2032,10 +2032,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		return prBssInfo;
 	}
 
-	/*reserve ownMAC0 for MBSS*/
-	ucOwnMacIdx = (eNetworkType == NETWORK_TYPE_MBSS) ? 0 :
-		      1;
-
 	/* Find available HW set  with the order 1,2,..*/
 	do {
 		for (ucBssIndex = 0;
@@ -2056,33 +2052,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		}
 	} while (++ucOwnMacIdx < prAdapter->ucHwBssIdNum);
 
-
-	/* should not dispatch P2P_DEV_BSS_INDEX (prAdapter->ucHwBssIdNum)
-	 * to general bss. It means total BSS_INFO_NUM BSS are created,
-	 * no more reseve for MBSS
-	 */
-	if (ucOwnMacIdx == prAdapter->ucHwBssIdNum) {
-
-		for (ucBssIndex = 0;
-		     ucBssIndex < prAdapter->ucHwBssIdNum;
-		     ucBssIndex++) {
-			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-			/*If the Bss was alredy assigned, and in use*/
-			if (prBssInfo && prBssInfo->fgIsInUse
-			    && prBssInfo->ucOwnMacIndex == 0)
-				break;
-		}
-
-		if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
-			/* there is no NETWORK_TYPE_MBSS used before */
-
-			log_dbg(INIT, WARN, "[Warning] too much Bss in use, take reserve OwnMac(%d)for usage!\n",
-				ucOwnMacIdx);
-			ucOwnMacIdx = 0;
-		}
-
-	}
+	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum)
+		return NULL;
 
 	/* Find available BSS_INFO */
 	for (ucBssIndex = 0;
@@ -2092,42 +2063,35 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
 			prBssInfo->fgIsInUse = TRUE;
-			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->eNetworkType = eNetworkType;
+			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
 #endif
+			/* initialize wlan id and status for keys */
+			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
+			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+			for (i = 0; i < MAX_KEY_NUM; i++) {
+				prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
+				prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
+				prBssInfo->wepkeyUsed[i] = FALSE;
+			}
+			prBssInfo->ucWdevIndex = ucWdevIndex;
+			cnmTimerInitTimer(prAdapter,
+				&prBssInfo->rCsaTimer,
+				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
+				(unsigned long)ucBssIndex);
+			rlmResetCSAParams(prBssInfo);
+			prBssInfo->fgHasStopTx = FALSE;
+			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d\n",
+				prBssInfo->ucBssIndex,
+				prBssInfo->eNetworkType,
+				prBssInfo->ucOwnMacIndex);
 			break;
 		}
 	}
-
-	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum
-	    || ucBssIndex >= prAdapter->ucHwBssIdNum)
-		prBssInfo = NULL;
-	if (prBssInfo) {
-		/* initialize wlan id and status for keys */
-		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
-		prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
-		for (i = 0; i < MAX_KEY_NUM; i++) {
-			prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
-			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
-			prBssInfo->wepkeyUsed[i] = FALSE;
-		}
-		prBssInfo->ucWdevIndex = ucWdevIndex;
-	}
-
-#if CFG_SUPPORT_DFS
-	if (prBssInfo) {
-		cnmTimerInitTimer(prAdapter,
-			&prBssInfo->rCsaTimer,
-			(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
-			(unsigned long)ucBssIndex);
-		rlmResetCSAParams(prBssInfo);
-		prBssInfo->fgHasStopTx = FALSE;
-	}
-#endif
 
 	return prBssInfo;
 }
