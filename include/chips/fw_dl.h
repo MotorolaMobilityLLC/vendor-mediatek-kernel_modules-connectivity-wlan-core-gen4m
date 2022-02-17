@@ -82,6 +82,8 @@
 #define COMPRESSION_OPTION_MASK     BIT(4)
 #endif
 
+#define RELEASE_INFO_SEPARATOR_LEN  16
+
 #if CFG_MTK_ANDROID_EMI
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
@@ -119,7 +121,9 @@ struct TAILER_COMMON_FORMAT_T {
 	uint8_t ucChipInfo;
 	uint8_t ucEcoCode;
 	uint8_t ucRegionNum;
-	uint8_t aucReserved[4];
+	uint8_t ucFormatVer;
+	uint8_t ucFormatFlag;
+	uint8_t aucReserved[2];
 	uint8_t aucRamVersion[10];
 	uint8_t aucRamBuiltDate[15];
 	uint32_t u4CRC;
@@ -144,6 +148,12 @@ struct TAILER_FORMAT_T {
 	uint8_t ram_version[10];
 	uint8_t ram_built_date[15];
 	uint32_t len;
+};
+
+struct HEADER_RELEASE_INFO {
+	uint16_t u2Len;
+	uint8_t ucPaddingLen;
+	uint8_t ucTag;
 };
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -270,6 +280,11 @@ uint32_t wlanGetPatchInfo(IN struct ADAPTER *prAdapter);
 
 uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	char *pcBuf, int i4TotalLen);
+
+void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr);
+void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
+			    struct HEADER_RELEASE_INFO *prRelInfo,
+			    uint8_t *pucStartPtr);
 
 #endif
 

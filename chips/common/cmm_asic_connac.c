@@ -200,12 +200,20 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 
 	kalMemZero(aucBuf, 32);
 	kalMemCopy(aucBuf, prComTailer->aucRamVersion, 10);
-	u4Offset += snprintf(pcBuf + u4Offset,
-			     i4TotalLen - u4Offset,
-			     "N9 tailer version %s (%s) info %u:E%u\n",
-			     aucBuf, prComTailer->aucRamBuiltDate,
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+			     "Tailer Ver[%u:%u] %s (%s) info %u:E%u\n",
+			     prComTailer->ucFormatVer,
+			     prComTailer->ucFormatFlag,
+			     aucBuf,
+			     prComTailer->aucRamBuiltDate,
 			     prComTailer->ucChipInfo,
 			     prComTailer->ucEcoCode + 1);
+
+	if (prComTailer->ucFormatFlag) {
+		u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+				     "Release manifest: %s\n",
+				     prAdapter->rVerInfo.aucReleaseManifest);
+	}
 	return u4Offset;
 }
 
