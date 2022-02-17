@@ -1714,6 +1714,9 @@ struct ADAPTER {
 	uint8_t fgTxPPDU;
 	uint8_t ucVcoreBoost;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t fgEhtHtcOM;
+#endif
 #if (CFG_SUPPORT_TWT == 1)
 	struct _TWT_PLANNER_T rTWTPlanner;
 #endif
