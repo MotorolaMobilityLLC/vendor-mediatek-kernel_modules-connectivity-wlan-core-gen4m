@@ -1080,6 +1080,43 @@ do { \
 
 #endif
 
+/*
+ * TODO: os-related, should we separate the file just leave API here and
+ * do the implementation in os folder (?)
+ * followings are the necessary API for build PASS
+ */
+#ifdef CFG_VIRTUAL_OS
+#define HAL_WRITE_TX_PORT(_prAd, _u4PortId, _u4Len, _pucBuf, _u4BufSize) \
+	kal_virt_write_tx_port(_prAd, _u4PortId, _u4Len, _pucBuf, _u4BufSize)
+
+#define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
+	kal_virt_get_wifi_func_stat(_prAdapter, &_u4Result)
+
+#define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
+	kal_virt_chk_wifi_func_off(_prAdapter, _checkItem, _pfgResult)
+
+#define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
+	kal_virt_chk_wifi_func_ready(_prAdapter, _checkItem, _pfgResult)
+
+#define HAL_SET_MAILBOX_READ_CLEAR(_prAdapter, _fgEnableReadClear) \
+	kal_virt_set_mailbox_readclear(_prAdapter, _fgEnableReadClear)
+
+#define HAL_SET_INTR_STATUS_READ_CLEAR(_prAdapter) \
+	kal_virt_set_int_stat_readclear(_prAdapter)
+
+#define HAL_HIF_INIT(_prAdapter) \
+	kal_virt_init_hif(_prAdapter)
+
+#define HAL_ENABLE_FWDL(_prAdapter, _fgEnable) \
+	kal_virt_enable_fwdl(_prAdapter, _fgEnable)
+
+#define HAL_READ_INT_STATUS(_prAdapter, _pu4IntStatus) \
+	kal_virt_get_int_status(_prAdapter, _pu4IntStatus)
+
+#define HAL_IS_TX_DIRECT(_prAdapter) FALSE
+
+#define HAL_IS_RX_DIRECT(_prAdapter) FALSE
+#endif
 #define INVALID_VERSION 0xFFFF /* used by HW/FW version */
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
