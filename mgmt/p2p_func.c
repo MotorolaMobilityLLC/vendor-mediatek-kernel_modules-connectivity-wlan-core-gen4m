@@ -4243,7 +4243,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				 * will not always be
 				 * the true since hidden SSID case
 				 */
-#if 0
+#if CFG_SUPPORT_HIDDEN_SW_AP
 					COPY_SSID(
 					prP2pBssInfo->aucSSID,
 					prP2pBssInfo->ucSSIDLen,

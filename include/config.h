@@ -1841,6 +1841,13 @@
 #define CFG_POWER_OFF_CTRL_SUPPORT	0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Support TX hidden SSID beacon
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_HIDDEN_SW_AP
+#define CFG_SUPPORT_HIDDEN_SW_AP	0
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
