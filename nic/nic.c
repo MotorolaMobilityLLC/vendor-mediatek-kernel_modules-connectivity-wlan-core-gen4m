@@ -2623,7 +2623,7 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 	       sizeof(struct AC_QUE_PARMS));
 	DBGLOG(QM, EVENT, "sizeof(CMD_UPDATE_WMM_PARMS): %zu\n",
 	       sizeof(struct CMD_UPDATE_WMM_PARMS));
-	DBGLOG(QM, EVENT, "u2CmdTxHdrSize: %zu\n",
+	DBGLOG(QM, EVENT, "u2CmdTxHdrSize: %u\n",
 	       prChipInfo->u2CmdTxHdrSize);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);

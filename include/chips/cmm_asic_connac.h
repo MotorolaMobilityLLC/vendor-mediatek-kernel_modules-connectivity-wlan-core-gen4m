@@ -124,6 +124,14 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
 void asicSetDummyReg(struct GLUE_INFO *prGlueInfo);
 void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo);
+void asicPdmaTxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	uint32_t index);
+void asicPdmaRxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	uint32_t index);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
