@@ -2370,6 +2370,14 @@ int wf_pwr_off_consys_mcu(void)
 		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
 		return ret;
 	}
+
+	/* mask wf2conn slpprot idle
+	 * 0x1800F004[0] = 1'b1
+	 */
+	wf_ioremap_read(WF2CONN_SLPPROT_IDLE_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(WF2CONN_SLPPROT_IDLE_ADDR, value);
+
 	/* Turn on "conn_infra to wfsys"/ wfsys to conn_infra" bus sleep protect
 	 * 0x18001620[0] = 1'b1
 	 */
@@ -2486,6 +2494,14 @@ int wf_pwr_off_consys_mcu(void)
 			value);
 		return ret;
 	}
+
+	/* unmask wf2conn slpprot idle
+	 * 0x1800F004[0] = 1'b0
+	 */
+	wf_ioremap_read(WF2CONN_SLPPROT_IDLE_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(WF2CONN_SLPPROT_IDLE_ADDR, value);
+
 	/* Toggle WFSYS EMI request 0x18001c14[0] = 1'b1 -> 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WFSYS_EMI_REQ_ADDR, &value);
 	value |= 0x00000001;
