@@ -175,6 +175,15 @@ extern struct delayed_work sched_workq;
 
 #define KAL_TRACE __builtin_return_address(0)
 
+#define AXI_REMAP_SIZE		(1 * 1024 * 1024)
+#define PCIE_REMAP_SZ		(64 * 1024)
+
+#if defined(_HIF_PCIE)
+#define BUS_REMAP_SIZE		PCIE_REMAP_SZ
+#elif defined(_HIF_AXI)
+#define BUS_REMAP_SIZE		AXI_REMAP_SIZE
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1222,6 +1231,11 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 			IN uint32_t u4Value);
 u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
 			    IN uint32_t u4Register, IN uint32_t u4Value);
+
+u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4Register, OUT void *prBuf, IN uint32_t u4Size);
+u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4Register, IN void *prBuf, IN uint32_t u4Size);
 
 u_int8_t
 kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,

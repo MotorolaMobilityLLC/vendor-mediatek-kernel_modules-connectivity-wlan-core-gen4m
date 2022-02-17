@@ -14,6 +14,8 @@
 
 #include "precomp.h"
 #include "soc5_0.h"
+#include "coda/soc5_0/conn_bus_cr.h"
+#include "coda/soc5_0/conn_mcu_bus_cr.h"
 #include "coda/soc5_0/wf_wfdma_host_dma0.h"
 #include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
 #include "coda/soc5_0/wf_pse_top.h"
@@ -241,6 +243,25 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 };
 #endif
 
+struct pcie2ap_remap soc5_0_pcie2ap_remap = {
+	.reg_base = CONN_BUS_CR_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_ADDR,
+	.reg_mask = CONN_BUS_CR_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_MASK,
+	.reg_shift = CONN_BUS_CR_PCIE2AP_REMAP_2_R_PCIE2AP_PUBLIC_REMAPPING_5_SHFT,
+	.base_addr = SOC5_0_REMAP_BASE_ADDR
+};
+
+struct ap2wf_remap soc5_0_ap2wf_remap = {
+	.reg_base = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.base_addr = SOC5_0_REMAP_BASE_ADDR
+};
+
+struct PCIE_CHIP_CR_REMAPPING soc5_0_bus2chip_cr_remap = {
+	.pcie2ap = &soc5_0_pcie2ap_remap,
+	.ap2wf = &soc5_0_ap2wf_remap,
+};
+
 struct wfdma_group_info soc5_0_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
 	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
@@ -345,6 +366,7 @@ struct BUS_INFO soc5_0_bus_info = {
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
 	.bus2chip = soc5_0_bus2chip_cr_mapping,
+	.bus2chip_remap = &soc5_0_bus2chip_cr_remap,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
@@ -356,10 +378,6 @@ struct BUS_INFO soc5_0_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-#if defined(_HIF_PCIE)
-	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
-#endif
-	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.wfmda_host_tx_group = soc5_0_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(soc5_0_wfmda_host_tx_group),
 	.wfmda_host_rx_group = soc5_0_wfmda_host_rx_group,

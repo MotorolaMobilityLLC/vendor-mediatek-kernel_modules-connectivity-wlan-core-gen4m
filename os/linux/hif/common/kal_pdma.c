@@ -175,92 +175,102 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t *val)
 {
+	const struct PCIE_CHIP_CR_REMAPPING *remap =
+		prChipInfo->bus_info->bus2chip_remap;
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
-	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
-		prBusInfo->bus2chip_remapping;
-	const struct L1_CR_REMAPPING *prL1Remapping =
-		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
 
-	if (!prRemapping || !prL1Remapping) {
-		DBGLOG(HAL, ERROR,
-			"L1remapping NOT supported, reg: 0x%08x\n",
-			reg);
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
 		return;
 	}
 
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
-	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(reg) << prL1Remapping->u4Shift;
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4RemapBase +
+	pcie2ap = remap->pcie2ap;
+
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		return;
+	}
+
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	tmp_val = (backup_val & ~pcie2ap->reg_mask);
+	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegRead(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 }
 
 static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t val)
 {
+	const struct PCIE_CHIP_CR_REMAPPING *remap =
+		prChipInfo->bus_info->bus2chip_remap;
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
-	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
-		prBusInfo->bus2chip_remapping;
-	const struct L1_CR_REMAPPING *prL1Remapping =
-		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
 
-	if (!prRemapping || !prL1Remapping) {
-		DBGLOG(HAL, ERROR,
-			"L1 remapping NOT supported, reg: 0x%08x\n",
-			reg);
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
 		return;
 	}
 
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
-	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(reg) << prL1Remapping->u4Shift;
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4RemapBase +
+	pcie2ap = remap->pcie2ap;
+
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		return;
+	}
+
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	tmp_val = (backup_val & ~pcie2ap->reg_mask);
+	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegWrite(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 }
 
 static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t *val)
 {
+	const struct PCIE_CHIP_CR_REMAPPING *remap =
+		prChipInfo->bus_info->bus2chip_remap;
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
-	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
-		prBusInfo->bus2chip_remapping;
-	const struct L1_CR_REMAPPING *prL1Remapping =
-		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
-	const struct L2_CR_REMAPPING *prL2Remapping =
-		(prRemapping != NULL ? prRemapping->l2_remapping : NULL);
 
-	if (!prRemapping || !prL1Remapping || !prL2Remapping) {
-		DBGLOG(HAL, ERROR,
-			"L2 remapping NOT supported, reg: 0x%08x\n",
-			reg);
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
+		return;
+	}
+
+	pcie2ap = remap->pcie2ap;
+	ap2wf = remap->ap2wf;
+
+	if (!pcie2ap || !ap2wf) {
+		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
+			pcie2ap, ap2wf);
 		return;
 	}
 
 #if defined(_HIF_PCIE)
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
-	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	tmp_val = (backup_val & ~pcie2ap->reg_mask);
+	tmp_val |= GET_L1_REMAP_BASE(pcie2ap->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
-		prL1Remapping->u4Shift;
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
+		pcie2ap->reg_shift;
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
 #endif
 
-	kalDevRegWrite(prGlueInfo, prL2Remapping->u4Base, reg);
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4RemapBase, val);
+	kalDevRegWrite(prGlueInfo, ap2wf->reg_base, reg);
+	kalDevRegRead(prGlueInfo, ap2wf->base_addr, val);
 
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
 }
 
@@ -268,43 +278,48 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo,
 	uint32_t reg, uint32_t val)
 {
+	const struct PCIE_CHIP_CR_REMAPPING *remap =
+		prChipInfo->bus_info->bus2chip_remap;
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
-	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
-		prBusInfo->bus2chip_remapping;
-	const struct L1_CR_REMAPPING *prL1Remapping =
-		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
-	const struct L2_CR_REMAPPING *prL2Remapping =
-		(prRemapping != NULL ? prRemapping->l2_remapping : NULL);
 
-	if (!prRemapping || !prL1Remapping || !prL2Remapping) {
-		DBGLOG(HAL, ERROR,
-			"L2 remapping NOT supported, reg: 0x%08x\n",
-			reg);
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
+		return;
+	}
+
+	pcie2ap = remap->pcie2ap;
+	ap2wf = remap->ap2wf;
+
+	if (!pcie2ap || !ap2wf) {
+		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
+			pcie2ap, ap2wf);
 		return;
 	}
 
 #if defined(_HIF_PCIE)
-	kalDevRegRead(prGlueInfo, prL1Remapping->u4Base, &backup_val);
-	tmp_val = (backup_val & ~prL1Remapping->u4Mask);
-	tmp_val |= GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	tmp_val = (backup_val & ~pcie2ap->reg_mask);
+	tmp_val |= GET_L1_REMAP_BASE(pcie2ap->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
-		prL1Remapping->u4Shift;
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, tmp_val);
+		pcie2ap->reg_shift;
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
 #endif
 
-	kalDevRegWrite(prGlueInfo, prL2Remapping->u4Base, reg);
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4RemapBase, val);
+	kalDevRegWrite(prGlueInfo, ap2wf->reg_base, reg);
+	kalDevRegWrite(prGlueInfo, ap2wf->base_addr, val);
 
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(prGlueInfo, prL1Remapping->u4Base, backup_val);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
 }
 
 static u_int8_t kalDevRegL1Remap(uint32_t *reg)
 {
+#if defined(_HIF_PCIE)
 	if (IS_PHY_ADDR(*reg))
 		return TRUE;
 
@@ -312,6 +327,7 @@ static u_int8_t kalDevRegL1Remap(uint32_t *reg)
 		(*reg) -= CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET;
 		return TRUE;
 	}
+#endif
 
 	return FALSE;
 }
@@ -452,6 +468,163 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		prHifInfo->u4HifCnt++;
 
 	return TRUE;
+}
+
+u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4Register, OUT void *prBuf, IN uint32_t u4Size)
+{
+	struct mt66xx_chip_info *chip_info;
+	const struct PCIE_CHIP_CR_REMAPPING *remap;
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
+#if defined(_HIF_PCIE)
+	uint32_t u4Value = 0, u4BkValue = 0;
+#endif
+	uint32_t offset_addr = 0;
+	uint32_t offset = 0;
+	u_int8_t ret = TRUE;
+
+	glGetChipInfo((void **)&chip_info);
+	remap = chip_info->bus_info->bus2chip_remap;
+
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
+		return FALSE;
+	}
+
+	pcie2ap = remap->pcie2ap;
+	ap2wf = remap->ap2wf;
+
+	if (!pcie2ap || !ap2wf) {
+		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
+			pcie2ap, ap2wf);
+		return FALSE;
+	}
+
+#if defined(_HIF_PCIE)
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &u4Value);
+	u4BkValue = u4Value;
+
+	u4Value &= ~pcie2ap->reg_mask;
+	u4Value |= (GET_L1_REMAP_BASE(pcie2ap->base_addr -
+		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
+		pcie2ap->reg_shift);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4Value);
+#endif
+
+	if (!halChipToStaticMapBusAddr(chip_info,
+			ap2wf->base_addr,
+			&offset_addr)) {
+		DBGLOG(INIT, ERROR, "map bus address fail.\n");
+		ret = FALSE;
+		goto exit;
+	}
+
+	while (true) {
+		uint32_t size;
+
+		if (offset >= u4Size)
+			break;
+
+		size = ((offset + BUS_REMAP_SIZE) <= u4Size ?
+			BUS_REMAP_SIZE :
+			u4Size - offset);
+
+		kalDevRegWrite(prGlueInfo, ap2wf->reg_base, (u4Register + offset));
+
+		RTMP_IO_READ_RANGE(&prGlueInfo->rHifInfo,
+			offset_addr,
+			(void *)(prBuf + offset), size);
+
+		offset += BUS_REMAP_SIZE;
+	}
+
+exit:
+
+#if defined(_HIF_PCIE)
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4BkValue);
+#endif
+
+	return ret;
+}
+
+u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4Register, IN void *prBuf, IN uint32_t u4Size)
+{
+	struct mt66xx_chip_info *chip_info;
+	const struct PCIE_CHIP_CR_REMAPPING *remap;
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
+#if defined(_HIF_PCIE)
+	uint32_t u4Value = 0, u4BkValue = 0;
+#endif
+	uint32_t offset_addr = 0;
+	uint32_t offset = 0;
+	u_int8_t ret = TRUE;
+
+	glGetChipInfo((void **)&chip_info);
+	remap = chip_info->bus_info->bus2chip_remap;
+
+	if (!remap) {
+		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
+		return FALSE;
+	}
+
+	pcie2ap = remap->pcie2ap;
+	ap2wf = remap->ap2wf;
+
+	if (!pcie2ap || !ap2wf) {
+		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
+			pcie2ap, ap2wf);
+		return FALSE;
+	}
+
+#if defined(_HIF_PCIE)
+	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &u4Value);
+	u4BkValue = u4Value;
+
+	u4Value &= ~pcie2ap->reg_mask;
+	u4Value |= (GET_L1_REMAP_BASE(pcie2ap->base_addr -
+		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
+		pcie2ap->reg_shift);
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4Value);
+#endif
+
+	if (!halChipToStaticMapBusAddr(chip_info,
+			ap2wf->base_addr,
+			&offset_addr)) {
+		DBGLOG(INIT, ERROR, "map bus address fail.\n");
+		ret = FALSE;
+		goto exit;
+	}
+
+	while (true) {
+		uint32_t size;
+
+		if (offset >= u4Size)
+			break;
+
+		size = ((offset + BUS_REMAP_SIZE) <= u4Size ?
+			BUS_REMAP_SIZE :
+			u4Size - offset);
+
+		kalDevRegWrite(prGlueInfo, ap2wf->reg_base,
+			(u4Register + offset));
+
+		RTMP_IO_WRITE_RANGE(&prGlueInfo->rHifInfo,
+			offset_addr,
+			(void *)(prBuf + offset), size);
+
+		offset += BUS_REMAP_SIZE;
+	}
+
+exit:
+
+#if defined(_HIF_PCIE)
+	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4BkValue);
+#endif
+
+	return ret;
 }
 
 static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,

@@ -1130,12 +1130,6 @@ void asicConnac3xWfdmaControl(
 	u_int8_t ucDmaIdx,
 	u_int8_t enable);
 
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr, IN uint32_t u4Len,
-	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-#endif
-
 void asicConnac3xDmashdlSetPlePktMaxPage(
 	struct ADAPTER *prAdapter,
 	uint16_t u2MaxPage);

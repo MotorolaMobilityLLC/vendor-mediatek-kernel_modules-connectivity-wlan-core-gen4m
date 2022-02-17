@@ -166,24 +166,23 @@ struct PCIE_CHIP_CR_MAPPING bellwether_bus2chip_cr_mapping[] = {
 };
 #endif
 
-struct L1_CR_REMAPPING bellwether_l1_remapping = {
-	.u4Base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
-	.u4Mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
-	.u4Shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
-	.u4RemapBase = 0x7c500000,
+struct pcie2ap_remap bellwether_pcie2ap_remap = {
+	.reg_base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
+	.reg_mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
+	.reg_shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
+	.base_addr = BELLWETHER_REMAP_BASE_ADDR
 };
 
-struct L2_CR_REMAPPING bellwether_l2_remapping = {
-	.u4Base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
-	.u4Mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
-	.u4Shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+struct ap2wf_remap bellwether_ap2wf_remap = {
+	.reg_base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.base_addr = BELLWETHER_REMAP_BASE_ADDR
 };
 
-struct PCIE_CHIP_CR_REMAPPING bellwether_bus2chip_cr_remapping = {
-#if defined(_HIF_PCIE)
-	.l1_remapping = &bellwether_l1_remapping,
-#endif
-	.l2_remapping = &bellwether_l2_remapping,
+struct PCIE_CHIP_CR_REMAPPING bellwether_bus2chip_cr_remap = {
+	.pcie2ap = &bellwether_pcie2ap_remap,
+	.ap2wf = &bellwether_ap2wf_remap,
 };
 
 struct wfdma_group_info bellwether_wfmda_host_tx_group[] = {
@@ -280,7 +279,7 @@ struct BUS_INFO bellwether_bus_info = {
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
 	.bus2chip = bellwether_bus2chip_cr_mapping,
-	.bus2chip_remapping = &bellwether_bus2chip_cr_remapping,
+	.bus2chip_remap = &bellwether_bus2chip_cr_remap,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC3X_FWDL_TX_RING_IDX,
@@ -292,10 +291,6 @@ struct BUS_INFO bellwether_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
-#if defined(_HIF_PCIE)
-	.pcie2ap_remap_2 = CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR,
-#endif
-	.ap2wf_remap_1 = CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
 	.wfmda_host_tx_group = bellwether_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(bellwether_wfmda_host_tx_group),
 	.wfmda_host_rx_group = bellwether_wfmda_host_rx_group,
@@ -342,11 +337,7 @@ struct FWDL_OPS_T bellwether_fw_dl_ops = {
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
 	.downloadFirmware = wlanConnacFormatDownload,
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-	.downloadByDynMemMap = downloadImgByDynMemMap,
-#else
 	.downloadByDynMemMap = NULL,
-#endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 #if (CONFIG_ROM_CODE_DOWNLOAD == 1)
@@ -823,16 +814,6 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 	uint8_t *name, uint32_t addr)
 {
 	const struct firmware *fw;
-	uint32_t u4Value = 0, u4BkValue = 0;
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
-		prBusInfo->bus2chip_remapping;
-	const struct L1_CR_REMAPPING *prL1Remapping =
-		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
-	const struct L2_CR_REMAPPING *prL2Remapping =
-		(prRemapping != NULL ? prRemapping->l2_remapping : NULL);
-	uint32_t offset = 0;
-	uint32_t offset_addr = 0;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 
 	ret = request_firmware(&fw, name, prAdapter->prGlueInfo->prDev);
@@ -853,44 +834,8 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 		fw->data,
 		fw->size);
 
-	HAL_MCR_RD(prAdapter, prL1Remapping->u4Base, &u4Value);
-	u4BkValue = u4Value;
-
-	u4Value &= ~prL1Remapping->u4Mask;
-	u4Value |= (GET_L1_REMAP_BASE(prL1Remapping->u4RemapBase -
-		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
-		prL1Remapping->u4Shift);
-	HAL_MCR_WR(prAdapter, prL1Remapping->u4Base, u4Value);
-
-	if (!halChipToStaticMapBusAddr(prAdapter->chip_info,
-			prL1Remapping->u4RemapBase,
-			&offset_addr)) {
-		DBGLOG(INIT, ERROR, "map bus address fail.\n");
-		ret = WLAN_STATUS_FAILURE;
-		goto exit;
-	}
-
-	while (true) {
-		uint32_t size;
-
-		if (offset >= fw->size)
-			break;
-
-		size = ((offset + PCIE_REMAP_SZ) <= fw->size ?
-			PCIE_REMAP_SZ :
-			fw->size - offset);
-
-		HAL_MCR_WR(prAdapter, prL2Remapping->u4Base,
-			(addr + offset));
-
-		RTMP_IO_MEM_COPY(&prAdapter->prGlueInfo->rHifInfo,
-			offset_addr,
-			(void *)(fw->data + offset), size);
-
-		offset += PCIE_REMAP_SZ;
-	}
-
-	HAL_MCR_WR(prAdapter, prL1Remapping->u4Base, u4BkValue);
+	kalDevRegWriteRange(prAdapter->prGlueInfo,
+		addr, (void *)fw->data, fw->size);
 
 exit:
 	release_firmware(fw);
