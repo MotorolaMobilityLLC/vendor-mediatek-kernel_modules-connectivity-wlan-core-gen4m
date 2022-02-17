@@ -124,13 +124,17 @@
 
 /* Full2Partial */
 /* Define a full scan as scan channel number larger than this number */
-#define SCAN_FULL2PARTIAL_CHANNEL_NUM           (25)
+#define SCAN_FULL2PARTIAL_CHANNEL_NUM           (20)
 #define SCAN_CHANNEL_BITMAP_ARRAY_LEN           (8)
 #define BITS_OF_UINT                            (32)
 #define BITS_OF_BYTE                            (8)
 
 /* dwell time setting, should align FW setting */
 #define SCAN_CHANNEL_DWELL_TIME_MIN_MSEC         (42)
+
+/* dwell time setting, reduce APP trigger scan dwell time to 20 */
+#define SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP	(20)
+#define SCAN_CHANNEL_DWELL_TIME_MSEC_APP	(40)
 
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
@@ -720,6 +724,7 @@ uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize);
 void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4ScanChannelNum,
 		IN struct RF_CHANNEL_INFO arChannel[],
+		IN uint32_t u4ScanFlags,
 		IN uint8_t fgIsOnlineScan,
 		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 

@@ -1134,14 +1134,16 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	}
 
 #define TEMP_LOG_TEMPLATE "n_ssid=(%u->%u) n_channel(%u==>%u) " \
-	"wildcard=0x%X random_mac=" MACSTR "\n"
+	"wildcard=0x%X flag=0x%x random_mac=" MACSTR "\n"
 	DBGLOG(REQ, INFO, TEMP_LOG_TEMPLATE,
 		request->n_ssids, num_ssid, request->n_channels,
 		prScanRequest->u4ChannelNum, wildcard_flag,
+		request->flags,
 		MAC2STR(prScanRequest->aucRandomMac));
 #undef TEMP_LOG_TEMPLATE
 
 	prScanRequest->ucBssIndex = ucBssIndex;
+	prScanRequest->u4Flags = request->flags;
 	prGlueInfo->prScanRequest = request;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,
 			   prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),
