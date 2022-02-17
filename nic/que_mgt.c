@@ -2399,7 +2399,14 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter, IN struct SW_RFB 
 
 		/* prHifRxHdr = prCurrSwRfb->prHifRxHdr; // TODO: (Tehuang) Use macro to obtain the pointer */
 		prRxStatus = prCurrSwRfb->prRxStatus;
-
+		if (prRxStatus->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
+			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+			QUEUE_INSERT_TAIL(prReturnedQue, (struct QUE_ENTRY *) prCurrSwRfb);
+			DBGLOG(QM, ERROR,
+				"Drop packet when packet length is larger than CFG_RX_MAX_PKT_SIZE. Packet length=%d\n",
+				prRxStatus->u2RxByteCount);
+			continue;
+		}
 		/* TODO: (Tehuang) Check if relaying */
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_HOST;
 
