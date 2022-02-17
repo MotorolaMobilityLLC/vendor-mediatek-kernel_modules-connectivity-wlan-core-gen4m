@@ -1171,9 +1171,11 @@ uint8_t * beHandleRnrMldParam(IN uint8_t *ie,
 			case KAL_BAND_5GHZ:
 				prProfile->rChnlInfo.eBand = BAND_5G;
 				break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 			case KAL_BAND_6GHZ:
 				prProfile->rChnlInfo.eBand = BAND_6G;
 				break;
+#endif
 			default:
 				DBGLOG(ML, WARN, "unsupported band: %d\n",
 					band);
@@ -1794,7 +1796,9 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	if (!prMldStarec)
 		return;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	nicUniCmdMldStaTeardown(prAdapter, prStarec);
+#endif
 
 	prStarecList = &prMldStarec->rStarecList;
 
