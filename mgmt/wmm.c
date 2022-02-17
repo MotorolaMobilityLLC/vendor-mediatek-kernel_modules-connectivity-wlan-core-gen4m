@@ -775,6 +775,8 @@ static struct ACTIVE_RM_TSM_REQ *wmmGetActiveTsmReq(struct ADAPTER *prAdapter,
 		fgFound = TRUE;
 		prActiveReq = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 					  sizeof(struct ACTIVE_RM_TSM_REQ));
+		if (!prActiveReq)
+			return NULL;
 		LINK_INSERT_TAIL(&prWMMInfo->rActiveTsmReq,
 				 &prActiveReq->rLinkEntry);
 	}
