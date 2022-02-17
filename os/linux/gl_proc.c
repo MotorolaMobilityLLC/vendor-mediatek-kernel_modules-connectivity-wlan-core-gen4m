@@ -105,6 +105,9 @@
 #define PROC_DRIVER_CMD                         "driver"
 #define PROC_CFG                                "cfg"
 #define PROC_EFUSE_DUMP                         "efuse_dump"
+#if CFG_WIFI_TXPWR_TBL_DUMP
+#define PROC_GET_TXPWR_TBL                      "get_txpwr_tbl"
+#endif
 #define PROC_PKT_DELAY_DBG			"pktDelay"
 #if CFG_SUPPORT_SET_CAM_BY_PROC
 #define PROC_SET_CAM				"setCAM"
@@ -615,6 +618,469 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	}
 	return count;
 }
+
+#if CFG_WIFI_TXPWR_TBL_DUMP
+#define TXPWR_TABLE_ENTRY(_siso_mcs, _cdd_mcs, _mimo_mcs, _idx)	\
+{								\
+	.mcs[STREAM_SISO] = _siso_mcs,				\
+	.mcs[STREAM_CDD] = _cdd_mcs,				\
+	.mcs[STREAM_MIMO] = _mimo_mcs,				\
+	.idx = (_idx),						\
+}
+
+static struct txpwr_table_entry dsss[] = {
+	TXPWR_TABLE_ENTRY("DSSS1", "", "", MODULATION_SYSTEM_CCK_1M),
+	TXPWR_TABLE_ENTRY("DSSS2", "", "", MODULATION_SYSTEM_CCK_2M),
+	TXPWR_TABLE_ENTRY("CCK5", "", "", MODULATION_SYSTEM_CCK_5M),
+	TXPWR_TABLE_ENTRY("CCK11", "", "", MODULATION_SYSTEM_CCK_11M),
+};
+
+static struct txpwr_table_entry ofdm[] = {
+	TXPWR_TABLE_ENTRY("OFDM6", "OFDM6", "", MODULATION_SYSTEM_OFDM_6M),
+	TXPWR_TABLE_ENTRY("OFDM9", "OFDM9", "", MODULATION_SYSTEM_OFDM_9M),
+	TXPWR_TABLE_ENTRY("OFDM12", "OFDM12", "", MODULATION_SYSTEM_OFDM_12M),
+	TXPWR_TABLE_ENTRY("OFDM18", "OFDM18", "", MODULATION_SYSTEM_OFDM_18M),
+	TXPWR_TABLE_ENTRY("OFDM24", "OFDM24", "", MODULATION_SYSTEM_OFDM_24M),
+	TXPWR_TABLE_ENTRY("OFDM36", "OFDM36", "", MODULATION_SYSTEM_OFDM_36M),
+	TXPWR_TABLE_ENTRY("OFDM48", "OFDM48", "", MODULATION_SYSTEM_OFDM_48M),
+	TXPWR_TABLE_ENTRY("OFDM54", "OFDM54", "", MODULATION_SYSTEM_OFDM_54M),
+};
+
+static struct txpwr_table_entry ht20[] = {
+	TXPWR_TABLE_ENTRY("MCS0", "MCS0", "MCS8", MODULATION_SYSTEM_HT20_MCS0),
+	TXPWR_TABLE_ENTRY("MCS1", "MCS1", "MCS9", MODULATION_SYSTEM_HT20_MCS1),
+	TXPWR_TABLE_ENTRY("MCS2", "MCS2", "MCS10", MODULATION_SYSTEM_HT20_MCS2),
+	TXPWR_TABLE_ENTRY("MCS3", "MCS3", "MCS11", MODULATION_SYSTEM_HT20_MCS3),
+	TXPWR_TABLE_ENTRY("MCS4", "MCS4", "MCS12", MODULATION_SYSTEM_HT20_MCS4),
+	TXPWR_TABLE_ENTRY("MCS5", "MCS5", "MCS13", MODULATION_SYSTEM_HT20_MCS5),
+	TXPWR_TABLE_ENTRY("MCS6", "MCS6", "MCS14", MODULATION_SYSTEM_HT20_MCS6),
+	TXPWR_TABLE_ENTRY("MCS7", "MCS7", "MCS15", MODULATION_SYSTEM_HT20_MCS7),
+};
+static struct txpwr_table_entry ht40[] = {
+	TXPWR_TABLE_ENTRY("MCS0", "MCS0", "MCS8", MODULATION_SYSTEM_HT40_MCS0),
+	TXPWR_TABLE_ENTRY("MCS1", "MCS1", "MCS9", MODULATION_SYSTEM_HT40_MCS1),
+	TXPWR_TABLE_ENTRY("MCS2", "MCS2", "MCS10", MODULATION_SYSTEM_HT40_MCS2),
+	TXPWR_TABLE_ENTRY("MCS3", "MCS3", "MCS11", MODULATION_SYSTEM_HT40_MCS3),
+	TXPWR_TABLE_ENTRY("MCS4", "MCS4", "MCS12", MODULATION_SYSTEM_HT40_MCS4),
+	TXPWR_TABLE_ENTRY("MCS5", "MCS5", "MCS13", MODULATION_SYSTEM_HT40_MCS5),
+	TXPWR_TABLE_ENTRY("MCS6", "MCS6", "MCS14", MODULATION_SYSTEM_HT40_MCS6),
+	TXPWR_TABLE_ENTRY("MCS7", "MCS7", "MCS15", MODULATION_SYSTEM_HT40_MCS7),
+	TXPWR_TABLE_ENTRY("MCS32", "MCS32", "MCS32",
+		MODULATION_SYSTEM_HT40_MCS32),
+};
+static struct txpwr_table_entry vht[] = {
+	TXPWR_TABLE_ENTRY("MCS0", "MCS0", "MCS0", MODULATION_SYSTEM_VHT20_MCS0),
+	TXPWR_TABLE_ENTRY("MCS1", "MCS1", "MCS1", MODULATION_SYSTEM_VHT20_MCS1),
+	TXPWR_TABLE_ENTRY("MCS2", "MCS2", "MCS2", MODULATION_SYSTEM_VHT20_MCS2),
+	TXPWR_TABLE_ENTRY("MCS3", "MCS3", "MCS3", MODULATION_SYSTEM_VHT20_MCS3),
+	TXPWR_TABLE_ENTRY("MCS4", "MCS4", "MCS4", MODULATION_SYSTEM_VHT20_MCS4),
+	TXPWR_TABLE_ENTRY("MCS5", "MCS5", "MCS5", MODULATION_SYSTEM_VHT20_MCS5),
+	TXPWR_TABLE_ENTRY("MCS6", "MCS6", "MCS6", MODULATION_SYSTEM_VHT20_MCS6),
+	TXPWR_TABLE_ENTRY("MCS7", "MCS7", "MCS7", MODULATION_SYSTEM_VHT20_MCS7),
+	TXPWR_TABLE_ENTRY("MCS8", "MCS8", "MCS8", MODULATION_SYSTEM_VHT20_MCS8),
+	TXPWR_TABLE_ENTRY("MCS9", "MCS9", "MCS9", MODULATION_SYSTEM_VHT20_MCS9),
+};
+
+#if (CFG_WIFI_TXPWR_TBL_DUMP_HE == 1)
+static struct txpwr_table_entry he[] = {
+	TXPWR_TABLE_ENTRY("MCS0", "MCS0", "MCS0", MODULATION_SYSTEM_HE26_MCS0),
+	TXPWR_TABLE_ENTRY("MCS1", "MCS1", "MCS1", MODULATION_SYSTEM_HE26_MCS1),
+	TXPWR_TABLE_ENTRY("MCS2", "MCS2", "MCS2", MODULATION_SYSTEM_HE26_MCS2),
+	TXPWR_TABLE_ENTRY("MCS3", "MCS3", "MCS3", MODULATION_SYSTEM_HE26_MCS3),
+	TXPWR_TABLE_ENTRY("MCS4", "MCS4", "MCS4", MODULATION_SYSTEM_HE26_MCS4),
+	TXPWR_TABLE_ENTRY("MCS5", "MCS5", "MCS5", MODULATION_SYSTEM_HE26_MCS5),
+	TXPWR_TABLE_ENTRY("MCS6", "MCS6", "MCS6", MODULATION_SYSTEM_HE26_MCS6),
+	TXPWR_TABLE_ENTRY("MCS7", "MCS7", "MCS7", MODULATION_SYSTEM_HE26_MCS7),
+	TXPWR_TABLE_ENTRY("MCS8", "MCS8", "MCS8", MODULATION_SYSTEM_HE26_MCS8),
+	TXPWR_TABLE_ENTRY("MCS9", "MCS9", "MCS9", MODULATION_SYSTEM_HE26_MCS9),
+	TXPWR_TABLE_ENTRY("MCS10", "MCS10", "MCS10",
+		MODULATION_SYSTEM_HE26_MCS10),
+	TXPWR_TABLE_ENTRY("MCS11", "MCS11", "MCS11",
+		MODULATION_SYSTEM_HE26_MCS11),
+};
+#endif
+
+static struct txpwr_table txpwr_tables[] = {
+	{"Legacy", dsss, ARRAY_SIZE(dsss)},
+	{"11g", ofdm, ARRAY_SIZE(ofdm)},
+	{"11a", ofdm, ARRAY_SIZE(ofdm)},
+	{"HT20", ht20, ARRAY_SIZE(ht20)},
+	{"HT40", ht40, ARRAY_SIZE(ht40)},
+	{"VHT20", vht, ARRAY_SIZE(vht)},
+	{"VHT40", vht, ARRAY_SIZE(vht)},
+	{"VHT80", vht, ARRAY_SIZE(vht)},
+	{"VHT160", vht, ARRAY_SIZE(vht)},
+#if (CFG_WIFI_TXPWR_TBL_DUMP_HE == 1)
+	{"HE26", he, ARRAY_SIZE(he)},
+	{"HE52", he, ARRAY_SIZE(he)},
+	{"HE106", he, ARRAY_SIZE(he)},
+	{"HE242", he, ARRAY_SIZE(he)},
+	{"HE484", he, ARRAY_SIZE(he)},
+	{"HE996", he, ARRAY_SIZE(he)},
+	{"HE996X2", he, ARRAY_SIZE(he)},
+#endif
+};
+
+#define TMP_SZ (1024)
+#define CDD_PWR_OFFSET (6)
+#define TXPWR_DUMP_SZ (16384)
+void print_txpwr_tbl(struct txpwr_table *txpwr_tbl, unsigned char ch,
+				unsigned char *tx_pwr[], char pwr_offset[],
+				char *stream_buf[], unsigned int stream_pos[])
+{
+	struct txpwr_table_entry *tmp_tbl = txpwr_tbl->tables;
+	unsigned int idx, pwr_idx, stream_idx;
+	char pwr[TXPWR_TBL_NUM] = {0}, tmp_pwr = 0;
+	char prefix[5], tmp[4];
+	char *buf = NULL;
+	unsigned int *pos = NULL;
+	int i;
+
+	DBGLOG(REQ, INFO, "Enter print_txpwr_tbl\n");
+
+	/* n_tables: MCS number of each modulation */
+	for (i = 0; i < txpwr_tbl->n_tables; i++) {
+		idx = tmp_tbl[i].idx;
+
+		for (pwr_idx = 0; pwr_idx < TXPWR_TBL_NUM; pwr_idx++) {
+			if (!tx_pwr[pwr_idx]) {
+				DBGLOG(REQ, WARN,
+				       "Power table[%d] is NULL\n", pwr_idx);
+				return;
+			}
+			pwr[pwr_idx] = tx_pwr[pwr_idx][idx] +
+				       pwr_offset[pwr_idx];
+			pwr[pwr_idx] = (pwr[pwr_idx] > MAX_TX_POWER) ?
+				       MAX_TX_POWER : pwr[pwr_idx];
+		}
+
+		for (stream_idx = 0; stream_idx < STREAM_NUM; stream_idx++) {
+			buf = stream_buf[stream_idx];
+			pos = &stream_pos[stream_idx];
+
+			if (tmp_tbl[i].mcs[stream_idx][0] == '\0')
+				continue;
+
+			switch (stream_idx) {
+			case STREAM_SISO:
+				kalStrnCpy(prefix, "siso", sizeof(prefix));
+				break;
+			/*
+			 * CDD offset did not include
+			 * The CDD values are the same as the values of SISO
+			 */
+			case STREAM_CDD:
+				kalStrnCpy(prefix, "cdd", sizeof(prefix));
+				break;
+			case STREAM_MIMO:
+				kalStrnCpy(prefix, "mimo", sizeof(prefix));
+				break;
+			}
+
+			*pos += kalScnprintf(buf + *pos, TMP_SZ - *pos,
+				"%s, %d, %s, %s, ",
+				prefix, ch,
+				txpwr_tbl->phy_mode,
+				tmp_tbl[i].mcs[stream_idx]);
+
+			for (pwr_idx = 0; pwr_idx < TXPWR_TBL_NUM; pwr_idx++) {
+				tmp_pwr = pwr[pwr_idx];
+
+				tmp_pwr = (tmp_pwr > 0) ? tmp_pwr : 0;
+
+				if (pwr_idx + 1 == TXPWR_TBL_NUM)
+					kalStrnCpy(tmp, "\n", sizeof(tmp));
+				else
+					kalStrnCpy(tmp, ", ", sizeof(tmp));
+				*pos += kalScnprintf(buf + *pos, TMP_SZ - *pos,
+					"%d.%d%s",
+					tmp_pwr / 2,
+					tmp_pwr % 2 * 5,
+					tmp);
+			}
+		}
+	}
+}
+
+char *g_txpwr_tbl_read_buffer;
+char *g_txpwr_tbl_read_buffer_head;
+unsigned int g_txpwr_tbl_read_residual;
+
+static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
+				   size_t count, loff_t *f_pos)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER  *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	unsigned char ucBssIndex;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	uint32_t status;
+	struct PARAM_CMD_GET_TXPWR_TBL pwr_tbl;
+	struct POWER_LIMIT *tx_pwr_tbl = pwr_tbl.tx_pwr_tbl;
+	char *buffer;
+	unsigned int pos = 0, buf_len = TXPWR_DUMP_SZ, oid_len;
+	unsigned char i, j;
+	char *stream_buf[STREAM_NUM] = {NULL};
+	unsigned int stream_pos[STREAM_NUM] = {0};
+	unsigned char *tx_pwr[TXPWR_TBL_NUM] =  {NULL};
+	char pwr_offset[TXPWR_TBL_NUM] = {0};
+	int ret;
+
+	DBGLOG(REQ, INFO, "Enter procGetTxpwrTblRead\n");
+
+	/* Re-entry to the func to print the remaining table */
+	if (*f_pos > 0) { /* re-entry */
+		pos = g_txpwr_tbl_read_residual;
+		buffer = g_txpwr_tbl_read_buffer;
+		goto next_entry;
+	}
+
+	if (buf == NULL) {
+		DBGLOG(REQ, WARN, "empty buf: exit cat");
+		return 0;
+	}
+
+	prGlueInfo = g_prGlueInfo_proc;
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "can't get glue info");
+		return -EFAULT;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(gPrDev);
+	if (prNetDevPrivate->prGlueInfo != prGlueInfo) {
+		DBGLOG(REQ, WARN, "glue info are not the same");
+		return -EFAULT;
+	}
+
+	ucBssIndex = prNetDevPrivate->ucBssIdx;
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN, "can't get the BssInfo from adapter");
+		return -EFAULT;
+	}
+
+	kalMemZero(&pwr_tbl, sizeof(pwr_tbl));
+
+
+	/* Complete the cmd/event process */
+	status = kalIoctl(prGlueInfo,
+			  wlanoidGetTxPwrTbl,
+			  &pwr_tbl,
+			  sizeof(pwr_tbl), TRUE, FALSE, TRUE, &oid_len);
+
+	if (status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "Query Tx Power Table fail\n");
+		return -EINVAL;
+	}
+	DBGLOG(REQ, INFO, "Query Tx Power Table success\n");
+
+
+	buffer = (char *) kalMemAlloc(buf_len, VIR_MEM_TYPE);
+	if (!buffer) {
+		return -ENOMEM;
+		DBGLOG(REQ, WARN, "buffer is empty\n");
+	}
+
+	g_txpwr_tbl_read_buffer = buffer;
+	g_txpwr_tbl_read_buffer_head = buffer;
+
+	for (i = 0; i < STREAM_NUM; i++) {
+		stream_buf[i] = (char *) kalMemAlloc(TMP_SZ, VIR_MEM_TYPE);
+		if (!stream_buf[i]) {
+			ret = -ENOMEM;
+			goto out;
+		}
+	}
+	DBGLOG(REQ, INFO, "stream init\n");
+
+
+	pos = kalScnprintf(buffer, buf_len,
+				"\n%s",
+				"spatial stream, Channel, bw, modulation, ");
+	pos += kalScnprintf(buffer + pos, buf_len - pos,
+				"%s\n",
+				"regulatory limit, board limit, target power");
+
+	for (i = 0; i < ARRAY_SIZE(txpwr_tables); i++) {
+		for (j = 0; j < STREAM_NUM; j++) {
+			kalMemZero(stream_buf[j], TMP_SZ);
+			stream_pos[j] = 0;
+		}
+
+		for (j = 0; j < TXPWR_TBL_NUM; j++) {
+			tx_pwr[j] = NULL;
+			pwr_offset[j] = 0;
+		}
+
+		/*
+		 * In the rate is not supported on this channel,
+		 * its limit table value will be the default 127
+		*/
+
+		switch (i) {
+		case DSSS:
+			if (pwr_tbl.ucCenterCh > 14)
+				continue;
+			DBGLOG(REQ, INFO, "Print DSSS table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_dsss;
+			break;
+		case OFDM_24G:
+			if (pwr_tbl.ucCenterCh > 14)
+				continue;
+			DBGLOG(REQ, INFO, "Print OFDM_24G table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ofdm;
+			break;
+		case OFDM_5G:
+			if (pwr_tbl.ucCenterCh <= 14)
+				continue;
+			DBGLOG(REQ, INFO, "Print OFDM_5G table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ofdm;
+			break;
+		case HT20:
+			DBGLOG(REQ, INFO, "Print HT20 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ht20;
+			break;
+		case HT40:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_ht40[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print HT40 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_ht40;
+			break;
+		case VHT20:
+			DBGLOG(REQ, INFO, "Print VHT20 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht20;
+			break;
+		case VHT40:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_vht40[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print VHT40 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht40;
+			break;
+		case VHT80:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_vht80[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print VHT80 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht80;
+			break;
+		case VHT160:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_vht160[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print VHT160 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_vht160;
+			break;
+#if (CFG_WIFI_TXPWR_TBL_DUMP_HE == 1)
+		case HE26:
+			DBGLOG(REQ, INFO, "Print HE26 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he26;
+			break;
+		case HE52:
+			DBGLOG(REQ, INFO, "Print HE52 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he52;
+			break;
+		case HE106:
+			DBGLOG(REQ, INFO, "Print HE106 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he106;
+			break;
+		case HE242:
+			DBGLOG(REQ, INFO, "Print HE242 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he242;
+			break;
+		case HE484:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_he484[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print HE484 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he484;
+			break;
+		case HE996:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_he996[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print HE996 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he996;
+			break;
+		case HE996X2:
+			if (pwr_tbl.ucCenterCh <= 14 ||
+					tx_pwr_tbl[0].tx_pwr_he996x2[0] >= 127)
+				continue;
+			DBGLOG(REQ, INFO, "Print HE996X2 table\n");
+			for (j = 0; j < TXPWR_TBL_NUM; j++)
+				tx_pwr[j] = tx_pwr_tbl[j].tx_pwr_he996x2;
+			break;
+#endif
+		default:
+			break;
+		}
+
+		print_txpwr_tbl(&txpwr_tables[i], pwr_tbl.ucCenterCh,
+				tx_pwr, pwr_offset,
+				stream_buf, stream_pos);
+
+		for (j = 0; j < STREAM_NUM; j++) {
+			pos += kalScnprintf(buffer + pos, buf_len - pos,
+				"%s",
+				stream_buf[j]);
+		}
+	}
+
+	g_txpwr_tbl_read_residual = pos;
+
+next_entry:
+	if (pos > count)
+		pos = count;
+
+	if (copy_to_user(buf, buffer, pos)) {
+		DBGLOG(INIT, WARN, "copy to user failed\n");
+		ret = -EFAULT;
+		goto out;
+	}
+
+	g_txpwr_tbl_read_buffer += pos;
+	g_txpwr_tbl_read_residual -= pos;
+
+	*f_pos += pos;
+	ret = pos;
+out:
+	if (ret == 0 || ret == -ENOMEM) {
+		for (i = 0; i < STREAM_NUM; i++) {
+			if (stream_buf[i])
+				kalMemFree(stream_buf[i], VIR_MEM_TYPE, TMP_SZ);
+		}
+		if (g_txpwr_tbl_read_buffer_head)
+			kalMemFree(g_txpwr_tbl_read_buffer_head,
+				VIR_MEM_TYPE, buf_len);
+
+		g_txpwr_tbl_read_buffer = NULL;
+		g_txpwr_tbl_read_buffer_head = NULL;
+		g_txpwr_tbl_read_residual = 0;
+	}
+
+	return ret;
+}
+#endif /* CFG_WIFI_TXPWR_TBL_DUMP */
+
 #if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
 static const struct proc_ops dbglevel_ops = {
 	.proc_read = procDbgLevelRead,
@@ -669,6 +1135,13 @@ static const struct file_operations cfg_ops = {
 };
 #endif
 #endif
+#endif
+
+#if CFG_WIFI_TXPWR_TBL_DUMP
+static const struct file_operations get_txpwr_tbl_ops = {
+	.owner = THIS_MODULE,
+	.read = procGetTxpwrTblRead,
+};
 #endif
 
 /*******************************************************************************
@@ -1601,6 +2074,9 @@ int32_t procRemoveProcfs(void)
 	remove_proc_entry(PROC_DRIVER_CMD, gprProcRoot);
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 	remove_proc_entry(PROC_EFUSE_DUMP, gprProcRoot);
+#if CFG_WIFI_TXPWR_TBL_DUMP
+	remove_proc_entry(PROC_GET_TXPWR_TBL, gprProcRoot);
+#endif
 	remove_proc_entry(PROC_PKT_DELAY_DBG, gprProcRoot);
 #if CFG_SUPPORT_SET_CAM_BY_PROC
 	remove_proc_entry(PROC_SET_CAM, gprProcRoot);
@@ -1651,6 +2127,15 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 	if (prEntry == NULL) {
 		DBGLOG(INIT, ERROR,
 		       "Unable to create /proc entry roam_param\n\r");
+		return -1;
+	}
+#endif
+#if CFG_WIFI_TXPWR_TBL_DUMP
+	prEntry = proc_create(PROC_GET_TXPWR_TBL, 0664, gprProcRoot,
+			      &get_txpwr_tbl_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR,
+			"Unable to create /proc entry TXPWR Table\n\r");
 		return -1;
 	}
 #endif
