@@ -155,6 +155,36 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 		fgIsTransition = (u_int8_t) FALSE;
 		switch (prStaRec->eAuthAssocState) {
 		case AA_STATE_IDLE:
+			DBGLOG(SAA, TRACE,
+				"FT: authAlgNum %d, AuthTranNum %d\n",
+				prStaRec->ucAuthAlgNum,
+				prStaRec->ucAuthTranNum);
+			if (prStaRec->ucAuthAlgNum ==
+				AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
+				prStaRec->ucAuthTranNum ==
+				AUTH_TRANSACTION_SEQ_2 &&
+				prStaRec->ucStaState == STA_STATE_1) {
+				struct PARAM_STATUS_INDICATION rStatus = {
+				.eStatusType =
+				ENUM_STATUS_TYPE_FT_AUTH_STATUS};
+				struct cfg80211_ft_event_params *prFtEvent =
+					&prAdapter->prGlueInfo->rFtEventParam;
+
+				prFtEvent->target_ap = prStaRec->aucMacAddr;
+				/* now, we don't support RIC first */
+				prFtEvent->ric_ies = NULL;
+				prFtEvent->ric_ies_len = 0;
+				DBGLOG(SAA, INFO,
+				       "FT: notify supplicant to update FT IEs\n");
+				kalIndicateStatusAndComplete(
+					prAdapter->prGlueInfo,
+					WLAN_STATUS_MEDIA_SPECIFIC_INDICATION,
+					&rStatus, sizeof(rStatus));
+				break;
+				/* wait supplicant update ft ies and then
+				** continue to send assoc 1
+				*/
+			}
 
 			if (ePreviousState != prStaRec->eAuthAssocState) {	/* Only trigger this event once */
 
@@ -199,7 +229,8 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				fgIsTransition = TRUE;
 			} else {
 				prStaRec->ucTxAuthAssocRetryCount++;
-
+				prStaRec->ucAuthTranNum =
+					AUTH_TRANSACTION_SEQ_1;
 				/* Update Station Record - Class 1 Flag */
 				cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
@@ -241,6 +272,8 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				fgIsTransition = TRUE;
 			} else {
 				prStaRec->ucTxAuthAssocRetryCount++;
+				prStaRec->ucAuthTranNum =
+					AUTH_TRANSACTION_SEQ_3;
 
 #if !CFG_SUPPORT_AAA
 				rStatus = authSendAuthFrame(prAdapter, prStaRec, AUTH_TRANSACTION_SEQ_3);
@@ -471,6 +504,12 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgH
 	prStaRec->ucAuthAssocReqSeqNum = prSaaFsmStartMsg->ucSeqNum;
 
 	cnmMemFree(prAdapter, prMsgHdr);
+	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
+		prStaRec->ucAuthTranNum == AUTH_TRANSACTION_SEQ_2) {
+		DBGLOG(SAA, ERROR,
+		       "FT: current is waiting FT auth, don't reentry\n");
+		return;
+	}
 
 	/* 4 <1> Validation of SAA Start Event */
 	if (!IS_AP_STA(prStaRec)) {
@@ -532,6 +571,50 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgH
 	else if (prStaRec->ucStaState == STA_STATE_2 || prStaRec->ucStaState == STA_STATE_3)
 		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1, (struct SW_RFB *) NULL);
 }				/* end of saaFsmRunEventStart() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function will handle the Continue Event to SAA FSM.
+*
+* @param[in] prMsgHdr   Message of Join Request for a particular STA.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
+			      IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_SAA_FT_CONTINUE *prSaaFsmMsg = NULL;
+	struct STA_RECORD *prStaRec;
+	u_int8_t fgFtRicRequest = FALSE;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsgHdr);
+
+	prSaaFsmMsg = (struct MSG_SAA_FT_CONTINUE *)prMsgHdr;
+	prStaRec = prSaaFsmMsg->prStaRec;
+	fgFtRicRequest = prSaaFsmMsg->fgFTRicRequest;
+	cnmMemFree(prAdapter, prMsgHdr);
+	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
+		DBGLOG(SAA, ERROR, "No Sta Record or it is not in use\n");
+		return;
+	}
+	if (prStaRec->eAuthAssocState != AA_STATE_IDLE) {
+		DBGLOG(SAA, ERROR,
+		       "FT: Wrong SAA FSM state %d to continue auth/assoc\n",
+		       prStaRec->eAuthAssocState);
+		return;
+	}
+	DBGLOG(SAA, TRACE, "Continue to do auth/assoc\n");
+	if (fgFtRicRequest)
+		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_AUTH3,
+			    (struct SW_RFB *)NULL);
+	else {
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
+			    (struct SW_RFB *)NULL);
+	}
+}				/* end of saaFsmRunEventFTContinue() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -791,7 +874,19 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRf
 
 				authProcessRxAuth2_Auth4Frame(prAdapter, prSwRfb);
 
-				if (prStaRec->ucAuthAlgNum == (uint8_t) AUTH_ALGORITHM_NUM_SHARED_KEY) {
+				prStaRec->ucAuthTranNum =
+					AUTH_TRANSACTION_SEQ_2;
+				/* after received Auth2 for FT, should indicate
+				*to supplicant
+				** and wait response from supplicant
+				*/
+				if (prStaRec->ucAuthAlgNum ==
+				    AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION)
+					eNextState = AA_STATE_IDLE;
+				else if (
+					prStaRec->ucAuthAlgNum ==
+					(uint8_t)
+						AUTH_ALGORITHM_NUM_SHARED_KEY) {
 
 					eNextState = SAA_STATE_SEND_AUTH3;
 				} else {
@@ -828,7 +923,31 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRf
 
 			if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 
-				authProcessRxAuth2_Auth4Frame(prAdapter, prSwRfb);	/* Add for 802.11r handling */
+				/* Add for 802.11r handling */
+				uint32_t rStatus =
+					authProcessRxAuth2_Auth4Frame(prAdapter,
+								      prSwRfb);
+
+				prStaRec->ucAuthTranNum =
+					AUTH_TRANSACTION_SEQ_4;
+				/* if Auth4 check is failed(check mic in Auth
+				** ack frame), should disconnect
+				*/
+				if (prStaRec->ucAuthAlgNum ==
+				AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
+				rStatus != WLAN_STATUS_SUCCESS) {
+					DBGLOG(SAA, INFO,
+						"Check Rx Auth4 Frame failed, may be MIC error, %pM, status %d\n",
+					       (prStaRec->aucMacAddr),
+					       u2StatusCode);
+					/* Reset Send Auth/(Re)Assoc Frame Count
+					 */
+					prStaRec->ucTxAuthAssocRetryCount = 0;
+					saaFsmSteps(prAdapter, prStaRec,
+						    AA_STATE_IDLE,
+						    (struct SW_RFB *)NULL);
+					break;
+				}
 
 				/* Update Station Record - Class 2 Flag */
 				cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);

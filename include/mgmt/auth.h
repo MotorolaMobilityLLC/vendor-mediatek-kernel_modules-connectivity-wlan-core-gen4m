@@ -159,5 +159,16 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 			IN uint16_t u2ExpectedTransSeqNum,
 			OUT uint16_t *pu2ReturnStatusCode);
 
+void authAddMDIE(IN struct ADAPTER *prAdapter,
+		 IN OUT struct MSDU_INFO *prMsduInfo);
+
+uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			       struct STA_RECORD *prStaRec);
+
+void authAddRSNIE(IN struct ADAPTER *prAdapter,
+		  IN OUT struct MSDU_INFO *prMsduInfo);
+
+void authHandleFtIEs(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+		     struct IE_HDR *prIEHdr);
 
 #endif /* _AUTH_H */

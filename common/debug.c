@@ -503,3 +503,53 @@ void wlanPrintFwLog(uint8_t *pucLogContent,
 #undef OLD_KBUILD_MODNAME
 #undef OLD_LOG_FUNC
 }
+
+/* Begin: Functions used to breakdown packet jitter, for test case VoE 5.7 */
+static void wlanSetBE32(uint32_t u4Val, uint8_t *pucBuf)
+{
+	uint8_t *littleEn = (uint8_t *)&u4Val;
+
+	pucBuf[0] = littleEn[3];
+	pucBuf[1] = littleEn[2];
+	pucBuf[2] = littleEn[1];
+	pucBuf[3] = littleEn[0];
+}
+
+void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
+		       uint8_t ucPhase)
+{
+	struct sk_buff *skb = (struct sk_buff *)pvPacket;
+	uint8_t *pucEth = NULL;
+	uint32_t u4Length = 0;
+	uint8_t *pucUdp = NULL;
+	struct timeval tval;
+
+	if (!prAdapter || !prAdapter->rDebugInfo.fgVoE5_7Test || !skb)
+		return;
+	pucEth = skb->data;
+	u4Length = skb->len;
+	if (u4Length < 200 ||
+	    ((pucEth[ETH_TYPE_LEN_OFFSET] << 8) |
+	     (pucEth[ETH_TYPE_LEN_OFFSET + 1])) != ETH_P_IPV4)
+		return;
+	if (pucEth[ETH_HLEN+9] != IP_PRO_UDP)
+		return;
+	pucUdp = &pucEth[ETH_HLEN+28];
+	if (kalStrnCmp(pucUdp, "1345678", 7))
+		return;
+	do_gettimeofday(&tval);
+	switch (ucPhase) {
+	case PHASE_XMIT_RCV: /* xmit */
+		pucUdp += 20;
+		break;
+	case PHASE_ENQ_QM: /* enq */
+		pucUdp += 28;
+		break;
+	case PHASE_HIF_TX: /* tx */
+		pucUdp += 36;
+		break;
+	}
+	wlanSetBE32(tval.tv_sec, pucUdp);
+	wlanSetBE32(tval.tv_usec, pucUdp+4);
+}
+/* End: Functions used to breakdown packet jitter, for test case VoE 5.7 */

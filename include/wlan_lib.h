@@ -1492,3 +1492,8 @@ uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
 	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw);
+
+void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
+
+uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
+

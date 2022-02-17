@@ -1883,6 +1883,13 @@ void nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
 void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 
+void nicTxChangeDataPortByAc(struct STA_RECORD *prStaRec, uint8_t ucAci,
+			     u_int8_t fgToMcu);
+
+void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
+			    struct STA_RECORD *prOldStaRec,
+			    struct STA_RECORD *prNewStaRec);
+
 void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo, IN struct QUE *prQue);
 
 void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,

@@ -822,9 +822,19 @@
 
 #define CFG_SHOW_FULL_MACADDR     1
 
-/* Support 802.11v Wireless Network Management */
-#define CFG_SUPPORT_802_11V			0
+#define CFG_SUPPORT_VO_ENTERPRISE               1
+#define CFG_SUPPORT_WMM_AC                      1
+#if CFG_SUPPORT_VO_ENTERPRISE
+#define CFG_SUPPORT_802_11R                     1
+#define CFG_SUPPORT_802_11K                     1
+#else
+#define CFG_SUPPORT_802_11R                     0
+#define CFG_SUPPORT_802_11K                     0
+#endif
 
+/* Support 802.11v Wireless Network Management */
+#define CFG_SUPPORT_802_11V                     1
+#define CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT  1
 #define CFG_SUPPORT_802_11V_TIMING_MEASUREMENT	0
 
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && \
@@ -833,9 +843,7 @@
 "CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
 #endif
 
-#if (CFG_SUPPORT_802_11V == 0)
-#define WNM_UNIT_TEST				0
-#endif
+#define WNM_UNIT_TEST CFG_SUPPORT_802_11V
 
 #define CFG_SUPPORT_PPR2			1
 #define CFG_DRIVER_COMPOSE_ASSOC_REQ		1

@@ -885,7 +885,11 @@ u_int8_t rsnPerformPolicySelection(
 	} else if (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
 		   AUTH_MODE_WPA2 ||
 		   prAdapter->rWifiVar.rConnSettings.eAuthMode ==
-		   AUTH_MODE_WPA2_PSK) {
+		   AUTH_MODE_WPA2_PSK ||
+		   prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		   AUTH_MODE_WPA2_FT_PSK ||
+		   prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		   AUTH_MODE_WPA2_FT) {
 
 		if (prBss->fgIERSN) {
 			prBssRsnInfo = &prBss->rRSNInfo;
@@ -1121,6 +1125,16 @@ u_int8_t rsnPerformPolicySelection(
 	 *  the given BSS, we fail to perform RSNA policy selection.
 	 */
 	/* Attempt to find any overlapping supported AKM suite. */
+	if (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		    AUTH_MODE_WPA2_FT_PSK &&
+			rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_FT_PSK, &j))
+		u4AkmSuite = RSN_AKM_SUITE_FT_PSK;
+	else if (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+			AUTH_MODE_WPA2_FT &&
+			rsnSearchAKMSuite(prAdapter,
+				RSN_AKM_SUITE_FT_802_1X, &j))
+		u4AkmSuite = RSN_AKM_SUITE_FT_802_1X;
+	else
 #if CFG_SUPPORT_802_11W
 	if (i != 0)
 		for (i = (prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1); i >= 0;
@@ -1515,6 +1529,16 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
+	/* for Fast Bss Transition,  we reuse the RSN Element composed in
+	** userspace
+	*/
+	if ((prAdapter->rWifiVar.rConnSettings.eAuthMode == AUTH_MODE_WPA2_FT ||
+	     prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		     AUTH_MODE_WPA2_FT_PSK) &&
+		prAdapter->prGlueInfo->rFtIeForTx.prRsnIE) {
+		authAddRSNIE(prAdapter, prMsduInfo);
+		return;
+	}
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 	ASSERT(prBssInfo);
 
@@ -1537,7 +1561,11 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		 ((prAdapter->rWifiVar.rConnSettings.eAuthMode ==
 		   AUTH_MODE_WPA2)
 		  || (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
-		      AUTH_MODE_WPA2_PSK)))) {
+		      AUTH_MODE_WPA2_PSK)
+		  || (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		      AUTH_MODE_WPA2_FT_PSK)
+		  || (prAdapter->rWifiVar.rConnSettings.eAuthMode ==
+		      AUTH_MODE_WPA2_FT)))) {
 		/* Construct a RSN IE for association request frame. */
 		RSN_IE(pucBuffer)->ucElemId = ELEM_ID_RSN;
 		RSN_IE(pucBuffer)->ucLength = ELEM_ID_RSN_LEN_FIXED;
@@ -2305,7 +2333,7 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER
 	u4LenOfUsedBuffer = sizeof(enum ENUM_STATUS_TYPE) +
 			    (2 * sizeof(uint32_t)) +
 			    (count * sizeof(struct PARAM_PMKID_CANDIDATE));
-	/* dumpMemory8((PUINT_8)prAdapter->aucIndicationEventBuffer,
+	/* dumpMemory8((uint8_t *)prAdapter->aucIndicationEventBuffer,
 	 *    u4LenOfUsedBuffer);
 	 */
 
@@ -2884,7 +2912,7 @@ u_int8_t rsnCheckSecurityModeChanged(
 	    prAdapter->rWifiVar.rConnSettings.eAuthMode;
 
 	switch (eAuthMode) {
-	case AUTH_MODE_OPEN:	/* original is open system */
+	case AUTH_MODE_OPEN: /* original is open system */
 	case AUTH_MODE_NON_RSN_FT:
 		if ((prBssDesc->u2CapInfo & CAP_INFO_PRIVACY) &&
 		    !prAdapter->prGlueInfo->rWpaInfo.fgPrivacyInvoke) {
@@ -2915,6 +2943,8 @@ u_int8_t rsnCheckSecurityModeChanged(
 		return TRUE;
 	case AUTH_MODE_WPA2:	/*original is WPA2 */
 	case AUTH_MODE_WPA2_PSK:
+	case AUTH_MODE_WPA2_FT:
+	case AUTH_MODE_WPA2_FT_PSK:
 		if (prBssDesc->fgIERSN)
 			return rsnCheckWpaRsnInfo(prBssInfo,
 				&prBssDesc->rRSNInfo);
@@ -3682,3 +3712,38 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_PASSPOINT */
 
+uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+			     struct STA_RECORD *prStaRec)
+{
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+		prAdapter->rWifiVar.rConnSettings.eAuthMode;
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
+	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
+	    !prFtIEs->prFTIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
+				 eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+		return 0;
+	return IE_SIZE(prFtIEs->prFTIE);
+}
+
+void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
+		     IN OUT struct MSDU_INFO *prMsduInfo)
+{
+	enum ENUM_PARAM_AUTH_MODE eAuthMode =
+		prAdapter->rWifiVar.rConnSettings.eAuthMode;
+	struct FT_IES *prFtIEs = &prAdapter->prGlueInfo->rFtIeForTx;
+	uint8_t *pucBuffer =
+		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
+	uint32_t ucFtIeSize = 0;
+	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIdx) ||
+	    !IS_BSS_AIS(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx)) ||
+	    !prFtIEs->prFTIE || (eAuthMode != AUTH_MODE_WPA2_FT &&
+				 eAuthMode != AUTH_MODE_WPA2_FT_PSK))
+		return;
+	ucFtIeSize = IE_SIZE(prFtIEs->prFTIE);
+	prMsduInfo->u2FrameLength += ucFtIeSize;
+	kalMemCopy(pucBuffer, prFtIEs->prFTIE, ucFtIeSize);
+}
