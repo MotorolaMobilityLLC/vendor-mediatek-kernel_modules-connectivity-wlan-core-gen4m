@@ -2647,6 +2647,19 @@ struct PARAM_BSS_DISALLOWED_LIST {
 	uint8_t aucList[MAC_ADDR_LEN * 16];
 };
 #endif
+
+struct PARAM_AX_BLACKLIST {
+	uint8_t ucType;
+	uint8_t ucCount;
+	uint8_t aucList[MAC_ADDR_LEN * 16];
+};
+
+enum ENUM_AX_BLACKLIST_TYPE {
+	BLACKLIST_AX_TO_AC = 0,
+	BLACKLIST_DIS_HE_HTC = 1,
+	BLACKLIST_NUM
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4217,5 +4230,11 @@ uint32_t
 wlanoidIndicateBssInfo(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetAxBlacklist(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
 
 #endif /* _WLAN_OID_H */

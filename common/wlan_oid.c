@@ -16721,3 +16721,39 @@ wlanoidIndicateBssInfo(IN struct ADAPTER *prAdapter,
 
 	return rStatus;
 }	/* wlanoidIndicateBssInfo */
+
+uint32_t
+wlanoidSetAxBlacklist(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen) {
+	struct PARAM_AX_BLACKLIST *pParamAxBlacklist;
+	uint8_t count = 0;
+	uint8_t ucBssIndex = 0;
+	uint8_t i = 0;
+	uint8_t aucTemp[MAC_ADDR_LEN];
+
+	DEBUGFUNC("wlanoidSetAxBlacklist");
+	ASSERT(prAdapter);
+
+	if (u4SetBufferLen < sizeof(uint32_t))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	pParamAxBlacklist = (struct PARAM_AX_BLACKLIST *) pvSetBuffer;
+	count = pParamAxBlacklist->ucCount;
+
+	clearAxBlacklist(prAdapter, ucBssIndex, pParamAxBlacklist->ucType);
+	for (i = 0; i < count ; i++) {
+		COPY_MAC_ADDR(aucTemp,
+				&pParamAxBlacklist->aucList[i * MAC_ADDR_LEN]);
+		addAxBlacklist(prAdapter, aucTemp, ucBssIndex,
+				pParamAxBlacklist->ucType);
+		DBGLOG(OID, INFO,
+			"Set BSSID " MACSTR " into %s blacklist!\n",
+			MAC2STR(aucTemp),
+			pParamAxBlacklist->ucType == 0 ? "AX" : "+HTC");
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
