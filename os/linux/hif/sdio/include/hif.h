@@ -120,6 +120,7 @@
 
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2      11
 #define HIF_TX_PAGE_SIZE                    2048	/* in unit of bytes */
+#define HIF_TX_PAGE_SIZE_STORED_FORWARD     256	/* in unit of bytes */
 
 #define HIF_EXTRA_IO_BUFFER_SIZE \
 	(sizeof(ENHANCE_MODE_DATA_STRUCT_T) + HIF_RX_COALESCING_BUF_COUNT * HIF_RX_COALESCING_BUFFER_SIZE)

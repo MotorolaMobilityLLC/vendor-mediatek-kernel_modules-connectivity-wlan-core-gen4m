@@ -1438,7 +1438,8 @@ qmDequeueTxPacketsFromPerTypeQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 		(u4MaxResourceLimit - u4TotalUsedResource));
 
 	/* dequeue function comsumes no resource, change */
-	if ((u4LeftResource >= u4AvaliableResource) && (u4AvaliableResource >= NIC_TX_MAX_PAGE_PER_FRAME)) {
+	if ((u4LeftResource >= u4AvaliableResource) &&
+		(u4AvaliableResource >= prAdapter->rTxCtrl.u4MaxPageCntPerFrame)) {
 		fgChangeDeQFunc = TRUE;
 	} else {
 		u4TotalUsedResource += (u4AvaliableResource - u4LeftResource);
@@ -1701,8 +1702,10 @@ qmAdjustTcQuotasMthread(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdj
 		prQM->fgTcResourcePostAnnealing = (!fgResourceRedistributed);
 
 		for (i = 0; i < TC_NUM; i++) {
-			prTcqStatus->au4FreePageCount[i] += (prTcqAdjust->ai4Variation[i] * NIC_TX_MAX_PAGE_PER_FRAME);
-			prTcqStatus->au4MaxNumOfPage[i] += (prTcqAdjust->ai4Variation[i] * NIC_TX_MAX_PAGE_PER_FRAME);
+			prTcqStatus->au4FreePageCount[i] +=
+				(prTcqAdjust->ai4Variation[i] * prAdapter->rTxCtrl.u4MaxPageCntPerFrame);
+			prTcqStatus->au4MaxNumOfPage[i] +=
+				(prTcqAdjust->ai4Variation[i] * prAdapter->rTxCtrl.u4MaxPageCntPerFrame);
 
 			prTcqStatus->au4FreeBufferCount[i] += prTcqAdjust->ai4Variation[i];
 			prTcqStatus->au4MaxNumOfBuffer[i] += prTcqAdjust->ai4Variation[i];
