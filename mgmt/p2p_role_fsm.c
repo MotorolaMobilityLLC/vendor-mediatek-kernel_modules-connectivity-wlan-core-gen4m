@@ -2714,6 +2714,17 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 				P2P_ROLE_STATE_IDLE);
 			break;
 #endif
+		case P2P_ROLE_STATE_OFF_CHNL_TX:
+			if (prMsgChGrant->eReqType == CH_REQ_TYPE_OFFCHNL_TX) {
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_OFF_CHNL_TX);
+			} else {
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_IDLE);
+			}
+			break;
 		default:
 			/* Channel is granted under unexpected state.
 			 * Driver should cancel channel privileagea
@@ -3641,6 +3652,8 @@ void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 
 	if (fgIsCookieFound || prP2pRoleFsmInfo->eCurrentState ==
 			P2P_ROLE_STATE_OFF_CHNL_TX) {
+		p2pFunClearAllTxReq(prAdapter,
+				&(prP2pRoleFsmInfo->rMgmtTxInfo));
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
 	}
 
