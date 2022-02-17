@@ -166,9 +166,12 @@ uint8_t _heGetBssBandBw(struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(prBssInfo)) {
 		if (eBand == BAND_2G4)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
-		else
+		else if (eBand == BAND_5G)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
+#endif
 		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
@@ -179,10 +182,14 @@ uint8_t _heGetBssBandBw(struct ADAPTER *prAdapter,
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp2gBandwidth;
-			else
+			else if (prBssInfo->eBand == BAND_5G)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucAp5gBandwidth;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp6gBandwidth;
+#endif
 			if (ucMaxBandwidth
 				> prAdapter->rWifiVar.ucApBandwidth)
 				ucMaxBandwidth = prAdapter->rWifiVar
@@ -193,9 +200,14 @@ uint8_t _heGetBssBandBw(struct ADAPTER *prAdapter,
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucP2p2gBandwidth;
-			else
+			else if (prBssInfo->eBand == BAND_5G)
 				ucMaxBandwidth = prAdapter->rWifiVar
 					.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p6gBandwidth;
+#endif
 		}
 	}
 

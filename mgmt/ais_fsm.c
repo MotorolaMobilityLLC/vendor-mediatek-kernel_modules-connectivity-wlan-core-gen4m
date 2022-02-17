@@ -2139,18 +2139,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 			prMsgChReq->eRfChannelWidth = ucRfBw;
 			/* TODO: BW80+80 support */
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prMsgChReq->eRfBand == BAND_6G) {
-			prMsgChReq->ucRfCenterFreqSeg1 =
-			    nicGetHe6gS1(prMsgChReq->ucPrimaryChannel,
-					prMsgChReq->eRfChannelWidth);
-			} else
-#endif
-			{
-			prMsgChReq->ucRfCenterFreqSeg1 =
-			    nicGetVhtS1(prMsgChReq->ucPrimaryChannel,
-					prMsgChReq->eRfChannelWidth);
-			}
+			prMsgChReq->ucRfCenterFreqSeg1 = nicGetS1(
+				prMsgChReq->eRfBand,
+			    prMsgChReq->ucPrimaryChannel,
+				prMsgChReq->eRfChannelWidth);
+
 			DBGLOG(RLM, INFO,
 			       "AIS req CH for CH:%d, Bw:%d, s1=%d\n",
 			       prAisBssInfo->ucPrimaryChannel,
