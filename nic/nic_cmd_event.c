@@ -1104,12 +1104,12 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (kalGetMediaStateIndicated(
 			prAdapter->prGlueInfo,
-			u4Idx) !=
+			AIS_MAIN_BSS_INDEX(prAdapter, u4Idx)) !=
 		    MEDIA_STATE_DISCONNECTED)
 			kalIndicateStatusAndComplete(
 				prAdapter->prGlueInfo,
 				WLAN_STATUS_MEDIA_DISCONNECT,
-				NULL, 0, u4Idx);
+				NULL, 0, AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 	}
 	/* 1. Remove pending TX */
 	nicTxRelease(prAdapter, TRUE);
@@ -1256,13 +1256,13 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (kalGetMediaStateIndicated(
 			prAdapter->prGlueInfo,
-			u4Idx) !=
+			AIS_MAIN_BSS_INDEX(prAdapter, u4Idx)) !=
 		    MEDIA_STATE_DISCONNECTED) {
 
 			kalIndicateStatusAndComplete(
 				prAdapter->prGlueInfo,
 				WLAN_STATUS_MEDIA_DISCONNECT,
-				NULL, 0, u4Idx);
+				NULL, 0, AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 
 			prAdapter->rWlanInfo.u4SysTime =
 				kalGetTimeTick();
@@ -4191,7 +4191,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 
 	enum ENUM_COEX_MODE eCoexMode = COEX_NONE_BT;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint8_t ucBssIndex;
+	uint8_t ucAisIndex;
 	bool fgIsBAND2G4Coex = FALSE;
 	bool fgHitBlackList = FALSE;
 
@@ -4211,7 +4211,9 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	       prEventCoexStatus->ucCoexMode,
 	       prEventCoexStatus->fgIsBAND2G4Coex);
 	/*AIS only feature*/
-	for (ucBssIndex = 0; ucBssIndex < KAL_AIS_NUM; ucBssIndex++) {
+	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
+		uint8_t ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
+
 		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);

@@ -2411,7 +2411,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 	struct CMD_SW_DBG_CTRL rCmdSwCtrl;
 	/* CMD_ACCESS_REG rCmdAccessReg; */
 	uint32_t rWlanStatus;
-	uint8_t ucBssIdx;
+	uint8_t ucAisIdx;
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	uint32_t u4Level = 0;
 #endif
@@ -2441,7 +2441,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			(uint8_t *)&rCmdSwCtrl, NULL, 0);
 
 		/* 2. Keep at CAM mode */
-		for (ucBssIdx = 0; ucBssIdx < KAL_AIS_NUM; ucBssIdx++) {
+		for (ucAisIdx = 0; ucAisIdx < KAL_AIS_NUM; ucAisIdx++) {
 			enum PARAM_POWER_MODE ePowerMode;
 
 			prAdapter->u4CtiaPowerMode = 0;
@@ -2449,7 +2449,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 
 			ePowerMode = Param_PowerModeCAM;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
-				ucBssIdx,
+				AIS_MAIN_BSS_INDEX(prAdapter, ucAisIdx),
 				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
 		}
 
@@ -2483,7 +2483,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			(uint8_t *)&rCmdSwCtrl, NULL, 0);
 
 		/* 2. Keep at Fast PS */
-		for (ucBssIdx = 0; ucBssIdx < KAL_AIS_NUM; ucBssIdx++) {
+		for (ucAisIdx = 0; ucAisIdx < KAL_AIS_NUM; ucAisIdx++) {
 			enum PARAM_POWER_MODE ePowerMode;
 
 			prAdapter->u4CtiaPowerMode = 2;
@@ -2491,7 +2491,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 
 			ePowerMode = Param_PowerModeFast_PSP;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
-				ucBssIdx,
+				AIS_MAIN_BSS_INDEX(prAdapter, ucAisIdx),
 				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
 		}
 
@@ -2578,7 +2578,7 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 			       u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent)
 {
 	uint32_t rWlanStatus;
-	uint8_t ucBssIdx;
+	uint8_t ucAisIdx;
 
 	ASSERT(prAdapter);
 	DBGLOG(INIT, INFO, "nicEnterCtiaModeOfCAM: %d\n",
@@ -2588,7 +2588,7 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 
 	if (fgEnterCtia) {
 		/* Keep at CAM mode */
-		for (ucBssIdx = 0; ucBssIdx < KAL_AIS_NUM; ucBssIdx++) {
+		for (ucAisIdx = 0; ucAisIdx < KAL_AIS_NUM; ucAisIdx++) {
 			enum PARAM_POWER_MODE ePowerMode;
 
 			prAdapter->u4CtiaPowerMode = 0;
@@ -2596,12 +2596,12 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 
 			ePowerMode = Param_PowerModeCAM;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
-				ucBssIdx,
+				AIS_MAIN_BSS_INDEX(prAdapter, ucAisIdx),
 				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA_CAM);
 		}
 	} else {
 		/* Keep at Fast PS */
-		for (ucBssIdx = 0; ucBssIdx < KAL_AIS_NUM; ucBssIdx++) {
+		for (ucAisIdx = 0; ucAisIdx < KAL_AIS_NUM; ucAisIdx++) {
 			enum PARAM_POWER_MODE ePowerMode;
 
 			prAdapter->u4CtiaPowerMode = 2;
@@ -2609,7 +2609,7 @@ uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter,
 
 			ePowerMode = Param_PowerModeFast_PSP;
 			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
-				ucBssIdx,
+				AIS_MAIN_BSS_INDEX(prAdapter, ucAisIdx),
 				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA_CAM);
 		}
 	}
@@ -3430,7 +3430,7 @@ nicAddScanResult(IN struct ADAPTER *prAdapter,
 			struct PARAM_BSSID_EX *prCurrBssid;
 
 			prCurrBssid = aisGetCurrBssId(prAdapter,
-				j);
+				AIS_MAIN_BSS_INDEX(prAdapter, j));
 			if (EQUAL_MAC_ADDR
 				(prAdapter->rWlanInfo.
 				arScanResult[i].arMacAddress,
@@ -4751,7 +4751,6 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
 				cLinkQuality = cLinkQuality;
 			/* indicate to glue layer */
-			// TODO: mlo
 			kalUpdateRSSI(prAdapter->prGlueInfo,
 				      ucBssIndex, cRssi, cLinkQuality);
 		}

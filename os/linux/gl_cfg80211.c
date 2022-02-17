@@ -6123,8 +6123,7 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 		return -1;
 
 	/* init AIS FSM */
-	// TODO: mlo
-	//aisFsmInit(prAdapter, ucBssIndex);
+	aisFsmInit(prAdapter, NULL, AIS_INDEX(prAdapter, ucBssIndex));
 
 #if CFG_SUPPORT_ROAMING
 	/* Roaming Module - intiailization */

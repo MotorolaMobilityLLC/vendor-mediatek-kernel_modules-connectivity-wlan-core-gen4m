@@ -4977,6 +4977,7 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 	/* Do not compare P2P SSID with AIS SSID to avoid changing
 	 * p2p bss index unexpectedly.
 	*/
+	// TODO: mlo, ucP2pStartIdx is not KAL_AIS_NUM
 	uint8_t ucP2pStartIdx = KAL_AIS_NUM;
 
 	switch (ucElemIdType) {

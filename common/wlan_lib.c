@@ -1335,23 +1335,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			wlanUpdateBasicConfig(prAdapter);
 
 			if (!bAtResetFlow) {
-				uint32_t u4Idx = 0;
-
 				/* 7. Override network address */
 				wlanUpdateNetworkAddress(prAdapter);
 
 				/* 8. Apply Network Address */
 				nicApplyNetworkAddress(prAdapter);
-
-				/* 9. indicate disconnection
-				 *    as default status
-				 */
-				for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++)
-					kalIndicateStatusAndComplete(
-						prAdapter->prGlueInfo,
-						WLAN_STATUS_MEDIA_DISCONNECT,
-						NULL, 0,
-						u4Idx);
 			}
 		}
 
@@ -9484,15 +9472,7 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 		if (!prBssInfo->fgIsInUse)
 			continue;
 
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
-
-			if (kalGetMediaStateIndicated(prGlueInfo,
-				i4BssIdx) ==
-			    MEDIA_STATE_CONNECTED)
-				kalIndicateStatusAndComplete(prGlueInfo,
-					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0,
-					i4BssIdx);
-		} else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
 			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 				u4ClientCount = bssGetClientCount(prAdapter,
 								  prBssInfo);
