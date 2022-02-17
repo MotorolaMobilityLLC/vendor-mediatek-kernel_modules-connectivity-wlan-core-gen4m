@@ -1231,6 +1231,14 @@ struct WLAN_IOT_AP_RULE_T {
 	uint8_t  ucAction;
 };
 #endif
+
+struct TRX_INFO {
+	uint32_t u4TxFail[2];		/* By Band */
+	uint32_t u4RxFail[2];		/* By Band */
+	uint32_t u4TxHwRetry[2];	/* By Band */
+	uint32_t u4TxOk[MAX_BSSID_NUM];	/* By BSSIDX */
+	uint32_t u4RxOk[MAX_BSSID_NUM];	/* By BSSIDX */
+};
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1850,3 +1858,7 @@ uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);
 uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);
+
+void
+wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
+	OUT struct TRX_INFO *prTRxInfo);
