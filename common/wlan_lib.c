@@ -7067,7 +7067,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				FEATURE_DISABLED);
 
 	prWifiVar->ucNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Nss", 2);
+				(prAdapter, "Nss", DEFAULT_NSS);
 
 #ifdef CFG_FORCE_AP1NSS
 	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
@@ -7078,18 +7078,18 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				(prAdapter, "Ap2gNss", 1);
 #else
 	prWifiVar->ucAp6gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap6gNss", 2);
+				(prAdapter, "Ap6gNss", DEFAULT_NSS);
 	prWifiVar->ucAp5gNSS = (uint8_t)wlanCfgGetUint32
-				(prAdapter, "Ap5gNss", 2);
+				(prAdapter, "Ap5gNss", DEFAULT_NSS);
 	prWifiVar->ucAp2gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Ap2gNss", 2);
+				(prAdapter, "Ap2gNss", DEFAULT_NSS);
 #endif
 	prWifiVar->ucGo6gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go6gNss", 2);
+				(prAdapter, "Go6gNss", DEFAULT_NSS);
 	prWifiVar->ucGo5gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go5gNss", 2);
+				(prAdapter, "Go5gNss", DEFAULT_NSS);
 	prWifiVar->ucGo2gNSS = (uint8_t) wlanCfgGetUint32
-				(prAdapter, "Go2gNss", 2);
+				(prAdapter, "Go2gNss", DEFAULT_NSS);
 
 	/* Max Rx MPDU length setting
 	 * 0: 3k
@@ -11046,10 +11046,12 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
 	if (IS_BSS_P2P(prBssInfo) && p2pFuncIsDualAPMode(prAdapter)) {
 		DBGLOG(SW4, LOUD, "Use 1x1 due to dual ap mode\n");
 		ucRetValNss = 1;
 	}
+#endif
 
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
