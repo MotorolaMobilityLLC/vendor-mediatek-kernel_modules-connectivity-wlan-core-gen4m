@@ -4018,6 +4018,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_BTM_QUERY				"bss-transition-query"
 #endif
 
+#define CMD_GET_BAINFO           "GET_BAINFO"
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -5559,6 +5561,68 @@ int priv_driver_dump_mld_sta(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif
+
+int priv_driver_get_bainfo(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucBaIdx = 0;
+	struct ADAPTER *prAdapter = NULL;
+	struct QUE_MGT *prQM = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	prQM = &prAdapter->rQM;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		(prQM->ucRxBaCount ?
+		"\n---------- Valid BA entry ----------\n" :
+		"\n---------- NO valid BA entry ----------\n"));
+
+	for (ucBaIdx = 0; ucBaIdx < CFG_NUM_OF_RX_BA_AGREEMENTS; ucBaIdx++) {
+		struct RX_BA_ENTRY *prRxBaEntry = &prQM->arRxBaTable[ucBaIdx];
+
+		if (prRxBaEntry && prRxBaEntry->fgIsValid) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"WlanIdx[%d] TID[%d]\n",
+				secGetWlanIdxByStaIdx(prAdapter,
+				prRxBaEntry->ucStaRecIdx),
+				prRxBaEntry->ucTid);
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\t- Window start[%d]\n",
+				prRxBaEntry->u2WinStart);
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\t- Window end[%d]\n",
+				prRxBaEntry->u2WinEnd);
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\t- Window size[%d]\n",
+				prRxBaEntry->u2WinSize);
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\t- BAR SSN[%d]\n",
+				prRxBaEntry->u2BarSSN);
+		}
+	}
+	return i4BytesWritten;
+}
 
 static int priv_driver_set_test_mode(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
@@ -16259,6 +16323,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_DBG_SHOW_MLD_STA, priv_driver_dump_mld_sta},
 #endif
 	{CMD_SET_USE_CASE, priv_driver_set_multista_use_case},
+	{CMD_GET_BAINFO, priv_driver_get_bainfo},
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
