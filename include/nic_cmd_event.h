@@ -2266,6 +2266,7 @@ typedef struct _EVENT_CH_PRIVILEGE_T {
 	UINT_8 aucReserved2[8];
 } EVENT_CH_PRIVILEGE_T, *P_EVENT_CH_PRIVILEGE_T;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 typedef struct _LONG_PULSE_BUFFER_T {
 	UINT_32 u4LongStartTime;
 	UINT_16 u2LongPulseWidth;
@@ -2290,9 +2291,11 @@ typedef struct _EVENT_RDD_REPORT_T {
 	UINT_8 ucPRICountM1TH;
 	UINT_8 ucPRICountM2;
 	UINT_8 ucPRICountM2TH;
+	UINT_32 u4PRI1st;
 	LONG_PULSE_BUFFER_T arLpbContent[32];
 	PERIODIC_PULSE_BUFFER_T arPpbContent[32];
 } EVENT_RDD_REPORT_T, *P_EVENT_RDD_REPORT_T;
+#endif
 
 typedef struct _EVENT_BSS_BEACON_TIMEOUT_T {
 	UINT_8 ucBssIndex;
