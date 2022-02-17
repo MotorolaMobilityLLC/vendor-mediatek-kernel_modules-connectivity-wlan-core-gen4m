@@ -67,49 +67,50 @@ struct IE_EHT_OP {
 
 /*
  * Indicates support for transmitting or responding
- * to a TXOP sharing trigger frame that does not solicit TB PPDU.
+ * to a TXOP sharing trigger frame with Triggered TXOP Sharing Mode field
+ * equal to 1 that does not solicit TB PPDU.
  */
-#define EHT_MAC_CAP_TXOP_SHARING BIT(2)
+#define EHT_MAC_CAP_TXOP_SHARING_MODE1 BIT(2)
 
-#define SET_EHT_MAC_CAP_TXOP_SHARING(_aucMacCapInfo) \
-		(_aucMacCapInfo[0] |= EHT_MAC_CAP_TXOP_SHARING)
+#define SET_EHT_MAC_CAP_TXOP_SHARING_MODE1(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] |= EHT_MAC_CAP_TXOP_SHARING_MODE1)
 
 /*
  * Indicates support for transmitting or responding
- * to a TXOP sharing trigger frame that does not solicit TB PPDU.
+ * to a TXOP sharing trigger frame with Triggered TXOP Sharing Mode field
+ * equal to 2 that does not solicit TB PPDU.
  */
-#define EHT_MAC_CAP_TXOP_SHARING BIT(2)
+#define EHT_MAC_CAP_TXOP_SHARING_MODE2 BIT(3)
 
-#define SET_EHT_MAC_CAP_TXOP_SHARING(_aucMacCapInfo) \
-		(_aucMacCapInfo[0] |= EHT_MAC_CAP_TXOP_SHARING)
+#define SET_EHT_MAC_CAP_TXOP_SHARING_MODE2(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] |= EHT_MAC_CAP_TXOP_SHARING_MODE2)
 
 /*
  * Indicates support for the restricted TWT operation.
  */
-#define EHT_MAC_CAP_RESTRICTED_TWT BIT(3)
+#define EHT_MAC_CAP_RESTRICTED_TWT BIT(4)
 
 #define SET_EHT_MAC_CAP_RESTRICTED_TWT(_aucMacCapInfo) \
 		(_aucMacCapInfo[0] |= EHT_MAC_CAP_RESTRICTED_TWT)
 
 /*
  * Indicates support for transmission and
- * reception of SCS Descriptor elements containing a TSPEC subelement.
+ * reception of SCS Descriptor elements containing
+ * a QoS Characteristics subelement
  */
-#define EHT_MAC_CAP_SCS BIT(4)
+#define EHT_MAC_CAP_SCS BIT(5)
 
 #define SET_EHT_MAC_CAP_SCS(_aucMacCapInfo) \
 		(_aucMacCapInfo[0] |= EHT_MAC_CAP_SCS)
 
 /*
- * For an AP, indicates support for receiving a frame
- * with an AAR Control subfield.
- * For a non-AP STA, indicates support for generating a frame
- * with an AAR Control subfield.
+ * Indicates the maximum MPDU length
+ * that the STA is capable of receiving
  */
-#define EHT_MAC_CAP_AAR BIT(5)
+#define EHT_MAC_CAP_MAX_MPDU_LEN BIT(6)
 
-#define SET_EHT_MAC_CAP_AAR(_aucMacCapInfo) \
-		(_aucMacCapInfo[0] |= EHT_MAC_CAP_AAR)
+#define SET_EHT_MAC_CAP_MAX_MPDU_LEN(_aucMacCapInfo) \
+		(_aucMacCapInfo[0] |= EHT_MAC_CAP_MAX_MPDU_LEN)
 
 
 /* EHT PHY Capabilities Information field */
@@ -175,6 +176,15 @@ enum EHT_PHY_CAPS {
 	EHT_EXTRA_LTF_SUPPORT = 1 << 11,
 	EHT_DUP_6G = 1 << 12,
 	EHT_20M_RX_NDP_W_WIDER_BW = 1 << 13,
+};
+
+/* EHT Operation Information subfields - Channel Width */
+enum EHT_OP_MAX_BW {
+	EHT_MAX_BW_20 = 0,
+	EHT_MAX_BW_40 = 1,
+	EHT_MAX_BW_80 = 2,
+	EHT_MAX_BW_160 = 3,
+	EHT_MAX_BW_320 = 4,
 };
 
 struct EHT_BF_INFO {
