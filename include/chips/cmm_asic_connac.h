@@ -60,19 +60,26 @@
 #ifndef _CMM_ASIC_CONNAC_H
 #define _CMM_ASIC_CONNAC_H
 
+/*******************************************************************************
+*                              C O N S T A N T S
+********************************************************************************
+*/
+#define USB_HIF_TXD_LEN    4
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+VOID asicCapInit(IN P_ADAPTER_T prAdapter);
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-VOID asicDevInit(IN P_ADAPTER_T prAdapter);
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
-
+#if defined(_HIF_USB)
+VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen);
+#endif /* _HIF_USB */
 #endif /* _CMM_ASIC_CONNAC_H */
 

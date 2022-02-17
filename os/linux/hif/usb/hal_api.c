@@ -249,6 +249,7 @@ WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CM
 	unsigned long flags;
 	P_HW_MAC_TX_DESC_T prTxDesc;
 	UINT_8 ucQueIdx;
+	struct mt66xx_chip_info *prChipInfo;
 
 	if (prHifInfo->state != USB_STATE_LINK_UP &&
 	    !(prHifInfo->state == USB_STATE_PRE_RESUME && prCmdInfo->ucCID == 0))
@@ -267,6 +268,10 @@ WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CM
 	}
 
 	DBGLOG(HAL, INFO, "TX URB[0x%p]\n", prUsbReq->prUrb);
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, (prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen));
+	u2OverallBufferLength += prChipInfo->u2HifTxdSize;
 
 	if (prCmdInfo->u4TxdLen) {
 		memcpy((prBufCtrl->pucBuf + u2OverallBufferLength), prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
@@ -466,6 +471,7 @@ WLAN_STATUS halTxUSBSendAggData(IN P_GL_HIF_INFO_T prHifInfo, IN UINT_8 ucTc, IN
 WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 {
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS;
 	P_USB_REQ_T prUsbReq;
 	P_BUF_CTRL_T prBufCtrl;
@@ -482,6 +488,7 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	pucBuf = skb->data;
 	u4Length = skb->len;
 	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 #if CFG_USB_TX_AGG
 	spin_lock_irqsave(&prHifInfo->rQLock, flags);
 
@@ -506,6 +513,8 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 		prBufCtrl = prUsbReq->prBufCtrl;
 	}
 
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, u4Length);
+	prBufCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
 	memcpy(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
 
@@ -530,10 +539,13 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	prBufCtrl = prUsbReq->prBufCtrl;
 	prBufCtrl->u4WrIdx = 0;
 
-	memcpy(prBufCtrl->pucBuf, pucBuf, u4Length);
+	HAL_WRITE_HIF_TXD(prChipInfo, prBufCtrl->pucBuf, u4Length);
+	prBufCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
+
+	memcpy(prBufCtrl->pucBuf + prChipInfo->u2HifTxdSize, pucBuf, u4Length);
 	prBufCtrl->u4WrIdx += u4Length;
 
-	u4PaddingLength = (ALIGN_4(u4Length) - u4Length);
+	u4PaddingLength = (ALIGN_4(u4Length + prChipInfo->u2HifTxdSize) - u4Length);
 	if (u4PaddingLength) {
 		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
 		prBufCtrl->u4WrIdx += u4PaddingLength;
@@ -1114,33 +1126,13 @@ VOID halEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable)
 
 VOID halDevInit(IN P_ADAPTER_T prAdapter)
 {
-	UINT_32 u4Value = 0;
-	struct mt66xx_chip_info *prChipInfo;
+	P_GLUE_INFO_T prGlueInfo;
 
 	ASSERT(prAdapter);
+	prGlueInfo = prAdapter->prGlueInfo;
 
-	prChipInfo = prAdapter->chip_info;
-	if (prChipInfo->asicDevInit) {
-		prChipInfo->asicDevInit(prAdapter);
-	} else	{
-		HAL_MCR_RD(prAdapter, UDMA_WLCFG_0, &u4Value);
-
-		/* enable UDMA TX & RX */
-		u4Value = UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) |
-		    UDMA_WLCFG_0_RX_AGG_EN(1) |
-		    UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
-		    UDMA_WLCFG_0_RX_AGG_LMT(USB_RX_AGGREGTAION_LIMIT) |
-		    UDMA_WLCFG_0_RX_AGG_TO(USB_RX_AGGREGTAION_TIMEOUT);
-
-		HAL_MCR_WR(prAdapter, UDMA_WLCFG_0, u4Value);
-
-		HAL_MCR_RD(prAdapter, UDMA_WLCFG_1, &u4Value);
-
-		u4Value &= ~UDMA_WLCFG_1_RX_AGG_PKT_LMT_MASK;
-		u4Value |= UDMA_WLCFG_1_RX_AGG_PKT_LMT(USB_RX_AGGREGTAION_PKT_LIMIT);
-
-		HAL_MCR_WR(prAdapter, UDMA_WLCFG_1, u4Value);
-	}
+	glUdmaRxAggEnable(prGlueInfo, FALSE);
+	glUdmaTxRxEnable(prGlueInfo, TRUE);
 }
 
 BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)

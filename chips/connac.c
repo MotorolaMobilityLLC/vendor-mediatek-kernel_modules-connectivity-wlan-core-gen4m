@@ -132,6 +132,10 @@ BUS_INFO bus_info_connac = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
 #endif /* _HIF_PCIE */
+#if defined(_HIF_USB)
+	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
+	.u4UdmaWlCfg_1_Addr = CONNAC_UDMA_WLCFG_1,
+#endif /* _HIF_USB */
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_connac = {
@@ -144,9 +148,10 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = CONNAC_TX_DESC_APPEND_LENGTH,
 	.eco_info = connac_eco_table,
+
 	.constructFirmwarePrio = NULL,
+	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
-	.asicDevInit = asicDevInit,
 	.fillTxDescAppend = fillTxDescAppendByHostV2,
 };
 

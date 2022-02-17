@@ -110,6 +110,14 @@ typedef enum _MT_INF_TYPE_T {
 #define IS_PCIE_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_PCIE)
 #define IS_EHPI_INF(__GlueInfo)		((__GlueInfo)->u4InfType == MT_DEV_INF_PCIE)
 
+#define HAL_WRITE_HIF_TXD(_prChipInfo, _pucOutputBuf, _u2InfoBufLen) \
+{ \
+	UINT_16 _u2DataLen = (UINT_16)(_u2InfoBufLen); \
+	PUINT_8 _prBuf = (_pucOutputBuf); \
+	if (_prChipInfo->fillHifTxDesc) \
+		_prChipInfo->fillHifTxDesc(&_prBuf, &_u2DataLen); \
+}
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
