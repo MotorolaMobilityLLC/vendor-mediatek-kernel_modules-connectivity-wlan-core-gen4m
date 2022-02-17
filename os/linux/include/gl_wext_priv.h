@@ -244,6 +244,22 @@
 #define TX_POWER_SHOW_INFO                              0x7
 #endif
 
+#define AGG_RANGE_SEL_NUM                               7
+#define AGG_RANGE_SEL_0_MASK                            BITS(0, 7)
+#define AGG_RANGE_SEL_0_OFFSET                          0
+#define AGG_RANGE_SEL_1_MASK                            BITS(8, 15)
+#define AGG_RANGE_SEL_1_OFFSET                          8
+#define AGG_RANGE_SEL_2_MASK                            BITS(16, 23)
+#define AGG_RANGE_SEL_2_OFFSET                          16
+#define AGG_RANGE_SEL_3_MASK                            BITS(24, 31)
+#define AGG_RANGE_SEL_3_OFFSET                          24
+#define AGG_RANGE_SEL_4_MASK                            AGG_RANGE_SEL_0_MASK
+#define AGG_RANGE_SEL_4_OFFSET                          AGG_RANGE_SEL_0_OFFSET
+#define AGG_RANGE_SEL_5_MASK                            AGG_RANGE_SEL_1_MASK
+#define AGG_RANGE_SEL_5_OFFSET                          AGG_RANGE_SEL_1_OFFSET
+#define AGG_RANGE_SEL_6_MASK                            AGG_RANGE_SEL_2_MASK
+#define AGG_RANGE_SEL_6_OFFSET                          AGG_RANGE_SEL_2_OFFSET
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -281,6 +297,12 @@ typedef struct _NDIS_TRANSPORT_STRUCT {
 	UINT_32 outNdisOidLength;
 	UINT_8 ndisOidContent[16];
 } NDIS_TRANSPORT_STRUCT, *P_NDIS_TRANSPORT_STRUCT;
+
+enum AGG_RANGE_TYPE_T {
+	ENUM_AGG_RANGE_TYPE_TX = 0,
+	ENUM_AGG_RANGE_TYPE_TRX = 1,
+	ENUM_AGG_RANGE_TYPE_RX = 2
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
