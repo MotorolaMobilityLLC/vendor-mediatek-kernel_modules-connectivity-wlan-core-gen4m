@@ -2125,14 +2125,14 @@ enum BEACON_REPORT_DETAIL {
 #define TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET        10
 #define TWT_REQ_TYPE_TWT_PROTECTION_OFFSET             15
 
-#define TWT_SETUP_CMD_REQUEST                       0
-#define TWT_SETUP_CMD_SUGGEST                       1
-#define TWT_SETUP_CMD_DEMAND                        2
-#define TWT_SETUP_CMD_GROUPING                      3
-#define TWT_SETUP_CMD_ACCEPT                        4
-#define TWT_SETUP_CMD_ALTERNATE                     5
-#define TWT_SETUP_CMD_DICTATE                       6
-#define TWT_SETUP_CMD_REJECT                        7
+#define TWT_SETUP_CMD_ID_REQUEST                       0
+#define TWT_SETUP_CMD_ID_SUGGEST                       1
+#define TWT_SETUP_CMD_ID_DEMAND                        2
+#define TWT_SETUP_CMD_ID_GROUPING                      3
+#define TWT_SETUP_CMD_ID_ACCEPT                        4
+#define TWT_SETUP_CMD_ID_ALTERNATE                     5
+#define TWT_SETUP_CMD_ID_DICTATE                       6
+#define TWT_SETUP_CMD_ID_REJECT                        7
 
 /* TWT Flow Field in teardown frame */
 #define TWT_TEARDOWN_FLOW_ID                        BITS(0, 2)

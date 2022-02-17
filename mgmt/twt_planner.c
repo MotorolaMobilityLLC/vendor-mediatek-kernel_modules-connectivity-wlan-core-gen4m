@@ -1837,7 +1837,7 @@ void twtPlannerRxNegoResult(
 #endif
 
 	switch (prTWTResult->ucSetupCmd) {
-	case TWT_SETUP_CMD_ACCEPT:
+	case TWT_SETUP_CMD_ID_ACCEPT:
 		/* Update agreement table */
 		twtPlannerAddAgrtTbl(prAdapter, prBssInfo, prStaRec,
 			prTWTResult, ucTWTFlowId, FALSE,
@@ -1851,18 +1851,18 @@ void twtPlannerRxNegoResult(
 
 		break;
 
-	case TWT_SETUP_CMD_ALTERNATE:
-	case TWT_SETUP_CMD_DICTATE:
+	case TWT_SETUP_CMD_ID_ALTERNATE:
+	case TWT_SETUP_CMD_ID_DICTATE:
 		/* Use AP's suggestions */
 		prTWTParams = &(prTWTFlow->rTWTParams);
 		kalMemCopy(prTWTParams,
 			prTWTResult, sizeof(struct _TWT_PARAMS_T));
-		prTWTParams->ucSetupCmd = TWT_SETUP_CMD_SUGGEST;
+		prTWTParams->ucSetupCmd = TWT_SETUP_CMD_ID_SUGGEST;
 		prTWTParams->fgReq = 1;
 		twtPlannerSendReqStart(prAdapter, prStaRec, ucTWTFlowId);
 		break;
 
-	case TWT_SETUP_CMD_REJECT:
+	case TWT_SETUP_CMD_ID_REJECT:
 		/* Clear TWT flow in StaRec */
 		break;
 
@@ -2390,13 +2390,13 @@ void mltwtPlannerRxNegoResult(
 
 		/*
 		* We are MLTWT, proceed with AP response TWT param,
-		* add agreement to F/W, only TWT_SETUP_CMD_ACCEPT
+		* add agreement to F/W, only TWT_SETUP_CMD_ID_ACCEPT
 		* is manipulated during dev stage, TBD...
 		*/
 		prTWTResult = &(prTWTFlow->rTWTPeerParams);
 
 		switch (prTWTResult->ucSetupCmd) {
-		case TWT_SETUP_CMD_ACCEPT:
+		case TWT_SETUP_CMD_ID_ACCEPT:
 			/* Update agreement table */
 			twtPlannerAddAgrtTbl(prAdapter, prCurrBssInfo, prStaRecOfAP,
 				prTWTResult, ucTWTFlowId, FALSE,
@@ -2412,9 +2412,9 @@ void mltwtPlannerRxNegoResult(
 
 			break;
 
-		case TWT_SETUP_CMD_ALTERNATE:
-		case TWT_SETUP_CMD_DICTATE:
-		case TWT_SETUP_CMD_REJECT:
+		case TWT_SETUP_CMD_ID_ALTERNATE:
+		case TWT_SETUP_CMD_ID_DICTATE:
+		case TWT_SETUP_CMD_ID_REJECT:
 		default:
 			DBGLOG(TWT_PLANNER, STATE,
 				"MLTWT setup command %u don't care\n",
