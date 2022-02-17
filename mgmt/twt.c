@@ -579,15 +579,7 @@ void twtProcessS1GAction(
 	case ACTION_S1G_TWT_SETUP:
 		prRxSetupFrame =
 			(struct _ACTION_TWT_SETUP_FRAME *) prSwRfb->pvHeader;
-		/*origin
-		if (prStaRec->ucStaState != STA_STATE_3 ||
-			prSwRfb->u2PacketLen <
-				sizeof(struct _ACTION_TWT_SETUP_FRAME)) {
-			DBGLOG(TWT_REQUESTER, WARN,
-				"Received improper TWT Setup frame\n");
-			return;
-		}
-		*/
+#if (CFG_SUPPORT_BTWT == 1)
 		if (prStaRec->ucStaState != STA_STATE_3 ||
 			prSwRfb->u2PacketLen <
 				sizeof(struct _ACTION_BTWT_SETUP_FRAME)) {
@@ -596,6 +588,15 @@ void twtProcessS1GAction(
 				prStaRec->ucStaState);
 			return;
 		}
+#else
+		if (prStaRec->ucStaState != STA_STATE_3 ||
+			prSwRfb->u2PacketLen <
+				sizeof(struct _ACTION_TWT_SETUP_FRAME)) {
+			DBGLOG(TWT_REQUESTER, WARN,
+				"Received improper TWT Setup frame\n");
+			return;
+		}
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 		if (GET_BTWT_CTRL_NEGO(
@@ -634,8 +635,8 @@ void twtProcessS1GAction(
 #if (CFG_SUPPORT_BTWT == 1)
 			btwtFlagOnOff(&(prStaRec->arTWTFlow[ucTWTFlowId]),
 				FALSE);
-#endif
 		}
+#endif
 
 		/* Notify TWT Requester FSM upon reception of a TWT response */
 		u2ReqType = prRxSetupFrame->rTWT.u2ReqType;
