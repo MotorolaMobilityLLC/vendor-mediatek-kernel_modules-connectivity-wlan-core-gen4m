@@ -88,7 +88,15 @@
 #include <linux/mfd/mt6359p/registers.h>
 #include <linux/regmap.h>
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+/* Implementation for kernel-5.4 */
+#elif KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
+#include <linux/soc/mediatek/mtk-pm-qos.h>
+#define PM_QOS_VCORE_OPP MTK_PM_QOS_VCORE_OPP
+#define PM_QOS_VCORE_OPP_DEFAULT_VALUE MTK_PM_QOS_VCORE_OPP_DEFAULT_VALUE
+#else
 #include <linux/pm_qos.h>
+#endif
 #endif /*#ifndef CFG_BUILD_X86_PLATFORM*/
 
 /*******************************************************************************
@@ -147,6 +155,11 @@ static uint8_t *soc3_0_apucCr4FwName[] = {
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 #if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
 /* Implementation for kernel-5.4 */
+#elif (KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE)
+#define pm_qos_request_active mtk_pm_qos_request_active
+#define pm_qos_add_request mtk_pm_qos_add_request
+#define pm_qos_update_request mtk_pm_qos_update_request
+static struct mtk_pm_qos_request wifi_req;
 #else
 static struct pm_qos_request wifi_req;
 #endif
