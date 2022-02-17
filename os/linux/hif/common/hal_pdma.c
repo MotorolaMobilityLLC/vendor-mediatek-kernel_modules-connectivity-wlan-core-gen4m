@@ -983,9 +983,57 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
 		prChipInfo->asicWfdmaReInit_handshakeInit(prAdapter);
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	prAdapter->ucSerState = SER_IDLE_DONE;
+	prHifInfo->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
+	prHifInfo->rErrRecoveryCtl.u4Status = 0;
+
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+	timer_setup(&prHif->rSerTimer, halHwRecoveryTimeout, 0);
+	prHif->rSerTimerData = (unsigned long)prGlueInfo;
+#else
+	init_timer(&prHif->rSerTimer);
+	prHif->rSerTimer.function = halHwRecoveryTimeout;
+	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
+#endif
+	prHifInfo->rSerTimer.expires =
+		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
+
+	INIT_LIST_HEAD(&prHifInfo->rTxCmdQ);
+	INIT_LIST_HEAD(&prHifInfo->rTxDataQ);
+	prHifInfo->u4TxDataQLen = 0;
+#endif
+
 	prHifInfo->fgIsPowerOff = false;
 
 	return true;
+}
+
+void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
+{
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct list_head *prCur, *prNext;
+	struct TX_CMD_REQ *prTxCmdReq;
+	struct TX_DATA_REQ *prTxDataReq;
+
+	del_timer_sync(&prHifInfo->rSerTimer);
+
+	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
+	halWpdmaFreeRing(prGlueInfo);
+
+	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
+		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
+		list_del(prCur);
+		kfree(prTxCmdReq);
+	}
+
+	list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ) {
+		prTxDataReq = list_entry(prCur, struct TX_DATA_REQ, list);
+		list_del(prCur);
+		prHifInfo->u4TxDataQLen--;
+	}
+#endif
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
@@ -2826,31 +2874,5 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 				SPIN_LOCK_UPDATE_WMM_QUOTA);
 		}
 	}
-}
-
-bool halCancelOngoingSer(IN struct ADAPTER *prAdapter)
-{
-	struct GL_HIF_INFO *prHifInfo;
-	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
-
-	if (!prAdapter || prAdapter->rWifiVar.fgEnableSer == FALSE)
-		return false;
-
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
-
-	if (prErrRecoveryCtrl->eErrRecovState == ERR_RECOV_STOP_IDLE &&
-			prErrRecoveryCtrl->u4Status == 0)
-		return false;
-
-	DBGLOG(HAL, INFO, "eErrRecovState: %d, u4Status: %d\n",
-			prErrRecoveryCtrl->eErrRecovState,
-			prErrRecoveryCtrl->u4Status);
-
-	prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
-	prErrRecoveryCtrl->u4Status = 0;
-	nicSerStartTxRx(prAdapter);
-
-	return true;
 }
 
