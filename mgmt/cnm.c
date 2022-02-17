@@ -2068,7 +2068,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	uint8_t ucWdevIndex,
 	u_int8_t fgIsP2pDevice)
 {
-	struct BSS_INFO *prBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByIdx(prAdapter, ucMldGroupIdx);
 
@@ -2169,11 +2169,12 @@ omac_chosed:
 				prBssInfo->eNetworkType,
 				prBssInfo->ucOwnMacIndex,
 				prBssInfo->ucOwnMldId);
+			prOutBssInfo = prBssInfo;
 			break;
 		}
 	}
 
-	return prBssInfo;
+	return prOutBssInfo;
 }
 
 /*----------------------------------------------------------------------------*/
