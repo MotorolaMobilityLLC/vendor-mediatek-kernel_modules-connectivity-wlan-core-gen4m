@@ -502,7 +502,7 @@ static struct net_device_stats *p2pGetStats(IN struct net_device *prDev);
 
 static void p2pSetMulticastList(IN struct net_device *prDev);
 
-static int p2pHardStartXmit(IN struct sk_buff *prSkb,
+static netdev_tx_t p2pHardStartXmit(IN struct sk_buff *prSkb,
 		IN struct net_device *prDev);
 
 static int p2pSetMACAddress(IN struct net_device *prDev, void *addr);
@@ -1957,7 +1957,8 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*---------------------------------------------------------------------------*/
-int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
+netdev_tx_t p2pHardStartXmit(IN struct sk_buff *prSkb,
+		IN struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;

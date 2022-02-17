@@ -903,7 +903,8 @@ static int bowStop(IN struct net_device *prDev)
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*----------------------------------------------------------------------------*/
-static int bowHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
+static netdev_tx_t bowHardStartXmit(IN struct sk_buff *prSkb,
+		IN struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 
@@ -987,7 +988,8 @@ static int bowHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDe
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*----------------------------------------------------------------------------*/
-static int bowHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
+static netdev_tx_t bowHardStartXmit(IN struct sk_buff *prSkb,
+		IN struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
