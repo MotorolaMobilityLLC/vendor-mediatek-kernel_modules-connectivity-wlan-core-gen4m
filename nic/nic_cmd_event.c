@@ -5534,6 +5534,36 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
+			IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
+			IN uint16_t u2WinSize, IN uint16_t u2WinStart)
+{
+	if (!prStaRec) {
+		/* Invalid STA_REC index, discard the event packet */
+		/* ASSERT(0); */
+		DBGLOG(QM, WARN,
+			"QM: RX ADDBA Event for a NULL STA_REC\n");
+		return;
+	}
+#if 0
+	if (!prStaRec->fgIsValid) {
+		/* TODO: (Tehuang) Handle the Host-FW synchronization issue */
+		DBGLOG(QM, WARN,
+			"QM: RX ADDBA Event for an invalid STA_REC\n");
+		/* ASSERT(0); */
+		/* return; */
+	}
+#endif
+	if (!qmAddRxBaEntry(prAdapter, prStaRec->ucIndex,
+				ucTid, u2WinStart, u2WinSize)) {
+		/* FW shall ensure the availabiilty of
+		 * the free-to-use BA entry
+		 */
+		DBGLOG(QM, ERROR, "QM: (Error) qmAddRxBaEntry() failure\n");
+	}
+}
+
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent)

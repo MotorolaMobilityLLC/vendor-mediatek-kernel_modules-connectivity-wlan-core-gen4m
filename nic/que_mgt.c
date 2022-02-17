@@ -5027,73 +5027,24 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 {
 	struct EVENT_RX_ADDBA *prEventRxAddBa;
 	struct STA_RECORD *prStaRec;
-	uint32_t u4Tid;
-	uint32_t u4WinSize;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *prMldSta = NULL;
-#endif
+	uint8_t ucTid;
+	uint16_t u2WinSize;
 
 	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
 
-	prEventRxAddBa = (struct EVENT_RX_ADDBA *) (
-				 prEvent->aucBuffer);
+	prEventRxAddBa = (struct EVENT_RX_ADDBA *)prEvent->aucBuffer;
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventRxAddBa->ucStaRecIdx);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (prMldSta) {
-		uint8_t ucStaIndex = secGetStaIdxByWlanIdx(prAdapter,
-			prMldSta->u2PrimaryMldId);
+	ucTid = (prEventRxAddBa->u2BAParameterSet & BA_PARAM_SET_TID_MASK) >>
+		BA_PARAM_SET_TID_MASK_OFFSET;
 
-		prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
-			ucStaIndex);
-		if (prEventRxAddBa->ucStaRecIdx != ucStaIndex)
-			DBGLOG(QM, INFO,
-				"Change primary wlan_idx from %d to %d\n",
-				prEventRxAddBa->ucStaRecIdx,
-				ucStaIndex);
-	}
-#endif
+	u2WinSize = (prEventRxAddBa->u2BAParameterSet &
+			BA_PARAM_SET_BUFFER_SIZE_MASK) >>
+				BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET;
 
-	if (!prStaRec) {
-		/* Invalid STA_REC index, discard the event packet */
-		/* ASSERT(0); */
-		DBGLOG(QM, INFO,
-			"QM: (Warning) RX ADDBA Event for a NULL STA_REC\n");
-		return;
-	}
-#if 0
-	if (!(prStaRec->fgIsValid)) {
-		/* TODO: (Tehuang) Handle the Host-FW synchronization issue */
-		DBGLOG(QM, WARN,
-			"QM: (Warning) RX ADDBA Event for an invalid STA_REC\n");
-		/* ASSERT(0); */
-		/* return; */
-	}
-#endif
-
-	u4Tid = (((prEventRxAddBa->u2BAParameterSet) &
-		BA_PARAM_SET_TID_MASK) >>
-		BA_PARAM_SET_TID_MASK_OFFSET);
-
-	u4WinSize = (((prEventRxAddBa->u2BAParameterSet) &
-		BA_PARAM_SET_BUFFER_SIZE_MASK) >>
-		BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET);
-
-	if (!qmAddRxBaEntry(prAdapter,
-		prStaRec->ucIndex,
-		(uint8_t) u4Tid,
-		(prEventRxAddBa->u2BAStartSeqCtrl >>
-		OFFSET_BAR_SSC_SN),
-		(uint16_t) u4WinSize)) {
-
-		/* FW shall ensure the availabiilty of
-		 * the free-to-use BA entry
-		 */
-		DBGLOG(QM, ERROR, "QM: (Error) qmAddRxBaEntry() failure\n");
-	}
-
+	nicEventHandleAddBa(prAdapter, prStaRec, ucTid, u2WinSize,
+			prEventRxAddBa->u2BAStartSeqCtrl);
 }
 
 /*----------------------------------------------------------------------------*/

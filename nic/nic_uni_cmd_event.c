@@ -6104,6 +6104,43 @@ void nicUniEventStatusToHost(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 
+/**
+ * nicUniHandleEventRxAddBa() - Handle ADD RX BA unified Event from the FW
+ * @prAdapter: Adapter pointer
+ * @prEvent: The event packet from the FW
+ */
+static void nicUniHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
+		IN struct UNI_EVENT_RX_ADDBA *prEvent)
+{
+	struct STA_RECORD *prStaRec;
+	uint8_t ucStaRecIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldSta = NULL;
+#endif
+
+	DBGLOG(QM, INFO, "QM:Event +RxBaEht\n");
+
+	ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter, prEvent->u2WlanIdx);
+	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaRecIdx);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldSta) {
+		uint8_t ucStaIndex = secGetStaIdxByWlanIdx(prAdapter,
+					prMldSta->u2PrimaryMldId);
+
+		prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaIndex);
+		if (ucStaRecIdx != ucStaIndex)
+			DBGLOG(QM, INFO,
+				"Change primary wlan_idx from %d to %d\n",
+				ucStaRecIdx, ucStaIndex);
+	}
+#endif
+
+	nicEventHandleAddBa(prAdapter, prStaRec, prEvent->ucTid,
+			prEvent->u2WinSize, prEvent->u2BAStartSeqCtrl);
+}
+
 void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	int32_t tags_len;
@@ -6123,19 +6160,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_BA_OFFLOAD_TAG_RX_ADDBA:{
 			struct UNI_EVENT_RX_ADDBA *ba =
 				(struct UNI_EVENT_RX_ADDBA *) tag;
-			struct EVENT_RX_ADDBA legacy;
-
-			legacy.ucStaRecIdx =
-				secGetStaIdxByWlanIdx(ad, ba->u2WlanIdx);
-			legacy.ucDialogToken = ba->ucDialogToken;
-			legacy.u2BATimeoutValue = ba->u2BATimeoutValue;
-			legacy.u2BAStartSeqCtrl = ba->u2BAStartSeqCtrl;
-			legacy.u2BAParameterSet =
-				(ba->ucTid << BA_PARAM_SET_TID_MASK_OFFSET) |
-				(ba->u2WinSize <<
-					BA_PARAM_SET_BUFFER_SIZE_MASK_OFFSET);
-
-			RUN_RX_EVENT_HANDLER(EVENT_ID_RX_ADDBA, &legacy);
+			nicUniHandleEventRxAddBa(ad, ba);
 		}
 			break;
 		case UNI_EVENT_BA_OFFLOAD_TAG_RX_DELBA:{
