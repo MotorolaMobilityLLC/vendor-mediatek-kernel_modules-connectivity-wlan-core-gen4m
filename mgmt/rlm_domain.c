@@ -4757,9 +4757,11 @@ void rlmDomainShowPwrLimitPerCh(char *message,
 					PWR_BUF_LEN - msgOfs,
 					"%d,",
 					*(prcRatePwr + j));
-
 			/*message tail*/
-			msgLimit[msgOfs-1] = '\0';
+			if (msgOfs >= 1)
+				msgLimit[msgOfs-1] = '\0';
+			else
+				msgLimit[0] = '\0';
 
 			DBGLOG(RLM, TRACE, "%s:%s\n", message, msgLimit);
 
