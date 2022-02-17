@@ -177,6 +177,9 @@ enum ENUM_REMOVE_BY_MSDU_TPYE {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if (CFG_TWT_SMART_STA == 1)
+extern struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
