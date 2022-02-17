@@ -518,7 +518,7 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 };
 
 #if CFG_SUPPORT_DBDC
-static struct DBDC_INFO_T g_rDbdcInfo;
+static struct DBDC_INFO_T g_rDbdcInfo = {0};
 #endif
 
 #if CFG_SUPPORT_IDC_CH_SWITCH
