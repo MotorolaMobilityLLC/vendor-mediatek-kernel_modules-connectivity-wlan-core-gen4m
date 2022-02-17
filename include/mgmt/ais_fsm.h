@@ -204,6 +204,8 @@ struct AIS_FSM_INFO {
 
 	u_int8_t fgTryScan;
 
+	u_int8_t fgIsScanning;
+
 	u_int8_t fgIsInfraChannelFinished;
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
