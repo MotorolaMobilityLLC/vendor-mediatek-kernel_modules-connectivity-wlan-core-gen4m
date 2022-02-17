@@ -172,30 +172,8 @@ ifneq ($(CONFIG_NUM_OF_WFDMA_RX_RING),)
     ccflags-y += -DCONFIG_NUM_OF_WFDMA_RX_RING=$(CONFIG_NUM_OF_WFDMA_RX_RING)
 endif
 
-ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
-	ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
-	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
-	ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
-ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
-	ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/wlan/adaptor
-endif
-else
-	ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
-	ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
-	ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
-endif
-
 ifeq ($(WIFI_ENABLE_GCOV), y)
-GCOV_PROFILE := y
+    GCOV_PROFILE := y
 endif
 
 ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
@@ -208,10 +186,45 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+    WMT_SUPPORT := y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
+    WMT_SUPPORT := y
 else
     ccflags-y += -DCFG_MTK_ANDROID_WMT=0
+    WMT_SUPPORT := n
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
+    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+    ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
+    ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump/platform/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/wlan/adaptor
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
+    ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
+    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
+    ifeq ($(WMT_SUPPORT), y)
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
+        ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
+        ifeq ($(CONFIG_MTK_CONN_LTE_IDC_SUPPORT),y)
+            ccflags-y += -DWMT_IDC_SUPPORT=1
+        else
+            ccflags-y += -DWMT_IDC_SUPPORT=0
+        endif
+        ccflags-y += -DMTK_WCN_WMT_STP_EXP_SYMBOL_ABSTRACT
+    endif
 endif
 
 ifeq ($(MTK_ANDROID_EMI), y)
