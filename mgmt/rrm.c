@@ -1567,11 +1567,13 @@ static void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	if (data->ssidLen &&
 		UNEQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
 			     data->ssid, data->ssidLen)) {
-		uint8_t reqSsid[33] = {0};
-		uint8_t bcnSsid[33] = {0};
+		uint8_t reqSsid[ELEM_MAX_LEN_SSID + 1] = {0};
+		uint8_t bcnSsid[ELEM_MAX_LEN_SSID + 1] = {0};
 
-		kalMemCopy(reqSsid, data->ssid,	data->ssidLen);
-		kalMemCopy(bcnSsid, prBssDesc->aucSSID,	prBssDesc->ucSSIDLen);
+		kalMemCopy(reqSsid, data->ssid,
+			min_t(uint8_t, data->ssidLen, ELEM_MAX_LEN_SSID));
+		kalMemCopy(bcnSsid, prBssDesc->aucSSID,
+		       min_t(uint8_t, prBssDesc->ucSSIDLen, ELEM_MAX_LEN_SSID));
 		DBGLOG(RRM, TRACE,
 		       "%pM SSID mismatch, req(%d, %s), bcn(%d, %s)\n",
 		       bssid, data->ssidLen, reqSsid,
