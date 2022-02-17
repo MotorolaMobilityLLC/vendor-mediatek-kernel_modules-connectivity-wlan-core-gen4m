@@ -1099,7 +1099,227 @@ union PFMU_PROFILE_TAG2 {
 	uint32_t au4RawData[7];
 };
 
+struct TXBF_LOW_SEG_ANGEL {
+	/* DATA 0 */
+	uint32_t u2Phi11          : 9;
+	uint32_t ucPsi21          : 7;
+	uint32_t u2Phi21          : 9;
+	uint32_t ucPsi31          : 7;
+
+	/* DATA 1*/
+	uint32_t u2Phi31          : 9;
+	uint32_t ucPsi41          : 7;
+	uint32_t u2Phi41          : 9;
+	uint32_t ucPsi51          : 7;
+
+	/* DATA 2*/
+	uint32_t u2Phi51          : 9;
+	uint32_t ucPsi61          : 7;
+	uint32_t u2Phi61          : 9;
+	uint32_t ucPsi71          : 7;
+
+	/* DATA 3*/
+	uint32_t u2Phi71          : 9;
+	uint32_t ucPsi81          : 7;
+	uint32_t u2Phi22          : 9;
+	uint32_t ucPsi32          : 7;
+
+	/* DATA 4*/
+	uint32_t u2Phi32          : 9;
+	uint32_t ucPsi42          : 7;
+	uint32_t u2Phi42          : 9;
+	uint32_t ucPsi52          : 7;
+
+	/* DATA 5*/
+	uint32_t u2Phi52          : 9;
+	uint32_t ucPsi62          : 7;
+	uint32_t u2Phi62          : 9;
+	uint32_t ucPsi72          : 7;
+
+	/* DATA 6*/
+	uint32_t u2Phi72          : 9;
+	uint32_t ucPsi82          : 7;
+	uint32_t u2Phi33          : 9;
+	uint32_t ucPsi43          : 7;
+
+	/* DATA 7*/
+	uint32_t u2Phi43          : 9;
+	uint32_t ucPsi53          : 7;
+	uint32_t u2Phi53          : 9;
+	uint32_t ucPsi63          : 7;
+
+	/* DATA 8*/
+	uint32_t u2Phi63          : 9;
+	uint32_t ucPsi73          : 7;
+	uint32_t u2Phi73          : 9;
+	uint32_t ucPsi83          : 7;
+
+	/* DATA 9*/
+	uint32_t u2Phi44          : 9;
+	uint32_t ucPsi54          : 7;
+	uint32_t u2Phi54          : 9;
+	uint32_t ucPsi64          : 7;
+
+	/* DATA 10*/
+	uint32_t u2Phi64          : 9;
+	uint32_t ucPsi74          : 7;
+	uint32_t u2Phi74          : 9;
+	uint32_t ucPsi84          : 7;
+
+	/* DATA 11*/
+	uint32_t u2Phi55          : 9;
+	uint32_t ucPsi65          : 7;
+	uint32_t u2Phi65          : 9;
+	uint32_t ucPsi75          : 7;
+
+	/* DATA 12*/
+	uint32_t u2Phi75          : 9;
+	uint32_t ucPsi85          : 7;
+	uint32_t u2Phi66          : 9;
+	uint32_t ucPsi76          : 7;
+
+	/* DATA 13*/
+	uint32_t u2Phi76          : 9;
+	uint32_t ucPsi86          : 7;
+	uint32_t u2Phi77          : 9;
+	uint32_t ucPsi87          : 7;
+};
+
+struct TXBF_HIGH_SEG_ANGEL {
+	/* DATA 14 */
+	uint32_t u2Phi11          : 9;
+	uint32_t ucPsi21          : 7;
+	uint32_t u2Phi21          : 9;
+	uint32_t ucPsi31          : 7;
+
+	/* DATA 15*/
+	uint32_t u2Phi31          : 9;
+	uint32_t ucPsi41          : 7;
+	uint32_t u2Phi41          : 9;
+	uint32_t ucPsi51          : 7;
+
+	/* DATA 16*/
+	uint32_t u2Phi51          : 9;
+	uint32_t ucPsi61          : 7;
+	uint32_t u2Phi61          : 9;
+	uint32_t ucPsi71          : 7;
+
+	/* DATA 17*/
+	uint32_t u2Phi71          : 9;
+	uint32_t ucPsi81          : 7;
+	uint32_t u2Phi22          : 9;
+	uint32_t ucPsi32          : 7;
+
+	/* DATA 18*/
+	uint32_t u2Phi32          : 9;
+	uint32_t ucPsi42          : 7;
+	uint32_t u2Phi42          : 9;
+	uint32_t ucPsi52          : 7;
+
+	/* DATA 19*/
+	uint32_t u2Phi52          : 9;
+	uint32_t ucPsi62          : 7;
+	uint32_t u2Phi62          : 9;
+	uint32_t ucPsi72          : 7;
+
+	/* DATA 20*/
+	uint32_t u2Phi72          : 9;
+	uint32_t ucPsi82          : 7;
+	uint32_t u2Phi33          : 9;
+	uint32_t ucPsi43          : 7;
+
+	/* DATA 21*/
+	uint32_t u2Phi43          : 9;
+	uint32_t ucPsi53          : 7;
+	uint32_t u2Phi53          : 9;
+	uint32_t ucPsi63          : 7;
+
+	/* DATA 22*/
+	uint32_t u2Phi63          : 9;
+	uint32_t ucPsi73          : 7;
+	uint32_t u2Phi73          : 9;
+	uint32_t ucPsi83          : 7;
+
+	/* DATA 23*/
+	uint32_t u2Phi44          : 9;
+	uint32_t ucPsi54          : 7;
+	uint32_t u2Phi54          : 9;
+	uint32_t ucPsi64          : 7;
+
+	/* DATA 24*/
+	uint32_t u2Phi64          : 9;
+	uint32_t ucPsi74          : 7;
+	uint32_t u2Phi74          : 9;
+	uint32_t ucPsi84          : 7;
+
+	/* DATA 25*/
+	uint32_t u2Phi55          : 9;
+	uint32_t ucPsi65          : 7;
+	uint32_t u2Phi65          : 9;
+	uint32_t ucPsi75          : 7;
+
+	/* DATA 26*/
+	uint32_t u2Phi75          : 9;
+	uint32_t ucPsi85          : 7;
+	uint32_t u2Phi66          : 9;
+	uint32_t ucPsi76          : 7;
+
+	/* DATA 27*/
+	uint32_t u2Phi76          : 9;
+	uint32_t ucPsi86          : 7;
+	uint32_t u2Phi77          : 9;
+	uint32_t ucPsi87          : 7;
+};
+
+struct TXBF_BFEE_LOW_SEG_SNR {
+	/* DATA 28 */
+	uint32_t u2dSNR00        : 10;
+	uint32_t u2dSNR01        : 10;
+	uint32_t u2dSNR02        : 10;
+	uint32_t u2dSNR03        : 2;
+
+	/* DATA 29 */
+	uint32_t u2dSNR03_MSB    : 8;
+	uint32_t u2dSNR04        : 10;
+	uint32_t u2dSNR05        : 10;
+	uint32_t u2dSNR06        : 4;
+
+	/* DATA 30 */
+	uint32_t u2dSNR06_MSB    : 6;
+	uint32_t u2dSNR07        : 10;
+	uint32_t reserved        : 16;
+};
+
+struct TXBF_BFEE_HIGH_SEG_SNR {
+	/* DATA 30 */
+	uint32_t reserved        : 16;
+	uint32_t u2dSNR00        : 10;
+	uint32_t u2dSNR01        : 6;
+
+	/* DATA 31 */
+	uint32_t u2dSNR01_MSB    : 4;
+	uint32_t u2dSNR02        : 10;
+	uint32_t u2dSNR03        : 10;
+	uint32_t u2dSNR04        : 8;
+
+	/* DATA 32 */
+	uint32_t u2dSNR04_MSB    : 2;
+	uint32_t u2dSNR05        : 10;
+	uint32_t u2dSNR06        : 10;
+	uint32_t u2dSNR07        : 10;
+};
+
 union PFMU_DATA {
+	struct {
+		struct TXBF_LOW_SEG_ANGEL rLowSegAng;
+		struct TXBF_HIGH_SEG_ANGEL rHighSegAng;
+		struct TXBF_BFEE_LOW_SEG_SNR rLowSegSnr;
+		struct TXBF_BFEE_HIGH_SEG_SNR rHighSegSnr;
+	} rField;
+	uint32_t au4RawData[33];
+};
+
+union ORIGIN_PFMU_DATA {
 	struct {
 		uint32_t u2Phi11: 9;
 		uint32_t ucPsi21: 7;
@@ -1155,7 +1375,7 @@ struct PROFILE_TAG_READ {
 	uint8_t ucTxBfCategory;
 	uint8_t ucProfileIdx;
 	uint8_t fgBfer;
-	uint8_t ucRsv;
+	uint8_t ucBandIdx;
 };
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
@@ -1178,10 +1398,10 @@ struct PROFILE_TAG_WRITE {
 struct PROFILE_DATA_READ {
 	uint8_t ucTxBfCategory;
 	uint8_t ucPfmuIdx;
-	u_int8_t fgBFer;
-	uint8_t ucReserved[3];
-	uint8_t ucSubCarrIdxLsb;
-	uint8_t ucSubCarrIdxMsb;
+	uint8_t fgBFer;
+	uint8_t ucBandIdx;
+	uint8_t ucReserved[2];
+	uint16_t u2SubCarIdx;
 };
 
 struct PROFILE_DATA_WRITE {
@@ -1189,7 +1409,7 @@ struct PROFILE_DATA_WRITE {
 	uint8_t ucPfmuIdx;
 	uint8_t u2SubCarrIdxLsb;
 	uint8_t u2SubCarrIdxMsb;
-	union PFMU_DATA rTxBfPfmuData;
+	union ORIGIN_PFMU_DATA rTxBfPfmuData;
 };
 
 struct PROFILE_PN_READ {

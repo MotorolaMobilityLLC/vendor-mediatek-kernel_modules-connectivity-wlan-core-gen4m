@@ -3456,6 +3456,7 @@ int32_t TxBfProfileTagRead(struct net_device *prNetDev,
 		BF_PFMU_TAG_READ;
 	rTxBfActionInfo.rProfileTagRead.ucProfileIdx = profileIdx;
 	rTxBfActionInfo.rProfileTagRead.fgBfer = fgBFer;
+	rTxBfActionInfo.rProfileTagRead.ucBandIdx = ENUM_BAND_0;
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
 			    sizeof(rTxBfActionInfo),
@@ -3777,10 +3778,9 @@ int32_t TxBfProfileDataRead(struct net_device *prNetDev,
 		BF_PROFILE_READ;
 	rTxBfActionInfo.rProfileDataRead.ucPfmuIdx = profileIdx;
 	rTxBfActionInfo.rProfileDataRead.fgBFer = fgBFer;
-	rTxBfActionInfo.rProfileDataRead.ucSubCarrIdxMsb =
-		ucSubCarrIdxMsb;
-	rTxBfActionInfo.rProfileDataRead.ucSubCarrIdxLsb =
-		ucSubCarrIdxLsb;
+	rTxBfActionInfo.rProfileDataRead.u2SubCarIdx =
+		CPU_TO_LE16(ucSubCarrIdxMsb << 8 | ucSubCarrIdxLsb);
+	rTxBfActionInfo.rProfileDataRead.ucBandIdx = ENUM_BAND_0;
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
 			    sizeof(rTxBfActionInfo),

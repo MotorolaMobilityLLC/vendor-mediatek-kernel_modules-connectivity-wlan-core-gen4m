@@ -192,6 +192,13 @@ ccflags-y += -DCFG_SUPPORT_CMD_OVER_WFDMA=1
 ccflags-y += -DQM_CMD_RESERVED_THRESHOLD=1
 CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
+# unless patch wifi 6G setting in kernel before kernel version 5.4,
+# it will build fail when enable wifi 6G flag
+ifeq ($(shell expr $(VERSION).$(PATCHLEVEL) \>= 5.4),1)
+CONFIG_MTK_WIFI_6G_SUPPORT=y
+else
+CONFIG_MTK_WIFI_6G_SUPPORT=n
+endif
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SMART_STA=n
 CONFIG_MTK_WIFI_TWT_HOTSPOT_SUPPORT=n
