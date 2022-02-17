@@ -1818,6 +1818,9 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 		uint16_t u2Tag12; /* Awake duration */
 		uint16_t u2Len12;
 		uint64_t u8HwMacAwakeDuration;
+		uint16_t u2Tag13; /* Scan Flag */
+		uint16_t u2Len13;
+		uint16_t u2FlagScanning;
 	} __packed outputData = {
 		.u2Tag01 = 1,  /* tag: 1, cur tx rate */
 		.u2Len01 = 4,  /* len: 4, bytes */
@@ -1842,7 +1845,9 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 		.u2Tag11 = 11,
 		.u2Len11 = 8,
 		.u2Tag12 = 12, /* tag: 12, Hw Mac Awake Duration */
-		.u2Len12 = 8   /* len: 8, bytes */
+		.u2Len12 = 8,  /* len: 8, bytes */
+		.u2Tag13 = 13, /* tag: 13, Scanning Flag */
+		.u2Len13 = 2,  /* len: 2, bytes */
 	};
 	struct PARAM_GET_LINK_QUALITY_INFO rParam;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
@@ -1887,6 +1892,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	outputData.u8RxErrCount = rLinkQualityInfo.u8RxErrCount;
 	outputData.u8IdleSlotCount = rLinkQualityInfo.u8IdleSlotCount;
 	outputData.u8HwMacAwakeDuration = rLinkQualityInfo.u8HwMacAwakeDuration;
+	outputData.u2FlagScanning = rLinkQualityInfo.u2FlagScanning;
 
 	DBGLOG(REQ, INFO,
 	       "LQ: Tx(rate:%u, total:%u, Rty:%lu, fail:%lu, RTSF:%lu, ACKF:%lu), Rx(rate:%u, total:%u, dup:%u, error:%lu), Idle:%lu AwakeDur:%lu\n",
