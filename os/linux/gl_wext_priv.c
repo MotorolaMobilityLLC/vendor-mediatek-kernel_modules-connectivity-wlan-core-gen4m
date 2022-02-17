@@ -2725,6 +2725,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #endif
 
 #define CMD_EFUSE		"EFUSE"
+#define CMD_CCCR		"CCCR"
 
 /* miracast related definition */
 #define MIRACAST_MODE_OFF	0
@@ -11777,6 +11778,127 @@ efuse_op_invalid:
 	return (int32_t)u4Offset;
 }
 
+#if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)
+static int priv_driver_cccr_ops(IN struct net_device *prNetDev,
+				 IN char *pcCommand, IN int i4TotalLen)
+{
+	enum CCCR_OP_MODE {
+		CCCR_READ,
+		CCCR_WRITE,
+		CCCR_FREE,
+		CCCR_INVALID,
+	};
+	uint8_t ucOpMode = CCCR_INVALID;
+	uint8_t ucOpChar;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int32_t i4Ret;
+	int32_t i4Parameter;
+	uint32_t u4CCCR_addr = 0;
+	uint8_t ucCCCR_value = 0;
+
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4Offset = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	struct sdio_func *func;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+
+	if(!IS_SDIO_INF(prGlueInfo)){
+		u4Offset += snprintf(pcCommand + u4Offset,
+				     i4TotalLen - u4Offset,
+				     "Not SDIO bus(%d)\n",
+				     prGlueInfo->u4InfType);
+		return (int32_t)u4Offset;
+	}
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	/* Sanity check */
+	if (i4Argc < 2)
+		goto cccr_op_invalid;
+
+	ucOpChar = (uint8_t)apcArgv[1][0];
+	if ((i4Argc == 3) && (ucOpChar == 'r' || ucOpChar == 'R'))
+		ucOpMode = CCCR_READ;
+	else if ((i4Argc == 4) && (ucOpChar == 'w' || ucOpChar == 'W'))
+		ucOpMode = CCCR_WRITE;
+
+	/* Print out help if input format is wrong */
+	if (ucOpMode == CCCR_INVALID)
+		goto cccr_op_invalid;
+
+	/* convert address */
+	if (ucOpMode == CCCR_READ || ucOpMode == CCCR_WRITE) {
+		i4Ret = kalkStrtos32(apcArgv[2], 16, &i4Parameter);
+		/* Valid address 0x0~0xFF */
+		u4CCCR_addr = (uint32_t)(i4Parameter & 0xFF);
+	}
+
+	/* convert value */
+	if (ucOpMode == CCCR_WRITE) {
+		i4Ret = kalkStrtos32(apcArgv[3], 16, &i4Parameter);
+		ucCCCR_value = (uint8_t)i4Parameter;
+	}
+
+	/* Set SDIO host reference */
+	func = prGlueInfo->rHifInfo.func;
+
+	/* Start operation */
+	if (ucOpMode == CCCR_READ) {
+		sdio_claim_host(func);
+		ucCCCR_value = sdio_f0_readb(func, u4CCCR_addr, &rStatus);
+		sdio_release_host(func);
+
+		if (rStatus) /* Fail case */
+			u4Offset += snprintf(pcCommand + u4Offset,
+					     i4TotalLen - u4Offset,
+					     "Read Fail 0x%X (ret=%d)\n",
+					     u4CCCR_addr, rStatus);
+		else
+			u4Offset += snprintf(pcCommand + u4Offset,
+					     i4TotalLen - u4Offset,
+					     "Read success 0x%X = 0x%X\n",
+					     u4CCCR_addr, ucCCCR_value);
+	} else if (ucOpMode == CCCR_WRITE) {
+		uint32_t quirks_bak;
+		sdio_claim_host(func);
+		/* Enable capability to write CCCR */
+		quirks_bak = func->card->quirks;
+		func->card->quirks |= MMC_QUIRK_LENIENT_FN0;
+		/* Write CCCR into card */
+		sdio_f0_writeb(func, ucCCCR_value, u4CCCR_addr, &rStatus);
+		func->card->quirks = quirks_bak;
+		sdio_release_host(func);
+
+		if (rStatus) /* Fail case */
+			u4Offset += snprintf(pcCommand + u4Offset,
+					     i4TotalLen - u4Offset,
+					     "Write Fail 0x%X (ret=%d)\n",
+					     u4CCCR_addr, rStatus);
+		else
+			u4Offset += snprintf(pcCommand + u4Offset,
+					     i4TotalLen - u4Offset,
+					     "Write success 0x%X = 0x%X\n",
+					     u4CCCR_addr, ucCCCR_value);
+	}
+
+	return (int32_t)u4Offset;
+
+cccr_op_invalid:
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\nHelp menu\n");
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\tRead:\t\"cccr read addr_hex\"\n");
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\tWrite:\t\"cccr write addr_hex val_hex\"\n");
+	return (int32_t)u4Offset;
+}
+#endif /* _HIF_SDIO && (MTK_WCN_HIF_SDIO == 0) */
+
 #if CFG_SUPPORT_ADVANCE_CONTROL
 static int priv_driver_set_noise(IN struct net_device *prNetDev,
 				 IN char *pcCommand, IN int i4TotalLen)
@@ -12860,6 +12982,12 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			 sizeof(CMD_EFUSE)-1) == 0)
 			i4BytesWritten = priv_driver_efuse_ops(prNetDev,
 							pcCommand, i4TotalLen);
+#if defined(_HIF_SDIO) && (MTK_WCN_HIF_SDIO == 0)
+		else if (strnicmp(pcCommand, CMD_CCCR,
+			 strlen(CMD_CCCR)) == 0)
+			i4BytesWritten = priv_driver_cccr_ops(prNetDev,
+							pcCommand, i4TotalLen);
+#endif /* _HIF_SDIO && (MTK_WCN_HIF_SDIO == 0) */
 #if CFG_SUPPORT_ADVANCE_CONTROL
 		else if (strnicmp(pcCommand, CMD_SET_NOISE,
 			 strlen(CMD_SET_NOISE)) == 0)
