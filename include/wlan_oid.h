@@ -1655,6 +1655,7 @@ struct PARAM_802_11_STATISTICS_STRUCT {
 	union LARGE_INTEGER rFCSErrorCount;
 	union LARGE_INTEGER rMdrdyCnt;
 	union LARGE_INTEGER rChnlIdleCnt;
+	union LARGE_INTEGER rHwAwakeDuration;
 	uint32_t u4RstReason;
 	uint64_t u8RstTime;
 	uint32_t u4RoamFailCnt;
