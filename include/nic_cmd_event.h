@@ -2746,7 +2746,22 @@ typedef struct _EVENT_STA_STATISTICS_T {
 	MIB_INFO_STAT_T rMibInfo[ENUM_BAND_NUM];
 	BOOLEAN fgIsForceTxStream;
 	BOOLEAN fgIsForceSeOff;
-	UINT_8 aucReserved[21];
+
+	UINT_16 u2RaRunningCnt;
+	UINT_8 ucRaStatus;
+	UINT_8 ucMaxAmpduFactor;
+	UINT_8 aucTxQuality[MAX_TX_QUALITY_INDEX];
+	UINT_8 ucTxRateUpPenalty;
+	UINT_8 ucLowTrafficMode;
+	UINT_8 ucLowTrafficCount;
+	UINT_8 ucLowTrafficDashBoard;
+	UINT_8 ucDynamicSGIState;
+	UINT_8 ucDynamicSGIScore;
+	UINT_8 ucDynamicBWState;
+	UINT_8 ucDynamicGband256QAMState;
+	UINT_8 ucVhtNonSpRateState;
+
+	UINT_8 aucReserved[4];
 } EVENT_STA_STATISTICS_T, *P_EVENT_STA_STATISTICS_T;
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
