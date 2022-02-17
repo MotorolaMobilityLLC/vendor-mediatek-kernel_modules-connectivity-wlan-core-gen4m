@@ -3979,7 +3979,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
 			for (i = 0; i < KAL_AIS_NUM; i++)
-				gprWdev[i]->netdev->features =
+				gprWdev[i]->netdev->features |=
 					NETIF_F_IP_CSUM |
 					NETIF_F_IPV6_CSUM |
 					NETIF_F_RXCSUM;
