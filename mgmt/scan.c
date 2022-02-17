@@ -1843,7 +1843,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			uint8_t ucSpatial = 0;
 			uint8_t i = 0;
 			/* end Support AP Selection */
-
+			if (IE_LEN(pucIE) != (sizeof(struct IE_HT_CAP) - 2)) {
+				DBGLOG(SCN, WARN,
+					"HT_CAP wrong length(%d)->(%d)\n",
+					(sizeof(struct IE_HT_CAP) - 2),
+					IE_LEN(prHtCap));
+				break;
+			}
 			prBssDesc->fgIsHTPresent = TRUE;
 
 			/* Support AP Selection */
@@ -1893,6 +1899,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		{
 			struct IE_BSS_LOAD *prBssLoad =
 				(struct IE_BSS_LOAD *)pucIE;
+			if (IE_LEN(prBssLoad) !=
+				(sizeof(struct IE_BSS_LOAD) - 2)) {
+				DBGLOG(SCN, WARN,
+					"HE_CAP IE_LEN err(%d)->(%d)!\n",
+					(sizeof(struct IE_BSS_LOAD) - 2),
+					IE_LEN(prBssLoad));
+				break;
+			}
 
 			prBssDesc->u2StaCnt = prBssLoad->u2StaCnt;
 			prBssDesc->ucChnlUtilization =
@@ -1976,6 +1990,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HE_ER == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
 					prHeCap = (struct _IE_HE_CAP_T *) pucIE;
+					if (IE_LEN(prHeCap) !=
+					    (sizeof(struct _IE_HE_CAP_T) - 2)) {
+						DBGLOG(SCN, WARN,
+							"HE_CAP IE_LEN err!\n");
+						break;
+					}
 					prBssDesc->fgIsHEPresent = TRUE;
 					prBssDesc->ucDCMMaxConRx =
 					HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
@@ -1989,6 +2009,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
 					prHeOp = (struct _IE_HE_OP_T *) pucIE;
+					if (IE_LEN(prHeOp) !=
+					    (sizeof(struct _IE_HE_OP_T) - 2)) {
+						DBGLOG(SCN, WARN,
+							"HE_OP IE_LEN err!\n");
+						break;
+					}
 					prBssDesc->fgIsERSUDisable =
 					HE_IS_ER_SU_DISABLE(
 						prHeOp->ucHeOpParams);
@@ -2018,11 +2044,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		case ELEM_ID_RRM_ENABLED_CAP:
-			/* RRM Capability IE is always in length 5 bytes */
-			kalMemZero(prBssDesc->aucRrmCap,
-				   sizeof(prBssDesc->aucRrmCap));
-			kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
-				   sizeof(prBssDesc->aucRrmCap));
+			if (IE_LEN(pucIE) == 5) {
+				/* RRM Capability IE is always 5 bytes */
+				kalMemZero(prBssDesc->aucRrmCap,
+					   sizeof(prBssDesc->aucRrmCap));
+				kalMemCopy(prBssDesc->aucRrmCap, pucIE + 2,
+					   sizeof(prBssDesc->aucRrmCap));
+			}
 			break;
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 		case ELEM_ID_MBSSID:
@@ -2163,7 +2191,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		prBssDesc->eSco = CHNL_EXT_SCN;
 	}
 #if CFG_SUPPORT_802_11K
-	if (prCountryIE) {
+	if (prCountryIE && prCountryIE->ucLength ==
+			(sizeof(struct IE_COUNTRY) - 2)) {
 		uint8_t ucRemainLen = prCountryIE->ucLength - 3;
 		struct COUNTRY_INFO_SUBBAND_TRIPLET *prSubBand =
 			&prCountryIE->arCountryStr[0];
@@ -4177,6 +4206,15 @@ void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
 	uint8_t j = 0;
 
 	prVhtCap = (struct IE_VHT_CAP *) pucIE;
+	/* Error handling */
+	if (IE_LEN(prVhtCap) != (sizeof(struct IE_VHT_CAP) - 2)) {
+		DBGLOG(SCN, WARN,
+			"VhtCap wrong length!(%d)->(%d)\n",
+			(sizeof(struct IE_VHT_CAP) - 2),
+			IE_LEN(prVhtCap));
+		return;
+	}
+
 	u2TxMcsSet = prVhtCap->rVhtSupportedMcsSet.u2TxMcsMap;
 	prBssDesc->fgIsVHTPresent = TRUE;
 #if CFG_SUPPORT_BFEE
