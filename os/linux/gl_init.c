@@ -1382,6 +1382,25 @@ void wlanDebugInit(void)
 
 }
 
+#if CFG_SUPPORT_RX_GRO
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief A method of callback function for napi struct
+ *
+ * It just return false because driver indicate Rx packet directly.
+ *
+ * \param[in] napi      Pointer to struct napi_struct.
+ * \param[in] budget    Polling time interval.
+ *
+ * \return false
+ */
+/*----------------------------------------------------------------------------*/
+static int kal_napi_poll(struct napi_struct *napi, int budget)
+{
+	return 0;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief A function for prDev->init
@@ -1409,6 +1428,18 @@ static int wlanInit(struct net_device *prDev)
 	/* 20161024 init wow port setting */
 #if CFG_WOW_SUPPORT
 	kalWowInit(prGlueInfo);
+#endif
+
+#if CFG_SUPPORT_RX_GRO
+	/* Register GRO function to kernel */
+	prDev->features |= NETIF_F_GRO;
+	prDev->hw_features |= NETIF_F_GRO;
+
+	prGlueInfo->napi.dev = prDev;
+	spin_lock_init(&prGlueInfo->napi_spinlock);
+	netif_napi_add(prGlueInfo->napi.dev,
+		&prGlueInfo->napi, kal_napi_poll, 64);
+	DBGLOG(INIT, INFO, "netif_napi_add success\n");
 #endif
 
 	return 0;		/* success */
