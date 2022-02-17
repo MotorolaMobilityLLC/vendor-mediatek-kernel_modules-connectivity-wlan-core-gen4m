@@ -1283,6 +1283,18 @@
 #define CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL 0
 #endif
 
+/*------------------------------------------------------------------------------
+ * CONNINFRA SUPPORT (Without WMT)
+ * CFG_SUPPORT_CONNINFRA: 1 : conninfra driver exist
+ *                        0 : conninfra driver doesn't exist
+ * We replace WMT driver with CONNINFRA driver in mobile project
+ * after connac2.0.
+ * CFG_MTK_ANDROID_WMT is used to separate between mobile project and others.
+ * Although WMT driver is removed, CFG_MTK_ANDROID_WMT still need to be set 1
+ * for some code flow in mobile gen4m.
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_CONNINFRA 0
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
