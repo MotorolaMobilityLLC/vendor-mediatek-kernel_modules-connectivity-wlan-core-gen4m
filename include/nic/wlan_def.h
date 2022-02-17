@@ -740,18 +740,26 @@ enum ENUM_CH_REQ_TYPE {
 	CH_REQ_TYPE_NUM
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
 enum ENUM_MBMC_BN {
 	ENUM_BAND_0,
 	ENUM_BAND_1,
 	ENUM_BAND_NUM,
-#if (CFG_SUPPORT_CONNAC3X == 0)
 	ENUM_BAND_ALL,
 	ENUM_BAND_AUTO,	/*Auto select by A/G band, Driver only*/
+};
 #else
+enum ENUM_MBMC_BN {
+	ENUM_BAND_0 = 0,
+	ENUM_BAND_1 = 1,
+	ENUM_BAND_2 = 2,
+	ENUM_BAND_3 = 3,
+	ENUM_BAND_LIT = 3,
+	ENUM_BAND_NUM = CONFIG_BAND_NUM,
 	ENUM_BAND_ALL = 0xFE,
 	ENUM_BAND_AUTO = 0xFF,
-#endif
 };
+#endif
 
 /* Provide supported channel list to other components in array format */
 struct RF_CHANNEL_INFO {
