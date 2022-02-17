@@ -1837,7 +1837,7 @@ __priv_set_struct(IN struct net_device *prNetDev,
 			char *pCommand = NULL;
 
 			u4CmdLen = prIwReqData->data.length;
-			if (u4CmdLen > CMD_OID_BUF_LENGTH)
+			if (u4CmdLen >= CMD_OID_BUF_LENGTH)
 				return -EINVAL;
 			if (copy_from_user(&aucOidBuf[0],
 					   prIwReqData->data.pointer,
@@ -1845,7 +1845,7 @@ __priv_set_struct(IN struct net_device *prNetDev,
 				status = -EFAULT;
 				break;
 			}
-			aucOidBuf[u4CmdLen - 1] = 0;
+			aucOidBuf[u4CmdLen] = 0;
 			if (strlen(aucOidBuf) <= 0) {
 				status = -EFAULT;
 				break;
