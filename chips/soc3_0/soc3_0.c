@@ -1758,8 +1758,7 @@ void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter)
 	soc3_0_DumpHostCr(prAdapter);
 }
 
-int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
-	uint8_t ucWfResetEnable)
+int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 {
 	int ret = 1;
 	int conninfra_read_ret = 0;
@@ -1768,6 +1767,7 @@ int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
 	uint32_t u4Cr = 0;
 	uint32_t u4Value = 0;
 	uint32_t RegValue = 0;
+	struct ADAPTER *prAdapter = (struct ADAPTER *) adapter;
 
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
