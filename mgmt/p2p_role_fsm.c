@@ -1785,6 +1785,120 @@ VOID p2pRoleFsmRunEventDissolve(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 
 /*----------------------------------------------------------------------------*/
 /*!
+* @	This routine update the current MAC table based on the current ACL.
+*	If ACL change causing an associated STA become un-authorized. This STA
+*	will be kicked out immediately.
+*
+* @param[in] prAdapter          Pointer to the Adapter structure.
+* @param[in] ucBssIdx            Bss index.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID p2pRoleUpdateACLEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
+{
+	BOOLEAN drop = FALSE, Matched = FALSE;
+	INT_32 i = 0, i4Ret = 0;
+	P_LINK_T prClientList;
+	P_STA_RECORD_T prCurrStaRec;
+	P_BSS_INFO_T prP2pBssInfo;
+
+	if ((!prAdapter) || (ucBssIdx > HW_BSSID_NUM))
+		return;
+	DBGLOG(P2P, TRACE, "Update ACL Entry ucBssIdx = %d\n", ucBssIdx);
+	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	/* ACL is disabled. Do nothing about the MAC table. */
+	if (prP2pBssInfo->rACL.ePolicy == 0)
+		return;
+
+	prClientList = &prP2pBssInfo->rStaRecOfClientList;
+
+	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
+		if (!prCurrStaRec) {
+			DBGLOG(P2P, WARN, "NULL STA_REC ptr in BSS client list\n");
+			bssDumpClientList(prAdapter, prP2pBssInfo);
+			break;
+		}
+
+		Matched = FALSE;
+		drop = FALSE;
+		for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
+			if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
+				Matched = TRUE;
+				break;
+			}
+		}
+
+		if ((Matched == FALSE) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)) {
+			drop = TRUE;
+			DBGLOG(P2P, WARN, "the client is not on accept ACL and kick out it.\n");
+		} else if ((Matched == TRUE) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DENY)) {
+			drop = TRUE;
+			DBGLOG(P2P, WARN, "the client is on deny ACL and kick out it.\n");
+		} else {
+			DBGLOG(P2P, TRACE, "the client is authorized.\n");
+			continue;
+		}
+
+		if (drop == TRUE) {
+			DBGLOG(P2P, TRACE, "ucBssIdx=%d, ACL Policy=%d\n", ucBssIdx, prP2pBssInfo->rACL.ePolicy);
+
+			i4Ret = assocSendDisAssocFrame(prAdapter, prCurrStaRec, STATUS_CODE_REQ_DECLINED);
+			if (!i4Ret)
+				DBGLOG(P2P, WARN, "Send DISASSOC to [" MACSTR "], Reason = %d\n",
+					MAC2STR(prCurrStaRec->aucMacAddr), STATUS_CODE_REQ_DECLINED);
+			LINK_REMOVE_KNOWN_ENTRY(prClientList, &prCurrStaRec->rLinkEntry);
+		}
+	}
+} /* p2pRoleUpdateACLEntry */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @ Check if the specified STA pass the Access Control List inspection.
+*	If fails to pass the checking, then no authentication or association is allowed.
+*
+* @param[in] prAdapter          Pointer to the Adapter structure.
+* @param[in] pMacAddr           Pointer to the mac address.
+* @param[in] ucBssIdx            Bss index.
+*
+* @return TRUE - pass ACL inspection, FALSE - ACL inspection fail
+*/
+/*----------------------------------------------------------------------------*/
+BOOL p2pRoleProcessACLInspection(IN P_ADAPTER_T prAdapter, IN PUCHAR pMacAddr, IN UINT_8 ucBssIdx)
+{
+	BOOLEAN bPassACL = TRUE;
+	INT_32 i = 0;
+	P_BSS_INFO_T prP2pBssInfo;
+
+	if ((!prAdapter) || (!pMacAddr) || (ucBssIdx > HW_BSSID_NUM))
+		return FALSE;
+
+	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
+
+	if (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DISABLE)
+		return TRUE;
+
+	if (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)
+		bPassACL = FALSE;
+	else
+		bPassACL = TRUE;
+
+	for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
+		if (EQUAL_MAC_ADDR(pMacAddr, prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
+			bPassACL = !bPassACL;
+			break;
+		}
+	}
+
+	if (bPassACL == FALSE)
+		DBGLOG(P2P, WARN, "this mac [" MACSTR "] is fail to pass ACL inspection.\n", MAC2STR(pMacAddr));
+
+	return bPassACL;
+} /* p2pRoleProcessACLInspection */
+
+/*----------------------------------------------------------------------------*/
+/*!
 * @brief This function will indicate the Event of Successful Completion of AAA Module.
 *
 * @param[in] prAdapter          Pointer to the Adapter structure.
@@ -1807,6 +1921,7 @@ p2pRoleFsmRunEventAAAComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaR
 		bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
 
 		if (prP2pBssInfo->rStaRecOfClientList.u4NumElem >= P2P_MAXIMUM_CLIENT_COUNT
+			|| !p2pRoleProcessACLInspection(prAdapter, prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 			|| kalP2PMaxClients(prAdapter->prGlueInfo, prP2pBssInfo->rStaRecOfClientList.u4NumElem,
 			(UINT_8) prP2pBssInfo->u4PrivateData)

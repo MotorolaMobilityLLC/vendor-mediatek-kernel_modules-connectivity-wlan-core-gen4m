@@ -603,10 +603,11 @@ typedef struct _MONITOR_RADIOTAP_T {
 #define kalSnprintf(buf, size, fmt, ...)            snprintf(buf, size, fmt, ##__VA_ARGS__)
 #define kalSprintf(buf, fmt, ...)                   sprintf(buf, fmt, __VA_ARGS__)
 /* remove for AOSP */
-/* #define kalSScanf(buf, fmt, ...)                      sscanf(buf, fmt, __VA_ARGS__) */
+/* #define kalSScanf(buf, fmt, ...)                    sscanf(buf, fmt, __VA_ARGS__) */
 #define kalStrStr(ct, cs)                           strstr(ct, cs)
 #define kalStrSep(s, ct)                            strsep(s, ct)
 #define kalStrCat(dest, src)                        strcat(dest, src)
+#define kalIsXdigit(c)                              isxdigit(c)
 
 /* defined for wince sdio driver only */
 #if defined(_HIF_SDIO)
