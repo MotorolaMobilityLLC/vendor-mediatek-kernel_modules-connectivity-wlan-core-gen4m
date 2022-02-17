@@ -275,7 +275,8 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 		}
 
 		/* Response packet is not ready */
-		kalUdelay(50);
+		/* use sleep waiting instead of busy waiting */
+		kalUsleep_range(50, 100);
 	} while (TRUE);
 
 	return WLAN_STATUS_SUCCESS;
