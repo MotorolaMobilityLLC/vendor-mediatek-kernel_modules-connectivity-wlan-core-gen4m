@@ -256,6 +256,8 @@
  * MACRO for WTBL INFO GET
  *------------------------------------------------------------------------------
  */
+
+/* CONNAC2X */
 #define CONNAC2X_WIFI_LWTBL_BASE 0x820d4000
 #define CONNAC2X_WIFI_LWTBL_GROUP_MASK 0x00000007 /* GROUP[2..0] */
 #define CONNAC2X_WIFI_LWTBL_GROUP_SHFT 0
@@ -276,32 +278,32 @@
 
 
 
-#define CONNAC2X_LWTBL_CONFIG(_pAd, _wlanIdx) \
-	HAL_MCR_WR(_pAd, CONNAC2X_WIFI_LWTBL_BASE, \
+#define CONNAC2X_LWTBL_CONFIG(_pAd, _lmacWtblDUAddr, _wlanIdx) \
+	HAL_MCR_WR(_pAd, _lmacWtblDUAddr, \
 		((_wlanIdx >> 7) & CONNAC2X_WIFI_LWTBL_GROUP_MASK) \
 		<< CONNAC2X_WIFI_LWTBL_GROUP_SHFT)
 
-#define CONNAC2X_LWTBL_IDX2BASE(_wlanIdx, _DW) \
-	((CONNAC2X_WIFI_LWTBL_BASE  & 0xFFFF0000) | 0x8000 | \
+#define CONNAC2X_LWTBL_IDX2BASE(_lmacWtblDUAddr, _wlanIdx, _DW) \
+	((_lmacWtblDUAddr & 0xFFFF0000) | 0x8000 | \
 	((_wlanIdx & 0x7F) << 8) | (_DW & 0x3F) << 2)
 
-#define CONNAC2X_UWTBL_CONFIG(_pAd, _wlanIdx) \
-	HAL_MCR_WR(_pAd, CONNAC2X_WIFI_UWTBL_BASE, \
+#define CONNAC2X_UWTBL_CONFIG(_pAd, _umacWtblDUAddr, _wlanIdx) \
+	HAL_MCR_WR(_pAd, _umacWtblDUAddr, \
 		((_wlanIdx >> 7) & CONNAC2X_WIFI_UWTBL_GROUP_MASK) \
 		<< CONNAC2X_WIFI_UWTBL_GROUP_SHFT)
 
-#define CONNAC2X_UWTBL_IDX2BASE(_wlanIdx, _DW) \
-	((CONNAC2X_WIFI_UWTBL_BASE & 0XFFFFC000) | 0x2000 | \
+#define CONNAC2X_UWTBL_IDX2BASE(_umacWtblDUAddr, _wlanIdx, _DW) \
+	((_umacWtblDUAddr & 0XFFFFC000) | 0x2000 | \
 	((_wlanIdx & 0x7F) << 6) | (_DW & 0xF) << 2)
 
-#define CONNAC2X_KEYTBL_CONFIG(_pAd, _key_loc) \
-	HAL_MCR_WR(_pAd, CONNAC2X_WIFI_UWTBL_BASE, \
+#define CONNAC2X_KEYTBL_CONFIG(_pAd, _umacWtblDUAddr, _key_loc) \
+	HAL_MCR_WR(_pAd, _umacWtblDUAddr, \
 		(CONNAC2X_WIFI_UWTBL_TARGET_MASK | \
 		(((_key_loc >> 7) & CONNAC2X_WIFI_UWTBL_GROUP_MASK) \
 		<< CONNAC2X_WIFI_UWTBL_GROUP_SHFT)))
 
-#define CONNAC2X_KEYTBL_IDX2BASE(_key_loc, _DW) \
-	((CONNAC2X_WIFI_UWTBL_BASE & 0XFFFFC000) | 0x2000 | \
+#define CONNAC2X_KEYTBL_IDX2BASE(_umacWtblDUAddr, _key_loc, _DW) \
+	((_umacWtblDUAddr & 0XFFFFC000) | 0x2000 | \
 	((_key_loc & 0x7F) << 6) | (_DW & 0xF) << 2)
 
 /*------------------------------------------------------------------------------
