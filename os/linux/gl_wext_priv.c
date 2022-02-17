@@ -12583,7 +12583,7 @@ int priv_driver_set_tx_force_amsdu(IN struct net_device *prNetDev,
 			"prAdapter->rWifiVar.ucHeCertForceAmsdu is %d\n",
 			prAdapter->rWifiVar.ucHeCertForceAmsdu);
 	} else {
-		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver FORCE_AMSDU_TX %d\n");
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver FORCE_AMSDU_TX\n");
 		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
 	}
 
