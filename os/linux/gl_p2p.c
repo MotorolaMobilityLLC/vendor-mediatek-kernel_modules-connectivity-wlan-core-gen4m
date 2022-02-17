@@ -1922,8 +1922,7 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		? *((struct GLUE_INFO **) netdev_priv(prDev))
 		: NULL;
 
-	if (!prDev || !prGlueInfo ||
-		!prGlueInfo->prAdapter->fgIsP2PRegistered) {
+	if (!prDev || !prGlueInfo) {
 		DBGLOG(INIT, WARN,
 			" abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
 			prDev, prGlueInfo);
