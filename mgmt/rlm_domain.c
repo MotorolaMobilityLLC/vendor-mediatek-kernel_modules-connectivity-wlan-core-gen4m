@@ -816,7 +816,12 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 			{121, BAND_5G, CHNL_SPAN_20, 100, 11, TRUE}
 			,			/* CH_SET_UNII_WW_100_140 */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 0, FALSE}
-			,			/* CH_SET_UNII_UPPER_NA */
+						/* CH_SET_UNII_UPPER_NA */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			,
+			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
+						/* 6G_PSC_CH_SET_5_229 */
+#endif
 		}
 	}
 	,
@@ -837,7 +842,12 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
 			,			/* CH_SET_UNII_WW_100_144 */
 			{125, BAND_5G, CHNL_SPAN_20, 149, 0, FALSE}
-			,			/* CH_SET_UNII_UPPER_NA */
+						/* CH_SET_UNII_UPPER_NA */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			,
+			{131, BAND_6G, CHNL_SPAN_80, 5, 15, FALSE}
+						/* 6G_PSC_CH_SET_5_229 */
+#endif
 		}
 	}
 };
@@ -5983,6 +5993,13 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 				       __func__);
 				break;
 			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			/* 6G only add PSC channel */
+			if (band_idx == NL80211_BAND_6GHZ &&
+				((chan->hw_value - 5) % 16) != 0) {
+				continue;
+			}
+#endif
 
 			rlmDomainAddActiveChannel(band_idx);
 

@@ -269,8 +269,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	/* Modify channelList number from 32 to 54 */
 	if (prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID) {
 		kalMemCopy(prCmdScanReq->aucExtBSSID,
-		&prScanParam->aucBSSID[0][0],
-		SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
+			&prScanParam->aucBSSID[0][0],
+			SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
 	} else {
 		COPY_MAC_ADDR(prCmdScanReq->aucBSSID,
 		&prScanParam->aucBSSID[0][0]);
@@ -285,6 +285,12 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
 	prCmdScanReq->auVersion[0] = 1;
 	prCmdScanReq->ucScnFuncMask |= prScanParam->ucScnFuncMask;
+	/* for 6G OOB scan */
+	kalMemCopy(prCmdScanReq->ucBssidMatchCh, prScanParam->ucBssidMatchCh,
+			CFG_SCAN_SSID_MAX_NUM);
+	kalMemCopy(prCmdScanReq->ucBssidMatchSsidInd,
+		prScanParam->ucBssidMatchSsidInd, CFG_SCAN_SSID_MAX_NUM);
+
 	if (kalIsValidMacAddr(prScanParam->aucRandomMac)) {
 		prCmdScanReq->ucScnFuncMask |= (ENUM_SCN_RANDOM_MAC_EN |
 						ENUM_SCN_RANDOM_SN_EN);
@@ -675,8 +681,15 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 
 	kalMemCopy(prScanParam->aucRandomMac, prScanReqMsg->aucRandomMac,
 		MAC_ADDR_LEN);
+	/* for 6G OOB scan */
+	kalMemCopy(prScanParam->ucBssidMatchCh, prScanReqMsg->ucBssidMatchCh,
+			CFG_SCAN_SSID_MAX_NUM);
+	kalMemCopy(prScanParam->ucBssidMatchSsidInd,
+		prScanReqMsg->ucBssidMatchSsidInd, CFG_SCAN_SSID_MAX_NUM);
 
-	if (prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) {
+	if ((prScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) &&
+		((prScanReqMsg->ucScnFuncMask &
+		ENUM_SCN_USE_PADDING_AS_BSSID) == 0)) {
 		prScanParam->ucSSIDNum = 1;
 		kalMemZero(prScanParam->ucSpecifiedSSIDLen,
 			   sizeof(prScanParam->ucSpecifiedSSIDLen));
@@ -873,13 +886,24 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 	if (prScanInfo->fgIsScanForFull2Partial &&
 		prScanInfo->ucFull2PartialSeq == prScanDone->ucSeqNum) {
 		uint32_t *pu4BitMap = &(prScanInfo->au4ChannelBitMap[0]);
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
 		log_dbg(SCN, INFO,
-		"Full2Partial(%u):%08X %08X %08X %08X %08X %08X %08X %08X\n",
+			"Full2Partial(%u):%08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X %08X\n",
+			scanCountBits(prScanInfo->au4ChannelBitMap,
+			sizeof(prScanInfo->au4ChannelBitMap)),
+			pu4BitMap[7], pu4BitMap[6], pu4BitMap[5], pu4BitMap[4],
+			pu4BitMap[3], pu4BitMap[2], pu4BitMap[1], pu4BitMap[0],
+			pu4BitMap[15], pu4BitMap[14], pu4BitMap[13],
+			pu4BitMap[12], pu4BitMap[11], pu4BitMap[10],
+			pu4BitMap[9], pu4BitMap[8]);
+#else
+		log_dbg(SCN, INFO,
+			"Full2Partial(%u):%08X %08X %08X %08X %08X %08X %08X %08X\n",
 			scanCountBits(prScanInfo->au4ChannelBitMap,
 			sizeof(prScanInfo->au4ChannelBitMap)),
 			pu4BitMap[7], pu4BitMap[6], pu4BitMap[5], pu4BitMap[4],
 			pu4BitMap[3], pu4BitMap[2], pu4BitMap[1], pu4BitMap[0]);
+#endif
 
 		prScanInfo->fgIsScanForFull2Partial = FALSE;
 	}

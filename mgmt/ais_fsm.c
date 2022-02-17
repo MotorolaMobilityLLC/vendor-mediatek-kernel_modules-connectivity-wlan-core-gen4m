@@ -1855,7 +1855,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				uint8_t ucScanSSIDNum;
 				enum ENUM_SCAN_TYPE eScanType;
 
-				ucScanSSIDNum = prScanRequest->u4SsidNum;
+				ucScanSSIDNum = prScanRequest->u4SsidNum +
+					prScanRequest->ucShortSsidNum;
 				eScanType = prScanRequest->ucScanType;
 
 				if (eScanType == SCAN_TYPE_ACTIVE_SCAN
@@ -1894,7 +1895,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					prScanReqMsg->ucSSIDType =
 					    SCAN_REQ_SSID_SPECIFIED;
 #endif
-					prScanReqMsg->ucSSIDNum = ucScanSSIDNum;
+					prScanReqMsg->ucShortSSIDNum =
+					    prScanRequest->ucShortSsidNum;
+					prScanReqMsg->ucSSIDNum =
+					    prScanRequest->u4SsidNum;
 					prScanReqMsg->prSsid =
 					    prScanRequest->rSsid;
 				}
@@ -1933,6 +1937,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prScanReqMsg->u2ChannelDwellTime = 0;
 			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
+
 			/* Reduce APP scan's dwell time, prevent it affecting
 			 * TX/RX performance
 			 */
@@ -1943,6 +1948,15 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prScanReqMsg->u2ChannelMinDwellTime =
 					SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
 			}
+
+			/* for 6G OOB scan */
+			kalMemCopy(prScanReqMsg->ucBssidMatchCh,
+				prScanRequest->ucBssidMatchCh,
+				CFG_SCAN_SSID_MAX_NUM);
+			kalMemCopy(prScanReqMsg->ucBssidMatchSsidInd,
+				prScanRequest->ucBssidMatchSsidInd,
+				CFG_SCAN_SSID_MAX_NUM);
+
 			/* check if tethering is running and need to fix on
 			 * specific channel
 			 */
@@ -2052,6 +2066,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			/* reset prAisFsmInfo->rScanRequest */
 			kalMemZero(prAisFsmInfo->aucScanIEBuf,
 				   sizeof(prAisFsmInfo->aucScanIEBuf));
+			prScanRequest->ucShortSsidNum = 0;
 			prScanRequest->u4SsidNum = 0;
 			prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 			prScanRequest->u4IELength = 0;
@@ -2397,6 +2412,10 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint8_t ucBssIndex = 0;
 
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+#endif
+
 	DEBUGFUNC("aisFsmRunEventScanDone()");
 
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
@@ -2487,6 +2506,21 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	}
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+	if (!LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList)) {
+		LINK_REMOVE_HEAD(&prAdapter->rNeighborAPInfoList,
+			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
+		cnmTimerStartTimer(prAdapter,
+				   aisGetScanDoneTimer(prAdapter, ucBssIndex),
+				   SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
+		aisFsmScanRequestAdv(prAdapter,
+			&prNeighborAPInfo->rScanRequest);
+		cnmMemFree(prAdapter, prNeighborAPInfo);
+		return;
+	}
+#endif
+
 	if (prBcnRmParam->eState == RM_NO_REQUEST)
 		return;
 	/* normal mode scan done, and beacon measurement is pending,
