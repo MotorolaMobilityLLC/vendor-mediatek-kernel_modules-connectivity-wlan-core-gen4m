@@ -146,8 +146,9 @@ VOID asicCapInit(IN P_ADAPTER_T prAdapter)
 		prChipInfo->u4HifDmaShdlBaseAddr = PCIE_HIF_DMASHDL_BASE;
 
 		HAL_MCR_WR(prAdapter, CONN_HIF_ON_IRQ_ENA, BIT(0));
-
+#if 0 /* PCIE is not ready to use driver dma scheduler setting now. */
 		asicPcieDmaShdlInit(prAdapter);
+#endif
 		break;
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
