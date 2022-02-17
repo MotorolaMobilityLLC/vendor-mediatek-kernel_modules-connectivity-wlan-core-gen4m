@@ -376,6 +376,7 @@ enum ENUM_CMD_ID {
 #if CFG_WIFI_TXPWR_TBL_DUMP
 	CMD_ID_GET_TXPWR_TBL = 0xD0, /* 0xd0 (Query) */
 #endif
+	CMD_ID_TX_MCS_INFO	= 0xCF,			/* 0xCF (Query) */
 	CMD_ID_SET_TXBF_BACKOFF = 0xD1,
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 	CMD_ID_GET_DPD_CACHE = 0xD2,	/* 0xd2 (Query) */
@@ -570,6 +571,7 @@ enum ENUM_EVENT_ID {
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 	EVENT_ID_GET_DPD_CACHE = 0xD2,	/* 0xd2 (Query) */
 #endif
+	EVENT_ID_TX_MCS_INFO = 0xCF,			/* 0xCF (Query) */
 #if CFG_SUPPORT_NAN
 	EVENT_ID_NAN_EXT_EVENT = 0xEB,
 #endif

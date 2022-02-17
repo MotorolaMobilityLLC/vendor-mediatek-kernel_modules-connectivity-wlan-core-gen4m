@@ -154,6 +154,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_TPUT_INFO, nicEventTputFactorHandler},
 	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO, nicEventMibInfo},
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+	{EVENT_ID_TX_MCS_INFO, nicEventTxMcsInfo},
+#endif
 	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
 	{EVENT_ID_BSS_ABSENCE_PRESENCE, qmHandleEventBssAbsencePresence},
 	{EVENT_ID_STA_CHANGE_PS_MODE, qmHandleEventStaChangePsMode},

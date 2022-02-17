@@ -3100,6 +3100,16 @@ struct EVENT_GET_DPD_CACHE {
 };
 #endif
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+struct EVENT_TX_MCS_INFO {
+	uint16_t    au2TxRateCode[MCS_INFO_SAMPLE_CNT];
+	uint8_t     aucTxBw[MCS_INFO_SAMPLE_CNT];
+	uint8_t     aucTxSgi[MCS_INFO_SAMPLE_CNT];
+	uint8_t     aucTxLdpc[MCS_INFO_SAMPLE_CNT];
+	uint8_t     aucTxRatePer[MCS_INFO_SAMPLE_CNT];
+};
+#endif
+
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 struct EVENT_ACCESS_EFUSE {
 
@@ -4070,6 +4080,13 @@ void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 void nicCmdEventQueryDpdCache(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+void nicCmdEventQueryTxMcsInfo(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent);
 #endif
 
 /*******************************************************************************
