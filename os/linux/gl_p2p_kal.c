@@ -1387,6 +1387,14 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 				MAC2STR(prWlanHeader->aucAddr2),
 				prNetdevice);
 
+		if (!prGlueInfo->fgIsRegistered ||
+			(prNetdevice == NULL) ||
+			(prNetdevice->ieee80211_ptr == NULL)) {
+			DBGLOG(P2P, WARN,
+				"prNetdevice is not ready or NULL!\n");
+			break;
+		}
+
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(
 			/* struct net_device * dev, */
