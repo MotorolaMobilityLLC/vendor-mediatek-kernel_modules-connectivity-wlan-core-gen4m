@@ -2524,6 +2524,7 @@ static s_int32 hqa_mps_set_seq_data(
 	ret = mt_serv_mps_set_seq_data(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
@@ -2602,6 +2603,7 @@ static s_int32 hqa_mps_set_payload_length(
 	ret = mt_serv_mps_set_payload_length(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
@@ -2675,6 +2677,7 @@ static s_int32 hqa_mps_set_packet_count(
 	ret = mt_serv_mps_set_packet_count(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
@@ -2748,6 +2751,7 @@ static s_int32 hqa_mps_set_power_gain(
 	ret = mt_serv_mps_set_power_gain(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
@@ -3059,6 +3063,7 @@ static s_int32 hqa_mps_set_nss(
 	ret = mt_serv_mps_set_nss(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
@@ -3167,6 +3172,7 @@ static s_int32 hqa_mps_set_per_packet_bw(
 	ret = mt_serv_mps_set_per_packet_bw(serv_test);
 
 err:
+	sys_ad_free_mem(param);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx=%d, len=%d, op_mode=0x%x, mps_cnt=%d\n",
 		__func__, band_idx, len,
