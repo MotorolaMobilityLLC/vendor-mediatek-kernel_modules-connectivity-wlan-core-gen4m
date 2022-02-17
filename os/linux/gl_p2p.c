@@ -1133,7 +1133,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	}
 
 	/* FIXME: check KAL_P2P_NUM in trunk? */
-	if (u4Idx >= KAL_P2P_NUM) {
+	if (u4Idx < 0 || u4Idx >= KAL_P2P_NUM) {
 		DBGLOG(INIT, ERROR, "u4Idx(%d) is out of range!!\n", u4Idx);
 		return -1;
 	}
