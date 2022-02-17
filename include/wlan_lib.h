@@ -597,6 +597,37 @@ enum ENUM_FEATURE_OPTION_IN_CMD {
 	FEATURE_OPT_CMD_FORCE_ENABLED
 };
 
+enum ENUM_FEATURE_OPTION_IN_SER {
+	/* DISABLE means
+	 * 1. When driver init, driver will send fw CMD to disable the
+	 *    corresponding SER feature even if it was enabled in fw build time.
+	 * 2. driver will bypass the corresponding SER reset procedure when it
+	 *    receives the error notification from chip.
+	 */
+	FEATURE_OPT_SER_DISABLE = 0,
+	/* ENABLE means
+	 * 1. driver will execute the corresponding SER reset procedure when
+	 *    it receives the error notification from chip.
+	 */
+	FEATURE_OPT_SER_ENABLE,
+	/* Monitor means
+	 * 1. driver will bypass the corresponding SER reset procedure when it
+	 *    receives the error notification from chip.
+	 */
+	FEATURE_OPT_SER_MONITOR
+
+	/* Thus, the difference between disable and monitor is
+	 *   - In L0.5 reset, chip wfsys watchdog is disabled and enabled
+	 *     when feature options is disable and monitor respectively.
+	 *     So, in the former, driver won't receive watchdog timeout
+	 *     event even when mcu hangs and in the latter, driver will.
+	 *   - In L1 reset, chip MAC watchdog is disabled and enabled
+	 *     when feature option is disable and monitor respectively.
+	 *     So, in the former, driver won't receive hw error notification
+	 *     even when hw hangs and in the latter, driver will.
+	 */
+};
+
 #define DEBUG_MSG_SIZE_MAX 1200
 enum {
 	DEBUG_MSG_ID_UNKNOWN = 0x00,

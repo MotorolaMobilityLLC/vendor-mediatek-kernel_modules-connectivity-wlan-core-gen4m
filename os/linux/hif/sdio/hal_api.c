@@ -2380,16 +2380,23 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	}
 
 	if (u4IntrBits & SER_SDIO_N9_HOST_STOP_TX_RX_OP) {
-		DBGLOG(INIT, WARN, "[SER][L1] fw notify host L1 start\n");
-		halPrintMailbox(prAdapter);
-		/* Stop HIF Tx/Rx operation */
-		nicSerStopTxRx(prAdapter);
-		HAL_MCR_WR(prAdapter, MCR_WSICR,
-			SER_SDIO_HOST_N9_STOP_TX_RX_OP_ACK);
+		DBGLOG(HAL, WARN, "[SER][L1] fw notify host L1 start\n");
+
+		if (prAdapter->rWifiVar.eEnableSerL1 !=
+		     FEATURE_OPT_SER_ENABLE)
+			DBGLOG(HAL, WARN,
+			       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
+		else {
+			halPrintMailbox(prAdapter);
+			/* Stop HIF Tx/Rx operation */
+			nicSerStopTxRx(prAdapter);
+			HAL_MCR_WR(prAdapter, MCR_WSICR,
+				   SER_SDIO_HOST_N9_STOP_TX_RX_OP_ACK);
+		}
 	}
 
 	if (u4IntrBits & SER_SDIO_N9_HOST_RECOVERY_DONE) {
-		DBGLOG(INIT, WARN, "[SER][L1] fw L1 rst done\n");
+		DBGLOG(HAL, WARN, "[SER][L1] fw L1 rst done\n");
 
 		wlanUpdateNicResourceInformation(prAdapter);
 		/* SER is done, start Tx/Rx */
