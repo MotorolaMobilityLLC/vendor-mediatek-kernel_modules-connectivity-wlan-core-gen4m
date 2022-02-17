@@ -73,6 +73,7 @@
  */
 
 #include "gl_typedef.h"
+#include "wsys_cmd_handler_fw.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -164,40 +165,6 @@ enum ENUM_INIT_PATCH_STATUS {
  */
 
 /* commands */
-struct INIT_WIFI_CMD {
-	uint8_t ucCID;
-	uint8_t ucPktTypeID;	/* Must be 0xA0 (CMD Packet) */
-	uint8_t ucReserved;
-	uint8_t ucSeqNum;
-#if 1
-	/* padding fields, hw may auto modify this field */
-	uint8_t ucD2B0Rev;
-	uint8_t ucExtenCID;	/* Extend CID */
-	uint8_t ucS2DIndex;	/* Index for Src to Dst in CMD usage */
-	uint8_t ucExtCmdOption;	/* Extend CID option */
-
-	uint32_t au4D3toD7Rev[5];	/* padding fields */
-#endif
-	uint8_t aucBuffer[0];
-};
-
-struct INIT_HIF_TX_HEADER {
-	uint16_t u2TxByteCount;	/* Max value is over 2048 */
-	uint16_t u2PQ_ID;	/* Must be 0x8000 (Port1, Queue 0) */
-#if 1
-	uint8_t ucWlanIdx;
-	uint8_t ucHeaderFormat;
-	uint8_t ucHeaderPadding;
-	uint8_t ucPktFt: 2;
-	uint8_t ucOwnMAC: 6;
-	uint32_t au4D2toD7Rev[6];
-
-	uint16_t u2Length;
-	uint16_t u2PqId;
-#endif
-	struct INIT_WIFI_CMD rInitWifiCmd;
-};
-
 struct INIT_CMD_DOWNLOAD_CONFIG {
 	uint32_t u4Address;
 	uint32_t u4Length;
@@ -251,27 +218,8 @@ struct INIT_CMD_ACCESS_REG {
 };
 
 /* Events */
-struct INIT_WIFI_EVENT {
-	uint16_t u2RxByteCount;
-	uint16_t u2PacketType;	/* Must be filled with 0xE000 (EVENT Packet) */
-	uint8_t ucEID;
-	uint8_t ucSeqNum;
-	uint8_t aucReserved[2];
-	uint8_t aucBuffer[0];
-};
-
 struct INIT_HIF_RX_HEADER {
 	struct INIT_WIFI_EVENT rInitWifiEvent;
-};
-
-struct INIT_EVENT_CMD_RESULT {
-	uint8_t ucStatus;	/* 0: success */
-	/* 1: rejected by invalid param */
-	/* 2: rejected by incorrect CRC */
-	/* 3: rejected by decryption failure */
-	/* 4: unknown CMD */
-	/* 5: timeout */
-	uint8_t aucReserved[3];
 };
 
 struct INIT_EVENT_ACCESS_REG {

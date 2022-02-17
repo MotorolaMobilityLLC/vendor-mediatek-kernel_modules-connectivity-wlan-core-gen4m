@@ -595,7 +595,7 @@ wlanoidSetP2pNetworkAddress(IN struct ADAPTER *prAdapter,
 	/* construct payload of command packet */
 	u4CmdSize =
 		OFFSET_OF(struct CMD_SET_NETWORK_ADDRESS_LIST, arNetAddress) +
-		sizeof(struct IPV4_NETWORK_ADDRESS) * u4IpAddressCount;
+		sizeof(struct CMD_IPV4_NETWORK_ADDRESS) * u4IpAddressCount;
 
 	prCmdNWAddrList = (struct CMD_SET_NETWORK_ADDRESS_LIST *)
 		kalMemAlloc(u4CmdSize, VIR_MEM_TYPE);
@@ -820,7 +820,7 @@ wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
 	/* construct payload of command packet */
 	u4CmdSize =
 		OFFSET_OF(struct CMD_SET_NETWORK_ADDRESS_LIST, arNetAddress) +
-	    sizeof(struct IPV4_NETWORK_ADDRESS) * u4IpAddressCount;
+	    sizeof(struct CMD_IPV4_NETWORK_ADDRESS) * u4IpAddressCount;
 
 	if (u4IpAddressCount == 0)
 		u4CmdSize = sizeof(struct CMD_SET_NETWORK_ADDRESS_LIST);

@@ -2094,7 +2094,7 @@ u_int8_t rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 	/* Search for desired BSSID */
 	for (i = 0; i < prAisSpecBssInfo->u4PmkidCacheCount; i++) {
 		if (!kalMemCmp(
-			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.arBSSID,
+			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.aucBssid,
 			pucBssid, MAC_ADDR_LEN))
 			break;
 	}
@@ -2137,7 +2137,7 @@ u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER *prAdapter)
 		for (j = 0; j < prAisSpecBssInfo->u4PmkidCacheCount; j++) {
 			if (!kalMemCmp
 			    (prAisSpecBssInfo->arPmkidCache[j].rBssidInfo.
-			     arBSSID,
+			     aucBssid,
 			     prAisSpecBssInfo->arPmkidCandicate[i].aucBssid,
 			     MAC_ADDR_LEN)) {
 				/* DBGLOG(
@@ -2161,7 +2161,7 @@ u_int8_t rsnCheckPmkidCandicate(IN struct ADAPTER *prAdapter)
 					arPmkidCandicate[i].aucBssid));
 			kalMemCopy((void *) prAisSpecBssInfo->
 					arPmkidCache[prAisSpecBssInfo->
-					u4PmkidCacheCount].rBssidInfo.arBSSID,
+					u4PmkidCacheCount].rBssidInfo.aucBssid,
 				   (void *) prAisSpecBssInfo->
 					arPmkidCandicate[i].aucBssid,
 					MAC_ADDR_LEN);
@@ -2196,7 +2196,7 @@ void rsnIndicatePmkidCand(IN struct ADAPTER *prAdapter,
 	 */
 
 	if (prAdapter->prAisBssInfo->eConnectionState ==
-	    PARAM_MEDIA_STATE_CONNECTED &&
+	    MEDIA_STATE_CONNECTED &&
 	    prAdapter->rWifiVar.rConnSettings.eAuthMode == AUTH_MODE_WPA2) {
 		rsnGeneratePmkidIndication(prAdapter);
 	}
@@ -2230,7 +2230,7 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss)
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 
 	if ((prAisBssInfo->eConnectionState ==
-	     PARAM_MEDIA_STATE_CONNECTED) &&
+	     MEDIA_STATE_CONNECTED) &&
 	    (prConnSettings->eAuthMode == AUTH_MODE_WPA2)) {
 		rsnSelectPmkidCandidateList(prAdapter, prBss);
 
@@ -2296,7 +2296,7 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER
 		     j++) {
 			if (EQUAL_MAC_ADDR(
 				prAisSpecificBssInfo->arPmkidCache[j].
-					rBssidInfo.arBSSID,
+					rBssidInfo.aucBssid,
 				prAisSpecificBssInfo->arPmkidCandicate[i].
 					aucBssid) &&
 			    (prAisSpecificBssInfo->arPmkidCache[j].fgPmkidExist
@@ -2460,7 +2460,7 @@ uint8_t rsnCheckSaQueryTimeout(IN struct ADAPTER *prAdapter)
 		cnmTimerStopTimer(prAdapter, &prBssSpecInfo->rSaQueryTimer);
 #if 1
 		if (prAdapter->prAisBssInfo->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED) {
+		    MEDIA_STATE_CONNECTED) {
 			struct MSG_AIS_ABORT *prAisAbortMsg;
 
 			prAisAbortMsg =
@@ -2726,7 +2726,7 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	DBGLOG_MEM8(RSN, INFO, prRxFrame->ucTransId, ACTION_SA_QUERY_TR_ID_LEN);
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED) {
 		DBGLOG(RSN, INFO,
 		       "IEEE 802.11: Ignore SA Query Request from unassociated STA "
 		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));

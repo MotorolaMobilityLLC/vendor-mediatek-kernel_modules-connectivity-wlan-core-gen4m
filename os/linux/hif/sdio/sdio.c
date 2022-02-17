@@ -445,7 +445,7 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
 		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
 		(kalGetMediaStateIndicated(prGlueInfo) ==
-		PARAM_MEDIA_STATE_CONNECTED)) {
+		MEDIA_STATE_CONNECTED)) {
 		DBGLOG(HAL, STATE, "enter WOW flow\n");
 		kalWowProcess(prGlueInfo, TRUE);
 	}
@@ -525,7 +525,7 @@ static int mtk_sdio_pm_resume(struct device *pDev)
 	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
 		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
 		(kalGetMediaStateIndicated(prGlueInfo) ==
-		PARAM_MEDIA_STATE_CONNECTED)) {
+		MEDIA_STATE_CONNECTED)) {
 		DBGLOG(HAL, STATE, "leave WOW flow\n");
 		kalWowProcess(prGlueInfo, FALSE);
 	}

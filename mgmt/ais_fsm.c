@@ -565,7 +565,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
@@ -1304,7 +1304,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 #endif
 			/* we are under Roaming Condition. */
 			if (prAisBssInfo->eConnectionState ==
-			    PARAM_MEDIA_STATE_CONNECTED) {
+			    MEDIA_STATE_CONNECTED) {
 				if (prAisFsmInfo->ucConnTrialCount >
 				    AIS_ROAMING_CONNECTION_TRIAL_LIMIT) {
 #if CFG_SUPPORT_ROAMING
@@ -1339,7 +1339,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			}
 			/* 4 <2> We are not under Roaming Condition. */
 			if (prAisBssInfo->eConnectionState ==
-			    PARAM_MEDIA_STATE_DISCONNECTED) {
+			    MEDIA_STATE_DISCONNECTED) {
 
 				/* 4 <2.a> If we have the matched one */
 				if (prBssDesc) {
@@ -1807,7 +1807,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				prScanReqMsg->arChnlInfoList[0].ucChannelNum =
 				    ucChannel;
 			} else if (prAisBssInfo->eConnectionState ==
-				   PARAM_MEDIA_STATE_CONNECTED
+				   MEDIA_STATE_CONNECTED
 				   && (prAdapter->rWifiVar.
 				       rRoamingInfo.eCurrentState ==
 				       ROAMING_STATE_DISCOVERY)
@@ -1907,7 +1907,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				   prAdapter->rNchoInfo.u4RoamScanControl ==
 				   TRUE
 				   && prAisBssInfo->eConnectionState ==
-				   PARAM_MEDIA_STATE_CONNECTED
+				   MEDIA_STATE_CONNECTED
 				   && prAdapter->rWifiVar.
 				   rRoamingInfo.eCurrentState ==
 				   ROAMING_STATE_DISCOVERY) {
@@ -2254,7 +2254,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 			}
 			if (!aisState_OFF_CHNL_TX(prAdapter, prAisFsmInfo)) {
 				if (prAisBssInfo->eConnectionState ==
-						PARAM_MEDIA_STATE_CONNECTED)
+						MEDIA_STATE_CONNECTED)
 					eNextState = AIS_STATE_NORMAL_TR;
 				else
 					eNextState = AIS_STATE_IDLE;
@@ -2663,7 +2663,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 
 	/* 4 <1> Save information of Abort Message and then free memory. */
 	prAisBssInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
@@ -2771,7 +2771,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 
 	if (fgIsCheckConnected
 	    && (prAisBssInfo->eConnectionState ==
-		PARAM_MEDIA_STATE_CONNECTED)) {
+		MEDIA_STATE_CONNECTED)) {
 
 		/* switch into DISCONNECTING state for sending DEAUTH
 		 * if necessary
@@ -2885,7 +2885,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
-			    PARAM_MEDIA_STATE_CONNECTED) {
+			    MEDIA_STATE_CONNECTED) {
 
 #if CFG_SUPPORT_ROAMING
 				/* 2. Deactivate previous BSS */
@@ -2905,7 +2905,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				 * immediately.
 				 */
 				aisChangeMediaState(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED);
+					MEDIA_STATE_CONNECTED);
 
 				/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
 				 * in Driver if have.
@@ -2947,7 +2947,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				 */
 				/* .. from AIS_BSS_INFO_T */
 				aisIndicationOfMediaStateToHost(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED,
+					MEDIA_STATE_CONNECTED,
 					FALSE);
 
 				if (prAdapter->rWifiVar.ucTpTestMode ==
@@ -3087,7 +3087,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					cnmStaRecFree(prAdapter, prStaRec);
 
 				if (prAisBssInfo->eConnectionState ==
-				    PARAM_MEDIA_STATE_CONNECTED) {
+				    MEDIA_STATE_CONNECTED) {
 					struct PARAM_SSID rSsid;
 
 					/* roaming fail count and time */
@@ -3233,7 +3233,7 @@ void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
 				 * immediately.
 				 */
 				aisChangeMediaState(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED);
+					MEDIA_STATE_CONNECTED);
 
 				/* 4 <1.2> Deactivate previous Peers'
 				 * STA_RECORD_T in Driver if have.
@@ -3273,7 +3273,7 @@ void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
 				 * immediately.
 				 */
 				aisIndicationOfMediaStateToHost(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED,
+					MEDIA_STATE_CONNECTED,
 					FALSE);
 
 				/* 4 <1.9> Set the Next State of AIS FSM */
@@ -3348,7 +3348,7 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 				 * immediately.
 				 */
 				aisChangeMediaState(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED);
+					MEDIA_STATE_CONNECTED);
 
 				/* 4 <1.2> Add Peers' STA_RECORD_T to
 				 * Client List
@@ -3417,7 +3417,7 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
 				 * immediately.
 				 */
 				aisIndicationOfMediaStateToHost(prAdapter,
-					PARAM_MEDIA_STATE_CONNECTED,
+					MEDIA_STATE_CONNECTED,
 					FALSE);
 
 				/* 4 <1.8> indicate PM for connected */
@@ -3545,7 +3545,7 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 	       prAisFsmInfo->eCurrentState,
 	       prAisBssInfo->eConnectionStateIndicated);
 
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED &&
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
 		/* if receive DEAUTH in JOIN state, report disconnect*/
 		!(prAisBssInfo->ucReasonOfDisconnect ==
 		 DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
@@ -3561,7 +3561,7 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 		/* 4 <1> Fill EVENT_CONNECTION_STATUS */
 		rEventConnStatus.ucMediaStatus = (uint8_t) eConnectionState;
 
-		if (eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+		if (eConnectionState == MEDIA_STATE_CONNECTED) {
 			rEventConnStatus.ucReasonOfDisconnect =
 			    DISCONNECT_REASON_CODE_RESERVED;
 
@@ -3630,13 +3630,13 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				    prAdapter->prAisBssInfo->ucBssIndex,
 				    &rEventConnStatus);
 		prAisBssInfo->eConnectionStateIndicated = eConnectionState;
-		if (eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+		if (eConnectionState == MEDIA_STATE_DISCONNECTED) {
 			prAisFsmInfo->prTargetBssDesc = NULL;
 			prAisFsmInfo->prTargetStaRec = NULL;
 		}
 	} else {
 		/* NOTE: Only delay the Indication of Disconnect Event */
-		ASSERT(eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED);
+		ASSERT(eConnectionState == MEDIA_STATE_DISCONNECTED);
 
 		DBGLOG(AIS, INFO,
 		       "Postpone the indication of Disconnect for %d seconds\n",
@@ -3719,7 +3719,7 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 	prAisBssInfo->u2DeauthReason = REASON_CODE_BEACON_TIMEOUT;
 	/* 4 <3> Indicate Disconnected Event to Host immediately. */
 	aisIndicationOfMediaStateToHost(prAdapter,
-					PARAM_MEDIA_STATE_DISCONNECTED, FALSE);
+					MEDIA_STATE_DISCONNECTED, FALSE);
 }				/* end of aisPostponedEventOfDisconnTimeout() */
 
 /*----------------------------------------------------------------------------*/
@@ -4216,7 +4216,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	/* 4 <3> Unset the fgIsConnected flag of BSS_DESC_T and send Deauth
 	 * if needed.
 	 */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 
 		{
 			if (prAdapter->rWifiVar.ucTpTestMode !=
@@ -4275,7 +4275,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	/* 4 <4> Change Media State immediately. */
 	if (prAisBssInfo->ucReasonOfDisconnect !=
 	    DISCONNECT_REASON_CODE_REASSOCIATION) {
-		aisChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECTED);
+		aisChangeMediaState(prAdapter, MEDIA_STATE_DISCONNECTED);
 
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
@@ -4302,7 +4302,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 
 	/* 4 <6> Indicate Disconnected Event to Host */
 	aisIndicationOfMediaStateToHost(prAdapter,
-					PARAM_MEDIA_STATE_DISCONNECTED,
+					MEDIA_STATE_DISCONNECTED,
 					fgDelayIndication);
 
 	/* 4 <7> Trigger AIS FSM */
@@ -4464,7 +4464,7 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
 			/* 3.1 Retreat to AIS_STATE_SEARCH state for next try */
 			eNextState = AIS_STATE_SEARCH;
 		} else if (prAisBssInfo->eConnectionState ==
-			   PARAM_MEDIA_STATE_CONNECTED) {
+			   MEDIA_STATE_CONNECTED) {
 			/* roaming cases */
 			/* 3.2 Retreat to AIS_STATE_WAIT_FOR_NEXT_SCAN state for
 			 * next try
@@ -4971,7 +4971,7 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter)
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			struct STA_RECORD *prStaRec =
 			    prAisBssInfo->prStaRecOfAP;
@@ -5027,7 +5027,7 @@ void aisBssLinkDown(IN struct ADAPTER *prAdapter)
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			struct STA_RECORD *prStaRec =
 			    prAisBssInfo->prStaRecOfAP;
@@ -5240,7 +5240,7 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 	/* 4 <3> Unset the fgIsConnected flag of BSS_DESC_T and
 	 * send Deauth if needed.
 	 */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		struct PARAM_SSID rSsid;
 		struct BSS_DESC *prBssDesc = NULL;
 
@@ -5257,7 +5257,7 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <4> Change Media State immediately. */
-	aisChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECT_PREV);
+	aisChangeMediaState(prAdapter, MEDIA_STATE_ROAMING_DISC_PREV);
 
 	/* 4 <4.1> sync. with firmware */
 	/* Virtial BSSID */
@@ -5317,7 +5317,7 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
 	prAisBssInfo = prAdapter->prAisBssInfo;
 
 	/* 4 <1.1> Change FW's Media State immediately. */
-	aisChangeMediaState(prAdapter, PARAM_MEDIA_STATE_CONNECTED);
+	aisChangeMediaState(prAdapter, MEDIA_STATE_CONNECTED);
 
 	/* 4 <1.2> Deactivate previous AP's STA_RECORD_T in Driver if have. */
 	if ((prAisBssInfo->prStaRecOfAP) &&
@@ -5343,7 +5343,7 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
 	/* Require BSSID, Association ID, Beacon Interval..
 	 * from AIS_BSS_INFO_T
 	 */
-	aisIndicationOfMediaStateToHost(prAdapter, PARAM_MEDIA_STATE_CONNECTED,
+	aisIndicationOfMediaStateToHost(prAdapter, MEDIA_STATE_CONNECTED,
 					FALSE);
 }				/* end of aisFsmRoamingUpdateBss() */
 
@@ -5559,7 +5559,7 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 		    || prAisFsmInfo->eCurrentState ==
 		    AIS_STATE_REMAIN_ON_CHANNEL) {
 			if (prAisBssInfo->eConnectionState ==
-			    PARAM_MEDIA_STATE_CONNECTED)
+			    MEDIA_STATE_CONNECTED)
 				aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR);
 			else
 				aisFsmSteps(prAdapter, AIS_STATE_IDLE);
@@ -5704,7 +5704,7 @@ aisFunNeedOffchnlTx(IN struct ADAPTER *prAdapter,
 		return FALSE;
 
 	/* tx channel == op channel */
-	if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 			prAisBssInfo->ucPrimaryChannel ==
 				prMgmtTxMsg->rChannelInfo.ucChannelNum)
 		return FALSE;
@@ -5855,7 +5855,7 @@ void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
 
 		/* 4. decide which state to retreat */
 		if (prAisBssInfo->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED)
+		    MEDIA_STATE_CONNECTED)
 			aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR);
 		else
 			aisFsmSteps(prAdapter, AIS_STATE_IDLE);
@@ -6577,7 +6577,7 @@ u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter)
 		prAisFsmInfo->ucConnTrialCount
 	);
 
-	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_DISCONNECTED
+	if (prAisBssInfo->eConnectionState != MEDIA_STATE_DISCONNECTED
 		|| prAisFsmInfo->eCurrentState != AIS_STATE_LOOKING_FOR
 		|| prAisFsmInfo->u4PostponeIndStartTime == 0
 		|| fgIsPostponeTimeout
@@ -6637,7 +6637,7 @@ void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 	aisFsmReleaseCh(prAdapter);
 
 	if (prAisBssInfo->eConnectionState ==
-			PARAM_MEDIA_STATE_CONNECTED)
+			MEDIA_STATE_CONNECTED)
 		aisFsmSteps(prAdapter, AIS_STATE_NORMAL_TR);
 	else
 		aisFsmSteps(prAdapter, AIS_STATE_IDLE);

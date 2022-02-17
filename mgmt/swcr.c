@@ -892,9 +892,9 @@ void testPsSetupBss(IN struct ADAPTER *prAdapter,
 	BSS_INFO_INIT(prAdapter, prBssInfo);
 
 	prBssInfo->eConnectionState =
-		PARAM_MEDIA_STATE_DISCONNECTED;
+		MEDIA_STATE_DISCONNECTED;
 	prBssInfo->eConnectionStateIndicated =
-		PARAM_MEDIA_STATE_DISCONNECTED;
+		MEDIA_STATE_DISCONNECTED;
 	prBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 	prBssInfo->fgIsNetActive = TRUE;
 	prBssInfo->ucBssIndex = ucBssIndex;

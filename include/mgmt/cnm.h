@@ -352,7 +352,7 @@ struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
 enum ENUM_OP_CHANGE_STATUS_T cnmSetOpTRxNssBw(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON_T eSource,
+	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON eSource,
 	IN bool fgEnable,
 	IN uint8_t ucOpRxNss,
 	IN uint8_t ucOpTxNss,

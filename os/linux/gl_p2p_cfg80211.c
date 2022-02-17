@@ -570,7 +570,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	/* fix that the kernel warning occures when the GC is connected */
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	if ((prP2pBssInfo != NULL) &&
-	    (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) &&
+	    (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) &&
 	    (wdev->iftype == NL80211_IFTYPE_P2P_CLIENT)) {
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_disconnected(UnregRoleHander, 0, NULL, 0, TRUE,
@@ -988,7 +988,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			return -EINVAL;
 		}
 		if (prBssInfo->eConnectionState
-			!= PARAM_MEDIA_STATE_CONNECTED) {
+			!= MEDIA_STATE_CONNECTED) {
 			/* not connected */
 			DBGLOG(P2P, WARN, "not yet connected\n");
 			return 0;

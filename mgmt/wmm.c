@@ -427,7 +427,7 @@ void wmmTspecSteps(struct ADAPTER *prAdapter, uint8_t ucTid,
 
 	ASSERT(prAdapter->prAisBssInfo);
 	if (prAdapter->prAisBssInfo->eConnectionState !=
-		    PARAM_MEDIA_STATE_CONNECTED ||
+		    MEDIA_STATE_CONNECTED ||
 	    prAisFsmInfo->eCurrentState == AIS_STATE_DISCONNECTING) {
 		DBGLOG(WMM, INFO,
 		       "ignore OP code %d when medium disconnected\n", eOpCode);

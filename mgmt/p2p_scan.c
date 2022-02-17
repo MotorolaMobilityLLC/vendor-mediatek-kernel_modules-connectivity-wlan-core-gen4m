@@ -160,7 +160,7 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			if ((prP2pBssInfo->eCurrentOPMode ==
 					OP_MODE_INFRASTRUCTURE) &&
 				(prP2pBssInfo->eConnectionState ==
-					PARAM_MEDIA_STATE_CONNECTED)) {
+					MEDIA_STATE_CONNECTED)) {
 				fgIsSkipThisBeacon = TRUE;
 				/* First Time. */
 				if ((!prP2pBssInfo->ucDTIMPeriod)) {
