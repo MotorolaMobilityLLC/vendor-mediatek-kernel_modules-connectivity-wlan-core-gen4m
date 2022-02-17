@@ -261,12 +261,194 @@ static const iw_handler rIwPrivHandler[] = {
 #endif
 };
 
+/* standard ioctls */
+static int std_get_name(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_freq(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_freq(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_mode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_mode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_ap(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_ap(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_rate(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_rts(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_rts(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_frag(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_txpow(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_txpow(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_power(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_power(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_range(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_priv(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_priv(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_mlme(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_scan(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_scan(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_essid(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_essid(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_encode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_get_encode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_auth(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+#if (WIRELESS_EXT > 17)
+static int std_set_genie(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+#endif
+
+static int std_set_encode_ext(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static int std_set_pmska(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra);
+
+static const iw_handler mtk_std_handler[] = {
+	IW_HANDLER(SIOCGIWNAME, std_get_name),    /* factory mode used */
+	IW_HANDLER(SIOCSIWFREQ, std_set_freq),
+	IW_HANDLER(SIOCGIWFREQ, std_get_freq),    /* factory mode used */
+	IW_HANDLER(SIOCSIWMODE, std_set_mode),    /* factory mode used */
+	IW_HANDLER(SIOCGIWMODE, std_get_mode),    /* factory mode used */
+	IW_HANDLER(SIOCGIWRANGE, std_get_range),  /* factory mode used */
+	IW_HANDLER(SIOCSIWPRIV, std_set_priv),
+	IW_HANDLER(SIOCGIWPRIV, std_get_priv),
+	IW_HANDLER(SIOCSIWAP, std_set_ap),
+	IW_HANDLER(SIOCGIWAP, std_get_ap),        /* factory mode used */
+	IW_HANDLER(SIOCSIWMLME, std_set_mlme),
+	IW_HANDLER(SIOCSIWSCAN, std_set_scan),    /* factory mode used */
+	IW_HANDLER(SIOCGIWSCAN, std_get_scan),    /* factory mode used */
+	IW_HANDLER(SIOCSIWESSID, std_set_essid),  /* factory mode used */
+	IW_HANDLER(SIOCGIWESSID, std_get_essid),  /* factory mode used */
+	IW_HANDLER(SIOCGIWRATE, std_get_rate),    /* factory mode used */
+	IW_HANDLER(SIOCSIWRTS, std_set_rts),
+	IW_HANDLER(SIOCGIWRTS, std_get_rts),      /* factory mode used */
+	IW_HANDLER(SIOCGIWFRAG,  std_get_frag),   /* factory mode used */
+	IW_HANDLER(SIOCSIWTXPOW, std_set_txpow),
+	IW_HANDLER(SIOCGIWTXPOW, std_get_txpow),  /* factory mode used */
+	IW_HANDLER(SIOCSIWENCODE, std_set_encode),
+	IW_HANDLER(SIOCGIWENCODE, std_get_encode),/* factory mode used */
+	IW_HANDLER(SIOCSIWPOWER, std_set_power),
+	IW_HANDLER(SIOCGIWPOWER, std_get_power),  /* factory mode used */
+	IW_HANDLER(SIOCSIWAUTH,  std_set_auth),
+#if (WIRELESS_EXT > 17)
+	IW_HANDLER(SIOCSIWGENIE,  std_set_genie),
+#endif
+	IW_HANDLER(SIOCSIWENCODEEXT, std_set_encode_ext),
+	IW_HANDLER(SIOCSIWPMKSA, std_set_pmska),
+};
+
 const struct iw_handler_def wext_handler_def = {
-	.num_standard = 0,
+	.num_standard = (__u16) sizeof(mtk_std_handler) / sizeof(iw_handler),
 	.num_private = (__u16) sizeof(rIwPrivHandler) / sizeof(iw_handler),
 	.num_private_args = (__u16) sizeof(rIwPrivTable) /
 						sizeof(struct iw_priv_args),
-	.standard = (iw_handler *) NULL,
+	.standard = (iw_handler *) mtk_std_handler,
 	.private = rIwPrivHandler,
 	.private_args = rIwPrivTable,
 	.get_wireless_stats = wext_get_wireless_stats,
@@ -3676,7 +3858,6 @@ int wext_get_priv(IN struct net_device *prNetDev,
 	return 0;
 }				/* wext_get_priv */
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief ioctl() (Linux Wireless Extensions) routines
@@ -4601,6 +4782,335 @@ stat_out:
 	return pStats;
 }				/* wlan_get_wireless_stats */
 
+
+/* Standard call implementations */
+static int std_get_name(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_name(prDev, NULL, (char *)(&(prData->name)),
+				    sizeof(prData->name), NULL);
+}
+
+static int std_set_freq(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_freq(prDev, NULL, &(prData->freq), NULL);
+}
+
+static int std_get_freq(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_freq(prDev, NULL, &(prData->freq), NULL);
+}
+
+static int std_set_mode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_mode(prDev, NULL, &prData->mode, NULL);
+}
+
+static int std_get_mode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_mode(prDev, NULL, &prData->mode, NULL);
+}
+
+static int std_set_ap(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	int ret = 0;
+
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+
+	if (prData->ap_addr.sa_data[0] == 0 &&
+		    prData->ap_addr.sa_data[1] == 0 &&
+		    prData->ap_addr.sa_data[2] == 0 &&
+		    prData->ap_addr.sa_data[3] == 0 &&
+		    prData->ap_addr.sa_data[4] == 0
+		    && prData->ap_addr.sa_data[5] == 0) {
+			/* WPA Supplicant will set 000000000000 in
+			 * wpa_driver_wext_deinit(), do nothing here or
+			 * disassoc again?
+			 */
+		ret = 0;
+	} else {
+		ret = wext_set_ap(prDev, NULL, &(prData->ap_addr), NULL);
+	}
+	return ret;
+}
+
+static int std_get_ap(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_ap(prDev, NULL, &(prData->ap_addr), NULL);
+}
+
+static int std_get_rate(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_rate(prDev, NULL, &prData->bitrate, NULL);
+}
+
+static int std_set_rts(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_rts(prDev, NULL, &(prData->rts), NULL);
+}
+
+static int std_get_rts(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_rts(prDev, NULL, &prData->rts, NULL);
+}
+
+static int std_get_frag(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_frag(prDev, NULL, &prData->frag, NULL);
+}
+
+static int std_set_txpow(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_txpow(prDev, NULL, &(prData->txpower), NULL);
+}
+
+static int std_get_txpow(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_txpow(prDev, NULL, &prData->txpower, NULL);
+}
+
+static int std_set_power(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_power(prDev, NULL, &prData->power, NULL);
+}
+
+static int std_get_power(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_power(prDev, NULL, &prData->power, NULL);
+}
+
+static int std_get_range(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_range(prDev, NULL, &(prData->data),
+				pcExtra);
+}
+
+static int std_set_priv(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_country(prDev, &(prData->data));
+}
+
+static int std_get_priv(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_priv(prDev, &(prData->data));
+}
+
+static int std_set_scan(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_scan(prDev, NULL, NULL, NULL);
+}
+
+static int std_set_mlme(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_mlme(prDev, NULL, &(prData->data), pcExtra);
+}
+
+static int std_get_scan(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_scan(prDev, NULL, &(prData->data), pcExtra);
+}
+
+static int std_set_essid(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_essid(prDev, NULL, &(prData->essid), pcExtra);
+}
+
+static int std_get_essid(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_essid(prDev, NULL, &(prData->essid), pcExtra);
+}
+
+static int std_set_encode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_encode(prDev, NULL,
+			  &(prData->encoding),
+			  pcExtra);
+}
+
+static int std_get_encode(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_get_encode(prDev, NULL, &(prData->encoding), NULL);
+}
+
+static int std_set_auth(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_auth(prDev, NULL, &(prData->param), NULL);
+}
+
+#if WIRELESS_EXT > 17
+static int std_set_genie(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	uint32_t u4ExtraSize = prData->data.length;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+
+#if CFG_SUPPORT_WAPI
+	/* The max wapi ie buffer */
+	if (u4ExtraSize > 42)
+		return -EINVAL;
+#endif
+
+	if (prData->data.pointer) {
+		u4ExtraSize = prData->data.length;
+		prGlueInfo = *((struct GLUE_INFO **)
+						 netdev_priv(prDev));
+		wext_support_ioctl_SIOCSIWGENIE(
+			prGlueInfo, pcExtra,
+			u4ExtraSize);
+	}
+
+	return 0;
+}
+#endif /* end of WIRELESS_EXT */
+
+static int std_set_encode_ext(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+	return wext_set_encode_ext(prDev, NULL, &(prData->encoding),
+						  pcExtra);
+}
+
+static int std_set_pmska(struct net_device *prDev,
+		struct iw_request_info *rIwReqInfo,
+		union iwreq_data *prData,
+		char *pcExtra)
+{
+	int ret = 0;
+
+	DBGLOG(INIT, INFO, " mtk std ioctl is called.\n");
+
+	switch (((struct iw_pmksa *)pcExtra)->cmd) {
+	case IW_PMKSA_ADD:
+		wext_support_ioctl_SIOCSIWPMKSA_Action(
+				prDev, pcExtra,
+				IW_PMKSA_ADD, &ret);
+		break;
+	case IW_PMKSA_REMOVE:
+		break;
+	case IW_PMKSA_FLUSH:
+		wext_support_ioctl_SIOCSIWPMKSA_Action(
+				prDev, pcExtra,
+				IW_PMKSA_FLUSH, &ret);
+		break;
+	default:
+		DBGLOG(INIT, INFO,
+		       "UNKNOWN iw_pmksa command:%d\n",
+		       ((struct iw_pmksa *)pcExtra)
+		       ->cmd);
+		ret = -EFAULT;
+		break;
+	}
+	return ret;
+}
 
 
 #endif /* WIRELESS_EXT */
