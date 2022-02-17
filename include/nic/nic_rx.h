@@ -1293,6 +1293,9 @@ struct RX_DESC_OPS_T {
 #define RXM_IS_MGMT_FRAME(_u2FrameCtrl) \
 	(((_u2FrameCtrl & MASK_FC_TYPE) == MAC_FRAME_TYPE_MGT) ? TRUE : FALSE)
 
+#define RXM_IS_PROTECTED_FRAME(_u2FrameCtrl) \
+	((_u2FrameCtrl & MASK_FC_PROTECTED_FRAME) ? TRUE : FALSE)
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
