@@ -1752,6 +1752,10 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 	while (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) {
 		if (count > 50) {
 			DBGLOG(HAL, ERROR, "pre_resume timeout\n");
+
+			GL_DEFAULT_RESET_TRIGGER(prAdapter,
+						 RST_CMD_EVT_FAIL);
+
 			break;
 		}
 		msleep(20);

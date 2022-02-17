@@ -458,7 +458,8 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 	    RequestType != DEVICE_VENDOR_REQUEST_UHW_OUT &&
 	    prGlueInfo->prAdapter->fgIsWfsysReset) {
 		mutex_unlock(&prHifInfo->vendor_req_sem);
-		return -1;
+		DBGLOG(HAL, WARN, "forbid usb vendor request\n");
+		return -EPERM;
 	}
 
 	if (RequestType == prBusInfo->u4device_vender_request_out ||
@@ -1168,6 +1169,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
 	prGlueInfo->u4InfType = MT_DEV_INF_USB;
 
+	prBusInfo->ucVndReqToMcuFailCnt = 0;
+
 	return;
 
 error:
@@ -1348,10 +1351,12 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 void glResetHifInfo(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	/* If chip supports event endpoint detection, ex: MT7961, then we shall
 	 * do the procedure again after chip reset. Otherwise, chip will be fail
@@ -1360,6 +1365,8 @@ void glResetHifInfo(struct GLUE_INFO *prGlueInfo)
 	prHifInfo->fgEventEpDetected = FALSE;
 
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
+
+	prBusInfo->ucVndReqToMcuFailCnt = 0;
 } /* end of glResetHifInfo() */
 
 /*----------------------------------------------------------------------------*/
@@ -1521,12 +1528,21 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
+	uint8_t ucTotalFailCnt;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4Value);
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	*pu4Value = 0xFFFFFFFF;
+
+	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
+
+	if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+		DBGLOG(HAL, ERROR, "vendor reqs keep failure over %d times\n",
+		       VND_REQ_FAIL_TH);
+		return FALSE;
+	}
 
 	do {
 		ret = mtk_usb_vendor_request(prGlueInfo,
@@ -1542,6 +1558,11 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 				"usb_control_msg() status: %d retry: %u\n",
 				ret, ucRetryCount);
 
+		if (ret) {
+			if (ucTotalFailCnt < 0xff)
+				ucTotalFailCnt++;
+		} else
+			ucTotalFailCnt = 0;
 
 		ucRetryCount++;
 		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
@@ -1556,6 +1577,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 		DBGLOG(HAL, TRACE, "Get CR[0x%08x] value[0x%08x]\n",
 			u4Register, *pu4Value);
 	}
+
+	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevRegRead() */
@@ -1577,9 +1600,19 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
 	struct BUS_INFO *prBusInfo = NULL;
+	uint8_t ucTotalFailCnt;
 
 	ASSERT(prGlueInfo);
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	ucTotalFailCnt = prBusInfo->ucVndReqToMcuFailCnt;
+
+	if (ucTotalFailCnt >= VND_REQ_FAIL_TH) {
+		DBGLOG(HAL, ERROR, "vendor reqs keep failure over %d times\n",
+		       VND_REQ_FAIL_TH);
+		return FALSE;
+	}
+
 	do {
 		ret = mtk_usb_vendor_request(prGlueInfo,
 			0,
@@ -1595,6 +1628,12 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 				"usb_control_msg() status: %d retry: %u\n",
 				ret, ucRetryCount);
 
+		if (ret) {
+			if (ucTotalFailCnt < 0xff)
+				ucTotalFailCnt++;
+		} else
+			ucTotalFailCnt = 0;
+
 		ucRetryCount++;
 		if (ucRetryCount > HIF_USB_ACCESS_RETRY_LIMIT)
 			break;
@@ -1608,6 +1647,8 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 	} else {
 		DBGLOG(HAL, INFO, "Set CR[0x%08x] value[0x%08x]\n", u4Register, u4Value);
 	}
+
+	prBusInfo->ucVndReqToMcuFailCnt = ucTotalFailCnt;
 
 	return (ret) ? FALSE : TRUE;
 }				/* end of kalDevRegWrite() */
