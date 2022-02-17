@@ -1294,6 +1294,7 @@ struct mt66xx_chip_info {
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 	const unsigned int custom_oid_interface_version;
 	const unsigned int em_interface_version;
+	const unsigned int cmd_max_pkt_size;
 
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */

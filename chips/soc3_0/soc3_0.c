@@ -910,6 +910,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #endif
 	.checkbushang = soc3_0_CheckBusHang,
 	.dumpBusHangCr = soc3_0_DumpBusHangCr,
+	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
