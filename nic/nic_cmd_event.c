@@ -3057,6 +3057,11 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 		wlanCfgSetUint32(prAdapter, "DbdcMode",
 					prAdapter->rWifiVar.eDbdcMode);
+	} else if (prPhyCap->ucWifiPath
+		== (WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF1)) {
+		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_STATIC;
+		wlanCfgSetUint32(prAdapter, "DbdcMode",
+					prAdapter->rWifiVar.eDbdcMode);
 	}
 #endif
 	prAdapter->rWifiVar.ucTxLdpc &= prPhyCap->ucTxLdpc;
