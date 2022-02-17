@@ -276,6 +276,45 @@ do { \
 }
 
 #else /* #if defined(_HIF_SDIO) */
+#define L1_REMAP_OFFSET_MASK (0xffff)
+#define GET_L1_REMAP_OFFSET(p) (((p) & L1_REMAP_OFFSET_MASK))
+#define L1_REMAP_BASE_MASK (0xffff << 16)
+#define GET_L1_REMAP_BASE(p) (((p) & L1_REMAP_BASE_MASK) >> 16)
+
+#define CONN_INFRA_PHY_ADDR_START	0x18000000
+#define CONN_INFRA_PHY_ADDR_END		0x183fffff
+#define WFSYS_PHY_ADDR_START		0x18400000
+#define WFSYS_PHY_ADDR_END		0x187fffff
+#define BGFSYS_PHY_ADDR_START		0x18800000
+#define BGFSYS_PHY_ADDR_END		0x18bfffff
+#define CBTOP1_PHY_ADDR_START		0x70000000
+#define CBTOP1_PHY_ADDR_END		0x77ffffff
+#define CBTOP2_PHY_ADDR_START		0xf0000000
+#define CBTOP2_PHY_ADDR_END		0xffffffff
+
+#define CONN_INFRA_MCU_ADDR_START	0x7c000000
+#define CONN_INFRA_MCU_ADDR_END		0x7c3fffff
+#define CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET \
+	(CONN_INFRA_MCU_ADDR_START - CONN_INFRA_PHY_ADDR_START)
+
+#define IS_CONN_INFRA_PHY_ADDR(_reg) \
+	((_reg) >= CONN_INFRA_PHY_ADDR_START && (_reg) \
+		<= CONN_INFRA_PHY_ADDR_END)
+#define IS_WFSYS_PHY_ADDR(_reg) \
+	((_reg) >= WFSYS_PHY_ADDR_START && (_reg) <= WFSYS_PHY_ADDR_END)
+#define IS_BGFSYS_PHY_ADDR(_reg) \
+	((_reg) >= BGFSYS_PHY_ADDR_START && (_reg) <= BGFSYS_PHY_ADDR_END)
+#define IS_CBTOP_PHY_ADDR(_reg) \
+	(((_reg) >= CBTOP1_PHY_ADDR_START && (_reg) <= CBTOP1_PHY_ADDR_END) || \
+	((_reg) >= CBTOP2_PHY_ADDR_START && (_reg) <= CBTOP2_PHY_ADDR_END))
+#define IS_PHY_ADDR(_reg) \
+	(IS_CONN_INFRA_PHY_ADDR(_reg) || IS_WFSYS_PHY_ADDR(_reg) \
+		|| IS_BGFSYS_PHY_ADDR(_reg) || IS_CBTOP_PHY_ADDR(_reg))
+
+#define IS_CONN_INFRA_MCU_ADDR(_reg) \
+	((_reg) >= CONN_INFRA_MCU_ADDR_START && (_reg) \
+			<= CONN_INFRA_MCU_ADDR_END)
+
 #define HAL_MCR_RD(_prAdapter, _u4Offset, _pu4Value) \
 { \
 	if (_prAdapter == NULL) { \

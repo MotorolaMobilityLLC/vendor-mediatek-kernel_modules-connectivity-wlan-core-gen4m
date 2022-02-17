@@ -364,8 +364,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	pci_set_drvdata(pdev, (void *)id->driver_data);
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-		g_fgDriverProbed = TRUE;
-		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
+	g_fgDriverProbed = TRUE;
+	g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 #else
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {

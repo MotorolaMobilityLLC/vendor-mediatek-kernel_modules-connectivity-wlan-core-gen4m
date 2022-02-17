@@ -17,6 +17,13 @@
 #include "coda/bellwether/wf_wfdma_host_dma0.h"
 #include "coda/bellwether/wf_pse_top.h"
 #include "coda/bellwether/pcie_mac_ireg.h"
+#include "coda/bellwether/conn_infra_rgu_on.h"
+#include "coda/bellwether/conn_infra_bus_cr_on.h"
+#include "coda/bellwether/wf_top_cfg_on.h"
+#include "coda/bellwether/wf_mcu_bus_cr.h"
+#include "coda/bellwether/conn_host_csr_top.h"
+#include "coda/bellwether/conn_infra_cfg.h"
+#include "coda/bellwether/conn_infra_cfg_on.h"
 #include "hal_dmashdl_bellwether.h"
 
 /*******************************************************************************
@@ -70,8 +77,10 @@ static void bellwetherEnableFwDlMode(struct ADAPTER *prAdapter);
 
 #if defined(_HIF_PCIE)
 static void bellwetherInitPcieInt(struct GLUE_INFO *prGlueInfo);
-static void bellwetherConfigPcieIntMask(struct GLUE_INFO *prGlueInfo,
-					u_int8_t fgEn);
+#endif
+
+#if (CONFIG_ROM_CODE_DOWNLOAD == 1)
+static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter);
 #endif
 
 /*******************************************************************************
@@ -149,9 +158,34 @@ struct PCIE_CHIP_CR_MAPPING bellwether_bus2chip_cr_mapping[] = {
 	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+};
 
+struct L1_CR_REMAPPING bellwether_l1_remapping = {
+	.u4Base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
+	.u4Mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
+	.u4Shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
+	.u4RemapBase = 0x50000,
 };
 #endif
+
+struct L2_CR_REMAPPING bellwether_l2_remapping = {
+	.u4Base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.u4Mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.u4Shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.u4RemapBase = 0x18500000,
+#if defined(_HIF_PCIE)
+	.u4RemapBusBase = 0x50000,
+#else
+	.u4RemapBusBase = (0x18500000 - 0x18000000),
+#endif
+};
+
+struct PCIE_CHIP_CR_REMAPPING bellwether_bus2chip_cr_remapping = {
+#if defined(_HIF_PCIE)
+	.l1_remapping = &bellwether_l1_remapping,
+#endif
+	.l2_remapping = &bellwether_l2_remapping,
+};
 
 struct wfdma_group_info bellwether_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
@@ -234,6 +268,7 @@ struct BUS_INFO bellwether_bus_info = {
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
 
 	.bus2chip = bellwether_bus2chip_cr_mapping,
+	.bus2chip_remapping = &bellwether_bus2chip_cr_remapping,
 	.max_static_map_addr = 0x000f0000,
 
 	.tx_ring_fwdl_idx = CONNAC3X_FWDL_TX_RING_IDX,
@@ -303,6 +338,9 @@ struct FWDL_OPS_T bellwether_fw_dl_ops = {
 #endif
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
+#if (CONFIG_ROM_CODE_DOWNLOAD == 1)
+	.dlRomCode = bellwetherDownloadRomCode,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -347,7 +385,6 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
-	.patch_addr = BELLWETHER_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
 	.txd_append_size = BELLWETHER_TX_DESC_APPEND_LENGTH,
@@ -703,9 +740,6 @@ static void bellwetherWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	bellwetherConfigIntMask(prGlueInfo, enable);
-#if defined(_HIF_PCIE)
-	bellwetherConfigPcieIntMask(prGlueInfo, enable);
-#endif
 
 	if (enable) {
 		u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
@@ -720,26 +754,291 @@ static void bellwetherInitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		PCIE_MAC_IREG_IMASK_HOST_INT_REQUEST_EN_MASK);
-}
-
-static void bellwetherConfigPcieIntMask(struct GLUE_INFO *prGlueInfo,
-					u_int8_t fgEn)
-{
-	uint32_t u4Val = 0;
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		   PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		   &u4Val);
-	if (fgEn)
-		u4Val |= PCIE_MAC_IREG_ISTATUS_LOCAL_DMA_END_MASK;
-	else
-		u4Val &= ~PCIE_MAC_IREG_ISTATUS_LOCAL_DMA_END_MASK;
-
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		   PCIE_MAC_IREG_IMASK_HOST_ADDR,
-		   u4Val);
+		PCIE_MAC_IREG_IMASK_HOST_DMA_END_EN_MASK);
 }
 #endif
+
+static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
+	uint8_t *name, uint32_t addr)
+{
+	const struct firmware *fw;
+	uint32_t u4Value = 0, u4BkValue = 0;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	const struct PCIE_CHIP_CR_REMAPPING *prRemapping =
+		prBusInfo->bus2chip_remapping;
+	const struct L1_CR_REMAPPING *prL1Remapping =
+		(prRemapping != NULL ? prRemapping->l1_remapping : NULL);
+	const struct L2_CR_REMAPPING *prL2Remapping =
+		(prRemapping != NULL ? prRemapping->l2_remapping : NULL);
+	uint32_t offset = 0;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+
+	ret = request_firmware(&fw, name, prAdapter->prGlueInfo->prDev);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "Request FW %s failed.\n", name);
+		ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	if (!fw || !fw->data) {
+		DBGLOG(INIT, ERROR, "Invalid ROM, name: %s.\n", name);
+		ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	DBGLOG(INIT, INFO, "name: %s, fw->data: 0x%p, fw->size: 0x%zx\n",
+		name,
+		fw->data,
+		fw->size);
+
+	HAL_MCR_RD(prAdapter, prL1Remapping->u4Base, &u4Value);
+	u4BkValue = u4Value;
+
+	u4Value &= ~prL1Remapping->u4Mask;
+	u4Value |= (GET_L1_REMAP_BASE(prL2Remapping->u4RemapBase) <<
+		prL1Remapping->u4Shift);
+	HAL_MCR_WR(prAdapter, prL1Remapping->u4Base, u4Value);
+
+	while (true) {
+		uint32_t size;
+
+		if (offset >= fw->size)
+			break;
+
+		size = ((offset + PCIE_REMAP_SZ) <= fw->size ?
+			PCIE_REMAP_SZ :
+			fw->size - offset);
+
+		HAL_MCR_WR(prAdapter, prL2Remapping->u4Base,
+			(addr + offset));
+
+		RTMP_IO_MEM_COPY(&prAdapter->prGlueInfo->rHifInfo,
+			prL2Remapping->u4RemapBusBase,
+			(void *)(fw->data + offset), size);
+
+		offset += PCIE_REMAP_SZ;
+	}
+
+	HAL_MCR_WR(prAdapter, prL1Remapping->u4Base, u4BkValue);
+
+exit:
+	release_firmware(fw);
+	return ret;
+}
+
+static void __init_pcie_settings(struct ADAPTER *prAdapter)
+{
+	/*
+	 * 0x7C048308 = 0x17400
+	 * 0x7C048320 = 0x0
+	 */
+	HAL_MCR_WR(prAdapter, CONN_BUS_CR_ADDR_MD_SHARED_BASE_ADDR_ADDR, 0x17400);
+	HAL_MCR_WR(prAdapter, CONN_BUS_CR_ADDR_CONN2AP_REMAP_BYPASS_ADDR, 0x0);
+
+	/*
+	 * 0x74030D00 = 0x10000
+	 */
+	HAL_MCR_WR(prAdapter, PCIE_MAC_IREG_PCIE_DEBUG_DUMMY_0_ADDR, 0x10000);
+}
+
+static u_int8_t check_mcu_idle(struct ADAPTER *prAdapter)
+{
+#define MCU_IDLE		0x1D1E
+
+	uint32_t u4Value = 0;
+
+	HAL_MCR_RD(prAdapter, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+		&u4Value);
+
+	return u4Value == MCU_IDLE ? TRUE : FALSE;
+}
+
+static uint32_t __polling_wf_mcu_idle(struct ADAPTER *prAdapter)
+{
+#define MCU_IDLE_POLL_ROUND	100
+#define MCU_IDLE_POLL_US	1000
+
+	uint32_t u4Value = 0;
+	uint32_t i = 0;
+	u_int8_t fgIdle = FALSE;
+
+	do {
+		if (check_mcu_idle(prAdapter) == TRUE) {
+			fgIdle = TRUE;
+			break;
+		}
+
+		kalUdelay(MCU_IDLE_POLL_US);
+	} while ((i++) < MCU_IDLE_POLL_ROUND);
+
+	DBGLOG(INIT, INFO, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
+
+	return (fgIdle == TRUE ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
+}
+
+static uint32_t __polling_wf_task_idle(struct ADAPTER *prAdapter)
+{
+#define WF_IDLE			0xBE11
+#define WF_IDLE_POLL_ROUND	5000
+#define WF_IDLE_POLL_US		1000
+
+	uint32_t u4Value = 0;
+	uint32_t i = 0;
+	u_int8_t fgIdle = FALSE;
+
+	do {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_CR_SW_DEF_MCU_ENTER_IDLE_LOOP,
+			&u4Value);
+		if (u4Value == WF_IDLE) {
+			fgIdle = TRUE;
+			break;
+		}
+
+		kalUdelay(WF_IDLE_POLL_US);
+	} while ((i++) < WF_IDLE_POLL_ROUND);
+
+	DBGLOG(INIT, INFO, "u4Value: 0x%x, fgIdle: %d\n", u4Value, fgIdle);
+
+	return (fgIdle == TRUE ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
+}
+
+static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
+{
+	uint32_t u4PollingCnt = 0;
+	uint32_t u4Value = 0;
+	uint32_t ret = WLAN_STATUS_SUCCESS;
+
+	/* Force wake up conn_infra */
+	HAL_MCR_RD(prAdapter, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, &u4Value);
+	u4Value |= CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_CONN_INFRA_WAKEPU_TOP_MASK;
+	HAL_MCR_WR(prAdapter, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, u4Value);
+
+	/* Polling conn_infra ID */
+	u4PollingCnt = 0;
+	do {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_IP_VERSION_ADDR, &u4Value);
+		if (u4Value == CONNSYS_VERSION_ID)
+			break;
+		else if (u4PollingCnt > 100) {
+			DBGLOG(INIT, INFO, "(%d) Polling conninfra id failed, value=0x%x.\n",
+				__LINE__, u4Value);
+			ret = WLAN_STATUS_FAILURE;
+			goto exit2;
+		}
+		udelay(1000);
+	} while(true);
+
+	/* Polling conn_infra_ready */
+	u4PollingCnt = 0;
+	do {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_ADDR, &u4Value);
+		if (u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_CFG_PWRCTRL1_CONN_INFRA_RDY_MASK)
+			break;
+		else if (u4PollingCnt > 100) {
+			DBGLOG(INIT, INFO, "Polling conninfra ready failed, value=0x%x.\n", u4Value);
+			ret = WLAN_STATUS_FAILURE;
+			goto exit1;
+		}
+		udelay(1000);
+	} while(true);
+
+	if (check_mcu_idle(prAdapter)) {
+		ret = WLAN_STATUS_SUCCESS;
+		goto exit1;
+	}
+
+	/* Enable wf related slp prot */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, &u4Value);
+	u4Value |= CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_CFG_CONN_WF_SLP_PROT_SW_EN_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, u4Value);
+
+	/* Check slp prot rdy */
+	u4PollingCnt = 0;
+	do {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_ADDR, &u4Value);
+		if ((u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WFDMA2CONN_SLP_PROT_RDY_MASK) &&
+			(u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_CONN2WF_SLP_PROT_RDY_MASK) &&
+			(u4Value & CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_STATUS_WF2CONN_SLP_PROT_RDY_MASK))
+			break;
+		else if (u4PollingCnt > 100) {
+			DBGLOG(INIT, INFO, "Polling slp prot rdy failed, value=0x%x.\n", u4Value);
+			ret = WLAN_STATUS_FAILURE;
+			goto exit1;
+		}
+		udelay(1000);
+	} while(true);
+
+	/* Reset wfsys */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_ADDR, &u4Value);
+	u4Value &= ~CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_WFSYS_SW_RST_B_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_ADDR, u4Value);
+
+	/* Wf mcu reset */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, &u4Value);
+	u4Value &= ~CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_WFSYS_CPU_SW_RST_B_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, u4Value);
+
+	/* Disable wf related slp prot */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, &u4Value);
+	u4Value &= ~CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_CFG_CONN_WF_SLP_PROT_SW_EN_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_CFG_ON_CONN_INFRA_WF_SLP_CTRL_ADDR, u4Value);
+
+	/* Release wf reset */
+	HAL_MCR_RD(prAdapter, CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_ADDR, &u4Value);
+	u4Value |= CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_WFSYS_SW_RST_B_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_RGU_ON_WFSYS_SW_RST_B_ADDR, u4Value);
+
+	/* Polling conn_infra ID */
+	u4PollingCnt = 0;
+	do {
+		HAL_MCR_RD(prAdapter, CONN_INFRA_CFG_IP_VERSION_ADDR, &u4Value);
+		if (u4Value == CONNSYS_VERSION_ID)
+			break;
+		else if (u4PollingCnt > 100) {
+			DBGLOG(INIT, INFO, "(%d) Polling conninfra id failed, value=0x%x.\n",
+				__LINE__, u4Value);
+			ret = WLAN_STATUS_FAILURE;
+			goto exit1;
+		}
+		udelay(1000);
+	} while(true);
+
+	ret = __load_rom_code(prAdapter,
+		BELLWETHER_FIRMWARE_ROM,
+		BELLWETHER_FIRMWARE_ROM_ADDR);
+	if (ret != WLAN_STATUS_SUCCESS)
+		goto exit1;
+
+	ret = __load_rom_code(prAdapter,
+		BELLWETHER_FIRMWARE_ROM_SRAM,
+		BELLWETHER_FIRMWARE_ROM_SRAM_ADDR);
+	if (ret != WLAN_STATUS_SUCCESS)
+		goto exit1;
+
+	/* TODO: only needed for fpga platform */
+	__init_pcie_settings(prAdapter);
+
+	HAL_MCR_RD(prAdapter, CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, &u4Value);
+	u4Value |= CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_WFSYS_CPU_SW_RST_B_MASK;
+	HAL_MCR_WR(prAdapter, CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, u4Value);
+
+	ret = __polling_wf_mcu_idle(prAdapter);
+	if (ret != WLAN_STATUS_SUCCESS)
+		goto exit1;
+
+	ret = __polling_wf_task_idle(prAdapter);
+	if (ret != WLAN_STATUS_SUCCESS)
+		goto exit1;
+
+exit1:
+	/* Force wake up conn_infra */
+	HAL_MCR_RD(prAdapter, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, &u4Value);
+	u4Value &= ~CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_CONN_INFRA_WAKEPU_TOP_MASK;
+	HAL_MCR_WR(prAdapter, CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR, u4Value);
+
+exit2:
+	DBGLOG(INIT, INFO, "ret: 0x%lx\n", ret);
+	return ret;
+}
 
 #endif  /* bellwether */

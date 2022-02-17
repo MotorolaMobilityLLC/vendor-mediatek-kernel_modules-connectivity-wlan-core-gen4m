@@ -2463,6 +2463,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	struct FWDL_OPS_T *prFwDlOps;
 	uint32_t u4Offset = 0;
 	uint8_t aucBuf[32], aucDate[32];
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
@@ -2484,7 +2485,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 						   pcBuf + u4Offset,
 						   i4TotalLen - u4Offset);
 
-	if (!prVerInfo->fgPatchIsDlByDrv) {
+	if (prChipInfo->patch_addr && !prVerInfo->fgPatchIsDlByDrv) {
 		u4Offset += snprintf(pcBuf + u4Offset,
 				     i4TotalLen - u4Offset,
 				     "MCU patch is not downloaded by wlan driver, read patch info\n");

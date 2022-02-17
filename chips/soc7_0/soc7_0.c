@@ -396,7 +396,9 @@ struct BUS_INFO soc7_0_bus_info = {
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
 	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
+#if defined(_HIF_PCIE)
 	.initPcieInt = NULL,
+#endif
 	.devReadIntStatus = soc7_0ReadIntStatus,
 	.DmaShdlInit = soc7_0DmashdlInit,
 	.setRxRingHwAddr = soc7_0SetRxRingHwAddr,
