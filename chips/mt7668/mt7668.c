@@ -364,6 +364,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.downloadBufferBin = wlanDownloadBufferBin,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
+	.workAround = 0,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7668 = {
