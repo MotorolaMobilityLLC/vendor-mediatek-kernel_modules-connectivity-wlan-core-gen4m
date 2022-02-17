@@ -223,7 +223,7 @@ int CFG80211_Resume(struct wiphy *wiphy)
  *******************************************************************************
  */
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 	#define CHAN2G(_channel, _freq, _flags)		\
 	{						\
 		.band               = KAL_BAND_2GHZ,	\
@@ -263,7 +263,7 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 	CHAN2G(14, 2484, 0),
 };
 
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 	#define CHAN5G(_channel, _flags)			\
 	{							\
 		.band              = KAL_BAND_5GHZ,		\
@@ -291,7 +291,7 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 	#define CHAN6G(_channel, _flags)				\
 	{								\
 		.band               = KAL_BAND_6GHZ,			\
@@ -5500,8 +5500,10 @@ static int32_t wlanOffAtReset(void)
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	prBusInfo = prAdapter->chip_info->bus_info;
 	nicDisableInterrupt(prAdapter);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prBusInfo->disableSwInterrupt)
 		prBusInfo->disableSwInterrupt(prAdapter);
+#endif
 	glBusFreeIrq(prDev, prGlueInfo);
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)

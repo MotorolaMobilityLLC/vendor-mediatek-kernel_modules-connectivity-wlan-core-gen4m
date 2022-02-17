@@ -918,6 +918,7 @@ void
 statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct ADAPTER *prAdapter;
 	struct BUS_INFO *prBusInfo;
 	struct PLE_TOP_CR *prCr;
@@ -958,6 +959,7 @@ statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 		u4TlvLen, prQueueStat->u4MsduTokenUsed,
 		prQueueStat->u4MsduTokenRsvd,
 		prQueueStat->u4PleHifUsed, prQueueStat->u4PleHifRsvd);
+#endif
 }
 
 void
