@@ -1424,8 +1424,8 @@ enum BEACON_REPORT_DETAIL {
 #define VHT_OP_MODE_RX_NSS                          BITS(4, 6)
 #define VHT_OP_MODE_RX_NSS_TYPE                     BIT(7)
 
-#define SUPPORT_NSS_1	0x00
-#define SUPPORT_NSS_2	0x01
+#define VHT_OP_MODE_NSS_1	0x00
+#define VHT_OP_MODE_NSS_2	0x01
 
 #define VHT_OP_MODE_CHANNEL_WIDTH_OFFSET                   0
 #define VHT_OP_MODE_RX_NSS_OFFSET                   4
