@@ -132,6 +132,7 @@ struct mddpw_net_stat_ext_t stats;
 */
 
 static bool wait_for_md_on_complete(void);
+static bool wait_for_md_off_complete(void);
 static void save_mddp_stats(void);
 
 static void mddpRdFunc(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
@@ -503,6 +504,92 @@ int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
 	return ret;
 }
 
+static bool mddpIsCasanFWload(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	bool ret = FALSE;
+
+	if (gPrDev == NULL) {
+		DBGLOG(INIT, ERROR, "gPrDev is NULL.\n");
+		goto exit;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(gPrDev));
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto exit;
+	}
+
+	if (prAdapter->u4CasanLoadType == 1)
+		ret = TRUE;
+
+exit:
+	return ret;
+}
+
+int32_t mddpNotifyDrvOwnTimeoutTime(void)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	int32_t ret = 0;
+	uint32_t u32BufSize = 0;
+	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
+	uint8_t *buff = NULL;
+
+	DBGLOG(INIT, INFO, "MD notify Drv Own Timeout time.\n");
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	if (mddpIsCasanFWload() == TRUE)
+		u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
+	else
+		goto exit;
+
+	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
+
+	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+			sizeof(uint32_t);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = 5; /* WSVC_DRVINFO_DRVOWN_TIME_SET */
+	prDrvInfo->info_len = sizeof(uint32_t);
+
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]), &u32DrvOwnTimeoutTime,
+			sizeof(uint32_t));
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+
+exit:
+	if (buff)
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+
+	DBGLOG(INIT, INFO, "ret: %d, timeout: %d.\n",
+				   ret, u32DrvOwnTimeoutTime);
+	return ret;
+}
+
 void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
@@ -519,6 +606,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 
 	if (!mddpIsSupportMcifWifi())
 		return ret;
+
+	/* Notify Driver own timeout time before Wi-Fi on end */
+	mddpNotifyDrvOwnTimeoutTime();
 
 	if (g_rSettings.rOps.set)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4WifiOnBit);
@@ -553,6 +643,8 @@ void mddpNotifyWifiOffStart(void)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4MdOffBit);
 
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_START);
+	if (ret == 0)
+		wait_for_md_off_complete();
 }
 
 void mddpNotifyWifiOffEnd(void)
@@ -762,6 +854,41 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 
 	return 0;
 
+}
+
+static bool wait_for_md_off_complete(void)
+{
+	uint32_t u4Value = 0;
+	uint32_t u4StartTime, u4CurTime;
+	bool fgTimeout = false;
+	uint32_t u32MDOffTimeoutTime = MD_ON_OFF_TIMEOUT;
+
+	if (mddpIsCasanFWload() == TRUE)
+		u32MDOffTimeoutTime = MD_ON_OFF_TIMEOUT_CASAN;
+
+	u4StartTime = kalGetTimeTick();
+
+	do {
+		if (g_rSettings.rOps.rd)
+			g_rSettings.rOps.rd(&g_rSettings, &u4Value);
+
+		if ((u4Value & g_rSettings.u4MdOffBit) == 0) {
+			DBGLOG(INIT, INFO, "md off end.\n");
+			break;
+		}
+
+		u4CurTime = kalGetTimeTick();
+		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
+				u32MDOffTimeoutTime)) {
+			DBGLOG(INIT, ERROR, "wait for md off timeout\n");
+			fgTimeout = true;
+			break;
+		}
+
+		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
+	} while (TRUE);
+
+	return !fgTimeout;
 }
 
 static bool wait_for_md_on_complete(void)

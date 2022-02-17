@@ -31,7 +31,8 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define MD_ON_OFF_TIMEOUT 1000
+#define MD_ON_OFF_TIMEOUT			1000
+#define MD_ON_OFF_TIMEOUT_CASAN		3000
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define MD_STATUS_SYNC_CR 0x180600F4
 #define MD_LPCTL_ADDR 0x18060050
