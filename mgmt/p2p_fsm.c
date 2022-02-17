@@ -292,6 +292,26 @@ void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
 					prAdapter->prGlueInfo->prP2PInfo[i]
 						->u2WFDIELen = 0;
 			}
+
+#if CFG_ENABLE_PER_STA_STATISTICS_LOG
+		if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[0]) {
+			/* Assume role 0 */
+			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+				(struct P2P_ROLE_FSM_INFO *)
+				prAdapter->rWifiVar.aprP2pRoleFsmInfo[0];
+
+			if (prWfdCfgSettings->ucWfdEnable == 1)
+				cnmTimerStartTimer(prAdapter,
+					&(prP2pRoleFsmInfo
+					->rP2pRoleFsmGetStatisticsTimer),
+					(3 * P2P_ROLE_GET_STATISTICS_TIME));
+			else
+				cnmTimerStopTimer(prAdapter,
+					&prP2pRoleFsmInfo
+					->rP2pRoleFsmGetStatisticsTimer);
+		}
+#endif
+
 	} while (FALSE);
 
 	if (prMsgHdr)
