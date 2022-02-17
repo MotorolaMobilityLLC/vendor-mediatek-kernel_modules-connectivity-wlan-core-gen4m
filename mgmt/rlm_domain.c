@@ -1850,6 +1850,7 @@ uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf)
 	kalMemCopy(SUP_OPERATING_CLASS_IE(pBuf)->ucSup, aucClass,
 		   sizeof(aucClass));
 	u4IeLen = (SUP_OPERATING_CLASS_IE(pBuf)->ucLength + 2);
+#if CFG_SUPPORT_802_11D
 	pBuf += u4IeLen;
 
 	COUNTRY_IE(pBuf)->ucId = ELEM_ID_COUNTRY_INFO;
@@ -1861,7 +1862,7 @@ uint32_t rlmDomainSupOperatingClassIeFill(uint8_t *pBuf)
 	COUNTRY_IE(pBuf)->arCountryStr[0].ucNumOfChnl = 11;
 	COUNTRY_IE(pBuf)->arCountryStr[0].cMaxTxPwrLv = 0x1e;
 	u4IeLen += (COUNTRY_IE(pBuf)->ucLength + 2);
-
+#endif
 	return u4IeLen;
 }
 
