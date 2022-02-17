@@ -7,7 +7,7 @@
  *
  * GPLv2 License
  *
- * Copyright(C) 2016 MediaTek Inc.
+ * Copyright(C) 2017 MediaTek Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -20,7 +20,7 @@
  *
  * BSD LICENSE
  *
- * Copyright(C) 2016 MediaTek Inc. All rights reserved.
+ * Copyright(C) 2017 MediaTek Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,15 +49,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-
-/*! \file  mt7915.h
-*    \brief This file contains the info of MT7915
-*/
-
-#ifdef MT7915
-
-#ifndef _MT7915_H
-#define _MT7915_H
+#ifndef _TWT_PLANNER_H
+#define _TWT_PLANNER_H
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -73,30 +66,29 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-/*TODO: To use correct ID after FPGA uses correct ID @20170927*/
-
-#define CONNAC2X_TOP_HCR 0x70010200
-#define CONNAC2X_TOP_FVR 0x70010204
-#define CONNAC2X_TOP_HVR 0x70010208
-#define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
-	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         0
-
-#define MT7915_CHIP_ID                 (0x7915)
-#define MT7915_SW_SYNC0                CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define MT7915_SW_SYNC0_RDY_OFFSET \
-	CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-#define MT7915_PATCH_START_ADDR        (0x00200000)
-#define MT7915_TOP_CFG_BASE			CONN_CFG_BASE
-#define MT7915_TX_DESC_APPEND_LENGTH        44
-#define MT7915_RX_DESC_LENGTH               24
-#define MT7915_ARB_AC_MODE_ADDR (0x820e3020)
 
 /*******************************************************************************
-*                         D A T A   T Y P E S
+*                             D A T A   T Y P E S
 ********************************************************************************
 */
+
+struct _TWT_FLOW_T {
+	struct _TWT_PARAMS_T rTWTParams;
+	struct _TWT_PARAMS_T rTWTPeerParams;
+	u_int64_t u8NextTWT;
+};
+
+struct _TWT_AGRT_T {
+	u_int8_t fgValid;
+	u_int8_t ucAgrtTblIdx;
+	u_int8_t ucBssIdx;
+	u_int8_t ucFlowId;
+	struct _TWT_PARAMS_T rTWTAgrt;
+};
+
+struct _TWT_PLANNER_T {
+	struct _TWT_AGRT_T arTWTAgrtTbl[TWT_AGRT_MAX_NUM];
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -113,15 +105,73 @@
 ********************************************************************************
 */
 
+#define TSF_OFFSET_FOR_EMU	   (1 * 1000 * 1000)	/* after 1 sec */
+#define TSF_OFFSET_FOR_AGRT_ADD	   (5 * 1000 * 1000)	/* after 5 sec */
+#define TSF_OFFSET_FOR_AGRT_RESUME (5 * 1000 * 1000)	/* after 5 sec */
+
+/* Definitions for action control of TWT params */
+enum {
+	TWT_PARAM_ACTION_NONE = 0,
+	TWT_PARAM_ACTION_ADD_BYPASS = 1, /* bypass nego & add an agrt */
+	TWT_PARAM_ACTION_DEL_BYPASS = 2, /* bypass proto & del an agrt */
+	TWT_PARAM_ACTION_MOD_BYPASS = 3, /* bypass proto & modify an agrt */
+	TWT_PARAM_ACTION_ADD = 4,
+	TWT_PARAM_ACTION_DEL = 5,
+	TWT_PARAM_ACTION_SUSPEND = 6,
+	TWT_PARAM_ACTION_RESUME = 7,
+	TWT_PARAM_ACTION_MAX
+};
+
+#define IS_TWT_PARAM_ACTION_ADD_BYPASS(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ADD_BYPASS)
+#define IS_TWT_PARAM_ACTION_DEL_BYPASS(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_DEL_BYPASS)
+#define IS_TWT_PARAM_ACTION_MOD_BYPASS(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_MOD_BYPASS)
+#define IS_TWT_PARAM_ACTION_ADD(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ADD)
+#define IS_TWT_PARAM_ACTION_DEL(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_DEL)
+#define IS_TWT_PARAM_ACTION_SUSPEND(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_SUSPEND)
+#define IS_TWT_PARAM_ACTION_RESUME(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_RESUME)
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+void twtPlannerSetParams(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+uint32_t twtPlannerReset(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
+void twtPlannerRxNegoResult(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtPlannerSuspendDone(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtPlannerTeardownDone(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtPlannerResumeDone(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtPlannerRxInfoFrm(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 
-#endif /* _MT7915_H */
-#endif  /* MT7915 */
+#endif /* _TWT_PLANNER_H */

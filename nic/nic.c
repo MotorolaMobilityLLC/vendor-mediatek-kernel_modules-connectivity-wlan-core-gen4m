@@ -89,7 +89,10 @@ const uint8_t aucPhyCfg2PhyTypeSet[PHY_CONFIG_NUM] = {
 	PHY_TYPE_SET_802_11GN,	/* PHY_CONFIG_802_11GN */
 	PHY_TYPE_SET_802_11AC,
 	PHY_TYPE_SET_802_11ANAC,
-	PHY_TYPE_SET_802_11ABGNAC
+	PHY_TYPE_SET_802_11ABGNAC,
+#if (CFG_SUPPORT_802_11AX == 1)
+	PHY_TYPE_SET_802_11ABGNACAX,
+#endif
 };
 
 /*******************************************************************************
@@ -1693,6 +1696,14 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	else
 		rCmdSetBssInfo.ucStaRecIdxOfAP = STA_REC_INDEX_NOT_FOUND;
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	memcpy(rCmdSetBssInfo.ucHeOpParams, prBssInfo->ucHeOpParams,
+			HE_OP_BYTE_NUM);
+	rCmdSetBssInfo.ucBssColorInfo = prBssInfo->ucBssColorInfo;
+	rCmdSetBssInfo.u2HeBasicMcsSet =
+		CPU_TO_LE16(prBssInfo->u2HeBasicMcsSet);
+#endif
+
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	rCmdSetBssInfo.ucMaxBSSIDIndicator = prBssInfo->ucMaxBSSIDIndicator;
 	rCmdSetBssInfo.ucMBSSIDIndex = prBssInfo->ucMBSSIDIndex;
@@ -2645,6 +2656,103 @@ uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 				   sizeof(struct CMD_UPDATE_WMM_PARMS),
 				   (uint8_t *)&rCmdUpdateWmmParms, NULL, 0);
 }
+
+#if (CFG_SUPPORT_802_11AX == 1)
+uint32_t nicQmUpdateMUEdcaParams(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T rCmdUpdateMUEdcaParms;
+
+	ASSERT(prAdapter);
+
+	DBGLOG(QM, INFO, "Update MU EDCA parameters for BSS[%u]\n", ucBssIndex);
+
+	DBGLOG(QM, EVENT, "sizeof(CMD_MU_EDCA_PARAMS_T): %d\n",
+		sizeof(struct _CMD_MU_EDCA_PARAMS_T));
+	DBGLOG(QM, EVENT, "sizeof(CMD_MQM_UPDATE_MU_EDCA_PARMS_T): %d\n",
+		sizeof(struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T));
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	rCmdUpdateMUEdcaParms.ucBssIndex = (uint8_t) ucBssIndex;
+
+	if (prAdapter->fgMuEdcaOverride) {
+
+		enum ENUM_WMM_ACI eAci;
+		struct _CMD_MU_EDCA_PARAMS_T *prMUEdca;
+
+		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+
+			prMUEdca =
+				&(rCmdUpdateMUEdcaParms.arMUEdcaParams[eAci]);
+
+			prMUEdca->ucECWmin = 15;
+			prMUEdca->ucECWmax = 15;
+			prMUEdca->ucAifsn = 0;
+			prMUEdca->ucIsACMSet = 0;
+			prMUEdca->ucMUEdcaTimer = 0xff;
+		}
+	} else {
+		kalMemCopy(&rCmdUpdateMUEdcaParms.arMUEdcaParams[0],
+			&prBssInfo->arMUEdcaParams[0],
+			(sizeof(struct _CMD_MU_EDCA_PARAMS_T) * AC_NUM));
+	}
+
+	rCmdUpdateMUEdcaParms.fgIsQBSS = prBssInfo->fgIsQBSS;
+	rCmdUpdateMUEdcaParms.ucWmmSet = (uint8_t) prBssInfo->ucWmmQueSet;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_MQM_UPDATE_MU_EDCA_PARMS,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL, NULL,
+				sizeof(struct _CMD_MQM_UPDATE_MU_EDCA_PARMS_T),
+				(uint8_t *)&rCmdUpdateMUEdcaParms, NULL, 0);
+}
+
+uint32_t nicRlmUpdateSRParams(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct _CMD_RLM_UPDATE_SR_PARMS_T rCmdUpdateSRParms;
+
+	ASSERT(prAdapter);
+
+	DBGLOG(RLM, INFO, "Update Spatial Reuse parameters for BSS[%u]\n",
+		ucBssIndex);
+
+	DBGLOG(RLM, EVENT, "sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T): %d\n",
+		sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T));
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	rCmdUpdateSRParms.ucBssIndex = ucBssIndex;
+	rCmdUpdateSRParms.ucSRControl = prBssInfo->ucSRControl;
+	rCmdUpdateSRParms.ucNonSRGObssPdMaxOffset =
+		prBssInfo->ucNonSRGObssPdMaxOffset;
+	rCmdUpdateSRParms.ucSRGObssPdMinOffset =
+		prBssInfo->ucSRGObssPdMinOffset;
+	rCmdUpdateSRParms.ucSRGObssPdMaxOffset =
+		prBssInfo->ucSRGObssPdMaxOffset;
+	rCmdUpdateSRParms.u4SRGBSSColorBitmapLow = CPU_TO_LE32(
+		(uint32_t)(prBssInfo->u8SRGBSSColorBitmap & 0xFFFFFFFF));
+	rCmdUpdateSRParms.u4SRGBSSColorBitmapHigh = CPU_TO_LE32(
+		(uint32_t)(prBssInfo->u8SRGBSSColorBitmap >> 32));
+	rCmdUpdateSRParms.u4SRGPartialBSSIDBitmapLow = CPU_TO_LE32(
+		(uint32_t)(prBssInfo->u8SRGPartialBSSIDBitmap & 0xFFFFFFFF));
+	rCmdUpdateSRParms.u4SRGPartialBSSIDBitmapHigh = CPU_TO_LE32(
+		(uint32_t)(prBssInfo->u8SRGPartialBSSIDBitmap >> 32));
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_RLM_UPDATE_SR_PARAMS,
+				TRUE,
+				FALSE,
+				FALSE,
+				NULL, NULL,
+				sizeof(struct _CMD_RLM_UPDATE_SR_PARMS_T),
+				(uint8_t *)&rCmdUpdateSRParms, NULL, 0);
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
