@@ -908,14 +908,17 @@ WLAN_STATUS
 nicMediaStateChange(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_EVENT_CONNECTION_STATUS prConnectionStatus)
 {
 	P_GLUE_INFO_T prGlueInfo;
+	P_AIS_FSM_INFO_T prAisFsmInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
+	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
 		if (prConnectionStatus->ucMediaStatus == PARAM_MEDIA_STATE_DISCONNECTED) {	/* disconnected */
-			if (kalGetMediaStateIndicated(prGlueInfo) != PARAM_MEDIA_STATE_DISCONNECTED) {
+			if (kalGetMediaStateIndicated(prGlueInfo) != PARAM_MEDIA_STATE_DISCONNECTED ||
+				prAisFsmInfo->eCurrentState == AIS_STATE_JOIN) {
 
 				kalIndicateStatusAndComplete(prGlueInfo, WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
 
