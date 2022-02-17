@@ -338,6 +338,7 @@ ifeq ($(MTK_TC3_SUPPORT), yes)
     ccflags-y += -DCFG_TC3_FEATURE=1
     ccflags-y += -DCFG_P2P_CONNECT_ALL_BSS=1
     ccflags-y += -DCFG_P2P_DEFAULT_CLIENT_COUNT=1
+    ccflags-y += -DCFG_P2P_SCAN_REPORT_ALL_BSS=1
 else
     ccflags-y += -DCFG_TC3_FEATURE=0
 endif
