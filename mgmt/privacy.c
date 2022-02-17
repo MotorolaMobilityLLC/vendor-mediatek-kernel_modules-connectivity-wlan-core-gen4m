@@ -831,8 +831,8 @@ u_int8_t secPrivacySeekForEntry(
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
-	/* reserve wtbl IDX for GTK: 0-2 for wlan0, 3-5 for wlan1 */
-	ucStartIDX = 6;
+	/* reserve wtbl IDX 0, 1 for BIP*/
+	ucStartIDX = 2;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
@@ -1114,27 +1114,23 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 		prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
 		fgCheckKeyId);
 
-	/* reserve wtbl IDX for GTK: 0-2 for wlan0, 3-5 for wlan1 */
-	if (IS_BSS_AIS(prBSSInfo) && ucKeyId >= 1 && ucKeyId <= 3) { /* GTK */
-		ucStartIDX = (ucBssIndex == 0)?0:3;
-		ucMaxIDX = (ucBssIndex == 0)?2:5;
-		DBGLOG(RSN, TRACE,
-			"[Wlan index]: IGTK key install ranging from 0 to 5\n");
+	/* reserve wtbl IDX 0, 1 for BIP*/
+	ucStartIDX = 2;
+	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
+	if (ucAlg == CIPHER_SUITE_BIP) {
+		ucEntry = ucBssIndex;
 	} else {
-		ucStartIDX = 6;
-		ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
-	}
-
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
 			if (prWtbl[i].ucUsed && !prWtbl[i].ucPairwise
 				&& prWtbl[i].ucBssIndex == ucBssIndex) {
+
 				if (!fgCheckKeyId) {
 					ucEntry = i;
 					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Reuse entry #%d for open/wep/wpi\n",
-					    i);
+						"[Wlan index]: Reuse entry #%d for open/wep/wpi\n",
+						i);
 					break;
 				}
 
@@ -1143,8 +1139,8 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 						|| prWtbl[i].ucKeyId == 0xFF)) {
 					ucEntry = i;
 					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Reuse entry #%d\n",
-					    i);
+						"[Wlan index]: Reuse entry #%d\n",
+						i);
 					break;
 				}
 			}
@@ -1155,12 +1151,13 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 				if (prWtbl[i].ucUsed == FALSE) {
 					ucEntry = i;
 					DBGLOG(RSN, TRACE,
-					    "[Wlan index]: Assign entry #%d\n",
-					    i);
+					       "[Wlan index]: Assign entry #%d\n",
+						i);
 					break;
 				}
 			}
 		}
+	}
 
 	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
 		prWtbl[ucEntry].ucUsed = TRUE;
