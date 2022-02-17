@@ -437,7 +437,7 @@ wlanoidGetNANCapabilitiesRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanCapabilitiesRsp.max_subscribe_address = 1;
 
 	/*  Fill values of nanCapabilitiesRsp */
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  sizeof(struct NanCapabilitiesRspMsg) +
 						  NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -482,7 +482,7 @@ wlanoidNANEnableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanEnableRsp.value = 0;
 
 	/*  Fill values of nanCapabilitiesRsp */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev, sizeof(struct NanEnableRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -527,7 +527,7 @@ wlanoidNANDisableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanDisableRsp.status = 0;
 
 	/*  Fill values of nanCapabilitiesRsp */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev, sizeof(struct NanDisableRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -572,7 +572,7 @@ wlanoidNANConfigRsp(IN struct ADAPTER *prAdapter,
 	nanConfigRsp.value = 0;
 
 	/*  Fill values of nanCapabilitiesRsp */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev, sizeof(struct NanConfigRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -630,7 +630,7 @@ wlanoidNanPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	       nanPublishRsp.fwHeader.transactionId);
 
 	/*  Fill values of nanPublishRsp */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
 		sizeof(struct NanPublishServiceRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -693,7 +693,7 @@ wlanoidNANCancelPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	       "[%s] nanPublishCancelRsp.fwHeader.transactionId = %d\n",
 	       __func__, nanPublishCancelRsp.fwHeader.transactionId);
 
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
 		sizeof(struct NanPublishServiceCancelRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -749,7 +749,7 @@ wlanoidNanSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		nanSubscribeRsp.status = NAN_I_STATUS_INVALID_HANDLE;
 
 	/*  Fill values of nanSubscribeRsp */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
 		sizeof(struct NanSubscribeServiceRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -809,7 +809,7 @@ wlanoidNANCancelSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	nanSubscribeCancelRsp.status = pNanSubscribeCancelRsp->status;
 
 	/*  Fill values of NanSubscribeServiceCancelRspMsg */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
 		sizeof(struct NanSubscribeServiceCancelRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -869,7 +869,7 @@ wlanoidNANFollowupRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	u8NanFollowupID = nanXmitFollowupRsp.fwHeader.transactionId;
 
 	/*  Fill values of NanSubscribeServiceCancelRspMsg */
-	skb = cfg80211_vendor_event_alloc(
+	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
 		sizeof(struct NanTransmitFollowupRspMsg) + NLMSG_HDRLEN,
 		WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
@@ -2084,7 +2084,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(IN struct ADAPTER *prAdapter,
 	tlvs = nanAddTlv(u2EventType, MAC_ADDR_LEN, prDeEvt->addr, tlvs);
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2145,7 +2145,7 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 	prNanDisableInd->reason = 0;
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					message_len + NLMSG_HDRLEN,
 					WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2216,7 +2216,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 			 &prRepliedEvt->ucRssi_value, tlvs);
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2314,7 +2314,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
 			 (u8 *)&nanPeerSdeaCtrlarms, tlvs);
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2366,7 +2366,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(IN struct ADAPTER *prAdapter,
 	       nanPubTerInd.fwHeader.handle);
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2413,7 +2413,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(IN struct ADAPTER *prAdapter,
 	nanSubTerInd.reason = prSubTerEvt->ucReasonCode;
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2488,7 +2488,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 	/* To be implement. NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO */
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					  message_len + NLMSG_HDRLEN,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
@@ -2540,7 +2540,7 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 	prNanFollowupInd->fwHeader.transactionId = u8NanFollowupID;
 
 	/*  Fill skb and send to kernel by nl80211*/
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 					message_len + NLMSG_HDRLEN,
 					WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {

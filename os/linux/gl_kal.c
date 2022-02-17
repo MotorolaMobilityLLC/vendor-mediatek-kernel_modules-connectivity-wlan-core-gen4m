@@ -7272,7 +7272,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	kalSnprintf(uevent, sizeof(uevent), "code=%d", event);
 	kalSendUevent(uevent);
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 		dataLen,
 		WIFI_EVENT_DRIVER_ERROR, GFP_KERNEL);
 	if (!skb) {
@@ -7324,7 +7324,7 @@ int8_t kalBigDataPip(struct ADAPTER *prAdapter,
 	}
 	GET_CURRENT_SYSTIME(&prAdapter->tmDataPipReportinterval);
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, dataLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, dataLen,
 		WIFI_EVENT_BIGDATA_PIP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
@@ -7365,10 +7365,8 @@ int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
 	if (!wiphy || !wdev || !prWifiVar)
 		return -EINVAL;
 
-	skb = cfg80211_vendor_event_alloc(wiphy,
-#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+	skb = kalCfg80211VendorEventAlloc(wiphy,
 		wdev,
-#endif
 		dataLen, WIFI_EVENT_OP_MODE_CHANGE, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
