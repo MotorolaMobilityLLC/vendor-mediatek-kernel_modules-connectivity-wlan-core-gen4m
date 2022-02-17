@@ -1425,11 +1425,23 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	if (rCmdSetBssInfo.ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex) {
 		P_CONNECTION_SETTINGS_T prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+#if CFG_SUPPORT_PASSPOINT
+		/* mapping OSEN to WPA2, due to firmware no need to know current is OSEN */
+		if (prConnSettings->eAuthMode == AUTH_MODE_WPA_OSEN)
+			rCmdSetBssInfo.ucAuthMode = AUTH_MODE_WPA2;
+		else
+#endif
+		/* Firmware didn't define AUTH_MODE_NON_RSN_FT, so AUTH_MODE_OPEN is zero in firmware,
+		** but it is 1 in driver. so we need to minus 1 for all authmode except AUTH_MODE_NON_RSN_FT,
+		** because AUTH_MODE_NON_RSN_FT will be same as AUTH_MODE_OPEN in firmware
+		**/
+		if (prConnSettings->eAuthMode != AUTH_MODE_NON_RSN_FT)
+			rCmdSetBssInfo.ucAuthMode = (UINT_8)prConnSettings->eAuthMode - 1;
+		else
+			rCmdSetBssInfo.ucAuthMode = (UINT_8) prConnSettings->eAuthMode;
 
-		rCmdSetBssInfo.ucAuthMode = (UINT_8) prConnSettings->eAuthMode;
 		rCmdSetBssInfo.ucEncStatus = (UINT_8) prConnSettings->eEncStatus;
 		rCmdSetBssInfo.ucWapiMode = (UINT_8) prConnSettings->fgWapiMode;
-		rCmdSetBssInfo.ucDisconnectDetectTh = prWifiVar->ucStaDisconnectDetectTh;
 	}
 #if CFG_ENABLE_BT_OVER_WIFI
 	else if (IS_BSS_BOW(prBssInfo)) {

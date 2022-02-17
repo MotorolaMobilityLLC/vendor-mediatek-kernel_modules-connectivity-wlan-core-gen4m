@@ -11762,7 +11762,7 @@ wlanoidSetHS20Info(IN P_ADAPTER_T prAdapter,
 	ASSERT(pu4SetInfoLen);
 
 	DEBUGFUNC("wlanoidSetHS20AssocInfo");
-	DBGLOG(REQ, LOUD, "\r\n");
+	DBGLOG(OID, LOUD, "\r\n");
 
 	if (u4SetBufferLen == 0)
 		return WLAN_STATUS_INVALID_LENGTH;
@@ -11774,11 +11774,11 @@ wlanoidSetHS20Info(IN P_ADAPTER_T prAdapter,
 	prAdapter->prGlueInfo->ucHotspotConfig = prHS20IndicationIe->ucHotspotConfig;
 	prAdapter->prGlueInfo->fgConnectHS20AP = TRUE;
 
-	DBGLOG(SEC, TRACE, "HS20 IE sz %ld\n", u4SetBufferLen);
+	DBGLOG(SEC, TRACE, "HS20 IE sz %u\n", u4SetBufferLen);
 
 	kalMemCopy(prAdapter->prGlueInfo->aucHS20AssocInfoIE, pvSetBuffer, u4SetBufferLen);
 	prAdapter->prGlueInfo->u2HS20AssocInfoIELen = (UINT_16) u4SetBufferLen;
-	DBGLOG(SEC, TRACE, "HS20 Assoc Info IE sz %ld\n", u4SetBufferLen);
+	DBGLOG(SEC, TRACE, "HS20 Assoc Info IE sz %u\n", u4SetBufferLen);
 
 	return WLAN_STATUS_SUCCESS;
 
@@ -11806,34 +11806,7 @@ WLAN_STATUS
 wlanoidSetInterworkingInfo(IN P_ADAPTER_T prAdapter,
 			   IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
 {
-#if 0
-	P_HS20_INFO_T prHS20Info = NULL;
-	P_IE_INTERWORKING_T prInterWorkingIe;
-
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
-
-	prHS20Info = &(prAdapter->rWifiVar.rHS20Info);
-
-	DEBUGFUNC("wlanoidSetInterworkingInfo");
-	DBGLOG(REQ, TRACE, "\r\n");
-
-	if (u4SetBufferLen == 0)
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	*pu4SetInfoLen = u4SetBufferLen;
-	prInterWorkingIe = (P_IE_INTERWORKING_T) pvSetBuffer;
-
-	prHS20Info->ucAccessNetworkOptions = prInterWorkingIe->ucAccNetOpt;
-	prHS20Info->ucVenueGroup = prInterWorkingIe->ucVenueGroup;
-	prHS20Info->ucVenueType = prInterWorkingIe->ucVenueType;
-	COPY_MAC_ADDR(prHS20Info->aucHESSID, prInterWorkingIe->aucHESSID);
-
-	DBGLOG(SEC, TRACE, "IW IE sz %ld\n", u4SetBufferLen);
-#endif
 	return WLAN_STATUS_SUCCESS;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11858,31 +11831,7 @@ WLAN_STATUS
 wlanoidSetRoamingConsortiumIEInfo(IN P_ADAPTER_T prAdapter,
 				  IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen, OUT PUINT_32 pu4SetInfoLen)
 {
-#if 0
-	P_HS20_INFO_T prHS20Info = NULL;
-	P_PARAM_HS20_ROAMING_CONSORTIUM_INFO prRCInfo;
-
-	ASSERT(prAdapter);
-	ASSERT(pvSetBuffer);
-	ASSERT(pu4SetInfoLen);
-
-	prHS20Info = &(prAdapter->rWifiVar.rHS20Info);
-
-	/* DEBUGFUNC("wlanoidSetRoamingConsortiumInfo"); */
-	/* DBGLOG(HS2, TRACE, ("\r\n")); */
-
-	if (u4SetBufferLen == 0)
-		return WLAN_STATUS_INVALID_LENGTH;
-
-	*pu4SetInfoLen = u4SetBufferLen;
-	prRCInfo = (P_PARAM_HS20_ROAMING_CONSORTIUM_INFO) pvSetBuffer;
-
-	kalMemCopy(&(prHS20Info->rRCInfo), prRCInfo, sizeof(PARAM_HS20_ROAMING_CONSORTIUM_INFO));
-
-	/* DBGLOG(HS2, TRACE, ("RoamingConsortium IE sz %ld\n", u4SetBufferLen)); */
-#endif
 	return WLAN_STATUS_SUCCESS;
-
 }
 
 /*----------------------------------------------------------------------------*/
