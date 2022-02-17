@@ -709,17 +709,28 @@ void kalSetRstEvent(void)
 
 }
 
-static irqreturn_t mtk_sw_interrupt(int irq, void *dev_instance)
+static irqreturn_t mtk_sw_int_top_handler(int irq, void *dev_instance)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
+	return IRQ_WAKE_THREAD;
+}
+
+static irqreturn_t mtk_sw_int_thread_handler(int irq, void *dev_instance)
+{
+	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 
-	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4SwIsrCount);
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	if (prChipInfo->sw_interrupt_handler)
-		prChipInfo->sw_interrupt_handler(prGlueInfo->prAdapter);
+	prAdapter = (struct ADAPTER *)dev_instance;
+	if (!prAdapter) {
+		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
+		goto exit;
+	}
 
+	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->sw_interrupt_handler)
+		prChipInfo->sw_interrupt_handler(prAdapter);
+
+exit:
 	return IRQ_HANDLED;
 }
 #endif
@@ -1070,8 +1081,12 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	}
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	ret = request_irq(prHifInfo->u4IrqId_1, mtk_sw_interrupt, IRQF_SHARED,
-			  prNetDevice->name, prGlueInfo);
+	ret = request_threaded_irq(prHifInfo->u4IrqId_1,
+		mtk_sw_int_top_handler,
+		mtk_sw_int_thread_handler,
+		IRQF_SHARED,
+		prNetDevice->name,
+		prGlueInfo->prAdapter);
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
 				prHifInfo->u4IrqId_1, ret);
@@ -1128,7 +1143,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	free_irq(prHifInfo->u4IrqId, prGlueInfo);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	synchronize_irq(prHifInfo->u4IrqId_1);
-	free_irq(prHifInfo->u4IrqId_1, prGlueInfo);
+	free_irq(prHifInfo->u4IrqId_1, prGlueInfo->prAdapter);
 #endif
 }
 
