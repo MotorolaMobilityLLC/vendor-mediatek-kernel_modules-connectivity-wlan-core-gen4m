@@ -1727,6 +1727,21 @@ void p2pFuncAcquireCh(IN struct ADAPTER *prAdapter,
 }				/* p2pFuncAcquireCh */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+void p2pFuncSetDfsChannelAvailable(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucChannel, IN uint8_t ucAvailable)
+{
+	DBGLOG(P2P, INFO,
+		"p2pFuncSetDfsChannelAvailable: channel %d %s\n", ucChannel,
+		ucAvailable == 1 ? "available" : "unavailable");
+
+	wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+		-1, /* p2p role index */
+		ucAvailable == 1 ? ucChannel : 0, /* primary channel */
+		0, /* bandwidth */
+		0, /* sco */
+		0 /* center frequency */);
+}
+
 void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 {
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
