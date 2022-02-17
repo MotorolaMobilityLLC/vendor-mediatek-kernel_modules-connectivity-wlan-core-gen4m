@@ -315,6 +315,10 @@ struct _P2P_ROLE_FSM_INFO_T {
 	/* FSM Timer */
 	TIMER_T rP2pRoleFsmTimeoutTimer;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	TIMER_T rDfsShutDownTimer;
+#endif
+
 	/* Packet filter for P2P module. */
 	UINT_32 u4P2pPacketFilter;
 
@@ -352,6 +356,8 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
 
 VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+
+VOID p2pRoleFsmRunEventDfsShutDownTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
 #endif
 
 VOID p2pRoleFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
