@@ -1838,6 +1838,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 {
 	int8_t rStatus = 0;
 	struct MLD_STA_RECORD *prMldStarec = NULL;
+	struct STA_RECORD *prCurrStarec;
 	struct LINK *prStarecList = NULL;
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
@@ -1852,6 +1853,16 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	}
 
 	prStarecList = &prMldStarec->rStarecList;
+
+	LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
+	    struct STA_RECORD) {
+		if (prStarec == prCurrStarec) {
+			DBGLOG(ML, WARN, "starec(%d) already in mld_starec(%d)\n",
+				prStarec->ucIndex, prMldStarec->ucIdx);
+			rStatus = -EINVAL;
+			goto exit;
+		}
+	}
 
 	if (prStarecList->u4NumElem == 0)
 		prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
