@@ -1530,4 +1530,14 @@ void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt);
 void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 	const uint16_t logBufLen);
 
-#endif				/* _GL_KAL_H */
+u_int8_t
+kalChannelScoSwitch(IN enum nl80211_channel_type channel_type,
+		IN enum ENUM_CHNL_EXT *prChnlSco);
+
+u_int8_t
+kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
+		IN struct ieee80211_channel *channel,
+		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
+
+#endif /* _GL_KAL_H */
+

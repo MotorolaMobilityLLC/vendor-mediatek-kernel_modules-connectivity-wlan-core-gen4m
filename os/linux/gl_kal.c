@@ -7068,3 +7068,101 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 		&(prAdapter->rWifiVar.rScanInfo.rScanLogCache.rBSSListCFG),
 		LOG_SCAN_DONE_D2K, logBufLen);
 }
+
+
+u_int8_t
+kalChannelScoSwitch(IN enum nl80211_channel_type channel_type,
+		IN enum ENUM_CHNL_EXT *prChnlSco)
+{
+	u_int8_t fgIsValid = FALSE;
+
+	do {
+		if (prChnlSco) {
+			switch (channel_type) {
+			case NL80211_CHAN_NO_HT:
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			case NL80211_CHAN_HT20:
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			case NL80211_CHAN_HT40MINUS:
+				*prChnlSco = CHNL_EXT_SCA;
+				break;
+			case NL80211_CHAN_HT40PLUS:
+				*prChnlSco = CHNL_EXT_SCB;
+				break;
+			default:
+				ASSERT(FALSE);
+				*prChnlSco = CHNL_EXT_SCN;
+				break;
+			}
+		}
+		fgIsValid = TRUE;
+	} while (FALSE);
+
+	return fgIsValid;
+}
+
+u_int8_t
+kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
+		IN struct ieee80211_channel *channel,
+		IN struct RF_CHANNEL_INFO *prRfChnlInfo)
+{
+	u_int8_t fgIsValid = FALSE;
+
+	do {
+		if (channel == NULL)
+			break;
+
+		DBGLOG(P2P, INFO, "switch channel band: %d, freq: %d\n",
+				channel->band, channel->center_freq);
+
+		if (prRfChnlInfo) {
+			prRfChnlInfo->ucChannelNum =
+				nicFreq2ChannelNum(channel->center_freq * 1000);
+
+			switch (channel->band) {
+			case KAL_BAND_2GHZ:
+				prRfChnlInfo->eBand = BAND_2G4;
+				break;
+			case KAL_BAND_5GHZ:
+				prRfChnlInfo->eBand = BAND_5G;
+				break;
+			default:
+				prRfChnlInfo->eBand = BAND_2G4;
+				break;
+			}
+		}
+
+		if (channel_def && prRfChnlInfo) {
+			switch (channel_def->width) {
+			case NL80211_CHAN_WIDTH_20_NOHT:
+			case NL80211_CHAN_WIDTH_20:
+				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_40:
+				prRfChnlInfo->ucChnlBw = MAX_BW_40MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_80:
+				prRfChnlInfo->ucChnlBw = MAX_BW_80MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_80P80:
+				prRfChnlInfo->ucChnlBw = MAX_BW_80_80_MHZ;
+				break;
+			case NL80211_CHAN_WIDTH_160:
+				prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
+				break;
+			default:
+				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
+				break;
+			}
+			prRfChnlInfo->u2PriChnlFreq = channel->center_freq;
+			prRfChnlInfo->u4CenterFreq1 = channel_def->center_freq1;
+			prRfChnlInfo->u4CenterFreq2 = channel_def->center_freq2;
+		}
+
+		fgIsValid = TRUE;
+	} while (FALSE);
+
+	return fgIsValid;
+}

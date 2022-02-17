@@ -655,6 +655,17 @@ enum ENUM_BAND {
 	BAND_NUM
 };
 
+enum ENUM_CH_REQ_TYPE {
+	CH_REQ_TYPE_JOIN,
+	CH_REQ_TYPE_ROC, /* requested by remain on channel type */
+	CH_REQ_TYPE_OFFCHNL_TX,
+	CH_REQ_TYPE_GO_START_BSS,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	CH_REQ_TYPE_DFS_CAC,
+#endif
+	CH_REQ_TYPE_NUM
+};
+
 enum ENUM_DBDC_BN {
 	ENUM_BAND_0,
 	ENUM_BAND_1,
