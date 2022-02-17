@@ -716,31 +716,21 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr;
 	uint32_t idx;
-	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
 
-	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-		if (!chip_info->is_support_wfdma1 && idx)
-			break;
-		asicConnac2xWfdmaControl(prGlueInfo, idx, enable);
-		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
-		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg[idx].word);
-	}
+	asicConnac2xWfdmaControl(prGlueInfo, 0, enable);
+	u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, 0);
+	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	configIntMask(prGlueInfo, enable);
 
 	if (enable) {
-		for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
-			if (!chip_info->is_support_wfdma1 && idx)
-				break;
-			u4DmaCfgCr =
-				asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
-			GloCfg[idx].field_conn2x.tx_dma_en = 1;
-			GloCfg[idx].field_conn2x.rx_dma_en = 1;
-			HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg[idx].word);
-		}
+		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
+		GloCfg.field_conn2x.tx_dma_en = 1;
+		GloCfg.field_conn2x.rx_dma_en = 1;
+		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 	}
 }
 
