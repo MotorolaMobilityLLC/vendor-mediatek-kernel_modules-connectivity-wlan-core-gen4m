@@ -492,7 +492,6 @@ void soc3_0ReadExtIntStatus(
 	uint32_t ap_write_value = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	*pu4IntStatus = 0;
 
@@ -515,10 +514,8 @@ void soc3_0ReadExtIntStatus(
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 	}
 
-	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
-	    (prSwWfdmaInfo->ulIntFlag & SW_WFDMA_FLAG_INT)) {
+	if (prHifInfo->ulIntFlag & HIF_FLAG_SW_WFDMA_INT)
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
-	}
 
 	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
@@ -542,9 +539,8 @@ void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
-	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
-	    test_and_clear_bit(SW_WFDMA_FLAG_INT_BIT,
-			       &prSwWfdmaInfo->ulIntFlag)) {
+	if (test_and_clear_bit(HIF_FLAG_SW_WFDMA_INT_BIT,
+			       &prHifInfo->ulIntFlag)) {
 		if (prSwWfdmaInfo->rOps.processDmaDone)
 			prSwWfdmaInfo->rOps.
 				processDmaDone(prAdapter->prGlueInfo);
@@ -834,6 +830,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.pdmaSetup = soc3_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
+	.disableSwInterrupt = asicConnac2xDisablePlatformSwIRQ,
 	.processTxInterrupt = soc3_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc3_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
@@ -2760,9 +2757,13 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 
 	/* SW wfdma cmd done interrupt */
 	if (value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
-		DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
-		set_bit(SW_WFDMA_FLAG_INT_BIT, &prSwWfdmaInfo->ulIntFlag);
-		kalSetDrvIntEvent(prAdapter->prGlueInfo);
+		if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+			DBGLOG(HAL, TRACE, "GLUE_FLAG_HALT skip SwWfdma INT\n");
+		} else {
+			DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
+			kalSetHifIntEvent(prAdapter->prGlueInfo,
+					  HIF_FLAG_SW_WFDMA_INT_BIT);
+		}
 	}
 }
 

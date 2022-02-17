@@ -715,6 +715,16 @@ void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 	prAdapter->fgIsIntEnable = FALSE;
 }
 
+void asicConnac2xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	ASSERT(prAdapter);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	disable_irq_nosync(prHifInfo->u4IrqId_1);
+}
+
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter)
 {

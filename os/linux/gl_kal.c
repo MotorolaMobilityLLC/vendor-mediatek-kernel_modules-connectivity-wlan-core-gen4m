@@ -5140,6 +5140,12 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 #endif
 }
 
+void kalSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit)
+{
+	set_bit(ulBit, &pr->rHifInfo.ulIntFlag);
+	kalSetDrvIntEvent(pr);
+}
+
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
 {
 	set_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT, &pr->ulFlag);
