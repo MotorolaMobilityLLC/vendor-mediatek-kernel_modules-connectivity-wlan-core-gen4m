@@ -1123,6 +1123,12 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 
 			prAdapter->rWlanInfo.u4SysTime = kalGetTimeTick();
 
+			/* sanity check */
+			if (unlikely(prConnectionStatus->ucSsidLen >
+				ELEM_MAX_LEN_SSID))
+				prConnectionStatus->ucSsidLen =
+					ELEM_MAX_LEN_SSID;
+
 			/* fill information for association result */
 			prCurrBssid->rSsid.u4SsidLen =
 				prConnectionStatus->ucSsidLen;
