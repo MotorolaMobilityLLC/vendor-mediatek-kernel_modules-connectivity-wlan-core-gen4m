@@ -6022,8 +6022,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 				prAdapter, "Sta2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta5gBw", MAX_BW_80MHZ);
+	/* GC,GO */
 	prWifiVar->ucP2p2gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "P2p2gBw", MAX_BW_40MHZ); /* GC,GO */
+				prAdapter, "P2p2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucP2p5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucApBandwidth = (uint8_t) wlanCfgGetUint32(
