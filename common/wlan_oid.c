@@ -11926,6 +11926,75 @@ wlanoidQuerySetTxTargetPower(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN 
 	return rWlanStatus;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to set rdd report.
+*
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+*                           the query.
+* \param[in] u4QueryBufLen The length of the query buffer.
+* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+*                            bytes written into the query buffer. If the call
+*                            failed due to invalid length of the query buffer,
+*                            returns the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS
+* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+wlanoidQuerySetRddReport(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4SetBufferLen,
+			 OUT PUINT_32 pu4SetInfoLen)
+{
+	P_PARAM_CUSTOM_SET_RDD_REPORT_T prSetRddReport;
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+	WLAN_STATUS rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidQuerySetRddReport");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(P_PARAM_CUSTOM_SET_RDD_REPORT_T);
+
+	/*if (u4SetBufferLen < sizeof(P_PARAM_CUSTOM_SET_RDD_REPORT_T))*/
+		/*return WLAN_STATUS_INVALID_LENGTH;*/
+
+	ASSERT(pvSetBuffer);
+
+	prSetRddReport = (P_PARAM_CUSTOM_SET_RDD_REPORT_T) pvSetBuffer;
+
+	prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+
+	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_RADAR_EMULATE;
+
+	prCmdRddOnOffCtrl->ucRddIdx = prSetRddReport->ucDbdcIdx;
+
+	if (prCmdRddOnOffCtrl->ucRddIdx)
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+	else
+		prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+
+	DBGLOG(INIT, INFO, "MT6632 : wlanoidQuerySetRddReport -  DFS ctrl: %.d, RDD index: %d\n",
+	prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+
+	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,   /* fgSetQuery Bit:  True->write  False->read*/
+					FALSE,   /* fgNeedResp */
+					FALSE,   /* fgIsOid*/
+					NULL,
+					NULL,
+					sizeof(CMD_RDD_ON_OFF_CTRL_T),
+					(PUINT_8) (prCmdRddOnOffCtrl), NULL, 0);
+
+	return rWlanStatus;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This routine is used to turn radio off.

@@ -1278,6 +1278,59 @@ kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo,
 
 }				/* kalP2PGOStationUpdate */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID kalP2PRddDetectUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
+{
+	DBGLOG(INIT, INFO, "Radar Detection event\n");
+
+	do {
+		if (prGlueInfo == NULL) {
+			ASSERT(FALSE);
+			break;
+		}
+
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef == NULL) {
+			ASSERT(FALSE);
+			break;
+		}
+
+		/* cac start disable for next cac slot if enable in dfs channel */
+		prGlueInfo->prP2PInfo[ucRoleIndex]->prWdev->cac_started = FALSE;
+		DBGLOG(INIT, INFO, "kalP2PRddDetectUpdate: Update to OS\n");
+		cfg80211_radar_event(prGlueInfo->prP2PInfo[ucRoleIndex]->prWdev->wiphy,
+				prGlueInfo->prP2PInfo[ucRoleIndex]->chandef, GFP_KERNEL);
+		DBGLOG(INIT, INFO, "kalP2PRddDetectUpdate: Update to OS Done\n");
+
+		netif_carrier_off(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
+		netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
+
+	} while (FALSE);
+
+}				/* kalP2PRddDetectUpdate */
+
+VOID kalP2PCacFinishedUpdate(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRoleIndex)
+{
+	DBGLOG(INIT, INFO, "CAC Finished event\n");
+
+	do {
+		if (prGlueInfo == NULL)
+			ASSERT(FALSE);
+
+		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef == NULL) {
+			ASSERT(FALSE);
+			break;
+		}
+
+		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS\n");
+		cfg80211_cac_event(prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler,
+				prGlueInfo->prP2PInfo[ucRoleIndex]->chandef, NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
+		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS Done\n");
+
+	} while (FALSE);
+
+}				/* kalP2PRddDetectUpdate */
+#endif
+
 BOOLEAN kalP2pFuncGetChannelType(IN ENUM_CHNL_EXT_T rChnlSco, OUT enum nl80211_channel_type *channel_type)
 {
 	BOOLEAN fgIsValid = FALSE;
