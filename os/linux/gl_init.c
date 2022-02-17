@@ -2817,14 +2817,101 @@ label_exit:
 #define FW_LOG_CMD_SET_LEVEL     1
 static uint32_t u4LogOnOffCache = -1;
 
+struct CMD_CONNSYS_FW_LOG {
+	int32_t fgCmd;
+	int32_t fgValue;
+};
+
+uint32_t
+connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+{
+	struct CMD_CONNSYS_FW_LOG *prCmd;
+	struct CMD_HEADER rCmdV1Header;
+	struct CMD_FORMAT_V1 rCmd_v1;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if ((prAdapter == NULL) || (pvSetBuffer == NULL)
+		|| (pu4SetInfoLen == NULL))
+		return WLAN_STATUS_FAILURE;
+
+	/* init */
+	*pu4SetInfoLen = sizeof(struct CMD_CONNSYS_FW_LOG);
+	prCmd = (struct CMD_CONNSYS_FW_LOG *) pvSetBuffer;
+
+	if (prCmd->fgCmd == FW_LOG_CMD_ON_OFF) {
+
+		/*EvtDrvnLogEn 0/1*/
+		uint8_t onoff[1] = {'0'};
+
+		DBGLOG(INIT, TRACE, "FW_LOG_CMD_ON_OFF\n");
+
+		rCmdV1Header.cmdType = CMD_TYPE_SET;
+		rCmdV1Header.cmdVersion = CMD_VER_1;
+		rCmdV1Header.cmdBufferLen = 0;
+		rCmdV1Header.itemNum = 0;
+
+		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
+		kalMemSet(&rCmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
+
+		rCmd_v1.itemType = ITEM_TYPE_STR;
+
+		/*send string format to firmware */
+		rCmd_v1.itemStringLength = kalStrLen("EnableDbgLog");
+		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemString, "EnableDbgLog",
+			rCmd_v1.itemStringLength);
+
+		if (prCmd->fgValue == 1) /* other cases, send 'OFF=0' */
+			onoff[0] = '1';
+		rCmd_v1.itemValueLength = 1;
+		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
+		kalMemCopy(rCmd_v1.itemValue, &onoff, 1);
+
+		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
+				rCmd_v1.itemString, rCmd_v1.itemValue);
+
+		kalMemCopy(((struct CMD_FORMAT_V1 *)rCmdV1Header.buffer),
+				&rCmd_v1,  sizeof(struct CMD_FORMAT_V1));
+
+		rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
+		rCmdV1Header.itemNum = 1;
+
+		rStatus = wlanSendSetQueryCmd(
+				prAdapter, /* prAdapter */
+				CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
+				TRUE,  /* fgSetQuery */
+				FALSE, /* fgNeedResp */
+				FALSE, /* fgIsOid */
+				NULL,  /* pfCmdDoneHandler*/
+				NULL,  /* pfCmdTimeoutHandler */
+				sizeof(struct CMD_HEADER),
+				(uint8_t *)&rCmdV1Header, /* pucInfoBuffer */
+				NULL,  /* pvSetQueryBuffer */
+				0      /* u4SetQueryBufferLen */
+			);
+
+		/* keep in cache */
+		u4LogOnOffCache = prCmd->fgValue;
+	} else if (prCmd->fgCmd == FW_LOG_CMD_SET_LEVEL) {
+		/*ENG_LOAD_OFFSET 1*/
+		/*USERDEBUG_LOAD_OFFSET 2 */
+		/*USER_LOAD_OFFSET 3 */
+		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL\n");
+	} else {
+		DBGLOG(INIT, INFO, "command can not parse\n");
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
 static void consys_log_event_notification(int cmd, int value)
 {
+	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct net_device *prDev = gPrDev;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
-	struct CMD_HEADER rCmdV1Header;
-	struct CMD_FORMAT_V1 rCmd_v1;
+	uint32_t u4BufLen;
 
 	DBGLOG(INIT, INFO, "gPrDev=%p, cmd=%d, value=%d\n",
 		gPrDev, cmd, value);
@@ -2857,73 +2944,16 @@ static void consys_log_event_notification(int cmd, int value)
 		return;
 	}
 
-	if (cmd == FW_LOG_CMD_ON_OFF) {
+	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
+	rFwLogCmd.fgCmd = cmd;
+	rFwLogCmd.fgValue = value;
 
-		/*EvtDrvnLogEn 0/1*/
-		uint8_t onoff[1] = {'0'};
-
-		DBGLOG(INIT, TRACE, "FW_LOG_CMD_ON_OFF\n");
-
-		rCmdV1Header.cmdType = CMD_TYPE_SET;
-		rCmdV1Header.cmdVersion = CMD_VER_1;
-		rCmdV1Header.cmdBufferLen = 0;
-		rCmdV1Header.itemNum = 0;
-
-		kalMemSet(rCmdV1Header.buffer, 0, MAX_CMD_BUFFER_LENGTH);
-		kalMemSet(&rCmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
-
-		rCmd_v1.itemType = ITEM_TYPE_STR;
-
-		/*send string format to firmware */
-		rCmd_v1.itemStringLength = kalStrLen("EnableDbgLog");
-		kalMemZero(rCmd_v1.itemString, MAX_CMD_NAME_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemString, "EnableDbgLog",
-			rCmd_v1.itemStringLength);
-
-		if (value == 1) /* other cases, send 'OFF=0' */
-			onoff[0] = '1';
-		rCmd_v1.itemValueLength = 1;
-		kalMemZero(rCmd_v1.itemValue, MAX_CMD_VALUE_MAX_LENGTH);
-		kalMemCopy(rCmd_v1.itemValue, &onoff, 1);
-
-		DBGLOG(INIT, INFO, "Send key word (%s) WITH (%s) to firmware\n",
-				rCmd_v1.itemString, rCmd_v1.itemValue);
-
-		kalMemCopy(((struct CMD_FORMAT_V1 *)rCmdV1Header.buffer),
-				&rCmd_v1,  sizeof(struct CMD_FORMAT_V1));
-
-		rCmdV1Header.cmdBufferLen += sizeof(struct CMD_FORMAT_V1);
-		rCmdV1Header.itemNum = 1;
-
-		rStatus = wlanSendSetQueryCmd(
-				prAdapter, /* prAdapter */
-				CMD_ID_GET_SET_CUSTOMER_CFG, /* 0x70 */
-				TRUE,  /* fgSetQuery */
-				FALSE, /* fgNeedResp */
-				FALSE, /* fgIsOid */
-				NULL,  /* pfCmdDoneHandler*/
-				NULL,  /* pfCmdTimeoutHandler */
-				sizeof(struct CMD_HEADER),
-				(uint8_t *)&rCmdV1Header, /* pucInfoBuffer */
-				NULL,  /* pvSetQueryBuffer */
-				0      /* u4SetQueryBufferLen */
-			);
-
-		if (rStatus == WLAN_STATUS_FAILURE)
-			DBGLOG(INIT, INFO,
-				"[Fail]kalIoctl wifiSefCFG fail 0x%x\n",
-					rStatus);
-
-		/* keep in cache */
-		u4LogOnOffCache = value;
-	} else if (cmd == FW_LOG_CMD_SET_LEVEL) {
-		/*ENG_LOAD_OFFSET 1*/
-		/*USERDEBUG_LOAD_OFFSET 2 */
-		/*USER_LOAD_OFFSET 3 */
-		DBGLOG(INIT, INFO, "FW_LOG_CMD_SET_LEVEL\n");
-	} else {
-		DBGLOG(INIT, INFO, "command can not parse\n");
-	}
+	rStatus = kalIoctl(prGlueInfo,
+				   connsysFwLogControl,
+				   &rFwLogCmd,
+				   sizeof(struct CMD_CONNSYS_FW_LOG),
+				   FALSE, FALSE, FALSE,
+				   &u4BufLen);
 }
 #endif
 
