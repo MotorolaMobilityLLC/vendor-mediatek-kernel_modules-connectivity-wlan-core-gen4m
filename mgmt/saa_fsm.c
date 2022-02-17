@@ -417,12 +417,9 @@ saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
 						  prStaRec->ucBssIndex);
 
 		if (prBssInfo != NULL) {
-			if (rJoinStatus == WLAN_STATUS_SUCCESS) {
+			if (rJoinStatus == WLAN_STATUS_SUCCESS)
 				prBssInfo->fg40mBwAllowed =
 						prBssInfo->fgAssoc40mBwAllowed;
-				/* reset add key action */
-				prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
-			}
 			prBssInfo->fgAssoc40mBwAllowed = FALSE;
 		}
 	}
