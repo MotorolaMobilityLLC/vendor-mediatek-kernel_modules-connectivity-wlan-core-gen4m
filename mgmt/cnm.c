@@ -3468,10 +3468,6 @@ uint8_t cnmGetDbdcBwCapability(IN struct ADAPTER
 		ucMaxBw = MAX_BW_80MHZ;
 #endif
 
-	/* TODO: BW80+80 support */
-	if (ucMaxBw == MAX_BW_80_80_MHZ)
-		ucMaxBw = MAX_BW_80MHZ; /* VHT should default support BW80 */
-
 	return ucMaxBw;
 }
 
