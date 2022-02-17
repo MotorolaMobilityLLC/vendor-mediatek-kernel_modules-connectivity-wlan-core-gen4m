@@ -4550,6 +4550,13 @@ void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr)
 	set_bit(GLUE_FLAG_HIF_TX_CMD_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq_hif);
 }
+
+void kalSetTxCmdDoneEvent(struct GLUE_INFO *pr)
+{
+	/* do we need wake lock here */
+	set_bit(GLUE_FLAG_TX_CMD_DONE_BIT, &pr->ulFlag);
+	wake_up_interruptible(&pr->waitq);
+}
 #endif
 /*----------------------------------------------------------------------------*/
 /*!
