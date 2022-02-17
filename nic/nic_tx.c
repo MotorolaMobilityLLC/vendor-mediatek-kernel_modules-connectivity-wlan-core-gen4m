@@ -1949,6 +1949,7 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		/* Overwrite fields for EOSP or More data */
 		nicTxFillDescByPktOption(prAdapter, prMsduInfo, prTxDesc);
 
+#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 		if (unlikely(prMsduInfo->ucPacketType
 			== TX_PACKET_TYPE_DATA &&
 			prBssInfo->ucWmmQueSet !=
@@ -1961,6 +1962,7 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 				ucWmmQueSet,
 				prMsduInfo->ucWmmQueSet);
 		}
+#endif
 	} else { /* Compose TXD by Msdu info */
 		DBGLOG_LIMITED(NIC, TRACE, "Compose TXD by Msdu info\n");
 #if (UNIFIED_MAC_TX_FORMAT == 1)
