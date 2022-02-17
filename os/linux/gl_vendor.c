@@ -102,6 +102,20 @@ const struct nla_policy nla_parse_wifi_rssi_monitor[
 	[WIFI_ATTRIBUTE_RSSI_MONITOR_START]    = {.type = NLA_U32},
 };
 
+const struct nla_policy nla_get_version_policy[
+		LOGGER_ATTRIBUTE_MAX + 1] = {
+#if KERNEL_VERSION(5, 9, 0) <= CFG80211_VERSION_CODE
+	[LOGGER_ATTRIBUTE_DRIVER_VER] = NLA_POLICY_MIN_LEN(0),
+	[LOGGER_ATTRIBUTE_FW_VER] = NLA_POLICY_MIN_LEN(0),
+#elif KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	[LOGGER_ATTRIBUTE_DRIVER_VER] = { .type = NLA_MIN_LEN, .len = 0 },
+	[LOGGER_ATTRIBUTE_FW_VER] = { .type = NLA_MIN_LEN, .len = 0 },
+#else
+	[LOGGER_ATTRIBUTE_DRIVER_VER] = { .type = NLA_UNSPEC },
+	[LOGGER_ATTRIBUTE_FW_VER] = { .type = NLA_UNSPEC },
+#endif
+};
+
 static struct nla_policy nla_parse_offloading_policy[
 		 MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1] = {
 	[MKEEP_ALIVE_ATTRIBUTE_ID] = {.type = NLA_U8},
@@ -1244,7 +1258,7 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 		}
 	}
 
-	DBGLOG(REQ, TRACE, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
+	DBGLOG(REQ, INFO, "Get version(%d)=[%s]\n", u2CopySize, aucVersionBuf);
 
 	if (u2CopySize == 0)
 		return -EFAULT;
