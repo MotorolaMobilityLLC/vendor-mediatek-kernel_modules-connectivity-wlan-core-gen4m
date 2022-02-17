@@ -102,6 +102,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_SUPPORT_ANT_SWAP
 	{TAG_CAP_ANTSWP, nicCfgChipCapAntSwpCap},
 #endif
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	{TAG_CAP_P2P, nicCfgChipP2PCap},
+#endif
+
 };
 
 /*******************************************************************************
@@ -3104,6 +3108,23 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
+					 IN uint8_t *pucEventBuf)
+{
+#if 0
+	struct CAP_PHY_CAP *prPhyCap =
+	(struct CAP_PHY_CAP *)pucEventBuf;
+	prAdapter->rWifiVar.ucStaVht &= prPhyCap->ucVht;
+#endif
+	wlanCfgSetUint32(prAdapter, "P2pGoACSEnable",
+	prAdapter->rWifiVar.ucP2pGoACS);
+	DBGLOG(INIT, INFO, "P2pGoACSEnable:ACS Enable[%d]\n",
+			prAdapter->rWifiVar.ucP2pGoACS);
+	return WLAN_STATUS_SUCCESS;
+	}
+#endif
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)
