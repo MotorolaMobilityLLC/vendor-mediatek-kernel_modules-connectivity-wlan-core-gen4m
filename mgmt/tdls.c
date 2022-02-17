@@ -71,7 +71,6 @@
 
 #if CFG_SUPPORT_TDLS
 #include "tdls.h"
-#include "gl_cfg80211.h"
 #include "queue.h"
 
 /*******************************************************************************
