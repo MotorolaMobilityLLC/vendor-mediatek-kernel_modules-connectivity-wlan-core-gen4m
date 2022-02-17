@@ -81,6 +81,8 @@ uint16_t AUTH_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_REJECTED_GROUPS] = 23,
 	/* Anti-Clogging Token Container */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_ACTC] = 24,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 25,
 };
 
 /* 802.11-2020: Table 9-34 Association Request frame body */
@@ -185,6 +187,13 @@ uint16_t ASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	 * but we need to handle it for OWE connection
 	 */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM] = 99,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 100,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 101,
+	/* TID2LNK */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_TID2LNK_MAP] = 102,
+
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST,
 };
@@ -315,6 +324,15 @@ uint16_t ASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_NDP_FEEDBACK] = 64,
 	/* HE 6G Band Capabilities */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_6G_BAND_CAP] = 65,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 66,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 67,
+	/* EHT Operation */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_OP] = 68,
+	/* TID2LNK */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_TID2LNK_MAP] = 69,
+
 
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST,
@@ -424,6 +442,12 @@ uint16_t REASSOC_REQ_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_6G_BAND_CAP] = 53,
 	/* UL MU Power Capabilities */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_UL_MU_Power_CAP] = 54,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 55,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 56,
+	/* TID2LNK */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_TID2LNK_MAP] = 57,
 
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST,
@@ -563,6 +587,14 @@ uint16_t REASSOC_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_NDP_FEEDBACK] = 68,
 	/* HE 6G Band Capabilities */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_6G_BAND_CAP] = 69,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 70,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 71,
+	/* EHT Operation */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_OP] = 72,
+	/* TID2LNK */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_TID2LNK_MAP] = 73,
 
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST,
@@ -773,6 +805,12 @@ uint16_t PROBE_RSP_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_BSS_LOAD] = 103,
 	/* HE 6G Band Capabilities */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_6G_BAND_CAP] = 104,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 105,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 106,
+	/* EHT Operation */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_OP] = 107,
 
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST - 1,
@@ -951,6 +989,13 @@ uint16_t BEACON_IE_ORDER[ELEM_ID_MAX_NUM + ELEM_EXT_ID_MAX_NUM] = {
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_BSS_LOAD] = 86,
 	/* HE 6G Band Capabilities */
 	[ELEM_ID_RESERVED + ELEM_EXT_ID_HE_6G_BAND_CAP] = 87,
+	/* Multi-Link element */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_MLD] = 88,
+	/* EHT Capabilities */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_CAPS] = 89,
+	/* EHT Operation */
+	[ELEM_ID_RESERVED + ELEM_EXT_ID_EHT_OP] = 90,
+
 
 	/* Vendor Specific: should be present in the last */
 	[ELEM_ID_VENDOR] = SORT_ORDER_LAST,

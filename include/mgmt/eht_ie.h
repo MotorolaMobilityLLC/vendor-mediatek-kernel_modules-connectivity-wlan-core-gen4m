@@ -30,7 +30,7 @@ struct IE_EHT_CAP {
  */
 #define EHT_OP_BYTE_NUM (4)
 
-struct _IE_EHT_OP_T {
+struct IE_EHT_OP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int8_t  ucExtId;

@@ -3146,9 +3146,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_WIFI_6G */
 #if (CFG_SUPPORT_802_11BE == 1)
-			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
-			else if (IE_ID_EXT(pucIE) == EID_EXT_EHT_OP)
+			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
 				ehtRlmRecOperation(prAdapter,
 					prBssInfo, pucIE);
 #endif
@@ -3578,7 +3578,7 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS &&
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS &&
 				RLM_NET_IS_11BE(prBssInfo))
 				fgIsHasEhtCap = TRUE;
 #endif
@@ -4645,7 +4645,7 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
 #endif
 			break;
