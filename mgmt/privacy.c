@@ -863,7 +863,7 @@ void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter,
 	if (ucEntry >= WTBL_SIZE)
 		return;
 
-	DBGLOG(RSN, INFO, "secPrivacyFreeForEntry %d", ucEntry);
+	DBGLOG(RSN, TRACE, "secPrivacyFreeForEntry %d", ucEntry);
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
