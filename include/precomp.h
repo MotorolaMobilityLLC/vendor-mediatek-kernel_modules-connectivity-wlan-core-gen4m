@@ -137,13 +137,17 @@
 #include "hif_tx.h"
 
 #include "nic_connac2x_tx.h"
+#include "nic_connac3x_tx.h"
 #include "nic_tx.h"
 #include "nic_txd_v1.h"
 #include "nic_txd_v2.h"
+#include "nic_txd_v3.h"
 #include "nic_rxd_v1.h"
 #include "nic_rxd_v2.h"
+#include "nic_rxd_v3.h"
 
 #include "nic_connac2x_rx.h"
+#include "nic_connac3x_rx.h"
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */
 #include "nic_rx.h"
 
@@ -191,6 +195,7 @@
 #include "connac_dmashdl.h"
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
+#include "cmm_asic_connac3x.h"
 
 #include "pre_cal.h"
 

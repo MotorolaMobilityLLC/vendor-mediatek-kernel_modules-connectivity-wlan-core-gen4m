@@ -5960,8 +5960,10 @@ static int initWlan(void)
 	gConEmiPhyBase = (phys_addr_t)ptr;
 #endif
 
+#if CFG_MTK_ANDROID_WMT
 	gConEmiPhyBaseFinal = gConEmiPhyBase;
 	gConEmiSizeFinal = gConEmiSize;
+#endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	conninfra_get_phy_addr(
@@ -6068,6 +6070,20 @@ static void exitWlan(void)
 	uint32_t u4Idx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct wiphy *wiphy = NULL;
+#endif
+
+#if CFG_MTK_MDDP_SUPPORT
+	mddpUninit();
+#endif
+	wlanUnregisterNetdevNotifier();
+	kalFbNotifierUnReg();
+
+#if CFG_CHIP_RESET_SUPPORT
+	glResetUninit();
+#endif
+
+	glUnregisterBus(wlanRemove);
+#if CFG_SUPPORT_PERSIST_NETDEV
 
 	wiphy = wlanGetWiphy();
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6089,16 +6105,6 @@ static void exitWlan(void)
 	DBGLOG(INIT, INFO, "Free wlan device..\n");
 	wlanFreeNetDev();
 #endif
-	kalFbNotifierUnReg();
-	wlanUnregisterNetdevNotifier();
-
-	/* printk("remove %p\n", wlanRemove); */
-#if CFG_CHIP_RESET_SUPPORT
-	glResetUninit();
-#endif
-
-	glUnregisterBus(wlanRemove);
-
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
 
@@ -6108,18 +6114,15 @@ static void exitWlan(void)
 	 */
 	wlanDestroyAllWdev();
 
-#if WLAN_INCLUDE_PROC
-	procUninitProcFs();
-#endif
 #if WLAN_INCLUDE_SYS
 	sysUninitSysFs();
 #endif
+
+#if WLAN_INCLUDE_PROC
+	procUninitProcFs();
+#endif
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	kfree((const void *)gConEmiPhyBase);
-#endif
-
-#if CFG_MTK_MDDP_SUPPORT
-	mddpUninit();
 #endif
 
 	g_u4WlanInitFlag = 0;

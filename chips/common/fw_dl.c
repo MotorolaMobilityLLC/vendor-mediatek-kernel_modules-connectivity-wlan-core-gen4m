@@ -189,7 +189,7 @@ void wlanImageSectionGetCompressFwInfo(IN struct ADAPTER
 		       prTailer->eco_code, prTailer->feature_set);
 		kalMemZero(aucBuf, 32);
 		kalStrnCpy(aucBuf, prTailer->ram_version,
-			   sizeof(prTailer->ram_version));
+			   sizeof(aucBuf) - 1);
 		DBGLOG(INIT, INFO, "date[%s] version[%s]\n",
 		       prTailer->ram_built_date, aucBuf);
 	}
@@ -2031,7 +2031,7 @@ uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER
 
 		kalMemZero(aucBuf, 32);
 		kalStrnCpy(aucBuf, prTailers[u4SecIdx].ram_version,
-			   sizeof(prTailers[u4SecIdx].ram_version));
+			   sizeof(aucBuf) - 1);
 		DBGLOG(INIT, INFO, "date[%s] version[%s]\n",
 		       prTailers[u4SecIdx].ram_built_date, aucBuf);
 	}
@@ -2061,7 +2061,7 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 
 	kalMemZero(aucBuf, 32);
 	kalStrnCpy(aucBuf, prComTailer->aucRamVersion,
-		   sizeof(prComTailer->aucRamVersion));
+		   sizeof(aucBuf) - 1);
 
 	/* Dump image information */
 	DBGLOG(INIT, INFO,
@@ -2262,6 +2262,12 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 		rCfgStatus = wlanConfigWifiFunc(prAdapter,
 					(ram_entry == 0) ? FALSE : TRUE,
 					ram_entry, ucPDA);
+#ifdef BELLWETHER
+		rCfgStatus = wlanConfigWifiFunc(prAdapter,
+					FALSE,
+					0,
+					PDA_CR4);
+#endif
 #endif
 /* To support dynamic memory map for WiFi RAM code download::End */
 
@@ -2381,15 +2387,12 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_ROM_PATCH_NO_SEM_CTRL == 0)
-#pragma message("ROM code supports SEM-CTRL for ROM patch download")
 	if (wlanPatchIsDownloaded(prAdapter)) {
 		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
 					  prFwBuffer);
 		DBGLOG(INIT, INFO, "No need to download patch\n");
 		return WLAN_STATUS_SUCCESS;
 	}
-#else
-#pragma message("ROM code supports no SEM-CTRL for ROM patch download")
 #endif
 
 	/* Patch DL */

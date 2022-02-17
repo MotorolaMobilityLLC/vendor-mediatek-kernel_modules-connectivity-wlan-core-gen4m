@@ -11336,10 +11336,12 @@ wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter)
 uint32_t
 wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter)
 {
-	uint32_t u4Events;
+	uint32_t u4Events = 0;
 
 	/* Query setting from wifi adaptor module */
+#if CFG_MTK_ANDROID_WMT
 	u4Events = get_low_latency_mode();
+#endif
 
 	/* Set low latency mode */
 	DBGLOG(AIS, INFO, "LowLatency(Connected) event:0x%x\n", u4Events);

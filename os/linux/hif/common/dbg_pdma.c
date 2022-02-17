@@ -329,8 +329,10 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			prDbgOps->dumpMacInfo(prAdapter);
 	}
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY))
-		haldumpPhyInfo(prAdapter);
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY)) {
+		if (prDbgOps && prDbgOps->dumpPhyInfo)
+			prDbgOps->dumpPhyInfo(prAdapter);
+	}
 
 	prHifInfo->fgIsDumpLog = false;
 	prAdapter->u4HifDbgFlag = 0;
@@ -377,6 +379,10 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
 		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 
+		u4MaxCnt &= MT_RING_CNT_MASK;
+		u4CpuIdx &= MT_RING_CIDX_MASK;
+		u4DmaIdx &= MT_RING_DIDX_MASK;
+
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"TX[%u] SZ[%04u] CPU[%04u/%04u] DMA[%04u/%04u] SW_UD[%04u] Used[%u]\n",
 			u4Idx, u4MaxCnt, prTxRing->TxCpuIdx,
@@ -404,6 +410,10 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 		kalDevRegRead(prGlueInfo, prRxRing->hw_cnt_addr, &u4MaxCnt);
 		kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &u4CpuIdx);
 		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr, &u4DmaIdx);
+
+		u4MaxCnt &= MT_RING_CNT_MASK;
+		u4CpuIdx &= MT_RING_CIDX_MASK;
+		u4DmaIdx &= MT_RING_DIDX_MASK;
 
 		LOGBUF(pucBuf, u4Max, u4Len,
 		       "RX[%u] SZ[%04u] CPU[%04u/%04u] DMA[%04u/%04u]\n",

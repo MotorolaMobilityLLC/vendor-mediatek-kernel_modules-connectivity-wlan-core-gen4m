@@ -127,6 +127,7 @@ u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
 #endif
 
+#if (CFG_WMT_RESET_API_SUPPORT || CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_UNKNOWN"),
 	(uint8_t *) DISP_STRING("RST_PROCESS_ABNORMAL_INT"),
@@ -148,6 +149,8 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("[Wi-Fi] [Read WCIR_WLAN_READY fail!]"),
 	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED.")
 };
+#endif
+
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
 #endif
@@ -398,8 +401,8 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 	return fgResult;
 }
 
-
-
+#if ((CFG_SUPPORT_CONNINFRA == 0 && CFG_WMT_RESET_API_SUPPORT) || \
+     (CFG_SUPPORT_CONNINFRA == 1))
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is called for wifi reset
@@ -414,8 +417,8 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 {
 	u_int8_t fgResult = FALSE;
-	int32_t ret;
 #if CFG_WMT_RESET_API_SUPPORT
+	int32_t ret;
 	/* wlanOnAtReset(); */
 	ret = wifi_reset_end(rst->rst_data);
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -462,6 +465,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 #endif
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d\n", fgResult);
 }
+#endif
 
 #if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 0)
@@ -1096,7 +1100,7 @@ static u_int8_t is_bt_exist(void)
 	p_bt_fun_type bt_func;
 	char *bt_func_name = "WF_rst_L0_notify_BT_step1";
 
-	bt_func = (p_bt_fun_type) kallsyms_lookup_name(bt_func_name);
+	bt_func = (p_bt_fun_type) GLUE_LOOKUP_FUN(bt_func_name);
 	if (bt_func)
 		return TRUE;
 
@@ -1113,7 +1117,7 @@ static u_int8_t rst_L0_notify_step1(void)
 		char *bt_func_name = "WF_rst_L0_notify_BT_step1";
 
 		DBGLOG(INIT, STATE, "[SER][L0] %s\n", bt_func_name);
-		bt_func = (p_bt_fun_type) kallsyms_lookup_name(bt_func_name);
+		bt_func = (p_bt_fun_type) GLUE_LOOKUP_FUN(bt_func_name);
 		if (bt_func) {
 			bt_func(0);
 		} else {
