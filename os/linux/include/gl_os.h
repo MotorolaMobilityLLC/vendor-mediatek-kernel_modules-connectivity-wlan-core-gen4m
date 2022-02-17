@@ -796,10 +796,6 @@ struct GLUE_INFO {
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct service rService;
 #endif
-
-#if CFG_SUPPORT_RX_GRO
-	spinlock_t napi_spinlock;
-#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
@@ -915,6 +911,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 #if CFG_SUPPORT_RX_GRO
 	struct napi_struct napi;
 	OS_SYSTIME tmGROFlushTimeout;
+	spinlock_t napi_spinlock;
 #endif
 	struct net_device_stats stats;
 };
