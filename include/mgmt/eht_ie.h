@@ -8,16 +8,6 @@
 
 #if (CFG_SUPPORT_802_11BE == 1)
 
-/*
- * Refer to Draft P802.11be_D0.4 @20210419
- * ID value is not defined yet.
- * Assume use to use EXT ID.
- */
-/* EHT Capabilities */
-#define EID_EXT_EHT_CAPS 254
-/* EHT Operation */
-#define EID_EXT_EHT_OP 253
-
 #define EHT_MAC_CAP_BYTE_NUM                            (2)
 #define EHT_PHY_CAP_BYTE_NUM                            (8)
 
@@ -314,7 +304,7 @@ struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD {
 #define SET_DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD(_capinfo, _value) \
 	SET_CAP_BITS(DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD, _capinfo, _value)
 #define GET_DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD(_capinfo) \
-	GET_CAP_BITS(DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD, _capinfo)  
+	GET_CAP_BITS(DOT11BE_PHY_CAP_COMMON_NOMINAL_PKT_PAD, _capinfo)
 #define DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM_BITS 5
 #define DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM_SHIFT 14
 #define DOT11BE_PHY_CAP_MAX_EHT_LTF_NUM_MASK \

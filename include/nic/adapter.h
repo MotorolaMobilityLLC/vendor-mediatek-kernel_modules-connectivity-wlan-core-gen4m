@@ -171,7 +171,10 @@ struct WLAN_INFO {
 };
 
 struct BSS_INFO {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct LINK_ENTRY rLinkEntryMld;
+	uint8_t ucLinkIndex;
+#endif
 	enum ENUM_NETWORK_TYPE eNetworkType;
 
 	/* Private data parameter for each NETWORK type usage. */

@@ -517,8 +517,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 	}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prBssDesc->rMlInfo.fgValid) {
-		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.fgValid ?
-			prBssDesc->rMlInfo.ucLinkIndex : MLD_LINK_INDEX_NOT_FOUND;
+		prStaRec->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 		COPY_MAC_ADDR(prStaRec->aucMldAddr, prBssDesc->rMlInfo.aucMldAddr);
 		mldStarecRegister(prAdapter, prStaRec);
 	}
@@ -1146,23 +1145,11 @@ uint32_t bssUpdateBeaconContent(IN struct ADAPTER
 		IE_UPD_METHOD_UPDATE_ALL);
 }
 
-/*---------------------------------------------------------------------------*/
-/*!
- * @brief Update the Beacon Frame Template to FW for AIS AdHoc and P2P GO.
- *
- * @param[in] prAdapter         Pointer to the Adapter structure.
- * @param[in] ucBssIndex        Specify which network reply the Probe Response.
- *
- * @retval WLAN_STATUS_SUCCESS   Success.
- */
-/*---------------------------------------------------------------------------*/
-uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex,
-				enum ENUM_IE_UPD_METHOD eMethod)
+struct MSDU_INFO* bssComposeBeaconContent(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
-	struct WLAN_BEACON_FRAME *prBcnFrame;
 	uint32_t i;
 
 	DEBUGFUNC("bssUpdateBeaconContent");
@@ -1179,7 +1166,7 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 	 * so skip if it is
 	 */
 	if (prMsduInfo == NULL)
-		return WLAN_STATUS_SUCCESS;
+		return NULL;
 
 	/* 4 <2> Compose header */
 	bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
@@ -1215,7 +1202,38 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 
 	sortMgmtFrameIE(prAdapter, prMsduInfo);
 
-	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
+	return prMsduInfo;
+}
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * @brief Update the Beacon Frame Template to FW for AIS AdHoc and P2P GO.
+ *
+ * @param[in] prAdapter         Pointer to the Adapter structure.
+ * @param[in] ucBssIndex        Specify which network reply the Probe Response.
+ *
+ * @retval WLAN_STATUS_SUCCESS   Success.
+ */
+/*---------------------------------------------------------------------------*/
+uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex,
+				enum ENUM_IE_UPD_METHOD eMethod)
+{
+
+	struct MSDU_INFO *prMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	struct WLAN_BEACON_FRAME *prBcnFrame;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	prMsduInfo = bssComposeBeaconContent(prAdapter, ucBssIndex);
+	if (!prMsduInfo)
+		return WLAN_STATUS_SUCCESS;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	beGenerateBeaconMldIE(prAdapter, ucBssIndex, FALSE, prMsduInfo,
+		bssComposeBeaconContent);
+#endif
 
 	DBGLOG(P2P, TRACE, "Dump beacon content to FW, method:%d\n", eMethod);
 	if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
@@ -1223,6 +1241,7 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 			(uint32_t) prMsduInfo->u2FrameLength);
 	}
 
+	prBcnFrame = (struct WLAN_BEACON_FRAME *)prMsduInfo->prPacket;
 	return nicUpdateBeaconIETemplate(prAdapter,
 				 eMethod,
 				 ucBssIndex,

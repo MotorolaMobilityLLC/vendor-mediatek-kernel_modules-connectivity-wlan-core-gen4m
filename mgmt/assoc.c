@@ -566,17 +566,7 @@ assocComposeReAssocReqFrameHeaderAndFF(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of assocComposeReAssocReqFrame() */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will send the (Re)Association Request frame
- *
- * @param[in] prStaRec           Pointer to the STA_RECORD_T
- *
- * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
- * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
- */
-/*----------------------------------------------------------------------------*/
-uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
+struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 				  IN struct STA_RECORD *prStaRec)
 {
 	struct MSDU_INFO *prMsduInfo;
@@ -666,11 +656,7 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_STA_IN_AIS(prStaRec)
-		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
-		//add MLIE estimated length
-		u2EstimatedExtraIELen += MAX_LEN_OF_MLIE;
-	}
+	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
 #endif
 
 	/* Allocate a MSDU_INFO_T */
@@ -678,10 +664,10 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	if (prMsduInfo == NULL) {
 		DBGLOG(SAA, WARN,
 		       "No PKT_INFO_T for sending (Re)Assoc Request.\n");
-		return WLAN_STATUS_RESOURCES;
+		return NULL;
 	}
 	/* 4 <2> Compose (Re)Association Request frame header and fixed fields
-	 *       in MSDU_INfO_T.
+	 *	 in MSDU_INfO_T.
 	 */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -742,15 +728,6 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
 #endif
 
-	sortMgmtFrameIE(prAdapter, prMsduInfo);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_STA_IN_AIS(prStaRec)) {
-		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_ASSOC,
-			txAssocReqIETable, txAssocReqIENums);
-	}
-#endif
-
 	if (IS_STA_IN_AIS(prStaRec)) {
 		struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
 
@@ -789,8 +766,36 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
-	/* 4 <6> Enqueue the frame to send this (Re)Association request frame.
-	 */
+	sortMgmtFrameIE(prAdapter, prMsduInfo);
+
+	return prMsduInfo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function will send the (Re)Association Request frame
+ *
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
+				  IN struct STA_RECORD *prStaRec)
+{
+	struct MSDU_INFO *prMsduInfo;
+
+	prMsduInfo = assocComposeReAssocReqFrame(prAdapter, prStaRec);
+	if (!prMsduInfo)
+		return WLAN_STATUS_RESOURCES;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	beGenerateAssocMldIE(prAdapter, prStaRec, prMsduInfo,
+		assocComposeReAssocReqFrame);
+#endif
+
+	/* Enqueue the frame to send this (Re)Association request frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	return WLAN_STATUS_SUCCESS;

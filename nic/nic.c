@@ -1649,7 +1649,7 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 					 STA_REC_INDEX_NOT_FOUND,
 					 CIPHER_SUITE_NONE, 0xFF);
 	rCmdActivateCtrl.ucBMCWlanIndex = prBssInfo->ucBMCWlanIndex;
-	rCmdActivateCtrl.ucMLOLinkIdx = ucLinkIndex;
+	rCmdActivateCtrl.ucMldLinkIdx = ucLinkIndex;
 
 	DBGLOG(RSN, INFO,
 	       "[BSS index]=%d Link=%d OwnMac%d=" MACSTR " BSSID=" MACSTR
@@ -1723,7 +1723,7 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 		prBssInfo->ucOwnMacIndex;
 	rCmdActivateCtrl.ucBMCWlanIndex =
 		prBssInfo->ucBMCWlanIndex;
-	rCmdActivateCtrl.ucMLOLinkIdx = ucLinkIndex;
+	rCmdActivateCtrl.ucMldLinkIdx = ucLinkIndex;
 
 	DBGLOG(RSN, INFO,
 	       "[BSS index]=%d Link=%d OwnMac=" MACSTR " BSSID=" MACSTR
