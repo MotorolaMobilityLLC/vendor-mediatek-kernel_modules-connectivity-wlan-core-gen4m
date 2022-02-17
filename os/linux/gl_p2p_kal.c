@@ -2262,8 +2262,20 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		prNetdevice = prP2PInfo->prDevHandler;
 
 	/* Compose ch info. */
-	if (prP2PInfo->chandef == NULL) {
+	if (prP2PInfo->fgChannelSwitchReq) {
 		struct ieee80211_channel *chan;
+
+		prP2PInfo->fgChannelSwitchReq = false;
+		if (prP2PInfo->chandef != NULL) {
+			if (prP2PInfo->chandef->chan) {
+				cnmMemFree(prAdapter,
+					prP2PInfo->chandef->chan);
+				prP2PInfo->chandef->chan = NULL;
+			}
+			cnmMemFree(prAdapter,
+				prP2PInfo->chandef);
+			prP2PInfo->chandef = NULL;
+		}
 
 		prP2PInfo->chandef = (struct cfg80211_chan_def *)
 				cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
