@@ -2522,6 +2522,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 				rStatus = WLAN_STATUS_NOT_SUPPORTED;
 				ResponseToQA(HqaCmdFrame, prIwReqData,
 					     2, rStatus);
+				kfree(Buffer);
 				return rStatus;
 			}
 			kalMemSet(&rAccessEfuseInfoRead, 0,
@@ -2975,7 +2976,12 @@ static int32_t HQA_GetFreqOffset(struct net_device
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (prGlueInfo && prGlueInfo->prAdapter)
+	if (!prGlueInfo) {
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+		return i4Ret;
+	}
+
+	if (prGlueInfo->prAdapter)
 		prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	/* Mobile chips don't support GetFreqOffset */
