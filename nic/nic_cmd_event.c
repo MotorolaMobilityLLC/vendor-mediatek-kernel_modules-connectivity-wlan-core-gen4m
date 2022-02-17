@@ -5277,6 +5277,94 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 	       prAdapter->ucSmartGearWfPathSupport);
 }
 
+void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
+			      IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_COEX_STATUS *prEventCoexStatus;
+	struct STA_RECORD *prStaRec;
+	struct BSS_DESC *prBssDesc;
+	struct BSS_INFO *prBssInfo;
+	struct CMD_ADDBA_REJECT rAddBaReject;
+
+	enum ENUM_COEX_MODE eCoexMode = COEX_NONE_BT;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+	bool fgIsBAND2G4Coex = FALSE;
+	bool fgHitBlackList = FALSE;
+
+	ASSERT(prAdapter);
+
+	DBGLOG(NIC, LOUD, "%s\n", __func__);
+
+	prEventCoexStatus = (struct EVENT_COEX_STATUS *)(prEvent->aucBuffer);
+
+	eCoexMode = prEventCoexStatus->ucCoexMode;
+	fgIsBAND2G4Coex = prEventCoexStatus->fgIsBAND2G4Coex;
+
+	DBGLOG(NIC, TRACE, "[BTon:%d BTPrf:0x%x BTRssi=%d Mode:%d Flag:%d]\n",
+	       prEventCoexStatus->ucBtOnOff,
+	       prEventCoexStatus->u2BtProfile,
+	       prEventCoexStatus->ucBtRssi,
+	       prEventCoexStatus->ucCoexMode,
+	       prEventCoexStatus->fgIsBAND2G4Coex);
+	/*AIS only feature*/
+	for (; ucBssIndex < KAL_AIS_NUM; ucBssIndex++) {
+		prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
+		fgHitBlackList = (bssGetIotApAction(prAdapter, prBssDesc) ==
+				  WLAN_IOT_AP_COEX_DIS_RX_AMPDU);
+		if (!prBssInfo || !prStaRec)
+			return;
+		/**
+		 * 1. Previouse mode is not TDD
+		 * 2. Coex mode in Event = TDD
+		 * 3. CoexFlag in Event is TRUE
+		 * 4. Bss Band is 2G
+		 * 5. BssDesc hit Blacklist
+		 */
+		if (prBssInfo->eCoexMode != COEX_TDD_MODE &&
+		    eCoexMode == COEX_TDD_MODE &&
+		    fgIsBAND2G4Coex == TRUE &&
+		    prBssInfo->eBand == BAND_2G4 &&
+		    fgHitBlackList == TRUE) {
+			/*Set Rx BA size=1*/
+			prAdapter->rWifiVar.ucRxHtBaSize = 1;
+			prAdapter->rWifiVar.ucRxVhtBaSize = 1;
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+			rAddBaReject.fgEnable = TRUE;
+			rAddBaReject.fgApply = TRUE;
+			rStatus = wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_ADDBA_REJECT,
+				TRUE, FALSE, TRUE, NULL, NULL,
+				sizeof(struct CMD_ADDBA_REJECT),
+				(uint8_t *) &rAddBaReject, NULL, 0);
+			DBGLOG(NIC, INFO, "Set Rx BA size=1 [%u]\n", rStatus);
+		} else if (prBssInfo->eCoexMode == COEX_TDD_MODE &&
+			   eCoexMode != COEX_TDD_MODE &&
+			   prBssInfo->eBand == BAND_2G4 &&
+			   fgHitBlackList == TRUE) {
+			/*restore Tx BA size setting*/
+			prAdapter->rWifiVar.ucRxHtBaSize =
+				WLAN_LEGACY_MAX_BA_SIZE;
+			prAdapter->rWifiVar.ucRxVhtBaSize =
+				WLAN_LEGACY_MAX_BA_SIZE;
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+			rAddBaReject.fgEnable = TRUE;
+			rAddBaReject.fgApply = TRUE;
+			rStatus = wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_ADDBA_REJECT,
+				TRUE, FALSE, TRUE, NULL, NULL,
+				sizeof(struct CMD_ADDBA_REJECT),
+				(uint8_t *) &rAddBaReject, NULL, 0);
+			DBGLOG(NIC, INFO, "Reset Rx BA size [%u]\n", rStatus);
+		}
+		/*Record current coex mode to Ais BssInfo*/
+		prBssInfo->eCoexMode = eCoexMode;
+	}
+}
+
+
 void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
