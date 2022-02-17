@@ -82,6 +82,10 @@
 #include "wlan_lib.h"
 #include "wlan_oid.h"
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include "conn_power_throttling.h"
+#endif
+
 #if CFG_ENABLE_BT_OVER_WIFI
 #include "nic/bow.h"
 #endif
@@ -1861,6 +1865,9 @@ connsysPowerLevelNotify(IN struct ADAPTER *prAdapter,
 void
 connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
+
+void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
+					int currentTemp);
 #endif
 
 #endif /* _GL_KAL_H */

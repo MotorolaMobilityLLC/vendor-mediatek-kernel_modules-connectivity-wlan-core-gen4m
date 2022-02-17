@@ -274,10 +274,6 @@
 #include "agent.h"
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-#include <conn_power_throttling.h>
-#endif
-
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
