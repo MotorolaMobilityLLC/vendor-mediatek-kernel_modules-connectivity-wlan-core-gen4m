@@ -248,6 +248,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_GPIO 		= 0x2A, /* GPIO setting*/
 	UNI_CMD_ID_TXPOWER		= 0x2B, /* RLM Tx Power */
 	UNI_CMD_ID_POWER_LIMIT		= 0x2C, /* Tx Power Limit*/
+	UNI_CMD_SET_NVRAM_SETTINGS      = 0x2E, /* Nvram settings */
 	UNI_CMD_ID_RA			= 0x2F, /* RA */
 	UNI_CMD_ID_MURU 		= 0x31, /* MURU */
 	UNI_CMD_ID_TESTMODE_RX_STAT	= 0x32, /* testmode Rx statistic */
@@ -2398,6 +2399,38 @@ struct UNI_CMD_MBMC_SETTING {
 	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+/* Set DVT config Tag */
+enum ENUM_UNI_CMD_DVT_TYPE_TAG {
+	UNI_CMD_MODULE_DVT = 0,
+	UNI_CMD_SYSTEM_DVT = 1,
+	UNI_CMD_DVT_TYPE_TAG_MAX_NUM
+};
+
+enum ENUM_UNI_CMD_DVT_TAG {
+	UNI_CMD_DVT_TAG_SET_PARA = 0,
+	UNI_CMD_DVT_TAG_SET_TRB_BLOCK = 1,
+	UNI_CMD_DVT_TAG_SET_BLOCK_MODE = 2,
+	UNI_CMD_DVT_TAG_GET_DMA_RESULT = 3,
+	UNI_CMD_DVT_TAG_SET_LPON_TEST_START = 4,
+	UNI_CMD_DVT_TAG_GET_LPON_TSF_RESULT = 5,
+	UNI_CMD_DVT_TAG_SET_WTBL_DURING_TEST = 6,
+	UNI_CMD_DVT_TAG_GET_WTBL_RESULT = 7,
+	UNI_CMD_DVT_TAG_MAX_NUM
+};
+
+struct UNI_CMD_DVT {
+	uint8_t ucTestType;
+	uint8_t aucPadding[3];
+	uint8_t aucTlvBuffer[0];
+};
+
+struct UNI_CMD_MDVT_PARA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2ModuleId;
+	uint16_t u2CaseId;
+};
+
 struct UNI_CMD_POWER_LIMIT {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -2431,37 +2464,38 @@ struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE config;
 } __KAL_ATTRIB_PACKED__;
 
-/* Set DVT config Tag */
-enum ENUM_UNI_CMD_DVT_TYPE_TAG {
-	UNI_CMD_MODULE_DVT = 0,
-	UNI_CMD_SYSTEM_DVT = 1,
-	UNI_CMD_DVT_TYPE_TAG_MAX_NUM
-};
+struct UNI_CMD_NVRAM_SETTINGS {
+	/* fixed field */
+	uint8_t aucPadding[4];
 
-enum ENUM_UNI_CMD_DVT_TAG {
-	UNI_CMD_DVT_TAG_SET_PARA = 0,
-	UNI_CMD_DVT_TAG_SET_TRB_BLOCK = 1,
-	UNI_CMD_DVT_TAG_SET_BLOCK_MODE = 2,
-	UNI_CMD_DVT_TAG_GET_DMA_RESULT = 3,
-	UNI_CMD_DVT_TAG_SET_LPON_TEST_START = 4,
-	UNI_CMD_DVT_TAG_GET_LPON_TSF_RESULT = 5,
-	UNI_CMD_DVT_TAG_SET_WTBL_DURING_TEST = 6,
-	UNI_CMD_DVT_TAG_GET_WTBL_RESULT = 7,
-	UNI_CMD_DVT_TAG_MAX_NUM
-};
-
-struct UNI_CMD_DVT {
-	uint8_t ucTestType;
-	uint8_t aucPadding[3];
+	/* tlv */
 	uint8_t aucTlvBuffer[0];
-};
+} __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_MDVT_PARA {
+/** Nvram command TLV List */
+enum UNI_CMD_NVRAM_SETTINGS_TAG {
+	UNI_CMD_NVRAM_SETTINGS_FRAGMENT = 0,
+	UNI_CMD_NVRAM_SETTINGS_LEGACY = 1,
+	UNI_CMD_NVRAM_SETTINGS_NUM
+} __KAL_ATTRIB_PACKED__;
+
+/* Nvram settings (Tag0) */
+struct UNI_CMD_NVRAM_SETTINGS_FRAGMENT_PARAM {
+	/* Tag = 0x00 */
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint16_t u2ModuleId;
-	uint16_t u2CaseId;
-};
+
+	struct CMD_NVRAM_FRAGMENT config;
+} __KAL_ATTRIB_PACKED__;
+
+/* Nvram settings (Tag1) */
+struct UNI_CMD_NVRAM_SETTINGS_LEGACY_PARAM {
+	/* Tag = 0x01 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct CMD_NVRAM_SETTING config;
+} __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_RA {
 	/* fixed field */
@@ -4037,6 +4071,8 @@ uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,
 uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
