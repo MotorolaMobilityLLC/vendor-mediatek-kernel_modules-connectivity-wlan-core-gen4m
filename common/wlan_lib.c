@@ -7034,13 +7034,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	 * Note: For VHT STA, BW 80Mhz is a must!
 	 */
 	prWifiVar->ucStaBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "StaBw", MAX_BW_160MHZ);
+				prAdapter, "StaBw", MAX_BW_320MHZ);
 	prWifiVar->ucSta2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta2gBw", MAX_BW_20MHZ);
 	prWifiVar->ucSta5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Sta5gBw", MAX_BW_160MHZ);
 	prWifiVar->ucSta6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Sta6gBw", MAX_BW_160MHZ);
+				prAdapter, "Sta6gBw", MAX_BW_320MHZ);
 	/* GC,GO */
 	prWifiVar->ucP2p2gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "P2p2gBw", MAX_BW_20MHZ);
