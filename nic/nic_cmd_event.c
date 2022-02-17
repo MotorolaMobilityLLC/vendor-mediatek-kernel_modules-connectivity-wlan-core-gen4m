@@ -2704,7 +2704,14 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	/* TODO */
+	prAdapter->rWifiVar.ucStaEht &= prPhyCap->ucEht;
+	wlanCfgSetUint32(prAdapter, "StaEHT", prAdapter->rWifiVar.ucStaEht);
+	prAdapter->rWifiVar.ucApEht &= prPhyCap->ucEht;
+	wlanCfgSetUint32(prAdapter, "ApEHT", prAdapter->rWifiVar.ucApEht);
+	prAdapter->rWifiVar.ucP2pGoEht &= prPhyCap->ucEht;
+	wlanCfgSetUint32(prAdapter, "P2pGoEHT", prAdapter->rWifiVar.ucP2pGoEht);
+	prAdapter->rWifiVar.ucP2pGcEht &= prPhyCap->ucEht;
+	wlanCfgSetUint32(prAdapter, "P2pGcEHT", prAdapter->rWifiVar.ucP2pGcEht);
 #endif
 	/* Overwrite bandwidth settings by phy capability */
 	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {
@@ -2757,16 +2764,21 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-	DBGLOG(INIT, TRACE,
-		"Vht [%u] He[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
+	DBGLOG(INIT, INFO,
+		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
+#if (CFG_SUPPORT_802_11BE == 1)
+			prPhyCap->ucEht,
+#else
+			0,
+#endif
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
 			prPhyCap->ucDbdc,
 			prPhyCap->ucMaxBandwidth);
 
-	DBGLOG(INIT, TRACE,
+	DBGLOG(INIT, INFO,
 		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u], WifiPath [%x]\n",
 			prPhyCap->ucTxLdpc,
 			prPhyCap->ucRxLdpc,
