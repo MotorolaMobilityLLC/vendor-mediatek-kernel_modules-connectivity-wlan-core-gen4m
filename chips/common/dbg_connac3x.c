@@ -92,6 +92,16 @@
 #include "coda/mt6639/bn1_wf_mib_top.h"
 #include "coda/mt6639/wf_umib_top.h"
 #endif
+#ifdef MT7990
+#include "coda/mt7990/wf_hif_dmashdl_top.h"
+#include "coda/mt7990/wf_ple_top.h"
+#include "coda/mt7990/wf_pse_top.h"
+#include "coda/mt7990/wf_wfdma_host_dma0.h"
+#include "coda/mt7990/bn0_wf_mib_top.h"
+#include "coda/mt7990/bn1_wf_mib_top.h"
+#include "coda/mt7990/wf_umib_top.h"
+#include "coda/mt7990/ip1_bn0_wf_mib_top.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2704,7 +2714,7 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 	used_pg = (mdp_grp_info & WF_PSE_TOP_MDP2_PG_INFO_MDP2_SRC_CNT_MASK) >> WF_PSE_TOP_MDP2_PG_INFO_MDP2_SRC_CNT_SHFT;
 	DBGLOG(HAL, INFO, "\t\tThe used/reserved pages of MDP2 group=0x%03x/0x%03x\n", used_pg, rsv_pg);
 
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_PG_MDP3_GROUP_ADDR, &mdp_grp);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_MDP3_PG_INFO_ADDR, &mdp_grp_info);
 	DBGLOG(HAL, INFO, "\tReserved page counter of MDP3 group: 0x%08x\n", mdp_grp);
@@ -2880,7 +2890,7 @@ int32_t connac3x_show_mib_info(
 	uint32_t tdrcr[5];
 	uint32_t mbtocr[16], mbtbcr[16], mbrocr[16], mbrbcr[16];
 	uint32_t btcr, btbcr, brocr, brbcr, btdcr, brdcr;
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 	uint32_t mu_cnt[5];
 #endif
 	uint32_t ampdu_cnt[3];
@@ -2896,7 +2906,7 @@ int32_t connac3x_show_mib_info(
 		band_offset = BN1_WF_MIB_TOP_BASE - BN0_WF_MIB_TOP_BASE;
 		band_offset_umib = WF_UMIB_TOP_B1BROCR_ADDR - WF_UMIB_TOP_B0BROCR_ADDR;
 		break;
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 	case 2:
 		band_offset = IP1_BN0_WF_MIB_TOP_BASE - BN0_WF_MIB_TOP_BASE;
 		band_offset_umib = WF_UMIB_TOP_B2BROCR_ADDR - WF_UMIB_TOP_B0BROCR_ADDR;
@@ -2973,7 +2983,7 @@ int32_t connac3x_show_mib_info(
 	per_rem = do_div(per, 10);
 	DBGLOG(HAL, INFO, "\tAMPDU MPDU PER=%ld.%1ld%%\n", per, per_rem);
 
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 	DBGLOG(HAL, INFO, "===MU Related Counters===\n");
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BSCR2_ADDR + band_offset, &mu_cnt[0]);
 	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR5_ADDR + band_offset, &mu_cnt[1]);

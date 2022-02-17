@@ -111,6 +111,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_bellwether;
 #ifdef MT6639
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639;
 #endif /* MT6639 */
+#ifdef MT7990
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7990;
+#endif /* MT7990 */
 
 /*******************************************************************************
  *                              C O N S T A N T S

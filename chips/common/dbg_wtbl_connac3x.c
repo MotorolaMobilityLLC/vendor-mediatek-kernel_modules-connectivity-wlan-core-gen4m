@@ -27,6 +27,12 @@
 #include "coda/mt6639/wf_ds_uwtbl.h"
 #include "coda/mt6639/wf_ds_lwtbl.h"
 #endif
+#ifdef MT7990
+#include "coda/mt7990/wf_wtblon_top.h"
+#include "coda/mt7990/wf_uwtbl_top.h"
+#include "coda/mt7990/wf_ds_uwtbl.h"
+#include "coda/mt7990/wf_ds_lwtbl.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
