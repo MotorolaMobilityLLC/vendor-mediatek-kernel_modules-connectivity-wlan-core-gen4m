@@ -1658,6 +1658,14 @@
 #endif
 #endif
 
+#ifndef CFG_MTK_WIFI_SW_WFDMA
+#define CFG_MTK_WIFI_SW_WFDMA			0
+#endif
+
+#ifndef CFG_MTK_WIFI_WFDMA_BK_RS
+#define CFG_MTK_WIFI_WFDMA_BK_RS		0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

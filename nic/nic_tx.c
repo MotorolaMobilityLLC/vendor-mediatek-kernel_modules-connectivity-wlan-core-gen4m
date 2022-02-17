@@ -2383,8 +2383,7 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-		if (prMsduInfo->ucBssIndex < BSS_DEFAULT_NUM &&
-		    halIsTxBssCntFull(prAdapter, prMsduInfo->ucBssIndex)) {
+		if (halTxIsBssCntFull(prAdapter, prMsduInfo->ucBssIndex)) {
 			QUEUE_INSERT_TAIL(prDataTemp,
 					  (struct QUE_ENTRY *) prMsduInfo);
 			continue;

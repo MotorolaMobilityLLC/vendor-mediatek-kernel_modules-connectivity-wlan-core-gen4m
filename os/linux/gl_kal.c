@@ -178,7 +178,6 @@ static unsigned long rtc_update;
  *******************************************************************************
  */
 
-static void kalDumpHifStats(IN struct ADAPTER *prAdapter);
 static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter);
 
 /*******************************************************************************
@@ -4170,17 +4169,19 @@ int hif_thread(void *data)
 					&prGlueInfo->ulFlag))
 			TRACE(halUpdateTxMaxQuota(prAdapter), "UPDATE_WMM");
 
+#if CFG_MTK_MDDP_SUPPORT
 		/* Notify MD crash to FW */
 		if (test_and_clear_bit(GLUE_FLAG_NOTIFY_MD_CRASH_BIT,
 					&prGlueInfo->ulFlag))
 			halNotifyMdCrash(prAdapter);
+#endif
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
 			prAdapter->fgWiFiInSleepyState = TRUE;
 
-		kalDumpHifStats(prAdapter);
+		halDumpHifStats(prAdapter);
 
 		/* Release to FW own */
 		wlanReleasePowerControl(prAdapter);
@@ -5349,12 +5350,6 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 #else
 	wake_up_interruptible(&pr->waitq);
 #endif
-}
-
-void kalSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit)
-{
-	set_bit(ulBit, &pr->rHifInfo.ulIntFlag);
-	kalSetDrvIntEvent(pr);
 }
 
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
@@ -7787,7 +7782,6 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 	struct BSS_INFO *bss;
 	struct net_device *ndev = NULL;
-	struct GL_HIF_INFO *hif = &glue->rHifInfo;
 	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
 	OS_SYSTIME now, last;
 	int32_t period;
@@ -7800,7 +7794,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
 	uint64_t throughput = 0;
-	char *buf = NULL, *head1, *head2, *head3, *head4;
+	char *buf = NULL, *head1, *head2, *head3;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 
@@ -7885,13 +7879,11 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	 * 1. "[%ld:%ld:%ld:%ld]" for each bss, %ld range is
 	 *    [-9223372036854775807, +9223372036854775807]
 	 * 2. "[%d:...:%d]" for pending frame num, %d range is [-32767, 32767]
-	 * 3. "[%u]" for each TX ring, %u range is [0, 65536]
-	 * 4. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
+	 * 3. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
 	 *    [0, 18446744073709551615]
 	 */
 	slen = (20 * 4 + 5) * BSS_DEFAULT_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
-	       (5 + 2) * NUM_OF_TX_RING + 1 +
 	       (20 * 4 + 5) * BSS_DEFAULT_NUM + 1;
 	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
@@ -7921,12 +7913,6 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head3 = pos;
-	for (i = 0; i < NUM_OF_TX_RING; ++i) {
-		pos += kalSnprintf(pos, end - pos, "[%u]",
-			hif->TxRing[i].u4UsedCnt);
-	}
-	pos++;
-	head4 = pos;
 	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
 		ndev = wlanGetNetDev(glue, i);
 		if (ndev) {
@@ -7942,16 +7928,14 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	}
 
 #define TEMP_LOG_TEMPLATE \
-	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s Used:" \
-	"%u/%d/%d %s LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx\n"
+	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
+	"LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
 		(unsigned long long) (perf->ulThroughput >> 20),
 		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
 		head1, GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
 		prAdapter->rWifiVar.u4NetifStopTh, head2,
-		hif->rTokenInfo.u4UsedCnt, HIF_TX_MSDU_TOKEN_NUM,
-		TX_RING_SIZE, head3,
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
 		(unsigned long long) lq->u8DiffIdleSlotCount,
@@ -7964,7 +7948,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	"DR,TE,CE,DN]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
-		head4,
+		head3,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -9045,80 +9029,6 @@ int _kalSprintf(char *buf, const char *fmt, ...)
 	retval = vsprintf(buf, fmt, ap);
 	va_end(ap);
 	return (retval < 0)?(0):(retval);
-}
-
-static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
-{
-	struct HIF_STATS *prHifStats;
-	struct GL_HIF_INFO *prHifInfo;
-	struct RTMP_TX_RING *prTxRing;
-	struct RTMP_RX_RING *prRxRing;
-	struct RX_CTRL *prRxCtrl;
-	uint8_t i = 0;
-	uint32_t u4BufferSize = 512, pos = 0;
-	char *buf;
-
-	if (!prAdapter)
-		return;
-
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	if (prAdapter->prGlueInfo->fgIsEnableMon)
-		return;
-#endif
-	prHifStats = &prAdapter->rHifStats;
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prRxCtrl = &prAdapter->rRxCtrl;
-
-	if (time_before(jiffies, prHifStats->ulUpdatePeriod))
-		return;
-
-	buf = (char *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
-	if (!buf)
-		return;
-	kalMemZero(buf, u4BufferSize);
-
-	prHifStats->ulUpdatePeriod = jiffies +
-			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
-
-	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"I[%u %u]",
-			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
-			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount));
-	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" T[%u %u %u / %u %u %u %u]",
-			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
-			GLUE_GET_REF_CNT(prHifStats->u4CmdTxCount),
-			GLUE_GET_REF_CNT(prHifStats->u4CmdTxdoneCount),
-			GLUE_GET_REF_CNT(prHifStats->u4DataInCount),
-			GLUE_GET_REF_CNT(prHifStats->u4DataTxCount),
-			GLUE_GET_REF_CNT(prHifStats->u4DataTxdoneCount),
-			GLUE_GET_REF_CNT(prHifStats->u4DataMsduRptCount));
-	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" R[%u / %u]",
-			GLUE_GET_REF_CNT(prHifStats->u4DataRxCount),
-			GLUE_GET_REF_CNT(prHifStats->u4EventRxCount));
-	for (i = 0; i < NUM_OF_TX_RING; ++i) {
-		prTxRing = &prHifInfo->TxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-				(i == 0) ? " T_R[" : "",
-				prTxRing->u4UsedCnt,
-				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
-	}
-	for (i = 0; i < NUM_OF_RX_RING; ++i) {
-		prRxRing = &prHifInfo->RxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-				(i == 0) ? " R_R[" : "",
-				prRxRing->u4PendingCnt,
-				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
-	}
-	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" Tok[%u/%u] Rfb[%u/%u]",
-			prHifInfo->rTokenInfo.u4UsedCnt,
-			HIF_TX_MSDU_TOKEN_NUM,
-			prRxCtrl->rFreeSwRfbList.u4NumElem,
-			CFG_RX_MAX_PKT_NUM);
-	DBGLOG(HAL, INFO, "%s\n", buf);
-	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
 
 uint32_t kalSetSuspendFlagToEMI(IN struct ADAPTER

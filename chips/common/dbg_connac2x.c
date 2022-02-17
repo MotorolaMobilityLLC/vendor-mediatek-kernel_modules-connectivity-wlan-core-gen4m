@@ -119,6 +119,7 @@ static char *SGI_UNSP_STATE_TBLE[] = {"INITIAL", "PROBING", "SUCCESS",
 static char *BW_STATE_TBLE[] = {"UNCHANGED", "DOWN", "N/A"};
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static struct EMPTY_QUEUE_INFO ple_queue_empty_info[] = {
 	{"CPU Q0", MCU_Q0_INDEX, ENUM_UMAC_CTX_Q_0},
 	{"CPU Q1", ENUM_UMAC_CPU_PORT_1, ENUM_UMAC_CTX_Q_1},
@@ -189,6 +190,7 @@ static struct EMPTY_QUEUE_INFO pse_queue_empty_info[] = {
 	{"RLS Q", ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F} };
 
 static u_int8_t *sta_ctrl_reg[] = {"ENABLE", "DISABLE", "PAUSE"};
+#endif
 
 /*******************************************************************************
  *                                 M A C R O S
