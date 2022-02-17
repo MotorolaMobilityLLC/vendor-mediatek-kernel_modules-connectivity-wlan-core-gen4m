@@ -1055,4 +1055,6 @@ VOID halRxTasklet(unsigned long data);
 VOID halTxCompleteTasklet(unsigned long data);
 VOID halPrintHifDbgInfo(IN P_ADAPTER_T prAdapter);
 BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter);
+VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter);
+
 #endif /* _HAL_H */

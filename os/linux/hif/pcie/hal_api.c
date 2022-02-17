@@ -1720,3 +1720,8 @@ BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter)
 {
 	return FALSE;
 }
+
+VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter)
+{
+}
+
