@@ -194,6 +194,24 @@ else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_POWER_ON_DOWNLOAD_EMI_ROM_PATCH), y)
+    ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
+else
+    ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP), y)
+    ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=1
+else
+    ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_ROM_PATCH_NO_SEM_CTRL), y)
+    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+else
+    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=0
+endif
+
 ifneq ($(CFG_CFG80211_VERSION),)
 VERSION_STR = $(subst \",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
 $(info VERSION_STR=$(VERSION_STR))
@@ -267,6 +285,9 @@ ccflags-y += -I$(src)/os/$(os)/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 ccflags-y += -I$(src)/os/$(os)/hif/common/include
 ccflags-y += -I$(src)/os/$(os)/hif/pcie/include
+ifneq ($(findstring 3_0,$(MTK_COMBO_CHIP)),)
+ccflags-y += -I$(src)/include/chips/coda/soc3_0
+endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 ccflags-y += -I$(src)/os/$(os)/hif/common/include
 ccflags-y += -I$(src)/os/$(os)/hif/axi/include
