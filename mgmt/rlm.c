@@ -2418,7 +2418,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		}
 
 		if (eChBwOrigin != *peChannelWidth) {
-			DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d)\n",
+			DBGLOG(RLM, INFO,
+				"Change BW(VHT)[%d->%d], S1[%d->%d]\n",
 				eChBwOrigin, *peChannelWidth,
 				ucS1Origin, *pucS1);
 		}
@@ -2495,7 +2496,8 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else if (ucBssOpBw == MAX_BW_320MHZ) {
 		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_320;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetVhtS1(
+		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_320);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	} else {
@@ -3239,9 +3241,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
-			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
+			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
 				ehtRlmRecOperation(prAdapter,
 					prBssInfo, pucIE);
+
+				/*Backup peer VHT OpInfo*/
+				/*TODO: backup CCFS as well*/
+				prStaRec->ucVhtOpChannelWidth =
+					prBssInfo->ucVhtChannelWidth;
+
+			}
 #endif
 			break;
 
@@ -4626,7 +4635,7 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
 		DBGLOG(RLM, INFO,
-		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w=%d s1=%d s2=%d RxN=%d, TxN=%d\n",
+		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w(vht)=%d s1=%d s2=%d RxN=%d, TxN=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
 		       prCmdBody->ucErpProtectMode, prCmdBody->ucHtProtectMode,
