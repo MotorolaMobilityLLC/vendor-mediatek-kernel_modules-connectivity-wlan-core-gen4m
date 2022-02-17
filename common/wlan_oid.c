@@ -14875,6 +14875,40 @@ wlanoidQueryNchoEnable(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_NCHO */
 
+#if CFG_SUPPORT_EASY_DEBUG
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set fw cfg info
+ *
+ * \param[in] prAdapter      Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer    Pointer to the buffer that holds the data to be
+ *                           set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_INVALID_DATA
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidSetFwParam(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer,
+			   IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+
+	if (!pvSetBuffer || !u4SetBufferLen) {
+		DBGLOG(OID, ERROR, "Buffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	DBGLOG(OID, INFO, "Fw Params: %s\n", (uint8_t *)pvSetBuffer);
+	return wlanFwCfgParse(prAdapter, (uint8_t *)pvSetBuffer);
+}
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+
 uint32_t
 wlanoidAbortScan(IN struct ADAPTER *prAdapter,
 		 OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
