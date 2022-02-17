@@ -149,6 +149,9 @@ struct DBDC_INFO_T {
 	/* Used to queue enter/leave A+G event */
 	bool fgPostpondEnterAG;
 	bool fgPostpondLeaveAG;
+
+	/* For debug */
+	OS_SYSTIME rPeivilegeLockTime;
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -681,6 +684,9 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	struct MSG_CH_REQ *prMsgChReq;
 	struct CMD_CH_PRIVILEGE *prCmdBody;
 	uint32_t rStatus;
+#if CFG_SUPPORT_DBDC
+	OS_SYSTIME rChReqQueueTime;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
@@ -694,6 +700,19 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		log_dbg(CNM, INFO,
 		       "[DBDC] ChReq: queued BSS %u Token %u REQ\n",
 		       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID);
+
+		/* Trigger EE dump if PeivilegeLock was held for more than 5s */
+		rChReqQueueTime = kalGetTimeTick();
+		if ((g_rDbdcInfo.rPeivilegeLockTime != 0) &&
+			(rChReqQueueTime > g_rDbdcInfo.rPeivilegeLockTime) &&
+			((rChReqQueueTime -
+				g_rDbdcInfo.rPeivilegeLockTime) > 5000)) {
+			log_dbg(CNM, WARN,
+				"[DBDC] ChReq: long peivilege lock at %d, %d\n",
+				g_rDbdcInfo.rPeivilegeLockTime,
+				rChReqQueueTime);
+			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+		}
 		return;
 	}
 #endif
@@ -2068,6 +2087,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 	g_rDbdcInfo.fgHasSentCmd = FALSE;
 	g_rDbdcInfo.fgPostpondEnterAG = FALSE;
 	g_rDbdcInfo.fgPostpondLeaveAG = FALSE;
+	g_rDbdcInfo.rPeivilegeLockTime = 0;
 
 	/* Parameter decision */
 	switch (prAdapter->rWifiVar.eDbdcMode) {
@@ -2467,6 +2487,7 @@ static void
 cnmDBDCFsmActionReqPeivilegeLock(void)
 {
 	g_rDbdcInfo.fgReqPrivelegeLock = TRUE;
+	g_rDbdcInfo.rPeivilegeLockTime = kalGetTimeTick();
 	log_dbg(CNM, INFO, "[DBDC] ReqPrivelege Lock!!\n");
 }
 
@@ -2477,6 +2498,7 @@ cnmDBDCFsmActionReqPeivilegeUnLock(IN struct ADAPTER *prAdapter)
 	struct MSG_HDR *prMsgHdr;
 
 	g_rDbdcInfo.fgReqPrivelegeLock = FALSE;
+	g_rDbdcInfo.rPeivilegeLockTime = 0;
 	log_dbg(CNM, INFO, "[DBDC] ReqPrivelege Unlock!!\n");
 
 	while (!LINK_IS_EMPTY(&g_rDbdcInfo.rPendingMsgList)) {
