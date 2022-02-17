@@ -136,6 +136,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_DEFAULT_KEY_ID] = nicUniCmdInstallDefaultKey,
 	[CMD_ID_SET_GTK_REKEY_DATA] = nicUniCmdOffloadKey,
 	[CMD_ID_HIF_CTRL] = nicUniCmdHifCtrl,
+	[CMD_ID_RDD_ON_OFF_CTRL] = nicUniCmdRddOnOffCtrl,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -3333,6 +3334,45 @@ uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	struct CMD_RDD_ON_OFF_CTRL *cmd;
+	struct UNI_CMD_RDD *uni_cmd;
+	struct UNI_CMD_RDD_ON_OFF_CTRL_PARM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RDD) +
+			       sizeof(struct UNI_CMD_RDD_ON_OFF_CTRL_PARM);
+
+	if (info->ucCID != CMD_ID_RDD_ON_OFF_CTRL ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_RDD_ON_OFF_CTRL *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RDD_ON_OFF_CTRL,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_RDD *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_RDD_ON_OFF_CTRL_PARM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RDD_TAG_ON_OFF_CTRL_PARM;
+	tag->u2Length = sizeof(*tag);
+	tag->u1DfsCtrl = cmd->ucDfsCtrl;
+	tag->u1RddIdx = cmd->ucRddIdx;
+	tag->u1RddRxSel = cmd->ucRddRxSel;
+	tag->u1SetVal = cmd->ucSetVal;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 
 /*******************************************************************************
  *                                 Event
