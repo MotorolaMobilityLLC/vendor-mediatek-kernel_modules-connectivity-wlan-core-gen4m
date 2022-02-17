@@ -311,7 +311,7 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	cp = common->aucCommonInfo;
 
 	if (BE_IS_ML_CTRL_PRESENCE_MLD_MAC(common->u2Ctrl)) {
-		kalMemCopy(cp, mld_bssinfo->aucOwnMldAddr, MAC_ADDR_LEN);
+		COPY_MAC_ADDR(cp, mld_bssinfo->aucOwnMldAddr);
 		cp += MAC_ADDR_LEN;
 	}
 
@@ -406,7 +406,7 @@ void beGenerateMldSTAInfo(
 	/* filling STA info field (varied length) */
 	cp = sta_ctrl->aucStaInfo;
 	if (BE_IS_ML_STA_CTRL_PRESENCE_MAC(sta_ctrl->u2StaCtrl)) {
-		kalMemCopy(cp, bss->aucOwnMacAddr, MAC_ADDR_LEN);
+		COPY_MAC_ADDR(cp, bss->aucOwnMacAddr);
 		cp += MAC_ADDR_LEN;
 	}
 
@@ -511,6 +511,241 @@ void beGenerateMldSTAInfo(
 DONE:
 	DBGLOG(RLM, INFO, "Dump ML Link%d IE\n", link);
 	DBGLOG_MEM8(RLM, INFO, sta_ctrl, IE_SIZE(sta_ctrl));
+}
+
+
+uint32_t beCalculateRnrIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *bss;
+	struct MLD_BSS_INFO *mld_bssinfo;
+
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+
+	if (!mld_bssinfo || mld_bssinfo->rBssList.u4NumElem <= 1)
+		return 0;
+
+	/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
+	return sizeof(struct IE_RNR) + mld_bssinfo->rBssList.u4NumElem *
+		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 10);
+}
+
+void beGenerateRnrIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *bss;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct LINK *links;
+	struct IE_RNR *rnr;
+	struct NEIGHBOR_AP_INFO_FIELD *info;
+	uint8_t *cp;
+
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+
+	if (!mld_bssinfo || mld_bssinfo->rBssList.u4NumElem <= 1)
+		return;
+
+	rnr = (struct IE_RNR *)	((uint8_t *)prMsduInfo->prPacket +
+						prMsduInfo->u2FrameLength);
+	rnr->ucId = ELEM_ID_RNR;
+	rnr->ucLength = mld_bssinfo->rBssList.u4NumElem *
+		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 10);
+	cp = rnr->aucInfoField;
+
+	links = &mld_bssinfo->rBssList;
+	LINK_FOR_EACH_ENTRY(bss, links, rLinkEntryMld,
+		struct BSS_INFO) {
+		info = (struct NEIGHBOR_AP_INFO_FIELD *) cp;
+
+		/* count is default 0. no need to set,
+		 * 10: Neighbor AP TBTT Offset + BSSID + MLD Para
+		 */
+		info->u2TbttInfoHdr = 10 << TBTT_INFO_HDR_LENGTH_OFFSET;
+		info->ucOpClass = 0;
+		info->ucChannelNum = 0;
+		cp = info->aucTbttInfoSet;
+
+		/* Neighbor AP TBTT Offset*/
+		*cp++ = 0xff;
+
+		/* BSSID */
+		COPY_MAC_ADDR(cp, bss->aucOwnMacAddr);
+		cp += MAC_ADDR_LEN;
+
+		/* MLD Para */
+		*cp++ = 0; /* MLD ID */
+		*cp++ = bss->ucLinkIndex; /* Link ID */
+		*cp++ = 0; /* BSS para change count */
+	}
+
+	prMsduInfo->u2FrameLength += IE_SIZE(rnr);
+}
+
+void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo, IN uint8_t *pucIE)
+{
+	const uint8_t *pos, *end;
+	uint8_t ucMlCtrlType, ucMlCtrlPreBmp;
+	struct IE_MULTI_LINK_INFO *prMlInfoIe;
+
+	log_dbg(SCN, INFO, "dump ML IE, IE_LEN = %d\n", IE_LEN(pucIE));
+	dumpMemory8(pucIE, IE_SIZE(pucIE));
+
+	end = pucIE + IE_SIZE(pucIE);
+	prMlInfoIe = (struct IE_MULTI_LINK_INFO *)pucIE;
+	pos = prMlInfoIe->aucMultiLinkVarIe;
+
+	/* ML control bits[4,15] is presence bitmap */
+	ucMlCtrlPreBmp = ((prMlInfoIe->u2MlCtrl & ML_CTRL_PRE_BMP_MASK)
+				>> ML_CTRL_PRE_BMP_SHIFT);
+	/* ML control bits[0,2] is type */
+	ucMlCtrlType = (prMlInfoIe->u2MlCtrl & ML_CTRL_TYPE_MASK);
+
+	/* It shall be Basic variant ML element*/
+	if (ucMlCtrlType != ML_ELEMENT_TYPE_BASIC) {
+		log_dbg(SCN, WARN, "invalid ML control type:%d", ucMlCtrlType);
+		return;
+	}
+
+	prMlInfo->ucMlCtrlPreBmp = ucMlCtrlPreBmp;
+
+	/* Check ML control that which common info exist */
+	if (ucMlCtrlPreBmp & ML_CTRL_MLD_MAC_ADDR_PRESENT) {
+		COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
+		log_dbg(SCN, INFO, "MLD common Info MAC addr = "MACSTR"",
+			MAC2STR(prMlInfo->aucMldAddr));
+		prMlInfo->ucValid = TRUE;
+		pos += MAC_ADDR_LEN;
+	}
+	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
+		prMlInfo->ucLinkId = *pos;
+		log_dbg(SCN, INFO, "ML common Info LinkID = %d",
+			*pos);
+		pos += 1;
+	}
+	if (ucMlCtrlPreBmp & ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
+		prMlInfo->ucBssParaChangeCount = *pos;
+		log_dbg(SCN, INFO, "ML common Info BssParaChangeCount = %d",
+			*pos);
+		pos += 1;
+	}
+	if (ucMlCtrlPreBmp & ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT) {
+		/* todo: handle 2byte MEDIUM_SYN_DELAY_INFO_PRESENT */
+ 		kalMemCopy(&prMlInfo->u2MediumSynDelayInfo, pos, 2);
+		log_dbg(SCN, INFO, "ML common Info MediumSynDelayInfo = 0x%x",
+			prMlInfo->u2MediumSynDelayInfo);
+		pos += 2;
+	}
+	if (ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT) {
+		kalMemCopy(&prMlInfo->u2EmlCap, pos, 2);
+		log_dbg(SCN, INFO, "ML common Info EML capa = 0x%x",
+			prMlInfo->u2EmlCap);
+		pos += 2;
+	}
+	if (ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
+		kalMemCopy(&prMlInfo->u2MldCap, pos, 2);
+		log_dbg(SCN, INFO, "ML common Info MLD capa = 0x%x",
+			prMlInfo->u2MldCap);
+		pos += 2;
+	}
+
+	/* pos point to link info, recusive parse it */
+	while (pos < end) {
+		struct IE_ML_PER_STA_PROFILE_INFO *prIePerStaProfile;
+		struct STA_PROFILE *prStaProfile;
+		uint8_t ucLinkId, ucPerStaProfLen, ucCurrLength;
+		uint16_t u2StaControl;
+
+		if (*pos != SUB_IE_MLD_PER_STA_PROFILE ||
+		    prMlInfo->ucLinkNum >= MLD_LINK_MAX)
+			break;
+
+		ucCurrLength = 0;
+		ucPerStaProfLen = IE_LEN(pos);
+		/* 2 bytes offset: Subelement ID, IE length
+		 * now pos point to STA Control in Per-STA profile subelement
+		 */
+		pos += 2;
+
+		prIePerStaProfile = (struct IE_ML_PER_STA_PROFILE_INFO *) pos;
+		u2StaControl = prIePerStaProfile->u2StaCtrl;
+
+		ucLinkId = (u2StaControl & ML_STA_CTRL_LINK_ID_MASK);
+
+		prStaProfile = &prMlInfo->rStaProfiles[prMlInfo->ucLinkNum++];
+		prStaProfile->ucLinkId = ucLinkId;
+		prStaProfile->u2StaCtrl = u2StaControl;
+
+		log_dbg(SCN, INFO, "LinkID=%d Ctrl=0x%x(%s) Total=%d",
+				ucLinkId, u2StaControl,
+				(u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE) ?
+				"COMPLETE" : "PARTIAL",
+				prMlInfo->ucLinkNum);
+
+		/* 2 bytes is length of STA control,
+		 * ucCurrLength will be length of STA control + STA Info,
+		 * and keep pos point to STA Control.
+		 */
+		ucCurrLength += 2;
+		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
+			COPY_MAC_ADDR(prStaProfile->aucLinkAddr,
+					(pos + ucCurrLength));
+			log_dbg(SCN, INFO, "LinkID=%d, LinkAddr="MACSTR"",
+				ucLinkId, MAC2STR(prStaProfile->aucLinkAddr));
+			ucCurrLength += MAC_ADDR_LEN;
+		}
+		if (u2StaControl & ML_STA_CTRL_BCN_INTV_PRESENT) {
+			kalMemCopy(&prStaProfile->u2BcnIntv,
+				pos + ucCurrLength, 2);
+			log_dbg(SCN, INFO, "LinkID=%d, BCN_INTV = %d",
+				ucLinkId, prStaProfile->u2BcnIntv);
+			ucCurrLength += 2;
+		}
+		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
+			kalMemCopy(&prStaProfile->u2DtimInfo,
+				pos + ucCurrLength, 2);
+			log_dbg(SCN, INFO, "LinkID=%d, DTIM_INFO = 0x%x",
+				ucLinkId, prStaProfile->u2DtimInfo);
+			ucCurrLength += 2;
+		}
+		/* If the Complete Profile subfield = 1 and
+		 * NSTR Link Pair Present = 1, then NSTR Indication Bitmap exist
+		 * NSTR Bitmap Size = 1 if the length of the corresponding
+		 * NSTR Indication Bitmap is 2 bytes, and = 0 if the
+		 * length of the corresponding NSTR Indication Bitmap = 1 byte
+		 */
+		if ((u2StaControl & ML_STA_CTRL_COMPLETE_PROFILE) &&
+			(u2StaControl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)) {
+			if (((u2StaControl & ML_STA_CTRL_NSTR_BMP_SIZE) >>
+				ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT) == 0) {
+				prStaProfile->u2NstrBmp = *(pos + ucCurrLength);
+				log_dbg(SCN, INFO, "LinkID=%d, NSTR_BMP0=0x%x",
+					ucLinkId, prStaProfile->u2NstrBmp);
+				ucCurrLength += 1;
+			} else {
+				kalMemCopy(&prStaProfile->u2NstrBmp,
+					pos + ucCurrLength, 2);
+				log_dbg(SCN, INFO, "LinkID=%d, NSTR_BMP1=0x%x",
+					ucLinkId, prStaProfile->u2NstrBmp);
+				ucCurrLength += 2;
+			}
+		}
+		/*(ucPerStaProfLen - ucCurrLength) is length of STA Profile
+		 * copy STA profile in Per-STA profile subelement.
+		 * STA profile contains Inheritance and Non-Inheritance element
+		 * todo: handle Inheritance and Non-Inheritance element
+		 */
+		if (ucPerStaProfLen - ucCurrLength <
+				sizeof(prStaProfile->aucIEbuf))
+			kalMemCopy(prStaProfile->aucIEbuf, pos + ucCurrLength,
+				ucPerStaProfLen - ucCurrLength);
+
+		/* point to next Per-STA profile*/
+		pos += ucPerStaProfLen;
+	}
 }
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
