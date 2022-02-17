@@ -7550,6 +7550,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonTpTh[9] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
 
+#if CFG_SUPPORT_LLS
+	prWifiVar->fgLinkStatsDump = (bool)wlanCfgGetUint32(
+		prAdapter, "LinkStatsDump", 0);
+#endif
+
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	prWifiVar->u4BoostCpuTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
