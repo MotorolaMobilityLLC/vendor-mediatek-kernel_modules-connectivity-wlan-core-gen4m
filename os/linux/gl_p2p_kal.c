@@ -1655,6 +1655,9 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex)
 {
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct net_device *prNetdevice = (struct net_device *) NULL;
+
 	DBGLOG(INIT, INFO, "Radar Detection event\n");
 
 	do {
@@ -1663,7 +1666,16 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef == NULL) {
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
+			(prGlueP2pInfo->aprRoleHandler !=
+				prGlueP2pInfo->prDevHandler))
+			prNetdevice = prGlueP2pInfo->aprRoleHandler;
+		else
+			prNetdevice = prGlueP2pInfo->prDevHandler;
+
+		if (prGlueP2pInfo->chandef == NULL) {
 			ASSERT(FALSE);
 			break;
 		}
@@ -1671,33 +1683,30 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 		/* cac start disable for next cac slot
 		 * if enable in dfs channel
 		 */
-		prGlueInfo->prP2PInfo[ucRoleIndex]->prWdev->cac_started = FALSE;
+		prGlueP2pInfo->prWdev->cac_started = FALSE;
 		DBGLOG(INIT, INFO,
 			"kalP2PRddDetectUpdate: Update to OS\n");
 		cfg80211_radar_event(
-			prGlueInfo->prP2PInfo[ucRoleIndex]->prWdev->wiphy,
-			prGlueInfo->prP2PInfo[ucRoleIndex]->chandef,
+			prGlueP2pInfo->prWdev->wiphy,
+			prGlueP2pInfo->chandef,
 			GFP_KERNEL);
 		DBGLOG(INIT, INFO,
 			"kalP2PRddDetectUpdate: Update to OS Done\n");
 
-		netif_carrier_off(
-			prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
-		netif_tx_stop_all_queues(
-			prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler);
+		netif_carrier_off(prNetdevice);
+		netif_tx_stop_all_queues(prNetdevice);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan)
+		if (prGlueP2pInfo->chandef->chan)
 			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueInfo->prP2PInfo
-					[ucRoleIndex]->chandef->chan);
+				prGlueP2pInfo->chandef->chan);
 
-		prGlueInfo->prP2PInfo[ucRoleIndex]->chandef->chan = NULL;
+		prGlueP2pInfo->chandef->chan = NULL;
 
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef)
+		if (prGlueP2pInfo->chandef)
 			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueInfo->prP2PInfo[ucRoleIndex]->chandef);
+				prGlueP2pInfo->chandef);
 
-		prGlueInfo->prP2PInfo[ucRoleIndex]->chandef = NULL;
+		prGlueP2pInfo->chandef = NULL;
 
 	} while (FALSE);
 
@@ -1706,6 +1715,9 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex)
 {
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct net_device *prNetdevice = (struct net_device *) NULL;
+
 	DBGLOG(INIT, INFO, "CAC Finished event\n");
 
 	do {
@@ -1714,7 +1726,16 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		if (prGlueInfo->prP2PInfo[ucRoleIndex]->chandef == NULL) {
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
+			(prGlueP2pInfo->aprRoleHandler !=
+				prGlueP2pInfo->prDevHandler))
+			prNetdevice = prGlueP2pInfo->aprRoleHandler;
+		else
+			prNetdevice = prGlueP2pInfo->prDevHandler;
+
+		if (prGlueP2pInfo->chandef == NULL) {
 			ASSERT(FALSE);
 			break;
 		}
@@ -1722,12 +1743,12 @@ void kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, INFO, "kalP2PCacFinishedUpdate: Update to OS\n");
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 		cfg80211_cac_event(
-			prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler,
-			prGlueInfo->prP2PInfo[ucRoleIndex]->chandef,
+			prNetdevice,
+			prGlueP2pInfo->chandef,
 			NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
 #else
 		cfg80211_cac_event(
-			prGlueInfo->prP2PInfo[ucRoleIndex]->prDevHandler,
+			prNetdevice,
 			NL80211_RADAR_CAC_FINISHED, GFP_KERNEL);
 #endif
 		DBGLOG(INIT, INFO,
@@ -2060,7 +2081,12 @@ void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	prGlueP2pInfo = prGlueInfo->prP2PInfo[prFrame->ucRoleIdx];
-	prNetdevice = prGlueP2pInfo->prDevHandler;
+
+	if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
+		(prGlueP2pInfo->aprRoleHandler != prGlueP2pInfo->prDevHandler))
+		prNetdevice = prGlueP2pInfo->aprRoleHandler;
+	else
+		prNetdevice = prGlueP2pInfo->prDevHandler;
 
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_rx_mgmt(
@@ -2223,6 +2249,7 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo)
 {
 	struct GL_P2P_INFO *prP2PInfo;
+	struct net_device *prNetdevice = (struct net_device *) NULL;
 	uint8_t role_idx = 0;
 
 	if (!prAdapter || !prBssInfo)
@@ -2235,6 +2262,12 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN, "p2p glue info is not active\n");
 		return;
 	}
+
+	if ((prP2PInfo->aprRoleHandler != NULL) &&
+		(prP2PInfo->aprRoleHandler != prP2PInfo->prDevHandler))
+		prNetdevice = prP2PInfo->aprRoleHandler;
+	else
+		prNetdevice = prP2PInfo->prDevHandler;
 
 	/* Compose ch info. */
 	if (prP2PInfo->chandef == NULL) {
@@ -2345,6 +2378,6 @@ void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 
 	/* Ch notify */
 	cfg80211_ch_switch_notify(
-		prP2PInfo->prDevHandler,
+		prNetdevice,
 		prP2PInfo->chandef);
 }
