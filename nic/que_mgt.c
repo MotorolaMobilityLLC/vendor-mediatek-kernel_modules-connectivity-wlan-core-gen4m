@@ -1471,21 +1471,23 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 			/* 4 <2> Check if an AP STA is present */
 			prTempStaRec = prBssInfo->prStaRecOfAP;
 
-			DBGLOG(QM, LOUD,
-				"StaOfAp Idx[%u] WIDX[%u] Valid[%u] TxAllowed[%u] InUse[%u] Type[%u]\n",
-				prTempStaRec->ucIndex,
-				prTempStaRec->ucWlanIndex,
-				prTempStaRec->fgIsValid,
-				prTempStaRec->fgIsTxAllowed,
-				prTempStaRec->fgIsInUse,
-				prTempStaRec->eStaType);
+			if (prTempStaRec) {
+				DBGLOG(QM, LOUD,
+	"StaOfAp Idx[%u] WIDX[%u] Valid[%u] TxAllowed[%u] InUse[%u] Type[%u]\n",
+				       prTempStaRec->ucIndex,
+				       prTempStaRec->ucWlanIndex,
+				       prTempStaRec->fgIsValid,
+				       prTempStaRec->fgIsTxAllowed,
+				       prTempStaRec->fgIsInUse,
+				       prTempStaRec->eStaType);
 
-			if (prTempStaRec->fgIsInUse) {
-				prMsduInfo->ucStaRecIndex =
-					prTempStaRec->ucIndex;
-				DBGLOG(QM, LOUD, "TX with AP_STA[%u]\n",
-					prTempStaRec->ucIndex);
-				return;
+				if (prTempStaRec->fgIsInUse) {
+					prMsduInfo->ucStaRecIndex =
+						prTempStaRec->ucIndex;
+					DBGLOG(QM, LOUD, "TX with AP_STA[%u]\n",
+					       prTempStaRec->ucIndex);
+					return;
+				}
 			}
 		}
 		break;
