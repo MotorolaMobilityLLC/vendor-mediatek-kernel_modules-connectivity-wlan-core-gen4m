@@ -1481,6 +1481,12 @@
 #define CFG_SUPPORT_STAT_STATISTICS	1 /* fos_change oneline */
 #define CFG_SUPPORT_WAKEUP_STATISTICS 1 /* fos_change oneline */
 #define CFG_SUPPORT_EXCEPTION_STATISTICS 1 /* fos_change oneline */
+/*------------------------------------------------------------------------------
+ * cnm power control:
+ * for power save, disable 2x2 and DBDC when power is low
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_CNM_POWER_CTRL		    1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

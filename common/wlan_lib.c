@@ -10979,7 +10979,13 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 #if CFG_SISO_SW_DEVELOP
 	enum ENUM_BAND eBand = BAND_NULL;
 #endif
-
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prAdapter->fgPowerForceOneNss) {
+		DBGLOG(INIT, TRACE, "Force 1 Nss\n",
+		       ucBssIndex);
+		return 1;
+	}
+#endif
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (IS_BSS_APGO(prBssInfo)) {

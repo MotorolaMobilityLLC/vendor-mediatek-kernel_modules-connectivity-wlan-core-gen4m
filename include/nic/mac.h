@@ -757,6 +757,9 @@
 #define REASON_CODE_PEER_CIPHER_UNSUPPORTED         45
 /* for beacon timeout, defined by mediatek */
 #define REASON_CODE_BEACON_TIMEOUT		              100
+/* for power control, op mode change fail neeed to disconnect */
+#define REASON_CODE_OP_MODE_CHANGE_FAIL		          101
+
 /* 7.3.1.8 AID field */
 #define AID_FIELD_LEN                               2
 #define AID_MASK                                    BITS(0, 13)

@@ -5668,6 +5668,15 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 			/* Clear retry count when retry count > TX limit */
 			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
 
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+			/* for power control error handling, */
+			/* retry fail but before rollback parameter */
+			if (prAdapter->fgPowerNeedDisconnect) {
+				cnmPowerControlErrorHandling(prAdapter,
+					prBssInfo);
+			}
+#endif
+
 			/* VHT notification frame sent */
 			if (ucOpChangeType ==
 			    OP_NOTIFY_TYPE_VHT_NSS_BW) {
@@ -6182,7 +6191,7 @@ rlmChangeOperationMode(
 		}
 
 #if CFG_SUPPORT_SMART_GEAR
-		if (eNewReq != 0x04 /* CNM_OPMODE_REQ_SMARTGEAR_1T2R */) {
+		if (eNewReq != CNM_OPMODE_REQ_SMARTGEAR_1T2R) {
 #endif		/* <5.2> Send operating mode notification frame (STA mode)
 		 * No action frame is needed if we only changed OpTxNss.
 		 */
