@@ -2316,7 +2316,10 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_GET_CNM_INFO		"GET_CNM"
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
-#define CMD_SW_DBGCTL_ADVCTL_ID 0xa1260000
+#define CMD_SW_DBGCTL_ADVCTL_SET_ID 0xa1260000
+#define CMD_SW_DBGCTL_ADVCTL_GET_ID 0xb1260000
+#define CMD_SET_NOISE           "SET_NOISE"
+#define CMD_GET_NOISE           "GET_NOISE"
 #define CMD_SET_POP           "SET_POP"
 #define CMD_SET_ED            "SET_ED"
 #define CMD_SET_PD            "SET_PD"
@@ -7722,6 +7725,102 @@ efuse_op_invalid:
 }
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
+static int priv_driver_set_noise(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	INT_32 u4Ret = 0;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 1;
+	UINT_32 u4Sel = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	rSwCtrlInfo.u4Id = u4Id;
+
+	if (i4Argc <= 1) {
+		DBGLOG(REQ, ERROR, "Argc(%d) ERR: SET_NOISE <Sel>\n", i4Argc);
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Sel);
+	if (u4Ret)
+		DBGLOG(REQ, ERROR, "parse rSwCtrlInfo error u4Ret=%d\n", u4Ret);
+
+	rSwCtrlInfo.u4Data = u4Sel << 30;
+	DBGLOG(REQ, LOUD, "u4Sel=%d u4Data=0x%x,\n", u4Sel, rSwCtrlInfo.u4Data);
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetSwCtrlWrite,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+
+}
+
+static int priv_driver_get_noise(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	UINT_32 u4BufLen = 0;
+	INT_32 i4BytesWritten = 0;
+	INT_32 i4Argc = 0;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
+	UINT_32 u4Offset = 0;
+	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
+	INT_16 u2Wf0AvgPwr, u2Wf1AvgPwr;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	rSwCtrlInfo.u4Data = 0;
+	rSwCtrlInfo.u4Id = u4Id;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidQuerySwCtrlRead,
+			   &rSwCtrlInfo, sizeof(rSwCtrlInfo), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	u2Wf0AvgPwr = rSwCtrlInfo.u4Data & 0xFFFF;
+	u2Wf1AvgPwr = (rSwCtrlInfo.u4Data >> 16) & 0xFFFF;
+
+	u4Offset += snprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"Noise Idle Avg. Power: WF0:%ddB WF1:%ddB\n", u2Wf0AvgPwr, u2Wf1AvgPwr);
+
+	i4BytesWritten = (INT_32)u4Offset;
+
+	return i4BytesWritten;
+
+}				/* priv_driver_get_sw_ctrl */
+
 static int priv_driver_set_pop(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -7731,7 +7830,7 @@ static int priv_driver_set_pop(IN struct net_device *prNetDev, IN char *pcComman
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	INT_32 u4Ret = 0;
-	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_ID + 2;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 2;
 	UINT_32 u4Sel = 0, u4CckTh = 0, u4OfdmTh = 0;
 	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
 
@@ -7786,7 +7885,7 @@ static int priv_driver_set_ed(IN struct net_device *prNetDev, IN char *pcCommand
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	INT_32 u4Ret = 0, u4EdVal = 0;
-	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_ID + 3;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 3;
 	UINT_32 u4Sel = 0;
 	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
 
@@ -7839,7 +7938,7 @@ static int priv_driver_set_pd(IN struct net_device *prNetDev, IN char *pcCommand
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	INT_32 u4Ret = 0;
-	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_ID + 4;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 4;
 	UINT_32 u4Sel = 0;
 	INT_32 u4CckTh = 0, u4OfdmTh = 0;
 	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
@@ -7902,7 +8001,7 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev, IN char *pc
 	INT_32 i4Argc = 0;
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
 	INT_32 u4Ret = 0;
-	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_ID + 5;
+	UINT_32 u4Id = CMD_SW_DBGCTL_ADVCTL_SET_ID + 5;
 	UINT_32 u4Sel = 0;
 	INT_32 u4Wf0Gain = 0, u4Wf1Gain = 0;
 	PARAM_CUSTOM_SW_CTRL_STRUCT_T rSwCtrlInfo;
@@ -8166,6 +8265,10 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 		else if (strnicmp(pcCommand, CMD_EFUSE, sizeof(CMD_EFUSE)-1) == 0)
 			i4BytesWritten = priv_driver_efuse_ops(prNetDev, pcCommand, i4TotalLen);
 #if CFG_SUPPORT_ADVANCE_CONTROL
+		else if (strnicmp(pcCommand, CMD_SET_NOISE, strlen(CMD_SET_NOISE)) == 0)
+			i4BytesWritten = priv_driver_set_noise(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_NOISE, strlen(CMD_GET_NOISE)) == 0)
+			i4BytesWritten = priv_driver_get_noise(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_POP, strlen(CMD_SET_POP)) == 0)
 			i4BytesWritten = priv_driver_set_pop(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_SET_ED, strlen(CMD_SET_ED)) == 0)
