@@ -2010,7 +2010,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 
 		/* Check current NeighborAPInfo recorded BSSID count*/
 		if (prNeighborAPInfo) {
-			for (i = 0; i < CFG_SCAN_SSID_MAX_NUM; i++)
+			for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++)
 				if (EQUAL_MAC_ADDR(prNeighborAPInfo->
 				  	rScanParam.aucBSSID[i], aucNullAddr)) {
 					ucBssidNum = i;
@@ -2020,7 +2020,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		/* If list is empty or tail NeighborAPInfo BssidNum = MAX,
 		*  generate a new NeighborAPInfo.
 		*/
-		if (prNeighborAPInfo == NULL || i == CFG_SCAN_SSID_MAX_NUM) {
+		if (prNeighborAPInfo == NULL || i == CFG_SCAN_OOB_MAX_NUM) {
 			prNeighborAPInfo =
 			    (struct NEIGHBOR_AP_INFO *)cnmMemAlloc(prAdapter,
 			    RAM_TYPE_BUF, sizeof(struct NEIGHBOR_AP_INFO));
@@ -2058,11 +2058,11 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			prScanParam->ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 			prScanParam->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
-			/* Init value = CFG_SCAN_SSID_MAX_NUM, if init value = 0
+			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0
 			*  will let FW confuse to match SSID ind 0.
 			*/
 			kalMemSet(prScanParam->ucBssidMatchSsidInd,
-				CFG_SCAN_SSID_MAX_NUM,
+				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanParam->ucBssidMatchSsidInd));
 		}
 
@@ -2161,7 +2161,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			if (!ucScanEnable)
 				continue;
 
-			if (ucBssidNum < CFG_SCAN_SSID_MAX_NUM) {
+			if (ucBssidNum < CFG_SCAN_OOB_MAX_NUM) {
 				kalMemCopy(prScanParam->aucBSSID[ucBssidNum],
 					&prNeighborAPInfoField->
 					aucTbttInfoSet[j + 1],
@@ -2203,7 +2203,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				prScanParam->ucShortSSIDNum++;
 			}
 			if (ucBssParamOffset != 0 &&
-				prScanParam->ucSSIDNum < CFG_SCAN_SSID_MAX_NUM
+				prScanParam->ucSSIDNum < CFG_SCAN_OOB_MAX_NUM
 				&& (prNeighborAPInfoField->aucTbttInfoSet[j +
 				ucBssParamOffset] &
 				TBTT_INFO_BSS_PARAM_SAME_SSID))
