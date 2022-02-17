@@ -2393,8 +2393,10 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	prMemOps = &prHifInfo->rMemOps;
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
 
-	if (prSkb == NULL || prSkb->data == NULL) {
-		DBGLOG(HAL, ERROR, "prSkb is 0x%p\n", prSkb);
+	if (prSkb == NULL || prSkb->data == NULL || prSkb->len == 0 ||
+	    prMsduInfo->u2FrameLength == 0) {
+		DBGLOG(HAL, ERROR, "prSkb=0x%p, frameLen=%d\n",
+		       prSkb, prMsduInfo->u2FrameLength);
 
 		if (prCurList) {
 			list_del(prCurList);
