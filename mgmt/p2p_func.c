@@ -3251,7 +3251,12 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 		 * exhausted case and do removal of unused struct STA_RECORD.
 		 */
 		/* Sent a message event to clean un-used STA_RECORD_T. */
-		ASSERT(prStaRec);
+		/* ASSERT(prStaRec); */
+		if (!prStaRec) {
+			DBGLOG(P2P, WARN,
+				"StaRec Full. (%d)\n", CFG_STA_REC_NUM);
+			return TRUE;
+		}
 
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 
