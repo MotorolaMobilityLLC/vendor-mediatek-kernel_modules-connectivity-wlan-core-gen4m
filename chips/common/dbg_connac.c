@@ -114,8 +114,8 @@
 
 void halShowPseInfo(IN struct ADAPTER *prAdapter)
 {
-	uint32_t pse_buf_ctrl, pg_sz, pg_num;
-	uint32_t pse_stat, pg_flow_ctrl[16] = {0};
+	uint32_t pse_buf_ctrl = 0, pg_sz, pg_num;
+	uint32_t pse_stat = 0, pg_flow_ctrl[16] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
 	uint32_t i, page_offset, addr, value;
@@ -666,7 +666,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	uint32_t value;
+	uint32_t value = 0;
 	uint32_t ple_pkt_max_sz;
 	uint32_t pse_pkt_max_sz;
 	uint32_t max_quota;
