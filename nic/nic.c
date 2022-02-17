@@ -1842,8 +1842,10 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 		else
 			qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 
+#if (CFG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK == 0)
 		nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
 			MSDU_REMOVE_BY_BSS_INDEX);
+#endif
 		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
 			ucBssIndex);
 
@@ -5226,7 +5228,7 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 				ulFlags);
 #endif
 
-	DBGLOG(NIC, WARN, "SER: Stop HIF Tx/Rx!\n");
+	DBGLOG(NIC, WARN, "[SER][L1] host set STOP_TRX!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX_RX;
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -5252,14 +5254,14 @@ void nicSerStopTxRx(IN struct ADAPTER *prAdapter)
 
 void nicSerStopTx(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(NIC, WARN, "SER: Stop HIF Tx!\n");
+	DBGLOG(NIC, WARN, "[SER][L1] Stop HIF Tx!\n");
 
 	prAdapter->ucSerState = SER_STOP_HOST_TX;
 }
 
 void nicSerStartTxRx(IN struct ADAPTER *prAdapter)
 {
-	DBGLOG(NIC, WARN, "SER: Start HIF T/R!\n");
+	DBGLOG(NIC, WARN, "[SER][L1] Start HIF T/R!\n");
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	{
 		struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;

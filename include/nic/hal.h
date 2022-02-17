@@ -162,20 +162,19 @@ do { \
 			ASSERT(0); \
 		} \
 		if (_u4Offset > 0xFFFF) { \
-			if (kalDevRegRead_mac(_prAdapter->prGlueInfo, \
-				_u4Offset, _pu4Value) == FALSE) {\
-				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-				fgIsBusAccessFailed = TRUE; \
-				DBGLOG(HAL, ERROR, \
-				"HAL_MCR_RD (MAC) access fail! 0x%x: 0x%x\n", \
+			if (!_prAdapter->fgMBAccessFail) { \
+				if (kalDevRegRead_mac(_prAdapter->prGlueInfo, \
+					_u4Offset, _pu4Value) == FALSE) {\
+					_prAdapter->fgMBAccessFail = TRUE; \
+					DBGLOG(HAL, ERROR, \
+					"MailBox access fail! 0x%x:0x%x\n", \
 					(uint32_t) (_u4Offset), \
 					*((uint32_t *) (_pu4Value))); \
+				} \
 			} \
 		} else { \
 			if (kalDevRegRead(_prAdapter->prGlueInfo, \
 				_u4Offset, _pu4Value) == FALSE) {\
-				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, \
 				"HAL_MCR_RD (SDIO) access fail! 0x%x: 0x%x\n", \
 					(uint32_t) (_u4Offset), \
@@ -195,20 +194,19 @@ do { \
 			ASSERT(0); \
 		} \
 		if (_u4Offset > 0xFFFF) { \
-			if (kalDevRegWrite_mac(_prAdapter->prGlueInfo, \
-				_u4Offset, _u4Value) == FALSE) {\
-				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-				fgIsBusAccessFailed = TRUE; \
-				DBGLOG(HAL, ERROR, \
-				"HAL_MCR_WR (MAC) access fail! 0x%x: 0x%x\n", \
+			if (!_prAdapter->fgMBAccessFail) { \
+				if (kalDevRegWrite_mac(_prAdapter->prGlueInfo, \
+					_u4Offset, _u4Value) == FALSE) {\
+					_prAdapter->fgMBAccessFail = TRUE; \
+					DBGLOG(HAL, ERROR, \
+					"MailBox access fail! 0x%x:0x%x\n", \
 					(uint32_t) (_u4Offset), \
 					(uint32_t) (_u4Value)); \
+				} \
 			} \
 		} else { \
 			if (kalDevRegWrite(_prAdapter->prGlueInfo, \
 				_u4Offset, _u4Value) == FALSE) {\
-				HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-				fgIsBusAccessFailed = TRUE; \
 				DBGLOG(HAL, ERROR, \
 				"HAL_MCR_WR (SDIO) access fail! 0x%x: 0x%x\n", \
 					(uint32_t) (_u4Offset), \
@@ -666,14 +664,6 @@ do { \
 #endif
 
 #if defined(_HIF_SDIO)
-#define HIF_H2D_SW_INT_SHFT                 (16)
-/* bit16 */
-#define SDIO_MAILBOX_FUNC_READ_REG_IDX      (BIT(0) << HIF_H2D_SW_INT_SHFT)
-/* bit17 */
-#define SDIO_MAILBOX_FUNC_WRITE_REG_IDX     (BIT(1) << HIF_H2D_SW_INT_SHFT)
-/* bit18 */
-#define SDIO_MAILBOX_FUNC_CHECKSUN16_IDX    (BIT(2) << HIF_H2D_SW_INT_SHFT)
-
 #define HAL_READ_RX_PORT(prAdapter, u4PortId, u4Len, pvBuf, _u4ValidBufSize) \
 { \
 	ASSERT(u4PortId < 2); \
@@ -903,34 +893,26 @@ do { \
 		pvBuf, \
 		length)
 
+/* CR not continuous, so need to change base.
+ *	MCR_WTQCR0~7 & MCR_WTQCR8~15 is
+ *	continuous.
+ */
 #define HAL_READ_TX_RELEASED_COUNT(_prAdapter, au2TxReleaseCount) \
 { \
 	uint32_t *pu4Value = (uint32_t *)au2TxReleaseCount; \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR0, \
-		&pu4Value[0]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR1, \
-		&pu4Value[1]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR2, \
-		&pu4Value[2]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR3, \
-		&pu4Value[3]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR4, \
-		&pu4Value[4]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR5, \
-		&pu4Value[5]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR6, \
-		&pu4Value[6]); \
-	HAL_MCR_RD(_prAdapter, \
-		MCR_WTQCR7, \
-		&pu4Value[7]); \
+	uint8_t  i = 0; \
+	uint32_t u4CR = MCR_WTQCR0; \
+	for (i = 0; i < SDIO_TX_RESOURCE_REG_NUM; i++) { \
+		if (i == 8) { \
+			u4CR = MCR_WTQCR8; \
+		} \
+		HAL_MCR_RD(_prAdapter, \
+			u4CR, \
+			&pu4Value[i]); \
+		u4CR += 4; \
+	} \
 }
+
 
 #define HAL_READ_RX_LENGTH(prAdapter, pu2Rx0Len, pu2Rx1Len) \
 { \

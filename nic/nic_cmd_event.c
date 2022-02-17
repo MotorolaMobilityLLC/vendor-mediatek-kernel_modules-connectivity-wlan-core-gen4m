@@ -1254,7 +1254,7 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 	/* 5. Clear Interrupt Status */
 	{
 		uint32_t u4WHISR = 0;
-		uint16_t au2TxCount[16];
+		uint16_t au2TxCount[SDIO_TX_RESOURCE_NUM];
 
 		HAL_READ_INTR_STATUS(prAdapter, 4, (uint8_t *)&u4WHISR);
 		if (HAL_IS_TX_DONE_INTR(u4WHISR))
@@ -1296,7 +1296,7 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 
 #if defined(_HIF_SDIO) && 0
 	uint32_t u4WHISR = 0;
-	uint16_t au2TxCount[16];
+	uint16_t au2TxCount[SDIO_TX_RESOURCE_NUM];
 	uint32_t u4Value;
 
 	/* 1. Disable Interrupt */
