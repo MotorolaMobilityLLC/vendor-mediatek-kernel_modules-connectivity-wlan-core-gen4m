@@ -75,6 +75,7 @@
 #include "mt7961.h"
 #include "hal_dmashdl_mt7961.h"
 #include "hal_wfsys_reset_mt7961.h"
+#include "hif.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -392,6 +393,93 @@ static void mt7961Connac2xProcessRxInterrupt(
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5)
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
+}
+
+void mt7961WfdmaTxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	uint32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Offset = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	/*
+	 * TX_RING_DATA0_IDX_0   (TX_Ring0)  - Band0 Tx Data
+	 * TX_RING_DATA1_IDX_1   (TX_Ring1)  - Band1 Tx Data
+	 * TX_RING_FWDL_IDX_4    (TX_Ring16) - FW download
+	 * TX_RING_CMD_IDX_3     (TX_Ring17) - FW CMD
+	 */
+	switch (index) {
+	case TX_RING_DATA0_IDX_0:
+		u4Offset = HW_WFDMA0_TX_RING_IDX_0 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case TX_RING_DATA1_IDX_1:
+		u4Offset = HW_WFDMA0_TX_RING_IDX_1 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case TX_RING_FWDL_IDX_4:
+		u4Offset = HW_WFDMA0_TX_RING_IDX_16 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case TX_RING_CMD_IDX_3:
+		u4Offset = HW_WFDMA0_TX_RING_IDX_17 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	default:
+		return;
+	}
+
+	tx_ring->hw_desc_base_ext =
+		prBusInfo->host_tx_ring_ext_ctrl_base + u4Offset;
+}
+
+void mt7961WfdmaRxRingExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	uint32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Offset = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	/*
+	 * RX_RING_EVT_IDX_1    (RX_Ring0) - Rx Event
+	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
+	 * RX_RING_DATA1_IDX_2 (RX_Ring3) - Band1 Rx Data
+	 * RX_RING_TXDONE0_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1_IDX_4 (RX_Ring5) - Band1 Tx Free Done Event
+	*/
+	switch (index) {
+	case RX_RING_EVT_IDX_1:
+		u4Offset = HW_WFDMA0_RX_RING_IDX_0 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case RX_RING_DATA_IDX_0:
+		u4Offset = HW_WFDMA0_RX_RING_IDX_2 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case RX_RING_DATA1_IDX_2:
+		u4Offset = HW_WFDMA0_RX_RING_IDX_3 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case RX_RING_TXDONE0_IDX_3:
+		u4Offset = HW_WFDMA0_RX_RING_IDX_4 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	case RX_RING_TXDONE1_IDX_4:
+		u4Offset = HW_WFDMA0_RX_RING_IDX_5 * MT_RINGREG_EXT_DIFF;
+		break;
+
+	default:
+		return;
+	}
+
+	rx_ring->hw_desc_base_ext =
+		prBusInfo->host_rx_ring_ext_ctrl_base + u4Offset;
 }
 
 static void mt7961Connac2xWfdmaManualPrefetch(
@@ -1362,7 +1450,7 @@ struct BUS_INFO mt7961_bus_info = {
 
 	.host_rx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR,
 	.host_rx_ring_ext_ctrl_base =
-		WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR,
+		WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_EXT_CTRL_ADDR,
 	.host_rx_ring_cidx_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL2_ADDR,
 	.host_rx_ring_didx_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL3_ADDR,
 	.host_rx_ring_cnt_addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_ADDR,
@@ -1386,8 +1474,8 @@ struct BUS_INFO mt7961_bus_info = {
 	.disableInterrupt = mt7961DisableInterrupt,
 	.processTxInterrupt = mt7961Connac2xProcessTxInterrupt,
 	.processRxInterrupt = mt7961Connac2xProcessRxInterrupt,
-	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
-	.rx_ring_ext_ctrl = asicConnac2xWfdmaRxRingExtCtrl,
+	.tx_ring_ext_ctrl = mt7961WfdmaTxRingExtCtrl,
+	.rx_ring_ext_ctrl = mt7961WfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = mt7961Connac2xWfdmaManualPrefetch,
 	.lowPowerOwnRead = asicConnac2xLowPowerOwnRead,

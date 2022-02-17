@@ -310,6 +310,42 @@ do { \
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+/* hw defined tx ring idx */
+enum ENUM_HW_WFDMA0_TX_RING_IDX {
+	HW_WFDMA0_TX_RING_IDX_0 = 0,
+	HW_WFDMA0_TX_RING_IDX_1,
+	HW_WFDMA0_TX_RING_IDX_2,
+	HW_WFDMA0_TX_RING_IDX_3,
+	HW_WFDMA0_TX_RING_IDX_4,
+	HW_WFDMA0_TX_RING_IDX_5,
+	HW_WFDMA0_TX_RING_IDX_6,
+	HW_WFDMA0_TX_RING_IDX_7,
+	HW_WFDMA0_TX_RING_IDX_8,
+	HW_WFDMA0_TX_RING_IDX_9,
+	HW_WFDMA0_TX_RING_IDX_10,
+	HW_WFDMA0_TX_RING_IDX_11,
+	HW_WFDMA0_TX_RING_IDX_12,
+	HW_WFDMA0_TX_RING_IDX_13,
+	HW_WFDMA0_TX_RING_IDX_14,
+	HW_WFDMA0_TX_RING_IDX_15,
+	HW_WFDMA0_TX_RING_IDX_16,
+	HW_WFDMA0_TX_RING_IDX_17
+};
+
+/* hw defined rx ring idx */
+enum ENUM_HW_WFDMA0_RX_RING_IDX {
+	HW_WFDMA0_RX_RING_IDX_0 = 0,
+	HW_WFDMA0_RX_RING_IDX_1,
+	HW_WFDMA0_RX_RING_IDX_2,
+	HW_WFDMA0_RX_RING_IDX_3,
+	HW_WFDMA0_RX_RING_IDX_4,
+	HW_WFDMA0_RX_RING_IDX_5,
+	HW_WFDMA0_RX_RING_IDX_6,
+	HW_WFDMA0_RX_RING_IDX_7,
+	HW_WFDMA0_RX_RING_IDX_8,
+	HW_WFDMA0_RX_RING_IDX_9,
+};
+
 struct GL_HIF_INFO;
 
 /* ============================================================================
