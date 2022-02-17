@@ -701,7 +701,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRe
 			nicReleaseAdapterMemory(prAdapter);
 			break;
 		case ALLOC_ADAPTER_MEM_FAIL:
-			break;
 		default:
 			break;
 		}
@@ -843,11 +842,16 @@ u_int8_t wlanISR(IN struct ADAPTER *prAdapter, IN u_int8_t fgGlobalIntrCtrl)
 /*----------------------------------------------------------------------------*/
 void wlanIST(IN struct ADAPTER *prAdapter)
 {
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
 	ASSERT(prAdapter);
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
-	nicProcessIST(prAdapter);
+	u4Status = nicProcessIST(prAdapter);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "Fail in nicProcessIST! status [%d]\n", u4Status);
+
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	if (KAL_WAKE_LOCK_ACTIVE(prAdapter, &prAdapter->prGlueInfo->rIntrWakeLock))
 		KAL_WAKE_UNLOCK(prAdapter, &prAdapter->prGlueInfo->rIntrWakeLock);
@@ -5696,7 +5700,7 @@ void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter)
 			DBGLOG(INIT, INFO, "Reset ALL DBG module log level to DEFAULT!");
 		} else if (u4DbgIdx < DBG_MODULE_NUM) {
 			wlanSetDebugLevel(u4DbgIdx, u4DbgMask);
-			DBGLOG(INIT, INFO, "Set DBG module[%lu] log level to [0x%02x]!", u4DbgIdx, (uint8_t) u4DbgMask);
+			DBGLOG(INIT, INFO, "Set DBG module[%u] log level to [0x%02x]!", u4DbgIdx, (uint8_t) u4DbgMask);
 		}
 	}
 
@@ -7103,9 +7107,11 @@ void wlanTxLifetimeUpdateStaStats(IN struct ADAPTER *prAdapter, IN struct MSDU_I
 	struct STA_RECORD *prStaRec;
 	uint32_t u4DeltaTime;
 	uint32_t u4DeltaHifTxTime;
-	struct QUE_MGT *prQM = &prAdapter->rQM;
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
+#if 0
+	struct QUE_MGT *prQM = &prAdapter->rQM;
 	uint32_t u4PktPrintPeriod = 0;
+#endif
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -7127,6 +7133,7 @@ void wlanTxLifetimeUpdateStaStats(IN struct ADAPTER *prAdapter, IN struct MSDU_I
 		if (u4DeltaTime >= NIC_TX_TIME_THRESHOLD)
 			prStaRec->u4ThresholdCounter++;
 
+#if 0
 		if (u4PktPrintPeriod && (prStaRec->u4TotalTxPktsNumber >= u4PktPrintPeriod)) {
 			DBGLOG(TX, INFO, "[%u]N[%u]A[%u]M[%u]T[%u]E[%4u]\n",
 			       prStaRec->ucIndex,
@@ -7142,6 +7149,7 @@ void wlanTxLifetimeUpdateStaStats(IN struct ADAPTER *prAdapter, IN struct MSDU_I
 			prStaRec->u4ThresholdCounter = 0;
 			prQM->au4QmTcResourceEmptyCounter[prStaRec->ucBssIndex][TC2_INDEX] = 0;
 		}
+#endif
 	}
 }
 #endif
