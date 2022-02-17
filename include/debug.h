@@ -605,6 +605,10 @@ int32_t connac2x_show_stat_info(
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void fw_log_bug_hang_register(void *);
+#endif
+
 #if (CFG_SUPPORT_STATISTICS == 1)
 void wlanWakeStaticsInit(void);
 void wlanWakeStaticsUninit(void);
