@@ -313,6 +313,9 @@ uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
 		     IN OUT struct MSDU_INFO *prMsduInfo);
 
+u_int8_t rsnIsFtOverTheAir(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
