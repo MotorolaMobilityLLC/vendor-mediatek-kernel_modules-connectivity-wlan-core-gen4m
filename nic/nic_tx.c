@@ -511,8 +511,10 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
 	uint32_t u4Status = WLAN_STATUS_RESOURCES;
-	uint32_t u4MaxPageCntPerFrame =
-		prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	uint32_t u4MaxDataPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
+	uint32_t u4MaxCmdPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
 	struct QUE_MGT *prQM;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -529,12 +531,6 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 #if 1
 	prQM = &prAdapter->rQM;
-#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
-	if (ucTC == TC4_INDEX) {
-		/* one cmd resource = one WFDMA rx ring buffer */
-		u4PageCount = 1;
-	}
-#endif
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
 
 		if (nicTxAcquireResourcePLE(prAdapter,
@@ -547,11 +543,18 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 		}
 
 		/* This update must be AFTER the PLE-resource-check */
-		if (ucTC == TC4_INDEX)
-			u4CurrTick = 0;
 		prTc->au4FreePageCount[ucTC] -= u4PageCount;
-		prTc->au4FreeBufferCount[ucTC] =
-			(prTc->au4FreePageCount[ucTC] / u4MaxPageCntPerFrame);
+		if (ucTC == TC4_INDEX) {
+			u4CurrTick = 0;
+			prTc->au4FreeBufferCount[ucTC] =
+			(prTc->au4FreePageCount[ucTC] /
+			u4MaxCmdPageCntPerFrame);
+		} else {
+			prTc->au4FreeBufferCount[ucTC] =
+			(prTc->au4FreePageCount[ucTC] /
+			u4MaxDataPageCntPerFrame);
+		}
+
 		prQM->au4QmTcUsedPageCounter[ucTC] += u4PageCount;
 
 		DBGLOG(TX, LOUD,
@@ -678,8 +681,10 @@ u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
 {
 	struct TX_TCQ_STATUS *prTcqStatus;
 	u_int8_t bStatus = FALSE;
-	uint32_t u4MaxPageCntPerFrame =
-		prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	uint32_t u4MaxDataPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
+	uint32_t u4MaxCmdPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
 	struct QUE_MGT *prQM = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -707,9 +712,14 @@ u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
 			 NIX_TX_PLE_PAGE_CNT_PER_FRAME);
 	} else {
 		prTcqStatus->au4FreePageCount[ucTc] += u4PageCount;
-		prTcqStatus->au4FreeBufferCount[ucTc] =
-			(prTcqStatus->au4FreePageCount[ucTc] /
-			 u4MaxPageCntPerFrame);
+		if (ucTc == TC4_INDEX)
+			prTcqStatus->au4FreeBufferCount[ucTc] =
+				(prTcqStatus->au4FreePageCount[ucTc] /
+						 u4MaxCmdPageCntPerFrame);
+		else
+			prTcqStatus->au4FreeBufferCount[ucTc] =
+				(prTcqStatus->au4FreePageCount[ucTc] /
+						 u4MaxDataPageCntPerFrame);
 	}
 	prQM->au4QmTcResourceBackCounter[ucTc] += u4PageCount;
 
@@ -750,7 +760,7 @@ void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
 					 struct QUE_ENTRY *) prMsduInfo);
 
 		nicTxReleaseResource_PSE(prAdapter, prMsduInfo->ucTC,
-			nicTxGetPageCount(
+			nicTxGetDataPageCount(
 				prAdapter, prMsduInfo->u2FrameLength,
 				FALSE), FALSE);
 
@@ -775,7 +785,8 @@ void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
 uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
-	uint32_t u4MaxPageCntPerFrame = 0;
+	uint32_t u4MaxDataPageCntPerFrame = 0;
+	uint32_t u4MaxCmdPageCntPerFrame = 0;
 	uint8_t ucIdx;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -786,10 +797,14 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 	/* Following two lines MUST be in order. */
-	prTxCtrl->u4PageSize = halGetHifTxPageSize(prAdapter);
-	prTxCtrl->u4MaxPageCntPerFrame = nicTxGetMaxPageCntPerFrame(
+	prTxCtrl->u4DataPageSize = halGetHifTxDataPageSize(prAdapter);
+	prTxCtrl->u4MaxDataPageCntPerFrame = nicTxGetMaxDataPageCntPerFrame(
+			prAdapter);
+	prTxCtrl->u4MaxCmdPageCntPerFrame = nicTxGetMaxCmdPageCntPerFrame(
 			prAdapter);
 
+	u4MaxDataPageCntPerFrame = prTxCtrl->u4MaxDataPageCntPerFrame;
+	u4MaxCmdPageCntPerFrame = prTxCtrl->u4MaxCmdPageCntPerFrame;
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 
@@ -818,12 +833,6 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 
 	/* Assign resource for each TC according to prAdapter->rWifiVar */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
-		u4MaxPageCntPerFrame = prTxCtrl->u4MaxPageCntPerFrame;
-#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
-		/* one cmd resource = one WFDMA rx ring buffer */
-		if (ucIdx == TC4_INDEX)
-			u4MaxPageCntPerFrame = 1;
-#endif
 		/*
 		 * PSE
 		 */
@@ -841,13 +850,23 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 		       prTxCtrl->rTc.au4FreePageCount[ucIdx]);
 
 		/* Buffer count */
-		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
-			(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
-			 (u4MaxPageCntPerFrame));
+		if (ucIdx == TC4_INDEX) {
+			prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
+				(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
+				 (u4MaxCmdPageCntPerFrame));
 
-		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
-			(prTxCtrl->rTc.au4FreePageCount[ucIdx] /
-			 (u4MaxPageCntPerFrame));
+			prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
+				(prTxCtrl->rTc.au4FreePageCount[ucIdx] /
+				 (u4MaxCmdPageCntPerFrame));
+		} else {
+			prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
+				(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
+				 (u4MaxDataPageCntPerFrame));
+
+			prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
+				(prTxCtrl->rTc.au4FreePageCount[ucIdx] /
+				 (u4MaxDataPageCntPerFrame));
+		}
 
 
 		DBGLOG(TX, TRACE,
@@ -1182,7 +1201,7 @@ uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
 					  (struct QUE_ENTRY *) prMsduInfo);
 			status = nicTxAcquireResource(
 				prAdapter, prMsduInfo->ucTC,
-				nicTxGetPageCount(
+				nicTxGetDataPageCount(
 					prAdapter, prMsduInfo->u2FrameLength,
 					FALSE), TRUE);
 			ASSERT(status == WLAN_STATUS_SUCCESS);
@@ -1197,7 +1216,7 @@ uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
 
 			status = nicTxAcquireResource(
 				prAdapter, prMsduInfo->ucTC,
-				nicTxGetPageCount(prAdapter,
+				halTxGetCmdPageCount(prAdapter,
 					prMsduInfo->u2FrameLength,
 					FALSE), TRUE);
 			ASSERT(status == WLAN_STATUS_SUCCESS);
@@ -1235,6 +1254,8 @@ uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
 void nicTxDropInvalidMsduInfo(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
+	uint32_t u4PageCnt = 0;
+
 	/* Dump mem for debugging */
 	DBGLOG(TX, ERROR, "[B] Dump invalid prMsduInfo & StaRec.\n");
 	nicDumpMsduInfo(prMsduInfo);
@@ -1251,10 +1272,18 @@ void nicTxDropInvalidMsduInfo(IN struct ADAPTER *prAdapter,
 	/* Remove next link */
 	QM_TX_SET_NEXT_MSDU_INFO(prMsduInfo, NULL);
 
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	if (prMsduInfo->ucTC == TC4_INDEX)
+		u4PageCnt = halTxGetCmdPageCount(prAdapter,
+		  prMsduInfo->u2FrameLength, TRUE);
+#else
+		u4PageCnt = halTxGetDataPageCount(prAdapter,
+		  prMsduInfo->u2FrameLength, TRUE);
+#endif
+
 	/* Release Tx resource */
 	nicTxReleaseResource_PSE(prAdapter, prMsduInfo->ucTC,
-		nicTxGetPageCount(prAdapter,
-		prMsduInfo->u2FrameLength, TRUE), TRUE);
+		u4PageCnt, TRUE);
 	nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
 	nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 }
@@ -3038,7 +3067,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 						prPacket);
 	prMsduInfo->u2FrameLength = (uint16_t)
 				    GLUE_GET_PKT_FRAME_LEN(prPacket);
-	prMsduInfo->u4PageCount = nicTxGetPageCount(prAdapter,
+	prMsduInfo->u4PageCount = nicTxGetDataPageCount(prAdapter,
 				  prMsduInfo->u2FrameLength, FALSE);
 
 	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
@@ -3335,8 +3364,10 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
 {
 	struct TX_CTRL *prTxCtrl;
 	uint8_t ucIdx;
-	uint32_t u4MaxPageCntPerFrame =
-		prAdapter->rTxCtrl.u4MaxPageCntPerFrame;
+	uint32_t u4MaxDataPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
+	uint32_t u4MaxCmdPageCntPerFrame =
+		prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
 
 	DEBUGFUNC("nicTxInitResetResource");
 
@@ -3379,12 +3410,21 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
 
 	/* Buffer count */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
-		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
-			prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
-				u4MaxPageCntPerFrame;
-		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
-			prTxCtrl->rTc.au4FreePageCount[ucIdx] /
-			u4MaxPageCntPerFrame;
+		if (ucIdx == TC4_INDEX) {
+			prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
+				prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
+					u4MaxCmdPageCntPerFrame;
+			prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
+				prTxCtrl->rTc.au4FreePageCount[ucIdx] /
+					u4MaxCmdPageCntPerFrame;
+		} else {
+			prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
+				prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
+					u4MaxDataPageCntPerFrame;
+			prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
+				prTxCtrl->rTc.au4FreePageCount[ucIdx] /
+					u4MaxDataPageCntPerFrame;
+		}
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -4060,11 +4100,10 @@ uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter)
  * @retval page count of this frame
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxGetPageCount(IN struct ADAPTER *prAdapter,
+uint32_t nicTxGetDataPageCount(IN struct ADAPTER *prAdapter,
 			   IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
-	return halTxGetPageCount(prAdapter, u4FrameLength,
-				 fgIncludeDesc);
+	return halTxGetDataPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
 uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
@@ -4074,7 +4113,7 @@ uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
-		u4PageCount = nicTxGetPageCount(prAdapter,
+		u4PageCount = halTxGetCmdPageCount(prAdapter,
 						prCmdInfo->u2InfoBufLen, TRUE);
 		break;
 
@@ -4082,16 +4121,15 @@ uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
 	case COMMAND_TYPE_DATA_FRAME:
 		/* No TxD append field for management packet */
-		u4PageCount = nicTxGetPageCount(prAdapter,
+		u4PageCount = halTxGetCmdPageCount(prAdapter,
 			prCmdInfo->u2InfoBufLen +
-			NIC_TX_DESC_LONG_FORMAT_LENGTH,
-			TRUE);
+			NIC_TX_DESC_LONG_FORMAT_LENGTH, TRUE);
 		break;
 
 	default:
 		DBGLOG(INIT, WARN, "Undefined CMD Type(%u)\n",
 		       prCmdInfo->eCmdType);
-		u4PageCount = nicTxGetPageCount(prAdapter,
+		u4PageCount = halTxGetCmdPageCount(prAdapter,
 						prCmdInfo->u2InfoBufLen, FALSE);
 		break;
 	}
@@ -4598,10 +4636,18 @@ void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
 	halTxCancelSendingCmd(prAdapter, prCmdInfo);
 }
 
-uint32_t nicTxGetMaxPageCntPerFrame(IN struct ADAPTER
-				    *prAdapter)
+uint32_t nicTxGetMaxCmdPageCntPerFrame(IN struct ADAPTER *prAdapter)
 {
-	uint32_t page_size = halGetHifTxPageSize(prAdapter);
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	return 1;
+#else
+	return nicTxGetMaxDataPageCntPerFrame(prAdapter);
+#endif
+}
+
+uint32_t nicTxGetMaxDataPageCntPerFrame(IN struct ADAPTER *prAdapter)
+{
+	uint32_t page_size = halGetHifTxDataPageSize(prAdapter);
 
 	/*
 	 * want to replace
@@ -5786,7 +5832,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 		/* pse */
 		u4pseRemain = prAdapter->nicTxReousrce.u4DataTotalResource;
 		u4psePageCnt = DEFAULT_PACKET_NUM *
-			       nicTxGetMaxPageCntPerFrame(prAdapter);
+			       nicTxGetMaxDataPageCntPerFrame(prAdapter);
 
 		/* ple */
 		u4pleRemain =

@@ -1473,10 +1473,22 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 	prDataToken->u4PktDmaLength = prMsduInfo->u2FrameLength;
 }
 
-uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
 	return 1;
+}
+
+uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
+}
+
+uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
 uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
@@ -2502,7 +2514,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 		)
 		nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
 			TC4_INDEX,
-			nicTxGetPageCount(prGlueInfo->prAdapter,
+			halTxGetCmdPageCount(prGlueInfo->prAdapter,
 				pTxD->SDLen0,
 				TRUE),
 			TRUE);
@@ -2636,7 +2648,7 @@ void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		(prMsduInfo->pfTxDoneHandler ? TRUE : FALSE));
 
 	nicTxReleaseResource_PSE(prGlueInfo->prAdapter, prMsduInfo->ucTC,
-		nicTxGetPageCount(prGlueInfo->prAdapter,
+		halTxGetCmdPageCount(prGlueInfo->prAdapter,
 		prMsduInfo->u2FrameLength, TRUE), TRUE);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
@@ -3358,9 +3370,19 @@ void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
 {
 }
 
-uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
+}
+
+uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+{
+	return halGetHifTxPageSize(prAdapter);
+}
+
+uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
+{
+	return halGetHifTxPageSize(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/

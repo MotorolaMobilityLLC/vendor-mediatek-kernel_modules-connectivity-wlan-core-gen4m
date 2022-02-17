@@ -283,7 +283,17 @@ uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
-uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
@@ -299,7 +309,19 @@ u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
-uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);

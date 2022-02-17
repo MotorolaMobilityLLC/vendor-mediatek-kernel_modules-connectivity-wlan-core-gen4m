@@ -1018,8 +1018,7 @@ uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-					 prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1128,8 +1127,7 @@ uint32_t wlanPatchDynMemMapSendComplete(IN struct ADAPTER *prAdapter)
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-			nicTxGetPageCount(prAdapter,
-			prCmdInfo->u2InfoBufLen, TRUE),
+			nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 			TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 				ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1265,8 +1263,7 @@ uint32_t wlanImageSectionConfig(
 	while (1) {
 		/* 6.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-					 prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1446,8 +1443,7 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-					 prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1675,8 +1671,7 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-						prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1800,8 +1795,7 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-						prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
@@ -1948,8 +1942,7 @@ wlanCompressedFWConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	while (1) {
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
-						prCmdInfo->u2InfoBufLen, TRUE),
+				nicTxGetCmdPageCount(prAdapter, prCmdInfo),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {

@@ -724,7 +724,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 		/* 5.1 Acquire TX Resource */
 		if (nicTxAcquireResource(prAdapter, ucTC,
-					 nicTxGetPageCount(prAdapter,
+					 halTxGetCmdPageCount(prAdapter,
 					 prCmdInfo->u2InfoBufLen, TRUE),
 					 TRUE) == WLAN_STATUS_RESOURCES) {
 			if (nicTxPollingResource(prAdapter,
