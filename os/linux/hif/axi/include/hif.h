@@ -319,7 +319,23 @@ struct BUS_INFO {
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4IntStatus);
+	/* Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset,
+	 * etc.
+	 */
 	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
+	/* Although DMASHDL was init, we need to reinit it again due to falcon
+	 * L1 reset, etc. Take MT7961 as example. The difference between
+	 * mt7961DmashdlInit and mt7961DmashdlReInit is that we don't init CRs
+	 * such as refill, min_quota, max_quota in mt7961DmashdlReInit, which
+	 * are backup and restored in fw. The reason why some DMASHDL CRs are
+	 * reinit by driver and some by fw is
+	 *     1. Some DMASHDL CRs shall be inited before fw releases UMAC reset
+	 *        in L1 procedure. Then, these CRs are backup and restored by fw
+	 *     2. However, the backup and restore of each DMASHDL CR in fw needs
+	 *        wm DLM space. So, we save DLM space by reinit the remaining
+	 *        DMASHDL CRs in driver.
+	 */
+	void (*DmaShdlReInit)(IN struct ADAPTER *prAdapter);
 	uint8_t (*setRxRingHwAddr)(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo,
 		uint32_t u4SwRingIdx);
