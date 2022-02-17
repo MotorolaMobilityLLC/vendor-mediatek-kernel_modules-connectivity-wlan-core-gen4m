@@ -421,6 +421,7 @@ static void register_conninfra_cb(void)
 	/* Register conninfra call back */
 	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
 	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
+	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
