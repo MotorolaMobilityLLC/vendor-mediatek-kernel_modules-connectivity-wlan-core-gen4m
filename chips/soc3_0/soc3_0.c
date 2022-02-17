@@ -159,7 +159,11 @@ struct wireless_dev *grWdev;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+/* Implementation for kernel-5.4 */
+#else
 static struct pm_qos_request wifi_req;
+#endif
 #endif
 
 bool gCoAntVFE28En = FALSE;
@@ -2551,7 +2555,9 @@ void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 
 	if (fgCoAnt) {
 		if (gCoAntVFE28En == FALSE) {
-#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+			/* Implementation for kernel-5.4 */
+#elif (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
 			regmap_write(g_regmap,
 				MT6359_LDO_VFE28_OP_EN_SET, 0x1 << 8);
 			regmap_write(g_regmap,
@@ -2572,7 +2578,9 @@ void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 void wlanCoAntVFE28Dis(void)
 {
 	if (gCoAntVFE28En == TRUE) {
-#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+		/* Implementation for kernel-5.4 */
+#elif (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
 		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_EN_CLR, 0x1 << 8);
 		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
 		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
@@ -2818,6 +2826,9 @@ void soc3_0_icapRiseVcoreClockRate(void)
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 	/*Enable VCore to 0.725*/
 
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+		/* Implementation for kernel-5.4 */
+#else
 	/*init*/
 	if (!pm_qos_request_active(&wifi_req))
 		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
@@ -2825,6 +2836,7 @@ void soc3_0_icapRiseVcoreClockRate(void)
 
 	/*update Vcore*/
 	pm_qos_update_request(&wifi_req, 0);
+#endif
 
 	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
 #else
@@ -2844,7 +2856,9 @@ void soc3_0_icapDownVcoreClockRate(void)
 	value &= ~(0x00010000);
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
-
+#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+	/* Implementation for kernel-5.4 */
+#else
 	/*init*/
 	if (!pm_qos_request_active(&wifi_req))
 		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
@@ -2856,6 +2870,7 @@ void soc3_0_icapDownVcoreClockRate(void)
 
 	/*disable VCore to normal setting*/
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
+#endif
 #else
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
 
