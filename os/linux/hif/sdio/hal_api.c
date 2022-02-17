@@ -197,7 +197,7 @@ uint32_t
 halRxWaitResponse(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-		  IN uint32_t u4WaitingInterval)
+		  IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Value = 0, u4PktLen = 0, i = 0, u4CpyLen;

@@ -4229,7 +4229,8 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 	return nicRxWaitResponseByWaitingInterval(
 				prAdapter, ucPortIdx,
 				pucRspBuffer, u4MaxRespBufferLen,
-				pu4Length, CFG_DEFAULT_SLEEP_WAITING_INTERVAL);
+				pu4Length, CFG_DEFAULT_SLEEP_WAITING_INTERVAL,
+				CFG_DEFAULT_RX_RESPONSE_TIMEOUT);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4248,7 +4249,7 @@ uint32_t
 nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-		  IN uint32_t u4WaitingInterval) {
+		  IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue) {
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -4258,7 +4259,8 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx,
 					pucRspBuffer, u4MaxRespBufferLen,
-					pu4Length, u4WaitingInterval);
+					pu4Length, u4WaitingInterval,
+					u4TimeoutValue);
 	if (u4Status == WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, TRACE,
 		       "Dump Response buffer, length = %u\n", *pu4Length);
