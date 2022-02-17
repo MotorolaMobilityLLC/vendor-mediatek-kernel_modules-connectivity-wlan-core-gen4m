@@ -1887,6 +1887,16 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		prBssDesc->ucDTIMPeriod = 0;
 	}
 
+	/* The cPowerLimit should be set as invalid value while BSS description
+	 * is reallocated
+	 */
+	if (fgIsNewBssDesc) {
+		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
+		DBGLOG(SCN, LOUD,
+			"LM: New reallocated BSSDesc [" MACSTR "]\n",
+			MAC2STR(prBssDesc->aucBSSID));
+	}
+
 	/* 4 <3.1> Full IE parsing on SW_RFB_T */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
 	/* pucDumpIE = pucIE; */
@@ -2324,6 +2334,10 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 			(uint8_t)sizeof(struct COUNTRY_INFO_SUBBAND_TRIPLET);
 		int8_t cNewPwrLimit = RLM_INVALID_POWER_LIMIT;
 
+		DBGLOG(SCN, LOUD,
+			   "LM: Country IE of BSSID[" MACSTR "] is present\n",
+			   MAC2STR(prBssDesc->aucBSSID));
+
 		/* Try to find a country subband base on our channel */
 		while (ucRemainLen >= ucSubBandSize) {
 			if (prSubBand->ucFirstChnlNum < 201 &&
@@ -2364,10 +2378,20 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 				}
 			}
 		} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+			DBGLOG(SCN, LOUD,
+				"LM: The channel of BSSID[" MACSTR
+				"] doesn't match with country IE, prBssDesc->cPowerLimit=%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->cPowerLimit);
 			prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
 			rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
 		}
 	} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+		DBGLOG(SCN, LOUD,
+			"LM: Country IE of BSSID[" MACSTR
+			"] isn't present, prBssDesc->cPowerLimit=%d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->cPowerLimit);
 		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
 		rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
 	}
