@@ -88,6 +88,10 @@
 
 #include "linux/kallsyms.h"
 
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+#include "wireless/core.h"
+#endif
+
 #if DBG
 extern int allocatedMemSize;
 #endif
@@ -1196,6 +1200,10 @@ u_int8_t kalCancelTimer(IN struct GLUE_INFO *prGlueInfo);
 void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
 		 IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx,
 		 IN uint32_t status);
+
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+uint8_t kalUpdateBssTimestamp(IN struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 uint32_t kalRandomNumber(void);
 

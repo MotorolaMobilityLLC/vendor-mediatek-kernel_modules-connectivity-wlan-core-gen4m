@@ -673,6 +673,10 @@ struct GLUE_INFO {
 	/* PARTIAL_SCAN_INFO rScanChannelInfo; */
 	uint8_t *pucScanChannel;
 
+#if CFG_SUPPORT_SCAN_CACHE_RESULT
+	/* Scan period time */
+	OS_SYSTIME u4LastScanTime;
+#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 	/* Full2Partial */
 	OS_SYSTIME u4LastFullScanTime;
 	/* full scan or partial scan */
