@@ -2413,7 +2413,7 @@ static int32_t HQA_WriteEEPROM(struct net_device *prNetDev,
 	u4Index = Offset % EFUSE_BLOCK_SIZE;
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal ==
-	    TRUE) {
+	    TRUE && Offset >= 0 && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
 		uacEEPROMImage[Offset] = u4WriteData & 0xff;
 		uacEEPROMImage[Offset + 1] = u4WriteData >> 8 & 0xff;
 	} else if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
@@ -2682,7 +2682,8 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 		}
 
 		if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal ==
-		    TRUE) {
+		    TRUE &&
+		    Offset >= 0 && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
 			/* EEPROM */
 			DBGLOG(INIT, INFO, "Direct EEPROM buffer, offset=%x\n",
 			       Offset);
