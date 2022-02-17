@@ -6743,17 +6743,6 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		u4LteSafeChnMask_2G = prLteSafeChnList->au4SafeChannelBitmask[
 			ENUM_SAFE_CH_MASK_BAND_2G4];
 
-#if CFG_TC1_FEATURE
-		/* Restrict 2.4G band channel selection range
-		 * to 1/6/11 per customer's request
-		 */
-		u4LteSafeChnMask_2G &= 0x0842;
-#elif CFG_TC10_FEATURE
-		/* Restrict 2.4G band channel selection range
-		 * to 1~11 per customer's request
-		 */
-		u4LteSafeChnMask_2G &= 0x0FFE;
-#endif
 		prAcsReqInfo->u4LteSafeChnMask_2G &= u4LteSafeChnMask_2G;
 		for (i = 0; i < ucNumOfChannel; i++) {
 			if ((prAcsReqInfo->u4LteSafeChnMask_2G &
@@ -6765,6 +6754,17 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 				"All mask invalid, mark all as valid\n");
 			prAcsReqInfo->u4LteSafeChnMask_2G = BITS(1, 14);
 		}
+#if CFG_TC1_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1/6/11 per customer's request
+		 */
+		prAcsReqInfo->u4LteSafeChnMask_2G &= 0x0842;
+#elif CFG_TC10_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1~11 per customer's request
+		 */
+		prAcsReqInfo->u4LteSafeChnMask_2G &= 0x0FFE;
+#endif
 	} else if (prLteSafeChnInfo && (eBand == BAND_5G)) {
 		/* Add support for 5G FW mask */
 		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
