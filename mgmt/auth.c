@@ -1139,6 +1139,10 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 				aisGetAisFsmInfo(prAdapter, ucBssIndex)
 					->encryptedDeauthIsInProcess = TRUE;
+			} else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+					prBssInfo->u4PrivateData)
+					->encryptedDeauthIsInProcess = TRUE;
 			}
 			DBGLOG(SAA, INFO,
 			       "Reason=%d, DestAddr=" MACSTR

@@ -860,8 +860,42 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 	rRemoveKey.u4KeyIndex = key_index;
 	rRemoveKey.u4Length = sizeof(struct PARAM_REMOVE_KEY);
 	if (mac_addr) {
+		uint32_t waitRet = 0;
+		struct BSS_INFO *prBssInfo = NULL;
+		struct P2P_ROLE_FSM_INFO *fsm =
+			(struct P2P_ROLE_FSM_INFO *)
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+			prGlueInfo->prAdapter,
+			ucRoleIdx);
+
 		COPY_MAC_ADDR(rRemoveKey.arBSSID, mac_addr);
 		rRemoveKey.u4KeyIndex |= BIT(30);
+		prBssInfo =
+			GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			rRemoveKey.ucBssIdx);
+
+#if CFG_SUPPORT_802_11W
+		/* if encrypted deauth frame
+		 * is in process, pending remove key
+		 */
+		if (fsm &&
+			prBssInfo &&
+			IS_BSS_APGO(prBssInfo) &&
+			(fsm->encryptedDeauthIsInProcess ==
+			TRUE) &&
+			(prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE)) {
+			waitRet = wait_for_completion_timeout(
+				&fsm->rDeauthComp,
+				MSEC_TO_JIFFIES(1000));
+			if (!waitRet) {
+				DBGLOG(RSN, WARN, "timeout\n");
+				fsm->encryptedDeauthIsInProcess = FALSE;
+			} else
+				DBGLOG(RSN, TRACE, "complete\n");
+		}
+#endif
 	}
 
 	rStatus = kalIoctl(prGlueInfo,
