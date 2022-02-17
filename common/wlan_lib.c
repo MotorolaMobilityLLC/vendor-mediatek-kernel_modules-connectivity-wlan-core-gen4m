@@ -1427,7 +1427,8 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 			DBGLOG(REQ, INFO, "Fail: nicProcessIST! status [%x]\n",
 			       u4Status);
 			/* dump log for check */
-			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+			prAdapter->u4HifDbgFlag |= DEG_HIF_PDMA;
+			halPrintHifDbgInfo(prAdapter);
 		}
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
