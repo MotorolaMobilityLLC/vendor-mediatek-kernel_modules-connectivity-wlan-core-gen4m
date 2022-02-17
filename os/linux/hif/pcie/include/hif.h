@@ -220,7 +220,7 @@ VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode);
 void glGetDev(PVOID ctx, struct device **dev);
 
 void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev);
-
+VOID halHifRst(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo);
 VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo);
