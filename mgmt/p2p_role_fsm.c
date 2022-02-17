@@ -4066,6 +4066,13 @@ static void indicateAcsResultByAisCh(IN struct ADAPTER *prAdapter,
 	} else {
 		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
 	}
+
+	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
+		if (prAisBssInfo->eBand == BAND_2G4)
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+		else
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
+	}
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
 }
@@ -4216,14 +4223,17 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
 		} else if (prAdapter->fgEnable5GBand) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 		} else {
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_2G4));
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
