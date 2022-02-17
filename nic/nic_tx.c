@@ -2004,7 +2004,10 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 				u4TxDescLength + prChipInfo->txd_append_size);
 		else
 			kalMemCopy(prTxDesc, prTxDescTemplate, u4TxDescLength);
-		/* Overwrite fields for EOSP or More data */
+
+#if defined(_HIF_USB)
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
 		nicTxFillDescByPktOption(prAdapter, prMsduInfo, prTxDesc);
 
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO
@@ -2022,7 +2025,10 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		}
 #endif
 	} else { /* Compose TXD by Msdu info */
-		DBGLOG_LIMITED(NIC, TRACE, "Compose TXD by Msdu info\n");
+#if defined(_HIF_USB)
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+		DBGLOG_LIMITED(NIC, INFO, "Compose TXD by Msdu info\n");
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_COMMAND;
@@ -2092,10 +2098,6 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 
 	if (pu4TxDescLength)
 		*pu4TxDescLength = u4TxDescLength;
-
-#if defined(_HIF_USB)
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 }
 
 void
@@ -2308,8 +2310,8 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 {
 	struct TX_DESC_OPS_T *prTxDescOps;
 	uint8_t ucTid;
-	uint8_t ucTxDescSize;
-	void *prTxDesc;
+	void *prTxDescList[TX_DESC_TID_NUM] = {NULL};
+	uint8_t ucTxDescSizeList[TX_DESC_TID_NUM] = {0};
 
 #if defined(_HIF_USB)
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2318,53 +2320,52 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 	DBGLOG(QM, TRACE, "Free TXD template for STA[%u] QoS[%u]\n",
 	       prStaRec->ucIndex, prStaRec->fgIsQoS);
 
-	/* This is to lock the process to preventing */
-	/* nicTxFreeDescTemplate while Filling it */
 #if defined(_HIF_USB)
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
 #endif
-
 	prTxDescOps = prAdapter->chip_info->prTxDescOps;
 	if (prStaRec->fgIsQoS) {
 		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-			prTxDesc = prStaRec->aprTxDescTemplate[ucTid];
-
-			if (prTxDesc) {
+			prTxDescList[ucTid] =
+				prStaRec->aprTxDescTemplate[ucTid];
+			if (prTxDescList[ucTid]) {
 				if (prTxDescOps->nic_txd_long_format_op(
-					prTxDesc, FALSE))
-					ucTxDescSize =
+					prTxDescList[ucTid], FALSE))
+					ucTxDescSizeList[ucTid] =
 						NIC_TX_DESC_LONG_FORMAT_LENGTH;
 				else
-					ucTxDescSize =
+					ucTxDescSizeList[ucTid] =
 						NIC_TX_DESC_SHORT_FORMAT_LENGTH;
 
-				kalMemFree(prTxDesc, VIR_MEM_TYPE,
-					ucTxDescSize);
-
-				prTxDesc =
-					prStaRec->aprTxDescTemplate[ucTid] =
+				prStaRec->aprTxDescTemplate[ucTid] =
 					NULL;
 			}
 		}
 	} else {
-		prTxDesc = prStaRec->aprTxDescTemplate[0];
-		if (prTxDesc) {
-			if (prTxDescOps->nic_txd_long_format_op(
-				prTxDesc, FALSE))
-				ucTxDescSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
-			else
-				ucTxDescSize = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-
-			kalMemFree(prTxDesc, VIR_MEM_TYPE, ucTxDescSize);
-			prTxDesc = NULL;
-		}
+		prTxDescList[0] = prStaRec->aprTxDescTemplate[0];
 		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++)
 			prStaRec->aprTxDescTemplate[ucTid] = NULL;
-	}
 
+		if (prTxDescList[0]) {
+			if (prTxDescOps->nic_txd_long_format_op(
+				prTxDescList[0], FALSE))
+				ucTxDescSizeList[0] =
+					NIC_TX_DESC_LONG_FORMAT_LENGTH;
+			else
+				ucTxDescSizeList[0] =
+					NIC_TX_DESC_SHORT_FORMAT_LENGTH;
+		}
+	}
 #if defined(_HIF_USB)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
 #endif
+	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
+		if (prTxDescList[ucTid]) {
+			kalMemFree(prTxDescList[ucTid],
+				VIR_MEM_TYPE, ucTxDescSizeList[ucTid]);
+			prTxDescList[ucTid] = NULL;
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
