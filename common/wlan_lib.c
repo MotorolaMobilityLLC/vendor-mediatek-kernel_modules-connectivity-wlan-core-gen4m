@@ -4190,7 +4190,6 @@ uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
 	}
 
 	/* Fill-up MSDU_INFO and TxD*/
-	prMsduInfo->eSrc = TX_PACKET_OS;
 	if (!nicTxFillMsduInfo(prAdapter, prMsduInfo, prPacket) ||
 		!nicTxProcessCmdDataPacket(prAdapter, prMsduInfo)) {
 
