@@ -84,7 +84,7 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma)
 		return;
 
-	prSwWfdmaInfo->u4PortIdx = TX_RING_CMD_IDX_2;
+	prSwWfdmaInfo->u4PortIdx = TX_RING_CMD_IDX_3;
 
 	/* update sw wfdma emi offset */
 	if (prSwWfdmaInfo->u4EmiOffsetAddr) {
@@ -343,7 +343,7 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prSwWfDmad = prSwWfdmaInfo->prDmad;
 
-	prTxRing = &prHifInfo->TxRing[TX_RING_CMD_IDX_2];
+	prTxRing = &prHifInfo->TxRing[TX_RING_CMD_IDX_3];
 
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma || !prSwWfDmad)
 		return false;
@@ -413,7 +413,7 @@ bool halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo)
 	if (!prSwWfdmaInfo->fgIsEnSwWfdma)
 		return false;
 
-	halWpdmaProcessCmdDmaDone(prGlueInfo, TX_RING_CMD_IDX_2);
+	halWpdmaProcessCmdDmaDone(prGlueInfo, TX_RING_CMD_IDX_3);
 	return halSwWfdmaWriteCmd(prGlueInfo);
 }
 
