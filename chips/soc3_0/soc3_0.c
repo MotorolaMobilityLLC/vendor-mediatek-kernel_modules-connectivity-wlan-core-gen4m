@@ -407,7 +407,7 @@ void soc3_0asicConnac2xWpdmaConfig(
 	bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
+	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT] = {0};
 	uint32_t u4DmaCfgCr = 0;
 	uint32_t idx = 0;
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
@@ -1677,7 +1677,7 @@ static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
 #define	AXI_MASTER_DUMP_CR_NUM 9
 
 	uint32_t ReadRegValue = 0;
-	uint32_t u4Value[AXI_MASTER_DUMP_CR_NUM];
+	uint32_t u4Value[AXI_MASTER_DUMP_CR_NUM] = {0};
 	uint32_t i;
 
 	ReadRegValue = AXI_MASTER_DUMP_CR_START;
