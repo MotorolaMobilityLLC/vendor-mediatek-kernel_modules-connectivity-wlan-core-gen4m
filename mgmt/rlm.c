@@ -2359,7 +2359,7 @@ rlmRecAssocRespIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, PU
 	if (!fgIsHasHtCap) {
 		prStaRec->ucDesiredPhyTypeSet &= ~PHY_TYPE_BIT_HT;
 		if (prBssDesc) {
-			if (prBssDesc->ucPhyTypeSet && PHY_TYPE_BIT_HT) {
+			if (prBssDesc->ucPhyTypeSet & PHY_TYPE_BIT_HT) {
 				DBGLOG(RLM, WARN, "PhyTypeSet in Beacon and AssocResp are unsync. ");
 				DBGLOG(RLM, WARN, "Follow AssocResp to disable HT.\n");
 			}
@@ -2368,7 +2368,7 @@ rlmRecAssocRespIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, PU
 	if (!fgIsHasVhtCap) {
 		prStaRec->ucDesiredPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 		if (prBssDesc) {
-			if (prBssDesc->ucPhyTypeSet && PHY_TYPE_BIT_VHT) {
+			if (prBssDesc->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
 				DBGLOG(RLM, WARN, "PhyTypeSet in Beacon and AssocResp are unsync. ");
 				DBGLOG(RLM, WARN, "Follow AssocResp to disable VHT.\n");
 			}
