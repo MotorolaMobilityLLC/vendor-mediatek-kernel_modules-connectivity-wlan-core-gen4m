@@ -399,8 +399,7 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= (count + 1))
-		u4CopySize = count;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
 	pucTmp = g_aucProcBuf;
 	SNPRINTF(pucTmp, g_aucProcBuf, ("%s ", "set_cfg"));
@@ -456,7 +455,6 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	size_t count, loff_t *data)
 {
-
 /*	UINT_32 u4DriverCmd, u4DriverValue;
  *	UINT_8 *temp = &g_aucProcBuf[0];
  */
@@ -464,10 +462,9 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	struct GLUE_INFO *prGlueInfo;
 /*	PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P; */
 
-
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= (count + 1))
-		u4CopySize = count;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
+
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -497,10 +494,8 @@ static ssize_t procDbgLevelWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= count + 1)
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
+
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -718,10 +713,7 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 	struct ADAPTER *prAdapter = NULL;
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= count + 1)
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
@@ -853,10 +845,7 @@ static ssize_t procPktDelayDbgCfgWrite(struct file *file, const char *buffer,
 	uint8_t ucTxOrRx = 0;
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= count + 1)
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
@@ -945,10 +934,8 @@ static ssize_t procRoamWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= count + 1)
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
+
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -1024,10 +1011,8 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	if (u4CopySize >= count + 1)
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
+
 	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
 		pr_err("error of copy from user\n");
 		return -EFAULT;
@@ -1094,7 +1079,6 @@ static ssize_t procAutoPerfCfgWrite(struct file *file, const char *buffer,
 	uint8_t i = 0;
 	uint32_t u4ForceEnable = 0;
 	uint8_t aucBuf[32];
-
 
 	if (u4CopySize >= sizeof(g_aucProcBuf))
 		u4CopySize = sizeof(g_aucProcBuf) - 1;
@@ -1618,11 +1602,7 @@ static ssize_t cfgWrite(struct file *filp, const char __user *buf,
 	uint8_t token_num = 1;
 
 	kalMemSet(aucCfgBuf, 0, u4CopySize);
-
-	if (u4CopySize >= (count + 1))
-		u4CopySize = count;
-	else
-		u4CopySize = u4CopySize - 1;
+	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
 	if (copy_from_user(aucCfgBuf, buf, u4CopySize)) {
 		DBGLOG(INIT, ERROR, "copy from user failed\n");
