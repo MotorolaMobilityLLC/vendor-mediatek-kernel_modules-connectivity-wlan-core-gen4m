@@ -91,6 +91,13 @@
 
 #define RX_DATA_RING_BASE_IDX 2
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+#define WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING2_PRI_SEL_MASK \
+	WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_WPDMA_INT_RX_RING2_PRI_SEL_MASK
+#define WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING3_PRI_SEL_MASK \
+	WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_WPDMA_INT_RX_RING3_PRI_SEL_MASK
+#endif
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -1226,6 +1233,49 @@ u_int8_t mt7961GetRxDbgInfoSrc(struct ADAPTER *prAdapter)
 		return FALSE;	/* From group5 */
 }
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+uint32_t mt7961setWfdmaCoalescingInt(struct ADAPTER *prAdapter,
+					    u_int8_t fgEnable)
+{
+	uint32_t u4Addr, u4Val;
+	struct BUS_INFO *prBusInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR;
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+	/*
+	 * RX_RING_DATA_IDX_0   (RX_Ring2) - Band0 Rx Data
+	 * WFDMA0_RX_RING_IDX_2 (RX_Ring3) - Band1 Rx Data
+	*/
+
+	u4Val &=
+	~(WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING2_PRI_SEL_MASK
+	| WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING3_PRI_SEL_MASK);
+
+	if (fgEnable) {
+		u4Val |=
+		(WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING2_PRI_SEL_MASK |
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_RING3_PRI_SEL_MASK);
+	}
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Val = 0;
+	u4Addr =
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie_dly_rx_int_en_ADDR;
+	HAL_MCR_RD(prAdapter, u4Addr, &u4Val);
+
+	u4Val &=
+	~WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie_dly_rx_int_en_MASK;
+	if (fgEnable) {
+		u4Val |=
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie_dly_rx_int_en_MASK;
+	}
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 #ifdef MT7961
 struct BUS_INFO mt7961_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1298,6 +1348,13 @@ struct BUS_INFO mt7961_bus_info = {
 	.updateTxRingMaxQuota = mt7961UpdateDmashdlQuota,
 	.setRxRingHwAddr = mt7961SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt7961LiteWfdmaAllocRxRing,
+#if (CFG_COALESCING_INTERRUPT == 1)
+#if defined(_HIF_PCIE)
+	.setWfdmaCoalescingInt = mt7961setWfdmaCoalescingInt,
+#else
+	.setWfdmaCoalescingInt = NULL,
+#endif
+#endif/* (CFG_COALESCING_INTERRUPT == 1) */
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)

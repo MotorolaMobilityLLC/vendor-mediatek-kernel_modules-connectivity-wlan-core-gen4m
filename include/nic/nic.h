@@ -523,6 +523,11 @@ uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter,
 			      IN struct CMD_RDD_CH *prRddChParam);
 #endif
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+uint32_t nicSetCoalescingInt(IN struct ADAPTER *prAdapter,
+				  IN u_int8_t fgPktThEn, IN u_int8_t fgTmrThEn);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Address Setting Apply                                                      */
 /*----------------------------------------------------------------------------*/

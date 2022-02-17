@@ -5602,3 +5602,19 @@ void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
+#if (CFG_COALESCING_INTERRUPT == 1)
+void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_PF_CF_COALESCING_INT_DONE *prEventCf;
+	struct BUS_INFO *prBusInfo;
+
+	prEventCf = (struct EVENT_PF_CF_COALESCING_INT_DONE *) (
+		prEvent->aucBuffer);
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->setWfdmaCoalescingInt)
+		prBusInfo->setWfdmaCoalescingInt(prAdapter,
+						prEventCf->fgEnable);
+}
+#endif

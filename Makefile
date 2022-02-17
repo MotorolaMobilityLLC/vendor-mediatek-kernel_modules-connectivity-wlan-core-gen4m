@@ -186,9 +186,11 @@ CONFIG_SUPPORT_WIFI_DL_BT_PATCH=y
 CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE=y
 ccflags-y += -DCFG_WIFI_FWDL_UMAC_RESERVE_SIZE_PARA=128
 CONFIG_MTK_DBDC_SW_FOR_P2P_LISTEN=n
-
 # Default disable feature notify country code to bt
 CONFIG_SUPPORT_BT_SKU=n
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+CFG_COALESCING_INTERRUPT=y
+endif
 endif
 
 ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)
@@ -739,6 +741,12 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_BT_SKU), y)
     ccflags-y += -DCFG_SUPPORT_BT_SKU
+endif
+
+ifeq ($(CFG_COALESCING_INTERRUPT), y)
+    ccflags-y += -DCFG_COALESCING_INTERRUPT=1
+else
+    ccflags-y += -DCFG_COALESCING_INTERRUPT=0
 endif
 
 ifeq ($(MODULE_NAME),)
