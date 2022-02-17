@@ -5,6 +5,22 @@ endif
 MTK_PLATFORM := $(subst $(quote),,$(CONFIG_MTK_PLATFORM))
 
 # ---------------------------------------------------
+# Kbuild option
+# ---------------------------------------------------
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF),)
+ifneq ($(src),)
+ifneq ($(srctree),)
+hif=pcie
+include $(srctree)/$(src)/Makefile.x86
+src:=$(srctree)/$(shell echo ${src})
+MTK_COMBO_CHIP=MT7961
+$(info Kbuild chip: $(MTK_COMBO_CHIP))
+$(info Kbuild hif : $(CONFIG_MTK_COMBO_WIFI_HIF))
+endif
+endif
+endif
+
+# ---------------------------------------------------
 # OS option
 # ---------------------------------------------------
 os=$(CONFIG_MTK_SUPPORT_OS)
