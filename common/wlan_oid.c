@@ -12514,7 +12514,12 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 {
 	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
 		(struct PARAM_SCHED_SCAN_REQUEST *) pvSetBuffer;
-	uint8_t ucBssIndex = prSchedScanRequest->ucBssIndex;
+	uint8_t ucBssIndex;
+
+	if (pvSetBuffer == NULL)
+		return WLAN_STATUS_INVALID_DATA;
+
+	ucBssIndex = prSchedScanRequest->ucBssIndex;
 
 	DEBUGFUNC("wlanoidSetStartSchedScan()");
 
@@ -12531,8 +12536,6 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 	if (u4SetBufferLen != sizeof(struct
 				     PARAM_SCHED_SCAN_REQUEST))
 		return WLAN_STATUS_INVALID_LENGTH;
-	else if (pvSetBuffer == NULL)
-		return WLAN_STATUS_INVALID_DATA;
 	else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		ucBssIndex) ==
 		 MEDIA_STATE_CONNECTED
