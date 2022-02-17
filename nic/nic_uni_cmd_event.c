@@ -3942,16 +3942,30 @@ void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
+	struct UNI_CMD_ACCESS_REG *uni_cmd =
+		(struct UNI_CMD_ACCESS_REG *) GET_UNI_CMD_DATA(prCmdInfo);
 	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
 	struct UNI_EVENT_ACCESS_REG *evt =
 		(struct UNI_EVENT_ACCESS_REG *)uni_evt->aucBuffer;
-	struct UNI_EVENT_ACCESS_REG_BASIC *tag =
-		(struct UNI_EVENT_ACCESS_REG_BASIC *) evt->aucTlvBuffer;
 	struct CMD_ACCESS_REG legacy;
 
-	legacy.u4Address = tag->u4Addr;
-	legacy.u4Data = tag->u4Value;
 
+	if (TAG_ID(uni_cmd->aucTlvBuffer) == UNI_CMD_ACCESS_REG_TAG_BASIC) {
+		struct UNI_EVENT_ACCESS_REG_BASIC *tag =
+			(struct UNI_EVENT_ACCESS_REG_BASIC *) evt->aucTlvBuffer;
+
+		legacy.u4Address = tag->u4Addr;
+		legacy.u4Data = tag->u4Value;
+	} else { /* RF */
+		struct UNI_EVENT_ACCESS_RF_REG_BASIC *tag =
+		     (struct UNI_EVENT_ACCESS_RF_REG_BASIC *) evt->aucTlvBuffer;
+
+		legacy.u4Address = tag->u4Addr;
+		legacy.u4Data = tag->u4Value;
+	}
+
+	DBGLOG(RFTEST, INFO, "CMD:0x%x read addr=0x%x, value=0x%x\n",
+		TAG_ID(uni_cmd->aucTlvBuffer), legacy.u4Address, legacy.u4Data);
 	nicCmdEventQueryMcrRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
