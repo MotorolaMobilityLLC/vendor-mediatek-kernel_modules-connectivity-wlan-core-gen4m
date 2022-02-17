@@ -1373,8 +1373,18 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 						(prDeauthFrame->aucDestAddr),
 						prDeauthFrame->u2FrameCtrl,
 						ucWlanIdx);
-					if (prAisSpecBssInfo->fgMgmtProtection
-					    && prSwRfb->fgIsCipherMS
+
+					if (prStaRec->fgIsTxAllowed)
+						DBGLOG(RSN, INFO,
+						"ignore no sec deauth\n");
+
+					if (IS_STA_IN_AIS(prStaRec) &&
+					    prStaRec->fgIsTxAllowed &&
+					    prAisSpecBssInfo->fgMgmtProtection
+					    && IS_INCORRECT_SEC_RX_FRAME(
+						prSwRfb,
+						prDeauthFrame->aucDestAddr,
+						prDeauthFrame->u2FrameCtrl)
 					    /* HAL_RX_STATUS_GET_SEC_MODE
 					     * (prSwRfb->prRxStatus) !=
 					     * CIPHER_SUITE_BIP
@@ -1607,9 +1617,18 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 						(prDisassocFrame->aucDestAddr),
 						prDisassocFrame->u2FrameCtrl,
 						ucWlanIdx);
+
+					if (prStaRec->fgIsTxAllowed)
+						DBGLOG(RSN, INFO,
+						"ignore no sec disassoc\n");
+
 					if (IS_STA_IN_AIS(prStaRec) &&
+					    prStaRec->fgIsTxAllowed &&
 					    prAisSpecBssInfo->fgMgmtProtection
-					    && prSwRfb->fgIsCipherMS
+					    && IS_INCORRECT_SEC_RX_FRAME(
+						prSwRfb,
+						prDisassocFrame->aucDestAddr,
+						prDisassocFrame->u2FrameCtrl)
 					    /* HAL_RX_STATUS_GET_SEC_MODE(
 					     * prSwRfb->prRxStatus) !=
 					     * CIPHER_SUITE_CCMP

@@ -7657,6 +7657,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
 	prWifiVar->ucWowDetectType = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "WowDetectType", WOWLAN_DETECT_TYPE_MAGIC);
+	prWifiVar->ucMobileLikeSuspend = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "MobileLikeSuspend", FEATURE_DISABLED);
 #endif
 	prWifiVar->u4TxHangFullDumpMode = wlanCfgGetUint32(
 			prAdapter, "TxHangFullDumpMode", 0);

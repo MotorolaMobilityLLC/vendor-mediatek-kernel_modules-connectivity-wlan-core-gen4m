@@ -180,6 +180,11 @@ struct PMKID_ENTRY {
  *                                 M A C R O S
  *******************************************************************************
  */
+/* TRUE if CM error || Unprotected UC frame */
+#define IS_INCORRECT_SEC_RX_FRAME(_prSwRfb, _aucDestAddr, u2FrameCtrl) \
+		(_prSwRfb->fgIsCipherMS || \
+		(IS_UCAST_MAC_ADDR(_aucDestAddr) && \
+			!(u2FrameCtrl & MASK_FC_PROTECTED_FRAME)))
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
