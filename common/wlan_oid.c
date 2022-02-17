@@ -4204,7 +4204,7 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		int32_t rRssi;
 
 		/* ranged from (-128 ~ 30) in unit of dBm */
-		rRssi = (int32_t) prAdapter->rLinkQuality.cRssi;
+		rRssi = (int32_t) prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 
 		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
 			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
@@ -4332,7 +4332,7 @@ wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
 	 * that an RSSI status indication event triggers.
 	 */
 	if (rRssiTriggerValue == (int32_t) (
-		    prAdapter->rLinkQuality.cRssi)) {
+		    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;
 
@@ -4342,11 +4342,11 @@ wlanoidSetRssiTrigger(IN struct ADAPTER *prAdapter,
 			     sizeof(int32_t),
 			     ucBssIndex);
 	} else if (rRssiTriggerValue < (int32_t) (
-			   prAdapter->rLinkQuality.cRssi))
+			   prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi))
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_GREATER;
 	else if (rRssiTriggerValue > (int32_t) (
-			 prAdapter->rLinkQuality.cRssi))
+			 prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi))
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_LESS;
 
@@ -4682,9 +4682,10 @@ wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->fgIsLinkRateValid == TRUE &&
 		   (kalGetTimeTick() - prAdapter->rLinkRateUpdateTime) <=
 		   CFG_LINK_QUALITY_VALID_PERIOD) {
+		/* change to unit of 100bps */
 		*(uint32_t *) pvQueryBuffer =
-			prAdapter->rLinkQuality.u2LinkSpeed *
-			5000;	/* change to unit of 100bps */
+			prAdapter->rLinkQuality.
+			rLq[ucBssIndex].u2LinkSpeed * 5000;
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,
@@ -4728,9 +4729,9 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	    rUpdateDeltaTime <= CFG_LINK_QUALITY_VALID_PERIOD) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi =
-			prAdapter->rLinkQuality.cRssi;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed =
-			prAdapter->rLinkQuality.u2LinkSpeed;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].u2LinkSpeed;
 
 		/* change to unit of 100bps */
 		pu4LinkSpeed->rLq[ucBssIndex].u2LinkSpeed *= 5000;
