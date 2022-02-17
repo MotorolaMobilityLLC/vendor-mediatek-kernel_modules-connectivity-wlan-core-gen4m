@@ -87,6 +87,19 @@
  *******************************************************************************
  */
 
+struct wfdma_ring_info {
+	char name[20];
+	uint32_t ring_idx;
+	bool dump_ring_content;
+
+	/* query from register */
+	uint32_t base;
+	uint32_t base_ext;
+	uint32_t cnt;
+	uint32_t cidx;
+	uint32_t didx;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -526,13 +539,31 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0;
-	uint32_t Base[6], Base_Ext[6], Cnt[6], Cidx[6], Didx[6];
 	uint32_t offset, offset_ext, SwIdx;
 	char buf[100] = {0};
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct BUS_INFO *prBus_info;
+	struct BUS_INFO *prBus_info = prAdapter->chip_info->bus_info;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
+	struct wfdma_ring_info wfmda_tx_group[] = {
+		{"AP DATA0", prBus_info->tx_ring0_data_idx, true},
+		{"AP DATA1", prBus_info->tx_ring1_data_idx, true},
+		{"FWDL", prBus_info->tx_ring_fwdl_idx, true},
+		{"AP CMD", prBus_info->tx_ring_cmd_idx, true},
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		{"MD DATA0", 8, false},
+		{"MD DATA1", 9, false},
+		{"MD CMD", 14, false},
+#endif
+	};
+	struct wfdma_ring_info wfmda_rx_group[] = {
+		{"AP DATA", 0, true},
+		{"AP EVENT", 1, true},
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+		{"MD DATA", 2, false},
+		{"MD EVENT", 3, false},
+#endif
+	};
 
 	/* PDMA HOST_INT */
 	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4Value);
@@ -552,94 +583,122 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "WPDMA MCU2HOST_SW_INT_STA:0x%08x = 0x%08x\n",
 		MCU2HOST_SW_INT_STA, u4Value);
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	HAL_MCR_RD(prAdapter, MD_INT_STA, &u4Value);
+	DBGLOG(HAL, INFO, "MD_INT_STA:0x%08x = 0x%08x\n",
+		MD_INT_STA, u4Value);
+	HAL_MCR_RD(prAdapter, MD_WPDMA_GLO_CFG, &u4Value);
+	DBGLOG(HAL, INFO, "MD_WPDMA_GLO_CFG:0x%08x = 0x%08x\n",
+		MD_WPDMA_GLO_CFG, u4Value);
+	HAL_MCR_RD(prAdapter, MD_INT_ENA, &u4Value);
+	DBGLOG(HAL, INFO, "MD_INT_ENA:0x%08x = 0x%08x\n",
+		MD_INT_ENA, u4Value);
+	HAL_MCR_RD(prAdapter, MD_WPDMA_DLY_INIT_CFG, &u4Value);
+	DBGLOG(HAL, INFO, "MD_WPDMA_DLY_INIT_CFG:0x%08x = 0x%08x\n",
+		MD_WPDMA_DLY_INIT_CFG, u4Value);
+	HAL_MCR_RD(prAdapter, MD_WPDMA_MISC, &u4Value);
+	DBGLOG(HAL, INFO, "MD_WPDMA_MISC:0x%08x = 0x%08x\n",
+		MD_WPDMA_MISC, u4Value);
+#endif
+
 	/* PDMA Tx/Rx Ring  Info */
-	prBus_info = prAdapter->chip_info->bus_info;
 	DBGLOG(HAL, INFO, "Tx Ring configuration\n");
-	DBGLOG(HAL, INFO, "%10s%12s%18s%10s%10s%10s\n",
-		"Tx Ring", "Reg", "Base", "Cnt", "CIDX", "DIDX");
+	DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
+		"Tx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
-	for (i = 0; i < 4; i++) {
-		if (i == 0) {
-			offset = prBus_info->tx_ring0_data_idx *
-						MT_RINGREG_DIFF;
-			offset_ext = prBus_info->tx_ring0_data_idx *
-					MT_RINGREG_EXT_DIFF;
-		} else if (i == 1) {
-			offset = prBus_info->tx_ring1_data_idx *
-					MT_RINGREG_DIFF;
-			offset_ext = prBus_info->tx_ring1_data_idx *
-					MT_RINGREG_EXT_DIFF;
-		} else if (i == 2) {
-			offset = prBus_info->tx_ring_fwdl_idx * MT_RINGREG_DIFF;
-			offset_ext = prBus_info->tx_ring_fwdl_idx *
-					MT_RINGREG_EXT_DIFF;
-		} else {
-			offset = prBus_info->tx_ring_cmd_idx * MT_RINGREG_DIFF;
-			offset_ext = prBus_info->tx_ring_cmd_idx *
-					MT_RINGREG_EXT_DIFF;
-		}
+	for (i = 0; i < sizeof(wfmda_tx_group) /
+			sizeof(struct wfdma_ring_info); i++) {
+		offset = wfmda_tx_group[i].ring_idx * MT_RINGREG_DIFF;
+		offset_ext = wfmda_tx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
 
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL0 + offset, &Base[i]);
+		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL0 + offset,
+				&wfmda_tx_group[i].base);
 		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_BASE_PTR_EXT + offset_ext,
-				&Base_Ext[i]);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL1 + offset, &Cnt[i]);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL2 + offset, &Cidx[i]);
-		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset, &Didx[i]);
+				&wfmda_tx_group[i].base_ext);
+		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL1 + offset,
+				&wfmda_tx_group[i].cnt);
+		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL2 + offset,
+				&wfmda_tx_group[i].cidx);
+		HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
+				&wfmda_tx_group[i].didx);
 
-		kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
-			offset/MT_RINGREG_DIFF, WPDMA_TX_RING0_CTRL0 + offset,
-			(Base[i] + ((uint64_t) Base_Ext[i] << 32)),
-			Cnt[i], Cidx[i], Didx[i]);
+		kalSprintf(buf, "%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+			wfmda_tx_group[i].name,
+			wfmda_tx_group[i].ring_idx,
+			WPDMA_TX_RING0_CTRL0 + offset,
+			(wfmda_tx_group[i].base + ((uint64_t)
+				wfmda_tx_group[i].base_ext << 32)),
+			wfmda_tx_group[i].cnt,
+			wfmda_tx_group[i].cidx,
+			wfmda_tx_group[i].didx);
 		DBGLOG(HAL, INFO, "%s\n", buf);
 	}
 
 	DBGLOG(HAL, INFO, "Rx Ring configuration\n");
-	DBGLOG(HAL, INFO, "%10s%12s%18s%10s%10s%10s\n",
-		"Rx Ring", "Reg", "Base", "Cnt", "CIDX", "DIDX");
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0, &Base[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT, &Base_Ext[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1, &Cnt[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2, &Cidx[4]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3, &Didx[4]);
-	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
-		0, WPDMA_RX_RING0_CTRL0,
-		(Base[4] + ((uint64_t)Base_Ext[4] << 32)),
-		Cnt[4], Cidx[4], Didx[4]);
-	DBGLOG(HAL, INFO, "%s\n", buf);
+	DBGLOG(HAL, INFO, "%10s%10s%12s%20s%10s%10s%10s\n",
+		"Rx Ring", "Idx", "Reg", "Base", "Cnt", "CIDX", "DIDX");
 
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF, &Base[5]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT + MT_RINGREG_EXT_DIFF,
-			&Base_Ext[5]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + MT_RINGREG_DIFF, &Cnt[5]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + MT_RINGREG_DIFF, &Cidx[5]);
-	HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + MT_RINGREG_DIFF, &Didx[5]);
-	kalSprintf(buf, "%10d  0x%08x  0x%016llx%10d%10d%10d",
-		1, WPDMA_RX_RING0_CTRL0 + MT_RINGREG_DIFF,
-		(Base[5] + ((uint64_t)Base_Ext[5] << 32)),
-		Cnt[5], Cidx[5], Didx[5]);
-	DBGLOG(HAL, INFO, "%s\n", buf);
+	for (i = 0; i < sizeof(wfmda_rx_group) /
+			sizeof(struct wfdma_ring_info); i++) {
+		offset = wfmda_rx_group[i].ring_idx * MT_RINGREG_DIFF;
+		offset_ext = wfmda_rx_group[i].ring_idx * MT_RINGREG_EXT_DIFF;
+
+		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + offset,
+				&wfmda_rx_group[i].base);
+		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT + offset_ext,
+				&wfmda_rx_group[i].base_ext);
+		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + offset,
+				&wfmda_rx_group[i].cnt);
+		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + offset,
+				&wfmda_rx_group[i].cidx);
+		HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
+				&wfmda_rx_group[i].didx);
+
+		kalSprintf(buf, "%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
+			wfmda_rx_group[i].name,
+			wfmda_rx_group[i].ring_idx,
+			WPDMA_RX_RING0_CTRL0 + offset,
+			(wfmda_rx_group[i].base + ((uint64_t)
+				wfmda_rx_group[i].base_ext << 32)),
+			wfmda_rx_group[i].cnt,
+			wfmda_rx_group[i].cidx,
+			wfmda_rx_group[i].didx);
+		DBGLOG(HAL, INFO, "%s\n", buf);
+	}
 
 	/* PDMA Tx/Rx descriptor & packet content */
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	for (i = 0; i < 3; i++) {
-		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
+	for (i = 0; i < sizeof(wfmda_tx_group) /
+			sizeof(struct wfdma_ring_info); i++) {
+		if (!wfmda_tx_group[i].dump_ring_content)
+			continue;
+		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n",
+				wfmda_tx_group[i].ring_idx);
 		prTxRing = &prHifInfo->TxRing[i];
-		SwIdx = Didx[i];
+		SwIdx = wfmda_tx_group[i].didx;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
 			      SwIdx, true);
-		SwIdx = Didx[i] == 0 ? Cnt[i] - 1 : Didx[i] - 1;
+		SwIdx = wfmda_tx_group[i].didx == 0 ?
+				wfmda_tx_group[i].cnt - 1 :
+				wfmda_tx_group[i].didx - 1;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
 			      SwIdx, true);
 	}
 
-	for (i = 0; i < 2; i++) {
-		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
+	for (i = 0; i < sizeof(wfmda_rx_group) /
+			sizeof(struct wfdma_ring_info); i++) {
+		if (!wfmda_rx_group[i].dump_ring_content)
+			continue;
+		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n",
+				wfmda_rx_group[i].ring_idx);
 		prRxRing = &prHifInfo->RxRing[i];
-		SwIdx = Didx[i+3];
+		SwIdx = wfmda_rx_group[i].didx;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
 			      SwIdx, true);
-		SwIdx = Didx[i+3] == 0 ? Cnt[i+3] - 1 : Didx[i+3] - 1;
+		SwIdx = wfmda_rx_group[i].didx == 0 ?
+				wfmda_rx_group[i].cnt - 1 :
+				wfmda_rx_group[i].didx - 1;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
 			      SwIdx, true);
 	}
