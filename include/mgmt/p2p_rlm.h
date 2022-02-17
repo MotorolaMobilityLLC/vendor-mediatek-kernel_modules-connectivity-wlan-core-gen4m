@@ -104,7 +104,7 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
-void rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
+u_int8_t rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo, u_int8_t fgUpdateBeacon);
 
 void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
