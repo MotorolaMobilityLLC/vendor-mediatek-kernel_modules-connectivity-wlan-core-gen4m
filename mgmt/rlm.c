@@ -8597,3 +8597,330 @@ rlmClientSupportsHtETxBF(struct STA_RECORD *prStaRec)
 }
 
 #endif
+
+#if CFG_AP_80211K_SUPPORT
+static void rlmMulAPAgentFillApRrmCapa(uint8_t *pucCapa)
+{
+	uint8_t ucIndex = 0;
+	uint8_t aucEnabledBits[] = {RRM_CAP_INFO_BEACON_PASSIVE_MEASURE_BIT,
+				    RRM_CAP_INFO_BEACON_ACTIVE_MEASURE_BIT,
+				    RRM_CAP_INFO_BEACON_TABLE_BIT,
+				    RRM_CAP_INFO_CHANNEL_LOAD_MEASURE_BIT,
+				    RRM_CAP_INFO_NOISE_HISTOGRAM_MEASURE_BIT,
+				    RRM_CAP_INFO_RRM_BIT};
+
+	for (; ucIndex < sizeof(aucEnabledBits); ucIndex++)
+		SET_EXT_CAP(pucCapa, ELEM_MAX_LEN_RRM_CAP,
+			    aucEnabledBits[ucIndex]);
+}
+
+void rlmMulAPAgentGenerateApRRMEnabledCapIE(
+				IN struct ADAPTER *prAdapter,
+				IN struct MSDU_INFO *prMsduInfo)
+{
+	struct IE_RRM_ENABLED_CAP *prRrmEnabledCap = NULL;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
+		return;
+	}
+
+	if (!prMsduInfo) {
+		DBGLOG(RLM, ERROR, "prMsduInfo is NULL!\n");
+		return;
+	}
+
+	prRrmEnabledCap = (struct IE_RRM_ENABLED_CAP *)
+	    (((uint8_t *) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+	prRrmEnabledCap->ucId = ELEM_ID_RRM_ENABLED_CAP;
+	prRrmEnabledCap->ucLength = ELEM_MAX_LEN_RRM_CAP;
+	kalMemZero(&prRrmEnabledCap->aucCap[0], ELEM_MAX_LEN_RRM_CAP);
+	rlmMulAPAgentFillApRrmCapa(&prRrmEnabledCap->aucCap[0]);
+	prMsduInfo->u2FrameLength += IE_SIZE(prRrmEnabledCap);
+}
+
+void rlmMulAPAgentTxMeasurementRequest(
+				struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				struct SUB_ELEMENT_LIST *prSubIEs)
+{
+	static uint8_t ucDialogToken = 1;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t *pucPayload = NULL;
+	struct ACTION_RM_REQ_FRAME *prTxFrame = NULL;
+	uint16_t u2TxFrameLen = 500;
+	uint16_t u2FrameLen = 0;
+
+	if (!prStaRec)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is NULL!\n");
+		return;
+	}
+	/* 1 Allocate MSDU Info */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
+		prAdapter, MAC_TX_RESERVED_FIELD + u2TxFrameLen);
+	if (!prMsduInfo)
+		return;
+	prTxFrame = (struct ACTION_RM_REQ_FRAME
+			     *)((unsigned long)(prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+	prTxFrame->ucCategory = CATEGORY_RM_ACTION;
+	prTxFrame->ucAction = RM_ACTION_RM_REQUEST;
+	prTxFrame->u2Repetitions = HTONS(prStaRec->u2BcnReqRepetition);
+	u2FrameLen = OFFSET_OF(struct ACTION_RM_REQ_FRAME, aucInfoElem);
+	/* 3 Compose the frame body's frame. */
+	prTxFrame->ucDialogToken = ucDialogToken++;
+	u2TxFrameLen -= (sizeof(*prTxFrame) - 1);
+	pucPayload = &prTxFrame->aucInfoElem[0];
+	while (prSubIEs && u2TxFrameLen >= (prSubIEs->rSubIE.ucLength + 2)) {
+		kalMemCopy(pucPayload, &prSubIEs->rSubIE,
+			   prSubIEs->rSubIE.ucLength + 2);
+		pucPayload += prSubIEs->rSubIE.ucLength + 2;
+		u2FrameLen += prSubIEs->rSubIE.ucLength + 2;
+		prSubIEs = prSubIEs->prNext;
+		if (prSubIEs)
+			prTxFrame->u2Repetitions++;
+	}
+	nicTxSetMngPacket(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+			  prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+			  u2FrameLen, NULL, MSDU_RATE_MODE_AUTO);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+}
+
+static u_int8_t rlmMulAPAgentRmReportFrameIsValid(
+					struct SW_RFB *prSwRfb)
+{
+	uint16_t u2ElemLen = 0;
+	uint16_t u2Offset =
+		(uint16_t)OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
+	uint8_t *pucIE = (uint8_t *)prSwRfb->pvHeader;
+	struct IE_MEASUREMENT_REPORT *prCurrMeasElem = NULL;
+	uint16_t u2CalcIELen = 0;
+	uint16_t u2IELen = 0;
+
+	if (prSwRfb->u2PacketLen <= u2Offset) {
+		DBGLOG(RLM, ERROR, "RRM: Rm Packet length %d is too short\n",
+		       prSwRfb->u2PacketLen);
+		return FALSE;
+	}
+	pucIE += u2Offset;
+	u2ElemLen = prSwRfb->u2PacketLen - u2Offset;
+	IE_FOR_EACH(pucIE, u2ElemLen, u2Offset)
+	{
+		u2IELen = IE_LEN(pucIE);
+
+		/* The minimum value of the Length field is 3 (based on a
+		 ** minimum length for the Measurement Request field
+		 ** of 0 octets
+		 */
+		if (u2IELen <= 3) {
+			DBGLOG(RLM, ERROR, "RRM: Abnormal RM IE length is %d\n",
+			       u2IELen);
+			return FALSE;
+		}
+
+		/* Check whether the length of each measurment request element
+		 ** is reasonable
+		 */
+		prCurrMeasElem = (struct IE_MEASUREMENT_REPORT *)pucIE;
+		switch (prCurrMeasElem->ucMeasurementType) {
+		case ELEM_RM_TYPE_BEACON_REPORT:
+			if (u2IELen < (3 + OFFSET_OF(struct RM_BCN_REPORT,
+						     aucOptElem))) {
+				DBGLOG(RLM, ERROR,
+				       "RRM: Abnormal Becaon Req IE length is %d\n",
+				       u2IELen);
+				return FALSE;
+			}
+			break;
+		default:
+			DBGLOG(RLM, ERROR,
+			       "RRM: Not support: MeasurementType is %d, IE length is %d\n",
+				prCurrMeasElem->ucMeasurementType, u2IELen);
+			return FALSE;
+		}
+
+		u2CalcIELen += IE_SIZE(pucIE);
+	}
+	if (u2CalcIELen != u2ElemLen) {
+		DBGLOG(RLM, ERROR,
+		       "RRM: Calculated Total IE len is not equal to received length\n");
+		return FALSE;
+	}
+	return TRUE;
+}
+
+void rlmMulAPAgentProcessRadioMeasurementResponse(
+		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+	struct ACTION_RM_REPORT_FRAME *prRxFrame = NULL;
+	uint8_t *pucOptInfo = NULL;
+	uint8_t *pucReportElem = NULL;
+	uint16_t u2TmpLen = 0;
+	struct IE_MEASUREMENT_REPORT *prMeasureReportIE = NULL;
+	struct RM_BCN_REPORT *prBeaconReportIE = NULL;
+	struct T_MULTI_AP_BEACON_METRICS_RESP *prBcnMeasureReport = NULL;
+	int32_t i4Ret = 0;
+
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
+		return;
+	}
+
+	if (!prSwRfb) {
+		DBGLOG(RLM, ERROR, "prSwRfb is NULL!\n");
+		return;
+	}
+
+	/*TODO, check it's soft ap mode or not ?*/
+
+	prRxFrame = (struct ACTION_RM_REPORT_FRAME *)prSwRfb->pvHeader;
+	if (!rlmMulAPAgentRmReportFrameIsValid(prSwRfb))
+		return;
+
+	prBcnMeasureReport = (struct T_MULTI_AP_BEACON_METRICS_RESP *)
+			kalMemAlloc(sizeof(
+				struct T_MULTI_AP_BEACON_METRICS_RESP),
+			VIR_MEM_TYPE);
+	if (prBcnMeasureReport == NULL) {
+		DBGLOG(INIT, ERROR, "alloc memory fail\n");
+		return;
+	}
+
+	kalMemZero(prBcnMeasureReport,
+		sizeof(struct T_MULTI_AP_BEACON_METRICS_RESP));
+	COPY_MAC_ADDR(prBcnMeasureReport->mStaMac, prRxFrame->aucSrcAddr);
+
+	pucOptInfo = &prRxFrame->aucInfoElem[0];
+	u2TmpLen = OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
+	pucReportElem = prBcnMeasureReport->uElem;
+
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] u2FrameCtrl = 0x%x\n", prRxFrame->u2FrameCtrl);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] u2Duration = %u\n", prRxFrame->u2Duration);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] aucDestAddr = " MACSTR "\n",
+		prRxFrame->aucDestAddr);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] aucSrcAddr = " MACSTR "\n", prRxFrame->aucSrcAddr);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] aucBSSID = " MACSTR "\n", prRxFrame->aucBSSID);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] u2SeqCtrl = %u\n", prRxFrame->u2SeqCtrl);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] ucCategory = %u\n", prRxFrame->ucCategory);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] ucAction = %u\n", prRxFrame->ucAction);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] ucDialogToken = %u\n", prRxFrame->ucDialogToken);
+	/* Measurement Report Elements */
+	while (prSwRfb->u2PacketLen > u2TmpLen) {
+		switch (pucOptInfo[0]) {
+		case ELEM_ID_MEASUREMENT_REPORT:
+			prMeasureReportIE =
+				(struct IE_MEASUREMENT_REPORT *) &pucOptInfo[0];
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucId = %u\n",
+				prMeasureReportIE->ucId);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucLength = %u\n",
+				prMeasureReportIE->ucLength);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucToken = %u\n",
+				prMeasureReportIE->ucToken);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucReportMode = 0x%x\n",
+				prMeasureReportIE->ucReportMode);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucMeasurementType = 0x%x\n",
+				prMeasureReportIE->ucMeasurementType);
+			prBeaconReportIE =
+				(struct RM_BCN_REPORT *)
+				&prMeasureReportIE->aucReportFields[0];
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucRegulatoryClass = %d\n",
+				prBeaconReportIE->ucRegulatoryClass);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucChannel = %d\n",
+				prBeaconReportIE->ucChannel);
+			DBGLOG_MEM8(RLM, INFO,
+				prBeaconReportIE->aucStartTime, 8);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] u2Duration = %d\n",
+				prBeaconReportIE->u2Duration);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucReportInfo = 0x%x\n",
+				prBeaconReportIE->ucReportInfo);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucRCPI = 0x%x\n",
+				prBeaconReportIE->ucRCPI);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucRSNI = 0x%x\n",
+				prBeaconReportIE->ucRSNI);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] aucBSSID = " MACSTR "\n",
+				prBeaconReportIE->aucBSSID);
+			DBGLOG(RLM, INFO,
+				"[SAP_Test] ucAntennaID = %d\n",
+				prBeaconReportIE->ucAntennaID);
+			DBGLOG_MEM8(RLM, INFO,
+				prBeaconReportIE->aucParentTSF, 4);
+			DBGLOG_MEM8(RLM, INFO,
+				prBeaconReportIE->aucOptElem,
+				prMeasureReportIE->ucLength - 3 - 26);
+
+			prBcnMeasureReport->u8ElemNum++;
+			prBcnMeasureReport->uElemLen +=
+				(prMeasureReportIE->ucLength + 2);
+			kalMemCopy(pucReportElem,
+				&prMeasureReportIE->ucId,
+				prMeasureReportIE->ucLength + 2);
+			break;
+		default:
+			DBGLOG(RLM, INFO, "[SAP_Test] not know\n");
+			DBGLOG_MEM8(RLM, WARN,
+				pucOptInfo, pucOptInfo[1] + 2);
+			break;
+		}
+		pucOptInfo += (pucOptInfo[1] + 2);
+		u2TmpLen += (pucOptInfo[1] + 2);
+		pucReportElem += prMeasureReportIE->ucLength;
+	}
+
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] mStaMac = " MACSTR "\n",
+		prRxFrame->aucSrcAddr);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] u8ElemNum = %u\n",
+		prBcnMeasureReport->u8ElemNum);
+	DBGLOG(RLM, INFO,
+		"[SAP_Test] uElemLen = %u\n",
+		prBcnMeasureReport->uElemLen);
+	DBGLOG_MEM8(RLM, INFO,
+		prBcnMeasureReport->uElem,
+		prBcnMeasureReport->uElemLen);
+
+	i4Ret = MulAPAgentMontorSendMsg(
+		EV_WLAN_MULTIAP_BEACON_METRICS_RESPONSE,
+		prBcnMeasureReport, sizeof(*prBcnMeasureReport));
+	if (i4Ret < 0)
+		DBGLOG(AAA, ERROR,
+			"EV_WLAN_MULTIAP_BEACON_METRICS_RESPONSE nl send msg failed!\n");
+
+	kalMemFree(prBcnMeasureReport, VIR_MEM_TYPE,
+		sizeof(struct T_MULTI_AP_BEACON_METRICS_RESP));
+}
+#endif /* CFG_AP_80211K_SUPPORT */

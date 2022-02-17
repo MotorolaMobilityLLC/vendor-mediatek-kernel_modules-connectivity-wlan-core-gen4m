@@ -105,6 +105,9 @@
 #define TX_ASSOCIATE_TIMEOUT_TU        2048 /* TU. */
 #define JOIN_MAX_RETRY_OVERLOAD_RN		    1	/* Times */
 
+#if CFG_AP_80211KVR_INTERFACE
+#define SAP_CHAN_NOISE_GET_INFO_PERIOD              5000 /* ms */
+#endif
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -232,5 +235,17 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 		     IN struct MSDU_INFO *prMsduInfo,
 		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
+#if CFG_AP_80211KVR_INTERFACE
+void aaaMulAPAgentChanNoiseInitWorkHandler(
+	struct work_struct *work);
 
+void aaaMulAPAgentChanNoiseCollectionWorkHandler(
+	struct work_struct *work);
+
+void aaaMulAPAgentStaEventNotify(IN struct STA_RECORD *prStaRec,
+	IN unsigned char *pucAddr, IN unsigned char fgIsConnected);
+
+void aaaMulAPAgentUnassocStaMeasureTimeout(
+	IN struct ADAPTER *prAdapter, unsigned long ulParamPtr);
+#endif
 #endif /* _AA_FSM_H */

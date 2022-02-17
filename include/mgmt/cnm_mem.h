@@ -660,7 +660,12 @@ struct STA_RECORD {
 	uint32_t u4EnqueueCounter;
 	uint32_t u4DeqeueuCounter;
 #endif
-
+#if CFG_AP_80211KVR_INTERFACE
+	uint64_t u8TotalTxBytes;
+	uint64_t u8TotalRxBytes;
+	uint64_t u8TotalRxPkts;
+	uint64_t u8GetDataRateTime;
+#endif
 #if 1
 	/*----------------------------------------------------------------------
 	 * To be removed, this is to make que_mgt compilation success only
@@ -748,6 +753,12 @@ struct STA_RECORD {
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;
 #endif
+#if CFG_AP_80211K_SUPPORT
+	uint16_t u2BcnReqRepetition;
+#endif
+#if CFG_AP_80211V_SUPPORT
+	struct TIMER rBTMReqDisassocTimer;
+#endif /* CFG_AP_80211V_SUPPORT */
 #if DSCP_SUPPORT
 	uint8_t  qosMapSet[64];
 #endif

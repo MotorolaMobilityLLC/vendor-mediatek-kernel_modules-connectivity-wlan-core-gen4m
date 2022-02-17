@@ -805,6 +805,11 @@ struct GLUE_INFO {
 	uint32_t u4RxBwCache[BSSID_NUM];
 	uint32_t u4FcsErrorCache;
 
+#if CFG_AP_80211KVR_INTERFACE
+	struct delayed_work rChanNoiseControlWork;
+	struct delayed_work rChanNoiseGetInfoWork;
+#endif
+
 	uint32_t u4InfType;
 
 	uint32_t IsrCnt;

@@ -153,6 +153,11 @@ struct VERIFY_IE_ENTRY rxAssocReqIETable[] = {
 struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL, rlmRspGenerateErpIE}
 	,			/* 42 */
+#if CFG_AP_80211K_SUPPORT
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RRM_CAP),
+		NULL, rlmMulAPAgentGenerateApRRMEnabledCapIE}
+	,			/* 70 */
+#endif /* CFG_AP_80211K_SUPPORT */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmRspGenerateHtCapIE}
 	,			/* 45 */
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL, rlmRspGenerateHtOpIE}

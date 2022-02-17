@@ -2370,6 +2370,11 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 	struct EVENT_WLAN_INFO *prEventWlanInfo;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
+#if CFG_AP_80211KVR_INTERFACE
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	struct STA_RECORD *prStaRec;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -2412,9 +2417,28 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 				   sizeof(struct PARAM_PEER_TX_COUNTER_ALL));
 	}
 
-	if (prCmdInfo->fgIsOid)
+	if (prCmdInfo->fgIsOid) {
+#if CFG_AP_80211KVR_INTERFACE
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			prGlueInfo->prP2PInfo[1]->prDevHandler,
+			&ucRoleIdx) == 0) {
+			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+				ucRoleIdx,
+				&ucBssIdx) == WLAN_STATUS_SUCCESS) {
+				prStaRec = cnmGetStaRecByAddress(prAdapter,
+					ucBssIdx,
+					prWlanInfo->rWtblTxConfig.aucPA);
+				if (prStaRec)
+					prStaRec->u8GetDataRateTime =
+					kalGetTimeTick();
+			} else
+				DBGLOG(INIT, ERROR, "get ucBssIdx fail\n");
+		} else
+			DBGLOG(INIT, ERROR, "get ucRoleIdx fail\n");
+#endif
 		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
 }
 
 

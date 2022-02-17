@@ -10437,6 +10437,14 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 		}
 	}
 
+#if CFG_AP_80211KVR_INTERFACE
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+				prMsduInfo->ucBssIndex,
+				prMsduInfo->aucEthDestAddr);
+	if (prStaRec && !fgTxDrop)
+		prStaRec->u8TotalTxBytes += prMsduInfo->u2FrameLength;
+#endif
+
 	/* Trigger FW stats log every 20s */
 	rCurTime = (OS_SYSTIME) kalGetTimeTick();
 

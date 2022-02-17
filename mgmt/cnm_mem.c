@@ -656,6 +656,12 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->u4TotalRxPktsNumber = 0;
 			prStaRec->u4MaxTxPktsTime = 0;
 #endif
+#if CFG_AP_80211KVR_INTERFACE
+			prStaRec->u8TotalTxBytes = 0;
+			prStaRec->u8TotalRxBytes = 0;
+			prStaRec->u8TotalRxPkts = 0;
+			prStaRec->u8GetDataRateTime = 0;
+#endif
 
 			for (k = 0; k < NUM_OF_PER_STA_TX_QUEUES; k++) {
 				QUEUE_INITIALIZE(
@@ -768,6 +774,9 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 	/* To do: free related resources, e.g. timers, buffers, etc */
 	cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
 	cnmTimerStopTimer(prAdapter, &prStaRec->rDeauthTxDoneTimer);
+#if CFG_AP_80211V_SUPPORT
+	cnmTimerStopTimer(prAdapter, &prStaRec->rBTMReqDisassocTimer);
+#endif /* CFG_AP_80211V_SUPPORT */
 	prStaRec->fgTransmitKeyExist = FALSE;
 
 	prStaRec->fgSetPwrMgtBit = FALSE;
