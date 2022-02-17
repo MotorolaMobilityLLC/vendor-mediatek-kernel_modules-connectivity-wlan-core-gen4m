@@ -1776,13 +1776,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 					prStaRec = cnmGetStaRecByIndex(
 						prAdapter,
 						prRetSwRfb->ucStaRecIdx);
+#if ARP_MONITER_ENABLE
 					if (prStaRec &&
 						IS_STA_IN_AIS(prStaRec)) {
-#if ARP_MONITER_ENABLE
 						qmHandleRxArpPackets(
 							prAdapter,
 							prRetSwRfb);
-#endif
 					}
 
 					if (prStaRec) { /* STA or GC */
@@ -1790,6 +1789,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 							prAdapter,
 							prRetSwRfb);
 					}
+#endif
 #if CFG_SUPPORT_WIFI_SYSDVT
 #if (CFG_SUPPORT_CONNAC2X == 1)
 					/* Not handle non-CONNAC2X case */
