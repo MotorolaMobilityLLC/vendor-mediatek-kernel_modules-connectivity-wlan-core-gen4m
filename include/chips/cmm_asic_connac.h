@@ -106,7 +106,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		bool fgResetHif);
 uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
-	IN uint16_t u2Port, IN uint32_t u4MaxQuota);
+	IN uint8_t ucWmmIndex, IN uint32_t u4MaxQuota);
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
 void asicDisableInterrupt(IN struct ADAPTER *prAdapter);
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);

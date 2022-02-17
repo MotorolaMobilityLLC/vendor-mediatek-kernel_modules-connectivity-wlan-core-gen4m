@@ -2839,15 +2839,29 @@ cnmDbdcFsmEntryFunc_ENABLE_IDLE(
 )
 {
 	uint8_t ucWmmIndex;
+	uint32_t u4ReqQuota = DBDC_WMM_TX_QUOTA;
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+
+	prChipInfo = prAdapter->chip_info;
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
+
+		if (prChipInfo->dmashdlQuotaDecision) {
+			u4ReqQuota =
+				prChipInfo->dmashdlQuotaDecision(
+					prAdapter,
+					ucWmmIndex);
+		}
+
 		cnmWmmQuotaSetMaxQuota(
 			prAdapter,
 			ucWmmIndex,
 			CNM_WMM_REQ_DBDC,
 			true,
-			DBDC_WMM_TX_QUOTA);
+			u4ReqQuota);
 	}
 }
 

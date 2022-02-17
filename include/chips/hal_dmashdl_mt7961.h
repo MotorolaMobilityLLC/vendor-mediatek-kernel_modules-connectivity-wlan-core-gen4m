@@ -182,6 +182,17 @@ extern struct DMASHDL_CFG rMT7961DmashdlCfg;
 #define MT7961_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define MT7961_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT7961_DMASHDL_PRIORITY15_GROUP                (0xF)
+#ifdef MT7922
+/* PLE Quota 0x3D0*/
+#define MT7961_DMASHDL_DBDC_5G_MAX_QUOTA               (0x1E8)
+#define MT7961_DMASHDL_DBDC_2G_MAX_QUOTA               (0x1E8)
+#define MT7961_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0x1E8)
+#else
+/*TODO: fine tune*/
+#define MT7961_DMASHDL_DBDC_5G_MAX_QUOTA               (0xFFF)
+#define MT7961_DMASHDL_DBDC_2G_MAX_QUOTA               (0xFFF)
+#define MT7961_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0xFFF)
+#endif
 
 #elif defined(_HIF_USB)
 
@@ -290,7 +301,17 @@ extern struct DMASHDL_CFG rMT7961DmashdlCfg;
 #define MT7961_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define MT7961_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT7961_DMASHDL_PRIORITY15_GROUP                (0xF)
-
+#if (CFG_WIFI_FWDL_UMAC_RESERVE_SIZE_PARA == 128)
+/* PSE quota 169*/
+#define MT7961_DMASHDL_DBDC_5G_MAX_QUOTA               (0x38)
+#define MT7961_DMASHDL_DBDC_2G_MAX_QUOTA               (0x1C)
+#define MT7961_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0x2A)
+#else
+/* PSE quota 212*/
+#define MT7961_DMASHDL_DBDC_5G_MAX_QUOTA               (0x46)
+#define MT7961_DMASHDL_DBDC_2G_MAX_QUOTA               (0x24)
+#define MT7961_DMASHDL_DBDC_5G_6G_MAX_QUOTA            (0x35)
+#endif
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 /*******************************************************************************
@@ -375,5 +396,11 @@ void mt7961HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 				     uint8_t ucGroup);
 
 void mt7961DmashdlInit(struct ADAPTER *prAdapter);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+uint32_t mt7961UpdateDmashdlQuota(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex, uint32_t u4MaxQuota);
 
+uint32_t mt7961dmashdlQuotaDecision(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex);
+#endif
 #endif /* _HAL_DMASHDL_MT7961_H */
