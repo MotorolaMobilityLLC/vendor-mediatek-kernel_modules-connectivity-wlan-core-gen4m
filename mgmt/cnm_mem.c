@@ -375,16 +375,16 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 		ASSERT(u4BlockNum <= MAX_NUM_OF_BUF_BLOCKS);
 	}
 
-#if CFG_DBG_MGT_BUF
-	prBufInfo->u4AllocCount++;
-#endif
-
 	if (eRamType == RAM_TYPE_MSG)
 		eLockBufCat = SPIN_LOCK_MSG_BUF;
 	else
 		eLockBufCat = SPIN_LOCK_MGT_BUF;
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, eLockBufCat);
+
+#if CFG_DBG_MGT_BUF
+	prBufInfo->u4AllocCount++;
+#endif
 
 	if ((u4BlockNum > 0) && (u4BlockNum <= MAX_NUM_OF_BUF_BLOCKS)) {
 
@@ -420,6 +420,10 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 		}
 	}
 
+#if CFG_DBG_MGT_BUF
+	prBufInfo->u4AllocNullCount++;
+#endif
+
 	/* kalMemAlloc() shall not included in spin_lock */
 	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
@@ -430,10 +434,8 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 #endif
 
 #if CFG_DBG_MGT_BUF
-	prBufInfo->u4AllocNullCount++;
-
 	if (pvMemory)
-		prAdapter->u4MemAllocDynamicCount++;
+		GLUE_INC_REF_CNT(prAdapter->u4MemAllocDynamicCount);
 #endif
 
 	return pvMemory;
