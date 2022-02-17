@@ -11874,6 +11874,43 @@ wlanoidNotifyFwSuspend(
 					NULL,
 					0);
 }
+
+WLAN_STATUS
+wlanoidQueryCnm(
+	IN P_ADAPTER_T prAdapter,
+	IN PVOID pvQueryBuffer,
+	IN UINT_32 u4QueryBufferLen,
+	OUT PUINT_32 pu4QueryInfoLen)
+{
+	struct _PARAM_GET_CNM_T *prCnmInfo = NULL;
+
+	DEBUGFUNC("wlanoidQueryLinkSpeed");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4QueryInfoLen);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+
+	if (prAdapter->fgIsEnableLpdvt)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	*pu4QueryInfoLen = sizeof(struct _PARAM_GET_CNM_T);
+
+	if (u4QueryBufferLen < sizeof(struct _PARAM_GET_CNM_T))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	prCnmInfo = (struct _PARAM_GET_CNM_T *)pvQueryBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_GET_CNM,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventQueryCnmInfo,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct _PARAM_GET_CNM_T), (P_UINT_8)prCnmInfo,
+				   pvQueryBuffer, u4QueryBufferLen);
+}
 #if CFG_SUPPORT_DBDC
 WLAN_STATUS
 wlanoidSetDbdcEnable(
