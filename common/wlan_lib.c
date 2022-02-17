@@ -11440,7 +11440,7 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
 */
 uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out)
 {
-	uint8_t aucDecimalStr[32] = {0,};
+	uint8_t aucDecimalStr[32] = {0};
 	uint8_t *pucDecimalPart = NULL;
 	uint8_t *tmp = NULL;
 	uint32_t u4Result = 0;
@@ -11456,6 +11456,7 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out)
 	while (*pucDecimalStr == '0')
 		pucDecimalStr++;
 	kalStrnCpy(aucDecimalStr, pucDecimalStr, sizeof(aucDecimalStr) - 1);
+	aucDecimalStr[31] = 0;
 	pucDecimalPart = strchr(aucDecimalStr, '.');
 	if (!pucDecimalPart) {
 		DBGLOG(INIT, INFO, "No decimal part, ori str %s\n",
