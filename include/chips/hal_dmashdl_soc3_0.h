@@ -215,4 +215,19 @@ void mt6885HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 
 void mt6885DmashdlInit(struct ADAPTER *prAdapter);
 
+void mt6885HalDmashdlGetPktMaxPage(struct ADAPTER *prAdapter);
+
+void mt6885HalDmashdlGetRefill(struct ADAPTER *prAdapter);
+
+void mt6885HalDmashdlGetGroupControl(struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+
+uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+
+uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+
+void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
 #endif /* _HAL_DMASHDL_MT6885_H */
