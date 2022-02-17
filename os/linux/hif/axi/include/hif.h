@@ -211,6 +211,9 @@ struct GL_HIF_INFO {
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
+
+	uint32_t u4WakeupIntSta;
+	bool fgIsBackupIntSta;
 };
 
 struct BUS_INFO {

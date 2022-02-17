@@ -556,11 +556,13 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 {
 	struct BUS_INFO *prBusInfo;
+	struct GL_HIF_INFO *prHifInfo;
 	u_int8_t fgResult;
 
 	ASSERT(prAdapter);
 
 	prBusInfo = prAdapter->chip_info->bus_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
@@ -587,8 +589,10 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
 		prAdapter->fgIsFwOwn = TRUE;
+		prHifInfo->fgIsBackupIntSta = false;
 
-		DBGLOG(INIT, INFO, "FW OWN:%u\n", fgResult);
+		DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
+		       fgResult, prHifInfo->u4WakeupIntSta);
 	}
 }
 
