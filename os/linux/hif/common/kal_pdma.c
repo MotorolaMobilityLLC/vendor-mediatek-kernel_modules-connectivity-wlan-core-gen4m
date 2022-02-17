@@ -260,7 +260,7 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
-	tmp_val |= GET_L1_REMAP_BASE(pcie2ap->base_addr -
+	tmp_val |= GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift;
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
@@ -303,7 +303,7 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
-	tmp_val |= GET_L1_REMAP_BASE(pcie2ap->base_addr -
+	tmp_val |= GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift;
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
@@ -506,7 +506,7 @@ u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
 	u4BkValue = u4Value;
 
 	u4Value &= ~pcie2ap->reg_mask;
-	u4Value |= (GET_L1_REMAP_BASE(pcie2ap->base_addr -
+	u4Value |= (GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift);
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4Value);
@@ -584,7 +584,7 @@ u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
 	u4BkValue = u4Value;
 
 	u4Value &= ~pcie2ap->reg_mask;
-	u4Value |= (GET_L1_REMAP_BASE(pcie2ap->base_addr -
+	u4Value |= (GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift);
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, u4Value);

@@ -64,6 +64,7 @@ extern struct PP_TOP_CR rBellwetherPpTopCr;
 #define BELLWETHER_FIRMWARE_ROM_ADDR		0x00800000
 #define BELLWETHER_FIRMWARE_ROM_SRAM_ADDR	0xE0048000
 
+#define BELLWETHER_PCIE2AP_REMAP_BASE_ADDR	0x50000
 #define BELLWETHER_REMAP_BASE_ADDR		0x7c500000
 
 /*******************************************************************************
