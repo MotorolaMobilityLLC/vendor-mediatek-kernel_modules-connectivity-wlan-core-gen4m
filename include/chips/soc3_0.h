@@ -348,7 +348,7 @@ void wlanCoAntVFE28Dis(void);
 int wlanConnacPccifon(void);
 int wlanConnacPccifoff(void);
 int soc3_0_Trigger_whole_chip_rst(char *reason);
-void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
+bool soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);
 extern void update_driver_reset_status(uint8_t fgIsResetting);
 extern int32_t get_wifi_process_status(void);

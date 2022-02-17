@@ -1820,7 +1820,7 @@ int soc5_0_Trigger_whole_chip_rst(char *reason)
 	return conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, reason);
 }
 
-void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
+bool soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
 	int sw_int_value = 0;
@@ -1863,10 +1863,9 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (check != 0) {
 		DBGLOG(HAL, ERROR, "Polling CONNSYS version ID fail.\n");
 
-		if (!conninfra_reg_readable_no_lock()) {
+		if (!conninfra_reg_readable()) {
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail\n");
-			disable_irq_nosync(prHifInfo->u4IrqId_1);
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_FW;
 			if (!prAdapter->prGlueInfo->u4ReadyFlag)
@@ -1877,7 +1876,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 			fgIsResetting = TRUE;
 			update_driver_reset_status(fgIsResetting);
 			kalSetRstEvent();
-			return;
+			return false;
 		}
 	}
 
@@ -1959,6 +1958,7 @@ void soc5_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 					  HIF_FLAG_SW_WFDMA_INT_BIT);
 		}
 	}
+	return true;
 }
 
 void soc5_0_Conninfra_cb_register(void)
