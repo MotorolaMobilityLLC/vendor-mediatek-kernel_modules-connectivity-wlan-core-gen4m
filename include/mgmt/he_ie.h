@@ -162,11 +162,13 @@
 
 /* HE PHY Capablilites byte3 */
 #define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_SHFT      0
-#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK	   BITS(0, 1)
+#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_TX_MASK      BITS(0, 1)
 #define HE_PHY_CAP3_DCM_MAX_NSS_TX_SHFT                2
+#define HE_PHY_CAP3_DCM_MAX_NSS_TX_MASK                BIT(2)
 #define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_SHFT      3
-#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK	   BITS(3, 4)
+#define HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK      BITS(3, 4)
 #define HE_PHY_CAP3_DCM_MAX_NSS_RX_SHFT                5
+#define HE_PHY_CAP3_DCM_MAX_NSS_RX_MASK                BIT(5)
 #define HE_PHY_CAP3_UL_HE_MU_PPDU_SHFT                 6
 #define HE_PHY_CAP3_SU_BFMER                           BIT(7)
 #define HE_PHY_CAP3_SU_BFMER_SHFT                      7
@@ -231,6 +233,7 @@
 #define HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF_SHFT          4
 #define HE_PHY_CAP8_MIDAMBLE_RX_2X_1X_HE_LTF_SHFT      5
 #define HE_PHY_CAP8_DCM_MAX_BW_SHFT                    6
+#define HE_PHY_CAP8_DCM_MAX_BW_MASK                    BITS(6, 7)
 
 /* HE PHY Capablilites byte9 */
 #define HE_PHY_CAP9_LT_16_SIGB_OFDM_SYMBOL_SHFT        0
@@ -564,6 +567,12 @@ enum ENUM_HEBA_TYPE {
 	((_aucHePhyCapInfo[3] & HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_MASK) \
 	>> HE_PHY_CAP3_DCM_MAX_CONSTELLATION_RX_SHFT)
 
+#define HE_SET_PHY_CAP_DCM_MAX_NSS_TX(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[3] |= HE_PHY_CAP3_DCM_MAX_NSS_TX_MASK)
+
+#define HE_SET_PHY_CAP_DCM_MAX_NSS_RX(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[3] |= HE_PHY_CAP3_DCM_MAX_NSS_RX_MASK)
+
 #define HE_SET_PHY_CAP_SU_BFMEE(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[4] |= HE_PHY_CAP4_SU_BFMEE)
 
@@ -592,6 +601,14 @@ enum ENUM_HEBA_TYPE {
 	_aucHePhyCapInfo[5] |= \
 		((_ucNum << HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_SHFT) \
 			& HE_PHY_CAP5_NUM_OF_SND_DIM_LT_OR_EQ_80M_MASK); \
+}
+
+#define HE_SET_PHY_CAP_NUM_OF_SND_DIM_GT_80M(_aucHePhyCapInfo, _ucNum) \
+{ \
+	_aucHePhyCapInfo[5] &= ~(HE_PHY_CAP5_NUM_OF_SND_DIM_GT_80M_MASK); \
+	_aucHePhyCapInfo[5] |= \
+		((_ucNum << HE_PHY_CAP5_NUM_OF_SND_DIM_GT_80M_SHFT) \
+			& HE_PHY_CAP5_NUM_OF_SND_DIM_GT_80M_MASK); \
 }
 
 #define HE_SET_PHY_CAP_BFMEE_STS_GT_80M(_aucHePhyCapInfo, _ucSts) \
@@ -664,12 +681,22 @@ enum ENUM_HEBA_TYPE {
 	((_aucHePhyCapInfo[8] & HE_PHY_CAP8_ER_SU_4X_HE_LTF) \
 		>> HE_PHY_CAP8_ER_SU_4X_HE_LTF_SHFT)
 
+#define HE_SET_PHY_CAP_ER_SU_1X_HE_LTF(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[8] |= HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF)
+
 #define HE_SET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[8] |= HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF)
 
 #define HE_GET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(_aucHePhyCapInfo) \
 	((_aucHePhyCapInfo[8] & HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF) \
 		>> HE_PHY_CAP8_ER_SU_PPDU_1X_HE_LTF_SHFT)
+
+#define HE_SET_PHY_CAP_DCM_MAX_RU(_aucHePhyCapInfo, _MaxRu) \
+{ \
+	_aucHePhyCapInfo[8] &= ~(HE_PHY_CAP8_DCM_MAX_BW_MASK); \
+	_aucHePhyCapInfo[8] |= (((_MaxRu) << HE_PHY_CAP8_DCM_MAX_BW_SHFT) \
+		& HE_PHY_CAP8_DCM_MAX_BW_MASK);	\
+}
 
 /* should use macro to access field of HE OP*/
 #define HE_IS_VHT_OP_INFO_PRESENT(_aucHeOpParams) \

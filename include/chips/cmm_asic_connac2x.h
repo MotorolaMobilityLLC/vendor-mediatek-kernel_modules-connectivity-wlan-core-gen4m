@@ -424,9 +424,13 @@
  * MACRO for CONNAC2X WTBL TX RATE
  *------------------------------------------------------------------------------
  */
-#define CONNAC2X_HW_TX_RATE_TO_MODE(_x)        (((_x) & (0xf << 6)) >> 6)
-#define CONNAC2X_HW_TX_RATE_TO_NSS(_x)         (((_x) & (0x7 << 10)) >> 10)
-#define CONNAC2X_HW_TX_RATE_TO_STBC(_x)        (((_x) & (0x1 << 13)) >> 13)
+#define CONNAC2X_HW_TX_RATE_TO_MODE(_x)		(((_x) & (0xf << 6)) >> 6)
+#define CONNAC2X_HW_TX_RATE_TO_NSS(_x)		(((_x) & (0x7 << 10)) >> 10)
+#define CONNAC2X_HW_TX_RATE_TO_STBC(_x)		(((_x) & (0x1 << 13)) >> 13)
+#define CONNAC2X_HW_TX_RATE_TO_DCM(_x)		(((_x) & (0x1 << 4)) >> 4)
+#define CONNAC2X_HW_TX_RATE_TO_106T(_x)		(((_x) & (0x1 << 5)) >> 5)
+#define CONNAC2X_HW_TX_RATE_UNMASK_DCM(_x)	((uint8_t)(_x) & 0xef)
+#define CONNAC2X_HW_TX_RATE_UNMASK_106T(_x)	((uint8_t)(_x) & 0xdf)
 
 /*------------------------------------------------------------------------------
  * MACRO for CONNAC2X TXV
@@ -440,6 +444,10 @@
 #define CONNAC2X_TXV_GET_TX_NSTS(_x)	(((_x)->u4TxV[2] & (0x7 << 8)) >> 8)
 #define CONNAC2X_TXV_GET_TX_PWR(_x)	(((_x)->u4TxV[0] & (0xff << 16)) >> 16)
 #define CONNAC2X_TXV_GET_TX_SGI(_x)	(((_x)->u4TxV[1] & (0x3 << 26)) >> 26)
+#define CONNAC2X_TXV_GET_TX_DCM(_x)	(((_x)->u4TxV[2] & (0x1 << 4)) >> 4)
+#define CONNAC2X_TXV_GET_TX_106T(_x)	(((_x)->u4TxV[2] & (0x1 << 5)) >> 5)
+#define CONNAC2X_TXV_GET_TX_RATE_UNMASK_DCM(_r)		((uint8_t)(_r) & 0xef)
+#define CONNAC2X_TXV_GET_TX_RATE_UNMASK_106T(_r)	((uint8_t)(_r) & 0xdf)
 
 /*******************************************************************************
 *                             D A T A   T Y P E S

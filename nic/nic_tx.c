@@ -6182,6 +6182,9 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 {
 	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc, txpwr;
 	int32_t i4BytesWritten = 0;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint8_t dcm, ersu106t;
+#endif
 
 	rate = TX_VECTOR_GET_TX_RATE(prTxV);
 	txmode = TX_VECTOR_GET_TX_MODE(prTxV);
@@ -6191,6 +6194,15 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 	ldpc = TX_VECTOR_GET_TX_LDPC(prTxV);
 	stbc = TX_VECTOR_GET_TX_STBC(prTxV);
 	txpwr = TX_VECTOR_GET_TX_PWR(prTxV);
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	dcm = TX_VECTOR_GET_TX_DCM(prTxV);
+	ersu106t = TX_VECTOR_GET_TX_106T(prTxV);
+
+	if (dcm)
+		rate = CONNAC2X_TXV_GET_TX_RATE_UNMASK_DCM(rate);
+	if (ersu106t)
+		rate = CONNAC2X_TXV_GET_TX_RATE_UNMASK_106T(rate);
+#endif
 
 	if (prTxV->u4TxV[0] == 0xFFFFFFFF) {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
@@ -6206,7 +6218,9 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s, ", rate < 4 ? HW_TX_RATE_CCK_STR[rate] :
-					HW_TX_RATE_CCK_STR[4]);
+					(((rate >= 5) && (rate <= 7)) ?
+						HW_TX_RATE_CCK_STR[rate - 4] :
+						HW_TX_RATE_CCK_STR[4]));
 		else if (txmode == TX_RATE_MODE_OFDM)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -6226,13 +6240,10 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 				nsts, rate);
 
 		i4BytesWritten += kalScnprintf(
-			pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "%s, ",
-#if (CFG_SUPPORT_CONNAC2X == 1)
-			txmode == TX_RATE_MODE_HE_ER ?
-			      (frmode > 0 ? "106-RU" : "242-RU") :
-#endif
-			      HW_TX_RATE_BW[frmode < 4 ? (uint8_t)frmode : 4U]);
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				frmode < 4 ? HW_TX_RATE_BW[frmode] :
+				HW_TX_RATE_BW[4]);
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalScnprintf(
@@ -6253,12 +6264,18 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%s, ", sgi == 0 ? "LGI" :
-				(sgi == 1 ? "SGI" : "MGI"));
+				"%s, ", sgi == 0 ? "SGI" :
+				(sgi == 1 ? "MGI" : "LGI"));
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "%s%s%s\n",
-			txmode < 5 ? HW_TX_MODE_STR[txmode] : HW_TX_MODE_STR[5],
+			i4TotalLen - i4BytesWritten, "%s%s%s%s%s\n",
+			(txmode < ENUM_TX_MODE_NUM ?
+			HW_TX_MODE_STR[txmode] : "N/A"),
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
+#else
+			"", "",
+#endif
 			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
 	}
 
