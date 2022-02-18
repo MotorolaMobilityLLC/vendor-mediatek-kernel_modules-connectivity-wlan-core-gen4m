@@ -2320,8 +2320,11 @@ static int wlanStop(struct net_device *prDev)
 	if (prGlueInfo->prScanRequest) {
 		DBGLOG(INIT, INFO, "wlanStop abort scan!\n");
 		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
-		aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
-					wlanGetBssIdx(prDev));
+		if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0))
+			DBGLOG(INIT, WARN, "driver is not ready\n");
+		else
+			aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
+						wlanGetBssIdx(prDev));
 		prGlueInfo->prScanRequest = NULL;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
