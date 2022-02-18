@@ -3039,6 +3039,11 @@ mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
 
+	if (len < sizeof(struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS)) {
+		DBGLOG(OID, WARN, "len [%d] is invalid!\n", len);
+		return -EINVAL;
+	}
+
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_GET_STA_STATISTICS_PARAMS
 			    *) data;
