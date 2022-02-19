@@ -570,7 +570,8 @@ struct GL_SCAN_CACHE_INFO {
 		uint16_t u2CurRxRate[BSSID_NUM]; /* Unit 500 Kbps */
 		uint8_t ucCurRxRCPI0[BSSID_NUM];
 		uint8_t ucCurRxRCPI1[BSSID_NUM];
-		uint8_t ucCurRxNss[BSSID_NUM];
+		uint8_t ucCurRxNss[BSSID_NUM]; /* 1NSS Data Counter */
+		uint8_t ucCurRxNss2[BSSID_NUM]; /* 2NSS Data Counter */
 	};
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
