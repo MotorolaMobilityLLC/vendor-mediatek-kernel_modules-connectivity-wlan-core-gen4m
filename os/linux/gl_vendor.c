@@ -2000,7 +2000,7 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = wlanGetGlueInfo();
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
