@@ -1833,25 +1833,22 @@ void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 
 	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
 
-	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
+	ucRxMode = (prRxStatusGroup3->u4RxVector[0] & RX_VT_RX_MODE_MASK)
+				>> RX_VT_RX_MODE_OFFSET;
 
 	/* RATE & NSS */
-	if ((ucRxMode == RX_VT_LEGACY_CCK)
-		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
+	if (ucRxMode == RX_VT_LEGACY_CCK || ucRxMode == RX_VT_LEGACY_OFDM) {
 		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
-		ucRxRate = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) & RX_VT_RX_RATE_AC_MASK);
+		ucRxRate = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0) &
+				RX_VT_RX_RATE_AC_MASK;
 		u2Rate = nicGetHwRateByPhyRate(ucRxRate);
 	} else {
-		ucMcs = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) & RX_VT_RX_RATE_AC_MASK);
-		ucNsts = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 1) &
-			RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-		ucGroupid = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 1) &
-			RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET);
+		ucMcs = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0) &
+				RX_VT_RX_RATE_AC_MASK;
+		ucNsts = (HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 1) &
+			RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
+		ucGroupid = (HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 1) &
+			RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
 
 		if (ucNsts == 0)
 			ucNsts = 1;
@@ -1864,16 +1861,18 @@ void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 		}
 
 		/* VHTA1 B0-B1 */
-		ucFrMode = ((HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) &
-			RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
-		ucShortGI = (HAL_RX_VECTOR_GET_RX_VECTOR(
-			prRxStatusGroup3, 0) &
-			RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
+		ucFrMode = (HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0) &
+				RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+		ucShortGI = (HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0) &
+				RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
 
+		if (ucRxMode == RX_VT_MIXED_MODE)
+			ucMcs %= 8;
 		/* ucRate(500kbs) = u4PhyRate(100kbps) */
-		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode,
-					ucShortGI);
+		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode, ucShortGI);
+		if (ucRxMode == RX_VT_MIXED_MODE)
+			u4PhyRate *= ucNsts;
+
 		if (u4PhyRate == 0)
 			return;
 		u2Rate = u4PhyRate / 5;

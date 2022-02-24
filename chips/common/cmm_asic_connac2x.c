@@ -1977,9 +1977,16 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	ucRxMode = PERF_IND_RXV_GET_TXMODE(u4RxVector0);
 	ucMcs = PERF_IND_RXV_GET_RX_RATE(u4RxVector0);
 
+	ucNsts = PERF_IND_RXV_GET_RX_NSTS(u4RxVector0);
+	ucStbc = PERF_IND_RXV_GET_STBC(u4RxVector0);
+	ucNsts += 1;
+	if (ucNsts == 1)
+		ucNss = ucNsts;
+	else
+		ucNss = ucStbc ? (ucNsts >> 1) : ucNsts;
+
 	/* RATE & NSS */
-	if ((ucRxMode == RX_VT_LEGACY_CCK)
-		|| (ucRxMode == RX_VT_LEGACY_OFDM)) {
+	if (ucRxMode == RX_VT_LEGACY_CCK || ucRxMode == RX_VT_LEGACY_OFDM) {
 		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
 		u2Rate = nicGetHwRateByPhyRate(ucMcs);
 	} else {
@@ -1991,21 +1998,17 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			return;
 		}
 
+		if (ucRxMode == RX_VT_MIXED_MODE)
+			ucMcs %= 8;
 		/* ucRate(500kbs) = u4PhyRate(100kbps) */
 		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode, ucShortGI);
+		if (ucRxMode == RX_VT_MIXED_MODE)
+			u4PhyRate *= ucNss;
+
 		if (u4PhyRate == 0)
 			return;
 		u2Rate = u4PhyRate / 5;
 	}
-
-	ucNsts = PERF_IND_RXV_GET_RX_NSTS(u4RxVector0);
-	ucStbc = PERF_IND_RXV_GET_STBC(u4RxVector0);
-
-	ucNsts += 1;
-	if (ucNsts == 1)
-		ucNss = ucNsts;
-	else
-		ucNss = ucStbc ? (ucNsts >> 1) : ucNsts;
 
 	if (ucNss == 1) {
 		if (prAdapter->prGlueInfo->
