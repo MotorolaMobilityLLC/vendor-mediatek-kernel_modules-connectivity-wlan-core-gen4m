@@ -7555,6 +7555,14 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 			struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 				(struct P2P_ROLE_FSM_INFO *) NULL;
 
+			if (!prGlueInfo->prAdapter->fgIsP2PRegistered ||
+				(prGlueInfo->prAdapter->rP2PNetRegState !=
+					ENUM_NET_REG_STATE_REGISTERED)) {
+				DBGLOG(P2P, WARN,
+					"p2p net dev is not registered\n");
+				break;
+			}
+
 			if (prGlueInfo->prP2PInfo[0]->prDevHandler ==
 				wdev->netdev) {
 				pu4PacketFilter =
