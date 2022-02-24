@@ -3827,11 +3827,7 @@ void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
 	rSetP2P.u4Enable = 0;
 	rSetP2P.u4Mode = 0;
 
-	rWlanStatus = kalIoctl(prGlueInfo,
-			wlanoidSetP2pNetRegister,
-			(void *) &rSetP2P,
-			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-			FALSE, FALSE, TRUE, &u4BufLen);
+	p2pNetUnregister(prGlueInfo, FALSE);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
@@ -3902,13 +3898,8 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	rSetP2P.u4Enable = p2pmode.u4Enable;
 	rSetP2P.u4Mode = p2pmode.u4Mode;
 
-	if ((!rSetP2P.u4Enable) && (kalIsResetting() == FALSE)) {
-		rWlanStatus = kalIoctl(prGlueInfo,
-				wlanoidSetP2pNetRegister,
-				(void *) &rSetP2P,
-				sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-				FALSE, FALSE, TRUE, &u4BufLen);
-	}
+	if ((!rSetP2P.u4Enable) && (kalIsResetting() == FALSE))
+		p2pNetUnregister(prGlueInfo, FALSE);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
@@ -3927,14 +3918,9 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	 * and prGlueInfo->prP2PInfo[0] may be NULL
 	 */
 	if ((rSetP2P.u4Enable)
-		&& (prGlueInfo->prAdapter->fgIsP2PRegistered)
-		&& (kalIsResetting() == FALSE)) {
-		rWlanStatus = kalIoctl(prGlueInfo,
-				wlanoidSetP2pNetRegister,
-				(void *) &rSetP2P,
-				sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-				FALSE, FALSE, TRUE, &u4BufLen);
-	}
+	    && (prGlueInfo->prAdapter->fgIsP2PRegistered)
+	    && (kalIsResetting() == FALSE))
+		p2pNetRegister(prGlueInfo, FALSE);
 
 	return 0;
 }
