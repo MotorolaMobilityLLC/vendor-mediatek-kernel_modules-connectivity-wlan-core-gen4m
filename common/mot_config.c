@@ -21,7 +21,7 @@ static moto_product products_list[] = {
 
 
 /* use moto bootargs to get device name & radio parameters */
-static char *bootargs_str;
+static char *bootargs_str = NULL;
 
 static int mmi_get_bootarg_dt(char *key, char **value, char *prop, char *spl_flag)
 {
@@ -75,6 +75,12 @@ int mmi_get_bootarg(char *key, char **value)
 #endif
 }
 
+void mmi_free_bootarg_res(void)
+{
+	kfree(bootargs_str);
+	bootargs_str = NULL;
+}
+
 void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
 {
 	char device[ARRAY_VALUE_MAX] = { 0 };
@@ -86,10 +92,12 @@ void get_moto_config_file_name(char* name, WIFI_CFG_ENUM index)
 	if (mmi_get_bootarg("androidboot.device=", &s) == 0) {
 		memcpy(device, s, strlen(s));
 		DBGLOG(RLM, INFO, "[MOTO]bootargs get device: %s\n", device);
+		mmi_free_bootarg_res();
 	}
 	if (mmi_get_bootarg("androidboot.radio=", &s) == 0) {
 		memcpy(radio, s, strlen(s));
 		DBGLOG(RLM, INFO, "[MOTO]bootargs get radio: %s\n", radio);
+		mmi_free_bootarg_res();
 	}
 
     num = sizeof(products_list) / sizeof(moto_product);
