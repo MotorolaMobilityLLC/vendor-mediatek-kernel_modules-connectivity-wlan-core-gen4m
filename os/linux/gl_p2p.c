@@ -810,6 +810,7 @@ u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
 u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
@@ -825,6 +826,8 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 		return FALSE;
 	}
 
+	prWifiVar = &prAdapter->rWifiVar;
+
 	/* TODO: how can I sure that the specific P2P device can be freed?
 	 * The original check is that prGlueInfo->prAdapter->fgIsP2PRegistered.
 	 * For one wiphy feature, this func may be called without
@@ -832,47 +835,42 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 	 */
 
 	if (prGlueInfo->prP2PInfo[ucIdx] != NULL) {
-		kalMemFree(prAdapter->rWifiVar.prP2PConnSettings[ucIdx],
-			VIR_MEM_TYPE,
+		p2pFreeMemSafe(prGlueInfo,
+			(void **)&prWifiVar->prP2PConnSettings[ucIdx],
 			sizeof(struct P2P_CONNECTION_SETTINGS));
-		prAdapter->rWifiVar.prP2PConnSettings[ucIdx] = NULL;
 
-		kalMemFree(prAdapter->rWifiVar.prP2pSpecificBssInfo[ucIdx],
-			VIR_MEM_TYPE,
+		p2pFreeMemSafe(prGlueInfo,
+			(void **)&prWifiVar->prP2pSpecificBssInfo[ucIdx],
 			sizeof(struct P2P_SPECIFIC_BSS_INFO));
-		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucIdx] = NULL;
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
-		kalMemFree(prAdapter->rWifiVar.prP2pQueryStaStatistics[ucIdx],
-			VIR_MEM_TYPE,
+		p2pFreeMemSafe(prGlueInfo,
+			(void **)&prWifiVar->prP2pQueryStaStatistics[ucIdx],
 			sizeof(struct PARAM_GET_STA_STATISTICS));
-		prAdapter->rWifiVar.prP2pQueryStaStatistics[ucIdx] = NULL;
 #endif
 
-		kalMemFree(prGlueInfo->prP2PInfo[ucIdx],
-			VIR_MEM_TYPE,
+		p2pFreeMemSafe(prGlueInfo,
+			(void **)&prGlueInfo->prP2PInfo[ucIdx],
 			sizeof(struct GL_P2P_INFO));
-		prGlueInfo->prP2PInfo[ucIdx] = NULL;
-
 		prAdapter->prP2pInfo->u4DeviceNum--;
 	}
 
 	if (prAdapter->prP2pInfo->u4DeviceNum == 0) {
 		/* all prP2PInfo are freed, and free the general part now */
 
-		kalMemFree(prAdapter->prP2pInfo, VIR_MEM_TYPE,
+		p2pFreeMemSafe(prGlueInfo,
+			(void **)&prAdapter->prP2pInfo,
 			sizeof(struct P2P_INFO));
-		prAdapter->prP2pInfo = NULL;
 
 		if (prGlueInfo->prP2PDevInfo) {
-			kalMemFree(prGlueInfo->prP2PDevInfo, VIR_MEM_TYPE,
+			p2pFreeMemSafe(prGlueInfo,
+				(void **)&prGlueInfo->prP2PDevInfo,
 				sizeof(struct GL_P2P_DEV_INFO));
-			prGlueInfo->prP2PDevInfo = NULL;
 		}
 		if (prAdapter->rWifiVar.prP2pDevFsmInfo) {
-			kalMemFree(prAdapter->rWifiVar.prP2pDevFsmInfo,
-				VIR_MEM_TYPE, sizeof(struct P2P_DEV_FSM_INFO));
-			prAdapter->rWifiVar.prP2pDevFsmInfo = NULL;
+			p2pFreeMemSafe(prGlueInfo,
+				(void **)&prWifiVar->prP2pDevFsmInfo,
+				sizeof(struct P2P_DEV_FSM_INFO));
 		}
 
 		/* Reomve p2p bss scan list */
@@ -882,6 +880,21 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 	return TRUE;
 }
 
+void p2pFreeMemSafe(struct GLUE_INFO *prGlueInfo,
+		void **pprMemInfo, uint32_t size)
+{
+	void *prTmpMemInfo = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prTmpMemInfo = *pprMemInfo;
+	*pprMemInfo = NULL;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	kalMemFree(prTmpMemInfo, VIR_MEM_TYPE, size);
+}
+
 u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		u_int8_t fgIsRtnlLockAcquired)
 {
@@ -889,7 +902,7 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
 	u_int8_t ret;
-	uint32_t i, u4DeviceNum;
+	uint32_t i;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -912,13 +925,11 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		fgRollbackRtnlLock = TRUE;
 	}
 
-	u4DeviceNum =
-		(prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum == KAL_P2P_NUM &&
-		 KAL_P2P_NUM == 2) ? 2 : 1;
-
-	for (i = 0; i < u4DeviceNum; i++) {
+	for (i = 0; i < prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum; i++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-		prDevHandler = prGlueInfo->prP2PInfo[i]->prDevHandler;
+		prDevHandler = prGlueInfo->prP2PInfo[i] ?
+			prGlueInfo->prP2PInfo[i]->prDevHandler :
+			NULL;
 
 		/* Check NETREG_RELEASED for the case that free_netdev
 		 * is called but not set to NULL yet.
@@ -1038,6 +1049,10 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 				MEDIA_STATE_CONNECTED) &&
 			    ((iftype == NL80211_IFTYPE_P2P_CLIENT) ||
 			     (iftype == NL80211_IFTYPE_STATION))) {
+				p2pChangeMediaState(prAdapter,
+					prP2pBssInfo,
+					MEDIA_STATE_DISCONNECTED);
+
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
 				cfg80211_disconnected(prRoleDev, 0, NULL, 0,
 							TRUE, GFP_KERNEL);
