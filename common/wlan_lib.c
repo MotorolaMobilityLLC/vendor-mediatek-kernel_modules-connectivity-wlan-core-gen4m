@@ -10173,16 +10173,10 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 				   OP_MODE_INFRASTRUCTURE) {
 				if (prBssInfo->prStaRecOfAP == NULL)
 					continue;
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 				kalP2PGCIndicateConnectionStatus(prGlueInfo,
 					(uint8_t) prBssInfo->u4PrivateData,
-					NULL, NULL, 0, 0,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-#else
-				kalP2PGCIndicateConnectionStatus(prGlueInfo,
-					(uint8_t) prBssInfo->u4PrivateData,
-					NULL, NULL, 0, 0);
-#endif
+					NULL, NULL, 0,
+					REASON_CODE_DEAUTH_LEAVING_BSS);
 				prBssInfo->prStaRecOfAP = NULL;
 
 			}

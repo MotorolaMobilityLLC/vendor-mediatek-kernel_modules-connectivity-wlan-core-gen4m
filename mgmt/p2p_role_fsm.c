@@ -683,6 +683,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
 	struct GL_P2P_INFO *prP2PInfo;
+	uint16_t u2ReasonCode;
 
 	DBGLOG(P2P, INFO, "Deauth TX Complete!\n");
 
@@ -756,6 +757,9 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 	/* Change station state. */
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
 
+	/* Save ReasonCode */
+	u2ReasonCode = prStaRec->u2ReasonCode;
+
 	/* Reset Station Record Status. */
 	p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
@@ -772,21 +776,15 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 				"No More Client, Media Status DISCONNECTED\n");
 		else
 			DBGLOG(P2P, INFO,
-				"Deauth done, Media Status DISCONNECTED\n");
+				"Deauth done, Media Status DISCONNECTED, reason=%d\n",
+				u2ReasonCode);
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
 			MEDIA_STATE_DISCONNECTED);
 		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, 0,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-#else
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, 0);
-#endif
+					NULL, NULL, 0, u2ReasonCode);
 		}
 		if (prP2PInfo && prP2PInfo->eChnlSwitchPolicy ==
 				CHNL_SWITCH_POLICY_DEAUTH) {
@@ -927,18 +925,6 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					- (WLAN_MAC_HEADER_LEN
 					+ REASON_CODE_FIELD_LEN);
 
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-/* Indicate disconnect to Host. */
-				kalP2PGCIndicateConnectionStatus(
-					prAdapter->prGlueInfo,
-					(uint8_t) prP2pBssInfo->u4PrivateData,
-					NULL,
-					prDeauthFrame->aucInfoElem,
-					u2IELength,
-					u2ReasonCode,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-
-#else
 /* Indicate disconnect to Host. */
 				kalP2PGCIndicateConnectionStatus(
 					prAdapter->prGlueInfo,
@@ -947,7 +933,6 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					prDeauthFrame->aucInfoElem,
 					u2IELength,
 					u2ReasonCode);
-#endif
 
 				prP2pBssInfo->prStaRecOfAP = NULL;
 
@@ -1082,21 +1067,11 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 			u2IELength = prSwRfb->u2PacketLen
 				- (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
 
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-			/* Indicate disconnect to Host. */
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-				(uint8_t) prP2pBssInfo->u4PrivateData, NULL,
-				prDisassocFrame->aucInfoElem,
-				u2IELength, prStaRec->u2ReasonCode,
-				WLAN_STATUS_MEDIA_DISCONNECT);
-
-#else
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 				(uint8_t) prP2pBssInfo->u4PrivateData, NULL,
 				prDisassocFrame->aucInfoElem,
 				u2IELength, prStaRec->u2ReasonCode);
-#endif
 
 			prP2pBssInfo->prStaRecOfAP = NULL;
 
@@ -1206,22 +1181,11 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 		if (prP2pBssInfo->eConnectionState
 			== MEDIA_STATE_CONNECTED) {
 
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
 					NULL, NULL, 0,
-					REASON_CODE_DEAUTH_LEAVING_BSS,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-
-
-#else
-			/* Indicate disconnect to Host. */
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0,
-					REASON_CODE_DEAUTH_LEAVING_BSS);
-#endif
+					REASON_CODE_DISASSOC_LEAVING_BSS);
 
 			if (prP2pBssInfo->prStaRecOfAP != NULL) {
 				struct STA_RECORD *prStaRec =
@@ -2433,7 +2397,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 						prP2pBssInfo,
 						prJoinInfo->prTargetStaRec,
 						FALSE,
-						REASON_CODE_DEAUTH_LEAVING_BSS);
+						prDisconnMsg->u2ReasonCode);
 
 					p2pRoleFsmStateTransition(prAdapter,
 						prP2pRoleFsmInfo,
@@ -2466,7 +2430,6 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			}
 
 			prStaRec = prP2pBssInfo->prStaRecOfAP;
-
 			/* Stop rejoin timer if it is started. */
 			/* TODO: If it has. */
 
@@ -2747,26 +2710,13 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				scanReportBss2Cfg80211(prAdapter,
 					BSS_TYPE_P2P_DEVICE,
 					prJoinInfo->prTargetBssDesc);
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-				prP2pRoleFsmInfo->ucRoleIndex,
-				&prP2pRoleFsmInfo->rConnReqInfo,
-				prJoinInfo->aucIEBuf,
-				prJoinInfo->u4BufLength,
-				prStaRec->u2StatusCode,
-				WLAN_STATUS_MEDIA_DISCONNECT);
-#else
+
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex,
 				&prP2pRoleFsmInfo->rConnReqInfo,
 				prJoinInfo->aucIEBuf,
 				prJoinInfo->u4BufLength,
 				prStaRec->u2StatusCode);
-
-#endif
-
-
-
 		} else {
 			/* Join Fail */
 			/* 4 <2.1> Redo JOIN process
@@ -2794,16 +2744,6 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 				if (prStaRec->ucJoinFailureCount >=
 						P2P_SAA_RETRY_COUNT) {
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-					kalP2PGCIndicateConnectionStatus(
-						prAdapter->prGlueInfo,
-						prP2pRoleFsmInfo->ucRoleIndex,
-						&prP2pRoleFsmInfo->rConnReqInfo,
-						prJoinInfo->aucIEBuf,
-						prJoinInfo->u4BufLength,
-						prStaRec->u2StatusCode,
-						WLAN_STATUS_MEDIA_DISCONNECT);
-#else
 					kalP2PGCIndicateConnectionStatus(
 						prAdapter->prGlueInfo,
 						prP2pRoleFsmInfo->ucRoleIndex,
@@ -2811,7 +2751,6 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 						prJoinInfo->aucIEBuf,
 						prJoinInfo->u4BufLength,
 						prStaRec->u2StatusCode);
-#endif
 				}
 
 			}

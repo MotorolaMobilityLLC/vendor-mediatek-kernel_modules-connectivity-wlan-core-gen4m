@@ -3307,7 +3307,8 @@ uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
 			if (bssRemoveClient(prAdapter, prBssInfo, prStaRec)) {
 				/* Indicate disconnect to Host. */
 				p2pFuncDisconnect(prAdapter, prBssInfo,
-					prStaRec, FALSE, 0);
+					prStaRec, FALSE,
+					REASON_CODE_DEAUTH_LEAVING_BSS);
 				/* Deactive BSS if PWR is IDLE and no peer */
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					prBssInfo->ucBssIndex)

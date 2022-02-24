@@ -1512,15 +1512,13 @@ kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
 
 }				/* kalP2PIndicateRxMgmtFrame */
 
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 void
 kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,
 		IN struct P2P_CONNECTION_REQ_INFO *prP2pConnInfo,
 		IN uint8_t *pucRxIEBuf,
 		IN uint16_t u2RxIELen,
-		IN uint16_t u2StatusReason,
-		IN uint32_t eStatus)
+		IN uint16_t u2StatusReason)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1566,72 +1564,16 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				/* struct net_device * dev, */
 				u2StatusReason,
 				pucRxIEBuf, u2RxIELen,
-				eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY,
-				GFP_KERNEL);
-		}
-
-	} while (FALSE);
-
-}				/* kalP2PGCIndicateConnectionStatus */
-
-#else
-void
-kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN struct P2P_CONNECTION_REQ_INFO *prP2pConnInfo,
-		IN uint8_t *pucRxIEBuf,
-		IN uint16_t u2RxIELen,
-		IN uint16_t u2StatusReason)
-{
-	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
-	struct ADAPTER *prAdapter = NULL;
-
-	do {
-		if (prGlueInfo == NULL) {
-			ASSERT(FALSE);
-			break;
-		}
-
-		prAdapter = prGlueInfo->prAdapter;
-		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
-
-		/* FIXME: This exception occurs at wlanRemove. */
-		if ((prGlueP2pInfo == NULL) ||
-		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
-		    (prAdapter->rP2PNetRegState !=
-				ENUM_NET_REG_STATE_REGISTERED) ||
-		    (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) == 1)) {
-			break;
-		}
-
-		if (prP2pConnInfo) {
-			/* switch netif on */
-			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
-
-			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
-				/* struct net_device * dev, */
-				prP2pConnInfo->aucBssid,
-				prP2pConnInfo->aucIEBuf,
-				prP2pConnInfo->u4BufLength,
-				pucRxIEBuf, u2RxIELen,
-				u2StatusReason,
-				/* gfp_t gfp *//* allocation flags */
-				GFP_KERNEL);
-
-			prP2pConnInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
-		} else {
-			/* Disconnect, what if u2StatusReason == 0? */
-			cfg80211_disconnected(prGlueP2pInfo->aprRoleHandler,
-				/* struct net_device * dev, */
-				u2StatusReason, pucRxIEBuf,
-				u2RxIELen, GFP_KERNEL);
-		}
-
-	} while (FALSE);
-
-}				/* kalP2PGCIndicateConnectionStatus */
-
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+				u2StatusReason ==
+					REASON_CODE_DEAUTH_LEAVING_BSS,
 #endif
+				GFP_KERNEL);
+		}
+
+	} while (FALSE);
+
+}				/* kalP2PGCIndicateConnectionStatus */
 
 void
 kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
