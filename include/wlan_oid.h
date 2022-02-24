@@ -3823,6 +3823,12 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer,
 		  IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetP2pNetRegister(IN struct ADAPTER *prAdapter,
+		  IN void *pvSetBuffer,
+		  IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen);
 #endif
 
 #if CFG_SUPPORT_NAN

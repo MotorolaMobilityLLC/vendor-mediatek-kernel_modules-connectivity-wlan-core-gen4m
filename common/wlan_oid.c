@@ -12897,6 +12897,62 @@ wlanoidSetP2pMode(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is used to set the p2p net register.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                          bytes read from the set buffer. If the call failed
+ *                          due to invalid length of the set buffer, returns
+ *                          the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetP2pNetRegister(IN struct ADAPTER *prAdapter,
+		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		  OUT uint32_t *pu4SetInfoLen) {
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct PARAM_CUSTOM_P2P_SET_STRUCT *prSetP2P =
+		(struct PARAM_CUSTOM_P2P_SET_STRUCT *) NULL;
+
+	DEBUGFUNC("wlanoidSetP2pNetRegister");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT);
+	if (u4SetBufferLen < sizeof(struct
+				    PARAM_CUSTOM_P2P_SET_STRUCT)) {
+		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	prSetP2P = (struct PARAM_CUSTOM_P2P_SET_STRUCT *)
+		   pvSetBuffer;
+
+	DBGLOG(P2P, TRACE, "Set P2P net enable[%d]\n",
+	       prSetP2P->u4Enable);
+
+
+	if (prSetP2P->u4Enable) {
+		if (!p2pNetRegister(prAdapter->prGlueInfo, FALSE))
+			status = WLAN_STATUS_FAILURE;
+	} else {
+		if (!p2pNetUnregister(prAdapter->prGlueInfo, FALSE))
+			status = WLAN_STATUS_FAILURE;
+	}
+	return status;
+}
+
+#endif
+
 #if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
