@@ -2548,6 +2548,19 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				cnmTimerStartTimer(prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
+#if CFG_SUPPORT_802_11W
+			} else if (prP2pBssInfo
+				->u4RsnSelectedAKMSuite ==
+				RSN_AKM_SUITE_SAE) {
+				if (!completion_done(
+					&prP2pBssInfo->rDeauthComp)) {
+					DBGLOG(P2P, TRACE,
+						"Complete rDeauthComp\n");
+					complete(&prP2pBssInfo->rDeauthComp);
+				}
+				prP2pBssInfo
+					->encryptedDeauthIsInProcess = FALSE;
+#endif
 			}
 #if 0
 			LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
