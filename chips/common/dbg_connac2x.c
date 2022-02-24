@@ -74,6 +74,10 @@
 #include "mt_dmac.h"
 #include "wf_ple.h"
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3338,6 +3342,9 @@ void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	connac2x_show_wfdma_desc(prAdapter);
 
 	connac2xDumpPPDebugCr(prAdapter);
+#if CFG_MTK_MDDP_SUPPORT
+	mddpNotifyDumpDebugInfo();
+#endif
 }
 
 void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)

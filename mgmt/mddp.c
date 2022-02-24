@@ -156,6 +156,7 @@ enum BOOTMODE {
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
+bool g_fgIsMdReady;
 
 struct mddpw_net_stat_ext_t stats;
 
@@ -245,6 +246,7 @@ static void mddpUnregisterCb(void)
 	DBGLOG(INIT, INFO, "mddp_drv_detach\n");
 	mddp_drv_detach(&gMddpDrvConf, &gMddpFunc);
 	gMddpFunc.wifi_handle = NULL;
+	g_fgIsMdReady = false;
 }
 
 int32_t mddpGetMdStats(IN struct net_device *prDev)
@@ -668,6 +670,47 @@ exit:
 	return ret;
 }
 
+void mddpNotifyDumpDebugInfo(void)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	uint32_t u32BufSize = 0;
+	uint8_t *buff = NULL;
+
+	if (!g_fgIsMdReady) {
+		DBGLOG(NIC, ERROR, "MD isn't ready, skip dump.\n");
+		return;
+	}
+
+	if (gMddpWFunc.notify_drv_info) {
+		int32_t ret;
+
+		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) + sizeof(bool));
+		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+
+		if (buff == NULL) {
+			DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+			return;
+		}
+		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+		prNotifyInfo->version = 0;
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+				sizeof(bool);
+		prNotifyInfo->info_num = 1;
+		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+		prDrvInfo->info_id = 4;
+		prDrvInfo->info_len = 1;
+		prDrvInfo->info[0] = 0;
+
+		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+		DBGLOG(INIT, INFO, "notify md dump debug info ret=%d\n", ret);
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+	} else {
+		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
+	}
+}
+
 void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
@@ -702,6 +745,8 @@ int32_t mddpNotifyWifiOnEnd(void)
 		ret = wait_for_md_on_complete() ?
 				WLAN_STATUS_SUCCESS :
 				WLAN_STATUS_FAILURE;
+	if (ret == WLAN_STATUS_SUCCESS)
+		g_fgIsMdReady = true;
 	return ret;
 }
 
@@ -863,6 +908,17 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag
 			| RST_FLAG_DO_CORE_DUMP);
+	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_NOTIFY_MD_INFO_EMI) {
+		struct mddpw_get_drv_emi *prEmi =
+			(struct mddpw_get_drv_emi *)&(prMdInfo->buf[1]);
+		uint32_t u4Size = prEmi->emi_size;
+
+		if (u4Size > MD_MAX_EMI_SIZE)
+			u4Size = MD_MAX_EMI_SIZE;
+		DBGLOG(INIT, INFO, "emi_start_addr=0x%08x\n",
+		       prEmi->emi_start_addr);
+		DBGLOG_MEM32(INIT, INFO, prEmi->emi_payload, u4Size);
+		DBGLOG_MEM32(INIT, INFO, prMdInfo, 64);
 	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_COMMUNICATION) {
 		struct wsvc_md_event_comm_t *event;
 
@@ -894,6 +950,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			GL_RESET_TRIGGER(prAdapter, event->u4RstFlag
 				| RST_FLAG_DO_CORE_DUMP);
 		}
+		GL_RESET_TRIGGER(prAdapter, event->u4RstFlag);
 	} else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
 			prMdInfo->info_type);
