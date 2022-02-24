@@ -5201,6 +5201,12 @@ void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
 
+	if (prAdapter->fgIsNANRegistered == FALSE) {
+		DBGLOG(NAN, ERROR,
+			"Unable to handle nan event\n");
+		return;
+	}
+
 	DBGLOG(INIT, WARN, "nicNanEventDispatcher\n");
 
 	if (prAdapter->fgIsNANfromHAL == FALSE) {

@@ -672,9 +672,20 @@ nanDevSendEnableRequest(struct ADAPTER *prAdapter,
 
 		prNANSpecInfo = prAdapter->rWifiVar
 				.aprNanSpecificBssInfo[ucIdx];
+		if (prNANSpecInfo == NULL) {
+			DBGLOG(NAN, ERROR,
+				"[%s] prNANSpecInfo is NULL\n",
+				__func__);
+			return;
+		}
 		prnanBssInfo =
 			prAdapter->aprBssInfo[prNANSpecInfo->ucBssIndex];
-
+		if (prnanBssInfo == NULL) {
+			DBGLOG(NAN, ERROR,
+				"[%s] prnanBssInfo is NULL\n",
+				__func__);
+			return;
+		}
 		if (!IS_BSS_ACTIVE(prnanBssInfo)) {
 			SET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
 			nicActivateNetwork(prAdapter, prnanBssInfo->ucBssIndex);
