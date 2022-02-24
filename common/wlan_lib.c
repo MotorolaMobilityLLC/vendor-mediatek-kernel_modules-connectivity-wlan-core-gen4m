@@ -73,10 +73,6 @@
 //Moto, read MACs from boot params
 #include <linux/of.h>
 #include <linux/of_address.h>
-#ifdef MOTO_UTAGS_MAC
-#define WIFI_MAC_BOOTARG "androidboot.wifimacaddr="
-#define MACSTRLEN 17
-#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -3929,6 +3925,11 @@ void wlanoidClearTimeoutCheck(IN struct ADAPTER *prAdapter)
 }
 
 #ifdef MOTO_UTAGS_MAC
+/* moto, reed wifi mac add from bootargs */
+#define MACSTRLEN 17
+extern int mmi_get_bootarg(char *key, char **value);
+extern void mmi_free_bootarg_res(void);
+
 static inline void strtomac(char * buf, unsigned char macaddr[6]) {
         if (strchr(buf, ':'))
                 sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
@@ -3940,6 +3941,7 @@ static inline void strtomac(char * buf, unsigned char macaddr[6]) {
                 DBGLOG(INIT, ERROR, "%s,Can not parse mac address: %s", __func__,buf);
 }
 #endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3961,7 +3963,7 @@ uint32_t wlanUpdateNetworkAddress(IN struct ADAPTER
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	uint32_t u4SysTime;
 #ifdef MOTO_UTAGS_MAC
-	struct device_node *chosen_node = NULL;
+	char *s;
 	char macStr[MACSTRLEN+1] ={0};
 	bool utagMac = FALSE;
 #endif
@@ -3972,28 +3974,16 @@ uint32_t wlanUpdateNetworkAddress(IN struct ADAPTER
 
 #ifdef MOTO_UTAGS_MAC
         //Moto, read MACs from bootparams
-        chosen_node = of_find_node_by_name(NULL, "chosen");
-        if (!chosen_node) {
-                DBGLOG(INIT, ERROR, "%s: get chosen node read failed\n", __func__);
-        } else {
-                int len=0;
-                const char *cmd_line = NULL;
-                cmd_line = of_get_property(chosen_node, "bootargs", &len);
-                if (!cmd_line || len <= 0) {
-                        DBGLOG(INIT, ERROR, "%s: get wlan MACs bootargs failed\n", __func__);
-                } else {
-                        char * mac_idx = NULL;
-                        mac_idx = strstr(cmd_line, WIFI_MAC_BOOTARG);
-                        if (mac_idx == NULL) {
-                                DBGLOG(INIT, ERROR, "%s: " WIFI_MAC_BOOTARG " not present in bootargs", __func__);
-                        } else {
-
-                                mac_idx += strlen(WIFI_MAC_BOOTARG);
-                                memcpy(macStr,mac_idx,MACSTRLEN);
-                                utagMac = TRUE;
-                        }
-                }
+        if (mmi_get_bootarg("androidboot.wifimacaddr=", &s) == 0) {
+            DBGLOG(INIT, ERROR, "%s: get wlan MACs bootargs = %s \n", __func__, s);
+            memcpy(macStr, s, MACSTRLEN);
+            utagMac = TRUE;
+            mmi_free_bootarg_res();
         }
+        else {
+            DBGLOG(INIT, ERROR, "%s: WIFI_MAC_BOOTARG not present in bootargs", __func__);
+        }
+
         if (utagMac == TRUE) {
 #if CFG_SHOW_MACADDR_SOURCE
                 DBGLOG(INIT, INFO, " Using MAC from boot params=%s\n", macStr);
