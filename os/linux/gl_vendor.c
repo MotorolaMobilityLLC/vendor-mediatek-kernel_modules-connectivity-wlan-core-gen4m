@@ -1999,9 +1999,8 @@ int mtk_cfg80211_vendor_get_supported_feature_set(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = wlanGetGlueInfo();
-	if (!prGlueInfo)
-		return -EFAULT;
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	ASSERT(prGlueInfo);
 
 	u8FeatureSet = wlanGetSupportedFeatureSet(prGlueInfo);
 
