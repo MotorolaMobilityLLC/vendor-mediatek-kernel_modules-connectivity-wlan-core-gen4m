@@ -558,6 +558,43 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 	kalSendUevent("abnormaltrx=DIR:TX,Event:Hang");
 }
 
+void halGetLongestPacketInfo(struct ADAPTER *prAdapter,
+	uint32_t *pucTokenId, struct timespec64 *prLongestPacketTime)
+{
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	struct MSDU_TOKEN_ENTRY *prToken;
+	struct timespec64 rNowTs, rTime;
+	uint32_t u4Idx = 0;
+
+	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+
+	ktime_get_ts64(&rNowTs);
+
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
+		prToken = &prTokenInfo->arToken[u4Idx];
+		if (!prToken->fgInUsed)
+			continue;
+
+		/* Ignore now time < token time */
+		if (halTimeCompare(&rNowTs, &prToken->rTs) < 0)
+			continue;
+
+		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
+		rTime.tv_nsec = rNowTs.tv_nsec;
+		if (prToken->rTs.tv_nsec > rNowTs.tv_nsec) {
+			rTime.tv_sec -= 1;
+			rTime.tv_nsec += SEC_TO_NSEC(1);
+		}
+		rTime.tv_nsec -= prToken->rTs.tv_nsec;
+		/* rTime > rLongest */
+		if (halTimeCompare(&rTime, prLongestPacketTime) > 0) {
+			prLongestPacketTime->tv_sec = rTime.tv_sec;
+			prLongestPacketTime->tv_nsec = rTime.tv_nsec;
+			*pucTokenId = u4Idx;
+		}
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Checking tx hang

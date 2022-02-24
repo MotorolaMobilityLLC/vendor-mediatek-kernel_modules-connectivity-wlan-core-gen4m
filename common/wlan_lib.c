@@ -12397,6 +12397,41 @@ void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
 #endif
 }
 
+void
+wlanGetEnvInfo(IN struct ADAPTER *prAdapter,
+	OUT struct ENV_INFO *prEnvInfo)
+{
+	struct timespec64 *prLongestPacket = &prEnvInfo->rLongestTxTime;
+	char arQueryEvnInfo[64] = "getChannelLoad";
+	uint8_t *pucItem = NULL;
+	uint8_t *pucSavedPtr = NULL;
+	uint32_t u4temp = 0, u4Index = 0, u4LongestTokenId = 0;
+
+	halGetLongestPacketInfo(prAdapter, &u4LongestTokenId, prLongestPacket);
+	DBGLOG(REQ, TRACE, "Longest packet[sec:%ld, nsec:%ld]\n",
+			prLongestPacket->tv_sec, prLongestPacket->tv_nsec);
+
+	wlanChipConfig(prAdapter, &arQueryEvnInfo[0], sizeof(arQueryEvnInfo));
+
+	pucItem =
+		(uint8_t *)kalStrtokR(&arQueryEvnInfo[0], " ", &pucSavedPtr);
+	while (pucItem) {
+		kalkStrtou32(pucItem, 0, &u4temp);
+		if (u4Index % 2 == 0) { /* Band 0 */
+			*(((uint32_t *)&prEnvInfo->u4Snr) + u4Index / 2) =
+				u4temp;
+		}
+		pucItem =
+			(uint8_t *)kalStrtokR(NULL, " ", &pucSavedPtr);
+		u4Index++;
+	}
+	DBGLOG(REQ, INFO,
+		"Snr:%d Noise:%d RxListenTime:%d TxTime:%d Idle:%d\n",
+		prEnvInfo->u4Snr, prEnvInfo->u4Noise,
+		prEnvInfo->u4RxListenTime, prEnvInfo->u4TxTimeCount,
+		prEnvInfo->u4Idle);
+}
+
 static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
 {
 	switch (ofdm_idx) {

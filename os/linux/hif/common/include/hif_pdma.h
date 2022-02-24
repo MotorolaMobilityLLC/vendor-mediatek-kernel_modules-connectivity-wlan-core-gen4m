@@ -663,4 +663,9 @@ void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 
 void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 	uint32_t u4DriverLatency);
+
+void halGetLongestPacketInfo(struct ADAPTER *prAdapter,
+	uint32_t *pucTokenId,
+	struct timespec64 *prLongestPacketTime);
+
 #endif /* HIF_PDMA_H__ */

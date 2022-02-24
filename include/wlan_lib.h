@@ -1278,6 +1278,16 @@ struct TRX_INFO {
 	uint32_t u4TxOk[MAX_BSSID_NUM];	/* By BSSIDX */
 	uint32_t u4RxOk[MAX_BSSID_NUM];	/* By BSSIDX */
 };
+
+struct ENV_INFO {
+	struct timespec64 rLongestTxTime;
+	uint32_t u4Snr;
+	uint32_t u4Noise;
+	uint32_t u4RxListenTime;
+	uint32_t u4TxTimeCount;
+	uint32_t u4Idle;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1907,6 +1917,10 @@ uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);
 uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);
+
+void
+wlanGetEnvInfo(IN struct ADAPTER *prAdapter,
+	OUT struct ENV_INFO *prEnvInfo);
 
 void
 wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
