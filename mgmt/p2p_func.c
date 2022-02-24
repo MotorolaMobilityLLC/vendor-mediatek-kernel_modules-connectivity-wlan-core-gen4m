@@ -3576,7 +3576,12 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 			p2pFuncResetStaRecStatus(prAdapter, prStaRec);
 
 			bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
-
+#if CFG_SUPPORT_802_11W
+			if (timerPendingTimer(&(prStaRec
+				 ->rPmfCfg.rSAQueryTimer)))
+				cnmTimerStopTimer(prAdapter,
+					&(prStaRec->rPmfCfg.rSAQueryTimer));
+#endif
 			p2pFuncDisconnect(prAdapter,
 				prP2pBssInfo, prStaRec, FALSE,
 				REASON_CODE_DISASSOC_INACTIVITY);
