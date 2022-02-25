@@ -370,10 +370,17 @@ static s_int32 hqa_set_tx_path(
 		get_param_and_shift_buf(TRUE, sizeof(value),
 				&data, (u_char *)&value);
 		tx_ant = value;
+
+		if (tx_ant > BITS(0, 3))
+		tx_ant = BIT(0);
+
 		/* band index */
 		get_param_and_shift_buf(TRUE, sizeof(value),
 				&data, (u_char *)&value);
 		band_idx = value;
+
+		if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+			band_idx = 0;
 
 		/* Set Band idx */
 		SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
@@ -422,10 +429,17 @@ static s_int32 hqa_set_rx_path(
 		get_param_and_shift_buf(TRUE, sizeof(value),
 				&data, (u_char *)&value);
 		rx_ant = value;
+
+		if (rx_ant > BITS(0, 3))
+			rx_ant = BIT(0);
+
 		/* band index */
 		get_param_and_shift_buf(TRUE, sizeof(value),
 				&data, (u_char *)&value);
 		band_idx = value;
+
+		if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+			band_idx = 0;
 
 		/* Set Band idx */
 		SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
@@ -1088,6 +1102,9 @@ static s_int32 hqa_rf_reg_bulk_read(
 	get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data, (u_char *)&test_regs->cr_num);
 
+	if (test_regs->cr_num > READ_CR_NUM_MAX)
+		test_regs->cr_num = READ_CR_NUM_MAX;
+
 	/* Allocate cr_val memory */
 	cr_total_len = test_regs->cr_num << 2;
 	ret = sys_ad_alloc_mem((u_char **)&test_regs->cr_val, cr_total_len);
@@ -1136,6 +1153,17 @@ static s_int32 hqa_rf_reg_bulk_write(
 				&data, (u_char *)&test_regs->cr_addr);
 	get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data, (u_char *)&test_regs->cr_num);
+
+	if (test_regs->cr_num == 0) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: allocate register memory fail\n", __func__));
+		ret = SERV_STATUS_AGENT_INVALID_PARAM;
+
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, 2, ret);
+
+		return ret;
+	}
 
 	/* Allocate cr_val memory */
 	cr_total_len = test_regs->cr_num << 2;
@@ -4659,6 +4687,21 @@ static s_int32 hqa_listmode_tx_seg(
 				&ParserSegHeader,
 				sizeof(struct list_mode_tx_seg_header));
 
+			/* overflow check */
+			if (pSendSegHeader->u4SegParaNum >
+				LIST_MODE_FW_SEG_PARA_NUM_MAX) {
+				SERV_LOG(SERV_DBG_CAT_TEST,
+					SERV_DBG_LVL_ERROR,
+					("%s: allocate eeprom memory fail\n",
+					__func__));
+				ret = SERV_STATUS_AGENT_INVALID_PARAM;
+
+				update_hqa_frame(hqa_frame, 2, ret);
+
+				return ret;
+
+			}
+
 			/* segment parser */
 			seg_para_num =
 				pSendSegHeader->u4SegNum *
@@ -4883,6 +4926,20 @@ static s_int32 hqa_listmode_rx_seg(
 			/* copy header to send_buff */
 			sys_ad_move_mem(pSendSegHeader, &ParserSegHeader,
 				sizeof(struct list_mode_rx_seg_header));
+
+			/* overflow check */
+			if (pSendSegHeader->u4SegParaNum >
+				LIST_MODE_FW_SEG_PARA_NUM_MAX) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+					("%s: allocate eeprom memory fail\n",
+					__func__));
+				ret = SERV_STATUS_AGENT_INVALID_PARAM;
+
+				update_hqa_frame(hqa_frame, 2, ret);
+
+				return ret;
+
+			}
 
 			/* segment parser */
 			seg_para_num =
