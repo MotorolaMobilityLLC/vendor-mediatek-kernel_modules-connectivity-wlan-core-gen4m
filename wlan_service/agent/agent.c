@@ -4408,9 +4408,6 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x1a,	hqa_mps_stop},
 	{0x1c,	hqa_get_rx_statistics_all},
 	{0x1d,	hqa_get_capability},
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	{0x1e,	hqa_get_rf_type_capability},
-#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 	{0x21,	legacy_function},
 	{0x22,	hqa_check_efuse_mode_type},
 	{0x23,	hqa_check_efuse_nativemode_type},
@@ -4435,11 +4432,13 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x81,	hqa_get_dump_recal},
 	{0x82,	hqa_get_dump_rxv},
 	{0x83,	hqa_get_dump_rdd},
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	{0x90,  hqa_set_max_pac_ext},
-#endif
 	{0x91,	hqa_get_hetb_info},
-	{0x94,	hqa_set_ru_info}
+	{0x94,	hqa_set_ru_info},
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	{0x1e,	hqa_get_rf_type_capability},
+	{0x90,  hqa_set_max_pac_ext},
+	{0x96,	hqa_set_ru_info_v2}
+#endif
 };
 
 static s_int32 hqa_set_channel_ext(
