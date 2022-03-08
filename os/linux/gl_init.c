@@ -6926,7 +6926,7 @@ static int wlanFunOn(void)
 {
 	int ret = 0;
 
-	glBusFunOn();
+	ret = glBusFunOn();
 
 	return ret;
 }
