@@ -414,10 +414,10 @@ twtPlannerSendReqStart(
 	return WLAN_STATUS_SUCCESS;
 }
 
-static uint32_t
-twtPlannerSendReqTeardown(struct ADAPTER *prAdapter,
-				struct STA_RECORD *prStaRec,
-				uint8_t ucTWTFlowId)
+uint32_t twtPlannerSendReqTeardown(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId)
 {
 	struct _MSG_TWT_REQFSM_TEARDOWN_T *prTWTReqFsmTeardownMsg;
 
@@ -926,7 +926,7 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 
 	cnmMemFree(prAdapter, prTWTAgrtUpdate);
 
-	return rWlanStatus;
+	return WLAN_STATUS_SUCCESS;
 }
 
 static uint32_t
@@ -1710,11 +1710,117 @@ twtPlannerGetCurrentTSF(
 	return rWlanStatus;
 }
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+void twtPlannerGetCnmGrantedDone(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf)
+{
+	struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
+
+	if (!prCmdInfo->pvInformationBuffer) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"prCmdInfo->pvInformationBuffer is NULL.\n");
+
+		return;
+	}
+
+	prGetTsfCtxt = (struct _TWT_GET_TSF_CONTEXT_T *)
+		prCmdInfo->pvInformationBuffer;
+
+	if (!prGetTsfCtxt) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prGetTsfCtxt\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prGetTsfCtxt->ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return;
+	}
+
+	/* Continue to use the existing prGetTsfCtxt to get current TSF */
+	twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
+		prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+}
+
+static uint32_t
+twtPlannerGetCnmGranted(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct _EXT_CMD_GET_MAC_INFO_T *prMacInfoCmd;
+	struct _EXTRA_ARG_TSF_T *prTsfArg;
+
+	prMacInfoCmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _EXT_CMD_GET_MAC_INFO_T));
+	if (!prMacInfoCmd) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Alloc _EXT_CMD_GET_MAC_INFO_T FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTsfArg = &(prMacInfoCmd->rExtraArgument.rTsfArg);
+	prMacInfoCmd->u2MacInfoId = CPU_TO_LE16(MAC_INFO_TYPE_TWT_STA_CNM);
+	prTsfArg->ucHwBssidIndex = prBssInfo->ucOwnMacIndex;
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+					CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+					EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED,
+					FALSE,
+					TRUE,
+					FALSE,
+					twtPlannerGetCnmGrantedDone,
+					NULL,
+					sizeof(struct _EXT_CMD_GET_MAC_INFO_T),
+					(uint8_t *) (prMacInfoCmd),
+					pvSetBuffer, u4SetBufferLen);
+
+	cnmMemFree(prAdapter, prMacInfoCmd);
+
+	return rWlanStatus;
+}
+#endif
+
 void twtPlannerSetParams(
 	struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
 	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
 	struct _TWT_CTRL_T rTWTCtrl, *prTWTCtrl = &rTWTCtrl;
+	struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt = NULL;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIdx, ucFlowId;
@@ -1761,7 +1867,7 @@ void twtPlannerSetParams(
 
 	/* If bypassing TWT nego, this ctrl param is treated as a TWT agrt*/
 	if (IS_TWT_PARAM_ACTION_ADD_BYPASS(prTWTCtrl->ucCtrlAction)) {
-		struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+		prGetTsfCtxt =
 			kalMemAlloc(sizeof(struct _TWT_GET_TSF_CONTEXT_T),
 				VIR_MEM_TYPE);
 		if (prGetTsfCtxt == NULL) {
@@ -1852,7 +1958,7 @@ void twtPlannerSetParams(
 			prAdapter, ucBssIdx,
 			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
 
-			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+			prGetTsfCtxt =
 				kalMemAlloc(
 					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
 					VIR_MEM_TYPE);
@@ -1878,9 +1984,22 @@ void twtPlannerSetParams(
 			prGetTsfCtxt->ucBssIdx = ucBssIdx;
 			prGetTsfCtxt->ucTWTFlowId = prTWTCtrl->ucTWTFlowId;
 			prGetTsfCtxt->fgIsOid = FALSE;
+
 			kalMemCopy(&(prGetTsfCtxt->rTWTParams),
 					&(prTWTCtrl->rTWTParams),
 					sizeof(struct _TWT_PARAMS_T));
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+			prGetTsfCtxt->ucTwtStaCnmReason = TWT_STA_CNM_SETUP;
+
+			DBGLOG(TWT_PLANNER, WARN,
+				"BSS %u TWT flow %u setup to get CNM granted\n",
+				ucBssIdx, ucFlowId);
+
+			twtPlannerGetCnmGranted(prAdapter, prBssInfo,
+				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+#else
+			prGetTsfCtxt->ucTwtStaCnmReason = TWT_STA_CNM_DEFAULT;
 
 			DBGLOG(TWT_PLANNER, WARN,
 				"BSS %u TWT flow %u get current TSF\n",
@@ -1888,6 +2007,7 @@ void twtPlannerSetParams(
 
 			twtPlannerGetCurrentTSF(prAdapter, prBssInfo,
 				prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+#endif
 
 			return;
 		}
@@ -1904,7 +2024,7 @@ void twtPlannerSetParams(
 			prAdapter, ucBssIdx,
 			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
 
-			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+			prGetTsfCtxt =
 				kalMemAlloc(
 					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
 					VIR_MEM_TYPE);
@@ -1948,7 +2068,7 @@ void twtPlannerSetParams(
 			prAdapter, ucBssIdx,
 			ucFlowId, &ucFlowId_real) >= TWT_AGRT_MAX_NUM) {
 
-			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+			prGetTsfCtxt =
 				kalMemAlloc(
 					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
 					VIR_MEM_TYPE);
@@ -2005,8 +2125,43 @@ void twtPlannerSetParams(
 				prStaRec, ucFlowId);
 			} else {
 #endif
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+				prGetTsfCtxt = kalMemAlloc(
+					sizeof(
+					struct _TWT_GET_TSF_CONTEXT_T),
+					VIR_MEM_TYPE);
+
+				if (prGetTsfCtxt == NULL) {
+					DBGLOG(TWT_PLANNER, ERROR,
+						"mem alloc failed\n");
+
+					return;
+				}
+
+				prGetTsfCtxt->ucReason =
+					TWT_GET_TSF_FOR_CNM_TEARDOWN_GRANTED;
+				prGetTsfCtxt->ucBssIdx = ucBssIdx;
+				prGetTsfCtxt->ucTWTFlowId =
+					prTWTCtrl->ucTWTFlowId;
+				prGetTsfCtxt->fgIsOid = FALSE;
+
+				kalMemCopy(&(prGetTsfCtxt->rTWTParams),
+						&(prTWTCtrl->rTWTParams),
+						sizeof(struct _TWT_PARAMS_T));
+
+				prGetTsfCtxt->ucTwtStaCnmReason =
+					TWT_STA_CNM_TEARDOWN;
+
+				DBGLOG(TWT_PLANNER, WARN,
+					"BSS %u TWT flow %u teardown to get CNM granted\n",
+					ucBssIdx, ucFlowId);
+
+				twtPlannerGetCnmGranted(prAdapter, prBssInfo,
+					prGetTsfCtxt, sizeof(*prGetTsfCtxt));
+#else
 			twtPlannerSendReqTeardown(prAdapter,
 				prStaRec, ucFlowId);
+#endif
 #if (CFG_SUPPORT_BTWT == 1)
 			}
 #endif
@@ -2037,7 +2192,7 @@ void twtPlannerSetParams(
 		if (twtPlannerDrvAgrtFind(
 			prAdapter, ucBssIdx, ucFlowId,
 			&ucFlowId_real) < TWT_AGRT_MAX_NUM) {
-			struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt =
+			prGetTsfCtxt =
 				kalMemAlloc(
 					sizeof(struct _TWT_GET_TSF_CONTEXT_T),
 					VIR_MEM_TYPE);

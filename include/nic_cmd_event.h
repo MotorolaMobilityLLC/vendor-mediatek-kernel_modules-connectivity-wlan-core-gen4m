@@ -361,6 +361,9 @@ enum ENUM_EXT_CMD_ID {
 	EXT_CMD_ID_SR_CTRL = 0xA8,
 #endif
 	EXT_CMD_ID_CR4_DMASHDL_DVT = 0xAB,
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED = 0xAC,
+#endif
 	EXT_CMD_ID_END
 };
 
@@ -821,6 +824,7 @@ enum {
 	MAC_INFO_TYPE_MIB = 0x3,
 	MAC_INFO_TYPE_EDCA = 0x4,
 	MAC_INFO_TYPE_WIFI_INT_CNT = 0x5,
+	MAC_INFO_TYPE_TWT_STA_CNM = 0x6,
 };
 
 /*******************************************************************************
