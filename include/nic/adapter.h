@@ -1945,6 +1945,7 @@ struct ADAPTER {
 #if (CFG_SUPPORT_ICS == 1)
 	u_int8_t fgEnTmacICS;
 	u_int8_t fgEnRmacICS;
+	uint16_t u2IcsSeqNo;
 #endif /* CFG_SUPPORT_ICS */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
