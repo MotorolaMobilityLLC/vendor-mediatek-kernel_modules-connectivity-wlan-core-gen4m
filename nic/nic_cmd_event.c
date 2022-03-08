@@ -144,6 +144,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #endif
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_CASAN_LOAD_TYPE,
 				nicCmdEventCasanLoadType),
+#if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_REDL_INFO,
+				nicCfgChipCapRedlInfo),
+#endif
 };
 
 /*******************************************************************************
@@ -3020,6 +3024,21 @@ uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_ENABLE_FW_DOWNLOAD
+#if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
+uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+	struct CAP_REDL_INFO *prRedlInfo = (struct CAP_REDL_INFO *)pucEventBuf;
+
+	fwDlSetupReDl(prAdapter, prRedlInfo->u4RedlOffset,
+		prRedlInfo->u4RedlLen);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+#endif
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)

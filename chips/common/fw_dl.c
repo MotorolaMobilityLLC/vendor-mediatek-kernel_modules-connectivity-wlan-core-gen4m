@@ -2040,4 +2040,86 @@ void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
 	       prAdapter->rVerInfo.aucReleaseManifest);
 }
 
+#if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
+static void fwDlSetupRedlDmad(struct ADAPTER *prAdapter,
+	phys_addr_t pa,
+	uint32_t u4Size)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[TX_RING_FWDL_IDX_4];
+	struct RTMP_DMACB *pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
+	struct TXD_STRUCT *pTxD = (struct TXD_STRUCT *)pTxCell->AllocVa;
+
+	pTxD->LastSec0 = 1;
+	pTxD->LastSec1 = 0;
+	pTxD->SDLen0 = u4Size;
+	pTxD->SDLen1 = 0;
+	pTxD->SDPtr0 = (uint64_t)pa & DMA_LOWER_32BITS_MASK;
+#ifdef CONFIG_PHYS_ADDR_T_64BIT
+	pTxD->SDPtr0Ext = ((uint64_t)pa >> DMA_BITS_OFFSET) &
+		DMA_HIGHER_4BITS_MASK;
+#else
+	pTxD->SDPtr0Ext = 0;
+#endif
+	pTxD->SDPtr1 = 0;
+	pTxD->Burst = 0;
+	pTxD->DMADONE = 0;
+
+	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+
+	prTxRing->u4UsedCnt++;
+}
+
+static void fwDlSetupRedlImg(struct ADAPTER *prAdapter,
+	uint32_t u4EmiOffset,
+	uint32_t u4Size)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	uint32_t u4Offset = 0;
+
+	do {
+		uint32_t u4SecSize = 0;
+
+		if (u4Offset >= u4Size)
+			break;
+
+		if (u4Offset + FWDL_REDL_MAX_PKT_SIZE < u4Size)
+			u4SecSize = FWDL_REDL_MAX_PKT_SIZE;
+		else
+			u4SecSize = u4Size - u4Offset;
+
+		fwDlSetupRedlDmad(prAdapter,
+			prHifInfo->rMcuEmiMem.pa + u4EmiOffset + u4Offset,
+			u4SecSize);
+
+		u4Offset += u4SecSize;
+	} while (TRUE);
+}
+
+uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
+	uint32_t u4EmiOffset, uint32_t u4Size)
+{
+	DBGLOG(INIT, INFO, "u4EmiOffset: 0x%x, u4Size: 0x%x\n",
+		u4EmiOffset, u4Size);
+
+	if (u4Size == 0 || (u4EmiOffset + u4Size) > MCU_EMI_SIZE)
+		return WLAN_STATUS_INVALID_DATA;
+
+	/* 1. Recycle used dmad first */
+	halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
+		TX_RING_FWDL_IDX_4);
+
+	/* 2. Stop recycle TX dmad for FWDL ring */
+	halWpdmaStopRecycleDmad(prAdapter->prGlueInfo,
+		TX_RING_FWDL_IDX_4);
+
+	/* 3. Setup DMAD for redl packets */
+	fwDlSetupRedlImg(prAdapter,
+		u4EmiOffset,
+		u4Size);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 #endif  /* CFG_ENABLE_FW_DOWNLOAD */

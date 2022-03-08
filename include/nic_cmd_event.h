@@ -1135,6 +1135,7 @@ enum NIC_CAPABILITY_V2_TAG {
 
 	TAG_CAP_LLS_DATA_EMI_OFFSET = 0x1c, /* Shared EMI offset for LLS */
 	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
+	TAG_CAP_REDL_INFO = 0x1e,
 	TAG_CAP_TOTAL
 };
 
@@ -1367,6 +1368,11 @@ struct CAP_CASAN_LOAD_TYPE_T {
 	uint32_t u4CasanLoadType;	/* Type of CASAN 0:Normal 1:CASAN */
 };
 
+struct CAP_REDL_INFO {
+	uint32_t u4RedlOffset;
+	uint32_t u4RedlLen;
+	uint32_t u4Reserved;
+};
 
 /*
  * NIC_TX_RESOURCE_REPORT_EVENT related definition
@@ -4060,6 +4066,13 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 #endif
 uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
+
+#if CFG_ENABLE_FW_DOWNLOAD
+#if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
+uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf);
+#endif
+#endif
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);

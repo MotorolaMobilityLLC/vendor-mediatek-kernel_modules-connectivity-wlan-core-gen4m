@@ -473,6 +473,7 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_mask;
 	uint32_t hw_cnt_shift;
 	spinlock_t rTxDmaQLock;
+	u_int8_t fgStopRecycleDmad;
 };
 
 struct RTMP_RX_RING {
@@ -896,4 +897,6 @@ int kalCreateRxPagePool(struct device *dev);
 struct sk_buff *kalAllocRxSkb(dma_addr_t *prAddr);
 void kalDmaSyncForDevice(void *rAddr);
 #endif
+void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
+				       IN uint16_t u2Port);
 #endif /* HIF_PDMA_H__ */
