@@ -2384,10 +2384,11 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 			   IN struct STA_RECORD *prStaRec)
 {
-	struct TX_DESC_OPS_T *prTxDescOps;
 	uint8_t ucTid;
-	void *prTxDescList[TX_DESC_TID_NUM] = {NULL};
-	uint8_t ucTxDescSizeList[TX_DESC_TID_NUM] = {0};
+	uint8_t ucTxDescSize;
+	struct TX_DESC_OPS_T *prTxDescOps;
+	struct HW_MAC_TX_DESC *prTxDesc;
+	struct HW_MAC_TX_DESC *prFirstTxDesc = NULL;
 
 #if defined(_HIF_USB)
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2396,51 +2397,50 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
 	DBGLOG(QM, TRACE, "Free TXD template for STA[%u] QoS[%u]\n",
 	       prStaRec->ucIndex, prStaRec->fgIsQoS);
 
-#if defined(_HIF_USB)
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
-	prTxDescOps = prAdapter->chip_info->prTxDescOps;
-	if (prStaRec->fgIsQoS) {
-		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-			prTxDescList[ucTid] =
-				prStaRec->aprTxDescTemplate[ucTid];
-			if (prTxDescList[ucTid]) {
-				if (prTxDescOps->nic_txd_long_format_op(
-					prTxDescList[ucTid], FALSE))
-					ucTxDescSizeList[ucTid] =
-						NIC_TX_DESC_LONG_FORMAT_LENGTH;
-				else
-					ucTxDescSizeList[ucTid] =
-						NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-
-				prStaRec->aprTxDescTemplate[ucTid] =
-					NULL;
-			}
-		}
-	} else {
-		prTxDescList[0] = prStaRec->aprTxDescTemplate[0];
-		for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++)
-			prStaRec->aprTxDescTemplate[ucTid] = NULL;
-
-		if (prTxDescList[0]) {
-			if (prTxDescOps->nic_txd_long_format_op(
-				prTxDescList[0], FALSE))
-				ucTxDescSizeList[0] =
-					NIC_TX_DESC_LONG_FORMAT_LENGTH;
-			else
-				ucTxDescSizeList[0] =
-					NIC_TX_DESC_SHORT_FORMAT_LENGTH;
-		}
-	}
-#if defined(_HIF_USB)
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
-#endif
 	for (ucTid = 0; ucTid < TX_DESC_TID_NUM; ucTid++) {
-		if (prTxDescList[ucTid]) {
-			kalMemFree(prTxDescList[ucTid],
-				VIR_MEM_TYPE, ucTxDescSizeList[ucTid]);
-			prTxDescList[ucTid] = NULL;
+#if defined(_HIF_USB)
+		/* This is to lock the process to preventing */
+		/* nicTxFreeDescTemplate while Filling it */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+		if (ucTid == 0)
+			prFirstTxDesc = (struct HW_MAC_TX_DESC *)
+				prStaRec->aprTxDescTemplate[0];
+		prTxDescOps = prAdapter->chip_info->prTxDescOps;
+
+		prTxDesc = (struct HW_MAC_TX_DESC *)
+			prStaRec->aprTxDescTemplate[ucTid];
+
+		if (!prTxDesc) {
+#if defined(_HIF_USB)
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+			continue;
 		}
+
+		if (ucTid > 0 && prTxDesc == prFirstTxDesc) {
+			/* This partial is for prStaRec->fgIsQoS = 0 case
+			 * In this case, prStaRec->aprTxDescTemplate[0:7]'s
+			 * value will be same,
+			 * so should avoid repeated free.
+			 */
+			prStaRec->aprTxDescTemplate[ucTid] = NULL;
+#if defined(_HIF_USB)
+			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+			continue;
+		}
+		if (prTxDescOps->nic_txd_long_format_op(prTxDesc, FALSE))
+			ucTxDescSize = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+		else
+			ucTxDescSize = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
+
+		prStaRec->aprTxDescTemplate[ucTid] = NULL;
+#if defined(_HIF_USB)
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
+#endif
+
+		kalMemFree(prTxDesc, VIR_MEM_TYPE, ucTxDescSize);
 	}
 }
 
