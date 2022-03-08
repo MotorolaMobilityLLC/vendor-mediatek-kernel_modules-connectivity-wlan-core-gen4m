@@ -379,6 +379,7 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 ifeq ($(MTK_ANDROID_WMT), y)
+CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
     ifneq ($(CONFIG_PAGE_POOL),)
         CONFIG_RX_PAGE_POOL=y
     endif
@@ -646,6 +647,12 @@ else
     ccflags-y += -DCFG_MTK_FPGA_PLATFORM=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_CONNFEM_SUPPORT), y)
+ccflags-y += -DCFG_SUPPORT_CONNFEM=1
+else
+ccflags-y += -DCFG_SUPPORT_CONNFEM=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
@@ -680,7 +687,7 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=0
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=0
-    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=0
+    ccflags-y += -DCFG_SUPPORT_PRE_ON_PHY_ACTION=1
     ifeq ($(WMT_SUPPORT), y)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
@@ -1134,17 +1141,16 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o \
-              $(CHIPS_CMM)dbg_connac2x.o
-ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
-CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
-endif
+              $(CHIPS_CMM)dbg_connac2x.o \
+              $(CHIPS_CMM)pre_cal.o
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v2.o \
             $(NIC_DIR)nic_rxd_v2.o
 else ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
               $(CHIPS_CMM)dbg_connac3x.o \
-              $(CHIPS_CMM)dbg_wtbl_connac3x.o
+              $(CHIPS_CMM)dbg_wtbl_connac3x.o \
+              $(CHIPS_CMM)pre_cal.o
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_CTRL), y)
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_ctrl.o
         ccflags-y += -DCFG_MTK_WIFI_FW_LOG_CTRL=1

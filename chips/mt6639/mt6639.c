@@ -404,6 +404,11 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 	.downloadEMI = wlanDownloadEMISectionViaDma,
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	.phyAction = wlanPhyAction,
+#else
+	.phyAction = NULL,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
