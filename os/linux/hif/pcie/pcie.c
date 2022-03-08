@@ -964,6 +964,7 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 
 	if (g_fgDriverProbed) {
 		pfWlanRemove();
+		g_fgDriverProbed = FALSE;
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
 	pci_set_drvdata(pdev, NULL);
