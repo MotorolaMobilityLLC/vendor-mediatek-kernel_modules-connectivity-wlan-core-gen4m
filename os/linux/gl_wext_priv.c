@@ -186,6 +186,11 @@ static int priv_driver_set_sw_wfdma(
 	IN char *pcCommand, IN int i4TotalLen);
 #endif
 
+#if CFG_SUPPORT_CSI
+static int priv_driver_set_csi(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen);
+#endif
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 static int priv_driver_set_pwr_level(
 	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
@@ -3903,6 +3908,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_MU_RX_PKTCNT	"hqa_get_murx_pktcnt"
 #define CMD_RUN_HQA	"hqa"
 #define CMD_CALIBRATION	"cal"
+
+#if CFG_SUPPORT_CSI
+#define CMD_SET_CSI             "SET_CSI"
+#endif
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START		"WOW_START"
@@ -19973,6 +19982,12 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			   strlen(CMD_SET_QOS)) == 0) {
 			i4BytesWritten = priv_driver_set_qos(prNetDev,
 							pcCommand, i4TotalLen);
+#if CFG_SUPPORT_CSI
+		} else if (strnicmp(pcCommand,
+			CMD_SET_CSI, strlen(CMD_SET_CSI)) == 0) {
+			i4BytesWritten = priv_driver_set_csi(prNetDev,
+							pcCommand, i4TotalLen);
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 		} else if (strnicmp(pcCommand, CMD_SET_MUEDCA_OVERRIDE,
 			   strlen(CMD_SET_MUEDCA_OVERRIDE)) == 0) {
@@ -20434,6 +20449,133 @@ static int priv_driver_set_sw_wfdma(
 	}
 	return i4BytesWritten;
 }				/* priv_driver_set_sw_wfdma */
+#endif
+
+#if CFG_SUPPORT_CSI
+static int priv_driver_set_csi(IN struct net_device *prNetDev,
+			IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	uint32_t i4Argc = 0;
+	signed char *apcArgv[WLAN_CFG_ARGV_MAX];
+	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
+	uint32_t u4Ret = 0;
+	struct CSI_INFO_T *prCSIInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(RSN, LOUD, "[CSI] command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "[CSI] argc is %i\n", i4Argc);
+
+	DBGLOG(RSN, INFO, "[CSI] priv_driver_csi_control\n");
+
+	prCSIInfo = &(prGlueInfo->prAdapter->rCSIInfo);
+
+	prCSICtrl = (struct CMD_CSI_CONTROL_T *)kalMemAlloc(
+			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
+	if (!prCSICtrl) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] allocate memory for prCSICtrl failed\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	if (i4Argc < 2 || i4Argc > 5) {
+		DBGLOG(REQ, ERROR, "[CSI] argc %i is invalid\n", i4Argc);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &(prCSICtrl->ucMode));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "[CSI] parse ucMode error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucMode >= CSI_CONTROL_MODE_NUM) {
+		DBGLOG(REQ, LOUD, "[CSI] Invalid ucMode %d, should be 0 or 1\n",
+			prCSICtrl->ucMode);
+		goto out;
+	}
+
+	prCSICtrl->ucBandIdx = ENUM_BAND_0;
+	prCSIInfo->ucMode = prCSICtrl->ucMode;
+
+	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
+		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
+		prCSIInfo->bIncomplete = FALSE;
+		prCSIInfo->u4CopiedDataSize = 0;
+		prCSIInfo->u4RemainingDataSize = 0;
+		prCSIInfo->u4CSIBufferHead = 0;
+		prCSIInfo->u4CSIBufferTail = 0;
+		prCSIInfo->u4CSIBufferUsed = 0;
+		goto send_cmd;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &(prCSICtrl->ucCfgItem));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD,
+			"[CSI] parse cfg item error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+
+	if (prCSICtrl->ucCfgItem >= CSI_CONFIG_ITEM_NUM) {
+		DBGLOG(REQ, LOUD, "[CSI] Invalid csi cfg_item %u\n",
+			prCSICtrl->ucCfgItem);
+		goto out;
+	}
+
+	u4Ret = kalkStrtou8(apcArgv[3], 0, &(prCSICtrl->ucValue1));
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD,
+			"[CSI] parse csi cfg value1 error u4Ret=%d\n", u4Ret);
+		goto out;
+	}
+	prCSIInfo->ucValue1[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue1;
+
+	if (i4Argc == 5) {
+		u4Ret = kalkStrtou8(apcArgv[4], 0, &(prCSICtrl->ucValue2));
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD,
+				"[CSI] parse csi cfg value2 error u4Ret=%d\n",
+									u4Ret);
+			goto out;
+		}
+		prCSIInfo->ucValue2[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue2;
+	}
+	DBGLOG(REQ, STATE,
+	   "[CSI][DEBUG] Set mode %d, csi cfg item %d, value1 %d, value2 %d",
+		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
+		prCSICtrl->ucValue1, prCSICtrl->ucValue2);
+
+send_cmd:
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetCSIControl, prCSICtrl,
+		sizeof(struct CMD_CSI_CONTROL_T), TRUE, TRUE, TRUE, &u4BufLen);
+
+	DBGLOG(REQ, INFO, "[CSI] %s: command result is %s\n",
+						__func__, pcCommand);
+	DBGLOG(REQ, STATE,
+	   "[CSI] mode %d, csi cfg item %d, value1 %d, value2 %d",
+		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
+		prCSICtrl->ucValue1, prCSICtrl->ucValue2);
+	DBGLOG(REQ, LOUD, "[CSI] rStatus %u\n", rStatus);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "[CSI] send CSI control cmd failed\n");
+		i4BytesWritten = -1;
+	}
+
+out:
+	if (prCSICtrl)
+		kalMemFree(prCSICtrl, VIR_MEM_TYPE,
+				sizeof(struct CMD_CSI_CONTROL_T));
+
+	return i4BytesWritten;
+}
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)

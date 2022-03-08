@@ -123,6 +123,10 @@
 #define PROC_CORE_DUMP                     "core_dump"
 #endif
 
+#if CFG_SUPPORT_CSI
+#define PROC_CSI_DATA_NAME                     "csi_data"
+#endif
+
 #define PROC_MCR_ACCESS_MAX_USER_INPUT_LEN      20
 #define PROC_RX_STATISTICS_MAX_USER_INPUT_LEN   10
 #define PROC_TX_STATISTICS_MAX_USER_INPUT_LEN   10
@@ -256,6 +260,294 @@ static unsigned int procCoreDumpPoll(struct file *file, poll_table *wait)
 	return mask;
 }
 
+#endif
+
+#if CFG_SUPPORT_CSI
+static int procCSIDataOpen(struct inode *n, struct file *f)
+{
+	struct CSI_INFO_T *prCSIInfo = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
+		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+		prCSIInfo->bIncomplete = FALSE;
+	}
+
+	return 0;
+}
+
+static int procCSIDataRelease(struct inode *n, struct file *f)
+{
+	struct CSI_INFO_T *prCSIInfo = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
+		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+		prCSIInfo->bIncomplete = FALSE;
+	}
+
+	return 0;
+}
+
+static ssize_t procCSIDataPrepare(
+	uint8_t *buf,
+	struct CSI_INFO_T *prCSIInfo,
+	struct CSI_DATA_T *prCSIData)
+{
+	int32_t i4Pos = 0;
+	uint8_t *tmpBuf = buf;
+	uint16_t u2DataSize = prCSIData->u2DataCount * sizeof(int16_t);
+	uint16_t u2Rsvd1Size = prCSIData->ucRsvd1Cnt * sizeof(int32_t);
+	enum ENUM_CSI_MODULATION_BW_TYPE_T eModulationType = CSI_TYPE_CCK_BW20;
+
+	if (prCSIData->ucBw == 0)
+		eModulationType = prCSIData->bIsCck ?
+			CSI_TYPE_CCK_BW20 : CSI_TYPE_OFDM_BW20;
+	else if (prCSIData->ucBw == 1)
+		eModulationType = CSI_TYPE_OFDM_BW40;
+	else if (prCSIData->ucBw == 2)
+		eModulationType = CSI_TYPE_OFDM_BW80;
+
+	put_unaligned(0xAC, (tmpBuf + i4Pos));
+	i4Pos++;
+
+	/* Just bypass total length feild here and update it in the end */
+	i4Pos += 2;
+
+	put_unaligned(CSI_DATA_VER, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->ucFwVer, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_TYPE, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(eModulationType, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_TS, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(8, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->u8TimeStamp, (uint64_t *) (tmpBuf + i4Pos));
+	i4Pos += 8;
+
+	put_unaligned(CSI_DATA_RSSI, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->cRssi, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_SNR, (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->ucSNR, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_DBW, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->ucDataBw, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_CH_IDX, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->ucPrimaryChIdx, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+
+	put_unaligned(CSI_DATA_TA, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(MAC_ADDR_LEN, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	kalMemCopy((tmpBuf + i4Pos), prCSIData->aucTA, MAC_ADDR_LEN);
+	i4Pos += MAC_ADDR_LEN;
+
+	put_unaligned(CSI_DATA_EXTRA_INFO, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(4, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->u4ExtraInfo, (uint32_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint32_t);
+
+	put_unaligned(CSI_DATA_I, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(u2DataSize, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	kalMemCopy((tmpBuf + i4Pos), prCSIData->ac2IData, u2DataSize);
+	i4Pos += u2DataSize;
+
+	put_unaligned(CSI_DATA_Q, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(u2DataSize, (uint16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	kalMemCopy((tmpBuf + i4Pos), prCSIData->ac2QData, u2DataSize);
+	i4Pos += u2DataSize;
+
+	if (prCSIInfo->ucValue1[CSI_CONFIG_INFO] & CSI_INFO_RSVD1) {
+		put_unaligned(CSI_DATA_RSVD1, (uint8_t *) (tmpBuf + i4Pos));
+		i4Pos++;
+		put_unaligned(u2Rsvd1Size, (uint16_t *) (tmpBuf + i4Pos));
+		i4Pos += 2;
+		kalMemCopy((tmpBuf + i4Pos),
+			prCSIData->ai4Rsvd1,
+			u2Rsvd1Size);
+		i4Pos += u2Rsvd1Size;
+
+		put_unaligned(CSI_DATA_RSVD2, (uint8_t *) (tmpBuf + i4Pos));
+		i4Pos++;
+		put_unaligned(u2Rsvd1Size, (uint16_t *) (tmpBuf + i4Pos));
+		i4Pos += 2;
+		kalMemCopy((tmpBuf + i4Pos),
+			prCSIData->au4Rsvd2,
+			u2Rsvd1Size);
+		i4Pos += u2Rsvd1Size;
+
+		put_unaligned(CSI_DATA_RSVD3, (uint8_t *) (tmpBuf + i4Pos));
+		i4Pos++;
+		put_unaligned(sizeof(int32_t), (int16_t *) (tmpBuf + i4Pos));
+		i4Pos += 2;
+		put_unaligned(prCSIData->i4Rsvd3,
+			(int32_t *) (tmpBuf + i4Pos));
+		i4Pos += sizeof(int32_t);
+	}
+
+	if (prCSIInfo->ucValue1[CSI_CONFIG_INFO] & CSI_INFO_RSVD2) {
+		put_unaligned(CSI_DATA_RSVD4, (uint8_t *) (tmpBuf + i4Pos));
+		i4Pos++;
+		put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+		i4Pos += 2;
+		put_unaligned(prCSIData->ucRsvd4, (uint8_t *) (tmpBuf + i4Pos));
+		i4Pos += sizeof(uint8_t);
+	}
+
+	put_unaligned(CSI_DATA_TX_IDX, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(((uint8_t)GET_CSI_TX_IDX(prCSIData->u4TRxIdx)),
+		(uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+
+	put_unaligned(CSI_DATA_RX_IDX, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(((uint8_t)GET_CSI_RX_IDX(prCSIData->u4TRxIdx)),
+		(uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+
+	put_unaligned(CSI_DATA_FRAME_MODE, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->ucRxMode,
+		(uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+
+	/* add antenna pattern*/
+	put_unaligned(CSI_DATA_H_IDX, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->Antenna_pattern,
+			(uint32_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint32_t);
+
+	put_unaligned(CSI_DATA_RX_RATE, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->u2RxRate,
+		(uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+
+	/*
+	 * The lengths of magic number (1 byte) and total length (2 bytes)
+	 * fields should not be counted in the total length value
+	 */
+	put_unaligned(i4Pos - 3, (uint16_t *) (tmpBuf + 1));
+
+	return i4Pos;
+}
+
+struct CSI_DATA_T rTmpCSIData;
+static ssize_t procCSIDataRead(struct file *filp,
+	char __user *buf, size_t count, loff_t *f_pos)
+{
+	uint8_t *temp = &g_aucProcBuf[0];
+	uint32_t u4CopySize = 0;
+	uint32_t u4StartIdx = 0;
+	int32_t i4Pos = 0;
+	struct CSI_INFO_T *prCSIInfo = NULL;
+
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter)
+		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+	else
+		return 0;
+
+	if (prCSIInfo->bIncomplete == FALSE) {
+
+		wait_event_interruptible(prCSIInfo->waitq,
+			prCSIInfo->u4CSIBufferUsed != 0);
+
+		/*
+		 * No older CSI data in buffer waiting for reading out,
+		 * so prepare a new one for reading.
+		 */
+		if (wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
+			&rTmpCSIData))
+			i4Pos = procCSIDataPrepare(temp,
+				prCSIInfo, &rTmpCSIData);
+
+		/* The frist run of reading the CSI data */
+		u4StartIdx = 0;
+		if (i4Pos > count) {
+#ifdef CFG_SSVD_SVACE64
+			u4CopySize = (uint32_t)count;
+#else
+			u4CopySize = count;
+#endif
+			prCSIInfo->u4RemainingDataSize = i4Pos - count;
+			prCSIInfo->u4CopiedDataSize = count;
+			prCSIInfo->bIncomplete = TRUE;
+		} else {
+			u4CopySize = i4Pos;
+		}
+	} else {
+		/* Reading the remaining CSI data in the buffer */
+
+		u4StartIdx = prCSIInfo->u4CopiedDataSize;
+		if (prCSIInfo->u4RemainingDataSize > count) {
+#ifdef CFG_SSVD_SVACE64
+			u4CopySize = (uint32_t)count;
+#else
+			u4CopySize = count;
+#endif
+			prCSIInfo->u4RemainingDataSize -= count;
+			prCSIInfo->u4CopiedDataSize += count;
+		} else {
+			u4CopySize = prCSIInfo->u4RemainingDataSize;
+			prCSIInfo->bIncomplete = FALSE;
+		}
+	}
+
+	if (copy_to_user(buf, &g_aucProcBuf[u4StartIdx], u4CopySize)) {
+		DBGLOG(INIT, ERROR, "[CSI] copy to user failed\n");
+		return -EFAULT;
+	}
+
+	*f_pos += u4CopySize;
+
+	DBGLOG(INIT, INFO, "[CSI] u4CopySize=%d\n", u4CopySize);
+
+	return (ssize_t)u4CopySize;
+}
 #endif
 
 static ssize_t procDbgLevelRead(struct file *filp, char __user *buf,
@@ -1169,12 +1461,27 @@ static const struct proc_ops dbglevel_ops = {
 	.proc_read = procDbgLevelRead,
 	.proc_write = procDbgLevelWrite,
 };
+#if CFG_SUPPORT_CSI
+static const struct proc_ops csidata_ops = {
+	.proc_read = procCSIDataRead,
+	.proc_open = procCSIDataOpen,
+	.proc_release = procCSIDataRelease,
+};
+#endif
 #else
 static const struct file_operations dbglevel_ops = {
 	.owner = THIS_MODULE,
 	.read = procDbgLevelRead,
 	.write = procDbgLevelWrite,
 };
+#if CFG_SUPPORT_CSI
+static const struct file_operations csidata_ops = {
+	.owner = THIS_MODULE,
+	.read = procCSIDataRead,
+	.open = procCSIDataOpen,
+	.release = procCSIDataRelease,
+};
+#endif
 #endif
 
 #if (CFG_CE_ASSERT_DUMP == 1)
@@ -2186,6 +2493,9 @@ int32_t procRemoveProcfs(void)
 #if CFG_SUPPORT_DEBUG_FS
 	remove_proc_entry(PROC_ROAM_PARAM, gprProcRoot);
 #endif
+#if CFG_SUPPORT_CSI
+	remove_proc_entry(PROC_CSI_DATA_NAME, gprProcRoot);
+#endif
 	remove_proc_entry(PROC_COUNTRY, gprProcRoot);
 	return 0;
 } /* end of procRemoveProcfs() */
@@ -2275,6 +2585,17 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 		proc_create(PROC_CORE_DUMP, 0664, gprProcRoot, &coredump_ops);
 	if (prEntry == NULL) {
 		pr_err("Unable to create /proc entry core_dump\n\r");
+		return -1;
+	}
+#endif
+
+#if CFG_SUPPORT_CSI
+	prEntry =
+		proc_create(PROC_CSI_DATA_NAME, 0664,
+					gprProcRoot, &csidata_ops);
+	if (prEntry == NULL) {
+		DBGLOG(INIT, ERROR,
+			"[CSI] Unable to create /proc entry csidata\n\r");
 		return -1;
 	}
 #endif

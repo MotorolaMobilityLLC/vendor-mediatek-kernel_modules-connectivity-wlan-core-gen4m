@@ -2936,6 +2936,40 @@ enum ENUM_CMD_HIF_WAKEUP_TYPE_T {
 	ENUM_CMD_HIF_WAKEUP_TYPE_NUM  = 5,
 };
 
+#if CFG_SUPPORT_CSI
+enum CSI_EVENT_TLV_TAG {
+	CSI_EVENT_VERSION,
+	CSI_EVENT_CBW,
+	CSI_EVENT_RSSI,
+	CSI_EVENT_SNR,
+	CSI_EVENT_BAND,
+	CSI_EVENT_CSI_NUM,
+	CSI_EVENT_CSI_I_DATA,
+	CSI_EVENT_CSI_Q_DATA,
+	CSI_EVENT_DBW,
+	CSI_EVENT_CH_IDX,
+	CSI_EVENT_TA,
+	CSI_EVENT_EXTRA_INFO,
+	CSI_EVENT_RX_MODE,
+	CSI_EVENT_RSVD1,
+	CSI_EVENT_RSVD2,
+	CSI_EVENT_RSVD3,
+	CSI_EVENT_RSVD4,
+	CSI_EVENT_H_IDX,
+	CSI_EVENT_TX_RX_IDX,    /* csi event end, must be exist */
+	CSI_EVENT_TLV_TAG_NUM,
+};
+
+#define CSI_EVENT_RX_IDX_MASK	BITS(0, 15)
+#define CSI_EVENT_RX_IDX_SHFIT	0
+#define CSI_EVENT_TX_IDX_MASK	BITS(16, 31)
+#define CSI_EVENT_TX_IDX_SHFIT	16
+#define CSI_EVENT_RX_MODE_MASK  BITS(0, 15)
+#define CSI_EVENT_RX_MODE_SHFIT 0
+#define CSI_EVENT_RATE_MASK	BITS(16, 31)
+#define CSI_EVENT_RATE_SHFIT    16
+#endif
+
 enum ENUM_HIF_TYPE {
 	ENUM_HIF_TYPE_SDIO = 0x00,
 	ENUM_HIF_TYPE_USB = 0x01,
@@ -3705,6 +3739,53 @@ struct EVENT_PF_CF_COALESCING_INT_DONE {
 	uint8_t  aucReserved[64];
 };
 #endif
+
+#if CFG_SUPPORT_CSI
+
+#define CSI_INFO_RSVD1 BIT(0)
+#define CSI_INFO_RSVD2 BIT(1)
+
+struct CSI_TLV_ELEMENT {
+	uint32_t tag_type;
+	uint32_t body_len;
+	uint8_t aucbody[0];
+};
+
+enum CSI_CONTROL_MODE_T {
+	CSI_CONTROL_MODE_STOP,
+	CSI_CONTROL_MODE_START,
+	CSI_CONTROL_MODE_SET,
+	CSI_CONTROL_MODE_NUM
+};
+
+enum CSI_CONFIG_ITEM_T {
+	CSI_CONFIG_RSVD1,
+	CSI_CONFIG_WF,
+	CSI_CONFIG_RSVD2,
+	CSI_CONFIG_FRAME_TYPE,
+	CSI_CONFIG_TX_PATH,
+	CSI_CONFIG_OUTPUT_FORMAT,
+	CSI_CONFIG_INFO,
+	CSI_CONFIG_ITEM_NUM
+};
+
+struct CMD_CSI_CONTROL_T {
+	uint8_t ucBandIdx;
+	uint8_t ucMode;
+	uint8_t ucCfgItem;
+	uint8_t ucValue1;
+	uint8_t ucValue2;
+};
+
+enum CSI_OUTPUT_FORMAT_T {
+	CSI_OUTPUT_RAW,
+	CSI_OUTPUT_TONE_MASKED,
+	CSI_OUTPUT_TONE_MASKED_SHIFTED,
+	CSI_OUTPUT_FORMAT_NUM
+};
+
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3743,6 +3824,22 @@ struct EVENT_PF_CF_COALESCING_INT_DONE {
 			__pucSeqNum, (void **)__ppCmdBuf); \
 	} \
 }
+
+#if CFG_SUPPORT_CSI
+
+#define GET_CSI_RX_IDX(TRX_IDX)	\
+	((TRX_IDX & CSI_EVENT_RX_IDX_MASK) >> CSI_EVENT_RX_IDX_SHFIT)
+
+#define GET_CSI_TX_IDX(TRX_IDX)	\
+	((TRX_IDX & CSI_EVENT_TX_IDX_MASK) >> CSI_EVENT_TX_IDX_SHFIT)
+
+#define GET_CSI_RX_MODE(DATA) \
+	((DATA & CSI_EVENT_RX_MODE_MASK) >> CSI_EVENT_RX_MODE_SHFIT)
+
+#define GET_CSI_RATE(DATA) \
+	((DATA & CSI_EVENT_RATE_MASK) >> CSI_EVENT_RATE_SHFIT)
+
+#endif
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

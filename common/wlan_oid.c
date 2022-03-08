@@ -14541,6 +14541,46 @@ wlanoidAisPreSuspend(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 } /* wlanoidPreSuspend */
 
+#if CFG_SUPPORT_CSI
+uint32_t
+wlanoidSetCSIControl(
+	IN struct ADAPTER *prAdapter,
+	IN void *pvSetBuffer,
+	IN uint32_t u4SetBufferLen,
+	OUT uint32_t *pu4SetInfoLen)
+{
+	struct CMD_CSI_CONTROL_T *pCSICtrl;
+
+	DEBUGFUNC("wlanoidSetCSIControl");
+
+	*pu4SetInfoLen = sizeof(struct CMD_CSI_CONTROL_T);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(REQ, WARN,
+			"[CSI] (Adapter not ready). ACPI=D%d, Radio=%d\n",
+			   prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4SetBufferLen < sizeof(struct CMD_CSI_CONTROL_T)) {
+		DBGLOG(REQ, WARN,
+			"[CSI] Too short length %lu\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	pCSICtrl = (struct CMD_CSI_CONTROL_T *)pvSetBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_CSI_CONTROL,
+				TRUE,
+				FALSE,
+				TRUE,
+				nicCmdEventSetCommon,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_CSI_CONTROL_T),
+				(uint8_t *)pCSICtrl,
+				pvSetBuffer, u4SetBufferLen);
+}
+#endif
+
 #if CFG_SUPPORT_NCHO
 
 uint32_t

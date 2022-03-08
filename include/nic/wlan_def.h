@@ -1305,6 +1305,15 @@ enum ENUM_ANTENNA_NUM {
 	MAX_ANTENNA_NUM
 };
 
+#if CFG_SUPPORT_CSI
+enum ENUM_CSI_MODULATION_BW_TYPE_T {
+	CSI_TYPE_CCK_BW20,
+	CSI_TYPE_OFDM_BW20,
+	CSI_TYPE_OFDM_BW40,
+	CSI_TYPE_OFDM_BW80
+};
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* RSN structures                                                             */
 /*----------------------------------------------------------------------------*/
