@@ -4020,7 +4020,7 @@ int32_t TxBfSounding(struct net_device *prNetDev,
 	       ucWLan3);
 
 	if (ucSuMu < SOUNDING_MAX) {
-		rTxBfActionInfo.rTxBfSoundingStart.ucCmdCategoryID =
+		rTxBfActionInfo.rTxBfSoundingStart.ucTxBfCategory =
 								BF_SOUNDING_ON;
 		rTxBfActionInfo.rTxBfSoundingStart.ucSuMuSndMode = ucSuMu;
 		rTxBfActionInfo.rTxBfSoundingStart.ucStaNum = ucNumSta;

@@ -2607,6 +2607,9 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	case STA_REC_BF:
 		max_cmd_len += sizeof(struct UNI_CMD_STAREC_BF);
 		break;
+	case STA_REC_MAUNAL_ASSOC:
+		max_cmd_len += sizeof(struct UNI_CMD_STAREC_MANUAL_ASSOC);
+		break;
 	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
@@ -2697,6 +2700,29 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 
 	}
 		break;
+	case STA_REC_MAUNAL_ASSOC: {
+		struct CMD_MANUAL_ASSOC_STRUCT *cmn;
+		struct UNI_CMD_STAREC_MANUAL_ASSOC *tag;
+
+		cmn = (struct CMD_MANUAL_ASSOC_STRUCT *) cmd->aucBuffer;
+		tag = (struct UNI_CMD_STAREC_MANUAL_ASSOC *)
+			uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_STAREC_TAG_MAUNAL_ASSOC;
+		tag->u2Length = sizeof(*tag);
+		COPY_MAC_ADDR(tag->aucMac, cmn->aucMac);
+		tag->ucType = cmn->ucType;
+		tag->ucWtbl = cmn->ucWtbl;
+		tag->ucOwnmac = cmn->ucOwnmac;
+		tag->ucMode = cmn->ucMode;
+		tag->ucBw = cmn->ucBw;
+		tag->ucNss = cmn->ucNss;
+		tag->ucPfmuId = cmn->ucPfmuId;
+		tag->ucMarate = cmn->ucMarate;
+		tag->ucSpeIdx = cmn->ucSpeIdx;
+		tag->ucaid = cmn->ucaid;
+		DBGLOG(NIC, ERROR, "STA_REC_MAUNAL_ASSOC TAG:%d\n", tag->u2Tag);
+	}
+		break;
 	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
@@ -2704,17 +2730,194 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+void nicUniCmdBFActionSoundOff(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_SOUNDING_STOP *tag;
+
+	tag = (struct UNI_CMD_BF_SOUNDING_STOP *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_SOUNDING_OFF;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSndgStop = cmd->rTxBfSoundingStop.ucSndgStop;
+}
+
+void nicUniCmdBFActionSoundOn(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_SND *tag;
+	uint32_t i;
+
+	tag = (struct UNI_CMD_BF_SND *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_SOUNDING_ON;
+	tag->u2Length = sizeof(*tag);
+	tag->u1SuMuSndMode = cmd->rTxBfSoundingStart.ucSuMuSndMode;
+	tag->u1StaNum = cmd->rTxBfSoundingStart.ucStaNum;
+	for (i = 0; i < 4; i++)
+		tag->u2WlanId[i] = cmd->rTxBfSoundingStart.ucWlanId[i];
+	tag->u4SndIntv = cmd->rTxBfSoundingStart.u4SoundingInterval;
+}
+
+void nicUniCmdBFActionTxApply(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_TX_APPLY *tag;
+
+	tag = (struct UNI_CMD_BF_TX_APPLY *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_DATA_PACKET_APPLY;
+	tag->u2Length = sizeof(*tag);
+	DBGLOG(NIC, ERROR, "ucWlanId:%d, fgETxBf:%d, fgITxBf:%d, fgMuTxBf:%d\n",
+		cmd->rTxBfTxApply.ucWlanId,
+		cmd->rTxBfTxApply.fgETxBf,
+		cmd->rTxBfTxApply.fgITxBf,
+		cmd->rTxBfTxApply.fgMuTxBf);
+	tag->ucWlanId = cmd->rTxBfTxApply.ucWlanId;
+	tag->fgETxBf = cmd->rTxBfTxApply.fgETxBf;
+	tag->fgITxBf = cmd->rTxBfTxApply.fgITxBf;
+	tag->fgMuTxBf = cmd->rTxBfTxApply.fgMuTxBf;
+}
+
+void nicUniCmdBFActionMemAlloc(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PFMU_MEM_ALLOC *tag;
+
+	tag = (struct UNI_CMD_BF_PFMU_MEM_ALLOC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PFMU_MEM_ALLOCATE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSuMuMode = cmd->rTxBfPfmuMemAlloc.ucSuMuMode;
+	tag->ucWlanIdx = cmd->rTxBfPfmuMemAlloc.ucWlanIdx;
+	tag->ucReserved = cmd->rTxBfPfmuMemAlloc.ucReserved;
+}
+
+void nicUniCmdBFActionMemRelease(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PFMU_MEM_RLS *tag;
+
+	tag = (struct UNI_CMD_BF_PFMU_MEM_RLS *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PFMU_MEM_RELEASE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucWlanId = cmd->rTxBfPfmuMemRls.ucWlanId;
+	tag->ucReserved[0] = cmd->rTxBfPfmuMemRls.ucReserved[0];
+	tag->ucReserved[1] = cmd->rTxBfPfmuMemRls.ucReserved[1];
+}
+
+void nicUniCmdBFActionTagRead(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PROFILE_TAG_READ *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_TAG_READ *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_READ;
+	tag->u2Length = sizeof(*tag);
+	DBGLOG(NIC, ERROR, "ucProfileIdx:%d, fgBfer:%d, ucBandIdx:%d\n",
+		cmd->rProfileTagRead.ucProfileIdx,
+		cmd->rProfileTagRead.fgBfer,
+		cmd->rProfileTagRead.ucBandIdx);
+	tag->ucProfileIdx = cmd->rProfileTagRead.ucProfileIdx;
+	tag->fgBfer = cmd->rProfileTagRead.fgBfer;
+	tag->ucBandIdx = cmd->rProfileTagRead.ucBandIdx;
+}
+
+void nicUniCmdBFActionTagWrite(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PROFILE_TAG_WRITE *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_TAG_WRITE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_WRITE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucPfmuId = cmd->rProfileTagWrite.ucPfmuId;
+	tag->fgBFer = cmd->rProfileTagWrite.fgBFer;
+	tag->ucBandIdx = cmd->rProfileTagWrite.ucBandIdx;
+	memcpy(tag->ucBuffer, cmd->rProfileTagWrite.ucBuffer, 64);
+}
+
+void nicUniCmdBFActionDataRead(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PROFILE_DATA_READ *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_DATA_READ *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_READ;
+	tag->u2Length = sizeof(*tag);
+	tag->ucPfmuIdx = cmd->rProfileDataRead.ucPfmuIdx;
+	tag->fgBFer = cmd->rProfileDataRead.fgBFer;
+	tag->ucBandIdx = cmd->rProfileDataRead.ucBandIdx;
+	tag->u2SubCarIdx = cmd->rProfileDataRead.u2SubCarIdx;
+}
+
+void nicUniCmdBFActionDataWrite(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	struct UNI_CMD_BF_PROFILE_DATA_WRITE *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_DATA_WRITE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_PROFILE_WRITE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucPfmuIdx = cmd->rProfileDataWrite.ucPfmuIdx;
+	tag->u2SubCarrIdxLsb = cmd->rProfileDataWrite.u2SubCarrIdxLsb;
+	tag->u2SubCarrIdxMsb = cmd->rProfileDataWrite.u2SubCarrIdxMsb;
+	memcpy(&tag->rTxBfPfmuData, &cmd->rProfileDataWrite.rTxBfPfmuData,
+		sizeof(union PFMU_DATA));
+}
+
+void nicUniCmdBFActionPnRead(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	/* Todo: Add tag id for UNI_CMD_PROFILE_PN_READ */
+#if 0
+	struct UNI_CMD_BF_PROFILE_PN_READ *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_PN_READ *) uni_cmd->aucTlvBuffer;
+	/* tag->u2Tag */
+	tag->u2Length = sizeof(*tag);
+	tag->ucPfmuIdx = cmd->rProfilePnRead.ucPfmuIdx;
+	tag->ucReserved[0] = cmd->rProfilePnRead.ucReserved[0];
+	tag->ucReserved[1] = cmd->rProfilePnRead.ucReserved[1];
+#endif
+}
+
+void nicUniCmdBFActionPnWrite(
+	union CMD_TXBF_ACTION *cmd, struct UNI_CMD_BF *uni_cmd)
+{
+	/* Todo: Add tag id for UNI_CMD_PROFILE_PN_WRITE */
+#if 0
+	struct UNI_CMD_BF_PROFILE_PN_WRITE *tag;
+
+	tag = (struct UNI_CMD_BF_PROFILE_PN_WRITE *) uni_cmd->aucTlvBuffer;
+	/* tag->u2Tag */
+	tag->u2Length = sizeof(*tag);
+	tag->ucPfmuIdx = cmd->rProfilePnWrite.ucPfmuIdx;
+	tag->u2bw = cmd->rProfilePnWrite.u2bw;
+	memcpy(tag->ucBuf, cmd->rProfilePnWrite.ucBuf, 32);
+#endif
+}
+
+struct  UNI_CMD_BF_HANDLE arBFActionTable[] = {
+	{sizeof(struct UNI_CMD_BF_SOUNDING_STOP), nicUniCmdBFActionSoundOff},
+	{sizeof(struct UNI_CMD_BF_SND), nicUniCmdBFActionSoundOn},
+	{sizeof(struct UNI_CMD_BF_TX_APPLY), nicUniCmdBFActionTxApply},
+	{sizeof(struct UNI_CMD_BF_PFMU_MEM_ALLOC), nicUniCmdBFActionMemAlloc},
+	{sizeof(struct UNI_CMD_BF_PFMU_MEM_RLS), nicUniCmdBFActionMemRelease},
+	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_READ), nicUniCmdBFActionTagRead},
+	{sizeof(struct UNI_CMD_BF_PROFILE_TAG_WRITE),
+		nicUniCmdBFActionTagWrite},
+	{sizeof(struct UNI_CMD_BF_PROFILE_DATA_READ),
+		nicUniCmdBFActionDataRead},
+	{sizeof(struct UNI_CMD_BF_PROFILE_DATA_WRITE),
+		nicUniCmdBFActionDataWrite},
+	{sizeof(struct UNI_CMD_BF_PROFILE_PN_READ), nicUniCmdBFActionPnRead},
+	{sizeof(struct UNI_CMD_BF_PROFILE_PN_WRITE), nicUniCmdBFActionPnWrite},
+};
+
 uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	union CMD_TXBF_ACTION *cmd;
-	struct UNI_CMD_BF *uni_cmd;
-	struct UNI_CMD_BF_SND *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BF) +
-	     		       sizeof(struct UNI_CMD_BF_SND);
-	uint32_t bf_id;
-	uint8_t i;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BF);
+	uint8_t bf_action_id;
 
 	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
 	    info->ucExtCID != EXT_CMD_ID_BF_ACTION)
@@ -2722,24 +2925,20 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 
 	cmd = (union CMD_TXBF_ACTION *) info->pucInfoBuffer;
 
-	bf_id =	cmd->rTxBfSoundingStart.ucCmdCategoryID;
-	if (bf_id != BF_SOUNDING_ON)
+	bf_action_id = cmd->rProfileTagRead.ucTxBfCategory;
+	if (bf_action_id >= ARRAY_SIZE(arBFActionTable)) {
+		DBGLOG(NIC, ERROR, "unknown ACTION_ID:d\n", bf_action_id);
 		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 
+	max_cmd_len += arBFActionTable[bf_action_id].u4Size;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BF, max_cmd_len,
 			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_BF *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_BF_SND *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_BF_TAG_SOUNDING_ON;
-	tag->u2Length = sizeof(*tag);
- 	tag->u1SuMuSndMode = cmd->rTxBfSoundingStart.ucSuMuSndMode;
-	tag->u1StaNum = cmd->rTxBfSoundingStart.ucStaNum;
-	for (i = 0; i < 4; i++)
-		tag->u2WlanId[i] = cmd->rTxBfSoundingStart.ucWlanId[i];
-	tag->u4SndIntv = cmd->rTxBfSoundingStart.u4SoundingInterval;
+	arBFActionTable[bf_action_id].pfHandler(cmd,
+		(struct UNI_CMD_BF *) entry->pucInfoBuffer);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
