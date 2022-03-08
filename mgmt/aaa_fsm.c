@@ -773,8 +773,6 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				(prSwRfb->pvHeader))->aucInfoElem;
 		}
 
-		rlmProcessAssocReq(prAdapter, prSwRfb, pucIE, u2IELength);
-
 		/* 4 <4.1> Assign Association ID */
 		if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 
