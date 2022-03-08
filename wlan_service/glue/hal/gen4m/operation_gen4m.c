@@ -2897,33 +2897,47 @@ s_int32 mt_op_get_rx_stat_band(
 		 &test_hqa_rx_stat);
 
 	rx_st_band->mac_rx_fcs_err_cnt =
-		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4MacRxFcsErrCnt);
 	rx_st_band->mac_rx_mdrdy_cnt =
-		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_mdrdy_cnt);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4MacRxMdrdyCnt);
 	rx_st_band->mac_rx_len_mismatch =
-		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4MacRxLenMisMatch);
 	rx_st_band->mac_rx_fcs_ok_cnt =
-		SERV_OS_NTOHL(test_hqa_rx_stat.mac_fcs_ok);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4MacRxFcsOkCnt);
 	rx_st_band->phy_rx_fcs_err_cnt_cck =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxFcsErrCntCck);
 	rx_st_band->phy_rx_fcs_err_cnt_ofdm =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_ofdm);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxFcsErrCntOfdm);
 	rx_st_band->phy_rx_pd_cck =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_pd_cck);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxPdCck);
 	rx_st_band->phy_rx_pd_ofdm =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_pd_ofdm);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxPdOfdm);
 	rx_st_band->phy_rx_sig_err_cck =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sig_err_cck);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxSigErrCck);
 	rx_st_band->phy_rx_sfd_err_cck =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sfd_err_cck);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxSfdErrCck);
 	rx_st_band->phy_rx_sig_err_ofdm =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_sig_err_ofdm);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxSigErrOfdm);
 	rx_st_band->phy_rx_tag_err_ofdm =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_tag_err_ofdm);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxTagErrOfdm);
 	rx_st_band->phy_rx_mdrdy_cnt_cck =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_cck);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxMdrdyCntCck);
 	rx_st_band->phy_rx_mdrdy_cnt_ofdm =
-		SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm);
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoBand[band_idx].u4PhyRxMdrdyCntOfdm);
 
 #else
 
@@ -3011,7 +3025,6 @@ s_int32 mt_op_get_rx_stat_band(
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm_band1);
 	}
-
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	return ret;
@@ -3036,6 +3049,7 @@ s_int32 mt_op_get_rx_stat_path(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
 	switch (blk_idx) {
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	case ANT_WF0:
 		rx_st_path->rcpi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.rcpi0);
@@ -3064,7 +3078,55 @@ s_int32 mt_op_get_rx_stat_path(
 		rx_st_path->inst_wb_rssi =
 			SERV_OS_NTOHL(test_hqa_rx_stat.inst_wb_RSSSI1);
 		break;
+#else
 
+	case ANT_WF0:
+		rx_st_path->rcpi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[0].u4Rcpi);
+		rx_st_path->rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[0].u4Rssi);
+		rx_st_path->fagc_ib_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoFagc[0].u4RssiIb);
+		rx_st_path->fagc_wb_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoFagc[0].u4RssiWb);
+		rx_st_path->inst_ib_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[0].u4RssiIb);
+		rx_st_path->inst_wb_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[0].u4RssiWb);
+		rx_st_path->adc_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[0].u4AdcRssi);
+		break;
+	case ANT_WF1:
+		rx_st_path->rcpi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[1].u4Rcpi);
+		rx_st_path->rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[1].u4Rssi);
+		rx_st_path->fagc_ib_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoFagc[1].u4RssiIb);
+		rx_st_path->fagc_wb_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoFagc[1].u4RssiWb);
+		rx_st_path->inst_ib_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[1].u4RssiIb);
+		rx_st_path->inst_wb_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoInst[1].u4RssiWb);
+		rx_st_path->adc_rssi =
+			SERV_OS_NTOHL(
+			test_hqa_rx_stat.rInfoRXV[1].u4AdcRssi);
+		break;
+#endif
 	default:
 		ret = SERV_STATUS_HAL_OP_FAIL;
 		break;
@@ -3089,24 +3151,29 @@ s_int32 mt_op_get_rx_stat_user(
 	struct test_rx_stat_user_info *rx_st_user)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	rx_st_user->freq_offset_from_rx =
 		SERV_OS_NTOHL(test_hqa_rx_stat.freq_offset_from_rx);
 
 	rx_st_user->fcs_error_cnt =
 		SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
-
-	rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr0);
-
-#else
-
 	if (band_idx == M_BAND_0)
 		rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr0);
 	else
 		rx_st_user->snr = SERV_OS_NTOHL(test_hqa_rx_stat.snr1);
+#else
+	rx_st_user->freq_offset_from_rx =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoUser[0].u4FreqOffsetFromRx);
 
+	rx_st_user->fcs_error_cnt =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoUser[0].u4FcsErrorCnt);
+
+	rx_st_user->snr =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoUser[0].u4Snr);
 #endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	return ret;
@@ -3120,6 +3187,7 @@ s_int32 mt_op_get_rx_stat_comm(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	rx_st_comm->rx_fifo_full =
 		SERV_OS_NTOHL(test_hqa_rx_stat.rx_fifo_full);
 	rx_st_comm->aci_hit_low =
@@ -3133,13 +3201,6 @@ s_int32 mt_op_get_rx_stat_comm(
 	rx_st_comm->sinr =
 		SERV_OS_NTOHL(test_hqa_rx_stat.sinr);
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
-
-	rx_st_comm->driver_rx_count =
-	SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count);
-
-#else
-
 	if (band_idx == M_BAND_0) {
 		rx_st_comm->driver_rx_count =
 		SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count);
@@ -3148,8 +3209,26 @@ s_int32 mt_op_get_rx_stat_comm(
 		SERV_OS_NTOHL(test_hqa_rx_stat.driver_rx_count1);
 	}
 
-#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
-
+#else
+	rx_st_comm->rx_fifo_full =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoComm[band_idx].u4MacRxFifoFull);
+	rx_st_comm->mu_pkt_count =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoCommExt1[band_idx].u4MuRxCnt);
+	rx_st_comm->sig_mcs =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoCommExt1[band_idx].u4EhtSigMcs);
+	rx_st_comm->sinr =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoCommExt1[band_idx].u4Sinr);
+	rx_st_comm->ne_var_db =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoUserExt1[0].u4NeVarDbAllUser);
+	rx_st_comm->driver_rx_count =
+		SERV_OS_NTOHL(
+		test_hqa_rx_stat.rInfoCommExt1[band_idx].u4DrvRxCnt);
+#endif
 	return ret;
 }
 
