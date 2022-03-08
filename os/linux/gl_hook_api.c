@@ -4070,8 +4070,8 @@ int32_t TxBfSoundingStop(struct net_device *prNetDev)
 }
 
 int32_t TxBfTxApply(struct net_device *prNetDev,
-		    uint8_t ucWlanId, uint8_t fgETxBf, uint8_t fgITxBf,
-		    uint8_t fgMuTxBf)
+		    uint16_t ucWlanId, uint8_t fgETxBf, uint8_t fgITxBf,
+		    uint8_t fgMuTxBf, uint8_t fgPhaseCali)
 {
 	int32_t i4Status = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -4086,15 +4086,15 @@ int32_t TxBfTxApply(struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(RFTEST, ERROR,
-	       "TxBfTxApply : ucWlanId = 0x%08x, fgETxBf = 0x%08x,fgITxBf = 0x%08x,fgMuTxBf = 0x%08x\n",
-	       ucWlanId, fgETxBf, fgITxBf, fgMuTxBf);
+	       "TxBfTxApply : ucWlanId = 0x%08x, fgETxBf = 0x%08x, fgITxBf = 0x%08x, fgMuTxBf = 0x%08x, fgPhaseCali = 0x%08x\n",
+	       ucWlanId, fgETxBf, fgITxBf, fgMuTxBf, fgPhaseCali);
 
-	rTxBfActionInfo.rTxBfTxApply.ucTxBfCategory =
-		BF_DATA_PACKET_APPLY;
+	rTxBfActionInfo.rTxBfTxApply.ucTxBfCategory = BF_DATA_PACKET_APPLY;
 	rTxBfActionInfo.rTxBfTxApply.ucWlanId = ucWlanId;
 	rTxBfActionInfo.rTxBfTxApply.fgETxBf = fgETxBf;
 	rTxBfActionInfo.rTxBfTxApply.fgITxBf = fgITxBf;
 	rTxBfActionInfo.rTxBfTxApply.fgMuTxBf = fgMuTxBf;
+	rTxBfActionInfo.rTxBfTxApply.ucReserved[0] = fgPhaseCali;
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
 			    sizeof(rTxBfActionInfo),

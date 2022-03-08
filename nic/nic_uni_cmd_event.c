@@ -2767,15 +2767,18 @@ void nicUniCmdBFActionTxApply(
 	tag = (struct UNI_CMD_BF_TX_APPLY *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BF_TAG_DATA_PACKET_APPLY;
 	tag->u2Length = sizeof(*tag);
-	DBGLOG(NIC, ERROR, "ucWlanId:%d, fgETxBf:%d, fgITxBf:%d, fgMuTxBf:%d\n",
+	DBGLOG(NIC, ERROR,
+		"WlanId:%d, ETxBf:%d, ITxBf:%d, MuTxBf:%d, PhaseCali:%d\n",
 		cmd->rTxBfTxApply.ucWlanId,
 		cmd->rTxBfTxApply.fgETxBf,
 		cmd->rTxBfTxApply.fgITxBf,
-		cmd->rTxBfTxApply.fgMuTxBf);
+		cmd->rTxBfTxApply.fgMuTxBf,
+		cmd->rTxBfTxApply.ucReserved[0]);
 	tag->ucWlanId = cmd->rTxBfTxApply.ucWlanId;
 	tag->fgETxBf = cmd->rTxBfTxApply.fgETxBf;
 	tag->fgITxBf = cmd->rTxBfTxApply.fgITxBf;
 	tag->fgMuTxBf = cmd->rTxBfTxApply.fgMuTxBf;
+	tag->fgPhaseCali = cmd->rTxBfTxApply.ucReserved[0];
 }
 
 void nicUniCmdBFActionMemAlloc(
