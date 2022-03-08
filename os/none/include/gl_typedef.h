@@ -173,6 +173,12 @@ typedef void(*remove_card) (void);
 #define BITS(m, n)                       (~(BIT(m)-1) & ((BIT(n) - 1) | BIT(n)))
 #endif /* BIT */
 
+#ifndef BITS_ULL
+#define BITS_ULL(m, n) \
+	(~(BIT_ULL(m)-1) & ((BIT_ULL(n) - 1) | BIT_ULL(n)))
+#endif /* BITS_ULL */
+
+
 /* This macro returns the byte offset of a named field in a known structure
  *   type.
  *   _type - structure name,
@@ -301,7 +307,6 @@ typedef void(*remove_card) (void);
 #define le2cpu32(x) SWAP32((x))
 #define cpu2be32(x) ((uint32_t)(x))
 #define be2cpu32(x) ((uint32_t)(x))
-
 
 #endif
 

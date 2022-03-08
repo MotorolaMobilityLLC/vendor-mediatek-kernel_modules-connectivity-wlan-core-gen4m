@@ -513,7 +513,7 @@ struct AIS_FSM_INFO {
 
 #if CFG_SUPPORT_802_11W
 	/* STA PMF: for encrypted deauth frame */
-	struct completion rDeauthComp;
+	kal_completion rDeauthComp;
 	u_int8_t encryptedDeauthIsInProcess;
 #endif
 

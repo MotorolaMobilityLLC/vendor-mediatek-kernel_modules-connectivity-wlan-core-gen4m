@@ -651,7 +651,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 
 	rrmParamInit(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_802_11W
-	init_completion(&prAisFsmInfo->rDeauthComp);
+	kal_init_completion(&prAisFsmInfo->rDeauthComp);
 	prAisFsmInfo->encryptedDeauthIsInProcess = FALSE;
 #endif
 	/* AX blacklist*/
@@ -5736,7 +5736,7 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* Notify completion after encrypted deauth frame tx done */
 	if (prAisFsmInfo->encryptedDeauthIsInProcess == TRUE) {
-		if (!completion_done(&prAisFsmInfo->rDeauthComp)) {
+		if (!kal_completion_done(&prAisFsmInfo->rDeauthComp)) {
 			DBGLOG(AIS, EVENT, "Complete rDeauthComp\n");
 			complete(&prAisFsmInfo->rDeauthComp);
 		}

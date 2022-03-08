@@ -78,6 +78,52 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define SDO_HIF_TXD_SIZE         76
+#define SDO_PARTIAL_PAYLOAD_SIZE 72
+#define NUM_OF_WFDMA1_TX_RING			0
+
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+#undef NUM_OF_WFDMA1_TX_RING
+#ifdef CONFIG_NUM_OF_WFDMA_TX_RING
+#define NUM_OF_WFDMA1_TX_RING			(CONFIG_NUM_OF_WFDMA_TX_RING)
+#else
+#define NUM_OF_WFDMA1_TX_RING			1  /* WA CMD Ring */
+#endif
+#endif
+
+#define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
+#ifdef CONFIG_MTK_WIFI_HE160
+#define TX_RING_SIZE				1024
+#define RX_RING_SIZE				1024 /* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				1024
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				128
+#elif defined(CONFIG_MTK_WIFI_HE80)
+#define TX_RING_SIZE				1024
+#define RX_RING_SIZE				1024 /* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				1024
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				16
+#elif defined(CONFIG_MTK_WIFI_VHT80)
+#define TX_RING_SIZE				512
+#define RX_RING_SIZE				512	/* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				512
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				16
+#else
+#define TX_RING_SIZE				256
+#define RX_RING_SIZE				256	/* Max Rx ring size */
+/* Data Rx ring */
+#define RX_RING0_SIZE				256
+/* Event/MSDU_report Rx ring */
+#define RX_RING1_SIZE				16
+#endif
+
+#define RXD_SIZE					16
+#define RX_BUFFER_AGGRESIZE			3840
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -86,16 +132,135 @@
 
 struct GL_HIF_INFO;
 
+/*
+ *	Data buffer for DMA operation, the buffer must be contiguous
+ *	physical memory Both DMA to / from CPU use the same structure.
+ */
+struct RTMP_DMABUF {
+	unsigned long AllocSize;
+	void *AllocVa;		/* TxBuf virtual address */
+	phys_addr_t AllocPa;		/* TxBuf physical address */
+};
+
+/*
+ *	Control block (Descriptor) for all ring descriptor DMA operation,
+ *	buffer must be contiguous physical memory. NDIS_PACKET stored the
+ *	binding Rx packet descriptor which won't be released, driver has to
+ *	wait until upper layer return the packet before giveing up this rx
+ *	ring descriptor to ASIC. NDIS_BUFFER is assocaited pair to describe
+ *	the packet buffer. For Tx, NDIS_PACKET stored the tx packet descriptor
+ *  which driver should ACK upper layer when the tx is physically done or
+ *  failed.
+ */
+struct RTMP_DMACB {
+	unsigned long AllocSize;	/* Control block size */
+	void *AllocVa;			/* Control block virtual address */
+	phys_addr_t AllocPa;	        /* Control block physical address */
+	void *pPacket;
+	void *pBuffer;
+	phys_addr_t PacketPa;
+	struct RTMP_DMABUF DmaBuf;	/* Associated DMA buffer structure */
+	struct MSDU_TOKEN_ENTRY *prToken;
+};
+
+struct RTMP_TX_RING {
+	struct RTMP_DMACB Cell[TX_RING_SIZE];
+	uint32_t TxCpuIdx;
+	uint32_t TxDmaIdx;
+	uint32_t u4BufSize;
+	uint32_t TxSwUsedIdx;
+	uint32_t u4UsedCnt;
+	uint32_t hw_desc_base;
+	uint32_t hw_desc_base_ext;
+	uint32_t hw_cidx_addr;
+	uint32_t hw_cidx_mask;
+	uint32_t hw_cidx_shift;
+	uint32_t hw_didx_addr;
+	uint32_t hw_didx_mask;
+	uint32_t hw_didx_shift;
+	uint32_t hw_cnt_addr;
+	uint32_t hw_cnt_mask;
+	uint32_t hw_cnt_shift;
+};
 
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
 struct GL_HIF_INFO {
+	uint32_t u4MawdL2TblCnt;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* MAWD */
+	struct RTMP_TX_RING MawdTxRing[NUM_OF_TX_RING];
+#endif
+	uint32_t u4IntStatus;
+	uint32_t u4MawdIntStatus;
 };
 
 struct BUS_INFO {
+	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
+	struct DMASHDL_CFG *prDmashdlCfg;
+	const uint32_t host_int_rxdone_bits;
+	const uint32_t host_int_txdone_bits;
+	const uint32_t host_rx_ring_ext_ctrl_base;
 };
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+union mawd_l2tbl {
+	struct {
+		uint8_t key_ip[16];
+		uint8_t d_mac[MAC_ADDR_LEN];
+		uint8_t s_mac[MAC_ADDR_LEN];
+		uint32_t wlan_id:12;
+		uint32_t bss_id:8;
+		uint32_t reserved:12;
+	} sram;
+
+	uint32_t data[8];
+};
+#endif
+
+struct RTMP_RX_RING {
+	struct RTMP_DMACB Cell[RX_RING_SIZE];
+	uint32_t RxCpuIdx;
+	uint32_t RxDmaIdx;
+	uint32_t u4BufSize;
+	uint32_t u4RingSize;
+	u_int8_t fgRxSegPkt;
+	uint32_t hw_desc_base;
+	uint32_t hw_desc_base_ext;
+	uint32_t hw_cidx_addr;
+	uint32_t hw_cidx_mask;
+	uint32_t hw_cidx_shift;
+	uint32_t hw_didx_addr;
+	uint32_t hw_didx_mask;
+	uint32_t hw_didx_shift;
+	uint32_t hw_cnt_addr;
+	uint32_t hw_cnt_mask;
+	uint32_t hw_cnt_shift;
+	bool fgIsDumpLog;
+	uint32_t u4PendingCnt;
+	void *pvPacket;
+	uint32_t u4PacketLen;
+};
+
+struct pcie2ap_remap {
+	uint32_t reg_base;
+	uint32_t reg_mask;
+	uint32_t reg_shift;
+	uint32_t base_addr;
+};
+
+struct ap2wf_remap {
+	uint32_t reg_base;
+	uint32_t reg_mask;
+	uint32_t reg_shift;
+	uint32_t base_addr;
+};
+
+struct PCIE_CHIP_CR_REMAPPING {
+	const struct pcie2ap_remap *pcie2ap;
+	const struct ap2wf_remap *ap2wf;
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -287,4 +452,5 @@ void kal_virt_uhw_rd(struct ADAPTER *ad, uint32_t u4Offset, uint32_t *pu4Value,
  */
 void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
 		     u_int8_t *pfgSts);
+
 #endif /* _HIF_H */

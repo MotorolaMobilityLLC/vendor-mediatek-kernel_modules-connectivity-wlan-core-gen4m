@@ -7761,11 +7761,12 @@ void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha)
 	for (ucIdx = 0; ucIdx < MAX_COUNTRY_CODE_LEN; ucIdx++)
 		pcAlpha[ucIdx] = ((u4CountryCode >> (ucIdx * 8)) & 0xff);
 }
-
+#if 0
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 void rlm_get_alpha2(char *alpha2)
 {
 	rlmDomainU32ToAlpha(g_mtk_regd_control.alpha2, alpha2);
 }
 EXPORT_SYMBOL(rlm_get_alpha2);
+#endif
 #endif
