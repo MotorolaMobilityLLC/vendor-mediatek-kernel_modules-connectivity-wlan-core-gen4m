@@ -1033,7 +1033,12 @@ s_int32 mt_op_read_bulk_rf_reg(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	regs->cr_addr = regs->cr_addr | 0x99000000 | (regs->wf_sel<<16);
+#else
 	regs->cr_addr = regs->cr_addr | 0x99900000 | (regs->wf_sel<<16);
+#endif
+
 	/*
 	 * wf_sel
 	 * 0: WF0 -> 0x9990xxxx
@@ -1081,7 +1086,12 @@ s_int32 mt_op_write_bulk_rf_reg(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	regs->cr_addr = regs->cr_addr | 0x99000000 | (regs->wf_sel<<16);
+#else
 	regs->cr_addr = regs->cr_addr | 0x99900000 | (regs->wf_sel<<16);
+#endif
+
 	/*
 	 * wf_sel
 	 * 0: WF0 -> 0x9990xxxx
