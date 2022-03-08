@@ -5786,7 +5786,7 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
-	enum ENUM_AIS_REQUEST_TYPE eAisRequest = AIS_REQUEST_NUM;
+	enum ENUM_AIS_REQUEST_TYPE eAisRequest;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -6296,7 +6296,7 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prCancelRemainOnChannel;
-	u_int8_t rReturn = TRUE;
+	u_int8_t rReturn;
 	uint8_t ucBssIndex = 0;
 
 	prCancelRemainOnChannel =
@@ -7810,7 +7810,7 @@ struct cfg80211_ft_event_params *aisGetFtEventParam(
 
 uint8_t *aisGetFsmState(
 	IN enum ENUM_AIS_STATE eCurrentState) {
-	if (eCurrentState >= 0 && eCurrentState < AIS_STATE_NUM)
+	if (eCurrentState < AIS_STATE_NUM)
 		return apucDebugAisState[eCurrentState];
 
 	ASSERT(0);
