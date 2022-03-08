@@ -387,6 +387,15 @@ s_int32 mt_op_get_freq_offset(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
 	u_int32 *freq_offset);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_set_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_int32 freq_offset, u_char band_idx);
+s_int32 mt_op_get_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	u_int32 *freq_offset);
+#endif
 s_int32 mt_op_get_cfg_on_off(
 	struct test_wlan_info *winfos,
 	u_char band_idx,

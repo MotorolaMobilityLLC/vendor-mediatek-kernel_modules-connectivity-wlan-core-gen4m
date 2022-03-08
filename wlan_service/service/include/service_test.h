@@ -90,6 +90,13 @@ enum {
 	SERV_TEST_TXPWR_SET_PWR_MAN,
 };
 
+/* Service test frequency offset type */
+enum {
+	SERV_FREQ_C1 = 1,
+	SERV_FREQ_C2,
+
+};
+
 /*****************************************************************************
  *	Data struct definition
  *****************************************************************************/
@@ -154,7 +161,7 @@ s_int32 mt_serv_start_tx(struct service_test *serv_test);
 s_int32 mt_serv_stop_tx(struct service_test *serv_test);
 s_int32 mt_serv_start_rx(struct service_test *serv_test);
 s_int32 mt_serv_stop_rx(struct service_test *serv_test);
-s_int32 mt_serv_set_freq_offset(struct service_test *serv_test);
+s_int32 mt_serv_set_freq_offset(struct service_test *serv_test, u_int32 type);
 s_int32 mt_serv_tx_power_operation(
 	struct service_test *serv_test, u_int32 item);
 s_int32 mt_serv_get_freq_offset(

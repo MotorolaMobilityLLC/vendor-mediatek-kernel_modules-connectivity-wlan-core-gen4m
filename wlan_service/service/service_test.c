@@ -34,6 +34,9 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_set_antswap = mt_op_set_antswap;
 	ops->op_set_rx_filter_pkt_len = mt_op_set_rx_filter_pkt_len;
 	ops->op_set_freq_offset = mt_op_set_freq_offset;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	ops->op_set_freq_offset_C2 = mt_op_set_freq_offset_C2;
+#endif
 	ops->op_set_phy_counter = mt_op_set_phy_counter;
 	ops->op_set_rxv_index = mt_op_set_rxv_index;
 	ops->op_set_fagc_path = mt_op_set_fagc_path;
@@ -75,6 +78,9 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_get_tx_pwr = mt_op_get_tx_pwr;
 	ops->op_set_tx_pwr = mt_op_set_tx_pwr;
 	ops->op_get_freq_offset = mt_op_get_freq_offset;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	ops->op_get_freq_offset_C2 = mt_op_get_freq_offset_C2;
+#endif
 	ops->op_get_cfg_on_off = mt_op_get_cfg_on_off;
 	ops->op_get_tx_tone_pwr = mt_op_get_tx_tone_pwr;
 	ops->op_get_recal_cnt = mt_op_get_recal_cnt;
@@ -596,7 +602,7 @@ s_int32 mt_serv_set_channel(struct service_test *serv_test)
 	case TEST_BW_160NC:
 		if (pri_sel >= 8)
 			goto error;
-    
+
 		if (!channel_2nd)
 			goto error2;
 
@@ -956,7 +962,7 @@ s_int32 mt_serv_stop_rx(struct service_test *serv_test)
 	return ret;
 }
 
-s_int32 mt_serv_set_freq_offset(struct service_test *serv_test)
+s_int32 mt_serv_set_freq_offset(struct service_test *serv_test, u_int32 type)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
@@ -968,10 +974,19 @@ s_int32 mt_serv_set_freq_offset(struct service_test *serv_test)
 
 	rf_freq_offset = configs->rf_freq_offset;
 
-	ret = ops->op_set_freq_offset(
+	if (type == SERV_FREQ_C1) {
+		ret = ops->op_set_freq_offset(
 			serv_test->test_winfo,
 			rf_freq_offset,
 			ctrl_band_idx);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	} else if (type == SERV_FREQ_C2) {
+		ret = ops->op_set_freq_offset_C2(
+			serv_test->test_winfo,
+			rf_freq_offset,
+			ctrl_band_idx);
+#endif
+	}
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
@@ -1735,7 +1750,7 @@ s_int32 mt_serv_get_band_mode(
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	struct test_capability capability;
-	
+
 	/* get content */
 	ret = mt_serv_get_capability(serv_test, &capability);
 
@@ -1756,7 +1771,7 @@ s_int32 mt_serv_get_band_mode(
 		}
 	}
 #else
-	
+
 	struct test_operation *ops;
 
 	ops = serv_test->test_op;
