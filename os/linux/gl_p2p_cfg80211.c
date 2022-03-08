@@ -857,42 +857,8 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 	rRemoveKey.u4KeyIndex = key_index;
 	rRemoveKey.u4Length = sizeof(struct PARAM_REMOVE_KEY);
 	if (mac_addr) {
-		uint32_t waitRet = 0;
-		struct BSS_INFO *prBssInfo = NULL;
-		struct P2P_ROLE_FSM_INFO *fsm =
-			(struct P2P_ROLE_FSM_INFO *)
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
-			prGlueInfo->prAdapter,
-			ucRoleIdx);
-
 		COPY_MAC_ADDR(rRemoveKey.arBSSID, mac_addr);
 		rRemoveKey.u4KeyIndex |= BIT(30);
-		prBssInfo =
-			GET_BSS_INFO_BY_INDEX(
-			prGlueInfo->prAdapter,
-			rRemoveKey.ucBssIdx);
-
-#if CFG_SUPPORT_802_11W
-		/* if encrypted deauth frame
-		 * is in process, pending remove key
-		 */
-		if (fsm &&
-			prBssInfo &&
-			IS_BSS_APGO(prBssInfo) &&
-			(fsm->encryptedDeauthIsInProcess ==
-			TRUE) &&
-			(prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_SAE)) {
-			waitRet = wait_for_completion_timeout(
-				&fsm->rDeauthComp,
-				MSEC_TO_JIFFIES(1000));
-			if (!waitRet) {
-				DBGLOG(RSN, WARN, "timeout\n");
-				fsm->encryptedDeauthIsInProcess = FALSE;
-			} else
-				DBGLOG(RSN, TRACE, "complete\n");
-		}
-#endif
 	}
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -1914,34 +1880,26 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				break;
 			}
 		}
+		kalMemZero(
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
+			sizeof(struct cfg80211_chan_def));
+		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
+			= (struct ieee80211_channel *)
+			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
+		kalMemZero(
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
+			sizeof(struct ieee80211_channel));
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
-				(struct cfg80211_chan_def *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
-				(struct ieee80211_channel *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
-				== NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-		}
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq1 = params->chandef.center_freq1;
+			->chandefCsa.center_freq1 =
+			params->chandef.center_freq1;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq2 = params->chandef.center_freq2;
+			->chandefCsa.center_freq2 =
+			params->chandef.center_freq2;
 		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->width = params->chandef.width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
+			->chandefCsa.width = params->chandef.width;
+		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 			params->chandef.chan,
 			sizeof(struct ieee80211_channel));
 
@@ -1956,10 +1914,10 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO, "ucRoleIdx: %d, ucBssIdx: %d\n",
 				ucRoleIdx, ucBssIdx);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
 			dfs_state == NL80211_DFS_AVAILABLE
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
 			dfs_cac_ms != 0
 #endif
 			)
@@ -2837,6 +2795,10 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBcMac[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	uint32_t waitRet = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *fsm = NULL;
 
 	do {
 		if ((wiphy == NULL) || (dev == NULL))
@@ -2857,6 +2819,9 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		 * kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
 		 * VIR_MEM_TYPE);
 		 */
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+			break;
 
 		prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
 		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
@@ -2872,12 +2837,40 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
 		prDisconnectMsg->u2ReasonCode = params->reason_code;
 		prDisconnectMsg->fgSendDeauth = TRUE;
-
+		fsm = (struct P2P_ROLE_FSM_INFO *)
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+			prGlueInfo->prAdapter,
+			ucRoleIdx);
+		prBssInfo =
+			GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			ucBssIdx);
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prDisconnectMsg,
 			MSG_SEND_METHOD_BUF);
+#if CFG_SUPPORT_802_11W
+		/* if encrypted deauth frame
+			* is in process, pending remove key
+			*/
+		if (fsm &&
+			prBssInfo &&
+			IS_BSS_APGO(prBssInfo) &&
+			(fsm->encryptedDeauthIsInProcess ==
+			TRUE) &&
+			(prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE)) {
+			waitRet = wait_for_completion_timeout(
+				&fsm->rDeauthComp,
+				MSEC_TO_JIFFIES(1000));
+			if (!waitRet) {
+				DBGLOG(RSN, WARN, "timeout\n");
+				fsm->encryptedDeauthIsInProcess = FALSE;
+			} else
+				DBGLOG(RSN, TRACE, "complete\n");
+		}
+#endif
 
 		i4Rslt = 0;
 	} while (FALSE);
