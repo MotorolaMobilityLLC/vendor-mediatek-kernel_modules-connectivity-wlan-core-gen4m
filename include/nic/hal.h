@@ -112,6 +112,7 @@ enum ENUM_RX_RING_IDX {
 	RX_RING_TXDONE2_IDX_6,
 	RX_RING_WAEVT0_IDX_5,
 	RX_RING_WAEVT1_IDX_6,
+	RX_RING_MAX,
 };
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -613,7 +614,7 @@ do { \
 		prBusInfo->devReadIntStatus(_prAdapter, _pu4IntStatus); \
 	else \
 		kalDevReadIntStatus(_prAdapter, _pu4IntStatus);\
-	if (_prAdapter->u4NoMoreRfb != 0) \
+	if (_prAdapter->ulNoMoreRfb != 0) \
 		*_pu4IntStatus |= WHISR_RX0_DONE_INT; \
 	if (!prHifInfo->fgIsBackupIntSta) { \
 		prHifInfo->fgIsBackupIntSta = true; \
@@ -648,9 +649,11 @@ do { \
 	} \
 }
 
-#define HAL_IS_TX_DIRECT(_prAdapter) FALSE
+#define HAL_IS_TX_DIRECT(_prAdapter) \
+	((CFG_TX_DIRECT) ? TRUE : FALSE)
 
-#define HAL_IS_RX_DIRECT(_prAdapter) FALSE
+#define HAL_IS_RX_DIRECT(_prAdapter) \
+	((CFG_RX_DIRECT) ? TRUE : FALSE)
 
 #define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)
 
@@ -1173,10 +1176,10 @@ do { \
 }
 
 #define HAL_IS_TX_DIRECT(_prAdapter) \
-	((CFG_TX_DIRECT_USB) ? TRUE : FALSE)
+	((CFG_TX_DIRECT) ? TRUE : FALSE)
 
 #define HAL_IS_RX_DIRECT(_prAdapter) \
-	((CFG_RX_DIRECT_USB) ? TRUE : FALSE)
+	((CFG_RX_DIRECT) ? TRUE : FALSE)
 
 #define HAL_UHW_RD(_prAdapter, _u4Offset, _pu4Value, _pucSts)	\
 { \

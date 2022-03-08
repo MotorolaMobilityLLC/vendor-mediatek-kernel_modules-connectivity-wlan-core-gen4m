@@ -822,19 +822,19 @@ static void soc7_0asicConnac2xProcessRxInterrupt(
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)))
+	    (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_1 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)))
+	    (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
+	    (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3 ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
 }
 

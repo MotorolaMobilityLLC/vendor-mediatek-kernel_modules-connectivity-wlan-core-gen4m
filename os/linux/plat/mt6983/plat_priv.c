@@ -171,6 +171,38 @@ void kalSetDramBoost(IN struct ADAPTER *prAdapter, IN u_int8_t onoff)
 	/* TODO */
 }
 
+void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask)
+{
+	struct cpumask cpu_mask;
+	int i;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	if (!HAL_IS_RX_DIRECT(prAdapter))
+		return;
+
+	if (!prGlueInfo)
+		return;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (set_mask == CPU_ALL_CORE)
+		irq_set_affinity_hint(prHifInfo->u4IrqId,
+			cpu_all_mask);
+	else {
+		cpumask_clear(&cpu_mask);
+		for (i = 0; i < num_possible_cpus(); i++)
+			if ((0x1 << i) & set_mask)
+				cpumask_or(&cpu_mask, &cpu_mask,
+					cpumask_of(i));
+		irq_set_affinity_hint(prHifInfo->u4IrqId,
+			&cpu_mask);
+	}
+
+	DBGLOG(INIT, INFO, "irq_set_affinity_hint(%u, %u)",
+		prHifInfo->u4IrqId, set_mask);
+}
+
 static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 {
 	int r = -1;
@@ -226,6 +258,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
+		kalSetISRMask(prAdapter, CPU_ALL_CORE);
 
 		kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 		kalSetDramBoost(prAdapter, TRUE);
@@ -244,6 +277,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_BIG_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_BIG_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_BIG_CORE);
+		kalSetISRMask(prAdapter, CPU_BIG_CORE);
 		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_LITTLE_CORE);
 
 		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
@@ -262,6 +296,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_LITTLE_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_LITTLE_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_LITTLE_CORE);
+		kalSetISRMask(prAdapter, CPU_LITTLE_CORE);
 
 		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
@@ -289,6 +324,7 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
 		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
+		kalSetISRMask(prAdapter, CPU_ALL_CORE);
 
 		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
@@ -358,7 +394,11 @@ int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucPhyType;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+#if defined(_HIF_PCIE)
+	struct pci_dev *pdev = NULL;
+#else
 	struct platform_device *pdev = NULL;
+#endif /* _HIF_PCIE */
 	struct regulator *dvfsrc_vcore_power;
 
 	prBssInfo = prAdapter->aprBssInfo[uBssIndex];

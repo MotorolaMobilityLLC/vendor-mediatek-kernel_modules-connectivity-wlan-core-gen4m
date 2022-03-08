@@ -548,30 +548,30 @@ static void mt7961ReadIntStatus(
 	if (u4RegValue & CONNAC_MCU_SW_INT)
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 
-	if (prAdapter->u4NoMoreRfb)
+	if (prAdapter->ulNoMoreRfb)
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
 
-	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)) {
+	if (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_0 = 1;
 		DBGLOG(HAL, ERROR, "retry process RX_RING_EVT_IDX_1\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0)) {
+	if (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_2 = 1;
 		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA_IDX_0\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)) {
+	if (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_3 = 1;
 		DBGLOG(HAL, ERROR, "retry process RX_RING_DATA1_IDX_2\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)) {
+	if (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_4 = 1;
 		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE0_IDX_3\n");
 	}
 
-	if (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE1_IDX_4)) {
+	if (KAL_TEST_BIT(RX_RING_TXDONE1_IDX_4, prAdapter->ulNoMoreRfb)) {
 		prIntrStatus->field_conn2x_single.wfdma0_rx_done_5 = 1;
 		DBGLOG(HAL, ERROR, "retry process RX_RING_TXDONE1_IDX_4\n");
 	}

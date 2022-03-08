@@ -644,7 +644,7 @@ static bool halMawdHandleRxblk(struct ADAPTER *prAdapter,
 	if (!prSwRfb) {
 		DBGLOG_LIMITED(
 			RX, WARN, "No More RFB for P[%u]\n", u4Port);
-		prAdapter->u4NoMoreRfb |= BIT(u4Port);
+		KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 		return false;
 	}
 

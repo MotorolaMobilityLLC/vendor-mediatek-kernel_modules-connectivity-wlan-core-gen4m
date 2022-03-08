@@ -269,6 +269,7 @@
 #define INC_RING_INDEX(_idx, _RingSize)		\
 { \
 	(_idx) = (_idx+1) % (_RingSize); \
+	KAL_MB_W(); \
 }
 
 #define RTMP_IO_READ32(_A, _R, _pV) \
@@ -471,6 +472,7 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_addr;
 	uint32_t hw_cnt_mask;
 	uint32_t hw_cnt_shift;
+	spinlock_t rTxDmaQLock;
 };
 
 struct RTMP_RX_RING {

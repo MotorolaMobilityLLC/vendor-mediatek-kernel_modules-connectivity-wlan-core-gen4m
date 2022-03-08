@@ -767,7 +767,7 @@ static void mt6639ProcessRxInterrupt(
 	uint32_t u4Addr, u4Val;
 
 	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA_IDX_0))) {
+	    (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb))) {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		if (prChipInfo->is_support_rro)
 			halMawdUpdateWfdmaRxBlk(prAdapter->prGlueInfo,
@@ -778,7 +778,7 @@ static void mt6639ProcessRxInterrupt(
 	}
 
 	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_DATA1_IDX_2)))
+	    (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb))) {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		if (prChipInfo->is_support_rro)
 			halMawdUpdateWfdmaRxBlk(prAdapter->prGlueInfo,
@@ -786,13 +786,14 @@ static void mt6639ProcessRxInterrupt(
 		else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 			halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
+	}
 
 	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_EVT_IDX_1)))
+	    (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 
 	if ((u4Sta | WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
-	    (prAdapter->u4NoMoreRfb & BIT(RX_RING_TXDONE0_IDX_3)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, FALSE);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)

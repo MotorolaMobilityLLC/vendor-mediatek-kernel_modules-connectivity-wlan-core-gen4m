@@ -1536,6 +1536,9 @@ struct ADAPTER {
 
 	struct sk_buff_head rTxDirectSkbQueue;
 	struct QUE rTxDirectHifQueue[TX_PORT_NUM];
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+	spinlock_t rTxDirectHifQueueLock[TX_PORT_NUM];
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	struct QUE rStaPsQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPsBitmap;
@@ -1853,7 +1856,7 @@ struct ADAPTER {
 	uint32_t u4HifTxHangDumpBitmap;
 	uint32_t u4HifTxHangDumpIdx;
 	uint32_t u4HifTxHangDumpNum;
-	uint32_t u4NoMoreRfb;
+	unsigned long ulNoMoreRfb;
 
 	/* Only for PCIE DmaSchdl usage so far. */
 	struct {

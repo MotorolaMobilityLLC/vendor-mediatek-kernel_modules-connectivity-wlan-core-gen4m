@@ -1716,6 +1716,7 @@ static int p2pOpen(IN struct net_device *prDev)
 
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
+	kalNapiRxDirectInit(prDev);
 	kalNapiEnable(prDev);
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
@@ -1829,6 +1830,7 @@ static int p2pStop(IN struct net_device *prDev)
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
 	kalNapiDisable(prDev);
+	kalNapiRxDirectUninit(prDev);
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
 

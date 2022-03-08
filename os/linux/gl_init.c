@@ -2467,7 +2467,7 @@ static int wlanInit(struct net_device *prDev)
 
 #if CFG_SUPPORT_RX_GRO
 	kalNapiInit(prDev);
-#endif
+#endif /* CFG_SUPPORT_RX_GRO */
 	return 0;		/* success */
 }				/* end of wlanInit() */
 
@@ -2585,6 +2585,7 @@ static int wlanOpen(struct net_device *prDev)
 
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
+	kalNapiRxDirectInit(prDev);
 	kalNapiEnable(prDev);
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
@@ -2665,6 +2666,7 @@ static int wlanStop(struct net_device *prDev)
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
 	kalNapiDisable(prDev);
+	kalNapiRxDirectUninit(prDev);
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
 

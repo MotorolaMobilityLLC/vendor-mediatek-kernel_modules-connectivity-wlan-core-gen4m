@@ -7220,9 +7220,15 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 	}
 	/* From Absent to Present */
 	if ((fgIsNetAbsentOld) && (!prBssInfo->fgIsNetAbsent)) {
-		if (HAL_IS_TX_DIRECT(prAdapter))
+		if (HAL_IS_TX_DIRECT(prAdapter)) {
 			nicTxDirectStartCheckQTimer(prAdapter);
-		else {
+			/* To process the Mgmt frame which is queued
+			 * in tx cmd Q during absent period.
+			 */
+			if (GLUE_GET_REF_CNT(
+				prAdapter->rTxCtrl.i4TxMgmtPendingNum))
+				kalSetEvent(prAdapter->prGlueInfo);
+		} else {
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 			prAdapter->rQM.fgForceReassign = TRUE;
 #endif
@@ -7670,6 +7676,20 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 	LOGBUF(pucBuf, u4Max, u4Len,
 		"===\n");
 
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		LOGBUF(pucBuf, u4Max, u4Len,
+			"TxDirect : SkbQ[%d] HifQ[%d:%d:%d:%d]\n",
+			skb_queue_len(&prAdapter->rTxDirectSkbQueue),
+			prAdapter->rTxDirectHifQueue[0].u4NumElem,
+			prAdapter->rTxDirectHifQueue[1].u4NumElem,
+			prAdapter->rTxDirectHifQueue[2].u4NumElem,
+			prAdapter->rTxDirectHifQueue[3].u4NumElem);
+		LOGBUF(pucBuf, u4Max, u4Len,
+			"===\n");
+	}
+
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"===\n");
 	if (prGlueInfo->rCmdQueue.u4NumElem > 0)
 		cmdBufDumpCmdQueue(&prGlueInfo->rCmdQueue,
 				"waiting Tx CMD queue");

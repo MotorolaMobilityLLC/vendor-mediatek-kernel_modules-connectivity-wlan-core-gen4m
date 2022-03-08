@@ -406,8 +406,8 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 
 		if (halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
 					    RX_RING_EVT_IDX_1)) {
-			prAdapter->u4NoMoreRfb |=
-				BIT(RX_RING_EVT_IDX_1);
+			KAL_SET_BIT(RX_RING_EVT_IDX_1,
+				prAdapter->ulNoMoreRfb);
 		}
 	}
 #else /* CFG_MTK_WIFI_WFDMA_BK_RS */
