@@ -2095,6 +2095,14 @@
  *                                 M A C R O S
  *******************************************************************************
  */
+#define WM_RAM_TYPE_MOBILE			0
+#define WM_RAM_TYPE_CE				1
+
+#define IS_MOBILE_SEGMENT \
+	(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_MOBILE)
+
+#define IS_CE_SEGMENT \
+	(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_CE)
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

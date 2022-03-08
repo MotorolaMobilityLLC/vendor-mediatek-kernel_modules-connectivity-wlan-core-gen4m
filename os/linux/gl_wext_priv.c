@@ -14122,11 +14122,12 @@ static int priv_driver_get_version(IN struct net_device *prNetDev,
 
 	u4Offset += fwDlGetFwdlInfo(prAdapter, pcCommand, i4TotalLen);
 	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
-		"WiFi Driver Version %u.%u.%u %s\n",
+		"WiFi Driver Version %u.%u.%u %s %s\n",
 		NIC_DRIVER_MAJOR_VERSION,
 		NIC_DRIVER_MINOR_VERSION,
 		NIC_DRIVER_SERIAL_VERSION,
-		DRIVER_BUILD_DATE);
+		DRIVER_BUILD_DATE,
+		IS_MOBILE_SEGMENT ? "mobile" : "ce");
 
 	i4BytesWritten = (int32_t)u4Offset;
 
