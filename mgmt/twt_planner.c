@@ -1075,8 +1075,11 @@ uint32_t twtPlannerReset(
 	struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	struct STA_RECORD *prStaRec;
-	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
+	struct STA_RECORD *prStaRec = NULL;
+	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate = NULL;
+	uint8_t i;
+	struct _TWT_PLANNER_T *prTWTPlanner = NULL;
+	struct _TWT_AGRT_T *prTWTAgrt = NULL;
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1089,39 +1092,53 @@ uint32_t twtPlannerReset(
 	if (twtPlannerIsDrvAgrtExisting(prAdapter) == FALSE)
 		return rWlanStatus;
 
-	prTWTAgrtUpdate = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-		sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T));
-	if (!prTWTAgrtUpdate) {
-		DBGLOG(TWT_PLANNER, ERROR,
-			"Alloc _EXT_CMD_TWT_ARGT_UPDATE_T for reset FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
+	prTWTPlanner = &(prAdapter->rTWTPlanner);
+	prTWTAgrt = &(prTWTPlanner->arTWTAgrtTbl[0]);
 
-	/* send cmd to reset FW agreement table */
-	if (!prBssInfo) {
-		DBGLOG(TWT_PLANNER, ERROR,
-			"Invalid prBssInfo\n");
+	/* For the case we are deauthed, we should terminate all TWTs */
+	for (i = 0; i < TWT_AGRT_MAX_NUM; i++, prTWTAgrt++) {
+		if (prTWTAgrt->fgValid == FALSE)
+			continue;
 
-		return WLAN_STATUS_INVALID_DATA;
-	}
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						prTWTAgrt->ucBssIdx);
 
+		/* send cmd to reset FW agreement table */
+		if (!prBssInfo) {
+			DBGLOG(TWT_PLANNER, ERROR,
+					"Invalid prBssInfo\n");
 
-	prStaRec = prBssInfo->prStaRecOfAP;
+			return WLAN_STATUS_INVALID_DATA;
+		}
 
-	if (!prStaRec) {
-		DBGLOG(TWT_PLANNER, ERROR,
-			"Invalid prStaRec\n");
+		prStaRec = prBssInfo->prStaRecOfAP;
 
-		return WLAN_STATUS_INVALID_DATA;
-	}
+		if (!prStaRec) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
 
-	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_RESET;
-	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
-		CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
-	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
-	prTWTAgrtUpdate->ucBssIndex = prBssInfo ? prBssInfo->ucBssIndex : 0;
+			return WLAN_STATUS_INVALID_DATA;
+		}
 
-	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+		prTWTAgrtUpdate = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T));
+
+		if (!prTWTAgrtUpdate) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Alloc _EXT_CMD_TWT_ARGT_UPDATE_T[%d] for reset FAILED.\n",
+				i);
+
+			return WLAN_STATUS_FAILURE;
+		}
+
+		prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_RESET;
+		prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
+					CPU_TO_LE16(prStaRec->ucWlanIndex) : 1;
+		prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
+		prTWTAgrtUpdate->ucBssIndex = prBssInfo ?
+						prBssInfo->ucBssIndex : 0;
+
+		rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
 			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
 			EXT_CMD_ID_TWT_AGRT_UPDATE,
 			TRUE,
@@ -1133,6 +1150,8 @@ uint32_t twtPlannerReset(
 			(uint8_t *) (prTWTAgrtUpdate),
 			NULL, 0);
 
+		cnmMemFree(prAdapter, prTWTAgrtUpdate);
+	}
 
 	/* reset driver agreement table */
 	memset(&(prAdapter->rTWTPlanner), 0, sizeof(prAdapter->rTWTPlanner));
@@ -1151,8 +1170,6 @@ uint32_t twtPlannerReset(
 	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
-
-	cnmMemFree(prAdapter, prTWTAgrtUpdate);
 
 	return rWlanStatus;
 }
