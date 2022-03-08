@@ -1759,17 +1759,11 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			DBGLOG_LIMITED(RX, WARN,
 				"No More RFB for P[%u], RxCnt: %d, RfbCnt: %d\n",
 				u4Port, u4RxCnt, u4RfbCnt);
-			KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 			break;
 		}
 		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-	if (u4RfbCnt == u4RxCnt) {
-		/* clear no more rfb port bit */
-		KAL_CLR_BIT(u4Port, prAdapter->ulNoMoreRfb);
-	}
 
 	prHifStats->u4RxDataRegCnt++;
 	kalDevRegRead(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
@@ -1896,6 +1890,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
 	prRxRing->u4PendingCnt = u4RxCnt - u4RxSuccessCnt;
+
+	if (prRxRing->u4PendingCnt == 0) {
+		/* clear no more rfb port bit */
+		KAL_CLR_BIT(u4Port, prAdapter->ulNoMoreRfb);
+	} else
+		KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 
 	if (u4MsduReportCnt > 0)
 		DBGLOG(RX, TEMP, "Recv %d msdu reports\n", u4MsduReportCnt);
@@ -3713,6 +3713,8 @@ void halRxTasklet(unsigned long data)
 		prGlueInfo->TaskIsrCnt++;
 		wlanIST(prGlueInfo->prAdapter, fgEnInt);
 	}
+
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
 }
 
 void halTxCompleteTasklet(unsigned long data)
@@ -4242,9 +4244,10 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 	}
 	for (i = 0; i < NUM_OF_RX_RING; ++i) {
 		prRxRing = &prHifInfo->RxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
-				(i == 0) ? " R_R[" : "",
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
+				(i == 0) ? " R_R:R_N[" : "",
 				prRxRing->u4PendingCnt,
+				KAL_TEST_BIT(i, prAdapter->ulNoMoreRfb),
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
