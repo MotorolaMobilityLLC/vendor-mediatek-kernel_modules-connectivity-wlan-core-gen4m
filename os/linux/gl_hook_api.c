@@ -3071,7 +3071,14 @@ int32_t TxBfProfileTag_InValid(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT)
+		prPfmuTag1->rFieldv2.ucInvalidProf = ucInValid;
+	else
+		prPfmuTag1->rFieldv3.ucInvalidProf = ucInValid;
+#else
 	prPfmuTag1->rField.ucInvalidProf = ucInValid;
+#endif
 
 	return i4Status;
 }
@@ -3103,7 +3110,14 @@ int32_t TxBfProfileTag_DBW(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT)
+		prPfmuTag1->rFieldv2.ucDBW = ucBW;
+	else
+		prPfmuTag1->rFieldv3.ucDBW = ucBW;
+#else
 	prPfmuTag1->rField.ucDBW = ucBW;
+#endif
 
 	return i4Status;
 }
@@ -3113,7 +3127,14 @@ int32_t TxBfProfileTag_SuMu(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT)
+		prPfmuTag1->rFieldv2.ucSU_MU = ucSuMu;
+	else
+		prPfmuTag1->rFieldv3.ucSU_MU = ucSuMu;
+#else
 	prPfmuTag1->rField.ucSU_MU = ucSuMu;
+#endif
 
 	return i4Status;
 }
@@ -3124,6 +3145,27 @@ int32_t TxBfProfileTag_Mem(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT) {
+		prPfmuTag1->rFieldv2.ucMemAddr1ColIdx = aucMemAddrColIdx[0];
+		prPfmuTag1->rFieldv2.ucMemAddr1RowIdx = aucMemAddrRowIdx[0];
+		prPfmuTag1->rFieldv2.ucMemAddr2ColIdx = aucMemAddrColIdx[1];
+		prPfmuTag1->rFieldv2.ucMemAddr2RowIdx = aucMemAddrRowIdx[1];
+		prPfmuTag1->rFieldv2.ucMemAddr3ColIdx = aucMemAddrColIdx[2];
+		prPfmuTag1->rFieldv2.ucMemAddr3RowIdx = aucMemAddrRowIdx[2];
+		prPfmuTag1->rFieldv2.ucMemAddr4ColIdx = aucMemAddrColIdx[3];
+		prPfmuTag1->rFieldv2.ucMemAddr4RowIdx = aucMemAddrRowIdx[3];
+	} else {
+		prPfmuTag1->rFieldv3.ucMemAddr1ColIdx = aucMemAddrColIdx[0];
+		prPfmuTag1->rFieldv3.ucMemAddr1RowIdx = aucMemAddrRowIdx[0];
+		prPfmuTag1->rFieldv3.ucMemAddr2ColIdx = aucMemAddrColIdx[1];
+		prPfmuTag1->rFieldv3.ucMemAddr2RowIdx = aucMemAddrRowIdx[1];
+		prPfmuTag1->rFieldv3.ucMemAddr3ColIdx = aucMemAddrColIdx[2];
+		prPfmuTag1->rFieldv3.ucMemAddr3RowIdx = aucMemAddrRowIdx[2];
+		prPfmuTag1->rFieldv3.ucMemAddr4ColIdx = aucMemAddrColIdx[3];
+		prPfmuTag1->rFieldv3.ucMemAddr4RowIdx = aucMemAddrRowIdx[3];
+	}
+#else
 	prPfmuTag1->rField.ucMemAddr1ColIdx = aucMemAddrColIdx[0];
 	prPfmuTag1->rField.ucMemAddr1RowIdx = aucMemAddrRowIdx[0];
 	prPfmuTag1->rField.ucMemAddr2ColIdx = aucMemAddrColIdx[1];
@@ -3132,6 +3174,7 @@ int32_t TxBfProfileTag_Mem(struct net_device *prNetDev,
 	prPfmuTag1->rField.ucMemAddr3RowIdx = aucMemAddrRowIdx[2];
 	prPfmuTag1->rField.ucMemAddr4ColIdx = aucMemAddrColIdx[3];
 	prPfmuTag1->rField.ucMemAddr4RowIdx = aucMemAddrRowIdx[3];
+#endif
 
 	return i4Status;
 }
@@ -3144,11 +3187,27 @@ int32_t TxBfProfileTag_Matrix(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (ucLM == PFMU_EHT) {
+		prPfmuTag1->rFieldv2.ucNrow = ucNrow;
+		prPfmuTag1->rFieldv2.ucNcol = ucNcol;
+		prPfmuTag1->rFieldv2.ucNgroup = ucNgroup;
+		prPfmuTag1->rFieldv2.ucLM = ucLM;
+		prPfmuTag1->rFieldv2.ucCodeBook = ucCodeBook;
+	} else {
+		prPfmuTag1->rFieldv3.ucNrow = ucNrow;
+		prPfmuTag1->rFieldv3.ucNcol = ucNcol;
+		prPfmuTag1->rFieldv3.ucNgroup = ucNgroup;
+		prPfmuTag1->rFieldv3.ucLM = ucLM;
+		prPfmuTag1->rFieldv3.ucCodeBook = ucCodeBook;
+	}
+#else
 	prPfmuTag1->rField.ucNrow = ucNrow;
 	prPfmuTag1->rField.ucNcol = ucNcol;
 	prPfmuTag1->rField.ucNgroup = ucNgroup;
 	prPfmuTag1->rField.ucLM = ucLM;
 	prPfmuTag1->rField.ucCodeBook = ucCodeBook;
+#endif
 
 	return i4Status;
 }
@@ -3160,10 +3219,46 @@ int32_t TxBfProfileTag_SNR(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT) {
+		prPfmuTag1->rFieldv2.ucSNR_STS0 = ucSNR_STS0;
+		prPfmuTag1->rFieldv2.ucSNR_STS1 = ucSNR_STS1;
+		prPfmuTag1->rFieldv2.ucSNR_STS2 = ucSNR_STS2;
+		prPfmuTag1->rFieldv2.ucSNR_STS3 = ucSNR_STS3;
+	} else {
+		prPfmuTag1->rFieldv3.ucSNR_STS0 = ucSNR_STS0;
+		prPfmuTag1->rFieldv3.ucSNR_STS1 = ucSNR_STS1;
+		prPfmuTag1->rFieldv3.ucSNR_STS2 = ucSNR_STS2;
+		prPfmuTag1->rFieldv3.ucSNR_STS3 = ucSNR_STS3;
+	}
+#else
 	prPfmuTag1->rField.ucSNR_STS0 = ucSNR_STS0;
 	prPfmuTag1->rField.ucSNR_STS1 = ucSNR_STS1;
 	prPfmuTag1->rField.ucSNR_STS2 = ucSNR_STS2;
 	prPfmuTag1->rField.ucSNR_STS3 = ucSNR_STS3;
+#endif
+
+	return i4Status;
+}
+
+int32_t  TxBfProfileTagPartialBw(struct net_device *prNetDev,
+			   union PFMU_PROFILE_TAG1 *prPfmuTag1,
+			   uint8_t u4Bitmap, uint8_t u4Resolution)
+{
+	int32_t i4Status = 0;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (prPfmuTag1->rFieldv2.ucLM == PFMU_EHT) {
+		prPfmuTag1->rFieldv2.ucPartialBWInfo =
+			(u4Bitmap & 0xFF) + (u4Resolution << 8);
+	} else {
+		DBGLOG(RFTEST, ERROR,
+			"Only PFMU_EHT need to set BW info\n");
+	}
+#else
+	DBGLOG(RFTEST, ERROR,
+		"Only CONNAC3.0 support this cmd\n");
+#endif
 
 	return i4Status;
 }
@@ -3196,7 +3291,12 @@ int32_t TxBfProfileTag_RmsdThd(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	DBGLOG(RFTEST, ERROR,
+		"Only CONNAC2.0 support this cmd\n");
+#else
 	prPfmuTag2->rField.ucRMSDThd = ucRmsdThrd;
+#endif
 
 	return i4Status;
 }
@@ -3224,7 +3324,11 @@ int32_t TxBfProfileTag_TimeOut(struct net_device *prNetDev,
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPfmuTag2->rFieldv2.uciBfTimeOut = ucTimeOut;
+#else
 	prPfmuTag2->rField.uciBfTimeOut = ucTimeOut;
+#endif
 
 	return i4Status;
 }
@@ -3235,7 +3339,11 @@ int32_t TxBfProfileTag_DesiredBW(struct net_device
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPfmuTag2->rFieldv2.uciBfDBW = ucDesiredBW;
+#else
 	prPfmuTag2->rField.uciBfDBW = ucDesiredBW;
+#endif
 
 	return i4Status;
 }
@@ -3246,7 +3354,11 @@ int32_t TxBfProfileTag_DesiredNc(struct net_device
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPfmuTag2->rFieldv2.uciBfNcol = ucDesiredNc;
+#else
 	prPfmuTag2->rField.uciBfNcol = ucDesiredNc;
+#endif
 
 	return i4Status;
 }
@@ -3257,7 +3369,11 @@ int32_t TxBfProfileTag_DesiredNr(struct net_device
 {
 	int32_t i4Status = 0;
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPfmuTag2->rFieldv2.uciBfNrow = ucDesiredNr;
+#else
 	prPfmuTag2->rField.uciBfNrow = ucDesiredNr;
+#endif
 
 	return i4Status;
 }

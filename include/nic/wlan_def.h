@@ -1087,6 +1087,14 @@ enum ENUM_CHNL_SORT_POLICY {
 	CHNL_SORT_POLICY_BY_CH_DOMAIN
 };
 
+enum PFMU_PHY_MODE {
+	PFMU_LG = 0,
+	PFMU_HT,
+	PFMU_VHT,
+	PFMU_HE,
+	PFMU_EHT
+};
+
 /*----------------------------------------------------------------------------*/
 /* Information Element (IE) handlers                                          */
 /*----------------------------------------------------------------------------*/
