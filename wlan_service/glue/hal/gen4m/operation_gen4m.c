@@ -1033,10 +1033,16 @@ s_int32 mt_op_read_bulk_rf_reg(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	if (regs->wf_sel == 0)
-		regs->cr_addr = regs->cr_addr | 0x99900000;
-	else if (regs->wf_sel == 1)
-		regs->cr_addr = regs->cr_addr | 0x99910000;
+	regs->cr_addr = regs->cr_addr | 0x99900000 | (regs->wf_sel<<16);
+	/*
+	 * wf_sel
+	 * 0: WF0 -> 0x9990xxxx
+	 * 1: WF1 -> 0x9991xxxx
+	 * 2: WF2 -> 0x9992xxxx
+	 * 3: WF3 -> 0x9993xxxx
+	 * 4: WF4 -> 0x9994xxxx
+	 * 15: ATOP -> 0x999Fxxxx
+	 */
 
 	for (idx = 0; idx < regs->cr_num; idx++) {
 		mcr_info.mcr_offset = regs->cr_addr + idx * 4;
@@ -1075,10 +1081,16 @@ s_int32 mt_op_write_bulk_rf_reg(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	if (regs->wf_sel == 0)
-		regs->cr_addr = regs->cr_addr | 0x99900000;
-	else if (regs->wf_sel == 1)
-		regs->cr_addr = regs->cr_addr | 0x99910000;
+	regs->cr_addr = regs->cr_addr | 0x99900000 | (regs->wf_sel<<16);
+	/*
+	 * wf_sel
+	 * 0: WF0 -> 0x9990xxxx
+	 * 1: WF1 -> 0x9991xxxx
+	 * 2: WF2 -> 0x9992xxxx
+	 * 3: WF3 -> 0x9993xxxx
+	 * 4: WF4 -> 0x9994xxxx
+	 * 15: ATOP -> 0x999Fxxxx
+	 */
 
 	mcr_info.mcr_offset = regs->cr_addr;
 	mcr_info.mcr_data = *regs->cr_val;
