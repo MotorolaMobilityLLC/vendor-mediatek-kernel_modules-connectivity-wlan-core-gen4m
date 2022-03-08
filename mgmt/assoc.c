@@ -1903,6 +1903,13 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 
 	rlmProcessAssocReq(prAdapter, prSwRfb, pucIEStart, u2IELength);
 
+	prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(
+			prAdapter, RCPI_MODE_MAX, prSwRfb);
+	prStaRec->u2DesiredNonHTRateSet &=
+		prBssInfo->u2OperationalRateSet;
+	prStaRec->ucDesiredPhyTypeSet =
+		prStaRec->ucPhyTypeSet & prBssInfo->ucPhyTypeSet;
+
 	*pu2StatusCode = u2StatusCode;
 
 	return WLAN_STATUS_SUCCESS;

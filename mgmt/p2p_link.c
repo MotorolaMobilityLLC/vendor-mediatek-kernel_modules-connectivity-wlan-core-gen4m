@@ -748,41 +748,10 @@ void p2pRoleFsmRunEventAAATxFail(
 	IN struct STA_RECORD *prStaRec,
 	IN struct BSS_INFO *prP2pBssInfo)
 {
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *mld_starec;
-
-	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (mld_starec) {
-		struct LINK *links;
-		struct STA_RECORD *starec;
-
-		links =  &mld_starec->rStarecList;
-		LINK_FOR_EACH_ENTRY(starec,
-			links, rLinkEntryMld,
-			struct STA_RECORD) {
-			struct BSS_INFO *bss =
-				GET_BSS_INFO_BY_INDEX(
-				prAdapter,
-				starec->ucBssIndex);
-
-			DBGLOG(INIT, INFO,
-				"\tsta: %d, wid: %d, bss: %d, " MACSTR "\n",
-				starec->ucIndex,
-				starec->ucWlanIndex,
-				starec->ucBssIndex,
-				MAC2STR(bss->aucOwnMacAddr));
-
-			p2pRoleFsmRunEventAAATxFailImpl(
-				prAdapter,
-				prStaRec,
-				bss);
-		}
-	} else
-#endif
-		p2pRoleFsmRunEventAAATxFailImpl(
-			prAdapter,
-			prStaRec,
-			prP2pBssInfo);
+	p2pRoleFsmRunEventAAATxFailImpl(
+		prAdapter,
+		prStaRec,
+		prP2pBssInfo);
 }
 
 uint16_t bssAssignAssocID(IN struct STA_RECORD *prStaRec)

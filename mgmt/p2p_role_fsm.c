@@ -722,7 +722,7 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 }				/* p2pRoleFsmRunEventTimeout */
 
 static void
-p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
+p2pRoleFsmDeauthCompleteImpl(IN struct ADAPTER *prAdapter,
 		IN struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -865,6 +865,40 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_IDLE);
 	}
+}
+
+static void
+p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
+		IN struct STA_RECORD *prStaRec)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *mld_starec;
+
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (mld_starec) {
+		uint16_t i;
+		struct STA_RECORD *starec;
+
+		for (i = 0; i < CFG_STA_REC_NUM; i++) {
+			starec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
+
+			if (!starec ||
+				!starec->fgIsInUse ||
+				starec->ucMldStaIndex != mld_starec->ucIdx)
+				continue;
+
+			DBGLOG(INIT, INFO,
+				"\tsta: %d, wid: %d, bss: %d\n",
+				starec->ucIndex,
+				starec->ucWlanIndex,
+				starec->ucBssIndex);
+
+			p2pRoleFsmDeauthCompleteImpl(prAdapter,
+				starec);
+		}
+	} else
+#endif
+		p2pRoleFsmDeauthCompleteImpl(prAdapter, prStaRec);
 }
 
 void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter,
@@ -1528,6 +1562,13 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE, "RxNSS[%u]TxNss[%u]. Hidden[%u]\n",
 		prP2pBssInfo->ucOpRxNss, prP2pBssInfo->ucOpTxNss,
 		prP2pBssInfo->eHiddenSsidType);
+
+	/* Update channel info first for rnr */
+	prP2pBssInfo->ucPrimaryChannel =
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum;
+	prP2pBssInfo->eBand =
+		prP2pConnReqInfo->rChannelInfo.eBand;
+
 	/*
 	 * beacon content is related with Nss number ,
 	 * need to update because of modification
