@@ -90,6 +90,9 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_get_thermal_val = mt_op_get_thermal_val;
 	ops->op_set_cal_bypass = mt_op_set_cal_bypass;
 	ops->op_set_dpd = mt_op_set_dpd;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	ops->op_set_max_pac_ext = mt_op_set_max_pac_ext;
+#endif
 	ops->op_set_tssi = mt_op_set_tssi;
 	ops->op_set_rdd_test = mt_op_set_rdd_test;
 	ops->op_get_wf_path_comb = mt_op_get_wf_path_comb;
@@ -1201,6 +1204,27 @@ s_int32 mt_serv_set_dpd(
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_serv_set_max_pac_ext(
+	struct service_test *serv_test,
+	u_int32 max_pac_ext)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_set_max_pac_ext(
+			serv_test->test_winfo,
+			max_pac_ext);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+#endif
 
 s_int32 mt_serv_set_tssi(
 	struct service_test *serv_test,

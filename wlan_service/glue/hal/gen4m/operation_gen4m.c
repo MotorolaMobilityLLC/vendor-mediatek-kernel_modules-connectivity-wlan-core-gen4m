@@ -299,9 +299,9 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_CFG_ON = 176,
 	RF_AT_FUNCID_SET_CFG_OFF = 177,
 
+	RF_AT_FUNCID_SET_MAX_PE = 191,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR7 = 192,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8 = 193,
-
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	RF_AT_FUNCID_END = 0xff
@@ -2964,6 +2964,24 @@ s_int32 mt_op_set_dpd(
 {
 	return SERV_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_set_max_pac_ext(
+	struct test_wlan_info *winfos,
+	u_int32 max_pac_ext)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_MAX_PE, max_pac_ext);
+
+	return ret;
+}
+#endif
 
 s_int32 mt_op_set_tssi(
 	struct test_wlan_info *winfos,
