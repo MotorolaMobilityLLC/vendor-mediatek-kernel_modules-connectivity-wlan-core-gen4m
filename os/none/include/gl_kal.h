@@ -665,6 +665,7 @@ enum ENUM_CMD_TX_RESULT {
 #define kalStrStr(ct, cs)                  strstr(ct, cs)
 #define kalStrSep(s, ct)                   strsep(s, ct)
 #define kalStrCat(dest, src)               strcat(dest, src)
+#define kalStrnCat(dst, src, n)            strncat(dst, src, n)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kal_strtoint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kal_strtoul(_data, _base, _res)

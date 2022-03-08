@@ -4901,7 +4901,10 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	char aucVersionBuf[128];
+	char aucLineEnd[] = {'\n', '\0'};
+	char *pucLineEndHead;
 	uint16_t u2VerBufLen = 0;
+	uint16_t u2VerStrLen = 0;
 	uint16_t u2BufSize = 0;
 
 	prChipInfo = prAdapter->chip_info;
@@ -4920,17 +4923,31 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 			prAdapter->fgN9AssertDumpOngoing = TRUE;
 			/* Add FW version in coredump header*/
 			kalMemZero(aucVersionBuf, sizeof(aucVersionBuf));
-			aucVersionBuf[0] = ';';
-			u2VerBufLen = kalStrLen(
-					prAdapter->rVerInfo.aucReleaseManifest);
-			kalStrnCpy(&aucVersionBuf[1],
-					prAdapter->rVerInfo.aucReleaseManifest,
-				   u2VerBufLen);
-			aucVersionBuf[u2VerBufLen + 1] = '\n';
-			aucVersionBuf[u2VerBufLen + 2] = '\0';
+			u2VerBufLen = sizeof(aucVersionBuf) - sizeof('\0');
+
+			/* Concat prefix string */
+			kalStrnCat(aucVersionBuf, ";", u2VerBufLen);
+			u2VerBufLen -= kalStrLen(";");
+
+			/* Concat Mainfest string */
+			kalStrnCat(aucVersionBuf,
+				prAdapter->rVerInfo.aucReleaseManifest,
+				u2VerBufLen);
+
+			/* Force write '\n\0' as string terminator */
+			u2VerStrLen = kalStrLen(aucVersionBuf);
+			if (u2VerStrLen <= sizeof(aucVersionBuf) -
+				sizeof(aucLineEnd))
+				pucLineEndHead = aucVersionBuf + u2VerStrLen;
+			else
+				pucLineEndHead = aucVersionBuf +
+					sizeof(aucVersionBuf) -
+					sizeof(aucLineEnd);
+			kalMemCopy(pucLineEndHead,
+				aucLineEnd, sizeof(aucLineEnd));
 
 			if (kalEnqCoreDumpLog(prAdapter,
-					aucVersionBuf, u2VerBufLen + 2,
+					aucVersionBuf, kalStrLen(aucVersionBuf),
 					&prAdapter->prGlueInfo
 					->rCoreDumpSkbQueue)
 					!= WLAN_STATUS_SUCCESS) {
@@ -4938,7 +4955,14 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 						"Add FW version in core dump header fail\n");
 			}
 
-			wlanCorDumpTimerInit(prAdapter);
+			if (kalWriteCorDumpFile(
+					aucVersionBuf, kalStrLen(aucVersionBuf),
+					TRUE) != WLAN_STATUS_SUCCESS) {
+				DBGLOG(NIC, ERROR,
+					"Add FW version in core dump header fail\n");
+			}
+
+			wlanCorDumpTimerInit(prAdapter, TRUE);
 		}
 		if (prAdapter->fgN9AssertDumpOngoing) {
 			u2BufSize = prEvent->u2PacketLength
