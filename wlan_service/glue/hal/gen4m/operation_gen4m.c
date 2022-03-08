@@ -5,6 +5,12 @@
 #include "operation.h"
 
 #define CFG_WAIT_TSSI_READY 0
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define PROACTIVE_BW160 3
+#define PROACTIVE_BW320 4
+#endif
+
 extern s_int32 mt_engine_calc_phy(
 	struct test_ru_info *ru_info,
 	u_int32 apep_length,
@@ -45,6 +51,41 @@ union hetb_tx_usr {
 	} field;
 	u_int32 usr_info;
 };
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+union ehttb_tx_usr {
+	struct {
+		u_int32 aid:8;
+		u_int32 neoab:1;
+		u_int32 mimo_nss:3;
+		u_int32 allocation:8;
+		u_int32 coding:1;
+		u_int32 mcs:4;
+		u_int32 reserve:1;
+		u_int32 start_ss:4;
+		u_int32 Nos:2;
+		u_int32 TargetRssi:7;
+		u_int32 Ps160:1;
+		u_int32 reserve2:22;
+		u_int32 UserType:2;
+	} field;
+	u_int32 usr_info;
+};
+
+union ehttb_spec_usr {
+	struct {
+		u_int32 aid:12;
+		u_int32 PhyId:3;
+		u_int32 ExtUlBw:2;
+		u_int32 SR1:4;
+		u_int32 SR2:4;
+		u_int32 disregard:12;
+		u_int32 reserve:25;
+		u_int32 UserType:2;
+	} field;
+	u_int32 usr_info;
+};
+#endif
 
 struct icap_dump_iq {
 	u_int32 wf_num;
@@ -257,6 +298,10 @@ enum ENUM_RF_AT_FUNCID {
 
 	RF_AT_FUNCID_SET_CFG_ON = 176,
 	RF_AT_FUNCID_SET_CFG_OFF = 177,
+
+	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR7 = 192,
+	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8 = 193,
+
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	RF_AT_FUNCID_END = 0xff
@@ -346,8 +391,6 @@ static struct hqa_m_rx_stat test_hqa_rx_stat;
 #if (CFG_SUPPORT_CONNAC3X == 0)
 static u_char g_tx_mode;
 #endif /*(CFG_SUPPORT_CONNAC3X == 0)*/
-
-
 
 static u_int32 tm_ch_num_to_freq(u_int32 ch_num)
 {
@@ -1248,6 +1291,162 @@ static void mt_op_set_manual_he_tb_value(
 
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static void mt_op_set_manual_eht_tb_value(
+	struct test_wlan_info *winfos,
+	struct test_ru_info *ru_sta,
+	struct test_configuration *configs)
+{
+	union hetb_rx_cmm cmm;
+	union ehttb_tx_usr usr;
+	union ehttb_spec_usr specUsr;
+	u_int32 nss;
+	u_int32 mapping_bw;
+	u_int8 ltf_sym_code[] = {
+		0, 0, 1, 2, 2, 3, 3, 4, 4   /* SS 1~8 */
+	};
+
+	/* setup MAC start */
+	/* step 1-1, common info of TF */
+	sys_ad_zero_mem(&cmm, sizeof(cmm));
+	cmm.field.sig_a_reserved = 0x1fc;
+	cmm.field.ul_length = ru_sta->l_len;
+	cmm.field.t_pe =
+	(ru_sta->afactor_init & 0x3) | ((ru_sta->pe_disamb & 0x1) << 2);
+	cmm.field.ldpc_extra_sym = ru_sta->ldpc_extr_sym;
+	nss = (ru_sta->ru_mu_nss > ru_sta->nss) ?
+		ru_sta->ru_mu_nss : ru_sta->nss;
+	if (ru_sta->ru_mu_nss > ru_sta->nss)
+		cmm.field.mimo_ltf = 1;
+	if (configs->stbc && nss == 1)
+		cmm.field.ltf_sym_midiam = ltf_sym_code[nss+1];
+	else
+		cmm.field.ltf_sym_midiam = ltf_sym_code[nss];
+	cmm.field.gi_ltf = configs->sgi;
+
+	mapping_bw = tm_bw_hqa_mapping_at((u_int32) configs->bw);
+	if (mapping_bw >= PROACTIVE_BW320)
+		cmm.field.ul_bw = PROACTIVE_BW160;
+	else
+		cmm.field.ul_bw = mapping_bw;
+	cmm.field.stbc = configs->stbc;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR0 ] tigger_type:0x%x,\n",
+	__func__, cmm.field.tigger_type));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("ul_length:0x%x cascade_ind:0x%x,\n",
+	cmm.field.ul_length, cmm.field.cascade_ind));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("cs_required:0x%x, ul_bw:0x%x,\n",
+	cmm.field.cs_required, cmm.field.ul_bw));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("gi_ltf:0x%x, mimo_ltf:0x%x,\n",
+	cmm.field.gi_ltf, cmm.field.mimo_ltf));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("ltf_sym_midiam:0x%x, stbc:0x%x,\n",
+	cmm.field.ltf_sym_midiam, cmm.field.stbc));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("ldpc_extra_sym :0x%x, ap_tx_pwr: 0x%x\n",
+	cmm.field.ldpc_extra_sym, cmm.field.ap_tx_pwr));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR0 ] cr_value:0x%08x\n",
+	__func__, (u_int32)(cmm.cmm_info & 0xffffffff)));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR1 ] cr_value:0x%08x\n",
+	__func__, (u_int32)((cmm.cmm_info & 0xffffffff00000000) >> 32)));
+
+	/* step 1-2, users info */
+	sys_ad_zero_mem(&usr, sizeof(usr));
+	usr.field.aid = 0x0;
+	usr.field.neoab = 0;
+	usr.field.mimo_nss = 0;
+	usr.field.allocation = ru_sta->ru_index;
+	usr.field.coding = ru_sta->ldpc;
+	usr.field.mcs = ru_sta->rate & ~BIT(5);
+	usr.field.reserve = 0;
+	usr.field.start_ss = ru_sta->start_sp_st & 0xF;
+	usr.field.Nos = (nss-1);
+	usr.field.Ps160 = ru_sta->ps160;
+	usr.field.reserve2 = 0;
+	usr.field.UserType = 2;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR2 ] aid:%d\n",
+	__func__,  usr.field.aid));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("allocation:%d, coding:%d,\n",
+	usr.field.allocation, usr.field.coding));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("mcs:0x%x, start_ss:%d,\n",
+	usr.field.mcs, usr.field.start_ss));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("Nos:%d, Ps160:%d\n",
+	usr.field.Nos, usr.field.Ps160));
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR2 ] cr_value:0x%08x\n",
+	__func__, (u_int32)(usr.usr_info & 0xffffffff)));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR3 ] cr_value:0x%08x\n",
+	__func__, (u_int32)((usr.usr_info & 0xffffffff00000000) >> 32)));
+
+	/* step 2, spec users info */
+	specUsr.field.aid = 2007;
+	specUsr.field.PhyId = 0;
+	specUsr.field.SR1 = 0;
+	specUsr.field.SR2 = 0;
+	specUsr.field.disregard = 0;
+	specUsr.field.reserve = 0;
+	specUsr.field.UserType = 2;
+
+	/* handle BW_EXT */
+	if (mapping_bw == PROACTIVE_BW160)
+		specUsr.field.ExtUlBw = 1;
+	else if (mapping_bw >= PROACTIVE_BW320)
+		specUsr.field.ExtUlBw = 2;
+	else
+		specUsr.field.ExtUlBw = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("mapping_bw:%d, ExtUlBw:%d\n",
+	mapping_bw, specUsr.field.ExtUlBw));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR7 ] cr_value:0x%08x\n",
+	__func__, (u_int32)(specUsr.usr_info & 0xffffffff)));
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	("%s: [TF TTRCR8 ] cr_value:0x%08x\n",
+	__func__, (u_int32)((specUsr.usr_info & 0xffffffff00000000) >> 32)));
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR0,
+		(cmm.cmm_info & 0xffffffff));
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR1,
+		((cmm.cmm_info & 0xffffffff00000000) >> 32));
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR2,
+		(usr.usr_info & 0xffffffff));
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR3,
+		((usr.usr_info & 0xffffffff00000000) >> 32));
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR4, 0xffffffff);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR5, 0xffffffff);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR6, 0xffffffff);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR7,
+		(specUsr.usr_info & 0xffffffff));
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8,
+		((specUsr.usr_info & 0xffffffff00000000) >> 32));
+}
+#endif
+
 s_int32 mt_op_start_tx(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
@@ -1279,7 +1478,8 @@ s_int32 mt_op_start_tx(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
 
-	if (configs->tx_mode == TEST_MODE_HE_TB) {
+	if ((configs->tx_mode == TEST_MODE_HE_TB) ||
+		(configs->tx_mode == TEST_MODE_EHT_TB_UL_OFDMA)) {
 		/*do ru operation*/
 		if (ru_sta->valid) {
 			/*Calculate HE TB PHY Info*/
@@ -1298,9 +1498,14 @@ s_int32 mt_op_start_tx(
 			tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_PKTLEN, ru_sta->mpdu_length);
 
-			/*Do Calc Manual HE TB TX*/
-			mt_op_set_manual_he_tb_value(winfos,
-			ru_sta, configs);
+			if (configs->tx_mode == TEST_MODE_HE_TB)
+				/*Do Calc Manual HE TB TX*/
+				mt_op_set_manual_he_tb_value(winfos,
+				ru_sta, configs);
+			else
+				/*Do Calc Manual EHT TB TX*/
+				mt_op_set_manual_eht_tb_value(winfos,
+				ru_sta, configs);
 		}
 	}
 

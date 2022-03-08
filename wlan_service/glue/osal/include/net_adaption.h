@@ -319,6 +319,12 @@ enum test_phy_mode_type {
 	TEST_MODE_HE_TB,
 	TEST_MODE_HE_MU,
 	TEST_MODE_VHT_MIMO,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	TEST_MODE_EHT_MU_DL_SU,
+	TEST_MODE_EHT_MU_UL_SU,
+	TEST_MODE_EHT_MU_DL_OFDMA = 15,
+	TEST_MODE_EHT_TB_UL_OFDMA,
+#endif
 	TEST_MODE_NUM
 };
 
@@ -1079,6 +1085,10 @@ struct test_ru_info {
 	u_int8 pe_disamb;
 	s_int16 punc;
 	u_int32 l_len;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_int8 ps160;
+	u_int8 isEHT;
+#endif
 };
 
 struct test_tx_info {
