@@ -11936,6 +11936,12 @@ __priv_set_ap(IN struct net_device *prNetDev,
 				__func__, i4BytesWritten);
 			return -EFAULT;
 		}
+		if (prIwReqData->data.length >
+			CMD_OID_BUF_LENGTH) {
+			DBGLOG(REQ, INFO,
+				"illegal cmd length\n");
+			return -EFAULT;
+		}
 		if (copy_from_user(aucOidBuf,
 			prIwReqData->data.pointer,
 			prIwReqData->data.length)) {
