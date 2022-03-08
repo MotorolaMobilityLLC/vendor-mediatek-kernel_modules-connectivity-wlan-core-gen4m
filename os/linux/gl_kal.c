@@ -541,6 +541,9 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 
 		if (eDlIdx == IMG_DL_IDX_PATCH) {
 			/* construct the file name for patch */
+			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
+				apucName[sub_idx] =
+					(uint8_t *)(aucNameBody + sub_idx);
 
 			/* mtxxxx_patch_ex_hdr.bin*/
 			if (prChipInfo->fw_dl_ops->constructPatchName)
