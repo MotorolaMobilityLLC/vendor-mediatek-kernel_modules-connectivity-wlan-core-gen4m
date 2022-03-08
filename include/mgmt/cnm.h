@@ -224,8 +224,9 @@ enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 6,
 	CNM_OPMODE_REQ_ANT_CTRL_1T2R   = 7,
 	CNM_OPMODE_REQ_COANT      = 8,
-	CNM_OPMODE_REQ_NUM        = 9,
-	CNM_OPMODE_REQ_MAX_CAP    = 10 /* just for coding */
+	CNM_OPMODE_REQ_RDD_OPCHNG = 9,
+	CNM_OPMODE_REQ_NUM        = 10,
+	CNM_OPMODE_REQ_MAX_CAP    = 11 /* just for coding */
 };
 
 /*******************************************************************************
@@ -409,6 +410,11 @@ void cnmEventSGStatus(
 #endif
 
 void cnmOpmodeEventHandler(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent
+);
+
+void cnmRddOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent
 );
