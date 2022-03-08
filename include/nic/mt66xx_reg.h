@@ -1286,7 +1286,9 @@ enum enum_workAround {
 };
 
 enum ENUM_CHIP_CAPABILITY {
-	CHIP_CAPA_FW_LOG_TIME_SYNC
+	CHIP_CAPA_FW_LOG_TIME_SYNC,
+	CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF,
+	CHIP_CAPA_NUM
 };
 
 /* WPDMA_GLO_CFG */
@@ -1606,6 +1608,7 @@ struct mt66xx_chip_info {
 
 	u_int8_t fgIsSupportL0p5Reset;
 	uint32_t (*queryPmicInfo)(struct ADAPTER *prAdapter);
+	struct CCIF_OPS *ccif_ops;
 };
 
 struct mt66xx_hif_driver_data {
