@@ -4581,7 +4581,7 @@ void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 
 		if (prAdapter->fgIsP2PRegistered) {
 			p2pFuncDisconnect(prAdapter, prBssInfo, prStaRec, FALSE,
-					  REASON_CODE_DISASSOC_INACTIVITY);
+				REASON_CODE_DISASSOC_INACTIVITY, TRUE);
 		}
 
 	}

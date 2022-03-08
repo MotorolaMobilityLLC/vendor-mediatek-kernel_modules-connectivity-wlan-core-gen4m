@@ -5484,7 +5484,8 @@ void cnmPowerControlErrorHandling(
 			prBssInfo,
 			prBssInfo->prStaRecOfAP,
 			TRUE,
-			REASON_CODE_OP_MODE_CHANGE_FAIL);
+			REASON_CODE_OP_MODE_CHANGE_FAIL,
+			TRUE);
 		break;
 	default:
 		break;
