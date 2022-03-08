@@ -102,6 +102,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_BSS_ACTIVATE_CTRL] = nicUniCmdBssActivateCtrl,
 	[CMD_ID_GET_SET_CUSTOMER_CFG] = nicUniCmdCustomerCfg,
 	[CMD_ID_CHIP_CONFIG] = nicUniCmdChipCfg,
+	[CMD_ID_WTBL_INFO] = nicUniCmdNotSupport,
 	[CMD_ID_SW_DBG_CTRL] = nicUniCmdSwDbgCtrl,
 	[CMD_ID_REMOVE_STA_RECORD] = nicUniCmdRemoveStaRec,
 	[CMD_ID_INDICATE_PM_BSS_CREATED] = nicUniCmdNotSupport,
