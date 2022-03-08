@@ -3119,20 +3119,12 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 		case OP_MODE_INFRASTRUCTURE:
 			/* Reset station record status. */
 			if (prP2pBssInfo->prStaRecOfAP) {
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+
 				kalP2PGCIndicateConnectionStatus(
 					prAdapter->prGlueInfo,
 					(uint8_t) prP2pBssInfo->u4PrivateData,
 					NULL, NULL, 0,
-					REASON_CODE_DEAUTH_LEAVING_BSS,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-#else
-				kalP2PGCIndicateConnectionStatus(
-					prAdapter->prGlueInfo,
-					(uint8_t) prP2pBssInfo->u4PrivateData,
-					NULL, NULL, 0,
-					REASON_CODE_DEAUTH_LEAVING_BSS);
-#endif
+					u2ReasonCode);
 
 				/* 2012/02/14 frog:
 				 * After formation before join group,
@@ -3305,6 +3297,7 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 			fgSendDeauth == TRUE ? "TRUE" : "FALSE");
 
 		if (fgSendDeauth) {
+			prStaRec->u2ReasonCode = u2ReasonCode;
 			/* Send deauth. */
 			authSendDeauthFrame(prAdapter,
 			    prP2pBssInfo,
