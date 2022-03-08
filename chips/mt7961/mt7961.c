@@ -1305,6 +1305,22 @@ uint32_t mt7961setWfdmaCoalescingInt(struct ADAPTER *prAdapter,
 }
 #endif
 
+void mt7961SerInit(IN struct ADAPTER *prAdapter,
+		   IN const u_int8_t fgAtResetFlow)
+{
+	if (!fgAtResetFlow) {
+#if defined(_HIF_SDIO)
+		/* Since MT7961 SDIO hw doesn't support L1 reset, if user
+		 * enables L1 reset somehow, then driver explicitly reset this
+		 * flag to monitor only.
+		 */
+		if (prAdapter->rWifiVar.eEnableSerL1 == FEATURE_OPT_SER_ENABLE)
+			prAdapter->rWifiVar.eEnableSerL1 =
+				FEATURE_OPT_SER_MONITOR;
+#endif
+	}
+}
+
 #ifdef MT7961
 struct BUS_INFO mt7961_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1521,7 +1537,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+#if defined(_HIF_USB) || defined(_HIF_SDIO)
 	.asicDumpSerDummyCR = mt7961DumpSerDummyCR,
+#endif
 	.downloadBufferBin = wlanConnac2XDownloadBufferBin,
 	.constructBufferBinFileName = mt7961ConstructBufferBinFileName,
 	.is_support_hw_amsdu = TRUE,
@@ -1551,6 +1569,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.asicWfsysRst = mt7961HalCbtopRguWfRst,
 	.asicPollWfsysSwInitDone = mt7961HalPollWfsysSwInitDone,
 #endif
+	.asicSerInit = mt7961SerInit,
 
 	/* buzzard capability:
 	 * 1. MAC RX AMPDU max number is 256.

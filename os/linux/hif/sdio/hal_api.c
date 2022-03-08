@@ -2382,11 +2382,16 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 	if (u4IntrBits & SER_SDIO_N9_HOST_STOP_TX_RX_OP) {
 		DBGLOG(HAL, WARN, "[SER][L1] fw notify host L1 start\n");
 
+		if (prAdapter->chip_info->asicDumpSerDummyCR)
+			prAdapter->chip_info->asicDumpSerDummyCR(prAdapter);
+
 		if (prAdapter->rWifiVar.eEnableSerL1 !=
-		     FEATURE_OPT_SER_ENABLE)
+		     FEATURE_OPT_SER_ENABLE) {
 			DBGLOG(HAL, WARN,
 			       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
-		else {
+
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L1_FAIL);
+		} else {
 			halPrintMailbox(prAdapter);
 			/* Stop HIF Tx/Rx operation */
 			nicSerStopTxRx(prAdapter);

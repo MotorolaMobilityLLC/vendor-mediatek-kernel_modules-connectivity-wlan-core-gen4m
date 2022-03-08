@@ -1590,6 +1590,8 @@ struct mt66xx_chip_info {
 				 u_int8_t fgAssertRst);
 	u_int8_t (*asicPollWfsysSwInitDone)(struct ADAPTER *prAdapter);
 #endif
+	void (*asicSerInit)(IN struct ADAPTER *prAdapter,
+			    IN const u_int8_t fgAtResetFlow);
 
 	/* If you want to explicitly specify the max AMPDU length exponent in
 	 * HE CAP IE instead of using default one specified by
