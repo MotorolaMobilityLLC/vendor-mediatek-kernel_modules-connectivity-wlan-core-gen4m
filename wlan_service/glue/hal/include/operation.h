@@ -57,6 +57,13 @@ struct param_mtk_wifi_test_struct {
 	u_int32 func_data;
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
+struct param_custom_access_rx_stat {
+	u_int32 seq_num;
+	u_int32 total_num;
+};
+
+#else
 struct param_custom_access_rx_stat {
 	u_int16 seq_num;
 	u_int8  band_idx;
@@ -64,6 +71,7 @@ struct param_custom_access_rx_stat {
 	u_int8  data;
 	u_int32 total_num;
 };
+#endif
 
 struct param_custom_mcr_rw_struct {
 	u_int32 mcr_offset;

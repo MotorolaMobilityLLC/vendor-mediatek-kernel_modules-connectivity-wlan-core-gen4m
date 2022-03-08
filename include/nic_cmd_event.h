@@ -1594,6 +1594,19 @@ struct EVENT_DUMP_MEM {
 };
 
 #if CFG_SUPPORT_QA_TOOL
+#if (CFG_SUPPORT_CONNAC3X == 0)
+struct CMD_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+};
+
+struct EVENT_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+	uint32_t au4Buffer[1];
+};
+
+#else
 struct CMD_ACCESS_RX_STAT {
 	uint16_t u2SeqNum;
 	uint8_t ucDbdcIdx;
@@ -1610,7 +1623,7 @@ struct EVENT_ACCESS_RX_STAT {
 	uint32_t u4TotalNum;
 	uint32_t au4Buffer[1];
 };
-
+#endif
 #if CFG_SUPPORT_TX_BF
 union CMD_TXBF_ACTION {
 	struct PROFILE_TAG_READ rProfileTagRead;

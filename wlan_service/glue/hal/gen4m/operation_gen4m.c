@@ -3165,9 +3165,7 @@ s_int32 mt_op_get_rx_stat_band(
 #else
 
 	rx_stat_test.seq_num = 0;
-	rx_stat_test.total_num = 76;
-	rx_stat_test.band_idx = band_idx;
-	rx_stat_test.data = 1;
+	rx_stat_test.total_num = 72;
 
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
 		 OP_WLAN_OID_QUERY_RX_STATISTICS,
@@ -3183,8 +3181,8 @@ s_int32 mt_op_get_rx_stat_band(
 			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_mdrdy_cnt);
 		rx_st_band->mac_rx_len_mismatch =
 			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch);
-		rx_st_band->mac_rx_fcs_ok_cnt =
-			SERV_OS_NTOHL(test_hqa_rx_stat.mac_fcs_ok);
+		rx_st_band->mac_rx_fcs_ok_cnt =	rx_st_band->mac_rx_mdrdy_cnt -
+			rx_st_band->mac_rx_fcs_err_cnt;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck);
 		rx_st_band->phy_rx_fcs_err_cnt_ofdm =
@@ -3215,8 +3213,8 @@ s_int32 mt_op_get_rx_stat_band(
 		rx_st_band->mac_rx_len_mismatch =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.mac_rx_len_mismatch_band1);
-		rx_st_band->mac_rx_fcs_ok_cnt =
-			SERV_OS_NTOHL(test_hqa_rx_stat.mac_fcs_ok_band1);
+		rx_st_band->mac_rx_fcs_ok_cnt = rx_st_band->mac_rx_mdrdy_cnt -
+			rx_st_band->mac_rx_fcs_err_cnt;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck_band1);

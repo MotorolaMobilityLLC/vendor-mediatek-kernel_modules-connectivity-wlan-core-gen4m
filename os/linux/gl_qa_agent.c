@@ -83,7 +83,11 @@
  */
 
 struct PARAM_RX_STAT g_HqaRxStat;
+#if (CFG_SUPPORT_CONNAC3X == 0)
+uint32_t u4RxStatSeqNum;
+#else
 uint16_t u2RxStatSeqNum;
+#endif
 u_int8_t g_DBDCEnable = FALSE;
 /* For SA Buffer Mode Temp Solution */
 u_int8_t	g_BufferDownload = FALSE;
@@ -4024,6 +4028,7 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 				      struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rRxStatisticsTest;
@@ -4032,7 +4037,7 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetRxStatisticsAll\n");
 
-	rRxStatisticsTest.u2SeqNum = u2RxStatSeqNum;
+	rRxStatisticsTest.u4SeqNum = u4RxStatSeqNum;
 	rRxStatisticsTest.u4TotalNum = HQA_RX_STATISTIC_NUM + 6;
 
 	i4Ret = kalIoctl(prGlueInfo,
@@ -4040,13 +4045,13 @@ static int32_t HQA_GetRxStatisticsAll(struct net_device
 			 &rRxStatisticsTest, sizeof(rRxStatisticsTest),
 			 TRUE, TRUE, TRUE, &u4BufLen);
 
-	u2RxStatSeqNum++;
+	u4RxStatSeqNum++;
 
 	memcpy(HqaCmdFrame->Data + 2, &(g_HqaRxStat),
 	       sizeof(struct PARAM_RX_STAT));
 	ResponseToQA(HqaCmdFrame, prIwReqData,
 		     (2 + sizeof(struct PARAM_RX_STAT)), i4Ret);
-
+#endif
 	return i4Ret;
 }
 
@@ -5245,10 +5250,11 @@ int32_t hqa_getRxStatisticsByType(
 	struct hqa_rx_stat_u *st)
 {
 	int32_t i4Ret = 0;
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	uint32_t u4BufLen = 0;
 	struct PARAM_CUSTOM_ACCESS_RX_STAT rx_stat_test;
 
-	rx_stat_test.u2SeqNum = 0;
+	rx_stat_test.u4SeqNum = 0;
 	rx_stat_test.u4TotalNum = 72;
 
 	/* only TEST_RX_STAT_BAND send query command to FW. */
@@ -5290,7 +5296,7 @@ int32_t hqa_getRxStatisticsByType(
 
 	if (i4Ret)
 		DBGLOG(RFTEST, INFO, "err=0x%08x\n.", i4Ret);
-
+#endif
 	return i4Ret;
 
 }
@@ -9018,6 +9024,7 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 				struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	uint32_t u4Ext_id = 0;
 	uint32_t u4Param_num = 0;
 	uint32_t u4Band_idx = 0;
@@ -9054,7 +9061,7 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT hqa_start_rx_ext rx_path : 0x%x\n", u4Rx_path);
 
-	u2RxStatSeqNum = 0;
+	u4RxStatSeqNum = 0;
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Band_idx);
 
@@ -9080,7 +9087,7 @@ static int32_t hqa_start_rx_ext(struct net_device *prNetDev,
 	       sizeof(u4Ext_id));
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + sizeof(u4Ext_id),
 		     i4Ret);
-
+#endif
 	return i4Ret;
 }
 
