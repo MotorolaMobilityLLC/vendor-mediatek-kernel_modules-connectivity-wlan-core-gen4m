@@ -1227,8 +1227,9 @@ uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
 void halNotifyMdCrash(IN struct ADAPTER *prAdapter);
-bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt);
+uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void halSetAdjustCtrl(struct ADAPTER *prAdapter, bool fgEn);
+void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);

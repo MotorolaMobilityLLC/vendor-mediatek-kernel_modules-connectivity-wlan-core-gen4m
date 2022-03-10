@@ -1864,15 +1864,11 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
-		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_MCC_MODE_TOKEN_CNT);
+		halSetAdjustCtrl(prAdapter, true);
 	else if (prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B) {
-		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_LOW_RATE_TOKEN_CNT);
-		prWifiVar->u4NetifStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
-		prWifiVar->u4NetifStartTh = prWifiVar->u4NetifStopTh / 2;
+		halSetAdjustCtrl(prAdapter, true);
 	} else {
-		halSetTxRingBssTokenCnt(prAdapter, HIF_TX_MSDU_TOKEN_NUM);
-		prWifiVar->u4NetifStopTh = prWifiVar->u4NetifStopThBackup;
-		prWifiVar->u4NetifStartTh = prWifiVar->u4NetifStartThBackup;
+		halSetAdjustCtrl(prAdapter, false);
 	}
 
 	kalMemZero(&rCmdSetBssInfo,
