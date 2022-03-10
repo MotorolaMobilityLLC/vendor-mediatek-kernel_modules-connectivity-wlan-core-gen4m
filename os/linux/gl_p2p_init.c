@@ -219,20 +219,39 @@ void p2pResumeStatisticsTimer(struct GLUE_INFO *prGlueInfo,
 /*---------------------------------------------------------------------------*/
 u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 {
-	if (prGlueInfo->prAdapter->fgIsP2PRegistered == TRUE) {
-		DBGLOG(P2P, INFO, "p2p is already registered\n");
+	struct ADAPTER *prAdapter = NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	ASSERT(prGlueInfo);
+	ASSERT(prAdapter);
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->rP2PRegState != ENUM_P2P_REG_STATE_UNREGISTERED) {
+		DBGLOG(P2P, INFO, "p2p is already registered, state=%d\n",
+			prAdapter->rP2PRegState);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		return FALSE;
 	}
+
+	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_REGISTERING;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	if (!glRegisterP2P(prGlueInfo, ifname, ifname2, mode)) {
 		DBGLOG(P2P, ERROR, "Launch failed\n");
+		prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERED;
 		return FALSE;
 	}
 
-	prGlueInfo->prAdapter->fgIsP2PRegistered = TRUE;
-	prGlueInfo->prAdapter->p2p_scan_report_all_bss =
-		CFG_P2P_SCAN_REPORT_ALL_BSS;
-	DBGLOG(P2P, TRACE, "Launch success, fgIsP2PRegistered TRUE\n");
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prAdapter->fgIsP2PRegistered = TRUE;
+	prAdapter->p2p_scan_report_all_bss = CFG_P2P_SCAN_REPORT_ALL_BSS;
+	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_REGISTERED;
+	DBGLOG(P2P, INFO, "Launch success, fgIsP2PRegistered TRUE\n");
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
 	return TRUE;
 }
 
@@ -292,21 +311,28 @@ void p2pSetMode(IN uint8_t ucAPMode)
 /*---------------------------------------------------------------------------*/
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter = NULL;
 	u_int8_t idx = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+	prAdapter = prGlueInfo->prAdapter;
+
+	ASSERT(prGlueInfo);
+	ASSERT(prAdapter);
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	g_P2pPrDev = NULL;
 
-	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {
-		DBGLOG(P2P, INFO, "p2p is not registered\n");
+	if (prAdapter->rP2PRegState != ENUM_P2P_REG_STATE_REGISTERED) {
+		DBGLOG(P2P, INFO, "p2p is not registered, state=%d\n",
+			prAdapter->rP2PRegState);
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		return FALSE;
 	}
 
-	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
-	prGlueInfo->prAdapter->p2p_scan_report_all_bss = FALSE;
+	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERING;
+	prAdapter->p2p_scan_report_all_bss = FALSE;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	glUnregisterP2P(prGlueInfo, 0xff);
@@ -350,6 +376,11 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	if (gprP2pWdev[0] != NULL)
 		set_wiphy_dev(gprP2pWdev->wiphy, NULL);
 #endif
+
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERED;
+	prAdapter->fgIsP2PRegistered = FALSE;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	return TRUE;
 }

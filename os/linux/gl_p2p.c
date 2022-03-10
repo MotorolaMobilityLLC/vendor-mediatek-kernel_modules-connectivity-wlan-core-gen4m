@@ -901,19 +901,21 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	u_int8_t fgDoRegister = FALSE;
 	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
-	u_int8_t ret;
+	struct ADAPTER *prAdapter = NULL;
+	u_int8_t ret = FALSE;
 	uint32_t i;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
+	prAdapter = prGlueInfo->prAdapter;
+
 	ASSERT(prGlueInfo);
-	ASSERT(prGlueInfo->prAdapter);
+	ASSERT(prAdapter);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	if (prGlueInfo->prAdapter->rP2PNetRegState
-		== ENUM_NET_REG_STATE_UNREGISTERED) {
-		prGlueInfo->prAdapter->rP2PNetRegState =
-			ENUM_NET_REG_STATE_REGISTERING;
+	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_UNREGISTERED &&
+		prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED) {
+		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERING;
 		fgDoRegister = TRUE;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -1001,7 +1003,8 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prAdapter);
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED) {
+	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED &&
+		prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED) {
 		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_UNREGISTERING;
 		fgDoUnregister = TRUE;
 	}
