@@ -1900,6 +1900,14 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #if CFG_SUPPORT_RX_GRO
+void kalSetGROEvent2Rx(struct GLUE_INFO *pr);
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+void kalGROTimerFunc(struct timer_list *timer);
+#else
+void kalGROTimerFunc(unsigned long data);
+#endif
+void kalGROTimerInit(struct ADAPTER *prAdapter);
+void kalGROTimerUninit(struct ADAPTER *prAdapter);
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev);
 #endif

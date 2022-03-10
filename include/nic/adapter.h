@@ -2073,6 +2073,10 @@ struct ADAPTER {
 	u_int8_t fgEnRmacICS;
 #endif /* CFG_SUPPORT_ICS */
 
+#if CFG_SUPPORT_RX_GRO
+	struct timer_list rRxGROTimer;
+#endif /* CFG_SUPPORT_RX_GRO */
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct LINK rPwrLevelHandlerList;
 	uint32_t u4PwrLevel;

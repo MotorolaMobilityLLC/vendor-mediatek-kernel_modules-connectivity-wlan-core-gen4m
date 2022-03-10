@@ -4957,6 +4957,10 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 			prAdapter->fgTxDirectInited = TRUE;
 		}
 	}
+
+#if CFG_SUPPORT_RX_GRO
+	kalGROTimerInit(prAdapter);
+#endif /* CFG_SUPPORT_RX_GRO */
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -5476,6 +5480,10 @@ static int32_t wlanOffAtReset(void)
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 
 	wlanOffStopWlanThreads(prGlueInfo);
+
+#if CFG_SUPPORT_RX_GRO
+	kalGROTimerUninit(prAdapter);
+#endif /* CFG_SUPPORT_RX_GRO */
 
 	wlanAdapterStop(prAdapter, TRUE);
 

@@ -380,6 +380,9 @@ extern void update_driver_loaded_status(uint8_t loaded);
 #define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
 
+#define GLUE_FLAG_RX_GRO_TIMEOUT_BIT		(25)
+#define GLUE_FLAG_RX_GRO_TIMEOUT		BIT(25)
+
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
 #define GLUE_BOW_DEVICE_NAME        "ampc0"
