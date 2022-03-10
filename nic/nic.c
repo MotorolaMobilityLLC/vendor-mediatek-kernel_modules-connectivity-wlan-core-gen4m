@@ -5337,8 +5337,6 @@ void nicRxdChNumTranslate(
 		*pucHwChannelNum = (((*pucHwChannelNum-181) << 2) + 1);
 #endif
 }
-
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo)
 {
 	struct sk_buff *prSkb;
@@ -5422,4 +5420,3 @@ void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo)
 		DBGLOG_MEM8(NIC, INFO, prSkb->data, 64);
 	}
 }
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */

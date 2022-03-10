@@ -3974,7 +3974,8 @@ void kalClearMgmtFramesByBssIdx(IN struct GLUE_INFO
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
+void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo,
+			IN u_int8_t fgIsNeedHandler)
 {
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
@@ -4004,8 +4005,9 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
 			prCmdInfo->pfCmdTimeoutHandler(prGlueInfo->prAdapter,
 						       prCmdInfo);
 		else
-			wlanReleaseCommand(prGlueInfo->prAdapter, prCmdInfo,
-					   TX_RESULT_QUEUE_CLEARANCE);
+			wlanReleaseCommandEx(prGlueInfo->prAdapter, prCmdInfo,
+					   TX_RESULT_QUEUE_CLEARANCE,
+					   fgIsNeedHandler);
 
 		cmdBufFreeCmdInfo(prGlueInfo->prAdapter, prCmdInfo);
 		GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdNum);

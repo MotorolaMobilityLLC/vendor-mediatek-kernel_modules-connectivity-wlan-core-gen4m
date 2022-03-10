@@ -5571,6 +5571,14 @@ static int32_t wlanOnAtReset(void)
 #if (CFG_SUPPORT_STATISTICS == 1)
 		wlanWakeStaticsInit();
 #endif
+
+		if (prGlueInfo->i4TxPendingCmdNum != 0) {
+			DBGLOG(INIT, INFO, "wlanOnReset clear %d command\n",
+				prGlueInfo->i4TxPendingCmdNum);
+
+			kalClearCommandQueue(prAdapter->prGlueInfo, FALSE);
+		}
+
 		/* wlanNetCreate partial process */
 		QUEUE_INITIALIZE(&prGlueInfo->rCmdQueue);
 		prGlueInfo->i4TxPendingCmdNum = 0;
