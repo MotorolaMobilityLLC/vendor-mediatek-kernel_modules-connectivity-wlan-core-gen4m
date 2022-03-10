@@ -966,9 +966,11 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 			/* free_netdev(prGlueInfo->prP2PInfo->prDevHandler); */
 			ret = FALSE;
 		} else {
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			prGlueInfo->prAdapter->rP2PNetRegState =
 			ENUM_NET_REG_STATE_REGISTERED;
 			gPrP2pDev[i] = prDevHandler;
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			ret = TRUE;
 		}
 
@@ -1096,8 +1098,10 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED)
 			unregister_netdev(prP2PInfo->prDevHandler);
 
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prGlueInfo->prAdapter->rP2PNetRegState =
 			ENUM_NET_REG_STATE_UNREGISTERED;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 		if (fgRollbackRtnlLock)
 			rtnl_lock();
@@ -1293,6 +1297,8 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	struct device *prDev;
 #endif
 
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -1389,9 +1395,11 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		/* prP2pInfo is alloc at glSetupP2P()->p2PAllocInfo() */
 		prAdapter->prP2pInfo->u4DeviceNum++;
 
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		/* set p2p net device register state */
 		/* p2pNetRegister() will check prAdapter->rP2PNetRegState. */
 		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_UNREGISTERED;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	} while (i < ucRegisterNum);
 
 	return TRUE;
