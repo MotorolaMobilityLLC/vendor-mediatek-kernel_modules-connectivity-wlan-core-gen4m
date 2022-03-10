@@ -4007,10 +4007,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_FW_PARAM				"set_fw_param"
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 #define CMD_SET_WHOLE_CHIP_RESET "SET_WHOLE_CHIP_RESET"
 #define CMD_SET_WFSYS_RESET      "SET_WFSYS_RESET"
-#endif
 
 #define CMD_SET_SW_WFDMA         "SET_SW_WFDMA"
 
@@ -14477,14 +14475,12 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
 static int priv_driver_trigger_whole_chip_reset(
 	struct net_device *prNetDev,
 	char *pcCommand,
 	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
@@ -14501,16 +14497,19 @@ static int priv_driver_trigger_whole_chip_reset(
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -1;
 	}
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	glSetRstReason(RST_CMD_TRIGGER);
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	glSetRstReasonString(
 		"cmd test trigger whole chip reset");
 	glResetWholeChipResetTrigger(g_reason);
+#else
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_CHIP_RESET);
+#endif
 
 	return i4BytesWritten;
 }
@@ -14542,11 +14541,15 @@ static int priv_driver_trigger_wfsys_reset(
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	glSetRstReason(RST_CMD_TRIGGER);
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
+#else
+	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_CHIP_RESET);
+#endif
 
 	return i4BytesWritten;
 }
-#endif
+
 #if (CFG_SUPPORT_CONNAC2X == 1)
 static int priv_driver_get_umac_fwtbl(
 	struct net_device *prNetDev,
@@ -15510,10 +15513,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1)
 	{CMD_SET_WHOLE_CHIP_RESET, priv_driver_trigger_whole_chip_reset},
 	{CMD_SET_WFSYS_RESET, priv_driver_trigger_wfsys_reset},
-#endif
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	{CMD_GET_FWTBL_UMAC, priv_driver_get_umac_fwtbl},
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
