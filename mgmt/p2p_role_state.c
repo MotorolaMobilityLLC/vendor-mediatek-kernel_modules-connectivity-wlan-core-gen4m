@@ -58,7 +58,7 @@ p2pRoleStateInit_IDLE(IN struct ADAPTER *prAdapter,
 {
 	cnmTimerStartTimer(prAdapter,
 		&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-		P2P_AP_CHNL_HOLD_TIME_MS);
+		prAdapter->rWifiVar.u4ApChnlHoldTime);
 }				/* p2pRoleStateInit_IDLE */
 
 void
