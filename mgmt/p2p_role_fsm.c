@@ -2789,7 +2789,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 		(struct MSG_SAA_FSM_COMP *) NULL;
 	struct SW_RFB *prAssocRspSwRfb = (struct SW_RFB *) NULL;
 	struct STA_RECORD *prSetupStaRec = (struct STA_RECORD *) NULL;
-	struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
 	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *) prMsgHdr;
 	prSetupStaRec = prJoinCompMsg->prStaRec;
@@ -2815,30 +2815,30 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-	bss =
+	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prSetupStaRec->ucBssIndex);
 
-	if (bss->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
+	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
 		DBGLOG(P2P, ERROR,
 			"prP2pBssInfo->eCurrentOPMode %d != OP_MODE_INFRASTRUCTURE(%d)!\n",
-			bss->eCurrentOPMode,
+			prP2pBssInfo->eCurrentOPMode,
 			OP_MODE_INFRASTRUCTURE);
 		goto error;
 	}
 
-	ASSERT(bss->u4PrivateData < BSS_P2P_NUM);
-	if (!(bss->u4PrivateData < BSS_P2P_NUM)) {
+	ASSERT(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM);
+	if (!(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM)) {
 		DBGLOG(P2P, ERROR,
 			"prP2pBssInfo->u4PrivateData %d should < BSS_P2P_NUM(%d)!\n",
-			bss->u4PrivateData,
+			prP2pBssInfo->u4PrivateData,
 			BSS_P2P_NUM);
 		goto error;
 	}
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-			bss->u4PrivateData);
+			prP2pBssInfo->u4PrivateData);
 
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
@@ -2851,7 +2851,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 			uint8_t i;
 
 			for (i = 0; i < MLD_LINK_MAX; i++) {
-				struct BSS_INFO *prP2pBssInfo =
+				struct BSS_INFO *prP2pLinkBssInfo =
 					p2pGetLinkBssInfo(prAdapter,
 					prP2pRoleFsmInfo, i);
 				struct BSS_DESC *prTargetBssDesc =
@@ -2859,7 +2859,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec =
 					p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
 
-				if (!prP2pBssInfo ||
+				if (!prP2pLinkBssInfo ||
 					!prTargetBssDesc ||
 					!prStaRec)
 					break;
@@ -2871,30 +2871,30 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				 * FW's Media State immediately.
 				 */
 				p2pChangeMediaState(prAdapter,
-					prP2pBssInfo,
+					prP2pLinkBssInfo,
 					MEDIA_STATE_CONNECTED);
 
 				/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
 				 * in Driver if have.
 				 */
-				if ((prP2pBssInfo->prStaRecOfAP)
-					&& (prP2pBssInfo->prStaRecOfAP
+				if ((prP2pLinkBssInfo->prStaRecOfAP)
+					&& (prP2pLinkBssInfo->prStaRecOfAP
 					!= prStaRec)) {
 					cnmStaRecChangeState(prAdapter,
-						prP2pBssInfo->prStaRecOfAP,
+						prP2pLinkBssInfo->prStaRecOfAP,
 						STA_STATE_1);
 
 					cnmStaRecFree(prAdapter,
-						prP2pBssInfo->prStaRecOfAP);
+						prP2pLinkBssInfo->prStaRecOfAP);
 
-					prP2pBssInfo->prStaRecOfAP = NULL;
+					prP2pLinkBssInfo->prStaRecOfAP = NULL;
 				}
 				/* 4 <1.3> Update BSS_INFO_T */
 				if (prAssocRspSwRfb) {
 					p2pFuncUpdateBssInfoForJOIN(prAdapter,
 					    prTargetBssDesc,
 					    prStaRec,
-					    prP2pBssInfo,
+					    prP2pLinkBssInfo,
 					    prAssocRspSwRfb);
 				} else {
 					DBGLOG(P2P, INFO,
@@ -2910,7 +2910,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 				/* <1.5> Update RSSI if necessary */
 				nicUpdateRSSI(prAdapter,
-					prP2pBssInfo->ucBssIndex,
+					prP2pLinkBssInfo->ucBssIndex,
 					(int8_t)(RCPI_TO_dBm(prStaRec->ucRCPI)),
 					0);
 #endif
@@ -2964,6 +2964,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				if (prSetupStaRec->ucJoinFailureCount >=
 						P2P_SAA_RETRY_COUNT) {
 #define DISCONNECT_LOCALLY WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
+					/* Join failed after retries */
 					kalP2PGCIndicateConnectionStatus(
 						prAdapter->prGlueInfo,
 						prP2pRoleFsmInfo->ucRoleIndex,
@@ -2973,15 +2974,25 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 						prSetupStaRec->u2StatusCode,
 						DISCONNECT_LOCALLY);
 
-					prP2pRoleFsmInfo->
-						rJoinInfo.prTargetStaRec = NULL;
+					/* Reset p2p state */
+					prJoinInfo->prTargetBssDesc = NULL;
+
+					SET_NET_PWR_STATE_IDLE(prAdapter,
+						prP2pBssInfo->ucBssIndex);
+
+					p2pRoleFsmStateTransition(prAdapter,
+						prP2pRoleFsmInfo,
+						P2P_ROLE_STATE_IDLE);
+
+					p2pFuncStopComplete(prAdapter,
+						prP2pBssInfo);
 				}
 			}
 		}
 	}
 
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
-		if (bss->eConnectionState ==
+		if (prP2pBssInfo->eConnectionState ==
 				MEDIA_STATE_CONNECTED) {
 			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
 		} else {
@@ -2990,14 +3001,16 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 			prBssDesc = prJoinInfo->prTargetBssDesc;
 
-			COPY_SSID(rSsid.aucSsid,
-				rSsid.ucSsidLen,
-				prBssDesc->aucSSID,
-				prBssDesc->ucSSIDLen);
-			p2pRoleFsmScanTargetBss(prAdapter,
-				prP2pRoleFsmInfo,
-				prBssDesc->ucChannelNum,
-				&rSsid);
+			if (prBssDesc) {
+				COPY_SSID(rSsid.aucSsid,
+					rSsid.ucSsidLen,
+					prBssDesc->aucSSID,
+					prBssDesc->ucSSIDLen);
+				p2pRoleFsmScanTargetBss(prAdapter,
+					prP2pRoleFsmInfo,
+					prBssDesc->ucChannelNum,
+					&rSsid);
+			}
 		}
 	}
 
