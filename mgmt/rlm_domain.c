@@ -7403,6 +7403,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 			chan = &sband->channels[ch_idx];
 			pCh = (rlmDomainGetActiveChannels() + ch_count);
 			/* Parse flags and get readable string */
+			kalMemZero(chan_flag_string, sizeof(chan_flag_string));
 			rlmDomainChannelFlagString(chan->flags,
 						   chan_flag_string,
 						   sizeof(chan_flag_string));
