@@ -438,6 +438,28 @@ enum ENUM_CMD_TX_RESULT {
 #endif
 #define KAL_NUM_BANDS (4)
 
+#if CFG_SUPPORT_DATA_STALL
+#define REPORT_EVENT_INTERVAL		30
+#define EVENT_PER_HIGH_THRESHOLD	80
+#define EVENT_TX_LOW_RATE_THRESHOLD	20
+#define EVENT_RX_LOW_RATE_THRESHOLD	20
+#define TRAFFIC_RHRESHOLD	150
+
+enum ENUM_VENDOR_DRIVER_EVENT {
+	EVENT_TEST_MODE,
+	EVENT_ARP_NO_RESPONSE,
+	EVENT_PER_HIGH,
+	EVENT_TX_LOW_RATE,
+	EVENT_RX_LOW_RATE,
+	EVENT_SG_DISABLE,
+	EVENT_SG_1T1R,
+	EVENT_SG_2T2R,
+	EVENT_TX_DUP_OFF = 100,
+	EVENT_TX_DUP_ON = 101,
+	EVENT_TX_DUP_CERT_CHANGE = 102
+};
+#endif
+
 /**
  * enum nl80211_reg_rule_flags - regulatory rule flags
  * @NL80211_RRF_NO_OFDM: OFDM modulation not allowed
@@ -1963,5 +1985,24 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 
 #define kalIcsWrite(buf, size) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#if CFG_SUPPORT_DATA_STALL
+#define KAL_REPORT_ERROR_EVENT(_prAdapter, \
+			       _event, \
+			       _dataLen, \
+			       _ucBssIdx, \
+			       _fgForceReport) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#endif
+
+#define kalVendorEvtRssiBeyondRange(_prAdapter, _ucBssIdx, _i4Rssi) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+bool ieee80211_operating_class_to_band(u8 operating_class,
+				       enum nl80211_band *band);
+
+uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgInitCmd);
+
 #endif /* _GL_KAL_H */
 

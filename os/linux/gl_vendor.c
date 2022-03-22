@@ -2052,27 +2052,28 @@ nla_put_failure:
 	return -EFAULT;
 }
 
-int mtk_cfg80211_vendor_event_rssi_beyond_range(
-	struct wiphy *wiphy, struct wireless_dev *wdev, int rssi)
+int mtk_cfg80211_vendor_event_rssi_beyond_range(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, int rssi)
 {
+	struct wiphy *wiphy = wlanGetWiphy();
+	struct net_device *dev = wlanGetNetDev(prAdapter->prGlueInfo,
+			ucBssIdx);
 	struct sk_buff *skb;
 	struct PARAM_RSSI_MONITOR_EVENT rRSSIEvt;
 	struct BSS_INFO *prAisBssInfo;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter;
 
 	ASSERT(wiphy);
-	ASSERT(wdev);
+	ASSERT(dev->ieee80211_ptr);
 
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
+	if (dev == NULL)
+		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "vendor command rssi=%d\r\n", rssi);
 	kalMemZero(&rRSSIEvt,
 		   sizeof(struct PARAM_RSSI_MONITOR_EVENT));
 
 #if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
+	skb = cfg80211_vendor_event_alloc(wiphy, dev->ieee80211_ptr,
 				  sizeof(struct PARAM_RSSI_MONITOR_EVENT),
 				  WIFI_EVENT_RSSI_MONITOR, GFP_KERNEL);
 #else
@@ -2086,8 +2087,7 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 		return -ENOMEM;
 	}
 
-	prAdapter = prGlueInfo->prAdapter;
-	prAisBssInfo = aisGetDefaultLinkBssInfo(prGlueInfo->prAdapter);
+	prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
 	kalMemCopy(rRSSIEvt.BSSID, prAisBssInfo->aucBSSID,
 		   sizeof(uint8_t) * MAC_ADDR_LEN);
 

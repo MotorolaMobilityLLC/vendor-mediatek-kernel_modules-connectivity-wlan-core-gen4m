@@ -998,6 +998,10 @@ slt_postfix = _mc
 MODULE_NAME := $(MODULE_NAME)$(slt_postfix)
 endif
 
+ifeq ($(CONFIG_CHIP_RESET_SUPPORT), n)
+    ccflags-y += -DCFG_CHIP_RESET_SUPPORT=0
+endif
+
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips

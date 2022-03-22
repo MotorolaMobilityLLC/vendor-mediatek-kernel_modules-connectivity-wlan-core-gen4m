@@ -2709,7 +2709,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			} else if (prP2pBssInfo
 				->u4RsnSelectedAKMSuite ==
 				RSN_AKM_SUITE_SAE) {
-				if (!completion_done(
+				if (!kal_completion_done(
 					&prP2pRoleFsmInfo->rDeauthComp)) {
 					DBGLOG(P2P, TRACE,
 						"Complete rDeauthComp\n");
