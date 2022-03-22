@@ -380,7 +380,9 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Initiate BSS_INFO_T - common part */
 	BSS_INFO_INIT(prAdapter, prAisBssInfo);
 
-	if (!prAdapter->rWifiVar.ucMacAddrOverride) {
+	/* override config only affects default ais, which is wlan0 */
+	if (!prAdapter->rWifiVar.ucMacAddrOverride ||
+	    prAisFsmInfo->ucAisIndex != AIS_DEFAULT_INDEX) {
 		/* update MAC address */
 		nicApplyLinkAddress(prAdapter,
 		    prAdapter->rWifiVar.aucMacAddress[prAisFsmInfo->ucAisIndex],
