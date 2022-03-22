@@ -279,7 +279,8 @@ void rstNotifyWholeChipRstStatus(enum ENUM_RST_MODULE_TYPE_T module,
 		apcModule[module], apcStatus[status]);
 
 #if defined(_HIF_SDIO)
-	g_prResetInfo.prHost = func->card->host;
+	if (func)
+		g_prResetInfo.prHost = func->card->host;
 #endif
 
 	switch (status) {
