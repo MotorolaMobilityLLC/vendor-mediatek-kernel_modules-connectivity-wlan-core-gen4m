@@ -4310,6 +4310,8 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 	uint8_t i = 0;
 	struct RSN_INFO rRsnIe;
 
+	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
+
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
