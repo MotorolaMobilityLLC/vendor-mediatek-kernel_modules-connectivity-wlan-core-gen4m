@@ -1073,6 +1073,11 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand);
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
+void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
+	IN enum ENUM_BAND eHwBand);
+#endif
+
 void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);
 
 void updateLinkStatsApRec(struct ADAPTER *prAdapter,

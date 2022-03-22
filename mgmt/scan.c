@@ -2851,12 +2851,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
 			}
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
-				DBGLOG(SCN, INFO,
-					"BSSID:" MACSTR
-					" SSID:%s, EHT OP IE\n",
-					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->aucSSID);
-				DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+				scanParseEhtOpIE(pucIE, prBssDesc, eHwBand);
 			}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -5380,7 +5375,11 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 			&prBssDesc->ucCenterFreqS2,
 			&prBssDesc->eSco);
 
-		log_dbg(SCN, INFO, "HE6G_OPINFOR:%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+		log_dbg(SCN, INFO,
+			"BSSID:" MACSTR
+			" SSID:%s HE6G_OPINFOR:%u,%u,%u,%u,%u,%u,%u,%u,%u\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->aucSSID,
 			prBssDesc->ucChannelNum,
 			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
 			prBssDesc->eChannelWidth,
@@ -5392,6 +5391,33 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 			prBssDesc->eSco);
 	} else
 		prBssDesc->fgIsHE6GPresent = FALSE;
+}
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
+	IN enum ENUM_BAND eHwBand)
+{
+	struct IE_EHT_OP *prEhtOp;
+
+	prEhtOp = (struct IE_EHT_OP *) pucIE;
+	prBssDesc->eChannelWidth =
+		ehtRlmGetVhtOpBwByEhtOpBw(prEhtOp->ucEhtOpParams[0]);
+	/* Get CCFS from driver temporarily instead of parsing AP's CCFS */
+	prBssDesc->ucCenterFreqS1 = nicGetS1(eHwBand,
+		prBssDesc->ucChannelNum, prBssDesc->eChannelWidth);
+	prBssDesc->ucCenterFreqS2 = 0;
+
+	DBGLOG(SCN, INFO,
+		"[EHT OP IE] BSSID:" MACSTR
+		" SSID:%s CH: %u, BW: %u S1: %u S2: %u\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		prBssDesc->aucSSID,
+		prBssDesc->ucChannelNum,
+		prBssDesc->eChannelWidth,
+		prBssDesc->ucCenterFreqS1,
+		prBssDesc->ucCenterFreqS2);
+	DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
 }
 #endif
 
