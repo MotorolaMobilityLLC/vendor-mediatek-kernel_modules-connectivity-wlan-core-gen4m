@@ -1011,7 +1011,7 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
+		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4WrValue);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	HAL_MCR_WR(prAdapter, MAWD_AP_INTERRUPT_SETTING1, u4MawdSta);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
