@@ -53,35 +53,10 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-uint32_t halWtblWriteRaw(
-	struct ADAPTER *prAdapter,
-	uint16_t  u2EntryIdx,
-	enum _ENUM_WTBL_TYPE_T eType,
-	uint16_t u2DW,
-	uint32_t u4Value)
-{
-	uint32_t u4WtblVmAddr = 0;
-
-	if (eType == WTBL_TYPE_LMAC) {
-		HAL_MCR_WR(prAdapter, WF_WTBLON_TOP_WDUCR_ADDR,
-			((u2EntryIdx >> 7) & WF_WTBLON_TOP_WDUCR_GROUP_MASK) << WF_WTBLON_TOP_WDUCR_GROUP_SHFT);
-		u4WtblVmAddr = LWTBL_IDX2BASE(u2EntryIdx, u2DW);
-	} else if (eType == WTBL_TYPE_UMAC) {
-		HAL_MCR_WR(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR,
-			((u2EntryIdx >> 7) & WF_UWTBL_TOP_WDUCR_GROUP_MASK) << WF_UWTBL_TOP_WDUCR_GROUP_SHFT);
-		u4WtblVmAddr = UWTBL_IDX2BASE(u2EntryIdx, u2DW);
-	} else if (eType == WTBL_TYPE_KEY) {
-		HAL_MCR_WR(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR,
-			(WF_UWTBL_TOP_WDUCR_TARGET_MASK | (((u2EntryIdx >> 7) & WF_UWTBL_TOP_WDUCR_GROUP_MASK) << WF_UWTBL_TOP_WDUCR_GROUP_SHFT)));
-		u4WtblVmAddr = KEYTBL_IDX2BASE(u2EntryIdx, u2DW);
-	} else {
-		/*TODO:*/
-	}
-
-	HAL_MCR_WR(prAdapter, u4WtblVmAddr, u4Value);
-
-	return 0;
-}
+static char *RATE_V3_HW_TX_MODE_STR[] = {
+	"CCK", "OFDM", "MM", "GF", "VHT", "PLR",
+	"N/A", "N/A", "HE_SU", "HE_ER", "HE_TRIG", "HE_MU",
+	"EHT", "EHT_ER", "EHT_TRIG", "EHT_MU"};
 
 uint32_t halWtblReadRaw(
 	struct ADAPTER *prAdapter,
@@ -125,1154 +100,690 @@ uint32_t halWtblReadRaw(
 	return 0;
 }
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW0[] = {
-	{"MUAR_IDX",    WF_LWTBL_MUAR_MASK, WF_LWTBL_MUAR_SHIFT,	FALSE},
-	{"RCA1",        WF_LWTBL_RCA1_MASK, NO_SHIFT_DEFINE,	FALSE},
-	{"KID",         WF_LWTBL_KID_MASK,  WF_LWTBL_KID_SHIFT,	FALSE},
-	{"RCID",        WF_LWTBL_RCID_MASK, NO_SHIFT_DEFINE,	FALSE},
-	{"BAND",        WF_LWTBL_BAND_MASK, WF_LWTBL_BAND_SHIFT,	FALSE},
-	{"RV",          WF_LWTBL_RV_MASK,   NO_SHIFT_DEFINE,	FALSE},
-	{"RCA2",        WF_LWTBL_RCA2_MASK, NO_SHIFT_DEFINE,	FALSE},
-	{"WPI_FLAG",    WF_LWTBL_WPI_FLAG_MASK, NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW0_1(struct ADAPTER *prAdapter, uint8_t *lwtbl)
+static u_int8_t connac3x_wtbl_get_sgi_info(
+	struct bwtbl_lmac_struct *pWtbl)
 {
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
+	if (!pWtbl)
+		return FALSE;
 
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LinkAddr: %02x:%02x:%02x:%02x:%02x:%02x(D0[B0~15], D1[B0~31])\n",
-		lwtbl[4], lwtbl[5], lwtbl[6], lwtbl[7], lwtbl[0], lwtbl[1]);
+	switch (pWtbl->trx_cap.wtbl_d9.field.fcap) {
+	case BW_20:
+		return ((pWtbl->trx_cap.wtbl_d2.field.he) ?
+			(pWtbl->trx_cap.wtbl_d6.field.g2_he) :
+			(pWtbl->trx_cap.wtbl_d6.field.g2));
+	case BW_40:
+		return ((pWtbl->trx_cap.wtbl_d2.field.he) ?
+			(pWtbl->trx_cap.wtbl_d6.field.g4_he) :
+			(pWtbl->trx_cap.wtbl_d6.field.g4));
+	case BW_80:
+		return ((pWtbl->trx_cap.wtbl_d2.field.he) ?
+			(pWtbl->trx_cap.wtbl_d6.field.g8_he) :
+			(pWtbl->trx_cap.wtbl_d6.field.g8));
+	case BW_160:
+		return ((pWtbl->trx_cap.wtbl_d2.field.he) ?
+			(pWtbl->trx_cap.wtbl_d6.field.g16_he) :
+			(pWtbl->trx_cap.wtbl_d6.field.g16));
+	case BW_320:
+		return pWtbl->trx_cap.wtbl_d5.field.gi_eht;
+	default:
+		return FALSE;
+	}
+}
 
-	/* LMAC WTBL DW 0 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 0/1\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_PEER_INFO_DW_0*4]);
-	dw_value = *addr;
+static u_int8_t connac3x_wtbl_get_ldpc_info(
+	uint8_t ucTxMode,
+	struct bwtbl_lmac_struct *pWtbl)
+{
+	if (!pWtbl)
+		return FALSE;
 
-	while (WTBL_LMAC_DW0[i].name) {
+	switch (ucTxMode) {
+	case ENUM_TX_MODE_MM:
+	case ENUM_TX_MODE_GF:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_ht;
+	case ENUM_TX_MODE_VHT:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_vht;
+#if (CFG_SUPPORT_802_11AX == 1)
+	case ENUM_TX_MODE_HE_SU:
+	case ENUM_TX_MODE_HE_ER:
+	case ENUM_TX_MODE_HE_MU:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_he;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	case ENUM_TX_MODE_EHT:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_eht;
+#endif
+	case ENUM_TX_MODE_CCK:
+	case ENUM_TX_MODE_OFDM:
+	default:
+		return FALSE;
+	}
+}
 
-		if (WTBL_LMAC_DW0[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW0[i].name,
-				(dw_value & WTBL_LMAC_DW0[i].mask) ? 1 : 0);
+static int32_t connac3x_wtbl_rate_to_string(
+	char *pcCommand,
+	int i4TotalLen,
+	uint8_t TxRx,
+	struct bwtbl_lmac_struct *pWtbl,
+	int32_t i4BytesWritten)
+{
+	uint8_t i, txmode, rate, stbc, fcap;
+	uint8_t nss, gi;
+	uint16_t arTxRate[8];
+	char prefix[16] = {" "};
+
+	arTxRate[0] = pWtbl->auto_rate_tb.wtbl_d10.field.rate1;
+	arTxRate[1] = pWtbl->auto_rate_tb.wtbl_d10.field.rate2;
+	arTxRate[2] = pWtbl->auto_rate_tb.wtbl_d11.field.rate3;
+	arTxRate[3] = pWtbl->auto_rate_tb.wtbl_d11.field.rate4;
+	arTxRate[4] = pWtbl->auto_rate_tb.wtbl_d12.field.rate5;
+	arTxRate[5] = pWtbl->auto_rate_tb.wtbl_d12.field.rate6;
+	arTxRate[6] = pWtbl->auto_rate_tb.wtbl_d13.field.rate7;
+	arTxRate[7] = pWtbl->auto_rate_tb.wtbl_d13.field.rate8;
+	fcap = pWtbl->trx_cap.wtbl_d9.field.fcap;
+	for (i = 0; i < AUTO_RATE_NUM; i++) {
+
+		txmode = CONNAC3X_HW_TX_RATE_TO_MODE(arTxRate[i]);
+		if (txmode >= ENUM_TX_MODE_NUM)
+			txmode = ENUM_TX_MODE_NUM - 1;
+		rate = HW_TX_RATE_TO_MCS(arTxRate[i]);
+		nss = CONNAC3X_HW_TX_RATE_TO_NSS(arTxRate[i]) + 1;
+		stbc = CONNAC3X_HW_TX_RATE_TO_STBC(arTxRate[i]);
+		gi = connac3x_wtbl_get_sgi_info(pWtbl);
+
+		if (pWtbl->trx_cap.wtbl_d9.field.rate_idx == i) {
+			if (TxRx == 0)
+				kalStrnCpy(prefix, "[Last RX Rate] ", 16);
+			else
+				kalStrnCpy(prefix, "[Last TX Rate] ", 16);
+		}
 		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW0[i].name,
-				(dw_value & WTBL_LMAC_DW0[i].mask) >> WTBL_LMAC_DW0[i].shift);
-		i++;
-	}
-}
+			kalStrnCpy(prefix, "               ", 16);
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW2[] = {
-	{"AID",                 WF_LWTBL_AID_MASK,              WF_LWTBL_AID_SHIFT,	FALSE},
-	{"GID_SU",              WF_LWTBL_GID_SU_MASK,           NO_SHIFT_DEFINE,	FALSE},
-	{"SPP_EN",              WF_LWTBL_SPP_EN_MASK,           NO_SHIFT_DEFINE,	FALSE},
-	{"WPI_EVEN",            WF_LWTBL_WPI_EVEN_MASK,         NO_SHIFT_DEFINE,	FALSE},
-	{"AAD_OM",              WF_LWTBL_AAD_OM_MASK,           NO_SHIFT_DEFINE,	FALSE},
-	{"CIPHER_PGTK",         WF_LWTBL_CIPHER_SUIT_PGTK_MASK, WF_LWTBL_CIPHER_SUIT_PGTK_SHIFT,	TRUE},
-	{"FROM_DS",             WF_LWTBL_FD_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"TO_DS",               WF_LWTBL_TD_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"SW",                  WF_LWTBL_SW_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"UL",                  WF_LWTBL_UL_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"TX_POWER_SAVE",       WF_LWTBL_TX_PS_MASK,            NO_SHIFT_DEFINE,	TRUE},
-	{"QOS",                 WF_LWTBL_QOS_MASK,              NO_SHIFT_DEFINE,	FALSE},
-	{"HT",                  WF_LWTBL_HT_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"VHT",                 WF_LWTBL_VHT_MASK,              NO_SHIFT_DEFINE,	FALSE},
-	{"HE",                  WF_LWTBL_HE_MASK,               NO_SHIFT_DEFINE,	FALSE},
-	{"EHT",                 WF_LWTBL_EHT_MASK,              NO_SHIFT_DEFINE,	FALSE},
-	{"MESH",                WF_LWTBL_MESH_MASK,             NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW2(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 2 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 2\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_2*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW2[i].name) {
-
-		if (WTBL_LMAC_DW2[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW2[i].name,
-				(dw_value & WTBL_LMAC_DW2[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW2[i].name,
-				(dw_value & WTBL_LMAC_DW2[i].mask) >> WTBL_LMAC_DW2[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW3[] = {
-	{"WMM_Q",           WF_LWTBL_WMM_Q_MASK,			WF_LWTBL_WMM_Q_SHIFT,	FALSE},
-	{"EHT_SIG_MCS",     WF_LWTBL_EHT_SIG_MCS_MASK,		WF_LWTBL_EHT_SIG_MCS_SHIFT,	FALSE},
-	{"HDRT_MODE",       WF_LWTBL_HDRT_MODE_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"BEAM_CHG",        WF_LWTBL_BEAM_CHG_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"EHT_LTF_SYM_NUM", WF_LWTBL_EHT_LTF_SYM_NUM_OPT_MASK,      WF_LWTBL_EHT_LTF_SYM_NUM_OPT_SHIFT,	TRUE},
-	{"PFMU_IDX",	WF_LWTBL_PFMU_IDX_MASK,			WF_LWTBL_PFMU_IDX_SHIFT,	FALSE},
-	{"ULPF_IDX",	WF_LWTBL_ULPF_IDX_MASK,			WF_LWTBL_ULPF_IDX_SHIFT,	FALSE},
-	{"RIBF",		WF_LWTBL_RIBF_MASK,			NO_SHIFT_DEFINE,	FALSE},
-	{"ULPF",		WF_LWTBL_ULPF_MASK,			NO_SHIFT_DEFINE,	TRUE},
-	{"TBF_HT",          WF_LWTBL_TBF_HT_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"TBF_VHT",         WF_LWTBL_TBF_VHT_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"TBF_HE",          WF_LWTBL_TBF_HE_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"TBF_EHT",         WF_LWTBL_TBF_EHT_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"IGN_FBK",         WF_LWTBL_IGN_FBK_MASK,		NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW3(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 3 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 3\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_3*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW3[i].name) {
-
-		if (WTBL_LMAC_DW3[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW3[i].name,
-				(dw_value & WTBL_LMAC_DW3[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW3[i].name,
-				(dw_value & WTBL_LMAC_DW3[i].mask) >> WTBL_LMAC_DW3[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW4[] = {
-	{"ANT_ID_STS0",     WF_LWTBL_ANT_ID0_MASK,      WF_LWTBL_ANT_ID0_SHIFT,	FALSE},
-	{"STS1",            WF_LWTBL_ANT_ID1_MASK,      WF_LWTBL_ANT_ID1_SHIFT,	FALSE},
-	{"STS2",            WF_LWTBL_ANT_ID2_MASK,      WF_LWTBL_ANT_ID2_SHIFT,	FALSE},
-	{"STS3",            WF_LWTBL_ANT_ID3_MASK,      WF_LWTBL_ANT_ID3_SHIFT,	TRUE},
-	{"ANT_ID_STS4",     WF_LWTBL_ANT_ID4_MASK,      WF_LWTBL_ANT_ID4_SHIFT,	FALSE},
-	{"STS5",            WF_LWTBL_ANT_ID5_MASK,      WF_LWTBL_ANT_ID5_SHIFT,	FALSE},
-	{"STS6",            WF_LWTBL_ANT_ID6_MASK,      WF_LWTBL_ANT_ID6_SHIFT,	FALSE},
-	{"STS7",            WF_LWTBL_ANT_ID7_MASK,      WF_LWTBL_ANT_ID7_SHIFT,	TRUE},
-	{"PE",              WF_LWTBL_PE_MASK,           WF_LWTBL_PE_SHIFT,	FALSE},
-	{"DIS_RHTR",        WF_LWTBL_DIS_RHTR_MASK,     NO_SHIFT_DEFINE,	FALSE},
-	{"LDPC_HT",         WF_LWTBL_LDPC_HT_MASK,      NO_SHIFT_DEFINE,	FALSE},
-	{"LDPC_VHT",        WF_LWTBL_LDPC_VHT_MASK,     NO_SHIFT_DEFINE,	FALSE},
-	{"LDPC_HE",         WF_LWTBL_LDPC_HE_MASK,      NO_SHIFT_DEFINE,	FALSE},
-	{"LDPC_EHT",	    WF_LWTBL_LDPC_EHT_MASK,	NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW4(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 4 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 4\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_4*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW4[i].name) {
-		if (WTBL_LMAC_DW4[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW4[i].name,
-				(dw_value & WTBL_LMAC_DW4[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW4[i].name,
-				(dw_value & WTBL_LMAC_DW4[i].mask) >> WTBL_LMAC_DW4[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW5[] = {
-	{"AF",                  WF_LWTBL_AF_MASK,           WF_LWTBL_AF_SHIFT,		FALSE},
-	{"AF_HE",               WF_LWTBL_AF_HE_MASK,        WF_LWTBL_AF_HE_SHIFT,	FALSE},
-	{"RTS",                 WF_LWTBL_RTS_MASK,          NO_SHIFT_DEFINE,	FALSE},
-	{"SMPS",                WF_LWTBL_SMPS_MASK,         NO_SHIFT_DEFINE,	FALSE},
-	{"DYN_BW",              WF_LWTBL_DYN_BW_MASK,       NO_SHIFT_DEFINE,	TRUE},
-	{"MMSS",                WF_LWTBL_MMSS_MASK,         WF_LWTBL_MMSS_SHIFT,	FALSE},
-	{"USR",                 WF_LWTBL_USR_MASK,          NO_SHIFT_DEFINE,	FALSE},
-	{"SR_RATE",             WF_LWTBL_SR_R_MASK,         WF_LWTBL_SR_R_SHIFT,	FALSE},
-	{"SR_ABORT",            WF_LWTBL_SR_ABORT_MASK,     NO_SHIFT_DEFINE,	TRUE},
-	{"TX_POWER_OFFSET",     WF_LWTBL_TX_POWER_OFFSET_MASK,  WF_LWTBL_TX_POWER_OFFSET_SHIFT,	FALSE},
-	{"LTF_EHT",		WF_LWTBL_LTF_EHT_MASK,      WF_LWTBL_LTF_EHT_SHIFT, FALSE},
-	{"GI_EHT",		WF_LWTBL_GI_EHT_MASK,       WF_LWTBL_GI_EHT_SHIFT, FALSE},
-	{"DOPPL",               WF_LWTBL_DOPPL_MASK,        NO_SHIFT_DEFINE,	FALSE},
-	{"TXOP_PS_CAP",         WF_LWTBL_TXOP_PS_CAP_MASK,  NO_SHIFT_DEFINE,	FALSE},
-	{"DONOT_UPDATE_I_PSM",  WF_LWTBL_DU_I_PSM_MASK,     NO_SHIFT_DEFINE,	TRUE},
-	{"I_PSM",               WF_LWTBL_I_PSM_MASK,        NO_SHIFT_DEFINE,	FALSE},
-	{"PSM",                 WF_LWTBL_PSM_MASK,          NO_SHIFT_DEFINE,	FALSE},
-	{"SKIP_TX",             WF_LWTBL_SKIP_TX_MASK,      NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW5(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 5 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 5\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_5*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW5[i].name) {
-		if (WTBL_LMAC_DW5[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW5[i].name,
-				(dw_value & WTBL_LMAC_DW5[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW5[i].name,
-				(dw_value & WTBL_LMAC_DW5[i].mask) >> WTBL_LMAC_DW5[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW6[] = {
-	{"CBRN",        WF_LWTBL_CBRN_MASK,	    WF_LWTBL_CBRN_SHIFT,	FALSE},
-	{"DBNSS_EN",    WF_LWTBL_DBNSS_EN_MASK, NO_SHIFT_DEFINE,	FALSE},
-	{"BAF_EN",      WF_LWTBL_BAF_EN_MASK,   NO_SHIFT_DEFINE,	FALSE},
-	{"RDGBA",       WF_LWTBL_RDGBA_MASK,    NO_SHIFT_DEFINE,	FALSE},
-	{"RDG",         WF_LWTBL_R_MASK,        NO_SHIFT_DEFINE,	FALSE},
-	{"SPE_IDX",     WF_LWTBL_SPE_IDX_MASK,  WF_LWTBL_SPE_IDX_SHIFT,	TRUE},
-	{"G2",          WF_LWTBL_G2_MASK,       NO_SHIFT_DEFINE,	FALSE},
-	{"G4",          WF_LWTBL_G4_MASK,       NO_SHIFT_DEFINE,	FALSE},
-	{"G8",          WF_LWTBL_G8_MASK,       NO_SHIFT_DEFINE,	FALSE},
-	{"G16",         WF_LWTBL_G16_MASK,      NO_SHIFT_DEFINE,	TRUE},
-	{"G2_LTF",      WF_LWTBL_G2_LTF_MASK,   WF_LWTBL_G2_LTF_SHIFT,	FALSE},
-	{"G4_LTF",      WF_LWTBL_G4_LTF_MASK,   WF_LWTBL_G4_LTF_SHIFT,	FALSE},
-	{"G8_LTF",      WF_LWTBL_G8_LTF_MASK,   WF_LWTBL_G8_LTF_SHIFT,	FALSE},
-	{"G16_LTF",     WF_LWTBL_G16_LTF_MASK,  WF_LWTBL_G16_LTF_SHIFT,	TRUE},
-	{"G2_HE",       WF_LWTBL_G2_HE_MASK,    WF_LWTBL_G2_HE_SHIFT,	FALSE},
-	{"G4_HE",       WF_LWTBL_G4_HE_MASK,    WF_LWTBL_G4_HE_SHIFT,	FALSE},
-	{"G8_HE",       WF_LWTBL_G8_HE_MASK,    WF_LWTBL_G8_HE_SHIFT,	FALSE},
-	{"G16_HE",      WF_LWTBL_G16_HE_MASK,   WF_LWTBL_G16_HE_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW6(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 6 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 6\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_6*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW6[i].name) {
-		if (WTBL_LMAC_DW6[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW6[i].name,
-				(dw_value & WTBL_LMAC_DW6[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW6[i].name,
-				(dw_value & WTBL_LMAC_DW6[i].mask) >> WTBL_LMAC_DW6[i].shift);
-		i++;
-	}
-}
-
-static void parse_bmac_lwtbl_DW7(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	int i = 0;
-
-	/* LMAC WTBL DW 7 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 7\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_7*4]);
-	dw_value = *addr;
-
-	for (i = 0; i < 8; i++) {
-		DBGLOG(HAL, INFO, "\tBA_WIN_SIZE%u:%lu\n", i, ((dw_value & BITS(i*4, i*4+3)) >> i*4));
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW8[] = {
-	{"RTS_FAIL_CNT_AC0",    WF_LWTBL_AC0_RTS_FAIL_CNT_MASK,	WF_LWTBL_AC0_RTS_FAIL_CNT_SHIFT,	FALSE},
-	{"AC1",                 WF_LWTBL_AC1_RTS_FAIL_CNT_MASK,	WF_LWTBL_AC1_RTS_FAIL_CNT_SHIFT,	FALSE},
-	{"AC2",                 WF_LWTBL_AC2_RTS_FAIL_CNT_MASK,	WF_LWTBL_AC2_RTS_FAIL_CNT_SHIFT,	FALSE},
-	{"AC3",                 WF_LWTBL_AC3_RTS_FAIL_CNT_MASK,	WF_LWTBL_AC3_RTS_FAIL_CNT_SHIFT,	TRUE},
-	{"PARTIAL_AID",         WF_LWTBL_PARTIAL_AID_MASK,		WF_LWTBL_PARTIAL_AID_SHIFT,	FALSE},
-	{"CHK_PER",             WF_LWTBL_CHK_PER_MASK,		NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW8(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 8 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 8\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_8*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW8[i].name) {
-		if (WTBL_LMAC_DW8[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW8[i].name,
-				(dw_value & WTBL_LMAC_DW8[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW8[i].name,
-				(dw_value & WTBL_LMAC_DW8[i].mask) >> WTBL_LMAC_DW8[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW9[] = {
-	{"RX_AVG_MPDU_SIZE",    WF_LWTBL_RX_AVG_MPDU_SIZE_MASK,    WF_LWTBL_RX_AVG_MPDU_SIZE_SHIFT,	FALSE},
-	{"PRITX_SW_MODE",       WF_LWTBL_PRITX_SW_MODE_MASK,       NO_SHIFT_DEFINE,	FALSE},
-	{"PRITX_ERSU",	    WF_LWTBL_PRITX_ERSU_MASK,	       NO_SHIFT_DEFINE,	FALSE},
-	{"PRITX_PLR",           WF_LWTBL_PRITX_PLR_MASK,           NO_SHIFT_DEFINE,	TRUE},
-	{"PRITX_DCM",           WF_LWTBL_PRITX_DCM_MASK,           NO_SHIFT_DEFINE,	FALSE},
-	{"PRITX_ER106T",        WF_LWTBL_PRITX_ER106T_MASK,        NO_SHIFT_DEFINE,	TRUE},
-	/*     {"FCAP(0:20 1:~40)",    WTBL_FCAP_20_TO_160_MHZ,
-	WTBL_FCAP_20_TO_160_MHZ_OFFSET}, */
-	{"MPDU_FAIL_CNT",       WF_LWTBL_MPDU_FAIL_CNT_MASK,       WF_LWTBL_MPDU_FAIL_CNT_SHIFT,	FALSE},
-	{"MPDU_OK_CNT",         WF_LWTBL_MPDU_OK_CNT_MASK,         WF_LWTBL_MPDU_OK_CNT_SHIFT,	FALSE},
-	{"RATE_IDX",            WF_LWTBL_RATE_IDX_MASK,            WF_LWTBL_RATE_IDX_SHIFT,	TRUE},
-	{NULL,}
-};
-
-uint8_t *fcap_name[] = {"20MHz", "20/40MHz", "20/40/80MHz", "20/40/80/160/80+80MHz", "20/40/80/160/80+80/320MHz"};
-
-static void parse_bmac_lwtbl_DW9(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 9 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 9\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_TRX_CAP_DW_9*4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW9[i].name) {
-		if (WTBL_LMAC_DW9[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW9[i].name,
-				(dw_value & WTBL_LMAC_DW9[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW9[i].name,
-				(dw_value & WTBL_LMAC_DW9[i].mask) >> WTBL_LMAC_DW9[i].shift);
-		i++;
-	}
-
-	/* FCAP parser */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "FCAP:%s\n", fcap_name[(dw_value & WF_LWTBL_FCAP_MASK) >> WF_LWTBL_FCAP_SHIFT]);
-}
-
-#define MAX_TX_MODE 16
-static char *CONNAC3X_HW_TX_MODE_STR[] = {"CCK", "OFDM", "HT-Mix", "HT-GF", "VHT",
-				 "N/A", "N/A", "N/A",
-				 "HE_SU", "HE_EXT_SU", "HE_TRIG", "HE_MU",
-				 "N/A",
-				 "EHT_EXT_SU", "EHT_TRIG", "EHT_MU",
-				 "N/A"};
-static char *CONNAC3X_HW_TX_RATE_CCK_STR[] = {"1M", "2Mlong", "5.5Mlong", "11Mlong", "N/A", "2Mshort", "5.5Mshort", "11Mshort", "N/A"};
-
-static char *hw_rate_str(uint8_t mode, uint16_t rate_idx)
-{
-	if (mode == 0)
-		return rate_idx < 8 ? CONNAC3X_HW_TX_RATE_CCK_STR[rate_idx] : CONNAC3X_HW_TX_RATE_CCK_STR[8];
-	else if (mode == 1)
-		return nicHwRateOfdmStr(rate_idx);
-	else
-		return "MCS";
-}
-
-static void parse_rate(struct ADAPTER *prAdapter, uint16_t rate_idx, uint16_t txrate)
-{
-	uint16_t txmode, mcs, nss, stbc;
-
-	txmode = HW_TX_RATE_TO_MODE(txrate);
-	mcs = HW_TX_RATE_TO_MCS(txrate);
-	nss = HW_TX_RATE_TO_NSS(txrate);
-	stbc = HW_TX_RATE_TO_STBC(txrate);
-
-	DBGLOG(HAL, INFO, "\tRate%d(0x%x):TxMode=%d(%s), TxRate=%d(%s), Nsts=%d, STBC=%d\n",
-		rate_idx + 1,
-		txrate,
-		txmode,
-		(txmode < MAX_TX_MODE ? CONNAC3X_HW_TX_MODE_STR[txmode] : CONNAC3X_HW_TX_MODE_STR[MAX_TX_MODE]),
-		mcs,
-		hw_rate_str(txmode, mcs),
-		nss,
-		stbc);
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-} WTBL_LMAC_DW10[] = {
-	{"RATE1",       WF_LWTBL_RATE1_MASK,        WF_LWTBL_RATE1_SHIFT},
-	{"RATE2",       WF_LWTBL_RATE2_MASK,        WF_LWTBL_RATE2_SHIFT},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW10(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 10 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 10\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_AUTO_RATE_1_2 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW10[i].name) {
-		parse_rate(prAdapter, i, (dw_value & WTBL_LMAC_DW10[i].mask) >> WTBL_LMAC_DW10[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-} WTBL_LMAC_DW11[] = {
-	{"RATE3",       WF_LWTBL_RATE3_MASK,        WF_LWTBL_RATE3_SHIFT},
-	{"RATE4",       WF_LWTBL_RATE4_MASK,        WF_LWTBL_RATE4_SHIFT},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW11(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 11 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 11\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_AUTO_RATE_3_4 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW11[i].name) {
-		parse_rate(prAdapter, i+2, (dw_value & WTBL_LMAC_DW11[i].mask) >> WTBL_LMAC_DW11[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-} WTBL_LMAC_DW12[] = {
-	{"RATE5",       WF_LWTBL_RATE5_MASK,        WF_LWTBL_RATE5_SHIFT},
-	{"RATE6",       WF_LWTBL_RATE6_MASK,        WF_LWTBL_RATE6_SHIFT},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW12(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 12 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 12\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_AUTO_RATE_5_6 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW12[i].name) {
-		parse_rate(prAdapter, i+4, (dw_value & WTBL_LMAC_DW12[i].mask) >> WTBL_LMAC_DW12[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-} WTBL_LMAC_DW13[] = {
-	{"RATE7",       WF_LWTBL_RATE7_MASK,        WF_LWTBL_RATE7_SHIFT},
-	{"RATE8",       WF_LWTBL_RATE8_MASK,        WF_LWTBL_RATE8_SHIFT},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW13(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 13 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 13\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_AUTO_RATE_7_8 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW13[i].name) {
-		parse_rate(prAdapter, i+6, (dw_value & WTBL_LMAC_DW13[i].mask) >> WTBL_LMAC_DW13[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW14_BMC[] = {
-	{"CIPHER_IGTK",         WF_LWTBL_CIPHER_SUIT_IGTK_MASK,    WF_LWTBL_CIPHER_SUIT_IGTK_SHIFT,		FALSE},
-	{"CIPHER_BIGTK",        WF_LWTBL_CIPHER_SUIT_BIGTK_MASK,   WF_LWTBL_CIPHER_SUIT_BIGTK_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW14(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr, *muar_addr = 0;
-	uint32_t dw_value, muar_dw_value = 0;
-	uint16_t i = 0;
-
-	/* DUMP DW14 for BMC entry only */
-	muar_addr = (uint32_t *)&(lwtbl[WF_LWTBL_MUAR_DW * 4]);
-	muar_dw_value = *muar_addr;
-	if (((muar_dw_value & WF_LWTBL_MUAR_MASK) >> WF_LWTBL_MUAR_SHIFT)
-		== MUAR_INDEX_OWN_MAC_ADDR_BC_MC) {
-		/* LMAC WTBL DW 14 */
-		DBGLOG(HAL, INFO, "\t\n");
-		DBGLOG(HAL, INFO, "LWTBL DW 14\n");
-		addr = (uint32_t *)&(lwtbl[WF_LWTBL_CIPHER_SUIT_IGTK_DW * 4]);
-		dw_value = *addr;
-
-		while (WTBL_LMAC_DW14_BMC[i].name) {
-			parse_rate(prAdapter, i+6,
-				(dw_value & WTBL_LMAC_DW14_BMC[i].mask) >>
-					WTBL_LMAC_DW14_BMC[i].shift);
-			i++;
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+				i4BytesWritten,
+				"\tRateIdx[%d] %s %s, %s, %s, %s, %s%s\n",
+				i,
+				prefix,
+				rate < 4 ?
+					HW_TX_RATE_CCK_STR[rate] :
+					HW_TX_RATE_CCK_STR[4],
+				(fcap < 5) ?
+					HW_TX_RATE_BW[fcap] : HW_TX_RATE_BW[5],
+				rate < 4 ? "LP" : "SP",
+				RATE_V3_HW_TX_MODE_STR[txmode],
+				stbc ? "STBC, " : "",
+				connac3x_wtbl_get_ldpc_info(txmode, pWtbl)
+					== 0 ? "BCC" : "LDPC");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+				i4BytesWritten,
+				"\tRateIdx[%d] %s %s, %s, %s, %s%s\n",
+				i,
+				prefix,
+				nicHwRateOfdmStr(rate),
+				(fcap < 5) ?
+					HW_TX_RATE_BW[fcap] : HW_TX_RATE_BW[5],
+				RATE_V3_HW_TX_MODE_STR[txmode],
+				stbc ? "STBC, " : "",
+				connac3x_wtbl_get_ldpc_info(txmode, pWtbl)
+					== 0 ? "BCC" : "LDPC");
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+				i4BytesWritten,
+				"\tRateIdx[%d] %s MCS%d, %s, %s, %s, %s%s\n",
+				i,
+				prefix,
+				rate,
+				(fcap < 5) ?
+					HW_TX_RATE_BW[fcap] : HW_TX_RATE_BW[5],
+				gi == 0 ? "LGI" : "SGI",
+				RATE_V3_HW_TX_MODE_STR[txmode],
+				stbc ? "STBC, " : "",
+				connac3x_wtbl_get_ldpc_info(txmode, pWtbl)
+					== 0 ? "BCC" : "LDPC");
+		else if ((txmode == TX_RATE_MODE_VHT) ||
+			 (txmode == TX_RATE_MODE_PLR))
+			i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+				i4BytesWritten,
+				"\tRateIdx[%d] %s %s%d_MCS%d, %s, %s, %s, %s%s\n",
+				i,
+				prefix,
+				stbc ? "NSTS" : "NSS",
+				nss, rate,
+				(fcap < 5) ?
+					HW_TX_RATE_BW[fcap] : HW_TX_RATE_BW[5],
+				gi == 0 ? "LGI" : "SGI",
+				RATE_V3_HW_TX_MODE_STR[txmode],
+				stbc ? "STBC, " : "",
+				connac3x_wtbl_get_ldpc_info(txmode, pWtbl)
+					== 0 ? "BCC" : "LDPC");
+		else {
+			i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+				i4BytesWritten,
+				"\tRateIdx[%d] %s %s%d_MCS%d, %s, %s, %s, %s%s\n",
+				i,
+				prefix,
+				stbc ? "NSTS" : "NSS",
+				nss, rate,
+				(fcap < 5) ?
+					HW_TX_RATE_BW[fcap] : HW_TX_RATE_BW[5],
+				gi == 0 ? "SGI" : (gi == 1 ? "MGI" : "LGI"),
+				RATE_V3_HW_TX_MODE_STR[txmode],
+				stbc ? "STBC, " : "",
+				connac3x_wtbl_get_ldpc_info(txmode, pWtbl)
+					== 0 ? "BCC" : "LDPC");
 		}
 	}
+
+	return i4BytesWritten;
 }
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW28[] = {
-	{"RELATED_IDX0",	WF_LWTBL_RELATED_IDX0_MASK,		WF_LWTBL_RELATED_IDX0_SHIFT,	FALSE},
-	{"RELATED_BAND0",	WF_LWTBL_RELATED_BAND0_MASK,		WF_LWTBL_RELATED_BAND0_SHIFT,	FALSE},
-	{"PRI_MLD_BAND",    WF_LWTBL_PRIMARY_MLD_BAND_MASK,		WF_LWTBL_PRIMARY_MLD_BAND_SHIFT,	TRUE},
-	{"RELATED_IDX0",	WF_LWTBL_RELATED_IDX1_MASK,		WF_LWTBL_RELATED_IDX1_SHIFT,	FALSE},
-	{"RELATED_BAND1",   WF_LWTBL_RELATED_BAND1_MASK,		WF_LWTBL_RELATED_BAND1_SHIFT,	FALSE},
-	{"SEC_MLD_BAND",	WF_LWTBL_SECONDARY_MLD_BAND_MASK,	WF_LWTBL_SECONDARY_MLD_BAND_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW28(struct ADAPTER *prAdapter, uint8_t *lwtbl)
+static int32_t connac3x_dump_helper_wtbl_info(
+	struct ADAPTER *prAdapter,
+	char *pcCommand,
+	int i4TotalLen,
+	struct bwtbl_lmac_struct *pWtbl,
+	uint32_t u4Index)
 {
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t aucPA[MAC_ADDR_LEN];
+	uint8_t cipher_suit_igtk, cipher_suit_bigtk;
 
-	/* LMAC WTBL DW 28 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 28\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_MLO_INFO_LINE_1 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW28[i].name) {
-		if (WTBL_LMAC_DW28[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW28[i].name,
-				(dw_value & WTBL_LMAC_DW28[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW28[i].name,
-				(dw_value & WTBL_LMAC_DW28[i].mask) >>
-					WTBL_LMAC_DW28[i].shift);
-		i++;
+	if (!pcCommand) {
+		DBGLOG(HAL, ERROR, "%s: pcCommand is NULL.\n",
+			__func__);
+		return i4BytesWritten;
 	}
+
+	aucPA[0] =
+		pWtbl->peer_basic_info.wtbl_d1.field.peer_addr & 0xff;
+	aucPA[1] =
+		((pWtbl->peer_basic_info.wtbl_d1.field.peer_addr &
+			0xff00) >> 8);
+	aucPA[2] =
+		((pWtbl->peer_basic_info.wtbl_d1.field.peer_addr &
+			0xff0000) >> 16);
+	aucPA[3] =
+		((pWtbl->peer_basic_info.wtbl_d1.field.peer_addr &
+			0xff000000) >> 24);
+	aucPA[4] =
+		pWtbl->peer_basic_info.wtbl_d0.field.peer_addr & 0xff;
+	aucPA[5] =
+		((pWtbl->peer_basic_info.wtbl_d0.field.peer_addr &
+			0xff00) >> 8);
+	cipher_suit_igtk =
+		pWtbl->auto_rate_counters.wtbl_d14.field_v2.cipher_suit_igtk;
+	cipher_suit_bigtk =
+		pWtbl->auto_rate_counters.wtbl_d14.field_v2.cipher_suit_bigtk;
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+			"Dump WTBL info of WLAN_IDX	    = %d\n",
+		u4Index);
+
+	DBGLOG(REQ, INFO, "====DW0~1====\n");
+	/* DW0~DW1 */
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tADDR="MACSTR"\n",
+		MAC2STR(aucPA));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMUAR/RCA1/KID/RCID:%d/%d/%d/%d\n",
+		pWtbl->peer_basic_info.wtbl_d0.field.muar_idx,
+		pWtbl->peer_basic_info.wtbl_d0.field.rc_a1,
+		pWtbl->peer_basic_info.wtbl_d0.field.kid,
+		pWtbl->peer_basic_info.wtbl_d0.field.rc_id);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tBN/RV/RCA2/WPI_FLAG:%d/%d/%d/%d\n",
+		pWtbl->peer_basic_info.wtbl_d0.field.band,
+		pWtbl->peer_basic_info.wtbl_d0.field.rv,
+		pWtbl->peer_basic_info.wtbl_d0.field.rc_a2,
+		pWtbl->peer_basic_info.wtbl_d0.field.wpi_flg);
+
+	/* DW2~4 */
+	DBGLOG(REQ, INFO, "====DW2~4====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tAID12/GID_SU/SPP_EN/WPI_EVEN/AAD_OM:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d2.field.aid12,
+		pWtbl->trx_cap.wtbl_d2.field.gid_su,
+		pWtbl->trx_cap.wtbl_d2.field.spp_en,
+		pWtbl->trx_cap.wtbl_d2.field.wpi_even,
+		pWtbl->trx_cap.wtbl_d2.field.aad_om);
+
+	/* DUMP DW14 for BMC entry only */
+	if (pWtbl->peer_basic_info.wtbl_d0.field.muar_idx
+			== MUAR_INDEX_OWN_MAC_ADDR_BC_MC)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFD/TD/CIPHER[PGKT/IGTK/GIBTK]:%d/%d/%d/%d/%d\n",
+			pWtbl->trx_cap.wtbl_d2.field.fd,
+			pWtbl->trx_cap.wtbl_d2.field.td,
+			pWtbl->trx_cap.wtbl_d2.field.cipher_suit_pgkt,
+			cipher_suit_igtk,
+			cipher_suit_bigtk);
+	else
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFD/TD/CIPHER_PGKT:%d/%d/%d\n",
+			pWtbl->trx_cap.wtbl_d2.field.fd,
+			pWtbl->trx_cap.wtbl_d2.field.td,
+			pWtbl->trx_cap.wtbl_d2.field.cipher_suit_pgkt);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tSW/UL/TXPS/QoS/MESH:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d2.field.sw,
+		pWtbl->trx_cap.wtbl_d2.field.ul,
+		pWtbl->trx_cap.wtbl_d2.field.tx_ps,
+		pWtbl->trx_cap.wtbl_d2.field.qos,
+		pWtbl->trx_cap.wtbl_d2.field.mesh);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tHT/VHT/HE/EHT:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d2.field.ht,
+		pWtbl->trx_cap.wtbl_d2.field.vht,
+		pWtbl->trx_cap.wtbl_d2.field.he,
+		pWtbl->trx_cap.wtbl_d2.field.eht);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tLDPC[HT/VHT/HE/EHT]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d4.field.ldpc_ht,
+		pWtbl->trx_cap.wtbl_d4.field.ldpc_vht,
+		pWtbl->trx_cap.wtbl_d4.field.ldpc_he,
+		pWtbl->trx_cap.wtbl_d4.field.ldpc_eht);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tWMMQ/EHT_SIG_MCS/HDRT_MODE/BEAM_CHG:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d3.field.wmm_q,
+		pWtbl->trx_cap.wtbl_d3.field.eht_sig_mcs,
+		pWtbl->trx_cap.wtbl_d3.field.hdrt_mode,
+		pWtbl->trx_cap.wtbl_d3.field.beam_chg);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tEHT_LTF_SYM_NUM/PFMU_IDX/ULPF_IDX:%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d3.field.eht_ltf_sym_num_opt,
+		pWtbl->trx_cap.wtbl_d3.field.pfmu_index,
+		pWtbl->trx_cap.wtbl_d3.field.ulpf_index);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tIGB_FBK/TBF[HT/VHT/HE/EHT]:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d3.field.ign_fbk,
+		pWtbl->trx_cap.wtbl_d3.field.tbf_ht,
+		pWtbl->trx_cap.wtbl_d3.field.tbf_vht,
+		pWtbl->trx_cap.wtbl_d3.field.tbf_he,
+		pWtbl->trx_cap.wtbl_d3.field.tbf_eht);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tANT_ID[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d4.field.ant_id0,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id1,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id2,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id3,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id4,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id5,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id6,
+		pWtbl->trx_cap.wtbl_d4.field.ant_id7);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tPE/DIS_RHTR:%d/%d\n",
+		pWtbl->trx_cap.wtbl_d4.field.pe,
+		pWtbl->trx_cap.wtbl_d4.field.dis_rhtr);
+
+	/* DW5 */
+	DBGLOG(REQ, INFO, "====DW5====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tAF/AFHE/RTS/SMPS/DYNBW/MMSS:%d/%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d5.field.af,
+		pWtbl->trx_cap.wtbl_d5.field.af_he,
+		pWtbl->trx_cap.wtbl_d5.field.rts,
+		pWtbl->trx_cap.wtbl_d5.field.smps,
+		pWtbl->trx_cap.wtbl_d5.field.dyn_bw,
+		pWtbl->trx_cap.wtbl_d5.field.mmss);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tUSR/SR_R/SR_A/TXPWR_OFST:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d5.field.usr,
+		pWtbl->trx_cap.wtbl_d5.field.sr_r,
+		pWtbl->trx_cap.wtbl_d5.field.sr_abort,
+		pWtbl->trx_cap.wtbl_d5.field.tx_power_offset);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tEHT[LTF/GL]/DOPPL/TXOP_PS_CAP:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d5.field.ltf_eht,
+		pWtbl->trx_cap.wtbl_d5.field.gi_eht,
+		pWtbl->trx_cap.wtbl_d5.field.doppl,
+		pWtbl->trx_cap.wtbl_d5.field.txop_ps_cap);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tDU_I_PSM/I_PSM/PSM/SKIP_TX:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d5.field.du_i_psm,
+		pWtbl->trx_cap.wtbl_d5.field.i_psm,
+		pWtbl->trx_cap.wtbl_d5.field.psm,
+		pWtbl->trx_cap.wtbl_d5.field.skip_tx);
+
+	/* DW6 */
+	DBGLOG(REQ, INFO, "====DW6====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tCBRN/DBNSS_EN/BAFEN/RDGBA/R:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d6.field.cbrn,
+		pWtbl->trx_cap.wtbl_d6.field.dbnss_en,
+		pWtbl->trx_cap.wtbl_d6.field.baf_en,
+		pWtbl->trx_cap.wtbl_d6.field.rdgba,
+		pWtbl->trx_cap.wtbl_d6.field.r);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tG2/G4/G8/G16/SPE:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d6.field.g2,
+		pWtbl->trx_cap.wtbl_d6.field.g4,
+		pWtbl->trx_cap.wtbl_d6.field.g8,
+		pWtbl->trx_cap.wtbl_d6.field.g16,
+		pWtbl->trx_cap.wtbl_d6.field.spe_idx);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tHE[G2/G4/G8/G16]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d6.field.g2_he,
+		pWtbl->trx_cap.wtbl_d6.field.g4_he,
+		pWtbl->trx_cap.wtbl_d6.field.g8_he,
+		pWtbl->trx_cap.wtbl_d6.field.g16_he);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tLTF[G2/G4/G8/G16]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d6.field.g2_ltf,
+		pWtbl->trx_cap.wtbl_d6.field.g4_ltf,
+		pWtbl->trx_cap.wtbl_d6.field.g8_ltf,
+		pWtbl->trx_cap.wtbl_d6.field.g16_ltf);
+
+	/* DW7 */
+	DBGLOG(REQ, INFO, "====DW7====\n");
+	if (pWtbl->trx_cap.wtbl_d2.field.qos)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tBaWinSize TID[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid0),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid1),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid2),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid3),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid4),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid5),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid6),
+			(uint32_t)
+			(pWtbl->trx_cap.wtbl_d7.field.ba_win_size_tid7));
+
+	/* DW8 */
+	DBGLOG(REQ, INFO, "====DW8====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRtsFailCnt AC[0~3]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac0,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac1,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac2,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac3);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tCHK_PER/P_AID:%d/%d\n",
+		pWtbl->trx_cap.wtbl_d8.field.chk_per,
+		pWtbl->trx_cap.wtbl_d8.field.partial_aid);
+
+
+	/* DW9 */
+	DBGLOG(REQ, INFO, "====DW9====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPRITX[SW_M/ERSU/PLR/DCM/ER106T]:%d/%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d9.field.pritx_sw_mode,
+		pWtbl->trx_cap.wtbl_d9.field.pritx_ersu,
+		pWtbl->trx_cap.wtbl_d9.field.pritx_plr,
+		pWtbl->trx_cap.wtbl_d9.field.pritx_dcm,
+		pWtbl->trx_cap.wtbl_d9.field.pritx_er106t);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRX_AVG_MPDU_SIZE/FCAP/MPDU[OK/FAIL]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d9.field.rx_avg_mpdu_size,
+		pWtbl->trx_cap.wtbl_d9.field.fcap,
+		pWtbl->trx_cap.wtbl_d9.field.mpdu_fail_cnt,
+		pWtbl->trx_cap.wtbl_d9.field.mpdu_ok_cnt);
+
+	/* DW28 */
+	DBGLOG(REQ, INFO, "====DW28====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRELATED[IDX0/BN0/IDX1:BN1]:%d/%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d28.field.related_idx0,
+		pWtbl->mlo_info.wtbl_d28.field.related_band0,
+		pWtbl->mlo_info.wtbl_d28.field.related_idx1,
+		pWtbl->mlo_info.wtbl_d28.field.related_band1);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMLD[PRI_BN/SEC_BN/OWN_ID]:%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d28.field.pri_mld_band,
+		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band,
+		pWtbl->mlo_info.wtbl_d29.field.own_mld_id);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMLD[PRI_BN/SEC_BN/OWN_ID]:%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d28.field.pri_mld_band,
+		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band,
+		pWtbl->mlo_info.wtbl_d29.field.own_mld_id);
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten,
+		"%s\n",
+		"\t====DW 29~33 was shown in kernel log====");
+
+	/* DW34 */
+	DBGLOG(REQ, INFO, "====DW34~35====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRSSI = %d %d %d %d\n",
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_0),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_1),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_2),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_3));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tSNR = %d %d %d %d\n",
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx0),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx1),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx2),
+		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx3));
+
+	DBGLOG(REQ, INFO, "====DW14~19====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRate1[TX/FAIL] TXOK[RATE2/RATE3]= %d/%d/%d/%d\n",
+		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_fail_cnt,
+		pWtbl->auto_rate_counters.wtbl_d15.field.rate_2_ok_cnt,
+		pWtbl->auto_rate_counters.wtbl_d15.field.rate_3_ok_cnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tCUR_BW[TX/FAIL] OTHER_BW[TX/FAIL]= %d/%d/%d/%d\n",
+		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_fail_cnt,
+		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_fail_cnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRTS[OK/FAIL] RETRY[DATA/MGNT]= %d/%d/%d/%d\n",
+		pWtbl->ppdu_counters.wtbl_d18.field.rts_ok_cnt,
+		pWtbl->ppdu_counters.wtbl_d18.field.rts_fail_cnt,
+		pWtbl->ppdu_counters.wtbl_d19.field.data_retry_cnt,
+		pWtbl->ppdu_counters.wtbl_d19.field.mgnt_retry_cnt);
+
+	i4BytesWritten = connac3x_wtbl_rate_to_string(
+		pcCommand, i4TotalLen, 1, pWtbl, i4BytesWritten);
+
+	return i4BytesWritten;
 }
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW29[] = {
-	{"DISPATCH_POLICY_MLD_TID0", WF_LWTBL_DISPATCH_POLICY0_MASK,	WF_LWTBL_DISPATCH_POLICY0_SHIFT,	FALSE},
-	{"MLD_TID1",	WF_LWTBL_DISPATCH_POLICY1_MASK,		WF_LWTBL_DISPATCH_POLICY1_SHIFT,	FALSE},
-	{"MLD_TID2",	WF_LWTBL_DISPATCH_POLICY2_MASK,		WF_LWTBL_DISPATCH_POLICY2_SHIFT,	FALSE},
-	{"MLD_TID3",	WF_LWTBL_DISPATCH_POLICY3_MASK,	WF_LWTBL_DISPATCH_POLICY3_SHIFT,	TRUE},
-	{"MLD_TID4",	WF_LWTBL_DISPATCH_POLICY4_MASK,		WF_LWTBL_DISPATCH_POLICY4_SHIFT,	FALSE},
-	{"MLD_TID5",	WF_LWTBL_DISPATCH_POLICY5_MASK,		WF_LWTBL_DISPATCH_POLICY5_SHIFT,	FALSE},
-	{"MLD_TID6",	WF_LWTBL_DISPATCH_POLICY6_MASK,		WF_LWTBL_DISPATCH_POLICY6_SHIFT,	FALSE},
-	{"MLD_TID7",	WF_LWTBL_DISPATCH_POLICY7_MASK,		WF_LWTBL_DISPATCH_POLICY7_SHIFT,	TRUE},
-	{"OMLD_ID",		WF_LWTBL_OWN_MLD_ID_MASK,	WF_LWTBL_OWN_MLD_ID_SHIFT,	FALSE},
-	{"EMLSR0",		WF_LWTBL_EMLSR0_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"EMLMR0",		WF_LWTBL_EMLMR0_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"EMLSR1",		WF_LWTBL_EMLSR1_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"EMLMR1",		WF_LWTBL_EMLMR1_MASK,		NO_SHIFT_DEFINE,	TRUE},
-	{"EMLSR2",		WF_LWTBL_EMLSR2_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"EMLMR2",		WF_LWTBL_EMLMR2_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"STR_BITMAP",	WF_LWTBL_STR_BITMAP_MASK,	WF_LWTBL_STR_BITMAP_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW29(struct ADAPTER *prAdapter, uint8_t *lwtbl)
+static void connac3x_print_wtbl_info(
+	struct ADAPTER *prAdapter,
+	int32_t idx,
+	struct bwtbl_lmac_struct *pWtbl)
 {
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
+	LOG_FUNC(
+	"====DW29====\n"
+	"\tDISPATCH_POLICY[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n"
+	"\tEML[SR0/MR0/SR1/MR1/SR2/MR2]:%d/%d/%d/%d/%d/%d\n"
+	"\tSTR_BMAP/LINK_MGF/DISPATCH[ORDER/RATIO]:%d/%d/%d/%d\n"
+	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ/ACK_EN:%d/%d/%d/%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy0,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy1,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy2,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy3,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy4,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy5,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy6,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy7,
+		pWtbl->mlo_info.wtbl_d29.field.emlsr0,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr0,
+		pWtbl->mlo_info.wtbl_d29.field.emlsr1,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr1,
+		pWtbl->mlo_info.wtbl_d29.field.emlsr2,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr2,
+		pWtbl->mlo_info.wtbl_d29.field.str_bitmap
+	);
 
-	/* LMAC WTBL DW 29 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 29\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_MLO_INFO_LINE_2 * 4]);
-	dw_value = *addr;
+	LOG_FUNC(
+	"====DW30====\n"
+	"\tLINK_MGF:%d DISPATCH[ORDER/RATIO]:%d/%d\n",
+		pWtbl->mlo_info.wtbl_d30.field.link_mgf,
+		pWtbl->mlo_info.wtbl_d30.field.dispatch_order,
+		pWtbl->mlo_info.wtbl_d30.field.dispatch_ratio
+	);
 
-	while (WTBL_LMAC_DW29[i].name) {
-		if (WTBL_LMAC_DW29[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW29[i].name,
-				(dw_value & WTBL_LMAC_DW29[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW29[i].name,
-				(dw_value & WTBL_LMAC_DW29[i].mask) >>
-					WTBL_LMAC_DW29[i].shift);
-		i++;
+	LOG_FUNC(
+	"====DW====\n"
+	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ:%d/%d/%d/%d/%d/%d\n"
+	"\tNEGO_WINSZ [0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
+		pWtbl->resp_info.wtbl_d31.field.cascad,
+		pWtbl->resp_info.wtbl_d31.field.all_ack,
+		pWtbl->resp_info.wtbl_d31.field.drop,
+		pWtbl->resp_info.wtbl_d31.field.ba_mode,
+		pWtbl->resp_info.wtbl_d31.field.mpdu_size,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize0,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize1,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize2,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize3,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize4,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize5,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize6,
+		pWtbl->resp_info.wtbl_d31.field.nego_winsize7
+	);
+
+	LOG_FUNC(
+	"====DW32====\n"
+	"\tACK_EN:%d OM_INFO_HE:%d OM_INFO_EHT:%d\n"
+	"\tRXD_DUP[MODE/W_LIST/FROM_OM_CHG]:%d/%d/%d\n",
+		pWtbl->rx_dup_info.wtbl_d32.field.ack_en,
+		pWtbl->rx_dup_info.wtbl_d32.field.om_info,
+		pWtbl->rx_dup_info.wtbl_d32.field.om_info_eht,
+		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_mode,
+		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_white_list,
+		pWtbl->rx_dup_info.wtbl_d32.field.rxd_dup_from_om_chg
+	);
+
+	LOG_FUNC(
+	"====DW33====\n"
+	"\tUSER_RSSI:%d USER_SNR:%d\n"
+	"\tRAPID_REACTION_RATE:%d HT_AMSDU: %d AMSDU_CROSS_LG:%d\n",
+		pWtbl->rx_stat.wtbl_d33.field.user_rssi,
+		pWtbl->rx_stat.wtbl_d33.field.user_snr,
+		pWtbl->rx_stat.wtbl_d33.field.rapid_reaction_rate,
+		pWtbl->rx_stat.wtbl_d33.field.ht_amsdu,
+		pWtbl->rx_stat.wtbl_d33.field.amsdu_cross_lg);
+}
+
+int32_t connac3x_show_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4Value = 0;
+	uint32_t wtbl_lmac_baseaddr;
+	uint32_t wtbl_offset, addr;
+	unsigned char *wtbl_raw_dw = NULL;
+	struct bwtbl_lmac_struct *pwtbl;
+	int32_t i4BytesWritten = 0;
+
+	prChipInfo = prAdapter->chip_info;
+
+	wtbl_raw_dw = (unsigned char *)kalMemAlloc(
+		sizeof(struct bwtbl_lmac_struct), VIR_MEM_TYPE);
+	if (!wtbl_raw_dw) {
+		DBGLOG(REQ, ERROR, "WTBL : Memory alloc failed\n");
+		return 0;
 	}
-}
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW30[] = {
-	{"DISPATCH_ORDER",	WF_LWTBL_DISPATCH_ORDER_MASK,	WF_LWTBL_DISPATCH_ORDER_SHIFT,	FALSE},
-	{"DISPATCH_RATIO",	WF_LWTBL_DISPATCH_RATIO_MASK,	WF_LWTBL_DISPATCH_RATIO_SHIFT,	FALSE},
-	{"LINK_MGF",		WF_LWTBL_LINK_MGF_MASK,		WF_LWTBL_LINK_MGF_SHIFT,	TRUE},
-	{NULL,}
-};
+	/* LMAC */
+	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
+	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
+		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
+	HAL_MCR_RD(prAdapter, prChipInfo->u4LmacWtblDUAddr,
+				&u4Value);
 
-static void parse_bmac_lwtbl_DW30(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
+	DBGLOG(REQ, INFO, "LMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
+		prChipInfo->u4LmacWtblDUAddr,
+		u4Value,
+		wtbl_lmac_baseaddr);
 
-	/* LMAC WTBL DW 30 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 30\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_MLO_INFO_LINE_3 * 4]);
-	dw_value = *addr;
-
-
-	while (WTBL_LMAC_DW30[i].name) {
-		if (WTBL_LMAC_DW30[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW30[i].name,
-				(dw_value & WTBL_LMAC_DW30[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW30[i].name,
-				(dw_value & WTBL_LMAC_DW30[i].mask) >> WTBL_LMAC_DW30[i].shift);
-		i++;
+	/* Read LWTBL Entries */
+	for (wtbl_offset = 0; wtbl_offset <
+		sizeof(struct bwtbl_lmac_struct);
+		wtbl_offset += 4) {
+		addr = wtbl_lmac_baseaddr + wtbl_offset;
+		HAL_MCR_RD(prAdapter, addr,
+			   &u4Value);
+		kalMemCopy(
+			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
+			&u4Value, sizeof(uint32_t));
 	}
+
+	pwtbl = (struct bwtbl_lmac_struct *)wtbl_raw_dw;
+	i4BytesWritten = connac3x_dump_helper_wtbl_info(
+		prAdapter,
+		pcCommand,
+		i4TotalLen,
+		pwtbl,
+		u4Index);
+
+	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
+			sizeof(struct bwtbl_lmac_struct));
+
+	/* print more info in log */
+	connac3x_print_wtbl_info(prAdapter, u4Index, pwtbl);
+
+	return i4BytesWritten;
 }
 
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW31[] = {
-	{"NEGO_WINSIZE0",	WF_LWTBL_NEGOTIATED_WINSIZE0_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE0_SHIFT,    FALSE},
-	{"WINSIZE1",	WF_LWTBL_NEGOTIATED_WINSIZE1_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE1_SHIFT,    FALSE},
-	{"WINSIZE2",	WF_LWTBL_NEGOTIATED_WINSIZE2_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE2_SHIFT,    FALSE},
-	{"WINSIZE3",	WF_LWTBL_NEGOTIATED_WINSIZE3_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE3_SHIFT,    TRUE},
-	{"WINSIZE4",	WF_LWTBL_NEGOTIATED_WINSIZE4_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE4_SHIFT,    FALSE},
-	{"WINSIZE5",	WF_LWTBL_NEGOTIATED_WINSIZE5_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE5_SHIFT,    FALSE},
-	{"WINSIZE6",	WF_LWTBL_NEGOTIATED_WINSIZE6_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE6_SHIFT,    FALSE},
-	{"WINSIZE7",	WF_LWTBL_NEGOTIATED_WINSIZE7_MASK,	WF_LWTBL_NEGOTIATED_WINSIZE7_SHIFT,    TRUE},
-	{"CASCAD",	        WF_LWTBL_CASCAD_MASK,			NO_SHIFT_DEFINE,    FALSE},
-	{"ALL_ACK",	        WF_LWTBL_ALL_ACK_MASK,			NO_SHIFT_DEFINE,    FALSE},
-	{"MPDU_SIZE",	WF_LWTBL_MPDU_SIZE_MASK,		WF_LWTBL_MPDU_SIZE_SHIFT,  FALSE},
-	{"BA_MODE",		WF_LWTBL_BA_MODE_MASK,			WF_LWTBL_BA_MODE_SHIFT,  TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW31(struct ADAPTER *prAdapter, uint8_t *lwtbl)
+static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
 {
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 31 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 31\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_RESP_INFO_DW_31 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW31[i].name) {
-		if (WTBL_LMAC_DW31[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW31[i].name,
-				(dw_value & WTBL_LMAC_DW31[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW31[i].name,
-				(dw_value & WTBL_LMAC_DW31[i].mask) >>
-					WTBL_LMAC_DW31[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW32[] = {
-	{"OM_INFO",			WF_LWTBL_OM_INFO_MASK,			WF_LWTBL_OM_INFO_SHIFT,		FALSE},
-	{"OM_RXD_DUP_MODE",		WF_LWTBL_RXD_DUP_FOR_OM_CHG_MASK,	NO_SHIFT_DEFINE,		FALSE},
-	{"RXD_DUP_WHITE_LIST",	WF_LWTBL_RXD_DUP_WHITE_LIST_MASK,	WF_LWTBL_RXD_DUP_WHITE_LIST_SHIFT,	FALSE},
-	{"RXD_DUP_MODE",		WF_LWTBL_RXD_DUP_MODE_MASK,		WF_LWTBL_RXD_DUP_MODE_SHIFT,	FALSE},
-	{"DROP",			WF_LWTBL_DROP_MASK,			NO_SHIFT_DEFINE,		FALSE},
-	{"ACK_EN",			WF_LWTBL_ACK_EN_MASK,			NO_SHIFT_DEFINE,		TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW32(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 32 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 32\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_RX_DUP_INFO_DW_32 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW32[i].name) {
-		if (WTBL_LMAC_DW32[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW32[i].name,
-				(dw_value & WTBL_LMAC_DW32[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW32[i].name,
-				(dw_value & WTBL_LMAC_DW32[i].mask) >>
-					WTBL_LMAC_DW32[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW33[] = {
-	{"USER_RSSI",                   WF_LWTBL_USER_RSSI_MASK,            WF_LWTBL_USER_RSSI_SHIFT,	FALSE},
-	{"USER_SNR",                    WF_LWTBL_USER_SNR_MASK,             WF_LWTBL_USER_SNR_SHIFT,	FALSE},
-	{"RAPID_REACTION_RATE",         WF_LWTBL_RAPID_REACTION_RATE_MASK,  WF_LWTBL_RAPID_REACTION_RATE_SHIFT,	TRUE},
-	{"HT_AMSDU(Read Only)",         WF_LWTBL_HT_AMSDU_MASK,             NO_SHIFT_DEFINE,	FALSE},
-	{"AMSDU_CROSS_LG(Read Only)",   WF_LWTBL_AMSDU_CROSS_LG_MASK,       NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW33(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 33 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 33\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_RX_STAT_CNT_LINE_1 * 4]);
-	dw_value = *addr;
-
-	while (WTBL_LMAC_DW33[i].name) {
-		if (WTBL_LMAC_DW33[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW33[i].name,
-				(dw_value & WTBL_LMAC_DW33[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW33[i].name,
-				(dw_value & WTBL_LMAC_DW33[i].mask) >>
-					WTBL_LMAC_DW33[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW34[] = {
-	{"RESP_RCPI0",	WF_LWTBL_RESP_RCPI0_MASK,	WF_LWTBL_RESP_RCPI0_SHIFT,	FALSE},
-	{"RCPI1",	WF_LWTBL_RESP_RCPI1_MASK,	WF_LWTBL_RESP_RCPI1_SHIFT,	FALSE},
-	{"RCPI2",	WF_LWTBL_RESP_RCPI2_MASK,	WF_LWTBL_RESP_RCPI2_SHIFT,	FALSE},
-	{"RCPI3",	WF_LWTBL_RESP_RCPI3_MASK,	WF_LWTBL_RESP_RCPI3_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW34(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 34 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 34\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_RX_STAT_CNT_LINE_2 * 4]);
-	dw_value = *addr;
-
-
-	while (WTBL_LMAC_DW34[i].name) {
-		if (WTBL_LMAC_DW34[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW34[i].name,
-				(dw_value & WTBL_LMAC_DW34[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW34[i].name,
-				(dw_value & WTBL_LMAC_DW34[i].mask) >>
-					WTBL_LMAC_DW34[i].shift);
-		i++;
-	}
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_LMAC_DW35[] = {
-	{"SNR 0",	WF_LWTBL_SNR_RX0_MASK,		WF_LWTBL_SNR_RX0_SHIFT,	FALSE},
-	{"SNR 1",	WF_LWTBL_SNR_RX1_MASK,		WF_LWTBL_SNR_RX1_SHIFT,	FALSE},
-	{"SNR 2",	WF_LWTBL_SNR_RX2_MASK,		WF_LWTBL_SNR_RX2_SHIFT,	FALSE},
-	{"SNR 3",	WF_LWTBL_SNR_RX3_MASK,		WF_LWTBL_SNR_RX3_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_lwtbl_DW35(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	/* LMAC WTBL DW 35 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "LWTBL DW 35\n");
-	addr = (uint32_t *)&(lwtbl[WTBL_GROUP_RX_STAT_CNT_LINE_3 * 4]);
-	dw_value = *addr;
-
-
-	while (WTBL_LMAC_DW35[i].name) {
-		if (WTBL_LMAC_DW35[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_LMAC_DW35[i].name,
-				(dw_value & WTBL_LMAC_DW35[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_LMAC_DW35[i].name,
-				(dw_value & WTBL_LMAC_DW35[i].mask) >>
-					WTBL_LMAC_DW35[i].shift);
-		i++;
-	}
-}
-
-static void parse_bmac_lwtbl_rx_stats(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	parse_bmac_lwtbl_DW33(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW34(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW35(prAdapter, lwtbl);
-}
-
-static void parse_bmac_lwtbl_mlo_info(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	parse_bmac_lwtbl_DW28(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW29(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW30(prAdapter, lwtbl);
-}
-
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW9[] = {
-	{"RELATED_IDX0",	WF_UWTBL_RELATED_IDX0_MASK,		WF_UWTBL_RELATED_IDX0_SHIFT,	FALSE},
-	{"RELATED_BAND0",	WF_UWTBL_RELATED_BAND0_MASK,		WF_UWTBL_RELATED_BAND0_SHIFT,	FALSE},
-	{"PRI_MLD_BAND",    WF_UWTBL_PRIMARY_MLD_BAND_MASK,		WF_UWTBL_PRIMARY_MLD_BAND_SHIFT,	TRUE},
-	{"RELATED_IDX0",	WF_UWTBL_RELATED_IDX1_MASK,		WF_UWTBL_RELATED_IDX1_SHIFT,	FALSE},
-	{"RELATED_BAND1",   WF_UWTBL_RELATED_BAND1_MASK,		WF_UWTBL_RELATED_BAND1_SHIFT,	FALSE},
-	{"SEC_MLD_BAND",	WF_UWTBL_SECONDARY_MLD_BAND_MASK,	WF_UWTBL_SECONDARY_MLD_BAND_SHIFT,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_uwtbl_mlo_info(struct ADAPTER *prAdapter, uint8_t *uwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "MldAddr: %02x:%02x:%02x:%02x:%02x:%02x(D0[B0~15], D1[B0~31])\n",
-		uwtbl[4], uwtbl[5], uwtbl[6], uwtbl[7], uwtbl[0], uwtbl[1]);
-
-	/* UMAC WTBL DW 0 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL DW 0\n");
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_OWN_MLD_ID_DW * 4]);
-	dw_value = *addr;
-
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "OMLD_ID",
-		(dw_value & WF_UWTBL_OWN_MLD_ID_MASK) >> WF_UWTBL_OWN_MLD_ID_SHIFT);
-
-	/* UMAC WTBL DW 9 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL DW 9\n");
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_RELATED_IDX0_DW * 4]);
-	dw_value = *addr;
-
-	while (WTBL_UMAC_DW9[i].name) {
-
-		if (WTBL_UMAC_DW9[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_UMAC_DW9[i].name,
-				(dw_value & WTBL_UMAC_DW9[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW9[i].name,
-				 (dw_value & WTBL_UMAC_DW9[i].mask) >>
-					WTBL_UMAC_DW9[i].shift);
-		i++;
-	}
-}
-
-
-static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t wtbl_lmac_baseaddr;
 	uint32_t dw_value = 0;
 
-	addr = (uint32_t *)&(lwtbl[WF_LWTBL_MUAR_DW*4]);
-	dw_value = *addr;
+	prChipInfo = prAdapter->chip_info;
+	/* LMAC */
+	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
+	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
+		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
+	HAL_MCR_RD(prAdapter,
+		prChipInfo->u4LmacWtblDUAddr + WF_LWTBL_MUAR_DW * 4,
+				&dw_value);
+
 	if (((dw_value & WF_LWTBL_MUAR_MASK) >> WF_LWTBL_MUAR_SHIFT) ==
 					MUAR_INDEX_OWN_MAC_ADDR_BC_MC) {
-		addr = (uint32_t *)&(lwtbl[WF_LWTBL_CIPHER_SUIT_BIGTK_DW * 4]);
-		dw_value = *addr;
+		HAL_MCR_RD(prAdapter,
+			(prChipInfo->u4LmacWtblDUAddr +
+				WF_LWTBL_CIPHER_SUIT_BIGTK_DW * 4),
+			&dw_value);
 		if (((dw_value & WF_LWTBL_CIPHER_SUIT_BIGTK_MASK) >>
-			WF_LWTBL_CIPHER_SUIT_BIGTK_SHIFT) != IGTK_CIPHER_SUIT_NONE)
+			WF_LWTBL_CIPHER_SUIT_BIGTK_SHIFT) !=
+			IGTK_CIPHER_SUIT_NONE)
 			return TRUE;
 	}
 
 	return FALSE;
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW2[] = {
-	{"PN0",		WTBL_PN0_MASK,		WTBL_PN0_OFFSET,	FALSE},
-	{"PN1",		WTBL_PN1_MASK,		WTBL_PN1_OFFSET,	FALSE},
-	{"PN2",		WTBL_PN2_MASK,		WTBL_PN2_OFFSET,	TRUE},
-	{"PN3",		WTBL_PN3_MASK,		WTBL_PN3_OFFSET,	FALSE},
-	{NULL,}
-};
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW3[] = {
-	{"PN4",     WTBL_PN4_MASK,      WTBL_PN4_OFFSET,	FALSE},
-	{"PN5",     WTBL_PN5_MASK,      WTBL_PN5_OFFSET,	TRUE},
-	{NULL,}
-};
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW4_BIPN[] = {
-	{"BIPN0",	WTBL_BIPN0_MASK,	WTBL_BIPN0_OFFSET,	FALSE},
-	{"BIPN1",	WTBL_BIPN1_MASK,	WTBL_BIPN1_OFFSET,	FALSE},
-	{"BIPN2",	WTBL_BIPN2_MASK,	WTBL_BIPN2_OFFSET,	TRUE},
-	{"BIPN3",	WTBL_BIPN3_MASK,	WTBL_BIPN3_OFFSET,	FALSE},
-	{NULL,}
-};
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW5_BIPN[] = {
-	{"BIPN4",	WTBL_BIPN0_MASK,	WTBL_BIPN0_OFFSET,	FALSE},
-	{"BIPN5",	WTBL_BIPN1_MASK,	WTBL_BIPN1_OFFSET,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_uwtbl_pn(struct ADAPTER *prAdapter, uint8_t *uwtbl, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t i = 0;
-
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL PN\n");
-
-	/* UMAC WTBL DW 2/3 */
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_PN_31_0__DW * 4]);
-	dw_value = *addr;
-
-	while (WTBL_UMAC_DW2[i].name) {
-		DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW2[i].name,
-			(dw_value & WTBL_UMAC_DW2[i].mask) >>
-				WTBL_UMAC_DW2[i].shift);
-		i++;
-	}
-
-	i = 0;
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_PN_47_32__DW * 4]);
-	dw_value = *addr;
-
-	while (WTBL_UMAC_DW3[i].name) {
-		DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW3[i].name,
-			 (dw_value & WTBL_UMAC_DW3[i].mask) >>
-			WTBL_UMAC_DW3[i].shift);
-		i++;
-	}
-
-
-	/* UMAC WTBL DW 4/5 for BIGTK */
-	if (is_wtbl_bigtk_exist(prAdapter, lwtbl) == TRUE) {
-		i = 0;
-		addr = (uint32_t *)&(uwtbl[WF_UWTBL_RX_BIPN_31_0__DW * 4]);
-		dw_value = *addr;
-
-		while (WTBL_UMAC_DW4_BIPN[i].name) {
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW4_BIPN[i].name,
-				(dw_value & WTBL_UMAC_DW4_BIPN[i].mask) >>
-					WTBL_UMAC_DW4_BIPN[i].shift);
-			i++;
-		}
-
-		i = 0;
-		addr = (uint32_t *)&(uwtbl[WF_UWTBL_RX_BIPN_47_32__DW * 4]);
-		dw_value = *addr;
-
-		while (WTBL_UMAC_DW5_BIPN[i].name) {
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW5_BIPN[i].name,
-				(dw_value & WTBL_UMAC_DW5_BIPN[i].mask) >>
-				WTBL_UMAC_DW5_BIPN[i].shift);
-			i++;
-		}
-	}
-}
-
-static void parse_bmac_uwtbl_sn(struct ADAPTER *prAdapter, uint8_t *uwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t u2SN = 0;
-
-	/* UMAC WTBL DW SN part */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL SN\n");
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID0_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID0_SN_MASK) >> WF_UWTBL_TID0_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID0_AC0_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID1_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID1_SN_MASK) >> WF_UWTBL_TID1_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID1_AC1_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID2_SN_7_0__DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID2_SN_7_0__MASK) >>
-				WF_UWTBL_TID2_SN_7_0__SHIFT;
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID2_SN_11_8__DW * 4]);
-	u2SN |= (((*addr) & WF_UWTBL_TID2_SN_11_8__MASK) >>
-			WF_UWTBL_TID2_SN_11_8__SHIFT) << 8;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID2_AC2_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID3_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID3_SN_MASK) >> WF_UWTBL_TID3_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID3_AC3_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID4_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID4_SN_MASK) >> WF_UWTBL_TID4_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID4_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID5_SN_3_0__DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID5_SN_3_0__MASK) >>
-				WF_UWTBL_TID5_SN_3_0__SHIFT;
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID5_SN_11_4__DW * 4]);
-	u2SN |= (((*addr) & WF_UWTBL_TID5_SN_11_4__MASK) >>
-				WF_UWTBL_TID5_SN_11_4__SHIFT) << 4;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID5_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID6_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID6_SN_MASK) >> WF_UWTBL_TID6_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID6_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_TID7_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_TID7_SN_MASK) >> WF_UWTBL_TID7_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "TID7_SN", u2SN);
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_COM_SN_DW * 4]);
-	u2SN = ((*addr) & WF_UWTBL_COM_SN_MASK) >> WF_UWTBL_COM_SN_SHIFT;
-	DBGLOG(HAL, INFO, "\t%s:%u\n", "COM_SN", u2SN);
 }
 
 static void dump_key_table(
@@ -1354,189 +865,219 @@ static void dump_key_table(
 	}
 }
 
-static void parse_bmac_uwtbl_key_info(struct ADAPTER *prAdapter, uint8_t *uwtbl, uint8_t *lwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint16_t keyloc0 = INVALID_KEY_ENTRY;
-	uint16_t keyloc1 = INVALID_KEY_ENTRY;
-	uint16_t keyloc2 = INVALID_KEY_ENTRY;
-
-	/* UMAC WTBL DW 7 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL key info\n");
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_KEY_LOC0_DW * 4]);
-	dw_value = *addr;
-	keyloc0 = (dw_value & WF_UWTBL_KEY_LOC0_MASK) >> WF_UWTBL_KEY_LOC0_SHIFT;
-	keyloc1 = (dw_value & WF_UWTBL_KEY_LOC1_MASK) >> WF_UWTBL_KEY_LOC1_SHIFT;
-
-	DBGLOG(HAL, INFO, "\t%s:%u/%u\n", "Key Loc 0/1", keyloc0, keyloc1);
-
-	/* UMAC WTBL DW 6 for BIGTK */
-	if (is_wtbl_bigtk_exist(prAdapter, lwtbl) == TRUE) {
-		keyloc2 = (dw_value & WF_UWTBL_KEY_LOC2_MASK) >>
-			WF_UWTBL_KEY_LOC2_SHIFT;
-		DBGLOG(HAL, INFO, "\t%s:%u\n", "Key Loc 2", keyloc2);
-	}
-
-	/* Parse KEY link */
-	dump_key_table(prAdapter, keyloc0, keyloc1, keyloc2);
-}
-
-static struct {
-	uint8_t *name;
-	uint32_t mask;
-	uint32_t shift;
-	u_int8_t new_line;
-} WTBL_UMAC_DW8[] = {
-	{"UWTBL_WMM_Q",		WF_UWTBL_WMM_Q_MASK,		WF_UWTBL_WMM_Q_SHIFT,	FALSE},
-	{"UWTBL_QOS",		WF_UWTBL_QOS_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"UWTBL_HT_VHT_HE",	WF_UWTBL_HT_MASK,		NO_SHIFT_DEFINE,	FALSE},
-	{"UWTBL_HDRT_MODE",	WF_UWTBL_HDRT_MODE_MASK,	NO_SHIFT_DEFINE,	TRUE},
-	{NULL,}
-};
-
-static void parse_bmac_uwtbl_msdu_info(struct ADAPTER *prAdapter, uint8_t *uwtbl)
-{
-	uint32_t *addr = 0;
-	uint32_t dw_value = 0;
-	uint32_t amsdu_len = 0;
-	uint16_t i = 0;
-
-	/* UMAC WTBL DW 8 */
-	DBGLOG(HAL, INFO, "\t\n");
-	DBGLOG(HAL, INFO, "UWTBL DW8\n");
-
-	addr = (uint32_t *)&(uwtbl[WF_UWTBL_AMSDU_CFG_DW * 4]);
-	dw_value = *addr;
-
-	while (WTBL_UMAC_DW8[i].name) {
-
-		if (WTBL_UMAC_DW8[i].shift == NO_SHIFT_DEFINE)
-			DBGLOG(HAL, INFO, "\t%s:%d\n", WTBL_UMAC_DW8[i].name,
-				(dw_value & WTBL_UMAC_DW8[i].mask) ? 1 : 0);
-		else
-			DBGLOG(HAL, INFO, "\t%s:%u\n", WTBL_UMAC_DW8[i].name,
-				(dw_value & WTBL_UMAC_DW8[i].mask) >>
-					WTBL_UMAC_DW8[i].shift);
-		i++;
-	}
-
-	/* UMAC WTBL DW 8 - AMSDU_CFG */
-	DBGLOG(HAL, INFO, "\t%s:%d\n", "HW AMSDU Enable",
-		(dw_value & WTBL_AMSDU_EN_MASK) ? 1 : 0);
-
-	amsdu_len = (dw_value & WTBL_AMSDU_LEN_MASK) >> WTBL_AMSDU_LEN_OFFSET;
-	if (amsdu_len == 0)
-		DBGLOG(HAL, INFO, "\t%s:invalid (WTBL value=0x%x)\n", "HW AMSDU Len",
-			amsdu_len);
-	else if (amsdu_len == 1)
-		DBGLOG(HAL, INFO, "\t%s:%d~%d (WTBL value=0x%x)\n", "HW AMSDU Len",
-			1,
-			255,
-			amsdu_len);
-	else if (amsdu_len == 2)
-		DBGLOG(HAL, INFO, "\t%s:%d~%d (WTBL value=0x%x)\n", "HW AMSDU Len",
-			256,
-			511,
-			amsdu_len);
-	else if (amsdu_len == 3)
-		DBGLOG(HAL, INFO, "\t%s:%d~%d (WTBL value=0x%x)\n", "HW AMSDU Len",
-			512,
-			767,
-			amsdu_len);
-	else
-		DBGLOG(HAL, INFO, "\t%s:%d~%d (WTBL value=0x%x)\n", "HW AMSDU Len",
-			256 * (amsdu_len - 1),
-			256 * (amsdu_len - 1) + 255,
-			amsdu_len);
-
-	DBGLOG(HAL, INFO, "\t%s:%lu (WTBL value=0x%lx)\n", "HW AMSDU Num",
-		((dw_value & WTBL_AMSDU_NUM_MASK) >> WTBL_AMSDU_NUM_OFFSET) + 1,
-		(dw_value & WTBL_AMSDU_NUM_MASK) >> WTBL_AMSDU_NUM_OFFSET);
-}
-
-static void dump_bmac_wtbl_info(struct ADAPTER *prAdapter, uint8_t *lwtbl, uint8_t *uwtbl)
-{
-	/* Parse LWTBL */
-	parse_bmac_lwtbl_DW0_1(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW2(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW3(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW4(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW5(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW6(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW7(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW8(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW9(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW10(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW11(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW12(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW13(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW14(prAdapter, lwtbl);
-	parse_bmac_lwtbl_mlo_info(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW31(prAdapter, lwtbl);
-	parse_bmac_lwtbl_DW32(prAdapter, lwtbl);
-	parse_bmac_lwtbl_rx_stats(prAdapter, lwtbl);
-
-	/* Parse UWTBL */
-	parse_bmac_uwtbl_mlo_info(prAdapter, uwtbl);
-	parse_bmac_uwtbl_pn(prAdapter, uwtbl, lwtbl);
-	parse_bmac_uwtbl_sn(prAdapter, uwtbl);
-	parse_bmac_uwtbl_key_info(prAdapter, uwtbl, lwtbl);
-	parse_bmac_uwtbl_msdu_info(prAdapter, uwtbl);
-}
-
-int32_t connac3x_show_wtbl_info(
+int32_t connac3x_show_umac_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
 	char *pcCommand,
 	int i4TotalLen)
 {
-	int32_t i4BytesWritten = 0;
-	uint8_t lwtbl[LWTBL_LEN_IN_DW * 4] = {0};
-	uint8_t uwtbl[UWTBL_LEN_IN_DW * 4] = {0};
-	int x;
-	uint8_t real_lwtbl_size = 0;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Value = 0;
+	uint32_t wtbl_umac_baseaddr;
+	uint32_t wtbl_offset, addr;
+	unsigned char *wtbl_raw_dw = NULL;
+	struct bwtbl_umac_struct *puwtbl;
+	int32_t i4BytesWritten = 0;
+	uint8_t aucPA[MAC_ADDR_LEN];
+	unsigned long long pn = 0;
+	uint16_t keyloc2 = INVALID_KEY_ENTRY;
+	uint32_t amsdu_len = 0;
 
-	real_lwtbl_size = LWTBL_LEN_IN_DW;
-
-	/* Don't swap below two lines, halWtblReadRaw will write new value WF_WTBLON_TOP_WDUCR_ADDR */
-	halWtblReadRaw(prAdapter, u4Index, WTBL_TYPE_LMAC, 0, real_lwtbl_size, lwtbl);
-	HAL_MCR_RD(prAdapter, WF_WTBLON_TOP_WDUCR_ADDR, &u4Value);
-	DBGLOG(HAL, INFO, "Dump WTBL info of WLAN_IDX:%d\n", u4Index);
-	DBGLOG(HAL, INFO, "LMAC WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
-		WF_WTBLON_TOP_WDUCR_ADDR,
-		u4Value,
-		LWTBL_IDX2BASE(u4Index, 0));
-	for (x = 0; x < real_lwtbl_size; x++) {
-		DBGLOG(HAL, INFO, "DW%02d: %02x %02x %02x %02x\n",
-			x,
-			lwtbl[x * 4 + 3],
-			lwtbl[x * 4 + 2],
-			lwtbl[x * 4 + 1],
-			lwtbl[x * 4]);
-	}
-
-	/* Don't swap below two lines, halWtblReadRaw will write new value WF_WTBLON_TOP_WDUCR_ADDR */
-	halWtblReadRaw(prAdapter, u4Index, WTBL_TYPE_UMAC, 0, UWTBL_LEN_IN_DW, uwtbl);
-	HAL_MCR_RD(prAdapter, WF_UWTBL_TOP_WDUCR_ADDR, &u4Value);
 	DBGLOG(HAL, INFO, "UMAC WTBL Addr: group:0x%x=0x%x addr: 0x%x\n",
 		WF_UWTBL_TOP_WDUCR_ADDR,
 		u4Value,
 		UWTBL_IDX2BASE(u4Index, 0));
-	for (x = 0; x < UWTBL_LEN_IN_DW; x++) {
-		DBGLOG(HAL, INFO, "DW%02d: %02x %02x %02x %02x\n",
-			x,
-			uwtbl[x * 4 + 3],
-			uwtbl[x * 4 + 2],
-			uwtbl[x * 4 + 1],
-			uwtbl[x * 4]);
+
+	prChipInfo = prAdapter->chip_info;
+	/* UMAC */
+	CONNAC3X_UWTBL_CONFIG(prAdapter, prChipInfo->u4UmacWtblDUAddr, u4Index);
+	wtbl_umac_baseaddr = CONNAC3X_UWTBL_IDX2BASE(
+		prChipInfo->u4UmacWtblDUAddr, u4Index, 0);
+	HAL_MCR_RD(prAdapter, prChipInfo->u4UmacWtblDUAddr, &u4Value);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"UMAC WTBL Addr: group: 0x%x=0x%x addr: 0x%x\n",
+		prChipInfo->u4UmacWtblDUAddr,
+		u4Value,
+		wtbl_umac_baseaddr);
+
+	wtbl_raw_dw = (unsigned char *)kalMemAlloc(
+		sizeof(struct bwtbl_umac_struct), VIR_MEM_TYPE);
+	if (!wtbl_raw_dw) {
+		DBGLOG(REQ, ERROR, "WTBL : Memory alloc failed\n");
+		return 0;
+	}
+	/* Read UWTBL Entries */
+	for (wtbl_offset = 0; wtbl_offset <
+		sizeof(struct bwtbl_umac_struct);
+		wtbl_offset += 4) {
+		addr = wtbl_umac_baseaddr + wtbl_offset;
+		HAL_MCR_RD(prAdapter, addr,
+			   &u4Value);
+		kalMemCopy(
+			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
+			&u4Value, sizeof(uint32_t));
+	}
+	puwtbl = (struct bwtbl_umac_struct *)wtbl_raw_dw;
+
+	/* UMAC WTBL DW 0,1 */
+	aucPA[0] =
+		puwtbl->mlo_info.wtbl_d1.field.peer_mld_addr & 0xff;
+	aucPA[1] =
+		((puwtbl->mlo_info.wtbl_d1.field.peer_mld_addr &
+			0xff00) >> 8);
+	aucPA[2] =
+		((puwtbl->mlo_info.wtbl_d1.field.peer_mld_addr &
+			0xff0000) >> 16);
+	aucPA[3] =
+		((puwtbl->mlo_info.wtbl_d1.field.peer_mld_addr &
+			0xff000000) >> 24);
+	aucPA[4] =
+		puwtbl->mlo_info.wtbl_d0.field.peer_mld_addr & 0xff;
+	aucPA[5] =
+		((puwtbl->mlo_info.wtbl_d0.field.peer_mld_addr &
+			0xff00) >> 8);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPEER_MLD_ADDR="MACSTR"\n",
+		MAC2STR(aucPA));
+
+	pn = (((unsigned long long)(puwtbl->pn_sn.wtbl_d3.field.pn1) << 32)
+		| puwtbl->pn_sn.wtbl_d2.field.pn0);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s\n",
+		"UWTBL DW 2~3");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"\tpn:%llu com_sn:%d\n",
+		pn,
+		(uint32_t)puwtbl->pn_sn.wtbl_d3.field.com_sn);
+
+	/*DW4*/
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s\n",
+		"UWTBL DW 4~6");
+	if (is_wtbl_bigtk_exist(prAdapter, u4Index)) {
+		keyloc2 = puwtbl->pn_sn.wtbl_d6.field_v2.key_loc2;
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRX_BIPN:%llu Key_lock2:%d\n",
+			((unsigned long long)(
+				puwtbl->pn_sn.wtbl_d5.field_v2.rx_bipn1) <<
+					32) |
+				puwtbl->pn_sn.wtbl_d4.field_v2.rx_bipn0,
+			puwtbl->pn_sn.wtbl_d6.field_v2.key_loc2);
+	} else {
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tSN TID0:%d TID1:%d TID2:%d TID3:%d\n",
+			puwtbl->pn_sn.wtbl_d4.field.ac0_sn,
+			puwtbl->pn_sn.wtbl_d4.field.ac1_sn,
+			puwtbl->pn_sn.wtbl_d4.field.ac2_sn |
+				puwtbl->pn_sn.wtbl_d5.field.ac2_sn << 8,
+			puwtbl->pn_sn.wtbl_d5.field.ac3_sn);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tSN TID4:%d TID5:%d TID6:%d TID7:%d\n",
+			puwtbl->pn_sn.wtbl_d5.field.ac4_sn,
+			puwtbl->pn_sn.wtbl_d5.field.ac5_sn |
+				puwtbl->pn_sn.wtbl_d6.field.ac5_sn << 4,
+			puwtbl->pn_sn.wtbl_d6.field.ac6_sn,
+			puwtbl->pn_sn.wtbl_d6.field.ac7_sn);
 	}
 
-	dump_bmac_wtbl_info(prAdapter, lwtbl, uwtbl);
- 
+	/* UMAC WTBL DW 7 */
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s\n",
+		"UWTBL DW 7");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tKey_loc0:%d Key_loc1:%d\n",
+			puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc0,
+			puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc1);
+
+	/* Dump key table in log */
+	dump_key_table(prAdapter,
+		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc0,
+		puwtbl->key_msdu_mlo.wtbl_d7.field.key_loc1,
+		keyloc2);
+
+	/* UMAC WTBL DW 8 */
+	amsdu_len = puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_len;
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s\n",
+		"UWTBL DW 8");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tAMSDU_CFG EN:%d NUM:%d(WTBL value=0x%x)\n",
+			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_en,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_num + 1,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_num);
+	if (amsdu_len == 0)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\t%sinvalid (WTBL value=0x%x)\n",
+			"HW AMSDU Len",
+			amsdu_len);
+	else if (amsdu_len == 1)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\t%s:%d~%d (WTBL value=0x%x)\n",
+			"HW AMSDU Len",
+			1,
+			255,
+			amsdu_len);
+	else if (amsdu_len == 2)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\t%s:%d~%d (WTBL value=0x%x)\n",
+			"HW AMSDU Len",
+			256,
+			511,
+			amsdu_len);
+	else if (amsdu_len == 3)
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\t%s:%d~%d (WTBL value=0x%x)\n",
+			"HW AMSDU Len",
+			512,
+			767,
+			amsdu_len);
+	else
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\t%s:%d~%d (WTBL value=0x%x)\n",
+			"HW AMSDU Len",
+			256 * (amsdu_len - 1),
+			256 * (amsdu_len - 1) + 255,
+			amsdu_len);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tWMM_Q:%d QoS:%d HT:%d HDRT_MODE:%d\n",
+			puwtbl->key_msdu_mlo.wtbl_d8.field.wmm_q,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.qos,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.ht,
+			puwtbl->key_msdu_mlo.wtbl_d8.field.hdrt_mode);
+
+	/* UMAC WTBL DW 9 */
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s\n",
+		"UWTBL DW 9");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRELATED_IDX0:%d RELATED_BN0:%d PRI_MLD_BN:%d\n",
+			puwtbl->key_msdu_mlo.wtbl_d9.field.related_idx0,
+			puwtbl->key_msdu_mlo.wtbl_d9.field.related_band0,
+			puwtbl->key_msdu_mlo.wtbl_d9.field.pri_mld_band);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRELATED_IDX1:%d RELATED_BN1:%d SEC_MLD_BN:%d\n",
+			puwtbl->key_msdu_mlo.wtbl_d9.field.related_idx1,
+			puwtbl->key_msdu_mlo.wtbl_d9.field.related_band1,
+			puwtbl->key_msdu_mlo.wtbl_d9.field.sec_mld_band);
+
+	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
+		sizeof(struct bwtbl_umac_struct));
+
 	return i4BytesWritten;
 }
 

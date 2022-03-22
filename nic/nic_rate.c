@@ -232,7 +232,8 @@ char *HW_TX_MODE_STR[] = {
 char *HW_TX_RATE_CCK_STR[] = {"1M", "2M", "5.5M", "11M", "N/A"};
 char *HW_TX_RATE_OFDM_STR[] = {"6M", "9M", "12M", "18M", "24M", "36M",
 				      "48M", "54M", "N/A"};
-char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080", "N/A"};
+char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080",
+					  "BW320", "N/A"};
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A

@@ -298,7 +298,8 @@
 #define TX_POWER_DROP_CTRL                              0x2
 #endif
 
-#define IW_PRIV_BUF_SIZE			2000
+#define IW_PRIV_SET_BUF_SIZE			2000
+#define IW_PRIV_GET_BUF_SIZE			4095
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

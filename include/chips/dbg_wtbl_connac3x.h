@@ -215,6 +215,17 @@ enum _ENUM_IGTK_CIPHER_SUIT_T {
 	IGTK_CIPHER_SUIT_BIP_256
 };
 
+#define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
+	{\
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,\
+				i4TotalLen - i4BytesWritten,\
+				fmt,\
+				args);\
+		DBGLOG(HAL, INFO, fmt, args);\
+		i4BytesWritten;\
+	} \
+)
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************

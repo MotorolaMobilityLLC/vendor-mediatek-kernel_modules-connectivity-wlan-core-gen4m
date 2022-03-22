@@ -504,13 +504,13 @@ struct CHIP_DBG_OPS {
 		uint32_t u4Index,
 		char *pcCommand,
 		int32_t i4TotalLen);
-#if (CFG_SUPPORT_CONNAC2X == 1)
-	int32_t (*showUmacFwtblInfo)(
+#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+	int32_t (*showUmacWtblInfo)(
 		struct ADAPTER *prAdapter,
 		uint32_t u4Index,
 		char *pcCommand,
 		int32_t i4TotalLen);
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+#endif
 	void (*showHifInfo)(struct ADAPTER *prAdapter);
 	void (*printHifDbgInfo)(struct ADAPTER *prAdapter);
 	int32_t (*show_rx_rate_info)(
@@ -1008,6 +1008,11 @@ void connac3x_show_txd_Info(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
 int32_t connac3x_show_wtbl_info(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	char *pcCommand,
+	int i4TotalLen);
+int32_t connac3x_show_umac_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
 	char *pcCommand,
