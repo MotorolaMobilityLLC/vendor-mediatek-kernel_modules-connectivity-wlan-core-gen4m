@@ -861,7 +861,8 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		goto fail;
 	dev_cmd = (struct UNI_CMD_DEVINFO *) dev_entry->pucInfoBuffer;
 	dev_cmd->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
-	dev_cmd->ucDbdcIdx = ENUM_BAND_AUTO;
+	dev_cmd->ucDbdcIdx = bss->ucBssIndex == ad->ucP2PDevBssIdx ?
+		ENUM_BAND_ALL : ENUM_BAND_AUTO;
 	dev_active_tag = (struct UNI_CMD_DEVINFO_ACTIVE *)dev_cmd->aucTlvBuffer;
 	dev_active_tag->u2Tag = UNI_CMD_DEVINFO_TAG_ACTIVE;
 	dev_active_tag->u2Length = sizeof(*dev_active_tag);
@@ -7297,8 +7298,6 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_FWLOG2HOST_TAG_FORMAT: {
 			struct UNI_EVENT_FW_LOG_FORMAT *log =

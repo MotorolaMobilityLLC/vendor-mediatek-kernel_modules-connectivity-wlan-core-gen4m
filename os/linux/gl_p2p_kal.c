@@ -184,6 +184,24 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 		u4FrameBodyLen -= 4;
 	}
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (u4FrameBodyLen <= CFG_CFG80211_IE_BUF_LEN &&
+		!IS_BSS_APGO(prBssInfo)) {
+		struct P2P_ROLE_FSM_INFO *fsm =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+				prGlueInfo->prAdapter,
+				prBssInfo->u4PrivateData);
+
+		if (!fsm)
+			return;
+
+		DBGLOG(P2P, LOUD,
+			"[%d] Copy assoc req info\n", ucBssIndex);
+
+		fsm->rConnReqInfo.u4BufLength = u4FrameBodyLen;
+		kalMemCopy(fsm->rConnReqInfo.aucIEBuf, cp, u4FrameBodyLen);
+	}
+
 	/* do supplicant a favor, parse to the start of WPA/RSN IE */
 	if (wextSrchDesiredWPSIE(cp, u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
 		/* WPS IE found */
@@ -202,7 +220,6 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 	pucExtraInfo = pucDesiredIE;
 	wrqu.data.length = pucDesiredIE[1] + 2;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 
 	if (ucBssIndex == prGlueInfo->prAdapter->ucP2PDevBssIdx)
 		prNetdevice = prGlueInfo->prP2PInfo

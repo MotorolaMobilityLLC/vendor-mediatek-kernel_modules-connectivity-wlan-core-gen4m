@@ -10689,6 +10689,16 @@ struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
 	return NULL;
 }
 
+struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucP2pIndex)
+{
+	if (gprP2pRoleWdev[ucP2pIndex] &&
+		gprP2pRoleWdev[ucP2pIndex]->netdev)
+		return gprP2pRoleWdev[ucP2pIndex]->netdev;
+
+	return NULL;
+}
+
 uint8_t wlanGetBssIdx(struct net_device *ndev)
 {
 	if (ndev) {
@@ -11610,8 +11620,10 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
-	if (IS_BSS_P2P(prBssInfo) && p2pFuncIsDualAPMode(prAdapter)) {
-		DBGLOG(SW4, LOUD, "Use 1x1 due to dual ap mode\n");
+	if (IS_BSS_P2P(prBssInfo) &&
+		(p2pFuncIsDualAPMode(prAdapter) ||
+		p2pFuncIsDualGOMode(prAdapter))) {
+		DBGLOG(SW4, LOUD, "Use 1x1 due to dual ap/go mode\n");
 		ucRetValNss = 1;
 	}
 #endif

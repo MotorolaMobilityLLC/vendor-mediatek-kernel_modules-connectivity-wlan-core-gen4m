@@ -5025,6 +5025,12 @@ uint32_t nicApplyNetworkAddress(IN struct ADAPTER
 		prAdapter->rWifiVar.aucInterfaceAddress[i][0] |= 0x2;
 		prAdapter->rWifiVar.aucInterfaceAddress[i][0] ^=
 			i << MAC_ADDR_LOCAL_ADMIN;
+
+		nicApplyLinkAddress(prAdapter,
+			prAdapter->rWifiVar.aucInterfaceAddress[i],
+			prAdapter->rWifiVar.aucInterfaceAddress[i],
+			i);
+
 		DBGLOG(NIC, INFO, "P2P_INF[%d] mac: " MACSTR "\n",
 			i, MAC2STR(prAdapter->rWifiVar.aucInterfaceAddress[i]));
 	}
@@ -5087,12 +5093,15 @@ void nicApplyLinkAddress(struct ADAPTER *prAdapter,
 	uint8_t *pucDestMAC,
 	uint8_t ucLinkIdx)
 {
-	COPY_MAC_ADDR(pucDestMAC, pucSrcMAC);
+	uint8_t src[MAC_ADDR_LEN];
+
+	COPY_MAC_ADDR(src, pucSrcMAC);
+	COPY_MAC_ADDR(pucDestMAC, src);
 	pucDestMAC[5] ^= ucLinkIdx;
 
 	DBGLOG(NIC, INFO, "ucLinkIdx: %d, src mac: " MACSTR ", dest mac: " MACSTR "\n",
 		ucLinkIdx,
-		MAC2STR(pucSrcMAC),
+		MAC2STR(src),
 		MAC2STR(pucDestMAC));
 }
 

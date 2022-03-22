@@ -2300,8 +2300,8 @@ skip_role:
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));
 	} else if (prBssInfo) {
 		DBGLOG(INIT, INFO,
-			"[%d] Set random macaddr to " MACSTR ".\n",
-			ucBssIdx,
+			"[%d][%d] Set random macaddr to " MACSTR ".\n",
+			ucBssIdx, ucRoleIdx,
 			MAC2STR(prBssInfo->aucOwnMacAddr));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUpdateMldAddrByMainBss(prAdapter,
