@@ -118,6 +118,8 @@ static int soc7_0_ConnacPccifoff(void);
 static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
 
+static void soc7_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
+
 static int wf_pwr_on_consys_mcu(void);
 static int wf_pwr_off_consys_mcu(void);
 
@@ -444,7 +446,11 @@ struct FWDL_OPS_T soc7_0_fw_dl_ops = {
 	.constructFirmwarePrio = soc7_0_ConstructFirmwarePrio,
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
+#if CFG_WLAN_IMG_SUPPORT
+	.downloadFirmware = wlanFwImageDownload,
+#else
 	.downloadFirmware = wlanConnacFormatDownload,
+#endif
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 	.downloadByDynMemMap = downloadImgByDynMemMap,
 #else
@@ -565,12 +571,14 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
 	.wmmcupwron = wf_pwr_on_consys_mcu,
 	.wmmcupwroff = wf_pwr_off_consys_mcu,
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1) \
+	&& (CFG_WLAN_IMG_SUPPORT == 0)
 	.pwrondownload = soc7_0_wlanPowerOnDownload,
 #else
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc7_0_Trigger_fw_assert,
+	.dumpwfsyscpupcr = soc7_0_DumpWfsyscpupcr,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = soc7_0_ConnacPccifon,
 	.coexpccifoff = soc7_0_ConnacPccifoff,
