@@ -1,9 +1,14 @@
 ccflags-y :=
 CFG_DIR ?= $(src)/configs
+
 ifeq ($(CONFIG_MTK_PLATFORM),)
-CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
+    CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
 endif
 MTK_PLATFORM := $(subst $(quote),,$(CONFIG_MTK_PLATFORM))
+
+ifeq ($(CONFIG_WLAN_PLATFORM),)
+    CONFIG_WLAN_PLATFORM := mt$(WLAN_CHIP_ID)
+endif
 
 # WM RAM TYPE
 # WM_RAM - mobile | ce
@@ -94,6 +99,7 @@ endif
 
 $(info $$WM_RAM is [${WM_RAM}])
 $(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
+$(info $$CONFIG_WLAN_PLATFORM is [${CONFIG_WLAN_PLATFORM}])
 $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 $(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
 $(info $$WLAN_CONNAC3_DEV is [${WLAN_CONNAC3_DEV}])
@@ -1099,8 +1105,8 @@ NAN_DIR     := nan/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
 
-ifneq ($(MTK_PLATFORM),)
-PLAT_DIR    := os/$(os)/plat/$(MTK_PLATFORM)/
+ifneq ($(CONFIG_WLAN_PLATFORM),)
+PLAT_DIR    := os/$(os)/plat/$(CONFIG_WLAN_PLATFORM)/
 $(info $$PLAT_DIR is [$(PLAT_DIR)])
 endif
 SYSDVT_DIR  := dvt/
