@@ -541,7 +541,7 @@ struct GLUE_INFO {
 	uint8_t fgDropFcsErrorFrame;
 	uint8_t aucBandIdxEn[CFG_MONITOR_BAND_NUM];
 	uint16_t u2Aid;
-	uint32_t u4AmpduRefNum;
+	uint32_t u4AmpduRefNum[CFG_MONITOR_BAND_NUM];
 #endif
 #if (CFG_SUPPORT_PERF_IND == 1)
 	struct GL_PERF_IND_INFO PerfIndCache;
