@@ -94,7 +94,7 @@ const uint8_t *apucNetworkType[NETWORK_TYPE_NUM] = {
 	(uint8_t *) "MBSS"
 };
 
-const uint8_t *apucNetworkOpMode[] = {
+const uint8_t *apucNetworkOpMode[OP_MODE_NUM] = {
 	(uint8_t *) "INFRASTRUCTURE",
 	(uint8_t *) "IBSS",
 	(uint8_t *) "ACCESS_POINT",
@@ -2442,6 +2442,7 @@ void bssUpdateStaRecFromAssocReq(IN struct ADAPTER *prAdapter)
 void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
+	uint32_t u4NetworkType, u4CurrentOPMode;
 	/* P_LINK_T prStaRecOfClientList = (P_LINK_T) NULL; */
 	/* P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL; */
 
@@ -2463,13 +2464,15 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID),
 	       HIDE(prBssInfo->aucSSID));
 
-	if (prBssInfo->eNetworkType < NETWORK_TYPE_NUM
-			&& prBssInfo->eCurrentOPMode < OP_MODE_NUM) {
+	u4NetworkType = prBssInfo->eNetworkType;
+	u4CurrentOPMode = prBssInfo->eCurrentOPMode;
+	if (u4NetworkType < NETWORK_TYPE_NUM
+			&& u4CurrentOPMode < OP_MODE_NUM) {
 		DBGLOG(SW4, INFO,
 			"BSS IDX[%u] Type[%s] OPMode[%s] ConnState[%u] Absent[%u]\n",
 			prBssInfo->ucBssIndex,
-			apucNetworkType[prBssInfo->eNetworkType],
-			apucNetworkOpMode[prBssInfo->eCurrentOPMode],
+			apucNetworkType[u4NetworkType],
+			apucNetworkOpMode[u4CurrentOPMode],
 			prBssInfo->eConnectionState, prBssInfo->fgIsNetAbsent);
 	}
 
