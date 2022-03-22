@@ -32,8 +32,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-
-#if CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_EMI
 u_int8_t *gEmiCalResult;
 u_int32_t gEmiCalSize;
 u_int32_t gEmiCalOffset;
@@ -48,7 +47,6 @@ struct wireless_dev *grWdev;
  *******************************************************************************
  */
 
-#if CFG_MTK_ANDROID_WMT
 uint32_t wlanAccessCalibrationEMI(
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
@@ -136,88 +134,6 @@ uint32_t wlanAccessCalibrationEMI(
 #endif /* CFG_MTK_ANDROID_EMI */
 	return u4Status;
 }
-
-int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
-{
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-
-	/* Shift 4 for bypass Cal result CRC */
-	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
-
-	/* 2k size for RFCR backup */
-	*pEmiCalSize = 2048;
-
-	DBGLOG(INIT, INFO,
-				"EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
-				*pEmiCalOffset,
-				*pEmiCalSize);
-
-	u4Status = WLAN_STATUS_SUCCESS;
-	return u4Status;
-}
-
-uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
-	struct HAL_PHY_ACTION_TLV_HEADER *prPhyTlvHeader)
-{
-	struct HAL_PHY_ACTION_TLV *prPhyTlv;
-	struct INIT_EVENT_PHY_ACTION_RSP *prPhyEvent;
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-
-	if (prPhyTlvHeader->u4MagicNum != HAL_PHY_ACTION_MAGIC_NUM) {
-		DBGLOG(INIT, ERROR, "HAL_PHY_ACTION_MAGIC_NUM failed\n");
-		u4Status = WLAN_STATUS_FAILURE;
-		goto exit;
-	}
-
-	prPhyTlv =
-		(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
-
-	prPhyEvent = (struct INIT_EVENT_PHY_ACTION_RSP *)
-		prPhyTlv->aucBuffer;
-
-	if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
-		DBGLOG(INIT, INFO,
-			"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
-			prPhyEvent->ucEvent,
-			prPhyEvent->ucStatus,
-			prPhyEvent->u4EmiAddress,
-			prPhyEvent->u4EmiLength);
-
-		if ((prPhyEvent->ucEvent ==
-			HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
-			prPhyEvent->ucStatus ==
-			HAL_PHY_ACTION_STATUS_SUCCESS) ||
-			(prPhyEvent->ucEvent ==
-			HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
-			prPhyEvent->ucStatus ==
-			HAL_PHY_ACTION_STATUS_RECAL)) {
-
-			/* read from EMI, backup in driver */
-#if CFG_MTK_ANDROID_WMT
-			wlanAccessCalibrationEMI(prPhyEvent,
-				TRUE);
-#endif
-		}
-
-		u4Status = WLAN_STATUS_SUCCESS;
-	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
-		DBGLOG(INIT, INFO,
-			"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
-			prPhyEvent->ucStatus);
-
-		u4Status = WLAN_STATUS_SUCCESS;
-	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
-		DBGLOG(INIT, INFO,
-			"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
-			prPhyEvent->ucStatus);
-
-		u4Status = WLAN_STATUS_SUCCESS;
-	}
-
-exit:
-	return u4Status;
-}
-#endif
 
 void wlanGetEpaElnaFromNvram(
 	uint8_t **pu1DataPointer,
@@ -368,6 +284,66 @@ void wlanGetEpaElnaFromNvram(
 	}
 
 	DBGLOG_MEM8(INIT, TRACE, *pu1DataPointer, *pu4DataLen);
+}
+
+uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
+	struct HAL_PHY_ACTION_TLV_HEADER *prPhyTlvHeader)
+{
+	struct HAL_PHY_ACTION_TLV *prPhyTlv;
+	struct INIT_EVENT_PHY_ACTION_RSP *prPhyEvent;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	if (prPhyTlvHeader->u4MagicNum != HAL_PHY_ACTION_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "HAL_PHY_ACTION_MAGIC_NUM failed\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	prPhyTlv =
+		(struct HAL_PHY_ACTION_TLV *)prPhyTlvHeader->aucBuffer;
+
+	prPhyEvent = (struct INIT_EVENT_PHY_ACTION_RSP *)
+		prPhyTlv->aucBuffer;
+
+	if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_CAL) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_CAL ucEvent[0x%x]status[0x%x]emiAddr[0x%x]emiLen[0x%x]\n",
+			prPhyEvent->ucEvent,
+			prPhyEvent->ucStatus,
+			prPhyEvent->u4EmiAddress,
+			prPhyEvent->u4EmiLength);
+
+		if ((prPhyEvent->ucEvent ==
+			HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
+			prPhyEvent->ucStatus ==
+			HAL_PHY_ACTION_STATUS_SUCCESS) ||
+			(prPhyEvent->ucEvent ==
+			HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
+			prPhyEvent->ucStatus ==
+			HAL_PHY_ACTION_STATUS_RECAL)) {
+
+			/* read from EMI, backup in driver */
+			wlanAccessCalibrationEMI(prPhyEvent,
+				TRUE);
+		}
+
+		u4Status = WLAN_STATUS_SUCCESS;
+	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_NVRAM) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_NVRAM status[0x%x]\n",
+			prPhyEvent->ucStatus);
+
+		u4Status = WLAN_STATUS_SUCCESS;
+	} else if (prPhyTlv->u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
+		DBGLOG(INIT, INFO,
+			"HAL_PHY_ACTION_TAG_COM_FEM status[0x%x]\n",
+			prPhyEvent->ucStatus);
+
+		u4Status = WLAN_STATUS_SUCCESS;
+	}
+
+exit:
+	return u4Status;
 }
 
 #if (CFG_SUPPORT_CONNFEM == 1)
@@ -688,7 +664,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		goto exit;
 
-	/* u4Status = wlanRcvPhyActionRsp(prAdapter, prEvent); */
+	u4Status = wlanRcvPhyActionRsp(prAdapter, prEvent);
 
 exit:
 	if (prCmd)
@@ -720,7 +696,26 @@ uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
 	return u4Status;
 }
 
-#if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	/* Shift 4 for bypass Cal result CRC */
+	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
+
+	/* 2k size for RFCR backup */
+	*pEmiCalSize = 2048;
+
+	DBGLOG(INIT, INFO,
+				"EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
+				*pEmiCalOffset,
+				*pEmiCalSize);
+
+	u4Status = WLAN_STATUS_SUCCESS;
+	return u4Status;
+}
+
 int wlanPreCalPwrOn(void)
 {
 #define MAX_PRE_ON_COUNT 5
@@ -1109,16 +1104,24 @@ int wlanPreCal(void)
 
 	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
 }
+#endif
 
 uint8_t *wlanGetCalResult(uint32_t *prCalSize)
 {
+#if CFG_MTK_ANDROID_EMI
 	*prCalSize = gEmiCalSize;
 
 	return gEmiCalResult;
+#else
+	*prCalSize = 0;
+
+	return NULL;
+#endif
 }
 
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 {
+#if CFG_MTK_ANDROID_EMI
 	switch (cmd) {
 	case 0:
 		if (gEmiCalResult != NULL) {
@@ -1139,5 +1142,5 @@ void wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 
 	DBGLOG(RFTEST, INFO, "gEmiCalResult(0x%x), gEmiCalUseEmiData(%d)\n",
 			gEmiCalResult, gEmiCalUseEmiData);
-}
 #endif
+}
