@@ -288,7 +288,4 @@ u_int8_t glReSchWfsysReset(struct ADAPTER *prAdapter);
 void WfsysResetHdlr(struct work_struct *work);
 #endif
 
-#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason)	\
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 #endif /* _GL_RST_H */
