@@ -2482,6 +2482,73 @@ struct UNI_CMD_SR_UPDATE_SR_PARMS {
 	uint8_t aucPadding2[32];
 };
 
+struct WH_SR_IND {
+	/* RMAC */
+	/* DW_1 */
+	uint8_t u1NonSrgInterPpduRcpi;
+	uint8_t u1SrgInterPpduRcpi;
+	uint16_t u2NonSrgVldCnt;
+	/* DW_2 */
+	uint16_t u2SrgVldCnt;
+	uint16_t u2IntraBssPpduCnt;
+	/* DW_3 */
+	uint16_t u2InterBssPpduCnt;
+	uint16_t u2NonSrgPpduVldCnt;
+	/* DW_4 */
+	uint16_t u2SrgPpduVldCnt;
+	uint8_t RSV[2];
+	/* MIB */
+	/* DW_5 */
+	uint32_t u4SrAmpduMpduCnt;
+	/* DW_6 */
+	uint32_t u4SrAmpduMpduAckedCnt;
+} __KAL_ATTRIB_PACKED__;
+
+struct WH_SR_CAP {
+	/* RMAC */
+	/* DW_1 */
+	uint8_t fgSrEn;
+	uint8_t fgSrgEn;
+	uint8_t fgNonSrgEn;
+	uint8_t fgSingleMdpuRtsctsEn;
+	/* DW_2 */
+	uint8_t fgHdrDurEn;
+	uint8_t fgTxopDurEn;
+	uint8_t fgNonSrgInterPpduPresv;
+	uint8_t fgSrgInterPpduPresv;
+	/* DW_3 */
+	uint8_t fgSMpduNoTrigEn;
+	uint8_t fgSrgBssidOrder;
+	uint8_t fgCtsAfterRts;
+	uint8_t fgSrpOldRxvEn;
+	/* DW_4 */
+	uint8_t fgSrpNewRxvEn;
+	uint8_t fgSrpDataOnlyEn;
+	uint8_t fgFixedRateSrREn;
+	uint8_t fgWtblSrREn;
+	/* AGG  */
+	/* DW_5 */
+	uint8_t fgSrRemTimeEn;
+	uint8_t fgProtInSrWinDis;
+	uint8_t fgTxCmdDlRateSelEn;
+	/* MIB  */
+	uint8_t fgAmpduTxCntEn;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_SR_IND {
+	/* DW_0 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct WH_SR_IND rSrInd;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_SR_CAP {
+	/* DW_0 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct WH_SR_CAP rSrCap;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_CNM {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -5207,6 +5274,33 @@ struct UNI_EVENT_NAN_DISCOVERY_EVENT {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+enum UNI_EVENT_SR_TAG {
+	UNI_EVENT_SR_TAG_HW_CAP = 0xC0,
+	UNI_EVENT_SR_TAG_HW_IND = 0xC9
+};
+
+struct UNI_EVENT_SR_HW_IND {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct WH_SR_IND rSrInd;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_SR_HW_CAP {
+	/* DW_0 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* DW_1 - DW_5 */
+	struct WH_SR_CAP rSrCap;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_SR {
+	/*Fixed Fields*/
+	uint8_t u1DbdcIdx;
+	uint8_t au1Padding[3];
+	/*TLV*/
+	uint8_t au1TlvBuffer[0];/*  the TLVs included in this field: */
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5499,6 +5593,9 @@ uint32_t nicUniCmdFwLogQueryBase(struct ADAPTER *ad,
 uint32_t nicUniCmdFwLogUpdateRead(struct ADAPTER *ad,
 	enum FW_LOG_CMD_CTRL_TYPE type,
 	uint32_t addr);
+uint32_t nicUniCmdSR(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info);
+
 
 /*******************************************************************************
  *                   Event
@@ -5534,6 +5631,8 @@ void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventQuerySRInfo(struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
