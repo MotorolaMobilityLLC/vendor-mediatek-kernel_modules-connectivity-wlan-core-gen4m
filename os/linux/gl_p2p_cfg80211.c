@@ -1873,6 +1873,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 	uint8_t ucBssIdx = 0;
 	uint32_t u4Len = 0;
 
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	do {
 		if ((wiphy == NULL) || (params == NULL))
 			break;
