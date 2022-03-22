@@ -1555,17 +1555,17 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
 	},
-	{
+	[WIFI_EVENT_RESET_TRIGGERED] {
 		.vendor_id = OUI_MTK,
-		.subcmd = MTK_SUBCMD_NAN
+		.subcmd = MTK_NL80211_TRIGGER_RESET
 	},
 	[WIFI_EVENT_SUBCMD_NAN] {
 		.vendor_id = OUI_MTK,
-		.subcmd = MTK_SUBCMD_NDP
+		.subcmd = MTK_SUBCMD_NAN
 	},
 	[WIFI_EVENT_SUBCMD_NDP] {
 		.vendor_id = OUI_MTK,
-		.subcmd = MTK_NL80211_TRIGGER_RESET
+		.subcmd = MTK_SUBCMD_NDP
 	},
 };
 #endif
