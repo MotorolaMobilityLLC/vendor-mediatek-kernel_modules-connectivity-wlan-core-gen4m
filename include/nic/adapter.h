@@ -1737,6 +1737,8 @@ struct ADAPTER {
 #endif
 	u_int8_t fgIsChipNoAck;
 	u_int8_t fgIsChipAssert;
+	u_int8_t fgIsCmdAllocFail;
+	uint32_t u4CmdAllocStartFailTime;
 
 	/* RLM maintenance */
 	enum ENUM_CHNL_EXT eRfSco;

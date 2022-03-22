@@ -276,6 +276,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		       "CMD[0x%p] allocated! LEN[%04u], Rest[%u]\n",
 		       prCmdInfo, u4Length, prAdapter->rFreeCmdList.u4NumElem);
 
+		prAdapter->fgIsCmdAllocFail = FALSE;
 	} else {
 		/* dump debug log */
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
@@ -284,6 +285,15 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		DBGLOG(MEM, ERROR,
 		       "CMD allocation failed! LEN[%04u], Rest[%u]\n",
 		       u4Length, prAdapter->rFreeCmdList.u4NumElem);
+
+		if (!prAdapter->fgIsCmdAllocFail) {
+			prAdapter->fgIsCmdAllocFail = TRUE;
+			prAdapter->u4CmdAllocStartFailTime = kalGetTimeTick();
+		} else if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+					    prAdapter->u4CmdAllocStartFailTime,
+					    CFG_CMD_ALLOC_FAIL_TIMEOUT_MS))
+			GL_DEFAULT_RESET_TRIGGER(prAdapter,
+					     RST_CMD_EVT_FAIL);
 	}
 
 	return prCmdInfo;

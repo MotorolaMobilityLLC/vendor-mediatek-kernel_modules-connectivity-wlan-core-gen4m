@@ -628,8 +628,10 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 #define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
 { \
-	wakeup_source_unregister(_prWakeLock); \
-	_prWakeLock = NULL; \
+	if (_prWakeLock) { \
+		wakeup_source_unregister(_prWakeLock); \
+		_prWakeLock = NULL; \
+	} \
 }
 #else
 #define KAL_WAKE_LOCK_INIT(_prAdapter, _prWakeLock, _pcName) \

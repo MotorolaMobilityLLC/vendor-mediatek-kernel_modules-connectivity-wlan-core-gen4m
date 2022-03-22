@@ -254,6 +254,9 @@ int32_t glIsWmtCodeDump(void);
 #define glGetRstReason() \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define glResetSelectAction(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define glResetTrigger(prAdapter, u4RstFlag, pucFile, u4Line) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -270,6 +273,9 @@ void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 		    eReason);
 
 int glSetRstReason(void);
+
+uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter);
+
 void glResetTrigger(struct ADAPTER *prAdapter,
 		    uint32_t u4RstFlag, const uint8_t *pucFile,
 		    uint32_t u4Line);

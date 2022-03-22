@@ -4747,6 +4747,13 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 				struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
 				aBinContent) + prSetEfuseBufModeInfo->u2Count,
 			FALSE, TRUE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+			       "kalIoctl EXT_CMD_ID_EFUSE_BUFFER_MODE 0x%X\n",
+			       rStatus);
+			goto label_exit;
+		}
 		/* update remain size */
 		u4ContentLen -= prSetEfuseBufModeInfo->u2Count;
 	}
