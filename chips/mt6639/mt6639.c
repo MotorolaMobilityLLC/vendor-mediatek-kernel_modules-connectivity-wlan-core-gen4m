@@ -14,6 +14,7 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/wf_cr_sw_def.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_wfdma_mcu_dma0.h"
@@ -548,6 +549,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = NULL,
+	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADDR,
+	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
 #if defined(_HIF_PCIE)
 #if IS_MOBILE_SEGMENT
