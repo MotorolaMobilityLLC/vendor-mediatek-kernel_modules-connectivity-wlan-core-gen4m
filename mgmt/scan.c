@@ -1817,7 +1817,20 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			*/
 			prScanParam->u2IELen = IE_SIZE(prIeShortSsidList);
 			prScanParam->ucBssIndex =
-					prScanInfo->rScanParam.ucBssIndex;
+				prAdapterScanParam->ucBssIndex;
+			prScanParam->eMsgId = prAdapterScanParam->eMsgId;
+			prScanParam->fgIsScanV2 =
+				prAdapterScanParam->fgIsScanV2;
+#if CFG_ENABLE_WIFI_DIRECT
+			prScanParam->fgFindSpecificDev =
+				prAdapterScanParam->fgFindSpecificDev;
+			COPY_MAC_ADDR(prScanParam->aucDiscoverDevAddr,
+				prAdapterScanParam->aucDiscoverDevAddr);
+			prScanParam->fgIsDevType =
+				prAdapterScanParam->fgIsDevType;
+			prScanParam->rDiscoverDevType =
+				prAdapterScanParam->rDiscoverDevType;
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 			/* Init value = CFG_SCAN_OOB_MAX_NUM, if init value = 0
 			*  will let FW confuse to match SSID ind 0.
