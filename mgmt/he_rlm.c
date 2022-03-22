@@ -524,6 +524,15 @@ static void heRlmFillHeCapIE(
 				prHeCap->ucHePhyCap);
 	}
 
+	/* Set PUNCTURED_PREAMBLE_RX:
+	 * BW80_sec20(bit[0]) and BW80_sec40(bit[1]) are supported
+	 */
+	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHePpRx) &&
+		(prWifiVar->ucSta5gBandwidth >= MAX_BW_80MHZ)) {
+		HE_SET_PHY_CAP_PUNCTURED_PREAMBLE_RX(prHeCap->ucHePhyCap, 3);
+	} else
+		HE_SET_PHY_CAP_PUNCTURED_PREAMBLE_RX(prHeCap->ucHePhyCap, 0);
+
 	if (IS_FEATURE_ENABLED(prWifiVar->ucRxLdpc) &&
 		IS_FEATURE_ENABLED(prWifiVar->ucTxLdpc))
 		HE_SET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(prHeCap->ucHePhyCap);

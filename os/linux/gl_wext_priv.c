@@ -3971,6 +3971,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_SR_ENABLE       "SET_SR_ENABLE"
 #define CMD_GET_SR_CAP          "GET_SR_CAP"
 #define CMD_GET_SR_IND          "GET_SR_IND"
+#define CMD_SET_PP_RX           "SET_PP_RX"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
@@ -14537,6 +14538,51 @@ int priv_driver_get_sr_ind(
 	return i4BytesWritten;
 }
 
+int priv_driver_set_pp_rx(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucPpRxCap;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucPpRxCap = (uint8_t) u4Parse;
+		if (ucPpRxCap) {
+			/* enable */
+			prGlueInfo->prAdapter->rWifiVar.ucStaHePpRx = TRUE;
+		} else {
+			/* disable */
+			prGlueInfo->prAdapter->rWifiVar.ucStaHePpRx = FALSE;
+		}
+
+		DBGLOG(REQ, ERROR, "ucPpRxCap = %d\n",
+			prGlueInfo->prAdapter->rWifiVar.ucStaHePpRx);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlan0 driver SET_PP_RX_CAP <en>\n");
+		DBGLOG(INIT, ERROR, "<en> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
 
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
@@ -20121,6 +20167,10 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 		} else if (strnicmp(pcCommand, CMD_GET_SR_IND,
 			strlen(CMD_GET_SR_IND)) == 0) {
 			i4BytesWritten = priv_driver_get_sr_ind(prNetDev,
+				pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_PP_RX,
+			strlen(CMD_SET_PP_RX)) == 0) {
+			i4BytesWritten = priv_driver_set_pp_rx(prNetDev,
 				pcCommand, i4TotalLen);
 #endif
 
