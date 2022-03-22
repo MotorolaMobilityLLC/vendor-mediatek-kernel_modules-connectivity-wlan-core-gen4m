@@ -19,6 +19,11 @@ struct CCIF_OPS {
 	void (*notify_utc_time_to_fw)(struct ADAPTER *ad,
 		uint32_t sec,
 		uint32_t usec);
+	void (*set_fw_log_read_pointer)(struct ADAPTER *ad,
+		enum ENUM_FW_LOG_CTRL_TYPE type,
+		uint32_t read_pointer);
+	uint32_t (*get_fw_log_read_pointer)(struct ADAPTER *ad,
+		enum ENUM_FW_LOG_CTRL_TYPE type);
 };
 
 static inline uint32_t ccif_get_interrupt_status(struct ADAPTER *ad)
@@ -41,6 +46,44 @@ static inline void ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 		return;
 
 	ad->chip_info->ccif_ops->notify_utc_time_to_fw(ad, sec, usec);
+}
+
+static inline void ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type,
+	uint32_t read_pointer)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	if (!ad)
+		return;
+
+	prChipInfo = ad->chip_info;
+
+	if (prChipInfo && prChipInfo->ccif_ops &&
+	    prChipInfo->ccif_ops->set_fw_log_read_pointer)
+		prChipInfo->ccif_ops->set_fw_log_read_pointer(ad,
+			type,
+			read_pointer);
+}
+
+static inline uint32_t ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
+	enum ENUM_FW_LOG_CTRL_TYPE type)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4Rp = 0;
+
+	if (!ad)
+		goto exit;
+
+	prChipInfo = ad->chip_info;
+
+	if (prChipInfo && prChipInfo->ccif_ops &&
+	    prChipInfo->ccif_ops->get_fw_log_read_pointer)
+		u4Rp = prChipInfo->ccif_ops->get_fw_log_read_pointer(ad,
+			type);
+
+exit:
+	return u4Rp;
 }
 
 #endif

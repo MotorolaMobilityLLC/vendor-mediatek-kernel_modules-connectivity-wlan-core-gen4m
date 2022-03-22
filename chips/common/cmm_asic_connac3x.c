@@ -1945,7 +1945,36 @@ void asicConnac3xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
-	return TRUE;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t r4Status = 0;
+	u_int8_t fgNeedPwrCtrl = FALSE;
+	u_int8_t fgRet = TRUE;
+
+	if (!prAdapter)
+		return TRUE;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (!prChipInfo->get_sw_interrupt_status)
+		goto exit;
+
+	fgRet = prChipInfo->get_sw_interrupt_status(prAdapter, &r4Status);
+	if (fgRet == FALSE || r4Status == 0)
+		goto exit;
+
+	fgNeedPwrCtrl = IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO);
+
+	if (fgNeedPwrCtrl)
+		wlanAcquirePowerControl(prAdapter);
+
+	if (r4Status & BIT(SW_INT_FW_LOG))
+		fw_log_wifi_irq_handler();
+
+	if (fgNeedPwrCtrl)
+		wlanReleasePowerControl(prAdapter);
+
+exit:
+	return fgRet;
 }
 
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter)

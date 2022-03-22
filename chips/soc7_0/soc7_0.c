@@ -115,7 +115,7 @@ static int soc7_0_ConnacPccifon(void);
 static int soc7_0_ConnacPccifoff(void);
 #endif
 
-static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
 
 static void soc7_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
@@ -2816,7 +2816,7 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	return ret;
 }
 
-static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status)
 {
 	int check = 0;
@@ -2825,7 +2825,7 @@ static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 
 	check = wake_up_conninfra_off();
 	if (check)
-		return false;
+		return FALSE;
 
 	sw_int_value = ccif_get_interrupt_status(prAdapter);
 
@@ -2835,7 +2835,7 @@ static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	wf_ioremap_write(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, value);
 
 	*status = sw_int_value;
-	return true;
+	return TRUE;
 }
 
 static uint32_t soc7_0_ccif_get_interrupt_status(struct ADAPTER *ad)

@@ -127,7 +127,7 @@
 */
 static void soc3_0_triggerInt(struct GLUE_INFO *prGlueInfo);
 static void soc3_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
-static bool soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
 static int wf_pwr_on_consys_mcu(void);
 static int wf_pwr_off_consys_mcu(void);
@@ -3780,7 +3780,7 @@ static void soc3_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta)
 	wf_ioremap_read(prSwWfdmaInfo->u4CcifStartAddr, pu4Sta);
 }
 
-static bool soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status)
 {
 	struct BUS_INFO *prBusInfo = NULL;
@@ -3790,7 +3790,7 @@ static bool soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (!conninfra_reg_readable())
-		return false;
+		return FALSE;
 
 	HAL_MCR_RD(prAdapter,
 		CONN_MCU_CONFG_WF2AP_SW_IRQ_CTRL_ADDR,
@@ -3800,7 +3800,7 @@ static bool soc3_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 		value);
 
 	*status = value;
-	return true;
+	return TRUE;
 }
 
 #endif				/* soc3_0 */
