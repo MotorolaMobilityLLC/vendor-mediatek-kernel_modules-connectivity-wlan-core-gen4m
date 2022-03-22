@@ -1584,7 +1584,7 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 		return 0;	/* To indicate end of file. */
 
 	prGlueInfo = g_prGlueInfo_proc;
-
+	rMcrInfo.u4McrData = 0;
 	rMcrInfo.u4McrOffset = u4McrOffset;
 
 	rStatus = kalIoctl(prGlueInfo,
