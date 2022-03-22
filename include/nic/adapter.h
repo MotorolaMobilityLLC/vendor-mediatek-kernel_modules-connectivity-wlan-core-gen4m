@@ -1730,7 +1730,11 @@ struct ADAPTER {
 	/* Root Timer for cnm_timer module */
 	struct ROOT_TIMER rRootTimer;
 
-	u_int8_t fgIsWfsysReset;    /* WFSYS L0.5 reset flag */
+#if CFG_CHIP_RESET_SUPPORT
+	enum ENUM_WFSYS_RESET_STATE_TYPE_T eWfsysResetState;
+	spinlock_t rWfsysResetLock;
+	u_int8_t fgIsCfgSuspend;
+#endif
 	u_int8_t fgIsChipNoAck;
 	u_int8_t fgIsChipAssert;
 
@@ -1862,6 +1866,10 @@ struct ADAPTER {
 	u_int8_t fgIsSupportPowerOnSendBufferModeCMD;
 	u_int8_t fgIsSupportGetTxPower;
 	u_int8_t fgIsEnableLpdvt;
+
+#if (CFG_SUPPORT_SUPPLICANT_SME == 1)
+	u_int8_t fgSuppSmeLinkDownPend;
+#endif
 
 	/* SER related info */
 	uint8_t ucSerState;

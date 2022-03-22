@@ -2142,6 +2142,15 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			}
 #endif
 
+#if (CFG_SUPPORT_SUPPLICANT_SME == 1)
+			if (prAdapter->fgSuppSmeLinkDownPend) {
+				prAdapter->fgSuppSmeLinkDownPend = FALSE;
+
+				kalOidComplete(prAdapter->prGlueInfo,
+					       TRUE, 0, WLAN_STATUS_SUCCESS);
+			}
+#endif
+
 			break;
 
 		case AIS_STATE_SEARCH: {

@@ -661,6 +661,8 @@ do { \
 
 #define HAL_CANCEL_TX_RX(_prAdapter)
 
+#define HAL_RESUME_TX_RX(_prAdapter)
+
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
 
@@ -1033,6 +1035,8 @@ do { \
 
 #define HAL_CANCEL_TX_RX(_prAdapter)
 
+#define HAL_RESUME_TX_RX(_prAdapter)
+
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
 
@@ -1202,7 +1206,19 @@ do { \
 }
 
 #define HAL_CANCEL_TX_RX(_prAdapter)    \
-	halCancelTxRx(_prAdapter)
+{ \
+	glUsbSetStateSyncCtrl(&_prAdapter->prGlueInfo->rHifInfo, \
+			      USB_STATE_TRX_FORBID); \
+	nicSerStopTxRx(prAdapter); \
+	halCancelTxRx(_prAdapter); \
+}
+
+#define HAL_RESUME_TX_RX(_prAdapter)    \
+{ \
+	glUsbSetStateSyncCtrl(&_prAdapter->prGlueInfo->rHifInfo, \
+			      USB_STATE_LINK_UP); \
+	nicSerStartTxRx(prAdapter); \
+}
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
@@ -1254,6 +1270,9 @@ do { \
 
 #define HAL_CANCEL_TX_RX(_prAdapter)    \
 	kal_virt_cancel_tx_rx(_prAdapter)
+
+#define HAL_RESUME_TX_RX(_prAdapter)    \
+	kal_virt_resume_tx_rx(_prAdapter)
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	kal_virt_toggle_wfsys_rst(_prAdapter)

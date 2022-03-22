@@ -10485,8 +10485,7 @@ void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
 			  IN unsigned long ulParamPtr)
 {
 	/* Trigger RESET */
-	/*GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT); */
-	DBGLOG(INIT, INFO, "RESET Current didn't work\n");
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT);
 }
 
 #endif

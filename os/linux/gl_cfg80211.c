@@ -7514,12 +7514,33 @@ int mtk_cfg_suspend(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "GLUE_INFO is NULL\n");
+		return -EFAULT;
+	}
+
 	if (!wlanIsDriverReady(prGlueInfo,
 		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
 
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+
+	/* Before cfg80211 suspend, we must make sure L0.5 is either
+	 * done or postponed.
+	 */
+	if (prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+
+		prGlueInfo->prAdapter->fgIsCfgSuspend = TRUE;
+
+		spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+	}
+#endif
 	/* TODO: AP/P2P do not support this function, should take that case. */
 	return mtk_cfg80211_suspend(wiphy, wow);
 }
@@ -7530,11 +7551,37 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "GLUE_INFO is NULL\n");
+		return -EFAULT;
+	}
+
 	if (!wlanIsDriverReady(prGlueInfo,
 		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
 		DBGLOG(REQ, TRACE, "driver is not ready\n");
 		return 0;
 	}
+
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+
+	/* When cfg80211 resume, just reschedule L0.5 reset procedure
+	 * if it is pending due to that fact that system suspend happened
+	 * previously when L0.5 reset was not yet done.
+	 */
+	if (prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+
+		prGlueInfo->prAdapter->fgIsCfgSuspend = FALSE;
+
+		spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+
+		if (glReSchWfsysReset(prGlueInfo->prAdapter))
+			DBGLOG(REQ, WARN, "reschedule L0.5 reset procedure\n");
+	}
+#endif
 
 	/* TODO: AP/P2P do not support this function, should take that case. */
 	return mtk_cfg80211_resume(wiphy);

@@ -87,13 +87,12 @@
 #endif
 
 #define RST_FLAG_CHIP_RESET        0
-#define RST_FLAG_DO_CORE_DUMP		BIT(0)
-#define RST_FLAG_PREVENT_POWER_OFF	BIT(1)
-#define RST_FLAG_DO_WHOLE_RESET		BIT(2)
-#define RST_FLAG_DO_PASSIVE_L0P5_RESET	BIT(3)
-#define RST_FLAG_DO_ACTIVE_L0P5_RESET	BIT(4)
-#define RST_FLAG_DO_L1_RESET		BIT(5)
 
+#define RST_FLAG_DO_CORE_DUMP              BIT(0)
+#define RST_FLAG_PREVENT_POWER_OFF         BIT(1)
+#define RST_FLAG_DO_WHOLE_RESET            BIT(2)
+#define RST_FLAG_DO_L0P5_RESET             BIT(3)
+#define RST_FLAG_DO_L1_RESET               BIT(4)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -145,6 +144,7 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_PROCESS_ABNORMAL_INT = 1,
 	RST_DRV_OWN_FAIL,
 	RST_FW_ASSERT,
+	RST_FW_ASSERT_TIMEOUT,
 	RST_BT_TRIGGER,
 	RST_OID_TIMEOUT,
 	RST_CMD_TRIGGER,
@@ -162,7 +162,17 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_ALLOC_CMD_FAIL,
 	RST_SDIO_RX_ERROR,
 	RST_WHOLE_CHIP_TRIGGER,
+	RST_SER_L0P5_FAIL,
+	RST_WDT,
 	RST_REASON_MAX
+};
+
+enum ENUM_WFSYS_RESET_STATE_TYPE_T {
+	WFSYS_RESET_STATE_IDLE = 0,
+	WFSYS_RESET_STATE_RESET,
+	WFSYS_RESET_STATE_REINIT,
+	WFSYS_RESET_STATE_POSTPONE,
+	WFSYS_RESET_STATE_MAX
 };
 
 /*******************************************************************************
@@ -190,20 +200,28 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
  *******************************************************************************
  */
 #if CFG_CHIP_RESET_SUPPORT
-#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
-	glResetTrigger(_prAdapter, (_u4Flags), \
-	(const uint8_t *)__FILE__, __LINE__)
+/* Each reset trigger reason has corresponding default reset action, which is
+ * defined in glResetSelectAction(). You can use this macro to trigger default
+ * action.
+ */
+#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason)		\
+do { \
+	glSetRstReason(_eReason);    \
+	glResetTrigger(_prAdapter, glResetSelectAction(_prAdapter),	\
+		       (const uint8_t *)__FILE__, __LINE__);    \
+} while (FALSE)
+
 /* You can use this macro to trigger user defined reset actions instead of the
  * default ones.
  */
 #define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags)    \
-	do { \
-		glSetRstReason(_eReason);    \
-		glResetTrigger(_prAdapter, _u4Flags,	\
-			       (const uint8_t *)__FILE__, __LINE__);	\
-	} while (FALSE)
+do { \
+	glSetRstReason(_eReason);    \
+	glResetTrigger(_prAdapter, _u4Flags,	\
+		       (const uint8_t *)__FILE__, __LINE__);    \
+} while (FALSE)
 #else
-#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason) \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 
 #define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags)    \
@@ -239,6 +257,12 @@ int32_t glIsWmtCodeDump(void);
 #define glResetTrigger(prAdapter, u4RstFlag, pucFile, u4Line) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define glSetWfsysResetState(_prAdapter, _state) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define glReSchWfsysReset(_prAdapter) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define WfsysResetHdlr(_work) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
@@ -249,6 +273,11 @@ int glSetRstReason(void);
 void glResetTrigger(struct ADAPTER *prAdapter,
 		    uint32_t u4RstFlag, const uint8_t *pucFile,
 		    uint32_t u4Line);
+
+void glSetWfsysResetState(struct ADAPTER *prAdapter,
+			  enum ENUM_WFSYS_RESET_STATE_TYPE_T state);
+
+u_int8_t glReSchWfsysReset(struct ADAPTER *prAdapter);
 
 void WfsysResetHdlr(struct work_struct *work);
 #endif

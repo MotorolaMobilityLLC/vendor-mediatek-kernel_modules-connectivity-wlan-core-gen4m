@@ -314,6 +314,15 @@ static int mtk_usb_resume(struct usb_interface *intf)
 	/* Allow upper layers to call the device hard_start_xmit routine. */
 	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
 
+#if CFG_CHIP_RESET_SUPPORT
+	if (prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+
+		if (glReSchWfsysReset(prGlueInfo->prAdapter))
+			DBGLOG(REQ, WARN, "reschedule L0.5 reset procedure\n");
+	}
+#endif
+
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done ret=%d!\n", ret);
 
 	/* TODO */
@@ -352,6 +361,11 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 
 	/* change to pre-Suspend state & block cfg80211 ops */
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_SUSPEND);
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset)
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+#endif
 
 	wlanSuspendPmHandle(prGlueInfo);
 
@@ -458,9 +472,9 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
 
-	if (RequestType != DEVICE_VENDOR_REQUEST_UHW_IN &&
-	    RequestType != DEVICE_VENDOR_REQUEST_UHW_OUT &&
-	    prGlueInfo->prAdapter->fgIsWfsysReset) {
+	if (prHifInfo->stateSyncCtrl != USB_STATE_LINK_UP &&
+	    RequestType != DEVICE_VENDOR_REQUEST_UHW_IN &&
+	    RequestType != DEVICE_VENDOR_REQUEST_UHW_OUT) {
 		mutex_unlock(&prHifInfo->vendor_req_sem);
 		DBGLOG(HAL, WARN, "forbid usb vendor request\n");
 		return -EPERM;
@@ -516,6 +530,12 @@ static int mtk_usb_bulk_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
 
+	if (prHifInfo->stateSyncCtrl != USB_STATE_LINK_UP) {
+		mutex_unlock(&prHifInfo->vendor_req_sem);
+		DBGLOG(HAL, WARN, "forbid usb bulk in\n");
+		return -1;
+	}
+
 	/* do a blocking bulk read to get data from the device */
 	ret = usb_bulk_msg(prHifInfo->udev,
 			   usb_rcvbulkpipe(prHifInfo->udev, InEp), buffer, len, &count, BULK_TIMEOUT_MS);
@@ -547,6 +567,12 @@ static int mtk_usb_intr_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len
 	}
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
+
+	if (prHifInfo->stateSyncCtrl != USB_STATE_LINK_UP) {
+		mutex_unlock(&prHifInfo->vendor_req_sem);
+		DBGLOG(HAL, WARN, "forbid usb interrupt in\n");
+		return -1;
+	}
 
 	/* do a blocking interrupt read to get data from the device */
 	ret = usb_interrupt_msg(prHifInfo->udev,
@@ -591,6 +617,12 @@ static int mtk_usb_bulk_out_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t le
 	}
 
 	mutex_lock(&prHifInfo->vendor_req_sem);
+
+	if (prHifInfo->stateSyncCtrl != USB_STATE_LINK_UP) {
+		mutex_unlock(&prHifInfo->vendor_req_sem);
+		DBGLOG(HAL, WARN, "forbid usb bulk out\n");
+		return -1;
+	}
 
 	/* do a blocking bulk read to get data from the device */
 	ret = usb_bulk_msg(prHifInfo->udev,
@@ -830,6 +862,24 @@ void glUsbSetState(struct GL_HIF_INFO *prHifInfo, enum usb_state state)
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 	prHifInfo->state = state;
 	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function set USB stateSyncCtrl which is used to determine if it's
+*        allowed to send synchronous usb control.
+*
+* \param[in] prHifInfo  Pointer to the struct GL_HIF_INFO structure
+* \param[in] state      Specify new usb state
+*
+* \retval none
+*/
+/*----------------------------------------------------------------------------*/
+void glUsbSetStateSyncCtrl(struct GL_HIF_INFO *prHifInfo, enum usb_state state)
+{
+	mutex_lock(&prHifInfo->vendor_req_sem);
+	prHifInfo->stateSyncCtrl = state;
+	mutex_unlock(&prHifInfo->vendor_req_sem);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1171,6 +1221,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 #endif
 
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
+	glUsbSetStateSyncCtrl(prHifInfo, USB_STATE_LINK_UP);
 	prGlueInfo->u4InfType = MT_DEV_INF_USB;
 
 	prBusInfo->ucVndReqToMcuFailCnt = 0;
@@ -1369,6 +1420,7 @@ void glResetHifInfo(struct GLUE_INFO *prGlueInfo)
 	prHifInfo->fgEventEpDetected = FALSE;
 
 	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
+	glUsbSetStateSyncCtrl(prHifInfo, USB_STATE_LINK_UP);
 
 	prBusInfo->ucVndReqToMcuFailCnt = 0;
 } /* end of glResetHifInfo() */
@@ -2009,30 +2061,42 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief API for set L0.5 reset flag. If flag is TRUE, then it means L0.5 reset
- *        is on-going.
+ * \brief Check HIF state to determine if L0.5 reset shall be postponed.
  *
- * \param[in] prAdapter
- * \param[in] fgIsReset
+ * \param[in] prGlueInfo
  *
- * \return void
+ * \return TRUE  if L0.5 reset shall be postponed.
+ *         FALSE  otherwise
  */
 /*----------------------------------------------------------------------------*/
-void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset)
+u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	unsigned long flags;
+	u_int8_t fgPostpone = FALSE;
 
-	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
 
-	/* fgIsWfsysReset is used to prevent any USB EP0 request on mcu during
-	 * WF subsys reset. We shall use mutex here to prevent race condition
-	 * in USB.
-	 */
-	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	spin_lock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
 
-	prAdapter->fgIsWfsysReset = fgIsReset;
+	if (prGlueInfo->prAdapter->fgIsCfgSuspend)
+		fgPostpone = TRUE;
 
-	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+	spin_unlock_bh(&prGlueInfo->prAdapter->rWfsysResetLock);
+
+	if (fgPostpone)
+		goto END;
+
+	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
+
+	if (prHifInfo->state == USB_STATE_PRE_SUSPEND ||
+	    prHifInfo->state == USB_STATE_SUSPEND)
+		fgPostpone = TRUE;
+
+	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
+
+END:
+	return fgPostpone;
 }
 #endif
 

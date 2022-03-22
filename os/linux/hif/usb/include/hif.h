@@ -239,6 +239,7 @@ enum usb_state {
 	USB_STATE_PRE_SUSPEND_FAIL,
 	USB_STATE_SUSPEND,
 	USB_STATE_PRE_RESUME,
+	USB_STATE_TRX_FORBID,
 	USB_STATE_LINK_UP
 };
 
@@ -275,6 +276,12 @@ struct GL_HIF_INFO {
 
 	struct GLUE_INFO *prGlueInfo;
 	enum usb_state state;
+	/* Use stateSyncCtrl to determine if it's allowed to send synchronous
+	 * usb control such as usb_control_msg, usb_bulk_msg, etc.
+	 * On the other hand, use state to determine if it's allowed to send
+	 * asynchronous usb control such as usb_submit_urb.
+	 */
+	enum usb_state stateSyncCtrl;
 
 	spinlock_t rTxDataQLock;
 	spinlock_t rTxCmdQLock;
@@ -474,6 +481,8 @@ struct USB_REQ *glUsbDequeueReq(struct GL_HIF_INFO *prHifInfo, struct list_head 
 u_int8_t glUsbBorrowFfaReq(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc);
 
 void glUsbSetState(IN struct GL_HIF_INFO *prHifInfo, enum usb_state state);
+
+void glUsbSetStateSyncCtrl(struct GL_HIF_INFO *prHifInfo, enum usb_state state);
 
 int glUsbSubmitUrb(IN struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			enum usb_submit_type type);

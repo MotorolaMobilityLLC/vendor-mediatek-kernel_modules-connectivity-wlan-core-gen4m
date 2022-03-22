@@ -1912,10 +1912,10 @@ uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
-#define kalSetWfsysResetFlag(_prAdapter, _fgIsReset) \
+#define kalCheckWfsysResetPostpone(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset);
+u_int8_t kalCheckWfsysResetPostpone(IN struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_REMIND_IMPLEMENT */
 #endif
 

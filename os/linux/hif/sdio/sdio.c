@@ -1805,18 +1805,18 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief API for set L0.5 reset flag. If flag is TRUE, then it means L0.5 reset
- *        is on-going.
+ * \brief Check HIF state to determine if L0.5 reset shall be postponed.
  *
- * \param[in] prAdapter
- * \param[in] fgIsReset
+ * \param[in] prGlueInfo
  *
- * \return void
+ * \return TRUE  if L0.5 reset shall be postponed.
+ *         FALSE  otherwise
  */
 /*----------------------------------------------------------------------------*/
-void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset)
+u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo)
 {
-	prAdapter->fgIsWfsysReset = fgIsReset;
+	/* TODO */
+	return FALSE;
 }
 #endif
 

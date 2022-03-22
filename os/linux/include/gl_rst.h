@@ -94,9 +94,8 @@
 #define RST_FLAG_DO_CORE_DUMP              BIT(0)
 #define RST_FLAG_PREVENT_POWER_OFF         BIT(1)
 #define RST_FLAG_DO_WHOLE_RESET            BIT(2)
-#define RST_FLAG_DO_PASSIVE_L0P5_RESET     BIT(3)
-#define RST_FLAG_DO_ACTIVE_L0P5_RESET      BIT(4)
-#define RST_FLAG_DO_L1_RESET               BIT(5)
+#define RST_FLAG_DO_L0P5_RESET             BIT(3)
+#define RST_FLAG_DO_L1_RESET               BIT(4)
 
 #if CFG_CHIP_RESET_HANG
 #define SER_L0_HANG_RST_NONE		0
@@ -131,6 +130,7 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_PROCESS_ABNORMAL_INT = 1,
 	RST_DRV_OWN_FAIL,
 	RST_FW_ASSERT,
+	RST_FW_ASSERT_TIMEOUT,
 	RST_BT_TRIGGER,
 	RST_OID_TIMEOUT,
 	RST_CMD_TRIGGER,
@@ -153,7 +153,18 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_SER_L1_FAIL,
 	RST_SER_L0P5_FAIL,
 	RST_CMD_EVT_FAIL,
+	RST_WDT,
 	RST_REASON_MAX
+};
+
+/* L0.5 reset state */
+enum ENUM_WFSYS_RESET_STATE_TYPE_T {
+	WFSYS_RESET_STATE_IDLE = 0,
+	WFSYS_RESET_STATE_DETECT,
+	WFSYS_RESET_STATE_RESET,
+	WFSYS_RESET_STATE_REINIT,
+	WFSYS_RESET_STATE_POSTPONE,
+	WFSYS_RESET_STATE_MAX
 };
 
 struct RESET_STRUCT {
@@ -325,6 +336,11 @@ u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 #endif /* CFG_SUPPORT_CONNINFRA */
 #else
+void glSetWfsysResetState(struct ADAPTER *prAdapter,
+			  enum ENUM_WFSYS_RESET_STATE_TYPE_T state);
+
+u_int8_t glReSchWfsysReset(struct ADAPTER *prAdapter);
+
 void WfsysResetHdlr(struct work_struct *work);
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 #endif /* CFG_CHIP_RESET_SUPPORT */
