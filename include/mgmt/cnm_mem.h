@@ -453,6 +453,7 @@ struct STA_RECORD {
 
 	uint16_t u2StatusCode;	/* Status of Auth/Assoc Req */
 	uint16_t u2ReasonCode;	/* Reason that been Deauth/Disassoc */
+	u_int8_t fgIsLocallyGenerated;
 
 	/* Point to an allocated buffer for storing Challenge */
 	/* Text for Shared Key Authentication */
