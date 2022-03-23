@@ -12404,6 +12404,7 @@ wlanGetEnvInfo(IN struct ADAPTER *prAdapter,
 	uint8_t *pucItem = NULL;
 	uint8_t *pucSavedPtr = NULL;
 	uint32_t u4temp = 0, u4Index = 0, u4LongestTokenId = 0;
+	int32_t u4Ret = 0;
 
 	halGetLongestPacketInfo(prAdapter, &u4LongestTokenId, prLongestPacket);
 	DBGLOG(REQ, TRACE, "Longest packet[sec:%ld, nsec:%ld]\n",
@@ -12414,7 +12415,10 @@ wlanGetEnvInfo(IN struct ADAPTER *prAdapter,
 	pucItem =
 		(uint8_t *)kalStrtokR(&arQueryEvnInfo[0], " ", &pucSavedPtr);
 	while (pucItem) {
-		kalkStrtou32(pucItem, 0, &u4temp);
+		u4Ret = kalkStrtou32(pucItem, 0, &u4temp);
+		if (u4Ret)
+			break;
+
 		if (u4Index % 2 == 0) { /* Band 0 */
 			*(((uint32_t *)&prEnvInfo->u4Snr) + u4Index / 2) =
 				u4temp;
