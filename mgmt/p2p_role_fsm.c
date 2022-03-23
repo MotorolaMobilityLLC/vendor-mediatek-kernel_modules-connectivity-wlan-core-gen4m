@@ -2744,6 +2744,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 				if (prStaRec->ucJoinFailureCount >=
 						P2P_SAA_RETRY_COUNT) {
+					/* Join failed after retries */
 					kalP2PGCIndicateConnectionStatus(
 						prAdapter->prGlueInfo,
 						prP2pRoleFsmInfo->ucRoleIndex,
@@ -2751,10 +2752,21 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 						prJoinInfo->aucIEBuf,
 						prJoinInfo->u4BufLength,
 						prStaRec->u2StatusCode);
+
+					/* Reset p2p state */
+					prJoinInfo->prTargetBssDesc = NULL;
+
+					SET_NET_PWR_STATE_IDLE(prAdapter,
+						prP2pBssInfo->ucBssIndex);
+
+					p2pRoleFsmStateTransition(prAdapter,
+						prP2pRoleFsmInfo,
+						P2P_ROLE_STATE_IDLE);
+
+					p2pFuncStopComplete(prAdapter,
+						prP2pBssInfo);
 				}
-
 			}
-
 		}
 	}
 
@@ -2768,14 +2780,16 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 			prBssDesc = prJoinInfo->prTargetBssDesc;
 
-			COPY_SSID(rSsid.aucSsid,
-				rSsid.ucSsidLen,
-				prBssDesc->aucSSID,
-				prBssDesc->ucSSIDLen);
-			p2pRoleFsmScanTargetBss(prAdapter,
-				prP2pRoleFsmInfo,
-				prBssDesc->ucChannelNum,
-				&rSsid);
+			if (prBssDesc) {
+				COPY_SSID(rSsid.aucSsid,
+					rSsid.ucSsidLen,
+					prBssDesc->aucSSID,
+					prBssDesc->ucSSIDLen);
+				p2pRoleFsmScanTargetBss(prAdapter,
+					prP2pRoleFsmInfo,
+					prBssDesc->ucChannelNum,
+					&rSsid);
+			}
 		}
 	}
 
