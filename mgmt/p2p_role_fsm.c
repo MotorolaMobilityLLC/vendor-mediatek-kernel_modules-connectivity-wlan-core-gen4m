@@ -294,7 +294,8 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 
 		p2pFuncDissolve(prAdapter,
 			prP2pBssInfo, TRUE,
-			REASON_CODE_DEAUTH_LEAVING_BSS);
+			REASON_CODE_DEAUTH_LEAVING_BSS,
+			TRUE);
 
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -684,6 +685,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
 	struct GL_P2P_INFO *prP2PInfo;
 	uint16_t u2ReasonCode;
+	u_int8_t fgIsLocallyGenerated;
 
 	DBGLOG(P2P, INFO, "Deauth TX Complete!\n");
 
@@ -759,6 +761,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 
 	/* Save ReasonCode */
 	u2ReasonCode = prStaRec->u2ReasonCode;
+	fgIsLocallyGenerated = prStaRec->fgIsLocallyGenerated;
 
 	/* Reset Station Record Status. */
 	p2pFuncResetStaRecStatus(prAdapter, prStaRec);
@@ -784,7 +787,10 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, u2ReasonCode);
+					NULL, NULL, 0, u2ReasonCode,
+					fgIsLocallyGenerated ?
+					WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY :
+					WLAN_STATUS_MEDIA_DISCONNECT);
 		}
 		if (prP2PInfo && prP2PInfo->eChnlSwitchPolicy ==
 				CHNL_SWITCH_POLICY_DEAUTH) {
@@ -932,7 +938,8 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					NULL,
 					prDeauthFrame->aucInfoElem,
 					u2IELength,
-					u2ReasonCode);
+					u2ReasonCode,
+					WLAN_STATUS_MEDIA_DISCONNECT);
 
 				prP2pBssInfo->prStaRecOfAP = NULL;
 
@@ -940,7 +947,8 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo,
 					prStaRec,
 					FALSE,
-					u2ReasonCode);
+					u2ReasonCode,
+					FALSE);
 
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
@@ -991,7 +999,8 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 						prP2pBssInfo,
 						prStaRec,
 						fgSendDeauth,
-						u2ReasonCode);
+						u2ReasonCode,
+						FALSE);
 					/* Deactive BSS
 					 * if PWR is IDLE and no peer
 					 */
@@ -1071,7 +1080,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 				(uint8_t) prP2pBssInfo->u4PrivateData, NULL,
 				prDisassocFrame->aucInfoElem,
-				u2IELength, prStaRec->u2ReasonCode);
+				u2IELength, prStaRec->u2ReasonCode,
+				WLAN_STATUS_MEDIA_DISCONNECT);
 
 			prP2pBssInfo->prStaRecOfAP = NULL;
 
@@ -1079,7 +1089,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 				prP2pBssInfo,
 				prStaRec,
 				FALSE,
-				prStaRec->u2ReasonCode);
+				prStaRec->u2ReasonCode,
+				FALSE);
 
 			SET_NET_PWR_STATE_IDLE(prAdapter,
 				prP2pBssInfo->ucBssIndex);
@@ -1129,7 +1140,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo,
 					prStaRec,
 					fgSendDeauth,
-					u2ReasonCode);
+					u2ReasonCode,
+					FALSE);
 				/* Deactive BSS if PWR is IDLE and no peer */
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex) &&
@@ -1185,7 +1197,8 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
 					NULL, NULL, 0,
-					REASON_CODE_DISASSOC_LEAVING_BSS);
+					REASON_CODE_DISASSOC_LEAVING_BSS,
+					WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
 
 			if (prP2pBssInfo->prStaRecOfAP != NULL) {
 				struct STA_RECORD *prStaRec =
@@ -1196,7 +1209,8 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 				p2pFuncDisconnect(prAdapter,
 					prP2pBssInfo,
 					prStaRec, FALSE,
-					REASON_CODE_DISASSOC_LEAVING_BSS);
+					REASON_CODE_DISASSOC_LEAVING_BSS,
+					TRUE);
 
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
@@ -2397,7 +2411,8 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 						prP2pBssInfo,
 						prJoinInfo->prTargetStaRec,
 						FALSE,
-						prDisconnMsg->u2ReasonCode);
+						prDisconnMsg->u2ReasonCode,
+						TRUE);
 
 					p2pRoleFsmStateTransition(prAdapter,
 						prP2pRoleFsmInfo,
@@ -2436,7 +2451,8 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 			p2pFuncDisconnect(prAdapter, prP2pBssInfo,
 				prStaRec,
 				prDisconnMsg->fgSendDeauth,
-				prDisconnMsg->u2ReasonCode);
+				prDisconnMsg->u2ReasonCode,
+				TRUE);
 
 			cnmTimerStopTimer(prAdapter,
 				&(prStaRec->rDeauthTxDoneTimer));
@@ -2497,7 +2513,8 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo,
 					prCurrStaRec,
 					prDisconnMsg->fgSendDeauth,
-					prDisconnMsg->u2ReasonCode);
+					prDisconnMsg->u2ReasonCode,
+					TRUE);
 
 				cnmTimerStopTimer(prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer));
@@ -2716,7 +2733,8 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				&prP2pRoleFsmInfo->rConnReqInfo,
 				prJoinInfo->aucIEBuf,
 				prJoinInfo->u4BufLength,
-				prStaRec->u2StatusCode);
+				prStaRec->u2StatusCode,
+				WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY);
 		} else {
 			/* Join Fail */
 			/* 4 <2.1> Redo JOIN process
@@ -2744,6 +2762,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 				if (prStaRec->ucJoinFailureCount >=
 						P2P_SAA_RETRY_COUNT) {
+#define DISCONNECT_LOCALLY WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
 					/* Join failed after retries */
 					kalP2PGCIndicateConnectionStatus(
 						prAdapter->prGlueInfo,
@@ -2751,7 +2770,8 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 						&prP2pRoleFsmInfo->rConnReqInfo,
 						prJoinInfo->aucIEBuf,
 						prJoinInfo->u4BufLength,
-						prStaRec->u2StatusCode);
+						prStaRec->u2StatusCode,
+						DISCONNECT_LOCALLY);
 
 					/* Reset p2p state */
 					prJoinInfo->prTargetBssDesc = NULL;
@@ -3528,7 +3548,8 @@ void p2pRoleFsmRunEventAAATxFail(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo, prStaRec, FALSE,
 		prStaRec->eAuthAssocState == AAA_STATE_SEND_AUTH2
 		? STATUS_CODE_AUTH_TIMEOUT
-		: STATUS_CODE_ASSOC_TIMEOUT);
+		: STATUS_CODE_ASSOC_TIMEOUT,
+		TRUE);
 
 	/* 20120830 moved into p2puUncDisconnect. */
 	/* cnmStaRecFree(prAdapter, prStaRec); */

@@ -1582,7 +1582,8 @@ void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
 			/* AP is created, Beacon Updated. */
 			p2pFuncDissolve(prAdapter,
 				prP2pBssInfo, TRUE,
-				REASON_CODE_DEAUTH_LEAVING_BSS);
+				REASON_CODE_DEAUTH_LEAVING_BSS,
+				TRUE);
 			prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
 		}
 
@@ -3003,7 +3004,8 @@ void
 p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo,
 		IN u_int8_t fgSendDeauth,
-		IN uint16_t u2ReasonCode)
+		IN uint16_t u2ReasonCode,
+		IN u_int8_t fgIsLocallyGenerated)
 {
 	struct STA_RECORD *prCurrStaRec, *prStaRecNext;
 	struct LINK *prClientList;
@@ -3022,8 +3024,10 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 				kalP2PGCIndicateConnectionStatus(
 					prAdapter->prGlueInfo,
 					(uint8_t) prP2pBssInfo->u4PrivateData,
-					NULL, NULL, 0,
-					u2ReasonCode);
+					NULL, NULL, 0, u2ReasonCode,
+					fgIsLocallyGenerated ?
+					WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY :
+					WLAN_STATUS_MEDIA_DISCONNECT);
 
 				/* 2012/02/14 frog:
 				 * After formation before join group,
@@ -3033,7 +3037,8 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo,
 					prP2pBssInfo->prStaRecOfAP,
 					fgSendDeauth,
-					u2ReasonCode);
+					u2ReasonCode,
+					fgIsLocallyGenerated);
 			}
 
 			/* Fix possible KE when RX Beacon &
@@ -3069,7 +3074,8 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 					break;
 				p2pFuncDisconnect(prAdapter,
 					prP2pBssInfo, prCurrStaRec,
-					TRUE, u2ReasonCode);
+					TRUE, u2ReasonCode,
+					fgIsLocallyGenerated);
 			}
 			break;
 		default:
@@ -3111,7 +3117,8 @@ void
 p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo,
 		IN struct STA_RECORD *prStaRec,
-		IN u_int8_t fgSendDeauth, IN uint16_t u2ReasonCode)
+		IN u_int8_t fgSendDeauth, IN uint16_t u2ReasonCode,
+		IN u_int8_t fgIsLocallyGenerated)
 {
 	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
 
@@ -3167,12 +3174,14 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(P2P, INFO,
-			"p2pFuncDisconnect(): BssMode: %d, reason: %d, SendDeauth %s\n",
+			"p2pFuncDisconnect(): BssMode: %d, reason: %d, SendDeauth %s, locally_generated: %d\n",
 			prP2pBssInfo->eCurrentOPMode, u2ReasonCode,
-			fgSendDeauth == TRUE ? "TRUE" : "FALSE");
+			fgSendDeauth == TRUE ? "TRUE" : "FALSE",
+			fgIsLocallyGenerated);
 
 		if (fgSendDeauth) {
 			prStaRec->u2ReasonCode = u2ReasonCode;
+			prStaRec->fgIsLocallyGenerated = fgIsLocallyGenerated;
 			/* Send deauth. */
 			authSendDeauthFrame(prAdapter,
 			    prP2pBssInfo,
@@ -3577,7 +3586,8 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 #endif
 			p2pFuncDisconnect(prAdapter,
 				prP2pBssInfo, prStaRec, FALSE,
-				REASON_CODE_DISASSOC_INACTIVITY);
+				REASON_CODE_DISASSOC_INACTIVITY,
+				TRUE);
 		}
 
 	}
@@ -7936,7 +7946,8 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 
 				p2pFuncDisconnect(prAdapter, prBssInfo,
 						prCurrStaRec, TRUE,
-						REASON_CODE_DEAUTH_LEAVING_BSS);
+						REASON_CODE_DEAUTH_LEAVING_BSS,
+						TRUE);
 
 				if (!timerPendingTimer(prTimer)) {
 					cnmTimerInitTimer(prAdapter,
