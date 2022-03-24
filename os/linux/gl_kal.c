@@ -1098,6 +1098,55 @@ uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_SUPPORT_RX_GRO
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+void kalGROTimerFunc(struct timer_list *timer)
+#else
+void kalGROTimerFunc(unsigned long data)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+	struct ADAPTER *prAdapter =
+		from_timer(prAdapter, timer, rRxGROTimer);
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+#endif
+	kalSetGROEvent2Rx(prGlueInfo);
+}
+
+static inline void kalGROTimerStart(
+	struct ADAPTER *prAdapter, uint32_t u4Timeout)
+{
+	mod_timer(&prAdapter->rRxGROTimer,
+		jiffies + MSEC_TO_JIFFIES(
+		u4Timeout));
+}
+
+static inline void kalGROTimerStop(struct ADAPTER *prAdapter)
+{
+	del_timer_sync(&prAdapter->rRxGROTimer);
+}
+
+void kalGROTimerInit(struct ADAPTER *prAdapter)
+{
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+	timer_setup(&prAdapter->rRxGROTimer,
+			kalGROTimerFunc,
+			0);
+#else
+	init_timer(&prAdapter->rRxGROTimer);
+	prAdapter->rRxGROTimer.data =
+			(unsigned long)prAdapter->prGlueInfo;
+	prAdapter->rRxGROTimer.function =
+			kalGROTimerFunc;
+#endif
+}
+
+void kalGROTimerUninit(struct ADAPTER *prAdapter)
+{
+	kalGROTimerStop(prAdapter);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief To indicate Tput is higher than ucGROEnableTput or not.
@@ -1178,15 +1227,15 @@ void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev)
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 		prNetDevPrivate->tmGROFlushTimeout,
 		prWifiVar->ucGROFlushTimeout)) {
-		napi_gro_flush(napi, false);
+		kalGROTimerStop(prAdapter);
+		napi_gro_flush_list(napi);
 		DBGLOG_LIMITED(INIT, TRACE, "napi_gro_flush:%p\n", prDev);
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-		prNetDevPrivate->u4PendingFlushNum = napi->rx_count;
-#else
 		prNetDevPrivate->u4PendingFlushNum = 0;
-#endif
-	} else
+	} else {
 		prNetDevPrivate->u4PendingFlushNum++;
+		kalGROTimerStart(prAdapter,
+			prWifiVar->ucGROFlushTimeout);
+	}
 
 	GET_CURRENT_SYSTIME(&prNetDevPrivate->tmGROFlushTimeout);
 }
@@ -4508,11 +4557,15 @@ int rx_thread(void *data)
 					->rWifiVar.u4WakeLockRxTimeout));
 				}
 			}
-#if CFG_SUPPORT_RX_GRO
-			kal_gro_flush_queue(prGlueInfo);
-#endif /* CFG_SUPPORT_RX_GRO */
 			kalTraceEnd(); /* RX_TO_OS */
 		}
+
+#if CFG_SUPPORT_RX_GRO
+		if (test_and_clear_bit(GLUE_FLAG_RX_GRO_TIMEOUT_BIT,
+				       &prGlueInfo->ulFlag)) {
+			kal_gro_flush_queue(prGlueInfo);
+		}
+#endif /* CFG_SUPPORT_RX_GRO */
 
 		kalTraceEnd(); /* rx_thread*/
 	}
@@ -5652,6 +5705,21 @@ void kalSetTxEvent2Rx(struct GLUE_INFO *pr)
 	set_bit(GLUE_FLAG_RX_TO_OS_BIT, &pr->ulFlag);
 	wake_up_interruptible(&pr->waitq_rx);
 }
+
+#if CFG_SUPPORT_RX_GRO
+void kalSetGROEvent2Rx(struct GLUE_INFO *pr)
+{
+	if (!pr->rx_thread)
+		return;
+
+	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
+			      MSEC_TO_JIFFIES(
+			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
+
+	set_bit(GLUE_FLAG_RX_GRO_TIMEOUT_BIT, &pr->ulFlag);
+	wake_up_interruptible(&pr->waitq_rx);
+}
+#endif /* CFG_SUPPORT_RX_GRO */
 
 void kalSetTxCmdEvent2Hif(struct GLUE_INFO *pr)
 {
