@@ -2861,6 +2861,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			IS_BSS_APGO(prBssInfo) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE)) {
+			reinit_completion(&prBssInfo->rDeauthComp);
 			waitRet = wait_for_completion_timeout(
 				&prBssInfo->rDeauthComp,
 				MSEC_TO_JIFFIES(1000));
