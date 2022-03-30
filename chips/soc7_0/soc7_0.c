@@ -446,7 +446,7 @@ struct FWDL_OPS_T soc7_0_fw_dl_ops = {
 	.constructFirmwarePrio = soc7_0_ConstructFirmwarePrio,
 	.constructPatchName = NULL,
 	.downloadPatch = NULL,
-#if CFG_WLAN_IMG_SUPPORT
+#if CFG_WLAN_LK_FWDL_SUPPORT
 	.downloadFirmware = wlanFwImageDownload,
 #else
 	.downloadFirmware = wlanConnacFormatDownload,
@@ -572,7 +572,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.wmmcupwron = wf_pwr_on_consys_mcu,
 	.wmmcupwroff = wf_pwr_off_consys_mcu,
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1) \
-	&& (CFG_WLAN_IMG_SUPPORT == 0)
+	&& (CFG_WLAN_LK_FWDL_SUPPORT == 0)
 	.pwrondownload = soc7_0_wlanPowerOnDownload,
 #else
 	.pwrondownload = NULL,

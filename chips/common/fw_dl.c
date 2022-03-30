@@ -1258,7 +1258,19 @@ exit:
 	return u4Status;
 }
 
-#if CFG_WLAN_IMG_SUPPORT
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is used if FWDL by lk.
+ *        Driver does not load and download firmware,
+ *        only send the FW start command.
+ *
+ * @param prAdapter        Pointer to the Adapter structure.
+ *        u4StartAddress   Align FWDL function only. Not used.
+ *
+ * @return u4Status        FW start CMD result
+ */
+/*----------------------------------------------------------------------------*/
+#if CFG_WLAN_LK_FWDL_SUPPORT
 uint32_t wlanFwImageSendStart(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4StartAddress)
 {
@@ -1701,7 +1713,7 @@ uint32_t wlanHarvardFormatDownload(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_WLAN_IMG_SUPPORT
+#if CFG_WLAN_LK_FWDL_SUPPORT
 uint32_t wlanFwImageDownload(IN struct ADAPTER
 				  *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
