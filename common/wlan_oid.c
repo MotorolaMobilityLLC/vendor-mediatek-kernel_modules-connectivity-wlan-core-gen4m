@@ -5722,6 +5722,12 @@ wlanoidTxBfAction(IN struct ADAPTER *prAdapter,
 
 	u4TxBfCmdId =
 		rCmdTxBfActionInfo.rProfileTagRead.ucTxBfCategory;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	/* unified command doesn't need to wait resposne */
+	fgSetQuery = TRUE;
+	fgNeedResp = FALSE;
+#else
 	if (TXBF_CMD_NEED_TO_RESPONSE(u4TxBfCmdId) ==
 	    0) {	/* don't need response */
 		fgSetQuery = TRUE;
@@ -5730,6 +5736,7 @@ wlanoidTxBfAction(IN struct ADAPTER *prAdapter,
 		fgSetQuery = FALSE;
 		fgNeedResp = TRUE;
 	}
+#endif
 
 	for (ucIdx = 0; ucIdx < ARRAY_SIZE(rTxBfCmdDoneHandler);
 	     ucIdx++) {
