@@ -126,11 +126,17 @@ static void ehtRlmFillBW80MCSMap(
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
-	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
-	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
-	_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
-	_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
-	_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW80_MCS_MAP) {
+		WLAN_SET_FIELD_24(_prEhtSupportedMcsSet,
+			prAdapter->u4EhtMcsMap80MHzSetFromSigma);
+	} else {
+		ucSupportedNss = wlanGetSupportNss(prAdapter,
+			prBssInfo->ucBssIndex);
+		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+		_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+	}
 }
 
 static void ehtRlmFillBW20MCSMap(
@@ -144,13 +150,18 @@ static void ehtRlmFillBW20MCSMap(
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
-	ucSupportedNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
-
-	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
-	_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
-	_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
-	_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
-	_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW20_MCS_MAP) {
+		WLAN_SET_FIELD_32(_prEhtSupportedMcsSet,
+			prAdapter->u4EhtMcsMap20MHzSetFromSigma);
+	} else {
+		ucSupportedNss = wlanGetSupportNss(prAdapter,
+			prBssInfo->ucBssIndex);
+		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+	}
 }
 
 static void ehtRlmFillCapIE(
@@ -517,21 +528,21 @@ static void ehtRlmRecMcsMap(
 
 	u4McsMapOffset = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
 
-	kalMemZero((void *) prStaRec->aucMscMap20MHzSta,
+	kalMemZero((void *) prStaRec->aucMcsMap20MHzSta,
 		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
-	kalMemZero((void *) prStaRec->aucMscMap80MHz,
+	kalMemZero((void *) prStaRec->aucMcsMap80MHz,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
-	kalMemZero((void *) prStaRec->aucMscMap160MHz,
+	kalMemZero((void *) prStaRec->aucMcsMap160MHz,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
-	kalMemZero((void *) prStaRec->aucMscMap320MHz,
+	kalMemZero((void *) prStaRec->aucMcsMap320MHz,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
 	if (ucMaxBw == MAX_BW_20MHZ) {
-		memcpy(prStaRec->aucMscMap20MHzSta,
+		memcpy(prStaRec->aucMcsMap20MHzSta,
 			((uint8_t *)prEhtCap) + u4McsMapOffset,
 			sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
         } else {
 		if (ucMaxBw >= MAX_BW_40MHZ) {
-			memcpy(prStaRec->aucMscMap80MHz,
+			memcpy(prStaRec->aucMcsMap80MHz,
 				((uint8_t *)prEhtCap) + u4McsMapOffset,
 				sizeof(struct
 					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
@@ -540,7 +551,7 @@ static void ehtRlmRecMcsMap(
 					EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
 		}
 		if (ucMaxBw >= MAX_BW_160MHZ) {
-			memcpy(prStaRec->aucMscMap160MHz,
+			memcpy(prStaRec->aucMcsMap160MHz,
 				((uint8_t *)prEhtCap) + u4McsMapOffset,
 				sizeof(struct
 					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
@@ -549,7 +560,7 @@ static void ehtRlmRecMcsMap(
 					EHT_SUPPORTED_MCS_BW80_160_320_FIELD);
 		}
 		if (ucMaxBw >= MAX_BW_320MHZ) {
-			memcpy(prStaRec->aucMscMap320MHz,
+			memcpy(prStaRec->aucMcsMap320MHz,
 				((uint8_t *)prEhtCap) + u4McsMapOffset,
 				sizeof(struct
 					EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
