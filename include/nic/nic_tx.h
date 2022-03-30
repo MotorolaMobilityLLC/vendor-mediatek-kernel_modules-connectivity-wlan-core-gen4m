@@ -810,7 +810,10 @@ enum ENUM_EAPOL_KEY_TYPE_T {
 
 struct MSDU_INFO {
 	struct QUE_ENTRY rQueEntry;
+	void *prHead;	/* Pointer to buffer */
 	void *prPacket;	/* Pointer to packet buffer */
+	void *prTxP; /* Pointer to Tx payload*/
+	uint8_t fgIsPacketSkb;
 
 	enum ENUM_TX_PACKET_SRC eSrc;	/* specify OS/FORWARD packet */
 	uint8_t ucUserPriority;	/* QoS parameter, convert to TID */
@@ -883,7 +886,7 @@ struct MSDU_INFO {
 #endif
 
 	/* Compose TxDesc in main_thread and place here */
-	uint8_t aucTxDescBuffer[NIC_TX_DESC_AND_PADDING_LENGTH];
+	uint8_t *aucTxDescBuffer;
 
 
 #if CFG_SUPPORT_NAN
@@ -899,6 +902,7 @@ struct MSDU_INFO {
 	uint8_t ucTarQueue;
 #endif
 	uint8_t fgMgmtUseDataQ;
+	uint8_t fgNullUseDataQ;
 
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO
 	/* sanity drop flag */
@@ -1917,6 +1921,15 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 
 uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+void nicTxSetMgmtByDataQ(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo);
+
+uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter);
+
+void nicTxClearMgmtDirectTxQ(IN struct ADAPTER *prAdapter);
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 uint8_t nicTxGetWlanIdx(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);

@@ -374,6 +374,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_TX_DIRECT_HIF_TX_BIT          (24)
 #define GLUE_FLAG_TX_DIRECT_HIF_TX              BIT(24)
 
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT          (25)
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX              BIT(25)
+
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
 #define GLUE_BOW_DEVICE_NAME        "ampc0"
