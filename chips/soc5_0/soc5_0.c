@@ -727,22 +727,22 @@ static uint8_t soc5_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	uint32_t offset = 0;
 
 	/*
-	 * RX_RING_EVT_IDX_1     (RX_Ring0) - Rx Event
-	 * RX_RING_DATA_IDX_0    (RX_Ring2) - Band0 Rx Data
-	 * RX_RING_DATA1_IDX_2   (RX_Ring3) - Band1 Rx Data
-	 * RX_RING_TXDONE0_IDX_3 (RX_Ring4) - Band0 Tx Free Done Event
-	 * RX_RING_TXDONE1_IDX_4 (RX_Ring5) - Band1 Tx Free Done Event
+	 * RX_RING_EVT     (RX_Ring0) - Rx Event
+	 * RX_RING_DATA0    (RX_Ring2) - Band0 Rx Data
+	 * RX_RING_DATA1   (RX_Ring3) - Band1 Rx Data
+	 * RX_RING_TXDONE0 (RX_Ring4) - Band0 Tx Free Done Event
+	 * RX_RING_TXDONE1 (RX_Ring5) - Band1 Tx Free Done Event
 	*/
 	switch (u4SwRingIdx) {
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		offset = 0;
 		break;
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		offset = RX_DATA_RING_BASE_IDX;
 		break;
-	case RX_RING_DATA1_IDX_2:
-	case RX_RING_TXDONE0_IDX_3:
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_DATA1:
+	case RX_RING_TXDONE0:
+	case RX_RING_TXDONE1:
 		offset = u4SwRingIdx + 1;
 		break;
 	default:
@@ -759,21 +759,21 @@ static bool soc5_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 {
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA1_IDX_2, RX_RING0_SIZE,
+			RX_RING_DATA1, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[0] fail\n");
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0_IDX_3, RX_RING1_SIZE,
+			RX_RING_TXDONE0, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
 	}
 	/* Band1 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE1_IDX_4, RX_RING1_SIZE,
+			RX_RING_TXDONE1, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[1] fail\n");
 		return false;
@@ -801,27 +801,27 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_16)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_FWDL_IDX_4);
+			prAdapter->prGlueInfo, TX_RING_FWDL);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_17)
 		halWpdmaProcessCmdDmaDone(
-			prAdapter->prGlueInfo, TX_RING_CMD_IDX_3);
+			prAdapter->prGlueInfo, TX_RING_CMD);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_0) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA0_IDX_0);
+			prAdapter->prGlueInfo, TX_RING_DATA0);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_1) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA1_IDX_1);
+			prAdapter->prGlueInfo, TX_RING_DATA1);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_2) {
 		halWpdmaProcessDataDmaDone(
-			prAdapter->prGlueInfo, TX_RING_DATA2_IDX_2);
+			prAdapter->prGlueInfo, TX_RING_DATA_PRIO);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 }
@@ -834,24 +834,24 @@ static void soc5_0asicConnac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0 ||
-	    (KAL_TEST_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
+	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2 ||
-	    (KAL_TEST_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
+	    (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3 ||
-	    (KAL_TEST_BIT(RX_RING_DATA1_IDX_2, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_DATA1_IDX_2, TRUE);
+	    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_4 ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE0_IDX_3, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0_IDX_3, TRUE);
+	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5 ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE1_IDX_4, prAdapter->ulNoMoreRfb)))
-		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1_IDX_4, TRUE);
+	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)))
+		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, TRUE);
 }
 
 static void soc5_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)

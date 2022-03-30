@@ -1732,7 +1732,7 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 				ucPortIdx = halTxRingDataSelect(
 					prAdapter, prMsduInfo);
 				prDataPort =
-					(ucPortIdx == TX_RING_DATA1_IDX_1) ?
+					(ucPortIdx == TX_RING_DATA1) ?
 					prDataPort1 : prDataPort0;
 
 				prSkb = prMsduInfo->prPacket;
@@ -1820,7 +1820,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 					ucPortIdx = halTxRingDataSelect(
 						prAdapter, prMsduInfo);
 					prDataPort =
-					    (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+					    (ucPortIdx == TX_RING_DATA1) ?
 					    prDataPort1 : prDataPort0;
 					QUEUE_INSERT_TAIL(prDataPort,
 					       (struct QUE_ENTRY *) prMsduInfo);
