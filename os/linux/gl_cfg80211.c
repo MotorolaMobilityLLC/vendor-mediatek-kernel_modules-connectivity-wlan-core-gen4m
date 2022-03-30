@@ -5988,9 +5988,11 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
+#if !CFG_ENABLE_WAKE_LOCK
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen;
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	DBGLOG(REQ, TRACE, "mtk_cfg80211_suspend\n");
 
@@ -6008,6 +6010,9 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 
 	if (prGlueInfo && prGlueInfo->prAdapter) {
 		prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+#if !CFG_ENABLE_WAKE_LOCK
+
 		if (IS_FEATURE_ENABLED(prWifiVar->ucWow)) {
 			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			if (prGlueInfo->prScanRequest) {
@@ -6028,6 +6033,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			 * Otherwise, MT7668 would fail to enter deep sleep.
 			 */
 		}
+#endif
 
 		set_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
 			&prGlueInfo->prAdapter->ulSuspendFlag);

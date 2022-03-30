@@ -2396,7 +2396,6 @@ u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 	return TRUE;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief Check if HIF state is during supend process
