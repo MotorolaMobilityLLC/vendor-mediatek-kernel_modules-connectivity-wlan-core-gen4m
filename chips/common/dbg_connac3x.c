@@ -1664,6 +1664,155 @@ int32_t connac3x_show_stat_info(
 	return i4BytesWritten;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int32_t connac3x_show_mld_info(
+		struct ADAPTER *prAdapter,
+		char *pcCommand,
+		int32_t i4TotalLen,
+		struct PARAM_MLD_REC *mld)
+{
+	int32_t i4BytesWritten = 0;
+	struct MLD_RECORD_LINK *prMldLink;
+	struct MLO_AGC_DISP_PARAM_TX *prAgcParam;
+	struct MLO_AGC_DISP_PARAM_TRIG *prAgcParamTrig;
+	struct MLO_OVLP_RPT_CNT *prOvlpRptCnt;
+	struct MLO_OVLP_RPT_CNT *prOvlpRptCntTrig;
+	uint8_t i, j;
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\n%s%d, %s%d, %s%d\n",
+			"MldRecState=", mld->u1MldRecState,
+			"MldRecIdx=", mld->u1MldRecIdx,
+			"MldIdx=", mld->u2MldIdx);
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s0x%x, %s0x%x, %s0x%x\n",
+			"StrBmp=", mld->u1StrBmp,
+			"EmlsrBmp=", mld->u1EmlsrBmp,
+			"ActiveLinkBmp=", mld->u1ActiveLinkBmp);
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		prMldLink = &(mld->arMldRecLink[i]);
+		prAgcParam = &(prMldLink->rAgcDispParamTx);
+		prAgcParamTrig = &(prMldLink->rAgcDispParamTrig);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\n====== Link_%d ======\n", i);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%d, %s%d, %s%d, %s%d\n",
+			"Active=", prMldLink->fgActive,
+			"ParentMldRecIdx=", prMldLink->u1ParentMldRecIdx,
+			"DBDC=", prMldLink->u1Band,
+			"WlanIdx=", prMldLink->u2WlanIdx);
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"---AgcDispParamTx---\n");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%d, %s%d, %s%d, %s%d\n",
+			"AgcState=", prAgcParam->u1AgcStateTx,
+			"Ratio=", prAgcParam->u1DispRatioTx,
+			"Order=", prAgcParam->u1DispOrderTx,
+			"Mgf=", prAgcParam->u2DispMgfTx);
+
+		for (j = 0; j < MAX_MLO_MGMT_SUPPORT_AC_NUM; j++) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Pol_AC%d=%d",
+				j, prAgcParam->au1DispPolTx[j]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s",
+				((j == MAX_MLO_MGMT_SUPPORT_AC_NUM - 1) ?
+				"\n" : ", "));
+		}
+
+		i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%s",
+			"---OvlpRptCnt---\n",
+			"Corr0-Corr1-InCorr0-InCorr1\n");
+
+		for (j = 0; j < MAX_MLO_MGMT_SUPPORT_AC_NUM; j++) {
+			prOvlpRptCnt = &(prMldLink->arOvlpRptCntTx[j]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%d: %d-%d-%d-%d\n",
+				"AC", j,
+				prOvlpRptCnt->u2Corr0,
+				prOvlpRptCnt->u2Corr1,
+				prOvlpRptCnt->u2InCorr0,
+				prOvlpRptCnt->u2InCorr1);
+		}
+
+		/* Trig */
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"---AgcDispParamTrig---\n");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%d, %s%d, %s%d, %s%d, %s%d\n",
+			"AgcState=", prAgcParamTrig->u1AgcStateTrig,
+			"Ratio=", prAgcParamTrig->u1DispRatioTrig,
+			"MuLen=", prAgcParamTrig->u1DispMuLenTrig,
+			"Mgf=", prAgcParamTrig->u2DispMgfTrig,
+			"AggLimit=", prAgcParamTrig->u2DispAggLimitTrig);
+
+		for (j = 0; j < MAX_MLO_MGMT_SUPPORT_AC_NUM; j++) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Pol_AC%d=%d",
+				j, prAgcParamTrig->au1DispPolTrig[j]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s",
+				((j == MAX_MLO_MGMT_SUPPORT_AC_NUM - 1) ?
+				"\n" : ", "));
+		}
+
+		i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s%s",
+			"---OvlpRptCntTrig---\n",
+			"Corr0-Corr1-InCorr0-InCorr1\n");
+
+		for (j = 0; j < MAX_MLO_MGMT_SUPPORT_AC_NUM; j++) {
+			prOvlpRptCntTrig = &(prMldLink->arOvlpRptCntTrig[j]);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%d: %d-%d-%d-%d\n",
+				"AC", j,
+				prOvlpRptCntTrig->u2Corr0,
+				prOvlpRptCntTrig->u2Corr1,
+				prOvlpRptCntTrig->u2InCorr0,
+				prOvlpRptCntTrig->u2InCorr1);
+		}
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static void connac3x_show_wfdma_axi_debug_log(
 	IN struct ADAPTER *prAdapter,

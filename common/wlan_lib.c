@@ -13883,6 +13883,17 @@ wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
 		prTRxInfo->u4RxOk[2], prTRxInfo->u4RxOk[3]);
 }
 
+void wlanGetChipDbgOps(struct ADAPTER *prAdapter, uint32_t **pu4Handle)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+
+	*pu4Handle = (uint32_t *)(prChipInfo->prDebugOps);
+}
+
 #if CFG_SUPPORT_TPENHANCE_MODE
 inline uint64_t wlanTpeTimeUs(void)
 {

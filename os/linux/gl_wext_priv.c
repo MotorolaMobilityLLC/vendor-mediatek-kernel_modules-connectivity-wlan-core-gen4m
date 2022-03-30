@@ -3881,6 +3881,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
 #define CMD_SET_MDVT		"SET_MDVT"
+#define CMD_SET_MLO_AGC_TX	"MLOAGCTX"
+#define CMD_GET_MLD_REC		"MLDREC"
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
@@ -9353,6 +9355,161 @@ int priv_driver_set_unified_auto_rate(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }	/* priv_driver_set_fixed_rate */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int priv_driver_set_unified_mlo_agc_tx(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	int32_t i4Recv = 0;
+	uint32_t u4MldRecIdx = 0, u4MldRecLinkIdx = 0, u4AcIdx = 0;
+	uint32_t u4DispPolTx = 0, u4DispRatioTx = 0, u4DispOrderTx = 0;
+	uint32_t u4DispMgfTx = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d:%d:%d:%d:%d:%d:%d",
+			&(u4MldRecIdx), &(u4MldRecLinkIdx), &(u4AcIdx),
+			&(u4DispPolTx), &(u4DispMgfTx), &(u4DispRatioTx),
+			&(u4DispOrderTx));
+
+	DBGLOG(REQ, ERROR, "MldRecIdx=%d,LinkIdx=%d,AcIdx=%d\n",
+	       u4MldRecIdx, u4MldRecLinkIdx, u4AcIdx);
+	DBGLOG(REQ, ERROR, "Pol=%d,Mgf=%d,Ratio=%d,Order=%d\n",
+	       u4DispPolTx, u4DispMgfTx, u4DispRatioTx, u4DispOrderTx);
+
+	if (u4MldRecIdx >= MAX_MLO_MGMT_SUPPORT_MLD_NUM) {
+		DBGLOG(REQ, ERROR, "MldIdx should be less than %u\n",
+			MAX_MLO_MGMT_SUPPORT_MLD_NUM);
+		return -1;
+	}
+
+	if (u4MldRecLinkIdx >= MLD_LINK_MAX) {
+		DBGLOG(REQ, ERROR, "Link should be less than %u\n",
+			MLD_LINK_MAX);
+		return -1;
+	}
+
+	if (u4AcIdx >= MAX_MLO_MGMT_SUPPORT_AC_NUM) {
+		DBGLOG(REQ, ERROR, "Ac should less be than %u\n",
+			MAX_MLO_MGMT_SUPPORT_AC_NUM);
+		return -1;
+	}
+
+	if (i4Recv == 7) {
+		struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX mlo;
+
+		mlo.u1MldRecIdx = (uint8_t)u4MldRecIdx;
+		mlo.u1MldRecLinkIdx = (uint8_t)u4MldRecLinkIdx;
+		mlo.u1AcIdx = (uint8_t)u4AcIdx;
+		mlo.u1DispPolTx = (uint8_t)u4DispPolTx;
+		mlo.u1DispRatioTx = (uint8_t)u4DispRatioTx;
+		mlo.u1DispOrderTx = (uint8_t)u4DispOrderTx;
+		mlo.u2DispMgfTx = (uint16_t)u4DispMgfTx;
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetMloAgcTx,
+					&mlo, sizeof(mlo),
+					FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(REQ, ERROR, "iwpriv wlanX driver mloagctx=Option\n");
+		DBGLOG(REQ, ERROR,
+		"Option=[MldRec]:[Link]:[Ac]:[Pol]:[Ratio]:[Order]:[Mgf]\n");
+	}
+
+	return i4BytesWritten;
+}	/* priv_driver_set_unified_mlo_agc_tx */
+
+int priv_driver_get_unified_mld_rec(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	struct PARAM_MLD_REC mld;
+	uint32_t u4MldRecIdx = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct CHIP_DBG_OPS *prChipDbg;
+	uint32_t *pu4Handle;
+	int rc;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	rc = kstrtou32(this_char, 0, &(u4MldRecIdx));
+
+	if (rc)
+		return -1;
+
+	DBGLOG(REQ, ERROR, "MldRecIdx=%d\n", u4MldRecIdx);
+
+	if (u4MldRecIdx >= MAX_MLO_MGMT_SUPPORT_MLD_NUM) {
+		DBGLOG(REQ, ERROR, "MldIdx should be less than %u\n",
+			MAX_MLO_MGMT_SUPPORT_MLD_NUM);
+		return -1;
+	}
+
+	mld.u1MldRecIdx = (uint8_t)u4MldRecIdx;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidGetMldRec,
+				&mld, sizeof(mld),
+				TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	wlanGetChipDbgOps(prAdapter, &pu4Handle);
+	prChipDbg = (struct CHIP_DBG_OPS *)pu4Handle;
+
+	if (prChipDbg && prChipDbg->show_mld_info)
+		i4BytesWritten = prChipDbg->show_mld_info(
+			prAdapter, pcCommand, i4TotalLen, &mld);
+
+	return i4BytesWritten;
+} /* priv_driver_get_unified_mld_rec */
+#endif
+
 
 #else
 
@@ -18251,6 +18408,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	{CMD_SET_FIXED_RATE, priv_driver_set_unified_fixed_rate},
 	{CMD_SET_AUTO_RATE, priv_driver_set_unified_auto_rate},
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	{CMD_SET_MLO_AGC_TX, priv_driver_set_unified_mlo_agc_tx},
+	{CMD_GET_MLD_REC, priv_driver_get_unified_mld_rec},
+#endif
 #else
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
 #endif
