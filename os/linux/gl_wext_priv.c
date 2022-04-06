@@ -4111,6 +4111,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_STA_BTM_REQUEST		"BTMRequest"
 #endif /* CFG_AP_80211V_SUPPORT */
 
+#define CMD_GET_SER                             "GET_SER"
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -15109,6 +15111,239 @@ static int priv_driver_get_sleep_dbg_info(IN struct net_device *prNetDev,
 }
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief    The function for command "iwpriv wlan0 driver get_ser".
+*
+* \param[in] prNetDev
+* \param[in/out] pcCommand   input as pointer to command arguments and
+*                            output as pointer to command result
+* \param[in] i4TotalLen   the maximum length allowed for command result
+*
+* \return the actual length of command result
+*/
+/*----------------------------------------------------------------------------*/
+static int priv_driver_get_ser_info(IN struct net_device *prNetDev,
+				    IN OUT char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Offset = 0;
+	struct PARAM_SER_INFO_T rQuerySerInfo;
+	uint16_t i, j;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	ASSERT(prGlueInfo);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQuerySerInfo,
+			   &rQuerySerInfo, sizeof(rQuerySerInfo),
+			   TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "rStatus 0x%8X\n", rStatus);
+
+		return -1;
+	}
+
+#if (CFG_CHIP_RESET_SUPPORT == 1)
+
+	if (prGlueInfo->prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset,
+				    "\n======== SER L0.5 reset cnt  ========\n"
+			    "== empty result means NO L0.5 reset happens ==\n");
+
+		if (prGlueInfo->prAdapter->u2WfsysResetCnt != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"L0.5 reset cnt %d\n",
+					prGlueInfo->prAdapter->u2WfsysResetCnt);
+	}
+
+#endif /* CFG_CHIP_RESET_SUPPORT */
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\n======== SER L1~L4 Enable bits ========\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[0]:SER_ENABLE_TRACKING\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[1]:SER_ENABLE_L1_RECOVER\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[2]:SER_ENABLE_L2_RECOVER\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[3]:SER_ENABLE_L3_RX_ABORT\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[4]:SER_ENABLE_L3_TX_ABORT\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[5]:SER_ENABLE_L3_TX_DISABLE\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[6]:SER_ENABLE_L3_BF_RECOVER\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"BIT[7]:SER_ENABLE_L4_MDP_RECOVER\n");
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"ucEnableSER=0x%08X\n",
+				rQuerySerInfo.ucEnableSER);
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\n======== SER L1~L4 reset cnt ========\n"
+			    "== empty result mean NO L1~L4 reset happens ==\n");
+
+	if (rQuerySerInfo.ucSerL1RecoverCnt != 0)
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset,
+					"L1 reset cnt %d\n",
+					rQuerySerInfo.ucSerL1RecoverCnt);
+
+	if (rQuerySerInfo.ucSerL2RecoverCnt != 0)
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset,
+					"L2 reset cnt %d\n",
+					rQuerySerInfo.ucSerL2RecoverCnt);
+
+	if (rQuerySerInfo.ucSerL3BfRecoverCnt != 0)
+		u4Offset += kalSnprintf(pcCommand + u4Offset,
+					i4TotalLen - u4Offset,
+					"L3 BF reset cnt %d\n",
+					rQuerySerInfo.ucSerL3BfRecoverCnt);
+
+	for (i = 0; i < EXT_EVENT_SER_RAM_BAND_NUM; i++) {
+		if (rQuerySerInfo.ucSerL3RxAbortCnt[i] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+					    "[BN%d] L3 RX ABORT reset cnt %d\n",
+						i,
+					    rQuerySerInfo.ucSerL3RxAbortCnt[i]);
+
+		if (rQuerySerInfo.ucSerL3TxAbortCnt[i] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+					    "[BN%d] L3 TX ABORT reset cnt %d\n",
+						i,
+					    rQuerySerInfo.ucSerL3TxAbortCnt[i]);
+
+		if (rQuerySerInfo.ucSerL3TxDisableCnt[i] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+					  "[BN%d] L3 TX DISABLE reset cnt %d\n",
+						i,
+					  rQuerySerInfo.ucSerL3TxDisableCnt[i]);
+
+		if (rQuerySerInfo.ucSerL4RecoverCnt[i] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"[BN%d] L4 reset cnt %d\n",
+						i,
+					    rQuerySerInfo.ucSerL4RecoverCnt[i]);
+	}
+
+	u4Offset += kalSnprintf(pcCommand + u4Offset, i4TotalLen - u4Offset,
+				"\n======== SER HW ERR cnt ========\n"
+				"== empty result mean NO HW ERR happens ==\n");
+
+	for (i = 0; i < EXT_EVENT_SER_RAM_BAND_NUM; i++) {
+		for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+			if (rQuerySerInfo.u2LMACError6Cnt[i][j] != 0)
+				u4Offset += kalSnprintf(pcCommand + u4Offset,
+							i4TotalLen - u4Offset,
+					    "[BN%d] LMAC ERR6 bit[%d] cnt %d\n",
+							i, j,
+					   rQuerySerInfo.u2LMACError6Cnt[i][j]);
+		}
+
+		for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+			if (rQuerySerInfo.u2LMACError7Cnt[i][j] != 0)
+				u4Offset += kalSnprintf(pcCommand + u4Offset,
+							i4TotalLen - u4Offset,
+					    "[BN%d] LMAC ERR7 bit[%d] cnt %d\n",
+							i, j,
+					   rQuerySerInfo.u2LMACError7Cnt[i][j]);
+		}
+	}
+
+	for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+		if (rQuerySerInfo.u2PSEErrorCnt[j] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"PSE ERR bit[%d] cnt %d\n",
+						j,
+						rQuerySerInfo.u2PSEErrorCnt[j]);
+	}
+
+	for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+		if (rQuerySerInfo.u2PSEError1Cnt[j] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"PSE ERR1 bit[%d] cnt %d\n",
+						j,
+					       rQuerySerInfo.u2PSEError1Cnt[j]);
+	}
+
+	for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+		if (rQuerySerInfo.u2PLEErrorCnt[j] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"PLE ERR bit[%d] cnt %d\n",
+						j,
+						rQuerySerInfo.u2PLEErrorCnt[j]);
+	}
+
+	for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+		if (rQuerySerInfo.u2PLEError1Cnt[j] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+						"PLE ERR1 bit[%d] cnt %d\n",
+						j,
+					       rQuerySerInfo.u2PLEError1Cnt[j]);
+	}
+
+	for (j = 0; j < EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER; j++) {
+		if (rQuerySerInfo.u2PLEErrorAmsduCnt[j] != 0)
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+						i4TotalLen - u4Offset,
+					       "PLE ERR AMSDU bit[%d] cnt %d\n",
+						j,
+					   rQuerySerInfo.u2PLEErrorAmsduCnt[j]);
+	}
+
+	if (rQuerySerInfo.ucEvtVer == 0)
+		goto end;
+
+	/* for rQuerySerInfo.ucEvtVer == 1 kalSnprintf implementation ...
+	 *
+	 *	if (rQuerySerInfo.ucEvtVer == 1)
+	 *		goto end;
+	 *
+	 *      ...
+	 */
+
+end:
+	i4BytesWritten = (int32_t)u4Offset;
+
+	return i4BytesWritten;
+
+} /* priv_driver_get_ser_info */
+
 #if CFG_SUPPORT_BATCH_SCAN
 #define CMD_BATCH_SET           "WLS_BATCHING SET"
 #define CMD_BATCH_GET           "WLS_BATCHING GET"
@@ -18671,6 +18906,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 	{CMD_GET_MCS_INFO, priv_driver_get_mcs_info},
 #endif
+	{CMD_GET_SER, priv_driver_get_ser_info},
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT

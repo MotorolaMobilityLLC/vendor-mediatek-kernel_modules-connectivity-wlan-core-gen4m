@@ -3590,6 +3590,89 @@ struct PARAM_MLD_REC {
 };
 #endif
 
+/* This structure is a replication of struct EXT_EVENT_SER_T.
+ * Thus, we are able to simply do memory copy from EXT_EVENT_SER_T to
+ * PARAM_SER_INFO_T when receiving EXT_EVENT_ID_SER.
+ */
+struct PARAM_SER_INFO_T {
+/* Represents the current supporting EXT_EVENT_ID_SER version in driver.
+ * Each time we extend this structure in the future, we shall increment
+ * EXT_EVENT_SER_VER.
+ */
+#ifdef EXT_EVENT_SER_VER
+#undef EXT_EVENT_SER_VER
+#endif
+#define EXT_EVENT_SER_VER        0
+
+/* Don't change these constants.
+ * We define these definitions for readability, not for flexibility.
+ * For example, if RAM_BAND_NUM changes from 2 to 3 in future project,
+ * then we shall add new structure members (ex: uint8_t ucSerL2RecoverCntBand2;)
+ * and increment EXT_EVENT_SER_VER for compatibility, but shall not simply
+ * change EXT_EVENT_SER_RAM_BAND_NUM from 2 to 3.
+ */
+#ifdef EXT_EVENT_SER_RAM_BAND_NUM
+#undef EXT_EVENT_SER_RAM_BAND_NUM
+#endif
+#define EXT_EVENT_SER_RAM_BAND_NUM        2    /* RAM_BAND_NUM */
+#ifdef EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER
+#undef EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER
+#endif
+/* MAX_HW_ERROR_INT_NUMBER */
+#define EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER        32
+
+	/* DWORD_0 - Common Part */
+	/* if the structure size is changed, the ucEvtVer shall be increased. */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	/* event size including common part and body. */
+	uint16_t u2EvtLen;
+
+	/* ucEvtVer = 0 definition BEGIN */
+
+	/* DWORD_1 - Body */
+	uint8_t  ucEnableSER;
+	uint8_t  ucSerL1RecoverCnt;
+	uint8_t  ucSerL2RecoverCnt;
+	uint8_t  ucSerL3BfRecoverCnt;
+
+	/* DWORD_2 */
+	uint8_t  ucSerL3RxAbortCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+	uint8_t  ucSerL3TxAbortCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+
+	/* DWORD_3 */
+	uint8_t  ucSerL3TxDisableCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+	uint8_t  ucSerL4RecoverCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+
+	/* DWORD_4 ~ DWORD_35 */
+	uint16_t u2LMACError6Cnt[EXT_EVENT_SER_RAM_BAND_NUM]
+				[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_36 ~ DWORD_67 */
+	uint16_t u2LMACError7Cnt[EXT_EVENT_SER_RAM_BAND_NUM]
+				[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_68 ~ DWORD_83 */
+	uint16_t u2PSEErrorCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_84 ~ DWORD_99 */
+	uint16_t u2PSEError1Cnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_100 ~ DWORD_115 */
+	uint16_t u2PLEErrorCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_116 ~ DWORD_131 */
+	uint16_t u2PLEError1Cnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_132 ~ DWORD_147 */
+	uint16_t u2PLEErrorAmsduCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* ucEvtVer = 0 definition END */
+
+	/* ucEvtVer = 1 definition BEGIN */
+	/* ... */
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5352,4 +5435,9 @@ uint32_t wlanoidSendBTMRequest(struct ADAPTER *prAdapter,
 				    void *pvSetBuffer, uint32_t u4SetBufferLen,
 				    uint32_t *pu4SetInfoLen);
 #endif /* CFG_AP_80211V_SUPPORT */
+
+uint32_t wlanoidQuerySerInfo(IN struct ADAPTER *prAdapter,
+			     IN void *pvQueryBuffer,
+			     IN uint32_t u4QueryBufferLen,
+			     OUT uint32_t *pu4QueryInfoLen);
 #endif /* _WLAN_OID_H */
