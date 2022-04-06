@@ -2978,7 +2978,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				eType == PWR_LIMIT_TYPE_COMP_6E_3)
 		prPwrLmt6E = &prCmd->u.rChPwrLimt6E[0];
 #endif
-	else
+	else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 		prPwrLimit = &prCmd->u.rChannelPowerLimit[0];
 
 	startIndex = POWER_LIMIT_2G4;
@@ -2998,18 +2999,21 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 	/*Build power limit cmd by default table information */
 
 	for (i = startIndex; i <= endIndex; i++) {
-		cLmtBand = prPwrLimitSubBand->aucPwrLimitSubBand[i];
-
-		if (prPwrLimitSubBand->aucPwrLimitSubBand[i] > MAX_TX_POWER) {
-			DBGLOG(RLM, WARN, "SubBand[%d] Pwr(%d) > Max (%d)",
-				prPwrLimitSubBand->aucPwrLimitSubBand[i],
-				MAX_TX_POWER);
-			cLmtBand = MAX_TX_POWER;
-		}
 
 		for (k = g_rRlmSubBand[i].ucStartCh;
 		     k <= g_rRlmSubBand[i].ucEndCh;
 		     k += g_rRlmSubBand[i].ucInterval) {
+
+			/* cLmtBand need reset by each channel */
+			cLmtBand = prPwrLimitSubBand->aucPwrLimitSubBand[i];
+			if (prPwrLimitSubBand->aucPwrLimitSubBand[i]
+				> MAX_TX_POWER) {
+				DBGLOG(RLM, WARN,
+				"SubBand[%d] Pwr(%d) > Max (%d)",
+				prPwrLimitSubBand->aucPwrLimitSubBand[i],
+				MAX_TX_POWER);
+				cLmtBand = MAX_TX_POWER;
+			}
 
 			if (eType == PWR_LIMIT_TYPE_COMP_11AX)
 				prPwrLmtHE->ucCentralCh = k;
@@ -3021,7 +3025,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E->ucCentralCh = k;
 #endif
-			else
+			else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 				prPwrLimit->ucCentralCh = k;
 
 			if ((prPwrLimitSubBand->ucPwrUnit
@@ -3045,7 +3050,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 						cLmtBand,
 						PWR_LIMIT_6E_NUM);
 #endif
-				else
+				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 					kalMemSet(&prPwrLimit->cPwrLimitCCK_L,
 #else
@@ -3131,7 +3137,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU242U = cLmtBand;
 				}
 #endif
-				else {
+				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 					/* BW20 */
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 					prPwrLimit->cPwrLimitCCK_L = cLmtBand;
@@ -3173,7 +3180,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU484U = cLmtBand;
 				}
 #endif
-				else {
+				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 					prPwrLimit->cPwrLimit40L = cLmtBand;
 					prPwrLimit->cPwrLimit40H = cLmtBand;
 				}
@@ -3205,7 +3213,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU996U = cLmtBand;
 				}
 #endif
-				else {
+				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 					prPwrLimit->cPwrLimit80L = cLmtBand;
 					prPwrLimit->cPwrLimit80H = cLmtBand;
 				}
@@ -3232,7 +3241,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					prPwrLmt6E->cPwrLimitRU1992U = cLmtBand;
 				}
 #endif
-				else {
+				else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2) {
 					prPwrLimit->cPwrLimit160L = cLmtBand;
 					prPwrLimit->cPwrLimit160H = cLmtBand;
 				}
@@ -3250,7 +3260,8 @@ rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 					eType == PWR_LIMIT_TYPE_COMP_6E_3)
 				prPwrLmt6E++;
 #endif
-			else
+			else if (eType == PWR_LIMIT_TYPE_COMP_11AC ||
+					eType == PWR_LIMIT_TYPE_COMP_11AC_V2)
 				prPwrLimit++;
 
 			prCmd->ucNum++;
