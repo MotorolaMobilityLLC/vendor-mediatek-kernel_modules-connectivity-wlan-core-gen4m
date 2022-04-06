@@ -1658,7 +1658,17 @@ s_int32 mt_op_start_rx(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	if (configs->tx_mode == TEST_MODE_HE_MU) {
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+
+	if ((configs->tx_mode == TEST_MODE_HE_MU)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	|| (configs->tx_mode == TEST_MODE_EHT_MU_DL_SU)
+	|| (configs->tx_mode == TEST_MODE_EHT_MU_UL_SU)
+	|| (configs->tx_mode == TEST_MODE_EHT_MU_DL_OFDMA)
+#endif
+	){
 		if (configs->mu_rx_aid)
 			ret = tm_rftest_set_auto_test(winfos,
 					RF_AT_FUNCID_SET_RX_MU_AID,
@@ -1678,8 +1688,6 @@ s_int32 mt_op_start_rx(
 	tm_rftest_set_auto_test(winfos,
 		(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
 
-	ret = tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTRX);
 
