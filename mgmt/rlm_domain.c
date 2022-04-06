@@ -2912,10 +2912,40 @@ void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
 					       uint16_t u2CountryCode)
 {
-
-	uint16_t i;
+	uint16_t i, j;
 	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
 	uint16_t u2TableIndex = POWER_LIMIT_TABLE_NULL;	/* No Table Match */
+	struct COUNTRY_POWER_LIMIT_GROUP_TABLE *prCountryGrpInfo;
+
+	for (i = 0; i < COUNTRY_LIMIT_GROUP_NUM; i++) {
+		prCountryGrpInfo = &arSupportCountryPowerLmtGrps[i];
+
+		if (!prCountryGrpInfo->u4CountryNum ||
+			!prCountryGrpInfo->prGroup)
+			continue;
+
+		for (j = 0; j < prCountryGrpInfo->u4CountryNum; j++) {
+			WLAN_GET_FIELD_BE16(
+				&prCountryGrpInfo->prGroup[j].aucCountryCode[0],
+				&u2CountryCodeTable);
+
+			if (u2CountryCodeTable == u2CountryCode) {
+				WLAN_GET_FIELD_BE16(
+					&prCountryGrpInfo->aucGroupCode[0],
+					&u2CountryCode);
+				break;
+			}
+		}
+		if (j < prCountryGrpInfo->u4CountryNum)
+			break;	/* Found */
+	}
+
+	if (i >= COUNTRY_LIMIT_GROUP_NUM) {
+		DBGLOG(RLM, TRACE,
+			"Can't find Country = (%c%c) in any group!\n",
+			((u2CountryCode & 0xff00) >> 8),
+			(u2CountryCode & 0x00ff));
+	}
 
 	/*Default Table Index */
 	for (i = 0; i < sizeof(g_rRlmPowerLimitDefault) /
@@ -3302,6 +3332,64 @@ void rlmDomainCopyFromConfigTable(struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit,
 #endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
 }
 
+static void PwrLmtTblArbitrator(int8_t *target,
+	int8_t *compare,
+	uint32_t size)
+{
+	uint8_t i = 0;
+
+	/* Choose min value from target & compare */
+	for (i = 0; i < size; i++) {
+		if (target[i] > compare[i])
+			target[i] = compare[i];
+
+		/* Sanity check power boundary */
+		if (target[i] > MAX_TX_POWER)
+			target[i] = MAX_TX_POWER;
+		else if (target[i] < MIN_TX_POWER)
+			target[i] = MIN_TX_POWER;
+	}
+}
+
+static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
+	int8_t *prPwrLmtConf,
+	enum ENUM_PWR_LIMIT_TYPE eType)
+{
+	uint32_t size;
+
+	switch (eType) {
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+	case PWR_LIMIT_TYPE_COMP_11AC_V2:
+#else
+	case PWR_LIMIT_TYPE_COMP_11AC:
+#endif
+		size = PWR_LIMIT_NUM;
+		break;
+
+	case PWR_LIMIT_TYPE_COMP_11AX:
+		size = PWR_LIMIT_HE_NUM;
+		break;
+
+	case PWR_LIMIT_TYPE_COMP_11AX_BW160:
+		size = PWR_LIMIT_HE_BW160_NUM;
+		break;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case PWR_LIMIT_TYPE_COMP_6E_1:
+	case PWR_LIMIT_TYPE_COMP_6E_2:
+	case PWR_LIMIT_TYPE_COMP_6E_3:
+		size = PWR_LIMIT_6E_NUM;
+		break;
+#endif
+	default:
+		DBGLOG(RLM, WARN,
+			"Invalid rate type : etype = %d\n", eType);
+		return;
+	}
+
+	/* Choose min value from defarult table & Conf table */
+	PwrLmtTblArbitrator(prPwrLmt, prPwrLmtConf, size);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3379,20 +3467,25 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					!= PwrLmtConfHE[i].ucCentralCh)
 					continue;
 
-				/* Cmd setting (Default table
+				/* Choose MINIMUN value from
+				 * Default table & Conf table
+				 * Cmd setting (Default table
 				 * information) and Conf table
 				 * has repetition channel entry,
 				 * ex : Default table (ex: 2.4G,
 				 *      limit = 20dBm) -->
 				 *      ch1~14 limit =20dBm,
 				 * Conf table (ex: ch1, limit =
-				 *      22dBm) --> ch 1 = 22 dBm
+				 *      22 dBm) --> ch 1 = 22 dBm
+				 * Conf table (ex: ch2, limit =
+				 *      18 dBm) --> ch 2 = 18 dBm
 				 * Cmd final setting --> ch1 =
-				 *      22dBm, ch2~14 = 20dBm
+				 *      20dBm, ch2 = 18dBm ch3~14 = 20dBm
 				 */
-				kalMemCopy(&prCmdPwrLimtHE->cPwrLimitRU26L,
-					   &PwrLmtConfHE[i].aucPwrLimit,
-					   PWR_LIMIT_HE_NUM);
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimtHE->cPwrLimitRU26L,
+					&PwrLmtConfHE[i].aucPwrLimit[0],
+					eType);
 			}
 		} else if (eType == PWR_LIMIT_TYPE_COMP_11AX_BW160) {
 			prCmdPwrLimtHEBW160 = &prCmd->u.rChPwrLimtHEBW160[k];
@@ -3421,20 +3514,25 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					!= PwrLmtConfHEBW160[i].ucCentralCh)
 					continue;
 
-				/* Cmd setting (Default table
+				/* Choose MINIMUN value from
+				 * Default table & Conf table
+				 * Cmd setting (Default table
 				 * information) and Conf table
 				 * has repetition channel entry,
 				 * ex : Default table (ex: 2.4G,
 				 *      limit = 20dBm) -->
 				 *      ch1~14 limit =20dBm,
 				 * Conf table (ex: ch1, limit =
-				 *      22dBm) --> ch 1 = 22 dBm
+				 *      22 dBm) --> ch 1 = 22 dBm
+				 * Conf table (ex: ch2, limit =
+				 *      18 dBm) --> ch 2 = 18 dBm
 				 * Cmd final setting --> ch1 =
-				 *      22dBm, ch2~14 = 20dBm
+				 *      20dBm, ch2 = 18dBm ch3~14 = 20dBm
 				 */
-				kalMemCopy(&prCmdPwrLimtHEBW160->cPwrLimitRU26L,
-					   &PwrLmtConfHEBW160[i].aucPwrLimit,
-					   PWR_LIMIT_HE_BW160_NUM);
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimtHEBW160->cPwrLimitRU26L,
+					&PwrLmtConfHEBW160[i].aucPwrLimit[0],
+					eType);
 			}
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -3443,7 +3541,6 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					eType == PWR_LIMIT_TYPE_COMP_6E_3) {
 			prCmdPwrLimt6E = &prCmd->u.rChPwrLimt6E[k];
 			ucCentCh = prCmdPwrLimt6E->ucCentralCh;
-
 			for (i = 0; i < ucPwrLmitConfSize6E ; i++) {
 
 				WLAN_GET_FIELD_BE16(
@@ -3466,9 +3563,25 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					!= PwrLmtConf6E[i].ucCentralCh)
 					continue;
 
-				kalMemCopy(&prCmdPwrLimt6E->cPwrLimitRU26L,
-					   &PwrLmtConf6E[i].aucPwrLimit,
-					   PWR_LIMIT_6E_NUM);
+				/* Choose MINIMUN value from
+				 * Default table & Conf table
+				 * Cmd setting (Default table
+				 * information) and Conf table
+				 * has repetition channel entry,
+				 * ex : Default table (ex: 6G,
+				 *      limit = 20dBm) -->
+				 *      ch1~14 limit =20dBm,
+				 * Conf table (ex: ch1, limit =
+				 *      22 dBm) --> ch 1 = 22 dBm
+				 * Conf table (ex: ch2, limit =
+				 *      18 dBm) --> ch 2 = 18 dBm
+				 * Cmd final setting --> ch1 =
+				 *      20dBm, ch2 = 18dBm ch3~14 = 20dBm
+				 */
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimt6E->cPwrLimitRU26L,
+					&PwrLmtConf6E[i].aucPwrLimit[0],
+					eType);
 			}
 		}
 #endif
@@ -3498,24 +3611,37 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 				else if (ucCentCh != PwrLmtConf[i].ucCentralCh)
 					continue;
 
-				/* Cmd setting (Default table
+				/* Choose MINIMUN value from
+				 * Default table & Conf table
+				 * Cmd setting (Default table
 				 * information) and Conf table
 				 * has repetition channel entry,
 				 * ex : Default table (ex: 2.4G,
 				 *      limit = 20dBm) -->
 				 *      ch1~14 limit =20dBm,
 				 * Conf table (ex: ch1, limit =
-				 *      22dBm) --> ch 1 = 22 dBm
+				 *      22 dBm) --> ch 1 = 22 dBm
+				 * Conf table (ex: ch2, limit =
+				 *      18 dBm) --> ch 2 = 18 dBm
 				 * Cmd final setting --> ch1 =
-				 *      22dBm, ch2~14 = 20dBm
+				 *      20dBm, ch2 = 18dBm ch3~14 = 20dBm
 				 */
-				rlmDomainCopyFromConfigTable(
-					prCmdPwrLimit,
-					&PwrLmtConf[i]
-				);
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimit->cPwrLimitCCK_L,
+					&PwrLmtConf[i].aucPwrLimit[0],
+					eType);
+#else
+				rlmDomainCompareFromConfigTable(
+					&prCmdPwrLimit->cPwrLimitCCK,
+					&PwrLmtConf[i].aucPwrLimit[0],
+					eType);
+#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
+
 			}
 		}
 	}
+
 #undef PwrLmtConf
 #undef PwrLmtConfHE
 #undef PwrLmtConfHEBW160
@@ -6311,6 +6437,21 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter)
 			    [u2DefaultTableIndex]
 			    .aucCountryCode[0],
 			    &prCmdHE->u2CountryCode);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
+			    [u2DefaultTableIndex]
+			    .aucCountryCode[0],
+			    &prCmd6E_1->u2CountryCode);
+	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
+			    [u2DefaultTableIndex]
+			    .aucCountryCode[0],
+			    &prCmd6E_2->u2CountryCode);
+	WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitDefault
+			    [u2DefaultTableIndex]
+			    .aucCountryCode[0],
+			    &prCmd6E_3->u2CountryCode);
+#endif
 
 	if (prCmd->u2CountryCode == COUNTRY_CODE_NULL)
 		DBGLOG(RLM, TRACE,
