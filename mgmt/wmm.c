@@ -1597,11 +1597,7 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	struct WMM_INFO *prWmmInfo =
 		aisGetWMMInfo(prAdapter, ucBssIndex);
 	uint32_t u4CurTime = 0;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-	struct timespec64 ts;
-#else
-	struct timespec ts;
-#endif
+
 	if (!prWmmInfo) {
 		DBGLOG(WMM, INFO, "prWmmInfo is null %d\n", ucBssIndex);
 		return FALSE;
@@ -1610,12 +1606,9 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	prAcmCtrl = &prWmmInfo->arAcmCtrl[ucAc];
 	if (!prAcmCtrl->u4AdmittedTime)
 		return FALSE;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-	ktime_get_boottime_ts64(&ts);
-#else
-	get_monotonic_boottime(&ts);
-#endif
-	u4CurTime = ts.tv_sec;
+
+	u4CurTime = (uint32_t)(kalGetBootTime() / USEC_PER_SEC);
+
 	if (!TIME_BEFORE(u4CurTime, prAcmCtrl->u4IntervalEndSec)) {
 		u4CurTime++;
 		DBGLOG(WMM, INFO,
@@ -1664,13 +1657,9 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	 */
 	if (!timerPendingTimer(&prWmmInfo->rAcmDeqTimer)) {
 		uint32_t u4EndMsec = prAcmCtrl->u4IntervalEndSec * 1000;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-		ktime_get_boottime_ts64(&ts);
-#else
-		get_monotonic_boottime(&ts);
-#endif
-		u4CurTime = ts.tv_sec * MSEC_PER_SEC;
-		u4CurTime += ts.tv_nsec / NSEC_PER_MSEC;
+
+		u4CurTime = (uint32_t)(kalGetBootTime() / USEC_PER_MSEC);
+
 		/* It is impossible that u4EndMsec is less than u4CurTime */
 		u4EndMsec = u4EndMsec - u4CurTime +
 			    20; /* the timeout duration at least 2 jiffies */

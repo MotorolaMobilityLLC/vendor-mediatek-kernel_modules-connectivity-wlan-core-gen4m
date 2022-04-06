@@ -4884,10 +4884,8 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemCopy(&rssi, prEvent->aucBuffer, sizeof(int32_t));
 	DBGLOG(RX, TRACE, "EVENT_ID_RSSI_MONITOR value=%d\n", rssi);
-#if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
-	mtk_cfg80211_vendor_event_rssi_beyond_range(prAdapter,
+	kalVendorEventRssiBeyondRange(prAdapter->prGlueInfo,
 		aisGetDefaultLinkBssIndex(prAdapter), rssi);
-#endif
 }
 
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
@@ -5758,12 +5756,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
-	struct rtc_time tm;
-#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
-	struct timespec64 tv = { 0 };
-#else
-	struct timeval tv;
-#endif
+	struct REAL_TIME rTm;
 #if CFG_SUPPORT_DATA_STALL
 	uint8_t event[12];
 	uint32_t iEventTime;
@@ -5774,18 +5767,17 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 
 	prEvtLowLatencyInfo =
 		(struct EVENT_LOW_LATENCY_INFO *)(prEvent->aucBuffer);
-
-	ktime_get_real_ts64(&tv);
-	rtc_time64_to_tm(tv.tv_sec, &tm);
+	kalMemZero(&rTm, sizeof(struct REAL_TIME));
+	kalGetRealTime(&rTm);
 
 	DBGLOG(NIC, TRACE,
-	       "Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
-	       prAdapter->fgTxDupCertificate,
-	       prEvtLowLatencyInfo->fgTxDupCert,
-	       prEvtLowLatencyInfo->fgTxDupEnable,
-	       prAdapter->fgEnTxDupDetect,
-	       tm.tm_mon + 1, tm.tm_mday, tm.tm_hour,
-	       tm.tm_min, tm.tm_sec, (unsigned int)KAL_GET_USEC(tv));
+		   "Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
+		   prAdapter->fgTxDupCertificate,
+		   prEvtLowLatencyInfo->fgTxDupCert,
+		   prEvtLowLatencyInfo->fgTxDupEnable,
+		   prAdapter->fgEnTxDupDetect,
+		   rTm.i4TmWday + 1, rTm.i4TmDay, rTm.i4TmHour,
+		   rTm.i4TmMin, rTm.i4TmSec, rTm.u4TvValUsec);
 	if (prAdapter->fgTxDupCertificate != prEvtLowLatencyInfo->fgTxDupCert) {
 
 		prAdapter->fgTxDupCertificate =
@@ -5794,8 +5786,9 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DATA_STALL
 		ret = sprintf(event, "%03d%02d%06u",
 			EVENT_TX_DUP_CERT_CHANGE,
-			tm.tm_sec,
-			(unsigned int)KAL_GET_USEC(tv));
+			rTm.i4TmSec,
+			rTm.u4TvValUsec);
+
 		if (ret < 0 || ret > sizeof(event)) {
 			DBGLOG_LIMITED(NIC, INFO, "sprintf failed:%d\n", ret);
 			return;
@@ -5821,14 +5814,15 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 			if (prEvtLowLatencyInfo->fgTxDupEnable) {
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_ON,
-					tm.tm_sec,
-					(unsigned int)KAL_GET_USEC(tv));
+					rTm.i4TmSec,
+					rTm.u4TvValUsec);
 			} else {
 				ret = sprintf(event, "%03d%02d%06u",
 					EVENT_TX_DUP_OFF,
-					tm.tm_sec,
-					(unsigned int)KAL_GET_USEC(tv));
+					rTm.i4TmSec,
+					rTm.u4TvValUsec);
 			}
+
 			if (ret < 0 || ret > sizeof(event)) {
 				DBGLOG_LIMITED(NIC, INFO,
 					"sprintf failed:%d\n", ret);

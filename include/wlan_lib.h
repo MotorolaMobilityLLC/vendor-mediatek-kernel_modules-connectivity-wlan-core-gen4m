@@ -909,6 +909,20 @@ struct _TWT_GET_TSF_CONTEXT_T {
 
 #endif
 
+struct REAL_TIME {
+	int32_t i4TmSec;
+	int32_t i4TmMin;
+	int32_t i4TmHour;
+	int32_t i4TmDay;
+	int32_t i4TmMon;
+	int32_t i4TmYear;
+	int32_t i4TmWday;
+	int32_t i4TmYday;
+	int32_t i4TmIsDst;
+	uint32_t u4TvValUsec;
+	uint32_t u4TvValSec;
+};
+
 #if CFG_SUPPORT_CSI
 struct CSI_DATA_T;
 #endif
@@ -2146,23 +2160,6 @@ uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 void
 wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
 	OUT struct TRX_INFO *prTRxInfo);
-
-#if CFG_SUPPORT_TPENHANCE_MODE
-inline uint64_t wlanTpeTimeUs(void);
-void wlanTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
-		uint8_t ucPktJump);
-void wlanTpeFlush(struct GLUE_INFO *prGlueInfo);
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void wlanTpeTimeoutHandler(struct timer_list *timer);
-#else
-void wlanTpeTimeoutHandler(unsigned long ulData);
-#endif
-void wlanTpeInit(struct GLUE_INFO *prGlueInfo);
-void wlanTpeUninit(struct GLUE_INFO *prGlueInfo);
-int wlanTpeProcess(struct GLUE_INFO *prGlueInfo,
-			struct sk_buff *prSkb,
-			struct net_device *prDev);
-#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 #if (CFG_WOW_SUPPORT == 1)
 void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter);

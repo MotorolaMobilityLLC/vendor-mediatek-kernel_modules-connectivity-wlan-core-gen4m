@@ -177,7 +177,7 @@ extern int g_u4WlanInitFlag;
 
 #define NETIF_F_IP_CSUM 0
 #define NETIF_F_IPV6_CSUM 0
-
+#define KAL_SCN_BSS_DESC_STALE_SEC			20
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -418,9 +418,6 @@ enum ENUM_CMD_TX_RESULT {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #define KAL_BAND_6GHZ (3)
 #define ktime_get_ts64 ktime_get_real_ts64
-#define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
-#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_nsec
-#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
 #else
 #define KAL_BAND_6GHZ KAL_BAND_60GHZ
 #undef timespec64
@@ -431,9 +428,6 @@ enum ENUM_CMD_TX_RESULT {
 #define ktime_get_real_ts64 do_gettimeofday
 #undef rtc_time64_to_tm
 #define rtc_time64_to_tm rtc_time_to_tm
-#define KAL_GET_USEC(_time) _time.tv_usec
-#define KAL_GET_PTIME_OF_USEC_OR_NSEC(_pTime) _pTime->tv_usec
-#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
 #endif
 #endif
 #define KAL_NUM_BANDS (4)
@@ -710,7 +704,6 @@ int8_t kal_atoi(uint8_t ch);
 #define kal_completion_done(eComp) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kal_completion uint32_t
-#define kal_timer_list uint32_t
 #define complete(eComp) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kal_kmemleak_ignore(pucAssocIEs) \
@@ -2003,6 +1996,30 @@ bool ieee80211_operating_class_to_band(u8 operating_class,
 
 uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgInitCmd);
+void kalSetLogTooMuch(uint32_t u4DriverLevel,
+	uint32_t u4FwLevel);
+void kalGetRealTime(struct REAL_TIME *prRealTime);
 
+void kalVendorEventRssiBeyondRange(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIdx, int rssi);
+
+void kalTxDirectStartCheckQTimer(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t offset);
+uint32_t kalGetTxDirectQueueLength(
+	struct GLUE_INFO *prGlueInfo);
+
+#if CFG_SUPPORT_WPA3
+int kalExternalAuthRequest(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t uBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+
+int kalVendorExternalAuthRequest(
+		struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
+#endif
+#endif
 #endif /* _GL_KAL_H */
 

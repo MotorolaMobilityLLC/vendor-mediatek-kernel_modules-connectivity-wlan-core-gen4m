@@ -105,11 +105,8 @@
  */
 #define SCN_BSS_DESC_SAME_SSID_THRESHOLD	20
 
-#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-#define SCN_BSS_DESC_STALE_SEC			30 /* Scan Request Timeout */
-#else
-#define SCN_BSS_DESC_STALE_SEC			20
-#endif
+#define SCN_BSS_DESC_STALE_SEC KAL_SCN_BSS_DESC_STALE_SEC
+
 /* For WFD scan need about 15s. */
 #define SCN_BSS_DESC_STALE_SEC_WFD		30
 
