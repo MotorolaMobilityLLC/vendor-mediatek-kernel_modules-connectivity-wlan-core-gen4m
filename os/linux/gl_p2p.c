@@ -1224,6 +1224,10 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		"check prDevHandler = %p, aprRoleHandler = %p\n",
 		prP2PInfo->prDevHandler, prP2PInfo->aprRoleHandler);
 
+	/* setup running mode */
+	p2pFuncInitConnectionSettings(prAdapter,
+		prAdapter->rWifiVar.prP2PConnSettings[u4Idx], fgIsApMode);
+
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, (uint8_t) u4Idx);
 	init_completion(&prP2PInfo->rStopApComp);
 	/* Currently wpasupplicant can't support create interface. */
@@ -1236,10 +1240,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	wlanBindNetInterface(prGlueInfo, NET_DEV_P2P_IDX,
 				(void *)prGlueInfo->prP2PInfo->prDevHandler);
 #endif
-
-	/* setup running mode */
-	p2pFuncInitConnectionSettings(prAdapter,
-		prAdapter->rWifiVar.prP2PConnSettings[u4Idx], fgIsApMode);
 
 exit:
 

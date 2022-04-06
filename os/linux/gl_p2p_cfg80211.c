@@ -195,6 +195,18 @@ static void mtk_vif_destructor(struct net_device *dev)
 	}
 }
 
+static void mtk_p2p_initsettings(
+	struct ADAPTER *prAdapter,
+	enum nl80211_iftype type,
+	uint32_t u4Idx)
+{
+	DBGLOG(P2P, TRACE, "type: %d\n", type);
+
+	p2pFuncInitConnectionSettings(prAdapter,
+		prAdapter->rWifiVar.prP2PConnSettings[u4Idx],
+		type == NL80211_IFTYPE_AP);
+}
+
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		const char *name, unsigned char name_assign_type,
@@ -239,6 +251,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 					prP2pInfo->prDevHandler)
 				break;
 			if (prP2pInfo->aprRoleHandler == NULL) {
+				mtk_p2p_initsettings(prGlueInfo->prAdapter,
+					type, u4Idx);
 				p2pRoleFsmInit(prGlueInfo->prAdapter, u4Idx);
 				init_completion(&prP2pInfo->rStopApComp);
 				break;

@@ -98,6 +98,35 @@ p2pRoleP2pLisStopDbdcDecision(
 		IN enum ENUM_P2P_CONNECTION_TYPE eConnRequest);
 #endif
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static u_int8_t p2pRoleFsmNeedMlo(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx)
+{
+	u_int8_t fgIsApMode = p2pFuncIsAPMode(
+		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
+
+	DBGLOG(P2P, TRACE,
+		"link:%d, enable:%d, isApMode:%d\n",
+		prAdapter->rWifiVar.ucMldLinkMax,
+		prAdapter->rWifiVar.ucEnableMlo,
+		fgIsApMode);
+
+	if (prAdapter->rWifiVar.ucMldLinkMax <= 1 ||
+		IS_FEATURE_DISABLED(
+		prAdapter->rWifiVar.ucEnableMlo))
+		return FALSE;
+	else if (fgIsApMode &&
+		IS_FEATURE_FORCE_ENABLED(
+		prAdapter->rWifiVar.ucEnableMlo))
+		return TRUE;
+	else if (!fgIsApMode)
+		return TRUE;
+	else
+		return FALSE;
+}
+#endif
+
 uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIdx)
 {
@@ -174,7 +203,7 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prAdapter->rWifiVar.ucMldLinkMax > 1) {
+		if (p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx)) {
 			prMldBssInfo = p2pGetMldBssInfo(prAdapter,
 				prP2pRoleFsmInfo);
 			if (!prMldBssInfo) {
