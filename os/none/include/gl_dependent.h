@@ -963,10 +963,6 @@ void kal_skb_trim(struct sk_buff *skb, unsigned int len);
 struct sk_buff *kal_dev_alloc_skb(unsigned int length);
 #define dev_alloc_skb(_length) kal_dev_alloc_skb(_length)
 
-/* needed by mgmt/tkip_mic.c */
-void kal_kfree_skb(struct sk_buff *skb);
-#define kfree_skb(_skb) kal_kfree_skb(_skb)
-
 /****************************************************************************
  * TODO: Functions need implementation
  ****************************************************************************
@@ -1117,5 +1113,4 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 
 #define iounmap(_vir_addr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 #endif

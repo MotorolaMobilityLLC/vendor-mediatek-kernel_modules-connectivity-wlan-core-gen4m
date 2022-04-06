@@ -306,11 +306,6 @@ struct sk_buff *kal_dev_alloc_skb(unsigned int length)
 	return NULL;
 }
 
-void kal_kfree_skb(struct sk_buff *skb)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 int kal_test_and_clear_bit(unsigned long bit, unsigned long *p)
 {
 	unsigned int res;

@@ -2021,5 +2021,13 @@ int kalVendorExternalAuthRequest(
 		struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
 #endif
 #endif
+
+void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
+	u_int8_t fgIsSetLen);
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+void kalSetMgmtDirectTxEvent2Hif(
+		struct GLUE_INFO *pr);
+#endif
 #endif /* _GL_KAL_H */
 

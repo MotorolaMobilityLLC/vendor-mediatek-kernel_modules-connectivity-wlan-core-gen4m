@@ -2107,7 +2107,10 @@ void kalTxDirectTimerCheckHifQ(unsigned long data);
 
 uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 	struct GLUE_INFO *prGlueInfo);
-uint32_t kalGetTxDirectQueueLength(IN struct GLUE_INFO *prGlueInfo);
+uint32_t kalGetTxDirectQueueLength(struct GLUE_INFO *prGlueInfo);
+void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
+	u_int8_t fgIsSetLen);
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0
