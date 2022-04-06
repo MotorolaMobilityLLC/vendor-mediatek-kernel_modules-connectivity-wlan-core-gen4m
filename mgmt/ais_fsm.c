@@ -7465,7 +7465,9 @@ struct BSS_INFO *aisGetDefaultLinkBssInfo(IN struct ADAPTER *prAdapter)
 
 uint8_t aisGetDefaultLinkBssIndex(IN struct ADAPTER *prAdapter)
 {
-	return	aisGetDefaultLinkBssInfo(prAdapter)->ucBssIndex;
+	struct BSS_INFO *prBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+
+	return	prBssInfo ? prBssInfo->ucBssIndex : AIS_DEFAULT_BSS_INDEX;
 }
 
 struct STA_RECORD *aisGetDefaultStaRecOfAP(IN struct ADAPTER *prAdapter)
