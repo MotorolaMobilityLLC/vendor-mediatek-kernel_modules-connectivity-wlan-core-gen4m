@@ -2130,5 +2130,7 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 #define kalIcsWrite(buf, size) \
 	wifi_ics_fwlog_write(buf, size)
 
+int32_t kalPlatOpsInit(void);
+
 #endif /* _GL_KAL_H */
 

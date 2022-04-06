@@ -27,6 +27,10 @@
 #include "hal_dmashdl_mt6639.h"
 #include "coda/mt6639/wf2ap_conn_infra_on_ccif4.h"
 #include "coda/mt6639/ap2wf_conn_infra_on_ccif4.h"
+#include "coda/mt6639/wf_top_cfg_on.h"
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
 
 #define CFG_SUPPORT_VCODE_VDFS 0
 
@@ -111,6 +115,10 @@ static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	uint32_t read_pointer);
 static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type);
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
+#endif
 #endif
 
 /*******************************************************************************
@@ -437,6 +445,9 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.phyAction = wlanPhyAction,
 #else
 	.phyAction = NULL,
+#endif
+#if defined(_HIF_PCIE) && IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	.mcu_init = mt6639_mcu_init,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
@@ -1292,15 +1303,6 @@ static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
 		SW_INT_TIME_SYNC);
 }
-#endif
-
-static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
-{
-	if (IS_MOBILE_SEGMENT)
-		return 0x1;
-	else
-		return 0x2;
-}
 
 static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type,
@@ -1329,6 +1331,53 @@ static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	HAL_MCR_RD(ad, u4Addr, &u4Value);
 
 	return u4Value;
+}
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
+{
+#define MCU_IDLE		0x1D1E
+
+	uint32_t u4Value = 0, u4PollingCnt = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	while (TRUE) {
+		if (u4PollingCnt >= 1000) {
+			DBGLOG(INIT, ERROR, "timeout.\n");
+			rStatus = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
+
+		HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+			&u4Value);
+		if (u4Value == MCU_IDLE)
+			break;
+
+		u4PollingCnt++;
+		kalUdelay(1000);
+	}
+
+	if (connv3_ext_32k_on()) {
+		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
+		rStatus = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+exit:
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
+			u4Value);
+	return rStatus;
+}
+#endif
+#endif
+
+static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
+{
+	if (IS_MOBILE_SEGMENT)
+		return 0x1;
+	else
+		return 0x2;
 }
 
 #endif  /* MT6639 */

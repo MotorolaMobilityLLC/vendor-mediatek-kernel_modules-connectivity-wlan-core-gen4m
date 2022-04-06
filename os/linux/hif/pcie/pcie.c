@@ -90,6 +90,7 @@
 #endif
 
 #include "mt66xx_reg.h"
+#include "wlan_pinctrl.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -409,10 +410,15 @@ static void pcieReleaseRxBlkBuf(struct GL_HIF_INFO *prHifInfo,
 
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
-	if (!g_prDev)
-		return NULL;
+	if (g_prPlatDev)
+		return (struct mt66xx_hif_driver_data *) platform_get_drvdata(
+			g_prPlatDev);
 
-	return (struct mt66xx_hif_driver_data *) pci_get_drvdata(g_prDev);
+	if (g_prDev)
+		return (struct mt66xx_hif_driver_data *) pci_get_drvdata(
+			g_prDev);
+
+	return NULL;
 }
 
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
@@ -782,6 +788,12 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	ret = axiAllocHifMem(pdev, prDriverData);
+	if (ret)
+		goto exit;
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	ret = wlan_pinctrl_init(prChipInfo);
 	if (ret)
 		goto exit;
 #endif

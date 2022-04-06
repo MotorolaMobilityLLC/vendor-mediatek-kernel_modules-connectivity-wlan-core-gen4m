@@ -37,6 +37,8 @@
 #include <linux/regulator/consumer.h>
 #endif
 #include <linux/platform_device.h>
+#include <linux/pinctrl/consumer.h>
+#include "wlan_pinctrl.h"
 
 enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_INIT = 0,
@@ -49,6 +51,18 @@ enum ENUM_CPU_BOOST_STATUS {
 };
 
 static uint32_t u4EmiMetOffset = 0x45D400;
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static struct pinctrl *pinctrl_ptr;
+
+static int32_t mt6983_wlan_pinctrl_init(void);
+static int32_t mt6983_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg);
+
+static struct WLAN_PINCTRL_OPS mt6983_pinctrl_ops = {
+	.init = mt6983_wlan_pinctrl_init,
+	.action = mt6983_wlan_pinctrl_action,
+};
+#endif
 
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 uint32_t kalGetLittleCpuBoostThreshold(void)
@@ -442,3 +456,84 @@ int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
 	return FALSE;
 #endif
 }
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+int32_t kalPlatOpsInit(void)
+{
+#ifdef MT6639
+	struct mt66xx_hif_driver_data *driver_data =
+		&mt66xx_driver_data_mt6639;
+	struct mt66xx_chip_info *chip = driver_data->chip_info;
+
+	chip->pinctrl_ops = &mt6983_pinctrl_ops;
+#endif
+
+	return 0;
+}
+
+static int32_t mt6983_wlan_pinctrl_init(void)
+{
+	struct platform_device *pdev = g_prPlatDev;
+	int32_t ret = 0;
+
+	if (!pdev) {
+		DBGLOG(INIT, ERROR,
+			"NULL platform_device\n",
+			ret);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
+	if (IS_ERR(pinctrl_ptr)) {
+		ret = PTR_ERR(pinctrl_ptr);
+		DBGLOG(INIT, ERROR,
+			"devm_pinctrl_get failed, ret=%d.\n",
+			ret);
+	}
+
+exit:
+	return ret;
+}
+
+static int32_t mt6983_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
+{
+	struct pinctrl_state *pinctrl;
+	uint8_t *name;
+	int32_t ret = 0;
+
+	if (IS_ERR(pinctrl_ptr))
+		goto exit;
+
+	switch (msg) {
+	case WLAN_PINCTRL_MSG_FUNC_ON:
+		name = "wf_rst_on";
+		break;
+	case WLAN_PINCTRL_MSG_FUNC_OFF:
+		name = "wf_rst_off";
+		break;
+	default:
+		goto exit;
+	}
+
+	pinctrl = pinctrl_lookup_state(pinctrl_ptr, name);
+	if (IS_ERR(pinctrl)) {
+		ret = PTR_ERR(pinctrl);
+		DBGLOG(INIT, ERROR,
+			"pinctrl_lookup_state %s, ret=%d.\n",
+			name,
+			ret);
+		goto exit;
+	}
+
+	ret = pinctrl_select_state(pinctrl_ptr, pinctrl);
+
+exit:
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"pinctrl_select_state ret: %d.\n",
+			ret);
+
+	return ret;
+}
+#endif
