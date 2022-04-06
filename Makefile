@@ -427,6 +427,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
         CONFIG_MTK_WIFI_FW_LOG_MMIO=y
     endif
+    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
