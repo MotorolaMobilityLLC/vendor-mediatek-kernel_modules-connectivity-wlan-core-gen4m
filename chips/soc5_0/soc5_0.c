@@ -2474,25 +2474,43 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
 	       u4WrVal, u4Val);
-	u4WrVal = 0x00100001;
+	u4WrVal = 0x00108421;
 	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
 	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
 	DBGLOG(HAL, ERROR,
 	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
 	       u4WrVal, u4Val);
-	u4WrVal = 0x00100010;
+	u4WrVal = 0x00184210;
 	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
 	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
 	DBGLOG(HAL, ERROR,
 	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
 	       u4WrVal, u4Val);
-	u4WrVal = 0x00100017;
+	u4WrVal = 0x00194A52;
 	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
 	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
 	DBGLOG(HAL, ERROR,
 	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
 	       u4WrVal, u4Val);
-	u4WrVal = 0x0010001D;
+	u4WrVal = 0x001BDEF7;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x001C6318;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x001E739C;
+	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "W 0x18060094=[0x%08x], 0x1806021C=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x001EF7BD;
 	connac2x_DbgCrWrite(prAdapter, 0x18060094, u4WrVal);
 	connac2x_DbgCrRead(prAdapter, 0x1806021C, &u4Val);
 	DBGLOG(HAL, ERROR,
@@ -2622,7 +2640,8 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 				conninfra_reset = TRUE;
 
 				DBGLOG(HAL, ERROR,
-					"conninfra_is_bus_hang, Chip reset\n");
+					"conninfra_is_bus_hang(%d), Chip reset\n",
+					conninfra_hang_ret);
 			} else {
 				/*
 				* not readable, but no_hang or rst_ongoing
@@ -2648,7 +2667,8 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
  */
 		wf_ioremap_read(WF_MCU_CFG_LS_BASE_ADDR, &u4Value);
 		if (u4Value != 0x02050000) {
-			DBGLOG(HAL, ERROR, "184F_0000 != 02050000\n");
+			DBGLOG(HAL, ERROR, "0x184F_0000=[0x%08x]\n",
+				u4Value);
 			break;
 		}
 /*
