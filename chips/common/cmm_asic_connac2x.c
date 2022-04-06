@@ -1943,7 +1943,8 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	/* REMOVE DATA RATE Parsing Logic:Workaround only for 6885*/
 	/* Since MT6885 can not get Rx Data Rate dur to RXV HW Bug*/
 
-	if (ucBssIndex >= BSSID_NUM)
+	/* if (ucBssIndex >= BSSID_NUM)*/
+	if (!(IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
 		return;
 
 	/* can't parse radiotap info if no rx vector */
@@ -1958,7 +1959,7 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	if (prStaRec) {
 		ucWlanIdx = prStaRec->ucWlanIndex;
 	} else {
-		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
+		/* DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");*/
 		return;
 	}
 
