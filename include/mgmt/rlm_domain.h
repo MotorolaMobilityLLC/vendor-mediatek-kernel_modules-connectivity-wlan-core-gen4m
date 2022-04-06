@@ -1042,6 +1042,16 @@ struct SUBBAND_CHANNEL {
 	uint8_t ucReserved;
 };
 
+struct COUNTRY_POWER_LIMIT_COUNTRY_CODE {
+	uint8_t    aucCountryCode[2];
+};
+
+struct COUNTRY_POWER_LIMIT_GROUP_TABLE {
+	uint8_t    aucGroupCode[2];
+	uint32_t   u4CountryNum;
+	struct COUNTRY_POWER_LIMIT_COUNTRY_CODE *prGroup;
+};
+
 #endif /* CFG_SUPPORT_PWR_LIMIT_COUNTRY */
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
