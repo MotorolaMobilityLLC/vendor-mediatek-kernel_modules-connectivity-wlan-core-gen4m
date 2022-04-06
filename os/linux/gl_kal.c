@@ -10551,8 +10551,7 @@ kalSyncTimeToFWByIoctl(void)
 
 	DEBUGFUNC("kalSyncTimeToFWByIoctl");
 
-	if (getFWLogOnOff() == 1 && prGlueInfo &&
-	    prGlueInfo->prAdapter) {
+	if (prGlueInfo && prGlueInfo->u4ReadyFlag == 1) {
 		uint32_t u4BufLen = 0;
 		uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
