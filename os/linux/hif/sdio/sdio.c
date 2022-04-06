@@ -91,6 +91,16 @@
 
 #include "mt66xx_reg.h"
 
+#if CFG_SUPPORT_WOW_EINT
+#include <linux/of.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
+#endif
+
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+#include <linux/input.h>
+#endif
+
 #if (CFG_SDIO_1BIT_DATA_MODE == 1)
 #include "test_driver_sdio_ops.h"
 #endif
@@ -105,6 +115,12 @@
 
 #define HIF_SDIO_ACCESS_RETRY_LIMIT         250
 #define HIF_SDIO_INTERRUPT_RESPONSE_TIMEOUT (15000)
+
+#if CFG_SUPPORT_WOW_EINT
+#define WAIT_POWERKEY_TIMEOUT		(5000)
+#define WIFI_COMPATIBLE_NODE_NAME	"mediatek,mediatek_wifi_ctrl"
+#define WIFI_INTERRUPT_NAME		"mediatek_wifi_ctrl-eint"
+#endif
 
 #if MTK_WCN_HIF_SDIO
 
@@ -236,6 +252,147 @@ void print_content(uint32_t cmd_len, uint8_t *buffer)
 	printk(dev_info DRV_NAME"End =============\n");
 }
 #endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This function is a SDIO interrupt callback function
+*
+* \param[in] func  pointer to SDIO handle
+*
+* \return void
+*/
+/*----------------------------------------------------------------------------*/
+#if CFG_SUPPORT_WOW_EINT
+static irqreturn_t wifi_wow_isr(int irq, void *dev)
+{
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	struct ADAPTER *pAd = (struct ADAPTER *)dev;
+
+	DBGLOG(HAL, INFO, "%s, received interrupt!\n", __func__);
+
+	disable_irq_nosync(pAd->rWowlanDevNode.wowlan_irq);
+	atomic_dec(&(pAd->rWowlanDevNode.irq_enable_count));
+
+	wake_lock_timeout(&pAd->rWowlanDevNode.eint_wlock,
+		WAIT_POWERKEY_TIMEOUT);
+
+	input_report_key(pAd->prWowInputDev, KEY_POWER, 1);
+	input_sync(pAd->prWowInputDev);
+	input_report_key(pAd->prWowInputDev, KEY_POWER, 0);
+	input_sync(pAd->prWowInputDev);
+#endif
+
+	return IRQ_HANDLED;
+}
+
+static void wlan_register_irq(struct ADAPTER *prAdapter)
+{
+	struct device_node *eint_node = NULL;
+	int interrupts[2];
+	struct WOWLAN_DEV_NODE *node;
+
+	node = &prAdapter->rWowlanDevNode;
+
+	eint_node = of_find_compatible_node(NULL,
+			NULL, WIFI_COMPATIBLE_NODE_NAME);
+	if (eint_node) {
+		node->wowlan_irq = irq_of_parse_and_map(eint_node, 0);
+		DBGLOG(INIT, INFO, "%s, WOWLAN irq_number = %d\n", __func__,
+			node->wowlan_irq);
+		if (node->wowlan_irq) {
+			of_property_read_u32_array(eint_node,
+				"interrupts",
+				interrupts,
+				ARRAY_SIZE(interrupts));
+			node->wowlan_irqlevel = interrupts[1];
+			if (request_irq(node->wowlan_irq,
+				wifi_wow_isr,
+				node->wowlan_irqlevel,
+				WIFI_INTERRUPT_NAME,
+				prAdapter)) {
+				DBGLOG(INIT, ERROR,
+					"%s, WOWLAN irq NOT AVAILABLE!\n",
+					__func__);
+			} else {
+				disable_irq_nosync(node->wowlan_irq);
+			}
+		} else {
+			DBGLOG(INIT, ERROR,
+				"%s, can't find wifi_ctrl irq\n",
+				__func__);
+		}
+
+	} else {
+		node->wowlan_irq = 0;
+		DBGLOG(INIT, ERROR,
+			"%s, can't find wifi_ctrl compatible node\n",
+			__func__);
+	}
+}
+
+static void mtk_sdio_eint_interrupt(struct sdio_func *func)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = sdio_get_drvdata(func);
+	if (!prGlueInfo)
+		return;
+
+	prGlueInfo->prAdapter->rWowlanDevNode.func = func;
+	wlan_register_irq(prGlueInfo->prAdapter);
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	wake_lock_init(&prGlueInfo->prAdapter->rWowlanDevNode.eint_wlock,
+		WAKE_LOCK_SUSPEND, "wifievent_eint");
+#endif
+}
+
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+static int mtk_wow_input_init(struct GLUE_INFO *prGlueInfo)
+{
+	int err = 0;
+
+	prGlueInfo->prAdapter->prWowInputDev = input_allocate_device();
+	if (prGlueInfo->prAdapter->prWowInputDev == NULL)
+		return -ENOMEM;
+	DBGLOG(HAL, INFO, "WOW input device allocate device\n");
+
+	prGlueInfo->prAdapter->prWowInputDev->name = "WOW_INPUT_DEVICE";
+	prGlueInfo->prAdapter->prWowInputDev->id.bustype = BUS_HOST;
+	prGlueInfo->prAdapter->prWowInputDev->id.vendor = 0x0001;
+	prGlueInfo->prAdapter->prWowInputDev->id.product = 0x0001;
+	prGlueInfo->prAdapter->prWowInputDev->id.version = 0x0001;
+
+	__set_bit(EV_KEY, prGlueInfo->prAdapter->prWowInputDev->evbit);
+	__set_bit(KEY_POWER, prGlueInfo->prAdapter->prWowInputDev->keybit);
+
+	err = input_register_device(prGlueInfo->prAdapter->prWowInputDev);
+	if (err < 0) {
+		input_free_device(prGlueInfo->prAdapter->prWowInputDev);
+		return err;
+	}
+
+	return 0;
+}
+#endif
+
+static void mtk_sdio_eint_free_irq(struct sdio_func *func)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4Irq = 0;
+
+	prGlueInfo = sdio_get_drvdata(func);
+	if (!prGlueInfo)
+		return;
+
+	u4Irq = prGlueInfo->prAdapter->rWowlanDevNode.wowlan_irq;
+	if (u4Irq) {
+		disable_irq_nosync(u4Irq);
+		free_irq(u4Irq, prGlueInfo->prAdapter);
+	}
+}
+
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This function is a SDIO interrupt callback function
@@ -472,6 +629,24 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	halDisableInterrupt(prAdapter);
 
 	prGlueInfo->rHifInfo.fgForceFwOwn = TRUE;
+
+#if CFG_SUPPORT_WOW_EINT
+	if (prAdapter->rWowlanDevNode.wowlan_irq != 0 &&
+		atomic_read(
+		&(prAdapter->rWowlanDevNode.irq_enable_count)) == 0) {
+		DBGLOG(HAL, ERROR, "%s:enable WIFI IRQ:%d\n", __func__,
+			prAdapter->rWowlanDevNode.wowlan_irq);
+		enable_irq(prAdapter->rWowlanDevNode.wowlan_irq);
+		enable_irq_wake(prAdapter->rWowlanDevNode.wowlan_irq);
+		atomic_inc(&(prAdapter->rWowlanDevNode.irq_enable_count));
+	} else {
+		DBGLOG(HAL, ERROR, "%s:irq_enable count:%d, WIFI IRQ:%d\n",
+		__func__,
+		atomic_read(
+		&(prAdapter->rWowlanDevNode.irq_enable_count)),
+			prAdapter->rWowlanDevNode.wowlan_irq);
+	}
+#endif
 
 	/* Wait for
 	*  1. The other unfinished ownership handshakes
@@ -841,6 +1016,9 @@ void glBusRelease(void *pvData)
 int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
 	int ret = 0;
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	int InitStatus = 0;
+#endif
 
 	struct net_device *prNetDevice = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -864,6 +1042,17 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	sdio_release_host(prHifInfo->func);
 #else
 	mtk_wcn_hif_sdio_enable_irq(prHifInfo->cltCtx, TRUE);
+#endif
+
+#if CFG_SUPPORT_WOW_EINT
+	mtk_sdio_eint_interrupt(prHifInfo->func);
+#endif
+
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	InitStatus = mtk_wow_input_init(prGlueInfo);
+	if (InitStatus != 0)
+		DBGLOG(HAL, ERROR,
+			"alocating input device for WOW is failed\n");
 #endif
 
 	prHifInfo->fgIsPendingInt = FALSE;

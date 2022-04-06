@@ -427,6 +427,20 @@ struct GL_DETECT_REPLAY_INFO {
 };
 #endif
 
+#if CFG_SUPPORT_WOW_EINT
+struct WOWLAN_DEV_NODE {
+	struct sdio_func *func;
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	struct wake_lock eint_wlock;
+#endif
+
+	unsigned int wowlan_irq;
+	int wowlan_irqlevel;
+	atomic_t irq_enable_count;
+
+};
+#endif
+
 enum ENUM_NET_DEV_IDX {
 	NET_DEV_WLAN_IDX = 0,
 	NET_DEV_P2P_IDX,

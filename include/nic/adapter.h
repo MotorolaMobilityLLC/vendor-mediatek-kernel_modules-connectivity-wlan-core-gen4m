@@ -1856,6 +1856,9 @@ struct ADAPTER {
 #endif
 
 #endif
+#if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+	struct input_dev *prWowInputDev;
+#endif
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
 	struct NCHO_INFO rNchoInfo;
