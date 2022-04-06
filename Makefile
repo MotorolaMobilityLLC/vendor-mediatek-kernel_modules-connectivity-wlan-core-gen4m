@@ -422,7 +422,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_RX_PAGE_POOL=y
     endif
 endif
-ifneq ($(TARGET_BUILD_VARIANT),user)
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+    CONFIG_MTK_WIFI_NAN=y
+else
     CONFIG_MTK_WIFI_NAN=n
 endif
 ifeq ($(MTK_ANDROID_WMT), y)
