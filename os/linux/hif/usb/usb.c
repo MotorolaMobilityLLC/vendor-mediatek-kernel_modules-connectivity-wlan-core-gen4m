@@ -1734,8 +1734,6 @@ u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	*pu4Value = 0xFFFFFFFF;
 
-	DBGLOG(HAL, ERROR, "u4Register=0x%X\n", u4Register);
-
 	do {
 		ret = mtk_usb_vendor_request(prGlueInfo,
 			0,
@@ -1819,7 +1817,7 @@ u_int8_t kalDevUhwRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "uhw_writel() reports error: %x retry: %u\n",
 		       ret, ucRetryCount);
 	} else {
-		DBGLOG(HAL, INFO, "Set CR[0x%08x] value[0x%08x]\n", u4Register,
+		DBGLOG(HAL, TRACE, "Set CR[0x%08x] value[0x%08x]\n", u4Register,
 		       u4Value);
 	}
 
