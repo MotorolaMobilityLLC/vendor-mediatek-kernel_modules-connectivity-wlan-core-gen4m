@@ -780,6 +780,7 @@ uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
 int wlanPreCalPwrOn(void)
 {
 #define MAX_PRE_ON_COUNT 5
+#define MAX_NVRAM_READY_COUNT 10
 
 	int retryCount = 0;
 	void *pvData = NULL;
@@ -802,19 +803,33 @@ int wlanPreCalPwrOn(void)
 	struct timespec64 time;
 	uint32_t rStatus = 0;
 
+	retryCount = 0;
+	while (g_NvramFsm != NVRAM_STATE_READY) {
+		kalMsleep(100);
+		retryCount++;
+
+		if (retryCount > MAX_NVRAM_READY_COUNT) {
+			DBGLOG(INIT, WARN, "g_NvramFsm != NVRAM_STATE_READY\n");
+			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+		}
+	}
+
 	while (update_wr_mtx_down_up_status(0, 0)) {
 		if (get_wifi_process_status())
 			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 		kalMsleep(50);
 	}
 
-	if (get_wifi_powered_status())
+	if (get_wifi_powered_status()) {
+		update_wr_mtx_down_up_status(1, 0);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+	}
 
 	prChipInfo = prDriverData->chip_info;
 	pvData = (void *)prChipInfo->pdev;
 	update_pre_cal_status(1);
 
+	retryCount = 0;
 	while (g_u4WlanInitFlag == 0) {
 		DBGLOG(INIT, WARN,
 			"g_u4WlanInitFlag(%d) retryCount(%d)",
