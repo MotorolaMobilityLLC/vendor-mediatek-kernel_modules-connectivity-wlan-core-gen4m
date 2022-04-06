@@ -120,11 +120,11 @@ uint32_t wlanAccessCalibrationEMI(
 			DBGLOG(INIT, INFO, "No Write back to EMI\n");
 			break;
 		}
-
+#if 0  /* Disable host write EMI */
 		kalMemCopyToIo((pucEmiBaseAddr + gEmiCalOffset),
 			gEmiCalResult,
 			gEmiCalSize);
-
+#endif
 		u4Status = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
 
