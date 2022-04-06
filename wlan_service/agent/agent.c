@@ -4726,6 +4726,10 @@ static s_int32 hqa_start_tx_ext(
 			(u_char)param.stbc, param.band_idx);
 	CONFIG_SET_PARAM(serv_test, ldpc,
 			(u_char)param.ldpc, param.band_idx);
+	CONFIG_SET_PARAM(serv_test, ibf,
+			(u_char)param.ibf, param.band_idx);
+	CONFIG_SET_PARAM(serv_test, ebf,
+			(u_char)param.ebf, param.band_idx);
 #if 0	/* remove tx_path setting while start Tx,
 	 * it should be done prior to switch channel
 	 */
@@ -4747,7 +4751,7 @@ static s_int32 hqa_start_tx_ext(
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	CONFIG_SET_PARAM(serv_test, puncture,
-			(u_char)param.puncture, param.band_idx);
+			(u_int16)param.puncture, param.band_idx);
 #endif
 
 	if (mt_serv_submit_tx(serv_test) != SERV_STATUS_SUCCESS)
