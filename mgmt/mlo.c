@@ -1926,6 +1926,7 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucGroupMldId, prBssInfo->ucBssIndex);
 
 	prBssInfo->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+	prMldBssInfo->u4BssBitmap |= BIT(prBssInfo->ucBssIndex);
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
 	mldBssUpdateMldAddrByMainBss(prAdapter, prMldBssInfo);
@@ -1948,6 +1949,7 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	DBGLOG(ML, INFO, "prMldBssInfo: %d, prBss: %d\n",
 		prMldBssInfo->ucGroupMldId, prBss->ucBssIndex);
 
+	prMldBssInfo->u4BssBitmap &= ~BIT(prBss->ucBssIndex);
 	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
 			rLinkEntryMld,
 			struct BSS_INFO) {
@@ -1979,6 +1981,7 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucGroupMldId = i;
 		prMldBssInfo->ucOmRemapIdx = OM_REMAP_IDX_NONE;
 		prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
+		prMldBssInfo->u4BssBitmap = 0;
 
 		*pprMldBssInfo = prMldBssInfo;
 		break;

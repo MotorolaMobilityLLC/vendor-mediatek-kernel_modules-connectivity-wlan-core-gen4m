@@ -1196,8 +1196,8 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
-			if ((!nicTxIsMgmtResourceEnough(prAdapter))
-				|| (prBssInfo->fgIsNetAbsent)) {
+			if (!nicTxIsMgmtResourceEnough(prAdapter) ||
+			    isNetAbsent(prAdapter, prBssInfo)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
