@@ -3103,6 +3103,45 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	}
 };
 #endif
+
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {};
+
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp1[] = {};
+
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp2[] = {};
+
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp3[] = {};
+
+struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
+	{
+		{'G', '0'},
+		sizeof(g_u2CountryLimitGrp0) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp0
+	},
+	{
+		{'G', '1'},
+		sizeof(g_u2CountryLimitGrp1) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp1
+	},
+	{
+		{'G', '2'},
+		sizeof(g_u2CountryLimitGrp2) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp2
+	},
+	{
+		{'G', '3'},
+		sizeof(g_u2CountryLimitGrp3) /
+			sizeof(struct COUNTRY_POWER_LIMIT_COUNTRY_CODE),
+		g_u2CountryLimitGrp3
+	}
+
+#define COUNTRY_LIMIT_GROUP_NUM \
+		(sizeof(arSupportCountryPowerLmtGrps) \
+			/ sizeof(struct COUNTRY_POWER_LIMIT_GROUP_TABLE))
+};
 #endif
 
 /*******************************************************************************
