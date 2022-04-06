@@ -1526,6 +1526,10 @@ uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER
 					u4Status = WLAN_STATUS_SUCCESS;
 				}
 			}
+
+			if (u4Status != WLAN_STATUS_SUCCESS)
+				DBGLOG_MEM8(INIT, WARN,
+					(uint8_t *) aucBuffer, u4EventSize);
 		}
 	} while (FALSE);
 
@@ -2246,6 +2250,9 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 			prFwBuffer, u4FwSize, ucRegionNum, eDlIdx,
 			&fgIsDynamicMemMap);
 
+	if (rDlStatus != WLAN_STATUS_SUCCESS)
+		goto exit;
+
 	ram_entry = wlanDetectRamEntry(&prAdapter->rVerInfo);
 
 /* To support dynamic memory map for WiFi RAM code download::Begin */
@@ -2333,7 +2340,10 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	}
 
 	if (prFwDlOps->phyAction)
-		prFwDlOps->phyAction(prAdapter);
+		rStatus = prFwDlOps->phyAction(prAdapter);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto exit;
 
 	if (prChipInfo->coantVFE28En)
 		prChipInfo->coantVFE28En(prAdapter);
@@ -2363,10 +2373,11 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		}
 #endif
 	}
+
+exit:
 	DBGLOG(INIT, TRACE, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
-
 
 	return rStatus;
 }
