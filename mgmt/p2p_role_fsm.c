@@ -2233,6 +2233,14 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		goto error;
 
+	/* In case the network is already activated, we need to re-activate
+	 * the network. Otherwise, the connection may be failed in dbdc cases.
+	 */
+	if (IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex)) {
+		UNSET_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
+		nicDeactivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
+	}
+
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 
 	/* In P2P GC case, the interval of
