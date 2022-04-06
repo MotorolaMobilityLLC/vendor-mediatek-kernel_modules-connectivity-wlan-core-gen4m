@@ -6531,7 +6531,7 @@ void nicUniEventRxStatCastMap(IN struct UNI_EVENT_TESTMODE_STAT_ALL_V2 *tag,
 		pHqaRxStat->rInfoUser[u1Idx].u4FcsErrorCnt =
 			tag->rInfoUser[u1Idx].u4FcsErrorCnt;
 		pHqaRxStat->rInfoUserExt1[u1Idx].u4NeVarDbAllUser =
-			(uint32_t)(tag->rInfoUserExt1[u1Idx].u1NeVarDbAllUser);
+			(uint32_t)(tag->rInfoUserExt1[u1Idx].i1NeVarDbAllUser);
 	}
 
 	/* Common part */

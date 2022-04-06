@@ -5149,7 +5149,7 @@ struct UNI_TESTMODE_STATINFO_COMM_EXT1 {
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_TESTMODE_STATINFO_USER_EXT1 {
-	uint8_t u1NeVarDbAllUser;
+	int8_t i1NeVarDbAllUser;
 	uint8_t u1Reserved1[3];
 } __KAL_ATTRIB_PACKED__;
 
