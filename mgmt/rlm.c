@@ -1047,7 +1047,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_MSCS_SUPPORT
-	if (mscsIsFpSupport(prAdapter))
+	if (mscsIsFpSupport(prAdapter) && IS_BSS_AIS(prBssInfo))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_MSCS_BIT);
 #endif
