@@ -3668,9 +3668,9 @@ static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case PWR_LIMIT_TYPE_COMP_6E_1:
-		kal_fallthrough;
+		/* fallthrough */
 	case PWR_LIMIT_TYPE_COMP_6E_2:
-		kal_fallthrough;
+		/* fallthrough */
 	case PWR_LIMIT_TYPE_COMP_6E_3:
 		size = PWR_LIMIT_6E_NUM;
 		break;
