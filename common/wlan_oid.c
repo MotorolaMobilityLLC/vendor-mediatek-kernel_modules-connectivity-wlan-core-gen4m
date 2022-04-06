@@ -7788,6 +7788,72 @@ wlanoidGetMldRec(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
+uint32_t
+wlanoidSetPpCap(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_PP *uni_cmd;
+	struct UNI_CMD_PP_EN_CTRL_T *tag;
+	struct UNI_CMD_PP_EN_CTRL_T *para;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PP) +
+			       sizeof(struct UNI_CMD_PP_EN_CTRL_T);
+
+	if (prAdapter == NULL || pu4SetInfoLen == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_PP_EN_CTRL_T);
+
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_PP_EN_CTRL_T))
+		return WLAN_STATUS_INVALID_LENGTH;
+	else if (pvSetBuffer == NULL)
+		return WLAN_STATUS_INVALID_DATA;
+
+	para = (struct UNI_CMD_PP_EN_CTRL_T *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_PP *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_PP ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_PP_EN_CTRL_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_PP_EN_CTRL;
+	tag->u2Length =  sizeof(*tag);
+	tag->u1DbdcIdx = para->u1DbdcIdx;
+	tag->u1PpMgmtMode = para->u1PpMgmtMode;
+	tag->u1PpAutoMode = para->u1PpAutoMode;
+	tag->u1PpCtrl = para->u1PpCtrl;
+	tag->u1PpBitMap = para->u1PpBitMap;
+
+	DBGLOG(INIT, ERROR, "pp_cap_ctrl: %d-%d-%d-%d\n",
+			tag->u1PpMgmtMode,
+			tag->u1PpAutoMode,
+			tag->u1PpCtrl,
+			tag->u1PpBitMap);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_PP,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 #if (CFG_SUPPORT_ICS == 1)
 /*----------------------------------------------------------------------------*/
 /*!

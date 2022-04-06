@@ -2919,6 +2919,41 @@ struct UNI_EVENT_GET_MLD_REC {
 
 #endif
 
+/*PP command (Tag 0x38) */
+struct UNI_CMD_PP {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                                        | ID   |
+	*   -------------------------      | --   |
+	*   UNI_CMD_PP_SET_PP_CAP_CTRL     | 0x1  |
+	*/
+};
+/** @} */
+
+enum UNI_CMD_ID_PP_TAG {
+    /** SET **/
+	UNI_CMD_PP_EN_CTRL = 0x0,
+	UNI_CMD_PP_MAX_NUM
+};
+
+struct UNI_CMD_PP_EN_CTRL_T {
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+
+    /* tag specific part */
+	uint8_t    u1PpMgmtMode;
+	uint8_t    u1DbdcIdx;
+	uint8_t    u1PpCtrl;
+	uint8_t    u1PpAutoMode;
+	uint16_t   u1PpBitMap;
+	uint8_t    u1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+
 /* BF command (0x33) */
 struct UNI_CMD_BF {
     /* fixed field */
