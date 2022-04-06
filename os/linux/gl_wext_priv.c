@@ -3837,6 +3837,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_NVRAM	"SET_NVRAM"
 #define CMD_GET_NVRAM	"GET_NVRAM"
 #endif
+#define CMD_SUPPORT_NVRAM	"SUPPORT_NVRAM"
 #define CMD_SET_DRV_MCR		"SET_DRV_MCR"
 #define CMD_GET_DRV_MCR		"GET_DRV_MCR"
 #define CMD_SET_UHW_MCR		"SET_UHW_MCR"
@@ -18496,6 +18497,52 @@ int priv_driver_set_nvram(IN struct net_device *prNetDev, IN char *pcCommand,
 }
 #endif
 
+int priv_driver_support_nvram(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct WIFI_CFG_PARAM_STRUCT *prNvSet;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Argc = 0;
+	int32_t i4ArgNum = 1;
+	uint32_t u4Offset = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc == i4ArgNum) {
+		u4Offset += snprintf(pcCommand + u4Offset,
+				(i4TotalLen - u4Offset),
+				 "%d\n",
+				prGlueInfo->fgNvramAvailable);
+
+		if (prGlueInfo->fgNvramAvailable == TRUE) {
+			prNvSet = prGlueInfo->rRegInfo.prNvramSettings;
+			u4Offset += snprintf(pcCommand + u4Offset,
+				(i4TotalLen - u4Offset),
+				"NVRAM Version is[%d.%d.%d]\n",
+				(prNvSet->u2Part1OwnVersion & 0x00FF),
+				(prNvSet->u2Part1OwnVersion & 0xFF00) >> 8,
+				(prNvSet->u2Part1PeerVersion & 0xFF));
+		} else {
+			u4Offset += snprintf(pcCommand + u4Offset,
+					(i4TotalLen - u4Offset),
+					"NVRAM nonsupport!\n");
+		}
+		DBGLOG(REQ, INFO,
+			"%s: command result is %s\n", __func__, pcCommand);
+	}
+	return (int32_t)u4Offset;
+}
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int priv_driver_thermal_protect_enable(IN struct net_device *prNetDev,
 		IN char *pcCommand, IN int i4TotalLen)
@@ -18943,6 +18990,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
 #endif
+	{CMD_SUPPORT_NVRAM, priv_driver_support_nvram},
 #if CFG_MTK_WIFI_SW_WFDMA
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
 #endif
