@@ -794,9 +794,8 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 			ARRAY_SIZE(ch_list)].eBand = BAND_6G;
 	}
 #endif
-#endif /* CFG_MTK_FPGA_PLATFORM */
-
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+#endif /* CFG_MTK_FPGA_PLATFORM */
 }
 
 /*----------------------------------------------------------------------------*/
