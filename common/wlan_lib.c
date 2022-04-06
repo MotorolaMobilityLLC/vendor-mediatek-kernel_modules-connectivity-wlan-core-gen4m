@@ -10664,7 +10664,22 @@ struct wiphy *wlanGetWiphy(void)
 struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 	IN uint8_t ucBssIndex)
 {
+	struct net_device *prNetDevice = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
 	if (!prGlueInfo)
+		return NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
 		return NULL;
 
 	/* AIS */
@@ -10674,37 +10689,30 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 
 		if (gprWdev[ais->ucAisIndex])
 			return gprWdev[ais->ucAisIndex]->netdev;
-	}
-
-	/* P2P */
-	if (ucBssIndex < BSS_DEFAULT_NUM) {
-		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-		struct GL_P2P_INFO *prGlueP2pInfo =
-			(struct GL_P2P_INFO *) NULL;
-
-		prBssInfo =
-			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
-			ucBssIndex);
-
-		if (prBssInfo && IS_BSS_P2P(prBssInfo)) {
-			prGlueP2pInfo =
+	} else if (IS_BSS_P2P(prBssInfo)) { /* P2P */
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		if (prAdapter->rP2PNetRegState ==
+			ENUM_NET_REG_STATE_REGISTERED) {
+			prP2pInfo =
 				prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
 
-			if (prGlueP2pInfo) {
-				if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
-					(prGlueP2pInfo->aprRoleHandler !=
-						prGlueP2pInfo->prDevHandler))
-					return prGlueP2pInfo->aprRoleHandler;
+			if (prP2pInfo) {
+				if ((prP2pInfo->aprRoleHandler != NULL) &&
+					(prP2pInfo->aprRoleHandler !=
+						prP2pInfo->prDevHandler))
+					prNetDevice = prP2pInfo->aprRoleHandler;
 				else
-					return prGlueP2pInfo->prDevHandler;
+					prNetDevice = prP2pInfo->prDevHandler;
 			}
 		}
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	}
 
-	DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
-		ucBssIndex, KAL_TRACE);
+	if (prNetDevice == NULL)
+		DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
+			ucBssIndex, KAL_TRACE);
 
-	return NULL;
+	return prNetDevice;
 }
 
 struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
