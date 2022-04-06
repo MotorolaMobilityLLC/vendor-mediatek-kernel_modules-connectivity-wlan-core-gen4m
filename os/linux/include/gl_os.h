@@ -431,7 +431,7 @@ struct GL_DETECT_REPLAY_INFO {
 struct WOWLAN_DEV_NODE {
 	struct sdio_func *func;
 #if CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
-	struct wake_lock eint_wlock;
+	KAL_WAKE_LOCK_T *pr_eint_wlock;
 #endif
 
 	unsigned int wowlan_irq;

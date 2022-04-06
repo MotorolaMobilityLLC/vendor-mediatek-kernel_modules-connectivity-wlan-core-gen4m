@@ -2012,6 +2012,14 @@
 #define CFG_SUPPORT_DYNAMIC_EDCCA 0
 #endif
 
+/*
+ * support Performance Monitor or not
+ *
+ */
+#ifndef CFG_SUPPORT_PERMON
+#define CFG_SUPPORT_PERMON 1
+#endif
+
 /*------------------------------------------------------------------------------
 * Driver supports TX resource ctrl for Per-BSS mode
 * Note1:
