@@ -173,6 +173,11 @@ u_int8_t mt7961HalCbtopRguWfRst(struct ADAPTER *prAdapter,
 	}
 
 	if (fgAssertRst) {
+		/* CBTOP_RGU_WF_SUBSYS_RST_BYPASS_WFDMA_SLP_PROT_MASK is defined
+		 * since MT7922. For prior project like MT7961, it's undefined
+		 * and doesn't have any effect if this bit is set.
+		 */
+		u4CrVal |= CBTOP_RGU_WF_SUBSYS_RST_BYPASS_WFDMA_SLP_PROT_MASK;
 		u4CrVal |= CBTOP_RGU_WF_SUBSYS_RST_WF_WHOLE_PATH_RST_MASK;
 		HAL_UHW_WR(prAdapter, CBTOP_RGU_WF_SUBSYS_RST_ADDR, u4CrVal,
 			   &fgStatus);
