@@ -1133,7 +1133,7 @@ static inline void kal_gro_flush_queue(IN struct GLUE_INFO *prGlueInfo)
 	struct net_device *dev = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		dev = wlanGetNetDev(prGlueInfo, i);
 		if (dev) {
 			prNetDevPrivate =
@@ -1260,7 +1260,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	prNetDev->stats.rx_bytes += prSkb->len;
 	prNetDev->stats.rx_packets++;
 #if CFG_SUPPORT_PERF_IND
-	if (GLUE_GET_PKT_BSS_IDX(prSkb) < BSS_DEFAULT_NUM) {
+	if (GLUE_GET_PKT_BSS_IDX(prSkb) < MAX_BSSID_NUM) {
 	/* update Performance Indicator statistics*/
 		prGlueInfo->PerfIndCache.u4CurRxBytes
 			[GLUE_GET_PKT_BSS_IDX(prSkb)] += prSkb->len;
@@ -8621,7 +8621,7 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		prCmdPerfReport->ulCurTxBytes[i] =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
 		prCmdPerfReport->ulCurRxBytes[i] =
@@ -8702,7 +8702,7 @@ inline int32_t kalPerMonInit(IN struct GLUE_INFO
 
 	/* sync data with netdev */
 	GET_BOOT_SYSTIME(&prPerMonitor->rLastUpdateTime);
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		prDevHandler = wlanGetNetDev(prGlueInfo, i);
 		if (prDevHandler) {
 			prPerMonitor->ulLastTxBytes[i] =
@@ -8864,10 +8864,10 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	OS_SYSTIME now, last;
 	int32_t period;
 	uint8_t i, j;
-	signed long txDiffBytes[BSS_DEFAULT_NUM],
-		    rxDiffBytes[BSS_DEFAULT_NUM],
-		    rxDiffPkts[BSS_DEFAULT_NUM],
-		    txDiffPkts[BSS_DEFAULT_NUM];
+	signed long txDiffBytes[MAX_BSSID_NUM],
+		    rxDiffBytes[MAX_BSSID_NUM],
+		    rxDiffPkts[MAX_BSSID_NUM],
+		    txDiffPkts[MAX_BSSID_NUM];
 	unsigned long lastTxBytes, lastRxBytes, lastTxPkts, lastRxPkts;
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
@@ -8901,7 +8901,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		goto fail;
 	}
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		ndev = wlanGetNetDev(glue, i);
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
@@ -8972,9 +8972,9 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	 * 3. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
 	 *    [0, 18446744073709551615]
 	 */
-	slen = (20 * 4 + 5) * BSS_DEFAULT_NUM + 1 +
+	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
-	       (20 * 4 + 5) * BSS_DEFAULT_NUM + 1;
+	       (20 * 4 + 5) * MAX_BSSID_NUM + 1;
 	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -8983,7 +8983,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	memset(buf, 0, slen);
 	end = buf + slen;
 	head1 = pos;
-	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		pos += kalSnprintf(pos, end - pos, "[%lld:%lld:%lld:%lld]",
 			(long long) txDiffBytes[i],
 			(long long) txDiffPkts[i],
@@ -9003,7 +9003,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head3 = pos;
-	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		ndev = wlanGetNetDev(glue, i);
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
@@ -9138,7 +9138,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 	kalPerfIndReset(prAdapter);
 #endif
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		struct BSS_INFO *prBssInfo;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -9558,7 +9558,7 @@ void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value)
 	int32_t i = 0, j = 0;
 	struct net_device *dev = NULL;
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		dev = wlanGetNetDev(glue, i);
 		if (dev) {
 			for (j = 0; j < dev->real_num_rx_queues; ++j)

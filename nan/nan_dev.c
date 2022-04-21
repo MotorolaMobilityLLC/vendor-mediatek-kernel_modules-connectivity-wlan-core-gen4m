@@ -25,8 +25,8 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		return MAX_BSS_INDEX;
 	}
 
-	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_NAN,
-					    MLD_GROUP_NONE, FALSE);
+	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter,
+		NETWORK_TYPE_NAN, FALSE, FALSE);
 	if (prnanBssInfo == NULL) {
 		DBGLOG(NAN, INFO, "No enough BSS INDEX\n");
 		return MAX_BSS_INDEX;

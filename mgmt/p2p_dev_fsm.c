@@ -100,7 +100,7 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 			(unsigned long) prP2pDevFsmInfo);
 #endif
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_P2P, MLD_GROUP_NONE, TRUE);
+			NETWORK_TYPE_P2P, TRUE, FALSE);
 
 		if (prP2pBssInfo != NULL) {
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,

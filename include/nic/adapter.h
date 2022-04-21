@@ -1387,15 +1387,15 @@ struct PERF_MONITOR {
 	struct TIMER rPerfMonTimer;
 	OS_SYSTIME rLastUpdateTime;
 	unsigned long ulPerfMonFlag;
-	unsigned long ulLastTxBytes[BSS_DEFAULT_NUM];
-	unsigned long ulLastRxBytes[BSS_DEFAULT_NUM];
-	unsigned long ulLastTxPackets[BSS_DEFAULT_NUM];
-	unsigned long ulLastRxPackets[BSS_DEFAULT_NUM];
-	unsigned long ulTxPacketsDiffLastSec[BSS_DEFAULT_NUM];
-	unsigned long ulRxPacketsDiffLastSec[BSS_DEFAULT_NUM];
+	unsigned long ulLastTxBytes[MAX_BSSID_NUM];
+	unsigned long ulLastRxBytes[MAX_BSSID_NUM];
+	unsigned long ulLastTxPackets[MAX_BSSID_NUM];
+	unsigned long ulLastRxPackets[MAX_BSSID_NUM];
+	unsigned long ulTxPacketsDiffLastSec[MAX_BSSID_NUM];
+	unsigned long ulRxPacketsDiffLastSec[MAX_BSSID_NUM];
 	uint64_t ulThroughput; /* in bps */
-	unsigned long ulTxTp[BSS_DEFAULT_NUM]; /* in Bps */
-	unsigned long ulRxTp[BSS_DEFAULT_NUM]; /* in Bps */
+	unsigned long ulTxTp[MAX_BSSID_NUM]; /* in Bps */
+	unsigned long ulRxTp[MAX_BSSID_NUM]; /* in Bps */
 	uint32_t u4UpdatePeriod; /* in ms */
 	uint32_t u4TarPerfLevel;
 	uint32_t u4CurrPerfLevel;
@@ -1639,7 +1639,7 @@ struct ADAPTER {
 	struct QUE rTxP0Queue;
 	struct QUE rTxP1Queue;
 #else
-	struct QUE rTxPQueue[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	struct QUE rTxPQueue[MAX_BSSID_NUM][TX_PORT_NUM];
 #endif
 	struct QUE rRxQueue;
 	struct QUE rTxDataDoneQueue;
@@ -1966,7 +1966,7 @@ struct ADAPTER {
 	struct {
 		bool fgRun;
 		uint32_t u4Quota;
-	} rWmmQuotaReqCS[BSS_DEFAULT_NUM];
+	} rWmmQuotaReqCS[MAX_BSSID_NUM];
 
 	/* TX HIF Control falgs */
 	uint32_t au4TxHifResCtl[TX_PORT_NUM];
@@ -2073,6 +2073,7 @@ struct ADAPTER {
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint32_t u4BssAbsentBitmap;
+	uint8_t ucMldReservedBssIdx;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

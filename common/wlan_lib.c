@@ -754,9 +754,12 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		/* 4 <0> Reset variables in ADAPTER_T */
 		/* prAdapter->fgIsFwOwn = TRUE; */
 		prAdapter->fgIsEnterD3ReqIssued = FALSE;
-		prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
-		prAdapter->ucWmmSetNum = BSS_DEFAULT_NUM;
-		prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
+		prAdapter->ucHwBssIdNum = MAX_BSSID_NUM;
+		prAdapter->ucWmmSetNum = MAX_BSSID_NUM;
+		prAdapter->ucP2PDevBssIdx = MAX_BSSID_NUM;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prAdapter->ucMldReservedBssIdx = MAX_BSSID_NUM - 1;
+#endif
 		prAdapter->ucWtblEntryNum = WTBL_SIZE;
 		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 
@@ -827,7 +830,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
 	QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
-	for (i = 0; i < BSS_DEFAULT_NUM; i++)
+	for (i = 0; i < MAX_BSSID_NUM; i++)
 		for (j = 0; j < TX_PORT_NUM; j++)
 			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif
@@ -2662,8 +2665,8 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 #else
 
-		struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
-		struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+		struct QUE qDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
+		struct QUE *prDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
 		struct MSDU_INFO *prMsduInfo;
 		int32_t i, j;
 
@@ -2672,7 +2675,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		nicTxClearMgmtDirectTxQ(prAdapter);
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
 				prDataPort[i][j] = &qDataPort[i][j];
 				QUEUE_INITIALIZE(prDataPort[i][j]);
@@ -2681,7 +2684,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 
 		/* <1> Move whole list of CMD_INFO to temp queue */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
 				QUEUE_MOVE_ALL(prDataPort[i][j],
 					&prAdapter->rTxPQueue[i][j]);
@@ -2692,7 +2695,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 
 		/* <2> Return sk buffer */
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
 				if (!QUEUE_GET_HEAD(prDataPort[i][j]))
 					continue;

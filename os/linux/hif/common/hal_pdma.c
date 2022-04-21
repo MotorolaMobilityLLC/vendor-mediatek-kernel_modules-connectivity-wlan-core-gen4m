@@ -1000,7 +1000,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 	prToken->fgInUsed = TRUE;
 	prTokenInfo->u4UsedCnt++;
 
-	if (ucBssIndex < BSS_DEFAULT_NUM) {
+	if (ucBssIndex < MAX_BSSID_NUM) {
 		prToken->ucBssIndex = ucBssIndex;
 		prTokenInfo->u4TxBssCnt[ucBssIndex]++;
 	}
@@ -1089,14 +1089,14 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
 
-	if (prToken->ucBssIndex < BSS_DEFAULT_NUM) {
+	if (prToken->ucBssIndex < MAX_BSSID_NUM) {
 		if (prTokenInfo->u4TxBssCnt[prToken->ucBssIndex] == 0)
 			DBGLOG(HAL, ERROR, "TxBssCnt is zero[%u]\n",
 			       prToken->ucBssIndex);
 		else
 			prTokenInfo->u4TxBssCnt[prToken->ucBssIndex]--;
 	}
-	prToken->ucBssIndex = BSS_DEFAULT_NUM;
+	prToken->ucBssIndex = MAX_BSSID_NUM;
 
 	prToken->fgInUsed = FALSE;
 	prTokenInfo->u4UsedCnt--;

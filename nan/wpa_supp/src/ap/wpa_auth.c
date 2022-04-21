@@ -29,7 +29,7 @@
 
 /*====== DLM pre-allocation*/
 #ifndef CFG_SUPPORT_NAN
-struct wpa_authenticator g_rWpaAuth[BSS_INFO_NUM];
+struct wpa_authenticator g_rWpaAuth[MAX_BSSID_NUM];
 #endif
 
 static int wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
