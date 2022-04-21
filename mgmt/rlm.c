@@ -1987,7 +1987,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryCalBackupV2,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   TRUE, TRUE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,
@@ -2006,7 +2006,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCalBackup,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,
@@ -2026,7 +2026,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryCalBackupV2,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   TRUE, TRUE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,
@@ -2049,7 +2049,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryCalBackupV2,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   TRUE, TRUE, TRUE, &u4BufLen);
+				   &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,
 			       "RLM CMD : Get Cal Data (%s) Size from FW Return Fail (0x%08x)!!!!!!!!!!!\n",
@@ -2085,7 +2085,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCalBackup,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   TRUE, TRUE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,
@@ -2105,7 +2105,7 @@ uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCalBackup,
 				   &rCalBackupDataV2,
 				   sizeof(struct PARAM_CAL_BACKUP_STRUCT_V2),
-				   TRUE, TRUE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(RFTEST, INFO,

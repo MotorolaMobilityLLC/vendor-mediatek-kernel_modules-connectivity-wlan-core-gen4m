@@ -1492,17 +1492,13 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 uint32_t
 kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf,
-	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	 IN u_int8_t fgWaitResp,
-	 IN u_int8_t fgCmd, OUT uint32_t *pu4QryInfoLen);
+	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
+	 OUT uint32_t *pu4QryInfoLen);
 
 uint32_t
 kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	IN void *pvInfoBuf,
-	IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
 	OUT uint32_t *pu4QryInfoLen,
 	IN uint8_t ucBssIndex);
 

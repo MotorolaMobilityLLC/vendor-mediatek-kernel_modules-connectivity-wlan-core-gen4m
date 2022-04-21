@@ -522,15 +522,12 @@ enum ENUM_WMM_UP {
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
 	/* wait_queue_head_t       cmdwait_q; */
-	u_int8_t fgRead;
-	u_int8_t fgWaitResp;
 	struct ADAPTER *prAdapter;
 	PFN_OID_HANDLER_FUNC pfnOidHandler;
 	void *pvInfoBuf;
 	uint32_t u4InfoBufLen;
 	uint32_t *pu4QryInfoLen;
 	uint32_t rStatus;
-	uint32_t u4Flag;
 	uint8_t ucBssIndex;
 };
 

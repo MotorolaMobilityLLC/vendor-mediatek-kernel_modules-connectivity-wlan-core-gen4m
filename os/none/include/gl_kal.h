@@ -1173,16 +1173,15 @@ uint32_t kalReadExtCfg(IN struct GLUE_INFO *prGlueInfo);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #define kalIoctl(_pr, _pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
-	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen) \
+	_pu4QryInfoLen) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
-	_pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
-	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen)
+	_pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, _pu4QryInfoLen)
 
 #define kalIoctlByBssIdx(_pr, _pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
-	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen, _ucBssIndex) \
+	_pu4QryInfoLen, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
 	_pfnOidHandler, _pvInfoBuf, _u4InfoBufLen, \
-	_fgRead, _fgWaitResp, _fgCmd, _pu4QryInfoLen, _ucBssIndex)
+	_pu4QryInfoLen, _ucBssIndex)
 
 #define SET_IOCTL_BSSIDX(_pr, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr, \
@@ -1210,17 +1209,13 @@ kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
 uint32_t
 kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf,
-	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	 IN u_int8_t fgWaitResp,
-	 IN u_int8_t fgCmd, OUT uint32_t *pu4QryInfoLen);
+	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
+	 OUT uint32_t *pu4QryInfoLen);
 
 uint32_t
 kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf,
-	 IN uint32_t u4InfoBufLen, IN u_int8_t fgRead,
-	 IN u_int8_t fgWaitResp, IN u_int8_t fgCmd,
+	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
 	 OUT uint32_t *pu4QryInfoLen,
 	 IN uint8_t ucBssIndex);
 
