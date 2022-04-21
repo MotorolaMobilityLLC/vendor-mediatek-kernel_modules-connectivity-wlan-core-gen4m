@@ -148,6 +148,8 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_REDL_INFO,
 				nicCfgChipCapRedlInfo),
 #endif
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HOST_SUSPEND_INFO,
+				nicCmdEventHostSuspendInfo),
 };
 
 /*******************************************************************************
@@ -2938,12 +2940,17 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 {
 	struct NIC_HOST_STATUS_EMI_OFFSET *prOffset =
 		(struct NIC_HOST_STATUS_EMI_OFFSET *)pucEventBuf;
+	struct HOST_SUSPEND_NOTIFY_INFO *prNotifyInfo =
+		&prAdapter->rHostSuspendInfo;
 
-	prAdapter->u4HostStatusEmiOffset = prOffset->u4EmiOffset;
+	prNotifyInfo->eType = ENUM_HOST_SUSPEND_ADDR_TYPE_EMI;
+	prNotifyInfo->u4SetAddr = prOffset->u4EmiOffset;
+	prNotifyInfo->u4ClrAddr = prOffset->u4EmiOffset;
+	prNotifyInfo->u4Mask = 0xFFFFFFFF;
+	prNotifyInfo->u4Shift = 0;
 
-	DBGLOG(INIT, INFO,
-	       "EMI offset= %x\n",
-	       prAdapter->u4HostStatusEmiOffset);
+	DBGLOG(INIT, INFO, "EMI offset= 0x%x\n",
+		prNotifyInfo->u4SetAddr);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3015,7 +3022,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 				ioremap(gConEmiPhyBaseFinal + offset, size);
 
 	DBGLOG(INIT, INFO, "EMI Base=0x%llx, offset= %x, size=%zu",
-			gConEmiPhyBase, prOffset->u4DataEmiOffset, size);
+			gConEmiPhyBaseFinal, prOffset->u4DataEmiOffset, size);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
@@ -3051,6 +3058,30 @@ uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
 }
 #endif
 #endif
+
+uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf)
+{
+	struct CAP_HOST_SUSPEND_INFO_T *prEvent =
+		(struct CAP_HOST_SUSPEND_INFO_T *)pucEventBuf;
+	struct HOST_SUSPEND_NOTIFY_INFO *prNotifyInfo =
+		&prAdapter->rHostSuspendInfo;
+
+	prNotifyInfo->eType = prEvent->eType;
+	prNotifyInfo->u4SetAddr = prEvent->u4SetAddr;
+	prNotifyInfo->u4ClrAddr = prEvent->u4ClrAddr;
+	prNotifyInfo->u4Mask = prEvent->u4Mask;
+	prNotifyInfo->u4Shift = prEvent->u4Shift;
+
+	DBGLOG(INIT, INFO, "type: %d, addr: 0x%x 0x%x, mask: 0x%x, shift: %d\n",
+		prNotifyInfo->eType,
+		prNotifyInfo->u4SetAddr,
+		prNotifyInfo->u4ClrAddr,
+		prNotifyInfo->u4Mask,
+		prNotifyInfo->u4Shift);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)

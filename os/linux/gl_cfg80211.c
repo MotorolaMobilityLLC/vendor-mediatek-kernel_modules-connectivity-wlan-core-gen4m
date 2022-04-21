@@ -6039,8 +6039,7 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
 		set_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prGlueInfo->prAdapter->ulSuspendFlag);
-		if (prGlueInfo->prAdapter->u4HostStatusEmiOffset)
-			kalSetSuspendFlagToEMI(prGlueInfo->prAdapter, TRUE);
+		halSetSuspendFlagToFw(prGlueInfo->prAdapter, TRUE);
 	}
 end:
 	kalHaltUnlock();
@@ -6090,8 +6089,7 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "ScanResultLog error:%x\n",
 		       rStatus);
-	if (prGlueInfo->prAdapter->u4HostStatusEmiOffset)
-		kalSetSuspendFlagToEMI(prGlueInfo->prAdapter, FALSE);
+	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
 end:
 	kalHaltUnlock();
 

@@ -2459,3 +2459,9 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 {
 }
 
+uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,
+	IN u_int8_t fgSuspend)
+{
+	return WLAN_STATUS_SUCCESS;
+}
+
