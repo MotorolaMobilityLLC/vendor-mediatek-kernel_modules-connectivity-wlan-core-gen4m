@@ -430,13 +430,24 @@ enum ENUM_WLAN_SMC_OPID {
 	/* init, on, off */
 	SMC_WLAN_PWR_ON_CONSYS_MCU_OPID = 1,
 	SMC_WLAN_PWR_OFF_CONSYS_MCU_OPID = 2,
-
-	/* HIF */
-	SMC_WLAN_HIF_OPID = 1000,
+	SMC_WLAN_PCCIF_ON_OPID = 3,
+	SMC_WLAN_PCCIF_OFF_OPID = 4,
+	SMC_WLAN_ENABLE_FWDL_MODE_OPID = 5,
 
 	/* add new module here */
 	/* set OPID +1000 based on previous module */
+
+	/* general register access */
+	SMC_WLAN_DEV_REG_WR_CR_OPID = 9998,
+	SMC_WLAN_IOREMAP_WR_CR_OPID = 9999,
 };
+
+enum ENUM_SMC_WLAN_STATUS_CODE {
+	SMC_WLAN_SUCCESS = 0,
+	SMC_WLAN_UNKNOWN_OPID = 1,
+	SMC_WLAN_INVALID_REGISTER = 2,
+};
+
 #endif
 
 typedef int(*PFN_PWR_LEVEL_HANDLER)(struct ADAPTER *, uint8_t);
@@ -2119,7 +2130,8 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen);
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
-uint32_t kalSendAtfSmcCmd(uint32_t u4Opid);
+uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
+	uint32_t u4Arg3, uint32_t u4Arg4);
 #endif
 
 uint32_t kalGetChannelFrequency(

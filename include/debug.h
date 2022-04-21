@@ -221,6 +221,7 @@ enum ENUM_DBG_MODULE {
 	DBG_TWT_REQUESTER_IDX,	/* 0x23 *//* TWT REQ */
 	DBG_TWT_PLANNER_IDX,	/* 0x24 *//* TWT Planner */
 	DBG_TWT_RESPONDER_IDX,	/* 0x25 *//* TWT Hotspot */
+	DBG_SMC_IDX,		/* 0x26 *//* SMC */
 	DBG_RRM_IDX,
 	DBG_ML_IDX,
 #if CFG_SUPPORT_NAN

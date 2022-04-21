@@ -11498,12 +11498,41 @@ uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 }
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
-uint32_t kalSendAtfSmcCmd(uint32_t u4Opid)
+uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
+	uint32_t u4Arg3, uint32_t u4Arg4)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct arm_smccc_res res;
+	int32_t i4Ret;
 
 	arm_smccc_smc(MTK_SIP_KERNEL_WLAN_CONTROL, u4Opid,
-			0, 0, 0, 0, 0, 0, &res);
+			u4Arg2, u4Arg3, u4Arg4, 0, 0, 0, &res);
+
+	i4Ret = (int32_t)res.a0;
+	switch (i4Ret) {
+	case SMC_WLAN_SUCCESS:
+		break;
+	case -SMC_WLAN_UNKNOWN_OPID:
+		DBGLOG(SMC, WARN, "Invaild SMC opid\n");
+		WARN_ON(1);
+		break;
+	case -SMC_WLAN_INVALID_REGISTER:
+		DBGLOG(SMC, WARN, "Invaild address access[0x%08x]\n",
+			u4Arg2);
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+		if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+			WARN_ON(1);
+			break;
+		}
+		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_INVALID_REGISTER_ACCESS);
+		break;
+	default:
+		if (i4Ret < 0)
+			DBGLOG(SMC, WARN, "Unknown status code[%d]\n", i4Ret);
+		break;
+	}
+
 	return res.a0;
 }
 #endif
