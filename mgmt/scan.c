@@ -3388,6 +3388,8 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	kalMemZero(&rConfiguration, sizeof(rConfiguration));
+	kalMemZero(&rSsid, sizeof(rSsid));
 
 	if (prBssDesc->eBand == BAND_2G4) {
 		if ((prBssDesc->u2OperationalRateSet & RATE_SET_OFDM)
