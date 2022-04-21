@@ -1204,18 +1204,6 @@ void wlanbowCmdEventLinkDisconnected(IN struct ADAPTER *prAdapter, IN struct CMD
 	}
 #endif
 
-#if 0
-	/* 3 <3>Stop this link; flush Tx;
-	 * send deAuthentication -> abort. SAA, AAA. need to check BOW table state == Connected.
-	 */
-	if (prAdapter->prGlueInfo->i4TxPendingFrameNum > 0)
-		kalFlushPendingTxPackets(prAdapter->prGlueInfo);
-
-	/* flush pending security frames */
-	if (prAdapter->prGlueInfo->i4TxPendingSecurityFrameNum > 0)
-		kalClearSecurityFrames(prAdapter->prGlueInfo);
-#endif
-
 	/*Update BoW table */
 	bowGetBowTableEntryByPeerAddress(prAdapter, prBowLinkDisconnected->aucPeerAddress, &ucBowTableIdx);
 	rBowTable.fgIsValid = FALSE;

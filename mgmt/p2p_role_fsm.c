@@ -380,7 +380,7 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		/* Clear CmdQue */
 		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
 			prP2pBssInfo->ucBssIndex);
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
 			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
@@ -1767,7 +1767,7 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 		/* Clear CmdQue */
 		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
 			prP2pBssInfo->ucBssIndex);
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
 			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
 		wlanReleasePendingCMDbyBssIdx(prAdapter,

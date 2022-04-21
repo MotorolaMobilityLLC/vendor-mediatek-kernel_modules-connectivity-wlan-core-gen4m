@@ -1345,8 +1345,6 @@ void asicConnac3xInitTxdHook(
 	prTxDescOps->nic_txd_header_format_op = nic_txd_v3_header_format_op;
 	prTxDescOps->nic_txd_fill_by_pkt_option = nic_txd_v3_fill_by_pkt_option;
 	prTxDescOps->nic_txd_compose = nic_txd_v3_compose;
-	prTxDescOps->nic_txd_compose_security_frame =
-		nic_txd_v3_compose_security_frame;
 	prTxDescOps->nic_txd_set_pkt_fixed_rate_option_full =
 		nic_txd_v3_set_pkt_fixed_rate_option_full;
 	prTxDescOps->nic_txd_set_pkt_fixed_rate_option =

@@ -625,27 +625,6 @@ u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter,
 
 }				/* secEnabledInAis */
 
-u_int8_t secIsProtected1xFrame(IN struct ADAPTER *prAdapter,
-			       IN struct STA_RECORD *prStaRec)
-{
-	struct BSS_INFO *prBssInfo;
-
-	if (prStaRec) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						  prStaRec->ucBssIndex);
-		if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
-#if CFG_SUPPORT_WAPI
-			if (aisGetWapiMode(prAdapter,
-				prStaRec->ucBssIndex))
-				return FALSE;
-#endif
-		}
-
-		return prStaRec->fgTransmitKeyExist;
-	}
-	return FALSE;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to set the privacy bit at mac header for TxM

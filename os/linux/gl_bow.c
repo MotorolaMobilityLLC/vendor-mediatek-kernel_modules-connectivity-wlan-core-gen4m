@@ -896,92 +896,6 @@ static int bowStop(IN struct net_device *prDev)
 	return 0;
 };
 
-#if 0
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This function is TX entry point of NET DEVICE.
- *
- * \param[in] prSkb  Pointer of the sk_buff to be sent
- * \param[in] prDev  Pointer to struct net_device
- *
- * \retval NETDEV_TX_OK - on success.
- * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
- */
-/*----------------------------------------------------------------------------*/
-static netdev_tx_t bowHardStartXmit(IN struct sk_buff *prSkb,
-		IN struct net_device *prDev)
-{
-	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
-
-	struct QUE_ENTRY *prQueueEntry = NULL;
-	struct QUE *prTxQueue = NULL;
-	uint16_t u2QueueIdx = 0;
-	uint8_t ucDSAP, ucSSAP, ucControl;
-	uint8_t aucOUI[3];
-	uint8_t *aucLookAheadBuf = NULL;
-	uint8_t ucBssIndex;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prSkb);
-	ASSERT(prDev);
-	ASSERT(prGlueInfo);
-
-	aucLookAheadBuf = prSkb->data;
-
-	ucDSAP = *(uint8_t *) &aucLookAheadBuf[ETH_LLC_OFFSET];
-	ucSSAP = *(uint8_t *) &aucLookAheadBuf[ETH_LLC_OFFSET + 1];
-	ucControl = *(uint8_t *) &aucLookAheadBuf[ETH_LLC_OFFSET + 2];
-	aucOUI[0] = *(uint8_t *) &aucLookAheadBuf[ETH_SNAP_OFFSET];
-	aucOUI[1] = *(uint8_t *) &aucLookAheadBuf[ETH_SNAP_OFFSET + 1];
-	aucOUI[2] = *(uint8_t *) &aucLookAheadBuf[ETH_SNAP_OFFSET + 2];
-
-	if (!(ucDSAP == ETH_LLC_DSAP_SNAP &&
-	      ucSSAP == ETH_LLC_SSAP_SNAP &&
-	      ucControl == ETH_LLC_CONTROL_UNNUMBERED_INFORMATION &&
-	      aucOUI[0] == ETH_SNAP_BT_SIG_OUI_0 &&
-	      aucOUI[1] == ETH_SNAP_BT_SIG_OUI_1 && aucOUI[2] == ETH_SNAP_BT_SIG_OUI_2) || (prSkb->len > 1514)) {
-		dev_kfree_skb(prSkb);
-		return NETDEV_TX_OK;
-	}
-
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
-		DBGLOG(BOW, TRACE, "GLUE_FLAG_HALT skip tx\n");
-		dev_kfree_skb(prSkb);
-		return NETDEV_TX_OK;
-	}
-
-	GLUE_SET_PKT_FLAG_PAL(prSkb);
-
-	ucBssIndex = wlanGetBssIdxByNetInterface(prGlueInfo, NET_DEV_BOW_IDX);
-
-	GLUE_SET_PKT_BSS_IDX(prSkb, ucBssIndex);
-
-	prQueueEntry = (struct QUE_ENTRY *) GLUE_GET_PKT_QUEUE_ENTRY(prSkb);
-	prTxQueue = &prGlueInfo->rTxQueue;
-
-	if (wlanProcessSecurityFrame(prGlueInfo->prAdapter, (void *) prSkb) == FALSE) {
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-		QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-
-		GLUE_INC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
-		GLUE_INC_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]);
-
-		if (prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx] >=
-		    CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD) {
-			netif_stop_subqueue(prDev, u2QueueIdx);
-		}
-	} else {
-		GLUE_INC_REF_CNT(prGlueInfo->i4TxPendingSecurityFrameNum);
-	}
-
-	kalSetEvent(prGlueInfo);
-
-	/* For Linux, we'll always return OK FLAG, because we'll free this skb by ourself */
-	return NETDEV_TX_OK;
-}
-#else
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is TX entry point of NET DEVICE.
@@ -1036,7 +950,6 @@ static netdev_tx_t bowHardStartXmit(IN struct sk_buff *prSkb,
 	/* For Linux, we'll always return OK FLAG, because we'll free this skb by ourself */
 	return NETDEV_TX_OK;
 }
-#endif
 
 /* callbacks for netdevice */
 static const struct net_device_ops bow_netdev_ops = {

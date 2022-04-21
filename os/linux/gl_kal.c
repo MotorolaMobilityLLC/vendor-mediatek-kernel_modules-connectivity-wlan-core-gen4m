@@ -2888,8 +2888,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 #endif /* Automation */
 
 	/* IPv4 version check */
-	ucIpVersion = (pucIpHdr[0] & IP_VERSION_MASK) >>
-		      IP_VERSION_OFFSET;
+	ucIpVersion = (pucIpHdr[0] & IP_VERSION_MASK) >> IP_VERSION_OFFSET;
 	if (ucIpVersion != IP_VERSION_4) {
 		DBGLOG(TX, WARN, "Invalid IPv4 packet version: %u\n",
 		       ucIpVersion);
@@ -3759,14 +3758,14 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is used to clear all pending security frames
+ * \brief This routine is used to clear all pending CmdData frames
  *
  * \param prGlueInfo     Pointer of GLUE Data Structure
  *
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
+void kalClearCmdDataFrames(IN struct GLUE_INFO *prGlueInfo)
 {
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
@@ -3782,7 +3781,7 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
 	ASSERT(prGlueInfo);
 
 	QUEUE_INITIALIZE(prReturnCmdQue);
-	/* Clear pending security frames in prGlueInfo->rCmdQueue */
+	/* Clear pending CmdData frames in prGlueInfo->rCmdQueue */
 	prCmdQue = &prGlueInfo->rCmdQueue;
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
@@ -3794,8 +3793,7 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
-			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 			if (prCmdInfo->pfCmdTimeoutHandler)
 				prCmdInfo->pfCmdTimeoutHandler(
 					prGlueInfo->prAdapter, prCmdInfo);
@@ -3819,7 +3817,7 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is used to clear pending security frames
+ * \brief This routine is used to clear pending CmdData frames
  *        belongs to dedicated network type
  *
  * \param prGlueInfo         Pointer of GLUE Data Structure
@@ -3828,7 +3826,7 @@ void kalClearSecurityFrames(IN struct GLUE_INFO *prGlueInfo)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
+void kalClearCmdDataFramesByBssIdx(IN struct GLUE_INFO
 				    *prGlueInfo, IN uint8_t ucBssIndex)
 {
 	struct QUE *prCmdQue;
@@ -3846,7 +3844,7 @@ void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
 	ASSERT(prGlueInfo);
 
 	QUEUE_INITIALIZE(prReturnCmdQue);
-	/* Clear pending security frames in prGlueInfo->rCmdQueue */
+	/* Clear pending CmdData frames in prGlueInfo->rCmdQueue */
 	prCmdQue = &prGlueInfo->rCmdQueue;
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
@@ -3860,9 +3858,8 @@ void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
 		prMsduInfo = prCmdInfo->prMsduInfo;
 		fgFree = FALSE;
 
-		if ((prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
-			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME)
-		    && prMsduInfo) {
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME
+				&& prMsduInfo) {
 			if (prMsduInfo->ucBssIndex == ucBssIndex)
 				fgFree = TRUE;
 		}
@@ -4066,15 +4063,13 @@ void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo)
  * \brief This routine is used to check use packet data into command Queue flow
  *
  * \param prAdapter     Pointer of prAdapter Structure
- * \param prAdapter     Pointer of prAdapter Structure
- * \retval is TRUE (run command Data path flow) or FALSE (not use)
+ * \param prSkb         Pointer to TX packet
+ * \retval is TRUE (run CmdData path flow) or FALSE (not use)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalIsCommandDataPath(IN struct ADAPTER
-				  *prAdapter, IN void *prPacket)
+u_int8_t kalIsCommandDataPath(IN struct ADAPTER *prAdapter,
+		IN struct sk_buff *prSkb)
 {
-	struct sk_buff *skb = (struct sk_buff *)prPacket;
-
 	if (prAdapter->rWifiVar.ucLowLatencyCmdData == 0)
 		return FALSE;
 
@@ -4086,27 +4081,27 @@ u_int8_t kalIsCommandDataPath(IN struct ADAPTER
 
 	/* Only detect for special mark packet */
 	if (!prAdapter->rWifiVar.ucLowLatencyCmdDataAllPacket &&
-	    !(skb->mark & BIT(NIC_TX_SKB_DUP_DETECT_MARK_BIT))) {
+	    !(prSkb->mark & BIT(NIC_TX_SKB_DUP_DETECT_MARK_BIT))) {
 		DBGLOG_LIMITED(TX, TRACE,
-			"mark flag=[%x]\n", skb->mark);
+			"mark flag=[%x]\n", prSkb->mark);
 		return FALSE;
 	}
 
 	/* Not send special mark flag packets via command path */
-	if (GLUE_IS_PKT_FLAG_SET(prPacket)) {
+	if (GLUE_IS_PKT_FLAG_SET(prSkb)) {
 		DBGLOG_LIMITED(TX, TRACE,
-			"Packet flag=[%d]\n", GLUE_IS_PKT_FLAG_SET(prPacket));
+			"Packet flag=[%d]\n", GLUE_IS_PKT_FLAG_SET(prSkb));
 		return FALSE;
 	}
 
 	/* Only handle checksum calculated packets, must not enable
-	 * checksum offload for command data packet. Refer to
+	 * checksum offload for CmdData packet. Refer to
 	 * kalQueryTxChksumOffloadParam()
 	 */
-	if (skb->ip_summed != CHECKSUM_NONE) {
+	if (prSkb->ip_summed != CHECKSUM_NONE) {
 		DBGLOG_LIMITED(TX, TRACE,
 			"Packet checksum not calculated, ip_summed=[%d]",
-			skb->ip_summed);
+			prSkb->ip_summed);
 		return FALSE;
 	}
 
@@ -4120,15 +4115,11 @@ u_int8_t kalIsCommandDataPath(IN struct ADAPTER
 
 	DBGLOG_LIMITED(TX, INFO,
 	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
-		GLUE_IS_PKT_FLAG_SET(prPacket),
-		skb->ip_summed,
-		skb->mark);
+		GLUE_IS_PKT_FLAG_SET(prSkb), prSkb->ip_summed, prSkb->mark);
 
 	DBGLOG_LIMITED(TX, INFO,
 	       "Change data to cmd data frame. Packet flag=[%d], ip_summed=[%d] mark=[%x]\n",
-		GLUE_IS_PKT_FLAG_SET(prPacket),
-		skb->ip_summed,
-		skb->mark);
+		GLUE_IS_PKT_FLAG_SET(prSkb), prSkb->ip_summed, prSkb->mark);
 
 	return TRUE;
 }
@@ -4144,27 +4135,14 @@ uint32_t kalProcessTxPacket(struct GLUE_INFO *prGlueInfo,
 		return u4Status;
 	}
 
-	/* Handle security frame */
-	if (0 /* GLUE_TEST_PKT_FLAG(prSkb, ENUM_PKT_1X) */
-	      /* No more sending via cmd */) {
-		if (wlanProcessSecurityFrame(prGlueInfo->prAdapter,
-					     (void *) prSkb)) {
-			u4Status = WLAN_STATUS_SUCCESS;
-			GLUE_INC_REF_CNT(
-				prGlueInfo->i4TxPendingSecurityFrameNum);
-		} else {
-			u4Status = WLAN_STATUS_RESOURCES;
-		}
-	}
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	/* Data frame use command path */
-	else if (kalIsCommandDataPath(prGlueInfo->prAdapter,
-						(void *) prSkb)) {
+	else if (kalIsCommandDataPath(prGlueInfo->prAdapter, prSkb)) {
 		u4Status = wlanProcessCmdDataFrame(prGlueInfo->prAdapter,
 					       (void *) prSkb);
 		if (u4Status == WLAN_STATUS_SUCCESS)
 			GLUE_INC_REF_CNT(
-				prGlueInfo->i4TxPendingSecurityFrameNum);
+				prGlueInfo->i4TxPendingCmdDataFrameNum);
 
 	}
 #endif
@@ -4255,35 +4233,6 @@ void kalProcessTxReq(struct GLUE_INFO *prGlueInfo,
 					      (struct sk_buff *)
 					      GLUE_GET_PKT_DESCRIPTOR(
 					      prQueueEntry));
-#if 0
-				prSkb =	(struct sk_buff *)
-					GLUE_GET_PKT_DESCRIPTOR(prQueueEntry);
-				ASSERT(prSkb);
-				if (prSkb == NULL) {
-					DBGLOG(INIT, WARN,
-					       "prSkb == NULL in tx\n");
-					continue;
-				}
-
-				/* Handle security frame */
-				if (GLUE_GET_PKT_IS_1X(prSkb)) {
-					if (wlanProcessSecurityFrame(
-					    prGlueInfo->prAdapter,
-					    (void *)prSkb)) {
-						u4Status = WLAN_STATUS_SUCCESS;
-						GLUE_INC_REF_CNT(prGlueInfo->
-						i4TxPendingSecurityFrameNum);
-					} else {
-						u4Status =
-							WLAN_STATUS_RESOURCES;
-					}
-				}
-				/* Handle normal frame */
-				else
-					u4Status = wlanEnqueueTxPacket(
-							prGlueInfo->prAdapter,
-							(void *) prSkb);
-#endif
 				/* Enqueue packet back into TxQueue if resource
 				 * is not enough
 				 */
@@ -5032,10 +4981,9 @@ int main_thread(void *data)
 	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) > 0)
 		kalFlushPendingTxPackets(prGlueInfo);
 
-	/* flush pending security frames */
-	if (GLUE_GET_REF_CNT(
-		    prGlueInfo->i4TxPendingSecurityFrameNum) > 0)
-		kalClearSecurityFrames(prGlueInfo);
+	/* flush pending CmdData frames */
+	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdDataFrameNum) > 0)
+		kalClearCmdDataFrames(prGlueInfo);
 
 	/* remove pending oid */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
@@ -5376,14 +5324,14 @@ void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 
 /* / Todo */
-void kalSecurityFrameSendComplete(IN struct GLUE_INFO
+void kalCmdDataFrameSendComplete(IN struct GLUE_INFO
 			  *prGlueInfo, IN void *pvPacket, IN uint32_t rStatus)
 {
 	ASSERT(pvPacket);
 
 	/* dev_kfree_skb((struct sk_buff *) pvPacket); */
 	kalSendCompleteAndAwakeQueue(prGlueInfo, pvPacket);
-	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingSecurityFrameNum);
+	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdDataFrameNum);
 }
 
 uint32_t kalGetTxPendingFrameCount(IN struct GLUE_INFO

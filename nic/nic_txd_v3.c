@@ -283,14 +283,19 @@ void nic_txd_v3_compose(
 		(uint8_t *) DISP_STRING("802_11"),
 		(uint8_t *) DISP_STRING("802_3"),
 		(uint8_t *) DISP_STRING("1X"),
-		(uint8_t *) DISP_STRING("PROTECTED_1X"),
 		(uint8_t *) DISP_STRING("NON_PROTECTED_1X"),
 		(uint8_t *) DISP_STRING("VLAN_EXIST"),
 		(uint8_t *) DISP_STRING("DHCP"),
 		(uint8_t *) DISP_STRING("ARP"),
 		(uint8_t *) DISP_STRING("ICMP"),
 		(uint8_t *) DISP_STRING("TDLS"),
-		(uint8_t *) DISP_STRING("DNS")
+		(uint8_t *) DISP_STRING("DNS"),
+#if CFG_SUPPORT_TPENHANCE_MODE
+		(uint8_t *) DISP_STRING("TCP_ACK"),
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		(uint8_t *) DISP_STRING("802_11_MGMT"),
+#endif
 	};
 
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
@@ -543,103 +548,6 @@ void nic_txd_v3_compose(
 	default:
 		break;
 	}
-}
-
-void nic_txd_v3_compose_security_frame(
-	struct ADAPTER *prAdapter,
-	struct CMD_INFO *prCmdInfo,
-	uint8_t *prTxDescBuffer,
-	uint8_t *pucTxDescLength)
-{
-	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc
-		= (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
-	uint8_t ucTxDescAndPaddingLength
-		= NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH;
-	struct BSS_INFO *prBssInfo;
-	uint8_t ucTid = 0;
-	uint8_t ucTempTC = TC4_INDEX;
-	void *prNativePacket;
-	uint8_t ucEtherTypeOffsetInWord;
-	struct MSDU_INFO *prMsduInfo;
-
-	prMsduInfo = prCmdInfo->prMsduInfo;
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-	prNativePacket = prMsduInfo->prPacket;
-
-	ASSERT(prNativePacket);
-
-	kalMemZero(prTxDesc, ucTxDescAndPaddingLength);
-
-	/* WLAN index */
-	prMsduInfo->ucWlanIndex =
-		nicTxGetWlanIdx(prAdapter,
-			prMsduInfo->ucBssIndex, prMsduInfo->ucStaRecIndex);
-
-	/* UC to a connected peer */
-	HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(prTxDesc, prMsduInfo->ucWlanIndex);
-
-	/* Tx byte count */
-	HAL_MAC_CONNAC3X_TXD_SET_TX_BYTE_COUNT(prTxDesc,
-		ucTxDescAndPaddingLength + prCmdInfo->u2InfoBufLen);
-
-	/* Ether-type offset */
-	ucEtherTypeOffsetInWord =
-		((ETHER_HEADER_LEN - ETHER_TYPE_LEN) +
-		prAdapter->chip_info->pse_header_length)
-		>> 1;
-
-	HAL_MAC_CONNAC3X_TXD_SET_ETHER_TYPE_OFFSET(prTxDesc,
-		ucEtherTypeOffsetInWord);
-
-	/* queue index */
-	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc,
-		nicTxGetTxDestQIdxByTc(ucTempTC));
-
-	/* Header format */
-	HAL_MAC_CONNAC3X_TXD_SET_HEADER_FORMAT(prTxDesc,
-		HEADER_FORMAT_NON_802_11);
-
-	/* Update Packet option */
-	nic_txd_v3_fill_by_pkt_option(prMsduInfo, prTxDesc);
-
-	if (!GLUE_TEST_PKT_FLAG(prNativePacket, ENUM_PKT_802_3)) {
-		/* Set EthernetII */
-		HAL_MAC_CONNAC3X_TXD_SET_ETHERNET_II(prTxDesc);
-	}
-	/* Header Padding */
-	HAL_MAC_CONNAC3X_TXD_SET_HEADER_PADDING(prTxDesc,
-		NIC_TX_DESC_HEADER_PADDING_LENGTH);
-
-	/* TID mgmt type */
-	HAL_MAC_CONNAC3X_TXD_SET_TID_MGMT_TYPE(prTxDesc, ucTid);
-
-	/* Remaining TX time */
-	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(prTxDesc,
-		nicTxGetRemainingTxTimeByTc(ucTempTC));
-
-	/* Tx count limit */
-	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_TX_COUNT(prTxDesc,
-		nicTxGetTxCountLimitByTc(ucTempTC));
-
-	HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
-
-	/* Packet Format */
-	HAL_MAC_CONNAC3X_TXD_SET_PKT_FORMAT(prTxDesc, TXD_PKT_FORMAT_COMMAND);
-
-	/* Own MAC */
-	HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(prTxDesc,
-		prBssInfo->ucOwnMacIndex);
-
-	/* PID */
-	if (prMsduInfo->pfTxDoneHandler) {
-		prMsduInfo->ucPID =
-			nicTxAssignPID(prAdapter, prMsduInfo->ucWlanIndex);
-		HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
-		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
-	}
-
-	if (pucTxDescLength)
-		*pucTxDescLength = ucTxDescAndPaddingLength;
 }
 
 void nic_txd_v3_set_pkt_fixed_rate_option_full(struct MSDU_INFO

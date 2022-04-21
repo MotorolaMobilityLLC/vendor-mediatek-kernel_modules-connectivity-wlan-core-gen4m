@@ -1093,11 +1093,6 @@ struct TX_DESC_OPS_T {
 		u_int32_t u4TxDescLength,
 		u_int8_t fgIsTemplate,
 		u_int8_t *prTxDescBuffer);
-	void (*nic_txd_compose_security_frame)(
-		struct ADAPTER *prAdapter,
-		struct CMD_INFO *prCmdInfo,
-		uint8_t *prTxDescBuffer,
-		uint8_t *pucTxDescLength);
 	void (*nic_txd_set_pkt_fixed_rate_option_full)(
 		struct MSDU_INFO *prMsduInfo,
 		uint16_t u2RateCode,
@@ -1851,10 +1846,6 @@ void nicTxFillDesc(IN struct ADAPTER *prAdapter,
 
 void nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
-
-void nicTxComposeSecurityFrameDesc(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo,
-	OUT uint8_t *prTxDescBuffer, OUT uint8_t *pucTxDescLength);
 
 uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);

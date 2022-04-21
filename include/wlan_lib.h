@@ -1265,7 +1265,7 @@ struct PARAM_GET_BSS_STATISTICS {
 
 struct PARAM_GET_DRV_STATISTICS {
 	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingSecurityFrameNum;
+	int32_t i4TxPendingCmdDataFrameNum;
 	int32_t i4TxPendingCmdNum;
 
 	/* sync i4PendingFwdFrameCount in _TX_CTRL_T */
@@ -1666,18 +1666,10 @@ u_int8_t wlanQueryTestMode(IN struct ADAPTER *prAdapter);
 u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 			    IN void *prPacket);
 
-/* Security Frame Handling */
-u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER *prAdapter,
-				  IN void *prPacket);
+uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER *prAdapter,
+				 IN void *prPacket);
 
-uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
-				  *prAdapter, IN void *prPacket);
-
-void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
-			     IN struct CMD_INFO *prCmdInfo,
-			     IN uint8_t *pucEventBuf);
-
-void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
+void wlanCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
 				IN struct CMD_INFO *prCmdInfo);
 
 uint32_t wlanGetThreadWakeUp(IN struct ADAPTER *prAdapter);
@@ -2188,8 +2180,6 @@ uint32_t wlanSendFwLogControlCmd(IN struct ADAPTER *prAdapter,
 
 void wlanGetChipDbgOps(struct ADAPTER *prAdapter, uint32_t **pu4Handle);
 
-#endif /* _WLAN_LIB_H */
-
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
 uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 					int32_t i4EdVal5G, uint32_t u4Sel);
@@ -2200,3 +2190,4 @@ void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
 					unsigned long ulParamPtr);
 #endif
 
+#endif /* _WLAN_LIB_H */

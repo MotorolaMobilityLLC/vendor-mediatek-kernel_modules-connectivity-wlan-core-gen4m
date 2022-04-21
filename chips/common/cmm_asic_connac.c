@@ -1474,8 +1474,6 @@ void asicInitTxdHook(
 	prTxDescOps->nic_txd_fill_by_pkt_option =
 		nic_txd_v1_fill_by_pkt_option;
 	prTxDescOps->nic_txd_compose = nic_txd_v1_compose;
-	prTxDescOps->nic_txd_compose_security_frame =
-		nic_txd_v1_compose_security_frame;
 	prTxDescOps->nic_txd_set_pkt_fixed_rate_option_full =
 		nic_txd_v1_set_pkt_fixed_rate_option_full;
 	prTxDescOps->nic_txd_set_pkt_fixed_rate_option =

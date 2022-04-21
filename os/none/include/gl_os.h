@@ -334,7 +334,6 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_802_11,	/* 802.11 or non-802.11 */
 	ENUM_PKT_802_3,		/* 802.3 or ethernetII */
 	ENUM_PKT_1X,		/* 1x frame or not */
-	ENUM_PKT_PROTECTED_1X,	/* protected 1x frame */
 	ENUM_PKT_NON_PROTECTED_1X,	/* Non protected 1x frame */
 	ENUM_PKT_VLAN_EXIST,	/* VLAN tag exist */
 	ENUM_PKT_DHCP,		/* DHCP frame */
@@ -342,6 +341,9 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_ICMP,		/* ICMP */
 	ENUM_PKT_TDLS,		/* TDLS */
 	ENUM_PKT_DNS,		/* DNS */
+#if CFG_SUPPORT_TPENHANCE_MODE
+	ENUM_PKT_TCP_ACK,	/* TCP ACK */
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 	ENUM_PKT_FLAG_NUM
 };
@@ -452,7 +454,7 @@ struct GLUE_INFO {
 	 */
 	int32_t ai4TxPendingFrameNumPerQueue[MAX_BSSID_NUM][CFG_MAX_TXQ_NUM];
 	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingSecurityFrameNum;
+	int32_t i4TxPendingCmdDataFrameNum;
 	int32_t i4TxPendingCmdNum;
 
 	uint32_t u4RoamFailCnt;
@@ -571,274 +573,6 @@ struct GLUE_INFO {
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	uint32_t rRxRfbRetTask;
-#endif
-
-#if 0
-	/* Device */
-	struct device *prDev;
-
-	/* Device Index(index of arWlanDevInfo[]) */
-	int32_t i4DevIdx;
-
-	/* Device statistics */
-	/* struct net_device_stats rNetDevStats; */
-
-	/* Wireless statistics struct net_device */
-	struct iw_statistics rIwStats;
-
-	/* spinlock to sync power save mechanism */
-	spinlock_t rSpinLock[SPIN_LOCK_NUM];
-
-	/* Mutex to protect interruptible section */
-	struct mutex arMutex[MUTEX_NUM];
-
-	/* semaphore for ioctl */
-	struct semaphore ioctl_sem;
-
-	uint64_t u8Cookie;
-
-	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
-	uint32_t u4PendFlag;
-	/* UINT_32 u4TimeoutFlag; */
-	uint32_t u4OidCompleteFlag;
-	uint32_t u4ReadyFlag;	/* check if card is ready */
-
-	uint32_t u4OsMgmtFrameFilter;
-
-	/* Number of pending frames, also used for debuging if any frame is
-	 * missing during the process of unloading Driver.
-	 *
-	 * NOTE(Kevin): In Linux, we also use this variable as the threshold
-	 * for manipulating the netif_stop(wake)_queue() func.
-	 */
-	int32_t ai4TxPendingFrameNumPerQueue[MAX_BSSID_NUM][CFG_MAX_TXQ_NUM];
-	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingSecurityFrameNum;
-	int32_t i4TxPendingCmdNum;
-
-	/* Tx: for NetDev to BSS index mapping */
-	struct NET_INTERFACE_INFO arNetInterfaceInfo[MAX_BSSID_NUM];
-
-	/* Rx: for BSS index to NetDev mapping */
-	/* P_NET_INTERFACE_INFO_T  aprBssIdxToNetInterfaceInfo[HW_BSSID_NUM]; */
-
-	/* current IO request for kalIoctl */
-	struct GL_IO_REQ OidEntry;
-
-	/* registry info */
-	struct REG_INFO rRegInfo;
-
-	/* firmware */
-	struct firmware *prFw;
-
-	/*! \brief wext wpa related information */
-	struct GL_WPA_INFO rWpaInfo;
-#if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO prDetRplyInfo;
-#endif
-
-	/* Pointer to ADAPTER_T - main data structure of internal protocol
-	 * stack
-	 */
-	struct ADAPTER *prAdapter;
-
-#if WLAN_INCLUDE_PROC
-	struct proc_dir_entry *pProcRoot;
-#endif				/* WLAN_INCLUDE_PROC */
-
-	/* Indicated media state */
-	enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicated;
-
-	/* Device power state D0~D3 */
-	enum PARAM_DEVICE_POWER_STATE ePowerState;
-
-	struct completion rScanComp;	/* indicate scan complete */
-	struct completion
-		rHaltComp;	/* indicate main thread halt complete */
-#if CFG_SUPPORT_MULTITHREAD
-	struct completion
-		rHifHaltComp;	/* indicate hif_thread halt complete */
-	struct completion
-		rRxHaltComp;	/* indicate hif_thread halt complete */
-
-	uint32_t u4RxThreadPid;
-	uint32_t u4HifThreadPid;
-#endif
-
-#if CFG_SUPPORT_NCHO
-	struct completion
-		rAisChGrntComp;	/* indicate Ais channel grant complete */
-#endif
-
-	uint32_t rPendStatus;
-
-	struct QUE rTxQueue;
-
-	/* OID related */
-	struct QUE rCmdQueue;
-	/* PVOID                   pvInformationBuffer; */
-	/* UINT_32                 u4InformationBufferLength; */
-	/* PVOID                   pvOidEntry; */
-	/* PUINT_8                 pucIOReqBuff; */
-	/* QUE_T                   rIOReqQueue; */
-	/* QUE_T                   rFreeIOReqQueue; */
-
-	wait_queue_head_t waitq;
-	struct task_struct *main_thread;
-
-#if CFG_SUPPORT_MULTITHREAD
-	wait_queue_head_t waitq_hif;
-	struct task_struct *hif_thread;
-
-	wait_queue_head_t waitq_rx;
-	struct task_struct *rx_thread;
-
-#endif
-	struct tasklet_struct rRxTask;
-	struct tasklet_struct rTxCompleteTask;
-
-	struct work_struct rTxMsduFreeWork;
-	struct delayed_work rRxPktDeAggWork;
-
-	struct timer_list tickfn;
-
-#if CFG_SUPPORT_EXT_CONFIG
-	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */
-	uint32_t u4ExtCfgLength;	/* 0 means data is NOT valid */
-#endif
-
-#if 1				/* CFG_SUPPORT_WAPI */
-	/* Should be large than the PARAM_WAPI_ASSOC_INFO_T */
-	uint8_t aucWapiAssocInfoIEs[42];
-	uint16_t u2WapiAssocInfoIESz;
-#endif
-
-#if CFG_ENABLE_BT_OVER_WIFI
-	struct GL_BOW_INFO rBowInfo;
-#endif
-
-#if CFG_ENABLE_WIFI_DIRECT
-	struct GL_P2P_DEV_INFO *prP2PDevInfo;
-	struct GL_P2P_INFO *prP2PInfo[KAL_P2P_NUM];
-#if CFG_SUPPORT_P2P_RSSI_QUERY
-	/* Wireless statistics struct net_device */
-	struct iw_statistics rP2pIwStats;
-#endif
-#endif
-	u_int8_t fgWpsActive;
-	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
-	uint16_t u2WSCIELen;
-	uint8_t aucWSCAssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2WSCAssocInfoIELen;
-
-	/* NVRAM availability */
-	u_int8_t fgNvramAvailable;
-
-	u_int8_t fgMcrAccessAllowed;
-
-	/* MAC Address Overridden by IOCTL */
-	u_int8_t fgIsMacAddrOverride;
-	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN];
-
-	struct SET_TXPWR_CTRL rTxPwr;
-
-	/* to indicate registered or not */
-	u_int8_t fgIsRegistered;
-
-	/* for cfg80211 connected indication */
-	uint32_t u4RspIeLength;
-	uint8_t aucRspIe[CFG_CFG80211_IE_BUF_LEN];
-
-	uint32_t u4ReqIeLength;
-	uint8_t aucReqIe[CFG_CFG80211_IE_BUF_LEN];
-
-	/*
-	 * Buffer to hold non-wfa vendor specific IEs set
-	 * from wpa_supplicant. This is used in sending
-	 * Association Request in AIS mode.
-	 */
-	uint16_t non_wfa_vendor_ie_len;
-	uint8_t non_wfa_vendor_ie_buf[NON_WFA_VENDOR_IE_MAX_LEN];
-
-#if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
-	u_int8_t fgEnSdioTestPattern;
-	u_int8_t fgSdioReadWriteMode;
-	u_int8_t fgIsSdioTestInitialized;
-	uint8_t aucSdioTestBuffer[256];
-#endif
-
-	u_int8_t fgIsInSuspendMode;
-
-#if CFG_SUPPORT_PASSPOINT
-	uint8_t aucHS20AssocInfoIE[200];	/*for Assoc req */
-	uint16_t u2HS20AssocInfoIELen;
-	uint8_t ucHotspotConfig;
-	u_int8_t fgConnectHS20AP;
-
-	u_int8_t fgIsDad;
-	uint8_t aucDADipv4[4];
-	u_int8_t fgIs6Dad;
-	uint8_t aucDADipv6[16];
-#endif				/* CFG_SUPPORT_PASSPOINT */
-
-	KAL_WAKE_LOCK_T rIntrWakeLock;
-	KAL_WAKE_LOCK_T rTimeoutWakeLock;
-
-#if CFG_MET_PACKET_TRACE_SUPPORT
-	u_int8_t fgMetProfilingEn;
-	uint16_t u2MetUdpPort;
-#endif
-
-	int32_t i4RssiCache;
-	uint32_t u4LinkSpeedCache;
-
-
-	uint32_t u4InfType;
-
-	uint32_t IsrCnt;
-	uint32_t IsrPassCnt;
-	uint32_t TaskIsrCnt;
-
-	uint32_t IsrAbnormalCnt;
-	uint32_t IsrSoftWareCnt;
-	uint32_t IsrTxCnt;
-	uint32_t IsrRxCnt;
-	uint64_t u8HifIntTime;
-
-	/* save partial scan channel information */
-	/* PARTIAL_SCAN_INFO rScanChannelInfo; */
-	uint8_t *pucScanChannel;
-
-#if CFG_SUPPORT_SCAN_CACHE_RESULT
-	struct GL_SCAN_CACHE_INFO scanCache;
-#endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
-
-	/* Full2Partial */
-	OS_SYSTIME u4LastFullScanTime;
-	/* full scan or partial scan */
-	uint8_t ucTrScanType;
-	/* UINT_8 aucChannelNum[FULL_SCAN_MAX_CHANNEL_NUM]; */
-	/* PARTIAL_SCAN_INFO rFullScanApChannel; */
-	uint8_t *pucFullScan2PartialChannel;
-
-	uint32_t u4RoamFailCnt;
-	uint64_t u8RoamFailTime;
-	u_int8_t fgTxDoneDelayIsARP;
-	uint32_t u4ArriveDrvTick;
-	uint32_t u4EnQueTick;
-	uint32_t u4DeQueTick;
-	uint32_t u4LeaveDrvTick;
-	uint32_t u4CurrTick;
-	uint64_t u8CurrTime;
-
-	/* FW Roaming */
-	/* store the FW roaming enable state which FWK determines */
-	/* if it's = 0, ignore the black/whitelists settings from FWK */
-	uint32_t u4FWRoamingEnable;
-
-	/* 11R */
-	struct FT_IES rFtIeForTx;
-	struct cfg80211_ft_event_params rFtEventParam;
 #endif
 };
 
