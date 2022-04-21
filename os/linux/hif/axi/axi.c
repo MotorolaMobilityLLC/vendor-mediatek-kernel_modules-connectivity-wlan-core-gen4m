@@ -581,6 +581,14 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			DBGLOG(INIT, ERROR, "TxCmdBuf[%u] alloc fail\n", u4Idx);
 	}
 
+	for (u4Idx = 0; u4Idx < TX_RING_SIZE; u4Idx++) {
+		if (!axiAllocRsvMem(AXI_TX_CMD_BUFF_SIZE,
+				    &grMem.rTxFwdlBuf[u4Idx]))
+			DBGLOG(INIT, ERROR,
+				"TxFwdlBuf[%u] alloc fail\n",
+				u4Idx);
+	}
+
 	for (u4Idx = 0; u4Idx < RX_RING0_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(CFG_RX_MAX_PKT_SIZE,
 				    &grMem.rRxDataBuf[u4Idx]))
@@ -1242,17 +1250,23 @@ static void axiAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
 static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx)
 {
-	/* only for cmd & fw download ring */
-	if (u4Num == TX_RING_CMD || u4Num == TX_RING_FWDL) {
-		prDmaBuf->AllocSize = AXI_TX_CMD_BUFF_SIZE;
+	if (u4Num != TX_RING_CMD && u4Num != TX_RING_FWDL)
+		return true;
+
+	prDmaBuf->AllocSize = AXI_TX_CMD_BUFF_SIZE;
+	if (u4Num == TX_RING_CMD) {
 		prDmaBuf->AllocPa = grMem.rTxCmdBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;
-		if (prDmaBuf->AllocVa  == NULL) {
-			DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
-			return false;
-		}
-		memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
+	} else if (u4Num == TX_RING_FWDL) {
+		prDmaBuf->AllocPa = grMem.rTxFwdlBuf[u4Idx].pa;
+		prDmaBuf->AllocVa = grMem.rTxFwdlBuf[u4Idx].va;
 	}
+	if (prDmaBuf->AllocVa  == NULL) {
+		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
+		return false;
+	}
+	kalMemZero(prDmaBuf->AllocVa, prDmaBuf->AllocSize);
+
 	return true;
 }
 
