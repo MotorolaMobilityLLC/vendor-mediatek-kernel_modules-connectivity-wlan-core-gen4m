@@ -6746,6 +6746,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	unregister_netdevice(prDevHandler);
 #endif
 
+	DBGLOG(REQ, INFO, "ucBssIndex = %d done\n", ucBssIndex);
 	/* netdev and wdev will be freed at mtk_vif_destructor */
 	return 0;
 }
