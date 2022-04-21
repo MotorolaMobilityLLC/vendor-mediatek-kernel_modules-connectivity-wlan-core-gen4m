@@ -434,6 +434,22 @@ void asicConnac2xWfdmaDummyCrWrite(
 		u4RegValue);
 }
 
+u_int8_t asicConnac2xWfdmaIsNeedReInit(
+	struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	u_int8_t fgNeedReInit;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->asicWfdmaReInit == NULL)
+		return FALSE;
+
+	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgNeedReInit);
+
+	return fgNeedReInit;
+}
+
 static void asicConnac2xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1475,6 +1491,10 @@ void asicConnac2xWfdmaInitForUSB(
 
 	if (prChipInfo->asicUsbInit_ic_specific)
 		prChipInfo->asicUsbInit_ic_specific(prAdapter, prChipInfo);
+
+	if ((prChipInfo->asicWfdmaReInit)
+	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
+		prChipInfo->asicWfdmaReInit_handshakeInit(prAdapter);
 }
 
 void asicConnac2xUsbRxEvtEP4Setting(
@@ -1674,11 +1694,15 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 {
 	uint8_t count = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
 	uint32_t u4Value, u4Idx, u4Loop;
 	uint32_t u4PollingFail = FALSE;
 	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t u4SerEvnt;
+	uint32_t u4Tick;
 
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prDbgOps = prChipInfo->prDebugOps;
 
 #if 0 /* enable it if need to do bug fixing by vender request */
@@ -1697,9 +1721,71 @@ u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
 
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
 
-	/* reinit USB because LP could clear WFDMA's CR */
-	if (prChipInfo->asicWfdmaReInit)
-		prChipInfo->asicWfdmaReInit(prAdapter);
+	u4SerEvnt = halSerGetMcuEvent(prAdapter, FALSE);
+	u4Tick = kalGetTimeTick();
+	while (u4SerEvnt & ERROR_DETECT_SER_TRIGGER_IN_SUSPEND) {
+		if (u4SerEvnt & ERROR_DETECT_SER_DONE_IN_SUSPEND) {
+			halSerGetMcuEvent(prAdapter, TRUE);
+			break;
+		}
+
+		kalMsleep(10);
+
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Tick,
+			    MSEC_TO_SYSTIME(WIFI_SER_L1_RST_DONE_TIMEOUT))) {
+
+			DBGLOG(HAL, ERROR,
+			       "[SER] suspend L1 reset done timeout\n");
+			break;
+		}
+		u4SerEvnt = halSerGetMcuEvent(prAdapter, FALSE);
+	}
+
+	if (u4SerEvnt & ERROR_DETECT_SER_TRIGGER_IN_SUSPEND) {
+		DBGLOG(INIT, INFO,
+		       "L1 reset happens in suspend\n");
+
+		/* Gather the following init flow from
+		 * - halSerSyncTimerHandler()
+		 * - asicConnac2xWfdmaReInit()
+		 */
+
+		if (prChipInfo->asicUsbInit)
+			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
+
+		if (prBusInfo->DmaShdlReInit)
+			prBusInfo->DmaShdlReInit(prAdapter);
+
+		nicSerReInitBeaconFrame(prAdapter);
+
+		/* It's surprising that the toggle bit or sequence
+		 * number of USB endpoints in some USB hosts cannot be
+		 * reset by kernel API usb_reset_endpoint(). In order to
+		 * prevent this IOT, we tend to do not reset toggle bit
+		 * and sequence number on both device and host in some
+		 * project like MT7961. In MT7961, we can choose that
+		 * endpoints reset excludes toggle bit and sequence
+		 * number through asicUsbEpctlRstOpt().
+		 */
+		if (!prBusInfo->asicUsbEpctlRstOpt)
+			halSerHifReset(prAdapter);
+
+
+		if (prChipInfo->is_support_wacpu) {
+			/* command packet forward to TX ring 17 (WMCPU) or
+			 *	  TX ring 20 (WACPU)
+			 */
+			asicConnac2xEnableUsbCmdTxRing(prAdapter,
+				CONNAC2X_USB_CMDPKT2WA);
+		}
+	} else if (asicConnac2xWfdmaIsNeedReInit(prAdapter)) {
+		DBGLOG(INIT, INFO,
+		       "Deep sleep happens in suspend\n");
+
+		/* reinit USB because LP could clear WFDMA's CR */
+		if (prChipInfo->asicWfdmaReInit)
+			prChipInfo->asicWfdmaReInit(prAdapter);
+	}
 
 
 	for (u4Loop = 0; u4Loop < MAX_POLLING_LOOP; u4Loop++) {
