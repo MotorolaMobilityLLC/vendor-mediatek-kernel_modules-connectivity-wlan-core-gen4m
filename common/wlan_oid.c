@@ -7866,15 +7866,13 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 
 	if (!prAdapter) {
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: prAdapter is null !!!!\x1b[m\n"
-			, __func__);
+			"\x1b[31m prAdapter is null !!!!\x1b[m\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
 	if (!pu4SetInfoLen) {
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: pu4SetInfoLen is null !!!!\x1b[m\n"
-			, __func__);
+			"\x1b[31m pu4SetInfoLen is null !!!!\x1b[m\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -7884,8 +7882,7 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 
 	if (!pvSetBuffer) {
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: pvSetBuffer is null !!!!\x1b[m\n"
-			, __func__);
+			"\x1b[31m pvSetBuffer is null !!!!\x1b[m\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	para = (struct UNI_CMD_PP_ALG_CTRL *)pvSetBuffer;
@@ -7894,8 +7891,7 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 				RAM_TYPE_MSG, u4MaxCmdLen);
 	if (!uni_cmd) {
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: uni_cmd is null !!!!\x1b[m\n"
-			, __func__);
+			"\x1b[31m uni_cmd is null !!!!\x1b[m\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -7906,46 +7902,61 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 
 	switch (tag->u1PpAction) {
 	case UNI_CMD_PP_ALG_SET_TIMER:
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
-			, __func__, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpTimerIntv = %d\x1b[m\n"
-			, __func__, tag->u4PpTimerIntv);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
+			, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpTimerIntv = %d\x1b[m\n"
+			, tag->u4PpTimerIntv);
 
 		break;
 	case UNI_CMD_PP_ALG_SET_THR:
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
-			, __func__, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
-			, __func__, tag->u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX2 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX2);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX3 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX3);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX4 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX4);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX5 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX5);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX6 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX6);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX7 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX7);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX8 = %d\x1b[m\n"
-			, __func__, tag->u4PpThrX8);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
+			, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
+			, tag->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Value = %d\x1b[m\n"
+			, tag->u4ThrX2_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Shift = %d\x1b[m\n"
+			, tag->u4ThrX2_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Value = %d\x1b[m\n"
+			, tag->u4ThrX3_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Shift = %d\x1b[m\n"
+			, tag->u4ThrX3_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Value = %d\x1b[m\n"
+			, tag->u4ThrX4_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Shift = %d\x1b[m\n"
+			, tag->u4ThrX4_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Value = %d\x1b[m\n"
+			, tag->u4ThrX5_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Shift = %d\x1b[m\n"
+			, tag->u4ThrX5_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Value = %d\x1b[m\n"
+			, tag->u4ThrX6_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Shift = %d\x1b[m\n"
+			, tag->u4ThrX6_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Value = %d\x1b[m\n"
+			, tag->u4ThrX7_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Shift = %d\x1b[m\n"
+			, tag->u4ThrX7_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Value = %d\x1b[m\n"
+			, tag->u4ThrX8_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Shift = %d\x1b[m\n"
+			, tag->u4ThrX8_Shift);
+
 
 		break;
 
 	case UNI_CMD_PP_ALG_GET_STATISTICS:
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
-			, __func__, tag->u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
-			, __func__, tag->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
+			, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
+			, tag->u1DbdcIdx);
 
 		break;
 
 	default:
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: u4PpAction = %d is not supported !!\x1b[m\n"
-			, __func__, tag->u1PpAction);
+			"\x1b[31m u4PpAction = %d is not supported !!\x1b[m\n"
+			, tag->u1PpAction);
 		break;
 	}
 

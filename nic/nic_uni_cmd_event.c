@@ -7530,35 +7530,72 @@ static void nicUniEventPpStat(
 	struct UNI_EVENT_PP_ALG_CTRL *tag)
 {
 	DBGLOG(REQ, INFO,
-		"\n"
-		"\x1b[32m ============= Pp Band%d Stat ============= \x1b[m\n"
-		"\x1b[32m u4PpTimerIntv	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX2	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX3	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX4	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX5	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX6	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX7	      = %d               \x1b[m\n"
-		"\x1b[32m u4PpThrX8	      = %d               \x1b[m\n"
-		"\x1b[32m u4SwPpTime	      = %d (Unit: %d ms) \x1b[m\n"
-		"\x1b[32m u4HwPpTime	      = %d (Unit: %d ms) \x1b[m\n"
-		"\x1b[32m u4NoPpTime	      = %d (Unit: %d ms) \x1b[m\n"
-		"\x1b[32m =========================================== \x1b[m\n",
-		tag->u1DbdcIdx,
-		tag->u4PpTimerIntv,
-		tag->u4PpThrX2,
-		tag->u4PpThrX3,
-		tag->u4PpThrX4,
-		tag->u4PpThrX5,
-		tag->u4PpThrX6,
-		tag->u4PpThrX7,
-		tag->u4PpThrX8,
+		"\x1b[32m ============= Pp Band%d Stat ============= \x1b[m\n",
+		tag->u1DbdcIdx);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpTimerIntv            = %d              \x1b[m\n",
+		tag->u4PpTimerIntv);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX2: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX2_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX2: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX2_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX3: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX3_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX3: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX3_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX4: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX4_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX4: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX4_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX5: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX5_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX5: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX5_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX6: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX6_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX6: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX6_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX7: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX7_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX7: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX7_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX8: Value	  = %d                   \x1b[m\n",
+		tag->u4ThrX8_Value);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4PpThrX8: Shift	  = %d                   \x1b[m\n",
+		tag->u4ThrX8_Shift);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4SwPpTime               = %d (Unit: %d ms)\x1b[m\n",
 		tag->u4SwPpTime,
-		tag->u4PpTimerIntv,
+		tag->u4PpTimerIntv);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4HwPpTime               = %d (Unit: %d ms)\x1b[m\n",
 		tag->u4HwPpTime,
-		tag->u4PpTimerIntv,
+		tag->u4PpTimerIntv);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4NoPpTime               = %d (Unit: %d ms)\x1b[m\n",
 		tag->u4NoPpTime,
 		tag->u4PpTimerIntv);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m u4AutoBwTime             = %d (Unit: %d ms)\x1b[m\n",
+		tag->u4AutoBwTime,
+		tag->u4PpTimerIntv);
+	DBGLOG(REQ, INFO,
+		"\x1b[32m ========================================== \x1b[m\n");
+
 }
 
 void nicUniEventPpCb(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
