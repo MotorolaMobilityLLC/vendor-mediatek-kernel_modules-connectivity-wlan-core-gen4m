@@ -206,9 +206,6 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 		if (prDbgOps && prDbgOps->dumpMacInfo)
 			prDbgOps->dumpMacInfo(prAdapter);
 
-		if (u4DebugLevel & DBG_CLASS_TRACE)
-			haldumpPhyInfo(prAdapter);
-
 		if (prDbgOps && prDbgOps->setFwDebug) {
 			/* clr drv print log sync flag */
 			prDbgOps->setFwDebug(
@@ -405,9 +402,6 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		if (prDbgOps && prDbgOps->dumpMacInfo)
 			prDbgOps->dumpMacInfo(prAdapter);
 	}
-
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY))
-		haldumpPhyInfo(prAdapter);
 
 	prHifInfo->fgIsDumpLog = false;
 	prAdapter->u4HifDbgFlag = 0;
@@ -1098,18 +1092,5 @@ bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 	fgEnClock = ((u4Value & BIT(17)) != 0) && ((u4Value & BIT(16)) != 0);
 
 	return fgIsDriverOwn && fgEnClock;
-}
-
-void haldumpPhyInfo(struct ADAPTER *prAdapter)
-{
-	uint32_t i = 0, value = 0;
-
-	for (i = 0; i < 20; i++) {
-		HAL_MCR_RD(prAdapter, 0x82072644, &value);
-		DBGLOG(HAL, INFO, "0x82072644: 0x%08x\n", value);
-		HAL_MCR_RD(prAdapter, 0x82072654, &value);
-		DBGLOG(HAL, INFO, "0x82072654: 0x%08x\n", value);
-		kalMdelay(1);
-	}
 }
 
