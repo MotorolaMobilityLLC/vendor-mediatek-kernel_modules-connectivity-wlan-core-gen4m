@@ -1640,7 +1640,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 					prIeShortSsidList->ucLength + 2;
 			prScanRequest->ucScnFuncMask |=
 						ENUM_SCN_USE_PADDING_AS_BSSID;
-			prScanRequest->ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+			prScanRequest->ucBssIndex =
+					prScanInfo->rScanParam.ucBssIndex;
 			/* IE used to save short SSID list*/
 			prScanRequest->pucIE = prNeighborAPInfo->aucScanIEBuf;
 
