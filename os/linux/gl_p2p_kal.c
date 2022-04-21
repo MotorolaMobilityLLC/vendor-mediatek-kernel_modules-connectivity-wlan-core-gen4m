@@ -640,6 +640,19 @@ void kalP2PTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
 	}
 }
 
+uint8_t kalP2PIsTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
+		IN struct BSS_INFO *prBssInfo)
+{
+	struct net_device *prDevHandler = NULL;
+	uint8_t ucBssIndex = (uint8_t)prBssInfo->ucBssIndex;
+
+	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (prDevHandler == NULL)
+		return FALSE;
+
+	return netif_carrier_ok(prDevHandler);
+}
+
 void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
 		IN struct BSS_INFO *prBssInfo)
 {
