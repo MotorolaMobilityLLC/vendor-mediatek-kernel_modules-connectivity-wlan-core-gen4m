@@ -2373,17 +2373,23 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	if (u4DmaIdx > u4SwIdx) {
 		u4Diff = u4DmaIdx - u4SwIdx;
-		prTxRing->u4UsedCnt -= u4Diff;
 	} else if (u4DmaIdx < u4SwIdx) {
 		u4Diff = (TX_RING_SIZE + u4DmaIdx) - u4SwIdx;
-		prTxRing->u4UsedCnt -= u4Diff;
 	} else {
 		/* DMA index == SW used index */
-		if (prTxRing->u4UsedCnt == TX_RING_SIZE) {
+		if (prTxRing->u4UsedCnt == TX_RING_SIZE)
 			u4Diff = TX_RING_SIZE;
-			prTxRing->u4UsedCnt = 0;
-		}
 	}
+
+	if (u4Diff > prTxRing->u4UsedCnt) {
+		DBGLOG(HAL, ERROR,
+		       "port[%u] diff[%u] > UsedCnt[%u], trigger Drv SER\n",
+		       u2Port, u4Diff, prTxRing->u4UsedCnt);
+		halSetDrvSer(prGlueInfo->prAdapter);
+		return;
+	}
+
+	prTxRing->u4UsedCnt -= u4Diff;
 
 	DBGLOG_LIMITED(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
