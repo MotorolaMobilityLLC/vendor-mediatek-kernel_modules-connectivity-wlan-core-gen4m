@@ -1682,14 +1682,17 @@ int32_t connac3x_show_mld_info(
 			"\n%s%d, %s%d, %s%d\n",
 			"MldRecState=", mld->u1MldRecState,
 			"MldRecIdx=", mld->u1MldRecIdx,
-			"MldIdx=", mld->u2MldIdx);
+			"StaRecMldIdx=", mld->u2MldIdx);
 
 	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%s0x%x, %s0x%x, %s0x%x\n",
+			"%s%d, %s0x%x, %s0x%x\n%s%d(0x%x), %s%d\n",
+			"AllSTR=", mld->fgAllStrLinks,
 			"StrBmp=", mld->u1StrBmp,
 			"EmlsrBmp=", mld->u1EmlsrBmp,
-			"ActiveLinkBmp=", mld->u1ActiveLinkBmp);
+			"ActLinkNum/Bmp=", mld->u1ActiveLinkNum,
+			mld->u1ActiveLinkBmp,
+			"Aggressive=", mld->fgAgcAggressiveMode);
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prMldLink = &(mld->arMldRecLink[i]);
@@ -1698,14 +1701,15 @@ int32_t connac3x_show_mld_info(
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\n====== Link_%d ======\n", i);
+			"\n=== Link_%d ===\n", i);
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%s%d, %s%d, %s%d, %s%d\n",
-			"Active=", prMldLink->fgActive,
-			"ParentMldRecIdx=", prMldLink->u1ParentMldRecIdx,
-			"DBDC=", prMldLink->u1Band,
+			"%s%d, %s%d, %s%d, %s%d, %s%d\n",
+			"Act=", prMldLink->fgActive,
+			"Suspend=", prMldLink->fgSuspend,
+			"ParMldRec=", prMldLink->u1ParentMldRecIdx,
+			"Band=", prMldLink->u1Band,
 			"WlanIdx=", prMldLink->u2WlanIdx);
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
@@ -1715,7 +1719,7 @@ int32_t connac3x_show_mld_info(
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%s%d, %s%d, %s%d, %s%d\n",
-			"AgcState=", prAgcParam->u1AgcStateTx,
+			"State=", prAgcParam->u1AgcStateTx,
 			"Ratio=", prAgcParam->u1DispRatioTx,
 			"Order=", prAgcParam->u1DispOrderTx,
 			"Mgf=", prAgcParam->u2DispMgfTx);
@@ -1764,7 +1768,7 @@ int32_t connac3x_show_mld_info(
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%s%d, %s%d, %s%d, %s%d, %s%d\n",
-			"AgcState=", prAgcParamTrig->u1AgcStateTrig,
+			"State=", prAgcParamTrig->u1AgcStateTrig,
 			"Ratio=", prAgcParamTrig->u1DispRatioTrig,
 			"MuLen=", prAgcParamTrig->u1DispMuLenTrig,
 			"Mgf=", prAgcParamTrig->u2DispMgfTrig,

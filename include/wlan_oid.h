@@ -3569,6 +3569,7 @@ struct MLO_OVLP_RPT_CNT {
 
 struct MLD_RECORD_LINK {
 	u_int8_t fgActive;
+	u_int8_t fgSuspend;
 	uint8_t u1ParentMldRecIdx; /* Parent MLD Record Index */
 	uint8_t u1Band;
 	uint16_t u2WlanIdx;
@@ -3583,9 +3584,12 @@ struct PARAM_MLD_REC {
 	uint8_t u1MldRecState;
 	uint8_t u1MldRecIdx;
 	uint16_t u2MldIdx;
+	u_int8_t fgAllStrLinks;
 	uint8_t u1StrBmp;
 	uint8_t u1EmlsrBmp;
+	uint8_t u1ActiveLinkNum;
 	uint8_t u1ActiveLinkBmp;
+	u_int8_t fgAgcAggressiveMode;
 	struct MLD_RECORD_LINK arMldRecLink[MLD_LINK_MAX];
 };
 #endif
