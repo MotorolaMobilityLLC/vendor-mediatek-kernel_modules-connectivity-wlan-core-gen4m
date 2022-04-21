@@ -863,7 +863,6 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 #define KAL_ARCH_SETUP_DMA_OPS(_dev, _base, _size, _iommu, _coherent)
 #endif
-
 /*----------------------------------------------------------------------------*/
 /* Macros of show stack operations for using in Driver Layer                  */
 /*----------------------------------------------------------------------------*/
@@ -1988,10 +1987,6 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 
 #define kalVendorEvtRssiBeyondRange(_prAdapter, _ucBssIdx, _i4Rssi) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-bool ieee80211_operating_class_to_band(u8 operating_class,
-				       enum nl80211_band *band);
-
 uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgInitCmd);
 void kalSetLogTooMuch(uint32_t u4DriverLevel,
@@ -2027,5 +2022,25 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 void kalSetMgmtDirectTxEvent2Hif(
 		struct GLUE_INFO *pr);
 #endif
+
+uint32_t kalGetChannelFrequency(
+		uint8_t ucChannel,
+		uint8_t ucBand);
+
+enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass);
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+u_int8_t kalFillChannels(
+	struct GLUE_INFO *prGlueInfo,
+	struct CMD_DOMAIN_CHANNEL *pChBase,
+	uint8_t ucChSize,
+	uint8_t ucOpChannelNum,
+	u_int8_t fgDisconnectUponInvalidOpChannel
+);
+#endif
+uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo);
+
+u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
+			uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand);
 #endif /* _GL_KAL_H */
 

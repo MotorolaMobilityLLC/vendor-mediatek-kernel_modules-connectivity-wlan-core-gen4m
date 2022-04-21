@@ -1149,9 +1149,6 @@ struct mtk_regdomain {
 struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(
 	struct ADAPTER *prAdapter);
 
-u_int8_t rlmIsValidChnl(struct ADAPTER *prAdapter, uint8_t ucNumOfChannel,
-			enum ENUM_BAND eBand);
-
 void
 rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 		     enum ENUM_BAND eSpecificBand, u_int8_t fgNoDfs,
@@ -1205,9 +1202,6 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-extern struct ieee80211_supported_band mtk_band_2ghz;
-extern struct ieee80211_supported_band mtk_band_5ghz;
-
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void);
 void rlmDomainSetCountryCode(char *alpha2,
 			     u8 size_of_alpha2);
@@ -1219,7 +1213,7 @@ enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(void);
 void rlmDomainResetCtrlInfo(u_int8_t force);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);
-void rlmDomainParsingChannel(IN struct wiphy *pWiphy);
+void rlmDomainParsingChannel(struct ADAPTER *prAdapter);
 struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(void);
 void rlmExtractChannelInfo(u32 max_ch_count,
 			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff);
