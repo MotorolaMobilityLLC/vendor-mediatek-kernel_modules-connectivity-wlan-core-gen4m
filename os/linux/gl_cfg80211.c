@@ -6698,6 +6698,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct ADAPTER *prAdapter;
 	struct net_device *prDevHandler = NULL;
 	struct wireless_dev *prWdev = NULL;
+	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_DEL_IFACE;
 	uint32_t rStatus;
 	uint8_t ucBssIndex = 0;
 	uint8_t ucAisIndex = 0;
@@ -6725,8 +6726,9 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	/* make sure netdev is disconnected */
 	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate, NULL,
-			   0, FALSE, FALSE, TRUE, &u4SetInfoLen, ucBssIndex);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
+			&u4DisconnectReason, sizeof(u4DisconnectReason),
+			FALSE, FALSE, TRUE, &u4SetInfoLen, ucBssIndex);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
