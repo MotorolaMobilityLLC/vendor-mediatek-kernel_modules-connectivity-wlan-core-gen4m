@@ -153,6 +153,12 @@ void nic_txd_v1_chksum_op(
 	if ((ucChksumFlag & TX_CS_TCP_UDP_GEN))
 		HAL_MAC_TX_DESC_SET_TCP_UDP_CHKSUM(
 			(struct HW_MAC_TX_DESC *)prTxDesc);
+	/*
+	 * If kernel do not expect HW checksum for this frame, set ~AMSDU.
+	 */
+	if (!(ucChksumFlag & (TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN)))
+		HAL_MAC_TX_DESC_UNSET_HW_AMSDU(
+				(struct HW_MAC_TX_DESC *)prTxDesc);
 }
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
 

@@ -3116,6 +3116,26 @@ kalSecurityFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
+/**
+ * kalIPv6ChecksumHelp() - Calculate checksum in driver for special cases
+ * @prSkb: pointer to skbuff
+ * @pucIpv6Hdr: pointer to head of IPv6 packet
+ * @u4Ipv6TotalLen: length of IPv6 packet, including header
+ */
+static
+void kalIPv6ChecksumHelp(struct sk_buff *prSkb, const uint8_t *pucIpv6Hdr,
+				const uint32_t u4Ipv6TotalLen)
+{
+	uint8_t ucIpv6Proto;
+
+	ucIpv6Proto = pucIpv6Hdr[IPV6_HDR_IP_PROTOCOL_OFFSET];
+	if (ucIpv6Proto == IP_PRO_UDP && u4Ipv6TotalLen <= IPV6_HDR_LEN + 16) {
+		if (prSkb->ip_summed == CHECKSUM_PARTIAL)
+			skb_checksum_help(prSkb);
+	}
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This inline function is to extract some packet information, including
@@ -3138,8 +3158,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	uint16_t u2EtherTypeLen;
 	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
 	uint8_t *aucLookAheadBuf = NULL;
-	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN -
-				     ETHER_TYPE_LEN;
+	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
 	uint8_t *pucNextProtocol = NULL;
 #if DSCP_SUPPORT
 	uint8_t ucUserPriority;
@@ -3179,8 +3198,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 				    &u2EtherTypeLen);
 	}
 	/* 4 <2> Obtain next protocol pointer */
-	pucNextProtocol = &aucLookAheadBuf[ucEthTypeLenOffset +
-							      ETHER_TYPE_LEN];
+	pucNextProtocol = &aucLookAheadBuf[ucEthTypeLenOffset + ETHER_TYPE_LEN];
 
 	/* 4 <3> Handle ethernet format */
 	switch (u2EtherTypeLen) {
@@ -3233,6 +3251,8 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 				       pucNextProtocol, prTxPktInfo);
 #endif
 #endif
+		kalIPv6ChecksumHelp(prSkb, pucNextProtocol,
+			u4PacketLen - (ucEthTypeLenOffset + ETHER_TYPE_LEN));
 
 #if DSCP_SUPPORT
 		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
