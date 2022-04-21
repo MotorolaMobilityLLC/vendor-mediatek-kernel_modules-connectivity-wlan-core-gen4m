@@ -310,19 +310,30 @@ void wlanImageSectionGetPatchInfo(IN struct ADAPTER
 		   sizeof(struct PATCH_FORMAT_T));
 }
 
-void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
+uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER
 	*prAdapter,
 	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
-	OUT uint32_t *pu4DataMode,
-	struct patch_dl_target *target)
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx,
+	IN uint32_t u4DataMode)
 {
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct FWDL_OPS_T *prFwDlOps;
 	struct PATCH_FORMAT_V2_T *prPatchFormat;
 	uint8_t aucBuffer[32];
 	struct PATCH_GLO_DESC *glo_desc;
 	struct PATCH_SEC_MAP *sec_map;
 	uint8_t *img_ptr;
-	uint32_t num_of_region, i;
+	uint32_t num_of_region = 0, i;
 	uint32_t sec_info = 0;
+	struct patch_dl_target target = {0};
+
+	prFwDlOps = prChipInfo->fw_dl_ops;
+	if (!prFwDlOps) {
+		DBGLOG(INIT, ERROR, "prFwDlOps is NULL!!\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* patch header */
 	img_ptr = pvFwImageMapFile;
@@ -356,21 +367,21 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 	/* section map */
 	img_ptr += sizeof(struct PATCH_GLO_DESC);
 
-	target->num_of_region = num_of_region;
-	target->patch_region = (struct patch_dl_buf *)kalMemAlloc(
+	target.patch_region = (struct patch_dl_buf *)kalMemAlloc(
 		num_of_region * sizeof(struct patch_dl_buf), PHY_MEM_TYPE);
 
-	if (!target->patch_region) {
+	if (!target.patch_region) {
 		DBGLOG(INIT, WARN,
 			"parse patch failed!No memory to allocate.\n");
-		return;
+		return WLAN_STATUS_FAILURE;
 	}
+	target.num_of_region = num_of_region;
 
 	for (i = 0; i < num_of_region; i++) {
 		struct patch_dl_buf *region;
 		uint32_t section_type;
 
-		region = &target->patch_region[i];
+		region = &target.patch_region[i];
 		sec_map = (struct PATCH_SEC_MAP *)img_ptr;
 		img_ptr += sizeof(struct PATCH_SEC_MAP);
 
@@ -399,7 +410,20 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 		}
 	}
 
-	*pu4DataMode = wlanGetPatchDataModeV2(prAdapter, sec_info);
+	u4DataMode = wlanGetPatchDataModeV2(prAdapter, sec_info);
+
+	DBGLOG(INIT, INFO,
+		"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
+		target.num_of_region, u4DataMode);
+
+	u4Status = wlanDownloadSectionV2(prAdapter,
+		u4DataMode, eDlIdx, &target);
+
+	if (target.patch_region)
+		kalMemFree(target.patch_region, PHY_MEM_TYPE,
+			num_of_region * sizeof(struct patch_dl_buf));
+
+	return u4Status;
 }
 
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
@@ -469,10 +493,6 @@ uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
 	}
 
 out:
-	kalMemFree(target->patch_region, PHY_MEM_TYPE,
-		num_of_region * sizeof(struct patch_dl_buf));
-	target->patch_region = NULL;
-	target->num_of_region = 0;
 
 	return u4Status;
 }
@@ -814,7 +834,6 @@ uint32_t wlanImageSectionDownloadStage(
 	u_int8_t fgIsNotDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct patch_dl_target target;
 	struct PATCH_FORMAT_T *prPatchHeader;
 	struct FWDL_OPS_T *prFwDlOps;
 
@@ -827,14 +846,11 @@ uint32_t wlanImageSectionDownloadStage(
 	if (eDlIdx == IMG_DL_IDX_PATCH) {
 		prPatchHeader = pvFwImageMapFile;
 		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
-			wlanImageSectionGetPatchInfoV2(prAdapter,
+			u4Status = wlanGetPatchInfoAndDownloadV2(prAdapter,
 				pvFwImageMapFile,
 				u4FwImageFileLength,
-				&u4DataMode,
-				&target);
-			DBGLOG_LIMITED(INIT, INFO,
-				"FormatV2 num_of_regoin[%d] datamode[0x%08x]\n",
-				target.num_of_region, u4DataMode);
+				eDlIdx,
+				u4DataMode);
 		} else {
 			wlanImageSectionGetPatchInfo(prAdapter,
 				pvFwImageMapFile,
@@ -844,22 +860,14 @@ uint32_t wlanImageSectionDownloadStage(
 			DBGLOG_LIMITED(INIT, INFO,
 		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 		       u4Offset, u4Addr, u4Len, u4DataMode);
-		}
-
-		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM)
-			u4Status = wlanDownloadSectionV2(prAdapter,
-				u4DataMode, eDlIdx, &target);
-		else
 /* For dynamic memory map::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-		{
 			u4Status = prFwDlOps->downloadByDynMemMap(
 						prAdapter, u4Addr, u4Len,
 						pvFwImageMapFile
 							+ u4Offset,
 							eDlIdx);
 			*pfgIsDynamicMemMap = TRUE;
-		}
 #else
 			u4Status = wlanDownloadSection(
 							prAdapter,
@@ -870,6 +878,7 @@ uint32_t wlanImageSectionDownloadStage(
 								+ u4Offset,
 						       eDlIdx);
 #endif
+		}
 /* For dynamic memory map::End */
 	} else {
 		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
