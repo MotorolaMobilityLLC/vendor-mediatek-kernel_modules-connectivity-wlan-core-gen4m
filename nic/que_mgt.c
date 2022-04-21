@@ -3497,6 +3497,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndexRly = 0;
 	struct BSS_INFO *prBssInfoRly = NULL;
 #endif
+	u_int8_t fgSwRxReordering =
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
 
 	DEBUGFUNC("qmHandleRxPackets");
 
@@ -3903,7 +3905,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		}
 #endif
 
-		if (prCurrSwRfb->fgReorderBuffer && !fgIsBMC && fgIsHTran) {
+		if (fgSwRxReordering &&
+		    prCurrSwRfb->fgReorderBuffer && !fgIsBMC && fgIsHTran) {
 			/* If this packet should dropped or indicated to the
 			 * host immediately, it should be enqueued into the
 			 * rReturnedQue with specific flags. If this packet
@@ -3942,7 +3945,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						prCurrSwRfb->ucTid]);
 				}
 
-				if (prReorderQueParm &&
+				if (fgSwRxReordering && prReorderQueParm &&
 					prReorderQueParm->fgIsValid) {
 					/* Only QoS Data frame with BA aggrement
 					 * shall enter reordering buffer

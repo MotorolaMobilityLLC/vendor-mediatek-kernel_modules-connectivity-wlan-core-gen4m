@@ -7741,6 +7741,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			u4PlatformBoostLittleCpuTh);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
+	/**
+	 * A debugging switch for development phase to check the difference of
+	 * tput imposed by SW reordering, including the operation workload and
+	 * frame drops, etc.
+	 */
+	prWifiVar->fgSwRxReordering = wlanCfgGetUint32(prAdapter,
+					"SwRxReordering", FEATURE_ENABLED);
+
 	prWifiVar->u4PerfMonPendingTh = (uint8_t)wlanCfgGetUint32(prAdapter,
 						"PerfMonPendingTh", 80);
 
