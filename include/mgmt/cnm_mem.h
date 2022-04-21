@@ -845,9 +845,8 @@ struct MLD_STA_RECORD {
 	uint16_t u2SecondMldId;
 	uint16_t u2SetupWlanId;
 	u_int8_t fgNSEP;
-	uint8_t ucEmlmrBitmap;
-	uint8_t ucEmlsrBitmap;
 	uint8_t aucStrBitmap[3];
+	uint8_t aucEmlCap[3];
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 };

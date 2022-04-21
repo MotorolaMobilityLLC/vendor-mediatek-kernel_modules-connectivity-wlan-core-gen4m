@@ -2104,13 +2104,14 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 			continue;
 
 
-		DBGLOG(ML, INFO, "[%d] pri:%d, sec:%d, setup:%d, emlmr:%d, emlsr:%d, str:[0x%x,0x%x,0x%x], mac:" MACSTR "\n",
+		DBGLOG(ML, INFO,
+			"[%d] pri:%d, sec:%d, setup:%d, eml:0x%06x, str:[0x%x,0x%x,0x%x], mac:"
+			MACSTR "\n",
 			prMldStarec->ucIdx,
 			prMldStarec->u2PrimaryMldId,
 			prMldStarec->u2SecondMldId,
 			prMldStarec->u2SetupWlanId,
-			prMldStarec->ucEmlmrBitmap,
-			prMldStarec->ucEmlsrBitmap,
+			*(uint32_t *)prMldStarec->aucEmlCap,
 			prMldStarec->aucStrBitmap[0],
 			prMldStarec->aucStrBitmap[1],
 			prMldStarec->aucStrBitmap[2],
@@ -2276,8 +2277,8 @@ int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
 
 		/* TODO */
 		prMldStarec->fgNSEP = FALSE;
-		prMldStarec->ucEmlmrBitmap = 0;
-		prMldStarec->ucEmlsrBitmap = 0;
+		kalMemSet(prMldStarec->aucEmlCap, 0,
+			sizeof(prMldStarec->aucEmlCap));
 #if defined(BELLWETHER) || defined(MT7990)
 		prMldStarec->aucStrBitmap[0] = BIT(2);
 		prMldStarec->aucStrBitmap[1] = BIT(1);
