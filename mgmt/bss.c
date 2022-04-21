@@ -1410,7 +1410,7 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Set limited retry count and lifetime for Probe Resp is reasonable */
-	nicTxSetPktLifeTime(prMsduInfo, 100);
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, 2);
 
 	/* TODO(Kevin):

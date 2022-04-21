@@ -4660,9 +4660,14 @@ void nicTxConfigPktControlFlag(struct MSDU_INFO *prMsduInfo,
 			~ucControlFlagMask;	/* Clear control flag */
 }
 
-void nicTxSetPktLifeTime(struct MSDU_INFO *prMsduInfo,
+void nicTxSetPktLifeTime(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo,
 			 uint32_t u4TxLifeTimeInMs)
 {
+#if CFG_MTK_FPGA_PLATFORM
+	if (u4TxLifeTimeInMs && prAdapter->rWifiVar.u4FpgaSpeedFactor)
+		u4TxLifeTimeInMs *= prAdapter->rWifiVar.u4FpgaSpeedFactor;
+#endif
 	prMsduInfo->u4RemainingLifetime = u4TxLifeTimeInMs;
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_LIFE_TIME;
 }

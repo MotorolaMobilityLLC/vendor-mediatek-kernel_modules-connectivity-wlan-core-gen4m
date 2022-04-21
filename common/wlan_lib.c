@@ -8211,6 +8211,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->i4Ed5GEU = (int32_t) wlanCfgGetInt32(prAdapter,
 		"Ed5GEU", ED_CCA_BW20_5G_DEFAULT);
 #endif
+
+#if CFG_MTK_FPGA_PLATFORM
+	prWifiVar->u4FpgaSpeedFactor = wlanCfgGetUint32(prAdapter,
+			"FpgaSpeedFactor", 0);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
