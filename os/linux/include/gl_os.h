@@ -1664,4 +1664,21 @@ extern void glCustomGenlInit(void);
 extern void glCustomGenlDeinit(void);
 #endif
 
+struct wiphy *wlanGetWiphy(void);
+
+uint8_t wlanGetBssIdx(struct net_device *ndev);
+
+struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
+
+struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucAisIndex);
+
+struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucP2pIndex);
+
+u_int8_t wlanIsAisDev(struct net_device *prDev);
+
+void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
+			 struct net_device *prDev, u_int8_t fgSuspend);
 #endif /* _GL_OS_H */

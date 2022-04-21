@@ -17462,8 +17462,10 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 	prParamGetWifiType = (struct PARAM_GET_WIFI_TYPE *)pvSetBuffer;
+
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-				netdev_priv(prParamGetWifiType->prNetDev);
+				kalGetNetDevPriv(prParamGetWifiType->prNetDev);
+
 	ucBssIdx = prNetDevPrivate->ucBssIdx;
 	DBGLOG(OID, INFO, "bss index=%d\n", ucBssIdx);
 	kalMemZero(prParamGetWifiType->arWifiTypeName,

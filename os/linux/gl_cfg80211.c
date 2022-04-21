@@ -4964,7 +4964,6 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 {
 	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
 	struct ADAPTER *prAdapter;
-	struct wiphy *pBaseWiphy = wlanGetWiphy();
 	uint32_t u4CountryCode = 0;
 
 	if (g_u4HaltFlag) {
@@ -4973,7 +4972,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	}
 
 	if (!rlmDomainCountryCodeUpdateSanity(
-		prGlueInfo, pBaseWiphy, &prAdapter)) {
+		prGlueInfo, &prAdapter)) {
 		DBGLOG(RLM, ERROR, "sanity check failed, skip!\n");
 		return;
 	}
@@ -4996,7 +4995,8 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	rlmDomainSetCountryCode(pRequest->alpha2, 2);
 
 	u4CountryCode = rlmDomainAlpha2ToU32(pRequest->alpha2, 2);
-	rlmDomainCountryCodeUpdate(prAdapter, pBaseWiphy, u4CountryCode);
+
+	rlmDomainCountryCodeUpdate(prAdapter, u4CountryCode);
 
 	rlmDomainSetDfsRegion(pRequest->dfs_region);
 }

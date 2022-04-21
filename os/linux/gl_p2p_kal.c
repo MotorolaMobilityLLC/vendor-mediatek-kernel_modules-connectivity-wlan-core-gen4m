@@ -2800,3 +2800,15 @@ void kalP2pClearCsaChan(struct GL_P2P_INFO *prGlueP2pInfo)
 		prGlueP2pInfo->chandefCsa.chan,
 		sizeof(struct ieee80211_channel));
 }
+
+void kalSetP2pDevMac(
+		struct GLUE_INFO *prGlueInfo,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t ucRoleIdx)
+{
+	struct GL_P2P_INFO *prP2PInfo = NULL;
+
+	prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
+		      prP2PInfo->prDevHandler->dev_addr);
+}

@@ -1200,15 +1200,17 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
 	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM * 2];
 	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
-	struct net_device *prDev = wlanGetNetDev(prAdapter->prGlueInfo, 0);
 	uint8_t ucIpVer, u4TxDSize;
 
-	kalGetIPv4Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv4Addr,
+	kalGetIPv4Address(wlanGetNetDev(prAdapter->prGlueInfo, 0),
+		CFG_PF_ARP_NS_MAX_NUM, pucIPv4Addr,
 			  &u4NumIPv4);
 #if IS_ENABLED(CONFIG_IPV6)
-	kalGetIPv6Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv6Addr,
+	kalGetIPv6Address(wlanGetNetDev(prAdapter->prGlueInfo, 0),
+		CFG_PF_ARP_NS_MAX_NUM, pucIPv6Addr,
 			  &u4NumIPv6);
 #endif
+
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;

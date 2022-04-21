@@ -418,4 +418,8 @@ int32_t kalP2pFuncPreStartRdd(
 void kalP2pClearCsaChan(
 	struct GL_P2P_INFO *prGlueP2pInfo);
 
+void kalSetP2pDevMac(
+		struct GLUE_INFO *prGlueInfo,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t ucRoleIdx);
 #endif /* _GL_P2P_KAL_H */
