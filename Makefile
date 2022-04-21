@@ -410,7 +410,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     endif
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
-ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
 
@@ -438,7 +438,7 @@ endif
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
-ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
 endif
 
@@ -466,7 +466,7 @@ CONFIG_DBDC_MODE=1
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_NSS=4
 CONFIG_BAND_NUM=3
-ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 endif
 
