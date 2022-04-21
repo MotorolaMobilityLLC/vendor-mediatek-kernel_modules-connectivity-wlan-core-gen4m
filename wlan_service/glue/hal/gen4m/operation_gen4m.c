@@ -1366,7 +1366,13 @@ static void mt_op_set_manual_eht_tb_value(
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
 	usr.field.mcs = ru_sta->rate & ~BIT(4);
-	usr.field.dcm = (ru_sta->rate & BIT(4)) >> 4;
+
+	/* DCM enable while rate index > MCS13 */
+	if (ru_sta->rate > 13)
+		usr.field.mcs = 1;
+	else
+		usr.field.dcm = 0;
+
 	usr.field.start_ss = ru_sta->start_sp_st & 0xF;
 	usr.field.Nos = (nss-1);
 	usr.field.Ps160 = ru_sta->ps160;
@@ -1701,7 +1707,11 @@ s_int32 mt_op_start_rx(
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTRX);
 
 	/* For production line test, get tx count for wait calibration ready */
-	rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
+	if (band_idx == TEST_DBDC_BAND0)
+		rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
+	else
+		rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT | BIT(8);
+
 	rf_at_info.func_data = 0;
 	ret = tm_rftest_query_auto_test(winfos,
 		&rf_at_info, &buf_len);
