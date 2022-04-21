@@ -446,7 +446,7 @@ struct BSS_INFO {
 #endif
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	uint8_t  ucEhtOpParams[EHT_OP_BYTE_NUM];
+	uint8_t  ucEhtOpParams;
 #endif
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	uint8_t ucMaxBSSIDIndicator;

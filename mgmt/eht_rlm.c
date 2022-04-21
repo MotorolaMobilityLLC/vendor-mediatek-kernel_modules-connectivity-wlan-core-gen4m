@@ -111,6 +111,8 @@ uint32_t ehtRlmCalculateOpIELen(
 	/* struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL; */
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 
+	u4OverallLen += sizeof(struct EHT_OP_INFO);
+
 	return u4OverallLen;
 }
 
@@ -443,9 +445,10 @@ static void ehtRlmFillOpIE(
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
-	struct IE_EHT_OP*prEhtOp;
+	struct IE_EHT_OP *prEhtOp;
 	uint32_t u4OverallLen = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 	uint8_t eht_bw = 0;
+	struct EHT_OP_INFO *prEhtOpInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -460,15 +463,21 @@ static void ehtRlmFillOpIE(
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
 
+	EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
+
 	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo,
 		prBssInfo->eBand);
 
-	/* EHT Operation Information */
-	EHT_SET_OP_CHAN_WIDTH(prEhtOp->ucEhtOpParams,
-		ehtRlmGetEhtOpBwByBssOpBw(eht_bw));
+	/* filling operation info field*/
+	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
+
+	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
+	prEhtOpInfo->ucCCFS0 = nicGetS1(prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel, ehtRlmGetEhtOpBwByBssOpBw(eht_bw));
+	prEhtOpInfo->ucCCFS1 = 0;
 
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
-		EHT_GET_OP_CHAN_WIDTH(prEhtOp->ucEhtOpParams));
+		prEhtOpInfo->ucControl);
 
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
@@ -599,6 +608,7 @@ void ehtRlmRecOperation(
 	uint8_t *pucIE)
 {
 	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
+	struct EHT_OP_INFO *prEhtOpInfo;
 
 	/* if payload not contain any aucVarInfo,
 	 * IE size = sizeof(struct IE_EHT_OP)
@@ -609,20 +619,21 @@ void ehtRlmRecOperation(
 		return;
 	}
 
-	// TODO: The format of EHT operation Information subfield is missing in spec D1.1
-	prBssInfo->ucVhtChannelWidth =
-		ehtRlmGetVhtOpBwByEhtOpBw(prEhtOp->ucEhtOpParams[0]);
-	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, prBssInfo->ucVhtChannelWidth);
-	prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	prBssInfo->ucEhtOpParams = prEhtOp->ucEhtOpParams;
 
-	DBGLOG(RLM, INFO, "EHT channel width: %d, s1: %d, s2: %d\n",
-		prBssInfo->ucVhtChannelWidth,
-		prBssInfo->ucVhtChannelFrequencyS1,
-		prBssInfo->ucVhtChannelFrequencyS2);
+	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
+		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
+		prBssInfo->ucVhtChannelWidth =
+			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo->ucControl);
+		prBssInfo->ucVhtChannelFrequencyS1 = prEhtOpInfo->ucCCFS0;
+		prBssInfo->ucVhtChannelFrequencyS2 = prEhtOpInfo->ucCCFS1;
 
-	memcpy(prBssInfo->ucEhtOpParams, prEhtOp->ucEhtOpParams,
-		HE_OP_BYTE_NUM);
+		DBGLOG(RLM, INFO, "EHT channel width: %d, s1: %d, s2: %d\n",
+			prBssInfo->ucVhtChannelWidth,
+			prBssInfo->ucVhtChannelFrequencyS1,
+			prBssInfo->ucVhtChannelFrequencyS2);
+	}
+
 }
 void ehtRlmInit(
 	struct ADAPTER *prAdapter)
