@@ -2426,4 +2426,33 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	return IS_MLD_STAREC_VALID(mld_starec);
 }
 
+uint8_t mldIsMloFeatureEnabled(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t fgIsApMode)
+{
+	uint8_t ret;
+
+	if (prAdapter->rWifiVar.ucMldLinkMax <= 1 ||
+		IS_FEATURE_DISABLED(
+		prAdapter->rWifiVar.ucEnableMlo))
+		ret = FALSE;
+	else if (fgIsApMode &&
+		IS_FEATURE_FORCE_ENABLED(
+		prAdapter->rWifiVar.ucEnableMlo))
+		ret = TRUE;
+	else if (!fgIsApMode)
+		ret = TRUE;
+	else
+		ret = FALSE;
+
+	if (ret == FALSE)
+		DBGLOG(ML, INFO,
+			"ucMldLinkMax:%d, ucEnableMlo:%d, isApMode:%d => mlo feature disabled\n",
+			prAdapter->rWifiVar.ucMldLinkMax,
+			prAdapter->rWifiVar.ucEnableMlo,
+			fgIsApMode);
+
+	return ret;
+}
+
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
