@@ -5818,7 +5818,7 @@ static struct priv_hqa_cmd_id_mapping priv_hqa_cmd_mapping[] = {
 	{"GetTxInfo", 0x1313,
 	{0} },
 	{"DBDCStartTX", 0x1600,
-	{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4} },
+	{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4} },
 	{"DBDCStartRX", 0x1600,
 	{4, 4, 4, 6, 4, 4, 4, 4, 4} },
 	{"DBDCStopTX", 0x1600,

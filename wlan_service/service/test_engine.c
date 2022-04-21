@@ -123,6 +123,27 @@ static struct test_data_rate_map he_su_mode_map_bw20[] = {
 	{34,	73},	/* MCS1 DCM */
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static struct test_data_rate_map he_su_mode_map_bw40[] = {
+	/*index, nss1{0.8gi, 1.6gi, 3.2gi}, nss2{0.8gi, 1.6gi, 3.2gi},
+	 *nss3{0.8gi, 1.6gi, 3.2gi}, nss4{0.8gi, 1.6gi, 3.2gi}
+	 */
+	{0,	172},    /* in unit of 100k */
+	{1,	344},
+	{2,	516},
+	{3,	688},
+	{4,	1032},
+	{5,	1376},
+	{6,	1549},
+	{7,	1721},
+	{8,	2065},
+	{9,	2294},
+	{10,	2581},
+	{11,	2868},
+	{33,	86},	/* MCS0 DCM */
+	{34,	172},	/* MCS1 DCM */
+};
+#else
 static struct test_data_rate_map he_su_mode_map_bw40[] = {
 	/*index, nss1{0.8gi, 1.6gi, 3.2gi}, nss2{0.8gi, 1.6gi, 3.2gi},
 	 *nss3{0.8gi, 1.6gi, 3.2gi}, nss4{0.8gi, 1.6gi, 3.2gi}
@@ -142,6 +163,7 @@ static struct test_data_rate_map he_su_mode_map_bw40[] = {
 	{33,	73},	/* MCS0 DCM */
 	{34,	146},	/* MCS1 DCM */
 };
+#endif
 
 
 static struct test_data_rate_map he_su_mode_map_bw80[] = {
@@ -164,6 +186,46 @@ static struct test_data_rate_map he_su_mode_map_bw80[] = {
 	{34,	306},	/* MCS1 DCM */
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static struct test_data_rate_map he_su_mode_map_bw160[] = {
+	/*index, nss1{0.8gi, 1.6gi, 3.2gi}, nss2{0.8gi, 1.6gi, 3.2gi},
+	 *nss3{0.8gi, 1.6gi, 3.2gi}, nss4{0.8gi, 1.6gi, 3.2gi}
+	 */
+	{0,	721},    /* in unit of 100k */
+	{1,	1441},
+	{2,	2162},
+	{3,	2882},
+	{4,	4324},
+	{5,	5765},
+	{6,	6485},
+	{7,	7206},
+	{8,	8647},
+	{9,	9607},
+	{10,	10809},
+	{11,	12010},
+	{33,	360},	/* MCS0 DCM */
+	{34,	721},	/* MCS1 DCM */
+};
+
+static struct test_datalen_limit_map datalen_limit[] = {
+	{TEST_MODE_CCK,			2304},
+	{TEST_MODE_OFDM,		2304},
+	{TEST_MODE_HTMIX,		7935},
+	{TEST_MODE_HTGREENFIELD,	7935},
+	{TEST_MODE_VHT,			6144},
+	{0},	/* reserved */
+	{0},	/* reserved */
+	{0},	/* reserved */
+	{TEST_MODE_HE_SU,		6144},
+	{TEST_MODE_HE_ER,		6144},
+	{TEST_MODE_HE_MU,		6144},
+	{TEST_MODE_HE_TB,		6144},
+	{TEST_MODE_EHT_MU_DL_SU,		6144},
+	{TEST_MODE_EHT_MU_UL_SU,		6144},
+	{TEST_MODE_EHT_MU_DL_OFDMA,		6144},
+	{TEST_MODE_EHT_TB_UL_OFDMA,		6144},
+};
+#else
 static struct test_data_rate_map he_su_mode_map_bw160[] = {
 	/*index, nss1{0.8gi, 1.6gi, 3.2gi}, nss2{0.8gi, 1.6gi, 3.2gi},
 	 *nss3{0.8gi, 1.6gi, 3.2gi}, nss4{0.8gi, 1.6gi, 3.2gi}
@@ -199,13 +261,14 @@ static struct test_datalen_limit_map datalen_limit[] = {
 	{TEST_MODE_HE_TB,		11454},
 	{TEST_MODE_VHT_MIMO,		11454},
 };
+#endif
 
 static u_int8 test_he_bpscs[] = {
-	1, 2, 2, 4, 4, 6, 6, 6, 8, 8, 10, 10	/* MCS0~11 */
+	1, 2, 2, 4, 4, 6, 6, 6, 8, 8, 10, 10, 12, 12	/* MCS0~13 */
 };
 
 static u_int8 test_he_rate_density[] = {
-	2, 2, 4, 2, 4, 3, 4, 6, 4, 6, 4, 6	/* MCS0~11 */
+	2, 2, 4, 2, 4, 3, 4, 6, 4, 6, 4, 6, 4, 6	/* MCS0~13 */
 };
 
 static u_int8 test_ltf_sym[] = {
@@ -224,6 +287,27 @@ static u_int8 test_he_t_pe_x5[] = {
 	0, 20, 40, 60, 80		/* 0us, 4us, 8us, 12us, 16us */
 };
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static struct test_he_ru_const test_ru_const[] = {
+
+	{37, 24, 12, 6, 2},
+	{53, 48, 24, 12, 6},
+	{61, 102, 51, 24, 12},
+	{65, 234, 117, 60, 30},
+	{67, 468, 234, 120, 60},
+	{68, 980, 490, 240, 120},
+	{69, 1960, 980, 492, 246},
+	{70, 3920, 1960, 984, 492},
+	{82, 72, 36, 18, 8},
+	{90, 126, 63, 30, 14},
+	{94, 702, 351, 180, 90},
+	{96, 1448, 724, 360, 180},
+	{100, 1682, 841, 420, 210},
+	{104, 2428, 1214, 612, 306},
+	{105, 2940, 1470, 732, 366},
+	{107, 3408, 1704, 852, 426},
+};
+#else
 static struct test_he_ru_const test_ru_const[] = {
 	{37, 24, 12, 6, 2},
 	{53, 48, 24, 12, 6},
@@ -233,6 +317,7 @@ static struct test_he_ru_const test_ru_const[] = {
 	{68, 980, 490, 240, 120},
 	{69, 1960, 980, 492, 246}
 };
+#endif
 
 /*****************************************************************************
  *	Internal functions
