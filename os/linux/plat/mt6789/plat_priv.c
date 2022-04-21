@@ -53,9 +53,9 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.u4PerfMonUsedTh / 100;
 
 	if (cnmIsMccMode(prAdapter)
-		&& prAdapter->rWifiVar.u4PerfMonTpTh[2]
+		&& prAdapter->rWifiVar.u4PerfMonTpTh[1]
 			== PERF_MON_MCC_TP_THRESHOLD
-		&& u4TarPerfLevel >= 3) {
+		&& u4TarPerfLevel >= 2) {
 		return TRUE;
 	}
 
