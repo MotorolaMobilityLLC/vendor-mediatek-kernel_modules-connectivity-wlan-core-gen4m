@@ -454,13 +454,23 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* Static mapping */
-	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 #if (CFG_WLAN_ATF_SUPPORT == 1)
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+
+		DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n",
+			prChipInfo->u4CsrOffset + u4BusAddr,
+			u4Value);
+
 		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
-			u4BusAddr, u4Value, 0);
+			prChipInfo->u4CsrOffset + u4BusAddr,
+			u4Value, 0);
+	} else {
+		DBGLOG(INIT, ERROR, "Write CONSYS ERROR 0x%08x=0x%08x.\n",
+			u4Register, u4Value);
+	}
 #else
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
-#endif
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
@@ -469,6 +479,7 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 			kalDevRegL2Write(prGlueInfo, prChipInfo, u4Register,
 				u4Value);
 	}
+#endif
 
 	if (prHifInfo)
 		prHifInfo->u4HifCnt++;
@@ -1530,11 +1541,14 @@ int wf_ioremap_read(phys_addr_t addr, unsigned int *val)
 
 int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 {
-	void *vir_addr = NULL;
 #if (CFG_WLAN_ATF_SUPPORT == 1)
+	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n",
+		addr, val);
+
 	kalSendAtfSmcCmd(SMC_WLAN_IOREMAP_WR_CR_OPID,
 		(uint32_t)addr, (uint32_t)val, 0);
 #else
+	void *vir_addr = NULL;
 	vir_addr = ioremap(addr, 0x10);
 	if (!vir_addr) {
 		DBGLOG(INIT, ERROR, "%s: Cannot remap address[%pa].\n",
@@ -1546,6 +1560,5 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	iounmap(vir_addr);
 	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
 #endif
-
 	return 0;
 }

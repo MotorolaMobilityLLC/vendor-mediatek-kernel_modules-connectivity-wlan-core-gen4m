@@ -437,6 +437,7 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	}
 
 	prChipInfo->CSRBaseAddress = CSRBaseAddress;
+	prChipInfo->u4CsrOffset = (uint32_t)(g_u8CsrOffset & BITS(0, 31));
 
 	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
 	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
