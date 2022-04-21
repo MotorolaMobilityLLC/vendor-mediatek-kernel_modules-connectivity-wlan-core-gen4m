@@ -10081,7 +10081,7 @@ int kalMaskMemCmp(const void *cs, const void *ct,
 /*
  * This func is mainly from bionic's strtok.c
  */
-int8_t *strtok_r(int8_t *s, const int8_t *delim, int8_t **last)
+char *strtok_r(char *s, const char *delim, char **last)
 {
 	char *spanp;
 	int c, sc;

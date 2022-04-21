@@ -16846,7 +16846,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 	struct PARAM_QOS_TSPEC *prTspecParam = NULL;
 	struct MSG_TS_OPERATE *prMsgTsOperate = NULL;
 	uint8_t *pucCmd = (uint8_t *)pvBuffer;
-	uint8_t *pucSavedPtr = NULL;
+	char *pucSavedPtr = NULL;
 	uint8_t *pucItem = NULL;
 	uint32_t u4Ret = 1;
 	uint8_t ucApsdSetting = 2; /* 0: legacy; 1: u-apsd; 2: not set yet */
@@ -16896,7 +16896,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 	prMsgTsOperate->eOpCode = eTsOp;
 	prTspecParam = &prMsgTsOperate->rTspecParam;
 	pucCmd += 6;
-	pucItem = (uint8_t *)kalStrtokR(pucCmd, ",", &pucSavedPtr);
+	pucItem = kalStrtokR(pucCmd, ",", &pucSavedPtr);
 	while (pucItem) {
 		if (kalStrniCmp(pucItem, "token ", 6) == 0)
 			u4Ret = kalkStrtou8(pucItem + 6, 0,
@@ -16972,8 +16972,7 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 			cnmMemFree(prAdapter, prMsgTsOperate);
 			return WLAN_STATUS_FAILURE;
 		}
-		pucItem =
-			(uint8_t *)kalStrtokR(NULL, ",", &pucSavedPtr);
+		pucItem = kalStrtokR(NULL, ",", &pucSavedPtr);
 	}
 	/* if APSD is not set in addts request, use global wmmps settings */
 	prAisBssInfo =
@@ -17036,7 +17035,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 {
 	struct SW_RFB rSwRfb;
 	static uint8_t aucPacket[200] = {0,};
-	uint8_t *pucSavedPtr = (int8_t *)pvBuffer;
+	char *pucSavedPtr = (int8_t *)pvBuffer;
 	uint8_t *pucItem = NULL;
 	uint8_t j = 0;
 	int8_t i = 0;

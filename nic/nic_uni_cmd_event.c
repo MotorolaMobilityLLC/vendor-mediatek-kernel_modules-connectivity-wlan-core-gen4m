@@ -3880,8 +3880,10 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		tag->u2Length = sizeof(*tag);
 		tag->ucAcIndex = i;
 		tag->ucValidBitmap = UNI_CMD_EDCA_ALL_BITS;
-		tag->ucCWmin = (uint8_t) ffs(cmd->arACQueParms[i].u2CWmin + 1) - 1;
-		tag->ucCWmax = (uint8_t) ffs(cmd->arACQueParms[i].u2CWmax + 1) - 1;
+		tag->ucCWmin = (uint8_t) kalFfs(
+			cmd->arACQueParms[i].u2CWmin + 1) - 1;
+		tag->ucCWmax = (uint8_t) kalFfs(
+			cmd->arACQueParms[i].u2CWmax + 1) - 1;
 		tag->u2TxopLimit = cmd->arACQueParms[i].u2TxopLimit;
 		tag->ucAifsn = (uint8_t) cmd->arACQueParms[i].u2Aifsn;
 		tag++;

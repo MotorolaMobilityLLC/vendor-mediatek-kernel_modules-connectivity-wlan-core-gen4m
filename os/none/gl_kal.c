@@ -334,3 +334,33 @@ const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 
 	return ie;
 }
+
+int kalStrniCmp(const char *s1, const char *s2, size_t n)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+char *kalStrSep(char **stringp, const char *delim)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+size_t kalStrnLen(const char *s, size_t b)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+char *kalStrtokR(char *s, const char *delim, char **last)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+int kalFfs(int s)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
