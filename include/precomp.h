@@ -193,6 +193,7 @@
 
 #include "hal.h"
 
+#include "gl_emi.h"
 #include "mt66xx_reg.h"
 
 #include "connac_reg.h"

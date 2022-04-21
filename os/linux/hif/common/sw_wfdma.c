@@ -73,9 +73,6 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	uint32_t u4Value = 0;
-#if CFG_MTK_ANDROID_EMI
-	void __iomem *pucEmiBaseAddr = NULL;
-#endif
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -107,34 +104,11 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	if (!gConEmiPhyBaseFinal) {
-		DBGLOG(INIT, ERROR,
-		       "Consys emi memory address gConEmiPhyBaseFinal invalid\n");
-		return;
-	}
-
-	request_mem_region(
-		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
-		SW_WFDMA_EMI_SIZE,
-		"WIFI-SW-WFDMA");
-	pucEmiBaseAddr = ioremap(
-		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
-		SW_WFDMA_EMI_SIZE);
-
-	DBGLOG_LIMITED(INIT, INFO,
-		       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%p\n",
-		       (uint64_t)gConEmiPhyBaseFinal,
-		       prSwWfdmaInfo->u4EmiOffset,
-		       gConEmiSizeFinal, pucEmiBaseAddr);
-
-	if (!pucEmiBaseAddr) {
-		DBGLOG(INIT, ERROR, "ioremap_nocache failed\n");
-		return;
-	}
-
-	prSwWfdmaInfo->pucIoremapAddr = pucEmiBaseAddr;
+	prSwWfdmaInfo->pucIoremapAddr =
+		emi_mem_get_vir_base(prGlueInfo->prAdapter->chip_info) +
+		emi_mem_offset_convert(prSwWfdmaInfo->u4EmiOffset);
 	prSwWfdmaInfo->prDmad =
-		(struct SW_WFDMAD *)(pucEmiBaseAddr);
+		(struct SW_WFDMAD *)prSwWfdmaInfo->pucIoremapAddr;
 	halSwWfdmaReset(prSwWfdmaInfo);
 #endif /* CFG_MTK_ANDROID_EMI */
 }
@@ -149,19 +123,6 @@ void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo)
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
-#if CFG_MTK_ANDROID_EMI
-	if (!prSwWfdmaInfo->pucIoremapAddr) {
-		DBGLOG(INIT, ERROR, "prDmad not remap\n");
-		return;
-	}
-
-	DBGLOG_LIMITED(INIT, INFO, "iounmap 0x%p\n",
-		       prSwWfdmaInfo->pucIoremapAddr);
-	iounmap(prSwWfdmaInfo->pucIoremapAddr);
-	release_mem_region(
-		gConEmiPhyBaseFinal + prSwWfdmaInfo->u4EmiOffset,
-		SW_WFDMA_EMI_SIZE);
-#endif /* CFG_MTK_ANDROID_EMI */
 	prSwWfdmaInfo->pucIoremapAddr = NULL;
 	prSwWfdmaInfo->prDmad = NULL;
 }

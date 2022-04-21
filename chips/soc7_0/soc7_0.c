@@ -594,6 +594,11 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 	.isSupportMddpAOR = true,
 	.ccif_ops = &soc7_0_ccif_ops,
+#if CFG_MTK_ANDROID_WMT
+	.rEmiInfo = {
+		.type = EMI_ALLOC_TYPE_CONNINFRA,
+	},
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {

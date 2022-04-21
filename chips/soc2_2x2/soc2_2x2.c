@@ -397,6 +397,11 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_2x2 = {
 #if CFG_SUPPORT_MDDP_AOR
 	.isSupportMddpAOR = true,
 #endif
+#if CFG_MTK_ANDROID_WMT
+	.rEmiInfo = {
+		.type = EMI_ALLOC_TYPE_WMT,
+	},
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_2x2 = {

@@ -161,8 +161,6 @@ struct HIF_MEM_OPS {
 	void (*dumpRx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
-	void (*allocMcuEmiMem)(struct GL_HIF_INFO *prHifInfo);
-	void (*freeMcuEmiMem)(struct GL_HIF_INFO *prHifInfo);
 };
 
 /* host interface's private data structure, which is attached to os glue
@@ -172,7 +170,6 @@ struct GL_HIF_INFO {
 	struct platform_device *pdev;
 	struct device *prDmaDev;
 	struct HIF_MEM_OPS rMemOps;
-	struct HIF_MEM rMcuEmiMem;
 
 	uint32_t u4IrqId;
 #if (CFG_SUPPORT_CONNINFRA == 1)

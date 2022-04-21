@@ -503,34 +503,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucStartPtr,
 	IN uint32_t u4Len)
 {
-#if CFG_MTK_ANDROID_EMI
-	uint8_t __iomem *pucEmiBaseAddr = NULL;
-	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
-
-	if (!gConEmiPhyBaseFinal) {
-		DBGLOG(INIT, ERROR,
-		       "Consys emi memory address gConEmiPhyBaseFinal invalid\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	request_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal, "WIFI-EMI");
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
-	pucEmiBaseAddr = ioremap(gConEmiPhyBaseFinal, gConEmiSizeFinal);
-	DBGLOG_LIMITED(INIT, INFO,
-	       "EmiPhyBase:0x%llx offset:0x%x len:0x%x, ioremap region 0x%lX @ 0x%lX\n",
-	       (uint64_t)gConEmiPhyBaseFinal, u4Offset, u4Len, gConEmiSizeFinal,
-	       pucEmiBaseAddr);
-	if (!pucEmiBaseAddr) {
-		DBGLOG(INIT, ERROR, "ioremap failed\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	kalMemCopyToIo((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
-
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
-	iounmap(pucEmiBaseAddr);
-	release_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal);
-#endif /* CFG_MTK_ANDROID_EMI */
+	emi_mem_write(prAdapter->chip_info, u4DestAddr, pucStartPtr, u4Len);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2170,10 +2143,10 @@ static void fwDlSetupRedlDmad(struct ADAPTER *prAdapter,
 }
 
 static void fwDlSetupRedlImg(struct ADAPTER *prAdapter,
+	phys_addr_t rEmiPhyAddr,
 	uint32_t u4EmiOffset,
 	uint32_t u4Size)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Offset = 0;
 
 	do {
@@ -2188,7 +2161,7 @@ static void fwDlSetupRedlImg(struct ADAPTER *prAdapter,
 			u4SecSize = u4Size - u4Offset;
 
 		fwDlSetupRedlDmad(prAdapter,
-			prHifInfo->rMcuEmiMem.pa + u4EmiOffset + u4Offset,
+			rEmiPhyAddr + u4EmiOffset + u4Offset,
 			u4SecSize);
 
 		u4Offset += u4SecSize;
@@ -2198,10 +2171,18 @@ static void fwDlSetupRedlImg(struct ADAPTER *prAdapter,
 uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 	uint32_t u4EmiOffset, uint32_t u4Size)
 {
+	phys_addr_t rEmiPhyAddr;
+	uint32_t u4EmiLength;
+
 	DBGLOG(INIT, INFO, "u4EmiOffset: 0x%x, u4Size: 0x%x\n",
 		u4EmiOffset, u4Size);
 
-	if (u4Size == 0 || (u4EmiOffset + u4Size) > MCU_EMI_SIZE)
+	rEmiPhyAddr = emi_mem_get_phy_base(prAdapter->chip_info);
+	u4EmiLength = emi_mem_get_size(prAdapter->chip_info);
+	u4EmiOffset = emi_mem_offset_convert(u4EmiOffset);
+
+	if (u4Size == 0 || rEmiPhyAddr == 0 ||
+	    (u4Size + u4EmiOffset) > u4EmiLength)
 		return WLAN_STATUS_INVALID_DATA;
 
 	/* 1. Recycle used dmad first */
@@ -2214,6 +2195,7 @@ uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 
 	/* 3. Setup DMAD for redl packets */
 	fwDlSetupRedlImg(prAdapter,
+		rEmiPhyAddr,
 		u4EmiOffset,
 		u4Size);
 

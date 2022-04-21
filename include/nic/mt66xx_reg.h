@@ -60,6 +60,8 @@
 #ifndef _MT66XX_REG_H
 #define _MT66XX_REG_H
 
+#include "gl_emi.h"
+
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -1634,6 +1636,7 @@ struct mt66xx_chip_info {
 	uint32_t (*queryPmicInfo)(struct ADAPTER *prAdapter);
 	struct CCIF_OPS *ccif_ops;
 	struct WLAN_PINCTRL_OPS *pinctrl_ops;
+	struct EMI_MEM_INFO rEmiInfo;
 };
 
 struct mt66xx_hif_driver_data {

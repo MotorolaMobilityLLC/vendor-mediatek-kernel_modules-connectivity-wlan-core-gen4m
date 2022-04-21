@@ -589,6 +589,13 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if IS_MOBILE_SEGMENT
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF),
+	.rEmiInfo = {
+#if CFG_MTK_ANDROID_EMI
+		.type = EMI_ALLOC_TYPE_LK,
+#else
+		.type = EMI_ALLOC_TYPE_IN_DRIVER,
+#endif /* CFG_MTK_ANDROID_WMT */
+	},
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 #endif
@@ -1295,12 +1302,16 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
-	struct GL_HIF_INFO *prHifInfo =
-		&prAdapter->prGlueInfo->rHifInfo;
+	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
+
+	if (!base)
+		return;
+
+	DBGLOG(HAL, INFO, "base: 0x%llx\n", base);
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
-		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
+		   ((uint32_t)base >> 16));
 }
 
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,

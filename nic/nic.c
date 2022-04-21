@@ -340,9 +340,6 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 				      &prAdapter->arStaRec[u4Idx]);
 
 #if CFG_SUPPORT_LLS
-	/* LLS firmware EMI "WIFI-LLS" */
-	if (prAdapter->pucLinkStatsSrcBufferAddr)
-		iounmap(prAdapter->pucLinkStatsSrcBufferAddr);
 	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
 #endif
 

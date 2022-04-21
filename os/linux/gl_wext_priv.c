@@ -4115,6 +4115,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_GET_SER                             "GET_SER"
 
+#define CMD_GET_EMI			"GET_EMI"
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -10351,8 +10353,10 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 1", 8) == 0) {
-			conninfra_get_phy_addr(&u4ConEmiPhyBase, NULL);
-			u4EmiMetOffset = kalGetEmiMetOffset();
+			u4ConEmiPhyBase = emi_mem_get_phy_base(
+				prGlueInfo->prAdapter->chip_info);
+			u4EmiMetOffset = emi_mem_offset_convert(
+				kalGetEmiMetOffset());
 			DBGLOG(REQ, INFO, "Start MET log, u4ConEmiPhyBase:%d",
 				u4ConEmiPhyBase);
 			if (!u4ConEmiPhyBase) {
@@ -15574,6 +15578,88 @@ end:
 
 } /* priv_driver_get_ser_info */
 
+static int priv_driver_get_emi_info(struct net_device *prNetDev,
+	char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t *buf = NULL;
+	uint32_t offset = 0, size = 0, idx = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4ArgNum = 3;
+
+	if (!prNetDev)
+		goto exit;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto exit;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < i4ArgNum) {
+		DBGLOG(REQ, ERROR, "Expect arg num %d but %d\n",
+			i4ArgNum, i4Argc);
+		goto exit;
+	}
+
+	kalkStrtou32(apcArgv[1], 0, &offset);
+	kalkStrtou32(apcArgv[2], 0, &size);
+
+	DBGLOG(REQ, INFO, "offset: 0x%x, size: 0x%x\n",
+		offset, size);
+
+	if (size == 0)
+		goto exit;
+
+	buf = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!buf)
+		goto exit;
+	kalMemZero(buf, size);
+
+	if (emi_mem_read(prGlueInfo->prAdapter->chip_info, offset, buf,
+			 size)) {
+		DBGLOG(REQ, ERROR, "emi_mem_read failed.\n");
+		goto exit;
+	}
+	DBGLOG_MEM32(REQ, INFO, buf, size);
+	while (idx < size) {
+		if ((idx % 16) == 0)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\n");
+		else if ((idx % 8) == 0)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"  ");
+		else if ((idx % 4) == 0)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				" ");
+
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%02x",
+			buf[idx]);
+
+		idx++;
+	}
+
+exit:
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, size);
+
+	return i4BytesWritten;
+}
+
+
 #if CFG_SUPPORT_BATCH_SCAN
 #define CMD_BATCH_SET           "WLS_BATCHING SET"
 #define CMD_BATCH_GET           "WLS_BATCHING GET"
@@ -19276,6 +19362,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_MCS_INFO, priv_driver_get_mcs_info},
 #endif
 	{CMD_GET_SER, priv_driver_get_ser_info},
+	{CMD_GET_EMI, priv_driver_get_emi_info},
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT

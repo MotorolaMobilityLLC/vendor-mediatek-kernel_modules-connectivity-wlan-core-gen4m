@@ -215,19 +215,6 @@ static uint8_t *apucEepromName[] = {
 };
 #endif
 
-/* For running on X86 UT environment */
-#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
-phys_addr_t gConEmiPhyBase;
-EXPORT_SYMBOL(gConEmiPhyBase);
-
-unsigned long long gConEmiSize;
-EXPORT_SYMBOL(gConEmiSize);
-#endif
-
-#if CFG_MTK_ANDROID_EMI
-phys_addr_t gConEmiPhyBaseFinal;
-unsigned long long gConEmiSizeFinal;
-#endif
 /*  For DTV Ref project -> Default enable */
 #if CFG_DC_USB_WOW_CALLBACK || CFG_POWER_OFF_CTRL_SUPPORT
 /* Register  DC  wow callback */
@@ -4993,8 +4980,10 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 #endif
 
 #if (CFG_MTK_ANDROID_EMI == 1)
-	prServiceTest->test_winfo->emi_phy_base = gConEmiPhyBaseFinal;
-	prServiceTest->test_winfo->emi_phy_size = gConEmiSizeFinal;
+	prServiceTest->test_winfo->emi_phy_base =
+		emi_mem_get_phy_base(prGlueInfo->prAdapter->chip_info);
+	prServiceTest->test_winfo->emi_phy_size =
+		emi_mem_get_size(prGlueInfo->prAdapter->chip_info);
 #else
 	DBGLOG(RFTEST, WARN, "Platform doesn't support EMI address\n");
 #endif
@@ -7045,8 +7034,11 @@ static int wlanWmtCbClrBusCnt(void)
 
 static int wlanWmtCbSetMpuProtect(bool enable)
 {
+	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
+
 #if CFG_MTK_ANDROID_EMI
-	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, enable);
+	kalSetEmiMpuProtection(emi_mem_get_phy_base(data->chip_info),
+		enable);
 #endif
 	return 0;
 }
@@ -7295,33 +7287,6 @@ static int initWlan(void)
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
-	/* Refer 6765 dts setting */
-	char *ptr = NULL;
-
-	gConEmiSize = 0x400000;
-	ptr = kmalloc(gConEmiSize, GFP_KERNEL);
-	if (!ptr) {
-		DBGLOG(INIT, INFO,
-		       "initWlan try to allocate 0x%x bytes memory error\n",
-		       gConEmiSize);
-		return -EINVAL;
-	}
-	memset(ptr, 0, gConEmiSize);
-	gConEmiPhyBase = (phys_addr_t)ptr;
-#endif
-
-#if (CFG_MTK_ANDROID_EMI == 1)
-	gConEmiPhyBaseFinal = gConEmiPhyBase;
-	gConEmiSizeFinal = gConEmiSize;
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	conninfra_get_phy_addr(
-		&gConEmiPhyBaseFinal,
-		(unsigned int *)&gConEmiSizeFinal);
-#endif
-#endif
-
 	DBGLOG(INIT, INFO, "initWlan\n");
 
 #ifdef CFG_CHIP_RESET_KO_SUPPORT
@@ -7330,7 +7295,6 @@ static int initWlan(void)
 #endif
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
-
 	if (kalStrLen(gprifnamesta) > CUSTOM_IFNAMESIZ ||
 	    kalStrLen(gprifnamep2p) > CUSTOM_IFNAMESIZ ||
 	    kalStrLen(gprifnameap) > CUSTOM_IFNAMESIZ) {
@@ -7601,9 +7565,6 @@ static void exitWlan(void)
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
 #endif
-#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
-	kfree((const void *)gConEmiPhyBase);
-#endif
 
 #if (CFG_SUPPORT_ICS == 1)
 	IcsDeInit();
@@ -7700,9 +7661,6 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 
 #if WLAN_INCLUDE_PROC
 		procUninitProcFs();
-#endif
-#if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
-		kfree((const void *)gConEmiPhyBase);
 #endif
 
 #if (CFG_SUPPORT_ICS == 1)
