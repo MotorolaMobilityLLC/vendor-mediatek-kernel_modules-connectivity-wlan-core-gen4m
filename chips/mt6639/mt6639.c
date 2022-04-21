@@ -28,6 +28,8 @@
 #include "coda/mt6639/wf2ap_conn_infra_on_ccif4.h"
 #include "coda/mt6639/ap2wf_conn_infra_on_ccif4.h"
 #include "coda/mt6639/wf_top_cfg_on.h"
+#include "coda/mt6639/wf_wtblon_top.h"
+#include "coda/mt6639/wf_uwtbl_top.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif

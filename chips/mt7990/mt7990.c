@@ -26,6 +26,8 @@
 #include "coda/mt7990/conn_infra_cfg.h"
 #include "coda/mt7990/conn_infra_cfg_on.h"
 #include "hal_dmashdl_mt7990.h"
+#include "coda/mt7990/wf_wtblon_top.h"
+#include "coda/mt7990/wf_uwtbl_top.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
