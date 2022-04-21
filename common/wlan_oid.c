@@ -7823,7 +7823,7 @@ wlanoidSetPpCap(IN struct ADAPTER *prAdapter,
 	}
 
 	tag = (struct UNI_CMD_PP_EN_CTRL_T *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_PP_EN_CTRL;
+	tag->u2Tag = UNI_CMD_PP_TAG_EN_CTRL;
 	tag->u2Length =  sizeof(*tag);
 	tag->u1DbdcIdx = para->u1DbdcIdx;
 	tag->u1PpMgmtMode = para->u1PpMgmtMode;
@@ -7853,6 +7853,123 @@ wlanoidSetPpCap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif
 }
+
+uint32_t
+wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_PP *uni_cmd;
+	struct UNI_CMD_PP_ALG_CTRL *tag;
+	struct UNI_CMD_PP_ALG_CTRL *para;
+	uint32_t u4MaxCmdLen = sizeof(struct UNI_CMD_PP) +
+			       sizeof(struct UNI_CMD_PP_ALG_CTRL);
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: prAdapter is null !!!!\x1b[m\n"
+			, __func__);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pu4SetInfoLen) {
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: pu4SetInfoLen is null !!!!\x1b[m\n"
+			, __func__);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_PP_ALG_CTRL);
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_PP_ALG_CTRL))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	if (!pvSetBuffer) {
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: pvSetBuffer is null !!!!\x1b[m\n"
+			, __func__);
+		return WLAN_STATUS_FAILURE;
+	}
+	para = (struct UNI_CMD_PP_ALG_CTRL *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_PP *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, u4MaxCmdLen);
+	if (!uni_cmd) {
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: uni_cmd is null !!!!\x1b[m\n"
+			, __func__);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_PP_ALG_CTRL *)uni_cmd->aucTlvBuffer;
+	kalMemCopy(tag, para, sizeof(*tag));
+	tag->u2Tag = UNI_CMD_PP_TAG_ALG_CTRL;
+	tag->u2Length =  sizeof(*tag);
+
+	switch (tag->u1PpAction) {
+	case UNI_CMD_PP_ALG_SET_TIMER:
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
+			, __func__, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpTimerIntv = %d\x1b[m\n"
+			, __func__, tag->u4PpTimerIntv);
+
+		break;
+	case UNI_CMD_PP_ALG_SET_THR:
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
+			, __func__, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
+			, __func__, tag->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX2 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX2);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX3 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX3);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX4 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX4);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX5 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX5);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX6 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX6);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX7 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX7);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX8 = %d\x1b[m\n"
+			, __func__, tag->u4PpThrX8);
+
+		break;
+
+	case UNI_CMD_PP_ALG_GET_STATISTICS:
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
+			, __func__, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
+			, __func__, tag->u1DbdcIdx);
+
+		break;
+
+	default:
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: u4PpAction = %d is not supported !!\x1b[m\n"
+			, __func__, tag->u1PpAction);
+		break;
+	}
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_PP,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     u4MaxCmdLen,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
 
 #if (CFG_SUPPORT_ICS == 1)
 /*----------------------------------------------------------------------------*/

@@ -3864,6 +3864,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_FIXED_RATE      "FixedRate"
 #define CMD_SET_AUTO_RATE       "AutoRate"
 #define CMD_SET_PP_CAP_CTRL      "PpCapCtrl"
+#define CMD_SET_PP_ALG_CTRL      "PpAlgCtrl"
 #define CMD_GET_VERSION         "VER"
 #define CMD_SET_TEST_MODE	"SET_TEST_MODE"
 #define CMD_SET_TEST_CMD	"SET_TEST_CMD"
@@ -9772,6 +9773,166 @@ int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }	/* priv_driver_set_fixed_rate */
+
+int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4BufLen = 0;
+	int32_t i4BytesWritten = 0, i4Argc = 0, i4Recv0 = 0, i4Recv1 = 0;
+	uint32_t u4PpTimerIntv = 0, u4PpThrX2 = 0, u4PpThrX3 = 0;
+	uint32_t u4PpThrX4 = 0, u4PpThrX5 = 0, u4PpThrX6 = 0;
+	uint32_t u4PpThrX7 = 0, u4PpThrX8 = 0;
+	uint8_t u1PpAction = 0, u1DbdcIdx = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int8_t *this_char = NULL;
+	struct UNI_CMD_PP_ALG_CTRL rPpAlgCtrl;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "\x1b[32m %s: command is %s\x1b[m\n"
+		, __func__, pcCommand);
+	DBGLOG(REQ, INFO, "\x1b[32m %s: argc is %d, apcArgv[0] = %s\x1b[m\n"
+		, __func__, i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+
+	this_char++;
+	DBGLOG(REQ, INFO, "\x1b[32m %s: string = %s\x1b[m\n"
+		, __func__, this_char);
+
+	i4Recv0 = sscanf(this_char, "%d:", &u1PpAction);
+	this_char += 2;
+	DBGLOG(REQ, INFO, "\x1b[32m %s: u1PpAction = %d, i4Recv0 = %d\x1b[m\n"
+		, __func__, u1PpAction, i4Recv0);
+
+	if (i4Recv0 != 1)
+		goto error;
+
+	kalMemZero(&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL));
+	rPpAlgCtrl.u1PpAction = u1PpAction;
+
+	switch (u1PpAction) {
+	case UNI_CMD_PP_ALG_SET_TIMER:
+		i4Recv1 = sscanf(this_char, "%d",
+			&u4PpTimerIntv);
+
+		rPpAlgCtrl.u4PpTimerIntv = u4PpTimerIntv;
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u1PpAction = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpTimerIntv = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpTimerIntv);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
+			, __func__, i4Recv1);
+
+		if (i4Recv1 != 1)
+			goto error;
+
+		break;
+	case UNI_CMD_PP_ALG_SET_THR:
+		i4Recv1 = sscanf(this_char, "%d:%d:%d:%d:%d:%d:%d:%d",
+			&u1DbdcIdx,
+			&u4PpThrX2,
+			&u4PpThrX3,
+			&u4PpThrX4,
+			&u4PpThrX5,
+			&u4PpThrX6,
+			&u4PpThrX7,
+			&u4PpThrX8);
+
+		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
+		rPpAlgCtrl.u4PpThrX2 = u4PpThrX2;
+		rPpAlgCtrl.u4PpThrX3 = u4PpThrX3;
+		rPpAlgCtrl.u4PpThrX4 = u4PpThrX4;
+		rPpAlgCtrl.u4PpThrX5 = u4PpThrX5;
+		rPpAlgCtrl.u4PpThrX6 = u4PpThrX6;
+		rPpAlgCtrl.u4PpThrX7 = u4PpThrX7;
+		rPpAlgCtrl.u4PpThrX8 = u4PpThrX8;
+
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX2 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX2);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX3 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX3);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX4 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX4);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX5 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX5);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX6 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX6);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX7 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX7);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX8 = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u4PpThrX8);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
+			, __func__, i4Recv1);
+
+		if (i4Recv1 != 8)
+			goto error;
+
+		break;
+
+	case UNI_CMD_PP_ALG_GET_STATISTICS:
+		i4Recv1 = sscanf(this_char, "%d",
+			&u1DbdcIdx);
+		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
+
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
+			, __func__, i4Recv1);
+
+		if (i4Recv1 != 1)
+			goto error;
+
+		break;
+
+	default:
+		DBGLOG(REQ, ERROR,
+			"\x1b[31m %s: u4PpAction = %d is not supported !!\x1b[m\n"
+			, __func__, rPpAlgCtrl.u1PpAction);
+		goto error;
+
+		break;
+	}
+
+	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+	"PpAction=%d\n", rPpAlgCtrl.u1PpAction);
+
+	if (rPpAlgCtrl.u1PpAction == UNI_CMD_PP_ALG_GET_STATISTICS) {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpAlgCtrl,
+			&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL),
+			TRUE, TRUE, TRUE, &u4BufLen);
+	} else {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpAlgCtrl,
+			&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL),
+			FALSE, FALSE, TRUE, &u4BufLen);
+	}
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+	else
+		return i4BytesWritten;
+
+error:
+DBGLOG(REQ, ERROR, "\x1b[31m %s: iwpriv wlanXX driver %s \x1b[m\n"
+	, __func__, pcCommand);
+i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "Wrong param\n");
+
+	return i4BytesWritten;
+}
 #endif
 
 int priv_driver_set_em_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
@@ -18835,6 +18996,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	{CMD_SET_PP_CAP_CTRL, priv_driver_set_pp_cap_ctrl},
+	{CMD_SET_PP_ALG_CTRL, priv_driver_set_pp_alg_ctrl},
 #endif
 #if (CFG_SUPPORT_ICS == 1)
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
