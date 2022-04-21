@@ -645,11 +645,12 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t ext_offset = 0;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	if (index == TX_RING_CMD)
 		ext_offset = prBusInfo->tx_ring_cmd_idx * 4;
@@ -718,23 +719,45 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 void asicConnac3xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
 
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 	prAdapter->fgIsIntEnable = TRUE;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	enable_irq(prHifInfo->u4IrqId);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* IrqId_1 is MAWD interrupt */
+	if (prChipInfo->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		enable_irq(prHifInfo->u4IrqId_1);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 void asicConnac3xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prAdapter);
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 	disable_irq_nosync(prHifInfo->u4IrqId);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* IrqId_1 is MAWD interrupt */
+	if (prChipInfo->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		disable_irq_nosync(prHifInfo->u4IrqId_1);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	prAdapter->fgIsIntEnable = FALSE;
 }
@@ -1149,7 +1172,8 @@ void fillConnac3xNicTxDescAppendWithSdo(
 	/* Fill TxD append */
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)prTxDescBuffer;
 	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
-	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags =
+		HIF_PKT_FLAGS_CT_INFO_STA_APPLY_OVERRIDE;
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
 		prMsduInfo->ucBssIndex;
 	prHwTxDescAppend->CR4_APPEND.ucWtblIndex =
@@ -1170,11 +1194,9 @@ void fillConnac3xTxDescAppendBySdo(
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
 	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
-	prHwTxDescAppend->CR4_APPEND.ucBufNum = 2;
+	prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
-	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = SDO_HIF_TXD_SIZE;
-	prHwTxDescAppend->CR4_APPEND.au4BufPtr[1] = rDmaAddr + SDO_HIF_TXD_SIZE;
-	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] = SDO_PARTIAL_PAYLOAD_SIZE;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1267,7 +1289,9 @@ void fillConnac3xTxDescAppendByMawdSdo(
 
 	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
 	if (ucType)
-		prHwTxDescAppend->CR4_APPEND.u2PktFlags |= BIT(13) | BIT(15);
+		prHwTxDescAppend->CR4_APPEND.u2PktFlags |=
+			HIF_PKT_FLAGS_CT_INFO_STA_APPLY_OVERRIDE |
+			HIF_PKT_FLAGS_CT_INFO_MAWD_OFLD;
 
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
 	prHwTxDescAppend->CR4_APPEND.ucWtblIndex = prMsduInfo->ucWlanIndex;
@@ -1334,9 +1358,11 @@ void asicConnac3xInitTxdHook(
 	struct TX_DESC_OPS_T *prTxDescOps)
 {
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prTxDescOps);
 	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	prTxDescOps->nic_txd_long_format_op = nic_txd_v3_long_format_op;
 	prTxDescOps->nic_txd_tid_op = nic_txd_v3_tid_op;
@@ -1355,7 +1381,8 @@ void asicConnac3xInitTxdHook(
 		nic_txd_v3_set_hw_amsdu_template;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_sdo) {
+	if (prChipInfo->is_support_sdo &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
 		prTxDescOps->fillNicAppend =
@@ -1367,7 +1394,8 @@ void asicConnac3xInitTxdHook(
 	}
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	if (prChipInfo->is_support_mawd_tx) {
+	if (prChipInfo->is_support_mawd_tx &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
 		prTxDescOps->fillNicAppend =

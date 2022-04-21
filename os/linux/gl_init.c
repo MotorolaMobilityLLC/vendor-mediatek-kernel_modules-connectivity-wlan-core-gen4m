@@ -5488,6 +5488,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 	prAdapter->CurNoResSeqID = 0;
 
+	/* Initialize Feature Options */
+	wlanInitFeatureOption(prAdapter);
+
 	/* Init Chip Capability */
 	if (prChipInfo->asicCapInit)
 		prChipInfo->asicCapInit(prAdapter);

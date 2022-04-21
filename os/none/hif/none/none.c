@@ -445,19 +445,8 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void halMawdUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	uint8_t fgRxData)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
-
-void halMawdReadRxBlks(struct ADAPTER *prAdapter, uint32_t u4Port)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-

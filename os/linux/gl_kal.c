@@ -925,19 +925,24 @@ void kalPacketFree(IN struct GLUE_INFO *prGlueInfo,
  */
 /*----------------------------------------------------------------------------*/
 void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
-		     IN uint32_t u4Size, OUT uint8_t **ppucData)
+		     IN uint32_t u4Size,
+		     IN u_int8_t fgIsTx,
+		     OUT uint8_t **ppucData)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct sk_buff *prSkb;
-	uint32_t u4TxHeadRoomSize;
+	uint32_t u4TxHeadRoomSize = 0;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (fgIsTx) {
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	u4TxHeadRoomSize = CFG_RADIOTAP_HEADROOM;
+		u4TxHeadRoomSize = CFG_RADIOTAP_HEADROOM;
 #else
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-			   prChipInfo->txd_append_size;
+		u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+			prChipInfo->txd_append_size;
 #endif
+	}
 	if (in_interrupt())
 		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize,
 					GFP_ATOMIC | __GFP_NOWARN);

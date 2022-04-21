@@ -81,6 +81,7 @@
  *******************************************************************************
  */
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
+#define AXI_ISR_DEBUG_LOG                 1
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
 #define AXI_TX_CMD_BUFF_SIZE              4096
@@ -134,6 +135,8 @@ struct HIF_MEM_OPS {
 	void (*allocRxDesc)(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
+	void (*allocExtBuf)(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing);
 	bool (*allocTxCmdBuf)(struct RTMP_DMABUF *prDmaBuf,
 			      uint32_t u4Num, uint32_t u4Idx);
 	void (*allocTxDataBuf)(struct MSDU_TOKEN_ENTRY *prToken,
@@ -167,6 +170,8 @@ struct HIF_MEM_OPS {
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 	void (*freeDesc)(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
+	void (*freeExtBuf)(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing);
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
@@ -200,6 +205,7 @@ struct GL_HIF_INFO {
 	struct HIF_MEM rMcuEmiMem;
 
 	uint32_t u4IrqId;
+	uint32_t u4IrqId_1;
 	int32_t u4HifCnt;
 
 	/* PCI MMIO Base Address, all access will use */
@@ -231,12 +237,14 @@ struct GL_HIF_INFO {
 	struct RTMP_DMABUF AddrArray;
 	struct RTMP_DMABUF IndCmdRing;
 	struct RTMP_DMABUF AckSnCmdRing;
-	struct list_head rRcbUsedList;
+	struct list_head rRcbUsedList[NUM_OF_RX_RING];
+	uint32_t u4RcbUsedListCnt[NUM_OF_RX_RING];
 	struct list_head rRcbFreeList;
+	uint32_t u4RcbFreeListCnt;
 	struct hlist_head arRcbHTbl[RRO_PREALLOC_RX_BUF_NUM];
 	uint32_t u4RroMagicCnt;
-	uint32_t u4IndCmdLastDmaIdx;
-	uint32_t u4MawdIntStatus;
+	uint32_t u4IndCmdDmaIdx;
+	uint32_t u4OffloadIntStatus;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIntReadClear;
@@ -494,6 +502,10 @@ extern struct platform_device *g_prPlatDev;
  *                                 M A C R O S
  *******************************************************************************
  */
+
+#define axi_resource_start(d, v)  (0x18000000)
+#define axi_resource_len(d, v)    (0x100000)
+#define axi_name(d)               ("AXI-BUS")
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

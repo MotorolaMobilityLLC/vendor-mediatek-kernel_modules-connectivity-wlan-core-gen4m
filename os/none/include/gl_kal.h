@@ -914,7 +914,7 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _rMutexCategory)
 #define kalPacketFree(_prGlueInfo, _pvPacket) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _pvPacket)
 
-#define kalPacketAlloc(_prGlueInfo, _u4Size, _ppucData) \
+#define kalPacketAlloc(_prGlueInfo, _u4Size, _fgIsTx, _ppucData) \
 ((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo))
 
 #define kalPacketAllocWithHeadroom(_prGlueInfo, _u4Size, _ppucData) \
@@ -942,6 +942,7 @@ void kalPacketFree(IN struct GLUE_INFO *prGlueInfo,
 
 void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 		     IN uint32_t u4Size,
+		     IN u_int8_t fgIsTx,
 		     OUT uint8_t **ppucData);
 
 void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO

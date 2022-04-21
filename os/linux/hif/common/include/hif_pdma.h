@@ -260,16 +260,21 @@
 #define LOG_DUMP_COUNT_PERIOD		5
 #define LOG_DUMP_FULL_DUMP_TIMES	2
 
+#define WFDMA_MAGIC_CNT_NUM      16
+#define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
-#define SDO_HIF_TXD_SIZE         76
-#define SDO_PARTIAL_PAYLOAD_SIZE 72
+#define MAWD_CR_BACKUP_OFFSET    89
 #define RRO_PREALLOC_RX_BUF_NUM  4096
 #define RRO_BA_BITMAP_SIZE       128
-#define RRO_MAX_STA_NUM          16
+#if (CFG_MTK_FPGA_PLATFORM == 1)
+#define RRO_MAX_STA_NUM          8
+#else
+#define RRO_MAX_STA_NUM          128
+#endif
 #define RRO_MAX_TID_NUM          8
 #define RRO_ADDR_ELEM_SIZE       16
 #define RRO_TOTAL_ADDR_ELEM_NUM  (RRO_MAX_STA_NUM * RRO_MAX_TID_NUM)
-#define RRO_MAX_SESSION_NUM      1024
+#define RRO_MAX_WINDOW_NUM       1024
 #define RRO_IND_CMD_RING_SIZE    1024
 #define RRO_DROP_BY_HIF          0
 
@@ -282,6 +287,18 @@
 { \
 	(_idx) = (_idx+1) % (_RingSize); \
 	KAL_MB_W(); \
+}
+
+#define RTMP_HOST_IO_READ32(_A, _R, _pV) \
+{ \
+	(*(_pV) = readl((void *)(_A->HostCSRBaseAddress + \
+				 (_R - _A->u4HostCsrOffset)))); \
+}
+
+#define RTMP_HOST_IO_WRITE32(_A, _R, _V) \
+{ \
+	writel(_V, (void *)(_A->HostCSRBaseAddress + \
+			    (_R - _A->u4HostCsrOffset))); \
 }
 
 #define RTMP_IO_READ32(_A, _R, _pV) \
@@ -432,7 +449,8 @@ struct RXD_STRUCT {
 	uint32_t SDPtr1;
 
 	/* Word 3 */
-	uint32_t RXINFO;
+	uint32_t RXINFO:28;
+	uint32_t MagicCnt:4;
 };
 
 /*
@@ -510,6 +528,7 @@ struct RTMP_RX_RING {
 	uint32_t u4PendingCnt;
 	void *pvPacket;
 	uint32_t u4PacketLen;
+	uint32_t u4MagicCnt;
 };
 
 struct PCIE_CHIP_CR_MAPPING {
@@ -683,6 +702,11 @@ enum ENUM_DMA_INT_TYPE {
 	DMA_INT_TYPE_NUM
 };
 
+enum ENUM_WFDMA_RING_TYPE {
+	TX_RING,
+	RX_RING
+};
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 union mawd_l2tbl {
 	struct {
@@ -708,7 +732,9 @@ struct RX_BLK_DESC {
 };
 
 struct RX_CTRL_BLK {
+	phys_addr_t rPhyAddr;
 	struct sk_buff *prSkb;
+	uint32_t u4Idx;
 	struct list_head rNode;
 };
 
@@ -744,12 +770,16 @@ struct RRO_IND_CMD {
 	uint32_t magic_cnt:3;
 };
 
-struct RRO_ACK_SN_CMD {
-	uint32_t session_id:12;
-	uint32_t rsv0:4;
-	uint32_t ack_sn:12;
-	uint32_t rsv1:3;
-	uint32_t is_last:1;
+union RRO_ACK_SN_CMD {
+	struct {
+		uint32_t session_id:12;
+		uint32_t rsv0:4;
+		uint32_t ack_sn:12;
+		uint32_t rsv1:3;
+		uint32_t is_last:1;
+	} field;
+
+	uint32_t word;
 };
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -770,7 +800,8 @@ struct pcie_msi_info {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-
+u_int8_t halIsDataRing(struct ADAPTER *prAdapter,
+		       enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx);
 void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
@@ -871,37 +902,33 @@ bool halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-/* MAWD */
+/* Host Offload */
+void halRroTurnOff(struct GLUE_INFO *prGlueInfo);
 void halRroInit(struct GLUE_INFO *prGlueInfo);
 void halRroUninit(struct GLUE_INFO *prGlueInfo);
+void halRroAllocMem(struct GLUE_INFO *prGlueInfo);
+void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo);
+void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo);
+void halRroReadRxData(struct ADAPTER *prAdapter);
+void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
+			    uint16_t u2Port, uint32_t u4ResCnt);
+struct RX_CTRL_BLK *halRroGetFreeRcbBlk(
+	struct GL_HIF_INFO *prHifInfo,
+	struct RTMP_DMABUF *pDmaBuf,
+	uint32_t u4Idx);
+void halRroMawdInit(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
+void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
+void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo);
+void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
+		       struct MSDU_TOKEN_ENTRY *prToken);
+uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo);
+void halMawdWakeup(struct GLUE_INFO *prGlueInfo);
+void halMawdSleep(struct GLUE_INFO *prGlueInfo);
+void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);
-void halRroAllocMem(struct GLUE_INFO *prGlueInfo);
-bool halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
-void halMawdAllocRcbList(struct GLUE_INFO *prGlueInfo);
-void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,
-			   bool fgAllocMem);
-void halMawdInitRxBlkRing(IN struct GLUE_INFO *prGlueInfo);
-void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo);
-bool halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
-		       struct MSDU_TOKEN_ENTRY *prToken);
-void halMawdUpdateIndCmd(struct GLUE_INFO *prGlueInfo);
-uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo,
-				uint8_t ucRingNum);
-void halMawdReadRxBlks(struct ADAPTER *prAdapter, uint32_t u4Port);
-void halMawdUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo, uint16_t u2Port);
-bool halMawdHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
-		    struct sk_buff *prSkb, struct RX_CTRL_BLK *prRcb);
-bool halMawdHashDel(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key);
-struct RCB_NODE *halMawdHashSearch(struct GL_HIF_INFO *prHifInfo,
-				   uint64_t u8Key);
-void halMawdAddNewRcbBlk(struct GL_HIF_INFO *prHifInfo,
-			 struct sk_buff *prSkb);
-struct RX_CTRL_BLK *halMawdGetFreeRcbBlk(struct GL_HIF_INFO *prHifInfo);
-void halMawdPutFreeRcbBlk(struct GL_HIF_INFO *prHifInfo,
-			  struct RX_CTRL_BLK *prRcb);
-void halRroMawdInit(struct GLUE_INFO *prGlueInfo);
-void halMawdReset(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if CFG_SUPPORT_RX_PAGE_POOL

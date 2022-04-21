@@ -2222,12 +2222,14 @@ void connac3x_show_wfdma_info_by_type(
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo;
 	struct RTMP_DMABUF *prErrRpt;
 	uint32_t *pu4ErrRpt, *pu4HifTxd;
 	uint32_t u4Cidx = 0, u4Didx = 0, u4Val = 0, u4Idx, u4Num;
 
+	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prErrRpt = &prHifInfo->ErrRptRing;
@@ -2242,6 +2244,8 @@ void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
 	u4Cidx = u4Val & BITS(0, 12);
 	DBGLOG(HAL, INFO, "ERR_RPT_CTRL2:0x%08x!\n", u4Val);
 	while (u4Cidx != u4Didx) {
+		if (!pu4ErrRpt)
+			break;
 		DBGLOG(HAL, INFO, "ErrRpt[%d]:0x%08x!\n",
 		       u4Cidx, pu4ErrRpt[u4Cidx]);
 		INC_RING_INDEX(u4Cidx, RX_RING_SIZE);
@@ -2256,9 +2260,13 @@ void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
 
 	for (u4Num = 0; u4Num < MAWD_MD_TX_RING_NUM; u4Num++) {
 		pu4HifTxd = prHifInfo->HifTxDescRing[u4Num].AllocVa;
+		if (!pu4HifTxd)
+			continue;
 		for (u4Idx = 0; u4Idx < 3; u4Idx++) {
 			DBGLOG(HAL, INFO, "HIF TXD %d-%d\n", u4Num, u4Idx);
-			dumpMemory32((uint32_t *)pu4HifTxd, SDO_HIF_TXD_SIZE);
+			dumpMemory32((uint32_t *)pu4HifTxd,
+				     NIC_TX_DESC_AND_PADDING_LENGTH +
+				     prChipInfo->txd_append_size);
 			pu4HifTxd += 19;
 		}
 	}
@@ -2266,37 +2274,44 @@ void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
 
 void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct RTMP_DMABUF *prIndCmd;
 	struct RTMP_DMABUF *prAddrArray;
-	struct list_head *prCur;
+	struct RRO_ADDR_ELEM *prAddrElem;
 	uint32_t u4Val = 0, u4Idx;
-	uint32_t u4Used = 0, u4Free = 0;
+	uint32_t u4AddrNum;
 
+	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prIndCmd = &prHifInfo->IndCmdRing;
 	prAddrArray = &prHifInfo->AddrArray;
+	prWifiVar = &prAdapter->rWifiVar;
 
-	DBGLOG(HAL, INFO, "==============================\n");
-	DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
-	DBGLOG(HAL, INFO, "==============================\n");
+	if (prChipInfo->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+		DBGLOG(HAL, INFO, "==============================\n");
+		DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
+		DBGLOG(HAL, INFO, "==============================\n");
 
-	for (u4Idx = MAWD_IND_CMD_CTRL0;
-	     u4Idx <= MAWD_MD_RX_BLK_CTRL2; u4Idx += 4) {
-		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
-	}
+		for (u4Idx = MAWD_IND_CMD_CTRL0;
+		     u4Idx <= MAWD_MD_RX_BLK_CTRL2; u4Idx += 4) {
+			HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		}
 
-	for (u4Idx = MAWD_IND_CMD_SIGNATURE0;
-	     u4Idx <= MAWD_R2AXI_CTRL3; u4Idx += 4) {
-		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
-	}
+		for (u4Idx = MAWD_IND_CMD_SIGNATURE0;
+		     u4Idx <= MAWD_R2AXI_CTRL3; u4Idx += 4) {
+			HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		}
 
-	for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
-	     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
-		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
+		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
+			HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		}
 	}
 
 	DBGLOG(HAL, INFO, "==============================\n");
@@ -2306,17 +2321,40 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 	for (u4Idx = WF_RRO_TOP_GLOBAL_CONFG_ADDR;
 	     u4Idx <= WF_RRO_TOP_DBG_RDAT_DW3_ADDR; u4Idx += 4) {
 		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 	}
 
-	list_for_each(prCur, &prHifInfo->rRcbUsedList)
-		u4Used++;
-	list_for_each(prCur, &prHifInfo->rRcbFreeList)
-		u4Free++;
+	for (u4Idx = 0x100; u4Idx <= 0x10c; u4Idx++) {
+		HAL_MCR_WR(prAdapter, WF_RRO_TOP_DBG_FLAG_CTRL_ADDR, u4Idx);
+		HAL_MCR_RD(prAdapter, WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR, &u4Val);
+		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x] [0x%08x]=[0x%08x]",
+		       WF_RRO_TOP_DBG_FLAG_CTRL_ADDR, u4Idx,
+		       WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR, u4Val);
+	}
 
-	dumpMemory32((uint32_t *)prIndCmd->AllocVa, prIndCmd->AllocSize);
+	if (prIndCmd->AllocVa) {
+		DBGLOG(HAL, INFO, " IndCmd DUMP\n");
+		dumpMemory32((uint32_t *)prIndCmd->AllocVa,
+			     prIndCmd->AllocSize);
+	}
 
-	DBGLOG(HAL, TRACE, "BLK Used[%d] Free[%d]", u4Used, u4Free);
+	u4AddrNum = RRO_TOTAL_ADDR_ELEM_NUM * (RRO_MAX_WINDOW_NUM);
+	if (prAddrArray->AllocVa) {
+		DBGLOG(HAL, INFO, " AddrArray DUMP\n");
+		for (u4Idx = 0; u4Idx < 256; u4Idx++) {
+			prAddrElem = (struct RRO_ADDR_ELEM *)
+				(prAddrArray->AllocVa +
+				 (u4AddrNum + u4Idx) *
+				 sizeof(struct RRO_ADDR_ELEM));
+			dumpMemory32((uint32_t *)prAddrElem,
+				     sizeof(struct RRO_ADDR_ELEM));
+		}
+	}
+
+	DBGLOG(HAL, INFO, "BLK Used0[%u] Used1[%u] Free[%u]",
+	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA0],
+	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA1],
+	       prHifInfo->u4RcbFreeListCnt);
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -2450,11 +2488,13 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct WIFI_VAR *prWifiVar;
 	uint32_t u4DmaNum = 1;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
@@ -2477,10 +2517,12 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	connac3xDumpPPDebugCr(prAdapter);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx)
+	if (prChipInfo->is_support_mawd_tx &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		connac3x_show_mawd_info(prAdapter);
 
-	if (prChipInfo->is_support_rro)
+	if (prChipInfo->is_support_rro &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		connac3x_show_rro_info(prAdapter);
 #endif
 #endif

@@ -334,6 +334,19 @@ static u_int8_t kalDevRegL1Remap(uint32_t *reg)
 	return FALSE;
 }
 
+static u_int8_t kalIsHostReg(struct mt66xx_chip_info *prChipInfo,
+			     uint32_t u4Reg)
+{
+	if (prChipInfo->HostCSRBaseAddress == NULL ||
+	    prChipInfo->u4HostCsrOffset == 0 ||
+	    prChipInfo->u4HostCsrSize == 0)
+		return FALSE;
+
+	return (u4Reg >= prChipInfo->u4HostCsrOffset) &&
+		(u4Reg < (prChipInfo->u4HostCsrOffset +
+			  prChipInfo->u4HostCsrSize));
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read a 32-bit device register
@@ -380,6 +393,11 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		}
 		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
+	}
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
+		return TRUE;
 	}
 
 	/* Static mapping */
@@ -451,6 +469,11 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 			       u4Register, u4BusAddr, u4Value);
 		}
 		return FALSE;
+	}
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
+		return TRUE;
 	}
 
 	/* Static mapping */
@@ -1437,8 +1460,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 				INC_RING_INDEX(u4CpuIdxScatter, prRxRing->u4RingSize);
 			} while (TRUE);
 
-			prRxRing->pvPacket = kalPacketAlloc(prGlueInfo,
-					(ucScatterCnt * CFG_RX_MAX_MPDU_SIZE), &pucRecvBuff);
+			prRxRing->pvPacket = kalPacketAlloc(
+				prGlueInfo,
+				(ucScatterCnt * CFG_RX_MAX_MPDU_SIZE),
+				FALSE, &pucRecvBuff);
 			prRxRing->u4PacketLen = 0;
 		}
 #endif

@@ -117,6 +117,22 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter);
  *                              F U N C T I O N S
  *******************************************************************************
  */
+u_int8_t halIsDataRing(struct ADAPTER *prAdapter,
+		       enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
+{
+	if (eType == TX_RING) {
+		return (u4Idx == TX_RING_DATA0 ||
+			u4Idx == TX_RING_DATA1 ||
+			u4Idx == TX_RING_DATA_PRIO ||
+			u4Idx == TX_RING_DATA_ALTX);
+	} else if (eType == RX_RING) {
+		return (u4Idx == RX_RING_DATA0 ||
+			u4Idx == RX_RING_DATA1 ||
+			u4Idx == RX_RING_DATA2);
+	}
+	return FALSE;
+}
+
 uint8_t halRingDataSelectByWmmIndex(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucWmmIndex)
@@ -467,13 +483,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgStatus = TRUE;
 	uint32_t i, u4CurrTick;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
-#if CFG_SUPPORT_PCIE_ASPM
-	struct GL_HIF_INFO *prHifInfo;
-#endif
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -481,9 +496,8 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
-#if CFG_SUPPORT_PCIE_ASPM
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-#endif
+	prWifiVar = &prAdapter->rWifiVar;
 
 	/* if direct trx,  set drv/fw own will be called
 	*  in softirq/tasklet/thread context,
@@ -554,8 +568,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 #if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
-	glBusConfigASPM(prHifInfo->pdev,
-					DISABLE_ASPM_L1);
+	glBusConfigASPM(prHifInfo->pdev, DISABLE_ASPM_L1);
 #endif
 #endif
 
@@ -590,6 +603,12 @@ end:
 	else
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		halMawdWakeup(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 	return fgStatus;
 }
 
@@ -604,14 +623,18 @@ end:
 /*----------------------------------------------------------------------------*/
 void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgResult;
 
 	ASSERT(prAdapter);
 
+	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	/* if direct trx,  set drv/fw own will be called
 	*  in softirq/tasklet/thread context,
@@ -665,6 +688,12 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 			ENABLE_ASPM_L1);
 #endif
 #endif
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		halMawdSleep(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
@@ -1174,6 +1203,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1181,20 +1211,25 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prWifiVar = &prAdapter->rWifiVar;
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_mawd_tx &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+		halMawdAllocTxRing(prAdapter->prGlueInfo, TRUE);
+
+	if (prChipInfo->is_support_rro &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		halRroAllocMem(prAdapter->prGlueInfo);
+		halRroAllocRcbList(prAdapter->prGlueInfo);
+		if (prChipInfo->is_support_mawd &&
+		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			halMawdAllocRxBlkRing(prAdapter->prGlueInfo, TRUE);
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx)
-		halMawdAllocTxRing(prAdapter->prGlueInfo, true);
-
-	if (prChipInfo->is_support_rro) {
-		halRroAllocMem(prAdapter->prGlueInfo);
-		halMawdAllocRcbList(prAdapter->prGlueInfo);
-		halMawdAllocRxBlkRing(prAdapter->prGlueInfo, true);
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true))
 		return false;
@@ -1261,6 +1296,7 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct HIF_MEM_OPS *prMemOps = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
@@ -1271,6 +1307,7 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 
@@ -1278,7 +1315,8 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	halWpdmaFreeRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro)
+	if (prChipInfo->is_support_rro &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		halRroUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -2045,6 +2083,42 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	return true;
 }
 
+static void *halWpdmaGetRxBuf(
+	struct GLUE_INFO *prGlueInfo, struct RTMP_DMABUF *pDmaBuf,
+	uint32_t u4Num, uint32_t u4Idx)
+{
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct WIFI_VAR *prWifiVar;
+	void *pPacket = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
+	prWifiVar = &prAdapter->rWifiVar;
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if ((prChipInfo->is_support_rro &&
+	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
+	    halIsDataRing(prAdapter, RX_RING, u4Num)) {
+		struct RX_CTRL_BLK *prRcb;
+
+		prRcb = halRroGetFreeRcbBlk(prHifInfo, pDmaBuf, u4Num);
+		if (prRcb)
+			pPacket = prRcb->prSkb;
+		return pPacket;
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+	if (prMemOps->allocRxBuf)
+		pPacket = prMemOps->allocRxBuf(
+			prHifInfo, pDmaBuf, u4Num, u4Idx);
+	return pPacket;
+}
+
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 			 uint32_t u4Size, uint32_t u4DescSize,
 			 uint32_t u4BufSize, bool fgAllocMem)
@@ -2088,6 +2162,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	pRxRing->fgRxSegPkt = FALSE;
 	pRxRing->pvPacket = NULL;
 	pRxRing->u4PacketLen = 0;
+	pRxRing->u4MagicCnt = 0;
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		/* Init RX Ring Size, Va, Pa variables */
@@ -2105,9 +2180,10 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		pDmaBuf = &prRxCell->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
 
-		if (fgAllocMem && prMemOps->allocRxBuf)
-			prRxCell->pPacket = prMemOps->allocRxBuf(
-				prHifInfo, pDmaBuf, u4Num, u4Idx);
+		if (fgAllocMem) {
+			prRxCell->pPacket = halWpdmaGetRxBuf(
+				prGlueInfo, pDmaBuf, u4Num, u4Idx);
+		}
 		if (pDmaBuf->AllocVa == NULL) {
 			log_dbg(HAL, ERROR, "\nFailed to allocate RxRing buffer idx[%u]\n",
 				u4Idx);
@@ -2225,6 +2301,7 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_TX_RING *pTxRing;
@@ -2234,6 +2311,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	void *pPacket, *pBuffer;
 	uint32_t i, j;
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 
@@ -2263,14 +2341,18 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 		pRxRing = &prHifInfo->RxRing[i];
 		for (j = 0; j < pRxRing->u4RingSize; j++) {
 			prDmaCb = &pRxRing->Cell[j];
-			if (prMemOps->unmapRxBuf && prDmaCb->DmaBuf.AllocVa)
-				prMemOps->unmapRxBuf(prHifInfo,
-						     prDmaCb->DmaBuf.AllocPa,
-						     prDmaCb->DmaBuf.AllocSize);
-			if (prMemOps->freePacket && prDmaCb->pPacket)
-				prMemOps->freePacket(prHifInfo,
-						     prDmaCb->pPacket,
-						     i);
+			if (prMemOps->unmapRxBuf && prDmaCb->DmaBuf.AllocVa) {
+				prMemOps->unmapRxBuf(
+					prHifInfo,
+					prDmaCb->DmaBuf.AllocPa,
+					prDmaCb->DmaBuf.AllocSize);
+			}
+			prDmaCb->DmaBuf.AllocVa = NULL;
+			if (prMemOps->freePacket && prDmaCb->pPacket) {
+				prMemOps->freePacket(
+					prHifInfo, prDmaCb->pPacket, i);
+			}
+			prDmaCb->pPacket = NULL;
 		}
 
 		halWpdmaFreeRingDesc(prGlueInfo, &prHifInfo->RxDescRing[i]);
@@ -2325,12 +2407,14 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */
 	if (prBusInfo->pdmaSetup)
@@ -2342,11 +2426,15 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	halWpdmaInitRxRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx)
+	if (prChipInfo->is_support_mawd_tx &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		halMawdInitTxRing(prGlueInfo);
 
-	if (prChipInfo->is_support_rro) {
-		halMawdInitRxBlkRing(prGlueInfo);
+	if (prChipInfo->is_support_rro &&
+		IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		if (prChipInfo->is_support_mawd &&
+		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			halMawdInitRxBlkRing(prGlueInfo);
 		halRroInit(prGlueInfo);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -2667,9 +2755,10 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
+	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &prRxRing->RxDmaIdx);
 	u4MaxCnt = prRxRing->u4RingSize;
 	u4CpuIdx = prRxRing->RxCpuIdx;
-	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &u4DmaIdx);
+	u4DmaIdx = prRxRing->RxDmaIdx;
 
 	if (u4MaxCnt == 0 || u4MaxCnt > RX_RING_SIZE)
 		return 0;
@@ -2848,6 +2937,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
@@ -2857,6 +2947,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	u2Port = halTxRingDataSelect(
 		prGlueInfo->prAdapter, prToken->prMsduInfo);
@@ -2880,23 +2971,14 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	if (prChipInfo->is_support_cr4)
 		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_sdo) {
-		uint32_t u4PpSize = SDO_PARTIAL_PAYLOAD_SIZE;
-
-		if (u4PpSize > prToken->u4PktDmaLength)
-			u4PpSize = prToken->u4PktDmaLength;
-		pTxD->SDPtr1 = prToken->rDmaAddr + pTxD->SDLen0;
-		pTxD->SDLen1 = u4PpSize;
-		pTxD->LastSec0 = 0;
-		pTxD->LastSec1 = 1;
-	} else
+	if (prChipInfo->is_support_sdo &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo))
+		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-	{
-		pTxD->SDPtr1 = 0;
-		pTxD->SDLen1 = 0;
-		pTxD->LastSec0 = 1;
-		pTxD->LastSec1 = 0;
-	}
+	pTxD->SDPtr1 = 0;
+	pTxD->SDLen1 = 0;
+	pTxD->LastSec0 = 1;
+	pTxD->LastSec1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
 
@@ -2946,13 +3028,15 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 			      struct MSDU_TOKEN_ENTRY *prToken,
 			      uint32_t u4Idx, uint32_t u4Num)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	bool fgIsLast = (u4Idx + 1) == u4Num;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 
 	/* Update Tx descriptor */
 	halTxUpdateCutThroughDesc(prGlueInfo, prMsduInfo, prFillToken,
@@ -2970,7 +3054,8 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 			return false;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (prChipInfo->is_support_mawd_tx)
+		if (prChipInfo->is_support_mawd_tx &&
+		    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
 			halMawdFillTxRing(prGlueInfo, prFillToken);
 		else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -3465,17 +3550,6 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 	else
 		kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
 				MCU_INT_DRIVER_SER);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro || prChipInfo->is_support_mawd_tx)
-		halMawdReset(prAdapter->prGlueInfo);
-	if (prChipInfo->is_support_mawd_tx)
-		halMawdInitTxRing(prAdapter->prGlueInfo);
-	if (prChipInfo->is_support_rro) {
-		halRroMawdInit(prAdapter->prGlueInfo);
-		halMawdInitRxBlkRing(prAdapter->prGlueInfo);
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 static void halStartSerTimer(IN struct ADAPTER *prAdapter)
@@ -3497,6 +3571,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
 
@@ -3505,6 +3580,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	u4Status = prErrRecoveryCtrl->u4Status;
@@ -3584,6 +3660,14 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 			if (prBusInfo->DmaShdlReInit)
 				prBusInfo->DmaShdlReInit(prAdapter);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+			DBGLOG(HAL, INFO, "SER(M) Reset MAWDA\n");
+			if (prChipInfo->is_support_rro &&
+			    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+				halRroFreeRcbList(prGlueInfo);
+				halRroAllocRcbList(prGlueInfo);
+			}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 			/* only reset TXD & RXD */
 			halWpdmaAllocRing(prAdapter->prGlueInfo, false);
@@ -3597,9 +3681,24 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			halWpdmaInitRing(prGlueInfo, false);
 
 			/* reset SW value after InitRing */
-			prChipInfo = prAdapter->chip_info;
 			if (prChipInfo->asicWfdmaReInit)
 				prChipInfo->asicWfdmaReInit(prAdapter);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+			DBGLOG(HAL, INFO, "SER(M) Reset MAWDA\n");
+			if (prChipInfo->is_support_mawd &&
+			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+				halMawdReset(prGlueInfo);
+				if (prChipInfo->is_support_rro &&
+				    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+					halRroMawdInit(prGlueInfo);
+				halMawdInitRxBlkRing(prGlueInfo);
+			}
+
+			if (prChipInfo->is_support_mawd_tx &&
+			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+				halMawdInitTxRing(prGlueInfo);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
@@ -3728,10 +3827,12 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Retry = 0;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct WIFI_VAR *prWifiVar;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	DBGLOG(INIT, INFO, "Power off Wi-Fi!\n");
 
@@ -3782,6 +3883,12 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	}
 
 	prHifInfo->fgIsPowerOff = true;
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prAdapter->chip_info->is_support_mawd &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		halMawdReset(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	/* prAdapter->fgWiFiInSleepyState = TRUE; */
 
@@ -4217,9 +4324,10 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"I[%u %u]",
+			"I[%u %u %d]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
-			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount));
+			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
+			prAdapter->fgIsIntEnable);
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" T[%u %u %u / %u %u %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
