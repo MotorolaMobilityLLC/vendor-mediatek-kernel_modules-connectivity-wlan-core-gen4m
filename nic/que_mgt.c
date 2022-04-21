@@ -1267,9 +1267,8 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 				break;
 
 			default:
-				ucActivedTspec = wmmHasActiveTspec(
-					aisGetWMMInfo(prAdapter,
-					prCurrentMsduInfo->ucBssIndex));
+				ucActivedTspec = nicGetActiveTspec(prAdapter,
+					prCurrentMsduInfo->ucBssIndex);
 
 				prTxQue = qmDetermineStaTxQueue(
 					prAdapter, prCurrentMsduInfo,
@@ -9278,8 +9277,7 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	prSrcQue = &prStaRec->arTxQueue[aucWmmAC2TcResourceSet1[eAci]];
 	prAcQueParam = &(prAisBssInfo->arACQueParms[0]);
-	ucActivedTspec = wmmHasActiveTspec(
-		aisGetWMMInfo(prAdapter, prAisBssInfo->ucBssIndex));
+	ucActivedTspec = nicGetActiveTspec(prAdapter, prAisBssInfo->ucBssIndex);
 
 	while (prAcQueParam[eAci].ucIsACMSet &&
 			!(ucActivedTspec & BIT(eAci)) && eAci != ACI_BK

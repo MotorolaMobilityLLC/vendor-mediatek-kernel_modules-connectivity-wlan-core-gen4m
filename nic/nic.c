@@ -5557,3 +5557,16 @@ uint32_t nicSetCoalescingInt(IN struct ADAPTER *prAdapter,
 	    (uint8_t *)prCmdSetCoalescingInt, NULL, 0);
 }
 #endif
+
+uint8_t nicGetActiveTspec(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	uint8_t ucActivedTspec = 0;
+
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		ucActivedTspec = wmmHasActiveTspec(
+			aisGetWMMInfo(prAdapter, ucBssIndex));
+	}
+
+	return ucActivedTspec;
+}
