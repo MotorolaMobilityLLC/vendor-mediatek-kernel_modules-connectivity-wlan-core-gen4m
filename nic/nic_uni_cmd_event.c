@@ -4646,7 +4646,7 @@ uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,
 uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
-	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *cmd;
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *cmd;
 	struct UNI_CMD_POWER_LIMIT *uni_cmd;
 	struct UNI_CMD_SET_PWR_LIMIT_PARAM *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
@@ -4657,7 +4657,7 @@ uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	cmd = (struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 *)
+	cmd = (struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *)
 		info->pucInfoBuffer;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_POWER_LIMIT,
 		max_cmd_len, NULL, NULL);
