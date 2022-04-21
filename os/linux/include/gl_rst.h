@@ -248,6 +248,7 @@ extern int32_t get_wifi_powered_status(void);
  */
 #if CFG_CHIP_RESET_SUPPORT
 extern u_int8_t fgIsResetting;
+extern u_int8_t fgIsRstPreventFwOwn;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 extern enum ENUM_WF_RST_SOURCE g_eWfRstSource;
 #endif
@@ -311,6 +312,7 @@ void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason);
 int glGetRstReason(void);
 
 u_int8_t kalIsResetting(void);
+u_int8_t kalIsRstPreventFwOwn(void);
 
 #if CFG_CHIP_RESET_SUPPORT
 void glResetInit(struct GLUE_INFO *prGlueInfo);

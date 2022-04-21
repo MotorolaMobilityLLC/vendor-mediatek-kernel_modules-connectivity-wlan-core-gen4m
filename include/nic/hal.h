@@ -668,7 +668,6 @@ do { \
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
-
 #endif
 
 #if defined(_HIF_SDIO)
@@ -800,13 +799,16 @@ do { \
 { \
 	uint32_t u4RegValue = 0; \
 	*_pfgResult = FALSE; \
-	HAL_MCR_WR(_prAdapter, \
-		MCR_WHLPCR, \
-		WHLPCR_FW_OWN_REQ_SET); \
-	HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
-	if (u4RegValue & WHLPCR_IS_DRIVER_OWN) { \
-		*_pfgResult = TRUE; \
-	} \
+	if (kalIsRstPreventFwOwn() == FALSE) { \
+		HAL_MCR_WR(_prAdapter, \
+			MCR_WHLPCR, \
+			WHLPCR_FW_OWN_REQ_SET); \
+		HAL_MCR_RD(_prAdapter, MCR_WHLPCR, &u4RegValue); \
+		if (u4RegValue & WHLPCR_IS_DRIVER_OWN) { \
+			*_pfgResult = TRUE; \
+		} \
+	} else \
+		DBGLOG(INIT, INFO, "[SER][L0.5]skip set fw own\n"); \
 }
 
 #define HAL_LP_OWN_CLR(_prAdapter, _pfgResult) \
@@ -1036,12 +1038,11 @@ do { \
 
 #define HAL_UHW_WR(_prAdapter, _u4Offset, _u4Value, _pucSts)
 
-#define HAL_CANCEL_TX_RX(_prAdapter)
+#define HAL_CANCEL_TX_RX(_prAdapter) nicSerStopTxRx(_prAdapter)
 
-#define HAL_RESUME_TX_RX(_prAdapter)
+#define HAL_RESUME_TX_RX(_prAdapter) nicSerStartTxRx(_prAdapter)
 
-#define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
-	halToggleWfsysRst(_prAdapter)
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)  halToggleWfsysRst(_prAdapter)
 
 #endif
 
@@ -1225,7 +1226,6 @@ do { \
 
 #define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
 	halToggleWfsysRst(_prAdapter)
-
 #endif
 
 /*

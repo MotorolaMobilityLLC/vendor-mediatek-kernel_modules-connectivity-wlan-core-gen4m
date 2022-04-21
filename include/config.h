@@ -494,6 +494,10 @@
 #define CFG_SDIO_PATHRU_MODE                    0
 #endif
 
+#ifndef CFG_SDIO_INTR_ENHANCE_FORMAT
+#define CFG_SDIO_INTR_ENHANCE_FORMAT                1
+#endif
+
 #define CFG_SDIO_ACCESS_N9_REGISTER_BY_MAILBOX      0
 #define CFG_MAX_RX_ENHANCE_LOOP_COUNT               3
 
@@ -529,6 +533,7 @@
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
+#define CFG_SER_L05_DEBUG		0
 #define CFG_CHIP_RESET_HANG		0
 #else
 #define CFG_CHIP_RESET_HANG		0

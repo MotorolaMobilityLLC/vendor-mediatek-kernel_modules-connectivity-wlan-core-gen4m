@@ -185,6 +185,7 @@ u_int8_t fgIsDrvTriggerWholeChipReset = FALSE;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
 #endif
+u_int8_t fgIsRstPreventFwOwn = FALSE;
 #endif
 
 /*******************************************************************************
@@ -228,6 +229,16 @@ void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 int glGetRstReason(void)
 {
 	return eResetReason;
+}
+
+u_int8_t kalIsRstPreventFwOwn(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return fgIsRstPreventFwOwn;
+#else
+	return FALSE;
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -275,6 +286,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 #endif
 #endif
 	fgIsResetting = FALSE;
+	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 
 #if CFG_WMT_RESET_API_SUPPORT
@@ -759,6 +771,7 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 	      prAdapter->chip_info->fgIsSupportL0p5Reset) {
 		spin_lock_bh(&prAdapter->rWfsysResetLock);
 		fgIsResetting = TRUE;
+		fgIsRstPreventFwOwn = TRUE;
 
 		if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE) {
 			spin_unlock_bh(&prAdapter->rWfsysResetLock);
@@ -788,7 +801,8 @@ void glSetWfsysResetState(struct ADAPTER *prAdapter,
 			  enum ENUM_WFSYS_RESET_STATE_TYPE_T state)
 {
 	if (state >= WFSYS_RESET_STATE_MAX) {
-		DBGLOG(INIT, WARN, "unsupported wfsys reset state\n");
+		DBGLOG(INIT, WARN,
+			"[SER][L0.5] unsupported wfsys reset state\n");
 	} else {
 		spin_lock_bh(&prAdapter->rWfsysResetLock);
 
@@ -863,6 +877,7 @@ void WfsysResetHdlr(struct work_struct *work)
 			goto FAIL;
 
 		fgIsResetting = FALSE;
+		prAdapter->fgIsFwDownloaded = FALSE;
 
 		if (HAL_TOGGLE_WFSYS_RST(prAdapter) != WLAN_STATUS_SUCCESS)
 			goto FAIL;
@@ -881,19 +896,34 @@ void WfsysResetHdlr(struct work_struct *work)
 
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 
-	DBGLOG(INIT, INFO, "WF L0.5 Reset done\n");
+	DBGLOG(INIT, INFO, "[SER][L0.5] Reset done\n");
+
+	DBGLOG(INIT, INFO, "[SER][L0.5] eWfsysResetState = %d\n",
+					prAdapter->eWfsysResetState);
+
+	DBGLOG(INIT, INFO, "[SER][L0.5] ucSerState = %d\n",
+					prAdapter->ucSerState);
+
+	DBGLOG(INIT, INFO, "[SER][L0.5] i4PendingFwdFrameCount=%d\n",
+		prAdapter->rTxCtrl.i4PendingFwdFrameCount);
+
+	DBGLOG(INIT, INFO, "[SER][L0.5] i4TxPendingFrameNum=%d\n",
+		prAdapter->prGlueInfo->i4TxPendingFrameNum);
+
+	DBGLOG(INIT, INFO, "[SER][L0.5] au4PseCtrlEnMap=%d\n",
+		prAdapter->rTxCtrl.rTc.au4PseCtrlEnMap);
 
 	return;
 
 POSTPONE:
-	DBGLOG(INIT, WARN, "WF L0.5 reset postpone\n");
+	DBGLOG(INIT, WARN, "[SER][L0.5] reset postpone\n");
 
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_POSTPONE);
 
 	return;
 
 FAIL:
-	DBGLOG(INIT, ERROR, "WF L0.5 Reset fail\n");
+	DBGLOG(INIT, ERROR, "[SER][L0.5] Reset fail !!!!\n");
 
 	fgIsResetting = FALSE;
 
