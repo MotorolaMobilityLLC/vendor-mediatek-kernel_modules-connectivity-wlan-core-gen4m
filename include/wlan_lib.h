@@ -909,6 +909,18 @@ struct _TWT_GET_TSF_CONTEXT_T {
 
 #endif
 
+#if (CFG_SUPPORT_802_11AX == 1)
+struct _SMPS_PARAMS_T {
+	uint8_t ucHtHeCap;
+};
+
+struct _SMPS_CTRL_T {
+	uint8_t ucBssIdx;
+	uint8_t ucCtrlAction;
+	struct _SMPS_PARAMS_T rSMPSParams;
+};
+#endif
+
 struct REAL_TIME {
 	int32_t i4TmSec;
 	int32_t i4TmMin;

@@ -125,6 +125,11 @@
 #define TO_STR(value) #value
 #define INT_TO_STR(value) TO_STR(value)
 
+#define CMD_SMPS_ACTION_FOUR_PARAMS       4
+#define CMD_SMPS_ACTION_THREE_PARAMS      3
+#define CMD_SMPS_ACTION_TWO_PARAMS        2
+#define CMD_SMPS_MAX_PARAMS CMD_SMPS_ACTION_FOUR_PARAMS
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -3805,6 +3810,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_TWT == 1)
 #define CMD_SET_TWT_PARAMS	"SET_TWT_PARAMS"
 #endif
+
+#define CMD_SET_SMPS_PARAMS	"SET_SMPS_PARAMS"
 
 #define CMD_CCCR		"CCCR"
 
@@ -16974,6 +16981,113 @@ static int priv_driver_set_twtparams(
 
 		mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *) prTWTParamSetMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return -1;
+
+	return 0;
+}
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+static int priv_driver_set_smpsparams(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 };
+	struct _SMPS_CTRL_T rSMPSCtrl;
+	struct _SMPS_PARAMS_T *prSMPSParams;
+	uint16_t i;
+	int32_t u4Ret = 0;
+	uint32_t au4Setting[CMD_SMPS_MAX_PARAMS];
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	struct _MSG_SMPS_PARAMS_SET_T *prSMPSParamSetMsg;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prNetDev);
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	prAdapter = prNetDevPrivate->prGlueInfo->prAdapter;
+
+	/* Check param number and convert SMPS params to integer type */
+	if (i4Argc == CMD_SMPS_ACTION_FOUR_PARAMS) {
+		for (i = 0; i < (i4Argc - 1); i++) {
+
+			u4Ret = kalkStrtou32(apcArgv[i + 1],
+				0, &(au4Setting[i]));
+
+			if (u4Ret)
+				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
+		}
+	} else if (i4Argc == CMD_SMPS_ACTION_THREE_PARAMS) {
+		for (i = 0; i < (i4Argc - 1); i++) {
+
+			u4Ret = kalkStrtou32(apcArgv[i + 1],
+				0, &(au4Setting[i]));
+
+			if (u4Ret)
+				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
+		}
+	} else if (i4Argc == CMD_SMPS_ACTION_TWO_PARAMS) {
+		for (i = 0; i < (i4Argc - 1); i++) {
+
+			u4Ret = kalkStrtou32(apcArgv[i + 1],
+				0, &(au4Setting[i]));
+
+			if (u4Ret)
+				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
+		}
+	} else {
+		DBGLOG(REQ, INFO, "set_smpsparams wrong argc : %d\n", i4Argc);
+		return -1;
+	}
+
+	if ((i4Argc == CMD_SMPS_ACTION_FOUR_PARAMS) ||
+			(i4Argc == CMD_SMPS_ACTION_THREE_PARAMS)) {
+		prSMPSParams = &(rSMPSCtrl.rSMPSParams);
+		kalMemSet(prSMPSParams, 0, sizeof(struct _SMPS_PARAMS_T));
+		prSMPSParams->ucHtHeCap = (uint8_t) au4Setting[1];
+		rSMPSCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+		rSMPSCtrl.ucCtrlAction = au4Setting[0];
+		if (au4Setting[0] == 0)
+			g_fgHTSMPSEnabled =  (uint8_t) au4Setting[1];
+	} else if (i4Argc == CMD_SMPS_ACTION_TWO_PARAMS) {
+		if (au4Setting[0]) {
+			/* HE Dynamic SMPS is enabled */
+			prAdapter->rWifiVar.ucHeDynamicSMPS = TRUE;
+		} else {
+			/* HE Dynamic SMPS is disabled */
+			prAdapter->rWifiVar.ucHeDynamicSMPS = FALSE;
+		}
+
+		DBGLOG(REQ, STATE, "HE Dynamic SMPS is %d\n",
+				prAdapter->rWifiVar.ucHeDynamicSMPS);
+	} else {
+		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
+		return -1;
+	}
+
+	prSMPSParamSetMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_SMPS_PARAMS_SET_T));
+
+	if (prSMPSParamSetMsg) {
+
+		prSMPSParamSetMsg->rMsgHdr.eMsgId =
+			MID_SMPS_ACTION_SET;
+		kalMemCopy(&prSMPSParamSetMsg->rSMPSCtrl,
+			&rSMPSCtrl, sizeof(rSMPSCtrl));
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prSMPSParamSetMsg,
 			MSG_SEND_METHOD_BUF);
 	} else
 		return -1;

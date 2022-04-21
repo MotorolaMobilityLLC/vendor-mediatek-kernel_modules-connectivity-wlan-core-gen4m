@@ -7220,6 +7220,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucStaHePpRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"StaHePpRx", FEATURE_DISABLED);
+	prWifiVar->ucHeDynamicSMPS = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"HeDynamicSMPS", FEATURE_DISABLED);
 #endif
 
 	/* 0: disabled
@@ -11653,6 +11655,8 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 					WLAN_IOT_AP_DBDC_1SS) {
 				DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blk\n");
 				ucRetValNss = 1;
+				/* For sigma certificate, temp...*/
+				ucRetValNss = prAdapter->rWifiVar.ucNSS;
 			} else if (prAdapter->rWifiVar.fgSta1NSS) {
 				DBGLOG(SW4, INFO, "Use 1x1 due to FWK cmd\n");
 				ucRetValNss = 1;
