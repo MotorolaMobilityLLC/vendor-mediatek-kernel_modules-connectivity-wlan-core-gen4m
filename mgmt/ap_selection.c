@@ -1246,8 +1246,7 @@ struct BSS_DESC *scanSearchBssDescByScoreForAis(struct ADAPTER *prAdapter,
 	int32_t base, delta, goal;
 #endif
 
-	if (!prAdapter ||
-	    eRoamReason >= ROAMING_REASON_NUM || eRoamReason < 0) {
+	if (!prAdapter || eRoamReason >= ROAMING_REASON_NUM) {
 		log_dbg(SCN, ERROR,
 			"prAdapter %p, reason %d!\n", prAdapter, eRoamReason);
 		return NULL;
