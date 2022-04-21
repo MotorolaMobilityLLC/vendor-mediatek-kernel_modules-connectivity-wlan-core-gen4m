@@ -3096,28 +3096,17 @@ void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER
 
 }				/* wlanReleasePendingCMDbyBssIdx */
 
-#if (CFG_SUPPORT_RETURN_TASK == 1)
-void wlanReturnPacketDelaySetupTasklet(unsigned long data)
-{
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
-
-	wlanReturnPacketDelaySetupTimeout(prGlueInfo->prAdapter, 0);
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the indicated packet buffer and reallocate one to the RFB
  *
  * \param prAdapter      Pointer of Adapter Data Structure
- * \param pvPacket       Pointer of returned packet
  *
  * \retval WLAN_STATUS_SUCCESS: Success
  * \retval WLAN_STATUS_FAILURE: Failed
  */
 /*----------------------------------------------------------------------------*/
-void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
-				       *prAdapter, IN unsigned long ulParamPtr)
+void wlanReturnPacketDelaySetup(IN struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = NULL;
@@ -3161,6 +3150,25 @@ void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
 			&prAdapter->rPacketDelaySetupTimer,
 			RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
 	}
+}
+
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+void wlanReturnPacketDelaySetupTasklet(unsigned long data)
+{
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+
+	wlanReturnPacketDelaySetup(prGlueInfo->prAdapter);
+}
+#endif
+
+void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
+				       *prAdapter, IN unsigned long ulParamPtr)
+{
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	kal_tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+#else
+	wlanReturnPacketDelaySetup(prAdapter);
+#endif /* CFG_SUPPORT_RETURN_TASK */
 }
 
 /*----------------------------------------------------------------------------*/

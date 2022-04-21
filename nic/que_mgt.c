@@ -5152,6 +5152,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	IN unsigned long ulParamPtr)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct RX_BA_ENTRY *prReorderQueParm =
 		(struct RX_BA_ENTRY *) ulParamPtr;
 
@@ -5176,7 +5177,10 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
 		prReorderQueParm->u2FirstBubbleSn);
 
+	prGlueInfo = prAdapter->prGlueInfo;
+	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
+	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 }
 
 void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,

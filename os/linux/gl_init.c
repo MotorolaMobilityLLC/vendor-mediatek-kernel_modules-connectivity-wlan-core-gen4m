@@ -5528,8 +5528,6 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 		prRegInfo->fgEnArpFilter = TRUE;
 #endif
 
-	glTaskletInit(prGlueInfo);
-
 #if CFG_SUPPORT_NAN
 	prAdapter->fgIsNANfromHAL = TRUE;
 	prAdapter->ucNanPubNum = 0;
@@ -6379,6 +6377,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			eFailReason = ROM_DL_FAIL;
 			break;
 		}
+
+		/*
+		 * interrupt may come in after setup irq
+		 * we need to make sure that tasklet is ready before it
+		 */
+		glTaskletInit(prGlueInfo);
 
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 

@@ -1390,7 +1390,16 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #if CFG_SUPPORT_RX_NAPI
 		if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 			/* We should stay in NAPI context now */
+			/*
+			 * There is two context may reach here:
+			 * 1. napi context
+			 * 2. rx order timeout handler
+			 */
+			preempt_disable();
+			spin_lock_bh(&prNetDevPrivate->napi_spinlock);
 			napi_gro_receive(&prNetDevPrivate->napi, prSkb);
+			spin_unlock_bh(&prNetDevPrivate->napi_spinlock);
+			preempt_enable();
 		} else {
 			skb_queue_tail(&prNetDevPrivate->rRxNapiSkbQ, prSkb);
 			kal_napi_schedule(&prNetDevPrivate->napi);
