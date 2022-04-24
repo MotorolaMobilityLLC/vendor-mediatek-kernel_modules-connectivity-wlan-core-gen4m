@@ -1648,6 +1648,7 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 
 		nicDeactivateNetwork(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
