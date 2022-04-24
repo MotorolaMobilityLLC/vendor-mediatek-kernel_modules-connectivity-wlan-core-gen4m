@@ -253,8 +253,7 @@ void sortAssocReqIE(IN struct ADAPTER *prAdapter,
 		return;
 	}
 	pucBufferInOrder =
-		(uint8_t *) ((unsigned long) prMsduInfoInOrder->prPacket
-		+ (unsigned long) prMsduInfoInOrder->u2FrameLength);
+		(uint8_t *) ((unsigned long) prMsduInfoInOrder->prPacket);
 
 	end = prMsduInfo->u2FrameLength;
 	if (fgIsReAssoc) {
