@@ -185,6 +185,7 @@ struct GL_HIF_INFO {
 	u_int8_t fgMbxReadClear;
 
 	uint32_t u4IntStatus;
+	uint32_t u4IntStatus1;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	uint32_t u4OffloadIntStatus;
 #endif
@@ -224,6 +225,9 @@ struct GL_HIF_INFO {
 
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;
+
+	uint32_t u4TxRingPrefetchDefaultVal;
+	u_int8_t fgTxRingPrefetchEn[NUM_OF_TX_RING];
 
 	unsigned long ulHifIntEnBits;
 	uint32_t u4IntBitSetCnt;
@@ -390,6 +394,10 @@ struct BUS_INFO {
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,
 		u_int8_t fgEnable);
 #endif
+
+	void (*enableTxDataRingPrefetch)(
+		struct GLUE_INFO *prGlueInfo, uint32_t u4Port);
+	void (*resetTxDataRingPrefetch)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 #if CFG_MTK_WIFI_SW_EMI_RING

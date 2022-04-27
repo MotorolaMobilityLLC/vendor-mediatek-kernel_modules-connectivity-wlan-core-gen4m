@@ -4165,6 +4165,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	struct TXD_STRUCT rTxD, *pTxD;
 	uint16_t u2Port = TX_RING_DATA0;
 	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prGlueInfo);
 
@@ -4172,9 +4173,14 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
+	prBusInfo = prChipInfo->bus_info;
 
 	u2Port = halTxRingDataSelect(
 		prGlueInfo->prAdapter, prToken->prMsduInfo);
+
+	if (prBusInfo->enableTxDataRingPrefetch)
+		prBusInfo->enableTxDataRingPrefetch(prGlueInfo, u2Port);
+
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
