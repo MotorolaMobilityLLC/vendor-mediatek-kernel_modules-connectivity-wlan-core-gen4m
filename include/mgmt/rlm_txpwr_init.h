@@ -830,7 +830,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 	,
 	{	{'D', 'E'}
-		, {40, 46, 46, 60, 28, 63, 63, 63, 63}
+		, {40, 46, 46, 60, 60, 63, 63, 63, 63}
 		, 0
 	}
 	,
@@ -2013,7 +2013,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 	,
 	{	{'D', 'E'}
-		, {40, 46, 46, 60, 28}
+		, {40, 46, 46, 60, 60}
 		, 0
 	}
 	,
