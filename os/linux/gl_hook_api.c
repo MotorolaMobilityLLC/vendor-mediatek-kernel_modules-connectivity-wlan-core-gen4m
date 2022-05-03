@@ -95,6 +95,7 @@ enum {
 
 /* Maximum rxv vectors under 2048-2 bytes */
 #define MAX_RXV_DUMP_COUNT			(56)
+uint8_t g_uBandIdx;
 /*******************************************************************************
  *				F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -3200,6 +3201,15 @@ int32_t TxBfProfileTag_DesiredNr(struct net_device
 	return i4Status;
 }
 
+int32_t TxBfProfileTag_BandIdx(struct net_device
+				 *prNetDev, uint8_t uBandIdx)
+{
+	int32_t i4Status = 0;
+
+	g_uBandIdx = uBandIdx;
+	return i4Status;
+}
+
 int32_t TxBfProfileTagWrite(struct net_device *prNetDev,
 			    union PFMU_PROFILE_TAG1 *prPfmuTag1,
 			    union PFMU_PROFILE_TAG2 *prPfmuTag2,
@@ -3357,7 +3367,7 @@ int32_t TxBfProfileTagWrite(struct net_device *prNetDev,
 		BF_PFMU_TAG_WRITE;
 	rTxBfActionInfo.rProfileTagWrite.ucPfmuId = profileIdx;
 	rTxBfActionInfo.rProfileTagWrite.fgBFer = TRUE;
-	rTxBfActionInfo.rProfileTagWrite.ucBandIdx = ENUM_BAND_0;
+	rTxBfActionInfo.rProfileTagWrite.ucBandIdx = g_uBandIdx;
 	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer,
 	       prPfmuTag1, sizeof(union PFMU_PROFILE_TAG1));
 	memcpy(&rTxBfActionInfo.rProfileTagWrite.ucBuffer[28],
@@ -3393,7 +3403,7 @@ int32_t TxBfProfileTagRead(struct net_device *prNetDev,
 		BF_PFMU_TAG_READ;
 	rTxBfActionInfo.rProfileTagRead.ucProfileIdx = profileIdx;
 	rTxBfActionInfo.rProfileTagRead.fgBfer = fgBFer;
-	rTxBfActionInfo.rProfileTagRead.ucBandIdx = ENUM_BAND_0;
+	rTxBfActionInfo.rProfileTagRead.ucBandIdx = g_uBandIdx;
 
 	i4Status = kalIoctl(prGlueInfo, wlanoidTxBfAction, &rTxBfActionInfo,
 			    sizeof(rTxBfActionInfo), &u4BufLen);

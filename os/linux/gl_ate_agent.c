@@ -135,6 +135,7 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"TxBfProfileTagDesiredBw", Set_TxBfProfileTag_DesiredBW},
 	{"TxBfProfileTagDesiredNc", Set_TxBfProfileTag_DesiredNc},
 	{"TxBfProfileTagDesiredNr", Set_TxBfProfileTag_DesiredNr},
+	{"TxBfProfileTagBandIdx", Set_TxBfProfileTag_BandIdx},
 	{"TxBfProfileTagRead", Set_TxBfProfileTagRead},
 	{"TxBfProfileTagWrite", Set_TxBfProfileTagWrite},
 	{"TxBfProfileDataRead", Set_TxBfProfileDataRead},
@@ -1224,6 +1225,28 @@ int Set_TxBfProfileTagPartialBw(struct net_device *prNetDev,
 		       prInBuf, uBitmap, uResolution);
 		i4Status = TxBfProfileTagPartialBw(prNetDev, &g_rPfmuTag1,
 			uBitmap, uResolution);
+	} else {
+		return -EINVAL;
+	}
+
+	return i4Status;
+}
+
+int Set_TxBfProfileTag_BandIdx(struct net_device *prNetDev,
+			    uint8_t *prInBuf)
+{
+	uint32_t uBandIdx;
+	int32_t i4Status = 0;
+	int32_t rv;
+
+	DBGLOG(RFTEST, INFO, "Set_TxBfProfileTag_BandIdx\n");
+
+	rv = kstrtoint(prInBuf, 0, &uBandIdx);
+	if (rv == 0) {
+		DBGLOG(RFTEST, INFO,
+		       "Set_TxBfProfileTag_BandIdx prInBuf = %s, uBandIdx = %d\n",
+		       prInBuf, uBandIdx);
+		i4Status = TxBfProfileTag_BandIdx(prNetDev, uBandIdx);
 	} else {
 		return -EINVAL;
 	}
