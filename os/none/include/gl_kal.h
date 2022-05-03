@@ -784,7 +784,11 @@ int8_t kal_atoi(uint8_t ch);
 
 #define kalGetTimeTick() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define WLAN_TAG                        "[wlan_golden]"
+#else
 #define WLAN_TAG                        "[wlan]"
+#endif
 #define kalPrint(_Fmt...) printf(WLAN_TAG _Fmt)
 #define kalPrintLimited(_Fmt...) printf(WLAN_TAG _Fmt)
 
