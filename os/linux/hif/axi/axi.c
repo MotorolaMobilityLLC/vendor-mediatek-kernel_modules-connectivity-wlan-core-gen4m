@@ -581,6 +581,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			DBGLOG(INIT, ERROR, "TxCmdBuf[%u] alloc fail\n", u4Idx);
 	}
 
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 0)
 	for (u4Idx = 0; u4Idx < TX_RING_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(AXI_TX_CMD_BUFF_SIZE,
 				    &grMem.rTxFwdlBuf[u4Idx]))
@@ -588,6 +589,7 @@ static int axiAllocHifMem(struct platform_device *pdev,
 				"TxFwdlBuf[%u] alloc fail\n",
 				u4Idx);
 	}
+#endif
 
 	for (u4Idx = 0; u4Idx < RX_RING0_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(CFG_RX_MAX_PKT_SIZE,
@@ -1264,8 +1266,12 @@ static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 		prDmaBuf->AllocPa = grMem.rTxCmdBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxCmdBuf[u4Idx].va;
 	} else if (u4Num == TX_RING_FWDL) {
+#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 0)
 		prDmaBuf->AllocPa = grMem.rTxFwdlBuf[u4Idx].pa;
 		prDmaBuf->AllocVa = grMem.rTxFwdlBuf[u4Idx].va;
+#else
+		return true;
+#endif
 	}
 	if (prDmaBuf->AllocVa  == NULL) {
 		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
