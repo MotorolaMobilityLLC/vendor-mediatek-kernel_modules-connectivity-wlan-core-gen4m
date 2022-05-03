@@ -346,6 +346,12 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		return 0;
 	}
 
+	/* count total TDLS link */
+	prAdapter->u4TdlsLinkCount = 0;
+	for (i = 0; i < MAXNUM_TDLS_PEER; i++)
+		prAdapter->u4TdlsLinkCount += g_arTdlsLink[i];
+	DBGLOG(TDLS, INFO, "TDLS total link = %d", prAdapter->u4TdlsLinkCount);
+
 	return 0;
 }
 
