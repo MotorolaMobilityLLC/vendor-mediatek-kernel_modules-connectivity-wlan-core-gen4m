@@ -5294,10 +5294,6 @@ connsysFwLogControl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 			break;
 		}
-		wlanDbgSetLogLevelImpl(prAdapter,
-					   ENUM_WIFI_LOG_LEVEL_VERSION_V1,
-					   ENUM_WIFI_LOG_MODULE_DRIVER,
-					   u4LogLevel);
 
 		if (prCmd->fgEarlySet) {
 			wlanDbgSetLogLevel(prAdapter,
