@@ -315,6 +315,7 @@ void nic_rxd_v2_fill_rfb(
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_RF_BAND(prRxStatus);
 	prSwRfb->ucTcl =
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_TCL(prRxStatus);
+	prSwRfb->ucKeyID = HAL_MAC_CONNAC2X_RX_STATUS_GET_KID(prRxStatus);
 
 	updateLinkStatsMpduAc(prAdapter, prSwRfb);
 

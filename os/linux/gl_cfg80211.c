@@ -2379,12 +2379,30 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+
+	/* if ucEapolSuspendOffload 1 => suspend rekey offload */
+	/* So we store key data here */
+	/* and enable rekey when enter system suspend wow */
+	if (prGlueInfo->prAdapter->rWifiVar.ucEapolSuspendOffload) {
+		kalMemZero(prWpaInfo->aucKek, NL80211_KEK_LEN);
+		kalMemZero(prWpaInfo->aucKck, NL80211_KCK_LEN);
+		kalMemZero(prWpaInfo->aucReplayCtr, NL80211_REPLAY_CTR_LEN);
+		kalMemCopy(prWpaInfo->aucKek, data->kek, NL80211_KEK_LEN);
+		kalMemCopy(prWpaInfo->aucKck, data->kck, NL80211_KCK_LEN);
+		kalMemCopy(prWpaInfo->aucReplayCtr,
+			data->replay_ctr, NL80211_REPLAY_CTR_LEN);
+
+		return 0;
+	}
+
 	prGtkData =
 		(struct PARAM_GTK_REKEY_DATA *) kalMemAlloc(sizeof(
 				struct PARAM_GTK_REKEY_DATA), VIR_MEM_TYPE);
 
 	if (!prGtkData)
-		return WLAN_STATUS_SUCCESS;
+		return 0;
 
 	DBGLOG(RSN, INFO, "ucBssIndex = %d, size(%d)\n",
 		ucBssIndex,
@@ -2429,7 +2447,7 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	else {
 		kalMemFree(prGtkData, VIR_MEM_TYPE,
 			   sizeof(struct PARAM_GTK_REKEY_DATA));
-		return WLAN_STATUS_SUCCESS;
+		return 0;
 	}
 
 	if (prWpaInfo->u4CipherGroup ==
@@ -2441,7 +2459,7 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	else {
 		kalMemFree(prGtkData, VIR_MEM_TYPE,
 			   sizeof(struct PARAM_GTK_REKEY_DATA));
-		return WLAN_STATUS_SUCCESS;
+		return 0;
 	}
 
 	prGtkData->u4KeyMgmt = prWpaInfo->u4KeyMgmt;

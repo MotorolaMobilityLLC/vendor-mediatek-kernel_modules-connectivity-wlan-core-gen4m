@@ -282,6 +282,9 @@ struct GL_WPA_INFO {
 	uint8_t ucRSNMfpCap;
 #endif
 	uint16_t u2RSNXCap;
+	uint8_t aucKek[NL80211_KEK_LEN];
+	uint8_t aucKck[NL80211_KCK_LEN];
+	uint8_t aucReplayCtr[NL80211_REPLAY_CTR_LEN];
 };
 
 #if CFG_SUPPORT_REPLAY_DETECTION
@@ -743,6 +746,12 @@ enum ENUM_WMM_UP {
 	WMM_UP_VO_INDEX,
 	WMM_UP_NC_INDEX,
 	WMM_UP_INDEX_NUM
+};
+
+/* add for wlanSuspendRekeyOffload command because not include nl80211 */
+enum nl80211_wpa_versions {
+	NL80211_WPA_VERSION_1 = 1 << 0,
+	NL80211_WPA_VERSION_2 = 1 << 1,
 };
 
 /*******************************************************************************

@@ -712,13 +712,16 @@ struct PARAM_CAPABILITY {
 #define NL80211_KCK_LEN                 16
 #define NL80211_KEK_LEN                 16
 #define NL80211_REPLAY_CTR_LEN          8
+#define NL80211_KEYRSC_LEN		8
 
 struct PARAM_GTK_REKEY_DATA {
 	uint8_t aucKek[NL80211_KEK_LEN];
 	uint8_t aucKck[NL80211_KCK_LEN];
 	uint8_t aucReplayCtr[NL80211_REPLAY_CTR_LEN];
 	uint8_t ucBssIndex;
-	uint8_t ucRsv[3];
+	uint8_t ucRekeyMode;
+	uint8_t ucCurKeyId;
+	uint8_t ucRsv;
 	uint32_t u4Proto;
 	uint32_t u4PairwiseCipher;
 	uint32_t u4GroupCipher;
