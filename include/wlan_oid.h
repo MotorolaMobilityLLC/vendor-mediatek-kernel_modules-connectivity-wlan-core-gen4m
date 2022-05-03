@@ -3567,7 +3567,6 @@ struct MLO_AGC_DISP_PARAM_TRIG {
 	uint8_t u1DispRatioTrig;
 	uint8_t u1DispMuLenTrig;
 	uint16_t u2DispMgfTrig;
-	uint16_t u2DispAggLimitTrig;
 };
 
 struct MLO_OVLP_RPT_CNT {
@@ -3594,12 +3593,14 @@ struct PARAM_MLD_REC {
 	uint8_t u1MldRecState;
 	uint8_t u1MldRecIdx;
 	uint16_t u2MldIdx;
+	uint16_t u2PrimaryMldId;
+	uint16_t u2SecondMldId;
 	u_int8_t fgAllStrLinks;
 	uint8_t u1StrBmp;
 	uint8_t u1EmlsrBmp;
 	uint8_t u1ActiveLinkNum;
 	uint8_t u1ActiveLinkBmp;
-	u_int8_t fgAgcAggressiveMode;
+	u_int8_t fgAgcAggressiveMode[2]; /* Trig:0 Tx:1 */
 	struct MLD_RECORD_LINK arMldRecLink[MLD_LINK_MAX];
 };
 #endif

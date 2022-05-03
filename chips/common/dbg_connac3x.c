@@ -1679,20 +1679,22 @@ int32_t connac3x_show_mld_info(
 
 	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"\n%s%d, %s%d, %s%d\n",
+			"\n%s%d, %s%d, %s%d, %s%d/%d\n",
 			"MldRecState=", mld->u1MldRecState,
 			"MldRecIdx=", mld->u1MldRecIdx,
-			"StaRecMldIdx=", mld->u2MldIdx);
+			"StaRecMldIdx=", mld->u2MldIdx,
+			"MldId[P/S]=", mld->u2PrimaryMldId, mld->u2SecondMldId);
 
 	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%s%d, %s0x%x, %s0x%x\n%s%d(0x%x), %s%d\n",
+			"%s%d, %s0x%x, %s0x%x\n%s%d(0x%x), %s%d/%d\n",
 			"AllSTR=", mld->fgAllStrLinks,
 			"StrBmp=", mld->u1StrBmp,
 			"EmlsrBmp=", mld->u1EmlsrBmp,
 			"ActLinkNum/Bmp=", mld->u1ActiveLinkNum,
 			mld->u1ActiveLinkBmp,
-			"Aggressive=", mld->fgAgcAggressiveMode);
+			"Aggressive[Trig/Tx]=", mld->fgAgcAggressiveMode[0],
+			mld->fgAgcAggressiveMode[1]);
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prMldLink = &(mld->arMldRecLink[i]);
@@ -1767,12 +1769,11 @@ int32_t connac3x_show_mld_info(
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"%s%d, %s%d, %s%d, %s%d, %s%d\n",
+			"%s%d, %s%d, %s%d, %s%d\n",
 			"State=", prAgcParamTrig->u1AgcStateTrig,
 			"Ratio=", prAgcParamTrig->u1DispRatioTrig,
 			"MuLen=", prAgcParamTrig->u1DispMuLenTrig,
-			"Mgf=", prAgcParamTrig->u2DispMgfTrig,
-			"AggLimit=", prAgcParamTrig->u2DispAggLimitTrig);
+			"Mgf=", prAgcParamTrig->u2DispMgfTrig);
 
 		for (j = 0; j < MAX_MLO_MGMT_SUPPORT_AC_NUM; j++) {
 			i4BytesWritten += kalScnprintf(
