@@ -244,7 +244,7 @@ void sysCreateMacAddr(void)
 		kalSnprintf(aucMacAddrOverride,
 			sizeof(aucMacAddrOverride),
 			"%pM",
-			MAC2STR(rMacAddr));
+			rMacAddr);
 
 		DBGLOG(INIT, TRACE,
 			"Init macaddr to " MACSTR ".\n",
