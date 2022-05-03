@@ -2297,7 +2297,7 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 	if (!prFtIEs->prMDIE) {
 		struct BSS_DESC *prBssDesc =
 		    aisGetTargetBssDesc(prAdapter, ucBssIndex);
-		uint8_t *pucIE = &prBssDesc->aucIEBuf[0];
+		uint8_t *pucIE = prBssDesc->pucIeBuf;
 		uint16_t u2IeLen = prBssDesc->u2IELength;
 		uint16_t u2IeOffSet = 0;
 

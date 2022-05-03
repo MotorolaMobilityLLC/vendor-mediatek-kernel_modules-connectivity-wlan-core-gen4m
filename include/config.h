@@ -688,9 +688,6 @@
 /*! Maximum size of Header buffer of each SCAN record */
 #define CFG_RAW_BUFFER_SIZE                     1024
 
-/*! Maximum size of IE buffer of each SCAN record */
-#define CFG_IE_BUFFER_SIZE                      640
-
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Power management
  *------------------------------------------------------------------------------
