@@ -1233,6 +1233,8 @@ struct WIFI_VAR {
 	u_int8_t fgEnableSdo;
 	u_int8_t fgEnableRro;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+	u_int8_t fgIcmpTxs;
 };
 
 /* cnm_timer module */

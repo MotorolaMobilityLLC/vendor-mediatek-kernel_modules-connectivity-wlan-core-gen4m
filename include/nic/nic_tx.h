@@ -1092,7 +1092,8 @@ struct TX_DESC_OPS_T {
 #if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
 	void (*nic_txd_chksum_op)(
 		void *prTxDesc,
-		uint8_t ucChksumFlag);
+		uint8_t ucChksumFlag,
+		struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
 	void (*nic_txd_header_format_op)(
 		void *prTxDesc,
@@ -2128,5 +2129,7 @@ uint8_t nicTxGetAcIdxByTc(uint8_t ucTC);
  */
 
 u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
+void nicTxForceAmsduForCert(struct ADAPTER *prAdapter,
+				u_int8_t *prTxDescBuffer);
 
 #endif /* _NIC_TX_H */

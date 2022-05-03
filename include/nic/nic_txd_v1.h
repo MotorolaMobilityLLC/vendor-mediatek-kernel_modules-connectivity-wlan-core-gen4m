@@ -90,7 +90,8 @@ uint8_t nic_txd_v1_queue_idx_op(
 #if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
 void nic_txd_v1_chksum_op(
 	void *prTxDesc,
-	uint8_t ucChksumFlag);
+	uint8_t ucChksumFlag,
+	struct MSDU_INFO *prMsduInfo);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD == 1 */
 void nic_txd_v1_header_format_op(
 	void *prTxDesc,

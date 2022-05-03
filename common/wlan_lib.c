@@ -8070,6 +8070,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableRro", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
+			FEATURE_ENABLED);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
