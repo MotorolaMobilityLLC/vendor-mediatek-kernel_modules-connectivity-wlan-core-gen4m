@@ -2263,8 +2263,6 @@ void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 	struct MEM_TRACK *prMemTrack = NULL;
 #endif
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 		DBGLOG(TX, INFO, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
 			prCmdInfo, prCmdInfo->pfCmdDoneHandler,
@@ -2287,11 +2285,8 @@ void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 			prMemTrack->u2CmdIdAndWhere |= 0x5000;
 		}
 #endif
-
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue,
 				  (struct QUE_ENTRY *) prCmdInfo);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 	}
 }
 
