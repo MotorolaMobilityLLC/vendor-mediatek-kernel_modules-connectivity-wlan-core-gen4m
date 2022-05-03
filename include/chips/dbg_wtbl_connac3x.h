@@ -226,6 +226,13 @@ enum _ENUM_IGTK_CIPHER_SUIT_T {
 	} \
 )
 
+u_int8_t connac3x_wtbl_get_ldpc_info(
+	uint8_t ucTxMode,
+	struct bwtbl_lmac_struct *pWtbl);
+
+u_int8_t connac3x_wtbl_get_sgi_info(
+	struct bwtbl_lmac_struct *pWtbl);
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
