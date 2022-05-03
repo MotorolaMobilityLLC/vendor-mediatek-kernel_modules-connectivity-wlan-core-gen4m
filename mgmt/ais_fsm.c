@@ -749,8 +749,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	/* request list initialization */
 	LINK_INITIALIZE(&prAisFsmInfo->rPendingReqList);
 
-	/* Support AP Selection */
-	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlackList);
 	kalMemZero(&prAisSpecificBssInfo->arCurEssChnlInfo[0],
 		   sizeof(prAisSpecificBssInfo->arCurEssChnlInfo));
 	LINK_INITIALIZE(&prAisSpecificBssInfo->rCurEssLink);
@@ -859,9 +857,6 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 #if CFG_SUPPORT_802_11W
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
-	/* Support AP Selection */
-	LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rBlackList,
-			 struct AIS_BLACKLIST_ITEM, VIR_MEM_TYPE);
 	/* end Support AP Selection */
 	LINK_MGMT_UNINIT(&prAisSpecificBssInfo->rNeighborApList,
 			 struct NEIGHBOR_AP, VIR_MEM_TYPE);

@@ -3469,6 +3469,9 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 		aisFsmInit(prAdapter, prRegInfo, i);
 	}
 
+	/* Support AP Selection */
+	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlackList);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	p2pMldBssInit(prAdapter);
 #endif
@@ -3506,6 +3509,10 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 		/* AIS Module - unintiailization */
 		aisFsmUninit(prAdapter, i);
 	}
+
+	/* Support AP Selection */
+	LINK_MGMT_UNINIT(&prAdapter->rWifiVar.rBlackList,
+			 struct AIS_BLACKLIST_ITEM, VIR_MEM_TYPE);
 
 	/* SCN Module - unintiailization */
 	scnUninit(prAdapter);
