@@ -565,7 +565,7 @@ struct CHIP_DBG_OPS {
 	void (*get_rx_link_stats)(
 		IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prRetSwRfb,
-		IN uint32_t u4RxVector0);
+		IN uint32_t u4RxV0);
 #endif
 	u_int8_t (*show_mcu_debug_info)(
 		struct ADAPTER *prAdapter,

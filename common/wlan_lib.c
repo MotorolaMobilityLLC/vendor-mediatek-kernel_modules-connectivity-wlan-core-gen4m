@@ -14041,9 +14041,9 @@ void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
 		goto out;
 
 	if (prStaRec->fgIsValid && prStaRec->fgIsInUse) {
-		prStaRec->au4RxV0[ucSmapleCnt] = prStaRec->u4RxVector0;
-		prStaRec->au4RxV1[ucSmapleCnt] = prStaRec->u4RxVector1;
-		prStaRec->au4RxV2[ucSmapleCnt] = prStaRec->u4RxVector2;
+		prStaRec->au4RxV0[ucSmapleCnt] = prStaRec->au4RxV[0];
+		prStaRec->au4RxV1[ucSmapleCnt] = prStaRec->au4RxV[1];
+		prStaRec->au4RxV2[ucSmapleCnt] = prStaRec->au4RxV[2];
 
 		ucSmapleCnt = (ucSmapleCnt + 1) % MCS_INFO_SAMPLE_CNT;
 	}

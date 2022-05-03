@@ -666,27 +666,27 @@ int32_t connac3x_show_rx_rate_info(
 {
 	int32_t i4BytesWritten = 0;
 	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, mu;
-	uint32_t dcm = 0, u4RxVector0 = 0;
+	uint32_t dcm = 0, u4RxV0 = 0;
 
 	/* Group3 PRXV0[0:31] */
-	u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+	u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
 
 	/* P-RXV0 */
-	rate = (u4RxVector0 & CONNAC3X_RX_VT_RX_RATE_MASK)
+	rate = (u4RxV0 & CONNAC3X_RX_VT_RX_RATE_MASK)
 					>> CONNAC3X_RX_VT_RX_RATE_OFFSET;
-	nsts = ((u4RxVector0 & CONNAC3X_RX_VT_NSTS_MASK)
-					>> CONNAC3X_RX_VT_NSTS_OFFSET);
-	ldpc = u4RxVector0 & CONNAC3X_RX_VT_LDPC;
-	frmode = (u4RxVector0 & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
+	nsts = (u4RxV0 & CONNAC3X_RX_VT_NSTS_MASK)
+					>> CONNAC3X_RX_VT_NSTS_OFFSET;
+	ldpc = u4RxV0 & CONNAC3X_RX_VT_LDPC;
+	frmode = (u4RxV0 & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
 					>> CONNAC3X_RX_VT_FR_MODE_OFFSET_V2;
-	sgi = (u4RxVector0 & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
+	sgi = (u4RxV0 & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
 					>> CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2;
-	stbc = (u4RxVector0 & CONNAC3X_RX_VT_STBC_MASK_V2)
+	stbc = (u4RxV0 & CONNAC3X_RX_VT_STBC_MASK_V2)
 					>> CONNAC3X_RX_VT_STBC_OFFSET_V2;
-	txmode = (u4RxVector0 & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
+	txmode = (u4RxV0 & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
 					>> CONNAC3X_RX_VT_RX_MODE_OFFSET_V2;
-	mu = (u4RxVector0 & CONNAC3X_RX_VT_MU);
-	dcm = (u4RxVector0 & CONNAC3X_RX_VT_DCM);
+	mu = u4RxV0 & CONNAC3X_RX_VT_MU;
+	dcm = u4RxV0 & CONNAC3X_RX_VT_DCM;
 
 	if (mu == 0)
 		nsts += 1;
@@ -768,7 +768,7 @@ int32_t connac3x_show_rx_rssi_info(
 	int32_t i4BytesWritten = 0;
 	uint32_t u4RCPI = 0;
 
-	u4RCPI = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
+	u4RCPI = prAdapter->arStaRec[ucStaIdx].au4RxV[1];
 
 	DBGLOG(REQ, LOUD, "****** RCPI = 0x%08x ******\n", u4RCPI);
 
@@ -3107,7 +3107,7 @@ int connac3x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0, mu = 0;
-	uint32_t u4RxVector0 = 0;
+	uint32_t u4RxV0 = 0;
 	uint8_t ucWlanIdx, ucStaIdx;
 
 	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
@@ -3124,26 +3124,26 @@ int connac3x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
-		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
+		u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
 	} else {
 		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
 		return -1;
 	}
 
 	/* P-RXV1 */
-	rate = (u4RxVector0 & CONNAC3X_RX_VT_RX_RATE_MASK)
+	rate = (u4RxV0 & CONNAC3X_RX_VT_RX_RATE_MASK)
 				>> CONNAC3X_RX_VT_RX_RATE_OFFSET;
-	nsts = ((u4RxVector0 & CONNAC3X_RX_VT_NSTS_MASK)
-				>> CONNAC3X_RX_VT_NSTS_OFFSET);
-	frmode = (u4RxVector0 & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
+	nsts = (u4RxV0 & CONNAC3X_RX_VT_NSTS_MASK)
+				>> CONNAC3X_RX_VT_NSTS_OFFSET;
+	frmode = (u4RxV0 & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
 					>> CONNAC3X_RX_VT_FR_MODE_OFFSET_V2;
-	sgi = (u4RxVector0 & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
+	sgi = (u4RxV0 & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
 					>> CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2;
-	rxmode = (u4RxVector0 & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
+	rxmode = (u4RxV0 & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
 					>> CONNAC3X_RX_VT_RX_MODE_OFFSET_V2;
-	stbc = (u4RxVector0 & CONNAC3X_RX_VT_STBC_MASK_V2)
+	stbc = (u4RxV0 & CONNAC3X_RX_VT_STBC_MASK_V2)
 				>> CONNAC3X_RX_VT_STBC_OFFSET_V2;
-	mu = (u4RxVector0 & CONNAC3X_RX_VT_MU);
+	mu = u4RxV0 & CONNAC3X_RX_VT_MU;
 
 	if (mu == 0)
 		nsts += 1;
