@@ -317,6 +317,19 @@ uint32_t nicGetS1Freq(IN enum ENUM_BAND eBand,
 			IN uint8_t ucPrimaryChannel,
 			IN uint8_t ucBandwidth);
 
+#if (CFG_SUPPORT_802_11BE == 1)
+uint8_t nicGetEhtS1(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth);
+uint8_t nicGetEht6gS1(IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth);
+uint8_t nicGetEhtS2(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth);
+uint8_t nicGetEht6gS2(IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth);
+#endif
+
 /* Utility to get S1, S2 */
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
 		IN uint8_t ucPrimaryChannel,

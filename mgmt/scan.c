@@ -5354,16 +5354,20 @@ void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
 		prBssDesc->eChannelWidth =
 			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo->ucControl);
-		prBssDesc->ucCenterFreqS1 = prEhtOpInfo->ucCCFS0;
-		prBssDesc->ucCenterFreqS2 = prEhtOpInfo->ucCCFS1;
+		prBssDesc->ucCenterFreqS1 = nicGetS1(
+			prBssDesc->eBand, prBssDesc->ucChannelNum,
+			prBssDesc->eChannelWidth);
+		prBssDesc->ucCenterFreqS2 = 0;
 
 		DBGLOG(SCN, INFO,
 			"[EHT OP IE] BSSID:" MACSTR
-			" SSID:%s CH: %u, BW: %u S1: %u S2: %u\n",
+			" SSID:%s CH: %u, BW: %u S1: %u S2: %u fixed s1: %u fixed s2: %u\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->aucSSID,
 			prBssDesc->ucChannelNum,
 			prBssDesc->eChannelWidth,
+			prEhtOpInfo->ucCCFS0,
+			prEhtOpInfo->ucCCFS1,
 			prBssDesc->ucCenterFreqS1,
 			prBssDesc->ucCenterFreqS2);
 	}
