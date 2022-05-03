@@ -1014,7 +1014,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				uint8_t ucBssIndex;
 				struct CONNECTION_SETTINGS *prConnSettings;
 
-				if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+				if (!AIS_MAIN_BSS_INFO(prAdapter, j))
 					continue;
 
 				ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, j);
@@ -5005,7 +5005,7 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo;
 			struct LINK *prEssList;
 
-			if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+			if (!AIS_MAIN_BSS_INFO(prAdapter, j))
 				continue;
 
 			prSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,

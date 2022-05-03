@@ -5151,7 +5151,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	for (ucAisIndex = 0; ucAisIndex < KAL_AIS_NUM; ucAisIndex++) {
 		uint8_t ucBssIndex;
 
-		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex))
+		if (!AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex))
 			continue;
 
 		ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
