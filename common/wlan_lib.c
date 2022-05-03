@@ -7506,7 +7506,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucOffload = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "Offload", FEATURE_DISABLED);
 	prWifiVar->ucAdvPws = (uint8_t) wlanCfgGetUint32(
-					prAdapter, "AdvPws", FEATURE_ENABLED);
+					prAdapter, "AdvPws", FEATURE_DISABLED);
 	prWifiVar->ucWowOnMdtim = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "WowOnMdtim", 1);
 	prWifiVar->ucWowOffMdtim = (uint8_t) wlanCfgGetUint32(
