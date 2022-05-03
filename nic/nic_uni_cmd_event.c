@@ -7964,9 +7964,9 @@ void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
-		legacy = (uint8_t *)kalMemAlloc(tags_len, VIR_MEM_TYPE);
+		legacy = (uint8_t *)kalMemAlloc(TAG_LEN(tag), VIR_MEM_TYPE);
 
-		kalMemCopy(legacy, tag, tags_len);
+		kalMemCopy(legacy, tag, TAG_LEN(tag));
 
 
 		RUN_RX_EVENT_HANDLER(EVENT_ID_NAN_EXT_EVENT,
