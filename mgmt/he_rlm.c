@@ -427,8 +427,7 @@ static void heRlmFillHeCapIE(
 #endif
 	u_int8_t fgTxStbcEn = TRUE;
 
-	struct AIS_FSM_INFO *prAisFsmInfo =
-		aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 
 	ASSERT(prAdapter);
@@ -452,10 +451,12 @@ static void heRlmFillHeCapIE(
 		prWifiVar->ucTrigMacPadDur);
 
 	/* Check HTC blacklist */
-	if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
+	if (IS_BSS_AIS(prBssInfo)) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+			prBssInfo->ucBssIndex);
 		prBssDesc = aisGetTargetBssDesc(prAdapter,
 				prBssInfo->ucBssIndex);
-		if (prBssDesc != NULL &&
+		if (prAisFsmInfo && prBssDesc != NULL &&
 			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
 			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
 			DBGLOG(BSS, INFO,

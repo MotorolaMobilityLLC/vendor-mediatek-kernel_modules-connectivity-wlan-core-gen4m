@@ -247,6 +247,7 @@ struct P2P_SCAN_REQ_INFO {
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
 	uint8_t ucSsidNum;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
 	enum ENUM_SCAN_REASON eScanReason;
 	/* Currently we can only take one SSID scan request */
 	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];

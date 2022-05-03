@@ -338,7 +338,8 @@ void p2pFuncGetStationInfo(IN struct ADAPTER *prAdapter,
 		OUT struct P2P_STATION_INFO *prStaInfo);
 
 struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx, IN struct MSDU_INFO *prMgmtTxMsdu);
+		IN uint8_t ucBssIdx,
+		IN struct WLAN_BEACON_FRAME *prProbeRspFrame);
 
 #if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
 uint32_t
@@ -421,6 +422,38 @@ p2pFuncGetSpecAttri(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucIEBuf,
 		IN uint16_t u2BufferLen,
 		IN uint8_t ucAttriID);
+
+uint32_t p2pCalculateWSCIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec);
+
+void p2pGenerateWSCIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
+
+#if CFG_SUPPORT_WFD
+uint32_t p2pCalculateWFDIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec);
+
+void p2pGenerateWFDIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
+#endif
+
+uint32_t p2pCalculateP2PIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec);
+
+void p2pGenerateP2PIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
+
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+uint32_t p2pCalculateVendorIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec);
+
+void p2pGenerateVendorIE(IN struct ADAPTER *p2pGenerateVendorIE,
+		IN struct MSDU_INFO *prMsduInfo);
+#endif
 
 uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);

@@ -2343,19 +2343,15 @@ void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
 
 	ASSERT(prGlueInfo);
 
-	prConnSettings = aisGetConnSettings(
-		prGlueInfo->prAdapter,
-		ucBssIndex);
-
-	/* reset */
-	prConnSettings->u4RspIeLength = 0;
-
 	if (u4IELength <= CFG_CFG80211_IE_BUF_LEN) {
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 			ucBssIndex);
 
 		if (IS_BSS_AIS(bss)) {
+			prConnSettings = aisGetConnSettings(
+				prGlueInfo->prAdapter,
+				ucBssIndex);
 			prConnSettings->u4RspIeLength = u4IELength;
 			kalMemCopy(prConnSettings->aucRspIe,
 				pucFrameBody + u4IEOffset,
@@ -10082,6 +10078,9 @@ int kalMaskMemCmp(const void *cs, const void *ct,
 	const uint8_t *su1, *su2, *su3;
 	int res = 0;
 
+	if (!mask)
+		return kalMemCmp(cs, ct, count);
+
 	for (su1 = cs, su2 = ct, su3 = mask;
 		count > 0; ++su1, ++su2, ++su3, count--) {
 		if (mask != NULL)
@@ -10091,6 +10090,7 @@ int kalMaskMemCmp(const void *cs, const void *ct,
 		if (res != 0)
 			break;
 	}
+
 	return res;
 }
 

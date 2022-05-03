@@ -105,7 +105,6 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			ehtRlmRspGenerateOpIE}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
-	, {0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
@@ -118,6 +117,14 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rsnGenerateRSNXIE}	/* 244 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateOWEIE}
+	, {0, p2pCalculateWSCIELen, p2pGenerateWSCIE}
+#if CFG_SUPPORT_WFD
+	, {0, p2pCalculateWFDIELen, p2pGenerateWFDIE}
+#endif
+	, {0, p2pCalculateP2PIELen, p2pGenerateP2PIE}
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+	, {0, p2pCalculateVendorIELen, p2pGenerateVendorIE}
+#endif
 };
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -174,12 +181,8 @@ p2pFuncGetAttriListAction(IN struct ADAPTER *prAdapter,
 
 static void
 p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucIEBuf, IN uint8_t ucElemIdType,
-		OUT uint8_t *ucBssIdx, OUT struct BSS_INFO **prP2pBssInfo,
-		OUT u_int8_t *fgIsWSCIE,
-		OUT u_int8_t *fgIsP2PIE,
-		OUT u_int8_t *fgIsWFDIE,
-		OUT u_int8_t *fgIsVenderIE);
+		IN struct MSDU_INFO *prMgmtTxMsdu,
+		IN uint8_t ucBssIdx);
 
 static void
 p2pFuncGetSpecAttriAction(IN struct IE_P2P *prP2pIE,
@@ -217,6 +220,9 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 {
 	struct MSG_SCN_SCAN_REQ_V2 *prScanReqV2 =
 		(struct MSG_SCN_SCAN_REQ_V2 *) NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	const uint8_t *ml;
+#endif
 
 #ifdef CFG_SUPPORT_BEAM_PLUS
 	/*NFC Beam + Indication */
@@ -266,7 +272,6 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 		kalMemCopy(prScanReqV2->aucIE,
 			prScanReqInfo->aucIEBuf, prScanReqInfo->u4BufLength);
 		prScanReqV2->u2IELen = (uint16_t) prScanReqInfo->u4BufLength;
-
 		prScanReqV2->u2ChannelDwellTime =
 			prScanReqInfo->u2PassiveDewellTime;
 		prScanReqV2->u2ChannelMinDwellTime =
@@ -276,7 +281,6 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 
 		prScanReqV2->u2TimeoutValue = 0;
 		prScanReqV2->u2ProbeDelay = 0;
-		prScanReqV2->fgOobRnrParseEn = TRUE;
 
 		switch (prScanReqInfo->eChannelSet) {
 		case SCAN_CHANNEL_SPECIFIED:
@@ -352,6 +356,39 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 		}
 
 		prScanReqInfo->fgIsScanRequest = TRUE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		ml = kalFindIeExtIE(ELEM_ID_RESERVED,
+			ELEM_EXT_ID_MLD, prScanReqV2->aucIE,
+			prScanReqV2->u2IELen);
+		/* use ml prob req if scan req has ml ie, bssid, single chnl */
+		if (prScanReqV2->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
+		    prScanReqV2->ucChannelListNum == 1 &&
+#if 0 /* (CFG_SUPPORT_WIFI_6G == 1) */
+		    /* temp solution, ml probe req can be handled in 2.4/5g */
+		    prScanReqV2->arChnlInfoList[0].eBand != BAND_6G &&
+#endif
+		    mldIsMlProbeReq(ml) &&
+		    UNEQUAL_MAC_ADDR(prScanReqInfo->aucBSSID,
+				     "\xff\xff\xff\xff\xff\xff")) {
+			DBGLOG(P2P, INFO,
+				"ML Probe Req to "MACSTR" chnl=%d band=%d\n",
+				MAC2STR(prScanReqInfo->aucBSSID),
+				prScanReqV2->arChnlInfoList[0].ucChannelNum,
+				prScanReqV2->arChnlInfoList[0].eBand);
+
+			COPY_MAC_ADDR(prScanReqV2->aucExtBssid[0],
+				prScanReqInfo->aucBSSID);
+			kalMemSet(prScanReqV2->ucBssidMatchSsidInd,
+				CFG_SCAN_OOB_MAX_NUM,
+				sizeof(prScanReqV2->ucBssidMatchSsidInd));
+			prScanReqV2->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+
+			prScanReqV2->fgOobRnrParseEn = FALSE;
+		} else {
+			prScanReqV2->fgOobRnrParseEn = TRUE;
+		}
+#endif
 
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
@@ -1148,7 +1185,6 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	return prRetMsduInfo;
 }
 
-
 uint32_t
 p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex,
@@ -1192,30 +1228,57 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		/* prMgmtTxMsdu->ucBssIndex = ucBssIndex; */
 
 		switch (prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) {
-		case MAC_FRAME_PROBE_RSP:
+		case MAC_FRAME_PROBE_RSP: {
+			struct WLAN_BEACON_FRAME rProbeRspFrame;
+			struct GL_P2P_INFO *prP2PInfo;
+			IN struct MSDU_INFO *prNewMgmtTxMsdu;
+
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
+			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+				prBssInfo->u4PrivateData];
+
 			if (!nicTxIsMgmtResourceEnough(prAdapter) ||
 			    isNetAbsent(prAdapter, prBssInfo)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
-
 				break;
 			}
-			prMgmtTxMsdu->ucStaRecIndex =
-			    (prStaRec != NULL)
-			    ? (prStaRec->ucIndex) : (STA_REC_INDEX_NOT_FOUND);
+
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content from supplicant.\n");
-			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
-					(uint32_t) prMgmtTxMsdu->u2FrameLength);
-			}
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
+				prMgmtTxMsdu->u2FrameLength);
 
-			prMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter,
-				ucBssIndex, prMgmtTxMsdu);
+			p2pFuncProcessP2pProbeRspAction(prAdapter,
+				prMgmtTxMsdu, ucBssIndex);
+
+			/* backup header before free packet from supplicant */
+			kalMemCopy(&rProbeRspFrame,
+				prMgmtTxMsdu->prPacket + MAC_TX_RESERVED_FIELD,
+				sizeof(rProbeRspFrame));
+
+			/* compose p2p probe rsp frame */
+			prNewMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter,
+				ucBssIndex, &rProbeRspFrame);
+
+			if (prNewMgmtTxMsdu) {
+				cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+				prMgmtTxMsdu = prNewMgmtTxMsdu;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				/* temp solution, supplicant only build ml
+				 * common info for ml probe resp, so we have to
+				 * fill complete per-sta profile when ml ie len
+				 * is not 0.
+				 */
+				mldGenerateProbeRspIE(prAdapter, prMgmtTxMsdu,
+					ucBssIndex, prP2PInfo->u2MlIELen != 0,
+					p2pFuncProcessP2pProbeRsp);
+#endif
+			}
 
 			/* Modifiy Lie time to 100 mS due
 			 * to the STA only wait 30-50mS
@@ -1241,11 +1304,10 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			ucRetryLimit = 6;
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content to FW.\n");
-			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
-					(uint32_t) prMgmtTxMsdu->u2FrameLength);
-			}
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
+				prMgmtTxMsdu->u2FrameLength);
 			break;
+		}
 		case MAC_FRAME_ASSOC_RSP:
 			/* This case need to fall through */
 		case MAC_FRAME_REASSOC_RSP:
@@ -5286,180 +5348,220 @@ p2pFuncGetAttriListAction(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx, IN struct MSDU_INFO *prMgmtTxMsdu)
+uint32_t p2pCalculateWSCIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec)
 {
-	struct MSDU_INFO *prRetMsduInfo = prMgmtTxMsdu;
-	struct WLAN_BEACON_FRAME *prProbeRspFrame =
-		(struct WLAN_BEACON_FRAME *) NULL;
-	uint8_t *pucIEBuf = (uint8_t *) NULL;
-	uint16_t u2Offset = 0, u2IELength = 0, u2ProbeRspHdrLen = 0;
-	u_int8_t fgIsWSCIE = FALSE;
-	u_int8_t fgIsWFDIE = FALSE;
-	u_int8_t fgIsVenderIE = FALSE;
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	return kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 2,
+					(uint8_t) prP2pBssInfo->u4PrivateData);
+}
+
+void p2pGenerateWSCIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prP2pBssInfo;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+
+	kalP2PGenWSC_IE(prAdapter->prGlueInfo,
+		2,
+		(uint8_t *)
+		((unsigned long) prMsduInfo->prPacket +
+		(unsigned long) prMsduInfo->u2FrameLength),
+		(uint8_t) prP2pBssInfo->u4PrivateData);
+	prMsduInfo->u2FrameLength += (uint16_t)
+		kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
+		2,
+		(uint8_t) prP2pBssInfo->u4PrivateData);
+}
+
+#if CFG_SUPPORT_WFD
+uint32_t p2pCalculateWFDIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	return prAdapter->prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData]
+				->u2WFDIELen;
+}
+
+void p2pGenerateWFDIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	kalMemCopy((uint8_t *)
+		((unsigned long) prMsduInfo->prPacket +
+		(unsigned long) prMsduInfo->u2FrameLength),
+		prAdapter->prGlueInfo->prP2PInfo
+			[prP2pBssInfo->u4PrivateData]->aucWFDIE,
+		prAdapter->prGlueInfo->prP2PInfo
+			[prP2pBssInfo->u4PrivateData]
+			->u2WFDIELen);
+	prMsduInfo->u2FrameLength +=
+	(uint16_t) prAdapter->prGlueInfo
+		->prP2PInfo[prP2pBssInfo->u4PrivateData]
+		->u2WFDIELen;
+}
+#endif
+
+
+uint32_t p2pCalculateP2PIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	uint16_t u2EstimateSize = 0;
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++)
+		u2EstimateSize +=
+			kalP2PCalP2P_IELen(
+				prAdapter->prGlueInfo,
+				u4Idx,
+				(uint8_t)
+				prP2pBssInfo->u4PrivateData);
+	u2EstimateSize +=
+		p2pFuncCalculateP2P_IE_NoA(prAdapter,
+			ucBssIndex, NULL);
+
+	return u2EstimateSize;
+}
+
+void p2pGenerateP2PIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	uint32_t u4Idx = 0;
+
+	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++) {
+		kalP2PGenP2P_IE(prAdapter->prGlueInfo,
+			u4Idx,
+			(uint8_t *)
+			((unsigned long)
+			prMsduInfo->prPacket +
+			(unsigned long)
+			prMsduInfo->u2FrameLength),
+			(uint8_t) prP2pBssInfo->u4PrivateData);
+
+		prMsduInfo->u2FrameLength +=
+			(uint16_t)
+			kalP2PCalP2P_IELen(
+			prAdapter->prGlueInfo,
+			u4Idx,
+			(uint8_t) prP2pBssInfo->u4PrivateData);
+	}
+	p2pFuncGenerateP2P_IE_NoA(prAdapter, prMsduInfo);
+}
+
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+uint32_t p2pCalculateVendorIELen(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex,
+		IN struct STA_RECORD *prStaRec)
+{
+	struct BSS_INFO *prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	return prAdapter->prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData]
+			->u2VenderIELen;
+}
+
+void p2pGenerateVendorIE(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prP2pBssInfo;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+
+	kalMemCopy((uint8_t *)
+		((unsigned long) prMsduInfo->prPacket +
+		(unsigned long) prMsduInfo->u2FrameLength),
+		prAdapter->prGlueInfo->prP2PInfo
+			[prP2pBssInfo->u4PrivateData]
+			->aucVenderIE,
+		prAdapter->prGlueInfo->prP2PInfo
+			[prP2pBssInfo->u4PrivateData]
+			->u2VenderIELen);
+	prMsduInfo->u2FrameLength +=
+	(uint16_t) prAdapter->prGlueInfo
+		->prP2PInfo[prP2pBssInfo->u4PrivateData]
+		->u2VenderIELen;
+}
+#endif
+
+struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx, IN struct WLAN_BEACON_FRAME *prProbeRspFrame)
+{
+	struct MSDU_INFO *prRetMsduInfo = NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint16_t u2EstimateSize = 0, u2EstimatedExtraIELen = 0;
 	uint32_t u4IeArraySize = 0, u4Idx = 0;
-	u_int8_t u4P2PIEIdx = 0;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMgmtTxMsdu != NULL));
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	/* 3 Check the total size & current frame. */
+	u2EstimateSize = WLAN_MAC_MGMT_HEADER_LEN +
+	    TIMESTAMP_FIELD_LEN +
+	    BEACON_INTERVAL_FIELD_LEN +
+	    CAP_INFO_FIELD_LEN +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET);
 
-		/* 3 Make sure this is probe response frame. */
-		prProbeRspFrame = (struct WLAN_BEACON_FRAME *)
-			((unsigned long) prMgmtTxMsdu->prPacket +
-			MAC_TX_RESERVED_FIELD);
-		ASSERT_BREAK((prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE)
-			== MAC_FRAME_PROBE_RSP);
+	u2EstimatedExtraIELen = 0;
 
-		/* 3 Get the importent P2P IE. */
-		u2ProbeRspHdrLen =
-		    (WLAN_MAC_MGMT_HEADER_LEN +
-		    TIMESTAMP_FIELD_LEN +
-		    BEACON_INTERVAL_FIELD_LEN +
-		    CAP_INFO_FIELD_LEN);
-		pucIEBuf = prProbeRspFrame->aucInfoElem;
-		u2IELength = prMgmtTxMsdu->u2FrameLength - u2ProbeRspHdrLen;
-
-#if 0 /*CFG_SUPPORT_WFD*/
-		/* Reset in each time ?? */
-		prAdapter->prGlueInfo
-			->prP2PInfo[prP2pBssInfo->u4PrivateData]
-			->u2WFDIELen = 0;
-#endif
-#if CFG_SUPPORT_CUSTOM_VENDOR_IE
-		prAdapter->prGlueInfo
-			->prP2PInfo[prP2pBssInfo->u4PrivateData]
-			->u2VenderIELen = 0;
-#endif
-
-
-		IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
-			switch (IE_ID(pucIEBuf)) {
-			case ELEM_ID_SSID:
-				{
-					p2pFuncProcessP2pProbeRspAction(
-						prAdapter,
-						pucIEBuf, ELEM_ID_SSID,
-						&ucBssIdx,
-						&prP2pBssInfo,
-						&fgIsWSCIE,
-						&u4P2PIEIdx,
-						&fgIsWFDIE,
-						&fgIsVenderIE);
-				}
-				break;
-			case ELEM_ID_VENDOR:
-				{
-					p2pFuncProcessP2pProbeRspAction(
-						prAdapter,
-						pucIEBuf, ELEM_ID_VENDOR,
-						&ucBssIdx,
-						&prP2pBssInfo,
-						&fgIsWSCIE,
-						&u4P2PIEIdx,
-						&fgIsWFDIE,
-						&fgIsVenderIE);
-				}
-				break;
-			default:
-				break;
-			}
-
+	u4IeArraySize =
+		sizeof(txProbeRspIETable) /
+		sizeof(struct APPEND_VAR_IE_ENTRY);
+	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
+		if (txProbeRspIETable[u4Idx].u2EstimatedFixedIELen) {
+			u2EstimatedExtraIELen +=
+				txProbeRspIETable[u4Idx]
+				.u2EstimatedFixedIELen;
 		}
 
-		/* 3 Check the total size & current frame. */
-		u2EstimateSize = WLAN_MAC_MGMT_HEADER_LEN +
-		    TIMESTAMP_FIELD_LEN +
-		    BEACON_INTERVAL_FIELD_LEN +
-		    CAP_INFO_FIELD_LEN +
-		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
-		    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
-		    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET);
+		else {
+			ASSERT(txProbeRspIETable[u4Idx]
+				.pfnCalculateVariableIELen);
 
-		u2EstimatedExtraIELen = 0;
-
-		u4IeArraySize =
-			sizeof(txProbeRspIETable) /
-			sizeof(struct APPEND_VAR_IE_ENTRY);
-		for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
-			if (txProbeRspIETable[u4Idx].u2EstimatedFixedIELen) {
-				u2EstimatedExtraIELen +=
+			u2EstimatedExtraIELen +=
+				(uint16_t) (
 					txProbeRspIETable[u4Idx]
-					.u2EstimatedFixedIELen;
-			}
-
-			else {
-				ASSERT(txProbeRspIETable[u4Idx]
-					.pfnCalculateVariableIELen);
-
-				u2EstimatedExtraIELen +=
-					(uint16_t) (
-						txProbeRspIETable[u4Idx]
-						.pfnCalculateVariableIELen(
-							prAdapter,
-							ucBssIdx, NULL));
-			}
-
+					.pfnCalculateVariableIELen(
+						prAdapter,
+						ucBssIdx, NULL));
 		}
 
-		if (fgIsWSCIE)
-			u2EstimatedExtraIELen +=
-				kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 2,
-					(uint8_t) prP2pBssInfo->u4PrivateData);
+	}
 
-		if (u4P2PIEIdx > 0) {
-			for (u4Idx = 0; u4Idx < u4P2PIEIdx; u4Idx++)
-				u2EstimatedExtraIELen +=
-					kalP2PCalP2P_IELen(
-						prAdapter->prGlueInfo,
-						u4Idx,
-						(uint8_t)
-						prP2pBssInfo->u4PrivateData);
-			u2EstimatedExtraIELen +=
-				p2pFuncCalculateP2P_IE_NoA(prAdapter,
-					ucBssIdx, NULL);
-		}
-#if CFG_SUPPORT_WFD
-		ASSERT(sizeof(prAdapter->prGlueInfo
-			->prP2PInfo[prP2pBssInfo->u4PrivateData]->aucWFDIE)
-			>=
-		prAdapter->prGlueInfo
-		->prP2PInfo[prP2pBssInfo->u4PrivateData]->u2WFDIELen);
+	u2EstimateSize += u2EstimatedExtraIELen;
 
-		if (fgIsWFDIE)
-			u2EstimatedExtraIELen +=
-				prAdapter->prGlueInfo
-					->prP2PInfo[prP2pBssInfo->u4PrivateData]
-					->u2WFDIELen;
-#endif
-#if CFG_SUPPORT_CUSTOM_VENDOR_IE
-		if (fgIsVenderIE)
-			u2EstimatedExtraIELen +=
-				prAdapter->prGlueInfo
-					->prP2PInfo[prP2pBssInfo->u4PrivateData]
-					->u2VenderIELen;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	u2EstimateSize += MAX_LEN_OF_MLIE;
 #endif
 
-		u2EstimateSize += u2EstimatedExtraIELen;
-		if ((u2EstimateSize) > (prRetMsduInfo->u2FrameLength)) {
-			/* add sizeof(UINT_64) for Cookie */
-			prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
-				u2EstimateSize + sizeof(uint64_t));
+	/* add sizeof(UINT_64) for Cookie */
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
+		u2EstimateSize + sizeof(uint64_t));
 
-			if (prRetMsduInfo == NULL) {
-				DBGLOG(P2P, WARN,
-					"No packet for sending new probe response, use original one\n");
-				prRetMsduInfo = prMgmtTxMsdu;
-				break;
-			}
+	if (prRetMsduInfo == NULL) {
+		DBGLOG(P2P, WARN,
+			"No packet for sending new probe response, use original one\n");
+		return NULL;
+	}
 
-		}
+	prRetMsduInfo->ucBssIndex = ucBssIdx;
 
-		prRetMsduInfo->ucBssIndex = ucBssIdx;
-
+	if (prProbeRspFrame)
 		/* 3 Compose / Re-compose probe response frame. */
 		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
 			((unsigned long) (prRetMsduInfo->prPacket) +
@@ -5469,270 +5571,248 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 			prProbeRspFrame->aucBSSID,
 			prProbeRspFrame->u2BeaconInterval,
 			prProbeRspFrame->u2CapInfo);
+	else
+		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
+			((unsigned long)(prRetMsduInfo->prPacket)
+			+ MAC_TX_RESERVED_FIELD),
+			NULL,
+			prP2pBssInfo->aucOwnMacAddr,
+			prP2pBssInfo->aucBSSID,
+			prP2pBssInfo->u2BeaconInterval,
+			prP2pBssInfo->u2CapInfo);
 
-		prRetMsduInfo->u2FrameLength =
-		    (WLAN_MAC_MGMT_HEADER_LEN +
-		    TIMESTAMP_FIELD_LEN +
-		    BEACON_INTERVAL_FIELD_LEN + CAP_INFO_FIELD_LEN);
+	prRetMsduInfo->u2FrameLength =
+	    (WLAN_MAC_MGMT_HEADER_LEN +
+	    TIMESTAMP_FIELD_LEN +
+	    BEACON_INTERVAL_FIELD_LEN + CAP_INFO_FIELD_LEN);
 
-		bssBuildBeaconProbeRespFrameCommonIEs(prRetMsduInfo,
-			prP2pBssInfo, prProbeRspFrame->aucDestAddr);
+	bssBuildBeaconProbeRespFrameCommonIEs(prRetMsduInfo,
+		prP2pBssInfo, prProbeRspFrame ?
+		prProbeRspFrame->aucDestAddr : NULL);
 
-		prRetMsduInfo->ucStaRecIndex = prMgmtTxMsdu->ucStaRecIndex;
+	prRetMsduInfo->ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;
 
-		for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
-			if (txProbeRspIETable[u4Idx].pfnAppendIE)
-				txProbeRspIETable[u4Idx]
-					.pfnAppendIE(prAdapter, prRetMsduInfo);
+	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
+		if (txProbeRspIETable[u4Idx].pfnAppendIE)
+			txProbeRspIETable[u4Idx]
+				.pfnAppendIE(prAdapter, prRetMsduInfo);
 
-		}
+	}
 
-		if (fgIsWSCIE) {
-			kalP2PGenWSC_IE(prAdapter->prGlueInfo,
-				2,
-				(uint8_t *)
-				((unsigned long) prRetMsduInfo->prPacket +
-				(unsigned long) prRetMsduInfo->u2FrameLength),
-				(uint8_t) prP2pBssInfo->u4PrivateData);
-
-			prRetMsduInfo->u2FrameLength += (uint16_t)
-				kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
-				2,
-				(uint8_t) prP2pBssInfo->u4PrivateData);
-		}
-
-		if (u4P2PIEIdx > 0) {
-			for (u4Idx = 0; u4Idx < u4P2PIEIdx; u4Idx++) {
-				kalP2PGenP2P_IE(prAdapter->prGlueInfo,
-					u4Idx,
-					(uint8_t *)
-					((unsigned long)
-					prRetMsduInfo->prPacket +
-					(unsigned long)
-					prRetMsduInfo->u2FrameLength),
-					(uint8_t) prP2pBssInfo->u4PrivateData);
-
-				prRetMsduInfo->u2FrameLength +=
-					(uint16_t)
-					kalP2PCalP2P_IELen(
-					prAdapter->prGlueInfo,
-					u4Idx,
-					(uint8_t) prP2pBssInfo->u4PrivateData);
-			}
-			p2pFuncGenerateP2P_IE_NoA(prAdapter, prRetMsduInfo);
-
-		}
-#if CFG_SUPPORT_WFD
-		if (fgIsWFDIE > 0) {
-			ASSERT(prAdapter->prGlueInfo
-				->prP2PInfo[prP2pBssInfo->u4PrivateData]
-				->u2WFDIELen > 0);
-			kalMemCopy((uint8_t *)
-				((unsigned long) prRetMsduInfo->prPacket +
-				(unsigned long) prRetMsduInfo->u2FrameLength),
-				prAdapter->prGlueInfo->prP2PInfo
-					[prP2pBssInfo->u4PrivateData]->aucWFDIE,
-				prAdapter->prGlueInfo->prP2PInfo
-					[prP2pBssInfo->u4PrivateData]
-					->u2WFDIELen);
-			prRetMsduInfo->u2FrameLength +=
-			(uint16_t) prAdapter->prGlueInfo
-				->prP2PInfo[prP2pBssInfo->u4PrivateData]
-				->u2WFDIELen;
-
-		}
-#endif /* CFG_SUPPORT_WFD */
-#if CFG_SUPPORT_CUSTOM_VENDOR_IE
-		if (fgIsVenderIE &&
-			prAdapter->prGlueInfo
-			->prP2PInfo[prP2pBssInfo->u4PrivateData]
-			->u2VenderIELen > 0) {
-			kalMemCopy((uint8_t *)
-				((unsigned long) prRetMsduInfo->prPacket +
-				(unsigned long) prRetMsduInfo->u2FrameLength),
-				prAdapter->prGlueInfo->prP2PInfo
-					[prP2pBssInfo->u4PrivateData]
-					->aucVenderIE,
-				prAdapter->prGlueInfo->prP2PInfo
-					[prP2pBssInfo->u4PrivateData]
-					->u2VenderIELen);
-			prRetMsduInfo->u2FrameLength +=
-			(uint16_t) prAdapter->prGlueInfo
-				->prP2PInfo[prP2pBssInfo->u4PrivateData]
-				->u2VenderIELen;
-		}
-#endif
-
-	} while (FALSE);
-
-	if (prRetMsduInfo != prMgmtTxMsdu)
-		cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+	sortMgmtFrameIE(prAdapter, prRetMsduInfo);
 
 	return prRetMsduInfo;
 }				/* p2pFuncProcessP2pProbeRsp */
 
-/* Code refactoring for AOSP */
 static void
-p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
+p2pFuncProcessP2pProbeRspSsid(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucIEBuf,
-		IN uint8_t ucElemIdType,
-		OUT uint8_t *ucBssIdx,
-		OUT struct BSS_INFO **prP2pBssInfo,
-		OUT u_int8_t *fgIsWSCIE,
-		OUT u_int8_t *u4P2PIEIdx,
-		OUT u_int8_t *fgIsWFDIE,
-		OUT u_int8_t *fgIsVenderIE)
+		IN uint8_t ucBssIdx)
+{
+	struct BSS_INFO *prP2pBssInfo;
+
+	if (SSID_IE(pucIEBuf)->ucLength <= 7) {
+		if (ucBssIdx != prAdapter->ucP2PDevBssIdx) {
+			DBGLOG(P2P, WARN,
+				"Wrong SSID:%s with bssid=%d\n",
+				pucIEBuf, ucBssIdx);
+			return;
+		}
+
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		COPY_SSID(
+			prP2pBssInfo->aucSSID,
+			prP2pBssInfo->ucSSIDLen,
+			SSID_IE(pucIEBuf)->aucSSID,
+			SSID_IE(pucIEBuf)->ucLength);
+	}
+}
+
+static void
+p2pFuncProcessP2pProbeRspVendor(IN struct ADAPTER *prAdapter,
+		IN uint8_t *pucIEBuf,
+		IN uint8_t ucBssIdx)
 {
 	uint8_t ucOuiType = 0;
 	uint16_t u2SubTypeVersion = 0;
-	/* Do not compare P2P SSID with AIS SSID to avoid changing
-	 * p2p bss index unexpectedly.
-	*/
-	// TODO: mlo, ucP2pStartIdx is not KAL_AIS_NUM
-	uint8_t ucP2pStartIdx = KAL_AIS_NUM;
+	struct BSS_INFO *prP2pBssInfo;
+	struct GL_P2P_INFO *prP2PInfo;
+	uint32_t u4Idx;
 
-	switch (ucElemIdType) {
-	case ELEM_ID_SSID:
-		{
-			if (SSID_IE(pucIEBuf)->ucLength > 7) {
-				if (EQUAL_SSID(
-					(*prP2pBssInfo)->aucSSID,
-					(*prP2pBssInfo)->ucSSIDLen,
-					SSID_IE(pucIEBuf)->aucSSID,
-					SSID_IE(pucIEBuf)->ucLength)) {
-					DBGLOG(P2P, LOUD,
-						"Return directly %d\n",
-						*ucBssIdx);
-					break;
-				}
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+		prP2pBssInfo->u4PrivateData];
 
-				for ((*ucBssIdx) = ucP2pStartIdx;
-					(*ucBssIdx) < prAdapter->ucHwBssIdNum;
-					(*ucBssIdx)++) {
-					*prP2pBssInfo =
-						GET_BSS_INFO_BY_INDEX(
-							prAdapter, *ucBssIdx);
-					if (!(*prP2pBssInfo))
-						continue;
-					if (EQUAL_SSID(
-						(*prP2pBssInfo)->aucSSID,
-						(*prP2pBssInfo)->ucSSIDLen,
-						SSID_IE(pucIEBuf)->aucSSID,
-						SSID_IE(pucIEBuf)->ucLength)) {
-						break;
-					}
-				}
-				if ((*ucBssIdx) == prAdapter->ucP2PDevBssIdx)
-					*prP2pBssInfo =
-						GET_BSS_INFO_BY_INDEX(
-							prAdapter, *ucBssIdx);
-			} else {
-				*prP2pBssInfo =
-					GET_BSS_INFO_BY_INDEX(
-						prAdapter,
-						prAdapter->ucP2PDevBssIdx);
-				COPY_SSID(
-					(*prP2pBssInfo)->aucSSID,
-					(*prP2pBssInfo)->ucSSIDLen,
-					SSID_IE(pucIEBuf)->aucSSID,
-					SSID_IE(pucIEBuf)->ucLength);
-
-			}
+	if (rsnParseCheckForWFAInfoElem(prAdapter,
+		pucIEBuf, &ucOuiType, &u2SubTypeVersion)) {
+		if (ucOuiType == VENDOR_OUI_TYPE_WPS) {
+			kalP2PUpdateWSC_IE(prAdapter->prGlueInfo,
+				2, pucIEBuf,
+				IE_SIZE(pucIEBuf),
+				(uint8_t)
+				((struct BSS_INFO *)prP2pBssInfo)
+				->u4PrivateData);
 		}
-		break;
-	case ELEM_ID_VENDOR:
-		if (rsnParseCheckForWFAInfoElem(prAdapter,
-			pucIEBuf, &ucOuiType, &u2SubTypeVersion)) {
-			if (ucOuiType == VENDOR_OUI_TYPE_WPS) {
-				kalP2PUpdateWSC_IE(prAdapter->prGlueInfo,
-					2, pucIEBuf,
-					IE_SIZE(pucIEBuf),
-					(uint8_t)
-					((struct BSS_INFO *)*prP2pBssInfo)
-					->u4PrivateData);
-				*fgIsWSCIE = TRUE;
-			}
-
-		} else if (p2pFuncParseCheckForP2PInfoElem(prAdapter,
-			pucIEBuf, &ucOuiType)) {
-			if (ucOuiType == VENDOR_OUI_TYPE_P2P) {
-				/* 2 Note(frog): I use WSC IE buffer
-				 * for Probe Request
-				 * to store the P2P IE for Probe Response.
-				 */
-				if (*u4P2PIEIdx < MAX_P2P_IE_SIZE) {
+	} else if (p2pFuncParseCheckForP2PInfoElem(prAdapter,
+		pucIEBuf, &ucOuiType)) {
+		if (ucOuiType == VENDOR_OUI_TYPE_P2P) {
+			for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++) {
+				if (prP2PInfo->u2P2PIELen[u4Idx] == 0) {
 					kalP2PUpdateP2P_IE(
 						prAdapter->prGlueInfo,
-						*u4P2PIEIdx,
+						u4Idx,
 						pucIEBuf,
 						IE_SIZE(pucIEBuf),
 						(uint8_t)
 						((struct BSS_INFO *)
-						*prP2pBssInfo)
+						prP2pBssInfo)
 						->u4PrivateData);
-					*u4P2PIEIdx = *u4P2PIEIdx + 1;
-				} else
-					DBGLOG(P2P, WARN,
-						"Too much P2P IE for ProbeResp, skip update\n");
-			}
-#if CFG_SUPPORT_WFD
-			else if (ucOuiType == VENDOR_OUI_TYPE_WFD) {
-				DBGLOG(P2P, INFO,
-				       "WFD IE is found in probe resp (supp). Len %u\n",
-				       IE_SIZE(pucIEBuf));
-				if ((sizeof(prAdapter->prGlueInfo->prP2PInfo
-					[((struct BSS_INFO *)*prP2pBssInfo)
-					->u4PrivateData]->aucWFDIE)
-					>= IE_SIZE(pucIEBuf))) {
-					*fgIsWFDIE = TRUE;
-					kalMemCopy(prAdapter->prGlueInfo
-						->prP2PInfo
-						[((struct BSS_INFO *)
-						*prP2pBssInfo)
-						->u4PrivateData]->aucWFDIE,
-						pucIEBuf, IE_SIZE(pucIEBuf));
-					prAdapter->prGlueInfo
-						->prP2PInfo
-						[((struct BSS_INFO *)
-						*prP2pBssInfo)
-						->u4PrivateData]->u2WFDIELen =
-						IE_SIZE(pucIEBuf);
+					break;
 				}
-			}	/*  VENDOR_OUI_TYPE_WFD */
-#endif
-		} else {
+			}
+			if (u4Idx == MAX_P2P_IE_SIZE)
+				DBGLOG(P2P, WARN,
+					"Too much P2P IE for ProbeResp, skip update\n");
+		}
+#if CFG_SUPPORT_WFD
+		else if (ucOuiType == VENDOR_OUI_TYPE_WFD) {
 			DBGLOG(P2P, INFO,
-			       "Other vender IE is found in probe resp (supp). Len %u\n",
+			       "WFD IE is found in probe resp (supp). Len %u\n",
 			       IE_SIZE(pucIEBuf));
-#if CFG_SUPPORT_CUSTOM_VENDOR_IE
-			if ((prAdapter->prGlueInfo->prP2PInfo
-				[((struct BSS_INFO *)*prP2pBssInfo)
-				->u4PrivateData]->u2VenderIELen
-				+ IE_SIZE(pucIEBuf)) < 1024) {
-				*fgIsVenderIE = TRUE;
+			if ((sizeof(prAdapter->prGlueInfo->prP2PInfo
+				[((struct BSS_INFO *)prP2pBssInfo)
+				->u4PrivateData]->aucWFDIE)
+				>= IE_SIZE(pucIEBuf))) {
 				kalMemCopy(prAdapter->prGlueInfo
 					->prP2PInfo
 					[((struct BSS_INFO *)
-					*prP2pBssInfo)
-					->u4PrivateData]->aucVenderIE +
-					prAdapter->prGlueInfo
-					->prP2PInfo
-					[((struct BSS_INFO *)
-					*prP2pBssInfo)
-					->u4PrivateData]->u2VenderIELen,
+					prP2pBssInfo)
+					->u4PrivateData]->aucWFDIE,
 					pucIEBuf, IE_SIZE(pucIEBuf));
 				prAdapter->prGlueInfo
 					->prP2PInfo
 					[((struct BSS_INFO *)
-					*prP2pBssInfo)
-					->u4PrivateData]->u2VenderIELen +=
+					prP2pBssInfo)
+					->u4PrivateData]->u2WFDIELen =
 					IE_SIZE(pucIEBuf);
 			}
+		}	/*  VENDOR_OUI_TYPE_WFD */
 #endif
+	} else {
+		DBGLOG(P2P, INFO,
+		       "Other vender IE is found in probe resp (supp). Len %u\n",
+		       IE_SIZE(pucIEBuf));
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+		if ((prAdapter->prGlueInfo->prP2PInfo
+			[((struct BSS_INFO *)prP2pBssInfo)
+			->u4PrivateData]->u2VenderIELen
+			+ IE_SIZE(pucIEBuf)) < 1024) {
+			kalMemCopy(prAdapter->prGlueInfo
+				->prP2PInfo
+				[((struct BSS_INFO *)
+				prP2pBssInfo)
+				->u4PrivateData]->aucVenderIE +
+				prAdapter->prGlueInfo
+				->prP2PInfo
+				[((struct BSS_INFO *)
+				prP2pBssInfo)
+				->u4PrivateData]->u2VenderIELen,
+				pucIEBuf, IE_SIZE(pucIEBuf));
+			prAdapter->prGlueInfo
+				->prP2PInfo
+				[((struct BSS_INFO *)
+				prP2pBssInfo)
+				->u4PrivateData]->u2VenderIELen +=
+				IE_SIZE(pucIEBuf);
 		}
-		break;
-	default:
-		break;
+#endif
+	}
+}
+
+/* Code refactoring for AOSP */
+static void
+p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMgmtTxMsdu,
+		IN uint8_t ucBssIdx)
+{
+	struct BSS_INFO *prP2pBssInfo;
+	struct GL_P2P_INFO *prP2PInfo;
+	struct WLAN_BEACON_FRAME *prProbeRspFrame =
+		(struct WLAN_BEACON_FRAME *) NULL;
+	uint8_t *pucIEBuf = (uint8_t *) NULL;
+	uint16_t u2Offset = 0, u2IELength = 0, u2ProbeRspHdrLen = 0;
+	uint32_t u4Idx;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+		prP2pBssInfo->u4PrivateData];
+
+	/* 3 Make sure this is probe response frame. */
+	prProbeRspFrame = (struct WLAN_BEACON_FRAME *)
+		((unsigned long) prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	if ((prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE) !=
+			MAC_FRAME_PROBE_RSP) {
+		DBGLOG(P2P, INFO, "fctrl=0x%x is not probe resp",
+			prProbeRspFrame->u2FrameCtrl & MASK_FRAME_TYPE);
+		return;
+	}
+
+	/* 3 Get the importent P2P IE. */
+	u2ProbeRspHdrLen =
+	    (WLAN_MAC_MGMT_HEADER_LEN +
+	    TIMESTAMP_FIELD_LEN +
+	    BEACON_INTERVAL_FIELD_LEN +
+	    CAP_INFO_FIELD_LEN);
+	pucIEBuf = prProbeRspFrame->aucInfoElem;
+	u2IELength = prMgmtTxMsdu->u2FrameLength - u2ProbeRspHdrLen;
+
+	/* reset target ie length */
+	prP2PInfo->u2WSCIELen[2] = 0;
+	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++)
+		prP2PInfo->u2P2PIELen[u4Idx] = 0;
+#if CFG_SUPPORT_WFD
+	prP2PInfo->u2WFDIELen = 0;
+#endif
+#if CFG_SUPPORT_CUSTOM_VENDOR_IE
+	prP2PInfo->u2VenderIELen = 0;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	prP2PInfo->u2MlIELen = 0;
+#endif
+
+	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
+		switch (IE_ID(pucIEBuf)) {
+		case ELEM_ID_SSID:
+		{
+			p2pFuncProcessP2pProbeRspSsid(
+				prAdapter,
+				pucIEBuf,
+				ucBssIdx);
+		}
+			break;
+		case ELEM_ID_VENDOR:
+		{
+			p2pFuncProcessP2pProbeRspVendor(
+				prAdapter,
+				pucIEBuf,
+				ucBssIdx);
+		}
+			break;
+		case ELEM_ID_RESERVED:
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_MLD) {
+
+				kalMemCopy(prP2PInfo->aucMlIE,
+					pucIEBuf, IE_SIZE(pucIEBuf));
+				prP2PInfo->u2MlIELen = IE_SIZE(pucIEBuf);
+			}
+#endif
+			break;
+		default:
+			break;
+		}
 	}
 }
 

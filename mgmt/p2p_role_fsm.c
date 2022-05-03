@@ -66,6 +66,7 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_DFS_CAC"),
 	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SWITCH_CHANNEL"),
 #endif
+	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL"),
 };
 
 uint8_t *
@@ -184,6 +185,11 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 			(unsigned long) prP2pRoleFsmInfo);
 #endif
 
+		cnmTimerInitTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rWaitNextReqChnlTimer),
+			(PFN_MGMT_TIMEOUT_FUNC)
+			p2pRoleFsmRunEventWaitNextReqChnlTimeout,
+			(unsigned long) prP2pRoleFsmInfo);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx)) {
@@ -575,6 +581,13 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 				p2pRoleStateAbort_REQING_CHANNEL(prAdapter,
 					prP2pRoleBssInfo,
 					prP2pRoleFsmInfo, eNextState);
+			}
+			break;
+		case P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL:
+			if (!fgIsTransitionOut) {
+				cnmTimerStartTimer(prAdapter,
+				   &prP2pRoleFsmInfo->rWaitNextReqChnlTimer,
+				   SEC_TO_MSEC(2));
 			}
 			break;
 		case P2P_ROLE_STATE_AP_CHNL_DETECTION:
@@ -1663,6 +1676,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex),
 				&(prP2pRoleFsmInfo->rConnReqInfo),
 				&(prP2pRoleFsmInfo->rChnlReqInfo));
+
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
 				P2P_ROLE_STATE_REQING_CHANNEL);
@@ -2305,6 +2319,19 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
 }				/* p2pRoleFsmRunEventDfsShutDownTimeout */
 
 #endif
+
+void p2pRoleFsmRunEventWaitNextReqChnlTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
+
+	DBGLOG(P2P, INFO, "timeout\n");
+
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_REQING_CHANNEL);
+} /* p2pRoleFsmRunEventWaitNextReqChnlTimeout */
 
 void
 p2pRoleFsmScanTargetBss(IN struct ADAPTER *prAdapter,
@@ -3131,6 +3158,9 @@ void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 
 	prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
 	prScanReqInfo->eScanReason = prP2pScanReqMsg->eScanReason;
+
+	/* bssid */
+	COPY_MAC_ADDR(prScanReqInfo->aucBSSID, prP2pScanReqMsg->aucBSSID);
 
 	p2pRoleFsmStateTransition(prAdapter,
 		prP2pRoleFsmInfo,

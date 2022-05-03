@@ -10953,7 +10953,7 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 				TRUE, MAX_PER_BAND_CHN_NUM,
 				&ucNumOfChannel, aucChannelList);
 
-			DBGLOG(SCN, TRACE, "[ACS]Band=%d, Channel Number=%d\n",
+			DBGLOG(SCN, LOUD, "[ACS]Band=%d, Channel Number=%d\n",
 				ucBandIdx,
 				ucNumOfChannel);
 
@@ -10974,10 +10974,10 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 					prChnLoadInfo->rEachChnLoad[ucIdx].
 						u4Dirtiness;
 
-				DBGLOG(SCN, TRACE, "[ACS]Ch[%d],cIdx[%d]\n",
+				DBGLOG(SCN, LOUD, "[ACS]Ch[%d],cIdx[%d]\n",
 					aucChannelList[i].ucChannelNum,
 					uc2gChNum+i);
-				DBGLOG(SCN, TRACE, "[ACS]ChR[%d],eCh[%d]\n",
+				DBGLOG(SCN, LOUD, "[ACS]ChR[%d],eCh[%d]\n",
 					prChnLoadInfo->
 						rChnRankList[uc2gChNum+i].
 						ucChannel,
@@ -10992,7 +10992,7 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 			prChnLoadInfo->rChnRankList[i].u4Dirtiness = 0xFFFFFFFF;
 			prChnLoadInfo->rChnRankList[i].ucChannel = 0xFF;
 
-			DBGLOG(SCN, TRACE, "uc2gChNum=%d,[ACS]Chn=%d,D=0x%x\n",
+			DBGLOG(SCN, LOUD, "uc2gChNum=%d,[ACS]Chn=%d,D=0x%x\n",
 				i,
 				prChnLoadInfo->rChnRankList[i].ucChannel,
 				prChnLoadInfo->rChnRankList[i].u4Dirtiness);
@@ -11026,12 +11026,12 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
-			DBGLOG(SCN, TRACE, "[ACS]root Chn=%d,D=0x%x\n",
+			DBGLOG(SCN, LOUD, "[ACS]root Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
-			DBGLOG(SCN, TRACE, "[ACS]child Chn=%d,D=0x%x\n",
+			DBGLOG(SCN, LOUD, "[ACS]child Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -11045,13 +11045,13 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 			kalMemCopy(&prChnLoadInfo->rChnRankList[ucRoot],
 				&rChnRankInfo,
 				sizeof(struct PARAM_CHN_RANK_INFO));
-			DBGLOG(SCN, TRACE,
+			DBGLOG(SCN, LOUD,
 				"[ACS]After root uChn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
-			DBGLOG(SCN, TRACE,
+			DBGLOG(SCN, LOUD,
 				"[ACS]AFter child Chn=%d,D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
@@ -11078,13 +11078,13 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
 			    prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
-			DBGLOG(SCN, TRACE,
+			DBGLOG(SCN, LOUD,
 				"[ACS]root ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
-			DBGLOG(SCN, TRACE, "[ACS]child ChNum=%d D=0x%x\n",
+			DBGLOG(SCN, LOUD, "[ACS]child ChNum=%d D=0x%x\n",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
 					   prChnLoadInfo->
@@ -11098,14 +11098,14 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 			kalMemCopy(&prChnLoadInfo->rChnRankList[ucRoot],
 				&rChnRankInfo,
 				sizeof(struct PARAM_CHN_RANK_INFO));
-			DBGLOG(SCN, TRACE,
+			DBGLOG(SCN, LOUD,
 				"[ACS]New root ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].ucChannel,
 					   prChnLoadInfo->
 					   rChnRankList[ucRoot].u4Dirtiness);
 
-			DBGLOG(SCN, TRACE,
+			DBGLOG(SCN, LOUD,
 				"[ACS]New child ChNum=%d D=0x%x",
 					   prChnLoadInfo->
 					   rChnRankList[ucChild].ucChannel,
@@ -11115,7 +11115,7 @@ wlanSortChannel(IN struct ADAPTER *prAdapter,
 	}
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
-		DBGLOG(SCN, TRACE, "[ACS]band=%d,channel=%d,dirtiness=0x%x\n",
+		DBGLOG(SCN, LOUD, "[ACS]band=%d,channel=%d,dirtiness=0x%x\n",
 			prChnLoadInfo->rChnRankList[ucIdx].eBand,
 			prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
 			prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);

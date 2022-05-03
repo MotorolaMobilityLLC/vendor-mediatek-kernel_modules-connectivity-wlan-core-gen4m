@@ -866,8 +866,12 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		goto fail;
 	dev_cmd = (struct UNI_CMD_DEVINFO *) dev_entry->pucInfoBuffer;
 	dev_cmd->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	dev_cmd->ucDbdcIdx = bss->ucBssIndex == ad->ucP2PDevBssIdx ?
-		ENUM_BAND_ALL : ENUM_BAND_AUTO;
+		ENUM_BAND_AUTO : ENUM_BAND_AUTO;
+#else
+	dev_cmd->ucDbdcIdx = ENUM_BAND_AUTO;
+#endif
 	dev_active_tag = (struct UNI_CMD_DEVINFO_ACTIVE *)dev_cmd->aucTlvBuffer;
 	dev_active_tag->u2Tag = UNI_CMD_DEVINFO_TAG_ACTIVE;
 	dev_active_tag->u2Length = sizeof(*dev_active_tag);
@@ -3727,7 +3731,7 @@ static uint32_t nicUniCmdChAbortPrivilege(struct ADAPTER *ad,
 	tag->ucBssIndex = msg->ucBssIndex;
 	tag->ucTokenID = msg->ucTokenID;
 	if (msg->ucExtraChReqNum >= 1)
-		tag->ucDBDCBand = ENUM_BAND_ALL;
+		tag->ucDBDCBand = nicUniCmdChReqBandType(ENUM_BAND_ALL);
 	else
 		tag->ucDBDCBand = nicUniCmdChReqBandType(msg->eDBDCBand);
 

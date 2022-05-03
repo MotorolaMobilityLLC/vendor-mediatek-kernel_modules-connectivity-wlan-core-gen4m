@@ -5899,9 +5899,6 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 		kalMemZero(aucIe, 100);
 		mldGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
 		prScanRequest->pucIE = aucIe;
-		DBGLOG(ML, INFO, "Dump ML probe IE\n");
-		DBGLOG_MEM8(ML, INFO, prScanRequest->pucIE,
-				prScanRequest->u4IELength);
 		prScanRequest->arChannel[0].ucChannelNum =
 					nicFreq2ChannelNum(u4Freq * 1000);
 		prScanRequest->ucBssidMatchCh[0] =
