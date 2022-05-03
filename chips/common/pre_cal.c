@@ -334,6 +334,9 @@ exit:
 struct COM_FEM_TAG_FORMAT {
 	uint32_t tag_fem_info_id;
 	struct connfem_epaelna_pin_info tag_pin_info;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct connfem_epaelna_flags_common tag_flags_common;
+#endif
 };
 
 struct LAA_TAG_FORMAT {
@@ -355,6 +358,9 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	struct connfem_epaelna_fem_info fem_info;
 	struct connfem_epaelna_pin_info pin_info;
 	struct connfem_epaelna_laa_pin_info laa_pin_info;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct connfem_epaelna_flags_common flags_common;
+#endif
 #endif
 	uint8_t *u1EpaELnaDataPointer = NULL;
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
@@ -377,6 +383,9 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	connfem_epaelna_get_fem_info(&fem_info);
 	connfem_epaelna_get_pin_info(&pin_info);
 	connfem_epaelna_laa_get_pin_info(&laa_pin_info);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	connfem_epaelna_get_flags(CONNFEM_SUBSYS_NONE, &flags_common);
+#endif
 #endif
 
 	/* 1. Allocate CMD Info Packet and its Buffer. */
@@ -500,6 +509,11 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prTagDataComFEM->tag_fem_info_id = fem_info.id;
 		kalMemCopy(&prTagDataComFEM->tag_pin_info,
 			&pin_info, sizeof(struct connfem_epaelna_pin_info));
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		kalMemCopy(&prTagDataComFEM->tag_flags_common,
+			&flags_common,
+			sizeof(struct connfem_epaelna_flags_common));
+#endif
 
 		/* TAG HAL_PHY_ACTION_TAG_LAA */
 		prPhyTlv =
@@ -585,6 +599,11 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prTagDataComFEM->tag_fem_info_id = fem_info.id;
 		kalMemCopy(&prTagDataComFEM->tag_pin_info,
 			&pin_info, sizeof(struct connfem_epaelna_pin_info));
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		kalMemCopy(&prTagDataComFEM->tag_flags_common,
+			&flags_common,
+			sizeof(struct connfem_epaelna_flags_common));
+#endif
 
 		/* TAG HAL_PHY_ACTION_TAG_LAA */
 		prPhyTlv =
@@ -648,6 +667,11 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prTagDataComFEM->tag_fem_info_id = fem_info.id;
 		kalMemCopy(&prTagDataComFEM->tag_pin_info,
 			&pin_info, sizeof(struct connfem_epaelna_pin_info));
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		kalMemCopy(&prTagDataComFEM->tag_flags_common,
+			&flags_common,
+			sizeof(struct connfem_epaelna_flags_common));
+#endif
 #endif
 	}
 
