@@ -1243,8 +1243,13 @@ static void mt_op_set_manual_he_tb_value(
 	usr.field.aid = 0x1;
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	usr.field.mcs = ru_sta->rate & ~BIT(4);
 	usr.field.dcm = (ru_sta->rate & BIT(4)) >> 4;
+#else
+	usr.field.mcs = ru_sta->rate & ~BIT(5);
+	usr.field.dcm = (ru_sta->rate & BIT(5)) >> 5;
+#endif
 	usr.field.ss_allocation =
 	((ru_sta->nss-1) << 3) | (ru_sta->start_sp_st & 0x7);
 
@@ -1366,13 +1371,7 @@ static void mt_op_set_manual_eht_tb_value(
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
 	usr.field.mcs = ru_sta->rate & ~BIT(4);
-
-	/* DCM enable while rate index > MCS13 */
-	if (ru_sta->rate > 13)
-		usr.field.mcs = 1;
-	else
-		usr.field.dcm = 0;
-
+	usr.field.dcm = 0;
 	usr.field.start_ss = ru_sta->start_sp_st & 0xF;
 	usr.field.Nos = (nss-1);
 	usr.field.Ps160 = ru_sta->ps160;
