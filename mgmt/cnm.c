@@ -2188,7 +2188,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
 
-		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex;
+		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
+			MAT_OWN_MLD_ID_BASE;
 		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
 
 		/* initialize wlan id and status for keys */
@@ -2250,7 +2251,8 @@ omac_choosed:
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
 			prBssInfo->eBandIdx = ENUM_BAND_AUTO;
-			prBssInfo->ucOwnMldId = ucBssIndex;
+			prBssInfo->ucOwnMldId = ucBssIndex +
+				MAT_OWN_MLD_ID_BASE;
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
