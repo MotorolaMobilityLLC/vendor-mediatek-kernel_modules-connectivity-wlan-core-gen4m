@@ -3390,9 +3390,6 @@ int32_t soc3_0_wlanPowerOnInit(
 		/* Set the ioaddr to HIF Info */
 		WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 
-		/* Should we need this??? to be conti... */
-		gPrDev = prGlueInfo->prDevHandler;
-
 		/* Setup IRQ */
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 
