@@ -464,21 +464,15 @@ wlanoidQueryBssid(IN struct ADAPTER *prAdapter,
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
-	prCurrBssid = aisGetCurrBssId(prAdapter,
-		ucBssIndex);
+	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) ==
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
 	    MEDIA_STATE_CONNECTED)
-		kalMemCopy(pvQueryBuffer,
-			   prCurrBssid->arMacAddress,
-			   MAC_ADDR_LEN);
-	else if (aisGetOPMode(prAdapter, ucBssIndex) ==
-		 NET_TYPE_IBSS) {
+		COPY_MAC_ADDR(pvQueryBuffer, prCurrBssid->arMacAddress);
+	else if (aisGetOPMode(prAdapter, ucBssIndex) == NET_TYPE_IBSS) {
 		uint8_t aucTemp[PARAM_MAC_ADDR_LEN];	/*!< BSSID */
 
-		COPY_MAC_ADDR(aucTemp,
-			      prCurrBssid->arMacAddress);
+		COPY_MAC_ADDR(aucTemp, prCurrBssid->arMacAddress);
 		aucTemp[0] &= ~BIT(0);
 		aucTemp[1] |= BIT(1);
 		COPY_MAC_ADDR(pvQueryBuffer, aucTemp);

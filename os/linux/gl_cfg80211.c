@@ -625,9 +625,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
-	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-				&arBssid[0], sizeof(arBssid), &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
+			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
+		return -EINVAL;
 
 	/* 1. check input MAC address */
 	/* On Android O, this might be wlan0 address */
@@ -854,9 +855,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
-	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-				&arBssid[0], sizeof(arBssid), &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
+			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
+		return -EINVAL;
 
 	/* 1. check BSSID */
 	if (UNEQUAL_MAC_ADDR(arBssid, mac)) {
@@ -1020,9 +1022,10 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
-	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-				&arBssid[0], sizeof(arBssid), &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
+			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
+		return -EINVAL;
 
 	/* 1. check BSSID */
 	if (UNEQUAL_MAC_ADDR(arBssid, mac)) {
@@ -4049,9 +4052,10 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy,
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
-	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
-				&arBssid[0], sizeof(arBssid), &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
+			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
+		return -EINVAL;
 
 	/* 1. check BSSID */
 	if (UNEQUAL_MAC_ADDR(arBssid, req->bss->bssid)) {
