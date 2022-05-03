@@ -341,6 +341,10 @@
 #define MAX_MLO_MGMT_SUPPORT_MLD_NUM		1
 #define MAX_MLO_MGMT_SUPPORT_AC_NUM		4
 
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#define MAC_ICS_MODE		2
+#define PHY_ICS_MODE		3
+#endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2074,15 +2078,15 @@ struct PARAM_CUSTOM_SW_CTRL_STRUCT {
 	uint32_t u4Data;
 };
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT {
 	/* Include system all and PSSniffer */
 	uint8_t ucModule;
 	uint8_t ucAction;
 	uint8_t ucFilter;
 	uint8_t ucOperation;
-	uint16_t ucCondition[6];
-	uint8_t  aucPadding0[64];
+	uint16_t ucCondition[7];
+	uint8_t aucPadding0[62];
 };
 #endif /* CFG_SUPPORT_ICS */
 
@@ -2522,7 +2526,10 @@ enum FUNC_IDX {
 	SET_RX_GAIN = 0x0E,
 	SET_TTG = 0x0F,
 	TTG_ON_OFF = 0x10,
-	GET_ICAP_RAW_DATA = 0x11
+	GET_ICAP_RAW_DATA = 0x11,
+	SET_TX_TONE_GAIN_OFFSET = 0x12,
+	GET_TX_TONE_GAIN_OFFSET = 0x13,
+	GET_PHY_ICS_RAW_DATA = 0x14
 };
 
 struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T {
@@ -4262,7 +4269,7 @@ wlanSetChipConfig(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4SetInfoLen,
 		     IN uint8_t fgIsOid);
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 uint32_t
 wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
 		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,

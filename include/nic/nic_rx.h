@@ -73,7 +73,7 @@
  *******************************************************************************
  */
 
-#if (CFG_SUPPORT_ICS == 1)
+#if (CFG_SUPPORT_ICS == 1 || (CFG_SUPPORT_PHY_ICS == 1))
 #define ICS_BIN_LOG_MAGIC_NUM	0x44D9C99A
 #endif /* CFG_SUPPORT_ICS */
 
@@ -623,9 +623,12 @@ enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_MSDU_REPORT = 6,
 	RX_PKT_TYPE_SW_DEFINED = 7,
 	RX_PKT_TYPE_RX_REPORT = 11,
-#if (CFG_SUPPORT_ICS == 1)
-	RX_PKT_TYPE_ICS = 12
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	RX_PKT_TYPE_ICS = 12,
 #endif /* CFG_SUPPORT_ICS */
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	RX_PKT_TYPE_PHY_ICS = 13
+#endif /* #if CFG_SUPPORT_PHY_ICS */
 };
 
 enum ENUM_MAC_RX_GROUP_VLD {
@@ -714,7 +717,7 @@ enum {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#if (CFG_SUPPORT_ICS == 1)
+#if (CFG_SUPPORT_ICS == 1 || (CFG_SUPPORT_PHY_ICS == 1))
 struct ICS_BIN_LOG_HDR {
 	uint32_t u4MagicNum;
 	uint8_t  ucVer;

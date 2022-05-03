@@ -7963,8 +7963,7 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is set ICS sniffer
@@ -8008,12 +8007,12 @@ wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
 	rCmdSniffer.ucAction = prSnifferInfo->ucAction;
 	rCmdSniffer.ucFilter = prSnifferInfo->ucFilter;
 	rCmdSniffer.ucOperation = prSnifferInfo->ucOperation;
-	while (count <= 5) {
+	while (count <= 6) {
 		rCmdSniffer.ucCondition[count] =
 			prSnifferInfo->ucCondition[count];
 		count += 1;
 	}
-	DBGLOG(INIT, INFO, "ICS_CMD_DRIVER: %d-%d-%d-%d-%d-%d-%d-%d-%d-%d\n",
+	DBGLOG(INIT, INFO, "ICS_CMD_DRIVER: %d-%d-%d-%d-%d-%d-%d-%d-%d-%d-%d\n",
 		rCmdSniffer.ucModule,
 		rCmdSniffer.ucAction,
 		rCmdSniffer.ucFilter,
@@ -8023,7 +8022,8 @@ wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
 		rCmdSniffer.ucCondition[2],
 		rCmdSniffer.ucCondition[3],
 		rCmdSniffer.ucCondition[4],
-		rCmdSniffer.ucCondition[5]
+		rCmdSniffer.ucCondition[5],
+		rCmdSniffer.ucCondition[6]
 		);
 
 	if (rCmdSniffer.ucAction < 2) {
@@ -8038,14 +8038,19 @@ wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
 			prAdapter->fgEnTmacICS = rCmdSniffer.ucAction;
 			prAdapter->fgEnRmacICS = rCmdSniffer.ucAction;
 			break;
+		case 3:
+			prAdapter->fgEnPhyICS = rCmdSniffer.ucAction;
+			break;
 		default:
 			DBGLOG(INIT, ERROR, "ICS Action ERROR\n");
 			break;
 		}
 	}
 
-	if ((prAdapter->fgEnTmacICS || prAdapter->fgEnRmacICS) == FALSE)
+	if ((prAdapter->fgEnTmacICS || prAdapter->fgEnRmacICS
+		|| prAdapter->fgEnPhyICS) == FALSE) {
 		DBGLOG(INIT, INFO, "ICS STOP\n");
+	}
 
 	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
 				  CMD_ID_SET_ICS_SNIFFER,
