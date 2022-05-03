@@ -571,6 +571,8 @@ struct AIS_FSM_INFO {
 	struct LINK rHeHtcBlacklist;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo;
+	uint8_t ucMlProbeSendCount;
+	uint8_t ucMlProbeEnable;
 #endif
 };
 
