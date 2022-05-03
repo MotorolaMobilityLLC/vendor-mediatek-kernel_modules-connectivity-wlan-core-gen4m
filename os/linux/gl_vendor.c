@@ -2199,7 +2199,7 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
@@ -2247,7 +2247,7 @@ int mtk_cfg80211_vendor_set_multista_use_case(
 	ASSERT(wiphy);
 	ASSERT(wdev);
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo)
 		return -EFAULT;
 
