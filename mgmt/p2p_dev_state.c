@@ -106,12 +106,11 @@ p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
 		}
 		/************************* End *************************/
 
-		if (fgIsShareInterface) {
+		if (fgIsShareInterface)
 			/* Stay in IDLE state. */
-			UNSET_NET_ACTIVE(prAdapter, prAdapter->ucP2PDevBssIdx);
 			nicDeactivateNetwork(prAdapter,
 				prAdapter->ucP2PDevBssIdx);
-		}
+
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		if (prP2pDevFsmInfo && prP2pDevFsmInfo->fgIsP2pListening
 			&& prAdapter->rWifiVar.ucDbdcP2pLisEn) {

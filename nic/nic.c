@@ -1695,6 +1695,9 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 			    IN uint8_t ucNetworkIndex)
 {
+	uint8_t ucBssIndex = NETWORK_BSS_ID(ucNetworkIndex);
+
+	SET_NET_ACTIVE(prAdapter, ucBssIndex);
 	return nicActivateNetworkEx(prAdapter, ucNetworkIndex, TRUE);
 }
 
@@ -1772,6 +1775,9 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucNetworkIndex)
 {
+	uint8_t ucBssIndex = NETWORK_BSS_ID(ucNetworkIndex);
+
+	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 	return nicDeactivateNetworkEx(prAdapter, ucNetworkIndex, TRUE);
 }
 

@@ -743,13 +743,8 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	/* Activate network if it's not activated yet */
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChReq->ucBssIndex);
 
-	if (!IS_BSS_ACTIVE(prBssInfo)) {
-		SET_NET_ACTIVE(prAdapter, prBssInfo->ucBssIndex);
-		/* Don't reset 40mbw flag. Otherwise, ucHtOpInfo1 will be reset
-		 * and cause SCO changed unexpectly.
-		 */
+	if (!IS_BSS_ACTIVE(prBssInfo))
 		nicActivateNetworkEx(prAdapter, prBssInfo->ucBssIndex, FALSE);
-	}
 
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",

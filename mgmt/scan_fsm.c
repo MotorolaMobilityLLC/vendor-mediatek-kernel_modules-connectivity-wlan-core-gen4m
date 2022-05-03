@@ -1390,12 +1390,9 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanParam->fgStopAfterIndication = FALSE;
 
 	prSchedScanCmd->ucBssIndex = prSchedScanParam->ucBssIndex;
-	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex)) {
-		SET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
+	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 		/* sync with firmware */
-		nicActivateNetwork(prAdapter,
-			prAisBssInfo->ucBssIndex);
-	}
+		nicActivateNetwork(prAdapter, prAisBssInfo->ucBssIndex);
 
 	/* 2.1 Prepare command. Set FW struct SSID_MATCH_SETS */
 	/* ssid in ssid list will be send in probe request in advance */
