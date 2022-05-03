@@ -920,17 +920,15 @@ bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
 bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	struct AIS_FSM_INFO *fsm =
+		aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	struct ROAMING_INFO *roam =
+		aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	/* to support user space triggered reassociation */
-	return (prAisBssInfo->u2DeauthReason ==
-			REASON_CODE_RESERVED &&
-		prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_RADIO_LOST);
+	return (fsm->ucReasonOfDisconnect
+			== DISCONNECT_REASON_CODE_REASSOCIATION)
+		&& (roam->eReason == ROAMING_REASON_REASSOC);
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1006,8 +1004,9 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
-		/* Not in case of beacon timeout*/
-		&& !aisFsmIsBeaconTimeout(prAdapter, ucBssIndex)) {
+		/* Not in case of beacon timeout or reassociation */
+		&& !aisFsmIsBeaconTimeout(prAdapter, ucBssIndex)
+		&& !aisFsmIsReassociation(prAdapter, ucBssIndex)) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
@@ -2944,12 +2943,9 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	/* to support user space triggered reassociation */
 	} else if (ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_REASSOCIATION) {
-		DBGLOG(AIS, STATE,
-			"Reassociation start.\n");
-		prAisFsmInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
-		aisBssBeaconTimeout_impl(prAdapter,
-			BEACON_TIMEOUT_REASON_NUM,
-			DISCONNECT_REASON_CODE_RADIO_LOST,
+		aisFsmStateAbort(prAdapter,
+			ucReasonOfDisconnect,
+			fgDelayIndication,
 			ucBssIndex);
 		return;
 	}
@@ -2958,7 +2954,6 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION ||
-	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_REASSOCIATION ||
 	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING)
 		aisFsmInsertRequestToHead(prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
@@ -3010,8 +3005,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION &&
-	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING &&
-	    !aisFsmIsReassociation(prAdapter, ucBssIndex))
+	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
 
@@ -4804,6 +4798,10 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 				roam->eReason = ROAMING_REASON_SAA_FAIL;
 				prAisFsmInfo->ucConnTrialCountLimit = 1;
 				break;
+			case DISCONNECT_REASON_CODE_REASSOCIATION:
+				roam->eReason = ROAMING_REASON_REASSOC;
+				prAisFsmInfo->ucConnTrialCountLimit = 2;
+				break;
 			default:
 				DBGLOG(AIS, ERROR, "wrong reason %d",
 					prAisFsmInfo->ucReasonOfDisconnect);
@@ -4823,9 +4821,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <4> Change Media State immediately. */
-	if (prAisFsmInfo->ucReasonOfDisconnect !=
-	    DISCONNECT_REASON_CODE_REASSOCIATION)
-		aisFsmDisconnectAllBss(prAdapter, prAisFsmInfo);
+	aisFsmDisconnectAllBss(prAdapter, prAisFsmInfo);
 
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
