@@ -150,7 +150,8 @@ extern bool fgIsTxPowerDecreased;
 	GLUE_FLAG_NOTIFY_MD_CRASH | \
 	GLUE_FLAG_DRV_INT)
 
-#define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
+#define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS | \
+	GLUE_FLAG_RX_GRO_TIMEOUT)
 #else
 /* All flags for single thread driver */
 #define GLUE_FLAG_TX_PROCESS  0xFFFFFFFF
