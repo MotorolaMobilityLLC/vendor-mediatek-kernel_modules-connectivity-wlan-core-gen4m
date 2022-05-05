@@ -10836,6 +10836,8 @@ wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
 			break;
 
 		kalMemZero(prQueryLteChn, sizeof(struct PARAM_GET_CHN_INFO));
+		kalMemZero(&rQuery_LTE_SAFE_CHN,
+			sizeof(struct CMD_GET_LTE_SAFE_CHN));
 		prQueryLteChn->ucRoleIndex = ucRoleIndex;
 
 		/* Get LTE safe channel list */

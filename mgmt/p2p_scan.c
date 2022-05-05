@@ -243,6 +243,8 @@ void scnEventReturnChannel(IN struct ADAPTER *prAdapter,
 	/* send cancel message to firmware domain */
 	rCmdScanCancel.ucSeqNum = ucScnSeqNum;
 	rCmdScanCancel.ucIsExtChannel = (uint8_t) FALSE;
+	rCmdScanCancel.aucReserved[0] = 0;
+	rCmdScanCancel.aucReserved[1] = 0;
 
 	wlanSendSetQueryCmd(prAdapter,
 			    CMD_ID_SCAN_CANCEL,

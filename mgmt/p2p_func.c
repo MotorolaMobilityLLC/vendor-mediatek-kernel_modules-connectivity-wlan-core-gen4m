@@ -1764,6 +1764,7 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 
 			if (1) {
 				struct P2P_DISCONNECT_INFO rP2PDisInfo;
+				memset(&rP2PDisInfo, 0, sizeof(rP2PDisInfo));
 
 				rP2PDisInfo.ucRole = 2;
 				wlanSendSetQueryCmd(prAdapter,
