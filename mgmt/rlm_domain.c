@@ -7420,6 +7420,7 @@ void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter)
 	struct regulatory_request request;
 	struct regulatory_request *prReq = NULL;
 
+	kalMemZero(&request, sizeof(request));
 	if (!regd_is_single_sku_en())
 		return; /*not support single sku*/
 

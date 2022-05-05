@@ -3544,6 +3544,7 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 	ASSERT(pucIE);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
+	kalMemZero(&rSsid, sizeof(rSsid));
 
 	if (!prStaRec)
 		return;
@@ -5920,6 +5921,7 @@ void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+	kalMemZero(&rSsid, sizeof(rSsid));
 	prCSAParams = &prBssInfo->CSAParams;
 	prBssInfo->ucPrimaryChannel = prCSAParams->ucCsaNewCh;
 	prBssInfo->eBand = (prCSAParams->ucCsaNewCh <= 14) ? BAND_2G4 : BAND_5G;

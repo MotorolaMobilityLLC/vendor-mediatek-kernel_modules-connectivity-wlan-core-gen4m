@@ -142,10 +142,13 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
 
 	do {
 		/* Coverity */
-		if (prScanInfo->eCurrentState >= 0 && eNextState >= 0) {
+		if ((uint32_t)prScanInfo->eCurrentState < SCAN_STATE_NUM &&
+			(uint32_t)eNextState < SCAN_STATE_NUM) {
 			log_dbg(SCN, STATE, "[SCAN]TRANSITION: [%s] -> [%s]\n",
-				apucDebugScanState[prScanInfo->eCurrentState],
-				apucDebugScanState[eNextState]);
+			apucDebugScanState[
+				(uint32_t) prScanInfo->eCurrentState],
+			apucDebugScanState[
+				(uint32_t) eNextState]);
 		}
 		/* NOTE(Kevin): This is the only place to change the
 		 * eCurrentState(except initial)
@@ -529,6 +532,7 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 	prScanCancel = (struct MSG_SCN_SCAN_CANCEL *) prMsgHdr;
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &prScanInfo->rScanParam;
+	kalMemZero(&rCmdScanCancel, sizeof(rCmdScanCancel));
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_IDLE) {
 		if (prScanCancel->ucSeqNum == prScanParam->ucSeqNum &&
