@@ -1890,6 +1890,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		kalMemZero(
 			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 			sizeof(struct ieee80211_channel));
+		kalMemZero(
+			&rRfChnlInfo,
+			sizeof(rRfChnlInfo));
 
 		/* Copy chan def to local buffer*/
 		prGlueInfo->prP2PInfo[ucRoleIdx]

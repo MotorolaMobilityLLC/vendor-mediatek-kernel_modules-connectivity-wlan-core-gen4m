@@ -71,7 +71,7 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 uint8_t *
 	p2pRoleFsmGetFsmState(
 	IN enum ENUM_P2P_ROLE_STATE eCurrentState) {
-	if (eCurrentState >= 0 && eCurrentState < P2P_ROLE_STATE_NUM)
+	if (eCurrentState < P2P_ROLE_STATE_NUM)
 		return apucDebugP2pRoleState[eCurrentState];
 
 	return (uint8_t *) DISP_STRING("UNKNOWN");
@@ -2808,6 +2808,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 		} else {
 			struct BSS_DESC *prBssDesc;
 			struct P2P_SSID_STRUCT rSsid;
+			memset(&rSsid, 0, sizeof(rSsid));
 
 			prBssDesc = prJoinInfo->prTargetBssDesc;
 
