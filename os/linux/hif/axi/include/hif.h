@@ -437,6 +437,10 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
 
+struct mt66xx_chip_info *glGetChipInfoV2(void);
+
+struct mt66xx_hif_driver_data *glGetDriverData(void);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

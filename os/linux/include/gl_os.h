@@ -296,9 +296,13 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 typedef void (*wifi_fwlog_event_func_cb)(int, int);
+typedef void (*wifi_fwlog_get_fw_ver_func_cb)(uint8_t *, uint32_t *, uint32_t);
 /* adaptor ko */
 extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+
+extern void
+	wifi_fwlog_get_fw_ver_register(wifi_fwlog_get_fw_ver_func_cb pfFwVer);
 #if (CFG_SUPPORT_ICS == 1)
 typedef void (*ics_fwlog_event_func_cb)(int, int);
 extern ssize_t wifi_ics_fwlog_write(char *buf, size_t count);
