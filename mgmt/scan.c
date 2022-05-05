@@ -1987,6 +1987,11 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		if (IE_LEN(pucIE) > CFG_IE_BUFFER_SIZE) {
+			DBGLOG(SCN, ERROR, "ERR! EID:%d, IE length = %d\n",
+				IE_ID(pucIE), IE_LEN(pucIE));
+			return NULL;
+		}
 		/* Error handling for disorder IE that IE length is 0 */
 		if (IE_ID(pucIE) != ELEM_ID_SSID && IE_LEN(pucIE) == 0)
 			continue;
