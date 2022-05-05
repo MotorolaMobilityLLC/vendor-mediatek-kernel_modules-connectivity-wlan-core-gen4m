@@ -8551,10 +8551,14 @@ int32_t __weak kalGetFwFlavorByPlat(uint8_t *flavor)
 	return 0;
 }
 
-int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor)
+int32_t kalGetFwFlavor(uint8_t *flavor)
 {
-	if (prAdapter && prAdapter->fw_flavor) {
-		*flavor = prAdapter->fw_flavor[0];
+	struct mt66xx_hif_driver_data *prDriverData;
+
+	prDriverData = get_platform_driver_data();
+
+	if (prDriverData->fw_flavor) {
+		*flavor = prDriverData->fw_flavor[0];
 		return 1;
 	}
 
