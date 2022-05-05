@@ -2221,6 +2221,10 @@ void kalP2pPreStartRdd(
 	chan = ieee80211_get_channel(
 		prGlueP2pInfo->prWdev->wiphy,
 		freq);
+	chandef.center_freq1 = 0;
+	chandef.center_freq2 = 0;
+	chandef.chan = chan;
+	chandef.width = 0;
 	cfg80211_chandef_create(&chandef,
 		chan, NL80211_CHAN_NO_HT);
 
