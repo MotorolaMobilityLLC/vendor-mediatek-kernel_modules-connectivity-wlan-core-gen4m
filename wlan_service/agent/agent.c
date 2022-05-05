@@ -379,7 +379,7 @@ static s_int32 hqa_set_tx_path(
 				&data, (u_char *)&value);
 		band_idx = value;
 
-		if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+		if (band_idx >= TEST_DBDC_BAND_NUM)
 			band_idx = 0;
 
 		/* Set Band idx */
@@ -438,7 +438,7 @@ static s_int32 hqa_set_rx_path(
 				&data, (u_char *)&value);
 		band_idx = value;
 
-		if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+		if (band_idx >= TEST_DBDC_BAND_NUM)
 			band_idx = 0;
 
 		/* Set Band idx */
@@ -488,7 +488,7 @@ static s_int32 hqa_set_tx_power_ext(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(channel),
@@ -839,7 +839,7 @@ static s_int32 hqa_cal_bypass(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -869,7 +869,7 @@ static s_int32 hqa_set_rx_vector_idx(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(group1),
@@ -900,7 +900,7 @@ static s_int32 hqa_set_fagc_rssi_path(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(fagc_path),
@@ -979,7 +979,7 @@ static s_int32 hqa_mac_bbp_reg_write(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_register *test_regs = &serv_test->test_reg;
 	u_char *data = hqa_frame->data;
-	u_int32 cr_val;
+	u_int32 cr_val = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1032,6 +1032,9 @@ static s_int32 hqa_mac_bbp_reg_bulk_read(
 				&data, (u_char *)&test_regs->cr_addr);
 	get_param_and_shift_buf(TRUE, sizeof(test_regs->cr_num),
 				&data, (u_char *)&test_regs->cr_num);
+
+	if (test_regs->cr_num >= CR_NUM_MAX)
+		test_regs->cr_num = CR_NUM_MAX;
 
 	/* Allocate cr_val memory */
 	cr_total_len = test_regs->cr_num << 2;
@@ -1153,6 +1156,8 @@ static s_int32 hqa_rf_reg_bulk_write(
 				&data, (u_char *)&test_regs->cr_addr);
 	get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data, (u_char *)&test_regs->cr_num);
+	if (test_regs->cr_num >= CR_NUM_MAX)
+		test_regs->cr_num = CR_NUM_MAX;
 
 	if (test_regs->cr_num == 0) {
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
@@ -1251,7 +1256,7 @@ static s_int32 hqa_write_eeprom(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_eeprom *test_eprms = &serv_test->test_eprm;
 	u_char *data = hqa_frame->data;
-	u_int16 value;
+	u_int16 value = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1491,7 +1496,7 @@ static s_int32 hqa_get_tx_power(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(ch_band),
@@ -1550,7 +1555,7 @@ static s_int32 hqa_set_cfg_on_off(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 
@@ -1606,7 +1611,7 @@ static s_int32 hqa_dbdc_tx_tone(
 	get_param_and_shift_buf(TRUE, sizeof(param.band_idx),
 				&data, (u_char *)&param.band_idx);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM || param.band_idx < 0)
+	if (param.band_idx >= TEST_DBDC_BAND_NUM)
 		param.band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(param.tx_tone_en),
@@ -1684,7 +1689,7 @@ static s_int32 hqa_dbdc_continuous_tx(
 	get_param_and_shift_buf(TRUE, sizeof(param.band_idx),
 				&data, (u_char *) &param.band_idx);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM || param.band_idx < 0)
+	if (param.band_idx >= TEST_DBDC_BAND_NUM)
 		param.band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(param.tx_tone_en),
@@ -1753,7 +1758,7 @@ static s_int32 hqa_set_rx_filter_pkt_len(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(enable),
@@ -1825,7 +1830,7 @@ static s_int32 hqa_get_cfg_on_off(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	ret = mt_serv_get_cfg_on_off(serv_test, type, &result);
@@ -1892,7 +1897,7 @@ static s_int32 hqa_ca53_reg_write(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_register *test_regs = &serv_test->test_reg;
 	u_char *data = hqa_frame->data;
-	u_int32 cr_val;
+	u_int32 cr_val = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -2021,7 +2026,7 @@ static s_int32 hqa_get_fw_info(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct serv_fw_info *fw_info = NULL;
-	u_char op_mode;
+	u_char op_mode = 0;
 	u_int8 loop, month = 0;
 	u_char date[8], time[6];
 	u_char *kernel_info = NULL;
@@ -2257,7 +2262,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* check dbdc mode condition */
@@ -2482,7 +2487,7 @@ static s_int32 hqa_do_cal_item(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
@@ -2563,7 +2568,7 @@ static s_int32 hqa_mps_set_seq_data(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -2642,7 +2647,7 @@ static s_int32 hqa_mps_set_payload_length(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -2724,7 +2729,7 @@ static s_int32 hqa_mps_set_packet_count(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -2801,7 +2806,7 @@ static s_int32 hqa_mps_set_power_gain(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -2873,7 +2878,7 @@ static s_int32 hqa_mps_start(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -2899,7 +2904,7 @@ static s_int32 hqa_mps_stop(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -3004,7 +3009,7 @@ static s_int32 hqa_get_band_mode(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -3091,7 +3096,7 @@ static s_int32 hqa_log_on_off(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(log_type),
@@ -3129,7 +3134,7 @@ static s_int32 hqa_mps_set_nss(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *) &band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -3206,7 +3211,7 @@ static s_int32 hqa_mps_set_per_packet_bw(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	len = hqa_frame->length / sizeof(u_int32) - 1;
@@ -3311,7 +3316,7 @@ static s_int32 hqa_icap_ctrl(
 	u_int32 control = 0, resp_len = 2;
 	u_int32 value = 0, i = 0;
 	u_long max_data_len = 1024;
-	u_char src_addr[SERV_MAC_ADDR_LEN];
+	u_char src_addr[SERV_MAC_ADDR_LEN] = {0};
 	s_int32 *icap_data = NULL;
 	s_int32 *icap_data_cnt = NULL;
 	struct hqa_rbist_cap_start icap_info;
@@ -3357,8 +3362,7 @@ static s_int32 hqa_icap_ctrl(
 		get_param_and_shift_buf(TRUE, sizeof(icap_info.band_idx),
 			&data, (u_char *)&(icap_info.band_idx));
 
-		if (icap_info.band_idx >= TEST_DBDC_BAND_NUM
-			|| icap_info.band_idx < 0)
+		if (icap_info.band_idx >= TEST_DBDC_BAND_NUM)
 			icap_info.band_idx = 0;
 
 		get_param_and_shift_buf(TRUE, sizeof(icap_info.phy_idx),
@@ -3547,7 +3551,7 @@ static s_int32 hqa_get_dump_recal(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
@@ -3620,7 +3624,7 @@ static s_int32 hqa_get_dump_rxv(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
@@ -3692,7 +3696,7 @@ static s_int32 hqa_get_dump_rdd(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
@@ -3858,7 +3862,7 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE,
@@ -3866,7 +3870,7 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&seg_sta_cnt[0]);
 
-	if (seg_sta_cnt[0] >= SEG_STA_CNT || seg_sta_cnt[0] < 0)
+	if (seg_sta_cnt[0] >= SEG_STA_CNT)
 		seg_sta_cnt[0] = 1;
 
 	get_param_and_shift_buf(TRUE,
@@ -3874,7 +3878,7 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&seg_sta_cnt[1]);
 
-	if (seg_sta_cnt[1] >= SEG_STA_CNT || seg_sta_cnt[1] < 0)
+	if (seg_sta_cnt[1] >= SEG_STA_CNT)
 		seg_sta_cnt[1] = 1;
 
 	len -= sizeof(u_int32)*3;		/* array length */
@@ -4092,7 +4096,7 @@ static s_int32 hqa_set_channel_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.band_idx),
 				&data, (u_char *)&param.band_idx);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM || param.band_idx < 0)
+	if (param.band_idx >= TEST_DBDC_BAND_NUM)
 		param.band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(param.central_ch0),
@@ -4171,7 +4175,7 @@ static s_int32 hqa_set_txcontent_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.band_idx),
 				&data, (u_char *)&param.band_idx);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM || param.band_idx < 0)
+	if (param.band_idx >= TEST_DBDC_BAND_NUM)
 		param.band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(param.fc),
@@ -4307,7 +4311,7 @@ static s_int32 hqa_start_tx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(param.band_idx),
 				&data, (u_char *)&param.band_idx);
 
-	if (param.band_idx >= TEST_DBDC_BAND_NUM || param.band_idx < 0)
+	if (param.band_idx >= TEST_DBDC_BAND_NUM)
 		param.band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(param.pkt_cnt),
@@ -4418,7 +4422,7 @@ static s_int32 hqa_start_rx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(FALSE, SERV_MAC_ADDR_LEN,
@@ -4491,7 +4495,7 @@ static s_int32 hqa_stop_tx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -4533,7 +4537,7 @@ static s_int32 hqa_stop_rx_ext(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	/* Set parameters */
@@ -4600,6 +4604,9 @@ static s_int32 hqa_listmode_tx_seg(
 
 		get_param_and_shift_buf(TRUE, sizeof(u_int32), &data,
 			(u_char *)&ParserSegHeader.u4SegParaNum);
+
+		if (ParserSegHeader.u4SegParaNum >= SEGPARANUM_MAX)
+			ParserSegHeader.u4SegParaNum = SEGPARANUM_MAX;
 
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			("%s ExtId(%d) FC(%d) Dur(%d) Dur(%d) TxLen(%d)\n",
@@ -4866,6 +4873,9 @@ static s_int32 hqa_listmode_rx_seg(
 		get_param_and_shift_buf(TRUE, sizeof(u_int32),
 				&data,
 				(u_char *)&ParserSegHeader.u4SegParaNum);
+
+		if (ParserSegHeader.u4SegParaNum >= SEGPARANUM_MAX)
+			ParserSegHeader.u4SegParaNum = SEGPARANUM_MAX;
 
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 			("%s OwnMac[%x][%x][%x][%x][%x][%x]\n",
@@ -5214,7 +5224,7 @@ static s_int32 hqa_set_tx_time(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM || band_idx < 0)
+	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(is_tx_time),
@@ -5269,7 +5279,7 @@ static s_int32 hqa_off_ch_scan(
 	get_param_and_shift_buf(TRUE, sizeof(dbdc_idx),
 			&data, (u_char *)&dbdc_idx);
 
-	if (dbdc_idx >= TEST_DBDC_BAND_NUM || dbdc_idx < 0)
+	if (dbdc_idx >= TEST_DBDC_BAND_NUM)
 		dbdc_idx = 0;
 
 	get_param_and_shift_buf(TRUE, sizeof(mntr_ch),
