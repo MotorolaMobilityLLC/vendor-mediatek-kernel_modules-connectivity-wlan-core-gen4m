@@ -83,6 +83,8 @@
 #define PWR_LIMIT_UNII2C_IN_MW_MHZ BIT(3)
 #define PWR_LIMIT_UNII3_IN_MW_MHZ  BIT(4)
 
+#define PWR_LIMIT_REMOVE_DEFAULT_LIMIT  1
+
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
@@ -1272,6 +1274,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	g_rRlmPowerLimitDefault[] = {
 
+#if (PWR_LIMIT_REMOVE_DEFAULT_LIMIT != 1)
 	{	{'A', 'R'}
 		, {60, 34, 48, 48, 60}
 		, 0
@@ -2444,6 +2447,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 	,
 #endif
+#endif
 
 	/*Default*/
 	{	{0, 0}
@@ -2804,6 +2808,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
 
+#if (PWR_LIMIT_REMOVE_DEFAULT_LIMIT != 1)
 	{	{'A', 'I'}
 		, 144, {48, 48, 48, 48, 48, 48, 48, 48, 48}
 	}
@@ -3096,6 +3101,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		, 114, {48, 48, 48, 48, 48, 48, 48, 24, 24}
 	}
 	,
+#endif
 
 	/*Default*/
 	{	{0, 0}
