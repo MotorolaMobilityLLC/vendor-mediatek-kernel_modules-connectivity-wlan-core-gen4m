@@ -4473,7 +4473,13 @@ u_int8_t indicateApAcsOverwrite(
 			ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		} else if (p2pFuncIsDualAPMode(prAdapter)) {
-			ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
+			struct BSS_INFO *bss =
+				aisGetConnectedBssInfo(prAdapter);
+
+			if (!bss)
+				ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
+			else if (bss->eBand == BAND_2G4)
+				ucPrimaryCh = bss->ucPrimaryChannel;
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		}
 	} else if ((eBand == BAND_5G) &&
@@ -4572,7 +4578,10 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 
 		prAisBssInfo = aisGetAisBssInfo(prAdapter,
 			AIS_DEFAULT_INDEX);
-		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+			(!p2pFuncIsDualAPMode(prAdapter) ||
+			(p2pFuncIsDualAPMode(prAdapter) &&
+			prAisBssInfo->eBand > BAND_2G4))) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 				prAisBssInfo);
