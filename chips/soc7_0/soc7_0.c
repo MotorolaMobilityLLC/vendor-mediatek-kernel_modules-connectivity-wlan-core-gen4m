@@ -2571,6 +2571,10 @@ static void soc7_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "MD_AOR_STATUS 0x10001BF4=[%x]\n", u4Val);
 
 	/* Dump WFDMA CR */
+	connac2x_DbgCrRead(NULL, 0x184be008, &u4Val);
+	DBGLOG(INIT, INFO, "WFDMA clock 0x184be008=[%x]\n", u4Val);
+	connac2x_DbgCrRead(NULL, 0x184c0800, &u4Val);
+	DBGLOG(INIT, INFO, "WFDMA rst 0x184c0800=[%x]\n", u4Val);
 	connac2x_DumpCrRange(prAdapter, 0x18024200, 7, "WFDMA 0x18024200");
 	connac2x_DumpCrRange(prAdapter, 0x18024300, 16, "WFDMA 0x18024300");
 	connac2x_DumpCrRange(prAdapter, 0x18024380, 16, "WFDMA x18024380");
@@ -2643,6 +2647,8 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	int conninfra_hang_ret = 0;
 	uint8_t conninfra_reset = FALSE;
 	uint32_t u4Value = 0;
+	uint32_t u4WfdmaRstVal = 0;
+	uint32_t u4WfdmaClockVal = 0;
 
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
@@ -2743,6 +2749,28 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 		} else if (ucWfResetEnable) {
 			g_IsWfsysBusHang = TRUE;
 			glResetWholeChipResetTrigger("wifi bus hang");
+		}
+	} else {
+		connac2x_DbgCrRead(NULL, 0x184be008, &u4WfdmaClockVal);
+		connac2x_DbgCrRead(NULL, 0x184c0800, &u4WfdmaRstVal);
+		if (u4WfdmaClockVal == 0xdead0003 ||
+			u4WfdmaRstVal == 0xdead0003) {
+			soc7_0_DumpHostCr(prAdapter);
+		} else if (u4WfdmaClockVal == 0xdead0001 ||
+			u4WfdmaRstVal == 0xdead0001) {
+			DBGLOG(INIT, ERROR,
+				"clk 0x184be008=[%x] rst 0x184c0800=[%x]\n",
+				u4WfdmaClockVal, u4WfdmaRstVal);
+		} else if ((u4WfdmaClockVal & BIT(26)) &&
+			!(u4WfdmaClockVal & BIT(9))) {
+			DBGLOG(INIT, ERROR,
+				"clk 0x184be008=[%x] rst 0x184c0800=[%x]\n",
+				u4WfdmaClockVal, u4WfdmaRstVal);
+		} else if (!(u4WfdmaRstVal & BIT(2)) ||
+			!(u4WfdmaRstVal & BIT(3))) {
+			DBGLOG(INIT, ERROR,
+				"clk 0x184be008=[%x] rst 0x184c0800=[%x]\n",
+				u4WfdmaClockVal, u4WfdmaRstVal);
 		}
 	}
 
