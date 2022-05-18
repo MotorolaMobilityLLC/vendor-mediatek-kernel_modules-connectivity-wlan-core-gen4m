@@ -4117,6 +4117,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	uint8_t i = 0;
 	struct RSN_INFO rRsnIe;
+	memset(&rRsnIe, 0, sizeof(rRsnIe));
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
@@ -4222,7 +4223,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				break;
 			case ELEM_ID_COUNTRY_INFO: /* 7 */
 				if (COUNTRY_IE(pucIE)->ucLength
-					>= ELEM_MIN_LEN_COUNTRY_INFO) {
+					>= ELEM_MIN_LEN_COUNTRY_INFO &&
+					COUNTRY_IE(pucIE)->ucLength
+					< 256) {
 					prP2pBssInfo->ucCountryIELen =
 						COUNTRY_IE(pucIE)->ucLength;
 					kalMemCopy(
