@@ -2459,6 +2459,7 @@ void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
 		prP2pBssInfo->fgEnableH2E = FALSE;
 
 		for (i = 0;
+			i < RATE_NUM_SW &&
 			i < prP2pBssInfo->ucAllSupportedRatesLen;
 			i++) {
 			DBGLOG(P2P, LOUD,
