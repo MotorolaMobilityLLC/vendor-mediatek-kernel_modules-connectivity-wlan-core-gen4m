@@ -823,7 +823,7 @@ static void wmmRemoveTSM(struct ADAPTER *prAdapter,
 
 	LINK_REMOVE_KNOWN_ENTRY(prActiveTsmLink, prActiveTsm);
 	if (fgNeedStop) {
-		struct CMD_SET_TSM_STATISTICS_REQUEST rTsmStatistics;
+		struct CMD_SET_TSM_STATISTICS_REQUEST rTsmStatistics = {0};
 		struct STA_RECORD *prStaRec = NULL;
 		struct BSS_INFO *prAisBssInfo;
 
