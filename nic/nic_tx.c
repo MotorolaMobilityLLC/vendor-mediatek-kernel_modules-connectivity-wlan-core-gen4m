@@ -1367,8 +1367,7 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 		}
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
-		if (prMsduInfo->ucTC >= 0 &&
-		    prMsduInfo->ucTC < TC_NUM) {
+		if (prMsduInfo->ucTC < TC_NUM) {
 			QUEUE_GET_NEXT_ENTRY(
 				(struct QUE_ENTRY *) prMsduInfo) =
 				NULL;
