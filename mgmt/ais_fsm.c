@@ -7435,7 +7435,7 @@ struct cfg80211_ft_event_params *
 uint8_t *
 	aisGetFsmState(
 	IN enum ENUM_AIS_STATE eCurrentState) {
-	if (eCurrentState >= 0 && eCurrentState < AIS_STATE_NUM)
+	if (eCurrentState < AIS_STATE_NUM)
 		return apucDebugAisState[eCurrentState];
 
 	ASSERT(0);
