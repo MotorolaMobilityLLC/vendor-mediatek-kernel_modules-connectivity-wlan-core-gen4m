@@ -8154,6 +8154,8 @@ wlanoidSetNANMulticastList(IN struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 {
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
 
+	kalMemZero(&rCmdMacMcastAddr, sizeof(struct CMD_MAC_MCAST_ADDR));
+
 	if (!prAdapter || !pu4SetInfoLen)
 		return WLAN_STATUS_FAILURE;
 

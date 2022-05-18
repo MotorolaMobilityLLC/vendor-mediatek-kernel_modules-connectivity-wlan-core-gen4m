@@ -248,7 +248,7 @@ err_alloc:
 	}
 
 	if (prGlueInfo->aprNANDevInfo[ucRoleIdx]) {
-		kalMemFree(prGlueInfo->aprNANDevInfo, VIR_MEM_TYPE,
+		kalMemFree(prGlueInfo->aprNANDevInfo[ucRoleIdx], VIR_MEM_TYPE,
 		   sizeof(struct _GL_NAN_INFO_T));
 
 		prGlueInfo->aprNANDevInfo[ucRoleIdx] = NULL;

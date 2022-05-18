@@ -555,6 +555,10 @@ nan_sec_wpas_setkey_glue(bool fgIsAp, u8 u1BssIdx, enum wpa_alg alg,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(g_prAdapter, u1BssIdx);
+	if (!prBssInfo) {
+		DBGLOG(NAN, ERROR, "prBssInfo is null!\n");
+		return -1;
+	}
 	prStaRec = cnmGetStaRecByAddress(g_prAdapter, prBssInfo->ucBssIndex,
 					 (uint8_t *)addr);
 
@@ -2142,7 +2146,6 @@ nan_sec_wpa_init(const u8 *addr, struct wpa_auth_config *conf,
 	wpa_auth->group = wpa_group_init(wpa_auth, 0, 1);
 	if (wpa_auth->group == NULL) {
 		os_free(wpa_auth->wpa_ie);
-		os_free(wpa_auth);
 		return NULL;
 	}
 
@@ -2461,7 +2464,11 @@ nanSecGetNdpScidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 	pr1ScidAttrListHdr->u1ScidType = 1; /* PMKID */
 	pr1ScidAttrListHdr->u1PublishId = prNdp->ucPublishId;
 
-	pu1ScidPtr = &pr1ScidAttrListHdr->u1PublishId + 1;
+	/* pu1ScidPtr = &pr1ScidAttrListHdr->u1PublishId + 1; */
+	pu1ScidPtr = pucBuf +
+		sizeof(struct _NAN_SEC_SCID_ATTR_HDR) +
+		sizeof(struct _NAN_SEC_SCID_ATTR_ENTRY) +
+		1;
 	kalMemCopy(pu1ScidPtr, prNdp->au1Scid, sizeof(prNdp->au1Scid));
 
 	*ppu1ScidAttrBuf = pucBuf;

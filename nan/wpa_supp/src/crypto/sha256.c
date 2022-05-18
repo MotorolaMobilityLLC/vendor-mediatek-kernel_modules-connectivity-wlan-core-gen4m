@@ -143,6 +143,13 @@ void caculate_pmkid(u8 *key, u8 *IMAC, u8 *RMAC, u8 *serviceName, u8 *pmkid)
 	int i = 0;
 	int post = 0;
 
+	os_memset(auc_tk, 0, sizeof(auc_tk));
+
+	if (!pmkIdSrc) {
+		DBGLOG(NAN, ERROR, "pmkIdSrc is null!\n");
+		return;
+	}
+
 	for (i = 0; i < strlen(serviceName); i++) {
 		if ((serviceName[i] >= 'A') && (serviceName[i] <= 'Z'))
 			serviceName[i] =  serviceName[i] + 32;
