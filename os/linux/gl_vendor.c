@@ -753,8 +753,7 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 	DBGLOG(REQ, INFO, "Get the number of blacklist=%d\n",
 	       numOfList[0]);
 
-	if (numOfList[0] < 0
-	    || numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
+	if (numOfList[0] > MAX_FW_ROAMING_BLACKLIST_SIZE)
 		return -EINVAL;
 
 	/*Refresh all the FWKBlacklist */
