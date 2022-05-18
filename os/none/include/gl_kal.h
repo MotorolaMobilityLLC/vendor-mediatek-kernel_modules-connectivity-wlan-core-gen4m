@@ -961,15 +961,14 @@ u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalProcessRxPacket(_prGlueInfo, _pvPacket, _pucPacketStart, \
-	_u4PacketLen, _fgIsRetain, _aeCSUM) \
+	_u4PacketLen, _aeCSUM) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 uint32_t
 kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
 		   IN void *pvPacket,
 		   IN uint8_t *pucPacketStart, IN uint32_t u4PacketLen,
-		   /* IN PBOOLEAN           pfgIsRetain, */
-		   IN u_int8_t fgIsRetain, IN enum ENUM_CSUM_RESULT aeCSUM[]);
+		   IN enum ENUM_CSUM_RESULT aeCSUM[]);
 #endif
 
 uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,

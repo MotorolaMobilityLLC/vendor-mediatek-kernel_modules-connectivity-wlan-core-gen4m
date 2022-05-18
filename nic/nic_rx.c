@@ -1160,7 +1160,7 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 	if (kalProcessRxPacket(prAdapter->prGlueInfo,
 			       prSwRfb->pvPacket,
 			       prSwRfb->pvHeader,
-			       (uint32_t) prSwRfb->u2PacketLen, fgIsRetained,
+			       (uint32_t) prSwRfb->u2PacketLen,
 			       prSwRfb->aeCSUM) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, ERROR,
 		       "kalProcessRxPacket return value != WLAN_STATUS_SUCCESS\n");
@@ -1299,12 +1299,10 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
 
 	if (prMsduInfo &&
 	    kalProcessRxPacket(prAdapter->prGlueInfo,
-			       prSwRfb->pvPacket,
-			       prSwRfb->pvHeader,
-			       (uint32_t) prSwRfb->u2PacketLen,
-			       prRxCtrl->rFreeSwRfbList.u4NumElem <
-			       CFG_RX_RETAINED_PKT_THRESHOLD ? TRUE : FALSE,
-			       prSwRfb->aeCSUM) == WLAN_STATUS_SUCCESS) {
+			prSwRfb->pvPacket,
+			prSwRfb->pvHeader,
+			(uint32_t) prSwRfb->u2PacketLen,
+			prSwRfb->aeCSUM) == WLAN_STATUS_SUCCESS) {
 
 		/* parsing forward frame */
 		wlanProcessTxFrame(prAdapter, (void *) (prSwRfb->pvPacket));
