@@ -1361,6 +1361,9 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD,
 				 MTK_WLAN_VENDOR_ATTR_NDP_END_IND) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kalMemFree(pu2NDPInstance,
+				   VIR_MEM_TYPE,
+				   1 * sizeof(*pu2NDPInstance));
 		kfree_skb(skb);
 		return -EFAULT;
 	}
@@ -1369,6 +1372,9 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 			     1 * sizeof(*pu2NDPInstance),
 			     pu2NDPInstance) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kalMemFree(pu2NDPInstance,
+				   VIR_MEM_TYPE,
+				   1 * sizeof(*pu2NDPInstance));
 		kfree_skb(skb);
 		return -EFAULT;
 	}
@@ -1377,6 +1383,10 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 	       prNDP->ucNDPID);
 
 	cfg80211_vendor_event(skb, GFP_KERNEL);
+
+	kalMemFree(pu2NDPInstance,
+			   VIR_MEM_TYPE,
+			   1 * sizeof(*pu2NDPInstance));
 	return WLAN_STATUS_SUCCESS;
 }
 

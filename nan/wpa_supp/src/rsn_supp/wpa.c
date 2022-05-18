@@ -85,6 +85,13 @@ wpa_eapol_key_send_wpa(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
 				MAC2STR(dest));
 		}
 	}
+
+	if (!key_mic) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+				"key_mic is null");
+		goto out;
+	}
+
 	if (key_mic && wpa_eapol_key_mic_wpa(kck, kck_len, sm->key_mgmt, ver,
 					     msg, msg_len, key_mic)) {
 		wpa_msg(sm->ctx->msg_ctx, MSG_ERROR,

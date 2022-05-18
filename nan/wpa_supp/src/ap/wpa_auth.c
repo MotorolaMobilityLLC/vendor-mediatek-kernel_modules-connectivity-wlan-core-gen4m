@@ -2339,7 +2339,7 @@ SM_STEP(WPA_PTK) {
 	struct wpa_authenticator *wpa_auth = sm->wpa_auth;
 
 	wpa_printf(MSG_INFO, "[%s] Enter, wpa_ptk_state:%s\n", __func__,
-		   aStrWpaAuthPtkState[sm->wpa_ptk_state]);
+		   aStrWpaAuthPtkState[(u8)sm->wpa_ptk_state]);
 
 	if (sm->Init)
 		SM_ENTER(WPA_PTK, INITIALIZE);
@@ -2385,7 +2385,8 @@ SM_STEP(WPA_PTK) {
 					MSG_INFO,
 					"[%s] stop moving at %s, wpa_key_mgmt:%d\n",
 					__func__,
-					aStrWpaAuthPtkState[sm->wpa_ptk_state],
+					aStrWpaAuthPtkState[
+					(u8)sm->wpa_ptk_state],
 					sm->wpa_key_mgmt);
 
 			break;
@@ -2431,7 +2432,8 @@ SM_STEP(WPA_PTK) {
 				wpa_printf(
 					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
-					aStrWpaAuthPtkState[sm->wpa_ptk_state]);
+					aStrWpaAuthPtkState[
+					(u8)sm->wpa_ptk_state]);
 			break;
 		case WPA_PTK_PTKCALCNEGOTIATING:
 			if (sm->MICVerified)
@@ -2445,7 +2447,8 @@ SM_STEP(WPA_PTK) {
 				wpa_printf(
 					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
-					aStrWpaAuthPtkState[sm->wpa_ptk_state]);
+					aStrWpaAuthPtkState[
+					(u8)sm->wpa_ptk_state]);
 			break;
 		case WPA_PTK_PTKCALCNEGOTIATING2:
 			SM_ENTER(WPA_PTK, PTKINITNEGOTIATING);
@@ -2470,7 +2473,8 @@ SM_STEP(WPA_PTK) {
 				wpa_printf(
 					MSG_DEBUG, "[%s] stop moving at %d",
 					__func__,
-					aStrWpaAuthPtkState[sm->wpa_ptk_state]);
+					aStrWpaAuthPtkState[
+					(u8)sm->wpa_ptk_state]);
 			break;
 		case WPA_PTK_PTKINITDONE:
 			break;

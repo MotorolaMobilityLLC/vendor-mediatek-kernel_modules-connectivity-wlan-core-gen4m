@@ -102,6 +102,10 @@ sha256_compress(struct nan_rdf_sha256_state *md, unsigned char *buf) {
 
 	S = os_zalloc(8 * sizeof(u32));
 	W = os_zalloc(64 * sizeof(u32));
+	if (!S || !W) {
+		DBGLOG(NAN, ERROR, "sha256 compress parameter is null!\n");
+		return -1;
+	}
 
 	/* copy state into S */
 	for (i = 0; i < 8; i++)

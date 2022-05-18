@@ -895,6 +895,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	u32 u4BufLen;
 	u32 i4Status = -EINVAL;
 	u32 u4DelayIdx;
+	int ret = 0;
 
 	int remainingLen = (data_len - (sizeof(struct _NanMsgHeader)));
 
@@ -1041,6 +1042,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
 		}
+		ret = cfg80211_vendor_cmd_reply(skb);
 		break;
 	}
 	case NAN_MSG_ID_DISABLE_REQ: {
@@ -1095,6 +1097,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
 		}
+
+		ret = cfg80211_vendor_cmd_reply(skb);
 		break;
 	}
 	case NAN_MSG_ID_CONFIGURATION_REQ: {
@@ -1146,6 +1150,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
 		}
+		ret = cfg80211_vendor_cmd_reply(skb);
 		break;
 	}
 	case NAN_MSG_ID_CAPABILITIES_REQ: {
@@ -1175,6 +1180,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			return -EFAULT;
 		}
 		DBGLOG(INIT, INFO, "i4Status = %u\n", i4Status);
+		ret = cfg80211_vendor_cmd_reply(skb);
 
 		break;
 	}
@@ -1190,6 +1196,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kmalloc(sizeof(struct NanPublishRequest), GFP_ATOMIC);
 		pNanPublishRsp = kmalloc(sizeof(struct NanPublishServiceRspMsg),
 					 GFP_ATOMIC);
+
+		if (!pNanPublishReq || !pNanPublishRsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 
 		kalMemZero(pNanPublishReq, sizeof(struct NanPublishRequest));
 		kalMemZero(pNanPublishRsp,
@@ -1338,6 +1349,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanPublishRsp);
+			kfree(pNanPublishReq);
 			return -ENOMEM;
 		}
 
@@ -1346,6 +1359,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				     sizeof(struct NanPublishServiceRspMsg),
 				     pNanPublishRsp) < 0)) {
 			kfree_skb(skb);
+			kfree(pNanPublishRsp);
+			kfree(pNanPublishReq);
 			DBGLOG(REQ, ERROR, "Fail send reply\n");
 			return -EFAULT;
 		}
@@ -1389,9 +1404,15 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				    FALSE, FALSE, FALSE, &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+			kfree_skb(skb);
+			kfree(pNanPublishRsp);
+			kfree(pNanPublishReq);
 			return -EFAULT;
 		}
 
+		ret = cfg80211_vendor_cmd_reply(skb);
+
+		kfree(pNanPublishRsp);
 		kfree(pNanPublishReq);
 		break;
 	}
@@ -1407,6 +1428,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kmalloc(sizeof(struct NanPublishServiceCancelRspMsg),
 				GFP_ATOMIC);
 
+		if (!pNanPublishCancelReq || !pNanPublishCancelRsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
+
 		DBGLOG(REQ, INFO, "Enter CANCEL Publish Request\n");
 		pNanPublishCancelReq->publish_id = nanMsgHdr.handle;
 
@@ -1421,6 +1447,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			wiphy, sizeof(struct NanPublishServiceCancelRspMsg));
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanPublishCancelReq);
+			kfree(pNanPublishCancelRsp);
 			return -ENOMEM;
 		}
 		if (unlikely(nla_put_nohdr(
@@ -1428,6 +1456,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 						 NanPublishServiceCancelRspMsg),
 				     pNanPublishCancelRsp) < 0)) {
 			kfree_skb(skb);
+			kfree(pNanPublishCancelReq);
+			kfree(pNanPublishCancelRsp);
 			return -EFAULT;
 		}
 
@@ -1447,10 +1477,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				 FALSE, FALSE, FALSE, &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+			kfree_skb(skb);
+			kfree(pNanPublishCancelReq);
+			kfree(pNanPublishCancelRsp);
 			return -EFAULT;
 		}
 
+		ret = cfg80211_vendor_cmd_reply(skb);
+
 		kfree(pNanPublishCancelReq);
+		kfree(pNanPublishCancelRsp);
 		break;
 	}
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ: {
@@ -1469,6 +1505,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		pNanSubscribeRsp = kmalloc(
 			sizeof(struct NanSubscribeServiceRspMsg), GFP_ATOMIC);
 
+		if (!pNanSubscribeReq || !pNanSubscribeRsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		kalMemZero(pNanSubscribeReq,
 			   sizeof(struct NanSubscribeRequest));
 		kalMemZero(pNanSubscribeRsp,
@@ -1651,12 +1691,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanSubscribeReq);
+			kfree(pNanSubscribeRsp);
 			return -ENOMEM;
 		}
 		if (unlikely(nla_put_nohdr(
 				     skb,
 				     sizeof(struct NanSubscribeServiceRspMsg),
 				     pNanSubscribeRsp) < 0)) {
+			kfree(pNanSubscribeReq);
+			kfree(pNanSubscribeRsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
@@ -1669,6 +1713,15 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 			rgreq = kmalloc(sizeof(struct NanRangeRequest),
 				GFP_ATOMIC);
+
+			if (!rgreq) {
+				DBGLOG(REQ, ERROR, "Allocate failed\n");
+				kfree(pNanSubscribeReq);
+				kfree(pNanSubscribeRsp);
+				kfree_skb(skb);
+				return -ENOMEM;
+			}
+
 			kalMemZero(rgreq, sizeof(struct NanRangeRequest));
 
 			memcpy(&rgreq->peer_addr,
@@ -1699,6 +1752,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       FALSE, FALSE, FALSE, &u4BufLen);
 			if (i4Status != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+				kfree(pNanSubscribeReq);
+				kfree(pNanSubscribeRsp);
+				kfree(rgreq);
+				kfree_skb(skb);
 				return -EFAULT;
 			}
 			kfree(rgreq);
@@ -1723,10 +1780,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				    FALSE, FALSE, FALSE, &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+			kfree(pNanSubscribeReq);
+			kfree(pNanSubscribeRsp);
+			kfree_skb(skb);
 			return -EFAULT;
 		}
 
+		ret = cfg80211_vendor_cmd_reply(skb);
+
 		kfree(pNanSubscribeReq);
+		kfree(pNanSubscribeRsp);
 		break;
 	}
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_CANCEL_REQ: {
@@ -1740,6 +1803,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		pNanSubscribeCancelRsp =
 			kmalloc(sizeof(struct NanSubscribeServiceCancelRspMsg),
 				GFP_ATOMIC);
+		if (!pNanSubscribeCancelReq || !pNanSubscribeCancelRsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		kalMemZero(pNanSubscribeCancelReq,
 			   sizeof(struct NanSubscribeCancelRequest));
 		kalMemZero(pNanSubscribeCancelRsp,
@@ -1761,6 +1828,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			wiphy, sizeof(struct NanSubscribeServiceCancelRspMsg));
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanSubscribeCancelReq);
+			kfree(pNanSubscribeCancelRsp);
 			return -ENOMEM;
 		}
 		if (unlikely(nla_put_nohdr(
@@ -1768,6 +1837,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				     sizeof(struct
 					    NanSubscribeServiceCancelRspMsg),
 				     pNanSubscribeCancelRsp) < 0)) {
+			kfree(pNanSubscribeCancelReq);
+			kfree(pNanSubscribeCancelRsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
@@ -1790,10 +1861,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				 FALSE, FALSE, FALSE, &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+			kfree(pNanSubscribeCancelReq);
+			kfree(pNanSubscribeCancelRsp);
+			kfree_skb(skb);
 			return -EFAULT;
 		}
 
+		ret = cfg80211_vendor_cmd_reply(skb);
+
 		kfree(pNanSubscribeCancelReq);
+		kfree(pNanSubscribeCancelRsp);
 		break;
 	}
 	case NAN_MSG_ID_TRANSMIT_FOLLOWUP_REQ: {
@@ -1805,6 +1882,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			sizeof(struct NanTransmitFollowupRequest), GFP_ATOMIC);
 		pNanXmitFollowupRsp = kmalloc(
 			sizeof(struct NanTransmitFollowupRspMsg), GFP_ATOMIC);
+		if (!pNanXmitFollowupReq || !pNanXmitFollowupRsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		kalMemZero(pNanXmitFollowupReq,
 			   sizeof(struct NanTransmitFollowupRequest));
 		kalMemZero(pNanXmitFollowupRsp,
@@ -1858,6 +1939,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanXmitFollowupReq);
+			kfree(pNanXmitFollowupRsp);
 			return -ENOMEM;
 		}
 
@@ -1865,6 +1948,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				     skb,
 				     sizeof(struct NanTransmitFollowupRspMsg),
 				     pNanXmitFollowupRsp) < 0)) {
+			kfree(pNanXmitFollowupReq);
+			kfree(pNanXmitFollowupRsp);
 			kfree_skb(skb);
 			DBGLOG(REQ, ERROR, "Fail send reply\n");
 			return -EFAULT;
@@ -1883,10 +1968,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				    FALSE, FALSE, FALSE, &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
+			kfree(pNanXmitFollowupReq);
+			kfree(pNanXmitFollowupRsp);
+			kfree_skb(skb);
 			return -EFAULT;
 		}
 
+		ret = cfg80211_vendor_cmd_reply(skb);
+
 		kfree(pNanXmitFollowupReq);
+		kfree(pNanXmitFollowupRsp);
 		break;
 	}
 	case NAN_MSG_ID_BEACON_SDF_REQ: {
@@ -1905,6 +1996,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		pNanBcnSdfVSARsp = kmalloc(
 			sizeof(struct NanBeaconSdfPayloadRspMsg), GFP_ATOMIC);
 
+		if (!pNanXmitVSAttrReq || !pNanBcnSdfVSARsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		while ((remainingLen > 0) &&
 		       (0 !=
 			(readLen = nan_read_tlv((u8 *)data, &outputTlv)))) {
@@ -1958,15 +2053,21 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		if (!skb) {
 			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			kfree(pNanXmitVSAttrReq);
+			kfree(pNanBcnSdfVSARsp);
 			return -ENOMEM;
 		}
 		if (unlikely(nla_put_nohdr(
 				     skb,
 				     sizeof(struct NanBeaconSdfPayloadRspMsg),
 				     pNanBcnSdfVSARsp) < 0)) {
+			kfree(pNanXmitVSAttrReq);
+			kfree(pNanBcnSdfVSARsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
+
+		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanXmitVSAttrReq);
 		kfree(pNanBcnSdfVSARsp);
@@ -1978,6 +2079,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		struct NanDebugParams *pNanDebug = NULL;
 
 		pNanDebug = kmalloc(sizeof(struct NanDebugParams), GFP_ATOMIC);
+		if (!pNanDebug) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		kalMemZero(pNanDebug, sizeof(struct NanDebugParams));
 		DBGLOG(REQ, INFO, "NAN_MSG_ID_TESTMODE_REQ\n");
 
@@ -2011,15 +2116,19 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
+		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanDebug);
-		return 0;
+		break;
 	}
 	default:
 		return -EOPNOTSUPP;
 	}
 
-	return cfg80211_vendor_cmd_reply(skb);
+	kfree_skb(skb);
+
+	return ret;
+
 }
 
 /* Indication part */
@@ -2052,6 +2161,10 @@ mtk_cfg80211_vendor_event_nan_event_indication(IN struct ADAPTER *prAdapter,
 		SIZEOF_TLV_HDR + MAC_ADDR_LEN;
 
 	prNanEventInd = kalMemAlloc(message_len, VIR_MEM_TYPE);
+	if (!prNanEventInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
 
 	prNanEventInd->fwHeader.msgVersion = 1;
 	prNanEventInd->fwHeader.msgId = NAN_MSG_ID_DE_EVENT_IND;
@@ -2123,11 +2236,14 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 
 	/*Final length includes all TLVs*/
 	message_len = sizeof(struct _NanMsgHeader) +
-			sizeof(prNanDisableInd->reason) +
-			sizeof(prNanDisableInd->reserved);
+			sizeof(u16) +
+			sizeof(u16);
 
 	prNanDisableInd = kalMemAlloc(message_len, VIR_MEM_TYPE);
-
+	if (!prNanDisableInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
 	prNanDisableInd->fwHeader.msgVersion = 1;
 	prNanDisableInd->fwHeader.msgId = NAN_MSG_ID_DISABLE_IND;
 	prNanDisableInd->fwHeader.msgLen = message_len;
@@ -2186,6 +2302,9 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 		      ((SIZEOF_TLV_HDR) + sizeof(prRepliedEvt->ucRssi_value));
 
 	prNanPubRepliedInd = kmalloc(message_len, GFP_KERNEL);
+	if (prNanPubRepliedInd == NULL)
+		return -ENOMEM;
+
 	kalMemZero(prNanPubRepliedInd, message_len);
 
 	DBGLOG(NAN, INFO, "[%s] message_len : %d\n", __func__, message_len);
@@ -2258,6 +2377,11 @@ mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
 		      (SIZEOF_TLV_HDR + sizeof(struct NanFWSdeaCtrlParams));
 
 	prNanMatchInd = kmalloc(message_len, GFP_KERNEL);
+	if (!prNanMatchInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
+
 	kalMemZero(prNanMatchInd, message_len);
 
 	prNanMatchInd->fwHeader.msgVersion = 1;
@@ -2449,6 +2573,10 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 
 	prNanFollowupInd = kmalloc(message_len, GFP_KERNEL);
 	kalMemZero(prNanFollowupInd, message_len);
+	if (!prNanFollowupInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
 
 	prNanFollowupInd->fwHeader.msgVersion = 1;
 	prNanFollowupInd->fwHeader.msgId = NAN_MSG_ID_FOLLOWUP_IND;
@@ -2522,6 +2650,11 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 			sizeof(struct _NanFollowupIndParams);
 
 	prNanFollowupInd = kmalloc(message_len, GFP_KERNEL);
+	if (!prNanFollowupInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
+
 	kalMemZero(prNanFollowupInd, message_len);
 
 	prNanFollowupInd->fwHeader.msgVersion = 1;

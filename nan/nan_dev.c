@@ -245,7 +245,7 @@ nanDevFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 } /* p2pDevFsmUninit */
 struct _NAN_SPECIFIC_BSS_INFO_T *
 nanGetSpecificBssInfo(IN struct ADAPTER *prAdapter,
-		      enum NAN_BSS_ROLE_INDEX eIndex) {
+		      uint8_t eIndex) {
 	return prAdapter->rWifiVar.aprNanSpecificBssInfo[eIndex];
 }
 
