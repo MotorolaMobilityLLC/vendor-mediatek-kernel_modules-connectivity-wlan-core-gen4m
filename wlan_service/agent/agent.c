@@ -3848,7 +3848,7 @@ static s_int32 hqa_set_ru_info(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
 	u_int32 band_idx = 0;
-	u_int32 len = 0, seg_sta_cnt[2] = {0}, sta_seq = 0, value = 0;
+	u_int32 len = 0, seg_sta_cnt[2] = {0, 0}, sta_seq = 0, value = 0;
 	u_char param_cnt = 0, segment_idx = 0, param_loop = 0;
 	u_char *data = hqa_frame->data;
 	u_int32 mpdu_length = 0;
