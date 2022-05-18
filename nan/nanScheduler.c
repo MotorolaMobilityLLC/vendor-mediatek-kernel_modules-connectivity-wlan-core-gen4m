@@ -1200,6 +1200,12 @@ nanSchedReleasePeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	DBGLOG(NAN, INFO, "IN\n");
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+
+	if (prPeerSchRecord == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchRecord\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	if (prPeerSchRecord->prPeerSchDesc)
 		prPeerSchRecord->prPeerSchDesc->fgUsed = FALSE;
 	nanSchedResetPeerSchedRecord(prAdapter, u4SchIdx);
@@ -1241,6 +1247,10 @@ nanSchedPeerAvailabilityDbValidByID(struct ADAPTER *prAdapter,
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
 
 	prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+
+	if (prPeerSchRec == NULL)
+		return FALSE;
+
 	if (prPeerSchRec->prPeerSchDesc == NULL)
 		return FALSE;
 
@@ -1254,6 +1264,10 @@ nanSchedPeerAvailabilityDbValid(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	uint32_t u4AvailDbIdx;
 
 	prPeerSchRec = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+
+	if (prPeerSchRec == NULL)
+		return FALSE;
+
 	if (prPeerSchRec->prPeerSchDesc == NULL)
 		return FALSE;
 
@@ -4391,6 +4405,12 @@ nanSchedDropResources(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		return;
 
 	prPeerSchRecord = nanSchedGetPeerSchRecord(prAdapter, u4SchIdx);
+
+	if (prPeerSchRecord == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchRecord\n");
+		return;
+	}
+
 	prPeerSchDesc = prPeerSchRecord->prPeerSchDesc;
 
 	DBGLOG(NAN, INFO, "\n\n");
@@ -5041,12 +5061,19 @@ nanSchedNegoStop(struct ADAPTER *prAdapter) {
 	prNanTimelineMgmt->fgChkCondAvailability = FALSE;
 
 	nanSchedNegoDumpState(prAdapter, (uint8_t *) __func__, __LINE__);
-	nanSchedPeerCompleteNegoState(prAdapter, prPeerSchRecord->aucNmiAddr);
 
-	if (prPeerSchRecord->fgActive && !prPeerSchRecord->fgUseDataPath &&
-	    !prPeerSchRecord->fgUseRanging) {
-		nanSchedReleasePeerSchedRecord(prAdapter, prNegoCtrl->u4SchIdx);
-	}
+	if (prPeerSchRecord != NULL) {
+		nanSchedPeerCompleteNegoState(
+			prAdapter, prPeerSchRecord->aucNmiAddr);
+
+		if (prPeerSchRecord->fgActive &&
+			!prPeerSchRecord->fgUseDataPath &&
+		    !prPeerSchRecord->fgUseRanging) {
+			nanSchedReleasePeerSchedRecord(
+				prAdapter, prNegoCtrl->u4SchIdx);
+		}
+	} else
+		DBGLOG(NAN, ERROR, "NULL prPeerSchRecord\n");
 
 	cnmTimerStopTimer(prAdapter, &(prNegoCtrl->rCrbNegoDispatchTimer));
 	if (prNegoCtrl->ucNegoTransNum > 0)
@@ -5386,6 +5413,12 @@ nanSchedNegoGenQosCriteria(struct ADAPTER *prAdapter) {
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
 
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		goto CHK_QOS_DONE;
+	}
+
 	DBGLOG(NAN, INFO, "------>\n");
 	DBGLOG(NAN, INFO, "Peer Qos spec MinSlots:%d, MaxLatency:%d\n",
 	       prPeerSchDesc->u4QosMinSlots, prPeerSchDesc->u4QosMaxLatency);
@@ -5563,6 +5596,11 @@ nanSchedNegoChkQosSpec(struct ADAPTER *prAdapter,
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
 
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	if ((prNegoCtrl->u4QosMinSlots == NAN_INVALID_QOS_MIN_SLOTS) &&
 	    (prNegoCtrl->u4QosMaxLatency == NAN_INVALID_QOS_MAX_LATENCY) &&
 	    (prPeerSchDesc->u4QosMinSlots == NAN_INVALID_QOS_MIN_SLOTS) &&
@@ -5595,6 +5633,12 @@ nanSchedNegoIsRmtAvailabilityConflict(struct ADAPTER *prAdapter) {
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	u4SchIdx = prNegoCtrl->u4SchIdx;
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
+
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		u4RetCode = -1;
+		goto CHK_RMT_AVAIL_DONE;
+	}
 
 	for (u4AvailDbIdx = 0; u4AvailDbIdx < NAN_NUM_AVAIL_DB;
 	     u4AvailDbIdx++) {
@@ -5752,6 +5796,11 @@ nanSchedNegoIsRmtCrbConflict(
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchRecord =
 		nanSchedGetPeerSchRecord(prAdapter, prNegoCtrl->u4SchIdx);
+
+	if (prPeerSchRecord == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchRecord\n");
+		return TRUE;
+	}
 
 	if (pfgEmptyMapSet && au4EmptyMap) {
 		*pfgEmptyMapSet = FALSE;
@@ -5998,7 +6047,8 @@ nanSchedNegoAddNdcCrb(struct ADAPTER *prAdapter,
 	uint32_t u4SlotIdx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl;
-	uint32_t u4SysTime;
+	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacMask[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	uint32_t au4AvailMap[NAN_TOTAL_DW];
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
 
@@ -6066,8 +6116,9 @@ nanSchedNegoAddNdcCrb(struct ADAPTER *prAdapter,
 		prNdcCtrl = &prNegoCtrl->rSelectedNdcCtrl;
 		if (prNdcCtrl->fgValid == FALSE) {
 			prNdcCtrl->fgValid = TRUE;
-			u4SysTime = (uint32_t)kalGetTimeTick();
-			kalMemCopy(prNdcCtrl->aucNdcId, (uint8_t *)&u4SysTime,
+			get_random_mask_addr(
+				rRandMacAddr, rRandMacMask, rRandMacMask);
+			kalMemCopy(prNdcCtrl->aucNdcId, rRandMacAddr,
 				   NAN_NDC_ATTRIBUTE_ID_LENGTH);
 			kalMemCopy(prNdcCtrl->arTimeline[0].au4AvailMap,
 				   (uint8_t *)au4AvailMap, sizeof(au4AvailMap));
@@ -6294,7 +6345,8 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 	uint32_t u4Idx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl;
-	uint32_t u4SysTime;
+	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacMask[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	uint32_t u4SlotIdx;
 	uint32_t u4Num;
 	uint32_t u4SlotOffset;
@@ -6446,8 +6498,8 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 		prNdcCtrl->fgValid = TRUE;
 		kalMemZero(&prNdcCtrl->arTimeline[0].au4AvailMap,
 			   sizeof(prNdcCtrl->arTimeline[0].au4AvailMap));
-		u4SysTime = (uint32_t)kalGetTimeTick();
-		kalMemCopy(prNdcCtrl->aucNdcId, (uint8_t *)&u4SysTime,
+		get_random_mask_addr(rRandMacAddr, rRandMacMask, rRandMacMask);
+		kalMemCopy(prNdcCtrl->aucNdcId, rRandMacAddr,
 			   NAN_NDC_ATTRIBUTE_ID_LENGTH);
 		prNdcCtrl->arTimeline[0].ucMapId = prNanTimelineMgmt->ucMapId;
 
@@ -6547,6 +6599,11 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
+
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	switch (eResetReason) {
 	case ENUM_NEGO_CTRL_RST_BY_WAIT_RSP_STATE:
@@ -6709,6 +6766,13 @@ nanSchedNegoDataPathChkRmtCrbProposalForRspState(
 	u4SchIdx = prNegoCtrl->u4SchIdx;
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
+
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		u4ReasonCode = NAN_REASON_CODE_UNSPECIFIED;
+		goto DATA_RESPONDER_STATE_DONE;
+	}
 
 	/* Generate compliant/counter proposal */
 
@@ -6878,6 +6942,13 @@ nanSchedNegoRangingChkRmtCrbProposalForRspState(struct ADAPTER *prAdapter,
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
 
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		u4ReasonCode = NAN_REASON_CODE_UNSPECIFIED;
+		goto RANG_RESPONDER_STATE_DONE;
+	}
+
 	/* Step1. check initial ranging proposal */
 	if (prPeerSchDesc->fgRangingTimelineValid == TRUE) {
 		nanUtilDump(prAdapter, "Ranging Map",
@@ -6930,6 +7001,13 @@ nanSchedNegoDataPathChkRmtCrbProposalForWaitRspState(struct ADAPTER *prAdapter,
 
 	nanSchedNegoResetControlInfo(prAdapter,
 				     ENUM_NEGO_CTRL_RST_BY_WAIT_RSP_STATE);
+
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		u4ReasonCode = NAN_REASON_CODE_UNSPECIFIED;
+		goto WAIT_RSP_STATE_DONE;
+	}
 
 	/* Generate confirm proposal */
 
@@ -7029,6 +7107,13 @@ nanSchedNegoRangingChkRmtCrbProposalForWaitRspState(struct ADAPTER *prAdapter,
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, prNegoCtrl->u4SchIdx);
+
+	if (prPeerSchDesc == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchDesc\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		u4ReasonCode = NAN_REASON_CODE_UNSPECIFIED;
+		goto WAIT_RSP_STATE_DONE;
+	}
 
 	if (prPeerSchDesc->fgRangingTimelineValid == TRUE) {
 		nanUtilDump(prAdapter, "Ranging Map",
@@ -7135,6 +7220,12 @@ nanSchedNegoChkRmtCrbProposal(struct ADAPTER *prAdapter,
 	}
 
 RMT_PROPOSAL_DONE:
+	if (prPeerSchRec == NULL) {
+		DBGLOG(NAN, ERROR, "NULL prPeerSchRec\n");
+		rRetStatus = WLAN_STATUS_FAILURE;
+		u4ReasonCode = NAN_REASON_CODE_UNSPECIFIED;
+	}
+
 	if (rRetStatus == WLAN_STATUS_PENDING) {
 		rRetStatus = WLAN_STATUS_NOT_ACCEPTED;
 
