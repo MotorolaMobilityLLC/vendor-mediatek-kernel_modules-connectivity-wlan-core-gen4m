@@ -9566,6 +9566,10 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	}
 
 	memset(HqaCmdFrame, 0, sizeof(*HqaCmdFrame));
+
+	if (prIwReqData->data.length > sizeof(*HqaCmdFrame))
+		prIwReqData->data.length = sizeof(*HqaCmdFrame);
+
 	if (copy_from_user(HqaCmdFrame, prIwReqData->data.pointer,
 			   prIwReqData->data.length)) {
 		i4Status = -EFAULT;

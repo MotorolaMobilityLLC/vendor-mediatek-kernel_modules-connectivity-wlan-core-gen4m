@@ -10506,7 +10506,7 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter,
 			    IN uint32_t u4FreqInKHz,
 			    IN uint32_t *pu4SetInfoLen) {
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 
 	ASSERT(prAdapter);
 
