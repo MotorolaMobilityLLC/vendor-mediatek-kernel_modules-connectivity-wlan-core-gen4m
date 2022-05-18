@@ -5665,8 +5665,8 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len)
 {
-
 	struct sk_buff *skb;
+	int32_t i4Err = 0;
 
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy, len);
 
@@ -5675,7 +5675,11 @@ int32_t mtk_cfg80211_process_str_cmd_reply(
 		return -ENOMEM;
 	}
 
-	nla_put_nohdr(skb, len, data);
+	i4Err = nla_put_nohdr(skb, len, data);
+	if (i4Err) {
+		kfree_skb(skb);
+		return i4Err;
+	}
 
 	return cfg80211_testmode_reply(skb);
 }

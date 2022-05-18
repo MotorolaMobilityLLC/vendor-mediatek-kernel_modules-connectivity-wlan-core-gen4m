@@ -2612,6 +2612,7 @@ uint32_t nicEnterCtiaModeOfRoaming(IN struct ADAPTER
 	       fgEnterCtia);
 
 	rWlanStatus = WLAN_STATUS_SUCCESS;
+	kalMemZero(&rCmdSwCtrl, sizeof(struct CMD_SW_DBG_CTRL));
 
 	if (fgEnterCtia) {
 		/* Disable Roaming */
