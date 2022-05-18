@@ -150,9 +150,8 @@ twtReqFsmSteps(
 	ASSERT(prStaRec);
 
 	do {
-		if (prStaRec->aeTWTReqState < 0 ||
-			prStaRec->aeTWTReqState >= TWT_REQ_STATE_NUM ||
-			eNextState < 0 || eNextState >= TWT_REQ_STATE_NUM) {
+		if (prStaRec->aeTWTReqState >= TWT_REQ_STATE_NUM ||
+			eNextState >= TWT_REQ_STATE_NUM) {
 			DBGLOG(TWT_REQUESTER, ERROR,
 				"Invalid stat eNextState[%d]\n", eNextState);
 			return;
