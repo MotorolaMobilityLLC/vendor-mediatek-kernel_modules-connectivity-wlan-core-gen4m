@@ -1987,11 +1987,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-		if (IE_LEN(pucIE) > CFG_IE_BUFFER_SIZE) {
-			DBGLOG(SCN, ERROR, "ERR! EID:%d, IE length = %d\n",
-				IE_ID(pucIE), IE_LEN(pucIE));
-			return NULL;
-		}
 		/* Error handling for disorder IE that IE length is 0 */
 		if (IE_ID(pucIE) != ELEM_ID_SSID && IE_LEN(pucIE) == 0)
 			continue;
@@ -2825,11 +2820,20 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	/* 4 <3.3> Check rate information in related IEs. */
 	if (prIeSupportedRate || prIeExtSupportedRate) {
+		if ((prIeSupportedRate &&
+			prIeSupportedRate->ucLength > RATE_NUM_SW) ||
+			(prIeExtSupportedRate &&
+			prIeExtSupportedRate->ucLength >=
+			ELEM_MAX_LEN_EXTENDED_SUP_RATES)) {
+			DBGLOG(SCN, ERROR,
+				"ERR! SupportedRate IE length too big\n");
+			return NULL;
+		}
 		rateGetRateSetFromIEs(prIeSupportedRate,
-				      prIeExtSupportedRate,
-				      &prBssDesc->u2OperationalRateSet,
-				      &prBssDesc->u2BSSBasicRateSet,
-				      &prBssDesc->fgIsUnknownBssBasicRate);
+				prIeExtSupportedRate,
+				&prBssDesc->u2OperationalRateSet,
+				&prBssDesc->u2BSSBasicRateSet,
+				&prBssDesc->fgIsUnknownBssBasicRate);
 	}
 
 	/* 4 <4> Update information from HIF RX Header */
