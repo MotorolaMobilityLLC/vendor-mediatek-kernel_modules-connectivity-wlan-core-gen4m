@@ -2200,8 +2200,7 @@ uint32_t nicPmIndicateBssConnected(IN struct ADAPTER
 				   *prAdapter, IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	struct CMD_INDICATE_PM_BSS_CONNECTED
-		rCmdIndicatePmBssConnected;
+	struct CMD_INDICATE_PM_BSS_CONNECTED rCmdIndicatePmBssConnected = {0};
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
