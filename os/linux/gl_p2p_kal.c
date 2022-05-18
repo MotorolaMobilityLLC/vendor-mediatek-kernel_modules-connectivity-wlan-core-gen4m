@@ -2221,6 +2221,10 @@ void kalP2pPreStartRdd(
 	chan = ieee80211_get_channel(
 		prGlueP2pInfo->prWdev->wiphy,
 		freq);
+	if (!chan) {
+		DBGLOG(P2P, ERROR, "chan info null.\n");
+		return;
+	}
 	chandef.center_freq1 = 0;
 	chandef.center_freq2 = 0;
 	chandef.chan = chan;

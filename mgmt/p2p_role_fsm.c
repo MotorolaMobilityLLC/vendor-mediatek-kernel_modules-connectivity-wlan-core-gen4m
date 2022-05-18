@@ -71,7 +71,10 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 uint8_t *
 	p2pRoleFsmGetFsmState(
 	IN enum ENUM_P2P_ROLE_STATE eCurrentState) {
-	if (eCurrentState < P2P_ROLE_STATE_NUM)
+	if (eCurrentState
+		>= P2P_ROLE_STATE_IDLE &&
+		eCurrentState
+		< P2P_ROLE_STATE_NUM)
 		return apucDebugP2pRoleState[eCurrentState];
 
 	return (uint8_t *) DISP_STRING("UNKNOWN");
