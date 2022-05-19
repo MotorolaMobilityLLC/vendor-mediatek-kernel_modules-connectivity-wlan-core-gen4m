@@ -2445,8 +2445,15 @@ static void soc7_0_DumpDebugCtrlAoCr(struct ADAPTER *prAdapter)
 	/* CONN2WF remapping
 	 * 0x1840_0120 = 32'h810F0000
 	 */
-	wf_ioremap_write(WF_MCU_BUS_CR_AP2WF_REMAP_1,
-			 WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_BASE);
+	u4Addr = WF_MCU_BUS_CR_AP2WF_REMAP_1;
+	u4Val = WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_BASE;
+	DBGLOG(HAL, ERROR, "WR 0x%08x=[0x%08x]\n", u4Addr, u4Val);
+	wf_ioremap_write(u4Addr, u4Val);
+
+	u4Addr = 0x18500000;
+	connac2x_DbgCrRead(prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, ERROR, "0x%08x=[0x%08x]\n", u4Addr, u4Val);
+
 	/* READ debug information from debug_ctrl_ao CR
 	 * dump DEBUG_CTRL_RESULT_2~18 (0x1850_0408~0x1850_0448)
 	 */
