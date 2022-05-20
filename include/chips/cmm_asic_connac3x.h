@@ -1341,6 +1341,7 @@ void asicConnac3xDmashdlSetOptionalControl(
 	uint16_t u2HifGupActMap);
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
+uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)
 void asicConnac3xWfdmaInitForUSB(

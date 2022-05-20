@@ -432,6 +432,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.asicUsbResume = asicConnac3xUsbResume,
 	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
+	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
 #endif
 };
 
@@ -452,6 +453,13 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 #endif
 #if defined(_HIF_PCIE) && IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	.mcu_init = mt6639_mcu_init,
+#endif
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+	.constructBtPatchName = asicConnac3xConstructBtPatchName,
+	.downloadBtPatch = asicConnac3xDownloadBtPatch,
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	.configBtImageSection = asicConnac3xConfigBtImageSection,
+#endif
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */

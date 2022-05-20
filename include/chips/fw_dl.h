@@ -133,9 +133,11 @@
  * BT uses this field to determind each section' type.
  */
 #define FW_SECT_BINARY_TYPE_BT_PATCH			0x00000002
+#define FW_SECT_BINARY_TYPE_BT_CACHEABLE_PATCH		0x00000003
 #define FW_SECT_BINARY_TYPE_BT_ILM_TEXT_EX9_DATA	0x00000080
 #define FW_SECT_BINARY_TYPE_WF_PATCH			0x00000100
 #define FW_SECT_BINARY_TYPE_ZB_FW			0x00001000
+#define FW_SECT_BINARY_TYPE_BT_RAM_POS			0x00010000
 
 /*
  * Max packet size for REDL.
@@ -154,6 +156,25 @@ enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_BT_PATCH,
 	IMG_DL_IDX_ZB_PATCH
 
+};
+
+struct patch_dl_buf {
+	uint8_t *img_ptr;
+	uint32_t img_dest_addr;
+	uint32_t img_size;
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	uint32_t bin_type;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t sec_info;
+	uint32_t data_mode;
+#endif
+#endif
+	bool check_crc;
+};
+
+struct patch_dl_target {
+	struct patch_dl_buf *patch_region;
+	uint8_t num_of_region;
 };
 
 struct FWDL_OPS_T {
@@ -184,6 +205,10 @@ struct FWDL_OPS_T {
 	void (*constructBtPatchName)(struct GLUE_INFO *prGlueInfo,
 		uint8_t **apucName, uint8_t *pucNameIdx);
 	uint32_t (*downloadBtPatch)(IN struct ADAPTER *prAdapter);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t (*configBtImageSection)(IN struct ADAPTER *prAdapter,
+		IN struct patch_dl_buf *region);
+#endif
 #endif
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	void (*constructZbPatchName)(struct GLUE_INFO *prGlueInfo,
@@ -311,21 +336,6 @@ struct PATCH_SEC_MAP {
 			uint32_t reserved[8];
 		} bin_info_spec;
 	};
-};
-
-struct patch_dl_buf {
-	uint8_t *img_ptr;
-	uint32_t img_dest_addr;
-	uint32_t img_size;
-#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
-	uint32_t bin_type;
-#endif
-	bool check_crc;
-};
-
-struct patch_dl_target {
-	struct patch_dl_buf *patch_region;
-	uint8_t num_of_region;
 };
 
 #endif
@@ -480,6 +490,20 @@ uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 #endif
 
 #endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern void conninfra_get_phy_addr(phys_addr_t *addr, unsigned int *size);
+#endif
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx);
+uint32_t asicConnac3xDownloadBtPatch(struct ADAPTER *prAdapter);
+uint32_t asicConnac3xConfigBtImageSection(struct ADAPTER *prAdapter,
+	struct patch_dl_buf *region);
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+#endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
 #endif /* _FW_DL_H */
 
