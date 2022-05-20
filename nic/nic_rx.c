@@ -490,6 +490,8 @@ void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
  *
  * @return (none)
  *
+ * Set values in prSwRfb->aeCSUM for IPv4, IPv6, TCP, and UDP,
+ * with CSUM_RES_NONE, CSUM_RES_SUCCESS, or CSUM_RES_FAILED.
  */
 /*----------------------------------------------------------------------------*/
 void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
@@ -512,86 +514,37 @@ void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
 	  rReport->u4IpV4CksType, rReport->u4IpV6CksType,
 	  rReport->u4TcpCksType, rReport->u4UdpCksType);
 
-	if (prAdapter->u4CSUMFlags != CSUM_NOT_SUPPORTED) {
-		if (u4TcpUdpIpCksStatus &
-		    RX_CS_TYPE_IPv4) {	/* IPv4 packet */
-			prSwRfb->aeCSUM[CSUM_TYPE_IPV6] = CSUM_RES_NONE;
-			if (u4TcpUdpIpCksStatus &
-			    RX_CS_STATUS_IP) {	/* IP packet csum failed */
-				prSwRfb->aeCSUM[CSUM_TYPE_IPV4] =
-					CSUM_RES_FAILED;
-			} else {
-				prSwRfb->aeCSUM[CSUM_TYPE_IPV4] =
-					CSUM_RES_SUCCESS;
-			}
+	if (prAdapter->u4CSUMFlags == CSUM_NOT_SUPPORTED)
+		return;
 
-			if (u4TcpUdpIpCksStatus & RX_CS_TYPE_TCP) {
-				/* TCP packet */
-				prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_NONE;
-				if (u4TcpUdpIpCksStatus &
-				    RX_CS_STATUS_TCP) {
-				  /* TCP packet csum failed */
-					prSwRfb->aeCSUM[CSUM_TYPE_TCP] =
-						CSUM_RES_FAILED;
-				} else {
-					prSwRfb->aeCSUM[CSUM_TYPE_TCP] =
-						CSUM_RES_SUCCESS;
-				}
-			} else if (u4TcpUdpIpCksStatus &
-				   RX_CS_TYPE_UDP) {	/* UDP packet */
-				prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_NONE;
-				if (u4TcpUdpIpCksStatus &
-				    RX_CS_STATUS_UDP) {
-				  /* UDP packet csum failed */
-					prSwRfb->aeCSUM[CSUM_TYPE_UDP] =
-						CSUM_RES_FAILED;
-				} else {
-					prSwRfb->aeCSUM[CSUM_TYPE_UDP] =
-						CSUM_RES_SUCCESS;
-				}
-			} else {
-				prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_NONE;
-				prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_NONE;
-			}
-		} else if (u4TcpUdpIpCksStatus &
-			   RX_CS_TYPE_IPv6) {	/* IPv6 packet */
-			prSwRfb->aeCSUM[CSUM_TYPE_IPV4] = CSUM_RES_NONE;
-			prSwRfb->aeCSUM[CSUM_TYPE_IPV6] = CSUM_RES_SUCCESS;
+	/**
+	 * In nicRxSetupRFB(), prSwRfb->aeCSUM are all zeroed with the SW_RFB,
+	 * i.e., CSUM_RES_NONE, by kalMemZero.
+	 */
 
-			if (u4TcpUdpIpCksStatus & RX_CS_TYPE_TCP) {
-				/* TCP packet */
-				prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_NONE;
-				if (u4TcpUdpIpCksStatus &
-				    RX_CS_STATUS_TCP) {
-				  /* TCP packet csum failed */
-					prSwRfb->aeCSUM[CSUM_TYPE_TCP] =
-						CSUM_RES_FAILED;
-				} else {
-					prSwRfb->aeCSUM[CSUM_TYPE_TCP] =
-						CSUM_RES_SUCCESS;
-				}
-			} else if (u4TcpUdpIpCksStatus &
-				   RX_CS_TYPE_UDP) {	/* UDP packet */
-				prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_NONE;
-				if (u4TcpUdpIpCksStatus &
-				    RX_CS_STATUS_UDP) {
-				  /* UDP packet csum failed */
-					prSwRfb->aeCSUM[CSUM_TYPE_UDP] =
-						CSUM_RES_FAILED;
-				} else {
-					prSwRfb->aeCSUM[CSUM_TYPE_UDP] =
-						CSUM_RES_SUCCESS;
-				}
-			} else {
-				prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_NONE;
-				prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_NONE;
-			}
-		} else {
-			prSwRfb->aeCSUM[CSUM_TYPE_IPV4] = CSUM_RES_NONE;
-			prSwRfb->aeCSUM[CSUM_TYPE_IPV6] = CSUM_RES_NONE;
-		}
+	if (u4TcpUdpIpCksStatus & RX_CS_FLAG_NOT_DONE ||
+	    (u4TcpUdpIpCksStatus & RX_CS_TYPE_TCP &&
+	     u4TcpUdpIpCksStatus & RX_CS_TYPE_UDP))
+		return;
+
+	if (u4TcpUdpIpCksStatus & RX_CS_TYPE_IPv4) {
+		prSwRfb->aeCSUM[CSUM_TYPE_IPV4] = CSUM_RES_SUCCESS;
+		if (unlikely(u4TcpUdpIpCksStatus & RX_CS_STATUS_IP))
+			prSwRfb->aeCSUM[CSUM_TYPE_IPV4] = CSUM_RES_FAILED;
+	} else if (u4TcpUdpIpCksStatus & RX_CS_TYPE_IPv6) {
+		/* No IP layer checksum for IPv6, always success. */
+		prSwRfb->aeCSUM[CSUM_TYPE_IPV6] = CSUM_RES_SUCCESS;
 	}
 
+	if (u4TcpUdpIpCksStatus & RX_CS_TYPE_TCP) {
+		prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_SUCCESS;
+		if (unlikely(u4TcpUdpIpCksStatus & RX_CS_STATUS_TCP))
+			prSwRfb->aeCSUM[CSUM_TYPE_TCP] = CSUM_RES_FAILED;
+	} else if (u4TcpUdpIpCksStatus & RX_CS_TYPE_UDP) {
+		prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_SUCCESS;
+		if (unlikely(u4TcpUdpIpCksStatus & RX_CS_STATUS_UDP))
+			prSwRfb->aeCSUM[CSUM_TYPE_UDP] = CSUM_RES_FAILED;
+	}
 }
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
