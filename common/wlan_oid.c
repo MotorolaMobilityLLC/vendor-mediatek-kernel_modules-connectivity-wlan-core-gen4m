@@ -7090,6 +7090,7 @@ wlanoidQuerySwCtrlRead(IN struct ADAPTER *prAdapter,
 
 	case 0x9000:
 	default: {
+		kalMemSet(&rCmdSwCtrl, 0, sizeof(struct CMD_SW_DBG_CTRL));
 		rCmdSwCtrl.u4Id = prSwCtrlInfo->u4Id;
 		rCmdSwCtrl.u4Data = 0;
 		rWlanStatus = wlanSendSetQueryCmd(prAdapter,
@@ -7336,6 +7337,7 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 			struct CMD_TX_AMPDU rTxAmpdu;
 			uint32_t rStatus;
 
+			kalMemSet(&rTxAmpdu, 0, sizeof(struct CMD_TX_AMPDU));
 			rTxAmpdu.fgEnable = !!u4Data;
 
 			rStatus = wlanSendSetQueryCmd(
@@ -9411,6 +9413,11 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prPowerMode->ucBssIdx);
 
+	if (prBssInfo == NULL) {
+		DBGLOG(REQ, WARN, "BSS Info not exist !!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	if (prAdapter->fgEnCtiaPowerMode) {
 		if (prPowerMode->ePowerMode != Param_PowerModeCAM) {
 			/* User setting to PS mode (Param_PowerModeMAX_PSP or
@@ -9494,8 +9501,7 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 			TRUE, PS_CALLER_COMMON);
 	}
 
-	if (prPowerMode->ePowerMode >= 0 &&
-		prPowerMode->ePowerMode < Param_PowerModeMax) {
+	if (prPowerMode->ePowerMode < Param_PowerModeMax) {
 		DBGLOG(INIT, TRACE,
 		       "Set %s Network BSS(%u) PS mode to %s (%d)\n",
 		       apucNetworkType[prBssInfo->eNetworkType],
@@ -11992,6 +11998,12 @@ wlanoidSetWiFiWmmPsTest(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  rSetWmmPsTestParam.ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(REQ, WARN, "BSS Info not exist !!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	prPmProfSetupInfo->ucBmpDeliveryAC =
 		(rSetWmmPsTestParam.bmfgApsdEnAc >> 4) & BITS(0, 3);
@@ -16134,6 +16146,7 @@ wlanoidDisableTdlsPs(IN struct ADAPTER *prAdapter,
 	if (!prAdapter || !pvSetBuffer)
 		return WLAN_STATUS_INVALID_DATA;
 
+	kalMemSet(&rTdlsPs, 0, sizeof(struct CMD_TDLS_PS_T));
 	rTdlsPs.ucIsEnablePs = *(uint8_t *)pvSetBuffer - '0';
 	DBGLOG(OID, INFO, "enable tdls ps %d\n",
 	       rTdlsPs.ucIsEnablePs);
