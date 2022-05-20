@@ -205,10 +205,14 @@ static void mddpRdFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
 	if (prSysStat->md_stat[0] & prSettings->u4MdOnBit)
 		*pu4Val |= prSettings->u4MdOnBit;
 
+	if (prSysStat) {
+		DBGLOG(QM, INFO,
+			"md_stat: %u, Val: %u\n",
+			prSysStat->md_stat[0], *pu4Val);
+	}
+
 exit:
-	DBGLOG(QM, INFO,
-		"md_stat: %u, Val: %u\n",
-		prSysStat->md_stat[0], *pu4Val);
+	return;
 }
 
 static void mddpSetFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
@@ -236,11 +240,15 @@ static void mddpSetFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
 	} else
 		prSysStat->md_stat[0] |= u4Value;
 
+	if (prSysStat) {
+		DBGLOG(QM, INFO,
+			"u4Bit: %u, ap_stat[0]: %u, md_stat[0]: %u val: %u\n",
+			u4Bit, prSysStat->ap_stat[0],
+			prSysStat->md_stat[0], u4Value);
+	}
+
 exit:
-	DBGLOG(QM, INFO,
-		"u4Bit: %u, ap_stat[0]: %u, md_stat[0]: %u val: %u\n",
-		u4Bit, prSysStat->ap_stat[0],
-		prSysStat->md_stat[0], u4Value);
+	return;
 }
 
 static void mddpClrFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
@@ -268,11 +276,15 @@ static void mddpClrFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t u4Bit)
 	} else
 		prSysStat->md_stat[0] &= ~u4Value;
 
+	if (prSysStat) {
+		DBGLOG(QM, INFO,
+			"u4Bit: %u, ap_stat[%u]: %u, md_stat[%u]: %u\n",
+			u4Bit, u4Value, prSysStat->ap_stat[0],
+			u4Value, prSysStat->md_stat[0]);
+	}
+
 exit:
-	DBGLOG(QM, INFO,
-		"u4Bit: %u, ap_stat[%u]: %u, md_stat[%u]: %u\n",
-		u4Bit, u4Value, prSysStat->ap_stat[0],
-		u4Value, prSysStat->md_stat[0]);
+	return;
 }
 
 static int32_t mddpRegisterCb(void)
