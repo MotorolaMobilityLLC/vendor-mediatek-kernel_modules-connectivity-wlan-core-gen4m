@@ -8744,31 +8744,56 @@ int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 static int wlan_fb_notifier_callback(struct notifier_block
 				     *self, unsigned long event, void *data)
 {
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	int32_t *pData = (int32_t *)data;
+#else
 	struct fb_event *evdata = data;
+#endif
 	int32_t blank = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 				       wlan_fb_notifier_priv_data;
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	blank = *pData;
+#else
+	blank = *(int32_t *)evdata->data;
+#endif
+
 	/* If we aren't interested in this event, skip it immediately ... */
-	if ((event != FB_EVENT_BLANK) || !prGlueInfo)
-		return 0;
+	if ((event !=
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		MTK_DISP_EARLY_EVENT_BLANK
+#else
+		FB_EVENT_BLANK
+#endif
+		) || !prGlueInfo)
+		goto end;
+
+	DBGLOG(SW4, INFO, "%s: event[%ld], blank[%d]\n", __func__,
+			event, blank);
 
 	if (kalHaltTryLock())
-		return 0;
+		goto end;
 
 	if (kalIsHalted()) {
 		kalHaltUnlock();
-		return 0;
+		goto end;
 	}
 
-	blank = *(int32_t *)evdata->data;
-
 	switch (blank) {
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	case MTK_DISP_BLANK_UNBLANK:
+#else
 	case FB_BLANK_UNBLANK:
+#endif
 		kalPerMonEnable(prGlueInfo);
 		wlan_fb_power_down = FALSE;
 		break;
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	case MTK_DISP_BLANK_POWERDOWN:
+#else
 	case FB_BLANK_POWERDOWN:
+#endif
 		wlan_fb_power_down = TRUE;
 		if (!wlan_perf_monitor_force_enable)
 			kalPerMonDisable(prGlueInfo);
@@ -8778,6 +8803,8 @@ static int wlan_fb_notifier_callback(struct notifier_block
 	}
 
 	kalHaltUnlock();
+	DBGLOG(SW4, INFO, "%s: end\n", __func__);
+end:
 	return 0;
 }
 
@@ -8787,7 +8814,12 @@ int32_t kalFbNotifierReg(IN struct GLUE_INFO *prGlueInfo)
 
 	wlan_fb_notifier_priv_data = prGlueInfo;
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	i4Ret = mtk_disp_notifier_register("wlan_fb_notifier",
+			&wlan_fb_notifier);
+#else
 	i4Ret = fb_register_client(&wlan_fb_notifier);
+#endif
 	if (i4Ret)
 		DBGLOG(SW4, WARN, "Register wlan_fb_notifier failed:%d\n",
 		       i4Ret);
@@ -8798,7 +8830,11 @@ int32_t kalFbNotifierReg(IN struct GLUE_INFO *prGlueInfo)
 
 void kalFbNotifierUnReg(void)
 {
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	mtk_disp_notifier_unregister(&wlan_fb_notifier);
+#else
 	fb_unregister_client(&wlan_fb_notifier);
+#endif
 	wlan_fb_notifier_priv_data = NULL;
 }
 

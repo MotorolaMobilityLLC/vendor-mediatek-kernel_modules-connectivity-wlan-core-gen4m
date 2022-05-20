@@ -274,6 +274,9 @@
 #endif
 #include <linux/time.h>
 #include <linux/fb.h>
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#include "mtk_disp_notify.h"
+#endif
 
 #if CFG_SUPPORT_NAN
 #include "nan_base.h"
