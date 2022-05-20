@@ -280,7 +280,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_LED			= 0x53, /* LED */
 	UNI_CMD_ID_FAST_PATH		= 0x54,	/* Fast Path */
 	UNI_CMD_ID_NAN			= 0x56,	/* NAN */
-	UNI_CMD_ID_MLO			= 0x59	/* MLO */
+	UNI_CMD_ID_MLO			= 0x59,	/* MLO */
+	UNI_CMD_ID_ACL_POLICY		= 0x5A	/* ACL */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -3441,6 +3442,35 @@ struct UNI_CMD_ICS_SNIFFER {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+struct UNI_CMD_ACS_POLICY {
+	/*fixed field*/
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                            | ID  | structure
+	*   -------------------------------| ----| --------------------------
+	*   UNI_CMD_ACS_POLICY_TAG_SETTING | 0x0 | UNI_CMD_ACS_POLICY_SETTING
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_ACS_POLICY_TAG {
+	UNI_CMD_ACS_POLICY_TAG_SETTING = 0x0,
+	UNI_CMD_ACS_POLICY_TAG_MAX_NUM
+};
+
+struct UNI_CMD_ACS_POLICY_SETTING {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	/* tag specific part */
+	uint8_t ucBssIdx;
+	uint8_t ucPolicy;
+	uint8_t aucAddr[MAC_ADDR_LEN];
+
+} __KAL_ATTRIB_PACKED__;
+
 /** This structure is used for UNI_CMD_ID_EFUSE_CONTROL command (0x2D) to access EFUSE
  * @version Supported from ver:1.0.0.0
  *
@@ -5774,7 +5804,8 @@ uint32_t nicUniCmdFwLogUpdateRead(struct ADAPTER *ad,
 	uint32_t addr);
 uint32_t nicUniCmdSR(struct ADAPTER *ad,
 	struct WIFI_UNI_SETQUERY_INFO *info);
-
+uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
