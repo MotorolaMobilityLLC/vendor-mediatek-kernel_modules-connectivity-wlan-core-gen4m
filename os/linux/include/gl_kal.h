@@ -1767,6 +1767,10 @@ void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetSerTimeoutEvent(struct GLUE_INFO *pr);
 
+void kalRxTaskletSchedule(struct GLUE_INFO *pr);
+
+uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
+
 void kalSetIntEvent(struct GLUE_INFO *pr);
 
 void kalSetDrvIntEvent(struct GLUE_INFO *pr);

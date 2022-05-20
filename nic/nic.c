@@ -433,7 +433,6 @@ void nicDisableInterrupt(IN struct ADAPTER *prAdapter)
 void nicEnableInterrupt(IN struct ADAPTER *prAdapter)
 {
 	halEnableInterrupt(prAdapter);
-
 }				/* end of nicEnableInterrupt() */
 
 #if 0				/* CFG_SDIO_INTR_ENHANCE */

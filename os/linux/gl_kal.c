@@ -5699,6 +5699,56 @@ void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq);
 }
 
+void kalRxTaskletSchedule(struct GLUE_INFO *pr)
+{
+	uint32_t u4Cnt;
+
+	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
+		DBGLOG(INIT, ERROR,
+		       "Valid in RX-direct mode only\n");
+		return;
+	}
+
+	/* do nothing if wifi is not ready */
+	if (pr->fgRxTaskReady == FALSE)
+		return;
+
+	/* prevent multiple tasklet schedule in ISR */
+	u4Cnt = GLUE_INC_REF_CNT(pr->u4RxTaskScheduleCnt);
+	if (u4Cnt > 2) {
+		/* more than 2 times schedule, no need to add */
+		GLUE_DEC_REF_CNT(pr->u4RxTaskScheduleCnt);
+		return;
+	} else if (u4Cnt > 1) {
+		/* just skip it, rx tasklet will reschedule itself */
+		return;
+	}
+
+	tasklet_hi_schedule(&pr->rRxTask);
+}
+
+uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
+{
+	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
+		DBGLOG(INIT, ERROR,
+		       "Valid in RX-direct mode only\n");
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	if (GLUE_DEC_REF_CNT(pr->u4RxTaskScheduleCnt) > 0) {
+		/* reschedule RxTasklet due to pending INT */
+		tasklet_hi_schedule(&pr->rRxTask);
+	} else {
+		/* no more schedule, so enable interrupt */
+		if (fgIsInt) {
+			nicEnableInterrupt(pr->prAdapter);
+			return WLAN_STATUS_SUCCESS;
+		}
+	}
+
+	return WLAN_STATUS_PENDING;
+}
+
 void kalSetIntEvent(struct GLUE_INFO *pr)
 {
 	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
@@ -5714,7 +5764,7 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	/* when we got interrupt, we wake up service thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
-		tasklet_hi_schedule(&pr->rRxTask);
+		kalRxTaskletSchedule(pr);
 	else
 		wake_up_interruptible(&pr->waitq_hif);
 #else
@@ -5732,7 +5782,7 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 	/* when we got interrupt, we wake up servie thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
-		tasklet_hi_schedule(&pr->rRxTask);
+		kalRxTaskletSchedule(pr);
 	else
 		wake_up_interruptible(&pr->waitq_hif);
 #else

@@ -5591,6 +5591,11 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	prGlueInfo->rx_thread = kthread_run(rx_thread,
 			prGlueInfo->prDevHandler, "rx_thread");
 #endif
+	prGlueInfo->fgRxTaskReady = TRUE;
+
+	/* do schedule for the first time */
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		kalRxTaskletSchedule(prGlueInfo);
 
 	if (!bAtResetFlow)
 		g_u4HaltFlag = 0;
@@ -5914,6 +5919,7 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
+	prGlueInfo->fgRxTaskReady = FALSE;
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&prGlueInfo->waitq_hif);
 	wlanOffWaitWlanThreads(&prGlueInfo->rHifHaltComp,
@@ -6578,6 +6584,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		/* fallthrough */
 		case ROM_DL_FAIL:
 		case BUS_SET_IRQ_FAIL:
+			glTaskletUninit(prGlueInfo);
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);
 			/* prGlueInfo->prAdapter is released in
