@@ -108,7 +108,7 @@
 #endif
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128
-#define HIF_NUM_OF_QM_RX_PKT_NUM		4096
+#define HIF_NUM_OF_QM_RX_PKT_NUM		10240
 #define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 7)
 
 #elif defined(CONFIG_MTK_WIFI_HE160)
