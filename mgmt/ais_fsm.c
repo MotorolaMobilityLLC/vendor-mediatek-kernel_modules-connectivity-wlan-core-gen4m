@@ -5505,8 +5505,12 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	u_int8_t fgIsReasonPER = FALSE;
+#else
 	u_int8_t fgIsReasonPER =
 		(ucBcnTimeoutReason == BEACON_TIMEOUT_REASON_HIGH_PER);
+#endif
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
@@ -5514,19 +5518,26 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
+	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-		if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
-			struct STA_RECORD *prStaRec =
-			    prAisBssInfo->prStaRecOfAP;
+	if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+		struct STA_RECORD *prStaRec = prAisBssInfo->prStaRecOfAP;
 
-			if (prStaRec)
-				fgDoAbortIndication = TRUE;
-
-		} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
+		if (prStaRec)
 			fgDoAbortIndication = TRUE;
-		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+		if (mldIsMultiLinkFormed(prAdapter, prStaRec) &&
+			ucBcnTimeoutReason !=
+			UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD)
+			fgDoAbortIndication = FALSE;
+#endif
+	} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
+		fgDoAbortIndication = TRUE;
 	}
+
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
 		if (prAisFsmInfo->ucReasonOfDisconnect ==
