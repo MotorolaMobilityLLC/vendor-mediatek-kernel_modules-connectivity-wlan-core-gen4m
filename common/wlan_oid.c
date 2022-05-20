@@ -7890,6 +7890,8 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 	case UNI_CMD_PP_ALG_SET_TIMER:
 		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
 			, tag->u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
+			, tag->u1DbdcIdx);
 		DBGLOG(REQ, INFO, "\x1b[32m u4PpTimerIntv = %d\x1b[m\n"
 			, tag->u4PpTimerIntv);
 
@@ -7936,6 +7938,8 @@ wlanoidSetPpAlgCtrl(IN struct ADAPTER *prAdapter,
 			, tag->u1PpAction);
 		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
 			, tag->u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u1Reset = %d\x1b[m\n"
+			, tag->u1Reset);
 
 		break;
 
