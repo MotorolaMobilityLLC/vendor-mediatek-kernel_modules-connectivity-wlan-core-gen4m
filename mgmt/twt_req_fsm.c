@@ -747,6 +747,11 @@ void twtReqFsmRunEventResume(
 	DBGLOG(TWT_REQUESTER, LOUD, "EVENT-RESUME: TWT Requester FSM %d\n",
 		ucTWTFlowId);
 
+	DBGLOG(TWT_REQUESTER, WARN,
+		"TWT Info Frame 0x%x 0x%x\n",
+			rNextTWTInfo.u8NextTWT,
+			prTWTReqFsmResumeMsg->u8NextTWT);
+
 	cnmMemFree(prAdapter, prMsgHdr);
 
 	/* Validation of TWT Requester Teardown Event */
@@ -757,11 +762,6 @@ void twtReqFsmRunEventResume(
 		/* TODO: Notify TWT Planner */
 		return;
 	}
-
-	DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame 0x%x 0x%x\n",
-			rNextTWTInfo.u8NextTWT,
-			prTWTReqFsmResumeMsg->u8NextTWT);
 
 	twtReqFsmSteps(prAdapter, prStaRec, TWT_REQ_STATE_RESUMING,
 		ucTWTFlowId, (void *)&rNextTWTInfo);
