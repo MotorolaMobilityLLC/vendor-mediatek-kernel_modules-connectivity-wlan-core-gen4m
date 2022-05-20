@@ -827,20 +827,19 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		/* call aisFsmRunEventScanDoneTimeOut()
 		 * to reset scan fsm
 		 */
-		if (!fgHalted) {
+		if (!fgHalted)
 			aisFsmRunEventScanDoneTimeOut(prAdapter,
 				(unsigned long)ucBssIndex);
-			if (prAdapter->prGlueInfo->prScanRequest != NULL) {
-				GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
-							SPIN_LOCK_NET_DEV);
-				kalCfg80211ScanDone(prAdapter->prGlueInfo
+		if (prAdapter->prGlueInfo->prScanRequest != NULL) {
+			GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
+					SPIN_LOCK_NET_DEV);
+			kalCfg80211ScanDone(prAdapter->prGlueInfo
 					->prScanRequest, TRUE);
-				prAdapter->prGlueInfo->prScanRequest = NULL;
-				prAisFsmInfo->u2SeqNumOfScanReport =
-						AIS_SCN_REPORT_SEQ_NOT_SET;
-				GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
-							SPIN_LOCK_NET_DEV);
-			}
+			prAdapter->prGlueInfo->prScanRequest = NULL;
+			prAisFsmInfo->u2SeqNumOfScanReport =
+					AIS_SCN_REPORT_SEQ_NOT_SET;
+			GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
+					SPIN_LOCK_NET_DEV);
 		}
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	}
