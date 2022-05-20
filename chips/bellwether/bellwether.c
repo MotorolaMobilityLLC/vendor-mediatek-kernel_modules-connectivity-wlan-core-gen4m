@@ -575,6 +575,7 @@ static void bellwetherProcessTxInterrupt(
 		halWpdmaProcessCmdDmaDone(
 			prAdapter->prGlueInfo, TX_RING_CMD);
 
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_0_MASK) {
 		halWpdmaProcessDataDmaDone(
 			prAdapter->prGlueInfo, TX_RING_DATA0);
@@ -598,6 +599,7 @@ static void bellwetherProcessTxInterrupt(
 			prAdapter->prGlueInfo, TX_RING_DATA_ALTX);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 }
 
 static void bellwetherProcessRxInterrupt(
@@ -714,11 +716,7 @@ static void bellwetherReadIntStatus(struct ADAPTER *prAdapter,
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
 	}
 
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-	prHifInfo->u4IntStatus = u4WrValue;
-#else
 	prHifInfo->u4IntStatus = u4RegValue;
-#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,

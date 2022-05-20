@@ -962,6 +962,7 @@ exit:
 
 static int mtk_page_pool_remove(IN struct platform_device *pdev)
 {
+	kalReleaseRxPagePool(&pdev->dev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }

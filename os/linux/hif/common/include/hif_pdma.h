@@ -933,6 +933,7 @@ void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 int kalCreateRxPagePool(struct device *dev);
+void kalReleaseRxPagePool(struct device *dev);
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
 void kalDmaSyncForDevice(void *rAddr);
 #endif
