@@ -2075,8 +2075,9 @@ struct MSDU_INFO * assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
 	    CAP_INFO_FIELD_LEN +
 	    STATUS_CODE_FIELD_LEN +
 	    AID_FIELD_LEN +
-	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) + (ELEM_HDR_LEN +
-				       (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES));
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
+	    (ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)) +
+	    sizeof(uint64_t); /* reserved for cookie */
 
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;

@@ -1090,6 +1090,46 @@ p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	return eCNNState;
 }
 
+struct MSDU_INFO *p2pFuncProcessAuth(
+	IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec,
+	IN uint8_t ucBssIdx,
+	IN struct MSDU_INFO *prMgmtTxMsdu)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 0)
+	return prMgmtTxMsdu;
+#else
+	struct MSDU_INFO *prRetMsduInfo = NULL;
+
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
+		(int32_t) (prMgmtTxMsdu->u2FrameLength + /* incl. cookie */
+		MAX_LEN_OF_MLIE +
+		MAC_TX_RESERVED_FIELD));
+	if (!prRetMsduInfo) {
+		DBGLOG(P2P, WARN, "alloc fail\n");
+		return prMgmtTxMsdu;
+	}
+
+	kalMemCopy((uint8_t *)
+		((unsigned long) prRetMsduInfo->prPacket),
+		prMgmtTxMsdu->prPacket,
+		prMgmtTxMsdu->u2FrameLength);
+
+	prRetMsduInfo->u2FrameLength = prMgmtTxMsdu->u2FrameLength;
+
+	/* free after copy done */
+	cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+
+	/* update correct bssindex before generate ml ie */
+	prRetMsduInfo->ucBssIndex = ucBssIdx;
+
+	/* IEs from supplicant are sorted already, append ml ie */
+	mldGenerateMlIE(prAdapter, prRetMsduInfo);
+
+	return prRetMsduInfo;
+#endif
+}
+
 struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec,
@@ -1097,7 +1137,7 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	IN struct MSDU_INFO *prMgmtTxMsdu)
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSDU_INFO *prRetMsduInfo = prMgmtTxMsdu;
+	struct MSDU_INFO *prRetMsduInfo = NULL;
 	struct MSDU_INFO *prMsduInfo;
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame =
 		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
@@ -1106,82 +1146,97 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	uint8_t aucExtDHIE[1024];
 	uint16_t u2ExtDHIELen;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMgmtTxMsdu != NULL));
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,	ucBssIdx);
+	if (!prP2pBssInfo ||
+		(prP2pBssInfo->u4RsnSelectedAKMSuite !=
+		RSN_AKM_SUITE_OWE)) {
+		DBGLOG(P2P, TRACE, "[OWE] Incorrect akm\n");
+		return prMgmtTxMsdu;
+	}
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-			ucBssIdx);
-		if (!prP2pBssInfo ||
-			(prP2pBssInfo->u4RsnSelectedAKMSuite !=
-			RSN_AKM_SUITE_OWE)) {
-			DBGLOG(P2P, TRACE, "[OWE] Incorrect akm\n");
-			return prRetMsduInfo;
+	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
+		((unsigned long) prMgmtTxMsdu->prPacket +
+		MAC_TX_RESERVED_FIELD);
+
+	u2RspHdrLen =
+		(MAC_TX_RESERVED_FIELD +
+	    WLAN_MAC_MGMT_HEADER_LEN +
+	    CAP_INFO_FIELD_LEN +
+	    STATUS_CODE_FIELD_LEN +
+	    AID_FIELD_LEN);
+
+	pucIEBuf = prAssocRspFrame->aucInfoElem;
+	u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
+
+	u2ExtDHIELen = 0;
+
+	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
+		if ((IE_ID(pucIEBuf) == ELEM_ID_RESERVED)
+			&& (IE_ID_EXT(pucIEBuf) ==
+			ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM)) {
+			kalMemCopy(aucExtDHIE,
+				pucIEBuf, IE_SIZE(pucIEBuf));
+			u2ExtDHIELen = IE_SIZE(pucIEBuf);
+			break;
 		}
 
-		prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
-			((unsigned long) prMgmtTxMsdu->prPacket +
-			MAC_TX_RESERVED_FIELD);
+	}
 
-		u2RspHdrLen =
-			(MAC_TX_RESERVED_FIELD +
-		    WLAN_MAC_MGMT_HEADER_LEN +
-		    CAP_INFO_FIELD_LEN +
-		    STATUS_CODE_FIELD_LEN +
-		    AID_FIELD_LEN);
+	if (!u2ExtDHIELen) {
+		DBGLOG(P2P, WARN, "[OWE] No DH IE\n");
+		return prMgmtTxMsdu;
+	}
 
-		pucIEBuf = prAssocRspFrame->aucInfoElem;
-		u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
+	prMsduInfo = assocComposeReAssocRespFrame(
+		prAdapter, prStaRec);
+	if (!prMsduInfo) {
+		DBGLOG(P2P, WARN, "[OWE] Compose fail\n");
+		return prMgmtTxMsdu;
+	}
 
-		u2ExtDHIELen = 0;
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
+			(int32_t) (prMsduInfo->u2FrameLength +
+			u2ExtDHIELen +
+			MAC_TX_RESERVED_FIELD));
+	if (!prRetMsduInfo) {
+		DBGLOG(P2P, WARN, "[OWE] alloc fail\n");
+		cnmMgtPktFree(prAdapter, prMsduInfo);
+		return prMgmtTxMsdu;
+	}
 
-		IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
-			if ((IE_ID(pucIEBuf) == ELEM_ID_RESERVED)
-				&& (IE_ID_EXT(pucIEBuf) ==
-				ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM)) {
-				kalMemCopy(aucExtDHIE,
-					pucIEBuf, IE_SIZE(pucIEBuf));
-				u2ExtDHIELen = IE_SIZE(pucIEBuf);
-				break;
-			}
+	kalMemCopy((uint8_t *)
+		((unsigned long) prRetMsduInfo->prPacket),
+		prMsduInfo->prPacket,
+		prMsduInfo->u2FrameLength);
 
-		}
+	prRetMsduInfo->u2FrameLength = prMsduInfo->u2FrameLength;
 
-		if (!u2ExtDHIELen) {
-			DBGLOG(P2P, WARN, "[OWE] No DH IE\n");
-			return prRetMsduInfo;
-		}
-
-		prMsduInfo = assocComposeReAssocRespFrame(
-			prAdapter, prStaRec);
-		if (!prMsduInfo) {
-			DBGLOG(P2P, WARN, "[OWE] Compose fail\n");
-			return prRetMsduInfo;
-		}
-
-		kalMemCopy((uint8_t *)
-			((unsigned long) prRetMsduInfo->prPacket),
-			prMsduInfo->prPacket,
-			prMsduInfo->u2FrameLength);
-
-		prRetMsduInfo->u2FrameLength =
-			prMsduInfo->u2FrameLength;
-
-		kalMemCopy((uint8_t *)
-			((unsigned long) prRetMsduInfo->prPacket +
-			(unsigned long) prRetMsduInfo->u2FrameLength),
-			aucExtDHIE,
-			u2ExtDHIELen);
-
-		if (aucDebugModule[DBG_RLM_IDX] & DBG_CLASS_TRACE)
-			dumpMemory8((uint8_t *) aucExtDHIE,
-			(uint32_t) u2ExtDHIELen);
-
-		prRetMsduInfo->u2FrameLength +=
-			(uint16_t) u2ExtDHIELen;
-	} while (FALSE);
-
+	/* free after copy done */
 	cnmMgtPktFree(prAdapter, prMsduInfo);
 
+	kalMemCopy((uint8_t *)
+		((unsigned long) prRetMsduInfo->prPacket +
+		(unsigned long) prRetMsduInfo->u2FrameLength),
+		aucExtDHIE,
+		u2ExtDHIELen);
+
+	prRetMsduInfo->u2FrameLength += (uint16_t) u2ExtDHIELen;
+
+	DBGLOG_MEM8(P2P, TRACE, (uint8_t *) aucExtDHIE,
+		(uint32_t) u2ExtDHIELen);
+
+	/* free after copy done, prMgmtTxMsdu is replaced by prRetMsduInfo */
+	cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
+
+	sortMgmtFrameIE(prAdapter, prRetMsduInfo);
+
+	/* update correct bssindex before generate ml ie */
+	prRetMsduInfo->ucBssIndex = ucBssIdx;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldGenerateAssocIE(prAdapter, prStaRec, prRetMsduInfo,
+		assocComposeReAssocRespFrame);
+#endif
 	return prRetMsduInfo;
 }
 
@@ -1322,14 +1377,12 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			}
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
-			prMgmtTxMsdu->ucStaRecIndex =
-				prStaRec->ucIndex;
+			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
+			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			DBGLOG(P2P, TRACE,
 				"[OWE] Dump assoc resp from supplicant.\n");
-			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
-			}
 			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
 				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			pu8GlCookie =
@@ -1339,13 +1392,37 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
 			*pu8GlCookie = u8GlCookie;
-			DBGLOG(P2P, TRACE,
-				"[OWE] Dump assoc resp to FW.\n");
-			if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-				dumpMemory8((uint8_t *) prMgmtTxMsdu->prPacket,
+			DBGLOG(P2P, TRACE, "[OWE] Dump assoc resp to FW.\n");
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+			break;
+		case MAC_FRAME_AUTH:
+			DBGLOG(P2P, TRACE, "TX auth Frame\n");
+			if (!prStaRec) {
+				DBGLOG(AAA, WARN, "get sta fail\n");
+				break;
 			}
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				ucBssIndex);
+			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
+			DBGLOG(P2P, TRACE,
+				"Dump auth from supplicant.\n");
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
+
+			prMgmtTxMsdu = p2pFuncProcessAuth(prAdapter,
+				prStaRec, ucBssIndex, prMgmtTxMsdu);
+			pu8GlCookie =
+				(uint64_t *) ((unsigned long)
+					prMgmtTxMsdu->prPacket +
+					(unsigned long)
+					prMgmtTxMsdu->u2FrameLength +
+					MAC_TX_RESERVED_FIELD);
+			*pu8GlCookie = u8GlCookie;
+			DBGLOG(P2P, TRACE, "Dump auth to FW.\n");
+			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
+					(uint32_t) prMgmtTxMsdu->u2FrameLength);
 			break;
 		default:
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
@@ -5519,7 +5596,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	    CAP_INFO_FIELD_LEN +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
-	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET);
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET) +
+	    sizeof(uint64_t); /* reserved for cookie */
 
 	u2EstimatedExtraIELen = 0;
 
