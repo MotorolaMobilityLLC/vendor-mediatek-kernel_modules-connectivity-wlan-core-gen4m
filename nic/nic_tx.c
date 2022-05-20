@@ -210,9 +210,8 @@ static uint8_t *apucTxResultStr[TX_RESULT_NUM] = {
 	(uint8_t *) DISP_STRING("INACT_BSS")		/* inactive BSS */
 };
 
-static uint8_t *apucBandwidt[4] = {
-	(uint8_t *)"20", (uint8_t *)"40",
-	(uint8_t *)"80", (uint8_t *)"160/80+80"
+static const char * const apucBandwidth[] = {
+	"20", "40", "80", "160/80+80", "320"
 };
 
 /*******************************************************************************
@@ -3799,7 +3798,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
-	char *prBw = "INVALID";
+	const char *prBw = "INVALID";
 	char *prTxResult = "UNDEFINED";
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
@@ -3862,12 +3861,11 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			if (ucStbc)
 				ucNss /= 2;
 
-			if (prTxDone->ucBandwidth >=
-				sizeof(apucBandwidt) / sizeof(uint8_t *))
+			if (prTxDone->ucBandwidth >= ARRAY_SIZE(apucBandwidth))
 				DBGLOG(NIC, WARN, "Invalid bandwidth: %u",
 					prTxDone->ucBandwidth);
 			else
-				prBw = apucBandwidt[prTxDone->ucBandwidth];
+				prBw = apucBandwidth[prTxDone->ucBandwidth];
 
 			if (prTxDone->ucStatus != 0)
 				DBGLOG_LIMITED(NIC, INFO,
@@ -4760,8 +4758,8 @@ void nicTxSetPktFixedRateOption(
 			__func__);
 }
 
-void nicTxSetPktLowestFixedRate(IN struct ADAPTER
-				*prAdapter, IN struct MSDU_INFO *prMsduInfo)
+void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
+				IN struct MSDU_INFO *prMsduInfo)
 {
 	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(
 					     prAdapter, prMsduInfo->ucBssIndex);
