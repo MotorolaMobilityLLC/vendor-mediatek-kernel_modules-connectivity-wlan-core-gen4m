@@ -1637,6 +1637,13 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 			ucChnlLowerBound = 149;
 			ucCenterChnl = 155;
 		}
+
+		if (ucChnlLowerBound == 0) {
+			DBGLOG(NAN, ERROR, "Illegal channel number:%d\n",
+				ucPrimaryChnl);
+			return WLAN_STATUS_FAILURE;
+		}
+
 		prChnlEntry->ucPrimaryChnlBitmap =
 			(1 << ((ucPrimaryChnl - ucChnlLowerBound) / 4));
 		nanRegGetChannelBitmap(ucOperatingClass, ucCenterChnl,
@@ -1658,6 +1665,13 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 			ucChnlLowerBound = 100;
 			ucCenterChnl = 114;
 		}
+
+		if (ucChnlLowerBound == 0) {
+			DBGLOG(NAN, ERROR, "Illegal channel number:%d\n",
+				ucPrimaryChnl);
+			return WLAN_STATUS_FAILURE;
+		}
+
 		prChnlEntry->ucPrimaryChnlBitmap =
 			(1 << ((ucPrimaryChnl - ucChnlLowerBound) / 4));
 		prChnlEntry->u2AuxChannelBitmap = 0;
