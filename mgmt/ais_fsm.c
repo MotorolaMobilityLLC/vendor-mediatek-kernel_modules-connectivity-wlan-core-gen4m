@@ -2126,7 +2126,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	struct AIS_REQ_HDR *prAisReq;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint16_t u2ScanIELen;
-	uint16_t u2DeauthReason;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	uint8_t i;
 	enum ENUM_AIS_STATE eNewState;
@@ -2517,21 +2516,12 @@ send_msg:
 			break;
 
 		case AIS_STATE_DISCONNECTING:
-			/* Retrieve the reason for disconnecting */
-			if (prAisBssInfo->u2DeauthReason
-					!= REASON_CODE_RESERVED)
-				u2DeauthReason = prAisBssInfo->u2DeauthReason;
-			else
-				u2DeauthReason = REASON_CODE_DEAUTH_LEAVING_BSS;
-
-			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
-
 			/* send for deauth frame for disconnection */
 			authSendDeauthFrame(prAdapter,
 					    prAisBssInfo,
 					    prAisBssInfo->prStaRecOfAP,
 					    (struct SW_RFB *)NULL,
-					    u2DeauthReason,
+					    REASON_CODE_DEAUTH_LEAVING_BSS,
 					    aisDeauthXmitComplete);
 			/* If it is scanning or BSS absent, HW may go away from
 			 * serving channel, which may cause driver be not able
@@ -5566,6 +5556,9 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 			/* For reassociation */
 			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
 		} else {
+			prAisBssInfo->u2DeauthReason =
+				REASON_CODE_BEACON_TIMEOUT * 100 +
+				ucBcnTimeoutReason;
 			DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 		}
 
