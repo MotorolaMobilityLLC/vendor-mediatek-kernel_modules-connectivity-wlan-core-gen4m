@@ -5831,6 +5831,9 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
+#if CFG_SUPPORT_THERMAL_QUERY
+	register_thermal_cbs(prGlueInfo->prAdapter);
+#endif
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
 	halSetSuspendFlagToFw(prAdapter, FALSE);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -6715,6 +6718,10 @@ static void wlanRemove(void)
 		wlanFreeNetDev();
 		return;
 	}
+	prAdapter = prGlueInfo->prAdapter;
+#if CFG_SUPPORT_THERMAL_QUERY
+	unregister_thermal_cbs(prAdapter);
+#endif
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;
@@ -6739,7 +6746,6 @@ static void wlanRemove(void)
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	sysRemoveMonDbgFs();
 #endif
-	prAdapter = prGlueInfo->prAdapter;
 	kalPerMonDestroy(prGlueInfo);
 
 	/* Unregister notifier callback */

@@ -3189,6 +3189,21 @@ enum UNI_CMD_THERMAL_TAG {
 	UNI_CMD_THERMAL_TAG_NUM
 };
 
+enum THERMAL_SENSOR_INFO_ACTION {
+	THERMAL_SENSOR_INFO_TEMPERATURE = 0,
+	THERMAL_SENSOR_INFO_ADC,
+	THERMAL_SENSOR_INFO_NUM
+};
+
+struct UNI_CMD_THERMAL_SENSOR_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucThermalCtrlFormatId;
+	uint8_t ucActionIdx;
+	uint8_t ucBandIdx;
+	uint8_t ucReserved;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_RSSI_MONITOR {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -4999,6 +5014,28 @@ struct UNI_EVENT_THERMAL {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_THERMAL_RSP {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_THERMAL_SENSOR_INFO {
+	uint8_t ucCategory;
+	uint8_t ucReserved[3];
+	uint32_t u4SensorResult;
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_THERMAL_EVENT_CATEGORY {
+	UNI_THERMAL_EVENT_TEMPERATURE_INFO = 0x0,
+	UNI_THERMAL_EVENT_THERMAL_SENSOR_BASIC_INFO = 0x1,
+	UNI_THERMAL_EVENT_THERMAL_SENSOR_TASK_RESPONSE = 0x2,
+	UNI_THERMAL_EVENT_THERMAL_PROTECT_MECH_INFO = 0x3,
+	UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_INFO = 0x4,
+	UNI_THERMAL_EVENT_NUM
+};
+
 struct UNI_EVENT_CHIP_CAPABILITY
 {
 	/* fixed field */
@@ -5865,6 +5902,9 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 	struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
 	struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdQueryThermalTemperature(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
 
 /*******************************************************************************
  *                   Event
@@ -5938,6 +5978,8 @@ void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
 	IN struct CMD_INFO *cmd, IN uint8_t *event);
 void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventThermalTemperature(IN struct ADAPTER *ad,
+	IN struct CMD_INFO *cmd, IN uint8_t *event);
 
 /*******************************************************************************
  *                   Unsolicited Event

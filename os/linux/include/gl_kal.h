@@ -2212,5 +2212,10 @@ void kalConfigChksumOffload(
 
 int32_t kalPlatOpsInit(void);
 
+#if CFG_SUPPORT_THERMAL_QUERY
+int register_thermal_cbs(struct ADAPTER *ad);
+void unregister_thermal_cbs(struct ADAPTER *ad);
+#endif
+
 #endif /* _GL_KAL_H */
 

@@ -4117,6 +4117,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_SER                             "GET_SER"
 
 #define CMD_GET_EMI			"GET_EMI"
+#define CMD_QUERY_THERMAL_TEMP		"QUERY_THERMAL_TEMP"
 
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -15712,6 +15713,56 @@ exit:
 	return i4BytesWritten;
 }
 
+static int priv_driver_query_thermal_temp(struct net_device *prNetDev,
+	char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct THERMAL_DATA *data = NULL;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t size = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t band = 0;
+
+	if (!prNetDev)
+		goto exit;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto exit;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	size = sizeof(struct THERMAL_DATA) * ENUM_BAND_NUM;
+	data = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!data)
+		goto exit;
+	kalMemZero(data, size);
+
+	status = wlanQueryThermalTemp(prGlueInfo, data);
+	if (status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	for (band = 0; band < ENUM_BAND_NUM; band++, data++) {
+		if (band == 0) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\n");
+		}
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"[%d] temp=%d\n",
+			data->ucBandIdx,
+			data->u4Temperature);
+	}
+
+	DBGLOG(REQ, INFO, "%s\n", pcCommand);
+
+exit:
+	if (data)
+		kalMemFree(data, VIR_MEM_TYPE, size);
+
+	return i4BytesWritten;
+}
 
 #if CFG_SUPPORT_BATCH_SCAN
 #define CMD_BATCH_SET           "WLS_BATCHING SET"
@@ -19419,6 +19470,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 	{CMD_GET_SER, priv_driver_get_ser_info},
 	{CMD_GET_EMI, priv_driver_get_emi_info},
+	{CMD_QUERY_THERMAL_TEMP, priv_driver_query_thermal_temp},
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
