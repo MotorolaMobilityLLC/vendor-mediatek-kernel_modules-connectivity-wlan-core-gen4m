@@ -6087,8 +6087,6 @@ void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniCmdEventQuerySRInfo(struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
@@ -6188,6 +6186,8 @@ void nicUniEventHifCtrl(struct ADAPTER *ad,
 void nicUniEventNan(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventBF(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventSR(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventWow(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
