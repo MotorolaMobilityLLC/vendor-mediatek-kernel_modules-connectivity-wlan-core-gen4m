@@ -4218,7 +4218,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
 #endif
 
-#if CFG_SUPPORT_802_11BE
+#if CFG_SUPPORT_802_PP_DSCB
 void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 #endif

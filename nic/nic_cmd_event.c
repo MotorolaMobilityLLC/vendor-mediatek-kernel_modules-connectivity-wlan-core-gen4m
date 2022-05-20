@@ -5556,7 +5556,7 @@ void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-#if CFG_SUPPORT_802_11BE
+#if CFG_SUPPORT_802_PP_DSCB
 void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent)
 {

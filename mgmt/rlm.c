@@ -2621,7 +2621,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t fgBtwtIeFound = FALSE;
 #endif
 
-#if (CFG_SUPPORT_802_11BE == 1)
+/* TODO: Fix PP eht ie parsing for performance degrade
+ * It is commom part but add "CFG_SUPPORT_802_PP_DSCB" option only for debug
+ */
+#if ((CFG_SUPPORT_802_11BE == 1) && (CFG_SUPPORT_802_PP_DSCB == 1))
+
 	uint32_t u4EhtOffset;
 	struct EHT_OP_INFO *prEhtOperInfo = NULL;
 	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
@@ -3336,6 +3340,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prStaRec->ucVhtOpChannelWidth =
 					prBssInfo->ucVhtChannelWidth;
 
+#if CFG_SUPPORT_802_PP_DSCB
 				u4EhtOffset = OFFSET_OF(
 					struct IE_EHT_OP,
 					aucVarInfo[0]);
@@ -3372,6 +3377,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					}
 				}
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+#endif
 			}
 #endif
 			break;
