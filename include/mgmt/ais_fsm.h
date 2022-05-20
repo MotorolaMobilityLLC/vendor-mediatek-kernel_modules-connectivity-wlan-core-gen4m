@@ -159,8 +159,13 @@ enum ENUM_RECONNECT_LEVEL_T {
 struct MSG_AIS_ABORT {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucReasonOfDisconnect;
-	u_int8_t fgDelayIndication;
+	uint8_t fgDelayIndication;
 	uint8_t ucBssIndex;
+	/* Reason that been Deauth/Disassoc, valid when ucReasonOfDisconnect is
+	 * DISCONNECT_REASON_CODE_DEAUTHENTICATED or
+	 * DISCONNECT_REASON_CODE_DISASSOCIATED
+	 */
+	uint16_t u2DeauthReason;
 };
 
 struct MSG_AIS_IBSS_PEER_FOUND {
