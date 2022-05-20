@@ -83,6 +83,10 @@
 #include "twt.h"
 #endif
 
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -264,7 +268,7 @@ static int procCSIDataOpen(struct inode *n, struct file *f)
 	struct CSI_INFO_T *prCSIInfo = NULL;
 
 	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
-		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+		prCSIInfo = glCsiGetCSIInfo();
 		prCSIInfo->bIncomplete = FALSE;
 	}
 
@@ -276,200 +280,11 @@ static int procCSIDataRelease(struct inode *n, struct file *f)
 	struct CSI_INFO_T *prCSIInfo = NULL;
 
 	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
-		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+		prCSIInfo = glCsiGetCSIInfo();
 		prCSIInfo->bIncomplete = FALSE;
 	}
 
 	return 0;
-}
-
-static ssize_t procCSIDataPrepare(
-	uint8_t *buf,
-	struct CSI_INFO_T *prCSIInfo,
-	struct CSI_DATA_T *prCSIData)
-{
-	int32_t i4Pos = 0;
-	uint8_t *tmpBuf = buf;
-	uint16_t u2DataSize = prCSIData->u2DataCount * sizeof(int16_t);
-	uint16_t u2Rsvd1Size = prCSIData->ucRsvd1Cnt * sizeof(int32_t);
-	enum ENUM_CSI_MODULATION_BW_TYPE_T eModulationType = CSI_TYPE_CCK_BW20;
-
-	if (prCSIData->ucBw == 0)
-		eModulationType = prCSIData->bIsCck ?
-			CSI_TYPE_CCK_BW20 : CSI_TYPE_OFDM_BW20;
-	else if (prCSIData->ucBw == 1)
-		eModulationType = CSI_TYPE_OFDM_BW40;
-	else if (prCSIData->ucBw == 2)
-		eModulationType = CSI_TYPE_OFDM_BW80;
-
-	put_unaligned(0xAC, (tmpBuf + i4Pos));
-	i4Pos++;
-
-	/* Just bypass total length feild here and update it in the end */
-	i4Pos += 2;
-
-	put_unaligned(CSI_DATA_VER, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->ucFwVer, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_TYPE, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(eModulationType, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_TS, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(8, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->u8TimeStamp, (uint64_t *) (tmpBuf + i4Pos));
-	i4Pos += 8;
-
-	put_unaligned(CSI_DATA_RSSI, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->cRssi, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_SNR, (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->ucSNR, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_DBW, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->ucDataBw, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_CH_IDX, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(1, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->ucPrimaryChIdx, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-
-	put_unaligned(CSI_DATA_TA, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(MAC_ADDR_LEN, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	kalMemCopy((tmpBuf + i4Pos), prCSIData->aucTA, MAC_ADDR_LEN);
-	i4Pos += MAC_ADDR_LEN;
-
-	put_unaligned(CSI_DATA_EXTRA_INFO, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(4, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->u4ExtraInfo, (uint32_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint32_t);
-
-	put_unaligned(CSI_DATA_I, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(u2DataSize, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	kalMemCopy((tmpBuf + i4Pos), prCSIData->ac2IData, u2DataSize);
-	i4Pos += u2DataSize;
-
-	put_unaligned(CSI_DATA_Q, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(u2DataSize, (uint16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	kalMemCopy((tmpBuf + i4Pos), prCSIData->ac2QData, u2DataSize);
-	i4Pos += u2DataSize;
-
-	if (prCSIInfo->ucValue1[CSI_CONFIG_INFO] & CSI_INFO_RSVD1) {
-		put_unaligned(CSI_DATA_RSVD1, (uint8_t *) (tmpBuf + i4Pos));
-		i4Pos++;
-		put_unaligned(u2Rsvd1Size, (uint16_t *) (tmpBuf + i4Pos));
-		i4Pos += 2;
-		kalMemCopy((tmpBuf + i4Pos),
-			prCSIData->ai4Rsvd1,
-			u2Rsvd1Size);
-		i4Pos += u2Rsvd1Size;
-
-		put_unaligned(CSI_DATA_RSVD2, (uint8_t *) (tmpBuf + i4Pos));
-		i4Pos++;
-		put_unaligned(u2Rsvd1Size, (uint16_t *) (tmpBuf + i4Pos));
-		i4Pos += 2;
-		kalMemCopy((tmpBuf + i4Pos),
-			prCSIData->au4Rsvd2,
-			u2Rsvd1Size);
-		i4Pos += u2Rsvd1Size;
-
-		put_unaligned(CSI_DATA_RSVD3, (uint8_t *) (tmpBuf + i4Pos));
-		i4Pos++;
-		put_unaligned(sizeof(int32_t), (int16_t *) (tmpBuf + i4Pos));
-		i4Pos += 2;
-		put_unaligned(prCSIData->i4Rsvd3,
-			(int32_t *) (tmpBuf + i4Pos));
-		i4Pos += sizeof(int32_t);
-	}
-
-	if (prCSIInfo->ucValue1[CSI_CONFIG_INFO] & CSI_INFO_RSVD2) {
-		put_unaligned(CSI_DATA_RSVD4, (uint8_t *) (tmpBuf + i4Pos));
-		i4Pos++;
-		put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
-		i4Pos += 2;
-		put_unaligned(prCSIData->ucRsvd4, (uint8_t *) (tmpBuf + i4Pos));
-		i4Pos += sizeof(uint8_t);
-	}
-
-	put_unaligned(CSI_DATA_TX_IDX, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(((uint8_t)GET_CSI_TX_IDX(prCSIData->u4TRxIdx)),
-		(uint8_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint8_t);
-
-	put_unaligned(CSI_DATA_RX_IDX, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(((uint8_t)GET_CSI_RX_IDX(prCSIData->u4TRxIdx)),
-		(uint8_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint8_t);
-
-	put_unaligned(CSI_DATA_FRAME_MODE, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->ucRxMode,
-		(uint8_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint8_t);
-
-	/* add antenna pattern*/
-	put_unaligned(CSI_DATA_H_IDX, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->Antenna_pattern,
-			(uint32_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint32_t);
-
-	put_unaligned(CSI_DATA_RX_RATE, (uint8_t *) (tmpBuf + i4Pos));
-	i4Pos++;
-	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
-	i4Pos += 2;
-	put_unaligned(prCSIData->u2RxRate,
-		(uint8_t *) (tmpBuf + i4Pos));
-	i4Pos += sizeof(uint8_t);
-
-	/*
-	 * The lengths of magic number (1 byte) and total length (2 bytes)
-	 * fields should not be counted in the total length value
-	 */
-	put_unaligned(i4Pos - 3, (uint16_t *) (tmpBuf + 1));
-
-	return i4Pos;
 }
 
 struct CSI_DATA_T rTmpCSIData;
@@ -483,13 +298,13 @@ static ssize_t procCSIDataRead(struct file *filp,
 	struct CSI_INFO_T *prCSIInfo = NULL;
 
 	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter)
-		prCSIInfo = &(g_prGlueInfo_proc->prAdapter->rCSIInfo);
+		prCSIInfo = glCsiGetCSIInfo();
 	else
 		return 0;
 
 	if (prCSIInfo->bIncomplete == FALSE) {
 
-		wait_event_interruptible(prCSIInfo->waitq,
+		wait_event_interruptible(g_prGlueInfo_proc->waitq_csi,
 			prCSIInfo->u4CSIBufferUsed != 0);
 
 		/*
@@ -498,7 +313,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 		 */
 		if (wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
 			&rTmpCSIData))
-			i4Pos = procCSIDataPrepare(temp,
+			i4Pos = wlanCSIDataPrepare(temp,
 				prCSIInfo, &rTmpCSIData);
 
 		/* The frist run of reading the CSI data */

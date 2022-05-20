@@ -76,6 +76,9 @@
 #include "cmd_buf.h"
 #include "nan_txm.h"
 #endif
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
 
 /******************************************************************************
  *                              C O N S T A N T S
