@@ -2631,6 +2631,9 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+	if (prTxRing->fgStopRecycleDmad)
+		return;
+
 	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
 		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
 		spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
@@ -2642,9 +2645,6 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
 	} else
 		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
-
-	if (prTxRing->fgStopRecycleDmad)
-		return;
 
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
