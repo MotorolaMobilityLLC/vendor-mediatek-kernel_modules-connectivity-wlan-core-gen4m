@@ -547,13 +547,8 @@ struct CHIP_DBG_OPS {
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	int (*get_rx_rate_info)(
-		struct ADAPTER *prAdapter,
-		uint8_t ucBssIdx,
-		uint32_t *pu4Rate,
-		uint32_t *pu4Nss,
-		uint32_t *pu4RxMode,
-		uint32_t *pu4FrMode,
-		uint32_t *pu4Sgi);
+		IN const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo);
 #endif
 	int32_t (*get_tx_info_from_txv)(
 		IN char *pcCommand, IN int i4TotalLen,
@@ -915,13 +910,8 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int connac_get_rx_rate_info(struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx,
-	uint32_t *pu4Rate,
-	uint32_t *pu4Nss,
-	uint32_t *pu4RxMode,
-	uint32_t *pu4FrMode,
-	uint32_t *pu4Sgi);
+int connac_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo);
 #endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
@@ -1007,13 +997,8 @@ void connac2x_DumpCrRange(
 	uint32_t cr_start, uint32_t word_count, char *str);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac2x_get_rx_rate_info(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx,
-	uint32_t *pu4Rate,
-	uint32_t *pu4Nss,
-	uint32_t *pu4RxMode,
-	uint32_t *pu4FrMode,
-	uint32_t *pu4Sgi);
+	const uint32_t *prRxV,
+	struct RxRateInfo *prRxRateInfo);
 #endif
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
@@ -1110,13 +1095,8 @@ void connac3x_DumpCrRange(
 	uint32_t cr_start, uint32_t word_count, char *str);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac3x_get_rx_rate_info(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx,
-	uint32_t *pu4Rate,
-	uint32_t *pu4Nss,
-	uint32_t *pu4RxMode,
-	uint32_t *pu4FrMode,
-	uint32_t *pu4Sgi);
+	const uint32_t *prRxV,
+	struct RxRateInfo *prRxRateInfo);
 #endif
 int32_t connac3x_get_tx_info_from_txv(
 	IN char *pcCommand, IN int i4TotalLen,

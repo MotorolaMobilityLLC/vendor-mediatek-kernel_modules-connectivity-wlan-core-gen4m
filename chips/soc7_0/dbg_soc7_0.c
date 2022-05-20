@@ -843,55 +843,33 @@ void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 }
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
-		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
-		OUT uint32_t *pu4Sgi)
+int soc7_0_get_rx_rate_info(IN const uint32_t *prRxV,
+		OUT struct RxRateInfo *prRxRateInfo)
 {
-	struct STA_RECORD *prStaRec;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
-	uint32_t u4RxV0 = 0;
-	uint8_t ucWlanIdx, ucStaIdx;
 
-	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
-		(!pu4Sgi))
+	if (!prRxRateInfo || !prRxV)
 		return -1;
 
-	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIdx);
-	if (prStaRec) {
-		ucWlanIdx = prStaRec->ucWlanIndex;
-	} else {
-		DBGLOG(SW4, ERROR, "prStaRecOfAP is null\n");
-		return -1;
-	}
-
-	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
-		WLAN_STATUS_SUCCESS) {
-		u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
-		if (u4RxV0 == 0) {
-			DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
-			return -1;
-		}
-	} else {
-		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+	if (prRxV[0] == 0) {
+		DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
 		return -1;
 	}
 
 	/* P-RXV1 */
-	rate = (u4RxV0 & SOC7_0_RX_VT_RX_RATE_MASK)
+	rate = (prRxV[0] & SOC7_0_RX_VT_RX_RATE_MASK)
 				>> SOC7_0_RX_VT_RX_RATE_OFFSET;
-	nsts = (u4RxV0 & SOC7_0_RX_VT_NSTS_MASK)
+	nsts = (prRxV[0] & SOC7_0_RX_VT_NSTS_MASK)
 				>> SOC7_0_RX_VT_NSTS_OFFSET;
 	/* C-B-0 */
-	rxmode = (u4RxV0 & SOC7_0_RX_VT_TXMODE_MASK)
+	rxmode = (prRxV[0] & SOC7_0_RX_VT_TXMODE_MASK)
 				>> SOC7_0_RX_VT_TXMODE_OFFSET;
-	frmode = (u4RxV0 & SOC7_0_RX_VT_FR_MODE_MASK)
+	frmode = (prRxV[0] & SOC7_0_RX_VT_FR_MODE_MASK)
 				>> SOC7_0_RX_VT_FR_MODE_OFFSET;
-	sgi = (u4RxV0 & SOC7_0_RX_VT_GI_MASK)
+	sgi = (prRxV[0] & SOC7_0_RX_VT_GI_MASK)
 				>> SOC7_0_RX_VT_GI_OFFSET;
-	stbc = (u4RxV0 & SOC7_0_RX_VT_STBC_MASK)
+	stbc = (prRxV[0] & SOC7_0_RX_VT_STBC_MASK)
 				>> SOC7_0_RX_VT_STBC_OFFSET;
 
 	nsts += 1;
@@ -905,15 +883,15 @@ int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		return -1;
 	}
 
-	*pu4Rate = rate;
-	*pu4Nss = nss;
-	*pu4RxMode = rxmode;
-	*pu4FrMode = frmode;
-	*pu4Sgi = sgi;
+	prRxRateInfo->u4Rate = rate;
+	prRxRateInfo->u4Nss = nss;
+	prRxRateInfo->u4Mode = rxmode;
+	prRxRateInfo->u4Bw = frmode;
+	prRxRateInfo->u4Gi = sgi;
 
 	DBGLOG(SW4, TRACE,
 		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
-		   u4RxV0, rxmode, rate, frmode, sgi, nss
+		   prRxV[0], rxmode, rate, frmode, sgi, nss
 	);
 
 	return 0;

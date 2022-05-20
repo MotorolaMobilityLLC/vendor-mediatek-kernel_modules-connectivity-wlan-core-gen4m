@@ -2104,7 +2104,7 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 		 OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
+int wlanGetRxRateByBssid(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucBssIdx,
 		OUT uint32_t *pu4CurRate, OUT uint32_t *pu4MaxRate,
 		OUT struct RxRateInfo *prRxRateInfo);
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
