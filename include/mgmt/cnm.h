@@ -436,9 +436,6 @@ void cnmPowerControlErrorHandling(
 );
 #endif
 
-void cnmUpdateMbmcIdx(struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx,
-	uint8_t ucBandIdx);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

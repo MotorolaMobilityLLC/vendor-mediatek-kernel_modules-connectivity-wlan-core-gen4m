@@ -2443,10 +2443,6 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	/* Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
-	if (fgIsCrossBand)
-		nicPmIndicateBssCreated(prAdapter,
-			prBssInfo->ucBssIndex);
-
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(*prCmdRddOnOffCtrl));
@@ -5592,8 +5588,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	    CAP_INFO_FIELD_LEN +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
-	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET) +
-	    sizeof(uint64_t); /* reserved for cookie */
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET);
 
 	u2EstimatedExtraIELen = 0;
 

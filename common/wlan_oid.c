@@ -5368,8 +5368,8 @@ wlanoidBssInfoBasicUnify(IN struct ADAPTER *prAdapter,
 			     TRUE,
 			     FALSE,
 			     TRUE,
-			     nicCmdEventSetCommon,
-			     nicOidCmdTimeoutCommon,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
 			     max_cmd_len,
 			     (void *)uni_cmd, NULL, 0);
 

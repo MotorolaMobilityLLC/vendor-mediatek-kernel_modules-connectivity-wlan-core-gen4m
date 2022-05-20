@@ -2117,6 +2117,10 @@ struct ADAPTER {
 	(IS_BSS_P2P(_prBssInfo) && \
 	(_prBssInfo)->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 
+#define IS_BSS_GC(_prBssInfo) \
+	(IS_BSS_P2P(_prBssInfo) && \
+	(_prBssInfo)->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+
 #define SET_NET_ACTIVE(_prAdapter, _BssIndex) \
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = TRUE; }
 
