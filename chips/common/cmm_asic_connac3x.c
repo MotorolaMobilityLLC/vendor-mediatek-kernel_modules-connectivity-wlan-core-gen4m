@@ -1599,6 +1599,12 @@ void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 
 		/* P-RXV0[32:63] in RXD Group3 */
 		prRxV[1] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
+
+		/* RXD Group3, DW22 */
+		prRxV[2] = prGroup3->u2RxInfo;
+
+		/* RXD Group3, DW23 */
+		prRxV[3] = prGroup3->u4Rcpi;
 	}
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
@@ -1630,10 +1636,10 @@ uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)
 				prSwRfb->prRxStatusGroup3;
 
-	ucRcpi0 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI0_V2(prGroup3);
-	ucRcpi1 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI1_V2(prGroup3);
-	ucRcpi2 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI2_V2(prGroup3);
-	ucRcpi3 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI3_V2(prGroup3);
+	ucRcpi0 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI0(prGroup3);
+	ucRcpi1 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI1(prGroup3);
+	ucRcpi2 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI2(prGroup3);
+	ucRcpi3 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI3(prGroup3);
 
 	/*If Rcpi is not available, set it to zero*/
 	if (ucRcpi0 == RCPI_MEASUREMENT_NOT_AVAILABLE)
@@ -1687,7 +1693,7 @@ void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN uint8_t ucBssIndex)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3 = NULL;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	uint32_t u4PhyRate;
 	uint16_t u2Rate = 0; /* Unit 500 Kbps */
@@ -1708,9 +1714,9 @@ void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	u2Rate = u4PhyRate / 5;
 
 	/* RCPI */
-	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
-	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
-	ucRCPI1 = HAL_RX_STATUS_GET_RCPI1(prRxStatusGroup3);
+	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)prSwRfb->prRxStatusGroup3;
+	ucRCPI0 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI0(prGroup3);
+	ucRCPI1 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI1(prGroup3);
 
 	/* Record peak rate to Traffic Indicator*/
 	prAdapter->prGlueInfo->PerfIndCache.

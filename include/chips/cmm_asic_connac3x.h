@@ -301,40 +301,31 @@
  * MACRO for CONNAC3X RXVECTOR Parsing
  *------------------------------------------------------------------------------
  */
-/* P-RXVector, 1st Cycle */
-#define CONNAC3X_RX_VT_RX_RATE_MASK         BITS(0, 6)
-#define CONNAC3X_RX_VT_RX_RATE_OFFSET       0
-#define CONNAC3X_RX_VT_NSTS_MASK            BITS(7, 9)
-#define CONNAC3X_RX_VT_NSTS_OFFSET          7
-#define CONNAC3X_RX_VT_LDPC                 BIT(11)
-#define CONNAC3X_RX_VT_MU		    BIT(21)
+/* P-RXV Vector, RXD DW20 */
+#define CONNAC3X_RX_VT_RX_RATE_MASK		BITS(0, 6)
+#define CONNAC3X_RX_VT_RX_RATE_OFFSET		0
+#define CONNAC3X_RX_VT_NSTS_MASK		BITS(7, 9)
+#define CONNAC3X_RX_VT_NSTS_OFFSET		7
+#define CONNAC3X_RX_VT_LDPC_MASK		BIT(11)
+#define CONNAC3X_RX_VT_LDPC_OFFSET		11
+#define CONNAC3X_RX_VT_MU_MASK			BIT(21)
+#define CONNAC3X_RX_VT_MU_OFFSET		21
 
-/* P-RXVector, 1st Cycle, Modified */
-#define CONNAC3X_RX_VT_FR_MODE_MASK_V2		BITS(12, 14)
-#define CONNAC3X_RX_VT_FR_MODE_OFFSET_V2	12
-#define CONNAC3X_RX_VT_SHORT_GI_MASK_V2		BITS(15, 16)
-#define CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2	15
-#define CONNAC3X_RX_VT_DCM			BIT(17)
-#define CONNAC3X_RX_VT_NUM_RX_MASK_V2		BITS(18, 20)
-#define CONNAC3X_RX_VT_NUM_RX_OFFSET_V2		18
-#define CONNAC3X_RX_VT_STBC_MASK_V2		BITS(22, 23)
-#define CONNAC3X_RX_VT_STBC_OFFSET_V2		22
-#define CONNAC3X_RX_VT_RX_MODE_MASK_V2		BITS(24, 27)
-#define CONNAC3X_RX_VT_RX_MODE_OFFSET_V2	24
+/* C-RXV Vector, RXD DW22 */
+#define CONNAC3X_RX_VT_FR_MODE_MASK		BITS(0, 2)
+#define CONNAC3X_RX_VT_FR_MODE_OFFSET		0
+#define CONNAC3X_RX_VT_GI_MASK			BITS(3, 4)
+#define CONNAC3X_RX_VT_GI_OFFSET		3
+#define CONNAC3X_RX_VT_DCM_MASK			BIT(5)
+#define CONNAC3X_RX_VT_DCM_OFFSET		5
+#define CONNAC3X_RX_VT_NUM_RX_MASK		BITS(6, 8)
+#define CONNAC3X_RX_VT_NUM_RX_OFFSET		6
+#define CONNAC3X_RX_VT_STBC_MASK		BITS(9, 10)
+#define CONNAC3X_RX_VT_STBC_OFFSET		9
+#define CONNAC3X_RX_VT_RX_MODE_MASK		BITS(11, 14)
+#define CONNAC3X_RX_VT_RX_MODE_OFFSET		11
 
-/* C-RXC Vector, 1st Cycle */
-#define CONNAC3X_RX_VT_STBC_MASK            BITS(0, 1)
-#define CONNAC3X_RX_VT_STBC_OFFSET          0
-#define CONNAC3X_RX_VT_RX_MODE_MASK         BITS(4, 7)
-#define CONNAC3X_RX_VT_RX_MODE_OFFSET       4
-#define CONNAC3X_RX_VT_FR_MODE_MASK         BITS(8, 10)
-#define CONNAC3X_RX_VT_FR_MODE_OFFSET       8
-#define CONNAC3X_RX_VT_SHORT_GI_MASK		BITS(13, 14)
-#define CONNAC3X_RX_VT_SHORT_GI_OFFSET		13
-#define CONNAC3X_RX_VT_GROUP_ID_MASK        BITS(22, 27)
-#define CONNAC3X_RX_VT_GROUP_ID_OFFSET      22
-
-/* C-RXC Vector, 4th Cycle */
+/* C-RXV Vector, RXD DW23 */
 #define CONNAC3X_RX_VT_RCPI0_MASK             BITS(0, 7)
 #define CONNAC3X_RX_VT_RCPI0_OFFSET           0
 #define CONNAC3X_RX_VT_RCPI1_MASK             BITS(8, 15)
@@ -359,21 +350,79 @@
 #define CONNAC3X_HAL_RXV_GET_RCPI3_RXRPT(_RxvDw6)	\
 	(((_RxvDw6) & CONNAC3X_RX_VT_RCPI3_MASK) >> CONNAC3X_RX_VT_RCPI3_OFFSET)
 
-#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI0_V2(_prHwRxVector) \
-	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI0_MASK) >> \
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI0(_prHwRxVector) \
+	((((_prHwRxVector)->u4Rcpi) & CONNAC3X_RX_VT_RCPI0_MASK) >> \
 	CONNAC3X_RX_VT_RCPI0_OFFSET)
 
-#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI1_V2(_prHwRxVector) \
-	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI1_MASK) >> \
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI1(_prHwRxVector) \
+	((((_prHwRxVector)->u4Rcpi) & CONNAC3X_RX_VT_RCPI1_MASK) >> \
 	CONNAC3X_RX_VT_RCPI1_OFFSET)
 
-#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI2_V2(_prHwRxVector) \
-	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI2_MASK) >> \
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI2(_prHwRxVector) \
+	((((_prHwRxVector)->u4Rcpi) & CONNAC3X_RX_VT_RCPI2_MASK) >> \
 	CONNAC3X_RX_VT_RCPI2_OFFSET)
 
-#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI3_V2(_prHwRxVector) \
-	((((_prHwRxVector)->u4RxVector[1]) & CONNAC3X_RX_VT_RCPI3_MASK) >> \
+#define CONNAC3X_HAL_RX_VECTOR_GET_RCPI3(_prHwRxVector) \
+	((((_prHwRxVector)->u4Rcpi) & CONNAC3X_RX_VT_RCPI3_MASK) >> \
 	CONNAC3X_RX_VT_RCPI3_OFFSET)
+
+/*------------------------------------------------------------------------------
+ * MACRO for CONNAC3X info from adapter
+ *------------------------------------------------------------------------------
+ */
+
+#define CONNAC3X_GET_RX_RATE_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[0]) & \
+	CONNAC3X_RX_VT_RX_RATE_MASK) >> CONNAC3X_RX_VT_RX_RATE_OFFSET)
+
+#define CONNAC3X_GET_RX_NSTS_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[0]) & \
+	CONNAC3X_RX_VT_NSTS_MASK) >> CONNAC3X_RX_VT_NSTS_OFFSET)
+
+#define CONNAC3X_GET_RX_LDPC_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[0]) & \
+	CONNAC3X_RX_VT_LDPC_MASK) >> CONNAC3X_RX_VT_LDPC_OFFSET)
+
+#define CONNAC3X_GET_RX_MU_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[0]) & \
+	CONNAC3X_RX_VT_MU_MASK) >> CONNAC3X_RX_VT_MU_OFFSET)
+
+#define CONNAC3X_GET_RX_FR_MODE_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[2]) & \
+	CONNAC3X_RX_VT_FR_MODE_MASK) >> CONNAC3X_RX_VT_FR_MODE_OFFSET)
+
+#define CONNAC3X_GET_RX_GI_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[2]) & \
+	CONNAC3X_RX_VT_GI_MASK) >> CONNAC3X_RX_VT_GI_OFFSET)
+
+#define CONNAC3X_GET_RX_MODE_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[2]) & \
+	CONNAC3X_RX_VT_RX_MODE_MASK) >> CONNAC3X_RX_VT_RX_MODE_OFFSET)
+
+#define CONNAC3X_GET_RX_STBC_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[2]) & \
+	CONNAC3X_RX_VT_STBC_MASK) >> CONNAC3X_RX_VT_STBC_OFFSET)
+
+#define CONNAC3X_GET_RX_DCM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[2]) & \
+	CONNAC3X_RX_VT_DCM_MASK) >> CONNAC3X_RX_VT_DCM_OFFSET)
+
+#define CONNAC3X_GET_RCPI0_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[3]) & \
+	CONNAC3X_RX_VT_RCPI0_MASK) >> CONNAC3X_RX_VT_RCPI0_OFFSET)
+
+#define CONNAC3X_GET_RCPI1_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[3]) & \
+	CONNAC3X_RX_VT_RCPI1_MASK) >> CONNAC3X_RX_VT_RCPI1_OFFSET)
+
+#define CONNAC3X_GET_RCPI2_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[3]) & \
+	CONNAC3X_RX_VT_RCPI2_MASK) >> CONNAC3X_RX_VT_RCPI2_OFFSET)
+
+#define CONNAC3X_GET_RCPI3_FROM_ADAPTER(_prAdapter, _ucStaIdx) \
+	(((_prAdapter->arStaRec[_ucStaIdx].au4RxV[3]) & \
+	CONNAC3X_RX_VT_RCPI3_MASK) >> CONNAC3X_RX_VT_RCPI3_OFFSET)
+
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define HAL_IS_CONNAC3X_EXT_TX_DONE_INTR(u4IntrStatus, __u4IntrBits) \
@@ -406,9 +455,10 @@
 #define CONNAC3X_TXV_GET_TX_STBC(_x)	(((_x)->u4TxV[0] & (0x3 << 6)) >> 6)
 #define CONNAC3X_TXV_GET_TX_FRMODE(_x)	(((_x)->u4TxV[0] & (0x7 << 8)) >> 8)
 #define CONNAC3X_TXV_GET_TX_MODE(_x)	(((_x)->u4TxV[0] & (0xf << 12)) >> 12)
-#define CONNAC3X_TXV_GET_TX_NSTS(_x)	(((_x)->u4TxV[2] & (0x7 << 8)) >> 8)
+#define CONNAC3X_TXV_GET_TX_NSTS(_x)	(((_x)->u4TxV[2] & (0xf << 28)) >> 28)
 #define CONNAC3X_TXV_GET_TX_PWR(_x)	(((_x)->u4TxV[0] & (0xff << 16)) >> 16)
 #define CONNAC3X_TXV_GET_TX_SGI(_x)	(((_x)->u4TxV[1] & (0x3 << 26)) >> 26)
+#define CONNAC3X_TXV_GET_TX_SPE_IDX(_x)	(((_x)->u4TxV[0] & (0x1f << 0)) >> 0)
 #define CONNAC3X_TXV_GET_TX_DCM(_x)	(((_x)->u4TxV[2] & BIT(4)) >> 4)
 #define CONNAC3X_TXV_GET_TX_106T(_x)	(((_x)->u4TxV[2] & BIT(5)) >> 5)
 #define CONNAC3X_TXV_GET_TX_RATE_UNMASK_DCM(_r)		((uint8_t)(_r) & 0xef)
