@@ -2262,6 +2262,8 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 			p2pRoleFsmDeauthComplete(prAdapter, prStaRec);
 		}
 	}
+	/* Reset intended OP mode */
+	prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
 	/* Make sure the state is in IDLE state. */
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
 		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
