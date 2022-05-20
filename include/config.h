@@ -1794,6 +1794,25 @@
 #define CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING 0
 
 /*------------------------------------------------------------------------------
+ * Dynamic tx power control:
+ * Support additional tx power setting on EHT
+ *
+ * support power limit for
+ *                EHT26/EHT52/EHT104/EHT242/EHT484/EHT996/EHT996x2/
+ *                EHT996x4/EHT26_52/EHT26_106/EHT484_242/EHT996_484/
+ *                EHT996_484_242/EHT996x2_484/EHT996x3/EHT996x3_484
+ *
+ * note: 1. EHT support 2.4G/5G/6G
+ *       2. need to confirm firmware support EHT(802.11BE)
+ *------------------------------------------------------------------------------
+ */
+#if (CFG_SUPPORT_802_11BE == 1)
+#define CFG_SUPPORT_PWR_LIMIT_EHT	1
+#else
+#define CFG_SUPPORT_PWR_LIMIT_EHT	0
+#endif /* CFG_SUPPORT_802_11BE */
+
+/*------------------------------------------------------------------------------
  * tx power control:
  * Support additional tx power setting for HE
  *
