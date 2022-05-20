@@ -10275,7 +10275,9 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
-	struct sk_buff *prSkb = NULL;
+	void *pvPacket = NULL;
+	uint8_t *pucBuf = NULL;
+	uint32_t u4PacketLen = 0;
 	u_int8_t fgIsSuccess = FALSE;
 #endif
 
@@ -10324,7 +10326,7 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 			prAdapter->prGlueInfo->u4LeaveDrvTick =
 				prPktProfile->rHifTxDoneTimestamp;
 			prAdapter->prGlueInfo->u4CurrTick = rCurrent;
-			prAdapter->prGlueInfo->u8CurrTime = sched_clock();
+			prAdapter->prGlueInfo->u8CurrTime = kalGetTimeTickNs();
 		}
 	}
 
@@ -10347,11 +10349,12 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
-		prSkb = (struct sk_buff *)prMsduInfo->prPacket;
-		skb_pull(prSkb, prSkb->len - prMsduInfo->u2FrameLength);
-		prWlanHeader =
-				(struct WLAN_MAC_HEADER *)((unsigned long)
-				prSkb->data);
+
+		u4PacketLen = kalQueryPacketLength(prMsduInfo->prPacket);
+		kalGetPacketBufHeadManipulate(prMsduInfo->prPacket, &pucBuf,
+			u4PacketLen - prMsduInfo->u2FrameLength);
+		prWlanHeader = (struct WLAN_MAC_HEADER *)pucBuf;
+
 		if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
 			prWlanHeader->u2FrameCtrl &=
 				~MASK_FC_PROTECTED_FRAME;
@@ -10360,7 +10363,7 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		kalIndicateMgmtTxStatus(prAdapter->prGlueInfo,
 					prMsduInfo->u8Cookie,
 					fgIsSuccess,
-					(void *)prSkb->data,
+					pucBuf,
 					(uint32_t)
 					prMsduInfo->u2FrameLength,
 					prMsduInfo->ucBssIndex);

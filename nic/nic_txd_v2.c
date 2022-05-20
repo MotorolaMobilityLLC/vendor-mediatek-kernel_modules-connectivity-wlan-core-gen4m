@@ -319,7 +319,7 @@ void nic_txd_v2_compose(
 #endif
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-	struct sk_buff *prSkb = NULL;
+	uint8_t *pucBuff = NULL;
 	uint32_t u4TxHeadRoomSize;
 #endif
 
@@ -506,10 +506,11 @@ void nic_txd_v2_compose(
 		if (prMsduInfo->ucPktType == ENUM_PKT_802_11_MGMT) {
 			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 			   prAdapter->chip_info->txd_append_size;
-			prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+
+			kalGetPacketBuf(prMsduInfo->prPacket, &pucBuff);
 			prWlanHeader =
 				(struct WLAN_MAC_HEADER *)((unsigned long)
-				(prSkb->data + u4TxHeadRoomSize));
+				(pucBuff + u4TxHeadRoomSize));
 
 			if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
 				prWlanHeader->u2FrameCtrl |=

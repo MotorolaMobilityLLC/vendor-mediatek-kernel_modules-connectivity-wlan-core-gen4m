@@ -427,7 +427,6 @@ void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
 			    IN OUT struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
-	struct sk_buff *prSkb = (struct sk_buff *)(prSwRfb->pvPacket);
 	struct IEEE80211_RADIOTAP_INFO radiotapInfo;
 	struct IEEE80211_RADIOTAP_HEADER *header;
 	struct IEEE80211_RADIOTAP_FIELD_FUNC radiotap_fill_func[IEEE80211_RADIOTAP_SUPPORT_NUM];
@@ -596,19 +595,11 @@ void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
 		func_num++;
 	}
 
-	/* exceed skb headroom the kernel will panic */
-	if (skb_headroom(prSkb) < radiotap_len) {
+	if (!kalProcessRadiotap(prSwRfb->pvPacket, &p_base,
+			radiotap_len, prSwRfb->u2RxByteCount)){
 		DBGLOG(RX, ERROR, "radiotap exceed skb headroom!\n");
 		goto bypass;
 	}
-
-	skb_push(prSkb, radiotap_len);
-	p_base = (uint8_t *)(prSkb->data);
-	kalMemZero(p_base, radiotap_len);
-
-	skb_reset_tail_pointer(prSkb);
-	skb_trim(prSkb, 0);
-	skb_put(prSkb, (radiotap_len + prSwRfb->u2RxByteCount));
 
 	header = (struct IEEE80211_RADIOTAP_HEADER *)p_base;
 	header->ucItVersion = PKTHDR_RADIOTAP_VERSION;

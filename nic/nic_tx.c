@@ -1708,7 +1708,7 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 {
 	struct QUE *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
-	struct sk_buff *prSkb;
+	uint32_t u4Mark;
 	int32_t i4TcIdx, i;
 	uint32_t u4QSize, u4Idx;
 	uint8_t ucPortIdx;
@@ -1733,10 +1733,10 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 					(ucPortIdx == TX_RING_DATA1) ?
 					prDataPort1 : prDataPort0;
 
-				prSkb = prMsduInfo->prPacket;
-				if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
-				    (prSkb->mark &
-					   BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
+				u4Mark = kalGetPacketMark(prMsduInfo->prPacket);
+				if (u4Mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+				    (u4Mark &
+					BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
 					QUEUE_INSERT_TAIL(
 						prDataPort,
 						(struct QUE_ENTRY *)prMsduInfo);
@@ -2189,11 +2189,15 @@ nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 {
 	uint8_t *pucOutputBuf;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	int16_t i2HeadLength;
 
-	pucOutputBuf = skb_push((struct sk_buff *)
-				prMsduInfo->prPacket,
-				NIC_TX_DESC_AND_PADDING_LENGTH +
-				prChipInfo->txd_append_size);
+	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
+			+ prChipInfo->txd_append_size;
+
+	kalGetPacketBufHeadManipulate(prMsduInfo->prPacket,
+					&pucOutputBuf,
+					0 - i2HeadLength);
+
 	if (pucOutputBuf == NULL)
 		return;
 
@@ -2694,7 +2698,6 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
-	struct sk_buff *skb;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2729,9 +2732,10 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		else
 			prCmdInfo->u4TxdLen = NIC_TX_DESC_SHORT_FORMAT_LENGTH;
 
-		skb = (struct sk_buff *)prMsduInfo->prPacket;
-		prCmdInfo->pucTxp = skb->data;
-		prCmdInfo->u4TxpLen = skb->len;
+		kalGetPacketBuf(prMsduInfo->prPacket,
+				&(prCmdInfo->pucTxp));
+		prCmdInfo->u4TxpLen =
+			kalQueryPacketLength(prMsduInfo->prPacket);
 
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
 
@@ -3209,6 +3213,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	u_int8_t fgIsHighPrioQ = FALSE;
 #endif
+	uint8_t *pucData = NULL;
 
 	ASSERT(prAdapter);
 
@@ -3255,9 +3260,11 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 					 ENUM_PKT_802_11_MGMT) ? TRUE : FALSE;
 #endif
 
-		if (prMsduInfo->fgIs802_1x)
-			prMsduInfo->eEapolKeyType = secGetEapolKeyType(((
-			struct sk_buff *)prPacket)->data);
+		if (prMsduInfo->fgIs802_1x) {
+			kalGetPacketBuf(prPacket, &pucData);
+			prMsduInfo->eEapolKeyType =
+				secGetEapolKeyType(pucData);
+		}
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP)
 		    && prAdapter->rWifiVar.ucDhcpTxDone)
@@ -5649,8 +5656,8 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
  * \retval WLAN_STATUS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxDirectStartXmitMain(struct sk_buff
-		*prSkb, struct MSDU_INFO *prMsduInfo,
+uint32_t nicTxDirectStartXmitMain(void *pvPacket,
+		struct MSDU_INFO *prMsduInfo,
 		struct ADAPTER *prAdapter,
 		uint8_t ucCheckTc, uint8_t ucStaRecIndex,
 		uint8_t ucBssIndex)
@@ -5671,8 +5678,8 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 	QUEUE_INITIALIZE(prProcessingQue);
 
-	if (prSkb) {
-		nicTxFillMsduInfo(prAdapter, prMsduInfo, prSkb);
+	if (pvPacket) {
+		nicTxFillMsduInfo(prAdapter, prMsduInfo, pvPacket);
 
 		TX_INC_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT);
 

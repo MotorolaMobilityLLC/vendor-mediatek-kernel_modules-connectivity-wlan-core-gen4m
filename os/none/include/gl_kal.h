@@ -823,6 +823,7 @@ int8_t kal_atoi(uint8_t ch);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalGetTimeTick() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalGetTimeTickNs() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define WLAN_TAG                        "[wlan_golden]"
@@ -2161,4 +2162,52 @@ void kalConfigChksumOffload(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 #endif
 
+uint32_t kalQueryPacketLength(void *pvPacket);
+
+void kalSetPacketLength(void *pvPacket, uint32_t u4len);
+
+uint16_t kalQueryPacketEtherType(void *pvPacket);
+
+uint8_t kalQueryPacketIPVersion(void *pvPacket);
+
+uint8_t kalQueryPacketIPV4Precedence(void *pvPacket);
+
+uint8_t kalQueryPacketIPv4Protocol(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4Identification(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4TCPUDPSrcPort(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4TCPUDPDstPort(void *pvPacket);
+
+int kalComparePacketIPv4UDPPayload(void *pvPacket,
+				int8_t *pattern,
+				size_t length);
+
+void kalUpdatePacketIPv4UDPPayload(void *pvPacket,
+				uint16_t offset,
+				void *pattern,
+				size_t length);
+
+void kalGetPacketBuf(void *pvPacket, uint8_t **ppucData);
+void kalGetPacketBufHeadManipulate(void *pvPacket,
+				uint8_t **ppucData,
+				int16_t length);
+void kalGetPacketBufTailManipulate(void *pvPacket,
+				uint8_t **ppucData,
+				int16_t length);
+
+uint32_t kalGetPacketMark(void *pvPacket);
+u_int8_t kalProcessRadiotap(void *pvPacket,
+	uint8_t **ppucData,
+	uint16_t radiotap_len,
+	uint16_t u2RxByteCount);
+
+void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex,
+	void *pvPacket);
+
+void *kalGetPacketDev(void *pvPacket);
+
+void kalWlanHardStartXmit(void *pvPacket, void *pvDev);
 #endif /* _GL_KAL_H */

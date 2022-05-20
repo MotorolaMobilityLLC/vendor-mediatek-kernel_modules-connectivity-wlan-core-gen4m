@@ -202,27 +202,6 @@ enum {
 #endif
 #define CFG80211_VERSION_CODE LINUX_VERSION_CODE
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
-/* needed by
- * common/debug.c
- * mgmt/stats.c
- * include/nic/nic_tx.h, nic/nic_tx.c
- * cb for driver private for data packet
- * dev needed by mgmt/tdls.c
- * mgmt/tkip_mic.c, and do dev_alloc_skb
- * nic/nic_rx.c
- * nic/que_mgt.c
- */
-struct sk_buff {
-	char cb[48];
-	unsigned char *data;
-	unsigned int len;
-	struct net_device *dev;
-	union {
-		u32 mark;
-		u32 reserved_tailroom;
-	};
-};
-
 /*
  * needed by common/wlan_oid.c
  * struct cfg80211_update_ft_ies_params - FT IE Information
@@ -379,16 +358,6 @@ enum gfp_t {
 	__GFP_HIGHMEM,
 	__GFP_HIGH
 };
-
-/* needed by include/nic/adapter.h
- * for DIRECT_TX implementation in os folder
- */
-struct sk_buff_head {
-	/* These two members must be first. */
-	/* struct sk_buff	*next; */
-	/* struct sk_buff	*prev; */
-	uint32_t qlen;
-};
 /*
  * needed by mgmt/auth.c
  * struct cfg80211_ft_event - FT Information Elements
@@ -530,78 +499,6 @@ void *kal_vmalloc(size_t size);
 
 void kal_kfree(void *addr);
 void kal_vfree(void *addr);
-
-/*
- * skb_put - add data to a buffer
- * @skb: buffer to use
- * @len: amount of data to add
- * This function extends the used data area of the buffer. If this would
- * exceed the total buffer size the kernel will panic. A pointer to the
- * first byte of the extra data is returned.
- *
- * needed by nic_rx.c
- */
-unsigned char *kal_skb_put(struct sk_buff *skb, unsigned int len);
-#define skb_put(_skb, _len) kal_skb_put(_skb, _len)
-
-/*
- * kal_skb_push - add data to the start of a buffer
- * @skb: buffer to use
- * @len: amount of data to add
- * This function extends the used data area of the buffer at the buffer
- * start. If this would exceed the total buffer headroom the kernel will
- * panic. A pointer to the first byte of the extra data is returned.
- *
- * needed by nic_tx.c
- */
-void *kal_skb_push(struct sk_buff *skb, unsigned int len);
-#define skb_push(_skb, _len) kal_skb_push(_skb, _len)
-
-/*
- * kal_skb_headroom - bytes at buffer head
- * @skb: buffer to use
- * Return the number of bytes of free space at the head of an &sk_buff.
- *
- * needed by nic_rx.c
- */
-uint32_t kal_skb_headroom(struct sk_buff *skb);
-#define skb_headroom(_skb) kal_skb_headroom(_skb)
-
-/*
- * needed by nic_rx.c
- * make the tail pointer in skb point to beginning of data
- */
-void kal_skb_reset_tail_pointer(struct sk_buff *skb);
-#define skb_reset_tail_pointer(_skb) kal_skb_reset_tail_pointer(_skb)
-
-/*
- * needed by nic_rx.c
- * remove end from a buffer
- * @len: len of skb after trim
- */
-void kal_skb_trim(struct sk_buff *skb, unsigned int len);
-#define skb_trim(_skb, _len) kal_skb_trim(_skb, _len)
-
-/*
- * needed by mgmt/tkip_mic.c
- * legacy helper around netdev_alloc_skb()
- */
-struct sk_buff *kal_dev_alloc_skb(unsigned int length);
-#define dev_alloc_skb(_length) kal_dev_alloc_skb(_length)
-
-/****************************************************************************
- * TODO: Functions need implementation
- ****************************************************************************
- */
-/* needed by
- * common/debug.c
- * common/wlan_lib.c
- * mgmt/stats.c
- * ais_fsm.c
- */
-#define kal_sched_clock() KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define sched_clock() kal_sched_clock()
-
 /* looks like min/max not in C
  * https://stackoverflow.com/questions/3437404/min-and-max-in-c
  * needed by:

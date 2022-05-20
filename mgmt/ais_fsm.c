@@ -3334,7 +3334,8 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 	    prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
 		/* roaming fail count and time */
 		prAdapter->prGlueInfo->u4RoamFailCnt++;
-		prAdapter->prGlueInfo->u8RoamFailTime = sched_clock();
+		prAdapter->prGlueInfo->u8RoamFailTime = kalGetTimeTickNs();
+
 #if CFG_SUPPORT_ROAMING
 		eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 #endif /* CFG_SUPPORT_ROAMING */

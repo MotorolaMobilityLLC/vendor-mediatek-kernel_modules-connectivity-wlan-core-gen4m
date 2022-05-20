@@ -850,7 +850,7 @@ enum nl80211_wpa_versions {
 
 /* TODO: os-related implementation */
 #define GLUE_GET_PKT_PRIVATE_RX_DATA(_p) \
-	((struct PACKET_PRIVATE_RX_DATA *)(&(((struct sk_buff *)(_p))->cb[24])))
+	((struct PACKET_PRIVATE_RX_DATA *)0)
 
 #define GLUE_RX_SET_PKT_INT_TIME(_p, _rTime) \
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u8IntTime = (uint64_t)(_rTime))

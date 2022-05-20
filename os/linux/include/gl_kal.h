@@ -1114,6 +1114,8 @@ int8_t atoi(uint8_t ch);
 
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
 
+#define kalGetTimeTickNs()              sched_clock()
+
 #define kalPrintLogLimited(fmt, ...)					\
 ({									\
 	static DEFINE_RATELIMIT_STATE(_rs,				\
@@ -1408,6 +1410,53 @@ void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
 				 *prGlueInfo,
 				 IN uint32_t u4Size, OUT uint8_t **ppucData);
+
+uint32_t kalQueryPacketLength(void *pvPacket);
+
+void kalSetPacketLength(void *pvPacket, uint32_t u4len);
+
+uint16_t kalQueryPacketEtherType(void *pvPacket);
+
+uint8_t kalQueryPacketIPVersion(void *pvPacket);
+
+uint8_t kalQueryPacketIPV4Precedence(void *pvPacket);
+
+uint8_t kalQueryPacketIPv4Protocol(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4Identification(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4TCPUDPSrcPort(void *pvPacket);
+
+uint16_t kalQueryPacketIPv4TCPUDPDstPort(void *pvPacket);
+
+int kalComparePacketIPv4UDPPayload(void *pvPacket,
+				int8_t *pattern,
+				size_t length);
+
+void kalUpdatePacketIPv4UDPPayload(void *pvPacket,
+				uint16_t offset,
+				void *pattern,
+				size_t length);
+
+void kalGetPacketBuf(void *pvPacket, uint8_t **ppucData);
+void kalGetPacketBufHeadManipulate(void *pvPacket,
+				uint8_t **ppucData,
+				int16_t length);
+void kalGetPacketBufTailManipulate(void *pvPacket,
+				uint8_t **ppucData,
+				int16_t length);
+
+uint32_t kalGetPacketMark(void *pvPacket);
+u_int8_t kalProcessRadiotap(void *pvPacket,
+	uint8_t **ppucData,
+	uint16_t radiotap_len,
+	uint16_t u2RxByteCount);
+
+void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex,
+	void *pvPacket);
+
+void *kalGetPacketDev(void *pvPacket);
 
 void kalOsTimerInitialize(IN struct GLUE_INFO *prGlueInfo,
 			  IN void *prTimerHandler);
@@ -2282,6 +2331,8 @@ void kalTdlsOpReq(
 void kalConfigChksumOffload(
 	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 #endif
+
+void kalWlanHardStartXmit(void *pvPacket, void *pvDev);
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0
