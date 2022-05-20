@@ -11343,8 +11343,6 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 					WLAN_IOT_AP_DBDC_1SS) {
 				DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blk\n");
 				ucRetValNss = 1;
-				/* For sigma certificate, temp...*/
-				ucRetValNss = prAdapter->rWifiVar.ucNSS;
 			} else if (prAdapter->rWifiVar.fgSta1NSS) {
 				DBGLOG(SW4, INFO, "Use 1x1 due to FWK cmd\n");
 				ucRetValNss = 1;
