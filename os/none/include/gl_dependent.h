@@ -202,10 +202,6 @@ enum {
 #endif
 #define CFG80211_VERSION_CODE LINUX_VERSION_CODE
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
-
-struct device {
-};
-
 /* needed by
  * common/debug.c
  * mgmt/stats.c
@@ -393,20 +389,6 @@ struct sk_buff_head {
 	/* struct sk_buff	*prev; */
 	uint32_t qlen;
 };
-
-/*
- * should be defined as lock in corresponding os
- * access directly by
- * nic/nic_tx.c
- * nic/nic_rx.c
- * nic/que_mgt.c
- *
- * reference:
- * typedef struct spinlock {
- * } spinlock_t;
- */
-#define spinlock_t uint32_t
-
 /*
  * needed by mgmt/auth.c
  * struct cfg80211_ft_event - FT Information Elements
@@ -548,70 +530,6 @@ void *kal_vmalloc(size_t size);
 
 void kal_kfree(void *addr);
 void kal_vfree(void *addr);
-
-/*
- * kal_irqs_disabled: is irqs disabled, os-dependent
- * nic/nic_tx.c
- * nic/que_mgt.c
- */
-bool kal_irqs_disabled(void);
-#define irqs_disabled() kal_irqs_disabled()
-
-/*
- * kal_spin_lock: lock in irqs disabled, os-dependent
- * nic/nic_tx.c
- * nic/que_mgt.c
- */
-void kal_spin_lock(spinlock_t *lock);
-#define spin_lock(_lock) kal_spin_lock(_lock)
-
-/*
- * kal_spin_unlock: unlock in irqs disabled, os-dependent
- * paired with kal_spin_lock
- * nic/nic_tx.c
- * nic/que_mgt.c
- */
-void kal_spin_unlock(spinlock_t *lock);
-#define spin_unlock(_lock) kal_spin_unlock(_lock)
-
-/*
- * kal_spin_lock_bh: lock in bottom half, os-dependent
- * nic/nic_tx.c
- * nic/nic_rx.c
- * nic/que_mgt.c
- */
-void kal_spin_lock_bh(spinlock_t *lock);
-#define spin_lock_bh(_lock) kal_spin_lock_bh(_lock)
-
-/*
- * kal_spin_unlock_bh: unlock in bottom half, os-dependent
- * paired with kal_spin_lock_bh
- * nic/nic_tx.c
- * nic/nic_rx.c
- * nic/que_mgt.c
- */
-void kal_spin_unlock_bh(spinlock_t *lock);
-#define spin_unlock_bh(_lock) kal_spin_unlock_bh(_lock)
-
-/*
- * kal_spin_lock_irqsave: lock exclude irq, os-dependent
- * nic/nic_tx.c
- * nic/nic_rx.c
- * nic/que_mgt.c
- */
-void kal_spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
-#define spin_lock_irqsave(_lock, _flag) kal_spin_lock_irqsave(_lock, _flag)
-
-/*
- * kal_spin_unlock_irqsave: unlock, os-dependent
- * paired with kal_spin_lock_irqsave
- * nic/nic_tx.c
- * nic/nic_rx.c
- * nic/que_mgt.c
- */
-void kal_spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
-#define spin_unlock_irqrestore(_lock, _flag) \
-		kal_spin_unlock_irqrestore(_lock, _flag)
 
 /*
  * skb_put - add data to a buffer

@@ -1285,20 +1285,26 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_CHIP_RESET_SUPPORT
-		spin_lock_bh(&prAdapter->rWfsysResetLock);
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
+
 		/* During WFSYS_RESET_STATE_REINIT, driver might need to receive
 		 * events like response of EXT_CMD_ID_EFUSE_BUFFER_MODE.
 		 */
 		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE &&
 		    prAdapter->eWfsysResetState != WFSYS_RESET_STATE_REINIT) {
-			spin_unlock_bh(&prAdapter->rWfsysResetLock);
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
 
 			DBGLOG(RX, ERROR,
 			       "skip rx urb process due to L0.5 reset\n");
 
 			goto next_urb;
 		}
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
+
 #endif /*CFG_CHIP_RESET_SUPPORT */
 
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
@@ -1375,16 +1381,19 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_CHIP_RESET_SUPPORT
-		spin_lock_bh(&prAdapter->rWfsysResetLock);
-		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
-			spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 
+		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
 			DBGLOG(RX, ERROR,
 				   "skip rx urb process due to L0.5 reset\n");
 
 			goto next_urb;
 		}
-		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
