@@ -8009,9 +8009,9 @@ void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		kalMemCopy(legacy, tag, TAG_LEN(tag));
 
 
-		RUN_RX_EVENT_HANDLER(EVENT_ID_NAN_EXT_EVENT,
-			legacy);
-		kalMemFree(legacy, VIR_MEM_TYPE, tags_len);
+		RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_NAN_EXT_EVENT,
+			legacy, TAG_LEN(tag));
+		kalMemFree(legacy, VIR_MEM_TYPE, TAG_LEN(tag));
 
 	}
 #endif
