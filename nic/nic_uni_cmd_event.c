@@ -143,6 +143,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
 	[CMD_ID_GET_BUG_REPORT] = nicUniCmdGetBugReport,
+	[CMD_ID_GET_STATS_LLS] = nicUniCmdGetLinkStats,
 	[CMD_ID_PERF_IND] = nicUniCmdPerfInd,
 	[CMD_ID_SG_PARAM] = nicUniCmdSetSGParam,
 	[CMD_ID_SET_MONITOR] = nicUniCmdSetMonitor,
@@ -5161,6 +5162,50 @@ uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+/**
+ * This function handles the command conversion for legacy multiple functional
+ * command CMD_ID_GET_STATS_LLS(0x84).
+ * Tags embedded in cmd will be set in the unified command tag field with new
+ * values.
+ */
+uint32_t nicUniCmdGetLinkStats(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	uint32_t status = WLAN_STATUS_NOT_SUPPORTED;
+#if CFG_SUPPORT_LLS
+	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	struct UNI_CMD_LINK_LAYER_STATS *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+			       sizeof(struct UNI_CMD_LINK_LAYER_STATS);
+	struct CMD_GET_STATS_LLS *cmd =
+		(struct CMD_GET_STATS_LLS *)info->pucInfoBuffer;
+
+	if (info->ucCID != CMD_ID_GET_STATS_LLS)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_STATISTICS,
+		max_cmd_len, nicUniEventLinkStats, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GET_STATISTICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_LINK_LAYER_STATS *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = cmd->u4Tag + UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
+	tag->u2Length = sizeof(*tag);
+	tag->ucArg0 = cmd->ucArg0;
+	tag->ucArg1 = cmd->ucArg1;
+	tag->ucArg2 = cmd->ucArg2;
+	tag->ucArg3 = cmd->ucArg3;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	status = WLAN_STATUS_SUCCESS;
+#endif
+	return status;
+}
+
+
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -6920,11 +6965,43 @@ void nicUniEventBugReport(IN struct ADAPTER
 	struct UNI_EVENT_STATISTICS *evt =
 		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
 	struct UNI_EVENT_BUG_REPORT *tag =
-		(struct UNI_EVENT_BUG_REPORT *) evt->aucTlvBuffer;
+		(struct UNI_EVENT_BUG_REPORT *)evt->aucTlvBuffer;
 
 	nicCmdEventQueryBugReport(prAdapter, prCmdInfo,
 		(uint8_t *)&tag->u4BugReportVersion);
 }
+
+void nicUniEventLinkStats(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+#if CFG_SUPPORT_LLS
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_STATISTICS *evt =
+		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
+	struct UNI_EVENT_LINK_STATS *tag =
+		(struct UNI_EVENT_LINK_STATS *)evt->aucTlvBuffer;
+	uint32_t resultSize;
+
+	DBGLOG(RX, TRACE, "tag=%u, tag->u2Length=%u, BufLen=%u",
+			tag->u2Tag, tag->u2Length,
+			prCmdInfo->u4InformationBufferLength);
+
+	resultSize = tag->u2Length - sizeof(struct UNI_EVENT_LINK_STATS);
+	if (prCmdInfo->u4InformationBufferLength < resultSize)
+		DBGLOG(RX, WARN, "Overflow tag=%u, resultSize=%u, BufLen=%u",
+			tag->u2Tag, resultSize,
+			prCmdInfo->u4InformationBufferLength);
+
+	if (resultSize < prCmdInfo->u4InformationBufferLength)
+		prCmdInfo->u4InformationBufferLength = resultSize;
+
+	kalMemZero(prCmdInfo->pvInformationBuffer,
+		prCmdInfo->u4InformationBufferLength);
+
+	nicCmdEventQueryLinkStats(prAdapter, prCmdInfo, tag->aucBuffer);
+#endif
+}
+
 
 void nicUniEventTxPowerInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
@@ -6934,7 +7011,7 @@ void nicUniEventTxPowerInfo(IN struct ADAPTER
 	struct UNI_EVENT_TXPOWER *evt =
 		(struct UNI_EVENT_TXPOWER *)uni_evt->aucBuffer;
 	struct UNI_EVENT_TXPOWER_RSP *tag =
-		(struct UNI_EVENT_TXPOWER_RSP *) evt->aucTlvBuffer;
+		(struct UNI_EVENT_TXPOWER_RSP *)evt->aucTlvBuffer;
 
 	nicCmdEventQueryTxPowerInfo(prAdapter, prCmdInfo, tag->aucBuffer);
 #endif
