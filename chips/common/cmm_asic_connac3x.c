@@ -94,6 +94,52 @@
 
 #define USB_ACCESS_RETRY_LIMIT           1
 
+#if defined(_HIF_USB)
+#define MAX_POLLING_LOOP 2
+uint32_t g_au4UsbPollAddrTbl[] = {
+	CONNAC3X_U3D_RX4CSR0,
+	CONNAC3X_U3D_RX5CSR0,
+	CONNAC3X_U3D_RX6CSR0,
+	CONNAC3X_U3D_RX7CSR0,
+	CONNAC3X_U3D_RX8CSR0,
+	CONNAC3X_U3D_RX9CSR0,
+	CONNAC3X_UDMA_WLCFG_0,
+	CONNAC3X_UDMA_WL_TX_SCH_ADDR,
+	CONNAC3X_UDMA_AR_CMD_FIFO_ADDR,
+	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_TEST_ADDR,
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_ADDR,
+	CONNAC3X_UDMA_WL_STOP_DP_OUT_ADDR
+};
+uint32_t g_au4UsbPollMaskTbl[] = {
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_UDMA_WLCFG_0_WL_TX_BUSY_MASK,
+	CONNAC3X_UDMA_WL_TX_SCH_MASK,
+	CONNAC3X_UDMA_AR_CMD_FIFO_MASK,
+	WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT2_CSR_TX_DROP_MODE_TEST_MASK,
+	WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_HIF_BUSY_MASK,
+	CONNAC3X_UDMA_WL_STOP_DP_OUT_DROP_MASK
+};
+uint32_t g_au4UsbPollValueTbl[] = {
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	CONNAC3X_U3D_RX_FIFOEMPTY,
+	0,
+	CONNAC3X_UDMA_WL_TX_SCH_IDLE,
+	CONNAC3X_UDMA_AR_CMD_FIFO_MASK,
+	0,
+	0,
+	0
+};
+#endif
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -1137,6 +1183,97 @@ void asicConnac3xUdmaRxFlush(
 		u4Value &= ~UDMA_WLCFG_0_RX_FLUSH_MASK;
 	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaWlCfg_0_Addr,
 		   u4Value);
+}
+
+u_int8_t asicConnac3xUsbResume(
+	IN struct ADAPTER *prAdapter,
+	IN struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t count = 0;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Value, u4Idx, u4Loop;
+	uint32_t u4PollingFail = FALSE;
+	struct CHIP_DBG_OPS *prDbgOps;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prDbgOps = prChipInfo->prDebugOps;
+
+#if 0 /* enable it if need to do bug fixing by vender request */
+	/* NOTE: USB bus may not really do suspend and resume*/
+	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
+			  usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
+			  VND_REQ_FEATURE_SET,
+			  prBusInfo->u4device_vender_request_out,
+			  FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
+			  VENDOR_TIMEOUT_MS);
+	if (ret)
+		DBGLOG(HAL, ERROR,
+		"VendorRequest FeatureSetResume ERROR: %x\n",
+		(unsigned int)ret);
+#endif
+
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
+
+	for (u4Loop = 0; u4Loop < MAX_POLLING_LOOP; u4Loop++) {
+		for (u4Idx = 0;
+			u4Idx < sizeof(g_au4UsbPollAddrTbl)/sizeof(uint32_t);
+			u4Idx++) {
+			HAL_MCR_RD(prAdapter,
+				g_au4UsbPollAddrTbl[u4Idx], &u4Value);
+			if ((u4Value & g_au4UsbPollMaskTbl[u4Idx])
+				!= g_au4UsbPollValueTbl[u4Idx]) {
+				DBGLOG(HAL, ERROR,
+					"Polling [0x%08x] VALUE [0x%08x]\n",
+					g_au4UsbPollAddrTbl[u4Idx], u4Value);
+				u4PollingFail = TRUE;
+			}
+		}
+		if (u4PollingFail == TRUE) {
+			if (u4Loop == (MAX_POLLING_LOOP - 1)) {
+				if (prDbgOps && prDbgOps->showPdmaInfo)
+					prDbgOps->showPdmaInfo(prAdapter);
+			} else {
+				u4PollingFail = FALSE;
+				msleep(100);
+			}
+		} else
+			break;
+	}
+
+	/* To trigger CR4 path */
+	wlanSendDummyCmd(prAdapter, FALSE);
+	halEnableInterrupt(prAdapter);
+
+	/* using inband cmd to inform FW instead of vendor request */
+	/* All Resume operations move to FW */
+	halUSBPreResumeCmd(prAdapter);
+
+	while (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) {
+		if (count > 50) {
+			DBGLOG(HAL, ERROR, "pre_resume timeout\n");
+
+			/* If coredump is on-going, then we shall wait
+			 * until coredump is finished and subsequent
+			 * reset would be selected at that tiime.
+			 */
+#if (CFG_CE_ASSERT_DUMP == 1)
+			if (!prAdapter->fgN9AssertDumpOngoing)
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							 RST_CMD_EVT_FAIL);
+#endif
+			break;
+		}
+		msleep(20);
+		count++;
+	}
+
+	DBGLOG(HAL, STATE, "pre_resume event check(count %d)\n", count);
+
+	wlanResumePmHandle(prGlueInfo);
+
+	return TRUE;
 }
 
 uint16_t asicConnac3xUsbRxByteCount(
