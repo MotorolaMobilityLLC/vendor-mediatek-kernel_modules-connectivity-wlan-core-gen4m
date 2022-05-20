@@ -34,6 +34,11 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 	uint8_t i;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!bss) {
+		DBGLOG(ML, WARN, "Bss is NULL!\n");
+		return FALSE;
+	}
+
 	offset = sortGetPayloadOffset(prAdapter, pucPacket);
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(pucPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
@@ -334,6 +339,11 @@ void mldGenerateAssocIE(
 		struct STA_RECORD) {
 		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(prAdapter,
 				starec->ucBssIndex);
+
+		if (!bss) {
+			DBGLOG(ML, ERROR, "bss is NULL!!!\n");
+			return;
+		}
 
 		if (count >= MLD_LINK_MAX) {
 			DBGLOG(ML, ERROR, "too many links!!!\n");
@@ -659,6 +669,11 @@ void mldGenerateBasicCompleteProfile(
 	uint8_t nexid_arr[ELEM_ID_MAX_NUM], nexid = 0;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!bss) {
+		DBGLOG(ML, WARN, "Bss is NULL!");
+		return;
+	}
+
 	starec = cnmGetStaRecByIndex(prAdapter, prMsduInfoSta->ucStaRecIndex);
 	pos = (uint8_t *) prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	sta_ctrl = (struct IE_MULTI_LINK_STA_CONTROL *) pos;
@@ -1435,7 +1450,7 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	struct IE_MBSSID_INDEX *idx = NULL;
 	struct IE_MBSSID *mbss = NULL;
 	struct IE_NON_TX_CAP *cap = NULL;
-	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT], *pos;
+	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT], *pos, *end;
 	size_t len;
 
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
@@ -1466,14 +1481,20 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	/* compose RXD, mac header, payload(fixed field)*/
 	nicRxCopyRFB(prAdapter, prDst, prSrc);
 	pos = (uint8_t *)prDst->pvHeader;
+	end = prDst->pucRecvBuff + CFG_RX_MAX_MPDU_SIZE;
 	mgmt = (struct WLAN_BEACON_FRAME *)prDst->pvHeader;
 	COPY_MAC_ADDR(mgmt->aucSrcAddr, new_bssid);
 	COPY_MAC_ADDR(mgmt->aucBSSID, new_bssid);
-	mgmt->u2CapInfo = cap->u2Cap;
+	mgmt->u2CapInfo = cap ? cap->u2Cap : 0;
 
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
 		len = IE_SIZE(ies[i]);
+		if (pos + padding + len > end) {
+			DBGLOG(ML, INFO, "no rx packet space left");
+			break;
+		}
+
 		kalMemCopy(pos + padding, ies[i], len);
 
 		/* replace dtim count and dtim period of the MBSS to the TIM */
@@ -1670,7 +1691,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	len = prSrc->u2PacketLen - padding;
 
 	/* only valid mgmt can be duplicated from complete profile */
-	if (!mldIsValidForCompleteProfile(fctrl, prStaRec))
+	if (padding < 0 || !mldIsValidForCompleteProfile(fctrl, prStaRec))
 		return WLAN_STATUS_INVALID_PACKET;
 
 	if (mldParseProfile(ie, len, prSta->aucIEbuf, prSta->ucIEbufLen,
@@ -1688,6 +1709,11 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 		struct BSS_INFO *bss =
 			GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
+		if (!bss) {
+			DBGLOG(ML, WARN, "Bss is NULL!");
+			goto done;
+		}
+
 		if (fctrl == MAC_FRAME_ASSOC_REQ ||
 		    fctrl == MAC_FRAME_REASSOC_REQ)
 			COPY_MAC_ADDR(mgmt->aucBSSID, bss->aucOwnMacAddr);
@@ -1701,11 +1727,11 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	}
 
 	DBGLOG(ML, INFO, "header total %d ies\n", ie_count);
-	dumpMemory8(pos, padding);
+	DBGLOG_MEM8(ML, INFO, pos, padding);
 
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
-		dumpMemory8(ies[i], IE_SIZE(ies[i]));
+		DBGLOG_MEM8(ML, INFO, ies[i], IE_SIZE(ies[i]));
 		kalMemCopy(pos + padding, ies[i], IE_SIZE(ies[i]));
 		padding += IE_SIZE(ies[i]);
 	}
@@ -1723,6 +1749,11 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 			kalFindIeExtIE(ELEM_ID_RESERVED,
 			ELEM_EXT_ID_MLD, ie, len);
 		dst = (struct IE_MULTI_LINK_CONTROL *)(pos + padding);
+
+		if (!src) {
+			DBGLOG(ML, ERROR, "no ml ie\n");
+			goto done;
+		}
 
 		/* fixed field, 1:common info len, 6:mac addr*/
 		kalMemCopy(dst, src, sizeof(*src) + 1 + MAC_ADDR_LEN);
@@ -1759,11 +1790,12 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 				ELEM_HDR_LEN;
 
  		DBGLOG(ML, INFO, "dst ml len=%d\n", IE_SIZE(dst));
-		dumpMemory8((uint8_t *)dst, IE_SIZE(dst));
+		DBGLOG_MEM8(ML, INFO, (uint8_t *)dst, IE_SIZE(dst));
 
 		padding += IE_SIZE(dst);
 	}
 
+done:
 	prDst->u2PacketLen = padding;
 	prDst->u2RxByteCount = ((uint8_t *)prDst->pvHeader) +
 		padding - prDst->pucRecvBuff;
@@ -1772,7 +1804,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 
 	DBGLOG(ML, INFO, "dump duplicated SwRFB, len=%d, chnl=%d, band=%d\n",
 		padding, prDst->ucChnlNum, prDst->eRfBand);
-	dumpMemory8(pos, padding);
+	DBGLOG_MEM8(ML, INFO, pos, padding);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -1895,6 +1927,11 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 	uint32_t ret;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!bss) {
+		DBGLOG(ML, INFO, "AA but bss is null\n");
+		goto fail;
+	}
+
 	ml = kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
 		prSrc->pvHeader + offset, prSrc->u2PacketLen - offset);
 	if (!ml) {
@@ -2204,16 +2241,16 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 
 
 		DBGLOG(ML, INFO,
-			"[%d] pri:%d, sec:%d, setup:%d, eml:0x%06x, str:[0x%x,0x%x,0x%x], mac:"
+			"[%d] pri:%d, sec:%d, setup:%d, eml:0x%02x%04x, str:0x%02x%04x, mac:"
 			MACSTR "\n",
 			prMldStarec->ucIdx,
 			prMldStarec->u2PrimaryMldId,
 			prMldStarec->u2SecondMldId,
 			prMldStarec->u2SetupWlanId,
-			*(uint32_t *)prMldStarec->aucEmlCap,
-			prMldStarec->aucStrBitmap[0],
-			prMldStarec->aucStrBitmap[1],
-			prMldStarec->aucStrBitmap[2],
+			*(uint8_t *)(prMldStarec->aucEmlCap + 2),
+			*(uint16_t *)(prMldStarec->aucEmlCap),
+			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
+			*(uint16_t *)(prMldStarec->aucStrBitmap),
 			prMldStarec->aucPeerMldAddr);
 
 		DBGLOG(ML, INFO, "\tRX pkt count:\n");
@@ -2424,8 +2461,7 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 		return NULL;
 
 	if (prStaRec->ucMldStaIndex == MLD_GROUP_NONE ||
-			prStaRec->ucMldStaIndex >
-			ARRAY_SIZE(prAdapter->aprMldStarec))
+	    prStaRec->ucMldStaIndex >= ARRAY_SIZE(prAdapter->aprMldStarec))
 		return NULL;
 
 	prMldStarec = &prAdapter->aprMldStarec[prStaRec->ucMldStaIndex];
