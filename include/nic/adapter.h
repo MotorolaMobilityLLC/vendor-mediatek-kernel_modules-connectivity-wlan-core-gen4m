@@ -447,6 +447,14 @@ struct BSS_INFO {
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t  ucEhtOpParams;
+	uint8_t  fgIsEhtOpPresent;
+	uint8_t  fgIsEhtDscbPresent;
+	uint8_t  ucEhtCtrl;
+	uint8_t  ucEhtCcfs0;
+	uint8_t  ucEhtCcfs1;
+	uint16_t u2EhtDisSubChanBitmap;
+	struct EHT_OP_INFO rEhtOpInfo;
+	struct EHT_DSCP_INFO rEhtDscpInfo;
 #endif
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	uint8_t ucMaxBSSIDIndicator;

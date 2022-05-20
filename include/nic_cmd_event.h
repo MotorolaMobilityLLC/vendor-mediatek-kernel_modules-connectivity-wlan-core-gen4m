@@ -4306,6 +4306,11 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
 #endif
 
+#if CFG_SUPPORT_802_11BE
+void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+#endif
+
 #if CFG_SUPPORT_NAN
 struct _CMD_EVENT_TLV_ELEMENT_T *
 nicGetTargetTlvElement(IN uint16_t u2TargetTlvElement, IN void *prCmdBuffer);
