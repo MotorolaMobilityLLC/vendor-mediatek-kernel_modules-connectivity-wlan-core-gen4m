@@ -70,7 +70,6 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
-	# Keep combo chip as last to avoid build fail by bus mismatch
 	WLAN_CHIP_ID := bellwether
 	WIFI_CHIP := BELLWETHER
 	CONNAC_VER := 3_0
@@ -91,6 +90,39 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6639
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
 	CONFIG_WLAN_PLATFORM := mt6983
+	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	WLAN_CHIP_ID := bellwether
+	WIFI_CHIP := BELLWETHER
+	CONNAC_VER := 3_0
+	WIFI_HIF := pcie
+	WIFI_WMT := y
+	WIFI_EMI := n
+	WIFI_NAME := wlan_drv_gen4m_6983_bellwether
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
+	CONFIG_WLAN_PLATFORM := mt6983
+	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	WLAN_CHIP_ID := 6639
+	WIFI_CHIP := MT6639
+	CONNAC_VER := 3_0
+	WIFI_HIF := pcie
+	WIFI_WMT := y
+	WIFI_EMI := y
+	WIFI_NAME := wlan_drv_gen4m_6983_6639
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
+	CONFIG_WLAN_PLATFORM := mt6983
+	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	WLAN_CHIP_ID := 6639
+	WIFI_CHIP := MT6639
+	CONNAC_VER := 3_0
+	WIFI_HIF := pcie
+	WIFI_WMT := y
+	WIFI_EMI := y
+	WIFI_NAME := wlan_drv_gen4m_6985_6639
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
+	CONFIG_WLAN_PLATFORM := mt6985
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 else
 	WIFI_NAME := wlan_drv_gen4m
