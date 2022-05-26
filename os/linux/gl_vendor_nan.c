@@ -2157,8 +2157,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		return -EOPNOTSUPP;
 	}
 
-	kfree_skb(skb);
-
 	return ret;
 
 }
