@@ -1914,10 +1914,15 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO aucChannelListRdd
 			[MAX_5G_BAND_CHN_NUM] = {};
 
-		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC) {
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
 				P2P_ROLE_STATE_IDLE);
+			SET_NET_PWR_STATE_IDLE(
+				prAdapter,
+				prP2pBssInfo->ucBssIndex)
+		}
+
 
 		kalP2PRddDetectUpdate(prAdapter->prGlueInfo,
 			prP2pRoleFsmInfo->ucRoleIndex);
