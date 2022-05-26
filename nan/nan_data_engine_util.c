@@ -1877,8 +1877,9 @@ nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
 		case NDP_INITIATOR_TX_DP_CONFIRM:
 			/* refer to Table.28 - don't carry NDP
 			 * for NDL Counter Reject
+			 * avoid prNDL == NULL for Coverity Check
 			 */
-			if (prNDL->ucNDLSetupCurrentStatus ==
+			if (prNDL != NULL && prNDL->ucNDLSetupCurrentStatus ==
 			    NAN_ATTR_NDL_STATUS_REJECTED)
 				return 0;
 			return u2AttrLength;
@@ -2647,11 +2648,13 @@ nanDataEngineNdcAttrLength(struct ADAPTER *prAdapter,
 	/* Sigma 5.3.2 must pass with NDC attr
 	 * not to carry for NDP Status [ACCEPTED] with Data Path Confirm
 	 *  - Table 28
+	 * * avoid prNDL == NULL for Coverity Check
 	 */
 	if (prNDP != NULL &&
 	    prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM &&
 	    prNDP->fgConfirmRequired == TRUE &&
 	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_ACCEPTED &&
+	    prNDL != NULL &&
 	    prNDL->fgIsCounter == FALSE) {
 		return 0;
 	}
@@ -2793,10 +2796,12 @@ nanDataEngineUnalignedAttrLength(struct ADAPTER *prAdapter,
 	if ((prNDL == NULL) && (prNDP == NULL))
 		return 0;
 
+	/* avoid prNDL == NULL for Coverity Check */
 	if (prNDP != NULL &&
 	    prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_CONFIRM &&
 	    prNDP->fgConfirmRequired == TRUE &&
 	    prNDP->ucNDPSetupStatus == NAN_ATTR_NDP_STATUS_ACCEPTED &&
+		prNDL != NULL &&
 	    prNDL->fgIsCounter == FALSE) {
 		return 0;
 	}
@@ -3704,7 +3709,7 @@ nanDataEngineSetupStaRec(IN struct ADAPTER *prAdapter,
 		ucPeerBW = 20;
 		/* whsu */
 		u4PeerNSS = prBssInfo->ucOpRxNss;
-		u4PeerNSS = 1;
+
 		DBGLOG(NAN, INFO, "[%s] Use Default PeerBW %d , PeerNSS %d\n",
 		       __func__, ucPeerBW, u4PeerNSS);
 	}
@@ -4140,16 +4145,16 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 	    WLAN_STATUS_SUCCESS)
 		return WLAN_STATUS_FAILURE;
 
-	/* Notify scheduler */
-	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr,
-				NAN_BSS_INDEX_BAND0,
-				prNdpCxt->prNanStaRec->ucIndex, prNdpCxt->ucId);
-
 	/* update SA with strongest security */
 	if (!prNdpCxt->prNanStaRec) {
 		DBGLOG(NAN, ERROR, "[%s] prNanStaRec error\n", __func__);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	/* Notify scheduler */
+	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr,
+				NAN_BSS_INDEX_BAND0,
+				prNdpCxt->prNanStaRec->ucIndex, prNdpCxt->ucId);
 
 	if (fgSecurityRequired == FALSE)
 		nanSecResetTk(prNdpCxt->prNanStaRec);
@@ -4312,8 +4317,14 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 
 		prNdpCxt->fgValid = FALSE;
 	} else {
-		nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
-		nicTxGenerateDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+		if (prNdpCxt->prNanStaRec) {
+			nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+			nicTxGenerateDescTemplate(prAdapter,
+				prNdpCxt->prNanStaRec);
+		} else {
+			DBGLOG(NAN, WARN,
+				"[%s] prNanStaRec = NULL\n", __func__);
+		}
 	}
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -4651,8 +4662,14 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 
 		prNdpCxt->fgValid = FALSE;
 	} else {
-		nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
-		nicTxGenerateDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+		if (prNdpCxt->prNanStaRec) {
+			nicTxFreeDescTemplate(prAdapter, prNdpCxt->prNanStaRec);
+			nicTxGenerateDescTemplate(prAdapter,
+				prNdpCxt->prNanStaRec);
+		} else {
+			DBGLOG(NAN, WARN,
+					"[%s] prNanStaRec = NULL\n", __func__);
+		}
 	}
 	prNDP->prContext = NULL;
 

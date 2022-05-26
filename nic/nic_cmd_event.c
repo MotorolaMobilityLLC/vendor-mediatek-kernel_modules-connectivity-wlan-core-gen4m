@@ -5183,7 +5183,7 @@ void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
 			continue;
 
 		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
-		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_NUM; u4Idx++) {
+		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
 			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
 							  u4Idx);
 			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
