@@ -2159,7 +2159,7 @@ uint32_t nicPmIndicateBssCreated(IN struct ADAPTER
 				 *prAdapter, IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	struct CMD_INDICATE_PM_BSS_CREATED rCmdIndicatePmBssCreated;
+	struct CMD_INDICATE_PM_BSS_CREATED rCmdIndicatePmBssCreated = {0};
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -2278,7 +2278,7 @@ uint32_t nicPmIndicateBssConnected(IN struct ADAPTER
 uint32_t nicPmIndicateBssAbort(IN struct ADAPTER *prAdapter,
 			       IN uint8_t ucBssIndex)
 {
-	struct CMD_INDICATE_PM_BSS_ABORT rCmdIndicatePmBssAbort;
+	struct CMD_INDICATE_PM_BSS_ABORT rCmdIndicatePmBssAbort = {0};
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
