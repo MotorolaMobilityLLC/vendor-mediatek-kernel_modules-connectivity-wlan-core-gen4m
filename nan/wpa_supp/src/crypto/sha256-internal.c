@@ -34,6 +34,9 @@ sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac) {
 
 	ctx = os_zalloc(sizeof(struct nan_rdf_sha256_state));
 
+	if (ctx == NULL)
+		return -1;
+
 	nan_rdf_sha256_init(ctx);
 	for (i = 0; i < num_elem; i++)
 		if (sha256_process(ctx, addr[i], len[i])) {

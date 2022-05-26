@@ -5334,6 +5334,11 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 		prGlueInfo = prAdapter->prGlueInfo;
 		prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)pucEventBuf;
 		prTlvElement = nicGetTargetTlvElement(1, prTlvCommon);
+		if (!prTlvElement) {
+			DBGLOG(REQ, ERROR,
+				"prTlvElement is null\n");
+			return;
+		}
 		prEventContent =
 			(struct _TXM_CMD_EVENT_TEST_T *)prTlvElement->aucbody;
 		prQueryInfoContent =

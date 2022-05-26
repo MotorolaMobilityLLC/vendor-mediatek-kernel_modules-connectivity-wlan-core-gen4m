@@ -273,12 +273,15 @@ err_alloc:
 unsigned char
 nanFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 {
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter;
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error\n");
 		return FALSE;
 	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	if (!prAdapter) {
 		DBGLOG(NAN, ERROR, "prAdapter error!\n");
 		return FALSE;
@@ -393,12 +396,13 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
-	prAdapter = prGlueInfo->prAdapter;
-
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error\n");
 		return FALSE;
 	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
 	if (!prAdapter) {
 		DBGLOG(NAN, ERROR, "prAdapter error\n");
 		return FALSE;
@@ -626,6 +630,10 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 		prMCAddrList = kalMemAlloc(
 			MAX_NUM_GROUP_ADDR * ETH_ALEN, VIR_MEM_TYPE);
 
+		if (!prMCAddrList) {
+			DBGLOG(NAN, ERROR, "prMCAddrList is null!\n");
+			return;
+		}
 		netdev_for_each_mc_addr(ha, prDev) {
 			if (i < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy(

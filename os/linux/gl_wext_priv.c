@@ -2363,7 +2363,6 @@ __priv_nan_struct(IN struct net_device *prNetDev,
 		uint32_t rStatus;
 
 		rNanCmdDataResponse.ucType = prDataRes->type;
-		rNanCmdDataResponse.ucDecisionStatus = prDataRes->rsp_code;
 		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
 		rNanCmdDataResponse.ucNDPId = prDataRes->ndp_instance_id;
 		rNanCmdDataResponse.ucRequireQOS = prDataRes->ndp_cfg.qos_cfg;

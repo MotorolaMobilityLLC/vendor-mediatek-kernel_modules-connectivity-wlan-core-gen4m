@@ -100,7 +100,6 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	uint8_t ucCmdSeqNum;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
-	unsigned char fgNoHandshakeSec = FALSE;
 	struct mt66xx_chip_info *prChipInfo;
 	uint16_t cmd_size;
 
@@ -268,14 +267,15 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				   prBssInfo->aucOwnMacAddr,
 				   MAC_ADDR_LEN);
 		}
+#if 0
 		if (fgNoHandshakeSec) { /* WEP: STA and AP */
 			prBssInfo->wepkeyWlanIdx =
 				prCmdKey->ucWlanIndex;
 			prBssInfo->wepkeyUsed
 				[prCmdKey->ucKeyId] = TRUE;
-		} else if (
-			!prBssInfo
-				 ->prStaRecOfAP) {
+		} else
+#endif
+		if (!prBssInfo->prStaRecOfAP) {
 			/* AP WPA/RSN */
 			prBssInfo->ucBMCWlanIndexS
 				[prCmdKey->ucKeyId] =
@@ -1544,11 +1544,7 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /* AP */
 	u16 key_info, key_data_length;
 	enum { PAIRWISE_2,
 	       PAIRWISE_4,
-	       GROUP_2,
-	       REQUEST,
-	       SMK_M1,
-	       SMK_M3,
-	       SMK_ERROR } msg;
+	       GROUP_2 } msg;
 	char *msgtxt;
 	struct wpa_eapol_ie_parse kde;
 	/* int ft; */
@@ -1900,6 +1896,7 @@ continue_processing:
 			return WLAN_STATUS_FAILURE;
 		}
 		break;
+#if 0
 	case SMK_M1:
 	case SMK_M3:
 	case SMK_ERROR:
@@ -1907,6 +1904,7 @@ continue_processing:
 		/* STSL disabled - ignore SMK messages */
 	case REQUEST:
 		break;
+#endif
 	}
 
 	wpa_auth_vlogger(wpa_auth, sm->addr, LOGGER_DEBUG,

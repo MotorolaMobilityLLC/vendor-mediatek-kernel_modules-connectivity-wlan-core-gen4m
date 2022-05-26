@@ -1355,6 +1355,9 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		kalMemFree(pu2NDPInstance,
+				   VIR_MEM_TYPE,
+				   1 * sizeof(*pu2NDPInstance));
 		return -ENOMEM;
 	}
 

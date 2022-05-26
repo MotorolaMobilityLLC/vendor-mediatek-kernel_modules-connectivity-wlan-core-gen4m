@@ -42,6 +42,11 @@ hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	int ret = 0;
 
 	k_pad = os_zalloc(64);
+
+	if (!k_pad) {
+		DBGLOG(NAN, ERROR, "k_pad is null!\n");
+		return -1;
+	}
 	tk = os_zalloc(32);
 
 	if (num_elem > 5) {
