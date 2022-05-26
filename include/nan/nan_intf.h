@@ -1024,7 +1024,7 @@ struct NanPublishRequest {
 	/* length of service name */
 	uint16_t service_name_len;
 	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_MAX_SERVICE_NAME_LEN];
+	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
 
 	/* Field which specifies how the matching indication to host is
 	 * controlled.
@@ -1209,7 +1209,7 @@ struct NanSubscribeRequest {
 	/* length of service name */
 	uint16_t service_name_len;
 	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_MAX_SERVICE_NAME_LEN];
+	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
 
 	/* Sequence of values which further specify the published service
 	 * beyond the service name
