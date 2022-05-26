@@ -4907,7 +4907,8 @@ uint32_t txPwrApplyPwrAnt(
 {
 	uint8_t u1BandIdx = 0, u1AntIdx = 0;
 
-	if (txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+	if ((txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+		|| (tag >= POWER_ANT_TAG_NUM))
 		return u1Idx;
 
 	for (u1BandIdx = 0; u1BandIdx < u1BandNum; u1BandIdx++) {
@@ -4948,7 +4949,8 @@ uint32_t txPwrApplyPwrAnt6G(
 {
 	uint8_t u1BandIdx = 0, u1AntIdx = 0;
 
-	if (txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+	if ((txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+		|| (tag >= POWER_ANT_TAG_NUM))
 		return u1Idx;
 
 	for (u1BandIdx = 0; u1BandIdx < u1BandNum; u1BandIdx++) {
