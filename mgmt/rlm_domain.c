@@ -4760,35 +4760,36 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	struct CMD_CHANNEL_POWER_LIMIT *prPwrLimit;
 	struct CMD_CHANNEL_POWER_LIMIT_HE *prPwrLimitHE;
 	struct CMD_CHANNEL_POWER_LIMIT_HE_BW160 *prPwrLimitHEBW160;
-	uint8_t rateIdxHe, rateIdx;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	struct CMD_CHANNEL_POWER_LIMIT_6E *prPwrLimit6E;
 #endif
 	int8_t *prRateOfs;
 
 	if (eType == PWR_LIMIT_TYPE_COMP_11AX) {
+		enum ENUM_POWER_LIMIT_HE rateIdx;
 		prPwrLimitHE = (struct CMD_CHANNEL_POWER_LIMIT_HE *) pvBuf;
 		prRateOfs = &prPwrLimitHE->cPwrLimitRU26L;
 
-		for (rateIdxHe = PWR_LIMIT_RU26_L;
-			rateIdxHe < PWR_LIMIT_HE_NUM ; rateIdxHe++) {
-			if (prChlSetting->opHE[rateIdxHe]
+		for (rateIdx = PWR_LIMIT_RU26_L;
+			rateIdx < PWR_LIMIT_HE_NUM ; rateIdx++) {
+			if (prChlSetting->opHE[rateIdx]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
-				txPwrOperate(eCtrlType, prRateOfs + rateIdxHe,
-				&prChlSetting->i8PwrLimitHE[rateIdxHe]);
+				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
+				&prChlSetting->i8PwrLimitHE[rateIdx]);
 			}
 		}
 	} else if (eType == PWR_LIMIT_TYPE_COMP_11AX_BW160) {
+		enum ENUM_POWER_LIMIT_HE rateIdx;
 		prPwrLimitHEBW160 =
 			(struct CMD_CHANNEL_POWER_LIMIT_HE_BW160 *) pvBuf;
 		prRateOfs = &prPwrLimitHEBW160->cPwrLimitRU26L;
 
-		for (rateIdxHe = PWR_LIMIT_RU26_L;
-			rateIdxHe < PWR_LIMIT_HE_BW160_NUM ; rateIdxHe++) {
-			if (prChlSetting->opHE[rateIdxHe]
+		for (rateIdx = PWR_LIMIT_RU26_L;
+			rateIdx < PWR_LIMIT_HE_BW160_NUM ; rateIdx++) {
+			if (prChlSetting->opHE[rateIdx]
 				!= PWR_CTRL_TYPE_NO_ACTION) {
-				txPwrOperate(eCtrlType, prRateOfs + rateIdxHe,
-				&prChlSetting->i8PwrLimitHE[rateIdxHe]);
+				txPwrOperate(eCtrlType, prRateOfs + rateIdx,
+				&prChlSetting->i8PwrLimitHE[rateIdx]);
 			}
 		}
 	}
@@ -4796,6 +4797,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	else if (eType == PWR_LIMIT_TYPE_COMP_6E_1 ||
 				eType == PWR_LIMIT_TYPE_COMP_6E_2 ||
 				eType == PWR_LIMIT_TYPE_COMP_6E_3) {
+		enum ENUM_POWER_LIMIT_HE rateIdx;
 		prPwrLimit6E = (struct CMD_CHANNEL_POWER_LIMIT_6E *) pvBuf;
 		prRateOfs = &prPwrLimit6E->cPwrLimitRU26L;
 		for (rateIdx = PWR_LIMIT_RU26_L;
@@ -4809,6 +4811,7 @@ uint32_t txPwrArbitrator(enum ENUM_TX_POWER_CTRL_TYPE eCtrlType,
 	}
 #endif
 	else {
+		enum ENUM_POWER_LIMIT rateIdx;
 		prPwrLimit = (struct CMD_CHANNEL_POWER_LIMIT *) pvBuf;
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 		prRateOfs = &prPwrLimit->cPwrLimitCCK_L;
