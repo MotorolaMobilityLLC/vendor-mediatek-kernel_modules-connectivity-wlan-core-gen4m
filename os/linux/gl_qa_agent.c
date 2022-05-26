@@ -357,7 +357,8 @@ static int32_t ResponseToQA(struct HQA_CMD_FRAME
 				   sizeof((HqaCmdFrame)->Sequence) +
 				   ntohs((HqaCmdFrame)->Length);
 
-	if (prIwReqData->data.length == 0)
+	if (prIwReqData->data.length == 0 ||
+	    prIwReqData->data.length > sizeof(*HqaCmdFrame))
 		return -EFAULT;
 
 	if (copy_to_user(prIwReqData->data.pointer,
@@ -2116,6 +2117,10 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device
 
 	DBGLOG(RFTEST, INFO, "Offset = 0x%08x, Len = 0x%08x\n",
 				u4Offset, u2Len);
+
+	if ((2 + (u2Len * 4)) > sizeof(HqaCmdFrame->Data)) {
+		return -EINVAL;
+	}
 
 	for (u4Index = 0; u4Index < u2Len; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
