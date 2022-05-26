@@ -1101,6 +1101,8 @@ wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm, const u8 *keydata,
 	int maxkeylen;
 	struct wpa_eapol_ie_parse ie;
 
+	os_memset(&ie, 0, sizeof(ie));
+
 	wpa_hexdump(MSG_DEBUG, "RSN: msg 1/2 key data", keydata, keydatalen);
 	if (wpa_supplicant_parse_ies_wpa(keydata, keydatalen, &ie) < 0)
 		return -1;

@@ -292,6 +292,8 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	uint8_t auc_tk[32];
 	uint32_t u4Idx;
 
+	kalMemZero(auc_tk, sizeof(auc_tk));
+
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
 			 sizeof(struct NanFWPublishRequest);
@@ -595,6 +597,8 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	struct nan_rdf_sha256_state r_SHA_256_state;
 	uint8_t auc_tk[32];
 	uint32_t u4Idx;
+
+	kalMemZero(auc_tk, sizeof(auc_tk));
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +

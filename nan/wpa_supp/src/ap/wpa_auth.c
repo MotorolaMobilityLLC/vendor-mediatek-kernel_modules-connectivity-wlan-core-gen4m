@@ -2269,10 +2269,9 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING) {
 
 #ifdef CFG_SUPPORT_NAN
 	sm->u1CurMsg = NAN_SEC_M3;
-	secure = 1;
 #endif
 	wpa_send_eapol(sm->wpa_auth, sm,
-		       (secure ? WPA_KEY_INFO_SECURE : 0) | WPA_KEY_INFO_MIC |
+		       WPA_KEY_INFO_SECURE | WPA_KEY_INFO_MIC |
 			       WPA_KEY_INFO_ACK | WPA_KEY_INFO_INSTALL |
 			       WPA_KEY_INFO_KEY_TYPE,
 		       _rsc, sm->ANonce, kde, pos - kde, keyidx, encr);
@@ -2583,7 +2582,7 @@ SM_STATE(WPA_PTK_GROUP, KEYERROR) {
 
 SM_STEP(WPA_PTK_GROUP) {
 	wpa_printf(MSG_INFO, "[%s] Enter, wpa_ptk_group_state:%s\n", __func__,
-		   aStrWpaAuthGtkState[sm->wpa_ptk_group_state]);
+		   aStrWpaAuthGtkState[(u8)sm->wpa_ptk_group_state]);
 
 	return; /*skip for NAN now time*/
 

@@ -1105,8 +1105,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		struct NanConfigRequest nanConfigReq;
 		struct NanConfigRspMsg nanConfigRsp;
 
-		kalMemZero(&nanConfigReq, sizeof(struct NanEnableRequest));
-		kalMemZero(&nanConfigRsp, sizeof(struct NanEnableRspMsg));
+		kalMemZero(&nanConfigReq, sizeof(struct NanConfigRequest));
+		kalMemZero(&nanConfigRsp, sizeof(struct NanConfigRspMsg));
 
 		while ((remainingLen > 0) &&
 		       (0 !=
@@ -1194,11 +1194,17 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		pNanPublishReq =
 			kmalloc(sizeof(struct NanPublishRequest), GFP_ATOMIC);
+
+		if (!pNanPublishReq) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		pNanPublishRsp = kmalloc(sizeof(struct NanPublishServiceRspMsg),
 					 GFP_ATOMIC);
 
-		if (!pNanPublishReq || !pNanPublishRsp) {
+		if (!pNanPublishRsp) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanPublishReq);
 			return -ENOMEM;
 		}
 
@@ -1424,12 +1430,18 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		pNanPublishCancelReq = kmalloc(
 			sizeof(struct NanPublishCancelRequest), GFP_ATOMIC);
+
+		if (!pNanPublishCancelReq) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		pNanPublishCancelRsp =
 			kmalloc(sizeof(struct NanPublishServiceCancelRspMsg),
 				GFP_ATOMIC);
 
-		if (!pNanPublishCancelReq || !pNanPublishCancelRsp) {
+		if (!pNanPublishCancelRsp) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanPublishCancelReq);
 			return -ENOMEM;
 		}
 
@@ -1502,11 +1514,17 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		pNanSubscribeReq =
 			kmalloc(sizeof(struct NanSubscribeRequest), GFP_ATOMIC);
+
+		if (!pNanSubscribeReq) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		pNanSubscribeRsp = kmalloc(
 			sizeof(struct NanSubscribeServiceRspMsg), GFP_ATOMIC);
 
-		if (!pNanSubscribeReq || !pNanSubscribeRsp) {
+		if (!pNanSubscribeRsp) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanSubscribeReq);
 			return -ENOMEM;
 		}
 		kalMemZero(pNanSubscribeReq,
@@ -1800,11 +1818,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		pNanSubscribeCancelReq = kmalloc(
 			sizeof(struct NanSubscribeCancelRequest), GFP_ATOMIC);
+		if (!pNanSubscribeCancelReq) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		pNanSubscribeCancelRsp =
 			kmalloc(sizeof(struct NanSubscribeServiceCancelRspMsg),
 				GFP_ATOMIC);
-		if (!pNanSubscribeCancelReq || !pNanSubscribeCancelRsp) {
+		if (!pNanSubscribeCancelRsp) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanSubscribeCancelReq);
 			return -ENOMEM;
 		}
 		kalMemZero(pNanSubscribeCancelReq,
@@ -1880,10 +1903,16 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 		pNanXmitFollowupReq = kmalloc(
 			sizeof(struct NanTransmitFollowupRequest), GFP_ATOMIC);
+
+		if (!pNanXmitFollowupReq) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			return -ENOMEM;
+		}
 		pNanXmitFollowupRsp = kmalloc(
 			sizeof(struct NanTransmitFollowupRspMsg), GFP_ATOMIC);
-		if (!pNanXmitFollowupReq || !pNanXmitFollowupRsp) {
+		if (!pNanXmitFollowupRsp) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanXmitFollowupReq);
 			return -ENOMEM;
 		}
 		kalMemZero(pNanXmitFollowupReq,
@@ -1981,7 +2010,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		break;
 	}
 	case NAN_MSG_ID_BEACON_SDF_REQ: {
-		uint32_t rStatus = WLAN_STATUS_SUCCESS;
 		u16 vsa_length = 0;
 		u32 *pXmitVSAparms = NULL;
 		struct NanTransmitVendorSpecificAttribute *pNanXmitVSAttrReq =
@@ -1993,13 +2021,21 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		pNanXmitVSAttrReq = kmalloc(
 			sizeof(struct NanTransmitVendorSpecificAttribute),
 			GFP_ATOMIC);
-		pNanBcnSdfVSARsp = kmalloc(
-			sizeof(struct NanBeaconSdfPayloadRspMsg), GFP_ATOMIC);
 
-		if (!pNanXmitVSAttrReq || !pNanBcnSdfVSARsp) {
+		if (!pNanXmitVSAttrReq) {
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
 			return -ENOMEM;
 		}
+
+		pNanBcnSdfVSARsp = kmalloc(
+			sizeof(struct NanBeaconSdfPayloadRspMsg), GFP_ATOMIC);
+
+		if (!pNanBcnSdfVSARsp) {
+			DBGLOG(REQ, ERROR, "Allocate failed\n");
+			kfree(pNanXmitVSAttrReq);
+			return -ENOMEM;
+		}
+
 		while ((remainingLen > 0) &&
 		       (0 !=
 			(readLen = nan_read_tlv((u8 *)data, &outputTlv)))) {
@@ -2043,10 +2079,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		pNanBcnSdfVSARsp->fwHeader.msgLen =
 			sizeof(struct NanBeaconSdfPayloadRspMsg);
 
-		if (rStatus != WLAN_STATUS_FAILURE)
-			pNanBcnSdfVSARsp->status = NAN_I_STATUS_SUCCESS;
-		else
-			pNanBcnSdfVSARsp->status = NAN_I_STATUS_INVALID_HANDLE;
+		pNanBcnSdfVSARsp->status = NAN_I_STATUS_SUCCESS;
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(
 			wiphy, sizeof(struct NanBeaconSdfPayloadRspMsg));
@@ -2116,7 +2149,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
-		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanDebug);
 		break;
@@ -2332,6 +2364,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		kfree(prNanPubRepliedInd);
 		return -ENOMEM;
 	}
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN, message_len,
@@ -2572,11 +2605,11 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 		(SIZEOF_TLV_HDR + prFollowupEvt->service_specific_info_len);
 
 	prNanFollowupInd = kmalloc(message_len, GFP_KERNEL);
-	kalMemZero(prNanFollowupInd, message_len);
 	if (!prNanFollowupInd) {
 		DBGLOG(REQ, ERROR, "Allocate failed\n");
 		return -ENOMEM;
 	}
+	kalMemZero(prNanFollowupInd, message_len);
 
 	prNanFollowupInd->fwHeader.msgVersion = 1;
 	prNanFollowupInd->fwHeader.msgId = NAN_MSG_ID_FOLLOWUP_IND;
@@ -2614,6 +2647,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		kfree(prNanFollowupInd);
 		return -ENOMEM;
 	}
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN, message_len,
