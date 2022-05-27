@@ -3014,6 +3014,8 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 			prMsduInfo->ucPktType = ENUM_PKT_TDLS;
 		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DNS))
 			prMsduInfo->ucPktType = ENUM_PKT_DNS;
+		else if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ICMPV6))
+			prMsduInfo->ucPktType = ENUM_PKT_ICMPV6;
 
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 		if (prMsduInfo->ucPktType != ENUM_PKT_ICMP) {

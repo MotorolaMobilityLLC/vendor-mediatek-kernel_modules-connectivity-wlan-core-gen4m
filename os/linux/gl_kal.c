@@ -2973,6 +2973,7 @@ kalIPv6FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIpv6Proto;
 	uint8_t *pucL3Hdr;
 	struct ADAPTER *prAdapter = NULL;
+	uint8_t ucSeqNo;
 
 	prAdapter = prGlueInfo->prAdapter;
 	ucIpv6Proto = pucIpv6Hdr[IPV6_HDR_IP_PROTOCOL_OFFSET];
@@ -3001,6 +3002,10 @@ kalIPv6FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
+	} else if (ucIpv6Proto == IPV6_PROTOCOL_ICMPV6) { /* ICMPV6 */
+		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
+		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
+		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMPV6);
 	}
 
 	return TRUE;
@@ -3189,12 +3194,8 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		break;
 
 	case ETH_P_IPV6:
-#if CFG_SUPPORT_WIFI_SYSDVT
-#if (CFG_TCP_IP_CHKSUM_OFFLOAD)
 		kalIPv6FrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
-#endif
-#endif
 
 #if DSCP_SUPPORT
 		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
