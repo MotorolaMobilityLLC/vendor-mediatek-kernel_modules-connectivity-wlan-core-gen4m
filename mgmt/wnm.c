@@ -433,6 +433,11 @@ void wnmSendBTMResponseFrame(IN struct ADAPTER *adapter,
 	prBtmParam = aisGetBTMParam(adapter, staRec->ucBssIndex);
 	prBtmParam->ucStatusCode = status;
 
+	if (!prBssInfo) {
+		DBGLOG(WNM, INFO, "BTM: invalid BSS_INFO\n");
+		return;
+	}
+
 	/* 1 Allocate MSDU Info */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
 		adapter, MAC_TX_RESERVED_FIELD + PUBLIC_ACTION_MAX_LEN);
@@ -529,6 +534,11 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 	prBtmParam = aisGetBTMParam(prAdapter, prStaRec->ucBssIndex);
 	prBtmParam->ucQueryDialogToken = ucToken++;
 	prBtmParam->fgWaitBtmRequest = TRUE;
+
+	if (!prBssInfo) {
+		DBGLOG(WNM, INFO, "BTM: invalid BSS_INFO\n");
+		return;
+	}
 
 	/* 1 Allocate MSDU Info */
 	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(
