@@ -1086,7 +1086,7 @@ int soc5_0_get_rx_rate_info(IN const uint32_t *prRxV,
 
 
 void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint32_t u4RxV0)
+	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV)
 {
 #if CFG_SUPPORT_LLS
 	static const uint8_t TX_MODE_2_LLS_MODE[] = {
@@ -1115,6 +1115,7 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 		/* Save format:  0  1  2   3   4   5   6    7 */
 	struct STATS_LLS_WIFI_RATE rate = {0};
 	struct STA_RECORD *prStaRec;
+	uint32_t u4RxV0 = pu4RxV[0];
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
 		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",

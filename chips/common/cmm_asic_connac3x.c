@@ -1598,12 +1598,14 @@ void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		/* P-RXV0[32:63] in RXD Group3 */
 		prRxV[1] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 
-		/* RXD Group3, DW22 */
+		/* DW22 for MODE, STBC, GI, DBW; rate(MCS), NSTS in RXV0 */
 		prRxV[2] = prGroup3->u2RxInfo;
 
 		/* RXD Group3, DW23 */
 		prRxV[3] = prGroup3->u4Rcpi;
 	}
+
+	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 

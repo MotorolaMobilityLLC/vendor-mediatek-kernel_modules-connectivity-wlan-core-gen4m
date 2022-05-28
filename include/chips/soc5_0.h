@@ -204,7 +204,7 @@ int soc5_0_get_rx_rate_info(IN const uint32_t *prRxV,
 
 #if CFG_SUPPORT_LLS
 void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxV0);
+	IN struct SW_RFB *prRetSwRfb, IN uint32_t *pu4RxV);
 #endif
 
 extern void kalConstructDefaultFirmwarePrio(
