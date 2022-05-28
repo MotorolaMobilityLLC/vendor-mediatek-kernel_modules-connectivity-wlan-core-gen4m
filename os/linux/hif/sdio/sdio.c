@@ -842,6 +842,7 @@ int mtk_sdio_async_irq_enable(struct sdio_func *func)
 	sdio_f0_writeb(func, data, SDIO_CCCR_IRQ_EXT, &ret);
 	if (ret) {
 		DBGLOG(HAL, ERROR, "CCCR 0x%X write fail (%d).\n", SDIO_CCCR_IRQ_EXT, ret);
+		func->card->quirks = quirks_bak;
 		return FALSE;
 	}
 	func->card->quirks = quirks_bak;
@@ -1035,9 +1036,17 @@ u_int8_t glBusInit(void *pvData)
 	else
 		DBGLOG(INIT, INFO, "Async-IRQ is enabled.\n");
 #endif
-
+	/* Returns 0 on success, -EINVAL if the host does not support the
+	 *  requested block size, or -EIO (etc.) if one of the resultant
+	 *  FBR block size register writes failed.
+	 */
 	ret = sdio_set_block_size(func, 512);
 	sdio_release_host(func);
+	if (ret) {
+		DBGLOG(HAL, ERROR,
+			"sdio_set_block_size fail!! ret: 0x%x\n", ret);
+		return FALSE;
+	}
 #endif
 	return TRUE;
 }				/* end of glBusInit() */
@@ -1273,29 +1282,42 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 
     /* progrqm h2d mailbox0 as interested register address */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
+	if (ucResult == FALSE)
+		goto Exit;
 
     /* set h2d interrupt to notify firmware. bit16 */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_WSICR,
 			SDIO_MAILBOX_FUNC_READ_REG_IDX);
+	if (ucResult == FALSE)
+		goto Exit;
 
 	/* polling interrupt status asserted. bit16 */
 
 	/* first, disable interrupt enable for SDIO_MAILBOX_FUNC_READ_REG_IDX */
 	ucResult = kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
+	if (ucResult == FALSE)
+		goto Exit;
+
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_WHIER,
 			(value & ~SDIO_MAILBOX_FUNC_READ_REG_IDX));
+	if (ucResult == FALSE)
+		goto Exit;
 
 	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit16 of WHISR assert for read register response */
 		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
+		if (ucResult == FALSE)
+			goto Exit;
 
 		if ((value & SDIO_MAILBOX_FUNC_READ_REG_IDX) ||
 			prGlueInfo->prAdapter->fgGetMailBoxRWAck) {
 			/* read d2h mailbox0 for interested register address */
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM0R, &value);
+			if (ucResult == FALSE)
+				goto Exit;
 
 			if (value != u4Register) {
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegRead_mac():register address mis-match");
@@ -1309,6 +1331,8 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 			/* read d2h mailbox1 for the value of the register */
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM1R, &value);
+			if (ucResult == FALSE)
+				goto Exit;
 			*pu4Value = value;
 			/* Set MCR_H2DSM0R to 0 for ack to FW. */
 			ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, 0);
@@ -1426,32 +1450,46 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 
 	/* progrqm h2d mailbox0 as interested register address */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, u4Register);
+	if (ucResult == FALSE)
+		goto Exit;
 
 	/* progrqm h2d mailbox1 as the value to write */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM1R, u4Value);
+	if (ucResult == FALSE)
+		goto Exit;
 
 	/*  set h2d interrupt to notify firmware bit17 */
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_WSICR,
 			SDIO_MAILBOX_FUNC_WRITE_REG_IDX);
+	if (ucResult == FALSE)
+		goto Exit;
 
 	/* polling interrupt status asserted. bit17 */
 
 	/* first, disable interrupt enable for SDIO_MAILBOX_FUNC_WRITE_REG_IDX */
 	ucResult = kalDevRegRead(prGlueInfo, MCR_WHIER, &value);
+	if (ucResult == FALSE)
+		goto Exit;
 	ucResult = kalDevRegWrite(prGlueInfo, MCR_WHIER,
 			(value & ~SDIO_MAILBOX_FUNC_WRITE_REG_IDX));
+	if (ucResult == FALSE)
+		goto Exit;
 
 	u4Time = (uint32_t) kalGetTimeTick();
 
 	do {
 		/* check bit17 of WHISR assert for response */
 		ucResult = kalDevRegRead(prGlueInfo, MCR_WHISR, &value);
+		if (ucResult == FALSE)
+			goto Exit;
 
 		if ((value & SDIO_MAILBOX_FUNC_WRITE_REG_IDX) ||
 			prGlueInfo->prAdapter->fgGetMailBoxRWAck) {
 			/* read d2h mailbox0 for interested register address */
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM0R, &value);
+			if (ucResult == FALSE)
+				goto Exit;
 
 			if (value != u4Register) {
 				DBGLOG(HAL, ERROR, "ERROR! kalDevRegWrite_mac():register address mis-match");

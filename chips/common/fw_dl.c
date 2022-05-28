@@ -335,6 +335,11 @@ uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
+	if (pvFwImageMapFile == NULL) {
+		DBGLOG(INIT, ERROR, "pvFwImageMapFile is NULL!!\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
 	/* patch header */
 	img_ptr = pvFwImageMapFile;
 	prPatchFormat = (struct PATCH_FORMAT_V2_T *)img_ptr;
@@ -363,6 +368,13 @@ uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER
 			glo_desc->patch_ver,
 			num_of_region,
 			be2cpu32(glo_desc->subsys));
+
+	if (num_of_region > FW_MAX_SECTION_NUM) {
+		DBGLOG(INIT, ERROR,
+			"num_of_region is bigger than max section number!\n");
+
+		return WLAN_STATUS_FAILURE;
+	}
 
 	/* section map */
 	img_ptr += sizeof(struct PATCH_GLO_DESC);
