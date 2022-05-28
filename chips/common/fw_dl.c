@@ -2596,7 +2596,7 @@ void wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 #define FW_FILE_NAME_TOTAL 8
 #define FW_FILE_NAME_MAX_LEN 64
 	const struct firmware *fw_entry;
-	struct WIFI_VER_INFO rVerInfo;
+	struct WIFI_VER_INFO *prVerInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct device *prDev;
 	void *prFwBuffer = NULL;
@@ -2636,23 +2636,28 @@ void wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		goto exit;
 	}
 
+	prVerInfo = (struct WIFI_VER_INFO *)
+		kalMemAlloc(sizeof(struct WIFI_VER_INFO), VIR_MEM_TYPE);
 	kalMemCopy(prFwBuffer, fw_entry->data, fw_entry->size);
-	if (wlanGetConnacTailerInfo(&rVerInfo, prFwBuffer, fw_entry->size,
+	if (wlanGetConnacTailerInfo(prVerInfo, prFwBuffer, fw_entry->size,
 			IMG_DL_IDX_N9_FW) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
 		goto exit;
 	}
 
 	*pu4ManifestSize =
-		kalStrnLen(rVerInfo.aucReleaseManifest, u4BufferMaxSize);
+		kalStrnLen(prVerInfo->aucReleaseManifest, u4BufferMaxSize);
 
 	kalMemCopy(pucManifestBuffer,
-		&rVerInfo.aucReleaseManifest,
+		&prVerInfo->aucReleaseManifest,
 		*pu4ManifestSize);
 
 exit:
 	if (prFwBuffer)
 		kalMemFree(prFwBuffer, VIR_MEM_TYPE, ALIGN_4(fw_entry->size));
+	if (prVerInfo)
+		kalMemFree(prVerInfo, VIR_MEM_TYPE,
+			sizeof(struct WIFI_VER_INFO));
 	release_firmware(fw_entry);
 }
 
