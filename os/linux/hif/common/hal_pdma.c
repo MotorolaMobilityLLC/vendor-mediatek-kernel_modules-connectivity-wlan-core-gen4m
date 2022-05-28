@@ -3067,6 +3067,9 @@ void halWpdmaFreeMsduTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 	struct MSDU_INFO *prMsduInfo;
+	struct QUE *prTxMsduRetQue = &prGlueInfo->rTxMsduRetQueue;
+
+	QUEUE_INITIALIZE(prTxMsduRetQue);
 
 	while (KAL_FIFO_OUT(&prGlueInfo->rTxMsduRetFifo, prMsduInfo)) {
 		if (!prMsduInfo) {
@@ -3074,6 +3077,14 @@ void halWpdmaFreeMsduTasklet(unsigned long data)
 			break;
 		}
 		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, FALSE);
+	}
+
+	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+			prTxMsduRetQue);
+	if (prMsduInfo) {
+		nicTxFreeMsduInfoPacketEx(prGlueInfo->prAdapter,
+				prMsduInfo, FALSE);
+		nicTxReturnMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
 	}
 }
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
@@ -3092,8 +3103,14 @@ void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	if (!prMsduInfo->pfTxDoneHandler) {
+#if CFG_SUPPORT_TASKLET_FREE_MSDU
+		/* reduce locks */
+		QUEUE_INSERT_TAIL(&prGlueInfo->rTxMsduRetQueue,
+				  (struct QUE_ENTRY *) prMsduInfo);
+#else /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 		nicTxFreePacket(prGlueInfo->prAdapter, prMsduInfo, FALSE);
 		nicTxReturnMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
+#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 	}
 #endif
 
