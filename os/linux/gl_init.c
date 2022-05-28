@@ -6343,6 +6343,7 @@ static int initWlan(void)
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
+	wifi_fwlog_get_fw_ver_register(wlanReadRamCodeReleaseManifest);
 #if (CFG_SUPPORT_ICS == 1)
 	wifi_ics_event_func_register(ics_log_event_notification);
 #endif /* CFG_SUPPORT_ICS */
@@ -6426,6 +6427,10 @@ static void exitWlan(void)
 #endif
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	kfree((const void *)gConEmiPhyBase);
+#endif
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	wifi_fwlog_get_fw_ver_register(NULL);
 #endif
 
 #if CFG_MTK_MDDP_SUPPORT
