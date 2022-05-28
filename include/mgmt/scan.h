@@ -640,6 +640,10 @@ struct SCAN_INFO {
 	u_int8_t	fgSkipDFS;
 	uint8_t		fgIsScanTimeout;
 	OS_SYSTIME rLastScanStartTime;
+
+#if (CFG_SUPPORT_WIFI_RNR == 1)
+	struct LINK rNeighborAPInfoList;
+#endif
 };
 
 /* Incoming Mailbox Messages */
@@ -745,8 +749,7 @@ struct AGPS_AP_LIST {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 struct NEIGHBOR_AP_INFO {
 	struct LINK_ENTRY rLinkEntry;
-	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
-	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
+	struct SCAN_PARAM rScanParam;
 };
 #endif
 
