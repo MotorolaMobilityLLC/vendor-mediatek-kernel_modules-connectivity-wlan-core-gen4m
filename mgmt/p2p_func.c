@@ -72,6 +72,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rlmRspGenerateHtCapIE}	/* 45 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
 			rlmRspGenerateHtOpIE}	/* 61 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
+			rlmGenerateHtTPEIE}	/* 34 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 			rsnGenerateRSNIE}	/* 48 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
