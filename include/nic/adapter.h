@@ -147,12 +147,6 @@ struct WLAN_INFO {
 
 	uint8_t eDesiredRates[PARAM_MAX_LEN_RATES];
 
-/* CMD_PS_PROFILE_T         ePowerSaveMode; */
-	struct CMD_PS_PROFILE arPowerSaveMode[MAX_BSSID_NUM];
-
-	/* Support power save flag for the caller */
-	uint32_t u4PowerSaveFlag[MAX_BSSID_NUM];
-
 	/* trigger parameter */
 	enum ENUM_RSSI_TRIGGER_TYPE eRssiTriggerType;
 	int32_t rRssiTriggerValue;
@@ -353,6 +347,10 @@ struct BSS_INFO {
 	/* Power Management related information                              */
 	/*-------------------------------------------------------------------*/
 	struct PM_PROFILE_SETUP_INFO rPmProfSetupInfo;
+
+	/* Support power save flag for the caller */
+	uint32_t u4PowerSaveFlag;
+	enum PARAM_POWER_MODE ePwrMode;
 
 	/*-------------------------------------------------------------------*/
 	/* WMM/QoS related information                                       */

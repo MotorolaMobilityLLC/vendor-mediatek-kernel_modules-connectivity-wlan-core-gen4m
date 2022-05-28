@@ -11578,6 +11578,7 @@ uint32_t wlanSetLowLatencyMode(
 	IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Events, uint8_t ucBssIndex)
 {
+	struct BSS_INFO *prBssInfo;
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
 	u_int8_t fgEnPM = FALSE; /* Power management */
@@ -11589,6 +11590,12 @@ uint32_t wlanSetLowLatencyMode(
 	DEBUGFUNC("wlanSetLowLatencyMode");
 
 	ASSERT(prAdapter);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u]\n", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	/* Initialize */
 	prWifiVar = &prAdapter->rWifiVar;
@@ -11604,7 +11611,8 @@ uint32_t wlanSetLowLatencyMode(
 		(uint32_t)prWifiVar->ucLowLatencyCmdData);
 
 	rPowerMode.ucBssIdx = ucBssIndex;
-	u4PowerFlag = prAdapter->rWlanInfo.u4PowerSaveFlag[rPowerMode.ucBssIdx];
+
+	u4PowerFlag = prBssInfo->u4PowerSaveFlag;
 
 	/* Enable/disable low latency mode decision:
 	 *
