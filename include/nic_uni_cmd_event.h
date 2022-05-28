@@ -5832,10 +5832,10 @@ struct UNI_EVENT_CSI_DATA {
 #define TAG_DATA(fp)	(((struct TAG_HDR *) fp)->aucBuffer)
 #define TAG_HDR_LEN 	sizeof(struct TAG_HDR)
 
-#define TAG_FOR_EACH(_pucTlvBuf, _i32TlvBufLen, _u2Offset) \
-for ((_u2Offset) = 0;	\
-	((((_u2Offset) + 2) <= (_i32TlvBufLen)) && \
-	(((_u2Offset) + TAG_LEN(_pucTlvBuf)) <= (_i32TlvBufLen))); \
+#define TAG_FOR_EACH(_pucTlvBuf, _u2TlvBufLen, _u2Offset) \
+for ((_u2Offset) = 0U;	\
+	((((_u2Offset) + 2U) <= (_u2TlvBufLen)) && \
+	(((_u2Offset) + TAG_LEN(_pucTlvBuf)) <= (_u2TlvBufLen))); \
 	(_u2Offset) += TAG_LEN(_pucTlvBuf), (_pucTlvBuf) += TAG_LEN(_pucTlvBuf))
 
 
