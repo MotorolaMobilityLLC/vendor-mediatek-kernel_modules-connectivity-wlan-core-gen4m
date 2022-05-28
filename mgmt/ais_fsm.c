@@ -4008,14 +4008,8 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 				  prConnSettings->aucSSID,
 				  prConnSettings->ucSSIDLen);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (mldIsMultiLinkFormed(prAdapter, prStaRec))
-				COPY_MAC_ADDR(rEventConnStatus.aucBssid,
-					      prStaRec->aucMldAddr);
-			else
-#endif
-				COPY_MAC_ADDR(rEventConnStatus.aucBssid,
-				      prAisBssInfo->aucBSSID);
+			COPY_MAC_ADDR(rEventConnStatus.aucBssid,
+			      prAisBssInfo->aucBSSID);
 
 			rEventConnStatus.u2BeaconPeriod =
 			    prAisBssInfo->u2BeaconInterval;

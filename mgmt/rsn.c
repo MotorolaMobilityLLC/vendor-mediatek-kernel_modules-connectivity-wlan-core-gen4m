@@ -2076,10 +2076,19 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			&& prBssInfo->u4RsnSelectedAKMSuite
 				== RSN_AKM_SUITE_SAE
 			&& rRsnIe.u2PmkidCount > 0) {
-			struct PMKID_ENTRY *entry =
-				rsnSearchPmkidEntry(prAdapter,
-				prStaRec->aucMacAddr,
-				prStaRec->ucBssIndex);
+			struct PMKID_ENTRY *entry;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
+				DBGLOG(RSN, INFO, "Use mld addr!");
+				entry = rsnSearchPmkidEntry(prAdapter,
+					prStaRec->aucMldAddr,
+					prStaRec->ucBssIndex);
+			} else
+#endif
+				entry = rsnSearchPmkidEntry(prAdapter,
+					prStaRec->aucMacAddr,
+					prStaRec->ucBssIndex);
 
 			DBGLOG(RSN, LOUD,
 				"Parse PMKID " PMKSTR " from " MACSTR "\n",

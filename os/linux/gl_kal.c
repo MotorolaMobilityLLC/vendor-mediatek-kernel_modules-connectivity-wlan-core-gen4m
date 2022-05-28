@@ -2038,31 +2038,6 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 	pos = prBssDesc->pucIeBuf;
 	len = prBssDesc->u2IELength;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-		len += 6;
-		buf = pos = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, len);
-		if (buf == NULL) {
-			DBGLOG(ML, INFO,
-			       "No PKT_INFO_T for indicate mlo bssdesc.\n");
-		} else {
-			uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
-
-			kalMemCopy(pos, prBssDesc->pucIeBuf,
-				prBssDesc->u2IELength);
-			pos += prBssDesc->u2IELength;
-			*pos++ = ELEM_ID_VENDOR;
-			*pos++ = 4;
-			kalMemCopy(pos, aucMtkOui, 3);
-			pos += 3;
-			*pos++ = 1;
-			pos = buf;
-
-			DBGLOG(ML, INFO, "Indicate bssdesc by mlo addr.\n");
-		}
-	}
-#endif
-
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	bss = cfg80211_inform_bss(
 		wlanGetWiphy(),
