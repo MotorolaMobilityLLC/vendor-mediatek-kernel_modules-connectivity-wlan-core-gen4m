@@ -99,20 +99,22 @@ p2pRoleP2pLisStopDbdcDecision(
 		IN enum ENUM_P2P_CONNECTION_TYPE eConnRequest);
 #endif
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static u_int8_t p2pRoleFsmNeedMlo(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucRoleIdx)
 {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	u_int8_t fgIsApMode = p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
 
 	return mldIsMloFeatureEnabled(prAdapter, fgIsApMode);
-}
+#else
+	return FALSE;
 #endif
+}
 
-uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucRoleIdx, IN u_int8_t fgIsMldReserved)
+uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -121,7 +123,6 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo =
 		(struct P2P_MGMT_TX_REQ_INFO *) NULL;
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	uint8_t ucLinkIndex = ucRoleIdx;
@@ -206,7 +207,8 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P,
 			FALSE,
-			fgIsMldReserved);
+			p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
+			(ucRoleIdx != P2P_MAIN_LINK_INDEX));
 
 		if (!prP2pBssInfo) {
 			DBGLOG(P2P, ERROR,
@@ -319,12 +321,6 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 	else
 		return prAdapter->ucP2PDevBssIdx;
 }				/* p2pFsmInit */
-
-uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIdx)
-{
-	return p2pRoleFsmInitImpl(prAdapter, ucRoleIdx, FALSE);
-}
 
 void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 {
