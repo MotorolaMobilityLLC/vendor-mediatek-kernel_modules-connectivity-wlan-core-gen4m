@@ -156,6 +156,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #endif
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HOST_SUSPEND_INFO,
 				nicCmdEventHostSuspendInfo),
+#if CFG_MSCS_SUPPORT
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_FAST_PATH, nicCfgChipCapFastPath),
+#endif
+
 };
 
 /*******************************************************************************
@@ -3103,6 +3107,25 @@ uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_MSCS_SUPPORT
+uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf)
+{
+	struct MSCS_CAP_FAST_PATH *prFastPathCap =
+		(struct MSCS_CAP_FAST_PATH *)pucEventBuf;
+
+	kalMemCopy(&prAdapter->rFastPathCap, prFastPathCap,
+			sizeof(struct MSCS_CAP_FAST_PATH));
+
+	DBGLOG(INIT, INFO,
+	       "Fast path version(%d) support(%d) vendor key(0x%x) group key(0x%x)\n",
+	       prFastPathCap->ucVersion, prFastPathCap->fgSupportFastPath,
+	       prFastPathCap->u4KeyBitmap[0], prFastPathCap->u4KeyBitmap[2]);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 			     IN uint8_t *pucEventBuf)

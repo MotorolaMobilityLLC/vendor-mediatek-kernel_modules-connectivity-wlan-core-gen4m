@@ -301,6 +301,8 @@
 
 #include "fw_log_mmio.h"
 
+#include "mscs.h"
+
 #include "adapter.h"
 #include "ccif.h"
 

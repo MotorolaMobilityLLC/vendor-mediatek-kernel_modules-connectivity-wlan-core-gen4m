@@ -719,8 +719,9 @@ endif
 
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
-    CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT=y
     WMT_SUPPORT := y
+    CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT=y
+    CONFIG_MSCS_FAST_PATH_SUPPORT=y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
@@ -1132,6 +1133,10 @@ ifeq ($(CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_LLS=1
 endif
 
+ifeq ($(CONFIG_MSCS_FAST_PATH_SUPPORT), y)
+ccflags-y += -DCFG_MSCS_SUPPORT=1
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
@@ -1256,7 +1261,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)wmm.o \
 		$(MGMT_DIR)mddp.o \
 		$(MGMT_DIR)thrm.o \
-		$(MGMT_DIR)ie_sort.o
+		$(MGMT_DIR)ie_sort.o \
+		$(MGMT_DIR)mscs.o
 
 ifneq ($(os), none)
 MGMT_OBJS +=	$(MGMT_DIR)wlan_ring.o \

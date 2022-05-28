@@ -383,6 +383,8 @@ enum ENUM_CMD_ID {
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 	CMD_ID_GET_DPD_CACHE = 0xD2,	/* 0xd2 (Query) */
 #endif
+	CMD_ID_FAST_PATH = 0xD5,
+
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
 	CMD_ID_NAN_EXT_CMD = 0XEB,
@@ -587,6 +589,8 @@ enum ENUM_EVENT_ID {
 #if CFG_WIFI_TXPWR_TBL_DUMP
 	EVENT_ID_GET_TXPWR_TBL = 0xD0,
 #endif
+	EVENT_ID_FAST_PATH = 0xD5,
+
 	EVENT_ID_NIC_CAPABILITY_V2 = 0xEC,
 	/* 0xEC (Query - CMD_ID_GET_NIC_CAPABILITY_V2) */
 	EVENT_ID_LAYER_0_EXT_MAGIC_NUM  = 0xED,
@@ -2256,5 +2260,29 @@ struct EVENT_WOW_WAKEUP_REASON_INFO {
 	uint8_t aucReserved[1];
 };
 #endif
+
+struct CMD_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucCmdVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2CmdLen;
+
+	/* DWORD_1 - afterwards */
+	uint8_t  aucOwnMac[6]; /* Own Mac address*/
+	uint16_t u2RandomNum; /* Random number genetate by Driver*/
+	uint32_t u4Keybitmap[4]; /* Keybitmap send from AP */
+};
+
+struct EVENT_FAST_PATH {
+	/* DWORD_0 - Common Part */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+
+	/* DWORD_1 - afterwards */
+	uint16_t u2Mic; /* message integrity check */
+	uint8_t  ucKeynum; /* To tell AP side about STA use which key */
+	uint8_t  ucKeyBitmapMatchStatus; /* Tell if Keybitmap match */
+};
 
 #endif /* _WSYS_CMD_HANDLER_FW_H */

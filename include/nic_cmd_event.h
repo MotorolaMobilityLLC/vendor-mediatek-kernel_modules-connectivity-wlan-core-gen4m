@@ -1129,7 +1129,9 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_6G_CAP = 0x18,
 #endif
 	TAG_CAP_HOST_STATUS_EMI_OFFSET = 0x19,
-
+#if CFG_MSCS_SUPPORT
+	TAG_CAP_FAST_PATH = 0x1a,
+#endif
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
 	TAG_CAP_PSE_RX_QUOTA = 0x1b,
 #endif
@@ -4233,6 +4235,8 @@ uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 
 uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
+uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
