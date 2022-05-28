@@ -1506,18 +1506,32 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 }
 
 uint8_t scanSearchBssidInCurrentList(
-	IN struct SCAN_PARAM *prScanParam,
-	IN uint8_t aucBSSID[],
-	IN uint8_t ucBssidNum)
+	IN struct SCAN_INFO *prScanInfo, IN uint8_t aucBSSID[],
+	IN struct SCAN_PARAM *prCurScanParam, IN uint8_t ucNewLink)
 {
 	uint8_t i;
+	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
+	struct SCAN_PARAM *prExistScanParam;
 
-	if (ucBssidNum == 0)
-		return FALSE;
+	/* Current prNeighborAPInfo has not insert to
+	 * rNeighborAPInfoList
+	 */
+	if (ucNewLink)
+		for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++)
+			if (EQUAL_MAC_ADDR(prCurScanParam->aucBSSID[i],
+				aucBSSID))
+				return TRUE;
 
-	for (i = 0; i < ucBssidNum; i++)
-		if (EQUAL_MAC_ADDR(prScanParam->aucBSSID[i], aucBSSID))
-			return TRUE;
+	LINK_FOR_EACH_ENTRY(prNeighborAPInfo,
+		&prScanInfo->rNeighborAPInfoList,
+		rLinkEntry, struct NEIGHBOR_AP_INFO) {
+		prExistScanParam = &prNeighborAPInfo->rScanParam;
+
+		for (i = 0; i < CFG_SCAN_OOB_MAX_NUM; i++)
+			if (EQUAL_MAC_ADDR(prExistScanParam->aucBSSID[i],
+				aucBSSID))
+				return TRUE;
+	}
 
 	return FALSE;
 }
@@ -1853,9 +1867,9 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 				prBssDescTemp->rUpdateTime,
 				SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) ||
-			    scanSearchBssidInCurrentList(prScanParam,
+			    scanSearchBssidInCurrentList(prScanInfo,
 				&prNeighborAPInfoField->aucTbttInfoSet[j + 1],
-				ucBssidNum))
+				prScanParam, ucNewLink))
 				ucScanEnable = FALSE;
 
 			if (EQUAL_MAC_ADDR(&prNeighborAPInfoField->
@@ -1952,7 +1966,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				    prScanInfo->rNeighborAPInfoList.u4NumElem);
 
 			log_dbg(SCN, INFO, "RnrIe " MACSTR " " MACSTR " " MACSTR
-					"" MACSTR "\n",
+					" " MACSTR "\n",
 					MAC2STR(prScanParam->aucBSSID[0]),
 					MAC2STR(prScanParam->aucBSSID[1]),
 					MAC2STR(prScanParam->aucBSSID[2]),
