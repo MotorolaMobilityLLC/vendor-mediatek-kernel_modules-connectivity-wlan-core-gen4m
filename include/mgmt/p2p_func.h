@@ -554,3 +554,11 @@ void p2pFunMulAPAgentBssStatusNotification(
 		IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo);
 #endif
+
+struct BSS_INFO *p2pGetAisBssByBand(
+	IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand);
+
+struct BSS_INFO *p2pGetAisConnectedBss(
+	IN struct ADAPTER *prAdapter);
+
