@@ -2485,6 +2485,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	uint32_t u4Level = 0;
 #endif
+	u_int8_t fgEnCmdEvtSetting = 0;
 
 	DEBUGFUNC("nicEnterCtiaMode");
 	DBGLOG(INIT, TRACE, "nicEnterCtiaMode: %d\n", fgEnterCtia);
@@ -2518,9 +2519,15 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			prAdapter->fgEnCtiaPowerMode = TRUE;
 
 			ePowerMode = Param_PowerModeCAM;
-			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
+			fgEnCmdEvtSetting =
+				(ucBssIdx + 1 == KAL_AIS_NUM)
+				? fgEnCmdEvent : FALSE;
+			rWlanStatus = nicConfigPowerSaveProfile(
+				prAdapter,
 				ucBssIdx,
-				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
+				ePowerMode,
+				fgEnCmdEvtSetting,
+				PS_CALLER_CTIA);
 		}
 
 		/* 5. Disable Beacon Timeout Detection */
@@ -2560,9 +2567,15 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 			prAdapter->fgEnCtiaPowerMode = TRUE;
 
 			ePowerMode = Param_PowerModeFast_PSP;
-			rWlanStatus = nicConfigPowerSaveProfile(prAdapter,
+			fgEnCmdEvtSetting =
+				(ucBssIdx + 1 == KAL_AIS_NUM)
+				? fgEnCmdEvent : FALSE;
+			rWlanStatus = nicConfigPowerSaveProfile(
+				prAdapter,
 				ucBssIdx,
-				ePowerMode, fgEnCmdEvent, PS_CALLER_CTIA);
+				ePowerMode,
+				fgEnCmdEvtSetting,
+				PS_CALLER_CTIA);
 		}
 
 		/* 5. Enable Beacon Timeout Detection */
