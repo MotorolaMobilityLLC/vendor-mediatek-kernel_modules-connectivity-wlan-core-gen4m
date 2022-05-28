@@ -189,38 +189,6 @@ void kalSetDramBoost(IN struct ADAPTER *prAdapter, IN u_int8_t onoff)
 	/* TODO */
 }
 
-void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask)
-{
-	struct cpumask cpu_mask;
-	int i;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-
-	if (!HAL_IS_RX_DIRECT(prAdapter))
-		return;
-
-	if (!prGlueInfo)
-		return;
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-
-	if (set_mask == CPU_ALL_CORE)
-		irq_set_affinity_hint(prHifInfo->u4IrqId,
-			cpu_all_mask);
-	else {
-		cpumask_clear(&cpu_mask);
-		for (i = 0; i < num_possible_cpus(); i++)
-			if ((0x1 << i) & set_mask)
-				cpumask_or(&cpu_mask, &cpu_mask,
-					cpumask_of(i));
-		irq_set_affinity_hint(prHifInfo->u4IrqId,
-			&cpu_mask);
-	}
-
-	DBGLOG(INIT, INFO, "irq_set_affinity_hint(%u, %u)",
-		prHifInfo->u4IrqId, set_mask);
-}
-
 static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 {
 	int r = -1;
