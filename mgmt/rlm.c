@@ -6258,15 +6258,15 @@ void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
 		prBssInfo->eBand = (prCSAParams->ucCsaNewCh <= 14)
 			? BAND_2G4 : BAND_5G;
 
+	/* Store VHT Channel width for later op mode operation */
+	prBssInfo->ucVhtChannelWidthBeforeCsa =
+		prBssInfo->ucVhtChannelWidth;
+
+	prBssInfo->ucVhtChannelWidth = prCSAParams->ucVhtBw;
+	prBssInfo->ucVhtChannelFrequencyS1 = prCSAParams->ucVhtS1;
+	prBssInfo->ucVhtChannelFrequencyS2 = prCSAParams->ucVhtS2;
+
 	if (HAS_WIDE_BAND_PARAMS(prCSAParams)) {
-		/* Store VHT Channel width for later op mode operation */
-		prBssInfo->ucVhtChannelWidthBeforeCsa =
-			prBssInfo->ucVhtChannelWidth;
-
-		prBssInfo->ucVhtChannelWidth = prCSAParams->ucVhtBw;
-		prBssInfo->ucVhtChannelFrequencyS1 = prCSAParams->ucVhtS1;
-		prBssInfo->ucVhtChannelFrequencyS2 = prCSAParams->ucVhtS2;
-
 		if (prBssInfo->fgIsOpChangeChannelWidth &&
 		    rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
 			     prBssInfo->ucVhtChannelWidth) {
