@@ -2077,16 +2077,19 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	return true;
 }
 
-static void *halWpdmaGetRxBuf(
-	struct GLUE_INFO *prGlueInfo, struct RTMP_DMABUF *pDmaBuf,
-	uint32_t u4Num, uint32_t u4Idx)
+void halWpdmaGetRxBuf(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_DMACB *prRxCell,
+	struct RTMP_DMABUF *pDmaBuf,
+	uint32_t u4Num,
+	uint32_t u4Idx,
+	bool fgAllocMem)
 {
 	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
 	struct WIFI_VAR *prWifiVar;
-	void *pPacket = NULL;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
@@ -2095,6 +2098,7 @@ static void *halWpdmaGetRxBuf(
 	prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* rro need realloc memory when SER */
 	if ((prChipInfo->is_support_rro &&
 	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
 	    halIsDataRing(prAdapter, RX_RING, u4Num)) {
@@ -2102,15 +2106,14 @@ static void *halWpdmaGetRxBuf(
 
 		prRcb = halRroGetFreeRcbBlk(prHifInfo, pDmaBuf, u4Num);
 		if (prRcb)
-			pPacket = prRcb->prSkb;
-		return pPacket;
+			prRxCell->pPacket = prRcb->prSkb;
+		return;
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	if (prMemOps->allocRxBuf)
-		pPacket = prMemOps->allocRxBuf(
+	if (fgAllocMem && prMemOps->allocRxBuf)
+		prRxCell->pPacket = prMemOps->allocRxBuf(
 			prHifInfo, pDmaBuf, u4Num, u4Idx);
-	return pPacket;
 }
 
 bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
@@ -2174,10 +2177,8 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		pDmaBuf = &prRxCell->DmaBuf;
 		pDmaBuf->AllocSize = u4BufSize;
 
-		if (fgAllocMem) {
-			prRxCell->pPacket = halWpdmaGetRxBuf(
-				prGlueInfo, pDmaBuf, u4Num, u4Idx);
-		}
+		halWpdmaGetRxBuf(prGlueInfo, prRxCell, pDmaBuf,
+				 u4Num, u4Idx, fgAllocMem);
 		if (pDmaBuf->AllocVa == NULL) {
 			log_dbg(HAL, ERROR, "\nFailed to allocate RxRing buffer idx[%u]\n",
 				u4Idx);
@@ -2196,6 +2197,7 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 #endif
 		pRxD->SDLen0 = u4BufSize;
 		pRxD->DMADONE = 0;
+		pRxD->MagicCnt = 0;
 	}
 
 	DBGLOG(HAL, TRACE, "Rx[%d] Ring: total %d entry allocated\n",
@@ -2426,10 +2428,10 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 
 	if (prChipInfo->is_support_rro &&
 		IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		halRroInit(prGlueInfo);
 		if (prChipInfo->is_support_mawd &&
 		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 			halMawdInitRxBlkRing(prGlueInfo);
-		halRroInit(prGlueInfo);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -3655,12 +3657,15 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			if (prBusInfo->DmaShdlReInit)
 				prBusInfo->DmaShdlReInit(prAdapter);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-			DBGLOG(HAL, INFO, "SER(M) Reset MAWDA\n");
+			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
 			if (prChipInfo->is_support_rro &&
 			    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-				halRroFreeRcbList(prGlueInfo);
-				halRroAllocRcbList(prGlueInfo);
+				halRroResetRcbList(prGlueInfo);
+				halRroResetMem(prGlueInfo);
 			}
+			if (prChipInfo->is_support_mawd &&
+			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+				halMawdReset(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 			/* only reset TXD & RXD */
@@ -3677,22 +3682,6 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			/* reset SW value after InitRing */
 			if (prChipInfo->asicWfdmaReInit)
 				prChipInfo->asicWfdmaReInit(prAdapter);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-			DBGLOG(HAL, INFO, "SER(M) Reset MAWDA\n");
-			if (prChipInfo->is_support_mawd &&
-			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-				halMawdReset(prGlueInfo);
-				if (prChipInfo->is_support_rro &&
-				    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
-					halRroMawdInit(prGlueInfo);
-				halMawdInitRxBlkRing(prGlueInfo);
-			}
-
-			if (prChipInfo->is_support_mawd_tx &&
-			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
-				halMawdInitTxRing(prGlueInfo);
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");

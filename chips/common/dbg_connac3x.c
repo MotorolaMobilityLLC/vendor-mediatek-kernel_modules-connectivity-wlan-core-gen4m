@@ -2539,7 +2539,9 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 
 	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
+	    halMawdCheckInfra(prAdapter)) {
+
 		DBGLOG(HAL, INFO, "==============================\n");
 		DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
 		DBGLOG(HAL, INFO, "==============================\n");
@@ -2590,7 +2592,7 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 	u4AddrNum = RRO_TOTAL_ADDR_ELEM_NUM * (RRO_MAX_WINDOW_NUM);
 	if (prAddrArray->AllocVa) {
 		DBGLOG(HAL, INFO, " AddrArray DUMP\n");
-		for (u4Idx = 0; u4Idx < 256; u4Idx++) {
+		for (u4Idx = 0; u4Idx < RRO_MAX_STA_NUM; u4Idx++) {
 			prAddrElem = (struct RRO_ADDR_ELEM *)
 				(prAddrArray->AllocVa +
 				 (u4AddrNum + u4Idx) *

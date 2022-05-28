@@ -6961,13 +6961,30 @@ static int wlanFunOn(void)
 	}
 	/* Add delay for pcie phy ready */
 	kalMdelay(10);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (kalIsSupportMawd()) {
+		ret = conninfra_pwr_on(CONNDRV_TYPE_MAWD);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+			       "conninfra pwr on failed, ret=%d\n", ret);
+			goto connv3_pwr_off;
+		}
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		halMawdPwrOn();
+#endif
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 #endif
 
 	ret = glBusFunOn();
 	if (ret) {
 		DBGLOG(HAL, ERROR, "glBusFunOn failed, ret=%d\n",
 			ret);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		goto mawd_fun_off;
+#else
 		goto connv3_pwr_off;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	}
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -6985,6 +7002,15 @@ static int wlanFunOn(void)
 bus_fun_off:
 #endif
 	glBusFunOff();
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+mawd_fun_off:
+	if (kalIsSupportMawd()) {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		halMawdPwrOff();
+#endif
+		conninfra_pwr_off(CONNDRV_TYPE_MAWD);
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 connv3_pwr_off:
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
@@ -7004,6 +7030,14 @@ static int wlanFunOff(void)
 	glBusFunOff();
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (kalIsSupportMawd()) {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		halMawdPwrOff();
+#endif
+		conninfra_pwr_off(CONNDRV_TYPE_MAWD);
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	wlan_pinctrl_action(prChipInfo, WLAN_PINCTRL_MSG_FUNC_OFF);
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 #endif
