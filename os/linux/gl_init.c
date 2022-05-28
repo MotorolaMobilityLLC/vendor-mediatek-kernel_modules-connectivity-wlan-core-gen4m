@@ -7626,16 +7626,16 @@ static void exitWlan(void)
 static int wf_pdwnc_notify(struct notifier_block *nb,
 		unsigned long event, void *unused)
 {
-	if (event == SYS_RESTART) {
-		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 #if defined(_HIF_USB) || CFG_SUPPORT_PERSIST_NETDEV
-		struct GLUE_INFO *prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
+#if CFG_SUPPORT_PERSIST_NETDEV
+	uint32_t u4Idx = 0;
+	struct wiphy *wiphy = NULL;
 #endif
 
-#if CFG_SUPPORT_PERSIST_NETDEV
-		uint32_t u4Idx = 0;
-		struct wiphy *wiphy = NULL;
-#endif
+	if (event == SYS_RESTART) {
+		DBGLOG(HAL, STATE, "wf_pdwnc_notify()\n");
 
 #if CFG_MTK_MDDP_SUPPORT
 		mddpUninit();
