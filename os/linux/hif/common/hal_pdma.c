@@ -1011,10 +1011,20 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 					     uint8_t ucBssIndex)
 {
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
+
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	unsigned long flags = 0;
+
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+#endif
 
 	if (!halGetMsduTokenFreeCnt(prAdapter)) {
 		DBGLOG(HAL, INFO, "No more free MSDU token, Used[%u]\n",
@@ -1027,6 +1037,14 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 	prToken = prTokenInfo->aprTokenStack[prTokenInfo->u4UsedCnt];
 	ktime_get_ts64(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
+
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->configPcieAspm)
+		prBusInfo->configPcieAspm(prAdapter->prGlueInfo, FALSE);
+#endif
+#endif
+
 	prTokenInfo->u4UsedCnt++;
 
 	if (ucBssIndex < MAX_BSSID_NUM) {
@@ -1097,10 +1115,18 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
+
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	unsigned long flags = 0;
+
+#if CFG_SUPPORT_PCIE_ASPM
+	prBusInfo = prAdapter->chip_info->bus_info;
+#endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
@@ -1130,6 +1156,13 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	prToken->fgInUsed = FALSE;
 	prTokenInfo->u4UsedCnt--;
 	prTokenInfo->aprTokenStack[prTokenInfo->u4UsedCnt] = prToken;
+
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->configPcieAspm)
+		prBusInfo->configPcieAspm(prAdapter->prGlueInfo, TRUE);
+#endif
+#endif
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 }
