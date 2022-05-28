@@ -221,6 +221,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
 	[UNI_EVENT_ID_IE_COUNTDOWN] = nicUniEventCountdown,
 	[UNI_EVENT_ID_STAREC] = nicUniEventStaRec,
+	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
 	[UNI_EVENT_ID_TDLS] = nicUniEventTdls,
 	[UNI_EVENT_ID_BSS_ER] = nicUniEventBssER,
 	[UNI_EVENT_ID_RSSI_MONITOR] = nicUniEventRssiMonitor,
@@ -7195,6 +7196,77 @@ uint32_t nicUniUpdateStaRecFastAll(
 	cnmMemFree(ad, uni_cmd);
 
 	return status;
+}
+
+void nicUniEventRDD(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_RDD);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	DBGLOG_MEM8(CNM, TRACE, data, data_len);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+
+	switch (TAG_ID(tag)) {
+	case UNI_EVENT_RDD_TAG_SEND_PULSE: {
+		struct UNI_EVENT_RDD_SEND_PULSE *pulse =
+			(struct UNI_EVENT_RDD_SEND_PULSE *)tag;
+		struct WIFI_EVENT *pEvent;
+		struct EVENT_RDD_REPORT *prEventBody;
+
+		pEvent = (struct WIFI_EVENT *)
+			kalMemAlloc(sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_RDD_REPORT), VIR_MEM_TYPE);
+		prEventBody =
+			(struct EVENT_RDD_REPORT *)
+			&(pEvent->aucBuffer[0]);
+
+		memset(prEventBody, 0, sizeof(struct EVENT_RDD_REPORT));
+		prEventBody->u1RddIdx = pulse->u1RddIdx;
+		prEventBody->u1LongDetected = pulse->u1LongDetected;
+		prEventBody->u1ConstantPRFDetected
+			= pulse->u1ConstantPRFDetected;
+		prEventBody->u1StaggeredPRFDetected
+			= pulse->u1StaggeredPRFDetected;
+		prEventBody->u1RadarTypeIdx = pulse->u1RadarTypeIdx;
+		prEventBody->u1PeriodicPulseNum
+			= pulse->u1PeriodicPulseNum;
+		prEventBody->u1LongPulseNum = pulse->u1LongPulseNum;
+		prEventBody->u1HwPulseNum = pulse->u1HwPulseNum;
+		prEventBody->u1OutLPN = pulse->u1OutLPN;
+		prEventBody->u1OutSPN = pulse->u1OutSPN;
+		prEventBody->u1OutCRPN = pulse->u1OutCRPN;
+		prEventBody->u1OutCRPW = pulse->u1OutCRPW;
+		prEventBody->u1OutCRBN = pulse->u1OutCRBN;
+		prEventBody->u1OutSTGPN = pulse->u1OutSTGPN;
+		prEventBody->u1Reserve = pulse->u1Reserve;
+		prEventBody->u4OutPRI_CONST = pulse->u4OutPRI_CONST;
+		prEventBody->u4OutPRI_STG1 = pulse->u4OutPRI_STG1;
+		prEventBody->u4OutPRI_STG2 = pulse->u4OutPRI_STG2;
+		prEventBody->u4OutPRI_STG3 = pulse->u4OutPRI_STG3;
+		prEventBody->u4OutPRIStgDmin = pulse->u4OutPRIStgDmin;
+		DBGLOG(CNM, WARN,
+			"legacy event tag = %d\n",
+			TAG_ID(tag));
+		RUN_RX_EVENT_HANDLER(EVENT_ID_RDD_REPORT,
+			pEvent);
+	}
+		break;
+
+	default:
+		fail_cnt++;
+		DBGLOG(CNM, WARN,
+			"invalid tag = %d, cnt: %d\n",
+			TAG_ID(tag), fail_cnt);
+		break;
+	}
+
 }
 
 void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
