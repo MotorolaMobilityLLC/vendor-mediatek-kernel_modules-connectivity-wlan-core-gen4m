@@ -361,6 +361,9 @@ else
     ifneq ($(filter 6983, $(WLAN_CHIP_ID)),)
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=1
+    else ifneq ($(filter 6886, $(WLAN_CHIP_ID)),)
+        ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
+        ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
     endif
 endif
 
