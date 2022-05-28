@@ -2579,7 +2579,7 @@ nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
 	IN u_int8_t enabled, IN uint8_t ucBssIndex)
 {
 	enum PARAM_POWER_MODE ePowerMode;
-	struct CMD_PS_PROFILE rPowerSaveMode;
+	struct CMD_PS_PROFILE rPowerSaveMode = {0};
 	struct BSS_INFO *prBssInfo;
 
 	if ((!prAdapter))
