@@ -380,7 +380,7 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-	else if (prBssInfo->eBand == BAND_2G4 &&
+	else if (prBssInfo && prBssInfo->eBand == BAND_2G4 &&
 		IS_FEATURE_DISABLED(prWifiVar->ucVhtIeIn2g)) {
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 	}
@@ -668,6 +668,10 @@ void bssComposeNullFrame(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer,
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return;
+	}
 	prNullFrame = (struct WLAN_MAC_HEADER *)pucBuffer;
 
 	/* 4 <1> Decide the Frame Control Field */
@@ -913,6 +917,10 @@ void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter,
 	uint8_t ucExtSupRatesLen;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return;
+	}
 	pucBuffer =
 	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 			 (unsigned long)prMsduInfo->u2FrameLength);
@@ -1187,7 +1195,10 @@ struct MSDU_INFO* bssComposeBeaconContent(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, LOUD, "\n");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return NULL;
+	}
 	/* 4 <1> Allocate a PKT_INFO_T for Beacon Frame */
 	/* Allocate a MSDU_INFO_T */
 	/* For Beacon */
@@ -2604,6 +2615,10 @@ void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
 
 	prErTxMode = (struct EVENT_ER_TX_MODE *) (prEvent->aucBuffer);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prErTxMode->ucBssInfoIdx);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	prBssInfo->ucErMode = prErTxMode->ucErMode;
 

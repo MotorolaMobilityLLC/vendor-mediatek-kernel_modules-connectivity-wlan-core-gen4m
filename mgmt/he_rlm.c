@@ -206,6 +206,10 @@ uint32_t heRlmCalculateHeCapIELen(
 	if (fgEfuseCtrlAxOn == 1) {
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return u4OverallLen;
+	}
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	u4OverallLen += 4;
@@ -947,6 +951,10 @@ static uint32_t heRlmRecHeMcsMap(
 	uint8_t ucHeCapMcsOwnNotSupportOffset = 0, ucMaxBw;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return 0;
+	}
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	/* BW 80Mhz */
@@ -1672,6 +1680,10 @@ void heRlmProcessSMPSAction(
 	/* Find the BSS info */
 	ucBssIdx = prSMPSCtrl->ucBssIdx;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	switch (prSMPSCtrl->ucCtrlAction) {
 
@@ -1917,7 +1929,7 @@ static void heRlmFillBssMaxIdleIE(
 	/* The Protected Keep-Alive Required subfield is set to 1
 	 * to indicate that only a protected frame indicates activity.
 	 */
-	if ((prStaRec->u2CapInfo & CAP_INFO_PRIVACY) &&
+	if (prStaRec && (prStaRec->u2CapInfo & CAP_INFO_PRIVACY) &&
 		secEnabledInAis(prAdapter, prMsduInfo->ucBssIndex))
 		ucIdleOptions = 1;
 	prBssMaxIdleIE->ucIdleOptions = ucIdleOptions;
