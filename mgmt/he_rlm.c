@@ -1690,11 +1690,15 @@ void heRlmProcessSMPSAction(
 		break;
 
 	case SMPS_ACTION_SEND_ACTION_FRAME:
-
 		/* Get the STA Record */
-		prStaRec = prBssInfo->prStaRecOfAP;
-		if (!prStaRec) {
-			DBGLOG(RLM, INFO, "No AP STA Record\n");
+		if (prBssInfo) {
+			prStaRec = prBssInfo->prStaRecOfAP;
+			if (!prStaRec) {
+				DBGLOG(RLM, INFO, "No AP STA Record\n");
+				return;
+			}
+		} else {
+			DBGLOG(RLM, WARN, "BssInfo is NULL!\n");
 			return;
 		}
 

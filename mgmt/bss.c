@@ -1480,9 +1480,9 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-		if ((!fgIsBcBssid)
+		if ((!prBssInfo) || ((!fgIsBcBssid)
 		    && UNEQUAL_MAC_ADDR(prBssInfo->aucBSSID,
-					prMgtHdr->aucBSSID))
+					prMgtHdr->aucBSSID)))
 			continue;
 
 		eBand = prSwRfb->eRfBand;
