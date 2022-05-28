@@ -452,16 +452,16 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
 		       u4DrvOwnTimeoutMs);
-		if (prAdapter->chip_info->dumpwfsyscpupcr)
-			prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
+		if (prChipDbgOps->dumpwfsyscpupcr)
+			prChipDbgOps->dumpwfsyscpupcr(prAdapter);
 
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
 			if (prChipDbgOps->showCsrInfo)
 				prChipDbgOps->showCsrInfo(prAdapter);
-			if (prChipInfo->dumpBusHangCr)
-				prChipInfo->dumpBusHangCr(prAdapter);
+			if (prChipDbgOps->dumpBusHangCr)
+				prChipDbgOps->dumpBusHangCr(prAdapter);
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);

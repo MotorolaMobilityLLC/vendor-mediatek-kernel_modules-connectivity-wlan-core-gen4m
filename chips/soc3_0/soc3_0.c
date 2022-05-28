@@ -1085,6 +1085,8 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.get_rx_rate_info = connac2x_get_rx_rate_info,
 #endif
 	.show_mcu_debug_info = NULL,
+	.dumpwfsyscpupcr = connac2x_DumpWfsyscpupcr,
+	.dumpBusHangCr = soc3_0_DumpBusHangCr,
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -1160,7 +1162,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
-	.dumpwfsyscpupcr = connac2x_DumpWfsyscpupcr,
 
 	.coantSetWiFi = wlanCoAntWiFi,
 	.coantSetMD = wlanCoAntMD,
@@ -1176,7 +1177,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
 	.checkbushang = soc3_0_CheckBusHang,
-	.dumpBusHangCr = soc3_0_DumpBusHangCr,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if CFG_MTK_ANDROID_WMT
 	.rEmiInfo = {
