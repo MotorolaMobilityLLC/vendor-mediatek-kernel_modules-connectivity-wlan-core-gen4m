@@ -4527,6 +4527,8 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (unlikely(ucBssIndex >= BSSID_NUM))
+		return WLAN_STATUS_INVALID_DATA;
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
 	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&

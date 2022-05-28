@@ -5825,7 +5825,7 @@ void wlanDumpAllBssStatistics(IN struct ADAPTER *prAdapter)
 
 	for (ucIdx = 0; ucIdx < prAdapter->ucHwBssIdNum; ucIdx++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucIdx);
-		if (!IS_BSS_ACTIVE(prBssInfo)) {
+		if (prBssInfo && !IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG(SW4, TRACE,
 			       "Invalid BssInfo index[%u], skip dump!\n",
 			       ucIdx);
@@ -10230,6 +10230,7 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 	enum ENUM_WMM_ACI eAci = WMM_AC_BE_INDEX;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	OS_SYSTIME rCurTime;
+	struct WIFI_WMM_AC_STAT *prAcStats;
 
 	eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
 
@@ -10246,11 +10247,13 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prMsduInfo->ucBssIndex);
 
-			if (fgTxDrop)
-				prBssInfo->arLinkStatistics[eAci].
-					u4TxDropMsdu++;
-			else
-				prBssInfo->arLinkStatistics[eAci].u4TxMsdu++;
+			if (prBssInfo) {
+				prAcStats = &prBssInfo->arLinkStatistics[eAci];
+				if (fgTxDrop)
+					prAcStats->u4TxDropMsdu++;
+				else
+					prAcStats->u4TxMsdu++;
+			}
 		}
 	}
 
