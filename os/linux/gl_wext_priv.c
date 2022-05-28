@@ -9782,13 +9782,14 @@ int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
 
 	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
 
-	i4Recv = sscanf(this_char, "%d-%d-%x-%d",
+	i4Recv = sscanf(this_char, "%d-%d-%d-%x-%d",
+			&(u1DbdcIdx),
 			&(u4pp_auto),
 			&(u4pp_ctrl),
 			&(u4pp_bitmap),
 			&(u4pp_mgmt));
 
-	if (i4Recv == 4) {
+	if (i4Recv == 5) {
 		struct UNI_CMD_PP_EN_CTRL_T pp_cap_ctrl;
 
 		pp_cap_ctrl.u1PpMgmtMode = (uint8_t)u4pp_mgmt;
