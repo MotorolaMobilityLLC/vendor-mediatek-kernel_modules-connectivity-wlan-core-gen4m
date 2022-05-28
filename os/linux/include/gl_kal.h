@@ -1370,6 +1370,7 @@ void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t ucBssIndex,
 			IN uint8_t ucHifTc,
 			IN unsigned long ulHifQFlags);
+
 void kalAcquireSpinLockBh(struct GLUE_INFO *prGlueInfo,
 			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory);
 

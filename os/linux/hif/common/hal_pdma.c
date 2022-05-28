@@ -2622,7 +2622,8 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	phys_addr_t PacketPa = 0;
 	void *pBuffer = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0;
-	unsigned long flags;
+
+	KAL_HIF_TXRING_LOCK_DECLARATION();
 
 	ASSERT(prGlueInfo);
 
@@ -2636,9 +2637,7 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	if (prTxRing->fgStopRecycleDmad)
 		return;
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
+	KAL_HIF_TXRING_LOCK(prTxRing);
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prSwWfdmaInfo->rOps.getDidx)
@@ -2680,9 +2679,7 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->TxSwUsedIdx = u4SwIdx;
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_unlock_irqrestore(&prTxRing->rTxDmaQLock, flags);
+	KAL_HIF_TXRING_UNLOCK(prTxRing);
 
 #if CFG_SUPPORT_MULTITHREAD
 	if (!QUEUE_IS_EMPTY(&prGlueInfo->prAdapter->rTxCmdQueue))
@@ -2697,16 +2694,19 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0, u4Diff = 0;
 	struct RTMP_TX_RING *prTxRing;
-	unsigned long flags;
+
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	KAL_HIF_TXRING_LOCK_DECLARATION();
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	KAL_HIF_TXRING_LOCK(prTxRing);
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	HAL_GET_RING_DIDX(prGlueInfo, prTxRing, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
@@ -2734,9 +2734,9 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->TxSwUsedIdx = u4DmaIdx;
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_unlock_irqrestore(&prTxRing->rTxDmaQLock, flags);
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	KAL_HIF_TXRING_UNLOCK(prTxRing);
+#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
 
 uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
@@ -2784,7 +2784,8 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	uint32_t u4TotalLen;
 	void *pucSrc = NULL;
 	enum ENUM_CMD_TX_RESULT ret = CMD_TX_RESULT_SUCCESS;
-	unsigned long flags;
+
+	KAL_HIF_TXRING_LOCK_DECLARATION();
 
 	ASSERT(prGlueInfo);
 
@@ -2800,9 +2801,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_lock_irqsave(&prTxRing->rTxDmaQLock, flags);
+	local_bh_disable();
+
+	KAL_HIF_TXRING_LOCK(prTxRing);
 
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
@@ -2921,9 +2922,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 				TRUE),
 			TRUE);
 unlock:
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) ||
-		HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		spin_unlock_irqrestore(&prTxRing->rTxDmaQLock, flags);
+	KAL_HIF_TXRING_UNLOCK(prTxRing);
+
+	local_bh_enable();
 
 	return ret;
 }
