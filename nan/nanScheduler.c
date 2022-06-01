@@ -6061,7 +6061,7 @@ nanSchedNegoAddNdcCrb(struct ADAPTER *prAdapter,
 	uint32_t u4SlotIdx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl;
-	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacAddr[6] = {0};
 	uint8_t rRandMacMask[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	uint32_t au4AvailMap[NAN_TOTAL_DW];
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
@@ -6359,7 +6359,7 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 	uint32_t u4Idx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_NDC_CTRL_T *prNdcCtrl;
-	uint8_t rRandMacAddr[6];
+	uint8_t rRandMacAddr[6] = {0};
 	uint8_t rRandMacMask[6] = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	uint32_t u4SlotIdx;
 	uint32_t u4Num;
@@ -7533,12 +7533,19 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
 #endif
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucOpRxNss = 1;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNanSpecificBssInfo =
 		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
+			prNanSpecificBssInfo->ucBssIndex);
+	else
+		ucOpRxNss = prBssInfo->ucOpRxNss;
 
 	pucPos = pucBuf;
 
@@ -7566,7 +7573,7 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
 
 	/* whsu */
 	u2EntryControl =
-		((prBssInfo->ucOpRxNss
+		((ucOpRxNss
 		  << NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 		 NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 		((1
@@ -7617,7 +7624,7 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
 		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
 
 		u2EntryControl =
-			((prBssInfo->ucOpRxNss
+			((ucOpRxNss
 			  << NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 			 NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 			((1
@@ -7666,6 +7673,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucOpRxNss = 1;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
@@ -7675,6 +7683,12 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
+			prNanSpecificBssInfo->ucBssIndex);
+	else
+		ucOpRxNss = prBssInfo->ucOpRxNss;
 
 	prAvailAttr = (struct _NAN_ATTR_NAN_AVAILABILITY_T *)g_aucNanIEBuffer;
 	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
@@ -7699,7 +7713,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)pucPos;
 
 		u2EntryControl =
-			((prBssInfo->ucOpRxNss
+			((ucOpRxNss
 			  << NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 			 NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 			((1
@@ -7748,7 +7762,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 #if CFG_NAN_SIGMA_TEST
 			if (prNegoCtrl->eType == ENUM_NAN_NEGO_RANGING) {
 				u2EntryControl =
-				((prBssInfo->ucOpRxNss <<
+				((ucOpRxNss <<
 				NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 				NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 				  ((1 <<
@@ -7759,7 +7773,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 				  NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE);
 			} else {
 				u2EntryControl =
-				((prBssInfo->ucOpRxNss <<
+				((ucOpRxNss <<
 				NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 				NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 				 ((1 <<
@@ -7771,7 +7785,7 @@ nanSchedGetAvailabilityAttr(struct ADAPTER *prAdapter,
 			}
 #else
 			u2EntryControl =
-			    ((prBssInfo->ucOpRxNss <<
+			    ((ucOpRxNss <<
 			    NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
 			    NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
 				((1 <<
@@ -7831,6 +7845,7 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 	struct _NAN_SCHEDULER_T *prScheduler;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucOpRxNss = 1;
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prAttrDevCap = &prScheduler->rAttrDevCap;
@@ -7873,10 +7888,18 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prNanSpecificBssInfo->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
+			prNanSpecificBssInfo->ucBssIndex);
+	else {
+		DBGLOG(NAN, INFO, "Bss idx:%d, Nss:%d\n",
+			prBssInfo->ucBssIndex, prBssInfo->ucOpRxNss);
+		ucOpRxNss = prBssInfo->ucOpRxNss;
+	}
+
 	prAttrDevCap->ucNumOfAntennas =
-		(prBssInfo->ucOpRxNss << 4) | (prBssInfo->ucOpRxNss);
-	DBGLOG(NAN, INFO, "Bss idx:%d, Nss:%d\n", prBssInfo->ucBssIndex,
-	       prBssInfo->ucOpRxNss);
+		(ucOpRxNss << 4) | (ucOpRxNss);
 
 	prAttrDevCap->u2MaxChannelSwitchTime = g_u4MaxChnlSwitchTimeUs;
 
