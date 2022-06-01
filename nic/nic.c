@@ -2487,6 +2487,7 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 	rWlanStatus = WLAN_STATUS_SUCCESS;
+	kalMemZero(&rCmdSwCtrl, sizeof(struct CMD_SW_DBG_CTRL));
 
 	if (fgEnterCtia) {
 		/* 1. Disable On-Lin Scan */
