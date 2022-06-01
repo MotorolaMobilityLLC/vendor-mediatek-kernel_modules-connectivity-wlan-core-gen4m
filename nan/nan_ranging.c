@@ -309,7 +309,8 @@ nanRangingInstanceSearchByMac(struct ADAPTER *prAdapter,
 
 	dl_list_for_each(prRanging, ranging_list,
 			 struct _NAN_RANGING_INSTANCE_T, list) {
-
+		if (prRanging == NULL)
+			return NULL;
 		if (prRanging) {
 			if (kalMemCmp(prRanging->ranging_ctrl.aucPeerAddr,
 				      puc_peer_mac, MAC_ADDR_LEN) == 0)
@@ -339,7 +340,8 @@ nanRangingInstanceSearchById(struct ADAPTER *prAdapter, uint16_t u2RangingId) {
 
 	dl_list_for_each(prRanging, ranging_list,
 			 struct _NAN_RANGING_INSTANCE_T, list) {
-
+		if (ranging_list == NULL)
+			return NULL;
 		if (prRanging) {
 			if (prRanging->ranging_ctrl.u2RangingId == u2RangingId)
 				return prRanging;
