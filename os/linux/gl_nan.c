@@ -646,8 +646,11 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 				i++;
 			}
 		}
-		if (i >= MAX_NUM_GROUP_ADDR)
+		if (i >= MAX_NUM_GROUP_ADDR) {
+			kalMemFree(prMCAddrList, VIR_MEM_TYPE,
+			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
 			return;
+		}
 
 		wlanoidSetNANMulticastList(
 			prGlueInfo->prAdapter,
