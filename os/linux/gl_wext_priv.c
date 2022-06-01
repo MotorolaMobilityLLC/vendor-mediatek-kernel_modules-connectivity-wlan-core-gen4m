@@ -9137,7 +9137,8 @@ priv_driver_get_range(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	dl_list_for_each(prRanging, ranging_list,
 			 struct _NAN_RANGING_INSTANCE_T, list) {
-
+		if (prRanging == NULL)
+			return -1;
 		if (prRanging) {
 			range_measurement_cm =
 				prRanging->ranging_ctrl.range_measurement_cm;
