@@ -3170,6 +3170,7 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 					prP2pBssInfo->u4PrivateData);
 
 			prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc = NULL;
+			prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
 
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 				prP2pBssInfo->aucBSSID,
