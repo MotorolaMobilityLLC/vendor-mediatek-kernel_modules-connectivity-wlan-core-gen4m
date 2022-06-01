@@ -385,6 +385,8 @@ nanGetFtmRangeReportAttr(struct ADAPTER *prAdapter, uint8_t **ppucAttr,
 	*(pucPos++) = ucRangeEntryCnt;
 
 	for (u4Idx = 0; u4Idx < ucRangeEntryCnt; u4Idx++) {
+		if (u4Idx >= NAN_FTM_REPORT_OK_MAX_NUM)
+			break;
 		kalMemCopy(pucPos, &prRanging->ranging_ctrl.rNanFtmReport
 					    .arRangeEntry[u4Idx],
 			   sizeof(struct _FTM_REPORT_RANGE_ENTRY_T));
@@ -395,6 +397,8 @@ nanGetFtmRangeReportAttr(struct ADAPTER *prAdapter, uint8_t **ppucAttr,
 	*(pucPos++) = ucErrorEntryCnt;
 
 	for (u4Idx = 0; u4Idx < ucErrorEntryCnt; u4Idx++) {
+		if (u4Idx >= NAN_FTM_REPORT_NG_MAX_NUM)
+			break;
 		kalMemCopy(pucPos, &prRanging->ranging_ctrl.rNanFtmReport
 					    .arErrorEntry[u4Idx],
 			   sizeof(struct _FTM_REPORT_ERROR_ENTRY_T));
@@ -1769,6 +1773,8 @@ nanRangingFtmDoneEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
 	prRanging->ranging_ctrl.rNanFtmReport.ucErrorEntryCnt = ucErrorEntryCnt;
 
 	for (u4Idx = 0; u4Idx < ucErrorEntryCnt; u4Idx++) {
+		if (u4Idx >= NAN_FTM_REPORT_NG_MAX_NUM)
+			break;
 		kalMemCopy(&prRanging->ranging_ctrl.rNanFtmReport
 				    .arErrorEntry[u4Idx],
 			   &prEvent->rNanFtmReport.arErrorEntry[u4Idx],
