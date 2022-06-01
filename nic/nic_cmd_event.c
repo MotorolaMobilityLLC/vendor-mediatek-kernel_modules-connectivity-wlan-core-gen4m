@@ -4545,7 +4545,7 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct BSS_DESC *prBssDesc;
 	struct BSS_INFO *prBssInfo;
-	struct CMD_ADDBA_REJECT rAddBaReject;
+	struct CMD_ADDBA_REJECT rAddBaReject = {0};
 
 	enum ENUM_COEX_MODE eCoexMode = COEX_NONE_BT;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
