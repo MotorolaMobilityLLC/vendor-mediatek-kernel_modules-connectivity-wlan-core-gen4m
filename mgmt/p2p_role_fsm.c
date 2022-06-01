@@ -2690,6 +2690,11 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
+	if (!prJoinInfo->prTargetStaRec) {
+		DBGLOG(P2P, ERROR, "prJoinInfo->prTargetStaRec is NULL!\n");
+		goto error;
+	}
+
 	/* Check SEQ NUM */
 	if (prJoinCompMsg->ucSeqNum == prJoinInfo->ucSeqNumOfReqMsg) {
 		ASSERT(prStaRec == prJoinInfo->prTargetStaRec);
@@ -2797,6 +2802,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 					/* Reset p2p state */
 					prJoinInfo->prTargetBssDesc = NULL;
+					prJoinInfo->prTargetStaRec = NULL;
 
 					SET_NET_PWR_STATE_IDLE(prAdapter,
 						prP2pBssInfo->ucBssIndex);
