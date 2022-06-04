@@ -519,6 +519,7 @@ struct CHIP_DBG_OPS {
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	int (*get_rx_rate_info)(
 		struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
 		uint32_t *pu4Rate,
 		uint32_t *pu4Nss,
 		uint32_t *pu4RxMode,
@@ -859,6 +860,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac_get_rx_rate_info(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
 	uint32_t *pu4Rate,
 	uint32_t *pu4Nss,
 	uint32_t *pu4RxMode,
@@ -950,6 +952,7 @@ void connac2x_DumpCrRange(
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac2x_get_rx_rate_info(
 	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
 	uint32_t *pu4Rate,
 	uint32_t *pu4Nss,
 	uint32_t *pu4RxMode,
