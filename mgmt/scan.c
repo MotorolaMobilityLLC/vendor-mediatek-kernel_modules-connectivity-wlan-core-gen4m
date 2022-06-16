@@ -146,8 +146,8 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/* Check if the memory allocation consist with
 	 * this initialization function
 	 */
-	ASSERT(((unsigned long) pucBSSBuff
-		- (unsigned long)&prScanInfo->aucScanBuffer[0])
+	ASSERT(((uintptr_t) pucBSSBuff
+		- (uintptr_t)&prScanInfo->aucScanBuffer[0])
 		== SCN_MAX_BUFFER_SIZE);
 
 	/* reset freest channel information */
@@ -3467,7 +3467,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 		eOpMode,
 		aucRatesEx,
 		prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen,
-		(uint8_t *) ((unsigned long) (prSwRfb->pvHeader)
+		(uint8_t *) ((uintptr_t) (prSwRfb->pvHeader)
 			+ WLAN_MAC_MGMT_HEADER_LEN));
 
 	return WLAN_STATUS_SUCCESS;

@@ -168,7 +168,7 @@ void rrmStartNextMeasurement(struct ADAPTER *prAdapter, u_int8_t fgNewStarted,
 u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 			struct MSG_SCN_SCAN_REQ_V2 *prMsg);
 
-void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam);
+void rrmDoBeaconMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam);
 
 void rrmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 				struct STA_RECORD *prStaRec,

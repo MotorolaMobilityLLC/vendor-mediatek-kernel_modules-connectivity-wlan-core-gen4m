@@ -170,13 +170,13 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
-			(unsigned long) prP2pRoleFsmInfo);
+			(uintptr_t) prP2pRoleFsmInfo);
 
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmGetStaStatistics,
-			(unsigned long) prP2pRoleFsmInfo);
+			(uintptr_t) prP2pRoleFsmInfo);
 #endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -184,14 +184,14 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 			&(prP2pRoleFsmInfo->rDfsShutDownTimer),
 			(PFN_MGMT_TIMEOUT_FUNC)
 			p2pRoleFsmRunEventDfsShutDownTimeout,
-			(unsigned long) prP2pRoleFsmInfo);
+			(uintptr_t) prP2pRoleFsmInfo);
 #endif
 
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rWaitNextReqChnlTimer),
 			(PFN_MGMT_TIMEOUT_FUNC)
 			p2pRoleFsmRunEventWaitNextReqChnlTimeout,
-			(unsigned long) prP2pRoleFsmInfo);
+			(uintptr_t) prP2pRoleFsmInfo);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx)) {
@@ -666,7 +666,7 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 }				/* p2pRoleFsmStateTransition */
 
 void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
@@ -943,7 +943,7 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 }
 
 void p2pRoleFsmDeauthTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 
@@ -1578,7 +1578,7 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 		 * to deactive BSS and free channel
 		 */
 		p2pRoleFsmRunEventTimeout(prAdapter,
-			(unsigned long)prP2pRoleFsmInfo);
+			(uintptr_t)prP2pRoleFsmInfo);
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 	}
@@ -1861,7 +1861,7 @@ SKIP_END_RDD:
 					&(prCurrStaRec->rDeauthTxDoneTimer),
 					(PFN_MGMT_TIMEOUT_FUNC)
 					p2pRoleFsmDeauthTimeout,
-					(unsigned long) prCurrStaRec);
+					(uintptr_t) prCurrStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
@@ -2321,7 +2321,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 }				/*p2pRoleFsmRunEventCsaDone*/
 
 void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
@@ -2337,7 +2337,7 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
 #endif
 
 void p2pRoleFsmRunEventWaitNextReqChnlTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
@@ -2697,7 +2697,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					&(prStaRec->rDeauthTxDoneTimer),
 					(PFN_MGMT_TIMEOUT_FUNC)
 						p2pRoleFsmDeauthTimeout,
-					(unsigned long) prStaRec);
+					(uintptr_t) prStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 					&(prStaRec->rDeauthTxDoneTimer),
@@ -2761,7 +2761,7 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
 					(PFN_MGMT_TIMEOUT_FUNC)
 					p2pRoleFsmDeauthTimeout,
-					(unsigned long) prCurrStaRec);
+					(uintptr_t) prCurrStaRec);
 
 				cnmTimerStartTimer(prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
@@ -4096,7 +4096,7 @@ p2pProcessEvent_UpdateNOAParam(IN struct ADAPTER *prAdapter,
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 void
 p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	uint32_t u4BufLen;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
@@ -4268,7 +4268,7 @@ p2pRoleNeedOffchnlTx(IN struct ADAPTER *prAdapter,
 
 	if (fgNeedOffchnlTx) {
 		prWlanHdr = (struct WLAN_MAC_HEADER *)
-			((unsigned long) prMgmtTxMsg->prMgmtMsduInfo->prPacket +
+			((uintptr_t) prMgmtTxMsg->prMgmtMsduInfo->prPacket +
 					MAC_TX_RESERVED_FIELD);
 		if (prMgmtTxMsg->rChannelInfo.ucChannelNum ==
 				prBssInfo->ucPrimaryChannel)

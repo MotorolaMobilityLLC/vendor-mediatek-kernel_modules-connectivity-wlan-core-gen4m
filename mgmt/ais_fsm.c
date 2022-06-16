@@ -129,7 +129,7 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
  *******************************************************************************
  */
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
-					  unsigned long ulParam);
+					  uintptr_t ulParam);
 static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter);
 
 static void aisFunClearAllTxReq(IN struct ADAPTER *prAdapter,
@@ -701,46 +701,46 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rBGScanTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventBGSleepTimeOut,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rIbssAloneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 			  aisFsmRunEventIbssAloneTimeOut,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rScanDoneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventScanDoneTimeOut,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rJoinTimeoutTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventJoinTimeout,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rChannelTimeoutTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventChannelTimeout,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rDeauthDoneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmRunEventDeauthTimeout,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rSecModeChangeTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 			  aisFsmRunEventSecModeChangeTimeout,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 #endif
 
 	cnmTimerInitTimer(prAdapter,
 			  &prAisFsmInfo->rBtmRespTxDoneTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmBtmRespTxDoneTimeout,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 
 	prMgmtTxReqInfo = &prAisFsmInfo->rMgmtTxInfo;
 	LINK_INITIALIZE(&prMgmtTxReqInfo->rTxReqLink);
@@ -828,7 +828,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		 */
 		if (!fgHalted)
 			aisFsmRunEventScanDoneTimeOut(prAdapter,
-				(unsigned long)ucBssIndex);
+				(uintptr_t)ucBssIndex);
 
 		if (kalGetGlueScanReq(prAdapter->prGlueInfo) != NULL) {
 			GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
@@ -1608,7 +1608,7 @@ aisState_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 }
 
 void aisFsmBtmRespTxDoneTimeout(
-	IN struct ADAPTER *prAdapter, unsigned long ulParam)
+	IN struct ADAPTER *prAdapter, uintptr_t ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	uint8_t ucBssIndex = (uint8_t) ulParam;
@@ -4631,7 +4631,7 @@ u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 
 	u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
 	pucIE =
-	    (uint8_t *) ((unsigned long)prSwRfb->pvHeader +
+	    (uint8_t *) ((uintptr_t)prSwRfb->pvHeader +
 			 prSwRfb->u2HeaderLen);
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
@@ -4853,7 +4853,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 }				/* end of aisFsmDisconnect() */
 
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
-					  unsigned long ulParam)
+					  uintptr_t ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -4901,7 +4901,7 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
-				  unsigned long ulParamPtr)
+				  uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
@@ -4946,7 +4946,7 @@ void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmRunEventIbssAloneTimeOut(IN struct ADAPTER *prAdapter,
-				    unsigned long ulParamPtr)
+				    uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
@@ -4996,7 +4996,7 @@ void aisFsmRunEventIbssAloneTimeOut(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
-			       unsigned long ulParamPtr)
+			       uintptr_t ulParamPtr)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -5100,7 +5100,7 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
 }				/* end of aisFsmRunEventJoinTimeout() */
 
 void aisFsmRunEventDeauthTimeout(IN struct ADAPTER *prAdapter,
-				 unsigned long ulParamPtr)
+				 uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 
@@ -5109,7 +5109,7 @@ void aisFsmRunEventDeauthTimeout(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER *prAdapter,
-					unsigned long ulParamPtr)
+					uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 
@@ -6525,7 +6525,7 @@ void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
 		prMgmtTxMsg->prMgmtMsduInfo = prMgmtFrame;
 
 		pucFrameBuf =
-		    (uint8_t *) ((unsigned long)prMgmtFrame->prPacket +
+		    (uint8_t *) ((uintptr_t)prMgmtFrame->prPacket +
 				 MAC_TX_RESERVED_FIELD);
 		prVendorSpec =
 		    (struct _ACTION_VENDOR_SPEC_FRAME_T *)pucFrameBuf;
@@ -6559,7 +6559,7 @@ void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
 #endif
 
 void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
-				  unsigned long ulParamPtr)
+				  uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -6624,8 +6624,8 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		prMgmtTxReqInfo = &(prAisFsmInfo->rMgmtTxInfo);
 		pu8GlCookie =
-			(uint64_t *) ((unsigned long) prMsduInfo->prPacket +
-				(unsigned long) prMsduInfo->u2FrameLength +
+			(uint64_t *) ((uintptr_t) prMsduInfo->prPacket +
+				(uintptr_t) prMsduInfo->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
 
 		if (rTxDoneStatus != TX_RESULT_SUCCESS) {
@@ -6701,7 +6701,7 @@ aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		}
 
 		prWlanHdr =
-		    (struct WLAN_MAC_HEADER *)((unsigned long)
+		    (struct WLAN_MAC_HEADER *)((uintptr_t)
 					       prMgmtTxMsdu->prPacket +
 					       MAC_TX_RESERVED_FIELD);
 		prStaRec =

@@ -233,7 +233,7 @@ void nic_txd_v2_fill_by_pkt_option(
 		if (fgProtected && prMsduInfo->prPacket) {
 			struct WLAN_MAC_HEADER *prWlanHeader =
 			    (struct WLAN_MAC_HEADER *)
-			    ((unsigned long) (prMsduInfo->prPacket)
+			    ((uintptr_t) (prMsduInfo->prPacket)
 				+ MAC_TX_RESERVED_FIELD);
 
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
@@ -516,7 +516,7 @@ void nic_txd_v2_compose(
 
 			kalGetPacketBuf(prMsduInfo->prPacket, &pucBuff);
 			prWlanHeader =
-				(struct WLAN_MAC_HEADER *)((unsigned long)
+				(struct WLAN_MAC_HEADER *)((uintptr_t)
 				(pucBuff + u4TxHeadRoomSize));
 
 			if (prMsduInfo->u4Option & MSDU_OPT_PROTECTED_FRAME)
@@ -526,7 +526,7 @@ void nic_txd_v2_compose(
 #endif
 			prWlanHeader =
 				(struct WLAN_MAC_HEADER *)
-				((unsigned long)
+				((uintptr_t)
 				(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 		HAL_MAC_CONNAC2X_TXD_SET_TYPE(
@@ -581,7 +581,7 @@ void nic_txd_v2_compose(
 			prMsduInfo->ucPacketType == 1) { /* Mgmt */
 			struct WLAN_MAC_HEADER *prWlanHeader =
 			(struct WLAN_MAC_HEADER *)
-			((unsigned long)(prMsduInfo->prPacket) +
+			((uintptr_t)(prMsduInfo->prPacket) +
 			MAC_TX_RESERVED_FIELD);
 
 			if (((prWlanHeader->u2FrameCtrl &

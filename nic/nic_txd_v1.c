@@ -229,7 +229,7 @@ void nic_txd_v1_fill_by_pkt_option(
 	case HEADER_FORMAT_802_11_NORMAL_MODE:
 		if (fgProtected && prMsduInfo->prPacket) {
 			struct WLAN_MAC_HEADER *prWlanHeader =
-				(struct WLAN_MAC_HEADER *) ((unsigned long) (
+				(struct WLAN_MAC_HEADER *) ((uintptr_t) (
 				prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
@@ -474,7 +474,7 @@ void nic_txd_v1_compose(
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
 		struct WLAN_MAC_HEADER *prWlanHeader =
-			(struct WLAN_MAC_HEADER *) ((unsigned long) (
+			(struct WLAN_MAC_HEADER *) ((uintptr_t) (
 			prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
 		HAL_MAC_TX_DESC_SET_TYPE(prTxDesc,

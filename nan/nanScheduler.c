@@ -777,7 +777,7 @@ nanWindowType(struct ADAPTER *prAdapter, uint16_t u2SlotIdx) {
 }
 
 void
-nanSchedAvailAttrCtrlTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanSchedAvailAttrCtrlTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_SCHEDULER_T *prScheduler;
 
 	prScheduler = nanGetScheduler(prAdapter);
@@ -4906,7 +4906,7 @@ nanSchedNegoCustFawApplyCmd(struct ADAPTER *prAdapter) {
 }
 
 void
-nanSchedNegoDispatchTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanSchedNegoDispatchTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	uint32_t u4Idx;
 	uint32_t u4SchIdx;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;

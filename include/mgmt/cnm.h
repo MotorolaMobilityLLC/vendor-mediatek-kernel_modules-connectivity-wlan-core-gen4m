@@ -378,7 +378,7 @@ u_int8_t cnmDbdcIsP2pListenDbdcEn(void);
 #endif
 
 void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr);
+	IN uintptr_t plParamPtr);
 void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 u_int8_t cnmDBDCIsReqPeivilegeLock(void);

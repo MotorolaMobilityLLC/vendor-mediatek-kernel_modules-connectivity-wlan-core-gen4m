@@ -847,7 +847,7 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	bssComposeQoSNullFrame(prAdapter,
-		(uint8_t *) ((unsigned long) (prMsduInfo->prPacket) +
+		(uint8_t *) ((uintptr_t) (prMsduInfo->prPacket) +
 		MAC_TX_RESERVED_FIELD),
 		prStaRec, ucUP, fgSetEOSP);
 
@@ -861,7 +861,7 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 	prMsduInfo->ucPacketType = ucPacketType;
 
 	prQoSNullFrame = (struct WLAN_MAC_HEADER_QOS *) ((uint8_t *)
-			 ((unsigned long) (prMsduInfo->prPacket) +
+			 ((uintptr_t) (prMsduInfo->prPacket) +
 			  MAC_TX_RESERVED_FIELD));
 
 	if (fgBMC)
@@ -1226,7 +1226,7 @@ void swCrDebugInit(struct ADAPTER *prAdapter)
 
 	cnmTimerInitTimer(prAdapter, &g_rSwcrDebugTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) swCrDebugCheckTimeout,
-			  (unsigned long) NULL);
+			  (uintptr_t) NULL);
 
 	if (g_u4SwcrDebugCheckTimeout)
 		swCrDebugCheckEnable(prAdapter, TRUE,
@@ -1429,7 +1429,7 @@ void swCrDebugCheck(struct ADAPTER *prAdapter,
 }
 
 void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
-			   unsigned long ulParamPtr)
+			   uintptr_t ulParamPtr)
 {
 	struct CMD_SW_DBG_CTRL rCmdSwCtrl = {0};
 	uint32_t rStatus;

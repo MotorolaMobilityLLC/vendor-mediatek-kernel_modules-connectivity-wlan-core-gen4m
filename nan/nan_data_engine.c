@@ -192,7 +192,7 @@ nanDataPathProtocolFsmStep(IN struct ADAPTER *prAdapter,
  *******************************************************************************
  */
 void
-nanDataResponseTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanDataResponseTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_NDP_INSTANCE_T *prNDP;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -225,7 +225,7 @@ nanDataResponseTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
  */
 /*----------------------------------------------------------------------------*/
 void
-nanDataProtocolTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanDataProtocolTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
 
@@ -256,7 +256,7 @@ nanDataProtocolTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
  */
 /*----------------------------------------------------------------------------*/
 void
-nanDataRetryTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanDataRetryTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
 
@@ -285,7 +285,7 @@ nanDataRetryTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
  */
 /*----------------------------------------------------------------------------*/
 void
-nanDataSecurityTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanDataSecurityTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	struct _NAN_NDP_INSTANCE_T *prNDP;
 
@@ -890,7 +890,7 @@ nanDataAllocateNdp(struct ADAPTER *prAdapter,
 
 	cnmTimerInitTimer(prAdapter, &(prNDP->rNDPUserSpaceResponseTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanDataResponseTimeout,
-			  (unsigned long)prNDP);
+			  (uintptr_t)prNDP);
 
 	if (prNDL->ucNDPNum < UINT8_MAX)
 		prNDL->ucNDPNum++;
@@ -1088,15 +1088,15 @@ nanDataAllocateNdl(struct ADAPTER *prAdapter, IN uint8_t *pucMacAddr,
 	/* timer initialization sequence */
 	cnmTimerInitTimer(prAdapter, &(prNDL->rNDPProtocolExpireTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanDataProtocolTimeout,
-			  (unsigned long)prNDL);
+			  (uintptr_t)prNDL);
 
 	cnmTimerInitTimer(prAdapter, &(prNDL->rNDPProtocolRetryTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanDataRetryTimeout,
-			  (unsigned long)prNDL);
+			  (uintptr_t)prNDL);
 
 	cnmTimerInitTimer(prAdapter, &(prNDL->rNDPSecurityExpireTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanDataSecurityTimeout,
-			  (unsigned long)prNDL);
+			  (uintptr_t)prNDL);
 
 	LINK_INITIALIZE(&(prNDL->rPendingReqList));
 

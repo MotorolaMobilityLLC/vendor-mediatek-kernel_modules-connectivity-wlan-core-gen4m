@@ -1716,17 +1716,17 @@ void wlanReleaseCommandEx(IN struct ADAPTER *prAdapter,
 			IN u_int8_t fgIsNeedHandler);
 
 void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
-			   IN unsigned long ulParamPtr);
+			   IN uintptr_t ulParamPtr);
 
 void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER *prAdapter,
 				   IN uint8_t ucBssIndex);
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
-void wlanReturnPacketDelaySetupTasklet(unsigned long data);
+void wlanReturnPacketDelaySetupTasklet(uintptr_t data);
 #endif
 
 void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER *prAdapter,
-				       IN unsigned long ulParamPtr);
+				       IN uintptr_t ulParamPtr);
 
 void wlanReturnPacket(IN struct ADAPTER *prAdapter, IN void *pvPacket);
 
@@ -2077,7 +2077,7 @@ void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter);
 void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter);
 
 void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr);
+			  IN uintptr_t ulParamPtr);
 
 #endif
 
@@ -2272,7 +2272,7 @@ uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
-					unsigned long ulParamPtr);
+					uintptr_t ulParamPtr);
 #endif
 
 uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,

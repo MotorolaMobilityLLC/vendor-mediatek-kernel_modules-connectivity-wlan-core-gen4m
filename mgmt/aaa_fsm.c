@@ -218,7 +218,7 @@ void aaaFsmRunEventStart(IN struct MSG_HDR *prMsgHdr)
 #if CFG_SUPPORT_AAA
 
 void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
-		IN unsigned long plParamPtr)
+		IN uintptr_t plParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -547,7 +547,7 @@ bow_proc:
 				&prStaRec->rTxReqDoneOrRxRespTimer,
 				(PFN_MGMT_TIMEOUT_FUNC)
 				aaaFsmRunEventTxReqTimeOut,
-				(unsigned long) prStaRec);
+				(uintptr_t) prStaRec);
 
 			cnmTimerStartTimer(prAdapter,
 				&prStaRec->rTxReqDoneOrRxRespTimer,
@@ -1490,7 +1490,7 @@ void aaaMulAPAgentStaEventNotify(
 }
 
 void aaaMulAPAgentUnassocStaMeasureTimeout(
-	IN struct ADAPTER *prAdapter, unsigned long ulParamPtr)
+	IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
 {
 	int32_t i4Ret = 0;
 	uint8_t ucIndex = 0;

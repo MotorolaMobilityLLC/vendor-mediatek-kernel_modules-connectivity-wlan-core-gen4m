@@ -90,14 +90,14 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pDevFsmInfo->rP2pFsmTimeoutTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) p2pDevFsmRunEventTimeout,
-			(unsigned long) prP2pDevFsmInfo);
+			(uintptr_t) prP2pDevFsmInfo);
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		prP2pDevFsmInfo->fgIsP2pListening = FALSE;
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pDevFsmInfo->rP2pListenDbdcTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) p2pDevDbdcSwDelayTimeout,
-			(unsigned long) prP2pDevFsmInfo);
+			(uintptr_t) prP2pDevFsmInfo);
 #endif
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P, TRUE, FALSE);
@@ -198,7 +198,7 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pFsmInfo->rP2pFsmTimeoutTimer),
 			(PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventFsmTimeout,
-			(unsigned long) prP2pFsmInfo);
+			(uintptr_t) prP2pFsmInfo);
 
 		/* 4 <2> Initiate BSS_INFO_T - common part */
 		BSS_INFO_INIT(prAdapter, NETWORK_TYPE_P2P_INDEX);
@@ -510,7 +510,7 @@ void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventAbort */
 
 void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) ulParamPtr;
@@ -1256,7 +1256,7 @@ p2pDevNeedOffchnlTx(IN struct ADAPTER *prAdapter,
 		return FALSE;
 
 	prWlanHdr = (struct WLAN_MAC_HEADER *)
-			((unsigned long) prMgmtTxMsg->prMgmtMsduInfo->prPacket +
+			((uintptr_t) prMgmtTxMsg->prMgmtMsduInfo->prPacket +
 					MAC_TX_RESERVED_FIELD);
 	/* Probe response can only be sent during roc channel or op channel */
 	if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_PROBE_RSP)
@@ -1311,8 +1311,8 @@ p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 		}
 
 		pu8GlCookie =
-			(uint64_t *) ((unsigned long) prMsduInfo->prPacket +
-				(unsigned long) prMsduInfo->u2FrameLength +
+			(uint64_t *) ((uintptr_t) prMsduInfo->prPacket +
+				(uintptr_t) prMsduInfo->u2FrameLength +
 				MAC_TX_RESERVED_FIELD);
 
 		if (rTxDoneStatus != TX_RESULT_SUCCESS) {
@@ -1336,7 +1336,7 @@ p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 				prMsduInfo->ucBssIndex);
 			struct WLAN_MAC_HEADER *prWlanHdr =
 				(struct WLAN_MAC_HEADER *)
-				((unsigned long) prMsduInfo->prPacket +
+				((uintptr_t) prMsduInfo->prPacket +
 				MAC_TX_RESERVED_FIELD);
 
 			/* Redirect to assoc rsp tx done */
@@ -1470,7 +1470,7 @@ exit:
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 void p2pDevDbdcSwDelayTimeout(IN struct ADAPTER *prAdapter,
-		IN unsigned long ulParamPtr)
+		IN uintptr_t ulParamPtr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) ulParamPtr;

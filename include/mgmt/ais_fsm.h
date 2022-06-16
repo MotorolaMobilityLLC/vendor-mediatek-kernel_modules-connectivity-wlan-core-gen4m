@@ -782,23 +782,23 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER
 /* Timeout Handling                                                           */
 /*----------------------------------------------------------------------------*/
 void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER
-				  *prAdapter, unsigned long ulParamPtr);
+				  *prAdapter, uintptr_t ulParamPtr);
 
 void aisFsmRunEventIbssAloneTimeOut(IN struct ADAPTER
-				    *prAdapter, unsigned long ulParamPtr);
+				    *prAdapter, uintptr_t ulParamPtr);
 
 void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
-			       unsigned long ulParamPtr);
+			       uintptr_t ulParamPtr);
 
 void aisFsmRunEventChannelTimeout(IN struct ADAPTER
-				  *prAdapter, unsigned long ulParamPtr);
+				  *prAdapter, uintptr_t ulParamPtr);
 
 void aisFsmRunEventDeauthTimeout(IN struct ADAPTER
-				 *prAdapter, unsigned long ulParamPtr);
+				 *prAdapter, uintptr_t ulParamPtr);
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER
-					*prAdapter, unsigned long ulParamPtr);
+					*prAdapter, uintptr_t ulParamPtr);
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -863,7 +863,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
 
 void aisFsmBtmRespTxDoneTimeout(
-	IN struct ADAPTER *prAdapter, unsigned long ulParam);
+	IN struct ADAPTER *prAdapter, uintptr_t ulParam);
 
 void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);

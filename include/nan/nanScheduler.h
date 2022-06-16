@@ -158,7 +158,7 @@ void nanSchedNegoInitDb(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 			enum _ENUM_NAN_NEGO_TYPE_T eType,
 			enum _ENUM_NAN_NEGO_ROLE_T eRole);
 void nanSchedNegoDispatchTimeout(struct ADAPTER *prAdapter,
-		unsigned long ulParam);
+		uintptr_t ulParam);
 uint32_t nanSchedNegoGenLocalCrbProposal(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoChkRmtCrbProposal(struct ADAPTER *prAdapter,
 				       uint32_t *pu4RejectCode);

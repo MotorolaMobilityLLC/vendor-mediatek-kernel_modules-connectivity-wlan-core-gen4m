@@ -190,7 +190,7 @@ nanRangingInstanceInit(struct ADAPTER *prAdapter,
 	cnmTimerInitTimer(prAdapter,
 			  &(prRanging->ranging_ctrl.rRangingSessionTimer),
 			  (PFN_MGMT_TIMEOUT_FUNC)nanRangingSessionTimeout,
-			  (unsigned long)prRanging);
+			  (uintptr_t)prRanging);
 
 	nanRangingFsmStep(prAdapter, prRanging, RANGING_STATE_INIT);
 }
@@ -1536,7 +1536,7 @@ nanRangingFsmStep(struct ADAPTER *prAdapter,
 }
 
 void
-nanRangingSessionTimeout(struct ADAPTER *prAdapter, unsigned long ulParam) {
+nanRangingSessionTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam) {
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);

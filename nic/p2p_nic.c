@@ -171,26 +171,26 @@ nicRxAddP2pDevice(IN struct ADAPTER *prAdapter,
 				ASSERT(pucIeBuf == NULL);
 				pucIeBuf = prP2pInfo->pucCurrIePtr;
 
-				if (((unsigned long) prP2pInfo->pucCurrIePtr
-					+ (unsigned long) u2RxIELength) >
-				    (unsigned long)&
+				if (((uintptr_t) prP2pInfo->pucCurrIePtr
+					+ (uintptr_t) u2RxIELength) >
+				    (uintptr_t)&
 				    prP2pInfo->aucCommIePool
 				    [CFG_MAX_COMMON_IE_BUF_LEN]) {
 
 					/* Common Buffer is no enough. */
 					u2RxIELength =
-					    (uint16_t) ((unsigned long)
+					    (uint16_t) ((uintptr_t)
 					    &prP2pInfo->aucCommIePool
 					    [CFG_MAX_COMMON_IE_BUF_LEN] -
-						(unsigned long)
+						(uintptr_t)
 						prP2pInfo->pucCurrIePtr);
 				}
 
 				/* Step to next buffer address. */
 				prP2pInfo->pucCurrIePtr =
-				    (uint8_t *) ((unsigned long)
+				    (uint8_t *) ((uintptr_t)
 					prP2pInfo->pucCurrIePtr +
-					(unsigned long) u2RxIELength);
+					(uintptr_t) u2RxIELength);
 			}
 
 			/* Restore buffer pointer. */
@@ -235,27 +235,27 @@ nicRxAddP2pDevice(IN struct ADAPTER *prAdapter,
 				prTargetResult->pucIeBuf =
 					prP2pInfo->pucCurrIePtr;
 
-				if (((unsigned long) prP2pInfo->pucCurrIePtr
-					+ (unsigned long) u2RxIELength) >
-				    (unsigned long)
+				if (((uintptr_t) prP2pInfo->pucCurrIePtr
+					+ (uintptr_t) u2RxIELength) >
+				    (uintptr_t)
 				    &prP2pInfo->aucCommIePool
 				    [CFG_MAX_COMMON_IE_BUF_LEN]) {
 
 					/* Common Buffer is no enough. */
 					u2IELength =
-						(uint16_t) ((unsigned long)
+						(uint16_t) ((uintptr_t)
 						&prP2pInfo->aucCommIePool
 						[CFG_MAX_COMMON_IE_BUF_LEN] -
-						(unsigned long)
+						(uintptr_t)
 						prP2pInfo->pucCurrIePtr);
 				} else {
 					u2IELength = u2RxIELength;
 				}
 
 				prP2pInfo->pucCurrIePtr =
-				    (uint8_t *) ((unsigned long)
+				    (uint8_t *) ((uintptr_t)
 				    prP2pInfo->pucCurrIePtr
-				    + (unsigned long) u2IELength);
+				    + (uintptr_t) u2IELength);
 
 				kalMemCopy((void *) prTargetResult->pucIeBuf,
 					(void *) pucRxIEBuf,

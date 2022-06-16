@@ -1526,7 +1526,7 @@ uint32_t heRlmSendHtcNullFrame(
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	heRlmComposeHtcNullFrame(prAdapter,
-		(uint8_t *)((unsigned long)(prMsduInfo->prPacket)
+		(uint8_t *)((uintptr_t)(prMsduInfo->prPacket)
 			+ MAC_TX_RESERVED_FIELD),
 		prStaRec, ucUP, FALSE);
 

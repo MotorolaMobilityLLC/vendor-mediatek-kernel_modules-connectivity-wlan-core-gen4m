@@ -336,7 +336,7 @@ void nanRangingFsmStep(struct ADAPTER *prAdapter,
 		       struct _NAN_RANGING_INSTANCE_T *prRanging,
 		       enum _ENUM_RANGING_STATE_T eNextState);
 
-void nanRangingSessionTimeout(struct ADAPTER *prAdapter, unsigned long ulParam);
+void nanRangingSessionTimeout(struct ADAPTER *prAdapter, uintptr_t ulParam);
 
 /************************************************
  *   Interface for FTM

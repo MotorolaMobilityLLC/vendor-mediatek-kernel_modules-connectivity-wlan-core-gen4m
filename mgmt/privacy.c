@@ -240,7 +240,7 @@ void secInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	cnmTimerInitTimer(prAdapter,
 			  &prAisSpecBssInfo->rSaQueryTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) rsnStartSaQueryTimer,
-			  (unsigned long)ucBssIndex);
+			  (uintptr_t)ucBssIndex);
 #endif
 
 	prAisSpecBssInfo->fgCounterMeasure = FALSE;
@@ -713,7 +713,7 @@ u_int8_t secIsRobustMgmtFrame(IN struct ADAPTER *prAdapter, IN void *prPacket)
 		return FALSE;
 
 	prWlanHeader = (struct WLAN_MAC_HEADER *)
-		((unsigned long) prPacket + MAC_TX_RESERVED_FIELD);
+		((uintptr_t) prPacket + MAC_TX_RESERVED_FIELD);
 	u2TxFrameCtrl = prWlanHeader->u2FrameCtrl & MASK_FRAME_TYPE;
 	if (u2TxFrameCtrl == MAC_FRAME_DISASSOC
 	    || u2TxFrameCtrl == MAC_FRAME_DEAUTH)
@@ -732,7 +732,7 @@ u_int8_t secIsRobustActionFrame(IN struct ADAPTER *prAdapter, IN void *prPacket)
 		return FALSE;
 
 	prWlanHeader = (struct WLAN_MAC_HEADER *)
-		((unsigned long) prPacket + MAC_TX_RESERVED_FIELD);
+		((uintptr_t) prPacket + MAC_TX_RESERVED_FIELD);
 	u2TxFrameCtrl = prWlanHeader->u2FrameCtrl & MASK_FRAME_TYPE;
 	if (u2TxFrameCtrl != MAC_FRAME_ACTION)
 		return FALSE;
