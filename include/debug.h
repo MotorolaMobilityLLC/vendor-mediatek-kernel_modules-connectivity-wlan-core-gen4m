@@ -82,11 +82,6 @@
 extern u_int8_t wlan_fb_power_down;
 extern uint8_t aucDebugModule[];
 extern uint32_t au4LogLevel[];
-
-extern void set_logtoomuch_enable(int value) __attribute__((weak));
-extern int get_logtoomuch_enable(void) __attribute__((weak));
-extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
-
 extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 
 /*******************************************************************************
