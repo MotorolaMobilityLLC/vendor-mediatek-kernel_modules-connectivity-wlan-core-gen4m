@@ -2402,33 +2402,6 @@ send_msg:
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
-			for (i = 0; i < MLD_LINK_MAX; i++) {
-				struct BSS_INFO *bss = aisGetLinkBssInfo(
-					prAisFsmInfo, i);
-
-				if (!bss || !aisGetLinkBssDesc(prAisFsmInfo, i))
-					break;
-
-				/* for secondary link */
-				if (!IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
-					/* sync with firmware */
-					nicActivateNetwork(prAdapter,
-						NETWORK_ID(bss->ucBssIndex, i));
-
-				/* stop Tx due to we need to connect a new AP. even the
-				 ** new AP is operating on the same channel with current
-				 ** , we still need to stop Tx, because firmware should
-				 ** ensure all mgmt and dhcp packets are Tx in time,
-				 ** and may cause normal data packets was queued and
-				 ** eventually flushed in firmware
-				 */
-				if (bss->prStaRecOfAP &&
-				    prAisFsmInfo->ucReasonOfDisconnect !=
-				    DISCONNECT_REASON_CODE_REASSOCIATION)
-					bss->prStaRecOfAP->fgIsTxAllowed =
-									FALSE;
-			}
-
 			aisReqJoinChPrivilege(prAdapter,
 				prAisFsmInfo,
 				&prAisFsmInfo->ucSeqNumOfChReq);
@@ -8020,15 +7993,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	uint32_t u4MsgSz;
 	uint8_t i = 0;
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_INFO *prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
-		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
-
-		if (!prBss || !prBssDesc)
-			continue;
-
-		ucReqChNum++;
-	}
+	ucReqChNum = aisGetLinkNum(prAisFsmInfo);
 
 	u4MsgSz = sizeof(struct MSG_CH_REQ) +
 		sizeof(struct MSG_CH_REQ) * ucReqChNum;
@@ -8052,6 +8017,25 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 		if (!prBss || !prBssDesc)
 			continue;
+
+		/* for secondary link */
+		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex))
+			/* sync with firmware */
+			nicActivateNetwork(prAdapter,
+				NETWORK_ID(prBss->ucBssIndex, i));
+
+		/* stop Tx due to we need to connect a new AP. even the
+		 ** new AP is operating on the same channel with current
+		 ** , we still need to stop Tx, because firmware should
+		 ** ensure all mgmt and dhcp packets are Tx in time,
+		 ** and may cause normal data packets was queued and
+		 ** eventually flushed in firmware
+		 */
+		if (prBss->prStaRecOfAP &&
+			prAisFsmInfo->ucReasonOfDisconnect !=
+			DISCONNECT_REASON_CODE_REASSOCIATION)
+			prBss->prStaRecOfAP->fgIsTxAllowed =
+							FALSE;
 
 		if (i == 0)
 			prSubReq = prMsgChReq;
