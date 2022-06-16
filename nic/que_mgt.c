@@ -6335,6 +6335,8 @@ mqmParseMUEdcaParams(
 		return FALSE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return FALSE;
 
 	/* Goal: Obtain the MU EDCA parameters */
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
