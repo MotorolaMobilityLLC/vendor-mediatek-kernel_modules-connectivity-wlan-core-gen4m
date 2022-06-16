@@ -2030,6 +2030,7 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
 	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIndex;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
@@ -2088,11 +2089,10 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 			}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
-			if (prStaRec &&
-			prStaRec->ucBssIndex < MAX_BSSID_NUM) {
+			ucBssIndex = prStaRec->ucBssIndex;
+			if (prStaRec && ucBssIndex < MAX_BSSID_NUM) {
 				GET_BOOT_SYSTIME(
-					&prRxCtrl->u4LastRxTime
-					[prStaRec->ucBssIndex]);
+					&prRxCtrl->u4LastRxTime[ucBssIndex]);
 			}
 			nicRxProcessPktWithoutReorder(
 				prAdapter, prRetSwRfb);
