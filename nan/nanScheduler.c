@@ -8213,7 +8213,7 @@ nanSchedCmdUpdateCRB(IN struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 uint32_t
 nanSchedCmdMapStaRecord(IN struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			enum NAN_BSS_ROLE_INDEX eRoleIdx, uint8_t ucStaRecIdx,
-			uint8_t ucNdpCxtId) {
+			uint8_t ucNdpCxtId, uint8_t ucWlanIndex) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
 	uint32_t u4CmdBufferLen;
@@ -8263,7 +8263,7 @@ nanSchedCmdMapStaRecord(IN struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		(struct _NAN_SCHED_CMD_MAP_STA_REC_T *)prTlvElement->aucbody;
 	kalMemCopy(prCmdMapStaRec->aucNmiAddr, pucNmiAddr, MAC_ADDR_LEN);
 	prCmdMapStaRec->eRoleIdx = eRoleIdx;
-	prCmdMapStaRec->ucStaRecIdx = ucStaRecIdx;
+	prCmdMapStaRec->ucStaRecIdx = ucWlanIndex;
 	prCmdMapStaRec->ucNdpCxtId = ucNdpCxtId;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
@@ -8681,6 +8681,90 @@ nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 	return rRetStatus;
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+uint32_t
+nanSchedUniEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
+		     uint8_t *pucBuf) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	struct _NAN_SCHED_EVENT_NAN_ATTR_T *prEventNanAttr;
+	struct _NAN_ATTR_HDR_T *prAttrHdr;
+	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
+	struct _NAN_NDP_INSTANCE_T *prNDP = NULL;
+	uint32_t u4Idx = 0;
+
+	prEventNanAttr = (struct _NAN_SCHED_EVENT_NAN_ATTR_T *)pucBuf;
+	prAttrHdr = (struct _NAN_ATTR_HDR_T *)prEventNanAttr->aucNanAttr;
+
+	DBGLOG(NAN, INFO, "Nmi> %02x:%02x:%02x:%02x:%02x:%02x, SubEvent:%d\n",
+		prEventNanAttr->aucNmiAddr[0], prEventNanAttr->aucNmiAddr[1],
+		prEventNanAttr->aucNmiAddr[2], prEventNanAttr->aucNmiAddr[3],
+		prEventNanAttr->aucNmiAddr[4], prEventNanAttr->aucNmiAddr[5],
+		u4SubEvent);
+#if 0
+	nanUtilDump(prAdapter, "NAN Attribute",
+		(PUINT_8)prAttrHdr, (prAttrHdr->u2Length + 3));
+#endif
+
+	switch (u4SubEvent) {
+	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
+		nanSchedPeerUpdateDevCapabilityAttr(prAdapter,
+						    prEventNanAttr->aucNmiAddr,
+						    prEventNanAttr->aucNanAttr);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
+		/* Skip update availability by event
+		* if NDP negotiation is ongoing
+		*/
+		prNDL = nanDataUtilSearchNdlByMac(
+			prAdapter, prEventNanAttr->aucNmiAddr);
+		if (prNDL) {
+			if (prNDL->prOperatingNDP)
+				DBGLOG(NAN, INFO, "operating NDP %d\n",
+				prNDL->prOperatingNDP->ucNDPID);
+
+			if (prNDL->ucNDPNum) {
+				for (u4Idx = 0;
+					u4Idx < prNDL->ucNDPNum; u4Idx++) {
+					prNDP = &(prNDL->arNDP[u4Idx]);
+					DBGLOG(NAN, INFO,
+						"NDP idx[%d] NDPID[%d] state[%d]\n",
+						u4Idx, prNDP->ucNDPID,
+						(prNDP
+						->eCurrentNDPProtocolState));
+
+					if ((prNDP->eCurrentNDPProtocolState
+						!= NDP_IDLE) &&
+						(prNDP->eCurrentNDPProtocolState
+						!= NDP_NORMAL_TR)) {
+						DBGLOG(NAN, INFO,
+							"Skip due to peer under negotiation\n",
+							u4Idx,
+							prNDP->ucNDPID,
+						(prNDP
+						->eCurrentNDPProtocolState));
+						return WLAN_STATUS_FAILURE;
+					}
+				}
+			} else {
+				DBGLOG(NAN, INFO,
+					"No NDP found %d\n", prNDL->ucNDPNum);
+			}
+		} else {
+			DBGLOG(NAN, INFO, "No NDL found\n");
+		}
+
+		nanSchedPeerUpdateAvailabilityAttr(prAdapter,
+						   prEventNanAttr->aucNmiAddr,
+						   prEventNanAttr->aucNanAttr);
+		break;
+
+	default:
+		break;
+	}
+
+	return rRetStatus;
+}
+#else
 uint32_t
 nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 		     uint8_t *pucBuf) {
@@ -8763,6 +8847,7 @@ nanSchedEventNanAttr(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 
 	return rRetStatus;
 }
+#endif
 
 uint32_t
 nanSchedEventDwInterval(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
@@ -8778,6 +8863,36 @@ nanSchedEventDwInterval(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 	return rRetStatus;
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+uint32_t
+nanSchedulerUniEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
+			  uint8_t *pucBuf) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(NAN, INFO, "Evt:%d\n", u4SubEvent);
+
+	switch (u4SubEvent) {
+	case UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG:
+		nanSchedEventScheduleConfig(prAdapter, u4SubEvent, pucBuf);
+		break;
+
+	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
+	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
+		nanSchedUniEventNanAttr(prAdapter, u4SubEvent, pucBuf);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
+		break;
+	case UNI_EVENT_NAN_TAG_DW_INTERVAL:
+		nanSchedEventDwInterval(prAdapter, u4SubEvent, pucBuf);
+		break;
+	default:
+		break;
+	}
+
+	return rRetStatus;
+}
+
+#else
 uint32_t
 nanSchedulerEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 			  uint8_t *pucBuf) {
@@ -8805,6 +8920,7 @@ nanSchedulerEventDispatch(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 
 	return rRetStatus;
 }
+#endif
 
 #define NAN_STATION_TEST_ADDRESS                                               \
 	{ 0x22, 0x22, 0x22, 0x22, 0x22, 0x22 }

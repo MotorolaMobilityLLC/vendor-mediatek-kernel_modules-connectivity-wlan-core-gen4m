@@ -95,14 +95,11 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		      IN uint32_t u4SetBufferLen) {
 
 	struct CMD_802_11_KEY *prCmdFWKey;
-	struct CMD_INFO *prCmdInfo;
-	struct CMD_802_11_KEY *prCmdKey;
-	uint8_t ucCmdSeqNum;
+	struct CMD_802_11_KEY rCmdKey;
+	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	unsigned char fgNoHandshakeSec = FALSE;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 
 	prCmdFWKey = (struct CMD_802_11_KEY *)pvSetBuffer;
 	DEBUGFUNC("wlanSetAddKey");
@@ -154,49 +151,6 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			return WLAN_STATUS_SUCCESS;
 		}
 	}
-
-	prChipInfo = prAdapter->chip_info;
-
-	if (!prChipInfo) {
-		DBGLOG(NAN, ERROR, "prChipInfo error!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_802_11_KEY);
-
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, INFO, "ucCmdSeqNum = %d\n", ucCmdSeqNum);
-
-	/* compose CMD_802_11_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-#if CFG_SUPPORT_REPLAY_DETECTION
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetAddKey;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutSetAddKey;
-#else
-	prCmdInfo->pfCmdDoneHandler = NULL;
-	prCmdInfo->pfCmdTimeoutHandler = NULL;
-#endif
-	prCmdInfo->fgIsOid = FALSE;
-	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
-	prCmdInfo->u4SetInfoLen = u4SetBufferLen;
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-
-	NIC_FILL_CMD_TX_HDR(prAdapter, prCmdInfo->pucInfoBuffer,
-			    prCmdInfo->u2InfoBufLen, prCmdInfo->ucCID,
-			    CMD_PACKET_TYPE_ID, &prCmdInfo->ucCmdSeqNum,
-			    prCmdInfo->fgSetQuery, &prCmdKey, FALSE, 0,
-			    S2D_INDEX_CMD_H2N);
 
 	/* Setup WIFI_CMD_T */
 	kalMemZero(prCmdKey, sizeof(struct CMD_802_11_KEY));
@@ -322,33 +276,37 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	DBGLOG(NAN, INFO, "ucBMCWlanIndexS = %d:",
 	       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
 #endif
+	return wlanSendSetQueryCmd(prAdapter,
+			  CMD_ID_ADD_REMOVE_KEY,
+			  TRUE,
+			  FALSE,
+			  FALSE,
+#if CFG_SUPPORT_REPLAY_DETECTION
+			  nicCmdEventSetAddKey,
+			  nicOidCmdTimeoutSetAddKey,
+#else
+			  NULL,
+			  NULL,
+#endif
+			  sizeof(struct CMD_802_11_KEY),
+			  (uint8_t *)&rCmdKey,
+			  pvSetBuffer,
+			  u4SetBufferLen);
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prAdapter->prGlueInfo, (struct QUE_ENTRY *)prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prAdapter->prGlueInfo);
-	return WLAN_STATUS_PENDING;
 }
 
 uint32_t
 nan_sec_wlanSetRemoveKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			 IN uint32_t u4SetBufferLen) {
 	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	/* P_PARAM_REMOVE_KEY_T prRemovedKey; */
-	struct CMD_802_11_KEY *prCmdKey;
+	struct CMD_802_11_KEY rCmdKey;
+	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
 	struct CMD_802_11_KEY *prCmdFWKey;
-	uint8_t ucCmdSeqNum;
-	struct WLAN_TABLE *prWlanTable;
 	struct STA_RECORD *prStaRec = NULL;
 	struct BSS_INFO *prBssInfo;
-	/* UINT_8 i = 0; */
 	unsigned char fgRemoveWepKey = FALSE;
 	uint32_t ucRemoveBCKeyAtIdx = WTBL_RESERVED_ENTRY;
 	uint32_t u4KeyIndex;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 
 	prCmdFWKey = (struct CMD_802_11_KEY *)pvSetBuffer;
 	DEBUGFUNC("wlanoidSetRemoveKey");
@@ -452,50 +410,6 @@ nan_sec_wlanSetRemoveKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			return WLAN_STATUS_SUCCESS;
 	}
 
-	prChipInfo = prAdapter->chip_info;
-
-	if (!prChipInfo) {
-		DBGLOG(NAN, ERROR, "prChipInfo error!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_802_11_KEY);
-
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	prWlanTable = prAdapter->rWifiVar.arWtbl;
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prCmdFWKey->ucBssIdx);
-
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-
-	/* compose CMD_802_11_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	/* prCmdInfo->ucBssIndex = prRemovedKey->ucBssIdx; */
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = NULL;
-	prCmdInfo->pfCmdTimeoutHandler = NULL;
-	prCmdInfo->fgIsOid = FALSE;
-	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	/* prCmdInfo->fgDriverDomainMCR = FALSE; */
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
-	prCmdInfo->u4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-	/* Setup WIFI_CMD_T */
-
-	NIC_FILL_CMD_TX_HDR(prAdapter, prCmdInfo->pucInfoBuffer,
-			    prCmdInfo->u2InfoBufLen, prCmdInfo->ucCID,
-			    CMD_PACKET_TYPE_ID, &prCmdInfo->ucCmdSeqNum,
-			    prCmdInfo->fgSetQuery, &prCmdKey, FALSE, 0,
-			    S2D_INDEX_CMD_H2N);
-
 	kalMemZero((uint8_t *)prCmdKey, sizeof(struct CMD_802_11_KEY));
 
 	prCmdKey->ucAddRemove = 0; /* Remove */
@@ -516,13 +430,17 @@ nan_sec_wlanSetRemoveKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *)prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(prAdapter,
+		  CMD_ID_ADD_REMOVE_KEY,
+		  TRUE,
+		  FALSE,
+		  FALSE,
+		  NULL,
+		  NULL,
+		  sizeof(struct CMD_802_11_KEY),
+		  (uint8_t *)&rCmdKey,
+		  pvSetBuffer,
+		  u4SetBufferLen);
 }
 
 int
