@@ -1359,7 +1359,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 * in p2pFuncProcessP2pProbeRsp
 			 */
 			*pu8GlCookie = u8GlCookie;
-			ucRetryLimit = 6;
+			ucRetryLimit = 2;
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
