@@ -314,6 +314,7 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	unsigned char fgRollbackRtnlLock = FALSE;
 	unsigned char ret;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
+	int32_t i4RetReg = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -350,10 +351,16 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	netif_tx_stop_all_queues(
 		prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	i4RetReg = cfg80211_register_netdevice(
+		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+#else
+	i4RetReg = register_netdev(
+		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+#endif
+
 	/* register for net device */
-	if (register_netdev(
-		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler) <
-	    0) {
+	if (i4RetReg < 0) {
 		DBGLOG(INIT, WARN,
 		       "unable to register netdevice for nan\n");
 		/* trunk doesn't do free_netdev here */
@@ -452,7 +459,12 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	if (fgRollbackRtnlLock)
 		rtnl_unlock();
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_unregister_netdevice(prNANInfo->prDevHandler);
+#else
 	unregister_netdev(prNANInfo->prDevHandler);
+#endif
+
 	DBGLOG(INIT, INFO, "unregister nandev\n");
 	if (fgRollbackRtnlLock)
 		rtnl_lock();
