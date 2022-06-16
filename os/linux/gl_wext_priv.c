@@ -2375,6 +2375,7 @@ __priv_nan_struct(IN struct net_device *prNetDev,
 			prDataRes->ucServiceProtocolType;
 		rNanCmdDataResponse.ucMinTimeSlot = prDataRes->ucMinTimeSlot;
 		rNanCmdDataResponse.u2MaxLatency = prDataRes->u2MaxLatency;
+		rNanCmdDataResponse.u2NdpTransactionId = 0;
 
 		kalMemCopy(rNanCmdDataResponse.aucInitiatorDataAddress,
 			   prDataRes->initiator_mac_addr, MAC_ADDR_LEN);
