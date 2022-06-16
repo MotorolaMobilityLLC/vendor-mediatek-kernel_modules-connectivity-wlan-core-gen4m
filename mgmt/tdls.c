@@ -513,7 +513,7 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr,
 		   TDLS_FME_MAC_ADDR_LEN);
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
-	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = HTONS(TDLS_FRM_PROT_TYPE);
 	pPkt += 2;
 	u4PktLen += TDLS_FME_MAC_ADDR_LEN * 2 + 2;
 
@@ -636,7 +636,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 	kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = HTONS(TDLS_FRM_PROT_TYPE);
 	LR_TDLS_FME_FIELD_FILL(2);
 
 	/* 2. payload type */
@@ -820,7 +820,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 	kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = HTONS(TDLS_FRM_PROT_TYPE);
 	LR_TDLS_FME_FIELD_FILL(2);
 
 	/* 2. payload type */
@@ -1016,7 +1016,7 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 	kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = HTONS(TDLS_FRM_PROT_TYPE);
 	LR_TDLS_FME_FIELD_FILL(2);
 
 	/* 2. payload type */
@@ -1155,7 +1155,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 	kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = HTONS(TDLS_FRM_PROT_TYPE);
 	LR_TDLS_FME_FIELD_FILL(2);
 
 	/* 2. payload type */
