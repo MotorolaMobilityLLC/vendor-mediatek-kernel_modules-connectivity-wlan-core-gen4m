@@ -5053,7 +5053,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	/* set MAC address */
 	if (!bAtResetFlow) {
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
-		struct sockaddr MacAddr;
+		struct sockaddr MacAddr = {0};
 		uint32_t u4SetInfoLen = 0;
 		struct net_device *prDevHandler;
 

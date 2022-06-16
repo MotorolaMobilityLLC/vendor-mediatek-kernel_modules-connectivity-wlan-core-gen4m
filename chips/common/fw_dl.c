@@ -285,11 +285,6 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 			num_of_region,
 			be2cpu32(glo_desc->subsys));
 
-	if (num_of_region < 0) {
-		DBGLOG(INIT, WARN, "parse patch failed! num_of_region < 0.\n");
-		return;
-	}
-
 	/* section map */
 	img_ptr += sizeof(struct PATCH_GLO_DESC);
 
@@ -392,14 +387,6 @@ uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	num_of_region = target->num_of_region;
-	if (num_of_region < 0) {
-		DBGLOG(INIT, ERROR,
-			"Firmware download num_of_region < 0 !\n");
-		u4Status = WLAN_STATUS_FAILURE;
-		goto out;
-	}
-
-
 	for (i = 0; i < num_of_region; i++) {
 		struct patch_dl_buf *region;
 
@@ -2606,9 +2593,9 @@ void wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 {
 #define FW_FILE_NAME_TOTAL 8
 #define FW_FILE_NAME_MAX_LEN 64
-	const struct firmware *fw_entry;
+	const struct firmware *fw_entry = NULL;
 	struct WIFI_VER_INFO *prVerInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct device *prDev;
 	void *prFwBuffer = NULL;
 	uint8_t *aucFwName[FW_FILE_NAME_TOTAL + 1];
@@ -2649,6 +2636,11 @@ void wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 
 	prVerInfo = (struct WIFI_VER_INFO *)
 		kalMemAlloc(sizeof(struct WIFI_VER_INFO), VIR_MEM_TYPE);
+	if (!prVerInfo) {
+		DBGLOG(INIT, WARN, "vmalloc(%u) failed\n",
+			sizeof(struct WIFI_VER_INFO));
+		goto exit;
+	}
 	kalMemCopy(prFwBuffer, fw_entry->data, fw_entry->size);
 	if (wlanGetConnacTailerInfo(prVerInfo, prFwBuffer, fw_entry->size,
 			IMG_DL_IDX_N9_FW) != WLAN_STATUS_SUCCESS) {
