@@ -1459,6 +1459,19 @@ union WPDMA_GLO_CFG_STRUCT {
 	uint32_t word;
 };
 
+struct thermal_sensor_info {
+	const char name[16];
+	const enum THERMAL_TEMP_TYPE type;
+	const uint8_t sendor_idx;
+	void *tzd;
+	void *priv;
+};
+
+struct thermal_info {
+	const uint32_t sensor_num;
+	struct thermal_sensor_info *sensor_info;
+};
+
 struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
@@ -1640,6 +1653,7 @@ struct mt66xx_chip_info {
 	struct CCIF_OPS *ccif_ops;
 	struct WLAN_PINCTRL_OPS *pinctrl_ops;
 	struct EMI_MEM_INFO rEmiInfo;
+	struct thermal_info thermal_info;
 };
 
 struct mt66xx_hif_driver_data {
