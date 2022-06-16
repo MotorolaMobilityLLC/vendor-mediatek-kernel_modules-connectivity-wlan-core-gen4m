@@ -6892,7 +6892,7 @@ void mqmGenerateWmmParamIE(IN struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prMsduInfo->ucBssIndex);
 
-	if (!prBssInfo->fgIsQBSS)
+	if (!prBssInfo || !prBssInfo->fgIsQBSS)
 		return;
 
 	prIeWmmParam = (struct IE_WMM_PARAM *)
