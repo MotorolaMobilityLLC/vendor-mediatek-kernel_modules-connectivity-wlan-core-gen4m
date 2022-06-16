@@ -1029,11 +1029,25 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info,
 	unsigned int drv, char *reason)
 {
+#define AEE_STR_LEN		256
+#define FW_VER_LEN		256
+
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
-	uint8_t fw_version[256];
-	uint8_t aee_str[256];
+	uint8_t *fw_version = NULL;
+	uint8_t *aee_str = NULL;
 	uint32_t u4Len = 0;
+
+	aee_str = kalMemAlloc(AEE_STR_LEN, VIR_MEM_TYPE);
+	fw_version = kalMemAlloc(FW_VER_LEN, VIR_MEM_TYPE);
+	if (!aee_str || !fw_version) {
+		DBGLOG(INIT, ERROR,
+			"Alloc mem failed, aee_str: 0x%p, fw_version: 0x%p\n",
+			aee_str, fw_version);
+		goto exit;
+	}
+	kalMemZero(aee_str, AEE_STR_LEN);
+	kalMemZero(fw_version, FW_VER_LEN);
 
 	if (glue->u4ReadyFlag == 0) {
 		if (chip_info->fw_dl_ops->getFwVerInfo)
@@ -1072,11 +1086,17 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 
 	__coredump_to_userspace_issue_info(ctx,
 		aee_str,
-		sizeof(aee_str));
+		AEE_STR_LEN);
 
 	__coredump_to_userspace_mem_region(ctx);
 
 	connv3_coredump_end(ctx->handler, aee_str);
+
+exit:
+	if (aee_str)
+		kalMemFree(aee_str, VIR_MEM_TYPE, AEE_STR_LEN);
+	if (fw_version)
+		kalMemFree(fw_version, VIR_MEM_TYPE, FW_VER_LEN);
 
 	return 0;
 }
@@ -1160,18 +1180,18 @@ void wifi_coredump_start(uint8_t drv, char *reason)
 			drv_type = CONNDRV_TYPE_WIFI;
 			break;
 		case RST_SOURCE_WIFI_FW:
-			drv_type = (enum consys_drv_type)-1;
+			drv_type = CONNDRV_TYPE_MAX;
 			break;
 		default:
 			drv_type = (enum consys_drv_type)drv;
 			break;
 		}
-		connsys_coredump_start(g_coredump_ctx.handler, 0,
+		connsys_coredump_start(ctx->handler, 0,
 			drv_type, reason);
-		connsys_coredump_clean(g_coredump_ctx.handler);
+		connsys_coredump_clean(ctx->handler);
 	}
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_start(&g_coredump_ctx, drv, reason);
+	__coredump_start(ctx, drv, reason);
 #endif
 }
 
