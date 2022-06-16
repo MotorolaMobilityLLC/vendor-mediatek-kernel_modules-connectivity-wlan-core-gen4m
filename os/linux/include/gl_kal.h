@@ -2334,6 +2334,8 @@ void kalGetFtIeParam(void *pvftie,
 	const uint8_t **pucIe);
 int kalRegulatoryHint(char *country);
 
+uint32_t kalGetSKBSharedInfoSize(void);
+
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,
 	uint32_t u4Arg3, uint32_t u4Arg4);

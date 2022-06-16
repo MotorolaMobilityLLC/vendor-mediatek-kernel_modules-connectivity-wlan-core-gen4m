@@ -12796,14 +12796,20 @@ void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
 void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen)
 {
-	struct sk_buff *pkt = (struct sk_buff *)pvPacket;
+	struct sk_buff *pkt;
 
-	pkt = build_skb(pkt, u4TotLen);
+	pkt = build_skb(pvPacket, u4TotLen
+		+ kalGetSKBSharedInfoSize());
 
 	if (pkt && fgIsSetLen)
 		pkt->len = u4TotLen;
 
 	return (void *)pkt;
+}
+
+uint32_t kalGetSKBSharedInfoSize(void)
+{
+	return SKB_DATA_ALIGN(sizeof(struct skb_shared_info));
 }
 
 uint32_t kalGetChannelFrequency(
