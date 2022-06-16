@@ -2883,19 +2883,27 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+#if (CFG_SUPPORT_802_11BE == 1)
 	DBGLOG(INIT, INFO,
 		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
 			prPhyCap->ucVht,
 			prPhyCap->ucHe,
-#if (CFG_SUPPORT_802_11BE == 1)
 			prPhyCap->ucEht,
-#else
-			0,
-#endif
 			prPhyCap->uc5gBand,
 			prPhyCap->ucNss,
 			prPhyCap->ucDbdc,
 			prPhyCap->ucMaxBandwidth);
+#else
+	DBGLOG(INIT, INFO,
+		"Vht [%u] He[%u] Eht[%u] 5gBand [%d], Nss [%d], Dbdc [%d], bw [%d]\n",
+			prPhyCap->ucVht,
+			prPhyCap->ucHe,
+			0,
+			prPhyCap->uc5gBand,
+			prPhyCap->ucNss,
+			prPhyCap->ucDbdc,
+			prPhyCap->ucMaxBandwidth);
+#endif
 
 	DBGLOG(INIT, INFO,
 		"TxLdpc [%u], RxLdpc [%u], StbcTx [%u], StbcRx [%u], WifiPath [%x]\n",

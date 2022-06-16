@@ -1584,16 +1584,20 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			" = ", u2LinkSpeed);
 
 		if (!prQueryStaStatistics->ucSkipAr) {
+#if (CFG_SUPPORT_RA_GEN == 1)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%-20s%s%s\n", "RateTable", " = ",
-#if (CFG_SUPPORT_RA_GEN == 1)
 				prQueryStaStatistics->ucArTableIdx <
 				(ucRaTableNum - 1) ?
 				RATE_TBLE[prQueryStaStatistics->ucArTableIdx] :
 				RATE_TBLE[ucRaTableNum - 1]);
 #else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%s\n", "RateTable", " = ",
 				prQueryStaStatistics->ucArTableIdx < 6 ?
 				RATE_TBLE[prQueryStaStatistics->ucArTableIdx] :
 				RATE_TBLE[6]);
@@ -1602,18 +1606,23 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			if (wlanGetStaIdxByWlanIdx(prAdapter,
 				(uint8_t)(prHwWlanInfo->u4Index), &ucStaIdx) ==
 				WLAN_STATUS_SUCCESS) {
+#if (CFG_SUPPORT_RA_GEN == 1)
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
 					"%-20s%s%d\n", "2G Support 256QAM TX",
 					" = ",
-#if (CFG_SUPPORT_RA_GEN == 1)
 					((prAdapter->arStaRec[ucStaIdx].u4Flags
 					& MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ||
 					(prQueryStaStatistics->
 					ucDynamicGband256QAMState == 2)) ?
 					1 : 0);
 #else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%-20s%s%d\n", "2G Support 256QAM TX",
+					" = ",
 					(prAdapter->arStaRec[ucStaIdx].u4Flags &
 					MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ?
 					1 : 0);
