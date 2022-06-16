@@ -2572,7 +2572,7 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 }
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 
-int32_t glBusFunOn(void)
+int32_t glBusFuncOn(void)
 {
 	int ret = 0;
 
@@ -2605,7 +2605,7 @@ int32_t glBusFunOn(void)
 	return ret;
 }
 
-void glBusFunOff(void)
+void glBusFuncOff(void)
 {
 	pci_unregister_driver(&mtk_pci_driver);
 	g_fgDriverProbed = FALSE;

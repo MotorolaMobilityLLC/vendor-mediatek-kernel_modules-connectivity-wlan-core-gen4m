@@ -40,7 +40,7 @@ u_int32_t gEmiGetCalOffset;
 bool gEmiCalUseEmiData;
 #endif
 
-struct wireless_dev *grWdev;
+static u_int8_t g_fgPreCal;
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -366,7 +366,8 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "SendPhyAction begin\n");
+	DBGLOG(INIT, INFO, "SendPhyAction begin, tag: %d, cmd: %d\n",
+		u2Tag, ucCalCmd);
 
 	ASSERT(prAdapter);
 
@@ -696,254 +697,26 @@ exit:
 	return u4Status;
 }
 
-uint32_t wlanPhyAction(IN struct ADAPTER *prAdapter)
+uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
+	DBGLOG(INIT, INFO, "fgPreCal = %d\n", g_fgPreCal);
+
+	if (g_fgPreCal == FALSE) {
 	/* Setup calibration data from backup file */
 #if CFG_MTK_ANDROID_WMT
-	if (wlanAccessCalibrationEMI(prAdapter, NULL, FALSE) ==
-		WLAN_STATUS_SUCCESS)
-		u4Status = wlanSendPhyAction(prAdapter,
-			HAL_PHY_ACTION_TAG_CAL,
-			HAL_PHY_ACTION_CAL_USE_BACKUP_REQ);
-	else
+		if (wlanAccessCalibrationEMI(prAdapter, NULL, FALSE) ==
+			WLAN_STATUS_SUCCESS)
+			u4Status = wlanSendPhyAction(prAdapter,
+				HAL_PHY_ACTION_TAG_CAL,
+				HAL_PHY_ACTION_CAL_USE_BACKUP_REQ);
+		else
 #endif
-		u4Status = wlanSendPhyAction(prAdapter,
-			HAL_PHY_ACTION_TAG_CAL,
-			HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
-
-	return u4Status;
-}
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
-{
-	uint32_t u4Status = WLAN_STATUS_FAILURE;
-
-	/* Shift 4 for bypass Cal result CRC */
-	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
-
-	/* 2k size for RFCR backup */
-	*pEmiCalSize = 2048;
-
-	DBGLOG(INIT, INFO,
-				"EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
-				*pEmiCalOffset,
-				*pEmiCalSize);
-
-	u4Status = WLAN_STATUS_SUCCESS;
-	return u4Status;
-}
-
-int wlanPreCalPwrOn(void)
-{
-#define MAX_PRE_ON_COUNT 5
-
-	int retryCount = 0;
-	void *pvData = NULL;
-	enum ENUM_POWER_ON_INIT_FAIL_REASON {
-		NET_CREATE_FAIL,
-		BUS_SET_IRQ_FAIL,
-		ALLOC_ADAPTER_MEM_FAIL,
-		DRIVER_OWN_FAIL,
-		INIT_ADAPTER_FAIL,
-		INIT_HIFINFO_FAIL,
-		ROM_PATCH_DOWNLOAD_FAIL,
-		POWER_ON_INIT_DONE
-	} eFailReason;
-	uint32_t i = 0, j = 0;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct mt66xx_hif_driver_data *prDriverData =
-		get_platform_driver_data();
-	struct mt66xx_chip_info *prChipInfo;
-
-	while (update_wr_mtx_down_up_status(0, 0)) {
-		if (get_wifi_process_status())
-			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-		kalMsleep(50);
-	}
-
-	if (get_wifi_powered_status())
-		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-
-	prChipInfo = prDriverData->chip_info;
-	pvData = (void *)prChipInfo->pdev;
-	update_pre_cal_status(1);
-
-	while (g_u4WlanInitFlag == 0) {
-		DBGLOG(INIT, WARN,
-			"g_u4WlanInitFlag(%d) retryCount(%d)",
-			g_u4WlanInitFlag,
-			retryCount);
-
-		kalMsleep(100);
-		retryCount++;
-
-		if (retryCount > MAX_PRE_ON_COUNT) {
-			update_pre_cal_status(0);
-			update_wr_mtx_down_up_status(1, 0);
-			return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-		}
-	}
-
-	/* wf driver power on */
-	if (asicConnac2xPwrOnWmMcu(prChipInfo) != 0) {
-		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1, 0);
-		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-	}
-
-	/* Download patch and send PHY action */
-	do {
-		retryCount = 0;
-		while (g_prPlatDev == NULL) {
-			DBGLOG(INIT, WARN,
-				"g_prPlatDev(0x%x) retryCount(%d)",
-				g_prPlatDev,
-				retryCount);
-
-			kalMsleep(100);
-			retryCount++;
-
-			if (retryCount > MAX_PRE_ON_COUNT) {
-				update_pre_cal_status(0);
-				update_wr_mtx_down_up_status(1, 0);
-				return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-			}
-		}
-
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Init();
-#endif
-
-		/* Create network device, Adapter, KalInfo,
-		*		prDevHandler(netdev)
-		*/
-		grWdev = wlanNetCreate(pvData, (void *)prDriverData);
-
-		if (grWdev == NULL) {
-			DBGLOG(INIT, ERROR, "wlanNetCreate Error\n");
-			eFailReason = NET_CREATE_FAIL;
-			break;
-		}
-
-		/* Set the ioaddr to HIF Info */
-		WIPHY_PRIV(grWdev->wiphy, prGlueInfo);
-
-		/* Setup IRQ */
-		if (glBusSetIrq(grWdev->netdev, NULL, prGlueInfo)
-			!= WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "glBusSetIrq error\n");
-			eFailReason = BUS_SET_IRQ_FAIL;
-			break;
-		}
-
-		prGlueInfo->i4DevIdx = 0;
-		prAdapter = prGlueInfo->prAdapter;
-
-		if (prChipInfo->asicCapInit != NULL)
-			prChipInfo->asicCapInit(prAdapter);
-
-		prAdapter->fgIsFwOwn = TRUE;
-		if (wlanAcquirePowerControl(prAdapter) != WLAN_STATUS_SUCCESS) {
-			eFailReason = DRIVER_OWN_FAIL;
-			break;
-		}
-
-		prAdapter->u4OwnFailedCount = 0;
-		prAdapter->u4OwnFailedLogCount = 0;
-
-		/* Additional with chip reset optimize */
-		prAdapter->ucCmdSeqNum = 0;
-
-		QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
-#if CFG_SUPPORT_MULTITHREAD
-		QUEUE_INITIALIZE(&prAdapter->rTxCmdQueue);
-		QUEUE_INITIALIZE(&prAdapter->rTxCmdDoneQueue);
-#if CFG_FIX_2_TX_PORT
-		QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
-		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
-#else
-		for (i = 0; i < MAX_BSSID_NUM; i++)
-			for (j = 0; j < TC_NUM; j++)
-				QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
-#endif
-		QUEUE_INITIALIZE(&prAdapter->rRxQueue);
-		QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
-#endif
-
-		/* reset fgIsBusAccessFailed */
-		fgIsBusAccessFailed = FALSE;
-
-		/* Allocate mandatory resource for TX/RX */
-		if (nicAllocateAdapterMemory(prAdapter) !=
-			WLAN_STATUS_SUCCESS) {
-
-			DBGLOG(INIT, ERROR,
-				"nicAllocateAdapterMemory Error!\n");
-			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
-			break;
-		}
-
-		/* should we need this?  to be conti... */
-		prAdapter->u4OsPacketFilter = PARAM_PACKET_FILTER_SUPPORTED;
-
-		/* Initialize the Adapter:
-		*		verify chipset ID, HIF init...
-		*		the code snippet just do the copy thing
-		*/
-		if (nicInitializeAdapter(prAdapter) != WLAN_STATUS_SUCCESS) {
-
-			DBGLOG(INIT, ERROR,
-				"nicInitializeAdapter failed!\n");
-			eFailReason = INIT_ADAPTER_FAIL;
-			break;
-		}
-
-		nicInitSystemService(prAdapter, FALSE);
-
-		/* Initialize Tx */
-		nicTxInitialize(prAdapter);
-
-		/* Initialize Rx */
-		nicRxInitialize(prAdapter);
-
-		/* HIF SW info initialize */
-		if (!halHifSwInfoInit(prAdapter)) {
-
-			DBGLOG(INIT, ERROR,
-				"halHifSwInfoInit failed!\n");
-			eFailReason = INIT_HIFINFO_FAIL;
-			break;
-		}
-
-		/* Enable HIF  cut-through to N9 mode */
-		HAL_ENABLE_FWDL(prAdapter, TRUE);
-
-		/* Disable interrupt, download is done by polling mode only */
-		nicDisableInterrupt(prAdapter);
-
-		/* Initialize Tx Resource to fw download state */
-		nicTxInitResetResource(prAdapter);
-
-		if (prChipInfo->pwrondownload) {
-			uint32_t ret;
-
-			ret = prChipInfo->pwrondownload(prAdapter,
-				ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
-			if (ret != WLAN_STATUS_SUCCESS &&
-					ret != WLAN_STATUS_NOT_SUPPORTED) {
-				DBGLOG(INIT, ERROR,
-					"pwrondownload failed!\n");
-				eFailReason = ROM_PATCH_DOWNLOAD_FAIL;
-				break;
-			}
-		}
-
-		kalSyncTimeToFW(prAdapter, TRUE);
-
+			u4Status = wlanSendPhyAction(prAdapter,
+				HAL_PHY_ACTION_TAG_CAL,
+				HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
+	} else {
 #if (CFG_SUPPORT_CONNFEM == 1)
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
@@ -953,175 +726,93 @@ int wlanPreCalPwrOn(void)
 			HAL_PHY_ACTION_TAG_NVRAM,
 			0);
 #endif
-
-		eFailReason = POWER_ON_INIT_DONE;
-	} while (FALSE);
-
-	DBGLOG(INIT, INFO,
-		"wlanPreCalPwrOn end(%d)\n",
-		eFailReason);
-
-	if (eFailReason != POWER_ON_INIT_DONE) {
-		u_int8_t fgResult;
-
-		HAL_LP_OWN_SET(prAdapter, &fgResult);
-		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1, 0);
+		wlanSendPhyAction(prAdapter,
+			HAL_PHY_ACTION_TAG_CAL,
+			HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
 	}
 
-	switch (eFailReason) {
-	case NET_CREATE_FAIL:
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
-#endif
-		break;
+	return u4Status;
+}
 
-	case BUS_SET_IRQ_FAIL:
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
-#endif
-		wlanWakeLockUninit(prGlueInfo);
-		wlanNetDestroy(grWdev);
-		break;
+#if CFG_MTK_ANDROID_WMT
+int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
+{
+#if CFG_MTK_ANDROID_EMI
+	/* Shift 4 for bypass Cal result CRC */
+	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
 
-	case ALLOC_ADAPTER_MEM_FAIL:
-	case DRIVER_OWN_FAIL:
-	case INIT_ADAPTER_FAIL:
-		glBusFreeIrq(grWdev->netdev,
-			*((struct GLUE_INFO **) netdev_priv(grWdev->netdev)));
-
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
+	/* 2k size for RFCR backup */
+	*pEmiCalSize = 2048;
 #endif
 
-		wlanWakeLockUninit(prGlueInfo);
+	DBGLOG(INIT, INFO, "EMI_GET_CAL emiAddr[0x%x]emiLen[%d]\n",
+		*pEmiCalOffset,
+		*pEmiCalSize);
 
-		if (eFailReason == INIT_ADAPTER_FAIL)
-			nicReleaseAdapterMemory(prAdapter);
+	return WLAN_STATUS_SUCCESS;
+}
 
-		wlanNetDestroy(grWdev);
-		break;
+int wlanPreCalPwrOn(void)
+{
+#define MAX_PRE_ON_COUNT 5
 
-	case INIT_HIFINFO_FAIL:
-		nicRxUninitialize(prAdapter);
-		nicTxRelease(prAdapter, FALSE);
+	int32_t u4RetryCnt = 0;
+	int32_t ret = 0;
 
-		/* System Service Uninitialization */
-		nicUninitSystemService(prAdapter);
+	DBGLOG(INIT, INFO, "wlanPreCalPwrOn.\n");
 
-		glBusFreeIrq(grWdev->netdev,
-			*((struct GLUE_INFO **)netdev_priv(grWdev->netdev)));
-
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
-#endif
-
-		wlanWakeLockUninit(prGlueInfo);
-		nicReleaseAdapterMemory(prAdapter);
-		wlanNetDestroy(grWdev);
-		break;
-
-	case ROM_PATCH_DOWNLOAD_FAIL:
-		HAL_ENABLE_FWDL(prAdapter, FALSE);
-		halHifSwInfoUnInit(prGlueInfo);
-		nicRxUninitialize(prAdapter);
-		nicTxRelease(prAdapter, FALSE);
-
-		/* System Service Uninitialization */
-		nicUninitSystemService(prAdapter);
-
-		glBusFreeIrq(grWdev->netdev,
-			*((struct GLUE_INFO **)netdev_priv(grWdev->netdev)));
-
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-		wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
-#endif
-
-		wlanWakeLockUninit(prGlueInfo);
-		nicReleaseAdapterMemory(prAdapter);
-		wlanNetDestroy(grWdev);
-		break;
-
-	case POWER_ON_INIT_DONE:
-		/* pre-cal release resouce */
-		break;
+	while (update_wr_mtx_down_up_status(0, 0)) {
+		if (get_wifi_process_status()) {
+			ret = -1;
+			goto exit;
+		}
+		kalMsleep(50);
 	}
 
-	if (eFailReason != POWER_ON_INIT_DONE) {
-		struct CHIP_DBG_OPS *debug_ops = prChipInfo->prDebugOps;
-
-		if (debug_ops && debug_ops->dumpBusHangCr)
-			debug_ops->dumpBusHangCr(NULL);
-		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
+	if (get_wifi_powered_status()) {
+		ret = -1;
+		goto unlock;
 	}
 
-	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
+	while (g_u4WlanInitFlag == 0) {
+		DBGLOG(INIT, WARN,
+			"g_u4WlanInitFlag(%d) retryCount(%d)",
+			g_u4WlanInitFlag,
+			u4RetryCnt);
+
+		kalMsleep(100);
+		u4RetryCnt++;
+
+		if (u4RetryCnt > MAX_PRE_ON_COUNT) {
+			ret = -1;
+			goto unlock;
+		}
+	}
+	update_pre_cal_status(1);
+	g_fgPreCal = TRUE;
+
+	ret = wlanFuncOnImpl();
+	if (ret)
+		goto unlock;
+
+	wlanFuncOffImpl();
+
+unlock:
+	g_fgPreCal = FALSE;
+	update_pre_cal_status(0);
+	update_wr_mtx_down_up_status(1, 0);
+exit:
+	if (ret)
+		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+
+	return ret;
 }
 
 int wlanPreCal(void)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	u_int8_t fgResult;
+	DBGLOG(INIT, INFO, "wlanPreCal.\n");
 
-	if (get_pre_cal_status() == 0)
-		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-
-	if (g_u4WlanInitFlag == 0) {
-		DBGLOG(INIT, WARN,
-			"g_u4WlanInitFlag(%d)",
-			g_u4WlanInitFlag);
-
-		update_pre_cal_status(0);
-		update_wr_mtx_down_up_status(1, 0);
-		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
-	}
-
-	DBGLOG(INIT, INFO, "PreCal begin\n");
-
-	/* Set the ioaddr to HIF Info */
-	WIPHY_PRIV(grWdev->wiphy, prGlueInfo);
-	prAdapter = prGlueInfo->prAdapter;
-	glGetChipInfo((void **)&prChipInfo);
-
-	/* Disable interrupt, download is done by polling mode only */
-	nicDisableInterrupt(prAdapter);
-
-	wlanSendPhyAction(prAdapter,
-		HAL_PHY_ACTION_TAG_CAL,
-		HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
-
-	HAL_LP_OWN_SET(prAdapter, &fgResult);
-
-	HAL_ENABLE_FWDL(prAdapter, FALSE);
-	halHifSwInfoUnInit(prGlueInfo);
-	nicRxUninitialize(prAdapter);
-	nicTxRelease(prAdapter, FALSE);
-
-	/* System Service Uninitialization */
-	nicUninitSystemService(prAdapter);
-
-	glBusFreeIrq(grWdev->netdev,
-		*((struct GLUE_INFO **)netdev_priv(grWdev->netdev)));
-
-#if (CFG_SUPPORT_TRACE_TC4 == 1)
-	wlanDebugTC4Uninit();  /* Uninit for TC4 debug */
-#endif
-
-	wlanWakeLockUninit(prGlueInfo);
-	nicReleaseAdapterMemory(prAdapter);
-	wlanNetDestroy(grWdev);
-
-	if (prChipInfo->wmmcupwroff)
-		prChipInfo->wmmcupwroff();
-
-	DBGLOG(INIT, INFO, "PreCal end\n");
-
-	update_pre_cal_status(0);
-	update_wr_mtx_down_up_status(1, 0);
-
-	return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
+	return 0;
 }
 #endif
 

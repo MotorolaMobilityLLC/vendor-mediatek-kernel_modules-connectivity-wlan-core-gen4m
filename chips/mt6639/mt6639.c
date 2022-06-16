@@ -955,8 +955,12 @@ static void mt6639ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+#endif
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1086,7 +1090,9 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	uint32_t u4RegValue, u4WrValue = 0, u4Addr;
 
 	*pu4IntStatus = 0;
@@ -1272,7 +1278,9 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t u4DmaCfgCr = 0;
 	uint32_t idx = 0, u4Val = 0;
@@ -1330,13 +1338,17 @@ static void mt6639WfdmaRxRingExtCtrl(
 	struct ADAPTER *prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar;
-	uint32_t ext_offset, u4Val;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+	uint32_t ext_offset;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	prWifiVar = &prAdapter->rWifiVar;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	switch (index) {
 	case RX_RING_EVT:
@@ -1367,6 +1379,8 @@ static void mt6639WfdmaRxRingExtCtrl(
 	if ((prChipInfo->is_support_rro &&
 	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
 	    halIsDataRing(RX_RING, index)) {
+		uint32_t u4Val = 0;
+
 		HAL_MCR_RD(prAdapter, prRxRing->hw_cnt_addr, &u4Val);
 		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
 		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr, u4Val);

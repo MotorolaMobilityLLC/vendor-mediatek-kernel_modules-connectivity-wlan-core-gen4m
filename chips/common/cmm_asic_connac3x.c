@@ -75,6 +75,7 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
+#include "wlan_pinctrl.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -2218,6 +2219,62 @@ uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter)
 	u4SwVer = nicGetChipSwVer() + 1;
 
 	return u4SwVer;
+}
+
+int connsys_power_on(void)
+{
+	int ret = 0;
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	ret = connv3_pwr_on(CONNV3_DRV_TYPE_WIFI);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "connv3_pwr_on failed, ret=%d\n",
+			ret);
+		return ret;
+	}
+	/* Add delay for pcie phy ready */
+	kalMdelay(10);
+
+	ret = halMawdPwrOn();
+	if (ret) {
+		connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
+		return ret;
+	}
+#endif
+
+	return ret;
+}
+
+int connsys_power_done(void)
+{
+	int ret = 0;
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	ret = connv3_pwr_on_done(CONNV3_DRV_TYPE_WIFI);
+	if (ret)
+		DBGLOG(HAL, ERROR,
+			"connv3_pwr_on_done failed, ret=%d\n",
+			ret);
+#endif
+
+	return ret;
+}
+
+void connsys_power_off(void)
+{
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	struct mt66xx_chip_info *chip = NULL;
+
+	glGetChipInfo((void **)&chip);
+	if (!chip) {
+		DBGLOG(HAL, ERROR, "NULL chip info.\n");
+		return;
+	}
+
+	halMawdPwrOff();
+	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
+	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
+#endif
 }
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

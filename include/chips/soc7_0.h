@@ -126,48 +126,10 @@ extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
 extern struct PP_TOP_CR rSoc7_0_PpTopCr;
 
-struct ROM_EMI_HEADER {
-	uint8_t ucDateTime[16];
-	uint8_t ucPLat[4];
-	uint16_t u2HwVer;
-	uint16_t u2SwVer;
-	uint32_t u4PatchAddr;
-	uint32_t u4PatchType;
-	uint32_t u4CRC[4];
-};
-
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-extern void kalConstructDefaultFirmwarePrio(
-				struct GLUE_INFO	*prGlueInfo,
-				uint8_t **apucNameTable,
-				uint8_t **apucName,
-				uint8_t *pucNameIdx,
-				uint8_t ucMaxNameIdx);
-extern uint32_t kalFirmwareOpen(
-				IN struct GLUE_INFO *prGlueInfo,
-				IN uint8_t **apucNameTable);
-extern uint32_t kalFirmwareSize(
-				IN struct GLUE_INFO *prGlueInfo,
-				OUT uint32_t *pu4Size);
-extern uint32_t kalFirmwareLoad(
-			IN struct GLUE_INFO *prGlueInfo,
-			OUT void *prBuf, IN uint32_t u4Offset,
-			OUT uint32_t *pu4Size);
-extern uint32_t kalFirmwareClose(
-			IN struct GLUE_INFO *prGlueInfo);
-extern void wlanWakeLockInit(
-	struct GLUE_INFO *prGlueInfo);
-extern void wlanWakeLockUninit(
-	struct GLUE_INFO *prGlueInfo);
-extern struct wireless_dev *wlanNetCreate(
-		void *pvData,
-		void *pvDriverData);
-extern void wlanNetDestroy(
-	struct wireless_dev *prWdev);
-
 void soc7_0_show_wfdma_info(struct ADAPTER *prAdapter);
 void soc7_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void soc7_0_show_pse_info(struct ADAPTER *prAdapter);
@@ -185,20 +147,6 @@ int soc7_0_get_rx_rate_info(IN const uint32_t *prRxV,
 #if CFG_SUPPORT_LLS
 void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prRetSwRfb, IN uint32_t *pu4RxV);
-#endif
-
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-void *soc7_0_kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
-	OUT void **ppvMapFileBuf, OUT uint32_t *pu4FileLength,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-uint32_t soc7_0_wlanImageSectionDownloadStage(
-	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
-	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-uint32_t soc7_0_wlanPowerOnDownload(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucDownloadItem);
-int32_t soc7_0_wlanPowerOnInit(void);
 #endif
 
 void soc7_0_icapRiseVcoreClockRate(void);

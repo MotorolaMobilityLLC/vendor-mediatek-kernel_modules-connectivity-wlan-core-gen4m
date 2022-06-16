@@ -31,6 +31,10 @@
 #include "mt66xx_reg.h"
 #include "gl_kal.h"
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "conninfra.h"
+#endif
+
 #ifdef MT6639
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
@@ -96,6 +100,8 @@ static void halMawdUpdateSram(
 	uint32_t u4Offset,
 	uint32_t u4ValL,
 	uint32_t u4ValH);
+static void __halMawdWakeup(void);
+static void __halMawdSleep(void);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -110,7 +116,7 @@ void halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxBlkRing;
 
-	halMawdPwrOn();
+	__halMawdWakeup();
 
 	/* mawd speed up */
 	u4Addr = MAWD_POWER_UP;
@@ -191,7 +197,7 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, u4Addr, 0);
 
 exit:
-	halMawdPwrOff();
+	__halMawdSleep();
 }
 
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
@@ -1756,7 +1762,7 @@ void halMawdReset(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 }
 
-void halMawdPwrOn(void)
+static void __halMawdWakeup(void)
 {
 	uint32_t u4Addr, u4Val, u4Idx;
 
@@ -1805,7 +1811,7 @@ void halMawdPwrOn(void)
 		DBGLOG(HAL, ERROR, "polling conn_infra_cfg ready fail\n");
 }
 
-void halMawdPwrOff(void)
+static void __halMawdSleep(void)
 {
 	uint32_t u4Addr;
 
@@ -1869,6 +1875,36 @@ u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 
 	return TRUE;
+}
+
+int halMawdPwrOn(void)
+{
+	int ret = 0;
+
+	if (!kalIsSupportMawd())
+		goto exit;
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	ret = conninfra_pwr_on(CONNDRV_TYPE_MAWD);
+	if (ret != 0) {
+		DBGLOG(HAL, ERROR,
+		       "conninfra pwr on failed, ret=%d\n", ret);
+		goto exit;
+	}
+#endif
+
+exit:
+	return ret;
+}
+
+void halMawdPwrOff(void)
+{
+	if (!kalIsSupportMawd())
+		return;
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	conninfra_pwr_off(CONNDRV_TYPE_MAWD);
+#endif
 }
 
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

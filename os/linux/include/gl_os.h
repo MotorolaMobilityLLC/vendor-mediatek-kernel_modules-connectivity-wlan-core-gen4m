@@ -1639,7 +1639,8 @@ void wlanNvramSetState(enum ENUM_NVRAM_STATE state);
 enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-int connsys_power_event_notification(enum conn_pwr_event_type type, void *data);
+int connsys_power_event_notification(enum conn_pwr_event_type type,
+	void *data);
 #endif
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -1695,4 +1696,10 @@ u_int8_t wlanIsAisDev(struct net_device *prDev);
 
 void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 struct net_device *prDev, u_int8_t fgSuspend);
+
+int wlanFuncOnImpl(void);
+void wlanFuncOffImpl(void);
+int wlanFuncOn(void);
+int wlanFuncOff(void);
+
 #endif /* _GL_OS_H */
