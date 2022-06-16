@@ -1021,7 +1021,8 @@ struct UNI_CMD_STAREC_EHT_BASIC {
 	uint8_t   ucTidBitmap;
 	uint8_t   aucPadding[1];
 	uint16_t   u2EhtMacCap;
-	uint64_t   u8EhtPhyCap;
+	uint64_t   u8EhtPhyCap; /* BIT0 ~ BIT63 */
+	uint64_t   u8EhtPhyCapExt; /* BIT64 ~ BIT127 */
 	uint8_t   aucMcsMap20MHzSta[4];
 	uint8_t   aucMcsMap80MHz[3];
 	uint8_t   aucMcsMap160MHz[3];

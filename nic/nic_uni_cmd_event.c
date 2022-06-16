@@ -3455,7 +3455,8 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 	static uint8_t zero[EHT_PHY_CAP_BYTE_NUM];
 
 	if (!kalMemCmp(cmd->ucEhtMacCapInfo, zero, EHT_MAC_CAP_BYTE_NUM) &&
-	    !kalMemCmp(cmd->ucEhtPhyCapInfo, zero, EHT_PHY_CAP_BYTE_NUM))
+	    !kalMemCmp(cmd->ucEhtPhyCapInfo, zero, EHT_PHY_CAP_BYTE_NUM) &&
+	    !kalMemCmp(cmd->ucEhtPhyCapInfoExt, zero, EHT_PHY_CAP_BYTE_NUM))
 		return 0;
 
 	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_BASIC;
@@ -3463,6 +3464,7 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 	tag->ucTidBitmap = 0xff;
 	WLAN_GET_FIELD_16(&cmd->ucEhtMacCapInfo[0], &tag->u2EhtMacCap);
 	WLAN_GET_FIELD_64(&cmd->ucEhtPhyCapInfo[0], &tag->u8EhtPhyCap);
+	WLAN_GET_FIELD_64(&cmd->ucEhtPhyCapInfoExt[0], &tag->u8EhtPhyCap);
 	WLAN_GET_FIELD_32(&cmd->aucMcsMap20MHzSta[0], &tag->aucMcsMap20MHzSta);
 	WLAN_GET_FIELD_24(&cmd->aucMcsMap80MHz[0], &tag->aucMcsMap80MHz);
 	WLAN_GET_FIELD_24(&cmd->aucMcsMap160MHz[0], &tag->aucMcsMap160MHz);

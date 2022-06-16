@@ -1073,6 +1073,7 @@ struct CMD_UPDATE_STA_RECORD {
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucEhtMacCapInfo[EHT_MAC_CAP_BYTE_NUM];
 	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
+	uint8_t ucEhtPhyCapInfoExt[EHT_PHY_CAP_BYTE_NUM];
 	uint8_t aucMcsMap20MHzSta[4];
 	uint8_t aucMcsMap80MHz[3];
 	uint8_t aucMcsMap160MHz[3];

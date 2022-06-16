@@ -633,6 +633,7 @@ void ehtRlmRecCapInfo(
 		EHT_MAC_CAP_BYTE_NUM);
 	memcpy(prStaRec->ucEhtPhyCapInfo, prEhtCap->ucEhtPhyCap,
 		EHT_PHY_CAP_BYTE_NUM);
+	prStaRec->ucEhtPhyCapInfoExt[0] = prEhtCap->ucEhtPhyCapExt;
 	ehtRlmRecMcsMap(prAdapter, prStaRec, prEhtCap);
 }
 
