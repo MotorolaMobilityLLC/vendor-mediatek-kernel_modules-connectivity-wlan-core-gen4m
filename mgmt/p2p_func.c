@@ -4007,6 +4007,7 @@ u_int8_t p2pFuncParseCheckForTKIPInfoElem(IN uint8_t *pucBuf)
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	struct WPA_INFO_ELEM *prWpaIE = (struct WPA_INFO_ELEM *) NULL;
 	uint32_t u4GroupKeyCipher = 0;
+	int32_t i4RemainWpaIeLen;
 
 	if (pucBuf == NULL)
 		return FALSE;
@@ -4017,6 +4018,12 @@ u_int8_t p2pFuncParseCheckForTKIPInfoElem(IN uint8_t *pucBuf)
 		return FALSE;
 
 	if (kalMemCmp(prWpaIE->aucOui, aucWfaOui, sizeof(aucWfaOui)))
+		return FALSE;
+
+	i4RemainWpaIeLen = (int32_t) prWpaIE->ucLength -
+				ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE;
+
+	if (i4RemainWpaIeLen < 4)
 		return FALSE;
 
 	WLAN_GET_FIELD_32(&prWpaIE->u4GroupKeyCipherSuite, &u4GroupKeyCipher);
