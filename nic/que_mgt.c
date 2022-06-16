@@ -4655,7 +4655,9 @@ static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 				IN const struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
-	prReorderQueParm->prCacheIndex[prSwRfb->u2SSN & HALF_SEQ_MASK] = NULL;
+	uint16_t u2SSN = prSwRfb->u2SSN & HALF_SEQ_MASK;
+
+	prReorderQueParm->prCacheIndex[u2SSN] = NULL;
 #endif
 }
 
