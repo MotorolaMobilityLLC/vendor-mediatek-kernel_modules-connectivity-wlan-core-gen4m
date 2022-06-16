@@ -85,7 +85,8 @@ struct WFA_DESENSE_CHANNEL_LIST {
 extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
 
 #define IS_CHANNEL_IN_DESENSE_RANGE(_prAdapter, _ch, _band) \
-	(!!(_prAdapter->fgIsNeedAvoidDesenseFreq && (_band != BAND_2G4) && \
+	(!!(_prAdapter->fgIsNeedAvoidDesenseFreq && \
+	(_band != BAND_2G4) && (_band < BAND_NUM) && \
 	(_ch >= desenseChList[_band].ucChLowerBound) && \
 	(_ch <= desenseChList[_band].ucChUpperBound)))
 #endif

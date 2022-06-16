@@ -830,7 +830,7 @@ wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen)
 {
-	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
+	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr = {0};
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -1386,6 +1386,8 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 	prUapsdParam = (struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT *) pvSetBuffer;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prUapsdParam->ucBssIdx);
+	if (!prBssInfo)
+		return WLAN_STATUS_FAILURE;
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 
 	kalMemZero(&rCmdUapsdParam,

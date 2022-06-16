@@ -494,7 +494,8 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 	prP2pRoleBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
-
+	if (!prP2pRoleBssInfo || !prChnlReqInfo)
+		return;
 	do {
 		if (!IS_BSS_ACTIVE(prP2pRoleBssInfo)) {
 			if (!cnmP2PIsPermitted(prAdapter))
@@ -2883,6 +2884,10 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prSetupStaRec->ucBssIndex);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR, "prP2pBssInfo is NULL!\n");
+		goto error;
+	}
 
 	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
 		DBGLOG(P2P, ERROR,
@@ -3067,7 +3072,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
 		} else {
 			struct BSS_DESC *prBssDesc;
-			struct P2P_SSID_STRUCT rSsid;
+			struct P2P_SSID_STRUCT rSsid = {0};
 
 			prBssDesc = prJoinInfo->prTargetBssDesc;
 
@@ -3379,6 +3384,8 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
+	if (!prBssInfo)
+		return;
 #endif
 	if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
 		DBGLOG(P2P, WARN,
@@ -3421,7 +3428,9 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 		case P2P_ROLE_STATE_DFS_CAC:
 			rlmDomainSetDfsDbdcBand(prMsgChGrant->eDBDCBand);
 
-			p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
+			if (prMsgChGrant->ucBssIndex < (MAX_BSSID_NUM + 1))
+				p2pFuncStartRdd(prAdapter,
+					prMsgChGrant->ucBssIndex);
 
 			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
 				u4CacTimeMs =
@@ -4526,6 +4535,8 @@ void p2pRoleFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 	prCancelTxWaitMsg = (struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
 	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prCancelTxWaitMsg->ucBssIdx);
+	if (!prP2pRoleBssInfo)
+		goto exit;
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pRoleBssInfo->u4PrivateData);
 	prP2pMgmtTxInfo = prP2pRoleFsmInfo != NULL ?
