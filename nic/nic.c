@@ -3170,6 +3170,10 @@ void nicSetAvailablePhyTypeSet(IN struct ADAPTER *prAdapter)
 		aucPhyCfg2PhyTypeSet[
 		prAdapter->rWifiVar.eDesiredPhyConfig];
 
+	DBGLOG(P2P, TRACE, "Avail Phy type: 0x%x, %d\n",
+		prAdapter->rWifiVar.ucAvailablePhyTypeSet,
+		prAdapter->rWifiVar.eDesiredPhyConfig);
+
 	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 	    PHY_TYPE_BIT_ERP)
 		prAdapter->rWifiVar.eNonHTBasicPhyType2G4 =
