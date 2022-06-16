@@ -496,6 +496,12 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	if (i >= BSS_P2P_NUM)
 		return NULL;
 
+	if (p2pRoleFsmNeedMlo(prAdapter, i))
+		return p2pGetLinkBssDesc(
+			p2pGetDefaultRoleFsmInfo(prAdapter,
+			IFTYPE_P2P_CLIENT),
+			i);
+
 	return prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]
 		->rJoinInfo.prTargetBssDesc;
 }
