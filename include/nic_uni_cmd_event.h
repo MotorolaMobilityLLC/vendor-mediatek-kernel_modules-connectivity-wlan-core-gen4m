@@ -3981,7 +3981,7 @@ struct UNI_CMD_CSI_SET_FRAME_TYPE {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
 	uint8_t    ucFrameTypeIndex;
-	uint8_t    ucFrameType;
+	uint32_t    u4FrameType;
 	uint8_t    aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 

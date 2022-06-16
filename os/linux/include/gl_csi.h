@@ -19,10 +19,11 @@
 #define CSI_RING_SIZE 1000
 #define CSI_MAX_DATA_COUNT 1024		/* for BW320 */
 #define CSI_MAX_RSVD1_COUNT 10
-#define CSI_FIX_DATA_SIZE	100
-
-#define CSI_H_max_Index 4		/* for 2x2 support */
 #define CSI_MAX_RSVD2_COUNT 10
+#define CSI_MAX_STA_MAC_NUM 5		/* Depend on FW desing */
+
+#define CSI_FIX_DATA_SIZE 107
+#define CSI_H_max_Index 4		/* for 2x2 support */
 #define Max_Stream_Bytes 3000
 
 #define CSI_INFO_RSVD1 BIT(0)
@@ -41,6 +42,16 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+enum CSI_OPT_NUMBER {
+	CSI_OPT_1 = 2,
+	CSI_OPT_2,
+	CSI_OPT_3,
+	CSI_OPT_4,
+	CSI_OPT_5,
+	CSI_OPT_NUM =
+		CSI_OPT_5 - 1
+};
+
 enum CSI_CONTROL_MODE_T {
 	CSI_CONTROL_MODE_STOP,
 	CSI_CONTROL_MODE_START,
@@ -56,6 +67,9 @@ enum CSI_CONFIG_ITEM_T {
 	CSI_CONFIG_TX_PATH,
 	CSI_CONFIG_OUTPUT_FORMAT,
 	CSI_CONFIG_INFO,
+	CSI_CONFIG_CHAIN_NUMBER,
+	CSI_CONFIG_FILTER_MODE,
+	CSI_CONFIG_OUTPUT_METHOD,
 	CSI_CONFIG_ITEM_NUM
 };
 
@@ -64,6 +78,19 @@ enum CSI_OUTPUT_FORMAT_T {
 	CSI_OUTPUT_TONE_MASKED,
 	CSI_OUTPUT_TONE_MASKED_SHIFTED,
 	CSI_OUTPUT_FORMAT_NUM
+};
+
+enum CSI_FILTER_MODE_T {
+	CSI_LENGTH_FILTER,
+	CSI_MAC_FILTER,
+	CSI_FILTER_MODE_NUM
+};
+
+enum CSI_STA_MAC_MODE_T {
+	CSI_STA_MAC_DEL,
+	CSI_STA_MAC_ADD,
+	CSI_STA_MAC_SHOW,
+	CSI_STA_MAC_MODE_NUM
 };
 
 enum CSI_EVENT_TLV_TAG {
@@ -85,8 +112,9 @@ enum CSI_EVENT_TLV_TAG {
 	CSI_EVENT_RSVD3,
 	CSI_EVENT_RSVD4,
 	CSI_EVENT_H_IDX,
-	CSI_EVENT_TX_RX_IDX,    /* csi event end, must be exist */
-	CSI_EVENT_TLV_TAG_NUM,
+	CSI_EVENT_TX_RX_IDX,
+	CSI_EVENT_RSVD5,
+	CSI_EVENT_TLV_TAG_NUM,    /* csi event end, must be exist */
 };
 
 enum CSI_DATA_TLV_TAG {
@@ -110,12 +138,25 @@ enum CSI_DATA_TLV_TAG {
 	CSI_DATA_FRAME_MODE,
 	CSI_DATA_H_IDX,
 	CSI_DATA_RX_RATE,
+	CSI_DATA_RSVD5,
 	CSI_DATA_TLV_TAG_NUM,
+};
+
+enum ENUM_CSI_OUTPUT_METHOD {
+	CSI_OUTPUT_PROC_FILE = 0,
+	CSI_OUTPUT_VENDOR_EVENT,
+	CSI_OUTPUT_METHOD_NUM
+};
+
+enum CSI_OUTPUT_METHOND_COMMAND {
+	CSI_PROC_FILE_COMMAND = 0,
+	CSI_VENDOR_EVENT_COMMAND,
+	CSI_OUTPUT_COMMAND_NUM
 };
 
 /*
  * CSI_DATA_T is used for representing
- * the CSI and other useful * information
+ * the CSI and other useful information
  * for application usage
  */
 struct CSI_DATA_T {
@@ -143,6 +184,7 @@ struct CSI_DATA_T {
 	uint8_t ucRsvd4;
 	uint32_t Antenna_pattern;
 	uint32_t u4TRxIdx;
+	uint32_t u4Rsvd5;
 };
 
 /*
@@ -157,7 +199,7 @@ struct CSI_INFO_T {
 	/* Variable for recording the CSI function config */
 	uint8_t ucMode;
 	uint8_t ucValue1[CSI_CONFIG_ITEM_NUM];
-	uint8_t ucValue2[CSI_CONFIG_ITEM_NUM];
+	uint32_t u4Value2[CSI_CONFIG_ITEM_NUM];
 	/* Variable for manipulating the CSI ring buffer */
 	struct CSI_DATA_T arCSIBuffer[CSI_RING_SIZE];
 	uint32_t u4CSIBufferHead;
@@ -165,9 +207,20 @@ struct CSI_INFO_T {
 	uint32_t u4CSIBufferUsed;
 	int16_t ai2TempIData[CSI_MAX_DATA_COUNT];
 	int16_t ai2TempQData[CSI_MAX_DATA_COUNT];
-	/*for usr to get the specific H(jw), 0 for all */
+	/* For usr to get the specific H(jw), 0 for all */
 	uint16_t Matrix_Get_Bit;
-	uint8_t byte_stream[Max_Stream_Bytes];/*send bytes to proc interfacel */
+	/* Send bytes to proc interfacel */
+	uint8_t byte_stream[Max_Stream_Bytes];
+	/* Station mac addr for filter */
+	uint8_t *apucStaMacAddr[MAC_ADDR_LEN];
+	uint8_t ucStaCount;
+	struct LINK rStaList;
+	enum ENUM_CSI_OUTPUT_METHOD eCSIOutput;
+};
+
+struct CSI_STA {
+	struct LINK_ENTRY rLinkEntry;
+	uint8_t aucMacAddress[MAC_ADDR_LEN];
 };
 
 struct CMD_CSI_CONTROL_T {
@@ -175,7 +228,12 @@ struct CMD_CSI_CONTROL_T {
 	uint8_t ucMode;
 	uint8_t ucCfgItem;
 	uint8_t ucValue1;
-	uint8_t ucValue2;
+	uint32_t u4Value2;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	/* For 32-bit alighment */
+	uint8_t aucReserved1[2];
+	/* Ask more for extension used */
+	uint8_t aucReserved2[32];
 };
 
 struct CSI_TLV_ELEMENT {
@@ -213,6 +271,13 @@ struct CSI_TLV_ELEMENT {
  *******************************************************************************
  */
 struct CSI_INFO_T *glCsiGetCSIInfo(void);
+void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo);
+void glCsiSupportDeinit(IN struct GLUE_INFO *prGlueInfo);
+int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
+	struct CMD_CSI_CONTROL_T *prCSICtrl);
+int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
+	struct CMD_CSI_CONTROL_T *prCSICtrl);
+void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo);
 void nicEventCSIData(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 u_int8_t wlanPushCSIData(IN struct ADAPTER *prAdapter,

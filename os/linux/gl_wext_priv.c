@@ -21808,53 +21808,65 @@ static int priv_driver_set_csi(IN struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int32_t i4Ret = 0;
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
-	uint32_t i4Argc = 0;
+	int32_t i4Argc = 0;
 	signed char *apcArgv[WLAN_CFG_ARGV_MAX];
+	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
 	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
-	uint32_t u4Ret = 0;
 	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct BSS_INFO *prAisBssInfo;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	DBGLOG(RSN, LOUD, "[CSI] command is %s\n", pcCommand);
+	DBGLOG(REQ, INFO, "[CSI] command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "[CSI] argc is %i\n", i4Argc);
 
-	DBGLOG(RSN, INFO, "[CSI] priv_driver_csi_control\n");
-
 	prCSIInfo = glCsiGetCSIInfo();
 
-	prCSICtrl = (struct CMD_CSI_CONTROL_T *)kalMemAlloc(
+	prCSICtrl = (struct CMD_CSI_CONTROL_T *) kalMemAlloc(
 			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
 	if (!prCSICtrl) {
-		DBGLOG(REQ, ERROR,
+		DBGLOG(REQ, LOUD,
 			"[CSI] allocate memory for prCSICtrl failed\n");
 		i4BytesWritten = -1;
 		goto out;
 	}
 
-	if (i4Argc < 2 || i4Argc > 5) {
+	if (i4Argc < CSI_OPT_1 || i4Argc > CSI_OPT_5) {
 		DBGLOG(REQ, ERROR, "[CSI] argc %i is invalid\n", i4Argc);
 		i4BytesWritten = -1;
 		goto out;
 	}
 
-	u4Ret = kalkStrtou8(apcArgv[1], 0, &(prCSICtrl->ucMode));
-	if (u4Ret) {
-		DBGLOG(REQ, LOUD, "[CSI] parse ucMode error u4Ret=%d\n", u4Ret);
+	i4Ret = kalkStrtou8(apcArgv[1], 0, &(prCSICtrl->ucMode));
+	if (i4Ret) {
+		DBGLOG(REQ, LOUD,
+			"[CSI] parse csi mode error u4Ret=%d\n", i4Ret);
+		i4BytesWritten = -1;
 		goto out;
 	}
 
 	if (prCSICtrl->ucMode >= CSI_CONTROL_MODE_NUM) {
-		DBGLOG(REQ, LOUD, "[CSI] Invalid ucMode %d, should be 0 or 1\n",
-			prCSICtrl->ucMode);
+		DBGLOG(REQ, ERROR, "[CSI] Invalid csi mode %d\n",
+				prCSICtrl->ucMode);
+		i4BytesWritten = -1;
 		goto out;
 	}
-
-	prCSICtrl->ucBandIdx = ENUM_BAND_0;
 	prCSIInfo->ucMode = prCSICtrl->ucMode;
+
+	prAisBssInfo = aisGetAisBssInfo(
+				prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
+	if (prAisBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prAisBssInfo->eBand == BAND_6G
+#endif
+		)
+		prCSICtrl->ucBandIdx = ENUM_BAND_1;
+	else
+		prCSICtrl->ucBandIdx = ENUM_BAND_0;
 
 	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
 		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
@@ -21864,62 +21876,135 @@ static int priv_driver_set_csi(IN struct net_device *prNetDev,
 		prCSIInfo->u4CSIBufferHead = 0;
 		prCSIInfo->u4CSIBufferTail = 0;
 		prCSIInfo->u4CSIBufferUsed = 0;
+
+		if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP)
+			glCsiFreeStaList(prGlueInfo);
+
 		goto send_cmd;
 	}
 
-	u4Ret = kalkStrtou8(apcArgv[2], 0, &(prCSICtrl->ucCfgItem));
-	if (u4Ret) {
+	if (i4Argc < CSI_OPT_3) {
+		DBGLOG(REQ, ERROR, "[CSI] argc %i is invalid\n", i4Argc);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	i4Ret = kalkStrtou8(apcArgv[2], 0, &(prCSICtrl->ucCfgItem));
+	if (i4Ret) {
 		DBGLOG(REQ, LOUD,
-			"[CSI] parse cfg item error u4Ret=%d\n", u4Ret);
+			"[CSI] parse cfg item error i4Ret=%d\n", i4Ret);
+		i4BytesWritten = -1;
 		goto out;
 	}
 
 	if (prCSICtrl->ucCfgItem >= CSI_CONFIG_ITEM_NUM) {
-		DBGLOG(REQ, LOUD, "[CSI] Invalid csi cfg_item %u\n",
+		DBGLOG(REQ, ERROR, "[CSI] Invalid csi cfg_item %u\n",
 			prCSICtrl->ucCfgItem);
+		i4BytesWritten = -1;
 		goto out;
 	}
 
-	u4Ret = kalkStrtou8(apcArgv[3], 0, &(prCSICtrl->ucValue1));
-	if (u4Ret) {
+	i4Ret = kalkStrtou8(apcArgv[3], 0, &(prCSICtrl->ucValue1));
+	if (i4Ret) {
 		DBGLOG(REQ, LOUD,
-			"[CSI] parse csi cfg value1 error u4Ret=%d\n", u4Ret);
+			"[CSI] parse csi cfg value1 error i4Ret=%d\n", i4Ret);
+		i4BytesWritten = -1;
 		goto out;
 	}
 	prCSIInfo->ucValue1[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue1;
 
-	if (i4Argc == 5) {
-		u4Ret = kalkStrtou8(apcArgv[4], 0, &(prCSICtrl->ucValue2));
-		if (u4Ret) {
+	if (prCSICtrl->ucCfgItem == CSI_CONFIG_OUTPUT_METHOD) {
+		if (prCSICtrl->ucValue1 == CSI_PROC_FILE_COMMAND) {
+			prCSIInfo->eCSIOutput = CSI_OUTPUT_PROC_FILE;
+			DBGLOG(REQ, INFO,
+				"[CSI] Set CSI data output to proc file\n");
+		} else if (prCSICtrl->ucMode == CSI_VENDOR_EVENT_COMMAND) {
+			prCSIInfo->eCSIOutput = CSI_OUTPUT_VENDOR_EVENT;
+			DBGLOG(REQ, INFO,
+				"[CSI] Set CSI data output to vendor event\n");
+		} else {
+			DBGLOG(REQ, ERROR,
+				"[CSI] Invalid csi output method %d\n",
+				prCSICtrl->ucMode);
+			i4BytesWritten = -1;
+		}
+		goto out;
+	}
+
+	if (i4Argc >= CSI_OPT_4) {
+		i4Ret = kalkStrtou32(apcArgv[4], 0, &(prCSICtrl->u4Value2));
+		if (i4Ret) {
 			DBGLOG(REQ, LOUD,
-				"[CSI] parse csi cfg value2 error u4Ret=%d\n",
-									u4Ret);
+				"[CSI] parse csi cfg value2 error i4Ret=%d\n",
+				i4Ret);
+			i4BytesWritten = -1;
 			goto out;
 		}
-		prCSIInfo->ucValue2[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue2;
+		prCSIInfo->u4Value2[prCSICtrl->ucCfgItem] = prCSICtrl->u4Value2;
 	}
-	DBGLOG(REQ, STATE,
-	   "[CSI][DEBUG] Set mode %d, csi cfg item %d, value1 %d, value2 %d",
-		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
-		prCSICtrl->ucValue1, prCSICtrl->ucValue2);
+
+	if (i4Argc == CSI_OPT_5) {
+		i4Ret = wlanHwAddrToBin(apcArgv[5], &aucMacAddr[0]);
+		if (i4Ret < 0) {
+			DBGLOG(REQ, ERROR,
+				"[CSI] Check your mac addr format: xx:xx:xx:xx:xx:xx!! i4Ret=%d\n",
+				i4Ret);
+			i4BytesWritten = -1;
+			goto out;
+		}
+		COPY_MAC_ADDR(prCSICtrl->aucMacAddr, aucMacAddr);
+	}
+
+	/* Check invalid chain number 1~16 */
+	if ((prCSICtrl->ucCfgItem == CSI_CONFIG_CHAIN_NUMBER) &&
+		  ((prCSICtrl->ucValue1 > 16) || (prCSICtrl->ucValue1 < 1))) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] Invalid chain number: %d\n",
+			prCSICtrl->ucValue1);
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	if (prCSICtrl->ucCfgItem == CSI_CONFIG_FILTER_MODE &&
+			prCSICtrl->ucValue1 == CSI_STA_MAC_ADD) {
+		switch (prCSICtrl->u4Value2) {
+		case CSI_STA_MAC_ADD:
+			i4Ret = glCsiAddSta(prGlueInfo, prCSICtrl);
+			if (i4Ret < 0) {
+				i4BytesWritten = -1;
+				goto out;
+			}
+
+			break;
+		case CSI_STA_MAC_DEL:
+			i4Ret = glCsiDelSta(prGlueInfo, prCSICtrl);
+			if (i4Ret < 0) {
+				i4BytesWritten = -1;
+				goto out;
+			}
+
+			break;
+		default:
+			DBGLOG(REQ, ERROR, "[CSI] Invalid STA MAC mode: %d\n",
+				prCSICtrl->u4Value2);
+			break;
+		}
+	}
 
 send_cmd:
+	DBGLOG(REQ, STATE,
+	   "[CSI] Set band idx %d, mode %d, csi cfg item %d, value1 %d, value2 %d",
+		prCSICtrl->ucBandIdx,
+		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
+		prCSICtrl->ucValue1, prCSICtrl->u4Value2);
+
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetCSIControl, prCSICtrl,
 		sizeof(struct CMD_CSI_CONTROL_T), &u4BufLen);
 
-	DBGLOG(REQ, INFO, "[CSI] %s: command result is %s\n",
-						__func__, pcCommand);
-	DBGLOG(REQ, STATE,
-	   "[CSI] mode %d, csi cfg item %d, value1 %d, value2 %d",
-		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
-		prCSICtrl->ucValue1, prCSICtrl->ucValue2);
-
-#if CFG_CSI_DEBUG
-	DBGLOG(REQ, INFO, "[CSI] rStatus %u\n", rStatus);
-#endif
-
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(REQ, ERROR, "[CSI] send CSI control cmd failed\n");
+		DBGLOG(REQ, ERROR,
+			"[CSI] send CSI control cmd failed, rStatus %u\n",
+			rStatus);
 		i4BytesWritten = -1;
 	}
 
