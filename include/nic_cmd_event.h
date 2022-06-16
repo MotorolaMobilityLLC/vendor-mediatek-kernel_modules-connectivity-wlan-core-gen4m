@@ -4503,6 +4503,12 @@ void nicCmdEventQuerySerInfo(IN struct ADAPTER *prAdapter,
 			     IN struct CMD_INFO *prCmdInfo,
 			     IN uint8_t *pucEventBuf);
 
+#if (CONFIG_WLAN_SERVICE == 1)
+void nicCmdEventListmode(IN struct ADAPTER
+				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
+				  IN uint8_t *pucEventBuf);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
