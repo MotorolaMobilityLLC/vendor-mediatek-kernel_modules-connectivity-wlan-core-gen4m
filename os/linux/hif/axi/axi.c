@@ -706,17 +706,6 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	return IRQ_HANDLED;
 }
 #if (CFG_SUPPORT_CONNINFRA == 1)
-void kalSetRstEvent(void)
-{
-	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
-
-	set_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag);
-
-	/* when we got interrupt, we wake up servie thread */
-	wake_up_interruptible(&g_waitq_rst);
-
-}
-
 static irqreturn_t mtk_sw_int_top_handler(int irq, void *dev_instance)
 {
 	struct ADAPTER *prAdapter = (struct ADAPTER *)dev_instance;

@@ -18,6 +18,7 @@
 #include "coda/mt6639/cbtop_gpio_sw_def.h"
 #include "coda/mt6639/conn_cfg.h"
 #include "coda/mt6639/conn_host_csr_top.h"
+#include "coda/mt6639/conn_semaphore.h"
 #include "coda/mt6639/wf_cr_sw_def.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
@@ -26,8 +27,10 @@
 #include "coda/mt6639/pcie_mac_ireg.h"
 #include "coda/mt6639/conn_mcu_bus_cr.h"
 #include "coda/mt6639/conn_bus_cr_von.h"
+#include "coda/mt6639/conn_host_csr_top.h"
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
+#include "coda/mt6639/wf_top_cfg_on.h"
 #include "hal_dmashdl_mt6639.h"
 #include "coda/mt6639/wf2ap_conn_infra_on_ccif4.h"
 #include "coda/mt6639/ap2wf_conn_infra_on_ccif4.h"
@@ -125,8 +128,10 @@ static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
 	uint32_t read_pointer);
 static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type);
+static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if IS_MOBILE_SEGMENT
+static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
 #endif
 #endif
@@ -468,7 +473,7 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 #else
 	.phyAction = NULL,
 #endif
-#if defined(_HIF_PCIE) && IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if defined(_HIF_PCIE) && IS_MOBILE_SEGMENT
 	.mcu_init = mt6639_mcu_init,
 #endif
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
@@ -552,6 +557,7 @@ static struct CCIF_OPS mt6639_ccif_ops = {
 	.notify_utc_time_to_fw = mt6639_ccif_notify_utc_time_to_fw,
 	.set_fw_log_read_pointer = mt6639_ccif_set_fw_log_read_pointer,
 	.get_fw_log_read_pointer = mt6639_ccif_get_fw_log_read_pointer,
+	.trigger_fw_assert = mt6639_ccif_trigger_fw_assert,
 };
 #endif
 
@@ -657,7 +663,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 		.sensor_num = ARRAY_SIZE(mt6639_thermal_sensor_info),
 		.sensor_info = mt6639_thermal_sensor_info,
 	},
-#endif /* CFG_MTK_ANDROID_WMT */
+#endif
+	.trigger_fw_assert = mt6639_trigger_fw_assert,
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
@@ -1506,7 +1513,16 @@ static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	return u4Value;
 }
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad)
+{
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
+		SW_INT_SUBSYS_RESET);
+
+	return 0;
+}
+
+#if IS_MOBILE_SEGMENT
 static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
 {
 	uint32_t u4Value = 0;
@@ -1632,6 +1648,48 @@ exit:
 	return rStatus;
 }
 
+#if (CFG_MTK_ANDROID_WMT == 0)
+static uint32_t mt6639_mcu_reset(struct ADAPTER *ad)
+{
+	uint32_t u4Value = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, INFO, "mt6639_mcu_reset..\n");
+
+	HAL_MCR_RD(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		&u4Value);
+	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
+	u4Value |= (0x1 << CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_SHFT);
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		u4Value);
+
+	kalMdelay(1);
+
+	HAL_MCR_RD(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		&u4Value);
+	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
+	u4Value |= (0x0 << CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_SHFT);
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		u4Value);
+
+	HAL_MCR_RD(ad,
+		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
+		&u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x.\n",
+		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
+		u4Value);
+	if ((u4Value &
+	     CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_CONN_SEMA00_OWN_BY_M0_STA_REP_MASK) != 0x0)
+		DBGLOG(INIT, ERROR, "L0.5 reset failed.\n");
+
+	return rStatus;
+}
+#endif
+
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
@@ -1642,6 +1700,12 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	rStatus = mt6639_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		goto exit;
+
+#if (CFG_MTK_ANDROID_WMT == 0)
+	rStatus = mt6639_mcu_reset(ad);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto exit;
+#endif
 
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
@@ -1659,11 +1723,13 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		kalUdelay(1000);
 	}
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (connv3_ext_32k_on()) {
 		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
+#endif
 
 exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -1673,6 +1739,20 @@ exit:
 	}
 
 	return rStatus;
+}
+
+static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
+{
+	int32_t ret = 0;
+
+	ret = ccif_trigger_fw_assert(prAdapter);
+
+	if (reset_wait_for_trigger_completion()) {
+		mt6639_ccif_get_interrupt_status(prAdapter);
+		reset_done_trigger_completion();
+	}
+
+	return ret;
 }
 #endif
 #endif

@@ -77,14 +77,51 @@
 #include "wmt_exp.h"
 #endif
 
-#if 0
-#include "mtk_porting.h"
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include "conninfra.h"
 #endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1)
+#if defined(_HIF_SDIO)
+/* #ifdef CONFIG_X86 */
+/*Kernel-3.10-ARM did not provide X86_FLAG & HIF shouldn't bind platform*/
+#if (CFG_MTK_ANDROID_WMT)
+#define MTK_WCN_HIF_SDIO		1
+#else
+#define MTK_WCN_HIF_SDIO		0
+#endif
+#else
+#define MTK_WCN_HIF_SDIO		0
+#endif
+
+#if defined(_HIF_AXI)
+#ifdef LINUX
+#ifdef CONFIG_X86
+#define MTK_WCN_HIF_AXI			0
+#else
+#define MTK_WCN_HIF_AXI			1
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+
+#if defined(_HIF_PCIE)
+#if IS_MOBILE_SEGMENT
+#define MTK_WCN_HIF_PCIE		1
+#else
+#define MTK_WCN_HIF_PCIE		0
+#endif
+#else
+#define MTK_WCN_HIF_PCIE		0
+#endif
+
+#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1) || (MTK_WCN_HIF_PCIE == 1)
 #define CFG_WMT_RESET_API_SUPPORT   1
 #else
 #define CFG_WMT_RESET_API_SUPPORT   0
@@ -106,8 +143,7 @@
 
 #define SER_L0_HANG_LOG_TIME_INTERVAL	3000
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1)
-#include "conninfra.h"
+
 #define WIFI_TRIGGER_ASSERT_TIMEOUT 2000
 #define GLUE_FLAG_RST_PROCESS (GLUE_FLAG_HALT |\
 				GLUE_FLAG_RST_START |\
@@ -116,7 +152,7 @@
 			       RST_FLAG_PREVENT_POWER_OFF |\
 			       RST_FLAG_DO_WHOLE_RESET)
 #define RST_FLAG_WF_RESET  (RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF)
-#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -178,68 +214,28 @@ struct RESET_STRUCT {
 #endif
 };
 
-#if CFG_CHIP_RESET_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 1)
-/* duplicated from wmt_exp.h for better driver isolation */
-enum ENUM_WMTDRV_TYPE {
-	WMTDRV_TYPE_BT = 0,
-	WMTDRV_TYPE_FM = 1,
-	WMTDRV_TYPE_GPS = 2,
-	WMTDRV_TYPE_WIFI = 3,
-	WMTDRV_TYPE_WMT = 4,
-	WMTDRV_TYPE_STP = 5,
-	WMTDRV_TYPE_SDIO1 = 6,
-	WMTDRV_TYPE_SDIO2 = 7,
-	WMTDRV_TYPE_LPBK = 8,
-	WMTDRV_TYPE_MAX
+enum ENUM_RST_MSG {
+	ENUM_RST_MSG_L0_START = 0x0,
+	ENUM_RST_MSG_L0_END,
+	ENUM_RST_MSG_L04_START,
+	ENUM_RST_MSG_L04_END,
+	ENUM_RST_MSG_L05_START,
+	ENUM_RST_MSG_L05_END,
+	ENUM_RST_MSG_NUM
 };
-
-enum ENUM_WMTMSG_TYPE {
-	WMTMSG_TYPE_POWER_ON = 0,
-	WMTMSG_TYPE_POWER_OFF = 1,
-	WMTMSG_TYPE_RESET = 2,
-	WMTMSG_TYPE_STP_RDY = 3,
-	WMTMSG_TYPE_HW_FUNC_ON = 4,
-	WMTMSG_TYPE_MAX
-};
-
-enum ENUM_WMTRSTMSG_TYPE {
-	WMTRSTMSG_RESET_START = 0x0,  /*whole chip reset (include other radio)*/
-	WMTRSTMSG_RESET_END = 0x1,
-	WMTRSTMSG_RESET_END_FAIL = 0x2,
-	WMTRSTMSG_0P5RESET_START = 0x3, /*wfsys reset ( wifi only )*/
-	WMTRSTMSG_RESET_MAX,
-	WMTRSTMSG_RESET_INVALID = 0xff
-};
-
-enum ENUM_WF_RST_SOURCE {
-	WF_RST_SOURCE_NONE = 0x0,
-	WF_RST_SOURCE_DRIVER = 0x1,
-	WF_RST_SOURCE_FW = 0x2,
-	WF_RST_SOURCE_MAX
-};
-#endif
-#endif
 
 /*******************************************************************************
  *                    E X T E R N A L   F U N C T I O N S
  *******************************************************************************
  */
 #if CFG_CHIP_RESET_SUPPORT
-
-#if CFG_WMT_RESET_API_SUPPORT
-extern int wifi_reset_start(void);
-extern int wifi_reset_end(enum ENUM_RESET_STATUS);
-#endif /* CFG_WMT_RESET_API_SUPPORT */
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-extern int hifAxiRemove(void);
-extern void kalSetRstEvent(void);
+#if CFG_MTK_ANDROID_WMT
 extern void update_driver_reset_status(uint8_t fgIsResetting);
 extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
-#endif /* CFG_SUPPORT_CONNINFRA */
-
+extern int wifi_reset_start(void);
+extern int wifi_reset_end(enum ENUM_RESET_STATUS);
+#endif
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*******************************************************************************
@@ -333,13 +329,17 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 
 #if CFG_WMT_RESET_API_SUPPORT
 int32_t glIsWmtCodeDump(void);
-#if (CFG_SUPPORT_CONNINFRA == 1)
 int wlan_reset_thread_main(void *data);
+#if (CFG_SUPPORT_CONNINFRA == 1)
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
+#endif /* CFG_SUPPORT_CONNINFRA */
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
-#endif /* CFG_SUPPORT_CONNINFRA */
+void kalSetRstEvent(void);
+void glRstSetRstEndEvent(void);
+int reset_wait_for_trigger_completion(void);
+void reset_done_trigger_completion(void);
 #else
 void glSetWfsysResetState(struct ADAPTER *prAdapter,
 			  enum ENUM_WFSYS_RESET_STATE_TYPE_T state);

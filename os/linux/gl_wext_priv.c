@@ -18625,12 +18625,12 @@ static int priv_driver_trigger_wfsys_reset(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
-			RST_CMD_TRIGGER, RST_FLAG_WF_RESET);
-#else
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
 			RST_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
+#else
+	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_CMD_TRIGGER, RST_FLAG_WF_RESET);
 #endif
 
 	return i4BytesWritten;

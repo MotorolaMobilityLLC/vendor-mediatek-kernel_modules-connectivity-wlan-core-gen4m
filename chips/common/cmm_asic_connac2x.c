@@ -2785,7 +2785,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 #endif
 		DBGLOG(HAL, ERROR,
 			"Wi-Fi Driver trigger, need do complete.\n");
-		complete(&g_triggerComp);
+		reset_done_trigger_completion();
 	} else {
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
