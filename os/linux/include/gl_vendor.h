@@ -110,6 +110,7 @@
 #define NL80211_VENDOR_SUBCMD_GET_TRX_STATS 48
 #define MTK_NL80211_OP_MODE_CHANGE 14
 #define MTK_NL80211_TRIGGER_RESET 15
+#define COMB_MATRIX_LEN 6
 
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
 #define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
@@ -205,6 +206,7 @@ enum WIFI_OFFLOAD_SUB_COMMAND {
 /* MTK subcmds should be here */
 enum MTK_WIFI_VENDOR_SUB_COMMAND {
 	MTK_SUBCMD_TRIGGER_RESET = 1,
+	MTK_SUBCMD_GET_RADIO_COMBO_MATRIX = 2,
 	MTK_SUBCMD_NAN = 12,
 	MTK_SUBCMD_CSI = 17,
 	MTK_SUBCMD_NDP = 81,
@@ -512,6 +514,13 @@ enum WIFI_CSI_ATTRIBUTE {
 		WIFI_ATTRIBUTE_CSI_AFTER_LAST - 1
 };
 #endif
+
+enum wifi_radio_combinations_matrix_attributes {
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_INVALID    = 0,
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MATRIX     = 1,
+		/* Add more attribute here */
+	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MAX
+};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1049,6 +1058,17 @@ struct STATS_LLS_PEER_AP_REC {
 };
 #endif /* CFG_SUPPORT_LLS */
 
+struct ANDROID_T_COMB_UNIT {
+	uint8_t band_0;
+	uint8_t ant_0;
+	uint8_t band_1;
+	uint8_t ant_1;
+};
+
+struct ANDROID_T_COMB_MATRIX {
+	struct ANDROID_T_COMB_UNIT comb_mtx[COMB_MATRIX_LEN];
+};
+
 /* RTT Capabilities */
 struct PARAM_WIFI_RTT_CAPABILITIES {
 	/* if 1-sided rtt data collection is supported */
@@ -1313,6 +1333,10 @@ int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					   int data_len);
 
 int mtk_cfg80211_vendor_trigger_reset(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
+int mtk_cfg80211_vendor_comb_matrix(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 
