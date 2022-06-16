@@ -1917,7 +1917,8 @@ skip_dequeue:
 					(*pucPsStaFreeQuota) = 0;
 			}
 
-			if (isNetAbsent(prAdapter, prBssInfo)) {
+			if (prBssInfo &&
+				isNetAbsent(prAdapter, prBssInfo)) {
 				if (prBssInfo->ucBssFreeQuota >=
 					u4CurStaForwardFrameCount)
 					prBssInfo->ucBssFreeQuota -=
@@ -2965,7 +2966,7 @@ void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter)
 					/* If the STA is activated,
 					 * get the queue length
 					 */
-					if (prStaRec->fgIsValid &&
+					if (prStaRec->fgIsValid && prBssInfo &&
 					    !isNetAbsent(prAdapter, prBssInfo))
 						u4CurrQueLen +=
 							(prStaRec->
@@ -7161,7 +7162,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 		}
 
 		/* 4 <3> Queue, if BSS is absent, drop probe response */
-		if (isNetAbsent(prAdapter, prBssInfo)) {
+		if (prBssInfo && isNetAbsent(prAdapter, prBssInfo)) {
 			if (prMsduInfo && isProbeResponse(prMsduInfo)) {
 				DBGLOG(TX, TRACE,
 					"Drop probe response (BSS[%u] Absent)\n",
