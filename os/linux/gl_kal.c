@@ -9043,15 +9043,8 @@ void kalPerMonDump(IN struct GLUE_INFO *prGlueInfo)
 #if (CFG_SUPPORT_PERF_IND == 1)
 void kalPerfIndReset(IN struct ADAPTER *prAdapter)
 {
-	uint8_t i;
-
-	for (i = 0; i < BSSID_NUM; i++) {
-		prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i] = 0;
-		prAdapter->prGlueInfo->PerfIndCache.u4CurRxBytes[i] = 0;
-		prAdapter->prGlueInfo->PerfIndCache.u2CurRxRate[i] = 0;
-		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i] = 0;
-		prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i] = 0;
-	}
+	kalMemZero(&prAdapter->prGlueInfo->PerfIndCache,
+		sizeof(prAdapter->prGlueInfo->PerfIndCache));
 } /* kalPerfIndReset */
 
 void kalSetPerfReport(IN struct ADAPTER *prAdapter)
@@ -9091,6 +9084,8 @@ void kalSetPerfReport(IN struct ADAPTER *prAdapter)
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i];
 		prCmdPerfReport->ucCurRxNss[i] =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i];
+		prCmdPerfReport->ucCurRxNss2[i] =
+			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss2[i];
 		u4CurrentTp += (prCmdPerfReport->ulCurTxBytes[i] +
 			prCmdPerfReport->ulCurRxBytes[i]);
 	}
