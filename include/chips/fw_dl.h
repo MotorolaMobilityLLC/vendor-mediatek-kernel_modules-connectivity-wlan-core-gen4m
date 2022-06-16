@@ -190,7 +190,12 @@ struct FWDL_OPS_T {
 	void (*constructRomName)(struct GLUE_INFO *prGlueInfo,
 		enum ENUM_IMG_DL_IDX_T eDlIdx,
 		uint8_t **apucName, uint8_t *pucNameIdx);
-
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+	uint32_t (*parseSingleBinaryFile)(void *pvFileBuf,
+		uint32_t u4FileLength, void **ppvIdxFileBuf,
+		uint32_t *pu4IdxFileLength,
+		enum ENUM_IMG_DL_IDX_T eDlIdx);
+#endif
 	uint32_t (*downloadPatch)(IN struct ADAPTER *prAdapter);
 	uint32_t (*downloadFirmware)(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_IMG_DL_IDX_T eDlIdx);
@@ -237,6 +242,15 @@ struct FWDL_OPS_T {
 
 #if (CFG_UMAC_GENERATION >= 0x20)
 #define LEN_4_BYTE_CRC	(4)
+
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+struct HEADER_SINGLE_BINARY {
+	uint8_t aucVersion[16];
+	uint32_t u4FileNumber;
+	uint8_t aucFileType[8];
+	uint8_t aucEndPadding[4];
+};
+#endif
 
 struct TAILER_COMMON_FORMAT_T {
 	uint8_t ucChipInfo;
@@ -404,6 +418,12 @@ uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER *prAdapter,
 	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	IN uint32_t u4DataMode);
+
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+uint32_t wlanParseSingleBinaryFile(void *pvFileBuf,
+	uint32_t u4FileLength, void **ppvIdxFileBuf,
+	uint32_t *pu4IdxFileLength, enum ENUM_IMG_DL_IDX_T eDlIdx);
+#endif
 
 void wlanImageSectionGetPatchInfo(IN struct ADAPTER
 	*prAdapter,

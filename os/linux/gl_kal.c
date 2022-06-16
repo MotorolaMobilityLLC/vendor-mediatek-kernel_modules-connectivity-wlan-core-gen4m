@@ -332,11 +332,9 @@ uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-
 	/* Check result */
 	if (!fgResult)
 		goto error_open;
-
 
 	return WLAN_STATUS_SUCCESS;
 
@@ -520,6 +518,8 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo =
 			prGlueInfo->prAdapter->chip_info;
 	uint32_t chip_id = prChipInfo->chip_id;
+	void *prFwBuffer = NULL;
+	uint32_t u4FwSize = 0;
 
 	DEBUGFUNC("kalFirmwareImageMapping");
 
@@ -644,11 +644,8 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 
 		/* <1> Open firmware */
 		if (kalFirmwareOpen(prGlueInfo,
-				    apucNameTable) != WLAN_STATUS_SUCCESS)
-			break;
+			apucNameTable) == WLAN_STATUS_SUCCESS)
 		{
-			uint32_t u4FwSize = 0;
-			void *prFwBuffer = NULL;
 			/* <2> Query firmare size */
 			kalFirmwareSize(prGlueInfo, &u4FwSize);
 			/* <3> Use vmalloc for allocating large memory trunk */
@@ -667,9 +664,23 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 				break;
 			}
 			/* <5> write back info */
-			*pu4FileLength = u4FwSize;
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+			if (prChipInfo->fw_dl_ops->parseSingleBinaryFile &&
+				prChipInfo->fw_dl_ops->parseSingleBinaryFile(
+					prFwBuffer,
+					u4FwSize,
+					ppvMapFileBuf,
+					pu4FileLength,
+					eDlIdx) == WLAN_STATUS_SUCCESS) {
+				vfree(prFwBuffer);
+			} else {
+				*ppvMapFileBuf = prFwBuffer;
+				*pu4FileLength = u4FwSize;
+			}
+#else
 			*ppvMapFileBuf = prFwBuffer;
-
+			*pu4FileLength = u4FwSize;
+#endif
 			return prFwBuffer;
 		}
 	} while (FALSE);
