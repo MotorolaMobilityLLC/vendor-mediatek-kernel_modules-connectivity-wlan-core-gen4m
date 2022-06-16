@@ -3881,6 +3881,9 @@ static s_int32 hqa_set_ru_info(
 	if (seg_sta_cnt[1] >= SEG_STA_CNT)
 		seg_sta_cnt[1] = 1;
 
+	if (seg_sta_cnt[0]+seg_sta_cnt[1] >= (2*SEG_STA_CNT))
+		return SERV_STATUS_AGENT_INVALID_LEN;
+
 	len -= sizeof(u_int32)*3;		/* array length */
 
 	if (seg_sta_cnt[0]+seg_sta_cnt[1] <= 0)

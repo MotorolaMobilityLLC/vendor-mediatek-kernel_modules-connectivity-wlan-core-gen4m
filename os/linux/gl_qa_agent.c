@@ -9581,7 +9581,7 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 		MT_ATEStart(prNetDev, "ATESTART");
 
 	if (!prIwReqData || prIwReqData->data.length == 0 ||
-		   prIwReqData->data.length > sizeof(*HqaCmdFrame)) {
+		prIwReqData->data.length > sizeof(*HqaCmdFrame)) {
 		i4Status = -EINVAL;
 		goto ERROR0;
 	}
