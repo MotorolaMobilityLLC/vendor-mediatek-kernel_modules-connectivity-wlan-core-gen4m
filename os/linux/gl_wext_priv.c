@@ -4064,6 +4064,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+#define CMD_DBG_SHOW_MLD		"show-mld"
 #define CMD_DBG_SHOW_MLD_BSS		"show-mld-bss"
 #define CMD_DBG_SHOW_MLD_STA		"show-mld-sta"
 #endif
@@ -5709,6 +5710,33 @@ int priv_driver_set_mdvt(IN struct net_device *prNetDev, IN char *pcCommand,
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+int priv_driver_dump_mld(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int32_t u4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Index = MLD_GROUP_NONE;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 2)
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Index);
+
+	if (u4Ret)
+		return -1;
+
+	return mldDump(prGlueInfo->prAdapter, u4Index, pcCommand, i4TotalLen);
+}
+
 int priv_driver_dump_mld_bss(IN struct net_device *prNetDev,
 	IN char *pcCommand,
 	IN int i4TotalLen)
@@ -19463,6 +19491,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 	{CMD_SET_MDVT, priv_driver_set_mdvt},
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	{CMD_DBG_SHOW_MLD, priv_driver_dump_mld},
 	{CMD_DBG_SHOW_MLD_BSS, priv_driver_dump_mld_bss},
 	{CMD_DBG_SHOW_MLD_STA, priv_driver_dump_mld_sta},
 #endif

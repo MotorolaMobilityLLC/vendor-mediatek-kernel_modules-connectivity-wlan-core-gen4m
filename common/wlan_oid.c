@@ -3057,8 +3057,9 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prMldStaRec = mldStarecGetByAddr(prAdapter, prNewKey->arBSSID);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldStaRec = mldStarecGetByAddr(prAdapter,
+		prMldBssInfo, prNewKey->arBSSID);
 	if (prMldStaRec && prNewKey->u4KeyIndex & IS_UNICAST_KEY) {
 		struct STA_RECORD *sta;
 

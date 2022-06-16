@@ -433,6 +433,7 @@ struct BSS_INFO {
 	struct _6G_OPER_INFOR_T r6gOperInfor;
 #endif
 #endif
+
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t  ucEhtOpParams;
 	uint8_t  fgIsEhtOpPresent;
@@ -555,9 +556,10 @@ struct BSS_INFO {
 	struct LINK rPmkidCache;
 
 	enum ENUM_MBMC_BN eBandIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
-
+#endif
 	uint8_t ucVhtChannelWidthBackup;
 
 	uint16_t u2MaxIdlePeriod;
