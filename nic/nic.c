@@ -1137,12 +1137,23 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 
-	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
-				      ucBssIndex)->eNetworkType) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(NIC, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -1883,6 +1894,10 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 
 	/* FW only supports BMCWlan index 0 ~ 31.
