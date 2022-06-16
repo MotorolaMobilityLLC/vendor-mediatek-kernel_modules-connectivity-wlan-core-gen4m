@@ -184,6 +184,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_VOLT_INFO == 1)
 	[CMD_ID_SEND_VOLT_INFO] = nicUniCmdSendVnf,
 #endif
+#if CFG_MSCS_SUPPORT
+	[CMD_ID_FAST_PATH] = nicUniCmdFastPath,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -240,6 +243,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_VOLT_INFO == 1)
 	[UNI_EVENT_ID_GET_VOLT_INFO] = nicUniEventGetVnf,
 #endif
+	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -6215,6 +6219,42 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 }
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_MSCS_SUPPORT
+uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_FAST_PATH *cmd;
+	struct UNI_CMD_FAST_PATH *uni_cmd;
+	struct UNI_CMD_FAST_PATH_PROCESS_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_FAST_PATH) +
+			       sizeof(struct UNI_CMD_FAST_PATH_PROCESS_T);
+
+	if (info->ucCID != CMD_ID_FAST_PATH ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_FAST_PATH *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_FAST_PATH,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_FAST_PATH *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_FAST_PATH_PROCESS_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_FAST_PATH_PROCESS;
+	tag->u2Length = sizeof(*tag);
+
+	kalMemCopy(tag->aucOwnMac, cmd->aucOwnMac, MAC_ADDR_LEN);
+	tag->u2RandomNum = cmd->u2RandomNum;
+	kalMemCopy(tag->u4Keybitmap, cmd->u4Keybitmap, KEY_BITMAP_LEN_BYTE);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -9107,3 +9147,48 @@ void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 #endif /* CFG_VOLT_INFO */
+
+void nicUniEventFastPath(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+#if CFG_MSCS_SUPPORT
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_ID_FAST_PATH);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint8_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_FAST_PATH_PROCESS: {
+			struct UNI_EVENT_FAST_PATH_PROCESS_T
+				*prFastPathProcess =
+			    (struct UNI_EVENT_FAST_PATH_PROCESS_T *)tag;
+			struct EVENT_FAST_PATH legacy = {0};
+
+			legacy.u2Mic = prFastPathProcess->u2Mic;
+			legacy.ucKeynum = prFastPathProcess->ucKeynum;
+			legacy.ucKeyBitmapMatchStatus =
+				prFastPathProcess->u4KeybitmapMatchStatus;
+
+			RUN_RX_EVENT_HANDLER(
+				EVENT_ID_FAST_PATH,
+				&legacy
+			);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+#endif
+}
+

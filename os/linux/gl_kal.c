@@ -3818,8 +3818,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	/* Raise priority for special packet if skb mark filed
 	 * marked with pre-defined value.
 	 */
-	if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
-	    (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
+	if (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT)) {
 		prTxPktInfo->ucPriorityParam = NIC_TX_PRIORITY_DATA_TID;
 		DBGLOG_LIMITED(INIT, TRACE,
 				"skb mark field=[%x]", prSkb->mark);

@@ -4039,6 +4039,48 @@ enum ENUM_UNI_CMD_SEND_VOLT_INFO_TAG {
 };
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_MSCS_SUPPORT
+/* Fast Path command (0x54) */
+struct UNI_CMD_FAST_PATH {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                              | ID  | structure
+	*   ---------------------------------|-----|--------------
+	*   UNI_CMD_FAST_PATH_PROCESS        | 0x0 | UNI_CMD_FAST_PATH_PROCESS_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Get FAST PATH command TLV List */
+enum ENUM_UNI_CMD_FAST_PATH_TAG {
+	UNI_CMD_FAST_PATH_PROCESS = 0,
+	UNI_CMD_FAST_PATH_MAX_NUM
+};
+
+/**
+ * This structure is used for UNI_CMD_FAST_PATH_PROCESS(0x00)
+ * of UNI_CMD_FAST_PATH_PROCESS command (0x54) to calculate MIC
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                   should be 0x00
+ * @param[in] u2Length                the length of this TLV, should be 8
+ * @param[in] aucOwnMac               Mac address bring by Driver
+ * @param[in] u2RandomNum             Random number genetate by Driver
+ * @param[in] u4Keybitmap             Keybitmap send from Driver
+ */
+/* FAST PATH (Tag0) */
+struct UNI_CMD_FAST_PATH_PROCESS_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  aucOwnMac[6];
+	uint16_t u2RandomNum;
+	uint32_t u4Keybitmap[4];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -6231,6 +6273,50 @@ enum ENUM_UNI_EVENT_GET_VOLT_INFO_TAG {
 };
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_MSCS_SUPPORT
+/** This structure is used for UNI_EVENT_ID_FAST_PATH event (0x54)
+ *
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucReserved      reserved fixed field
+ * @param[in] aucTlvBuffer     TLVs
+ */
+/* Fast Path event */
+struct UNI_EVENT_ID_FAST_PATH {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Fast Path event tags */
+enum ENUM_UNI_EVENT_FAST_PATH_TAG {
+	UNI_EVENT_FAST_PATH_PROCESS  = 0,
+	UNI_EVENT_ID_FAST_PATH_MAX_NUM
+};
+
+/**
+ * This structure is used for UNI_EVENT_FAST_PATH_PROCESS tag(0x00)
+ *  of UNI_EVENT_ID_FAST_PATH event (0x54)
+ * The event is for send fast path MIC to driver
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                     Tag id
+ * @param[in] u2Length                  The length of this TLV
+ * @param[in] u2Mic                     message integrity check
+ * @param[in] ucKeynum                  To tell Driver use which key match
+ * @param[in] u4KeybitmapMatchStatus    Tell if Keybitmap match success or not
+ */
+struct UNI_EVENT_FAST_PATH_PROCESS_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2Mic;
+	uint8_t ucKeynum;
+	uint8_t u4KeybitmapMatchStatus;
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_MSCS_SUPPORT */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -6541,6 +6627,8 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -6690,6 +6778,8 @@ void nicUniEventCsiData(struct ADAPTER *ad,
 void nicUniEventGetVnf(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif
+void nicUniEventFastPath(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
  *                              F U N C T I O N S
