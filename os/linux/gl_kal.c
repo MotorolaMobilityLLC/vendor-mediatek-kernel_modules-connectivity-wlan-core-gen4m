@@ -4914,14 +4914,6 @@ int hif_thread(void *data)
 					"Mgmt-DirectTx");
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-			/* Process TX-direct data packet to HIF */
-			if (test_and_clear_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT,
-					       &prGlueInfo->ulFlag))
-				TRACE(nicTxDirectMsduQueueMthread(prAdapter),
-					"TX-Direct");
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
-
 			/* Process TX data packet to HIF */
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
@@ -6202,22 +6194,6 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr)
 }
 
 #if CFG_SUPPORT_MULTITHREAD
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr)
-{
-	if (!pr->hif_thread)
-		return;
-
-	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
-			      MSEC_TO_JIFFIES(
-			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
-
-	if (HAL_IS_TX_DIRECT(pr->prAdapter))
-		set_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT, &pr->ulFlag);
-
-	wake_up_interruptible(&pr->waitq_hif);
-}
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr)
@@ -6248,11 +6224,6 @@ void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
 	set_bit(GLUE_FLAG_HIF_TX_BIT, &pr->ulFlag);
-
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-	if (HAL_IS_TX_DIRECT(pr->prAdapter))
-		set_bit(GLUE_FLAG_TX_DIRECT_HIF_TX_BIT, &pr->ulFlag);
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	wake_up_interruptible(&pr->waitq_hif);
 }
@@ -12677,7 +12648,7 @@ void kalTxDirectTimerCheckHifQ(unsigned long data)
 	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
 
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
-	kalSetTxDirectEvent2Hif(prGlueInfo);
+	kalSetTxEvent2Hif(prGlueInfo);
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
 
@@ -13180,41 +13151,6 @@ void kalConfigChksumOffload(
 			prGlueInfo->prDevHandler->features);
 }
 #endif
-
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-void kalAcquireTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
-			IN uint8_t ucBssIndex,
-			IN uint8_t ucHifTc,
-			OUT unsigned long *plHifQFlags)
-{
-	unsigned long ulHifQFlags = 0;
-
-	if (unlikely(prGlueInfo == NULL)) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
-		return;
-	}
-
-	spin_lock_irqsave(
-		&prGlueInfo->rTxDirectHifQueueLock[ucBssIndex][ucHifTc],
-		ulHifQFlags);
-	*plHifQFlags = ulHifQFlags;
-}
-
-void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
-			IN uint8_t ucBssIndex,
-			IN uint8_t ucHifTc,
-			IN unsigned long ulHifQFlags)
-{
-	if (unlikely(prGlueInfo == NULL)) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
-		return;
-	}
-
-	spin_unlock_irqrestore(
-		&prGlueInfo->rTxDirectHifQueueLock[ucBssIndex][ucHifTc],
-		ulHifQFlags);
-}
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #if CFG_SUPPORT_THERMAL_QUERY
 static int get_connsys_thermal_temp(void *data, int *temp)

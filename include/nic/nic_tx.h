@@ -1877,11 +1877,6 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
 
 uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter);
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-#define NIC_GET_TX_DIRECT_HIFQ(prAdapter, ucBssIndex, ucHifTc) \
-	(&prAdapter->rTxDirectHifQueue[ucBssIndex][ucHifTc])
-uint32_t nicTxDirectMsduQueueMthread(IN struct ADAPTER *prAdapter);
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter);
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter);

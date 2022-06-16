@@ -150,7 +150,6 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_UPDATE_WMM_QUOTA | \
 	GLUE_FLAG_NOTIFY_MD_CRASH | \
 	GLUE_FLAG_DRV_INT | \
-	GLUE_FLAG_TX_DIRECT_HIF_TX | \
 	GLUE_FLAG_MGMT_DIRECT_HIF_TX)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
@@ -500,16 +499,6 @@ struct PWR_LEVEL_HANDLER_ELEMENT {
 #define KAL_RELEASE_SPIN_LOCK(_prAdapter, _rLockCategory)   \
 	kalReleaseSpinLock(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
 	_rLockCategory, __ulFlags)
-
-#define KAL_TX_DIRECT_HIFQ_LOCK_DECLARATION() unsigned long __ulHifQFlags
-
-#define KAL_TX_DIRECT_HIFQ_LOCK(prGlueInfo, ucBssIndex, ucHifTc) \
-	kalAcquireTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
-		&__ulHifQFlags)
-
-#define KAL_TX_DIRECT_HIFQ_UNLOCK(prGlueInfo, ucBssIndex, ucHifTc) \
-	kalReleaseTxDirectHifQLock(prGlueInfo, ucBssIndex, ucHifTc, \
-		__ulHifQFlags)
 
 #define KAL_ACQUIRE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
 	kalAcquireSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
@@ -1366,16 +1355,6 @@ void kalReleaseSpinLock(IN struct GLUE_INFO *prGlueInfo,
 			IN enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
 			IN unsigned long ulFlags);
 
-void kalAcquireTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
-			IN uint8_t ucBssIndex,
-			IN uint8_t ucHifTc,
-			OUT unsigned long *plHifQFlags);
-
-void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
-			IN uint8_t ucBssIndex,
-			IN uint8_t ucHifTc,
-			IN unsigned long ulHifQFlags);
-
 void kalAcquireSpinLockBh(struct GLUE_INFO *prGlueInfo,
 			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory);
 
@@ -1838,9 +1817,6 @@ void kalSetMdCrashEvent(struct GLUE_INFO *pr);
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-void kalSetTxDirectEvent2Hif(struct GLUE_INFO *pr);
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr);
