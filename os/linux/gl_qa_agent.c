@@ -2314,6 +2314,15 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 	memcpy(&Len, HqaCmdFrame->Data + 2 * 1, 2);
 	Len = ntohs(Len);
 
+	/*  HQA_ReadEEPROM read size  only 16 bytes is used */
+	if (Len > EFUSE_BLOCK_SIZE) {
+		DBGLOG(INIT, ERROR,
+			"QA_AGENT HQA_ReadEEPROM Len : %d not supported\n",
+			Len);
+		return WLAN_STATUS_FAILURE;
+	}
+
+
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (!prGlueInfo) {
@@ -2423,7 +2432,7 @@ static int32_t HQA_WriteEEPROM(struct net_device *prNetDev,
 	u4Index = Offset % EFUSE_BLOCK_SIZE;
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal ==
-	    TRUE && Offset >= 0 && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
+	    TRUE && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
 		uacEEPROMImage[Offset] = u4WriteData & 0xff;
 		uacEEPROMImage[Offset + 1] = u4WriteData >> 8 & 0xff;
 	} else if (u4Index >= EFUSE_BLOCK_SIZE - 1) {
@@ -2509,6 +2518,14 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device
 	       "QA_AGENT HQA_ReadBulkEEPROM Offset : %d\n", Offset);
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Len : %d\n",
 	       Len);
+
+    /* for buck read, only 16 bytes is used */
+	if (Len > EFUSE_BLOCK_SIZE) {
+		DBGLOG(INIT, ERROR,
+			"QA_AGENT HQA_ReadBulkEEPROM Len : %d not supported\n",
+			Len);
+		return WLAN_STATUS_FAILURE;
+	}
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	rAccessEfuseInfo.u4Address = (Offset / EFUSE_BLOCK_SIZE) *
@@ -2672,6 +2689,13 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 
 	DBGLOG(INIT, INFO, "Offset : %x, Len : %u\n", Offset, Len);
 
+    /* for buck access, only 16 bytes is used */
+	if (Len > EFUSE_BLOCK_SIZE) {
+		DBGLOG(INIT, ERROR, "%s Len : %d not supported\n",
+			   __func__, Len);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	/* Support Delay Calibraiton */
 	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse ==
 	    TRUE) {
@@ -2692,8 +2716,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 		}
 
 		if (prGlueInfo->prAdapter->rWifiVar.ucEfuseBufferModeCal ==
-		    TRUE &&
-		    Offset >= 0 && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
+		    TRUE && Offset < MAX_EEPROM_BUFFER_SIZE - 1) {
 			/* EEPROM */
 			DBGLOG(INIT, INFO, "Direct EEPROM buffer, offset=%x\n",
 			       Offset);
