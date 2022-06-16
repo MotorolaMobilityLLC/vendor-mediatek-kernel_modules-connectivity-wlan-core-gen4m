@@ -355,16 +355,14 @@ CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
 CONFIG_MTK_WIFI_NAN=y
 CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
 else
-    ifneq ($(filter 6983, $(WLAN_CHIP_ID)),)
+    ifneq ($(filter 6983 6886, $(WLAN_CHIP_ID)),)
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=1
-    else ifneq ($(filter 6886, $(WLAN_CHIP_ID)),)
-        ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
-        ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
     endif
 endif
 
