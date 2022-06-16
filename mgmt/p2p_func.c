@@ -3281,6 +3281,8 @@ int32_t p2pFuncPreStartRdd(
 		(struct MSG_P2P_DFS_CAC *) NULL;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	do {
 		if ((prAdapter == NULL) || (chandef == NULL))
 			break;
@@ -4115,7 +4117,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucIEInfo, IN uint32_t u4IELen)
 {
 	uint8_t *pucIE = (uint8_t *) NULL;
-	uint16_t u2Offset = 0;
+	uint32_t u2Offset = 0;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	uint8_t i = 0;
@@ -4226,9 +4228,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				break;
 			case ELEM_ID_COUNTRY_INFO: /* 7 */
 				if (COUNTRY_IE(pucIE)->ucLength
-					>= ELEM_MIN_LEN_COUNTRY_INFO &&
-					COUNTRY_IE(pucIE)->ucLength
-					< 256) {
+					>= ELEM_MIN_LEN_COUNTRY_INFO) {
 					prP2pBssInfo->ucCountryIELen =
 						COUNTRY_IE(pucIE)->ucLength;
 					kalMemCopy(

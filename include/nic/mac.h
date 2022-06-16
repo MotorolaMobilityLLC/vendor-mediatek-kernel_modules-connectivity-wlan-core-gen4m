@@ -4019,8 +4019,8 @@ struct RSNX_INFO_ELEM {
 	} while (FALSE)
 
 #define IE_FOR_EACH(_pucIEsBuf, _u2IEsBufLen, _u2Offset) \
-for ((_u2Offset) = 0;	\
-	((((_u2Offset) + 2) <= (_u2IEsBufLen)) && \
+for ((_u2Offset) = 0U;	\
+	((((_u2Offset) + 2U) <= (_u2IEsBufLen)) && \
 	(((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen))); \
 	(_u2Offset) += IE_SIZE(_pucIEsBuf), (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
 

@@ -968,6 +968,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	struct BSS_INFO *prBssInfo;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
+	kalMemZero(&rLinkSpeed, sizeof(struct PARAM_LINK_SPEED_EX));
+
 	ASSERT(wiphy);
 
 	do {
@@ -1507,6 +1509,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	struct ADAPTER *prAdapter = (struct ADAPTER *) NULL;
 	struct WIFI_VAR *prWifiVar = (struct WIFI_VAR *) NULL;
+
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
 	/* RF_CHANNEL_INFO_T rRfChnlInfo; */
 /* P_IE_SSID_T prSsidIE = (P_IE_SSID_T)NULL; */
@@ -3316,6 +3320,8 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	uint8_t ucRoleIdx = 0;
 	struct net_device *dev = NULL;
+
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
 	if ((wiphy == NULL) || (chandef == NULL))
 		return i4Rslt;
