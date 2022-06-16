@@ -518,21 +518,36 @@ enum {
 #define WOWLAN_FF_ALLOW_1X                      BIT(5)
 #define WOWLAN_FF_ALLOW_ARP_REQ2ME              BIT(6)
 
-/* wow detect type */
+/* wow detect type (8 bits)*/
 #define WOWLAN_DETECT_TYPE_NONE                 0
 #define WOWLAN_DETECT_TYPE_MAGIC                BIT(0)
 #define WOWLAN_DETECT_TYPE_ANY                  BIT(1)
 #define WOWLAN_DETECT_TYPE_DISCONNECT           BIT(2)
 #define WOWLAN_DETECT_TYPE_GTK_REKEY_FAILURE    BIT(3)
 #define WOWLAN_DETECT_TYPE_BCN_LOST             BIT(4)
+#define WOWLAN_DETECT_TYPE_SCHD_SCAN_SSID_HIT   BIT(5)
+#define WOWLAN_DETECT_TYPE_BITMAP               BIT(6)
+#define WOWLAN_DETECT_TYPE_MC_DATA              BIT(7)
+
+/* wow detect type Extension (16 bits)*/
+#define WOWLAN_DETECT_TYPE_EXT_NONE             0
+#define WOWLAN_DETECT_TYPE_EXT_PORT             BIT(0)
+#define WOWLAN_DETECT_TYPE_EXT_IPV4_TCP_SYN     BIT(1)
+#define WOWLAN_DETECT_TYPE_EXT_IPV6_TCP_SYN     BIT(2)
+#define WOWLAN_DETECT_TYPE_EXT_EAPOL_REQUEST    BIT(3)
+#define WOWLAN_DETECT_TYPE_EXT_ACTION           BIT(4)
+#define WOWLAN_DETECT_TYPE_EXT_IPV6_ICMP        BIT(5)
+#define WOWLAN_DETECT_TYPE_EXT_ROAMING_INTR     BIT(6)
 
 /* Wakeup command bit define */
 #define PF_WAKEUP_CMD_BIT0_OUTPUT_MODE_EN   BIT(0)
 #define PF_WAKEUP_CMD_BIT1_OUTPUT_DATA      BIT(1)
 #define PF_WAKEUP_CMD_BIT2_WAKEUP_LEVEL     BIT(2)
 
-#define PM_WOWLAN_REQ_START         0x1
-#define PM_WOWLAN_REQ_STOP          0x2
+#define PM_WOWLAN_REQ_START                 0x1
+#define PM_WOWLAN_REQ_STOP                  0x2
+#define PM_WOWLAN_REQ_WINDOWS_START         0x3
+#define PM_WOWLAN_REQ_WINDOWS_STOP          0x4
 
 struct EVENT_WOWLAN_NOTIFY {
 	uint8_t	ucNetTypeIndex;
