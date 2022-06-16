@@ -683,13 +683,11 @@ struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 
 	/* Compose Header and Fixed Field */
 	assocComposeReAssocReqFrameHeaderAndFF(prAdapter,
-					       prStaRec,
-					       (uint8_t
-						*) ((unsigned
-						     long)(prMsduInfo->prPacket)
-						    + MAC_TX_RESERVED_FIELD),
-					       prBssInfo->aucOwnMacAddr,
-					       &u2PayloadLen);
+			prStaRec,
+			(uint8_t *)((uintptr_t)(prMsduInfo->prPacket)
+			+ MAC_TX_RESERVED_FIELD),
+			prBssInfo->aucOwnMacAddr,
+			&u2PayloadLen);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
 	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);

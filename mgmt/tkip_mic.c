@@ -499,13 +499,15 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(
 		*(pucBuff + 9) = 0x00;
 		*(pucBuff + 10) = 0x00;
 		*(pucBuff + 11) = 0x00;
-		*(pucBuff + 12) = *(uint8_t *)(prSwRfb->pvHeader + 12);
-		*(pucBuff + 13) = *(uint8_t *)(prSwRfb->pvHeader + 13);
+		*(pucBuff + 12) = *(uint8_t *)
+			((uintptr_t)prSwRfb->pvHeader + 12);
+		*(pucBuff + 13) = *(uint8_t *)
+			((uintptr_t)prSwRfb->pvHeader + 13);
 
 		tkipMicGen(pucMicKey,
 			   pucBuff + 6,
 			   u2FrameBodyLen - WLAN_MAC_MIC_LEN + 8,
-			   prSwRfb->pvHeader + 6,
+			   (uint8_t *)((uintptr_t)prSwRfb->pvHeader + 6),
 			   prSwRfb->pvHeader,
 			   prSwRfb->ucTid, aucMic2);
 

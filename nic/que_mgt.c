@@ -3793,15 +3793,17 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						ETH_SNAP_OUI_LEN;
 					u2MACLen -=
 						ETHER_TYPE_LEN_OFFSET;
-					prCurrSwRfb->pvHeader +=
-						u2MACLen;
+					prCurrSwRfb->pvHeader = (void *)(
+						(uintptr_t)prCurrSwRfb->pvHeader
+						+ u2MACLen);
 					kalMemCopy(
 						prCurrSwRfb->pvHeader,
 						prWlanHeader->aucAddr1,
 						MAC_ADDR_LEN);
 					kalMemCopy(
-						prCurrSwRfb->pvHeader +
-						MAC_ADDR_LEN,
+						(uint8_t *)(
+						(uintptr_t)prCurrSwRfb->pvHeader
+						+ MAC_ADDR_LEN),
 						prWlanHeader->aucAddr2,
 						MAC_ADDR_LEN);
 					prCurrSwRfb->u2PacketLen -=
@@ -3824,8 +3826,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 							prCurrSwRfb->
 							ucWlanIdx));
 					DBGLOG_MEM8(QM, WARN,
-						(uint8_t *)
-						prCurrSwRfb->pvHeader,
+						(uint8_t *)((uintptr_t)
+						prCurrSwRfb->pvHeader),
 						(prCurrSwRfb->
 						u2PacketLen > 64) ? 64 :
 						prCurrSwRfb->
@@ -4134,7 +4136,8 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 		u2SSN = prWlanHeader->u2SeqCtrl >> MASK_SC_SEQ_NUM_OFFSET;
 		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 		pucTaAddr = prWlanHeader->aucAddr2;
-		pucPaylod = prSwRfb->pvHeader + prSwRfb->u2HeaderLen;
+		pucPaylod = (uint8_t *)(
+			(uintptr_t)prSwRfb->pvHeader + prSwRfb->u2HeaderLen);
 	}
 
 	/* 802.11 header RA */
