@@ -1166,7 +1166,7 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	if (rate.preamble == LLS_MODE_CCK)
 		rate.rateMcsIdx &= 0x3; /* 0: 1M; 1: 2M; 2: 5.5M; 3: 11M  */
 	else if (rate.preamble == LLS_MODE_OFDM)
-		rate.rateMcsIdx = OFDM_RATE[rate.rateMcsIdx & 0x7];
+		rate.rateMcsIdx = OFDM_RATE[(uint8_t)(rate.rateMcsIdx & 0x7)];
 
 	if (rate.nss >= STATS_LLS_MAX_NSS_NUM)
 		goto wrong_rate;
