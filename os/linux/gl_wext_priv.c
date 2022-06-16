@@ -15116,7 +15116,7 @@ int priv_driver_set_sr_enable(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 	struct _SR_CMD_SR_CAP_T *prCmdSrCap = NULL;
 
@@ -15131,6 +15131,11 @@ int priv_driver_set_sr_enable(
 	prCmdSrCap = (struct _SR_CMD_SR_CAP_T *)
 		kalMemAlloc(sizeof(struct _SR_CMD_SR_CAP_T),
 			    VIR_MEM_TYPE);
+
+	if (!prCmdSrCap) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -15194,6 +15199,11 @@ int priv_driver_get_sr_cap(
 		kalMemAlloc(sizeof(struct _SR_CMD_SR_CAP_T),
 			    VIR_MEM_TYPE);
 
+	if (!prCmdSrCap) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
@@ -15246,6 +15256,11 @@ int priv_driver_get_sr_ind(
 	prCmdSrInd = (struct _SR_CMD_SR_IND_T *)
 		kalMemAlloc(sizeof(struct _SR_CMD_SR_IND_T),
 			    VIR_MEM_TYPE);
+
+	if (!prCmdSrInd) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
