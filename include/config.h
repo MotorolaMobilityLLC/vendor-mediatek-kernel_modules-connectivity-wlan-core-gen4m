@@ -1687,6 +1687,14 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flags of enabling setting VTA in accordance with fixed rate.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_WIFI_TX_FIXED_RATE_NO_VTA
+#define CFG_WIFI_TX_FIXED_RATE_NO_VTA 0
+#endif
+
+/*------------------------------------------------------------------------------
  * Flags of enabling check if TX ethernet-II frame has empty payload. If yes,
  * then driver drops it.
  *------------------------------------------------------------------------------
