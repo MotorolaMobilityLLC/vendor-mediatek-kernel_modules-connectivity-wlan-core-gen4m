@@ -1091,6 +1091,9 @@ void connac3x_show_wfdma_info_by_type(
 
 void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter);
 void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+uint32_t connac3x_get_ple_int(struct ADAPTER *prAdapter);
+void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask);
 void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void connac3x_show_pse_info(struct ADAPTER *prAdapter);
 void connac3x_DumpWfsyscpupcr(struct ADAPTER *prAdapter);

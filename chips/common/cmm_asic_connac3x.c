@@ -772,7 +772,6 @@ void asicConnac3xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
-	prAdapter->fgIsIntEnable = TRUE;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	enable_irq(prHifInfo->u4IrqId);
@@ -804,8 +803,6 @@ void asicConnac3xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		disable_irq_nosync(prHifInfo->u4IrqId_1);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
-	prAdapter->fgIsIntEnable = FALSE;
 }
 
 #if defined(_HIF_AXI)
@@ -839,10 +836,7 @@ void asicConnac3xDisableExtInterrupt(
 		CONNAC3X_WPDMA_EXT_INT_MASK(CONNAC3X_HOST_EXT_CONN_HIF_WRAP),
 		&IntMask.word);
 
-	prAdapter->fgIsIntEnable = FALSE;
-
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
-
 }
 
 void asicConnac3xLowPowerOwnRead(

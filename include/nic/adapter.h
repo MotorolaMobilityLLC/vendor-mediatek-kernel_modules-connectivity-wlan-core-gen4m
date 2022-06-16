@@ -1580,7 +1580,7 @@ struct ADAPTER {
 
 	enum ENUM_ACPI_STATE rAcpiState;
 
-	u_int8_t fgIsIntEnable;
+	uint32_t fgIsIntEnable;
 	u_int8_t fgIsIntEnableWithLPOwnSet;
 
 	u_int8_t fgIsFwOwn;

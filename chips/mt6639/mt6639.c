@@ -406,7 +406,8 @@ struct BUS_INFO mt6639_bus_info = {
 		.prMsiLayout = mt6639_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
 	},
-#endif
+	.showDebugInfo = halPcieShowDebugInfo,
+#endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac3xWfdmaTxRingExtCtrl,
@@ -498,6 +499,8 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
+	.getFwDebug = connac3x_get_ple_int,
+	.setFwDebug = connac3x_set_ple_int,
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,

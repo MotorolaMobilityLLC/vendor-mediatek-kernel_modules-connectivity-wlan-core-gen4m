@@ -1453,6 +1453,8 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 #endif
 
 	glUdmaRxAggEnable(prGlueInfo, TRUE);
+
+	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
 } /* end of halEnableInterrupt() */
 
 /*----------------------------------------------------------------------------*/
@@ -1483,7 +1485,8 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 
 	if (!wlanIsChipNoAck(prAdapter))
 		glUdmaRxAggEnable(prGlueInfo, FALSE);
-	prAdapter->fgIsIntEnable = FALSE;
+
+	GLUE_SET_REF_CNT(0, prAdapter->fgIsIntEnable);
 }
 
 /*----------------------------------------------------------------------------*/
