@@ -1264,7 +1264,7 @@ int mt6639_get_rx_rate_info(IN const uint32_t *prRxV,
 	}
 
 	rate = RXV_GET_RX_RATE(prRxV[0]);
-	nsts = RXV_GET_RX_NSTS(prRxV[2]);
+	nsts = RXV_GET_RX_NSTS(prRxV[0]);
 	rxmode = RXV_GET_TXMODE(prRxV[2]);
 	frmode = RXV_GET_FR_MODE(prRxV[2]);
 	sgi = RXV_GET_GI(prRxV[2]);
@@ -1276,7 +1276,7 @@ int mt6639_get_rx_rate_info(IN const uint32_t *prRxV,
 	else
 		nss = stbc ? (nsts >> 1) : nsts;
 
-	if (frmode >= 4) {
+	if (frmode > 5) { /* 320M */
 		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
 		return -1;
 	}
