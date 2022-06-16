@@ -1474,6 +1474,71 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This interface aim to update the connect params.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer Pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_DATA
+ * \retval WLAN_STATUS_ADAPTER_NOT_READY
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidUpdateConnect(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen)
+{
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex = 0;
+	struct PARAM_CONNECT *pParamConn;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	pParamConn = (struct PARAM_CONNECT *) pvSetBuffer;
+
+	switch (prConnSettings->eAuthMode) {
+	case AUTH_MODE_WPA3_OWE:
+		/*Should update Diffie-Hallmen params*/
+		if (prConnSettings->assocIeLen > 0) {
+			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+				prConnSettings->assocIeLen);
+			prConnSettings->assocIeLen = 0;
+		}
+
+		if (pParamConn->u4IesLen > 0) {
+			prConnSettings->assocIeLen = pParamConn->u4IesLen;
+			prConnSettings->pucAssocIEs =
+				kalMemAlloc(prConnSettings->assocIeLen,
+					    VIR_MEM_TYPE);
+			/* skip memory leak checking */
+			kmemleak_ignore(prConnSettings->pucAssocIEs);
+
+			if (prConnSettings->pucAssocIEs) {
+				kalMemCopy(prConnSettings->pucAssocIEs,
+					    pParamConn->pucIEs,
+					    prConnSettings->assocIeLen);
+			} else {
+				DBGLOG(INIT, INFO,
+					"allocate mem for prConnSettings->pucAssocIEs failed\n");
+					prConnSettings->assocIeLen = 0;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to query the currently associated SSID.
  *
  * \param[in] prAdapter Pointer to the Adapter structure.

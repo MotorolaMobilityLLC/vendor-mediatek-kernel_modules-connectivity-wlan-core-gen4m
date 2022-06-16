@@ -7124,6 +7124,40 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 	return mtk_cfg80211_connect(wiphy, ndev, sme);
 }
 
+int mtk_cfg_update_connect_params(struct wiphy *wiphy,
+		  struct net_device *ndev,
+		  struct cfg80211_connect_params *sme,
+		  u32 changed){
+	uint8_t ucBssIndex = 0;
+	uint32_t u4BufLen;
+	uint32_t rStatus;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_CONNECT rNewSsid;
+
+	if (!(changed & UPDATE_ASSOC_IES))
+		return 0;
+
+	if (!(sme->ie && sme->ie_len))
+		return 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	ucBssIndex = wlanGetBssIdx(ndev);
+
+	DBGLOG(REQ, INFO, "[wlan%d] update connect %p %zu %d\n",
+		ucBssIndex, sme->ie, sme->ie_len, changed);
+	rNewSsid.pucIEs = (uint8_t *)sme->ie;
+	rNewSsid.u4IesLen = sme->ie_len;
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUpdateConnect,
+		   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
+		   FALSE, FALSE, TRUE, &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN, "update SSID:%x\n", rStatus);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+
 int mtk_cfg_disconnect(struct wiphy *wiphy,
 		       struct net_device *ndev,
 		       u16 reason_code)
