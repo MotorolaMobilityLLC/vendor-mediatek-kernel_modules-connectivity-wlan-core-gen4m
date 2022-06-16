@@ -321,7 +321,7 @@ int IcsInit(void)
 	gIcsDev->driver_class = class_create(THIS_MODULE,
 		FW_LOG_ICS_DRIVER_NAME);
 
-	if (IS_ERR(gIcsDev->driver_class)) {
+	if (KAL_IS_ERR(gIcsDev->driver_class)) {
 		result = -ENOMEM;
 		DBGLOG(ICS, ERROR, "class_create failed %d.\n",
 			result);

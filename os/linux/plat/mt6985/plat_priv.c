@@ -453,7 +453,8 @@ static int32_t mt6985_wlan_pinctrl_init(void)
 	}
 
 	pinctrl_ptr = devm_pinctrl_get(&pdev->dev);
-	if (IS_ERR(pinctrl_ptr)) {
+
+	if (KAL_IS_ERR(pinctrl_ptr)) {
 		ret = PTR_ERR(pinctrl_ptr);
 		DBGLOG(INIT, ERROR,
 			"devm_pinctrl_get failed, ret=%d.\n",
@@ -470,7 +471,7 @@ static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
 	uint8_t *name;
 	int32_t ret = 0;
 
-	if (IS_ERR(pinctrl_ptr))
+	if (KAL_IS_ERR(pinctrl_ptr))
 		goto exit;
 
 	switch (msg) {
@@ -485,7 +486,8 @@ static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
 	}
 
 	pinctrl = pinctrl_lookup_state(pinctrl_ptr, name);
-	if (IS_ERR(pinctrl)) {
+
+	if (KAL_IS_ERR(pinctrl)) {
 		ret = PTR_ERR(pinctrl);
 		DBGLOG(INIT, ERROR,
 			"pinctrl_lookup_state %s, ret=%d.\n",

@@ -64,8 +64,6 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
-#include <linux/version.h>
-
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -327,14 +325,6 @@
 #endif
 
 #define TEST_CODE_FOR_MDNS			0
-#endif
-
-#if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
-#define CFG_SUPPORT_DATA_STALL			1
-#define CFG_SUPPORT_BIGDATA_PIP			1
-#else
-#define CFG_SUPPORT_DATA_STALL			0
-#define CFG_SUPPORT_BIGDATA_PIP			0
 #endif
 
 #define CFG_SUPPORT_HE_ER               1
@@ -1594,16 +1584,6 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM  0
-
-/*------------------------------------------------------------------------------
- * Flags of WPA3 support
- *------------------------------------------------------------------------------
- */
-#if KERNEL_VERSION(4, 17, 0) <= LINUX_VERSION_CODE
-#define CFG_SUPPORT_WPA3	1
-#else
-#define CFG_SUPPORT_WPA3	0
-#endif
 
 /*------------------------------------------------------------------------------
  * Driver supports preferred frequency list for p2p operating channel

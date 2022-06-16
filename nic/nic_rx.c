@@ -1976,7 +1976,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsChipNoAck) {
 		DBGLOG_LIMITED(RX, WARN,
 		       "Got response from chip, clear NoAck flag!\n");
-		WARN_ON(TRUE);
+		KAL_WARN_ON(TRUE);
 	}
 	prAdapter->ucOidTimeoutCount = 0;
 	prAdapter->fgIsChipNoAck = FALSE;

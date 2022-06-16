@@ -185,7 +185,8 @@ int kalCreateRxPagePool(struct device *dev)
 	pp.dma_dir = DMA_FROM_DEVICE;
 
 	g_prPagePool = page_pool_create(&pp);
-	if (IS_ERR(g_prPagePool)) {
+
+	if (KAL_IS_ERR(g_prPagePool)) {
 		int err = PTR_ERR(g_prPagePool);
 
 		DBGLOG(HAL, ERROR, "create page pool fail\n");
