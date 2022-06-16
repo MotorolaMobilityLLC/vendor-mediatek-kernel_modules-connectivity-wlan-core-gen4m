@@ -1759,6 +1759,47 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 {
 }
 
+u_int8_t halRxInsertRecvRfbList(
+	struct ADAPTER *prAdapter,
+	struct QUE *prReceivedRfbList,
+	struct SW_RFB *prSwRfb)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct RX_CTRL *prRxCtrl;
+	u_int8_t fgRet = TRUE;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	if (HAL_IS_RX_DIRECT(prAdapter) &&
+	    prSwRfb->ucPacketType == RX_PKT_TYPE_RX_DATA) {
+#if CFG_SUPPORT_RX_NAPI
+		/* If RxDirectNapi and RxFfifo available, run NAPI mode
+		 * Otherwise, goto default RX-direct policy
+		 */
+		if (prGlueInfo->prRxDirectNapi) {
+			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
+				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
+			} else {
+				/* should not enter here */
+				RX_INC_CNT(prRxCtrl,
+					   RX_NAPI_FIFO_ABN_FULL_COUNT);
+				nicRxProcessPacketType(prAdapter, prSwRfb);
+				fgRet = FALSE;
+			}
+		} else
+#endif /* CFG_SUPPORT_RX_NAPI */
+		{
+			/* Rx Direct without NAPI */
+			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT);
+			nicRxProcessPacketType(prAdapter, prSwRfb);
+		}
+	} else
+		QUEUE_INSERT_TAIL(prReceivedRfbList, &prSwRfb->rQueEntry);
+
+	return fgRet;
+}
+
 void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	uint8_t fgRxData)
 {
@@ -1779,7 +1820,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	struct QUE rFreeSwRfbList, rReceivedRfbList;
 	struct HIF_STATS *prHifStats;
 	static int32_t ai4PortLock[RX_RING_MAX];
+	u_int8_t fgRet = TRUE;
+#if CFG_SUPPORT_RX_NAPI
 	bool fgNapiSchedule = false;
+#endif /* CFG_SUPPORT_RX_NAPI */
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1840,15 +1884,6 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	for (u4RfbCnt = 0; u4RfbCnt < u4RxCnt; u4RfbCnt++) {
-#if CFG_SUPPORT_RX_NAPI
-		/* if fifo exhausted, stop deQ and schedule NAPI */
-		if (prGlueInfo->prRxDirectNapi &&
-			KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
-			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
-			fgNapiSchedule = true;
-			break;
-		}
-#endif
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
 			prSwRfb, struct SW_RFB *);
 		if (!prSwRfb) {
@@ -1875,7 +1910,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
 			break;
 		}
-#endif
+#endif /* CFG_SUPPORT_RX_NAPI */
 		QUEUE_REMOVE_HEAD(prFreeSwRfbList, prSwRfb, struct SW_RFB *);
 		if (!prSwRfb)
 			break;
@@ -1933,38 +1968,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 				prAdapter,
 				prRxDescOps->nic_rxd_get_wlan_idx(prRxStatus));
 
-		if (HAL_IS_RX_DIRECT(prAdapter) &&
-			prSwRfb->ucPacketType == RX_PKT_TYPE_RX_DATA) {
+		fgRet = halRxInsertRecvRfbList(
+			prAdapter, prReceivedRfbList, prSwRfb);
+		if (!fgRet)
+			break;
 #if CFG_SUPPORT_RX_NAPI
-			/* If RxDirectNapi and RxFfifo available, run NAPI mode
-			 * Otherwise, goto default RX-direct policy
-			 */
-			if (prGlueInfo->prRxDirectNapi) {
-				if (KAL_FIFO_IN(
-					&prGlueInfo->rRxKfifoQ,
-					prSwRfb)) {
-					RX_INC_CNT(prRxCtrl,
-						RX_NAPI_FIFO_IN_COUNT);
-					fgNapiSchedule = true;
-				} else {
-					/* should not enter here */
-					RX_INC_CNT(prRxCtrl,
-					RX_NAPI_FIFO_ABN_FULL_COUNT);
-					nicRxProcessPacketType(
-						prAdapter, prSwRfb);
-					break;
-				}
-			} else
+		fgNapiSchedule = (fgRet == TRUE);
 #endif /* CFG_SUPPORT_RX_NAPI */
-			{
-				/* Rx Direct without NAPI */
-				RX_INC_CNT(prRxCtrl,
-					RX_NAPI_FIFO_ABNORMAL_COUNT);
-				nicRxProcessPacketType(prAdapter, prSwRfb);
-			}
-		} else
-			QUEUE_INSERT_TAIL(prReceivedRfbList,
-				&prSwRfb->rQueEntry);
 
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
@@ -1999,10 +2009,12 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 end:
 	GLUE_DEC_REF_CNT(ai4PortLock[u4Port]);
 
+#if CFG_SUPPORT_RX_NAPI
 	if (fgNapiSchedule) {
 		RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
 		kal_napi_schedule(prGlueInfo->prRxDirectNapi);
 	}
+#endif /* CFG_SUPPORT_RX_NAPI */
 }
 
 static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)

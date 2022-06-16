@@ -1530,7 +1530,7 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)hif_mem.o \
              $(HIF_DIR)pcie.o
 ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
-HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mawd.o
+HIF_OBJS +=  $(HIF_COMMON_DIR)hal_offload.o
 endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \

@@ -7014,9 +7014,6 @@ static int wlanFunOn(void)
 			       "conninfra pwr on failed, ret=%d\n", ret);
 			goto connv3_pwr_off;
 		}
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		halMawdPwrOn();
-#endif
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 #endif
@@ -7050,9 +7047,6 @@ bus_fun_off:
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 mawd_fun_off:
 	if (kalIsSupportMawd()) {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		halMawdPwrOff();
-#endif
 		conninfra_pwr_off(CONNDRV_TYPE_MAWD);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -7077,9 +7071,6 @@ static int wlanFunOff(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (kalIsSupportMawd()) {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		halMawdPwrOff();
-#endif
 		conninfra_pwr_off(CONNDRV_TYPE_MAWD);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

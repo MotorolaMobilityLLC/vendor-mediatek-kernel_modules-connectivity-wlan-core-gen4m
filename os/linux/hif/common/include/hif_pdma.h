@@ -283,13 +283,14 @@
 #define MAWD_POWER_UP_RETRY_CNT  100
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
+#define MAWD_CR_BACKUP_VALID     88
 #define MAWD_CR_BACKUP_OFFSET    89
 #define RRO_PREALLOC_RX_BUF_NUM  (RX_RING_SIZE * 3)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define RRO_MAX_STA_NUM          8
 #else
-#define RRO_MAX_STA_NUM          128
+#define RRO_MAX_STA_NUM          16
 #endif
 #define RRO_MAX_TID_NUM          8
 #define RRO_ADDR_ELEM_SIZE       16
@@ -875,6 +876,10 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent);
+u_int8_t halRxInsertRecvRfbList(
+	struct ADAPTER *prAdapter,
+	struct QUE *prReceivedRfbList,
+	struct SW_RFB *prSwRfb);
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 void halWpdmaFreeMsduTasklet(unsigned long data);
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
