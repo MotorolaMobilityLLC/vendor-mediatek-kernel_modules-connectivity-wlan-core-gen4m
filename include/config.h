@@ -1296,7 +1296,7 @@
  * Flags of SCHEDULE SCAN SUPPORT
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_SCAN_NO_AP_RECOVERY    (1)
+#define CFG_SUPPORT_SCAN_NO_AP_RECOVERY    (0)
 #ifndef CFG_SUPPORT_SCHED_SCAN
 #define CFG_SUPPORT_SCHED_SCAN             (1)
 #endif
