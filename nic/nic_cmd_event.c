@@ -5470,7 +5470,7 @@ void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
 		return;
 
 	/* AIS only */
-	if (!ucKeyType && ucKeyId >= 0 && ucKeyId < 4) {
+	if (!ucKeyType && ucKeyId < 4) {
 		/* Only save data broadcast key info.
 		*  ucKeyType == 1 means unicast key
 		*  ucKeyId == 4 or ucKeyId == 5 means it is a PMF key
