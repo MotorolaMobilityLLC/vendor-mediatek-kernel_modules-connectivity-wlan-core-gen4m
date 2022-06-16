@@ -1635,10 +1635,10 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
 			    IN uint32_t u4Register, IN uint32_t u4Value);
 
-u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
-	IN uint32_t u4Register, OUT void *prBuf, IN uint32_t u4Size);
-u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
-	IN uint32_t u4Register, IN void *prBuf, IN uint32_t u4Size);
+u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
+	uint32_t reg, void *buf, uint32_t total_size);
+u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
+	uint32_t reg, void *buf, uint32_t total_size);
 
 u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
 			  IN uint32_t u4Register, OUT uint32_t *pu4Value);

@@ -1179,9 +1179,9 @@ void glGetChipInfo(void **prChipInfo)
 
 	prDriverData = get_platform_driver_data();
 	if (!prDriverData)
-		return;
-
-	*prChipInfo = (void *)prDriverData->chip_info;
+		*prChipInfo = NULL;
+	else
+		*prChipInfo = (void *)prDriverData->chip_info;
 }
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER

@@ -164,6 +164,13 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 		DBGLOG(INIT, ERROR, "Alloc emi mem failed\n");
 		ret = -ENOMEM;
 		goto exit;
+	} else if (emi->size != MCU_EMI_SIZE) {
+		DBGLOG(INIT, ERROR,
+			"Emi size mismatch, expect: 0x%x but 0x%x\n",
+			MCU_EMI_SIZE,
+			emi->size);
+		ret = -ENOMEM;
+		goto exit;
 	}
 #endif
 

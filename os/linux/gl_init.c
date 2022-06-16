@@ -99,9 +99,7 @@
 #if CFG_POWER_OFF_CTRL_SUPPORT
 #include <linux/reboot.h>
 #endif
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 #include "gl_coredump.h"
-#endif
 #include "gl_fw_log.h"
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -5874,11 +5872,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	wlanProbeSuccessForLowLatency(prAdapter);
 #endif
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-	if (prAdapter->chip_info->checkbushang) {
-		fw_log_bug_hang_register(prAdapter->chip_info->checkbushang);
-	}
-#endif
+	coredump_register_bushang_chk_cb(prAdapter->chip_info->checkbushang);
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 	for (i = 0; i < KAL_AIS_NUM; i++) {
@@ -6805,6 +6799,8 @@ static void wlanRemove(void)
 #if CFG_SUPPORT_THERMAL_QUERY
 	unregister_thermal_cbs(prAdapter);
 #endif
+
+	coredump_register_bushang_chk_cb(NULL);
 
 	/* to avoid that wpa_supplicant/hostapd triogger new cfg80211 command */
 	prGlueInfo->u4ReadyFlag = 0;

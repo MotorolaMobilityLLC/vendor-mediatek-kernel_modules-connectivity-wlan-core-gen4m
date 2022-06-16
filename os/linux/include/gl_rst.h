@@ -246,12 +246,14 @@ extern int32_t get_wifi_powered_status(void);
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#define RST_SOURCE_WIFI_DRIVER		0xFD
+#define RST_SOURCE_WIFI_FW		0xFE
+#define RST_SOURCE_WIFI_NONE		0xFF
+
 #if CFG_CHIP_RESET_SUPPORT
 extern u_int8_t fgIsResetting;
 extern u_int8_t fgIsRstPreventFwOwn;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-extern enum ENUM_WF_RST_SOURCE g_eWfRstSource;
-#endif
+extern uint8_t g_ucWfRstSource;
 
 #if CFG_CHIP_RESET_HANG
 extern u_int8_t fgIsResetHangState;
