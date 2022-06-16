@@ -1328,6 +1328,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 				rStatus);
 
 		prP2pGlueDevInfo->prScanRequest = request;
+		prP2pGlueDevInfo->fgScanSpecificSSID =
+			request->n_ssids == 1 ? TRUE : FALSE;
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,

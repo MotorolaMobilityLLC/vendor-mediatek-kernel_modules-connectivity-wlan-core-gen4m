@@ -161,8 +161,8 @@ int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Idx, uint32_t *pu4IfIndex);
 #endif
 
-void *kalGetP2pDevScanReq(
-			struct GLUE_INFO *prGlueInfo);
+void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo);
+uint8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalP2PUpdateAssocInfo(_prGlueInfo, _pucFrameBody, _u4FrameBodyLen, \
