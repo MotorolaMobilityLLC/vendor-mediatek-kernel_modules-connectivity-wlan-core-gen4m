@@ -1094,6 +1094,7 @@ static const struct wiphy_vendor_command
 		.maxattr = WIFI_ATTRIBUTE_MAX
 #endif
 	},
+#if CFG_SUPPORT_RTT
 	/* RTT */
 	{
 		{
@@ -1101,13 +1102,41 @@ static const struct wiphy_vendor_command
 			.subcmd = RTT_SUBCMD_GETCAPABILITY
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
-		WIPHY_VENDOR_CMD_NEED_NETDEV,
+			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_get_rtt_capabilities
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = RTT_SUBCMD_SET_CONFIG
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			 WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_rtt_config
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = nla_set_rtt_config_policy,
+		.maxattr = RTT_ATTRIBUTE_MAX
+#endif
+	},
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = RTT_SUBCMD_CANCEL_CONFIG
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			 WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_cancel_rtt_config
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+	},
+#endif /* CFG_SUPPORT_RTT */
 	/* Link Layer Statistics */
 	{
 		{
@@ -1473,10 +1502,12 @@ static const struct nl80211_vendor_cmd_info
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_FULL_SCAN_RESULTS
 	},
+#if CFG_SUPPORT_RTT
 	{
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = RTT_EVENT_COMPLETE
 	},
+#endif
 	{
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_COMPLETE_SCAN

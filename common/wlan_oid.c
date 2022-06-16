@@ -18548,3 +18548,88 @@ wlanoidQueryThermalTemperature(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 #endif
 }
+
+uint32_t wlanoidGetRttCapabilities(IN struct ADAPTER *prAdapter,
+	IN void *pvQueryBuffer,
+	IN uint32_t u4QueryBufferLen,
+	OUT uint32_t *pu4QueryInfoLen)
+{
+#if CFG_RTT_TEST_MODE
+	struct RTT_CAPABILITIES *capa =
+		 (struct RTT_CAPABILITIES *) pvQueryBuffer;
+#endif
+
+	ASSERT(prAdapter);
+	if (u4QueryBufferLen)
+		ASSERT(pvQueryBuffer);
+	ASSERT(pu4QueryInfoLen);
+
+	*pu4QueryInfoLen = sizeof(struct RTT_CAPABILITIES);
+
+	DBGLOG(RTT, INFO, "pu4QueryInfoLen %d", *pu4QueryInfoLen);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(RTT, WARN, "Adapter is not ready. ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4QueryBufferLen < sizeof(struct RTT_CAPABILITIES)) {
+		DBGLOG(RTT, WARN, "Too short length %u\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+#if CFG_RTT_TEST_MODE
+	capa->fgRttOneSidedSupported = 0;
+	capa->fgRttFtmSupported = 1;
+	capa->fgLciSupported = 0;
+	capa->fgLcrSupported = 0;
+	capa->ucPreambleSupport = 0x07;
+	capa->ucBwSupport = 0x1c;
+	capa->fgResponderSupported = 0;
+	capa->fgMcVersion = 43;
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_RTT_GET_CAPABILITIES,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventRttCapabilities,
+				   nicOidCmdTimeoutCommon,
+				   0, NULL, pvQueryBuffer, u4QueryBufferLen);
+#endif
+
+}
+
+uint32_t wlanoidHandleRttRequest(IN struct ADAPTER *prAdapter,
+	IN void *pvSetBuffer,
+	IN uint32_t u4SetBufferLen,
+	OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_RTT_REQUEST *prRttRequest =
+		(struct PARAM_RTT_REQUEST *) pvSetBuffer;
+	uint8_t ucBssIndex = 0;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+
+	ASSERT(prAdapter);
+	if (u4SetBufferLen)
+		ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_RTT_REQUEST);
+
+	DBGLOG(RTT, INFO, "u4SetBufferLen %d", u4SetBufferLen);
+
+	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
+		DBGLOG(RTT, WARN, "Adapter is not ready. ACPI=D%d, Radio=%d\n",
+		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	} else if (u4SetBufferLen != sizeof(struct PARAM_RTT_REQUEST)) {
+		DBGLOG(RTT, WARN, "Too short length %u\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	return rttHandleRttRequest(prAdapter, prRttRequest, ucBssIndex);
+}
+

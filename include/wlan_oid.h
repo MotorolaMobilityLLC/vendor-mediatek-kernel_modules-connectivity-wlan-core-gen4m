@@ -5486,4 +5486,13 @@ wlanoidQueryThermalTemperature(struct ADAPTER *prAdapter,
 	uint32_t u4QueryBufferLen,
 	uint32_t *pu4QueryInfoLen);
 
+uint32_t wlanoidGetRttCapabilities(IN struct ADAPTER *prAdapter,
+			 IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen);
+
+
+uint32_t wlanoidHandleRttRequest(IN struct ADAPTER *prAdapter,
+			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			 OUT uint32_t *pu4SetInfoLen);
+
 #endif /* _WLAN_OID_H */

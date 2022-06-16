@@ -5693,6 +5693,82 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 	}
 	return rStatus;
 }
+int testmode_rtt_test(IN struct wiphy *wiphy, IN char *pcCommand,
+				IN int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint8_t aucTestMacAddr[] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct RTT_CAPABILITIES rRttCapabilities;
+	struct PARAM_RTT_REQUEST request;
+	uint32_t rStatus;
+	uint32_t u4BufLen;
+	int32_t i4BytesWritten = -1;
+	uint8_t ucType = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
+		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucType);
+		if (i4BytesWritten)
+			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
+					i4BytesWritten);
+
+		/* test CMD_ID_RTT_GET_CAPABILITIES */
+		if (ucType == 0) {
+			kalMemZero(&rRttCapabilities, sizeof(rRttCapabilities));
+			rStatus = kalIoctl(prGlueInfo,
+					   wlanoidGetRttCapabilities,
+					   &rRttCapabilities,
+					   sizeof(struct RTT_CAPABILITIES),
+					   &u4BufLen);
+		}
+
+		/* test CMD_ID_RTT_RANGE_REQUEST */
+		if (ucType == 1) {
+			kalMemZero(&request, sizeof(request));
+			request.fgEnable = true;
+			request.ucConfigNum = 1;
+			wlanHwAddrToBin(apcArgv[1], aucTestMacAddr);
+			COPY_MAC_ADDR(request.arRttConfigs[0].aucAddr,
+					aucTestMacAddr);
+			request.arRttConfigs[0].eType = RTT_TYPE_2_SIDED;
+			request.arRttConfigs[0].ePeer = RTT_PEER_AP;
+			request.arRttConfigs[0].rChannel.width =
+				WIFI_CHAN_WIDTH_80;
+			request.arRttConfigs[0].rChannel.center_freq =
+				5180; /* ch36 */
+			request.arRttConfigs[0].rChannel.center_freq0 =
+				5210; /* ch42 */
+			request.arRttConfigs[0].rChannel.center_freq1 = 0;
+			request.arRttConfigs[0].ucBurstPeriod = 0;
+			request.arRttConfigs[0].ucNumBurst = 0;
+			request.arRttConfigs[0].ucNumFramesPerBurst = 21;
+			request.arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
+			request.arRttConfigs[0].ucNumRetriesPerFtmr = 0;
+			request.arRttConfigs[0].ucLciRequest = 0;
+			request.arRttConfigs[0].ucLcrRequest = 0;
+			request.arRttConfigs[0].ucBurstDuration = 11;
+			request.arRttConfigs[0].ePreamble =
+				WIFI_RTT_PREAMBLE_VHT;
+			request.arRttConfigs[0].eBw = WIFI_RTT_BW_80;
+			request.arRttConfigs[0].fgASAP = 1;
+			request.arRttConfigs[0].ucMinDeltaIn100US = 40;
+			request.arRttConfigs[0].u8LocalTSFTime = 0;
+			request.arRttConfigs[0].u8PeerTSFTime = 0;
+			rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
+					   &request,
+					   sizeof(struct PARAM_RTT_REQUEST),
+					   &u4BufLen);
+		}
+	}
+	return rStatus;
+}
 
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len)
@@ -5850,6 +5926,9 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	} else if (strnicmp(cmd, CMD_SET_AX_BLACKLIST,
 			    strlen(CMD_SET_AX_BLACKLIST)) == 0) {
 		return testmode_set_ax_blacklist(wiphy, cmd, len);
+	} else if (strnicmp(cmd, "RttGetCap",
+			    strlen("RttGetCap")) == 0) {
+		return testmode_rtt_test(wiphy, cmd, len);
 	} else
 		return -EOPNOTSUPP;
 

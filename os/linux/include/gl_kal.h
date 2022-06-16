@@ -677,6 +677,13 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 }
 #endif
 
+static inline void kalCfg80211VendorEvent(void *pvPacket)
+{
+	struct sk_buff *pkt = (struct sk_buff *)pvPacket;
+
+	return cfg80211_vendor_event(pkt, GFP_KERNEL);
+}
+
 /* Consider on some Android platform, using request_firmware_direct()
  * may cause system failed to load firmware. So we still use
  * request_firmware().
@@ -2336,6 +2343,13 @@ void kalConfigChksumOffload(
 #endif
 
 void kalWlanHardStartXmit(void *pvPacket, void *pvDev);
+
+uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
+		uint32_t attrLen, const void *data);
+
+void *kalProcessRttReportDone(
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t u4DataLen, uint32_t u4Count);
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0

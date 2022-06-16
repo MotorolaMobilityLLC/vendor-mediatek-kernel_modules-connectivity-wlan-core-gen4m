@@ -1513,6 +1513,107 @@ struct THERMAL_DATA {
 	uint32_t u4Temperature;
 };
 
+/* channel operating width */
+enum WIFI_CHANNEL_WIDTH {
+	WIFI_CHAN_WIDTH_20 = 0,
+	WIFI_CHAN_WIDTH_40 = 1,
+	WIFI_CHAN_WIDTH_80 = 2,
+	WIFI_CHAN_WIDTH_160 = 3,
+	WIFI_CHAN_WIDTH_80P80 = 4,
+	WIFI_CHAN_WIDTH_5 = 5,
+	WIFI_CHAN_WIDTH_10 = 6,
+	WIFI_CHAN_WIDTH_INVALID = -1
+};
+
+/* channel information */
+struct WIFI_CHANNEL_INFO {
+	enum WIFI_CHANNEL_WIDTH width;
+	uint32_t center_freq;
+	uint32_t center_freq0;
+	uint32_t center_freq1;
+};
+
+/* wifi rate */
+struct WIFI_RATE {
+	uint32_t preamble: 3;
+	uint32_t nss: 2;
+	uint32_t bw: 3;
+	uint32_t rateMcsIdx: 8;
+	uint32_t reserved: 16;
+	uint32_t bitrate;
+};
+
+
+/* RTT Capabilities */
+struct RTT_CAPABILITIES {
+	/* if 1-sided rtt data collection is supported */
+	uint8_t fgRttOneSidedSupported;
+	/* if ftm rtt data collection is supported */
+	uint8_t fgRttFtmSupported;
+	/* if initiator supports LCI request. Applies to 2-sided RTT */
+	uint8_t fgLciSupported;
+	/* if initiator supports LCR request. Applies to 2-sided RTT */
+	uint8_t fgLcrSupported;
+	/* bit mask indicates what preamble is supported by initiator */
+	uint8_t ucPreambleSupport;
+	/* bit mask indicates what BW is supported by initiator */
+	uint8_t ucBwSupport;
+	/* if 11mc responder mode is supported */
+	uint8_t fgResponderSupported;
+	/* draft 11mc spec version supported by chip. For instance,
+	 * version 4.0 should be 40 and version 4.3 should be 43 etc.
+	 */
+	uint8_t fgMcVersion;
+};
+
+/* RTT configuration */
+struct RTT_CONFIG {
+	uint8_t aucAddr[MAC_ADDR_LEN]; /* peer device mac address */
+	uint8_t eType; /* enum ENUM_RTT_TYPE */
+	uint8_t ePeer; /* enum ENUM_RTT_PEER_TYPE */
+	struct WIFI_CHANNEL_INFO rChannel;
+	uint8_t ucBurstPeriod;
+	uint8_t ucNumBurst;
+	uint8_t ucNumFramesPerBurst;
+	uint8_t ucNumRetriesPerRttFrame;
+	uint8_t ucNumRetriesPerFtmr;
+	uint8_t ucLciRequest;
+	uint8_t ucLcrRequest;
+	uint8_t ucBurstDuration;
+	uint8_t ePreamble; /* enum ENUM_WIFI_RTT_PREAMBLE */
+	uint8_t eBw; /* enum ENUM_WIFI_RTT_BW */
+
+	/* bellow are for internal useages */
+	uint8_t fgASAP;
+	uint8_t ucMinDeltaIn100US;
+	uint64_t u8LocalTSFTime;
+	uint64_t u8PeerTSFTime;
+};
+
+struct RTT_RESULT {
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint32_t u4BurstNum;
+	uint32_t  u4MeasurementNumber;
+	uint32_t  u4SuccessNumber;
+	uint8_t  ucNumPerBurstPeer;
+	uint32_t eStatus; /* enum ENUM_RTT_STATUS */
+	uint8_t  ucRetryAfterDuration;
+	uint32_t eType; /* enum ENUM_RTT_TYPE */
+	int32_t i4Rssi;
+	int32_t i4RssiSpread;
+	struct WIFI_RATE rTxRate;
+	struct WIFI_RATE rRxRate;
+	int64_t i8Rtt;
+	int64_t i8RttSd;
+	int64_t i8RttSpread;
+	int32_t i4DistanceMM;
+	int32_t i4DistanceSdMM;
+	int32_t i4DistanceSpreadMM;
+	int64_t i8Ts;
+	int32_t i4BurstDuration;
+	int32_t i4NegotiatedBustNum;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

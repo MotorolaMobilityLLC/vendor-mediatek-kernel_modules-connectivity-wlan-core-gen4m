@@ -298,6 +298,7 @@
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #include "ais_fsm.h"
+#include "rtt.h"
 
 #include "fw_log_mmio.h"
 

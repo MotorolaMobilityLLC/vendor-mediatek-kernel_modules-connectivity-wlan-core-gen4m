@@ -13361,4 +13361,40 @@ void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
 
 	wlanHardStartXmit(skb, dev);
 }
+uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
+		uint32_t attrLen, const void *data)
+{
+	struct sk_buff *skb = (struct sk_buff *)pvPacket;
+
+	return nla_put(skb, attrType, attrLen, data);
+}
+
+void *
+kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4DataLen, uint32_t u4Count)
+{
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev = prGlueInfo->prDevHandler->ieee80211_ptr;
+	struct sk_buff *skb;
+
+	wiphy = wlanGetWiphy();
+	if (!wiphy) {
+		log_dbg(REQ, ERROR, "wiphy is null\n");
+		return NULL;
+	}
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
+				  sizeof(u32) + u4DataLen,
+				  RTT_EVENT_COMPLETE, GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(RTT, ERROR, "%s allocate skb failed\n", __func__);
+		return NULL;
+	}
+
+	if (unlikely(nla_put_u32(skb, RTT_ATTRIBUTE_RESULT_CNT, u4Count) < 0)) {
+		DBGLOG(RTT, ERROR, "put cnt fail");
+		return NULL;
+	}
+
+	return (void *) skb;
+}
 

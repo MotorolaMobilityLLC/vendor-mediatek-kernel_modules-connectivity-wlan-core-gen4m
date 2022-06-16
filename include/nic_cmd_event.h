@@ -3893,6 +3893,29 @@ enum _ENUM_NAN_SUB_EVENT {
 };
 #endif
 
+struct CMD_RTT_REQUEST {
+	uint8_t ucSeqNum;
+	uint8_t fgEnable;              /* request or cancel */
+	uint8_t ucConfigNum;
+	uint8_t ucPadding;
+	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CANDIDATES];
+};
+
+struct EVENT_RTT_CAPABILITIES {
+	struct RTT_CAPABILITIES rCapabilities;
+};
+
+struct EVENT_RTT_RESULT {
+	struct RTT_RESULT rResult;
+	uint16_t u2IELen;
+	/* Keep it last */
+	uint8_t aucIE[0];
+};
+
+struct EVENT_RTT_DONE {
+	uint8_t ucSeqNum;
+};
+
 #if (CFG_COALESCING_INTERRUPT == 1)
 /* parsing IPv4/IPv6 UDP/TCP header */
 #define CMD_PF_CF_COALESCING_INT_FILTER_MASK_IPV4_TCP BIT(0)
@@ -4448,6 +4471,12 @@ void nicCmdEventLatchTSF(IN struct ADAPTER *prAdapter,
 void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+void nicCmdEventRttCapabilities(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicEventRttDone(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+void nicEventRttResult(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
 
 void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
 			IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
