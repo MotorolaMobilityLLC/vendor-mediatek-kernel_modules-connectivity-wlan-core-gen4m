@@ -2894,7 +2894,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					uint8_t *info = infoList + i * 3;
 					uint8_t ac = (*info) & 0x3;
 
-					if (ac < WIFI_AC_MAX)
+					if (ac < ESP_AC_NUM)
 						WLAN_GET_FIELD_24(info,
 						    &prBssDesc->u4EspInfo[ac]);
 				}
