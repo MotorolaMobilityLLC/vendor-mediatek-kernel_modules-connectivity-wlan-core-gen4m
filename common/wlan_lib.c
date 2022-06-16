@@ -3507,7 +3507,7 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER
 				 *prAdapter, IN uint8_t ucPowerMode)
 {
 	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct CMD_NIC_POWER_CTRL rNicPwrCtrl;
+	struct CMD_NIC_POWER_CTRL rNicPwrCtrl = {0};
 
 	ASSERT(prAdapter);
 
@@ -3936,7 +3936,7 @@ uint32_t wlanUpdateNetworkAddress(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 uint32_t wlanUpdateBasicConfig(IN struct ADAPTER *prAdapter)
 {
-	struct CMD_BASIC_CONFIG rCmdBasicConfig;
+	struct CMD_BASIC_CONFIG rCmdBasicConfig = {0};
 	struct CMD_BASIC_CONFIG *prCmdBasicConfig = &rCmdBasicConfig;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
