@@ -37,12 +37,14 @@ struct fw_log_wifi_interface {
 };
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
+void wifi_fwlog_event_func_register(void (*func)(int, int));
 uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint8_t *buffer,
 	uint32_t size);
 int fw_log_wifi_inf_init(void);
 void fw_log_wifi_inf_deinit(void);
 #else
+static inline void wifi_fwlog_event_func_register(void (*func)(int, int)) {}
 static inline uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint8_t *buffer,
 	uint32_t size) { return size; }
