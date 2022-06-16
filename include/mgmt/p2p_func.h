@@ -455,11 +455,13 @@ void p2pGenerateVendorIE(IN struct ADAPTER *p2pGenerateVendorIE,
 		IN struct MSDU_INFO *prMsduInfo);
 #endif
 
+#if CFG_SUPPORT_WFD
 uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
 
 void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo);
+#endif
 
 uint32_t p2pFuncCalculateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIdx, IN struct STA_RECORD *prStaRec);

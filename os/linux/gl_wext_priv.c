@@ -4126,7 +4126,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_EMI			"GET_EMI"
 #define CMD_QUERY_THERMAL_TEMP		"QUERY_THERMAL_TEMP"
 
+#if CFG_SUPPORT_WFD
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
+#endif
 
 struct cmd_tlv {
 	char prefix;
@@ -11971,6 +11973,8 @@ error:
 }
 
 #endif
+
+#if CFG_SUPPORT_WFD
 int priv_driver_set_miracast(IN struct net_device *prNetDev,
 			     IN char *pcCommand, IN int i4TotalLen)
 {
@@ -12071,6 +12075,7 @@ int priv_driver_set_miracast(IN struct net_device *prNetDev,
 	/* i4Argc */
 	return i4BytesWritten;
 }
+#endif
 
 int parseValueInString(
 	IN char **pcCommand,
@@ -19532,8 +19537,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif
 	{CMD_GET_COUNTRY, priv_driver_get_country},
 	{CMD_GET_CHANNELS, priv_driver_get_channels},
+#if CFG_SUPPORT_WFD
 	{CMD_MIRACAST, priv_driver_set_miracast},
 	{CMD_SETCASTMODE, priv_driver_set_miracast},
+#endif
 	/* Mediatek private command */
 	{CMD_SET_SW_CTRL, priv_driver_set_sw_ctrl},
 #if (CFG_SUPPORT_RA_GEN == 1)

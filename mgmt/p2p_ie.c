@@ -202,7 +202,7 @@ void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 	return;
 
 }				/* p2pGenerate_IEForAssocReq */
-
+#if CFG_SUPPORT_WFD
 uint32_t
 wfdFuncAppendAttriDevInfo(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgIsAssocFrame,
@@ -262,3 +262,5 @@ wfdFuncAppendAttriDevInfo(IN struct ADAPTER *prAdapter,
 }
 
 /* wfdFuncAppendAttriDevInfo */
+#endif
+

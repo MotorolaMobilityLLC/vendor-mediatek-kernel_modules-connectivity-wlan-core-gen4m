@@ -6720,7 +6720,7 @@ p2pFuncComposeBeaconProbeRspTemplate(IN struct ADAPTER *prAdapter,
 	return rWlanStatus;
 
 }				/* p2pFuncComposeBeaconTemplate */
-
+#if CFG_SUPPORT_WFD
 uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucBssIndex,
 		IN struct STA_RECORD *prStaRec)
@@ -6799,6 +6799,7 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 	return;
 #endif
 }				/* wfdFuncGenerateWfdIEForAssocRsp */
+#endif
 
 void
 p2pFuncComposeNoaAttribute(IN struct ADAPTER *prAdapter,

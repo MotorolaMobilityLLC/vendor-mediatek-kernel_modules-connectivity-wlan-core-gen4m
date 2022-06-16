@@ -1173,11 +1173,14 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 
 	/* DBGLOG(RX, INFO, ("fgIsRetained = %d\n", fgIsRetained)); */
 #if CFG_ENABLE_PER_STA_STATISTICS
+#if CFG_SUPPORT_WFD
 	if (prSwRfb->prStaRec
 	    && (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable >
 		0))
 		prSwRfb->prStaRec->u4TotalRxPktsNumber++;
 #endif
+#endif
+
 
 #if CFG_AP_80211KVR_INTERFACE
 	if (prSwRfb->prStaRec) {
