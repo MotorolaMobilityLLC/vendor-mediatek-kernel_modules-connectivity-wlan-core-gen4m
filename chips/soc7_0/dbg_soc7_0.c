@@ -777,16 +777,16 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	uint32_t u4BufferSize = 512, pos = 0;
 	char *buf;
 
-	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
-	if (buf == NULL)
-		return;
-	kalMemZero(buf, u4BufferSize);
-
 	if (!prAdapter)
 		return;
 
 	if (enum_wfdma_type != WFDMA_TYPE_HOST)
 		return;
+
+	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (buf == NULL)
+		return;
+	kalMemZero(buf, u4BufferSize);
 
 	u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
 	u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
