@@ -1521,6 +1521,8 @@ struct mt66xx_chip_info {
 	uint8_t eco_ver;	/* chip version */
 	uint8_t ucPacketFormat;
 
+	uint32_t u4MinTxLen; /* Length after 802.3/Ethernet II header */
+
 	uint16_t u2TxInitCmdPort;
 	uint16_t u2TxFwDlPort;
 	uint16_t u2HifTxdSize;

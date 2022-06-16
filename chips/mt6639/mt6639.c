@@ -677,6 +677,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif /* _HIF_PCIE */
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
+
+	.u4MinTxLen = 2,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {

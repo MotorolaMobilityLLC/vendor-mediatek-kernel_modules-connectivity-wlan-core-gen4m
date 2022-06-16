@@ -443,6 +443,8 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 	.isSupportMddpAOR = false,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
+
+	.u4MinTxLen = 2,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_bellwether = {

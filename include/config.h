@@ -1650,15 +1650,6 @@
 #define CFG_WIFI_SW_CIPHER_MISMATCH 1
 
 /*------------------------------------------------------------------------------
- * Flags of enabling check if TX frame passed payload too short. If yes,
- * then driver drops it.
- *------------------------------------------------------------------------------
- */
-#ifndef CFG_WIFI_TX_DROP_SHORT_PAYLOAD
-#define CFG_WIFI_TX_DROP_SHORT_PAYLOAD 0
-#endif
-
-/*------------------------------------------------------------------------------
  * Flags of enabling setting VTA in accordance with fixed rate.
  *------------------------------------------------------------------------------
  */
