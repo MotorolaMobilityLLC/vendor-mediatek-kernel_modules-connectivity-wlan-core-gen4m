@@ -533,7 +533,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie);
 
 void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 
-void glGetDev(void *ctx, struct device **dev);
+void glGetDev(void *ctx, void **dev);
 
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 

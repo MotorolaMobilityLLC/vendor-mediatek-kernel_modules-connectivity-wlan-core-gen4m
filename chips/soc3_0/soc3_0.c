@@ -854,7 +854,7 @@ void soc3_0_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+	kalGetFwFlavor(&aucFlavor[0]);
 
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			SOC3_0_FILE_NAME_MAX,
@@ -2727,7 +2727,7 @@ void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+	kalGetFwFlavor(&aucFlavor[0]);
 
 	for (ucIdx = 0; apucsoc3_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -2738,14 +2738,12 @@ void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1 */
+		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN, "%s_%u%s_%u",
+				CFG_FW_NAME_MAX_LEN, "%s_%u%s_1.bin",
 				apucsoc3_0FwName[ucIdx],
 				CFG_WIFI_IP_SET,
-				aucFlavor,
-				wlanGetEcoVersion(
-					prGlueInfo->prAdapter));
+				aucFlavor);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -2753,14 +2751,12 @@ void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 
-		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1.bin */
+		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1 */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN, "%s_%u%s_%u.bin",
+				CFG_FW_NAME_MAX_LEN, "%s_%u%s_1",
 				apucsoc3_0FwName[ucIdx],
 				CFG_WIFI_IP_SET,
-				aucFlavor,
-				wlanGetEcoVersion(
-					prGlueInfo->prAdapter));
+				aucFlavor);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -2820,7 +2816,7 @@ soc3_0_kalFirmwareImageMapping(
 
 	*ppvMapFileBuf = NULL;
 	*pu4FileLength = 0;
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+	kalGetFwFlavor(&aucFlavor[0]);
 
 	do {
 		/* <0.0> Get FW name prefix table */

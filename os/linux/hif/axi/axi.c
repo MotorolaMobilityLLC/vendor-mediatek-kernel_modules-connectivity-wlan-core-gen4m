@@ -258,12 +258,7 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 
 struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
-	ASSERT(g_prPlatDev);
-	if (!g_prPlatDev)
-		return NULL;
-
-	return (struct mt66xx_hif_driver_data *) platform_get_drvdata(
-			g_prPlatDev);
+	return (struct mt66xx_hif_driver_data *) mtk_axi_ids[0].driver_data;
 }
 
 static int hifAxiProbe(void)
@@ -1202,7 +1197,7 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
-void glGetDev(void *ctx, struct device **dev)
+void glGetDev(void *ctx, void **dev)
 {
 	*dev = &((struct platform_device *)ctx)->dev;
 }

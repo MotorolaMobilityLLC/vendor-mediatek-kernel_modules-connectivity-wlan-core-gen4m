@@ -62,7 +62,7 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter);
+static uint32_t mt6639GetFlavorVer(void);
 
 static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
@@ -468,6 +468,7 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.configBtImageSection = asicConnac3xConfigBtImageSection,
 #endif
 #endif
+	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -776,7 +777,7 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 				CFG_FW_NAME_MAX_LEN,
 				"WIFI_RAM_CODE_MT%x_%x_%u.bin",
 				MT6639_CHIP_ID,
-				mt6639GetFlavorVer(prGlueInfo->prAdapter),
+				mt6639GetFlavorVer(),
 				MT6639_ROM_VERSION);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
@@ -808,7 +809,7 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_MT%x_PATCH_MCU_%x_%u_hdr.bin",
 			  MT6639_CHIP_ID,
-			  mt6639GetFlavorVer(prGlueInfo->prAdapter),
+			  mt6639GetFlavorVer(),
 			  MT6639_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
@@ -1499,7 +1500,7 @@ exit:
 #endif
 #endif
 
-static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
+static uint32_t mt6639GetFlavorVer(void)
 {
 	if (IS_MOBILE_SEGMENT)
 		return 0x1;
