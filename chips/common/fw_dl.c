@@ -286,11 +286,9 @@ void wlanImageSectionGetPatchInfo(IN struct ADAPTER
 
 	prPatchFormat = (struct PATCH_FORMAT_T *) pvFwImageMapFile;
 
-	*pu4StartOffset = offsetof(struct PATCH_FORMAT_T,
-				   ucPatchImage);
+	*pu4StartOffset = sizeof(*prPatchFormat);
 	*pu4Addr = prChipInfo->patch_addr;
-	*pu4Len = u4FwImageFileLength - offsetof(struct
-			PATCH_FORMAT_T, ucPatchImage);
+	*pu4Len = u4FwImageFileLength - sizeof(*prPatchFormat);
 	*pu4DataMode = wlanGetDataMode(prAdapter, IMG_DL_IDX_PATCH,
 				       0);
 
