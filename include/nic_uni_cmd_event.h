@@ -281,7 +281,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_FAST_PATH		= 0x54,	/* Fast Path */
 	UNI_CMD_ID_NAN			= 0x56,	/* NAN */
 	UNI_CMD_ID_MLO			= 0x59,	/* MLO */
-	UNI_CMD_ID_ACL_POLICY		= 0x5A	/* ACL */
+	UNI_CMD_ID_ACL_POLICY		= 0x5A,	/* ACL */
+	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4005,6 +4006,28 @@ struct UNI_CMD_CSI_SET_FILTER_MODE {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+struct UNI_CMD_SEND_VOLT_INFO {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_SEND_VOLT_INFO_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* cmd body */
+	struct CMD_SEND_VOLT_INFO_T rVolt;
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_CMD_SEND_VOLT_INFO_TAG {
+	UNI_CMD_SEND_VOLT_INFO_TAG_BASIC = 0x0,
+	UNI_CMD_SEND_VOLT_INFO_TAG_NUM
+};
+#endif /* CFG_VOLT_INFO */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -4106,6 +4129,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_MLO	     = 0x59,
 	UNI_EVENT_ID_PP		     = 0x5A,
 	UNI_EVENT_ID_WOW	     = 0x5B,
+	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6165,6 +6189,29 @@ struct UNI_EVENT_CSI_DATA {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+struct UNI_EVENT_GET_VOLT_INFO {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_GET_VOLT_INFO_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint16_t u2Volt;
+	uint8_t  aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_GET_VOLT_INFO_TAG {
+	UNI_EVENT_GET_VOLT_INFO_TAG_BASIC = 0x0,
+	UNI_EVENT_GET_VOLT_INFO_TAG_NUM
+};
+#endif /* CFG_VOLT_INFO */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -6468,6 +6515,10 @@ uint32_t nicUniCmdQueryThermalTemperature(struct ADAPTER *ad,
 	uint32_t u4QueryBufferLen);
 uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CFG_VOLT_INFO == 1)
+uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 
 /*******************************************************************************
  *                   Event
@@ -6611,6 +6662,10 @@ void nicUniEventWow(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventCsiData(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if (CFG_VOLT_INFO == 1)
+void nicUniEventGetVnf(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

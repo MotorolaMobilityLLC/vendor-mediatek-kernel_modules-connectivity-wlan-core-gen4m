@@ -77,7 +77,7 @@
 #include "gl_wext.h"
 #include "gl_cfg80211.h"
 #include "precomp.h"
-#if CFG_SUPPORT_AGPS_ASSIST
+#if ((CFG_SUPPORT_AGPS_ASSIST) || (CFG_VOLT_INFO == 1))
 #include "gl_kal.h"
 #endif
 #if CFG_TC1_FEATURE
@@ -5580,6 +5580,9 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 			prAdapter->fgTxDirectInited = TRUE;
 		}
 	}
+#if (CFG_VOLT_INFO == 1)
+	kalVnfInit(prAdapter);
+#endif
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -5877,6 +5880,10 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+	kalVnfActive(prAdapter);
+#endif
+
 	return 0;
 }
 
@@ -6032,7 +6039,10 @@ int32_t wlanOffAtReset(void)
 		wlanFreeNetDev();
 		return WLAN_STATUS_FAILURE;
 	}
-
+#if (CFG_VOLT_INFO == 1)
+	/* Uninit volt info mechanism */
+	kalVnfUninit();
+#endif
 	kalPerMonDestroy(prGlueInfo);
 
 	/* complete possible pending oid, which may block wlanRemove some time
@@ -6843,6 +6853,11 @@ static void wlanRemove(void)
 	nicSerDeInit(prGlueInfo->prAdapter);
 
 	wlanOffStopWlanThreads(prGlueInfo);
+
+#if (CFG_VOLT_INFO == 1)
+	/* Uninit volt info mechanis */
+	kalVnfUninit();
+#endif
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (prAdapter->fgTxDirectInited) {

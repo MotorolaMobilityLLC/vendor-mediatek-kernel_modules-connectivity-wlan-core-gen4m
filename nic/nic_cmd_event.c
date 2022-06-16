@@ -6759,3 +6759,15 @@ void nicCmdEventListmode(IN struct ADAPTER
 }
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+void nicEventGetVnf(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_GET_VOLT_INFO_T *prEventVnf;
+
+	prEventVnf = (struct EVENT_GET_VOLT_INFO_T *)(prEvent->aucBuffer);
+	DBGLOG(NIC, INFO, "FW current volt[%d], trigger volt info sync",
+				prEventVnf->u2Volt);
+	kalVnfEventHandler(prAdapter);
+}
+#endif /* CFG_VOLT_INFO */

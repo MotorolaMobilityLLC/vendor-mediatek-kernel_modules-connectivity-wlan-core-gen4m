@@ -3955,6 +3955,18 @@ struct EVENT_PF_CF_COALESCING_INT_DONE {
 };
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+struct CMD_SEND_VOLT_INFO_T {
+	uint16_t u2Volt;
+	uint8_t  aucReserved[2];
+};
+
+struct EVENT_GET_VOLT_INFO_T {
+	uint16_t u2Volt;
+	uint8_t  aucReserved[2];
+};
+#endif /* CFG_VOLT_INFO  */
+
 /* Any change to this structure, please sync to struct PARAM_SER_INFO_T, too. */
 struct EXT_EVENT_SER_T {
 /* Represents the current supporting EXT_EVENT_ID_SER version in driver.
@@ -4512,6 +4524,10 @@ void nicCmdEventListmode(IN struct ADAPTER
 				  IN uint8_t *pucEventBuf);
 #endif
 
+#if (CFG_VOLT_INFO == 1)
+void nicEventGetVnf(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_EVENT *prEvent);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
