@@ -8015,6 +8015,7 @@ wlanoidSetIcsSniffer(IN struct ADAPTER *prAdapter,
 
 	prSnifferInfo =
 	(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT *)pvSetBuffer;
+	kalMemZero(&rCmdSniffer, sizeof(struct CMD_ICS_SNIFFER_INFO));
 	rCmdSniffer.ucModule = prSnifferInfo->ucModule;
 	rCmdSniffer.ucAction = prSnifferInfo->ucAction;
 	rCmdSniffer.ucFilter = prSnifferInfo->ucFilter;
