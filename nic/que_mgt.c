@@ -6096,55 +6096,49 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (IS_BSS_ACTIVE(prBssInfo)) {
-			if (prBssInfo->eCurrentOPMode ==
-				OP_MODE_INFRASTRUCTURE &&
-			    prBssInfo->eConnectionState ==
-			    MEDIA_STATE_CONNECTED) {
-				/* P2P client or AIS infra STA */
-				if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID,
-					((struct WLAN_MAC_MGMT_HEADER *)
-					(prSwRfb->pvHeader))->aucBSSID)) {
+		if (!prBssInfo && !IS_BSS_ACTIVE(prBssInfo))
+			continue;
 
-					fgNewParameter =
-						mqmParseEdcaParameters(
-							prAdapter,
-							prSwRfb, pucIE,
-							u2IELength, FALSE);
-#if (CFG_SUPPORT_802_11AX == 1)
-				if (fgEfuseCtrlAxOn == 1) {
-				fgNewMUEdca = mqmParseMUEdcaParams(
+		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
+		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			/* P2P client or AIS infra STA */
+			if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID,
+				((struct WLAN_MAC_MGMT_HEADER *)
+				(prSwRfb->pvHeader))->aucBSSID)) {
+
+				fgNewParameter = mqmParseEdcaParameters(
 						prAdapter, prSwRfb, pucIE,
 						u2IELength, FALSE);
-					}
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-				/*TODO */
-#endif
-
-				}
-			}
-
-			/* Appy new parameters if necessary */
-			if (fgNewParameter) {
-				nicQmUpdateWmmParms(prAdapter,
-					prBssInfo->ucBssIndex);
-				fgNewParameter = FALSE;
-			}
 #if (CFG_SUPPORT_802_11AX == 1)
-			if (fgEfuseCtrlAxOn == 1) {
-				if (fgNewMUEdca) {
-					nicQmUpdateMUEdcaParams(prAdapter,
-						prBssInfo->ucBssIndex);
-					fgNewMUEdca = FALSE;
-				}
-			}
+			if (fgEfuseCtrlAxOn == 1)
+				fgNewMUEdca = mqmParseMUEdcaParams(prAdapter,
+						prSwRfb, pucIE, u2IELength,
+						FALSE);
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
 			/*TODO */
 #endif
+			}
 		}
-	}		/* end of IS_BSS_ACTIVE() */
+
+		/* Appy new parameters if necessary */
+		if (fgNewParameter) {
+			nicQmUpdateWmmParms(prAdapter, prBssInfo->ucBssIndex);
+			fgNewParameter = FALSE;
+		}
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (fgEfuseCtrlAxOn == 1) {
+			if (fgNewMUEdca) {
+				nicQmUpdateMUEdcaParams(prAdapter,
+						prBssInfo->ucBssIndex);
+				fgNewMUEdca = FALSE;
+			}
+		}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		/*TODO */
+#endif
+	}
 }
 
 
