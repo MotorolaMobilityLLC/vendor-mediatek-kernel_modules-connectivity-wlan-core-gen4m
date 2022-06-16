@@ -3987,6 +3987,8 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 #endif
 
 	if (prMsduInfo) {
+		uint8_t ucBssIndex = prMsduInfo->ucBssIndex;
+
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
 			/* After Tx Done, we need to reset prPacket
@@ -4019,11 +4021,8 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
 
-		if (prTxDone->ucStatus == 0 &&
-			prMsduInfo->ucBssIndex < MAX_BSSID_NUM)
-			GET_BOOT_SYSTIME(
-				&prTxCtrl->u4LastTxTime
-				[prMsduInfo->ucBssIndex]);
+		if (prTxDone->ucStatus == 0 && ucBssIndex < MAX_BSSID_NUM)
+			GET_BOOT_SYSTIME(&prTxCtrl->u4LastTxTime[ucBssIndex]);
 	}
 }
 
