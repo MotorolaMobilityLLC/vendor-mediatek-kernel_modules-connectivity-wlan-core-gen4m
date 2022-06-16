@@ -795,8 +795,8 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
 
-	if (test_and_clear_bit(HIF_FLAG_SW_WFDMA_INT_BIT,
-			       &prHifInfo->ulIntFlag)) {
+	if (KAL_TEST_AND_CLEAR_BIT(HIF_FLAG_SW_WFDMA_INT_BIT,
+			       prHifInfo->ulIntFlag)) {
 		if (prSwWfdmaInfo->rOps.processDmaDone)
 			prSwWfdmaInfo->rOps.
 				processDmaDone(prAdapter->prGlueInfo);

@@ -1402,9 +1402,9 @@ NIC_OBJS += $(NIC_DIR)p2p_nic.o
 ifneq ($(os), none)
 OS_OBJS += $(OS_DIR)gl_p2p.o \
            $(OS_DIR)gl_p2p_cfg80211.o \
-           $(OS_DIR)gl_p2p_init.o \
-           $(OS_DIR)gl_p2p_kal.o
+           $(OS_DIR)gl_p2p_init.o
 endif
+OS_OBJS += $(OS_DIR)gl_p2p_kal.o
 
 MGMT_OBJS += $(MGMT_DIR)p2p_dev_fsm.o\
             $(MGMT_DIR)p2p_dev_state.o\

@@ -8724,16 +8724,23 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
-
 	struct GLUE_INFO *prGlueInfo = NULL;
+	void *pvDevHandler = NULL;
 
 	if (!prAdapter ||
-		!prAdapter->prGlueInfo ||
-		!prAdapter->prGlueInfo->prDevHandler) {
+		!prAdapter->prGlueInfo) {
 		DBGLOG(QM, WARN, "Param is invalid\n");
 		return;
 	}
+
 	prGlueInfo = prAdapter->prGlueInfo;
+
+	pvDevHandler = kalGetGlueNetDevHdl(prGlueInfo);
+
+	if (!pvDevHandler) {
+		DBGLOG(QM, WARN, "pvDevHandler NULL\n");
+		return;
+	}
 	prWifiVar = &prAdapter->rWifiVar;
 	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
 	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
@@ -8785,13 +8792,12 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		arpMoniter++;
 		/* Record counts of RX Packets when Tx 1st ARP Req */
 		if (!last_rx_packets) {
-			last_rx_packets = kalGetNetDevRxPacket(
-				(void *)prGlueInfo->prDevHandler);
+			last_rx_packets =
+				kalGetNetDevRxPacket(pvDevHandler);
 			latest_rx_packets = 0;
 		}
 		/* Record counts of RX Packets when TX ARP Req recently */
-		last_rx_packets = kalGetNetDevRxPacket(
-				(void *)prGlueInfo->prDevHandler);
+		last_rx_packets = kalGetNetDevRxPacket(pvDevHandler);
 		if (arpMoniter > uArpMonitorNumber) {
 			if ((latest_rx_packets - last_rx_packets) <=
 				uArpMonitorRxPktNum) {

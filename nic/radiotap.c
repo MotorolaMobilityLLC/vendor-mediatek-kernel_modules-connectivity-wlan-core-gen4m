@@ -604,7 +604,7 @@ void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
 	header = (struct IEEE80211_RADIOTAP_HEADER *)p_base;
 	header->ucItVersion = PKTHDR_RADIOTAP_VERSION;
 	radiotap_len += radiotapInfo.u2VendorLen;
-	header->u2ItLen = cpu_to_le16(radiotap_len);
+	header->u2ItLen = CPU_TO_LE16(radiotap_len);
 	header->u4ItPresent = present;
 
 	for (func_idx = 0; func_idx < func_num; func_idx++)	{

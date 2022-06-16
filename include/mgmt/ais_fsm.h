@@ -378,7 +378,7 @@ struct CONNECTION_SETTINGS {
 
 	/* 11R */
 	struct FT_IES rFtIeForTx;
-	struct cfg80211_ft_event_params rFtEventParam;
+	struct FT_EVENT_PARAMS rFtEventParam;
 
 	/* CR1486, CR1640 */
 	/* for WPS, disable the privacy check for AP selection policy */
@@ -1066,7 +1066,7 @@ struct FT_IES *
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
-struct cfg80211_ft_event_params *
+struct FT_EVENT_PARAMS *
 	aisGetFtEventParam(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);

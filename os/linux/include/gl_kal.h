@@ -917,7 +917,6 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kvfree(pvAddr); \
 }
 #endif
-
 #define kalUdelay(u4USec)                           udelay(u4USec)
 #define kalMdelay(u4MSec)                           mdelay(u4MSec)
 #define kalMsleep(u4MSec)                           msleep(u4MSec)
@@ -1010,7 +1009,6 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kstrtoint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kstrtoul(_data, _base, _res)
-
 char *strtok_r(char *s, const char *delim, char **last);
 #define kalStrtokR(_buf, _tok, _saved) \
 	strtok_r(_buf, _tok, _saved)
@@ -2007,7 +2005,7 @@ uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
-			     uint16_t u2Size, struct sk_buff_head *queue);
+			     uint16_t u2Size);
 #endif
 
 /*******************************************************************************
@@ -2296,6 +2294,17 @@ uint32_t kalGetTxDirectQueueLength(struct GLUE_INFO *prGlueInfo);
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
 void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen);
+void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
+struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
+void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
+void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
+void kalGetFtIeParam(void *pvftie,
+	uint16_t *pu2MDID, uint32_t *pu4IeLength,
+	const uint8_t **pucIe);
+int kal_strtou8(const char *s, unsigned int base, uint8_t *res);
+int kal_strtou16(const char *s, unsigned int base, uint16_t *res);
+int kal_strtou32(const char *s, unsigned int base, uint32_t *res);
+int kal_strtos32(const char *s, unsigned int base, int32_t *res);
 
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 uint32_t kalSendAtfSmcCmd(uint32_t u4Opid, uint32_t u4Arg2,

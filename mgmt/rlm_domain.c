@@ -7558,7 +7558,7 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 	if (pucConfigBuf) {
 		if (kalRequestFirmware("txpowerctrl.cfg", pucConfigBuf,
 		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-		    prAdapter->prGlueInfo->prDev) == 0) {
+			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
 			/* ToDo:: Nothing */
 		}
 

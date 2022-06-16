@@ -157,7 +157,7 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 /*UINT_32 kalP2PGetFreqInKHz(IN P_GLUE_INFO_T prGlueInfo);*/
 
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
-		struct net_device *ndev,
+		void *pvNdev,
 		uint8_t *pucRoleIdx);
 
 uint8_t kalP2PGetRole(IN struct GLUE_INFO *prGlueInfo,
@@ -422,4 +422,16 @@ void kalSetP2pDevMac(
 		struct GLUE_INFO *prGlueInfo,
 		struct BSS_INFO *prP2pBssInfo,
 		uint8_t ucRoleIdx);
+
+void *kalGetP2pNetHdl(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, u_int8_t fgIsRole);
+
+#if CFG_AP_80211KVR_INTERFACE
+int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Idx, uint32_t *pu4IfIndex);
+#endif
+
+void *kalGetP2pDevScanReq(
+			struct GLUE_INFO *prGlueInfo);
+
 #endif /* _GL_P2P_KAL_H */
