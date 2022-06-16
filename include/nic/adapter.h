@@ -778,6 +778,7 @@ struct WIFI_VAR {
 	uint8_t ucMldLinkMax;
 	uint8_t ucApMldAddrByLink;
 	uint8_t ucEnableMlo;
+	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;

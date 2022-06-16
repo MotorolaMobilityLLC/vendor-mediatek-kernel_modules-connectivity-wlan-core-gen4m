@@ -6916,6 +6916,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "ApMldAddrByLink", MLD_LINK_ID_NONE);
 	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMlo", FEATURE_ENABLED);
+	wlanCfgGet(prAdapter, "MloP2pPreferFreq",
+		prWifiVar->aucMloP2pPreferFreq,
+		"2462 5180 5975", 0);
 #endif
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
