@@ -817,6 +817,12 @@ else
     ccflags-y += -DCFG_SUPPORT_THERMAL_QUERY=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_BTM_OFFLOAD), y)
+    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
+else
+    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_POWER_THROTTLING), y)
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=1
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
@@ -952,6 +958,7 @@ endif
 
 ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
     ccflags-y += -DCFG_TC10_FEATURE=1
+    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
 else
     ccflags-y += -DCFG_TC10_FEATURE=0
 endif

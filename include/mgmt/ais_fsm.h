@@ -128,6 +128,12 @@
 #define AIS_INDEX(_adapter, _bss_idx) \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucAisIndex
 
+#define AIS_BTM_DIS_IMMI_TIMEOUT	    10000 /* MSEC */
+#define AIS_BTM_DIS_IMMI_STATE_0	    0
+#define AIS_BTM_DIS_IMMI_STATE_1	    1
+#define AIS_BTM_DIS_IMMI_STATE_2	    2
+#define AIS_BTM_DIS_IMMI_STATE_3	    3
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -886,7 +892,7 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			  uint8_t ucBssIndex);
 void aisResetNeighborApList(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
-void aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
+uint8_t aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif
 void aisSendNeighborRequest(struct ADAPTER *prAdapter,

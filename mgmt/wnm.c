@@ -690,6 +690,7 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 	uint8_t fgNeedResponse = FALSE;
 	uint8_t ucStatus;
+	struct BSS_DESC *prBssDesc;
 
 	prRxFrame = (struct ACTION_BTM_REQ_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
@@ -702,6 +703,7 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	}
 
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+	prBssDesc = scanSearchBssDescByBssid(prAdapter, prRxFrame->aucBSSID);
 
 	DBGLOG(WNM, INFO,
 	       "BTM: Req 0x%x, VInt %d, DiscTimer %d, Token %d\n",
@@ -716,9 +718,12 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	/* if BTM Request is for broadcast, don't send BTM Response */
 	fgNeedResponse = !!(kalMemCmp(prRxFrame->aucDestAddr,
 		"\xff\xff\xff\xff\xff\xff", MAC_ADDR_LEN));
+	COPY_MAC_ADDR(prBtmParam->aucBSSID, prRxFrame->aucBSSID);
 	prBtmParam->ucDialogToken = prRxFrame->ucDialogToken;
 	prBtmParam->ucRequestMode = prRxFrame->ucRequestMode;
-	prBtmParam->u2DisassocTimer = prRxFrame->u2DisassocTimer;
+	prBtmParam->u4ReauthDelay = prBssDesc ?
+		prRxFrame->u2DisassocTimer * prBssDesc->u2BeaconInterval :
+		prRxFrame->u2DisassocTimer * 100;
 	prBtmParam->fgIsMboPresent = FALSE;
 	prBtmParam->fgPendingResponse = fgNeedResponse;
 	pucOptInfo = &prRxFrame->aucOptInfo[0];
@@ -754,6 +759,8 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	}
 #endif
 
+	aisResetNeighborApList(prAdapter, ucBssIndex);
+
 	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
 #if CFG_SUPPORT_802_11K
 		if (prSwRfb->u2PacketLen <= u2TmpLen ||
@@ -782,15 +789,15 @@ void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		}
 	}
 
-	if ((!(ucRequestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT) &&
+	if ((!(ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) &&
 	     (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
 	     !(ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED)) ||
-	    ((ucRequestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT) &&
+	    ((ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) &&
 	     (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
 	     !(ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED))) {
 		DBGLOG(WNM, WARN,
 			"WNM: Invalid Frame mode (d,a,p)=(%d,%d,%d)\n",
-			ucRequestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT,
+			ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT,
 			ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED,
 			ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED);
 		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
