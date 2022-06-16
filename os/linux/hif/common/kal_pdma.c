@@ -508,7 +508,7 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, OUT void *prBuf, IN uint32_t u4Size)
 {
-	struct mt66xx_chip_info *chip_info;
+	struct mt66xx_chip_info *chip_info = NULL;
 	const struct PCIE_CHIP_CR_REMAPPING *remap;
 	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
@@ -520,6 +520,10 @@ u_int8_t kalDevRegReadRange(IN struct GLUE_INFO *prGlueInfo,
 	u_int8_t ret = TRUE;
 
 	glGetChipInfo((void **)&chip_info);
+	if (!chip_info) {
+		DBGLOG(INIT, ERROR, "chip info is NULL\n");
+		return FALSE;
+	}
 	remap = chip_info->bus_info->bus2chip_remap;
 
 	if (!remap) {
@@ -586,7 +590,7 @@ exit:
 u_int8_t kalDevRegWriteRange(IN struct GLUE_INFO *prGlueInfo,
 	IN uint32_t u4Register, IN void *prBuf, IN uint32_t u4Size)
 {
-	struct mt66xx_chip_info *chip_info;
+	struct mt66xx_chip_info *chip_info = NULL;
 	const struct PCIE_CHIP_CR_REMAPPING *remap;
 	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
@@ -788,21 +792,27 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 
 	if (pRxD->SDLen0 > u4Len) {
 		uint8_t *prBuffer = NULL;
+		uint32_t u4dumpSize = 0;
 
 		DBGLOG(HAL, WARN,
 			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
 			pRxD->SDLen0, u4Len);
 		dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
-		prBuffer = kalMemAlloc(pRxD->SDLen0, VIR_MEM_TYPE);
+		if (pRxD->SDLen0 > BITS(0, 13))
+			u4dumpSize = BITS(0, 13);
+		else
+			u4dumpSize = pRxD->SDLen0;
+		prBuffer = kalMemAlloc(u4dumpSize, VIR_MEM_TYPE);
 		if (prBuffer) {
 			if (prMemOps->copyEvent &&
 			    prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
 						prDmaBuf, prBuffer,
-						pRxD->SDLen0)) {
+						sizeof(prBuffer))) {
 				DBGLOG(RX, ERROR, "Dump RX payload\n");
-				DBGLOG_MEM8(RX, ERROR, prBuffer, pRxD->SDLen0);
+				DBGLOG_MEM8(RX, ERROR, prBuffer,
+						sizeof(prBuffer));
 			}
-			kalMemFree(prBuffer, VIR_MEM_TYPE, pRxD->SDLen0);
+			kalMemFree(prBuffer, VIR_MEM_TYPE, sizeof(prBuffer));
 		}
 		goto skip;
 	}
