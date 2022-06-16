@@ -1684,6 +1684,8 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 		case RX_PKT_DESTINATION_HOST:
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 					prRetSwRfb->ucStaRecIdx);
+			if (prStaRec)
+				ucBssIndex = prStaRec->ucBssIndex;
 #if ARP_MONITER_ENABLE
 			if (prStaRec &&
 				IS_STA_IN_AIS(prStaRec)) {
@@ -1710,13 +1712,11 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 			}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
-			ucBssIndex = prStaRec->ucBssIndex;
 			if (prStaRec && ucBssIndex < MAX_BSSID_NUM) {
 				GET_BOOT_SYSTIME(
 					&prRxCtrl->u4LastRxTime[ucBssIndex]);
 			}
-			nicRxProcessPktWithoutReorder(
-				prAdapter, prRetSwRfb);
+			nicRxProcessPktWithoutReorder(prAdapter, prRetSwRfb);
 			break;
 
 		case RX_PKT_DESTINATION_FORWARD:
