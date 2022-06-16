@@ -429,9 +429,6 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	if (!fgDoUnregister)
 		return TRUE;
 
-	if (fgIsRtnlLockAcquired && rtnl_is_locked())
-		fgRollbackRtnlLock = TRUE;
-
 	prNANInfo = prGlueInfo->aprNANDevInfo[ucIdx];
 	if (prNANInfo == NULL)
 		return FALSE;
@@ -456,8 +453,10 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	netif_tx_stop_all_queues(prNANInfo->prDevHandler);
 
-	if (fgRollbackRtnlLock)
+	if (rtnl_is_locked()) {
+		fgRollbackRtnlLock = TRUE;
 		rtnl_unlock();
+	}
 
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 	cfg80211_unregister_netdevice(prNANInfo->prDevHandler);

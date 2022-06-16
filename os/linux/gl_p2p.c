@@ -900,10 +900,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	if (!fgDoRegister)
 		return TRUE;
 
-	if (fgIsRtnlLockAcquired && rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-	}
-
 	for (i = 0; i < prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum; i++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prDevHandler = prGlueInfo->prP2PInfo[i] ?
@@ -932,8 +928,11 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		if (fgRollbackRtnlLock)
+		if (rtnl_is_locked()) {
+			fgRollbackRtnlLock = TRUE;
 			rtnl_unlock();
+		} else
+			fgRollbackRtnlLock = FALSE;
 
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 		i4RetReg = cfg80211_register_netdevice(prDevHandler);
@@ -1000,9 +999,6 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 	if (!fgDoUnregister)
 		return TRUE;
 
-	if (fgIsRtnlLockAcquired && rtnl_is_locked())
-		fgRollbackRtnlLock = TRUE;
-
 	for (ucRoleIdx = 0; ucRoleIdx < KAL_P2P_NUM; ucRoleIdx++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
@@ -1065,8 +1061,11 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		netif_tx_stop_all_queues(prP2PInfo->prDevHandler);
 
-		if (fgRollbackRtnlLock)
+		if (rtnl_is_locked()) {
+			fgRollbackRtnlLock = TRUE;
 			rtnl_unlock();
+		} else
+			fgRollbackRtnlLock = FALSE;
 
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
