@@ -1161,7 +1161,7 @@ uint32_t twtPlannerReset(
 	g_TwtSmartStaCtrl.ucFlowId = 0;
 	g_TwtSmartStaCtrl.u4CurTp = 0;
 	g_TwtSmartStaCtrl.u4LastTp = 0;
-	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 
@@ -1235,7 +1235,7 @@ void twtPlannerTearingdown(
 	g_TwtSmartStaCtrl.ucFlowId = 0;
 	g_TwtSmartStaCtrl.u4CurTp = 0;
 	g_TwtSmartStaCtrl.u4LastTp = 0;
-	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 }
@@ -2614,7 +2614,7 @@ void twtPlannerTeardownDone(
 	g_TwtSmartStaCtrl.ucFlowId = 0;
 	g_TwtSmartStaCtrl.u4CurTp = 0;
 	g_TwtSmartStaCtrl.u4LastTp = 0;
-	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 }
@@ -3603,7 +3603,7 @@ void mltwtPlannerDelAgrtTbl(
 				prStaRecOfAP, FALSE, NULL,
 				NULL /* handle TWT cmd timeout? */);
 
-		prTWTFlow->fgIsMLTWT == FALSE;
+		prTWTFlow->fgIsMLTWT = FALSE;
 	}
 
 	/* Enable SCAN after TWT agrt has been tear down */
