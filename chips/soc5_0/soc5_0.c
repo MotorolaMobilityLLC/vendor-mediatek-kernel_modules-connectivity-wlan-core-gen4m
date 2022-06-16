@@ -450,7 +450,7 @@ struct BUS_INFO soc5_0_bus_info = {
 		.u4CcifChlNum = 3,
 		.u4CpuIdx = 0,
 		.u4DmaIdx = 0,
-		.u4MaxCnt = TX_RING_SIZE,
+		.u4MaxCnt = TX_RING_CMD_SIZE,
 	},
 #endif
 #endif /*_HIF_PCIE || _HIF_AXI */
