@@ -1342,6 +1342,7 @@ enum ENUM_CSI_MODULATION_BW_TYPE_T {
 #endif
 
 /* Structure of RSN Information */
+__KAL_ATTRIB_PACKED_FRONT__
 struct RSN_INFO {
 	uint8_t ucElemId;
 	uint16_t u2Version;
@@ -1362,6 +1363,7 @@ struct RSN_INFO {
 #define MAX_NUM_SUPPORTED_WAPI_CIPHER_SUITES 1
 
 /* Structure of WAPI Information */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WAPI_INFO {
 	uint8_t ucElemId;
 	uint8_t ucLength;

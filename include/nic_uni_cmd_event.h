@@ -284,6 +284,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_ACL_POLICY		= 0x5A	/* ACL */
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DEVINFO {
 	/* fixed field */
 	uint8_t ucOwnMacIdx;
@@ -301,6 +302,7 @@ enum ENUM_UNI_CMD_DEVINFO_TAG {
 };
 
 /* DevInfo information (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DEVINFO_ACTIVE {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
@@ -309,6 +311,7 @@ struct UNI_CMD_DEVINFO_ACTIVE {
 	uint8_t aucOwnMacAddr[6];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
@@ -362,6 +365,7 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE {
 };
 
 /* BssInfo basic information (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BASIC {
 	uint16_t u2Tag;          // Tag = 0x00
 	uint16_t u2Length;
@@ -384,6 +388,7 @@ struct UNI_CMD_BSSINFO_BASIC {
 }__KAL_ATTRIB_PACKED__;
 
 /* BssInfo RA information (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_RA {
 	uint16_t  u2Tag;                 /* Tag = 0x01 */
 	uint16_t  u2Length;
@@ -399,6 +404,7 @@ struct UNI_CMD_BSSINFO_RA {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo RLM information (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_RLM {
 	uint16_t u2Tag;  /* Tag = 0x02 */
 	uint16_t u2Length;
@@ -433,6 +439,7 @@ enum ENUM_PROTECTION_MODE_T {
 };
 
 /* BssInfo protection information (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_PROTECT {
 	uint16_t u2Tag;  /* Tag = 0x03 */
 	uint16_t u2Length;
@@ -440,6 +447,7 @@ struct UNI_CMD_BSSINFO_PROTECT {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo bss color information (Tag4) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BSS_COLOR {
 	uint16_t u2Tag;  /* Tag = 0x4 */
 	uint16_t u2Length;
@@ -449,6 +457,7 @@ struct UNI_CMD_BSSINFO_BSS_COLOR {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo HE information (Tag5) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_HE {
 	uint16_t u2Tag;  /* Tag = 0x05 */
 	uint16_t u2Length;
@@ -460,6 +469,7 @@ struct UNI_CMD_BSSINFO_HE {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo 11v MBSSID information (Tag6) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_11V_MBSSID {
 	uint16_t u2Tag;  /* Tag = 0x06 */
 	uint16_t u2Length;
@@ -468,6 +478,7 @@ struct UNI_CMD_BSSINFO_11V_MBSSID {
 	uint8_t  aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_CONTENT {
 	uint16_t u2Tag;       /* Tag = 0x07 */
 	uint16_t u2Length;
@@ -489,6 +500,7 @@ enum BCN_CONTENT_ACTION {
 
 
 /* BssInfo BCN CSA information (Tag8) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_CSA {
 	uint16_t u2Tag;       /* Tag = 0x08 */
 	uint16_t u2Length;
@@ -497,6 +509,7 @@ struct UNI_CMD_BSSINFO_BCN_CSA {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo BCN BCC information (Tag9) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_BCC {
 	uint16_t u2Tag;       /* Tag = 0x9 */
 	uint16_t u2Length;
@@ -505,6 +518,7 @@ struct UNI_CMD_BSSINFO_BCN_BCC {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo BCN Mbssid-index ie information (Tag10) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_MBSSID {
 	uint16_t u2Tag;       /* Tag = 0xA */
 	uint16_t u2Length;
@@ -513,6 +527,7 @@ struct UNI_CMD_BSSINFO_BCN_MBSSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo RATE information (Tag11) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_RATE {
 	uint16_t u2Tag;  /* Tag = 0x0B */
 	uint16_t u2Length;
@@ -525,6 +540,7 @@ struct UNI_CMD_BSSINFO_RATE {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo WAPI information (Tag12) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_WAPI {
 	uint16_t u2Tag;  /* Tag = 0x0C */
 	uint16_t u2Length;
@@ -533,6 +549,7 @@ struct UNI_CMD_BSSINFO_WAPI {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo SAP information (Tag13) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_SAP {
 	uint16_t u2Tag;  /* Tag = 0x0D */
 	uint16_t u2Length;
@@ -543,6 +560,7 @@ struct UNI_CMD_BSSINFO_SAP {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo P2P information (Tag14) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_P2P {
 	uint16_t u2Tag;  /* Tag = 0x0E */
 	uint16_t u2Length;
@@ -550,6 +568,7 @@ struct UNI_CMD_BSSINFO_P2P {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo QBSS information (Tag15) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_QBSS {
 	uint16_t u2Tag;  /* Tag = 0x0F */
 	uint16_t u2Length;
@@ -558,6 +577,7 @@ struct UNI_CMD_BSSINFO_QBSS {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo Security information (Tag16) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_SEC {
 	uint16_t u2Tag;  /* Tag = 0x10 */
 	uint16_t u2Length;
@@ -583,6 +603,7 @@ struct UNI_CMD_BSSINFO_SEC {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo BCN Prot. information (Tag 0x11) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_BCN_PROT {
 	uint16_t u2Tag; /* Tag = 0x11 */
 	uint16_t u2Length;
@@ -595,6 +616,7 @@ struct UNI_CMD_BSSINFO_BCN_PROT {
 } __KAL_ATTRIB_PACKED__;
 
 /* TxCMD Mode information (Tag 0x12) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_TXCMD {
 	uint16_t u2Tag;  /* Tag = 0x12 */
 	uint16_t u2Length;
@@ -603,6 +625,7 @@ struct UNI_CMD_BSSINFO_TXCMD {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo UAPSD information (Tag 0x13) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_UAPSD {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -612,6 +635,7 @@ struct UNI_CMD_BSSINFO_UAPSD {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo WMM PS test information (Tag 0x14) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_WMM_PS_TEST {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -621,6 +645,7 @@ struct UNI_CMD_BSSINFO_WMM_PS_TEST {
 }__KAL_ATTRIB_PACKED__;
 
 /* BssInfo Power Save information (Tag 0x15) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_POWER_SAVE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -637,6 +662,7 @@ struct UNI_CMD_BSSINFO_POWER_SAVE {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo STA connection information (Tag 0x16) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_STA_PM_ENABLE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -646,6 +672,7 @@ struct UNI_CMD_BSSINFO_STA_PM_ENABLE {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo IFS time information (Tag 0x17) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_IFS_TIME {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -663,6 +690,7 @@ struct UNI_CMD_BSSINFO_IFS_TIME {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo Mobile need information (Tag 0x18) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_IOT {
 	uint16_t u2Tag; /* Tag = 0x18 */
 	uint16_t u2Length;
@@ -671,6 +699,7 @@ struct UNI_CMD_BSSINFO_IOT {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo IFS time information (Tag 0x19) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_OFFLOAD_PKT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -690,6 +719,7 @@ enum ENUM_UNSOLICIT_TX {
 };
 
 /* BssInfo MLD information (Tag 0x1A) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_MLD {
 	uint16_t u2Tag;   /* Tag = 0x1A */
 	uint16_t u2Length;
@@ -723,6 +753,7 @@ struct UNI_CMD_BSSINFO_MLD {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo Max Idle Period element (Tag 0x1D) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -732,6 +763,7 @@ struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo EHT information (Tag 0x1E) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_EHT {
 	uint16_t u2Tag;  /* Tag = 0x1E */
 	uint16_t u2Length;
@@ -746,6 +778,7 @@ struct UNI_CMD_BSSINFO_EHT {
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo STA PM disable (Tag 0x1B) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_STA_PM_DISABLE
 {
     uint16_t u2Tag;
@@ -753,6 +786,7 @@ struct UNI_CMD_BSSINFO_STA_PM_DISABLE
 } __KAL_ATTRIB_PACKED__;
 
 /* Common part of CMD_STAREC */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC {
 	/* Fixed field*/
 	uint8_t ucBssInfoIdx;
@@ -811,6 +845,7 @@ struct UNI_CMD_STAREC_TAG_HANDLE {
 	PFN_UNI_CMD_STAREC_TAG_HANDLER pfHandler;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_BASIC {
 	/* Basic STA record (Group0) */
 	uint16_t u2Tag;		/* Tag = 0x00 */
@@ -829,6 +864,7 @@ struct UNI_CMD_STAREC_BASIC {
 	uint16_t u2ExtraInfo;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_STATE_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -840,6 +876,7 @@ struct UNI_CMD_STAREC_STATE_INFO {
 	uint8_t audPaddings2[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TXBF_PFMU_STA_INFO {
 	uint16_t   u2PfmuId;           /* 0xFFFF means no access right for PFMU */
 	uint8_t   fgSU_MU;            /* 0 : SU, 1 : MU */
@@ -882,12 +919,14 @@ struct UNI_CMD_TXBF_PFMU_STA_INFO {
 	uint8_t    he_ltf;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_BF {
 	uint16_t u2Tag;      /* Tag = 0x04 */
 	uint16_t u2Length;
 	struct UNI_CMD_TXBF_PFMU_STA_INFO  rTxBfPfmuInfo;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_HT_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -895,6 +934,7 @@ struct UNI_CMD_STAREC_HT_INFO {
 	uint16_t u2HtExtendedCap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_VHT_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -905,6 +945,7 @@ struct UNI_CMD_STAREC_VHT_INFO {
 	uint8_t	aucReserve[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_PHY_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -917,6 +958,7 @@ struct UNI_CMD_STAREC_PHY_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 /* Update RA Info */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_RA_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -925,6 +967,7 @@ struct UNI_CMD_STAREC_RA_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 /* Update BA_OFFLOAD Info */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_BA_OFFLOAD_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -937,6 +980,7 @@ struct UNI_CMD_STAREC_BA_OFFLOAD_INFO {
 	uint16_t      u2RxBaSize;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_DEFAULT_KEY {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -945,6 +989,7 @@ struct UNI_CMD_STAREC_DEFAULT_KEY {
 	uint8_t       aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_HE_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -957,6 +1002,7 @@ struct UNI_CMD_STAREC_HE_BASIC {
 } __KAL_ATTRIB_PACKED__;
 
 /* Update HE 6g Info */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_HE_6G_CAP {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -964,6 +1010,7 @@ struct UNI_CMD_STAREC_HE_6G_CAP {
 	uint8_t aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_AMSDU {
 	uint16_t  u2Tag;		/* Tag = 0x05 */
 	uint16_t  u2Length;
@@ -974,6 +1021,7 @@ struct UNI_CMD_STAREC_AMSDU {
 } __KAL_ATTRIB_PACKED__;
 
 /* mld starec setup (Tag 0x20) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_MLD_SETUP {
 	uint16_t  u2Tag;                 /* Tag = 0x20 */
 	uint16_t  u2Length;
@@ -986,6 +1034,7 @@ struct UNI_CMD_STAREC_MLD_SETUP {
 	uint8_t   aucLinkInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_LINK_INFO {
 	uint16_t  u2WlanIdx;
 	uint8_t   ucBssIdx;
@@ -993,6 +1042,7 @@ struct UNI_CMD_STAREC_LINK_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 /* starec MLD level information (Tag 0x21) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_EHT_MLD {
 	uint16_t u2Tag;		/* Tag = 0x21 */
 	uint16_t u2Length;
@@ -1015,6 +1065,7 @@ struct UNI_CMD_STAREC_EHT_MLD {
 } __KAL_ATTRIB_PACKED__;
 
 /* starec link level EHT information (Tag 0x22) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_EHT_BASIC {
 	uint16_t  u2Tag;		/* Tag = 0x22 */
 	uint16_t  u2Length;
@@ -1031,12 +1082,14 @@ struct UNI_CMD_STAREC_EHT_BASIC {
 } __KAL_ATTRIB_PACKED__;
 
 /* MLD STAREC teardown (Tag 0x23) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_MLD_TEARDOWN {
 	uint16_t  u2Tag;                 /* Tag = 0x23 */
 	uint16_t  u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* Update UAPSD Info */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_UAPSD_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -1057,6 +1110,7 @@ struct UNI_CMD_STAREC_FASTALL {
 };
 
 /* Remove STAREC */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_REMOVE_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -1064,6 +1118,7 @@ struct UNI_CMD_STAREC_REMOVE_INFO {
 	uint8_t       aucReserve[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_INSTALL_KEY3 {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
@@ -1083,6 +1138,7 @@ struct UNI_CMD_STAREC_INSTALL_KEY3 {
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EDCA {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
@@ -1099,6 +1155,7 @@ enum ENUM_UNI_CMD_EDCA_TAG {
 };
 
 /* EDCA AC Parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EDCA_AC_PARM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1119,6 +1176,7 @@ struct UNI_CMD_EDCA_AC_PARM {
 	uint8_t aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SUSPEND {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
@@ -1148,6 +1206,7 @@ enum ENUM_UNI_CMD_SUSPEND_TAG {
 };
 
 /* suspend mode setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SUSPEND_MODE_SETTING {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
@@ -1160,6 +1219,7 @@ struct UNI_CMD_SUSPEND_MODE_SETTING {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SUSPEND_WOW_CTRL {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
@@ -1173,6 +1233,7 @@ struct UNI_CMD_SUSPEND_WOW_CTRL {
 	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
@@ -1186,6 +1247,7 @@ struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SUSPEND_WOW_WAKEUP_PORT {
 	uint16_t u2Tag;                   // Tag = 0x03
 	uint16_t u2Length;
@@ -1237,6 +1299,7 @@ struct IPV4_ADDRESS {
 	uint8_t aucIpMask[IPV4_ADDR_LEN];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_OFFLOAD_ARPNS_IPV4 {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
@@ -1253,6 +1316,7 @@ struct IPV6_ADDRESS {
 	uint8_t aucIpAddr[IPV6_ADDR_LEN];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_OFFLOAD_ARPNS_IPV6 {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
@@ -1264,6 +1328,7 @@ struct UNI_CMD_OFFLOAD_ARPNS_IPV6 {
 	struct IPV6_ADDRESS arIpv6NetAddress[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_OFFLOAD_GTK_REKEY {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
@@ -1286,6 +1351,7 @@ struct UNI_CMD_OFFLOAD_GTK_REKEY {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT {
 	uint16_t u2Tag;                   // Tag = 0x03
 	uint16_t u2Length;
@@ -1299,6 +1365,7 @@ struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_HIF_CTRL {
 	/*fixed field*/
 	uint8_t ucHifType;
@@ -1319,6 +1386,7 @@ enum ENUM_UNI_CMD_HIF_CTRL_TAG {
 	UNI_CMD_HIF_CTRL_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_HIF_CTRL_BASIC {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
@@ -1329,6 +1397,7 @@ struct UNI_CMD_HIF_CTRL_BASIC {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG {
 	/*fixed field*/
 	uint8_t ucDbdcIdx;
@@ -1361,6 +1430,7 @@ enum ENUM_UNI_CMD_BAND_CONFIG_TAG {
 	UNI_CMD_BAND_CONFIG_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_RADIO_ONOFF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1368,6 +1438,7 @@ struct UNI_CMD_BAND_CONFIG_RADIO_ONOFF {
 	uint8_t  aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_RXV_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1376,12 +1447,14 @@ struct UNI_CMD_BAND_CONFIG_RXV_CTRL {
 	uint8_t  aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_SET_RX_FILTER {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4RxPacketFilter;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_DROP_CTRL_FRAME {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1391,6 +1464,7 @@ struct UNI_CMD_BAND_CONFIG_DROP_CTRL_FRAME {
 	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_AGG_AC_LIMIT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1400,6 +1474,7 @@ struct UNI_CMD_BAND_CONFIG_AGG_AC_LIMIT {
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCCA OnOff Control (Tag5) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_EDCCA_ENABLE_CTRL {
 	uint16_t u2Tag;    // Tag = 0x05
 	uint16_t u2Length;
@@ -1408,6 +1483,7 @@ struct UNI_CMD_BAND_CONFIG_EDCCA_ENABLE_CTRL {
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCCA Threshold Control (Tag6) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL {
 	uint16_t u2Tag;    // Tag = 0x06
 	uint16_t u2Length;
@@ -1416,6 +1492,7 @@ struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL {
 } __KAL_ATTRIB_PACKED__;
 
 /* MUAR set command (0x0A) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MUAR {
 	/* fixed field */
 	uint8_t ucBand;
@@ -1434,6 +1511,7 @@ enum UNI_CMD_MUAR_TAG {
 };
 
 /* MUAR Config Parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MUAR_CLEAN_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1442,6 +1520,7 @@ struct UNI_CMD_MUAR_CLEAN_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* MC Config Parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MC_FILTER_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1454,6 +1533,7 @@ struct UNI_CMD_MC_FILTER_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* MC Config Parameters (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MUAR_ENTRY_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1466,6 +1546,7 @@ struct UNI_CMD_MUAR_ENTRY_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* WSYS Config set command (0x0B) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_WSYS_CONFIG {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -1496,6 +1577,7 @@ enum ENUM_UNI_CMD_WSYS_CONFIG_TAG {
 };
 
 /* FW Log Basic Setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_FW_LOG_CTRL_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1510,6 +1592,7 @@ struct UNI_CMD_FW_LOG_CTRL_BASIC {
 } __KAL_ATTRIB_PACKED__;
 
 /* FW Log UI Setting (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1519,6 +1602,7 @@ struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL {
 } __KAL_ATTRIB_PACKED__;
 
 /* FW Debug Level Setting (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1529,6 +1613,7 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 } __KAL_ATTRIB_PACKED__;
 
 /* FW Log Buffer Control Setting (Tag5) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1544,6 +1629,7 @@ struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ROAMING {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
@@ -1565,6 +1651,7 @@ enum ENUM_UNI_CMD_ROAMING_TAG {
 };
 
 /* Show roaming (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ROAMING_TRANSIT_FSM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1578,6 +1665,7 @@ struct UNI_CMD_ROAMING_TRANSIT_FSM {
 } __KAL_ATTRIB_PACKED__;
 
 /* register access command (0x0D) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACCESS_REG {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -1599,6 +1687,7 @@ enum ENUM_UNI_CMD_ACCESS_REG_TAG {
 	UNI_CMD_ACCESS_REG_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACCESS_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1606,6 +1695,7 @@ struct UNI_CMD_ACCESS_REG_BASIC {
 	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACCESS_RF_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1616,6 +1706,7 @@ struct UNI_CMD_ACCESS_RF_REG_BASIC {
 } __KAL_ATTRIB_PACKED__;
 
 /* Chip Config set command (0x0E) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -1642,6 +1733,7 @@ enum ENUM_UNI_CMD_CHIP_CONFIG_TAG {
 };
 
 /* SW DBG control Setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL {
 	uint16_t u2Tag; // Tag = 0x00
 	uint16_t u2Length;
@@ -1650,6 +1742,7 @@ struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL {
 }__KAL_ATTRIB_PACKED__;
 
 /* Customer Configuration Setting (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1660,12 +1753,14 @@ struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG {
 }__KAL_ATTRIB_PACKED__;
 
 /* get or set chip configuration (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_CHIP_CFG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t aucbuffer[0];
 }__KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP {
 	uint16_t u2Id;
 	uint8_t ucType;
@@ -1676,11 +1771,13 @@ struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP {
 }__KAL_ATTRIB_PACKED__;
 
 /* Get Connsys Cpability (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_NIC_CAPABILITY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 }__KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_POWER_CTRL {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -1699,6 +1796,7 @@ enum ENUM_UNI_CMD_POWER_CTRL_TAG {
 	UNI_CMD_POWER_CTRL_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_POWER_OFF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1707,6 +1805,7 @@ struct UNI_CMD_POWER_OFF {
 } __KAL_ATTRIB_PACKED__;
 
 /* RRM_11K command (0x11) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RRM_11K {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
@@ -1730,6 +1829,7 @@ enum ENUM_UNI_CMD_RRM_11K_TAG {
 };
 
 /* RRM capability Information (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_RRM_CAPABILITY_PARAM {
 	/* Tag = 0x00 */
 	uint16_t u2Tag;
@@ -1741,6 +1841,7 @@ struct UNI_CMD_SET_RRM_CAPABILITY_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* AP constraint power limit Information (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM {
 	/* Tag = 0x01 */
 	uint16_t u2Tag;
@@ -1753,6 +1854,7 @@ struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Rx header translation command (0x12) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SER {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -1780,12 +1882,14 @@ enum ENUM_UNI_CMD_SER_TAG {
 };
 
 /* Show ser (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SER_QUERY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* Enable/disable ser (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SER_ENABLE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1794,6 +1898,7 @@ struct UNI_CMD_SER_ENABLE {
 } __KAL_ATTRIB_PACKED__;
 
 /* config ser (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SER_SET {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1801,6 +1906,7 @@ struct UNI_CMD_SER_SET {
 } __KAL_ATTRIB_PACKED__;
 
 /* trigger ser recovery (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SER_TRIGGER {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -1809,6 +1915,7 @@ struct UNI_CMD_SER_TRIGGER {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TWT {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
@@ -1827,6 +1934,7 @@ enum ENUM_UNI_CMD_TWT_TAG {
 	UNI_CMD_TWT_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TWT_ARGT_UPDATE {
 	uint16_t    u2Tag;    /* Tag = 0x00 */
 	uint16_t    u2Length;
@@ -1853,6 +1961,7 @@ struct UNI_CMD_TWT_ARGT_UPDATE {
 #endif
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DOMAIN_SET_INFO {
 	/* fixed field */
 	uint32_t u4CountryCode;
@@ -1877,6 +1986,7 @@ enum ENUM_UNI_CMD_DOMAIN_TAG {
 	UNI_CMD_DOMAIN_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
@@ -1886,6 +1996,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND {
 	uint8_t  aucSubBandInfoBuffer[0]; // UNI_CMD_DOMAIN_SUBBAND_INFO
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DOMAIN_SUBBAND_INFO {
 	uint8_t ucRegClass;
 	uint8_t ucBand;
@@ -1896,6 +2007,7 @@ struct UNI_CMD_DOMAIN_SUBBAND_INFO {
 	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
@@ -1907,6 +2019,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST {
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC command (0x17) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_IDC {
 	uint8_t ucReserved[4];
 
@@ -1932,12 +2045,14 @@ enum ENUM_UNI_CMD_IDC_TAG {
 };
 
 /* IDC Setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_GET_IDC_CHN {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC Setting (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ALWAYS_SCAN_PARAM_SETTING {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
@@ -1945,6 +2060,7 @@ struct UNI_CMD_ALWAYS_SCAN_PARAM_SETTING {
 	uint8_t     aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN {
 	/* fixed field */
 	uint8_t ucSeqNum;
@@ -1988,6 +2104,7 @@ enum ENUM_UNI_CMD_SCAN_TAG {
 	UNI_CMD_SCAN_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_REQ {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
@@ -2003,6 +2120,7 @@ struct UNI_CMD_SCAN_REQ {
 	uint32_t u4ScnFuncMaskExtend;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_CANCEL {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
@@ -2011,6 +2129,7 @@ struct UNI_CMD_SCAN_CANCEL {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_SSID {
 	uint16_t u2Tag;                   // Tag = 0x0a
 	uint16_t u2Length;
@@ -2021,6 +2140,7 @@ struct UNI_CMD_SCAN_SSID {
 	uint8_t aucSsidBuffer[0]; // PARAM_SSID_T
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_BSSID {
 	uint16_t u2Tag;                   // Tag = 0x0b
 	uint16_t u2Length;
@@ -2032,6 +2152,7 @@ struct UNI_CMD_SCAN_BSSID {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_CHANNEL_INFO {
 	uint16_t u2Tag;                   // Tag = 0x0c
 	uint16_t u2Length;
@@ -2042,6 +2163,7 @@ struct UNI_CMD_SCAN_CHANNEL_INFO {
 	uint8_t aucChnlInfoBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_IE {
 	uint16_t u2Tag;                   // Tag = 0x0d
 	uint16_t u2Length;
@@ -2051,6 +2173,7 @@ struct UNI_CMD_SCAN_IE {
 	uint8_t  aucIEBuffer[0];  //depends on u2IELen
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_MISC {
 	uint16_t u2Tag;                   // Tag = 0x0e
 	uint16_t u2Length;
@@ -2060,6 +2183,7 @@ struct UNI_CMD_SCAN_MISC {
 	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_SCHED_SCAN_REQ {
 	uint16_t u2Tag;                   // Tag = 0x03
 	uint16_t u2Length;
@@ -2071,6 +2195,7 @@ struct UNI_CMD_SCAN_SCHED_SCAN_REQ {
 	uint16_t au2MspList[10];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE {
 	uint16_t u2Tag;                   // Tag = 0x04
 	uint16_t u2Length;
@@ -2079,6 +2204,7 @@ struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 	uint16_t u2Tag;                   // Tag = 0x15
 	uint16_t u2Length;
@@ -2089,6 +2215,7 @@ struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 } __KAL_ATTRIB_PACKED__;
 
 /* RDD set command (0x19) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RDD {
 	/*fixed field*/
 	uint8_t aucPadding[4];
@@ -2108,6 +2235,7 @@ enum ENUM_UNI_CMD_RDD_TAG {
 };
 
 /* RDD on off command (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RDD_ON_OFF_CTRL_PARM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2119,6 +2247,7 @@ struct UNI_CMD_RDD_ON_OFF_CTRL_PARM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Get mac info command (0x1A) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_GET_MAC_INFO {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2140,6 +2269,7 @@ enum ENUM_UNI_CMD_MAC_INFO_TAG {
 };
 
 /* Get tsf time (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MAC_INFO_TSF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2150,6 +2280,7 @@ struct UNI_CMD_MAC_INFO_TSF {
 } __KAL_ATTRIB_PACKED__;
 
 /* TWT STA req CNM CH usage (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MAC_INFO_TWT_STA_CNM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2160,6 +2291,7 @@ struct UNI_CMD_MAC_INFO_TWT_STA_CNM {
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS command (0x1B) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TDLS {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2180,6 +2312,7 @@ enum ENUM_UNI_CMD_TDLS_TAG {
 };
 
 /* FW Log Basic Setting (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_TDLS_CH_SW {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2188,6 +2321,7 @@ struct UNI_CMD_SET_TDLS_CH_SW {
 } __KAL_ATTRIB_PACKED__;
 
 /* BA offload set command (0x1F) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BA_OFFLOAD {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2210,6 +2344,7 @@ enum UNI_CMD_BA_OFFLOAD_TAG {
 };
 
 /* TX AMPDU (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TX_AMPDU_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2218,6 +2353,7 @@ struct UNI_CMD_TX_AMPDU_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* RX AMPDU (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RX_AMPDU_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2226,6 +2362,7 @@ struct UNI_CMD_RX_AMPDU_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P command (0x20) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_P2P {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2248,6 +2385,7 @@ enum ENUM_UNI_CMD_P2P_TAG {
 };
 
 /* Set NOA parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_NOA_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2259,6 +2397,7 @@ struct UNI_CMD_SET_NOA_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Set OPPPS parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_OPPPS_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2268,6 +2407,7 @@ struct UNI_CMD_SET_OPPPS_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Smart gear command (0x21) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SMART_GEAR {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2287,6 +2427,7 @@ enum ENUM_UNI_CMD_SMART_GEAR_TAG {
 };
 
 /* Set smart gear parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SMART_GEAR_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2299,6 +2440,7 @@ struct UNI_CMD_SMART_GEAR_PARAM {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_GET_STATISTICS {
 	/*fixed field*/
 	uint8_t ucReserved[4];
@@ -2325,21 +2467,25 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE,
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BASIC_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_LINK_QUALITY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BUG_REPORT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STA_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2354,6 +2500,7 @@ struct UNI_CMD_STA_STATISTICS {
 	uint8_t  ucResetCounter;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_LINK_LAYER_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2364,6 +2511,7 @@ struct UNI_CMD_LINK_LAYER_STATS {
 	uint8_t ucArg3;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PKT_DROP {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2383,6 +2531,7 @@ enum ENUM_UNI_CMD_PKT_DROP_TAG {
 	UNI_CMD_PKT_DROP_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PKT_DROP_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2391,6 +2540,7 @@ struct UNI_CMD_PKT_DROP_SETTING {
 	uint8_t aucReserved[24];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SNIFFER_MODE {
 	/* fixed field */
 	uint8_t ucBandIdx;
@@ -2408,6 +2558,7 @@ enum ENUM_UNI_CMD_SNIFFER_MODE_TAG {
 };
 
 /* Set sniffer mode parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SNIFFER_MODE_ENABLE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2416,6 +2567,7 @@ struct UNI_CMD_SNIFFER_MODE_ENABLE {
 } __KAL_ATTRIB_PACKED__;
 
 /* Set sniffer mode parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SNIFFER_MODE_CONFIG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2515,6 +2667,7 @@ struct UNI_CMD_SR_UPDATE_SR_PARMS {
 	uint8_t aucPadding2[32];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WH_SR_IND {
 	/* RMAC */
 	/* DW_1 */
@@ -2537,6 +2690,7 @@ struct WH_SR_IND {
 	uint32_t u4SrAmpduMpduAckedCnt;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WH_SR_CAP {
 	/* RMAC */
 	/* DW_1 */
@@ -2568,6 +2722,7 @@ struct WH_SR_CAP {
 	uint8_t fgAmpduTxCntEn;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SR_IND {
 	/* DW_0 */
 	uint16_t u2Tag;
@@ -2575,6 +2730,7 @@ struct UNI_CMD_SR_IND {
 	struct WH_SR_IND rSrInd;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SR_CAP {
 	/* DW_0 */
 	uint16_t u2Tag;
@@ -2582,6 +2738,7 @@ struct UNI_CMD_SR_CAP {
 	struct WH_SR_CAP rSrCap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CNM {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2625,6 +2782,7 @@ enum ENUM_UNI_CMD_CNM_CH_REQ_BAND {
 	UNI_CMD_CNM_CH_REQ_BAND_AUTO = 0xFF,
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CNM_CH_PRIVILEGE_REQ {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
@@ -2645,6 +2803,7 @@ struct UNI_CMD_CNM_CH_PRIVILEGE_REQ {
 	uint8_t          aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CNM_CH_PRIVILEGE_ABORT {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
@@ -2654,11 +2813,13 @@ struct UNI_CMD_CNM_CH_PRIVILEGE_ABORT {
 	uint8_t          aucReserved[5];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CNM_GET_INFO {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MBMC {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -2673,11 +2834,13 @@ struct UNI_CMD_MBMC {
 	*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 enum ENUM_UNI_CMD_MBMC_TAG {
 	UNI_CMD_MBMC_TAG_SETTING = 0,
 	UNI_CMD_MBMC_TAG_MAX_NUM
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MBMC_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2718,6 +2881,7 @@ struct UNI_CMD_MDVT_PARA {
 	uint16_t u2CaseId;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_POWER_LIMIT {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -2727,6 +2891,7 @@ struct UNI_CMD_POWER_LIMIT {
 } __KAL_ATTRIB_PACKED__;
 
 /** Power Limit command TLV List */
+__KAL_ATTRIB_PACKED_FRONT__
 enum UNI_CMD_POWER_LIMIT_TAG {
 	UNI_CMD_POWER_LIMIT_TABLE_CTRL = 0,
 	UNI_CMD_POWER_LIMIT_PER_RATE_TABLE = 1,
@@ -2734,6 +2899,7 @@ enum UNI_CMD_POWER_LIMIT_TAG {
 } __KAL_ATTRIB_PACKED__;
 
 /* Power limit table (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_PWR_LIMIT_PARAM {
 	/* Tag = 0x00 */
 	uint16_t u2Tag;
@@ -2743,6 +2909,7 @@ struct UNI_CMD_SET_PWR_LIMIT_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Power limit per rate table (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 	/* Tag = 0x01 */
 	uint16_t u2Tag;
@@ -2752,6 +2919,7 @@ struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /*UNI_CMD_ID_TXPOWER */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TXPOWER_CONFIG {
     /*fixed field*/
     uint8_t aucPadding[4];
@@ -2760,6 +2928,7 @@ struct UNI_CMD_TXPOWER_CONFIG {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NVRAM_SETTINGS {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -2769,6 +2938,7 @@ struct UNI_CMD_NVRAM_SETTINGS {
 } __KAL_ATTRIB_PACKED__;
 
 /** Nvram command TLV List */
+__KAL_ATTRIB_PACKED_FRONT__
 enum UNI_CMD_NVRAM_SETTINGS_TAG {
 	UNI_CMD_NVRAM_SETTINGS_FRAGMENT = 0,
 	UNI_CMD_NVRAM_SETTINGS_LEGACY = 1,
@@ -2776,6 +2946,7 @@ enum UNI_CMD_NVRAM_SETTINGS_TAG {
 } __KAL_ATTRIB_PACKED__;
 
 /* Nvram settings (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NVRAM_SETTINGS_FRAGMENT_PARAM {
 	/* Tag = 0x00 */
 	uint16_t u2Tag;
@@ -2785,6 +2956,7 @@ struct UNI_CMD_NVRAM_SETTINGS_FRAGMENT_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Nvram settings (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NVRAM_SETTINGS_LEGACY_PARAM {
 	/* Tag = 0x01 */
 	uint16_t u2Tag;
@@ -2793,6 +2965,7 @@ struct UNI_CMD_NVRAM_SETTINGS_LEGACY_PARAM {
 	struct CMD_NVRAM_SETTING config;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RA {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -2863,6 +3036,7 @@ struct UNI_CMD_RA_SET_FIXED_RATE {
 	uint8_t  aucBuffer[0];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RA_SET_FIXED_RATE_V1 {
 	uint16_t u2WlanIdx;
 	uint8_t  u1PhyMode;
@@ -2878,6 +3052,7 @@ struct UNI_CMD_RA_SET_FIXED_RATE_V1 {
 	uint16_t u2Reserve;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RA_SET_AUTO_RATE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2889,6 +3064,7 @@ struct UNI_CMD_RA_SET_AUTO_RATE {
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MLO {
 	/* fixed field */
 	uint8_t u1BandIdx;
@@ -2898,6 +3074,7 @@ struct UNI_CMD_MLO {
 	uint8_t au1TlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MLO {
 	/* fixed field */
 	uint8_t u1BandIdx;
@@ -2918,6 +3095,7 @@ enum ENUM_UNI_CMD_MLO_TAG {
 };
 
 /* UNI_CMD_MLO_TAG_MLD_REC(Tag=0x2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SET_MLD_REC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2926,6 +3104,7 @@ struct UNI_CMD_SET_MLD_REC {
 } __KAL_ATTRIB_PACKED__;
 
 /* UNI_CMD_MLO_TAG_MLD_REC_LINK_AGC_TX(Tag=0x04) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MLO_MLD_REC_LINK_AGC_TX {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -2980,6 +3159,7 @@ enum UNI_CMD_PP_ALG_CMD_ACTION {
 	UNI_CMD_PP_ALG_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PP_ALG_CTRL {
 	uint16_t  u2Tag;
 	uint16_t  u2Length;
@@ -3006,6 +3186,7 @@ struct UNI_CMD_PP_ALG_CTRL {
 	uint8_t u1Reserved[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PP_EN_CTRL_T {
 	uint16_t  u2Tag;
 	uint16_t  u2Length;
@@ -3021,6 +3202,7 @@ struct UNI_CMD_PP_EN_CTRL_T {
 
 
 /* BF command (0x33) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BF {
     /* fixed field */
     uint8_t aucReserved[4];
@@ -3080,6 +3262,7 @@ struct UNI_CMD_BF_SOUNDING_STOP {
 	uint8_t ucReserved[2];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BF_SND {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3185,6 +3368,7 @@ struct UNI_CMD_STAREC_MANUAL_ASSOC {
 };
 
 /* BF read BF StaRec (Tag11) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BF_STAREC_READ {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3192,6 +3376,7 @@ struct UNI_CMD_BF_STAREC_READ {
 	uint8_t  au1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_THERMAL {
 	/* fix field */
 	uint8_t au1Reserved[4];
@@ -3222,6 +3407,7 @@ enum THERMAL_SENSOR_INFO_ACTION {
 	THERMAL_SENSOR_INFO_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_THERMAL_SENSOR_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3231,6 +3417,7 @@ struct UNI_CMD_THERMAL_SENSOR_INFO {
 	uint8_t ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RSSI_MONITOR {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -3248,6 +3435,7 @@ enum UNI_CMD_RSSI_MONITOR_TAG {
 	UNI_CMD_RSSI_MONITOR_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_RSSI_MONITOR_SET {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3258,6 +3446,7 @@ struct UNI_CMD_RSSI_MONITOR_SET {
 	uint8_t ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MQM_UPDATE_MU_EDCA {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -3271,11 +3460,13 @@ struct UNI_CMD_MQM_UPDATE_MU_EDCA {
 	*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 enum ENUM_UNI_CMD_MQM_UPDATE_MU_EDCA_TAG {
 	UNI_CMD_MQM_UPDATE_MU_EDCA_TAG_PARMS = 0x0,
 	UNI_CMD_MQM_UPDATE_MU_EDCA_TAG_NUM
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MU_EDCA_PARAMS {
 	uint8_t ucECWmin;
 	uint8_t ucECWmax;
@@ -3285,6 +3476,7 @@ struct UNI_CMD_MU_EDCA_PARAMS {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_UPDATE_MU_EDCA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3297,6 +3489,7 @@ struct UNI_CMD_UPDATE_MU_EDCA {
 	struct UNI_CMD_MU_EDCA_PARAMS arMUEdcaParams[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PERF_IND {
 	/*fixed field*/
 	uint8_t aucPadding[4];
@@ -3314,6 +3507,7 @@ enum ENUM_UNI_CMD_PERF_IND_TAG {
 	UNI_CMD_PERF_IND_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_PERF_IND_PARM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3330,6 +3524,7 @@ struct UNI_CMD_PERF_IND_PARM {
 	uint32_t au4Padding[63]; /* reserve for future*/
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ID_FRM_IND_FROM_HOST {
 	/*fixed field*/
 	uint8_t aucPadding[4];
@@ -3348,6 +3543,7 @@ enum ENUM_UNI_CMD_FRM_IND_FROM_HOST_TAG {
 	UNI_CMD_FRM_IND_FROM_HOST_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
 	uint8_t  ucCmdVer;
 	uint8_t  aucPadding0[1];
@@ -3366,6 +3562,7 @@ struct UNI_CMD_FRM_IND_FROM_HOST_PARM {
 	uint8_t  aucPadding4[64];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_CTRL {
 	/* fix field*/
 	uint8_t aucPadding[4];
@@ -3405,6 +3602,7 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
  * @param[in] rRfATInfo     RF information
  */
 /* Set testmode RF parameter cmd struct (Tag 0x00) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RF_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3418,6 +3616,7 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
 	}u;
 }__KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RX_STAT {
 	/* fix field*/
 	uint8_t aucPadding[4];
@@ -3455,6 +3654,7 @@ enum ENUM_UNI_CMD_TESTMODE_RX_TAG {
  * @param[in] aucReserved   Reserved
  */
 /* Get rx info all cmd struct (Tag 0x08) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3464,6 +3664,7 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 /** @} */
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ICS {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -3482,6 +3683,7 @@ enum UNI_CMD_ICS_TAG {
 	UNI_CMD_ICS_TAG_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ICS_SNIFFER {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3499,6 +3701,7 @@ struct UNI_CMD_ICS_SNIFFER {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACS_POLICY {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -3517,6 +3720,7 @@ enum UNI_CMD_ACS_POLICY_TAG {
 	UNI_CMD_ACS_POLICY_TAG_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACS_POLICY_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3535,6 +3739,7 @@ struct UNI_CMD_ACS_POLICY_SETTING {
  * @param[in] aucTlvBuffer   TLVs
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EFUSE {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -3573,6 +3778,7 @@ enum UNI_CMD_EFUSE_CTRL_TAG {
  * @param[in] u2Count            Total number of aBinContent elements
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EFUSE_BUFFER_MODE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3597,6 +3803,7 @@ struct UNI_CMD_EFUSE_BUFFER_MODE {
  * @param[in] aucData[16]   get address value
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACCESS_EFUSE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3619,6 +3826,7 @@ struct UNI_CMD_ACCESS_EFUSE {
  * @param[in] ucReserved
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EFUSE_FREE_BLOCK {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3641,6 +3849,7 @@ struct UNI_CMD_EFUSE_FREE_BLOCK {
  * @param[in] u2Count           Read Total Counts
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EFUSE_BUFFER_MODE_READ {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3653,6 +3862,7 @@ struct UNI_CMD_EFUSE_BUFFER_MODE_READ {
 
 #if CFG_SUPPORT_NAN
 /* NAN set command (0x56) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NAN {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -3697,6 +3907,7 @@ enum ENUM_UNI_CMD_NAN_TAG {
 };
 
 /* Set Master Performance (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NAN_SET_MASTER_PREFERENCE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3705,6 +3916,7 @@ struct UNI_CMD_NAN_SET_MASTER_PREFERENCE {
 } __KAL_ATTRIB_PACKED__;
 
 /* Enable NAN (Tag7) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NAN_ENABLE_REQUEST {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3713,6 +3925,7 @@ struct UNI_CMD_NAN_ENABLE_REQUEST {
 } __KAL_ATTRIB_PACKED__;
 
 /* Disable NAN (Tag8) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_NAN_DISABLE_REQUEST {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3722,6 +3935,7 @@ struct UNI_CMD_NAN_DISABLE_REQUEST {
 
 #if CFG_SUPPORT_CSI
 /* CSI set command (0x48) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI {
 	uint8_t ucBandIdx;
 	uint8_t ucReserved[3];
@@ -3748,18 +3962,21 @@ enum ENUM_UNI_CMD_CSI_TAG {
 };
 
 /* Stop capturing CSI data (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI_STOP {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* Start capturing CSI data (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI_START {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* Set frame type (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI_SET_FRAME_TYPE {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
@@ -3769,6 +3986,7 @@ struct UNI_CMD_CSI_SET_FRAME_TYPE {
 } __KAL_ATTRIB_PACKED__;
 
 /* Set max chain number (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI_SET_CHAIN_NUMBER {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
@@ -3777,6 +3995,7 @@ struct UNI_CMD_CSI_SET_CHAIN_NUMBER {
 } __KAL_ATTRIB_PACKED__;
 
 /* Set filter mode (Tag4) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CSI_SET_FILTER_MODE {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
@@ -3890,12 +4109,14 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CMD_RESULT {
 	uint16_t u2CID;
 	uint8_t aucReserved[2];
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_HIF_CTRL {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -3910,6 +4131,7 @@ enum ENUM_UNI_EVENT_HIF_CTRL_TAG {
 	UNI_EVENT_HIF_CTRL_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_HIF_CTRL_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3924,6 +4146,7 @@ struct UNI_EVENT_HIF_CTRL_BASIC {
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_FW_LOG2HOST {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -3952,6 +4175,7 @@ struct UNI_EVENT_FW_LOG_FORMAT {
 	uint8_t acMsg[0];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_PP {
 	/* fixed field */
 	uint8_t au1Reserved[4];
@@ -3965,6 +4189,7 @@ enum ENUM_UNI_EVENT_PP_TAG {
 	UNI_EVENT_PP_TAG_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_PP_ALG_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -3992,6 +4217,7 @@ struct UNI_EVENT_PP_ALG_CTRL {
 	uint8_t  u1Reserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ROAMING {
 	/* fixed field */
 	uint8_t ucBssIndex;
@@ -4008,6 +4234,7 @@ enum ENUM_UNI_EVENT_ROAMING_TAG {
 };
 
 /* Roaming status (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ROAMING_STATUS {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4019,6 +4246,7 @@ struct UNI_EVENT_ROAMING_STATUS {
 	uint16_t u2RcpiHighThreshold;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ACCESS_REG {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -4034,6 +4262,7 @@ struct UNI_EVENT_ACCESS_REG {
 } __KAL_ATTRIB_PACKED__;
 
 /* Register access event Tag */
+__KAL_ATTRIB_PACKED_FRONT__
 enum ENUM_UNI_EVENT_ACCESS_REG_TAG {
 	UNI_EVENT_ACCESS_REG_TAG_BASIC = 0,
 	UNI_EVENT_ACCESS_REG_TAG_RF_REG_BASIC,
@@ -4041,6 +4270,7 @@ enum ENUM_UNI_EVENT_ACCESS_REG_TAG {
 } __KAL_ATTRIB_PACKED__;
 
 /* Access Register (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ACCESS_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4049,6 +4279,7 @@ struct UNI_EVENT_ACCESS_REG_BASIC {
 } __KAL_ATTRIB_PACKED__;
 
 /* Access RF address (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ACCESS_RF_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4058,6 +4289,7 @@ struct UNI_EVENT_ACCESS_RF_REG_BASIC {
 	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CHIP_CONFIG {
 	/* fixed field */
 	uint16_t u2TotalElementNum;
@@ -4074,6 +4306,7 @@ enum ENUM_UNI_EVENT_CHIP_CONFIG_TAG {
 	UNI_EVENT_CHIP_CONFIG_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_IE_COUNTDOWNT {
 	/* fixed field */
 	uint8_t ucBand;
@@ -4091,6 +4324,7 @@ enum ENUM_UNI_EVENT_IE_COUNTDOWN_TAG
 	UNI_EVENT_IE_COUNTDOWN_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CSA_NOTIFY
 {
 	uint16_t u2Tag;    // Tag = 0x00
@@ -4101,6 +4335,7 @@ struct UNI_EVENT_CSA_NOTIFY
 } __KAL_ATTRIB_PACKED__;
 
 /* BCC notify Parameters (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BCC_NOTIFY
 {
 	uint16_t u2Tag;    // Tag = 0x01
@@ -4110,6 +4345,7 @@ struct UNI_EVENT_BCC_NOTIFY
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SLEEP_NOTIFY {
 	/*fixed field*/
 	uint8_t ucBssIndex;
@@ -4130,6 +4366,7 @@ enum ENUM_UNI_EVENT_SLEEP_NOTYFY_TAG {
 	UNI_EVENT_SLEEP_NOTYFY_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SLEEP_INFO {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
@@ -4215,6 +4452,7 @@ enum ENUM_UNI_BCN_TIMEOUT_REASON {
 	UNI_ENUM_BCN_TIMEOUT_REASON_MAX_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BEACON_TIMEOUT {
 	/* fixed field */
 	uint8_t ucBssIndex;
@@ -4230,6 +4468,7 @@ enum ENUM_UNI_EVENT_BEACON_TIMEOUT_TAG {
 	UNI_EVENT_BEACON_TIMEOUT_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BEACON_TIMEOUT_INFO {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4237,6 +4476,7 @@ struct UNI_EVENT_BEACON_TIMEOUT_INFO {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_PS_SYNC {
 	/*fixed field*/
 	uint8_t ucBssIndex;
@@ -4257,6 +4497,7 @@ enum ENUM_UNI_EVENT_PS_SYNC_TAG {
 };
 
 /* PS SYNC (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CLIENT_PS_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4268,6 +4509,7 @@ struct UNI_EVENT_CLIENT_PS_INFO {
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SCAN_DONE {
 	/* fixed field */
 	uint8_t ucSeqNum;
@@ -4285,6 +4527,7 @@ enum ENUM_UNI_EVENT_SCAN_DONE_TAG {
 	UNI_EVENT_SCAN_DONE_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SCAN_DONE_BASIC {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4296,6 +4539,7 @@ struct UNI_EVENT_SCAN_DONE_BASIC {
 	uint32_t u4ScanDurBcnCnt;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SCAN_DONE_SPARSECHNL {
 	uint16_t u2Tag;    // Tag = 0x01
 	uint16_t u2Length;
@@ -4306,6 +4550,7 @@ struct UNI_EVENT_SCAN_DONE_SPARSECHNL {
 	uint8_t ucSparseChannelArrayValidNum;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SCAN_DONE_CHNLINFO {
 	uint16_t u2Tag;    // Tag = 0x02
 	uint16_t u2Length;
@@ -4315,6 +4560,7 @@ struct UNI_EVENT_SCAN_DONE_CHNLINFO {
 	uint8_t aucChnlInfoBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CHNLINFO {
 	uint8_t ucChannelNum;
 	uint8_t ucChannelBAndPCnt;
@@ -4324,6 +4570,7 @@ struct UNI_EVENT_CHNLINFO {
 	uint16_t u2ChannelScanTime;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SCAN_DONE_NLO {
 	uint16_t u2Tag;    // Tag = 0x03
 	uint16_t u2Length;
@@ -4332,6 +4579,7 @@ struct UNI_EVENT_SCAN_DONE_NLO {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STAREC {
 	/* fixed field */
 	uint16_t u2WlanIdx;
@@ -4348,6 +4596,7 @@ enum UNI_EVENT_STAREC_TAG {
 	UNI_EVENT_STAREC_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STAREC_PN_INFO {
 	uint16_t u2Tag;               /* Tag = 0x26 */
 	uint16_t u2Length;
@@ -4356,6 +4605,7 @@ struct UNI_EVENT_STAREC_PN_INFO {
 	uint8_t  aucReserved;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STAREC_UPDATE_MAX_AMSDU_LEN {
 	uint16_t u2Tag;               /* Tag = 0x00 */
 	uint16_t u2Length;
@@ -4363,6 +4613,7 @@ struct UNI_EVENT_STAREC_UPDATE_MAX_AMSDU_LEN {
 	uint8_t  aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RDD
 {
 	/* fixed field */
@@ -4387,6 +4638,7 @@ enum ENUM_UNI_EVENT_RDD_TAG {
 };
 
 /* Beacon timeout reason (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RDD_SEND_PULSE {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4417,6 +4669,7 @@ struct UNI_EVENT_RDD_SEND_PULSE {
 } __KAL_ATTRIB_PACKED__;
 
 /* Per band SER counter (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RDD_REPORT {
 	uint16_t   u2Tag;    // Tag = 0x01
 	uint16_t   u2Length;
@@ -4429,6 +4682,7 @@ struct UNI_EVENT_RDD_REPORT {
 	uint8_t aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ADD_KEY_DONE {
 	/* fixed field */
 	uint8_t ucBssIndex;
@@ -4445,6 +4699,7 @@ enum ENUM_UNI_EVENT_ADD_KEY_DONE_TAG {
 };
 
 /* Add PKey down (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_ADD_PKEY_DONE {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4452,6 +4707,7 @@ struct UNI_EVENT_ADD_PKEY_DONE {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_OBSS_UPDATE
 {
 	/* fixed field */
@@ -4470,6 +4726,7 @@ enum ENUM_UNI_EVENT_OBSS_UPDATE_TAG
 };
 
 /* Update OBSS STATUS (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_OBSS_STATUS {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4481,6 +4738,7 @@ struct UNI_EVENT_OBSS_STATUS {
 	uint8_t  aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TDLS {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4495,6 +4753,7 @@ enum UNI_EVENT_TDLS_TAG {
 };
 
 /* TDLS tear down reason (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TDLS_TEAR_DOWN {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4502,6 +4761,7 @@ struct UNI_EVENT_TDLS_TEAR_DOWN {
 	uint32_t u4StaIdx;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_IDC {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4522,6 +4782,7 @@ enum ENUM_UNI_EVENT_IDC_TAG {
 	UNI_EVENT_IDC_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MD_SAFE_CHN {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4531,6 +4792,7 @@ struct UNI_EVENT_MD_SAFE_CHN {
 	uint32_t u4SafeChannelBitmask[UNI_WIFI_CH_MASK_IDX_NUM]; /* WIFI_CH_MASK_IDX_NUM = 4 */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MAC_IFNO {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -4547,6 +4809,7 @@ enum ENUM_UNI_EVENT_MAC_INFO_TAG {
 };
 
 /* Beacon timeout reason (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MAC_INFO_TSF {
 	uint16_t   u2Tag;    // Tag = 0x00
 	uint16_t   u2Length;
@@ -4558,6 +4821,7 @@ struct UNI_EVENT_MAC_INFO_TSF {
 } __KAL_ATTRIB_PACKED__;
 
 /* Uni event for TWT STA req CNM CH usage (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4567,6 +4831,7 @@ struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
 	uint8_t fgCnmGranted;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STATISTICS {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4590,6 +4855,7 @@ enum ENUM_UNI_EVENT_STATISTICS_TAG {
 };
 
 /* Basic Scan down notify Parameters (Tag00) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BASIC_STATISTICS {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -4610,6 +4876,7 @@ struct UNI_EVENT_BASIC_STATISTICS {
 	uint32_t     u4HwMacAwakeDuration; /* SlotIdleHwAwake */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BUG_REPORT {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -4684,6 +4951,7 @@ struct UNI_EVENT_BUG_REPORT {
 	uint32_t     u4TxCcaNavTxTime;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_LINK_QUALITY {
 	int8_t       cRssi; /* AIS Network. */
 	int8_t       cLinkQuality;
@@ -4693,30 +4961,35 @@ struct UNI_LINK_QUALITY {
 	uint8_t      aucReserve[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_QUALITY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	struct UNI_LINK_QUALITY rLq[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STA_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_GET_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SAP {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4733,6 +5006,7 @@ enum ENUM_UNI_EVENT_SAP_TAG {
 	UNI_EVENT_SAP_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SAP_AGING_TIMEOUT {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -4740,6 +5014,7 @@ struct UNI_EVENT_SAP_AGING_TIMEOUT {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4748,6 +5023,7 @@ struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint8_t  ucFreeQuota;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SAP_DCSB_IE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4757,6 +5033,7 @@ struct UNI_EVENT_SAP_DCSB_IE {
 	uint8_t  aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RSSI_MONITOR {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -4776,6 +5053,7 @@ enum ENUM_UNI_EVENT_RSSI_MONITOR_TAG {
 };
 
 /* Rssi monitor info (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RSSI_MONITOR_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4783,6 +5061,7 @@ struct UNI_EVENT_RSSI_MONITOR_INFO {
 	int32_t   cRssi;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_P2P {
 	/*fixed field*/
 	uint8_t ucReserved[4];
@@ -4802,6 +5081,7 @@ enum ENUM_UNI_EVENT_P2P_TAG {
 	UNI_EVENT_P2P_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_NOA_TIMING {
 	uint8_t ucIsInUse;              /* Indicate if this entry is in use or not */
 	uint8_t ucCount;                /* Count */
@@ -4813,6 +5093,7 @@ struct UNI_NOA_TIMING {
 } __KAL_ATTRIB_PACKED__;
 
 /* UPDATE_NOA_PARAM (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UPDATE_NOA_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -4827,6 +5108,7 @@ struct UNI_EVENT_UPDATE_NOA_PARAM {
 	struct UNI_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4845,6 +5127,7 @@ struct UNI_EVENT_CNM {
 } __KAL_ATTRIB_PACKED__;
 
 /** channel privilege command TLV List */
+__KAL_ATTRIB_PACKED_FRONT__
 enum ENUM_UNI_EVENT_CNM_TAG {
 	UNI_EVENT_CNM_TAG_CH_PRIVILEGE_GRANT = 0,
 	UNI_EVENT_CNM_TAG_GET_CHANNEL_INFO = 1,
@@ -4855,6 +5138,7 @@ enum ENUM_UNI_EVENT_CNM_TAG {
 	UNI_EVENT_CNM_TAG_NUM
 }__KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
@@ -4873,6 +5157,7 @@ struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT {
 	uint32_t         u4GrantInterval;    /* In unit of ms */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_GET_CHANNEL_INFO {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -4884,6 +5169,7 @@ struct UNI_EVENT_CNM_GET_CHANNEL_INFO {
 	uint8_t      aucChnlInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_GET_BSS_INFO {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -4893,6 +5179,7 @@ struct UNI_EVENT_CNM_GET_BSS_INFO {
 	uint8_t      aucBssInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_CHANNEL_INFO {
 	uint8_t      ucPriChannel;
 	uint8_t      ucChBw;
@@ -4903,6 +5190,7 @@ struct UNI_EVENT_CNM_CHANNEL_INFO {
 	uint16_t     u2ChBssBitmapList;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_BSS_INFO {
 	uint8_t      ucBssType;
 	uint8_t      ucBssInuse;
@@ -4914,6 +5202,7 @@ struct UNI_EVENT_CNM_BSS_INFO {
 	uint8_t      ucBssOMACDBDCBand;
 }__KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_OPMODE_CHANGE {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
@@ -4925,6 +5214,7 @@ struct UNI_EVENT_CNM_OPMODE_CHANGE {
 	uint8_t          aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE {
 	uint16_t         u2Tag;
 	uint16_t         u2Length;
@@ -4938,6 +5228,7 @@ struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE {
 	uint8_t          ucAction;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MBMC {
 	/* fixed field */
 	uint8_t ucReserved[4];
@@ -4954,17 +5245,20 @@ struct UNI_EVENT_MBMC {
 } __KAL_ATTRIB_PACKED__;
 
 /** MBMC Event TLV List */
+__KAL_ATTRIB_PACKED_FRONT__
 enum ENUM_UNI_EVENT_MBMC_TAG {
 	UNI_EVENT_MBMC_TAG_SWITCH_DONE = 0,
 	UNI_EVENT_MBMC_TAG_NUM
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MBMC_SWITCH_DONE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BSS_IS_ABSENCE {
 	/* fixed field */
 	uint8_t ucBssIndex;
@@ -4980,6 +5274,7 @@ enum ENUM_UNI_EVENT_BSS_IS_ABSENCE_TAG {
 	UNI_EVENT_BSS_IS_ABSENCE_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BSS_IS_ABSENCE_INFO {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -4989,6 +5284,7 @@ struct UNI_EVENT_BSS_IS_ABSENCE_INFO {
 	uint8_t	    aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STATUS_TO_HOST {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4997,6 +5293,7 @@ struct UNI_EVENT_STATUS_TO_HOST {
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TXPOWER {
     /* fixed field */
     uint8_t aucPadding[4];
@@ -5005,6 +5302,7 @@ struct UNI_EVENT_TXPOWER {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TXPOWER_RSP {
     uint16_t u2Tag;
     uint16_t u2Length;
@@ -5012,6 +5310,7 @@ struct UNI_EVENT_TXPOWER_RSP {
     uint8_t aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_WSYS_CONFIG {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5026,6 +5325,7 @@ enum ENUM_UNI_EVENT_WSYS_CONFIG_TAG {
 	UNI_EVENT_WSYS_CONFIG_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_FW_LOG_BUFFER_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5035,6 +5335,7 @@ struct UNI_EVENT_FW_LOG_BUFFER_CTRL {
 	uint32_t u4Address;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BA_OFFLOAD {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5050,6 +5351,7 @@ enum ENUM_UNI_EVENT_BA_OFFLOAD_TAG {
 	UNI_EVENT_BA_OFFLOAD_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RX_ADDBA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5062,6 +5364,7 @@ struct UNI_EVENT_RX_ADDBA {
 	uint8_t	aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RX_DELBA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5070,6 +5373,7 @@ struct UNI_EVENT_RX_DELBA {
 	uint8_t	aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TX_ADDBA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5103,6 +5407,7 @@ enum ENUM_UNI_EVENT_STATUS_TO_HOST_TAG {
 	UNI_EVENT_STATUS_TO_HOST_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TX_DONE {
 	uint16_t     u2Tag;
 	uint16_t     u2Length;
@@ -5146,6 +5451,7 @@ struct UNI_EVENT_TX_DONE {
 }__KAL_ATTRIB_PACKED__;
 
 /* BF event (0x33) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BF {
 	/* fixed field */
 	uint8_t au1Reserved[4];
@@ -5170,6 +5476,7 @@ enum ENUM_UNI_EVENT_BF_TAG {
 	UNI_EVENT_BF_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BF_STA_REC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5186,6 +5493,7 @@ struct UNI_EVENT_BF_PFMU_READ {
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL {
     /* fixed field */
     uint8_t aucPadding[4];
@@ -5194,6 +5502,7 @@ struct UNI_EVENT_THERMAL {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL_RSP {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5201,6 +5510,7 @@ struct UNI_EVENT_THERMAL_RSP {
 	uint8_t aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL_SENSOR_INFO {
 	uint8_t ucCategory;
 	uint8_t ucReserved[3];
@@ -5216,6 +5526,7 @@ enum UNI_THERMAL_EVENT_CATEGORY {
 	UNI_THERMAL_EVENT_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CHIP_CAPABILITY
 {
 	/* fixed field */
@@ -5259,6 +5570,7 @@ enum ENUM_UNI_EVENT_CHIP_CAPABILITY_TAG
 	UNI_EVENT_CHIP_CAPABILITY_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UPDATE_COEX
 {
 	/* fixed field */
@@ -5281,6 +5593,7 @@ enum ENUM_UNI_EVENT_UPDATE_COEX_TAG
 };
 
 /* FW Log with Format (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UPDATE_COEX_PHYRATE
 {
 	uint16_t u2Tag;
@@ -5304,6 +5617,7 @@ struct UNI_EVENT_UPDATE_COEX_PHYRATE
  * @param[in] aucTlvBuffer     TLVs
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_CTRL {
 	/*fix field*/
 	uint8_t au1Reserved[4];
@@ -5338,6 +5652,7 @@ enum UNI_EVENT_TESTMODE_CTRL_TAG {
  * @param[in] aucBuffer            Icap , recal event
  */
 /* Testmode RF status (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RF_TEST_TLV {
     uint16_t u2Tag;
     uint16_t u2Length;
@@ -5346,6 +5661,7 @@ struct UNI_EVENT_RF_TEST_TLV {
 
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RF_TEST_RESULT {
 	uint32_t u4FuncIndex;
 	uint32_t u4PayloadLength;
@@ -5368,6 +5684,7 @@ struct UNI_EVENT_RF_TEST_RESULT {
  * @param[in] aucTlvBuffer     TLVs
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_RX_STAT {
 	/* fix field */
 	uint8_t au1Reserved[4];
@@ -5408,12 +5725,14 @@ enum UNI_EVENT_TESTMODE_RX_STAT_TAG {
 #define UNI_TM_MAX_ANT_NUM 8
 #define UNI_TM_MAX_USER_NUM 16
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_STAT_ALL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_BAND {
 	/* mac part */
 	uint16_t u2MacRxFcsErrCnt;
@@ -5435,12 +5754,14 @@ struct UNI_TESTMODE_STATINFO_BAND {
 	uint16_t u2PhyRxMdrdyCntOfdm;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_USER {
 	int32_t i4FreqOffsetFromRx;
 	int32_t i4Snr;
 	uint32_t u4FcsErrorCnt;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_COMM {
 	uint16_t u2MacRxFifoFull;
 	uint8_t u1Reserved1[2];
@@ -5449,6 +5770,7 @@ struct UNI_TESTMODE_STATINFO_COMM {
 	uint32_t u4AciHitHigh;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_RXV {
 	uint16_t u2Rcpi;
 	int16_t i2Rssi;
@@ -5456,12 +5778,14 @@ struct UNI_TESTMODE_STATINFO_RXV {
 	int16_t i2AdcRssi;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_RSSI {
 	int8_t i1RssiIb;
 	int8_t i1RssiWb;
 	uint8_t u1Reserved1[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_BAND_EXT1 {
 	/* mac part */
 	uint32_t u4RxU2MMpduCnt;
@@ -5473,6 +5797,7 @@ struct UNI_TESTMODE_STATINFO_BAND_EXT1 {
 	uint8_t u1Reserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_COMM_EXT1 {
 	uint32_t u4DrvRxCnt;
 	uint32_t u4Sinr;
@@ -5485,6 +5810,7 @@ struct UNI_TESTMODE_STATINFO_COMM_EXT1 {
 	uint8_t u1Reserved1[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_TESTMODE_STATINFO_USER_EXT1 {
 	int8_t i1NeVarDbAllUser;
 	uint8_t u1Reserved1[3];
@@ -5510,6 +5836,7 @@ struct UNI_TESTMODE_STATINFO_USER_EXT1 {
  * @param[in] rInfoUser     show user part of rx statistic related information
  */
 /* Update rx statistic event struct (Tag 0x07) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_STAT_ALL_V2 {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5533,6 +5860,7 @@ struct UNI_EVENT_TESTMODE_STAT_ALL_V2 {
 /** @} */
 
 /* BSS ER event */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_BSS_ER {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5572,6 +5900,7 @@ enum ENUM_UNI_EVENT_EFUSE_TAG {
  * @param[in] aucTlvBuffer
  *
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_EFUSE_CONTROL {
 	/* fixed field */
 	uint8_t aucReserved[4];
@@ -5601,6 +5930,7 @@ struct UNI_EVENT_EFUSE_CONTROL {
  * @param[in] u2Count              Read Total Counts
  * @param[out] BinContent[];       the content of read
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_EFUSE_BUFFER_MODE_READ {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5627,6 +5957,7 @@ struct UNI_EVENT_EFUSE_BUFFER_MODE_READ {
  * @param[in] ucTotalBlockNum      Total Block
  * @param[in] ucReserved
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_EFUSE_FREE_BLOCK {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5653,6 +5984,7 @@ struct UNI_EVENT_EFUSE_FREE_BLOCK {
  * @param[in] u4Reserved[4]        Reserved
  * @param[in] aucData[32]          get data
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_EFUSE_ACCESS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5669,6 +6001,7 @@ struct UNI_EVENT_EFUSE_ACCESS {
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_SUPPORT_NAN
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_NAN {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5678,6 +6011,7 @@ struct UNI_EVENT_NAN {
 
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EVENT_TLV_ELEMENT_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5710,6 +6044,7 @@ enum ENUM_UNI_EVENT_NAN_TAG {
 	UNI_EVENT_NAN_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_NAN_DISCOVERY_EVENT {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
@@ -5731,12 +6066,14 @@ enum UNI_EVENT_SR_TAG {
 	UNI_EVENT_SR_TAG_HW_IND = 0xC9
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SR_HW_IND {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	struct WH_SR_IND rSrInd;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SR_HW_CAP {
 	/* DW_0 */
 	uint16_t u2Tag;
@@ -5745,6 +6082,7 @@ struct UNI_EVENT_SR_HW_CAP {
 	struct WH_SR_CAP rSrCap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_SR {
 	/*Fixed Fields*/
 	uint8_t u1DbdcIdx;
@@ -5753,6 +6091,7 @@ struct UNI_EVENT_SR {
 	uint8_t au1TlvBuffer[0];/*  the TLVs included in this field: */
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_WOW {
 	/*fixed field*/
 	uint8_t ucReserved[4];
@@ -5766,6 +6105,7 @@ enum ENUM_UNI_EVENT_WOW_TAG {
 	UNI_EVENT_WOW_TAG_NUM
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_WOW_WAKEUP_REASON_INFO {
 	uint16_t u2Tag;
 	uint16_t u2Length;
@@ -5787,6 +6127,7 @@ struct UNI_EVENT_WOW_WAKEUP_REASON_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_SUPPORT_CSI
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CSI {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5815,6 +6156,7 @@ enum ENUM_UNI_EVENT_CSI_TAG {
  * @param[in] aucBuffer            the CSI data
  */
 /* CSI data (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_CSI_DATA {
 	uint16_t u2Tag;
 	uint16_t u2Length;

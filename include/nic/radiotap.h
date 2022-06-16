@@ -357,6 +357,7 @@ enum ENUM_IEEE80211_RADIOTAP_HE_BW_RU {
 	IEEE80211_RADIOTAP_HE_RU_2x_996
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IEEE80211_RADIOTAP_HEADER {
 	uint8_t ucItVersion;
 	uint8_t ucItPad;
@@ -369,6 +370,7 @@ struct IEEE80211_RADIOTAP_HEADER {
  * Required Alignment 8 bytes
  * Unit microseconds
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct TSFT {
 	uint64_t u8MacTime;
 } __KAL_ATTRIB_PACKED__;
@@ -376,6 +378,7 @@ struct TSFT {
 /* Flags
  * Bit Number 1
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct FLAGS {
 	uint8_t ucFlags;
 } __KAL_ATTRIB_PACKED__;
@@ -384,6 +387,7 @@ struct FLAGS {
  * Bit Number 2
  * Unit 500 Kbps
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct RATE {
 	uint8_t ucRate;
 } __KAL_ATTRIB_PACKED__;
@@ -392,6 +396,7 @@ struct RATE {
  * Bit Number 3
  * Required Alignment 2 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct CHANNEL {
 	uint16_t u2ChFrequency;
 	uint16_t u2ChFlags;
@@ -401,6 +406,7 @@ struct CHANNEL {
  * Bit Number 5
  * Unit dBm
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ANT_SIGNAL {
 	int8_t i1AntennaSignal;
 } __KAL_ATTRIB_PACKED__;
@@ -408,6 +414,7 @@ struct ANT_SIGNAL {
 /* Antenna
  * Bit Number 11
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct ANTENNA {
 	uint8_t ucAntIdx;
 } __KAL_ATTRIB_PACKED__;
@@ -415,6 +422,7 @@ struct ANTENNA {
 /* MCS
  * Bit Number 19
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct MCS {
 	uint8_t ucMcsKnown;
 	uint8_t ucMcsFlags;
@@ -425,6 +433,7 @@ struct MCS {
  * Bit Number 20
  * Required Alignment 4 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct AMPDU {
 	uint32_t u4AmpduRefNum;
 	uint16_t u2AmpduFlags;
@@ -436,6 +445,7 @@ struct AMPDU {
  * Bit Number 21
  * Required Alignment 2 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct VHT {
 	uint16_t u2VhtKnown;
 	uint8_t ucVhtFlags;
@@ -450,6 +460,7 @@ struct VHT {
  * Bit Number 22
  * Required Alignment 8 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct TIMESTAMP {
 	uint64_t u8Timestamp;
 	uint16_t u2Accuracy;
@@ -461,6 +472,7 @@ struct TIMESTAMP {
  * Bit Number 23
  * Required Alignment 2 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct HE {
 	uint16_t u2Data1;
 	uint16_t u2Data2;
@@ -474,6 +486,7 @@ struct HE {
  * Bit Number 24
  * Required Alignment 2 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct HE_MU {
 	uint16_t u2Flag1;
 	uint16_t u2Flag2;
@@ -485,6 +498,7 @@ struct HE_MU {
  * Bit Number 30
  * Required Alignment 2 bytes
  */
+__KAL_ATTRIB_PACKED_FRONT__
 struct VENDOR_NAMESPACE {
 	uint8_t aucOUI[3];
 	uint8_t ucSubNamespace;

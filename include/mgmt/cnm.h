@@ -166,6 +166,7 @@ struct CNM_INFO {
 
 #if CFG_ENABLE_WIFI_DIRECT
 /* Moved from p2p_fsm.h */
+__KAL_ATTRIB_PACKED_FRONT__
 struct DEVICE_TYPE {
 	uint16_t u2CategoryId;		/* Category ID */
 	uint8_t aucOui[4];		/* OUI */

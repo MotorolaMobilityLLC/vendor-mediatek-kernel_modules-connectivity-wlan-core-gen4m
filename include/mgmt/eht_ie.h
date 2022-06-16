@@ -11,6 +11,7 @@
 #define EHT_MAC_CAP_BYTE_NUM                            (2)
 #define EHT_PHY_CAP_BYTE_NUM                            (9)
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_EHT_CAP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -40,10 +41,12 @@ struct IE_EHT_CAP {
 	((_aucEhtOpParams & EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT) \
 	== EHT_OP_PARAM_DIS_SUBCHANNEL_PRESENT)
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct EHT_DSCP_INFO {
 	u_int16_t u2DisSubChannelBitmap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_EHT_OP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
@@ -52,6 +55,7 @@ struct IE_EHT_OP {
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct EHT_OP_INFO {
 	u_int8_t  ucControl;
 	u_int8_t  ucCCFS0;
@@ -342,11 +346,13 @@ struct EHT_BF_INFO {
 	uint8_t max_ltf_num_mu;
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct EHT_PHY_CAP_INFO {
 	uint32_t phy_capinfo_1;
 	uint32_t phy_capinfo_2;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct EHT_SUPPORTED_MCS_BW20_FIELD {
 	u_int8_t eht_bw20_mcs_0_7;
 	u_int8_t eht_bw20_mcs_8_9;
@@ -354,6 +360,7 @@ struct EHT_SUPPORTED_MCS_BW20_FIELD {
 	u_int8_t eht_bw20_mcs_12_13;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD {
 	u_int8_t eht_mcs_0_9;
 	u_int8_t eht_mcs_10_11;
