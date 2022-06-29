@@ -305,6 +305,17 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
+uint8_t cnmOwnGcCsaReq(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
+	IN uint8_t ucCh,
+	IN uint8_t ucRoleIdx);
+
+void cnmPeerGcCsaHandler(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
+
+void cnmOwnGcCsaHandler(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
+
 uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 	IN struct RF_CHANNEL_INFO *prRfChannelInfo,
 	IN uint8_t ucRoleIdx);

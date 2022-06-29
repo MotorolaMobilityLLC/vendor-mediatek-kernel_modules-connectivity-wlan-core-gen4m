@@ -308,6 +308,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_WFD_CFG_UPDATE, p2pFsmRunEventWfdSettingUpdate},
 #endif
 	{MID_MNY_P2P_ACTIVE_BSS, p2pDevFsmRunEventActiveDevBss},
+	{MID_MNY_P2P_GC_CSA, cnmOwnGcCsaHandler},
 #endif
 
 	{MID_SAA_AIS_FSM_ABORT, aisFsmRunEventAbort},

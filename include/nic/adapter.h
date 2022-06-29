@@ -1157,6 +1157,7 @@ struct WIFI_VAR {
 	uint8_t fgSapOverwriteAcsChnlBw;
 	uint8_t fgSapAddTPEIE;
 	uint8_t fgSapOffload;
+	uint8_t fgP2pGcCsa;
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;
 	uint32_t u4CC2Region;

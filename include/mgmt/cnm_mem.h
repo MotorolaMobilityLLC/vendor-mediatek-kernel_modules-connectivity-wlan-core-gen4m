@@ -838,6 +838,7 @@ struct STA_RECORD {
 	u_int8_t fgIsMscsSupported;
 	struct LINK rMscsMonitorList;
 	struct LINK rMscsTcpMonitorList;
+	u_int8_t ucGcCsaSupported;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

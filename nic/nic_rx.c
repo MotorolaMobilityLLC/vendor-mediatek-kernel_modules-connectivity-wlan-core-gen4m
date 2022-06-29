@@ -208,6 +208,7 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
 #endif
 #endif
+	{EVENT_ID_GC_CSA, cnmPeerGcCsaHandler},
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
