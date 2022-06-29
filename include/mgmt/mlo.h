@@ -244,6 +244,9 @@ void mldBssUpdateMldAddr(
 	IN struct MLD_BSS_INFO *prMldBssInfo,
 	IN const uint8_t *paucBssId);
 
+void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss);

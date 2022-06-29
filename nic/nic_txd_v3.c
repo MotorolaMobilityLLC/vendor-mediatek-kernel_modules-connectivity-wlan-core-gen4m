@@ -425,7 +425,7 @@ void nic_txd_v3_compose(
 			prTxDesc, prBssInfo->ucOwnMacIndex);
 
 		/* TGID should align HW band idx */
-		HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eBandIdx);
+		HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eHwBandIdx);
 	}
 
 	/** DW2 **/

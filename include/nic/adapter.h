@@ -555,7 +555,7 @@ struct BSS_INFO {
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
 
-	enum ENUM_MBMC_BN eBandIdx;
+	enum ENUM_MBMC_BN eHwBandIdx;
 	/* TODO other code block  use this in uni_cmd_event.c w/o define */
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
@@ -587,7 +587,8 @@ struct MLD_BSS_INFO {
 	uint8_t ucGroupMldId;
 	uint8_t ucOmRemapIdx;
 	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
-	uint32_t u4BssBitmap;
+	uint8_t ucBssBitmap;
+	uint8_t ucHwBandBitmap; /* BIT(i), i = prBssInfo->eBandIdx */
 };
 #endif
 
@@ -2059,7 +2060,7 @@ struct ADAPTER {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO aprMldBssInfo[MAX_BSSID_NUM];
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
-	uint32_t u4BssAbsentBitmap;
+	uint8_t ucBssAbsentBitmap;
 	uint8_t ucMldReservedBssIdx;
 #endif
 	uint8_t ucCnmTokenID;

@@ -7297,13 +7297,13 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_27);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prAdapter->u4BssAbsentBitmap &= ~BIT(prBssInfo->ucBssIndex);
+		prAdapter->ucBssAbsentBitmap &= ~BIT(prBssInfo->ucBssIndex);
 #endif
 	} else {
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prAdapter->u4BssAbsentBitmap |= BIT(prBssInfo->ucBssIndex);
+		prAdapter->ucBssAbsentBitmap |= BIT(prBssInfo->ucBssIndex);
 #endif
 	}
 	/* From Absent to Present */

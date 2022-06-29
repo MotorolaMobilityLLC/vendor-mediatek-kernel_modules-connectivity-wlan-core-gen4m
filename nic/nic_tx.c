@@ -5347,8 +5347,8 @@ u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	if (!prMldBssInfo) /* non-MLO */
 		return netAbsent;
 
-	if ((prMldBssInfo->u4BssBitmap & prAdapter->u4BssAbsentBitmap) ==
-		prMldBssInfo->u4BssBitmap)
+	if ((prMldBssInfo->ucBssBitmap & prAdapter->ucBssAbsentBitmap) ==
+		prMldBssInfo->ucBssBitmap)
 		return TRUE;
 	return FALSE;
 #else
