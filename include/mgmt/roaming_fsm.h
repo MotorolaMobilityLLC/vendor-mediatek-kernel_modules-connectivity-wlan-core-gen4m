@@ -78,18 +78,23 @@
  *******************************************************************************
  */
 /* Roaming Discovery interval, SCAN result need to be updated */
-#define ROAMING_DISCOVER_TIMEOUT_SEC                10	/* Seconds. */
-#define ROAMING_INACTIVE_TIMEOUT_SEC                10	/* Seconds. */
+#define ROAMING_DISCOVER_TIMEOUT_SEC		10	/* Seconds. */
+#define ROAMING_INACTIVE_TIMEOUT_SEC		10	/* Seconds. */
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-#define ROAMING_ONE_AP_SKIP_TIMES                   3
+#define ROAMING_ONE_AP_SKIP_TIMES		3
 #endif
-#define ROAMING_BTM_DELTA                           0   /* % */
-
-/* #define ROAMING_NO_SWING_RCPI_STEP                  5 //rcpi */
+#define ROAMING_BTM_DELTA			0	/* % */
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+
+enum ROAM_TYPE {
+	ROAM_TYPE_RCPI,
+	ROAM_TYPE_PER,
+	ROAM_TYPE_NUM
+};
+
 enum ENUM_ROAMING_FAIL_REASON {
 	ROAMING_FAIL_REASON_CONNLIMIT = 0,
 	ROAMING_FAIL_REASON_NOCANDIDATE,
@@ -173,7 +178,7 @@ struct ROAMING_EVENT_INFO {
 };
 
 struct ROAMING_INFO {
-	u_int8_t fgIsEnableRoaming;
+	uint8_t fgIsEnableRoaming;
 
 	enum ENUM_ROAMING_STATE eCurrentState;
 
@@ -182,7 +187,7 @@ struct ROAMING_INFO {
 	OS_SYSTIME rRoamingLastDecisionTime;
 #endif
 
-	u_int8_t fgDrvRoamingAllow;
+	uint8_t fgDrvRoamingAllow;
 	enum ENUM_ROAMING_REASON eReason;
 	uint8_t ucPER;
 	uint8_t ucRcpi;

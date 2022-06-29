@@ -3537,15 +3537,17 @@ uint32_t nicUniCmdStaRecTagMldSetup(struct ADAPTER *ad,
 	struct UNI_CMD_STAREC_LINK_INFO *link;
 	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
 	struct MLD_STA_RECORD *prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
-	struct LINK *prStaList = &prMldStaRec->rStarecList;
+	struct LINK *prStaList;
 	struct STA_RECORD *prCurStaRec;
 
 	if (!prStaRec || prStaRec->ucStaState != STA_STATE_3)
 		return 0;
 
-	if (!prMldStaRec)
+	if (!prMldStaRec ||
+	    prMldStaRec->rStarecList.u4NumElem > UNI_MLD_LINK_MAX)
 		return 0;
 
+	prStaList = &prMldStaRec->rStarecList;
 	tag->u2Tag = UNI_CMD_STAREC_TAG_MLD_SETUP;
 	tag->u2Length = sizeof(*tag) + sizeof(*link) * prStaList->u4NumElem;
 	COPY_MAC_ADDR(tag->aucPeerMldAddr, prMldStaRec->aucPeerMldAddr);
@@ -3772,7 +3774,9 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_MLD), nicUniCmdStaRecTagEhtMld},
-	{sizeof(struct UNI_CMD_STAREC_MLD_SETUP), nicUniCmdStaRecTagMldSetup},
+	{sizeof(struct UNI_CMD_STAREC_MLD_SETUP) +
+	 sizeof(struct UNI_CMD_STAREC_LINK_INFO) * UNI_MLD_LINK_MAX,
+	 nicUniCmdStaRecTagMldSetup},
 #endif
 #if (CFG_SUPPORT_MLR == 1)
 	{sizeof(struct UNI_CMD_STAREC_MLR_INFO), nicUniCmdStaRecTagMlrInfo},
@@ -8395,7 +8399,11 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			roamingFsmProcessEvent(ad, &legacy);
 		}
-			break;
+		break;
+		case UNI_EVENT_ROAMING_TAG_LINK_STATUS: {
+			/* TODO */
+		}
+		break;
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)

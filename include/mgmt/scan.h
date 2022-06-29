@@ -505,9 +505,7 @@ struct BSS_DESC {
 	uint32_t u4UpdateIdx;
 	uint8_t fgIotApActionValid;
 	uint8_t ucIotApAct;
-#if CFG_SUPPORT_RSN_SCORE
-	u_int8_t fgIsRSNSuitableBss;
-#endif
+	uint16_t u2MaximumMpdu;
 	/* end Support AP Selection */
 	int8_t cPowerLimit;
 	uint8_t aucRrmCap[5];
@@ -1067,6 +1065,7 @@ void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
 void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
 void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
 
+uint8_t scanApOverload(uint16_t status, uint16_t reason);
 void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
 
 void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,

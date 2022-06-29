@@ -82,9 +82,25 @@
 #endif
 
 #define AIS_MAIN_LINK_INDEX (0)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-#define ML_PROBE_RETRY_COUNT 2
-#endif
+
+/* Support driver triggers roaming */
+#define RCPI_DIFF_DRIVER_ROAM			20 /* 10 dbm */
+
+/* In case 2.4G->5G, the trigger rssi is RSSI_BAD_NEED_ROAM_24G_TO_5G
+ * In other case(2.4G->2.4G/5G->2.4G/5G->5G), the trigger
+ * rssi is RSSI_BAD_NEED_ROAM
+ *
+ * The reason of using two rssi threshold is that we only
+ * want to benifit 2.4G->5G case, and keep original logic in
+ * other cases.
+ */
+#define RSSI_BAD_NEED_ROAM_24G_TO_5G_6G         -40 /* dbm */
+#define RSSI_BAD_NEED_ROAM                      -80 /* dbm */
+
+/* When roam to 5G AP, the AP's rcpi should great than
+ * RCPI_THRESHOLD_ROAM_2_5G dbm
+ */
+#define RCPI_THRESHOLD_ROAM_TO_5G_6G  90 /* rssi -65 */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -629,6 +645,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucMlProbeEnable = FALSE;
 #endif
 
+	prAisFsmInfo->u4BssIdxBmap = 0;
 	prAisFsmInfo->ucLinkNum = 0;
 	for (i = 0; i < MAX_BSSID_NUM + 1; i++)
 		prAisFsmInfo->arBssId2LinkMap[i] = MLD_LINK_ID_NONE;
@@ -759,6 +776,8 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	kalMemZero(&prAisSpecificBssInfo->arCurEssChnlInfo[0],
 		   sizeof(prAisSpecificBssInfo->arCurEssChnlInfo));
 	LINK_INITIALIZE(&prAisSpecificBssInfo->rCurEssLink);
+	kalMemZero(&prAisSpecificBssInfo->arApHash[0],
+		   sizeof(prAisSpecificBssInfo->arApHash));
 	/* end Support AP Selection */
 
 	/* 11K, 11V */
@@ -866,7 +885,8 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 #if CFG_SUPPORT_802_11W
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
-	/* end Support AP Selection */
+
+	apsResetEssApList(prAdapter, ucBssIndex);
 	LINK_MGMT_UNINIT(&prAisSpecificBssInfo->rNeighborApList,
 			 struct NEIGHBOR_AP, VIR_MEM_TYPE);
 
@@ -1639,7 +1659,7 @@ struct BSS_DESC *aisSearchBssDescByScore(
 		ais->ucConnTrialCount == 0)
 		return NULL;
 	else
-		return scanSearchBssDescByScoreForAis(prAdapter,
+		return apsSearchBssDescByScore(prAdapter,
 				roam->eReason, ucBssIndex, set);
 }
 
@@ -1684,11 +1704,18 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 	prMainBss = aisGetMainLinkBssInfo(prAisFsmInfo);
 	cnmWmmIndexDecision(prAdapter, prMainBss);
 
-	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
+	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
 		struct BSS_DESC *prBssDesc =
 			prBssDescSet->aprBssDesc[i];
+
+		/* prBssDesc can be null if roam from mld to legacy */
+		aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
+		aisSetLinkStaRec(prAisFsmInfo, NULL, i);
+
+		if (!prBssDesc)
+			continue;
 
 		if (!prAisBssInfo) {
 			prAisBssInfo =
@@ -1715,7 +1742,6 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 
 		prAisBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
-		aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
 
 #if CFG_SUPPORT_DBDC
 		/* DBDC decsion.may change OpNss */
@@ -1739,41 +1765,39 @@ uint8_t aisBssDescAllowed(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC_SET *prBssDescSet)
 {
-	struct BSS_DESC *prBssDesc;
 	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex;
+	uint8_t i, j, match = 0;
+
+	prConnSettings = &prAisFsmInfo->rConnSettings;
+	/* if the connection policy is BSSID/BSSID_HINT, means upper layer
+	 * order driver connect to specific AP, we need still do connect
+	 */
+	if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID ||
+	    prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID_HINT)
+		return TRUE;
 
 	if (prBssDescSet->ucLinkNum == 0)
 		return FALSE;
 
-	prBssDesc = prBssDescSet->prMainBssDesc;
-	prConnSettings = &prAisFsmInfo->rConnSettings;
-	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
+	if (prBssDescSet->ucLinkNum != aisGetLinkNum(prAisFsmInfo))
+		return TRUE;
 
-	/* 4 <3.a> Following cases will go back to NORMAL_TR.
-	 * Precondition: not user space triggered roaming
-	 *
-	 * CASE I: During Roaming, APP(WZC/NDISTEST) change the
-	 * connection settings. That make we can NOT match
-	 * the original AP, so the prBssDesc is NULL.
-	 *
-	 * CASE II: The same reason as CASE I.
-	 * Because APP change the eOPMode to other network type in
-	 * connection setting (e.g. NET_TYPE_IBSS), so the BssDesc
-	 * become the IBSS node.
-	 * (For CASE I/II, before WZC/NDISTEST set the OID_SSID,
-	 * it will change other parameters in connection setting first.
-	 * if we do roaming at the same time, it will hit these cases.)
-	 *
-	 * CASE III: Normal case, we can't find other candidate to roam
-	 * out, so only the current AP will be matched.
-	 * however, if the connection policy is BSSID, means upper layer
-	 * order driver connect to specific AP, we need still do connect
-	 */
-	return
-	     !(prBssDesc->fgIsConnected & BIT(ucBssIndex) && \
-	     prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID && \
-	     prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID_HINT);
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
+
+		if (!prBssDesc)
+			continue;
+
+		for (j = 0; j < prBssDescSet->ucLinkNum; j++) {
+			if (prBssDesc == prBssDescSet->aprBssDesc[j]) {
+				match++;
+				break;
+			}
+		}
+	}
+
+	/* allow when different combination */
+	return match != prBssDescSet->ucLinkNum;
 }
 
 enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(IN struct ADAPTER *prAdapter,
@@ -1873,7 +1897,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 			    prBssDescSet->prMainBssDesc->
 				rMlInfo.ucMaxSimultaneousLinks > 0 &&
 			    prAisFsmInfo->ucMlProbeSendCount <
-					ML_PROBE_RETRY_COUNT) {
+				prAdapter->rWifiVar.ucMlProbeRetryLimit) {
 				prAisFsmInfo->ucMlProbeSendCount++;
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
 				prAisFsmInfo->prMlProbeBssDesc =
@@ -2124,7 +2148,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct AIS_REQ_HDR *prAisReq;
-	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint16_t u2ScanIELen;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	uint8_t i;
@@ -2133,11 +2156,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("aisFsmSteps()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	do {
 
@@ -2625,12 +2646,10 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 void aisFsmQueryCandidates(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_802_11K
-	struct ROAMING_INFO *prRoamingFsmInfo;
 	struct STA_RECORD *prStaRec;
 	struct BSS_DESC *prBssDesc;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
@@ -2657,6 +2676,174 @@ void aisFsmQueryCandidates(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif
 }
 
+uint8_t aisFsmUpdateChannelList(uint8_t channel, enum ENUM_BAND eBand,
+	uint8_t *bitmap, uint8_t *count, struct ESS_CHNL_INFO *info)
+{
+	uint8_t byteNum = 0;
+	uint8_t bitNum = 0;
+
+	byteNum = channel / 8;
+	bitNum = channel % 8;
+	if (bitmap[byteNum] & BIT(bitNum))
+		return 1;
+	bitmap[byteNum] |= BIT(bitNum);
+	info[*count].ucChannel = channel;
+	info[*count].eBand = eBand;
+	*count += 1;
+	if (*count >= CFG_MAX_NUM_OF_CHNL_INFO)
+		return 0;
+
+	return 1;
+}
+
+void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct BSS_DESC *prBssDesc = NULL;
+	struct LINK *prBSSDescList =
+		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+	struct CONNECTION_SETTINGS *prConnSettings =
+		aisGetConnSettings(prAdapter, ucBssIndex);
+	struct ESS_CHNL_INFO *prEssChnlInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	uint8_t aucChnlBitMap[30] = {0,};
+	uint8_t aucChnlApNum[234] = {0,};
+	uint8_t aucChnlUtil[234] = {0,};
+	uint8_t ucChnlCount = 0;
+	uint32_t i;
+	uint8_t j = 0;
+#if CFG_SUPPORT_802_11K
+	struct LINK *prNeighborAPLink;
+#endif
+	struct CFG_SCAN_CHNL *prRoamScnChnl = &prAdapter->rAddRoamScnChnl;
+
+	if (!prConnSettings)  {
+		log_dbg(SCN, INFO, "No prConnSettings\n");
+		return;
+	}
+
+	if (prConnSettings->ucSSIDLen == 0) {
+		log_dbg(SCN, INFO, "No Ess are expected to connect\n");
+		return;
+	}
+
+	prAisSpecBssInfo =
+		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	if (!prAisSpecBssInfo) {
+		log_dbg(SCN, INFO, "No prAisSpecBssInfo\n");
+		return;
+	}
+	prEssChnlInfo =
+		&prAisSpecBssInfo->arCurEssChnlInfo[0];
+	if (!prEssChnlInfo) {
+		log_dbg(SCN, INFO, "No prEssChnlInfo\n");
+		return;
+	}
+
+	kalMemZero(prEssChnlInfo, CFG_MAX_NUM_OF_CHNL_INFO *
+		sizeof(struct ESS_CHNL_INFO));
+
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+		struct BSS_DESC) {
+		if (prBssDesc->ucChannelNum > 233)
+			continue;
+		/* Statistic AP num for each channel */
+		if (aucChnlApNum[prBssDesc->ucChannelNum] < 255)
+			aucChnlApNum[prBssDesc->ucChannelNum]++;
+		if (aucChnlUtil[prBssDesc->ucChannelNum] <
+			prBssDesc->ucChnlUtilization)
+			aucChnlUtil[prBssDesc->ucChannelNum] =
+				prBssDesc->ucChnlUtilization;
+		if (!EQUAL_SSID(prConnSettings->aucSSID,
+			prConnSettings->ucSSIDLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen) ||
+			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
+			continue;
+
+#if CFG_SUPPORT_NCHO
+		/* scan control is 1: use NCHO channel list only */
+		if (prAdapter->rNchoInfo.u4RoamScanControl)
+			continue;
+#endif
+		if (!aisFsmUpdateChannelList(prBssDesc->ucChannelNum,
+			prBssDesc->eBand, aucChnlBitMap, &ucChnlCount,
+			prEssChnlInfo))
+			goto updated;
+	}
+
+#if CFG_SUPPORT_NCHO
+	if (prAdapter->rNchoInfo.fgNCHOEnabled) {
+		struct CFG_NCHO_SCAN_CHNL *ncho;
+
+		if (prAdapter->rNchoInfo.u4RoamScanControl)
+			ncho = &prAdapter->rNchoInfo.rRoamScnChnl;
+		else
+			ncho = &prAdapter->rNchoInfo.rAddRoamScnChnl;
+
+		/* handle user-specefied scan channel info */
+		for (i = 0; ucChnlCount < CFG_MAX_NUM_OF_CHNL_INFO &&
+			i < ncho->ucChannelListNum; i++) {
+			uint8_t chnl;
+			enum ENUM_BAND eBand;
+
+			chnl = ncho->arChnlInfoList[i].ucChannelNum;
+			eBand = ncho->arChnlInfoList[i].eBand;
+			if (!aisFsmUpdateChannelList(chnl, eBand,
+			    aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
+				goto updated;
+		}
+
+		if (prAdapter->rNchoInfo.u4RoamScanControl)
+			goto updated;
+	}
+#endif
+
+#if CFG_SUPPORT_802_11K
+	prNeighborAPLink = &prAisSpecBssInfo->rNeighborApList.rUsingLink;
+	if (!LINK_IS_EMPTY(prNeighborAPLink)) {
+		/* Add channels provided by Neighbor Report to
+		 ** channel list for roaming scanning.
+		 */
+		struct NEIGHBOR_AP *prNeiAP = NULL;
+		enum ENUM_BAND eBand;
+		uint8_t ucChannel;
+
+		LINK_FOR_EACH_ENTRY(prNeiAP, prNeighborAPLink,
+		    rLinkEntry, struct NEIGHBOR_AP) {
+			ucChannel = prNeiAP->ucChannel;
+			eBand = prNeiAP->eBand;
+			if (!rlmDomainIsLegalChannel(
+				prAdapter, eBand, ucChannel))
+				continue;
+			if (!aisFsmUpdateChannelList(ucChannel, eBand,
+				aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
+				goto updated;
+		}
+	}
+#endif
+
+	/* handle user-specefied scan channel info */
+	for (i = 0; ucChnlCount < CFG_MAX_NUM_OF_CHNL_INFO &&
+		i < prRoamScnChnl->ucChannelListNum; i++) {
+		uint8_t chnl;
+		enum ENUM_BAND eBand;
+
+		chnl = prRoamScnChnl->arChnlInfoList[i].ucChannelNum;
+		eBand = prRoamScnChnl->arChnlInfoList[i].eBand;
+		if (!aisFsmUpdateChannelList(chnl, eBand,
+		    aucChnlBitMap, &ucChnlCount, prEssChnlInfo))
+			goto updated;
+	}
+
+updated:
+	prAisSpecBssInfo->ucCurEssChnlInfoNum = ucChnlCount;
+	for (j = 0; j < ucChnlCount; j++) {
+		uint8_t ucChnl = prEssChnlInfo[j].ucChannel;
+
+		prEssChnlInfo[j].ucApNum = aucChnlApNum[ucChnl];
+		prEssChnlInfo[j].ucUtilization = aucChnlUtil[ucChnl];
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -2677,7 +2864,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
 	struct BCN_RM_PARAMS *prBcnRmParam;
-	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmRunEventScanDone()");
@@ -2698,8 +2884,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
 	prBcnRmParam = &prRmReq->rBcnRmParam;
 
@@ -2743,7 +2927,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_ONLINE_SCAN:
-			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+			aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter,
@@ -2759,7 +2943,7 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_LOOKING_FOR:
-			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+			aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter,
@@ -2921,7 +3105,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 		return;
 	}
 	/* Support AP Selection */
-	scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+	aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
 	/* for new connection triggered by upper layer,
@@ -3185,8 +3369,15 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 		aisSetLinkStaRec(ais, prAisBssInfo->prStaRecOfAP, i);
 
 		/* Free STA-REC */
-		if (prStaRec != prAisBssInfo->prStaRecOfAP)
+		if (prStaRec != prAisBssInfo->prStaRecOfAP) {
 			cnmStaRecFree(ad, prStaRec);
+
+			prAisBssInfo->eHwBandIdx =
+				prAisBssInfo->prStaRecOfAP->eHwBandIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			mldBssUpdateBandIdxBitmap(ad, prAisBssInfo);
+#endif
+		}
 
 		/* roaming but can't find connected bssdesc */
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
@@ -5531,6 +5722,39 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of aisBssBeaconTimeout() */
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief    This function is to decide if we can roam out by this beacon time
+*
+* \param[in] prAdapter  Pointer of ADAPTER_T
+*
+* \return true	if we can roam out
+*         false	others
+*/
+/*----------------------------------------------------------------------------*/
+uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *ais;
+	int8_t rssi;
+
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -70) {
+		struct BSS_DESC_SET set = {0};
+
+		/* Good rssi but beacon timeout happened => PER */
+		apsSearchBssDescByScore(prAdapter,
+			ROAMING_REASON_TX_ERR,
+			ucBssIndex, &set);
+		if (aisBssDescAllowed(prAdapter, ais, &set)) {
+			DBGLOG(AIS, INFO, "Better AP for beacon timeout");
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisBssSecurityChanged(struct ADAPTER *prAdapter,
@@ -5735,6 +5959,75 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of aisFsmRunEventRoamingDiscovery() */
 
+uint8_t aisCheckNeedDriverRoaming(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *roam;
+	struct AIS_FSM_INFO *ais;
+	struct CONNECTION_SETTINGS *setting;
+	int8_t rssi;
+
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	setting = aisGetConnSettings(prAdapter, ucBssIndex);
+	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
+
+	GET_CURRENT_SYSTIME(&roam->rRoamingDiscoveryUpdateTime);
+
+	/*
+	 * try to select AP only when roaming is enabled and rssi is bad
+	 */
+	if (roamingFsmInDecision(prAdapter, ucBssIndex) &&
+	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
+	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
+		      roam->rRoamingLastDecisionTime,
+		      SEC_TO_SYSTIME(prAdapter->rWifiVar.u4InactiveTimeout))) {
+		struct BSS_DESC_SET set = {0};
+		struct BSS_DESC *target;
+		struct BSS_DESC *bss;
+
+		bss = apsSearchBssDescByScore(prAdapter,
+			ROAMING_REASON_INACTIVE, ucBssIndex, &set);
+		if (bss == NULL)
+			return FALSE;
+
+		/* multi-link case */
+		if (aisGetLinkNum(ais) != 1 || set.ucLinkNum != 1)
+			return aisBssDescAllowed(prAdapter, ais, &set);
+
+		/* single link, prefer 5g/6g */
+		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		/* 2.4 -> 5 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if ((bss->eBand == BAND_5G || bss->eBand == BAND_6G)
+#else
+		if (bss->eBand == BAND_5G
+#endif
+			&& target->eBand == BAND_2G4) {
+			if (rssi > RSSI_BAD_NEED_ROAM_24G_TO_5G_6G)
+				return FALSE;
+			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G_6G ||
+			bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM) {
+				DBGLOG(AIS, INFO,
+					"Driver trigger roaming to 5G band.\n");
+				return TRUE;
+			}
+		} else {
+			if (rssi > RSSI_BAD_NEED_ROAM)
+				return FALSE;
+			if (bss->ucRCPI - target->ucRCPI >
+				RCPI_DIFF_DRIVER_ROAM) {
+				DBGLOG(AIS, INFO,
+				"Driver trigger roaming for other cases.\n");
+				return TRUE;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Update the time of ScanDone for roaming and transit to Roam state.
@@ -5755,7 +6048,17 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(IN struct ADAPTER *prAdapter,
 	prRoamingFsmInfo =
 	    aisGetRoamingInfo(prAdapter, ucBssIndex);
 
-	roamingFsmScanResultsUpdate(prAdapter, ucBssIndex);
+	/* try driver roaming */
+	if (aisCheckNeedDriverRoaming(prAdapter, ucBssIndex)) {
+		struct ROAMING_INFO *roam;
+
+		DBGLOG(ROAMING, INFO, "Request driver roaming");
+		roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+		roam->eReason = ROAMING_REASON_INACTIVE;
+		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
+		aisFsmInsertRequest(prAdapter,
+			AIS_REQUEST_ROAMING_CONNECT, ucBssIndex);
+	}
 
 	eNextState = prAisFsmInfo->eCurrentState;
 	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY) {
@@ -5783,13 +6086,11 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
-				   IN struct AIS_FSM_INFO *prAisFsmInfo,
+				   IN struct BSS_INFO *prAisBssInfo,
 				   IN struct STA_RECORD *prTargetStaRec)
 {
-	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucBssIndex = prTargetStaRec->ucBssIndex;
+	uint8_t ucBssIndex = prAisBssInfo->ucBssIndex;
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (prAisBssInfo->prStaRecOfAP != prTargetStaRec)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
@@ -5821,15 +6122,20 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <4> Change Media State immediately. */
-	aisChangeMediaState(prAisBssInfo, MEDIA_STATE_ROAMING_DISC_PREV);
+	aisChangeMediaState(prAisBssInfo,
+		prTargetStaRec ?
+		MEDIA_STATE_ROAMING_DISC_PREV :
+		MEDIA_STATE_DISCONNECTED);
 
 	/* 4 <4.1> sync. with firmware */
 	/* Virtial BSSID */
-	prTargetStaRec->ucBssIndex = (prAdapter->ucHwBssIdNum + 1);
+	if (prTargetStaRec)
+		prTargetStaRec->ucBssIndex = (prAdapter->ucHwBssIdNum + 1);
 	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 
 	secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
-	prTargetStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
+	if (prTargetStaRec)
+		prTargetStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
 	/* before deactivate previous AP, should move its pending MSDUs
 	 ** to the new AP
 	 */
@@ -5848,6 +6154,7 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 					       prTargetStaRec);
 #endif
 			cnmStaRecFree(prAdapter, prAisBssInfo->prStaRecOfAP);
+			prAisBssInfo->prStaRecOfAP = NULL;
 		} else
 			DBGLOG(AIS, WARN, "prStaRecOfAP is in use %d\n",
 			       prAisBssInfo->prStaRecOfAP->fgIsInUse);
@@ -5862,14 +6169,16 @@ void aisFsmRoamingDisconnectPrevAllAP(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct STA_RECORD *prTargetStaRec =
+		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
+		struct BSS_INFO *prAisBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
 
-		if (!prTargetStaRec)
+		if (!prAisBssInfo)
 			break;
 
 		aisFsmRoamingDisconnectPrevAP(prAdapter,
-			prAisFsmInfo, prTargetStaRec);
+			prAisBssInfo, prStaRec);
 	}
 }
 
@@ -6959,6 +7268,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 	struct BSS_DESC *prBssDesc;
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
+	struct CMD_ROAMING_TRANSIT rRoamingData;
 	uint8_t ucBssIndex = 0;
 	uint8_t ucRequestMode = 0;
 
@@ -6975,6 +7285,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	ucRequestMode = prBtmParam->ucRequestMode;
+	kalMemZero(&rRoamingData, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* roaming */
 	if (!prBssDesc ||
@@ -6984,7 +7295,7 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	}
 
 	/* update cached channel list */
-	scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+	aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
 		struct AIS_BLACKLIST_ITEM *blk =
@@ -7007,12 +7318,14 @@ void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 	} else {
 		prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_0;
 	}
-
-	prRoamingFsmInfo->eReason = ROAMING_REASON_BTM;
+	rRoamingData.eReason = ROAMING_REASON_BTM;
 
 	DBGLOG(AIS, INFO, "BTM req roam start, DIS_IMMI_STATE %d\n",
 		prBtmParam->ucDisImmiState);
-	roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY, ucBssIndex);
+	rRoamingData.u2Data = prBssDesc->ucRCPI;
+	rRoamingData.u2RcpiLowThreshold = prRoamingFsmInfo->ucThreshold;
+	rRoamingData.ucBssidx = ucBssIndex;
+	roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
 
 	return;
 send_response:
@@ -7393,15 +7706,19 @@ void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return;
 
-	if (ori)
+	if (ori) {
+		prAisFsmInfo->u4BssIdxBmap &= ~BIT(ori->ucBssIndex);
 		prAisFsmInfo->arBssId2LinkMap[ori->ucBssIndex] =
 			MLD_LINK_ID_NONE;
+	}
 
 	prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo = prBssInfo;
 
-	if (prBssInfo)
+	if (prBssInfo) {
+		prAisFsmInfo->u4BssIdxBmap |= BIT(prBssInfo->ucBssIndex);
 		prAisFsmInfo->arBssId2LinkMap[prBssInfo->ucBssIndex] =
 			ucLinkIdx;
+	}
 }
 
 struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
@@ -7411,6 +7728,11 @@ struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 		return NULL;
 
 	return prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo;
+}
+
+uint32_t aisGetBssIndexBmap(IN struct AIS_FSM_INFO *prAisFsmInfo)
+{
+	return prAisFsmInfo->u4BssIdxBmap;
 }
 
 struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo)
@@ -8009,11 +8331,8 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		 ** and may cause normal data packets was queued and
 		 ** eventually flushed in firmware
 		 */
-		if (prBss->prStaRecOfAP &&
-			prAisFsmInfo->ucReasonOfDisconnect !=
-			DISCONNECT_REASON_CODE_REASSOCIATION)
-			prBss->prStaRecOfAP->fgIsTxAllowed =
-							FALSE;
+		if (prBss->prStaRecOfAP)
+			prBss->prStaRecOfAP->fgIsTxAllowed = FALSE;
 
 		if (i == 0)
 			prSubReq = prMsgChReq;

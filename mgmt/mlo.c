@@ -2361,7 +2361,7 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss)
 {
-	struct BSS_INFO *prCurrBssInfo;
+	struct BSS_INFO *prCurrBssInfo, *prNextBssInfo;
 	struct LINK *prBssList = NULL;
 
 	if (!prMldBssInfo)
@@ -2374,7 +2374,7 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 
 	prMldBssInfo->ucBssBitmap &= ~BIT(prBss->ucBssIndex);
 	prMldBssInfo->ucHwBandBitmap &= ~BIT(prBss->eHwBandIdx);
-	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
+	LINK_FOR_EACH_ENTRY_SAFE(prCurrBssInfo, prNextBssInfo, prBssList,
 			rLinkEntryMld,
 			struct BSS_INFO) {
 		if (!prCurrBssInfo)
@@ -2421,7 +2421,7 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 void mldBssFree(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo)
 {
-	struct BSS_INFO *prCurrBssInfo;
+	struct BSS_INFO *prCurrBssInfo, *prNextBssInfo;
 	struct LINK *prBssList = NULL;
 
 	if (!prMldBssInfo)
@@ -2432,8 +2432,8 @@ void mldBssFree(struct ADAPTER *prAdapter,
 	DBGLOG(ML, INFO, "ucGroupMldId: %d\n",
 		prMldBssInfo->ucGroupMldId);
 
-	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
-			struct BSS_INFO) {
+	LINK_FOR_EACH_ENTRY_SAFE(prCurrBssInfo, prNextBssInfo, prBssList,
+			rLinkEntryMld, struct BSS_INFO) {
 		if (!prCurrBssInfo)
 			break;
 
@@ -2657,7 +2657,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 {
 	struct MLD_STA_RECORD *prMldStarec;
 	struct LINK *prStarecList;
-	struct STA_RECORD *prCurrStarec;
+	struct STA_RECORD *prCurrStarec, *prNextStarec;
 
 	if (!prStarec || prStarec->ucMldStaIndex == MLD_GROUP_NONE)
 		return;
@@ -2677,8 +2677,8 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	DBGLOG(ML, INFO, "prMldStarec: %d, prStarec: %d\n",
 		prMldStarec->ucIdx, prStarec->ucIndex);
 
-	LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
-	    struct STA_RECORD) {
+	LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec, prNextStarec, prStarecList,
+			rLinkEntryMld, struct STA_RECORD) {
 		if (prStarec != prCurrStarec)
 			continue;
 

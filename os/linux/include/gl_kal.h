@@ -933,6 +933,14 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 })
 #endif
 
+#define kalMemZAlloc(u4Size, eMemType) ({    \
+	void *pvAddr; \
+	pvAddr = kalMemAlloc(u4Size, eMemType); \
+	if (pvAddr) \
+		kalMemSet(pvAddr, 0, u4Size); \
+	pvAddr; \
+})
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free allocated cache memory
@@ -1092,6 +1100,9 @@ int8_t atoi(uint8_t ch);
 
 #define kal_ieee80211_channel_to_frequency(_ch, _band) \
 	ieee80211_channel_to_frequency(_ch, _band)
+
+#define kal_max_t(_type, _v1, _v2) \
+	max_t(_type, _v1, _v2)
 
 #define kal_min_t(_type, _v1, _v2) \
 	min_t(_type, _v1, _v2)

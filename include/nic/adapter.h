@@ -767,8 +767,6 @@ struct WIFI_VAR {
 	uint8_t ucApHe;
 	uint8_t ucP2pGoHe;
 	uint8_t ucP2pGcHe;
-	uint8_t ucApSelAxWeight;
-	uint8_t ucApSelAxScoreDiv;
 	uint8_t ucVcoreBoostEnable;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -785,6 +783,7 @@ struct WIFI_VAR {
 	uint8_t ucEnableMlo;
 	uint8_t ucEnableMloSingleLink;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
+	uint8_t ucMlProbeRetryLimit;
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
@@ -1131,6 +1130,11 @@ struct WIFI_VAR {
 
 	uint32_t u4DiscoverTimeout;
 	uint32_t u4InactiveTimeout;
+	uint8_t ucDisallowBand2G;
+	uint8_t ucDisallowBand5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ucDisallowBand6G;
+#endif
 	uint32_t u4BtmDelta;
 	uint32_t u4BtmDisTimerThreshold;
 #if ARP_MONITER_ENABLE

@@ -4697,7 +4697,7 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 			/* Policy 1, if RX in the past duration (in ms) */
-			if (scanBeaconTimeoutFilterPolicyForAis(
+			if (aisBeaconTimeoutFilterPolicy(
 					prAdapter, ucBssIdx)) {
 				DBGLOG(NIC, INFO, "Driver find better TX AP");
 				*ucDisconnectReason =

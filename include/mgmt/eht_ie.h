@@ -137,11 +137,11 @@ struct EHT_OP_INFO {
  * Indicates the maximum MPDU length
  * that the STA is capable of receiving
  */
-#define EHT_MAC_CAP_MAX_MPDU_LEN BIT(6)
-
-#define SET_EHT_MAC_CAP_MAX_MPDU_LEN(_aucMacCapInfo) \
-		(_aucMacCapInfo[0] |= EHT_MAC_CAP_MAX_MPDU_LEN)
-
+#define EHT_MAC_CAP_MAX_MPDU_LEN_3K		0
+#define EHT_MAC_CAP_MAX_MPDU_LEN_8K		BIT(6)
+#define EHT_MAC_CAP_MAX_MPDU_LEN_11K		BIT(7)
+#define EHT_MAC_CAP_MAX_MPDU_LEN_MASK		BITS(6, 7)
+#define EHT_MAC_CAP_MAX_MPDU_LEN_OFFSET
 
 /* 802.11be D1.3 9.2.4.6.4 A-Control */
 #define HTC_EHT_A_CTRL_OM			7

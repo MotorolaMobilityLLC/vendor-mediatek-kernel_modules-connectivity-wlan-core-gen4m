@@ -267,6 +267,7 @@ struct STA_RECORD {
 	struct LINK_ENTRY rLinkEntryMld;
 	uint8_t ucIndex;	/* Not modify it except initializing */
 	uint8_t ucWlanIndex;	/* WLAN table index */
+	enum ENUM_MBMC_BN eHwBandIdx;
 
 #if 0 /* TODO: Remove this */
 	/* The BSS STA Rx WLAN index, IBSS Rx BC WLAN table

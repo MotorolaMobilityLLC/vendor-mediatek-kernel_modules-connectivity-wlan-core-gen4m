@@ -2434,6 +2434,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExsitBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
+	prBssDesc->u2MaximumMpdu = 0;
 #if CFG_SUPPORT_MBO
 	prBssDesc->fgIsDisallowed = FALSE;
 	prBssDesc->fgExistEspIE = FALSE;
@@ -2632,6 +2633,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prBssDesc->fgMultiAnttenaAndSTBC =
 				((ucSpatial > 1) &&
 				(prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
+
+			prBssDesc->u2MaximumMpdu = (prHtCap->u2HtCapInfo &
+				HT_CAP_INFO_MAX_AMSDU_LEN);
 			/* end Support AP Selection */
 
 			break;
@@ -2820,7 +2824,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 			/* TODO */
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS) {
+				struct IE_EHT_CAP *ehtCap = NULL;
+
+				ehtCap = (struct IE_EHT_CAP *) pucIE;
 				prBssDesc->fgIsEHTPresent = TRUE;
+				prBssDesc->u2MaximumMpdu =
+					(ehtCap->ucEhtMacCap[0] &
+					EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
 				DBGLOG(SCN, INFO,
 					"BSSID:" MACSTR
 					" SSID:%s, EHT CAP IE\n",
@@ -2918,6 +2928,16 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 			}
 
+#endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_6G_BAND_CAP) {
+				uint16_t u2CapInfo =
+					((struct _IE_HE_6G_BAND_CAP_T *)pucIE)->
+					u2CapInfo;
+
+				prBssDesc->u2MaximumMpdu = (u2CapInfo &
+					HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK);
+			}
 #endif
 			break;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
@@ -4275,37 +4295,6 @@ void scanRemoveBssDescFromList(IN struct ADAPTER *prAdapter,
 			       IN struct BSS_DESC *prBssDesc)
 {
 	if (prAdapter != NULL && prBssDesc != NULL) {
-		uint8_t j;
-
-		/* Support AP Selection */
-		if (!prBssDesc->prBlack)
-			aisQueryBlackList(prAdapter, prBssDesc);
-
-		/* Remove this BSS Desc from the Ess Desc List */
-		for (j = 0; j < KAL_AIS_NUM; j++) {
-			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo;
-			struct LINK *prEssList;
-
-			if (!AIS_MAIN_BSS_INFO(prAdapter, j))
-				continue;
-
-			prSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
-				AIS_MAIN_BSS_INDEX(prAdapter, j));
-			if (!prSpecBssInfo)
-				continue;
-
-			prEssList = &prSpecBssInfo->rCurEssLink;
-			if (!prEssList)
-				continue;
-
-			if (!LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss[j]))
-				continue;
-
-			LINK_REMOVE_KNOWN_ENTRY(prEssList,
-				&prBssDesc->rLinkEntryEss[j]);
-		}
-		/* end Support AP Selection */
-
 		/* Remove this BSS Desc from the BSS Desc list */
 		if (prBSSDescList != NULL)
 			LINK_REMOVE_KNOWN_ENTRY(prBSSDescList, prBssDesc);
@@ -4462,6 +4451,9 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 	prBssDesc->fgMultiAnttenaAndSTBC =
 		((ucSpatial > 1) && (prVhtCap->u4VhtCapInfo &
 			VHT_CAP_INFO_TX_STBC));
+
+	prBssDesc->u2MaximumMpdu = (prVhtCap->u4VhtCapInfo &
+		VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
 }
 
 void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
@@ -4483,6 +4475,24 @@ void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
 			   &prBssDesc->ucCenterFreqS2,
 			   prBssDesc->ucCenterFreqS3,
 			   (uint8_t *)&prBssDesc->eChannelWidth);
+}
+
+uint8_t scanApOverload(uint16_t status, uint16_t reason)
+{
+	switch (status) {
+	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
+	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
+	case STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD:
+	case STATUS_CODE_AUTH_TIMEOUT:
+	case STATUS_CODE_ASSOC_TIMEOUT:
+		return TRUE;
+	}
+	switch (reason) {
+	case REASON_CODE_DISASSOC_LACK_OF_BANDWIDTH:
+	case REASON_CODE_DISASSOC_AP_OVERLOAD:
+		return TRUE;
+	}
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
