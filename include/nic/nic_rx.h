@@ -416,6 +416,7 @@
 #define RX_VT_FR_MODE_40      1
 #define RX_VT_FR_MODE_80      2
 #define RX_VT_FR_MODE_160     3 /*BW160 or BW80+80*/
+#define RX_VT_FR_MODE_320     4
 
 #define RX_VT_CCK_SHORT_PREAMBLE   BIT(2)
 
