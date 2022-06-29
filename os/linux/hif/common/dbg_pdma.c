@@ -121,7 +121,7 @@ struct wfdma_ring_info {
  */
 static void halCheckHifState(struct ADAPTER *prAdapter);
 static void halDumpHifDebugLog(struct ADAPTER *prAdapter);
-static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token);
+static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -266,7 +266,7 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
-		if (halIsTxHang(prAdapter, &u4TokenId)) {
+		if (halIsTxTimeout(prAdapter, &u4TokenId)) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
 
@@ -575,14 +575,14 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Checking tx hang
+ * @brief Checking tx timeout
  *
  * @param prAdapter      a pointer to adapter private data structure.
  *
- * @retval true          tx is hang because msdu report too long
+ * @retval true          tx is timeout because msdu report too long
  */
 /*----------------------------------------------------------------------------*/
-static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
+static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
@@ -643,10 +643,13 @@ static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 	if (fgIsTimeout) {
 		prToken = &prTokenInfo->arToken[u4TokenId];
-		DBGLOG(HAL, INFO, "TokenId[%u] Wlan_Idx[%u] timeout[sec:%ld]\n",
+
+		DBGLOG(HAL, INFO,
+				"TokenId[%u] Wlan_Idx[%u] timeout[sec:%ld]\n",
 				u4TokenId,
 				prToken->ucWlanIndex,
 				rLongest.tv_sec);
+
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
 		prHistory->au4List[prHistory->u4CurIdx].u4LongestId = u4TokenId;
