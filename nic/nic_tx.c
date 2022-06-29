@@ -1712,7 +1712,7 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 				     struct QUE *prDataPort1)
 {
 	struct QUE *prDataPort, *prTxQue;
-	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfo = NULL;
 	uint32_t u4Mark;
 	int32_t i4TcIdx, i;
 	uint32_t u4QSize, u4Idx;
@@ -1767,15 +1767,15 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
-	struct WIFI_VAR *prWifiVar;
+	struct WIFI_VAR *prWifiVar = NULL;
 	struct QUE qDataPort0, qDataPort1,
 		arTempQue[MAX_BSSID_NUM][TC_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
-	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfo = NULL;
 	uint32_t u4Idx, u4IsNotAllQueneEmpty, i, j;
 	uint8_t ucPortIdx;
 	uint32_t au4TxCnt[MAX_BSSID_NUM][TC_NUM];
-	struct BSS_INFO	*prBssInfo;
+	struct BSS_INFO	*prBssInfo = NULL;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2607,9 +2607,9 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			uint8_t ucPortIdx, struct QUE *prQue)
 {
-	struct HIF_STATS *prHifStats;
-	struct MSDU_INFO *prMsduInfo;
-	struct TX_CTRL *prTxCtrl;
+	struct HIF_STATS *prHifStats = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct TX_CTRL *prTxCtrl = NULL;
 	struct QUE qDataTemp, *prDataTemp = NULL;
 
 	ASSERT(prAdapter);
@@ -2854,7 +2854,7 @@ void nicTxRelease(IN struct ADAPTER *prAdapter,
 		  IN u_int8_t fgProcTxDoneHandler)
 {
 	struct TX_CTRL *prTxCtrl;
-	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfo = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -4043,7 +4043,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 		       *prMsduInfoHead;
 	struct QUE qDataPort0, qDataPort1;
 	struct QUE *prDataPort0, *prDataPort1;
-	struct CMD_INFO *prCmdInfo;
+	struct CMD_INFO *prCmdInfo = NULL;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	struct QUE qDataPort2;
@@ -4431,7 +4431,7 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 
 void nicTxClearMgmtDirectTxQ(IN struct ADAPTER *prAdapter)
 {
-	struct MSDU_INFO *prMsduInfo;
+	struct MSDU_INFO *prMsduInfo = NULL;
 
 	DBGLOG(TX, INFO,
 		"Clear all mgmt direct tx Q\n");

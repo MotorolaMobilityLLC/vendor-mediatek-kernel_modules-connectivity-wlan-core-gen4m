@@ -578,7 +578,7 @@ bow_proc:
 uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prSwRfb)
 {
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	uint16_t u2StatusCode = STATUS_CODE_RESERVED;
 	u_int8_t fgReplyAssocResp = FALSE;

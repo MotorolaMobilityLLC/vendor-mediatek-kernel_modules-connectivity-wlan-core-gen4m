@@ -2960,7 +2960,7 @@ void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
 void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
 	uint32_t int_n9_sts = 0, int_n9_err_sts = 0, int_n9_err_sts_1 = 0;
-	uint32_t ple_buf_ctrl, pg_sz, pg_num;
+	uint32_t ple_buf_ctrl = 0, pg_sz, pg_num = 0;
 	uint32_t ple_stat[ALL_CR_NUM_OF_ALL_AC + 1] = {0}, pg_flow_ctrl[10] = {0};
 	uint32_t dis_sta_map[CR_NUM_OF_AC] = {0};
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail, hif_max_q, hif_min_q;
@@ -3109,7 +3109,7 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 {
 	uint32_t int_n9_sts = 0, int_n9_err_sts = 0, int_n9_err_sts_1 = 0;
-	uint32_t pse_buf_ctrl, pg_sz, pg_num;
+	uint32_t pse_buf_ctrl = 0, pg_sz, pg_num = 0;
 	uint32_t que_empty = 0, que_empty1 = 0, que_empty_mask = 0;
 	uint32_t fpg_cnt, ffa_cnt, fpg_head, fpg_tail;
 	uint32_t max_q, min_q, rsv_pg, used_pg;
@@ -3447,14 +3447,17 @@ int32_t connac3x_show_mib_info(
 	int32_t i4BytesWritten = 0;
 	uint8_t bss_nums = 4;
 	uint32_t idx;
-	uint32_t mac_val, band_idx = u4Index, band_offset = 0, band_offset_umib = 0;
-	uint32_t msdr6, msdr9, msdr18;
-	uint32_t rvsr0, rscr26, mctr5, mctr6, msr0, msr1, msr2;
-	uint32_t tbcr0, tbcr1, tbcr2, tbcr3, tbcr4;
+	uint32_t mac_val = 0, band_idx = u4Index;
+	uint32_t band_offset = 0, band_offset_umib = 0;
+	uint32_t msdr6 = 0, msdr9 = 0, msdr18 = 0;
+	uint32_t rvsr0 = 0, rscr26 = 0, mctr5 = 0, mctr6 = 0;
+	uint32_t msr0 = 0, msr1 = 0, msr2 = 0;
+	uint32_t tbcr0 = 0, tbcr1 = 0, tbcr2 = 0, tbcr3 = 0, tbcr4 = 0;
 	uint32_t btscr[7];
 	uint32_t tdrcr[5];
 	uint32_t mbtocr[16], mbtbcr[16], mbrocr[16], mbrbcr[16];
-	uint32_t btcr, btbcr, brocr, brbcr, btdcr, brdcr;
+	uint32_t btcr = 0, btbcr = 0, brocr = 0;
+	uint32_t brbcr = 0, btdcr = 0, brdcr = 0;
 #if defined(BELLWETHER) || defined(MT7990)
 	uint32_t mu_cnt[5];
 #endif

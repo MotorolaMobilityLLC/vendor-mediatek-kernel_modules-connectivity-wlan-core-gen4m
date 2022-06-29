@@ -1577,7 +1577,7 @@ uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	uint32_t u4MldParam = 0;
 	uint8_t band;
-	struct STA_PROFILE *prProfile;
+	struct STA_PROFILE *prProfile = NULL;
 
 	/* get channel number for this neighborAPInfo */
 	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
@@ -1926,7 +1926,7 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSrc, struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *bss;
-	struct STA_PROFILE *sta;
+	struct STA_PROFILE *sta = NULL;
 	struct MULTI_LINK_INFO parse, *info = &parse;
 	struct SW_RFB *rfb = NULL;
 	struct WLAN_MAC_MGMT_HEADER *mgmt =

@@ -1883,7 +1883,7 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 	uint32_t rStatus;
 	struct QUE rTempCmdQue, rMergeCmdQue, rStandInCmdQue;
 	struct QUE *prTempCmdQue, *prMergeCmdQue, *prStandInCmdQue;
-	struct QUE_ENTRY *prQueueEntry;
+	struct QUE_ENTRY *prQueueEntry = NULL;
 	struct CMD_INFO *prCmdInfo;
 	struct MSDU_INFO *prMsduInfo;
 	enum ENUM_FRAME_ACTION eFrameAction = FRAME_ACTION_DROP_PKT;
@@ -2395,7 +2395,7 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 	struct QUE *prTempCmdQue;
 	struct QUE rTempCmdDoneQue;
 	struct QUE *prTempCmdDoneQue;
-	struct QUE_ENTRY *prQueueEntry;
+	struct QUE_ENTRY *prQueueEntry = NULL;
 	struct CMD_INFO *prCmdInfo;
 	/* P_CMD_ACCESS_REG prCmdAccessReg;
 	 * P_CMD_ACCESS_REG prEventAccessReg;
@@ -2508,7 +2508,7 @@ uint32_t wlanTxCmdDoneMthread(IN struct ADAPTER *prAdapter)
 {
 	struct QUE rTempCmdQue;
 	struct QUE *prTempCmdQue;
-	struct QUE_ENTRY *prQueueEntry;
+	struct QUE_ENTRY *prQueueEntry = NULL;
 	struct CMD_INFO *prCmdInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -2707,7 +2707,7 @@ void wlanClearTxCommandDoneQueue(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 {
-	if (HAL_IS_TX_DIRECT())
+	if (HAL_IS_TX_DIRECT(prAdapter))
 		nicTxDirectClearHifQ(prAdapter);
 	else {
 #if CFG_FIX_2_TX_PORT
@@ -2758,7 +2758,7 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 
 		struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
 		struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
-		struct MSDU_INFO *prMsduInfo;
+		struct MSDU_INFO *prMsduInfo = NULL;
 		int32_t i, j;
 
 		KAL_SPIN_LOCK_DECLARATION();
@@ -4012,7 +4012,7 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 	uint32_t u4SysTime;
 	uint8_t ucMacHeaderLen;
 	struct TX_PACKET_INFO rTxPacketInfo;
-	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prPacket);
@@ -8273,7 +8273,7 @@ void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
 	const int8_t acDelim[] = " ";
 	int8_t *pcPtr = NULL;
 	int8_t *pcDupValue = NULL;
-	uint32_t au4Values[2] = {};
+	uint32_t au4Values[2] = {0};
 	uint32_t u4TokenCount = 0;
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -12281,7 +12281,7 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 			prGtkData->u4PairwiseCipher = BIT(4);
 		else {
 			kalMemFree(prGtkData, VIR_MEM_TYPE,
-				sizeof(PARAM_GTK_REKEY_DATA));
+				sizeof(struct PARAM_GTK_REKEY_DATA));
 			return WLAN_STATUS_SUCCESS;
 		}
 
@@ -12293,7 +12293,7 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 			prGtkData->u4GroupCipher    = BIT(4);
 		else {
 			kalMemFree(prGtkData, VIR_MEM_TYPE,
-				sizeof(PARAM_GTK_REKEY_DATA));
+				sizeof(struct PARAM_GTK_REKEY_DATA));
 			return WLAN_STATUS_SUCCESS;
 		}
 
@@ -12319,7 +12319,8 @@ wlanSuspendRekeyOffload(struct GLUE_INFO *prGlueInfo, uint8_t ucRekeyMode)
 	else
 		u4Rslt = WLAN_STATUS_SUCCESS;
 
-	kalMemFree(prGtkData, VIR_MEM_TYPE, sizeof(PARAM_GTK_REKEY_DATA));
+	kalMemFree(prGtkData, VIR_MEM_TYPE,
+		sizeof(struct PARAM_GTK_REKEY_DATA));
 
 	return u4Rslt;
 }

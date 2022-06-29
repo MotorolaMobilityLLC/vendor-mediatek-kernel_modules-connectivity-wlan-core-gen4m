@@ -256,7 +256,7 @@ int rrmBeaconRepUpdateLastFrame(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
 	struct IE_MEASUREMENT_REPORT *msr_rep;
 	uint8_t *end = pos + len;
-	uint8_t *msr_rep_end;
+	uint8_t *msr_rep_end = NULL;
 	struct RM_BCN_REPORT *rep = NULL;
 	uint8_t *subelem;
 

@@ -2059,9 +2059,9 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		uint8_t ucChannelNum = 36;
 		uint8_t ucRoleIndex = prP2pBssInfo->u4PrivateData;
 		struct RF_CHANNEL_INFO aucChannelList
-			[MAX_5G_BAND_CHN_NUM] = {};
+			[MAX_5G_BAND_CHN_NUM] = {0};
 		struct RF_CHANNEL_INFO aucChannelListRdd
-			[MAX_5G_BAND_CHN_NUM] = {};
+			[MAX_5G_BAND_CHN_NUM] = {0};
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC) {
 			p2pRoleFsmStateTransition(prAdapter,
