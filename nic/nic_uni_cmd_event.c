@@ -831,7 +831,6 @@ uint32_t nicUniCmdBssInfoPhyMode(uint8_t ucPhyTypeSet)
 	return phy_mode;
 }
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 	uint8_t *buf, uint8_t ucBssIndex)
 {
@@ -847,13 +846,16 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
 	tag->u2Length = sizeof(*tag);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prMldBssInfo && prMldBssInfo->rBssList.u4NumElem > 1) {
 		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
 		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
 		tag->ucLinkId = bss->ucLinkIndex;
-	} else {
+	} else
+#endif
+	{
 		tag->ucGroupMldId = MLD_GROUP_NONE;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucOwnMacAddr);
@@ -873,7 +875,6 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 
 	return tag->u2Length;
 }
-#endif
 
 uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -883,6 +884,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	struct UNI_CMD_BSSINFO *bss_cmd;
 	struct UNI_CMD_DEVINFO_ACTIVE *dev_active_tag;
 	struct UNI_CMD_BSSINFO_BASIC *bss_basic_tag;
+	struct UNI_CMD_BSSINFO_MLD *mld_tag;
 	struct WIFI_UNI_CMD_ENTRY *dev_entry = NULL, *bss_entry = NULL;
 	uint32_t max_cmd_len;
 	struct BSS_INFO *bss;
@@ -925,7 +927,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	/* update bssinfo */
 	max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
 		sizeof(struct UNI_CMD_BSSINFO_BASIC) +
-		(cmd->ucActive ? sizeof(struct UNI_CMD_BSSINFO_MLD) : 0);
+		sizeof(struct UNI_CMD_BSSINFO_MLD);
 	bss_entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!bss_entry)
@@ -953,12 +955,15 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->ucPhyMode = phy_mode & 0xff;
 	bss_basic_tag->ucPhyModeExt = (phy_mode >> 8) & 0xff;
 	bss_basic_tag->ucMldLinkIdx = cmd->ucMldLinkIdx;
-	if (cmd->ucActive)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		nicUniCmdBssInfoMld(ad,
-			bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag),
-			cmd->ucBssIndex);
-#endif
+	mld_tag = (struct UNI_CMD_BSSINFO_MLD *)
+		(bss_cmd->aucTlvBuffer + sizeof(*bss_basic_tag));
+	mld_tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
+	mld_tag->u2Length = sizeof(*mld_tag);
+	mld_tag->ucGroupMldId = MLD_GROUP_NONE;
+	mld_tag->ucOwnMldId = bss->ucOwnMldId;
+	COPY_MAC_ADDR(mld_tag->aucOwnMldAddr, bss->aucOwnMacAddr);
+	mld_tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
+	mld_tag->ucLinkId = MLD_LINK_ID_NONE;
 	DBGLOG(INIT, INFO,
 		"%s DevInfo[OMAC=%d, DBDC=%d], BssInfo%d[DBDC=%d, OMAC=%d, WMM=%d, ConnType=%d, ConnState=%d, BcIdx=%d, PhyMode=0x%x, PhyModeEx=0x%x]\n",
 		cmd->ucActive ? "Activate" : "Deactivate",
@@ -2401,13 +2406,11 @@ uint32_t nicUniCmdBssInfoTagWapi(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
 	return nicUniCmdBssInfoMld(ad, buf, cmd->ucBssIndex);
 }
-#endif
 
 uint32_t nicUniCmdBssInfoTagMaxIdlePeriod(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
@@ -2455,9 +2458,7 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld},
-#endif
 #if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD),
 					nicUniCmdBssInfoTagMaxIdlePeriod}

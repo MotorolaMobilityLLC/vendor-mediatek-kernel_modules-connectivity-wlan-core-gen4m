@@ -2218,7 +2218,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex = prAdapter->ucP2PDevBssIdx;
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
 			MAT_OWN_MLD_ID_BASE;
 		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
@@ -2282,7 +2282,7 @@ omac_choosed:
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
 			prBssInfo->eHwBandIdx = ENUM_BAND_AUTO;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 			prBssInfo->ucOwnMldId = ucBssIndex +
 				MAT_OWN_MLD_ID_BASE;
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
