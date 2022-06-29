@@ -10339,8 +10339,12 @@ void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)
 	 * so usbcore will re-enable our remote wakeup function
 	 * before entering suspend.
 	 */
-	if (prAdapter->rWifiVar.ucWow)
+#if CFG_WOW_SUPPORT
+	if (prAdapter->rWifiVar.ucWow &&
+		(prAdapter->rWowCtrl.astWakeHif[0].ucWakeupHif
+		!= ENUM_HIF_TYPE_GPIO))
 		device_init_wakeup(prDev, TRUE);
+#endif
 }
 
 u_int8_t kalIsOuiMask(const uint8_t pucMacAddrMask[MAC_ADDR_LEN])
