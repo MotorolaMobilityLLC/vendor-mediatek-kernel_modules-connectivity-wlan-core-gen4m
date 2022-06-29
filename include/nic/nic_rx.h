@@ -1015,6 +1015,11 @@ struct RX_CTRL {
 	/*!< RX Counters */
 	uint64_t au8Statistics[RX_STATISTIC_COUNTER_NUM];
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* RRO_COUNTER_NUM used for abnormal reason */
+	uint64_t au8RROStatistics[RRO_COUNTER_NUM + 1];
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
+
 #if CFG_HIF_STATISTICS
 	uint32_t u4TotalRxAccessNum;
 	uint32_t u4TotalRxPacketNum;
@@ -1139,6 +1144,18 @@ struct ACTION_FRAME_SIZE_MAP {
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
 	{kalMemZero(&prRxCtrl->au8Statistics[0], \
 	sizeof(prRxCtrl->au8Statistics)); }
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#define RX_RRO_INC_CNT(prRxCtrl, eCounter)              \
+	{((struct RX_CTRL *)prRxCtrl)->au8RROStatistics[eCounter]++; }
+
+#define RX_RRO_GET_CNT(prRxCtrl, eCounter)              \
+	(((struct RX_CTRL *)prRxCtrl)->au8RROStatistics[eCounter])
+
+#define RX_RRO_RESET_ALL_CNTS(prRxCtrl)                 \
+	{kalMemZero(&prRxCtrl->au8RROStatistics[0], \
+	sizeof(prRxCtrl->au8RROStatistics)); }
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #define RX_STATUS_TEST_MORE_FLAG(flag)	\
 	((u_int8_t)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))

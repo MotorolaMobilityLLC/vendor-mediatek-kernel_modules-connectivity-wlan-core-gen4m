@@ -9541,12 +9541,23 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT)
 		);
 #undef TEMP_LOG_TEMPLATE
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#define RRO_LOG_TEMPLATE \
+	"RRO[%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu] "
+#else /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+#define RRO_LOG_TEMPLATE ""
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
+	RRO_LOG_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME,ID]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu" \
 	"%lu\n"
+
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
@@ -9557,6 +9568,22 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT),
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		prAdapter->rWifiVar.fgEnableRro,
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_STEP_ONE),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_REPEAT),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_OLDPKT),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_WITHIN),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_SURPASS),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_SURPASS_BY_BAR),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_SURPASS_BIG_SN),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_DISCONNECT),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_NOT_RRO_PKT),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_TIMEOUT_STEP_ONE),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_TIMEOUT_FLUSH_ALL),
+		/* used when recv abnormal reason */
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM),
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -9585,6 +9612,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT)
 		);
 #undef TEMP_LOG_TEMPLATE
+#undef RRO_LOG_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
