@@ -34,8 +34,10 @@
 
 #define ICS_FW_LOG_IOC_MAGIC        (0xfc)
 #define ICS_FW_LOG_IOCTL_ON_OFF     _IOW(ICS_FW_LOG_IOC_MAGIC, 0, int)
+#define ICS_FW_LOG_IOCTL_SET_LEVEL  _IOW(ICS_FW_LOG_IOC_MAGIC, 1, int)
 
 #define ICS_LOG_CMD_ON_OFF        0
+#define ICS_LOG_CMD_SET_LEVEL     1
 
 struct ics_ring {
 	/* ring related variable */
@@ -217,6 +219,25 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 
 	down(&gIcsDev->ioctl_mtx);
 	switch (cmd) {
+	case ICS_FW_LOG_IOCTL_SET_LEVEL:{
+		unsigned int level = (unsigned int) arg;
+
+		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_SET_LEVEL start\n");
+
+		if (gIcsDev->pfFwEventFuncCB) {
+			DBGLOG(ICS, INFO,
+				"ICS_FW_LOG_IOCTL_SET_LEVEL invoke:%d\n",
+				(int)level);
+			gIcsDev->pfFwEventFuncCB(ICS_LOG_CMD_SET_LEVEL,
+				level);
+		} else {
+			DBGLOG(ICS, ERROR,
+				"ICS_FW_LOG_IOCTL_SET_LEVEL invoke failed\n");
+		}
+
+		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_SET_LEVEL end\n");
+		break;
+	}
 	case ICS_FW_LOG_IOCTL_ON_OFF:{
 		unsigned int log_on_off = (unsigned int) arg;
 
@@ -227,9 +248,10 @@ static long fw_log_ics_unlocked_ioctl(struct file *filp, unsigned int cmd,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke:%d\n",
 				(int)log_on_off);
 			gIcsDev->pfFwEventFuncCB(ICS_LOG_CMD_ON_OFF, log_on_off);
-		} else
-			DBGLOG(ICS, ERROR, 
+		} else {
+			DBGLOG(ICS, ERROR,
 				"ICS_FW_LOG_IOCTL_ON_OFF invoke failed\n");
+		}
 
 		DBGLOG(ICS, INFO, "ICS_FW_LOG_IOCTL_ON_OFF end\n");
 		break;
