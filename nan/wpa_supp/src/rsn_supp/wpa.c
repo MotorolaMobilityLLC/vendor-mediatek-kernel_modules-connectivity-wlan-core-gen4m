@@ -85,6 +85,13 @@ wpa_eapol_key_send_wpa(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
 				MAC2STR(dest));
 		}
 	}
+
+	if (!key_mic) {
+		wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
+				"key_mic is null");
+		goto out;
+	}
+
 	if (key_mic && wpa_eapol_key_mic_wpa(kck, kck_len, sm->key_mgmt, ver,
 					     msg, msg_len, key_mic)) {
 		wpa_msg(sm->ctx->msg_ctx, MSG_ERROR,
@@ -1093,6 +1100,8 @@ wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm, const u8 *keydata,
 				  struct wpa_gtk_data *gd) {
 	int maxkeylen;
 	struct wpa_eapol_ie_parse ie;
+
+	os_memset(&ie, 0, sizeof(ie));
 
 	wpa_hexdump(MSG_DEBUG, "RSN: msg 1/2 key data", keydata, keydatalen);
 	if (wpa_supplicant_parse_ies_wpa(keydata, keydatalen, &ie) < 0)

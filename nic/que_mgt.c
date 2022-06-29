@@ -7136,15 +7136,14 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 				eFrameAction = FRAME_ACTION_TX_PKT;
 				break;
 			}
-		}
-#if CFG_SUPPORT_NAN
-		if (prMsduInfo &&
-			prMsduInfo->ucTxToNafQueFlag == TRUE) {
-			eFrameAction = FRAME_ACTION_TX_PKT;
-			break;
-		}
-#endif
 
+#if CFG_SUPPORT_NAN
+			if (prMsduInfo->ucTxToNafQueFlag == TRUE) {
+				eFrameAction = FRAME_ACTION_TX_PKT;
+				break;
+			}
+#endif
+		}
 		/* 4 <2> Drop, if BSS is inactive */
 		if (!prBssInfo) {
 			DBGLOG(QM, INFO,
