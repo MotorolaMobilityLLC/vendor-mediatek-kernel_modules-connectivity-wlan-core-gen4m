@@ -178,6 +178,21 @@ struct WAKEUP_STATISTIC {
 };
 #endif /* fos_change end */
 
+#if CFG_SUPPORT_PKT_OFLD
+
+enum RX_DATA_MODE {
+	RX_DATA_MODE_TO_HOST,
+	RX_DATA_MODE_SUSPEND_TO_FW,
+	RX_DATA_MODE_CFG_SUSPEND_TO_FW,
+	RX_DATA_MODE_FORCE_TO_FW,
+	RX_DATA_MODE_NUM
+};
+
+struct ABNORMAL_WAKEUP_STATISTIC {
+	uint16_t u2Count;
+	OS_SYSTIME rStartTime;
+};
+#endif
 
 /* Test mode bitmask of disable flag */
 #define TEST_MODE_DISABLE_ONLINE_SCAN  BIT(0)
@@ -587,4 +602,8 @@ void nicDumpMsduInfo(IN struct MSDU_INFO *prMsduInfo);
 uint8_t nicGetActiveTspec(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
+#if CFG_SUPPORT_PKT_OFLD
+void nicAbnormalWakeupHandler(IN struct ADAPTER *prAdapter);
+void nicAbnormalWakeupMonReset(IN struct ADAPTER *prAdapter);
+#endif
 #endif /* _NIC_H */

@@ -283,6 +283,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MLO			= 0x59,	/* MLO */
 	UNI_CMD_ID_ACL_POLICY		= 0x5A,	/* ACL */
 	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
+	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4053,6 +4054,43 @@ enum ENUM_UNI_CMD_SEND_VOLT_INFO_TAG {
 	UNI_CMD_SEND_VOLT_INFO_TAG_NUM
 };
 #endif /* CFG_VOLT_INFO */
+#if CFG_SUPPORT_PKT_OFLD
+/* Packet offload set command (0x60) */
+struct UNI_CMD_PKT_OFLD {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                                  | ID  | structure
+	*   --------------------------------|---|--------------
+	*   UNI_CMD_PKT_OFLD_TAG_APF_INSTALL|0x0| UNI_CMD_PKT_OFLD_GENERAL_OP_T
+	*   UNI_CMD_PKT_OFLD_TAG_APF_QUERY  |0x1| UNI_CMD_PKT_OFLD_GENERAL_OP_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Packet offload set command TLV List */
+enum ENUM_UNI_CMD_PKT_OFLD_TAG {
+	UNI_CMD_PKT_OFLD_TAG_APF_INSTALL = 0,
+	UNI_CMD_PKT_OFLD_TAG_APF_QUERY,
+	UNI_CMD_PKT_OFLD_TAG_NUM
+};
+
+/* Packet offload setting (Tag0) */
+struct UNI_CMD_PKT_OFLD_GENERAL_OP {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucType;
+	uint8_t ucOp;
+	uint8_t ucFragNum;
+	uint8_t ucFragSeq;
+	uint32_t u4TotalLen;
+	uint32_t u4BufLen;
+	uint8_t aucBuf[PKT_OFLD_BUF_SIZE];
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 #if CFG_MSCS_SUPPORT
 /* Fast Path command (0x54) */
@@ -4198,6 +4236,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PP		     = 0x5A,
 	UNI_EVENT_ID_WOW	     = 0x5B,
 	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
+	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6291,6 +6330,15 @@ enum ENUM_UNI_EVENT_GET_VOLT_INFO_TAG {
 	UNI_EVENT_GET_VOLT_INFO_TAG_NUM
 };
 #endif /* CFG_VOLT_INFO */
+#if CFG_SUPPORT_PKT_OFLD
+struct UNI_EVENT_PKT_OFLD {
+	/*Fixed Fields*/
+	uint8_t aucPadding[4];
+	/*TLV*/
+	uint8_t aucTlvBuffer[0];/*  the TLVs included in this field: */
+} __KAL_ATTRIB_PACKED__;
+
+#endif
 
 #if CFG_MSCS_SUPPORT
 /** This structure is used for UNI_EVENT_ID_FAST_PATH event (0x54)
@@ -6651,6 +6699,11 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
+#if CFG_SUPPORT_PKT_OFLD
+uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
+
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -6729,6 +6782,12 @@ void nicUniEventThermalAdieTemp(IN struct ADAPTER *ad,
 	IN struct CMD_INFO *cmd, IN uint8_t *event);
 void nicUniEventThermalDdieTemp(IN struct ADAPTER *ad,
 	IN struct CMD_INFO *cmd, IN uint8_t *event);
+
+#if CFG_SUPPORT_PKT_OFLD
+void nicUniEventQueryOfldInfo(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
+
 
 /*******************************************************************************
  *                   Unsolicited Event
