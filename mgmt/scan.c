@@ -1536,10 +1536,10 @@ uint8_t scanSearchBssidInCurrentList(
 void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
 {
-	uint8_t *pucProfileIE, i = 0, j = 0, ucNewLink = FALSE;
+	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
 	uint8_t ucShortSsidOffset, ucBssParamOffset;
 	uint8_t ucBssidNum = 0, ucCurrentLength = 0, ucShortSsidNum = 0;
-	uint8_t ucRnrChNum, ucHasBssid = FALSE, ucScanEnable = TRUE;
+	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
@@ -1549,6 +1549,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	struct IE_SHORT_SSID_LIST *prIeShortSsidList;
 	struct BSS_DESC *prBssDescTemp = NULL;
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
+
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
 		|| !prScanInfo->rScanParam.fg6gOobRnrParseEn) {
@@ -1557,9 +1559,9 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	}
 
 	while (ucCurrentLength < IE_LEN(pucIE)) {
-		pucProfileIE = &IE_ID_EXT(pucIE) + ucCurrentLength;
-		prNeighborAPInfoField =
-			(struct NEIGHBOR_AP_INFO_FIELD *)pucProfileIE;
+		prNeighborAPInfoField =	(struct NEIGHBOR_AP_INFO_FIELD *)
+					(prRnr->aucInfoField + ucCurrentLength);
+		ucOpClass = prNeighborAPInfoField->ucOpClass;
 
 		/* get TBTT information count and length for
 		*  this neighborAPInfo
@@ -1579,12 +1581,54 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				u2TbttInfoLength);
 			return;
 		}
+
+		switch (u2TbttInfoLength) {
+		/* 7: Neighbor AP TBTT Offset + BSSID */
+		case 7:
+			ucShortSsidOffset = 0;
+			ucBssParamOffset = 0;
+			ucHasBssid = TRUE;
+			break;
+		/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
+		 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
+		 *	  + 20MHz PSD
+		 */
+		case 8:
+		case 9:
+			ucShortSsidOffset = 0;
+			ucBssParamOffset = 7;
+			ucHasBssid = TRUE;
+			break;
+
+		/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
+		case 11:
+			ucShortSsidOffset = 7;
+			ucBssParamOffset = 0;
+			ucHasBssid = TRUE;
+			break;
+		/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
+		 *	   + BSS parameters
+		 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
+		 *	   + BSS parameters + 20MHz PSD
+		 */
+		case 12:
+		case 13:
+			ucShortSsidOffset = 7;
+			ucBssParamOffset = 11;
+			ucHasBssid = TRUE;
+			break;
+		default:
+			/* only support neighbor AP info with
+			*  BSSID
+			*/
+			continue;
+		}
 		/* If opClass is not 6G, no need to do extra scan
 		 * directly check next neighborAPInfo if exist
 		 */
-		if (!IS_6G_OP_CLASS(prNeighborAPInfoField->ucOpClass)) {
+		if (!IS_6G_OP_CLASS(ucOpClass)) {
 			DBGLOG(SCN, INFO, "RNR op class(%d) is not 6G\n",
-				prNeighborAPInfoField->ucOpClass);
+				ucOpClass);
 
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
@@ -1600,6 +1644,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 #endif
 		}
 
+		ucNewLink = FALSE;
 		/* peek tail NeighborAPInfo from list to save information */
 		prNeighborAPInfo = LINK_PEEK_TAIL(
 		    &prScanInfo->rNeighborAPInfoList, struct NEIGHBOR_AP_INFO,
@@ -1631,7 +1676,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 					sizeof(struct NEIGHBOR_AP_INFO));
 			ucNewLink = TRUE;
 		}
-
 		prScanParam = &prNeighborAPInfo->rScanParam;
 		prAdapterScanParam =
 			&(prAdapter->rWifiVar.rScanInfo.rScanParam);
@@ -1672,8 +1716,9 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			*  will let FW confuse to match SSID ind 0.
 			*/
 			kalMemSet(prScanParam->ucBssidMatchSsidInd,
-				CFG_SCAN_SSID_MAX_NUM,
+				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanParam->ucBssidMatchSsidInd));
+
 			if (prAdapterScanParam->ucSSIDType &
 					SCAN_REQ_SSID_SPECIFIED) {
 				for (i = 0; i < prAdapterScanParam->ucSSIDNum &&
@@ -1707,10 +1752,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
 			DBGLOG(SCN, INFO, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
-			if (ucNewLink) {
+			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
-				ucNewLink = FALSE;
-			}
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
@@ -1719,47 +1762,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 
 		for (i = 0; i < u2TbttInfoCount; i++) {
 			j = i * u2TbttInfoLength;
-
-			switch (u2TbttInfoLength) {
-			/* 7: Neighbor AP TBTT Offset + BSSID */
-			case 7:
-				ucShortSsidOffset = 0;
-				ucBssParamOffset = 0;
-				ucHasBssid = TRUE;
-				break;
-			/* 8: Neighbor AP TBTT Offset + BSSID + BSS parameters
-			 * 9: Neighbor AP TBTT Offset + BSSID + BSS parameters
-			 *    + 20MHz PSD
-			 */
-			case 8:
-			case 9:
-				ucShortSsidOffset = 0;
-				ucBssParamOffset = 7;
-				ucHasBssid = TRUE;
-				break;
-			/* 11: Neighbor AP TBTT Offset + BSSID + Short SSID */
-			case 11:
-				ucShortSsidOffset = 7;
-				ucBssParamOffset = 0;
-				ucHasBssid = TRUE;
-				break;
-			/* 12: Neighbor AP TBTT Offset + BSSID + Short SSID
-			 *     + BSS parameters
-			 * 13: Neighbor AP TBTT Offset + BSSID + Short SSID
-			 *     + BSS parameters + 20MHz PSD
-			 */
-			case 12:
-			case 13:
-				ucShortSsidOffset = 7;
-				ucBssParamOffset = 11;
-				ucHasBssid = TRUE;
-				break;
-			default:
-				/* only support neighbor AP info with
-				*  BSSID
-				*/
-				continue;
-			}
 
 			/* If this BSSID existed and update time diff is
 			 * smaller than 20s, or existed in current scan request,
@@ -1788,7 +1790,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			if (!ucScanEnable)
 				continue;
 
-			if (ucBssidNum < CFG_SCAN_SSID_MAX_NUM) {
+			if (ucBssidNum < CFG_SCAN_OOB_MAX_NUM) {
 				if (prScanParam->ucScnFuncMask &
 					ENUM_SCN_USE_PADDING_AS_BSSID) {
 					kalMemCopy(prScanParam->
@@ -1850,7 +1852,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		/* Only handle RnR with BSSID */
 		if (ucHasBssid && ucScanEnable) {
 			scanProcessRnrChannel(ucRnrChNum,
-				prNeighborAPInfoField->ucOpClass,
+				ucOpClass,
 				prScanParam);
 			if (ucNewLink) {
 				LINK_INSERT_TAIL(
@@ -1883,10 +1885,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			prScanParam->fg6gOobRnrParseEn = FALSE;
 			ucHasBssid = FALSE;
 		}
-		if (ucNewLink) {
+		if (ucNewLink)
 			cnmMemFree(prAdapter, prNeighborAPInfo);
-			ucNewLink = FALSE;
-		}
 	}
 }
 
