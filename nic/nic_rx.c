@@ -1858,7 +1858,10 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_MSCS_SUPPORT
-		if (prAdapter->fgEnLowLatencyMode &&
+		if (
+#if CFG_SUPPORT_LOWLATENCY_MODE
+			prAdapter->fgEnLowLatencyMode &&
+#endif
 			prAdapter->rWifiVar.ucSupportProtocol != 0)
 			mscsHandleRxPacket(prAdapter, prSwRfb);
 #endif

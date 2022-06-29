@@ -9327,8 +9327,9 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
 	struct BSS_INFO *bss;
 	struct net_device *ndev = NULL;
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
-
+#endif
 	OS_SYSTIME now, last;
 	int32_t period;
 	uint8_t i, j;
@@ -9499,11 +9500,20 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 	}
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	"LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx" \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
+#else
+#define TEMP_LOG_TEMPLATE \
+	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
+	" lv:%u th:%u fg:0x%lx" \
+	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
+	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
+
+#endif
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
@@ -9511,9 +9521,11 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
 		head1, GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
 		prAdapter->rWifiVar.u4NetifStopTh, head2,
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
 		(unsigned long long) lq->u8DiffIdleSlotCount,
+#endif
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,

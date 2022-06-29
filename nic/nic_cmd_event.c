@@ -923,6 +923,8 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 	}
 }
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is in response of OID_GEN_LINK_SPEED query request
@@ -1015,6 +1017,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
+#endif
 
 void nicCmdEventQueryStatistics(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
