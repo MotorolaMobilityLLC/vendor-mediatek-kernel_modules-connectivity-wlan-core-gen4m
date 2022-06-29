@@ -9981,7 +9981,8 @@ int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4pp_auto = 0, u4pp_ctrl = 0, u4pp_bitmap = 0, u4pp_mgmt = 0;
+	uint32_t u4pp_mgmt_en = 0, u4pp_ctrl = 0;
+	uint32_t u4pp_bitmap = 0, u4pp_mgmt = 0;
 	int32_t i4Recv = 0;
 	int8_t *this_char = NULL;
 	uint8_t u1DbdcIdx = 0;
@@ -10004,7 +10005,7 @@ int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
 
 	i4Recv = sscanf(this_char, "%d-%d-%d-%x-%d",
 			&(u1DbdcIdx),
-			&(u4pp_auto),
+			&(u4pp_mgmt_en),
 			&(u4pp_ctrl),
 			&(u4pp_bitmap),
 			&(u4pp_mgmt));
@@ -10016,11 +10017,11 @@ int priv_driver_set_pp_cap_ctrl(IN struct net_device *prNetDev,
 		pp_cap_ctrl.u1PpCtrl     = (uint8_t)u4pp_ctrl;
 		pp_cap_ctrl.u1PpBitMap   = (uint16_t)u4pp_bitmap;
 		pp_cap_ctrl.u1DbdcIdx    = (uint8_t)u1DbdcIdx;
-		pp_cap_ctrl.u1PpAutoMode = (uint8_t)u4pp_auto;
+		pp_cap_ctrl.u1PpMgmtEn = (uint8_t)u4pp_mgmt_en;
 
 		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
-			"automode=%d\npp_ctrl=%d\npp_bitmap=0x%x\npp_mgmt=%d\n",
-			u4pp_auto, u4pp_ctrl, u4pp_bitmap, u4pp_mgmt);
+			"pp_mgmt_en=%d\npp_ctrl=%d\npp_bitmap=0x%x\npp_mgmt=%d\n",
+			u4pp_mgmt_en, u4pp_ctrl, u4pp_bitmap, u4pp_mgmt);
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpCap,
 					   &pp_cap_ctrl, sizeof(pp_cap_ctrl),

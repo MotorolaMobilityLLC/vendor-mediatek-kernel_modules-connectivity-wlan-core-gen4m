@@ -3234,7 +3234,7 @@ struct UNI_CMD_PP_EN_CTRL_T {
 	uint8_t    u1PpMgmtMode;
 	uint8_t    u1DbdcIdx;
 	uint8_t    u1PpCtrl;
-	uint8_t    u1PpAutoMode;
+	uint8_t    u1PpMgmtEn;
 	uint16_t   u1PpBitMap;
 	uint8_t    u1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
