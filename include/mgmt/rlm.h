@@ -389,6 +389,11 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter,
 			       IN uint8_t *pucBuf, IN uint32_t *pu4Cap);
 
+#if CFG_SUPPORT_RXSMM_WHITELIST
+u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+			       u_int8_t *pfgRxsmmEnable);
+#endif
+
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 

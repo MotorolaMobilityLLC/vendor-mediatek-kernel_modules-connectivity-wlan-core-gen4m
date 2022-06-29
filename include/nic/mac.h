@@ -1945,6 +1945,11 @@ enum BEACON_REPORT_DETAIL {
 
 #define MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC		BIT(1)
 
+#if CFG_SUPPORT_RXSMM_WHITELIST
+#define VENDOR_OUI_RXSMM_LIST_NUM                   0
+#define VENDOR_OUI_RXSMM_OUI_IE_NUM                 3
+#endif
+
 /* 802.11h CSA element */
 #define ELEM_MIN_LEN_CSA                            17
 

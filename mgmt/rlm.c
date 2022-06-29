@@ -108,6 +108,13 @@ uint8_t  g_fgHTSMPSEnabled = 0xFF;
 struct RLM_CAL_RESULT_ALL_V2 g_rBackupCalDataAllV2;
 #endif
 
+#if CFG_SUPPORT_RXSMM_WHITELIST
+uint8_t Rxsmm_Iot_Whitelist[VENDOR_OUI_RXSMM_LIST_NUM]
+	[VENDOR_OUI_RXSMM_OUI_IE_NUM] = {
+/*	{0x00, 0x0C, 0xE7}, */
+};
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -755,6 +762,55 @@ u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
 	return FALSE;
 } /* rlmParseCheckMTKOuiIE */
 
+#endif
+
+#if CFG_SUPPORT_RXSMM_WHITELIST
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is used to check MTK Vendor Specific OUI
+ *
+ *
+ * @return true:  correct MTK OUI
+ *             false: incorrect MTK OUI
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+			       u_int8_t *pfgRxsmmEnable)
+{
+	uint8_t u1RxsmmListIdx = 0;
+	struct IE_MTK_OUI *prMtkOuiIE = (struct IE_MTK_OUI *)NULL;
+
+	if ((prAdapter == NULL) || (pucBuf == NULL))
+		return FALSE;
+
+	*pfgRxsmmEnable = FALSE;
+
+	for (u1RxsmmListIdx = 0;
+		u1RxsmmListIdx < VENDOR_OUI_RXSMM_LIST_NUM;
+		u1RxsmmListIdx++) {
+
+		prMtkOuiIE = (struct IE_MTK_OUI *)pucBuf;
+
+		if (prAdapter->rWifiVar.ucMtkOui == FEATURE_DISABLED)
+			continue;
+		else if (IE_LEN(pucBuf) < ELEM_MIN_LEN_MTK_OUI)
+			continue;
+		else if (prMtkOuiIE->aucOui[0] !=
+			Rxsmm_Iot_Whitelist[u1RxsmmListIdx][0] ||
+			 prMtkOuiIE->aucOui[1] !=
+			 Rxsmm_Iot_Whitelist[u1RxsmmListIdx][1] ||
+			 prMtkOuiIE->aucOui[2] !=
+			 Rxsmm_Iot_Whitelist[u1RxsmmListIdx][2])
+			continue;
+
+		*pfgRxsmmEnable = TRUE;
+
+	}
+
+	DBGLOG(QM, INFO, "RxSMM: RxSMM enable = %d\n", *pfgRxsmmEnable);
+
+	return TRUE;
+} /* rlmParseCheckRxsmmOuiIE */
 #endif
 
 /*----------------------------------------------------------------------------*/
