@@ -628,8 +628,7 @@ end:
 	}
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halMawdWakeup(prAdapter->prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -719,8 +718,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 #endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halMawdSleep(prAdapter->prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -1325,16 +1323,13 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		halMawdAllocTxRing(prAdapter->prGlueInfo, TRUE);
 
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		halRroAllocMem(prAdapter->prGlueInfo);
 		halRroAllocRcbList(prAdapter->prGlueInfo);
-		if (prChipInfo->is_support_mawd &&
-		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 			halMawdAllocRxBlkRing(prAdapter->prGlueInfo, TRUE);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -1441,8 +1436,7 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	halWpdmaFreeRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		halRroUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -2245,8 +2239,7 @@ void halWpdmaGetRxBuf(
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* rro need realloc memory when SER */
-	if ((prChipInfo->is_support_rro &&
-	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
+	if ((IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
 	    halIsDataRing(RX_RING, u4Num)) {
 		struct RX_CTRL_BLK *prRcb;
 
@@ -2570,15 +2563,12 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	halWpdmaInitRxRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		halMawdInitTxRing(prGlueInfo);
 
-	if (prChipInfo->is_support_rro &&
-		IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		halRroInit(prGlueInfo);
-		if (prChipInfo->is_support_mawd &&
-		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 			halMawdInitRxBlkRing(prGlueInfo);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -3116,8 +3106,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	if (prChipInfo->is_support_cr4)
 		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_sdo &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo))
 		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	pTxD->SDPtr1 = 0;
@@ -3199,8 +3188,7 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 			return false;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (prChipInfo->is_support_mawd_tx &&
-		    IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
 			halMawdFillTxRing(prGlueInfo, prFillToken);
 		else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -3826,13 +3814,11 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 				prBusInfo->DmaShdlReInit(prAdapter);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
-			if (prChipInfo->is_support_rro &&
-			    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 				halRroResetRcbList(prGlueInfo);
 				halRroResetMem(prGlueInfo);
 			}
-			if (prChipInfo->is_support_mawd &&
-			    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 				halMawdReset(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -4038,8 +4024,7 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	prHifInfo->fgIsPowerOff = true;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prAdapter->chip_info->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halMawdReset(prAdapter->prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 

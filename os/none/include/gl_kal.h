@@ -2237,4 +2237,10 @@ bool kal_warn_on(uint8_t condition);
 int kalRegulatoryHint(char *country);
 
 bool kal_is_err(void *ptr);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+u_int8_t kalIsSupportMawd(void);
+u_int8_t kalIsSupportSdo(void);
+u_int8_t kalIsSupportRro(void);
+#endif
 #endif /* _GL_KAL_H */

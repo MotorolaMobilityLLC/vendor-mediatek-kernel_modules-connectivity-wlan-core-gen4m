@@ -513,4 +513,14 @@ u_int8_t kalIsSupportMawd(void)
 {
 	return TRUE;
 }
+
+u_int8_t kalIsSupportSdo(void)
+{
+	return TRUE;
+}
+
+u_int8_t kalIsSupportRro(void)
+{
+	return TRUE;
+}
 #endif

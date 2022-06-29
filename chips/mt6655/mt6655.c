@@ -945,14 +945,12 @@ static void mt6655ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		if (prHifInfo->u4OffloadIntStatus ||
 		    (KAL_TEST_BIT(RX_RRO_DATA, prAdapter->ulNoMoreRfb)))
 			halRroReadRxData(prAdapter);
@@ -1109,10 +1107,8 @@ static void mt6655ReadIntStatus(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		if (prChipInfo->is_support_mawd &&
-		    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 			u4Addr = MAWD_AP_INTERRUPT_SETTING0;
 			HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
 			if (u4RegValue & BIT(0))
@@ -1161,10 +1157,8 @@ static void mt6655ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		if (!(prChipInfo->is_support_mawd &&
-		      IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		if (!(IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))) {
 			u4WrVal |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
 		}
@@ -1304,8 +1298,7 @@ static void mt6655WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prAdapter->chip_info->is_support_sdo &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
 		/* enable SDO */
 		HAL_MCR_RD(prAdapter,
 			   WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR,
@@ -1374,8 +1367,7 @@ static void mt6655WfdmaRxRingExtCtrl(
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* enable wfdma magic cnt */
-	if ((prChipInfo->is_support_rro &&
-	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
+	if ((IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
 	    halIsDataRing(RX_RING, index)) {
 		HAL_MCR_RD(prAdapter, prRxRing->hw_cnt_addr, &u4Val);
 		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
