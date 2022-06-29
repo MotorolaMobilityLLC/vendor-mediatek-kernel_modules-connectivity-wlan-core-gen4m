@@ -260,7 +260,6 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	    AIS_DELAY_TIME_OF_DISCONNECT_SEC;
 
 	COPY_MAC_ADDR(prConnSettings->aucBSSID, aucAnyBSSID);
-	prConnSettings->fgIsConnByBssidIssued = FALSE;
 
 	prConnSettings->ucSSIDLen = 0;
 
@@ -900,32 +899,6 @@ bool aisFsmIsInProcessPostpone(IN struct ADAPTER *prAdapter,
 	    SEC_TO_MSEC(set->ucDelayTimeOfDisconnectEvent));
 }
 
-bool aisFsmIsBeaconTimeout(IN struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo =
-			aisGetAisFsmInfo(prAdapter, ucBssIndex);
-
-	return aisFsmIsInProcessPostpone(prAdapter, ucBssIndex) &&
-		(prAisFsmInfo->ucReasonOfDisconnect ==
-			 DISCONNECT_REASON_CODE_RADIO_LOST ||
-		 prAisFsmInfo->ucReasonOfDisconnect ==
-			 DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR);
-}
-
-bool aisFsmIsReassociation(IN struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct AIS_FSM_INFO *fsm =
-		aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	struct ROAMING_INFO *roam =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	/* to support user space triggered reassociation */
-	return (fsm->ucReasonOfDisconnect
-			== DISCONNECT_REASON_CODE_REASSOCIATION)
-		&& (roam->eReason == ROAMING_REASON_REASSOC);
-}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialization of JOIN STATE
@@ -1000,9 +973,8 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
-		/* Not in case of beacon timeout or reassociation */
-		&& !aisFsmIsBeaconTimeout(prAdapter, ucBssIndex)
-		&& !aisFsmIsReassociation(prAdapter, ucBssIndex)) {
+		/* not in reconnection */
+		&& !aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
@@ -2495,23 +2467,19 @@ send_msg:
 				eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
 				fgIsTransition = TRUE;
 			}
-			/* reset disconnect reason otherwise
-			 * aisSearchHandleBssDesc uses it wrongly
-			 */
-			prAisFsmInfo->ucReasonOfDisconnect =
-				DISCONNECT_REASON_CODE_RESERVED;
-
-			/* reset disconnect reason otherwise
-			 * aisSearchHandleBssDesc uses it wrongly
-			 */
-			prAisFsmInfo->ucReasonOfDisconnect =
-				DISCONNECT_REASON_CODE_RESERVED;
 
 			/* for WMM-AC cert 5.2.5 */
 			/* after reassoc, update PS flag to FW again */
-			if (aisFsmIsReassociation(prAdapter, ucBssIndex) &&
-			    (prAisFsmInfo->ePreviousState == AIS_STATE_JOIN))
+			if (prAisFsmInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_REASSOCIATION &&
+			    prAisFsmInfo->ePreviousState == AIS_STATE_JOIN)
 				wmmReSyncPsParamWithFw(prAdapter, ucBssIndex);
+
+			/* reset disconnect reason otherwise
+			 * aisSearchHandleBssDesc uses it wrongly
+			 */
+			prAisFsmInfo->ucReasonOfDisconnect =
+				DISCONNECT_REASON_CODE_RESERVED;
 
 			break;
 
@@ -2943,21 +2911,17 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 					    ucBssIndex);
 		}
 		return;
-	/* to support user space triggered reassociation */
-	} else if (ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_REASSOCIATION) {
-		aisFsmStateAbort(prAdapter,
-			ucReasonOfDisconnect,
-			fgDelayIndication,
-			ucBssIndex);
-		return;
 	}
 	/* Support AP Selection */
 	scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
 
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
-	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION ||
-	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING)
+	/* for new connection triggered by upper layer,
+	 * DISCONNECT_REASON_CODE_ROAMING is already handled ahead,
+	 * DISCONNECT_REASON_CODE_REASSOCIATION is handled in aisFsmStateAbort,
+	 * so only add request for DISCONNECT_REASON_CODE_NEW_CONNECTION
+	 */
+	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION)
 		aisFsmInsertRequestToHead(prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
 
@@ -4131,10 +4095,7 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucConnTrialCountLimit);
 
 	/* only retry connect once when beacon timeout */
-	if ((policy != CONNECT_BY_BSSID ||
-		aisFsmIsReassociation(prAdapter, ucBssIndex)) &&
-	    !fgIsPostponeTimeout &&
-	    !(prAisFsmInfo->ucConnTrialCount >
+	if (!fgIsPostponeTimeout && !(prAisFsmInfo->ucConnTrialCount >
 			prAisFsmInfo->ucConnTrialCountLimit)) {
 		DBGLOG(AIS, INFO,
 		       "DelayTimeOfDisconnect, don't report disconnect\n");
@@ -5544,16 +5505,10 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 
 	/* 4 <2> invoke abort handler */
 	if (fgDoAbortIndication) {
-		if (prAisFsmInfo->ucReasonOfDisconnect ==
-			DISCONNECT_REASON_CODE_REASSOCIATION) {
-			/* For reassociation */
-			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
-		} else {
-			prAisBssInfo->u2DeauthReason =
-				REASON_CODE_BEACON_TIMEOUT * 100 +
-				ucBcnTimeoutReason;
-			DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
-		}
+		prAisBssInfo->u2DeauthReason =
+			REASON_CODE_BEACON_TIMEOUT * 100 +
+			ucBcnTimeoutReason;
+		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 
 		aisFsmStateAbort(prAdapter,
 			ucDisconnectReason,

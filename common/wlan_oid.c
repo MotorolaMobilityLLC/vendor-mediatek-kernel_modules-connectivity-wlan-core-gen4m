@@ -1279,7 +1279,6 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	kalMemZero(prConnSettings->aucBSSIDHint,
 			sizeof(prConnSettings->aucBSSIDHint));
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
-	prConnSettings->fgIsConnByBssidIssued = FALSE;
 
 	if (pParamConn->pucSsid) {
 		prConnSettings->eConnectionPolicy =
@@ -1296,7 +1295,6 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, pParamConn->pucBssid)
 		    && IS_UCAST_MAC_ADDR(pParamConn->pucBssid)) {
 			prConnSettings->eConnectionPolicy = CONNECT_BY_BSSID;
-			prConnSettings->fgIsConnByBssidIssued = TRUE;
 			COPY_MAC_ADDR(prConnSettings->aucBSSID,
 				      pParamConn->pucBssid);
 			if (EQUAL_MAC_ADDR(
@@ -1309,7 +1307,7 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	} else if (pParamConn->pucBssidHint) {
 		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, pParamConn->pucBssidHint)
 			&& IS_UCAST_MAC_ADDR(pParamConn->pucBssidHint)) {
-			if (ucBssIndex <
+			if (AIS_INDEX(prAdapter, ucBssIndex) <
 				prAdapter->rWifiVar.u4AisRoamingNumber) {
 				prConnSettings->eConnectionPolicy =
 					CONNECT_BY_BSSID_HINT;
@@ -1323,7 +1321,6 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 			} else {
 				prConnSettings->eConnectionPolicy =
 					CONNECT_BY_BSSID;
-				prConnSettings->fgIsConnByBssidIssued = TRUE;
 				COPY_MAC_ADDR(prConnSettings->aucBSSID,
 						pParamConn->pucBssidHint);
 				if (EQUAL_MAC_ADDR(
