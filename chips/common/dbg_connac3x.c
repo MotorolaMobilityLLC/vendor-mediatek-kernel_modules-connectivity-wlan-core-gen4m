@@ -1152,9 +1152,11 @@ int32_t connac3x_show_stat_info(
 	struct RX_CTRL *prRxCtrl;
 	uint32_t u4InstantRxPer[ENUM_BAND_NUM];
 	uint32_t u4InstantTxMpduPer[ENUM_BAND_NUM];
-	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_ADVANCE_CONTROL
+	struct PARAM_CUSTOM_SW_CTRL_STRUCT rSwCtrlInfo;
 	int16_t i2Wf0AvgPwr = 0, i2Wf1AvgPwr = 0;
+#endif
 	uint32_t u4BufLen = 0;
 	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
@@ -1401,6 +1403,7 @@ int32_t connac3x_show_stat_info(
 		if (IS_BSS_INDEX_VALID(ucBssIndex))
 			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
+#if CFG_SUPPORT_ADVANCE_CONTROL
 		rSwCtrlInfo.u4Data = 0;
 		rSwCtrlInfo.u4Id = CMD_SW_DBGCTL_ADVCTL_GET_ID + 1;
 #if 0
@@ -1420,6 +1423,7 @@ int32_t connac3x_show_stat_info(
 					"%-20s%s%d %d\n", "NOISE", " = ",
 					i2Wf0AvgPwr, i2Wf1AvgPwr);
 		}
+#endif
 
 #ifndef SOC3_0
 		/* Last RX Rate */
