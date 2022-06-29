@@ -546,7 +546,6 @@ void halPciePreSuspendDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
-void halPcieShowDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
@@ -554,15 +553,20 @@ void glBusFuncOff(void);
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
+#if CFG_MTK_MDDP_SUPPORT
+irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
+#endif
 
 #if CFG_SUPPORT_PCIE_ASPM
 bool glBusConfigASPM(struct pci_dev *dev, int val);
 bool glBusConfigASPML1SS(struct pci_dev *dev, int enable);
 #endif
 
-#if IS_ENABLED(CFG_MTK_PCIE_PROBE_SUPPORT)
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 extern int mtk_pcie_probe_port(int port) __attribute__((weak));
 extern int mtk_pcie_remove_port(int port) __attribute__((weak));
+extern int mtk_pcie_mask_msi_to_ap(
+	int port, u32 msi_addr, u32 mask) __attribute__((weak));
 #endif
 
 /*******************************************************************************
