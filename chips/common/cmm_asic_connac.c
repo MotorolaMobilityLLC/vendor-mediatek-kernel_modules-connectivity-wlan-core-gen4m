@@ -1678,3 +1678,16 @@ u_int8_t conn1_rst_L0_notify_step2(void)
 }
 #endif
 
+int connsys_power_on(void)
+{
+	return 0;
+}
+
+int connsys_power_done(void)
+{
+	return 0;
+}
+
+void connsys_power_off(void)
+{
+}

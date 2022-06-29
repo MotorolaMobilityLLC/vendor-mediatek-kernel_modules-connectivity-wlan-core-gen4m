@@ -2922,6 +2922,11 @@ int connsys_power_on(void)
 	return ret;
 }
 
+int connsys_power_done(void)
+{
+	return 0;
+}
+
 void connsys_power_off(void)
 {
 #if (CFG_SUPPORT_CONNINFRA == 1)
