@@ -1088,13 +1088,10 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 #if CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
-	glBusConfigASPM(pdev,
-			DISABLE_ASPM_L1);
-	glBusConfigASPML1SS(pdev,
-		PCI_L1PM_CTR1_ASPM_L12_EN |
-		PCI_L1PM_CTR1_ASPM_L11_EN);
-	glBusConfigASPM(pdev,
-			ENABLE_ASPM_L1);
+	glBusConfigASPM(pdev, DISABLE_ASPM_L1);
+	glBusConfigASPML1SS(
+		pdev, PCI_L1PM_CTR1_ASPM_L12_EN | PCI_L1PM_CTR1_ASPM_L11_EN);
+	glBusConfigASPM(pdev, ENABLE_ASPM_L1);
 #endif
 #endif
 
@@ -2199,6 +2196,7 @@ static void pcieSetASPML1SS(struct pci_dev *dev, int i4Enable)
 	u4Reg |= i4Enable;
 	pci_write_config_dword(dev, pos + PCI_L1PMSS_CTR1, u4Reg);
 }
+
 static void pcieSetASPML1(struct pci_dev *dev, int i4Enable)
 {
 	uint16_t u2Reg = 0;
@@ -2209,6 +2207,7 @@ static void pcieSetASPML1(struct pci_dev *dev, int i4Enable)
 	u2Reg |= i4Enable;
 	pci_write_config_word(dev, i4Pos + PCI_EXP_LNKCTL, u2Reg);
 }
+
 static bool pcieCheckASPML1SS(struct pci_dev *dev, int i4BitMap)
 {
 	int i4Pos;
@@ -2236,13 +2235,12 @@ static bool pcieCheckASPML1SS(struct pci_dev *dev, int i4BitMap)
 	}
 	return TRUE;
 }
+
 bool glBusConfigASPM(struct pci_dev *dev, int i4Enable)
 {
-
 	uint32_t u4Reg = 0;
 	struct pci_dev *parent = dev->bus->self;
 	int pos = parent->pcie_cap;
-
 
 	pci_read_config_dword(parent, pos + PCI_EXP_LNKCAP, &u4Reg);
 	if (PCIE_ASPM_CHECK_L1(u4Reg)) {
@@ -2258,6 +2256,7 @@ bool glBusConfigASPM(struct pci_dev *dev, int i4Enable)
 	return FALSE;
 
 }
+
 bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
 {
 	struct pci_dev *parent = dev->bus->self;
@@ -2272,7 +2271,6 @@ bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
 	}
 	return FALSE;
 }
-
 #endif
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)

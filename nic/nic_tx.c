@@ -1615,6 +1615,9 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 			nicTxMsduQueueByPrio(prAdapter);
 	}
 #endif
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	HAL_KICK_TX_DATA(prAdapter);
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2607,7 +2610,6 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			uint8_t ucPortIdx, struct QUE *prQue)
 {
-	struct HIF_STATS *prHifStats = NULL;
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct TX_CTRL *prTxCtrl = NULL;
 	struct QUE qDataTemp, *prDataTemp = NULL;
@@ -2615,7 +2617,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prQue);
 
-	prHifStats = &prAdapter->rHifStats;
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 #if CFG_HIF_STATISTICS
@@ -2684,7 +2685,6 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
-	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
 
 	if (QUEUE_IS_NOT_EMPTY(prQue))
 		QUEUE_CONCATENATE_QUEUES(prDataTemp, prQue);
@@ -5662,7 +5662,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	uint8_t ucHifTc = 0;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
 	QUEUE_INITIALIZE(prProcessingQue);
@@ -5947,7 +5946,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 	}
 
 	HAL_KICK_TX_DATA(prAdapter);
-	GLUE_INC_REF_CNT(prHifStats->u4TxDataRegCnt);
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* Release to FW own */
@@ -6033,6 +6031,7 @@ void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
 	}
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
+
 /* TX Direct functions : END */
 
 /*----------------------------------------------------------------------------*/

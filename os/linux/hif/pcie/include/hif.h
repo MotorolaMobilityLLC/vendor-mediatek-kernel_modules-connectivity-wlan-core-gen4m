@@ -111,6 +111,9 @@
 					PCI_L1PM_CTR1_ASPM_L12_EN |    \
 					PCI_L1PM_CTR1_ASPM_L11_EN)
 #define  PCI_L1PM_ENABLE_MASK			0x3
+#define PCIE_LOW_POWER_CTRL_DIS_L1	BIT(9)
+#define PCIE_LOW_POWER_CTRL_DIS_L1_1	BIT(10)
+#define PCIE_LOW_POWER_CTRL_DIS_L1_2	BIT(11)
 
 #define PCIE_ASPM_CHECK_L1(reg)	((((reg) & PCI_EXP_LNKCAP_ASPMS) >> 10) & 0x2)
 
@@ -260,6 +263,11 @@ struct GL_HIF_INFO {
 	struct list_head rTxDataQ[NUM_OF_TX_RING];
 	uint32_t u4TxDataQLen[NUM_OF_TX_RING];
 	spinlock_t rTxDataQLock[NUM_OF_TX_RING];
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	struct timer_list rTxDelayTimer;
+	unsigned long rTxDelayTimerData;
+	unsigned long ulTxDataTimeout;
+#endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 	bool fgIsPowerOff;
 	bool fgIsDumpLog;
@@ -269,6 +277,10 @@ struct GL_HIF_INFO {
 	bool fgIsBackupIntSta;
 
 	enum pcie_suspend_state eSuspendtate;
+#if CFG_SUPPORT_PCIE_ASPM
+	uint32_t u4PcieLTR;
+	uint32_t u4PcieASPM;
+#endif
 };
 
 struct BUS_INFO {

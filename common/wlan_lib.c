@@ -8268,6 +8268,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "VoltInfoDelta",
 		VOLT_INFO_DELTA);
 #endif /* CFG_VOLT_INFO  */
+
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	prWifiVar->u4TxDataDelayTimeout = wlanCfgGetUint32(prAdapter,
+			"TxDataDelayTimeout", 2);
+	prWifiVar->u4TxDataDelayCnt = wlanCfgGetUint32(prAdapter,
+			"TxDataDelayCnt", 32);
+#endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
