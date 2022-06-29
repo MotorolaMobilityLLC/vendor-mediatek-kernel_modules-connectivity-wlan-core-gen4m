@@ -306,7 +306,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	}
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
-		|| prAdapter->fgPowerForceOneNss
+		|| (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DYNAMIC &&
+		    prAdapter->fgPowerForceOneNss)
 #endif
 		)
 		prCmdScanReq->ucScnFuncMask |= ENUM_SCN_DBDC_SCAN_DIS;
