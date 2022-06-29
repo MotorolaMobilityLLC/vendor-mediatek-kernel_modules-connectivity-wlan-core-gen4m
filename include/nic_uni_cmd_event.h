@@ -835,7 +835,7 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_GET_PN		= 0x26,
 	UNI_CMD_STAREC_TAG_INSTALL_KEY_V3	= 0x27,
 	UNI_CMD_STAREC_TAG_FAST_ALL		= 0x2C,
-
+	UNI_CMD_STAREC_TAG_MLR_INFO		= 0x2D,
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
 
@@ -1152,6 +1152,15 @@ struct UNI_CMD_STAREC_INSTALL_KEY3 {
 	uint8_t       ucMgmtProtection;
 	uint8_t       aucKeyMaterial[32];
 	uint8_t       aucKeyRsc[16];
+} __KAL_ATTRIB_PACKED__;
+
+/* MLR information (Tag 0x2d) */
+struct UNI_CMD_STAREC_MLR_INFO {
+	uint16_t  u2Tag;		/* Tag = 0x2d */
+	uint16_t  u2Length;
+	uint8_t   ucMlrMode;
+	uint8_t   ucMlrState;
+	uint8_t   aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
@@ -6077,6 +6086,7 @@ struct UNI_EVENT_BSS_ER {
 /* BSS ER event tags */
 enum ENUM_UNI_EVENT_BSS_ER_TAG {
 	UNI_EVENT_BSS_ER_TAG_TX_MODE = 0,
+	UNI_EVENT_MLR_TAG_FSM_UPDATE = 1,
 	UNI_EVENT_BSS_ER_TAG_NUM
 };
 
@@ -6088,6 +6098,14 @@ struct UNI_EVENT_BSS_ER_TX_MODE {
 	uint8_t aucPadding1[2];
 	uint8_t aucPadding2[16];
 };
+
+struct UNI_EVENT_MLR_FSM_UPDATE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2WlanIdx;
+	uint8_t ucMlrMode;  /* ENUM_MLR_MODE */
+	uint8_t ucMlrState; /* ENUM_MLR_STATE */
+} __KAL_ATTRIB_PACKED__;
 
 /* EFUSE event Tag */
 enum ENUM_UNI_EVENT_EFUSE_TAG {

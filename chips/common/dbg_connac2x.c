@@ -236,6 +236,11 @@ void connac2x_dump_tmac_info(
 		(uint16_t)((txd->u4DW0 & CONNAC2X_TX_DESC_TX_BYTE_COUNT_MASK) >>
 		CONNAC2X_TX_DESC_TX_BYTE_COUNT_OFFSET));
 
+	/* Ether-Type Offset: [22:16] */
+	DBGLOG(HAL, INFO, "\t\tEtherType_offset = %d\n",
+	((txd->u4DW0 & CONNAC2X_TX_DESC_ETHER_TYPE_OFFSET_MASK) >>
+		CONNAC2X_TX_DESC_ETHER_TYPE_OFFSET_OFFSET));
+
 	/* PKT_FT: Packet Format [24:23] */
 	DBGLOG(HAL, INFO, "\t\tpkt_ft = 0x%x(%s)\n",
 	(uint8_t)((txd->u4DW0 & CONNAC2X_TX_DESC_PACKET_FORMAT_MASK) >>

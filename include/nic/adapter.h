@@ -1275,6 +1275,17 @@ struct WIFI_VAR {
 	uint32_t u4VnfDelta;
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_SUPPORT_MLR
+	u_int8_t fgEnForceTxFrag;
+	uint16_t u2TxFragThr;
+	/* 0:split size by average, 1:fixed split size */
+	uint16_t u2TxFragSplitSize;
+	uint8_t ucTxMlrRateRcpiThr;
+	u_int8_t fgEnTxFragDebug;
+	u_int8_t fgEnTxFragTxDone;
+	u_int8_t ucErrPos;
+#endif
+
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	uint32_t u4TxDataDelayTimeout;
 	uint32_t u4TxDataDelayCnt;
@@ -2116,6 +2127,13 @@ struct ADAPTER {
 #if CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif
+
+#if CFG_SUPPORT_MLR
+	uint8_t ucMlrIsSupport;
+	uint8_t ucMlrVersion;
+	uint32_t u4MlrSupportBitmap;
+#endif
+
 #if CFG_SUPPORT_PKT_OFLD
 	struct ABNORMAL_WAKEUP_STATISTIC rAbnormalWakeupStat;
 	u_int8_t ucRxDataMode;

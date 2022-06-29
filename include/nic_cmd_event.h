@@ -1156,6 +1156,9 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
 	TAG_CAP_REDL_INFO = 0x1e,
 	TAG_CAP_HOST_SUSPEND_INFO = 0x1f,
+#if CFG_SUPPORT_MLR
+	TAG_CAP_MLR_CAP = 0x20,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -1326,6 +1329,21 @@ struct CAP_ANTSWP {
 	uint8_t  ucRsvd;
 	uint8_t  ucIsSupported;	/* 1:support, 0:not */
 	uint8_t  ucReserved[1];
+};
+#endif
+
+#if CFG_SUPPORT_MLR
+struct CAP_MLR_CAP {
+	/* Version of MLR feature */
+	uint8_t ucVersion;
+	uint8_t aucReserved[3];
+	/* Bit(0):MLR-v1,
+	 * Bit(1):MLR-v2,
+	 * Bit(2):MLR+,
+	 * Bit(3):ALR,
+	 * Bit(4):Dual CTS
+	 */
+	uint32_t u4MlrSupportBitmap;
 };
 #endif
 
@@ -3802,6 +3820,14 @@ struct EVENT_LOW_LATENCY_INFO {
 	uint8_t  aucPayload[1024];
 };
 
+#if CFG_SUPPORT_MLR
+struct EVENT_MLR_FSM_UPDATE {
+	uint16_t u2WlanIdx;
+	uint8_t ucMlrMode;
+	uint8_t ucMlrState;
+};
+#endif
+
 #if CFG_SUPPORT_NAN
 struct _CMD_EVENT_TLV_COMMOM_T {
 	uint16_t u2TotalElementNum;
@@ -4292,6 +4318,11 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf);
 uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
 			       IN uint8_t *pucEventBuf);
+
+#if CFG_SUPPORT_MLR
+uint32_t nicCfgChipCapMlr(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf);
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,

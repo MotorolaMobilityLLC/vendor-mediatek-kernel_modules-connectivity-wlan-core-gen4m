@@ -180,6 +180,7 @@ void nic_txd_v3_header_format_op(
 }
 
 void nic_txd_v3_fill_by_pkt_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxD)
 {
@@ -224,11 +225,52 @@ void nic_txd_v3_fill_by_pkt_option(
 
 	case HEADER_FORMAT_802_11_NORMAL_MODE:
 		if (fgProtected && prMsduInfo->prPacket) {
-			struct WLAN_MAC_HEADER *prWlanHeader =
-			    (struct WLAN_MAC_HEADER *)
+			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+#if CFG_SUPPORT_MLR
+			if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT) {
+				prWlanHeader = (struct WLAN_MAC_HEADER *)
+					((uintptr_t) (prMsduInfo->prPacket)
+					+ MAC_TX_RESERVED_FIELD);
+				if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+					DBGLOG(RSN, INFO,
+						"MLR txdf - 802.11mgmt FC=0x%04x dump...\n",
+						prWlanHeader->u2FrameCtrl);
+					dumpMemory8((uint8_t *)prWlanHeader,
+						WLAN_MAC_HEADER_LEN);
+				}
+			} else if (prMsduInfo->ucPacketType ==
+				TX_PACKET_TYPE_DATA) {
+				struct mt66xx_chip_info *prChipInfo =
+					prAdapter->chip_info;
+				uint8_t *pucData = NULL;
+
+				kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+				prWlanHeader = (struct WLAN_MAC_HEADER *)
+					(pucData
+					+ NIC_TX_DESC_AND_PADDING_LENGTH
+					+ prChipInfo->txd_append_size);
+				if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+					DBGLOG(RSN, INFO,
+						"MLR txdf - 802.11data FC=0x%04x dump...\n",
+						prWlanHeader->u2FrameCtrl);
+					dumpMemory8((uint8_t *)prWlanHeader,
+						WLAN_MAC_HEADER_QOS_LEN);
+				}
+			} else {
+				prWlanHeader = (struct WLAN_MAC_HEADER *)
+					((uintptr_t) (prMsduInfo->prPacket)
+					+ MAC_TX_RESERVED_FIELD);
+				DBGLOG(RSN, ERROR,
+					"MLR txdf - ERROR ucPacketType = %d\n",
+					prMsduInfo->ucPacketType);
+				dumpMemory8((uint8_t *)prWlanHeader,
+					WLAN_MAC_HEADER_LEN);
+			}
+#else
+		    prWlanHeader = (struct WLAN_MAC_HEADER *)
 			    ((uintptr_t) (prMsduInfo->prPacket)
 				+ MAC_TX_RESERVED_FIELD);
-
+#endif
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 		}
 		break;
@@ -376,6 +418,23 @@ void nic_txd_v3_compose(
 
 		HAL_MAC_CONNAC3X_TXD_SET_ETHER_TYPE_OFFSET(
 			prTxDesc, ucEtherTypeOffsetInWord);
+	} else {
+		ucEtherTypeOffsetInWord =
+			(prAdapter->chip_info->pse_header_length
+			+ prMsduInfo->ucMacHeaderLength
+			+ prMsduInfo->ucLlcLength) >> 1;
+
+		HAL_MAC_CONNAC3X_TXD_SET_ETHER_TYPE_OFFSET(
+			prTxDesc, ucEtherTypeOffsetInWord);
+#if CFG_SUPPORT_MLR
+		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
+			MLR_DBGLOG(prAdapter, RSN, WARN,
+				"MLR txdc - 802.11 Ether-type offset[%u] [PseHeader:%u, MacHeader:%u, HeaderPading:2 LLC:%u]\n",
+				ucEtherTypeOffsetInWord,
+				prAdapter->chip_info->pse_header_length,
+				prMsduInfo->ucMacHeaderLength,
+				prMsduInfo->ucLlcLength);
+#endif
 	}
 
 	/** DW1 **/
@@ -431,9 +490,54 @@ void nic_txd_v3_compose(
 	/** DW2 **/
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
-		struct WLAN_MAC_HEADER *prWlanHeader = (struct WLAN_MAC_HEADER *)(
+		struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+#if CFG_SUPPORT_MLR
+		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT) {
+			prWlanHeader = (struct WLAN_MAC_HEADER *)(
+				(uintptr_t) (prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+			if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+				DBGLOG(RSN, INFO,
+					"MLR txdc - 802.11mgmt FC=0x%04x SC=0x%04x dump...\n",
+					prWlanHeader->u2FrameCtrl,
+					prWlanHeader->u2SeqCtrl);
+				dumpMemory8((uint8_t *)prWlanHeader,
+					WLAN_MAC_HEADER_LEN);
+			}
+		} else if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
+			struct mt66xx_chip_info *prChipInfo =
+				prAdapter->chip_info;
+			uint8_t *pucData = NULL;
+
+			kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+			prWlanHeader = (struct WLAN_MAC_HEADER *)
+				(pucData
+				+ MAC_TX_RESERVED_FIELD
+				+ u4TxDescLength
+				+ prChipInfo->txd_append_size);
+			if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
+				DBGLOG(RSN, INFO,
+					"MLR txdc - 802.11data FC=0x%04x SC=0x%04x dump...\n",
+					prWlanHeader->u2FrameCtrl,
+					prWlanHeader->u2SeqCtrl);
+				dumpMemory8((uint8_t *)prWlanHeader,
+					WLAN_MAC_HEADER_QOS_LEN);
+			}
+		} else {
+			prWlanHeader = (struct WLAN_MAC_HEADER *)(
+				(uintptr_t) (prMsduInfo->prPacket) +
+				MAC_TX_RESERVED_FIELD);
+			DBGLOG(RSN, ERROR,
+				"MLR txdc - ERROR ucPacketType = %d\n",
+				prMsduInfo->ucPacketType);
+			dumpMemory8((uint8_t *)prWlanHeader,
+				WLAN_MAC_HEADER_LEN);
+		}
+#else
+		prWlanHeader = (struct WLAN_MAC_HEADER *)(
 			(uintptr_t) (prMsduInfo->prPacket) +
 			MAC_TX_RESERVED_FIELD);
+#endif
 
 		HAL_MAC_CONNAC3X_TXD_SET_TYPE(
 			prTxDesc,
@@ -464,6 +568,25 @@ void nic_txd_v3_compose(
 	/* Power Offset */
 	HAL_MAC_CONNAC3X_TXD_SET_POWER_OFFSET(
 		prTxDesc, prMsduInfo->cPowerOffset);
+
+#if CFG_SUPPORT_MLR
+	if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)) {
+		uint8_t *pucData = NULL;
+
+		HAL_MAC_CONNAC3X_TXD_SET_FRAG_PACKET_POS(prTxDesc,
+			prMsduInfo->eFragPos);
+
+		kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+		MLR_DBGLOG(prAdapter, REQ, INFO,
+			"MLR txdc - PID=%d SeqNo=%d prPacket=%p prPacket->data=%p u2FrameLength=%d eFragPos=%d\n",
+			prMsduInfo->ucPID,
+			prMsduInfo->ucTxSeqNum,
+			prMsduInfo->prPacket,
+			pucData,
+			prMsduInfo->u2FrameLength,
+			prMsduInfo->eFragPos);
+	}
+#endif
 
 	/* OM MAP */
 	//HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
@@ -513,7 +636,7 @@ void nic_txd_v3_compose(
 	}
 
 	/* Update Packet option */
-	nic_txd_v3_fill_by_pkt_option(prMsduInfo, prTxDesc);
+	nic_txd_v3_fill_by_pkt_option(prAdapter, prMsduInfo, prTxDesc);
 
 	/** DW5 **/
 	/* PID */
@@ -609,6 +732,21 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 	case RATE_VHT_MCS_0:
 		ucRateIdx = FIXED_RATE_INDEX_VHT_MCS0;
 		break;
+
+#if CFG_SUPPORT_MLR
+	case RATE_MLR_1_5M:
+	case RATE_MLR_3M:
+		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)) {
+			ucRateIdx =
+				FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_WTBL;
+		} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
+			ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_TXD;
+		} else {
+			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+			DBGLOG(TX, WARN, "MLR rate - Don't use MLR rate\n");
+		}
+		break;
+#endif
 
 	/**
 	 * TODO: other rates?

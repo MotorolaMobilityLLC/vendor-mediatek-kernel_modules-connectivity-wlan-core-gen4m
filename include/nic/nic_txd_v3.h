@@ -99,6 +99,7 @@ void nic_txd_v3_header_format_op(
 	struct MSDU_INFO *prMsduInfo);
 
 void nic_txd_v3_fill_by_pkt_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxD);
 

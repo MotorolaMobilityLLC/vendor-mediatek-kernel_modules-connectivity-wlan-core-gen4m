@@ -1351,7 +1351,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)thrm.o \
 		$(MGMT_DIR)ie_sort.o \
 		$(MGMT_DIR)mscs.o \
-		$(MGMT_DIR)rtt.o
+		$(MGMT_DIR)rtt.o \
+		$(MGMT_DIR)mlr.o
 
 ifneq ($(os), none)
 MGMT_OBJS +=	$(MGMT_DIR)wlan_ring.o \

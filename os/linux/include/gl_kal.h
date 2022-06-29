@@ -1499,6 +1499,14 @@ void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
 
 void *kalGetPacketDev(void *pvPacket);
 
+int kal_skb_checksum_help(void *pvPacket);
+void kalSkbCopyCbData(void *pvDstPacket, void *pvSrcPacket);
+void *kal_skb_copy(void *pvPacket);
+void kal_skb_reserve(void *pvPacket, uint8_t ucLength);
+void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length);
+uint8_t *kal_skb_push(void *pvPacket, uint32_t u4Length);
+uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length);
+
 void kalOsTimerInitialize(IN struct GLUE_INFO *prGlueInfo,
 			  IN void *prTimerHandler);
 
