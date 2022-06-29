@@ -3608,11 +3608,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 	       prErrRecoveryCtrl->u4BackupStatus);
 
 #if CFG_CHIP_RESET_SUPPORT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_TIMEOUT);
-#else
 	kalSetSerTimeoutEvent(prGlueInfo);
-#endif
 #endif
 }
 
