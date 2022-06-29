@@ -595,12 +595,14 @@ struct MLD_BSS_INFO {
 struct NEIGHBOR_AP {
 	struct LINK_ENTRY rLinkEntry;
 	uint8_t aucBssid[MAC_ADDR_LEN];
-	u_int8_t fgHT:1;
-	u_int8_t fgSameMD:1;
-	u_int8_t fgRmEnabled:1;
-	u_int8_t fgFromBtm:1;
-	u_int8_t fgQoS:1;
-	uint8_t ucReserved:3;
+	uint8_t fgHT:1;
+	uint8_t fgSameMD:1;
+	uint8_t fgRmEnabled:1;
+	uint8_t fgFromBtm:1;
+	uint8_t fgQoS:1;
+	uint8_t fgHe:1;
+	uint8_t fgVht:1;
+	uint8_t fgEht:1;
 	u_int8_t fgPrefPresence;
 	uint8_t ucPreference;
 	uint8_t ucChannel;
@@ -781,6 +783,7 @@ struct WIFI_VAR {
 	uint8_t ucMldLinkMax;
 	uint8_t ucApMldAddrByLink;
 	uint8_t ucEnableMlo;
+	uint8_t ucEnableMloSingleLink;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 #endif
 	uint8_t ucApHt;

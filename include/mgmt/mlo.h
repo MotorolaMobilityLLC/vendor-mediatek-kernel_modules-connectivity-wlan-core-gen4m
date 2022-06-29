@@ -10,6 +10,11 @@
 #ifndef _MLO_H
 #define _MLO_H
 
+#define BE_IS_ML_CTRL_TYPE(__pucIE, __TYPE) \
+	(IE_ID(__pucIE) == ELEM_ID_RESERVED && IE_LEN(__pucIE) >= 3 && \
+	 IE_ID_EXT(__pucIE) == ELEM_EXT_ID_MLD && \
+	 (__pucIE[3] & ML_CTRL_TYPE_MASK) == __TYPE)
+
 #define BE_SET_ML_CTRL_TYPE(_u2ctrl, _ctrl_type) \
 {\
 	(_u2ctrl) &= ~(ML_CTRL_TYPE_MASK); \
@@ -54,6 +59,9 @@
 #define BE_IS_ML_CTRL_PRESENCE_MLD_CAP(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_CAPA_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
+#define BE_IS_ML_CTRL_PRESENCE_MLD_ID(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_MLD_ID_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
+
 
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
@@ -65,8 +73,6 @@ struct IE_MULTI_LINK_CONTROL {
 	u_int16_t u2Ctrl;	/* control field - BITS(0, 2): type, BIT(3): reserved, BITS(4, 15): presence bitmap*/
 	u_int8_t aucCommonInfo[0];	/* common field - varied by presence bitmap of control field*/
 } __KAL_ATTRIB_PACKED__;
-
-#define MLSTAIE(fp)              ((struct IE_MULTI_LINK_STA_CONTROL *) fp)
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
 {\
@@ -113,7 +119,7 @@ struct IE_MULTI_LINK_CONTROL {
 	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
 __KAL_ATTRIB_PACKED_FRONT__
-struct IE_MULTI_LINK_STA_CONTROL {
+struct IE_ML_STA_CONTROL {
 	u_int8_t ucSubID;	/* 0: Per-STA Profile */
 	u_int8_t ucLength;
 	u_int16_t u2StaCtrl;	/* control field - BITS(0, 3): link ID, BIT(4): complete profile, BITS(5, 8): presence bitmap, BITS(9): NSTR bitmap size*/
@@ -134,8 +140,10 @@ struct STA_PROFILE {
 	uint8_t ucLinkId;
 	uint8_t aucLinkAddr[MAC_ADDR_LEN];
 	uint16_t u2BcnIntv;
+	uint64_t u8TsfOffset;
 	uint16_t u2DtimInfo;
 	uint16_t u2NstrBmp;
+	uint16_t ucBssParaChangeCount;
 	struct RF_CHANNEL_INFO rChnlInfo;
 	uint8_t ucChangeSeq;
 	uint16_t u2CapInfo;
@@ -154,7 +162,8 @@ struct MULTI_LINK_INFO {
 	uint16_t u2MediumSynDelayInfo;
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
-	uint8_t ucLinkNum;
+	uint8_t ucMldId;
+	uint8_t ucProfNum;
 	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
 };
 
@@ -218,6 +227,8 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	IN const uint8_t *pucIE, IN const uint8_t *paucBssId,
 	IN uint16_t u2FrameCtrl, IN const char *pucDesc);
+
+const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
 
 void mldProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);

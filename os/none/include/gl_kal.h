@@ -747,6 +747,9 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #define kal_tasklet_schedule(_rRxRfbRetTask) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalIsZeroEtherAddr(_addr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0
 #endif

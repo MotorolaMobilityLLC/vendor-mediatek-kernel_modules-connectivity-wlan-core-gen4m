@@ -417,7 +417,16 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 		/*aa:bb:cc:dd:ee:ff 11:22:33:44:55:66 11:22:33:44:55:77 */
 		wlanHwAddrToBin(prAdapter->rWifiVar.aucMacAddrStr +
 			ucLinkIdx * 18, prAisBssInfo->aucOwnMacAddr);
-		DBGLOG(AIS, INFO, "ucLinkIdx: %d, mac: " MACSTR "\n",
+
+		if (kalIsZeroEtherAddr(prAisBssInfo->aucOwnMacAddr)) {
+			DBGLOG(AIS, WARN,
+				"MacAddr zero, override it by 1st link\n");
+			nicApplyLinkAddress(prAdapter,
+			    prAdapter->rWifiVar.aucMacAddrStr,
+			    prAisBssInfo->aucOwnMacAddr, ucLinkIdx);
+		}
+
+		DBGLOG(AIS, INFO, "link: %d, mac: " MACSTR "\n",
 			ucLinkIdx, MAC2STR(prAisBssInfo->aucOwnMacAddr));
 	}
 
@@ -1853,16 +1862,18 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		/* 4 <2.a> If we have the matched one */
 		if (prBssDescSet->ucLinkNum > 0) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			/* If target connected AP has MultiLink, but
-			 * we only scan one link(ucLinkNum=1), need to send ML
-			 * probe request to get completed ML info first.
+			/* If target connected AP has MultiLink
+			 * (ucMaxSimultaneousLinks > 0, 0 means only 1 device),
+			 * but we only scan one link(ucLinkNum=1), need to send
+			 * ML probe request to get completed ML info first.
 			 */
-			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
-				prBssDescSet->ucLinkNum == 1 &&
-				prBssDescSet->prMainBssDesc->rMlInfo.fgValid &&
-				prAisFsmInfo->ucMlProbeSendCount <
-				ML_PROBE_RETRY_COUNT) {
 
+			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
+			    prBssDescSet->ucLinkNum == 1 &&
+			    prBssDescSet->prMainBssDesc->
+				rMlInfo.ucMaxSimultaneousLinks > 0 &&
+			    prAisFsmInfo->ucMlProbeSendCount <
+					ML_PROBE_RETRY_COUNT) {
 				prAisFsmInfo->ucMlProbeSendCount++;
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
 				prAisFsmInfo->prMlProbeBssDesc =
@@ -4303,16 +4314,22 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = mldDupAssocSwRfb(prAdapter,
-			prAssocRspSwRfb, prStaRec);
-		if (prSwRfb) {
-			aisUpdateBssInfoForJOIN(prAdapter,
-				prStaRec, prSwRfb);
-			nicRxReturnRFB(prAdapter, prSwRfb);
-		} else
-#endif
+		if (prStaRec == prSetupStaRec) {
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
+		} else {
+			prSwRfb = mldDupAssocSwRfb(prAdapter,
+				prAssocRspSwRfb, prStaRec);
+			if (prSwRfb) {
+				aisUpdateBssInfoForJOIN(prAdapter,
+					prStaRec, prSwRfb);
+				nicRxReturnRFB(prAdapter, prSwRfb);
+			}
+		}
+#else
+		aisUpdateBssInfoForJOIN(prAdapter,
+			prStaRec, prAssocRspSwRfb);
+#endif
 
 		/* 4 <1.3> Activate current AP's STA_RECORD_T
 		 * in Driver.
@@ -5926,16 +5943,23 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = mldDupAssocSwRfb(prAdapter,
-			prAssocRspSwRfb, prStaRec);
-		if (prSwRfb) {
-			aisUpdateBssInfoForRoamingAP(prAdapter,
-				prStaRec, prSwRfb);
-			nicRxReturnRFB(prAdapter, prSwRfb);
-		} else
-#endif
-			aisUpdateBssInfoForRoamingAP(prAdapter,
+		if (prStaRec == prSetupStaRec) {
+			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
+		} else {
+			prSwRfb = mldDupAssocSwRfb(prAdapter,
+				prAssocRspSwRfb, prStaRec);
+			if (prSwRfb) {
+				aisUpdateBssInfoForRoamingAP(prAdapter,
+					prStaRec, prSwRfb);
+				nicRxReturnRFB(prAdapter, prSwRfb);
+			}
+		}
+#else
+		aisUpdateBssInfoForRoamingAP(
+			prAdapter, prStaRec, prAssocRspSwRfb);
+#endif
+
 	}
 }
 
@@ -7087,6 +7111,9 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 		if (!prNeighborAP)
 			break;
 		prNeighborAP->fgHT = !!(prIe->u4BSSIDInfo & BIT(11));
+		prNeighborAP->fgVht = !!(prIe->u4BSSIDInfo & BIT(12));
+		prNeighborAP->fgHe = !!(prIe->u4BSSIDInfo & BIT(14));
+		prNeighborAP->fgEht = !!(prIe->u4BSSIDInfo & BIT(21));
 		prNeighborAP->fgFromBtm = !!ucValidInterval;
 		prNeighborAP->fgRmEnabled = !!(prIe->u4BSSIDInfo & BIT(7));
 		prNeighborAP->fgQoS = !!(prIe->u4BSSIDInfo & BIT(5));

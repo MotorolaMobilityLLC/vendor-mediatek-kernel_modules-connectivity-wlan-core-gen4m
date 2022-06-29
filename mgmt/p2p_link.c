@@ -177,11 +177,9 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t) OFFSET_OF(struct WLAN_AUTH_FRAME,
 		aucInfoElem[0]);
-
 	pucIE = prAuthFrame->aucInfoElem;
 
-	ml = kalFindIeExtIE(ELEM_ID_RESERVED,
-		ELEM_EXT_ID_MLD, pucIE, u2IELength);
+	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
 		mldParseBasicMlIE(prMlInfo, ml, prAuthFrame->aucBSSID,
 			u2RxFrameCtrl, "RxAuthReq");
@@ -195,9 +193,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
 
-	/* assign correct id when assoc req is received*/
-	mldStarecRegister(prAdapter, prStaRec,
-		prMlInfo->aucMldAddr, MLD_GROUP_NONE);
+	COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -256,9 +252,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 			(prSwRfb->pvHeader))->aucInfoElem;
 	}
 
-	ml = kalFindIeExtIE(ELEM_ID_RESERVED,
-		ELEM_EXT_ID_MLD, pucIE, u2IELength);
-
+	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
 		mldParseBasicMlIE(prMlInfo, ml, prFrame->aucBSSID,
 			u2RxFrameCtrl, "RxAssocReq");
@@ -267,10 +261,14 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	/* sae auth frames are handled by hostapd, delay register until assoc */
-	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)
+	/* sta really attempt to build mlo */
+	if (prMlInfo->ucProfNum > 0) {
 		mldStarecRegister(prAdapter, prStaRec,
-			prMlInfo->aucMldAddr, MLD_GROUP_NONE);
+			prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
+	} else {
+		DBGLOG(AAA, INFO, "ml ie without links\n");
+		return WLAN_STATUS_SUCCESS;
+	}
 
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	prMldStarec = mldStarecGetByAddr(prAdapter,
@@ -282,58 +280,45 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	}
 
 	prStarecList = &prMldStarec->rStarecList;
-	for (i = 0; i < prMlInfo->ucLinkNum; i++) {
+	for (i = 0; i < prMlInfo->ucProfNum; i++) {
 		struct STA_PROFILE *prProfiles =
 			&prMlInfo->rStaProfiles[i];
+		struct BSS_INFO *bss =
+			p2pGetLinkBssInfo(prAdapter,
+			p2pGetDefaultRoleFsmInfo(prAdapter,
+			IFTYPE_P2P_GO),
+			prProfiles->ucLinkId);
 		uint8_t found = FALSE;
 
 		DBGLOG(AAA, INFO,
 			"%d/%d profile: %d, mac: " MACSTR "\n",
-			i + 1, prMlInfo->ucLinkNum, prProfiles->ucLinkId,
+			i + 1, prMlInfo->ucProfNum, prProfiles->ucLinkId,
 			MAC2STR(prProfiles->aucLinkAddr));
+
+		if (bss == NULL) {
+			DBGLOG(AAA, WARN, "wrong link id(%d)\n",
+				prProfiles->ucLinkId);
+			continue;
+		}
+
+		DBGLOG(AAA, INFO,
+			"[link%d] bss: %d, mac: " MACSTR
+			", bssid: " MACSTR "\n",
+			prProfiles->ucLinkId,
+			bss->ucBssIndex,
+			MAC2STR(bss->aucOwnMacAddr),
+			MAC2STR(bss->aucBSSID));
 
 		LINK_FOR_EACH_ENTRY(prCurr, prStarecList,
 				rLinkEntryMld, struct STA_RECORD) {
 			if (EQUAL_MAC_ADDR(prCurr->aucMacAddr,
 				prProfiles->aucLinkAddr)) {
-				struct BSS_INFO *bss =
-					GET_BSS_INFO_BY_INDEX(prAdapter,
-					prCurr->ucBssIndex);
-
-				DBGLOG(AAA, INFO,
-					"[%d] bss: %d, mac: " MACSTR
-					", bssid: " MACSTR "\n",
-					prProfiles->ucLinkId,
-					bss->ucBssIndex,
-					MAC2STR(bss->aucOwnMacAddr),
-					MAC2STR(bss->aucBSSID));
-				prCurr->ucLinkIndex = prProfiles->ucLinkId;
 				found = TRUE;
 				break;
 			}
 		}
 		/* starec not found */
 		if (!found) {
-			struct BSS_INFO *bss =
-				p2pGetLinkBssInfo(prAdapter,
-				p2pGetDefaultRoleFsmInfo(prAdapter,
-				IFTYPE_P2P_GO),
-				prProfiles->ucLinkId);
-
-			if (bss == NULL) {
-				DBGLOG(AAA, WARN, "wrong link id(%d)\n",
-					prProfiles->ucLinkId);
-				continue;
-			}
-
-			DBGLOG(AAA, INFO,
-				"[%d] bss: %d, mac: " MACSTR
-				", bssid: " MACSTR "\n",
-				prProfiles->ucLinkId,
-				bss->ucBssIndex,
-				MAC2STR(bss->aucOwnMacAddr),
-				MAC2STR(bss->aucBSSID));
-
 			prCurr = cnmStaRecAlloc(prAdapter,
 				STA_TYPE_P2P_GC,
 				bss->ucBssIndex,
