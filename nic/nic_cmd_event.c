@@ -3010,16 +3010,17 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 #if CFG_MTK_ANDROID_EMI
 	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
 		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
-	uint32_t size = sizeof(struct HAL_LLS_FULL_REPORT);
+	uint32_t size = sizeof(struct HAL_LLS_FW_REPORT);
+	uint32_t offset = prOffset->u4DataEmiOffset;
 
 	uint32_t u4HostOffsetInfo =
 		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, info);
 	uint32_t u4HostOffsetAc =
 		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, ac);
 	uint32_t u4HostOffsetPeerInfo =
-		OFFSET_OF(struct HAL_LLS_FULL_REPORT, peer_info);
+		OFFSET_OF(struct HAL_LLS_FW_REPORT, peer_info);
 	uint32_t u4HostOffsetRadioStat =
-		OFFSET_OF(struct HAL_LLS_FULL_REPORT, radio);
+		OFFSET_OF(struct HAL_LLS_FW_REPORT, radio);
 	uint32_t u4HostOffsetChannel =
 		OFFSET_OF(struct WIFI_RADIO_CHANNEL_STAT, channel);
 	uint32_t u4HostOffsetTxTimePerLevels =
@@ -3058,10 +3059,9 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 
 	prAdapter->pucLinkStatsSrcBufferAddr =
 		emi_mem_get_vir_base(prAdapter->chip_info) +
-		emi_mem_offset_convert(prOffset->u4DataEmiOffset);
+		emi_mem_offset_convert(offset);
 
-	DBGLOG(INIT, INFO, "offset= %x, size=%zu",
-		prOffset->u4DataEmiOffset, size);
+	DBGLOG(INIT, INFO, "offset= %x, size=%zu", offset, size);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }
