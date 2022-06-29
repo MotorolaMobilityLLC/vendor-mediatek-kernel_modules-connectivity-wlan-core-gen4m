@@ -5403,13 +5403,11 @@ wlanoidPresetLinkId(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4SetInfoLen);
 #endif
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 uint32_t
 wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer,
 			IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen);
-#endif
 
 uint32_t
 wlanoidSetMdvt(IN struct ADAPTER *prAdapter,

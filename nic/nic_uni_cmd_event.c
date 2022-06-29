@@ -251,6 +251,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_GET_VOLT_INFO] = nicUniEventGetVnf,
 #endif
 	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
+	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -5681,6 +5682,12 @@ uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 	case THERMAL_PROTECT_STATE_ACT:
 		tag_id = UNI_CMD_THERMAL_TAG_PROTECT_STATE_ACT;
 		break;
+	case THERMAL_PROTECT_MECH_INFO:
+		tag_id = UNI_CMD_THERMAL_TAG_PROTECT_MECH_INFO;
+		break;
+	case THERMAL_PROTECT_DUTY_INFO:
+		tag_id = UNI_CMD_THERMAL_TAG_PROTECT_DUTY_INFO;
+		break;
 	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
@@ -9327,3 +9334,96 @@ void nicUniEventQueryOfldInfo(IN struct ADAPTER *prAdapter,
 	nicCmdEventQueryOfldInfo(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 #endif
+
+void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_THERMAL);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	struct UNI_EVENT_THERMAL_RSP *rsp;
+
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_UPDATE: {
+			struct EXT_EVENT_THERMAL_PROTECT_DUTY_NOTIFY *info;
+
+			rsp = (struct UNI_EVENT_THERMAL_RSP *)tag;
+			info = (struct EXT_EVENT_THERMAL_PROTECT_DUTY_NOTIFY *)
+					rsp->aucBuffer;
+
+			DBGLOG(NIC, INFO,
+				"Duty update, B[%d] L[%d] D[%d] T[%d] P[%d]\n",
+				info->u1BandIdx, info->u1LevelIdx,
+				info->u1DutyPercent, info->i4Temp,
+				info->eProtectActType);
+		}
+			break;
+		case UNI_THERMAL_EVENT_THERMAL_PROTECT_RADIO_UPDATE: {
+			struct EXT_EVENT_THERMAL_PROTECT_RADIO_NOTIFY *info;
+
+			rsp = (struct UNI_EVENT_THERMAL_RSP *)tag;
+			info = (struct EXT_EVENT_THERMAL_PROTECT_RADIO_NOTIFY *)
+					rsp->aucBuffer;
+
+			DBGLOG(NIC, INFO,
+				"Radio update, B[%d] L[%d] T[%d] P[%d]\n",
+				info->u1BandIdx, info->u1LevelIdx,
+				info->i4Temp, info->eProtectActType);
+		}
+			break;
+		case UNI_THERMAL_EVENT_THERMAL_PROTECT_MECH_INFO: {
+			struct UNI_EVENT_THERMAL_PROTECT_MECH_INFO *info;
+			uint8_t i = 0;
+
+			rsp = (struct UNI_EVENT_THERMAL_RSP *)tag;
+			info = (struct UNI_EVENT_THERMAL_PROTECT_MECH_INFO *)
+					rsp->aucBuffer;
+
+			for (i = UNI_THERMAL_PROTECT_TYPE_NTX_CTRL;
+				i < UNI_THERMAL_PROTECT_TYPE_NUM; i++) {
+
+				DBGLOG(NIC, INFO,
+					"MechInfo[%d/%d/%d/%d/%d/%d/%d]",
+					info->ucProtectionType[i],
+					info->ucTriggerType[i],
+					info->i4TriggerTemp[i],
+					info->i4RestoreTemp[i],
+					info->u2RecheckTime[i],
+					info->ucState[i],
+					info->fgEnable[i]);
+			}
+
+		}
+			break;
+		case UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_INFO: {
+			struct UNI_EVENT_THERMAL_PROTECT_DUTY_INFO *info;
+
+			rsp = (struct UNI_EVENT_THERMAL_RSP *)tag;
+			info = (struct UNI_EVENT_THERMAL_PROTECT_DUTY_INFO *)
+					rsp->aucBuffer;
+
+			DBGLOG(NIC, INFO,
+				"Duty Info, Band[%d] Duty[%d/%d/%d/%d]\n",
+				info->ucBandIdx, info->ucDuty0, info->ucDuty1,
+				info->ucDuty2, info->ucDuty3);
+
+		}
+			break;
+
+		default:
+			fail_cnt++;
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}

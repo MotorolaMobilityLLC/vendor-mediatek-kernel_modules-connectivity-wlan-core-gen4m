@@ -11316,10 +11316,8 @@ void connsysPowerTempNotify(IN struct ADAPTER *prAdapter)
 	u4MaxTemp = (prAdapter->rTempInfo).max_temp;
 	u4RecoveryTemp = (prAdapter->rTempInfo).recovery_temp;
 
-	DBGLOG(INIT, INFO, "Notify FW new temp info: %d, %d\n",
+	DBGLOG(INIT, INFO, "Ignore notify FW new temp info: %d, %d\n",
 						u4MaxTemp, u4RecoveryTemp);
-
-	thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp);
 }
 
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
