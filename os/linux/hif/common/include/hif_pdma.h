@@ -299,11 +299,6 @@
 #define RRO_IND_CMD_RING_SIZE    1024
 #define RRO_DROP_BY_HIF          0
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-#define HIF_TX_DATA_DELAY_TIMEOUT_BIT        0
-#define HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT  1
-#endif
-
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -937,10 +932,6 @@ void halHwRecoveryTimeout(struct timer_list *timer);
 void halHwRecoveryTimeout(unsigned long arg);
 #endif
 void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
-
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-void halStartTxDelayTimer(IN struct ADAPTER *prAdapter);
-#endif
 
 /* Debug functions */
 int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
