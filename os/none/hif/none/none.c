@@ -418,6 +418,12 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
+	IN uint32_t u4MacLatency, IN uint32_t u4Stat)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
 uint8_t halSetRxRingHwAddr(
 	struct RTMP_RX_RING *prRxRing,
 	struct BUS_INFO *prBusInfo,

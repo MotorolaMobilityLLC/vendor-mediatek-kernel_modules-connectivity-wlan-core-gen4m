@@ -1787,6 +1787,11 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 
+void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
+	IN uint32_t u4MacLatency, IN uint32_t u4Stat)
+{
+}
+
 static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
