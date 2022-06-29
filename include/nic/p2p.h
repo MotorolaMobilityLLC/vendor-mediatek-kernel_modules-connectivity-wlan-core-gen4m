@@ -129,6 +129,12 @@
 #define AP_DEFAULT_CHANNEL_6G     5
 #endif
 
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+#define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (6)
+#else
+#define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (2)
+#endif
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************

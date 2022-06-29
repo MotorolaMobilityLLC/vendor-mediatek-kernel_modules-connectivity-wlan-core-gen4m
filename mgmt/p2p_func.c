@@ -1359,7 +1359,8 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 * in p2pFuncProcessP2pProbeRsp
 			 */
 			*pu8GlCookie = u8GlCookie;
-			ucRetryLimit = 2;
+			ucRetryLimit =
+				prAdapter->rWifiVar.u4ProbeRspRetryLimit;
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
@@ -1448,6 +1449,8 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			MSDU_RATE_MODE_AUTO);
 
 		nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
+
+		DBGLOG(P2P, LOUD, "ucRetryLimit = %d\n", ucRetryLimit);
 
 		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 
