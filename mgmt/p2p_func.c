@@ -7684,8 +7684,13 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 			prLteSafeChnList->au4SafeChannelBitmask
 			[ENUM_SAFE_CH_MASK_BAND_5G_1];
 
-		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= u4LteSafeChnMask_5G_1;
-		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= u4LteSafeChnMask_5G_2;
+		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= 0x0000;
+		prAcsReqInfo->u4LteSafeChnMask_5G_2 &= u4LteSafeChnMask_5G_2;
+		DBGLOG(P2P, INFO, "disable_band1_acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
+				u4LteSafeChnMask_5G_1,
+				u4LteSafeChnMask_5G_2,
+				prAcsReqInfo->u4LteSafeChnMask_5G_1,
+				prAcsReqInfo->u4LteSafeChnMask_5G_2);
 	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
