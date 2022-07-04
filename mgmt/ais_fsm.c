@@ -741,11 +741,20 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		case AUTH_MODE_OPEN:
 			if (prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0]
 					== WLAN_AKM_SUITE_SAE) {
-				prAisFsmInfo->ucAvailableAuthTypes =
-				(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
-					AUTH_TYPE_SAE);
-				DBGLOG(AIS, INFO,
-					"JOIN INIT: eAuthMode == OPEN | SAE\n");
+				if (rsnSearchPmkidEntry(prAdapter,
+						prBssDesc->aucBSSID,
+						ucBssIndex) == NULL) {
+					prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_SAE;
+					DBGLOG(AIS, INFO,
+						"JOIN INIT: change AUTH to SAE when PMK not found\n");
+				} else {
+					prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
+						   AUTH_TYPE_SAE);
+					DBGLOG(AIS, INFO,
+						"JOIN INIT: eAuthMode == OPEN | SAE\n");
+				}
 			} else {
 				prAisFsmInfo->ucAvailableAuthTypes =
 				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
