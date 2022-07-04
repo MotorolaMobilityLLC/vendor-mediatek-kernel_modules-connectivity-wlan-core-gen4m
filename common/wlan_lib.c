@@ -12750,14 +12750,20 @@ int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo,
 	int rv;
 	struct CHIP_DBG_OPS *prChipDbg;
 
-	*pu4CurRate = 0;
-	*pu4MaxRate = 0;
+	if (pu4CurRate)
+		*pu4CurRate = 0;
+	if (pu4MaxRate)
+		*pu4MaxRate = 0;
 	prAdapter = prGlueInfo->prAdapter;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
+		return -1;
 
 	prChipDbg = prAdapter->chip_info->prDebugOps;
 	if (prChipDbg && prChipDbg->get_rx_rate_info) {
 		rv = prChipDbg->get_rx_rate_info(
 				prAdapter,
+				ucBssIdx,
 				&rate,
 				&nss,
 				&rxmode,
