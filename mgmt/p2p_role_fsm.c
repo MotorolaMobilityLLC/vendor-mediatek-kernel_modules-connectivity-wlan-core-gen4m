@@ -1644,6 +1644,7 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 		nicDeactivateNetwork(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 	}
 
 error:
