@@ -203,7 +203,6 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t aucAnyBSSID[] = BC_BSSID;
 	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
-	int i = 0;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
@@ -303,6 +302,27 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.uc5GBandwidthMode = CONFIG_BW_20_40M;
 	prAdapter->rWifiVar.uc6GBandwidthMode = CONFIG_BW_20_40_80M;
 
+	aisInitializeConnectionRsnInfo(prAdapter, ucBssIndex);
+} /* end of aisFsmInitializeConnectionSettings() */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief the function is used to initialize the RsnInfo value of the connection
+ *        settings for AIS network
+ *
+ * @param (none)
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void aisInitializeConnectionRsnInfo(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex)
+{
+	struct CONNECTION_SETTINGS *prConnSettings;
+	int i = 0;
+
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
 	prConnSettings->rRsnInfo.ucElemId = 0x30;
 	prConnSettings->rRsnInfo.u2Version = 0x0001;
 	prConnSettings->rRsnInfo.u4GroupKeyCipherSuite = 0;
@@ -314,7 +334,7 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 		prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[i] = 0;
 	prConnSettings->rRsnInfo.u2RsnCap = 0;
 	prConnSettings->rRsnInfo.fgRsnCapPresent = FALSE;
-} /* end of aisFsmInitializeConnectionSettings() */
+} /* end of aisInitializeConnectionRsnInfo() */
 
 /*----------------------------------------------------------------------------*/
 /*!
