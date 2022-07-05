@@ -279,6 +279,8 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 				prP2pBssInfo->ucBssIndex;
 		} else {
 			/* Out of memory. */
+			DBGLOG(P2P, ERROR,
+				"Error allocating BSS Info Beacon\n");
 			ASSERT(FALSE);
 		}
 
@@ -3960,7 +3962,7 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prRoleP2pFsmInfo->ucBssIndex);
-	if (!prP2pBssInfo)
+	if (!prP2pBssInfo || !prP2pBssInfo->prBeacon)
 		goto error;
 
 	prP2pConnReqInfo = &(prRoleP2pFsmInfo->rConnReqInfo);
