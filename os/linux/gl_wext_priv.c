@@ -11417,6 +11417,9 @@ int priv_driver_set_csa_ex(IN struct net_device *prNetDev,
 			prGlueInfo->prAdapter,
 			ucBssIdx);
 
+		if (bss == NULL)
+			return -1;
+
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
 
