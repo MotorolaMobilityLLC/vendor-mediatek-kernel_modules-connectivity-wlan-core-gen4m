@@ -83,8 +83,7 @@
 #define AIS_DEFAULT_BSS_INDEX (0)
 #define AIS_SECONDARY_INDEX (1)
 
-#define AIS_BG_SCAN_INTERVAL_MIN_SEC        2	/* 30 // exponential to 960 */
-#define AIS_BG_SCAN_INTERVAL_MAX_SEC        2	/* 960 // 16min */
+#define AIS_BG_SCAN_INTERVAL_MSEC           10000  /* MSEC */
 
 #define AIS_DELAY_TIME_OF_DISCONNECT_SEC    5	/* 10 */
 
@@ -279,6 +278,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint8_t *pucSaQueryTransId;
 	struct TIMER rSaQueryTimer;
 	u_int8_t fgBipKeyInstalled;
+	struct BSS_DESC *prTargetComebackBssDesc;
 #endif
 	uint8_t ucKeyAlgorithmId;
 

@@ -789,6 +789,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	kal_init_completion(&prAisFsmInfo->rDeauthComp);
 	prAisFsmInfo->encryptedDeauthIsInProcess = FALSE;
+	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
 #endif
 	/* AX blacklist*/
 	LINK_INITIALIZE(&prAisFsmInfo->rAxBlacklist);
@@ -2263,7 +2264,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			}
 
 			prAisFsmInfo->u4SleepInterval =
-			    AIS_BG_SCAN_INTERVAL_MIN_SEC;
+			    AIS_BG_SCAN_INTERVAL_MSEC;
 
 #if (CFG_WOW_SUPPORT == 1)
 			if (prAdapter->fgWowLinkDownPendFlag == TRUE) {
@@ -2324,16 +2325,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 
 			cnmTimerStartTimer(prAdapter,
 					   &prAisFsmInfo->rBGScanTimer,
-					   SEC_TO_MSEC
-					   (prAisFsmInfo->u4SleepInterval));
+					   prAisFsmInfo->u4SleepInterval);
 
 			SET_NET_PWR_STATE_IDLE(prAdapter,
 					       prAisBssInfo->ucBssIndex);
-
-			if (prAisFsmInfo->u4SleepInterval <
-			    AIS_BG_SCAN_INTERVAL_MAX_SEC)
-				prAisFsmInfo->u4SleepInterval <<= 1;
-
 			break;
 		case AIS_STATE_SCAN:
 		case AIS_STATE_ONLINE_SCAN:
@@ -3387,6 +3382,35 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 	}
 }
 
+u_int8_t aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
+			      IN struct STA_RECORD *prStaRec) {
+#if CFG_SUPPORT_802_11W
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+	uint8_t ucBssIndex = 0;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
+	if (prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
+		/* record temporarily rejected AP for SA query */
+		prAisSpecificBssInfo->prTargetComebackBssDesc =
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		prAisFsmInfo->u4SleepInterval =
+			TU_TO_MSEC(prStaRec->u4assocComeBackTime);
+		/* Extend trial count during Beacon timeout retry*/
+		prAisFsmInfo->ucConnTrialCountLimit = 5;
+		DBGLOG(AIS, INFO, "reschedule a comeback timer %u msec\n",
+			TU_TO_MSEC(prStaRec->u4assocComeBackTime));
+		return true;
+	}
+	return false;
+#else
+	return false;
+#endif
+}
+
 uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	IN struct SW_RFB *prAssocRspSwRfb, uint8_t ucBssIndex)
@@ -3504,8 +3528,8 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
 
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
-	    prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
+	if (aisHandleTemporaryReject(prAdapter, prStaRec) ||
+	    prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		/* roaming fail count and time */
 		prAdapter->prGlueInfo->u4RoamFailCnt++;
 		prAdapter->prGlueInfo->u8RoamFailTime = kalGetTimeTickNs();
@@ -4068,6 +4092,9 @@ void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct ROAMING_INFO *prRoamingFsmInfo;
+#if CFG_SUPPORT_802_11W
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+#endif
 #if CFG_SUPPORT_802_11K
 	struct BSS_DESC *prBssDesc = NULL;
 	struct LINK *prBSSDescList =
@@ -4087,6 +4114,11 @@ void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
+#endif
+
+#if CFG_SUPPORT_802_11W
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
 #endif
 
 #if CFG_SUPPORT_802_11K
@@ -5072,10 +5104,17 @@ void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
+#if CFG_SUPPORT_802_11W
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+#endif
 
 	DEBUGFUNC("aisFsmRunEventBGSleepTimeOut()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+#if CFG_SUPPORT_802_11W
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+#endif
 
 	eNextState = prAisFsmInfo->eCurrentState;
 
@@ -5086,7 +5125,13 @@ void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
 			ucBssIndex,
 			kalGetTimeTick());
 
-		eNextState = AIS_STATE_LOOKING_FOR;
+#if CFG_SUPPORT_802_11W
+		if (prAisSpecificBssInfo->prTargetComebackBssDesc) {
+			eNextState = AIS_STATE_SEARCH;
+			prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+		} else
+#endif /* CFG_SUPPORT_802_11W */
+			eNextState = AIS_STATE_LOOKING_FOR;
 
 		SET_NET_PWR_STATE_ACTIVE(prAdapter,
 					 ucBssIndex);

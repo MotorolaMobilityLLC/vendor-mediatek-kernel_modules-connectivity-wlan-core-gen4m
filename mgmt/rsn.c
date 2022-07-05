@@ -2846,8 +2846,16 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	struct ACTION_SA_QUERY_FRAME *prTxFrame;
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter,
 		prSwRfb);
+#if CFG_SUPPORT_802_11W
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+#endif
 
 	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+#if CFG_SUPPORT_802_11W
+	prAisSpecificBssInfo =
+		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+#endif
+
 	if (!prSwRfb)
 		return;
 
@@ -2874,6 +2882,17 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		       MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
 		return;
 	}
+
+#if CFG_SUPPORT_802_11W
+	if (prAisSpecificBssInfo->prTargetComebackBssDesc
+		&& UNEQUAL_MAC_ADDR(prStaRec->aucMacAddr,
+		    prAisSpecificBssInfo->prTargetComebackBssDesc->aucBSSID)) {
+		DBGLOG(RSN, INFO,
+			"Ignore SA Query Request from non-targeted AP "
+			MACSTR "\n", MAC2STR(prStaRec->aucMacAddr));
+		return;
+	}
+#endif
 
 	DBGLOG(RSN, INFO,
 	       "IEEE 802.11: Sending SA Query Response to " MACSTR "\n",
