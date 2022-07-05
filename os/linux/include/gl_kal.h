@@ -257,6 +257,27 @@ extern u_int8_t wlan_perf_monitor_force_enable;
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+
+struct CPU_INFO {
+	int32_t i4LittleCpuFreq;
+	int32_t i4BigCpuFreq;
+};
+
+struct THREAD_INFO {
+	uint32_t u4CpuMask;
+	uint32_t u4Priority;
+};
+
+struct BOOST_INFO {
+	struct CPU_INFO rCpuInfo;
+	struct THREAD_INFO rHifThreadInfo;
+	struct THREAD_INFO rMainThreadInfo;
+	struct THREAD_INFO rRxThreadInfo;
+	uint32_t u4RpsMap;
+	uint32_t u4ISRMask;
+	u_int8_t fgDramBoost;
+};
+
 enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_FSM = 0,
 
@@ -2155,6 +2176,8 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+void kalSetCpuBoost(struct ADAPTER *prAdapter,
+		struct BOOST_INFO *prBoostInfo);
 int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 		    IN uint32_t u4TarPerfLevel,
 		    IN uint32_t u4BoostCpuTh);

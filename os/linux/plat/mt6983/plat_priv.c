@@ -22,12 +22,15 @@
 #define DOMAIN_CONN	2
 #endif
 
-#define DEFAULT_CPU_FREQ (-1)
+#define AUTO_CPU_FREQ (-1)
+#define UNDEFINED_CPU_FREQ (-2)
 #define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
 #define CPU_X_CORE (0x80)
 #define CPU_HP_CORE (CPU_BIG_CORE - CPU_X_CORE)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
+#define AUTO_PRIORITY 0
+#define HIGH_PRIORITY 100
 
 #define RPS_ALL_CORE (CPU_ALL_CORE - 0x11)
 #define RPS_BIG_CORE (CPU_BIG_CORE - 0x10)
@@ -39,16 +42,6 @@
 #include <linux/platform_device.h>
 #include <linux/pinctrl/consumer.h>
 #include "wlan_pinctrl.h"
-
-enum ENUM_CPU_BOOST_STATUS {
-	ENUM_CPU_BOOST_STATUS_INIT = 0,
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-	ENUM_CPU_BOOST_STATUS_START_LITTLE,
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-	ENUM_CPU_BOOST_STATUS_START_ALL,
-	ENUM_CPU_BOOST_STATUS_STOP,
-	ENUM_CPU_BOOST_STATUS_NUM
-};
 
 static uint32_t u4EmiMetOffset = 0x45D400;
 
@@ -64,14 +57,122 @@ static struct WLAN_PINCTRL_OPS mt6983_pinctrl_ops = {
 };
 #endif
 
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-uint32_t kalGetLittleCpuBoostThreshold(void)
-{
-	DBGLOG(SW4, TRACE, "enter kalGetLittleCpuBoostThreshold\n");
-	/* 3, stands for 100Mbps */
-	return 3;
-}
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+enum ENUM_CPU_BOOST_STATUS {
+	ENUM_CPU_BOOST_STATUS_INIT = 0,
+	ENUM_CPU_BOOST_STATUS_LV0,
+	ENUM_CPU_BOOST_STATUS_LV1,
+	ENUM_CPU_BOOST_STATUS_LV2,
+	ENUM_CPU_BOOST_STATUS_LV3,
+	ENUM_CPU_BOOST_STATUS_NUM
+};
+
+enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[] = {
+	ENUM_CPU_BOOST_STATUS_LV0, /* 0 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 1 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 2 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 3 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 4 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 5: 250Mbps */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 6 */
+	ENUM_CPU_BOOST_STATUS_LV0, /* 7 */
+	ENUM_CPU_BOOST_STATUS_LV2, /* 8: 1200Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 9: 2500Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3  /* 10 */
+};
+
+struct BOOST_INFO rBoostInfo[] = {
+	{
+		/* ENUM_CPU_BOOST_STATUS_INIT */
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV0 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_LITTLE_CORE,
+		.u4ISRMask = CPU_LITTLE_CORE,
+		.fgDramBoost = FALSE
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV1 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_ALL_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_ALL_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_ALL_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_ALL_CORE,
+		.u4ISRMask = CPU_BIG_CORE,
+		.fgDramBoost = FALSE
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV2 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_BIG_CORE,
+		.fgDramBoost = FALSE
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV3 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = AUTO_CPU_FREQ,
+			.i4BigCpuFreq = UNDEFINED_CPU_FREQ
+		},
+		.rHifThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.u4RpsMap = RPS_BIG_CORE,
+		.u4ISRMask = CPU_BIG_CORE,
+		.fgDramBoost = FALSE
+	}
+};
 
 uint32_t kalGetCpuBoostThreshold(void)
 {
@@ -213,116 +314,117 @@ static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 	return r;
 }
 
-int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
-		    IN uint32_t u4TarPerfLevel,
-		    IN uint32_t u4BoostCpuTh)
+/**
+ * kalSetCpuBoost() - Set CPU boost parameters
+ * @prAdapter: pointer to Adapter
+ * @prBoostInfo: pointer to Boost Info to retrieve how to boost cpu
+ *
+ * This function provides parameters configuration for each boost status.
+ *
+ * About RPS, the system default value of the rps_cpus file is zero.
+ * This disables RPS, so the CPU that handles the network interrupt also
+ * processes the packet.
+ * To enable RPS, configure the appropriate RPS CPU mask with the CPUs that
+ * should process packets from the specified network device and receive queue.
+ * If the network interrupt rate is extremely high, excluding the CPU that
+ * handles network interrupts may also improve performance.
+ */
+void kalSetCpuBoost(struct ADAPTER *prAdapter,
+		struct BOOST_INFO *prBoostInfo)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
-	uint32_t u4CpuFreq = prAdapter->rWifiVar.au4CpuBoostMinFreq * 1000;
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-	uint32_t u4BoostLittleCpuTh = prAdapter->rWifiVar.u4BoostLittleCpuTh;
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	kalSetCpuFreq(prBoostInfo->rCpuInfo.i4LittleCpuFreq,
+			CPU_LITTLE_CORE);
+	kalSetCpuFreq(prBoostInfo->rCpuInfo.i4BigCpuFreq,
+			CPU_BIG_CORE);
 
-	if (fgRequested == ENUM_CPU_BOOST_STATUS_INIT) {
-		/* initially enable rps working at small cores */
-		kalSetRpsMap(prGlueInfo, RPS_LITTLE_CORE);
-		kalSetISRMask(prAdapter, CPU_LITTLE_CORE);
-		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
-	}
+	kalSetCpuMask(prGlueInfo->hif_thread,
+			prBoostInfo->rHifThreadInfo.u4CpuMask);
+	kalSetCpuMask(prGlueInfo->main_thread,
+			prBoostInfo->rMainThreadInfo.u4CpuMask);
+	kalSetCpuMask(prGlueInfo->rx_thread,
+			prBoostInfo->rRxThreadInfo.u4CpuMask);
 
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-	if (u4TarPerfLevel >= u4BoostLittleCpuTh &&
-		u4TarPerfLevel < u4BoostCpuTh &&
-		fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
-		pr_info("Boost little (%u>=%u) freq=%u\n",
-			u4TarPerfLevel, u4BoostLittleCpuTh, u4CpuFreq/1000);
-		fgRequested = ENUM_CPU_BOOST_STATUS_START_LITTLE;
+	kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid,
+			prBoostInfo->rHifThreadInfo.u4Priority);
+	kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid,
+			prBoostInfo->rMainThreadInfo.u4Priority);
+	kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid,
+			prBoostInfo->rRxThreadInfo.u4Priority);
 
-		kalSetCpuFreq(u4CpuFreq, CPU_LITTLE_CORE);
-		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
-		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
-		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
+	kalSetRpsMap(prGlueInfo, prBoostInfo->u4RpsMap);
+	kalSetISRMask(prAdapter, prBoostInfo->u4ISRMask);
 
-		kalSetRpsMap(prGlueInfo, RPS_LITTLE_CORE);
-		kalSetISRMask(prAdapter, CPU_ALL_CORE);
-		kalSetDramBoost(prAdapter, TRUE);
-	} else if (u4TarPerfLevel >= u4BoostCpuTh &&
-		(fgRequested == ENUM_CPU_BOOST_STATUS_STOP ||
-		 fgRequested == ENUM_CPU_BOOST_STATUS_START_LITTLE)) {
-#else /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-	if (u4TarPerfLevel >= u4BoostCpuTh &&
-		fgRequested == ENUM_CPU_BOOST_STATUS_STOP) {
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-		pr_info("Boost and migrate big (%u>=%u) freq=%u\n",
-			u4TarPerfLevel, u4BoostCpuTh, u4CpuFreq/1000);
-		fgRequested = ENUM_CPU_BOOST_STATUS_START_ALL;
+	kalSetDramBoost(prAdapter, prBoostInfo->fgDramBoost);
 
-		kalSetCpuFreq(u4CpuFreq, CPU_BIG_CORE);
-		kalSetCpuMask(prGlueInfo->hif_thread, CPU_BIG_CORE);
-		kalSetCpuMask(prGlueInfo->main_thread, CPU_BIG_CORE);
-		kalSetCpuMask(prGlueInfo->rx_thread, CPU_BIG_CORE);
-		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_LITTLE_CORE);
+#define TEMP_LOG_TEMPLATE \
+	"CPUInfo[%d:%d] ThreadInfo:[%02x:%02x:%02x][%u:%u:%u] " \
+	"Rps:[%02x] ISR:[%02x] D:[%u]\n"
 
-		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
-		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
-		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
-		kalSetRpsMap(prGlueInfo, RPS_BIG_CORE);
-		kalSetISRMask(prAdapter, CPU_BIG_CORE);
-		kalSetDramBoost(prAdapter, TRUE);
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-	} else if (u4TarPerfLevel < u4BoostCpuTh &&
-		u4TarPerfLevel >= u4BoostLittleCpuTh &&
-		fgRequested == ENUM_CPU_BOOST_STATUS_START_ALL) {
-		pr_info("kalBoostCpu stop big core (%u<%u)\n",
-			u4TarPerfLevel, u4BoostCpuTh);
-		fgRequested = ENUM_CPU_BOOST_STATUS_START_LITTLE;
-
-		kalSetCpuMask(prGlueInfo->hif_thread, CPU_LITTLE_CORE);
-		kalSetCpuMask(prGlueInfo->main_thread, CPU_LITTLE_CORE);
-		kalSetCpuMask(prGlueInfo->rx_thread, CPU_LITTLE_CORE);
-
-		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
-		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
-		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
-
-		kalSetRpsMap(prGlueInfo, RPS_LITTLE_CORE);
-		kalSetISRMask(prAdapter, CPU_LITTLE_CORE);
-		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_BIG_CORE);
-	} else if (u4TarPerfLevel < u4BoostLittleCpuTh &&
-		(fgRequested == ENUM_CPU_BOOST_STATUS_START_ALL ||
-		 fgRequested == ENUM_CPU_BOOST_STATUS_START_LITTLE)) {
-#else /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-	} else if (u4TarPerfLevel < u4BoostCpuTh &&
-		fgRequested == ENUM_CPU_BOOST_STATUS_START_ALL) {
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-		pr_info("kalBoostCpu stop all (%u<%u)\n",
-			u4TarPerfLevel,
-#if CFG_SUPPORT_LITTLE_CPU_BOOST
-			u4BoostLittleCpuTh
-#else
-			u4BoostCpuTh
-#endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+	DBGLOG(INIT, INFO,
+		TEMP_LOG_TEMPLATE,
+		prBoostInfo->rCpuInfo.i4LittleCpuFreq,
+		prBoostInfo->rCpuInfo.i4BigCpuFreq,
+		prBoostInfo->rHifThreadInfo.u4CpuMask,
+		prBoostInfo->rMainThreadInfo.u4CpuMask,
+		prBoostInfo->rRxThreadInfo.u4CpuMask,
+		prBoostInfo->rHifThreadInfo.u4Priority,
+		prBoostInfo->rMainThreadInfo.u4Priority,
+		prBoostInfo->rRxThreadInfo.u4Priority,
+		prBoostInfo->u4RpsMap,
+		prBoostInfo->u4ISRMask,
+		prBoostInfo->fgDramBoost
 		);
-		fgRequested = ENUM_CPU_BOOST_STATUS_STOP;
+#undef TEMP_LOG_TEMPLATE
+}
 
-		kalSetCpuMask(prGlueInfo->hif_thread, CPU_ALL_CORE);
-		kalSetCpuMask(prGlueInfo->main_thread, CPU_ALL_CORE);
-		kalSetCpuMask(prGlueInfo->rx_thread, CPU_ALL_CORE);
+void kalUpdateBoostInfo(struct ADAPTER *prAdapter)
+{
+	uint32_t u4CpuFreq = prAdapter->rWifiVar.au4CpuBoostMinFreq * 1000;
+	struct BOOST_INFO *prBoostInfo;
+	int i;
 
-		kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
-		kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
-		kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
-		kalSetRpsMap(prGlueInfo, RPS_LITTLE_CORE);
-		kalSetISRMask(prAdapter, CPU_ALL_CORE);
-		kalSetCpuFreq(DEFAULT_CPU_FREQ, CPU_ALL_CORE);
-		kalSetDramBoost(prAdapter, FALSE);
+	for (i = 0; i < ENUM_CPU_BOOST_STATUS_NUM; i++) {
+		prBoostInfo = &rBoostInfo[i];
+		if (prBoostInfo->rCpuInfo.i4LittleCpuFreq ==
+			UNDEFINED_CPU_FREQ)
+			prBoostInfo->rCpuInfo.i4LittleCpuFreq = u4CpuFreq;
+
+		if (prBoostInfo->rCpuInfo.i4BigCpuFreq ==
+			UNDEFINED_CPU_FREQ)
+			prBoostInfo->rCpuInfo.i4BigCpuFreq = u4CpuFreq;
+	}
+}
+
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh)
+{
+	static enum ENUM_CPU_BOOST_STATUS eCurrBoost =
+			ENUM_CPU_BOOST_STATUS_INIT;
+	enum ENUM_CPU_BOOST_STATUS eNewBoost;
+
+	if (prAdapter->rWifiVar.fgBoostCpuEn == FEATURE_DISABLED)
+		return 0;
+
+	/* initially enable RPS working at small cores */
+	if (eCurrBoost == ENUM_CPU_BOOST_STATUS_INIT) {
+		eCurrBoost = ENUM_CPU_BOOST_STATUS_LV0;
+		kalUpdateBoostInfo(prAdapter);
+		kalSetCpuBoost(prAdapter, &rBoostInfo[eCurrBoost]);
 	}
 
-	kalTraceInt(fgRequested == ENUM_CPU_BOOST_STATUS_START_ALL,
-		"kalBoostCpu");
+	eNewBoost = eBoostCpuTable[u4TarPerfLevel];
+	if (eCurrBoost != eNewBoost) {
+		DBGLOG(INIT, INFO,
+			"kalBoostCpu TputLv:%u BoostLv[%u->%u]\n",
+			u4TarPerfLevel, eCurrBoost, eNewBoost);
+		kalTraceEvent("kalBoostCpu TputLv:%u BoostLv[%u->%u]\n",
+			u4TarPerfLevel, eCurrBoost, eNewBoost);
+		kalSetCpuBoost(prAdapter, &rBoostInfo[eNewBoost]);
+		eCurrBoost = eNewBoost;
+	}
 
 	return 0;
 }
