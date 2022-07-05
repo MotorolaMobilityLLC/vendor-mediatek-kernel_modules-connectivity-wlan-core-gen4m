@@ -188,9 +188,8 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	}
 
 	pcie2ap = remap->pcie2ap;
-
 	if (!pcie2ap) {
-		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return;
 	}
 
@@ -218,9 +217,8 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	}
 
 	pcie2ap = remap->pcie2ap;
-
 	if (!pcie2ap) {
-		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return;
 	}
 
@@ -239,9 +237,9 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 {
 	const struct PCIE_CHIP_CR_REMAPPING *remap =
 		prChipInfo->bus_info->bus2chip_remap;
-	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
 
@@ -250,12 +248,17 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+#if defined(_HIF_PCIE)
 	pcie2ap = remap->pcie2ap;
-	ap2wf = remap->ap2wf;
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
+		return;
+	}
+#endif
 
-	if (!pcie2ap || !ap2wf) {
-		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
-			pcie2ap, ap2wf);
+	ap2wf = remap->ap2wf;
+	if (!ap2wf) {
+		DBGLOG(INIT, ERROR, "ap2wf remap NOT supported\n");
 		return;
 	}
 
@@ -282,9 +285,9 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 {
 	const struct PCIE_CHIP_CR_REMAPPING *remap =
 		prChipInfo->bus_info->bus2chip_remap;
-	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
 
@@ -293,12 +296,17 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+#if defined(_HIF_PCIE)
 	pcie2ap = remap->pcie2ap;
-	ap2wf = remap->ap2wf;
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
+		return;
+	}
+#endif
 
-	if (!pcie2ap || !ap2wf) {
-		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
-			pcie2ap, ap2wf);
+	ap2wf = remap->ap2wf;
+	if (!ap2wf) {
+		DBGLOG(INIT, ERROR, "ap2wf remap NOT supported\n");
 		return;
 	}
 
@@ -338,7 +346,7 @@ u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
 
 	pcie2ap = remap->pcie2ap;
 	if (!pcie2ap) {
-		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return FALSE;
 	}
 
@@ -387,7 +395,7 @@ u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
 
 	pcie2ap = remap->pcie2ap;
 	if (!pcie2ap) {
-		DBGLOG(INIT, ERROR, "pcie2ap NOT supported\n");
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
 		return FALSE;
 	}
 
@@ -424,9 +432,9 @@ u_int8_t kalDevRegL2ReadRange(IN struct GLUE_INFO *glue,
 	uint32_t total_size)
 {
 	const struct PCIE_CHIP_CR_REMAPPING *remap;
-	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t value = 0, backup_val = 0;
 #endif
 	uint32_t offset_addr = 0;
@@ -439,11 +447,17 @@ u_int8_t kalDevRegL2ReadRange(IN struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+#if defined(_HIF_PCIE)
 	pcie2ap = remap->pcie2ap;
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
+		return FALSE;
+	}
+#endif
+
 	ap2wf = remap->ap2wf;
-	if (!pcie2ap || !ap2wf) {
-		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
-			pcie2ap, ap2wf);
+	if (!ap2wf) {
+		DBGLOG(INIT, ERROR, "ap2wf remap NOT supported\n");
 		return FALSE;
 	}
 
@@ -502,14 +516,16 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 	uint32_t total_size)
 {
 	const struct PCIE_CHIP_CR_REMAPPING *remap;
-	const struct pcie2ap_remap *pcie2ap;
 	const struct ap2wf_remap *ap2wf;
 #if defined(_HIF_PCIE)
+	const struct pcie2ap_remap *pcie2ap;
 	uint32_t value = 0, backup_val = 0;
 #endif
 	uint32_t offset_addr = 0;
 	uint32_t offset = 0;
 	u_int8_t ret = TRUE;
+
+	DBGLOG(INIT, INFO, "reg: 0x%x, total_size: 0x%x\n", reg, total_size);
 
 	remap = chip_info->bus_info->bus2chip_remap;
 	if (!remap) {
@@ -517,11 +533,17 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+#if defined(_HIF_PCIE)
 	pcie2ap = remap->pcie2ap;
+	if (!pcie2ap) {
+		DBGLOG(INIT, ERROR, "pcie2ap remap NOT supported\n");
+		return FALSE;
+	}
+#endif
+
 	ap2wf = remap->ap2wf;
-	if (!pcie2ap || !ap2wf) {
-		DBGLOG(INIT, ERROR, "pcie2ap: 0x%p, ap2wf: 0x%p\n",
-			pcie2ap, ap2wf);
+	if (!ap2wf) {
+		DBGLOG(INIT, ERROR, "ap2wf remap NOT supported\n");
 		return FALSE;
 	}
 
@@ -788,7 +810,7 @@ u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 				total_size - offset);
 
 			RTMP_IO_READ_RANGE(chip_info,
-				bus_addr + GET_L1_REMAP_OFFSET(reg),
+				bus_addr,
 				(void *)(buf + offset),
 				size);
 
@@ -839,7 +861,7 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 				total_size - offset);
 
 			RTMP_IO_WRITE_RANGE(chip_info,
-				bus_addr + GET_L1_REMAP_OFFSET(reg),
+				bus_addr,
 				(void *)(buf + offset),
 				size);
 

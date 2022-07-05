@@ -72,6 +72,8 @@ static int32_t emi_init_type_dma(void *dev,
 	void **va,
 	uint32_t *size)
 {
+#define MCU_EMI_SIZE		(2 * 64 * 1024)
+
 	dma_addr_t phy_addr;
 	void *vir_addr;
 
@@ -162,13 +164,6 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 
 	if (emi->va == NULL) {
 		DBGLOG(INIT, ERROR, "Alloc emi mem failed\n");
-		ret = -ENOMEM;
-		goto exit;
-	} else if (emi->size != MCU_EMI_SIZE) {
-		DBGLOG(INIT, ERROR,
-			"Emi size mismatch, expect: 0x%x but 0x%x\n",
-			MCU_EMI_SIZE,
-			emi->size);
 		ret = -ENOMEM;
 		goto exit;
 	}
