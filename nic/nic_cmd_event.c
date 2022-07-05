@@ -3029,6 +3029,9 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
 	uint32_t size = sizeof(struct HAL_LLS_FW_REPORT);
 	uint32_t offset = prOffset->u4DataEmiOffset;
+	uint32_t size2 = prOffset->u4NumTxPowerLevels * ENUM_BAND_NUM *
+			sizeof(uint32_t);
+	uint32_t offset2 = prOffset->u4TxTimePerLevelEmiOffset;
 
 	uint32_t u4HostOffsetInfo =
 		OFFSET_OF(struct STATS_LLS_WIFI_IFACE_STAT, info);
@@ -3045,11 +3048,22 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 	uint32_t u4HostOffsetRxTime =
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
 
-	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u/%u/%u",
+	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u/%u/%u power=%u,%u",
 			u4HostOffsetInfo, u4HostOffsetAc,
 			u4HostOffsetPeerInfo, u4HostOffsetRadioStat,
 			u4HostOffsetTxTimePerLevels, u4HostOffsetRxTime,
-			u4HostOffsetChannel);
+			u4HostOffsetChannel,
+			prOffset->u4NumTxPowerLevels, ENUM_BAND_NUM);
+
+	if (!offset) {
+		DBGLOG(INIT, WARN, "NULL offset: offset=%p, offset2=%p",
+				offset, offset2);
+		return WLAN_STATUS_FAILURE;
+	}
+	if (!offset2) {
+		DBGLOG(INIT, TRACE, "NULL offset: offset=%p, offset2=%p",
+				offset, offset2);
+	}
 
 	if (prOffset->u4OffsetInfo != u4HostOffsetInfo ||
 	    prOffset->u4OffsetAc != u4HostOffsetAc ||
@@ -3068,17 +3082,33 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 			prOffset->u4OffsetChannel);
 		return WLAN_STATUS_FAILURE;
 	}
+	if (offset2 && size2 > LLS_RADIO_STAT_MAX_TX_LEVELS *
+			ENUM_BAND_NUM * sizeof(uint32_t)) {
+		DBGLOG(INIT, WARN, "Size 2 too large: %zu", size2);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	if (prAdapter->pucLinkStatsSrcBufferAddr) {
-		DBGLOG(INIT, WARN, "LLS EMI has already set, update it.");
+		DBGLOG(INIT, WARN, "LLS EMI stats set, update it.");
 		prAdapter->pucLinkStatsSrcBufferAddr = NULL;
 	}
 
+	if (prAdapter->pu4TxTimePerLevels) {
+		DBGLOG(INIT, WARN, "LLS EMI PowerLevel set, update it.");
+		prAdapter->pu4TxTimePerLevels = NULL;
+	}
+
+	/* How if set already? Set without size? */
 	prAdapter->pucLinkStatsSrcBufferAddr =
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
+	prAdapter->pu4TxTimePerLevels =
+		emi_mem_get_vir_base(prAdapter->chip_info) +
+		emi_mem_offset_convert(offset2);
+	prAdapter->u4TxTimePerLevelsSize = size2;
 
-	DBGLOG(INIT, INFO, "offset= %x, size=%zu", offset, size);
+	DBGLOG(INIT, INFO, "EMI offset=%x (%zu), offset2=%x (%u)",
+			offset, size, offset2, size2);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }

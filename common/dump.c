@@ -123,9 +123,9 @@ void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length)
 #if !DBG_DISABLE_ALL_LOG
 #define BUFSIZE 100
 	uint8_t output[BUFSIZE] = {0};
-	uint8_t i = 0;
-	uint8_t printed = 0;
-	uint8_t offset = 0;
+	uint32_t i = 0;
+	uint32_t printed = 0;
+	uint32_t offset = 0;
 
 	ASSERT(pucStartAddr);
 	LOG_FUNC("DUMPHEX ADDRESS: 0x%x, Length: %d", pucStartAddr, u2Length);

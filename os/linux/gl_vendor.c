@@ -1308,6 +1308,13 @@ void dumpLinkStatsRadio(struct STATS_LLS_WIFI_RADIO_STAT *radio, uint32_t idx)
 			radio->num_channels);
 }
 
+void dumpLinkStatsPowerLevels(uint8_t *ptr, uint32_t u4TxTimePerLevelsSize)
+{
+	DBGLOG(REQ, INFO, "PowerLevels: %p, size=%u\n",
+			ptr, u4TxTimePerLevelsSize);
+	DBGLOG_HEX(REQ, INFO, ptr, u4TxTimePerLevelsSize);
+}
+
 void dumpLinkStatsChannel(struct STATS_LLS_CHANNEL_STAT *channel, uint32_t idx)
 {
 	DBGLOG(REQ, INFO, "Channel(%u) %u %d %d %d %u %u",
@@ -1625,6 +1632,23 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 	DBGLOG(REQ, TRACE, "advanced %u bytes", dst - orig);
 	return dst - orig;
 }
+
+/**
+ * Stored in pu4TxTimePerLevels in (uint32_t * size).
+ */
+uint32_t fill_power_levels(uint8_t *dst, struct ADAPTER *prAdapter,
+		uint32_t *pu4TxTimePerLevels, uint32_t u4TxTimePerLevelsSize)
+{
+	uint8_t *orig = dst;
+
+	DBGLOG(REQ, INFO, "Copy power level %u bytes", u4TxTimePerLevelsSize);
+	kalMemCopyFromIo(dst, pu4TxTimePerLevels, u4TxTimePerLevelsSize);
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		dumpLinkStatsPowerLevels(dst, u4TxTimePerLevelsSize);
+	dst += u4TxTimePerLevelsSize;
+
+	return dst - orig;
+}
 #endif /* CFG_SUPPORT_LLS */
 
 
@@ -1708,6 +1732,11 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		ptr += sizeof(uint32_t);
 
 		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM, prAdapter);
+		if (prAdapter->pu4TxTimePerLevels) {
+			ptr += fill_power_levels(ptr, prAdapter,
+					prAdapter->pu4TxTimePerLevels,
+					prAdapter->u4TxTimePerLevelsSize);
+		}
 		DBGLOG(REQ, TRACE, "Collected %u bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);
