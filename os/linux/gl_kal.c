@@ -3352,10 +3352,12 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 	uint16_t u2QueueIdx = 0;
 	uint8_t ucBssIndex = 0;
 	u_int8_t fgIsValidDevice = TRUE;
-	struct BSS_INFO *prBssInfo;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
+	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(pvPacket);
 	/* ASSERT(prGlueInfo->i4TxPendingFrameNum); */
 
@@ -3383,44 +3385,18 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 		goto end;
 
 #if CFG_ENABLE_WIFI_DIRECT
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	{
-		struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *)
-						    NULL;
-		struct net_device *prNetdevice = NULL;
-
-		/* in case packet was sent after P2P device is unregistered or
-		 * the net_device was be free
-		 */
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
-			if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE)
-				fgIsValidDevice = FALSE;
-			else {
-				ASSERT(prBssInfo->u4PrivateData < KAL_P2P_NUM);
-				prGlueP2pInfo =
-					prGlueInfo->prP2PInfo[
-						prBssInfo->u4PrivateData];
-				if (prGlueP2pInfo) {
-					prNetdevice =
-						prGlueP2pInfo->aprRoleHandler;
-					/* The net_device may be free */
-					if ((prDev != prNetdevice)
-					    && (prDev !=
-					    prGlueP2pInfo->prDevHandler)) {
-						fgIsValidDevice = FALSE;
-						DBGLOG(TX, LOUD,
-						       "kalSendCompleteAndAwakeQueue net device deleted! ucBssIndex = %u\n",
-						       ucBssIndex);
-					}
-				}
-			}
-		}
+	if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+		/* Make sure p2p netdevice is in registered state */
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		if (prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED)
+			fgIsValidDevice = FALSE;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	}
 #endif
 
-	if (fgIsValidDevice == TRUE) {
+	if (fgIsValidDevice) {
 		uint32_t u4StartTh = prGlueInfo->u4TxStartTh[ucBssIndex];
 
 		if (netif_subqueue_stopped(prDev, prSkb) &&
