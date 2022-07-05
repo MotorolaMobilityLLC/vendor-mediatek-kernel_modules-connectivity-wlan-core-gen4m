@@ -947,9 +947,20 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	prTokenInfo->fgEnAdjustCtrl = false;
+	prTokenInfo->u4MinBssTxCredit = HIF_DEFAULT_MIN_BSS_TX_CREDIT;
+	prTokenInfo->u4MaxBssTxCredit = HIF_DEFAULT_MAX_BSS_TX_CREDIT;
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4TxCredit[u4Idx] = prTokenInfo->u4MinBssTxCredit;
+	}
+#else
 	prTokenInfo->u4MaxBssFreeCnt = HIF_TX_MSDU_TOKEN_NUM;
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
 		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
+#endif
 
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
@@ -1002,9 +1013,19 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 	prTokenInfo->u4UsedCnt = 0;
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	prTokenInfo->u4MinBssTxCredit = HIF_DEFAULT_MIN_BSS_TX_CREDIT;
+	prTokenInfo->u4MaxBssTxCredit = HIF_DEFAULT_MAX_BSS_TX_CREDIT;
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
+		prTokenInfo->u4TxCredit[u4Idx] = prTokenInfo->u4MinBssTxCredit;
+	}
+#else
 	prTokenInfo->u4MaxBssFreeCnt = HIF_DEFAULT_BSS_FREE_CNT;
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
 		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
+#endif
 
 	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
@@ -1072,6 +1093,9 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 	if (ucBssIndex < MAX_BSSID_NUM) {
 		prToken->ucBssIndex = ucBssIndex;
 		prTokenInfo->u4TxBssCnt[ucBssIndex]++;
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+		prTokenInfo->u4LastTxBssCnt[ucBssIndex]++;
+#endif
 	}
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
@@ -1130,8 +1154,12 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 	prTokenInfo->u4UsedCnt = 0;
-	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
+#endif
+	}
 }
 
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
@@ -4130,6 +4158,107 @@ void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
 }
 #endif
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+
+	if (!prTokenInfo->fgEnAdjustCtrl)
+		return prTokenInfo->u4MaxBssTxCredit;
+
+	if (prTokenInfo->u4TxBssCnt[ucBssIndex] >
+	    prTokenInfo->u4TxCredit[ucBssIndex])
+		return 0;
+
+	return prTokenInfo->u4TxCredit[ucBssIndex] -
+		prTokenInfo->u4TxBssCnt[ucBssIndex];
+}
+
+static bool halIsHighCreditUsage(uint32_t u4Credit, uint32_t u4Used)
+{
+	return (u4Used * 100 / u4Credit) > HIF_TX_CREDIT_HIGH_USAGE;
+}
+
+static bool halIsLowCreditUsage(uint32_t u4Credit, uint32_t u4Used)
+{
+	return (u4Used * 100 / u4Credit) < HIF_TX_CREDIT_LOW_USAGE;
+}
+
+void halSetAdjustCtrl(struct ADAPTER *prAdapter, bool fgEn)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+
+	if (prTokenInfo->fgEnAdjustCtrl != fgEn)
+		DBGLOG(HAL, INFO, "fgEnAdjustCtrl[%u].\n", fgEn);
+
+	prTokenInfo->fgEnAdjustCtrl = fgEn;
+}
+
+void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	uint32_t u4Credit, u4Used, u4Delta = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+	u4Credit = prTokenInfo->u4TxCredit[ucBssIndex];
+	u4Used = prTokenInfo->u4TxBssCnt[ucBssIndex];
+
+	if (!prTokenInfo->fgEnAdjustCtrl)
+		return;
+
+	if (prTokenInfo->u4LastTxBssCnt[ucBssIndex] > u4Used)
+		u4Delta = prTokenInfo->u4LastTxBssCnt[ucBssIndex] - u4Used;
+
+	if (u4Delta == 0)
+		return;
+
+	if (halIsLowCreditUsage(u4Credit, u4Used) &&
+	    halIsHighCreditUsage(u4Credit, u4Delta)) {
+		u4Credit += HIF_TX_CREDIT_STEP_COUNT;
+	} else {
+		if (u4Credit > HIF_TX_CREDIT_STEP_COUNT)
+			u4Credit -= HIF_TX_CREDIT_STEP_COUNT;
+	}
+
+	if (u4Credit > prTokenInfo->u4MaxBssTxCredit)
+		u4Credit = prTokenInfo->u4MaxBssTxCredit;
+
+	if (u4Credit < prTokenInfo->u4MinBssTxCredit)
+		u4Credit = prTokenInfo->u4MinBssTxCredit;
+
+	if (u4Credit != prTokenInfo->u4TxCredit[ucBssIndex]) {
+		DBGLOG(HAL, TRACE,
+		       "adjust tx credit Bss[%u], [%u]->[%u], used[%u], delta[%u]\n",
+		       ucBssIndex, prTokenInfo->u4TxCredit[ucBssIndex],
+		       u4Credit, u4Used, u4Delta);
+		prTokenInfo->u4TxCredit[ucBssIndex] = u4Credit;
+	}
+
+	prTokenInfo->u4LastTxBssCnt[ucBssIndex] =
+		prTokenInfo->u4TxBssCnt[ucBssIndex];
+}
+
+
+u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit)
+{
+	if (u4TxCredit == 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+#endif
+
 u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -4192,13 +4321,21 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
+		halSetAdjustCtrl(prAdapter, true);
+	else if (prAdapter->ucAdjustCtrlBitmap)
+		halSetAdjustCtrl(prAdapter, true);
+	else
+		halSetAdjustCtrl(prAdapter, false);
+#else
 	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
 		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_MCC_MODE_TOKEN_CNT);
-	else if (prAdapter->ucAdjustCtrlBitmap) {
+	else if (prAdapter->ucAdjustCtrlBitmap)
 		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_LOW_RATE_TOKEN_CNT);
-	} else {
+	else
 		halSetTxRingBssTokenCnt(prAdapter, HIF_TX_MSDU_TOKEN_NUM);
-	}
+#endif
 }
 
 void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit)

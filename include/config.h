@@ -1205,6 +1205,10 @@
 #error "we did not expect fix 2 tx port queue supports TxHifPortQueue"
 #endif
 
+#ifndef CFG_TX_HIF_CREDIT_FEATURE
+#define CFG_TX_HIF_CREDIT_FEATURE		0
+#endif
+
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_TX_MGMT_BY_DATA_Q		1
 #else

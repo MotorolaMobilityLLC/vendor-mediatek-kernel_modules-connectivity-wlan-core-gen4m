@@ -263,6 +263,14 @@
 #define HIF_DEADFEED_VALUE      0xdeadfeed
 
 #define HIF_DEFAULT_BSS_FREE_CNT	64
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+#define HIF_TX_CREDIT_STEP_LEVET (TX_RING_SIZE / 2)
+#define HIF_TX_CREDIT_STEP_COUNT (TX_RING_SIZE / HIF_TX_CREDIT_STEP_LEVET)
+#define HIF_DEFAULT_MAX_BSS_TX_CREDIT	(TX_RING_SIZE * 2)
+#define HIF_DEFAULT_MIN_BSS_TX_CREDIT	(TX_RING_SIZE >> 3)
+#define HIF_TX_CREDIT_HIGH_USAGE	70
+#define HIF_TX_CREDIT_LOW_USAGE		30
+#endif
 
 #define HIF_FLAG_SW_WFDMA_INT		BIT(0)
 #define HIF_FLAG_SW_WFDMA_INT_BIT	(0)
@@ -613,6 +621,13 @@ struct MSDU_TOKEN_INFO {
 	/* control bss index packet number */
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
 	uint32_t u4MaxBssFreeCnt;
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	bool fgEnAdjustCtrl;
+	uint32_t u4TxCredit[MAX_BSSID_NUM];
+	uint32_t u4LastTxBssCnt[MAX_BSSID_NUM];
+	uint32_t u4MaxBssTxCredit;
+	uint32_t u4MinBssTxCredit;
+#endif
 
 	struct MSDU_TOKEN_HISTORY_INFO rHistory;
 };

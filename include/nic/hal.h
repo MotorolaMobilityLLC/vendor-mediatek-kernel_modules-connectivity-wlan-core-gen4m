@@ -1386,6 +1386,11 @@ void halNotifyMdCrash(IN struct ADAPTER *prAdapter);
 #endif
 u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void halUpdateBssTokenCnt(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit);
+#endif
 #if defined(_HIF_AXI)
 void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit);
 #endif

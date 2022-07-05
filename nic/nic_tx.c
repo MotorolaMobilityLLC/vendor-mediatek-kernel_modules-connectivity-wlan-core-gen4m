@@ -1609,11 +1609,20 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 #else
 
 	uint32_t u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	uint32_t u4Idx;
+#endif
+
 
 	if (halIsHifStateSuspend(prAdapter)) {
 		DBGLOG(TX, WARN, "Suspend TxMsduQueueMthread\n");
 		return WLAN_STATUS_SUCCESS;
 	}
+
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+		halAdjustBssTxCredit(prAdapter, u4Idx);
+#endif
 
 	while (u4TxLoopCount--) {
 		if (prAdapter->rWifiVar.ucTxMsduQueue == 1)
@@ -2739,6 +2748,9 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct TX_CTRL *prTxCtrl = NULL;
 	struct QUE qDataTemp, *prDataTemp = NULL;
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	uint32_t u4TxCredit[MAX_BSSID_NUM], u4Idx;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prQue);
@@ -2753,6 +2765,11 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 
 	prDataTemp = &qDataTemp;
 	QUEUE_INITIALIZE(prDataTemp);
+
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+		u4TxCredit[u4Idx] = halGetBssTxCredit(prAdapter, u4Idx);
+#endif
 
 	while (QUEUE_IS_NOT_EMPTY(prQue)) {
 		u_int8_t fgTxDoneHandler;
@@ -2770,11 +2787,23 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+		if (prMsduInfo->ucBssIndex < MAX_BSSID_NUM) {
+			if (halTxIsBssCreditCntFull(
+				u4TxCredit[prMsduInfo->ucBssIndex])) {
+				QUEUE_INSERT_TAIL(prDataTemp,
+					(struct QUE_ENTRY *) prMsduInfo);
+				continue;
+			}
+			u4TxCredit[prMsduInfo->ucBssIndex]--;
+		}
+#else
 		if (halTxIsBssCntFull(prAdapter, prMsduInfo->ucBssIndex)) {
 			QUEUE_INSERT_TAIL(prDataTemp,
-					  (struct QUE_ENTRY *) prMsduInfo);
+				(struct QUE_ENTRY *) prMsduInfo);
 			continue;
 		}
+#endif
 
 		fgTxDoneHandler = prMsduInfo->pfTxDoneHandler ?
 				TRUE : FALSE;
