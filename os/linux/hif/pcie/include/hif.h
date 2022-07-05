@@ -112,6 +112,10 @@
 					PCI_L1PM_CTR1_ASPM_L11_EN)
 #define  PCI_L1PM_ENABLE_MASK			0x3
 
+#define PCIE_LOW_POWER_CTRL_DIS_L1		BIT(9)
+#define PCIE_LOW_POWER_CTRL_DIS_L1_1	BIT(10)
+#define PCIE_LOW_POWER_CTRL_DIS_L1_2	BIT(11)
+
 #define PCIE_ASPM_CHECK_L1(reg)	((((reg) & PCI_EXP_LNKCAP_ASPMS) >> 10) & 0x2)
 
 #endif
@@ -269,6 +273,10 @@ struct GL_HIF_INFO {
 	bool fgIsBackupIntSta;
 
 	enum pcie_suspend_state eSuspendtate;
+#if CFG_SUPPORT_PCIE_ASPM
+	uint32_t u4PcieLTR;
+	uint32_t u4PcieASPM;
+#endif
 };
 
 struct BUS_INFO {
