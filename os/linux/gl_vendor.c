@@ -3665,14 +3665,14 @@ int mtk_cfg80211_vendor_csi_control(
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_PROC_FILE;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to proc file\n");
-		} else if (prCSICtrl->ucMode == CSI_VENDOR_EVENT_COMMAND) {
+		} else if (prCSICtrl->ucValue1 == CSI_VENDOR_EVENT_COMMAND) {
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_VENDOR_EVENT;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to vendor event\n");
 		} else
 			DBGLOG(REQ, ERROR,
 				"[CSI] Invalid csi output method %d\n",
-				prCSICtrl->ucMode);
+				prCSICtrl->ucValue1);
 	}
 
 	if (tb[WIFI_ATTRIBUTE_CSI_VALUE_2]) {
