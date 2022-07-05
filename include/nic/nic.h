@@ -78,6 +78,12 @@
 #define NIC_BSS_MCC_MODE_TOKEN_CNT	64
 #define NIC_BSS_LOW_RATE_TOKEN_CNT	256
 
+#define NIC_IS_BSS_11B(prBssInfo) \
+	(prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B)
+
+#define NIC_IS_BSS_BELOW_11AC(prBssInfo) \
+	((prBssInfo->ucPhyTypeSet >> PHY_TYPE_VHT_INDEX) == 0)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -377,6 +383,9 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucNetworkIndex,
 				IN uint8_t fgClearStaRec);
+
+void nicUpdateNetifTxThByBssId(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4StopTh, uint32_t u4StartTh);
 
 /* BSS-INFO */
 uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,

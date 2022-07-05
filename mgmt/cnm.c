@@ -2204,11 +2204,13 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				      u_int8_t fgIsP2pDevice,
 				      u_int8_t fgIsMldReserved)
 {
+	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
 
 	ASSERT(prAdapter);
 
+	prWifiVar = &prAdapter->rWifiVar;
 	/*specific case for p2p device scan*/
 	if (eNetworkType == NETWORK_TYPE_P2P && fgIsP2pDevice) {
 		prBssInfo =
@@ -2218,6 +2220,8 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucBssIndex = prAdapter->ucP2PDevBssIdx;
 		prBssInfo->eNetworkType = eNetworkType;
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
+		prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
+		prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
 			MAT_OWN_MLD_ID_BASE;
@@ -2294,6 +2298,8 @@ omac_choosed:
 			/* initialize wlan id and status for keys */
 			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+			prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
+			prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
 			for (i = 0; i < MAX_KEY_NUM; i++) {
 				prBssInfo->ucBMCWlanIndexSUsed[i] = FALSE;
 				prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
