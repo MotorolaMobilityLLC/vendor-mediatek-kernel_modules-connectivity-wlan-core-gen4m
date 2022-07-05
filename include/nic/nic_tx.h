@@ -918,6 +918,7 @@ struct MSDU_INFO {
 	uint8_t ucTarQueue;
 #endif
 	uint8_t fgMgmtUseDataQ;
+	uint32_t u4MgmtLength;
 	uint8_t fgNullUseDataQ;
 
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO

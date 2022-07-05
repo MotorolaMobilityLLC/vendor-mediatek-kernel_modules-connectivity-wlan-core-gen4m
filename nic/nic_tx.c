@@ -4183,7 +4183,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 				prAdapter->chip_info->txd_append_size;
 			u4TotLen = NIC_TX_DESC_AND_PADDING_LENGTH
 				+ u4TxDescAppendSize
-				+ prMsduInfoHead->u2FrameLength;
+				+ prMsduInfoHead->u4MgmtLength;
 
 			/* prepare skb to hif */
 			pkt = kalBuildSkb(prMsduInfoHead->prHead, u4TotLen,
@@ -4387,12 +4387,12 @@ struct MSDU_INFO *nicAllocMgmtPktForDataQ(IN struct ADAPTER *prAdapter,
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	/* add size for SKB shared info size */
 	/* if this MSDU will send by data Q */
-	u4Length += kalGetSKBSharedInfoSize();
-
-	prRetMsduInfo = cnmMgtPktAlloc(prAdapter, u4Length);
+	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
+		u4Length + kalGetSKBSharedInfoSize());
 
 	if (prRetMsduInfo) {
 		/* Mark this MSDU will send by data Q */
+		prRetMsduInfo->u4MgmtLength = u4Length;
 		prRetMsduInfo->fgMgmtUseDataQ = TRUE;
 	}
 #else

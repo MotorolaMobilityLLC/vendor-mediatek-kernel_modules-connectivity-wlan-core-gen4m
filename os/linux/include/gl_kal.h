@@ -144,6 +144,9 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 
 #define OID_HDLR_REC_NUM	5
 
+#define SKB_RESERVED_SIZE	32
+
+
 #if CFG_SUPPORT_MULTITHREAD
 #define GLUE_FLAG_MAIN_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_SUB_MOD_MULTICAST | \
