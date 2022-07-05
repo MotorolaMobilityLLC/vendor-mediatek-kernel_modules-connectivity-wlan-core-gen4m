@@ -742,14 +742,26 @@ int mtk_cfg_start_ap(struct wiphy *wiphy,
 int mtk_cfg_change_beacon(struct wiphy *wiphy,
 			  struct net_device *dev,
 			  struct cfg80211_beacon_data *info);
-int mtk_cfg_stop_ap(struct wiphy *wiphy,
-		    struct net_device *dev);
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev,
+	unsigned int link_id);
+#else
+int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev);
+#endif
 int mtk_cfg_set_wiphy_params(struct wiphy *wiphy,
 			     u32 changed);
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
+			     struct net_device *dev,
+			     unsigned int link_id,
+			     const u8 *peer,
+			     const struct cfg80211_bitrate_mask *mask);
+#else
 int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
 			     struct net_device *dev,
 			     const u8 *peer,
 			     const struct cfg80211_bitrate_mask *mask);
+#endif
 int mtk_cfg_set_txpower(struct wiphy *wiphy,
 			struct wireless_dev *wdev,
 			enum nl80211_tx_power_setting type, int mbm);
