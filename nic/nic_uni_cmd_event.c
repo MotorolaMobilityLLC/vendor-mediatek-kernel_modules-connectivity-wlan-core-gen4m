@@ -7394,10 +7394,14 @@ void nicUniEventLinkStats(IN struct ADAPTER *prAdapter,
 			prCmdInfo->u4InformationBufferLength);
 
 	resultSize = tag->u2Length - sizeof(struct UNI_EVENT_LINK_STATS);
-	if (prCmdInfo->u4InformationBufferLength < resultSize)
+	if (prCmdInfo->u4InformationBufferLength < resultSize) {
 		DBGLOG(RX, WARN, "Overflow tag=%u, resultSize=%u, BufLen=%u",
 			tag->u2Tag, resultSize,
 			prCmdInfo->u4InformationBufferLength);
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
+				WLAN_STATUS_FAILURE);
+		return;
+	}
 
 	if (resultSize < prCmdInfo->u4InformationBufferLength)
 		prCmdInfo->u4InformationBufferLength = resultSize;

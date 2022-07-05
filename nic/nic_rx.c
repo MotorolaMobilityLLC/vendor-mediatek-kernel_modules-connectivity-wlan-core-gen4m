@@ -3678,11 +3678,16 @@ void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 		STATS_LLS_WIFI_AC_VO,
 	};
 	uint8_t ac;
+	uint8_t ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSwRfb->pvPacket);
+	struct BSS_INFO *prBssInfo;
 
 	ac = Tid2LinkStatsAc[(uint8_t)(prSwRfb->ucTid & 0x7U)];
 	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU)
-		prAdapter->u4RxMpduAc[ac]++;
+	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		if (prBssInfo)
+			prBssInfo->u4RxMpduAc[ac]++;
+	}
 #endif
 }
 
