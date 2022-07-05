@@ -1067,14 +1067,14 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 		if (kalStrLen(prVerInfo->aucReleaseManifest)) {
 			u4Len = kalStrLen(prVerInfo->aucReleaseManifest);
 			kalSnprintf(fw_version,
-				    u4Len,
+				    u4Len + 1,
 				    "%s",
 				    prVerInfo->aucReleaseManifest);
 		} else {
 			u4Len = kalStrLen(
 				prVerInfo->rCommonTailer.aucRamBuiltDate);
 			kalSnprintf(fw_version,
-				    u4Len,
+				    u4Len + 1,
 				    "%s",
 				    prVerInfo->rCommonTailer.aucRamBuiltDate);
 		}
