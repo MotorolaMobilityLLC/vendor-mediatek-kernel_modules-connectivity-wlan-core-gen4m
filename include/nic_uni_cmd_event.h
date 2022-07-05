@@ -3622,13 +3622,15 @@ struct UNI_CMD_TESTMODE_CTRL {
 	*
 	*   TAG                            | ID  | structure
 	*   -------------------------------|-----|--------------
-	*   UNI_CMD_TESTMODE_TAG_RF_CTRL           | 0x0 | UNI_CMD_TESTMODE_RF_CTRL
+	*   UNI_CMD_TESTMODE_TAG_RF_CTRL   | 0x0 | UNI_CMD_TESTMODE_RF_CTRL
+	*   UNI_CMD_TESTMODE_TAG_LISTMODE  | 0x1 | UNI_CMD_TESTMODE_LISTMODE
 	*/
 } __KAL_ATTRIB_PACKED__;
 
 /** testmode RF test command TLV List */
 enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
-	UNI_CMD_TESTMODE_TAG_RF_CTRL = 0,
+	UNI_CMD_TESTMODE_TAG_RF_CTRL = 0x0,
+	UNI_CMD_TESTMODE_TAG_LISTMODE = 0x1,
 	UNI_CMD_TESTMODE_TAG_NUM
 };
 
@@ -3665,6 +3667,29 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
 		struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	}u;
 }__KAL_ATTRIB_PACKED__;
+
+#define TESTMODE_LISTMODE_DATA_LEN	1600
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_LISTMODE
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_LISTMODE(0x01)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * to set testmode listmode.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x00
+ * @param[in] u2Length      the length of this TLV
+ * @param[in] aucData       list mode data
+ */
+/* Set testmode listmode cmd struct (Tag 0x01) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_LISTMODE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucData[TESTMODE_LISTMODE_DATA_LEN];
+} __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RX_STAT {
@@ -6745,6 +6770,10 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif /* (CONFIG_WLAN_SERVICE == 1) */
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
