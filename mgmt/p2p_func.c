@@ -2444,10 +2444,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
-	nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
-
 	/* Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
+	nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
