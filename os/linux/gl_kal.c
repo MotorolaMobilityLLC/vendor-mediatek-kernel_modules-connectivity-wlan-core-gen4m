@@ -3415,10 +3415,6 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 		}
 	}
 
-#if CFG_ENABLE_WIFI_DIRECT
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-#endif
-
 end:
 	dev_kfree_skb_any((struct sk_buff *)pvPacket);
 
