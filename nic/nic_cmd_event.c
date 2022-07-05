@@ -1541,6 +1541,7 @@ void nicCmdEventQueryOfldInfo(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
 				IN uint8_t *pucEventBuf)
 {
+	uint32_t rOidStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
 	struct PARAM_OFLD_INFO *prParamOfldInfo;
@@ -1563,6 +1564,7 @@ void nicCmdEventQueryOfldInfo(IN struct ADAPTER
 			DBGLOG(REQ, INFO,
 			       "Ofld info query length %u is not valid.\n",
 			       prCmdInfo->u4InformationBufferLength);
+			rOidStatus = WLAN_STATUS_FAILURE;
 		}
 		prParamOfldInfo = (struct PARAM_OFLD_INFO
 				    *) prCmdInfo->pvInformationBuffer;
@@ -1582,9 +1584,10 @@ void nicCmdEventQueryOfldInfo(IN struct ADAPTER
 			       "Invalid query result, length: %d Buf size: %d.\n",
 				prCmdOfldInfo->u4TotalLen,
 				prCmdOfldInfo->u4BufLen);
+			rOidStatus = WLAN_STATUS_FAILURE;
 		}
 		kalOidComplete(prGlueInfo, prCmdInfo,
-		   u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+		   u4QueryInfoLen, rOidStatus);
 	}
 
 }
