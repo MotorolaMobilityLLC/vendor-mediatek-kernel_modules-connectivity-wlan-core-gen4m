@@ -7805,6 +7805,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgTxLatencyKeepCounting = (bool)wlanCfgGetUint32(
 		prAdapter, "TxLatencyKeepCounting", 0);
 
+	prWifiVar->fgTxLatencyPerBss = (bool)wlanCfgGetUint32(
+		prAdapter, "TxLatencyPerBss", 0);
+
 	prWifiVar->u4MsduStatsUpdateInterval = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "TxLatencyUpdateInterval",
 		TX_LATENCY_STATS_UPDATE_INTERVAL);
@@ -10203,11 +10206,12 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
 static void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
-	uint32_t u4DriverLatency)
+	IN uint8_t ucBssIndex, IN uint32_t u4DriverLatency)
 {
 	uint32_t *pMaxDriverDelay = prAdapter->rWifiVar.au4DriverTxDelayMax;
 	uint32_t *pDriverDelay =
-		prAdapter->rMsduReportStats.rCounting.au4DriverLatency;
+		prAdapter->rMsduReportStats.rCounting.au4DriverLatency
+							[ucBssIndex];
 	int i;
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++, pDriverDelay++) {
@@ -10407,6 +10411,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 					prMsduInfo->prPacket));
 
 			halAddDriverLatencyCount(prAdapter,
+				prMsduInfo->ucBssIndex,
 				((uint32_t)(prPktProfile->u8HifTxTime -
 				prPktProfile->u8XmitArrival)) /
 				USEC_PER_SEC);
