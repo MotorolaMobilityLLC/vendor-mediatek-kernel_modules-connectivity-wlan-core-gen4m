@@ -1198,6 +1198,13 @@
 
 #define CFG_CHANGE_CRITICAL_PACKET_PRIORITY	1
 
+#ifndef CFG_TX_HIF_PORT_QUEUE
+#define CFG_TX_HIF_PORT_QUEUE		0
+#endif
+#if (CFG_TX_HIF_PORT_QUEUE == 1) && CFG_FIX_2_TX_PORT
+#error "we did not expect fix 2 tx port queue supports TxHifPortQueue"
+#endif
+
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_TX_MGMT_BY_DATA_Q		1
 #else

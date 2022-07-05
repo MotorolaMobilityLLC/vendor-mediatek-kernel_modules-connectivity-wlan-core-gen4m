@@ -1625,21 +1625,12 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief In this function, we'll write MSDU into HIF by TC priority
- *
- *
- * @param prAdapter              Pointer to the Adapter structure.
- *
- */
-/*----------------------------------------------------------------------------*/
-void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
+void nicTxMsduQueueByPrioBackTxPortQ(struct ADAPTER *prAdapter)
 {
 	struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
 	struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
 	int32_t i, j, k;
-	struct BSS_INFO	*prBssInfo;
+	struct BSS_INFO *prBssInfo;
 #if QM_FORWARDING_FAIRNESS
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
@@ -1667,8 +1658,8 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 			if (prBssInfo == NULL)
 				continue;
 			while (!isNetAbsent(prAdapter, prBssInfo) &&
-			       QUEUE_IS_NOT_EMPTY(
-				       &(prAdapter->rTxPQueue[i][j]))) {
+				QUEUE_IS_NOT_EMPTY(
+					&(prAdapter->rTxPQueue[i][j]))) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TX_PORT_QUE);
 				QUEUE_MOVE_ALL(prDataPort[i][j],
@@ -1678,8 +1669,8 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 
 				TRACE(nicTxMsduQueue(prAdapter,
 					0, prDataPort[i][j]),
-				     "Move TxPQueue%d_%d %d",
-				     i, j, prDataPort[i][j]->u4NumElem);
+					"Move TxPQueue%d_%d %d",
+					i, j, prDataPort[i][j]->u4NumElem);
 
 				if (QUEUE_IS_NOT_EMPTY(prDataPort[i][j])) {
 					KAL_ACQUIRE_SPIN_LOCK(
@@ -1689,7 +1680,7 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 						&(prAdapter->rTxPQueue[i][j]),
 						prDataPort[i][j]);
 					KAL_RELEASE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_TX_PORT_QUE);
+						  SPIN_LOCK_TX_PORT_QUE);
 					break;
 				}
 			}
@@ -1700,6 +1691,118 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 #if QM_FORWARDING_FAIRNESS
 	prQM->u4HeadBssInfoIndex++;
 	prQM->u4HeadBssInfoIndex %= MAX_BSSID_NUM;
+#endif
+}
+
+
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+void nicTxMsduQueueByPrioTxHifPortQ(struct ADAPTER *prAdapter)
+{
+	struct QUE qDataPort;
+	struct QUE *prDataPort;
+	int32_t i, j, k;
+	struct BSS_INFO *prBssInfo;
+#if QM_FORWARDING_FAIRNESS
+	struct QUE_MGT *prQM = &prAdapter->rQM;
+#endif
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	prDataPort = &qDataPort;
+	QUEUE_INITIALIZE(prDataPort);
+
+	for (j = TC_NUM - 1; j >= 0; j--) {
+#if QM_FORWARDING_FAIRNESS
+		i = prQM->u4HeadBssInfoIndex;
+#else
+		i = 0;
+#endif
+		if (i >= MAX_BSSID_NUM)
+			continue;
+
+		for (k = 0; k < MAX_BSSID_NUM; k++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (prBssInfo == NULL)
+				continue;
+
+			while (!isNetAbsent(prAdapter, prBssInfo)) {
+				if (QUEUE_IS_NOT_EMPTY(
+					&(prAdapter->rTxHifPQueue[i][j]))) {
+					/* only hif thread and off thread use
+					 * TxHifPQ, and off thread will close
+					 * hif thread before use the queue
+					 * no need to use spinlock to protect
+					 */
+					QUEUE_MOVE_ALL(prDataPort,
+						&(prAdapter->rTxHifPQueue[i][j])
+						);
+				}
+
+				if (QUEUE_IS_NOT_EMPTY(
+					&(prAdapter->rTxPQueue[i][j]))) {
+					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TX_PORT_QUE);
+					QUEUE_CONCATENATE_QUEUES(
+						prDataPort,
+						&(prAdapter->rTxPQueue[i][j]));
+					KAL_RELEASE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_TX_PORT_QUE);
+				}
+
+				if (QUEUE_IS_NOT_EMPTY(prDataPort)) {
+					TRACE(nicTxMsduQueue(prAdapter,
+						0, prDataPort),
+						 "Move TxPQueue%d_%d %d",
+						 i, j,
+						 prDataPort->u4NumElem);
+				} else
+					break;
+
+				if (QUEUE_IS_NOT_EMPTY(prDataPort)) {
+					/* Move remaining tx data from
+					 * tmp q to tx hif port queue
+					 */
+					QUEUE_MOVE_ALL(
+						&(prAdapter->rTxHifPQueue[i][j]
+						),
+						prDataPort);
+					break;
+				}
+			}
+
+			i++;
+			i %= MAX_BSSID_NUM;
+		}
+	}
+#if QM_FORWARDING_FAIRNESS
+	prQM->u4HeadBssInfoIndex++;
+	prQM->u4HeadBssInfoIndex %= MAX_BSSID_NUM;
+#endif
+}
+#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief In this function, we'll write MSDU into HIF by TC priority
+ *
+ *
+ * @param prAdapter              Pointer to the Adapter structure.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
+{
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	struct WIFI_VAR *prWifiVar;
+
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (prWifiVar->ucEnableTxHifPortQ)
+		nicTxMsduQueueByPrioTxHifPortQ(prAdapter);
+	else
+		nicTxMsduQueueByPrioBackTxPortQ(prAdapter);
+#else
+	nicTxMsduQueueByPrioBackTxPortQ(prAdapter);
 #endif
 }
 
@@ -6546,6 +6649,22 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 	}
 #endif
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		for (ucIndex = 0; ucIndex < TC_NUM; ucIndex++) {
+			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+				&prAdapter->rTxHifPQueue[i][ucIndex]);
+			while (prMsduInfo) {
+				if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
+					prMsduInfo->ucWlanIndex =
+							ucNewWlanIndex;
+				prMsduInfo =
+				      (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(
+				      &prMsduInfo->rQueEntry);
+			}
+		}
+	}
+#endif
 #endif
 }
 
