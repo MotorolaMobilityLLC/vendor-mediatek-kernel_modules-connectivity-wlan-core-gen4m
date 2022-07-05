@@ -82,16 +82,19 @@ static void wmmAcmDequeueTimeOut(IN struct ADAPTER *prAdapter,
 #define FRM_LENGTH_AGG_AMSDU_HDR 17
 #define FRM_LENGTH_AGG_RAILNK_HDR 14
 
-#define LMR_PREAMBL_TIME(__fgIsGmode, __fgIsSpreamble)                         \
-	({                                                                     \
-		uint8_t ucTime;                                                \
-		if (__fgIsGmode)                                               \
-			ucTime = 20;                                           \
-		else                                                           \
-			ucTime = __fgIsSpreamble ? TIME_SHORT_PREAMBLE         \
-						 : TIME_LONG_PREAMBLE;         \
-		ucTime;                                                        \
-	})
+static inline uint8_t LMR_PREAMBL_TIME(uint8_t __fgIsGmode,
+	uint8_t __fgIsSpreamble)
+{
+	uint8_t ucTime = 0;
+
+	if (__fgIsGmode)
+		ucTime = 20;
+	else
+		ucTime = __fgIsSpreamble ? TIME_SHORT_PREAMBLE
+		: TIME_LONG_PREAMBLE;
+
+	return ucTime;
+}
 #endif
 
 uint8_t const aucUp2ACIMap[8] = {ACI_BE, ACI_BK, ACI_BK, ACI_BE,
