@@ -700,11 +700,7 @@ exit:
 static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info)
 {
-#define PRINT_MSG_END		";;[CONNSYS] coredump start .."
-
 	struct coredump_mem *mem = &ctx->mem;
-	uint8_t *pos = NULL, *msg = NULL;
-	uint32_t size = 0;
 	int ret = 0;
 
 	if (mem->dump_buff_len == 0)
@@ -718,31 +714,11 @@ static int __coredump_handle_dump_buff(struct coredump_ctx *ctx,
 		goto exit;
 	mem->dump_buff[mem->dump_buff_len - 1] = '\0';
 
-	pos = kalStrStr(mem->dump_buff, PRINT_MSG_END);
-	if (!pos) {
-		DBGLOG(INIT, ERROR,
-			"Can NOT find pattern %s\n",
-			PRINT_MSG_END);
-		goto exit;
-	}
-
-	size = pos - mem->dump_buff;
-	msg = kalMemAlloc(size, VIR_MEM_TYPE);
-	if (!msg) {
-		DBGLOG(INIT, ERROR,
-			"Alloc debug msg failed.\n");
-		goto exit;
-	}
-
-	kalMemCopy(msg, mem->dump_buff, size);
 	DBGLOG(INIT, INFO, "++ Coredump message ++\n");
-	PRINT_LONG_STR_MSG(msg, size);
+	PRINT_LONG_STR_MSG(mem->dump_buff, mem->dump_buff_len);
 	DBGLOG(INIT, INFO, "-- Coredump message --\n");
 
 exit:
-	if (msg)
-		kalMemFree(msg, VIR_MEM_TYPE, size);
-
 	return ret;
 }
 
