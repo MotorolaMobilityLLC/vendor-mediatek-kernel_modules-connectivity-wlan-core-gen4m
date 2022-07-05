@@ -297,16 +297,15 @@ struct mtk_regd_control g_mtk_regd_control = {
 	.state = REGD_STATE_UNDEFINED
 };
 
-#if CFG_SUPPORT_BW160
+#if CFG_SUPPORT_BW320
+#define BW_6G 320
+#define BW_5G 160
+#elif CFG_SUPPORT_BW160
 #define BW_5G 160
 #define BW_6G 160
 #else
 #define BW_5G 80
 #define BW_6G 80
-#endif
-
-#if CFG_SUPPORT_BW320
-#define BW_6G 320
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)

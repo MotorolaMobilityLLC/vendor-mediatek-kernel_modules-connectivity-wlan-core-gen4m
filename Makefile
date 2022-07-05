@@ -587,6 +587,10 @@ else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_BW320), y)
+    ccflags-y += -DCFG_SUPPORT_BW320=1
+endif
+
 ifneq ($(CONFIG_DBDC_MODE),)
     ccflags-y += -DCFG_DBDC_MODE=$(CONFIG_DBDC_MODE)
 endif
