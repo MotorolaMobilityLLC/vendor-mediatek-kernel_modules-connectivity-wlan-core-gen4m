@@ -7353,7 +7353,9 @@ static void unregister_connv3_cbs(void)
 static void register_connv3_cbs(void)
 {
 	struct connv3_sub_drv_ops_cb cb;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct sub_drv_ops_cb conninfra_wf_cb;
+#endif
 	int ret = 0;
 
 	kalMemZero(&cb, sizeof(cb));
@@ -7377,19 +7379,20 @@ static void register_connv3_cbs(void)
 			"connv3_sub_drv_ops_register failed, ret=%d\n",
 			ret);
 
-	/* For MAWD case, need to register conninfra callbacks for reset */
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
 	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
 		wlan_pre_whole_chip_rst_v2;
 	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
 		wlan_post_whole_chip_rst_v2;
 
-	ret = conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
+	ret = conninfra_sub_drv_ops_register(CONNDRV_TYPE_MAWD,
 		&conninfra_wf_cb);
 	if (ret)
 		DBGLOG(INIT, ERROR,
 			"conninfra_sub_drv_ops_register failed, ret=%d\n",
 			ret);
+#endif
 }
 #endif
 
