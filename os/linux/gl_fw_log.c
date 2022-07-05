@@ -116,6 +116,8 @@ static long fw_log_wifi_unlocked_ioctl(struct file *filp, unsigned int cmd,
 		if (copy_to_user((char *) arg, prInf->ver_name,
 				 prInf->ver_length))
 			ret = -EFAULT;
+
+		DBGLOG(INIT, INFO, "ver_name=%s\n", prInf->ver_name);
 		break;
 	}
 	default:

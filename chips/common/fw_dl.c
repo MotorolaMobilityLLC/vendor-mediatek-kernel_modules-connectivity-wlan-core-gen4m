@@ -1882,7 +1882,9 @@ uint32_t wlanHarvardFormatDownload(IN struct ADAPTER
 uint32_t wlanFwImageDownload(IN struct ADAPTER
 				  *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
-	uint32_t rCfgStatus = 0;
+	uint32_t rCfgStatus = WLAN_STATUS_SUCCESS;
+	uint8_t *pucManifestBuffer = NULL;
+	uint32_t u4ManifestSize = 0;
 
 	if (prAdapter->chip_info->checkbushang) {
 		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
@@ -1893,6 +1895,23 @@ uint32_t wlanFwImageDownload(IN struct ADAPTER
 		}
 	}
 
+	pucManifestBuffer = (uint8_t *)kalMemAlloc(
+		FW_VERSION_MAX_LEN, VIR_MEM_TYPE);
+	if (!pucManifestBuffer) {
+		DBGLOG(INIT, ERROR, "vmalloc(%u) failed\n", FW_VERSION_MAX_LEN);
+	} else {
+		wlanReadRamCodeReleaseManifest(pucManifestBuffer,
+			&u4ManifestSize, FW_VERSION_MAX_LEN);
+
+		kalMemZero(&prAdapter->rVerInfo.aucReleaseManifest,
+			sizeof(prAdapter->rVerInfo.aucReleaseManifest));
+		kalMemCopy(&prAdapter->rVerInfo.aucReleaseManifest,
+			pucManifestBuffer, u4ManifestSize);
+		DBGLOG(INIT, INFO, "aucReleaseManifest fw_ver=%s\n",
+			&prAdapter->rVerInfo.aucReleaseManifest);
+
+		kalMemFree(pucManifestBuffer, VIR_MEM_TYPE, FW_VERSION_MAX_LEN);
+	}
 	rCfgStatus = wlanFwImageSendStart(prAdapter, 0);
 
 exit:
@@ -2276,6 +2295,43 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
 	       prVerInfo->aucReleaseManifest);
 }
 
+
+uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4FwVerOffsetAddr = 0;
+	uint32_t u4FwVerOffset = 0;
+	uint32_t u4CopySize = 0;
+
+	*pu4ManifestSize = 0;
+	kalMemZero(pucManifestBuffer, u4BufferMaxSize);
+
+	u4FwVerOffsetAddr = kalGetFwVerOffsetAddr();
+	if (u4FwVerOffsetAddr == 0)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (emi_mem_read(prChipInfo, u4FwVerOffsetAddr, &u4FwVerOffset,
+		sizeof(u4FwVerOffset))) {
+		DBGLOG(INIT, WARN, "emi_mem_read %x failed.\n",
+			u4FwVerOffsetAddr);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (u4FwVerOffset) {
+		u4CopySize = (u4BufferMaxSize < FW_VERSION_MAX_LEN) ?
+			u4BufferMaxSize : FW_VERSION_MAX_LEN;
+		emi_mem_read(prChipInfo, u4FwVerOffset,
+			pucManifestBuffer, u4CopySize);
+		*pu4ManifestSize = kalStrnLen(pucManifestBuffer,
+			u4BufferMaxSize);
+		DBGLOG(INIT, INFO, "ver[%d]:%s\n", *pu4ManifestSize,
+			pucManifestBuffer);
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to get RAM CODE release manifest when
@@ -2287,7 +2343,7 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
  *        u4BufferMaxSize    The max length of Manifest Buffer.
  */
 /*----------------------------------------------------------------------------*/
-void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize)
 {
 #define FW_FILE_NAME_TOTAL 8
@@ -2394,7 +2450,7 @@ free_buf:
 	if (pvMapFileBuf)
 		kalMemFree(pvMapFileBuf, VIR_MEM_TYPE, u4FileLength);
 exit:
-	return;
+	return WLAN_STATUS_SUCCESS;
 }
 
 #if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
