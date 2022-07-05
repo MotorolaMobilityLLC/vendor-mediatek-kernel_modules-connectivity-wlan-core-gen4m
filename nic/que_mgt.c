@@ -4959,6 +4959,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 	OS_SYSTIME rCurrentTime, *prMissTimeout;
 	/* RX reorder for one MSDU in AMSDU issue */
 	uint8_t fgIsAmsduSubframe;
+	u_int8_t fgWinAdvanced = FALSE;
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 
@@ -4992,8 +4993,8 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 				prReorderedSwRfb->u2SSN) &&
 		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
 			if (prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU
-				|| prReorderQueParm->u8LastAmsduSubIdx ==
+				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
+			    prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
 				SEQ_INC(prReorderQueParm->u2WinStart);
@@ -5002,37 +5003,40 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 			}
 		}
 #endif
-		/* SN == WinStart, so the head packet
-		 * shall be indicated (advance the window)
+		/* SN == WinStart, so the head packet shall be indicated
+		 * (advance the window)
 		 */
-		if ((prReorderedSwRfb->u2SSN) ==
-			(prReorderQueParm->u2WinStart)) {
-
+		if (prReorderedSwRfb->u2SSN == prReorderQueParm->u2WinStart) {
 			fgDequeuHead = TRUE;
+
+			/* Processing MSDU and window advanced in while loop,
+			 * move onto an exising buffered block,
+			 * indicates a bubble was filled. Stop timer.
+			 */
+			if (fgWinAdvanced && prReorderQueParm->fgHasBubble) {
+				prReorderQueParm->fgHasBubble = FALSE;
+				cnmTimerStopTimer(prAdapter,
+					&prReorderQueParm->rReorderBubbleTimer);
+			}
+
 			/* RX reorder for one MSDU in AMSDU issue */
 			/* if last frame, winstart++.
 			 * Otherwise, keep winstart
 			 */
 			if (fgIsAmsduSubframe ==
-				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU
-				|| fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU)
+				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
+			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
+				fgWinAdvanced = TRUE;
+			}
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
-			if (unlikely(prReorderQueParm->fgHasBubble)) {
-				prReorderQueParm->fgHasBubble = FALSE;
-				cnmTimerStopTimer(prAdapter,
-					&prReorderQueParm->rReorderBubbleTimer);
-			}
-		}
-		/* SN > WinStart, break to update WinEnd */
-		else {
-			/* Start bubble timer */
+		} else { /* SN > WinStart, break to update WinEnd */
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
-				&(prReorderQueParm->rReorderBubbleTimer),
+					&prReorderQueParm->rReorderBubbleTimer,
 					prAdapter->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
@@ -5117,7 +5121,8 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
 	u_int8_t fgDequeuHead;
-	uint8_t fgIsAmsduSubframe;/* RX reorder for one MSDU in AMSDU issue */
+	uint8_t fgIsAmsduSubframe; /* RX reorder for one MSDU in AMSDU issue */
+	u_int8_t fgWinAdvanced = FALSE;
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 
@@ -5141,8 +5146,8 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				prReorderedSwRfb->u2SSN) &&
 		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
 			if (prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU
-				|| prReorderQueParm->u8LastAmsduSubIdx ==
+				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
+			    prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
 				SEQ_INC(prReorderQueParm->u2WinStart);
@@ -5151,46 +5156,46 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 			}
 		}
 #endif
-		/* SN == WinStart, so the head packet shall be
-		 * indicated (advance the window)
+		/* SN == WinStart, so the head packet shall be indicated
+		 * (advance the window)
 		 */
-		if ((prReorderedSwRfb->u2SSN) ==
-			(prReorderQueParm->u2WinStart)) {
-
+		if (prReorderedSwRfb->u2SSN == prReorderQueParm->u2WinStart) {
 			fgDequeuHead = TRUE;
+
+			/* Processing MSDU and window advanced in while loop,
+			 * move onto an exising buffered block,
+			 * indicates a bubble was filled. Stop timer.
+			 */
+			if (fgWinAdvanced && prReorderQueParm->fgHasBubble) {
+				prReorderQueParm->fgHasBubble = FALSE;
+				cnmTimerStopTimer(prAdapter,
+					&prReorderQueParm->rReorderBubbleTimer);
+			}
+
 			/* RX reorder for one MSDU in AMSDU issue */
 			/* if last frame, winstart++.
 			 * Otherwise, keep winstart
 			 */
 			if (fgIsAmsduSubframe ==
 				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
-				fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU)
+			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
+				fgWinAdvanced = TRUE;
+			}
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
-			if (unlikely(prReorderQueParm->fgHasBubble)) {
-				prReorderQueParm->fgHasBubble = FALSE;
-				cnmTimerStopTimer(prAdapter,
-					&prReorderQueParm->rReorderBubbleTimer);
-			}
-		}
-
-		/* SN < WinStart, so the head packet shall be
-		 * indicated (do not advance the window)
-		 */
-		else if (SEQ_SMALLER(prReorderedSwRfb->u2SSN,
-				     prReorderQueParm->u2WinStart))
+		} else if (SEQ_SMALLER(prReorderedSwRfb->u2SSN,
+					prReorderQueParm->u2WinStart)) {
+			/* SN < WinStart, so the head packet shall be
+			 * indicated (do not advance the window)
+			 */
 			fgDequeuHead = TRUE;
-
-		/* SN > WinStart, break to update WinEnd */
-		else {
-			/* Start bubble timer */
+		} else { /* SN > WinStart, break to update WinEnd */
 			if (!prReorderQueParm->fgHasBubble) {
 				cnmTimerStartTimer(prAdapter,
-					&(prReorderQueParm->
-					rReorderBubbleTimer),
+					&prReorderQueParm->rReorderBubbleTimer,
 					prAdapter->u4QmRxBaMissTimeout);
 				prReorderQueParm->fgHasBubble = TRUE;
 				prReorderQueParm->u2FirstBubbleSn =
