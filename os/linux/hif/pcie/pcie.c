@@ -1081,7 +1081,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
 		goto err_free_irq_vectors;
 	}
@@ -1102,6 +1102,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	goto out;
 
 err_free_irq_vectors:
+#if (CFG_MTK_ANDROID_WMT == 0)
+	emi_mem_uninit(prChipInfo, pdev);
+#endif
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
 #endif
@@ -1129,10 +1132,10 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 		g_fgDriverProbed = FALSE;
 		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	}
-	pci_set_drvdata(pdev, NULL);
 #if (CFG_MTK_ANDROID_WMT == 0)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
+	pci_set_drvdata(pdev, NULL);
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
 #endif
@@ -2603,6 +2606,9 @@ int32_t glBusFuncOn(void)
 
 	if (g_fgDriverProbed == FALSE) {
 		pci_unregister_driver(&mtk_pci_driver);
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+		mtk_pcie_remove_port(0);
+#endif
 		ret = -EINVAL;
 	}
 
