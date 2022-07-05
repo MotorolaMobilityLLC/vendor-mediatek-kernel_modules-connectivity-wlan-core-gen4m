@@ -214,6 +214,17 @@ void wlanGetConnacFwInfo(IN struct ADAPTER *prAdapter,
 			    DOWNLOAD_CONFIG_EMI;
 	*pfgIsNotDownload = prTailer->ucFeatureSet &
 			    FW_FEATURE_NOT_DOWNLOAD;
+
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	/* TODO:
+	 * This section is for that the idx log bin is
+	 * appended to the RAM bin tail.
+	 */
+#if 0
+	if (prTailer->ucType == FW_TYPE_IDX_LOG_DATA)
+		*pu4DataMode |= DOWNLOAD_CONFIG_IDX_LOG;
+#endif
+#endif
 }
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
@@ -1022,9 +1033,21 @@ uint32_t wlanImageSectionDownloadStage(
 			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 			       u4Offset, u4Addr, u4Len, u4DataMode);
 
-			if (fgIsNotDownload)
+			if (fgIsNotDownload) {
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+#if 0
+				/* TODO:
+				 * This section is for that the idx log bin is
+				 * appended to the RAM bin tail.
+				 */
+				if (u4DataMode & DOWNLOAD_CONFIG_IDX_LOG)
+					wlanStoreIdxLogBin(prAdapter,
+						pvFwImageMapFile + u4Offset,
+						u4Len);
+#endif
+#endif
 				continue;
-			else if (fgIsEMIDownload)
+			} else if (fgIsEMIDownload)
 				u4Status = prFwDlOps->downloadEMI(prAdapter,
 					u4Addr,
 					u4DataMode,
