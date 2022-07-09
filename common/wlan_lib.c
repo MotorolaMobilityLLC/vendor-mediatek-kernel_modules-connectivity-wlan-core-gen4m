@@ -8275,7 +8275,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgEnableMawdTx = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableMawdTx", FEATURE_DISABLED);
 	prWifiVar->fgEnableSdo = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableSdo", FEATURE_DISABLED);
+		prAdapter, "EnableSdo", FEATURE_ENABLED);
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableRro", FEATURE_DISABLED);
 
