@@ -1344,6 +1344,71 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 }
 #endif
 
+void apsResetEssApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct LINK *prCurEssLink;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	if (!prAisSpecBssInfo) {
+		log_dbg(SCN, INFO, "No prAisSpecBssInfo\n");
+		return;
+	}
+
+	prCurEssLink = &prAisSpecBssInfo->rCurEssLink;
+	if (!prCurEssLink) {
+		log_dbg(SCN, INFO, "No prCurEssLink\n");
+		return;
+	}
+
+	LINK_INITIALIZE(prCurEssLink);
+	log_dbg(SCN, INFO, "BssIndex:%d reset prCurEssLin done\n", ucBssIndex);
+}
+
+void apsUpdateEssApList(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_DESC *prBssDesc = NULL;
+	struct LINK *prBSSDescList =
+		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+	struct CONNECTION_SETTINGS *prConnSettings =
+		aisGetConnSettings(prAdapter, ucBssIndex);
+	struct LINK *prCurEssLink;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	uint8_t ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
+
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	if (!prAisSpecBssInfo) {
+		log_dbg(SCN, INFO, "No prAisSpecBssInfo\n");
+		return;
+	}
+
+	prCurEssLink = &prAisSpecBssInfo->rCurEssLink;
+	if (!prCurEssLink) {
+		log_dbg(SCN, INFO, "No prCurEssLink\n");
+		return;
+	}
+
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+		struct BSS_DESC) {
+		if (prBssDesc->ucChannelNum > 233)
+			continue;
+		if (!EQUAL_SSID(prConnSettings->aucSSID,
+			prConnSettings->ucSSIDLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen) ||
+			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
+			continue;
+		/* Record same BSS list */
+		LINK_ENTRY_INITIALIZE(&prBssDesc->rLinkEntryEss[ucAisIdx]);
+		LINK_INSERT_HEAD(prCurEssLink,
+			&prBssDesc->rLinkEntryEss[ucAisIdx]);
+	}
+
+	log_dbg(SCN, INFO, "Find %s in %d BSSes, result %d\n",
+		prConnSettings->aucSSID, prBSSDescList->u4NumElem,
+		prCurEssLink->u4NumElem);
+}
+
 /*
  * Bss Characteristics to be taken into account when calculate Score:
  * Channel Loading Group:
@@ -1606,73 +1671,8 @@ done:
 		}
 	}
 
-	return prCandBssDesc;
-}
-
-void apsResetEssApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-	struct LINK *prCurEssLink;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-
-	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	if (!prAisSpecBssInfo) {
-		log_dbg(SCN, INFO, "No prAisSpecBssInfo\n");
-		return;
-	}
-
-	prCurEssLink = &prAisSpecBssInfo->rCurEssLink;
-	if (!prCurEssLink) {
-		log_dbg(SCN, INFO, "No prCurEssLink\n");
-		return;
-	}
-
-	LINK_INITIALIZE(prCurEssLink);
-	log_dbg(SCN, INFO, "BssIndex:%d reset prCurEssLin done\n", ucBssIndex);
-}
-
-void apsUpdateEssApList(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct BSS_DESC *prBssDesc = NULL;
-	struct LINK *prBSSDescList =
-		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
-	struct CONNECTION_SETTINGS *prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
-	struct LINK *prCurEssLink;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-	uint8_t ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
-
-	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	if (!prAisSpecBssInfo) {
-		log_dbg(SCN, INFO, "No prAisSpecBssInfo\n");
-		return;
-	}
-
-	prCurEssLink = &prAisSpecBssInfo->rCurEssLink;
-	if (!prCurEssLink) {
-		log_dbg(SCN, INFO, "No prCurEssLink\n");
-		return;
-	}
-
 	apsResetEssApList(prAdapter, ucBssIndex);
 
-	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
-		struct BSS_DESC) {
-		if (prBssDesc->ucChannelNum > 233)
-			continue;
-		if (!EQUAL_SSID(prConnSettings->aucSSID,
-			prConnSettings->ucSSIDLen,
-			prBssDesc->aucSSID, prBssDesc->ucSSIDLen) ||
-			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
-			continue;
-		/* Record same BSS list */
-		LINK_ENTRY_INITIALIZE(&prBssDesc->rLinkEntryEss[ucAisIdx]);
-		LINK_INSERT_HEAD(prCurEssLink,
-			&prBssDesc->rLinkEntryEss[ucAisIdx]);
-	}
-
-	log_dbg(SCN, INFO, "Find %s in %d BSSes, result %d\n",
-		prConnSettings->aucSSID, prBSSDescList->u4NumElem,
-		prCurEssLink->u4NumElem);
+	return prCandBssDesc;
 }
 

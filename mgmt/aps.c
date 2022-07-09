@@ -361,7 +361,8 @@ uint8_t apsBssDescToLink(struct ADAPTER *ad,
 		if (ap->aucMask[i] & BIT(bss->eBand))
 			return i;
 	}
-	if (i == ap->ucLinkNum && i < MLD_LINK_MAX) {
+
+	if (i == ap->ucLinkNum && i < ad->rWifiVar.ucMldLinkMax) {
 		if (bss->eBand == BAND_2G4) {
 			ap->aucMask[i] = BIT(BAND_2G4);
 		} else {
@@ -412,7 +413,7 @@ struct AP_COLLECTION *apsAddAp(struct ADAPTER *ad,
 		COPY_MAC_ADDR(ap->aucAddr, bss->rMlInfo.aucMldAddr);
 #endif
 
-	DBGLOG(APS, INFO, "Add AP[" MACSTR "][%s]\n",
+	DBGLOG(APS, TRACE, "Add AP[" MACSTR "][%s]\n",
 		MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY");
 
 	for (i = 0; i < MLD_LINK_MAX; i++)
@@ -442,8 +443,9 @@ struct AP_COLLECTION *apsGetAp(struct ADAPTER *ad,
 
 void apsRemoveAp(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
-	DBGLOG(APS, INFO, "Remove AP[" MACSTR "] Total:%d\n",
-		MAC2STR(ap->aucAddr), ap->ucTotalCount);
+	DBGLOG(APS, TRACE, "Remove AP[" MACSTR "][%s] Total Bss: %d\n",
+		MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY",
+		ap->ucTotalCount);
 
 	apsHashDel(ad, ap, bidx);
 	kalMemFree(ap, VIR_MEM_TYPE, sizeof(*ap));
@@ -465,15 +467,13 @@ void apsResetEssApList(struct ADAPTER *ad, uint8_t bidx)
 	DBGLOG(APS, INFO, "BssIndex:%d reset prCurEssLink done\n", bidx);
 }
 
-void apsUpdateEssApList(struct ADAPTER *ad, uint8_t bidx)
+uint16_t apsUpdateEssApList(struct ADAPTER *ad, uint8_t bidx)
 {
 	struct AP_COLLECTION *ap;
 	struct BSS_DESC *bss = NULL;
 	struct LINK *scan_result = &ad->rWifiVar.rScanInfo.rBSSDescList;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	uint16_t count = 0;
-
-	apsResetEssApList(ad, bidx);
 
 	LINK_FOR_EACH_ENTRY(bss, scan_result, rLinkEntry,
 		struct BSS_DESC) {
@@ -498,6 +498,7 @@ void apsUpdateEssApList(struct ADAPTER *ad, uint8_t bidx)
 
 	DBGLOG(APS, INFO, "Find %s in %d BSSes, result %d\n",
 		conn->aucSSID, scan_result->u4NumElem, count);
+	return count;
 }
 
 /* Channel Utilization: weight index will be */
@@ -1179,13 +1180,9 @@ void apsIntraUpdateTargetAp(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	struct BSS_DESC *bss, *cand = NULL;
 	uint16_t score;
-	uint8_t search_blk;
+	uint8_t search_blk = FALSE;
 
 try_again:
-	ap->aprTarget[link_idx] = NULL;
-	ap->fgIsMatchBssid = FALSE;
-	ap->fgIsMatchBssidHint = FALSE;
-
 	LINK_FOR_EACH_ENTRY(bss, link, rLinkEntryEss[aidx], struct BSS_DESC) {
 		if (!search_blk) {
 			/* update blacklist info */
@@ -1211,9 +1208,10 @@ try_again:
 			if (EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
 				ap->fgIsMatchBssid = TRUE;
 				cand = bss;
+				goal_score = scanCalculateTotalScore(
+					ad, bss, reason, bidx);
 				break;
 			}
-			continue;
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
 			uint8_t oce = FALSE;
 
@@ -1235,6 +1233,8 @@ try_again:
 				{
 					ap->fgIsMatchBssidHint = TRUE;
 					cand = bss;
+					goal_score = scanCalculateTotalScore(
+						ad, bss, reason, bidx);
 					break;
 				}
 			}
@@ -1295,9 +1295,6 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	uint8_t i, num = aisGetLinkNum(ais);
 	uint8_t delta = 0;
 	uint16_t base = 0, goal;
-
-	if (!ais)
-		return;
 
 	if (reason == ROAMING_REASON_INACTIVE ||
 	    reason == ROAMING_REASON_POOR_RCPI)
@@ -1490,53 +1487,55 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 		if (!ap->aprTarget[i])
 			continue;
 
-		if (set->ucLinkNum < ad->rWifiVar.ucMldLinkMax)
-			set->aprBssDesc[set->ucLinkNum++] = ap->aprTarget[i];
+		set->aprBssDesc[set->ucLinkNum++] = ap->aprTarget[i];
 	}
 
-	if (set->ucLinkNum <= 1)
-		goto  done;
+	/* pick by bssid or bssid by upper layer */
+	for (i = 1; i < set->ucLinkNum; i++) {
+		bss = set->aprBssDesc[i];
+		if ((policy == CONNECT_BY_BSSID &&
+		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) ||
+		    (policy == CONNECT_BY_BSSID_HINT &&
+		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSIDHint))) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			break;
+		}
+	}
 
-	if (policy == CONNECT_BY_BSSID) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (policy != CONNECT_BY_BSSID && ap->fgIsMld) {
 		for (i = 0; i < set->ucLinkNum; i++) {
 			bss = set->aprBssDesc[i];
-			if (EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
+			DBGLOG(APS, INFO,
+				MACSTR " link_id=%d max_links=%d\n",
+				MAC2STR(bss->aucBSSID),
+				bss->rMlInfo.ucLinkIndex,
+				bss->rMlInfo.ucMaxSimultaneousLinks);
+
+			if (bss->rMlInfo.ucLinkIndex ==
+				ad->rWifiVar.ucStaMldMainLinkIdx) {
+				DBGLOG(APS, INFO, "\tSetup for link_id");
 				set->aprBssDesc[i] = set->aprBssDesc[0];
 				set->aprBssDesc[0] = bss;
-				break;
+			}
+
+			/* link id is not assigned, prefer mld addr */
+			if (ad->rWifiVar.ucStaMldMainLinkIdx ==
+				MLD_LINK_ID_NONE &&
+			    EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
+				DBGLOG(APS, INFO, "\tSetup for mld_addr");
+				set->aprBssDesc[i] = set->aprBssDesc[0];
+				set->aprBssDesc[0] = bss;
 			}
 		}
-	} else {
-		if (policy == CONNECT_BY_BSSID_HINT) {
-			for (i = 0; i < set->ucLinkNum; i++) {
-				bss = set->aprBssDesc[i];
-				if (EQUAL_MAC_ADDR(bss->aucBSSID,
-						   conn->aucBSSIDHint)) {
-					set->aprBssDesc[i] = set->aprBssDesc[0];
-					set->aprBssDesc[0] = bss;
-					break;
-				}
-			}
-		}
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (ap->fgIsMld) {
-			for (i = 0; i < set->ucLinkNum; i++) {
-				bss = set->aprBssDesc[i];
-				if (EQUAL_MAC_ADDR(bss->aucBSSID,
-						   ap->aucAddr)) {
-					set->aprBssDesc[i] = set->aprBssDesc[0];
-					set->aprBssDesc[0] = bss;
-					break;
-				}
-			}
-		}
-#endif
 	}
+#endif
 
 done:
 	/* first bss desc is main bss */
 	set->prMainBssDesc = set->aprBssDesc[0];
-	DBGLOG(APS, INFO, " Total %d link(s)\n", set->ucLinkNum);
+	DBGLOG(APS, INFO, "Total %d link(s)\n", set->ucLinkNum);
 	return set->prMainBssDesc;
 }
 
@@ -1584,9 +1583,10 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	struct BSS_DESC *cand = NULL;
+	uint16_t count = 0;
 
-	if (!ad || reason >= ROAMING_REASON_NUM) {
-		DBGLOG(APS, ERROR, "prAdapter %p, reason %d!\n", ad, reason);
+	if (reason >= ROAMING_REASON_NUM) {
+		DBGLOG(APS, ERROR, "reason %d!\n", reason);
 		return NULL;
 	}
 
@@ -1594,7 +1594,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 		conn->eConnectionPolicy, reason);
 
 	aisRemoveTimeoutBlacklist(ad);
-	apsUpdateEssApList(ad, bidx);
+	count = apsUpdateEssApList(ad, bidx);
 
 #if CFG_SUPPORT_802_11K
 	/* check before using neighbor report */
@@ -1604,38 +1604,28 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	apsIntraApSelection(ad, reason, bidx);
 	cand = apsInterApSelection(ad, set, reason, bidx);
 	if (cand) {
-		if (conn->eConnectionPolicy == CONNECT_BY_BSSID)
-			DBGLOG(APS, INFO, "Selected "
-				MACSTR
-				" %d base on ssid,when find %s, "
-				MACSTR
-				" in %d bssid.\n",
-				MAC2STR(cand->aucBSSID),
-				RCPI_TO_dBm(cand->ucRCPI),
-				HIDE(conn->aucSSID),
-				MAC2STR(conn->aucBSSID),
-				ess->u4NumElem);
-		else
-			DBGLOG(APS, INFO,
-				"Selected "
-				MACSTR
-				", cRSSI[%d] Band[%s] when find %s, "
-				MACSTR
-				" in %d BSSes.\n",
-				MAC2STR(cand->aucBSSID),
-				RCPI_TO_dBm(cand->ucRCPI),
-				apucBandStr[cand->eBand], conn->aucSSID,
-				MAC2STR(conn->aucBSSIDHint),
-				ess->u4NumElem);
-
+		DBGLOG(APS, INFO,
+			"Selected " MACSTR ", RSSI[%d] Band[%s] when find %s, "
+			MACSTR " policy=%d in %d(%d) BSSes.\n",
+			MAC2STR(cand->aucBSSID),
+			RCPI_TO_dBm(cand->ucRCPI),
+			apucBandStr[cand->eBand], HIDE(conn->aucSSID),
+			conn->eConnectionPolicy == CONNECT_BY_BSSID ?
+			MAC2STR(conn->aucBSSID) :
+			MAC2STR(conn->aucBSSIDHint),
+			conn->eConnectionPolicy,
+			count,
+			ess->u4NumElem);
 		goto done;
 	}
 
 	DBGLOG(APS, INFO, "Selected None when find %s, " MACSTR
-		" in %d BSSes.\n",
+		" in %d(%d) BSSes.\n",
 		conn->aucSSID, MAC2STR(conn->aucBSSID),
+		count,
 		ess->u4NumElem);
 done:
+	apsResetEssApList(ad, bidx);
 	return cand;
 }
 

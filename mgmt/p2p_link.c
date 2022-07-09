@@ -28,16 +28,15 @@ struct MLD_BSS_INFO *p2pGetMldBssInfo(
 int8_t p2pMldBssInit(struct ADAPTER *prAdapter)
 {
 	DBGLOG(INIT, TRACE, "\n");
-
-	mldBssAlloc(prAdapter, &prP2pMldBssInfo);
-
 	return 0;
 }
 
-void p2MldBssUninit(struct ADAPTER *prAdapter)
+void p2pMldBssUninit(struct ADAPTER *prAdapter)
 {
-	mldBssFree(prAdapter, prP2pMldBssInfo);
-	prP2pMldBssInfo = NULL;
+	if (prP2pMldBssInfo) {
+		mldBssFree(prAdapter, prP2pMldBssInfo);
+		prP2pMldBssInfo = NULL;
+	}
 	DBGLOG(INIT, TRACE, "\n");
 }
 
@@ -50,8 +49,8 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct P2P_ROLE_FSM_INFO *fsm =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *fsm = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prMain = (struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t i;
 
 	if (!prAdapter ||
@@ -71,9 +70,7 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 			prAdapter,
 			i);
-		if (!fsm ||
-			!IS_BSS_INDEX_P2P(prAdapter,
-			fsm->ucBssIndex))
+		if (!fsm || !IS_BSS_INDEX_P2P(prAdapter, fsm->ucBssIndex))
 			continue;
 
 		kal_init_completion(&prP2pInfo->rStopApComp);
@@ -90,45 +87,57 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 			prGlueInfo->prP2PInfo
 			[P2P_MAIN_LINK_INDEX]->u4CipherPairwise,
 			i);
+
+		prMain = p2pGetDefaultRoleFsmInfo(prAdapter, IFTYPE_P2P_CLIENT);
+		if (prMain)
+			prMain->aprP2pLinkInfo[i].prP2pBss =
+				GET_BSS_INFO_BY_INDEX(prAdapter,
+					fsm->ucBssIndex);
 	}
 }
 
 void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
-	struct P2P_ROLE_FSM_INFO *fsm =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *fsm = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prMain = (struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t i;
 
-	if (!prAdapter ||
-		p2pGetMode() != RUNNING_P2P_DEV_MODE)
+	if (!prAdapter || p2pGetMode() != RUNNING_P2P_DEV_MODE)
 		return;
 
-	for (i = 0;
-		i < prAdapter->rWifiVar.ucMldLinkMax;
-		i++) {
-		DBGLOG(INIT, TRACE, "\n");
-
-		prP2pInfo =
-			prAdapter->prGlueInfo->prP2PInfo[i];
+	DBGLOG(INIT, TRACE, "\n");
+	for (i = 0; i < prAdapter->rWifiVar.ucMldLinkMax; i++) {
+		prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[i];
 		if (prP2pInfo == NULL)
 			continue;
 
-		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
-			prAdapter,
-				i);
-		if (!fsm ||
-			!IS_BSS_INDEX_P2P(prAdapter,
-			fsm->ucBssIndex))
+		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,	i);
+		if (!fsm || !IS_BSS_INDEX_P2P(prAdapter, fsm->ucBssIndex))
 			continue;
 
 		wlanBindBssIdxToNetInterface(
 			prAdapter->prGlueInfo,
 			fsm->ucBssIndex,
-			kalGetP2pNetHdl(prAdapter->prGlueInfo,
-				i, FALSE));
+			kalGetP2pNetHdl(prAdapter->prGlueInfo, i, FALSE));
 		p2pRoleFsmUninit(prAdapter, i);
+
+		prMain = p2pGetDefaultRoleFsmInfo(prAdapter, IFTYPE_P2P_CLIENT);
+		if (prMain)
+			prMain->aprP2pLinkInfo[i].prP2pBss = NULL;
 	}
+}
+
+uint8_t p2pGetGCBssNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+{
+	uint8_t i, num = 0;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		if (prP2pRoleFsmInfo->aprP2pLinkInfo[i].prP2pBss != NULL)
+			num++;
+	}
+
+	return num;
 }
 #endif
 
@@ -139,6 +148,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	IN struct STA_RECORD *prStaRec,
 	IN struct SW_RFB *prSwRfb)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WLAN_AUTH_FRAME *prAuthFrame = NULL;
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
@@ -147,7 +157,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	const uint8_t *ml;
 	uint16_t u2RxFrameCtrl;
 
-	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
+	if (IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo))
+		return WLAN_STATUS_SUCCESS;
 
 	if (!prSwRfb || !prBssInfo || !prStaRec || !prStaRec->fgIsInUse) {
 		DBGLOG(AAA, WARN,
@@ -156,6 +167,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 			prStaRec ? prStaRec->fgIsInUse : -1);
 		return WLAN_STATUS_FAILURE;
 	}
+
+	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
@@ -170,7 +183,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 
 	/* sae auth frames are handled by hostapd, delay register until assoc */
 	if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
-		DBGLOG(AAA, INFO, "auth_alg=SAE, handle ml ie when assoc\n");
+		DBGLOG(AAA, INFO, "auth_alg=SAE, handle ml ie in hostapd\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 
@@ -261,17 +274,24 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		return WLAN_STATUS_SUCCESS;
 	}
 
+	if (!prMlInfo->ucValid) {
+		DBGLOG(AAA, INFO, "Invalid mld_info, reject!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	/* sta really attempt to build mlo */
 	if (prMlInfo->ucProfNum > 0) {
 		mldStarecRegister(prAdapter, prStaRec,
 			prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
 	} else {
-		DBGLOG(AAA, INFO, "ml ie without links\n");
+		COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
+		DBGLOG(AAA, INFO, "ml ie ["MACSTR"] without links\n",
+			MAC2STR(prMlInfo->aucMldAddr));
 		return WLAN_STATUS_SUCCESS;
 	}
 
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-	prMldStarec = mldStarecGetByAddr(prAdapter,
+	prMldStarec = mldStarecGetByMldAddr(prAdapter,
 		prMldBssInfo, prStaRec->aucMldAddr);
 	if (!prMlInfo->ucValid || !prMldStarec) {
 		DBGLOG(AAA, WARN, "Incorrect ml valid=%d, mldStarec=%p!\n",
@@ -348,7 +368,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	/* make sure all links are assigned link id */
 	LINK_FOR_EACH_ENTRY(prCurr, prStarecList,
 			rLinkEntryMld, struct STA_RECORD) {
-		if (prCurr->ucLinkIndex == MLD_GROUP_NONE) {
+		if (prCurr->ucLinkIndex == MLD_LINK_ID_NONE) {
 			DBGLOG(AAA, WARN, "sta%d " MACSTR " no link id\n",
 				prCurr->ucWlanIndex,
 				MAC2STR(prCurr->aucMacAddr));
@@ -633,6 +653,10 @@ void p2pLinkStaRecFree(
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mld_starec) {
+		/* backup mldsta idx firstr because mldstarec is freed
+		 * when all starec unregister
+		 */
+		uint8_t mldsta_idx = mld_starec->ucIdx;
 		uint16_t i;
 		struct STA_RECORD *starec;
 
@@ -640,8 +664,8 @@ void p2pLinkStaRecFree(
 			starec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
 
 			if (!starec ||
-				!starec->fgIsInUse ||
-				starec->ucMldStaIndex != mld_starec->ucIdx)
+			    !starec->fgIsInUse ||
+			    starec->ucMldStaIndex != mldsta_idx)
 				continue;
 
 			DBGLOG(INIT, INFO,
@@ -723,10 +747,13 @@ void p2pLinkAcquireChJoin(
 			continue;
 
 		/* for secondary link */
-		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex))
+		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex)) {
 			/* sync with firmware */
 			nicActivateNetwork(prAdapter,
 				NETWORK_ID(prBss->ucBssIndex, i));
+			SET_NET_PWR_STATE_ACTIVE(prAdapter,
+			    prBss->ucBssIndex);
+		}
 
 		if (i == 0)
 			prSubReq = prMsgChReq;

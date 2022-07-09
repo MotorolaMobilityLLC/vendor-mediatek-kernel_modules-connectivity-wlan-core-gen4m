@@ -361,15 +361,10 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		ml = mldFindMlIE(prScanReqV2->aucIE,
-			prScanReqV2->u2IELen, ML_CTRL_TYPE_BASIC);
+			prScanReqV2->u2IELen, ML_CTRL_TYPE_PROBE_REQ);
 		/* use ml prob req if scan req has ml ie, bssid, single chnl */
 		if (prScanReqV2->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
 		    prScanReqV2->ucChannelListNum == 1 &&
-#if 0 /* (CFG_SUPPORT_WIFI_6G == 1) */
-		    /* temp solution, ml probe req can be handled in 2.4/5g */
-		    prScanReqV2->arChnlInfoList[0].eBand != BAND_6G &&
-#endif
-		    mldIsMlProbeReq(ml) &&
 		    UNEQUAL_MAC_ADDR(prScanReqInfo->aucBSSID,
 				     "\xff\xff\xff\xff\xff\xff")) {
 			DBGLOG(P2P, INFO,
@@ -1126,6 +1121,8 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 
 	/* IEs from supplicant are sorted already, append ml ie */
 	mldGenerateMlIE(prAdapter, prRetMsduInfo);
+
+	/* no need to sort because mld is last element */
 
 	return prRetMsduInfo;
 #endif
@@ -1902,7 +1899,8 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 
 		if (prP2pBssInfo->eCurrentOPMode != eOpMode) {
 			DBGLOG(P2P, TRACE,
-				"p2pFuncSwitchOPMode: Switch to from %d, to %d.\n",
+				"BSS%d: Switch to from %d, to %d.\n",
+				prP2pBssInfo->ucBssIndex,
 				prP2pBssInfo->eCurrentOPMode, eOpMode);
 
 			switch (prP2pBssInfo->eCurrentOPMode) {

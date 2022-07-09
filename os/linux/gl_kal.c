@@ -2899,11 +2899,14 @@ kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
 	wext_indicate_wext_event(prGlueInfo, IWEVASSOCREQIE, cp,
 				 u4FrameBodyLen, ucBssIndex);
 
-	if (u4FrameBodyLen <= CFG_CFG80211_IE_BUF_LEN) {
-		prConnSettings->u4ReqIeLength = u4FrameBodyLen;
-		kalMemCopy(prConnSettings->aucReqIe, cp, u4FrameBodyLen);
+	if (u4FrameBodyLen > CFG_CFG80211_IE_BUF_LEN) {
+		DBGLOG(INIT, WARN, "Assoc Req IE truncated %d to %d",
+			u4FrameBodyLen, CFG_CFG80211_IE_BUF_LEN);
+		u4FrameBodyLen = CFG_CFG80211_IE_BUF_LEN;
 	}
 
+	prConnSettings->u4ReqIeLength = u4FrameBodyLen;
+	kalMemCopy(prConnSettings->aucReqIe, cp, u4FrameBodyLen);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2930,45 +2933,49 @@ void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
 		6;	/* cap_info, status_code & assoc_id */
 	uint32_t u4IELength = u4FrameBodyLen - u4IEOffset;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	struct BSS_INFO *bss =
+		GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 
 	ASSERT(prGlueInfo);
 
-	if (u4IELength <= CFG_CFG80211_IE_BUF_LEN) {
-		struct BSS_INFO *bss =
-			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
-			ucBssIndex);
-
-		if (IS_BSS_AIS(bss)) {
-			prConnSettings = aisGetConnSettings(
-				prGlueInfo->prAdapter,
-				ucBssIndex);
-			prConnSettings->u4RspIeLength = u4IELength;
-			kalMemCopy(prConnSettings->aucRspIe,
-				pucFrameBody + u4IEOffset,
-				u4IELength);
-		} else if (!IS_BSS_APGO(bss)) {
-			struct P2P_ROLE_FSM_INFO *fsm =
-				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
-					prGlueInfo->prAdapter,
-					bss->u4PrivateData);
-			struct P2P_JOIN_INFO *prJoinInfo =
-				(struct P2P_JOIN_INFO *) NULL;
-
-			if (!fsm)
-				return;
-
-			DBGLOG(P2P, LOUD,
-				"[%d] Copy assoc resp info\n",
-				ucBssIndex);
-
-			prJoinInfo = &(fsm->rJoinInfo);
-			prJoinInfo->u4BufLength = u4IELength;
-			kalMemCopy(prJoinInfo->aucIEBuf,
-				pucFrameBody + u4IEOffset,
-				u4IELength);
-		}
+	if (!bss) {
+		DBGLOG(ML, INFO, "bss is null\n");
+		return;
 	}
 
+	if (u4IELength > CFG_CFG80211_IE_BUF_LEN) {
+		DBGLOG(INIT, WARN, "Assoc Resp IE truncated %d to %d",
+			u4IELength, CFG_CFG80211_IE_BUF_LEN);
+		u4IELength = CFG_CFG80211_IE_BUF_LEN;
+	}
+
+	DBGLOG(INIT, LOUD, "[%d] Copy assoc resp info\n", ucBssIndex);
+
+	if (IS_BSS_AIS(bss)) {
+		prConnSettings = aisGetConnSettings(
+			prGlueInfo->prAdapter,
+			ucBssIndex);
+		prConnSettings->u4RspIeLength = u4IELength;
+		kalMemCopy(prConnSettings->aucRspIe,
+			pucFrameBody + u4IEOffset,
+			u4IELength);
+	} else if (!IS_BSS_APGO(bss)) {
+		struct P2P_ROLE_FSM_INFO *fsm =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+				prGlueInfo->prAdapter,
+				bss->u4PrivateData);
+		struct P2P_JOIN_INFO *prJoinInfo =
+			(struct P2P_JOIN_INFO *) NULL;
+
+		if (!fsm)
+			return;
+
+		prJoinInfo = &(fsm->rJoinInfo);
+		prJoinInfo->u4BufLength = u4IELength;
+		kalMemCopy(prJoinInfo->aucIEBuf,
+			pucFrameBody + u4IEOffset,
+			u4IELength);
+	}
 }				/* kalUpdateReAssocRspInfo */
 
 void kalResetPacket(IN struct GLUE_INFO *prGlueInfo,
@@ -11081,12 +11088,18 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	struct BSS_INFO *prBssInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+
 	uint16_t size = 0;
 
 	prAdapter = prGlueInfo->prAdapter;
 	wiphy = prGlueInfo->prDevHandler->ieee80211_ptr->wiphy;
 	wdev = wlanGetNetDev(prGlueInfo, ucBssIndex)->ieee80211_ptr;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prBssInfo)
+		return WLAN_STATUS_INVALID_DATA;
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		prAisFsmInfo =
@@ -11123,7 +11136,7 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) + MAX_LEN_OF_MLIE;
+	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO);
 	info = kalMemAlloc(size, VIR_MEM_TYPE);
 	if (!info) {
 		DBGLOG(SAA, ERROR, "alloc vendor external auth event fail\n");
@@ -11134,27 +11147,27 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	info->id = GRID_EXTERNAL_AUTH;
 	info->len = sizeof(struct PARAM_EXTERNAL_AUTH_INFO) - 2;
 	info->action = NL80211_EXTERNAL_AUTH_START;
-	if (prBssDesc->rMlInfo.fgValid)
-		COPY_MAC_ADDR(info->bssid, prBssDesc->rMlInfo.aucMldAddr);
-	else
-		COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
-	info->len += mldGenerateExternalAuthIE(
-		prAdapter, prStaRec, info->ext_ie);
+	COPY_MAC_ADDR(info->bssid, prBssDesc->aucBSSID);
 	COPY_SSID(info->ssid, info->ssid_len,
 		prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
 	info->ssid[info->ssid_len] = '\0';
 	info->key_mgmt_suite = RSN_AKM_SUITE_SAE;
-	COPY_MAC_ADDR(info->da, prStaRec->aucMacAddr);
+	info->dot11MultiLinkActivated = TRUE;
+	if (prMldBssInfo)
+		COPY_MAC_ADDR(info->own_ml_addr, prMldBssInfo->aucOwnMldAddr);
+	else
+		COPY_MAC_ADDR(info->own_ml_addr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(info->peer_ml_addr, prBssDesc->rMlInfo.aucMldAddr);
 
 	DBGLOG(SAA, INFO,
-		"[WPA3] "MACSTR" (link="MACSTR") %s %d %d %02x-%02x-%02x-%02x",
-		MAC2STR(info->bssid), info->da, info->ssid,
-		info->ssid_len, info->action,
+		"[WPA3] "MACSTR" %s %d %d mlo=%d["MACSTR"] %02x-%02x-%02x-%02x",
+		MAC2STR(info->bssid), info->ssid,
+		info->ssid_len, info->action, info->dot11MultiLinkActivated,
+		MAC2STR(info->peer_ml_addr),
 		(uint8_t) (info->key_mgmt_suite & 0xFF),
 		(uint8_t) ((info->key_mgmt_suite >> 8) & 0xFF),
 		(uint8_t) ((info->key_mgmt_suite >> 16) & 0xFF),
 		(uint8_t) ((info->key_mgmt_suite >> 24) & 0xFF));
-	DBGLOG_MEM8(SAA, INFO, info, IE_SIZE(info));
 
 	mtk_cfg80211_vendor_event_generic_response(
 		wiphy, wdev, IE_SIZE(info), (uint8_t *)info);

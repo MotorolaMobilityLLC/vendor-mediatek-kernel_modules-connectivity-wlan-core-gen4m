@@ -768,32 +768,6 @@ uint32_t nicUniCmdScanReqV2(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicUniCmdBssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo)
-{
-	if (bssinfo->eNetworkType == NETWORK_TYPE_AIS) {
-		return CONNECTION_INFRA_STA;
-	} else if (bssinfo->eNetworkType == NETWORK_TYPE_P2P) {
-		if (bssinfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
-			return CONNECTION_P2P_GC;
-		} else if (bssinfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-#if CFG_ENABLE_WIFI_DIRECT
-			if (ad->fgIsP2PRegistered &&
-			    !p2pFuncIsAPMode(ad->rWifiVar.prP2PConnSettings[
-					bssinfo->u4PrivateData])) {
-				return CONNECTION_P2P_GO;
-			} else
-#endif
-				return CONNECTION_INFRA_AP;
-		} else if (bssinfo->eCurrentOPMode == OP_MODE_P2P_DEVICE) {
-			return CONNECTION_P2P_DEVICE;
-		}
-	} else if (bssinfo->eNetworkType == NETWORK_TYPE_NAN) {
-		return CONNECTION_NAN;
-	}
-
-	return 0;
-}
-
 uint32_t nicUniCmdBssInfoPhyMode(uint8_t ucPhyTypeSet)
 {
 	uint32_t phy_mode = 0;
@@ -946,7 +920,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	bss_basic_tag->ucDbdcIdx = ENUM_BAND_AUTO;
 	bss_basic_tag->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
 	bss_basic_tag->ucHwBSSIndex = cmd->ucOwnMacAddrIndex;
-	bss_basic_tag->u4ConnectionType = nicUniCmdBssInfoConnType(ad, bss);
+	bss_basic_tag->u4ConnectionType = bssInfoConnType(ad, bss);
 	bss_basic_tag->ucConnectionState = bss->eConnectionState;
 	bss_basic_tag->ucWmmIdx = bss->ucWmmQueSet;
 	COPY_MAC_ADDR(bss_basic_tag->aucBSSID, bss->aucBSSID);
@@ -2140,7 +2114,7 @@ uint32_t nicUniCmdBssInfoTagBasic(struct ADAPTER *ad,
 	tag->ucOwnMacIdx = bss->ucOwnMacIndex;
 	tag->ucHwBSSIndex = bss->ucOwnMacIndex;
 	tag->ucDbdcIdx = cmd->ucDBDCBand;
-	tag->u4ConnectionType = nicUniCmdBssInfoConnType(ad, bss);
+	tag->u4ConnectionType = bssInfoConnType(ad, bss);
 	tag->ucConnectionState = bss->eConnectionState;
 	tag->ucWmmIdx = cmd->ucWmmSet;
 	COPY_MAC_ADDR(tag->aucBSSID, cmd->aucBSSID);

@@ -141,6 +141,8 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 /*----------------------------------------------------------------------------*/
 /* Routines for all Operation Modes                                           */
 /*----------------------------------------------------------------------------*/
+uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo);
+
 struct STA_RECORD *
 bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 			   IN enum ENUM_STA_TYPE eStaType, IN uint8_t uBssIndex,

@@ -2320,61 +2320,6 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to check the BSS Desc at scan result
- *             with pre-auth cap at wpa2 mode. If there is no cache entry,
- *             notify the PMKID indication.
- *
- * \param[in] prBss The BSS Desc at scan result
- *
- * \return none
- */
-/*----------------------------------------------------------------------------*/
-void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
-	IN uint8_t ucAisIndex)
-{
-	struct BSS_INFO *prAisBssInfo;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex;
-
-	if (!prBss || !AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex))
-		return;
-
-	ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prAisSpecBssInfo =
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-
-	/* Generate pmkid candidate indications for other APs which are
-	 * also belong to the same SSID with the current connected AP or
-	 * beacon timeout AP but have no available pmkid.
-	 */
-	if ((prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
-	    (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
-		 aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))) &&
-	    prConnSettings->eAuthMode == AUTH_MODE_WPA2 &&
-	    EQUAL_SSID(prBss->aucSSID, prBss->ucSSIDLen,
-		prConnSettings->aucSSID, prConnSettings->ucSSIDLen) &&
-	    UNEQUAL_MAC_ADDR(prBss->aucBSSID, prAisBssInfo->aucBSSID) &&
-	    !rsnSearchPmkidEntry(prAdapter, prBss->aucBSSID,
-	    ucBssIndex)) {
-		struct PARAM_PMKID_CANDIDATE candidate;
-
-		COPY_MAC_ADDR(candidate.arBSSID, prBss->aucBSSID);
-		candidate.u4Flags = prBss->u2RsnCap & MASK_RSNIE_CAP_PREAUTH;
-		rsnGeneratePmkidIndication(prAdapter, &candidate,
-			ucBssIndex);
-
-		DBGLOG(RSN, TRACE, "[%d] Generate " MACSTR
-			" with preauth %d to pmkid candidate list\n",
-			ucBssIndex,
-			MAC2STR(prBss->aucBSSID), candidate.u4Flags);
-	}
-} /* rsnCheckPmkidCache */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to add/update pmkid.
  *
  * \param[in] prPmkid The new pmkid

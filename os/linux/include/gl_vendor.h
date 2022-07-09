@@ -1197,8 +1197,9 @@ struct PARAM_EXTERNAL_AUTH_INFO {
 	uint8_t bssid[PARAM_MAC_ADDR_LEN];
 	uint32_t key_mgmt_suite;
 	uint32_t action;
-	uint8_t da[PARAM_MAC_ADDR_LEN];
-	uint8_t ext_ie[0];
+	uint8_t dot11MultiLinkActivated;
+	uint8_t own_ml_addr[PARAM_MAC_ADDR_LEN];
+	uint8_t peer_ml_addr[PARAM_MAC_ADDR_LEN];
 } __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************

@@ -502,6 +502,33 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 
 }
 
+uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo)
+{
+	if (bssinfo->eNetworkType == NETWORK_TYPE_AIS) {
+		return CONNECTION_INFRA_STA;
+	} else if (bssinfo->eNetworkType == NETWORK_TYPE_P2P) {
+		if (bssinfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+			return CONNECTION_P2P_GC;
+		} else if (bssinfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+#if CFG_ENABLE_WIFI_DIRECT
+			if (ad->fgIsP2PRegistered &&
+			    !p2pFuncIsAPMode(ad->rWifiVar.prP2PConnSettings[
+					bssinfo->u4PrivateData])) {
+				return CONNECTION_P2P_GO;
+			}
+#endif
+			return CONNECTION_INFRA_AP;
+		} else if (bssinfo->eCurrentOPMode == OP_MODE_P2P_DEVICE) {
+			return CONNECTION_P2P_DEVICE;
+		}
+	} else if (bssinfo->eNetworkType == NETWORK_TYPE_NAN) {
+		return CONNECTION_NAN;
+	}
+
+	return 0;
+
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function will create or reset a STA_RECORD_T by given BSS_DESC_T
@@ -553,33 +580,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 	prStaRec->u2OperationalRateSet = prBssDesc->u2OperationalRateSet;
 	prStaRec->u2BSSBasicRateSet = prBssDesc->u2BSSBasicRateSet;
 
-#if 1
 	bssDetermineStaRecPhyTypeSet(prAdapter, prBssDesc, prStaRec);
-#else
-	prStaRec->ucPhyTypeSet = prBssDesc->ucPhyTypeSet;
-
-	if (IS_STA_IN_AIS(prStaRec)) {
-		if (!
-		    ((prConnSettings->eEncStatus ==
-		      ENUM_ENCRYPTION3_ENABLED)
-		     || (prConnSettings->eEncStatus ==
-			 ENUM_ENCRYPTION3_KEY_ABSENT)
-		     || (prConnSettings->eEncStatus ==
-			 ENUM_ENCRYPTION_DISABLED)
-		     || (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
-#if CFG_SUPPORT_WAPI
-		     || (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
-#endif
-)) {
-			DBGLOG(BSS, INFO,
-			       "Ignore the HT Bit for TKIP as pairwise cipher configed!\n");
-			prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
-		}
-	}
-
-	prStaRec->ucDesiredPhyTypeSet =
-	    prStaRec->ucPhyTypeSet & prAdapter->rWifiVar.ucAvailablePhyTypeSet;
-#endif
 
 	ucNonHTPhyTypeSet =
 	    prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11ABG;

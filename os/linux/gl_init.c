@@ -2675,14 +2675,14 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 			"[wlan%d] Bssid%d Set connect random macaddr to " MACSTR ".\n",
 			wlanGetBssIdx(ndev), prAisBssInfo->ucBssIndex,
 			MAC2STR(prAisBssInfo->aucOwnMacAddr));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateMldAddrByMainBss(prAdapter,
+			mldBssGetByBss(prAdapter, prAisBssInfo));
+#endif
 	}
 
 	COPY_MAC_ADDR(ndev->dev_addr, sa->sa_data);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldBssUpdateMldAddrByMainBss(prAdapter,
-		mldBssGetByBss(prAdapter, prAisBssInfo));
-#endif
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of wlanSetMacAddr() */

@@ -2583,7 +2583,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					= prBssDesc->rRSNInfo.u2RsnCap;
 
 				for (i = 0; i < KAL_AIS_NUM; i++)
-					rsnCheckPmkidCache(
+					aisCheckPmkidCache(
 						prAdapter, prBssDesc, i);
 			}
 			break;
@@ -3616,7 +3616,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		struct BSS_INFO *prAisBssInfo = prAdapter->aprBssInfo[u4Idx];
 		struct CONNECTION_SETTINGS *prConnSettings;
 
-		if (!IS_BSS_INDEX_AIS(prAdapter, prAisBssInfo->ucBssIndex))
+		if (!IS_BSS_AIS(prAisBssInfo))
 			continue;
 
 		prConnSettings =

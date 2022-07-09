@@ -7031,25 +7031,19 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
 	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MldLinkMax", MLD_LINK_MAX);
-	prWifiVar->ucApMldAddrByLink = (uint8_t) wlanCfgGetInt32(
-		prAdapter, "ApMldAddrByLink", MLD_LINK_ID_NONE);
+	prWifiVar->ucApMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "ApMldMainLinkIdx", MLD_LINK_ID_NONE);
+	prWifiVar->ucStaMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "StaMldMainLinkIdx", MLD_LINK_ID_NONE);
 	wlanCfgGet(prAdapter, "MloP2pPreferFreq",
 		prWifiVar->aucMloP2pPreferFreq,
 		"2462 5180 5975", 0);
 	prWifiVar->ucMlProbeRetryLimit = (uint8_t) wlanCfgGetInt32(
 		prAdapter, "MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
-#if (CFG_SUPPORT_CONNAC3X == 1)
 	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMlo", FEATURE_ENABLED);
 	prWifiVar->ucEnableMloSingleLink = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMloSingleLink", FEATURE_ENABLED);
-#else
-	/* discard eht phy cap check for connac2 development */
-	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"EnableMlo", FEATURE_FORCE_ENABLED);
-	prWifiVar->ucEnableMloSingleLink = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"EnableMloSingleLink", FEATURE_FORCE_ENABLED);
-#endif
 #endif /* CFG_SUPPORT_802_11BE */
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);

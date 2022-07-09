@@ -1237,8 +1237,8 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			   prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),
 			   &u4BufLen);
 
-	kalMemFree(prScanRequest,
-		   sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
+	kalMemFree(prScanRequest, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		prGlueInfo->prScanRequest = NULL;
 		DBGLOG(REQ, WARN, "scan error:%x\n", rStatus);

@@ -1450,19 +1450,21 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		prBssInfo->ucWmmQueSet,
 		prBssInfo->eConnectionState,
 		MAC2STR(prBssInfo->aucBSSID));
+
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tSSID/QBSS: %d %s/%u\n",
+		 "\tSSID/QBSS/PHY/PWR_STATE: %d %s/%u/0x%x/%d\n",
 		prBssInfo->ucSSIDLen,
 		prBssInfo->aucSSID,
-		prBssInfo->fgIsQBSS);
+		prBssInfo->fgIsQBSS,
+		prBssInfo->ucPhyTypeSet,
+		prAdapter->rWifiVar.aePwrState[prBssInfo->ucBssIndex]);
 #if 0
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "AID/BCN_INT/PHY/RATE/PROT:%d/%d/0x%x/0x%x/%u\n",
+		 "AID/BCN_INT/RATE/PROT:%d/%d/0x%x/%u\n",
 		prBssInfo->u2AssocId,
 		prBssInfo->u2BeaconInterval,
-		prBssInfo->ucPhyTypeSet,
 		prBssInfo->u2BSSBasicRateSet,
 		secIsProtectedBss(prAdapter, prBssInfo));
 #endif
@@ -1513,7 +1515,8 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		MAC2STR(prStaRec->aucMacAddr));
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tDESIRE_PHY/BASIC_PHY/WMM/UAPSD: 0x%x/0x%x/%u/%u\n",
+		"\tPHY/DESIRE_PHY/BASIC_PHY/WMM/UAPSD: 0x%x/0x%x/0x%x/%u/%u\n",
+		prStaRec->ucPhyTypeSet,
 		prStaRec->ucDesiredPhyTypeSet,
 		prStaRec->ucNonHTBasicPhyType,
 		prStaRec->fgIsWmmSupported,

@@ -1120,7 +1120,7 @@ void sortIE(IN struct ADAPTER *prAdapter,
 	/* compose IE by sorted ie table */
 	pucBuf = pucDst = (uint8_t *) prMsduInfoInOrder->prPacket;
 	for (i = 0; i < num; i++) {
-		DBGLOG(TX, TRACE, "#%d: IE(%d, %d) size=%d\n",
+		DBGLOG(TX, LOUD, "#%d: IE(%d, %d) size=%d\n",
 			apu2OrderTable[info[i].eid + info[i].extid],
 			info[i].eid, info[i].extid, info[i].size);
 

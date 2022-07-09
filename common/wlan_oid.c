@@ -3061,7 +3061,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-	prMldStaRec = mldStarecGetByAddr(prAdapter,
+	prMldStaRec = mldStarecGetByLinkAddr(prAdapter,
 		prMldBssInfo, prNewKey->arBSSID);
 	if (prMldStaRec && prNewKey->u4KeyIndex & IS_UNICAST_KEY) {
 		struct STA_RECORD *sta;
@@ -17066,6 +17066,9 @@ wlanoidExternalAuthDone(IN struct ADAPTER *prAdapter,
 		       "SAE-confirm failed to allocate Msg\n");
 		return WLAN_STATUS_RESOURCES;
 	}
+
+	DBGLOG(REQ, INFO, "SAE-confirm with bssid:"MACSTR", status:%d\n",
+		MAC2STR(params->bssid), params->status);
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter, ucBssIndex, params->bssid);
 	if (!prStaRec) {

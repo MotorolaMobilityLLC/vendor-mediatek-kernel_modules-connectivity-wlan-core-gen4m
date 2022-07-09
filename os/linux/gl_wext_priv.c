@@ -5762,19 +5762,20 @@ int priv_driver_preset_linkid(IN struct net_device *prNetDev,
 				&u4Param, sizeof(uint32_t),
 				&u4SetInfoLen);
 
-			if (rStatus != WLAN_STATUS_SUCCESS)
+			if (rStatus != WLAN_STATUS_SUCCESS) {
+				i4BytesWritten = -1;
 				DBGLOG(INIT, ERROR,
 				       "set link id fail 0x%x\n", rStatus);
-			else
+			} else {
 				DBGLOG(INIT, TRACE,
 				       "set link id successed\n");
+			}
 		}
 	} else {
 		DBGLOG(REQ, ERROR, "set link id failed\n");
-		rStatus = WLAN_STATUS_INVALID_DATA;
 	}
 
-	return rStatus;
+	return i4BytesWritten;
 }
 
 int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
@@ -5862,31 +5863,54 @@ int priv_driver_get_ml_capa(IN struct net_device *prNetDev,
 	IN char *pcCommand,
 	IN int i4TotalLen)
 {
-	uint8_t ucCapa = 0;
-	int32_t i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = -1;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAd = NULL;
-
-	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	uint8_t ucCapa = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE, u4Param = 0;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAd = prGlueInfo->prAdapter;
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 
-	if (mldIsMloFeatureEnabled(prAd, FALSE)) {
-		struct BSS_INFO *bss =
-			prAd->aprBssInfo[prAd->ucMldReservedBssIdx];
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
+		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc,
+		       apcArgv[1]);
+		i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Param);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+			       i4BytesWritten);
+			i4BytesWritten = -1;
+		} else {
+			/* u4Param: 1: p2p, 0: AP */
+			if (mldIsMloFeatureEnabled(prAd, !u4Param)) {
+				struct BSS_INFO *bss =
+				    prAd->aprBssInfo[prAd->ucMldReservedBssIdx];
 
-		if (!bss->fgIsInUse)
-			ucCapa = 1;
+				if (!bss->fgIsInUse ||
+				    (u4Param == 0 &&
+				     bssInfoConnType(prAd, bss) ==
+						CONNECTION_INFRA_AP) ||
+				    (u4Param == 1 &&
+				     bssInfoConnType(prAd, bss) ==
+						CONNECTION_P2P_GO))
+					ucCapa = 1;
+			}
+
+			i4BytesWritten = kalSnprintf(
+				pcCommand, i4TotalLen, "%d", ucCapa);
+
+			DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "get ml cap failed\n");
 	}
-
-	i4BytesWritten = kalSnprintf(
-		pcCommand, i4TotalLen, "%d", ucCapa);
-
-	DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
 
 	return i4BytesWritten;
 }

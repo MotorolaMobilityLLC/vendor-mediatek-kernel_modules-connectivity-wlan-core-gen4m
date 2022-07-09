@@ -171,7 +171,6 @@ struct WLAN_INFO {
 struct BSS_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct LINK_ENTRY rLinkEntryMld;
-	uint8_t ucLinkIndex;
 #endif
 	enum ENUM_NETWORK_TYPE eNetworkType;
 
@@ -565,6 +564,7 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
 	uint8_t ucGroupMldId;
 	uint8_t ucOwnMldId;
+	uint8_t ucLinkIndex;
 #endif
 
 	uint8_t ucVhtChannelWidthBackup;
@@ -791,7 +791,8 @@ struct WIFI_VAR {
 	uint8_t ucStaEhtBfee;
 	uint8_t ucPresetLinkId;
 	uint8_t ucMldLinkMax;
-	uint8_t ucApMldAddrByLink;
+	uint8_t ucApMldMainLinkIdx;
+	uint8_t ucStaMldMainLinkIdx;
 	uint8_t ucEnableMlo;
 	uint8_t ucEnableMloSingleLink;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
@@ -2220,8 +2221,8 @@ struct ADAPTER {
 #define IS_BSS_ACTIVE(_prBssInfo)     ((_prBssInfo)->fgIsNetActive)
 
 #define IS_BSS_AIS(_prBssInfo) \
-	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS) && \
-	((_prBssInfo)->fgIsInUse)
+	((_prBssInfo)->eNetworkType == NETWORK_TYPE_AIS && \
+	 (_prBssInfo)->fgIsInUse)
 
 #define IS_BSS_INDEX_AIS(_prAdapter, _BssIndex) \
 	(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex) && \
