@@ -2836,7 +2836,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 					" SSID:%s, EHT CAP IE\n",
 					MAC2STR(prBssDesc->aucBSSID),
 					prBssDesc->aucSSID);
-				DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+				DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
 			}
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
 				scanParseEhtOpIE(pucIE, prBssDesc, eHwBand);
@@ -4699,7 +4699,7 @@ void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 			prBssDesc->ucCenterFreqS1,
 			prBssDesc->ucCenterFreqS2);
 	}
-	DBGLOG_MEM8(SCN, INFO, pucIE, IE_SIZE(pucIE));
+	DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
 }
 #endif
 
