@@ -40,8 +40,8 @@ static int coredump_check_reg_readable(void);
 #endif
 static int file_ops_coredump_open(struct inode *inode, struct file *file);
 static int file_ops_coredump_release(struct inode *inode, struct file *file);
-static int file_ops_coredump_mmap(struct file *file,
-	struct vm_area_struct *vma);
+static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
+	size_t count, loff_t *f_pos);
 
 #define PRINT_BYTES_PER_LOOP	512
 #define PRINT_LONG_STR_MSG(__msg, __size) \
@@ -74,7 +74,7 @@ struct coredump_event_cb g_wifi_coredump_cb = {
 const struct file_operations g_coredump_fops = {
 	.open = file_ops_coredump_open,
 	.release = file_ops_coredump_release,
-	.mmap = file_ops_coredump_mmap,
+	.read = file_ops_coredump_read,
 };
 
 /*******************************************************************************
@@ -114,13 +114,12 @@ static int file_ops_coredump_release(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static int file_ops_coredump_mmap(struct file *file,
-	struct vm_area_struct *vma)
+static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
+	size_t count, loff_t *f_pos)
 {
 	struct mt66xx_chip_info *chip_info;
-	unsigned long id = vma->vm_pgoff;
-	unsigned long pfn;
-	int ret = 0;
+	uint8_t *tmp_buf = NULL;
+	size_t ret = 0;
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
@@ -129,32 +128,40 @@ static int file_ops_coredump_mmap(struct file *file,
 		goto exit;
 	}
 
-	switch (id) {
-	case 0:
-		DBGLOG(INIT, INFO, "Coredump mmap size: %lu\n",
-			vma->vm_end - vma->vm_start);
-		if (vma->vm_end - vma->vm_start >
-		    emi_mem_get_size(chip_info)) {
-			ret = -EINVAL;
-			break;
-		}
-		pfn = emi_mem_get_phy_base(chip_info) >> PAGE_SHIFT;
-		if (remap_pfn_range(vma,
-				    vma->vm_start,
-				    pfn,
-				    vma->vm_end - vma->vm_start,
-				    vma->vm_page_prot)) {
-			ret = -EINVAL;
-			break;
-		}
-		break;
-	default:
-		DBGLOG(INIT, WARN, "Invalid id: %lu\n", id);
+	if (count != chip_info->rEmiInfo.coredump_size) {
+		DBGLOG(INIT, ERROR,
+			"coredump size mismatch (%d %d)\n",
+			count, chip_info->rEmiInfo.coredump_size);
 		ret = -EINVAL;
-		break;
+		goto exit;
 	}
 
+	tmp_buf = kalMemAlloc(chip_info->rEmiInfo.coredump_size, VIR_MEM_TYPE);
+	if (tmp_buf == NULL) {
+		DBGLOG(INIT, ERROR,
+			"buffer(%d) alloc failed\n",
+			chip_info->rEmiInfo.coredump_size);
+		ret = -ENOMEM;
+		goto exit;
+	}
+	kalMemZero(tmp_buf, chip_info->rEmiInfo.coredump_size);
+
+	if (emi_mem_read(chip_info, 0, tmp_buf,
+			 chip_info->rEmiInfo.coredump_size)) {
+		DBGLOG(INIT, ERROR,
+			"emi read failed.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	ret = simple_read_from_buffer(buf, count, f_pos, tmp_buf, count);
+	DBGLOG(INIT, INFO, "ret: 0x%x\n", ret);
+
 exit:
+	if (tmp_buf)
+		kalMemFree(tmp_buf, VIR_MEM_TYPE,
+			chip_info->rEmiInfo.coredump_size);
+
 	return ret;
 }
 
