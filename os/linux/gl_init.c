@@ -6445,10 +6445,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 		return i4Status;
 	}
-	fgIsResetting = FALSE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	update_driver_reset_status(fgIsResetting);
-#endif
+	glResetUpdateFlag(FALSE);
 #endif
 
 	eFailReason = FAIL_REASON_NUM;
@@ -7088,10 +7085,7 @@ static void wlanRemove(void)
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
-	fgIsResetting = FALSE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	update_driver_reset_status(fgIsResetting);
-#endif
+	glResetUpdateFlag(FALSE);
 #endif
 
 #if CFG_MTK_MDDP_SUPPORT

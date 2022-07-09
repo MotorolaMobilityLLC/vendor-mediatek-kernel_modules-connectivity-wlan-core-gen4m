@@ -2136,10 +2136,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glSetRstReason(RST_FW_ASSERT);
 
-		fgIsResetting = TRUE;
-#if CFG_MTK_ANDROID_WMT && !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-		update_driver_reset_status(fgIsResetting);
-#endif
+		glResetUpdateFlag(TRUE);
 
 		kalSetRstEvent();
 	}

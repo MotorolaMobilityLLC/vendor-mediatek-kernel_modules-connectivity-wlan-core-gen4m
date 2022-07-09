@@ -312,6 +312,8 @@ int glGetRstReason(void);
 u_int8_t kalIsResetting(void);
 u_int8_t kalIsRstPreventFwOwn(void);
 
+void glResetUpdateFlag(u_int8_t fgIsResetting);
+
 #if CFG_CHIP_RESET_SUPPORT
 void glResetInit(struct GLUE_INFO *prGlueInfo);
 
