@@ -6404,6 +6404,11 @@ wlanQueryLinkStats(IN struct ADAPTER *prAdapter,
 			cmd->ucArg2, cmd->ucArg3, *pu4QueryInfoLen);
 	rQuery = *cmd;
 
+#if CFG_MTK_MDDP_SUPPORT && CFG_SUPPORT_LLS_MDDP
+	if (cmd->u4Tag == STATS_LLS_TAG_LLS_DATA)
+		mddpGetMdLlsStats(prAdapter);
+#endif
+
 	return wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 			    CMD_ID_GET_STATS_LLS,	/* ucCID */
 			    FALSE,	/* fgSetQuery */

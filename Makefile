@@ -765,6 +765,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
     CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT=y
+    CONFIG_AOSP_MDDP_LINK_LAYER_STATS_SUPPORT=y
     CONFIG_TX_DELAY_STATS_SUPPORT=y
     CONFIG_MSCS_FAST_PATH_SUPPORT=y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
@@ -1234,6 +1235,18 @@ endif
 
 ifeq ($(CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_LLS=1
+endif
+
+ifeq ($(CONFIG_AOSP_MDDP_LINK_LAYER_STATS_SUPPORT), y)
+    ifneq ($(filter mt6983, $(CONFIG_WLAN_PLATFORM)),)
+        ccflags-y += -DCFG_SUPPORT_LLS_MDDP=0
+    else ifeq ($(WLAN_CONNAC3_DEV), yes)
+        ccflags-y += -DCFG_SUPPORT_LLS_MDDP=0
+    else
+        ccflags-y += -DCFG_SUPPORT_LLS_MDDP=1
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_LLS_MDDP=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_TX_HIF_CREDIT_FEATURE), y)
