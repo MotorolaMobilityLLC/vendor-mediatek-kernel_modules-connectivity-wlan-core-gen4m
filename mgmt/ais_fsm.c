@@ -850,7 +850,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBGScanTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rIbssAloneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
-	if (timerPendingTimer(&(prAisFsmInfo->rScanDoneTimer))) {
+	if (kalGetGlueScanReq(prAdapter->prGlueInfo) != NULL) {
 		/* call aisFsmRunEventScanDoneTimeOut()
 		 * to reset scan fsm
 		 */
@@ -858,21 +858,17 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 			aisFsmRunEventScanDoneTimeOut(prAdapter,
 				(uintptr_t)ucBssIndex);
 
-		if (kalGetGlueScanReq(prAdapter->prGlueInfo) != NULL) {
-			GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
-					SPIN_LOCK_NET_DEV);
-			kalCfg80211ScanDone(prAdapter->prGlueInfo
-					->prScanRequest, TRUE);
-
-			kalClearGlueScanReq(prAdapter->prGlueInfo);
-
-			prAisFsmInfo->u2SeqNumOfScanReport =
-					AIS_SCN_REPORT_SEQ_NOT_SET;
-			GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
-					SPIN_LOCK_NET_DEV);
-		}
-		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
+		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo,
+				SPIN_LOCK_NET_DEV);
+		kalCfg80211ScanDone(prAdapter->prGlueInfo
+				->prScanRequest, TRUE);
+		kalClearGlueScanReq(prAdapter->prGlueInfo);
+		prAisFsmInfo->u2SeqNumOfScanReport =
+				AIS_SCN_REPORT_SEQ_NOT_SET;
+		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
+				SPIN_LOCK_NET_DEV);
 	}
+	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rSecModeChangeTimer);
