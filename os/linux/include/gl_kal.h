@@ -2261,15 +2261,16 @@ kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
 		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #if CFG_SUPPORT_RX_GRO
+uint8_t kalRxGroInit(struct net_device *prDev);
 uint32_t kal_is_skb_gro(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
-void kal_gro_flush(struct ADAPTER *prAdapter, struct net_device *prDev);
+void kal_gro_flush(struct ADAPTER *prAdapter);
 void kal_napi_schedule(struct napi_struct *n);
 int kalNapiPoll(struct napi_struct *napi, int budget);
-uint8_t kalNapiInit(struct net_device *prDev);
-uint8_t kalNapiRxDirectInit(struct net_device *prDev);
-uint8_t kalNapiRxDirectUninit(struct net_device *prDev);
-uint8_t kalNapiEnable(struct net_device *prDev);
-uint8_t kalNapiDisable(struct net_device *prDev);
+uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo);
+uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo);
+uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo);
+uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo);
+uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_RX_GRO */
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb);
