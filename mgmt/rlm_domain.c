@@ -5233,6 +5233,9 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 
 	rlmDomainTxPwrLimitSendPerRateCmd_6G(prAdapter,
 		prTxPwrLimitPerRateCmd_6G);
+
+	cnmMemFree(prAdapter, prTxPwrLimitPerRateCmd_6G);
+
 }
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
 
