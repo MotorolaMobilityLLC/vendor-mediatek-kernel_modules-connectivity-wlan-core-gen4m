@@ -142,11 +142,6 @@
 
 #define PARAM_MEM_DUMP_MAX_SIZE         1536
 
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-#define PARAM_CAL_DATA_DUMP_MAX_SIZE	1200
-#define PARAM_CAL_DATA_DUMP_MAX_NUM	300
-#endif
-
 #define BT_PROFILE_PARAM_LEN		8
 
 /* Based on EEPROM layout 20160120 */
@@ -742,56 +737,6 @@ struct PARAM_MDVT_STRUCT {
 	uint32_t u4ModuleId;
 	uint32_t u4CaseId;
 };
-
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-/*
- * Description of Each Parameters :
- * ucReason :
- * 0 : Query Information of Thermal or Cal Data Length
- * 1 : Trigger FW do or don't All Cal
- * 2 : Dump Data to Host
- * 3 : Send Backupped Cal Data to FW
- * 4 : For Debug Use, Tell FW Print Cal Data (Rom or Ram)
- * ucAction :
- * 0 : Read Thermal Value
- * 1 : Ask the Cal Data Total Length (Rom and Ram)
- * 2 : Tell FW do All Cal
- * 3 : Tell FW don't do Cal
- * 4 : Dump Data to Host (Rom or Ram)
- * 5 : Send Backupped Cal Data to FW (Rom or Ram)
- * 6 : For Debug Use, Tell FW Print Cal Data (Rom or Ram)
- * ucNeedResp :
- * 0 : FW No Need to Response an EVENT
- * 1 : FW Need to Response an EVENT
- * ucFragNum :
- * Sequence Number
- * ucRomRam :
- * 0 : Operation for Rom Cal Data
- * 1 : Operation for Ram Cal Data
- * u4ThermalValue :
- * Field for filling the Thermal Value in FW
- * u4Address :
- * Dumpped Starting Address
- * Used for Dump and Send Cal Data Between Driver and FW
- * u4Length :
- * Memory Size need to allocated in Driver or Data Size in an EVENT
- * Used for Dump and Send Cal Data Between Driver and FW
- * u4RemainLength :
- * Remain Length need to Dump
- * Used for Dump and Send Cal Data Between Driver and FW
- */
-struct PARAM_CAL_BACKUP_STRUCT_V2 {
-	uint8_t	ucReason;
-	uint8_t	ucAction;
-	uint8_t	ucNeedResp;
-	uint8_t	ucFragNum;
-	uint8_t	ucRomRam;
-	uint32_t	u4ThermalValue;
-	uint32_t u4Address;
-	uint32_t	u4Length;
-	uint32_t	u4RemainLength;
-};
-#endif
 
 #if CFG_SUPPORT_QA_TOOL
 #if CFG_SUPPORT_BUFFER_MODE
@@ -4170,25 +4115,6 @@ uint32_t wlanoidStaRecBFRead(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-uint32_t
-wlanoidSendCalBackupV2Cmd(IN struct ADAPTER *prAdapter,
-			  IN void *pvQueryBuffer,
-			  IN uint32_t u4QueryBufferLen);
-
-uint32_t
-wlanoidSetCalBackup(IN struct ADAPTER *prAdapter,
-		    IN void *pvSetBuffer,
-		    IN uint32_t u4SetBufferLen,
-		    OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidQueryCalBackupV2(IN struct ADAPTER *prAdapter,
-			IN void *pvQueryBuffer,
-			IN uint32_t u4QueryBufferLen,
-			OUT uint32_t *pu4QueryInfoLen);
-#endif
-
 #if CFG_SUPPORT_SMART_GEAR
 uint32_t
 wlandioSetSGStatus(IN struct ADAPTER *prAdapter,
@@ -4883,20 +4809,6 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 uint32_t wlanoidResetBAScoreboard(IN struct ADAPTER *prAdapter,
 				  IN void *pvSetBuffer,
 				  IN uint32_t u4SetBufferLen);
-#endif
-
-#if CFG_SUPPORT_BATCH_SCAN
-uint32_t
-wlanoidSetBatchScanReq(IN struct ADAPTER *prAdapter,
-		       IN void *pvSetBuffer,
-		       IN uint32_t u4SetBufferLen,
-		       OUT uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidQueryBatchScanResult(IN struct ADAPTER *prAdapter,
-			    OUT void *pvQueryBuffer,
-			    IN uint32_t u4QueryBufferLen,
-			    OUT uint32_t *pu4QueryInfoLen);
 #endif
 
 #if CFG_SUPPORT_PASSPOINT

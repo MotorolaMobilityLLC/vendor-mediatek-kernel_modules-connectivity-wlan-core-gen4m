@@ -193,9 +193,6 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_CE_ASSERT_DUMP
 	{EVENT_ID_ASSERT_DUMP, nicEventAssertDump},
 #endif
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-	{EVENT_ID_CAL_ALL_DONE, nicEventCalAllDone},
-#endif
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	{EVENT_ID_RXM_DELAY_BAR, nicEventHandleDelayBar},
 #endif

@@ -198,10 +198,6 @@ static struct WLANDEV_INFO
 static uint32_t
 u4WlanDevNum;	/* How many NICs coexist now */
 
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-u_int8_t	g_fgIsCalDataBackuped = FALSE;
-#endif
-
 /* 20150205 added work queue for sched_scan to avoid cfg80211 stop schedule scan
  *          dead loack
  */
@@ -5896,27 +5892,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 		kalTpeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	}
-
-#if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
-	/* Calibration Backup Flow */
-	if (!g_fgIsCalDataBackuped) {
-		if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
-		    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
-			DBGLOG(RFTEST, INFO,
-			       "Error : Boot Time Wi-Fi Enable Fail........\n");
-			return -1;
-		}
-
-		g_fgIsCalDataBackuped = TRUE;
-	} else {
-		if (rlmTriggerCalBackup(prGlueInfo->prAdapter,
-		    g_fgIsCalDataBackuped) == WLAN_STATUS_FAILURE) {
-			DBGLOG(RFTEST, INFO,
-			       "Error : Normal Wi-Fi Enable Fail........\n");
-			return -1;
-		}
-	}
-#endif
 
 	/* card is ready */
 	prGlueInfo->u4ReadyFlag = 1;

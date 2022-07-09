@@ -1033,10 +1033,10 @@
 #define CFG_SHOW_MACADDR_SOURCE			1
 
 #if BUILD_QA_DBG
-#define CFG_SHOW_FULL_MACADDR     1
+#define CFG_SHOW_FULL_MACADDR			1
 #define CFG_SHOW_FULL_IPADDR			1
 #else
-#define CFG_SHOW_FULL_MACADDR     0
+#define CFG_SHOW_FULL_MACADDR			0
 #define CFG_SHOW_FULL_IPADDR			0
 #endif
 
@@ -1058,7 +1058,7 @@
 /*!< 1(default): Enable 802.11d */
 /* 0: Disable */
 #ifndef CFG_SUPPORT_802_11D
-#define CFG_SUPPORT_802_11D		1
+#define CFG_SUPPORT_802_11D			1
 #endif
 #if (CFG_SUPPORT_802_11K == 1)
 #undef CFG_SUPPORT_802_11D
@@ -1067,7 +1067,7 @@
 
 #define CFG_SUPPORT_SUPPLICANT_SME              0
 
-#define CFG_SUPPORT_DPP                     1
+#define CFG_SUPPORT_DPP				1
 
 #if (CFG_SUPPORT_802_11K == 1) && (CFG_SUPPORT_SUPPLICANT_SME == 1)
 /* Enable to do beacon reports by supplicant.
@@ -1471,21 +1471,6 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_SUPPORT_SPE_IDX_CONTROL		1
-
-/*------------------------------------------------------------------------------
- * Flags for a Goal for MT6632 : Cal Result Backup in Host or NVRam when Android
- *                               Boot
- *------------------------------------------------------------------------------
- */
-#if 0 /*(MTK_WCN_HIF_SDIO) : 20161003 Default Off, later will enable
-       *                     by MTK_WCN_HIF_SDIO
-       */
-#define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST				1
-#define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST_DBGLOG		0
-#else
-#define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST				0
-#define CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST_DBGLOG		0
-#endif
 
 /*------------------------------------------------------------------------------
  * Enable SDIO 1-bit Data Mode. (Usually debug only)
