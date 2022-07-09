@@ -285,12 +285,6 @@ else
     ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=0
 endif
 
-ifneq ($(filter 6879 6895, $(WLAN_CHIP_ID)),)
-    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
-else
-    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=0
-endif
-
 ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
 else
@@ -359,6 +353,7 @@ ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_SUPPORT_BW160
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
+ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
 
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
@@ -427,6 +422,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     endif
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
