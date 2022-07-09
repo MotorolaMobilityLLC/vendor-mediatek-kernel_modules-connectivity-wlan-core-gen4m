@@ -492,7 +492,8 @@ u_int8_t mlrDoFragPacket(IN struct ADAPTER *prAdapter,
 	uint8_t *pucRecvBuff;
 	uint16_t u2AllocSize = 0;
 	uint8_t ucMacHeaderLength = 0;
-	uint8_t aucWlanHeaderLlcEthType[WLAN_MAC_HEADER_QOS_LEN + LLC_LEN];
+	uint8_t aucWlanHeaderLlcEthType[WLAN_MAC_HEADER_QOS_LEN
+		+ LLC_LEN] = {0};
 	uint16_t u2SplitExpandOffset = 0;
 	u_int8_t fgHasLlc = FALSE;
 	uint8_t *pucBuff = NULL;
@@ -1248,11 +1249,16 @@ void mlrEventMlrFsmUpdateHandler(IN struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
 	if (prStaRec == NULL) {
-		DBGLOG(NIC, INFO, "MLR event - prStaRec is NULL.\n");
+		DBGLOG(NIC, WARN, "MLR event - prStaRec is NULL.\n");
 		return;
 	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prStaRec->ucBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(NIC, WARN, "MLR event - prBssInfo is NULL.\n");
+		return;
+	}
 
 	if (IS_BSS_AIS(prBssInfo) &&
 		kalGetMediaStateIndicated(
