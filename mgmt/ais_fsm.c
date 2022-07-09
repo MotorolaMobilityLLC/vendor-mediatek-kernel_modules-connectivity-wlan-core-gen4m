@@ -3363,16 +3363,16 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 			prAisBssInfo->aucBSSID, TRUE, &rSsid), i);
 		aisSetLinkStaRec(ais, prAisBssInfo->prStaRecOfAP, i);
 
-		/* Free STA-REC */
-		if (prStaRec != prAisBssInfo->prStaRecOfAP) {
-			cnmStaRecFree(ad, prStaRec);
+		prAisBssInfo->eHwBandIdx = prAisBssInfo->prStaRecOfAP ?
+			prAisBssInfo->prStaRecOfAP->eHwBandIdx : ENUM_BAND_AUTO;
 
-			prAisBssInfo->eHwBandIdx =
-				prAisBssInfo->prStaRecOfAP->eHwBandIdx;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			mldBssUpdateBandIdxBitmap(ad, prAisBssInfo);
+		mldBssUpdateBandIdxBitmap(ad, prAisBssInfo);
 #endif
-		}
+
+		/* Free STA-REC */
+		if (prStaRec != prAisBssInfo->prStaRecOfAP)
+			cnmStaRecFree(ad, prStaRec);
 
 		/* roaming but can't find connected bssdesc */
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
