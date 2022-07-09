@@ -1463,7 +1463,8 @@ uint8_t apsInterNeedReplace(struct ADAPTER *ad,
 	uint32_t cand_tput, uint32_t curr_tput,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
-	/* TODO: */
+	if (!cand)
+		return TRUE;
 	if (curr_tput > cand_tput)
 		return TRUE;
 

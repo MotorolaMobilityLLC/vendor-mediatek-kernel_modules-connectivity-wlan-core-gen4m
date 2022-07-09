@@ -3835,74 +3835,6 @@ struct CMD_VALIDATE_POLICY set_mcr_policy[PRIV_CMD_SET_ARG_NUM_3] = {
 	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };
 
-#if (CFG_SUPPORT_RA_GEN == 1)
-struct CMD_VALIDATE_POLICY set_fixed_fallback_policy[PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 5,
-				 .max = 23}
-};
-
-struct CMD_VALIDATE_POLICY set_ra_debug_policy[PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 5,
-				 .max = 6}
-};
-#endif
-
-#if (CFG_SUPPORT_TXPOWER_INFO == 1)
-struct CMD_VALIDATE_POLICY get_txpower_info_policy[PRIV_CMD_GET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 4,
-				 .max = 8}
-};
-#endif
-struct CMD_VALIDATE_POLICY set_txpower_man_policy[PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 8,
-				 .max = 16}
-};
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-struct CMD_VALIDATE_POLICY set_unified_fixed_rate_policy[
-		PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 22,
-				 .max = 23}
-};
-
-struct CMD_VALIDATE_POLICY set_unified_auto_rate_policy[
-		PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 6,
-				 .max = 7}
-};
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-struct CMD_VALIDATE_POLICY set_unified_mlo_agc_policy[
-		PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .len = 7}
-};
-
-struct CMD_VALIDATE_POLICY get_unified_mld_rec_policy[
-		PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 2,
-				 .max = 3}
-};
-#endif
-#else
-struct CMD_VALIDATE_POLICY set_fixed_rate_policy[PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 5,
-				 .max = 27}
-};
-#endif
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-struct CMD_VALIDATE_POLICY set_pp_cap_ctrl_policy[PRIV_CMD_SET_ARG_NUM_2] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING,
-				 .min = 10,
-				 .max = 13}
-};
-#endif
 struct CMD_VALIDATE_POLICY get_mcr_policy[PRIV_CMD_GET_ARG_NUM_2] = {
 	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };
@@ -6288,7 +6220,6 @@ static int priv_driver_get_test_result(IN struct net_device *prNetDev,
 }				/* priv_driver_get_test_result */
 
 #if (CFG_SUPPORT_RA_GEN == 1)
-
 static int32_t priv_driver_set_ra_debug_proc(IN struct net_device *prNetDev,
 					IN char *pcCommand, IN int i4TotalLen)
 {
@@ -20691,15 +20622,15 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_FIXED_FALLBACK,
 		.pfHandler = priv_driver_set_fixed_fallback,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_fixed_fallback_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_SET_RA_DBG,
 		.pfHandler = priv_driver_set_ra_debug_proc,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_ra_debug_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 #endif
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
@@ -20707,45 +20638,46 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_GET_TX_POWER_INFO,
 		.pfHandler = priv_driver_get_txpower_info,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_2,
-		.policy    = get_txpower_info_policy
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.policy    = NULL
 	},
 #endif
 	{
 		.pcCmdStr  = CMD_TX_POWER_MANUAL_SET,
 		.pfHandler = priv_driver_txpower_man_set,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_txpower_man_policy},
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
+	},
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	{
 		.pcCmdStr  = CMD_SET_FIXED_RATE,
 		.pfHandler = priv_driver_set_unified_fixed_rate,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_unified_fixed_rate_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_SET_AUTO_RATE,
 		.pfHandler = priv_driver_set_unified_auto_rate,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_unified_auto_rate_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{
 		.pcCmdStr  = CMD_SET_MLO_AGC_TX,
 		.pfHandler = priv_driver_set_unified_mlo_agc_tx,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_unified_mlo_agc_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_GET_MLD_REC,
 		.pfHandler = priv_driver_get_unified_mld_rec,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = get_unified_mld_rec_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 #endif
 #else
@@ -20753,8 +20685,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_FIXED_RATE,
 		.pfHandler = priv_driver_set_fixed_rate,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_fixed_rate_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 #endif
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
@@ -20762,14 +20694,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_PP_CAP_CTRL,
 		.pfHandler = priv_driver_set_pp_cap_ctrl,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
-		.policy    = set_pp_cap_ctrl_policy
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_SET_PP_ALG_CTRL,
 		.pfHandler = priv_driver_set_pp_alg_ctrl,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
 		.policy    = NULL
 	},
 #endif
@@ -21245,8 +21177,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_SET_CHIP,
 		.pfHandler = priv_driver_set_chip_config,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = NULL
 	},
 	{
