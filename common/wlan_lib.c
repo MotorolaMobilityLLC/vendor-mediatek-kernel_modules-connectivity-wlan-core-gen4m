@@ -4985,8 +4985,17 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 		(((uint16_t) prRegInfo->au2CountryCode[0]) << 8) | (((
 			uint16_t) prRegInfo->au2CountryCode[1]) & BITS(0, 7));
 
-	/* 6. Set domain and channel information to chip */
-	rlmDomainSendCmd(prAdapter);
+	/* 6. Set domain and channel information to chip
+	 * Note :
+	 * Skip send dynamic txpower result to FW
+	 * when send NVRAM to FW during Wi-Fi on,
+	 * due to config haven't been load yet.
+	 * During Wi-Fi on, we will send power limit only once
+	 * after load config.
+	 * The result of power limit send to FW will be the minimum value
+	 * of country power limit and config setting
+	 */
+	rlmDomainSendCmd(prAdapter, FALSE);
 
 	/* Update supported channel list in channel table */
 	wlanUpdateChannelTable(prAdapter->prGlueInfo);
@@ -8586,7 +8595,7 @@ void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter)
 
 		/* Force to re-search country code in regulatory domains */
 		prAdapter->prDomainInfo = NULL;
-		rlmDomainSendCmd(prAdapter);
+		rlmDomainSendCmd(prAdapter, TRUE);
 
 		/* Update supported channel list in channel table based on
 		 * current country domain
