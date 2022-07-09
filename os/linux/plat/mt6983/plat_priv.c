@@ -343,6 +343,10 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 			prBoostInfo->rHifThreadInfo.u4CpuMask);
 	kalSetCpuMask(prGlueInfo->main_thread,
 			prBoostInfo->rMainThreadInfo.u4CpuMask);
+#if CFG_SUPPORT_TRX_CSD
+	kalTxCsdSetMask(prGlueInfo,
+			prBoostInfo->rMainThreadInfo.u4CpuMask);
+#endif /* CFG_SUPPORT_TRX_CSD */
 	kalSetCpuMask(prGlueInfo->rx_thread,
 			prBoostInfo->rRxThreadInfo.u4CpuMask);
 
@@ -609,3 +613,13 @@ exit:
 	return ret;
 }
 #endif
+
+uint32_t kalGetLittleCpuMask(void)
+{
+	return CPU_LITTLE_CORE;
+}
+
+uint32_t kalGetBigCpuMask(void)
+{
+	return CPU_BIG_CORE;
+}

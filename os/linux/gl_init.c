@@ -2030,10 +2030,16 @@ static void glRxInit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
 	glTaskletInit(prGlueInfo);
+#if CFG_SUPPORT_TRX_CSD
+	kalTRxCsdInit(prGlueInfo);
+#endif /* CFG_SUPPORT_TRX_CSD */
 }
 
 static void glRxUninit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_TRX_CSD
+	kalTRxCsdUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_TRX_CSD */
 	glTaskletUninit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI

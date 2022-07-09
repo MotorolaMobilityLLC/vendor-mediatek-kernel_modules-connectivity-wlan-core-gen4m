@@ -288,6 +288,10 @@
 #include "agent.h"
 #endif
 
+#if CFG_SUPPORT_TRX_CSD
+#include <linux/smp.h>
+#endif /* CFG_SUPPORT_TRX_CSD */
+
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
@@ -516,6 +520,14 @@ enum ENUM_WMM_UP {
 	WMM_UP_NC_INDEX,
 	WMM_UP_INDEX_NUM
 };
+
+#if CFG_SUPPORT_TRX_CSD
+enum ENUM_CSD_CNT {
+	CSD_CNT_LITTLE = 0,
+	CSD_CNT_BIG,
+	CSD_CNT_MAX
+};
+#endif /* CFG_SUPPORT_TRX_CSD */
 
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
@@ -754,6 +766,21 @@ struct GLUE_INFO {
 	/* check if HIF port is ready to accept a new Msdu */
 	kal_timer_list rTxDirectHifTimer;
 	struct sk_buff_head rTxDirectSkbQueue;
+
+#if CFG_SUPPORT_TRX_CSD
+	uint32_t u4CsdBigCpuMin;
+	uint32_t u4CsdBigCpuMax;
+	uint32_t u4TxCsdMap; /* controlled by CPU Boost */
+	uint32_t u4RxCsdMap; /* controlled by CPU Boost */
+	call_single_data_t rTxCsd;
+	call_single_data_t rRxCsd;
+	uint32_t u4TxCsdBigCpuCurr; /* tx current big cpu */
+	/* csd statistics */
+	uint64_t u8TxCpuCnt[CSD_CNT_MAX];
+	uint64_t u8TxCsdCpuCnt[CSD_CNT_MAX];
+	uint64_t u8RxCpuCnt[CSD_CNT_MAX];
+	uint64_t u8RxCsdCpuCnt[CSD_CNT_MAX];
+#endif /* CFG_SUPPORT_TRX_CSD */
 
 #if CFG_SUPPORT_EXT_CONFIG
 	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */

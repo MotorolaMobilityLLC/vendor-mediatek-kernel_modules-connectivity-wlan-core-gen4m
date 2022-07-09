@@ -3244,7 +3244,11 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		/* To reduce L3 buffer usage, release original owner ASAP */
 		skb_orphan(prSkb);
 #endif
+#if CFG_SUPPORT_TRX_CSD
+		return kalTxDirectStartXmitCsd(prSkb, prGlueInfo);
+#else /* CFG_SUPPORT_TRX_CSD */
 		return kalTxDirectStartXmit(prSkb, prGlueInfo);
+#endif /* CFG_SUPPORT_TRX_CSD */
 	}
 
 	kalSetEvent(prGlueInfo);
@@ -6142,6 +6146,11 @@ void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq);
 }
 
+void __kalRxTaskletSchedule(struct GLUE_INFO *pr)
+{
+	tasklet_hi_schedule(&pr->rRxTask);
+}
+
 void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 {
 	uint32_t u4Cnt;
@@ -6167,7 +6176,11 @@ void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 		return;
 	}
 
-	tasklet_hi_schedule(&pr->rRxTask);
+#if CFG_SUPPORT_TRX_CSD
+	kalRxTaskletScheduleCsd(pr);
+#else /* CFG_SUPPORT_TRX_CSD */
+	__kalRxTaskletSchedule(pr);
+#endif /* CFG_SUPPORT_TRX_CSD */
 }
 
 uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
@@ -6180,7 +6193,11 @@ uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 
 	if (GLUE_DEC_REF_CNT(pr->u4RxTaskScheduleCnt) > 0) {
 		/* reschedule RxTasklet due to pending INT */
-		tasklet_hi_schedule(&pr->rRxTask);
+#if CFG_SUPPORT_TRX_CSD
+		kalRxTaskletScheduleCsd(pr);
+#else /* CFG_SUPPORT_TRX_CSD */
+		__kalRxTaskletSchedule(pr);
+#endif /* CFG_SUPPORT_TRX_CSD */
 	} else {
 		/* no more schedule, so enable interrupt */
 		if (fgIsInt) {
@@ -9539,16 +9556,27 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 	}
 
+#if CFG_SUPPORT_TRX_CSD
+#define TRX_CSD_TEMPLATE \
+	" Csd[%x:%x]" \
+	" TxCpu[%llu:%llu][%llu:%llu]" \
+	" RxCpu[%llu:%llu][%llu:%llu]"
+#else /* CFG_SUPPORT_TRX_CSD */
+#define TRX_CSD_TEMPLATE ""
+#endif /* CFG_SUPPORT_TRX_CSD */
+
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	"LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx" \
+	TRX_CSD_TEMPLATE \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
 #else
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	" lv:%u th:%u fg:0x%lx" \
+	TRX_CSD_TEMPLATE \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
 
@@ -9568,6 +9596,18 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,
+#if CFG_SUPPORT_TRX_CSD
+		glue->u4TxCsdMap,
+		glue->u4RxCsdMap,
+		CSD_GET_TX_CPU_CNT(glue, CSD_CNT_LITTLE),
+		CSD_GET_TX_CPU_CNT(glue, CSD_CNT_BIG),
+		CSD_GET_TX_CSD_CPU_CNT(glue, CSD_CNT_LITTLE),
+		CSD_GET_TX_CSD_CPU_CNT(glue, CSD_CNT_BIG),
+		CSD_GET_RX_CPU_CNT(glue, CSD_CNT_LITTLE),
+		CSD_GET_RX_CPU_CNT(glue, CSD_CNT_BIG),
+		CSD_GET_RX_CSD_CPU_CNT(glue, CSD_CNT_LITTLE),
+		CSD_GET_RX_CSD_CPU_CNT(glue, CSD_CNT_BIG),
+#endif /* CFG_SUPPORT_TRX_CSD */
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
@@ -10080,6 +10120,197 @@ u_int8_t __weak kalIsSupportRro(void)
 	return FALSE;
 }
 #endif
+
+uint32_t __weak kalGetLittleCpuMask(void)
+{
+	return 0;
+}
+
+uint32_t __weak kalGetBigCpuMask(void)
+{
+	return 0;
+}
+
+#if CFG_SUPPORT_TRX_CSD
+static void kalTxDirectXmitCsd(void *info)
+{
+	struct GLUE_INFO *pr = (struct GLUE_INFO *) info;
+
+	kalTxDirectStartXmit(NULL, pr);
+}
+
+static void kalRxCsd(void *info)
+{
+	struct GLUE_INFO *pr = (struct GLUE_INFO *) info;
+
+	__kalRxTaskletSchedule(pr);
+}
+
+void kalTRxCsdUninit(struct GLUE_INFO *pr)
+{
+	pr->u4TxCsdMap = 0xff;
+	pr->u4RxCsdMap = 0xff;
+}
+
+void kalTRxCsdInit(struct GLUE_INFO *pr)
+{
+	uint32_t i;
+	uint32_t u4BigCpuCnt = 0;
+	uint32_t u4BigCpuMin = 0, u4BigCpuMax = 0;
+
+	/* Tx/Rx Csd Map will be controlled by kalBoostCpu */
+	pr->u4TxCsdMap = 0xff;
+	pr->u4RxCsdMap = 0xff;
+
+	/* init csd function and info */
+	pr->rTxCsd.func = kalTxDirectXmitCsd;
+	pr->rTxCsd.info = pr;
+	pr->rRxCsd.func = kalRxCsd;
+	pr->rRxCsd.info = pr;
+
+	if (kalGetLittleCpuMask() == 0 || kalGetBigCpuMask() == 0) {
+		DBGLOG(INIT, INFO,
+			"Feature disabled BIG.LITTLE[%x:%x].\n",
+			kalGetBigCpuMask(),
+			kalGetLittleCpuMask()
+			);
+		pr->prAdapter->rWifiVar.fgEnableTxCsd = FEATURE_DISABLED;
+		pr->prAdapter->rWifiVar.fgEnableRxCsd = FEATURE_DISABLED;
+	}
+
+	for (i = 0; i < num_possible_cpus(); i++) {
+		if ((0x1 << i) & kalGetBigCpuMask()) {
+			/* record big cpu index */
+			if (u4BigCpuCnt == 0) {
+				u4BigCpuMin = i;
+				u4BigCpuMax = i;
+			} else
+				u4BigCpuMax = i;
+			u4BigCpuCnt++;
+		}
+	}
+
+	if (u4BigCpuCnt) {
+		pr->u4CsdBigCpuMin = u4BigCpuMin;
+		pr->u4CsdBigCpuMax = u4BigCpuMax;
+		pr->u4TxCsdBigCpuCurr = u4BigCpuMin;
+	}
+
+	DBGLOG(INIT, INFO,
+		"Cpu:%d BigCore:%d [%d:%d:%d]\n",
+		num_possible_cpus(),
+		u4BigCpuCnt,
+		pr->u4CsdBigCpuMin,
+		pr->u4CsdBigCpuMax,
+		pr->u4TxCsdBigCpuCurr);
+}
+
+int kalTxCsdGetAnyBigCpu(struct GLUE_INFO *pr)
+{
+	int cpu = pr->u4TxCsdBigCpuCurr;
+	int new = cpu;
+
+	/* increase cpu idx */
+	new++;
+	if (new > pr->u4CsdBigCpuMax)
+		new = pr->u4CsdBigCpuMin;
+	pr->u4TxCsdBigCpuCurr = new;
+
+	return cpu;
+}
+
+int kalRxCsdGetBigCpu(struct GLUE_INFO *pr)
+{
+	return pr->u4CsdBigCpuMin;
+}
+
+void kalTxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask)
+{
+	uint32_t u4SetMask = 0xff;
+
+	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgEnableTxCsd)) {
+		/* free-run when it is not set to big cpu mask */
+		if (kalGetBigCpuMask() == u4Mask)
+			u4SetMask = u4Mask;
+	}
+
+	pr->u4TxCsdMap = u4SetMask;
+	DBGLOG(INIT, INFO, "u4Mask:%x u4BigCpuMask:%x TxCsdMsp:%x\n",
+		u4Mask, kalGetBigCpuMask(), pr->u4TxCsdMap);
+}
+
+void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask)
+{
+	uint32_t u4SetMask = 0xff;
+
+	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgEnableRxCsd)) {
+		/* free-run when it is not set to big cpu mask */
+		if (kalGetBigCpuMask() == u4Mask)
+			u4SetMask = u4Mask;
+	}
+
+	pr->u4RxCsdMap = u4SetMask;
+	DBGLOG(INIT, INFO, "u4Mask:%x u4BigCpuMask:%x RxCsdMsp:%x\n",
+		u4Mask, kalGetBigCpuMask(), pr->u4RxCsdMap);
+}
+
+uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
+	struct GLUE_INFO *pr)
+{
+	int cpu = smp_processor_id();
+	int new;
+	int ret;
+
+	CSD_INC_TX_CPU_CNT(pr, cpu);
+	/*
+	 * kalBoostCpu will modify u4TxCsdMap to control the CPU that are
+	 * allowed to acquire tx direct lock
+	 */
+	if ((0x1 << cpu) & pr->u4TxCsdMap)
+		return kalTxDirectStartXmit(prSkb, pr);
+
+	new = kalTxCsdGetAnyBigCpu(pr);
+	CSD_INC_TX_CSD_CPU_CNT(pr, new);
+	if (prSkb)
+		skb_queue_tail(&pr->rTxDirectSkbQueue, prSkb);
+	ret = smp_call_function_single_async(new, &(pr->rTxCsd));
+	/* EBUSY means that the prev csd has not run yet */
+	if (ret && ret != -EBUSY) {
+		DBGLOG(INIT, INFO, "Tx CSD cpu:[%d:%d] ret:%d\n",
+			cpu, new, ret);
+		return kalTxDirectStartXmit(NULL, pr);
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void kalRxTaskletScheduleCsd(struct GLUE_INFO *pr)
+{
+	int cpu = smp_processor_id();
+	int new;
+	int ret;
+
+	CSD_INC_RX_CPU_CNT(pr, cpu);
+	/*
+	 * kalBoostCpu will modify u4RxCsdMap to control the CPU that are
+	 * allowed to schedule Rx Tasklet
+	 */
+	if ((0x1 << cpu) & pr->u4RxCsdMap) {
+		__kalRxTaskletSchedule(pr);
+		return;
+	}
+
+	new = kalRxCsdGetBigCpu(pr);
+	CSD_INC_RX_CSD_CPU_CNT(pr, new);
+	ret = smp_call_function_single_async(new, &(pr->rRxCsd));
+	/* EBUSY means that the prev csd has not run yet */
+	if (ret && ret != -EBUSY) {
+		DBGLOG(INIT, INFO, "Rx CSD cpu:[%d:%d] ret:%d\n",
+			cpu, new, ret);
+		__kalRxTaskletSchedule(pr);
+	}
+}
+#endif /* CFG_SUPPORT_TRX_CSD */
 
 /* mimic store_rps_map as net-sysfs.c does */
 int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
@@ -12725,12 +12956,14 @@ void kalTxDirectTimerCheckSkbQ(unsigned long data)
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 #endif
 
-	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue))
+	if (skb_queue_len(&prGlueInfo->rTxDirectSkbQueue)) {
+#if CFG_SUPPORT_TRX_CSD
+		kalTxDirectStartXmitCsd(NULL, prGlueInfo);
+#else /* CFG_SUPPORT_TRX_CSD */
 		kalTxDirectStartXmit(NULL, prGlueInfo);
-	else
-		DBGLOG(TX, INFO, "fgHasNoMsdu FALSE\n");
+#endif /* CFG_SUPPORT_TRX_CSD */
+	}
 }
-
 
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
 void kalTxDirectTimerCheckHifQ(struct timer_list *timer)
@@ -12784,7 +13017,7 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 	prTxDirectSkbQ = &prGlueInfo->rTxDirectSkbQueue;
 	__skb_queue_head_init(prLocalSkbQ);
 
-	if (!spin_trylock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT])) {
+	if (!(TX_DIRECT_TRYLOCK(prGlueInfo))) {
 		/* fail to get lock */
 		if (prSkb)
 			skb_queue_tail(prTxDirectSkbQ, prSkb);
@@ -12835,7 +13068,8 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 		mod_timer(&prGlueInfo->rTxDirectSkbTimer,
 			  jiffies + TX_DIRECT_CHECK_INTERVAL);
 
-	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+	TX_DIRECT_UNLOCK(prGlueInfo);
+
 	return ret;
 }
 
@@ -13203,13 +13437,14 @@ void kalTdlsOpReq(
 #endif
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask)
+void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t u4Mask)
 {
 #define CPU_ALL_CORE (0xff)
 	struct cpumask cpu_mask;
 	int i;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4SetMask = 0;
 
 	if (!HAL_IS_RX_DIRECT(prAdapter))
 		return;
@@ -13219,23 +13454,30 @@ void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask)
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (set_mask == CPU_ALL_CORE) {
+	if (u4Mask == CPU_ALL_CORE) {
 		synchronize_irq(prHifInfo->u4IrqId);
 		irq_set_affinity_hint(prHifInfo->u4IrqId,
 			cpu_all_mask);
+		u4SetMask = u4Mask;
 	} else {
 		cpumask_clear(&cpu_mask);
 		for (i = 0; i < num_possible_cpus(); i++)
-			if ((0x1 << i) & set_mask)
+			if ((0x1 << i) & u4Mask) {
 				cpumask_or(&cpu_mask, &cpu_mask,
 					cpumask_of(i));
+				u4SetMask |= (0x1 << i);
+			}
 		synchronize_irq(prHifInfo->u4IrqId);
 		irq_set_affinity_hint(prHifInfo->u4IrqId,
 			&cpu_mask);
 	}
 
-	DBGLOG(INIT, INFO, "irq_set_affinity_hint(%u, %u)",
-		prHifInfo->u4IrqId, set_mask);
+#if CFG_SUPPORT_TRX_CSD
+	kalRxCsdSetMask(prGlueInfo, u4SetMask);
+#endif /* CFG_SUPPORT_TRX_CSD */
+
+	DBGLOG(INIT, INFO, "%x => irq_set_affinity_hint(%u:%x)\n",
+		u4Mask, prHifInfo->u4IrqId, u4SetMask);
 #undef CPU_ALL_CORE
 }
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */

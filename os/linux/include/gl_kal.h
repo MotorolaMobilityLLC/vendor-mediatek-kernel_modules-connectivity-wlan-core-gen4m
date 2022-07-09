@@ -1399,6 +1399,20 @@ do { \
 		spin_lock_bh(&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
 } while (0)
 
+#define TX_DIRECT_TRYLOCK(glue) ({\
+int __ret; \
+do { \
+	if (irqs_disabled()) { \
+		__ret = spin_trylock( \
+			&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
+	} else {\
+		__ret = spin_trylock_bh( \
+			&glue->rSpinLock[SPIN_LOCK_TX_DIRECT]); \
+	} \
+} while (0); \
+__ret; \
+})
+
 #define TX_DIRECT_UNLOCK(glue) \
 do { \
 	if (irqs_disabled()) \
@@ -2487,6 +2501,53 @@ u_int8_t kalIsSupportMawd(void);
 u_int8_t kalIsSupportSdo(void);
 u_int8_t kalIsSupportRro(void);
 #endif
+uint32_t kalGetLittleCpuMask(void);
+uint32_t kalGetBigCpuMask(void);
+#if CFG_SUPPORT_TRX_CSD
+void kalTRxCsdUninit(struct GLUE_INFO *pr);
+void kalTRxCsdInit(struct GLUE_INFO *pr);
+uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
+	struct GLUE_INFO *pr);
+void kalRxTaskletScheduleCsd(struct GLUE_INFO *pr);
+void kalTxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
+void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
+#define CSD_INC_TX_CPU_CNT(pr, cpu) \
+({ \
+	if ((0x1 << cpu) & kalGetBigCpuMask()) \
+		GLUE_INC_REF_CNT(pr->u8TxCpuCnt[CSD_CNT_BIG]); \
+	else \
+		GLUE_INC_REF_CNT(pr->u8TxCpuCnt[CSD_CNT_LITTLE]); \
+})
+#define CSD_INC_TX_CSD_CPU_CNT(pr, cpu) \
+({ \
+	if ((0x1 << cpu) & kalGetBigCpuMask()) \
+		GLUE_INC_REF_CNT(pr->u8TxCsdCpuCnt[CSD_CNT_BIG]); \
+	else \
+		GLUE_INC_REF_CNT(pr->u8TxCsdCpuCnt[CSD_CNT_LITTLE]); \
+})
+#define CSD_INC_RX_CPU_CNT(pr, cpu) \
+({ \
+	if ((0x1 << cpu) & kalGetBigCpuMask()) \
+		GLUE_INC_REF_CNT(pr->u8RxCpuCnt[CSD_CNT_BIG]); \
+	else \
+		GLUE_INC_REF_CNT(pr->u8RxCpuCnt[CSD_CNT_LITTLE]); \
+})
+#define CSD_INC_RX_CSD_CPU_CNT(pr, cpu) \
+({ \
+	if ((0x1 << cpu) & kalGetBigCpuMask()) \
+		GLUE_INC_REF_CNT(pr->u8RxCsdCpuCnt[CSD_CNT_BIG]); \
+	else \
+		GLUE_INC_REF_CNT(pr->u8RxCsdCpuCnt[CSD_CNT_LITTLE]); \
+})
+#define CSD_GET_TX_CPU_CNT(pr, idx) \
+	(GLUE_GET_REF_CNT(pr->u8TxCpuCnt[idx]))
+#define CSD_GET_TX_CSD_CPU_CNT(pr, idx) \
+	(GLUE_GET_REF_CNT(pr->u8TxCsdCpuCnt[idx]))
+#define CSD_GET_RX_CPU_CNT(pr, idx) \
+	(GLUE_GET_REF_CNT(pr->u8RxCpuCnt[idx]))
+#define CSD_GET_RX_CSD_CPU_CNT(pr, idx) \
+	(GLUE_GET_REF_CNT(pr->u8RxCsdCpuCnt[idx]))
+#endif /* CFG_SUPPORT_TRX_CSD */
 
 #if CFG_SUPPORT_THERMAL_QUERY
 int register_thermal_cbs(struct ADAPTER *ad);

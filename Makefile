@@ -539,6 +539,12 @@ ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     endif
 endif
 
+ifeq ($(CONFIG_TRX_CSD_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_TRX_CSD=1
+else
+    ccflags-y += -DCFG_SUPPORT_TRX_CSD=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC2X=1
 else

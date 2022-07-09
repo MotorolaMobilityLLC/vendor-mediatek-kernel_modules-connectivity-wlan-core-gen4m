@@ -1234,6 +1234,11 @@ struct WIFI_VAR {
 	uint8_t ucApfEnable;
 #endif
 
+#if CFG_SUPPORT_TRX_CSD
+	u_int8_t fgEnableTxCsd;
+	u_int8_t fgEnableRxCsd;
+#endif /* CFG_SUPPORT_TRX_CSD */
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	u_int8_t fgBARDelayIndicationEn;
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
