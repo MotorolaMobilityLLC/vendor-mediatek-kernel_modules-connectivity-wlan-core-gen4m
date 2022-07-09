@@ -11701,7 +11701,7 @@ void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 	if (!prAdapter)
 		return;
 
-	rTxPwrPercentage.ucPowerCtrlFormatId = TX_POWER_PERCENTAGE_CTRL;
+	rTxPwrPercentage.ucPowerCtrlFormatId = PERCENTAGE_CTRL;
 	rTxPwrPercentage.fgPercentageEnable = ucEnable;
 	rTxPwrPercentage.ucBandIdx = 0;	/* TODO: how to get bandIdx */
 
@@ -11726,7 +11726,7 @@ void kalSetTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 	if (!prAdapter)
 		return;
 
-	rTxPwrDrop.ucPowerCtrlFormatId = TX_POWER_DROP_CTRL;
+	rTxPwrDrop.ucPowerCtrlFormatId = PERCENTAGE_DROP_CTRL;
 	if (ucEnable)
 		rTxPwrDrop.i1PowerDropLevel =
 			prAdapter->rWifiVar.u4BackoffLevel;

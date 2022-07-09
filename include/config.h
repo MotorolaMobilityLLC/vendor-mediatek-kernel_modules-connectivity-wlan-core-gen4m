@@ -659,7 +659,12 @@
 
 /* debug which packet wake up host */
 #define CFG_SUPPORT_WAKEUP_REASON_DEBUG         1
+
+#if CFG_MTK_ANDROID_WMT
+#define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         1
+#else
 #define CFG_MODIFY_TX_POWER_BY_BAT_VOLT         0
+#endif
 
 #define CFG_INIT_POWER_SAVE_PROF		ENUM_PSP_FAST_SWITCH
 

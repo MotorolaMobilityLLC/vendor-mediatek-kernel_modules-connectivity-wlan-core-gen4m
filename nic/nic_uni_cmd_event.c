@@ -5755,7 +5755,8 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 			       info->u4SetQueryInfoLen;
 
 	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
-	   (tag_id != TX_POWER_SHOW_INFO && tag_id != TX_RATE_POWER_CTRL))
+	   (tag_id != TX_POWER_SHOW_INFO && tag_id != TX_RATE_POWER_CTRL &&
+	   tag_id != PERCENTAGE_CTRL && tag_id != PERCENTAGE_DROP_CTRL))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TXPOWER, max_cmd_len,
