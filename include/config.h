@@ -835,7 +835,7 @@
 #endif
 
 #ifndef CFG_P2P_FORCE_ROC_CSA
-#define CFG_P2P_FORCE_ROC_CSA 0
+#define CFG_P2P_FORCE_ROC_CSA 1
 #endif
 
 /*------------------------------------------------------------------------------
