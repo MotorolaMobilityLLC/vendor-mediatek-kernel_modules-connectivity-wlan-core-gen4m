@@ -27,7 +27,7 @@
 #include "ics.h"
 #include "wlan_ring.h"
 
-#define ICS_LOG_SIZE	(64*1024)
+#define ICS_LOG_SIZE (128*1024)
 #define ICS_WAIT_READY_MAX_CNT 2000
 #define ICS_WAIT_READY_SLEEP_TIME 100
 #define FW_LOG_ICS_DRIVER_NAME "fw_log_ics"
@@ -144,6 +144,10 @@ static ssize_t ics_ring_write(struct ics_ring *iRing, char *buf,
 	ssize_t left_to_write = count;
 
 	if (likely(iRing->ring_base)) {
+		/* no enough buffer to write */
+		if (WLAN_RING_WRITE_REMAIN_SIZE(ring) < left_to_write)
+			goto skip;
+
 		WLAN_RING_WRITE_FOR_EACH(left_to_write, ring_seg, ring) {
 			memcpy(ring_seg.ring_pt, buf, ring_seg.sz);
 			left_to_write -= ring_seg.sz;
@@ -155,6 +159,7 @@ static ssize_t ics_ring_write(struct ics_ring *iRing, char *buf,
 		written = -EPERM;
 	}
 
+skip:
 	DBGLOG(ICS, TEMP, "[Done] written:%d left:%d\n", written,
 		left_to_write);
 	return written;
