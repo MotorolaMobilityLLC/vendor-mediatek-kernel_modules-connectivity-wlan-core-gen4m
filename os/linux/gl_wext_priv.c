@@ -20876,18 +20876,17 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL
 	},
 	{
-		/* Ask owner */
 		.pcCmdStr  = CMD_GET_STA_STAT,
 		.pfHandler = priv_driver_get_sta_stat,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_DYNAMIC_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
 	{
 		.pcCmdStr  = CMD_GET_STA_RX_STAT,
 		.pfHandler = priv_driver_show_rx_stat,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_DYNAMIC_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
 	{
@@ -22253,9 +22252,9 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 		{
 			uint32_t tmp;
 
-			if (kalkStrtou32(pcArgv[ucIdx], 10, &tmp) != 0)
+			if (kalkStrtou32(pcArgv[ucIdx], 0, &tmp) != 0)
 				goto FREE;
-			DBGLOG(REQ, INFO, ">> value[%d]\n", tmp);
+			DBGLOG(REQ, INFO, ">> value[%u]\n", tmp);
 
 			if (tmp >= prAttr->min && tmp <= prAttr->max)
 				continue;
@@ -22269,7 +22268,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 		{
 			int tmp;
 
-			if (kalStrtoint(pcArgv[ucIdx], 10, &tmp) != 0)
+			if (kalStrtoint(pcArgv[ucIdx], 0, &tmp) != 0)
 				goto FREE;
 			DBGLOG(REQ, INFO, ">> value[%d]\n", tmp);
 
