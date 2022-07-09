@@ -2737,6 +2737,7 @@ static int wlanOpen(struct net_device *prDev)
 static int wlanStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t fgNeedAbortScan = FALSE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -2754,14 +2755,14 @@ static int wlanStop(struct net_device *prDev)
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prGlueInfo->prScanRequest) {
 			DBGLOG(INIT, INFO, "wlanStop abort scan!\n");
-			aisFsmClearRequest(prGlueInfo->prAdapter,
-				AIS_REQUEST_SCAN, wlanGetBssIdx(prDev));
 			kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
-			aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
-						wlanGetBssIdx(prDev));
 			prGlueInfo->prScanRequest = NULL;
+			fgNeedAbortScan = TRUE;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		if (fgNeedAbortScan)
+			aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
+							wlanGetBssIdx(prDev));
 	}
 
 	netif_tx_stop_all_queues(prDev);
