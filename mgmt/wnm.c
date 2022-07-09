@@ -567,11 +567,11 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + 4,
 		     wnmBTMQueryTxDone, MSDU_RATE_MODE_AUTO);
 
-	/* 5 Enqueue the frame to send this action frame. */
-	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-
 	DBGLOG(WNM, INFO, "BTM: Query token %d, reason %d\n",
 	       prTxFrame->ucDialogToken, prTxFrame->ucQueryReason);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }				/* end of wnmComposeBTMQueryFrame() */
 
 #if CFG_SUPPORT_MBO
