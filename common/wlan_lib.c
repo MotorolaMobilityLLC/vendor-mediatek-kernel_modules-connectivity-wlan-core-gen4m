@@ -7028,6 +7028,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"EhtAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"StaEHTBfee", FEATURE_ENABLED);
+	prWifiVar->ucEhtOMCtrl = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"EhtOMCtrl", FEATURE_ENABLED);
 	prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
 	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MldLinkMax", MLD_LINK_MAX);
