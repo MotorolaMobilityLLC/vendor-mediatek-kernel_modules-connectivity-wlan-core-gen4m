@@ -173,7 +173,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting = FALSE;
 u_int8_t fgIsDrvTriggerWholeChipReset = FALSE;
-uint8_t g_ucWfRstSource;
+enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn = FALSE;
 #endif
 
@@ -504,7 +504,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		} else {
 			int ret = 0;
 
-			g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
+			g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
 			if (prChipInfo->trigger_fw_assert) {
 				ret = prChipInfo->trigger_fw_assert(prAdapter);
 				if (ret != -EBUSY)
@@ -1287,7 +1287,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = type;
+	g_Coredump_source = coredump_conn_type_to_src(type);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1387,7 +1387,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 
 	triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = drv;
+	g_Coredump_source = coredump_connv3_type_to_src(drv);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1453,7 +1453,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 
 	triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = drv;
+	g_Coredump_source = coredump_conn_type_to_src(drv);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1637,7 +1637,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 				g_fgRstRecover = FALSE;
 			else
 				wifi_coredump_start(
-					g_ucWfRstSource,
+					g_Coredump_source,
 					apucRstReason[eResetReason]);
 
 			g_IsNeedWaitCoredump = FALSE;
@@ -1676,7 +1676,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 			g_fgRstRecover = FALSE;
 		else
 			wifi_coredump_start(
-				g_ucWfRstSource,
+				g_Coredump_source,
 				apucRstReason[eResetReason]);
 
 		g_IsNeedWaitCoredump = FALSE;
@@ -1707,7 +1707,7 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
 			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
-	g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
+	g_Coredump_source = COREDUMP_SOURCE_NUM;
 }
 
 int wlan_reset_thread_main(void *data)
@@ -1759,7 +1759,7 @@ int wlan_reset_thread_main(void *data)
 				if (eResetReason >= RST_REASON_MAX)
 					eResetReason = 0;
 				wifi_coredump_start(
-					g_WholeChipRstType,
+					g_Coredump_source,
 					g_WholeChipRstReason);
 				g_IsNeedWaitCoredump = FALSE;
 

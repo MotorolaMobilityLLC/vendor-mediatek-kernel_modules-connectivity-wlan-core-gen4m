@@ -247,14 +247,10 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#define RST_SOURCE_WIFI_DRIVER		0xFD
-#define RST_SOURCE_WIFI_FW		0xFE
-#define RST_SOURCE_WIFI_NONE		0xFF
-
 #if CFG_CHIP_RESET_SUPPORT
 extern u_int8_t fgIsResetting;
 extern u_int8_t fgIsRstPreventFwOwn;
-extern uint8_t g_ucWfRstSource;
+extern enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 
 #if CFG_CHIP_RESET_HANG
 extern u_int8_t fgIsResetHangState;

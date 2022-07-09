@@ -1038,13 +1038,15 @@ static int __coredump_to_userspace_mem_region(struct coredump_ctx *ctx)
 
 static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info,
-	unsigned int drv, char *reason)
+	enum COREDUMP_SOURCE_TYPE source,
+	char *reason)
 {
 #define AEE_STR_LEN		256
 #define FW_VER_LEN		256
 
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
+	enum connv3_drv_type drv_type;
 	uint8_t *fw_version = NULL;
 	uint8_t *aee_str = NULL;
 	uint32_t u4Len = 0;
@@ -1087,8 +1089,9 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 		}
 	}
 
+	drv_type = coredump_src_to_connv3_type(source);
 	connv3_coredump_start(ctx->handler,
-			      drv,
+			      drv_type,
 			      reason,
 			      mem->dump_buff,
 			      fw_version);
@@ -1114,7 +1117,8 @@ exit:
 #endif
 
 static int __coredump_start(struct coredump_ctx *ctx,
-	unsigned int drv, char *reason)
+	enum COREDUMP_SOURCE_TYPE source,
+	char *reason)
 {
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
@@ -1159,7 +1163,7 @@ static int __coredump_start(struct coredump_ctx *ctx,
 		goto deinit;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_to_userspace(ctx, chip_info, drv, reason);
+	__coredump_to_userspace(ctx, chip_info, source, reason);
 #endif
 
 deinit:
@@ -1168,7 +1172,7 @@ exit:
 	return ret;
 }
 
-void wifi_coredump_start(uint8_t drv, char *reason)
+void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source, char *reason)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 
@@ -1178,31 +1182,128 @@ void wifi_coredump_start(uint8_t drv, char *reason)
 		return;
 	}
 
-	DBGLOG(INIT, INFO,
-		"drv: 0x%x, reason: %s\n",
-		drv, reason);
+	DBGLOG(INIT, INFO, "source: %d, reason: %s\n",
+		source, reason);
 
 #if CFG_SUPPORT_CONNINFRA
 	{
 		enum consys_drv_type drv_type;
 
-		switch (drv) {
-		case RST_SOURCE_WIFI_DRIVER:
-			drv_type = CONNDRV_TYPE_WIFI;
-			break;
-		case RST_SOURCE_WIFI_FW:
-			drv_type = CONNDRV_TYPE_MAX;
-			break;
-		default:
-			drv_type = (enum consys_drv_type)drv;
-			break;
-		}
+		drv_type = coredump_src_to_conn_type(source);
 		connsys_coredump_start(ctx->handler, 0,
 			drv_type, reason);
 		connsys_coredump_clean(ctx->handler);
 	}
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_start(ctx, drv, reason);
+	__coredump_start(ctx, source, reason);
 #endif
 }
+
+#if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src)
+{
+	enum consys_drv_type drv_type;
+
+	switch (src) {
+	case COREDUMP_SOURCE_WF_FW:
+		drv_type = CONNDRV_TYPE_MAX;
+		break;
+	case COREDUMP_SOURCE_BT:
+		drv_type = CONNDRV_TYPE_BT;
+		break;
+	case COREDUMP_SOURCE_FM:
+		drv_type = CONNDRV_TYPE_FM;
+		break;
+	case COREDUMP_SOURCE_GPS:
+		drv_type = CONNDRV_TYPE_GPS;
+		break;
+	case COREDUMP_SOURCE_CONNINFRA:
+		drv_type = CONNDRV_TYPE_CONNINFRA;
+		break;
+	case COREDUMP_SOURCE_WF_DRIVER:
+	default:
+		drv_type = CONNDRV_TYPE_WIFI;
+		break;
+	}
+
+	return drv_type;
+}
+
+enum COREDUMP_SOURCE_TYPE coredump_conn_type_to_src(enum consys_drv_type src)
+{
+	enum COREDUMP_SOURCE_TYPE type;
+
+	switch (src) {
+	case CONNDRV_TYPE_BT:
+		type = COREDUMP_SOURCE_BT;
+		break;
+	case CONNDRV_TYPE_FM:
+		type = COREDUMP_SOURCE_FM;
+		break;
+	case CONNDRV_TYPE_GPS:
+		type = COREDUMP_SOURCE_GPS;
+		break;
+	case CONNDRV_TYPE_CONNINFRA:
+		type = COREDUMP_SOURCE_CONNINFRA;
+		break;
+	case CONNDRV_TYPE_WIFI:
+	default:
+		type = COREDUMP_SOURCE_WF_DRIVER;
+		break;
+	}
+
+	return type;
+}
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+enum connv3_drv_type coredump_src_to_connv3_type(enum COREDUMP_SOURCE_TYPE src)
+{
+	enum connv3_drv_type drv_type;
+
+	switch (src) {
+	case COREDUMP_SOURCE_BT:
+		drv_type = CONNV3_DRV_TYPE_BT;
+		break;
+	case COREDUMP_SOURCE_MD:
+		drv_type = CONNV3_DRV_TYPE_MODEM;
+		break;
+	case COREDUMP_SOURCE_CONNV3:
+		drv_type = CONNV3_DRV_TYPE_CONNV3;
+		break;
+	case COREDUMP_SOURCE_WF_FW:
+		drv_type = CONNV3_DRV_TYPE_MAX;
+		break;
+	case COREDUMP_SOURCE_WF_DRIVER:
+	default:
+		drv_type = CONNV3_DRV_TYPE_WIFI;
+		break;
+	}
+
+	return drv_type;
+}
+
+enum COREDUMP_SOURCE_TYPE coredump_connv3_type_to_src(enum connv3_drv_type src)
+{
+	enum COREDUMP_SOURCE_TYPE type;
+
+	switch (src) {
+	case CONNV3_DRV_TYPE_BT:
+		type = COREDUMP_SOURCE_BT;
+		break;
+	case CONNV3_DRV_TYPE_MODEM:
+		type = COREDUMP_SOURCE_MD;
+		break;
+	case CONNV3_DRV_TYPE_CONNV3:
+		type = COREDUMP_SOURCE_CONNV3;
+		break;
+	case CONNV3_DRV_TYPE_WIFI:
+	default:
+		type = COREDUMP_SOURCE_WF_DRIVER;
+		break;
+	}
+
+	return type;
+}
+#endif
 

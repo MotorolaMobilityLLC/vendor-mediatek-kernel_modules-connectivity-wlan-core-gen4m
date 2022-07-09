@@ -2783,7 +2783,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 	if (kalIsResetting()) {
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-		g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
+		g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2792,7 +2792,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		reset_done_trigger_completion();
 	} else {
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2808,14 +2808,14 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			fw_log_wifi_irq_handler();
 #endif
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-			wifi_coredump_start(g_ucWfRstSource, NULL);
+			wifi_coredump_start(g_Coredump_source, NULL);
 			g_IsNeedWaitCoredump = FALSE;
 #endif
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
 				debug_ops->dumpwfsyscpupcr(prAdapter);
 
 			glResetUpdateFlag(FALSE);
-			g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
+			g_Coredump_source = COREDUMP_SOURCE_NUM;
 		} else {
 			kalSetRstEvent();
 		}
@@ -2828,7 +2828,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 		"FW trigger whole chip reset.\n");
 
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	if (!prAdapter->prGlueInfo->u4ReadyFlag)
 		g_IsNeedWaitCoredump = TRUE;
 #endif
@@ -2874,7 +2874,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 	ret = prChipInfo->get_sw_interrupt_status(prAdapter, &status);
 	if (ret == false) {
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 #endif

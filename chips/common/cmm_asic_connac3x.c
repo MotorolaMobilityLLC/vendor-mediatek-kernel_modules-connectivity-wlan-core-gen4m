@@ -76,6 +76,7 @@
 #include "connv3.h"
 #endif
 #include "wlan_pinctrl.h"
+#include "gl_coredump.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -2135,7 +2136,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
-		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 
 		glSetRstReason(RST_FW_ASSERT);
 
@@ -2150,7 +2151,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
 
-	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
 	kalSetRstEvent();
