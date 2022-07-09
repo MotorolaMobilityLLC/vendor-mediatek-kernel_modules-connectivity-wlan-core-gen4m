@@ -5688,9 +5688,6 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 			prAdapter->fgTxDirectInited = TRUE;
 		}
 	}
-#if (CFG_VOLT_INFO == 1)
-	kalVnfInit(prAdapter);
-#endif
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -5964,6 +5961,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if (CFG_VOLT_INFO == 1)
+	kalVnfInit(prAdapter);
 	kalVnfActive(prAdapter);
 #endif
 
