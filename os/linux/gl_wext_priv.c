@@ -18778,13 +18778,13 @@ static int priv_driver_trigger_whole_chip_reset(
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	glSetRstReason(RST_CMD_TRIGGER);
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
+#else
 	glSetRstReasonString(
 		"cmd test trigger whole chip reset");
 	glResetWholeChipResetTrigger(g_reason);
-#else
-	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
-			RST_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
 #endif
 
 	return i4BytesWritten;

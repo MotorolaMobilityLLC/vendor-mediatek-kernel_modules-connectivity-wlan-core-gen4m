@@ -2130,6 +2130,9 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO,
 			"Wi-Fi Driver trigger, need do complete.\n");
 		reset_done_trigger_completion();
+	} else if (fgIsDrvTriggerWholeChipReset) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
 		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
@@ -2146,6 +2149,11 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 {
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
+
+	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+	glResetUpdateFlag(TRUE);
+	g_IsWfsysBusHang = TRUE;
+	kalSetRstEvent();
 }
 #endif
 

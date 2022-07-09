@@ -1163,6 +1163,9 @@ struct bwtbl_umac_struct {
 	struct wtbl_key_msdu_mlo key_msdu_mlo;
 };
 
+extern u_int8_t fgIsDrvTriggerWholeChipReset;
+extern u_int8_t g_IsWfsysBusHang;
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************

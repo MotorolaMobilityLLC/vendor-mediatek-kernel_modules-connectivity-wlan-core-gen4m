@@ -81,6 +81,11 @@
 #include "conninfra.h"
 #endif
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#include "conninfra.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -336,6 +341,14 @@ int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
+	char *reason);
+int wlan_post_whole_chip_rst_v3(void);
+int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
+	char *reason);
+int wlan_post_whole_chip_rst_v2(void);
+#endif
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 void kalSetRstEvent(void);

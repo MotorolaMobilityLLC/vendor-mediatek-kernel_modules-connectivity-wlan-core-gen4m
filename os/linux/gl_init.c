@@ -7131,11 +7131,6 @@ int wlanFuncOn(void)
 {
 	int ret = 0;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (kalIsWholeChipResetting())
-		return wlanFuncOnImpl();
-#endif
-
 	ret = connsys_power_on();
 	if (ret)
 		goto exit;
@@ -7305,36 +7300,6 @@ static int wlan_pwr_on_notify(void)
 	wlanFuncOn();
 	wlanFuncOff();
 #endif
-	return 0;
-}
-
-static int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
-	char *reason)
-{
-	DBGLOG(INIT, INFO,
-		"drv: %d, reason: %s\n",
-		drv, reason);
-	return 0;
-}
-
-static int wlan_post_whole_chip_rst_v3(void)
-{
-	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
-	return 0;
-}
-
-static int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
-	char *reason)
-{
-	DBGLOG(INIT, INFO,
-		"drv: %d, reason: %s\n",
-		drv, reason);
-	return 0;
-}
-
-static int wlan_post_whole_chip_rst_v2(void)
-{
-	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v2\n");
 	return 0;
 }
 

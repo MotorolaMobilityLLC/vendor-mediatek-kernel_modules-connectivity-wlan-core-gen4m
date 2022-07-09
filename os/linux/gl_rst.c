@@ -119,7 +119,6 @@ char *g_WholeChipRstReason;
 u_int8_t g_IsWfsysResetOnFail = FALSE;
 u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
-uint8_t g_WholeChipRstType;
 #endif
 
 uint8_t *apucRstReason[RST_REASON_MAX] = {
@@ -1083,7 +1082,7 @@ static void triggerHifDumpIfNeed(void)
 	debug_ops = prAdapter->chip_info->prDebugOps;
 
 	if (debug_ops && debug_ops->dumpBusHangCr)
-		debug_ops->dumpBusHangCr(NULL);
+		debug_ops->dumpBusHangCr(prAdapter);
 
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 	/* wait for hif_thread finish dump */
@@ -1361,6 +1360,150 @@ int glRstwlanPostWholeChipReset(void)
 }
 #endif
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
+	char *reason)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(INIT, INFO,
+		"drv: %d, reason: %s\n",
+		drv, reason);
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+
+	while (get_wifi_process_status() == 1) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		return 0;
+	}
+
+	triggerHifDumpIfNeed();
+
+	g_WholeChipRstType = drv;
+	g_WholeChipRstReason = reason;
+
+	if (glRstCheckRstCriteria()) {
+		while (kalIsResetting()) {
+			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
+			msleep(100);
+		}
+
+		g_IsWholeChipRst = TRUE;
+
+		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+					 RST_WHOLE_CHIP_TRIGGER);
+	} else {
+		while (kalIsResetting() &&
+				fgIsDrvTriggerWholeChipReset == FALSE) {
+			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
+			msleep(100);
+		}
+		fgIsDrvTriggerWholeChipReset = FALSE;
+		g_IsWholeChipRst = TRUE;
+
+		kalSetRstEvent();
+	}
+
+	wait_for_completion(&g_RstOffComp);
+	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+
+	return 0;
+}
+
+int wlan_post_whole_chip_rst_v3(void)
+{
+	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
+
+	glRstSetRstEndEvent();
+
+	return 0;
+}
+
+int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
+	char *reason)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(INIT, INFO,
+		"drv: %d, reason: %s\n",
+		drv, reason);
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+
+	while (get_wifi_process_status() == 1) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		return 0;
+	}
+
+	triggerHifDumpIfNeed();
+
+	g_WholeChipRstType = drv;
+	g_WholeChipRstReason = reason;
+
+	if (glRstCheckRstCriteria()) {
+		while (kalIsResetting()) {
+			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
+			msleep(100);
+		}
+
+		g_IsWholeChipRst = TRUE;
+
+		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+					 RST_WHOLE_CHIP_TRIGGER);
+	} else {
+		while (kalIsResetting() &&
+				fgIsDrvTriggerWholeChipReset == FALSE) {
+			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
+			msleep(100);
+		}
+		fgIsDrvTriggerWholeChipReset = FALSE;
+		g_IsWholeChipRst = TRUE;
+
+		kalSetRstEvent();
+	}
+
+	wait_for_completion(&g_RstOffComp);
+	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+
+	return 0;
+}
+
+int wlan_post_whole_chip_rst_v2(void)
+{
+	while (get_wifi_process_status() == 1) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
+	if (!get_wifi_powered_status()) {
+		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		return 0;
+	}
+	glRstSetRstEndEvent();
+
+	DBGLOG(INIT, INFO,
+		"Leave glRstwlanPostWholeChipReset (%d).\n",
+		g_IsWholeChipRst);
+	return 0;
+}
+#endif
+
 u_int8_t kalIsWholeChipResetting(void)
 {
 #if CFG_CHIP_RESET_SUPPORT
@@ -1433,8 +1576,10 @@ bool IsOverRstTimeThreshold(
 void glResetWholeChipResetTrigger(char *pcReason)
 {
 #if (CFG_SUPPORT_CONNINFRA == 1)
-	if (conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason)
-			== 0)
+	if (conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason) == 0)
+		fgIsDrvTriggerWholeChipReset = TRUE;
+#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_WIFI, pcReason) == 0)
 		fgIsDrvTriggerWholeChipReset = TRUE;
 #else
 	DBGLOG(INIT, WARN, "whole chip reset NOT support\n");
