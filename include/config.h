@@ -615,11 +615,7 @@
 #define CFG_SUPPORT_RX_CACHE_INDEX		1
 #endif
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_PF_ARP_NS_MAX_NUM                   5
-#else
 #define CFG_PF_ARP_NS_MAX_NUM                   3
-#endif
 
 #define CFG_COMPRESSION_DEBUG			0
 #define CFG_DECOMPRESSION_TMP_ADDRESS		0

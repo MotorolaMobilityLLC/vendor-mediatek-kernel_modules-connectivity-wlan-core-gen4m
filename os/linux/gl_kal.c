@@ -7351,26 +7351,12 @@ kalGetIPv6Address(IN struct net_device *prDev,
 
 	/* 4 <2> copy the IPv6 address */
 	LIST_FOR_EACH_IPV6_ADDR(prIfa, prDev->ip6_ptr) {
-		if (ipv6_addr_src_scope(&prIfa->addr) ==
-					IPV6_ADDR_SCOPE_LINKLOCAL
-				&& u4NumIPv6 > 0) {
-			int32_t i = 0;
-
-			for (i = u4NumIPv6 - 1; i >= 0; i--) {
-				kalMemCopy(&pucIpv6Addrs[(i + 1) * u4AddrLen],
-					&pucIpv6Addrs[i * u4AddrLen],
-					u4AddrLen);
-			}
-			kalMemCopy(&pucIpv6Addrs[0], &prIfa->addr, u4AddrLen);
-		} else {
-			kalMemCopy(&pucIpv6Addrs[u4NumIPv6 * u4AddrLen],
-				   &prIfa->addr, u4AddrLen);
-		}
+		kalMemCopy(&pucIpv6Addrs[u4NumIPv6 * u4AddrLen],
+			   &prIfa->addr, u4AddrLen);
 
 		DBGLOG(INIT, INFO,
-			"IPv6 addr [%u] scope [%u][" IPV6STR "]\n", u4NumIPv6,
-			ipv6_addr_src_scope(&prIfa->addr),
-			IPV6TOSTR(&prIfa->addr));
+		       "IPv6 addr [%u][" IPV6STR "]\n", u4NumIPv6,
+		       IPV6TOSTR(&pucIpv6Addrs[u4NumIPv6 * u4AddrLen]));
 
 		if ((u4NumIPv6 + 1) >= u4MaxNumOfAddr)
 			break;
