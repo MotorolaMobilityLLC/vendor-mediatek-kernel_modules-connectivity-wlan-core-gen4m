@@ -97,9 +97,10 @@
 #include <linux/module.h>
 #include <linux/debugfs.h>
 #if CFG_SUPPORT_THERMAL_QUERY
-#include <linux/platform_device.h>
 #include <linux/thermal.h>
 #endif
+
+#include <linux/platform_device.h>
 
 /* for uevent */
 #include <linux/miscdevice.h>   /* for misc_register, and SYNTH_MINOR */
@@ -171,6 +172,8 @@ static uint8_t aucBandTranslate[BAND_NUM] = {
 #if DBG
 int allocatedMemSize;
 #endif
+
+struct platform_device *g_prPlatDev;
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -13562,6 +13565,14 @@ void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo)
 struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo)
 {
 	return prGlueInfo->prDev;
+}
+
+void kalGetPlatDev(void **dev)
+{
+	if (g_prPlatDev)
+		*dev = &g_prPlatDev->dev;
+	else
+		*dev = NULL;
 }
 
 void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo)

@@ -125,6 +125,8 @@ extern bool fgIsTxPowerDecreased;
 #endif
 
 extern u_int8_t wlan_perf_monitor_force_enable;
+
+extern struct platform_device *g_prPlatDev;
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2395,6 +2397,7 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen);
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
 struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
+void kalGetPlatDev(void **dev);
 void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void kalGetFtIeParam(void *pvftie,

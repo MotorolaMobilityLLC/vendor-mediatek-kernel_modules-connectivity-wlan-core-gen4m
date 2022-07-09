@@ -7480,6 +7480,7 @@ static int initWlan(void)
 
 	kalPlatOpsInit();
 
+	g_prPlatDev = NULL;
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO) {

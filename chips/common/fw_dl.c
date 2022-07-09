@@ -2350,7 +2350,7 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 #define FW_FILE_NAME_MAX_LEN 64
 	struct WIFI_VER_INFO *prVerInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	void *pvDev;
+	void *pvDev = NULL;
 	void *pvMapFileBuf = NULL;
 	uint32_t u4FileLength = 0;
 	uint32_t u4ReadLen = 0;
@@ -2371,6 +2371,12 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		goto exit;
 	}
 
+	kalGetPlatDev(&pvDev);
+	if (pvDev == NULL) {
+		DBGLOG(INIT, WARN, "glGetPlatDev failed\n");
+		goto exit;
+	}
+
 	for (idx = 0; idx < FW_FILE_NAME_TOTAL; idx++)
 		aucFwName[idx] = (uint8_t *)(aucFwNameBody + idx);
 
@@ -2383,7 +2389,6 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		goto exit;
 	}
 
-	glGetDev((void *)prChipInfo->pdev, &pvDev);
 	for (idx = 0; aucFwName[idx]; idx++) {
 		u4Ret = kalRequestFirmware(aucFwName[idx], &prFwBuffer,
 				&u4ReadLen, FALSE, pvDev);

@@ -2251,6 +2251,7 @@ kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
 
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
+void kalGetPlatDev(void **dev);
 void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void kalGetFtIeParam(void *pvftie,

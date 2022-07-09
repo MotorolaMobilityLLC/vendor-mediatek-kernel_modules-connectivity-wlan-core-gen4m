@@ -161,8 +161,6 @@ static struct platform_driver mtk_axi_driver = {
 	.remove = NULL,
 };
 
-struct platform_device *g_prPlatDev;
-
 static struct GLUE_INFO *g_prGlueInfo;
 static void *CSRBaseAddress;
 static u64 g_u8CsrOffset;
