@@ -196,6 +196,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_SUPPORT_PKT_OFLD
 	[CMD_ID_PKT_OFLD] = nicUniCmdPktOfldOp,
 #endif
+	[CMD_ID_WFC_KEEP_ALIVE] = nicUniCmdKeepAlive,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -6471,6 +6472,43 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct PARAM_PACKET_KEEPALIVE_T *cmd;
+	struct UNI_CMD_KEEP_ALIVE *uni_cmd;
+	struct UNI_CMD_KEEP_ALIVE_SET *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_KEEP_ALIVE) +
+		sizeof(struct UNI_CMD_KEEP_ALIVE_SET);
+
+	if (info->ucCID != CMD_ID_WFC_KEEP_ALIVE ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct PARAM_PACKET_KEEPALIVE_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_KEEP_ALIVE,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_KEEP_ALIVE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_KEEP_ALIVE_SET *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_KEEP_ALIVE_TAG_SET;
+	tag->u2Length = sizeof(*tag);
+	tag->fgEnable = cmd->enable;
+	tag->ucIndex = cmd->index;
+	tag->u2IpPktLen = cmd->u2IpPktLen;
+	kalMemCopy(tag->pIpPkt, cmd->pIpPkt, sizeof(tag->pIpPkt));
+	COPY_MAC_ADDR(tag->ucSrcMacAddr, cmd->ucSrcMacAddr);
+	COPY_MAC_ADDR(tag->ucDstMacAddr, cmd->ucDstMacAddr);
+	tag->u4PeriodMsec = cmd->u4PeriodMsec;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 /*******************************************************************************
  *                                 Event

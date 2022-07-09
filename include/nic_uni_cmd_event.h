@@ -284,6 +284,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_ACL_POLICY		= 0x5A,	/* ACL */
 	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
 	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
+	UNI_CMD_ID_KEEP_ALIVE		= 0x61, /* Keep alive */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4139,6 +4140,56 @@ struct UNI_CMD_PKT_OFLD_GENERAL_OP {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_KEEP_ALIVE {
+	/* fixed field */
+	uint8_t aucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                        | ID   | structure
+	*   -------------------------  | ---- | -------------
+	*   UNI_CMD_KEEP_ALIVE_SET     | 0x0  | UNI_CMD_KEEP_ALIVE_SET_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_KEEP_ALIVE_TAG {
+	UNI_CMD_KEEP_ALIVE_TAG_SET = 0x0,
+	UNI_CMD_KEEP_ALIVE_TAG_MAX_NUM
+};
+/** @addtogroup UNI_CMD_ID_KEEP_ALIVE
+ *  @{
+ */
+/** This structure is used for UNI_CMD_KEEP_ALIVE_SET tag(0x0) of
+ * UNI_CMD_ID_KEEP_ALIVE command (0x61)
+ * to periodic send a packet to keep connection alive
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag        should be 0x0
+ * @param[in] u2Length     should be sizeof(UNI_CMD_KEEP_ALIVE_SET_T)
+ * @param[in] fgEnable
+ * @param[in] ucIndex
+ * @param[in] u2IpPktLen
+ * @param[in] pIpPkt
+ * @param[in] ucSrcMacAddr
+ * @param[in] ucDstMacAddr
+ * @param[in] u4PeriodMsec
+
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_KEEP_ALIVE_SET {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* Tag specific part */
+	uint8_t fgEnable;
+	uint8_t  ucIndex;
+	uint16_t u2IpPktLen;
+	uint8_t  pIpPkt[256];
+	uint8_t  ucSrcMacAddr[6];
+	uint8_t  ucDstMacAddr[6];
+	uint32_t u4PeriodMsec;
+} __KAL_ATTRIB_PACKED__;
+
 #if CFG_MSCS_SUPPORT
 /* Fast Path command (0x54) */
 struct UNI_CMD_FAST_PATH {
@@ -6827,6 +6878,8 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
 
+uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 /*******************************************************************************
  *                   Event
  *******************************************************************************
