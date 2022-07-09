@@ -1215,6 +1215,10 @@
 #define CFG_TX_MGMT_BY_DATA_Q		0
 #endif
 
+#ifndef CFG_SUPPORT_TX_DATA_DELAY
+#define CFG_SUPPORT_TX_DATA_DELAY		0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of bus error tolerance
  *------------------------------------------------------------------------------

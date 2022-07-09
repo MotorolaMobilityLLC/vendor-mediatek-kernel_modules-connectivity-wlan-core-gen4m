@@ -509,6 +509,18 @@ else
 endif
 # ===== Below will add compile flag based on project setting =====
 
+ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=1
+    else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
+        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=1
+    else
+        ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
+    endif
+else
+    ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
     ccflags-y += -DCFG_VOLT_INFO=1
 else
