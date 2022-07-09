@@ -478,6 +478,11 @@ static void ehtRlmFillOpIE(
 	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo,
 		prBssInfo->eBand);
 
+	/* Basic EHT-MCS And Nss Set */
+	ehtRlmFillBW20MCSMap(
+		prAdapter, prBssInfo,
+		(uint8_t *) &prEhtOp->u4BasicEhtMcsNssSet);
+
 	/* filling operation info field */
 	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
 
@@ -660,6 +665,7 @@ void ehtRlmRecOperation(
 	}
 
 	prBssInfo->ucEhtOpParams = prEhtOp->ucEhtOpParams;
+	prBssInfo->u4BasicEhtMcsNssSet = prEhtOp->u4BasicEhtMcsNssSet;
 
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;

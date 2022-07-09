@@ -440,6 +440,7 @@ struct BSS_INFO {
 
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t  ucEhtOpParams;
+	uint32_t u4BasicEhtMcsNssSet;
 	uint8_t  fgIsEhtOpPresent;
 	uint8_t  fgIsEhtDscbPresent;
 	uint8_t  ucEhtCtrl;
