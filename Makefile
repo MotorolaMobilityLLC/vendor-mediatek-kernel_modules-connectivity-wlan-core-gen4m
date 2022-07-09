@@ -1259,6 +1259,12 @@ ifeq ($(CONFIG_TX_DELAY_STATS_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_TX_LATENCY_STATS=1
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_WFD_SCC_BALANCE), y)
+ccflags-y += -DCFG_WFD_SCC_BALANCE_SUPPORT=1
+else
+ccflags-y += -DCFG_WFD_SCC_BALANCE_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MSCS_FAST_PATH_SUPPORT), y)
 ccflags-y += -DCFG_MSCS_SUPPORT=1
 endif

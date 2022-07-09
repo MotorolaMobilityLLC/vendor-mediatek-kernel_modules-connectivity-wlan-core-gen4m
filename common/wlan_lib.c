@@ -8309,7 +8309,16 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	else if (!prChipInfo->is_support_rro || !kalIsSupportRro())
 		prWifiVar->fgEnableRro = FEATURE_DISABLED;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prWifiVar->i4BssCount[u4Idx] = wlanCfgGetInt32(
+			prAdapter, "wfdSccBalanceBssCount", 0);
+	}
+	prWifiVar->u4WfdSccBalanceMode = wlanCfgGetUint32(
+		prAdapter, "wfdSccBalanceMode", 0);
+	prWifiVar->u4WfdSccBalanceEnable = wlanCfgGetUint32(
+		prAdapter, "wfdSccBalanceEnable", FEATURE_DISABLED);
+#endif
 	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
 			FEATURE_ENABLED);
 

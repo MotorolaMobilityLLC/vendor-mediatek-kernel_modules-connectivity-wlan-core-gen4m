@@ -1865,6 +1865,72 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	return rStatus;
 }
 
+#if CFG_SUPPORT_LLS
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	int32_t rStatus = -EOPNOTSUPP;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+	struct sk_buff *skb;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct EVENT_STATS_LLS_TX_BIT_RATE bitrate;
+	} query = {0};
+	uint32_t u4QueryBufLen = sizeof(query);
+	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+
+	if ((wiphy == NULL) || (wdev == NULL))
+		return -EINVAL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo)
+		return -EFAULT;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -EFAULT;
+
+	query.cmd.u4Tag = STATS_LLS_TAG_GET_WFD_PRED_TX_BITRATE;
+	rStatus = kalIoctl(prGlueInfo,
+			wlanQueryLinkStats,
+			&query,
+			u4QueryBufLen,
+			&u4QueryInfoLen);
+	DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes", rStatus, u4QueryInfoLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS ||
+		u4QueryInfoLen != sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE)) {
+		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
+				rStatus, u4QueryBufLen);
+		rStatus = -EFAULT;
+	}
+	DBGLOG(REQ, TRACE, "u4CurBitRate=%u u4PredBitRate=%u",
+		query.bitrate.au4CurrentBitrate[0],
+		query.bitrate.au4PredictBitrate[0]);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+			sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+	if (unlikely(nla_put_u32(skb, WIFI_ATTR_WFD_CUR_TX_BR,
+				query.bitrate.au4CurrentBitrate[0])))
+		goto nla_put_failure;
+	if (unlikely(nla_put_u32(skb, WIFI_ATTR_WFD_PRED_TX_BR,
+				query.bitrate.au4PredictBitrate[0])))
+		goto nla_put_failure;
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EFAULT;
+}
+#endif
+#endif
+
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,
 				 struct wireless_dev *wdev,
 				 const void *data, int data_len)

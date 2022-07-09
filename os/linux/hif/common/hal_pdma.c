@@ -951,6 +951,13 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 	prTokenInfo->fgEnAdjustCtrl = false;
 	prTokenInfo->u4MinBssTxCredit = HIF_DEFAULT_MIN_BSS_TX_CREDIT;
 	prTokenInfo->u4MaxBssTxCredit = HIF_DEFAULT_MAX_BSS_TX_CREDIT;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	prTokenInfo->u4MinBssBalanceTxCredit =
+		HIF_DEFAULT_MIN_BSS_BALANCE_TX_CREDIT;
+	prTokenInfo->u4MaxBssBalanceTxCredit =
+		HIF_DEFAULT_MAX_BSS_BALANCE_TX_CREDIT;
+	prTokenInfo->u4WFDBssBalanceState = WFD_BSS_BALANCE_NO_LIMIT_STATE;
+#endif
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
 		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
@@ -1016,6 +1023,13 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 	prTokenInfo->u4MinBssTxCredit = HIF_DEFAULT_MIN_BSS_TX_CREDIT;
 	prTokenInfo->u4MaxBssTxCredit = HIF_DEFAULT_MAX_BSS_TX_CREDIT;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	prTokenInfo->u4MinBssBalanceTxCredit =
+		HIF_DEFAULT_MIN_BSS_BALANCE_TX_CREDIT;
+	prTokenInfo->u4MaxBssBalanceTxCredit =
+		HIF_DEFAULT_MAX_BSS_BALANCE_TX_CREDIT;
+	prTokenInfo->u4WFDBssBalanceState = WFD_BSS_BALANCE_NO_LIMIT_STATE;
+#endif
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		prTokenInfo->u4TxBssCnt[u4Idx] = 0;
 		prTokenInfo->u4LastTxBssCnt[u4Idx] = 0;
@@ -4265,6 +4279,21 @@ static bool halIsLowCreditUsage(uint32_t u4Credit, uint32_t u4Used)
 	return (u4Used * 100 / u4Credit) < HIF_TX_CREDIT_LOW_USAGE;
 }
 
+void halSetAdjustCtrlMode(struct ADAPTER *prAdapter,
+	enum ENUM_WFD_ADJUST_CTRL_MODE u4Mode)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+
+	if (prTokenInfo->u4EnAdjustCtrlMode != u4Mode)
+		DBGLOG(HAL, INFO, "u4EnAdjustCtrlMode[%u].\n", u4Mode);
+
+	prTokenInfo->u4EnAdjustCtrlMode = u4Mode;
+}
+
 void halSetAdjustCtrl(struct ADAPTER *prAdapter, bool fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -4278,6 +4307,354 @@ void halSetAdjustCtrl(struct ADAPTER *prAdapter, bool fgEn)
 
 	prTokenInfo->fgEnAdjustCtrl = fgEn;
 }
+
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+int32_t halWFDBssBalanceGetBssCntCfg(struct ADAPTER *prAdapter)
+{
+	return prAdapter->rWifiVar.i4BssCount[0];
+}
+
+void halWFDBssBalanceSetBssCntCfg(struct ADAPTER *prAdapter,
+	int32_t i4BssCntCfg, struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	uint32_t i = 0;
+
+	if (i4BssCntCfg < 0)
+		i4BssCntCfg = prTokenInfo->u4MinBssBalanceTxCredit;
+	else if (i4BssCntCfg > prTokenInfo->u4MaxBssBalanceTxCredit)
+		i4BssCntCfg = prTokenInfo->u4MaxBssBalanceTxCredit;
+	else if (i4BssCntCfg < prTokenInfo->u4MinBssBalanceTxCredit)
+		i4BssCntCfg = prTokenInfo->u4MinBssBalanceTxCredit;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++)
+		prAdapter->rWifiVar.i4BssCount[i] = i4BssCntCfg;
+
+	DBGLOG(REQ, INFO, "BssCntCfg ===> %ld", i4BssCntCfg);
+}
+
+void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
+	IN struct MSDU_TOKEN_INFO *prTokenInfo,
+	OUT uint32_t *u4CurBitRate, OUT uint32_t *u4PredBitRate)
+{
+	uint32_t i = 0;
+	*u4CurBitRate = 0;
+	*u4PredBitRate = 0;
+
+	for (i = 0; i < BSSID_NUM; i++)	{
+		*u4CurBitRate += prTokenInfo->bitrate.au4CurrentBitrate[i];
+		if (*u4PredBitRate < prTokenInfo->bitrate.au4PredictBitrate[i])
+			*u4PredBitRate =
+				prTokenInfo->bitrate.au4PredictBitrate[i];
+	}
+
+	DBGLOG(REQ, INFO, "CurR[%lu,%lu,%lu,%lu], PreR[%lu,%lu,%lu,%lu]",
+		prTokenInfo->bitrate.au4CurrentBitrate[0],
+		prTokenInfo->bitrate.au4CurrentBitrate[1],
+		prTokenInfo->bitrate.au4CurrentBitrate[2],
+		prTokenInfo->bitrate.au4CurrentBitrate[3],
+		prTokenInfo->bitrate.au4PredictBitrate[0],
+		prTokenInfo->bitrate.au4PredictBitrate[1],
+		prTokenInfo->bitrate.au4PredictBitrate[2],
+		prTokenInfo->bitrate.au4PredictBitrate[3]);
+}
+
+enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
+	struct ADAPTER *prAdapter, struct TX_LATENCY_STATS *report,
+	struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	uint32_t u4ConsysAll = 0, u4Connsys[BSSID_NUM] = {0};
+	uint32_t i = 0, j = 0;
+	uint32_t u4CurBitRate = 0;
+	uint32_t u4PredBitRate = 0;
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
+			u4ConsysAll += report->au4ConnsysLatency[i][j];
+			u4Connsys[i] += report->au4ConnsysLatency[i][j];
+		}
+	}
+
+	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
+		&u4CurBitRate, &u4PredBitRate);
+
+	DBGLOG(REQ, INFO,
+		"C All: %lu, CurRate: %lu, PredRate: %lu",
+		u4ConsysAll, u4CurBitRate, u4PredBitRate);
+
+
+	/* C<10ms % < 80% */
+	if (u4Connsys[0] < (u4ConsysAll*4/5) &&
+		(u4CurBitRate > u4PredBitRate*5/10)) {
+		DBGLOG(REQ, INFO,
+			"C[0]:[%lu] > LowTH, FSM: [NO_LIMIT] -> [QUICK]",
+			u4Connsys[0]);
+		return WFD_BSS_BALANCE_QUICK_STATE;
+	}
+
+	DBGLOG(REQ, INFO,
+		"C[0]:[%lu] < LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]",
+		u4Connsys[0]);
+	halWFDBssBalanceSetBssCntCfg(prAdapter,
+		prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
+	return WFD_BSS_BALANCE_NO_LIMIT_STATE;
+}
+
+enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleQuickState(
+	struct ADAPTER *prAdapter, struct TX_LATENCY_STATS *report,
+	struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	uint32_t u4ConsysAll = 0;
+	uint32_t i = 0, j = 0;
+
+	for (i = 0; i < BSSID_NUM; i++)
+		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++)
+			u4ConsysAll += report->au4ConnsysLatency[i][j];
+
+	DBGLOG(REQ, INFO, "C All: %lu", u4ConsysAll);
+
+	/* set Credit = ring size * 1/2, then go to main state */
+	halWFDBssBalanceSetBssCntCfg(prAdapter, TX_RING_SIZE/2, prTokenInfo);
+	DBGLOG(REQ, INFO,
+		"Cnt[%ld], FSM: [QUICK] -> [MAIN]",
+		halWFDBssBalanceGetBssCntCfg(prAdapter));
+
+	return WFD_BSS_BALANCE_MAIN_STATE;
+}
+
+enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
+	struct ADAPTER *prAdapter, struct TX_LATENCY_STATS *report,
+	struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	uint32_t u4ConsysAll = 0, u4Connsys[BSSID_NUM] = {0};
+	uint32_t u4DriverAll = 0, u4Driver[BSSID_NUM] = {0};
+	int32_t i4BssCntCfg = 0;
+	uint32_t u4CurBitRate = 0;
+	uint32_t u4PredBitRate = 0;
+	uint32_t i = 0, j = 0;
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
+			u4ConsysAll += report->au4ConnsysLatency[i][j];
+			u4DriverAll += report->au4DriverLatency[i][j];
+			u4Connsys[i] += report->au4ConnsysLatency[i][j];
+			u4Driver[i] += report->au4DriverLatency[i][j];
+		}
+	}
+
+	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
+		&u4CurBitRate, &u4PredBitRate);
+
+	DBGLOG(REQ, INFO,
+		"C All: %lu, D All: %lu, CurRate: %lu, PredRate: %lu",
+		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
+
+	/* if Actual TPUT <= Est TPUT*50% */
+	if (u4CurBitRate < u4PredBitRate*5/10) {
+		DBGLOG(REQ, INFO,
+			"TPUT <= NoLimitTH, Cnt[%ld], FSM: [MAIN] -> [NO_LIMIT]",
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
+		return WFD_BSS_BALANCE_NO_LIMIT_STATE;
+	}
+
+	/* if C < 10ms % < 90%, Credit -= tx ring size * 1/8 */
+	if (u4Connsys[0] < (u4ConsysAll*9/10)) {
+		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			i4BssCntCfg - TX_RING_SIZE/8, prTokenInfo);
+		DBGLOG(REQ, INFO,
+			"C[0]:[%lu] > TH, Cnt[%ld], FSM: [MAIN] -> [MAIN]",
+			u4Connsys[0],
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		return WFD_BSS_BALANCE_MAIN_STATE;
+	}
+
+	/* if C < 10ms % > 90% & Actual TPUT < Estimate TPUT*80% */
+	/* Credit += tx ring size * 1/8 */
+	if ((u4Connsys[0] > (u4ConsysAll*9/10)) &&
+		(u4CurBitRate < u4PredBitRate*8/10)) {
+		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			i4BssCntCfg + TX_RING_SIZE/8, prTokenInfo);
+		DBGLOG(REQ, INFO,
+			"C[0]:[%lu] > TH and TPUT < TH, Cnt[%ld], FSM: [MAIN] -> [MAIN]",
+			u4Connsys[0],
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		return WFD_BSS_BALANCE_MAIN_STATE;
+	}
+
+	/* if C < 10ms % > 90%, go to step state */
+	if ((u4Connsys[0] > (u4ConsysAll*9/10))
+		&& (u4CurBitRate > u4PredBitRate*8/10)) {
+		DBGLOG(REQ, INFO,
+			"C[0]:[%lu] > TH, Cnt[%ld], FSM: [MAIN] -> [STEP]",
+			u4Connsys[0],
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		return WFD_BSS_BALANCE_STEP_STATE;
+	}
+
+	return WFD_BSS_BALANCE_MAIN_STATE;
+}
+
+enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
+	struct ADAPTER *prAdapter, struct TX_LATENCY_STATS *report,
+	struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	uint32_t u4ConsysAll = 0, u4Connsys[BSSID_NUM] = {0};
+	uint32_t u4DriverAll = 0, u4Driver[BSSID_NUM] = {0};
+	uint32_t u4CurBitRate = 0;
+	uint32_t u4PredBitRate = 0;
+	uint32_t i4BssCntCfg = 0;
+	uint32_t i = 0, j = 0;
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
+			u4ConsysAll += report->au4ConnsysLatency[i][j];
+			u4DriverAll += report->au4DriverLatency[i][j];
+			u4Connsys[i] += report->au4ConnsysLatency[i][j];
+			u4Driver[i] += report->au4DriverLatency[i][j];
+		}
+	}
+
+	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
+		&u4CurBitRate, &u4PredBitRate);
+
+	DBGLOG(REQ, INFO,
+		"C All: %lu, D All: %lu, CurRate: %lu, PreRate: %lu",
+		u4ConsysAll, u4DriverAll, u4CurBitRate, u4PredBitRate);
+
+
+	/* if Actual TPUT < Est TPUT*50% */
+	if (u4CurBitRate <= u4PredBitRate*5/10) {
+		DBGLOG(REQ, INFO,
+			"TPUT <= NoLimitTH, Cnt[%ld], FSM: [STEP] -> [NO_LIMIT]",
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
+
+		return WFD_BSS_BALANCE_NO_LIMIT_STATE;
+	}
+
+	/* if C < 10ms < 90%, go to main state */
+	if (u4Connsys[0] < (u4ConsysAll*9/10)) {
+		DBGLOG(REQ, INFO,
+			"C[0]:[%lu] > TH, Cnt[%ld], FSM: [STEP] -> [MAIN]",
+			u4Connsys[0],
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+
+		return WFD_BSS_BALANCE_MAIN_STATE;
+	}
+
+	/* if Actual TPUT > Est TPUT * 95 */
+	if (u4CurBitRate >= u4PredBitRate*95/100) {
+		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
+		if ((u4Driver[0] + u4Driver[1])
+			> (u4DriverAll*9/10)) {
+			halWFDBssBalanceSetBssCntCfg(prAdapter,
+				i4BssCntCfg - 10, prTokenInfo);
+			DBGLOG(REQ, INFO,
+				"D[0]+D[1]:[%lu] < HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+				(u4Driver[0] + u4Driver[1]),
+				halWFDBssBalanceGetBssCntCfg(prAdapter));
+		} else {
+			halWFDBssBalanceSetBssCntCfg(prAdapter,
+				i4BssCntCfg + 10, prTokenInfo);
+			DBGLOG(REQ, INFO,
+				"D[0]+D[1]:[%lu] > HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+				(u4Driver[0] + u4Driver[1]),
+				halWFDBssBalanceGetBssCntCfg(prAdapter));
+		}
+		return WFD_BSS_BALANCE_STEP_STATE;
+	}
+
+	/* if Actual TPUT < Est TPUT * 95 */
+	if (u4CurBitRate < u4PredBitRate*95/100) {
+		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			i4BssCntCfg + 10, prTokenInfo);
+		DBGLOG(REQ, INFO,
+			"TPUT < HighTH, Cnt[%ld], FSM: [STEP] -> [STEP]",
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		return WFD_BSS_BALANCE_STEP_STATE;
+	}
+#if 0
+	/* if Actual TPUT > Est TPUT * 80 */
+	if (u4CurBitRate > u4PredBitRate*8/10) {
+		i4BssCntCfg = halWFDBssBalanceGetBssCntCfg(prAdapter);
+		DBGLOG(REQ, INFO,
+			"ENTER STEP STATE, sActual TPUT > Est TPUT * 90, goto STEP",
+			halWFDBssBalanceGetBssCntCfg(prAdapter));
+		return WFD_BSS_BALANCE_STEP_STATE;
+	}
+#endif
+
+	return WFD_BSS_BALANCE_STEP_STATE;
+}
+
+
+void halWFDBssBalanceFsmSteps(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_TOKEN_INFO *prTokenInfo)
+{
+	enum ENUM_WFD_BSS_BALANCE_STATE u4NextState =
+		WFD_BSS_BALANCE_NO_LIMIT_STATE;
+	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
+	struct TX_LATENCY_STATS *report = &stats->rDiff;
+
+	if ((prAdapter->rWifiVar.u4WfdSccBalanceEnable == 0) ||
+		prTokenInfo->u4EnAdjustCtrlMode != WFD_SCC_BALANCE_MODE) {
+		if (u4NextState != WFD_BSS_BALANCE_NO_LIMIT_STATE) {
+			halWFDBssBalanceSetBssCntCfg(prAdapter,
+				prTokenInfo->u4MaxBssBalanceTxCredit,
+				prTokenInfo);
+			u4NextState = WFD_BSS_BALANCE_NO_LIMIT_STATE;
+		}
+		halSetAdjustCtrl(prAdapter, false);
+		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+		goto END;
+	}
+
+	if (prAdapter->rWifiVar.u4WfdSccBalanceMode == 1) {
+		halWFDBssBalanceSetBssCntCfg(prAdapter,
+			prAdapter->rWifiVar.i4BssCount[0], prTokenInfo);
+		u4NextState = WFD_BSS_BALANCE_FORCE_STATE;
+		goto END;
+	}
+
+	switch (prTokenInfo->u4WFDBssBalanceState) {
+	case WFD_BSS_BALANCE_NO_LIMIT_STATE:
+		u4NextState =
+			halWFDBssBalanceFsmHandleNoLimitState(prAdapter,
+			report, prTokenInfo);
+		break;
+	case WFD_BSS_BALANCE_QUICK_STATE:
+		u4NextState =
+			halWFDBssBalanceFsmHandleQuickState(prAdapter,
+			report, prTokenInfo);
+		break;
+	case WFD_BSS_BALANCE_MAIN_STATE:
+		u4NextState =
+			halWFDBssBalanceFsmHandleMainState(prAdapter,
+			report, prTokenInfo);
+		break;
+	case WFD_BSS_BALANCE_STEP_STATE:
+		u4NextState =
+			halWFDBssBalanceFsmHandleStepState(prAdapter,
+			report, prTokenInfo);
+		break;
+	case WFD_BSS_BALANCE_FORCE_STATE:
+		u4NextState = WFD_BSS_BALANCE_FORCE_STATE;
+		break;
+	default:
+		u4NextState = WFD_BSS_BALANCE_NO_LIMIT_STATE;
+		break;
+	}
+
+END:
+	prTokenInfo->u4WFDBssBalanceState = u4NextState;
+}
+#endif
 
 void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
@@ -4299,6 +4676,14 @@ void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (u4Delta == 0)
 		return;
 
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	/* for SCC Balnance V1, set all bss the same bss count (credit) */
+	if (prTokenInfo->u4EnAdjustCtrlMode == WFD_SCC_BALANCE_MODE &&
+		prAdapter->rWifiVar.u4WfdSccBalanceEnable) {
+		if (halWFDBssBalanceGetBssCntCfg(prAdapter))
+			u4Credit = halWFDBssBalanceGetBssCntCfg(prAdapter);
+	} else
+#endif
 	if (halIsLowCreditUsage(u4Credit, u4Used) &&
 	    halIsHighCreditUsage(u4Credit, u4Delta)) {
 		u4Credit += HIF_TX_CREDIT_STEP_COUNT;
@@ -4307,17 +4692,27 @@ void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			u4Credit -= HIF_TX_CREDIT_STEP_COUNT;
 	}
 
-	if (u4Credit > prTokenInfo->u4MaxBssTxCredit)
-		u4Credit = prTokenInfo->u4MaxBssTxCredit;
+	if (prTokenInfo->u4EnAdjustCtrlMode == WFD_DEFAULT_MODE) {
+		if (u4Credit > prTokenInfo->u4MaxBssTxCredit)
+			u4Credit = prTokenInfo->u4MaxBssTxCredit;
 
-	if (u4Credit < prTokenInfo->u4MinBssTxCredit)
-		u4Credit = prTokenInfo->u4MinBssTxCredit;
+		if (u4Credit < prTokenInfo->u4MinBssTxCredit)
+			u4Credit = prTokenInfo->u4MinBssTxCredit;
+	}
+
 
 	if (u4Credit != prTokenInfo->u4TxCredit[ucBssIndex]) {
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+		DBGLOG(HAL, INFO,
+		       "adjust tx credit Bss[%u], [%u]->[%u], used[%u], delta[%u]\n",
+		       ucBssIndex, prTokenInfo->u4TxCredit[ucBssIndex],
+		       u4Credit, u4Used, u4Delta);
+#else
 		DBGLOG(HAL, TRACE,
 		       "adjust tx credit Bss[%u], [%u]->[%u], used[%u], delta[%u]\n",
 		       ucBssIndex, prTokenInfo->u4TxCredit[ucBssIndex],
 		       u4Credit, u4Used, u4Delta);
+#endif
 		prTokenInfo->u4TxCredit[ucBssIndex] = u4Credit;
 	}
 
@@ -4389,6 +4784,49 @@ static void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
 	       prTokenInfo->u4MaxBssFreeCnt);
 }
 
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+enum ENUM_BAND halIsDualBandSccMode(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4Idx, u4ActiveBssCnt[BAND_NUM] = {0};
+	uint32_t u4AllActiveBssCnt = 0;
+	uint8_t ucLastChNum[BAND_NUM] = {0};
+	bool fgIsScc[BAND_NUM] = {0};
+	enum ENUM_BAND u4SccBand = BAND_NULL;
+
+	ASSERT(prAdapter);
+
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		prBssInfo = prAdapter->aprBssInfo[u4Idx];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+		DBGLOG(HAL, INFO, "band:[%lu], channel:[%lu]\n",
+			   prBssInfo->eBand, prBssInfo->ucPrimaryChannel);
+		u4AllActiveBssCnt++;
+
+		u4ActiveBssCnt[prBssInfo->eBand]++;
+		if (ucLastChNum[prBssInfo->eBand] != 0 &&
+			(ucLastChNum[prBssInfo->eBand] ==
+			prBssInfo->ucPrimaryChannel) &&
+			u4ActiveBssCnt[prBssInfo->eBand] == 2)
+			fgIsScc[prBssInfo->eBand] = true;
+		else
+			fgIsScc[prBssInfo->eBand] = false;
+		ucLastChNum[prBssInfo->eBand] = prBssInfo->ucPrimaryChannel;
+	}
+
+	for (u4Idx = 0; u4Idx < BAND_NUM; u4Idx++) {
+		if (fgIsScc[u4Idx])
+			u4SccBand = u4Idx;
+	}
+	DBGLOG(HAL, INFO, "ActiveBssCnt:[%lu], SccBand:[%lu]\n",
+		   u4AllActiveBssCnt, u4SccBand);
+
+	return u4SccBand;
+}
+#endif
+
 void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
@@ -4399,12 +4837,29 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
-	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
+	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter)) {
 		halSetAdjustCtrl(prAdapter, true);
-	else if (prAdapter->ucAdjustCtrlBitmap)
+		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+	} else if (prAdapter->ucAdjustCtrlBitmap) {
 		halSetAdjustCtrl(prAdapter, true);
-	else
+		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+	} else if (halIsDualBandSccMode(prAdapter)) {
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+		if (prAdapter->rWifiVar.u4WfdSccBalanceEnable == 1) {
+			halSetAdjustCtrl(prAdapter, true);
+			halSetAdjustCtrlMode(prAdapter, WFD_SCC_BALANCE_MODE);
+		} else {
+			halSetAdjustCtrl(prAdapter, false);
+			halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+		}
+#else
 		halSetAdjustCtrl(prAdapter, false);
+		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+#endif
+	} else {
+		halSetAdjustCtrl(prAdapter, false);
+		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
+	}
 #else
 	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
 		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_MCC_MODE_TOKEN_CNT);
@@ -4503,7 +4958,7 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 	char *buf;
 	uint32_t u4BufferSize = 512, pos = 0;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	struct TX_LATENCY_STATS rDiff;
+	struct TX_LATENCY_STATS rDiff = {0};
 	struct TX_LATENCY_STATS *report;
 	uint8_t report_num = 1; /* Default: sum up */
 
@@ -4556,6 +5011,9 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 		report = &rDiff;
 	}
 	stats->rReported = stats->rCounting;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	stats->rDiff = rDiff;
+#endif
 
 	if (prWifiVar->fgTxLatencyPerBss)
 		report_num = BSSID_NUM;
@@ -4582,6 +5040,59 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 #endif
 }
 
+#if CFG_SUPPORT_LLS
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
+	OUT struct WFD_LLS_TX_BIT_RATE *outBitrate)
+{
+	struct GLUE_INFO *prGlueInfo;
+	int32_t rStatus = -EOPNOTSUPP;
+	union {
+		struct CMD_GET_STATS_LLS cmd;
+		struct WFD_LLS_TX_BIT_RATE bitrate;
+	} query = {0};
+	uint32_t u4QueryBufLen =
+		sizeof(struct WFD_LLS_TX_BIT_RATE);
+	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(REQ, INFO, "prGlueInfo null");
+		return;
+	}
+
+	query.cmd.u4Tag = STATS_LLS_TAG_GET_WFD_PRED_TX_BITRATE;
+
+	DBGLOG(REQ, TRACE, "cmd: u4Tag=%08x, args=%u/%u/%u/%u, len=%u",
+			query.cmd.u4Tag, query.cmd.ucArg0, query.cmd.ucArg1,
+			query.cmd.ucArg2, query.cmd.ucArg3, u4QueryInfoLen);
+
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_GET_STATS_LLS,	/* ucCID */
+			    FALSE,	/* fgSetQuery */
+			    TRUE,	/* fgNeedResp */
+			    FALSE,	/* fgIsOid */
+			    nicCmdEventQueryLinkStats,    /* pfCmdDoneHandler */
+			    nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
+			    u4QueryInfoLen,    /* u4SetQueryInfoLen */
+			    (uint8_t *)&query.cmd,  /* pucInfoBuffer */
+			    (void *)outBitrate,       /* pvSetQueryBuffer */
+			    u4QueryBufLen);   /* u4SetQueryBufferLen */
+
+	if ((rStatus != WLAN_STATUS_SUCCESS &&
+		rStatus != WLAN_STATUS_PENDING) ||
+		(u4QueryInfoLen !=
+		sizeof(struct WFD_LLS_TX_BIT_RATE))) {
+		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
+				rStatus, u4QueryBufLen);
+		rStatus = -EFAULT;
+	}
+}
+#endif
+#endif
+
+
 void halDumpHifStats(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -4594,13 +5105,24 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 	uint8_t i = 0;
 	uint32_t u4BufferSize = 512, pos = 0;
 	char *buf;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	struct TX_LATENCY_REPORT_STATS *prStats = &prAdapter->rMsduReportStats;
+	struct TX_LATENCY_STATS *prLatencyReport;
+#endif
 
 	if (!prAdapter)
 		return;
 
 	prGlueInfo = prAdapter->prGlueInfo;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+#endif
 
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 0)
 	halDumpMsduReportStats(prAdapter);
+#endif
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	if (prGlueInfo->fgIsEnableMon)
@@ -4613,6 +5135,10 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 
 	if (time_before(jiffies, prHifStats->ulUpdatePeriod))
 		return;
+
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	halDumpMsduReportStats(prAdapter);
+#endif
 
 	buf = (char *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
 	if (!buf)
@@ -4677,6 +5203,21 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 	DBGLOG(HAL, INFO, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
+
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	if (prTokenInfo->u4EnAdjustCtrlMode == WFD_SCC_BALANCE_MODE &&
+		prAdapter->rWifiVar.u4WfdSccBalanceEnable) {
+#if CFG_SUPPORT_LLS
+		kalWFDBssBalanceGetPreTxBW(prAdapter, &prTokenInfo->bitrate);
+#endif
+		prLatencyReport = &prStats->rDiff;
+		DBGLOG(HAL, INFO,
+			"WFD Credit: [%lu,%lu,%lu,%lu]\n",
+			prTokenInfo->u4TxCredit[0], prTokenInfo->u4TxCredit[1],
+			prTokenInfo->u4TxCredit[2], prTokenInfo->u4TxCredit[3]);
+	}
+	halWFDBssBalanceFsmSteps(prAdapter, prTokenInfo);
+#endif
 }
 
 #if CFG_CHIP_RESET_SUPPORT

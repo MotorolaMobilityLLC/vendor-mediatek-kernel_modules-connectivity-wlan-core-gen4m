@@ -268,6 +268,10 @@
 #define HIF_TX_CREDIT_STEP_COUNT (TX_RING_SIZE / HIF_TX_CREDIT_STEP_LEVET)
 #define HIF_DEFAULT_MAX_BSS_TX_CREDIT	(TX_RING_SIZE * 2)
 #define HIF_DEFAULT_MIN_BSS_TX_CREDIT	(TX_RING_SIZE >> 3)
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+#define HIF_DEFAULT_MAX_BSS_BALANCE_TX_CREDIT	(HIF_TX_MSDU_TOKEN_NUM)
+#define HIF_DEFAULT_MIN_BSS_BALANCE_TX_CREDIT	(TX_RING_SIZE >> 4)
+#endif
 #define HIF_TX_CREDIT_HIGH_USAGE	70
 #define HIF_TX_CREDIT_LOW_USAGE		30
 #endif
@@ -419,6 +423,23 @@ enum ENUM_HW_WFDMA0_RX_RING_IDX {
 };
 
 struct GL_HIF_INFO;
+
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+enum ENUM_WFD_BSS_BALANCE_STATE {
+	WFD_BSS_BALANCE_NO_LIMIT_STATE = 0,
+	WFD_BSS_BALANCE_QUICK_STATE,
+	WFD_BSS_BALANCE_MAIN_STATE,
+	WFD_BSS_BALANCE_STEP_STATE,
+	WFD_BSS_BALANCE_FORCE_STATE
+};
+#endif
+
+enum ENUM_WFD_ADJUST_CTRL_MODE {
+	WFD_DEFAULT_MODE = 0,
+	WFD_SCC_BALANCE_MODE
+};
+#endif
 
 /* ============================================================================
  * PCI/RBUS TX / RX Frame Descriptors format
@@ -617,6 +638,13 @@ struct MSDU_TOKEN_HISTORY_INFO {
 	uint32_t u4CurIdx;
 };
 
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+struct WFD_LLS_TX_BIT_RATE {
+	uint32_t au4CurrentBitrate[BSSID_NUM];
+	uint32_t au4PredictBitrate[BSSID_NUM];
+};
+#endif
+
 struct MSDU_TOKEN_INFO {
 	uint32_t u4UsedCnt;
 	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
@@ -627,13 +655,22 @@ struct MSDU_TOKEN_INFO {
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
 	uint32_t u4MaxBssFreeCnt;
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+	enum ENUM_WFD_ADJUST_CTRL_MODE u4EnAdjustCtrlMode;
 	bool fgEnAdjustCtrl;
 	uint32_t u4TxCredit[MAX_BSSID_NUM];
 	uint32_t u4LastTxBssCnt[MAX_BSSID_NUM];
 	uint32_t u4MaxBssTxCredit;
 	uint32_t u4MinBssTxCredit;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	enum ENUM_WFD_BSS_BALANCE_STATE u4WFDBssBalanceState;
+	uint32_t u4MaxBssBalanceTxCredit;
+	uint32_t u4MinBssBalanceTxCredit;
+	uint32_t u4DataMsduRptCountPerBss[MAX_BSSID_NUM]; /* HIF_STATS */
+	signed long u4TxDiffBytes[MAX_BSSID_NUM]; /* kalPerMonUpdate */
+	signed long u4RxDiffBytes[MAX_BSSID_NUM]; /* kalPerMonUpdate */
+	struct WFD_LLS_TX_BIT_RATE bitrate;
 #endif
-
+#endif
 	struct MSDU_TOKEN_HISTORY_INFO rHistory;
 };
 

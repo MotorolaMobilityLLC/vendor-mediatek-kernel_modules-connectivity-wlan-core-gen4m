@@ -1016,6 +1016,11 @@ struct WIFI_VAR {
 	uint16_t u2WowDetectTypeExt;
 	uint32_t u4TxHangFullDumpMode;
 	uint8_t ucMobileLikeSuspend; /* allow mobile like suspend */
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	uint32_t u4WfdSccBalanceEnable;
+	uint32_t u4WfdSccBalanceMode; /* 0: auto mode, 1: force mode */
+	int32_t i4BssCount[MAX_BSSID_NUM];
+#endif
 
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
@@ -1547,6 +1552,9 @@ struct TX_LATENCY_STATS {
 struct TX_LATENCY_REPORT_STATS {
 	struct TX_LATENCY_STATS rCounting;
 	struct TX_LATENCY_STATS rReported;
+#if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	struct TX_LATENCY_STATS rDiff;
+#endif
 	uint32_t u4ContinuousTxFail;
 	u_int8_t fgTxLatencyEnabled;
 };
