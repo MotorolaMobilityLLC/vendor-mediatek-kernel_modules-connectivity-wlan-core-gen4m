@@ -374,7 +374,7 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 
 	case RST_DRV_OWN_FAIL:
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
 		u4RstFlag = RST_FLAG_WF_RESET;
@@ -389,7 +389,7 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 	case RST_WHOLE_CHIP_TRIGGER:
 	case RST_FWK_TRIGGER:
 	case RST_SMC_CMD_FAIL:
-#if (CFG_SUPPORT_CONNINFRA == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
 		u4RstFlag = RST_FLAG_WF_RESET;
@@ -397,10 +397,10 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 		break;
 
 	case RST_SER_TIMEOUT:
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		u4RstFlag = RST_FLAG_DO_CORE_DUMP;
-#else
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 		u4RstFlag = RST_FLAG_CHIP_RESET;
+#else
+		u4RstFlag = RST_FLAG_DO_CORE_DUMP;
 #endif
 		break;
 
