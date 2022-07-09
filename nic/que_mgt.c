@@ -1951,8 +1951,15 @@ NEXT:
 		u4CurStaUsedResource = 0;
 
 #if QM_FORWARDING_FAIRNESS
-	prQM->au4HeadStaRecIndex[ucTC] = u4CurStaIndex;
-	prQM->au4ResourceUsedCount[ucTC] = u4CurStaUsedResource;
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	if (ucTC < TC_NUM) {
+#else
+	if (ucTC < NUM_OF_PER_STA_TX_QUEUES) {
+#endif
+		prQM->au4HeadStaRecIndex[ucTC] = u4CurStaIndex;
+		prQM->au4ResourceUsedCount[ucTC] =
+			u4CurStaUsedResource;
+	}
 #endif
 
 	DBGLOG(QM, TEMP,
