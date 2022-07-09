@@ -584,6 +584,15 @@ static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
 	case WLAN_PINCTRL_MSG_FUNC_OFF:
 		name = "wf_rst_off";
 		break;
+	case WLAN_PINCTRL_MSG_FUNC_PTA_UART_INIT:
+		name = "wf_rst_pta_uart_init";
+		break;
+	case WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON:
+		name = "wf_rst_pta_uart_on";
+		break;
+	case WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF:
+		name = "wf_rst_pta_uart_off";
+		break;
 	default:
 		goto exit;
 	}

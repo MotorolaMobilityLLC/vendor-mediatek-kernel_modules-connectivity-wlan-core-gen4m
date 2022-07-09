@@ -7417,7 +7417,7 @@ static int initWlan(void)
 {
 	int ret = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
-
+	struct mt66xx_chip_info *chip = NULL;
 	DBGLOG(INIT, INFO, "initWlan\n");
 
 #ifdef CFG_CHIP_RESET_KO_SUPPORT
@@ -7553,6 +7553,13 @@ static int initWlan(void)
 		return -EBUSY;
 	}
 #endif /* CFG_AP_80211KVR_INTERFACE */
+
+	glGetChipInfo((void **)&chip);
+
+	if (!chip)
+		DBGLOG(HAL, ERROR, "NULL chip info init Wlan.\n");
+	else
+		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_INIT);
 
 	DBGLOG(INIT, INFO, "initWlan::End\n");
 

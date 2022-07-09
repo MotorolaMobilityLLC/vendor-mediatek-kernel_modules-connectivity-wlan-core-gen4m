@@ -2262,6 +2262,9 @@ uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter)
 
 int connsys_power_on(void)
 {
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	struct mt66xx_chip_info *chip = NULL;
+#endif
 	int ret = 0;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -2279,6 +2282,14 @@ int connsys_power_on(void)
 		connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 		return ret;
 	}
+
+	glGetChipInfo((void **)&chip);
+
+	if (!chip)
+		DBGLOG(HAL, ERROR, "NULL chip info pwr on.\n");
+	else
+		wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
+
 #endif
 
 	return ret;
@@ -2312,6 +2323,7 @@ void connsys_power_off(void)
 
 	halMawdPwrOff();
 	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
+	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF);
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 #endif
 }
