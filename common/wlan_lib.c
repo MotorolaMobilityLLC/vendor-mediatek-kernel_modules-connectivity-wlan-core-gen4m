@@ -3066,8 +3066,6 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 #endif
 			}
 
-			prAdapter->fgIsChipNoAck = TRUE;
-
 			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
 		}
