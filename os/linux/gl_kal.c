@@ -7555,6 +7555,10 @@ void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 		}
 	}
 
+	DBGLOG(REQ, LOUD,
+		"prDev=0x%p, BssIdx=%d, NumIPv4=%d, NumIPv6=%d\n",
+		prDev, prNetDevPrivate->ucBssIdx, u4NumIPv4, u4NumIPv6);
+
 	kalSetNetAddress(prGlueInfo, prNetDevPrivate->ucBssIdx,
 			 pucIPv4Addr, u4NumIPv4, pucIPv6Addr, u4NumIPv6);
 }
