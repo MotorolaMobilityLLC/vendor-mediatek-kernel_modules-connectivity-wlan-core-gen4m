@@ -627,6 +627,10 @@ int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 int mtk_cfg_connect(struct wiphy *wiphy,
 		    struct net_device *ndev,
 		    struct cfg80211_connect_params *sme);
+int mtk_cfg_update_connect_params(struct wiphy *wiphy,
+		  struct net_device *ndev,
+		  struct cfg80211_connect_params *sme,
+		  u32 changed);
 int mtk_cfg_disconnect(struct wiphy *wiphy,
 		       struct net_device *ndev,
 		       u16 reason_code);
