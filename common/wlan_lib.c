@@ -7661,8 +7661,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4NetifStartTh = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "NetifStartTh",
 					CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
-	prWifiVar->u4NetifStopThBackup = prWifiVar->u4NetifStopTh;
-	prWifiVar->u4NetifStartThBackup = prWifiVar->u4NetifStartTh;
 	prWifiVar->ucTxBaSize = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "TxBaSize",
 					WLAN_LEGACY_MAX_BA_SIZE);

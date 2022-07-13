@@ -2440,6 +2440,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4TxHeadRoomSize = 0;
 	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
@@ -2553,6 +2554,14 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, INFO, "prBssInfo NULL for ucBssIndex:%u\n",
+			ucBssIndex);
+		dev_kfree_skb(prSkb);
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
 #if CFG_SUPPORT_TPENHANCE_MODE
 	if (!wlanTpeProcess(prGlueInfo,
 			prSkb,
@@ -2576,8 +2585,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		[u2QueueIdx]);
 
 	if (GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue
-	    [ucBssIndex][u2QueueIdx]) >=
-	    prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh) {
+	    [ucBssIndex][u2QueueIdx]) >= prBssInfo->u4NetifStopTh) {
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
 		DBGLOG(TX, INFO,
@@ -2662,6 +2670,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 	uint16_t u2QueueIdx = 0;
 	uint8_t ucBssIndex = 0;
 	u_int8_t fgIsValidDevice = TRUE;
+	struct BSS_INFO *prBssInfo;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -2673,32 +2682,6 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 	ASSERT(u2QueueIdx < CFG_MAX_TXQ_NUM);
 
 	ucBssIndex = GLUE_GET_PKT_BSS_IDX(pvPacket);
-
-#if 0
-	if ((GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) <=
-	     0)) {
-		uint8_t ucBssIdx;
-		uint16_t u2QIdx;
-
-		DBGLOG(INIT, INFO, "TxPendingFrameNum[%u] CurFrameId[%u]\n",
-		       prGlueInfo->i4TxPendingFrameNum,
-		       GLUE_GET_PKT_ARRIVAL_TIME(pvPacket));
-
-		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
-		     ucBssIdx++) {
-			for (u2QIdx = 0; u2QIdx < CFG_MAX_TXQ_NUM; u2QIdx++) {
-				DBGLOG(INIT, INFO,
-					"BSS[%u] Q[%u] TxPendingFrameNum[%u]\n",
-					ucBssIdx, u2QIdx,
-					prGlueInfo->ai4TxPendingFrameNumPerQueue
-					[ucBssIdx][u2QIdx]);
-			}
-		}
-	}
-
-	ASSERT((GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) >
-		0));
-#endif
 
 	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_DEC_REF_CNT(
@@ -2720,9 +2703,9 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 #if CFG_ENABLE_WIFI_DIRECT
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+
 	{
-		struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(
-					     prGlueInfo->prAdapter, ucBssIndex);
 		struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *)
 						    NULL;
 		struct net_device *prNetdevice = NULL;
@@ -2757,12 +2740,9 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 #endif
 
 	if (fgIsValidDevice == TRUE) {
-		uint32_t u4StartTh =
-			prGlueInfo->prAdapter->rWifiVar.u4NetifStartTh;
-
 		if (netif_subqueue_stopped(prDev, prSkb) &&
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
-		    [u2QueueIdx] <= u4StartTh) {
+		    [u2QueueIdx] <= prBssInfo->u4NetifStartTh) {
 			netif_wake_subqueue(prDev, u2QueueIdx);
 			DBGLOG(TX, INFO,
 				"WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",

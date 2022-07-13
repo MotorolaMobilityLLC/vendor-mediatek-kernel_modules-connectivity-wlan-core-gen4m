@@ -1863,13 +1863,24 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
-		halSetAdjustCtrl(prAdapter, true);
-	else if (prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B) {
-		halSetAdjustCtrl(prAdapter, true);
+	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED
+		&& NIC_IS_BSS_BELOW_11AC(prBssInfo)) {
+		if (NIC_IS_BSS_11B(prBssInfo))
+			prAdapter->u4AdjustCtrlBitmap |= BIT(ucBssIndex);
+
+		prBssInfo->u4NetifStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
+		prBssInfo->u4NetifStartTh = prBssInfo->u4NetifStopTh / 2;
 	} else {
-		halSetAdjustCtrl(prAdapter, false);
+		prBssInfo->u4NetifStopTh = prWifiVar->u4NetifStopTh;
+		prBssInfo->u4NetifStartTh = prWifiVar->u4NetifStartTh;
+		prAdapter->u4AdjustCtrlBitmap &= ~BIT(ucBssIndex);
 	}
+
+	if ((prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
+		|| prAdapter->u4AdjustCtrlBitmap != 0)
+		halSetAdjustCtrl(prAdapter, TRUE);
+	else
+		halSetAdjustCtrl(prAdapter, FALSE);
 
 	kalMemZero(&rCmdSetBssInfo,
 		   sizeof(struct CMD_SET_BSS_INFO));
@@ -2099,12 +2110,15 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(BSS, INFO,
 	       "Update Bss[%u] ConnState[%u] OPmode[%u] BSSID[" MACSTR
-	       "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n", ucBssIndex,
+	       "] AuthMode[%u] EncStatus[%u] IotAct[%u] NetIfTh[%u:%u]\n",
+	       ucBssIndex,
 	       prBssInfo->eConnectionState,
 	       prBssInfo->eCurrentOPMode, MAC2STR(prBssInfo->aucBSSID),
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
-	       rCmdSetBssInfo.ucIotApAct);
+	       rCmdSetBssInfo.ucIotApAct,
+	       prBssInfo->u4NetifStopTh,
+	       prBssInfo->u4NetifStartTh);
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_SET_BSS_INFO,
