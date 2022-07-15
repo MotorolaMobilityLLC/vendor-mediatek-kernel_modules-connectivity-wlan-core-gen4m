@@ -659,14 +659,9 @@ void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
 		return;
 	}
 	DBGLOG(SAA, TRACE, "Continue to do auth/assoc\n");
-	if (fgFtRicRequest)
-		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_AUTH3,
-			    (struct SW_RFB *)NULL);
-	else {
-		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
-		saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
-			    (struct SW_RFB *)NULL);
-	}
+	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+	saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_ASSOC1,
+		    (struct SW_RFB *)NULL);
 }				/* end of saaFsmRunEventFTContinue() */
 
 /*----------------------------------------------------------------------------*/
