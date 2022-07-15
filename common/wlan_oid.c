@@ -16117,10 +16117,7 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	/* ToDo: for Resource Request Protocol, we need to check if RIC request
 	** is included.
 	*/
-	if (prFtIes->prMDIE && (prFtIes->prMDIE->ucBitMap & BIT(1)))
-		prFtContinueMsg->fgFTRicRequest = TRUE;
-	else
-		prFtContinueMsg->fgFTRicRequest = FALSE;
+	prFtContinueMsg->fgFTRicRequest = FALSE;
 	DBGLOG(OID, INFO, "FT: continue to do auth/assoc, Ft Request %d\n",
 	       prFtContinueMsg->fgFTRicRequest);
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prFtContinueMsg,
