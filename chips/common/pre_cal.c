@@ -754,56 +754,30 @@ int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 
 int wlanPreCalPwrOn(void)
 {
-#define MAX_PRE_ON_COUNT 5
-
-	int32_t u4RetryCnt = 0;
 	int32_t ret = 0;
 
 	DBGLOG(INIT, INFO, "wlanPreCalPwrOn.\n");
 
-	while (update_wr_mtx_down_up_status(0, 0)) {
-		if (get_wifi_process_status()) {
-			ret = -1;
-			goto exit;
-		}
-		kalMsleep(50);
-	}
+	if (!wfsys_is_locked())
+		wfsys_lock();
 
-	if (get_wifi_powered_status()) {
-		ret = -1;
-		goto unlock;
-	}
-
-	while (g_u4WlanInitFlag == 0) {
-		DBGLOG(INIT, WARN,
-			"g_u4WlanInitFlag(%d) retryCount(%d)",
-			g_u4WlanInitFlag,
-			u4RetryCnt);
-
-		kalMsleep(100);
-		u4RetryCnt++;
-
-		if (u4RetryCnt > MAX_PRE_ON_COUNT) {
-			ret = -1;
-			goto unlock;
-		}
-	}
 	update_pre_cal_status(1);
 	g_fgPreCal = TRUE;
 
 	ret = wlanFuncOnImpl();
 	if (ret)
-		goto unlock;
+		goto exit;
 
 	wlanFuncOffImpl();
 
-unlock:
+exit:
 	g_fgPreCal = FALSE;
 	update_pre_cal_status(0);
-	update_wr_mtx_down_up_status(1, 0);
-exit:
-	if (ret)
+
+	if (ret) {
 		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+		wfsys_unlock();
+	}
 
 	return ret;
 }
@@ -811,6 +785,8 @@ exit:
 int wlanPreCal(void)
 {
 	DBGLOG(INIT, INFO, "wlanPreCal.\n");
+	if (wfsys_is_locked())
+		wfsys_unlock();
 
 	return 0;
 }

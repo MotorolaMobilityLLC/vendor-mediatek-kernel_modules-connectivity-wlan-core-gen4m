@@ -1361,7 +1361,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_custom.o \
 		$(OS_DIR)platform.o \
 		$(OS_DIR)gl_emi.o \
-		$(OS_DIR)gl_csi.o
+		$(OS_DIR)gl_csi.o \
+		$(OS_DIR)gl_sys_lock.o
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
         OS_OBJS += $(OS_DIR)gl_fw_log.o

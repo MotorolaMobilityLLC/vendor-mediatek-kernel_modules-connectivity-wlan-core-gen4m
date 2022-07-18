@@ -1674,6 +1674,10 @@ enum ENUM_NVRAM_STATE wlanNvramGetState(void);
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int connsys_power_event_notification(enum conn_pwr_event_type type,
 	void *data);
+void power_throttling_init(void);
+void power_throttling_deinit(void);
+void power_throttling_start(void);
+void power_throttling_stop(void);
 #endif
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH

@@ -81,5 +81,15 @@ void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
 int connsys_power_on(void);
 int connsys_power_done(void);
 void connsys_power_off(void);
+
+#if CFG_MTK_ANDROID_WMT
+#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+void unregister_chrdev_cbs(void);
+void register_chrdev_cbs(void);
+#endif
+void unregister_plat_connsys_cbs(void);
+void register_plat_connsys_cbs(void);
+#endif
+
 #endif /* _CMM_ASIC_COMMON_H */
 

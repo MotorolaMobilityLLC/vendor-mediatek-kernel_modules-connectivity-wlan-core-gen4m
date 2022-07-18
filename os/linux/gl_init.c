@@ -5543,18 +5543,18 @@ int connsys_power_event_notification(
 	return 0;
 }
 
-static void power_throttling_init(void)
+void power_throttling_init(void)
 {
 	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
 		(CONN_PWR_EVENT_CB)connsys_power_event_notification);
 }
 
-static void power_throttling_deinit(void)
+void power_throttling_deinit(void)
 {
 	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
 }
 
-static void power_throttling_start(void)
+void power_throttling_start(void)
 {
 	struct mt66xx_hif_driver_data *prDriverData =
 		get_platform_driver_data();
@@ -5564,7 +5564,7 @@ static void power_throttling_start(void)
 			&prDriverData->rTempInfo);
 }
 
-static void power_throttling_stop(void)
+void power_throttling_stop(void)
 {
 	conn_pwr_drv_post_off(CONN_PWR_DRV_WIFI);
 }
@@ -7169,252 +7169,6 @@ int wlanFuncOff(void)
 	return 0;
 }
 
-#if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-static int wlanWmtCbGetBusCnt(void)
-{
-	struct wireless_dev *prWdev = gprWdev[0];
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
-	if (!prGlueInfo)
-		return 0;
-
-	return prGlueInfo->rHifInfo.u4HifCnt;
-}
-
-static int wlanWmtCbClrBusCnt(void)
-{
-	struct wireless_dev *prWdev = gprWdev[0];
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
-	if (prGlueInfo)
-		prGlueInfo->rHifInfo.u4HifCnt = 0;
-
-	return 0;
-}
-
-static int wlanWmtCbSetMpuProtect(bool enable)
-{
-	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
-
-#if CFG_MTK_ANDROID_EMI
-	kalSetEmiMpuProtection(emi_mem_get_phy_base(data->chip_info),
-		enable);
-#endif
-	return 0;
-}
-
-static int wlanWmtCbIsWifiDrvOwn(void)
-{
-	struct wireless_dev *prWdev = gprWdev[0];
-	struct GLUE_INFO *prGlueInfo = NULL;
-
-	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
-	if (!prGlueInfo || !prGlueInfo->prAdapter)
-		return 0;
-
-	return (prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
-}
-
-static void unregister_wmt_cbs(void)
-{
-	mtk_wcn_wmt_wlan_unreg();
-}
-
-static void register_wmt_cbs(void)
-{
-	struct _MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
-
-	kalMemZero(&rWmtCb, sizeof(struct _MTK_WCN_WMT_WLAN_CB_INFO));
-	rWmtCb.wlan_probe_cb = wlanFuncOn;
-	rWmtCb.wlan_remove_cb = wlanFuncOff;
-	rWmtCb.wlan_bus_cnt_get_cb = wlanWmtCbGetBusCnt;
-	rWmtCb.wlan_bus_cnt_clr_cb = wlanWmtCbClrBusCnt;
-	rWmtCb.wlan_emi_mpu_set_protection_cb = wlanWmtCbSetMpuProtect;
-	rWmtCb.wlan_is_wifi_drv_own_cb = wlanWmtCbIsWifiDrvOwn;
-
-	mtk_wcn_wmt_wlan_reg(&rWmtCb);
-}
-
-#else /* CFG_SUPPORT_CONNAC1X */
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-static void unregister_conninfra_cbs(void)
-{
-	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
-}
-
-static void register_conninfra_cbs(void)
-{
-	struct sub_drv_ops_cb conninfra_wf_cb;
-
-	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
-	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
-			glRstwlanPreWholeChipReset;
-	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
-			glRstwlanPostWholeChipReset;
-	conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	/* Register conninfra call back */
-	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
-	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
-	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
-#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
-
-	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
-		&conninfra_wf_cb);
-}
-
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-static int wlan_pre_pwr_on(void)
-{
-	struct mt66xx_hif_driver_data *prDriverData =
-		get_platform_driver_data();
-	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
-
-	DBGLOG(INIT, INFO, "wlan_pre_pwr_on\n");
-
-	return wlan_pinctrl_action(prChipInfo, WLAN_PINCTRL_MSG_FUNC_ON);
-}
-
-static int wlan_efuse_on(void)
-{
-	int32_t ret = 0;
-
-	DBGLOG(INIT, INFO, "wlan_efuse_on.\n");
-
-	ret = wlanFuncOnImpl();
-	if (ret)
-		goto exit;
-
-	wlanFuncOffImpl();
-
-exit:
-	if (ret)
-		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
-
-	return ret;
-}
-
-static int wlan_pwr_on_notify(void)
-{
-	DBGLOG(INIT, INFO, "wlan_power_on_notify\n");
-#if 0
-	wlanFuncOn();
-	wlanFuncOff();
-#endif
-	return 0;
-}
-
-static void unregister_connv3_cbs(void)
-{
-	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
-	connv3_sub_drv_ops_unregister(CONNV3_DRV_TYPE_WIFI);
-}
-
-static void register_connv3_cbs(void)
-{
-	struct connv3_sub_drv_ops_cb cb;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	struct sub_drv_ops_cb conninfra_wf_cb;
-#endif
-	int ret = 0;
-
-	kalMemZero(&cb, sizeof(cb));
-
-	cb.pwr_on_cb.pre_power_on = wlan_pre_pwr_on;
-	cb.pwr_on_cb.power_on_notify = wlan_pwr_on_notify;
-
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	cb.pre_cal_cb.pre_on_cb = wlan_pre_pwr_on;
-	cb.pre_cal_cb.efuse_on_cb = wlan_efuse_on;
-	cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
-	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
-#endif
-
-	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;
-	cb.rst_cb.post_whole_chip_rst = wlan_post_whole_chip_rst_v3;
-
-	ret = connv3_sub_drv_ops_register(CONNV3_DRV_TYPE_WIFI, &cb);
-	if (ret)
-		DBGLOG(INIT, ERROR,
-			"connv3_sub_drv_ops_register failed, ret=%d\n",
-			ret);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
-	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
-		wlan_pre_whole_chip_rst_v2;
-	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
-		wlan_post_whole_chip_rst_v2;
-
-	ret = conninfra_sub_drv_ops_register(CONNDRV_TYPE_MAWD,
-		&conninfra_wf_cb);
-	if (ret)
-		DBGLOG(INIT, ERROR,
-			"conninfra_sub_drv_ops_register failed, ret=%d\n",
-			ret);
-#endif
-}
-#endif
-
-static void unregister_char_dev_cbs(void)
-{
-	mtk_wcn_wlan_unreg();
-}
-
-static void register_char_dev_cbs(void)
-{
-	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
-
-	kalMemZero(&rWlanCb, sizeof(struct MTK_WCN_WLAN_CB_INFO));
-	rWlanCb.wlan_probe_cb = wlanFuncOn;
-	rWlanCb.wlan_remove_cb = wlanFuncOff;
-	mtk_wcn_wlan_reg(&rWlanCb);
-}
-#endif /* CFG_SUPPORT_CONNAC1X */
-
-static void unregister_connsys_plat_cbs(void)
-{
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_deinit();
-#endif
-
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	unregister_wmt_cbs();
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	unregister_conninfra_cbs();
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	unregister_connv3_cbs();
-#endif
-
-#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	unregister_char_dev_cbs();
-#endif
-}
-
-static void register_connsys_plat_cbs(void)
-{
-#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	register_char_dev_cbs();
-#endif
-
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	register_wmt_cbs();
-#elif (CFG_SUPPORT_CONNINFRA == 1)
-	register_conninfra_cbs();
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	register_connv3_cbs();
-#endif
-
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_init();
-#endif
-}
-#endif /* CFG_MTK_ANDROID_WMT */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Driver entry point when the driver is configured as a Linux Module,
@@ -7518,7 +7272,7 @@ static int initWlan(void)
 	}
 
 #if CFG_MTK_ANDROID_WMT
-	register_connsys_plat_cbs();
+	register_plat_connsys_cbs();
 #else
 	ret = glBusFuncOn();
 	if (ret)
@@ -7622,7 +7376,7 @@ static void exitWlan(void)
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-	unregister_connsys_plat_cbs();
+	unregister_plat_connsys_cbs();
 #else
 	glBusFuncOff();
 #endif /* CFG_MTK_ANDROID_WMT */

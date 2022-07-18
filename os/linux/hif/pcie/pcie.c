@@ -2600,6 +2600,9 @@ int32_t glBusFuncOn(void)
 	if (ret) {
 		DBGLOG(HAL, ERROR, "pci_register_driver failed, ret=%d\n",
 			ret);
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+		mtk_pcie_remove_port(0);
+#endif
 		return ret;
 	}
 

@@ -1288,9 +1288,18 @@ uint32_t wlanImageSectionConfig(
 		fgCheckStatus, FALSE,
 		INIT_EVENT_ID_CMD_RESULT, &rEvent, sizeof(rEvent));
 
-	if (fgCheckStatus && rEvent.ucStatus != 0) {
-		DBGLOG(INIT, ERROR, "Event status: %d\n", rEvent.ucStatus);
-		u4Status = WLAN_STATUS_FAILURE;
+	if (fgCheckStatus) {
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR,
+				"wlanSendInitSetQueryCmd failed(0x%x).\n",
+				u4Status);
+			u4Status = WLAN_STATUS_FAILURE;
+		} else if (rEvent.ucStatus != 0) {
+			DBGLOG(INIT, ERROR,
+				"Event status: %d\n",
+				rEvent.ucStatus);
+			u4Status = WLAN_STATUS_FAILURE;
+		}
 	}
 
 	return u4Status;
@@ -2080,7 +2089,6 @@ exit:
 	DBGLOG(INIT, TRACE, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
-
 
 	return rStatus;
 }

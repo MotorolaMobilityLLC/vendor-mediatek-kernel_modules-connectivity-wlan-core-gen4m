@@ -2934,4 +2934,50 @@ void connsys_power_off(void)
 #endif
 }
 
+#if CFG_MTK_ANDROID_WMT
+void unregister_plat_connsys_cbs(void)
+{
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	power_throttling_deinit();
+#endif
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_WIFI);
+#endif
+
+	unregister_chrdev_cbs();
+}
+
+void register_plat_connsys_cbs(void)
+{
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct sub_drv_ops_cb conninfra_wf_cb;
+#endif
+
+	register_chrdev_cbs();
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
+	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
+			glRstwlanPreWholeChipReset;
+	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
+			glRstwlanPostWholeChipReset;
+	conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	/* Register conninfra call back */
+	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
+	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
+	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+
+	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
+		&conninfra_wf_cb);
+#endif
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	power_throttling_init();
+#endif
+}
+#endif
+
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
