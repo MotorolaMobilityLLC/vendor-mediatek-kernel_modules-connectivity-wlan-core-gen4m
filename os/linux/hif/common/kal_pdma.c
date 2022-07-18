@@ -1230,13 +1230,8 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prTxReq = kalMemAlloc(sizeof(struct TX_CMD_REQ), PHY_MEM_TYPE);
 
-	if (prTxReq == NULL) {
-		DBGLOG(HAL, ERROR, "kmalloc() TX_CMD_REQ error\n");
-		halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
-		return CMD_TX_RESULT_FAILED;
-	}
+	prTxReq = &prCmdInfo->rTxCmdReq;
 
 	prTxReq->prCmdInfo = prCmdInfo;
 	prTxReq->ucTC = ucTC;
@@ -1282,7 +1277,6 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 				SPIN_LOCK_CMD_PENDING);
 		}
 		list_del(prCur);
-		kfree(prTxReq);
 	}
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
