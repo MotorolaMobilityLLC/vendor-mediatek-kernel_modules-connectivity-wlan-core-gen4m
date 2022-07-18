@@ -6159,13 +6159,9 @@ void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq);
 }
 
-void kalRxTaskSchedule(struct GLUE_INFO *pr)
+void __kalRxTaskletSchedule(struct GLUE_INFO *pr)
 {
-#if CFG_SUPPORT_RX_WORK
-	kalRxWorkSchedule(pr);
-#else /* CFG_SUPPORT_RX_WORK */
 	tasklet_hi_schedule(&pr->rRxTask);
-#endif /* CFG_SUPPORT_RX_WORK */
 }
 
 void kalRxTaskletSchedule(struct GLUE_INFO *pr)
@@ -6194,9 +6190,9 @@ void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 	}
 
 #if CFG_SUPPORT_TRX_CSD
-	kalRxTaskScheduleCsd(pr);
+	kalRxTaskletScheduleCsd(pr);
 #else /* CFG_SUPPORT_TRX_CSD */
-	kalRxTaskSchedule(pr);
+	__kalRxTaskletSchedule(pr);
 #endif /* CFG_SUPPORT_TRX_CSD */
 }
 
@@ -6211,9 +6207,9 @@ uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 	if (GLUE_DEC_REF_CNT(pr->u4RxTaskScheduleCnt) > 0) {
 		/* reschedule RxTasklet due to pending INT */
 #if CFG_SUPPORT_TRX_CSD
-		kalRxTaskScheduleCsd(pr);
+		kalRxTaskletScheduleCsd(pr);
 #else /* CFG_SUPPORT_TRX_CSD */
-		kalRxTaskSchedule(pr);
+		__kalRxTaskletSchedule(pr);
 #endif /* CFG_SUPPORT_TRX_CSD */
 	} else {
 		/* no more schedule, so enable interrupt */
@@ -9655,7 +9651,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
 	RRO_LOG_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME,ID]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
@@ -9666,7 +9662,6 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		head3,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl, RX_WORK_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
@@ -10169,7 +10164,7 @@ static void kalRxCsd(void *info)
 {
 	struct GLUE_INFO *pr = (struct GLUE_INFO *) info;
 
-	kalRxTaskSchedule(pr);
+	__kalRxTaskletSchedule(pr);
 }
 
 void kalTRxCsdUninit(struct GLUE_INFO *pr)
@@ -10314,7 +10309,7 @@ uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
 	return WLAN_STATUS_SUCCESS;
 }
 
-void kalRxTaskScheduleCsd(struct GLUE_INFO *pr)
+void kalRxTaskletScheduleCsd(struct GLUE_INFO *pr)
 {
 	int cpu, new;
 	int ret;
@@ -10327,7 +10322,7 @@ void kalRxTaskScheduleCsd(struct GLUE_INFO *pr)
 	 */
 	if ((0x1 << cpu) & pr->u4RxCsdMap) {
 		put_cpu();
-		kalRxTaskSchedule(pr);
+		__kalRxTaskletSchedule(pr);
 		return;
 	}
 
@@ -10340,7 +10335,7 @@ void kalRxTaskScheduleCsd(struct GLUE_INFO *pr)
 	if (ret && ret != -EBUSY) {
 		DBGLOG(INIT, INFO, "Rx CSD cpu:[%d:%d] ret:%d\n",
 			cpu, new, ret);
-		kalRxTaskSchedule(pr);
+		__kalRxTaskletSchedule(pr);
 	}
 }
 #endif /* CFG_SUPPORT_TRX_CSD */
@@ -14351,40 +14346,3 @@ void kalVnfInit(IN struct ADAPTER *prAdapter)
 	DBGLOG(SW4, INFO, "VOLT_INFO init\n");
 }
 #endif /* CFG_VOLT_INFO */
-
-#if CFG_SUPPORT_RX_WORK
-void kalRxWork(struct work_struct *work)
-{
-	struct GLUE_INFO *prGlueInfo = container_of(work,
-					struct GLUE_INFO, rRxWork);
-	halRxWork(prGlueInfo);
-}
-
-void kalRxWorkInit(struct GLUE_INFO *pr)
-{
-	INIT_WORK(&pr->rRxWork, kalRxWork);
-	pr->prRxWorkQueue = create_workqueue("wifi_rx_work");
-	if (!pr->prRxWorkQueue)
-		DBGLOG(INIT, ERROR, "prRxWorkQueue is NULL\n");
-}
-
-void kalRxWorkUninit(struct GLUE_INFO *pr)
-{
-	struct workqueue_struct *prRxWq;
-
-	prRxWq = pr->prRxWorkQueue;
-	pr->prRxWorkQueue = NULL;
-	if (prRxWq) {
-		flush_workqueue(prRxWq);
-		destroy_workqueue(prRxWq);
-	}
-}
-
-void kalRxWorkSchedule(struct GLUE_INFO *pr)
-{
-	if (pr->prRxWorkQueue)
-		queue_work(pr->prRxWorkQueue, &pr->rRxWork);
-	else
-		DBGLOG_LIMITED(INIT, INFO, "prRxWorkQueue is NULL\n");
-}
-#endif /* CFG_SUPPORT_RX_WORK */
