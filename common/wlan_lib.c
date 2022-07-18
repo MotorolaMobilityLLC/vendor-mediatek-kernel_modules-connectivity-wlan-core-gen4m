@@ -4884,8 +4884,8 @@ uint32_t wlanGetMiniTxPower(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	startOfs = arRange[bandIdx][ePhyMode].startOfs;
-	endOfs = arRange[bandIdx][ePhyMode].endOfs;
+	startOfs = arRange[(uint8_t)bandIdx][(uint8_t)ePhyMode].startOfs;
+	endOfs = arRange[(uint8_t)bandIdx][(uint8_t)ePhyMode].endOfs;
 
 
 	/*NVRAM start addreess :0*/
