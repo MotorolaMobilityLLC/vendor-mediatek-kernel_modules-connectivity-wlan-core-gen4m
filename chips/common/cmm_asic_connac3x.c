@@ -1305,6 +1305,11 @@ void fillConnac3xNicTxDescAppendWithSdo(
 	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
 	prHwTxDescAppend->CR4_APPEND.u2PktFlags =
 		HIF_PKT_FLAGS_CT_INFO_STA_APPLY_OVERRIDE;
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (prMsduInfo->fgMgmtUseDataQ)
+		prHwTxDescAppend->CR4_APPEND.u2PktFlags =
+			HIF_PKT_FLAGS_CT_INFO_APPLY_TXD;
+#endif
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
 		prMsduInfo->ucBssIndex;
 	prHwTxDescAppend->CR4_APPEND.ucWtblIndex =

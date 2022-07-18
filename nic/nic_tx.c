@@ -2144,6 +2144,20 @@ u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER
 	return FALSE;
 }
 
+static bool
+nicIsNeedTXDAppend(IN struct MSDU_INFO *prMsduInfo)
+{
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		return TRUE;
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (prMsduInfo->fgMgmtUseDataQ)
+		return TRUE;
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll compose the Tx descriptor of the MSDU.
@@ -2256,7 +2270,7 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 				 FALSE, prTxDescBuffer);
 
 		/* Compose TxD append */
-		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		if (nicIsNeedTXDAppend(prMsduInfo))
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 					       prTxDescBuffer + u4TxDescLength);
 	}
