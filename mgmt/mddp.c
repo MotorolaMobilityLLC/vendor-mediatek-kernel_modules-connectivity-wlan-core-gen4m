@@ -1070,7 +1070,7 @@ int32_t mddpNotifyWifiOnEnd(void)
 				g_rSettings.u4MdOnBit);
 	}
 
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
 #else
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END_QOS);
@@ -1400,7 +1400,7 @@ static bool wait_for_md_on_complete(void)
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	uint32_t u4Val = 0;
 #endif
 
@@ -1438,7 +1438,7 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_AOP;
 	}
 
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
 	if (g_fgMddpEnabled)
 		u4Val |= MDDP_SUPPORT_CR_BIT;
@@ -1552,8 +1552,18 @@ static void save_mddp_stats(void)
 
 void mddpSetMDFwOwn(void)
 {
-	wf_ioremap_write(MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
+	kalDevRegWrite(NULL, MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
 	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
+}
+
+u_int8_t mddpIsMDFwOwn(void)
+{
+	uint32_t u4Val = 0;
+
+	kalDevRegRead(NULL, MD_LPCTL_ADDR, &u4Val);
+	DBGLOG(INIT, INFO, "Set MD Fw Status[0x%08x].\n", u4Val);
+
+	return (u4Val & BIT(0)) == BIT(0);
 }
 
 bool mddpIsSupportMcifWifi(void)

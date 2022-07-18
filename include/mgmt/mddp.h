@@ -33,12 +33,15 @@
  */
 #define MD_ON_OFF_TIMEOUT			1000
 #define MD_ON_OFF_TIMEOUT_CASAN		3000
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define MD_LPCTL_ADDR 0x7C001614
+#define MD_STATUS_SYNC_CR 0
+#elif (CFG_SUPPORT_CONNAC2X == 1)
 #define MD_STATUS_SYNC_CR 0x180600F4
-#define MD_LPCTL_ADDR 0x18060050
+#define MD_LPCTL_ADDR 0x7C060050
 #else
 #define MD_STATUS_SYNC_CR 0x1800701C
-#define MD_LPCTL_ADDR 0x18007030
+#define MD_LPCTL_ADDR 0x7C007030
 #endif
 #define MD_STATUS_INIT_SYNC_BIT BIT(0)
 #define MD_STATUS_OFF_SYNC_BIT  BIT(1)
@@ -58,7 +61,7 @@
 #define MD_SHM_MD_ON_BIT   BIT(10)
 #define MD_SHM_WIFI_ON_BIT (BIT(11) | MD_SHM_AP_STAT_BIT) /* ap_stat */
 
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 /* Use SER dummy register for mddp support flag */
 #define MDDP_SUPPORT_CR 0x820600d0
 #define MDDP_SUPPORT_CR_BIT BIT(23)
@@ -145,6 +148,7 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
 void mddpSetMDFwOwn(void);
+u_int8_t mddpIsMDFwOwn(void);
 bool mddpIsSupportMcifWifi(void);
 bool mddpIsSupportMddpWh(void);
 
