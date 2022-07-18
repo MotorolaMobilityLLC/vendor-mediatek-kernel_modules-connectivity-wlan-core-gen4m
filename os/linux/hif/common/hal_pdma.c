@@ -4125,9 +4125,10 @@ uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
-	/* PCIE owner should implement this function */
+	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
+	struct mt66xx_chip_info *chip = data->chip_info;
 
-	return TRUE;
+	return chip->CSRBaseAddress != NULL;
 }
 
 /*----------------------------------------------------------------------------*/

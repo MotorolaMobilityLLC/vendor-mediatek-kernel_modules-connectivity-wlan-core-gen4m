@@ -180,6 +180,7 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	const struct PCIE_CHIP_CR_REMAPPING *remap =
 		prChipInfo->bus_info->bus2chip_remap;
 	const struct pcie2ap_remap *pcie2ap;
+	unsigned long flags;
 	uint32_t backup_val = 0, tmp_val = 0;
 
 	if (!remap) {
@@ -193,6 +194,7 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
@@ -200,6 +202,7 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	kalDevRegRead(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
 static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
@@ -209,6 +212,7 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	const struct PCIE_CHIP_CR_REMAPPING *remap =
 		prChipInfo->bus_info->bus2chip_remap;
 	const struct pcie2ap_remap *pcie2ap;
+	unsigned long flags;
 	uint32_t backup_val = 0, tmp_val = 0;
 
 	if (!remap) {
@@ -222,6 +226,7 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
@@ -229,6 +234,7 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	kalDevRegWrite(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
 static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
@@ -242,6 +248,7 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
+	unsigned long flags;
 
 	if (!remap) {
 		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
@@ -262,6 +269,7 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
@@ -277,6 +285,7 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
+	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
 static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
@@ -290,6 +299,7 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 #endif
+	unsigned long flags;
 
 	if (!remap) {
 		DBGLOG(INIT, ERROR, "Remapping table NOT supported\n");
@@ -310,6 +320,7 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
+	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
 	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
@@ -325,6 +336,7 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE)
 	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
+	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
 u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
@@ -337,6 +349,7 @@ u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
 	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 	uint32_t offset = 0;
+	unsigned long flags;
 
 	remap = chip_info->bus_info->bus2chip_remap;
 	if (!remap) {
@@ -350,6 +363,7 @@ u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 	kalDevRegRead(glue, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
@@ -373,6 +387,7 @@ u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
 		offset += BUS_REMAP_SIZE;
 	}
 	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 	return TRUE;
 }
 
@@ -386,6 +401,7 @@ u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
 	const struct pcie2ap_remap *pcie2ap;
 	uint32_t backup_val = 0, tmp_val = 0;
 	uint32_t offset = 0;
+	unsigned long flags;
 
 	remap = chip_info->bus_info->bus2chip_remap;
 	if (!remap) {
@@ -399,6 +415,7 @@ u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 	kalDevRegRead(glue, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
@@ -422,6 +439,7 @@ u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
 		offset += BUS_REMAP_SIZE;
 	}
 	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 	return TRUE;
 }
 
@@ -440,6 +458,7 @@ u_int8_t kalDevRegL2ReadRange(IN struct GLUE_INFO *glue,
 	uint32_t offset_addr = 0;
 	uint32_t offset = 0;
 	u_int8_t ret = TRUE;
+	unsigned long flags;
 
 	remap = chip_info->bus_info->bus2chip_remap;
 	if (!remap) {
@@ -461,6 +480,7 @@ u_int8_t kalDevRegL2ReadRange(IN struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
 	kalDevRegRead(glue, pcie2ap->reg_base, &value);
 	backup_val = value;
@@ -505,6 +525,7 @@ exit:
 #if defined(_HIF_PCIE)
 	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
 #endif
+	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 
 	return ret;
 }
@@ -524,6 +545,7 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 	uint32_t offset_addr = 0;
 	uint32_t offset = 0;
 	u_int8_t ret = TRUE;
+	unsigned long flags;
 
 	DBGLOG(INIT, INFO, "reg: 0x%x, total_size: 0x%x\n", reg, total_size);
 
@@ -547,6 +569,7 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
 	kalDevRegRead(glue, pcie2ap->reg_base, &value);
 	backup_val = value;
@@ -591,6 +614,7 @@ exit:
 #if defined(_HIF_PCIE)
 	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
 #endif
+	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 
 	return ret;
 }
@@ -1946,33 +1970,63 @@ int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value)
 {
 	struct ADAPTER *ad = priv;
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	int32_t ret = 0;
+
+	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	HAL_MCR_RD(ad, addr, value);
 
-	return 0;
+exit:
+	return ret;
 }
 
 int32_t wf_reg_write_wrapper(void *priv,
 	uint32_t addr, uint32_t value)
 {
 	struct ADAPTER *ad = priv;
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	int32_t ret = 0;
+
+	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	HAL_MCR_WR(ad, addr, value);
 
-	return 0;
+exit:
+	return ret;
 }
 
 int32_t wf_reg_write_mask_wrapper(void *priv,
 	uint32_t addr, uint32_t mask, uint32_t value)
 {
 	struct ADAPTER *ad = priv;
+	struct GLUE_INFO *glue = ad->prGlueInfo;
 	uint32_t val = 0;
+	int32_t ret = 0;
+
+	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	HAL_MCR_RD(ad, addr, &val);
 	val &= ~mask;
 	val |= value;
 	HAL_MCR_WR(ad, addr, val);
 
-	return 0;
+exit:
+	return ret;
 }
 

@@ -410,10 +410,13 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	return true;
 }
 
-static void axiCsrIounmap(struct platform_device *pdev)
+static void axiCsrIounmap(struct platform_device *pdev,
+	struct mt66xx_chip_info *prChipInfo)
 {
 	if (!CSRBaseAddress)
 		return;
+
+	prChipInfo->CSRBaseAddress = NULL;
 
 	/* Unmap CSR base address */
 	iounmap(CSRBaseAddress);
@@ -804,7 +807,7 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 		platform_get_drvdata(pdev);
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
 
-	axiCsrIounmap(pdev);
+	axiCsrIounmap(pdev, prChipInfo);
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiFreeHifMem(pdev);
