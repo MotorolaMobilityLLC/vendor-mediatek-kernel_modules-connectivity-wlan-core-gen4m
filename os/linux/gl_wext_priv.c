@@ -21935,7 +21935,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_CSI,
 		.pfHandler = priv_driver_set_csi,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = NULL
 	},
 #endif
@@ -22173,7 +22173,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 	kalMemZero(pcCmd, i4TotalLen);
 	kalMemCopy(pcCmd, pcCommand, i4TotalLen);
 
-	DBGLOG(REQ, INFO,
+	DBGLOG(REQ, LOUD,
 		"priv command is [%s], argPolicy[%d] argNum[%d]\n",
 		pcCmd, prHandler->argPolicy, prHandler->ucArgNum);
 	wlanCfgParseArgument(pcCmd, &i4Argc, pcArgv);
@@ -22199,7 +22199,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 			DBGLOG(REQ, INFO, "invalid attr(%d)\n", ucIdx);
 			goto FREE;
 		}
-		DBGLOG(REQ, INFO, "(%d) type[%d] len[%u] min[%u] max[%u]\n",
+		DBGLOG(REQ, LOUD, "(%d) type[%d] len[%u] min[%u] max[%u]\n",
 			ucIdx, prAttr->type, prAttr->len, prAttr->min,
 			prAttr->max);
 		switch (prAttr->type) {
@@ -22211,7 +22211,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 
 			if (kalkStrtou32(pcArgv[ucIdx], 0, &tmp) != 0)
 				goto FREE;
-			DBGLOG(REQ, INFO, ">> value[%u]\n", tmp);
+			DBGLOG(REQ, LOUD, ">> value[%u]\n", tmp);
 
 			if (tmp >= prAttr->min && tmp <= prAttr->max)
 				continue;
@@ -22227,7 +22227,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 
 			if (kalStrtoint(pcArgv[ucIdx], 0, &tmp) != 0)
 				goto FREE;
-			DBGLOG(REQ, INFO, ">> value[%d]\n", tmp);
+			DBGLOG(REQ, LOUD, ">> value[%d]\n", tmp);
 
 			if (tmp >= prAttr->min && tmp <= prAttr->max)
 				continue;
@@ -22239,7 +22239,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 		{
 			uint8_t len = kalStrLen(pcArgv[ucIdx]);
 
-			DBGLOG(REQ, INFO, ">> len[%d]\n", len);
+			DBGLOG(REQ, LOUD, ">> len[%d]\n", len);
 
 			if (prAttr->len != 0) {
 				if (prAttr->len != len)
@@ -22255,13 +22255,13 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 			break;
 		}
 		default: {
-			DBGLOG(REQ, INFO, "unknown type[%d]\n", prAttr->type);
+			DBGLOG(REQ, ERROR, "unknown type[%d]\n", prAttr->type);
 			goto FREE;
 		}
 		}
 	}
 	ret = 1;
-	DBGLOG(REQ, INFO, "priv command validate pass\n");
+	DBGLOG(REQ, LOUD, "priv command validate pass\n");
 FREE:
 	if (pcCmd)
 		kalMemFree(pcCmd, VIR_MEM_TYPE, i4TotalLen);
