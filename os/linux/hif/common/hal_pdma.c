@@ -300,7 +300,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
 		}
 
 		if (halIsTimeout(u4Time, u4TimeoutValue)) {
-#if (CFG_SUPPORT_CONNAC2X == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 			uint32_t u4Value = 0;
 
 			kalDevRegRead(prGlueInfo, CONN_HIF_ON_DBGCR01,
