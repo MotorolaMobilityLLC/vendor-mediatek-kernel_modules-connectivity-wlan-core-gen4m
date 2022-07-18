@@ -2024,6 +2024,9 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 
 static void glRxInit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_RX_WORK
+	kalRxWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_WORK */
 #if CFG_SUPPORT_RX_GRO
 	kalNapiInit(prGlueInfo);
 #if CFG_SUPPORT_RX_NAPI
@@ -2042,6 +2045,9 @@ static void glRxUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_TRX_CSD
 	kalTRxCsdUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TRX_CSD */
+#if CFG_SUPPORT_RX_WORK
+	kalRxWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_WORK */
 	glTaskletUninit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
