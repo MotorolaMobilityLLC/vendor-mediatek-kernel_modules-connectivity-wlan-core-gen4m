@@ -21208,7 +21208,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_GET_CHIP,
 		.pfHandler = priv_driver_get_chip_config,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_2,
 		.policy    = NULL
 	},
@@ -22182,7 +22182,7 @@ uint8_t priv_cmd_validate(struct net_device *prNetDev,
 		prHandler->ucArgNum != i4Argc)
 		goto FREE;
 	else if (prHandler->argPolicy == VERIFY_MIN_ARG_NUM &&
-		prHandler->ucArgNum < i4Argc)
+		prHandler->ucArgNum > i4Argc)
 		goto FREE;
 
 	/* 2. validate arguments */
