@@ -2057,8 +2057,13 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prChipInfo->queryPmicInfo)
 		prChipInfo->queryPmicInfo(prAdapter);
 
-	if (prFwDlOps->phyAction)
-		prFwDlOps->phyAction(prAdapter);
+	if (prFwDlOps->phyAction) {
+		rStatus = prFwDlOps->phyAction(prAdapter);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "phyAction fail\n");
+			goto exit;
+		}
+	}
 
 	DBGLOG(INIT, INFO, "FW download Start\n");
 
