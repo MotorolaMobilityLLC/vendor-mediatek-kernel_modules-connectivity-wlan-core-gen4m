@@ -1283,6 +1283,7 @@
 #define CFG_SUPPORT_LLS 0
 #endif
 
+#define CFG_REPORT_TX_RATE_FROM_LLS 0
 /*------------------------------------------------------------------------------
  * Flags for prepare the FW compile flag
  *------------------------------------------------------------------------------

@@ -505,7 +505,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 	return i4Rst;
 }
 
-#if !CFG_REPORT_MAX_TX_RATE
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for getting tx rate from LLS
@@ -521,7 +521,6 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	IN uint32_t *pu4TxBw, IN uint8_t ucBssIndex)
 {
 	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
-#if CFG_SUPPORT_LLS
 	uint32_t u4MaxTxRate, u4Nss;
 	union {
 		struct CMD_GET_STATS_LLS cmd;
@@ -574,14 +573,13 @@ static uint32_t wlanGetTxRateFromLinkStats(
 			: targetRateInfo.nsts;
 
 	wlanQueryRateByTable(targetRateInfo.mode,
-			targetRateInfo.rate, targetRateInfo.bw, 0,
-			u4Nss, pu4TxRate, &u4MaxTxRate);
+		targetRateInfo.rate, targetRateInfo.bw, 0,
+		u4Nss, pu4TxRate, &u4MaxTxRate);
 	DBGLOG(REQ, INFO, "rate=%u mode=%u nss=%u stbc=%u bw=%u linkspeed=%u\n",
 		targetRateInfo.rate, targetRateInfo.mode,
 		u4Nss, targetRateInfo.stbc,
 		*pu4TxBw, *pu4TxRate);
 
-#endif
 	return rStatus;
 }
 #endif
@@ -613,7 +611,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
-#if !CFG_REPORT_MAX_TX_RATE
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	uint32_t u4TxBw = 0;
 #endif
 
@@ -737,7 +735,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
-#if !CFG_REPORT_MAX_TX_RATE
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
 			&u4TxBw, ucBssIndex);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
