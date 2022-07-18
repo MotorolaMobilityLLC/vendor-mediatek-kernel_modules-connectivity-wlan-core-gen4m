@@ -5619,17 +5619,17 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 		KAL_SPIN_LOCK_DECLARATION();
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		DBGLOG(TX, INFO, "fgIsNetAbsent!\n");
+		DBGLOG(TX, TRACE, "fgIsNetAbsent!\n");
 		while (1) {
 			if (prBssInfo->ucBssFreeQuota > 0) {
 				prBssInfo->ucBssFreeQuota--;
 				QUEUE_INSERT_TAIL(
 					prQue, (struct QUE_ENTRY *) prMsduInfo);
-				DBGLOG(TX, INFO,
+				DBGLOG(TX, TRACE,
 					"fgIsNetAbsent Quota Available\n");
 			} else {
 				fgReturnBssAbsentQ = TRUE;
-				DBGLOG(TX, INFO, "fgIsNetAbsent NoQuota\n");
+				DBGLOG(TX, TRACE, "fgIsNetAbsent NoQuota\n");
 				break;
 			}
 			if (QUEUE_IS_NOT_EMPTY(
@@ -5652,7 +5652,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
 		}
 	} else {
 		if (prAdapter->u4BssAbsentTxBufferBitmap)
-			DBGLOG(TX, INFO, "fgIsNetAbsent END!\n");
+			DBGLOG(TX, TRACE, "fgIsNetAbsent END!\n");
 		QUEUE_INSERT_TAIL(prQue, (struct QUE_ENTRY *) prMsduInfo);
 		if (QUEUE_IS_NOT_EMPTY(
 			&prAdapter->rBssAbsentQueue[ucBssIndex]))

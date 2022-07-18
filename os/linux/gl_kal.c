@@ -3221,7 +3221,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	    [ucBssIndex][u2QueueIdx]) >= u4StopTh) {
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
-		DBGLOG(TX, INFO,
+		DBGLOG_LIMITED(TX, INFO,
 		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 		       ucBssIndex, u2QueueIdx, u4SkbLen,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
@@ -3364,7 +3364,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		    [u2QueueIdx] <= u4StartTh) {
 			netif_wake_subqueue(prDev, u2QueueIdx);
-			DBGLOG(TX, INFO,
+			DBGLOG_LIMITED(TX, INFO,
 				"WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 				ucBssIndex, u2QueueIdx, prSkb->len,
 				GLUE_GET_REF_CNT(
@@ -9655,7 +9655,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	RRO_LOG_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME,ID]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu" \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
@@ -10278,17 +10278,21 @@ void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask)
 uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
 	struct GLUE_INFO *pr)
 {
-	int cpu = smp_processor_id();
-	int new;
+	int cpu, new;
 	int ret;
 
+	cpu = get_cpu();
 	CSD_INC_TX_CPU_CNT(pr, cpu);
 	/*
 	 * kalBoostCpu will modify u4TxCsdMap to control the CPU that are
 	 * allowed to acquire tx direct lock
 	 */
-	if ((0x1 << cpu) & pr->u4TxCsdMap)
+	if ((0x1 << cpu) & pr->u4TxCsdMap) {
+		put_cpu();
 		return kalTxDirectStartXmit(prSkb, pr);
+	}
+
+	put_cpu();
 
 	new = kalTxCsdGetAnyBigCpu(pr);
 	CSD_INC_TX_CSD_CPU_CNT(pr, new);
@@ -10307,19 +10311,22 @@ uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
 
 void kalRxTaskletScheduleCsd(struct GLUE_INFO *pr)
 {
-	int cpu = smp_processor_id();
-	int new;
+	int cpu, new;
 	int ret;
 
+	cpu = get_cpu();
 	CSD_INC_RX_CPU_CNT(pr, cpu);
 	/*
 	 * kalBoostCpu will modify u4RxCsdMap to control the CPU that are
 	 * allowed to schedule Rx Tasklet
 	 */
 	if ((0x1 << cpu) & pr->u4RxCsdMap) {
+		put_cpu();
 		__kalRxTaskletSchedule(pr);
 		return;
 	}
+
+	put_cpu();
 
 	new = kalRxCsdGetBigCpu(pr);
 	CSD_INC_RX_CSD_CPU_CNT(pr, new);

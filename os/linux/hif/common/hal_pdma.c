@@ -1954,7 +1954,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	if (GLUE_INC_REF_CNT(ai4PortLock[u4Port]) > 1) {
 		/* Single user allowed per port read */
-		DBGLOG(RX, WARN, "Single user only P[%u] [%d]\n", u4Port,
+		DBGLOG_LIMITED(RX, WARN, "Single user only P[%u] [%d]\n",
+			u4Port,
 			GLUE_GET_REF_CNT(ai4PortLock[u4Port]));
 		goto end;
 	}
