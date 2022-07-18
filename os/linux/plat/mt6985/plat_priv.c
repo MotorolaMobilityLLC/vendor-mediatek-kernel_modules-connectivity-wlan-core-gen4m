@@ -22,6 +22,7 @@
 #define DOMAIN_CONN	2
 #endif
 
+#define MAX_CPU_FREQ (3050 * 1000)
 #define AUTO_CPU_FREQ (-1)
 #define UNDEFINED_CPU_FREQ (-2)
 #define CPU_ALL_CORE (0xff)
@@ -73,10 +74,10 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[] = {
 	ENUM_CPU_BOOST_STATUS_LV0, /* 2 */
 	ENUM_CPU_BOOST_STATUS_LV0, /* 3 */
 	ENUM_CPU_BOOST_STATUS_LV0, /* 4 */
-	ENUM_CPU_BOOST_STATUS_LV0, /* 5: 250Mbps */
-	ENUM_CPU_BOOST_STATUS_LV0, /* 6 */
-	ENUM_CPU_BOOST_STATUS_LV0, /* 7 */
-	ENUM_CPU_BOOST_STATUS_LV2, /* 8: 1200Mbps */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 5: 250Mbps */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 6 */
+	ENUM_CPU_BOOST_STATUS_LV1, /* 7 */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 8: 1200Mbps */
 	ENUM_CPU_BOOST_STATUS_LV3, /* 9: 2500Mbps */
 	ENUM_CPU_BOOST_STATUS_LV3  /* 10 */
 };
@@ -114,18 +115,18 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_ALL_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_ALL_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_ALL_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.u4RpsMap = RPS_ALL_CORE,
+		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
 		.fgDramBoost = FALSE
 	},
@@ -154,8 +155,8 @@ struct BOOST_INFO rBoostInfo[] = {
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV3 */
 		.rCpuInfo = {
-			.i4LittleCpuFreq = AUTO_CPU_FREQ,
-			.i4BigCpuFreq = UNDEFINED_CPU_FREQ
+			.i4LittleCpuFreq = MAX_CPU_FREQ,
+			.i4BigCpuFreq = MAX_CPU_FREQ
 		},
 		.rHifThreadInfo = {
 			.u4CpuMask = CPU_BIG_CORE,
