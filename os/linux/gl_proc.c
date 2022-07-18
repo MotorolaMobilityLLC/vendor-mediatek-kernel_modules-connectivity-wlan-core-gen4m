@@ -156,6 +156,10 @@
 struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
 #endif
 
+#if CFG_SUPPORT_CSI
+struct CSI_DATA_T rTmpCSIData;
+#endif
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -287,19 +291,20 @@ static int procCSIDataRelease(struct inode *n, struct file *f)
 	return 0;
 }
 
-struct CSI_DATA_T rTmpCSIData;
 static ssize_t procCSIDataRead(struct file *filp,
 	char __user *buf, size_t count, loff_t *f_pos)
 {
-	uint8_t *temp = &g_aucProcBuf[0];
+	uint8_t *temp;
 	uint32_t u4CopySize = 0;
 	uint32_t u4StartIdx = 0;
 	int32_t i4Pos = 0;
 	struct CSI_INFO_T *prCSIInfo = NULL;
+	u_int8_t bStatus;
 
-	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter)
+	if (g_prGlueInfo_proc && g_prGlueInfo_proc->prAdapter) {
 		prCSIInfo = glCsiGetCSIInfo();
-	else
+		temp = glCsiGetCSIBuf();
+	} else
 		return 0;
 
 	if (prCSIInfo->bIncomplete == FALSE) {
@@ -311,8 +316,9 @@ static ssize_t procCSIDataRead(struct file *filp,
 		 * No older CSI data in buffer waiting for reading out,
 		 * so prepare a new one for reading.
 		 */
-		if (wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
-			&rTmpCSIData))
+		bStatus = wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
+			&rTmpCSIData);
+		if (bStatus)
 			i4Pos = wlanCSIDataPrepare(temp,
 				prCSIInfo, &rTmpCSIData);
 
@@ -348,14 +354,19 @@ static ssize_t procCSIDataRead(struct file *filp,
 		}
 	}
 
-	if (copy_to_user(buf, &g_aucProcBuf[u4StartIdx], u4CopySize)) {
-		DBGLOG(INIT, ERROR, "[CSI] copy to user failed\n");
+	if (copy_to_user(buf, temp + u4StartIdx, u4CopySize)) {
+		DBGLOG(REQ, ERROR, "[CSI] copy to user failed\n");
 		return -EFAULT;
 	}
 
 	*f_pos += u4CopySize;
 
-	DBGLOG(INIT, INFO, "[CSI] u4CopySize=%d\n", u4CopySize);
+#if CFG_CSI_DEBUG
+	DBGLOG(REQ, INFO,
+		"[CSI] copy size = %d, [used|head idx|tail idx] = [%d|%d|%d]\n",
+		u4CopySize, prCSIInfo->u4CSIBufferUsed,
+		prCSIInfo->u4CSIBufferHead, prCSIInfo->u4CSIBufferTail);
+#endif
 
 	return (ssize_t)u4CopySize;
 }

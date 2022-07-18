@@ -9284,10 +9284,6 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				break;
 			}
 
-#if CFG_CSI_DEBUG
-			DBGLOG_MEM8(NIC, INFO,
-				(uint8_t *) tag_buffer, legacy_len);
-#endif
 			kalMemCopy(legacy, tag_buffer, legacy_len);
 			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_CSI_DATA,
 						legacy, legacy_len);

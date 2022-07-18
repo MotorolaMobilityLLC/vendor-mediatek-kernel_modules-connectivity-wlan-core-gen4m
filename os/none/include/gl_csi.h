@@ -25,6 +25,7 @@
 #define CSI_FIX_DATA_SIZE 107
 #define CSI_H_max_Index 4		/* for 2x2 support */
 #define Max_Stream_Bytes 3000
+#define CSI_MAX_BUFFER_SIZE 4300
 
 #define CSI_INFO_RSVD1 BIT(0)
 #define CSI_INFO_RSVD2 BIT(1)
@@ -114,6 +115,8 @@ enum CSI_EVENT_TLV_TAG {
 	CSI_EVENT_H_IDX,
 	CSI_EVENT_TX_RX_IDX,
 	CSI_EVENT_RSVD5,
+	CSI_EVENT_BW_SEG,
+	CSI_EVENT_REMAIN_LAST,
 	CSI_EVENT_TLV_TAG_NUM,    /* csi event end, must be exist */
 };
 
@@ -185,6 +188,8 @@ struct CSI_DATA_T {
 	uint32_t Antenna_pattern;
 	uint32_t u4TRxIdx;
 	uint32_t u4Rsvd5;
+	uint32_t u4SegmentNum;
+	uint8_t ucRemainLast;
 };
 
 /*
@@ -202,6 +207,7 @@ struct CSI_INFO_T {
 	uint32_t u4Value2[CSI_CONFIG_ITEM_NUM];
 	/* Variable for manipulating the CSI ring buffer */
 	struct CSI_DATA_T arCSIBuffer[CSI_RING_SIZE];
+	struct CSI_DATA_T rCSISegmentTemp;
 	uint32_t u4CSIBufferHead;
 	uint32_t u4CSIBufferTail;
 	uint32_t u4CSIBufferUsed;
@@ -271,6 +277,7 @@ struct CSI_TLV_ELEMENT {
  *******************************************************************************
  */
 struct CSI_INFO_T *glCsiGetCSIInfo(void);
+uint8_t *glCsiGetCSIBuf(void);
 void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo);
 void glCsiSupportDeinit(IN struct GLUE_INFO *prGlueInfo);
 int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
@@ -280,6 +287,8 @@ int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
 void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo);
 void nicEventCSIData(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
+u_int8_t wlanPushCSISegmentData(IN struct ADAPTER *prAdapter,
+	struct CSI_DATA_T *prCSIData);
 u_int8_t wlanPushCSIData(IN struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSIData);
 u_int8_t wlanPopCSIData(IN struct ADAPTER *prAdapter,
