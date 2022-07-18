@@ -1097,6 +1097,20 @@ exit:
 }
 #endif
 
+static u_int8_t is_coredump_source_valid(enum COREDUMP_SOURCE_TYPE source)
+{
+	switch (source) {
+	case COREDUMP_SOURCE_WF_DRIVER:
+	case COREDUMP_SOURCE_WF_MAWD:
+	case COREDUMP_SOURCE_WF_FW:
+	case COREDUMP_SOURCE_CONNV3:
+	case COREDUMP_SOURCE_CONNINFRA:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
 static int __coredump_start(struct coredump_ctx *ctx,
 	enum COREDUMP_SOURCE_TYPE source,
 	char *reason)
@@ -1108,6 +1122,11 @@ static int __coredump_start(struct coredump_ctx *ctx,
 
 	if (glue->u4ReadyFlag == 0) {
 		DBGLOG(INIT, WARN, "Skip coredump due to NOT ready.\n");
+		goto exit;
+	} else if (!is_coredump_source_valid(source)) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to invalid source(%d).\n",
+			source);
 		goto exit;
 	}
 
