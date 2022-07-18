@@ -4976,6 +4976,12 @@ int hif_thread(void *data)
 			kalTraceEnd();
 		}
 
+		if (test_and_clear_bit(GLUE_FLAG_SER_INT_BIT,
+				       &prGlueInfo->ulFlag)) {
+			TRACE(nicProcessSoftwareInterrupt(prAdapter),
+				"SER-INT");
+		}
+
 		/* Skip Tx request if SER is operating */
 		if ((prAdapter->fgIsFwOwn == FALSE) &&
 		    !nicSerIsTxStop(prAdapter)) {
@@ -6282,6 +6288,14 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr)
 }
 
 #if CFG_SUPPORT_MULTITHREAD
+void kalSetSerIntEvent(struct GLUE_INFO *pr)
+{
+	KAL_WAKE_LOCK(pr->prAdapter, pr->rIntrWakeLock);
+
+	set_bit(GLUE_FLAG_SER_INT_BIT, &pr->ulFlag);
+
+	wake_up_interruptible(&pr->waitq_hif);
+}
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr)

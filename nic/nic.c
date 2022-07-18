@@ -124,7 +124,7 @@ static const uint8_t ucIntEventMapSize = (sizeof(
 
 static IST_EVENT_FUNCTION apfnEventFuncTable[] = {
 	nicProcessAbnormalInterrupt,	/*!< INT_EVENT_ABNORMAL */
-	nicProcessSoftwareInterrupt,	/*!< INT_EVENT_SW_INT   */
+	nicProcessSoftwareInterruptEx,	/*!< INT_EVENT_SW_INT   */
 	nicProcessTxInterrupt,	/*!< INT_EVENT_TX       */
 	nicProcessRxInterrupt,	/*!< INT_EVENT_RX       */
 };
@@ -794,6 +794,15 @@ void nicProcessFwOwnBackInterrupt(IN struct ADAPTER
 {
 
 }				/* end of nicProcessFwOwnBackInterrupt() */
+
+void nicProcessSoftwareInterruptEx(IN struct ADAPTER
+				 *prAdapter)
+{
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		kalSetSerIntEvent(prAdapter->prGlueInfo);
+	else
+		nicProcessSoftwareInterrupt(prAdapter);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

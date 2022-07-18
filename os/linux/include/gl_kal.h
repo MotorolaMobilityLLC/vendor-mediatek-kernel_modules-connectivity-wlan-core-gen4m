@@ -163,7 +163,8 @@ extern struct platform_device *g_prPlatDev;
 	GLUE_FLAG_UPDATE_WMM_QUOTA | \
 	GLUE_FLAG_NOTIFY_MD_CRASH | \
 	GLUE_FLAG_DRV_INT | \
-	GLUE_FLAG_MGMT_DIRECT_HIF_TX)
+	GLUE_FLAG_MGMT_DIRECT_HIF_TX | \
+	GLUE_FLAG_SER_INT)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -1942,6 +1943,8 @@ void kalRxTaskletSchedule(struct GLUE_INFO *pr);
 uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
+
+void kalSetSerIntEvent(struct GLUE_INFO *pr);
 
 void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 

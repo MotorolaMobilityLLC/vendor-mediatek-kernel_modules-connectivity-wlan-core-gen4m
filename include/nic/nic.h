@@ -297,6 +297,9 @@ u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter);
 void nicRestoreSpiDefMode(IN struct ADAPTER *prAdapter);
 #endif
 
+void nicProcessSoftwareInterruptEx(IN struct ADAPTER
+				 *prAdapter);
+
 void nicProcessSoftwareInterrupt(IN struct ADAPTER
 				 *prAdapter);
 
