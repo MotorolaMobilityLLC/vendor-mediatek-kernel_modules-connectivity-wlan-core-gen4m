@@ -171,7 +171,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = HIGH_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
-		.u4ISRMask = CPU_BIG_CORE,
+		.u4ISRMask = CPU_X_CORE,
 		.fgDramBoost = FALSE
 	}
 };
