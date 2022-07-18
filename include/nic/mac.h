@@ -1246,6 +1246,8 @@
 	240 /* FILS Indication */
 #define ELEM_ID_DILS \
 	241 /* DILS */
+#define ELEM_ID_FRAGMENT \
+	242 /* FRAGMENT */
 #define ELEM_ID_RSNX \
 	244 /* RSN Extension */
 #define ELEM_ID_RESERVED \
@@ -2278,7 +2280,8 @@ enum BEACON_REPORT_DETAIL {
 /* 9.4.2.260 Short SSID List element */
 #define ELEM_EXT_ID_SHORT_SSID_LIST                 58
 
-#define MAX_LEN_OF_MLIE				255
+#define MAX_LEN_OF_MLIE					(255)
+#define MAX_LEN_OF_FRAGMENT				(255)
 
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
 #define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
@@ -2316,6 +2319,9 @@ enum BEACON_REPORT_DETAIL {
 #define ML_STA_CTRL_NSTR_BMP_SIZE			BIT(10)
 #define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			10
 #define ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT	BIT(11)
+
+#define SUB_IE_MLD_VENDOR_SPECIFIC			221
+#define SUB_IE_MLD_FRAGMENT				254
 
 /* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
 #define MLD_ID_PRESENT					BIT(0)
@@ -4469,6 +4475,7 @@ struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
 #define IE_LEN(fp)              (((struct IE_HDR *) fp)->ucLength)
 #define IE_ID_EXT(fp)           (((struct IE_HDR *) fp)->aucInfo[0])
 #define IE_SIZE(fp)             (ELEM_HDR_LEN + IE_LEN(fp))
+#define IE_TAIL(fp)             ((uint8_t *)fp + IE_SIZE(fp))
 
 #define SSID_IE(fp)             ((struct IE_SSID *) fp)
 

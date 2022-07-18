@@ -1099,7 +1099,7 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 
 	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
 		(int32_t) (prMgmtTxMsdu->u2FrameLength + /* incl. cookie */
-		MAX_LEN_OF_MLIE +
+		ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
 		MAC_TX_RESERVED_FIELD));
 	if (!prRetMsduInfo) {
 		DBGLOG(P2P, WARN, "alloc fail\n");
@@ -5650,7 +5650,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	u2EstimateSize += u2EstimatedExtraIELen;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	u2EstimateSize += MAX_LEN_OF_MLIE;
+	u2EstimateSize += ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
+			  ELEM_HDR_LEN + MAX_LEN_OF_FRAGMENT;
 #endif
 
 	/* add sizeof(UINT_64) for Cookie */

@@ -134,6 +134,13 @@ struct IE_NON_INHERITANCE {
 	uint8_t aucList[0];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FRAGMENT {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t pucData[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct STA_PROFILE {
 	uint16_t u2StaCtrl;
 	uint8_t ucComplete;
@@ -149,7 +156,7 @@ struct STA_PROFILE {
 	uint16_t u2CapInfo;
 	uint16_t u2StatusCode;
 	uint8_t ucIEbufLen;
-	uint8_t aucIEbuf[256];
+	uint8_t aucIEbuf[320];
 };
 
 struct MULTI_LINK_INFO {
@@ -184,7 +191,7 @@ void mldGenerateProbeRspIE(
 	uint8_t ucBssIdx, uint8_t fgComplete,
 	PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE);
 
-struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
+uint8_t *mldGenerateBasicCommonInfo(
 	IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
 	IN uint16_t u2FrameCtrl);
@@ -192,9 +199,9 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	uint32_t *u4IELength, uint8_t ucMldId);
 
-void mldGenerateBasicCompleteProfile(
+uint8_t *mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,
-	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
+	uint8_t *prIe,
 	struct MSDU_INFO *prMsduInfo,
 	uint32_t u4BeginOffset,
 	uint32_t u4PrimaryLength,
@@ -218,8 +225,9 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
 void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
-	IN const uint8_t *pucIE, IN const uint8_t *paucBssId,
-	IN uint16_t u2FrameCtrl, IN const char *pucDesc);
+	const uint8_t *pucIE, uint16_t u2Left,
+	const uint8_t *paucBssId, uint16_t u2FrameCtrl,
+	const char *pucDesc);
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
 

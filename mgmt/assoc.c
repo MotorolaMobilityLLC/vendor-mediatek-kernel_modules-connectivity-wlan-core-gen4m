@@ -669,7 +669,8 @@ struct MSDU_INFO* assocComposeReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
+	u2EstimatedFrameLen += ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
+			       ELEM_HDR_LEN + MAX_LEN_OF_FRAGMENT;
 #endif
 
 	/* Allocate a MSDU_INFO_T */
@@ -2139,7 +2140,8 @@ struct MSDU_INFO * assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
+	u2EstimatedFrameLen += ELEM_HDR_LEN + MAX_LEN_OF_MLIE +
+			       ELEM_HDR_LEN + MAX_LEN_OF_FRAGMENT;
 #endif
 
 	/* Allocate a MSDU_INFO_T */
