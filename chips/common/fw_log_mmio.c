@@ -172,7 +172,8 @@ static u_int8_t fwLogCtrlIsBufEmpty(struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl)
 
 static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 	struct FW_LOG_MMIO_CTRL *prCtrl,
-	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl)
+	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl,
+	u_int8_t fgForceRead)
 {
 	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
 	struct FW_LOG_MMIO_SUB_STATS *prSubStats =
@@ -180,6 +181,9 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 	uint32_t u4Offset = 0, u4Rp = 0, u4Recv = 0, u4Handled = 0;
 
 	fwLogCtrlRefreshSubHeader(prAdapter, prCtrl, prSubCtrl);
+
+	if (fgForceRead)
+		prSubCtrl->wp = prSubCtrl->iwp;
 
 	if (fwLogCtrlIsBufEmpty(prSubCtrl))
 		return;
@@ -227,7 +231,7 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 		prSubCtrl->irp);
 }
 
-int32_t fwLogMmioHandler(void)
+static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 {
 	struct FW_LOG_MMIO_CTRL *prCtrl = &g_ctx;
 	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
@@ -264,7 +268,8 @@ int32_t fwLogMmioHandler(void)
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
 		struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl = &prCtrl->sub_ctrls[i];
 
-		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl);
+		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl,
+				    fgForceRead);
 	}
 	wlanReleasePowerControl(prAdapter);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
@@ -275,6 +280,11 @@ exit:
 	fwLogMmioStatsDump(prAdapter, prCtrl);
 
 	return 0;
+}
+
+int32_t fwLogMmioHandler(void)
+{
+	return __fwLogMmioHandler(FALSE);
 }
 
 static void fwLogCtrlRefreshCommonHeader(struct ADAPTER *prAdapter,
@@ -392,7 +402,7 @@ void fwLogMmioStart(void)
 	prCtrl->started = TRUE;
 
 	if (prCtrl->defered)
-		fwLogMmioHandler();
+		__fwLogMmioHandler(FALSE);
 }
 
 void fwLogMmioStop(void)
@@ -404,7 +414,7 @@ void fwLogMmioStop(void)
 	if (!prCtrl->initialized)
 		return;
 
-	fwLogMmioHandler();
+	__fwLogMmioHandler(TRUE);
 
 	prCtrl->started = FALSE;
 }
