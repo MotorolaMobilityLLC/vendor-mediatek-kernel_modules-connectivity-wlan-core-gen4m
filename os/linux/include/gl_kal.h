@@ -1234,7 +1234,6 @@ int8_t atoi(uint8_t ch);
 #endif
 #define kalPrint			kalPrintLog
 #define kalPrintLimited(_Fmt...)	kalPrintLogLimited(WLAN_TAG _Fmt)
-#define kalPrintWoTag(_Fmt...)		printk(_Fmt)
 
 #define kalBreakPoint() \
 do { \
