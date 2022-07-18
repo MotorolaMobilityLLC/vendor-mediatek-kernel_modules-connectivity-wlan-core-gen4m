@@ -571,6 +571,11 @@ static void save_mddp_lls_stats(void)
 	uint8_t i, j, k, l;
 	int32_t ret;
 
+	if (!mddpIsSupportMcifWifi() || !mddpIsSupportMddpWh()) {
+		DBGLOG(INIT, ERROR, "mddp is not supported.\n");
+		return;
+	}
+
 	if (!gMddpWFunc.get_lls_stat) {
 		DBGLOG(INIT, ERROR,
 			"gMddpWFunc.get_lls_stat is not supported.\n");
@@ -581,6 +586,11 @@ static void save_mddp_lls_stats(void)
 	ret = gMddpWFunc.get_lls_stat(&cur_lls_stats);
 	if (ret != 0) {
 		DBGLOG(INIT, ERROR, "get_lls_stat fail, ret: %d.\n", ret);
+		return;
+	}
+
+	if (cur_lls_stats.version == 0) {
+		DBGLOG(INIT, ERROR, "MD is resetting.\n");
 		return;
 	}
 
@@ -613,7 +623,7 @@ static void save_mddp_lls_stats(void)
 
 		for (k = 0; k < STATS_LLS_MAX_CCK_BW_NUM; ++k) {
 			for (l = 0; l < STATS_LLS_CCK_NUM; ++l) {
-				todo->u4RxMpduCCK[j][k][l] +=
+				todo->u4RxMpduCCK[0][k][l] +=
 					isMdResetSinceLastQuery ?
 					cur->u4RxMpduCCK[0][k][l] :
 					(cur->u4RxMpduCCK[0][k][l] -
