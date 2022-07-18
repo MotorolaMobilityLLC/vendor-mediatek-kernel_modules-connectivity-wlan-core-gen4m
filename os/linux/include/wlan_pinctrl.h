@@ -16,8 +16,9 @@ enum WLAN_PINCTRL_MSG {
 };
 
 struct WLAN_PINCTRL_OPS {
-	int32_t (*init)(void);
-	int32_t (*action)(enum WLAN_PINCTRL_MSG msg);
+	int32_t (*init)(struct mt66xx_chip_info *chip_info);
+	int32_t (*action)(struct mt66xx_chip_info *chip_info,
+		enum WLAN_PINCTRL_MSG msg);
 };
 
 static inline int32_t wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
@@ -27,7 +28,7 @@ static inline int32_t wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
 	    !chip_info->pinctrl_ops->init)
 		return 0;
 
-	return chip_info->pinctrl_ops->init();
+	return chip_info->pinctrl_ops->init(chip_info);
 }
 
 static inline int32_t wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
@@ -38,7 +39,7 @@ static inline int32_t wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
 	    !chip_info->pinctrl_ops->action)
 		return 0;
 
-	return chip_info->pinctrl_ops->action(msg);
+	return chip_info->pinctrl_ops->action(chip_info, msg);
 }
 
 #endif

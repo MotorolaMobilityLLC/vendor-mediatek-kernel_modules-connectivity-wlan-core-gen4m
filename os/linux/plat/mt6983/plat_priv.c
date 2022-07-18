@@ -48,8 +48,9 @@ static uint32_t u4EmiMetOffset = 0x45D400;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 static struct pinctrl *pinctrl_ptr;
 
-static int32_t mt6983_wlan_pinctrl_init(void);
-static int32_t mt6983_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg);
+static int32_t mt6983_wlan_pinctrl_init(struct mt66xx_chip_info *chip_info);
+static int32_t mt6983_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
+	enum WLAN_PINCTRL_MSG msg);
 
 static struct WLAN_PINCTRL_OPS mt6983_pinctrl_ops = {
 	.init = mt6983_wlan_pinctrl_init,
@@ -545,7 +546,7 @@ int32_t kalPlatOpsInit(void)
 	return 0;
 }
 
-static int32_t mt6983_wlan_pinctrl_init(void)
+static int32_t mt6983_wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
 {
 	struct platform_device *pdev = g_prPlatDev;
 	int32_t ret = 0;
@@ -571,7 +572,8 @@ exit:
 	return ret;
 }
 
-static int32_t mt6983_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
+static int32_t mt6983_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
+	enum WLAN_PINCTRL_MSG msg)
 {
 	struct pinctrl_state *pinctrl;
 	uint8_t *name;

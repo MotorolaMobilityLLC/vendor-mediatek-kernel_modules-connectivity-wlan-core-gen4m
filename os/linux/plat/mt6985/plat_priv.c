@@ -48,8 +48,9 @@ static uint32_t u4EmiMetOffset = 0x45D400;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 static struct pinctrl *pinctrl_ptr;
 
-static int32_t mt6985_wlan_pinctrl_init(void);
-static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg);
+static int32_t mt6985_wlan_pinctrl_init(struct mt66xx_chip_info *chip_info);
+static int32_t mt6985_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
+	enum WLAN_PINCTRL_MSG msg);
 
 static struct WLAN_PINCTRL_OPS mt6985_pinctrl_ops = {
 	.init = mt6985_wlan_pinctrl_init,
@@ -546,7 +547,7 @@ int32_t kalPlatOpsInit(void)
 	return 0;
 }
 
-static int32_t mt6985_wlan_pinctrl_init(void)
+static int32_t mt6985_wlan_pinctrl_init(struct mt66xx_chip_info *chip_info)
 {
 	struct platform_device *pdev = g_prPlatDev;
 	int32_t ret = 0;
@@ -566,20 +567,26 @@ static int32_t mt6985_wlan_pinctrl_init(void)
 		DBGLOG(INIT, ERROR,
 			"devm_pinctrl_get failed, ret=%d.\n",
 			ret);
+		goto exit;
 	}
+
+	wlan_pinctrl_action(chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_INIT);
 
 exit:
 	return ret;
 }
 
-static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
+static int32_t mt6985_wlan_pinctrl_action(struct mt66xx_chip_info *chip_info,
+	enum WLAN_PINCTRL_MSG msg)
 {
 	struct pinctrl_state *pinctrl;
 	uint8_t *name;
 	int32_t ret = 0;
 
-	if (KAL_IS_ERR(pinctrl_ptr))
+	if (KAL_IS_ERR(pinctrl_ptr)) {
+		ret = -EINVAL;
 		goto exit;
+	}
 
 	switch (msg) {
 	case WLAN_PINCTRL_MSG_FUNC_ON:
@@ -598,6 +605,10 @@ static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
 		name = "wf_rst_pta_uart_off";
 		break;
 	default:
+		DBGLOG(INIT, ERROR,
+			"Unknown msg: %d.\n",
+			msg);
+		ret = -EINVAL;
 		goto exit;
 	}
 
@@ -613,13 +624,11 @@ static int32_t mt6985_wlan_pinctrl_action(enum WLAN_PINCTRL_MSG msg)
 	}
 
 	ret = pinctrl_select_state(pinctrl_ptr, pinctrl);
+	DBGLOG(INIT, INFO,
+		"pinctrl_select_state msg: %d, ret: %d.\n",
+		msg, ret);
 
 exit:
-	if (ret)
-		DBGLOG(INIT, ERROR,
-			"pinctrl_select_state ret: %d.\n",
-			ret);
-
 	return ret;
 }
 #endif

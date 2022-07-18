@@ -40,6 +40,7 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
+#include "wlan_pinctrl.h"
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
@@ -1935,6 +1936,8 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon();
 
+	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
+
 exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
@@ -1947,6 +1950,8 @@ exit:
 
 static void mt6639_mcu_deinit(struct ADAPTER *ad)
 {
+	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF);
+
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff();
 }
