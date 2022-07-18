@@ -1977,7 +1977,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 #endif /* DBG */
 
 	if (!prRxCtrl->rFreeSwRfbList.u4NumElem) {
-		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u]\n", u4Port);
+		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u], Ind=%u\n",
+				u4Port, prRxCtrl->rIndicatedRfbList.u4NumElem);
 		KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 		goto end;
 	}
@@ -2007,8 +2008,9 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			prSwRfb, struct SW_RFB *);
 		if (!prSwRfb) {
 			DBGLOG_LIMITED(RX, WARN,
-				"No More RFB for P[%u], RxCnt: %d, RfbCnt: %d\n",
-				u4Port, u4RxCnt, u4RfbCnt);
+				"No More RFB for P[%u], RxCnt: %u, RfbCnt: %u, Ind:%u\n",
+				u4Port, u4RxCnt, u4RfbCnt,
+				prRxCtrl->rIndicatedRfbList.u4NumElem);
 			break;
 		}
 		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);

@@ -255,6 +255,11 @@
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
 
+/* Enable flushing reordering when running out of SWRFB */
+#ifndef CFG_SUPPORT_RX_FLUSH_REORDERING
+#define CFG_SUPPORT_RX_FLUSH_REORDERING 0
+#endif
+
 /* Mobile(must Android) need default 1 */
 #if defined(CONFIG_ANDROID)
 #ifndef CFG_ENABLE_WAKE_LOCK

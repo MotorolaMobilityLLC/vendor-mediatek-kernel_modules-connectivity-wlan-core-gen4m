@@ -1721,6 +1721,8 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER *prAdapter,
 				   IN uint8_t ucBssIndex);
 
+void wlanReturnPacketDelaySetup(IN struct ADAPTER *prAdapter);
+
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 void wlanReturnPacketDelaySetupTasklet(uintptr_t data);
 #endif

@@ -390,6 +390,13 @@ enum ENUM_MAC_TX_QUEUE_INDEX {
 #define CLR_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry)->u2BarSSNIsValid = 0)
 #define SET_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry)->u2BarSSNIsValid = 1)
 
+#define IS_FLUSHED_SSN_VALID(_prBaSsnEntry)  \
+		((_prBaSsnEntry)->u2FlushedSSNIsValid)
+#define CLR_FLUSHED_SSN_VALID(_prBaSsnEntry) \
+		((_prBaSsnEntry)->u2FlushedSSNIsValid = 0)
+#define SET_FLUSHED_SSN_VALID(_prBaSsnEntry) \
+		((_prBaSsnEntry)->u2FlushedSSNIsValid = 1)
+
 struct RX_BA_ENTRY {
 	u_int8_t fgIsValid;
 	struct QUE rReOrderQue;
@@ -438,7 +445,11 @@ struct RX_BA_ENTRY {
 
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	struct SW_RFB *prCacheIndex[HALF_SEQ_NO_COUNT];
+	uint16_t u2CacheIndexCount; /* monitor to flush when over threshold */
 #endif
+	uint16_t u2FlushedSSN:12; /* WinStart before flush */
+	uint16_t u2FlushedSSNIsValid:1;
+	uint16_t u2FlushedSSNReserved:3;
 };
 
 typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter,

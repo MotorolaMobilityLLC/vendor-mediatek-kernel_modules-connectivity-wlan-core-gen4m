@@ -1144,8 +1144,11 @@ int8_t atoi(uint8_t ch);
 #define kal_min_t(_type, _v1, _v2) \
 	min_t(_type, _v1, _v2)
 
-#define kal_tasklet_schedule(_rRxRfbRetTask) \
-	tasklet_schedule(_rRxRfbRetTask)
+#define kal_tasklet_schedule(_rTasklet) \
+	tasklet_schedule(_rTasklet)
+
+#define kal_tasklet_hi_schedule(_rTasklet) \
+	tasklet_hi_schedule(_rTasklet)
 
 #define kalIsZeroEtherAddr(_addr) \
 	is_zero_ether_addr(_addr)

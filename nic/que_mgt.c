@@ -3606,8 +3606,6 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		fgIsBMC = (prCurrSwRfb->fgIsBC | prCurrSwRfb->fgIsMC);
 		fgIsHTran = FALSE;
 		if (prCurrSwRfb->fgHdrTran) {
-			/* (!HIF_RX_HDR_GET_80211_FLAG(prHifRxHdr)){ */
-
 			uint8_t ucBssIndex;
 			struct BSS_INFO *prBssInfo;
 			uint8_t aucTaAddr[MAC_ADDR_LEN];
@@ -4304,6 +4302,94 @@ u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
+/**
+ * Flush if RFB is not sufficient to read full RX ring (< 3/4 of RX ring) and
+ * reordering entries queued up (>= 3/4 of WinSize).
+ * Only when a last AMSDU or single MSDU were just eneuqued.
+ *
+ * In the case of BA WinSize == 1024, each AMPDU is about 360 x 7 = 2520.
+ */
+static u_int8_t needFlushReordering(struct RX_BA_ENTRY *prReorderQueParm,
+					uint32_t u4IndicateSwRfbNum,
+					uint32_t u4FreeSwRfbNum)
+{
+#if CFG_SUPPORT_RX_FLUSH_REORDERING
+	uint16_t u2ReorderingHigh = prReorderQueParm->u2WinSize;
+	const uint16_t u2SwRfbLow = RX_RING_SIZE - (RX_RING_SIZE >> 2);
+
+	if (u4FreeSwRfbNum >= u2SwRfbLow)
+		return FALSE;
+
+	u2ReorderingHigh -= u2ReorderingHigh >> 2; /* 3/4 of WinSize */
+
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	if (prReorderQueParm->u2CacheIndexCount >= u2ReorderingHigh) {
+		DBGLOG(QM, TRACE,
+			"Flush reordering: Reordering=%u Ind=%u FreeRFB=%u\n",
+			prReorderQueParm->u2CacheIndexCount,
+			u4IndicateSwRfbNum, u4FreeSwRfbNum);
+		return TRUE;
+	}
+#else
+	/* ASMSDU = 7 by experience */
+	if (prReorderQueParm->rReOrderQue->u4NumElem >= u2ReorderingHigh * 7) {
+		DBGLOG(QM, TRACE,
+			"Flush reordering: reordering=%u Ind=%u FreeRFB=%u\n",
+			prReorderQueParm->rReOrderQue->u4NumElem,
+			u4IndicateSwRfbNum, u4FreeSwRfbNum);
+		return TRUE;
+	}
+#endif
+
+#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
+	return FALSE;
+}
+
+static void checkToFlushReordering(IN struct ADAPTER *prAdapter,
+				IN struct RX_BA_ENTRY *prReorderQueParm,
+				IN struct RX_CTRL *prRxCtrl)
+{
+#if CFG_SUPPORT_RX_FLUSH_REORDERING
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	uint32_t u4ReorderingNum = prReorderQueParm->u2CacheIndexCount;
+#else
+	uint32_t u4ReorderingNum = prReorderQueParm->rReOrderQue->u4NumElem;
+#endif
+	uint32_t u4IndicateSwRfbNum = prRxCtrl->rIndicatedRfbList.u4NumElem;
+	uint32_t u4FreeSwRfbNum = prRxCtrl->rFreeSwRfbList.u4NumElem;
+	uint32_t u4NewReorderingNum;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgFlushRxReordering))
+		return;
+
+	if (!needFlushReordering(prReorderQueParm,
+				u4IndicateSwRfbNum, u4FreeSwRfbNum))
+		return;
+
+	if (likely(prReorderQueParm->fgHasBubble)) {
+		cnmTimerStopTimer(prAdapter,
+			&prReorderQueParm->rReorderBubbleTimer);
+	}
+	prReorderQueParm->u2FlushedSSN = prReorderQueParm->u2WinStart;
+	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
+
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	u4NewReorderingNum = prReorderQueParm->u2CacheIndexCount;
+#else
+	u4NewReorderingNum = prReorderQueParm->rReOrderQue->u4NumElem;
+#endif
+	if (u4NewReorderingNum < u4ReorderingNum)
+		SET_FLUSHED_SSN_VALID(prReorderQueParm);
+
+	wlanReturnPacketDelaySetup(prAdapter);
+	DBGLOG(QM, INFO,
+		"Flushed reordering: Reordering=%u->%u Ind=%u->%u FreeRFB=%u->%u\n",
+		u4ReorderingNum, u4NewReorderingNum,
+		u4IndicateSwRfbNum, prRxCtrl->rIndicatedRfbList.u4NumElem,
+		u4FreeSwRfbNum, prRxCtrl->rFreeSwRfbList.u4NumElem);
+#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reorder the received packet
@@ -4321,9 +4407,10 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prReorderQueParm;
+	struct RX_CTRL *prRxCtrl;
 
 #if CFG_SUPPORT_RX_AMSDU
-	uint8_t u8AmsduSubframeIdx;
+	uint8_t ucAmsduSubframeIdx;
 	uint32_t u2SeqNo;
 #endif
 	DEBUGFUNC("qmProcessPktWithReordering");
@@ -4359,60 +4446,50 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	RX_INC_CNT(&prAdapter->rRxCtrl,
-		RX_DATA_REORDER_TOTAL_COUNT);
+	prRxCtrl = &prAdapter->rRxCtrl;
+	RX_INC_CNT(prRxCtrl, RX_DATA_REORDER_TOTAL_COUNT);
 
 	prSwRfb->u2SSN = HAL_RX_STATUS_GET_SEQFrag_NUM(
 		prSwRfb->prRxStatusGroup4) >> RX_STATUS_SEQ_NUM_OFFSET;
 
+	ucAmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 #if CFG_SUPPORT_RX_AMSDU
 	/* RX reorder for one MSDU in AMSDU issue */
 	/* QUEUE_INITIALIZE(&prSwRfb->rAmsduQue); */
 
-	u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
-
 	/* prMpduSwRfb = prReorderQueParm->prMpduSwRfb; */
 	u2SeqNo = prSwRfb->u2SSN;
 
-	switch (u8AmsduSubframeIdx) {
+	switch (ucAmsduSubframeIdx) {
 	case RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU:
 		if (prReorderQueParm->fgAmsduNeedLastFrame) {
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_MISS_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT);
 			prReorderQueParm->fgAmsduNeedLastFrame = FALSE;
 		}
-		RX_INC_CNT(&prAdapter->rRxCtrl,
-			   RX_DATA_MSDU_IN_AMSDU_COUNT);
-		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DATA_AMSDU_COUNT);
+		RX_INC_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT);
+		RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT);
 		break;
 
 	case RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU:
 		prReorderQueParm->fgAmsduNeedLastFrame = TRUE;
-		RX_INC_CNT(&prAdapter->rRxCtrl,
-			   RX_DATA_MSDU_IN_AMSDU_COUNT);
+		RX_INC_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT);
 		if (prReorderQueParm->u2SeqNo != u2SeqNo) {
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_MISS_COUNT);
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT);
 		}
 		break;
 	case RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU:
 		prReorderQueParm->fgAmsduNeedLastFrame = FALSE;
-		RX_INC_CNT(&prAdapter->rRxCtrl,
-			   RX_DATA_MSDU_IN_AMSDU_COUNT);
+		RX_INC_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT);
 		if (prReorderQueParm->u2SeqNo != u2SeqNo) {
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_MISS_COUNT);
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT);
 		}
 		break;
 
 	case RX_PAYLOAD_FORMAT_MSDU:
 		if (prReorderQueParm->fgAmsduNeedLastFrame) {
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_AMSDU_MISS_COUNT);
+			RX_INC_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT);
 			prReorderQueParm->fgAmsduNeedLastFrame = FALSE;
 		}
 		break;
@@ -4453,6 +4530,10 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
+	/* Only when a last AMSDU or single MSDU were just eneuqued */
+	if (ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_MSDU ||
+	    ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU)
+		checkToFlushReordering(prAdapter, prReorderQueParm, prRxCtrl);
 }
 
 void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
@@ -4584,6 +4665,18 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->u2LastRcvdSN = u2SeqNo;
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
 
+#if CFG_SUPPORT_RX_FLUSH_REORDERING
+		if (IS_FLUSHED_SSN_VALID(prReorderQueParm)) {
+			prReorderQueParm->u2FlushedSSN = 0;
+			CLR_FLUSHED_SSN_VALID(prReorderQueParm);
+			DBGLOG(RX, INFO,
+				"Clear %u:%u Flush SSN, SN %d >= u2WinStart %d\n",
+				prReorderQueParm->ucStaRecIdx,
+				prReorderQueParm->ucTid,
+				u2SeqNo, u2WinStart);
+		}
+#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
+
 		qmInsertFallWithinReorderPkt(prAdapter, prSwRfb,
 					     prReorderQueParm, prReturnedQue);
 
@@ -4679,6 +4772,22 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
 
+#if CFG_SUPPORT_RX_FLUSH_REORDERING
+		if (IS_FLUSHED_SSN_VALID(prReorderQueParm) &&
+		    SEQ_SMALLER(u2SeqNo, u2WinStart) &&
+		    (u2SeqNo == prReorderQueParm->u2FlushedSSN || /* AMSDU */
+		     SEQ_SMALLER(prReorderQueParm->u2FlushedSSN, u2SeqNo))) {
+			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
+				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
+			DBGLOG(RX, TRACE,
+				"QM: Data after Flushed:[%d](%d){%d,%d} total:%lu",
+				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
+				RX_GET_CNT(&prAdapter->rRxCtrl,
+				RX_DATA_REORDER_BEHIND_COUNT));
+			return;
+		}
+#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
+
 #if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 		if (qmIsNoDropPacket(prAdapter, prSwRfb) ||
 			prReorderQueParm->fgNoDrop) {
@@ -4722,6 +4831,8 @@ static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	uint16_t u2SSN = prSwRfb->u2SSN & HALF_SEQ_MASK;
 
+	if (prReorderQueParm->prCacheIndex[u2SSN])
+		prReorderQueParm->u2CacheIndexCount--;
 	prReorderQueParm->prCacheIndex[u2SSN] = NULL;
 #endif
 }
@@ -4732,6 +4843,8 @@ static void setReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	uint16_t u2SSN = prSwRfb->u2SSN & HALF_SEQ_MASK;
 
+	if (prReorderQueParm->prCacheIndex[u2SSN] == NULL)
+		prReorderQueParm->u2CacheIndexCount++;
 	prReorderQueParm->prCacheIndex[u2SSN] = prSwRfb;
 #endif
 }
@@ -5287,11 +5400,9 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	u2WinEnd = prReorderQueParm->u2WinEnd;
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
-		SPIN_LOCK_RX_DIRECT);
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_DIRECT);
 	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
-	KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
-		SPIN_LOCK_RX_DIRECT);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_DIRECT);
 
 	DBGLOG(QM, INFO,
 		"QM:(Bub Timeout) %u:%u Bub(%u)[%u]{%u,%u} -> Bub(%u)[%u]{%u,%u}\n",
@@ -5356,9 +5467,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 
 	/* Expected bubble timeout => pop out packets before win_end */
-	if (prReorderQueParm->u2FirstBubbleSn ==
-		prReorderQueParm->u2WinStart) {
-
+	if (prReorderQueParm->u2FirstBubbleSn == prReorderQueParm->u2WinStart) {
 		prReorderedSwRfb = (struct SW_RFB *) QUEUE_GET_TAIL(
 			prReorderQue);
 
@@ -5416,9 +5525,7 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 				prReorderQueParm->ucStaRecIdx,
 				prReorderQueParm->ucTid);
 		}
-	}
-	/* First bubble has been filled but others exist */
-	else {
+	} else { /* First bubble has been filled but others exist */
 		prReorderQueParm->u2FirstBubbleSn =
 			prReorderQueParm->u2WinStart;
 
@@ -5691,8 +5798,11 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 		prRxBaEntry->fgIsValid = TRUE;
 		prRxBaEntry->fgIsWaitingForPktWithSsn = TRUE;
 		prRxBaEntry->fgHasBubble = FALSE;
+#if CFG_SUPPORT_RX_CACHE_INDEX
 		kalMemZero(prRxBaEntry->prCacheIndex,
 				sizeof(prRxBaEntry->prCacheIndex));
+		prRxBaEntry->u2CacheIndexCount = 0;
+#endif
 
 		g_arMissTimeout[ucStaRecIdx][ucTid] = 0;
 

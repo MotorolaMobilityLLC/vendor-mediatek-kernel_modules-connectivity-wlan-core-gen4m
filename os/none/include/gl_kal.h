@@ -767,7 +767,10 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 #define kal_min_t(_type, _v1, _v2) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-#define kal_tasklet_schedule(_rRxRfbRetTask) \
+#define kal_tasklet_schedule(_rTasklet) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_tasklet_hi_schedule(_rTasklet) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalIsZeroEtherAddr(_addr) \

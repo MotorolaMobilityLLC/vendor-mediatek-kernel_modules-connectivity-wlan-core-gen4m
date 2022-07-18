@@ -1257,7 +1257,7 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 	 */
 	if (!prSwRfb->pvPacket) {
 		nicRxReturnRFB(prAdapter, prSwRfb);
-		kal_tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+		kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
 		return;
 	}
 #endif
@@ -2071,7 +2071,6 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 				  prWlanMgmtHeader->u2SeqCtrl,
 				  /* The new SN of the frame */
 				  prSwRfb->ucPacketType, ucSubtype);
-				/* HIF_RX_HDR_GET_80211_FLAG(prHifRxHdr))); */
 
 				DBGLOG_MEM8(SW4, TRACE,
 					(uint8_t *) prSwRfb->pvHeader,

@@ -745,6 +745,12 @@ else
     ccflags-y += -DCFG_SUPPORT_RX_ZERO_COPY=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_FLUSH_RX_REORDERING), y)
+    ccflags-y += -DCFG_SUPPORT_RX_FLUSH_REORDERING=1
+else
+    ccflags-y += -DCFG_SUPPORT_RX_FLUSH_REORDERING=0
+endif
+
 ifeq ($(WIFI_ENABLE_GCOV), y)
     GCOV_PROFILE := y
 endif
