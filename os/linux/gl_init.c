@@ -2767,8 +2767,10 @@ static int wlanStop(struct net_device *prDev)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(INIT, WARN, "driver is not ready\n");
+	if (!prGlueInfo) {
+		DBGLOG(INIT, WARN, "driver is not ready, prGlueInfo is NULL\n");
+	} else if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(INIT, WARN, "driver is not ready, u4ReadyFlag = 0\n");
 		prGlueInfo->prScanRequest = NULL;
 	} else {
 		/* CFG80211 down, report to kernel directly and run normal
