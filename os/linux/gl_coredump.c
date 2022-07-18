@@ -872,7 +872,6 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 	uint32_t aee_str_len)
 {
 	struct coredump_mem *mem = &ctx->mem;
-	uint8_t *start = NULL, *end = NULL;
 	int32_t written = 0;
 
 	switch (issue_info->issue_type) {
@@ -898,19 +897,10 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 				"<ASSERT> WFSYS ");
 		}
 
-		start = kalStrStr(mem->dump_buff, "<ASSERT> ");
-		if (start)
-			end = kalStrStr(start, "\n");
-
-		if (start && end)
-			written += kalSnprintf(aee_str + written,
-				end - start - kalStrLen("<ASSERT> ") + 1,
-				"%s",
-				start + kalStrLen("<ASSERT> "));
-		else
-			written += kalSnprintf(aee_str + written,
-				end - start,
-				"UNKNOWN");
+		written += kalSnprintf(aee_str + written,
+			aee_str_len - written,
+			"%s",
+			issue_info->assert_info);
 	}
 		break;
 	case CONNV3_ISSUE_FW_EXCEPTION:
@@ -919,19 +909,10 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 			aee_str_len - written,
 			"<EXCEPTION> WFSYS ");
 
-		start = kalStrStr(mem->dump_buff, "<EXCEPTION> ");
-		if (start)
-			end = kalStrStr(start, "\n");
-
-		if (start && end)
-			written += kalSnprintf(aee_str + written,
-				end - start - kalStrLen("<EXCEPTION> ") + 1,
-				"%s",
-				start + kalStrLen("<EXCEPTION> "));
-		else
-			written += kalSnprintf(aee_str + written,
-				end - start,
-				"UNKNOWN");
+		written += kalSnprintf(aee_str + written,
+			aee_str_len - written,
+			"%s",
+			issue_info->assert_info);
 	}
 		break;
 	default:
