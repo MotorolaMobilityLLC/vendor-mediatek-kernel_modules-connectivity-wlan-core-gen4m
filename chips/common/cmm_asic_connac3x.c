@@ -2427,6 +2427,7 @@ static void register_connv3_cbs(void)
 	cb.pre_cal_cb.efuse_on_cb = wlan_efuse_on;
 	cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
 	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
+	cb.pre_cal_cb.pre_cal_error = wlanPreCalErr;
 #endif
 
 	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;

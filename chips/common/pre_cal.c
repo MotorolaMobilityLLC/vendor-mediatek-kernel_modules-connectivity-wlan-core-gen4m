@@ -790,6 +790,15 @@ int wlanPreCal(void)
 
 	return 0;
 }
+
+int wlanPreCalErr(void)
+{
+	DBGLOG(INIT, INFO, "wlanPreCalErr.\n");
+	if (wfsys_is_locked())
+		wfsys_unlock();
+
+	return 0;
+}
 #endif
 
 uint8_t *wlanGetCalResult(uint32_t *prCalSize)

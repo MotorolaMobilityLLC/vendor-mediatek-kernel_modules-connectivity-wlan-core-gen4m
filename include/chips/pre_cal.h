@@ -19,6 +19,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter);
 int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize);
 int wlanPreCalPwrOn(void);
 int wlanPreCal(void);
+int wlanPreCalErr(void);
 #endif
 uint8_t *wlanGetCalResult(uint32_t *prCalSize);
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para);
