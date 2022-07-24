@@ -4614,7 +4614,7 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		/* 1 <4> Send CMD with bin file content */
 		prGlueInfo = prAdapter->prGlueInfo;
 
-		if (u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
+		if (u4ReadLen > BUFFER_BIN_PAGE_SIZE)
 			goto label_exit;
 
 		/* Update contents in local table */
