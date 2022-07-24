@@ -2054,11 +2054,33 @@ static int mt6639ConnacPccifOff(void)
 
 static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 {
-	int ret;
-	if (IS_MOBILE_SEGMENT)
-		ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "1");
-	else
-		ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "2");
+	uint32_t ret = WLAN_STATUS_FAILURE;
+
+	if (IS_MOBILE_SEGMENT) {
+		uint8_t aucFlavor[2] = {0};
+
+		if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
+			kalScnprintf(flavor,
+				     CFG_FW_FLAVOR_MAX_LEN,
+				     "%u%s",
+				     CFG_WIFI_IP_SET,
+				     aucFlavor);
+			ret = WLAN_STATUS_SUCCESS;
+		} else if (kalScnprintf(flavor,
+					CFG_FW_FLAVOR_MAX_LEN,
+					"1") > 0) {
+			ret = WLAN_STATUS_SUCCESS;
+		} else {
+			ret = WLAN_STATUS_FAILURE;
+		}
+	} else if (kalScnprintf(flavor,
+				CFG_FW_FLAVOR_MAX_LEN,
+				"2") > 0) {
+		ret = WLAN_STATUS_SUCCESS;
+	} else {
+		ret = WLAN_STATUS_FAILURE;
+	}
+
 	return ret;
 }
 #endif  /* MT6639 */

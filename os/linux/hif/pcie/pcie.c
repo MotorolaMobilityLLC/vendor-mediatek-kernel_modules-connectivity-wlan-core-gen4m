@@ -887,6 +887,20 @@ static int _init_resv_mem(struct platform_device *pdev)
 
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 
+static void axiSetupFwFlavor(struct platform_device *pdev,
+	struct mt66xx_hif_driver_data *driver_data)
+{
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
+
+	if (of_property_read_string(node,
+				    FW_BIN_FLAVOR_KEY,
+				    &driver_data->fw_flavor))
+		return;
+
+	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
+}
+
 static int mtk_axi_probe(IN struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
@@ -899,6 +913,8 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	prChipInfo = prDriverData->chip_info;
 
 	platform_set_drvdata(pdev, (void *)prDriverData);
+
+	axiSetupFwFlavor(pdev, prDriverData);
 
 	if (!axiCsrIoremap(pdev))
 		goto exit;

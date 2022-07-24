@@ -739,18 +739,15 @@ exit:
 }
 #endif
 
-#define TARGET_KEY "flavor_bin"
 static void axiSetupFwFlavor(struct platform_device *pdev,
 	struct mt66xx_hif_driver_data *driver_data)
 {
-	struct device_node *node = NULL;
+	struct device *dev = &pdev->dev;
+	struct device_node *node = dev->of_node;
 
-	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
-
-	if (!node)
-		return;
-
-	if (of_property_read_string(node, TARGET_KEY, &driver_data->fw_flavor))
+	if (of_property_read_string(node,
+				    FW_BIN_FLAVOR_KEY,
+				    &driver_data->fw_flavor))
 		return;
 
 	DBGLOG(HAL, INFO, "fw_flavor: %s\n", driver_data->fw_flavor);
