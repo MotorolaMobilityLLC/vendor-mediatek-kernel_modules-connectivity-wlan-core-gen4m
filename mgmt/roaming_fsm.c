@@ -151,6 +151,8 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
 	prRoamingFsmInfo->fgDrvRoamingAllow = TRUE;
+	kalMemZero(&(prAdapter->rWifiVar.rRoamSlotInfo),
+		sizeof(struct ROAMING_IDLE_INFO));
 }				/* end of roamingFsmInit() */
 
 /*----------------------------------------------------------------------------*/
@@ -850,4 +852,76 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	       TRUE : FALSE;
 }
 
+void roamingFillScanInfo(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum, uint16_t u2IdleTime)
+{
+	struct ROAMING_IDLE_INFO *prRoamSlotInfo =
+		&(ad->rWifiVar.rRoamSlotInfo);
+	uint8_t index = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return;
+
+		index = ucChNum--;
+		prRoamSlotInfo->au2ChIdleTime2G4[index] = u2IdleTime;
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 || ucChNum > 165)
+			return;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 && ucChNum <= 165)
+			index = (ucChNum - 69) / 4;
+		prRoamSlotInfo->au2ChIdleTime5G[index] = u2IdleTime;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return;
+
+		index = (ucChNum - 1) / 4;
+		prRoamSlotInfo->au2ChIdleTime6G[index] = u2IdleTime;
+#endif
+	}
+}
+
+uint16_t roamingGetChIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
+	uint8_t ucChNum)
+{
+	struct ROAMING_IDLE_INFO *prRoamSlotInfo =
+		&(ad->rWifiVar.rRoamSlotInfo);
+	uint8_t index = 0;
+	uint16_t u2Slot = 0;
+
+	if (eBand == BAND_2G4) {
+		if (ucChNum < 1 || ucChNum > 14)
+			return 0;
+
+		index = ucChNum--;
+		u2Slot = prRoamSlotInfo->au2ChIdleTime2G4[index];
+	} else if (eBand == BAND_5G) {
+		if (ucChNum < 36 || ucChNum > 165)
+			return 0;
+
+		if (ucChNum >= 36 && ucChNum <= 64)
+			index = (ucChNum - 36) / 4;
+		else if (ucChNum >= 100 && ucChNum <= 144)
+			index = (ucChNum - 68) / 4;
+		else if (ucChNum >= 149 && ucChNum <= 165)
+			index = (ucChNum - 69) / 4;
+		u2Slot = prRoamSlotInfo->au2ChIdleTime5G[index];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (ucChNum < 1 || ucChNum > 233)
+			return 0;
+
+		index = (ucChNum - 1) / 4;
+		u2Slot = prRoamSlotInfo->au2ChIdleTime6G[index];
+#endif
+	}
+
+	return u2Slot;
+}
 #endif

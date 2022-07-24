@@ -693,6 +693,7 @@ struct WIFI_VAR {
 	/* Common connection settings end */
 
 	struct SCAN_INFO rScanInfo;
+	struct ROAMING_IDLE_INFO rRoamSlotInfo;
 
 	struct AIS_FSM_INFO rAisFsmInfo[KAL_AIS_NUM];
 	struct AIS_FSM_INFO *prDefaultAisFsmInfo;

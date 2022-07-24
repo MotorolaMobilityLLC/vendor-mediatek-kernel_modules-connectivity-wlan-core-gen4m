@@ -1098,6 +1098,9 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
 			u2Written += kalSnprintf(strbuf + u2Written, \
 				u2TotalLen - u2Written, "%6d", \
 				prScanInfo->var[ucChCnt]); \
+			roamingFillScanInfo(prAdapter, eBand, \
+				prScanInfo->var[ucChCnt], \
+				prScanDone->au2ChannelIdleTime[ucChCnt]); \
 		} \
 		log_dbg(_Mod, _Clz, _Fmt, strbuf); \
 	} while (0)

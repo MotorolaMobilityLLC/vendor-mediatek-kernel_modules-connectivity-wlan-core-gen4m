@@ -1394,7 +1394,7 @@ uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
 
 uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
 {
-	uint8_t idx = 0, rcpi = 0;
+	uint8_t rcpi = 0;
 	uint16_t amsduByte = apsGetAmsduByte(bss);
 	uint16_t baSize = mpduLen[bss->eChannelWidth];
 	uint16_t slot = 0;
@@ -1404,17 +1404,13 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
 	if (bss->fgExsitBssLoadIE) {
 		airTime = (255 - bss->ucChnlUtilization) * 100 / 255;
 	} else {
-		struct SCAN_INFO *info = &(ad->rWifiVar.rScanInfo);
-
-		for (idx = 0; idx < info->ucSparseChannelArrayValidNum; idx++) {
-			if (bss->ucChannelNum == info->aucChannelNum[idx]) {
-				slot = info->au2ChannelIdleTime[idx];
-				/* 90000 ms = 90ms dwell time to micro sec */
-				idle = (slot * 9 * 100) / (90000);
-				airTime  = idle > 100 ? 100 : idle;
-				break;
-			}
-		}
+		slot = roamingGetChIdleSlot(ad, bss->eBand, bss->ucChannelNum);
+		/* 90000 ms = 90ms dwell time to micro sec */
+		idle = (slot * 9 * 100) / (90000);
+		airTime  = idle > 100 ? 100 : idle;
+		/* Give a default value of air time */
+		if (airTime == 0)
+			airTime = 45;
 	}
 
 	/* Unit: mbps */
@@ -1425,9 +1421,9 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
 	est = slope * (rcpi - 50);
 
 	DBGLOG(APS, INFO, MACSTR
-		": ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] est[%d] airTime[%d]\n",
+		": ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] est[%d] airTime[%d] slot[%d]\n",
 		MAC2STR(bss->aucBSSID), ideal, baSize, amsduByte, slope, rcpi,
-		est, airTime);
+		est, airTime, slot);
 
 	return airTime * est / 100;
 }
