@@ -21,7 +21,7 @@
 
 #include "mddp_export.h"
 
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 #include "mtk_ccci_common.h"
 #endif
 
@@ -148,8 +148,10 @@ void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
 void mddpNotifyWifiReset(void);
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
+#if CFG_MTK_CCCI_SUPPORT
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
+#endif
 void mddpSetMDFwOwn(void);
 u_int8_t mddpIsMDFwOwn(void);
 bool mddpIsSupportMcifWifi(void);

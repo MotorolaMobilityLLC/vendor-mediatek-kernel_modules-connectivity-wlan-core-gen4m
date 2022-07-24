@@ -1181,6 +1181,18 @@ ccflags-y += -I$(srctree)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/
 
+ifeq ($(CONFIG_MTK_WIFI_CCCI_SUPPORT), y)
+CONFIG_MTK_ECCCI_DRIVER := y
+else ifeq ($(CONFIG_MTK_WIFI_CCCI_SUPPORT), n)
+CONFIG_MTK_ECCCI_DRIVER :=
+endif
+
+ifneq ($(CONFIG_MTK_ECCCI_DRIVER),)
+ccflags-y += -DCFG_MTK_CCCI_SUPPORT=1
+else
+ccflags-y += -DCFG_MTK_CCCI_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_MDDP_SUPPORT), y)
 CONFIG_MTK_MDDP_SUPPORT := y
 endif

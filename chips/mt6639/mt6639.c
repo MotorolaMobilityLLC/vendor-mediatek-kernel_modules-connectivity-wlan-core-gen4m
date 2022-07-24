@@ -46,7 +46,7 @@
 #include "mddp_export.h"
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 #include "mtk_ccci_common.h"
 #endif
 
@@ -347,14 +347,14 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"wm_conn2ap_wdt_irq", NULL, NULL, AP_INT},
 	{"wf_mcu_jtag_det_eint", NULL, NULL, AP_INT},
 	{"pmic_eint", NULL, NULL, AP_INT},
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
 #else
 	{"ccif_bgf2ap_sw_irq", NULL, NULL, AP_INT},
 #endif
 	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
 		pcie_sw_int_thread_handler, AP_INT},
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
 	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
 #else
@@ -1993,7 +1993,7 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 #define MCIF_EMI_MEMORY_SIZE 128
 static int mt6639ConnacPccifOn(void)
 {
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 	uint32_t mcif_emi_base;
 	void *vir_addr = NULL;
 	int ret = 0;
@@ -2032,7 +2032,7 @@ static int mt6639ConnacPccifOn(void)
 
 static int mt6639ConnacPccifOff(void)
 {
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 	uint32_t mcif_emi_base;
 	void *vir_addr = NULL;
 	int ret = 0;
