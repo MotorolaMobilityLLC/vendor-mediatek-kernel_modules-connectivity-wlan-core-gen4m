@@ -1129,7 +1129,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	if (prTxRing->u4UsedCnt + 1 >= prTxRing->u4RingSize) {
-		DBGLOG(HAL, INFO, "Force recycle port %d DMA resource.\n",
+		DBGLOG(HAL, TRACE, "Force recycle port %d DMA resource.\n",
 			u2Port);
 		halWpdmaProcessCmdDmaDone(prGlueInfo, u2Port);
 	}

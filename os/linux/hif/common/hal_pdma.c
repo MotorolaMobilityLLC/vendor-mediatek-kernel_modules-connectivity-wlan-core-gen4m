@@ -4215,12 +4215,12 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 				u4Ret = prBusInfo->updateTxRingMaxQuota(
 						prAdapter, ucWmmIndex, u4Quota);
 			} else {
-				DBGLOG(HAL, INFO,
+				DBGLOG(HAL, TRACE,
 				"updateTxRingMaxQuota not implemented\n");
 				u4Ret = WLAN_STATUS_NOT_ACCEPTED;
 			}
 		}
-		DBGLOG(HAL, INFO,
+		DBGLOG(HAL, TRACE,
 			"WmmQuota,Run,%u,Wmm,%u,Quota,0x%x,ret=0x%x\n",
 			fgRun, ucWmmIndex, u4Quota, u4Ret);
 

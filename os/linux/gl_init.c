@@ -3702,7 +3702,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		return NULL;
 	}
 
-	DBGLOG(INIT, INFO, "Adapter allocated: %px\n",
+	DBGLOG(INIT, TRACE, "Adapter allocated: %px\n",
 			prAdapter);
 	if (prGlueInfo->prAdapter)
 		DBGLOG(INIT, WARN, "Adapter is not null: %px\n",

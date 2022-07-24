@@ -1594,7 +1594,7 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	if (g_prPlatDev) {
-		DBGLOG(HAL, INFO, "Use pre-alloc mem ops instead.\n");
+		DBGLOG(HAL, TRACE, "Use pre-alloc mem ops instead.\n");
 		prMemOps->allocTxDesc = axiAllocTxDesc;
 		prMemOps->allocRxDesc = axiAllocRxDesc;
 		prMemOps->allocExtBuf = axiAllocExtBuf;

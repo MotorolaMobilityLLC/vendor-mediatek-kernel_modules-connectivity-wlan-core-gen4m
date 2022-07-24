@@ -5270,7 +5270,7 @@ cnmWmmQuotaCallback(
 			prWmmQuotaCtrl->rRunning.eRunReq >= 0 &&
 			prWmmQuotaCtrl->rRunning.eRunReq <=
 			CNM_WMM_REQ_DEFAULT)
-			DBGLOG(CNM, INFO,
+			DBGLOG(CNM, TRACE,
 			"WmmQuotaCb,%d,Req,%s,Run,%s,Quota,%u,WakeUpHIF\n",
 			ucWmmIndex,
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
@@ -5291,7 +5291,7 @@ cnmWmmQuotaCallback(
 			prWmmQuotaCtrl->rRunning.eRunReq >= 0 &&
 			prWmmQuotaCtrl->rRunning.eRunReq <=
 			CNM_WMM_REQ_DEFAULT)
-			DBGLOG(CNM, INFO,
+			DBGLOG(CNM, TRACE,
 			"WmmQuotaCb,%u,%s,Run,%s,Quota,%u,Finish\n",
 			ucWmmIndex,
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
@@ -5349,7 +5349,7 @@ void cnmWmmQuotaSetMaxQuota(
 	prWmmQuotaCtrl->rRunning.eReqIdx = eNewReq;
 	prWmmQuotaCtrl->rRunning.eRunReq = eRunReq;
 	prWmmQuotaCtrl->rRunning.u4ReqQuota = u4QuotaFinal;
-	DBGLOG(CNM, INFO,
+	DBGLOG(CNM, TRACE,
 			"SetWmmQuota,%u,%s %s,Run,%s,Quota,0x%x\n",
 			ucWmmIndex,
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],

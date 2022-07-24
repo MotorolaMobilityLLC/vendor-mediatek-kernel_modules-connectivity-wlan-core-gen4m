@@ -1323,10 +1323,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		/* set FALSE after wifi init flow or reset (not reinit WFDMA) */
 		prAdapter->fgIsFwDownloaded = FALSE;
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)

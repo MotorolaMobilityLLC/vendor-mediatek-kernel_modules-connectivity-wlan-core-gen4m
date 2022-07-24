@@ -2108,7 +2108,7 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 		return WLAN_STATUS_FAILURE;
 
 
-	DBGLOG(INIT, INFO, "Patch download start\n");
+	DBGLOG(INIT, TRACE, "Patch download start\n");
 
 	prAdapter->rVerInfo.fgPatchIsDlByDrv = FALSE;
 
@@ -2164,7 +2164,7 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 	} while (0);
 
 exit:
-	DBGLOG(INIT, INFO, "Patch download end[%d].\n", u4Status);
+	DBGLOG(INIT, TRACE, "Patch download end[%d].\n", u4Status);
 
 	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
 				  prFwBuffer);
