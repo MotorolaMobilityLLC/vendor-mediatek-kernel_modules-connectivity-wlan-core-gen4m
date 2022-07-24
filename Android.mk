@@ -112,7 +112,6 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6985_6639_mddp
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
 	CONFIG_WLAN_PLATFORM := mt6985
-	WIFI_MDDP_SUPPORT := y
 	WIFI_DRIVER_OWN_DELAY_SUPPORT := y
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 else
