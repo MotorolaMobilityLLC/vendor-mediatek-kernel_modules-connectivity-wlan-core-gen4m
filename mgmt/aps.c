@@ -1428,7 +1428,7 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
 	return airTime * est / 100;
 }
 
-uint32_t apsCalculateTotalTput(struct ADAPTER *ad,
+int32_t apsCalculateTotalTput(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, enum ENUM_ROAMING_REASON reason,
 	uint8_t bidx)
 {
@@ -1443,21 +1443,27 @@ uint32_t apsCalculateTotalTput(struct ADAPTER *ad,
 		tput += apsGetEstimatedTput(ad, ap->aprTarget[i]);
 	}
 
-	if (found)
+	if (found) {
 		DBGLOG(APS, INFO, "AP[" MACSTR "][%s], Total(%d) EST: %d",
 			MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY",
 			ap->ucLinkNum, tput);
+		return tput;
+	}
 
-	return tput;
+	return -1;
 }
 
 uint8_t apsInterNeedReplace(struct ADAPTER *ad,
 	struct AP_COLLECTION *cand, struct AP_COLLECTION *curr,
-	uint32_t cand_tput, uint32_t curr_tput,
+	int32_t cand_tput, int32_t curr_tput,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
+	if (curr_tput < 0)
+		return FALSE;
+
 	if (!cand)
 		return TRUE;
+
 	if (curr_tput > cand_tput)
 		return TRUE;
 
@@ -1543,7 +1549,7 @@ struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *cand = NULL;
-	uint32_t best = 0, tput = 0;
+	int32_t best = 0, tput = 0;
 
 	LINK_FOR_EACH_ENTRY(ap, ess, rLinkEntry, struct AP_COLLECTION) {
 		if (policy == CONNECT_BY_BSSID) {

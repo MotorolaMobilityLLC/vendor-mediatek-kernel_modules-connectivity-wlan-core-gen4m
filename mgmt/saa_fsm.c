@@ -333,8 +333,6 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 			if (mldIsMultiLinkFormed(prAdapter, prStaRec) ||
 			    mldSingleLink(prAdapter, prStaRec,
 					  prStaRec->ucBssIndex)) {
-				DBGLOG(ML, INFO,  "Send MLO");
-
 				kalVendorExternalAuthRequest(
 					prAdapter->prGlueInfo,
 					prStaRec, prStaRec->ucBssIndex);

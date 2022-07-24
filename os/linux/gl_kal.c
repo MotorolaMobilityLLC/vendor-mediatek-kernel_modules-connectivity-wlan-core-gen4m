@@ -2357,17 +2357,8 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 #if (CFG_ADVANCED_80211_MLO == 1)
 				struct BSS_INFO *prBssInfo =
 					aisGetAisBssInfo(prAdapter, ucBssIndex);
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-				struct BSS_DESC *bssDesc = aisGetTargetBssDesc(
-						prAdapter, ucBssIndex);
-
-				if (bssDesc)
-					rRoamInfo.ap_mld_addr =
-						bssDesc->rMlInfo.aucMldAddr;
-#else
 
 				rRoamInfo.ap_mld_addr = arBssid;
-#endif
 				if (prBssInfo)
 					rRoamInfo.links[ucLinkIdx].addr =
 						prBssInfo->aucOwnMacAddr;
