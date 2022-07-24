@@ -560,7 +560,11 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_addr;
 	uint32_t hw_cnt_mask;
 	uint32_t hw_cnt_shift;
+#if CFG_SUPPORT_RX_WORK
+	struct mutex rTxDmaQMutex;
+#else /* CFG_SUPPORT_RX_WORK */
 	spinlock_t rTxDmaQLock;
+#endif /* CFG_SUPPORT_RX_WORK */
 	u_int8_t fgStopRecycleDmad;
 };
 
@@ -985,6 +989,12 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #define KAL_HIF_BH_ENABLE(prGlueInfo) \
 	kalBhEnable(prGlueInfo)
 
+#define KAL_HIF_OWN_LOCK(prAdapter) \
+	kalAcquireHifOwnLock(prAdapter)
+
+#define KAL_HIF_OWN_UNLOCK(prAdapter) \
+	kalReleaseHifOwnLock(prAdapter)
+
 void kalBhDisable(struct GLUE_INFO *prGlueInfo);
 void kalBhEnable(struct GLUE_INFO *prGlueInfo);
 void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
@@ -997,6 +1007,9 @@ void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 		OUT unsigned long *plHifTxRingFlags);
 void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 		IN unsigned long ulHifTxRingFlags);
+
+void kalAcquireHifOwnLock(struct ADAPTER *prAdapter);
+void kalReleaseHifOwnLock(struct ADAPTER *prAdapter);
 
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);

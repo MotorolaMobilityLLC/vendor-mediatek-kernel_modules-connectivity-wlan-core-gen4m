@@ -13708,6 +13708,32 @@ void kalReleaseHifStateLock(struct GLUE_INFO *prGlueInfo,
 }
 #endif
 
+void kalAcquirePendingCmdLock(struct ADAPTER *prAdapter,
+		unsigned long *plFlags)
+{
+#if CFG_SUPPORT_RX_WORK
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CMD_PENDING);
+#else /* CFG_SUPPORT_RX_WORK */
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_SPIN_LOCK_FLAG_SAVE(*plFlags);
+#endif /* CFG_SUPPORT_RX_WORK */
+}
+
+void kalReleasePendingCmdLock(struct ADAPTER *prAdapter,
+		unsigned long ulFlags)
+{
+#if CFG_SUPPORT_RX_WORK
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CMD_PENDING);
+#else /* CFG_SUPPORT_RX_WORK */
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_SPIN_LOCK_FLAG_RESTORE(ulFlags);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* CFG_SUPPORT_RX_WORK */
+}
+
 void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
 {
 	struct sk_buff *skb;

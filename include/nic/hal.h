@@ -440,13 +440,13 @@ do { \
 	if (_prAdapter->rAcpiState == ACPI_STATE_D3) { \
 		ASSERT(0); \
 	} \
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING); \
+	KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter); \
 	ret = kalDevWriteCmd(_prAdapter->prGlueInfo, _prCmdInfo, _ucTC); \
 	if (ret == CMD_TX_RESULT_SUCCESS) { \
 		if (_prCmdInfo && _prCmdInfo->pfHifTxCmdDoneCb) \
 			_prCmdInfo->pfHifTxCmdDoneCb(_prAdapter, _prCmdInfo); \
 	} \
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING); \
+	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter); \
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)

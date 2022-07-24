@@ -507,16 +507,7 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	/* if direct trx,  set drv/fw own will be called
-	*  in softirq/tasklet/thread context,
-	*  if normal trx, set drv/fw own will only
-	*  be called in thread context
-	*/
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_lock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_LOCK(prAdapter);
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
@@ -535,7 +526,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	while (1) {
 		/* Delay for LP engine to complete its operation. */
+#if CFG_SUPPORT_RX_WORK
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US,
+				LP_OWN_BACK_LOOP_DELAY_MAX_US);
+#else /* !CFG_SUPPORT_RX_WORK */
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 		if (!prBusInfo->fgCheckDriverOwnInt ||
 		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
@@ -575,9 +571,11 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	}
 
 	if (fgIsDriverOwnTimeout) {
+#if !CFG_SUPPORT_RX_WORK
 		if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 			goto end;
 		else
+#endif /* !CFG_SUPPORT_RX_WORK */
 			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 	}
 
@@ -612,18 +610,16 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
 
 end:
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_unlock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_UNLOCK(prAdapter);
 
+#if !CFG_SUPPORT_RX_WORK
 	if (fgIsDriverOwnTimeout) {
 		if (HAL_IS_TX_DIRECT(prAdapter) ||
 				HAL_IS_RX_DIRECT(prAdapter))
 			halDriverOwnTimeout(prAdapter,
 					u4CurrTick, fgTimeout);
 	}
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
@@ -631,6 +627,18 @@ end:
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	return fgStatus;
+}
+
+static uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4RxCnt = 0, u4Idx;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		u4RxCnt += halWpdmaGetRxDmaDoneCnt(
+			prAdapter->prGlueInfo, u4Idx);
+	}
+
+	return u4RxCnt;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -657,16 +665,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	/* if direct trx,  set drv/fw own will be called
-	*  in softirq/tasklet/thread context,
-	*  if normal trx, set drv/fw own will only
-	*  be called in thread context
-	*/
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_lock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_LOCK(prAdapter);
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
@@ -681,15 +680,16 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 	if (p2pFuncNeedForceSleep(prAdapter))
 		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
-	else if (!(prAdapter->fgWiFiInSleepyState &&
-		(prAdapter->u4PwrCtrlBlockCnt == 0)))
+	else if (!prAdapter->fgWiFiInSleepyState)
+		goto unlock;
+
+	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0)
 		goto unlock;
 
 	if (prAdapter->fgIsFwOwn == TRUE)
 		goto unlock;
 
-	if (!prHifInfo->fgIsPowerOff &&
-		nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
+	if (!prHifInfo->fgIsPowerOff && halGetWfdmaRxCnt(prAdapter)) {
 		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
 		goto unlock;
@@ -727,12 +727,7 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	}
 
 unlock:
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_unlock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
-
+	KAL_HIF_OWN_UNLOCK(prAdapter);
 }
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
@@ -1954,7 +1949,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	uint8_t *pucBuf = NULL;
 	void *prRxStatus;
 	u_int8_t fgStatus;
-	uint32_t u4RxCnt, u4RfbCnt;
+	uint32_t u4RxCnt;
 	uint32_t u4RxLoopCnt, u4RxSuccessCnt = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
 	struct RTMP_RX_RING *prRxRing;
@@ -2029,17 +2024,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	QUEUE_INITIALIZE(prReceivedRfbList);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	for (u4RfbCnt = 0; u4RfbCnt < u4RxCnt; u4RfbCnt++) {
-		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
-			prSwRfb, struct SW_RFB *);
-		if (!prSwRfb) {
-			DBGLOG_LIMITED(RX, WARN,
-				"No More RFB for P[%u], RxCnt: %u, RfbCnt: %u, Ind:%u\n",
-				u4Port, u4RxCnt, u4RfbCnt,
-				prRxCtrl->rIndicatedRfbList.u4NumElem);
-			break;
-		}
-		QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
+	QUEUE_MOVE_ALL(prFreeSwRfbList, &prRxCtrl->rFreeSwRfbList);
+	if (prFreeSwRfbList->u4NumElem < u4RxCnt) {
+		DBGLOG_LIMITED(RX, WARN,
+			"No More RFB for P[%u], RxCnt:%u, RfbCnt:%u, Ind:%u\n",
+			u4Port, u4RxCnt,
+			prFreeSwRfbList->u4NumElem,
+			prRxCtrl->rIndicatedRfbList.u4NumElem);
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
@@ -2508,7 +2499,11 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	for (u4Index = 0; u4Index < NUM_OF_TX_RING; u4Index++) {
 		prHifInfo->TxRing[u4Index].TxSwUsedIdx = 0;
 		prHifInfo->TxRing[u4Index].TxCpuIdx = 0;
+#if CFG_SUPPORT_RX_WORK
+		mutex_init(&prHifInfo->TxRing[u4Index].rTxDmaQMutex);
+#else /* CFG_SUPPORT_RX_WORK */
 		spin_lock_init(&prHifInfo->TxRing[u4Index].rTxDmaQLock);
+#endif /* CFG_SUPPORT_RX_WORK */
 	}
 
 	return true;
@@ -3017,7 +3012,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_DISABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	KAL_HIF_TXRING_LOCK(prTxRing);
 
@@ -3140,7 +3137,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 unlock:
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	return ret;
 }
@@ -4008,6 +4007,8 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+	wlanAcquirePowerControl(prGlueInfo->prAdapter);
+
 	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
@@ -4035,6 +4036,12 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 	}
+
+	if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
+			       &prGlueInfo->ulFlag))
+		prGlueInfo->prAdapter->fgWiFiInSleepyState = TRUE;
+
+	wlanReleasePowerControl(prGlueInfo->prAdapter);
 }
 
 void halTxCompleteTasklet(unsigned long data)

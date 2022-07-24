@@ -912,11 +912,11 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter,
 	if (!prAdapter)
 		return NULL;
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 
 	prCmdInfo = __nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 
 	if (prCmdInfo) {
 		DBGLOG(TX, INFO, "Get command: %p, %ps, cmd=0x%02X, seq=%u",

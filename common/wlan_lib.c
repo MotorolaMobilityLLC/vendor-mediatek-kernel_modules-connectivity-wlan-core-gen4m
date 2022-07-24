@@ -2077,13 +2077,11 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 				/* command packet which needs further handling
 				 * upon response
 				 */
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_CMD_PENDING);
+				KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 				QUEUE_INSERT_TAIL(
 						&(prAdapter->rPendingCmdQueue),
 						prQueueEntry);
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_CMD_PENDING);
+				KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 			} else {
 				struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
 							     prQueueEntry;
@@ -2313,14 +2311,6 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 			/* command packet which needs further handling upon
 			 * response
-			 */
-			/*
-			 *  KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-			 *			  SPIN_LOCK_CMD_PENDING);
-			 *  QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue),
-			 *		      (struct QUE_ENTRY *)prCmdInfo);
-			 *  KAL_RELEASE_SPIN_LOCK(prAdapter,
-			 *			  SPIN_LOCK_CMD_PENDING);
 			 */
 		}
 
@@ -2888,9 +2878,9 @@ void wlanClearPendingCommandQueue(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 	QUEUE_MOVE_ALL(prTempCmdQue, &prAdapter->rPendingCmdQueue);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 
 	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
 			  struct QUE_ENTRY *);
@@ -3085,7 +3075,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 #endif
 
 		/* 2: Clear Pending OID in prAdapter->rPendingCmdQueue */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+		KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 
 		prCmdQue = &prAdapter->rPendingCmdQueue;
 		QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
@@ -3110,11 +3100,9 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 						       0, WLAN_STATUS_FAILURE);
 				}
 
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_CMD_PENDING);
+				KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 				nicTxCancelSendingCmd(prAdapter, prCmdInfo);
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-						      SPIN_LOCK_CMD_PENDING);
+				KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 
 				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 			} else {
@@ -3125,7 +3113,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 					  struct QUE_ENTRY *);
 		}
 
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+		KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 
 		/* 3: Clear pending OID queued in pvOidEntry with REQ_FLAG_OID
 		 *    set
@@ -3152,56 +3140,6 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER
 				   *prAdapter, IN uint8_t ucBssIndex)
 {
-#if 0
-	struct QUE *prCmdQue;
-	struct QUE rTempCmdQue;
-	struct QUE *prTempCmdQue = &rTempCmdQue;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
-
-	KAL_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prAdapter);
-
-	do {
-		/* 1: Clear Pending OID in prAdapter->rPendingCmdQueue */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-		prCmdQue = &prAdapter->rPendingCmdQueue;
-		QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
-
-		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-				  struct QUE_ENTRY *);
-		while (prQueueEntry) {
-			prCmdInfo = (struct CMD_INFO *) prQueueEntry;
-
-			DBGLOG(P2P, TRACE, "Pending CMD for BSS:%d\n",
-			       prCmdInfo->ucBssIndex);
-
-			if (prCmdInfo->ucBssIndex == ucBssIndex) {
-				if (prCmdInfo->pfCmdTimeoutHandler) {
-					prCmdInfo->pfCmdTimeoutHandler(
-							prAdapter, prCmdInfo);
-				} else if (prCmdInfo->fgIsOid) {
-					kalOidComplete(prAdapter->prGlueInfo,
-						       prCmdInfo,
-						       0, WLAN_STATUS_FAILURE);
-				}
-
-				cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-			} else {
-				QUEUE_INSERT_TAIL(prCmdQue, prQueueEntry);
-			}
-
-			QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-					  struct QUE_ENTRY *);
-		}
-
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
-	} while (FALSE);
-#endif
-
 
 }				/* wlanReleasePendingCMDbyBssIdx */
 
@@ -12226,7 +12164,7 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
 	DBGLOG(OID, INFO, "Remove pending Cmd: CID %d\n", ucCid);
 
 	/* 1: Clear Pending OID in prAdapter->rPendingCmdQueue */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 
 	prCmdQue = &prAdapter->rPendingCmdQueue;
 	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
@@ -12252,7 +12190,7 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
 				  struct QUE_ENTRY *);
 	}
 
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 }
 
 /* Translate Decimals string to Hex

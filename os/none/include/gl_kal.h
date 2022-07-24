@@ -398,6 +398,12 @@ enum ENUM_CMD_TX_RESULT {
 	kalReleaseHifStateLock(prGlueInfo, __ulFlags)
 #endif
 
+#define KAL_ACQUIRE_PENDING_CMD_LOCK(_prAdapter)   \
+	kalAcquirePendingCmdLock(_prAdapter, &__ulFlags)
+
+#define KAL_RELEASE_PENDING_CMD_LOCK(_prAdapter)   \
+	kalReleasePendingCmdLock(_prAdapter, __ulFlags)
+
 #define KAL_ACQUIRE_SPIN_LOCK_BH(_prAdapter, _rLockCategory)   \
 	kalAcquireSpinLockBh(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
 		_rLockCategory)
@@ -985,6 +991,12 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _plFlags)
 #define kalReleaseHifStateLock(_prGlueInfo, _ulFlags) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _ulFlags)
 #endif
+
+#define kalAcquirePendingCmdLock(_prAdapter, _plFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prAdapter, _plFlags)
+
+#define kalReleasePendingCmdLock(_prAdapter, _ulFlags) \
+KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prAdapter, _ulFlags)
 
 #define TX_DIRECT_LOCK(glue) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, glue)

@@ -363,6 +363,7 @@ enum ENUM_MUTEX_CATEGORY_E {
 	MUTEX_CSI_BUFFER,
 	MUTEX_CSI_STA_LIST,
 	MUTEX_FW_LOG,
+	MUTEX_CMD_PENDING,
 	MUTEX_NUM
 };
 
@@ -574,6 +575,12 @@ struct VOLT_INFO_T {
 /*----------------------------------------------------------------------------*/
 #define KAL_SPIN_LOCK_DECLARATION()             unsigned long __ulFlags
 
+#define KAL_SPIN_LOCK_FLAG_SAVE(output) \
+	(output = __ulFlags)
+
+#define KAL_SPIN_LOCK_FLAG_RESTORE(input) \
+	(__ulFlags = input)
+
 #define KAL_ACQUIRE_SPIN_LOCK(_prAdapter, _rLockCategory)   \
 	kalAcquireSpinLock(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
 	_rLockCategory, &__ulFlags)
@@ -597,6 +604,12 @@ struct VOLT_INFO_T {
 #define KAL_HIF_STATE_UNLOCK(prGlueInfo) \
 	kalReleaseHifStateLock(prGlueInfo, __ulFlags)
 #endif
+
+#define KAL_ACQUIRE_PENDING_CMD_LOCK(_prAdapter)   \
+	kalAcquirePendingCmdLock(_prAdapter, &__ulFlags)
+
+#define KAL_RELEASE_PENDING_CMD_LOCK(_prAdapter)   \
+	kalReleasePendingCmdLock(_prAdapter, __ulFlags)
 
 #define KAL_ACQUIRE_SPIN_LOCK_IRQ(_prAdapter, _rLockCategory)   \
 	kalAcquireSpinLockIrq(((struct ADAPTER *)_prAdapter)->prGlueInfo,  \
@@ -1496,6 +1509,12 @@ void kalAcquiretHifStateLock(struct GLUE_INFO *prGlueInfo,
 
 void kalReleaseHifStateLock(struct GLUE_INFO *prGlueInfo,
 			unsigned long ulFlags);
+
+void kalAcquirePendingCmdLock(struct ADAPTER *prAdapter,
+		unsigned long *plFlags);
+
+void kalReleasePendingCmdLock(struct ADAPTER *prAdapter,
+		unsigned long ulFlags);
 
 void kalUpdateMACAddress(IN struct GLUE_INFO *prGlueInfo,
 			 IN uint8_t *pucMacAddr);

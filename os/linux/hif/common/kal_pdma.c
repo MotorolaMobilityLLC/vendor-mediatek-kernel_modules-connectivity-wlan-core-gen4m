@@ -1318,6 +1318,7 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	struct TX_CMD_REQ *prTxReq;
 	enum ENUM_CMD_TX_RESULT ret;
 	unsigned long flags;
+	struct list_head rTempQ;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1326,9 +1327,12 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
-	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
+	list_replace_init(&prHifInfo->rTxCmdQ, &rTempQ);
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
+
+	list_for_each_safe(prCur, prNext, &rTempQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+		KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 		ret = halWpdmaWriteCmd(prGlueInfo,
 				       &prTxReq->rCmdInfo, prTxReq->ucTC);
 		if (ret == CMD_TX_RESULT_SUCCESS) {
@@ -1339,11 +1343,10 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 		} else {
 			DBGLOG(HAL, ERROR, "ret: %d\n", ret);
 		}
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+		KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 		list_del(prCur);
 		list_add_tail(prCur, &prHifInfo->rTxCmdFreeList);
 	}
-	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return true;
 }
@@ -1433,7 +1436,9 @@ void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
 void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 		OUT unsigned long *plHifTxRingFlags)
 {
+#if !CFG_SUPPORT_RX_WORK
 	unsigned long ulHifTxRingFlags = 0;
+#endif /* CFG_SUPPORT_RX_WORK */
 
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
 		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
@@ -1444,9 +1449,13 @@ void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 		return;
 	}
 
+#if CFG_SUPPORT_RX_WORK
+	mutex_lock(&prTxRing->rTxDmaQMutex);
+#else /* CFG_SUPPORT_RX_WORK */
 	spin_lock_irqsave(&prTxRing->rTxDmaQLock,
 			ulHifTxRingFlags);
 	*plHifTxRingFlags = ulHifTxRingFlags;
+#endif /* CFG_SUPPORT_RX_WORK */
 }
 
 void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
@@ -1461,9 +1470,42 @@ void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 		return;
 	}
 
+#if CFG_SUPPORT_RX_WORK
+	mutex_unlock(&prTxRing->rTxDmaQMutex);
+#else /* CFG_SUPPORT_RX_WORK */
 	spin_unlock_irqrestore(&prTxRing->rTxDmaQLock,
 		ulHifTxRingFlags);
+#endif /* CFG_SUPPORT_RX_WORK */
+}
 
+void kalAcquireHifOwnLock(struct ADAPTER *prAdapter)
+{
+
+	/* if direct trx,  set drv/fw own will be called
+	*  in softirq/tasklet/thread context,
+	*  if normal trx, set drv/fw own will only
+	*  be called in thread context
+	*/
+#if !CFG_SUPPORT_RX_WORK
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter)) {
+		spin_lock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[
+			SPIN_LOCK_SET_OWN]);
+	} else
+#endif /* !CFG_SUPPORT_RX_WORK */
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+}
+
+void kalReleaseHifOwnLock(struct ADAPTER *prAdapter)
+{
+#if !CFG_SUPPORT_RX_WORK
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter)) {
+		spin_unlock_bh(
+			&prAdapter->prGlueInfo->rSpinLock[
+			SPIN_LOCK_SET_OWN]);
+	} else
+#endif /* !CFG_SUPPORT_RX_WORK */
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 }
 
 u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
@@ -1547,8 +1589,10 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 	}
 #endif
 
+#if !CFG_SUPPORT_RX_WORK
 	/* disable softirq to improve processing efficiency */
 	KAL_HIF_BH_DISABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (!halIsDataRing(TX_RING, u4Idx))
@@ -1603,7 +1647,9 @@ end:
 		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	del_timer_sync(&prHifInfo->rTxDelayTimer);
