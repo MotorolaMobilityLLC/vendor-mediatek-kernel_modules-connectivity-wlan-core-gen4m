@@ -883,10 +883,10 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	mt6639GetFlavorVer(&aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt6639_wifi.bin */
+	/* Type 0. connsys_wifi_mt6639.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6639_wifi.bin");
+			"connsys_wifi_mt6639.bin");
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -894,10 +894,10 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 1. mt6639_wifi_flavor.bin */
+	/* Type 1. connsys_wifi_mt6639_flavor.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6639_wifi_%s.bin",
+			"connsys_wifi_mt6639_%s.bin",
 			aucFlavor);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
@@ -953,10 +953,10 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	mt6639GetFlavorVer(&aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
-	/* Type 0. mt6639_wifi.bin */
+	/* Type 0. connsys_wifi_mt6639.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6639_wifi.bin");
+			"connsys_wifi_mt6639.bin");
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
@@ -964,10 +964,10 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 1. mt6639_wifi_flavor.bin */
+	/* Type 1. connsys_wifi_mt6639_flavor.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"mt6639_wifi_%s.bin",
+			"connsys_wifi_mt6639_%s.bin",
 			aucFlavor);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
