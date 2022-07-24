@@ -290,59 +290,59 @@ struct pse_group_info mt6655_pse_group[] = {
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6655_pcie_msi_layout[] = {
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
 #if CFG_MTK_MDDP_SUPPORT
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
 #else
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
-	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, NONE_INT, 0},
 #endif
-	{"wm_conn2ap_wdt_irq", NULL, NULL, AP_INT},
-	{"wf_mcu_jtag_det_eint", NULL, NULL, AP_INT},
-	{"pmic_eint", NULL, NULL, AP_INT},
+	{"wm_conn2ap_wdt_irq", NULL, NULL, NONE_INT, 0},
+	{"wf_mcu_jtag_det_eint", NULL, NULL, NONE_INT, 0},
+	{"pmic_eint", NULL, NULL, NONE_INT, 0},
 #if CFG_MTK_CCCI_SUPPORT
-	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
+	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
 #else
-	{"ccif_bgf2ap_sw_irq", NULL, NULL, AP_INT},
+	{"ccif_bgf2ap_sw_irq", NULL, NULL, NONE_INT, 0},
 #endif
 	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
-		pcie_sw_int_thread_handler, AP_INT},
+		pcie_sw_int_thread_handler, AP_MISC_INT},
 #if CFG_MTK_CCCI_SUPPORT
-	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
-	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
+	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
+	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT, 0},
 #else
-	{"ccif_bgf2ap_irq_0", NULL, NULL, AP_INT},
-	{"ccif_bgf2ap_irq_1", NULL, NULL, AP_INT},
+	{"ccif_bgf2ap_irq_0", NULL, NULL, NONE_INT, 0},
+	{"ccif_bgf2ap_irq_1", NULL, NULL, NONE_INT, 0},
 #endif
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
-	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"reserved", NULL, NULL, NONE_INT, 0},
 };
 #endif
 
@@ -1193,8 +1193,8 @@ static void mt6655ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 static void mt6655EnableInterrupt(struct ADAPTER *prAdapter)
 {
-	asicConnac3xEnablePlatformIRQ(prAdapter);
 	mt6655ConfigIntMask(prAdapter->prGlueInfo, TRUE);
+	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
 
 static void mt6655DisableInterrupt(struct ADAPTER *prAdapter)

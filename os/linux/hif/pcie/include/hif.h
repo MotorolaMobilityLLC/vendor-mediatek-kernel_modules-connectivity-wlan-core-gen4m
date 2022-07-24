@@ -398,6 +398,7 @@ struct BUS_INFO {
 	u_int8_t (*pdmaPollingIdle)(struct GLUE_INFO *prGlueInfo);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
+	void (*configWfdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*disableSwInterrupt)(struct ADAPTER *prAdapter);
 	void (*processTxInterrupt)(struct ADAPTER *prAdapter);
 	void (*processRxInterrupt)(struct ADAPTER *prAdapter);
@@ -564,7 +565,10 @@ void halPciePreSuspendTimeout(IN struct ADAPTER *prAdapter,
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 
-irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
+void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
+void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)

@@ -425,21 +425,59 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void)
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
+irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct pcie_msi_info *prMsiInfo;
+	struct pcie_msi_layout *prMsiLayout;
+	int i;
+
+	disable_irq_nosync(irq);
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, INFO, "No glue info in %s\n", __func__);
+		return IRQ_NONE;
+	}
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled)
+		goto exit;
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
+		if (prMsiLayout->irq_num == irq) {
+			set_bit(i, &prMsiInfo->ulEnBits);
+			break;
+		}
+	}
+
+exit:
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 #if PCIE_ISR_DEBUG_LOG
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
 #endif
 
-	prGlueInfo = (struct GLUE_INFO *) dev_instance;
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
-		DBGLOG(HAL, INFO, "No glue info in mtk_pci_interrupt()\n");
+		DBGLOG(HAL, INFO, "No glue info in %s\n", __func__);
 		return IRQ_NONE;
 	}
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
-	halDisableInterrupt(prGlueInfo->prAdapter);
+	if (prBusInfo->configWfdmaIntMask)
+		prBusInfo->configWfdmaIntMask(prGlueInfo, FALSE);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
@@ -453,6 +491,70 @@ irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 #endif
 
 	return IRQ_HANDLED;
+}
+
+void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct pcie_msi_info *prMsiInfo;
+	struct pcie_msi_layout *prMsiLayout;
+	int i;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+	if (!prMsiInfo->fgMsiEnabled) {
+		enable_irq(prHifInfo->u4IrqId);
+		return;
+	}
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
+		if (prMsiLayout->type != AP_INT)
+			continue;
+
+		if (test_and_clear_bit(i, &prMsiInfo->ulEnBits))
+			enable_irq(prMsiLayout->irq_num);
+	}
+}
+
+void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct pcie_msi_info *prMsiInfo;
+	struct pcie_msi_layout *prMsiLayout;
+	int i;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prChipInfo->bus_info;
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+
+	if (!prMsiInfo->fgMsiEnabled) {
+		disable_irq_nosync(prHifInfo->u4IrqId);
+		return;
+	}
+
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
+		if (prMsiLayout->type != AP_INT)
+			continue;
+
+		if (!test_bit(i, &prMsiInfo->ulEnBits)) {
+			disable_irq_nosync(prMsiLayout->irq_num);
+			set_bit(i, &prMsiInfo->ulEnBits);
+		}
+	}
 }
 
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
@@ -1071,6 +1173,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	prMsiInfo->fgMsiEnabled = FALSE;
 	prMsiInfo->u4MsiNum = 1;
 #endif
+	prMsiInfo->ulEnBits = 0;
 	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
 		ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
 
@@ -1634,8 +1737,9 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 		    !prMsiLayout->thread_handler)
 			continue;
 
+		prMsiLayout->irq_num = irqn;
 		ret = devm_request_threaded_irq(&pdev->dev,
-			irqn,
+			prMsiLayout->irq_num,
 			prMsiLayout->top_handler,
 			prMsiLayout->thread_handler,
 			IRQF_SHARED,
@@ -1697,7 +1801,13 @@ err:
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
+static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
+{
+	disable_irq_nosync(irq);
+	return IRQ_HANDLED;
+}
+
+static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 #if AXI_ISR_DEBUG_LOG
@@ -1707,7 +1817,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
 #if AXI_ISR_DEBUG_LOG
-		DBGLOG(HAL, INFO, "No glue info in mtk_axi_interrupt()\n");
+		DBGLOG(HAL, INFO, "No glue info in %s\n"__func__);
 #endif
 		return IRQ_NONE;
 	}
@@ -1739,12 +1849,14 @@ static int32_t glBusSetLegacyIrq(struct pci_dev *pdev,
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	return devm_request_irq(&pdev->dev,
-			prHifInfo->u4IrqId,
-			mtk_pci_interrupt,
-			IRQF_SHARED,
-			KBUILD_MODNAME,
-			prGlueInfo);
+	return devm_request_threaded_irq(
+		&pdev->dev,
+		prHifInfo->u4IrqId,
+		mtk_pci_isr,
+		mtk_pci_isr_thread,
+		IRQF_SHARED,
+		KBUILD_MODNAME,
+		prGlueInfo);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1807,8 +1919,13 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 
 		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
 		       prHifInfo->u4IrqId_1);
-		ret = request_irq(prHifInfo->u4IrqId_1, mtk_axi_interrupt,
-				  IRQF_SHARED, prNetDevice->name, prGlueInfo);
+		ret = request_threaded_irq(
+			prHifInfo->u4IrqId_1,
+			mtk_axi_isr,
+			mtk_axi_isr_thread,
+			IRQF_SHARED,
+			prNetDevice->name,
+			prGlueInfo);
 		if (ret != 0) {
 			DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
 			       prHifInfo->u4IrqId_1, ret);
