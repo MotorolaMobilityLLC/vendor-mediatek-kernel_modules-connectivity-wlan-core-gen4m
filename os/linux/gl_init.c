@@ -6070,17 +6070,6 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 			prGlueInfo->main_thread);
 
 	DBGLOG(INIT, INFO, "wlan thread stopped\n");
-
-	if (test_and_clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag) &&
-			!completion_done(&prGlueInfo->rPendComp)) {
-		struct GL_IO_REQ *prIoReq;
-
-		DBGLOG(INIT, INFO, "Complete on-going ioctl as failure.\n");
-		prIoReq = &(prGlueInfo->OidEntry);
-		prIoReq->rStatus = WLAN_STATUS_FAILURE;
-		DBGLOG(NIC, TRACE, "rPendComp=%p", &prGlueInfo->rPendComp);
-		complete(&prGlueInfo->rPendComp);
-	}
 }
 
 

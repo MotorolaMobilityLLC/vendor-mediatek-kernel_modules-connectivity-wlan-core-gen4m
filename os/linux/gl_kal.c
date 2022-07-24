@@ -5554,6 +5554,22 @@ int main_thread(void *data)
 	/* remove pending oid */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
+	if (kalIsResetting() &&
+	    !completion_done(&prGlueInfo->rPendComp) &&
+	    !prGlueInfo->u4OidCompleteFlag) {
+		struct GL_IO_REQ *prIoReq;
+
+		DBGLOG(INIT, INFO,
+			"main_thread stop, complete pending oid\n");
+
+		prIoReq = &(prGlueInfo->OidEntry);
+		prIoReq->rStatus = WLAN_STATUS_FAILURE;
+
+		prGlueInfo->u4OidCompleteFlag = 1;
+
+		complete(&prGlueInfo->rPendComp);
+	}
+
 	complete(&prGlueInfo->rHaltComp);
 #if CFG_ENABLE_WAKE_LOCK
 	if (KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
