@@ -2421,6 +2421,12 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 
 		WIPHY_PRIV(wiphy, prGlueInfo);
 		ASSERT(prGlueInfo);
+		if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON
+			| WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+			DBGLOG(REQ, WARN, "driver is not ready\n");
+			return -EFAULT;
+		}
+
 		prAdapter = prGlueInfo->prAdapter;
 		if (prAdapter) {
 			u2Len = kalStrLen(
