@@ -2364,11 +2364,20 @@ exit:
 static struct work_struct pwr_on_notify_work;
 static void __wlan_pwr_on_notify(struct work_struct *work)
 {
+	struct GLUE_INFO *glue = NULL;
 	int32_t ret = 0;
 
 	DBGLOG(INIT, INFO, "__wlan_pwr_on_notify.\n");
 
 	wfsys_lock();
+
+	WIPHY_PRIV(wlanGetWiphy(), glue);
+	if (glue->u4ReadyFlag == 1) {
+		DBGLOG(INIT, TRACE, "Skip due to wifi is already on.\n");
+		ret = 0;
+		goto exit;
+	}
+
 	ret = wlanFuncOn();
 	if (ret)
 		goto exit;
