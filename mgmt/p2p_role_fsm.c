@@ -341,7 +341,7 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		ASSERT_BREAK(prAdapter != NULL);
 
 		DEBUGFUNC("p2pRoleFsmUninit()");
-		DBGLOG(P2P, INFO, "->p2pRoleFsmUninit()\n");
+		DBGLOG(P2P, INFO, "->p2pRoleFsmUninit(%d)\n", ucRoleIdx);
 
 		prP2pRoleFsmInfo =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
@@ -1712,17 +1712,14 @@ error:
 
 }				/* p2pRoleFsmRunEventStartAP */
 
-
-void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pRoleFsmDelIface(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
-		(struct MSG_P2P_DEL_IFACE *) NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	uint8_t ucRoleIdx;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
 	uint32_t u4ConnType;
 
@@ -1732,15 +1729,13 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-	prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *) prMsgHdr;
-	ucRoleIdx = prP2pDelIfaceMsg->ucRoleIdx;
 	prAdapter = prGlueInfo->prAdapter;
 	prP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx);
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR,
-			   "p2pRoleFsmRunEventDelIface: Corresponding P2P Role FSM empty: %d.\n",
-			   prP2pDelIfaceMsg->ucRoleIdx);
+			"p2pRoleFsmRunEventDelIface: Corresponding P2P Role FSM empty: %d.\n",
+			ucRoleIdx);
 		goto error;
 	}
 
@@ -1807,6 +1802,19 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 	}
 
 error:
+
+	DBGLOG(P2P, LOUD, "Finish del iface, Quit.\n");
+}
+
+void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
+		(struct MSG_P2P_DEL_IFACE *) prMsgHdr;
+
+	p2pRoleFsmDelIface(prAdapter,
+		prP2pDelIfaceMsg->ucRoleIdx);
+
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
