@@ -7482,27 +7482,31 @@ exit:
 	/* return; */
 }
 
-static uint32_t
-p2pFunGetPreferrestFreqByBand(struct ADAPTER *prAdapter,
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pref freq list with maximum number assigned.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] eBandPrefer The preferred band.
+ * \param[in] eMaxBW The maximum freq bandwidth.
+ * \param[in] u4TopPreferNum The top N number of preferred freq.
+ * \param[out] pu4Freq The freq list.
+ *
+ * \retval The number of the preferred freq obtained.
+ */
+/*---------------------------------------------------------------------------*/
+static uint8_t
+p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBandPrefer,
 		enum ENUM_MAX_BANDWIDTH_SETTING eMaxBW,
-		uint32_t *pu4Freq)
+		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
 {
-	uint8_t ucMaxChnNum = 0;
+	uint8_t ucMaxChnNum = MAX_PER_BAND_CHN_NUM;
 	uint8_t ucNumOfChannel = 0;
-	uint32_t u4WlanStatus = WLAN_STATUS_SUCCESS;
+	uint8_t i;
 	struct RF_CHANNEL_INFO *aucChannelList = NULL;
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
-
-	if (eBandPrefer == BAND_2G4)
-		ucMaxChnNum = MAX_2G_BAND_CHN_NUM;
-	else if (eBandPrefer == BAND_5G)
-		ucMaxChnNum = MAX_5G_BAND_CHN_NUM;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eBandPrefer == BAND_6G)
-		ucMaxChnNum = MAX_6G_BAND_CHN_NUM;
 #endif
 
 	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
@@ -7511,7 +7515,7 @@ p2pFunGetPreferrestFreqByBand(struct ADAPTER *prAdapter,
 	if (!aucChannelList) {
 		DBGLOG(P2P, ERROR,
 			"Allocate buffer for channel list fail\n");
-		return -ENOMEM;
+		return 0;
 	}
 	kalMemZero(aucChannelList,
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
@@ -7531,18 +7535,15 @@ p2pFunGetPreferrestFreqByBand(struct ADAPTER *prAdapter,
 			ucMaxChnNum, &ucNumOfChannel, aucChannelList);
 	}
 
-	if (ucNumOfChannel > 0) {
-		*pu4Freq = nicChannelNum2Freq(
-			aucChannelList[0].ucChannelNum,
-			aucChannelList[0].eBand) / 1000;
-	} else {
-		u4WlanStatus = WLAN_STATUS_NOT_SUPPORTED;
-	}
+	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++)
+		*(pu4Freq + i) = nicChannelNum2Freq(
+			aucChannelList[i].ucChannelNum,
+			aucChannelList[i].eBand) / 1000;
 
 	kalMemFree(aucChannelList, VIR_MEM_TYPE,
 			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
 
-	return u4WlanStatus;
+	return i;
 }
 
 uint32_t
@@ -7562,16 +7563,17 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, INFO,
 			"Prefer 5G/6G in single P2P");
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G &&
-		    p2pFunGetPreferrestFreqByBand(prAdapter,
-		    BAND_6G, MAX_BW_80MHZ,
-		    &freq_list[*num_freq_list]) == WLAN_STATUS_SUCCESS)
-			(*num_freq_list)++;
+		if (prAdapter->fgIsHwSupport6G)
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_6G, MAX_BW_80MHZ,
+				MAX_6G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
 #endif
-		if (p2pFunGetPreferrestFreqByBand(prAdapter,
-		    BAND_5G, MAX_BW_80MHZ,
-		    &freq_list[*num_freq_list]) == WLAN_STATUS_SUCCESS)
-			(*num_freq_list)++;
+		*num_freq_list += p2pFunGetTopPreferFreqByBand(prAdapter,
+			BAND_5G, MAX_BW_80MHZ,
+			MAX_5G_BAND_CHN_NUM,
+			&freq_list[*num_freq_list]);
 	} else if (prAdapter->rWifiVar.eDbdcMode ==
 		ENUM_DBDC_MODE_DISABLED) {
 		/* DBDC disabled */
@@ -7594,16 +7596,18 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 		/* Prefer 5G/6G if STA is connected at 2.4G */
 		if (prAisBssInfo->eBand == BAND_2G4) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prAdapter->fgIsHwSupport6G &&
-			    p2pFunGetPreferrestFreqByBand(prAdapter,
-			    BAND_6G, MAX_BW_80MHZ,
-			    &freq_list[*num_freq_list]) == WLAN_STATUS_SUCCESS)
-				(*num_freq_list)++;
+			if (prAdapter->fgIsHwSupport6G)
+				*num_freq_list += p2pFunGetTopPreferFreqByBand(
+					prAdapter,
+					BAND_6G, MAX_BW_80MHZ,
+					MAX_6G_BAND_CHN_NUM,
+					&freq_list[*num_freq_list]);
 #endif
-			if (p2pFunGetPreferrestFreqByBand(prAdapter,
-			    BAND_5G, MAX_BW_80MHZ,
-			    &freq_list[*num_freq_list]) == WLAN_STATUS_SUCCESS)
-				(*num_freq_list)++;
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_5G, MAX_BW_80MHZ,
+				MAX_5G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
 
 			/* Add SCC channel */
 			freq_list[*num_freq_list] = nicChannelNum2Freq(
@@ -7619,10 +7623,11 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 			(*num_freq_list)++;
 
 			/* Add 2G channels */
-			if (p2pFunGetPreferrestFreqByBand(prAdapter,
-			    BAND_2G4, MAX_BW_20MHZ,
-			    &freq_list[*num_freq_list]) == WLAN_STATUS_SUCCESS)
-				(*num_freq_list)++;
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_2G4, MAX_BW_20MHZ,
+				MAX_2G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
 		}
 	}
 
