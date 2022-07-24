@@ -84,6 +84,10 @@
 #define ROAMING_ONE_AP_SKIP_TIMES		3
 #endif
 #define ROAMING_BTM_DELTA			0	/* % */
+
+#define ROAMING_RECOVER_RLM_SYNC		0
+#define ROAMING_RECOVER_BSS_UPDATE		1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -193,6 +197,7 @@ struct ROAMING_INFO {
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
 	struct ROAMING_EVENT_INFO rEventInfo;
+	uint8_t ucRecoverBitmap;
 };
 
 struct ROAMING_IDLE_INFO {
@@ -260,6 +265,11 @@ void roamingFsmNotifyEvent(IN struct ADAPTER *adapter, IN uint8_t bssIndex,
 
 uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 	IN struct CMD_ROAMING_TRANSIT *prTransit);
+
+void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t ucScenario);
+
+void roamingFsmDoRecover(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 

@@ -4197,8 +4197,15 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 			/* Appy new parameters if necessary */
 			if (fgNewParameter) {
-				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
-				rlmSyncOperationParams(prAdapter, prBssInfo);
+				if (IS_BSS_AIS(prBssInfo) &&
+					IS_AIS_ROAMING(prAdapter,
+						prBssInfo->ucBssIndex))
+					roamingFsmSetRecoverBitmap(prAdapter,
+						prBssInfo->ucBssIndex,
+						ROAMING_RECOVER_BSS_UPDATE);
+				else
+					nicUpdateBss(prAdapter,
+						     prBssInfo->ucBssIndex);
 				fgNewParameter = FALSE;
 			}
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -7371,8 +7378,15 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		rlmChangeOwnOpInfo(prAdapter, prBssInfo);
 
 		/* <2> Update OP BW/Nss to FW */
-		if (!fgIsSwitchingP2pChnl)
-			rlmSyncOperationParams(prAdapter, prBssInfo);
+		if (!fgIsSwitchingP2pChnl) {
+			if (IS_BSS_AIS(prBssInfo) &&
+			    IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex))
+				roamingFsmSetRecoverBitmap(prAdapter,
+					prBssInfo->ucBssIndex,
+					ROAMING_RECOVER_RLM_SYNC);
+			else
+				rlmSyncOperationParams(prAdapter, prBssInfo);
+		}
 
 		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is
 		 * changed (AP mode)

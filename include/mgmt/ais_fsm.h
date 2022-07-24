@@ -129,6 +129,9 @@
 #define AIS_INDEX(_adapter, _bss_idx) \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucAisIndex
 
+#define IS_AIS_ROAMING(_adapter, _bss_idx) \
+	aisGetAisFsmInfo(_adapter, _bss_idx)->ucIsStaRoaming
+
 #define AIS_BTM_DIS_IMMI_TIMEOUT	    10000 /* MSEC */
 #define AIS_BTM_DIS_IMMI_STATE_0	    0
 #define AIS_BTM_DIS_IMMI_STATE_1	    1
@@ -561,6 +564,7 @@ struct AIS_FSM_INFO {
 
 	/* Scan target channel when device roaming */
 	uint8_t fgTargetChnlScanIssued;
+	uint8_t ucIsStaRoaming;
 
 	struct LINK rAxBlacklist;
 	struct LINK rHeHtcBlacklist;

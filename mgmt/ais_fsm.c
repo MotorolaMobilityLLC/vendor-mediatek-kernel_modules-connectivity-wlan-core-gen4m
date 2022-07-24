@@ -2021,6 +2021,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 		prAisFsmInfo->ucConnTrialCount++;
 		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
+		prAisFsmInfo->ucIsStaRoaming = TRUE;
 
 		if (wnmSendBTMResponse(prAdapter,
 		    aisGetMainLinkBssDesc(prAisFsmInfo)->aucBSSID,
@@ -3380,8 +3381,44 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* end of aisFsmRunEventJoinComplete() */
 
-void aisRestoreAllLink(IN struct ADAPTER *ad,
-	struct AIS_FSM_INFO *ais)
+void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
+	struct BSS_DESC *prBssDesc)
+{
+	uint8_t ucRfBw, ucRfCenterFreqSeg1, ucPrimaryChannel;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
+	enum ENUM_CHNL_EXT eRfSco;
+
+	if (!prBssInfo || !prBssDesc)
+		return;
+
+	prBssInfo->u4RsnSelectedGroupCipher =
+		prBssDesc->u4RsnSelectedGroupCipher;
+	prBssInfo->u4RsnSelectedPairwiseCipher =
+		prBssDesc->u4RsnSelectedPairwiseCipher;
+	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
+	prBssInfo->eBand = prBssDesc->eBand;
+	ucPrimaryChannel = prBssDesc->ucChannelNum;
+
+#if CFG_SUPPORT_DBDC
+	ucRfBw = cnmGetDbdcBwCapability(ad, prBssInfo->ucBssIndex);
+#else
+	ucRfBw = cnmGetBssMaxBw(ad, prBssInfo->ucBssIndex);
+#endif
+	ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+	if (ucRfBw > prBssDesc->eChannelWidth)
+		ucRfBw = prBssDesc->eChannelWidth;
+	eRfChannelWidth = ucRfBw;
+	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
+		eRfChannelWidth);
+
+	rlmReviseMaxBw(ad, prBssInfo->ucBssIndex, &eRfSco, &eRfChannelWidth,
+		&ucRfCenterFreqSeg1, &ucPrimaryChannel);
+
+	prBssInfo->ucVhtChannelWidth = eRfChannelWidth;
+	prBssInfo->eBssSCO = eRfSco;
+}
+
+void aisRestoreAllLink(IN struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -3389,6 +3426,7 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
 		struct STA_RECORD *prStaRec = aisGetLinkStaRec(ais, i);
 		struct PARAM_SSID rSsid;
+		struct BSS_DESC *prBssDesc = NULL;
 
 		if (!prAisBssInfo)
 			break;
@@ -3398,8 +3436,9 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 			  rSsid.u4SsidLen,
 			  prAisBssInfo->aucSSID,
 			  prAisBssInfo->ucSSIDLen);
-		aisSetLinkBssDesc(ais, scanSearchBssDescByBssidAndSsid(ad,
-			prAisBssInfo->aucBSSID, TRUE, &rSsid), i);
+		prBssDesc = scanSearchBssDescByBssidAndSsid(ad,
+			prAisBssInfo->aucBSSID, TRUE, &rSsid);
+		aisSetLinkBssDesc(ais, prBssDesc, i);
 		aisSetLinkStaRec(ais, prAisBssInfo->prStaRecOfAP, i);
 
 		prAisBssInfo->eHwBandIdx = prAisBssInfo->prStaRecOfAP ?
@@ -3419,10 +3458,13 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 			aisFreeBssInfo(ad, ais, i);
 
 		/* roaming but can't find connected bssdesc */
-		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
-		    !aisGetLinkBssDesc(ais, i))
-			DBGLOG(AIS, ERROR,
-			       "Can't retrieve target bss descriptor %d\n", i);
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			if (!prBssDesc)
+				DBGLOG(AIS, ERROR,
+					"Can't find target BssDesc %d\n", i);
+			else
+				aisRestoreBssInfo(ad, prAisBssInfo, prBssDesc);
+		}
 	}
 }
 
@@ -3571,7 +3613,6 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 		prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
 
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
-
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
 
 	if (aisHandleTemporaryReject(prAdapter, prStaRec) ||
@@ -3588,6 +3629,10 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
 
 		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
+
+		/* Restore rlmFillSync or nicBssUpdate if needed */
+		roamingFsmDoRecover(prAdapter, ucBssIndex);
+		prAisFsmInfo->ucIsStaRoaming = FALSE;
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
 		SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
@@ -3688,6 +3733,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 
 			/* 1. Reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
+			prAisFsmInfo->ucIsStaRoaming = FALSE;
 
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
@@ -4155,6 +4201,7 @@ void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	aisRemoveDeauthBlacklist(prAdapter);
 	aisClearAllLink(prAisFsmInfo);
+	prAisFsmInfo->ucIsStaRoaming = FALSE;
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);

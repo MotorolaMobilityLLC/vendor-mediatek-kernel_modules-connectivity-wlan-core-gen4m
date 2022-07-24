@@ -1987,8 +1987,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		       uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	uint8_t ucMaxBandwidth =
-		MAX_BW_80_80_MHZ; /*chip capability*/
+	uint8_t ucMaxBandwidth = MAX_BW_80_80_MHZ; /*chip capability*/
 	struct BSS_DESC *prBssDesc = NULL;
 	enum ENUM_BAND eBand = BAND_NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -2003,22 +2002,18 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex);
 	if (!prBssInfo) {
-		DBGLOG(CNM, ERROR,
-			"Invalid bss idx: %d\n",
-			ucBssIndex);
+		DBGLOG(CNM, ERROR, "Invalid bss idx: %d\n", ucBssIndex);
 		return MAX_BW_20MHZ;
 	}
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		/* STA mode */
 
-
 		/* should check Bss_info could be used or not
-		 *the info might not be trustable before state3
+		 * the info might not be trustable before state3
 		 */
 
-		prBssDesc =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc)
 			eBand = prBssDesc->eBand;
 		else
