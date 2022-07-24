@@ -409,7 +409,7 @@ void fillUsbHifTxDesc(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
 #if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 static int wlan_func_on_by_chrdev(void)
 {
-#define MAX_RETRY_COUNT		10
+#define MAX_RETRY_COUNT		100
 
 	int retry = 0;
 	int ret = 0;
