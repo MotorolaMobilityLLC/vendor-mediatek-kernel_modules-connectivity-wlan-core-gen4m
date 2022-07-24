@@ -208,7 +208,11 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P,
 			FALSE,
-			p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
+			/*
+			 * Allow role1 to use reserve bss.
+			 * p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
+			 *
+			 */
 			(ucRoleIdx != P2P_MAIN_LINK_INDEX));
 
 		if (!prP2pBssInfo) {
