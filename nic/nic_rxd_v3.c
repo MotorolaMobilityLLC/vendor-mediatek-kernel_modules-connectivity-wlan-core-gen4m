@@ -884,6 +884,12 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 	uint32_t *pos = (uint32_t *)rpt;
 	uint32_t *end = (uint32_t *)rpt + len / 4;
 
+	if (len > CFG_RX_MAX_MPDU_SIZE) {
+		DBGLOG(HAL, ERROR, "Invalid MSDU Report len:%d\n", len);
+		DBGLOG_MEM8(HAL, ERROR, rpt, CFG_RX_MAX_MPDU_SIZE);
+		return;
+	}
+
 	DBGLOG_MEM8(HAL, TEMP, rpt, len);
 	DBGLOG(HAL, TEMP, "len: %d, msdu_cnt: %d, txd_cnt: %d, serial: %d\n",
 		len, msdu_cnt, txd_cnt, serial);
@@ -907,6 +913,12 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 			msdu1 = HAL_TX_FREE_DONE_GET_MSDU_ID1(*pos);
 
 			if (msdu0 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
+				if (msdu0 >= HIF_TX_MSDU_TOKEN_NUM) {
+					DBGLOG(HAL, ERROR,
+						"Invalid MSDU0 [%u]\n",
+						msdu0);
+					break;
+				}
 				halMsduReportStats(prAdapter, msdu0,
 						tx_delay, stat);
 				halProcessToken(prAdapter, msdu0, prFreeQueue);
@@ -914,6 +926,12 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 			}
 
 			if (msdu1 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
+				if (msdu1 >= HIF_TX_MSDU_TOKEN_NUM) {
+					DBGLOG(HAL, ERROR,
+						"Invalid MSDU1 [%u]\n",
+						msdu1);
+					break;
+				}
 				halMsduReportStats(prAdapter, msdu1,
 						tx_delay, stat);
 				halProcessToken(prAdapter, msdu1, prFreeQueue);
@@ -938,7 +956,8 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 	} while (pos < end);
 
 	if (msdu_cnt_handled != msdu_cnt || txd_cnt_handled != txd_cnt) {
-		DBGLOG(HAL, WARN, "Unpected msdu_cnt[%d/%d] txd_cnt[%d/%d]\n",
+		DBGLOG(HAL, WARN,
+			"Unexpected msdu_cnt[%d/%d] txd_cnt[%d/%d]\n",
 			msdu_cnt_handled, msdu_cnt, txd_cnt_handled, txd_cnt);
 		DBGLOG_MEM8(HAL, WARN, rpt, len);
 	}
