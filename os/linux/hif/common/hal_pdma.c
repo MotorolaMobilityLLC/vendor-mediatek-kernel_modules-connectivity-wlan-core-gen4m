@@ -336,10 +336,10 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 
+	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
+
 	if (prBusInfo->enableInterrupt)
 		prBusInfo->enableInterrupt(prAdapter);
-
-	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
 }
 
 /*----------------------------------------------------------------------------*/
