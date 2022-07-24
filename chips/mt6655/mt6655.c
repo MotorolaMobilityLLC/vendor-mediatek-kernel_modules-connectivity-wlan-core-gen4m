@@ -36,6 +36,9 @@
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
+#endif
+
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
 #include "mtk_ccci_common.h"
 #endif
 
@@ -287,59 +290,59 @@ struct pse_group_info mt6655_pse_group[] = {
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6655_pcie_msi_layout[] = {
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
-	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, AP_INT},
 #if CFG_MTK_MDDP_SUPPORT
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT},
 #else
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
-	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
+	{"conn_hif_host_int", NULL, NULL, AP_INT},
 #endif
-	{"wm_conn2ap_wdt_irq", NULL, NULL, 0},
-	{"wf_mcu_jtag_det_eint", NULL, NULL, 0},
-	{"pmic_eint", NULL, NULL, 0},
-#if CFG_MTK_MDDP_SUPPORT
-	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"wm_conn2ap_wdt_irq", NULL, NULL, AP_INT},
+	{"wf_mcu_jtag_det_eint", NULL, NULL, AP_INT},
+	{"pmic_eint", NULL, NULL, AP_INT},
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
 #else
-	{"ccif_bgf2ap_sw_irq", NULL, NULL, 0},
+	{"ccif_bgf2ap_sw_irq", NULL, NULL, AP_INT},
 #endif
 	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
-		pcie_sw_int_thread_handler, 0},
-#if CFG_MTK_MDDP_SUPPORT
-	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, 1},
-	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, 1},
+		pcie_sw_int_thread_handler, AP_INT},
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
+	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, CCIF_INT},
 #else
-	{"ccif_bgf2ap_irq_0", NULL, NULL, 0},
-	{"ccif_bgf2ap_irq_1", NULL, NULL, 0},
+	{"ccif_bgf2ap_irq_0", NULL, NULL, AP_INT},
+	{"ccif_bgf2ap_irq_1", NULL, NULL, AP_INT},
 #endif
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
-	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
+	{"reserved", NULL, NULL, AP_INT},
 };
 #endif
 

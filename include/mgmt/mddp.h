@@ -20,7 +20,10 @@
 #if CFG_MTK_MDDP_SUPPORT
 
 #include "mddp_export.h"
+
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
 #include "mtk_ccci_common.h"
+#endif
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S

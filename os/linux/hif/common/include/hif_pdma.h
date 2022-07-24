@@ -858,11 +858,17 @@ union RRO_ACK_SN_CMD {
 };
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+enum pcie_msi_int_type {
+	AP_INT,
+	MDDP_INT,
+	CCIF_INT
+};
+
 struct pcie_msi_layout {
 	uint8_t name[32];
 	irqreturn_t (*top_handler)(int irq, void *dev_instance);
 	irqreturn_t (*thread_handler)(int irq, void *dev_instance);
-	u_int8_t is_md_int;
+	enum pcie_msi_int_type type;
 };
 
 struct pcie_msi_info {

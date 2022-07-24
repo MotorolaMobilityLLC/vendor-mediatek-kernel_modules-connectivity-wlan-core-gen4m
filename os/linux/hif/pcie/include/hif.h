@@ -566,7 +566,7 @@ void glBusFuncOff(void);
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
-#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_MTK_MDDP_SUPPORT || IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER))
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif
 
@@ -580,6 +580,8 @@ extern int mtk_pcie_probe_port(int port) __attribute__((weak));
 extern int mtk_pcie_remove_port(int port) __attribute__((weak));
 extern int mtk_pcie_mask_msi_to_ap(
 	int port, u32 msi_addr, u32 mask) __attribute__((weak));
+extern int mtk_msi_unmask_to_other_mcu(
+	struct irq_data *data, u32 group) __attribute__((weak));
 #endif
 
 /*******************************************************************************

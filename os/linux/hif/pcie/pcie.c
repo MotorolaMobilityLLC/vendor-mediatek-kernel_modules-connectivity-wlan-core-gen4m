@@ -82,6 +82,7 @@
 #include <asm/memory.h>
 #endif
 
+#include <linux/irq.h>
 #include <linux/platform_device.h>
 #include <linux/of_device.h>
 #include <linux/of_reserved_mem.h>
@@ -491,7 +492,7 @@ exit:
 	return IRQ_HANDLED;
 }
 
-#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_MTK_MDDP_SUPPORT || IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER))
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 {
 	return IRQ_HANDLED;
@@ -1614,9 +1615,6 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint8_t i = 0;
 	int ret = 0;
-#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	uint32_t msi_addr = 0, mask = 0;
-#endif
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
@@ -1636,21 +1634,31 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			KBUILD_MODNAME,
 			prGlueInfo);
 
-#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-		if (prMsiLayout->is_md_int)
-			mask |= BIT(i);
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+#if CFG_MTK_MDDP_SUPPORT
+		if (prMsiLayout->type == MDDP_INT) {
+			struct irq_data *data;
+
+			data = irq_get_irq_data(irqn);
+			irq_chip_mask_parent(data);
+		}
 #endif
+#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+		if (prMsiLayout->type == CCIF_INT) {
+			struct irq_data *data;
+
+			data = irq_get_irq_data(irqn);
+			irq_chip_mask_parent(data);
+			mtk_msi_unmask_to_other_mcu(data, 1);
+		}
+#endif
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 		en_wake_ret = enable_irq_wake(irqn);
 		DBGLOG(INIT, INFO, "request_irq(%d %s %d %d)\n",
 			irqn, prMsiLayout->name, ret, en_wake_ret);
 		if (ret)
 			goto err;
 	}
-
-#if CFG_MTK_MDDP_SUPPORT && IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	pci_read_config_dword(pdev, pdev->msi_cap + 0x4, &msi_addr);
-	mtk_pcie_mask_msi_to_ap(0, msi_addr, mask);
-#endif
 
 	return 0;
 
