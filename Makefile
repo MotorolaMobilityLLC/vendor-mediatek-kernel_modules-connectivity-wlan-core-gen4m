@@ -1249,6 +1249,12 @@ else
 ccflags-y += -DCFG_TX_HIF_PORT_QUEUE=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_DRIVER_OWN_DELAY_SUPPORT), y)
+ccflags-y += -DCFG_MTK_DRIVER_OWN_DELAY=1
+else
+ccflags-y += -DCFG_MTK_DRIVER_OWN_DELAY=0
+endif
+
 ifeq ($(CONFIG_AOSP_LINK_LAYER_STATS_SUPPORT), y)
 ccflags-y += -DCFG_SUPPORT_LLS=1
 endif

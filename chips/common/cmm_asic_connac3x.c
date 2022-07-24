@@ -899,6 +899,9 @@ void asicConnac3xLowPowerOwnClear(
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+		kalMdelay(10);
+#endif
 		HAL_MCR_RD(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			&u4RegValue);
