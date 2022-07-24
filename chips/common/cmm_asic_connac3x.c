@@ -1713,12 +1713,12 @@ void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
-	/* REMOVE DATA RATE Parsing Logic:Workaround only for 6885*/
-	/* Since MT6885 can not get Rx Data Rate dur to RXV HW Bug*/
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
 				&rRxRateInfo);
+	if (status < 0 || u4PhyRate == 0)
+		return;
 
 	prPerfIndInfo = &prGlueInfo->PerfIndCache;
 
@@ -1731,8 +1731,6 @@ void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	}
 
 	/* ucRate(500kbs) = u4PhyRate(100kbps) */
-	if (status < 0 || u4PhyRate == 0)
-		return;
 	u2Rate = u4PhyRate / 5;
 
 	/* RCPI */

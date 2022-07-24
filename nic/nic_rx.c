@@ -489,6 +489,16 @@ void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
 
 	prChipInfo->asicRxProcessRxvforMSP(prAdapter, prSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
+
+/* fos_change begin */
+#if CFG_SUPPORT_STAT_STATISTICS
+	nicRxGetNoiseLevelAndLastRate(prAdapter, prSwRfb);
+#endif /* fos_change end */
+
+#if CFG_SUPPORT_PERF_IND
+	nicRxPerfIndProcessRXV(prAdapter, prSwRfb,
+		GLUE_GET_PKT_BSS_IDX(prSwRfb->pvPacket));
+#endif
 }
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD || CFG_TCP_IP_CHKSUM_OFFLOAD_NDIS_60
@@ -1662,24 +1672,13 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 	prRetSwRfb = prSwRfbListHead;
 
 	while (prRetSwRfb) {
-		STATS_RX_PKT_INFO_DISPLAY(prRetSwRfb);
-
 		/**
 		 * Collect RXV information,
 		 * prAdapter->arStaRec[i].u4RxV[*] updated.
 		 * wlanGetRxRate() can get new rate values
 		 */
-		nicRxProcessRxv(prAdapter, prRetSwRfb);
-
-/* fos_change begin */
-#if CFG_SUPPORT_STAT_STATISTICS
-		nicRxGetNoiseLevelAndLastRate(prAdapter, prRetSwRfb);
-#endif /* fos_change end */
-
-#if CFG_SUPPORT_PERF_IND
-		nicRxPerfIndProcessRXV(prAdapter, prRetSwRfb,
-			GLUE_GET_PKT_BSS_IDX(prRetSwRfb->pvPacket));
-#endif
+		if (prRetSwRfb->eDst != RX_PKT_DESTINATION_NULL)
+			nicRxProcessRxv(prAdapter, prRetSwRfb);
 
 		/* save next first */
 		prNextSwRfb = (struct SW_RFB *)
