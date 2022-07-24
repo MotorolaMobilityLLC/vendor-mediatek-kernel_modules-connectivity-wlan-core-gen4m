@@ -51,6 +51,10 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct HIF_SKB_NODE {
+	struct sk_buff *prSkb;
+	struct list_head rNode;
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -63,6 +67,7 @@
  */
 static struct device *g_prDev;
 static struct page_pool *g_prPagePool;
+struct list_head g_rHifSkbList;
 
 #if CFG_CMA_ALLOC
 struct page *g_prCmaPage;
@@ -284,5 +289,77 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 
 	return pkt;
 }
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
+u_int8_t kalCreateHifSkbList(void)
+{
+	struct HIF_SKB_NODE *prNode;
+	struct sk_buff *prSkb;
+	uint8_t *pucRecvBuff;
+	uint32_t u4Num = 0, u4Idx;
+	u_int8_t fgRet = TRUE;
+
+	INIT_LIST_HEAD(&g_rHifSkbList);
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		if (halIsDataRing(RX_RING, u4Idx))
+			u4Num += RX_RING0_SIZE;
+		else
+			u4Num += RX_RING1_SIZE;
+	}
+
+	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
+		prSkb = kalAllocRxSkb(&pucRecvBuff);
+		if (!prSkb) {
+			DBGLOG(HAL, ERROR, "hif skb reserve fail[%u]!\n",
+			       u4Idx);
+			kalReleaseHifSkbList();
+			fgRet = FALSE;
+			goto exit;
+		}
+
+		prNode = (struct HIF_SKB_NODE *)prSkb->cb;
+		prNode->prSkb = prSkb;
+		list_add_tail(&prNode->rNode, &g_rHifSkbList);
+	}
+	DBGLOG(HAL, INFO, "hif skb reserve count[%u]!\n", u4Num);
+
+exit:
+	return fgRet;
+}
+
+void kalReleaseHifSkbList(void)
+{
+	struct HIF_SKB_NODE *prNode;
+	struct list_head *prCur, *prNext;
+
+	list_for_each_safe(prCur, prNext, &g_rHifSkbList) {
+		prNode = list_entry(prCur, struct HIF_SKB_NODE, rNode);
+		list_del(prCur);
+		kalPacketFree(NULL, (void *)prNode->prSkb);
+	}
+}
+
+struct sk_buff *kalAllocHifSkb(void)
+{
+	struct HIF_SKB_NODE *prNode;
+
+	if (list_empty(&g_rHifSkbList)) {
+		DBGLOG(HAL, ERROR, "hif skb list is empty\n");
+		return NULL;
+	}
+
+	prNode = list_entry(g_rHifSkbList.next, struct HIF_SKB_NODE, rNode);
+	list_del(&prNode->rNode);
+
+	return prNode->prSkb;
+}
+
+void kalFreeHifSkb(struct sk_buff *prSkb)
+{
+	struct HIF_SKB_NODE *prNode;
+
+	prNode = (struct HIF_SKB_NODE *)prSkb->cb;
+	prNode->prSkb = prSkb;
+	list_add_tail(&prNode->rNode, &g_rHifSkbList);
+}
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */

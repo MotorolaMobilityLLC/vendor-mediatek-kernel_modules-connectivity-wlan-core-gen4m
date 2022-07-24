@@ -676,6 +676,13 @@ struct MSDU_TOKEN_INFO {
 	struct MSDU_TOKEN_HISTORY_INFO rHistory;
 };
 
+struct TX_CMD_REQ {
+	struct CMD_INFO rCmdInfo;
+	uint8_t aucBuff[TX_BUFFER_NORMSIZE];
+	uint8_t ucTC;
+	struct list_head list;
+};
+
 struct TX_DATA_REQ {
 	struct MSDU_INFO *prMsduInfo;
 	struct list_head list;
@@ -1074,7 +1081,10 @@ static inline void halMawdPwrOff(void) {}
 int kalCreateRxPagePool(struct device *dev);
 void kalReleaseRxPagePool(struct device *dev);
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
-void kalDmaSyncForDevice(void *rAddr);
+u_int8_t kalCreateHifSkbList(void);
+void kalReleaseHifSkbList(void);
+struct sk_buff *kalAllocHifSkb(void);
+void kalFreeHifSkb(struct sk_buff *prSkb);
 #endif
 void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
 				       IN uint16_t u2Port);

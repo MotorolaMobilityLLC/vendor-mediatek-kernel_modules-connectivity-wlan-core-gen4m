@@ -107,18 +107,10 @@ typedef void(*PFN_CMD_TIMEOUT_HANDLER) (IN struct ADAPTER
 typedef void(*PFN_HIF_TX_CMD_DONE_CB) (IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo);
 
-struct TX_CMD_REQ {
-	struct CMD_INFO *prCmdInfo;
-	uint8_t ucTC;
-	struct list_head list;
-};
-
 struct CMD_INFO {
 	struct QUE_ENTRY rQueEntry;
 
 	enum COMMAND_TYPE eCmdType;
-
-	struct TX_CMD_REQ rTxCmdReq;
 
 	uint16_t u2InfoBufLen;	/* This is actual CMD buffer length */
 	uint8_t *pucInfoBuffer;	/* May pointer to structure in prAdapter */

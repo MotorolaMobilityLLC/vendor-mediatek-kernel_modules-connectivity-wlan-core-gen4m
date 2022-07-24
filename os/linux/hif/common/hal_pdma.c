@@ -1419,7 +1419,20 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 	INIT_LIST_HEAD(&prHifInfo->rTxCmdQ);
+	INIT_LIST_HEAD(&prHifInfo->rTxCmdFreeList);
 	spin_lock_init(&prHifInfo->rTxCmdQLock);
+
+	for (u4Idx = 0; u4Idx < TX_RING_CMD_SIZE; u4Idx++) {
+		struct TX_CMD_REQ *prCmdReq;
+
+		prCmdReq = kalMemAlloc(sizeof(struct TX_CMD_REQ),
+				       VIR_MEM_TYPE);
+		if (!prCmdReq) {
+			DBGLOG(HAL, ERROR, "alloc cmd req fail[%u]\n", u4Idx);
+			break;
+		}
+		list_add_tail(&prCmdReq->list, &prHifInfo->rTxCmdFreeList);
+	}
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		INIT_LIST_HEAD(&prHifInfo->rTxDataQ[u4Idx]);
@@ -1484,7 +1497,13 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		list_del(prCur);
-		kfree(prTxCmdReq);
+		list_add_tail(&prTxCmdReq->list, &prHifInfo->rTxCmdFreeList);
+	}
+
+	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdFreeList) {
+		prTxCmdReq = list_entry(prCur, struct TX_CMD_REQ, list);
+		list_del(prCur);
+		kalMemFree(prTxCmdReq, VIR_MEM_TYPE, sizeof(struct TX_CMD_REQ));
 	}
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 

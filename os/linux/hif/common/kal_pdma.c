@@ -1244,6 +1244,48 @@ enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	return halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
 }
 
+static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
+				      struct CMD_INFO *prCmdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct list_head *prNode;
+	struct TX_CMD_REQ *prCmdReq;
+	uint32_t u4Size;
+	unsigned long flags;
+	uint8_t *aucBuff;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (list_empty(&prHifInfo->rTxCmdFreeList)) {
+		DBGLOG(HAL, ERROR, "tx cmd free list is empty\n");
+		return NULL;
+	}
+
+	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
+	prNode = prHifInfo->rTxCmdFreeList.next;
+	list_del(prNode);
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
+
+	prCmdReq = list_entry(prNode, struct TX_CMD_REQ, list);
+	kalMemCopy(&prCmdReq->rCmdInfo, prCmdInfo, sizeof(struct CMD_INFO));
+
+	aucBuff = prCmdReq->aucBuff;
+	u4Size = prCmdInfo->u4TxdLen;
+	if (u4Size > TX_BUFFER_NORMSIZE)
+		u4Size = TX_BUFFER_NORMSIZE;
+	kalMemCopy(aucBuff, prCmdInfo->pucTxd, u4Size);
+	prCmdReq->rCmdInfo.pucTxd = aucBuff;
+	aucBuff += u4Size;
+
+	u4Size = prCmdInfo->u4TxpLen;
+	if ((u4Size + prCmdInfo->u4TxdLen) > TX_BUFFER_NORMSIZE)
+		u4Size = TX_BUFFER_NORMSIZE - prCmdInfo->u4TxdLen;
+	kalMemCopy(aucBuff, prCmdInfo->pucTxp, u4Size);
+	prCmdReq->rCmdInfo.pucTxp = aucBuff;
+
+	return prCmdReq;
+}
+
 static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 		struct GLUE_INFO *prGlueInfo, struct CMD_INFO *prCmdInfo,
 		uint8_t ucTC)
@@ -1255,9 +1297,11 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	prTxReq = &prCmdInfo->rTxCmdReq;
-
-	prTxReq->prCmdInfo = prCmdInfo;
+	prTxReq = kalCloneCmd(prGlueInfo, prCmdInfo);
+	if (!prTxReq) {
+		DBGLOG(HAL, ERROR, "alloc TxCmdReq fail!");
+		return CMD_TX_RESULT_FAILED;
+	}
 	prTxReq->ucTC = ucTC;
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxCmdQ);
@@ -1284,23 +1328,20 @@ bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
-		if (prTxReq->prCmdInfo) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_CMD_PENDING);
-			ret = halWpdmaWriteCmd(prGlueInfo,
-				prTxReq->prCmdInfo, prTxReq->ucTC);
-			if (ret == CMD_TX_RESULT_SUCCESS) {
-				if (prTxReq->prCmdInfo->pfHifTxCmdDoneCb)
-					prTxReq->prCmdInfo->pfHifTxCmdDoneCb(
-						prGlueInfo->prAdapter,
-						prTxReq->prCmdInfo);
-			} else {
-				DBGLOG(HAL, ERROR, "ret: %d\n", ret);
-			}
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_CMD_PENDING);
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+		ret = halWpdmaWriteCmd(prGlueInfo,
+				       &prTxReq->rCmdInfo, prTxReq->ucTC);
+		if (ret == CMD_TX_RESULT_SUCCESS) {
+			if (prTxReq->rCmdInfo.pfHifTxCmdDoneCb)
+				prTxReq->rCmdInfo.pfHifTxCmdDoneCb(
+					prGlueInfo->prAdapter,
+					&prTxReq->rCmdInfo);
+		} else {
+			DBGLOG(HAL, ERROR, "ret: %d\n", ret);
 		}
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		list_del(prCur);
+		list_add_tail(prCur, &prHifInfo->rTxCmdFreeList);
 	}
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
