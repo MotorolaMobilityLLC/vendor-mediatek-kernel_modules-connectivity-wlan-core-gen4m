@@ -4016,8 +4016,6 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	wlanAcquirePowerControl(prGlueInfo->prAdapter);
-
 	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
@@ -4045,12 +4043,6 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 	}
-
-	if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
-			       &prGlueInfo->ulFlag))
-		prGlueInfo->prAdapter->fgWiFiInSleepyState = TRUE;
-
-	wlanReleasePowerControl(prGlueInfo->prAdapter);
 }
 
 void halTxCompleteTasklet(unsigned long data)
