@@ -10263,7 +10263,7 @@ void kalTxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask)
 
 	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgEnableTxCsd)) {
 		/* free-run when it is not set to big cpu mask */
-		if (kalGetBigCpuMask() == u4Mask)
+		if ((kalGetBigCpuMask() & u4Mask) == u4Mask)
 			u4SetMask = u4Mask;
 	}
 
@@ -10278,7 +10278,7 @@ void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask)
 
 	if (IS_FEATURE_ENABLED(pr->prAdapter->rWifiVar.fgEnableRxCsd)) {
 		/* free-run when it is not set to big cpu mask */
-		if (kalGetBigCpuMask() == u4Mask)
+		if ((kalGetBigCpuMask() & u4Mask) == u4Mask)
 			u4SetMask = u4Mask;
 	}
 
