@@ -392,7 +392,6 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 	case RST_REQ_CHL_FAIL:
 	case RST_P2P_CHNL_GRANT_INVALID_TYPE:
 	case RST_P2P_CHNL_GRANT_INVALID_STATE:
-	case RST_SCAN_RECOVERY:
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 #else
@@ -418,6 +417,7 @@ uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
 	case RST_CMD_TRIGGER:
 	case RST_SLP_PROT_TIMEOUT:
 	case RST_REG_READ_DEADFEED:
+	case RST_SCAN_RECOVERY:
 	default:
 		u4RstFlag = RST_FLAG_CHIP_RESET;
 		break;

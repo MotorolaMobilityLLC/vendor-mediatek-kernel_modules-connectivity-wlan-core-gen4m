@@ -978,21 +978,16 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 		struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-		enum ENUM_MSG_ID msg;
 
 		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
 			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
 				prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
 
-			/* copy before write */
-			msg = prScanParam->eMsgId;
-
-			kalMemCopy(prScanParam,	&prNeighborAPInfo->rScanParam,
+			kalMemCopy(prScanParam, &prNeighborAPInfo->rScanParam,
 				sizeof(prScanInfo->rScanParam));
 
 			/* restore for later scan done event */
 			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
-			prScanParam->eMsgId = msg;
 
 			cnmMemFree(prAdapter, prNeighborAPInfo);
 
