@@ -98,10 +98,6 @@
 uint8_t g_GetResultsBufferedCnt;
 uint8_t g_GetResultsCmdCnt;
 
-#if CFG_SUPPORT_CSI
-struct CSI_DATA_T rTempCSIData;
-#endif
-
 const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1] = {
 	[WIFI_ATTR_SCAN_IFACE_TYPE] = {.type = NLA_U8},
@@ -3926,11 +3922,13 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 {
 	struct wiphy *wiphy = gprWdev[0]->wiphy;
 	struct wireless_dev *wdev = gprWdev[0];
+	struct CSI_DATA_T *prTmpCSIData = NULL;
 	struct CSI_INFO_T *prCSIInfo = NULL;
 	struct sk_buff *skb = NULL;
-	uint8_t *temp;
-	int32_t i4Pos = 0;
-	u_int8_t bStatus;
+	uint8_t *prBuffer = NULL;
+	uint32_t u4BufferSize = 0;
+	uint32_t u4CopySize = 0;
+	uint16_t u2CSIDynamicDataSize = 0;
 
 	if (!wiphy || !wdev || !wdev->netdev) {
 		DBGLOG(REQ, ERROR,
@@ -3939,18 +3937,40 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	}
 
 	prCSIInfo = glCsiGetCSIInfo();
-	temp = glCsiGetCSIBuf();
 
-	bStatus = wlanPopCSIData(prAdapter, &rTempCSIData);
-	if (!bStatus)
-		return 0;
-	i4Pos = wlanCSIDataPrepare(temp,  prCSIInfo, &rTempCSIData);
+	prTmpCSIData = (struct CSI_DATA_T *) kalMemAlloc(
+			sizeof(struct CSI_DATA_T), VIR_MEM_TYPE);
+	if (!prTmpCSIData) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] allocate memory for prTmpCSIData failed\n");
+		goto err_handle;
+	}
+	kalMemZero(prTmpCSIData, sizeof(struct CSI_DATA_T));
+	wlanPopCSIData(prAdapter, prTmpCSIData);
+
+	/* Approximately raw data size */
+	u2CSIDynamicDataSize =
+			prTmpCSIData->u2DataCount * sizeof(int16_t) * 2 +
+			prTmpCSIData->ucRsvd1Cnt * sizeof(int32_t) * 2;
+	u4BufferSize = CSI_FIX_DATA_SIZE + u2CSIDynamicDataSize + 16;
+	DBGLOG(REQ, INFO, "[CSI] Approximately data size = %d\n", u4BufferSize);
+
+	prBuffer = (uint8_t *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (!prBuffer) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] allocate memory for prBuffer failed\n");
+		goto err_handle;
+	}
+	kalMemZero(prBuffer, u4BufferSize);
+
+	u4CopySize = wlanCSIDataPrepare(prBuffer, prCSIInfo, prTmpCSIData);
+	DBGLOG(REQ, INFO, "[CSI] Actually data size = %d", u4CopySize);
 
 	skb = cfg80211_vendor_event_alloc(wiphy,
 #if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
 			wdev,
 #endif
-			i4Pos,
+			u4CopySize,
 			WIFI_EVENT_SUBCMD_CSI,
 			GFP_KERNEL);
 	if (!skb) {
@@ -3959,23 +3979,23 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	}
 
 	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_CSI,
-				i4Pos, temp) < 0)) {
+				u4CopySize, prBuffer) < 0)) {
 		DBGLOG(REQ, ERROR, "[CSI] nla_put failure: len=%u, ptr=%p\n",
-		       i4Pos, temp);
+		       u4CopySize, prBuffer);
 		goto err_handle;
 	}
 
-#if CFG_CSI_DEBUG
-	DBGLOG(REQ, INFO,
-		"[CSI] copy size = %d, [used|head idx|tail idx] = [%d|%d|%d]\n",
-		i4Pos, prCSIInfo->u4CSIBufferUsed,
-		prCSIInfo->u4CSIBufferHead, prCSIInfo->u4CSIBufferTail);
-#endif
-
 	cfg80211_vendor_event(skb, GFP_KERNEL);
+	kalMemFree(prTmpCSIData, VIR_MEM_TYPE, sizeof(struct CSI_DATA_T));
+	kalMemFree(prBuffer, VIR_MEM_TYPE, u4BufferSize);
 	return 0;
 
 err_handle:
+	if (prTmpCSIData)
+		kalMemFree(
+			prTmpCSIData, VIR_MEM_TYPE, sizeof(struct CSI_DATA_T));
+	if (prBuffer)
+		kalMemFree(prBuffer, VIR_MEM_TYPE, u4BufferSize);
 	if (skb)
 		kfree_skb(skb);
 

@@ -36,7 +36,6 @@
  *******************************************************************************
  */
 static struct CSI_INFO_T rCSIInfo;
-static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -45,11 +44,6 @@ static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
 struct CSI_INFO_T *glCsiGetCSIInfo(void)
 {
 	return &rCSIInfo;
-}
-
-uint8_t *glCsiGetCSIBuf(void)
-{
-	return aucCSIBuf;
 }
 
 void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo)
@@ -83,13 +77,6 @@ void nicEventCSIData(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
-u_int8_t
-wlanPushCSISegmentData(IN struct ADAPTER *prAdapter,
-	struct CSI_DATA_T *prCSIData)
-{
-	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 u_int8_t
