@@ -1704,7 +1704,7 @@ static uint32_t soc5_0_McuInit(struct ADAPTER *prAdapter)
 		prAdapter->chip_info->coantVFE28En(prAdapter);
 
 	if (prAdapter->chip_info->coexpccifon)
-		prAdapter->chip_info->coexpccifon();
+		prAdapter->chip_info->coexpccifon(prAdapter);
 
 exit:
 	return ret == 0 ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
@@ -1715,7 +1715,7 @@ static void soc5_0_McuDeInit(struct ADAPTER *prAdapter)
 	int ret = 0;
 
 	if (prAdapter->chip_info->coexpccifoff)
-		prAdapter->chip_info->coexpccifoff();
+		prAdapter->chip_info->coexpccifoff(prAdapter);
 
 	if (prAdapter->chip_info->coantVFE28Dis)
 		prAdapter->chip_info->coantVFE28Dis();
@@ -1772,7 +1772,7 @@ void wlanCoAntVFE28Dis(void)
 }
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-int wlanConnacPccifon(void)
+int wlanConnacPccifon(struct ADAPTER *prAdapter)
 {
 	int ret = 0;
 
@@ -1796,7 +1796,7 @@ int wlanConnacPccifon(void)
 	return ret;
 }
 
-int wlanConnacPccifoff(void)
+int wlanConnacPccifoff(struct ADAPTER *prAdapter)
 {
 	int ret = 0;
 

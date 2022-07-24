@@ -153,8 +153,8 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
 static void mt6639_mcu_deinit(struct ADAPTER *ad);
-static int mt6639ConnacPccifOn(void);
-static int mt6639ConnacPccifOff(void);
+static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
+static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
 #endif
 #endif
 
@@ -1983,7 +1983,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 #endif
 
 	if (ad->chip_info->coexpccifon)
-		ad->chip_info->coexpccifon();
+		ad->chip_info->coexpccifon(ad);
 
 	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
 #if (CFG_MTK_DRIVER_OWN_DELAY == 1)
@@ -2004,7 +2004,7 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_OFF);
 
 	if (ad->chip_info->coexpccifoff)
-		ad->chip_info->coexpccifoff();
+		ad->chip_info->coexpccifoff(ad);
 
 #if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	if (pcie_vir_addr)
@@ -2027,21 +2027,32 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 }
 
 #define MCIF_EMI_MEMORY_SIZE 128
-static int mt6639ConnacPccifOn(void)
+#define MCIF_EMI_COEX_SWMSG_OFFSET 0xF8518000
+#define MCIF_EMI_BASE_OFFSET 0xE4
+static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
-	uint32_t mcif_emi_base;
+	uint32_t mcif_emi_base, u4Val = 0;
 	void *vir_addr = NULL;
 	int ret = 0;
+
+	mcif_emi_base = get_smem_phy_start_addr(
+		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
+	if (!mcif_emi_base) {
+		DBGLOG(INIT, ERROR, "share memory is NULL.\n");
+		return -1;
+	}
+
+	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
+	if (!vir_addr) {
+		DBGLOG(INIT, ERROR, "ioremap fail.\n");
+		return -1;
+	}
 
 	kalDevRegWrite(
 		NULL,
 		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
 		0x18051803);
-
-	mcif_emi_base = get_smem_phy_start_addr(
-		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
-	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
 
 	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
 	writel(0x4D4D434D, vir_addr);
@@ -2057,6 +2068,9 @@ static int mt6639ConnacPccifOn(void)
 	writel(0x4D434D4D, vir_addr + 0x78);
 	writel(0x4D434D4D, vir_addr + 0x7C);
 
+	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
+
+	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
 	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
 
 	iounmap(vir_addr);
@@ -2066,7 +2080,7 @@ static int mt6639ConnacPccifOn(void)
 	return 0;
 }
 
-static int mt6639ConnacPccifOff(void)
+static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
 	uint32_t mcif_emi_base;
@@ -2075,7 +2089,16 @@ static int mt6639ConnacPccifOff(void)
 
 	mcif_emi_base =	get_smem_phy_start_addr(
 		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
+	if (!mcif_emi_base) {
+		DBGLOG(INIT, ERROR, "share memory is NULL.\n");
+		return -1;
+	}
+
 	vir_addr = ioremap(mcif_emi_base, MCIF_EMI_MEMORY_SIZE);
+	if (!vir_addr) {
+		DBGLOG(INIT, ERROR, "ioremap fail.\n");
+		return -1;
+	}
 
 	writel(0, vir_addr + 0x10);
 	writel(0, vir_addr + 0x14);

@@ -205,8 +205,8 @@ void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
 void wlanCoAntVFE28Dis(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-int wlanConnacPccifon(void);
-int wlanConnacPccifoff(void);
+int wlanConnacPccifon(struct ADAPTER *prAdapter);
+int wlanConnacPccifoff(struct ADAPTER *prAdapter);
 #endif
 
 void soc5_0_icapRiseVcoreClockRate(void);

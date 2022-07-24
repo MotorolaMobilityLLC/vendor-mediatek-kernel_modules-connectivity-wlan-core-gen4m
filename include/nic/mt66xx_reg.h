@@ -1609,8 +1609,8 @@ struct mt66xx_chip_info {
 	uint32_t u4LmacWtblDUAddr;
 	uint32_t u4UmacWtblDUAddr;
 	int (*trigger_fw_assert)(struct ADAPTER *prAdapter);
-	int (*coexpccifon)(void);
-	int (*coexpccifoff)(void);
+	int (*coexpccifon)(struct ADAPTER *prAdapter);
+	int (*coexpccifoff)(struct ADAPTER *prAdapter);
 	void (*coantSetWiFi)(void);
 	void (*coantSetMD)(void);
 	void (*coantVFE28En)(IN struct ADAPTER *prAdapter);

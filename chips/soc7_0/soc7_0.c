@@ -106,8 +106,8 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
 static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
-static int soc7_0_ConnacPccifon(void);
-static int soc7_0_ConnacPccifoff(void);
+static int soc7_0_ConnacPccifon(struct ADAPTER *prAdapter);
+static int soc7_0_ConnacPccifoff(struct ADAPTER *prAdapter);
 #endif
 
 static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
@@ -1884,7 +1884,7 @@ static uint32_t soc7_0_McuInit(struct ADAPTER *prAdapter)
 	}
 
 	if (prAdapter->chip_info->coexpccifon)
-		prAdapter->chip_info->coexpccifon();
+		prAdapter->chip_info->coexpccifon(prAdapter);
 
 exit:
 	return ret == 0 ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
@@ -1895,7 +1895,7 @@ static void soc7_0_McuDeInit(struct ADAPTER *prAdapter)
 	int ret = 0;
 
 	if (prAdapter->chip_info->coexpccifoff)
-		prAdapter->chip_info->coexpccifoff();
+		prAdapter->chip_info->coexpccifoff(prAdapter);
 
 	ret = wf_pwr_off_consys_mcu(prAdapter);
 	if (ret) {
@@ -1908,17 +1908,17 @@ static void soc7_0_McuDeInit(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #if (CFG_WLAN_ATF_SUPPORT == 1)
-static int soc7_0_ConnacPccifon(void)
+static int soc7_0_ConnacPccifon(struct ADAPTER *prAdapter)
 {
 	return kalSendAtfSmcCmd(SMC_WLAN_PCCIF_ON_OPID, 0, 0, 0);
 }
 
-static int soc7_0_ConnacPccifoff(void)
+static int soc7_0_ConnacPccifoff(struct ADAPTER *prAdapter)
 {
 	return kalSendAtfSmcCmd(SMC_WLAN_PCCIF_OFF_OPID, 0, 0, 0);
 }
 #else
-static int soc7_0_ConnacPccifon(void)
+static int soc7_0_ConnacPccifon(struct ADAPTER *prAdapter)
 {
 	int ret = 0;
 
@@ -1928,7 +1928,7 @@ static int soc7_0_ConnacPccifon(void)
 	return ret;
 }
 
-static int soc7_0_ConnacPccifoff(void)
+static int soc7_0_ConnacPccifoff(struct ADAPTER *prAdapter)
 {
 	int ret = 0;
 
