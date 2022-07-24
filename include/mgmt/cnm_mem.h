@@ -1025,6 +1025,10 @@ struct MEM_TRACK {
 		(uint8_t *)_prAdapter->rMgtBufInfo.pucBuf) && \
 	((uint8_t *)(pucInfoBuffer) < \
 		(uint8_t *)_prAdapter->rMgtBufInfo.pucBuf + MGT_BUFFER_SIZE))
+
+#define cnmPktAlloc(_prAdapter, u4Length) \
+	cnmPktAllocX(_prAdapter, u4Length, \
+		__FILE__ ":" STRLINE(__LINE__))
 #else
 #define cnmMgtPktAlloc cnmPktAlloc
 #define cnmMgtPktFree cnmPktFree
@@ -1041,10 +1045,14 @@ struct MSDU_INFO *cnmPktAllocWrapper(IN struct ADAPTER *prAdapter,
 void cnmPktFreeWrapper(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucStr);
 
-struct MSDU_INFO *cnmPktAlloc(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Length);
-
-void cnmPktFree(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+#if CFG_DBG_MGT_BUF
+struct MSDU_INFO *cnmPktAllocX(struct ADAPTER *prAdapter,
+	uint32_t u4Length, uint8_t *fileAndLine);
+#else
+struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter,
+	uint32_t u4Length);
+#endif
+void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
 void cnmMemInit(IN struct ADAPTER *prAdapter);
 
