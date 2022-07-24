@@ -1593,6 +1593,11 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
+
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
+#endif
+
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
@@ -1603,35 +1608,17 @@ void *pcie_vir_addr;
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	if (fgEn) {
-		writel(0xf0f, (pcie_vir_addr + 0x194));
 		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130040);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031118, 0x6001000C);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130042);
-		writel(0x1f0000, (pcie_vir_addr + 0x140));
-		writel(0x70130040, (pcie_vir_addr + 0x1090));
-		writel(0x6001030C, (pcie_vir_addr + 0x1118));
-		writel(0x70130042, (pcie_vir_addr + 0x1090));
-		writel(0x130100, (pcie_vir_addr + 0x140));
-		writel(0x00f, (pcie_vir_addr + 0x194));
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf0f);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf);
 		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2\n");
 	} else {
 		/*
 		 *	Backup original setting then
 		 *	disable L1.1, L1.2 and set LTR to 0
 		 */
-		writel(0xf0f, (pcie_vir_addr + 0x194));
-
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130040);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031118, 0x60010000);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130042);
-
-		writel(0x1f0000, (pcie_vir_addr + 0x140));
-		writel(0x70130040, (pcie_vir_addr + 0x1090));
-		writel(0x60010300, (pcie_vir_addr + 0x1118));
-		writel(0x70130042, (pcie_vir_addr + 0x1090));
-		writel(0x130100, (pcie_vir_addr + 0x140));
-		writel(0x00f, (pcie_vir_addr + 0x194));
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf0f);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
 		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2\n");
 	}
 }
