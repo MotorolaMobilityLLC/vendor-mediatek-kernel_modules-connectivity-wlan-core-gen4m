@@ -4011,11 +4011,6 @@ struct CMD_VALIDATE_POLICY set_ml_probereq_policy[PRIV_CMD_SET_ARG_NUM_3] = {
 	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };
 
-struct CMD_VALIDATE_POLICY get_ml_2nd_freq_policy[PRIV_CMD_SET_ARG_NUM_3] = {
-	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING, .len = 17},
-	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
-};
-
 struct CMD_VALIDATE_POLICY set_trx_ba_size_policy[PRIV_CMD_SET_ARG_NUM_3] = {
 	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING, .min = 2, .max = 6},
 	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U16, .min = 0, .max = U16_MAX}
@@ -5985,8 +5980,8 @@ int priv_driver_get_ml_2nd_freq(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int32_t i4BytesWritten = 0;
 	uint32_t ucPreferFreq = 0;
-	uint32_t ucNegoFreq = 0;
-	uint32_t ucPeerFreq = 0;
+	uint32_t u4NegoFreq = 0;
+	uint32_t u4PeerFreq = 0;
 	struct BSS_INFO *bss = NULL;
 	enum ENUM_BAND ePreferBand = BAND_NULL;
 	enum ENUM_BAND eNegoBand = BAND_NULL;
@@ -6013,15 +6008,15 @@ int priv_driver_get_ml_2nd_freq(IN struct net_device *prNetDev,
 	 * apcArgv[0]: GO negotiation freq
 	 * apcArgv[1]: GC AIS freq
 	 */
-	if (kalkStrtou32(apcArgv[1], 0, &ucNegoFreq) ||
-		kalkStrtou32(apcArgv[2], 0, &ucPeerFreq)) {
+	if (kalkStrtou32(apcArgv[1], 0, &u4NegoFreq) ||
+		kalkStrtou32(apcArgv[2], 0, &u4PeerFreq)) {
 		DBGLOG(REQ, ERROR, "Integer format error\n");
 		return -1;
 	}
 
-	eNegoBand = getBandByFreq(ucNegoFreq);
+	eNegoBand = getBandByFreq(u4NegoFreq);
 	if (eNegoBand == BAND_NULL) {
-		DBGLOG(REQ, ERROR, "Incorrect input freq %u\n", ucNegoFreq);
+		DBGLOG(REQ, ERROR, "Incorrect input freq %u\n", u4NegoFreq);
 		return -1;
 	}
 
@@ -6035,7 +6030,7 @@ int priv_driver_get_ml_2nd_freq(IN struct net_device *prNetDev,
 
 	if (eNegoBand == BAND_2G4) {
 		if (ePreferBand <= BAND_2G4) {
-			ucPreferFreq = ucPeerFreq;
+			ucPreferFreq = u4PeerFreq;
 			ePreferBand = getBandByFreq(ucPreferFreq);
 		}
 		if (ePreferBand <= BAND_2G4)
@@ -6043,7 +6038,7 @@ int priv_driver_get_ml_2nd_freq(IN struct net_device *prNetDev,
 	} else if (eNegoBand >= BAND_5G &&
 			    eNegoBand < BAND_NUM) {
 		if (ePreferBand != BAND_2G4) {
-			ucPreferFreq = ucPeerFreq;
+			ucPreferFreq = u4PeerFreq;
 			ePreferBand = getBandByFreq(ucPreferFreq);
 		}
 		if (ePreferBand != BAND_2G4)
@@ -21687,7 +21682,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pfHandler = priv_driver_get_ml_2nd_freq,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_3,
-		.policy    = u8_policy
+		.policy    = u32_policy
 	},
 #endif
 
