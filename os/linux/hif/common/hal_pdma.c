@@ -3963,6 +3963,11 @@ void halDeAggRxPktWorker(struct work_struct *work)
 void halRxTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+	halRxWork(prGlueInfo);
+}
+
+void halRxWork(struct GLUE_INFO *prGlueInfo)
+{
 	bool fgEnInt = FALSE;
 
 	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
@@ -3994,7 +3999,11 @@ void halRxTasklet(unsigned long data)
 		wlanIST(prGlueInfo->prAdapter, FALSE);
 	}
 
+#if CFG_SUPPORT_RX_WORK
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_WORK_COUNT);
+#else /* CFG_SUPPORT_RX_WORK */
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
+#endif /* CFG_SUPPORT_RX_WORK */
 
 	if (kalRxTaskletWorkDone(prGlueInfo, fgEnInt)) {
 		/* interrupt is not enabled, keep int bit */

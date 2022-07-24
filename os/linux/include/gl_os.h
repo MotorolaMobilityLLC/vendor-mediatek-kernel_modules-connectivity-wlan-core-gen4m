@@ -249,6 +249,10 @@
 #endif
 #endif
 
+#if CFG_SUPPORT_RX_WORK
+#include <linux/workqueue.h>
+#endif /* CFG_SUPPORT_RX_WORK */
+
 #include "gl_typedef.h"
 #include "typedef.h"
 #include "queue.h"
@@ -745,6 +749,10 @@ struct GLUE_INFO {
 	struct task_struct *rx_thread;
 
 #endif
+#if CFG_SUPPORT_RX_WORK
+	struct workqueue_struct *prRxWorkQueue;
+	struct work_struct rRxWork;
+#endif /* CFG_SUPPORT_RX_WORK */
 	struct tasklet_struct rRxTask;
 	uint8_t fgRxTaskReady;
 	uint32_t u4RxTaskScheduleCnt;

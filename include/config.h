@@ -361,6 +361,10 @@
 #define CFG_NATIVE_802_11                       0
 #endif
 
+#ifndef CFG_SUPPORT_RX_WORK
+#define CFG_SUPPORT_RX_WORK                      0
+#endif /* CFG_SUPPORT_RX_WORK */
+
 /*
  * TX CSD is feature to reschedule Tx Direct to big CPU when BoostCpu
  * RX CSD is feature to reschedule Rx Tasklet to big CPU when BoostCpu

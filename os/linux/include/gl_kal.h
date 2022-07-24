@@ -2514,7 +2514,7 @@ void kalTRxCsdUninit(struct GLUE_INFO *pr);
 void kalTRxCsdInit(struct GLUE_INFO *pr);
 uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
 	struct GLUE_INFO *pr);
-void kalRxTaskletScheduleCsd(struct GLUE_INFO *pr);
+void kalRxTaskScheduleCsd(struct GLUE_INFO *pr);
 void kalTxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
 void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
 #define CSD_INC_TX_CPU_CNT(pr, cpu) \
@@ -2566,6 +2566,13 @@ void kalVnfUninit(void);
 void kalVnfInit(IN struct ADAPTER *prAdapter);
 void kalVnfEventHandler(IN struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_RX_WORK
+void kalRxWork(struct work_struct *work);
+void kalRxWorkInit(struct GLUE_INFO *pr);
+void kalRxWorkUninit(struct GLUE_INFO *pr);
+void kalRxWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_RX_WORK */
 
 #endif /* _GL_KAL_H */
 
