@@ -773,6 +773,12 @@ u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
 		u2Port = TX_RING_WA_CMD;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
+	/* Port idx sanity */
+	if (u2Port >= TX_RING_MAX) {
+		DBGLOG(HAL, ERROR, "Invalid Port[%u]\n", u2Port);
+		return FALSE;
+	}
+
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
 	if (prTxRing->u4UsedCnt + 1 < prTxRing->u4RingSize)
@@ -4991,7 +4997,7 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 	uint32_t u4BufferSize = 512, pos = 0;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct TX_LATENCY_STATS rDiff = {0};
-	struct TX_LATENCY_STATS *report;
+	struct TX_LATENCY_STATS *report = NULL;
 	uint8_t report_num = 1; /* Default: sum up */
 
 	if (!stats->fgTxLatencyEnabled || time_before(jiffies, next_update))

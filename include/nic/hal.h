@@ -103,6 +103,7 @@ enum ENUM_TX_RING_IDX {
 	TX_RING_CMD,
 	TX_RING_FWDL,
 	TX_RING_WA_CMD,
+	TX_RING_MAX,
 };
 
 enum ENUM_RX_RING_IDX {
@@ -408,7 +409,7 @@ do { \
 
 #define HAL_MCR_WR_FIELD(_prAdapter, _u4Offset, _u4FieldVal, _ucShft, _u4Mask) \
 { \
-	uint32_t u4CrValue; \
+	uint32_t u4CrValue = 0; \
 	HAL_MCR_RD(_prAdapter, _u4Offset, &u4CrValue); \
 	u4CrValue &= (~_u4Mask); \
 	u4CrValue |= ((_u4FieldVal << _ucShft) & _u4Mask); \
