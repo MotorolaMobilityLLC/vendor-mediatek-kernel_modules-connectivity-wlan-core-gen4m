@@ -1161,6 +1161,11 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 {
 #if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+	struct device *dev = &pdev->dev;
+
+	dev->power.driver_flags = DPM_FLAG_SMART_SUSPEND;
+	dev->power.runtime_status = RPM_SUSPENDED;
+	pdev->skip_bus_pm = true;
 	return 0;
 #else
 
