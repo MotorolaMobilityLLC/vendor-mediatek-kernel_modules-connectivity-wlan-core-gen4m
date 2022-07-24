@@ -2547,10 +2547,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-
 	uint32_t u4EhtOffset;
 	struct EHT_OP_INFO *prEhtOperInfo = NULL;
 	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
+#if (CFG_SUPPORT_802_PP_DSCB == 1)
+	uint16_t u2PreDscBitmap = 0;
+#endif
 #endif
 
 	ASSERT(prAdapter);
@@ -3296,13 +3298,24 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 							(struct EHT_DSCP_INFO *)
 							(((uint8_t *) pucIE)+
 								u4EhtOffset);
+
+						u2PreDscBitmap =
+							prBssInfo->
+							u2EhtDisSubChanBitmap;
+
 						prBssInfo->
 							u2EhtDisSubChanBitmap =
+
 						prEhtDscpInfo->
 							u2DisSubChannelBitmap;
+
+						nicUpdateDscb(prAdapter,
+							prBssInfo->ucBssIndex,
+							u2PreDscBitmap,
+							prBssInfo->
+							u2EhtDisSubChanBitmap);
 					}
 				}
-				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 #endif
 			}
 #endif

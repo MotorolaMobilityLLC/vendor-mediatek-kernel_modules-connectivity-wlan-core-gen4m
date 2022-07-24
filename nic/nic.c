@@ -2145,6 +2145,20 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 {
 	return nicUpdateBssEx(prAdapter, ucBssIndex, TRUE);
 }
+
+#if CFG_SUPPORT_802_PP_DSCB
+uint32_t nicUpdateDscb(struct ADAPTER *prAdapter,
+			uint8_t		ucBssIndex,
+			uint16_t	u2PreDscBitmap,
+			uint16_t	u2NewDscBitmap)
+{
+	if (u2PreDscBitmap != u2NewDscBitmap)
+		return nicUpdateBss(prAdapter, ucBssIndex);
+	else
+		return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to sync bss info with firmware

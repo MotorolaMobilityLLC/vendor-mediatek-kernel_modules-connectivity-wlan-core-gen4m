@@ -391,11 +391,17 @@ void nicUpdateNetifTxThByBssId(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint32_t u4StopTh, uint32_t u4StartTh);
 
 /* BSS-INFO */
-uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex);
-uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex,
-			IN uint8_t fgClearStaRec);
+uint32_t nicUpdateBss(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
+
+uint32_t nicUpdateDscb(struct ADAPTER *prAdapter,
+			uint8_t		ucBssIndex,
+			uint16_t	u2PreDscBitmap,
+			uint16_t	u2NewDscBitmap);
+
+uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			uint8_t fgClearStaRec);
 /* BSS-INFO Indication (PM) */
 uint32_t nicPmIndicateBssCreated(IN struct ADAPTER
 				 *prAdapter, IN uint8_t ucBssIndex);
