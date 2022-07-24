@@ -1409,14 +1409,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			kfree_skb(skb);
-			kfree(pNanPublishRsp);
 			kfree(pNanPublishReq);
 			return -EFAULT;
 		}
 
 		ret = cfg80211_vendor_cmd_reply(skb);
 
-		kfree(pNanPublishRsp);
 		kfree(pNanPublishReq);
 		break;
 	}
@@ -1489,14 +1487,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			kfree_skb(skb);
 			kfree(pNanPublishCancelReq);
-			kfree(pNanPublishCancelRsp);
 			return -EFAULT;
 		}
 
 		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanPublishCancelReq);
-		kfree(pNanPublishCancelRsp);
 		break;
 	}
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ: {
@@ -1769,7 +1765,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			if (i4Status != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 				kfree(pNanSubscribeReq);
-				kfree(pNanSubscribeRsp);
 				kfree(rgreq);
 				kfree_skb(skb);
 				return -EFAULT;
@@ -1797,7 +1792,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			kfree(pNanSubscribeReq);
-			kfree(pNanSubscribeRsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
@@ -1805,7 +1799,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanSubscribeReq);
-		kfree(pNanSubscribeRsp);
 		break;
 	}
 	case NAN_MSG_ID_SUBSCRIBE_SERVICE_CANCEL_REQ: {
@@ -1883,7 +1876,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			kfree(pNanSubscribeCancelReq);
-			kfree(pNanSubscribeCancelRsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
@@ -1891,7 +1883,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanSubscribeCancelReq);
-		kfree(pNanSubscribeCancelRsp);
 		break;
 	}
 	case NAN_MSG_ID_TRANSMIT_FOLLOWUP_REQ: {
@@ -1996,7 +1987,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			kfree(pNanXmitFollowupReq);
-			kfree(pNanXmitFollowupRsp);
 			kfree_skb(skb);
 			return -EFAULT;
 		}
@@ -2004,7 +1994,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanXmitFollowupReq);
-		kfree(pNanXmitFollowupRsp);
 		break;
 	}
 	case NAN_MSG_ID_BEACON_SDF_REQ: {
