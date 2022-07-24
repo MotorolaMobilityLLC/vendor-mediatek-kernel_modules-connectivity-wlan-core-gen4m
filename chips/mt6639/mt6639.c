@@ -192,7 +192,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x820c0000, 0x08000, 0x4000},  /* WF_UMAC_TOP (PLE) */
 	{0x820c8000, 0x0c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0x2000},  /* WF_UMAC_TOP (PP) */
-	{0x74030000, 0x10000, 0x1000},  /* PCIe MAC */
+	{0x74030000, 0x10000, 0x2000},  /* PCIe MAC */
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
 	{0x820e2000, 0x20800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
@@ -1595,6 +1595,46 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
+
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+
+void *pcie_vir_addr;
+static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+{
+	if (fgEn) {
+		writel(0xf0f, (pcie_vir_addr + 0x194));
+		/* Restore original setting*/
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130040);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031118, 0x6001000C);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130042);
+		writel(0x1f0000, (pcie_vir_addr + 0x140));
+		writel(0x70130040, (pcie_vir_addr + 0x1090));
+		writel(0x6001030C, (pcie_vir_addr + 0x1118));
+		writel(0x70130042, (pcie_vir_addr + 0x1090));
+		writel(0x130100, (pcie_vir_addr + 0x140));
+		writel(0x00f, (pcie_vir_addr + 0x194));
+		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2\n");
+	} else {
+		/*
+		 *	Backup original setting then
+		 *	disable L1.1, L1.2 and set LTR to 0
+		 */
+		writel(0xf0f, (pcie_vir_addr + 0x194));
+
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130040);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031118, 0x60010000);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74031090, 0x10130042);
+
+		writel(0x1f0000, (pcie_vir_addr + 0x140));
+		writel(0x70130040, (pcie_vir_addr + 0x1090));
+		writel(0x60010300, (pcie_vir_addr + 0x1118));
+		writel(0x70130042, (pcie_vir_addr + 0x1090));
+		writel(0x130100, (pcie_vir_addr + 0x140));
+		writel(0x00f, (pcie_vir_addr + 0x194));
+		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2\n");
+	}
+}
+#else
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1633,6 +1673,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
 	}
 }
+#endif
 #endif
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
@@ -1957,7 +1998,9 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		ad->chip_info->coexpccifon();
 
 	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
-
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+#endif
 exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
@@ -1974,6 +2017,11 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff();
+
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+	if (pcie_vir_addr)
+		iounmap(pcie_vir_addr);
+#endif
 }
 
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
