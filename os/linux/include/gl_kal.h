@@ -281,6 +281,7 @@ struct BOOST_INFO {
 	uint32_t u4ISRMask;
 	int32_t i4TxFreeMsduWorkCpu;
 	u_int8_t fgDramBoost;
+	u_int8_t fgKeepPcieWakeup;
 };
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
@@ -2486,6 +2487,11 @@ void kalTdlsOpReq(
 	uint16_t u2ReasonCode
 	);
 #endif
+
+#if defined(_HIF_PCIE)
+void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
+			  u_int8_t fgKeepPcieWakeup);
+#endif /* defined(_HIF_PCIE) */
 
 void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask);
 

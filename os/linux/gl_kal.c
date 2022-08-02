@@ -13625,6 +13625,23 @@ void kalTdlsOpReq(
 }
 #endif
 
+#if defined(_HIF_PCIE)
+void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgKeepPcieWakeup)
+{
+#if CFG_SUPPORT_PCIE_ASPM
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->keepPcieWakeup != NULL)
+		prBusInfo->keepPcieWakeup(prGlueInfo, fgKeepPcieWakeup);
+#endif /* CFG_SUPPORT_PCIE_ASPM */
+}
+#endif /* defined(_HIF_PCIE) */
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t u4Mask)
 {

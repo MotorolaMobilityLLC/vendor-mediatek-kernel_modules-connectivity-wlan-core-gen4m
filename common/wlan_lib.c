@@ -7744,7 +7744,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonTpTh[7] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv8", 1200);
 	prWifiVar->u4PerfMonTpTh[8] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 2500);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 2000);
 	prWifiVar->u4PerfMonTpTh[9] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 3500);
 
