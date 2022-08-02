@@ -4185,12 +4185,6 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf);
 
-void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
-void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-
 void nicCmdEventQueryStatistics(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,
 				IN uint8_t *pucEventBuf);

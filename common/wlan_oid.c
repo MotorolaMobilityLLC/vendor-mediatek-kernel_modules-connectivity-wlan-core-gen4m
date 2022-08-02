@@ -4441,83 +4441,8 @@ wlanoidQueryCurrentAddr(IN struct ADAPTER *prAdapter,
 } /* wlanoidQueryCurrentAddr */
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-
-/*----------------------------------------------------------------------------*/
-/*! \brief  This routine is called to query NIC link speed.
- *
- * \param[in] pvAdapter Pointer to the Adapter structure
- * \param[in] pvQueryBuf A pointer to the buffer that holds the result of the
- *                          query buffer
- * \param[in] u4QueryBufLen The length of the query buffer
- * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
- *                            bytes written into the query buffer. If the call
- *                            failed due to invalid length of the query buffer,
- *                            returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_BUFFER_TOO_SHORT
- *
- */
-/*----------------------------------------------------------------------------*/
 uint32_t
 wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-		      IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-		      OUT uint32_t *pu4QueryInfoLen) {
-	DEBUGFUNC("wlanoidQueryLinkSpeed");
-
-	return wlanQueryLinkSpeed(prAdapter, pvQueryBuffer, u4QueryBufferLen,
-				pu4QueryInfoLen, TRUE);
-}
-
-uint32_t
-wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
-		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
-{
-	uint8_t ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	struct LINK_SPEED_EX_ *prLq;
-
-	DEBUGFUNC("wlanQueryLinkSpeed");
-
-	ASSERT(prAdapter);
-	ASSERT(pu4QueryInfoLen);
-	if (u4QueryBufferLen)
-		ASSERT(pvQueryBuffer);
-
-	if (prAdapter->fgIsEnableLpdvt)
-		return WLAN_STATUS_NOT_SUPPORTED;
-
-	*pu4QueryInfoLen = sizeof(uint32_t);
-
-	if (u4QueryBufferLen < sizeof(uint32_t))
-		return WLAN_STATUS_BUFFER_TOO_SHORT;
-
-	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) !=
-	    MEDIA_STATE_CONNECTED) {
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (prLq->fgIsLinkRateValid == TRUE &&
-		   (kalGetTimeTick() - prLq->rLinkRateUpdateTime) <=
-		   CFG_LINK_QUALITY_VALID_PERIOD) {
-		/* change to unit of 100bps */
-		*(uint32_t *) pvQueryBuffer =
-			prLq->u2TxLinkSpeed * 5000;
-		return WLAN_STATUS_SUCCESS;
-	} else {
-		return wlanSendSetQueryCmd(prAdapter,
-					   CMD_ID_GET_LINK_QUALITY,
-					   FALSE,
-					   TRUE,
-					   fgIsOid,
-					   nicCmdEventQueryLinkSpeed,
-					   nicOidCmdTimeoutCommon, 0, NULL,
-					   pvQueryBuffer, u4QueryBufferLen);
-	}
-} /* end of wlanoidQueryLinkSpeed() */
-
-uint32_t
-wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 			OUT uint32_t *pu4QueryInfoLen)
 {
@@ -4525,7 +4450,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
 	struct LINK_SPEED_EX_ *prLq;
-	DEBUGFUNC("wlanoidQueryLinkSpeedEx");
+	DEBUGFUNC("wlanoidQueryLinkSpeed");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -4573,7 +4498,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 					FALSE,
 					TRUE,
 					TRUE,
-					nicCmdEventQueryLinkSpeedEx,
+					nicCmdEventQueryLinkQuality,
 					nicOidCmdTimeoutCommon, 0, NULL,
 					pvQueryBuffer, u4QueryBufferLen);
 	}

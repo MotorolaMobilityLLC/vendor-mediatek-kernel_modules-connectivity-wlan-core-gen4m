@@ -886,26 +886,45 @@ void nicCmdEventQueryRfTestATInfo(IN struct ADAPTER
 
 }
 
-void nicCmdEventQueryLinkQuality(IN struct ADAPTER
-				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				 IN uint8_t *pucEventBuf)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This routine is in response of OID_GEN_LINK_SPEED query request
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ * @param prCmdInfo      Pointer to the pending command info
+ * @param pucEventBuf
+ *
+ * @retval none
+ */
+/*----------------------------------------------------------------------------*/
+void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
+				struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	struct EVENT_LINK_QUALITY *prLinkQuality;
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
-	uint32_t i, u4CurRxRate, u4MaxRxRate;
+	uint32_t u4CurRxRate, u4MaxRxRate;
 	struct RxRateInfo rRxRateInfo = {0};
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
+	uint32_t i;
 
 	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
-	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *)
-		prCmdInfo->pvInformationBuffer;
+
+	DBGLOG(NIC, TRACE, "prCmdInfo->fgIsOid=%u", prCmdInfo->fgIsOid);
+
+	if (!prCmdInfo->fgIsOid)
+		return;
+
 	prGlueInfo = prAdapter->prGlueInfo;
+	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
+				   prCmdInfo->pvInformationBuffer);
+
+	DBGLOG(NIC, TRACE, "Glue=%p, Cmd=%p, pvInformationBuffer=%p",
+		prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer);
 
 	for (i = 0; i < BSSID_NUM; i++) {
+		/*Fill Tx Rate*/
 		prLinkSpeed->rLq[i].u2TxLinkSpeed
 			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
 
@@ -920,120 +939,22 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 			prLinkSpeed->rLq[i].u2RxLinkSpeed = 0;
 			prLinkSpeed->rLq[i].u4RxBw = 0;
 		}
-
 		/* ranged from (-128 ~ 30) in unit of dBm */
-		prLinkSpeed->rLq[i].cRssi
-			= prLinkQuality->rLq[i].cRssi;
+		prLinkSpeed->rLq[i].cRssi = prLinkQuality->rLq[i].cRssi;
 
-		DBGLOG(REQ, TRACE,
-			"ucBssIdx = %d, TxRate = %u, RxRate = %u, signal = %d\n",
-			i, prLinkSpeed->rLq[i].u2TxLinkSpeed,
+		DBGLOG(NIC, TRACE,
+			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
+			i,
+			prLinkSpeed->rLq[i].u2TxLinkSpeed,
 			prLinkSpeed->rLq[i].u2RxLinkSpeed,
 			prLinkSpeed->rLq[i].cRssi);
 	}
+
 	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
-	if (prCmdInfo->fgIsOid) {
-		kalOidComplete(prGlueInfo, prCmdInfo,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
+	kalOidComplete(prGlueInfo, prCmdInfo,
+		u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
-
-#if CFG_SUPPORT_LINK_QUALITY_MONITOR
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This routine is in response of OID_GEN_LINK_SPEED query request
- *
- * @param prAdapter      Pointer to the Adapter structure.
- * @param prCmdInfo      Pointer to the pending command info
- * @param pucEventBuf
- *
- * @retval none
- */
-/*----------------------------------------------------------------------------*/
-void nicCmdEventQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
-{
-	struct LINK_QUALITY *prLinkQuality;
-	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4QueryInfoLen;
-	uint32_t *pu4LinkSpeed;
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	pu4LinkSpeed = (uint32_t *) (prCmdInfo->pvInformationBuffer);
-	*pu4LinkSpeed = prLinkQuality->u2LinkSpeed * 5000;
-
-	u4QueryInfoLen = sizeof(uint32_t);
-
-	if (prCmdInfo->fgIsOid)
-		kalOidComplete(prGlueInfo, prCmdInfo,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-}
-
-void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
-{
-	struct EVENT_LINK_QUALITY *prLinkQuality;
-	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
-	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4CurRxRate, u4MaxRxRate;
-	uint32_t u4QueryInfoLen;
-	struct RxRateInfo rRxRateInfo = {0};
-	uint32_t i;
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
-
-	DBGLOG(NIC, TRACE, "prCmdInfo->fgIsOid=%u", prCmdInfo->fgIsOid);
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
-					   prCmdInfo->pvInformationBuffer);
-		DBGLOG(NIC, TRACE, "Glue=%p, Cmd=%p, pvInformationBuffer=%p",
-			prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer);
-		for (i = 0; i < BSSID_NUM; i++) {
-			/*Fill Tx Rate*/
-			pu4LinkSpeed->rLq[i].u2TxLinkSpeed
-				= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
-
-			/*Fill Rx Rate in unit of 100bps*/
-			if (IS_BSS_INDEX_AIS(prAdapter, i) &&
-			    wlanGetRxRateByBssid(prGlueInfo, i, &u4CurRxRate,
-				    &u4MaxRxRate, &rRxRateInfo) == 0) {
-				pu4LinkSpeed->rLq[i].u2RxLinkSpeed =
-					u4CurRxRate * 1000;
-				pu4LinkSpeed->rLq[i].u4RxBw = rRxRateInfo.u4Bw;
-			} else {
-				pu4LinkSpeed->rLq[i].u2RxLinkSpeed = 0;
-				pu4LinkSpeed->rLq[i].u4RxBw = 0;
-			}
-			/* ranged from (-128 ~ 30) in unit of dBm */
-			pu4LinkSpeed->rLq[i].cRssi
-				= prLinkQuality->rLq[i].cRssi;
-
-			DBGLOG(NIC, TRACE,
-				"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
-				i,
-				pu4LinkSpeed->rLq[i].u2TxLinkSpeed,
-				pu4LinkSpeed->rLq[i].u2RxLinkSpeed,
-				pu4LinkSpeed->rLq[i].cRssi);
-		}
-
-		u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
-
-		kalOidComplete(prGlueInfo, prCmdInfo,
-			u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
-}
-#endif
 
 void nicCmdEventQueryStatistics(IN struct ADAPTER
 				*prAdapter, IN struct CMD_INFO *prCmdInfo,

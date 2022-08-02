@@ -2552,7 +2552,7 @@ wext_get_rate(IN struct net_device *prNetDev,
 	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
 	DBGLOG(REQ, TRACE, "Call &rLinkSpeed=%p, sizeof=%zu, &u4BufLen=%p",
 		&rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeedEx,
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeed,
 			   &rLinkSpeed, sizeof(rLinkSpeed),
 			   &u4BufLen, ucBssIndex);
 	DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",

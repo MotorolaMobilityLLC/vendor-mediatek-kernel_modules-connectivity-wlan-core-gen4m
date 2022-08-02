@@ -2772,8 +2772,9 @@ priv_get_string(IN struct net_device *prNetDev,
 		}
 
 		if (kalIoctl(prGlueInfo, wlanoidQueryRssi,
-				&i4Rssi, sizeof(i4Rssi),
+				&rLinkSpeed, sizeof(rLinkSpeed),
 				&u4BufLen) == WLAN_STATUS_SUCCESS) {
+			i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 			prStaRec = aisGetDefaultLink(prGlueInfo->prAdapter)
 					->prTargetStaRec;
 			if (prStaRec)
@@ -2798,7 +2799,7 @@ priv_get_string(IN struct net_device *prNetDev,
 				"NoiseLevel-B =\n");
 		}
 
-		kalIoctl(prGlueInfo, wlanoidQueryLinkSpeedEx, &rLinkSpeed,
+		kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &rLinkSpeed,
 			sizeof(rLinkSpeed), &u4BufLen);
 		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 
@@ -2918,16 +2919,17 @@ priv_get_string(IN struct net_device *prNetDev,
 				prGlueInfo->prAdapter
 				->total_beacon_timeout_count);
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-		for (i = 0; i < UNI_ENUM_BCN_TIMEOUT_REASON_MAX_NUM; i++) {
+		for (i = 0; i < UNI_ENUM_BCN_TIMEOUT_REASON_MAX_NUM; i++)
 #else
-		for (i = 0; i < BEACON_TIMEOUT_REASON_NUM; i++) {
+		for (i = 0; i < BEACON_TIMEOUT_REASON_NUM; i++)
 #endif
 			if (prGlueInfo->prAdapter->beacon_timeout_count[i] > 0)
 				pos += kalScnprintf(buf + pos, u4TotalLen - pos,
 					"BeaconTimeout Reason(0x%0x):%d\n", i,
 					prGlueInfo->prAdapter
 					->beacon_timeout_count[i]);
-		}
+
+
 		pos += kalScnprintf(buf + pos, u4TotalLen - pos,
 				"TotalTxDoneFail:%d\n",
 				prGlueInfo->prAdapter
@@ -11073,7 +11075,7 @@ int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
 	DBGLOG(REQ, TRACE, "Glue=%p, &rLinkSpeed=%p, sizeof=%zu, &u4BufLen=%p",
 		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
-	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeedEx,
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed,
 			   &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
 		rStatus, prGlueInfo, u4BufLen);

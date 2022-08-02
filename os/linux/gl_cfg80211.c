@@ -109,7 +109,10 @@ static const uint32_t arBwCfg80211Table[] = {
 	RATE_INFO_BW_40,
 	RATE_INFO_BW_80,
 	RATE_INFO_BW_160,
+#if (IS_MOBILE_SEGMENT && KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE) || \
+	KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
 	RATE_INFO_BW_320
+#endif
 };
 
 /*******************************************************************************
@@ -656,7 +659,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	DBGLOG(REQ, TRACE, "Call Glue=%p, LinkSpeed=%p, size=%zu, &u4BufLen=%p",
 		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				   wlanoidQueryLinkSpeedEx, &rLinkSpeed,
+				   wlanoidQueryLinkSpeed, &rLinkSpeed,
 				   sizeof(rLinkSpeed),
 				   &u4BufLen, ucBssIndex);
 	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
@@ -887,7 +890,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, TRACE, "Call LinkSpeed=%p sizeof=%zu &u4BufLen=%p",
 			&rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-					   wlanoidQueryLinkSpeedEx,
+					   wlanoidQueryLinkSpeed,
 					   &rLinkSpeed, sizeof(rLinkSpeed),
 					   &u4BufLen, ucBssIndex);
 		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",

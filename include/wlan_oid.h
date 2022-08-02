@@ -3972,23 +3972,8 @@ wlanoidQueryMaxLinkSpeed(IN struct ADAPTER *prAdapter,
 		      IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen);
 
-#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 uint32_t
 wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-		      IN void *pvQueryBuffer,
-		      IN uint32_t u4QueryBufferLen,
-		      OUT uint32_t *pu4QueryInfoLen);
-
-uint32_t
-wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
-		       IN void *pvQueryBuffer,
-		       IN uint32_t u4QueryBufferLen,
-		       OUT uint32_t *pu4QueryInfoLen,
-		       IN uint8_t fgIsOid);
-#endif
-
-uint32_t
-wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			  IN void *pvQueryBuffer,
 			  IN uint32_t u4QueryBufferLen,
 			  OUT uint32_t *pu4QueryInfoLen);
