@@ -2197,6 +2197,9 @@ struct ADAPTER {
 #if CFG_SUPPORT_THERMAL_QUERY
 	struct work_struct thermal_work;
 #endif
+
+	struct QUE rTimeoutRxBaEntry; /* wait for Timeout flush by NAPI */
+	struct QUE rFlushRxBaEntry; /* wait for BA Delete flush by NAPI  */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

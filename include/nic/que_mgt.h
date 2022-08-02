@@ -450,6 +450,13 @@ struct RX_BA_ENTRY {
 	uint16_t u2FlushedSSN:12; /* WinStart before flush */
 	uint16_t u2FlushedSSNIsValid:1;
 	uint16_t u2FlushedSSNReserved:3;
+
+	u_int8_t fgFlushToHost; /* flush to host (1) or drop (0) */
+};
+
+struct RX_BA_QUE_ENTRY {
+	struct QUE_ENTRY rQueEntry;
+	struct RX_BA_ENTRY *prReorderQueParm;
 };
 
 typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter,
@@ -866,10 +873,6 @@ enum ENUM_BA_ENTRY_STATUS {
 	((((_prMsduInfoPreceding)->rQueEntry).prNext) = \
 	(struct QUE_ENTRY *)(_prMsduInfoNext))
 
-#define QM_TX_SET_NEXT_SW_RFB(_prSwRfbPreceding, _prSwRfbNext) \
-	((((_prSwRfbPreceding)->rQueEntry).prNext) = \
-		(struct QUE_ENTRY *)(_prSwRfbNext))
-
 #define QM_TX_GET_NEXT_MSDU_INFO(_prMsduInfo) \
 	((struct MSDU_INFO *)(((_prMsduInfo)->rQueEntry).prNext))
 
@@ -1253,6 +1256,17 @@ uint32_t qmGetRxReorderQueuedBufferCount(IN struct ADAPTER
 
 uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 			   IN uint8_t *pucBuf, IN uint32_t u4MaxLen);
+
+void addReorderQueParm(struct QUE *prRxBaEntry,
+		struct RX_BA_ENTRY *prReorderQueParm);
+
+struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry);
+
+void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
+		struct RX_BA_ENTRY *prReorderQueParm);
+
+void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
+		struct RX_BA_ENTRY *prReorderQueParm);
 
 #if CFG_M0VE_BA_TO_DRIVER
 void

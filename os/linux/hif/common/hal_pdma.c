@@ -1922,7 +1922,7 @@ u_int8_t halRxInsertRecvRfbList(
 	if (HAL_IS_RX_DIRECT(prAdapter) &&
 	    prSwRfb->ucPacketType == RX_PKT_TYPE_RX_DATA) {
 #if CFG_SUPPORT_RX_NAPI
-		/* If RxDirectNapi and RxFfifo available, run NAPI mode
+		/* If RxDirectNapi and RxFifo available, run NAPI mode
 		 * Otherwise, goto default RX-direct policy
 		 */
 		if (prGlueInfo->prRxDirectNapi) {

@@ -652,11 +652,8 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <2> Flush RX queues and delete RX BA agreements */
-	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++) {
-		/* Delete the RX BA entry with TID = i */
-		qmDelRxBaEntry(prAdapter, prStaRec->ucIndex, (uint8_t) i,
-			FALSE);
-	}
+	for (i = 0; i < CFG_RX_MAX_BA_TID_NUM; i++)
+		qmDelRxBaEntry(prAdapter, prStaRec->ucIndex, i, FALSE);
 
 	/* 4 <3> Deactivate the STA_REC */
 	prStaRec->fgIsValid = FALSE;
@@ -893,81 +890,61 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
-	if (prSwRfbListTail) {
-		/* Terminate the MSDU_INFO list with a NULL pointer */
-		QM_TX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
-	}
+	/* Terminate the MSDU_INFO list with a NULL pointer */
+	if (prSwRfbListTail)
+		QM_RX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
+
 	return prSwRfbListHead;
 
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Flush RX packets with respect to a particular STA
+/**
+ * qmFlushStaRxQueue() - Flush RX packets with given reordering BA
  *
- * \param[in] u4StaRecIdx STA_REC index
- * \param[in] u4Tid TID
+ * @prReorderQueParm: Pointer to BA Rroeder context
  *
- * \return The flushed packets (in a list of SW_RFBs)
+ * This procedure only processes packets based on prReorderQueParm,
+ * STA record are isolated in the caller.
+ *
+ * Return: The flushed packets (in a list of SW_RFBs)
  */
-/*----------------------------------------------------------------------------*/
-struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4StaRecIdx, IN uint32_t u4Tid)
+static struct SW_RFB *qmFlushStaRxQueue(struct ADAPTER *prAdapter,
+		struct RX_BA_ENTRY *prReorderQueParm)
 {
-	/* UINT_32 i; */
 	struct SW_RFB *prSwRfbListHead = NULL;
 	struct SW_RFB *prSwRfbListTail = NULL;
-	struct RX_BA_ENTRY *prReorderQueParm = NULL;
-	struct STA_RECORD *prStaRec = NULL;
 
-	DBGLOG(QM, TRACE, "QM: Enter qmFlushStaRxQueues(%u)\n", u4StaRecIdx);
-
-	prStaRec = &prAdapter->arStaRec[u4StaRecIdx];
-	ASSERT(prStaRec);
-
-	/* No matter whether this is an activated STA_REC, do flush */
-#if 0
-	if (!prStaRec->fgIsValid)
-		return NULL;
-#endif
-
-	/* Obtain the RX BA Entry pointer */
-	if (u4Tid < CFG_RX_MAX_BA_TID_NUM)
-		prReorderQueParm = ((prStaRec->aprRxReorderParamRefTbl)[u4Tid]);
-
+	DBGLOG(QM, TRACE, "QM: Enter qmFlushStaRxQueues(%u:%u)\n",
+			prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
 
 	/* Note: For each queued packet,
 	 * prCurrSwRfb->eDst equals RX_PKT_DESTINATION_HOST
 	 */
-	if (prReorderQueParm) {
-		if (HAL_IS_RX_DIRECT(prAdapter))
-			RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
-		if (QUEUE_IS_NOT_EMPTY(&(prReorderQueParm->rReOrderQue))) {
+	if (QUEUE_IS_NOT_EMPTY(&prReorderQueParm->rReOrderQue)) {
+		prSwRfbListHead = (struct SW_RFB *)
+			QUEUE_GET_HEAD(&prReorderQueParm->rReOrderQue);
+		prSwRfbListTail = (struct SW_RFB *)
+			QUEUE_GET_TAIL(&prReorderQueParm->rReOrderQue);
 
-			prSwRfbListHead = (struct SW_RFB *)
-				QUEUE_GET_HEAD(
-					&(prReorderQueParm->rReOrderQue));
-			prSwRfbListTail = (struct SW_RFB *)
-				QUEUE_GET_TAIL(
-					&(prReorderQueParm->rReOrderQue));
-
-			QUEUE_INITIALIZE(&(prReorderQueParm->rReOrderQue));
-		}
-
-		if (HAL_IS_RX_DIRECT(prAdapter))
-			RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
+		QUEUE_INITIALIZE(&prReorderQueParm->rReOrderQue);
 	}
+
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
 	if (prSwRfbListTail) {
 		if (QM_RX_GET_NEXT_SW_RFB(prSwRfbListTail)) {
 			DBGLOG(QM, ERROR,
 				"QM: non-empty tail->next at STA %u TID %u\n",
-				u4StaRecIdx, u4Tid);
+				prReorderQueParm->ucStaRecIdx,
+				prReorderQueParm->ucTid);
 		}
 
 		/* Terminate the MSDU_INFO list with a NULL pointer */
-		QM_TX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
+		QM_RX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
 	}
 	return prSwRfbListHead;
 }
@@ -5365,11 +5342,69 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinSize - 1);
 }
 
-void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
-	IN uintptr_t ulParamPtr)
+/**
+ * Form a RX_BA_QUE_ENTRY with given prReorderQueParm and append it to
+ * prRxBaEntry.
+ */
+void addReorderQueParm(struct QUE *prRxBaEntry,
+		struct RX_BA_ENTRY *prReorderQueParm)
+{
+	struct RX_BA_QUE_ENTRY *prRxBaQueEntry = NULL;
+
+	prRxBaQueEntry = kalMemZAlloc(sizeof(struct RX_BA_QUE_ENTRY),
+					VIR_MEM_TYPE);
+	prRxBaQueEntry->prReorderQueParm = prReorderQueParm;
+
+	QUEUE_INSERT_TAIL(prRxBaEntry, (struct QUE_ENTRY *)prRxBaQueEntry);
+}
+
+/**
+ * Get a RX_BA_ENTRY, embedded in RX_BA_QUE_ENTRY, from prRxBaEntry.
+ */
+struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry)
+{
+	struct RX_BA_QUE_ENTRY *prRxBaQueEntry = NULL;
+	struct RX_BA_ENTRY *prReorderQueParm = NULL;
+
+	QUEUE_REMOVE_HEAD(prRxBaEntry,
+			prRxBaQueEntry, struct RX_BA_QUE_ENTRY *);
+	if (prRxBaQueEntry) {
+		prReorderQueParm = prRxBaQueEntry->prReorderQueParm;
+		kalMemFree(prRxBaQueEntry, VIR_MEM_TYPE,
+				sizeof(struct RX_BA_QUE_ENTRY));
+	}
+
+	return prReorderQueParm;
+}
+
+/**
+ * Run in main_thread context triggered by reordering timeout,
+ * call the bottom-half handler in main_thread or add a RX_BA_ENTRY
+ * then schedule the handler to be invoked by NAPI.
+ */
+void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
+				uintptr_t ulParamPtr)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
+
+#if CFG_SUPPORT_RX_NAPI
+	DBGLOG(QM, TRACE, "QM:(Bub Timeout Flush scheduled) STA[%u] TID[%u]\n",
+		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
+	addReorderQueParm(&prAdapter->rTimeoutRxBaEntry, prReorderQueParm);
+	kal_napi_schedule(&prGlueInfo->napi);
+#else
+	qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+#endif
+}
+
+/**
+ * The bottom-half handler to flush reordering frames on RX timeout.
+ */
+void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
+				 struct RX_BA_ENTRY *prReorderQueParm)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
 	uint16_t u2FirstBubbleSn;
 	uint16_t u2WinStart;
 	uint16_t u2WinEnd;
@@ -5415,7 +5450,7 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
 }
 
-void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
+void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 				     struct RX_BA_ENTRY *prReorderQueParm)
 {
 	struct QUE *prReorderQue;
@@ -5829,101 +5864,118 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucStaRecIdx, IN uint8_t ucTid,
-	IN u_int8_t fgFlushToHost)
+static void qmStarvationCheck(struct ADAPTER *prAdapter)
+{
+#if CFG_HIF_RX_STARVATION_WARNING
+	struct RX_CTRL *prRxCtrl;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	DBGLOG(QM, TRACE,
+		"QM: (RX DEBUG) Enqueued: %d / Dequeued: %d\n",
+		prRxCtrl->u4QueuedCnt, prRxCtrl->u4DequeuedCnt);
+#endif
+}
+
+/**
+ * The bottom-half handler to flush frames on RX BA deleted.
+ */
+void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
+		struct RX_BA_ENTRY *prRxBaEntry)
+{
+	uint8_t ucStaRecIdx = prRxBaEntry->ucStaRecIdx;
+	uint8_t ucTid = prRxBaEntry->ucTid;
+	struct QUE_MGT *prQM = &prAdapter->rQM;
+	struct SW_RFB *prFlushedPacketList = NULL;
+
+	prFlushedPacketList = qmFlushStaRxQueue(prAdapter, prRxBaEntry);
+
+	if (prFlushedPacketList) {
+		if (prRxBaEntry->fgFlushToHost) {
+			wlanProcessQueuedSwRfb(prAdapter, prFlushedPacketList);
+		} else {
+			struct SW_RFB *prSwRfb;
+			struct SW_RFB *prNextSwRfb;
+
+			prSwRfb = prFlushedPacketList;
+
+			do {
+				prNextSwRfb = (struct SW_RFB *)
+					QUEUE_GET_NEXT_ENTRY(
+					(struct QUE_ENTRY *) prSwRfb);
+				nicRxReturnRFB(prAdapter, prSwRfb);
+				prSwRfb = prNextSwRfb;
+			} while (prSwRfb);
+		}
+	}
+
+	if (prRxBaEntry->fgHasBubble) {
+		DBGLOG(QM, TRACE,
+			"QM:(Bub Check Cancel) STA[%u] TID[%u], DELBA\n",
+			ucStaRecIdx, ucTid);
+
+		cnmTimerStopTimer(prAdapter, &prRxBaEntry->rReorderBubbleTimer);
+		prRxBaEntry->fgHasBubble = FALSE;
+	}
+
+#if ((QM_TEST_MODE == 0) && (QM_TEST_STA_REC_DEACTIVATION == 0))
+	/* Update RX BA entry state.
+	 * Note that RX queue flush is not done here
+	 */
+	prRxBaEntry->fgIsValid = FALSE;
+	prQM->ucRxBaCount--;
+#endif
+
+	qmStarvationCheck(prAdapter);
+}
+
+/**
+ * Run in main_thread context triggered by deleting reordering BA.
+ * If a RX_BA_ENTRY valid exists, call the bottom-half handler in
+ * main_thread or add a RX_BA_ENTRY then schedule the handler to
+ * be invoked by NAPI.
+ */
+void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
+			uint8_t ucTid, u_int8_t fgFlushToHost)
 {
 	struct RX_BA_ENTRY *prRxBaEntry = NULL;
 	struct STA_RECORD *prStaRec;
-	struct SW_RFB *prFlushedPacketList = NULL;
-	struct QUE_MGT *prQM = &prAdapter->rQM;
 
-	ASSERT(ucStaRecIdx < CFG_STA_REC_NUM);
-
-	prStaRec = &prAdapter->arStaRec[ucStaRecIdx];
-	ASSERT(prStaRec);
-
-#if 0
-	if (!(prStaRec->fgIsValid)) {
-		DbgPrint("QM: (WARNING) Invalid STA when deleting an RX BA\n");
+	if (ucStaRecIdx >= CFG_STA_REC_NUM) {
+		DBGLOG(QM, ERROR, "%u > %u(CFG_STA_REC_NUM)\n",
+			ucStaRecIdx, CFG_STA_REC_NUM);
 		return;
 	}
-#endif
+
+	prStaRec = &prAdapter->arStaRec[ucStaRecIdx];
+	if (!prStaRec) {
+		DBGLOG(QM, ERROR, "NULL prStaRec\n");
+		return;
+	}
 
 	/* Remove the BA entry for the same (STA, TID) tuple if it exists */
 	if (ucTid < CFG_RX_MAX_BA_TID_NUM) {
 		prRxBaEntry = prStaRec->aprRxReorderParamRefTbl[ucTid];
-	}
-
-	if (prRxBaEntry) {
-
-		prFlushedPacketList = qmFlushStaRxQueue(prAdapter,
-			ucStaRecIdx, ucTid);
-
-		if (prFlushedPacketList) {
-
-			if (fgFlushToHost) {
-				wlanProcessQueuedSwRfb(prAdapter,
-					prFlushedPacketList);
-			} else {
-
-				struct SW_RFB *prSwRfb;
-				struct SW_RFB *prNextSwRfb;
-
-				prSwRfb = prFlushedPacketList;
-
-				do {
-					prNextSwRfb = (struct SW_RFB *)
-						QUEUE_GET_NEXT_ENTRY(
-						(struct QUE_ENTRY *) prSwRfb);
-					nicRxReturnRFB(prAdapter, prSwRfb);
-					prSwRfb = prNextSwRfb;
-				} while (prSwRfb);
-
-			}
-
-		}
-
-		if (prRxBaEntry->fgHasBubble) {
-			DBGLOG(QM, TRACE,
-				"QM:(Bub Check Cancel) STA[%u] TID[%u], DELBA\n",
-			  prRxBaEntry->ucStaRecIdx, prRxBaEntry->ucTid);
-
-			cnmTimerStopTimer(prAdapter,
-				&prRxBaEntry->rReorderBubbleTimer);
-			prRxBaEntry->fgHasBubble = FALSE;
-		}
+		if (prRxBaEntry) {
 #if ((QM_TEST_MODE == 0) && (QM_TEST_STA_REC_DEACTIVATION == 0))
-		/* Update RX BA entry state.
-		 * Note that RX queue flush is not done here
-		 */
-		prRxBaEntry->fgIsValid = FALSE;
-		prQM->ucRxBaCount--;
-
-		/* Debug */
-#if 0
-		DbgPrint("QM: ucRxBaCount=%d\n", prQM->ucRxBaCount);
+			prStaRec->aprRxReorderParamRefTbl[ucTid] = NULL;
 #endif
-
-		/* Update STA RX BA table */
-		prStaRec->aprRxReorderParamRefTbl[ucTid] = NULL;
-#endif
-
-		DBGLOG(QM, INFO, "QM: -RxBA(STA=%d,TID=%d)\n",
-			ucStaRecIdx, ucTid);
-
+			DBGLOG(QM, INFO, "QM: -RxBA(STA=%d,TID=%d)\n",
+				ucStaRecIdx, ucTid);
+		}
 	}
 
-	/* Debug */
-#if CFG_HIF_RX_STARVATION_WARNING
-	{
-		struct RX_CTRL *prRxCtrl;
+	if (!prRxBaEntry)
+		return;
 
-		prRxCtrl = &prAdapter->rRxCtrl;
-		DBGLOG(QM, TRACE,
-			"QM: (RX DEBUG) Enqueued: %d / Dequeued: %d\n",
-			prRxCtrl->u4QueuedCnt, prRxCtrl->u4DequeuedCnt);
-	}
+	prRxBaEntry->fgFlushToHost = fgFlushToHost; /* save to be used later */
+
+#if CFG_SUPPORT_RX_NAPI
+	DBGLOG(QM, TRACE, "QM:(BA Delete Flush scheduled) STA[%u] TID[%u]\n",
+		prRxBaEntry->ucStaRecIdx, prRxBaEntry->ucTid);
+	addReorderQueParm(&prAdapter->rFlushRxBaEntry, prRxBaEntry);
+	kal_napi_schedule(&prAdapter->prGlueInfo->napi);
+#else
+	qmFlushDeletedBaReorder(prAdapter, prRxBaEntry);
 #endif
 }
 
@@ -8206,6 +8258,12 @@ void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
 	uint32_t u4IdleCountThreshold = 0;
 	struct STA_RECORD *prStaRec;
 	struct QUE_MGT *prQM;
+	static const uint32_t au4IdleCountThreshold[WMM_AC_INDEX_NUM] = {
+		MQM_DEL_IDLE_RXBA_THRESHOLD_BK,
+		MQM_DEL_IDLE_RXBA_THRESHOLD_BE,
+		MQM_DEL_IDLE_RXBA_THRESHOLD_VI,
+		MQM_DEL_IDLE_RXBA_THRESHOLD_VO
+	};
 
 	DBGLOG(QM, WARN,
 		"[Puff]: Enter mqmTimeoutIdleRxBaDetection()\n");
@@ -8252,25 +8310,9 @@ void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
 
 				prRxBa->ucIdleCount++;
 
-				ASSERT(prRxBa->ucTid < 8);
-				switch (aucTid2ACI[prRxBa->ucTid]) {
-				case 0:	/* BK */
-					u4IdleCountThreshold =
-						MQM_DEL_IDLE_RXBA_THRESHOLD_BK;
-					break;
-				case 1:	/* BE */
-					u4IdleCountThreshold =
-						MQM_DEL_IDLE_RXBA_THRESHOLD_BE;
-					break;
-				case 2:	/* VI */
-					u4IdleCountThreshold =
-						MQM_DEL_IDLE_RXBA_THRESHOLD_VI;
-					break;
-				case 3:	/* VO */
-					u4IdleCountThreshold =
-						MQM_DEL_IDLE_RXBA_THRESHOLD_VO;
-					break;
-				}
+				u4IdleCountThreshold =
+					au4IdleCountThreshold[
+						aucTid2ACI[prRxBa->ucTid & 7]];
 
 				if (prRxBa->ucIdleCount >=
 					u4IdleCountThreshold) {
@@ -8285,9 +8327,7 @@ void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
 						prStaRec->ucIndex,
 						prRxBa->ucTid, TRUE);
 				}
-			}
-			/* 4 <2.2> Activity detected */
-			else {
+			} else { /* 4 <2.2> Activity detected */
 				prRxBa->u2SnapShotSN =
 					prStaRec->au2CachedSeqCtrl[
 					prRxBa->ucTid];
@@ -8296,7 +8336,6 @@ void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
 			}
 		}
 	}
-
 }
 
 /*----------------------------------------------------------------------------*/

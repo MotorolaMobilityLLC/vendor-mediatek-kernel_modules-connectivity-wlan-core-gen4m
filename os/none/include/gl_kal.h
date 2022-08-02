@@ -2024,6 +2024,9 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 
 #define kalRxNapiValidSkb(_prGlueInfo, _prSkb) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_napi_schedule(_n) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 int kalMaskMemCmp(const void *cs, const void *ct,
 	const void *mask, size_t count);
@@ -2047,6 +2050,7 @@ u_int8_t kalIsRstPreventFwOwn(void);
 
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb);
+void kal_napi_schedule(struct napi_struct *n);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT

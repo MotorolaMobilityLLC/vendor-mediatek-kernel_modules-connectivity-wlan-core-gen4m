@@ -87,8 +87,7 @@
 /* Singly Queue Structures - Entry Part */
 struct QUE_ENTRY {
 	struct QUE_ENTRY *prNext;
-	struct QUE_ENTRY
-		*prPrev;	/* For Rx buffer reordering used only */
+	struct QUE_ENTRY *prPrev;	/* For Rx buffer reordering used only */
 };
 
 /* Singly Queue Structures - Queue Part */
@@ -133,8 +132,11 @@ struct QUE {
 
 #define QUEUE_GET_NEXT_ENTRY(prQueueEntry)  ((prQueueEntry)->prNext)
 
+/**
+ * prQueue (QUE) = prQueueEntry (QUE_ENTRY) + prQueue (QUE);
+ */
 #define QUEUE_INSERT_HEAD(prQueue, prQueueEntry) \
-	{ \
+	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
 		(prQueueEntry)->prNext = (prQueue)->prHead; \
@@ -144,13 +146,16 @@ struct QUE {
 		} \
 		((prQueue)->u4NumElem)++; \
 		KAL_MB_W(); \
-	}
+	} while (0)
 
+/**
+ * prQueue (QUE) = prQueue (QUE) + prQueueEntry (QUE_ENTRY)
+ */
 #define QUEUE_INSERT_TAIL(prQueue, prQueueEntry) \
-	{ \
+	do { \
 		ASSERT(prQueue); \
-	  ASSERT(prQueueEntry); \
-	  (prQueueEntry)->prNext = (struct QUE_ENTRY *)NULL; \
+		ASSERT(prQueueEntry); \
+		(prQueueEntry)->prNext = (struct QUE_ENTRY *)NULL; \
 		if ((prQueue)->prTail) { \
 			((prQueue)->prTail)->prNext = (prQueueEntry); \
 		} else { \
@@ -159,27 +164,34 @@ struct QUE {
 		(prQueue)->prTail = (prQueueEntry); \
 		((prQueue)->u4NumElem)++; \
 		KAL_MB_W(); \
-	}
+	} while (0)
 
+/**
+ * prQueue (QUE) = prQueue (QUE) + prQueueEntry (QUE_ENTRY)
+ * For prQueueEntry contains multiple entries not in struct QUE.
+ */
 #define QUEUE_INSERT_TAIL_ALL(prQueue, prQueueEntry) \
-{ \
-	struct QUE_ENTRY *_entry = (struct QUE_ENTRY *)prQueueEntry; \
-	struct QUE_ENTRY *_next; \
-\
-	while(_entry) { \
-		_next = QUEUE_GET_NEXT_ENTRY((struct QUE_ENTRY *) _entry); \
-		QUEUE_INSERT_TAIL(prQueue, _entry); \
-		_entry = _next; \
-	} \
-}
+	do { \
+		struct QUE_ENTRY *_entry = (struct QUE_ENTRY *)prQueueEntry; \
+		struct QUE_ENTRY *_next; \
+	\
+		while (_entry) { \
+			_next = QUEUE_GET_NEXT_ENTRY( \
+					(struct QUE_ENTRY *) _entry); \
+			QUEUE_INSERT_TAIL(prQueue, _entry); \
+			_entry = _next; \
+		} \
+	} while (0)
 
 /* NOTE: We assume the queue entry located at the beginning
  * of "prQueueEntry Type",
  * so that we can cast the queue entry to other data type without doubts.
  * And this macro also decrease the total entry count at the same time.
+ * prQueueEntry (QUE_ENTRY) = (_P_TYPE) prQueue[0]
+ * prQueue = prQueue[1:]
  */
 #define QUEUE_REMOVE_HEAD(prQueue, prQueueEntry, _P_TYPE) \
-	{ \
+	do { \
 		ASSERT(prQueue); \
 		prQueueEntry = (_P_TYPE)((prQueue)->prHead); \
 		if (prQueueEntry) { \
@@ -193,20 +205,28 @@ struct QUE {
 			((prQueue)->u4NumElem)--; \
 			KAL_MB_W(); \
 		} \
-	}
+	} while (0)
 
+/**
+ * prDestQueue (QUE) = prSrcQueue (QUE)
+ * prSrcQueue = EMPTY;
+ */
 #define QUEUE_MOVE_ALL(prDestQueue, prSrcQueue) \
-	{ \
+	do { \
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
 	    *(struct QUE *)prDestQueue = *(struct QUE *)prSrcQueue; \
 	    QUEUE_INITIALIZE(prSrcQueue); \
-	}
+	} while (0)
 
+/**
+ * prDestQueue (QUE) = prDestQueue (QUE) + prSrcQueue (QUE)
+ * prSrcQueue = EMPTY;
+ */
 #define QUEUE_CONCATENATE_QUEUES(prDestQueue, prSrcQueue) \
-	{ \
-	    ASSERT(prDestQueue); \
-	    ASSERT(prSrcQueue); \
+	do { \
+		ASSERT(prDestQueue); \
+		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0) { \
 			if ((prDestQueue)->prTail) { \
 				((prDestQueue)->prTail)->prNext = \
@@ -218,11 +238,15 @@ struct QUE {
 			((prDestQueue)->u4NumElem) += \
 				((prSrcQueue)->u4NumElem); \
 			QUEUE_INITIALIZE(prSrcQueue); \
-	    } \
-	}
+		} \
+	} while (0)
 
+/**
+ * prDestQueue (QUE) = prSrcQueue (QUE) + prDestQueue (QUE)
+ * prSrcQueue = EMPTY;
+ */
 #define QUEUE_CONCATENATE_QUEUES_HEAD(prDestQueue, prSrcQueue) \
-	{ \
+	do { \
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0 && (prSrcQueue)->prTail) { \
@@ -236,7 +260,7 @@ struct QUE {
 			}  \
 			QUEUE_INITIALIZE(prSrcQueue); \
 		} \
-	}
+	} while (0)
 
 /*******************************************************************************
  *                            E X T E R N A L  D A T A

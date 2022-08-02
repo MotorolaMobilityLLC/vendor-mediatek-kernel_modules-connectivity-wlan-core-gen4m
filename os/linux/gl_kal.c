@@ -12340,6 +12340,8 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	struct sk_buff *prSkb = NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 		container_of(napi, struct GLUE_INFO, napi);
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct RX_BA_ENTRY *prReorderQueParm;
 
 	struct sk_buff_head rFlushSkbQ;
 	struct sk_buff_head *prRxNapiSkbQ, *prFlushSkbQ;
@@ -12348,6 +12350,16 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+
+	/* Added in qmHandleReorderBubbleTimeout */
+	while (prReorderQueParm =
+			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry))
+		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+
+	/* Added in qmDelRxBaEntry */
+	while (prReorderQueParm =
+			getReorderQueParm(&prAdapter->rFlushRxBaEntry))
+		qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
 
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		/* Handle SwRFBs under RX-direct mode */
@@ -12363,7 +12375,7 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 #if CFG_SUPPORT_RX_GRO_PEAK
 next_try:
 #endif
-	/* Flush all RX SBKs to local SkbQ */
+	/* Flush all RX SKBs to local SkbQ */
 	__skb_queue_head_init(prFlushSkbQ);
 	if (skb_queue_len(prRxNapiSkbQ)) {
 		spin_lock_irqsave(&prRxNapiSkbQ->lock, u4Flags);
@@ -12383,9 +12395,9 @@ next_try:
 		}
 
 		/*
-		* Take this line instead to skip GRO in NAPI
-		* if (netif_receive_skb(prSkb) != NET_RX_SUCCESS)
-		*/
+		 * Take this line instead to skip GRO in NAPI
+		 * if (netif_receive_skb(prSkb) != NET_RX_SUCCESS)
+		 */
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 		if (napi_gro_receive(napi, prSkb) == GRO_MERGED_FREE)
 #else
