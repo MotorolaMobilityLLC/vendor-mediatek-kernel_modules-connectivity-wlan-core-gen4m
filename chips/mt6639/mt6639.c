@@ -1159,8 +1159,6 @@ static void mt6639ProcessRxInterrupt(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
-	mt6639ProcessRxDataInterrupt(prAdapter);
-
 	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
@@ -1168,6 +1166,8 @@ static void mt6639ProcessRxInterrupt(struct ADAPTER *prAdapter)
 	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
+
+	mt6639ProcessRxDataInterrupt(prAdapter);
 }
 
 static void mt6639SetMDTRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
