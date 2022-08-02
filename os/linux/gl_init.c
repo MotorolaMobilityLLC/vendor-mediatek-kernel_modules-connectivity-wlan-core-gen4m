@@ -6753,7 +6753,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		case NET_CREATE_FAIL:
 		/* fallthrough */
 		case BUS_INIT_FAIL:
-		/* fallthrough */
+#if (CFG_SUPPORT_STATISTICS == 1)
+			wlanWakeStaticsUninit();
+#endif
+#if (CFG_SUPPORT_TRACE_TC4 == 1)
+			wlanDebugTC4Uninit();
+#endif
 			break;
 		default:
 			break;
