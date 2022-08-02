@@ -2615,18 +2615,19 @@ struct SW_RFB * nicRxAcquireRFB(IN struct ADAPTER *prAdapter, uint16_t num)
 		if (!rfb) {
 			DBGLOG_LIMITED(RX, WARN,
 				"No More RFB caller=%pS\n", KAL_TRACE);
-			goto fail;
+			break;
 		}
 		QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-	return (struct SW_RFB *)QUEUE_GET_HEAD(que);
-fail:
-	while (QUEUE_IS_NOT_EMPTY(que)) {
-		QUEUE_REMOVE_HEAD(que, rfb, struct SW_RFB *);
-		nicRxReturnRFB(prAdapter, rfb);
-	}
+	if (likely(i == num))
+		return (struct SW_RFB *)QUEUE_GET_HEAD(que);
+
+	/* fail case goes here */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	QUEUE_CONCATENATE_QUEUES(&ctrl->rFreeSwRfbList, que);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	return NULL;
 }
 
