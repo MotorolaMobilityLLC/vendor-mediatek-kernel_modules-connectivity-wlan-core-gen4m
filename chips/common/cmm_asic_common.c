@@ -429,7 +429,9 @@ static int wlan_func_on_by_chrdev(void)
 		kalMdelay(100);
 	}
 
+#if 0 /* Leave acquire lock after connv3 driver power on return */
 	wfsys_lock();
+#endif
 	ret = wlanFuncOn();
 	wfsys_unlock();
 
