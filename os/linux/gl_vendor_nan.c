@@ -2136,10 +2136,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
-		ret = cfg80211_vendor_cmd_reply(skb);
 
 		kfree(pNanDebug);
-		break;
+		return 0;
 	}
 	default:
 		return -EOPNOTSUPP;
