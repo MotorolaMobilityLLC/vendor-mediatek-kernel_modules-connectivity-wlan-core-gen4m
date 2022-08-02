@@ -1951,7 +1951,6 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	cmd = (struct CMD_REMOVE_STA_RECORD *) info->pucInfoBuffer;
 	if (cmd->ucActionType == STA_REC_CMD_ACTION_STA ||
 	    cmd->ucActionType == STA_REC_CMD_ACTION_BSS_EXCLUDE_STA) {
-		/* don't use cnmGetStaRecByIndex becayse starec is not in-use */
 		if (cmd->ucStaIndex < CFG_STA_REC_NUM)
 			widx = ad->arStaRec[cmd->ucStaIndex].ucWlanIndex;
 		else
