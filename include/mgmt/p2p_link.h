@@ -129,4 +129,8 @@ void p2pRxDeauthNoWtbl(
 	IN struct STA_RECORD *prStaRec,
 	IN struct SW_RFB *prSwRfb);
 
+u_int8_t p2pNeedAppendP2pIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss);
+
 #endif /* !_P2P_MLO_H */

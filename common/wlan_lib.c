@@ -8127,6 +8127,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgP2pGcCsa = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "P2pGcCsa", FEATURE_ENABLED);
 
+	prWifiVar->fgSkipP2pIe = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SkipP2pIe", FEATURE_ENABLED);
+
 	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapChannelSwitchPolicy",
 		P2P_CHANNEL_SWITCH_POLICY_SCC);

@@ -1008,3 +1008,30 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 }
 #endif
 
+u_int8_t
+p2pNeedAppendP2pIE(
+	IN struct ADAPTER *ad,
+	IN struct BSS_INFO *bss)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (ad &&
+		ad->rWifiVar.fgSkipP2pIe &&
+		bss &&
+		IS_BSS_APGO(bss)) {
+		struct MLD_BSS_INFO *mld =
+			mldBssGetByBss(ad, bss);
+
+		if (mld &&
+			mld->rBssList.u4NumElem > 1 &&
+			bss->u4PrivateData != P2P_MAIN_LINK_INDEX) {
+			DBGLOG(BSS, LOUD,
+				"Skip p2p ie for role%d\n",
+				bss->u4PrivateData);
+			return FALSE;
+		}
+	}
+#endif
+
+	return TRUE;
+}
+
