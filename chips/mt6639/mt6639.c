@@ -14,6 +14,7 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/cb_infra_misc0.h"
 #include "coda/mt6639/cb_infra_rgu.h"
 #include "coda/mt6639/cbtop_gpio_sw_def.h"
 #include "coda/mt6639/conn_cfg.h"
@@ -232,6 +233,9 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
+	{0x70000000, 0x1d0000, 0x10000},
+	{0x70010000, 0x1e0000, 0x10000},
+	{0x70020000, 0x1f0000, 0x9000},
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
@@ -1811,6 +1815,29 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad)
 	return 0;
 }
 
+static void set_cbtop_remap_addr(struct ADAPTER *ad)
+{
+	uint32_t u4Value = 0;
+
+	HAL_MCR_RD(ad,
+		   CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg1_ADDR,
+		   &u4Value);
+	u4Value &= ~CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg1_MASK;
+	u4Value |= (0x7000 << CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg1_SHFT);
+	HAL_MCR_WR(ad,
+		   CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg1_ADDR,
+		   u4Value);
+
+	HAL_MCR_RD(ad,
+		   CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_pcie_remap_wf_rg2_ADDR,
+		   &u4Value);
+	u4Value &= ~CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_pcie_remap_wf_rg2_MASK;
+	u4Value |= (0x7001 << CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_pcie_remap_wf_rg2_SHFT);
+	HAL_MCR_WR(ad,
+		   CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_pcie_remap_wf_rg2_ADDR,
+		   u4Value);
+}
+
 #if IS_MOBILE_SEGMENT
 static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
 {
@@ -1985,6 +2012,8 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	set_cbtop_remap_addr(ad);
 
 	rStatus = mt6639_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
