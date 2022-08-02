@@ -2299,9 +2299,13 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				WLAN_CAPABILITY_ESS,
 				WLAN_CAPABILITY_ESS);
 #endif
-			if (bss == NULL)
+
+			if (bss == NULL) {
+				DBGLOG(SCN, WARN,
+					"cannot find bss by cfg80211_get_bss");
 				bss = kalInformConnectionBss(prAdapter,
 					prChannel, arBssid, ucBssIndex);
+			}
 
 #if (CFG_SUPPORT_STATISTICS == 1)
 			StatsResetTxRx();
@@ -2338,6 +2342,8 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 						bss_others);
 				} else {
 					if (bss_others) {
+						DBGLOG(SCN, TRACE,
+							"call cfg80211_put_bss for bss_others");
 						cfg80211_put_bss(
 							wlanGetWiphy(),
 							bss_others);
@@ -2395,6 +2401,19 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					GFP_KERNEL);
 #endif
 			} else {
+#if (CFG_ADVANCED_80211_MLO == 1)
+				cfg80211_connect_bss(
+					prDevHandler,
+					arBssid,
+					bss,
+					prConnSettings->aucReqIe,
+					prConnSettings->u4ReqIeLength,
+					prConnSettings->aucRspIe,
+					prConnSettings->u4RspIeLength,
+					WLAN_STATUS_SUCCESS,
+					GFP_KERNEL,
+					NL80211_TIMEOUT_UNSPECIFIED);
+#else
 				cfg80211_connect_result(
 					prDevHandler,
 					arBssid,
@@ -2408,6 +2427,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					cfg80211_put_bss(
 						wlanGetWiphy(),
 						bss);
+#endif
 			}
 
 			/* Check SAP channel */
@@ -2748,6 +2768,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			aisGetWpaInfo(prAdapter, ucBssIndex);
 		struct BSS_INFO *prBssInfo =
 			aisGetAisBssInfo(prAdapter, ucBssIndex);
+		uint16_t u2JoinStatus;
 
 		/* Make sure we remove all WEP key */
 		if (prWpaInfo && prWpaInfo->u4WpaVersion ==
@@ -2793,26 +2814,86 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			COPY_MAC_ADDR(arBssid,
 				prConnSettings->aucBSSID);
 		}
+
+#if (CFG_ADVANCED_80211_MLO == 1)
+		/* retrieve channel */
+		chnlNum = wlanGetChannelNumberByNetwork(
+				prGlueInfo->prAdapter,
+				ucBssIndex);
+		eBand = wlanGetBandIndexByNetwork(
+				prGlueInfo->prAdapter,
+				ucBssIndex);
+
+		if (eBand > BAND_NULL && eBand < BAND_NUM)
+			band = aucBandTranslate[eBand];
+		else {
+			DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
+			return;
+		}
+
+		prChannel = ieee80211_get_channel(
+				wlanGetWiphy(),
+				ieee80211_channel_to_frequency(
+					chnlNum, band));
+
+		if (!prChannel)
+			DBGLOG(SCN, ERROR,
+				 "prChannel is NULL and ucChannelNum is %d\n",
+				chnlNum);
+
+		/* ensure BSS exists */
+#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+		bss = cfg80211_get_bss(
+				wlanGetWiphy(),
+				prChannel, arBssid,
+				prConnSettings->aucSSID,
+				prConnSettings->ucSSIDLen,
+				IEEE80211_BSS_TYPE_ESS,
+				IEEE80211_PRIVACY_ANY);
+#else
+		bss = cfg80211_get_bss(
+				wlanGetWiphy(),
+				prChannel, arBssid,
+				prConnSettings->aucSSID,
+				prConnSettings->ucSSIDLen,
+				WLAN_CAPABILITY_ESS,
+				WLAN_CAPABILITY_ESS);
+#endif
+		if (bss == NULL)
+			bss = kalInformConnectionBss(prAdapter,
+				prChannel, arBssid, ucBssIndex);
+#endif /* (CFG_ADVANCED_80211_MLO == 1) */
+
 		if (prBssDesc && prBssDesc->u2JoinStatus
 		    && prBssDesc->u2JoinStatus != STATUS_CODE_AUTH_TIMEOUT
 		    && prBssDesc->u2JoinStatus != STATUS_CODE_ASSOC_TIMEOUT)
-			cfg80211_connect_result(prDevHandler,
-				arBssid,
-				prConnSettings->aucReqIe,
-				prConnSettings->u4ReqIeLength,
-				prConnSettings->aucRspIe,
-				prConnSettings->u4RspIeLength,
-				prBssDesc->u2JoinStatus,
-				GFP_KERNEL);
+			u2JoinStatus = prBssDesc->u2JoinStatus;
 		else
-			cfg80211_connect_result(prDevHandler,
+			u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
+
+#if (CFG_ADVANCED_80211_MLO == 1)
+			cfg80211_connect_bss(
+				prDevHandler,
+				arBssid,
+				bss,
+				prConnSettings->aucReqIe,
+				prConnSettings->u4ReqIeLength,
+				prConnSettings->aucRspIe,
+				prConnSettings->u4RspIeLength,
+				u2JoinStatus,
+				GFP_KERNEL,
+				NL80211_TIMEOUT_UNSPECIFIED);
+#else
+			cfg80211_connect_result(
+				prDevHandler,
 				arBssid,
 				prConnSettings->aucReqIe,
 				prConnSettings->u4ReqIeLength,
 				prConnSettings->aucRspIe,
 				prConnSettings->u4RspIeLength,
-				WLAN_STATUS_AUTH_TIMEOUT,
+				u2JoinStatus,
 				GFP_KERNEL);
+#endif
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,
 			ucBssIndex);
