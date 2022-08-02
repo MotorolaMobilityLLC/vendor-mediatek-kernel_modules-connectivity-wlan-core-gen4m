@@ -793,7 +793,7 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 	prNetdev = wlanGetNetDev(prAdapter->prGlueInfo, prStaRec->ucBssIndex);
-	if (prNetdev) {
+	if (!prNetdev) {
 		DBGLOG(NIC, INFO, "NetDev is null BssIndex[%d]\n",
 		       prStaRec->ucBssIndex);
 		ret = -1;
