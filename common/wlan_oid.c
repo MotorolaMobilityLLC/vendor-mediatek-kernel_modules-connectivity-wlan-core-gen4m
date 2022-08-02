@@ -9681,12 +9681,22 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		     PARAM_PROTOCOL_ID_TCP_IP) &&
 		    (prNetworkAddress->u2AddressLength == IPV4_ADDR_LEN)) {
 			u4IPv4AddrCount++;
-		}
-
-		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			((uintptr_t) prNetworkAddress +
 			(uintptr_t) (prNetworkAddress->u2AddressLength*2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
+		} else {
+			DBGLOG(OID, INFO, "type[%d] length[%d]",
+				prNetworkAddress->u2AddressType,
+				prNetworkAddress->u2AddressLength);
+
+			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+				((uintptr_t) prNetworkAddress +
+				(uintptr_t)
+					(prNetworkAddress->u2AddressLength +
+				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+					aucAddress)));
+		}
 	}
 
 	/* 4 <2> Calculate command buffer size */
@@ -9753,14 +9763,25 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 				prCmdNetworkAddressList->ucVersion);
 
 				u4IPv4AddrIdx++;
+
+				prNetworkAddress =
+					(struct PARAM_NETWORK_ADDRESS *)
+					((uintptr_t)prNetworkAddress +
+					(uintptr_t)(prNetworkAddress->
+					u2AddressLength*2 +
+					OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+					aucAddress)));
+			} else {
+				prNetworkAddress =
+					(struct PARAM_NETWORK_ADDRESS *)
+					((uintptr_t) prNetworkAddress +
+					(uintptr_t)
+					(prNetworkAddress->u2AddressLength +
+					OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+					aucAddress)));
 			}
 
-			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-				((uintptr_t)prNetworkAddress +
-				(uintptr_t)(prNetworkAddress->
-				u2AddressLength*2 +
-				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-				aucAddress)));
+
 		}
 
 	} else {
@@ -9838,13 +9859,23 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 		     PARAM_PROTOCOL_ID_TCP_IP) &&
 		    (prNetworkAddress->u2AddressLength == IPV6_ADDR_LEN)) {
 			u4IPv6AddrCount++;
+			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+				((uintptr_t) prNetworkAddress +
+				(uintptr_t)
+					(prNetworkAddress->u2AddressLength +
+				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+					aucAddress)));
+		} else {
+			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+				((uintptr_t)
+					prNetworkAddress +
+				(uintptr_t)
+					(prNetworkAddress->u2AddressLength * 2 +
+				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+					aucAddress)));
 		}
-
-		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((uintptr_t) prNetworkAddress +
-			(uintptr_t) (prNetworkAddress->u2AddressLength * 2 +
-			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
+
 
 	/* 4 <2> Calculate command buffer size */
 	/* construct payload of command packet */
@@ -9894,14 +9925,24 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 				       prCmdIPv6NetworkAddressList->ucBssIndex);
 
 				u4IPv6AddrCount++;
+				prNetworkAddress =
+					(struct PARAM_NETWORK_ADDRESS *)
+					((uintptr_t) prNetworkAddress +
+					(uintptr_t)
+					(prNetworkAddress->u2AddressLength +
+					OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+							aucAddress)));
+			} else {
+
+				prNetworkAddress =
+					(struct PARAM_NETWORK_ADDRESS *)
+					((uintptr_t)prNetworkAddress +
+					(uintptr_t)
+					(prNetworkAddress->u2AddressLength * 2 +
+					OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+							aucAddress)));
 			}
 
-			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			    ((uintptr_t)prNetworkAddress +
-			    (uintptr_t)(
-				prNetworkAddress->u2AddressLength * 2
-				+ OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-				aucAddress)));
 		}
 
 	} else {
