@@ -564,13 +564,8 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN struct ADAPTER *prAdapter,
 #endif
 		) {
 			/* Decide RF BW by own OP BW */
-#if CFG_SUPPORT_DBDC
-			ucRfBw = cnmGetDbdcBwCapability(prAdapter,
-				prBssInfo->ucBssIndex);
-#else
-			ucRfBw = cnmGetBssMaxBw(prAdapter,
-				prBssInfo->ucBssIndex);
-#endif
+			ucRfBw = cnmOpModeGetMaxBw(prAdapter,
+				prBssInfo);
 			/* Revise to VHT OP BW */
 			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 			prChnlReqInfo->eChannelWidth = ucRfBw;

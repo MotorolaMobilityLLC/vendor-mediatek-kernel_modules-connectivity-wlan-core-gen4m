@@ -4621,13 +4621,30 @@ uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
 	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-		ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
-
+#if CFG_SUPPORT_DBDC
+		ucOpMaxBw = cnmGetDbdcBwCapability(prAdapter,
+				prBssInfo->ucBssIndex);
+#else
+		ucOpMaxBw = cnmGetBssMaxBw(prAdapter,
+				prBssInfo->ucBssIndex);
+#endif
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
 			/* Verify if there is valid S1 */
 			ucS1 = nicGetS1(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
 				rlmMaxBwToVhtBw(ucOpMaxBw));
+
+			/* Try if there is valid S1 for BW160 if we failed to
+			 * get S1 for BW320.
+			 */
+			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_320MHZ) {
+				ucS1 = nicGetS1(prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel,
+					rlmMaxBwToVhtBw(MAX_BW_160MHZ));
+
+				if (ucS1) /* Fallback to BW80 */
+					ucOpMaxBw = MAX_BW_160MHZ;
+			}
 
 			/* Try if there is valid S1 for BW80 if we failed to
 			 * get S1 for BW160.

@@ -496,4 +496,7 @@ static __KAL_INLINE__ void cnmMsgDataTypeCheck(void)
 
 uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter);
 
+uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo);
+
 #endif /* _CNM_H */
