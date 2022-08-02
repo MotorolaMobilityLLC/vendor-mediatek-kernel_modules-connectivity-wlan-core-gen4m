@@ -1578,6 +1578,10 @@ static void mt6639WfdmaRxRingExtCtrl(
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+void *pcie_vir_addr;
+#endif
+
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t value = 0;
@@ -1596,6 +1600,12 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
+	if (pcie_vir_addr) {
+		writel(0x08021000, (pcie_vir_addr + 0x74));
+		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%x\n", pcie_vir_addr);
+	} else
+		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
+
 #endif
 
 }
@@ -1604,22 +1614,35 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 
-void *pcie_vir_addr;
+uint32_t value_ori;
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	if (fgEn) {
 		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf0f);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf);
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2\n");
+		if (value_ori & 0xf00 == 0) {
+			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xe0f);
+			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0x20f);
+			if (pcie_vir_addr)
+				writel(0xf, (pcie_vir_addr + 0x194));
+
+		    HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf);
+		}
+		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2..\n");
 	} else {
 		/*
 		 *	Backup original setting then
 		 *	disable L1.1, L1.2 and set LTR to 0
 		 */
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf0f);
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2\n");
+		HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value_ori);
+		if (value_ori & 0xf00 == 0) {
+			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0x20f);
+			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xe0f);
+			if (pcie_vir_addr)
+				writel(0xc0f, (pcie_vir_addr + 0x194));
+
+			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
+		}
+		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2..\n");
 	}
 }
 #else

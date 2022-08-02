@@ -520,10 +520,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
-	HAL_MCR_WR(prAdapter, 0x74030194, 0xf0f);
-#endif
-
 	/* PCIE/AXI need to do clear own, then could start polling status */
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
 	fgResult = FALSE;
@@ -573,11 +569,6 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 		i++;
 	}
-
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
-	HAL_MCR_WR(prAdapter, 0x74030194, 0xf0f);
-	HAL_MCR_WR(prAdapter, 0x74030194, 0xf);
-#endif
 
 	if (fgIsDriverOwnTimeout) {
 #if !CFG_SUPPORT_RX_WORK
