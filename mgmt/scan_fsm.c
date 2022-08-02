@@ -1019,6 +1019,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
 
+#if 0
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
 		prScanInfo->fgIsSparseChannelValid &&
 		prScanDone->ucSparseChannelArrayValidNum > 5 &&
@@ -1028,6 +1029,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
+#endif
 #endif
 
 }	/* end of scnEventScanDone */
