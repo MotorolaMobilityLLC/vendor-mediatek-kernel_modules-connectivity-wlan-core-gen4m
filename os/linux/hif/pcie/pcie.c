@@ -614,19 +614,24 @@ irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	pci_channel_state_t state)
 {
+	pci_ers_result_t res = PCI_ERS_RESULT_NONE;
+
 	DBGLOG(HAL, INFO, "mtk_pci_error_detected state: %d, resetting: %d\n",
 		state, kalIsResetting());
 
 	if (state == pci_channel_io_normal)
-		return PCI_ERS_RESULT_NONE;
+		goto exit;
 	else if (kalIsResetting())
-		return PCI_ERS_RESULT_DISCONNECT;
+		res = PCI_ERS_RESULT_CAN_RECOVER;
+	else
+		res = PCI_ERS_RESULT_NEED_RESET;
 
 	fgIsBusAccessFailed = TRUE;
 	if (pci_is_enabled(pdev))
 		pci_disable_device(pdev);
 
-	return PCI_ERS_RESULT_NEED_RESET;
+exit:
+	return res;
 }
 
 static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)

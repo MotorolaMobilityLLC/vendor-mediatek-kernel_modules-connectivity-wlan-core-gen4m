@@ -420,7 +420,6 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 				uint32_t u4CurrTick, u_int8_t fgTimeout)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	struct CHIP_DBG_OPS *prChipDbgOps;
 	uint32_t u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
 
 	if (prAdapter->u4CasanLoadType == 1)
@@ -431,7 +430,6 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		   u4DrvOwnTimeoutMs);
 
 	prChipInfo = prAdapter->chip_info;
-	prChipDbgOps = prChipInfo->prDebugOps;
 
 	if ((prAdapter->u4OwnFailedCount == 0) ||
 	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
@@ -451,25 +449,16 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO,
 		       "Skip LP own back failed log for next %ums\n",
 		       u4DrvOwnTimeoutMs);
-		if (prChipDbgOps->dumpwfsyscpupcr)
-			prChipDbgOps->dumpwfsyscpupcr(prAdapter);
 
 		prAdapter->u4OwnFailedLogCount++;
 		if (prAdapter->u4OwnFailedLogCount >
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
-			if (IS_MOBILE_SEGMENT && in_interrupt()) {
+			if (IS_MOBILE_SEGMENT && in_interrupt())
 				DBGLOG(INIT, INFO,
 					"Skip reset in tasklet\n");
-			} else {
-				if (prChipDbgOps->showCsrInfo)
-					prChipDbgOps->showCsrInfo(
-							prAdapter);
-				if (prChipDbgOps->dumpBusHangCr)
-					prChipDbgOps->dumpBusHangCr(
-							prAdapter);
+			else
 				GL_DEFAULT_RESET_TRIGGER(prAdapter,
 						RST_DRV_OWN_FAIL);
-			}
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 	}

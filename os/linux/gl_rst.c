@@ -486,9 +486,6 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		"Trigger chip reset in %s line %u reason %s\n",
 		pucFile, u4Line, apucRstReason[eResetReason]);
 
-	if (prDbgOps && prDbgOps->dumpBusHangCr)
-		prDbgOps->dumpBusHangCr(prAdapter);
-
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 
@@ -1620,13 +1617,12 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 {
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
-	struct WIFI_VAR *prWifiVar = NULL;
 	bool fgIsTimeout;
 
-	if (prGlueInfo != NULL)
-		prAdapter = prGlueInfo->prAdapter;
-
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+		struct WIFI_VAR *prWifiVar = NULL;
+
+		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
 		if (prWifiVar->fgRstRecover == 1)
 			g_fgRstRecover = TRUE;

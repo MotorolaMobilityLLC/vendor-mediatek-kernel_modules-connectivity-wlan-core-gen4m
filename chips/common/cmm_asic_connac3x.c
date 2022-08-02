@@ -2155,6 +2155,11 @@ void asicConnac3xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 #if CFG_WMT_RESET_API_SUPPORT
 static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 {
+	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
+
+	if (dbg_ops && dbg_ops->dumpBusHangCr)
+		dbg_ops->dumpBusHangCr(prAdapter);
+
 	if (kalIsResetting()) {
 		DBGLOG(HAL, INFO,
 			"Wi-Fi Driver trigger, need do complete.\n");
@@ -2176,8 +2181,13 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 {
+	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
+
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
+
+	if (dbg_ops && dbg_ops->dumpBusHangCr)
+		dbg_ops->dumpBusHangCr(prAdapter);
 
 	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);

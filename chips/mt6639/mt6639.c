@@ -2111,7 +2111,7 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 
 	ret = reset_wait_for_trigger_completion();
 	if (ret) {
-		mt6639_ccif_get_interrupt_status(prAdapter);
+		fgIsBusAccessFailed = TRUE;
 		reset_done_trigger_completion();
 	}
 
@@ -2312,6 +2312,9 @@ static u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
+
+	if (fgIsBusAccessFailed)
+		return 1;
 
 	if (mt6639_is_ap2conn_on_readable(ad) &&
 	    mt6639_is_ap2conn_off_readable(ad) &&
