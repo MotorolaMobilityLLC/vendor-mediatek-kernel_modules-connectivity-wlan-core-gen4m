@@ -317,6 +317,7 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info)
 {
 	struct coredump_mem *mem = &ctx->mem;
+	struct GLUE_INFO *glue = ctx->priv;
 	struct ctrl_blk_layout ctrl_blk;
 	int ret = 0;
 
@@ -366,8 +367,17 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 	else
 		mem->mem_region_num = ctrl_blk.mem_region_num;
 
+	if (chip_info->checkbushang) {
+		if (chip_info->checkbushang(glue->prAdapter, TRUE)) {
+			DBGLOG(INIT, INFO, "Bus check failed.\n");
+			mem->cr_region_num = 0;
+			mem->mem_region_num = 0;
+		}
+	}
+
 	DBGLOG(INIT, INFO,
-		"pdcm[0x%x 0x%x 0x%x 0x%x]\n",
+		"state: %d, pdcm[0x%x 0x%x 0x%x 0x%x]\n",
+		ctrl_blk.state,
 		ctrl_blk.print_buff_len,
 		ctrl_blk.dump_buff_len,
 		ctrl_blk.cr_region_len,
@@ -388,7 +398,9 @@ exit:
 }
 
 static int __coredump_wait_done(struct coredump_ctx *ctx,
-	struct mt66xx_chip_info *chip_info)
+	struct mt66xx_chip_info *chip_info,
+	u_int8_t force_dump,
+	u_int8_t *state_ready)
 {
 	unsigned long timeout;
 	int ret = 0;
@@ -416,9 +428,13 @@ static int __coredump_wait_done(struct coredump_ctx *ctx,
 		}
 
 		if (ctrl_blk.state == COREDUMP_STATE_PUT_DONE) {
-			ret = __coredump_init_ctrl_blk(ctx, chip_info);
+			*state_ready = TRUE;
+			break;
+		} else if (force_dump) {
 			break;
 		}
+
+		kalMsleep(100);
 	}
 
 	return ret;
@@ -559,7 +575,7 @@ static int __coredump_init_cr_region(struct coredump_ctx *ctx,
 
 		if (region->base == 0xFFFFFFFF || region->size == 0) {
 			region->buf = NULL;
-			break;
+			continue;
 		}
 
 		region->buf = kalMemAlloc(region->size, VIR_MEM_TYPE);
@@ -744,8 +760,8 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	for (idx = 0, region = mem->cr_regions;
 	     idx < mem->cr_region_num;
 	     idx++, region++) {
-		if (region->base == 0xFFFFFFFF || region->size == 0)
-			break;
+		if (!region->buf)
+			continue;
 
 		if (kalDevRegReadRange(glue,
 				       region->base,
@@ -758,6 +774,7 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 			ret = -ENOMEM;
 			break;
 		}
+		region->ready = TRUE;
 	}
 
 exit:
@@ -789,6 +806,7 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 			ret = -ENOMEM;
 			break;
 		}
+		region->ready = TRUE;
 
 		DBGLOG(INIT, INFO,
 			"[%d] mem region %s 0x%x 0x%x\n",
@@ -816,8 +834,12 @@ static int __coredump_to_userspace_cr_region(struct coredump_ctx *ctx)
 	/* calculate log buffer size */
 	for (i = 0, cr_region = mem->cr_regions;
 	     i < mem->cr_region_num;
-	     i++, cr_region++)
+	     i++, cr_region++) {
+		if (!cr_region->buf || !cr_region->ready)
+			continue;
+
 		total_sz += cr_region->size;
+	}
 	total_sz *= BUFF_SZ_PER_CR;
 
 	buf = kalMemAlloc(total_sz, VIR_MEM_TYPE);
@@ -830,8 +852,8 @@ static int __coredump_to_userspace_cr_region(struct coredump_ctx *ctx)
 	for (i = 0, cr_region = mem->cr_regions, pos = buf;
 	     i < mem->cr_region_num;
 	     i++, cr_region++) {
-		if (cr_region->base == 0xFFFFFFFF || cr_region->size == 0)
-			break;
+		if (!cr_region->buf || !cr_region->ready)
+			continue;
 
 		for (j = 0; j < cr_region->size / 4; j++) {
 			uint32_t addr = 0, val = 0;
@@ -967,6 +989,9 @@ static void __coredump_to_userspace_issue_info(struct coredump_ctx *ctx,
 	for (idx = 0, mem_region = mem->mem_regions;
 	     idx < mem->mem_region_num;
 	     idx++, mem_region++) {
+		if (!mem_region->ready)
+			continue;
+
 		written += kalSnprintf(pos + written,
 				       BUF_SIZE - written,
 				       "\t\t<%s>\n",
@@ -1008,11 +1033,15 @@ static int __coredump_to_userspace_mem_region(struct coredump_ctx *ctx)
 
 	for (idx = 0, mem_region = mem->mem_regions;
 	     idx < mem->mem_region_num;
-	     idx++, mem_region++)
+	     idx++, mem_region++) {
+		if (!mem_region->ready)
+			continue;
+
 		connv3_coredump_send(ctx->handler,
 				     mem_region->name,
 				     mem_region->buf,
 				     mem_region->size);
+	}
 
 	return 0;
 }
@@ -1020,7 +1049,9 @@ static int __coredump_to_userspace_mem_region(struct coredump_ctx *ctx)
 static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	struct mt66xx_chip_info *chip_info,
 	enum COREDUMP_SOURCE_TYPE source,
-	char *reason)
+	char *reason,
+	u_int8_t force_dump,
+	u_int8_t state_ready)
 {
 #define AEE_STR_LEN		256
 #define FW_VER_LEN		256
@@ -1071,11 +1102,24 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	}
 
 	drv_type = coredump_src_to_connv3_type(source);
-	connv3_coredump_start(ctx->handler,
-			      drv_type,
-			      reason,
-			      mem->dump_buff,
-			      fw_version);
+	if (!state_ready) {
+		uint8_t force_dump_buf[
+			kalStrLen(CONNV3_COREDUMP_FORCE_DUMP) + 1];
+
+		kalSnprintf(force_dump_buf, sizeof(force_dump_buf), "%s",
+			    CONNV3_COREDUMP_FORCE_DUMP);
+		connv3_coredump_start(ctx->handler,
+				      drv_type,
+				      reason,
+				      force_dump_buf,
+				      fw_version);
+	} else {
+		connv3_coredump_start(ctx->handler,
+				      drv_type,
+				      reason,
+				      mem->dump_buff,
+				      fw_version);
+	}
 
 	__coredump_to_userspace_cr_region(ctx);
 
@@ -1113,11 +1157,13 @@ static u_int8_t is_coredump_source_valid(enum COREDUMP_SOURCE_TYPE source)
 
 static int __coredump_start(struct coredump_ctx *ctx,
 	enum COREDUMP_SOURCE_TYPE source,
-	char *reason)
+	char *reason,
+	u_int8_t force_dump)
 {
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
 	struct mt66xx_chip_info *chip_info;
+	u_int8_t state_ready = FALSE;
 	int ret = 0;
 
 	if (glue->u4ReadyFlag == 0) {
@@ -1138,7 +1184,14 @@ static int __coredump_start(struct coredump_ctx *ctx,
 
 	kalMemZero(mem, sizeof(*mem));
 
-	ret = __coredump_wait_done(ctx, chip_info);
+	ret = __coredump_wait_done(ctx,
+				   chip_info,
+				   force_dump,
+				   &state_ready);
+	if (ret || !state_ready)
+		goto exit;
+
+	ret = __coredump_init_ctrl_blk(ctx, chip_info);
 	if (ret)
 		goto exit;
 
@@ -1163,7 +1216,12 @@ static int __coredump_start(struct coredump_ctx *ctx,
 		goto deinit;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_to_userspace(ctx, chip_info, source, reason);
+	__coredump_to_userspace(ctx,
+				chip_info,
+				source,
+				reason,
+				force_dump,
+				state_ready);
 #endif
 
 deinit:
@@ -1172,7 +1230,9 @@ exit:
 	return ret;
 }
 
-void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source, char *reason)
+void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
+	char *reason,
+	u_int8_t force_dump)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 
@@ -1182,8 +1242,8 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source, char *reason)
 		return;
 	}
 
-	DBGLOG(INIT, INFO, "source: %d, reason: %s\n",
-		source, reason);
+	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
+		source, reason, force_dump);
 
 #if CFG_SUPPORT_CONNINFRA
 	{
@@ -1195,7 +1255,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source, char *reason)
 		connsys_coredump_clean(ctx->handler);
 	}
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	__coredump_start(ctx, source, reason);
+	__coredump_start(ctx, source, reason, force_dump);
 #endif
 }
 

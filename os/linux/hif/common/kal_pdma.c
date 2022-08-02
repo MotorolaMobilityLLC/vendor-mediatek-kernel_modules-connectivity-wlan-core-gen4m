@@ -680,6 +680,11 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	if (!prChipInfo)
 		return FALSE;
 
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
@@ -698,11 +703,6 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 		KAL_WARN_ON(TRUE);
 		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
-	}
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
-		return TRUE;
 	}
 
 	/* Static mapping */
@@ -764,6 +764,11 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	if (!prChipInfo)
 		return FALSE;
 
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
+		return TRUE;
+	}
+
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
@@ -781,11 +786,6 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 		}
 		KAL_WARN_ON(TRUE);
 		return FALSE;
-	}
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
-		return TRUE;
 	}
 
 	/* Static mapping */

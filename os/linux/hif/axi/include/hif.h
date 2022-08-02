@@ -75,11 +75,7 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-#if (CFG_SUPPORT_CONNINFRA == 1)
-extern wait_queue_head_t g_waitq_rst;
-extern unsigned long g_ulFlag;
-extern KAL_WAKE_LOCK_T *g_IntrWakeLock;
-#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

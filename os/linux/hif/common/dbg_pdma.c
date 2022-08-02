@@ -346,17 +346,6 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		}
 	}
 
-	/* need to check Bus readable */
-	if (prAdapter->chip_info->checkbushang) {
-		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
-				TRUE);
-		if (ret != 0) {
-			DBGLOG(HAL, ERROR,
-				"return due to checkbushang fail %d\n", ret);
-			return;
-		}
-	}
-
 	/* Check Driver own HW CR */
 	{
 		struct BUS_INFO *prBusInfo = NULL;
@@ -375,6 +364,17 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		if (driver_owen_result == 0) {
 			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
 				driver_owen_result);
+			return;
+		}
+	}
+
+	/* need to check Bus readable */
+	if (prAdapter->chip_info->checkbushang) {
+		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
+				TRUE);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR,
+				"return due to checkbushang fail %d\n", ret);
 			return;
 		}
 	}

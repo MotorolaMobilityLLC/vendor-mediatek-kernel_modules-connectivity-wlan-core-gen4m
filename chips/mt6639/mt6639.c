@@ -17,10 +17,13 @@
 #include "coda/mt6639/cb_infra_misc0.h"
 #include "coda/mt6639/cb_infra_rgu.h"
 #include "coda/mt6639/cbtop_gpio_sw_def.h"
+#include "coda/mt6639/conn_bus_cr.h"
 #include "coda/mt6639/conn_cfg.h"
+#include "coda/mt6639/conn_dbg_ctl.h"
 #include "coda/mt6639/conn_host_csr_top.h"
 #include "coda/mt6639/conn_semaphore.h"
 #include "coda/mt6639/wf_cr_sw_def.h"
+#include "coda/mt6639/wf_top_cfg.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_wfdma_mcu_dma0.h"
@@ -159,6 +162,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
 static void mt6639_mcu_deinit(struct ADAPTER *ad);
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
+static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
 #endif
 #endif
 
@@ -235,6 +239,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x70020000, 0x1f0000, 0x9000},
 	{0x0, 0x0, 0x0} /* End */
@@ -733,6 +738,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
+	.checkbushang = mt6639_CheckBusHang,
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
@@ -2065,6 +2071,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		ad->chip_info->coexpccifon(ad);
 
 	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
+
 #if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
 #endif
@@ -2096,9 +2103,10 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 {
 	int32_t ret = 0;
 
-	ret = ccif_trigger_fw_assert(prAdapter);
+	ccif_trigger_fw_assert(prAdapter);
 
-	if (reset_wait_for_trigger_completion()) {
+	ret = reset_wait_for_trigger_completion();
+	if (ret) {
 		mt6639_ccif_get_interrupt_status(prAdapter);
 		reset_done_trigger_completion();
 	}
@@ -2192,7 +2200,123 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 #endif
 	return 0;
 }
-#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+
+static u_int8_t mt6639_is_ap2conn_on_readable(struct ADAPTER *ad)
+{
+	uint32_t value = 0;
+
+	HAL_MCR_RD(ad,
+		   CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR,
+		   &value);
+	if ((value & BITS(6, 7)) != 0) {
+		DBGLOG(HAL, ERROR,
+			"ap2conn gals sleep protect status: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
+{
+#define MAX_POLLING_COUNT		4
+
+	uint32_t value = 0, retry = 0;
+
+	while (TRUE) {
+		if (retry >= MAX_POLLING_COUNT) {
+			DBGLOG(HAL, ERROR,
+				"Conninfra off bus clk: 0x%08x\n",
+				value);
+			return FALSE;
+		}
+
+		HAL_MCR_WR(ad,
+			   CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR,
+			   BIT(0));
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR,
+			   &value);
+		if ((value & BITS(1, 2)) == BITS(1, 2))
+			break;
+
+		retry++;
+		kalMdelay(1);
+	}
+
+	HAL_MCR_RD(ad,
+		   CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
+		   &value);
+	if (value != MT6639_CONNINFRA_VERSION_ID) {
+		DBGLOG(HAL, ERROR,
+			"Conninfra ver id: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	HAL_MCR_RD(ad,
+		   CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
+		   &value);
+	if ((value & BITS(0, 2)) != 0x0) {
+		DBGLOG(HAL, ERROR,
+			"Conninfra bus hang irq status: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
+{
+	uint32_t value = 0;
+
+	HAL_MCR_RD(ad,
+		   CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR,
+		   &value);
+	if ((value & BIT(26)) != 0x0) {
+		DBGLOG(HAL, ERROR,
+			"conn2wf sleep protect: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	HAL_MCR_RD(ad,
+		   WF_TOP_CFG_IP_VERSION_ADDR,
+		   &value);
+	if (value != MT6639_WF_VERSION_ID) {
+		DBGLOG(HAL, ERROR,
+			"WF ver id: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	HAL_MCR_RD(ad,
+		   CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
+		   &value);
+	if ((value & BIT(0)) != 0x0) {
+		DBGLOG(HAL, ERROR,
+			"WF mcusys bus hang irq status: 0x%08x\n",
+			value);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
+{
+	struct ADAPTER *ad = priv;
+
+	if (mt6639_is_ap2conn_on_readable(ad) &&
+	    mt6639_is_ap2conn_off_readable(ad) &&
+	    mt6639_is_conn2wf_readable(ad))
+		return 0;
+	else
+		return 1;
+}
+#endif /* IS_MOBILE_SEGMENT */
 #endif /* _HIF_PCIE */
 
 static uint32_t mt6639GetFlavorVer(uint8_t *flavor)

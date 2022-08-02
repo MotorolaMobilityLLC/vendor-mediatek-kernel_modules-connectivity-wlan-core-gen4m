@@ -2806,7 +2806,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			fw_log_wifi_irq_handler();
 #endif
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-			wifi_coredump_start(g_Coredump_source, NULL);
+			wifi_coredump_start(g_Coredump_source, NULL, TRUE);
 			g_IsNeedWaitCoredump = FALSE;
 #endif
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
@@ -2815,7 +2815,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			glResetUpdateFlag(FALSE);
 			g_Coredump_source = COREDUMP_SOURCE_NUM;
 		} else {
-			kalSetRstEvent();
+			kalSetRstEvent(TRUE);
 		}
 	}
 }
@@ -2832,7 +2832,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 #endif
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
-	kalSetRstEvent();
+	kalSetRstEvent(TRUE);
 }
 
 static void handle_sw_wfdma_event(struct ADAPTER *prAdapter)
@@ -2878,7 +2878,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 #endif
 		DBGLOG(HAL, ERROR, "get_sw_interrupt_status failed\n");
 		glResetUpdateFlag(TRUE);
-		kalSetRstEvent();
+		kalSetRstEvent(TRUE);
 		goto exit;
 	}
 

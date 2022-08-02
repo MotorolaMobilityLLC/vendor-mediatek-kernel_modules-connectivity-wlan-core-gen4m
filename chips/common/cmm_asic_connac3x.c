@@ -2171,7 +2171,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glResetUpdateFlag(TRUE);
 
-		kalSetRstEvent();
+		kalSetRstEvent(TRUE);
 	}
 }
 
@@ -2183,7 +2183,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
-	kalSetRstEvent();
+	kalSetRstEvent(TRUE);
 }
 #endif
 

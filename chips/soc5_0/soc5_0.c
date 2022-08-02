@@ -1105,13 +1105,13 @@ int soc5_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Trigger fw assert start.\n");
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value &= 0xFFFFFF7F;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
-	reset_wait_for_trigger_completion();
+	ret = reset_wait_for_trigger_completion();
 
 	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
 	value |= 0x80;
-	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
 	return ret;
 }

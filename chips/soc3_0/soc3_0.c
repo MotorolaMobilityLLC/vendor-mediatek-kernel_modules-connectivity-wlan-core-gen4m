@@ -1326,7 +1326,7 @@ void soc3_0_DumpWfsysInfo(void)
 
 int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 {
-	int value = 0;
+	int value = 0, ret = 0;
 
 	soc3_0_CheckBusHang(NULL, FALSE);
 	if (g_IsWfsysBusHang == TRUE) {
@@ -1339,7 +1339,8 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	value &= 0xFFFFFF7F;
 	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
-	if (!reset_wait_for_trigger_completion()) {
+	ret = reset_wait_for_trigger_completion();
+	if (!ret) {
 		/* Case 1: No timeout. */
 		soc3_0_DumpWfsysInfo();
 	} else {
@@ -1352,7 +1353,7 @@ int soc3_0_Trigger_fw_assert(struct ADAPTER *prAdapter)
 	value |= 0x80;
 	wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
 
-	return 0;
+	return ret;
 }
 
 void soc3_0_CheckBusHangUT(void)

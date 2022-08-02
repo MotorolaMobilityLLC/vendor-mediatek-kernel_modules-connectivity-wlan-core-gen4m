@@ -6,7 +6,7 @@
 #ifndef _GL_COREDUMP_H
 #define _GL_COREDUMP_H
 
-#define COREDUMP_TIMEOUT			(10 * 1000)
+#define COREDUMP_TIMEOUT			(500)
 
 #define COREDUMP_OFFSET_CTRL_BLOCK		0x0
 
@@ -116,7 +116,8 @@ struct coredump_ctx {
 int wifi_coredump_init(void *priv);
 void wifi_coredump_deinit(void);
 void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
-	char *reason);
+	char *reason,
+	u_int8_t force_dump);
 void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb);
 #if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src);
@@ -131,7 +132,8 @@ static inline int wifi_coredump_init(void *priv)
 { return 0; }
 static inline void wifi_coredump_deinit(void) {}
 static inline void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
-	char *reason) {}
+	char *reason,
+	u_int8_t force_dump) {}
 static inline void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb) {}
 #endif
 

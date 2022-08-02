@@ -213,9 +213,12 @@ struct RESET_STRUCT {
 	struct GLUE_INFO *prGlueInfo;
 	struct work_struct rst_work;
 #if CFG_WMT_RESET_API_SUPPORT
+	unsigned long ulFlag;
+	u_int8_t force_dump;
 	enum ENUM_RESET_STATUS rst_data;
 	struct work_struct rst_trigger_work;
 	uint32_t rst_trigger_flag;
+	struct completion halt_comp;
 #endif
 };
 
@@ -347,7 +350,7 @@ int wlan_post_whole_chip_rst_v2(void);
 #endif
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
-void kalSetRstEvent(void);
+void kalSetRstEvent(u_int8_t force_dump);
 void glRstSetRstEndEvent(void);
 int reset_wait_for_trigger_completion(void);
 void reset_done_trigger_completion(void);
