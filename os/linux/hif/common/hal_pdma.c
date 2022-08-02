@@ -4027,7 +4027,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 
 	/* do nothing if wifi is not ready */
 	if (prGlueInfo->fgRxTaskReady == FALSE) {
-		DBGLOG(INIT, INFO,
+		DBGLOG_LIMITED(INIT, INFO,
 		       "Not ready yet, ignore pending interrupt\n");
 		return;
 	}
@@ -4042,7 +4042,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		|| kalIsResetting()
 		) {
 		/* Should stop now... skip pending interrupt */
-		DBGLOG(INIT, INFO,
+		DBGLOG_LIMITED(INIT, INFO,
 		       "ignore pending interrupt\n");
 	} else {
 		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
