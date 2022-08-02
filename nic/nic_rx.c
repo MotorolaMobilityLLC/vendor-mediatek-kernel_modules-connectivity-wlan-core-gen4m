@@ -2133,7 +2133,6 @@ void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb)
 {
 	halRxProcessMsduReport(prAdapter, prSwRfb);
-	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
 void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
