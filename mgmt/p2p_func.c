@@ -1008,8 +1008,11 @@ void p2pProcessActionResponse(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
-	DBGLOG(P2P, INFO, "eConnState: %d, eType: %d\n",
-			prAdapter->prP2pInfo->eConnState, eType);
+	DBGLOG(P2P, INFO,
+		"eConnState: %d, eType: %d, found P2P_%s\n",
+		prAdapter->prP2pInfo->eConnState,
+		eType,
+		p2pActionFrameToString(eType));
 
 	if (fgIdle)
 		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
@@ -1339,7 +1342,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			 * to the STA only wait 30-50mS
 			 */
 			/* and AP do not need send it after STA left */
-			nicTxSetPktLifeTime(prAdapter, prMgmtTxMsdu, 100);
+			/* nicTxSetPktLifeTime(prAdapter, prMgmtTxMsdu, 100); */
 
 			/*
 			 * Not check prMsduInfo sanity
@@ -4276,8 +4279,15 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 				prActFrame;
 			p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
-			if (prActPubVenFrame->ucPubSubType == P2P_GO_NEG_REQ)
+			if ((prActPubVenFrame->ucPubSubType ==
+				P2P_GO_NEG_REQ) ||
+				(prActPubVenFrame->ucPubSubType ==
+				P2P_INVITATION_REQ)) {
 				p2pFunAbortOngoingScan(prAdapter);
+				p2pDevFsmRunEventScanAbort(prAdapter,
+					prAdapter->ucP2PDevBssIdx);
+			}
+
 			if (fgIsDevInterface) {
 				p2pDevFsmNotifyP2pRx(prAdapter,
 					prActPubVenFrame->ucPubSubType,
