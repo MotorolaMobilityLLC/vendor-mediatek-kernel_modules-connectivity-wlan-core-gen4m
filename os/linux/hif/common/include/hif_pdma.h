@@ -955,6 +955,7 @@ u_int8_t halRxInsertRecvRfbList(
 	struct ADAPTER *prAdapter,
 	struct QUE *prReceivedRfbList,
 	struct SW_RFB *prSwRfb);
+void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 void halWpdmaFreeMsduTasklet(unsigned long data);
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */

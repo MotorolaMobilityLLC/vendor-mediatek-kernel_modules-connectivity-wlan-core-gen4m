@@ -106,6 +106,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_LITTLE_CORE,
 		.u4ISRMask = CPU_LITTLE_CORE,
+		.i4TxFreeMsduWorkCpu = -1,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -128,6 +129,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
+		.i4TxFreeMsduWorkCpu = -1,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -150,6 +152,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -172,6 +175,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_X_CORE,
+		.i4TxFreeMsduWorkCpu = 5,
 		.fgDramBoost = FALSE
 	}
 };
@@ -349,6 +353,10 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	kalTxCsdSetMask(prGlueInfo,
 			prBoostInfo->rMainThreadInfo.u4CpuMask);
 #endif /* CFG_SUPPORT_TRX_CSD */
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+	kalTxFreeMsduWorkSetCpu(prGlueInfo,
+			prBoostInfo->i4TxFreeMsduWorkCpu);
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 	kalSetCpuMask(prGlueInfo->rx_thread,
 			prBoostInfo->rRxThreadInfo.u4CpuMask);
 
@@ -364,9 +372,18 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 
 	kalSetDramBoost(prAdapter, prBoostInfo->fgDramBoost);
 
+
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+#define TX_FREE_MSDU_WORK_TEMPLATE " TxFreeMsduWork:[%d]"
+#else /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#define TX_FREE_MSDU_WORK_TEMPLATE ""
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+
 #define TEMP_LOG_TEMPLATE \
 	"CPUInfo[%d:%d] ThreadInfo:[%02x:%02x:%02x][%u:%u:%u] " \
-	"Rps:[%02x] ISR:[%02x] D:[%u]\n"
+	"Rps:[%02x] ISR:[%02x] D:[%u]" \
+	TX_FREE_MSDU_WORK_TEMPLATE \
+	"\n"
 
 	DBGLOG(INIT, INFO,
 		TEMP_LOG_TEMPLATE,
@@ -380,7 +397,8 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		prBoostInfo->rRxThreadInfo.u4Priority,
 		prBoostInfo->u4RpsMap,
 		prBoostInfo->u4ISRMask,
-		prBoostInfo->fgDramBoost
+		prBoostInfo->fgDramBoost,
+		prBoostInfo->i4TxFreeMsduWorkCpu
 		);
 #undef TEMP_LOG_TEMPLATE
 }

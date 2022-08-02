@@ -2002,6 +2002,14 @@
 #define CFG_SUPPORT_TASKLET_FREE_MSDU	0
 #endif /* LINUX */
 
+#ifndef CFG_SUPPORT_TX_FREE_MSDU_WORK
+#define CFG_SUPPORT_TX_FREE_MSDU_WORK 0
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+
+#if (CFG_SUPPORT_TASKLET_FREE_MSDU == 0) && (CFG_SUPPORT_TX_FREE_MSDU_WORK == 1)
+#error "TX_FREE_MSDU_WORK is based on TASKLET_FREE_MSDU."
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Force TX via ALTX Q Support
  *------------------------------------------------------------------------------

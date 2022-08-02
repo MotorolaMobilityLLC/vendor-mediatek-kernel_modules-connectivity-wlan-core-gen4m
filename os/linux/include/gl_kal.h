@@ -278,6 +278,7 @@ struct BOOST_INFO {
 	struct THREAD_INFO rRxThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
+	int32_t i4TxFreeMsduWorkCpu;
 	u_int8_t fgDramBoost;
 };
 
@@ -2585,6 +2586,15 @@ void kalVnfUninit(void);
 void kalVnfInit(IN struct ADAPTER *prAdapter);
 void kalVnfEventHandler(IN struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
+
+void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo);
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+void kalTxFreeMsduWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu);
+void kalTxFreeMsduWork(struct work_struct *work);
+void kalTxFreeMsduWorkInit(struct GLUE_INFO *pr);
+void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr);
+void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work);
