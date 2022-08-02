@@ -1323,6 +1323,7 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 			DBGLOG(SAA, WARN,
 			       "Received a Deauth: wlanIdx[%d] w/o corresponding staRec\n",
 			       ucWlanIdx);
+			p2pRxDeauthNoWtbl(prAdapter, prStaRec, prSwRfb);
 			break;
 		}
 

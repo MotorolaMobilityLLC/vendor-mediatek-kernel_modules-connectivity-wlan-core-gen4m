@@ -124,4 +124,9 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 void p2pLinkStaRecFree(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec);
 
+void p2pRxDeauthNoWtbl(
+	IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec,
+	IN struct SW_RFB *prSwRfb);
+
 #endif /* !_P2P_MLO_H */
