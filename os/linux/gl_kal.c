@@ -13696,6 +13696,12 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 	struct THERMAL_TEMP_DATA temp_data;
 	uint32_t status;
 
+	if (kalIsHalted()) {
+		DBGLOG(REQ, INFO, "Skip query temp.\n");
+		status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
 	kalMemZero(&temp_data, sizeof(temp_data));
 	temp_data.eType = sensor->type;
 	temp_data.ucIdx = sensor->sendor_idx;
