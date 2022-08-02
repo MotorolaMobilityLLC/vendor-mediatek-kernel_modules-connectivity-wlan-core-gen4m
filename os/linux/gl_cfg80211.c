@@ -81,6 +81,7 @@
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
 #include "gl_p2p_os.h"
+#include "wlan_lib.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -6514,7 +6515,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 
 	DBGLOG(AIS, TRACE, "%s: u4Idx=%d\n", __func__, ucAisIndex);
 
-	if (ucAisIndex == KAL_AIS_NUM) {
+	if (ucAisIndex >= KAL_AIS_NUM) {
 		DBGLOG(INIT, ERROR, "wdev num reaches limit\n");
 		goto fail;
 	}
@@ -6627,7 +6628,25 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	/* prepare aisfsm/bssinfo */
 	kalIoctl(prGlueInfo, wlanoidInitAisFsm, &ucAisIndex, 1, &u4SetInfoLen);
 
-	return prWdev;
+	/* BssIdx should not be 0 if add successfully */
+	if (wlanGetBssIdxByNetInterface(prGlueInfo,
+		gprWdev[ucAisIndex]->netdev) != AIS_DEFAULT_INDEX)
+		return prWdev;
+
+	/* Do uninit flow since wlanoidInitAisFsm failed */
+	gprWdev[ucAisIndex] = NULL;
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_unregister_netdevice(prDevHandler);
+#else
+	unregister_netdevice(prDevHandler);
+#endif
+	/* Don't free netdev and wdev manually here!
+	 * Netdev and wdev will be free after kernel invoke
+	 * netdev priv_destructor/desctructor.
+	 * (after unregister netdev and unlock rtnl lock)
+	 */
+	prDevHandler = NULL;
+	prWdev = NULL;
 fail:
 	if (prDevHandler != NULL)
 		free_netdev(prDevHandler);
