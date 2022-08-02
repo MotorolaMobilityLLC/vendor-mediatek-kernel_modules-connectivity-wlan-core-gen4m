@@ -1809,6 +1809,10 @@ static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec)
 {
+	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+	if (ad->fgIsFwOwn == TRUE)
+		goto exit;
+
 	HAL_MCR_WR(ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
 		sec);
@@ -1818,6 +1822,9 @@ static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	HAL_MCR_WR(ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
 		SW_INT_TIME_SYNC);
+
+exit:
+	RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
 }
 
 static void mt6639_ccif_set_fw_log_read_pointer(struct ADAPTER *ad,
