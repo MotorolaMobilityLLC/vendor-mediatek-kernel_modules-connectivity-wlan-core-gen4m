@@ -41,6 +41,7 @@ bool gEmiCalUseEmiData;
 #endif
 
 static u_int8_t g_fgPreCal;
+static u_int8_t g_fgCalEnabled;
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -366,8 +367,8 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO, "SendPhyAction begin, tag: %d, cmd: %d\n",
-		u2Tag, ucCalCmd);
+	DBGLOG(INIT, INFO, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
+		u2Tag, ucCalCmd, !g_fgCalEnabled);
 
 	ASSERT(prAdapter);
 
@@ -572,6 +573,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #else
 		prPhyCal->ucCalSaveResult = 0;
 #endif
+		prPhyCal->ucSkipCal = !g_fgCalEnabled;
 
 		/* TAG HAL_PHY_ACTION_TAG_NVRAM */
 		prPhyTlv =
@@ -653,6 +655,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #else
 		prPhyCal->ucCalSaveResult = 0;
 #endif
+		prPhyCal->ucSkipCal = !g_fgCalEnabled;
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 		/* TAG HAL_PHY_ACTION_TAG_COM_FEM */
@@ -798,6 +801,11 @@ int wlanPreCalErr(void)
 		wfsys_unlock();
 
 	return 0;
+}
+
+void set_cal_enabled(u_int8_t enabled)
+{
+	g_fgCalEnabled = enabled;
 }
 #endif
 

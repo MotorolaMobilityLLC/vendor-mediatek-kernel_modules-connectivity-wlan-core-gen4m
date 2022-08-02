@@ -2352,6 +2352,7 @@ static int wlan_efuse_on(void)
 
 	/* expect unlock wfsys at the end of do_cal_cb */
 	wfsys_lock();
+	set_cal_enabled(FALSE);
 	ret = wlanFuncOnImpl();
 	if (ret)
 		goto exit;
@@ -2359,6 +2360,7 @@ static int wlan_efuse_on(void)
 	wlanFuncOffImpl();
 
 exit:
+	set_cal_enabled(TRUE);
 	if (ret) {
 		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
 		wfsys_unlock();
@@ -2384,6 +2386,7 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 		goto exit;
 	}
 
+	set_cal_enabled(FALSE);
 	ret = wlanFuncOn();
 	if (ret)
 		goto exit;
@@ -2391,6 +2394,7 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 	wlanFuncOff();
 
 exit:
+	set_cal_enabled(TRUE);
 	if (ret)
 		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
 	wfsys_unlock();

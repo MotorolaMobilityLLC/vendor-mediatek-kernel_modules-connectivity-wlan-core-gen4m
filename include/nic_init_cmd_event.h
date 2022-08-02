@@ -324,7 +324,8 @@ enum ENUM_HAL_PHY_ACTION_STATUS {
 struct INIT_CMD_PHY_ACTION_CAL {
 	uint8_t ucCmd;
 	uint8_t ucCalSaveResult;
-	uint8_t aucReserved[2];
+	uint8_t ucSkipCal;
+	uint8_t aucReserved[1];
 };
 
 struct INIT_EVENT_PHY_ACTION_RSP {

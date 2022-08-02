@@ -20,6 +20,7 @@ int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize);
 int wlanPreCalPwrOn(void);
 int wlanPreCal(void);
 int wlanPreCalErr(void);
+void set_cal_enabled(u_int8_t enabled);
 #endif
 uint8_t *wlanGetCalResult(uint32_t *prCalSize);
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para);
