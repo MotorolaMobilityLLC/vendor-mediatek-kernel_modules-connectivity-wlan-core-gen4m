@@ -204,10 +204,7 @@
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
 #include "cmm_asic_connac3x.h"
-
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 #include "pre_cal.h"
-#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 #include "he_rlm.h"

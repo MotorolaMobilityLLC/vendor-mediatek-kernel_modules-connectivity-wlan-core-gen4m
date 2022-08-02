@@ -78,7 +78,6 @@
 #include "wlan_pinctrl.h"
 #include "gl_coredump.h"
 #include "gl_rst.h"
-#include "pre_cal.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S

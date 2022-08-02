@@ -417,21 +417,21 @@ static int wlan_func_on_by_chrdev(void)
 	while (TRUE) {
 		if (retry >= MAX_RETRY_COUNT) {
 			DBGLOG(INIT, WARN,
-				"try acquire wfsys lock failed.\n");
+				"Timeout, pre_cal_flow: %d, locked: %d.\n",
+				is_cal_flow_finished(),
+				wfsys_is_locked());
 			ret = -EBUSY;
 			goto exit;
 		}
 
-		if (!wfsys_is_locked())
+		if (is_cal_flow_finished() && !wfsys_is_locked())
 			break;
 
 		retry++;
 		kalMdelay(100);
 	}
 
-#if 0 /* Leave acquire lock after connv3 driver power on return */
 	wfsys_lock();
-#endif
 	ret = wlanFuncOn();
 	wfsys_unlock();
 

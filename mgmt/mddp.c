@@ -1058,6 +1058,9 @@ void mddpNotifyWifiOnStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
+	if (!is_cal_flow_finished())
+		return;
+
 #if CFG_MTK_CCCI_SUPPORT
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
 #endif
@@ -1070,6 +1073,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 	int32_t ret = 0;
 
 	if (!mddpIsSupportMcifWifi())
+		return ret;
+
+	if (!is_cal_flow_finished())
 		return ret;
 
 	/* Notify Driver own timeout time before Wi-Fi on end */
@@ -1106,6 +1112,9 @@ void mddpNotifyWifiOffStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
+	if (!is_cal_flow_finished())
+		return;
+
 	mddpSetMDFwOwn();
 
 #if CFG_MTK_CCCI_SUPPORT
@@ -1129,6 +1138,9 @@ void mddpNotifyWifiOffEnd(void)
 	int32_t u4ClrBits = 0;
 
 	if (!mddpIsSupportMcifWifi())
+		return;
+
+	if (!is_cal_flow_finished())
 		return;
 
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_SHM)

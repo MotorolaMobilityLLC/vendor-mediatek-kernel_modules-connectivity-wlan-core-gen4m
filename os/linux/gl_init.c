@@ -7163,9 +7163,6 @@ int wlanFuncOn(void)
 	if (ret)
 		goto exit;
 
-	if (!wfsys_is_locked())
-		wfsys_lock();
-
 	ret = wlanFuncOnImpl();
 	if (ret) {
 		DBGLOG(HAL, ERROR, "wlanFuncOnImpl failed, ret=%d\n",

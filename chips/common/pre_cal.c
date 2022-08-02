@@ -42,6 +42,7 @@ bool gEmiCalUseEmiData;
 
 static u_int8_t g_fgPreCal;
 static u_int8_t g_fgCalEnabled;
+static u_int8_t g_fgEverCal;
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -788,6 +789,8 @@ exit:
 int wlanPreCal(void)
 {
 	DBGLOG(INIT, INFO, "wlanPreCal.\n");
+	if (!g_fgEverCal)
+		g_fgEverCal = TRUE;
 	if (wfsys_is_locked())
 		wfsys_unlock();
 
@@ -797,6 +800,8 @@ int wlanPreCal(void)
 int wlanPreCalErr(void)
 {
 	DBGLOG(INIT, INFO, "wlanPreCalErr.\n");
+	if (!g_fgEverCal)
+		g_fgEverCal = TRUE;
 	if (wfsys_is_locked())
 		wfsys_unlock();
 
@@ -806,6 +811,11 @@ int wlanPreCalErr(void)
 void set_cal_enabled(u_int8_t enabled)
 {
 	g_fgCalEnabled = enabled;
+}
+
+u_int8_t is_cal_flow_finished(void)
+{
+	return g_fgEverCal;
 }
 #endif
 
