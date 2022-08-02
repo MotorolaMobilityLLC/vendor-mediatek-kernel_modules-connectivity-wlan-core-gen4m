@@ -894,7 +894,8 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
-	uint32_t i;
+	uint32_t i, u4CurRxRate, u4MaxRxRate;
+	struct RxRateInfo rRxRateInfo = {0};
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -902,25 +903,37 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *)
 		prCmdInfo->pvInformationBuffer;
+	prGlueInfo = prAdapter->prGlueInfo;
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		prLinkSpeed->rLq[i].u2TxLinkSpeed
 			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
+
+		/*Fill Rx Rate in unit of 100bps*/
+		if (IS_BSS_INDEX_AIS(prAdapter, i) &&
+		    wlanGetRxRateByBssid(prGlueInfo, i, &u4CurRxRate,
+			    &u4MaxRxRate, &rRxRateInfo) == 0) {
+			prLinkSpeed->rLq[i].u2RxLinkSpeed =
+				u4CurRxRate * 1000;
+			prLinkSpeed->rLq[i].u4RxBw = rRxRateInfo.u4Bw;
+		} else {
+			prLinkSpeed->rLq[i].u2RxLinkSpeed = 0;
+			prLinkSpeed->rLq[i].u4RxBw = 0;
+		}
 
 		/* ranged from (-128 ~ 30) in unit of dBm */
 		prLinkSpeed->rLq[i].cRssi
 			= prLinkQuality->rLq[i].cRssi;
 
 		DBGLOG(REQ, TRACE,
-			"ucBssIdx = %d, TxRate = %u, signal = %d\n",
+			"ucBssIdx = %d, TxRate = %u, RxRate = %u, signal = %d\n",
 			i, prLinkSpeed->rLq[i].u2TxLinkSpeed,
+			prLinkSpeed->rLq[i].u2RxLinkSpeed,
 			prLinkSpeed->rLq[i].cRssi);
 	}
 	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
 
-
 	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
 		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}

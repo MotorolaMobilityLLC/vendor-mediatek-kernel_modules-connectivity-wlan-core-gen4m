@@ -107,7 +107,8 @@ static const uint32_t arBwCfg80211Table[] = {
 	RATE_INFO_BW_20,
 	RATE_INFO_BW_40,
 	RATE_INFO_BW_80,
-	RATE_INFO_BW_160
+	RATE_INFO_BW_160,
+	RATE_INFO_BW_320
 };
 
 /*******************************************************************************
