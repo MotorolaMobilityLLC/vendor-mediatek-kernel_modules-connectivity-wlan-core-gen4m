@@ -1608,7 +1608,7 @@ static s_int32 hqa_set_cfg_on_off(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char *data = hqa_frame->data;
-	u_int32 type, enable = 0, band_idx = 0;
+	u_int32 type = 0, enable = 0, band_idx = 0, ch_band = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1619,24 +1619,24 @@ static s_int32 hqa_set_cfg_on_off(
 				&data, (u_char *)&enable);
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
 
 	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
-
-	/* Set parameters */
-	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
-	CONFIG_SET_PARAM(serv_test, log_type, (u_char)type, band_idx);
-	CONFIG_SET_PARAM(serv_test, log_enable, (u_char)enable, band_idx);
-
-	ret = mt_serv_set_cfg_on_off(serv_test);
+	ret = mt_serv_set_cfg_on_off(
+			serv_test,
+			type,
+			enable,
+			band_idx,
+			ch_band);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: type=%u, enable=%u, band_idx=%u\n",
 		__func__, type, enable, band_idx));
 
 	update_hqa_frame(hqa_frame, 2, ret);
-
 	return ret;
 }
 
@@ -1884,7 +1884,7 @@ static s_int32 hqa_get_cfg_on_off(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char *data = hqa_frame->data;
-	s_int32 type = 0, band_idx = 0;
+	s_int32 type = 0, band_idx = 0, ch_band = 0;
 	u_int32 result = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -1894,11 +1894,18 @@ static s_int32 hqa_get_cfg_on_off(
 				&data, (u_char *)&type);
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
 
 	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
-	ret = mt_serv_get_cfg_on_off(serv_test, type, &result);
+	ret = mt_serv_get_cfg_on_off(
+			serv_test,
+			type,
+			band_idx,
+			ch_band,
+			&result);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: type=%u, result=%u\n", __func__, type, result));

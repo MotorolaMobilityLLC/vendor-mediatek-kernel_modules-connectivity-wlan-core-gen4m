@@ -1241,9 +1241,8 @@ struct test_configuration {
 	u_int32 rate;
 	u_int32 tx_fd_mode;
 
-	/* Set Cfg on off */
+	/* Set log type */
 	u_char log_type;
-	u_char log_enable;
 
 	/* MPS related */
 	struct test_mps_cb mps_cb;
@@ -1628,8 +1627,9 @@ struct test_operation {
 #endif
 	s_int32 (*op_get_cfg_on_off)(
 		struct test_wlan_info *winfos,
-		u_char band_idx,
 		u_int32 type,
+		u_int32 band_idx,
+		u_int32 ch_band,
 		u_int32 *result);
 	s_int32 (*op_get_tx_tone_pwr)(
 		struct test_wlan_info *winfos,
@@ -1670,7 +1670,10 @@ struct test_operation {
 		u_int32 cal_item);
 	s_int32 (*op_set_cfg_on_off)(
 		struct test_wlan_info *winfos,
-		u_int8 type, u_int8 enable, u_char band_idx);
+		u_int32 type,
+		u_int32 enable,
+		u_int32 band_idx,
+		u_int32 ch_band);
 	s_int32 (*op_set_dpd)(
 		struct test_wlan_info *winfos,
 		u_int32 on_off,

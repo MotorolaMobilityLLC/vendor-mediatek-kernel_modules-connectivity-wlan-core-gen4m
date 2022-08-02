@@ -652,7 +652,10 @@ s_int32 mt_op_set_clean_persta_txq(
 
 s_int32 mt_op_set_cfg_on_off(
 	struct test_wlan_info *winfos,
-	u_int8 type, u_int8 enable, u_char band_idx)
+	u_int32 type,
+	u_int32 enable,
+	u_int32 band_idx,
+	u_int32 ch_band)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
@@ -660,6 +663,9 @@ s_int32 mt_op_set_cfg_on_off(
 
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_BAND, ch_band);
 
 	/* type pass through to FW */
 	if (enable)
@@ -2827,19 +2833,22 @@ s_int32 mt_op_get_freq_offset_C2(
 
 s_int32 mt_op_get_cfg_on_off(
 	struct test_wlan_info *winfos,
-	u_char band_idx,
 	u_int32 type,
+	u_int32 band_idx,
+	u_int32 ch_band,
 	u_int32 *result)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	struct param_mtk_wifi_test_struct rf_at_info;
-	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 buf_len = 0;
 
-	if (pr_oid_funcptr == NULL)
-		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_BAND, ch_band);
 
 	rf_at_info.func_idx = RF_AT_FUNCID_GET_CFG_ON_OFF;
 	rf_at_info.func_data = type;

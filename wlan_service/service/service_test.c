@@ -1095,17 +1095,19 @@ s_int32 mt_serv_get_freq_offset(
 s_int32 mt_serv_get_cfg_on_off(
 	struct service_test *serv_test,
 	u_int32 type,
+	u_int32 band_idx,
+	u_int32 ch_band,
 	u_int32 *result)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
 	struct test_operation *ops;
 
 	ops = serv_test->test_op;
 	ret = ops->op_get_cfg_on_off(
 			serv_test->test_winfo,
-			ctrl_band_idx,
 			type,
+			band_idx,
+			ch_band,
 			result);
 
 	if (ret)
@@ -1888,23 +1890,23 @@ s_int32 mt_serv_log_on_off(
 	return ret;
 }
 
-
 s_int32 mt_serv_set_cfg_on_off(
-	struct service_test *serv_test)
+	struct service_test *serv_test,
+	u_int32 type,
+	u_int32 enable,
+	u_int32 band_idx,
+	u_int32 ch_band)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	struct test_configuration *configs;
-	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
 	struct test_operation *ops;
-
-	configs = &serv_test->test_config[ctrl_band_idx];
 
 	ops = serv_test->test_op;
 	ret = ops->op_set_cfg_on_off(
 			serv_test->test_winfo,
-			(u_int8)configs->log_type,
-			(u_int8)configs->log_enable,
-			ctrl_band_idx);
+			type,
+			enable,
+			band_idx,
+			ch_band);
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,

@@ -157,7 +157,10 @@ s_int32 mt_op_set_clean_persta_txq(
 	boolean sta_pause_enable, u_char omac_idx, u_char band_idx);
 s_int32 mt_op_set_cfg_on_off(
 	struct test_wlan_info *winfos,
-	u_int8 type, u_int8 enable, u_char band_idx);
+	u_int32 type,
+	u_int32 enable,
+	u_int32 band_idx,
+	u_int32 ch_band);
 s_int32 mt_op_log_on_off(
 	struct test_wlan_info *winfos,
 	u_char band_idx,
@@ -406,8 +409,9 @@ s_int32 mt_op_get_freq_offset_C2(
 #endif
 s_int32 mt_op_get_cfg_on_off(
 	struct test_wlan_info *winfos,
-	u_char band_idx,
 	u_int32 type,
+	u_int32 band_idx,
+	u_int32 ch_band,
 	u_int32 *result);
 s_int32 mt_op_get_tx_tone_pwr(
 	struct test_wlan_info *winfos,
