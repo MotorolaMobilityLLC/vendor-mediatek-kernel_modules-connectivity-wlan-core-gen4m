@@ -3082,7 +3082,8 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			    ret != WLAN_STATUS_PENDING)
 				return ret;
 		}
-	} else if (prMldBssInfo && prAdapter->rWifiVar.ucPresetLinkId != 0xff) {
+	} else if (IS_MLD_BSSINFO_VALID(prMldBssInfo) &&
+		prAdapter->rWifiVar.ucPresetLinkId != MLD_LINK_ID_NONE) {
 		struct BSS_INFO *bss;
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
@@ -3100,11 +3101,12 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					return ret;
 			}
 		}
-		prAdapter->rWifiVar.ucPresetLinkId = 0xff;
 	} else {
 		ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
 				u4SetBufferLen, pu4SetInfoLen, TRUE);
 	}
+	/* for single link mlo, supplicant also set link id, so always clear */
+	prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
 	return ret;
 #else
 	return wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
@@ -8992,7 +8994,8 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 				return WLAN_STATUS_NOT_ACCEPTED;
 			}
 
-			if (prAdapter->rWifiVar.ucPresetLinkId == 0xff ||
+			if (prAdapter->rWifiVar.ucPresetLinkId ==
+							MLD_LINK_ID_NONE ||
 			    prAdapter->rWifiVar.ucPresetLinkId ==
 							bss->ucLinkIndex) {
 				status = nicConfigPowerSaveProfile(prAdapter,
@@ -9005,7 +9008,7 @@ wlanoidSet802dot11PowerSaveProfile(IN struct ADAPTER *
 			}
 		}
 
-		prAdapter->rWifiVar.ucPresetLinkId = 0xff;
+		prAdapter->rWifiVar.ucPresetLinkId = MLD_LINK_ID_NONE;
 	} else
 #endif
 	{

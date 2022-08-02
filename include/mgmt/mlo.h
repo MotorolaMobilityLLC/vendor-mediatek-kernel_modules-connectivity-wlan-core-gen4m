@@ -10,6 +10,12 @@
 #ifndef _MLO_H
 #define _MLO_H
 
+#define IS_MLD_BSSINFO_VALID(__prMldBssInfo) \
+	(__prMldBssInfo && __prMldBssInfo->rBssList.u4NumElem > 1)
+
+#define IS_MLD_STAREC_VALID(__prMldStaRec) \
+	(__prMldStaRec && __prMldStaRec->rStarecList.u4NumElem > 1)
+
 #define BE_IS_ML_CTRL_TYPE(__pucIE, __TYPE) \
 	(IE_ID(__pucIE) == ELEM_ID_RESERVED && IE_LEN(__pucIE) >= 3 && \
 	 IE_ID_EXT(__pucIE) == ELEM_EXT_ID_MLD && \

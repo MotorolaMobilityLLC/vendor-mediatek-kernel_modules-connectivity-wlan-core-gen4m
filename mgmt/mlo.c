@@ -12,12 +12,6 @@
 
 #define MAX_DUP_IE_COUNT 64
 
-#define IS_MLD_BSSINFO_VALID(__prMldBssInfo) \
-	(__prMldBssInfo && __prMldBssInfo->rBssList.u4NumElem > 1)
-
-#define IS_MLD_STAREC_VALID(__prMldStaRec) \
-	(__prMldStaRec && __prMldStaRec->rStarecList.u4NumElem > 1)
-
 uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 	uint16_t u2PacketLen, struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
@@ -1367,7 +1361,7 @@ uint32_t mldCalculateRnrIELen(
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!mld_bssinfo || mld_bssinfo->rBssList.u4NumElem <= 1)
+	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return 0;
 
 	/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
@@ -1389,7 +1383,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!mld_bssinfo || mld_bssinfo->rBssList.u4NumElem <= 1)
+	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return;
 
 	rnr = (struct IE_RNR *)	((uint8_t *)prMsduInfo->prPacket +
