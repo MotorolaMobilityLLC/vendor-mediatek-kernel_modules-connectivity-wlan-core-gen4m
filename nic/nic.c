@@ -919,7 +919,7 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter,
 	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 
 	if (prCmdInfo) {
-		DBGLOG(TX, INFO, "Get command: %p, %ps, cmd=0x%02X, seq=%u",
+		DBGLOG(TX, TRACE, "Get command: %p, %ps, cmd=0x%02X, seq=%u",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 

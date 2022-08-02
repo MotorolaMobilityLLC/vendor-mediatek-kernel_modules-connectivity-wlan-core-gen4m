@@ -13598,7 +13598,7 @@ exit:
 		*temp = THERMAL_TEMP_INVALID;
 	}
 
-	DBGLOG(REQ, INFO, "[%s] temp: %d\n",
+	DBGLOG(REQ, TRACE, "[%s] temp: %d\n",
 		sensor->name, *temp);
 
 	return 0;

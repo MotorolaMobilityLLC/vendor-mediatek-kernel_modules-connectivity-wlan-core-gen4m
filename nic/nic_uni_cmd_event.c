@@ -1277,6 +1277,7 @@ uint32_t nicUniCmdSetDomainV2(struct ADAPTER *ad,
 	valid_channel_count = cmd->arActiveChannels.u1ActiveChNum2g +
 			      cmd->arActiveChannels.u1ActiveChNum5g +
 			      cmd->arActiveChannels.u1ActiveChNum6g;
+
 	max_cmd_len = sizeof(struct UNI_CMD_DOMAIN_SET_INFO) +
 	     sizeof(struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST) +
 	     (valid_channel_count * sizeof(struct CMD_DOMAIN_CHANNEL));

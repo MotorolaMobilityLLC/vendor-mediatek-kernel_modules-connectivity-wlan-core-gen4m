@@ -2360,7 +2360,7 @@ void wlanTxCmdDoneCb(IN struct ADAPTER *prAdapter,
 	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 		removeDuplicatePendingCmd(prAdapter, prCmdInfo);
 
-		DBGLOG(TX, INFO, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
+		DBGLOG(TX, TRACE, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
 			prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 
