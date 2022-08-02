@@ -1780,6 +1780,12 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
 	uint8_t i = 0;
 	int ret = 0;
+	uint32_t pos = 0;
+	char *buf;
+
+#define BUF_SIZE 1024U
+	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	kalMemZero(buf, BUF_SIZE);
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
@@ -1820,11 +1826,20 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 #endif
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 		en_wake_ret = enable_irq_wake(irqn);
-		DBGLOG(INIT, INFO, "request_irq(%d %s %d %d)\n",
-			irqn, prMsiLayout->name, ret, en_wake_ret);
+		if ((BUF_SIZE - pos) > 0) {
+			pos += kalSnprintf(buf + pos, BUF_SIZE - pos,
+				"irqn:%d, ret:%d, en_wake_ret:%d%s",
+				irqn, ret, en_wake_ret,
+				i == prMsiInfo->u4MsiNum - 1 ? "\n" : "; ");
+		}
+
 		if (ret)
 			goto err;
 	}
+	DBGLOG(HAL, INFO, "request_irq info: %s", buf);
+
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
 
 	return 0;
 
@@ -1840,6 +1855,10 @@ err:
 
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
 	}
+
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+
 	return ret;
 #else
 	return -EOPNOTSUPP;
