@@ -14048,25 +14048,45 @@ static void kalVnfBatNotifyCb(unsigned int volt)
 		return;
 	}
 
+	/* 1. If there is volt info handler in process,
+	 *    skip to trigger volt info work this time,
+	 *    Althought the volt will be inaccurate,
+	 *    but expected volt info work will re-trigger again soon
+	 * 2. Since lbat handler will get lbat lock and release after
+	 *    callback function return(which is kalVnfBatNotifyCb).
+	 *    However if there are somebody schedule the the volt info work
+	 *    first(run kalVnfHandler, get vnf lock) while lbat trigger the
+	 *    volt info callback(kalVnfHandler has not executed finish
+	 *    yet), it will cause deadlock due to kalVnfHandler will thry to
+	 *    get lbat lock at modify the volt threshold progress, but due
+	 *    to lbat have take it before, so it can't take it that the deadlock
+	 *    occur.
+	 * 3. Since the problem in (2), the solution is to confirm whether there
+	 *    is volt info work in progress when lbat callback. If the volt info
+	 *    work is in progress, skip this time callback volt info sync, so
+	 *    that lbat can be return to release lbat lock.
+	 *    The original volt info work which is in progress will still
+	 *    continue to execute and will not be block by lbat lock while
+	 *    modify volt threshold.
+	 */
+
+	if ((prAdapter->rWifiVar.fgVnfEn != TRUE) ||
+			(_rVnfInfo.eState == VOLT_INFO_STATE_IN_PROGRESS)) {
+		DBGLOG(SW4, INFO,
+			"Skip volt info work, volt[%d]En[%d]State[%d]\n",
+			volt,
+			prAdapter->rWifiVar.fgVnfEn,
+			_rVnfInfo.eState);
+		return;
+	}
 	/* To avoid concurrent access for _rVnfInfo
 	 * between battery notify callback thread
 	 * and FW get voltage info event handler on
 	 * Wifi driver main thread.
 	 */
 	mutex_lock(&_rVnfInfo.rMutex);
-
-	/* If there is volt info handler in process,
-	 * skip to trigger volt info work this time,
-	 * Althought the volt will be inaccurate,
-	 * but expected volt info work will re-trigger again soon
-	 */
-	if (prAdapter->rWifiVar.fgVnfEn &&
-			_rVnfInfo.eState != VOLT_INFO_STATE_IN_PROGRESS) {
-		DBGLOG(SW4, INFO, "volt[%d], Start volt info work", volt);
-		kalVnfSchedule(&_rVnfInfo);
-	} else {
-		DBGLOG(SW4, INFO, "volt[%d], Skip volt info work", volt);
-	}
+	DBGLOG(SW4, INFO, "volt[%d], Start volt info work\n", volt);
+	kalVnfSchedule(&_rVnfInfo);
 	mutex_unlock(&_rVnfInfo.rMutex);
 }
 /*----------------------------------------------------------------------------*/
