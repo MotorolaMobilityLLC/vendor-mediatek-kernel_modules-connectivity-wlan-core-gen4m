@@ -7814,6 +7814,11 @@ skipLabel2:
 	if (txPwrParseAppendTag(pcContCur, pcContEnd, prCurElement))
 		DBGLOG(RLM, INFO, "txPwrParseAppendTag fail (%s).", pcContent);
 #endif
+	if (pcContBackUp != NULL)
+		kalMemFree(pcContBackUp, VIR_MEM_TYPE, u4BackUpSize);
+	if (pcContNext != NULL)
+		kalMemFree(pcContNext, VIR_MEM_TYPE, u4NextContSize);
+	/* pcCurElement will be free on wifi off */
 	return prCurElement;
 
 clearLabel:
