@@ -1632,6 +1632,8 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 uint32_t value_ori;
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
+	uint32_t value = 0;
+
 	if (fgEn) {
 		/* Restore original setting*/
 		if ((value_ori & 0xf00) == 0) {
@@ -1653,11 +1655,13 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 		HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value_ori);
 		if ((value_ori & 0xf00) == 0) {
 			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0x20f);
+			HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
 			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xe0f);
 			if (pcie_vir_addr)
 				writel(0xc0f, (pcie_vir_addr + 0x194));
 
 			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
+			HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
 		} else {
 			DBGLOG(HAL, INFO, "Disable aspm no match\n");
 		}
