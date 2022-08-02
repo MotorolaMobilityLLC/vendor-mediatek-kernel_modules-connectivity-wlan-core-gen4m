@@ -166,7 +166,7 @@ static void ehtRlmFillBW20MCSMap(
 	}
 }
 
-static void ehtRlmFillCapIE(
+void ehtRlmFillCapIE(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)

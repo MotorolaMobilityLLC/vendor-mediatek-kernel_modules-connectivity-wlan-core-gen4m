@@ -5781,11 +5781,13 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int32_t i4BytesWritten = -1;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint8_t aucMacAddr[MAC_ADDR_LEN], aucIe[100];
 	uint32_t u4BufLen, rStatus, u4Freq;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
 	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -5797,17 +5799,26 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 	}
 
 	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 3) {
+		struct BSS_DESC *prBssDesc;
+
 		DBGLOG(REQ, INFO, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 		wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
 
 		i4BytesWritten = kalkStrtou32(apcArgv[2], 0, &u4Freq);
-		if (i4BytesWritten)
+		if (i4BytesWritten) {
 			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
 					i4BytesWritten);
+			return -1;
+		}
+		prBssDesc = scanSearchBssDescByBssid(prAdapter, aucMacAddr);
+		if (!prBssDesc) {
+			DBGLOG(REQ, ERROR, "Can't find "MACSTR"\n",
+					MAC2STR(aucMacAddr));
+			return -1;
+		}
 
-		prScanRequest =
-			kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV),
-				VIR_MEM_TYPE);
+		prScanRequest =	kalMemAlloc(
+			sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
 
 		if (prScanRequest == NULL) {
 			DBGLOG(REQ, ERROR, "alloc scan request fail\n");
@@ -5817,7 +5828,8 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		kalMemZero(aucIe, 100);
-		mldGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
+		prScanRequest->u4IELength = mldFillScanIE(prAdapter, prBssDesc,
+			aucIe, sizeof(aucIe), AIS_DEFAULT_BSS_INDEX);
 		prScanRequest->pucIE = aucIe;
 		prScanRequest->arChannel[0].ucChannelNum =
 					nicFreq2ChannelNum(u4Freq * 1000);
@@ -5842,16 +5854,14 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,
 			prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV),
 			&u4BufLen);
-
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
+		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "fail 0x%x\n", rStatus);
-
+			return -1;
+		}
 	} else {
 		DBGLOG(REQ, ERROR, "fail invalid data\n");
-		rStatus = WLAN_STATUS_INVALID_DATA;
 	}
-	return rStatus;
+	return i4BytesWritten;
 }
 
 int priv_driver_get_ml_capa(IN struct net_device *prNetDev,

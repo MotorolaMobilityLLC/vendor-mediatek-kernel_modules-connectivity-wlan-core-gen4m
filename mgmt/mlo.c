@@ -508,6 +508,7 @@ uint8_t *mldGenerateBasicCommonInfo(
 	IN struct MSDU_INFO *prMsduInfo,
 	IN uint16_t u2FrameCtrl)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t *cp;
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct BSS_INFO *bss;
@@ -541,8 +542,10 @@ uint8_t *mldGenerateBasicCommonInfo(
 			present |= (ML_CTRL_LINK_ID_INFO_PRESENT |
 				    ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
 
+			/* mld id for mbss only
 			if (mld_bssinfo)
 				present |= ML_CTRL_MLD_ID_PRESENT;
+			*/
 		}
 	}
 
@@ -571,17 +574,24 @@ uint8_t *mldGenerateBasicCommonInfo(
 		*cp++ = 0;
 	}
 	if (BE_IS_ML_CTRL_PRESENCE_MLD_CAP(common->u2Ctrl)) {
+		uint16_t mld_cap = 0;
+
 		/* Set to the maximum number of affiliated STAs in the non-AP
 		 * MLD that support simultaneous transmission or reception of
 		 * frames minus 1. For an AP MLD, set to the number of
 		 * affiliated APs minus 1
 		 */
-		if (mld_bssinfo) {
-			WLAN_SET_FIELD_16(cp,
+		if (prWifiVar->ucMaxSimultaneousLinks != 0xff) {
+			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
+				prWifiVar->ucMaxSimultaneousLinks);
+		} else if (mld_bssinfo) {
+			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap,
 				mld_bssinfo->rBssList.u4NumElem - 1);
 		} else if (bss) {
-			WLAN_SET_FIELD_16(cp, 0);
+			BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(mld_cap, 0);
 		}
+
+		WLAN_SET_FIELD_16(cp, mld_cap);
 		DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
 			*(uint16_t *)cp);
 		cp += 2;
@@ -602,10 +612,256 @@ uint8_t *mldGenerateBasicCommonInfo(
 	return (uint8_t *)common;
 }
 
-void mldGenerateMlProbeReqIE(uint8_t *pucIE,
-	uint32_t *u4IELength, uint8_t ucMldId)
+void mldSetMldIdFromRnrMlParam(uint8_t *aucBSSID, struct IE_RNR *rnr,
+	struct MULTI_LINK_INFO *prMlInfo)
 {
+	uint8_t i, j;
+	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
+	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint32_t u4MldParam = 0;
+	uint8_t band;
+	uint8_t *pos = NULL;
+
+	if (!rnr)
+		return;
+
+	pos = rnr->aucInfoField;
+	do {
+		struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
+			(struct NEIGHBOR_AP_INFO_FIELD *)pos;
+
+		/* get channel number for this neighborAPInfo */
+		scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
+		u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_COUNT)
+					>> TBTT_INFO_HDR_COUNT_OFFSET)
+					+ 1;
+		u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
+					TBTT_INFO_HDR_LENGTH)
+					>> TBTT_INFO_HDR_LENGTH_OFFSET;
+
+		for (i = 0; i < u2TbttInfoCount; i++) {
+			j = i * u2TbttInfoLength;
+
+			if (u2TbttInfoLength == 10) {
+				ucMldParamOffset = 7;
+			} else if (u2TbttInfoLength >= 16 &&
+					  u2TbttInfoLength <= 255) {
+				ucMldParamOffset = 13;
+			} else {
+				continue;
+			}
+
+			/* Directly copy 4 bytes content, but MLD param is only
+			 * 3 bytes actually. We will only use 3 bytes content.
+			 */
+			kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
+				aucTbttInfoSet[j + ucMldParamOffset],
+				sizeof(u4MldParam));
+			ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+			ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
+				MLD_PARAM_LINK_ID_SHIFT;
+			ucBssParamChangeCount =
+				(u4MldParam &
+				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
+				MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
+
+			if (EQUAL_MAC_ADDR(aucBSSID,
+			       &prNeighborAPInfoField->aucTbttInfoSet[j + 1])) {
+				prMlInfo->ucMldId = ucMldId;
+				DBGLOG(ML, INFO,
+					MACSTR " MldId=%d\n LinkId=%d",
+					MAC2STR(aucBSSID), ucMldId,
+					ucMldLinkId);
+				return;
+			}
+		}
+
+		pos = (uint8_t *)rnr + 4 + u2TbttInfoCount * u2TbttInfoLength;
+	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+}
+
+uint8_t *mldHandleRnrMlParam(uint8_t *ie,
+	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride)
+{
+	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
+		(struct NEIGHBOR_AP_INFO_FIELD *)ie;
+	uint8_t i, j;
+	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
+	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint32_t u4MldParam = 0;
+	uint8_t band;
+	struct STA_PROFILE *prProfile = NULL;
+
+	/* get channel number for this neighborAPInfo */
+	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
+	u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
+				TBTT_INFO_HDR_COUNT)
+				>> TBTT_INFO_HDR_COUNT_OFFSET)
+				+ 1;
+	u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
+				TBTT_INFO_HDR_LENGTH)
+				>> TBTT_INFO_HDR_LENGTH_OFFSET;
+
+	DBGLOG(ML, LOUD, "dump RNR AP info field\n");
+	DBGLOG_MEM8(ML, LOUD, ie, 4 + u2TbttInfoCount * u2TbttInfoLength);
+
+	for (i = 0; i < u2TbttInfoCount; i++) {
+		j = i * u2TbttInfoLength;
+
+		/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter */
+		if (u2TbttInfoLength == 10) {
+			ucMldParamOffset = 7;
+		} else if (u2TbttInfoLength >= 16 &&
+				  u2TbttInfoLength <= 255) {
+			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID +
+			 * BSS parameters + 20MHz PSD + MLD Parameter
+			 */
+			ucMldParamOffset = 13;
+		} else {
+			/* only handle neighbor AP info that MLD parameter
+			 * and BSSID both exist
+			 */
+			continue;
+		}
+
+		DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
+			MAC2STR(&prNeighborAPInfoField->aucTbttInfoSet[j + 1]));
+
+		/* Directly copy 4 bytes content, but MLD param is only 3 bytes
+		 * actually. We will only use 3 bytes content.
+		 */
+		kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
+			aucTbttInfoSet[j + ucMldParamOffset],
+			sizeof(u4MldParam));
+		ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
+		ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
+			MLD_PARAM_LINK_ID_SHIFT;
+		ucBssParamChangeCount =
+			(u4MldParam & MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
+			MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
+
+		DBGLOG(ML, TRACE,
+			"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
+			ucMldId, ucMldLinkId, ucBssParamChangeCount);
+
+		if (ucMldId != prMlInfo->ucMldId ||
+		    ucMldLinkId == prMlInfo->ucLinkId)
+			continue;
+
+		if (!fgOverride) {
+			for (j = 0; j < prMlInfo->ucProfNum; j++) {
+				prProfile = &prMlInfo->rStaProfiles[j];
+				if (prProfile->ucLinkId == ucMldLinkId)
+					break;
+			}
+			if (j >= prMlInfo->ucProfNum) {
+				DBGLOG(ML, WARN, "invalid link%d", ucMldLinkId);
+				continue;
+			}
+		} else {
+			if (prMlInfo->ucProfNum >= MLD_LINK_MAX) {
+				DBGLOG(ML, WARN, "no space for link_id: %d",
+					ucMldLinkId);
+				continue;
+			}
+			prProfile =
+				&prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
+			prProfile->ucLinkId = ucMldLinkId;
+		}
+
+		switch (band) {
+		case KAL_BAND_2GHZ:
+			prProfile->rChnlInfo.eBand = BAND_2G4;
+			break;
+		case KAL_BAND_5GHZ:
+			prProfile->rChnlInfo.eBand = BAND_5G;
+			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case KAL_BAND_6GHZ:
+			prProfile->rChnlInfo.eBand = BAND_6G;
+			break;
+#endif
+		default:
+			DBGLOG(ML, WARN, "unsupported band: %d\n",
+				band);
+			break;
+		}
+
+		prProfile->rChnlInfo.ucChannelNum =
+			prNeighborAPInfoField->ucChannelNum;
+
+		prProfile->rChnlInfo.ucChnlBw =
+			rlmOpClassToBandwidth(prNeighborAPInfoField->ucOpClass);
+
+		prProfile->rChnlInfo.u4CenterFreq1 = 0;
+		prProfile->rChnlInfo.u4CenterFreq2 = 0;
+		DBGLOG(ML, TRACE,
+			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
+			prProfile->ucLinkId,
+			prNeighborAPInfoField->ucOpClass,
+			prProfile->rChnlInfo.eBand,
+			prProfile->rChnlInfo.ucChannelNum,
+			prProfile->rChnlInfo.ucChnlBw,
+			prProfile->rChnlInfo.u4CenterFreq1,
+			prProfile->rChnlInfo.u4CenterFreq2);
+	}
+
+	return ie + 4 + u2TbttInfoCount * u2TbttInfoLength;
+}
+
+uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
+	uint32_t u4IELength)
+{
+	struct MULTI_LINK_INFO parse, *info = &parse;
+	struct IE_RNR *rnr;
+	uint8_t *ml, *pos;
 	struct IE_MULTI_LINK_CONTROL *common;
+	uint8_t i;
+
+	ml = (uint8_t *) mldFindMlIE(prBssDesc->pucIeBuf,
+		prBssDesc->u2IELength, ML_CTRL_TYPE_BASIC);
+	if (!ml) {
+		DBGLOG(ML, INFO, "probe resp but no ml\n");
+		return 0;
+	}
+
+	/* parsing rnr & ml */
+	kalMemSet(info, 0, sizeof(*info));
+	mldParseBasicMlIE(info, ml,
+		IE_SIZE(ml),
+		prBssDesc->aucBSSID,
+		prBssDesc->fgSeenProbeResp ?
+		MAC_FRAME_PROBE_RSP : MAC_FRAME_BEACON,
+		__func__);
+
+	if (!info->ucValid) {
+		DBGLOG(ML, INFO, "ml ie not valid\n");
+		return 0;
+	}
+
+	/* get channel info from rnr if exist*/
+	rnr = (struct IE_RNR *) kalFindIeExtIE(ELEM_ID_RNR, 0,
+		prBssDesc->pucIeBuf,
+		prBssDesc->u2IELength);
+	if (!rnr) {
+		DBGLOG(ML, INFO, "probe resp but no rnr\n");
+		return 0;
+	}
+
+	/* reset profile num, will fill it from RNR */
+	info->ucProfNum = 0;
+	mldSetMldIdFromRnrMlParam(prBssDesc->aucBSSID, rnr, info);
+
+	pos = rnr->aucInfoField;
+	do {
+		pos = mldHandleRnrMlParam(pos, info, TRUE);
+	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+
+	if (u4IELength < 7 + info->ucProfNum * 4) {
+		DBGLOG(ML, INFO, "no space for ml prob req link info\n");
+		return 0;
+	}
 
 	common = (struct IE_MULTI_LINK_CONTROL *)pucIE;
 
@@ -622,12 +878,69 @@ void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	/* Common Info Length = 2 */
 	*common->aucCommonInfo = 2;
 	/* Assign MLD ID*/
-	*(common->aucCommonInfo + 1) = ucMldId;
+	*(common->aucCommonInfo + 1) = info->ucMldId;
 
-	*u4IELength += IE_SIZE(common);
+	pos = common->aucCommonInfo + 2;
+	for (i = 0; i < info->ucProfNum; i++) {
+		struct IE_ML_STA_CONTROL *sta_ctrl;
+		struct STA_PROFILE *prProfile = &info->rStaProfiles[i];
 
-	DBGLOG(ML, LOUD, "Dump ML probe req IE\n");
-	DBGLOG_MEM8(ML, LOUD, common, IE_SIZE(common));
+		sta_ctrl = (struct IE_ML_STA_CONTROL *)pos;
+		/* Subelement ID 0: Per-STA Profile */
+		sta_ctrl->ucSubID = 0;
+		/* Length = 2, only contain 2bytes STA control, no STA prof */
+		sta_ctrl->ucLength = 2;
+		/* STA control, bits[0:3] is Link ID */
+
+		BE_SET_ML_STA_CTRL_LINK_ID(sta_ctrl->u2StaCtrl,
+			prProfile->ucLinkId);
+		/* STA control, bit[4] is Complete Profile flag */
+		BE_SET_ML_STA_CTRL_COMPLETE_PROFILE(sta_ctrl->u2StaCtrl);
+
+		common->ucLength += IE_SIZE(sta_ctrl);
+		pos += IE_SIZE(sta_ctrl);
+	}
+
+	DBGLOG(ML, INFO, "Dump ML probe req IE\n");
+	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
+
+	return IE_SIZE(common);
+}
+
+uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct MSDU_INFO *msdu = NULL;
+	uint32_t total_len = 0, eht_len = 0;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ML, INFO, "no bssinfo %d\n", ucBssIndex);
+		goto done;
+	}
+
+	total_len += mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength);
+
+	eht_len = ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, NULL);
+	if (total_len + eht_len > u4IELength)
+		goto done;
+
+	msdu = cnmMgtPktAlloc(prAdapter, eht_len);
+	if (msdu == NULL)
+		goto done;
+
+	msdu->ucBssIndex = ucBssIndex;
+	ehtRlmFillCapIE(prAdapter, prBssInfo, msdu);
+
+	kalMemCopy(pucIE + total_len, (uint8_t *) msdu->prPacket,
+		msdu->u2FrameLength);
+
+	total_len += msdu->u2FrameLength;
+
+done:
+	cnmMgtPktFree(prAdapter, msdu);
+	return total_len;
 }
 
 uint8_t mldDupProfileSkipIE(uint8_t *pucBuf)
@@ -1890,125 +2203,6 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	return (struct SW_RFB *) QUEUE_GET_HEAD(que);
 }
 
-uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
-			      IN struct MULTI_LINK_INFO *prMlInfo)
-{
-	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
-		(struct NEIGHBOR_AP_INFO_FIELD *)ie;
-	uint8_t i, j;
-	uint8_t ucMldParamOffset, ucMldId, ucMldLinkId, ucBssParamChangeCount;
-	uint16_t u2TbttInfoCount, u2TbttInfoLength;
-	uint32_t u4MldParam = 0;
-	uint8_t band;
-	struct STA_PROFILE *prProfile = NULL;
-
-	/* get channel number for this neighborAPInfo */
-	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &band);
-	u2TbttInfoCount = ((prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_COUNT)
-				>> TBTT_INFO_HDR_COUNT_OFFSET)
-				+ 1;
-	u2TbttInfoLength = (prNeighborAPInfoField->u2TbttInfoHdr &
-				TBTT_INFO_HDR_LENGTH)
-				>> TBTT_INFO_HDR_LENGTH_OFFSET;
-
-	DBGLOG(ML, LOUD, "dump RNR AP info field\n");
-	DBGLOG_MEM8(ML, LOUD, ie, 4 + u2TbttInfoCount * u2TbttInfoLength);
-
-	for (i = 0; i < u2TbttInfoCount; i++) {
-		j = i * u2TbttInfoLength;
-
-		switch (u2TbttInfoLength) {
-			/* 10: Neighbor AP TBTT Offset + BSSID + MLD Parameter
-			 */
-			case 10:
-				ucMldParamOffset = 7;
-				break;
-			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID +
-			 * BSS parameters + 20MHz PSD + MLD Parameter */
-			case 16 ... 255:
-				ucMldParamOffset = 13;
-				break;
-			default:
-			/* only handle neighbor AP info that MLD parameter
-			 * and BSSID both exist*/
-				continue;
-		}
-
-		DBGLOG(ML, LOUD, "RnrIe[%x][" MACSTR "]\n", i,
-			MAC2STR(&prNeighborAPInfoField->aucTbttInfoSet[j + 1]));
-
-		/* Directly copy 4 bytes content, but MLD param is only 3 bytes
-		 * actually. We will only use 3 bytes content.
-		 */
-		kalMemCopy(&u4MldParam, &prNeighborAPInfoField->
-			aucTbttInfoSet[j + ucMldParamOffset],
-			sizeof(u4MldParam));
-		ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
-		ucMldLinkId = (u4MldParam & MLD_PARAM_LINK_ID_MASK) >>
-			MLD_PARAM_LINK_ID_SHIFT;
-		ucBssParamChangeCount =
-			(u4MldParam & MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK) >>
-			MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT;
-
-		DBGLOG(ML, TRACE,
-			"MldId=%d, MldLinkId=%d, BssParChangeCount=%d\n",
-			ucMldId, ucMldLinkId, ucBssParamChangeCount);
-
-		if (ucMldLinkId == prMlInfo->ucLinkId)
-			continue;
-
-		for (j = 0; j < prMlInfo->ucProfNum; j++) {
-			prProfile = &prMlInfo->rStaProfiles[j];
-			if (prProfile->ucLinkId == ucMldLinkId)
-				break;
-		}
-
-		if (j >= prMlInfo->ucProfNum) {
-			DBGLOG(ML, WARN, "invalid link_id: %d", ucMldLinkId);
-			continue;
-		}
-
-		switch (band) {
-			case KAL_BAND_2GHZ:
-				prProfile->rChnlInfo.eBand = BAND_2G4;
-				break;
-			case KAL_BAND_5GHZ:
-				prProfile->rChnlInfo.eBand = BAND_5G;
-				break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			case KAL_BAND_6GHZ:
-				prProfile->rChnlInfo.eBand = BAND_6G;
-				break;
-#endif
-			default:
-				DBGLOG(ML, WARN, "unsupported band: %d\n",
-					band);
-			break;
-		}
-
-		prProfile->rChnlInfo.ucChannelNum =
-			prNeighborAPInfoField->ucChannelNum;
-
-		prProfile->rChnlInfo.ucChnlBw =
-			rlmOpClassToBandwidth(prNeighborAPInfoField->ucOpClass);
-
-		prProfile->rChnlInfo.u4CenterFreq1 = 0;
-		prProfile->rChnlInfo.u4CenterFreq2 = 0;
-		DBGLOG(ML, TRACE,
-			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
-			prProfile->ucLinkId,
-			prNeighborAPInfoField->ucOpClass,
-			prProfile->rChnlInfo.eBand,
-			prProfile->rChnlInfo.ucChannelNum,
-			prProfile->rChnlInfo.ucChnlBw,
-			prProfile->rChnlInfo.u4CenterFreq1,
-			prProfile->rChnlInfo.u4CenterFreq2);
-	}
-
-	return ie + 4 + u2TbttInfoCount * u2TbttInfoLength;
-}
-
 uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	struct SW_RFB *prSrc, struct STA_PROFILE *prSta,
 	struct STA_RECORD *prStaRec, const char *pucDesc)
@@ -2167,9 +2361,12 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		return NULL;
 	}
 
+	/* set mld id */
+	mldSetMldIdFromRnrMlParam(mgmt->aucBSSID, rnr, info);
+
 	pos = rnr->aucInfoField;
 	do {
-		pos = mldHandleRnrMlParam(pos, info);
+		pos = mldHandleRnrMlParam(pos, info, FALSE);
 	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
 
 	for (i = 0; i < info->ucProfNum; i++) {

@@ -62,6 +62,12 @@
 #define BE_IS_ML_CTRL_PRESENCE_MLD_ID(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_ID_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
+#define BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(_u2Cap, _num) \
+{\
+	(_u2Cap) &= ~(MLD_CAP_MAX_SIMULTANEOUS_LINK_MASK); \
+	(_u2Cap) |= (((_num) << (MLD_CAP_MAX_SIMULTANEOUS_LINK_SHIFT)) \
+	& (MLD_CAP_MAX_SIMULTANEOUS_LINK_MASK)); \
+}
 
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
@@ -196,8 +202,11 @@ uint8_t *mldGenerateBasicCommonInfo(
 	IN struct MSDU_INFO *prMsduInfo,
 	IN uint16_t u2FrameCtrl);
 
-void mldGenerateMlProbeReqIE(uint8_t *pucIE,
-	uint32_t *u4IELength, uint8_t ucMldId);
+uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc,
+	uint8_t *pucIE, uint32_t u4IELength);
+
+uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t ucBssIndex);
 
 uint8_t *mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,
