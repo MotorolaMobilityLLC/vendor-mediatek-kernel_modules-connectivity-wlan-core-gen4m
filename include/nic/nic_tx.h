@@ -212,6 +212,13 @@
 #define NIC_TX_DESC_DRIVER_PID_MIN              1
 #define NIC_TX_DESC_DRIVER_PID_MAX              127
 
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+#define NIC_TX_DESC_DRIVER_PID_DATA_MIN         1
+#define NIC_TX_DESC_DRIVER_PID_DATA_MAX         31
+#define NIC_TX_DESC_DRIVER_PID_MGMT_MIN         32
+#define NIC_TX_DESC_DRIVER_PID_MGMT_MAX         127
+#endif
+
 #define NIC_TX_DATA_DEFAULT_RETRY_COUNT_LIMIT   30
 #define NIC_TX_MGMT_DEFAULT_RETRY_COUNT_LIMIT   30
 
@@ -747,7 +754,7 @@ enum ENUM_TX_PACKET_TYPE {
 	TX_PACKET_TYPE_DATA = 0,
 	TX_PACKET_TYPE_MGMT,
 	/* TX_PACKET_TYPE_1X, */
-	X_PACKET_TYPE_NUM
+	TX_PACKET_TYPE_NUM
 };
 
 enum ENUM_TX_PACKET_SRC {
@@ -2051,8 +2058,8 @@ void nicTxSetPktMoreData(IN struct MSDU_INFO *prCurrentMsduInfo,
 void nicTxSetPktEOSP(IN struct MSDU_INFO *prCurrentMsduInfo,
 	IN u_int8_t fgSetEOSPBit);
 
-uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucWlanIndex);
+uint8_t nicTxAssignPID(struct ADAPTER *prAdapter,
+	uint8_t ucWlanIndex, enum ENUM_TX_PACKET_TYPE type);
 
 uint32_t
 nicTxDummyTxDone(IN struct ADAPTER *prAdapter,

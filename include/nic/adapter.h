@@ -1718,7 +1718,11 @@ struct ADAPTER {
 
 	uint8_t ucCmdSeqNum;
 	uint8_t ucTxSeqNum;
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+	uint8_t aucPidPool[WTBL_SIZE][TX_PACKET_TYPE_NUM];
+#else
 	uint8_t aucPidPool[WTBL_SIZE];
+#endif
 
 #if CFG_SUPPORT_LIMITED_PKT_PID
 	/* last timestamp of pkt with txdone */

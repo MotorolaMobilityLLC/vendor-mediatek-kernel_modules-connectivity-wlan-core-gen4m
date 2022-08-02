@@ -2134,6 +2134,14 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Support separate TXS pid of Data from Management frames.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+#define CFG_SUPPORT_SEPARATE_TXS_PID_POOL 0
+#endif
+
+/*------------------------------------------------------------------------------
 * Flags for supported not free pending Tx msduInfo in nicDeactivateNetworkEx()
 * Prevent clear msdu which is still Tx(Host -> Device)
 *------------------------------------------------------------------------------

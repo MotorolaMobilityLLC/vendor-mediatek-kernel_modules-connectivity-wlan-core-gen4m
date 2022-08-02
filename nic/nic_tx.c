@@ -214,6 +214,18 @@ static const char * const apucBandwidth[] = {
 	"20", "40", "80", "160/80+80", "320"
 };
 
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+static const uint8_t TXS_PID_MIN[TX_PACKET_TYPE_NUM] = {
+	NIC_TX_DESC_DRIVER_PID_DATA_MIN,
+	NIC_TX_DESC_DRIVER_PID_MGMT_MIN,
+};
+
+static const uint8_t TXS_PID_MAX[TX_PACKET_TYPE_NUM] = {
+	NIC_TX_DESC_DRIVER_PID_DATA_MAX,
+	NIC_TX_DESC_DRIVER_PID_MGMT_MAX,
+};
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -306,7 +318,14 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 	prAdapter->ucTxSeqNum = 0;
 	/* PID pool */
 	for (i = 0; i < WTBL_SIZE; i++) {
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+		uint32_t j;
+
+		for (j = 0; j < TX_PACKET_TYPE_NUM; j++)
+			prAdapter->aucPidPool[i][j] = TXS_PID_MIN[j];
+#else
 		prAdapter->aucPidPool[i] = NIC_TX_DESC_DRIVER_PID_MIN;
+#endif
 #if CFG_SUPPORT_LIMITED_PKT_PID
 		nicTxInitPktPID(prAdapter, i);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
@@ -3327,45 +3346,34 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_LIMITED_PKT_PID
-void nicTxInitPktPID(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucWlanIndex
-)
+void nicTxInitPktPID(struct ADAPTER *prAdapter, uint8_t ucWlanIndex)
 {
 	int i = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(ucWlanIndex < WTBL_SIZE);
 
-	for (i = 0; i < ENUM_PKT_FLAG_NUM; i++) {
-		GET_CURRENT_SYSTIME(
-			&prAdapter->u4PktPIDTime[ucWlanIndex][i]
-		);
-	}
+	for (i = 0; i < ENUM_PKT_FLAG_NUM; i++)
+		GET_CURRENT_SYSTIME(&prAdapter->u4PktPIDTime[ucWlanIndex][i]);
 }
 
-static inline bool nicTxPktPIDIsLimited(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo
-)
+static inline bool nicTxPktPIDIsLimited(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucWlanIndex = prMsduInfo->ucWlanIndex;
 	uint8_t ucPktType = prMsduInfo->ucPktType;
 
 	/* only limit dns and arp */
-	if (ucPktType != ENUM_PKT_DNS
-		&& ucPktType != ENUM_PKT_ARP)
+	if (ucPktType != ENUM_PKT_DNS && ucPktType != ENUM_PKT_ARP)
 		return FALSE;
 
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-		prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType],
-		prWifiVar->u4PktPIDTimeout
-		)) {
+				prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType],
+				prWifiVar->u4PktPIDTimeout)) {
 
 		GET_CURRENT_SYSTIME(
-			&prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType]
-		);
+			&prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType]);
 		return FALSE;
 	}
 
@@ -3887,6 +3895,11 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 #define _SET_PID HAL_MAC_CONNAC2X_TXD_SET_PID
 #define _TX_DESC struct HW_MAC_CONNAC2X_TX_DESC*
 #endif
+#if NIC_TX_DESC_PID_RESERVED
+	static const uint8_t DATA_PID_MIN = NIC_TX_DESC_DRIVER_PID_DATA_MIN;
+#else
+	static const uint8_t DATA_PID_MIN = NIC_TX_DESC_DRIVER_PID_MIN;
+#endif
 	struct BSS_INFO *prBssInfo;
 	_TX_DESC prTxDesc;
 
@@ -3950,9 +3963,10 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 	 * Still set PID for command data packet for firmware usage. Driver
 	 * does not handle EVENT_ID_TX_DONE in this case
 	 */
-	if (prMsduInfo->ucPID < NIC_TX_DESC_DRIVER_PID_MIN) {
+	if (prMsduInfo->ucPID < DATA_PID_MIN) {
 		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
-					   prMsduInfo->ucWlanIndex);
+					   prMsduInfo->ucWlanIndex,
+					   TX_PACKET_TYPE_DATA);
 
 		_SET_PID(prTxDesc, prMsduInfo->ucPID);
 	}
@@ -5086,23 +5100,29 @@ void nicTxSetPktMoreData(struct MSDU_INFO
 	}
 }
 
-uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter,
-		       IN uint8_t ucWlanIndex)
+uint8_t nicTxAssignPID(struct ADAPTER *prAdapter,
+		       uint8_t ucWlanIndex, enum ENUM_TX_PACKET_TYPE type)
 {
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+	uint8_t *pucPidPool = &prAdapter->aucPidPool[ucWlanIndex][type];
+	uint8_t pid_min = TXS_PID_MIN[type];
+	uint8_t pid_max = TXS_PID_MAX[type];
+#else
+	uint8_t *pucPidPool = &prAdapter->aucPidPool[ucWlanIndex];
+	uint8_t pid_min = NIC_TX_DESC_DRIVER_PID_MIN;
+	uint8_t pid_max = NIC_TX_DESC_DRIVER_PID_MAX;
+#endif
 	uint8_t ucRetval;
-	uint8_t *pucPidPool;
 
 	ASSERT(prAdapter);
-
-	pucPidPool = &prAdapter->aucPidPool[ucWlanIndex];
 
 	ucRetval = *pucPidPool;
 
 	/* Driver side Tx Sequence number: 1~127 */
 	(*pucPidPool)++;
 
-	if (*pucPidPool > NIC_TX_DESC_DRIVER_PID_MAX)
-		*pucPidPool = NIC_TX_DESC_DRIVER_PID_MIN;
+	if (*pucPidPool > pid_max)
+		*pucPidPool = pid_min;
 
 	return ucRetval;
 }
