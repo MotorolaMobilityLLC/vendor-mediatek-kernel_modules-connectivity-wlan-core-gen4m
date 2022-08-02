@@ -129,7 +129,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
-		.i4TxFreeMsduWorkCpu = -1,
+		.i4TxFreeMsduWorkCpu = 5,
 		.fgDramBoost = FALSE
 	},
 	{

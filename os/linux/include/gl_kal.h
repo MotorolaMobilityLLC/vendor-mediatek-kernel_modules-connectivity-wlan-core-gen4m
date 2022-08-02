@@ -177,7 +177,8 @@ extern struct platform_device *g_prPlatDev;
 #define PERF_MON_STOP_BIT       (2)
 #define PERF_MON_RUNNING_BIT    (3)
 
-#define PERF_MON_UPDATE_INTERVAL (1000)
+#define PERF_MON_UPDATE_MIN_INTERVAL (500)
+#define PERF_MON_UPDATE_INTERVAL (500)
 #define PERF_MON_TP_MAX_THRESHOLD (10)
 
 #define PERF_MON_TP_CONDITION (125000)

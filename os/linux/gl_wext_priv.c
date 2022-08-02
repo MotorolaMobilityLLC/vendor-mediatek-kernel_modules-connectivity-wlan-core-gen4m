@@ -9205,7 +9205,7 @@ static int priv_driver_boostcpu(IN struct net_device *prNetDev,
 
 	kalMemZero(&rBoostInfo, sizeof(struct BOOST_INFO));
 	i4Recv = sscanf(this_char,
-		"%d-%d-%02x-%02x-%02x-%u-%u-%u-%x-%x-%d",
+		"%d-%d-%02x-%02x-%02x-%u-%u-%u-%x-%x-%d-%d",
 		&(rBoostInfo.rCpuInfo.i4LittleCpuFreq),
 		&(rBoostInfo.rCpuInfo.i4BigCpuFreq),
 		&(rBoostInfo.rHifThreadInfo.u4CpuMask),
@@ -9216,10 +9216,11 @@ static int priv_driver_boostcpu(IN struct net_device *prNetDev,
 		&(rBoostInfo.rRxThreadInfo.u4Priority),
 		&(rBoostInfo.u4RpsMap),
 		&(rBoostInfo.u4ISRMask),
-		&(rBoostInfo.fgDramBoost)
+		&(rBoostInfo.fgDramBoost),
+		&(rBoostInfo.i4TxFreeMsduWorkCpu)
 		);
 
-	if (i4Recv == 11) {
+	if (i4Recv == 12) {
 		/* Disable BoostCpu by PerMon */
 		prAdapter->rWifiVar.fgBoostCpuEn = FEATURE_DISABLED;
 

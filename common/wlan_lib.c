@@ -7720,6 +7720,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonUpdatePeriod =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonPeriod",
 					    PERF_MON_UPDATE_INTERVAL);
+	if (prWifiVar->u4PerfMonUpdatePeriod < PERF_MON_UPDATE_MIN_INTERVAL) {
+		prWifiVar->u4PerfMonUpdatePeriod = PERF_MON_UPDATE_MIN_INTERVAL;
+		DBGLOG(INIT, TRACE, "u4PerfMonUpdatePeriod set to min(%d).\n",
+				PERF_MON_UPDATE_MIN_INTERVAL);
+	}
 
 	prWifiVar->u4PerfMonTpTh[0] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv1", 20);

@@ -1511,11 +1511,14 @@ struct PERF_MONITOR {
 	unsigned long ulTxTp[MAX_BSSID_NUM]; /* in Bps */
 	unsigned long ulRxTp[MAX_BSSID_NUM]; /* in Bps */
 	uint32_t u4UpdatePeriod; /* in ms */
+	uint32_t u4BoostPerfLevel;
 	uint32_t u4TarPerfLevel;
 	uint32_t u4CurrPerfLevel;
 	uint32_t u4UsedCnt;
 	unsigned long ulTotalTxSuccessCount;
 	unsigned long ulTotalTxFailCount;
+	uint32_t u4TriggerCnt;
+	uint32_t u4RunCnt;
 };
 
 struct HIF_STATS {
