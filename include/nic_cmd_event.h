@@ -2011,12 +2011,6 @@ enum ENUM_PWR_LIMIT_TYPE {
 	PWR_LIMIT_TYPE_COMP_11BE_6G_4 = 14,
 	PWR_LIMIT_TYPE_COMP_11BE_6G_5 = 15,
 	PWR_LIMIT_TYPE_COMP_11BE_6G_6 = 16,
-	PWR_LIMIT_TYPE_COMP_LEGACY_6G_1 = 17,
-	PWR_LIMIT_TYPE_COMP_LEGACY_6G_2 = 18,
-	PWR_LIMIT_TYPE_COMP_LEGACY_6G_3 = 19,
-	PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1 = 20,
-	PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2 = 21,
-	PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3 = 22,
 	PWR_LIMIT_TYPE_COMP_NUM,
 };
 
@@ -2054,30 +2048,6 @@ struct CMD_CHANNEL_POWER_LIMIT_6E {
 	uint8_t ucFlag;
 	uint8_t ucValid;
 };
-
-struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G {
-	uint8_t ucCentralCh;
-#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
-	int8_t cPwrLimitCCK_L; /* CCK_L, 1M,2M */
-	int8_t cPwrLimitCCK_H; /* CCK_H, 5.5M,11M */
-	int8_t cPwrLimitOFDM_L; /* OFDM_L,  6M ~ 18M */
-	int8_t cPwrLimitOFDM_H; /* OFDM_H, 24M ~ 54M */
-#else
-	int8_t cPwrLimitCCK;
-#endif /* CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING */
-	int8_t cPwrLimit20L; /* MCS0~4 */
-	int8_t cPwrLimit20H; /* MCS5~8 */
-	int8_t cPwrLimit40L; /* MCS0~4 */
-	int8_t cPwrLimit40H; /* MCS5~9 */
-	int8_t cPwrLimit80L; /* MCS0~4 */
-	int8_t cPwrLimit80H; /* MCS5~9 */
-	int8_t cPwrLimit160L; /* MCS0~4 */
-	int8_t cPwrLimit160H; /* MCS5~9 */
-
-	uint8_t ucFlag; /*Not used in driver*/
-	uint8_t aucReserved[1];
-};
-
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 struct CMD_CHANNEL_POWER_LIMIT_EHT_6G {
 	uint8_t ucCentralCh;
@@ -2346,8 +2316,6 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		struct CMD_CHANNEL_POWER_LIMIT_6E
 			rChPwrLimt6E[MAX_CMD_SUPPORT_CHANNEL_NUM];
-		struct CMD_CHANNEL_POWER_LIMIT_LEGACY_6G
-			rChPwrLimtLegacy_6G[MAX_CMD_SUPPORT_CHANNEL_NUM];
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		struct CMD_CHANNEL_POWER_LIMIT_EHT_6G
 			rChPwrLimtEHT_6G[MAX_CMD_EHT_6G_SUPPORT_CHANNEL_NUM];
