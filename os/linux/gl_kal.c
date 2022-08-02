@@ -13172,9 +13172,17 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 {
 	struct sk_buff *pkt;
 
+	/* Add kalGetSKBSharedInfoSize() is due to build_skb
+	 * API will assume user have contain this in length parameter,
+	 * but we don't do this, so if not add this will result kernel
+	 * overwrite the content which is not expected.
+	 */
 	pkt = build_skb(pvPacket, u4TotLen
 		+ kalGetSKBSharedInfoSize());
 
+	/* Not need send skb shared info to peers, so not add
+	 * kalGetSKBSharedInfoSize() here.
+	 */
 	if (pkt && fgIsSetLen)
 		pkt->len = u4TotLen;
 

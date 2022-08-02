@@ -2256,9 +2256,14 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 #if (UNIFIED_MAC_TX_FORMAT == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
-			if (prMsduInfo->fgMgmtUseDataQ)
+			if (prMsduInfo->fgMgmtUseDataQ) {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 				prMsduInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
-			else
+#else
+				prMsduInfo->ucPacketFormat =
+				  TXD_PKT_FORMAT_TXD_PAYLOAD;
+#endif
+			} else
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 				prMsduInfo->ucPacketFormat =
 					TXD_PKT_FORMAT_COMMAND;

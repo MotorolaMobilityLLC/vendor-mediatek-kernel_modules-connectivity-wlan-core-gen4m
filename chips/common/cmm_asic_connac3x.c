@@ -1479,6 +1479,19 @@ void fillConnac3xTxDescTxByteCountWithSdo(
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+static u_int8_t IsPacketGoThruDataPath(struct MSDU_INFO *prMsduInfo)
+{
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		return TRUE;
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (prMsduInfo->fgMgmtUseDataQ)
+		return TRUE;
+#endif
+
+	return FALSE;
+}
+
 void fillConnac3xTxDescTxByteCount(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
@@ -1494,7 +1507,7 @@ void fillConnac3xTxDescTxByteCount(
 	prChipInfo = prAdapter->chip_info;
 	u4TxByteCount += prMsduInfo->u2FrameLength;
 
-	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+	if (IsPacketGoThruDataPath(prMsduInfo))
 		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;
 
 	/* Calculate Tx byte count */
