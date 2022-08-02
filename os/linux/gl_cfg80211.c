@@ -6732,15 +6732,30 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	/* make sure netdev is disconnected */
 	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
-			&u4DisconnectReason, sizeof(u4DisconnectReason),
-			&u4SetInfoLen, ucBssIndex);
+	if (!kalIsResetting()) {
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
+				&u4DisconnectReason, sizeof(u4DisconnectReason),
+				&u4SetInfoLen, ucBssIndex);
 
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm, NULL, 0,
-			&u4SetInfoLen, ucBssIndex);
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm,
+				NULL, 0, &u4SetInfoLen, ucBssIndex);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "uninit ais error:%x\n", rStatus);
+	} else {
+		/* Invoke directly since ioctl will be invalid during reset */
+		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex) ==
+		    MEDIA_STATE_CONNECTED)
+			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
+				     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL,
+				     0, ucBssIndex);
+
+		aisFsmUninit(prAdapter, AIS_INDEX(prAdapter, ucBssIndex));
+	}
 
 	/* prepare for removal */
 	if (netif_carrier_ok(prDevHandler))

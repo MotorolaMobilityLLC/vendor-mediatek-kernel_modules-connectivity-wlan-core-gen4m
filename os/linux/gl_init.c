@@ -6864,8 +6864,15 @@ static void wlanRemove(void)
 
 #if CFG_SUPPORT_PERSIST_NETDEV
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-		if (gprWdev[i] && gprWdev[i]->netdev)
+		if (gprWdev[i] && gprWdev[i]->netdev) {
 			netif_device_detach(gprWdev[i]->netdev);
+			if (i != AIS_DEFAULT_INDEX) {
+				rtnl_lock();
+				mtk_cfg80211_del_iface(gprWdev[i]->wiphy,
+						       gprWdev[i]);
+				rtnl_unlock();
+			}
+		}
 	}
 #endif
 
