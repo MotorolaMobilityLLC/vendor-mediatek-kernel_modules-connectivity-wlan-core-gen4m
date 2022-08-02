@@ -488,8 +488,6 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
-	if (prBusInfo->configWfdmaIntMask)
-		prBusInfo->configWfdmaIntMask(prGlueInfo, FALSE);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");

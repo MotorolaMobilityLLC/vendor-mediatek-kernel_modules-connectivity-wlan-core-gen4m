@@ -1389,13 +1389,13 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
 {
+	mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
 	mt6639ConfigIntMask(prAdapter->prGlueInfo, TRUE);
 	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
 
 static void mt6639DisableInterrupt(struct ADAPTER *prAdapter)
 {
-	mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
 	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 
