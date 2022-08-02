@@ -5158,6 +5158,12 @@ void cnmRddOpmodeEventHandler(
 		prP2pRddDetMsg = (struct MSG_P2P_RADAR_DETECT *)
 			cnmMemAlloc(prAdapter,
 				RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
+		if (!prP2pRddDetMsg) {
+			DBGLOG(P2P, TRACE,
+				"prP2pRddDetMsg is null\n");
+			return;
+		}
+
 		prP2pRddDetMsg->rMsgHdr.eMsgId =
 		MID_CNM_P2P_RADAR_DETECT;
 		prP2pRddDetMsg->ucBssIndex = ucBssIndex;

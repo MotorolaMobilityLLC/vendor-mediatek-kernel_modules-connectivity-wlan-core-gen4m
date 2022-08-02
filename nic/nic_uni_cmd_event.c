@@ -7703,45 +7703,36 @@ void nicUniEventRDD(struct ADAPTER *ad,
 	case UNI_EVENT_RDD_TAG_SEND_PULSE: {
 		struct UNI_EVENT_RDD_SEND_PULSE *pulse =
 			(struct UNI_EVENT_RDD_SEND_PULSE *)tag;
-		struct WIFI_EVENT *pEvent;
-		struct EVENT_RDD_REPORT *prEventBody;
+		struct EVENT_RDD_REPORT rEventBody = {0};
 
-		pEvent = (struct WIFI_EVENT *)
-			kalMemAlloc(sizeof(struct WIFI_EVENT)+
-			sizeof(struct EVENT_RDD_REPORT), VIR_MEM_TYPE);
-		prEventBody =
-			(struct EVENT_RDD_REPORT *)
-			&(pEvent->aucBuffer[0]);
-
-		memset(prEventBody, 0, sizeof(struct EVENT_RDD_REPORT));
-		prEventBody->u1RddIdx = pulse->u1RddIdx;
-		prEventBody->u1LongDetected = pulse->u1LongDetected;
-		prEventBody->u1ConstantPRFDetected
+		rEventBody.u1RddIdx = pulse->u1RddIdx;
+		rEventBody.u1LongDetected = pulse->u1LongDetected;
+		rEventBody.u1ConstantPRFDetected
 			= pulse->u1ConstantPRFDetected;
-		prEventBody->u1StaggeredPRFDetected
+		rEventBody.u1StaggeredPRFDetected
 			= pulse->u1StaggeredPRFDetected;
-		prEventBody->u1RadarTypeIdx = pulse->u1RadarTypeIdx;
-		prEventBody->u1PeriodicPulseNum
+		rEventBody.u1RadarTypeIdx = pulse->u1RadarTypeIdx;
+		rEventBody.u1PeriodicPulseNum
 			= pulse->u1PeriodicPulseNum;
-		prEventBody->u1LongPulseNum = pulse->u1LongPulseNum;
-		prEventBody->u1HwPulseNum = pulse->u1HwPulseNum;
-		prEventBody->u1OutLPN = pulse->u1OutLPN;
-		prEventBody->u1OutSPN = pulse->u1OutSPN;
-		prEventBody->u1OutCRPN = pulse->u1OutCRPN;
-		prEventBody->u1OutCRPW = pulse->u1OutCRPW;
-		prEventBody->u1OutCRBN = pulse->u1OutCRBN;
-		prEventBody->u1OutSTGPN = pulse->u1OutSTGPN;
-		prEventBody->u1Reserve = pulse->u1Reserve;
-		prEventBody->u4OutPRI_CONST = pulse->u4OutPRI_CONST;
-		prEventBody->u4OutPRI_STG1 = pulse->u4OutPRI_STG1;
-		prEventBody->u4OutPRI_STG2 = pulse->u4OutPRI_STG2;
-		prEventBody->u4OutPRI_STG3 = pulse->u4OutPRI_STG3;
-		prEventBody->u4OutPRIStgDmin = pulse->u4OutPRIStgDmin;
+		rEventBody.u1LongPulseNum = pulse->u1LongPulseNum;
+		rEventBody.u1HwPulseNum = pulse->u1HwPulseNum;
+		rEventBody.u1OutLPN = pulse->u1OutLPN;
+		rEventBody.u1OutSPN = pulse->u1OutSPN;
+		rEventBody.u1OutCRPN = pulse->u1OutCRPN;
+		rEventBody.u1OutCRPW = pulse->u1OutCRPW;
+		rEventBody.u1OutCRBN = pulse->u1OutCRBN;
+		rEventBody.u1OutSTGPN = pulse->u1OutSTGPN;
+		rEventBody.u1Reserve = pulse->u1Reserve;
+		rEventBody.u4OutPRI_CONST = pulse->u4OutPRI_CONST;
+		rEventBody.u4OutPRI_STG1 = pulse->u4OutPRI_STG1;
+		rEventBody.u4OutPRI_STG2 = pulse->u4OutPRI_STG2;
+		rEventBody.u4OutPRI_STG3 = pulse->u4OutPRI_STG3;
+		rEventBody.u4OutPRIStgDmin = pulse->u4OutPRIStgDmin;
 		DBGLOG(CNM, WARN,
 			"legacy event tag = %d\n",
 			TAG_ID(tag));
 		RUN_RX_EVENT_HANDLER(EVENT_ID_RDD_REPORT,
-			pEvent);
+			&rEventBody);
 	}
 		break;
 

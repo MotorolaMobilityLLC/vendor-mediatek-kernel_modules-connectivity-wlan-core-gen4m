@@ -1421,6 +1421,7 @@ enum MBO_TRANSITION_REJECT_REASON {
  * code string and one subband triplet.
  */
 #define ELEM_MIN_LEN_COUNTRY_INFO                   6
+#define ELEM_MAX_LEN_COUNTRY_INFO                   254
 
 #define ELEM_ID_COUNTRY_INFO_TRIPLET_LEN_FIXED              3
 #define ELEM_ID_COUNTRY_INFO_SUBBAND_TRIPLET_LEN_FIXED      3

@@ -1375,6 +1375,8 @@ void kalP2PIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			struct BSS_INFO *prP2pBssInfo =
 				GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 				prMsduInfo->ucBssIndex);
+			if (prP2pBssInfo == NULL)
+				return;
 
 			prGlueP2pInfo =
 				prGlueInfo->prP2PInfo
@@ -2290,7 +2292,9 @@ void kalP2pPreStartRdd(
 		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
 		return;
 	}
-
+	kalMemZero(
+		&chandef,
+		sizeof(struct cfg80211_chan_def));
 	chan = ieee80211_get_channel(
 		prGlueP2pInfo->prWdev->wiphy,
 		freq);

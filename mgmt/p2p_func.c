@@ -3671,7 +3671,8 @@ struct BSS_INFO *p2pFuncBSSIDFindBssInfo(IN struct ADAPTER *prAdapter,
 				continue;
 
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-
+			if (!prBssInfo)
+				break;
 			if (EQUAL_MAC_ADDR(prBssInfo->aucBSSID, pucBSSID)
 				&& IS_BSS_P2P(prBssInfo))
 				break;
@@ -4469,7 +4470,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11D
 			case ELEM_ID_COUNTRY_INFO: /* 7 */
 				if (COUNTRY_IE(pucIE)->ucLength
-					>= ELEM_MIN_LEN_COUNTRY_INFO) {
+					>= ELEM_MIN_LEN_COUNTRY_INFO &&
+					COUNTRY_IE(pucIE)->ucLength
+					<= ELEM_MAX_LEN_COUNTRY_INFO) {
 					prP2pBssInfo->ucCountryIELen =
 						COUNTRY_IE(pucIE)->ucLength;
 					kalMemCopy(
@@ -4701,29 +4704,37 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 
 				break;
 			case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 *//* V */
+			{
 #ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
+				uint8_t ucCurrLen =
+					prP2pBssInfo->ucAllSupportedRatesLen;
+				uint8_t ucIeLen =
+					EXT_SUP_RATES_IE(pucIE)->ucLength;
 				/* ELEM_ID_SUP_RATES should be placed
 				 * before ELEM_ID_EXTENDED_SUP_RATES.
 				 */
 				DBGLOG(P2P, TRACE, "Ex Support Rate IE\n");
-				kalMemCopy(&
-					(prP2pBssInfo->aucAllSupportedRates
-					[prP2pBssInfo->ucAllSupportedRatesLen]),
-					EXT_SUP_RATES_IE(pucIE)
+				if (ucIeLen < (RATE_NUM_SW - ucCurrLen)) {
+					kalMemCopy(&
+						(prP2pBssInfo
+						->aucAllSupportedRates
+						[ucCurrLen]),
+						EXT_SUP_RATES_IE(pucIE)
 						->aucExtSupportedRates,
-					EXT_SUP_RATES_IE(pucIE)
+						ucIeLen);
+
+					DBGLOG_MEM8(P2P, TRACE,
+						EXT_SUP_RATES_IE(pucIE)
+						->aucExtSupportedRates,
+						EXT_SUP_RATES_IE(pucIE)
 						->ucLength);
 
-				DBGLOG_MEM8(P2P, TRACE,
-					EXT_SUP_RATES_IE(pucIE)
-					->aucExtSupportedRates,
-					EXT_SUP_RATES_IE(pucIE)
-					->ucLength);
-
-				prP2pBssInfo->ucAllSupportedRatesLen +=
-					EXT_SUP_RATES_IE(pucIE)->ucLength;
+					prP2pBssInfo->ucAllSupportedRatesLen +=
+						ucIeLen;
+				}
 #endif
 				break;
+			}
 			case ELEM_ID_HT_OP:
 				/* 61 *//* V *//* TODO: */
 				{
@@ -5492,7 +5503,8 @@ uint32_t p2pCalculateWFDIELen(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
+	if (!prP2pBssInfo)
+		return 0;
 	return prAdapter->prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData]
 				->u2WFDIELen;
 }
@@ -5529,6 +5541,8 @@ uint32_t p2pCalculateP2PIELen(IN struct ADAPTER *prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	uint16_t u2EstimateSize = 0;
 	uint32_t u4Idx = 0;
+	if (!prP2pBssInfo)
+		return 0;
 
 	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++)
 		u2EstimateSize +=
@@ -5551,6 +5565,8 @@ void p2pGenerateP2PIE(IN struct ADAPTER *prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	uint32_t u4Idx = 0;
 
+	if (!prP2pBssInfo)
+		return;
 	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++) {
 		kalP2PGenP2P_IE(prAdapter->prGlueInfo,
 			u4Idx,
@@ -5591,6 +5607,8 @@ void p2pGenerateVendorIE(IN struct ADAPTER *prAdapter,
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 
+	if (!prP2pBssInfo)
+		return;
 	kalMemCopy((uint8_t *)
 		((uintptr_t) prMsduInfo->prPacket +
 		(uintptr_t) prMsduInfo->u2FrameLength),
@@ -5730,6 +5748,8 @@ p2pFuncProcessP2pProbeRspSsid(IN struct ADAPTER *prAdapter,
 		}
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		if (!prP2pBssInfo)
+			return;
 		COPY_SSID(
 			prP2pBssInfo->aucSSID,
 			prP2pBssInfo->ucSSIDLen,
@@ -5856,6 +5876,8 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 	uint32_t u4Idx;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prP2pBssInfo)
+		return;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
 		prP2pBssInfo->u4PrivateData];
 
@@ -6030,10 +6052,14 @@ void p2pFuncGenerateP2p_IEForBeacon(IN struct ADAPTER *prAdapter,
 			break;
 
 		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+		if (!prBssInfo)
+			break;
 
 		prP2pSpeBssInfo =
 			prAdapter->rWifiVar.prP2pSpecificBssInfo
 			[prBssInfo->u4PrivateData];
+		if (!prP2pSpeBssInfo)
+			break;
 
 		if (p2pFuncIsAPMode(
 			prAdapter->rWifiVar.prP2PConnSettings
