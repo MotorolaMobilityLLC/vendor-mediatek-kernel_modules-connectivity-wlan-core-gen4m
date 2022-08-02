@@ -707,7 +707,7 @@ uint8_t mldIsValidForCompleteProfile(
 uint8_t *mldInsertFragmentHdr(uint8_t eid, uint8_t *start, uint8_t *end)
 {
 	uint8_t *tmp;
-	uint8_t tmp_len;
+	uint32_t tmp_len;
 
 	/* backup original content */
 	tmp_len = end - start;
@@ -1034,6 +1034,10 @@ uint8_t *mldGenerateBasicCompleteProfile(
 		uint16_t len = 3 + neid + nexid;
 
 		buf = kalMemAlloc(ELEM_HDR_LEN + len, VIR_MEM_TYPE);
+		if (!buf) {
+			DBGLOG(ML, WARN, "no mem for inheritance IE\n");
+			goto done;
+		}
 		non_inh = (struct IE_NON_INHERITANCE *) buf;
 		non_inh->ucId = ELEM_ID_RESERVED;
 		non_inh->ucLength = len;
