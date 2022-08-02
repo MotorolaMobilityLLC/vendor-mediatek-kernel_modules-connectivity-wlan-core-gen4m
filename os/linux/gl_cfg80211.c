@@ -6499,6 +6499,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	struct wireless_dev *prWdev = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	uint8_t ucBssIdx = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint8_t ucAisIndex;
 	uint32_t u4SetInfoLen;
@@ -6633,8 +6634,9 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	kalIoctl(prGlueInfo, wlanoidInitAisFsm, &ucAisIndex, 1, &u4SetInfoLen);
 
 	/* BssIdx should not be 0 if add successfully */
-	if (wlanGetBssIdxByNetInterface(prGlueInfo,
-		gprWdev[ucAisIndex]->netdev) != AIS_DEFAULT_INDEX)
+	ucBssIdx = wlanGetBssIdxByNetInterface(prGlueInfo,
+					       gprWdev[ucAisIndex]->netdev);
+	if (ucBssIdx != AIS_DEFAULT_INDEX && ucBssIdx != HW_BSSID_NUM)
 		return prWdev;
 
 	/* Do uninit flow since wlanoidInitAisFsm failed */
