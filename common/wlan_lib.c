@@ -1731,8 +1731,6 @@ void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt)
 
 	ASSERT(prAdapter);
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-
 	if (prAdapter->fgIsFwOwn == FALSE) {
 		u4Status = nicProcessIST(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
@@ -1759,8 +1757,6 @@ void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt)
 
 	if (fgEnInt)
 		nicEnableInterrupt(prAdapter);
-
-	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 }
 
 void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter)

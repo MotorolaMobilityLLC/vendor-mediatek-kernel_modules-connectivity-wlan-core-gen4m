@@ -4009,6 +4009,8 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+
 	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
@@ -4036,6 +4038,8 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 	}
+
+	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
 }
 
 void halTxCompleteTasklet(unsigned long data)
