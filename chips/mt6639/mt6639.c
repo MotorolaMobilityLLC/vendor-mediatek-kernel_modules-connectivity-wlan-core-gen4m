@@ -1464,6 +1464,17 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_EXT_WRAP_CSR_MSI_INT_CFG3_ADDR,
 		u4Value);
+
+#if CFG_MTK_MDDP_SUPPORT
+#if (WFDMA_MD_MSI_NUM == 1)
+	u4Value = 0x0F00087F;
+#else
+	u4Value = 0x0000083C;
+#endif
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_MD_INT_LUMP_SEL,
+		u4Value);
+#endif
 }
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
