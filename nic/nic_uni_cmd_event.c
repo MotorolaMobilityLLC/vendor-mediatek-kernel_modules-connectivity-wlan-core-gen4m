@@ -687,17 +687,71 @@ uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 uint32_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
-	struct UNI_CMD_SCAN_IE *tag = (struct UNI_CMD_SCAN_IE *)buf;
+	struct UNI_CMD_SCAN_IE *tag;
+	uint8_t *pos, *end;
+	uint16_t fix = sizeof(struct UNI_CMD_SCAN_IE);
 
-	if (cmd->u2IELen == 0)
-		return 0;
+	pos = buf;
+	end = buf + sizeof(struct UNI_CMD_SCAN_IE) + 600;
 
-	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
-	tag->u2Length = sizeof(*tag) + ALIGN_4(cmd->u2IELen);
-	tag->u2IELen = cmd->u2IELen;
-	kalMemCopy(tag->aucIEBuffer, cmd->aucIE, cmd->u2IELen);
-
-	return tag->u2Length;
+	if (cmd->u2IELen) {
+		if (pos + fix + ALIGN_4(cmd->u2IELen) < end) {
+			tag = (struct UNI_CMD_SCAN_IE *)pos;
+			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
+			tag->u2Length = fix + ALIGN_4(cmd->u2IELen);
+			tag->u2IELen = cmd->u2IELen;
+			tag->ucBand = BAND_NULL;
+			kalMemCopy(tag->aucIEBuffer, cmd->aucIE, cmd->u2IELen);
+			pos += tag->u2Length;
+		} else {
+			DBGLOG(INIT, ERROR, "no space for default IE\n");
+		}
+	}
+	if (cmd->u2IELen2G4) {
+		if (pos + fix + ALIGN_4(cmd->u2IELen2G4) < end) {
+			tag = (struct UNI_CMD_SCAN_IE *)pos;
+			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
+			tag->u2Length = fix + ALIGN_4(cmd->u2IELen2G4);
+			tag->u2IELen = cmd->u2IELen2G4;
+			tag->ucBand = BAND_2G4;
+			kalMemCopy(tag->aucIEBuffer,
+				cmd->aucIE2G4, cmd->u2IELen2G4);
+			pos += tag->u2Length;
+		} else {
+			DBGLOG(INIT, ERROR, "no space for 2G4 IE\n");
+		}
+	}
+	if (cmd->u2IELen5G) {
+		if (pos + fix + ALIGN_4(cmd->u2IELen5G) < end) {
+			tag = (struct UNI_CMD_SCAN_IE *)pos;
+			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
+			tag->u2Length = fix + ALIGN_4(cmd->u2IELen5G);
+			tag->u2IELen = cmd->u2IELen5G;
+			tag->ucBand = BAND_5G;
+			kalMemCopy(tag->aucIEBuffer,
+				cmd->aucIE5G, cmd->u2IELen5G);
+			pos += tag->u2Length;
+		} else {
+			DBGLOG(INIT, ERROR, "no space for 5G IE\n");
+		}
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (cmd->u2IELen6G) {
+		if (pos + fix + ALIGN_4(cmd->u2IELen6G) < end) {
+			tag = (struct UNI_CMD_SCAN_IE *)pos;
+			tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
+			tag->u2Length = fix + ALIGN_4(cmd->u2IELen6G);
+			tag->u2IELen = cmd->u2IELen6G;
+			tag->ucBand = BAND_6G;
+			kalMemCopy(tag->aucIEBuffer,
+				cmd->aucIE6G, cmd->u2IELen6G);
+			pos += tag->u2Length;
+		} else {
+			DBGLOG(INIT, ERROR, "no space for 6G IE\n");
+		}
+	}
+#endif
+	return pos - buf;
 }
 
 uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,

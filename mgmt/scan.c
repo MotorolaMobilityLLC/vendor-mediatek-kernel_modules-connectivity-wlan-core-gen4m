@@ -2004,6 +2004,88 @@ static void scanFreeBssDesc(struct ADAPTER *prAdapter,
 		FALSE);
 }
 
+
+void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+	enum ENUM_BAND eHwBand, uint8_t ucIeDsChannelNum,
+	uint8_t ucIeHtChannelNum, struct BSS_DESC *prBssDesc)
+{
+	uint8_t ucRxRCPI;
+	uint8_t ucHwChannelNum;
+
+	/* 4 <4> Update information from HIF RX Header */
+	/* 4 <4.1> Get TSF comparison result */
+	prBssDesc->fgIsLargerTSF = prSwRfb->ucTcl;
+
+	/* 4 <4.2> Get Band information */
+	prBssDesc->eBand = eHwBand;
+
+	/* 4 <4.2> Get channel and RCPI information */
+	ucHwChannelNum = prSwRfb->ucChnlNum;
+
+	nicRxdChNumTranslate(eHwBand, &ucHwChannelNum);
+
+	ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter, RCPI_MODE_MAX, prSwRfb);
+	if (prBssDesc->eBand == BAND_2G4) {
+		/* Update RCPI if in right channel */
+		if (ucIeDsChannelNum >= 1 && ucIeDsChannelNum <= 14) {
+
+			/* Receive Beacon/ProbeResp frame
+			 * from adjacent channel.
+			 */
+			if ((ucIeDsChannelNum == ucHwChannelNum)
+				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				prBssDesc->ucRCPI = ucRxRCPI;
+			/* trust channel information brought by IE */
+			prBssDesc->ucChannelNum = ucIeDsChannelNum;
+		} else if (ucIeHtChannelNum >= 1
+			&& ucIeHtChannelNum <= 14) {
+			/* Receive Beacon/ProbeResp frame
+			 * from adjacent channel.
+			 */
+			if ((ucIeHtChannelNum == ucHwChannelNum)
+				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				prBssDesc->ucRCPI = ucRxRCPI;
+			/* trust channel information brought by IE */
+			prBssDesc->ucChannelNum = ucIeHtChannelNum;
+		} else {
+			prBssDesc->ucRCPI = ucRxRCPI;
+			prBssDesc->ucChannelNum = ucHwChannelNum;
+		}
+	}
+	/* 5G Band */
+	else if (prBssDesc->eBand == BAND_5G) {
+		if (ucIeHtChannelNum >= 1 && ucIeHtChannelNum < 200) {
+			/* Receive Beacon/ProbeResp frame
+			 * from adjacent channel.
+			 */
+			if ((ucIeHtChannelNum == ucHwChannelNum)
+				|| (ucRxRCPI > prBssDesc->ucRCPI))
+				prBssDesc->ucRCPI = ucRxRCPI;
+			/* trust channel information brought by IE */
+			prBssDesc->ucChannelNum = ucIeHtChannelNum;
+		} else {
+			/* Always update RCPI */
+			prBssDesc->ucRCPI = ucRxRCPI;
+			prBssDesc->ucChannelNum = ucHwChannelNum;
+		}
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssDesc->eBand == BAND_6G) {
+		if (ucRxRCPI > prBssDesc->ucRCPI)
+			prBssDesc->ucRCPI = ucRxRCPI;
+
+		if (prBssDesc->ucChannelNum != ucHwChannelNum) {
+			log_dbg(SCN, INFO,
+			"IE_PriCh:%d mismatch with RXD_ChNum:%d\n",
+			prBssDesc->ucChannelNum, ucHwChannelNum);
+
+			if (!prBssDesc->fgIsHE6GPresent)
+				prBssDesc->ucChannelNum = ucHwChannelNum;
+		}
+	}
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This API parses Beacon/ProbeResp frame and insert extracted
@@ -2037,7 +2119,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		= (struct IE_SUPPORTED_RATE_IOT *) NULL;
 	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate
 		= (struct IE_EXT_SUPPORTED_RATE *) NULL;
-	uint8_t ucHwChannelNum = 0;
 	uint8_t ucIeDsChannelNum = 0;
 	uint8_t ucIeHtChannelNum = 0;
 	u_int8_t fgIsValidSsid = FALSE;
@@ -2218,9 +2299,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
 
 	ucChnlNum = prSwRfb->ucChnlNum;
-#if (CFG_SUPPORT_WIFI_6G == 1)
 	nicRxdChNumTranslate(eHwBand, &ucChnlNum);
-#endif
 
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u),band=%d\n",
@@ -2460,6 +2539,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			"LM: New reallocated BSSDesc [" MACSTR "]\n",
 			MAC2STR(prBssDesc->aucBSSID));
 	}
+
+	scanSetChannelAndRCPI(prAdapter, prSwRfb, eHwBand,
+		ucIeDsChannelNum, ucIeHtChannelNum, prBssDesc);
 
 	/* 4 <3.1> Full IE parsing on SW_RFB_T */
 	pucIE = prWlanBeaconFrame->aucInfoElem;
@@ -3007,90 +3089,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				      &prBssDesc->u2OperationalRateSet,
 				      &prBssDesc->u2BSSBasicRateSet,
 				      &prBssDesc->fgIsUnknownBssBasicRate);
-	}
-
-	/* 4 <4> Update information from HIF RX Header */
-	{
-		uint8_t ucRxRCPI;
-
-		/* 4 <4.1> Get TSF comparison result */
-		prBssDesc->fgIsLargerTSF = prSwRfb->ucTcl;
-
-		/* 4 <4.2> Get Band information */
-		prBssDesc->eBand = eHwBand;
-
-		/* 4 <4.2> Get channel and RCPI information */
-		ucHwChannelNum = prSwRfb->ucChnlNum;
-
-		nicRxdChNumTranslate(eHwBand, &ucHwChannelNum);
-
-		ASSERT(prSwRfb->prRxStatusGroup3);
-		ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter,
-			RCPI_MODE_MAX, prSwRfb);
-		if (prBssDesc->eBand == BAND_2G4) {
-
-			/* Update RCPI if in right channel */
-
-			if (ucIeDsChannelNum >= 1 && ucIeDsChannelNum <= 14) {
-
-				/* Receive Beacon/ProbeResp frame
-				 * from adjacent channel.
-				 */
-				if ((ucIeDsChannelNum == ucHwChannelNum)
-					|| (ucRxRCPI > prBssDesc->ucRCPI))
-					prBssDesc->ucRCPI = ucRxRCPI;
-				/* trust channel information brought by IE */
-				prBssDesc->ucChannelNum = ucIeDsChannelNum;
-			} else if (ucIeHtChannelNum >= 1
-				&& ucIeHtChannelNum <= 14) {
-				/* Receive Beacon/ProbeResp frame
-				 * from adjacent channel.
-				 */
-				if ((ucIeHtChannelNum == ucHwChannelNum)
-					|| (ucRxRCPI > prBssDesc->ucRCPI))
-					prBssDesc->ucRCPI = ucRxRCPI;
-				/* trust channel information brought by IE */
-				prBssDesc->ucChannelNum = ucIeHtChannelNum;
-			} else {
-				prBssDesc->ucRCPI = ucRxRCPI;
-
-				prBssDesc->ucChannelNum = ucHwChannelNum;
-			}
-		}
-		/* 5G Band */
-		else if (prBssDesc->eBand == BAND_5G) {
-			if (ucIeHtChannelNum >= 1 && ucIeHtChannelNum < 200) {
-				/* Receive Beacon/ProbeResp frame
-				 * from adjacent channel.
-				 */
-				if ((ucIeHtChannelNum == ucHwChannelNum)
-					|| (ucRxRCPI > prBssDesc->ucRCPI))
-					prBssDesc->ucRCPI = ucRxRCPI;
-				/* trust channel information brought by IE */
-				prBssDesc->ucChannelNum = ucIeHtChannelNum;
-			} else {
-				/* Always update RCPI */
-				prBssDesc->ucRCPI = ucRxRCPI;
-
-				prBssDesc->ucChannelNum = ucHwChannelNum;
-			}
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prBssDesc->eBand == BAND_6G) {
-			if (ucRxRCPI > prBssDesc->ucRCPI)
-				prBssDesc->ucRCPI = ucRxRCPI;
-
-			if (prBssDesc->ucChannelNum != ucHwChannelNum) {
-				log_dbg(SCN, INFO,
-				"IE_PriCh:%d mismatch with RXD_ChNum:%d\n",
-				prBssDesc->ucChannelNum, ucHwChannelNum);
-
-				if (!prBssDesc->fgIsHE6GPresent)
-					prBssDesc->ucChannelNum =
-							ucHwChannelNum;
-			}
-		}
-#endif
 	}
 
 	/* 4 <5> Check IE information corret or not */

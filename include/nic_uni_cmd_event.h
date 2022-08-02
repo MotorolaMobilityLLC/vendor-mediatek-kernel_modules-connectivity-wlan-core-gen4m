@@ -2196,7 +2196,8 @@ struct UNI_CMD_SCAN_IE {
 	uint16_t u2Length;
 
 	uint16_t u2IELen;
-	uint8_t  aucPadding[2];
+	uint8_t  ucBand;
+	uint8_t  ucPadding;
 	uint8_t  aucIEBuffer[0];  //depends on u2IELen
 } __KAL_ATTRIB_PACKED__;
 

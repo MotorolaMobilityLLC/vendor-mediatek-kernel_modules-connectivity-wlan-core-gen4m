@@ -987,11 +987,6 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = prAdapter->ucHwBssIdNum;
 	uint8_t aucBMC[] = BC_MAC_ADDR;
 
-
-	if (!prBssInfo) {
-		DBGLOG(SAA, ERROR, "prBssInfo is null\n");
-		return WLAN_STATUS_INVALID_DATA;
-	}
 	/* NOTE(Kevin): The best way to reply the Deauth is according to
 	 * the incoming data frame
 	 */

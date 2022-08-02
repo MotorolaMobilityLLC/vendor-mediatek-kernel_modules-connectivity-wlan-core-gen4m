@@ -1257,6 +1257,16 @@ struct CMD_SCAN_REQ_V2 {
 	uint32_t	 u4ScnFuncMaskExtend;
 	uint8_t          ucScnSourceMask;
 	uint8_t		 aucPadding_3[23];
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint16_t	 u2IELen2G4;
+	uint8_t		 aucIE2G4[100];  /* depends on u2IELen24G */
+	uint16_t	 u2IELen5G;
+	uint8_t		 aucIE5G[100];  /* depends on u2IELen5G */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t	 u2IELen6G;
+	uint8_t		 aucIE6G[100];  /* depends on u2IELen6G */
+#endif
+#endif
 };
 
 /* TLV for CMD_ID_SCAN_REQ_V2*/
