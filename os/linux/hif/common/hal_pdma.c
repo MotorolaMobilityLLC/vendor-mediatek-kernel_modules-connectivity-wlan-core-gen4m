@@ -1121,8 +1121,8 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
-	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->configPcieAspm)
-		prBusInfo->configPcieAspm(prAdapter->prGlueInfo, FALSE);
+	if (prBusInfo->updatePcieAspm)
+		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, FALSE);
 #endif
 #endif
 
@@ -1247,8 +1247,8 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
-	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->configPcieAspm)
-		prBusInfo->configPcieAspm(prAdapter->prGlueInfo, TRUE);
+	if (prTokenInfo->u4UsedCnt == 0 && prBusInfo->updatePcieAspm)
+		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, TRUE);
 #endif
 #endif
 
@@ -1471,6 +1471,13 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 #endif
 
 	prHifInfo->fgIsPowerOn = true;
+
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+	prHifInfo->eCurPcieState = PCIE_STATE_NUM;
+	prHifInfo->eNextPcieState = PCIE_STATE_NUM;
+#endif
+#endif
 
 	if (prBusInfo->setupMcuEmiAddr)
 		prBusInfo->setupMcuEmiAddr(prAdapter);

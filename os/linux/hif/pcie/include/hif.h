@@ -195,6 +195,15 @@ enum pcie_suspend_state {
 	PCIE_STATE_SUSPEND
 };
 
+#if CFG_SUPPORT_PCIE_ASPM
+enum pcie_aspm_state {
+	PCIE_STATE_L0,
+	PCIE_STATE_L1,
+	PCIE_STATE_L1_2,
+	PCIE_STATE_NUM
+};
+#endif
+
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
@@ -282,6 +291,8 @@ struct GL_HIF_INFO {
 #if CFG_SUPPORT_PCIE_ASPM
 	uint32_t u4PcieLTR;
 	uint32_t u4PcieASPM;
+	enum pcie_aspm_state eCurPcieState;
+	enum pcie_aspm_state eNextPcieState;
 #endif
 };
 
@@ -425,6 +436,8 @@ struct BUS_INFO {
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_PCIE_ASPM
 	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4IntStatus);

@@ -138,6 +138,9 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_PCIE_ASPM
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgWakeup);
 #endif
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
@@ -483,6 +486,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.initPcieInt = mt6639InitPcieInt,
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
+	.updatePcieAspm = mt6639UpdatePcieAspm,
+	.keepPcieWakeup = mt6639KeepPcieWakeup,
 #endif
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
@@ -1590,9 +1595,7 @@ static void mt6639WfdmaRxRingExtCtrl(
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 void *pcie_vir_addr;
-#endif
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
@@ -1610,25 +1613,20 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
 
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
 	if (pcie_vir_addr) {
 		writel(0x08021000, (pcie_vir_addr + 0x74));
 		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%x\n", pcie_vir_addr);
-	} else
+	} else {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
-
-#endif
-
+	}
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
-
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
-
 uint32_t value_ori;
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t value = 0;
 
 	if (fgEn) {
@@ -1657,54 +1655,57 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 			if (pcie_vir_addr)
 				writel(0xc0f, (pcie_vir_addr + 0x194));
 
-			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
+			if (prHifInfo->eCurPcieState == PCIE_STATE_L0) {
+				HAL_MCR_WR(prGlueInfo->prAdapter,
+					   0x74030194, 0xe0f);
+			} else {
+				HAL_MCR_WR(prGlueInfo->prAdapter,
+					   0x74030194, 0xc0f);
+			}
 			HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
 		} else {
 			DBGLOG(HAL, INFO, "Disable aspm no match\n");
 		}
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2..\n");
+
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			DBGLOG(HAL, INFO, "Disable aspm L1..\n");
+		else
+			DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2..\n");
 	}
 }
-#else
-static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+
+static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t u4Val = 0;
-	if (fgEn) {
-		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   prHifInfo->u4PcieLTR);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   prHifInfo->u4PcieASPM);
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2 0x%08x\n",
-			prHifInfo->u4PcieASPM);
-	} else {
-		/*
-		 *	Backup original setting then
-		 *	disable L1.1, L1.2 and set LTR to 0
-		 */
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   &prHifInfo->u4PcieLTR);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   &prHifInfo->u4PcieASPM);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR, 0);
 
-		u4Val = prHifInfo->u4PcieASPM &
-			~PCIE_LOW_POWER_CTRL_DIS_L1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_2;
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   u4Val);
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
+	if (fgEn) {
+		prHifInfo->eNextPcieState = PCIE_STATE_L1_2;
+	} else {
+		if (prHifInfo->eNextPcieState != PCIE_STATE_L0)
+			prHifInfo->eNextPcieState = PCIE_STATE_L1;
+	}
+
+	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
+		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
+			mt6639ConfigPcieAspm(prGlueInfo, TRUE);
+		else
+			mt6639ConfigPcieAspm(prGlueInfo, FALSE);
+		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
-#endif
+
+static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgWakeup)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (fgWakeup) {
+		prHifInfo->eNextPcieState = PCIE_STATE_L0;
+	} else {
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			prHifInfo->eNextPcieState = PCIE_STATE_L1;
+	}
+}
 #endif
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
@@ -2079,9 +2080,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 
 	wlan_pinctrl_action(ad->chip_info, WLAN_PINCTRL_MSG_FUNC_PTA_UART_ON);
 
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
-#endif
 exit:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		WARN_ON_ONCE(TRUE);
@@ -2100,10 +2099,8 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
 
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
 	if (pcie_vir_addr)
 		iounmap(pcie_vir_addr);
-#endif
 }
 
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
