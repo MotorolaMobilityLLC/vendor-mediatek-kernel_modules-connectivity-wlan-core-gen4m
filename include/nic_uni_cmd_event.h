@@ -5003,7 +5003,8 @@ struct UNI_EVENT_TDLS_TEAR_DOWN {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint32_t u4Subid;
-	uint32_t u4StaIdx;
+	/* In Uni_Cmd: FW StaIdx == WlanIdx,convert */
+	uint32_t u4WlanIdx;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

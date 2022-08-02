@@ -8825,7 +8825,8 @@ void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			legacy.u4HostId = TDLS_HOST_EVENT_TEAR_DOWN;
 			legacy.u4SubId = down->u4Subid;
-			legacy.u4StaIdx = down->u4StaIdx;
+			legacy.u4StaIdx =
+				secGetStaIdxByWlanIdx(ad, down->u4WlanIdx);
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_TDLS, &legacy);
 		}
