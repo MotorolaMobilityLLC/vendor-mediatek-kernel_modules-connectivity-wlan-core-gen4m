@@ -333,7 +333,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* Avoid register checking */
-	prHifInfo->fgIsDumpLog = true;
+	prHifInfo->fgForceReadWriteReg = true;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
@@ -409,7 +409,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			prDbgOps->dumpPhyInfo(prAdapter);
 	}
 
-	prHifInfo->fgIsDumpLog = false;
+	prHifInfo->fgForceReadWriteReg = false;
 	prAdapter->u4HifDbgFlag = 0;
 }
 

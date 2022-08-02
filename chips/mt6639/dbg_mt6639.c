@@ -1231,10 +1231,15 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 
 void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 {
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
+
+	prHifInfo = &ad->prGlueInfo->rHifInfo;
+	prHifInfo->fgForceReadWriteReg = true;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6639_dumpConninfraBus(ad);
@@ -1245,6 +1250,8 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	mt6639_dumpN45CoreReg(ad);
 	mt6639_dumpWfTopReg(ad);
 	mt6639_dumpWfBusReg(ad);
+
+	prHifInfo->fgForceReadWriteReg = false;
 }
 #endif
 

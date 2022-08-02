@@ -680,9 +680,13 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 	if (!prChipInfo)
 		return FALSE;
 
-	prBusInfo = prChipInfo->bus_info;
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+		return FALSE;
+	}
 
-	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	prBusInfo = prChipInfo->bus_info;
+	if (prHifInfo && !prHifInfo->fgForceReadWriteReg &&
 	    prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		/* Don't print log when resetting */
@@ -691,6 +695,7 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
 			       u4Register, u4BusAddr, *pu4Value);
 		}
+		KAL_WARN_ON(TRUE);
 		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
 	}
@@ -759,9 +764,13 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 	if (!prChipInfo)
 		return FALSE;
 
-	prBusInfo = prChipInfo->bus_info;
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+		return FALSE;
+	}
 
-	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	prBusInfo = prChipInfo->bus_info;
+	if (prHifInfo && !prHifInfo->fgForceReadWriteReg &&
 	    prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
 		/* Don't print log when resetting */
@@ -770,6 +779,7 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
 			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
 			       u4Register, u4BusAddr, u4Value);
 		}
+		KAL_WARN_ON(TRUE);
 		return FALSE;
 	}
 
@@ -817,6 +827,11 @@ u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
+		return FALSE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
 	}
 
@@ -868,6 +883,11 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
+		return FALSE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
 	}
 

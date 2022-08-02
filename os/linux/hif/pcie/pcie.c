@@ -275,11 +275,23 @@ static struct platform_driver mtk_page_pool_driver = {
 };
 #endif
 
+static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
+	pci_channel_state_t state);
+static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev);
+static void mtk_pci_error_resume(struct pci_dev *pdev);
+
+static const struct pci_error_handlers mtk_pci_err_handler = {
+	.error_detected = mtk_pci_error_detected,
+	.slot_reset     = mtk_pci_error_slot_reset,
+	.resume         = mtk_pci_error_resume,
+};
+
 static struct pci_driver mtk_pci_driver = {
 	.name = KBUILD_MODNAME,
 	.id_table = mtk_pci_ids,
 	.probe = NULL,
 	.remove = NULL,
+	.err_handler = &mtk_pci_err_handler,
 };
 
 static struct GLUE_INFO *g_prGlueInfo;
@@ -600,6 +612,44 @@ irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 	return IRQ_HANDLED;
 }
 #endif
+
+static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
+	pci_channel_state_t state)
+{
+	DBGLOG(HAL, INFO, "mtk_pci_error_detected state: %d, resetting: %d\n",
+		state, kalIsResetting());
+
+	if (state == pci_channel_io_normal)
+		return PCI_ERS_RESULT_NONE;
+	else if (kalIsResetting())
+		return PCI_ERS_RESULT_DISCONNECT;
+
+	fgIsBusAccessFailed = TRUE;
+	if (pci_is_enabled(pdev))
+		pci_disable_device(pdev);
+
+	return PCI_ERS_RESULT_NEED_RESET;
+}
+
+static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
+{
+#define AER_RST_STR		"Whole chip reset by AER"
+
+	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, resetting: %d\n",
+		kalIsResetting());
+
+	if (!kalIsResetting()) {
+		glSetRstReasonString(AER_RST_STR);
+		glResetWholeChipResetTrigger(AER_RST_STR);
+	}
+
+	return PCI_ERS_RESULT_DISCONNECT;
+}
+
+static void mtk_pci_error_resume(struct pci_dev *pdev)
+{
+	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
+}
 
 static int axiDmaSetup(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
@@ -1126,7 +1176,6 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 
 	ret = pcim_enable_device(pdev);
-
 	if (ret) {
 		DBGLOG(INIT, INFO,
 			"pci_enable_device failed, ret=%d\n", ret);
@@ -1139,7 +1188,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 			"pcim_iomap_regions failed, ret=%d\n", ret);
 		goto out;
 	}
-
+	fgIsBusAccessFailed = FALSE;
 	pci_set_master(pdev);
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
@@ -1476,7 +1525,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 
 	mtk_pci_driver.probe = mtk_pci_probe;
 	mtk_pci_driver.remove = mtk_pci_remove;
-
 	mtk_pci_driver.suspend = mtk_pci_suspend;
 	mtk_pci_driver.resume = mtk_pci_resume;
 
@@ -1657,6 +1705,9 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 		SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
+
+	prHif->fgIsPowerOn = true;
+	prHif->fgForceReadWriteReg = false;
 
 	glPopulateMemOps(prChipInfo, prMemOps);
 }

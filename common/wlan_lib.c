@@ -10095,13 +10095,13 @@ int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr)
 
 u_int8_t wlanIsChipNoAck(IN struct ADAPTER *prAdapter)
 {
-	u_int8_t fgIsNoAck;
+	u_int8_t fgIsNoAck = fgIsBusAccessFailed;
 
-	fgIsNoAck = prAdapter->fgIsChipNoAck
 #if CFG_CHIP_RESET_SUPPORT
-		    || kalIsResetting()
+	fgIsNoAck = fgIsNoAck || kalIsResetting();
 #endif
-		    || fgIsBusAccessFailed;
+	if (prAdapter)
+		fgIsNoAck = fgIsNoAck || prAdapter->fgIsChipNoAck;
 
 	return fgIsNoAck;
 }

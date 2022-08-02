@@ -217,8 +217,8 @@ struct GL_HIF_INFO {
 	unsigned long ulTxDataTimeout;
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
-	bool fgIsPowerOff;
-	bool fgIsDumpLog;
+	bool fgIsPowerOn;
+	bool fgForceReadWriteReg;
 
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;

@@ -794,7 +794,7 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 		return false;
 
 	/* driver can access all consys registers on driver own */
-	if (!prAdapter->fgIsFwOwn)
+	if (prAdapter && !prAdapter->fgIsFwOwn)
 		return true;
 
 	/* only own control register can be accessed on fw own */

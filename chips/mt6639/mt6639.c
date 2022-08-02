@@ -123,6 +123,9 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter);
 
+static bool mt6639IsValidRegAccess(struct ADAPTER *prAdapter,
+				   uint32_t u4Register);
+
 static void mt6639WfdmaRxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
@@ -1342,7 +1345,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
-	uint32_t u4Addr = 0, u4WrVal = 0, u4Val = 0;
+	uint32_t u4Addr = 0, u4WrVal = 0;
 
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
@@ -1376,16 +1379,6 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK;
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
-
-	DBGLOG(HAL, TRACE,
-	       "HOST_INT_ENA(0x%08x):0x%08x, En:%u, WrVal:0x%08x\n",
-	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
-	       u4Val,
-	       enable,
-	       u4WrVal);
 }
 
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
@@ -1741,6 +1734,48 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		   MT6639_EMI_SIZE_ADDR,
 		   size);
+}
+
+static bool mt6639IsValidRegAccess(struct ADAPTER *prAdapter,
+				   uint32_t u4Register)
+{
+	uint32_t au4ExcludeRegs[] = {
+		CONNAC3X_BN0_LPCTL_ADDR,
+		CONNAC3X_BN0_IRQ_STAT_ADDR,
+		CONNAC3X_BN0_IRQ_ENA_ADDR,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY2_ADDR,
+		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_ADDR,
+		0x6d010,
+		0x6d014,
+	};
+	struct GL_HIF_INFO *prHifInfo;
+	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
+
+	if (fgIsBusAccessFailed)
+		return false;
+
+	if (prAdapter) {
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		if (!prHifInfo->fgIsPowerOn)
+			return true;
+		if (!prAdapter->fgIsFwOwn)
+			return true;
+	}
+
+	/* only own control and wfdma int register can be accessed on fw own */
+	if ((u4Register & 0xFFFF0000) == CONNAC3X_HOST_CSR_TOP_BASE)
+		return true;
+
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		if (u4Register == au4ExcludeRegs[u4Idx])
+			return true;
+	}
+
+	return false;
 }
 
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,

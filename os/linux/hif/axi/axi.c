@@ -902,8 +902,8 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prGlueInfo->u4InfType = MT_DEV_INF_AXI;
 
-	prHif->fgIsPowerOff = true;
-	prHif->fgIsDumpLog = false;
+	prHif->fgIsPowerOn = true;
+	prHif->fgForceReadWriteReg = false;
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	prMemOps->allocTxDesc = axiAllocTxDesc;

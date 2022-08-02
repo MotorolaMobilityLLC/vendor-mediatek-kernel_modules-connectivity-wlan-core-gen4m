@@ -689,8 +689,8 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	if (prAdapter->fgIsFwOwn == TRUE)
 		goto unlock;
 
-	if (!prHifInfo->fgIsPowerOff && halGetWfdmaRxCnt(prAdapter)) {
-		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
+	if (prHifInfo->fgIsPowerOn && halGetWfdmaRxCnt(prAdapter)) {
+		DBGLOG_LIMITED(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
 		goto unlock;
 	}
@@ -1447,7 +1447,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, HOST_CSR_BUS_TIMOUT_CTRL_ADDR, 0x80EFFFFF);
 #endif
 
-	prHifInfo->fgIsPowerOff = false;
+	prHifInfo->fgIsPowerOn = true;
 
 	if (prBusInfo->setupMcuEmiAddr)
 		prBusInfo->setupMcuEmiAddr(prAdapter);
@@ -4109,7 +4109,7 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 		}
 	}
 
-	prHifInfo->fgIsPowerOff = true;
+	prHifInfo->fgIsPowerOn = false;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
