@@ -967,7 +967,6 @@ struct BUS_INFO soc3_0_bus_info = {
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 2,
-	.tx_ring2_data_idx = 4,
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
