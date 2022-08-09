@@ -793,17 +793,14 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 	prNetdev = wlanGetNetDev(prAdapter->prGlueInfo, prStaRec->ucBssIndex);
-	if (!prNetdev) {
+	if (prNetdev) {
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prNetdev);
+		if (!prNetDevPrivate->ucMddpSupport)
+			goto exit;
+	} else {
 		DBGLOG(NIC, INFO, "NetDev is null BssIndex[%d]\n",
 		       prStaRec->ucBssIndex);
-		ret = -1;
-		goto exit;
-	}
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			netdev_priv(prNetdev);
-
-	if (!prNetDevPrivate->ucMddpSupport) {
-		goto exit;
 	}
 
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
@@ -835,8 +832,13 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
 	/* TODO: Create a new msg for DMASHDL BMP */
 	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
-	kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
-			sizeof(prMddpTxd->nw_if_name));
+	if (prNetdev) {
+		kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
+			   sizeof(prMddpTxd->nw_if_name));
+	} else {
+		kalMemZero(prMddpTxd->nw_if_name,
+			   sizeof(prMddpTxd->nw_if_name));
+	}
 	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
 	kalMemCopy(prMddpTxd->local_mac,
 		   prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
