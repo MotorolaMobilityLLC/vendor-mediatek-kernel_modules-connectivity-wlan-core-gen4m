@@ -3301,7 +3301,7 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 						p2pGetChnlReqInfo(prAdapter,
 						prP2pRoleFsmInfo, i);
 
-					if (!prP2pBssInfo)
+					if (!prP2pBssInfo || !prChnlReqInfo)
 						continue;
 
 					prP2pBssInfo->eBand =
