@@ -861,7 +861,8 @@ int32_t connac3xGetTxRateInfo(char *pcCommand, int i4TotalLen,
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
+				"%s, ",
+				HW_TX_RATE_CCK_STR[rate & (uint8_t)0x3]);
 		else if (txmode == TX_RATE_MODE_OFDM)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -3510,16 +3511,16 @@ int32_t connac3x_show_mib_info(
 	uint32_t rvsr0 = 0, rscr26 = 0, mctr5 = 0, mctr6 = 0;
 	uint32_t msr0 = 0, msr1 = 0, msr2 = 0;
 	uint32_t tbcr0 = 0, tbcr1 = 0, tbcr2 = 0, tbcr3 = 0, tbcr4 = 0;
-	uint32_t btscr[7];
-	uint32_t tdrcr[5];
+	uint32_t btscr[7] = {0};
+	uint32_t tdrcr[5] = {0};
 	uint32_t mbtocr[16], mbtbcr[16], mbrocr[16], mbrbcr[16];
 	uint32_t btcr = 0, btbcr = 0, brocr = 0;
 	uint32_t brbcr = 0, btdcr = 0, brdcr = 0;
 #if defined(BELLWETHER) || defined(MT7990)
-	uint32_t mu_cnt[5];
+	uint32_t mu_cnt[5] = {0};
 #endif
-	uint32_t rx_cnt[6];
-	uint32_t ampdu_cnt[3];
+	uint32_t rx_cnt[6] = {0};
+	uint32_t ampdu_cnt[3] = {0};
 	uint64_t per;
 	uint32_t per_rem;
 	struct RX_CTRL *prRxCtrl;
@@ -3761,7 +3762,8 @@ int32_t connac3x_show_mib_info(
 		"\tTx 320MHz Cnt=%d\n",
 		tbcr4 & BN0_WF_MIB_TOP_TBCR4_TX_320MHZ_CNT_MASK);
 	per = (ampdu_cnt[1] == 0 ?
-		0 : 1000 * (ampdu_cnt[1] - ampdu_cnt[2]) / ampdu_cnt[1]);
+		0 :
+		1000 * (uint64_t)(ampdu_cnt[1] - ampdu_cnt[2]) / ampdu_cnt[1]);
 	per_rem = do_div(per, 10);
 
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,

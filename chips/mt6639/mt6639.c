@@ -1293,7 +1293,7 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-	uint32_t u4RegValue, u4WrValue = 0, u4Addr;
+	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr;
 
 	*pu4IntStatus = 0;
 

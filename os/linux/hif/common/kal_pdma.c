@@ -1070,10 +1070,10 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 			if (prMemOps->copyEvent &&
 			    prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
 						prDmaBuf, prBuffer,
-						sizeof(prBuffer))) {
+						sizeof(*prBuffer))) {
 				DBGLOG(RX, ERROR, "Dump RX payload\n");
 				DBGLOG_MEM8(RX, ERROR, prBuffer,
-						sizeof(prBuffer));
+						sizeof(*prBuffer));
 			}
 			kalMemFree(prBuffer, VIR_MEM_TYPE, sizeof(prBuffer));
 		}

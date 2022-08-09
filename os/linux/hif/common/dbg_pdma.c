@@ -892,7 +892,8 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	/* PDMA Tx/Rx descriptor & packet content */
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	for (i = 0; i < ARRAY_SIZE(wfmda_tx_group); i++) {
+	for (i = 0; i < ARRAY_SIZE(wfmda_tx_group) &&
+		 i < NUM_OF_TX_RING; i++) {
 		if (!wfmda_tx_group[i].dump_ring_content)
 			continue;
 		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n",

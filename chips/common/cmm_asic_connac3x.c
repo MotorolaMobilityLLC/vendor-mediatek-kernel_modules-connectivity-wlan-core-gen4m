@@ -658,7 +658,7 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 {
 	uint32_t i = 0;
 	uint32_t u4RegAddr = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	union WPDMA_GLO_CFG_STRUCT GloCfg = {0};
 	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
@@ -857,7 +857,7 @@ void asicConnac3xLowPowerOwnRead(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue;
+		u_int32_t u4RegValue = 0;
 
 		HAL_MCR_RD(prAdapter,
 				CONNAC3X_BN0_LPCTL_ADDR,

@@ -781,7 +781,7 @@ u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	/* Port idx sanity */
-	if (u2Port >= NUM_OF_TX_RING) {
+	if (u2Port >= ARRAY_SIZE(prHifInfo->TxRing)) {
 		DBGLOG(HAL, ERROR, "Invalid Port[%u]\n", u2Port);
 		return FALSE;
 	}

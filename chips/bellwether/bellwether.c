@@ -692,7 +692,7 @@ static void bellwetherWfdmaManualPrefetch(
 static void bellwetherReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
 {
-	uint32_t u4RegValue, u4WrValue = 0;
+	uint32_t u4RegValue = 0, u4WrValue = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
