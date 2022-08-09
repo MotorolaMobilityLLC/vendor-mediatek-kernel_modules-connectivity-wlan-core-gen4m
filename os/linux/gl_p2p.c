@@ -896,8 +896,13 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	if (!fgDoRegister)
+	if (!fgDoRegister) {
+		DBGLOG(P2P, WARN,
+			"skip register, p2p_state=%d, net_state=%d\n",
+			prAdapter->rP2PRegState,
+			prAdapter->rP2PNetRegState);
 		return TRUE;
+	}
 
 	for (i = 0; i < prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum; i++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -988,8 +993,13 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	if (!fgDoUnregister)
+	if (!fgDoUnregister) {
+		DBGLOG(P2P, WARN,
+			"skip unregister, p2p_state=%d, net_state=%d\n",
+			prAdapter->rP2PRegState,
+			prAdapter->rP2PNetRegState);
 		return TRUE;
+	}
 
 	for (ucRoleIdx = 0; ucRoleIdx < KAL_P2P_NUM; ucRoleIdx++) {
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);

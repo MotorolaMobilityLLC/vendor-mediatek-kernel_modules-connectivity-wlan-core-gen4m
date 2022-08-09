@@ -322,6 +322,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		if (u4Idx == KAL_P2P_NUM) {
 			/* Role port full. */
+			DBGLOG(P2P, WARN, "P2P index full. Idx=%d\n", u4Idx);
+			GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			prAdapter->rP2PNetRegState =
+				ENUM_NET_REG_STATE_REGISTERED;
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			return ERR_PTR(-EINVAL);
 		}
 
