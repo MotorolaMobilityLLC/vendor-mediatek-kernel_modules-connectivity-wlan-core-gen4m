@@ -600,6 +600,8 @@ extern int mtk_pcie_mask_msi_to_ap(
 	int port, u32 msi_addr, u32 mask) __attribute__((weak));
 extern int mtk_msi_unmask_to_other_mcu(
 	struct irq_data *data, u32 group) __attribute__((weak));
+extern int mtk_pcie_hw_control_vote(
+	int port, bool hw_mode_en, u8 who) __attribute__((weak));
 #endif
 
 /*******************************************************************************

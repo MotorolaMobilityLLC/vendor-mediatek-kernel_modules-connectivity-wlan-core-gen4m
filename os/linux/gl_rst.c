@@ -149,7 +149,8 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_SER_L0P5_FAIL"),
 	(uint8_t *) DISP_STRING("RST_CMD_EVT_FAIL"),
 	(uint8_t *) DISP_STRING("RST_WDT"),
-	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL")
+	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL"),
+	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY")
 };
 
 const uint8_t *apucRstAction[] = {
@@ -393,6 +394,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	case RST_WHOLE_CHIP_TRIGGER:
 	case RST_FWK_TRIGGER:
 	case RST_SMC_CMD_FAIL:
+	case RST_PCIE_NOT_READY:
 	case RST_REQ_CHL_FAIL:
 	case RST_P2P_CHNL_GRANT_INVALID_TYPE:
 	case RST_P2P_CHNL_GRANT_INVALID_STATE:
