@@ -4699,6 +4699,13 @@ static void indicateAcsResultByAisCh(struct ADAPTER *prAdapter,
 			prAcsReqInfo->ucPrimaryCh,
 			prAcsReqInfo->eBand);
 		prAcsReqInfo->ucPrimaryCh = AP_DEFAULT_CHANNEL_5G;
+	} else if (rlmDomainIsLegalDfsChannel(prAdapter,
+		prAcsReqInfo->eBand,
+		prAcsReqInfo->ucPrimaryCh)) {
+		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+		DBGLOG(P2P, INFO, "report 20mhz bw due to dfs\n",
+			prAcsReqInfo->eBand,
+			prAcsReqInfo->ucPrimaryCh);
 	}
 
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
