@@ -3227,6 +3227,9 @@ s_int32 mt_op_get_rx_stat_band(
 	rx_stat_test.seq_num = 0;
 	rx_stat_test.total_num = 72;
 
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
 		 OP_WLAN_OID_QUERY_RX_STATISTICS,
 		 &rx_stat_test,
