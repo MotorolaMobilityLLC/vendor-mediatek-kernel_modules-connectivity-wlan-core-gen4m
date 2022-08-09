@@ -3742,6 +3742,12 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		  uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidUpdateConnect(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidSetSsid(struct ADAPTER *prAdapter,
 	       void *pvSetBuffer,
 	       uint32_t u4SetBufferLen,
