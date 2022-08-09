@@ -129,7 +129,7 @@ struct PCIE_CHIP_CR_MAPPING mt6632_bus2chip_cr_mapping[] = {
  *******************************************************************************
  */
 
-void mt6632CapInit(IN struct ADAPTER *prAdapter)
+void mt6632CapInit(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -260,8 +260,8 @@ void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-void mt6632LowPowerOwnRead(IN struct ADAPTER *prAdapter,
-	OUT u_int8_t *pfgResult)
+void mt6632LowPowerOwnRead(struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -269,7 +269,7 @@ void mt6632LowPowerOwnRead(IN struct ADAPTER *prAdapter,
 	*pfgResult = ((u4RegValue & WPDMA_FW_CLR_OWN_INT) ? TRUE : FALSE);
 }
 
-void mt6632LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt6632LowPowerOwnSet(struct ADAPTER *prAdapter, u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -278,8 +278,8 @@ void mt6632LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 	*pfgResult = (u4RegValue == 0);
 }
 
-void mt6632LowPowerOwnClear(IN struct ADAPTER *prAdapter,
-	OUT u_int8_t *pfgResult)
+void mt6632LowPowerOwnClear(struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -288,7 +288,7 @@ void mt6632LowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	*pfgResult = (u4RegValue == 0);
 }
 
-void mt6632EnableInterrupt(IN struct ADAPTER *prAdapter)
+void mt6632EnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	union WPDMA_INT_MASK IntMask;
@@ -312,7 +312,7 @@ void mt6632EnableInterrupt(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
 }
 
-void mt6632DisableInterrupt(IN struct ADAPTER *prAdapter)
+void mt6632DisableInterrupt(struct ADAPTER *prAdapter)
 {
 	union WPDMA_INT_MASK IntMask;
 
@@ -326,7 +326,7 @@ void mt6632DisableInterrupt(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }
 
-void mt6632WakeUpWiFi(IN struct ADAPTER *prAdapter)
+void mt6632WakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
 

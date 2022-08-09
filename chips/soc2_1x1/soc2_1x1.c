@@ -81,7 +81,7 @@ struct PCIE_CHIP_CR_MAPPING soc2_1x1_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-void soc2_1x1ShowHifInfo(IN struct ADAPTER *prAdapter)
+void soc2_1x1ShowHifInfo(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Value = 0;
 

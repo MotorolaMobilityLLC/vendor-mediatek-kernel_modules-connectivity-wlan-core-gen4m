@@ -1485,13 +1485,13 @@ do { \
 /*----------------------------------------------------------------------------*/
 /* Routines in gl_kal.c                                                       */
 /*----------------------------------------------------------------------------*/
-void kalAcquireSpinLock(IN struct GLUE_INFO *prGlueInfo,
-			IN enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
-			OUT unsigned long *plFlags);
+void kalAcquireSpinLock(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long *plFlags);
 
-void kalReleaseSpinLock(IN struct GLUE_INFO *prGlueInfo,
-			IN enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
-			IN unsigned long ulFlags);
+void kalReleaseSpinLock(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory,
+			unsigned long ulFlags);
 
 void kalAcquireSpinLockBh(struct GLUE_INFO *prGlueInfo,
 			 enum ENUM_SPIN_LOCK_CATEGORY_E rLockCategory);
@@ -1519,26 +1519,26 @@ void kalAcquirePendingCmdLock(struct ADAPTER *prAdapter,
 void kalReleasePendingCmdLock(struct ADAPTER *prAdapter,
 		unsigned long ulFlags);
 
-void kalUpdateMACAddress(IN struct GLUE_INFO *prGlueInfo,
-			 IN uint8_t *pucMacAddr);
+void kalUpdateMACAddress(struct GLUE_INFO *prGlueInfo,
+			 uint8_t *pucMacAddr);
 
-void kalAcquireMutex(IN struct GLUE_INFO *prGlueInfo,
-		     IN enum ENUM_MUTEX_CATEGORY_E rMutexCategory);
+void kalAcquireMutex(struct GLUE_INFO *prGlueInfo,
+		     enum ENUM_MUTEX_CATEGORY_E rMutexCategory);
 
-void kalReleaseMutex(IN struct GLUE_INFO *prGlueInfo,
-		     IN enum ENUM_MUTEX_CATEGORY_E rMutexCategory);
+void kalReleaseMutex(struct GLUE_INFO *prGlueInfo,
+		     enum ENUM_MUTEX_CATEGORY_E rMutexCategory);
 
-void kalPacketFree(IN struct GLUE_INFO *prGlueInfo,
-		   IN void *pvPacket);
+void kalPacketFree(struct GLUE_INFO *prGlueInfo,
+		   void *pvPacket);
 
-void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
-		     IN uint32_t u4Size,
-		     IN u_int8_t fgIsTx,
-		     OUT uint8_t **ppucData);
+void *kalPacketAlloc(struct GLUE_INFO *prGlueInfo,
+		     uint32_t u4Size,
+		     u_int8_t fgIsTx,
+		     uint8_t **ppucData);
 
-void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
+void *kalPacketAllocWithHeadroom(struct GLUE_INFO
 				 *prGlueInfo,
-				 IN uint32_t u4Size, OUT uint8_t **ppucData);
+				 uint32_t u4Size, uint8_t **ppucData);
 
 uint32_t kalQueryPacketLength(void *pvPacket);
 
@@ -1595,105 +1595,105 @@ void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length);
 uint8_t *kal_skb_push(void *pvPacket, uint32_t u4Length);
 uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length);
 
-void kalOsTimerInitialize(IN struct GLUE_INFO *prGlueInfo,
-			  IN void *prTimerHandler);
+void kalOsTimerInitialize(struct GLUE_INFO *prGlueInfo,
+			  void *prTimerHandler);
 
-u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
-		     IN OS_SYSTIME rInterval);
+u_int8_t kalSetTimer(struct GLUE_INFO *prGlueInfo,
+		     OS_SYSTIME rInterval);
 
 uint32_t
-kalProcessRxPacket(IN struct GLUE_INFO *prGlueInfo,
-		   IN void *pvPacket,
-		   IN uint8_t *pucPacketStart, IN uint32_t u4PacketLen,
-		   IN enum ENUM_CSUM_RESULT aeCSUM[]);
+kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
+		   void *pvPacket,
+		   uint8_t *pucPacketStart, uint32_t u4PacketLen,
+		   enum ENUM_CSUM_RESULT aeCSUM[]);
 
-uint32_t kalRxIndicatePkts(IN struct GLUE_INFO *prGlueInfo,
-			   IN void *apvPkts[],
-			   IN uint8_t ucPktNum);
+uint32_t kalRxIndicatePkts(struct GLUE_INFO *prGlueInfo,
+			   void *apvPkts[],
+			   uint8_t ucPktNum);
 
-uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
-			     *prGlueInfo, IN void *pvPkt);
+uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
+			     *prGlueInfo, void *pvPkt);
 
 #if CFG_SUPPORT_NAN
-int kalIndicateNetlink2User(IN struct GLUE_INFO *prGlueInfo, IN void *pvBuf,
-			    IN uint32_t u4BufLen);
-void kalCreateUserSock(IN struct GLUE_INFO *prGlueInfo);
-void kalReleaseUserSock(IN struct GLUE_INFO *prGlueInfo);
-void kalNanIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo,
-				     IN uint32_t eStatus, IN uint8_t ucRoleIdx);
+int kalIndicateNetlink2User(struct GLUE_INFO *prGlueInfo, void *pvBuf,
+			    uint32_t u4BufLen);
+void kalCreateUserSock(struct GLUE_INFO *prGlueInfo);
+void kalReleaseUserSock(struct GLUE_INFO *prGlueInfo);
+void kalNanIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
+				     uint32_t eStatus, uint8_t ucRoleIdx);
 #endif
 
 void
-kalIndicateStatusAndComplete(IN struct GLUE_INFO
+kalIndicateStatusAndComplete(struct GLUE_INFO
 			     *prGlueInfo,
-			     IN uint32_t eStatus, IN void *pvBuf,
-			     IN uint32_t u4BufLen,
-			     IN uint8_t ucBssIndex);
+			     uint32_t eStatus, void *pvBuf,
+			     uint32_t u4BufLen,
+			     uint8_t ucBssIndex);
 
 void
-kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
-			IN uint8_t *pucFrameBody, IN uint32_t u4FrameBodyLen,
-			IN u_int8_t fgReassocRequest,
-			IN uint8_t ucBssIndex);
+kalUpdateReAssocReqInfo(struct GLUE_INFO *prGlueInfo,
+			uint8_t *pucFrameBody, uint32_t u4FrameBodyLen,
+			u_int8_t fgReassocRequest,
+			uint8_t ucBssIndex);
 
-void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
+void kalUpdateReAssocRspInfo(struct GLUE_INFO
 			     *prGlueInfo,
-			     IN uint8_t *pucFrameBody,
-			     IN uint32_t u4FrameBodyLen,
-			     IN uint8_t ucBssIndex);
+			     uint8_t *pucFrameBody,
+			     uint32_t u4FrameBodyLen,
+			     uint8_t ucBssIndex);
 
 #if CFG_TX_FRAGMENT
 u_int8_t
-kalQueryTxPacketHeader(IN struct GLUE_INFO *prGlueInfo,
-		       IN void *pvPacket, OUT uint16_t *pu2EtherTypeLen,
-		       OUT uint8_t *pucEthDestAddr);
+kalQueryTxPacketHeader(struct GLUE_INFO *prGlueInfo,
+		       void *pvPacket, uint16_t *pu2EtherTypeLen,
+		       uint8_t *pucEthDestAddr);
 #endif /* CFG_TX_FRAGMENT */
 
-void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
+void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 				  *prGlueInfo,
-				  IN void *pvPacket);
+				  void *pvPacket);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-void kalQueryTxChksumOffloadParam(IN void *pvPacket,
-				  OUT uint8_t *pucFlag);
+void kalQueryTxChksumOffloadParam(void *pvPacket,
+				  uint8_t *pucFlag);
 
-void kalUpdateRxCSUMOffloadParam(IN void *pvPacket,
-				 IN enum ENUM_CSUM_RESULT eCSUM[]);
+void kalUpdateRxCSUMOffloadParam(void *pvPacket,
+				 enum ENUM_CSUM_RESULT eCSUM[]);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-u_int8_t kalRetrieveNetworkAddress(IN struct GLUE_INFO *prGlueInfo,
-				IN OUT uint8_t *prMacAddr);
+u_int8_t kalRetrieveNetworkAddress(struct GLUE_INFO *prGlueInfo,
+				uint8_t *prMacAddr);
 
 void
-kalReadyOnChannel(IN struct GLUE_INFO *prGlueInfo,
-		  IN uint64_t u8Cookie,
-		  IN enum ENUM_BAND eBand, IN enum ENUM_CHNL_EXT eSco,
-		  IN uint8_t ucChannelNum, IN uint32_t u4DurationMs,
-		  IN uint8_t ucBssIndex);
+kalReadyOnChannel(struct GLUE_INFO *prGlueInfo,
+		  uint64_t u8Cookie,
+		  enum ENUM_BAND eBand, enum ENUM_CHNL_EXT eSco,
+		  uint8_t ucChannelNum, uint32_t u4DurationMs,
+		  uint8_t ucBssIndex);
 
 void
-kalRemainOnChannelExpired(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint64_t u8Cookie, IN enum ENUM_BAND eBand,
-			  IN enum ENUM_CHNL_EXT eSco, IN uint8_t ucChannelNum,
-			  IN uint8_t ucBssIndex);
+kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
+			  uint64_t u8Cookie, enum ENUM_BAND eBand,
+			  enum ENUM_CHNL_EXT eSco, uint8_t ucChannelNum,
+			  uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_DFS
 void
-kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
-			IN enum ENUM_CHNL_EXT eSco,
-			IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand);
+kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_CHNL_EXT eSco,
+			uint8_t ucChannelNum, enum ENUM_BAND eBand);
 #endif
 
 void
-kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
-			IN uint64_t u8Cookie, IN u_int8_t fgIsAck,
-			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen,
-			IN uint8_t ucBssIndex);
+kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
+			uint64_t u8Cookie, u_int8_t fgIsAck,
+			uint8_t *pucFrameBuf, uint32_t u4FrameLen,
+			uint8_t ucBssIndex);
 
-void kalIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
-				IN struct GLUE_INFO *prGlueInfo,
-			    IN struct SW_RFB *prSwRfb,
-			    IN uint8_t ucBssIndex);
+void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
+				struct GLUE_INFO *prGlueInfo,
+			    struct SW_RFB *prSwRfb,
+			    uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
@@ -1721,190 +1721,190 @@ int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
-		       IN uint32_t u4Register,
-		       OUT uint32_t *pu4Value);
-u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Register, OUT uint32_t *pu4Value);
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register,
+		       uint32_t *pu4Value);
+u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Register, uint32_t *pu4Value);
 
 u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
-			IN uint32_t u4Register,
-			IN uint32_t u4Value);
+			uint32_t u4Register,
+			uint32_t u4Value);
 u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
-			    IN uint32_t u4Register, IN uint32_t u4Value);
+			    uint32_t u4Register, uint32_t u4Value);
 
 u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 	uint32_t reg, void *buf, uint32_t total_size);
 u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	uint32_t reg, void *buf, uint32_t total_size);
 
-u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint32_t u4Register, OUT uint32_t *pu4Value);
+u_int8_t kalDevUhwRegRead(struct GLUE_INFO *prGlueInfo,
+			  uint32_t u4Register, uint32_t *pu4Value);
 
-u_int8_t kalDevUhwRegWrite(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Register, IN uint32_t u4Value);
+u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Register, uint32_t u4Value);
 
 u_int8_t
-kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
-	       IN uint16_t u2Port, IN uint32_t u2Len, OUT uint8_t *pucBuf,
-	       IN uint32_t u2ValidOutBufSize);
+kalDevPortRead(struct GLUE_INFO *prGlueInfo,
+	       uint16_t u2Port, uint32_t u2Len, uint8_t *pucBuf,
+	       uint32_t u2ValidOutBufSize);
 
 u_int8_t
 kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
-		IN uint16_t u2Port, IN uint32_t u2Len, IN uint8_t *pucBuf,
-		IN uint32_t u2ValidInBufSize);
+		uint16_t u2Port, uint32_t u2Len, uint8_t *pucBuf,
+		uint32_t u2ValidInBufSize);
 
-u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
-			 IN struct MSDU_INFO *prMsduInfo);
-enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-			IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
-u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo);
-void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
-			 OUT uint32_t *pu4IntStatus);
+u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
+			 struct MSDU_INFO *prMsduInfo);
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(struct GLUE_INFO *prGlueInfo,
+			struct CMD_INFO *prCmdInfo, uint8_t ucTC);
+u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo);
+void kalDevReadIntStatus(struct ADAPTER *prAdapter,
+			 uint32_t *pu4IntStatus);
 
-u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO
+u_int8_t kalDevWriteWithSdioCmd52(struct GLUE_INFO
 				  *prGlueInfo,
-				  IN uint32_t u4Addr, IN uint8_t ucData);
+				  uint32_t u4Addr, uint8_t ucData);
 
 #if CFG_SUPPORT_EXT_CONFIG
-uint32_t kalReadExtCfg(IN struct GLUE_INFO *prGlueInfo);
+uint32_t kalReadExtCfg(struct GLUE_INFO *prGlueInfo);
 #endif
 
 u_int8_t
-kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO
+kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO
 				   *prGlueInfo,
-				   IN void *prPacket,
-				   OUT struct TX_PACKET_INFO *prTxPktInfo);
+				   void *prPacket,
+				   struct TX_PACKET_INFO *prTxPktInfo);
 
-u_int8_t kalGetEthDestAddr(IN struct GLUE_INFO *prGlueInfo,
-			   IN void *prPacket,
-			   OUT uint8_t *pucEthDestAddr);
+u_int8_t kalGetEthDestAddr(struct GLUE_INFO *prGlueInfo,
+			   void *prPacket,
+			   uint8_t *pucEthDestAddr);
 
 void
-kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
-	       IN struct CMD_INFO *prCmdInfo, IN uint32_t u4SetQueryInfoLen,
-	       IN uint32_t rOidStatus);
+kalOidComplete(struct GLUE_INFO *prGlueInfo,
+	       struct CMD_INFO *prCmdInfo, uint32_t u4SetQueryInfoLen,
+	       uint32_t rOidStatus);
 
 uint32_t
-kalIoctl(IN struct GLUE_INFO *prGlueInfo,
-	 IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	 IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
-	 OUT uint32_t *pu4QryInfoLen);
+kalIoctl(struct GLUE_INFO *prGlueInfo,
+	 PFN_OID_HANDLER_FUNC pfnOidHandler,
+	 void *pvInfoBuf, uint32_t u4InfoBufLen,
+	 uint32_t *pu4QryInfoLen);
 
 uint32_t
-kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
-	IN PFN_OID_HANDLER_FUNC pfnOidHandler,
-	IN void *pvInfoBuf, IN uint32_t u4InfoBufLen,
-	OUT uint32_t *pu4QryInfoLen,
-	IN uint8_t ucBssIndex);
+kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
+	PFN_OID_HANDLER_FUNC pfnOidHandler,
+	void *pvInfoBuf, uint32_t u4InfoBufLen,
+	uint32_t *pu4QryInfoLen,
+	uint8_t ucBssIndex);
 
 void SET_IOCTL_BSSIDX(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 uint8_t GET_IOCTL_BSSIDX(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 
-void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
-			IN struct EVENT_ASSOC_INFO *prAssocInfo);
+void kalHandleAssocInfo(struct GLUE_INFO *prGlueInfo,
+			struct EVENT_ASSOC_INFO *prAssocInfo);
 
 #if CFG_ENABLE_FW_DOWNLOAD
-void *kalFirmwareImageMapping(IN struct GLUE_INFO
+void *kalFirmwareImageMapping(struct GLUE_INFO
 			      *prGlueInfo,
-			      OUT void **ppvMapFileBuf,
-			      OUT uint32_t *pu4FileLength,
-			      IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-void kalFirmwareImageUnmapping(IN struct GLUE_INFO
+			      void **ppvMapFileBuf,
+			      uint32_t *pu4FileLength,
+			      enum ENUM_IMG_DL_IDX_T eDlIdx);
+void kalFirmwareImageUnmapping(struct GLUE_INFO
 			       *prGlueInfo,
-			       IN void *prFwHandle, IN void *pvMapFileBuf);
+			       void *prFwHandle, void *pvMapFileBuf);
 
-uint32_t kalFirmwareOpen(IN struct GLUE_INFO *prGlueInfo,
-			 IN uint8_t **apucNameTable);
-uint32_t kalFirmwareClose(IN struct GLUE_INFO *prGlueInfo);
-uint32_t kalFirmwareSize(IN struct GLUE_INFO *prGlueInfo,
-			 OUT uint32_t *pu4Size);
-uint32_t kalFirmwareLoad(IN struct GLUE_INFO *prGlueInfo,
-			 OUT void *prBuf, IN uint32_t u4Offset,
-			 OUT uint32_t *pu4Size);
+uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
+			 uint8_t **apucNameTable);
+uint32_t kalFirmwareClose(struct GLUE_INFO *prGlueInfo);
+uint32_t kalFirmwareSize(struct GLUE_INFO *prGlueInfo,
+			 uint32_t *pu4Size);
+uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
+			 void *prBuf, uint32_t u4Offset,
+			 uint32_t *pu4Size);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
-void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
+void kalRemoveProbe(struct GLUE_INFO *prGlueInfo);
 
 u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Card Removal Check                                                         */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalIsCardRemoved(IN struct GLUE_INFO *prGlueInfo);
+u_int8_t kalIsCardRemoved(struct GLUE_INFO *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /* TX                                                                         */
 /*----------------------------------------------------------------------------*/
-void kalFlushPendingTxPackets(IN struct GLUE_INFO
+void kalFlushPendingTxPackets(struct GLUE_INFO
 			      *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Media State Indication                                                     */
 /*----------------------------------------------------------------------------*/
 enum ENUM_PARAM_MEDIA_STATE kalGetMediaStateIndicated(
-	IN struct GLUE_INFO
-	*prGlueInfo, IN uint8_t ucBssIndex);
+	struct GLUE_INFO
+	*prGlueInfo, uint8_t ucBssIndex);
 
-void kalSetMediaStateIndicated(IN struct GLUE_INFO *prGlueInfo,
-		IN enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate,
-		IN uint8_t ucBssIndex);
+void kalSetMediaStateIndicated(struct GLUE_INFO *prGlueInfo,
+		enum ENUM_PARAM_MEDIA_STATE eParamMediaStateIndicate,
+		uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* OID handling                                                               */
 /*----------------------------------------------------------------------------*/
-void kalOidCmdClearance(IN struct GLUE_INFO *prGlueInfo);
+void kalOidCmdClearance(struct GLUE_INFO *prGlueInfo);
 
-void kalOidClearance(IN struct GLUE_INFO *prGlueInfo);
+void kalOidClearance(struct GLUE_INFO *prGlueInfo);
 
-void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo,
-		       IN struct QUE_ENTRY *prQueueEntry);
+void kalEnqueueCommand(struct GLUE_INFO *prGlueInfo,
+		       struct QUE_ENTRY *prQueueEntry);
 
 #if CFG_ENABLE_BT_OVER_WIFI
 /*----------------------------------------------------------------------------*/
 /* Bluetooth over Wi-Fi handling                                              */
 /*----------------------------------------------------------------------------*/
-void kalIndicateBOWEvent(IN struct GLUE_INFO *prGlueInfo,
-			 IN struct BT_OVER_WIFI_EVENT *prEvent);
+void kalIndicateBOWEvent(struct GLUE_INFO *prGlueInfo,
+			 struct BT_OVER_WIFI_EVENT *prEvent);
 
 enum ENUM_BOW_DEVICE_STATE kalGetBowState(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
 
-u_int8_t kalSetBowState(IN struct GLUE_INFO *prGlueInfo,
-			IN enum ENUM_BOW_DEVICE_STATE eBowState,
+u_int8_t kalSetBowState(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_BOW_DEVICE_STATE eBowState,
 			uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
 
 enum ENUM_BOW_DEVICE_STATE kalGetBowGlobalState(
-	IN struct GLUE_INFO
+	struct GLUE_INFO
 	*prGlueInfo);
 
-uint32_t kalGetBowFreqInKHz(IN struct GLUE_INFO
+uint32_t kalGetBowFreqInKHz(struct GLUE_INFO
 			    *prGlueInfo);
 
-uint8_t kalGetBowRole(IN struct GLUE_INFO *prGlueInfo,
-		      IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
+uint8_t kalGetBowRole(struct GLUE_INFO *prGlueInfo,
+		      uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
 
-void kalSetBowRole(IN struct GLUE_INFO *prGlueInfo,
-		   IN uint8_t ucRole,
-		   IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
+void kalSetBowRole(struct GLUE_INFO *prGlueInfo,
+		   uint8_t ucRole,
+		   uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN]);
 
 uint8_t kalGetBowAvailablePhysicalLinkCount(
-	IN struct GLUE_INFO *prGlueInfo);
+	struct GLUE_INFO *prGlueInfo);
 
 #if CFG_BOW_SEPARATE_DATA_PATH
 /*----------------------------------------------------------------------------*/
 /* Bluetooth over Wi-Fi Net Device Init/Uninit                                */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalInitBowDevice(IN struct GLUE_INFO *prGlueInfo,
-			  IN const char *prDevName);
+u_int8_t kalInitBowDevice(struct GLUE_INFO *prGlueInfo,
+			  const char *prDevName);
 
-u_int8_t kalUninitBowDevice(IN struct GLUE_INFO
+u_int8_t kalUninitBowDevice(struct GLUE_INFO
 			    *prGlueInfo);
 #endif /* CFG_BOW_SEPARATE_DATA_PATH */
 #endif /* CFG_ENABLE_BT_OVER_WIFI */
@@ -1912,43 +1912,43 @@ u_int8_t kalUninitBowDevice(IN struct GLUE_INFO
 /*----------------------------------------------------------------------------*/
 /* Command Data Frame Clearance                                               */
 /*----------------------------------------------------------------------------*/
-void kalClearCmdDataFrames(IN struct GLUE_INFO *prGlueInfo);
+void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo);
 
-void kalClearCmdDataFramesByBssIdx(IN struct GLUE_INFO *prGlueInfo,
-				    IN uint8_t ucBssIndex);
+void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO *prGlueInfo,
+				    uint8_t ucBssIndex);
 
-void kalCmdDataFrameSendComplete(IN struct GLUE_INFO *prGlueInfo,
-				  IN void *pvPacket, IN uint32_t rStatus);
+void kalCmdDataFrameSendComplete(struct GLUE_INFO *prGlueInfo,
+				  void *pvPacket, uint32_t rStatus);
 
 /*----------------------------------------------------------------------------*/
 /* Management Frame Clearance                                                 */
 /*----------------------------------------------------------------------------*/
-void kalClearMgmtFrames(IN struct GLUE_INFO *prGlueInfo);
+void kalClearMgmtFrames(struct GLUE_INFO *prGlueInfo);
 
-void kalClearMgmtFramesByBssIdx(IN struct GLUE_INFO
+void kalClearMgmtFramesByBssIdx(struct GLUE_INFO
 				*prGlueInfo,
-				IN uint8_t ucBssIndex);
+				uint8_t ucBssIndex);
 
-uint32_t kalGetTxPendingFrameCount(IN struct GLUE_INFO
+uint32_t kalGetTxPendingFrameCount(struct GLUE_INFO
 				   *prGlueInfo);
 
-uint32_t kalGetTxPendingCmdCount(IN struct GLUE_INFO
+uint32_t kalGetTxPendingCmdCount(struct GLUE_INFO
 				 *prGlueInfo);
 
-void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo,
-	IN u_int8_t fgIsNeedHandler);
+void kalClearCommandQueue(struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgIsNeedHandler);
 
-u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
-		     IN uint32_t u4Interval);
+u_int8_t kalSetTimer(struct GLUE_INFO *prGlueInfo,
+		     uint32_t u4Interval);
 
-u_int8_t kalCancelTimer(IN struct GLUE_INFO *prGlueInfo);
+u_int8_t kalCancelTimer(struct GLUE_INFO *prGlueInfo);
 
-void kalScanDone(IN struct GLUE_INFO *prGlueInfo,
-		 IN uint8_t ucBssIndex,
-		 IN uint32_t status);
+void kalScanDone(struct GLUE_INFO *prGlueInfo,
+		 uint8_t ucBssIndex,
+		 uint32_t status);
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
-uint8_t kalUpdateBssTimestamp(IN struct GLUE_INFO *prGlueInfo);
+uint8_t kalUpdateBssTimestamp(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
 uint32_t kalRandomNumber(void);
@@ -1998,35 +1998,35 @@ void kalSetRxProcessEvent(struct GLUE_INFO *pr);
 /*----------------------------------------------------------------------------*/
 /* NVRAM/Registry Service                                                     */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalIsConfigurationExist(IN struct GLUE_INFO
+u_int8_t kalIsConfigurationExist(struct GLUE_INFO
 				 *prGlueInfo);
 
-struct REG_INFO *kalGetConfiguration(IN struct GLUE_INFO
+struct REG_INFO *kalGetConfiguration(struct GLUE_INFO
 				     *prGlueInfo);
 
-u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
-			IN uint32_t u4Offset,
-			IN ssize_t len, OUT uint16_t *pu2Data);
+u_int8_t kalCfgDataRead(struct GLUE_INFO *prGlueInfo,
+			uint32_t u4Offset,
+			ssize_t len, uint16_t *pu2Data);
 
-u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint32_t u4Offset,
-			  OUT uint16_t *pu2Data);
+u_int8_t kalCfgDataRead16(struct GLUE_INFO *prGlueInfo,
+			  uint32_t u4Offset,
+			  uint16_t *pu2Data);
 
-u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Offset, IN uint16_t u2Data);
+u_int8_t kalCfgDataWrite16(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Offset, uint16_t u2Data);
 
-u_int8_t kalCfgDataWrite8(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Offset, IN uint8_t u2Data);
+u_int8_t kalCfgDataWrite8(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Offset, uint8_t u2Data);
 
 
 /*----------------------------------------------------------------------------*/
 /* RSSI Updating                                                              */
 /*----------------------------------------------------------------------------*/
 void
-kalUpdateRSSI(IN struct GLUE_INFO *prGlueInfo,
-	      IN uint8_t ucBssIndex,
-	      IN int8_t cRssi,
-	      IN int8_t cLinkQuality);
+kalUpdateRSSI(struct GLUE_INFO *prGlueInfo,
+	      uint8_t ucBssIndex,
+	      int8_t cRssi,
+	      int8_t cLinkQuality);
 
 /*----------------------------------------------------------------------------*/
 /* I/O Buffer Pre-allocation                                                  */
@@ -2035,27 +2035,27 @@ u_int8_t kalInitIOBuffer(u_int8_t is_pre_alloc);
 
 void kalUninitIOBuffer(void);
 
-void *kalAllocateIOBuffer(IN uint32_t u4AllocSize);
+void *kalAllocateIOBuffer(uint32_t u4AllocSize);
 
-void kalReleaseIOBuffer(IN void *pvAddr,
-			IN uint32_t u4Size);
+void kalReleaseIOBuffer(void *pvAddr,
+			uint32_t u4Size);
 
 void
-kalGetChannelList(IN struct GLUE_INFO *prGlueInfo,
-		  IN enum ENUM_BAND eSpecificBand,
-		  IN uint8_t ucMaxChannelNum, IN uint8_t *pucNumOfChannel,
-		  IN struct RF_CHANNEL_INFO *paucChannelList);
+kalGetChannelList(struct GLUE_INFO *prGlueInfo,
+		  enum ENUM_BAND eSpecificBand,
+		  uint8_t ucMaxChannelNum, uint8_t *pucNumOfChannel,
+		  struct RF_CHANNEL_INFO *paucChannelList);
 
-u_int8_t kalIsAPmode(IN struct GLUE_INFO *prGlueInfo);
+u_int8_t kalIsAPmode(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_802_11W
 /*----------------------------------------------------------------------------*/
 /* 802.11W                                                                    */
 /*----------------------------------------------------------------------------*/
-uint32_t kalGetMfpSetting(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex);
-uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex);
+uint32_t kalGetMfpSetting(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex);
+uint8_t kalGetRsnIeMfpCap(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex);
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -2072,69 +2072,69 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 /* NL80211                                                                    */
 /*----------------------------------------------------------------------------*/
 void
-kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
-		   IN uint8_t *pucFrameBuf, IN uint32_t u4BufLen,
-		   IN uint8_t ucChannelNum, IN enum ENUM_BAND eBand,
-		   IN int32_t i4SignalStrength);
+kalIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
+		   uint8_t *pucFrameBuf, uint32_t u4BufLen,
+		   uint8_t ucChannelNum, enum ENUM_BAND eBand,
+		   int32_t i4SignalStrength);
 
 /*----------------------------------------------------------------------------*/
 /* Net device                                                                 */
 /*----------------------------------------------------------------------------*/
 uint32_t
 kalHardStartXmit(struct sk_buff *prSkb,
-		 IN struct net_device *prDev,
+		 struct net_device *prDev,
 		 struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex);
 
-u_int8_t kalIsPairwiseEapolPacket(IN void *prPacket);
+u_int8_t kalIsPairwiseEapolPacket(void *prPacket);
 
 u_int8_t
-kalGetIPv4Address(IN struct net_device *prDev,
-		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv4Addrs,
-		  OUT uint32_t *pu4NumOfIpv4Addr);
+kalGetIPv4Address(struct net_device *prDev,
+		  uint32_t u4MaxNumOfAddr, uint8_t *pucIpv4Addrs,
+		  uint32_t *pu4NumOfIpv4Addr);
 
 #if IS_ENABLED(CONFIG_IPV6)
 u_int8_t
-kalGetIPv6Address(IN struct net_device *prDev,
-		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv6Addrs,
-		  OUT uint32_t *pu4NumOfIpv6Addr);
+kalGetIPv6Address(struct net_device *prDev,
+		  uint32_t u4MaxNumOfAddr, uint8_t *pucIpv6Addrs,
+		  uint32_t *pu4NumOfIpv6Addr);
 #else
 static inline u_int8_t
-kalGetIPv6Address(IN struct net_device *prDev,
-		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv6Addrs,
-		  OUT uint32_t *pu4NumOfIpv6Addr) {
+kalGetIPv6Address(struct net_device *prDev,
+		  uint32_t u4MaxNumOfAddr, uint8_t *pucIpv6Addrs,
+		  uint32_t *pu4NumOfIpv6Addr) {
 	/* Not support IPv6 */
 	*pu4NumOfIpv6Addr = 0;
 	return 0;
 }
 #endif /* IS_ENABLED(CONFIG_IPV6) */
 
-void kalSetNetAddressFromInterface(IN struct GLUE_INFO
+void kalSetNetAddressFromInterface(struct GLUE_INFO
 				   *prGlueInfo,
-				   IN struct net_device *prDev,
-				   IN u_int8_t fgSet);
+				   struct net_device *prDev,
+				   u_int8_t fgSet);
 
-uint32_t kalResetStats(IN struct net_device *prDev);
+uint32_t kalResetStats(struct net_device *prDev);
 
-void *kalGetStats(IN struct net_device *prDev);
+void *kalGetStats(struct net_device *prDev);
 
-void kalResetPacket(IN struct GLUE_INFO *prGlueInfo,
-		    IN void *prPacket);
+void kalResetPacket(struct GLUE_INFO *prGlueInfo,
+		    void *prPacket);
 
 #if CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 /*----------------------------------------------------------------------------*/
 /* SDIO Read/Write Pattern Support                                            */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalSetSdioTestPattern(IN struct GLUE_INFO
+u_int8_t kalSetSdioTestPattern(struct GLUE_INFO
 			       *prGlueInfo,
-			       IN u_int8_t fgEn, IN u_int8_t fgRead);
+			       u_int8_t fgEn, u_int8_t fgRead);
 #endif
 
 /*----------------------------------------------------------------------------*/
 /* PNO Support                                                                */
 /*----------------------------------------------------------------------------*/
-void kalSchedScanResults(IN struct GLUE_INFO *prGlueInfo);
+void kalSchedScanResults(struct GLUE_INFO *prGlueInfo);
 
-void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
+void kalSchedScanStopped(struct GLUE_INFO *prGlueInfo,
 			 u_int8_t fgDriverTriggerd);
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
@@ -2154,14 +2154,14 @@ uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
  */
 
 #if CFG_WOW_SUPPORT
-void kalWowInit(IN struct GLUE_INFO *prGlueInfo);
-void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
+void kalWowInit(struct GLUE_INFO *prGlueInfo);
+void kalWowProcess(struct GLUE_INFO *prGlueInfo,
 		   uint8_t enable);
 #if CFG_SUPPORT_MDNS_OFFLOAD
-void kalMdnsProcess(IN struct GLUE_INFO *prGlueInfo,
-		IN struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
-void kalMdnsOffloadInit(IN struct ADAPTER *prAdapter);
-struct MDNS_PARAM_ENTRY_T *mdnsAllocateParamEntry(IN struct ADAPTER *prAdapter);
+void kalMdnsProcess(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+void kalMdnsOffloadInit(struct ADAPTER *prAdapter);
+struct MDNS_PARAM_ENTRY_T *mdnsAllocateParamEntry(struct ADAPTER *prAdapter);
 void kalSendClearRecordToFw(struct GLUE_INFO *prGlueInfo);
 void kalSendMdnsRecordToFw(struct GLUE_INFO *prGlueInfo);
 void kalSendMdnsEnableToFw(struct GLUE_INFO *prGlueInfo);
@@ -2182,7 +2182,7 @@ int rx_thread(void *data);
 #endif
 uint64_t kalGetBootTime(void);
 
-int kalMetInitProcfs(IN struct GLUE_INFO *prGlueInfo);
+int kalMetInitProcfs(struct GLUE_INFO *prGlueInfo);
 int kalMetRemoveProcfs(void);
 
 uint8_t kalGetEapolKeyType(void *prPacket);
@@ -2201,17 +2201,17 @@ void kalFreeTxMsduWorker(struct work_struct *work);
 void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 		   struct MSDU_INFO *prMsduInfo);
 #endif
-int32_t kalPerMonInit(IN struct GLUE_INFO *prGlueInfo);
-int32_t kalPerMonDisable(IN struct GLUE_INFO *prGlueInfo);
-int32_t kalPerMonEnable(IN struct GLUE_INFO *prGlueInfo);
-int32_t kalPerMonStart(IN struct GLUE_INFO *prGlueInfo);
-int32_t kalPerMonStop(IN struct GLUE_INFO *prGlueInfo);
-int32_t kalPerMonDestroy(IN struct GLUE_INFO *prGlueInfo);
-void kalPerMonHandler(IN struct ADAPTER *prAdapter,
+int32_t kalPerMonInit(struct GLUE_INFO *prGlueInfo);
+int32_t kalPerMonDisable(struct GLUE_INFO *prGlueInfo);
+int32_t kalPerMonEnable(struct GLUE_INFO *prGlueInfo);
+int32_t kalPerMonStart(struct GLUE_INFO *prGlueInfo);
+int32_t kalPerMonStop(struct GLUE_INFO *prGlueInfo);
+int32_t kalPerMonDestroy(struct GLUE_INFO *prGlueInfo);
+void kalPerMonHandler(struct ADAPTER *prAdapter,
 		      unsigned long ulParam);
-uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter,
-			  IN uint8_t *pucBuf,
-			  IN uint32_t u4Max);
+uint32_t kalPerMonGetInfo(struct ADAPTER *prAdapter,
+			  uint8_t *pucBuf,
+			  uint32_t u4Max);
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
@@ -2222,28 +2222,28 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		struct BOOST_INFO *prBoostInfo);
-int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
-		    IN uint32_t u4TarPerfLevel,
-		    IN uint32_t u4BoostCpuTh);
-int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
-			 IN uint32_t u4CurrPerfLevel,
-			 IN uint32_t u4TarPerfLevel,
-			 IN int32_t i4Pending,
-			 IN uint32_t u4Used);
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh);
+int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
+			 uint32_t u4CurrPerfLevel,
+			 uint32_t u4TarPerfLevel,
+			 int32_t i4Pending,
+			 uint32_t u4Used);
 uint32_t kalGetCpuBoostThreshold(void);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 uint32_t kalGetLittleCpuBoostThreshold(void);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
-int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter, IN uint8_t uBssIndex);
+int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter, uint8_t uBssIndex);
 uint32_t kalGetFwVerOffsetAddr(void);
 uint32_t kalGetEmiMetOffset(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
-void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);
+void kalSetRpsMap(struct GLUE_INFO *glue, unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);
 #if (CFG_COALESCING_INTERRUPT == 1)
-int32_t kalCoalescingInt(IN struct ADAPTER *prAdapter,
-			IN uint32_t u4TarPerfLevel,
-			IN uint32_t u4CoalescingIntTh);
+int32_t kalCoalescingInt(struct ADAPTER *prAdapter,
+			uint32_t u4TarPerfLevel,
+			uint32_t u4CoalescingIntTh);
 #endif
 
 #if CFG_MTK_ANDROID_EMI
@@ -2257,7 +2257,7 @@ int32_t kalGetFwFlavor(uint8_t *flavor);
 int32_t kalGetFwFlavorByPlat(uint8_t *flavor);
 int32_t kalGetConnsysVerId(void);
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);
-int32_t kalFbNotifierReg(IN struct GLUE_INFO *prGlueInfo);
+int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo);
 void kalFbNotifierUnReg(void);
 
 #if KERNEL_VERSION(3, 0, 0) <= LINUX_VERSION_CODE
@@ -2294,13 +2294,13 @@ int kalMaskMemCmp(const void *cs, const void *ct,
 	const void *mask, size_t count);
 
 u_int8_t
-kalChannelScoSwitch(IN enum nl80211_channel_type channel_type,
-		IN enum ENUM_CHNL_EXT *prChnlSco);
+kalChannelScoSwitch(enum nl80211_channel_type channel_type,
+		enum ENUM_CHNL_EXT *prChnlSco);
 
 u_int8_t
-kalChannelFormatSwitch(IN struct cfg80211_chan_def *channel_def,
-		IN struct ieee80211_channel *channel,
-		IN struct RF_CHANNEL_INFO *prRfChnlInfo);
+kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
+		struct ieee80211_channel *channel,
+		struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #if CFG_SUPPORT_RX_GRO
 uint8_t kalRxGroInit(struct net_device *prDev);
@@ -2337,14 +2337,14 @@ int kalVendorExternalAuthRequest(
 #endif
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-int32_t kalBatNotifierReg(IN struct GLUE_INFO *prGlueInfo);
+int32_t kalBatNotifierReg(struct GLUE_INFO *prGlueInfo);
 void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable);
 void kalSetTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable);
 void kalBatNotifierUnReg(void);
 #endif
 
 #if CFG_SUPPORT_NAN
-void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer);
+void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer);
 #endif
 
 int kalWlanUeventInit(void);
@@ -2366,25 +2366,25 @@ extern uint32_t getFWLogOnOff(void);
 void setTimeParameter(
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo,
 	int chipConfigInfoSize, unsigned int second, unsigned int usecond);
-uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgInitCmd);
+uint32_t kalSyncTimeToFW(struct ADAPTER *prAdapter,
+	u_int8_t fgInitCmd);
 void kalSyncTimeToFWByIoctl(void);
 
-void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
-	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);
+void kalUpdateCompHdlrRec(struct ADAPTER *prAdapter,
+	PFN_OID_HANDLER_FUNC pfnOidHandler, struct CMD_INFO *prCmdInfo);
 
 extern uint32_t get_wifi_standalone_log_mode(void);
 void kalPrintLog(const char *fmt, ...);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
+void kalPwrLevelHdlrRegister(struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr);
-void kalPwrLevelHdlrUnregisterAll(IN struct ADAPTER *prAdapter);
-void connsysPowerLevelNotify(IN struct ADAPTER *prAdapter);
-void connsysPowerTempNotify(IN struct ADAPTER *prAdapter);
+void kalPwrLevelHdlrUnregisterAll(struct ADAPTER *prAdapter);
+void connsysPowerLevelNotify(struct ADAPTER *prAdapter);
+void connsysPowerTempNotify(struct ADAPTER *prAdapter);
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 					int currentTemp);
-uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter);
+uint32_t kalDumpPwrLevel(struct ADAPTER *prAdapter);
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
@@ -2396,7 +2396,7 @@ kalApplyCustomRegulatory(
 void kal_sched_set(struct task_struct *p, int policy,
 		const struct sched_param *param,
 		int nice);
-void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo);
+void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo);
 void kalSetLogTooMuch(uint32_t u4DriverLevel, uint32_t u4FwLevel);
 void kalGetRealTime(struct REAL_TIME *prRealTime);
 void kalVendorEventRssiBeyondRange(struct GLUE_INFO *prGlueInfo,
@@ -2493,7 +2493,7 @@ void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 			  u_int8_t fgKeepPcieWakeup);
 #endif /* defined(_HIF_PCIE) */
 
-void kalSetISRMask(IN struct ADAPTER *prAdapter, IN uint32_t set_mask);
+void kalSetISRMask(struct ADAPTER *prAdapter, uint32_t set_mask);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 void kalConfigChksumOffload(
@@ -2588,10 +2588,10 @@ void unregister_thermal_cbs(struct ADAPTER *ad);
 #endif
 
 #if (CFG_VOLT_INFO == 1)
-void kalVnfActive(IN struct ADAPTER *prAdapter);
+void kalVnfActive(struct ADAPTER *prAdapter);
 void kalVnfUninit(void);
-void kalVnfInit(IN struct ADAPTER *prAdapter);
-void kalVnfEventHandler(IN struct ADAPTER *prAdapter);
+void kalVnfInit(struct ADAPTER *prAdapter);
+void kalVnfEventHandler(struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
 
 void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo);

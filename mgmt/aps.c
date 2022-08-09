@@ -696,7 +696,7 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 
 static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
-	IN struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
 	enum ENUM_BAND eBand)
 {
 	struct SCAN_INFO *info;

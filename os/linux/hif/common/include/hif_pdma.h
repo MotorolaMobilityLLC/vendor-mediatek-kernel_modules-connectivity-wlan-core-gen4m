@@ -728,9 +728,9 @@ struct SW_WFDMA_OPS {
 	void (*reset)(struct SW_WFDMA_INFO *prSwWfdmaInfo);
 	void (*backup)(struct GLUE_INFO *prGlueInfo);
 	void (*restore)(struct GLUE_INFO *prGlueInfo);
-	void (*getCidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
-	void (*setCidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
-	void (*getDidx)(IN struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
+	void (*getCidx)(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
+	void (*setCidx)(struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
+	void (*getDidx)(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 	bool (*writeCmd)(struct GLUE_INFO *prGlueInfo);
 	bool (*processDmaDone)(struct GLUE_INFO *prGlueInfo);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
@@ -902,26 +902,26 @@ void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
 void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif);
-void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo, bool fgResetHif);
-void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitTxRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif);
+void halWpdmaInitRxRing(struct GLUE_INFO *prGlueInfo);
 uint8_t halSetRxRingHwAddr(
 	struct RTMP_RX_RING *prRxRing,
 	struct BUS_INFO *prBusInfo,
 	uint32_t u4SwRingIdx);
-void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
-			       IN uint16_t u2Port);
-void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
-				IN uint16_t u2Port);
-uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
-				 IN uint8_t ucRingNum);
-void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter);
-void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
-uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
-struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
+void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
+			       uint16_t u2Port);
+void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
+				uint16_t u2Port);
+uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
+				 uint8_t ucRingNum);
+void halInitMsduTokenInfo(struct ADAPTER *prAdapter);
+void halUninitMsduTokenInfo(struct ADAPTER *prAdapter);
+uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);
+struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 					      uint32_t u4TokenNum);
-struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 					     uint8_t ucBssIdx);
-void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
@@ -931,14 +931,14 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
 				   uint32_t u4ChipAddr,
 				   uint32_t *pu4BusAddr);
-u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr,
-			     OUT uint32_t *pu4Value);
-u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr,
-			     IN uint32_t u4Value);
+u_int8_t halGetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
+			     uint32_t u4ChipAddr,
+			     uint32_t *pu4Value);
+u_int8_t halSetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
+			     uint32_t u4ChipAddr,
+			     uint32_t u4Value);
 void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
-void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
+void halConnacEnableInterrupt(struct ADAPTER *prAdapter);
 enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 		      struct CMD_INFO *prCmdInfo,
 		      uint8_t ucTC);
@@ -998,16 +998,16 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 
 void kalBhDisable(struct GLUE_INFO *prGlueInfo);
 void kalBhEnable(struct GLUE_INFO *prGlueInfo);
-void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
-		IN uint32_t u4Port,
-		OUT unsigned long *plHifTxDataQFlags);
-void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
-		IN uint32_t u4Port,
-		IN unsigned long ulHifTxDataQFlags);
-void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
-		OUT unsigned long *plHifTxRingFlags);
-void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
-		IN unsigned long ulHifTxRingFlags);
+void kalAcquireHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
+		uint32_t u4Port,
+		unsigned long *plHifTxDataQFlags);
+void kalReleaseHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
+		uint32_t u4Port,
+		unsigned long ulHifTxDataQFlags);
+void kalAcquireHifTxRingLock(struct RTMP_TX_RING *prTxRing,
+		unsigned long *plHifTxRingFlags);
+void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
+		unsigned long ulHifTxRingFlags);
 
 void kalAcquireHifOwnLock(struct ADAPTER *prAdapter);
 void kalReleaseHifOwnLock(struct ADAPTER *prAdapter);
@@ -1023,15 +1023,15 @@ void halHwRecoveryTimeout(struct timer_list *timer);
 #else
 void halHwRecoveryTimeout(unsigned long arg);
 #endif
-void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
+void halHwRecoveryFromError(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-void halStartTxDelayTimer(IN struct ADAPTER *prAdapter);
+void halStartTxDelayTimer(struct ADAPTER *prAdapter);
 #endif
 
 /* Debug functions */
 int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
-void halShowPdmaInfo(IN struct ADAPTER *prAdapter);
-bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter);
+void halShowPdmaInfo(struct ADAPTER *prAdapter);
+bool halShowHostCsrInfo(struct ADAPTER *prAdapter);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 		   struct RTMP_TX_RING *prTxRing,
 		   uint32_t u4Num, bool fgDumpContent);
@@ -1054,7 +1054,7 @@ void halSwWfdmaGetCidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Cidx);
 void halSwWfdmaSetCidx(struct GLUE_INFO *prGlueInfo, uint32_t u4Cidx);
 void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
-bool halSwWfdmaProcessDmaDone(IN struct GLUE_INFO *prGlueInfo);
+bool halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -1104,8 +1104,8 @@ void kalReleaseHifSkbList(void);
 struct sk_buff *kalAllocHifSkb(void);
 void kalFreeHifSkb(struct sk_buff *prSkb);
 #endif
-void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
-				       IN uint16_t u2Port);
+void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
+				       uint16_t u2Port);
 
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value);

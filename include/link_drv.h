@@ -370,9 +370,9 @@ do { \
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void __linkAdd(IN struct LINK_ENTRY
-				     *prNew, IN struct LINK_ENTRY *prPrev,
-				     IN struct LINK_ENTRY *prNext)
+static __KAL_INLINE__ void __linkAdd(struct LINK_ENTRY
+				     *prNew, struct LINK_ENTRY *prPrev,
+				     struct LINK_ENTRY *prNext)
 {
 	prNext->prPrev = prNew;
 	prNew->prNext = prNext;
@@ -390,8 +390,8 @@ static __KAL_INLINE__ void __linkAdd(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkAdd(IN struct LINK_ENTRY
-				   *prNew, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkAdd(struct LINK_ENTRY
+				   *prNew, struct LINK *prLink)
 {
 	__linkAdd(prNew, (struct LINK_ENTRY *) prLink,
 		  prLink->prNext);
@@ -407,8 +407,8 @@ static __KAL_INLINE__ void linkAdd(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkAddTail(IN struct LINK_ENTRY
-				       *prNew, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkAddTail(struct LINK_ENTRY
+				       *prNew, struct LINK *prLink)
 {
 	__linkAdd(prNew, prLink->prPrev,
 		  (struct LINK_ENTRY *) prLink);
@@ -424,8 +424,8 @@ static __KAL_INLINE__ void linkAddTail(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY
-				     *prPrev, IN struct LINK_ENTRY *prNext)
+static __KAL_INLINE__ void __linkDel(struct LINK_ENTRY
+				     *prPrev, struct LINK_ENTRY *prNext)
 {
 	prNext->prPrev = prPrev;
 	prPrev->prNext = prNext;
@@ -441,7 +441,7 @@ static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkDel(IN struct LINK_ENTRY
+static __KAL_INLINE__ void linkDel(struct LINK_ENTRY
 				   *prEntry)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
@@ -460,8 +460,8 @@ static __KAL_INLINE__ void linkDel(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkMove(IN struct LINK_ENTRY
-				    *prEntry, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkMove(struct LINK_ENTRY
+				    *prEntry, struct LINK *prLink)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 	linkAdd(prEntry, prLink);
@@ -478,8 +478,8 @@ static __KAL_INLINE__ void linkMove(IN struct LINK_ENTRY
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkMoveTail(IN struct LINK_ENTRY
-					*prEntry, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkMoveTail(struct LINK_ENTRY
+					*prEntry, struct LINK *prLink)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 	linkAddTail(prEntry, prLink);

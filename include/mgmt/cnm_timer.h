@@ -243,45 +243,45 @@ struct TIMER {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void cnmTimerInitialize(IN struct ADAPTER *prAdapter);
+void cnmTimerInitialize(struct ADAPTER *prAdapter);
 
-void cnmTimerDestroy(IN struct ADAPTER *prAdapter);
+void cnmTimerDestroy(struct ADAPTER *prAdapter);
 
-void cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
-			     IN struct TIMER *prTimer,
-			     IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-			     IN uintptr_t ulDataPtr,
-			     IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType);
+void cnmTimerInitTimerOption(struct ADAPTER *prAdapter,
+			     struct TIMER *prTimer,
+			     PFN_MGMT_TIMEOUT_FUNC pfFunc,
+			     uintptr_t ulDataPtr,
+			     enum ENUM_TIMER_WAKELOCK_TYPE_T eType);
 
-void cnmTimerStopTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer);
+void cnmTimerStopTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer);
 
-void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
-			IN uint32_t u4TimeoutMs);
+void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
+			uint32_t u4TimeoutMs);
 
-void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter);
+void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
-static __KAL_INLINE__ int32_t timerPendingTimer(IN struct TIMER *prTimer)
+static __KAL_INLINE__ int32_t timerPendingTimer(struct TIMER *prTimer)
 {
 	ASSERT(prTimer);
 
 	return prTimer->rLinkEntry.prNext != NULL;
 }
 
-static __KAL_INLINE__ void cnmTimerInitTimer(IN struct ADAPTER *prAdapter,
-					     IN struct TIMER *prTimer,
-					     IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-					     IN uintptr_t ulDataPtr)
+static __KAL_INLINE__ void cnmTimerInitTimer(struct ADAPTER *prAdapter,
+					     struct TIMER *prTimer,
+					     PFN_MGMT_TIMEOUT_FUNC pfFunc,
+					     uintptr_t ulDataPtr)
 {
 	cnmTimerInitTimerOption(prAdapter, prTimer, pfFunc, ulDataPtr,
 		TIMER_WAKELOCK_AUTO);
 }
 
 #if CFG_WOW_SUPPORT
-void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter);
+void cnmStopPendingJoinTimerForSuspend(struct ADAPTER *prAdapter);
 #endif
 
 #endif /* _CNM_TIMER_H */

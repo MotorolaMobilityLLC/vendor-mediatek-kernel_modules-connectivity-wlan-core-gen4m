@@ -360,7 +360,7 @@ void glSendResetRequest(void)
  *          or RST_FLAG_PREVENT_POWER_OFF, ..., etc.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
+uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4RstFlag = RST_FLAG_CHIP_RESET;
@@ -532,7 +532,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
  *          or RST_FLAG_PREVENT_POWER_OFF, ..., etc.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter)
+uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4RstFlag = 0;

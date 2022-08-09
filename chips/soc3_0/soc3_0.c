@@ -465,7 +465,7 @@ static bool soc3_0WfdmaAllocRxRing(
 
 static void soc3_0asicConnac2xInterruptSettings(
 	struct ADAPTER *prAdapter,
-	IN u_int8_t enable)
+	u_int8_t enable)
 {
 	union soc3_0_WPDMA_INT_MASK IntMask;
 	ASSERT(prAdapter);
@@ -656,7 +656,7 @@ void soc3_0ReadExtIntStatus(
 
 }
 
-void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+void soc3_0asicConnac2xProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
@@ -2600,7 +2600,7 @@ static void soc3_0_McuDeInit(struct ADAPTER *prAdapter)
 	}
 }
 
-void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
+void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
 	u_int8_t fgCoAnt;

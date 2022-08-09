@@ -3498,8 +3498,8 @@ uint16_t rlmDomainPwrLimitDefaultTableDecision(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-rlmDomainGetStartEndIdx(IN enum ENUM_PWR_LIMIT_TYPE eType,
-		OUT uint8_t *pu1StartIdx, OUT uint8_t *pu1EndIdx)
+rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
+		uint8_t *pu1StartIdx, uint8_t *pu1EndIdx)
 {
 	if (pu1StartIdx == NULL || pu1EndIdx == NULL)
 		return;
@@ -3614,8 +3614,8 @@ rlmDomainGetStartEndIdx(IN enum ENUM_PWR_LIMIT_TYPE eType,
  */
 /*----------------------------------------------------------------------------*/
 void
-rlmDomainGetSubBandDefPwrIdx(IN enum ENUM_PWR_LMT_SUBBAND eSubBandIdx,
-	OUT uint8_t *pu1SubBandPwrIdx)
+rlmDomainGetSubBandDefPwrIdx(enum ENUM_PWR_LMT_SUBBAND eSubBandIdx,
+	uint8_t *pu1SubBandPwrIdx)
 {
 	if (pu1SubBandPwrIdx == NULL)
 		return;
@@ -9809,8 +9809,8 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 }
 #endif
 
-uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter,
-						   IN uint8_t *pucEventBuf)
+uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(struct ADAPTER *prAdapter,
+						   uint8_t *pucEventBuf)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	struct SINGLE_SKU_INFO *prSkuInfo =
@@ -9842,7 +9842,7 @@ uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-void rlmDomainSendInfoToFirmware(IN struct ADAPTER *prAdapter)
+void rlmDomainSendInfoToFirmware(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	if (!regd_is_single_sku_en())
@@ -9911,7 +9911,7 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 	return eSCO;
 }
 
-void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter, char *country,
+void rlmDomainOidSetCountry(struct ADAPTER *prAdapter, char *country,
 			    u8 size_of_country)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)

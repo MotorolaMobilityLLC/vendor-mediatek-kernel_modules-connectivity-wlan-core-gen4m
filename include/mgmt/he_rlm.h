@@ -220,17 +220,17 @@ void heRlmParseHeHtcACtrlOM(
 	uint32_t u4Htc,
 	struct HE_A_CTRL_OM_T *prHeActrlOM);
 uint32_t heRlmSendHtcNullFrame(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t ucUP,
-	IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucUP,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler);
 uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 uint32_t heRlmSMPSTxDone(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 void heRlmSendSMPSActionFrame(
 	struct ADAPTER *prAdapter,

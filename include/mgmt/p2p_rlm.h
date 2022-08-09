@@ -115,21 +115,21 @@ u_int8_t rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
-void rlmFuncInitialChannelList(IN struct ADAPTER *prAdapter);
+void rlmFuncInitialChannelList(struct ADAPTER *prAdapter);
 
 void
-rlmFuncCommonChannelList(IN struct ADAPTER *prAdapter,
-		IN struct CHANNEL_ENTRY_FIELD *prChannelEntryII,
-		IN uint8_t ucChannelListSize);
+rlmFuncCommonChannelList(struct ADAPTER *prAdapter,
+		struct CHANNEL_ENTRY_FIELD *prChannelEntryII,
+		uint8_t ucChannelListSize);
 
-uint8_t rlmFuncFindOperatingClass(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucChannelNum);
+uint8_t rlmFuncFindOperatingClass(struct ADAPTER *prAdapter,
+		uint8_t ucChannelNum);
 
 u_int8_t
-rlmFuncFindAvailableChannel(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucCheckChnl,
-		IN uint8_t *pucSuggestChannel,
-		IN u_int8_t fgIsSocialChannel, IN u_int8_t fgIsDefaultChannel);
+rlmFuncFindAvailableChannel(struct ADAPTER *prAdapter,
+		uint8_t ucCheckChnl,
+		uint8_t *pucSuggestChannel,
+		u_int8_t fgIsSocialChannel, u_int8_t fgIsDefaultChannel);
 
 enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
@@ -144,9 +144,9 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
 void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
-	IN enum ENUM_BAND eBand,
-	IN uint8_t ucCh,
-	IN uint8_t ucBssIdx,
-	OUT struct RF_CHANNEL_INFO *prRfChnlInfo);
+	enum ENUM_BAND eBand,
+	uint8_t ucCh,
+	uint8_t ucBssIdx,
+	struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #endif

@@ -1321,8 +1321,8 @@ void asicConnac2xEnableUsbFWDL(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgEnable);
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
-u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
-	IN struct GLUE_INFO *prGlueInfo);
+u_int8_t asicConnac2xUsbResume(struct ADAPTER *prAdapter,
+	struct GLUE_INFO *prGlueInfo);
 void asicConnac2xUdmaRxFlush(
 	struct ADAPTER *prAdapter,
 	u_int8_t bEnable);
@@ -1357,16 +1357,16 @@ void asicConnac2xInitTxdHook(
 void asicConnac2xInitRxdHook(
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb);
+void asicConnac2xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
 uint8_t asicConnac2xRxGetRcpiValueFromRxv(
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb);
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb);
 #if (CFG_SUPPORT_PERF_IND == 1)
-void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN uint8_t ucBssIndex);
+void asicConnac2xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t ucBssIndex);
 #endif
 void asicConnac2xWfdmaReInit(
 	struct ADAPTER *prAdapter);
@@ -1423,9 +1423,9 @@ void asicConnac2xWfdmaControl(
 	u_int8_t enable);
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr, IN uint32_t u4Len,
-	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t downloadImgByDynMemMap(struct ADAPTER *prAdapter,
+	uint32_t u4Addr, uint32_t u4Len,
+	uint8_t *pucStartPtr, enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
 
 void asicConnac2xDmashdlSetPlePktMaxPage(

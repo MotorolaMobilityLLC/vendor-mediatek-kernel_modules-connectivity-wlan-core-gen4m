@@ -1039,11 +1039,11 @@ struct MEM_TRACK {
  *******************************************************************************
  */
 
-struct MSDU_INFO *cnmPktAllocWrapper(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Length, IN uint8_t *pucStr);
+struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
+	uint32_t u4Length, uint8_t *pucStr);
 
-void cnmPktFreeWrapper(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucStr);
+void cnmPktFreeWrapper(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint8_t *pucStr);
 
 #if CFG_DBG_MGT_BUF
 struct MSDU_INFO *cnmPktAllocX(struct ADAPTER *prAdapter,
@@ -1054,33 +1054,33 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter,
 #endif
 void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo);
 
-void cnmMemInit(IN struct ADAPTER *prAdapter);
+void cnmMemInit(struct ADAPTER *prAdapter);
 
 #if CFG_DBG_MGT_BUF
-void *cnmMemAllocX(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_RAM_TYPE eRamType, IN uint32_t u4Length,
+void *cnmMemAllocX(struct ADAPTER *prAdapter,
+	enum ENUM_RAM_TYPE eRamType, uint32_t u4Length,
 	uint8_t *fileAndLine);
 #else
-void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
-	IN uint32_t u4Length);
+void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
+	uint32_t u4Length);
 #endif
 
-void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory);
+void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory);
 
-void cnmStaRecInit(IN struct ADAPTER *prAdapter);
+void cnmStaRecInit(struct ADAPTER *prAdapter);
 
 struct STA_RECORD *
-cnmStaRecAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_STA_TYPE eStaType,
-	IN uint8_t ucBssIndex, IN uint8_t *pucMacAddr);
+cnmStaRecAlloc(struct ADAPTER *prAdapter, enum ENUM_STA_TYPE eStaType,
+	uint8_t ucBssIndex, uint8_t *pucMacAddr);
 
-void cnmStaRecFree(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec);
+void cnmStaRecFree(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
 void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucStaRecIndexExcluded);
 
-struct STA_RECORD *cnmGetStaRecByIndex(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucIndex);
+struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
+	uint8_t ucIndex);
 
 struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
 	struct ADAPTER *prAdapter,
@@ -1089,19 +1089,19 @@ struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
 struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[]);
 
-void cnmStaRecChangeState(IN struct ADAPTER *prAdapter,
-	IN OUT struct STA_RECORD *prStaRec, IN uint8_t ucNewState);
+void cnmStaRecChangeState(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucNewState);
 
 int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	char *pcCommand, int i4TotalLen);
 int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	char *pcCommand, int i4TotalLen);
 
-void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
-void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx);
+void cnmDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
+void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx);
 
-uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
-	IN uint32_t u4Max);
+uint32_t cnmDumpMemoryStatus(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+	uint32_t u4Max);
 
 #if CFG_SUPPORT_TDLS
 uint32_t			/* TDLS_STATUS */

@@ -169,138 +169,138 @@ struct P2P_PARAM_KEY {
 /* WLAN_STATUS */
 /* wlanoidSetAddP2PKey(IN P_ADAPTER_T prAdapter, */
 /* IN PVOID pvSetBuffer,
- * IN UINT_32 u4SetBufferLen,
- * OUT PUINT_32 pu4SetInfoLen);
+ * UINT_32 u4SetBufferLen,
+ * PUINT_32 pu4SetInfoLen);
  */
 
 /* WLAN_STATUS */
 /* wlanoidSetRemoveP2PKey(IN P_ADAPTER_T prAdapter, */
 /* IN PVOID pvSetBuffer,
- * IN UINT_32 u4SetBufferLen,
- * OUT PUINT_32 pu4SetInfoLen);
+ * UINT_32 u4SetBufferLen,
+ * PUINT_32 pu4SetInfoLen);
  */
 
 uint32_t
-wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetNetworkAddress(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetP2PMulticastList(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 /*--------------------------------------------------------------*/
 /* Service Discovery Subroutines                                */
 /*--------------------------------------------------------------*/
 uint32_t
-wlanoidSendP2PSDRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSendP2PSDRequest(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSendP2PSDResponse(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSendP2PSDResponse(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidGetP2PSDRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidGetP2PSDRequest(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidGetP2PSDResponse(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *puQueryInfoLen);
+wlanoidGetP2PSDResponse(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *puQueryInfoLen);
 
 uint32_t
-wlanoidSetP2PTerminateSDPhase(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+wlanoidSetP2PTerminateSDPhase(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
 
 #if CFG_SUPPORT_ANTI_PIRACY
 uint32_t
-wlanoidSetSecCheckRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetSecCheckRequest(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 /*WLAN_STATUS
  *wlanoidGetSecCheckResponse(IN P_ADAPTER_T prAdapter,
  *		IN PVOID pvQueryBuffer,
- *		IN UINT_32 u4QueryBufferLen,
- *		OUT PUINT_32 pu4QueryInfoLen);
+ *		UINT_32 u4QueryBufferLen,
+ *		PUINT_32 pu4QueryInfoLen);
  */
 #endif
 
 uint32_t
-wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetNoaParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetOppPsParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetUApsdParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryP2pPowerSaveProfile(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetP2pPowerSaveProfile(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 uint32_t
-wlanoidQueryP2pVersion(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+wlanoidQueryP2pVersion(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidSetP2pSupplicantVersion(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen);
+wlanoidSetP2pSupplicantVersion(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 uint32_t
-wlanoidSetP2pWPSmode(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+wlanoidSetP2pWPSmode(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
 #endif
 
 uint32_t
-wlanoidAbortP2pScan(IN struct ADAPTER *prAdapter,
-		OUT void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen);
+wlanoidAbortP2pScan(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
 
 /*--------------------------------------------------------------*/
 /* Callbacks for event indication                               */

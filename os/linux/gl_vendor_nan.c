@@ -385,9 +385,9 @@ nanMapNan20RangingReqParams(u32 *pIndata,
 }
 
 u32
-wlanoidGetNANCapabilitiesRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			     IN uint32_t u4SetBufferLen,
-			     OUT uint32_t *pu4SetInfoLen)
+wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+			     uint32_t u4SetBufferLen,
+			     uint32_t *pu4SetInfoLen)
 {
 	struct NanCapabilitiesRspMsg nanCapabilitiesRsp;
 	struct NanCapabilitiesRspMsg *pNanCapabilitiesRsp =
@@ -450,8 +450,8 @@ wlanoidGetNANCapabilitiesRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANEnableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		    IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+wlanoidNANEnableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		    uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct NanEnableRspMsg nanEnableRsp;
 	struct NanEnableRspMsg *pNanEnableRsp =
@@ -496,8 +496,8 @@ wlanoidNANEnableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANDisableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		     IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+wlanoidNANDisableRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		     uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct NanDisableRspMsg nanDisableRsp;
 	struct NanDisableRspMsg *pNanDisableRsp =
@@ -539,9 +539,9 @@ wlanoidNANDisableRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANConfigRsp(IN struct ADAPTER *prAdapter,
-			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			      OUT uint32_t *pu4SetInfoLen)
+wlanoidNANConfigRsp(struct ADAPTER *prAdapter,
+			      void *pvSetBuffer, uint32_t u4SetBufferLen,
+			      uint32_t *pu4SetInfoLen)
 {
 	struct NanConfigRspMsg nanConfigRsp;
 	struct NanConfigRspMsg *pNanConfigRsp =
@@ -584,8 +584,8 @@ wlanoidNANConfigRsp(IN struct ADAPTER *prAdapter,
 }
 
 u32
-wlanoidNanPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		     IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		     uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct NanPublishServiceRspMsg nanPublishRsp;
 	struct NanPublishServiceRspMsg *pNanPublishRsp =
@@ -647,9 +647,9 @@ wlanoidNanPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANCancelPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			   IN uint32_t u4SetBufferLen,
-			   OUT uint32_t *pu4SetInfoLen)
+wlanoidNANCancelPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+			   uint32_t u4SetBufferLen,
+			   uint32_t *pu4SetInfoLen)
 {
 	struct NanPublishServiceCancelRspMsg nanPublishCancelRsp;
 	struct NanPublishServiceCancelRspMsg *pNanPublishCancelRsp =
@@ -708,9 +708,9 @@ wlanoidNANCancelPublishRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNanSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		       IN uint32_t u4SetBufferLen,
-		       OUT uint32_t *pu4SetInfoLen)
+wlanoidNanSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		       uint32_t u4SetBufferLen,
+		       uint32_t *pu4SetInfoLen)
 {
 	struct NanSubscribeServiceRspMsg nanSubscribeRsp;
 	struct NanSubscribeServiceRspMsg *pNanSubscribeRsp =
@@ -768,9 +768,9 @@ wlanoidNanSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANCancelSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			     IN uint32_t u4SetBufferLen,
-			     OUT uint32_t *pu4SetInfoLen)
+wlanoidNANCancelSubscribeRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+			     uint32_t u4SetBufferLen,
+			     uint32_t *pu4SetInfoLen)
 {
 	struct NanSubscribeServiceCancelRspMsg nanSubscribeCancelRsp;
 	struct NanSubscribeServiceCancelRspMsg *pNanSubscribeCancelRsp =
@@ -827,8 +827,8 @@ wlanoidNANCancelSubscribeRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 u32
-wlanoidNANFollowupRsp(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		      IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
+wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		      uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	struct NanTransmitFollowupRspMsg nanXmitFollowupRsp;
 	struct NanTransmitFollowupRspMsg *pNanXmitFollowupRsp =
@@ -2150,7 +2150,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 
 /* Indication part */
 int
-mtk_cfg80211_vendor_event_nan_event_indication(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 					       uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2231,7 +2231,7 @@ mtk_cfg80211_vendor_event_nan_event_indication(IN struct ADAPTER *prAdapter,
 }
 
 int mtk_cfg80211_vendor_event_nan_disable_indication(
-		IN struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
+		struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
@@ -2295,7 +2295,7 @@ int mtk_cfg80211_vendor_event_nan_disable_indication(
 
 /* Indication part */
 int
-mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 						 uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2365,7 +2365,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(IN struct ADAPTER *prAdapter,
 }
 
 int
-mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 					       uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2469,7 +2469,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(IN struct ADAPTER *prAdapter,
 }
 
 int
-mtk_cfg80211_vendor_event_nan_publish_terminate(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 						uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2519,7 +2519,7 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(IN struct ADAPTER *prAdapter,
 }
 
 int
-mtk_cfg80211_vendor_event_nan_subscribe_terminate(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 						  uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2566,7 +2566,7 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(IN struct ADAPTER *prAdapter,
 }
 
 int
-mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
+mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 						  uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
@@ -2654,7 +2654,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(IN struct ADAPTER *prAdapter,
 
 int
 mtk_cfg80211_vendor_event_nan_seldflwup_indication(
-	IN struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
+	struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;

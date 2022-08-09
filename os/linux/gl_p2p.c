@@ -503,18 +503,18 @@ const int32_t mtk_iface_combinations_p2p_num =
  */
 
 /* Net Device Hooks */
-static int p2pOpen(IN struct net_device *prDev);
+static int p2pOpen(struct net_device *prDev);
 
-static int p2pStop(IN struct net_device *prDev);
+static int p2pStop(struct net_device *prDev);
 
-static struct net_device_stats *p2pGetStats(IN struct net_device *prDev);
+static struct net_device_stats *p2pGetStats(struct net_device *prDev);
 
-static void p2pSetMulticastList(IN struct net_device *prDev);
+static void p2pSetMulticastList(struct net_device *prDev);
 
-static netdev_tx_t p2pHardStartXmit(IN struct sk_buff *prSkb,
-		IN struct net_device *prDev);
+static netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
+		struct net_device *prDev);
 
-static int p2pSetMACAddress(IN struct net_device *prDev, void *addr);
+static int p2pSetMACAddress(struct net_device *prDev, void *addr);
 
 static int p2pDoIOCTL(struct net_device *prDev,
 		struct ifreq *prIFReq,
@@ -554,7 +554,7 @@ static int p2pInit(struct net_device *prDev)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void p2pUninit(IN struct net_device *prDev)
+static void p2pUninit(struct net_device *prDev)
 {
 }				/* end of p2pUninit() */
 
@@ -591,7 +591,7 @@ const struct net_device_ops p2p_netdev_ops = {
  *           FALSE
  */
 /*---------------------------------------------------------------------------*/
-u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex)
+u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
@@ -1709,7 +1709,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
  * \retval < 0   The execution failed.
  */
 /*----------------------------------------------------------------------------*/
-static int p2pOpen(IN struct net_device *prDev)
+static int p2pOpen(struct net_device *prDev)
 {
 /* P_GLUE_INFO_T prGlueInfo = NULL; */
 /* P_ADAPTER_T prAdapter = NULL; */
@@ -1774,7 +1774,7 @@ static int p2pOpen(IN struct net_device *prDev)
  * \retval < 0   The execution failed.
  */
 /*----------------------------------------------------------------------------*/
-static int p2pStop(IN struct net_device *prDev)
+static int p2pStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1869,7 +1869,7 @@ static int p2pStop(IN struct net_device *prDev)
  * \return net_device_stats buffer pointer.
  */
 /*---------------------------------------------------------------------------*/
-struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
+struct net_device_stats *p2pGetStats(struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 
@@ -1884,7 +1884,7 @@ struct net_device_stats *p2pGetStats(IN struct net_device *prDev)
 	return (struct net_device_stats *) &prNetDevPrivate->stats;
 }				/* end of p2pGetStats() */
 
-static void p2pSetMulticastList(IN struct net_device *prDev)
+static void p2pSetMulticastList(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 
@@ -2010,8 +2010,8 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*---------------------------------------------------------------------------*/
-netdev_tx_t p2pHardStartXmit(IN struct sk_buff *prSkb,
-		IN struct net_device *prDev)
+netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
+		struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
@@ -2234,7 +2234,7 @@ int p2pDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
  *
  */
 /*---------------------------------------------------------------------------*/
-int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
+int p2pSetMACAddress(struct net_device *prDev, void *addr)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;

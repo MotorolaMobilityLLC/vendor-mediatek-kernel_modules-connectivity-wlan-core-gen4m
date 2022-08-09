@@ -791,7 +791,7 @@ int32_t connac3x_show_rx_rssi_info(
 	return i4BytesWritten;
 }
 
-int32_t connac3xGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
+int32_t connac3xGetTxRateInfo(char *pcCommand, int i4TotalLen,
 			u_int8_t fgDumpAll,
 			struct bwtbl_lmac_struct *pWtbl,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics)
@@ -1010,9 +1010,9 @@ int32_t connac3xGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 	return i4BytesWritten;
 }
 
-int32_t connac3x_get_tx_info_from_txv(IN char *pcCommand,
-	IN int i4TotalLen,
-	IN struct TX_VECTOR_BBP_LATCH *prTxV)
+int32_t connac3x_get_tx_info_from_txv(char *pcCommand,
+	int i4TotalLen,
+	struct TX_VECTOR_BBP_LATCH *prTxV)
 {
 	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc, spe;
 	int8_t txpwr, pos_txpwr;
@@ -2122,8 +2122,8 @@ int32_t connac3x_show_mld_info(
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static void connac3x_show_wfdma_axi_debug_log(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t pdma_base_cr;
 	uint32_t i = 0;
@@ -2365,7 +2365,7 @@ void connac3x_show_wfdma_ring_info(
 	}
 }
 
-void connac3x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
+void connac3x_show_wfdma_desc(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -2529,7 +2529,7 @@ void connac3x_show_wfdma_info_by_type(
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
+void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -2581,7 +2581,7 @@ void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
+void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -2785,7 +2785,7 @@ void connac3x_DumpCrRange(
 }
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
+void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct BUS_INFO *prBusInfo;
@@ -2832,7 +2832,7 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 #endif /*_HIF_PCIE || _HIF_AXI */
 }
 
-void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
+void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct DMASHDL_CFG *prCfg;
@@ -3443,8 +3443,8 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int connac3x_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo)
+int connac3x_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo)
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0, mu = 0;

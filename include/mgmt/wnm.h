@@ -162,35 +162,35 @@ enum BSS_TRANS_MGMT_STATUS_CODE {
  *******************************************************************************
  */
 
-void wnmWNMAction(IN struct ADAPTER *prAdapter,
-		  IN struct SW_RFB *prSwRfb);
+void wnmWNMAction(struct ADAPTER *prAdapter,
+		  struct SW_RFB *prSwRfb);
 
-void wnmReportTimingMeas(IN struct ADAPTER *prAdapter,
-			 IN uint8_t ucStaRecIndex, IN uint32_t u4ToD,
-			 IN uint32_t u4ToA);
+void wnmReportTimingMeas(struct ADAPTER *prAdapter,
+			 uint8_t ucStaRecIndex, uint32_t u4ToD,
+			 uint32_t u4ToA);
 
 #if WNM_UNIT_TEST
 void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIndex);
 #endif
 
-void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
-void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
-		 IN struct STA_RECORD *prStaRec, IN uint8_t ucQueryReason);
+void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
+		 struct STA_RECORD *prStaRec, uint8_t ucQueryReason);
 
-uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
-	IN const uint8_t *aucBssid, IN uint8_t ucStatus,
-	IN uint8_t ucReason, IN uint8_t ucBssIndex);
+uint8_t wnmSendBTMResponse(struct ADAPTER *prAdapter,
+	const uint8_t *aucBssid, uint8_t ucStatus,
+	uint8_t ucReason, uint8_t ucBssIndex);
 
 #if CFG_AP_80211V_SUPPORT
 void wnmMulAPAgentSendBTMRequestFrame(
-			IN struct ADAPTER *prAdapter,
-			IN struct STA_RECORD *prStaRec,
+			struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec,
 			struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo);
 
-void wnmMulAPAgentRecvBTMResponse(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 #endif /* CFG_AP_80211V_SUPPORT */
 
 /*******************************************************************************

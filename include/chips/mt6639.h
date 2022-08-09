@@ -126,10 +126,10 @@ void mt6639_show_wfdma_info(struct ADAPTER *prAdapter);
 void mt6639_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void mt6639_show_pse_info(struct ADAPTER *prAdapter);
 bool mt6639_show_host_csr_info(struct ADAPTER *prAdapter);
-void mt6639_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
-void mt6639_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void mt6639_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 
 void mt6639_icapRiseVcoreClockRate(void);
 void mt6639_icapDownVcoreClockRate(void);
@@ -137,11 +137,11 @@ void mt6639_icapDownVcoreClockRate(void);
 void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad);
 void mt6639_DumpBusHangCr(struct ADAPTER *ad);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int mt6639_get_rx_rate_info(IN const uint32_t *prRxV,
-		IN struct RxRateInfo *prRxRateInfo);
+int mt6639_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo);
 #endif
 
-void mt6639_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV);
+void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint32_t *pu4RxV);
 
 #endif  /* mt6639 */

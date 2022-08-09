@@ -110,16 +110,16 @@ const struct iw_handler_def mtk_p2p_wext_handler_def = {
  */
 
 /* Net Device Hooks */
-static int nanOpen(IN struct net_device *prDev);
+static int nanOpen(struct net_device *prDev);
 
-static int nanStop(IN struct net_device *prDev);
+static int nanStop(struct net_device *prDev);
 
-static struct net_device_stats *nanGetStats(IN struct net_device *prDev);
+static struct net_device_stats *nanGetStats(struct net_device *prDev);
 
-static void nanSetMulticastList(IN struct net_device *prDev);
+static void nanSetMulticastList(struct net_device *prDev);
 
-static netdev_tx_t nanHardStartXmit(IN struct sk_buff *prSkb,
-				    IN struct net_device *prDev);
+static netdev_tx_t nanHardStartXmit(struct sk_buff *prSkb,
+				    struct net_device *prDev);
 
 static int nanDoIOCTL(struct net_device *prDev, struct ifreq *prIFReq,
 		      int i4Cmd);
@@ -157,7 +157,7 @@ nanInit(struct net_device *prDev) {
  */
 /*----------------------------------------------------------------------------*/
 static void
-nanUninit(IN struct net_device *prDev) {}
+nanUninit(struct net_device *prDev) {}
 const struct net_device_ops nan_netdev_ops = {
 	.ndo_open = nanOpen,
 	.ndo_stop = nanStop,
@@ -189,7 +189,7 @@ const struct net_device_ops nan_netdev_ops = {
  */
 /*----------------------------------------------------------------------------*/
 unsigned char
-nanAllocInfo(IN struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
+nanAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucRoleIdx)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
@@ -1022,7 +1022,7 @@ nanSetSuspendMode(struct GLUE_INFO *prGlueInfo, unsigned char fgEnable)
  */
 /*----------------------------------------------------------------------------*/
 static int
-nanOpen(IN struct net_device *prDev)
+nanOpen(struct net_device *prDev)
 {
 	/* P_GLUE_INFO_T prGlueInfo = NULL; */
 	/* P_ADAPTER_T prAdapter = NULL; */
@@ -1052,7 +1052,7 @@ nanOpen(IN struct net_device *prDev)
  */
 /*----------------------------------------------------------------------------*/
 static int
-nanStop(IN struct net_device *prDev)
+nanStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1117,13 +1117,13 @@ nanStop(IN struct net_device *prDev)
  */
 /*----------------------------------------------------------------------------*/
 struct net_device_stats *
-nanGetStats(IN struct net_device *prDev)
+nanGetStats(struct net_device *prDev)
 {
 	return (struct net_device_stats *)kalGetStats(prDev);
 } /* end of nanGetStats() */
 
 static void
-nanSetMulticastList(IN struct net_device *prDev)
+nanSetMulticastList(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)NULL;
 	uint8_t ucRoleIdx = NAN_BSS_INDEX_BAND0;
@@ -1162,7 +1162,7 @@ nanSetMulticastList(IN struct net_device *prDev)
  */
 /*----------------------------------------------------------------------------*/
 netdev_tx_t
-nanHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
+nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *)NULL;
@@ -1417,9 +1417,9 @@ int nanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
  */
 /*----------------------------------------------------------------------------*/
 int
-mtk_nan_wext_get_priv(IN struct net_device *prDev,
-		      IN struct iw_request_info *info,
-		      IN OUT union iwreq_data *wrqu, IN OUT char *extra)
+mtk_nan_wext_get_priv(struct net_device *prDev,
+		      struct iw_request_info *info,
+		      union iwreq_data *wrqu, char *extra)
 {
 	struct iw_point *prData = (struct iw_point *)&wrqu->data;
 	uint16_t u2BufferSize = 0;

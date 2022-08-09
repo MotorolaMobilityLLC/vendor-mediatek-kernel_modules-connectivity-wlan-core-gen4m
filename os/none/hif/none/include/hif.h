@@ -317,8 +317,8 @@ struct PCIE_CHIP_CR_REMAPPING {
 #define halWpdmaInitRing(_glueinfo, __fgResetHif) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo);
+uint8_t halTxRingDataSelect(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -323,16 +323,16 @@ struct BUS_INFO {
 	void (*rx_ring_ext_ctrl)(struct GLUE_INFO *prGlueInfo,
 		struct RTMP_RX_RING *rx_ring, uint32_t index);
 	void (*wfdmaManualPrefetch)(struct GLUE_INFO *prGlueInfo);
-	void (*processSoftwareInterrupt)(IN struct ADAPTER *prAdapter);
-	void (*softwareInterruptMcu)(IN struct ADAPTER *prAdapter,
+	void (*processSoftwareInterrupt)(struct ADAPTER *prAdapter);
+	void (*softwareInterruptMcu)(struct ADAPTER *prAdapter,
 		u_int32_t intrBitMask);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
-		OUT uint32_t *pu4IntStatus);
+		uint32_t *pu4IntStatus);
 	/* Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset,
 	 * etc.
 	 */
-	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
+	void (*DmaShdlInit)(struct ADAPTER *prAdapter);
 	/* Although DMASHDL was init, we need to reinit it again due to falcon
 	 * L1 reset, etc. Take MT7961 as example. The difference between
 	 * mt7961DmashdlInit and mt7961DmashdlReInit is that we don't init CRs
@@ -345,7 +345,7 @@ struct BUS_INFO {
 	 *        wm DLM space. So, we save DLM space by reinit the remaining
 	 *        DMASHDL CRs in driver.
 	 */
-	void (*DmaShdlReInit)(IN struct ADAPTER *prAdapter);
+	void (*DmaShdlReInit)(struct ADAPTER *prAdapter);
 	uint8_t (*setRxRingHwAddr)(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo,
 		uint32_t u4SwRingIdx);
@@ -445,7 +445,7 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
 void glBusFreeIrq(void *pvData, void *pvCookie);
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode);
 
 void glGetDev(void *ctx, void **dev);
 

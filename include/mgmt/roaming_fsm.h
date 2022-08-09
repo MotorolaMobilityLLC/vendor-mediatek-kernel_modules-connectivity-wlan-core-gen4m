@@ -228,43 +228,43 @@ struct ROAMING_IDLE_INFO {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void roamingFsmInit(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmInit(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmUninit(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmUninit(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit);
+void roamingFsmSendCmd(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit);
 
-void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmScanResultsUpdate(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmSteps(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_ROAMING_STATE eNextState,
-	IN uint8_t ucBssIndex);
+void roamingFsmSteps(struct ADAPTER *prAdapter,
+	enum ENUM_ROAMING_STATE eNextState,
+	uint8_t ucBssIndex);
 
-void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit);
+void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit);
 
-void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmRunEventRoam(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucReason,
-	IN uint8_t ucBssIndex);
+void roamingFsmRunEventFail(struct ADAPTER *prAdapter,
+	uint8_t ucReason,
+	uint8_t ucBssIndex);
 
-void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
-void roamingFsmNotifyEvent(IN struct ADAPTER *adapter, IN uint8_t bssIndex,
-	IN uint8_t ucFail, IN struct BSS_DESC *prBssDesc);
+void roamingFsmNotifyEvent(struct ADAPTER *adapter, uint8_t bssIndex,
+	uint8_t ucFail, struct BSS_DESC *prBssDesc);
 
-uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit);
+uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit);
 
 void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t ucScenario);

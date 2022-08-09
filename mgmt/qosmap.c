@@ -117,7 +117,7 @@
  *      Called by: Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void handleQosMapConf(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void handleQosMapConf(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prRxFrame;
 
@@ -145,8 +145,8 @@ void handleQosMapConf(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	}
 }
 
-int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct _ACTION_QOS_MAP_CONFIGURE_FRAME *prRxFrame = NULL;
 	struct STA_RECORD *prStaRec;
@@ -182,9 +182,9 @@ int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 
-void qosParseQosMapSet(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t *qosMapSet)
+void qosParseQosMapSet(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *qosMapSet)
 {
 	uint8_t dscpExcNum = 0;
 	int i = 0;
@@ -242,7 +242,7 @@ void qosParseQosMapSet(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %d\n", dscpExcNum);
 }
 
-void qosMapSetInit(IN struct STA_RECORD *prStaRec)
+void qosMapSetInit(struct STA_RECORD *prStaRec)
 {
 	/* DSCP to UP maaping based on RFC8325 in the range 0 to 63 */
 	static uint8_t dscp2up[64] = {
@@ -274,8 +274,8 @@ void qosMapSetInit(IN struct STA_RECORD *prStaRec)
 	kalMemCopy(prStaRec->qosMapSet, dscp2up, 64);
 }
 
-uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucBssIndex, IN int dscp)
+uint8_t getUpFromDscp(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucBssIndex, int dscp)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;

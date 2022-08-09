@@ -210,9 +210,9 @@ static int32_t glCustomGenlBind(struct sk_buff *skb, struct genl_info *info)
 	return 0;
 }
 
-static uint32_t glCustomMgmtTxDone(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t glCustomMgmtTxDone(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));

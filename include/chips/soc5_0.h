@@ -180,20 +180,20 @@ void soc5_0_show_wfdma_info(struct ADAPTER *prAdapter);
 void soc5_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void soc5_0_show_pse_info(struct ADAPTER *prAdapter);
 bool soc5_0_show_host_csr_info(struct ADAPTER *prAdapter);
-void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
-void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void soc5_0_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void soc5_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 void soc5_0_dump_mac_info(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int soc5_0_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo);
+int soc5_0_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo);
 #endif
 
 #if CFG_SUPPORT_LLS
-void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, IN uint32_t *pu4RxV);
+void soc5_0_get_rx_link_stats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
 #endif
 
 /*******************************************************************************
@@ -201,7 +201,7 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 ********************************************************************************
 */
 int soc5_0_Trigger_fw_assert(struct ADAPTER *prAdapter);
-void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
+void wlanCoAntVFE28En(struct ADAPTER *prAdapter);
 void wlanCoAntVFE28Dis(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

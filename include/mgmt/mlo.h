@@ -204,9 +204,9 @@ void mldGenerateProbeRspIE(
 	PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE);
 
 uint8_t *mldGenerateBasicCommonInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN uint16_t u2FrameCtrl);
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u2FrameCtrl);
 
 uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc,
 	uint8_t *pucIE, uint32_t u4IELength);
@@ -239,7 +239,7 @@ uint32_t mldCalculateRnrIELen(
 void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
+void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pucIE, uint16_t u2Left,
 	const uint8_t *paucBssId, uint16_t u2FrameCtrl,
 	const char *pucDesc);
@@ -263,13 +263,13 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 void mldBssDump(struct ADAPTER *prAdapter);
 
 void mldBssUpdateMldAddrByMainBss(
-	IN struct ADAPTER *prAdapter,
-	IN struct MLD_BSS_INFO *prMldBssInfo);
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
 
 void mldBssUpdateMldAddr(
-	IN struct ADAPTER *prAdapter,
-	IN struct MLD_BSS_INFO *prMldBssInfo,
-	IN const uint8_t *paucBssId);
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	const uint8_t *paucBssId);
 
 void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
@@ -346,8 +346,8 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
 uint8_t mldIsMloFeatureEnabled(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t fgIsApMode);
+	struct ADAPTER *prAdapter,
+	uint8_t fgIsApMode);
 
 uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex);

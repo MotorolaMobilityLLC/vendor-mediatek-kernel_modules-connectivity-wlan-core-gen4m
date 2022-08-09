@@ -131,23 +131,23 @@ void mddpInit(void);
 void mddpUninit(void);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
-int32_t mddpGetMdStats(IN struct net_device *prDev);
+int32_t mddpGetMdStats(struct net_device *prDev);
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
-int32_t mddpGetMdLlsStats(IN struct ADAPTER *prAdapter);
+int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter);
 #endif
 void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm,
 			      struct SW_RFB *prSwRfb);
-int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t fgActivate);
-int32_t mddpNotifyStaTxd(IN struct ADAPTER *prAdapter);
+int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t fgActivate);
+int32_t mddpNotifyStaTxd(struct ADAPTER *prAdapter);
 void mddpNotifyWifiOnStart(void);
 int32_t mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
 void mddpNotifyWifiReset(void);
-void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
+void setMddpSupportRegister(struct ADAPTER *prAdapter);
 #if CFG_MTK_CCCI_SUPPORT
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);

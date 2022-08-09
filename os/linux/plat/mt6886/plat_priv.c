@@ -72,11 +72,11 @@ uint32_t kalGetCpuBoostThreshold(void)
 	return 5;
 }
 
-int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
-			 IN uint32_t u4CurrPerfLevel,
-			 IN uint32_t u4TarPerfLevel,
-			 IN int32_t i4Pending,
-			 IN uint32_t u4Used)
+int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
+			 uint32_t u4CurrPerfLevel,
+			 uint32_t u4TarPerfLevel,
+			 int32_t i4Pending,
+			 uint32_t u4Used)
 {
 	uint32_t pendingTh =
 		CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD *
@@ -91,7 +91,7 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 }
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
+void kalSetTaskUtilMinPct(int pid, unsigned int min)
 {
 	int ret = 0;
 	unsigned int blc_1024;
@@ -139,7 +139,7 @@ struct wlan_policy {
 	int cpu;
 };
 
-void kalSetCpuFreq(IN int32_t freq, IN uint32_t set_mask)
+void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 {
 	int cpu, ret;
 	struct cpufreq_policy *policy;
@@ -176,7 +176,7 @@ void kalSetCpuFreq(IN int32_t freq, IN uint32_t set_mask)
 	}
 }
 
-void kalSetDramBoost(IN struct ADAPTER *prAdapter, IN u_int8_t onoff)
+void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 {
 	/* TODO */
 }
@@ -205,9 +205,9 @@ static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 	return r;
 }
 
-int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
-		    IN uint32_t u4TarPerfLevel,
-		    IN uint32_t u4BoostCpuTh)
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	static u_int8_t fgRequested = ENUM_CPU_BOOST_STATUS_INIT;
@@ -370,8 +370,8 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 }
 #endif
 
-int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
-		IN uint8_t uBssIndex)
+int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter,
+		uint8_t uBssIndex)
 {
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE) && \
 	(CFG_SUPPORT_802_11AX == 1)

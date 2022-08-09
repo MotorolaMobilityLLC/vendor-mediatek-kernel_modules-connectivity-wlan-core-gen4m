@@ -107,17 +107,20 @@ uint32_t g_arBowRevPalPacketTime[32];
 */
 
 /* forward declarations */
-static ssize_t bow_ampc_read(IN struct file *filp, IN char __user *buf, IN size_t size, IN OUT loff_t *ppos);
+static ssize_t bow_ampc_read(struct file *filp, char __user *buf, size_t size,
+		loff_t *ppos);
 
-static ssize_t bow_ampc_write(IN struct file *filp, OUT const char __user *buf, IN size_t size, IN OUT loff_t *ppos);
+static ssize_t bow_ampc_write(struct file *filp, const char __user *buf,
+		size_t size, loff_t *ppos);
 
-static long bow_ampc_ioctl(IN struct file *filp, IN unsigned int cmd, IN OUT unsigned long arg);
+static long bow_ampc_ioctl(struct file *filp, unsigned int cmd,
+		unsigned long arg);
 
-static unsigned int bow_ampc_poll(IN struct file *filp, IN poll_table * wait);
+static unsigned int bow_ampc_poll(struct file *filp, poll_table *wait);
 
-static int bow_ampc_open(IN struct inode *inodep, IN struct file *filp);
+static int bow_ampc_open(struct inode *inodep, struct file *filp);
 
-static int bow_ampc_release(IN struct inode *inodep, IN struct file *filp);
+static int bow_ampc_release(struct inode *inodep, struct file *filp);
 
 /* character file operations */
 static const struct file_operations bow_ampc_fops = {
@@ -155,7 +158,7 @@ static const struct file_operations bow_ampc_fops = {
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t glRegisterAmpc(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t glRegisterAmpc(struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
@@ -237,7 +240,7 @@ fail_kfifo_alloc:
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t glUnregisterAmpc(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t glUnregisterAmpc(struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
@@ -279,7 +282,8 @@ u_int8_t glUnregisterAmpc(IN struct GLUE_INFO *prGlueInfo)
 *
 */
 /*----------------------------------------------------------------------------*/
-static ssize_t bow_ampc_read(IN struct file *filp, IN char __user *buf, IN size_t size, IN OUT loff_t *ppos)
+static ssize_t bow_ampc_read(struct file *filp, char __user *buf, size_t size,
+		loff_t *ppos)
 {
 	uint8_t aucBuffer[MAX_BUFFER_SIZE];
 	ssize_t retval;
@@ -324,7 +328,8 @@ static ssize_t bow_ampc_read(IN struct file *filp, IN char __user *buf, IN size_
 *
 */
 /*----------------------------------------------------------------------------*/
-static ssize_t bow_ampc_write(IN struct file *filp, OUT const char __user *buf, IN size_t size, IN OUT loff_t *ppos)
+static ssize_t bow_ampc_write(struct file *filp, const char __user *buf,
+		size_t size, loff_t *ppos)
 {
 	uint8_t i;
 
@@ -380,7 +385,8 @@ static ssize_t bow_ampc_write(IN struct file *filp, OUT const char __user *buf, 
 *
 */
 /*----------------------------------------------------------------------------*/
-static long bow_ampc_ioctl(IN struct file *filp, IN unsigned int cmd, IN OUT unsigned long arg)
+static long bow_ampc_ioctl(struct file *filp, unsigned int cmd,
+		unsigned long arg)
 {
 	int err = 0;
 	struct GLUE_INFO *prGlueInfo;
@@ -414,7 +420,7 @@ static long bow_ampc_ioctl(IN struct file *filp, IN unsigned int cmd, IN OUT uns
 *
 */
 /*----------------------------------------------------------------------------*/
-static unsigned int bow_ampc_poll(IN struct file *filp, IN poll_table * wait)
+static unsigned int bow_ampc_poll(struct file *filp, poll_table *wait)
 {
 	unsigned int retval;
 	struct GLUE_INFO *prGlueInfo;
@@ -454,7 +460,7 @@ static unsigned int bow_ampc_poll(IN struct file *filp, IN poll_table * wait)
 *
 */
 /*----------------------------------------------------------------------------*/
-static int bow_ampc_open(IN struct inode *inodep, IN struct file *filp)
+static int bow_ampc_open(struct inode *inodep, struct file *filp)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_BOW_INFO *prBowInfo;
@@ -483,7 +489,7 @@ static int bow_ampc_open(IN struct inode *inodep, IN struct file *filp)
 *
 */
 /*----------------------------------------------------------------------------*/
-static int bow_ampc_release(IN struct inode *inodep, IN struct file *filp)
+static int bow_ampc_release(struct inode *inodep, struct file *filp)
 {
 	struct GLUE_INFO *prGlueInfo;
 
@@ -507,7 +513,8 @@ static int bow_ampc_release(IN struct inode *inodep, IN struct file *filp)
 *           none
 */
 /*----------------------------------------------------------------------------*/
-void kalIndicateBOWEvent(IN struct GLUE_INFO *prGlueInfo, IN struct BT_OVER_WIFI_EVENT *prEvent)
+void kalIndicateBOWEvent(struct GLUE_INFO *prGlueInfo,
+		struct BT_OVER_WIFI_EVENT *prEvent)
 {
 	size_t u4AvailSize, u4EventSize;
 
@@ -549,7 +556,8 @@ void kalIndicateBOWEvent(IN struct GLUE_INFO *prGlueInfo, IN struct BT_OVER_WIFI
 *           ENUM_BOW_DEVICE_STATE
 */
 /*----------------------------------------------------------------------------*/
-enum ENUM_BOW_DEVICE_STATE kalGetBowState(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucPeerAddress[6])
+enum ENUM_BOW_DEVICE_STATE kalGetBowState(struct GLUE_INFO *prGlueInfo,
+		uint8_t aucPeerAddress[6])
 {
 	uint8_t i;
 
@@ -587,7 +595,8 @@ enum ENUM_BOW_DEVICE_STATE kalGetBowState(IN struct GLUE_INFO *prGlueInfo, IN ui
 *           none
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalSetBowState(IN struct GLUE_INFO *prGlueInfo, IN enum ENUM_BOW_DEVICE_STATE eBowState, IN uint8_t aucPeerAddress[6])
+u_int8_t kalSetBowState(struct GLUE_INFO *prGlueInfo,
+		enum ENUM_BOW_DEVICE_STATE eBowState, uint8_t aucPeerAddress[6])
 {
 	uint8_t i;
 
@@ -636,7 +645,7 @@ u_int8_t kalSetBowState(IN struct GLUE_INFO *prGlueInfo, IN enum ENUM_BOW_DEVICE
 *               in case there is any BoW connection available
 */
 /*----------------------------------------------------------------------------*/
-enum ENUM_BOW_DEVICE_STATE kalGetBowGlobalState(IN struct GLUE_INFO *prGlueInfo)
+enum ENUM_BOW_DEVICE_STATE kalGetBowGlobalState(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t i;
 
@@ -668,7 +677,7 @@ enum ENUM_BOW_DEVICE_STATE kalGetBowGlobalState(IN struct GLUE_INFO *prGlueInfo)
 *           in unit of KHz
 */
 /*----------------------------------------------------------------------------*/
-uint32_t kalGetBowFreqInKHz(IN struct GLUE_INFO *prGlueInfo)
+uint32_t kalGetBowFreqInKHz(struct GLUE_INFO *prGlueInfo)
 {
 	ASSERT(prGlueInfo);
 
@@ -687,7 +696,8 @@ uint32_t kalGetBowFreqInKHz(IN struct GLUE_INFO *prGlueInfo)
 *           1: Initiator
 */
 /*----------------------------------------------------------------------------*/
-uint8_t kalGetBowRole(IN struct GLUE_INFO *prGlueInfo, IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN])
+uint8_t kalGetBowRole(struct GLUE_INFO *prGlueInfo,
+		uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN])
 {
 	uint32_t i;
 
@@ -714,7 +724,8 @@ uint8_t kalGetBowRole(IN struct GLUE_INFO *prGlueInfo, IN uint8_t rPeerAddr[PARA
 *           none
 */
 /*----------------------------------------------------------------------------*/
-void kalSetBowRole(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRole, IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN])
+void kalSetBowRole(struct GLUE_INFO *prGlueInfo, uint8_t ucRole,
+		uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN])
 {
 	uint32_t i;
 
@@ -740,7 +751,7 @@ void kalSetBowRole(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRole, IN uint8_
 *               how many physical links are aviailable
 */
 /*----------------------------------------------------------------------------*/
-uint8_t kalGetBowAvailablePhysicalLinkCount(IN struct GLUE_INFO *prGlueInfo)
+uint8_t kalGetBowAvailablePhysicalLinkCount(struct GLUE_INFO *prGlueInfo)
 {
 	uint8_t i;
 	uint8_t ucLinkCount = 0;
@@ -771,7 +782,8 @@ uint8_t kalGetBowAvailablePhysicalLinkCount(IN struct GLUE_INFO *prGlueInfo)
 * @retval FALSE     Fail to extract correct information
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalBowFrameClassifier(IN struct GLUE_INFO *prGlueInfo, IN void *prPacket, OUT u_int8_t *pfgIs1X)
+u_int8_t kalBowFrameClassifier(struct GLUE_INFO *prGlueInfo,
+		void *prPacket, u_int8_t *pfgIs1X)
 {
 	uint32_t u4PacketLen;
 	uint16_t u2EtherTypeLen;
@@ -843,7 +855,7 @@ u_int8_t kalBowFrameClassifier(IN struct GLUE_INFO *prGlueInfo, IN void *prPacke
  * \retval < 0   The execution failed.
  */
 /*----------------------------------------------------------------------------*/
-static int bowOpen(IN struct net_device *prDev)
+static int bowOpen(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -873,7 +885,7 @@ static int bowOpen(IN struct net_device *prDev)
  * \retval < 0   The execution failed.
  */
 /*----------------------------------------------------------------------------*/
-static int bowStop(IN struct net_device *prDev)
+static int bowStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -907,8 +919,8 @@ static int bowStop(IN struct net_device *prDev)
  * \retval NETDEV_TX_BUSY - on failure, packet will be discarded by upper layer.
  */
 /*----------------------------------------------------------------------------*/
-static netdev_tx_t bowHardStartXmit(IN struct sk_buff *prSkb,
-		IN struct net_device *prDev)
+static netdev_tx_t bowHardStartXmit(struct sk_buff *prSkb,
+		struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -971,7 +983,7 @@ static const struct net_device_ops bow_netdev_ops = {
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalInitBowDevice(IN struct GLUE_INFO *prGlueInfo, IN const char *prDevName)
+u_int8_t kalInitBowDevice(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 {
 	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHif;
@@ -1056,7 +1068,7 @@ u_int8_t kalInitBowDevice(IN struct GLUE_INFO *prGlueInfo, IN const char *prDevN
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalUninitBowDevice(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t kalUninitBowDevice(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter;
 

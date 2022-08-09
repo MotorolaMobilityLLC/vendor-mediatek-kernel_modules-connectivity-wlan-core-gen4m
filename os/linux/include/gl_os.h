@@ -1554,11 +1554,11 @@ u16 wlanSelectQueue(struct net_device *dev,
 
 void wlanDebugInit(void);
 
-uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx,
-			       IN uint32_t u4DbgMask);
+uint32_t wlanSetDriverDbgLevel(uint32_t u4DbgIdx,
+			       uint32_t u4DbgMask);
 
-uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx,
-			       OUT uint32_t *pu4DbgMask);
+uint32_t wlanGetDriverDbgLevel(uint32_t u4DbgIdx,
+			       uint32_t *pu4DbgMask);
 
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			u_int8_t fgEnable);
@@ -1624,10 +1624,10 @@ extern int glUnregisterEarlySuspend(struct early_suspend
 #endif
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
-void kalMetTagPacket(IN struct GLUE_INFO *prGlueInfo,
-		     IN void *prPacket, IN enum ENUM_TX_PROFILING_TAG eTag);
+void kalMetTagPacket(struct GLUE_INFO *prGlueInfo,
+		     void *prPacket, enum ENUM_TX_PROFILING_TAG eTag);
 
-void kalMetInit(IN struct GLUE_INFO *prGlueInfo);
+void kalMetInit(struct GLUE_INFO *prGlueInfo);
 #endif
 
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
@@ -1728,14 +1728,14 @@ struct wiphy *wlanGetWiphy(void);
 
 uint8_t wlanGetBssIdx(struct net_device *ndev);
 
-struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex);
+struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex);
 
-struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucAisIndex);
+struct net_device *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucAisIndex);
 
-struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucP2pIndex);
+struct net_device *wlanGetP2pNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucP2pIndex);
 
 u_int8_t wlanIsAisDev(struct net_device *prDev);
 

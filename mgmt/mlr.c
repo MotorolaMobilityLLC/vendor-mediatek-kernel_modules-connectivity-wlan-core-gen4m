@@ -51,13 +51,13 @@
  *******************************************************************************
  */
 static u_int8_t mlrCompose80211Header(
-	IN struct ADAPTER *prAdapter,
-	OUT uint8_t	*pucBuffer,
-	IN uint8_t	*pucEthernetFrame,
-	IN struct STA_RECORD *prStaRec,
-	IN u_int8_t fgIsFragment,
-	IN uint8_t ucFragNo,
-	IN uint8_t ucSplitTotal)
+	struct ADAPTER *prAdapter,
+	uint8_t	*pucBuffer,
+	uint8_t	*pucEthernetFrame,
+	struct STA_RECORD *prStaRec,
+	u_int8_t fgIsFragment,
+	uint8_t ucFragNo,
+	uint8_t ucSplitTotal)
 {
 	const uint8_t aucBridgeTunnelEncap[6] = {
 		0xAA, 0xAA, 0x03, 0x00, 0x00, 0xF8
@@ -217,7 +217,7 @@ static uint16_t mlrCalcTcpUdpChecksum(void *pvData, uint16_t u2Len)
 	return ~u2Src;
 }
 
-static u_int8_t mlrFillTcpUdpChecksum(IN void *pvPacket)
+static u_int8_t mlrFillTcpUdpChecksum(void *pvPacket)
 {
 	uint8_t *aucLookAheadBuf = NULL;
 	uint16_t u2EtherTypeLen = 0;
@@ -324,13 +324,13 @@ static u_int8_t mlrFillTcpUdpChecksum(IN void *pvPacket)
 	return TRUE;
 }
 
-static u_int8_t mlrProccessFragMsduInfo(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN uint8_t ucMacHeaderLength,
-		IN uint8_t ucSplitTotal,
-		IN void *prNativePacket,
-		IN void **pprFragmentSkb,
-		OUT struct QUE *prFragmentedQue)
+static u_int8_t mlrProccessFragMsduInfo(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint8_t ucMacHeaderLength,
+		uint8_t ucSplitTotal,
+		void *prNativePacket,
+		void **pprFragmentSkb,
+		struct QUE *prFragmentedQue)
 {
 	struct MSDU_INFO *prMsduInfoFrag;
 	void *prSkbNative, *prSkbSplit;
@@ -473,12 +473,12 @@ err:
 	return FALSE;
 }
 
-u_int8_t mlrDoFragPacket(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN uint16_t u2SplitSize,
-		IN uint16_t u2SplitThreshold,
-		IN void *prNativePacket,
-		OUT struct QUE *prFragmentedQue)
+u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t u2SplitSize,
+		uint16_t u2SplitThreshold,
+		void *prNativePacket,
+		struct QUE *prFragmentedQue)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
@@ -926,9 +926,9 @@ err_handler_2: /* handling that processing MsduInfo happens an exception */
 	return FALSE;
 }
 
-static u_int8_t mlrMlrCapVerCheck(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct STA_RECORD *prStaRec)
+static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct STA_RECORD *prStaRec)
 {
 	u_int8_t fgMlrCapVerCheck = FALSE;
 
@@ -988,9 +988,9 @@ static u_int8_t mlrMlrCapVerCheck(IN struct ADAPTER *prAdapter,
 	return fgMlrCapVerCheck;
 }
 
-u_int8_t mlrCheckIfDoFrag(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN void *prNativePacket)
+u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		void *prNativePacket)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
@@ -1042,11 +1042,11 @@ u_int8_t mlrCheckIfDoFrag(IN struct ADAPTER *prAdapter,
 		return FALSE;
 }
 
-u_int8_t mlrDecideIfUseMlrRate(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct STA_RECORD *prStaRec,
-		IN struct MSDU_INFO *prMsduInfo,
-		OUT uint16_t *pu2RateCode)
+u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct STA_RECORD *prStaRec,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t *pu2RateCode)
 {
 	u_int8_t fgIsUseMlrRate = FALSE;
 
@@ -1223,8 +1223,8 @@ void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-void mlrEventMlrFsmUpdateHandler(IN struct ADAPTER *prAdapter,
-		  IN struct WIFI_EVENT *prEvent)
+void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
+		  struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_MLR_FSM_UPDATE *prEvtMlrFsmUpdate;
 	struct STA_RECORD *prStaRec;

@@ -751,7 +751,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 }
 
 void
-nanCmdAddCsid(IN struct ADAPTER *prAdapter, uint8_t ucPubID, uint8_t ucNumCsid,
+nanCmdAddCsid(struct ADAPTER *prAdapter, uint8_t ucPubID, uint8_t ucNumCsid,
 	      uint8_t *pucCsidList) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -807,7 +807,7 @@ nanCmdAddCsid(IN struct ADAPTER *prAdapter, uint8_t ucPubID, uint8_t ucNumCsid,
 }
 
 void
-nanCmdManageScid(IN struct ADAPTER *prAdapter, unsigned char fgAddDelete,
+nanCmdManageScid(struct ADAPTER *prAdapter, unsigned char fgAddDelete,
 		 uint8_t ucPubID, uint8_t *pucScid) {
 	uint32_t rStatus;
 	void *prCmdBuffer;

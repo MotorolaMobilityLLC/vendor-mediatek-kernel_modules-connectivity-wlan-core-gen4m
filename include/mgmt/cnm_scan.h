@@ -142,9 +142,9 @@ enum ENUM_SCAN_PROFILE {
 #if 0
 void cnmScanInit(void);
 
-void cnmScanRunEventScanRequest(IN struct MSG_HDR *prMsgHdr);
+void cnmScanRunEventScanRequest(struct MSG_HDR *prMsgHdr);
 
-u_int8_t cnmScanRunEventScanAbort(IN struct MSG_HDR *prMsgHdr);
+u_int8_t cnmScanRunEventScanAbort(struct MSG_HDR *prMsgHdr);
 
 void cnmScanProfileSelection(void);
 
@@ -152,13 +152,13 @@ void cnmScanProcessStart(void);
 
 void cnmScanProcessStop(void);
 
-void cnmScanRunEventReqAISAbsDone(IN struct MSG_HDR *prMsgHdr);
+void cnmScanRunEventReqAISAbsDone(struct MSG_HDR *prMsgHdr);
 
-void cnmScanRunEventCancelAISAbsDone(IN struct MSG_HDR *prMsgHdr);
+void cnmScanRunEventCancelAISAbsDone(struct MSG_HDR *prMsgHdr);
 
 void cnmScanPartialScanTimeout(uint32_t u4Param);
 
-void cnmScanRunEventScnFsmComplete(IN struct MSG_HDR *prMsgHdr);
+void cnmScanRunEventScnFsmComplete(struct MSG_HDR *prMsgHdr);
 #endif
 
 #endif /* _CNM_SCAN_H */

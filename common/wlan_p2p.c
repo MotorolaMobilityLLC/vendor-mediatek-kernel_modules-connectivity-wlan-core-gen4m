@@ -125,10 +125,10 @@
 /*---------------------------------------------------------------------------*/
 #if 0
 uint32_t
-wlanoidSetAddP2PKey(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetAddP2PKey(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct CMD_802_11_KEY rCmdKey;
 	struct PARAM_KEY *prNewKey;
@@ -338,10 +338,10 @@ wlanoidSetAddP2PKey(IN struct ADAPTER *prAdapter,
  */
 /*---------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetRemoveP2PKey(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetRemoveP2PKey(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct CMD_802_11_KEY rCmdKey;
 	struct PARAM_REMOVE_KEY *prRemovedKey;
@@ -457,10 +457,10 @@ wlanoidSetRemoveP2PKey(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2pNetworkAddress(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2pNetworkAddress(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t i, j;
@@ -569,10 +569,10 @@ wlanoidSetP2pNetworkAddress(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidQueryP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidQueryP2pPowerSaveProfile(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	DEBUGFUNC("wlanoidQueryP2pPowerSaveProfile");
 
@@ -610,10 +610,10 @@ wlanoidQueryP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2pPowerSaveProfile(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t status;
 	enum PARAM_POWER_MODE ePowerMode;
@@ -679,10 +679,10 @@ wlanoidSetP2pPowerSaveProfile(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t i, j;
@@ -825,10 +825,10 @@ wlanoidSetP2pSetNetworkAddress(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2PMulticastList(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr = {0};
 
@@ -911,10 +911,10 @@ wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSendP2PSDRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSendP2PSDRequest(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
@@ -955,10 +955,10 @@ wlanoidSendP2PSDRequest(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSendP2PSDResponse(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSendP2PSDResponse(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
@@ -1001,10 +1001,10 @@ wlanoidSendP2PSDResponse(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidGetP2PSDRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidGetP2PSDRequest(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 /* PUINT_8 pucChannelNum = NULL; */
@@ -1048,10 +1048,10 @@ wlanoidGetP2PSDRequest(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidGetP2PSDResponse(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidGetP2PSDResponse(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	/* UINT_8 ucSeqNum = 0, */
@@ -1092,10 +1092,10 @@ wlanoidGetP2PSDResponse(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2PTerminateSDPhase(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2PTerminateSDPhase(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct PARAM_P2P_TERMINATE_SD_PHASE *prP2pTerminateSD =
@@ -1152,10 +1152,10 @@ wlanoidSetP2PTerminateSDPhase(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetSecCheckRequest(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetSecCheckRequest(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -1203,10 +1203,10 @@ wlanoidSetSecCheckRequest(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidGetSecCheckResponse(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidGetSecCheckResponse(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	/* P_WLAN_MAC_HEADER_T prWlanHdr = (P_WLAN_MAC_HEADER_T)NULL; */
@@ -1242,10 +1242,10 @@ wlanoidGetSecCheckResponse(IN struct ADAPTER *prAdapter,
 #endif
 
 uint32_t
-wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetNoaParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct PARAM_CUSTOM_NOA_PARAM_STRUCT *prNoaParam;
 	struct CMD_CUSTOM_NOA_PARAM_STRUCT rCmdNoaParam;
@@ -1301,10 +1301,10 @@ wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
-wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetOppPsParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT *prOppPsParam;
 	struct CMD_CUSTOM_OPPPS_PARAM_STRUCT rCmdOppPsParam;
@@ -1359,10 +1359,10 @@ wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
-wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetUApsdParam(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT *prUapsdParam;
 	struct CMD_CUSTOM_UAPSD_PARAM_STRUCT rCmdUapsdParam;
@@ -1452,10 +1452,10 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
-wlanoidQueryP2pVersion(IN struct ADAPTER *prAdapter,
-		IN void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidQueryP2pVersion(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 /* PUINT_8 pucVersionNum = (PUINT_8)pvQueryBuffer; */
@@ -1497,10 +1497,10 @@ wlanoidQueryP2pVersion(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetP2pWPSmode(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2pWPSmode(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t status;
 	uint32_t u4IsWPSmode = 0;
@@ -1532,10 +1532,10 @@ wlanoidSetP2pWPSmode(IN struct ADAPTER *prAdapter,
 #endif
 
 uint32_t
-wlanoidSetP2pSupplicantVersion(IN struct ADAPTER *prAdapter,
-		IN void *pvSetBuffer,
-		IN uint32_t u4SetBufferLen,
-		OUT uint32_t *pu4SetInfoLen)
+wlanoidSetP2pSupplicantVersion(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	uint8_t ucVersionNum;
@@ -1568,10 +1568,10 @@ wlanoidSetP2pSupplicantVersion(IN struct ADAPTER *prAdapter,
 }				/* wlanoidSetP2pSupplicantVersion */
 
 uint32_t
-wlanoidAbortP2pScan(IN struct ADAPTER *prAdapter,
-		OUT void *pvQueryBuffer,
-		IN uint32_t u4QueryBufferLen,
-		OUT uint32_t *pu4QueryInfoLen)
+wlanoidAbortP2pScan(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
 {
 	uint8_t ucBssIdx;
 

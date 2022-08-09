@@ -105,42 +105,42 @@
 /*----------------------------------------------------------------------------*/
 /* Routines in assoc.c                                                        */
 /*----------------------------------------------------------------------------*/
-uint32_t assocSendReAssocReqFrame(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t assocSendReAssocReqFrame(struct ADAPTER
+				*prAdapter, struct STA_RECORD *prStaRec);
 
-uint32_t assocCheckTxReAssocReqFrame(IN struct ADAPTER
-				*prAdapter, IN struct MSDU_INFO *prMsduInfo);
+uint32_t assocCheckTxReAssocReqFrame(struct ADAPTER
+				*prAdapter, struct MSDU_INFO *prMsduInfo);
 
-uint32_t assocCheckTxReAssocRespFrame(IN struct ADAPTER
-				*prAdapter, IN struct MSDU_INFO *prMsduInfo);
-
-uint32_t
-assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER
-				*prAdapter, IN struct SW_RFB *prSwRfb,
-				OUT uint16_t *pu2StatusCode);
-
-uint32_t assocSendDisAssocFrame(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prStaRec,
-				IN uint16_t u2ReasonCode);
+uint32_t assocCheckTxReAssocRespFrame(struct ADAPTER
+				*prAdapter, struct MSDU_INFO *prMsduInfo);
 
 uint32_t
-assocProcessRxDisassocFrame(IN struct ADAPTER *prAdapter,
-				IN struct SW_RFB *prSwRfb,
-				IN uint8_t aucBSSID[],
-				OUT uint16_t *pu2ReasonCode);
+assocCheckRxReAssocRspFrameStatus(struct ADAPTER
+				*prAdapter, struct SW_RFB *prSwRfb,
+				uint16_t *pu2StatusCode);
 
-uint32_t assocProcessRxAssocReqFrame(IN struct ADAPTER
-				*prAdapter, IN struct SW_RFB *prSwRfb,
-				OUT uint16_t *pu2StatusCode);
+uint32_t assocSendDisAssocFrame(struct ADAPTER
+				*prAdapter, struct STA_RECORD *prStaRec,
+				uint16_t u2ReasonCode);
 
-uint32_t assocSendReAssocRespFrame(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t
+assocProcessRxDisassocFrame(struct ADAPTER *prAdapter,
+				struct SW_RFB *prSwRfb,
+				uint8_t aucBSSID[],
+				uint16_t *pu2ReasonCode);
 
-struct MSDU_INFO *assocComposeReAssocRespFrame(IN struct ADAPTER *prAdapter,
-				IN struct STA_RECORD *prStaRec);
+uint32_t assocProcessRxAssocReqFrame(struct ADAPTER
+				*prAdapter, struct SW_RFB *prSwRfb,
+				uint16_t *pu2StatusCode);
 
-uint16_t assocBuildCapabilityInfo(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t assocSendReAssocRespFrame(struct ADAPTER
+				*prAdapter, struct STA_RECORD *prStaRec);
+
+struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec);
+
+uint16_t assocBuildCapabilityInfo(struct ADAPTER
+				*prAdapter, struct STA_RECORD *prStaRec);
 
 uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
@@ -148,8 +148,8 @@ uint16_t assoc_get_nonwfa_vend_ie_len(struct ADAPTER *prAdapter,
 void assoc_build_nonwfa_vend_ie(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
-		       IN OUT struct MSDU_INFO *prMsduInfo);
+void assocGenerateMDIE(struct ADAPTER *prAdapter,
+		       struct MSDU_INFO *prMsduInfo);
 
 uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			     struct STA_RECORD *prStaRec);

@@ -191,111 +191,111 @@ struct PMKID_ENTRY {
  *******************************************************************************
  */
 
-void secInit(IN struct ADAPTER *prAdapter,
-	     IN uint8_t ucBssIndex);
+void secInit(struct ADAPTER *prAdapter,
+	     uint8_t ucBssIndex);
 
-void secSetPortBlocked(IN struct ADAPTER *prAdapter,
-		       IN struct STA_RECORD *prSta, IN u_int8_t fgPort);
+void secSetPortBlocked(struct ADAPTER *prAdapter,
+		       struct STA_RECORD *prSta, u_int8_t fgPort);
 
-u_int8_t secCheckClassError(IN struct ADAPTER *prAdapter,
-			    IN struct SW_RFB *prSwRfb,
-			    IN struct STA_RECORD *prStaRec);
+u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
+			    struct SW_RFB *prSwRfb,
+			    struct STA_RECORD *prStaRec);
 
-u_int8_t secTxPortControlCheck(IN struct ADAPTER *prAdapter,
-			       IN struct MSDU_INFO *prMsduInfo,
-			       IN struct STA_RECORD *prStaRec);
+u_int8_t secTxPortControlCheck(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo,
+			       struct STA_RECORD *prStaRec);
 
-u_int8_t secRxPortControlCheck(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSWRfb);
+u_int8_t secRxPortControlCheck(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSWRfb);
 
-void secSetCipherSuite(IN struct ADAPTER *prAdapter,
-		       IN uint32_t u4CipherSuitesFlags,
-		       IN uint8_t ucBssIndex);
+void secSetCipherSuite(struct ADAPTER *prAdapter,
+		       uint32_t u4CipherSuitesFlags,
+		       uint8_t ucBssIndex);
 
-u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
-			     IN struct MSDU_INFO *prMsdu,
-			     IN struct STA_RECORD *prStaRec);
+u_int8_t secIsProtectedFrame(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsdu,
+			     struct STA_RECORD *prStaRec);
 
-u_int8_t secRsnKeyHandshakeEnabled(IN struct ADAPTER
+u_int8_t secRsnKeyHandshakeEnabled(struct ADAPTER
 				   *prAdapter);
 
-uint8_t secGetBmcWlanIndex(IN struct ADAPTER *prAdapter,
-			   IN enum ENUM_NETWORK_TYPE eNetType,
-			   IN struct STA_RECORD *prStaRec);
+uint8_t secGetBmcWlanIndex(struct ADAPTER *prAdapter,
+			   enum ENUM_NETWORK_TYPE eNetType,
+			   struct STA_RECORD *prStaRec);
 
-u_int8_t secTransmitKeyExist(IN struct ADAPTER *prAdapter,
-			     IN struct STA_RECORD *prSta);
+u_int8_t secTransmitKeyExist(struct ADAPTER *prAdapter,
+			     struct STA_RECORD *prSta);
 
-u_int8_t secEnabledInAis(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex);
+u_int8_t secEnabledInAis(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex);
 
-u_int8_t secPrivacySeekForEntry(IN struct ADAPTER
-				*prAdapter, IN struct STA_RECORD *prSta);
+u_int8_t secPrivacySeekForEntry(struct ADAPTER
+				*prAdapter, struct STA_RECORD *prSta);
 
-void secPrivacyFreeForEntry(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucEntry);
+void secPrivacyFreeForEntry(struct ADAPTER *prAdapter,
+			    uint8_t ucEntry);
 
-void secPrivacyFreeSta(IN struct ADAPTER *prAdapter,
-		       IN struct STA_RECORD *prStaRec);
+void secPrivacyFreeSta(struct ADAPTER *prAdapter,
+		       struct STA_RECORD *prStaRec);
 
-void secRemoveBssBcEntry(IN struct ADAPTER *prAdapter,
-			 IN struct BSS_INFO *prBssInfo, IN u_int8_t fgRoam);
+void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
+			 struct BSS_INFO *prBssInfo, u_int8_t fgRoam);
 
 uint8_t
-secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
-			 IN uint8_t ucBssIndex,
-			 IN uint8_t *pucAddr, IN uint8_t ucStaIdx,
-			 IN uint8_t ucAlg, IN uint8_t ucKeyId);
+secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
+			 uint8_t ucBssIndex,
+			 uint8_t *pucAddr, uint8_t ucStaIdx,
+			 uint8_t ucAlg, uint8_t ucKeyId);
 
-uint8_t secGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucWlanIdx);
+uint8_t secGetStaIdxByWlanIdx(struct ADAPTER *prAdapter,
+			      uint8_t ucWlanIdx);
 
 uint8_t secGetWlanIdxByStaIdx(struct ADAPTER *prAdapter,
 				uint8_t ucStaIndex);
 
-uint8_t secGetBssIdxByWlanIdx(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucWlanIdx);
+uint8_t secGetBssIdxByWlanIdx(struct ADAPTER *prAdapter,
+			      uint8_t ucWlanIdx);
 
-uint8_t secGetBssIdxByRfb(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+uint8_t secGetBssIdxByRfb(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-struct BSS_INFO * secGetBssByRfb(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+struct BSS_INFO *secGetBssByRfb(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
 				   *prAdapter, uint8_t *pucMacAddress);
 
-void secPrivacyDumpWTBL(IN struct ADAPTER *prAdapter);
+void secPrivacyDumpWTBL(struct ADAPTER *prAdapter);
 
-u_int8_t secCheckWTBLAssign(IN struct ADAPTER *prAdapter);
+u_int8_t secCheckWTBLAssign(struct ADAPTER *prAdapter);
 
-u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
-			   IN struct BSS_INFO *prBssInfo);
+u_int8_t secIsProtectedBss(struct ADAPTER *prAdapter,
+			   struct BSS_INFO *prBssInfo);
 
-u_int8_t secIsRobustActionFrame(IN struct ADAPTER *prAdapter,
-			   IN void *prPacket);
+u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter,
+			   void *prPacket);
 
-u_int8_t secIsRobustMgmtFrame(IN struct ADAPTER *prAdapter,
-			IN void *prPacket);
+u_int8_t secIsRobustMgmtFrame(struct ADAPTER *prAdapter,
+			void *prPacket);
 
-u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
-			IN struct BSS_INFO *prBssInfo);
+u_int8_t secIsWepBss(struct ADAPTER *prAdapter,
+			struct BSS_INFO *prBssInfo);
 
-u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
-			    IN uint8_t *pucMicKey);
+u_int8_t tkipMicDecapsulate(struct SW_RFB *prSwRfb,
+			    uint8_t *pucMicKey);
 u_int8_t tkipMicDecapsulateInRxHdrTransMode(
-	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN uint8_t *pucMicKey);
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t *pucMicKey);
 
-void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
-		       IN struct BSS_INFO *prBssInfo);
+void secPostUpdateAddr(struct ADAPTER *prAdapter,
+		       struct BSS_INFO *prBssInfo);
 
 enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(
 	uint8_t *pucPacket);
 
-void secHandleNoWtbl(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+void secHandleNoWtbl(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 /*******************************************************************************
  *                              F U N C T I O N S

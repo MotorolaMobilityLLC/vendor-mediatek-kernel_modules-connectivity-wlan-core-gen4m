@@ -14,8 +14,8 @@
 struct MLD_BSS_INFO *prP2pMldBssInfo;
 
 struct MLD_BSS_INFO *p2pGetMldBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	if (prP2pMldBssInfo == NULL) {
 		DBGLOG(INIT, TRACE, "\n");
@@ -45,7 +45,7 @@ void p2pMldBssUninit(struct ADAPTER *prAdapter)
 
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
+void p2pLinkInitGCRole(struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -96,7 +96,7 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter)
+void p2pLinkUninitGCRole(struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *fsm = (struct P2P_ROLE_FSM_INFO *) NULL;
@@ -128,7 +128,7 @@ void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter)
 	}
 }
 
-uint8_t p2pGetGCBssNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+uint8_t p2pGetGCBssNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	uint8_t i, num = 0;
 
@@ -143,10 +143,10 @@ uint8_t p2pGetGCBssNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t p2pLinkProcessRxAuthReqFrame(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo,
-	IN struct STA_RECORD *prStaRec,
-	IN struct SW_RFB *prSwRfb)
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	struct SW_RFB *prSwRfb)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct WLAN_AUTH_FRAME *prAuthFrame = NULL;
@@ -214,10 +214,10 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 }
 
 uint32_t p2pLinkProcessRxAssocReqFrame(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo,
-	IN struct STA_RECORD *prStaRec,
-	IN struct SW_RFB *prSwRfb)
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ASSOC_REQ_FRAME *prFrame = NULL;
 	struct MLD_STA_RECORD *prMldStarec = NULL;
@@ -384,8 +384,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 #endif
 
 void p2pTargetBssDescResetConnecting(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *fsm)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *fsm)
 {
 	uint8_t i;
 
@@ -403,7 +403,7 @@ void p2pTargetBssDescResetConnecting(
 	}
 }
 
-void p2pClearAllLink(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+void p2pClearAllLink(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	uint8_t i;
 
@@ -416,9 +416,9 @@ void p2pClearAllLink(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 }
 
 void p2pFillLinkBssDesc(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN struct BSS_DESC_SET *prBssDescSet)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct BSS_DESC_SET *prBssDescSet)
 {
 	uint8_t i;
 
@@ -435,9 +435,9 @@ void p2pFillLinkBssDesc(
 }
 
 void p2pDeactivateAllLink(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t fgClearStaRec)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t fgClearStaRec)
 {
 	uint8_t i;
 
@@ -454,8 +454,8 @@ void p2pDeactivateAllLink(
 }
 
 struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
-	IN struct ADAPTER *prAdapter,
-	IN enum ENUM_IFTYPE eIftype)
+	struct ADAPTER *prAdapter,
+	enum ENUM_IFTYPE eIftype)
 
 {
 	return P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
@@ -463,8 +463,8 @@ struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 }
 
 struct BSS_INFO *p2pGetDefaultLinkBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN enum ENUM_IFTYPE eIftype)
+	struct ADAPTER *prAdapter,
+	enum ENUM_IFTYPE eIftype)
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		p2pGetDefaultRoleFsmInfo(prAdapter, eIftype);
@@ -477,8 +477,8 @@ struct BSS_INFO *p2pGetDefaultLinkBssInfo(
 }
 
 struct STA_RECORD *p2pGetDefaultLinkStaRec(
-	IN struct ADAPTER *prAdapter,
-	IN enum ENUM_IFTYPE eIftype)
+	struct ADAPTER *prAdapter,
+	enum ENUM_IFTYPE eIftype)
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		p2pGetDefaultRoleFsmInfo(prAdapter, eIftype);
@@ -491,9 +491,9 @@ struct STA_RECORD *p2pGetDefaultLinkStaRec(
 }
 
 struct BSS_INFO *p2pGetLinkBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t ucLinkIdx)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx)
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -520,8 +520,8 @@ struct BSS_INFO *p2pGetLinkBssInfo(
 }
 
 void p2pGetLinkWmmQueSet(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo)
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
 {
 	struct BSS_INFO *bss;
 
@@ -547,9 +547,9 @@ void p2pGetLinkWmmQueSet(
 
 
 void p2pSetLinkBssDesc(
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN struct BSS_DESC *prBssDesc,
-	IN uint8_t ucLinkIdx)
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct BSS_DESC *prBssDesc,
+	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return;
@@ -559,8 +559,8 @@ void p2pSetLinkBssDesc(
 }
 
 struct BSS_DESC *p2pGetLinkBssDesc(
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t ucLinkIdx)
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return NULL;
@@ -569,7 +569,7 @@ struct BSS_DESC *p2pGetLinkBssDesc(
 		.prP2pTargetBssDesc;
 }
 
-uint8_t p2pGetLinkNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+uint8_t p2pGetLinkNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	uint8_t i, num = 0;
 
@@ -582,9 +582,9 @@ uint8_t p2pGetLinkNum(IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 }
 
 void p2pSetLinkStaRec(
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t ucLinkIdx)
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return;
@@ -593,8 +593,8 @@ void p2pSetLinkStaRec(
 }
 
 struct STA_RECORD *p2pGetLinkStaRec(
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t ucLinkIdx)
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return NULL;
@@ -604,9 +604,9 @@ struct STA_RECORD *p2pGetLinkStaRec(
 }
 
 struct P2P_CONNECTION_REQ_INFO *p2pGetConnReqInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t ucLinkIdx)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx)
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -625,9 +625,9 @@ struct P2P_CONNECTION_REQ_INFO *p2pGetConnReqInfo(
 }
 
 struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN uint8_t ucLinkIdx)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx)
 {
 	struct P2P_ROLE_FSM_INFO *fsm =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -701,9 +701,9 @@ void p2pLinkStaRecFree(
 }
 
 void p2pLinkAcquireChJoin(
-	IN struct ADAPTER *prAdapter,
-	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	IN struct P2P_CHNL_REQ_INFO *prChnlReq)
+	struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct P2P_CHNL_REQ_INFO *prChnlReq)
 {
 	struct MSG_CH_REQ *prMsgChReq = NULL;
 	struct MSG_CH_REQ *prSubReq = NULL;
@@ -802,9 +802,9 @@ void p2pLinkAcquireChJoin(
 
 uint32_t
 p2pRoleFsmRunEventAAAComplete(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN struct BSS_INFO *prP2pBssInfo)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *mld_starec;
@@ -853,9 +853,9 @@ p2pRoleFsmRunEventAAAComplete(
 
 uint32_t
 p2pRoleFsmRunEventAAASuccess(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN struct BSS_INFO *prP2pBssInfo)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo)
 {
 	return p2pRoleFsmRunEventAAASuccessImpl(
 		prAdapter,
@@ -864,9 +864,9 @@ p2pRoleFsmRunEventAAASuccess(
 }
 
 void p2pRoleFsmRunEventAAATxFail(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN struct BSS_INFO *prP2pBssInfo)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo)
 {
 	p2pRoleFsmRunEventAAATxFailImpl(
 		prAdapter,
@@ -876,9 +876,9 @@ void p2pRoleFsmRunEventAAATxFail(
 
 
 void p2pRxDeauthNoWtbl(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN struct SW_RFB *prSwRfb)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct SW_RFB *prSwRfb)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct BSS_INFO *bss =
@@ -924,7 +924,7 @@ void p2pRxDeauthNoWtbl(
 #endif
 }
 
-uint16_t bssAssignAssocID(IN struct STA_RECORD *prStaRec)
+uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE)
@@ -1010,8 +1010,8 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 
 u_int8_t
 p2pNeedAppendP2pIE(
-	IN struct ADAPTER *ad,
-	IN struct BSS_INFO *bss)
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (ad &&

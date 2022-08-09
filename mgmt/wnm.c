@@ -105,16 +105,16 @@ static uint8_t ucTimingMeasToken;
  */
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
 static uint32_t
-wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
-			     IN struct MSDU_INFO *prMsduInfo,
-			     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+wnmRunEventTimgingMeasTxDone(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo,
+			     enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
-				      IN struct STA_RECORD *prStaRec,
-				      IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+static void wnmComposeTimingMeasFrame(struct ADAPTER *prAdapter,
+				      struct STA_RECORD *prStaRec,
+				      PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
-				 IN struct SW_RFB *prSwRfb);
+static void wnmTimingMeasRequest(struct ADAPTER *prAdapter,
+				 struct SW_RFB *prSwRfb);
 #endif
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -132,7 +132,7 @@ static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
  *      Called by: Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void wnmWNMAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prRxFrame;
 
@@ -183,8 +183,8 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
  *
  */
 /*----------------------------------------------------------------------------*/
-void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
-			 IN uint32_t u4ToD, IN uint32_t u4ToA)
+void wnmReportTimingMeas(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex,
+			 uint32_t u4ToD, uint32_t u4ToA)
 {
 	struct STA_RECORD *prStaRec;
 
@@ -215,9 +215,9 @@ void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex,
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t
-wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
-			     IN struct MSDU_INFO *prMsduInfo,
-			     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+wnmRunEventTimgingMeasTxDone(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo,
+			     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct STA_RECORD *prStaRec;
 
@@ -257,9 +257,9 @@ wnmRunEventTimgingMeasTxDone(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
-				      IN struct STA_RECORD *prStaRec,
-				      IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+static void wnmComposeTimingMeasFrame(struct ADAPTER *prAdapter,
+				      struct STA_RECORD *prStaRec,
+				      PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct BSS_INFO *prBssInfo;
@@ -326,8 +326,8 @@ static void wnmComposeTimingMeasFrame(IN struct ADAPTER *prAdapter,
  *      Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-static void wnmTimingMeasRequest(IN struct ADAPTER *prAdapter,
-				 IN struct SW_RFB *prSwRfb)
+static void wnmTimingMeasRequest(struct ADAPTER *prAdapter,
+				 struct SW_RFB *prSwRfb)
 {
 	struct ACTION_WNM_TIMING_MEAS_REQ_FRAME *prRxFrame = NULL;
 	struct STA_RECORD *prStaRec;
@@ -378,18 +378,18 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 
 #endif /* CFG_SUPPORT_802_11V_TIMING_MEASUREMENT */
 
-static uint32_t wnmBTMQueryTxDone(IN struct ADAPTER *prAdapter,
-				  IN struct MSDU_INFO *prMsduInfo,
-				  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t wnmBTMQueryTxDone(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(WNM, INFO, "BTM: Query Frame Tx Done, Status %d\n",
 	       rTxDoneStatus);
 	return WLAN_STATUS_SUCCESS;
 }
 
-static uint32_t wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
-				     IN struct MSDU_INFO *prMsduInfo,
-				     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t wnmBTMResponseTxDone(struct ADAPTER *prAdapter,
+				     struct MSDU_INFO *prMsduInfo,
+				     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	uint8_t ucBssIndex = 0;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -412,10 +412,10 @@ static uint32_t wnmBTMResponseTxDone(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void wnmSendBTMResponseFrame(IN struct ADAPTER *adapter,
-	IN struct STA_RECORD *staRec, IN uint8_t dialogToken,
-	IN uint8_t status, IN uint8_t reason, IN uint8_t delay,
-	IN const uint8_t *bssid)
+void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
+	struct STA_RECORD *staRec, uint8_t dialogToken,
+	uint8_t status, uint8_t reason, uint8_t delay,
+	const uint8_t *bssid)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -521,8 +521,8 @@ void wnmSendBTMResponseFrame(IN struct ADAPTER *adapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec, IN uint8_t ucQueryReason)
+void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec, uint8_t ucQueryReason)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -575,8 +575,8 @@ void wnmSendBTMQueryFrame(IN struct ADAPTER *prAdapter,
 }				/* end of wnmComposeBTMQueryFrame() */
 
 #if CFG_SUPPORT_MBO
-void wnmMboIeTransReq(IN struct ADAPTER *adapter, IN uint8_t wnmMode,
-		IN const uint8_t *ie, IN uint16_t len, IN uint8_t bssIndex)
+void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
+		const uint8_t *ie, uint16_t len, uint8_t bssIndex)
 {
 	const uint8_t *pos;
 	uint8_t id, elen;
@@ -679,7 +679,7 @@ fail:
  *      Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void wnmRecvBTMRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct ACTION_BTM_REQ_FRAME *prRxFrame = NULL;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -839,9 +839,9 @@ send_response:
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
-	IN const uint8_t *aucBssid, IN uint8_t ucStatus,
-	IN uint8_t ucReason, IN uint8_t ucBssIndex)
+uint8_t wnmSendBTMResponse(struct ADAPTER *prAdapter,
+	const uint8_t *aucBssid, uint8_t ucStatus,
+	uint8_t ucReason, uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	struct BSS_INFO *prAisBssInfo;
@@ -867,7 +867,7 @@ uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
 
 #if CFG_AP_80211V_SUPPORT
 static void wnmMulAPAgentBTMRequestDisassocTimerFunc(
-		IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
+		struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -883,9 +883,9 @@ static void wnmMulAPAgentBTMRequestDisassocTimerFunc(
 			REASON_CODE_DISASSOC_INACTIVITY);
 }
 
-static uint32_t wnmMulAPAgentBTMRequestTxDone(IN struct ADAPTER *prAdapter,
-				  IN struct MSDU_INFO *prMsduInfo,
-				  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+static uint32_t wnmMulAPAgentBTMRequestTxDone(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct ACTION_BTM_REQ_FRAME *prTxFrame = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -938,9 +938,9 @@ static uint32_t wnmMulAPAgentBTMRequestTxDone(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void wnmMulAPAgentSendBTMRequestFrame(
-		IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec,
-		IN struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo)
+		struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -1065,8 +1065,8 @@ void wnmMulAPAgentSendBTMRequestFrame(
  *      Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void wnmMulAPAgentRecvBTMResponse(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb)
+void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
 {
 	struct ACTION_BTM_RSP_FRAME *prRxFrame = NULL;
 	uint8_t *pucOptInfo = NULL;

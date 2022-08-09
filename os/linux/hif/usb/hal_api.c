@@ -144,7 +144,7 @@ static const uint16_t arTcToUSBEP[USB_TC_NUM] = {
 * @retval FALSE         CHIP ID is different from the setting compiled
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
+u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 {
 	uint32_t u4CIR = 0;
 	struct mt66xx_chip_info *prChipInfo;
@@ -171,10 +171,10 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 }
 
 uint32_t
-halRxWaitResponse(IN struct ADAPTER *prAdapter,
-		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-		  IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue)
+halRxWaitResponse(struct ADAPTER *prAdapter,
+		  uint8_t ucPortIdx, uint8_t *pucRspBuffer,
+		  uint32_t u4MaxRespBufferLen, uint32_t *pu4Length,
+		  uint32_t u4WaitingInterval, uint32_t u4TimeoutValue)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -248,7 +248,8 @@ halRxWaitResponse(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
-uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN struct CMD_INFO *prCmdInfo)
+uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
+		struct CMD_INFO *prCmdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -391,7 +392,8 @@ void halTxUSBSendCmdComplete(struct urb *urb)
 #endif
 }
 
-void halTxUSBProcessCmdComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq)
+void halTxUSBProcessCmdComplete(struct ADAPTER *prAdapter,
+		struct USB_REQ *prUsbReq)
 {
 	struct urb *urb = prUsbReq->prUrb;
 	uint32_t u4SentDataSize;
@@ -411,7 +413,8 @@ void halTxUSBProcessCmdComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *pr
 		halTxGetCmdPageCount(prAdapter, u4SentDataSize, TRUE), TRUE);
 }
 
-void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
+void halTxCancelSendingCmd(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo)
 {
 	struct USB_REQ *prUsbReq, *prNext;
 	unsigned long flags;
@@ -434,7 +437,7 @@ void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prC
 	}
 }
 
-void halTxCancelAllSending(IN struct ADAPTER *prAdapter)
+void halTxCancelAllSending(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct USB_REQ *prUsbReq, *prUsbReqNext;
@@ -459,7 +462,7 @@ void halTxCancelAllSending(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-void halCancelTxRx(IN struct ADAPTER *prAdapter)
+void halCancelTxRx(struct ADAPTER *prAdapter)
 {
 	/* stop TX BULK OUT URB */
 	halTxCancelAllSending(prAdapter);
@@ -469,7 +472,7 @@ void halCancelTxRx(IN struct ADAPTER *prAdapter)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -519,7 +522,8 @@ uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
 #if CFG_USB_TX_AGG
-uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, IN struct USB_REQ *prUsbReq)
+uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
+		struct USB_REQ *prUsbReq)
 {
 	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
 	struct BUF_CTRL *prBufCtrl = prUsbReq->prBufCtrl;
@@ -568,7 +572,8 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 }
 #endif
 
-uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
+uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -743,7 +748,7 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 	return u4Status;
 }
 
-uint32_t halTxUSBKickData(IN struct GLUE_INFO *prGlueInfo)
+uint32_t halTxUSBKickData(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_USB_TX_AGG
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -787,7 +792,8 @@ void halTxUSBSendDataComplete(struct urb *urb)
 #endif
 }
 
-void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *prUsbReq)
+void halTxUSBProcessMsduDone(struct GLUE_INFO *prGlueInfo,
+		struct USB_REQ *prUsbReq)
 {
 	uint8_t ucTc;
 	struct QUE rFreeQueue;
@@ -809,7 +815,8 @@ void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *pr
 			TRUE), TRUE);
 }
 
-void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq)
+void halTxUSBProcessDataComplete(struct ADAPTER *prAdapter,
+		struct USB_REQ *prUsbReq)
 {
 	uint8_t ucTc;
 	u_int8_t fgFfa;
@@ -861,11 +868,11 @@ void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *p
 }
 
 uint32_t halRxUSBEnqueueRFB(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf,
-	IN uint32_t u4Length,
-	IN uint32_t u4MinRfbCnt,
-	IN struct list_head *prCompleteQ)
+	struct ADAPTER *prAdapter,
+	uint8_t *pucBuf,
+	uint32_t u4Length,
+	uint32_t u4MinRfbCnt,
+	struct list_head *prCompleteQ)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -976,7 +983,7 @@ uint32_t halRxUSBEnqueueRFB(
 	return u4Length;
 }
 
-uint32_t halRxUSBReceiveEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFillUrb)
+uint32_t halRxUSBReceiveEvent(struct ADAPTER *prAdapter, u_int8_t fgFillUrb)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1076,7 +1083,7 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-uint32_t halRxUSBReceiveWdt(IN struct ADAPTER *prAdapter)
+uint32_t halRxUSBReceiveWdt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1156,7 +1163,7 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
-uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter)
+uint32_t halRxUSBReceiveData(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -1249,7 +1256,7 @@ void halRxUSBReceiveDataComplete(struct urb *urb)
 #endif
 }
 
-void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
+void halRxUSBProcessEventDataComplete(struct ADAPTER *prAdapter,
 	struct list_head *prCompleteQ, struct list_head *prFreeQ, uint32_t u4MinRfbCnt)
 {
 	struct USB_REQ *prUsbReq;
@@ -1353,7 +1360,7 @@ next_urb:
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
+void halRxUSBProcessWdtComplete(struct ADAPTER *prAdapter,
 				struct list_head *prCompleteQ,
 				struct list_head *prFreeQ, uint32_t u4MinRfbCnt)
 {
@@ -1432,7 +1439,7 @@ next_urb:
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void halEnableInterrupt(IN struct ADAPTER *prAdapter)
+void halEnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -1466,7 +1473,7 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void halDisableInterrupt(IN struct ADAPTER *prAdapter)
+void halDisableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -1498,7 +1505,7 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 {
 	return TRUE;
 }
@@ -1512,11 +1519,11 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
+void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 {
 }
 
-void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
+void halWakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	u_int8_t fgResult = FALSE;
@@ -1553,7 +1560,7 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 	prAdapter->fgIsFwOwn = FALSE;
 }
 
-void halEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable)
+void halEnableFWDownload(struct ADAPTER *prAdapter, u_int8_t fgEnable)
 {
 #if (CFG_UMAC_GENERATION >= 0x20)
 	struct mt66xx_chip_info *prChipInfo;
@@ -1578,7 +1585,7 @@ void halEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable)
 #endif
 }
 
-void halDevInit(IN struct ADAPTER *prAdapter)
+void halDevInit(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 
@@ -1589,12 +1596,13 @@ void halDevInit(IN struct ADAPTER *prAdapter)
 	glUdmaTxRxEnable(prGlueInfo, TRUE);
 }
 
-u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
+u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
 {
 	return TRUE;
 }
 
-u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
+u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1658,13 +1666,13 @@ u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	return FALSE;
 }
 
-uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+uint8_t halTxRingDataSelect(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	return 0;
 }
 
-void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
+void halUpdateTxMaxQuota(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Ret;
@@ -1733,7 +1741,7 @@ u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit)
 }
 #endif
 
-void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD
 	struct USB_REQ *prUsbReq;
@@ -1760,7 +1768,7 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
+bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -1787,29 +1795,29 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	return true;
 }
 
-void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
+void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 {
 }
 
-void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb)
+void halRxProcessMsduReport(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 
 }
 
-u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Token,
-	IN struct QUE *prFreeQueue)
+u_int8_t halProcessToken(struct ADAPTER *prAdapter,
+	uint32_t u4Token,
+	struct QUE *prFreeQueue)
 {
 	return 0;
 }
 
-void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
-	IN uint32_t u4MacLatency, IN uint32_t u4Stat)
+void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
+	uint32_t u4MacLatency, uint32_t u4Stat)
 {
 }
 
-static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+static uint32_t halTxGetPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 #if CFG_USB_TX_AGG
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
@@ -1840,24 +1848,24 @@ static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+uint32_t halTxGetDataPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+uint32_t halTxGetCmdPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
+uint32_t halTxPollingResource(struct ADAPTER *prAdapter, uint8_t ucTC)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-void halSerHifReset(IN struct ADAPTER *prAdapter)
+void halSerHifReset(struct ADAPTER *prAdapter)
 {
 	uint32_t i;
 
@@ -1887,7 +1895,7 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 					i | USB_DIR_IN);
 }
 
-void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
@@ -1916,7 +1924,8 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Max)
+uint32_t halDumpHifStatus(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+		uint32_t u4Max)
 {
 	uint32_t u4CpuIdx, u4DmaIdx, u4Int, u4GloCfg, u4Reg;
 	uint32_t u4Len = 0;
@@ -1959,7 +1968,7 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN u
 	return u4Len;
 }
 
-void halGetCompleteStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus)
+void halGetCompleteStatus(struct ADAPTER *prAdapter, uint32_t *pu4IntStatus)
 {
 #if CFG_USB_RX_HANDLE_IN_HIF_THREAD || CFG_USB_TX_HANDLE_IN_HIF_THREAD
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1978,7 +1987,7 @@ void halGetCompleteStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStat
 #endif
 }
 
-u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter)
+u_int8_t halIsPendingRx(struct ADAPTER *prAdapter)
 {
 #if CFG_USB_RX_HANDLE_IN_HIF_THREAD
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -2002,7 +2011,7 @@ u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter)
 * @return (void)
 */
 /*----------------------------------------------------------------------------*/
-void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
+void halUSBPreSuspendCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl;
 	uint32_t rStatus;
@@ -2041,7 +2050,7 @@ void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 * @return (void)
 */
 /*----------------------------------------------------------------------------*/
-void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter)
+void halUSBPreResumeCmd(struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl;
 	uint32_t rStatus;
@@ -2070,7 +2079,8 @@ void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter)
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
-void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void halUSBPreSuspendDone(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf)
 {
 	unsigned long flags;
 	struct GL_HIF_INFO *prHifInfo;
@@ -2090,7 +2100,8 @@ void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCm
 	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 }
 
-void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
+void halUSBPreSuspendTimeout(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo)
 {
 	unsigned long flags;
 	struct GL_HIF_INFO *prHifInfo;
@@ -2110,7 +2121,7 @@ void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 	spin_unlock_irqrestore(&prHifInfo->rStateLock, flags);
 }
 
-uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetValidCoalescingBufSize(struct ADAPTER *prAdapter)
 {
 	uint32_t u4BufSize;
 
@@ -2122,22 +2133,22 @@ uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
 	return u4BufSize;
 }
 
-uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
+uint32_t halAllocateIOBuffer(struct ADAPTER *prAdapter)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t halReleaseIOBuffer(IN struct ADAPTER *prAdapter)
+uint32_t halReleaseIOBuffer(struct ADAPTER *prAdapter)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
 {
 
 }
 
-void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 {
 
 }
@@ -2172,7 +2183,7 @@ void halTxCompleteTasklet(unsigned long data)
 }
 
 /* Hif power off wifi */
-uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
+uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
@@ -2194,7 +2205,7 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	return rStatus;
 }
 
-void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
+void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *prDbgOps;
 
@@ -2232,31 +2243,31 @@ void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 	prAdapter->u4HifDbgFlag = 0;
 }
 
-u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)
+u_int8_t halIsTxResourceControlEn(struct ADAPTER *prAdapter)
 {
 	return FALSE;
 }
 
-void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
+void halTxResourceResetHwTQCounter(struct ADAPTER *prAdapter)
 {
 }
 
-static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
 }
 
-uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetHifTxCmdPageSize(struct ADAPTER *prAdapter)
 {
 	return halGetHifTxPageSize(prAdapter);
 }
 
-uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetHifTxDataPageSize(struct ADAPTER *prAdapter)
 {
 	return halGetHifTxPageSize(prAdapter);
 }
 
-uint32_t halSerGetMcuEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgClear)
+uint32_t halSerGetMcuEvent(struct ADAPTER *prAdapter, u_int8_t fgClear)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -2288,7 +2299,7 @@ out:
 	return u4SerAction;
 }
 
-void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
+void halSerSyncTimerHandler(struct ADAPTER *prAdapter)
 {
 	static u_int8_t ucSerState = ERR_RECOV_STOP_IDLE;
 	uint32_t u4SerAction;
@@ -2428,7 +2439,7 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 * @return (TRUE: ready, FALSE: not ready)
 */
 /*----------------------------------------------------------------------------*/
-bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter)
+bool halIsHifStateLinkup(struct ADAPTER *prAdapter)
 {
 	if (!prAdapter)
 		return FALSE;
@@ -2451,7 +2462,7 @@ bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter)
 * @return (TRUE: ready, FALSE: not ready)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
+u_int8_t halIsHifStateReady(struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
 
 	if (!prGlueInfo)
@@ -2478,7 +2489,7 @@ u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 * @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
 */
 /*----------------------------------------------------------------------------*/
-bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+bool halIsHifStateSuspend(struct ADAPTER *prAdapter)
 {
 	enum usb_state state;
 
@@ -2496,12 +2507,12 @@ bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-void halDumpHifStats(IN struct ADAPTER *prAdapter)
+void halDumpHifStats(struct ADAPTER *prAdapter)
 {
 }
 
-uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgSuspend)
+uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
+	u_int8_t fgSuspend)
 {
 	return WLAN_STATUS_SUCCESS;
 }

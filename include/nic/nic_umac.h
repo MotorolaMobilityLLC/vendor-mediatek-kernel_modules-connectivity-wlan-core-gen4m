@@ -133,8 +133,8 @@
  *******************************************************************************
  */
 
-OUT u_int8_t
-halUmacInfoGetMiscStatus(IN struct ADAPTER *prAdapter,
-			 IN struct UMAC_STAT2_GET *pUmacStat2Get);
+u_int8_t
+halUmacInfoGetMiscStatus(struct ADAPTER *prAdapter,
+			 struct UMAC_STAT2_GET *pUmacStat2Get);
 
 #endif /* _NIC_UMAC_H */

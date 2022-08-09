@@ -294,31 +294,31 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 
 #if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
-uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_BAND eBand,
-	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
+uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ch_num, uint8_t ucRoleIdx);
 
-void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter);
+void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter);
 
-void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
 #endif
 #endif
 
-uint8_t cnmOwnGcCsaReq(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_BAND eBand,
-	IN uint8_t ucCh,
-	IN uint8_t ucRoleIdx);
+uint8_t cnmOwnGcCsaReq(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucCh,
+	uint8_t ucRoleIdx);
 
-void cnmPeerGcCsaHandler(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
 
-void cnmOwnGcCsaHandler(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr);
+void cnmOwnGcCsaHandler(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
 
-uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
-	IN struct RF_CHANNEL_INFO *prRfChannelInfo,
-	IN uint8_t ucRoleIdx);
+uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
+	struct RF_CHANNEL_INFO *prRfChannelInfo,
+	uint8_t ucRoleIdx);
 
 u_int8_t cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 	uint8_t *pucPrimaryChannel, enum ENUM_CHNL_EXT *prBssSCO);
@@ -355,17 +355,17 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 #endif
 
-void cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo);
-void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo);
+void cnmWmmIndexDecision(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+void cnmFreeWmmIndex(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 
 #if CFG_SUPPORT_DBDC
-void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter);
+void cnmInitDbdcSetting(struct ADAPTER *prAdapter);
 
 uint32_t cnmUpdateDbdcSetting(
-	IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgDbdcEn);
+	struct ADAPTER *prAdapter,
+	u_int8_t fgDbdcEn);
 
 uint8_t cnmGetDbdcBwCapability(
 	struct ADAPTER *prAdapter,
@@ -373,71 +373,71 @@ uint8_t cnmGetDbdcBwCapability(
 );
 
 void cnmDbdcPreConnectionEnableDecision(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucChangedBssIndex,
-	IN enum ENUM_BAND eRfBand,
-	IN uint8_t ucPrimaryChannel,
-	IN uint8_t ucWmmQueIdx
+	struct ADAPTER *prAdapter,
+	uint8_t ucChangedBssIndex,
+	enum ENUM_BAND eRfBand,
+	uint8_t ucPrimaryChannel,
+	uint8_t ucWmmQueIdx
 );
 
-void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucChangedBssIndex,
-	IN u_int8_t ucForceLeaveEnGuard);
+void cnmDbdcRuntimeCheckDecision(struct ADAPTER *prAdapter,
+	uint8_t ucChangedBssIndex,
+	u_int8_t ucForceLeaveEnGuard);
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 u_int8_t cnmDbdcIsP2pListenDbdcEn(void);
 #endif
 
-void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
-	IN uintptr_t plParamPtr);
-void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+void cnmDbdcGuardTimerCallback(struct ADAPTER *prAdapter,
+	uintptr_t plParamPtr);
+void cnmDbdcEventHwSwitchDone(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
 u_int8_t cnmDBDCIsReqPeivilegeLock(void);
 #endif /*CFG_SUPPORT_DBDC*/
 
 enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo);
 
-u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter);
+u_int8_t cnmSapIsActive(struct ADAPTER *prAdapter);
 
-u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
+u_int8_t cnmSapIsConcurrent(struct ADAPTER *prAdapter);
 
-struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
+struct BSS_INFO *cnmGetSapBssInfo(struct ADAPTER *prAdapter);
 
 struct BSS_INFO *
 cnmGetOtherSapBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prSapBssInfo);
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prSapBssInfo);
 
 void cnmOpModeGetTRxNss(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	OUT uint8_t *pucOpRxNss,
-	OUT uint8_t *pucOpTxNss
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t *pucOpRxNss,
+	uint8_t *pucOpTxNss
 );
 #if CFG_SUPPORT_SMART_GEAR
 void cnmEventSGStatus(
-	IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent
+	struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent
 );
 #endif
 
 void cnmOpmodeEventHandler(
-	IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent
+	struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent
 );
 
 void cnmRddOpmodeEventHandler(
-	IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent
+	struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent
 );
 
-u_int8_t cnmP2pIsActive(IN struct ADAPTER *prAdapter);
+u_int8_t cnmP2pIsActive(struct ADAPTER *prAdapter);
 
-struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter);
+struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter);
 
-bool cnmIsMccMode(IN struct ADAPTER *prAdapter);
+bool cnmIsMccMode(struct ADAPTER *prAdapter);
 
-enum ENUM_BAND_80211 cnmGet80211Band(IN enum ENUM_BAND eBand);
+enum ENUM_BAND_80211 cnmGet80211Band(enum ENUM_BAND eBand);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 int cnmPowerControl(struct ADAPTER *prAdapter, uint8_t level);
@@ -496,7 +496,7 @@ static __KAL_INLINE__ void cnmMsgDataTypeCheck(void)
 
 uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter);
 
-uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo);
+uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 
 #endif /* _CNM_H */

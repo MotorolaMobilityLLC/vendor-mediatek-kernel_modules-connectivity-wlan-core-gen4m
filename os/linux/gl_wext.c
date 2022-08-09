@@ -500,12 +500,12 @@ const struct iw_handler_def wext_handler_def = {
  *******************************************************************************
  */
 static void wext_support_ioctl_SIOCSIWGENIE(
-	IN struct net_device  *prDev, IN char *prExtraBuf,
-	IN uint32_t u4ExtraSize);
+	struct net_device  *prDev, char *prExtraBuf,
+	uint32_t u4ExtraSize);
 
 static void
-wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
-	       *prDev, IN char *prExtraBuf, IN int ioMode, OUT int *ret);
+wext_support_ioctl_SIOCSIWPMKSA_Action(struct net_device
+	       *prDev, char *prExtraBuf, int ioMode, int *ret);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -685,9 +685,9 @@ void MAP_CHANNEL_ID_TO_KHZ(uint32_t ch, uint32_t khz)
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE)
+wextSrchDesiredWPAIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -738,8 +738,8 @@ wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart,
-		       IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE)
+u_int8_t wextSrchDesiredWAPIIE(uint8_t *pucIEStart,
+		       int32_t i4TotalIeLen, uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -782,8 +782,8 @@ u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextIsDesiredHS20IE(IN uint8_t *pucCurIE,
-			     IN int32_t i4TotalIeLen)
+u_int8_t wextIsDesiredHS20IE(uint8_t *pucCurIE,
+			     int32_t i4TotalIeLen)
 {
 	int32_t i4InfoElemLen;
 
@@ -818,8 +818,8 @@ u_int8_t wextIsDesiredHS20IE(IN uint8_t *pucCurIE,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextIsDesiredInterworkingIE(IN uint8_t *pucCurIE,
-				     IN int32_t i4TotalIeLen)
+u_int8_t wextIsDesiredInterworkingIE(uint8_t *pucCurIE,
+				     int32_t i4TotalIeLen)
 {
 	int32_t i4InfoElemLen;
 
@@ -860,8 +860,8 @@ u_int8_t wextIsDesiredInterworkingIE(IN uint8_t *pucCurIE,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextIsDesiredAdvProtocolIE(IN uint8_t *pucCurIE,
-				    IN int32_t i4TotalIeLen)
+u_int8_t wextIsDesiredAdvProtocolIE(uint8_t *pucCurIE,
+				    int32_t i4TotalIeLen)
 {
 	int32_t i4InfoElemLen;
 
@@ -893,7 +893,7 @@ u_int8_t wextIsDesiredAdvProtocolIE(IN uint8_t *pucCurIE,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t wextIsDesiredRoamingConsortiumIE(
-	IN uint8_t *pucCurIE, IN int32_t i4TotalIeLen)
+	uint8_t *pucCurIE, int32_t i4TotalIeLen)
 {
 	int32_t i4InfoElemLen;
 
@@ -923,8 +923,8 @@ u_int8_t wextIsDesiredRoamingConsortiumIE(
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart,
-		       IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE)
+u_int8_t wextSrchDesiredHS20IE(uint8_t *pucIEStart,
+		       int32_t i4TotalIeLen, uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -969,8 +969,8 @@ u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart,
-		       IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE)
+u_int8_t wextSrchDesiredOsenIE(uint8_t *pucIEStart,
+		       int32_t i4TotalIeLen, uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -1015,9 +1015,9 @@ u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t
-				      *pucIEStart, IN int32_t i4TotalIeLen,
-				      OUT uint8_t **ppucDesiredIE)
+u_int8_t wextSrchDesiredAdvProtocolIE(uint8_t
+				      *pucIEStart, int32_t i4TotalIeLen,
+				      uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -1061,9 +1061,9 @@ u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE)
+wextSrchDesiredWPSIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE)
 {
 	int32_t i4InfoElemLen;
 
@@ -1117,9 +1117,9 @@ wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_name(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      OUT char *pcName, IN uint32_t pcNameSize, IN char *pcExtra)
+wext_get_name(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      char *pcName, uint32_t pcNameSize, char *pcExtra)
 {
 	enum ENUM_PARAM_NETWORK_TYPE eNetWorkType = PARAM_NETWORK_TYPE_NUM;
 
@@ -1182,9 +1182,9 @@ wext_get_name(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_freq(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN struct iw_freq *prIwFreq, IN char *pcExtra)
+wext_set_freq(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      struct iw_freq *prIwFreq, char *pcExtra)
 {
 
 #if 0
@@ -1248,9 +1248,9 @@ wext_set_freq(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_freq(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      OUT struct iw_freq *prIwFreq, IN char *pcExtra)
+wext_get_freq(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_freq *prIwFreq, char *pcExtra)
 {
 	uint32_t u4Channel = 0;
 
@@ -1294,9 +1294,9 @@ wext_get_freq(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_mode(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN unsigned int *pu4Mode, IN char *pcExtra)
+wext_set_mode(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      unsigned int *pu4Mode, char *pcExtra)
 {
 	struct PARAM_OP_MODE rOpMode;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1370,9 +1370,9 @@ wext_set_mode(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_mode(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      OUT unsigned int *pu4Mode, IN char *pcExtra)
+wext_get_mode(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      unsigned int *pu4Mode, char *pcExtra)
 {
 	enum ENUM_PARAM_OP_MODE eOpMode = NET_TYPE_NUM;
 
@@ -1427,9 +1427,9 @@ wext_get_mode(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_range(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       IN struct iw_point *prData, OUT char *pcExtra)
+wext_get_range(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_point *prData, char *pcExtra)
 {
 	struct iw_range *prRange = NULL;
 	uint8_t aucSuppRate[PARAM_MAX_LEN_RATES_EX] = { 0 }; /* data buffers */
@@ -1576,9 +1576,9 @@ wext_get_range(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_ap(IN struct net_device *prDev,
-	    IN struct iw_request_info *prIwrInfo,
-	    IN struct sockaddr *prAddr, IN char *pcExtra)
+wext_set_ap(struct net_device *prDev,
+	    struct iw_request_info *prIwrInfo,
+	    struct sockaddr *prAddr, char *pcExtra)
 {
 	return 0;
 }				/* wext_set_ap */
@@ -1599,9 +1599,9 @@ wext_set_ap(IN struct net_device *prDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_ap(IN struct net_device *prNetDev,
-	    IN struct iw_request_info *prIwrInfo,
-	    OUT struct sockaddr *prAddr, IN char *pcExtra)
+wext_get_ap(struct net_device *prNetDev,
+	    struct iw_request_info *prIwrInfo,
+	    struct sockaddr *prAddr, char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -1647,9 +1647,9 @@ wext_get_ap(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_mlme(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      IN struct iw_point *prData, IN char *pcExtra)
+wext_set_mlme(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_point *prData, char *pcExtra)
 {
 	struct iw_mlme *prMlme = NULL;
 
@@ -1697,9 +1697,9 @@ wext_set_mlme(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_scan(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      IN union iwreq_data *prData, IN char *pcExtra)
+wext_set_scan(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      union iwreq_data *prData, char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -1788,9 +1788,9 @@ static inline int snprintf_hex(char *buf, size_t buf_size,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_scan(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      IN OUT struct iw_point *prData, IN char *pcExtra)
+wext_get_scan(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_point *prData, char *pcExtra)
 {
 	uint32_t i = 0;
 	uint32_t j = 0;
@@ -2227,9 +2227,9 @@ error:
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_essid(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       IN struct iw_point *prEssid, IN char *pcExtra)
+wext_set_essid(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_point *prEssid, char *pcExtra)
 {
 	struct PARAM_SSID rNewSsid;
 	uint32_t cipher;
@@ -2365,9 +2365,9 @@ wext_set_essid(IN struct net_device *prNetDev,
 /*----------------------------------------------------------------------------*/
 /* static PARAM_SSID_T ssid; */
 static int
-wext_get_essid(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       IN struct iw_point *prEssid, OUT char *pcExtra)
+wext_get_essid(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_point *prEssid, char *pcExtra)
 {
 	/* PARAM_SSID_T ssid; */
 
@@ -2427,9 +2427,9 @@ wext_get_essid(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-wext_set_rate(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN struct iw_param *prRate, IN char *pcExtra)
+wext_set_rate(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      struct iw_param *prRate, char *pcExtra)
 {
 	uint8_t aucSuppRate[PARAM_MAX_LEN_RATES_EX] = { 0 };
 	uint8_t aucNewRate[PARAM_MAX_LEN_RATES_EX] = { 0 };
@@ -2526,9 +2526,9 @@ wext_set_rate(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_rate(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      OUT struct iw_param *prRate, IN char *pcExtra)
+wext_get_rate(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_param *prRate, char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
@@ -2584,9 +2584,9 @@ wext_get_rate(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_rts(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwrInfo,
-	     IN struct iw_param *prRts, IN char *pcExtra)
+wext_set_rts(struct net_device *prNetDev,
+	     struct iw_request_info *prIwrInfo,
+	     struct iw_param *prRts, char *pcExtra)
 {
 	uint32_t u4RtsThresh;
 
@@ -2633,9 +2633,9 @@ wext_set_rts(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_rts(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwrInfo,
-	     OUT struct iw_param *prRts, IN char *pcExtra)
+wext_get_rts(struct net_device *prNetDev,
+	     struct iw_request_info *prIwrInfo,
+	     struct iw_param *prRts, char *pcExtra)
 {
 	uint32_t u4RtsThresh = 0;
 
@@ -2675,9 +2675,9 @@ wext_get_rts(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_frag(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      OUT struct iw_param *prFrag, IN char *pcExtra)
+wext_get_frag(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_param *prFrag, char *pcExtra)
 {
 	ASSERT(prFrag);
 
@@ -2705,9 +2705,9 @@ wext_get_frag(IN struct net_device *prNetDev,
 /*----------------------------------------------------------------------------*/
 
 static int
-wext_set_txpow(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       IN struct iw_param *prTxPow, IN char *pcExtra)
+wext_set_txpow(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_param *prTxPow, char *pcExtra)
 {
 	int ret = 0;
 	/* PARAM_DEVICE_POWER_STATE ePowerState; */
@@ -2762,9 +2762,9 @@ wext_set_txpow(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_txpow(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       OUT struct iw_param *prTxPow, IN char *pcExtra)
+wext_get_txpow(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_param *prTxPow, char *pcExtra)
 {
 	/* PARAM_DEVICE_POWER_STATE ePowerState; */
 
@@ -2813,9 +2813,9 @@ wext_get_txpow(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_encode(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwrInfo,
-		OUT struct iw_point *prEnc, IN char *pcExtra)
+wext_get_encode(struct net_device *prNetDev,
+		struct iw_request_info *prIwrInfo,
+		struct iw_point *prEnc, char *pcExtra)
 {
 #if 1
 	/* ENUM_ENCRYPTION_STATUS_T eEncMode; */
@@ -2876,9 +2876,9 @@ wext_get_encode(IN struct net_device *prNetDev,
 static uint8_t wepBuf[48];
 
 static int
-wext_set_encode(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwrInfo,
-		IN struct iw_point *prEnc, IN char *pcExtra)
+wext_set_encode(struct net_device *prNetDev,
+		struct iw_request_info *prIwrInfo,
+		struct iw_point *prEnc, char *pcExtra)
 {
 #if 1
 	enum ENUM_WEP_STATUS eEncStatus;
@@ -3003,9 +3003,9 @@ wext_set_encode(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_power(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       IN struct iw_param *prPower, IN char *pcExtra)
+wext_set_power(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_param *prPower, char *pcExtra)
 {
 #if 1
 	enum PARAM_POWER_MODE ePowerMode;
@@ -3077,9 +3077,9 @@ wext_set_power(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_get_power(IN struct net_device *prNetDev,
-	       IN struct iw_request_info *prIwrInfo,
-	       OUT struct iw_param *prPower, IN char *pcExtra)
+wext_get_power(struct net_device *prNetDev,
+	       struct iw_request_info *prIwrInfo,
+	       struct iw_param *prPower, char *pcExtra)
 {
 
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -3157,9 +3157,9 @@ wext_get_power(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 static int
-wext_set_auth(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwrInfo,
-	      IN struct iw_param *prAuth, IN char *pcExtra)
+wext_set_auth(struct net_device *prNetDev,
+	      struct iw_request_info *prIwrInfo,
+	      struct iw_param *prAuth, char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_WPA_INFO *prWpaInfo;
@@ -3278,9 +3278,9 @@ uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
 static int
-wext_set_encode_ext(IN struct net_device *prNetDev,
-		    IN struct iw_request_info *prIwrInfo,
-		    IN struct iw_point *prEnc, IN char *pcExtra)
+wext_set_encode_ext(struct net_device *prNetDev,
+		    struct iw_request_info *prIwrInfo,
+		    struct iw_point *prEnc, char *pcExtra)
 {
 	struct PARAM_REMOVE_KEY *prRemoveKey =
 				(struct PARAM_REMOVE_KEY *) keyStructBuf;
@@ -3581,8 +3581,8 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
  *	 country domain.
  */
 /*----------------------------------------------------------------------------*/
-static int wext_set_country(IN struct net_device *prNetDev,
-			    IN struct iw_point *prData)
+static int wext_set_country(struct net_device *prNetDev,
+			    struct iw_point *prData)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t rStatus;
@@ -3628,8 +3628,8 @@ static int wext_set_country(IN struct net_device *prNetDev,
  *
  */
 /*----------------------------------------------------------------------------*/
-int wext_get_priv(IN struct net_device *prNetDev,
-		  OUT struct iw_point *prData)
+int wext_get_priv(struct net_device *prNetDev,
+		  struct iw_point *prData)
 {
 	uint16_t u2BufferSize = prData->length;
 
@@ -3663,8 +3663,8 @@ int wext_get_priv(IN struct net_device *prNetDev,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-int wext_support_ioctl(IN struct net_device *prDev,
-		       IN struct ifreq *prIfReq, IN int i4Cmd)
+int wext_support_ioctl(struct net_device *prDev,
+		       struct ifreq *prIfReq, int i4Cmd)
 {
 	/* prIfReq is verified in the caller function wlanDoIOCTL() */
 	struct iwreq *iwr = (struct iwreq *)prIfReq;
@@ -4207,8 +4207,8 @@ int wext_support_ioctl(IN struct net_device *prDev,
 }				/* wext_support_ioctl */
 
 static void wext_support_ioctl_SIOCSIWGENIE(
-	IN struct net_device *prDev, IN char *prExtraBuf,
-	IN uint32_t u4ExtraSize)
+	struct net_device *prDev, char *prExtraBuf,
+	uint32_t u4ExtraSize)
 {
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
 		netdev_priv(prDev));
@@ -4223,8 +4223,8 @@ static void wext_support_ioctl_SIOCSIWGENIE(
 }
 
 static void
-wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
-		*prDev, IN char *prExtraBuf, IN int ioMode, OUT int *ret)
+wext_support_ioctl_SIOCSIWPMKSA_Action(struct net_device
+		*prDev, char *prExtraBuf, int ioMode, int *ret)
 {
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
 					 netdev_priv(prDev));
@@ -4276,10 +4276,10 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
  */
 /*----------------------------------------------------------------------------*/
 void
-wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
-			 IN unsigned int u4Cmd, IN unsigned char *pucData,
-			 IN unsigned int u4dataLen,
-			 IN uint8_t ucBssIndex)
+wext_indicate_wext_event(struct GLUE_INFO *prGlueInfo,
+			 unsigned int u4Cmd, unsigned char *pucData,
+			 unsigned int u4dataLen,
+			 uint8_t ucBssIndex)
 {
 	union iwreq_data wrqu;
 	unsigned char *pucExtraInfo = NULL;

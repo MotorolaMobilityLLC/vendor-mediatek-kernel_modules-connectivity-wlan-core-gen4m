@@ -108,9 +108,9 @@
  */
 
 
-u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
-				   IN struct RSNX_INFO_ELEM *prInfoElem,
-				   OUT struct RSNX_INFO *prRsnxeInfo)
+u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
+				   struct RSNX_INFO_ELEM *prInfoElem,
+				   struct RSNX_INFO *prRsnxeInfo)
 {
 	uint8_t *cp;
 	uint16_t u2Cap = 0;
@@ -149,9 +149,9 @@ u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
  * \retval FALSE - Failed
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
-		       IN struct RSN_INFO_ELEM *prInfoElem,
-		       OUT struct RSN_INFO *prRsnInfo)
+u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
+		       struct RSN_INFO_ELEM *prInfoElem,
+		       struct RSN_INFO *prRsnInfo)
 {
 	uint32_t i;
 	int32_t i4RemainRsnIeLen;
@@ -406,9 +406,9 @@ u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
  * \retval FALSE Failed.
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
-		       IN struct WPA_INFO_ELEM *prInfoElem,
-		       OUT struct RSN_INFO *prWpaInfo)
+u_int8_t rsnParseWpaIE(struct ADAPTER *prAdapter,
+		       struct WPA_INFO_ELEM *prInfoElem,
+		       struct RSN_INFO *prWpaInfo)
 {
 	uint32_t i;
 	int32_t u4RemainWpaIeLen;
@@ -650,9 +650,9 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
  *                 table.
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter,
-				  IN uint32_t u4Cipher, OUT uint32_t *pu4Index,
-				  IN uint8_t ucBssIndex)
+u_int8_t rsnSearchSupportedCipher(struct ADAPTER *prAdapter,
+				  uint32_t u4Cipher, uint32_t *pu4Index,
+				  uint8_t ucBssIndex)
 {
 	uint8_t i;
 	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY *prEntry;
@@ -683,10 +683,10 @@ u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER *prAdapter,
  * \retval BOOLEAN
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
-			  IN struct BSS_DESC *prBss,
-			  IN struct RSN_INFO *prBssRsnInfo,
-			  IN uint8_t ucBssIndex)
+u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
+			  struct BSS_DESC *prBss,
+			  struct RSN_INFO *prBssRsnInfo,
+			  uint8_t ucBssIndex)
 {
 	uint32_t i, c, s, k;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -762,9 +762,9 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
  * \note
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
-			   IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index,
-			   IN uint8_t ucBssIndex)
+u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
+			   uint32_t u4AkmSuite, uint32_t *pu4Index,
+			   uint8_t ucBssIndex)
 {
 	uint8_t i;
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
@@ -793,9 +793,9 @@ u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
  * \brief refer to wpa_supplicant wpa_key_mgmt_wpa
  */
 
-uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_PARAM_AUTH_MODE eAuthMode,
-	IN uint8_t bssidx)
+uint8_t rsnKeyMgmtWpa(struct ADAPTER *prAdapter,
+	enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	uint8_t bssidx)
 {
 	uint32_t i;
 
@@ -809,10 +809,10 @@ uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
 	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
 }
 
-uint8_t rsnKeyMgmtWpa3for6g(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_PARAM_AUTH_MODE eAuthMode,
-	IN uint8_t bssidx,
-	IN struct BSS_DESC *prBss)
+uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *prAdapter,
+	enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	uint8_t bssidx,
+	struct BSS_DESC *prBss)
 {
 	uint32_t i;
 	struct GL_WPA_INFO *prWpaInfo;
@@ -850,8 +850,8 @@ uint8_t rsnKeyMgmtWpa3for6g(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rsnPerformPolicySelection(
-		IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
-		IN uint8_t ucBssIndex)
+		struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
+		uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_802_11W
 	int32_t i;
@@ -1309,8 +1309,8 @@ u_int8_t rsnPerformPolicySelection(
  *      Called by: JOIN module, compose beacon IE
  */
 /*----------------------------------------------------------------------------*/
-void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
-			  IN struct MSDU_INFO *prMsduInfo)
+void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
+			  struct MSDU_INFO *prMsduInfo)
 {
 	uint32_t i;
 	struct WPA_INFO_ELEM *prWpaIE;
@@ -1426,8 +1426,8 @@ void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 
 }				/* rsnGenerateWpaNoneIE */
 
-uint32_t _addWPAIE_impl(IN struct ADAPTER *prAdapter,
-	IN OUT struct MSDU_INFO *prMsduInfo)
+uint32_t _addWPAIE_impl(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct BSS_INFO *prBssInfo;
@@ -1478,8 +1478,8 @@ uint32_t _addWPAIE_impl(IN struct ADAPTER *prAdapter,
 }
 
 
-uint32_t _addRSNIE_impl(IN struct ADAPTER *prAdapter,
-	IN OUT struct MSDU_INFO *prMsduInfo)
+uint32_t _addRSNIE_impl(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct BSS_INFO *prBssInfo;
@@ -1529,8 +1529,8 @@ uint32_t _addRSNIE_impl(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
-static uint8_t rsnIsOsenAuthModeWithRSN(IN struct ADAPTER *prAdapter,
-					IN uint8_t ucBssIndex)
+static uint8_t rsnIsOsenAuthModeWithRSN(struct ADAPTER *prAdapter,
+					uint8_t ucBssIndex)
 {
 	if (aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA_OSEN &&
 		aisGetConnSettings(prAdapter, ucBssIndex)->fgAuthOsenWithRSN)
@@ -1553,8 +1553,8 @@ static uint8_t rsnIsOsenAuthModeWithRSN(IN struct ADAPTER *prAdapter,
  *      Called by: AIS module, Associate request
  */
 /*----------------------------------------------------------------------------*/
-void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo)
+void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *cp;
 	uint8_t *pucBuffer;
@@ -1670,8 +1670,8 @@ void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
  *      Called by: AIS module, P2P module, BOW module Associate request
  */
 /*----------------------------------------------------------------------------*/
-void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo)
+void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo)
 {
 	struct PMKID_ENTRY *entry = NULL;
 	uint8_t *cp;
@@ -1876,8 +1876,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 }				/* rsnGenerateRSNIE */
 
-void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void rsnGenerateRSNXIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct BSS_INFO *prBssInfo;
@@ -1915,8 +1915,8 @@ void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void rsnGenerateOWEIE(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void rsnGenerateOWEIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct BSS_INFO *prBssInfo;
@@ -1968,9 +1968,9 @@ void rsnGenerateOWEIE(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-rsnParseCheckForWFAInfoElem(IN struct ADAPTER *prAdapter,
-			    IN uint8_t *pucBuf, OUT uint8_t *pucOuiType,
-			    OUT uint16_t *pu2SubTypeVersion)
+rsnParseCheckForWFAInfoElem(struct ADAPTER *prAdapter,
+			    uint8_t *pucBuf, uint8_t *pucOuiType,
+			    uint16_t *pu2SubTypeVersion)
 {
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	struct IE_WFA *prWfaIE;
@@ -2183,8 +2183,8 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void rsnGenMicErrorEvent(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prSta, IN u_int8_t fgFlags)
+void rsnGenMicErrorEvent(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prSta, u_int8_t fgFlags)
 {
 	struct PARAM_INDICATION_EVENT authEvent;
 	struct BSS_INFO *prAisBssInfo;
@@ -2228,9 +2228,9 @@ void rsnGenMicErrorEvent(IN struct ADAPTER *prAdapter,
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
-			     IN struct STA_RECORD *prSta,
-			     IN u_int8_t fgErrorKeyType)
+void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
+			     struct STA_RECORD *prSta,
+			     u_int8_t fgErrorKeyType)
 {
 	/* UINT_32               u4RsnaCurrentMICFailTime; */
 	/* P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo; */
@@ -2293,9 +2293,9 @@ void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
  * \retval FALSE, if not found
  */
 /*----------------------------------------------------------------------------*/
-struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucBssid,
-			     IN uint8_t ucBssIndex)
+struct PMKID_ENTRY *rsnSearchPmkidEntry(struct ADAPTER *prAdapter,
+			     uint8_t *pucBssid,
+			     uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 
@@ -2327,8 +2327,8 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
  * \return status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
-		    IN struct PARAM_PMKID *prPmkid)
+uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
+		    struct PARAM_PMKID *prPmkid)
 {
 	struct BSS_INFO *prBssInfo;
 	struct PMKID_ENTRY *entry;
@@ -2375,8 +2375,8 @@ uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
  * \return status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
-		    IN struct PARAM_PMKID *prPmkid)
+uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
+		    struct PARAM_PMKID *prPmkid)
 {
 	struct BSS_INFO *prBssInfo;
 	struct PMKID_ENTRY *entry;
@@ -2414,7 +2414,7 @@ uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
  * \return status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	struct PMKID_ENTRY *entry;
@@ -2452,9 +2452,9 @@ uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
-				IN struct PARAM_PMKID_CANDIDATE *prCandi,
-				IN uint8_t ucBssIndex)
+void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
+				struct PARAM_PMKID_CANDIDATE *prCandi,
+				uint8_t ucBssIndex)
 {
 	struct PARAM_INDICATION_EVENT pmkidEvent;
 
@@ -2486,8 +2486,8 @@ void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
  *           FALSE
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
-				 *prAdapter, IN struct STA_RECORD *prStaRec)
+uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
+				 *prAdapter, struct STA_RECORD *prStaRec)
 {
 	/* caution: prStaRec might be null ! */
 	if (prStaRec) {
@@ -2525,7 +2525,7 @@ uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 uint8_t rsnCheckSaQueryTimeout(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
+	struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -2592,8 +2592,8 @@ uint8_t rsnCheckSaQueryTimeout(
  *      Called by: AIS module, Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			  IN uintptr_t ulParamPtr)
+void rsnStartSaQueryTimer(struct ADAPTER *prAdapter,
+			  uintptr_t ulParamPtr)
 {
 	struct BSS_INFO *prBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
@@ -2731,8 +2731,8 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
  *      Called by: AIS module, Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIdx)
+void rsnStartSaQuery(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 
@@ -2752,8 +2752,8 @@ void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
  *      Called by: AIS module, Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void rsnStopSaQuery(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIdx)
+void rsnStopSaQuery(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 
@@ -2781,7 +2781,7 @@ void rsnStopSaQuery(IN struct ADAPTER *prAdapter,
  *      Called by: AIS module, Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void rsnSaQueryRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
@@ -2906,7 +2906,7 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
  *      Called by: AIS module, Handle Rx mgmt request
  */
 /*----------------------------------------------------------------------------*/
-void rsnSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void rsnSaQueryAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prBssSpecInfo;
 	struct ACTION_SA_QUERY_FRAME *prRxFrame;
@@ -3152,9 +3152,9 @@ void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
  * \return status code
  */
 /*----------------------------------------------------------------------------*/
-uint16_t rsnPmfCapableValidation(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_INFO *prBssInfo,
-				 IN struct STA_RECORD *prStaRec)
+uint16_t rsnPmfCapableValidation(struct ADAPTER
+				 *prAdapter, struct BSS_INFO *prBssInfo,
+				 struct STA_RECORD *prStaRec)
 {
 	u_int8_t selfMfpc, selfMfpr, peerMfpc, peerMfpr;
 
@@ -3248,8 +3248,8 @@ void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
  *      Called by: AAA module, Handle by Sa Query timeout
  */
 /*----------------------------------------------------------------------------*/
-uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
-				 *prAdapter, IN struct STA_RECORD *prStaRec)
+uint8_t rsnApCheckSaQueryTimeout(struct ADAPTER
+				 *prAdapter, struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prBssInfo;
 	uint32_t now;
@@ -3315,8 +3315,8 @@ uint8_t rsnApCheckSaQueryTimeout(IN struct ADAPTER
  *      Called by: AAA module, Handle TX SAQ request
  */
 /*----------------------------------------------------------------------------*/
-void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			    IN uintptr_t ulParamPtr)
+void rsnApStartSaQueryTimer(struct ADAPTER *prAdapter,
+			    uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -3418,8 +3418,8 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
  *      Called by: AAA module, Handle Tx action frame request
  */
 /*----------------------------------------------------------------------------*/
-void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
-		       IN struct STA_RECORD *prStaRec)
+void rsnApStartSaQuery(struct ADAPTER *prAdapter,
+		       struct STA_RECORD *prStaRec)
 {
 	DBGLOG(RSN, INFO, "rsnApStartSaQuery\n");
 
@@ -3447,8 +3447,8 @@ void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
  *      Called by: AAA module, stop TX SAQ if receive correct SAQ response
  */
 /*----------------------------------------------------------------------------*/
-void rsnApStopSaQuery(IN struct ADAPTER *prAdapter,
-		      IN struct STA_RECORD *prStaRec)
+void rsnApStopSaQuery(struct ADAPTER *prAdapter,
+		      struct STA_RECORD *prStaRec)
 {
 	cnmTimerStopTimer(prAdapter, &prStaRec->rPmfCfg.rSAQueryTimer);
 	prStaRec->rPmfCfg.u2TransactionID = 0;
@@ -3466,8 +3466,8 @@ void rsnApStopSaQuery(IN struct ADAPTER *prAdapter,
  *      Called by: AAA module, Handle Rx action request
  */
 /*----------------------------------------------------------------------------*/
-void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
-			 IN struct SW_RFB *prSwRfb)
+void rsnApSaQueryRequest(struct ADAPTER *prAdapter,
+			 struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prBssInfo;
 	struct MSDU_INFO *prMsduInfo;
@@ -3574,7 +3574,7 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
  *      Called by: AAA module, Handle Rx action request
  */
 /*----------------------------------------------------------------------------*/
-void rsnApSaQueryAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+void rsnApSaQueryAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct ACTION_SA_QUERY_FRAME *prRxFrame;
 	struct STA_RECORD *prStaRec;
@@ -3838,8 +3838,8 @@ uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	return IE_SIZE(prFtIEs->prFTIE);
 }
 
-void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
-		     IN OUT struct MSDU_INFO *prMsduInfo)
+void rsnGenerateFTIE(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
@@ -3855,8 +3855,8 @@ void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
 	kalMemCopy(pucBuffer, prFtIEs->prFTIE, ucFtIeSize);
 }
 
-u_int8_t rsnIsFtOverTheAir(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx,
-	IN uint8_t ucStaRecIdx)
+u_int8_t rsnIsFtOverTheAir(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
+	uint8_t ucStaRecIdx)
 {
 	struct STA_RECORD *prStaRec;
 

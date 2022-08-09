@@ -382,7 +382,7 @@ void asicConnac2xFillInitCmdTxd(
 	struct ADAPTER *prAdapter,
 	struct WIFI_CMD_INFO *prCmdInfo,
 	u_int16_t *pu2BufInfoLen,
-	u_int8_t *pucSeqNum, OUT void **pCmdBuf)
+	u_int8_t *pucSeqNum, void **pCmdBuf)
 {
 	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
 	uint32_t u4TxdLen = sizeof(struct HW_MAC_CONNAC2X_TX_DESC);
@@ -978,7 +978,7 @@ void asicConnac2xWfdmaManualPrefetch(
 		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 }
 
-void asicConnac2xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac2xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -988,7 +988,7 @@ void asicConnac2xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 	enable_irq(prHifInfo->u4IrqId);
 }
 
-void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac2xDisablePlatformIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -999,7 +999,7 @@ void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 }
 
 #if defined(_HIF_AXI)
-void asicConnac2xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac2xDisablePlatformSwIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -1099,7 +1099,7 @@ void asicConnac2xDisableExtInterrupt(
 
 }
 
-void asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+void asicConnac2xProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
@@ -1541,7 +1541,7 @@ void asicConnac2xUsbRxEvtEP4Setting(
 }
 
 
-uint8_t asicConnac2xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+uint8_t asicConnac2xUsbEventEpDetected(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1683,8 +1683,8 @@ void asicConnac2xEnableUsbFWDL(
 	}
 }
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
-u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
-			IN struct GLUE_INFO *prGlueInfo)
+u_int8_t asicConnac2xUsbResume(struct ADAPTER *prAdapter,
+			struct GLUE_INFO *prGlueInfo)
 {
 	uint8_t count = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1888,8 +1888,8 @@ uint16_t asicConnac2xUsbRxByteCount(
 #endif /* _HIF_USB */
 
 #if defined(_HIF_SDIO)
-void fillSdioHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen,
-	IN uint8_t ucPacketType)
+void fillSdioHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
+	uint8_t ucPacketType)
 {
 	/* SDIO TX Descriptor (4 bytes)*/
 
@@ -2047,8 +2047,8 @@ void asicConnac2xInitRxdHook(
 
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	  IN OUT struct SW_RFB *prRetSwRfb)
+void asicConnac2xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
+	  struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
@@ -2079,8 +2079,8 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MSP == 1 */
 
 uint8_t asicConnac2xRxGetRcpiValueFromRxv(
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb)
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb)
 {
 	uint8_t ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3;
 	uint8_t ucRcpiValue = 0;
@@ -2157,9 +2157,9 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 }
 
 #if (CFG_SUPPORT_PERF_IND == 1)
-void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb,
-			       IN uint8_t ucBssIndex)
+void asicConnac2xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb,
+			       uint8_t ucBssIndex)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_PERF_IND_INFO *prPerfIndInfo;
@@ -2242,9 +2242,9 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr, IN uint32_t u4Len,
-	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+uint32_t downloadImgByDynMemMap(struct ADAPTER *prAdapter,
+	uint32_t u4Addr, uint32_t u4Len,
+	uint8_t *pucStartPtr, enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	if (eDlIdx != IMG_DL_IDX_PATCH && eDlIdx != IMG_DL_IDX_N9_FW)
 		return WLAN_STATUS_NOT_SUPPORTED;

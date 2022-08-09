@@ -1054,10 +1054,10 @@ void sortQuickSort(struct IE_ORDER_TABLE_INFO *arr,
 	}
 }
 
-void sortIE(IN struct ADAPTER *prAdapter,
-	    IN struct MSDU_INFO *prMsduInfo,
-	    IN uint16_t *apu2OrderTable,
-	    IN const char *pucIeDesc)
+void sortIE(struct ADAPTER *prAdapter,
+	    struct MSDU_INFO *prMsduInfo,
+	    uint16_t *apu2OrderTable,
+	    const char *pucIeDesc)
 {
 	uint16_t u2Offset = 0, u2IEsBufLen;
 	uint8_t *pucBuf, *pucDst;
@@ -1153,8 +1153,8 @@ done:
 		MAX_IE_NUM * sizeof(struct IE_ORDER_TABLE_INFO));
 }
 
-void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
-		    IN struct MSDU_INFO *prMsduInfo)
+void sortMgmtFrameIE(struct ADAPTER *prAdapter,
+		    struct MSDU_INFO *prMsduInfo)
 {
 #define SORT(x) \
 	case MAC_FRAME_##x: sortIE(prAdapter, prMsduInfo, x##_IE_ORDER, #x); \
@@ -1177,16 +1177,16 @@ void sortMgmtFrameIE(IN struct ADAPTER *prAdapter,
 	}
 }
 
-int sortMsduPayloadOffset(IN struct ADAPTER *prAdapter,
-		    IN struct MSDU_INFO *prMsduInfo)
+int sortMsduPayloadOffset(struct ADAPTER *prAdapter,
+		    struct MSDU_INFO *prMsduInfo)
 {
 	if (!prMsduInfo)
 		return -1;
 	return sortGetPayloadOffset(prAdapter, prMsduInfo->prPacket);
 }
 
-int sortGetPayloadOffset(IN struct ADAPTER *prAdapter,
-		    IN uint8_t *pucFrame)
+int sortGetPayloadOffset(struct ADAPTER *prAdapter,
+		    uint8_t *pucFrame)
 {
 	struct WLAN_MAC_MGMT_HEADER *prMgmtFrame;
 	uint16_t u2TxFrameCtrl;

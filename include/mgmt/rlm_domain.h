@@ -1467,10 +1467,10 @@ extern const struct mtk_regdomain *g_prRegRuleTable[];
 
 const struct ieee80211_regdomain
 *rlmDomainGetLocalDefaultRegd(void);
-void rlmDomainSendInfoToFirmware(IN struct ADAPTER
+void rlmDomainSendInfoToFirmware(struct ADAPTER
 				 *prAdapter);
 uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(
-	IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf);
+	struct ADAPTER *prAdapter, uint8_t *pucEventBuf);
 u_int8_t regd_is_single_sku_en(void);
 u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 				 enum ENUM_BAND eBand, uint8_t ucChannel);
@@ -1479,7 +1479,7 @@ u_int8_t rlmDomainIsLegalDfsChannel(struct ADAPTER *prAdapter,
 enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 	struct ADAPTER *prAdapter, enum ENUM_BAND band,
 	u8 primary_ch);
-void rlmDomainOidSetCountry(IN struct ADAPTER *prAdapter,
+void rlmDomainOidSetCountry(struct ADAPTER *prAdapter,
 			    char *country, u8 size_of_country);
 u32 rlmDomainGetCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
@@ -1541,5 +1541,5 @@ int32_t txPwrParseTagAllT6G(
  *******************************************************************************
  */
 
-uint8_t regCountryDfsMapping(IN struct ADAPTER *prAdapter);
+uint8_t regCountryDfsMapping(struct ADAPTER *prAdapter);
 #endif /* _RLM_DOMAIN_H */

@@ -120,8 +120,8 @@
  * \retval FALSE - Failed
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM *prInfoElem,
-			 OUT struct WAPI_INFO *prWapiInfo)
+u_int8_t wapiParseWapiIE(struct WAPI_INFO_ELEM *prInfoElem,
+			 struct WAPI_INFO *prWapiInfo)
 {
 	uint32_t i;
 	int32_t u4RemainWapiIeLen;
@@ -386,8 +386,8 @@ u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM *prInfoElem,
  * \note The Encrypt status matched score will save to bss for final ap select.
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t wapiPerformPolicySelection(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBss, IN uint8_t ucBssIndex)
+u_int8_t wapiPerformPolicySelection(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBss, uint8_t ucBssIndex)
 {
 	uint32_t i;
 	uint32_t u4PairwiseCipher = 0;

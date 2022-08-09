@@ -772,7 +772,7 @@ void nic_txd_v2_set_hw_amsdu_template(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	u_int8_t ucTid,
-	IN u_int8_t fgSet)
+	u_int8_t fgSet)
 {
 	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc;
 

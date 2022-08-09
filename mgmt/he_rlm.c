@@ -1368,8 +1368,8 @@ void heRlmInitHeHtcACtrlOMAndUPH(
 }
 
 void heRlmReqGenerateHeHtcACtrlOM(
-	IN struct HE_A_CTRL_OM_T *prHeActrlOM,
-	OUT uint32_t *pHtc)
+	struct HE_A_CTRL_OM_T *prHeActrlOM,
+	uint32_t *pHtc)
 {
 	uint32_t u4HTC = 0;
 
@@ -1424,11 +1424,11 @@ void heRlmParseHeHtcACtrlOM(
 /*----------------------------------------------------------------------------*/
 void
 heRlmComposeHtcNullFrame(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuffer,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t ucUP,
-	IN u_int8_t fgSetEOSP)
+	struct ADAPTER *prAdapter,
+	uint8_t *pucBuffer,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucUP,
+	u_int8_t fgSetEOSP)
 {
 	struct WLAN_MAC_HEADER_HT *prQoSNullFrame;
 	struct BSS_INFO *prBssInfo;
@@ -1505,10 +1505,10 @@ heRlmComposeHtcNullFrame(
 }				/* end of bssComposeQoSNullFrameHeader() */
 
 uint32_t heRlmSendHtcNullFrame(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t ucUP,
-	IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucUP,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	struct MSDU_INFO *prMsduInfo;
 	uint16_t u2EstimatedFrameLen;
@@ -1574,9 +1574,9 @@ void heRlmInit(
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-uint32_t heRlmSMPSTxDone(IN struct ADAPTER *prAdapter,
-			      IN struct MSDU_INFO *prMsduInfo,
-			      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t heRlmSMPSTxDone(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo,
+			      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 
 	return WLAN_STATUS_SUCCESS;

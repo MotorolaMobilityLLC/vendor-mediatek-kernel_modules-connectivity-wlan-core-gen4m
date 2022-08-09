@@ -144,133 +144,133 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
 uint32_t bssInfoConnType(struct ADAPTER *ad, struct BSS_INFO *bssinfo);
 
 struct STA_RECORD *
-bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
-			   IN enum ENUM_STA_TYPE eStaType, IN uint8_t uBssIndex,
-			   IN struct BSS_DESC *prBssDesc);
+bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
+			   enum ENUM_STA_TYPE eStaType, uint8_t uBssIndex,
+			   struct BSS_DESC *prBssDesc);
 
-void bssComposeNullFrame(IN struct ADAPTER *prAdapter,
-			 IN uint8_t *pucBuffer, IN struct STA_RECORD *prStaRec);
+void bssComposeNullFrame(struct ADAPTER *prAdapter,
+			 uint8_t *pucBuffer, struct STA_RECORD *prStaRec);
 
 void
-bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
-		       IN uint8_t *pucBuffer, IN struct STA_RECORD *prStaRec,
-		       IN uint8_t ucUP, IN u_int8_t fgSetEOSP);
+bssComposeQoSNullFrame(struct ADAPTER *prAdapter,
+		       uint8_t *pucBuffer, struct STA_RECORD *prStaRec,
+		       uint8_t ucUP, u_int8_t fgSetEOSP);
 
 uint32_t
-bssSendNullFrame(IN struct ADAPTER *prAdapter,
-		 IN struct STA_RECORD *prStaRec,
-		 IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+bssSendNullFrame(struct ADAPTER *prAdapter,
+		 struct STA_RECORD *prStaRec,
+		 PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
 uint32_t
-bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
-		    IN struct STA_RECORD *prStaRec, IN uint8_t ucUP,
-		    IN PFN_TX_DONE_HANDLER pfTxDoneHandler);
+bssSendQoSNullFrame(struct ADAPTER *prAdapter,
+		    struct STA_RECORD *prStaRec, uint8_t ucUP,
+		    PFN_TX_DONE_HANDLER pfTxDoneHandler);
 
-void bssDumpBssInfo(IN struct ADAPTER *prAdapter,
-		    IN uint8_t ucBssIndex);
+void bssDumpBssInfo(struct ADAPTER *prAdapter,
+		    uint8_t ucBssIndex);
 
-void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER
-				     *prAdapter, IN u_int8_t fgIsPureAp,
-				     OUT struct BSS_INFO *prBssInfo);
-int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc);
+void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER
+				     *prAdapter, u_int8_t fgIsPureAp,
+				     struct BSS_INFO *prBssInfo);
+int8_t bssGetRxNss(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
-uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc);
+uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                  */
 /*----------------------------------------------------------------------------*/
-void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter,
-			       IN struct MSDU_INFO *prMsduInfo);
+void bssGenerateExtSuppRate_IE(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo);
 
 void
-bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO
+bssBuildBeaconProbeRespFrameCommonIEs(struct MSDU_INFO
 				      *prMsduInfo,
-				      IN struct BSS_INFO *prBssInfo,
-				      IN uint8_t *pucDestAddr);
+				      struct BSS_INFO *prBssInfo,
+				      uint8_t *pucDestAddr);
 
 void
 bssComposeBeaconProbeRespFrameHeaderAndFF(
-	IN uint8_t *pucBuffer,
-	IN uint8_t *pucDestAddr,
-	IN uint8_t *pucOwnMACAddress,
-	IN uint8_t *pucBSSID, IN uint16_t u2BeaconInterval,
-	IN uint16_t u2CapInfo);
+	uint8_t *pucBuffer,
+	uint8_t *pucDestAddr,
+	uint8_t *pucOwnMACAddress,
+	uint8_t *pucBSSID, uint16_t u2BeaconInterval,
+	uint16_t u2CapInfo);
 
 uint32_t
-bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
-				IN uint8_t uBssIndex, IN uint8_t *pucDestAddr,
-				IN uint32_t u4ControlFlags);
+bssSendBeaconProbeResponse(struct ADAPTER *prAdapter,
+				uint8_t uBssIndex, uint8_t *pucDestAddr,
+				uint32_t u4ControlFlags);
 
-uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
-				IN struct SW_RFB *prSwRfb);
+uint32_t bssProcessProbeRequest(struct ADAPTER *prAdapter,
+				struct SW_RFB *prSwRfb);
 
-void bssInitializeClientList(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo);
+void bssInitializeClientList(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo);
 
-void bssAddClient(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo,
-				IN struct STA_RECORD *prStaRec);
+void bssAddClient(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				struct STA_RECORD *prStaRec);
 
-u_int8_t bssRemoveClient(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo,
-				IN struct STA_RECORD *prStaRec);
+u_int8_t bssRemoveClient(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				struct STA_RECORD *prStaRec);
 
-struct STA_RECORD *bssRemoveClientByMac(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo,
-				IN uint8_t *pucMac);
+struct STA_RECORD *bssRemoveClientByMac(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				uint8_t *pucMac);
 
-struct STA_RECORD *bssGetClientByMac(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo,
-				IN uint8_t *pucMac);
+struct STA_RECORD *bssGetClientByMac(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				uint8_t *pucMac);
 
-struct STA_RECORD *bssRemoveHeadClient(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo);
+struct STA_RECORD *bssRemoveHeadClient(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo);
 
-uint32_t bssGetClientCount(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo);
+uint32_t bssGetClientCount(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo);
 
-void bssDumpClientList(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo);
+void bssDumpClientList(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo);
 
-void bssCheckClientList(IN struct ADAPTER *prAdapter,
-				IN struct BSS_INFO *prBssInfo);
+void bssCheckClientList(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for IBSS(AdHoc) only                                              */
 /*----------------------------------------------------------------------------*/
 void
-ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
-			 IN struct BSS_INFO *prBssInfo,
-			 IN struct BSS_DESC *prBssDesc, IN uint8_t ucRCPI);
+ibssProcessMatchedBeacon(struct ADAPTER *prAdapter,
+			 struct BSS_INFO *prBssInfo,
+			 struct BSS_DESC *prBssDesc, uint8_t ucRCPI);
 
 uint32_t ibssCheckCapabilityForAdHocMode(
-		IN struct ADAPTER *prAdapter,
-		IN struct BSS_DESC *prBssDesc,
-		IN uint8_t uBssIndex);
+		struct ADAPTER *prAdapter,
+		struct BSS_DESC *prBssDesc,
+		uint8_t uBssIndex);
 
-void ibssInitForAdHoc(IN struct ADAPTER *prAdapter,
-		      IN struct BSS_INFO *prBssInfo);
+void ibssInitForAdHoc(struct ADAPTER *prAdapter,
+		      struct BSS_INFO *prBssInfo);
 
-uint32_t bssUpdateBeaconContent(IN struct ADAPTER
-				*prAdapter, IN uint8_t uBssIndex);
+uint32_t bssUpdateBeaconContent(struct ADAPTER
+				*prAdapter, uint8_t uBssIndex);
 
-uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER
-				*prAdapter, IN uint8_t uBssIndex,
+uint32_t bssUpdateBeaconContentEx(struct ADAPTER
+				*prAdapter, uint8_t uBssIndex,
 				enum ENUM_IE_UPD_METHOD eMethod);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for BSS(AP) only                                                  */
 /*----------------------------------------------------------------------------*/
-void bssInitForAP(IN struct ADAPTER *prAdapter,
-		  IN struct BSS_INFO *prBssInfo, IN u_int8_t fgIsRateUpdate);
+void bssInitForAP(struct ADAPTER *prAdapter,
+		  struct BSS_INFO *prBssInfo, u_int8_t fgIsRateUpdate);
 
-void bssUpdateDTIMCount(IN struct ADAPTER *prAdapter,
-			IN uint8_t uBssIndex);
+void bssUpdateDTIMCount(struct ADAPTER *prAdapter,
+			uint8_t uBssIndex);
 
-void bssSetTIMBitmap(IN struct ADAPTER *prAdapter,
-		     IN struct BSS_INFO *prBssInfo, IN uint16_t u2AssocId);
+void bssSetTIMBitmap(struct ADAPTER *prAdapter,
+		     struct BSS_INFO *prBssInfo, uint16_t u2AssocId);
 
 /*link function to p2p module for txBcnIETable*/
 
@@ -296,8 +296,8 @@ struct EVENT_ER_TX_MODE {
 	uint8_t ucErMode;
 };
 
-void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
+void bssProcessErTxModeEvent(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
 #endif
 
 #endif /* _BSS_H */

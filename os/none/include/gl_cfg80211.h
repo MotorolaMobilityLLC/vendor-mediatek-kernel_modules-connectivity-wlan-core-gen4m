@@ -318,21 +318,21 @@ int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			 bool dont_wait_for_ack, u64 *cookie);
 #endif
 
-void mtk_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
-		IN struct wireless_dev *wdev, IN u16 frame_type, IN bool reg);
+void mtk_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
+		struct wireless_dev *wdev, u16 frame_type, bool reg);
 
 int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 				     struct wireless_dev *wdev, u64 cookie);
 
 #ifdef CONFIG_NL80211_TESTMODE
 int
-mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
+mtk_cfg80211_testmode_get_sta_statistics(struct wiphy
 		*wiphy,
-		IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo);
+		void *data, int len, struct GLUE_INFO *prGlueInfo);
 
-int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy
-					*wiphy, IN void *data, IN int len,
-					IN struct GLUE_INFO *prGlueInfo);
+int mtk_cfg80211_testmode_get_scan_done(struct wiphy
+					*wiphy, void *data, int len,
+					struct GLUE_INFO *prGlueInfo);
 
 #if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy,
@@ -343,21 +343,21 @@ int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy,
 			      void *data, int len);
 #endif
 
-int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
-				 IN void *data, IN int len);
+int mtk_cfg80211_testmode_sw_cmd(struct wiphy *wiphy,
+				 void *data, int len);
 
 #if CFG_SUPPORT_PASSPOINT
-int mtk_cfg80211_testmode_hs20_cmd(IN struct wiphy *wiphy,
-				   IN void *data, IN int len);
+int mtk_cfg80211_testmode_hs20_cmd(struct wiphy *wiphy,
+				   void *data, int len);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_WAPI
-int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
-				      *wiphy, IN void *data, IN int len);
+int mtk_cfg80211_testmode_set_key_ext(struct wiphy
+				      *wiphy, void *data, int len);
 #endif
 #if CFG_SUPPORT_NFC_BEAM_PLUS
-int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy,
-		IN void *data, IN int len, IN struct GLUE_INFO *prGlueInfo);
+int mtk_cfg80211_testmode_get_scan_done(struct wiphy *wiphy,
+		void *data, int len, struct GLUE_INFO *prGlueInfo);
 #endif
 #else
 /* IGNORE KERNEL DEPENCY ERRORS */
@@ -368,17 +368,17 @@ int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy *wiphy,
 
 #if CFG_SUPPORT_SCHED_SCAN
 int
-mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
-			      IN struct net_device *ndev,
-			      IN struct cfg80211_sched_scan_request *request);
+mtk_cfg80211_sched_scan_start(struct wiphy *wiphy,
+			      struct net_device *ndev,
+			      struct cfg80211_sched_scan_request *request);
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
-				 IN struct net_device *ndev,
-				 IN u64 reqid);
+int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
+				 struct net_device *ndev,
+				 u64 reqid);
 #else
-int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
-				 IN struct net_device *ndev);
+int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
+				 struct net_device *ndev);
 #endif
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
@@ -450,9 +450,9 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 int32_t mtk_cfg80211_process_str_cmd(struct GLUE_INFO
 				     *prGlueInfo, uint8_t *cmd, int32_t len);
 
-void mtk_reg_notify(IN struct wiphy *pWiphy,
-		    IN struct regulatory_request *pRequest);
-void cfg80211_regd_set_wiphy(IN struct wiphy *pWiphy);
+void mtk_reg_notify(struct wiphy *pWiphy,
+		    struct regulatory_request *pRequest);
+void cfg80211_regd_set_wiphy(struct wiphy *pWiphy);
 
 int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			 struct cfg80211_wowlan *wow);
@@ -591,17 +591,17 @@ void mtk_cfg_abort_scan(struct wiphy *wiphy,
 #endif
 
 #if CFG_SUPPORT_SCHED_SCAN
-int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
-			     IN struct net_device *ndev,
-			     IN struct cfg80211_sched_scan_request *request);
+int mtk_cfg_sched_scan_start(struct wiphy *wiphy,
+			     struct net_device *ndev,
+			     struct cfg80211_sched_scan_request *request);
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
-			    IN struct net_device *ndev,
-			    IN u64 reqid);
+int mtk_cfg_sched_scan_stop(struct wiphy *wiphy,
+			    struct net_device *ndev,
+			    u64 reqid);
 #else
-int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
-			    IN struct net_device *ndev);
+int mtk_cfg_sched_scan_stop(struct wiphy *wiphy,
+			    struct net_device *ndev);
 #endif
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */

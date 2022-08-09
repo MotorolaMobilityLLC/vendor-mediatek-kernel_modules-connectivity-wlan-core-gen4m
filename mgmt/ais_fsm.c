@@ -144,21 +144,21 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
+static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 					  uintptr_t ulParam);
 static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter);
 
-static void aisFunClearAllTxReq(IN struct ADAPTER *prAdapter,
-		IN struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo);
-void aisFsmRoamingDisconnectPrevAllAP(IN struct ADAPTER *prAdapter,
-				   IN struct AIS_FSM_INFO *prAisFsmInfo);
-void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
-				IN struct AIS_FSM_INFO *prAisFsmInfo,
-				IN struct SW_RFB *prAssocRspSwRfb,
-				IN struct STA_RECORD *prSetupStaRec);
-void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
-		IN struct AIS_FSM_INFO *prAisFsmInfo,
-		IN enum ENUM_PARAM_MEDIA_STATE);
+static void aisFunClearAllTxReq(struct ADAPTER *prAdapter,
+		struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo);
+static void aisFsmRoamingDisconnectPrevAllAP(struct ADAPTER *prAdapter,
+				   struct AIS_FSM_INFO *prAisFsmInfo);
+static void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,
+				struct AIS_FSM_INFO *prAisFsmInfo,
+				struct SW_RFB *prAssocRspSwRfb,
+				struct STA_RECORD *prSetupStaRec);
+static void aisChangeAllMediaState(struct ADAPTER *prAdapter,
+		struct AIS_FSM_INFO *prAisFsmInfo,
+		enum ENUM_PARAM_MEDIA_STATE);
 
 static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
@@ -170,27 +170,27 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 static void aisScanReqInit(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
-static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
-	IN uint16_t u2ScanIELen);
+static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	uint16_t u2ScanIELen);
 
-static void aisScanProcessReqCh(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+static void aisScanProcessReqCh(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
-static void aisScanProcessReqExtra(IN struct ADAPTER *prAdapter,
-	IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+static void aisScanProcessReqExtra(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
-static void aisScanResetReq(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
-void aisResetBssTranstionMgtParam(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex)
+void aisResetBssTranstionMgtParam(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -204,8 +204,8 @@ void aisResetBssTranstionMgtParam(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_HE_ER == 1)
-uint8_t aisCheckPowerMatchERCondition(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc)
+uint8_t aisCheckPowerMatchERCondition(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc)
 {
 	int8_t txpwr = 0;
 	int8_t icBeaconRSSI;
@@ -224,8 +224,8 @@ uint8_t aisCheckPowerMatchERCondition(IN struct ADAPTER *prAdapter,
 	return ((txpwr - (AP_TX_POWER - icBeaconRSSI)) < -95);
 }
 
-bool aisCheckUsingERRate(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc)
+bool aisCheckUsingERRate(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc)
 {
 	bool fgIsStaUseERRate = false;
 
@@ -256,8 +256,8 @@ bool aisCheckUsingERRate(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
-		IN struct REG_INFO *prRegInfo, IN uint8_t ucBssIndex)
+void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
+		struct REG_INFO *prRegInfo, uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t aucAnyBSSID[] = BC_BSSID;
@@ -371,7 +371,7 @@ void aisInitializeConnectionRsnInfo(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11K
 uint32_t aisSync11kCapabilities(struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex)
+				uint8_t ucBssIndex)
 {
 	struct CMD_SET_RRM_CAPABILITY rCmdRrmCapa;
 
@@ -394,10 +394,10 @@ uint32_t aisSync11kCapabilities(struct ADAPTER *prAdapter,
 }
 #endif
 
-void aisInitBssInfo(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *prAisFsmInfo,
-	IN struct BSS_INFO *prAisBssInfo,
-	IN uint8_t ucLinkIdx)
+void aisInitBssInfo(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct BSS_INFO *prAisBssInfo,
+	uint8_t ucLinkIdx)
 {
 	uint8_t i;
 
@@ -596,11 +596,11 @@ void aisFreeAllBssInfo(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmInit(IN struct ADAPTER *prAdapter,
-		IN struct REG_INFO *prRegInfo,
-		IN uint8_t ucAisIndex)
+void aisFsmInit(struct ADAPTER *prAdapter,
+		struct REG_INFO *prRegInfo,
+		uint8_t ucAisIndex)
 {
-	IN struct AIS_FSM_INFO *prAisFsmInfo =
+	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
@@ -810,7 +810,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
+void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
@@ -903,7 +903,7 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
  * @return true if processing
  */
 /*----------------------------------------------------------------------------*/
-bool aisFsmIsInProcessPostpone(IN struct ADAPTER *prAdapter,
+bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *fsm = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -944,8 +944,8 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 		aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
 }
 
-void aisCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
-	IN uint8_t ucAisIndex)
+void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
+	uint8_t ucAisIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -996,7 +996,7 @@ void aisCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
+void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIndex)
 {
@@ -1307,7 +1307,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
  * @retval FALSE     We will not retry JOIN
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
+u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1399,7 +1399,7 @@ u_int8_t aisFsmStateInit_RetryJOIN(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateInit_IBSS_ALONE(IN struct ADAPTER *prAdapter,
+void aisFsmStateInit_IBSS_ALONE(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1432,7 +1432,7 @@ void aisFsmStateInit_IBSS_ALONE(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
+void aisFsmStateInit_IBSS_MERGE(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1482,7 +1482,7 @@ void aisFsmStateInit_IBSS_MERGE(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter,
+void aisFsmStateAbort_JOIN(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1526,7 +1526,7 @@ void aisFsmStateAbort_JOIN(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter,
+void aisFsmStateAbort_SCAN(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1569,7 +1569,7 @@ void aisFsmStateAbort_SCAN(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateAbort_NORMAL_TR(IN struct ADAPTER *prAdapter,
+void aisFsmStateAbort_NORMAL_TR(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1595,7 +1595,7 @@ void aisFsmStateAbort_NORMAL_TR(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateAbort_IBSS(IN struct ADAPTER *prAdapter,
+void aisFsmStateAbort_IBSS(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -1621,8 +1621,8 @@ void aisFsmStateAbort_IBSS(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ADHOC */
 
 static u_int8_t
-aisState_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+aisState_OFF_CHNL_TX(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct AIS_MGMT_TX_REQ_INFO *prMgmtTxInfo =
 			(struct AIS_MGMT_TX_REQ_INFO *) NULL;
@@ -1675,7 +1675,7 @@ aisState_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 }
 
 void aisFsmBtmRespTxDoneTimeout(
-	IN struct ADAPTER *prAdapter, uintptr_t ulParam)
+	struct ADAPTER *prAdapter, uintptr_t ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	uint8_t ucBssIndex = (uint8_t) ulParam;
@@ -1706,7 +1706,7 @@ void aisFsmBtmRespTxDoneTimeout(
  */
 /*----------------------------------------------------------------------------*/
 void aisFsmRemoveRoamingRequest(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	/* clear pending roaming connection request */
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_ROAMING_SEARCH, ucBssIndex);
@@ -1714,8 +1714,8 @@ void aisFsmRemoveRoamingRequest(
 }
 
 struct BSS_DESC *aisSearchBssDescByScore(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex,
-	OUT struct BSS_DESC_SET *set)
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+	struct BSS_DESC_SET *set)
 {
 	struct ROAMING_INFO *roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -1729,7 +1729,7 @@ struct BSS_DESC *aisSearchBssDescByScore(
 				roam->eReason, ucBssIndex, set);
 }
 
-uint8_t aisNeedTargetScan(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = NULL;
 	struct BSS_INFO *bss = NULL;
@@ -1759,7 +1759,7 @@ uint8_t aisNeedTargetScan(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	       (postponing && trial < AIS_ROAMING_CONNECTION_TRIAL_LIMIT);
 }
 
-void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
+void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC_SET *prBssDescSet)
 {
@@ -1829,7 +1829,7 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 	}
 }
 
-uint8_t aisBssDescAllowed(IN struct ADAPTER *prAdapter,
+uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC_SET *prBssDescSet)
 {
@@ -1868,8 +1868,8 @@ uint8_t aisBssDescAllowed(IN struct ADAPTER *prAdapter,
 	return match != prBssDescSet->ucLinkNum;
 }
 
-enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(IN struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet, IN uint8_t ucBssIndex)
+enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais;
 	enum ENUM_AIS_STATE state = AIS_STATE_NORMAL_TR;
@@ -1939,8 +1939,8 @@ skip_roam_fail:
 	return state;
 }
 
-enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet, IN uint8_t ucBssIndex)
+enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
 
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -2122,7 +2122,7 @@ void aisMultiStaSetQuoteTime(struct ADAPTER *prAdapter, uint8_t fgSetQuoteTime)
 }
 
 void aisCheckMultiStaStatus(struct ADAPTER *prAdapter,
-	enum ENUM_PARAM_MEDIA_STATE eState, IN uint8_t ucBssIndex)
+	enum ENUM_PARAM_MEDIA_STATE eState, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prInspectBss = NULL;
 	uint8_t ucInspectBssIndex;
@@ -2161,7 +2161,7 @@ void aisCheckMultiStaStatus(struct ADAPTER *prAdapter,
 #endif
 
 u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
-	uint8_t *pucPrimaryChannel, IN uint8_t ucBssIndex)
+	uint8_t *pucPrimaryChannel, uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *setting;
 	struct AIS_FSM_INFO *ais;
@@ -2206,7 +2206,7 @@ u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmSteps(IN struct ADAPTER *prAdapter,
+void aisFsmSteps(struct ADAPTER *prAdapter,
 	enum ENUM_AIS_STATE eNextState, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -2678,7 +2678,7 @@ send_msg:
 }				/* end of aisFsmSteps() */
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
-	IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
@@ -2704,7 +2704,7 @@ enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	return AIS_STATE_LOOKING_FOR;
 }
 
-void aisFsmQueryCandidates(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_802_11K
 	struct STA_RECORD *prStaRec;
@@ -2914,8 +2914,8 @@ updated:
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
-			    IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
+			    struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SCN_SCAN_DONE *prScanDoneMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -3101,8 +3101,8 @@ void aisFsmAddBlockList(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
-			 IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
+			 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -3196,7 +3196,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
+void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		uint8_t ucReasonOfDisconnect, u_int8_t fgDelayIndication,
 		uint8_t ucBssIndex)
 {
@@ -3363,8 +3363,8 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
-				IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
+				struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_FSM_COMP *prJoinCompMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -3444,7 +3444,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	prBssInfo->eBssSCO = eRfSco;
 }
 
-void aisRestoreAllLink(IN struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
+void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -3494,8 +3494,9 @@ void aisRestoreAllLink(IN struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 	}
 }
 
-u_int8_t aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
-			      IN struct STA_RECORD *prStaRec) {
+u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
+			      struct STA_RECORD *prStaRec)
+{
 #if CFG_SUPPORT_802_11W
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
@@ -3523,9 +3524,9 @@ u_int8_t aisHandleTemporaryReject(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
+uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	IN struct SW_RFB *prAssocRspSwRfb, uint8_t ucBssIndex)
+	struct SW_RFB *prAssocRspSwRfb, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -3682,9 +3683,9 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 	return eNextState;
 }
 
-void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *prAisFsmInfo,
-	IN enum ENUM_PARAM_MEDIA_STATE state)
+void aisChangeAllMediaState(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	enum ENUM_PARAM_MEDIA_STATE state)
 {
 	uint8_t i;
 
@@ -3722,8 +3723,8 @@ void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 	}
 }
 
-enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
-					     IN struct MSG_HDR *prMsgHdr)
+enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
+					     struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_FSM_COMP *prJoinCompMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -3885,7 +3886,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmCreateIBSS(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void aisFsmCreateIBSS(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
@@ -3910,8 +3911,8 @@ void aisFsmCreateIBSS(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
-		     IN struct STA_RECORD *prStaRec)
+void aisFsmMergeIBSS(struct ADAPTER *prAdapter,
+		     struct STA_RECORD *prStaRec)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
@@ -4015,8 +4016,8 @@ void aisFsmMergeIBSS(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
-				 IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventFoundIBSSPeer(struct ADAPTER *prAdapter,
+				 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_AIS_IBSS_PEER_FOUND *prAisIbssPeerFoundMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -4204,7 +4205,7 @@ void aisFsmRunEventFoundIBSSPeer(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct ROAMING_INFO *prRoamingFsmInfo;
@@ -4259,7 +4260,7 @@ void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
  */
 /*----------------------------------------------------------------------------*/
 void
-aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
+aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 				enum ENUM_PARAM_MEDIA_STATE eConnectionState,
 				u_int8_t fgDelayIndication,
 				uint8_t ucBssIndex)
@@ -4411,8 +4412,8 @@ aisIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex)
+void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -4477,7 +4478,7 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
+void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			     struct STA_RECORD *prStaRec,
 			     struct SW_RFB *prAssocRspSwRfb)
 {
@@ -4637,7 +4638,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	 */
 }				/* end of aisUpdateBssInfoForJOIN() */
 
-void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
+void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct SW_RFB *prAssocRspSwRfb,
 	struct STA_RECORD *prSetupStaRec)
@@ -4695,7 +4696,7 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter,
+void aisUpdateBssInfoForCreateIBSS(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -4793,8 +4794,8 @@ void aisUpdateBssInfoForCreateIBSS(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
-				  IN struct STA_RECORD *prStaRec)
+void aisUpdateBssInfoForMergeIBSS(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -4926,10 +4927,10 @@ void aisUpdateBssInfoForMergeIBSS(IN struct ADAPTER *prAdapter,
  * @retval FALSE     Don't reply the Probe Response
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
-			     IN struct SW_RFB *prSwRfb,
-			     IN uint8_t ucBssIndex,
-			     OUT uint32_t *pu4ControlFlags)
+u_int8_t aisValidateProbeReq(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb,
+			     uint8_t ucBssIndex,
+			     uint32_t *pu4ControlFlags)
 {
 	struct WLAN_MAC_MGMT_HEADER *prMgtHdr;
 	struct BSS_INFO *prBssInfo;
@@ -4981,7 +4982,7 @@ u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_ADHOC */
 
-void aisFsmDisconnectAllBss(IN struct ADAPTER *prAdapter,
+void aisFsmDisconnectAllBss(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
@@ -5040,8 +5041,8 @@ void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
  * @retval None
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
-		IN u_int8_t fgDelayIndication, IN uint8_t ucBssIndex)
+void aisFsmDisconnect(struct ADAPTER *prAdapter,
+		u_int8_t fgDelayIndication, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	uint16_t u2ReasonCode = REASON_CODE_UNSPECIFIED;
@@ -5174,7 +5175,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	aisFsmSteps(prAdapter, AIS_STATE_IDLE, ucBssIndex);
 }				/* end of aisFsmDisconnect() */
 
-static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
+static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 					  uintptr_t ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -5222,7 +5223,7 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 				  uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -5280,7 +5281,7 @@ void aisFsmRunEventBGSleepTimeOut(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventIbssAloneTimeOut(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventIbssAloneTimeOut(struct ADAPTER *prAdapter,
 				    uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -5330,7 +5331,7 @@ void aisFsmRunEventIbssAloneTimeOut(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 			       uintptr_t ulParamPtr)
 {
 	struct BSS_INFO *prAisBssInfo;
@@ -5440,7 +5441,7 @@ void aisFsmRunEventJoinTimeout(IN struct ADAPTER *prAdapter,
 		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
 }				/* end of aisFsmRunEventJoinTimeout() */
 
-void aisFsmRunEventDeauthTimeout(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventDeauthTimeout(struct ADAPTER *prAdapter,
 				 uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
@@ -5449,7 +5450,7 @@ void aisFsmRunEventDeauthTimeout(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
-void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventSecModeChangeTimeout(struct ADAPTER *prAdapter,
 					uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
@@ -5475,10 +5476,10 @@ void aisFsmRunEventSecModeChangeTimeout(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
-		       IN struct PARAM_SSID *prSsid, IN uint8_t *pucIe,
-		       IN uint32_t u4IeLength,
-		       IN uint8_t ucBssIndex)
+void aisFsmScanRequest(struct ADAPTER *prAdapter,
+		       struct PARAM_SSID *prSsid, uint8_t *pucIe,
+		       uint32_t u4IeLength,
+		       uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
@@ -5571,8 +5572,8 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
-		     IN struct PARAM_SCAN_REQUEST_ADV *prRequestIn)
+aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
+		     struct PARAM_SCAN_REQUEST_ADV *prRequestIn)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_INFO *prAisBssInfo;
@@ -5684,8 +5685,8 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
-			   IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
+			   struct MSG_HDR *prMsgHdr)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -5795,7 +5796,7 @@ void aisFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CH_ABORT *prMsgChAbort;
@@ -5847,8 +5848,8 @@ void aisFsmReleaseCh(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+void aisBssBeaconTimeout(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 
 {
 	/* trigger by driver, use dummy reason code */
@@ -5856,9 +5857,9 @@ void aisBssBeaconTimeout(IN struct ADAPTER *prAdapter,
 		DISCONNECT_REASON_CODE_RADIO_LOST, ucBssIndex);
 }
 
-void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBcnTimeoutReason, IN uint8_t ucDisconnectReason,
-	IN uint8_t ucBssIndex)
+void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
+	uint8_t ucBcnTimeoutReason, uint8_t ucDisconnectReason,
+	uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
@@ -5933,7 +5934,7 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisBssSecurityChanged(struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	uint8_t ucBssIndex)
 {
 
 	aisFsmStateAbort(prAdapter, DISCONNECT_REASON_CODE_DEAUTHENTICATED,
@@ -5951,8 +5952,8 @@ void aisBssSecurityChanged(struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void aisBssLinkDown(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+void aisBssLinkDown(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
@@ -6000,9 +6001,9 @@ void aisBssLinkDown(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
-		      IN uint8_t ucBssIndex,
-		      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
+		      uint8_t ucBssIndex,
+		      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -6053,9 +6054,9 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 }				/* end of aisDeauthXmitComplete() */
 
 uint32_t
-aisDeauthXmitComplete(IN struct ADAPTER *prAdapter,
-			IN struct MSDU_INFO *prMsduInfo,
-			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+aisDeauthXmitComplete(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo,
+			enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	return aisDeauthXmitCompleteBss(prAdapter,
 		prMsduInfo->ucBssIndex, rTxDoneStatus);
@@ -6071,7 +6072,7 @@ aisDeauthXmitComplete(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	uint32_t u4ReqScan, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6212,8 +6213,8 @@ uint8_t aisCheckNeedDriverRoaming(
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct ROAMING_INFO *prRoamingFsmInfo;
@@ -6260,9 +6261,9 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(IN struct ADAPTER *prAdapter,
  * @retval None
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
-				   IN struct BSS_INFO *prAisBssInfo,
-				   IN struct STA_RECORD *prTargetStaRec)
+void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
+				   struct BSS_INFO *prAisBssInfo,
+				   struct STA_RECORD *prTargetStaRec)
 {
 	uint8_t ucBssIndex = prAisBssInfo->ucBssIndex;
 
@@ -6338,8 +6339,8 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 		       "NULL pointer of prAisBssInfo->prStaRecOfAP\n");
 }				/* end of aisFsmRoamingDisconnectPrevAP() */
 
-void aisFsmRoamingDisconnectPrevAllAP(IN struct ADAPTER *prAdapter,
-				   IN struct AIS_FSM_INFO *prAisFsmInfo)
+void aisFsmRoamingDisconnectPrevAllAP(struct ADAPTER *prAdapter,
+				   struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
 
@@ -6374,9 +6375,9 @@ void aisFsmRoamingDisconnectPrevAllAP(IN struct ADAPTER *prAdapter,
  * @retval None
  */
 /*----------------------------------------------------------------------------*/
-void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
-				  IN struct STA_RECORD *prStaRec,
-				  IN struct SW_RFB *prAssocRspSwRfb)
+void aisUpdateBssInfoForRoamingAP(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec,
+				  struct SW_RFB *prAssocRspSwRfb)
 {
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = prStaRec->ucBssIndex;
@@ -6414,10 +6415,10 @@ void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER *prAdapter,
 					FALSE, ucBssIndex);
 }				/* end of aisFsmRoamingUpdateBss() */
 
-void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
-				IN struct AIS_FSM_INFO *prAisFsmInfo,
-				IN struct SW_RFB *prAssocRspSwRfb,
-				IN struct STA_RECORD *prSetupStaRec)
+void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,
+				struct AIS_FSM_INFO *prAisFsmInfo,
+				struct SW_RFB *prAssocRspSwRfb,
+				struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -6466,10 +6467,10 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
-				IN enum ENUM_AIS_REQUEST_TYPE eReqType,
-				IN u_int8_t bRemove,
-				IN uint8_t ucBssIndex)
+u_int8_t aisFsmIsRequestPending(struct ADAPTER *prAdapter,
+				enum ENUM_AIS_REQUEST_TYPE eReqType,
+				u_int8_t bRemove,
+				uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_REQ_HDR *prPendingReqHdr, *prPendingReqHdrNext;
@@ -6513,9 +6514,9 @@ u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisFsmClearRequest(IN struct ADAPTER *prAdapter,
-			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
-			     IN uint8_t ucBssIndex)
+u_int8_t aisFsmClearRequest(struct ADAPTER *prAdapter,
+			     enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     uint8_t ucBssIndex)
 {
 	return aisFsmIsRequestPending(prAdapter, eReqType, TRUE, ucBssIndex);
 }
@@ -6529,8 +6530,8 @@ u_int8_t aisFsmClearRequest(IN struct ADAPTER *prAdapter,
  * @return P_AIS_REQ_HDR_T
  */
 /*----------------------------------------------------------------------------*/
-struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+struct AIS_REQ_HDR *aisFsmGetNextRequest(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_REQ_HDR *prPendingReqHdr;
@@ -6554,9 +6555,9 @@ struct AIS_REQ_HDR *aisFsmGetNextRequest(IN struct ADAPTER *prAdapter,
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
-			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
-			     IN uint8_t ucBssIndex)
+u_int8_t aisFsmInsertRequest(struct ADAPTER *prAdapter,
+			     enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     uint8_t ucBssIndex)
 {
 	struct AIS_REQ_HDR *prAisReq;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6595,9 +6596,9 @@ u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t aisFsmInsertRequestToHead(IN struct ADAPTER *prAdapter,
-			     IN enum ENUM_AIS_REQUEST_TYPE eReqType,
-			     IN uint8_t ucBssIndex)
+u_int8_t aisFsmInsertRequestToHead(struct ADAPTER *prAdapter,
+			     enum ENUM_AIS_REQUEST_TYPE eReqType,
+			     uint8_t ucBssIndex)
 {
 	struct AIS_REQ_HDR *prAisReq;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6634,7 +6635,7 @@ u_int8_t aisFsmInsertRequestToHead(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmFlushRequest(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void aisFsmFlushRequest(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_REQ_HDR *prAisReq;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6648,8 +6649,8 @@ void aisFsmFlushRequest(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 		cnmMemFree(prAdapter, prAisReq);
 }
 
-void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter,
-				   IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventRemainOnChannel(struct ADAPTER *prAdapter,
+				   struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_REMAIN_ON_CHANNEL *prRemainOnChannel;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6688,8 +6689,8 @@ void aisFsmRunEventRemainOnChannel(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
-void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
-					 IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventCancelRemainOnChannel(struct ADAPTER *prAdapter,
+					 struct MSG_HDR *prMsgHdr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -6751,9 +6752,9 @@ void aisFsmRunEventCancelRemainOnChannel(IN struct ADAPTER *prAdapter,
 }
 
 static u_int8_t
-aisFunChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
-		IN struct AIS_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq,
-		IN uint8_t ucBssIndex)
+aisFunChnlReqByOffChnl(struct ADAPTER *prAdapter,
+		struct AIS_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq,
+		uint8_t ucBssIndex)
 {
 	struct MSG_REMAIN_ON_CHANNEL *prMsgChnlReq =
 			(struct MSG_REMAIN_ON_CHANNEL *) NULL;
@@ -6780,10 +6781,10 @@ aisFunChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
 }
 
 static u_int8_t
-aisFunAddTxReq2Queue(IN struct ADAPTER *prAdapter,
-		IN struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
-		OUT struct AIS_OFF_CHNL_TX_REQ_INFO **pprOffChnlTxReq)
+aisFunAddTxReq2Queue(struct ADAPTER *prAdapter,
+		struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+		struct AIS_OFF_CHNL_TX_REQ_INFO **pprOffChnlTxReq)
 {
 	struct AIS_OFF_CHNL_TX_REQ_INFO *prTmpOffChnlTxReq =
 			(struct AIS_OFF_CHNL_TX_REQ_INFO *) NULL;
@@ -6816,10 +6817,10 @@ aisFunAddTxReq2Queue(IN struct ADAPTER *prAdapter,
 }
 
 static void
-aisFunHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
-		IN struct AIS_FSM_INFO *prAisFsmInfo,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
-		IN uint8_t ucBssIndex)
+aisFunHandleOffchnlTxReq(struct ADAPTER *prAdapter,
+		struct AIS_FSM_INFO *prAisFsmInfo,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+		uint8_t ucBssIndex)
 {
 	struct AIS_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq =
 			(struct AIS_OFF_CHNL_TX_REQ_INFO *) NULL;
@@ -6872,8 +6873,8 @@ error:
 }
 
 static u_int8_t
-aisFunNeedOffchnlTx(IN struct ADAPTER *prAdapter,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
+aisFunNeedOffchnlTx(struct ADAPTER *prAdapter,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
 {
 	struct BSS_INFO *prAisBssInfo = (struct BSS_INFO *) NULL;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -6904,8 +6905,8 @@ aisFunNeedOffchnlTx(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void aisFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
@@ -6939,8 +6940,8 @@ exit:
 }				/* aisFsmRunEventMgmtFrameTx */
 
 #if CFG_SUPPORT_NCHO
-void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
-				     IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventNchoActionFrameTx(struct ADAPTER *prAdapter,
+				     struct MSG_HDR *prMsgHdr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo = (struct BSS_INFO *)NULL;
@@ -7011,7 +7012,7 @@ void aisFsmRunEventNchoActionFrameTx(IN struct ADAPTER *prAdapter,
 }				/* aisFsmRunEventNchoActionFrameTx */
 #endif
 
-void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
+void aisFsmRunEventChannelTimeout(struct ADAPTER *prAdapter,
 				  uintptr_t ulParamPtr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -7060,9 +7061,9 @@ void aisFsmRunEventChannelTimeout(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
-aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
-			      IN struct MSDU_INFO *prMsduInfo,
-			      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+aisFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo,
+			      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo =
@@ -7118,10 +7119,10 @@ aisFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 }				/* aisFsmRunEventMgmtFrameTxDone */
 
 uint32_t
-aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
-		   IN struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo,
-		   IN struct MSDU_INFO *prMgmtTxMsdu, IN uint64_t u8Cookie,
-		   IN uint8_t ucBssIndex)
+aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
+		   struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo,
+		   struct MSDU_INFO *prMgmtTxMsdu, uint64_t u8Cookie,
+		   uint8_t ucBssIndex)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct MSDU_INFO *prTxMsduInfo = (struct MSDU_INFO *)NULL;
@@ -7207,8 +7208,8 @@ aisFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-void aisFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
-				  IN struct SW_RFB *prSwRfb)
+void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
+				  struct SW_RFB *prSwRfb)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *)NULL;
 	uint8_t ucBssIndex = 0;
@@ -7439,8 +7440,8 @@ static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter)
 	}
 }
 
-void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
-				 IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
+				 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_AIS_BSS_TRANSITION *prMsg =
 	    (struct MSG_AIS_BSS_TRANSITION *)prMsgHdr;
@@ -7663,7 +7664,7 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 	return prAPlist->rUsingLink.u4NumElem;
 }
 
-void aisResetNeighborApList(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void aisResetNeighborApList(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
 	    aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
@@ -7673,7 +7674,7 @@ void aisResetNeighborApList(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	DBGLOG(AIS, INFO, "reset done");
 }
 
-uint8_t aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
+uint8_t aisCheckNeighborApValidity(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
@@ -7702,8 +7703,8 @@ uint8_t aisCheckNeighborApValidity(IN struct ADAPTER *prAdapter,
 
 #endif
 
-void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo =
 			(struct AIS_FSM_INFO *) NULL;
@@ -7764,8 +7765,8 @@ exit:
 }
 
 static void
-aisFunClearAllTxReq(IN struct ADAPTER *prAdapter,
-		IN struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo)
+aisFunClearAllTxReq(struct ADAPTER *prAdapter,
+		struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo)
 {
 	struct AIS_OFF_CHNL_TX_REQ_INFO *prOffChnlTxPkt =
 			(struct AIS_OFF_CHNL_TX_REQ_INFO *) NULL;
@@ -7788,8 +7789,8 @@ aisFunClearAllTxReq(IN struct ADAPTER *prAdapter,
 }
 
 struct AIS_FSM_INFO *aisGetAisFsmInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		DBGLOG(AIS, WARN,
@@ -7802,8 +7803,8 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->u4PrivateData);
 }
 
-struct AIS_FSM_INFO *aisFsmGetInstance(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucAisIndex)
+struct AIS_FSM_INFO *aisFsmGetInstance(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex)
 {
 	if (ucAisIndex < KAL_AIS_NUM)
 		return &prAdapter->rWifiVar.rAisFsmInfo[ucAisIndex];
@@ -7812,21 +7813,21 @@ struct AIS_FSM_INFO *aisFsmGetInstance(IN struct ADAPTER *prAdapter,
 }
 
 struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rAisSpecificBssInfo;
 }
 
 struct BSS_TRANSITION_MGT_PARAM *aisGetBTMParam(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisSpecBssInfo(prAdapter, ucBssIndex)->rBTMParam;
 }
 
 struct BSS_INFO *aisGetConnectedBssInfo(
-	IN struct ADAPTER *prAdapter) {
+	struct ADAPTER *prAdapter) {
 
 	struct BSS_INFO *prBssInfo;
 	uint8_t i;
@@ -7850,35 +7851,35 @@ struct BSS_INFO *aisGetConnectedBssInfo(
 	return NULL;
 }
 
-struct AIS_FSM_INFO *aisGetDefaultAisInfo(IN struct ADAPTER *prAdapter)
+struct AIS_FSM_INFO *aisGetDefaultAisInfo(struct ADAPTER *prAdapter)
 {
 	return prAdapter->rWifiVar.prDefaultAisFsmInfo;
 }
 
-struct AIS_LINK_INFO *aisGetDefaultLink(IN struct ADAPTER *prAdapter)
+struct AIS_LINK_INFO *aisGetDefaultLink(struct ADAPTER *prAdapter)
 {
 	return  &aisGetDefaultAisInfo(prAdapter)
 			->aprLinkInfo[AIS_MAIN_LINK_INDEX];
 }
 
-struct BSS_INFO *aisGetDefaultLinkBssInfo(IN struct ADAPTER *prAdapter)
+struct BSS_INFO *aisGetDefaultLinkBssInfo(struct ADAPTER *prAdapter)
 {
 	return	aisGetDefaultLink(prAdapter)->prBssInfo;
 }
 
-uint8_t aisGetDefaultLinkBssIndex(IN struct ADAPTER *prAdapter)
+uint8_t aisGetDefaultLinkBssIndex(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
 
 	return	prBssInfo ? prBssInfo->ucBssIndex : AIS_DEFAULT_BSS_INDEX;
 }
 
-struct STA_RECORD *aisGetDefaultStaRecOfAP(IN struct ADAPTER *prAdapter)
+struct STA_RECORD *aisGetDefaultStaRecOfAP(struct ADAPTER *prAdapter)
 {
 	return	aisGetDefaultLinkBssInfo(prAdapter)->prStaRecOfAP;
 }
 
-void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
+void aisSetLinkBssInfo(struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBssInfo, uint8_t ucLinkIdx)
 {
 	struct BSS_INFO *ori = prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo;
@@ -7901,7 +7902,7 @@ void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	}
 }
 
-struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
+struct BSS_INFO *aisGetLinkBssInfo(struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX || !prAisFsmInfo)
@@ -7910,18 +7911,18 @@ struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	return prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo;
 }
 
-uint32_t aisGetBssIndexBmap(IN struct AIS_FSM_INFO *prAisFsmInfo)
+uint32_t aisGetBssIndexBmap(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	return prAisFsmInfo->u4BssIdxBmap;
 }
 
-struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo)
+struct BSS_INFO *aisGetMainLinkBssInfo(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	return aisGetLinkBssInfo(prAisFsmInfo, AIS_MAIN_LINK_INDEX);
 }
 
-uint8_t aisGetMainLinkBssIndex(IN struct ADAPTER *prAdapter,
-		IN struct AIS_FSM_INFO *prAisFsmInfo)
+uint8_t aisGetMainLinkBssIndex(struct ADAPTER *prAdapter,
+		struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	struct BSS_INFO *bss = aisGetMainLinkBssInfo(prAisFsmInfo);
 
@@ -7935,7 +7936,7 @@ uint8_t aisGetMainLinkBssIndex(IN struct ADAPTER *prAdapter,
 	return aisGetDefaultLinkBssIndex(prAdapter);
 }
 
-void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
+void aisSetLinkBssDesc(struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_DESC *prBssDesc, uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
@@ -7943,7 +7944,7 @@ void aisSetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	prAisFsmInfo->aprLinkInfo[ucLinkIdx].prTargetBssDesc = prBssDesc;
 }
 
-struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
+struct BSS_DESC *aisGetLinkBssDesc(struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
@@ -7952,7 +7953,7 @@ struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	return prAisFsmInfo->aprLinkInfo[ucLinkIdx].prTargetBssDesc;
 }
 
-uint8_t aisGetLinkNum(IN struct AIS_FSM_INFO *prAisFsmInfo)
+uint8_t aisGetLinkNum(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i, num = 0;
 
@@ -7964,12 +7965,12 @@ uint8_t aisGetLinkNum(IN struct AIS_FSM_INFO *prAisFsmInfo)
 	return num;
 }
 
-struct BSS_DESC *aisGetMainLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo)
+struct BSS_DESC *aisGetMainLinkBssDesc(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	return aisGetLinkBssDesc(prAisFsmInfo, AIS_MAIN_LINK_INDEX);
 }
 
-void aisSetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
+void aisSetLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo,
 	struct STA_RECORD *prStaRec, uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
@@ -7977,7 +7978,7 @@ void aisSetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	prAisFsmInfo->aprLinkInfo[ucLinkIdx].prTargetStaRec = prStaRec;
 }
 
-struct STA_RECORD *aisGetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
+struct STA_RECORD *aisGetLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx)
 {
 	if (ucLinkIdx >= MLD_LINK_MAX)
@@ -7986,12 +7987,12 @@ struct STA_RECORD *aisGetLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	return prAisFsmInfo->aprLinkInfo[ucLinkIdx].prTargetStaRec;
 }
 
-struct STA_RECORD *aisGetMainLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo)
+struct STA_RECORD *aisGetMainLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	return aisGetLinkStaRec(prAisFsmInfo, AIS_MAIN_LINK_INDEX);
 }
 
-void aisClearAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo)
+void aisClearAllLink(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
 
@@ -8003,8 +8004,8 @@ void aisClearAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo)
 	}
 }
 
-void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
-			IN struct AIS_FSM_INFO *prAisFsmInfo)
+void aisDeactivateAllLink(struct ADAPTER *prAdapter,
+			struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
 
@@ -8017,8 +8018,8 @@ void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
 	}
 }
 
-struct AIS_LINK_INFO *aisGetLink(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+struct AIS_LINK_INFO *aisGetLink(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -8032,36 +8033,36 @@ struct AIS_LINK_INFO *aisGetLink(IN struct ADAPTER *prAdapter,
 }
 
 struct BSS_INFO *aisGetAisBssInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetLink(prAdapter, ucBssIndex)->prBssInfo;
 }
 
 struct STA_RECORD *aisGetStaRecOfAP(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetAisBssInfo(prAdapter, ucBssIndex)->prStaRecOfAP;
 }
 
 
 struct BSS_DESC *aisGetTargetBssDesc(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetLink(prAdapter, ucBssIndex)->prTargetBssDesc;
 }
 
 struct STA_RECORD *aisGetTargetStaRec(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetLink(prAdapter, ucBssIndex)->prTargetStaRec;
 }
 
-void aisTargetBssSetConnected(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *ais)
+void aisTargetBssSetConnected(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -8078,8 +8079,8 @@ void aisTargetBssSetConnected(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void aisTargetBssSetConnecting(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *ais)
+void aisTargetBssSetConnecting(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -8096,8 +8097,8 @@ void aisTargetBssSetConnecting(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void aisTargetBssResetConnected(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *ais)
+void aisTargetBssResetConnected(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -8114,8 +8115,8 @@ void aisTargetBssResetConnected(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void aisTargetBssResetConnecting(IN struct ADAPTER *prAdapter,
-	IN struct AIS_FSM_INFO *ais)
+void aisTargetBssResetConnecting(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -8134,117 +8135,117 @@ void aisTargetBssResetConnecting(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 struct TIMER *aisGetSecModeChangeTimer(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rSecModeChangeTimer;
 }
 #endif
 
 struct TIMER *aisGetScanDoneTimer(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rScanDoneTimer;
 }
 
 enum ENUM_AIS_STATE aisGetCurrState(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetAisFsmInfo(prAdapter, ucBssIndex)->eCurrentState;
 }
 
 struct CONNECTION_SETTINGS *aisGetConnSettings(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rConnSettings;
 }
 
 struct GL_WPA_INFO *aisGetWpaInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rWpaInfo;
 }
 
 u_int8_t aisGetWapiMode(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetConnSettings(prAdapter, ucBssIndex)->fgWapiMode;
 }
 
 enum ENUM_PARAM_AUTH_MODE aisGetAuthMode(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetConnSettings(prAdapter, ucBssIndex)->eAuthMode;
 }
 
 enum ENUM_PARAM_OP_MODE aisGetOPMode(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetConnSettings(prAdapter, ucBssIndex)->eOPMode;
 }
 
 enum ENUM_WEP_STATUS aisGetEncStatus(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return aisGetConnSettings(prAdapter, ucBssIndex)->eEncStatus;
 }
 
 struct IEEE_802_11_MIB *aisGetMib(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rMib;
 }
 
 struct ROAMING_INFO *aisGetRoamingInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rRoamingInfo;
 }
 
 struct PARAM_BSSID_EX *aisGetCurrBssId(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rCurrBssId;
 }
 
 #if CFG_SUPPORT_PASSPOINT
 struct HS20_INFO *aisGetHS20Info(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rHS20Info;
 }
 #endif
 
 struct RADIO_MEASUREMENT_REQ_PARAMS *aisGetRmReqParam(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rRmReqParams;
 }
 
 struct RADIO_MEASUREMENT_REPORT_PARAMS *
 	aisGetRmReportParam(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rRmRepParams;
 }
 
 struct WMM_INFO *aisGetWMMInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	if (ucBssIndex == 255)
 		DBGLOG(AIS, WARN,
@@ -8255,16 +8256,16 @@ struct WMM_INFO *aisGetWMMInfo(
 
 #ifdef CFG_SUPPORT_REPLAY_DETECTION
 struct GL_DETECT_REPLAY_INFO *aisGetDetRplyInfo(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex) {
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex) {
 
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->prDetRplyInfo;
 }
 #endif
 
 struct FT_IES *aisGetFtIe(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return NULL;
@@ -8273,14 +8274,14 @@ struct FT_IES *aisGetFtIe(
 }
 
 struct FT_EVENT_PARAMS *aisGetFtEventParam(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtEventParam;
 }
 
 uint8_t *aisGetFsmState(
-	IN enum ENUM_AIS_STATE eCurrentState) {
+	enum ENUM_AIS_STATE eCurrentState) {
 	uint32_t u4State = eCurrentState;
 
 	if (u4State < AIS_STATE_NUM)
@@ -8290,9 +8291,10 @@ uint8_t *aisGetFsmState(
 	return (uint8_t *) NULL;
 }
 
-u_int8_t addAxBlacklist(IN struct ADAPTER *prAdapter,
-			     IN uint8_t aucBSSID[], IN uint8_t ucBssIndex,
-			     IN uint8_t ucType) {
+u_int8_t addAxBlacklist(struct ADAPTER *prAdapter,
+			     uint8_t aucBSSID[], uint8_t ucBssIndex,
+			     uint8_t ucType)
+{
 	struct AX_BLACKLIST_ITEM *prBlacklistItem;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
@@ -8325,9 +8327,10 @@ u_int8_t addAxBlacklist(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-u_int8_t queryAxBlacklist(IN struct ADAPTER *prAdapter,
-			     IN uint8_t aucBSSID[], IN uint8_t ucBssIndex,
-			     IN uint8_t ucType) {
+u_int8_t queryAxBlacklist(struct ADAPTER *prAdapter,
+			     uint8_t aucBSSID[], uint8_t ucBssIndex,
+			     uint8_t ucType)
+{
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct LINK *prBlacklist;
 	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
@@ -8358,9 +8361,10 @@ u_int8_t queryAxBlacklist(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
-u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
-			     IN uint8_t ucBssIndex,
-			     IN uint8_t ucType) {
+u_int8_t clearAxBlacklist(struct ADAPTER *prAdapter,
+			     uint8_t ucBssIndex,
+			     uint8_t ucType)
+{
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct LINK *prBlacklist;
 	struct AX_BLACKLIST_ITEM *prBlacklistItem, *prBlacklistItemNext;
@@ -8409,7 +8413,7 @@ u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
+void aisPreSuspendFlow(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prAisBssInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -8676,10 +8680,10 @@ static void aisScanReqInit(struct ADAPTER *prAdapter,
 
 }
 
-static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
-	IN uint16_t u2ScanIELen)
+static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
+	uint16_t u2ScanIELen)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -8779,9 +8783,9 @@ static void aisScanProcessReqParam(IN struct ADAPTER *prAdapter,
 
 }
 
-static void aisScanProcessReqCh(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+static void aisScanProcessReqCh(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
@@ -8861,9 +8865,9 @@ static void aisScanProcessReqCh(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void aisScanProcessReqExtra(IN struct ADAPTER *prAdapter,
-	IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+static void aisScanProcessReqExtra(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
 	/* Reduce APP scan's dwell time, prevent it affecting
 	 * TX/RX performance
@@ -8886,7 +8890,7 @@ static void aisScanProcessReqExtra(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void aisScanResetReq(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
 	prScanRequest->ucShortSsidNum = 0;
 	prScanRequest->u4SsidNum = 0;

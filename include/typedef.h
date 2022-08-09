@@ -177,7 +177,7 @@ struct REG_ENTRY;	/* declare REG_ENTRY_T */
 typedef void(*IST_EVENT_FUNCTION) (struct ADAPTER *);
 
 /* Type definition for function pointer of timer handler */
-typedef void(*PFN_TIMER_CALLBACK) (IN struct GLUE_INFO *);
+typedef void(*PFN_TIMER_CALLBACK) (struct GLUE_INFO *);
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

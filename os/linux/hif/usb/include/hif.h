@@ -384,19 +384,19 @@ struct BUS_INFO {
 	uint8_t ucVndReqToMcuFailCnt;
 
 	u_int8_t (*asicUsbSuspend)(
-		IN struct ADAPTER *prAdapter,
-		IN struct GLUE_INFO *prGlueInfo);
+		struct ADAPTER *prAdapter,
+		struct GLUE_INFO *prGlueInfo);
 	u_int8_t (*asicUsbResume)(
-		IN struct ADAPTER *prAdapter,
-		IN struct GLUE_INFO *prGlueInfo);
-	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
-	uint16_t (*asicUsbRxByteCount)(IN struct ADAPTER *prAdapter,
-		IN struct BUS_INFO *prBusInfo,
-		IN uint8_t *pRXD);
+		struct ADAPTER *prAdapter,
+		struct GLUE_INFO *prGlueInfo);
+	uint8_t (*asicUsbEventEpDetected)(struct ADAPTER *prAdapter);
+	uint16_t (*asicUsbRxByteCount)(struct ADAPTER *prAdapter,
+		struct BUS_INFO *prBusInfo,
+		uint8_t *pRXD);
 	/* Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset,
 	 * etc.
 	 */
-	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
+	void (*DmaShdlInit)(struct ADAPTER *prAdapter);
 	/* Although DMASHDL was init, we need to reinit it again due to falcon
 	 * L1 reset, etc. Take MT7961 as example. The difference between
 	 * mt7961DmashdlInit and mt7961DmashdlReInit is that we don't init CRs
@@ -409,9 +409,9 @@ struct BUS_INFO {
 	 *        wm DLM space. So, we save DLM space by reinit the remaining
 	 *        DMASHDL CRs in driver.
 	 */
-	void (*DmaShdlReInit)(IN struct ADAPTER *prAdapter);
+	void (*DmaShdlReInit)(struct ADAPTER *prAdapter);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
-	void (*asicUdmaRxFlush)(IN struct ADAPTER *prAdapter, uint8_t bEnable);
+	void (*asicUdmaRxFlush)(struct ADAPTER *prAdapter, uint8_t bEnable);
 
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
 		uint8_t ucWmmIndex, uint32_t u4MaxQuota);
@@ -464,64 +464,72 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
 void glBusFreeIrq(void *pvData, void *pvCookie);
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode);
 
 void glUdmaTxRxEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
 void glUdmaRxAggEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
-int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t uEndpointAddress, IN uint8_t RequestType,
-	    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index,
-	    IN void *TransferBuffer, IN uint32_t TransferBufferLength);
+int32_t mtk_usb_vendor_request(struct GLUE_INFO *prGlueInfo,
+		uint8_t uEndpointAddress, uint8_t RequestType,
+	    uint8_t Request, uint16_t Value, uint16_t Index,
+	    void *TransferBuffer, uint32_t TransferBufferLength);
 
 void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, struct USB_REQ *prUsbReq,
 		     spinlock_t *prLock, u_int8_t fgHead);
 struct USB_REQ *glUsbDequeueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, spinlock_t *prLock);
 u_int8_t glUsbBorrowFfaReq(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc);
 
-void glUsbSetState(IN struct GL_HIF_INFO *prHifInfo, enum usb_state state);
+void glUsbSetState(struct GL_HIF_INFO *prHifInfo, enum usb_state state);
 
 void glUsbSetStateSyncCtrl(struct GL_HIF_INFO *prHifInfo, enum usb_state state);
 
-int glUsbSubmitUrb(IN struct GL_HIF_INFO *prHifInfo, struct urb *urb,
+int glUsbSubmitUrb(struct GL_HIF_INFO *prHifInfo, struct urb *urb,
 			enum usb_submit_type type);
 
-uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN struct CMD_INFO *prCmdInfo);
+uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
+		struct CMD_INFO *prCmdInfo);
 void halTxUSBSendCmdComplete(struct urb *urb);
-void halTxUSBProcessCmdComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq);
+void halTxUSBProcessCmdComplete(struct ADAPTER *prAdapter,
+		struct USB_REQ *prUsbReq);
 
-uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
-uint32_t halTxUSBKickData(IN struct GLUE_INFO *prGlueInfo);
+uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
+		struct MSDU_INFO *prMsduInfo);
+uint32_t halTxUSBKickData(struct GLUE_INFO *prGlueInfo);
 void halTxUSBSendDataComplete(struct urb *urb);
-void halTxUSBProcessMsduDone(IN struct GLUE_INFO *prGlueInfo, struct USB_REQ *prUsbReq);
-void halTxUSBProcessDataComplete(IN struct ADAPTER *prAdapter, struct USB_REQ *prUsbReq);
+void halTxUSBProcessMsduDone(struct GLUE_INFO *prGlueInfo,
+		struct USB_REQ *prUsbReq);
+void halTxUSBProcessDataComplete(struct ADAPTER *prAdapter,
+		struct USB_REQ *prUsbReq);
 
 uint32_t halRxUSBEnqueueRFB(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf,
-	IN uint32_t u4Length,
-	IN uint32_t u4MinRfbCnt,
-	IN struct list_head *prCompleteQ);
-uint32_t halRxUSBReceiveEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgFillUrb);
+	struct ADAPTER *prAdapter,
+	uint8_t *pucBuf,
+	uint32_t u4Length,
+	uint32_t u4MinRfbCnt,
+	struct list_head *prCompleteQ);
+uint32_t halRxUSBReceiveEvent(struct ADAPTER *prAdapter, u_int8_t fgFillUrb);
 void halRxUSBReceiveEventComplete(struct urb *urb);
-uint32_t halRxUSBReceiveWdt(IN struct ADAPTER *prAdapter);
+uint32_t halRxUSBReceiveWdt(struct ADAPTER *prAdapter);
 void halRxUSBReceiveWdtComplete(struct urb *urb);
-uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter);
+uint32_t halRxUSBReceiveData(struct ADAPTER *prAdapter);
 void halRxUSBReceiveDataComplete(struct urb *urb);
-void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
-	struct list_head *prCompleteQ, struct list_head *prFreeQ, uint32_t u4MinRfbCnt);
-void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
+void halRxUSBProcessEventDataComplete(struct ADAPTER *prAdapter,
+	struct list_head *prCompleteQ, struct list_head *prFreeQ,
+	uint32_t u4MinRfbCnt);
+void halRxUSBProcessWdtComplete(struct ADAPTER *prAdapter,
 				struct list_head *prCompleteQ,
 				struct list_head *prFreeQ,
 				uint32_t u4MinRfbCnt);
 
-void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter);
-void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter);
-void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
+void halUSBPreSuspendCmd(struct ADAPTER *prAdapter);
+void halUSBPreResumeCmd(struct ADAPTER *prAdapter);
+void halUSBPreSuspendDone(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf);
+void halUSBPreSuspendTimeout(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo);
 
-uint32_t halSerGetMcuEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgClear);
+uint32_t halSerGetMcuEvent(struct ADAPTER *prAdapter, u_int8_t fgClear);
 
 void glGetDev(void *ctx, void **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
@@ -530,7 +538,7 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void);
 
 void glGetChipInfo(void **prChipInfo);
 
-void halGetCompleteStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus);
+void halGetCompleteStatus(struct ADAPTER *prAdapter, uint32_t *pu4IntStatus);
 
 uint16_t glGetUsbDeviceVendorId(struct usb_device *dev);
 uint16_t glGetUsbDeviceProductId(struct usb_device *dev);

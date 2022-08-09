@@ -588,8 +588,8 @@ static void mt7961ReadIntStatus(
 }
 
 #if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
-uint8_t mt7961CheckPortForRxEventFromPse(IN struct ADAPTER *prAdapter,
-				IN uint8_t u2Port)
+uint8_t mt7961CheckPortForRxEventFromPse(struct ADAPTER *prAdapter,
+				uint8_t u2Port)
 {
 	if (u2Port == RX_RING_EVT &&
 			prAdapter->fgIsFwDownloaded == TRUE)
@@ -828,7 +828,7 @@ void mt7961Connac2xWfdmaInitForUSB(
 		asicConnac2xUsbRxEvtEP4Setting(prAdapter, TRUE);
 }
 
-uint8_t mt7961Connac2xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+uint8_t mt7961Connac2xUsbEventEpDetected(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -939,10 +939,10 @@ void mt7961ConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, ERROR, "gen BT Patch File Name fail\n");
 }
 
-uint32_t wlanBtPatchSendSemaControl(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Addr,
-	OUT uint8_t *pucPatchStatus,
-	OUT uint32_t *u4RemapAddr)
+uint32_t wlanBtPatchSendSemaControl(struct ADAPTER *prAdapter,
+	uint32_t u4Addr,
+	uint8_t *pucPatchStatus,
+	uint32_t *u4RemapAddr)
 {
 	struct INIT_CMD_BT_PATCH_SEMA_CTRL rCmd = {0};
 	struct INIT_EVENT_BT_PATCH_SEMA_CTRL rEvent = {0};
@@ -970,9 +970,9 @@ exit:
 	return u4Status;
 }
 
-uint32_t wlanImageSectionGetBtPatchInfo(IN struct ADAPTER *prAdapter,
-	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
-	OUT uint32_t *pu4DataMode, OUT struct patch_dl_target *target)
+uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
+	void *pvFwImageMapFile, uint32_t u4FwImageFileLength,
+	uint32_t *pu4DataMode, struct patch_dl_target *target)
 {
 	struct PATCH_FORMAT_V2_T *prPatchFormat;
 	struct PATCH_GLO_DESC *glo_desc;
@@ -1076,8 +1076,8 @@ uint32_t wlanImageSectionGetBtPatchInfo(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
-int32_t wlanBtPatchIsDownloaded(IN struct ADAPTER *prAdapter,
-				 IN uint32_t u4DestAddr, OUT uint32_t *u4BtAddr)
+int32_t wlanBtPatchIsDownloaded(struct ADAPTER *prAdapter,
+				 uint32_t u4DestAddr, uint32_t *u4BtAddr)
 {
 	uint8_t ucPatchStatus = PATCH_STATUS_NO_SEMA_NEED_PATCH;
 	uint32_t rStatus;
@@ -1111,7 +1111,7 @@ out:
 	return s4RetStatus;
 }
 
-uint32_t mt7961DownloadBtPatch(IN struct ADAPTER *prAdapter)
+uint32_t mt7961DownloadBtPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t u4FwSize = 0;
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
@@ -1301,8 +1301,8 @@ uint32_t mt7961setWfdmaCoalescingInt(struct ADAPTER *prAdapter,
 }
 #endif
 
-void mt7961SerInit(IN struct ADAPTER *prAdapter,
-		   IN const u_int8_t fgAtResetFlow)
+void mt7961SerInit(struct ADAPTER *prAdapter,
+		   const u_int8_t fgAtResetFlow)
 {
 	if (!fgAtResetFlow) {
 #if defined(_HIF_SDIO)

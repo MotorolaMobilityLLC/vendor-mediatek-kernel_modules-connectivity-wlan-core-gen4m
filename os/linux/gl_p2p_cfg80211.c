@@ -3282,11 +3282,11 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
 }				/* mtk_p2p_cfg80211_disconnect */
 
 int
-mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
-		IN struct net_device *ndev,
-		IN enum nl80211_iftype type,
-		IN u32 *flags,
-		IN struct vif_params *params)
+mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
+		struct net_device *ndev,
+		enum nl80211_iftype type,
+		u32 *flags,
+		struct vif_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
@@ -3377,7 +3377,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 
 }				/* mtk_p2p_cfg80211_change_iface */
 
-int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
+int mtk_p2p_cfg80211_set_channel(struct wiphy *wiphy,
 		struct cfg80211_chan_def *chandef)
 {
 	int32_t i4Rslt = -EINVAL;
@@ -3416,10 +3416,10 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
 /* mtk_p2p_cfg80211_set_channel */
 
 int
-mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
-		IN struct net_device *dev,
-		IN const u8 *peer,
-		IN const struct cfg80211_bitrate_mask *mask)
+mtk_p2p_cfg80211_set_bitrate_mask(struct wiphy *wiphy,
+		struct net_device *dev,
+		const u8 *peer,
+		const struct cfg80211_bitrate_mask *mask)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
@@ -3440,9 +3440,9 @@ mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_set_bitrate_mask */
 
-void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
+void mtk_p2p_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 		struct wireless_dev *wdev,
-		IN u16 frame_type, IN bool reg)
+		u16 frame_type, bool reg)
 {
 #if 0
 	struct MSG_P2P_MGMT_FRAME_REGISTER *prMgmtFrameRegister =
@@ -3835,8 +3835,8 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 }
 #endif
 
-int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *prParams =
@@ -3882,8 +3882,8 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
 	return 0;
 }
 
-int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_TEST_PRE_PARAMS rParams;
@@ -4041,8 +4041,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
 
 }
 
-int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_P2P_SIGMA_PARAMS *prParams =
@@ -4254,8 +4254,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
 
 #if CFG_SUPPORT_WFD && 0
 /* obsolete/decrepated */
-int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_wfd_update_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_WFD_PARAMS *prParams =
@@ -4375,8 +4375,8 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
-int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_hotspot_block_PARAMS *prParams =
@@ -4415,8 +4415,8 @@ int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
 
 #endif
 
-int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
-		IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_sw_cmd(struct wiphy *wiphy,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_SW_CMD_PARAMS *prParams =
@@ -4448,8 +4448,8 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
 	return fgIsValid;
 }
 
-int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(IN struct wiphy *wiphy,
-		IN struct net_device *nDev, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
+		struct net_device *nDev, void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_UPDATE_STA_PMKID_PARAMS *prParams =

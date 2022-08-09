@@ -336,7 +336,7 @@ static void mddpUnregisterCb(void)
 	gMddpFunc.wifi_handle = NULL;
 }
 
-int32_t mddpGetMdStats(IN struct net_device *prDev)
+int32_t mddpGetMdStats(struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	struct net_device_stats *prStats;
@@ -399,7 +399,7 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 }
 
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
-int32_t mddpGetMdLlsStats(IN struct ADAPTER *prAdapter)
+int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	struct GLUE_INFO *prGlueInfo;
@@ -753,9 +753,9 @@ void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 	prApBuf->end_idx = prReorderQueParm->u2WinEnd;
 }
 
-int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t fgActivate)
+int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t fgActivate)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
@@ -872,7 +872,7 @@ exit:
 	return ret;
 }
 
-int32_t mddpNotifyWifiStatus(IN enum ENUM_MDDPW_DRV_INFO_STATUS status)
+int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
@@ -1430,7 +1430,7 @@ static bool wait_for_md_on_complete(void)
 	return fgCompletion;
 }
 
-void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
+void setMddpSupportRegister(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 #if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)

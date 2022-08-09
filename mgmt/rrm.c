@@ -59,7 +59,7 @@ static void rrmCalibrateRepetions(
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq);
 
 static void rrmHandleBeaconReqSubelem(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1111,8 +1111,8 @@ out:
 		OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
 }
 
-void rrmGenerateRRMEnabledCapIE(IN struct ADAPTER *prAdapter,
-				IN struct MSDU_INFO *prMsduInfo)
+void rrmGenerateRRMEnabledCapIE(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_RRM_ENABLED_CAP *prRrmEnabledCap = NULL;
 
@@ -1228,7 +1228,7 @@ void rrmScheduleNextRm(struct ADAPTER *prAdapter,
 }
 
 static void rrmHandleBeaconReqSubelem(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReqParam = NULL;
 	struct IE_MEASUREMENT_REQ *request = NULL;
@@ -1526,7 +1526,7 @@ int rrmReportElem(struct RM_MEASURE_REPORT_ENTRY *reportEntry,
 	return 0;
 }
 
-int rrmAddBeaconRepElem(IN struct ADAPTER *prAdapter,
+int rrmAddBeaconRepElem(struct ADAPTER *prAdapter,
 			struct BCN_RM_PARAMS *data,
 			struct BSS_DESC *bss,
 			struct RM_MEASURE_REPORT_ENTRY *reportEntry,
@@ -1604,8 +1604,8 @@ out:
 	return ret;
 }
 
-void rrmCollectBeaconReport(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssIndex)
+void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *rmReq =
 		aisGetRmReqParam(prAdapter, ucBssIndex);

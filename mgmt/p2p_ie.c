@@ -51,9 +51,9 @@
  *****************************************************************************/
 #include "precomp.h"
 
-uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec)
+uint32_t p2pCalculate_IEForAssocReq(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -137,8 +137,8 @@ uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo)
+void p2pGenerate_IEForAssocReq(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -204,11 +204,11 @@ void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 }				/* p2pGenerate_IEForAssocReq */
 #if CFG_SUPPORT_WFD
 uint32_t
-wfdFuncAppendAttriDevInfo(IN struct ADAPTER *prAdapter,
-		IN u_int8_t fgIsAssocFrame,
-		IN uint16_t *pu2Offset,
-		IN uint8_t *pucBuf,
-		IN uint16_t u2BufSize)
+wfdFuncAppendAttriDevInfo(struct ADAPTER *prAdapter,
+		u_int8_t fgIsAssocFrame,
+		uint16_t *pu2Offset,
+		uint8_t *pucBuf,
+		uint16_t u2BufSize)
 {
 	uint32_t u4AttriLen = 0;
 	uint8_t *pucBuffer = NULL;

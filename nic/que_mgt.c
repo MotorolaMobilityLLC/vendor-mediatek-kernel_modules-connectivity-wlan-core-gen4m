@@ -272,8 +272,8 @@ do { \
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmInit(IN struct ADAPTER *prAdapter,
-	IN u_int8_t isTxResrouceControlEn)
+void qmInit(struct ADAPTER *prAdapter,
+	u_int8_t isTxResrouceControlEn)
 {
 	uint32_t u4Idx;
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
@@ -431,7 +431,7 @@ void qmInit(IN struct ADAPTER *prAdapter,
 }
 
 #if QM_TEST_MODE
-void qmTestCases(IN struct ADAPTER *prAdapter)
+void qmTestCases(struct ADAPTER *prAdapter)
 {
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
@@ -503,8 +503,8 @@ void qmTestCases(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmUpdateStaRec(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void qmUpdateStaRec(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsTxAllowed = FALSE;
@@ -561,8 +561,8 @@ void qmUpdateStaRec(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmActivateStaRec(IN struct ADAPTER *prAdapter,
-		      IN struct STA_RECORD *prStaRec)
+void qmActivateStaRec(struct ADAPTER *prAdapter,
+		      struct STA_RECORD *prStaRec)
 {
 	/* 4 <1> Deactivate first */
 	if (!prStaRec)
@@ -624,8 +624,8 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void qmDeactivateStaRec(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	uint32_t i;
 
@@ -690,7 +690,7 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmFreeAllByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void qmFreeAllByBssIdx(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 
 	struct QUE_MGT *prQM = NULL;
@@ -745,7 +745,7 @@ void qmFreeAllByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
  * \return The flushed packets (in a list of MSDU_INFOs)
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *qmFlushTxQueues(IN struct ADAPTER *prAdapter)
+struct MSDU_INFO *qmFlushTxQueues(struct ADAPTER *prAdapter)
 {
 	uint8_t ucStaArrayIdx;
 	uint8_t ucQueArrayIdx;
@@ -795,8 +795,8 @@ struct MSDU_INFO *qmFlushTxQueues(IN struct ADAPTER *prAdapter)
  * \return The flushed packets (in a list of MSDU_INFOs)
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *qmFlushStaTxQueues(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4StaRecIdx)
+struct MSDU_INFO *qmFlushStaTxQueues(struct ADAPTER *prAdapter,
+	uint32_t u4StaRecIdx)
 {
 	uint8_t ucQueArrayIdx;
 	struct STA_RECORD *prStaRec;
@@ -834,7 +834,7 @@ struct MSDU_INFO *qmFlushStaTxQueues(IN struct ADAPTER *prAdapter,
  * \return The flushed packets (in a list of SW_RFBs)
  */
 /*----------------------------------------------------------------------------*/
-struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER *prAdapter)
+struct SW_RFB *qmFlushRxQueues(struct ADAPTER *prAdapter)
 {
 	uint32_t i;
 	struct SW_RFB *prSwRfbListHead;
@@ -949,9 +949,9 @@ static struct SW_RFB *qmFlushStaRxQueue(struct ADAPTER *prAdapter,
 	return prSwRfbListHead;
 }
 
-struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
-				  IN struct MSDU_INFO *prMsduInfo,
-				  IN uint8_t ucActiveTs, OUT uint8_t *pucTC)
+struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  uint8_t ucActiveTs, uint8_t *pucTC)
 {
 	struct QUE *prTxQue = NULL;
 	struct STA_RECORD *prStaRec;
@@ -1061,8 +1061,8 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 	return prTxQue;
 }
 
-void qmSetTxPacketDescTemplate(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void qmSetTxPacketDescTemplate(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
 		prAdapter, prMsduInfo->ucStaRecIndex);
@@ -1091,8 +1091,8 @@ void qmSetTxPacketDescTemplate(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec, IN u_int8_t fgIsTxAllowed)
+void qmSetStaRecTxAllowed(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, u_int8_t fgIsTxAllowed)
 {
 	uint8_t ucIdx;
 	struct QUE *prSrcQ, *prDstQ;
@@ -1141,8 +1141,8 @@ void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
  * \return The freed packets, which are not enqueued
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfoListHead)
+struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfoListHead)
 {
 	struct MSDU_INFO *prMsduInfoReleaseList;
 	struct MSDU_INFO *prCurrentMsduInfo;
@@ -1391,8 +1391,8 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prTempStaRec;
 	struct BSS_INFO *prBssInfo;
@@ -1500,21 +1500,21 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 }
 
 struct STA_RECORD *qmDetermineStaToBeDequeued(
-	IN struct ADAPTER *prAdapter,
-	IN uint32_t u4StartStaRecIndex)
+	struct ADAPTER *prAdapter,
+	uint32_t u4StartStaRecIndex)
 {
 
 	return NULL;
 }
 
-struct QUE *qmDequeueStaTxPackets(IN struct ADAPTER *prAdapter)
+struct QUE *qmDequeueStaTxPackets(struct ADAPTER *prAdapter)
 {
 
 	return NULL;
 }
 #if CFG_SUPPORT_NAN
 void
-qmUpdateFreeNANQouta(IN struct ADAPTER *prAdapter,
+qmUpdateFreeNANQouta(struct ADAPTER *prAdapter,
 		     struct EVENT_UPDATE_NAN_TX_STATUS *prTxStatus) {
 	struct EVENT_UPDATE_NAN_TX_STATUS *prUpdateTxStatus;
 	uint8_t ucStaIndex = 0;
@@ -1540,11 +1540,11 @@ qmUpdateFreeNANQouta(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
-	OUT struct QUE *prQue, IN uint8_t ucTC,
-	IN uint32_t u4CurrentQuota,
-	IN uint32_t *prPleCurrentQuota,
-	IN uint32_t u4TotalQuota)
+qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTC,
+	uint32_t u4CurrentQuota,
+	uint32_t *prPleCurrentQuota,
+	uint32_t u4TotalQuota)
 {
 	uint32_t ucLoop;		/* Loop for */
 
@@ -1958,11 +1958,11 @@ NEXT:
  */
 /*----------------------------------------------------------------------------*/
 void
-qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
-	OUT struct QUE *prQue, IN uint8_t ucTC,
-	IN uint32_t u4CurrentQuota,
-	IN uint32_t *prPleCurrentQuota,
-	IN uint32_t u4TotalQuota)
+qmDequeueTxPacketsFromPerTypeQueues(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTC,
+	uint32_t u4CurrentQuota,
+	uint32_t *prPleCurrentQuota,
+	uint32_t u4TotalQuota)
 {
 	uint32_t u4AvaliableResource, u4LeftResource;
 	uint32_t u4MaxResourceLimit;
@@ -2054,11 +2054,11 @@ qmDequeueTxPacketsFromPerTypeQueues(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
-	OUT struct QUE *prQue,
-	IN uint8_t ucTC, IN uint32_t u4CurrentQuota,
-	IN uint32_t *prPleCurrentQuota,
-	IN uint32_t u4TotalQuota)
+qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
+	struct QUE *prQue,
+	uint8_t ucTC, uint32_t u4CurrentQuota,
+	uint32_t *prPleCurrentQuota,
+	uint32_t u4TotalQuota)
 {
 	struct BSS_INFO *prBssInfo;
 	struct QUE *prCurrQueue;
@@ -2154,8 +2154,8 @@ qmDequeueTxPacketsFromGlobalQueue(IN struct ADAPTER *prAdapter,
  * \return The list of dequeued TX packets
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+struct MSDU_INFO *qmDequeueTxPackets(struct ADAPTER *prAdapter,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 	int32_t i;
 	struct MSDU_INFO *prReturnedPacketListHead;
@@ -2253,8 +2253,8 @@ struct MSDU_INFO *qmDequeueTxPackets(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct MSDU_INFO *qmDequeueTxPacketsMthread(
-	IN struct ADAPTER *prAdapter,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+	struct ADAPTER *prAdapter,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 
 	/* INT_32 i; */
@@ -2312,9 +2312,9 @@ struct MSDU_INFO *qmDequeueTxPacketsMthread(
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-_qmAdjustTcQuotasMthread_PLE(IN struct ADAPTER *prAdapter,
-	OUT struct TX_TCQ_ADJUST *prTcqAdjust,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+_qmAdjustTcQuotasMthread_PLE(struct ADAPTER *prAdapter,
+	struct TX_TCQ_ADJUST *prTcqAdjust,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	uint32_t i;
@@ -2443,9 +2443,9 @@ _qmAdjustTcQuotasMthread_PLE(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-qmAdjustTcQuotasMthread(IN struct ADAPTER *prAdapter,
-	OUT struct TX_TCQ_ADJUST *prTcqAdjust,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+qmAdjustTcQuotasMthread(struct ADAPTER *prAdapter,
+	struct TX_TCQ_ADJUST *prTcqAdjust,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	uint32_t i;
@@ -2617,9 +2617,9 @@ qmAdjustTcQuotasMthread(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
-	OUT struct TX_TCQ_ADJUST *prTcqAdjust,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
+	struct TX_TCQ_ADJUST *prTcqAdjust,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 	uint8_t i;
 	int32_t i4pages;
@@ -2753,9 +2753,9 @@ void qmAdjustTcQuotaPle(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t qmAdjustTcQuotas(IN struct ADAPTER *prAdapter,
-	OUT struct TX_TCQ_ADJUST *prTcqAdjust,
-	IN struct TX_TCQ_STATUS *prTcqStatus)
+u_int8_t qmAdjustTcQuotas(struct ADAPTER *prAdapter,
+	struct TX_TCQ_ADJUST *prTcqAdjust,
+	struct TX_TCQ_STATUS *prTcqStatus)
 {
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	uint32_t i;
@@ -2873,7 +2873,7 @@ void qmCalAveQLen(struct QUE_MGT *prQM, uint32_t u4Tc, uint32_t u4CurrQueLen)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter)
+void qmUpdateAverageTxQueLen(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Tc, u4StaRecIdx;
 	struct STA_RECORD *prStaRec;
@@ -2994,10 +2994,10 @@ void qmUpdateAverageTxQueLen(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-void qmAllocateResidualTcResource(IN struct ADAPTER *prAdapter,
-	IN int32_t *ai4TcResDemand,
-	IN uint32_t *pu4ResidualResource,
-	IN uint32_t *pu4ShareCount)
+void qmAllocateResidualTcResource(struct ADAPTER *prAdapter,
+	int32_t *ai4TcResDemand,
+	uint32_t *pu4ResidualResource,
+	uint32_t *pu4ShareCount)
 {
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	uint32_t u4Share = 0;
@@ -3106,7 +3106,7 @@ void qmAllocateResidualTcResource(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmReassignTcResource(IN struct ADAPTER *prAdapter)
+void qmReassignTcResource(struct ADAPTER *prAdapter)
 {
 	int32_t i4TotalResourceDemand = 0;
 	uint32_t u4ResidualResource = 0;
@@ -3286,7 +3286,7 @@ void qmReassignTcResource(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmDoAdaptiveTcResourceCtrl(IN struct ADAPTER	*prAdapter)
+void qmDoAdaptiveTcResourceCtrl(struct ADAPTER	*prAdapter)
 {
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
@@ -3353,8 +3353,8 @@ void qmDoAdaptiveTcResourceCtrl(IN struct ADAPTER	*prAdapter)
 }
 
 #if QM_FAST_TC_RESOURCE_CTRL
-void qmCheckForFastTcResourceCtrl(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucTc)
+void qmCheckForFastTcResourceCtrl(struct ADAPTER *prAdapter,
+	uint8_t ucTc)
 {
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	u_int8_t fgTrigger = FALSE;
@@ -3382,10 +3382,10 @@ void qmCheckForFastTcResourceCtrl(IN struct ADAPTER *prAdapter,
 #endif
 
 uint32_t gmGetDequeueQuota(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN struct BSS_INFO *prBssInfo,
-	IN uint32_t			u4TotalQuota
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prBssInfo,
+	uint32_t			u4TotalQuota
 )
 {
 	uint32_t	u4Weight = 100;
@@ -3450,15 +3450,15 @@ uint32_t gmGetDequeueQuota(
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmInitRxQueues(IN struct ADAPTER *prAdapter)
+void qmInitRxQueues(struct ADAPTER *prAdapter)
 {
 	/* DbgPrint("QM: Enter qmInitRxQueues()\n"); */
 	/* TODO */
 }
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-u_int8_t qmHandleRroPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+u_int8_t qmHandleRroPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	u_int8_t fgDrop = FALSE;
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
@@ -3494,8 +3494,8 @@ u_int8_t qmHandleRroPkt(IN struct ADAPTER *prAdapter,
  * \return The list of packets which are not buffered for reordering
  */
 /*----------------------------------------------------------------------------*/
-struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfbListHead)
+struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfbListHead)
 {
 
 #if CFG_RX_REORDERING_ENABLED
@@ -4060,8 +4060,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
  * \return TRUE when we need to drop it
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t qmDetectRxInvalidEAPOL(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+u_int8_t qmDetectRxInvalidEAPOL(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucPkt = NULL;
 	uint8_t ucBssIndex;
@@ -4135,8 +4135,8 @@ u_int8_t qmDetectRxInvalidEAPOL(IN struct ADAPTER *prAdapter,
  * \return TRUE when we find an amsdu attack
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t qmAmsduAttackDetection(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	u_int8_t fgDrop = FALSE;
 	uint8_t aucTaAddr[MAC_ADDR_LEN];
@@ -4324,9 +4324,9 @@ static u_int8_t needFlushReordering(struct RX_BA_ENTRY *prReorderQueParm,
 	return FALSE;
 }
 
-static void checkToFlushReordering(IN struct ADAPTER *prAdapter,
-				IN struct RX_BA_ENTRY *prReorderQueParm,
-				IN struct RX_CTRL *prRxCtrl)
+static void checkToFlushReordering(struct ADAPTER *prAdapter,
+				struct RX_BA_ENTRY *prReorderQueParm,
+				struct RX_CTRL *prRxCtrl)
 {
 #if CFG_SUPPORT_RX_FLUSH_REORDERING
 #if CFG_SUPPORT_RX_CACHE_INDEX
@@ -4379,9 +4379,9 @@ static void checkToFlushReordering(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	OUT struct QUE *prReturnedQue)
+void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct QUE *prReturnedQue)
 {
 
 	struct STA_RECORD *prStaRec;
@@ -4515,8 +4515,8 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 		checkToFlushReordering(prAdapter, prReorderQueParm, prRxCtrl);
 }
 
-void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue)
+void qmProcessBarFrame(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, struct QUE *prReturnedQue)
 {
 	struct CTRL_BAR_FRAME *prBarCtrlFrame;
 
@@ -4558,8 +4558,8 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
  * log only start and end SN by checking whether there is gap between current
  * dropping SN and the last dropped SN.
  */
-static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
-		IN struct RX_BA_ENTRY *prReorderQueParm,
+static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
+		struct RX_BA_ENTRY *prReorderQueParm,
 		uint8_t ucTid, uint16_t u2BarSSN,
 		uint16_t u2SeqNo, uint16_t u2WinStart, uint16_t u2WinEnd)
 {
@@ -4585,10 +4585,10 @@ static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
 		       u2SeqNo, u2WinStart, u2WinEnd, 0, u2BarSSN, u8Count);
 }
 
-void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	OUT struct QUE *prReturnedQue)
+void qmInsertReorderPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
 {
 	uint16_t u2SeqNo;
 	uint16_t u2WinStart;
@@ -4804,8 +4804,8 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
-				IN const struct SW_RFB *prSwRfb)
+static void clearReorderingIndexCache(struct RX_BA_ENTRY *prReorderQueParm,
+				const struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	uint16_t u2SSN = prSwRfb->u2SSN & HALF_SEQ_MASK;
@@ -4816,8 +4816,8 @@ static void clearReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
 #endif
 }
 
-static void setReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
-				IN struct SW_RFB *prSwRfb)
+static void setReorderingIndexCache(struct RX_BA_ENTRY *prReorderQueParm,
+				struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	uint16_t u2SSN = prSwRfb->u2SSN & HALF_SEQ_MASK;
@@ -4834,8 +4834,8 @@ static void setReorderingIndexCache(IN struct RX_BA_ENTRY *prReorderQueParm,
  * if not found, return the head of the list as a fallback solution.
  */
 static struct SW_RFB *getReorderingIndexCache(
-				IN struct RX_BA_ENTRY *prReorderQueParm,
-				IN const struct SW_RFB *prSwRfb)
+				struct RX_BA_ENTRY *prReorderQueParm,
+				const struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_CACHE_INDEX
 	uint16_t i;
@@ -4854,10 +4854,10 @@ static struct SW_RFB *getReorderingIndexCache(
 	return (struct SW_RFB *)QUEUE_GET_HEAD(prReorderQue);
 }
 
-void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	OUT struct QUE *prReturnedQue)
+void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
 {
 	struct SW_RFB *prExaminedQueuedSwRfb;
 	struct QUE *prReorderQue;
@@ -4984,10 +4984,10 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	OUT struct QUE *prReturnedQue)
+void qmInsertFallAheadReorderPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
 {
 	struct QUE *prReorderQue;
 
@@ -5016,10 +5016,10 @@ void qmInsertFallAheadReorderPkt(IN struct ADAPTER *prAdapter,
 	setReorderingIndexCache(prReorderQueParm, prSwRfb);
 }
 
-void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue,
-	IN enum ENUM_RX_STATISTIC_COUNTER eRxCounter)
+void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct SW_RFB *prSwRfb, struct QUE *prReturnedQue,
+	enum ENUM_RX_STATISTIC_COUNTER eRxCounter)
 {
 	uint32_t u4PktCnt = 0;
 	/* RX reorder for one MSDU in AMSDU issue */
@@ -5048,9 +5048,9 @@ void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
 	RX_ADD_CNT(&prAdapter->rRxCtrl, eRxCounter, u4PktCnt);
 }
 
-void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	OUT struct QUE *prReturnedQue)
+void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
 {
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
@@ -5213,9 +5213,9 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinSize - 1);
 }
 
-void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
-	IN struct RX_BA_ENTRY *prReorderQueParm,
-	OUT struct QUE *prReturnedQue)
+void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	struct QUE *prReturnedQue)
 {
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
@@ -5604,7 +5604,7 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg)
+void qmHandleMailboxRxMessage(struct MAILBOX_MSG prMailboxRxMsg)
 {
 	/* DbgPrint("QM: Enter qmHandleMailboxRxMessage()\n"); */
 	/* TODO */
@@ -5620,8 +5620,8 @@ void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventTxAddBa(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct EVENT_TX_ADDBA *prEventTxAddBa;
@@ -5686,8 +5686,8 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventRxAddBa(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_RX_ADDBA *prEventRxAddBa;
 	struct STA_RECORD *prStaRec;
@@ -5723,8 +5723,8 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventRxDelBa(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_RX_DELBA *prEventRxDelBa;
 	struct STA_RECORD *prStaRec;
@@ -5752,7 +5752,7 @@ void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
 
 }
 
-struct RX_BA_ENTRY *qmLookupRxBaEntry(IN struct ADAPTER *prAdapter,
+struct RX_BA_ENTRY *qmLookupRxBaEntry(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIdx, uint8_t ucTid)
 {
 	int i;
@@ -5770,9 +5770,9 @@ struct RX_BA_ENTRY *qmLookupRxBaEntry(IN struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucStaRecIdx, IN uint8_t ucTid,
-	IN uint16_t u2WinStart, IN uint16_t u2WinSize)
+u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIdx, uint8_t ucTid,
+	uint16_t u2WinStart, uint16_t u2WinSize)
 {
 	int i;
 	struct RX_BA_ENTRY *prRxBaEntry = NULL;
@@ -5979,7 +5979,7 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 #endif
 }
 
-u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb)
+u_int8_t qmIsIndependentPkt(struct SW_RFB *prSwRfb)
 {
 
 	void *pvPacket = NULL;
@@ -5998,8 +5998,8 @@ u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb)
 	return FALSE;
 }
 
-void mqmParseAssocReqWmmIe(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucIE, IN struct STA_RECORD *prStaRec)
+void mqmParseAssocReqWmmIe(struct ADAPTER *prAdapter,
+	uint8_t *pucIE, struct STA_RECORD *prStaRec)
 {
 	struct IE_WMM_INFO *prIeWmmInfo;
 	uint8_t ucQosInfo;
@@ -6066,9 +6066,9 @@ void mqmParseAssocReqWmmIe(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmProcessAssocReq(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
-	IN uint16_t u2IELength)
+void mqmProcessAssocReq(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	uint16_t u2IELength)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
@@ -6133,8 +6133,8 @@ void mqmProcessAssocReq(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void mqmParseAssocRspWmmIe(IN uint8_t *pucIE,
-	IN struct STA_RECORD *prStaRec)
+void mqmParseAssocRspWmmIe(uint8_t *pucIE,
+	struct STA_RECORD *prStaRec)
 {
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 
@@ -6189,9 +6189,9 @@ void mqmParseAssocRspWmmIe(IN uint8_t *pucIE,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
-	IN uint16_t u2IELength)
+void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	uint16_t u2IELength)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
@@ -6316,9 +6316,9 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmProcessBcn(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
-	IN uint16_t u2IELength)
+void mqmProcessBcn(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	uint16_t u2IELength)
 {
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgNewParameter;
@@ -6384,8 +6384,8 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 }
 
 
-u_int8_t mqmUpdateEdcaParameters(IN struct BSS_INFO	*prBssInfo,
-	IN uint8_t *pucIE, IN u_int8_t fgForceOverride)
+u_int8_t mqmUpdateEdcaParameters(struct BSS_INFO	*prBssInfo,
+	uint8_t *pucIE, u_int8_t fgForceOverride)
 {
 	struct AC_QUE_PARMS *prAcQueParams;
 	struct IE_WMM_PARAM *prIeWmmParam;
@@ -6609,9 +6609,9 @@ mqmParseMUEdcaParams(
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-mqmParseEdcaParameters(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
-	IN uint16_t u2IELength, IN u_int8_t fgForceOverride)
+mqmParseEdcaParameters(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *pucIE,
+	uint16_t u2IELength, u_int8_t fgForceOverride)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
@@ -6678,8 +6678,8 @@ mqmParseEdcaParameters(IN struct ADAPTER *prAdapter,
 	return fgNewParameter;
 }
 
-u_int8_t mqmCompareEdcaParameters(IN struct IE_WMM_PARAM *prIeWmmParam,
-	IN struct BSS_INFO *prBssInfo)
+u_int8_t mqmCompareEdcaParameters(struct IE_WMM_PARAM *prIeWmmParam,
+	struct BSS_INFO *prBssInfo)
 {
 	struct AC_QUE_PARMS *prAcQueParams;
 	struct WMM_AC_PARAM *prWmmAcParams;
@@ -6739,9 +6739,9 @@ u_int8_t mqmCompareEdcaParameters(IN struct IE_WMM_PARAM *prIeWmmParam,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmFillAcQueParam(IN struct IE_WMM_PARAM *prIeWmmParam,
-	IN uint32_t u4AcOffset,
-	OUT struct AC_QUE_PARMS *prAcQueParams)
+void mqmFillAcQueParam(struct IE_WMM_PARAM *prIeWmmParam,
+	uint32_t u4AcOffset,
+	struct AC_QUE_PARMS *prAcQueParams)
 {
 	struct WMM_AC_PARAM *prAcParam =
 		&prIeWmmParam->arAcParam[u4AcOffset];
@@ -6778,9 +6778,9 @@ void mqmFillAcQueParam(IN struct IE_WMM_PARAM *prIeWmmParam,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prScanResult,
-	OUT struct STA_RECORD *prStaRec)
+void mqmProcessScanResult(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prScanResult,
+	struct STA_RECORD *prStaRec)
 {
 	uint8_t *pucIE;
 	uint16_t u2IELength;
@@ -7064,8 +7064,8 @@ mqmGenerateWmmInfoIEByStaRec(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void mqmGenerateWmmInfoIE(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void mqmGenerateWmmInfoIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
@@ -7103,8 +7103,8 @@ void mqmGenerateWmmInfoIE(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void mqmGenerateWmmParamIE(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void mqmGenerateWmmParamIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_WMM_PARAM *prIeWmmParam;
 
@@ -7339,7 +7339,7 @@ uint32_t mqmGenerateWmmParamIEByParam(struct ADAPTER *prAdapter,
 
 #endif
 
-u_int8_t isProbeResponse(IN struct MSDU_INFO *prMgmtTxMsdu)
+u_int8_t isProbeResponse(struct MSDU_INFO *prMgmtTxMsdu)
 {
 	struct WLAN_MAC_HEADER *prWlanHdr =
 		(struct WLAN_MAC_HEADER *) NULL;
@@ -7353,11 +7353,11 @@ u_int8_t isProbeResponse(IN struct MSDU_INFO *prMgmtTxMsdu)
 }
 
 
-enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	IN uint8_t ucStaRecIdx, IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_FRAME_TYPE_IN_CMD_Q eFrameType,
-	IN uint16_t u2FrameLength)
+enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucStaRecIdx, struct MSDU_INFO *prMsduInfo,
+	enum ENUM_FRAME_TYPE_IN_CMD_Q eFrameType,
+	uint16_t u2FrameLength)
 {
 	enum ENUM_FRAME_ACTION eFrameAction = FRAME_ACTION_TX_PKT;
 	struct BSS_INFO *prBssInfo;
@@ -7506,8 +7506,8 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus;
 	struct BSS_INFO *prBssInfo;
@@ -7573,8 +7573,8 @@ void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventStaChangePsMode(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode;
 	struct STA_RECORD *prStaRec;
@@ -7628,8 +7628,8 @@ void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void qmHandleEventStaUpdateFreeQuota(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_STA_UPDATE_FREE_QUOTA
 		*prEventStaUpdateFreeQuota;
@@ -7677,9 +7677,9 @@ void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-qmUpdateFreeQuota(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec, IN uint8_t ucUpdateMode,
-	IN uint8_t ucFreeQuota)
+qmUpdateFreeQuota(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t ucUpdateMode,
+	uint8_t ucFreeQuota)
 {
 
 	uint8_t ucFreeQuotaForNonDelivery;
@@ -7784,7 +7784,7 @@ qmUpdateFreeQuota(IN struct ADAPTER *prAdapter,
  * \return The number of queued RX packets
  */
 /*----------------------------------------------------------------------------*/
-uint32_t qmGetRxReorderQueuedBufferCount(IN struct ADAPTER *prAdapter)
+uint32_t qmGetRxReorderQueuedBufferCount(struct ADAPTER *prAdapter)
 {
 	uint32_t i, u4Total;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
@@ -7811,8 +7811,8 @@ uint32_t qmGetRxReorderQueuedBufferCount(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max)
+uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
+	uint8_t *pucBuf, uint32_t u4Max)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct QUE_MGT *prQM;
@@ -8040,9 +8040,9 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-mqmSendDelBaFrame(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgIsInitiator, IN struct STA_RECORD *prStaRec,
-	IN uint32_t u4Tid, IN uint32_t u4ReasonCode)
+mqmSendDelBaFrame(struct ADAPTER *prAdapter,
+	u_int8_t fgIsInitiator, struct STA_RECORD *prStaRec,
+	uint32_t u4Tid, uint32_t u4ReasonCode)
 {
 
 	struct MSDU_INFO *prTxMsduInfo;
@@ -8146,9 +8146,9 @@ mqmSendDelBaFrame(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-mqmCallbackAddBaRspSent(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+mqmCallbackAddBaRspSent(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct RX_BA_ENTRY *prRxBaEntry;
 	struct STA_RECORD *prStaRec;
@@ -8250,8 +8250,8 @@ mqmCallbackAddBaRspSent(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
-	IN uintptr_t ulParamPtr)
+void mqmTimeoutCheckIdleRxBa(struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr)
 {
 	int8_t i;
 	struct RX_BA_ENTRY *prRxBa;
@@ -8349,9 +8349,9 @@ void mqmTimeoutCheckIdleRxBa(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-mqmRxModifyBaEntryStatus(IN struct ADAPTER *prAdapter,
-	IN struct RX_BA_ENTRY *prRxBaEntry,
-	IN enum ENUM_BA_ENTRY_STATUS eStatus)
+mqmRxModifyBaEntryStatus(struct ADAPTER *prAdapter,
+	struct RX_BA_ENTRY *prRxBaEntry,
+	enum ENUM_BA_ENTRY_STATUS eStatus)
 {
 	struct STA_RECORD *prStaRec;
 	struct QUE_MGT *prQM;
@@ -8503,8 +8503,8 @@ mqmRxModifyBaEntryStatus(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmHandleAddBaReq(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+void mqmHandleAddBaReq(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
@@ -8868,7 +8868,7 @@ void mqmHandleAddBaReq(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmHandleAddBaRsp(IN struct SW_RFB *prSwRfb)
+void mqmHandleAddBaRsp(struct SW_RFB *prSwRfb)
 {
 
 }
@@ -8882,7 +8882,7 @@ void mqmHandleAddBaRsp(IN struct SW_RFB *prSwRfb)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmHandleDelBa(IN struct SW_RFB *prSwRfb)
+void mqmHandleDelBa(struct SW_RFB *prSwRfb)
 {
 
 }
@@ -8896,8 +8896,8 @@ void mqmHandleDelBa(IN struct SW_RFB *prSwRfb)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmHandleBaActionFrame(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+void mqmHandleBaActionFrame(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prRxFrame;
 
@@ -9225,7 +9225,7 @@ void qmResetArpDetect(void)
 #endif
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
-void qmResetTcControlResource(IN struct ADAPTER *prAdapter)
+void qmResetTcControlResource(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Idx;
 	uint32_t u4TotalMinReservedTcResource = 0;
@@ -9471,7 +9471,7 @@ qmIsIPLayerPacket(uint8_t *pucPkt)
 }
 
 u_int8_t
-qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucData = (uint8_t *) prSwRfb->pvHeader;
 	uint8_t ucBssIndex
@@ -9650,9 +9650,9 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 	}
 }
 
-void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint16_t u2SSN,
-	OUT struct QUE *prReturnedQue)
+void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIdx, uint8_t ucTid, uint16_t u2SSN,
+	struct QUE *prReturnedQue)
 {
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prReorderQueParm;
@@ -9723,8 +9723,8 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 
 }
 
-void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
-			IN struct SW_RFB *prSwRfb, uint8_t ucBssIndex)
+void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb, uint8_t ucBssIndex)
 {
 	uint8_t *pPkt = NULL;
 	uint16_t u2EtherType;

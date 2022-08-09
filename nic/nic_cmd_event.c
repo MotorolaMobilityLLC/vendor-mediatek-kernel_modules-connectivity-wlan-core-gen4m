@@ -184,8 +184,8 @@ struct _TXM_CMD_EVENT_TEST_T grCmdInfoQueryTestBuffer;
  *                            F U N C T I O N   D A T A
  *******************************************************************************
  */
-void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryMcrRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
@@ -216,8 +216,8 @@ void nicCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryCfgRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct CMD_HEADER *prInCfgHeader;
@@ -245,9 +245,9 @@ void nicCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_QA_TOOL
-void nicCmdEventQueryRxStatistics(IN struct ADAPTER
-				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				  IN uint8_t *pucEventBuf)
+void nicCmdEventQueryRxStatistics(struct ADAPTER
+				  *prAdapter, struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf)
 {
 #if (CFG_SUPPORT_CONNAC3X == 0)
 	struct PARAM_CUSTOM_ACCESS_RX_STAT *prRxStatistics;
@@ -323,8 +323,8 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 }
 
 #if CFG_SUPPORT_TX_BF
-void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventPfmuDataRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -379,8 +379,8 @@ void nicCmdEventPfmuDataRead(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "======================================\n");
 }
 
-void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventPfmuTagRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -520,8 +520,8 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_MU_MIMO
-void nicCmdEventGetQd(IN struct ADAPTER *prAdapter,
-		      IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventGetQd(struct ADAPTER *prAdapter,
+		      struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -572,8 +572,8 @@ void nicCmdEventGetQd(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventGetCalcLq(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventGetCalcLq(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -629,8 +629,8 @@ void nicCmdEventGetCalcLq(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventGetCalcInitMcs(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventGetCalcInitMcs(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -708,9 +708,9 @@ void nicCmdEventGetCalcInitMcs(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
-void nicCmdEventQuerySwCtrlRead(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQuerySwCtrlRead(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct PARAM_CUSTOM_SW_CTRL_STRUCT *prSwCtrlInfo;
@@ -739,9 +739,9 @@ void nicCmdEventQuerySwCtrlRead(IN struct ADAPTER
 
 }
 
-void nicCmdEventQueryChipConfig(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQueryChipConfig(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo;
@@ -790,8 +790,8 @@ void nicCmdEventQueryChipConfig(IN struct ADAPTER
 
 }
 
-void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventSetCommon(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -803,8 +803,8 @@ void nicCmdEventSetCommon(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventSetIpAddress(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4Count;
 
@@ -829,8 +829,8 @@ void nicCmdEventSetIpAddress(IN struct ADAPTER *prAdapter,
 }
 /* fos_change begin */
 #if CFG_SUPPORT_SET_IPV6_NETWORK
-void nicCmdEventSetIpv6Address(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventSetIpv6Address(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4Count;
 
@@ -855,9 +855,9 @@ void nicCmdEventSetIpv6Address(IN struct ADAPTER *prAdapter,
 #endif /* fos_change end */
 
 
-void nicCmdEventQueryRfTestATInfo(IN struct ADAPTER
-				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				  IN uint8_t *pucEventBuf)
+void nicCmdEventQueryRfTestATInfo(struct ADAPTER
+				  *prAdapter, struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf)
 {
 	union EVENT_TEST_STATUS *prTestStatus, *prQueryBuffer;
 	struct GLUE_INFO *prGlueInfo;
@@ -956,9 +956,9 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 		u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
-void nicCmdEventQueryStatistics(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQueryStatistics(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics;
 	struct EVENT_STATISTICS *prEventStatistics;
@@ -1063,8 +1063,8 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 }
 
 #if CFG_SUPPORT_LLS
-void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryLinkStats(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint16_t len = prCmdInfo->u4InformationBufferLength;
@@ -1097,8 +1097,8 @@ void nicCmdEventQueryLinkStats(IN struct ADAPTER *prAdapter,
  * call the command done handler, it will copy the data to returning buffer,
  * and OID complete the caller if needed.
  */
-void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent)
+void nicEventStatsLinkStats(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -1137,8 +1137,8 @@ void nicEventStatsLinkStats(IN struct ADAPTER *prAdapter,
 #endif
 
 
-void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryBugReport(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 #define BUG_REPORT_VERSION 1
 
@@ -1169,8 +1169,8 @@ void nicCmdEventQueryBugReport(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventEnterRfTest(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4Idx = 0;
 
@@ -1276,8 +1276,8 @@ void nicCmdEventEnterRfTest(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4Idx = 0;
 
@@ -1369,8 +1369,8 @@ void nicCmdEventLeaveRfTest(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicCmdEventQueryMcastAddr(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryMcastAddr(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -1405,9 +1405,9 @@ void nicCmdEventQueryMcastAddr(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicCmdEventQueryEepromRead(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQueryEepromRead(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *prEepromRdInfo;
@@ -1440,9 +1440,9 @@ void nicCmdEventQueryEepromRead(IN struct ADAPTER
 
 }
 
-void nicCmdEventSetStopSchedScan(IN struct ADAPTER
-				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				 IN uint8_t *pucEventBuf)
+void nicCmdEventSetStopSchedScan(struct ADAPTER
+				 *prAdapter, struct CMD_INFO *prCmdInfo,
+				 uint8_t *pucEventBuf)
 {
 	/*
 	 *  DBGLOG(SCN, INFO, "--->nicCmdEventSetStopSchedScan\n" ));
@@ -1471,9 +1471,9 @@ void nicCmdEventSetStopSchedScan(IN struct ADAPTER
 }
 
 #if (CFG_SUPPORT_PKT_OFLD == 1)
-void nicCmdEventQueryOfldInfo(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventQueryOfldInfo(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	uint32_t rOidStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4QueryInfoLen;
@@ -1538,8 +1538,8 @@ void nicCmdEventQueryOfldInfo(IN struct ADAPTER
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-void nicOidCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
-			    IN struct CMD_INFO *prCmdInfo)
+void nicOidCmdTimeoutCommon(struct ADAPTER *prAdapter,
+			    struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 
@@ -1560,8 +1560,8 @@ void nicOidCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
-			 IN struct CMD_INFO *prCmdInfo)
+void nicCmdTimeoutCommon(struct ADAPTER *prAdapter,
+			 struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 }
@@ -1578,8 +1578,8 @@ void nicCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicOidCmdEnterRFTestTimeout(IN struct ADAPTER
-				 *prAdapter, IN struct CMD_INFO *prCmdInfo)
+void nicOidCmdEnterRFTestTimeout(struct ADAPTER
+				 *prAdapter, struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 
@@ -1611,9 +1611,9 @@ void nicOidCmdEnterRFTestTimeout(IN struct ADAPTER
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventBatchScanResult(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo,
-				IN uint8_t *pucEventBuf)
+void nicCmdEventBatchScanResult(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct EVENT_BATCH_RESULT *prEventBatchResult;
@@ -1642,8 +1642,8 @@ void nicCmdEventBatchScanResult(IN struct ADAPTER
 }
 #endif
 
-void nicEventHifCtrlv2(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventHifCtrlv2(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 #if defined(_HIF_USB)
 	struct EVENT_HIF_CTRL *prEventHifCtrl;
@@ -1673,8 +1673,8 @@ void nicEventHifCtrlv2(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventHifCtrl(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_HIF_CTRL *prEventHifCtrl;
 	struct BUS_INFO *prBusInfo;
@@ -1765,8 +1765,8 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventBuildDateCode(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct EVENT_BUILD_DATE_CODE *prEvent;
@@ -1805,9 +1805,9 @@ void nicCmdEventBuildDateCode(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventQueryStaStatistics(IN struct ADAPTER
-				   *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				   IN uint8_t *pucEventBuf)
+void nicCmdEventQueryStaStatistics(struct ADAPTER
+				   *prAdapter, struct CMD_INFO *prCmdInfo,
+				   uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct EVENT_STA_STATISTICS *prEvent;
@@ -2104,9 +2104,9 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo,
-		IN uint8_t *pucEventBuf)
+void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf)
 {
 	struct EVENT_LTE_SAFE_CHN *prEvent;
 	struct PARAM_GET_CHN_INFO *prLteSafeChnInfo;
@@ -2169,8 +2169,8 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 			sizeof(struct PARAM_GET_CHN_INFO));
 }
 
-void nicEventRddPulseDump(IN struct ADAPTER *prAdapter,
-			  IN uint8_t *pucEventBuf)
+void nicEventRddPulseDump(struct ADAPTER *prAdapter,
+			  uint8_t *pucEventBuf)
 {
 	uint16_t u2Idx, u2PulseCnt;
 	struct EVENT_WIFI_RDD_TEST *prRddPulseEvent;
@@ -2214,8 +2214,8 @@ void nicEventRddPulseDump(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_MSP
-void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryWlanInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct PARAM_HW_WLAN_INFO *prWlanInfo;
 	struct EVENT_WLAN_INFO *prEventWlanInfo;
@@ -2293,8 +2293,8 @@ void nicCmdEventQueryWlanInfo(IN struct ADAPTER *prAdapter,
 }
 
 
-void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct PARAM_HW_MIB_INFO *prMibInfo;
 	struct EVENT_MIB_INFO *prEventMibInfo;
@@ -2331,8 +2331,8 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER *prAdapter,
-				      IN uint8_t *pucEventBuf)
+uint32_t nicEventQueryTxResourceEntry(struct ADAPTER *prAdapter,
+				      uint8_t *pucEventBuf)
 {
 	struct NIC_TX_RESOURCE *prTxResource;
 	uint32_t version = *((uint32_t *)pucEventBuf);
@@ -2372,8 +2372,8 @@ uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER *prAdapter,
-				      IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicEfuseAddr(struct ADAPTER *prAdapter,
+				      uint8_t *pucEventBuf)
 {
 	struct NIC_EFUSE_ADDRESS *prTxResource =
 		(struct NIC_EFUSE_ADDRESS *)pucEventBuf;
@@ -2393,8 +2393,8 @@ uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicCoexFeature(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct NIC_COEX_FEATURE *prCoexFeature =
 		(struct NIC_COEX_FEATURE *)pucEventBuf;
@@ -2409,8 +2409,8 @@ uint32_t nicCmdEventQueryNicCoexFeature(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventQueryNicCsumOffload(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct NIC_CSUM_OFFLOAD *prChecksumOffload =
 		(struct NIC_CSUM_OFFLOAD *)pucEventBuf;
@@ -2426,8 +2426,8 @@ uint32_t nicCmdEventQueryNicCsumOffload(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter,
-				IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapHwVersion(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CAP_HW_VERSION *prHwVer =
@@ -2444,8 +2444,8 @@ uint32_t nicCfgChipCapHwVersion(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipAdieHwVersion(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipAdieHwVersion(struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CAP_HW_ADIE_VERSION *prAdieHwVer =
@@ -2461,8 +2461,8 @@ uint32_t nicCfgChipAdieHwVersion(IN struct ADAPTER *prAdapter,
 }
 
 
-uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER *prAdapter,
-				IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapSwVersion(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf)
 {
 	struct CAP_SW_VERSION *prSwVer =
 		(struct CAP_SW_VERSION *)pucEventBuf;
@@ -2478,8 +2478,8 @@ uint32_t nicCfgChipCapSwVersion(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapMacAddr(IN struct ADAPTER *prAdapter,
-			      IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapMacAddr(struct ADAPTER *prAdapter,
+			      uint8_t *pucEventBuf)
 {
 	struct CAP_MAC_ADDR *prMacAddr = (struct CAP_MAC_ADDR *)pucEventBuf;
 	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
@@ -2495,8 +2495,8 @@ uint32_t nicCfgChipCapMacAddr(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
+			     uint8_t *pucEventBuf)
 {
 	struct CAP_PHY_CAP *prPhyCap = (struct CAP_PHY_CAP *)pucEventBuf;
 
@@ -2712,8 +2712,8 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
-					 IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipP2PCap(struct ADAPTER *prAdapter,
+					 uint8_t *pucEventBuf)
 {
 #if 0
 	struct CAP_PHY_CAP *prPhyCap =
@@ -2729,8 +2729,8 @@ uint32_t nicCfgChipP2PCap(IN struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
-uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
-				IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipPseRxQuota(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf)
 {
 	struct CAP_PSE_RX_QUOTA *prPseCap =
 	(struct CAP_PSE_RX_QUOTA *)pucEventBuf;
@@ -2774,8 +2774,8 @@ uint32_t nicCfgChipPseRxQuota(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventHostStatusEmiOffset(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct NIC_HOST_STATUS_EMI_OFFSET *prOffset =
 		(struct NIC_HOST_STATUS_EMI_OFFSET *)pucEventBuf;
@@ -2795,8 +2795,8 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_LLS
-uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 #if CFG_MTK_ANDROID_EMI
 	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
@@ -2900,8 +2900,8 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 
 	struct CAP_CASAN_LOAD_TYPE_T *prLoadType =
@@ -2918,8 +2918,8 @@ uint32_t nicCmdEventCasanLoadType(IN struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_FW_DOWNLOAD
 #if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
-uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapRedlInfo(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct CAP_REDL_INFO *prRedlInfo = (struct CAP_REDL_INFO *)pucEventBuf;
 
@@ -2932,8 +2932,8 @@ uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_MLR
-uint32_t nicCfgChipCapMlr(IN struct ADAPTER *prAdapter,
-			       IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapMlr(struct ADAPTER *prAdapter,
+			       uint8_t *pucEventBuf)
 {
 	struct CAP_MLR_CAP *prMLRCap =
 		(struct CAP_MLR_CAP *)pucEventBuf;
@@ -2952,8 +2952,8 @@ uint32_t nicCfgChipCapMlr(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct CAP_HOST_SUSPEND_INFO_T *prEvent =
 		(struct CAP_HOST_SUSPEND_INFO_T *)pucEventBuf;
@@ -2977,8 +2977,8 @@ uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_MSCS_SUPPORT
-uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
-			       IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapFastPath(struct ADAPTER *prAdapter,
+			       uint8_t *pucEventBuf)
 {
 	struct MSCS_CAP_FAST_PATH *prFastPathCap =
 		(struct MSCS_CAP_FAST_PATH *)pucEventBuf;
@@ -2995,8 +2995,8 @@ uint32_t nicCfgChipCapFastPath(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
-			     IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapMacCap(struct ADAPTER *prAdapter,
+			     uint8_t *pucEventBuf)
 {
 	struct CAP_MAC_CAP *prMacCap = (struct CAP_MAC_CAP *)pucEventBuf;
 
@@ -3029,33 +3029,33 @@ uint32_t nicCfgChipCapMacCap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapFrameBufCap(IN struct ADAPTER *prAdapter,
-				  IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapFrameBufCap(struct ADAPTER *prAdapter,
+				  uint8_t *pucEventBuf)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapBeamformCap(IN struct ADAPTER *prAdapter,
-				  IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapBeamformCap(struct ADAPTER *prAdapter,
+				  uint8_t *pucEventBuf)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapLocationCap(IN struct ADAPTER *prAdapter,
-				  IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapLocationCap(struct ADAPTER *prAdapter,
+				  uint8_t *pucEventBuf)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicCfgChipCapMuMimoCap(IN struct ADAPTER *prAdapter,
-				IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapMuMimoCap(struct ADAPTER *prAdapter,
+				uint8_t *pucEventBuf)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
 #if CFG_SUPPORT_ANT_SWAP
-uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCapAntSwpCap(struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf)
 {
 	struct CAP_ANTSWP *prAntSwpCap = (struct CAP_ANTSWP *)pucEventBuf;
 
@@ -3070,8 +3070,8 @@ uint32_t nicCfgChipCapAntSwpCap(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ANT_SWAP */
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-uint32_t nicCfgChipCap6GCap(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucEventBuf)
+uint32_t nicCfgChipCap6GCap(struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf)
 {
 	struct CAP_6G_CAP *pr6gCap = (struct CAP_6G_CAP *)pucEventBuf;
 
@@ -3113,8 +3113,8 @@ struct nicTxRsrcEvtHdlr nicTxRsrcEvtHdlrTbl[] = {
 #endif
 };
 
-uint32_t nicEventQueryTxResource(IN struct ADAPTER
-				 *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicEventQueryTxResource(struct ADAPTER
+				 *prAdapter, uint8_t *pucEventBuf)
 {
 	uint32_t i, i_max;
 	uint32_t version = *((uint32_t *)(pucEventBuf));
@@ -3140,8 +3140,8 @@ uint32_t nicEventQueryTxResource(IN struct ADAPTER
 	return WLAN_STATUS_NOT_SUPPORTED;
 }
 
-uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
-				    *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicEventQueryTxResource_v1(struct ADAPTER
+				    *prAdapter, uint8_t *pucEventBuf)
 {
 	struct tx_resource_report_v1 *pV1 =
 		(struct tx_resource_report_v1 *)pucEventBuf;
@@ -3177,15 +3177,15 @@ uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicEventQueryTxResource_v2(IN struct ADAPTER
-				    *prAdapter, IN uint8_t *pucEventBuf)
+uint32_t nicEventQueryTxResource_v2(struct ADAPTER
+				    *prAdapter, uint8_t *pucEventBuf)
 {
 	/* Follow V1 as default */
 	return nicEventQueryTxResource_v1(prAdapter, pucEventBuf);
 }
 
-void nicParsingNicCapV2(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Type, IN uint8_t *pucEventBuf)
+void nicParsingNicCapV2(struct ADAPTER *prAdapter,
+	uint32_t u4Type, uint8_t *pucEventBuf)
 {
 	uint32_t table_idx;
 
@@ -3203,8 +3203,8 @@ void nicParsingNicCapV2(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER *prAdapter,
-				     IN uint8_t *pucEventBuf)
+void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
+				     uint8_t *pucEventBuf)
 {
 	struct EVENT_NIC_CAPABILITY_V2 *prEventNicV2 =
 		(struct EVENT_NIC_CAPABILITY_V2 *)pucEventBuf;
@@ -3230,9 +3230,9 @@ void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
-void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
-				 IN struct CMD_INFO *prCmdInfo,
-				 IN uint8_t *pucEventBuf)
+void nicCmdEventQueryTxPowerInfo(struct ADAPTER *prAdapter,
+				 struct CMD_INFO *prCmdInfo,
+				 uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_TXPOWER_ALL_RATE_POWER_INFO_T *prEvent =
 			NULL;
@@ -3280,8 +3280,8 @@ void nicCmdEventQueryTxPowerInfo(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
+void nicEventLinkQuality(struct ADAPTER *prAdapter,
+			 struct WIFI_EVENT *prEvent)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CMD_INFO *prCmdInfo;
@@ -3353,7 +3353,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
+void nicExtEventReCalData(struct ADAPTER *prAdapter, uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_RECAL_DATA_T *prReCalData = NULL;
 	struct RECAL_INFO_T *prReCalInfo = NULL;
@@ -3518,8 +3518,8 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 }
 #endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
-void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucEventBuf)
+void nicExtEventICapIQData(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
 	uint32_t Idxi = 0, Idxj = 0, Idxk = 0;
@@ -3614,9 +3614,9 @@ void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)
-void nicExtCmdEventSolicitICapIQData(IN struct ADAPTER *prAdapter,
-					IN struct CMD_INFO *prCmdInfo,
-					IN uint8_t *pucEventBuf)
+void nicExtCmdEventSolicitICapIQData(struct ADAPTER *prAdapter,
+					struct CMD_INFO *prCmdInfo,
+					uint8_t *pucEventBuf)
 {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prTmpICapEvent = NULL;
@@ -3695,8 +3695,8 @@ void nicExtCmdEventSolicitICapIQData(IN struct ADAPTER *prAdapter,
 }
 #endif /* #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1) */
 
-uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
-			       IN struct WIFI_EVENT *prEvent)
+uint32_t nicRfTestEventHandler(struct ADAPTER *prAdapter,
+			       struct WIFI_EVENT *prEvent)
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct EXT_EVENT_RF_TEST_RESULT_T *prResult;
@@ -3766,8 +3766,8 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 	return u4QueryInfoLen;
 }
 
-void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
-			    IN struct WIFI_EVENT *prEvent)
+void nicEventLayer0ExtMagic(struct ADAPTER *prAdapter,
+			    struct WIFI_EVENT *prEvent)
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct CMD_INFO *prCmdInfo = NULL;
@@ -4092,8 +4092,8 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent)
+void nicEventMicErrorInfo(struct ADAPTER *prAdapter,
+			  struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_MIC_ERR_INFO *prMicError;
 	/* P_PARAM_AUTH_EVENT_T prAuthEvent; */
@@ -4142,23 +4142,23 @@ void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventScanDone(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventScanDone(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	scnEventScanDone(prAdapter,
 			 (struct EVENT_SCAN_DONE *) (prEvent->aucBuffer), TRUE);
 }
 
-void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent)
+void nicEventSchedScanDone(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
 {
 	DBGLOG(INIT, INFO, "EVENT_ID_SCHED_SCAN_DONE\n");
 	scnEventSchedScanDone(prAdapter,
 		(struct EVENT_SCHED_SCAN_DONE *) (prEvent->aucBuffer));
 }
 
-void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent)
+void nicEventSleepyNotify(struct ADAPTER *prAdapter,
+			  struct WIFI_EVENT *prEvent)
 {
 #if !defined(_HIF_USB)
 	struct EVENT_SLEEPY_INFO *prEventSleepyNotify;
@@ -4176,8 +4176,8 @@ void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventBtOverWifi(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 #if CFG_ENABLE_BT_OVER_WIFI
 	uint8_t aucTmp[sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(
@@ -4229,8 +4229,8 @@ void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventStatistics(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventStatistics(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -4256,8 +4256,8 @@ void nicEventStatistics(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventTputFactorHandler(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 #define EVENT_HDR_SIZE              OFFSET_OF(struct WIFI_EVENT, aucBuffer)
 #define TPUT_FACTOR_DUMP_LINE_SIZE  16
@@ -4396,8 +4396,8 @@ void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, WARN, "tputf> FEND\n");
 }
 
-void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventWlanInfo(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -4424,8 +4424,8 @@ void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventMibInfo(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventMibInfo(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -4463,7 +4463,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 *         false	if the beacon timeout event needs to be ignored
 */
 /*----------------------------------------------------------------------------*/
-bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
+bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	uint8_t ucBcnTimeoutReason, uint8_t *ucDisconnectReason,
 	uint8_t ucBssIdx)
 {
@@ -4544,8 +4544,8 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 	return bValid;
 }
 
-void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
-			   IN struct WIFI_EVENT *prEvent)
+void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
+			   struct WIFI_EVENT *prEvent)
 {
 	DBGLOG(NIC, INFO, "EVENT_ID_BSS_BEACON_TIMEOUT\n");
 
@@ -4632,8 +4632,8 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
+			     struct WIFI_EVENT *prEvent)
 {
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
@@ -4658,8 +4658,8 @@ void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
+void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
+			     struct WIFI_EVENT *prEvent)
 {
 	if (prAdapter->fgDisStaAgingTimeoutDetection == FALSE) {
 		struct EVENT_STA_AGING_TIMEOUT *prEventStaAgingTimeout;
@@ -4696,8 +4696,8 @@ void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 	/* gDisStaAgingTimeoutDetection */
 }
 
-void nicEventApObssStatus(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent)
+void nicEventApObssStatus(struct ADAPTER *prAdapter,
+			  struct WIFI_EVENT *prEvent)
 {
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered)
@@ -4706,8 +4706,8 @@ void nicEventApObssStatus(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventRoamingStatus(IN struct ADAPTER *prAdapter,
-			   IN struct WIFI_EVENT *prEvent)
+void nicEventRoamingStatus(struct ADAPTER *prAdapter,
+			   struct WIFI_EVENT *prEvent)
 {
 #if CFG_SUPPORT_ROAMING
 	struct CMD_ROAMING_TRANSIT *prTransit;
@@ -4717,8 +4717,8 @@ void nicEventRoamingStatus(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ROAMING */
 }
 
-void nicEventSendDeauth(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventSendDeauth(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 	struct SW_RFB rSwRfb;
 
@@ -4743,8 +4743,8 @@ void nicEventSendDeauth(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventUpdateRddStatus(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateRddStatus(struct ADAPTER *prAdapter,
+			     struct WIFI_EVENT *prEvent)
 {
 #if CFG_SUPPORT_RDD_TEST_MODE
 	struct EVENT_RDD_STATUS *prEventRddStatus;
@@ -4756,14 +4756,14 @@ void nicEventUpdateRddStatus(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventUpdateBwcsStatus(IN struct ADAPTER *prAdapter,
-			      IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateBwcsStatus(struct ADAPTER *prAdapter,
+			      struct WIFI_EVENT *prEvent)
 {
 	DBGLOG(RSN, EVENT, "not support");
 }
 
-void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
-			    IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateBcmDebug(struct ADAPTER *prAdapter,
+			    struct WIFI_EVENT *prEvent)
 {
 	struct PTA_IPC *prEventBwcsStatus;
 
@@ -4778,8 +4778,8 @@ void nicEventUpdateBcmDebug(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
+void nicEventAddPkeyDone(struct ADAPTER *prAdapter,
+			 struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_ADD_KEY_DONE_INFO *prKeyDone;
 	struct STA_RECORD *prStaRec = NULL;
@@ -4839,8 +4839,8 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventDebugMsg(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_DEBUG_MSG *prEventDebugMsg;
 	uint8_t ucMsgType;
@@ -4905,16 +4905,16 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
 }
 
-void nicEventTdls(IN struct ADAPTER *prAdapter,
-		  IN struct WIFI_EVENT *prEvent)
+void nicEventTdls(struct ADAPTER *prAdapter,
+		  struct WIFI_EVENT *prEvent)
 {
 	TdlsexEventHandle(prAdapter->prGlueInfo,
 			  (uint8_t *)prEvent->aucBuffer,
 			  (uint32_t)(prEvent->u2PacketLength - 8));
 }
 
-void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+void nicEventRssiMonitor(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
 {
 	int32_t rssi = 0;
 
@@ -4924,8 +4924,8 @@ void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 		aisGetDefaultLinkBssIndex(prAdapter), rssi);
 }
 
-void nicEventDumpMem(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventDumpMem(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -4950,8 +4950,8 @@ void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_CE_ASSERT_DUMP == 1)
-void nicEventAssertDump(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventAssertDump(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	char aucVersionBuf[128];
@@ -5056,8 +5056,8 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent)
+void nicEventRddSendPulse(struct ADAPTER *prAdapter,
+			  struct WIFI_EVENT *prEvent)
 {
 	DBGLOG(RLM, INFO, "%s: EVENT_ID_RDD_SEND_PULSE\n",
 	       __func__);
@@ -5065,8 +5065,8 @@ void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 	nicEventRddPulseDump(prAdapter, prEvent->aucBuffer);
 }
 
-void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
-			       IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateCoexPhyrate(struct ADAPTER *prAdapter,
+			       struct WIFI_EVENT *prEvent)
 {
 	uint8_t i, j;
 	struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate;
@@ -5103,8 +5103,8 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 	       prAdapter->ucSmartGearWfPathSupport);
 }
 
-void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
-			      IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
+			      struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_COEX_STATUS *prEventCoexStatus;
 	struct STA_RECORD *prStaRec;
@@ -5209,8 +5209,8 @@ void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 }
 
 
-void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryCnmInfo(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct PARAM_GET_CNM_T *prCnmInfoQuery = NULL;
 	struct PARAM_GET_CNM_T *prCnmInfoEvent = NULL;
@@ -5235,8 +5235,8 @@ void nicCmdEventQueryCnmInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventCoexCtrl(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventCoexCtrl(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -5257,8 +5257,8 @@ void nicEventCoexCtrl(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventCnmInfo(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -5278,8 +5278,8 @@ void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventReportUEvent(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_REPORT_U_EVENT *prEventData;
 
@@ -5293,7 +5293,7 @@ void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_REPLAY_DETECTION
-void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
+void nicCmdEventDetectReplayInfo(struct ADAPTER *prAdapter,
 		uint8_t ucKeyId, uint8_t ucKeyType, uint8_t ucBssIdx)
 {
 	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
@@ -5319,8 +5319,8 @@ void nicCmdEventDetectReplayInfo(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventSetAddKey(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct WIFI_CMD *prWifiCmd = NULL;
 	struct CMD_802_11_KEY *prCmdKey = NULL;
@@ -5347,8 +5347,8 @@ void nicCmdEventSetAddKey(IN struct ADAPTER *prAdapter,
 			prCmdKey->ucKeyType, prCmdKey->ucBssIdx);
 	}
 }
-void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
-			       IN struct CMD_INFO *prCmdInfo)
+void nicOidCmdTimeoutSetAddKey(struct ADAPTER *prAdapter,
+			       struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 
@@ -5362,8 +5362,8 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 }
 #endif
 #if (CFG_WOW_SUPPORT == 1)
-void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent)
+void nicEventWowWakeUpReason(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_WOW_WAKEUP_REASON_INFO *prWakeUpReason;
 	struct GLUE_INFO *prGlueInfo;
@@ -5432,8 +5432,8 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
  * @retval none
  */
 /*----------------------------------------------------------------------------*/
-void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
-		  IN struct WIFI_EVENT *prEvent)
+void nicEventUpdateLowLatencyInfoStatus(struct ADAPTER *prAdapter,
+		  struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_LOW_LATENCY_INFO *prEvtLowLatencyInfo;
 	struct REAL_TIME rTm;
@@ -5528,7 +5528,7 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_NAN
-uint32_t nicDumpTlv(IN void *prCmdBuffer)
+uint32_t nicDumpTlv(void *prCmdBuffer)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
@@ -5567,7 +5567,7 @@ uint32_t nicDumpTlv(IN void *prCmdBuffer)
 }
 
 struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
-		   IN uint16_t u2TargetTlvElement, IN void *prCmdBuffer)
+		   uint16_t u2TargetTlvElement, void *prCmdBuffer)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
@@ -5604,8 +5604,8 @@ struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
 	return prTlvElement;
 }
 
-uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
-		    IN uint32_t prCmdBufferLen, IN void *prCmdBuffer)
+uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
+		    uint32_t prCmdBufferLen, void *prCmdBuffer)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
@@ -5645,8 +5645,8 @@ uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
 	return WLAN_STATUS_SUCCESS;
 }
 
-void nicNanEventTestProcess(IN struct ADAPTER *prAdapter,
-		       IN struct WIFI_EVENT *prEvent)
+void nicNanEventTestProcess(struct ADAPTER *prAdapter,
+		       struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -5680,7 +5680,7 @@ void nicNanEventTestProcess(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicNanEventSTATxCTL(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+void nicNanEventSTATxCTL(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct EVENT_UPDATE_NAN_TX_STATUS *prUpdateTxStatus;
 
@@ -5688,8 +5688,8 @@ void nicNanEventSTATxCTL(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
 	qmUpdateFreeNANQouta(prAdapter, prUpdateTxStatus);
 }
 
-void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
-			 IN struct WIFI_EVENT *prEvent)
+void nicNanVendorEventHandler(struct ADAPTER *prAdapter,
+			 struct WIFI_EVENT *prEvent)
 {
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
@@ -5703,8 +5703,8 @@ void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
 struct NanMatchInd g_rDiscMatchInd;
 uint8_t g_u2IndPubId;
 
-void nicNanEventDiscoveryResult(IN struct ADAPTER *prAdapter,
-	    IN uint8_t *pcuEvtBuf)
+void nicNanEventDiscoveryResult(struct ADAPTER *prAdapter,
+	    uint8_t *pcuEvtBuf)
 {
 	struct NAN_DISCOVERY_EVENT *prDiscEvt;
 
@@ -5741,7 +5741,7 @@ void nicNanEventDiscoveryResult(IN struct ADAPTER *prAdapter,
 }
 
 struct NanFollowupInd rFollowInd;
-void nicNanReceiveEvent(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+void nicNanReceiveEvent(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NAN_FOLLOW_UP_EVENT *prDiscEvt;
 
@@ -5762,7 +5762,7 @@ void nicNanReceiveEvent(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
 				sizeof(struct NanFollowupInd));
 }
 
-void nicNanRepliedEvnt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+void nicNanRepliedEvnt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NanPublishRepliedInd rRepliedInd;
 	struct NAN_REPLIED_EVENT *prRepliedEvt;
@@ -5777,8 +5777,8 @@ void nicNanRepliedEvnt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
 				sizeof(struct NanPublishRepliedInd));
 }
 
-void nicNanPublishTerminateEvt(IN struct ADAPTER *prAdapter,
-		   IN uint8_t *pcuEvtBuf)
+void nicNanPublishTerminateEvt(struct ADAPTER *prAdapter,
+		   uint8_t *pcuEvtBuf)
 {
 	struct NanPublishTerminatedInd rPubTerminatEvt;
 	struct NAN_PUBLISH_TERMINATE_EVENT *prPubTerEvt;
@@ -5791,8 +5791,8 @@ void nicNanPublishTerminateEvt(IN struct ADAPTER *prAdapter,
 				sizeof(struct NanPublishTerminatedInd));
 }
 
-void nicNanSubscribeTerminateEvt(IN struct ADAPTER *prAdapter,
-			    IN uint8_t *pcuEvtBuf)
+void nicNanSubscribeTerminateEvt(struct ADAPTER *prAdapter,
+			    uint8_t *pcuEvtBuf)
 {
 	struct NanSubscribeTerminatedInd rSubTerminatEvt;
 	struct NAN_SUBSCRIBE_TERMINATE_EVENT *pSubTerEvt;
@@ -5805,7 +5805,7 @@ void nicNanSubscribeTerminateEvt(IN struct ADAPTER *prAdapter,
 				sizeof(struct NanSubscribeTerminatedInd));
 }
 
-void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NAN_EVT_NDL_FLOW_CTRL *prFlowCtrlEvt;
 	struct STA_RECORD *prStaRec;
@@ -5857,8 +5857,8 @@ void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
 	}
 }
 
-void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicNanEventDispatcher(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
@@ -5876,8 +5876,8 @@ void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
 	}
 }
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
-void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicNanIOEventHandler(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	uint32_t u4SubEvent;
@@ -5948,8 +5948,8 @@ void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
 }
 
 #else
-void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicNanIOEventHandler(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
@@ -6034,8 +6034,8 @@ void nicNanGetCmdInfoQueryTestBuffer(
 		(struct _TXM_CMD_EVENT_TEST_T *)&grCmdInfoQueryTestBuffer;
 }
 
-void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
-	    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicNanTestQueryInfoDone(struct ADAPTER *prAdapter,
+	    struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
@@ -6097,9 +6097,9 @@ void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
-			IN struct STA_RECORD *prStaRec, IN uint8_t ucTid,
-			IN uint16_t u2WinSize, IN uint16_t u2WinStart)
+void nicEventHandleAddBa(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec, uint8_t ucTid,
+			uint16_t u2WinSize, uint16_t u2WinStart)
 {
 	if (!prStaRec) {
 		/* Invalid STA_REC index, discard the event packet */
@@ -6127,8 +6127,8 @@ void nicEventHandleAddBa(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
-void nicCmdEventQueryDpdCache(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryDpdCache(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct EVENT_GET_DPD_CACHE *prEventDpdCache;
@@ -6174,8 +6174,8 @@ void nicCmdEventQueryDpdCache(IN struct ADAPTER *prAdapter,
 #endif /* CFG_WIFI_GET_DPD_CACHE */
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
-void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_BAR_DELAY *prEventStoredBAR;
 	struct SW_RFB *prRetSwRfb;
@@ -6242,8 +6242,8 @@ void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 #if (CFG_SUPPORT_TSF_SYNC == 1)
-void nicCmdEventLatchTSF(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventLatchTSF(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -6280,8 +6280,8 @@ void nicCmdEventLatchTSF(IN struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_COALESCING_INTERRUPT == 1)
-void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent)
+void nicEventCoalescingIntDone(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_PF_CF_COALESCING_INT_DONE *prEventCf;
 	struct BUS_INFO *prBusInfo;
@@ -6307,9 +6307,9 @@ void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-void nicCmdEventQuerySerInfo(IN struct ADAPTER *prAdapter,
-			     IN struct CMD_INFO *prCmdInfo,
-			     IN uint8_t *pucEventBuf)
+void nicCmdEventQuerySerInfo(struct ADAPTER *prAdapter,
+			     struct CMD_INFO *prCmdInfo,
+			     uint8_t *pucEventBuf)
 {
 	struct PARAM_SER_INFO_T *prQuerySerInfo = NULL;
 	struct EXT_EVENT_SER_T *prEventSer = NULL;
@@ -6343,8 +6343,8 @@ void nicCmdEventQuerySerInfo(IN struct ADAPTER *prAdapter,
 }
 
 #if (CFG_WIFI_ISO_DETECT == 1)
-void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryCoexIso(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -6385,9 +6385,9 @@ void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_WIFI_TXPWR_TBL_DUMP
-void nicCmdEventGetTxPwrTbl(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo,
-		IN uint8_t *pucEventBuf)
+void nicCmdEventGetTxPwrTbl(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -6445,8 +6445,8 @@ void nicCmdEventGetTxPwrTbl(IN struct ADAPTER *prAdapter,
 #endif /* CFG_WIFI_TXPWR_TBL_DUMP */
 
 #if (CFG_WIFI_GET_MCS_INFO == 1)
-void nicCmdEventQueryTxMcsInfo(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventQueryTxMcsInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct GLUE_INFO *prGlueInfo;
@@ -6512,8 +6512,8 @@ void nicCmdEventQueryTxMcsInfo(IN struct ADAPTER *prAdapter,
 
 }
 
-void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
-		     IN struct WIFI_EVENT *prEvent)
+void nicEventTxMcsInfo(struct ADAPTER *prAdapter,
+		     struct WIFI_EVENT *prEvent)
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -6535,8 +6535,8 @@ void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
 }
 #endif /* CFG_WIFI_GET_MCS_INFO */
 
-void nicCmdEventRttCapabilities(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void nicCmdEventRttCapabilities(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint32_t u4QueryInfoLen;
 	struct RTT_CAPABILITIES *capa =
@@ -6565,24 +6565,24 @@ void nicCmdEventRttCapabilities(IN struct ADAPTER *prAdapter,
 			capa->fgMcVersion);
 }
 
-void nicEventRttDone(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventRttDone(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	rttEventDone(prAdapter,
 		 (struct EVENT_RTT_DONE *) (prEvent->aucBuffer));
 }
 
-void nicEventRttResult(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void nicEventRttResult(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	rttEventResult(prAdapter,
 		 (struct EVENT_RTT_RESULT *) (prEvent->aucBuffer));
 }
 
 #if (CONFIG_WLAN_SERVICE == 1)
-void nicCmdEventListmode(IN struct ADAPTER
-				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
-				  IN uint8_t *pucEventBuf)
+void nicCmdEventListmode(struct ADAPTER
+				  *prAdapter, struct CMD_INFO *prCmdInfo,
+				  uint8_t *pucEventBuf)
 {
 	struct list_mode_event *prStatus;
 	struct GLUE_INFO *prGlueInfo;
@@ -6609,8 +6609,8 @@ void nicCmdEventListmode(IN struct ADAPTER
 #endif
 
 #if (CFG_VOLT_INFO == 1)
-void nicEventGetVnf(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent)
+void nicEventGetVnf(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_GET_VOLT_INFO_T *prEventVnf;
 

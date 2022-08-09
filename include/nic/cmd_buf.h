@@ -97,15 +97,15 @@ enum COMMAND_TYPE {
 	COMMAND_TYPE_NUM
 };
 
-typedef void(*PFN_CMD_DONE_HANDLER) (IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
+typedef void(*PFN_CMD_DONE_HANDLER) (struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
 
-typedef void(*PFN_CMD_TIMEOUT_HANDLER) (IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo);
+typedef void(*PFN_CMD_TIMEOUT_HANDLER) (struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo);
 
-typedef void(*PFN_HIF_TX_CMD_DONE_CB) (IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo);
+typedef void(*PFN_HIF_TX_CMD_DONE_CB) (struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo);
 
 struct CMD_INFO {
 	struct QUE_ENTRY rQueEntry;
@@ -169,26 +169,26 @@ struct CMD_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void cmdBufInitialize(IN struct ADAPTER *prAdapter);
+void cmdBufInitialize(struct ADAPTER *prAdapter);
 
 #if CFG_DBG_MGT_BUF
-struct CMD_INFO *cmdBufAllocateCmdInfoX(IN struct ADAPTER
-					   *prAdapter, IN uint32_t u4Length,
+struct CMD_INFO *cmdBufAllocateCmdInfoX(struct ADAPTER
+					   *prAdapter, uint32_t u4Length,
 					   uint8_t *fileAndLine);
 #else
-struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
-				       *prAdapter, IN uint32_t u4Length);
+struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
+				       *prAdapter, uint32_t u4Length);
 #endif
 
-void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
-		       IN struct CMD_INFO *prCmdInfo);
+void cmdBufFreeCmdInfo(struct ADAPTER *prAdapter,
+		       struct CMD_INFO *prCmdInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Routines for CMDs                                                          */
 /*----------------------------------------------------------------------------*/
 
 uint32_t
-wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
+wlanSendSetQueryCmd(struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
 		    u_int8_t fgSetQuery,
 		    u_int8_t fgNeedResp,
@@ -196,11 +196,11 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		    uint32_t u4SetQueryInfoLen,
-		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		    IN uint32_t u4SetQueryBufferLen);
+		    uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+		    uint32_t u4SetQueryBufferLen);
 
 uint32_t
-wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
+wlanSendSetQueryCmdAdv(struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
 		    uint8_t ucExtCID,
 		    u_int8_t fgSetQuery,
@@ -209,12 +209,12 @@ wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
 		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		    uint32_t u4SetQueryInfoLen,
-		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		    IN uint32_t u4SetQueryBufferLen,
+		    uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+		    uint32_t u4SetQueryBufferLen,
 		    enum EUNM_CMD_SEND_METHOD eMethod);
 
 uint32_t
-wlanSendSetQueryExtCmd(IN struct ADAPTER *prAdapter,
+wlanSendSetQueryExtCmd(struct ADAPTER *prAdapter,
 		       uint8_t ucCID,
 		       uint8_t ucExtCID,
 		       u_int8_t fgSetQuery,
@@ -223,30 +223,30 @@ wlanSendSetQueryExtCmd(IN struct ADAPTER *prAdapter,
 		       PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		       PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		       uint32_t u4SetQueryInfoLen,
-		       uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		       IN uint32_t u4SetQueryBufferLen);
+		       uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+		       uint32_t u4SetQueryBufferLen);
 
-uint32_t wlanSendInitSetQueryCmdImpl(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucCmdId,
-	IN void *pucCmdBuf,
-	IN uint32_t u4CmdSz,
-	IN u_int8_t fgWaitResp,
-	IN u_int8_t fgSkipCheckSeq,
-	IN uint8_t ucEvtId,
-	IN void *pucEvtBuf,
-	IN uint32_t u4EvtSz,
-	IN uint32_t u4EvtWaitInterval,
-	IN uint32_t u4EvtWaitTimeout);
+uint32_t wlanSendInitSetQueryCmdImpl(struct ADAPTER *prAdapter,
+	uint8_t ucCmdId,
+	void *pucCmdBuf,
+	uint32_t u4CmdSz,
+	u_int8_t fgWaitResp,
+	u_int8_t fgSkipCheckSeq,
+	uint8_t ucEvtId,
+	void *pucEvtBuf,
+	uint32_t u4EvtSz,
+	uint32_t u4EvtWaitInterval,
+	uint32_t u4EvtWaitTimeout);
 
-uint32_t wlanSendInitSetQueryCmd(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucCmdId,
-	IN void *pucCmdBuf,
-	IN uint32_t u4CmdSz,
-	IN u_int8_t fgWaitResp,
-	IN u_int8_t fgSkipCheckSeq,
-	IN uint8_t ucEvtId,
-	IN void *pucEvtBuf,
-	IN uint32_t u4EvtSz);
+uint32_t wlanSendInitSetQueryCmd(struct ADAPTER *prAdapter,
+	uint8_t ucCmdId,
+	void *pucCmdBuf,
+	uint32_t u4CmdSz,
+	u_int8_t fgWaitResp,
+	u_int8_t fgSkipCheckSeq,
+	uint8_t ucEvtId,
+	void *pucEvtBuf,
+	uint32_t u4EvtSz);
 
 void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			int8_t *queName);

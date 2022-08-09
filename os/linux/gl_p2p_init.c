@@ -275,7 +275,7 @@ uint8_t p2pGetMode()
 	return mode;
 }
 
-void p2pSetMode(IN uint8_t ucAPMode)
+void p2pSetMode(uint8_t ucAPMode)
 {
 	uint8_t *prAPInfName = AP_INF_NAME;
 	uint8_t *prP2PInfName = P2P_INF_NAME;

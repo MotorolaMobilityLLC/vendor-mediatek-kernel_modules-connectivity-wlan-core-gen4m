@@ -124,7 +124,7 @@ u_int8_t fgCmdDumpIsDone = FALSE;
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cmdBufInitialize(IN struct ADAPTER *prAdapter)
+void cmdBufInitialize(struct ADAPTER *prAdapter)
 {
 	struct CMD_INFO *prCmdInfo;
 	uint32_t i;
@@ -193,12 +193,12 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
  */
 /*----------------------------------------------------------------------------*/
 #if CFG_DBG_MGT_BUF
-struct CMD_INFO *cmdBufAllocateCmdInfoX(IN struct ADAPTER
-					   *prAdapter, IN uint32_t u4Length,
+struct CMD_INFO *cmdBufAllocateCmdInfoX(struct ADAPTER
+					   *prAdapter, uint32_t u4Length,
 					   uint8_t *fileAndLine)
 #else
-struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
-				       *prAdapter, IN uint32_t u4Length)
+struct CMD_INFO *cmdBufAllocateCmdInfo(struct ADAPTER
+				       *prAdapter, uint32_t u4Length)
 #endif
 {
 	struct CMD_INFO *prCmdInfo = NULL;
@@ -310,8 +310,8 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
-		       IN struct CMD_INFO *prCmdInfo)
+void cmdBufFreeCmdInfo(struct ADAPTER *prAdapter,
+		       struct CMD_INFO *prCmdInfo)
 {
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -344,7 +344,7 @@ void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
 }				/* end of cmdBufFreeCmdPacket() */
 
 uint32_t
-wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
+wlanSendSetQueryCmd(struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
 		    u_int8_t fgSetQuery,
 		    u_int8_t fgNeedResp,
@@ -352,8 +352,8 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		    uint32_t u4SetQueryInfoLen,
-		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		    IN uint32_t u4SetQueryBufferLen)
+		    uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+		    uint32_t u4SetQueryBufferLen)
 {
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	return wlanSendSetQueryCmdHelper(

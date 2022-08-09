@@ -175,21 +175,21 @@ struct WIFI_UNI_CMD {
 
 struct WIFI_UNI_SETQUERY_INFO {
 	/* legacy cmd*/
-	IN uint8_t ucCID;
-	IN uint8_t ucExtCID;
-	IN uint8_t fgSetQuery;
-	IN uint8_t fgNeedResp;
-	IN uint8_t fgIsOid;
-	IN PFN_CMD_DONE_HANDLER pfCmdDoneHandler;
-	IN PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler;
-	IN uint32_t u4SetQueryInfoLen;
-	IN uint8_t *pucInfoBuffer;
-	IN void *pvSetQueryBuffer;
-	IN uint32_t u4SetQueryBufferLen;
-	IN enum EUNM_CMD_SEND_METHOD eMethod;
+	uint8_t ucCID;
+	uint8_t ucExtCID;
+	uint8_t fgSetQuery;
+	uint8_t fgNeedResp;
+	uint8_t fgIsOid;
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler;
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler;
+	uint32_t u4SetQueryInfoLen;
+	uint8_t *pucInfoBuffer;
+	void *pvSetQueryBuffer;
+	uint32_t u4SetQueryBufferLen;
+	enum EUNM_CMD_SEND_METHOD eMethod;
 
 	/* uni cmds */
-	OUT struct LINK rUniCmdList;
+	struct LINK rUniCmdList;
 };
 
 struct WIFI_UNI_CMD_ENTRY {
@@ -359,8 +359,8 @@ enum ENUM_UNI_CMD_BSSINFO_TAG {
 	UNI_CMD_BSSINFO_NUM
 };
 
-typedef uint32_t(*PFN_UNI_CMD_BSSINFO_TAG_HANDLER) (IN struct ADAPTER
-	*ad, IN uint8_t *buf, IN struct CMD_SET_BSS_INFO *cmd);
+typedef uint32_t(*PFN_UNI_CMD_BSSINFO_TAG_HANDLER) (struct ADAPTER
+	*ad, uint8_t *buf, struct CMD_SET_BSS_INFO *cmd);
 
 struct UNI_CMD_BSSINFO_TAG_HANDLE {
 	uint32_t u4Size;
@@ -840,8 +840,8 @@ enum ENUM_UNI_CMD_STAREC_TAG {
 	UNI_CMD_STAREC_TAG_MAX_NUM
 };
 
-typedef uint32_t(*PFN_UNI_CMD_STAREC_TAG_HANDLER) (IN struct ADAPTER
-	*ad, IN uint8_t *buf, IN struct CMD_UPDATE_STA_RECORD *cmd);
+typedef uint32_t(*PFN_UNI_CMD_STAREC_TAG_HANDLER) (struct ADAPTER
+	*ad, uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd);
 
 struct UNI_CMD_STAREC_TAG_HANDLE {
 	uint32_t u4Size;
@@ -2098,16 +2098,16 @@ struct UNI_CMD_SCAN {
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
-typedef uint32_t(*PFN_UNI_CMD_SCAN_TAG_HANDLER) (IN struct ADAPTER
-	*ad, IN uint8_t *buf, IN struct CMD_SCAN_REQ_V2 *cmd);
+typedef uint32_t(*PFN_UNI_CMD_SCAN_TAG_HANDLER) (struct ADAPTER
+	*ad, uint8_t *buf, struct CMD_SCAN_REQ_V2 *cmd);
 
 struct UNI_CMD_SCAN_TAG_HANDLE {
 	uint32_t u4Size;
 	PFN_UNI_CMD_SCAN_TAG_HANDLER pfHandler;
 };
 
-typedef uint32_t(*PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER) (IN struct ADAPTER
-	*ad, IN uint8_t *buf, IN struct CMD_SCHED_SCAN_REQ *cmd);
+typedef uint32_t(*PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER) (struct ADAPTER
+	*ad, uint8_t *buf, struct CMD_SCHED_SCAN_REQ *cmd);
 
 struct UNI_CMD_SCHED_SCAN_TAG_HANDLE {
 	uint32_t u4Size;
@@ -3252,8 +3252,8 @@ struct UNI_CMD_BF {
     uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
-typedef void (*PFN_UNI_CMD_BF_HANDLER) (IN union CMD_TXBF_ACTION *cmd,
-	IN struct UNI_CMD_BF *uni_cmd);
+typedef void (*PFN_UNI_CMD_BF_HANDLER) (union CMD_TXBF_ACTION *cmd,
+	struct UNI_CMD_BF *uni_cmd);
 
 struct UNI_CMD_BF_HANDLE {
 	uint32_t u4Size;
@@ -6638,7 +6638,7 @@ for ((_u2Offset) = 0U;	\
  *******************************************************************************
  */
 
-uint32_t wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
+uint32_t wlanSendSetQueryCmdHelper(struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
 		    uint8_t ucExtCID,
 		    u_int8_t fgSetQuery,
@@ -6647,11 +6647,11 @@ uint32_t wlanSendSetQueryCmdHelper(IN struct ADAPTER *prAdapter,
 		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		    uint32_t u4SetQueryInfoLen,
-		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		    IN uint32_t u4SetQueryBufferLen,
+		    uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+		    uint32_t u4SetQueryBufferLen,
 		    enum EUNM_CMD_SEND_METHOD eMethod);
 
-uint32_t wlanSendSetQueryUniCmd(IN struct ADAPTER *prAdapter,
+uint32_t wlanSendSetQueryUniCmd(struct ADAPTER *prAdapter,
 			uint8_t ucUCID,
 			u_int8_t fgSetQuery,
 			u_int8_t fgNeedResp,
@@ -6659,10 +6659,10 @@ uint32_t wlanSendSetQueryUniCmd(IN struct ADAPTER *prAdapter,
 			PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 			PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 			uint32_t u4SetQueryInfoLen,
-			uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-			IN uint32_t u4SetQueryBufferLen);
+			uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+			uint32_t u4SetQueryBufferLen);
 
-uint32_t wlanSendSetQueryUniCmdAdv(IN struct ADAPTER *prAdapter,
+uint32_t wlanSendSetQueryUniCmdAdv(struct ADAPTER *prAdapter,
 			uint8_t ucUCID,
 			u_int8_t fgSetQuery,
 			u_int8_t fgNeedResp,
@@ -6670,8 +6670,8 @@ uint32_t wlanSendSetQueryUniCmdAdv(IN struct ADAPTER *prAdapter,
 			PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 			PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 			uint32_t u4SetQueryInfoLen,
-			uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-			IN uint32_t u4SetQueryBufferLen,
+			uint8_t *pucInfoBuffer, void *pvSetQueryBuffer,
+			uint32_t u4SetQueryBufferLen,
 			enum EUNM_CMD_SEND_METHOD eMethod);
 
 /*******************************************************************************
@@ -6887,83 +6887,83 @@ uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
  *******************************************************************************
  */
 
-void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
-			     IN OUT struct SW_RFB *prSwRfb);
-void nicUniCmdEventSetCommon(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
-void nicUniCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
-			    IN struct CMD_INFO *prCmdInfo);
+void nicRxProcessUniEventPacket(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb);
+void nicUniCmdEventSetCommon(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+void nicUniCmdTimeoutCommon(struct ADAPTER *prAdapter,
+			    struct CMD_INFO *prCmdInfo);
 
 /*******************************************************************************
  *                   Solicited Event
  *******************************************************************************
  */
 
-void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQuerySwDbgCtrl(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniCmdStaRecHandleEventPkt(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo,
-	IN uint8_t *pucEventBuf);
-void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
-		IN struct CMD_INFO *prCmdInfo,
-		IN uint8_t *pucEventBuf);
-void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventQueryCfgRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryChipConfig(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQuerySwDbgCtrl(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniCmdStaRecHandleEventPkt(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+void nicUniEventQueryIdcChnl(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf);
+void nicUniEventBFStaRec(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniCmdEventQueryMcrRead(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #if (CFG_SUPPORT_TWT == 1)
-void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventGetTsfDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
-void nicUniCmdEventTWTGetCnmGrantedDone(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 
-void nicUniCmdEventInstallKey(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQueryCnmInfo(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventStaStatistics(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventStatistics(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventLinkQuality(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQueryRxStatAll(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventQueryRxStatAllCon3(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventBugReport(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventLinkStats(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventRfTestHandler(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventTxPowerInfo(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventEfuseControl(IN struct ADAPTER
-	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
-	IN struct CMD_INFO *cmd, IN uint8_t *event);
-void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
-void nicUniEventThermalAdieTemp(IN struct ADAPTER *ad,
-	IN struct CMD_INFO *cmd, IN uint8_t *event);
-void nicUniEventThermalDdieTemp(IN struct ADAPTER *ad,
-	IN struct CMD_INFO *cmd, IN uint8_t *event);
+void nicUniCmdEventInstallKey(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryCnmInfo(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventStaStatistics(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventStatistics(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventLinkQuality(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryRfTestATInfo(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryRxStatAll(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventQueryRxStatAllCon3(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventBugReport(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventLinkStats(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventRfTestHandler(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventTxPowerInfo(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventEfuseControl(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventFwLogQueryBase(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+void nicUniCmdEventQueryMldRec(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventThermalAdieTemp(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
 
 #if CFG_SUPPORT_PKT_OFLD
-void nicUniEventQueryOfldInfo(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventQueryOfldInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 
 

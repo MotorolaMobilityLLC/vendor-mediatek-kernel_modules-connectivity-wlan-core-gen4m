@@ -134,19 +134,19 @@ void soc7_0_show_wfdma_info(struct ADAPTER *prAdapter);
 void soc7_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void soc7_0_show_pse_info(struct ADAPTER *prAdapter);
 bool soc7_0_show_host_csr_info(struct ADAPTER *prAdapter);
-void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
-void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void soc7_0_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void soc7_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 int soc7_0_Trigger_fw_assert(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int soc7_0_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo);
+int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo);
 #endif
 
 #if CFG_SUPPORT_LLS
-void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, IN uint32_t *pu4RxV);
+void soc7_0_get_rx_link_stats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
 #endif
 
 void soc7_0_icapRiseVcoreClockRate(void);

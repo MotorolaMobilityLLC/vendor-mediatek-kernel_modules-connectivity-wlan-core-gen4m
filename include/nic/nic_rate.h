@@ -262,51 +262,51 @@ enum HE_LTF {
  */
 uint32_t
 nicGetPhyRateByMcsRate(
-	IN uint8_t ucIdx,
-	IN uint8_t ucBw,
-	IN uint8_t ucGI
+	uint8_t ucIdx,
+	uint8_t ucBw,
+	uint8_t ucGI
 );
 
 uint32_t
 nicGetHwRateByPhyRate(
-	IN uint8_t ucIdx
+	uint8_t ucIdx
 );
 
 uint32_t
 nicSwIndex2RateIndex(
-	IN uint8_t ucRateSwIndex,
-	OUT uint8_t *pucRateIndex,
-	OUT uint8_t *pucPreambleOption
+	uint8_t ucRateSwIndex,
+	uint8_t *pucRateIndex,
+	uint8_t *pucPreambleOption
 );
 
 uint32_t
 nicRateIndex2RateCode(
-	IN uint8_t ucPreambleOption,
-	IN uint8_t ucRateIndex,
-	OUT uint16_t *pu2RateCode
+	uint8_t ucPreambleOption,
+	uint8_t ucRateIndex,
+	uint16_t *pu2RateCode
 );
 
 uint32_t
 nicRateCode2PhyRate(
-	IN uint16_t u2RateCode,
-	IN uint8_t ucBandwidth,
-	IN uint8_t ucGI,
-	IN uint8_t ucRateNss
+	uint16_t u2RateCode,
+	uint8_t ucBandwidth,
+	uint8_t ucGI,
+	uint8_t ucRateNss
 );
 
 uint32_t
 nicRateCode2DataRate(
-	IN uint16_t u2RateCode,
-	IN uint8_t ucBandwidth,
-	IN uint8_t ucGI
+	uint16_t u2RateCode,
+	uint8_t ucBandwidth,
+	uint8_t ucGI
 );
 
 u_int8_t
 nicGetRateIndexFromRateSetWithLimit(
-	IN uint16_t u2RateSet,
-	IN uint32_t u4PhyRateLimit,
-	IN u_int8_t fgGetLowest,
-	OUT uint8_t *pucRateSwIndex
+	uint16_t u2RateSet,
+	uint32_t u4PhyRateLimit,
+	u_int8_t fgGetLowest,
+	uint8_t *pucRateSwIndex
 );
 
 char *nicHwRateOfdmStr(
@@ -320,27 +320,27 @@ uint32_t nicRateHeLtfCheckGi(
 	struct FIXED_RATE_INFO *pFixedRate);
 
 uint8_t nicGetTxSgiInfo(
-	IN struct PARAM_PEER_CAP *prWtblPeerCap,
-	IN uint8_t u1TxMode);
+	struct PARAM_PEER_CAP *prWtblPeerCap,
+	uint8_t u1TxMode);
 
 uint8_t nicGetTxLdpcInfo(
-	IN uint8_t ucTxMode,
-	IN struct PARAM_TX_CONFIG *prWtblTxConfig);
+	uint8_t ucTxMode,
+	struct PARAM_TX_CONFIG *prWtblTxConfig);
 
-int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
+int32_t nicGetTxRateInfo(char *pcCommand, int i4TotalLen,
 			u_int8_t fgDumpAll,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics);
 
-int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
-			IN int i4TotalLen, IN uint8_t ucWlanIdx);
+int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, char *pcCommand,
+			int i4TotalLen, uint8_t ucWlanIdx);
 
-uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucWlanIdx);
+uint16_t nicGetStatIdxInfo(struct ADAPTER *prAdapter,
+			uint8_t ucWlanIdx);
 
 uint16_t
-nicRateInfo2RateCode(IN uint32_t  u4TxMode,
-	IN uint32_t  u4Rate);
+nicRateInfo2RateCode(uint32_t  u4TxMode,
+	uint32_t  u4Rate);
 
 /*******************************************************************************
  *                              F U N C T I O N S

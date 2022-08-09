@@ -347,11 +347,14 @@ struct GL_HIF_INFO {
 };
 
 struct BUS_INFO {
-	void (*halTxGetFreeResource)(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt, IN uint16_t *au2TxRlsCnt);
-	void (*halTxReturnFreeResource)(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt);
-	void (*halRestoreTxResource)(IN struct ADAPTER *prAdapter);
-	void (*halUpdateTxDonePendingCount)(IN struct ADAPTER *prAdapter,
-					    IN u_int8_t isIncr, IN uint8_t ucTc, IN uint16_t u2Cnt);
+	void (*halTxGetFreeResource)(struct ADAPTER *prAdapter,
+			uint16_t *au2TxDoneCnt, uint16_t *au2TxRlsCnt);
+	void (*halTxReturnFreeResource)(struct ADAPTER *prAdapter,
+			uint16_t *au2TxDoneCnt);
+	void (*halRestoreTxResource)(struct ADAPTER *prAdapter);
+	void (*halUpdateTxDonePendingCount)(struct ADAPTER *prAdapter,
+					    u_int8_t isIncr, uint8_t ucTc,
+					    uint16_t u2Cnt);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
 };
 
@@ -416,7 +419,7 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
 void glBusFreeIrq(void *pvData, void *pvCookie);
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode);
 
 void glGetDev(void *ctx, void **dev);
 
@@ -429,38 +432,43 @@ void glGetChipInfo(void **prChipInfo);
 u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo);
 
 #if !CFG_SDIO_INTR_ENHANCE
-void halRxSDIOReceiveRFBs(IN struct ADAPTER *prAdapter);
+void halRxSDIOReceiveRFBs(struct ADAPTER *prAdapter);
 
-uint32_t halRxReadBuffer(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+uint32_t halRxReadBuffer(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 #else
-void halRxSDIOEnhanceReceiveRFBs(IN struct ADAPTER *prAdapter);
+void halRxSDIOEnhanceReceiveRFBs(struct ADAPTER *prAdapter);
 
-uint32_t halRxEnhanceReadBuffer(IN struct ADAPTER *prAdapter, IN uint32_t u4DataPort,
-	IN uint16_t u2RxLength, IN OUT struct SW_RFB *prSwRfb);
+uint32_t halRxEnhanceReadBuffer(struct ADAPTER *prAdapter, uint32_t u4DataPort,
+	uint16_t u2RxLength, struct SW_RFB *prSwRfb);
 
-void halProcessEnhanceInterruptStatus(IN struct ADAPTER *prAdapter);
+void halProcessEnhanceInterruptStatus(struct ADAPTER *prAdapter);
 
 #endif /* CFG_SDIO_INTR_ENHANCE */
 
 #if CFG_SDIO_RX_AGG
-void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter);
+void halRxSDIOAggReceiveRFBs(struct ADAPTER *prAdapter);
 #endif
 
-void halPutMailbox(IN struct ADAPTER *prAdapter, IN uint32_t u4MailboxNum, IN uint32_t u4Data);
-void halGetMailbox(IN struct ADAPTER *prAdapter, IN uint32_t u4MailboxNum, OUT uint32_t *pu4Data);
-void halDeAggRxPkt(struct ADAPTER *prAdapter, struct SDIO_RX_COALESCING_BUF *prRxBuf);
-void halPrintMailbox(IN struct ADAPTER *prAdapter);
-void halPollDbgCr(IN struct ADAPTER *prAdapter, IN uint32_t u4LoopCount);
-void halTxGetFreeResource_v1(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxDoneCnt, IN uint16_t *au2TxRlsCnt);
+void halPutMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
+		uint32_t u4Data);
+void halGetMailbox(struct ADAPTER *prAdapter, uint32_t u4MailboxNum,
+		uint32_t *pu4Data);
+void halDeAggRxPkt(struct ADAPTER *prAdapter,
+		struct SDIO_RX_COALESCING_BUF *prRxBuf);
+void halPrintMailbox(struct ADAPTER *prAdapter);
+void halPollDbgCr(struct ADAPTER *prAdapter, uint32_t u4LoopCount);
+void halTxGetFreeResource_v1(struct ADAPTER *prAdapter, uint16_t *au2TxDoneCnt,
+		uint16_t *au2TxRlsCnt);
 
-u_int8_t halIsPendingTxDone(IN struct ADAPTER *prAdapter);
-void halDumpIntLog(IN struct ADAPTER *prAdapter);
-void halTagIntLog(IN struct ADAPTER *prAdapter, IN enum HIF_SDIO_INT_STS eTag);
-void halRecIntLog(IN struct ADAPTER *prAdapter, IN struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl);
-struct SDIO_INT_LOG_T *halGetIntLog(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx);
-void halPreSuspendCmd(IN struct ADAPTER *prAdapter);
-void halPreResumeCmd(IN struct ADAPTER *prAdapter);
+u_int8_t halIsPendingTxDone(struct ADAPTER *prAdapter);
+void halDumpIntLog(struct ADAPTER *prAdapter);
+void halTagIntLog(struct ADAPTER *prAdapter, enum HIF_SDIO_INT_STS eTag);
+void halRecIntLog(struct ADAPTER *prAdapter,
+		struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl);
+struct SDIO_INT_LOG_T *halGetIntLog(struct ADAPTER *prAdapter, uint32_t u4Idx);
+void halPreSuspendCmd(struct ADAPTER *prAdapter);
+void halPreResumeCmd(struct ADAPTER *prAdapter);
 void glSdioSetState(struct GL_HIF_INFO *prHifInfo, enum sdio_state state);
 
 static inline int32_t glBusFuncOn(void)

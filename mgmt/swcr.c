@@ -816,13 +816,13 @@ void swCtrlCmdCategory1(struct ADAPTER *prAdapter,
 #if TEST_PS
 
 void
-testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
-		       IN struct STA_RECORD *prStaRec,
-		       IN uint8_t ucUP,
-		       IN uint8_t ucBssIndex,
-		       IN u_int8_t fgBMC,
-		       IN u_int8_t fgIsBurstEnd, IN u_int8_t ucPacketType,
-		       IN u_int8_t ucPsSessionID, IN u_int8_t fgSetEOSP)
+testPsSendQoSNullFrame(struct ADAPTER *prAdapter,
+		       struct STA_RECORD *prStaRec,
+		       uint8_t ucUP,
+		       uint8_t ucBssIndex,
+		       u_int8_t fgBMC,
+		       u_int8_t fgIsBurstEnd, u_int8_t ucPacketType,
+		       u_int8_t ucPsSessionID, u_int8_t fgSetEOSP)
 {
 	struct MSDU_INFO *prMsduInfo;
 	uint16_t u2EstimatedFrameLen;
@@ -874,8 +874,8 @@ testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 
 }
 
-void testPsSetupBss(IN struct ADAPTER *prAdapter,
-		    IN uint8_t ucBssIndex)
+void testPsSetupBss(struct ADAPTER *prAdapter,
+		    uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR;
@@ -1428,7 +1428,7 @@ void swCrDebugCheck(struct ADAPTER *prAdapter,
 				   g_u4SwcrDebugCheckTimeout * MSEC_PER_SEC);
 }
 
-void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
+void swCrDebugCheckTimeout(struct ADAPTER *prAdapter,
 			   uintptr_t ulParamPtr)
 {
 	struct CMD_SW_DBG_CTRL rCmdSwCtrl = {0};
@@ -1452,8 +1452,8 @@ void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
-void swCrDebugQuery(IN struct ADAPTER *prAdapter,
-		    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+void swCrDebugQuery(struct ADAPTER *prAdapter,
+		    struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	ASSERT(prAdapter);
 
@@ -1461,8 +1461,8 @@ void swCrDebugQuery(IN struct ADAPTER *prAdapter,
 		       (struct CMD_SW_DBG_CTRL *) (pucEventBuf));
 }
 
-void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter,
-			   IN struct CMD_INFO *prCmdInfo)
+void swCrDebugQueryTimeout(struct ADAPTER *prAdapter,
+			   struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 

@@ -101,7 +101,7 @@ static void scanFreeBssDesc(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scnInit(IN struct ADAPTER *prAdapter)
+void scnInit(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct BSS_DESC *prBSSDesc;
@@ -168,7 +168,7 @@ void scnInit(IN struct ADAPTER *prAdapter)
 #endif
 }	/* end of scnInit() */
 
-void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter)
+void scnFreeAllPendingScanRquests(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct MSG_HDR *prMsgHdr;
@@ -208,7 +208,7 @@ void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scnUninit(IN struct ADAPTER *prAdapter)
+void scnUninit(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 #if (CFG_SUPPORT_WIFI_RNR == 1)
@@ -260,8 +260,8 @@ void scnUninit(IN struct ADAPTER *prAdapter)
  * @return   Pointer to BSS Descriptor, if found. NULL, if not found
  */
 /*----------------------------------------------------------------------------*/
-struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
-	IN uint8_t aucBSSID[])
+struct BSS_DESC *scanSearchBssDescByBssid(struct ADAPTER *prAdapter,
+	uint8_t aucBSSID[])
 {
 	return scanSearchBssDescByBssidAndSsid(prAdapter, aucBSSID,
 		FALSE, NULL);
@@ -280,8 +280,8 @@ struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
  * @return   TRUE if the bit of the given bitmap is set, FALSE otherwise
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t scanIsBitSet(IN uint32_t bit, IN uint32_t bitMap[],
-		IN uint32_t bitMapSize)
+u_int8_t scanIsBitSet(uint32_t bit, uint32_t bitMap[],
+		uint32_t bitMapSize)
 {
 	if (bit >= bitMapSize * BITS_OF_BYTE) {
 		log_dbg(SCN, WARN, "bit %u is out of array range(%u bits)\n",
@@ -306,8 +306,8 @@ u_int8_t scanIsBitSet(IN uint32_t bit, IN uint32_t bitMap[],
  * @return   TRUE if the bit of the given bitmap is set, FALSE otherwise
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t scan6gPscIsBitSet(IN uint32_t bit, IN uint32_t bitMap[],
-		IN uint32_t bitMapSize)
+u_int8_t scan6gPscIsBitSet(uint32_t bit, uint32_t bitMap[],
+		uint32_t bitMapSize)
 {
 	if (((bit - 5) % 16) == 0) {
 		if (bit >= bitMapSize * BITS_OF_BYTE) {
@@ -336,7 +336,7 @@ u_int8_t scan6gPscIsBitSet(IN uint32_t bit, IN uint32_t bitMap[],
  * @return   void
  */
 /*----------------------------------------------------------------------------*/
-void scanSetBit(IN uint32_t bit, OUT uint32_t bitMap[], IN uint32_t bitMapSize)
+void scanSetBit(uint32_t bit, uint32_t bitMap[], uint32_t bitMapSize)
 {
 	if (bit >= bitMapSize * BITS_OF_BYTE) {
 		log_dbg(SCN, WARN, "set bit %u to array(%u bits) failed\n",
@@ -358,7 +358,7 @@ void scanSetBit(IN uint32_t bit, OUT uint32_t bitMap[], IN uint32_t bitMapSize)
  */
 /*----------------------------------------------------------------------------*/
 
-uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
+uint32_t scanCountBits(uint32_t bitMap[], uint32_t bitMapSize)
 {
 	uint32_t count = 0;
 	uint32_t value;
@@ -390,12 +390,12 @@ uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
  * @return
  */
 /*----------------------------------------------------------------------------*/
-void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
-		IN uint32_t u4ScanChannelNum,
-		IN struct RF_CHANNEL_INFO arChannel[],
-		IN uint32_t u4ScanFlags,
-		IN uint8_t fgIsOnlineScan,
-		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
+void scanSetRequestChannel(struct ADAPTER *prAdapter,
+		uint32_t u4ScanChannelNum,
+		struct RF_CHANNEL_INFO arChannel[],
+		uint32_t u4ScanFlags,
+		uint8_t fgIsOnlineScan,
+		struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	uint32_t i, u4Channel, eBand, u4Index;
 	/*print channel info for debugging */
@@ -603,10 +603,10 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *
-scanSearchBssDescByBssidAndSsid(IN struct ADAPTER *prAdapter,
-				IN uint8_t aucBSSID[],
-				IN u_int8_t fgCheckSsid,
-				IN struct PARAM_SSID *prSsid)
+scanSearchBssDescByBssidAndSsid(struct ADAPTER *prAdapter,
+				uint8_t aucBSSID[],
+				u_int8_t fgCheckSsid,
+				struct PARAM_SSID *prSsid)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -660,8 +660,8 @@ scanSearchBssDescByBssidAndSsid(IN struct ADAPTER *prAdapter,
  * @return   Pointer to BSS Descriptor, if found. NULL, if not found
  */
 /*----------------------------------------------------------------------------*/
-struct BSS_DESC *scanSearchBssDescByTA(IN struct ADAPTER *prAdapter,
-	IN uint8_t aucSrcAddr[])
+struct BSS_DESC *scanSearchBssDescByTA(struct ADAPTER *prAdapter,
+	uint8_t aucSrcAddr[])
 {
 	return scanSearchBssDescByTAAndSsid(prAdapter, aucSrcAddr, FALSE, NULL);
 }
@@ -681,10 +681,10 @@ struct BSS_DESC *scanSearchBssDescByTA(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *
-scanSearchBssDescByTAAndSsid(IN struct ADAPTER *prAdapter,
-			     IN uint8_t aucSrcAddr[],
-			     IN u_int8_t fgCheckSsid,
-			     IN struct PARAM_SSID *prSsid)
+scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
+			     uint8_t aucSrcAddr[],
+			     u_int8_t fgCheckSsid,
+			     struct PARAM_SSID *prSsid)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -733,10 +733,10 @@ scanSearchBssDescByTAAndSsid(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *
-scanSearchExistingBssDesc(IN struct ADAPTER *prAdapter,
-			  IN enum ENUM_BSS_TYPE eBSSType,
-			  IN uint8_t aucBSSID[],
-			  IN uint8_t aucSrcAddr[])
+scanSearchExistingBssDesc(struct ADAPTER *prAdapter,
+			  enum ENUM_BSS_TYPE eBSSType,
+			  uint8_t aucBSSID[],
+			  uint8_t aucSrcAddr[])
 {
 	return scanSearchExistingBssDescWithSsid(prAdapter, eBSSType, aucBSSID,
 		aucSrcAddr, FALSE, NULL);
@@ -759,12 +759,12 @@ scanSearchExistingBssDesc(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *
-scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
-				  IN enum ENUM_BSS_TYPE eBSSType,
-				  IN uint8_t aucBSSID[],
-				  IN uint8_t aucSrcAddr[],
-				  IN u_int8_t fgCheckSsid,
-				  IN struct PARAM_SSID *prSsid)
+scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
+				  enum ENUM_BSS_TYPE eBSSType,
+				  uint8_t aucBSSID[],
+				  uint8_t aucSrcAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct BSS_DESC *prBssDesc, *prIBSSBssDesc;
@@ -850,8 +850,8 @@ scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
-				IN uint32_t u4RemovePolicy)
+void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
+				uint32_t u4RemovePolicy)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -1064,8 +1064,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
-			      IN uint8_t aucBSSID[])
+void scanRemoveBssDescByBssid(struct ADAPTER *prAdapter,
+			      uint8_t aucBSSID[])
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -1121,9 +1121,9 @@ void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
-				       IN enum ENUM_BAND eBand,
-				       IN uint8_t ucBssIndex)
+void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
+				       enum ENUM_BAND eBand,
+				       uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -1189,9 +1189,9 @@ void scanRemoveBssDescByBandAndNetwork(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
-					IN uint8_t aucBSSID[],
-					IN uint8_t ucBssIndex)
+void scanRemoveConnFlagOfBssDescByBssid(struct ADAPTER *prAdapter,
+					uint8_t aucBSSID[],
+					uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -1230,8 +1230,8 @@ void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
  *           free space. NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prTransBSS, IN struct IE_MBSSID *prMbssidIe)
+void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prTransBSS, struct IE_MBSSID *prMbssidIe)
 {
 	uint8_t *pucIE;
 	uint16_t u2IELength, u2Offset;
@@ -1303,8 +1303,8 @@ void scanParsingMBSSIDSubelement(IN struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
-	IN const uint8_t *pucIE, IN uint16_t u2FrameCtrl)
+void scanEhtParsingMldElement(struct BSS_DESC *prBssDesc,
+	const uint8_t *pucIE, uint16_t u2FrameCtrl)
 {
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
@@ -1337,8 +1337,8 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
-void scanHandleRnrSsid(IN struct SCAN_PARAM *prScanParam,
-	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssidNum)
+void scanHandleRnrSsid(struct SCAN_PARAM *prScanParam,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssidNum)
 {
 	uint8_t i, fgHasEqualSsid = FALSE;
 
@@ -1375,8 +1375,8 @@ void scanHandleRnrSsid(IN struct SCAN_PARAM *prScanParam,
 }
 
 uint8_t scanGetRnrChannel(
-	IN struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField,
-	IN uint8_t *pucBand)
+	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField,
+	uint8_t *pucBand)
 {
 	uint8_t ucRnrChNum;
 	uint32_t u4FreqInKHz;
@@ -1391,9 +1391,9 @@ uint8_t scanGetRnrChannel(
 	return ucRnrChNum;
 }
 
-void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
-	IN uint16_t u2OpClass,
-	IN struct SCAN_PARAM *prScanParam)
+void scanProcessRnrChannel(uint8_t ucRnrChNum,
+	uint16_t u2OpClass,
+	struct SCAN_PARAM *prScanParam)
 {
 	uint8_t i, ucHasSameCh = FALSE;
 	enum ENUM_BAND eBand;
@@ -1418,7 +1418,7 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 	log_dbg(SCN, LOUD, "RnrCh=%d\n", ucRnrChNum);
 }
 
-uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
+uint8_t scanValidRnrTbttInfo(uint16_t u2TbttInfoLength)
 {
 	uint8_t ucValidInfo;
 
@@ -1447,8 +1447,8 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 }
 
 uint8_t scanSearchBssidInCurrentList(
-	IN struct SCAN_INFO *prScanInfo, IN uint8_t aucBSSID[],
-	IN struct SCAN_PARAM *prCurScanParam, IN uint8_t ucNewLink)
+	struct SCAN_INFO *prScanInfo, uint8_t aucBSSID[],
+	struct SCAN_PARAM *prCurScanParam, uint8_t ucNewLink)
 {
 	uint8_t i;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
@@ -1477,8 +1477,8 @@ uint8_t scanSearchBssidInCurrentList(
 	return FALSE;
 }
 
-uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucRnrChNum, IN uint8_t ucBand)
+uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
+	uint8_t ucRnrChNum, uint8_t ucBand)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -1546,8 +1546,8 @@ uint8_t scanRnrChnlIsNeedScan(IN struct ADAPTER *prAdapter,
  * @return   NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc, IN uint8_t *pucIE)
+void scanParsingRnrElement(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, uint8_t *pucIE)
 {
 	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum, ucBand = 0;
 	uint8_t ucShortSsidOffset, ucBssParamOffset, ucMldParamOffset;
@@ -1932,7 +1932,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
  *           free space. NULL, if has no space.
  */
 /*----------------------------------------------------------------------------*/
-struct BSS_DESC *scanAllocateBssDesc(IN struct ADAPTER *prAdapter)
+struct BSS_DESC *scanAllocateBssDesc(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prFreeBSSDescList;
@@ -2099,8 +2099,8 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
  *           NULL if the Beacon/ProbeResp frame is invalid
  */
 /*----------------------------------------------------------------------------*/
-struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
-				  IN struct SW_RFB *prSwRfb)
+struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
+				  struct SW_RFB *prSwRfb)
 {
 	struct BSS_DESC *prBssDesc = NULL;
 	struct SCAN_PARAM *prScanParam;
@@ -3351,7 +3351,7 @@ void scanLogEssResult(struct ADAPTER *prAdapter)
  */
 /* maximum we only support record 64 ESSes */
 static void scanAddEssResult(struct ADAPTER *prAdapter,
-			     IN struct BSS_DESC *prBssDesc)
+			     struct BSS_DESC *prBssDesc)
 {
 	struct ESS_SCAN_RESULT_T *prEssResult
 		= &prAdapter->rWlanInfo.arScanResultEss[0];
@@ -3386,9 +3386,9 @@ static void scanAddEssResult(struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_FAILURE   It is not a valid Scan Result.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
-			   IN struct BSS_DESC *prBssDesc,
-			   IN struct SW_RFB *prSwRfb)
+uint32_t scanAddScanResult(struct ADAPTER *prAdapter,
+			   struct BSS_DESC *prBssDesc,
+			   struct SW_RFB *prSwRfb)
 {
 	struct SCAN_INFO *prScanInfo;
 	uint8_t aucRatesEx[PARAM_MAX_LEN_RATES_EX];
@@ -3512,7 +3512,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 
 }	/* end of scanAddScanResult() */
 
-u_int8_t scanCheckBssIsLegal(IN struct ADAPTER *prAdapter,
+u_int8_t scanCheckBssIsLegal(struct ADAPTER *prAdapter,
 			     struct BSS_DESC *prBssDesc)
 {
 	u_int8_t fgAddToScanResult = FALSE;
@@ -3548,8 +3548,8 @@ u_int8_t scanCheckBssIsLegal(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_PENDING   if report this SW_RFB_T to host as scan result
  */
 /*----------------------------------------------------------------------------*/
-uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
-				       IN struct SW_RFB *prSwRfb)
+uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
+				       struct SW_RFB *prSwRfb)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
@@ -3801,9 +3801,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	return rStatus;
 }	/* end of scanProcessBeaconAndProbeResp() */
 
-void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
-			    IN enum ENUM_BSS_TYPE eBSSType,
-			    IN struct BSS_DESC *SpecificprBssDesc)
+void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
+			    enum ENUM_BSS_TYPE eBSSType,
+			    struct BSS_DESC *SpecificprBssDesc)
 {
 	struct SCAN_INFO *prScanInfo = NULL;
 	struct LINK *prBSSDescList = NULL;
@@ -3977,7 +3977,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(
-	IN struct ADAPTER *prAdapter, IN uint8_t aucBSSID[])
+	struct ADAPTER *prAdapter, uint8_t aucBSSID[])
 {
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
@@ -4290,9 +4290,9 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanRemoveBssDescFromList(IN struct ADAPTER *prAdapter,
-			       IN struct LINK *prBSSDescList,
-			       IN struct BSS_DESC *prBssDesc)
+void scanRemoveBssDescFromList(struct ADAPTER *prAdapter,
+			       struct LINK *prBSSDescList,
+			       struct BSS_DESC *prBssDesc)
 {
 	if (prAdapter != NULL && prBssDesc != NULL) {
 		/* Remove this BSS Desc from the BSS Desc list */
@@ -4312,9 +4312,9 @@ void scanRemoveBssDescFromList(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
-			     IN struct BSS_DESC *prBssDesc,
-			     IN u_int8_t init)
+void scanInsertBssDescToList(struct LINK *prBSSDescList,
+			     struct BSS_DESC *prBssDesc,
+			     u_int8_t init)
 {
 	if (prBssDesc != NULL) {
 		if (init == TRUE) {
@@ -4343,8 +4343,8 @@ void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanResetBssDesc(IN struct ADAPTER *prAdapter,
-		      IN struct BSS_DESC *prBssDesc)
+void scanResetBssDesc(struct ADAPTER *prAdapter,
+		      struct BSS_DESC *prBssDesc)
 {
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
@@ -4367,7 +4367,7 @@ void scanResetBssDesc(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
+void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 {
 	uint32_t u4EpigramOui;
 	uint16_t u2EpigramVendorType;
@@ -4411,7 +4411,7 @@ void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
 	}
 }
 
-void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
+void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 {
 	struct IE_VHT_CAP *prVhtCap = NULL;
 	uint16_t u2TxMcsSet = 0;
@@ -4456,7 +4456,7 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
 }
 
-void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc)
+void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 {
 	struct IE_VHT_OP *prVhtOp = NULL;
 
@@ -4505,7 +4505,7 @@ uint8_t scanApOverload(uint16_t status, uint16_t reason)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
+void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 {
 	uint32_t oui;
 	struct IE_VENDOR_ADAPTIVE_11R_IE *ie;
@@ -4534,8 +4534,8 @@ void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc)
 		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsAdaptive11r);
 }
 
-void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
-	IN struct CMD_SCAN_REQ_V2 *prCmdScanReq)
+void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
+	struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
 	uint16_t u2Offset = 0, u2IEsBufLen = prScanParam->u2IELen;
 	uint8_t *pucBuf = prScanParam->aucIE;
@@ -4599,8 +4599,8 @@ void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
-	IN enum ENUM_BAND eHwBand)
+void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand)
 {
 	struct _IE_HE_OP_T *prHeOp = (struct _IE_HE_OP_T *) pucIE;
 	uint32_t u4Offset = OFFSET_OF(struct _IE_HE_OP_T, aucVarInfo[0]);
@@ -4669,8 +4669,8 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
-	IN enum ENUM_BAND eHwBand)
+void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand)
 {
 	struct IE_EHT_OP *prEhtOp;
 	struct EHT_OP_INFO *prEhtOpInfo;

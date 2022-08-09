@@ -872,9 +872,9 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_TC10_FEATURE == 1)
-static int32_t scanCalculateScoreByCu(IN struct ADAPTER *prAdapter,
-	IN struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
-	IN uint8_t ucBssIndex)
+static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
+	uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *info;
 	struct SCAN_PARAM *param;
@@ -1004,7 +1004,7 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 
 static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
-	IN struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
+	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
 	enum ENUM_BAND eBand)
 {
 	struct SCAN_INFO *info;

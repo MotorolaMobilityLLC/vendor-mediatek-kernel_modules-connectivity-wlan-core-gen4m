@@ -339,7 +339,7 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
-u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
+u_int8_t kalDevRegL1ReadRange(struct GLUE_INFO *glue,
 	struct mt66xx_chip_info *chip_info,
 	uint32_t reg,
 	void *buf,
@@ -391,7 +391,7 @@ u_int8_t kalDevRegL1ReadRange(IN struct GLUE_INFO *glue,
 	return TRUE;
 }
 
-u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
+u_int8_t kalDevRegL1WriteRange(struct GLUE_INFO *glue,
 	struct mt66xx_chip_info *chip_info,
 	uint32_t reg,
 	void *buf,
@@ -443,7 +443,7 @@ u_int8_t kalDevRegL1WriteRange(IN struct GLUE_INFO *glue,
 	return TRUE;
 }
 
-u_int8_t kalDevRegL2ReadRange(IN struct GLUE_INFO *glue,
+u_int8_t kalDevRegL2ReadRange(struct GLUE_INFO *glue,
 	struct mt66xx_chip_info *chip_info,
 	uint32_t reg,
 	void *buf,
@@ -659,8 +659,8 @@ static u_int8_t kalIsHostReg(struct mt66xx_chip_info *prChipInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
-	IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -745,8 +745,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo,
-	IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t u4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -994,9 +994,9 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
-	IN uint16_t u2Port, IN uint32_t u4Len,
-	OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
+u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
+	uint16_t u2Port, uint32_t u4Len,
+	uint8_t *pucBuf, uint32_t u4ValidOutBufSize)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -1127,9 +1127,9 @@ skip:
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
-	IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf,
-	IN uint32_t u4ValidInBufSize)
+kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
+	uint16_t u2Port, uint32_t u4Len, uint8_t *pucBuf,
+	uint32_t u4ValidInBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps;
@@ -1224,8 +1224,8 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
-	OUT uint32_t *pu4IntStatus)
+void kalDevReadIntStatus(struct ADAPTER *prAdapter,
+	uint32_t *pu4IntStatus)
 {
 	uint32_t u4RegValue = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1250,8 +1250,8 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
 
 }
 
-enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-	IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(struct GLUE_INFO *prGlueInfo,
+	struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -1330,7 +1330,7 @@ static enum ENUM_CMD_TX_RESULT kalDevWriteCmdByQueue(
 	return CMD_TX_RESULT_QUEUED;
 }
 
-bool kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo)
+bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -1415,9 +1415,9 @@ void kalBhEnable(struct GLUE_INFO *prGlueInfo)
 	local_bh_enable();
 }
 
-void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
-		IN uint32_t u4Port,
-		OUT unsigned long *plHifTxDataQFlags)
+void kalAcquireHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
+		uint32_t u4Port,
+		unsigned long *plHifTxDataQFlags)
 {
 	unsigned long ulHifTxDataQFlags = 0;
 
@@ -1435,9 +1435,9 @@ void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
 	*plHifTxDataQFlags = ulHifTxDataQFlags;
 }
 
-void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
-		IN uint32_t u4Port,
-		IN unsigned long ulHifTxDataQFlags)
+void kalReleaseHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
+		uint32_t u4Port,
+		unsigned long ulHifTxDataQFlags)
 {
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
 		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
@@ -1453,8 +1453,8 @@ void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
 			ulHifTxDataQFlags);
 }
 
-void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
-		OUT unsigned long *plHifTxRingFlags)
+void kalAcquireHifTxRingLock(struct RTMP_TX_RING *prTxRing,
+		unsigned long *plHifTxRingFlags)
 {
 #if !CFG_SUPPORT_RX_WORK
 	unsigned long ulHifTxRingFlags = 0;
@@ -1478,8 +1478,8 @@ void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
 #endif /* CFG_SUPPORT_RX_WORK */
 }
 
-void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
-		IN unsigned long ulHifTxRingFlags)
+void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
+		unsigned long ulHifTxRingFlags)
 {
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
 		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
@@ -1528,16 +1528,16 @@ void kalReleaseHifOwnLock(struct ADAPTER *prAdapter)
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 }
 
-u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
-	IN struct MSDU_INFO *prMsduInfo)
+u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
+	struct MSDU_INFO *prMsduInfo)
 {
 	ASSERT(prGlueInfo);
 
 	return kalDevWriteDataByQueue(prGlueInfo, prMsduInfo);
 }
 
-static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
-				   IN struct MSDU_INFO *prMsduInfo)
+static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
+				   struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct TX_DATA_REQ *prTxReq;
@@ -1569,7 +1569,7 @@ static bool kalDevWriteDataByQueue(IN struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo = NULL;

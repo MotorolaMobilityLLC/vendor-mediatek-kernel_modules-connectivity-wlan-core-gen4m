@@ -1489,123 +1489,123 @@ struct ACTION_FRAME_SIZE_MAP {
  *******************************************************************************
  */
 
-void nicRxInitialize(IN struct ADAPTER *prAdapter);
+void nicRxInitialize(struct ADAPTER *prAdapter);
 
-void nicRxUninitialize(IN struct ADAPTER *prAdapter);
+void nicRxUninitialize(struct ADAPTER *prAdapter);
 
 void nicRxProcessPacketType(
-	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxProcessRFBs(IN struct ADAPTER *prAdapter);
+void nicRxProcessRFBs(struct ADAPTER *prAdapter);
 
-void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessMsduReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessRxReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
+uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter, struct SW_RFB *prRfb);
 
-struct SW_RFB * nicRxAcquireRFB(IN struct ADAPTER *prAdapter, uint16_t num);
+struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num);
 
-void nicRxReceiveRFB(IN struct ADAPTER *prAdapter, struct SW_RFB *rfb);
+void nicRxReceiveRFB(struct ADAPTER *prAdapter, struct SW_RFB *rfb);
 
-uint32_t nicRxCopyRFB(IN struct ADAPTER *prAdapter,
-		       IN struct SW_RFB *prDst, IN struct SW_RFB *prSrc);
+uint32_t nicRxCopyRFB(struct ADAPTER *prAdapter,
+		       struct SW_RFB *prDst, struct SW_RFB *prSrc);
 
-void nicRxReturnRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
+void nicRxReturnRFB(struct ADAPTER *prAdapter, struct SW_RFB *prRfb);
 
-void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter);
+void nicProcessRxInterrupt(struct ADAPTER *prAdapter);
 
-void nicRxProcessPktWithoutReorder(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+void nicRxProcessPktWithoutReorder(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 u_int8_t nicRxCheckForwardPktResource(
-	IN struct ADAPTER *prAdapter, uint32_t ucTid);
+	struct ADAPTER *prAdapter, uint32_t ucTid);
 
-void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxProcessGOBroadcastPkt(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+void nicRxProcessGOBroadcastPkt(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxFillRFB(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxFillRFB(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxClearFrag(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec);
+void nicRxClearFrag(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
-struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSWRfb, OUT struct QUE *prReturnedQue);
+struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSWRfb, struct QUE *prReturnedQue);
 
-u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
+u_int8_t nicRxIsDuplicateFrame(struct SW_RFB *prSwRfb);
 
 #if CFG_SUPPORT_PERF_IND
-void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN uint8_t ucBssIndex);
+void nicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t ucBssIndex);
 #endif
 
-void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfbListHead);
+void nicRxIndicatePackets(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfbListHead);
 
-void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb);
+void nicRxFillChksumStatus(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
-void nicRxUpdateCSUMStatistics(IN struct ADAPTER *prAdapter,
-	IN const enum ENUM_CSUM_RESULT aeCSUM[]);
+void nicRxUpdateCSUMStatistics(struct ADAPTER *prAdapter,
+	const enum ENUM_CSUM_RESULT aeCSUM[]);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-void nicRxQueryStatus(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
+void nicRxQueryStatus(struct ADAPTER *prAdapter,
+	uint8_t *pucBuffer, uint32_t *pu4Count);
 
-void nicRxClearStatistics(IN struct ADAPTER *prAdapter);
+void nicRxClearStatistics(struct ADAPTER *prAdapter);
 
-void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
+void nicRxQueryStatistics(struct ADAPTER *prAdapter,
+	uint8_t *pucBuffer, uint32_t *pu4Count);
 
-uint32_t nicRxWaitResponse(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length);
+uint32_t nicRxWaitResponse(struct ADAPTER *prAdapter,
+	uint8_t ucPortIdx, uint8_t *pucRspBuffer,
+	uint32_t u4MaxRespBufferLen, uint32_t *pu4Length);
 
-uint32_t nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-	IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue);
+uint32_t nicRxWaitResponseByWaitingInterval(struct ADAPTER *prAdapter,
+	uint8_t ucPortIdx, uint8_t *pucRspBuffer,
+	uint32_t u4MaxRespBufferLen, uint32_t *pu4Length,
+	uint32_t u4WaitingInterval, uint32_t u4TimeoutValue);
 
-void nicRxEnablePromiscuousMode(IN struct ADAPTER *prAdapter);
+void nicRxEnablePromiscuousMode(struct ADAPTER *prAdapter);
 
-void nicRxDisablePromiscuousMode(IN struct ADAPTER *prAdapter);
+void nicRxDisablePromiscuousMode(struct ADAPTER *prAdapter);
 
-uint32_t nicRxFlush(IN struct ADAPTER *prAdapter);
+uint32_t nicRxFlush(struct ADAPTER *prAdapter);
 
-uint32_t nicRxProcessActionFrame(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 uint8_t nicRxGetRcpiValueFromRxv(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb);
+	struct ADAPTER *prAdapter,
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb);
 
-int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
-			IN int i4TotalLen, IN uint8_t ucWlanIdx);
+int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
+			int i4TotalLen, uint8_t ucWlanIdx);
 
-void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb);
+void nicRxProcessRxv(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
 
-void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
+void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
 
 void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);

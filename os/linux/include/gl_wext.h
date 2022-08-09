@@ -85,15 +85,15 @@ keyStructBuf[100];	/* add/remove key shared buffer */
 
 /* for IE Searching */
 extern u_int8_t
-wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE);
+wextSrchDesiredWPAIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
 extern u_int8_t
-wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE);
+wextSrchDesiredWPSIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE);
 #endif
 
 /*******************************************************************************
@@ -332,53 +332,53 @@ extern const struct iw_handler_def wext_handler_def;
  *******************************************************************************
  */
 /* wireless extensions' ioctls */
-int wext_support_ioctl(IN struct net_device *prDev,
-		       IN struct ifreq *prIfReq, IN int i4Cmd);
+int wext_support_ioctl(struct net_device *prDev,
+		       struct ifreq *prIfReq, int i4Cmd);
 
 int
-wext_set_rate(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN struct iw_param *prRate, IN char *pcExtra);
+wext_set_rate(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      struct iw_param *prRate, char *pcExtra);
 
 void
-wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
-			 IN unsigned int u4Cmd, IN unsigned char *pucData,
-			 IN unsigned int u4DataLen,
-			 IN uint8_t ucBssIndex);
+wext_indicate_wext_event(struct GLUE_INFO *prGlueInfo,
+			 unsigned int u4Cmd, unsigned char *pucData,
+			 unsigned int u4DataLen,
+			 uint8_t ucBssIndex);
 
 struct iw_statistics *wext_get_wireless_stats(
 	struct net_device *prDev);
 
 
 u_int8_t
-wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE);
+wextSrchDesiredWPAIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
 u_int8_t
-wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
-		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId,
-		     OUT uint8_t **ppucDesiredIE);
+wextSrchDesiredWPSIE(uint8_t *pucIEStart,
+		     int32_t i4TotalIeLen, uint8_t ucDesiredElemId,
+		     uint8_t **ppucDesiredIE);
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart,
-			       IN int32_t i4TotalIeLen,
-			       OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredHS20IE(uint8_t *pucIEStart,
+			       int32_t i4TotalIeLen,
+			       uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t
-				      *pucIEStart, IN int32_t i4TotalIeLen,
-				      OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredAdvProtocolIE(uint8_t
+				      *pucIEStart, int32_t i4TotalIeLen,
+				      uint8_t **ppucDesiredIE);
 
-u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart,
-			       IN int32_t i4TotalIeLen,
-			       OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredOsenIE(uint8_t *pucIEStart,
+			       int32_t i4TotalIeLen,
+			       uint8_t **ppucDesiredIE);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart,
-			       IN int32_t i4TotalIeLen,
-			       OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredWAPIIE(uint8_t *pucIEStart,
+			       int32_t i4TotalIeLen,
+			       uint8_t **ppucDesiredIE);
 
 /*******************************************************************************
  *                              F U N C T I O N S

@@ -1252,7 +1252,7 @@ void fillConnac3xTxDescAppendBySdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u4MsduId,
-	phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+	phys_addr_t rDmaAddr, uint32_t u4Idx,
 	u_int8_t fgIsLast,
 	uint8_t *pucBuffer);
 void fillConnac3xTxDescAppendByMawdSdo(
@@ -1280,16 +1280,16 @@ void asicConnac3xInitRxdHook(
 	struct ADAPTER *prAdapter,
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb);
+void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb);
 #endif /* CFG_SUPPORT_MSP == 1 */
 uint8_t asicConnac3xRxGetRcpiValueFromRxv(
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb);
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb);
 #if (CFG_SUPPORT_PERF_IND == 1)
-void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb,
-	IN uint8_t ucBssIndex);
+void asicConnac3xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	uint8_t ucBssIndex);
 #endif
 void asicConnac3xWfdmaReInit(
 	struct ADAPTER *prAdapter);
@@ -1411,8 +1411,8 @@ void asicConnac3xEnableUsbFWDL(
 	u_int8_t fgEnable);
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 u_int8_t asicConnac3xUsbResume(
-	IN struct ADAPTER *prAdapter,
-	IN struct GLUE_INFO *prGlueInfo);
+	struct ADAPTER *prAdapter,
+	struct GLUE_INFO *prGlueInfo);
 void asicConnac3xUdmaRxFlush(
 	struct ADAPTER *prAdapter,
 	u_int8_t bEnable);

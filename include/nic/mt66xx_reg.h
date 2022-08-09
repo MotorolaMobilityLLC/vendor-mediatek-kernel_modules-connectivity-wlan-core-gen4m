@@ -1548,39 +1548,39 @@ struct mt66xx_chip_info {
 	uint32_t u4HostCsrOffset;
 	uint32_t u4HostCsrSize;
 
-	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
-	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
-		IN u_int8_t fgEnable);
-	void (*asicFillInitCmdTxd)(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_CMD_INFO *prCmdInfo,
-		OUT uint16_t *pu2BufInfoLen, OUT uint8_t *pucSeqNum,
-		OUT void **pCmdBuf);
-	void (*asicFillCmdTxd)(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_CMD_INFO *prCmdInfo,
-		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
+	void (*asicCapInit)(struct ADAPTER *prAdapter);
+	void (*asicEnableFWDownload)(struct ADAPTER *prAdapter,
+		u_int8_t fgEnable);
+	void (*asicFillInitCmdTxd)(struct ADAPTER *prAdapter,
+		struct WIFI_CMD_INFO *prCmdInfo,
+		uint16_t *pu2BufInfoLen, uint8_t *pucSeqNum,
+		void **pCmdBuf);
+	void (*asicFillCmdTxd)(struct ADAPTER *prAdapter,
+		struct WIFI_CMD_INFO *prCmdInfo,
+		uint8_t *pucSeqNum, void **pCmdBuf);
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	uint16_t u2UniCmdTxHdrSize;
-	void (*asicFillUniCmdTxd)(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_UNI_CMD_INFO *prCmdInfo,
-		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
+	void (*asicFillUniCmdTxd)(struct ADAPTER *prAdapter,
+		struct WIFI_UNI_CMD_INFO *prCmdInfo,
+		uint8_t *pucSeqNum, void **pCmdBuf);
 #endif
 
-	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
-	void (*fillHifTxDesc)(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
-		IN uint8_t ucPacketType);
-	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
-	uint32_t (*constructBufferBinFileName)(IN struct ADAPTER *prAdapter,
-		OUT uint8_t *aucEeprom);
-	void (*asicRxProcessRxvforMSP)(IN struct ADAPTER *prAdapter,
-		IN OUT struct SW_RFB *prRetSwRfb);
+	uint32_t (*asicGetChipID)(struct ADAPTER *prAdapter);
+	void (*fillHifTxDesc)(uint8_t **pDest, uint16_t *pInfoBufLen,
+		uint8_t ucPacketType);
+	uint32_t (*downloadBufferBin)(struct ADAPTER *prAdapter);
+	uint32_t (*constructBufferBinFileName)(struct ADAPTER *prAdapter,
+		uint8_t *aucEeprom);
+	void (*asicRxProcessRxvforMSP)(struct ADAPTER *prAdapter,
+		struct SW_RFB *prRetSwRfb);
 	uint8_t (*asicRxGetRcpiValueFromRxv)(
-		IN uint8_t ucRcpiMode,
-		IN struct SW_RFB *prSwRfb);
+		uint8_t ucRcpiMode,
+		struct SW_RFB *prSwRfb);
 	void (*asicRxPerfIndProcessRXV)(
-		IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		IN uint8_t ucBssIndex);
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		uint8_t ucBssIndex);
 
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
@@ -1594,19 +1594,19 @@ struct mt66xx_chip_info {
 	u_int8_t is_support_dma_shdl;
 	u_int8_t rx_event_port;
 #if defined(_HIF_USB)
-	void (*asicUsbInit)(IN struct ADAPTER *prAdapter,
-			    IN struct mt66xx_chip_info *prChipInfo);
-	void (*asicUsbInit_ic_specific)(IN struct ADAPTER *prAdapter,
-			    IN struct mt66xx_chip_info *prChipInfo);
+	void (*asicUsbInit)(struct ADAPTER *prAdapter,
+			    struct mt66xx_chip_info *prChipInfo);
+	void (*asicUsbInit_ic_specific)(struct ADAPTER *prAdapter,
+			    struct mt66xx_chip_info *prChipInfo);
 	uint32_t u4SerUsbMcuEventAddr;
 	uint32_t u4SerUsbHostAckAddr;
 #endif
-	void (*asicDumpSerDummyCR)(IN struct ADAPTER *prAdapter);
-	void (*asicWfdmaReInit)(IN struct ADAPTER *prAdapter);
-	void (*asicWfdmaReInit_handshakeInit)(IN struct ADAPTER *prAdapter);
+	void (*asicDumpSerDummyCR)(struct ADAPTER *prAdapter);
+	void (*asicWfdmaReInit)(struct ADAPTER *prAdapter);
+	void (*asicWfdmaReInit_handshakeInit)(struct ADAPTER *prAdapter);
 	void *pdev;
 	uint32_t group5_size;
-	void (*wlanCheckAsicCap)(IN struct ADAPTER *prAdapter);
+	void (*wlanCheckAsicCap)(struct ADAPTER *prAdapter);
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
 	u_int8_t (*rst_L0_notify_step2)(void);
 #endif
@@ -1617,14 +1617,14 @@ struct mt66xx_chip_info {
 	int (*coexpccifoff)(struct ADAPTER *prAdapter);
 	void (*coantSetWiFi)(void);
 	void (*coantSetMD)(void);
-	void (*coantVFE28En)(IN struct ADAPTER *prAdapter);
+	void (*coantVFE28En)(struct ADAPTER *prAdapter);
 	void (*coantVFE28Dis)(void);
 	u_int8_t (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
 		uint32_t *status);
-	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
+	uint8_t* (*getCalResult)(uint32_t *prCalSize);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
-	uint32_t (*dmashdlQuotaDecision)(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucWmmIndex);
+	uint32_t (*dmashdlQuotaDecision)(struct ADAPTER *prAdapter,
+		uint8_t ucWmmIndex);
 	u_int8_t is_support_nvram_fragment;
 	int (*checkbushang)(void *prAdapter,
 		uint8_t ucWfResetEnable);
@@ -1636,8 +1636,8 @@ struct mt66xx_chip_info {
 				 u_int8_t fgAssertRst);
 	u_int8_t (*asicPollWfsysSwInitDone)(struct ADAPTER *prAdapter);
 #endif
-	void (*asicSerInit)(IN struct ADAPTER *prAdapter,
-			    IN const u_int8_t fgAtResetFlow);
+	void (*asicSerInit)(struct ADAPTER *prAdapter,
+			    const u_int8_t fgAtResetFlow);
 
 	/* If you want to explicitly specify the max AMPDU length exponent in
 	 * HE CAP IE instead of using default one specified by

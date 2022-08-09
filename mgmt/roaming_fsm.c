@@ -130,7 +130,7 @@ static uint8_t *apucEventStr[ROAMING_EVENT_NUM] = {
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -165,7 +165,7 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+void roamingFsmUninit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 
@@ -190,8 +190,8 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit)
+void roamingFsmSendCmd(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit)
 {
 	uint32_t rStatus;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
@@ -230,8 +230,8 @@ void roamingFsmSendCmd(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 static u_int8_t roamingFsmIsNeedScan(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *asbi = NULL;
 	struct LINK *prEssLink = NULL;
@@ -319,14 +319,14 @@ static u_int8_t roamingFsmIsNeedScan(
  * @brief The Core FSM engine of ROAMING for AIS Infra.
  *
  * @param [IN P_ADAPTER_T]          prAdapter
- *        [IN ENUM_ROAMING_STATE_T] eNextState Enum value of next AIS STATE
+ *        [ENUM_ROAMING_STATE_T] eNextState Enum value of next AIS STATE
  *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmSteps(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_ROAMING_STATE eNextState,
-	IN uint8_t ucBssIndex)
+void roamingFsmSteps(struct ADAPTER *prAdapter,
+	enum ENUM_ROAMING_STATE eNextState,
+	uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE ePreviousState;
@@ -418,8 +418,8 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -487,8 +487,8 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit)
+void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -616,8 +616,8 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+void roamingFsmRunEventRoam(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -657,8 +657,8 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
 }				/* end of roamingFsmRunEventRoam() */
 
 void roamingFsmNotifyEvent(
-	IN struct ADAPTER *adapter, IN uint8_t bssIndex, IN uint8_t ucFail,
-	IN struct BSS_DESC *prBssDesc)
+	struct ADAPTER *adapter, uint8_t bssIndex, uint8_t ucFail,
+	struct BSS_DESC *prBssDesc)
 {
 	struct ROAMING_INFO *roam = aisGetRoamingInfo(adapter, bssIndex);
 	struct ROAMING_EVENT_INFO *prEventInfo = &roam->rEventInfo;
@@ -699,8 +699,8 @@ void roamingFsmNotifyEvent(
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucReason, IN uint8_t ucBssIndex)
+void roamingFsmRunEventFail(struct ADAPTER *prAdapter,
+	uint8_t ucReason, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -748,8 +748,8 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -804,8 +804,8 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
-	IN struct CMD_ROAMING_TRANSIT *prTransit)
+uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
+	struct CMD_ROAMING_TRANSIT *prTransit)
 {
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 

@@ -828,102 +828,102 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 /*----------------------------------------------------------------------------*/
 /* Routines in scan.c                                                         */
 /*----------------------------------------------------------------------------*/
-void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter);
+void scnFreeAllPendingScanRquests(struct ADAPTER *prAdapter);
 
-void scnInit(IN struct ADAPTER *prAdapter);
+void scnInit(struct ADAPTER *prAdapter);
 
-void scnUninit(IN struct ADAPTER *prAdapter);
+void scnUninit(struct ADAPTER *prAdapter);
 
 /* Scan utilities */
-uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize);
+uint32_t scanCountBits(uint32_t bitMap[], uint32_t bitMapSize);
 
-void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
-		IN uint32_t u4ScanChannelNum,
-		IN struct RF_CHANNEL_INFO arChannel[],
-		IN uint32_t u4ScanFlags,
-		IN uint8_t fgIsOnlineScan,
-		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
+void scanSetRequestChannel(struct ADAPTER *prAdapter,
+		uint32_t u4ScanChannelNum,
+		struct RF_CHANNEL_INFO arChannel[],
+		uint32_t u4ScanFlags,
+		uint8_t fgIsOnlineScan,
+		struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
 /* BSS-DESC Search */
-struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
-					  IN uint8_t aucBSSID[]);
+struct BSS_DESC *scanSearchBssDescByBssid(struct ADAPTER *prAdapter,
+					  uint8_t aucBSSID[]);
 
 struct BSS_DESC *
-scanSearchBssDescByBssidAndSsid(IN struct ADAPTER *prAdapter,
-				IN uint8_t aucBSSID[],
-				IN u_int8_t fgCheckSsid,
-				IN struct PARAM_SSID *prSsid);
+scanSearchBssDescByBssidAndSsid(struct ADAPTER *prAdapter,
+				uint8_t aucBSSID[],
+				u_int8_t fgCheckSsid,
+				struct PARAM_SSID *prSsid);
 
-struct BSS_DESC *scanSearchBssDescByTA(IN struct ADAPTER *prAdapter,
-				       IN uint8_t aucSrcAddr[]);
+struct BSS_DESC *scanSearchBssDescByTA(struct ADAPTER *prAdapter,
+				       uint8_t aucSrcAddr[]);
 
 struct BSS_DESC *
-scanSearchBssDescByTAAndSsid(IN struct ADAPTER *prAdapter,
-			     IN uint8_t aucSrcAddr[],
-			     IN u_int8_t fgCheckSsid,
-			     IN struct PARAM_SSID *prSsid);
+scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
+			     uint8_t aucSrcAddr[],
+			     u_int8_t fgCheckSsid,
+			     struct PARAM_SSID *prSsid);
 
 /* BSS-DESC Search - Alternative */
 struct BSS_DESC *
-scanSearchExistingBssDesc(IN struct ADAPTER *prAdapter,
-			  IN enum ENUM_BSS_TYPE eBSSType,
-			  IN uint8_t aucBSSID[],
-			  IN uint8_t aucSrcAddr[]);
+scanSearchExistingBssDesc(struct ADAPTER *prAdapter,
+			  enum ENUM_BSS_TYPE eBSSType,
+			  uint8_t aucBSSID[],
+			  uint8_t aucSrcAddr[]);
 
 struct BSS_DESC *
-scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
-				  IN enum ENUM_BSS_TYPE eBSSType,
-				  IN uint8_t aucBSSID[],
-				  IN uint8_t aucSrcAddr[],
-				  IN u_int8_t fgCheckSsid,
-				  IN struct PARAM_SSID *prSsid);
+scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
+				  enum ENUM_BSS_TYPE eBSSType,
+				  uint8_t aucBSSID[],
+				  uint8_t aucSrcAddr[],
+				  u_int8_t fgCheckSsid,
+				  struct PARAM_SSID *prSsid);
 
 /* BSS-DESC Allocation */
-struct BSS_DESC *scanAllocateBssDesc(IN struct ADAPTER *prAdapter);
+struct BSS_DESC *scanAllocateBssDesc(struct ADAPTER *prAdapter);
 
 /* BSS-DESC Removal */
-void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
-				IN uint32_t u4RemovePolicy);
+void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
+				uint32_t u4RemovePolicy);
 
-void scanRemoveBssDescByBssid(IN struct ADAPTER *prAdapter,
-			      IN uint8_t aucBSSID[]);
+void scanRemoveBssDescByBssid(struct ADAPTER *prAdapter,
+			      uint8_t aucBSSID[]);
 
 void scanRemoveBssDescByBandAndNetwork(
-				IN struct ADAPTER *prAdapter,
-				IN enum ENUM_BAND eBand,
-				IN uint8_t ucBssIndex);
+				struct ADAPTER *prAdapter,
+				enum ENUM_BAND eBand,
+				uint8_t ucBssIndex);
 
 /* BSS-DESC State Change */
-void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
-					IN uint8_t aucBSSID[],
-					IN uint8_t ucBssIndex);
+void scanRemoveConnFlagOfBssDescByBssid(struct ADAPTER *prAdapter,
+					uint8_t aucBSSID[],
+					uint8_t ucBssIndex);
 
 	/* BSS-DESC Insertion - ALTERNATIVE */
-struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
-				  IN struct SW_RFB *prSwRfb);
+struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
+				  struct SW_RFB *prSwRfb);
 
-uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
-				       IN struct SW_RFB *prSWRfb);
+uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
+				       struct SW_RFB *prSWRfb);
 
 void
-scanBuildProbeReqFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
-				IN uint8_t *pucDesiredSsid,
-				IN uint32_t u4DesiredSsidLen,
-				IN uint16_t u2SupportedRateSet);
+scanBuildProbeReqFrameCommonIEs(struct MSDU_INFO *prMsduInfo,
+				uint8_t *pucDesiredSsid,
+				uint32_t u4DesiredSsidLen,
+				uint16_t u2SupportedRateSet);
 
-uint32_t scanSendProbeReqFrames(IN struct ADAPTER *prAdapter,
-				IN struct SCAN_PARAM *prScanParam);
+uint32_t scanSendProbeReqFrames(struct ADAPTER *prAdapter,
+				struct SCAN_PARAM *prScanParam);
 
-void scanUpdateBssDescForSearch(IN struct ADAPTER *prAdapter,
-				IN struct BSS_DESC *prBssDesc);
+void scanUpdateBssDescForSearch(struct ADAPTER *prAdapter,
+				struct BSS_DESC *prBssDesc);
 
-uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
-			   IN struct BSS_DESC *prBssDesc,
-			   IN struct SW_RFB *prSwRfb);
+uint32_t scanAddScanResult(struct ADAPTER *prAdapter,
+			   struct BSS_DESC *prBssDesc,
+			   struct SW_RFB *prSwRfb);
 
-void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
-			    IN enum ENUM_BSS_TYPE eBSSType,
-			    IN struct BSS_DESC *SpecificprBssDesc);
+void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
+			    enum ENUM_BSS_TYPE eBSSType,
+			    struct BSS_DESC *SpecificprBssDesc);
 
 bool scnEnableSplitScan(struct ADAPTER *prAdapter,
 				uint8_t ucBssIndex,
@@ -932,59 +932,59 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */
 /*----------------------------------------------------------------------------*/
-void scnFsmSteps(IN struct ADAPTER *prAdapter,
-		 IN enum ENUM_SCAN_STATE eNextState);
+void scnFsmSteps(struct ADAPTER *prAdapter,
+		 enum ENUM_SCAN_STATE eNextState);
 
 /*----------------------------------------------------------------------------*/
 /* Command Routines                                                           */
 /*----------------------------------------------------------------------------*/
-void scnSendScanReq(IN struct ADAPTER *prAdapter);
+void scnSendScanReq(struct ADAPTER *prAdapter);
 
-void scnSendScanReqV2(IN struct ADAPTER *prAdapter);
+void scnSendScanReqV2(struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* RX Event Handling                                                          */
 /*----------------------------------------------------------------------------*/
-void scnEventScanDone(IN struct ADAPTER *prAdapter,
-		      IN struct EVENT_SCAN_DONE *prScanDone,
+void scnEventScanDone(struct ADAPTER *prAdapter,
+		      struct EVENT_SCAN_DONE *prScanDone,
 		      u_int8_t fgIsNewVersion);
 
-void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
-		     IN struct EVENT_SCHED_SCAN_DONE *prSchedScanDone);
+void scnEventSchedScanDone(struct ADAPTER *prAdapter,
+		     struct EVENT_SCHED_SCAN_DONE *prSchedScanDone);
 
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Handling                                                   */
 /*----------------------------------------------------------------------------*/
-void scnFsmMsgStart(IN struct ADAPTER *prAdapter,
-		    IN struct MSG_HDR *prMsgHdr);
+void scnFsmMsgStart(struct ADAPTER *prAdapter,
+		    struct MSG_HDR *prMsgHdr);
 
-void scnFsmMsgAbort(IN struct ADAPTER *prAdapter,
-		    IN struct MSG_HDR *prMsgHdr);
+void scnFsmMsgAbort(struct ADAPTER *prAdapter,
+		    struct MSG_HDR *prMsgHdr);
 
-void scnFsmHandleScanMsg(IN struct ADAPTER *prAdapter,
-			 IN struct MSG_SCN_SCAN_REQ *prScanReqMsg);
+void scnFsmHandleScanMsg(struct ADAPTER *prAdapter,
+			 struct MSG_SCN_SCAN_REQ *prScanReqMsg);
 
-void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
-			   IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
+void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
+			   struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
-void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucSeqNum,
-			    IN uint8_t ucBssIndex);
+void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter,
+			    uint8_t ucSeqNum,
+			    uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Generation                                                 */
 /*----------------------------------------------------------------------------*/
 void
-scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
-			  IN enum ENUM_MSG_ID eMsgId,
-			  IN uint8_t ucSeqNum,
-			  IN uint8_t ucBssIndex,
-			  IN enum ENUM_SCAN_STATUS eScanStatus);
+scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
+			  enum ENUM_MSG_ID eMsgId,
+			  uint8_t ucSeqNum,
+			  uint8_t ucBssIndex,
+			  enum ENUM_SCAN_STATUS eScanStatus);
 
 /*----------------------------------------------------------------------------*/
 /* Query for sparse channel                                                   */
 /*----------------------------------------------------------------------------*/
-u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter,
+u_int8_t scnQuerySparseChannel(struct ADAPTER *prAdapter,
 			       enum ENUM_BAND *prSparseBand,
 			       uint8_t *pucSparseChannel);
 
@@ -993,8 +993,8 @@ u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 #if CFG_SUPPORT_PASSPOINT
 struct BSS_DESC *scanSearchBssDescByBssidAndLatestUpdateTime(
-						IN struct ADAPTER *prAdapter,
-						IN uint8_t aucBSSID[]);
+						struct ADAPTER *prAdapter,
+						uint8_t aucBSSID[]);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 #if CFG_SUPPORT_AGPS_ASSIST
@@ -1002,34 +1002,34 @@ void scanReportScanResultToAgps(struct ADAPTER *prAdapter);
 #endif
 
 #if CFG_SUPPORT_SCHED_SCAN
-u_int8_t scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
-			IN struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest);
+u_int8_t scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
+			struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest);
 
-u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter);
+u_int8_t scnFsmSchedScanStopRequest(struct ADAPTER *prAdapter);
 
-u_int8_t scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
-			IN enum ENUM_SCHED_SCAN_ACT ucSchedScanAct);
+u_int8_t scnFsmSchedScanSetAction(struct ADAPTER *prAdapter,
+			enum ENUM_SCHED_SCAN_ACT ucSchedScanAct);
 
-u_int8_t scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
-			IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
+u_int8_t scnFsmSchedScanSetCmd(struct ADAPTER *prAdapter,
+			struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
-void scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
-			IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
+void scnSetSchedScanPlan(struct ADAPTER *prAdapter,
+			struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
-void scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
-			IN struct EVENT_SCAN_DONE *prScanDone,
-			IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex);
-void scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex);
+void scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
+			struct EVENT_SCAN_DONE *prScanDone,
+			struct SCAN_INFO *prScanInfo, uint8_t ucBssIndex);
+void scnDoScanTimeoutRecoveryCheck(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
 
 #endif
 
-void scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
-			IN enum ENUM_SCAN_STATUS eStatus,
-			IN uint8_t ucBssIndex);
+void scnFsmNotifyEvent(struct ADAPTER *prAdapter,
+			enum ENUM_SCAN_STATUS eStatus,
+			uint8_t ucBssIndex);
 void scanLogEssResult(struct ADAPTER *prAdapter);
 void scanInitEssResult(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
@@ -1051,37 +1051,37 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix);
 
-void scanRemoveBssDescFromList(IN struct ADAPTER *prAdapter,
-			       IN struct LINK *prBSSDescList,
-			       IN struct BSS_DESC *prBssDesc);
-void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
-			     IN struct BSS_DESC *prBssDesc,
-			     IN u_int8_t init);
-void scanResetBssDesc(IN struct ADAPTER *prAdapter,
-		      IN struct BSS_DESC *prBssDesc);
+void scanRemoveBssDescFromList(struct ADAPTER *prAdapter,
+			       struct LINK *prBSSDescList,
+			       struct BSS_DESC *prBssDesc);
+void scanInsertBssDescToList(struct LINK *prBSSDescList,
+			     struct BSS_DESC *prBssDesc,
+			     u_int8_t init);
+void scanResetBssDesc(struct ADAPTER *prAdapter,
+		      struct BSS_DESC *prBssDesc);
 
 /* Check if VHT IE filled in Epigram IE */
-void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
-void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
-void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
+void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
+void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
+void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 
 uint8_t scanApOverload(uint16_t status, uint16_t reason);
-void scanCheckAdaptive11rIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
+void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
 
-void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
-	IN struct CMD_SCAN_REQ_V2 *prCmdScanReq);
+void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
+	struct CMD_SCAN_REQ_V2 *prCmdScanReq);
 
-void scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_SCAN_DONE *prScanDone);
+void scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
+	struct EVENT_SCAN_DONE *prScanDone);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
-	IN enum ENUM_BAND eHwBand);
+void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand);
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-void scanParseEhtOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
-	IN enum ENUM_BAND eHwBand);
+void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand);
 #endif
 
 void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);

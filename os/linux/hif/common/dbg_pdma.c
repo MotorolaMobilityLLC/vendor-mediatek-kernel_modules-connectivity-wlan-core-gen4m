@@ -128,7 +128,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token);
  *******************************************************************************
  */
 
-void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
+void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
 
@@ -413,8 +413,8 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	prAdapter->u4HifDbgFlag = 0;
 }
 
-static void halDumpTxRing(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint16_t u2Port, IN uint32_t u4Idx)
+static void halDumpTxRing(struct GLUE_INFO *prGlueInfo,
+			  uint16_t u2Port, uint32_t u4Idx)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct RTMP_TX_RING *prTxRing;
@@ -440,8 +440,8 @@ static void halDumpTxRing(IN struct GLUE_INFO *prGlueInfo,
 		pTxD->Burst, pTxD->DMADONE, pTxD->SDPtr0Ext);
 }
 
-uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max)
+uint32_t halDumpHifStatus(struct ADAPTER *prAdapter,
+	uint8_t *pucBuf, uint32_t u4Max)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -736,7 +736,7 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
 }
 
-void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
+void halShowPdmaInfo(struct ADAPTER *prAdapter)
 {
 #define BUF_SIZE 1024
 
@@ -989,7 +989,7 @@ void halShowPdmaInfo(IN struct ADAPTER *prAdapter)
 #undef BUF_SIZE
 }
 
-bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
+bool halShowHostCsrInfo(struct ADAPTER *prAdapter)
 {
 	uint32_t i = 0, u4Value = 0;
 	bool fgIsDriverOwn = false;
