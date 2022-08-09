@@ -1305,6 +1305,9 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		uint16_t score;
 		struct BSS_DESC *bss = aisGetLinkBssDesc(ais, i);
 
+		if (aisQueryBlackList(ad, bss))
+			continue;
+
 		score = scanCalculateTotalScore(ad, bss, reason, bidx);
 		if (base == 0 || score < base)
 			base = score;
