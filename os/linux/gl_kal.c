@@ -7694,7 +7694,7 @@ void kalSetNetAddressFromInterface(struct GLUE_INFO
 		}
 	}
 
-	DBGLOG(REQ, LOUD,
+	DBGLOG(REQ, INFO,
 		"prDev=0x%p, BssIdx=%d, NumIPv4=%d, NumIPv6=%d\n",
 		prDev, prNetDevPrivate->ucBssIdx, u4NumIPv4, u4NumIPv6);
 
