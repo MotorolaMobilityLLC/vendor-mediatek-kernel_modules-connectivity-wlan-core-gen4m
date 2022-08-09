@@ -1199,9 +1199,13 @@ try_again:
 		 * 1. sanity check fail or
 		 * 2. bssid is in driver's blacklist in 1st try
 		 */
-		if (!apsSanityCheckBssDesc(ad, bss, reason, bidx) ||
-		   (!search_blk && bss->prBlack))
+		if (!apsSanityCheckBssDesc(ad, bss, reason, bidx))
 			continue;
+		if (!search_blk && bss->prBlack) {
+			DBGLOG(APS, INFO, MACSTR" in blacklist\n",
+				MAC2STR(bss->aucBSSID));
+			continue;
+		}
 
 		/* pick by bssid first */
 		if (policy == CONNECT_BY_BSSID) {
@@ -1292,7 +1296,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap;
-	uint8_t i, num = aisGetLinkNum(ais);
+	uint8_t i, j, num = aisGetLinkNum(ais);
 	uint8_t delta = 0;
 	uint16_t base = 0, goal;
 
@@ -1305,7 +1309,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		uint16_t score;
 		struct BSS_DESC *bss = aisGetLinkBssDesc(ais, i);
 
-		if (aisQueryBlackList(ad, bss))
+		if (!bss || aisQueryBlackList(ad, bss))
 			continue;
 
 		score = scanCalculateTotalScore(ad, bss, reason, bidx);
@@ -1319,8 +1323,14 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
-		for (i = 0; i < ap->ucLinkNum; i++)
+		for (i = 0, j = 0; i < ap->ucLinkNum; i++) {
 			apsIntraUpdateTargetAp(ad, ap, i, goal, reason, bidx);
+
+			if (ap->aprTarget[i] && ap->aprTarget[i]->prBlack)
+				j++;
+		}
+		if (ap->ucLinkNum == j)
+			ap->fgIsAllLinkInBlackList = TRUE;
 	}
 }
 
@@ -1553,8 +1563,15 @@ struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *cand = NULL;
 	int32_t best = 0, tput = 0;
+	uint8_t tryBlackList = FALSE;
 
+try_again:
 	LINK_FOR_EACH_ENTRY(ap, ess, rLinkEntry, struct AP_COLLECTION) {
+		if (!tryBlackList && ap->fgIsAllLinkInBlackList) {
+			DBGLOG(APS, INFO, "All links in blacklist\n");
+			continue;
+		}
+
 		if (policy == CONNECT_BY_BSSID) {
 			if (ap->fgIsMatchBssid) {
 				DBGLOG(APS, INFO, "match bssid\n");
@@ -1576,6 +1593,12 @@ struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 			best = tput;
 			cand = ap;
 		}
+	}
+
+	if (!tryBlackList && !cand) {
+		tryBlackList = TRUE;
+		DBGLOG(APS, INFO, "No ap collection found, try blacklist\n");
+		goto try_again;
 	}
 
 	return apsFillBssDescSet(ad, cand, set, bidx);

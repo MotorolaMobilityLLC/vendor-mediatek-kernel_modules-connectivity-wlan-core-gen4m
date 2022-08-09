@@ -1838,15 +1838,16 @@ uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
 	uint8_t i, j, match = 0;
 
 	prConnSettings = &prAisFsmInfo->rConnSettings;
+
+	if (prBssDescSet->ucLinkNum == 0)
+		return FALSE;
+
 	/* if the connection policy is BSSID/BSSID_HINT, means upper layer
 	 * order driver connect to specific AP, we need still do connect
 	 */
 	if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID ||
 	    prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID_HINT)
 		return TRUE;
-
-	if (prBssDescSet->ucLinkNum == 0)
-		return FALSE;
 
 	if (prBssDescSet->ucLinkNum != aisGetLinkNum(prAisFsmInfo))
 		return TRUE;
