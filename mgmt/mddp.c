@@ -997,13 +997,14 @@ exit:
 	return ret;
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 int32_t mddpNotifyMDUnifiedCmdVer(void)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
 	uint32_t u32BufSize = 0;
-	uint32_t u32UnifiedCmdVer = 0;
+	uint32_t u32UnifiedCmdVer = 1;
 	uint8_t *buff = NULL;
 
 	DBGLOG(INIT, INFO, "Notify MD Unified Cmd version.\n");
@@ -1013,13 +1014,6 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 		ret = -1;
 		goto exit;
 	}
-
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	u32UnifiedCmdVer = 1;
-#else
-	DBGLOG(INIT, INFO, "Unified Cmd not support.\n");
-	goto exit;
-#endif
 
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
@@ -1054,6 +1048,7 @@ exit:
 				   ret, u32UnifiedCmdVer);
 	return ret;
 }
+#endif
 
 void mddpNotifyWifiOnStart(void)
 {
@@ -1084,7 +1079,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 	mddpNotifyDrvOwnTimeoutTime();
 
 	/* Notify MD Unified Cmd version */
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	mddpNotifyMDUnifiedCmdVer();
+#endif
 
 	if (g_rSettings.rOps.set)
 		g_rSettings.rOps.set(&g_rSettings, g_rSettings.u4WifiOnBit);
