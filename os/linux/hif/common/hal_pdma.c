@@ -1400,7 +1400,6 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	    && (prChipInfo->asicWfdmaReInit_handshakeInit))
 		prChipInfo->asicWfdmaReInit_handshakeInit(prAdapter);
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	prAdapter->ucSerState = SER_IDLE_DONE;
 	prHifInfo->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHifInfo->rErrRecoveryCtl.u4Status = 0;
@@ -1452,7 +1451,6 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		prHifInfo->u4TxDataQLen[u4Idx] = 0;
 		spin_lock_init(&prHifInfo->rTxDataQLock[u4Idx]);
 	}
-#endif
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
 	DBGLOG(HAL, INFO, "Enable Host CSR timeout mechanism.\n");
@@ -1471,17 +1469,14 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	if (prBusInfo->setupMcuEmiAddr)
 		prBusInfo->setupMcuEmiAddr(prAdapter);
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prSwWfdmaInfo->rOps.init)
 		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
-#endif
 
 	return true;
 }
 
 void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1540,7 +1535,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
-#endif
 }
 
 u_int8_t halProcessToken(struct ADAPTER *prAdapter,
@@ -4084,7 +4078,6 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
-#if defined(_HIF_AXI)
 	if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
 		WLAN_STATUS_NOT_INDICATING)
 		DBGLOG(INIT, INFO,
@@ -4099,7 +4092,6 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
 		DBGLOG(INIT, INFO, "process SER...\n");
 	}
-#endif
 
 	if (prBusInfo->setDmaIntMask)
 		prBusInfo->setDmaIntMask(prAdapter->prGlueInfo,
