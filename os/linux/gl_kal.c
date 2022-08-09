@@ -1678,6 +1678,24 @@ uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length)
 	return prSkbBuff;
 }
 
+void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_RX_PAGE_POOL
+	/*
+	 * if skb headroom is not zero, then it may not 4 byte alignment,
+	 * so we should not reuse it.
+	 */
+	if (prSwRfb->pvPacket && skb_headroom(prSwRfb->pvPacket)) {
+		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
+		prSwRfb->pvPacket = NULL;
+		DBGLOG_LIMITED(NIC, INFO,
+			"Unexpected SKB with headroom[%d].\n",
+			skb_headroom(prSwRfb->pvPacket));
+		dump_stack();
+	}
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Process the received packet for indicating to OS.
