@@ -831,6 +831,7 @@ struct WIFI_VAR {
 	uint8_t ucStaHeSuBfer;
 	uint8_t ucMaxAmpduLenExp;
 	uint8_t ucHeOMCtrl;
+	uint8_t ucRxCtrlToMutiBss;
 	uint8_t ucStaHePpRx;
 	uint8_t ucHeDynamicSMPS;
 #endif

@@ -3596,6 +3596,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_SET_OM_RX_NSS       "SET_OM_RXNSS"
 #define CMD_SET_OM_TX_NSS       "SET_OM_TXNSTS"
 #define CMD_SET_OM_MU_DISABLE   "SET_OM_MU_DISABLE"
+#define CMD_SET_OM_MU_DATA_DISABLE   "SET_OM_MU_DATA_DISABLE"
 #define CMD_SET_TX_OM_PACKET    "TX_OM_PACKET"
 #define CMD_SET_EHT_OM_MODE	"SET_EHT_OM_MODE"
 #define CMD_SET_EHT_OM_RX_NSS_EXT	"SET_EHT_OM_RXNSS_EXT"
@@ -3607,6 +3608,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_GET_SR_CAP          "GET_SR_CAP"
 #define CMD_GET_SR_IND          "GET_SR_IND"
 #define CMD_SET_PP_RX           "SET_PP_RX"
+#define CMD_SET_RxCtrlToMutiBss "SET_RX_CTRL_TO_MUTI_BSS"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
 #define CMD_GET_CNM		"GET_CNM"
@@ -14590,6 +14592,50 @@ int priv_driver_set_om_mu_dis(
 	return i4BytesWritten;
 }
 
+int priv_driver_set_om_mu_data_dis(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_om_mu_data_dis:: disable = %d\n",
+			u4Parse);
+		HE_SET_HTC_HE_OM_UL_MU_DATA_DISABLE(prAdapter->u4HeHtcOM,
+			u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_OM_MU_DATA_DISABLE <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
 #if (CFG_SUPPORT_802_11BE == 1)
 int priv_driver_set_eht_om(
 	struct net_device *prNetDev,
@@ -15080,6 +15126,52 @@ int priv_driver_set_pp_rx(struct net_device *prNetDev, char *pcCommand,
 	} else {
 		DBGLOG(INIT, ERROR, "iwpriv wlan0 driver SET_PP_RX_CAP <en>\n");
 		DBGLOG(INIT, ERROR, "<en> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_rx_ctrl_to_muti_bss(struct net_device *prNetDev,
+		char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		if (u4Parse) {
+			/* RxCtrlToMutiBss is enabled. */
+			prAdapter->rWifiVar.ucRxCtrlToMutiBss = TRUE;
+		} else {
+			/* RxCtrlToMutiBss is disabled. */
+			prAdapter->rWifiVar.ucRxCtrlToMutiBss = FALSE;
+		}
+
+		DBGLOG(REQ, STATE, "RxCtrlToMutiBss is %d\n",
+			prAdapter->rWifiVar.ucRxCtrlToMutiBss);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_RX_CTRL_TO_MUTI_BSS <number>\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
 	}
 
 	return i4BytesWritten;
@@ -22037,6 +22129,20 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = set_flag_policy
+	},
+	{
+		.pcCmdStr  = CMD_SET_OM_MU_DATA_DISABLE,
+		.pfHandler = priv_driver_set_om_mu_data_dis,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_SET_RxCtrlToMutiBss,
+		.pfHandler = priv_driver_set_rx_ctrl_to_muti_bss,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.policy    = NULL
 	},
 #if (CFG_SUPPORT_802_11BE == 1)
 	{

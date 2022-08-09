@@ -7148,6 +7148,9 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucHeOMCtrl = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"HeOMCtrl", FEATURE_ENABLED);
 
+	prWifiVar->ucRxCtrlToMutiBss = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"RxCtrlToMutiBss", FEATURE_DISABLED);
+
 	prWifiVar->ucStaHePpRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"StaHePpRx", FEATURE_DISABLED);
 	prWifiVar->ucHeDynamicSMPS = (uint8_t) wlanCfgGetUint32(prAdapter,
