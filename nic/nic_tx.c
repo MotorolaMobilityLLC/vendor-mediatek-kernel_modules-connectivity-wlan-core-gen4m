@@ -4355,11 +4355,12 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 				prAdapter->chip_info->txd_append_size;
 			u4TotLen = NIC_TX_DESC_AND_PADDING_LENGTH
 				+ u4TxDescAppendSize
-				+ prMsduInfoHead->u4MgmtLength;
+				+ prMsduInfoHead->u2FrameLength;
 
 			/* prepare skb to hif */
-			pkt = kalBuildSkb(prMsduInfoHead->prHead, u4TotLen,
-						TRUE);
+			pkt = kalBuildSkb(prMsduInfoHead->prHead,
+				prMsduInfoHead->u4MgmtLength,
+				u4TotLen, TRUE);
 			if (pkt == NULL) {
 				DBGLOG(NIC, WARN, "Unable to build skb\n");
 				if (prMsduInfoHead->pfTxDoneHandler != NULL) {

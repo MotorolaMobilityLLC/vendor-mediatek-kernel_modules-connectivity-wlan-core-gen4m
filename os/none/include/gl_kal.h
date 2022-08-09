@@ -2153,8 +2153,8 @@ int kalVendorExternalAuthRequest(
 #endif
 
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
-void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
-	u_int8_t fgIsSetLen);
+void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
+	uint32_t u4TotLen, u_int8_t fgIsSetLen);
 uint32_t kalGetSKBSharedInfoSize(void);
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 void kalSetMgmtDirectTxEvent2Hif(

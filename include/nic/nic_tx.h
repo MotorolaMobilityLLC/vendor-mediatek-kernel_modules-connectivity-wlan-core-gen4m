@@ -925,6 +925,9 @@ struct MSDU_INFO {
 	uint8_t ucTarQueue;
 #endif
 	uint8_t fgMgmtUseDataQ;
+	/* Record allocate size in nicAllocMgmtPktForDataQ()
+	 * without SKB shared info size, used for kalBuildSkb().
+	 */
 	uint32_t u4MgmtLength;
 	uint8_t fgNullUseDataQ;
 
