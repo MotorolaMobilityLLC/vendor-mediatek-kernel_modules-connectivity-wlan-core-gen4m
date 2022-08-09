@@ -1331,7 +1331,12 @@ uint32_t nicUniCmdSetDomainV2(struct ADAPTER *ad,
 	valid_channel_count = cmd->arActiveChannels.u1ActiveChNum2g +
 			      cmd->arActiveChannels.u1ActiveChNum5g +
 			      cmd->arActiveChannels.u1ActiveChNum6g;
-
+	if (valid_channel_count > MAX_CHN_NUM) {
+		DBGLOG(INIT, WARN,
+			"valid_channel_count=%d more than MAX_CHN_NUM\n",
+			valid_channel_count);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
 	max_cmd_len = sizeof(struct UNI_CMD_DOMAIN_SET_INFO) +
 	     sizeof(struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST) +
 	     (valid_channel_count * sizeof(struct CMD_DOMAIN_CHANNEL));
