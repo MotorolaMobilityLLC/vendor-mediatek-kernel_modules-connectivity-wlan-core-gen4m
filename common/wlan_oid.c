@@ -16114,15 +16114,9 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 	prFtContinueMsg->rMsgHdr.eMsgId = MID_OID_SAA_FSM_CONTINUE;
 	prFtContinueMsg->prStaRec = prStaRec;
-	/* ToDo: for Resource Request Protocol, we need to check if RIC request
-	** is included.
-	*/
-	if (prFtIes->prMDIE && (prFtIes->prMDIE->ucBitMap & BIT(1)))
-		prFtContinueMsg->fgFTRicRequest = TRUE;
-	else
-		prFtContinueMsg->fgFTRicRequest = FALSE;
-	DBGLOG(OID, INFO, "FT: continue to do auth/assoc, Ft Request %d\n",
-	       prFtContinueMsg->fgFTRicRequest);
+	/* We don't support resource request protocol */
+	prFtContinueMsg->fgFTRicRequest = FALSE;
+	DBGLOG(OID, INFO, "FT: continue to do auth/assoc\n");
 	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prFtContinueMsg,
 		    MSG_SEND_METHOD_BUF);
 	return WLAN_STATUS_SUCCESS;
