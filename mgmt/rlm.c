@@ -1497,8 +1497,14 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	 * frames without STBC
 	 * Enable the Operating Notification IE only for DBDC enable case.
 	 */
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 	if (!prAdapter->rWifiVar.fgDbDcModeEn)
 		return;
+#else
+	if (prBssInfo->ucOpRxNss ==
+		wlanGetSupportNss(prAdapter, prMsduInfo->ucBssIndex))
+		return;
+#endif
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
@@ -1547,8 +1553,14 @@ void rlmRspGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	if (!IS_BSS_ACTIVE(prBssInfo))
 		return;
 
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 	if (!prAdapter->rWifiVar.fgDbDcModeEn)
 		return;
+#else
+	if (prBssInfo->ucOpRxNss ==
+		wlanGetSupportNss(prAdapter, prMsduInfo->ucBssIndex))
+		return;
+#endif
 
 	/* Decide PHY type set source */
 	if (prStaRec) {
