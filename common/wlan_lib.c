@@ -8365,6 +8365,12 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 			prAdapter, "FwIdxLogTrans",
 			FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
+#if CFG_SUPPORT_PCIE_ASPM
+	prWifiVar->fgPcieEnableL1ss = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "PcieEnableL1ss", 1);
+#endif
+
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

@@ -1169,6 +1169,11 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	struct pcie_msi_info *prMsiInfo;
 	uint32_t u4MaxMsiNum;
 	int ret = 0;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+#endif
 
 	ASSERT(pdev);
 	ASSERT(id);
@@ -1268,6 +1273,20 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		PCI_L1PM_CTR1_ASPM_L11_EN);
 	glBusConfigASPM(pdev,
 			ENABLE_ASPM_L1);
+
+	prGlueInfo = g_prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL!\n");
+	} else {
+			prHifInfo = &prGlueInfo->rHifInfo;
+			prAdapter = prGlueInfo->prAdapter;
+			if (prAdapter->rWifiVar.fgPcieEnableL1ss == 0) {
+				glBusConfigASPM(prHifInfo->pdev,
+					DISABLE_ASPM_L1);
+				DBGLOG(INIT, INFO, "PCIE keep L0\n");
+			} else
+				DBGLOG(INIT, INFO, "PCIE allow enter L1.2\n");
+	}
 #endif
 #endif
 
