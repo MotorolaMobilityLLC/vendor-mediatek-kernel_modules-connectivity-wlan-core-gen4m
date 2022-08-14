@@ -3257,7 +3257,15 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 
 	if (prProg == NULL) {
 		DBGLOG(REQ, ERROR, "Can not allocate memory.\n");
-		return -ENOMEM;
+		 goto query_apf_failure;
+	}
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		APF_MAX_PROGRAM_LEN);
+
+	if (skb == NULL) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		goto query_apf_failure;
 	}
 
 	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
@@ -3283,13 +3291,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 			if (u4ProgLen == 0) {
 				DBGLOG(REQ, ERROR,
 					"Failed to query APF from firmware.\n");
-				return -EFAULT;
-			}
-			skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
-				u4ProgLen);
-			if (!skb) {
-				DBGLOG(REQ, ERROR, "Allocate skb failed\n");
-				return -ENOMEM;
+				 goto query_apf_failure;
 			}
 		} else if (rInfo.ucFragSeq <= ucCurrSeq) {
 			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
@@ -3307,7 +3309,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 					rInfo.u4BufLen);
 
 		u4RecvLen = u4BufLen;
-		DBGLOG(REQ, TRACE, "Get APF size(%d, %d) frag(%d, %d).\n",
+		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
 					u4ProgLen, u4RecvLen,
 					ucFragNum, ucCurrSeq);
 		rInfo.ucFragSeq++;
