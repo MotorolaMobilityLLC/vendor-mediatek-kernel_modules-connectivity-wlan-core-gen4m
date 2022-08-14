@@ -2174,6 +2174,11 @@ static int32_t HQA_RfRegBulkRead(struct net_device
 	else if (u4WfSel == 15)
 		u4Offset = u4Offset | 0x999F0000;
 
+	if ((2 + (u4Length * 4)) > sizeof(HqaCmdFrame->Data)
+	    || (2 + (u4Length * 4)) < u4Length) {  /*avoid integer overflow*/
+		i4Status = SERV_STATUS_AGENT_INVALID_LEN;
+		return i4Status;
+	}
 
 	for (u4Index = 0; u4Index < u4Length; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
