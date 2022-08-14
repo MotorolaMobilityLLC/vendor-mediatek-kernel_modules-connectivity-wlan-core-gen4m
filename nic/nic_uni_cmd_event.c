@@ -6361,14 +6361,14 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 				tag->ucMaxChain);
 #endif
 		} else {
-			DBGLOG(NIC, INFO, "[CSI] No Support CSI CfgItem:%d\n",
+			DBGLOG(NIC, WARN, "[CSI] No Support CSI CfgItem:%d\n",
 							cmd->ucCfgItem);
 			return WLAN_STATUS_NOT_ACCEPTED;
 		}
 	}
 		break;
 	default: {
-		DBGLOG(NIC, INFO, "[CSI] No Support CSI Mode:%d\n",
+		DBGLOG(NIC, WARN, "[CSI] No Support CSI Mode:%d\n",
 				cmd->ucMode);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
@@ -9312,13 +9312,11 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 
-#if CFG_CSI_DEBUG
-	DBGLOG(NIC, INFO,
-		"debug: data_len=%d, fixed_len=%d\n", data_len, fixed_len);
-#endif
-
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(NIC, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+#if CFG_CSI_DEBUG
+		DBGLOG(NIC, INFO, "[CSI] Tag(%d, %d)\n",
+			TAG_ID(tag), TAG_LEN(tag));
+#endif
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_CSI_TAG_DATA: {
@@ -9331,14 +9329,11 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy = (uint8_t *) kalMemAlloc(legacy_len,
 							VIR_MEM_TYPE);
 			if (!legacy) {
-				DBGLOG(NIC, WARN, "tag=%d OOM\n", TAG_ID(tag));
+				DBGLOG(NIC, WARN, "[CSI] tag=%d OOM\n",
+					TAG_ID(tag));
 				break;
 			}
 
-#if CFG_CSI_DEBUG
-			DBGLOG_MEM8(NIC, INFO,
-				(uint8_t *) tag_buffer, legacy_len);
-#endif
 			kalMemCopy(legacy, tag_buffer, legacy_len);
 			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_CSI_DATA,
 						legacy, legacy_len);

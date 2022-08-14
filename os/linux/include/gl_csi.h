@@ -117,6 +117,7 @@ enum CSI_EVENT_TLV_TAG {
 	CSI_EVENT_RSVD5,
 	CSI_EVENT_BW_SEG,
 	CSI_EVENT_REMAIN_LAST,
+	CSI_EVENT_RSVD6,
 	CSI_EVENT_TLV_TAG_NUM,    /* csi event end, must be exist */
 };
 
@@ -142,6 +143,7 @@ enum CSI_DATA_TLV_TAG {
 	CSI_DATA_H_IDX,
 	CSI_DATA_RX_RATE,
 	CSI_DATA_RSVD5,
+	CSI_DATA_RSVD6,
 	CSI_DATA_TLV_TAG_NUM,
 };
 
@@ -188,6 +190,7 @@ struct CSI_DATA_T {
 	uint32_t Antenna_pattern;
 	uint32_t u4TRxIdx;
 	uint32_t u4Rsvd5;
+	uint32_t u4Rsvd6;
 	uint32_t u4SegmentNum;
 	uint8_t ucRemainLast;
 };
