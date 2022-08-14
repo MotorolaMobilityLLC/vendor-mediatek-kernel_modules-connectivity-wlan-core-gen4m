@@ -374,6 +374,9 @@ struct CONNECTION_SETTINGS {
 	uint8_t aucWSCIE[GLUE_INFO_WSCIE_LENGTH];	/*for probe req */
 	uint16_t u2WSCIELen;
 
+	uint8_t aucJoinBSSID[MAC_ADDR_LEN];
+	uint16_t u2JoinStatus;
+
 	/*
 	 * Buffer to hold non-wfa vendor specific IEs set
 	 * from wpa_supplicant. This is used in sending

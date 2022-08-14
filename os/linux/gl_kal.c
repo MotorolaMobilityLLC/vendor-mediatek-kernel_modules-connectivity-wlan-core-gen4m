@@ -2813,8 +2813,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 
 #endif
 	case WLAN_STATUS_JOIN_FAILURE: {
-		struct BSS_DESC *prBssDesc =
-			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		struct CONNECTION_SETTINGS *prConnSettings =
 			aisGetConnSettings(prAdapter, ucBssIndex);
 		struct GL_WPA_INFO *prWpaInfo =
@@ -2822,6 +2820,16 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		struct BSS_INFO *prBssInfo =
 			aisGetAisBssInfo(prAdapter, ucBssIndex);
 		uint16_t u2JoinStatus;
+
+		COPY_MAC_ADDR(arBssid, prConnSettings->aucJoinBSSID);
+		if (prConnSettings->u2JoinStatus != STATUS_CODE_AUTH_TIMEOUT &&
+		    prConnSettings->u2JoinStatus != STATUS_CODE_ASSOC_TIMEOUT)
+			u2JoinStatus = prConnSettings->u2JoinStatus;
+		else
+			u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
+
+		DBGLOG(INIT, INFO, "JOIN Failure: "MACSTR" Status=%d",
+			MAC2STR(arBssid), u2JoinStatus);
 
 		/* Make sure we remove all WEP key */
 		if (prWpaInfo && prWpaInfo->u4WpaVersion ==
@@ -2839,14 +2847,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 					sizeof(struct PARAM_REMOVE_KEY);
 				rRemoveKey.u4KeyIndex = keyId;
 				rRemoveKey.ucBssIdx = ucBssIndex;
-				if (prBssDesc)
-					kalMemCopy(rRemoveKey.arBSSID,
-						prBssDesc->aucBSSID,
-						MAC_ADDR_LEN);
-				else
-					kalMemCopy(rRemoveKey.arBSSID,
-						prConnSettings->aucBSSIDHint,
-						MAC_ADDR_LEN);
+				COPY_MAC_ADDR(rRemoveKey.arBSSID, arBssid);
 				DBGLOG(INIT, INFO,
 					"JOIN Failure: remove WEP wlanidx: %d, keyid: %d",
 					prBssInfo->wepkeyWlanIdx,
@@ -2856,16 +2857,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 					sizeof(struct PARAM_REMOVE_KEY),
 					&u4SetLen, FALSE);
 			}
-		}
-
-		if (prBssDesc) {
-			DBGLOG(INIT, INFO, "JOIN Failure: u2JoinStatus=%d",
-				prBssDesc->u2JoinStatus);
-			COPY_MAC_ADDR(arBssid, prBssDesc->aucBSSID);
-		} else {
-			DBGLOG(INIT, INFO, "JOIN Failure: No TargetBssDesc");
-			COPY_MAC_ADDR(arBssid,
-				prConnSettings->aucBSSID);
 		}
 
 #if (CFG_ADVANCED_80211_MLO == 1)
@@ -2916,13 +2907,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			bss = kalInformConnectionBss(prAdapter,
 				prChannel, arBssid, ucBssIndex);
 #endif /* (CFG_ADVANCED_80211_MLO == 1) */
-
-		if (prBssDesc && prBssDesc->u2JoinStatus
-		    && prBssDesc->u2JoinStatus != STATUS_CODE_AUTH_TIMEOUT
-		    && prBssDesc->u2JoinStatus != STATUS_CODE_ASSOC_TIMEOUT)
-			u2JoinStatus = prBssDesc->u2JoinStatus;
-		else
-			u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
 
 #if (CFG_ADVANCED_80211_MLO == 1)
 			cfg80211_connect_bss(

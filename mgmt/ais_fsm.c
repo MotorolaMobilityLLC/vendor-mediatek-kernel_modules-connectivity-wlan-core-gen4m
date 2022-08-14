@@ -3539,6 +3539,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	uint16_t u2IELength = 0;
 	uint8_t *pucIE = NULL;
 	OS_SYSTIME rCurrentTime;
+	uint8_t fgTempReject;
 
 	GET_CURRENT_SYSTIME(&rCurrentTime);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -3582,7 +3583,8 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	       prStaRec->u2ReasonCode,
 	       prAisBssInfo->eConnectionState);
 
-	prBssDesc->u2JoinStatus = prStaRec->u2StatusCode;
+	COPY_MAC_ADDR(prConnSettings->aucJoinBSSID, prBssDesc->aucBSSID);
+	prConnSettings->u2JoinStatus = prStaRec->u2StatusCode;
 	prBssDesc->ucJoinFailureCount++;
 	GET_CURRENT_SYSTIME(&prBssDesc->rJoinFailTime);
 
@@ -3641,10 +3643,15 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	if (prBssDesc->prBlack)
 		prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
 
+	fgTempReject = aisHandleTemporaryReject(prAdapter, prStaRec);
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
 
-	if (aisHandleTemporaryReject(prAdapter, prStaRec) ||
+	/* aisRestoreAllLink clears target bssdesc and starec if no connection,
+	 * DO NOT use prStaRec or aisGetTargetBssDesc after this point
+	 */
+
+	if (fgTempReject ||
 	    prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		/* roaming fail count and time */
 		prAdapter->prGlueInfo->u4RoamFailCnt++;
@@ -3669,7 +3676,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		eNextState = AIS_STATE_JOIN_FAILURE;
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD &&
-		prBssDesc->u2JoinStatus) {
+		prConnSettings->u2JoinStatus) {
 		/* AP reject STA for
 		 * STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD
 		 * , or AP block STA
