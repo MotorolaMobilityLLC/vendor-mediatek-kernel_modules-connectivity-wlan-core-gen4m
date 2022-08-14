@@ -102,7 +102,7 @@
 #define TX_RING_SIZE				3072
 #endif
 #define TX_RING_DATA_SIZE			TX_RING_SIZE
-#define TX_RING_CMD_SIZE			256
+#define TX_RING_CMD_SIZE			320
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define RX_RING_SIZE				4095 /* Max Rx ring size */
