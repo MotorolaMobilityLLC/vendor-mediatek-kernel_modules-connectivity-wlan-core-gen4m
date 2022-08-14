@@ -435,9 +435,12 @@ struct BUS_INFO {
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_PCIE_ASPM
-	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
+		u_int enable_role);
 	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
+	u_int8_t fgWifiEnL1_2;
+	u_int8_t fgMDEnL1_2;
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
