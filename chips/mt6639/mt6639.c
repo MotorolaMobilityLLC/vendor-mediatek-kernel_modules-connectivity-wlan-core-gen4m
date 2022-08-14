@@ -1639,9 +1639,9 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 
 		    HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xf);
 		} else {
-			DBGLOG(HAL, INFO, "Enable aspm no match\n");
+			DBGLOG(HAL, TRACE, "Enable aspm no match\n");
 		}
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2..\n");
+		DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
 	} else {
 		/*
 		 *	Backup original setting then
@@ -1664,13 +1664,13 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 			}
 			HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
 		} else {
-			DBGLOG(HAL, INFO, "Disable aspm no match\n");
+			DBGLOG(HAL, TRACE, "Disable aspm no match\n");
 		}
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
-			DBGLOG(HAL, INFO, "Disable aspm L1..\n");
+			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
 		else
-			DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2..\n");
+			DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2..\n");
 	}
 }
 
