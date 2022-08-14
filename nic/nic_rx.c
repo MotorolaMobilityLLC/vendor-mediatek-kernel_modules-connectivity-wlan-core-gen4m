@@ -2754,6 +2754,9 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 void nicRxReturnRFB(struct ADAPTER *prAdapter,
 		    struct SW_RFB *prSwRfb)
 {
+	if (!prSwRfb)
+		return;
+
 	if (prSwRfb->pvPacket)
 		kalSkbReuseCheck(prSwRfb);
 
