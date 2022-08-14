@@ -1550,6 +1550,9 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 	struct RTMP_DMACB *prTxCell;
 	struct RTMP_TX_RING *prTxRing;
 
+	if (u4Token >= HIF_TX_MSDU_TOKEN_NUM)
+		return FALSE;
+
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prTokenEntry = halGetMsduTokenEntry(prAdapter, u4Token);
