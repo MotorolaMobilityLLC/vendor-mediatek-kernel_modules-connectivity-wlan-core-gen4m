@@ -3548,6 +3548,10 @@ uint32_t nicRlmUpdateSRParams(struct ADAPTER *prAdapter,
 		ucBssIndex);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR, "ucBssIndex:%d not found\n", ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
 	rCmdUpdateSRParms.ucBssIndex = ucBssIndex;
 	rCmdUpdateSRParms.ucSRControl = prBssInfo->ucSRControl;
 	rCmdUpdateSRParms.ucNonSRGObssPdMaxOffset =

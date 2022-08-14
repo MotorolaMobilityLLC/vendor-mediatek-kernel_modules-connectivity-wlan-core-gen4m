@@ -2792,6 +2792,7 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 	struct UNI_CMD_STAREC *uni_cmd;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC);
+	uint16_t widx = 0;
 
 	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
 	    info->ucExtCID != EXT_CMD_ID_STAREC_UPDATE)
@@ -2819,8 +2820,9 @@ uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
+	widx = (uint16_t) cmd->ucWlanIdx;
 	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		cmd->ucWlanIdx);
+		widx);
 
 	switch (TAG_ID(cmd->aucBuffer)) {
 	case STA_REC_BASIC: {

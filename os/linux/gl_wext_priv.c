@@ -12935,7 +12935,7 @@ static int priv_driver_set_wow_udpport(struct net_device *prNetDev,
 	/* example: set_wow_udp 0 5353,8080 (set) */
 	/* example: set_wow_udp 1 (clear) */
 
-	if (i4Argc == 3) {
+	if (i4Argc >= 3) {
 
 		/* Pick Max */
 		ucCount = ((i4Argc - 2) > MAX_TCP_UDP_PORT) ? MAX_TCP_UDP_PORT :
@@ -15093,7 +15093,7 @@ int priv_driver_set_pp_rx(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret = 0, u4Parse = 0;
 	uint8_t ucPpRxCap;
 
 	ASSERT(prNetDev);
@@ -17240,7 +17240,7 @@ static int priv_driver_set_smpsparams(
 	struct _SMPS_PARAMS_T *prSMPSParams = NULL;
 	uint16_t i;
 	int32_t u4Ret = 0;
-	uint32_t au4Setting[CMD_SMPS_MAX_PARAMS];
+	uint32_t au4Setting[CMD_SMPS_MAX_PARAMS] = { 0 };
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	struct _MSG_SMPS_PARAMS_SET_T *prSMPSParamSetMsg;
 
