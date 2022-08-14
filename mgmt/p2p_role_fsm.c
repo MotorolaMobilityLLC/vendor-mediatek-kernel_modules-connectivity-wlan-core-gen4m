@@ -1795,6 +1795,9 @@ void p2pRoleFsmDelIface(
 			prP2pRoleFsmInfo->ucRoleIndex));
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
+		p2pFuncInitConnectionSettings(prAdapter,
+			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx],
+			FALSE);
 	}
 
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
