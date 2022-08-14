@@ -2430,6 +2430,7 @@ exit:
 }
 
 static struct work_struct pwr_on_notify_work;
+static u_int8_t fgInPwrOnNotifyCb;
 static void __wlan_pwr_on_notify(struct work_struct *work)
 {
 	struct GLUE_INFO *glue = NULL;
@@ -2446,6 +2447,7 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 		goto exit;
 	}
 
+	fgInPwrOnNotifyCb = TRUE;
 	set_cal_enabled(FALSE);
 	ret = wlanFuncOn();
 	if (ret)
@@ -2455,9 +2457,15 @@ static void __wlan_pwr_on_notify(struct work_struct *work)
 
 exit:
 	set_cal_enabled(TRUE);
+	fgInPwrOnNotifyCb = FALSE;
 	if (ret)
 		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
 	wfsys_unlock();
+}
+
+u_int8_t is_pwr_on_notify_processing(void)
+{
+	return fgInPwrOnNotifyCb;
 }
 
 static int wlan_pwr_on_notify(void)
