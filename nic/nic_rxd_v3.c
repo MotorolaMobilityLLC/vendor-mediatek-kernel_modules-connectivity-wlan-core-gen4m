@@ -356,7 +356,9 @@ u_int8_t nic_rxd_v3_sanity_check(
 	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus;
 	u_int8_t fgDrop = FALSE;
 	uint8_t ucBssIndex;
+	struct RX_CTRL *prRxCtrl;
 
+	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = (struct HW_MAC_CONNAC3X_RX_DESC *)prSwRfb->prRxStatus;
 
@@ -472,6 +474,33 @@ u_int8_t nic_rxd_v3_sanity_check(
 		fgDrop = TRUE;
 		DBGLOG(RSN, INFO,
 			"Drop fragmented broadcast and multicast\n");
+	}
+
+	if (fgDrop) {
+		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
+
+		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_DAF_ERR_DROP_COUNT);
+
+		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_ICV_ERR_DROP_COUNT);
+
+#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus))
+			RX_INC_CNT(prRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT);
+#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+
+		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
+#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+			|| HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(
+				prRxStatus)
+#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+			) {
+			NIC_DUMP_RXD(prAdapter, prRxStatus);
+			NIC_DUMP_RXP(prSwRfb->pvHeader,
+				prSwRfb->u2PacketLen);
+		}
 	}
 
 	if (HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus))

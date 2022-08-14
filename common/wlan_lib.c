@@ -7867,6 +7867,14 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->fgFlushRxReordering = wlanCfgGetUint32(prAdapter,
 					"FlushRxReordering", FEATURE_ENABLED);
 
+
+	/**
+	 * A debugging switch enables RXD, RXP dumping when driver drops packets
+	 * for ICV error.
+	 */
+	prWifiVar->fgRxIcvErrDbg = wlanCfgGetUint32(prAdapter,
+					"RxIcvErrDbg", FEATURE_DISABLED);
+
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
 					"BaShortMissTimeoutMs",

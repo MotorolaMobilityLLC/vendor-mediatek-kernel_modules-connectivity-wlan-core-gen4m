@@ -84,6 +84,30 @@
 #define NIC_IS_BSS_BELOW_11AC(prBssInfo) \
 	((prBssInfo->ucPhyTypeSet >> PHY_TYPE_VHT_INDEX) == 0)
 
+#define NIC_DUMP_RXD(prAdapter, prRxStatus) \
+	do { \
+		u_int8_t fgRxIcvErrDbg = \
+			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
+		if (fgRxIcvErrDbg) { \
+			struct mt66xx_chip_info *prChipInfo; \
+			\
+			prChipInfo = prAdapter->chip_info; \
+			DBGLOG(NIC, INFO, "Dump RXD:\n"); \
+			DBGLOG_MEM8(NIC, INFO, prRxStatus, \
+				prChipInfo->rxd_size); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_RXP(pvPayload, u4PayloadLen) \
+	do { \
+		u_int8_t fgRxIcvErrDbg = \
+			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
+		if (fgRxIcvErrDbg) { \
+			DBGLOG(NIC, INFO, "Dump RXP:\n"); \
+			DBGLOG_MEM8(NIC, INFO, pvPayload, u4PayloadLen); \
+		} \
+	} while (0)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

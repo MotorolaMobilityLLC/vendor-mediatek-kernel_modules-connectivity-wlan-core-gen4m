@@ -3643,7 +3643,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				}
 
 				if (prCurrSwRfb->prStaRec == NULL) {
-					DBGLOG(RX, TEMP,
+					DBGLOG(RX, WARN,
 						"Mark NULL the Packet for no STA_REC, wlanIdx=%d\n",
 						prCurrSwRfb->ucWlanIdx);
 					RX_INC_CNT(&prAdapter->rRxCtrl,
@@ -3653,6 +3653,10 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					QUEUE_INSERT_TAIL(prReturnedQue,
 						(struct QUE_ENTRY *)
 						prCurrSwRfb);
+					NIC_DUMP_RXD(prAdapter, prRxStatus);
+					NIC_DUMP_RXP(prCurrSwRfb->pvHeader,
+						prCurrSwRfb->u2PacketLen);
+
 					continue;
 				}
 
@@ -4021,12 +4025,15 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					RX_BAR_DROP_COUNT);
 				break;
 			default:
-				DBGLOG(RX, TEMP,
+				DBGLOG(RX, WARN,
 					"Mark NULL the Packet for non-interesting type\n");
 				RX_INC_CNT(&prAdapter->rRxCtrl,
 					RX_NO_INTEREST_DROP_COUNT);
 				QUEUE_INSERT_TAIL(prReturnedQue,
 					(struct QUE_ENTRY *) prCurrSwRfb);
+				NIC_DUMP_RXD(prAdapter, prRxStatus);
+				NIC_DUMP_RXP(prCurrSwRfb->pvHeader,
+						prCurrSwRfb->u2PacketLen);
 				break;
 			}
 		}

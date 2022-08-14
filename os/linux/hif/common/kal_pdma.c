@@ -1905,6 +1905,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	uint8_t ucScatterCnt = 0;
 	uint8_t *pucRecvBuff;
 #endif
+#if CFG_DUMP_RXD_SEGMENT
+	u_int8_t fgSkip = FALSE;
+	u_int8_t fgSegmentFirst = FALSE;
+#endif /* CFG_DUMP_RXD_SEGMENT */
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -1931,6 +1935,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		DBGLOG(HAL, WARN,
 			"Skip Rx segmented data packet, SDL0[%u] LS0[%u]\n",
 			pRxD->SDLen0, pRxD->LastSec0);
+#if CFG_DUMP_RXD_SEGMENT
+		if (prRxRing->fgRxSegPkt == FALSE)
+			fgSegmentFirst = TRUE;
+#endif /* CFG_DUMP_RXD_SEGMENT */
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 		if (prRxRing->fgRxSegPkt == FALSE) {
 			u4CpuIdxScatter = u4CpuIdx;
@@ -1964,7 +1972,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 		if (prRxRing->pvPacket == NULL)
 #endif
+#if CFG_DUMP_RXD_SEGMENT
+		fgSkip = TRUE;
+#else /* CFG_DUMP_RXD_SEGMENT */
 		goto skip;
+#endif /* CFG_DUMP_RXD_SEGMENT */
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
@@ -1986,6 +1998,28 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	DBGLOG(HAL, INFO, "Dump RXDMAD: \n");
 	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 #endif
+
+#if CFG_DUMP_RXD_SEGMENT
+	/* dump rxd for large pkt */
+	if (fgSkip) {
+		void *pvPayload = prSwRfb->pucRecvBuff;
+		uint32_t u4PayloadLen = pRxD->SDLen0;
+
+		/* only first segment has rxd */
+		if (fgSegmentFirst) {
+			nicRxFillRFB(prAdapter, prSwRfb);
+
+			pvPayload = prSwRfb->pvHeader;
+			u4PayloadLen = prSwRfb->u2PacketLen;
+
+			NIC_DUMP_RXD(prAdapter, prSwRfb->prRxStatus);
+		}
+
+		/* dump payload */
+		NIC_DUMP_RXP(pvPayload, u4PayloadLen);
+		goto skip;
+	}
+#endif /* CFG_DUMP_RXD_SEGMENT */
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
