@@ -1681,16 +1681,23 @@ uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length)
 void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 {
 #if CFG_SUPPORT_RX_PAGE_POOL
+	struct sk_buff *prSkb;
+
+	if (!prSwRfb->pvPacket)
+		return;
+
+	prSkb = (struct sk_buff *)prSwRfb->pvPacket;
+
 	/*
 	 * if skb headroom is not zero, then it may not 4 byte alignment,
 	 * so we should not reuse it.
 	 */
-	if (prSwRfb->pvPacket && skb_headroom(prSwRfb->pvPacket)) {
-		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
-		prSwRfb->pvPacket = NULL;
+	if (prSkb->pp_recycle && skb_headroom(prSkb)) {
 		DBGLOG_LIMITED(NIC, INFO,
 			"Unexpected SKB with headroom[%d].\n",
-			skb_headroom(prSwRfb->pvPacket));
+			skb_headroom(prSkb));
+		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
+		prSwRfb->pvPacket = NULL;
 		dump_stack();
 	}
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
