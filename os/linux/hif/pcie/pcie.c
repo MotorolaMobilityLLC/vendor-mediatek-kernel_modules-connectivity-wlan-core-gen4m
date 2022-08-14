@@ -628,9 +628,19 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	DBGLOG(HAL, INFO, "mtk_pci_error_detected state: %d, resetting: %d\n",
 		state, kalIsResetting());
 
-	if (state == pci_channel_io_normal)
+	if (state == pci_channel_io_normal) {
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+		u32 ret = mtk_pcie_dump_link_info(0);
+
+		/* bit[6]: Completion timeout status */
+		if (ret & BIT(6) == 0)
+			goto exit;
+#else
 		goto exit;
-	else if (kalIsResetting())
+#endif
+	}
+
+	if (kalIsResetting())
 		res = PCI_ERS_RESULT_CAN_RECOVER;
 	else
 		res = PCI_ERS_RESULT_NEED_RESET;
