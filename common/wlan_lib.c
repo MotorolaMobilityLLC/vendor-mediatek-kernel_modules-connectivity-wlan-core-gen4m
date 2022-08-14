@@ -1103,6 +1103,8 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 	/* Beacon lost detection option */
 	if (prAdapter->rWifiVar.fgDisBcnLostDetection != 0)
 		prAdapter->fgDisBcnLostDetection = TRUE;
+	if (prAdapter->rWifiVar.fgDisAgingLostDetection != 0)
+		prAdapter->fgDisStaAgingTimeoutDetection = TRUE;
 #endif
 
 	/* Load compile time constant */
@@ -7688,6 +7690,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 					prAdapter, "DisOnlineScan", 0);
 	prWifiVar->fgDisBcnLostDetection = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "DisBcnLostDetection", 0);
+	prWifiVar->fgDisAgingLostDetection = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "DisAgingLostDetection", 0);
 	prWifiVar->fgDisRoaming = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "DisRoaming", 0);
 	prWifiVar->u4AisRoamingNumber = (uint32_t) wlanCfgGetUint32(
