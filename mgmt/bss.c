@@ -644,6 +644,9 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 	/* Update default Tx rate */
 	nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
+	/* Update default op mode to a impossible value */
+	prStaRec->ucOpModeInOpNotificationIE = 0xff;
+
 	return prStaRec;
 
 }				/* end of bssCreateStaRecFromBssDesc() */

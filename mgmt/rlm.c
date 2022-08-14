@@ -2525,6 +2525,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	struct IE_OP_MODE_NOTIFICATION *prOPNotif;
 	uint8_t fgHasOPModeIE = FALSE;
 	uint8_t fgHasNewOPModeIE = FALSE;
+	uint8_t fgUpdateToFWForDiffOPModeIE = TRUE;
 	uint8_t ucVhtOpModeChannelWidth = 0;
 	uint8_t ucVhtOpModeRxNss = 0;
 	uint8_t ucMaxBwAllowed;
@@ -2569,6 +2570,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint16_t u2PreDscBitmap = 0;
 #endif
 #endif
+	uint8_t *pucIEOpmode = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -2876,149 +2878,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			break;
 		case ELEM_ID_OP_MODE:
-			if (IE_LEN(pucIE) !=
-				    (sizeof(struct IE_OP_MODE_NOTIFICATION) -
-				     2))
-				break;
+			/* Check OP mode IE at last */
+			pucIEOpmode = pucIE;
 
-			if (!(RLM_NET_IS_11AC(prBssInfo)
-#if (CFG_SUPPORT_WIFI_6G == 1)
-				|| (prBssInfo->eBand == BAND_6G &&
-					RLM_NET_IS_11AX(prBssInfo))
-#endif
-			))
-				break;
-
-			prOPNotif = (struct IE_OP_MODE_NOTIFICATION *) pucIE;
-
-			/* NOTE: An AP always sets this field to 0,
-			 * so break it if this bit is set.
-			 */
-			if ((prOPNotif->ucOpMode & VHT_OP_MODE_RX_NSS_TYPE)
-			    == VHT_OP_MODE_RX_NSS_TYPE) {
-				break;
-			}
-			fgHasOPModeIE = TRUE;
-
-			/* Check BIT(2) is BW80P80_160.
-			 * Refactor ucOpMode with ucVhtOpMode format.
-			 */
-			if (prOPNotif->ucOpMode &
-				VHT_OP_MODE_CHANNEL_WIDTH_80P80_160) {
-				prOPNotif->ucOpMode &=
-					~(VHT_OP_MODE_CHANNEL_WIDTH |
-					VHT_OP_MODE_CHANNEL_WIDTH_80P80_160);
-				prOPNotif->ucOpMode |=
-					(VHT_OP_MODE_CHANNEL_WIDTH_160_80P80 &
-					VHT_OP_MODE_CHANNEL_WIDTH);
-			}
-
-			/* Same OP mode, no need to update.
-			 * Let the further flow not to update VhtOpMode.
-			 */
-			if (prStaRec->ucVhtOpMode == prOPNotif->ucOpMode) {
-				ucInitVhtOpMode = prStaRec->ucVhtOpMode;
-				break;
-			}
-
-			fgHasNewOPModeIE = TRUE;
-			prStaRec->ucVhtOpMode = prOPNotif->ucOpMode;
-			ucVhtOpModeChannelWidth =
-				(prOPNotif->ucOpMode &
-				VHT_OP_MODE_CHANNEL_WIDTH);
-
-			ucVhtOpModeRxNss =
-				(prOPNotif->ucOpMode & VHT_OP_MODE_RX_NSS)
-				>> VHT_OP_MODE_RX_NSS_OFFSET;
-
-			if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
-				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
-					(~(VHT_CAP_INFO_MCS_1SS_MASK |
-					VHT_CAP_INFO_MCS_2SS_MASK));
-
-				prStaRec->u2VhtRxMcsMap |=
-					(prStaRec->u2VhtRxMcsMapAssoc &
-					(VHT_CAP_INFO_MCS_1SS_MASK |
-					VHT_CAP_INFO_MCS_2SS_MASK));
-			} else {
-				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
-					(~VHT_CAP_INFO_MCS_1SS_MASK);
-
-				prStaRec->u2VhtRxMcsMap |=
-					(prStaRec->u2VhtRxMcsMapAssoc &
-					VHT_CAP_INFO_MCS_1SS_MASK);
-			}
-			DBGLOG(RLM, INFO,
-			       "NSS=%x RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-			       ucVhtOpModeRxNss, prStaRec->u2VhtRxMcsMap,
-			       prStaRec->u2VhtRxMcsMapAssoc);
-
-#if (CFG_SUPPORT_802_11AX == 1)
-			u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW80Assoc;
-			if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
-				prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
-					(~(HE_CAP_INFO_MCS_1SS_MASK |
-					HE_CAP_INFO_MCS_2SS_MASK));
-
-				prStaRec->u2HeRxMcsMapBW80 |=
-					(u2HeRxMcsMapAssoc &
-					(HE_CAP_INFO_MCS_1SS_MASK |
-					HE_CAP_INFO_MCS_2SS_MASK));
-			} else {
-				fgIsRx1ss = TRUE;
-
-				prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
-					(~HE_CAP_INFO_MCS_1SS_MASK);
-
-				prStaRec->u2HeRxMcsMapBW80 |=
-					(u2HeRxMcsMapAssoc &
-					HE_CAP_INFO_MCS_1SS_MASK);
-			}
-
-			DBGLOG(RLM, INFO,
-				"HeBW80, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-				ucVhtOpModeRxNss,
-				prStaRec->u2HeRxMcsMapBW80,
-				prStaRec->u2HeRxMcsMapBW80Assoc);
-
-			if (ucMaxBwAllowed >= MAX_BW_160MHZ) {
-				u2HeRxMcsMapAssoc =
-					prStaRec->u2HeRxMcsMapBW160Assoc;
-				if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
-					prStaRec->u2HeRxMcsMapBW160 =
-						BITS(0, 15) &
-						(~(HE_CAP_INFO_MCS_1SS_MASK |
-						HE_CAP_INFO_MCS_2SS_MASK));
-
-					prStaRec->u2HeRxMcsMapBW160 |=
-						(u2HeRxMcsMapAssoc &
-						(HE_CAP_INFO_MCS_1SS_MASK |
-						HE_CAP_INFO_MCS_2SS_MASK));
-				} else {
-					prStaRec->u2HeRxMcsMapBW160 =
-						BITS(0, 15) &
-						(~HE_CAP_INFO_MCS_1SS_MASK);
-
-					prStaRec->u2HeRxMcsMapBW160 |=
-						(u2HeRxMcsMapAssoc &
-						HE_CAP_INFO_MCS_1SS_MASK);
-				}
-
-				DBGLOG(RLM, INFO,
-					"HeBW160, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-					ucVhtOpModeRxNss,
-					prStaRec->u2HeRxMcsMapBW160,
-					prStaRec->u2HeRxMcsMapBW160Assoc);
-			}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if (fgIsRx1ss)
-				prStaRec->u2He6gBandCapInfo &=
-					~HE_6G_CAP_INFO_SM_POWER_SAVE;
-			else
-				prStaRec->u2He6gBandCapInfo |=
-					HE_6G_CAP_INFO_SM_POWER_SAVE;
-#endif
-#endif /* CFG_SUPPORT_802_11AX == 1 */
 			break;
 #if CFG_SUPPORT_DFS
 		case ELEM_ID_WIDE_BAND_CHANNEL_SWITCH:
@@ -3347,13 +3209,211 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 	}	 /* end of IE_FOR_EACH */
 
+	if (pucIEOpmode != NULL) {
+		switch (IE_ID(pucIEOpmode)) {
+		case ELEM_ID_OP_MODE:
+			DBGLOG(RLM, TRACE, "Check OP mode IE at last\n");
+			if (IE_LEN(pucIEOpmode) !=
+				(sizeof(struct IE_OP_MODE_NOTIFICATION) -
+					 2)) {
+				DBGLOG(RLM, WARN,
+					"OP mode IE len check fail\n");
+				break;
+			}
+
+			if (!(RLM_NET_IS_11AC(prBssInfo)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				|| (prBssInfo->eBand == BAND_6G &&
+					RLM_NET_IS_11AX(prBssInfo))
+#endif
+			))
+				break;
+
+			prOPNotif =
+			(struct IE_OP_MODE_NOTIFICATION *) pucIEOpmode;
+
+			/* NOTE: An AP always sets this field to 0,
+			 * so break it if this bit is set.
+			 */
+			if ((prOPNotif->ucOpMode & VHT_OP_MODE_RX_NSS_TYPE)
+				== VHT_OP_MODE_RX_NSS_TYPE)
+				break;
+			fgHasOPModeIE = TRUE;
+
+			/* Check BIT(2) is BW80P80_160.
+			 * Refactor ucOpMode with ucVhtOpMode format.
+			 */
+			if (prOPNotif->ucOpMode &
+				VHT_OP_MODE_CHANNEL_WIDTH_80P80_160) {
+				prOPNotif->ucOpMode &=
+					~(VHT_OP_MODE_CHANNEL_WIDTH |
+					VHT_OP_MODE_CHANNEL_WIDTH_80P80_160);
+				prOPNotif->ucOpMode |=
+					(VHT_OP_MODE_CHANNEL_WIDTH_160_80P80 &
+					VHT_OP_MODE_CHANNEL_WIDTH);
+			}
+
+			/* Same OP mode, no need to update.
+			 * Let the further flow not to update VhtOpMode.
+			 */
+			if (prStaRec->ucVhtOpMode == prOPNotif->ucOpMode) {
+				ucInitVhtOpMode = prStaRec->ucVhtOpMode;
+				DBGLOG(RLM, LOUD,
+					"OP mode IE: same ucVhtOpMode\n");
+			} else {
+				prStaRec->ucVhtOpMode = prOPNotif->ucOpMode;
+			}
+
+			if (prStaRec->ucOpModeInOpNotificationIE
+				== prOPNotif->ucOpMode) {
+				DBGLOG(RLM, LOUD,
+					"OP mode IE: same ucOpModeInOpNotificationIE 0x%x\n",
+					prStaRec->ucOpModeInOpNotificationIE);
+				fgUpdateToFWForDiffOPModeIE = FALSE;
+			}
+
+			prStaRec->ucOpModeInOpNotificationIE =
+				prOPNotif->ucOpMode;
+
+			fgHasNewOPModeIE = TRUE;
+
+			ucVhtOpModeChannelWidth =
+				(prOPNotif->ucOpMode &
+				VHT_OP_MODE_CHANNEL_WIDTH);
+
+			ucVhtOpModeRxNss =
+				(prOPNotif->ucOpMode & VHT_OP_MODE_RX_NSS)
+				>> VHT_OP_MODE_RX_NSS_OFFSET;
+
+			if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
+				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+					(~(VHT_CAP_INFO_MCS_1SS_MASK |
+					VHT_CAP_INFO_MCS_2SS_MASK));
+
+				prStaRec->u2VhtRxMcsMap |=
+					(prStaRec->u2VhtRxMcsMapAssoc &
+					(VHT_CAP_INFO_MCS_1SS_MASK |
+					VHT_CAP_INFO_MCS_2SS_MASK));
+			} else {
+				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+					(~VHT_CAP_INFO_MCS_1SS_MASK);
+
+				prStaRec->u2VhtRxMcsMap |=
+					(prStaRec->u2VhtRxMcsMapAssoc &
+					VHT_CAP_INFO_MCS_1SS_MASK);
+			}
+			DBGLOG(RLM, INFO,
+				"[OP Mode IE] NSS=%x RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+				ucVhtOpModeRxNss, prStaRec->u2VhtRxMcsMap,
+				prStaRec->u2VhtRxMcsMapAssoc);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+			u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW80Assoc;
+			if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
+				prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
+					(~(HE_CAP_INFO_MCS_1SS_MASK |
+					HE_CAP_INFO_MCS_2SS_MASK));
+
+				prStaRec->u2HeRxMcsMapBW80 |=
+					(u2HeRxMcsMapAssoc &
+					(HE_CAP_INFO_MCS_1SS_MASK |
+					HE_CAP_INFO_MCS_2SS_MASK));
+			} else {
+				fgIsRx1ss = TRUE;
+
+				prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
+					(~HE_CAP_INFO_MCS_1SS_MASK);
+
+				prStaRec->u2HeRxMcsMapBW80 |=
+					(u2HeRxMcsMapAssoc &
+					HE_CAP_INFO_MCS_1SS_MASK);
+			}
+
+			DBGLOG(RLM, INFO,
+				"[OP Mode IE] HeBW80, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+				ucVhtOpModeRxNss,
+				prStaRec->u2HeRxMcsMapBW80,
+				prStaRec->u2HeRxMcsMapBW80Assoc);
+
+			if (ucMaxBwAllowed >= MAX_BW_160MHZ) {
+				u2HeRxMcsMapAssoc =
+					prStaRec->u2HeRxMcsMapBW160Assoc;
+				if (ucVhtOpModeRxNss == VHT_OP_MODE_NSS_2) {
+					prStaRec->u2HeRxMcsMapBW160 =
+						BITS(0, 15) &
+						(~(HE_CAP_INFO_MCS_1SS_MASK |
+						HE_CAP_INFO_MCS_2SS_MASK));
+
+					prStaRec->u2HeRxMcsMapBW160 |=
+						(u2HeRxMcsMapAssoc &
+						(HE_CAP_INFO_MCS_1SS_MASK |
+						HE_CAP_INFO_MCS_2SS_MASK));
+				} else {
+					prStaRec->u2HeRxMcsMapBW160 =
+						BITS(0, 15) &
+						(~HE_CAP_INFO_MCS_1SS_MASK);
+
+					prStaRec->u2HeRxMcsMapBW160 |=
+						(u2HeRxMcsMapAssoc &
+						HE_CAP_INFO_MCS_1SS_MASK);
+				}
+
+				DBGLOG(RLM, INFO,
+					"[OP Mode IE] HeBW160, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+					ucVhtOpModeRxNss,
+					prStaRec->u2HeRxMcsMapBW160,
+					prStaRec->u2HeRxMcsMapBW160Assoc);
+			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (fgIsRx1ss)
+				prStaRec->u2He6gBandCapInfo &=
+					~HE_6G_CAP_INFO_SM_POWER_SAVE;
+			else
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_SM_POWER_SAVE;
+#endif
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+			break;
+		default:
+			break;
+
+		}
+	} else {
+		/*
+		 * beacon with OP mode IE -> beacon without OP mode IE
+		 * for the first time, thus require update to FW
+		 */
+		if (fgHasOPModeIE == FALSE
+			&& prStaRec->ucOpModeInOpNotificationIE != 0xff) {
+			prStaRec->ucOpModeInOpNotificationIE = 0xff;
+			DBGLOG(RLM, TRACE,
+				"OP mode IE not present for the first time, need update to FW\n");
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+		} else if (fgHasOPModeIE == FALSE
+			&& prStaRec->ucOpModeInOpNotificationIE == 0xff) {
+			/* beacon w/o OP mode IE & no need to update to FW */
+			fgUpdateToFWForDiffOPModeIE = FALSE;
+		}
+	}
+
 	if (prStaRec->ucStaState == STA_STATE_3) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (IsfgHe6gBandCapChange)
-			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+		if (IsfgHe6gBandCapChange) {
+			if (fgHasNewOPModeIE == TRUE
+				&& fgUpdateToFWForDiffOPModeIE == FALSE) {
+			} else {
+				DBGLOG(RLM, LOUD,
+					"Update staRec due to IsfgHe6gBandCapChange");
+				cnmStaSendUpdateCmd(prAdapter, prStaRec,
+					NULL, FALSE);
+			}
+		}
 #endif
-		if (IsfgHtCapChange)
+		if (IsfgHtCapChange) {
+			DBGLOG(RLM, LOUD,
+				"Update staRec due to IsfgHtCapChange");
 			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+		}
 	}
 
 	/* Some AP will have wrong channel number (255) when running time.
@@ -3381,17 +3441,26 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 */
 	if (fgHasNewOPModeIE == TRUE) {
 		if (prStaRec->ucStaState == STA_STATE_3) {
-			/* 1. Modify channel width parameters */
-			rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth,
+			if (fgUpdateToFWForDiffOPModeIE == TRUE) {
+				/* 1. Modify channel width parameters */
+				rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth,
 						prBssInfo);
 
-			/* 2. Update StaRec to FW (BssInfo will be updated after
-			 * return from this function)
-			 */
-			DBGLOG(RLM, INFO,
-			       "Update OpMode to 0x%x, to FW due to OpMode Notificaition",
+				/* 2. Update StaRec to FW (BssInfo will be
+				* updated after return from this function)
+				*/
+				DBGLOG(RLM, INFO,
+			       "Update VhtOpMode to 0x%x, to FW due to OpMode Notificaition",
 			       prStaRec->ucVhtOpMode);
-			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+#if (CFG_SUPPORT_802_11AX == 1)
+				DBGLOG(RLM, INFO,
+					"HeBW80 RxMcsMap:0x%x, HeBW160 RxMcsMap:0x%x\n",
+					prStaRec->u2HeRxMcsMapBW80,
+					prStaRec->u2HeRxMcsMapBW160);
+#endif
+				cnmStaSendUpdateCmd(prAdapter, prStaRec,
+					NULL, FALSE);
+			}
 
 			/* 3. Revise by own OP BW if needed */
 			if ((prBssInfo->fgIsOpChangeChannelWidth)) {
