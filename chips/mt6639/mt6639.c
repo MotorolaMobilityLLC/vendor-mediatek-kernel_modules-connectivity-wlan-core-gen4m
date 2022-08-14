@@ -2086,7 +2086,11 @@ exit:
 		WARN_ON_ONCE(TRUE);
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
-		mt6639_DumpBusHangCr(ad);
+		mt6639_dumpWfsyscpupcr(ad);
+		mt6639_dumpPcGprLog(ad);
+		mt6639_dumpN45CoreReg(ad);
+		mt6639_dumpWfTopReg(ad);
+		mt6639_dumpWfBusReg(ad);
 	}
 
 	return rStatus;

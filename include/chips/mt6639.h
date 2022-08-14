@@ -134,8 +134,15 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 void mt6639_icapRiseVcoreClockRate(void);
 void mt6639_icapDownVcoreClockRate(void);
 
+#if defined(_HIF_PCIE)
 void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad);
 void mt6639_DumpBusHangCr(struct ADAPTER *ad);
+void mt6639_dumpPcGprLog(struct ADAPTER *ad);
+void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
+void mt6639_dumpWfTopReg(struct ADAPTER *ad);
+void mt6639_dumpWfBusReg(struct ADAPTER *ad);
+void mt6639_dumpCbtopReg(struct ADAPTER *ad);
+#endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 		struct RxRateInfo *prRxRateInfo);
