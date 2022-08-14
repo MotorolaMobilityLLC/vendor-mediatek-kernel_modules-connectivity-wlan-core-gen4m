@@ -1063,7 +1063,11 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
 		/* not in reconnection */
-		&& !aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)) {
+		&& (!aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)
+		|| prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DEAUTHENTICATED
+		|| prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DISASSOCIATED)) {
 
 		prStaRec->fgIsReAssoc = FALSE;
 
