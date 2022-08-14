@@ -1753,7 +1753,15 @@ void p2pRoleFsmDelIface(
 	if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
 		IS_NET_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex) &&
 		prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-		DBGLOG(P2P, INFO, "under deauth procedure, Quit.\n");
+		uint32_t waitRet = 0;
+
+		waitRet = wait_for_completion_timeout(
+			&prP2pInfo->rStopApComp,
+			MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+		if (!waitRet)
+			DBGLOG(P2P, WARN, "under deauth procedure, timeout\n");
+		else
+			DBGLOG(P2P, INFO, "under deauth procedure, complete\n");
 	} else {
 		/*p2pFuncDissolve(prAdapter,
 		 * prP2pBssInfo, TRUE,
