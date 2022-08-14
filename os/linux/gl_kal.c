@@ -9375,7 +9375,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 			prCmdPerfReport->ulCurRxBytes[1],
 			prCmdPerfReport->ulCurRxBytes[2],
 			prCmdPerfReport->ulCurRxBytes[3]);
-		DBGLOG(SW4, INFO,
+		DBGLOG(SW4, TRACE,
 			"Rate[%d][%d][%d][%d] RCPI[%d][%d][%d][%d]\n",
 			prCmdPerfReport->u2CurRxRate[0],
 			prCmdPerfReport->u2CurRxRate[1],
