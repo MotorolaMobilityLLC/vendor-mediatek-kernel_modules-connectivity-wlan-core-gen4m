@@ -1188,7 +1188,7 @@ static int __coredump_start(struct coredump_ctx *ctx,
 				   chip_info,
 				   force_dump,
 				   &state_ready);
-	if (ret || !state_ready)
+	if (ret)
 		goto exit;
 
 	ret = __coredump_init_ctrl_blk(ctx, chip_info);
