@@ -13317,15 +13317,15 @@ u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
 	pWiphy = wlanGetWiphy();
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eBand == BAND_6G) {
+	if (eBand == BAND_6G && pWiphy->bands[KAL_BAND_6GHZ]) {
 		channelList = pWiphy->bands[KAL_BAND_6GHZ];
 		chSize = channelList->n_channels;
 	} else
 #endif
-	if (eBand == BAND_5G) {
+	if (eBand == BAND_5G && pWiphy->bands[KAL_BAND_5GHZ]) {
 		channelList = pWiphy->bands[KAL_BAND_5GHZ];
 		chSize = channelList->n_channels;
-	} else if (eBand == BAND_2G4) {
+	} else if (eBand == BAND_2G4 && pWiphy->bands[KAL_BAND_2GHZ]) {
 		channelList = pWiphy->bands[KAL_BAND_2GHZ];
 		chSize = channelList->n_channels;
 	} else
