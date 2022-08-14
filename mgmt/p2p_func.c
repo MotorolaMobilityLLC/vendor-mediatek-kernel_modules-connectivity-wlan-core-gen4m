@@ -1121,6 +1121,7 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 
 	/* update correct bssindex before generate ml ie */
 	prRetMsduInfo->ucBssIndex = ucBssIdx;
+	prRetMsduInfo->ucStaRecIndex = prStaRec->ucIndex;
 
 	/* IEs from supplicant are sorted already, append ml ie */
 	mldGenerateMlIE(prAdapter, prRetMsduInfo);
