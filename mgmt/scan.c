@@ -1556,6 +1556,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength;
 	uint8_t ucHasMlo = FALSE;
+	uint8_t ucNeedMlo = FALSE;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
 	struct SCAN_PARAM *prScanParam;
@@ -1570,6 +1571,10 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		DBGLOG(SCN, INFO, "Skip oob scan Rnr parsing\n");
 		return;
 	}
+
+#if CFG_SUPPORT_802_11BE_MLO
+	ucNeedMlo = (prAdapter->rWifiVar.ucMldLinkMax > 1);
+#endif
 
 	while (ucCurrentLength < IE_LEN(pucIE)) {
 		prNeighborAPInfoField =	(struct NEIGHBOR_AP_INFO_FIELD *)
@@ -1656,9 +1661,10 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		/* If opClass is not 6G, no need to do extra scan
 		 * directly check next neighborAPInfo if exist
 		 */
-		if (!IS_6G_OP_CLASS(ucOpClass) && !ucHasMlo) {
-			DBGLOG(SCN, TRACE, "RNR op class(%d) is not 6G\n",
-				ucOpClass);
+		if (!IS_6G_OP_CLASS(ucOpClass) && (!ucNeedMlo || !ucHasMlo)) {
+			DBGLOG(SCN, TRACE,
+				"No need RNR, op(%d) mlo(need=%d,has=%d)\n",
+				ucOpClass, ucNeedMlo, ucHasMlo);
 
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
