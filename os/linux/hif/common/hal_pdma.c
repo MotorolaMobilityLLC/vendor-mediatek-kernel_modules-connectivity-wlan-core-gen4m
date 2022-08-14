@@ -3106,7 +3106,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	pTxCell->pPacket = (void *)prCmdInfo;
 	pTxCell->pBuffer = pucSrc;
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, TRACE,
 		"Type: %u, cid: 0x%x, seq: %u, TxD[0x%p/%u] TxP[0x%p/%u]\n",
 			prCmdInfo->eCmdType, prCmdInfo->ucCID,
 			prCmdInfo->ucCmdSeqNum,
