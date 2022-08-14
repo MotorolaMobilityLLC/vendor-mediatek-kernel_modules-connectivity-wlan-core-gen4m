@@ -1327,7 +1327,11 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
+
+		prAdapter->fgIsWiFiOnDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		prAdapter->fgIsWiFiOnDrvOwn = FALSE;
+
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
@@ -1758,8 +1762,18 @@ void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 #endif
 	}
 
-	if (fgEnInt)
+	if (fgEnInt) {
+		if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
+			DBGLOG(HAL, INFO,
+				"DrvOwnInt clrbit GLUE_FLAG_DRV_OWN_INT_BIT\n");
+		KAL_CLR_BIT(
+			GLUE_FLAG_DRV_OWN_INT_BIT,
+			prAdapter->prGlueInfo->ulFlag);
+		if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
+			DBGLOG(HAL, INFO, "DrvOwnInt enable interrupt\n");
 		nicEnableInterrupt(prAdapter);
+	}
+
 }
 
 void wlanClearPendingInterrupt(struct ADAPTER *prAdapter)
@@ -8282,6 +8296,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #endif
 	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
 			FEATURE_ENABLED);
+	prWifiVar->u4DrvOwnInterruptDebugMode = wlanCfgGetUint32(
+		prAdapter, "drvOwnInterruptDebugMode", 0);
 
 	/* Fast Path Config */
 	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(

@@ -41,6 +41,7 @@
 #include "coda/mt6639/wf_top_cfg_on.h"
 #include "coda/mt6639/wf_wtblon_top.h"
 #include "coda/mt6639/wf_uwtbl_top.h"
+#include "coda/mt6639/cb_infra_slp_ctrl.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
@@ -120,6 +121,7 @@ static void mt6639DisableInterrupt(struct ADAPTER *prAdapter);
 
 static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
+static void mt6639CheckInterruptStatus(struct ADAPTER *prAdapter);
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
@@ -148,6 +150,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
+static u_int8_t mt6639_set_crypto(struct ADAPTER *prAdapter);
 static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
@@ -462,7 +465,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.tx_ring3_data_idx = 3,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
-	.fgCheckDriverOwnInt = FALSE,
+	.fgCheckDriverOwnInt = TRUE,
 	.u4DmaMask = 32,
 	.wfmda_host_tx_group = mt6639_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6639_wfmda_host_tx_group),
@@ -482,6 +485,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.enableInterrupt = mt6639EnableInterrupt,
 	.disableInterrupt = mt6639DisableInterrupt,
 	.configWfdmaIntMask = mt6639ConfigIntMask,
+	.CheckIntStatus = mt6639CheckInterruptStatus,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
 #if CFG_SUPPORT_PCIE_ASPM
@@ -774,6 +778,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 
 	.u4MinTxLen = 2,
+	.setCrypto = mt6639_set_crypto,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {
@@ -1323,6 +1328,14 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 	if (u4RegValue & CONNAC_SUBSYS_INT) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
 		u4WrValue |= (u4RegValue & CONNAC_SUBSYS_INT);
+
+		if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
+			DBGLOG(HAL, INFO,
+				"DrvOwnInt clrbit fw own clear addr\n");
+
+		HAL_MCR_WR(prAdapter,
+			prBusInfo->fw_own_clear_addr,
+			prBusInfo->fw_own_clear_bit);
 	}
 
 	prHifInfo->u4IntStatus = u4RegValue;
@@ -1351,6 +1364,42 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
+static void mt6639ConfigIntDrvOwnInt(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Addr = 0, u4WrVal = 0, u4Val = 0;
+
+	u4Addr = WF_WFDMA_HOST_DMA0_SUBSYS2HOST_INT_ENA_ADDR;
+
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+
+	u4WrVal = u4Val |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA4_MASK;
+
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
+
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+
+	DBGLOG(HAL, TRACE,
+		   "SUBSYS2HOST_INT_ENA(0x%08x):0x%08x, WrVal:0x%08x\n",
+		   u4Addr, u4Val, u4WrVal);
+
+	u4Addr = WF_WFDMA_HOST_DMA0_MD_INT_ENA_ADDR;
+
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+
+	u4WrVal = u4Val |
+		WF_WFDMA_HOST_DMA0_MD_INT_ENA_CONN_HIF_ON_MD_INT_ENA_MASK;
+
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
+
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+
+	DBGLOG(HAL, TRACE,
+		   "MD_INT_ENA(0x%08x):0x%08x, WrVal:0x%08x\n",
+		   u4Addr, u4Val, u4WrVal);
+
+}
+
 static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable)
 {
@@ -1375,16 +1424,8 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA15_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA16_MASK |
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		if (!(IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))) {
-			u4WrVal |=
-			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
-		}
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
 
 	u4WrVal |=
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA4_MASK |
@@ -1396,6 +1437,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
 {
 	mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
+	kalUdelay(8);
 	mt6639ConfigIntMask(prAdapter->prGlueInfo, TRUE);
 	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
@@ -1405,11 +1447,53 @@ static void mt6639DisableInterrupt(struct ADAPTER *prAdapter)
 	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 
+static void mt6639CheckInterruptStatus(struct ADAPTER *prAdapter)
+{
+	uint32_t idx;
+	uint32_t u4hostBaseCrAddr;
+	uint32_t u4DmaCfgCrAddr = 0;
+	uint32_t u4RegValue = 0;
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type = WFDMA_TYPE_HOST;
+	uint32_t u4DmaNum = 1;
+	uint32_t u4NeedIntOffon = 0;
+
+	/* Dump PDMA Status CR */
+	for (idx = 0; idx < u4DmaNum; idx++) {
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+				CONNAC3X_HOST_WPDMA_1_BASE :
+				CONNAC3X_HOST_WPDMA_0_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+				CONNAC3X_MCU_WPDMA_1_BASE :
+				CONNAC3X_MCU_WPDMA_0_BASE;
+
+		u4DmaCfgCrAddr = CONNAC3X_WPDMA_INT_STA(u4hostBaseCrAddr);
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
+
+		DBGLOG(HAL, INFO, "\t WFDMA DMA %d INT STA(0x%08x): 0x%08x\n",
+				idx, u4DmaCfgCrAddr, u4RegValue);
+
+		if (u4RegValue) {
+			u4NeedIntOffon = 1;
+			break;
+		}
+	}
+
+	if (u4NeedIntOffon) {
+		mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
+		kalUdelay(8);
+		mt6639ConfigIntMask(prAdapter->prGlueInfo, TRUE);
+	}
+}
+
+
 static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
 #define WFDMA_AP_MSI_NUM		1
 #if CFG_MTK_MDDP_SUPPORT
-#define WFDMA_MD_MSI_NUM		8
+#define WFDMA_MD_MSI_NUM		1
 #endif
 
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1502,6 +1586,7 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
 
 	mt6639ConfigIntMask(prGlueInfo, enable);
+	mt6639ConfigIntDrvOwnInt(prGlueInfo);
 
 	if (enable) {
 #if defined(_HIF_PCIE)
@@ -1790,6 +1875,15 @@ static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status)
 {
 	*pu4Status = ccif_get_interrupt_status(prAdapter);
+	return TRUE;
+}
+
+static u_int8_t mt6639_set_crypto(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter->fgIsWiFiOnDrvOwn)
+		HAL_MCR_WR(prAdapter,
+			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
+			BIT(0));
 	return TRUE;
 }
 

@@ -6359,6 +6359,14 @@ void kalRxTaskSchedule(struct GLUE_INFO *pr)
 
 uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 {
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prAdapter = pr->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
 		DBGLOG(INIT, ERROR,
 		       "Valid in RX-direct mode only\n");
@@ -6375,6 +6383,15 @@ uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 	} else {
 		/* no more schedule, so enable interrupt */
 		if (fgIsInt) {
+			if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
+				DBGLOG(HAL, INFO,
+					"DrvOwnInt clearbit GLUE_FLAG_DRV_OWN_INT_BIT\n");
+			KAL_CLR_BIT(
+				GLUE_FLAG_DRV_OWN_INT_BIT,
+				pr->ulFlag);
+			if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
+				DBGLOG(HAL, INFO,
+					"DrvOwnInt enable interrupt\n");
 			nicEnableInterrupt(pr->prAdapter);
 			return WLAN_STATUS_SUCCESS;
 		}

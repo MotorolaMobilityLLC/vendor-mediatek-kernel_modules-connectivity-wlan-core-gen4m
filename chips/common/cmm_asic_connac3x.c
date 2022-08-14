@@ -224,6 +224,9 @@ void asicConnac3xCapInit(
 		HAL_MCR_WR(prAdapter,
 				CONNAC3X_BN0_IRQ_ENA_ADDR,
 				BIT(0));
+		HAL_MCR_WR(prAdapter,
+				CONNAC3X_BN0_IRQ_MD_ENA_ADDR,
+				BIT(0));
 
 		if (prChipInfo->is_support_asic_lp) {
 			HAL_MCR_WR(prAdapter,
@@ -925,7 +928,6 @@ void asicConnac3xLowPowerOwnClear(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue = 0;
 
 #if defined(_HIF_PCIE)
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
@@ -944,16 +946,9 @@ void asicConnac3xLowPowerOwnClear(
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
-#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
-		kalMdelay(10);
-#endif
-		HAL_MCR_RD(prAdapter,
-			CONNAC3X_BN0_LPCTL_ADDR,
-			&u4RegValue);
-		*pfgResult = (u4RegValue &
-				PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
-	} else
-		*pfgResult = TRUE;
+	}
+
+	*pfgResult = TRUE;
 }
 
 void asicConnac3xProcessSoftwareInterrupt(
