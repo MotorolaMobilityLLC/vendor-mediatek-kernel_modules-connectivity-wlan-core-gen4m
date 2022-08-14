@@ -78,6 +78,8 @@ struct FW_LOG_MMIO_CTRL {
 	struct FW_LOG_MMIO_SUB_CTRL sub_ctrls[ENUM_FW_LOG_CTRL_TYPE_NUM];
 	void *priv;
 	struct FW_LOG_MMIO_STATS stats;
+	struct workqueue_struct *wq;
+	struct work_struct work;
 };
 
 #if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)

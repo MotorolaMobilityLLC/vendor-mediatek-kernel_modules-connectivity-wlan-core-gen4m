@@ -284,7 +284,11 @@ exit:
 
 int32_t fwLogMmioHandler(void)
 {
-	return __fwLogMmioHandler(FALSE);
+	struct FW_LOG_MMIO_CTRL *prCtrl = &g_ctx;
+
+	queue_work(prCtrl->wq, &prCtrl->work);
+
+	return 0;
 }
 
 static void fwLogCtrlRefreshCommonHeader(struct ADAPTER *prAdapter,
@@ -414,9 +418,15 @@ void fwLogMmioStop(void)
 	if (!prCtrl->initialized)
 		return;
 
+	cancel_work_sync(&prCtrl->work);
 	__fwLogMmioHandler(TRUE);
 
 	prCtrl->started = FALSE;
+}
+
+static void fwLogMmioWork(struct work_struct *work)
+{
+	__fwLogMmioHandler(FALSE);
 }
 
 uint32_t fwLogMmioInitMcu(struct ADAPTER *prAdapter)
@@ -444,6 +454,14 @@ uint32_t fwLogMmioInitMcu(struct ADAPTER *prAdapter)
 			goto exit;
 	}
 
+	prCtrl->wq = create_singlethread_workqueue("fw_log_mmio");
+	if (!prCtrl->wq) {
+		DBGLOG(INIT, ERROR, "create_singlethread_workqueue failed.\n");
+		u4Status = WLAN_STATUS_RESOURCES;
+		goto exit;
+	}
+	INIT_WORK(&prCtrl->work, fwLogMmioWork);
+
 	prCtrl->initialized = TRUE;
 
 exit:
@@ -463,6 +481,8 @@ void fwLogMmioDeInitMcu(void)
 	DBGLOG(INIT, TRACE, "\n");
 
 	prCtrl->initialized = FALSE;
+
+	destroy_workqueue(prCtrl->wq);
 
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++)
 		fwLogCtrlDeInitSubCtrl(prCtrl->priv, prCtrl, i);
