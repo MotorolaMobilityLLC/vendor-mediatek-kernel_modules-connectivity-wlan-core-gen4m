@@ -1377,6 +1377,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(INIT, INFO,
 		"drv: %d, reason: %s\n",
@@ -1384,6 +1385,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
@@ -1401,6 +1403,10 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
 			fgIsBusAccessFailed = TRUE;
 			g_IsWfsysBusHang = TRUE;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+			if (prBusInfo->disableDevice)
+				prBusInfo->disableDevice(prGlueInfo);
+#endif
 		}
 	}
 

@@ -496,6 +496,7 @@ struct BUS_INFO mt6639_bus_info = {
 		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
 	},
 	.showDebugInfo = mt6639ShowPcieDebugInfo,
+	.disableDevice = mtk_pci_disable_device,
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,

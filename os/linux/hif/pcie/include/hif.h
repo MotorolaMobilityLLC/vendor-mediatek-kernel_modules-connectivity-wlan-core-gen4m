@@ -469,6 +469,7 @@ struct BUS_INFO {
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
+	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 
@@ -578,6 +579,7 @@ void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 
+void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);

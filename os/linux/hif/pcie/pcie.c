@@ -428,6 +428,15 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 	return (struct mt66xx_hif_driver_data *) mtk_pci_ids[0].driver_data;
 }
 
+
+void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
+{
+	if (!prGlueInfo)
+		return;
+
+	pci_disable_device(prGlueInfo->rHifInfo.pdev);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -629,6 +638,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	fgIsBusAccessFailed = TRUE;
 	if (pci_is_enabled(pdev))
 		pci_disable_device(pdev);
+	else
+		res = PCI_ERS_RESULT_NONE;
 
 exit:
 	return res;
