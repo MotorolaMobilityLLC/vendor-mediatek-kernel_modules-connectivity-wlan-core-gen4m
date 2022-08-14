@@ -270,7 +270,7 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 
 	page = kalAllocRxPage(g_prDev);
 	if (!page) {
-		DBGLOG(HAL, ERROR, "allocate page fail\n");
+		DBGLOG_LIMITED(HAL, ERROR, "allocate page fail\n");
 		return NULL;
 	}
 

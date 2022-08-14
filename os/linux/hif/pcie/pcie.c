@@ -2306,20 +2306,31 @@ static bool pcieCopyRxData(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb)
 {
+	struct sk_buff *prSkb = (struct sk_buff *)prSwRfb->pvPacket;
 	void *pRxPacket = NULL;
 	dma_addr_t rAddr;
-
-	pRxPacket = pRxCell->pPacket;
-	ASSERT(pRxPacket);
-
-	pRxCell->pPacket = prSwRfb->pvPacket;
 
 	KAL_DMA_UNMAP_SINGLE(prHifInfo->prDmaDev,
 			     (dma_addr_t)prDmaBuf->AllocPa,
 			     prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-	prSwRfb->pvPacket = pRxPacket;
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+	if (!prSkb->pp_recycle) {
+		axiCopyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb);
+		goto dma_map;
+	}
+#endif
+
+	pRxPacket = pRxCell->pPacket;
+	ASSERT(pRxPacket);
+
+	pRxCell->pPacket = prSkb;
+	prSwRfb->pvPacket = pRxPacket;
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+dma_map:
+#endif
 	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev,
 		prDmaBuf->AllocVa, prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
 	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {

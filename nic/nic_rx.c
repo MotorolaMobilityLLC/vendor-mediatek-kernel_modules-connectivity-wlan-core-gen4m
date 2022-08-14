@@ -2562,6 +2562,12 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 #if CFG_SUPPORT_RX_PAGE_POOL
 		pvPacket = (void *)kalAllocRxSkb(&pucRecvBuff);
+		if (!pvPacket) {
+			pvPacket = kalPacketAlloc(
+				prAdapter->prGlueInfo,
+				CFG_RX_MAX_MPDU_SIZE,
+				FALSE, &pucRecvBuff);
+		}
 #else
 		pvPacket = kalPacketAlloc(
 			prAdapter->prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
