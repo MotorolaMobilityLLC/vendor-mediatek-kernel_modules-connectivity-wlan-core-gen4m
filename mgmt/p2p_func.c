@@ -6112,7 +6112,8 @@ uint32_t p2pFuncCalculateWSC_IELenForBeacon(struct ADAPTER *prAdapter,
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
-	if (prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+	if (!prP2pBssInfo ||
+		prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
 	return kalP2PCalWSC_IELen(prAdapter->prGlueInfo,
