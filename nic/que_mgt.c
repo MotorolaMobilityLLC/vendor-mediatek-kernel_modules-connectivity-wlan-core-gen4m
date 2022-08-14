@@ -5362,6 +5362,9 @@ void addReorderQueParm(struct QUE *prRxBaEntry,
 
 	prRxBaQueEntry = kalMemZAlloc(sizeof(struct RX_BA_QUE_ENTRY),
 					VIR_MEM_TYPE);
+	if (unlikely(!prRxBaQueEntry))
+		return;
+
 	prRxBaQueEntry->prReorderQueParm = prReorderQueParm;
 
 	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, lock);
