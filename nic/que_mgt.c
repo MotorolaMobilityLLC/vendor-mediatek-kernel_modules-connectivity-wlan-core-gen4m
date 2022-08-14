@@ -5354,7 +5354,9 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
  * prRxBaEntry.
  */
 void addReorderQueParm(struct QUE *prRxBaEntry,
-		struct RX_BA_ENTRY *prReorderQueParm)
+		struct RX_BA_ENTRY *prReorderQueParm,
+		struct ADAPTER *prAdapter,
+		enum ENUM_SPIN_LOCK_CATEGORY_E lock)
 {
 	struct RX_BA_QUE_ENTRY *prRxBaQueEntry = NULL;
 
@@ -5362,19 +5364,25 @@ void addReorderQueParm(struct QUE *prRxBaEntry,
 					VIR_MEM_TYPE);
 	prRxBaQueEntry->prReorderQueParm = prReorderQueParm;
 
-	QUEUE_INSERT_TAIL(prRxBaEntry, (struct QUE_ENTRY *)prRxBaQueEntry);
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, lock);
+	QUEUE_INSERT_TAIL(prRxBaEntry, &prRxBaQueEntry->rQueEntry);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, lock);
 }
 
 /**
  * Get a RX_BA_ENTRY, embedded in RX_BA_QUE_ENTRY, from prRxBaEntry.
  */
-struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry)
+struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry,
+		struct ADAPTER *prAdapter,
+		enum ENUM_SPIN_LOCK_CATEGORY_E lock)
 {
 	struct RX_BA_QUE_ENTRY *prRxBaQueEntry = NULL;
 	struct RX_BA_ENTRY *prReorderQueParm = NULL;
 
+	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, lock);
 	QUEUE_REMOVE_HEAD(prRxBaEntry,
 			prRxBaQueEntry, struct RX_BA_QUE_ENTRY *);
+	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, lock);
 	if (prRxBaQueEntry) {
 		prReorderQueParm = prRxBaQueEntry->prReorderQueParm;
 		kalMemFree(prRxBaQueEntry, VIR_MEM_TYPE,
@@ -5392,17 +5400,22 @@ struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry)
 void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr)
 {
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
+	uint32_t rc;
 
-#if CFG_SUPPORT_RX_NAPI
+	addReorderQueParm(&prAdapter->rTimeoutRxBaEntry, prReorderQueParm,
+			prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT);
 	DBGLOG(QM, TRACE, "QM:(Bub Timeout Flush scheduled) STA[%u] TID[%u]\n",
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid);
-	addReorderQueParm(&prAdapter->rTimeoutRxBaEntry, prReorderQueParm);
-	kal_napi_schedule(&prGlueInfo->napi);
-#else
-	qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
-#endif
+
+	rc = kalScheduleFlushRxBaEntry(prAdapter->prGlueInfo);
+
+	if (rc == WLAN_STATUS_NOT_ACCEPTED) { /* Not NAPI, flush in main */
+		prReorderQueParm =
+			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry,
+				prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT);
+		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+	}
 }
 
 /**
@@ -5946,6 +5959,7 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 {
 	struct RX_BA_ENTRY *prRxBaEntry = NULL;
 	struct STA_RECORD *prStaRec;
+	uint32_t rc;
 
 	if (ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(QM, ERROR, "%u > %u(CFG_STA_REC_NUM)\n",
@@ -5975,15 +5989,19 @@ void qmDelRxBaEntry(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx,
 		return;
 
 	prRxBaEntry->fgFlushToHost = fgFlushToHost; /* save to be used later */
-
-#if CFG_SUPPORT_RX_NAPI
+	addReorderQueParm(&prAdapter->rFlushRxBaEntry, prRxBaEntry,
+			prAdapter, SPIN_LOCK_RX_FLUSH_BA);
 	DBGLOG(QM, TRACE, "QM:(BA Delete Flush scheduled) STA[%u] TID[%u]\n",
 		prRxBaEntry->ucStaRecIdx, prRxBaEntry->ucTid);
-	addReorderQueParm(&prAdapter->rFlushRxBaEntry, prRxBaEntry);
-	kal_napi_schedule(&prAdapter->prGlueInfo->napi);
-#else
-	qmFlushDeletedBaReorder(prAdapter, prRxBaEntry);
-#endif
+
+	rc = kalScheduleFlushRxBaEntry(prAdapter->prGlueInfo);
+
+	if (rc == WLAN_STATUS_NOT_ACCEPTED) { /* Not NAPI, flush in main */
+		prRxBaEntry =
+			getReorderQueParm(&prAdapter->rFlushRxBaEntry,
+				prAdapter, SPIN_LOCK_RX_FLUSH_BA);
+		qmFlushDeletedBaReorder(prAdapter, prRxBaEntry);
+	}
 }
 
 u_int8_t qmIsIndependentPkt(struct SW_RFB *prSwRfb)

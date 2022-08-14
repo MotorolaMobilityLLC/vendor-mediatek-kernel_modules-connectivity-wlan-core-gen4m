@@ -216,6 +216,11 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_RX_DIRECT,
 	SPIN_LOCK_RX_DIRECT_REORDER,
 	/* TX/RX Direct : END */
+
+	/* RX: main vs. NAPI */
+	SPIN_LOCK_RX_FLUSH_TIMEOUT,
+	SPIN_LOCK_RX_FLUSH_BA,
+
 	SPIN_LOCK_IO_REQ,
 	SPIN_LOCK_INT,
 	SPIN_LOCK_UPDATE_WMM_QUOTA,
@@ -1388,8 +1393,17 @@ u_int8_t kalIsCardRemoved(struct GLUE_INFO *prGlueInfo);
 #define kalFlushPendingTxPackets(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
-void kalFlushPendingTxPackets(struct GLUE_INFO
-			      *prGlueInfo);
+void kalFlushPendingTxPackets(struct GLUE_INFO *prGlueInfo);
+#endif
+
+/*----------------------------------------------------------------------------*/
+/* RX                                                                         */
+/*----------------------------------------------------------------------------*/
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalScheduleFlushRxBaEntry(_prGlueInfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
+#else
+uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -2025,9 +2039,6 @@ void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 
 #define kalRxNapiValidSkb(_prGlueInfo, _prSkb) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-#define kal_napi_schedule(_n) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 int kalMaskMemCmp(const void *cs, const void *ct,
 	const void *mask, size_t count);
@@ -2051,7 +2062,6 @@ u_int8_t kalIsRstPreventFwOwn(void);
 
 uint8_t kalRxNapiValidSkb(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb);
-void kal_napi_schedule(struct napi_struct *n);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT

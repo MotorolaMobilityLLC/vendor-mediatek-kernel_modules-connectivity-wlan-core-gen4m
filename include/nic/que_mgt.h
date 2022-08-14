@@ -1130,14 +1130,13 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			    struct RX_BA_ENTRY *prReorderQueParm,
 			    struct QUE *prReturnedQue);
 
-void qmHandleReorderBubbleTimeout(struct ADAPTER
-				  *prAdapter, uintptr_t ulParamPtr);
+void qmHandleReorderBubbleTimeout(struct ADAPTER *prAdapter,
+			uintptr_t ulParamPtr);
 
 void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 				     struct RX_BA_ENTRY *prReorderQueParm);
 
-void qmHandleMailboxRxMessage(struct MAILBOX_MSG
-			      prMailboxRxMsg);
+void qmHandleMailboxRxMessage(struct MAILBOX_MSG prMailboxRxMsg);
 
 void qmHandleEventTxAddBa(struct ADAPTER *prAdapter,
 			  struct WIFI_EVENT *prEvent);
@@ -1258,9 +1257,13 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 			   uint8_t *pucBuf, uint32_t u4MaxLen);
 
 void addReorderQueParm(struct QUE *prRxBaEntry,
-		struct RX_BA_ENTRY *prReorderQueParm);
+		struct RX_BA_ENTRY *prReorderQueParm,
+		struct ADAPTER *prAdapter,
+		enum ENUM_SPIN_LOCK_CATEGORY_E lock);
 
-struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry);
+struct RX_BA_ENTRY *getReorderQueParm(struct QUE *prRxBaEntry,
+		struct ADAPTER *prAdapter,
+		enum ENUM_SPIN_LOCK_CATEGORY_E lock);
 
 void qmFlushTimeoutReorderBubble(struct ADAPTER *prAdapter,
 		struct RX_BA_ENTRY *prReorderQueParm);

@@ -2218,7 +2218,7 @@ struct ADAPTER {
 #endif
 
 	struct QUE rTimeoutRxBaEntry; /* wait for Timeout flush by NAPI */
-	struct QUE rFlushRxBaEntry; /* wait for BA Delete flush by NAPI  */
+	struct QUE rFlushRxBaEntry; /* wait for BA Delete flush by NAPI */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

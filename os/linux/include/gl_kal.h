@@ -321,6 +321,11 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_RX_DIRECT,
 	SPIN_LOCK_RX_DIRECT_REORDER,
 	/* TX/RX Direct : END */
+
+	/* RX: main vs. NAPI */
+	SPIN_LOCK_RX_FLUSH_TIMEOUT,
+	SPIN_LOCK_RX_FLUSH_BA,
+
 	SPIN_LOCK_IO_REQ,
 	SPIN_LOCK_INT,
 	SPIN_LOCK_UPDATE_WMM_QUOTA,
@@ -1844,6 +1849,11 @@ u_int8_t kalIsCardRemoved(struct GLUE_INFO *prGlueInfo);
 /*----------------------------------------------------------------------------*/
 void kalFlushPendingTxPackets(struct GLUE_INFO
 			      *prGlueInfo);
+
+/*----------------------------------------------------------------------------*/
+/* RX                                                                         */
+/*----------------------------------------------------------------------------*/
+uint32_t kalScheduleFlushRxBaEntry(struct GLUE_INFO *prGlueInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Media State Indication                                                     */
