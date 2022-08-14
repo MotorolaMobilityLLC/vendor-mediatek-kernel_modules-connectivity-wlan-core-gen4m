@@ -6980,16 +6980,13 @@ struct TX_PWR_CTRL_ELEMENT *txPwrCtrlStringToStruct(char *pcContent,
 	char acTmpName[MAX_TX_PWR_CTRL_ELEMENT_NAME_SIZE];
 	char *pcContCur = NULL, *pcContCur2 = NULL, *pcContEnd = NULL;
 	char *pcContTmp = NULL, *pcContNext = NULL, *pcContOld = NULL;
-	char *pcContTmp2 = NULL;
-	char *pcContBackUp = NULL;
 	char *pcContTag = NULL;
 	uint32_t u4MemSize = sizeof(struct TX_PWR_CTRL_ELEMENT);
 	uint32_t copySize = 0;
 	uint8_t i, j, op, ucSettingCount = 0;
 	uint8_t value, value2, count = 0;
 	uint8_t ucAppliedWay, ucOperation = 0;
-	uint32_t u4BackUpSize = 0;
-	uint32_t u4NextContSize = 0;
+	uint32_t u4RollBackStep = 0;
 	char carySeperator[2] = { 0, 0 };
 	enum ENUM_PWR_CFG_RATE_TAG u1RateTag = 0;
 	char *pacParsePwrAC[PWR_CFG_PRAM_NUM_AC] = {
@@ -7266,8 +7263,8 @@ skipLabel:
 		prTmpSetting = &prCurElement->rChlSettingList[i];
 
 		/* verify there is ] symbol */
-		pcContTmp2 = kalStrChr(pcContCur, ']');
-		if (!pcContTmp2) {
+		pcContNext = kalStrChr(pcContCur, ']');
+		if (!pcContNext) {
 			DBGLOG(RLM, ERROR,
 			       "parse error: miss symbol ']', %s\n",
 			       pcContCur);
@@ -7276,21 +7273,11 @@ skipLabel:
 		/* Calculate config element in this segment*/
 		pcContTmp = pcContCur;
 		count = 0;
-		while (pcContTmp < pcContTmp2) {
+		while (pcContTmp < pcContNext) {
 			if (*pcContTmp == ',')
 				count++;
 			pcContTmp++;
 		}
-
-		/* Backup */
-		u4NextContSize = kalStrLen(pcContTmp2) + 1;
-		pcContNext = (char *)kalMemAlloc(u4NextContSize, VIR_MEM_TYPE);
-		if (!pcContNext) {
-			DBGLOG(RLM, ERROR, "kalMemAlloc fail: %d\n",
-				u4NextContSize);
-			goto clearLabel;
-		}
-		kalMemCopy(pcContNext, pcContTmp2, u4NextContSize);
 
 		if ((count != PWR_LIMIT_NUM) &&
 			/* include keyword : LEGACY */
@@ -7334,24 +7321,40 @@ skipLabel:
 			goto clearLabel;
 		}
 
-		/* Parsing Rate Tag */
-		u4BackUpSize = kalStrLen(pcContCur) + 1;
-		pcContBackUp = (char *)kalMemAlloc(u4BackUpSize, VIR_MEM_TYPE);
-		if (!pcContBackUp) {
-			DBGLOG(RLM, ERROR,
-				"pcContBackUp kalMemAlloc fail: %d\n",
-				u4BackUpSize);
-			goto clearLabel;
-		}
-		kalMemCopy(pcContBackUp, pcContCur, u4BackUpSize);
+		/* If cfg parameter only one,
+		 * no need to parse rate tag
+		 */
+		if (count != PWR_CFG_PRAM_NUM_ALL_RATE) {
+			/* Start Parsing Rate Tag */
+			pcContTag = txPwrGetString(&pcContCur, ",");
+			if (!pcContCur) {
+				DBGLOG(RLM, ERROR,
+					"parse rate tag error\n");
+				goto clearLabel;
+			}
 
-		pcContTag = txPwrGetString(&pcContCur, ",");
-		u1RateTag = txPwrCfgParsingRateTag(pcContTag, count);
+			if (pcContTag == NULL)
+				u4RollBackStep = 0;
+			else
+				u4RollBackStep = kalStrLen(pcContTag);
 
-		if (u1RateTag == PWR_CFG_RATE_TAG_MISS) {
-			/* Miss Rate Tag, string roll back */
-			pcContCur = pcContBackUp;
+			u1RateTag = txPwrCfgParsingRateTag(pcContTag, count);
+
+			if (u1RateTag == PWR_CFG_RATE_TAG_MISS) {
+				/* 1. Miss Rate Tag, string roll back
+				 * 2. strsep will switch the the token which is
+				 * ',' here to '\0'
+				 */
+				pcContCur = pcContCur - 1;
+				*pcContCur = ',';
+				pcContCur = pcContCur - u4RollBackStep;
+			}
 		}
+		DBGLOG(RLM, TRACE,
+			"RateTag[%d]RollBack[%d]After parse rate tag:%s\n",
+			u1RateTag,
+			u4RollBackStep,
+			pcContCur);
 
 		/* "ALL" */
 		if (kalStrCmp(pcContTmp,
@@ -7430,7 +7433,8 @@ skipLabel:
 			pcContTmp = txPwrGetString(&pcContCur2, "-");
 			if (!pcContTmp) {
 				DBGLOG(RLM, ERROR,
-					"parse channel range error: %s\n");
+					"parse channel range error: %s\n",
+					pcContOld);
 				goto clearLabel;
 			}
 
@@ -7814,20 +7818,12 @@ skipLabel2:
 	if (txPwrParseAppendTag(pcContCur, pcContEnd, prCurElement))
 		DBGLOG(RLM, INFO, "txPwrParseAppendTag fail (%s).", pcContent);
 #endif
-	if (pcContBackUp != NULL)
-		kalMemFree(pcContBackUp, VIR_MEM_TYPE, u4BackUpSize);
-	if (pcContNext != NULL)
-		kalMemFree(pcContNext, VIR_MEM_TYPE, u4NextContSize);
 	/* pcCurElement will be free on wifi off */
 	return prCurElement;
 
 clearLabel:
 	if (prCurElement != NULL)
 		kalMemFree(prCurElement, VIR_MEM_TYPE, u4MemSize);
-	if (pcContBackUp != NULL)
-		kalMemFree(pcContBackUp, VIR_MEM_TYPE, u4BackUpSize);
-	if (pcContNext != NULL)
-		kalMemFree(pcContNext, VIR_MEM_TYPE, u4NextContSize);
 	return NULL;
 }
 
