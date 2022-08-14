@@ -1934,7 +1934,8 @@ static uint32_t mt6639_mcu_reinit(struct ADAPTER *ad)
 		HAL_MCR_RD(ad, CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 			&u4Value);
 
-		if (u4Value == MT6639_CONNINFRA_VERSION_ID)
+		if (u4Value == MT6639_CONNINFRA_VERSION_ID ||
+		    u4Value == MT6639_CONNINFRA_VERSION_ID_E2)
 			break;
 
 		u4PollingCnt++;
@@ -2256,7 +2257,8 @@ static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 	HAL_MCR_RD(ad,
 		   CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 		   &value);
-	if (value != MT6639_CONNINFRA_VERSION_ID) {
+	if (value != MT6639_CONNINFRA_VERSION_ID &&
+	    value != MT6639_CONNINFRA_VERSION_ID_E2) {
 		DBGLOG(HAL, ERROR,
 			"Conninfra ver id: 0x%08x\n",
 			value);
