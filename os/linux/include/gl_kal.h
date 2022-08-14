@@ -280,9 +280,13 @@ struct BOOST_INFO {
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	int32_t i4TxFreeMsduWorkCpu;
+	int32_t i4TxWorkCpu;
+	int32_t i4RxWorkCpu;
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
 };
+
+#define WORK_ALL_CPU_OK 999
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_FSM = 0,
@@ -1974,9 +1978,9 @@ void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetSerTimeoutEvent(struct GLUE_INFO *pr);
 
-void kalRxTaskletSchedule(struct GLUE_INFO *pr);
+void kalRxTaskSchedule(struct GLUE_INFO *pr);
 
-uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
+uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
 
@@ -2547,51 +2551,32 @@ u_int8_t kalIsSupportRro(void);
 #endif
 uint32_t kalGetLittleCpuMask(void);
 uint32_t kalGetBigCpuMask(void);
-#if CFG_SUPPORT_TRX_CSD
-void kalTRxCsdUninit(struct GLUE_INFO *pr);
-void kalTRxCsdInit(struct GLUE_INFO *pr);
-uint32_t kalTxDirectStartXmitCsd(struct sk_buff *prSkb,
-	struct GLUE_INFO *pr);
-void kalRxTaskScheduleCsd(struct GLUE_INFO *pr);
-void kalTxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
-void kalRxCsdSetMask(struct GLUE_INFO *pr, uint32_t u4Mask);
-#define CSD_INC_TX_CPU_CNT(pr, cpu) \
+#define CPU_STAT_INC_CNT_WITH_CPU(pr, idx, cpu) \
 ({ \
-	if ((0x1 << cpu) & kalGetBigCpuMask()) \
-		GLUE_INC_REF_CNT(pr->u8TxCpuCnt[CSD_CNT_BIG]); \
-	else \
-		GLUE_INC_REF_CNT(pr->u8TxCpuCnt[CSD_CNT_LITTLE]); \
+	if (cpu < CPU_CNT_MAX) \
+		GLUE_INC_REF_CNT(pr->aCpuStatCnt[idx][cpu]); \
 })
-#define CSD_INC_TX_CSD_CPU_CNT(pr, cpu) \
+
+#define CPU_STAT_INC_CNT(pr, idx) \
 ({ \
-	if ((0x1 << cpu) & kalGetBigCpuMask()) \
-		GLUE_INC_REF_CNT(pr->u8TxCsdCpuCnt[CSD_CNT_BIG]); \
-	else \
-		GLUE_INC_REF_CNT(pr->u8TxCsdCpuCnt[CSD_CNT_LITTLE]); \
+	int cpu; \
+	\
+	cpu = get_cpu(); \
+	if (cpu < CPU_CNT_MAX) \
+		GLUE_INC_REF_CNT(pr->aCpuStatCnt[idx][cpu]); \
+	put_cpu(); \
 })
-#define CSD_INC_RX_CPU_CNT(pr, cpu) \
-({ \
-	if ((0x1 << cpu) & kalGetBigCpuMask()) \
-		GLUE_INC_REF_CNT(pr->u8RxCpuCnt[CSD_CNT_BIG]); \
-	else \
-		GLUE_INC_REF_CNT(pr->u8RxCpuCnt[CSD_CNT_LITTLE]); \
-})
-#define CSD_INC_RX_CSD_CPU_CNT(pr, cpu) \
-({ \
-	if ((0x1 << cpu) & kalGetBigCpuMask()) \
-		GLUE_INC_REF_CNT(pr->u8RxCsdCpuCnt[CSD_CNT_BIG]); \
-	else \
-		GLUE_INC_REF_CNT(pr->u8RxCsdCpuCnt[CSD_CNT_LITTLE]); \
-})
-#define CSD_GET_TX_CPU_CNT(pr, idx) \
-	(GLUE_GET_REF_CNT(pr->u8TxCpuCnt[idx]))
-#define CSD_GET_TX_CSD_CPU_CNT(pr, idx) \
-	(GLUE_GET_REF_CNT(pr->u8TxCsdCpuCnt[idx]))
-#define CSD_GET_RX_CPU_CNT(pr, idx) \
-	(GLUE_GET_REF_CNT(pr->u8RxCpuCnt[idx]))
-#define CSD_GET_RX_CSD_CPU_CNT(pr, idx) \
-	(GLUE_GET_REF_CNT(pr->u8RxCsdCpuCnt[idx]))
-#endif /* CFG_SUPPORT_TRX_CSD */
+#define CPU_STAT_GET_CNT(pr, idx, cpu) \
+	(GLUE_GET_REF_CNT(pr->aCpuStatCnt[idx][cpu]))
+#define CPU_STAT_RESET_ALL_CNTS(pr) \
+do { \
+	int i, j; \
+	for (i = 0; i < CPU_STATISTICS_MAX; i++) { \
+		for (j = 0; j < CPU_CNT_MAX; j++) { \
+			GLUE_SET_REF_CNT(0, pr->aCpuStatCnt[i][j]); \
+		} \
+	} \
+} while (0)
 
 #if CFG_SUPPORT_THERMAL_QUERY
 int register_thermal_cbs(struct ADAPTER *ad);
@@ -2614,8 +2599,16 @@ void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr);
 void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_TX_WORK
+void kalTxWork(struct work_struct *work);
+void kalTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
+void kalTxWorkInit(struct GLUE_INFO *pr);
+void kalTxWorkUninit(struct GLUE_INFO *pr);
+uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work);
+void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
 void kalRxWorkInit(struct GLUE_INFO *pr);
 void kalRxWorkUninit(struct GLUE_INFO *pr);
 void kalRxWorkSchedule(struct GLUE_INFO *pr);

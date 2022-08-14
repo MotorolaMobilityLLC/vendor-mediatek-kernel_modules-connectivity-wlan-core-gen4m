@@ -4053,7 +4053,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
 #endif /* CFG_SUPPORT_RX_WORK */
 
-	if (kalRxTaskletWorkDone(prGlueInfo, fgEnInt)) {
+	if (kalRxTaskWorkDone(prGlueInfo, fgEnInt)) {
 		/* interrupt is not enabled, keep int bit */
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);

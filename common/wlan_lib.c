@@ -8213,12 +8213,6 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4TputThresholdMbps = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "TputThresholdMbps", 50);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
-#if CFG_SUPPORT_TRX_CSD
-	prWifiVar->fgEnableTxCsd = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableTxCsd", FEATURE_ENABLED);
-	prWifiVar->fgEnableRxCsd = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableRxCsd", FEATURE_ENABLED);
-#endif /* CFG_SUPPORT_TRX_CSD */
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
