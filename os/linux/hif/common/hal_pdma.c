@@ -336,10 +336,6 @@ void halEnableInterrupt(struct ADAPTER *prAdapter)
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 
-	if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-		DBGLOG(HAL, INFO,
-			"DrvOwnInt enable interrupt\n");
-
 	GLUE_SET_REF_CNT(1, prAdapter->fgIsIntEnable);
 
 	if (prBusInfo->enableInterrupt)
@@ -363,9 +359,6 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 
-	if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-		DBGLOG(HAL, INFO,
-			"DrvOwnInt disable interrupt\n");
 	if (prBusInfo->disableInterrupt)
 		prBusInfo->disableInterrupt(prAdapter);
 
@@ -493,7 +486,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
-	uint32_t u4Value = 0;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -517,9 +509,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
-	if (prChipInfo->setCrypto)
-		prChipInfo->setCrypto(prAdapter);
-
 	/* PCIE/AXI need to do clear own, then could start polling status */
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
 	fgResult = FALSE;
@@ -533,13 +522,8 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
-		if (prAdapter->fgIsWiFiOnDrvOwn)
-			HAL_LP_OWN_RD(prAdapter, &fgResult);
-		else if (prBusInfo->fgCheckDriverOwnInt) {
-			if (test_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
-					&prAdapter->prGlueInfo->ulFlag))
-				HAL_LP_OWN_RD(prAdapter, &fgResult);
-		} else
+		if (!prBusInfo->fgCheckDriverOwnInt ||
+		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
@@ -547,9 +531,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
-			if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-				DBGLOG(HAL, INFO,
-					"DrvOwnInt clrbit fw own clear addr\n");
 			if (prBusInfo->fgCheckDriverOwnInt)
 				HAL_MCR_WR(prAdapter,
 					prBusInfo->fw_own_clear_addr,
@@ -579,22 +560,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	}
 
 	if (fgIsDriverOwnTimeout) {
-		if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode) {
-			struct CHIP_DBG_OPS *prDbgOps;
-
-			if (prBusInfo->fgCheckDriverOwnInt)
-				HAL_MCR_RD(prAdapter,
-					prBusInfo->fw_own_clear_addr,
-					&u4Value);
-
-			DBGLOG(HAL, INFO,
-				"DrvOwnInt fw own clear addr :0x%08x\n",
-				u4Value);
-
-			prDbgOps = prAdapter->chip_info->prDebugOps;
-			if (prDbgOps && prDbgOps->showPdmaInfo)
-				prDbgOps->showPdmaInfo(prAdapter);
-		}
 #if !CFG_SUPPORT_RX_WORK
 		if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 			goto end;
@@ -733,9 +698,6 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		/* pending interrupts */
 		goto unlock;
 	}
-
-	if (prBusInfo->CheckIntStatus)
-		prBusInfo->CheckIntStatus(prAdapter);
 
 	if (fgEnableGlobalInt) {
 		prAdapter->fgIsIntEnableWithLPOwnSet = TRUE;

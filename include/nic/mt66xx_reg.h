@@ -1482,6 +1482,10 @@ struct mt66xx_chip_info {
 #endif
 	struct CHIP_DBG_OPS *prDebugOps;
 
+#if (CFG_MTK_DRIVER_OWN_DELAY == 1)
+	void *pcie_pcie;
+#endif
+
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */
@@ -1652,7 +1656,6 @@ struct mt66xx_chip_info {
 	struct WLAN_PINCTRL_OPS *pinctrl_ops;
 	struct EMI_MEM_INFO rEmiInfo;
 	struct thermal_info thermal_info;
-	u_int8_t (*setCrypto)(struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {

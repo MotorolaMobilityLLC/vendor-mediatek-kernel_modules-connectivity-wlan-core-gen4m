@@ -484,7 +484,6 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
-	struct ADAPTER *prAdapter;
 #if PCIE_ISR_DEBUG_LOG
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
 #endif
@@ -498,14 +497,6 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
-
-	prAdapter = prGlueInfo->prAdapter;
-
-	if (prAdapter && prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-		DBGLOG(HAL, INFO,
-			"DrvOwnInt setbit GLUE_FLAG_DRV_OWN_INT_BIT\n");
-
-	set_bit(GLUE_FLAG_DRV_OWN_INT_BIT, &prGlueInfo->ulFlag);
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
@@ -547,13 +538,8 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 		if (prMsiLayout->type != AP_INT)
 			continue;
 
-		if (test_and_clear_bit(i, &prMsiInfo->ulEnBits)) {
-			if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-				DBGLOG(HAL, INFO,
-					"enable_irq: %lu\n",
-					prMsiLayout->irq_num);
+		if (test_and_clear_bit(i, &prMsiInfo->ulEnBits))
 			enable_irq(prMsiLayout->irq_num);
-		}
 	}
 }
 
@@ -584,10 +570,6 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (!test_bit(i, &prMsiInfo->ulEnBits)) {
-			if (prAdapter->rWifiVar.u4DrvOwnInterruptDebugMode)
-				DBGLOG(HAL, INFO,
-					"disable_irq_nosync: %lu\n",
-					prMsiLayout->irq_num);
 			disable_irq_nosync(prMsiLayout->irq_num);
 			set_bit(i, &prMsiInfo->ulEnBits);
 		}
