@@ -293,6 +293,9 @@
 #endif
 
 extern u_int8_t fgIsBusAccessFailed;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+extern u_int8_t fgTriggerDebugSop;
+#endif
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
 extern const int32_t mtk_iface_combinations_sta_num;

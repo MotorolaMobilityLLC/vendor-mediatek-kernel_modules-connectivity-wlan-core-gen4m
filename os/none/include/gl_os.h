@@ -139,6 +139,9 @@ typedef uint8_t u8;
  * should we just but it in wlan_lib.h
  */
 extern u_int8_t fgIsBusAccessFailed;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+extern u_int8_t fgTriggerDebugSop;
+#endif
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S

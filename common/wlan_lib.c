@@ -123,6 +123,9 @@ struct NVRAM_FRAGMENT_RANGE {
  *******************************************************************************
  */
 u_int8_t fgIsBusAccessFailed = FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+u_int8_t fgTriggerDebugSop = FALSE;
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -937,6 +940,9 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	fgTriggerDebugSop = FALSE;
+#endif
 }
 
 void wlanOnPostNicInitAdapter(struct ADAPTER *prAdapter,
@@ -1690,6 +1696,11 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_CUSTOM_NETLINK
 	glCustomGenlDeinit();
+#endif
+
+	fgIsBusAccessFailed = FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	fgTriggerDebugSop = FALSE;
 #endif
 
 	return u4Status;

@@ -648,6 +648,9 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	fgIsBusAccessFailed = TRUE;
 	fgNeedReset = TRUE;
 	pci_disable_device(pdev);
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	fgTriggerDebugSop = TRUE;
+#endif
 
 exit:
 	if (fgNeedReset) {
@@ -1222,6 +1225,9 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 	fgIsBusAccessFailed = FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	fgTriggerDebugSop = FALSE;
+#endif
 	pci_set_master(pdev);
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
