@@ -9503,6 +9503,7 @@ inline int32_t kalPerMonStart(struct GLUE_INFO
 
 	prPerMonitor->u4CurrPerfLevel = 0;
 	prPerMonitor->u4TarPerfLevel = 0;
+	prPerMonitor->u4BoostPerfLevel = 0;
 	prPerMonitor->u4UpdatePeriod =
 		prGlueInfo->prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
 	cnmTimerStartTimer(prGlueInfo->prAdapter,
@@ -9544,6 +9545,7 @@ inline int32_t kalPerMonStop(struct GLUE_INFO
 
 		prPerMonitor->u4CurrPerfLevel = 0;
 		prPerMonitor->u4TarPerfLevel = 0;
+		prPerMonitor->u4BoostPerfLevel = 0;
 		/*Cancel CPU performance mode request*/
 		kalBoostCpu(prGlueInfo->prAdapter,
 			    prPerMonitor->u4TarPerfLevel,
@@ -10019,6 +10021,9 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			!keep_alive))
 		kalPerMonStop(prGlueInfo);
 	else {
+		uint32_t u4PrevBoostPerfLevel;
+
+		u4PrevBoostPerfLevel = prPerMonitor->u4BoostPerfLevel;
 		if (prPerMonitor->u4UpdatePeriod < SEC_TO_MSEC(1)) {
 			prPerMonitor->u4BoostPerfLevel = max(
 					prPerMonitor->u4TarPerfLevel,
@@ -10029,7 +10034,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 		}
 
 		if (kalCheckTputLoad(prAdapter,
-			prPerMonitor->u4CurrPerfLevel,
+			u4PrevBoostPerfLevel,
 			prPerMonitor->u4BoostPerfLevel,
 			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt))) {
@@ -10050,8 +10055,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				prPerMonitor->u4BoostPerfLevel,
 				prPerMonitor->u4BoostPerfLevel);
 		} else if ((prPerMonitor->u4BoostPerfLevel !=
-		     prPerMonitor->u4CurrPerfLevel) &&
-		    (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
+			u4PrevBoostPerfLevel) &&
+			(u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u th:%u fg:0x%lx\n",
 			(unsigned long) (prPerMonitor->ulThroughput >> 20),
@@ -10071,7 +10076,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.u4PerfMonTpCoalescingIntTh;
 
 		if ((prPerMonitor->u4BoostPerfLevel !=
-			prPerMonitor->u4CurrPerfLevel) &&
+			u4PrevBoostPerfLevel) &&
 			(u4CoalescingIntTh <
 			 PERF_MON_TP_MAX_THRESHOLD)) {
 
@@ -14561,8 +14566,8 @@ void kalTxWork(struct work_struct *work)
 
 void kalTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
 {
-	if (i4CpuIdx > num_possible_cpus() &&
-			i4CpuIdx != WORK_ALL_CPU_OK) {
+	if ((i4CpuIdx != -1 && i4CpuIdx != WORK_ALL_CPU_OK) &&
+		i4CpuIdx > num_possible_cpus()) {
 		DBGLOG(INIT, INFO, "Invalid CpuIdx:%d\n", i4CpuIdx);
 		return;
 	}
@@ -14641,8 +14646,8 @@ void kalRxWork(struct work_struct *work)
 
 void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
 {
-	if (i4CpuIdx > num_possible_cpus() &&
-			i4CpuIdx != WORK_ALL_CPU_OK) {
+	if ((i4CpuIdx != -1 && i4CpuIdx != WORK_ALL_CPU_OK) &&
+		i4CpuIdx > num_possible_cpus()) {
 		DBGLOG(INIT, INFO, "Invalid CpuIdx:%d\n", i4CpuIdx);
 		return;
 	}
