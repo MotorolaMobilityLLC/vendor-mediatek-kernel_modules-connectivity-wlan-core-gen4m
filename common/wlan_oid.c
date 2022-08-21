@@ -5969,11 +5969,12 @@ wlanoidQueryMcrRead(struct ADAPTER *prAdapter,
 				"Get Chip ID [0x%08x] from FW\n",
 				prMcrRdInfo->u4McrData);
 		} else {
-
+			ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 			HAL_MCR_RD(prAdapter,
 				/* address is in DWORD unit */
 				(prMcrRdInfo->u4McrOffset & BITS(2, 31)),
 				   &prMcrRdInfo->u4McrData);
+			RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
 			DBGLOG(INIT, TRACE,
 			       "MCR Read: Offset = %#08x, Data = %#08x\n",
