@@ -1589,6 +1589,8 @@ static u_int32 mt_engine_add_allocation(
 		__func__, sub_band_idx));
 
 		sys_ad_set_mem(&alloc_info->sub20[0], 8, 0x72);
+
+		return SERV_STATUS_ENGINE_INVALID_PARAM;
 	}
 
 	if (sub_band_idx + 1 < 0 || sub_band_idx + 2 < 0
