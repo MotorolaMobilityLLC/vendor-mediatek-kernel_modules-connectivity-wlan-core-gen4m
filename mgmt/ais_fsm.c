@@ -657,8 +657,8 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prNetDevPrivate->ucIsP2p = FALSE;
 #endif
 #if CFG_MTK_MDDP_SUPPORT
-	/* only wlan0 supports mddp */
-	prNetDevPrivate->ucMddpSupport = ucAisIndex == AIS_DEFAULT_INDEX;
+	/* support both wlan0 and wlan1 */
+	prNetDevPrivate->ucMddpSupport = TRUE;
 #else
 	prNetDevPrivate->ucMddpSupport = FALSE;
 #endif
