@@ -2262,10 +2262,12 @@ struct GLUE_INFO *wlanGetGlueInfo(void)
 
 static struct delayed_work workq;
 struct net_device *gPrDev;
+int8_t g_ucSetMcListIndex = MAX_BSS_INDEX;
 
 static void wlanSetMulticastList(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 	if (!prDev)
 		return;
@@ -2276,6 +2278,21 @@ static void wlanSetMulticastList(struct net_device *prDev)
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
+
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
+	if (!prNetDevPrivate) {
+		DBGLOG(REQ, WARN, "prNetDevPrivate is NULL\n");
+		return;
+	}
+
+	g_ucSetMcListIndex = prNetDevPrivate->ucBssIdx;
+
+	DBGLOG(INIT, INFO,
+		       "Bss[%d] set multicast list.\n",
+		       g_ucSetMcListIndex);
 
 	/* Allow to receive all multicast for WOW */
 	DBGLOG(INIT, TRACE, "flags: 0x%x\n", prDev->flags);
@@ -2296,10 +2313,10 @@ static void wlanSetMulticastListWorkQueue(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4PacketFilter = 0;
 	uint32_t u4SetInfoLen;
-	struct net_device *prDev = gPrDev;
+	struct net_device *prDev = NULL;
 	uint8_t ucBssIndex = 0;
 
-	ucBssIndex = wlanGetBssIdx(prDev);
+	ucBssIndex = g_ucSetMcListIndex;
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return;
 
@@ -2309,19 +2326,24 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **)
-					 netdev_priv(prDev)) : NULL;
-	ASSERT(prDev);
-	ASSERT(prGlueInfo);
-	if (!prDev || !prGlueInfo) {
+	if (gprWdev[ucBssIndex]) {
+		prDev = gprWdev[ucBssIndex]->netdev;
+
+		DBGLOG(INIT, INFO,
+		       "Get prDev(%p) by Bss%d\n",
+		       prDev, ucBssIndex);
+	} else {
 		DBGLOG(INIT, WARN,
-		       "abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
-		       prDev, prGlueInfo);
+		       "prDev for Bss%d not exist.\n",
+				ucBssIndex);
 		up(&g_halt_sem);
 		return;
 	}
 
-	if (!prGlueInfo->u4ReadyFlag) {
+	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **)
+					 netdev_priv(prDev)) : NULL;
+
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		up(&g_halt_sem);
 		return;
