@@ -1089,42 +1089,10 @@ static void mt6639_dumpPcieReg(void)
 #endif
 void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
-	struct dump_cr_set *dump = NULL;
-	uint32_t size = 0;
-	uint32_t i = 0;
-	uint32_t val = 0;
 	uint32_t u4Value = 0;
 
 	DBGLOG(HAL, INFO, "Start mt6639_dumpCbtopReg.\n");
-	if (!fgIsBusAccessFailed) {
-		DBGLOG(HAL, INFO, "PCIE normal.\n");
-
-		dump = cbtop_dump_list;
-		size = ARRAY_SIZE(cbtop_dump_list);
-		for (i = 0; i < size; i++) {
-			if (dump[i].read) {
-				HAL_MCR_RD(ad,
-					dump[i].addr,
-					&val);
-				DBGLOG(HAL, INFO, "RD 0x%08x=0x%08x\n",
-					dump[i].addr,
-					val);
-			} else {
-				HAL_MCR_RD(ad,
-					dump[i].addr,
-					&val);
-				val &= ~dump[i].mask;
-				val |= ((dump[i].value << dump[i].shift) &
-					dump[i].mask);
-				HAL_MCR_WR(ad,
-					dump[i].addr,
-					val);
-				DBGLOG(HAL, INFO, "WR 0x%08x=0x%08x\n",
-					dump[i].addr,
-					val);
-			}
-		}
-	} else {
+	if (fgIsBusAccessFailed) {
 		DBGLOG(HAL, INFO, "PCIE abnormal.\n");
 
 		/* 1. dump 0x18023C00[31:0] -> 0x7c023c00 */
