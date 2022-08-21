@@ -3456,6 +3456,15 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 	if (!prDev)
 		goto end;
 
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		struct AIS_FSM_INFO *prAisFsmInfo =
+			aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+		if (prAisFsmInfo &&
+			!wlanGetAisNetDev(prGlueInfo, prAisFsmInfo->ucAisIndex))
+			fgIsValidDevice = FALSE;
+	}
+
 #if CFG_ENABLE_WIFI_DIRECT
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
