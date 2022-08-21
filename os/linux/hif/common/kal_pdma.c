@@ -77,6 +77,7 @@
 
 #include "precomp.h"
 
+#include <linux/kernel.h>
 #include <linux/mm.h>
 #ifndef CONFIG_X86
 #include <asm/memory.h>
@@ -85,6 +86,10 @@
 #include "mt66xx_reg.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
+#endif
+
+#if IS_MOBILE_SEGMENT
+#include <aee.h>
 #endif
 
 /*******************************************************************************
@@ -791,6 +796,16 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
+	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000)) {
+		dump_stack();
+		aee_kernel_exception("WLAN",
+			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
+			u4Register, u4Value);
+	}
+#endif
+
 	/* Static mapping */
 #if (CFG_WLAN_ATF_SUPPORT == 1)
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
@@ -893,6 +908,16 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
 	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if ((reg >= 0x18050000 && reg <= 0x18051000) ||
+		(reg >= 0x7c050000 && reg <= 0x7c051000)) {
+		dump_stack();
+		aee_kernel_exception("WLAN",
+			"Corrupt conninfra cmdbt:  reg: [0x%08x~0x%08x]\n",
+			reg, reg + total_size);
+	}
+#endif
 
 	if (halChipToStaticMapBusAddr(chip_info, reg, &bus_addr)) {
 		uint32_t offset = 0;
