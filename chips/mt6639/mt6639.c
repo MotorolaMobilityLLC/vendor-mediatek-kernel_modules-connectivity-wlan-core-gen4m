@@ -209,7 +209,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x820c0000, 0x08000, 0x4000},  /* WF_UMAC_TOP (PLE) */
 	{0x820c8000, 0x0c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0x2000},  /* WF_UMAC_TOP (PP) */
-	{0x74030000, 0x10000, 0x2000},  /* PCIe MAC */
+	{0x74030000, 0x1d0000, 0x2000},  /* PCIe MAC */
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
 	{0x820e2000, 0x20800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
@@ -1773,7 +1773,6 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		}
 
 		/*2. cb_infra/cbtop status*/
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1F6558, 0x7000);
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1E7204,
 			&u4RegValue);
@@ -2202,12 +2201,26 @@ static uint32_t mt6639_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
+static void set_cbinfra_remap(struct ADAPTER *ad)
+{
+	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
+
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
+		0x74037001);
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
+		0x70007000);
+}
+
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	set_cbinfra_remap(ad);
 
 	rStatus = mt6639_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
