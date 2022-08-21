@@ -1658,17 +1658,41 @@ void nicRxGetNoiseLevelAndLastRate(struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
-void nicRxIndicatePackets(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfbListHead)
+void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
-	struct mt66xx_chip_info *prChipInfo;
-	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
-	prChipInfo = prAdapter->chip_info;
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prRetSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return;
+
+#if ARP_MONITER_ENABLE
+	if (IS_STA_IN_AIS(prStaRec))
+		qmHandleRxArpPackets(prAdapter, prRetSwRfb);
+
+	/* STA or GC */
+	qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
+#endif
+
+	GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
+}
+
+void nicRxIndicatePackets(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfbListHead)
+{
+	struct RX_CTRL *prRxCtrl;
+	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
 	prRetSwRfb = prSwRfbListHead;
 
 	while (prRetSwRfb) {
@@ -1688,23 +1712,7 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 
 		switch (prRetSwRfb->eDst) {
 		case RX_PKT_DESTINATION_HOST:
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
-					prRetSwRfb->ucStaRecIdx);
-			if (prStaRec)
-				ucBssIndex = prStaRec->ucBssIndex;
-#if ARP_MONITER_ENABLE
-			if (prStaRec &&
-				IS_STA_IN_AIS(prStaRec)) {
-				qmHandleRxArpPackets(prAdapter,
-					prRetSwRfb);
-			}
-
-			if (prStaRec) { /* STA or GC */
-				qmHandleRxDhcpPackets(
-					prAdapter,
-					prRetSwRfb);
-			}
-#endif
+			nicRxProcessPacketToHost(prAdapter, prRetSwRfb);
 #if CFG_SUPPORT_WIFI_SYSDVT
 #if (CFG_SUPPORT_CONNAC2X == 1)
 			/* Not handle non-CONNAC2X case */
@@ -1718,10 +1726,6 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 			}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
-			if (prStaRec && ucBssIndex < MAX_BSSID_NUM) {
-				GET_BOOT_SYSTIME(
-					&prRxCtrl->u4LastRxTime[ucBssIndex]);
-			}
 			nicRxProcessPktWithoutReorder(prAdapter, prRetSwRfb);
 			break;
 
