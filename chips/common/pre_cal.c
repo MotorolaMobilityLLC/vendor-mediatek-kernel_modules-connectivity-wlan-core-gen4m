@@ -307,10 +307,12 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 				WIFI_EMI_ADDR_MASK;
 #endif
 
+#if (CFG_SUPPORT_CONNAC3X == 0) /* No need in Connac3 projects */
 			/* read from EMI, backup in driver */
 			wlanAccessCalibrationEMI(prAdapter,
 				prPhyEvent,
 				TRUE);
+#endif
 		}
 
 		u4Status = WLAN_STATUS_SUCCESS;
