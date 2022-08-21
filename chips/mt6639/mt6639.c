@@ -1867,6 +1867,8 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 				u4RegValue);
 			return FALSE;
 		}
+	} else {
+		return FALSE;
 	}
 	DBGLOG(HAL, INFO, "mt6639DumpPcieDateFlowStatus done\n");
 	return TRUE;
