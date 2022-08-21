@@ -2619,12 +2619,6 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 		wlanCfgSetUint32(prAdapter, "EnableMlo",
 			prAdapter->rWifiVar.ucEnableMlo);
 	}
-	if (prAdapter->rWifiVar.ucEnableMloSingleLink !=
-					FEATURE_FORCE_ENABLED) {
-		prAdapter->rWifiVar.ucEnableMloSingleLink &= prPhyCap->ucEht;
-		wlanCfgSetUint32(prAdapter, "EnableMloSingleLink",
-			prAdapter->rWifiVar.ucEnableMloSingleLink);
-	}
 #endif
 	/* Overwrite bandwidth settings by phy capability */
 	if (prAdapter->rWifiVar.ucStaBandwidth > prPhyCap->ucMaxBandwidth) {
@@ -4503,10 +4497,9 @@ bool nicBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
-	if (prBssInfo &&
-	    mldIsMultiLinkFormed(prAdapter, prBssInfo->prStaRecOfAP) &&
-	    ucBcnTimeoutReason != UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD) {
-		DBGLOG(ML, INFO, "MLO but only single link BTO");
+	if (ucBcnTimeoutReason != UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD) {
+		DBGLOG(ML, INFO, "Only single link BTO reason=%d",
+			ucBcnTimeoutReason);
 		return FALSE;
 	}
 #endif

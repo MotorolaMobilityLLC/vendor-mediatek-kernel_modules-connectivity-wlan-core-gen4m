@@ -120,8 +120,10 @@ uint32_t p2pCalculate_IEForAssocReq(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_MTK_SYNERGY
-		if (prAdapter->rWifiVar.ucMtkOui == FEATURE_ENABLED)
-			u4RetValue += (ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI);
+		if (prAdapter->rWifiVar.ucMtkOui == FEATURE_ENABLED) {
+			u4RetValue += rlmCalculateMTKOuiIELen(prAdapter,
+				 prStaRec->ucBssIndex, prStaRec);
+		}
 #endif
 	} while (FALSE);
 

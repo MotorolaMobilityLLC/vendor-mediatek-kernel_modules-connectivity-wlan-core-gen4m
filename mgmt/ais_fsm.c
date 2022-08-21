@@ -930,19 +930,19 @@ bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
-			struct AIS_FSM_INFO *prAisFsmInfo,
+			struct BSS_INFO *prAisBssInfo,
 			struct BSS_DESC *prBssDesc)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (aisGetLinkNum(prAisFsmInfo) > 1)
+	if (mldIsMultiLinkFormed(prAdapter, prAisBssInfo->prStaRecOfAP))
 		return rsnSearchPmkidEntry(prAdapter,
 			prBssDesc->rMlInfo.aucMldAddr,
-			aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
+			prAisBssInfo->ucBssIndex);
 #endif
 
 	return rsnSearchPmkidEntry(prAdapter,
 		prBssDesc->aucBSSID,
-		aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
+		prAisBssInfo->ucBssIndex);
 }
 
 void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
@@ -973,7 +973,7 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 	    EQUAL_SSID(prBss->aucSSID, prBss->ucSSIDLen,
 		prConnSettings->aucSSID, prConnSettings->ucSSIDLen) &&
 	    !(prBss->fgIsConnected & u4Bmap) &&
-	    !aisSearchPmkidEntry(prAdapter, prAisFsmInfo, prBss)) {
+	    !aisSearchPmkidEntry(prAdapter, prAisBssInfo, prBss)) {
 		struct PARAM_PMKID_CANDIDATE candidate;
 
 		COPY_MAC_ADDR(candidate.arBSSID, prBss->aucBSSID);
@@ -1046,7 +1046,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (aisGetLinkNum(prAisFsmInfo) > 1) {
+	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
 		prAisBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 		mldStarecRegister(prAdapter, prStaRec,
 			prBssDesc->rMlInfo.aucMldAddr,
@@ -1192,7 +1192,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			break;
 		case AUTH_MODE_WPA3_SAE:
 			prBlackList = aisQueryBlackList(prAdapter, prBssDesc);
-			if (aisSearchPmkidEntry(prAdapter, prAisFsmInfo,
+			if (aisSearchPmkidEntry(prAdapter, prAisBssInfo,
 						prBssDesc) &&
 				(!prBlackList || prBlackList->u2AuthStatus
 					!= STATUS_INVALID_PMKID)) {
@@ -1945,10 +1945,62 @@ skip_roam_fail:
 	return state;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
+{
+	struct BSS_DESC *prBssDesc;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t *ie;
+	uint16_t offset = 0, len;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	/* over retry limit, no need mlo scan */
+	if (prAisFsmInfo->ucMlProbeSendCount >=
+		prAdapter->rWifiVar.ucMlProbeRetryLimit)
+		return FALSE;
+
+	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+		return FALSE;
+
+	/* already found multi link, no need mlo scan */
+	if (prBssDescSet->ucLinkNum != 1)
+		return FALSE;
+
+	prBssDesc = prBssDescSet->prMainBssDesc;
+	ie = prBssDesc->pucIeBuf;
+	len = prBssDesc->u2IELength;
+
+	IE_FOR_EACH(ie, len, offset) {
+		uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+		uint8_t sap = FALSE;
+
+		if (IE_ID(ie) == ELEM_ID_VENDOR &&
+		    !kalMemCmp(MTK_OUI_IE(ie)->aucOui,
+				aucMtkOui, sizeof(aucMtkOui)) &&
+		    MTK_OUI_IE(ie)->ucLength >= ELEM_MIN_LEN_MTK_OUI &&
+		    (MTK_OUI_IE(ie)->aucCapability[1] &
+				MTK_SYNERGY_CAP_SUPPORT_GC_CSA))
+			sap = TRUE;
+
+		/* ml scan for mtk icv v1 device excluding sap */
+		if (rlmCheckMtkOuiChipCap(ie, CHIP_CAP_ICV_V1) && !sap)
+			return TRUE;
+	}
+
+	/* target is not mlo, no need mlo scan */
+	if (!prBssDesc->rMlInfo.fgValid ||
+	    !prBssDesc->rMlInfo.ucMaxSimultaneousLinks)
+		return FALSE;
+
+	return TRUE;
+}
+#endif
+
 enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
-
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 
@@ -1965,13 +2017,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 			 * but we only scan one link(ucLinkNum=1), need to send
 			 * ML probe request to get completed ML info first.
 			 */
-
-			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
-			    prBssDescSet->ucLinkNum == 1 &&
-			    prBssDescSet->prMainBssDesc->
-				rMlInfo.ucMaxSimultaneousLinks > 0 &&
-			    prAisFsmInfo->ucMlProbeSendCount <
-				prAdapter->rWifiVar.ucMlProbeRetryLimit) {
+			if (aisNeedMloScan(prAdapter,
+					prBssDescSet, ucBssIndex)) {
 				prAisFsmInfo->ucMlProbeSendCount++;
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
 				prAisFsmInfo->prMlProbeBssDesc =
@@ -4657,9 +4704,6 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prSetupStaRec)
 {
 	uint8_t i;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct SW_RFB *prSwRfb;
-#endif
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
@@ -4675,8 +4719,9 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 			aisUpdateBssInfoForJOIN(prAdapter,
 				prStaRec, prAssocRspSwRfb);
 		} else {
-			prSwRfb = mldDupAssocSwRfb(prAdapter,
+			struct SW_RFB *prSwRfb = mldDupAssocSwRfb(prAdapter,
 				prAssocRspSwRfb, prStaRec);
+
 			if (prSwRfb) {
 				aisUpdateBssInfoForJOIN(prAdapter,
 					prStaRec, prSwRfb);

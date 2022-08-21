@@ -278,12 +278,15 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* sta really attempt to build mlo */
-	if (prMlInfo->ucProfNum > 0) {
-		mldStarecRegister(prAdapter, prStaRec,
-			prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
-	} else {
-		COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
+	if (!rlmCheckIsSupportedMld(prAdapter, pucIE, u2IELength)) {
+		DBGLOG(AAA, INFO, "unsupported mld, reject!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	mldStarecRegister(prAdapter, prStaRec,
+		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
+
+	if (prMlInfo->ucProfNum == 0) {
 		DBGLOG(AAA, INFO, "ml ie ["MACSTR"] without links\n",
 			MAC2STR(prMlInfo->aucMldAddr));
 		return WLAN_STATUS_SUCCESS;

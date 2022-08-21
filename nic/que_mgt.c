@@ -6106,7 +6106,6 @@ void mqmProcessAssocReq(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
-	uint32_t u4Flags;
 
 	DEBUGFUNC("mqmProcessAssocReq");
 
@@ -6140,9 +6139,8 @@ void mqmProcessAssocReq(struct ADAPTER *prAdapter,
 					pucIE, prStaRec);
 
 #if CFG_SUPPORT_MTK_SYNERGY
-				if (rlmParseCheckMTKOuiIE(prAdapter,
-					pucIE, &u4Flags))
-					prStaRec->u4Flags = u4Flags;
+				rlmParseCheckMTKOuiIE(prAdapter,
+					pucIE, prStaRec);
 #endif
 				break;
 
@@ -6229,7 +6227,6 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
-	uint32_t u4Flags;
 #if CFG_SUPPORT_RXSMM_WHITELIST
 	uint8_t  fgRxsmmEnable;
 #endif
@@ -6270,9 +6267,8 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 				mqmParseAssocRspWmmIe(pucIE, prStaRec);
 
 #if CFG_SUPPORT_MTK_SYNERGY
-				if (rlmParseCheckMTKOuiIE(prAdapter,
-					pucIE, &u4Flags))
-					prStaRec->u4Flags = u4Flags;
+				rlmParseCheckMTKOuiIE(prAdapter,
+					pucIE, prStaRec);
 #endif
 
 #if CFG_SUPPORT_RXSMM_WHITELIST

@@ -879,7 +879,7 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_MLD_BSSINFO_VALID(prMldBssInfo)) {
+	if (prMldBssInfo) {
 		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
@@ -3583,8 +3583,7 @@ uint32_t nicUniCmdStaRecTagMldSetup(struct ADAPTER *ad,
 	if (!prStaRec || prStaRec->ucStaState != STA_STATE_3)
 		return 0;
 
-	if (!prMldStaRec ||
-	    prMldStaRec->rStarecList.u4NumElem > UNI_MLD_LINK_MAX)
+	if (!prMldStaRec)
 		return 0;
 
 	prStaList = &prMldStaRec->rStarecList;
@@ -3681,6 +3680,8 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_MLD;
 	tag->u2Length = sizeof(struct UNI_CMD_STAREC_EHT_MLD);
 	tag->fgNSEP = prMldStarec->fgNSEP;
+	tag->fgMtkMld = prStaRec->fgMtkMld;
+
 	kalMemCopy(tag->afgStrCapBitmap,
 		prMldStarec->aucStrBitmap,
 		sizeof(tag->afgStrCapBitmap));
@@ -3689,14 +3690,15 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		sizeof(tag->aucEmlCap));
 
 	DBGLOG(INIT, INFO,
-		"[%d] bss=%d,nsep=%d,eml=0x%06x,str[0x%x,0x%x,0x%x]\n",
+		"[%d] bss=%d,nsep=%d,eml=0x%06x,str[0x%x,0x%x,0x%x] mld_type=%d\n",
 		prStaRec->ucIndex,
 		cmd->ucBssIndex,
 		tag->fgNSEP,
 		*(uint32_t *)tag->aucEmlCap,
 		tag->afgStrCapBitmap[0],
 		tag->afgStrCapBitmap[1],
-		tag->afgStrCapBitmap[2]);
+		tag->afgStrCapBitmap[2],
+		tag->fgMtkMld);
 
 	return tag->u2Length;
 }

@@ -727,6 +727,7 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prStaRec->ucMldStaIndex = MLD_GROUP_NONE;
 			prStaRec->ucTidBitmap = 0xFF;
+			prStaRec->fgMtkMld = 0;
 #endif
 			break;
 		}
@@ -1445,7 +1446,9 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tBSS[%d]:\n", prBssInfo->ucBssIndex);
+		"\tBSS[%d][RF_BAND=%d][OMAC="MACSTR"]:\n",
+		prBssInfo->ucBssIndex, prBssInfo->eBand,
+		MAC2STR(prBssInfo->aucOwnMacAddr));
 
 	if (!prBssInfo->fgIsInUse) {
 		i4BytesWritten += kalSnprintf(
@@ -1456,11 +1459,11 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tACTIVE/HW_BAND/OMAC_IDX/OMAC_ADDR: %u/%u/%u/"MACSTR"\n",
+		 "\tACTIVE/HW_BAND/OMAC_IDX: %u/%u/%u/\n",
 		prBssInfo->fgIsNetActive,
 		prBssInfo->eHwBandIdx,
-		prBssInfo->ucOwnMacIndex,
-		MAC2STR(prBssInfo->aucOwnMacAddr));
+		prBssInfo->ucOwnMacIndex);
+
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		 "\tBMC/OP_MODE/WMM/CONN_STATE/BSSID: %u/%u/%u/%u/"MACSTR"\n",
@@ -1489,12 +1492,12 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 #endif
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tRF_BAND/CHANNEL/WIDTH/S1/S2: %u/%u/%u/%u/%u/\n",
-		prBssInfo->eBand,
+		"\tCHANNEL/WIDTH/S1/S2: %u/%u/%u/%u/\n",
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth,
 		prBssInfo->ucVhtChannelFrequencyS1,
 		prBssInfo->ucVhtChannelFrequencyS2);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,

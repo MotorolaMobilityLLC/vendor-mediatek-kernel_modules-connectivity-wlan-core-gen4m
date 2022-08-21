@@ -251,8 +251,12 @@ void mldGenerateMlIE(struct ADAPTER *prAdapter,
 	switch (frame_ctrl) {
 	case MAC_FRAME_PROBE_RSP:
 	case MAC_FRAME_BEACON:
-		if (IS_MLD_BSSINFO_VALID(mld_bssinfo) ||
-		    mldSingleLink(prAdapter, sta, ucBssIndex))
+		if (IS_MLD_BSSINFO_VALID(mld_bssinfo)
+#ifndef CFG_AAD_NONCE_NO_REPLACE
+		/* only AAD replacement devices support single link mlo sap */
+		|| mldSingleLink(prAdapter, sta, ucBssIndex)
+#endif
+		)
 			mldGenerateBasicCommonInfo(prAdapter,
 				prMsduInfo, frame_ctrl);
 		break;
@@ -342,7 +346,7 @@ void mldGenerateAssocIE(
 				prAdapter, prMsduInfo, frame_ctrl);
 	} else {
 		if (IS_MLD_STAREC_VALID(mld_starec) ||
-		   mldSingleLink(prAdapter, prStaRec, prMsduInfo->ucBssIndex))
+		    mldSingleLink(prAdapter, prStaRec, prMsduInfo->ucBssIndex))
 			cur = common = mldGenerateBasicCommonInfo(
 				prAdapter, prMsduInfo, frame_ctrl);
 	}
@@ -2464,10 +2468,10 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\nMldLinkMax:%d\nEnableMlo:%d\nEnableMloSingleLink:%d\nNonApMld:%d\nApMld:%d\n",
+		"\nMldLinkMax:%d\nEnableMlo:%d\nAcceptAllMld:%d\nNonApMld:%d\nApMld:%d\n",
 		prAdapter->rWifiVar.ucMldLinkMax,
 		prAdapter->rWifiVar.ucEnableMlo,
-		prAdapter->rWifiVar.ucEnableMloSingleLink,
+		prAdapter->rWifiVar.ucAcceptAllMld,
 		mldIsMloFeatureEnabled(prAdapter, FALSE),
 		mldIsMloFeatureEnabled(prAdapter, TRUE));
 
@@ -2513,7 +2517,7 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"OM_ID/GRP_MLD_ID/OM_REMAP_ID:%u/%u/%u\n",
+			"OMAC_ID/GRP_MLD_ID/OM_REMAP_ID:%u/%u/%u\n",
 			prMldBssInfo->ucOmacIdx,
 			prMldBssInfo->ucGroupMldId,
 			prMldBssInfo->ucOmRemapIdx);
@@ -3080,10 +3084,12 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (LINK_IS_EMPTY(prStarecList))
+	if (LINK_IS_EMPTY(prStarecList)) {
 		prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
-	else if (prStarecList->u4NumElem == 1)
 		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
+	} else if (prStarecList->u4NumElem == 1) {
+		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
+	}
 
 	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
@@ -3305,12 +3311,13 @@ struct BSS_INFO *mldGetBssInfoByLinkID(
 }
 
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
-			     struct STA_RECORD *prStaRec)
+	struct STA_RECORD *prStaRec)
 {
 	struct MLD_STA_RECORD *mld_starec;
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	return IS_MLD_STAREC_VALID(mld_starec);
+	return (mld_starec != NULL &&
+		mld_starec->rStarecList.u4NumElem >= 1);
 }
 
 uint8_t mldIsMloFeatureEnabled(
@@ -3333,7 +3340,7 @@ uint8_t mldIsMloFeatureEnabled(
 		ret = FALSE;
 
 	if (ret == FALSE)
-		DBGLOG(ML, INFO,
+		DBGLOG(ML, TRACE,
 			"ucMldLinkMax:%d, ucEnableMlo:%d, isApMode:%d => mlo feature disabled\n",
 			prAdapter->rWifiVar.ucMldLinkMax,
 			prAdapter->rWifiVar.ucEnableMlo,
@@ -3355,8 +3362,7 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	enable = IS_FEATURE_ENABLED(prWifiVar->ucEnableMlo) &&
-		 IS_FEATURE_ENABLED(prWifiVar->ucEnableMloSingleLink);
+	enable = IS_FEATURE_ENABLED(prWifiVar->ucEnableMlo);
 
 	if (IS_BSS_APGO(bss)) {
 		enable &= !!(bss->ucPhyTypeSet & PHY_TYPE_BIT_EHT);
@@ -3382,7 +3388,8 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		} else if (IS_BSS_P2P(bss)) {
 			struct BSS_DESC *prBssDesc = NULL;
 			struct P2P_ROLE_FSM_INFO *p2p =
-				p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+				p2pGetDefaultRoleFsmInfo(prAdapter,
+					IFTYPE_P2P_CLIENT);
 
 			if (!p2p) {
 				DBGLOG(ML, WARN, "NULL prP2pRoleFsmInfo\n");

@@ -635,7 +635,68 @@ void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t rlmCheckMtkOuiChipCap(uint8_t *pucIe, uint64_t u8ChipCap)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+
+	if (IE_ID(pucIe) == ELEM_ID_VENDOR && IE_LEN(pucIe) > 7 &&
+	    !kalMemCmp(MTK_OUI_IE(pucIe)->aucOui, aucMtkOui, 3) &&
+	    (MTK_OUI_IE(pucIe)->aucCapability[0] &
+			MTK_SYNERGY_CAP_SUPPORT_TLV)) {
+		uint8_t *sub;
+		uint16_t len, offset;
+
+		sub = MTK_OUI_IE(pucIe)->aucInfoElem;
+		len = IE_LEN(pucIe) - 7;
+
+		IE_FOR_EACH(sub, len, offset) {
+			if (IE_ID(sub) == MTK_OUI_ID_CHIP_CAP &&
+			    IE_LEN(sub) == 8) {
+				struct IE_MTK_CHIP_CAP *prCapIe =
+					(struct IE_MTK_CHIP_CAP *)sub;
+
+				DBGLOG(RLM, TRACE, "MTK_OUI_CHIP_CAP");
+				DBGLOG_MEM8(RLM, TRACE, sub, IE_SIZE(sub));
+				return prCapIe->u8ChipCap & u8ChipCap;
+			}
+		}
+	}
+	return 0;
+}
+
+uint8_t rlmCheckIsSupportedMld(struct ADAPTER *prAdapter,
+	uint8_t *pucIe, uint16_t u2Len)
+{
+	uint16_t offset = 0;
+
+	IE_FOR_EACH(pucIe, u2Len, offset) {
+		if (rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V1) ||
+		    rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V2))
+			return 1;
+	}
+
+	return IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucAcceptAllMld);
+}
+#endif
+
 #if CFG_SUPPORT_MTK_SYNERGY
+uint32_t rlmCalculateMTKOuiIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec)
+{
+	uint8_t len = 0;
+
+	len += ELEM_MIN_LEN_MTK_OUI;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	len += sizeof(struct IE_MTK_CHIP_CAP);
+#endif
+
+	return len;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is used to generate MTK Vendor Specific OUI
@@ -651,6 +712,9 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t *pucBuffer;
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct IE_MTK_CHIP_CAP *prChipCap;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -701,8 +765,24 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pGcCsa)) {
 		MTK_OUI_IE(pucBuffer)->aucCapability[1] |=
 			MTK_SYNERGY_CAP_SUPPORT_GC_CSA;
-		DBGLOG(P2P, INFO, "Add gc csa capa\n");
+		DBGLOG(P2P, TRACE, "Add gc csa capa\n");
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* add icv sub ie for mlo device */
+	MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+		MTK_SYNERGY_CAP_SUPPORT_TLV;
+	prChipCap = (struct IE_MTK_CHIP_CAP *)
+		MTK_OUI_IE(pucBuffer)->aucInfoElem;
+	prChipCap->ucId = MTK_OUI_ID_CHIP_CAP;
+	prChipCap->ucLength = 8;
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	prChipCap->u8ChipCap |= CHIP_CAP_ICV_V1;
+#else
+	prChipCap->u8ChipCap |= CHIP_CAP_ICV_V2;
+#endif
+	MTK_OUI_IE(pucBuffer)->ucLength += sizeof(struct IE_MTK_CHIP_CAP);
+#endif
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	pucBuffer += IE_SIZE(pucBuffer);
@@ -718,7 +798,7 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
-			       uint32_t *pu4Cap)
+			      struct STA_RECORD *prStaRec)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	struct IE_MTK_OUI *prMtkOuiIE = (struct IE_MTK_OUI *)NULL;
@@ -760,8 +840,15 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 			       "Disable 2.4G 256QAM support if N only chip\n");
 		}
 
-		kalMemCopy(pu4Cap, prMtkOuiIE->aucCapability, sizeof(uint32_t));
+		kalMemCopy(&prStaRec->u4Flags, prMtkOuiIE->aucCapability,
+			sizeof(prStaRec->u4Flags));
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (rlmCheckMtkOuiChipCap(pucBuf, CHIP_CAP_ICV_V1))
+			prStaRec->fgMtkMld = 1;
+		else if (rlmCheckMtkOuiChipCap(pucBuf, CHIP_CAP_ICV_V2))
+			prStaRec->fgMtkMld = 2;
+#endif
 		return TRUE;
 	} while (FALSE);
 
@@ -2470,7 +2557,7 @@ void rlmParseMtkOui(
 	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
 		aucMtkOui, sizeof(aucMtkOui)))
 		return;
-	else if (MTK_OUI_IE(pucIE)->ucLength !=
+	else if (MTK_OUI_IE(pucIE)->ucLength <
 		ELEM_MIN_LEN_MTK_OUI)
 		return;
 

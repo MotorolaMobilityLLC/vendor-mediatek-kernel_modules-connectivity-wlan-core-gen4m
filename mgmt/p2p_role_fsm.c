@@ -2873,6 +2873,124 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventConnectionAbort */
 
+void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct SW_RFB *prAssocRspSwRfb,
+	struct STA_RECORD *prSetupStaRec)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prP2pLinkBssInfo =
+			p2pGetLinkBssInfo(prAdapter,
+			prP2pRoleFsmInfo, i);
+		struct BSS_DESC *prTargetBssDesc =
+			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
+		struct STA_RECORD *prStaRec =
+			p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
+
+		if (!prP2pLinkBssInfo ||
+			!prTargetBssDesc ||
+			!prStaRec)
+			break;
+
+		/* TODO: mlo, get AID from assoc resp frame */
+		prStaRec->u2AssocId = prSetupStaRec->u2AssocId;
+
+		/* 4 <1.1> Change
+		 * FW's Media State immediately.
+		 */
+		p2pChangeMediaState(prAdapter,
+			prP2pLinkBssInfo,
+			MEDIA_STATE_CONNECTED);
+
+		/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
+		 * in Driver if have.
+		 */
+		if ((prP2pLinkBssInfo->prStaRecOfAP)
+			&& (prP2pLinkBssInfo->prStaRecOfAP
+			!= prStaRec)) {
+			cnmStaRecChangeState(prAdapter,
+				prP2pLinkBssInfo->prStaRecOfAP,
+				STA_STATE_1);
+
+			cnmStaRecFree(prAdapter,
+				prP2pLinkBssInfo->prStaRecOfAP);
+
+			prP2pLinkBssInfo->prStaRecOfAP = NULL;
+		}
+		/* 4 <1.3> Update BSS_INFO_T */
+		if (prAssocRspSwRfb) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prStaRec == prSetupStaRec) {
+				p2pFuncUpdateBssInfoForJOIN(
+				    prAdapter,
+				    prTargetBssDesc,
+				    prStaRec,
+				    prP2pLinkBssInfo,
+				    prAssocRspSwRfb);
+
+			} else {
+				struct SW_RFB *prSwRfb =
+					mldDupAssocSwRfb(
+					prAdapter,
+					prAssocRspSwRfb,
+					prStaRec);
+
+				if (prSwRfb) {
+					p2pFuncUpdateBssInfoForJOIN(
+					    prAdapter,
+					    prTargetBssDesc,
+					    prStaRec,
+					    prP2pLinkBssInfo,
+					    prSwRfb);
+					nicRxReturnRFB(prAdapter, prSwRfb);
+				}
+			}
+#else
+			p2pFuncUpdateBssInfoForJOIN(prAdapter,
+			    prTargetBssDesc,
+			    prStaRec,
+			    prP2pLinkBssInfo,
+			    prAssocRspSwRfb);
+
+#endif
+
+		} else {
+			DBGLOG(P2P, INFO,
+				"prAssocRspSwRfb is NULL!\n");
+		}
+
+		/* 4 <1.4> Activate current AP's STA_RECORD_T
+		 * in Driver.
+		 */
+		cnmStaRecChangeState(prAdapter,
+			prStaRec, STA_STATE_3);
+
+#if CFG_SUPPORT_P2P_RSSI_QUERY
+		/* <1.5> Update RSSI if necessary */
+		nicUpdateRSSI(prAdapter,
+			prP2pLinkBssInfo->ucBssIndex,
+			(int8_t)(RCPI_TO_dBm(prStaRec->ucRCPI)),
+			0);
+#endif
+
+		/* 4 <1.6> Indicate Connected Event to
+		 * Host immediately.
+		 * Require BSSID, Association ID,
+		 * Beacon Interval..
+		 * from AIS_BSS_INFO_T
+		 * p2pIndicationOfMediaStateToHost(prAdapter,
+		 * MEDIA_STATE_CONNECTED,
+		 * prStaRec->aucMacAddr);
+		 */
+		if (prTargetBssDesc)
+			scanReportBss2Cfg80211(prAdapter,
+				BSS_TYPE_P2P_DEVICE,
+				prTargetBssDesc);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief    This function is called when JOIN complete message event
@@ -2962,87 +3080,10 @@ void p2pRoleFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 		prJoinInfo->fgIsJoinComplete = TRUE;
 
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
-			uint8_t i;
-
-			for (i = 0; i < MLD_LINK_MAX; i++) {
-				struct BSS_INFO *prP2pLinkBssInfo =
-					p2pGetLinkBssInfo(prAdapter,
-					prP2pRoleFsmInfo, i);
-				struct BSS_DESC *prTargetBssDesc =
-					p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
-				struct STA_RECORD *prStaRec =
-					p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
-
-				if (!prP2pLinkBssInfo ||
-					!prTargetBssDesc ||
-					!prStaRec)
-					break;
-
-				/* TODO: mlo, get AID from assoc resp frame */
-				prStaRec->u2AssocId = prSetupStaRec->u2AssocId;
-
-				/* 4 <1.1> Change
-				 * FW's Media State immediately.
-				 */
-				p2pChangeMediaState(prAdapter,
-					prP2pLinkBssInfo,
-					MEDIA_STATE_CONNECTED);
-
-				/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
-				 * in Driver if have.
-				 */
-				if ((prP2pLinkBssInfo->prStaRecOfAP)
-					&& (prP2pLinkBssInfo->prStaRecOfAP
-					!= prStaRec)) {
-					cnmStaRecChangeState(prAdapter,
-						prP2pLinkBssInfo->prStaRecOfAP,
-						STA_STATE_1);
-
-					cnmStaRecFree(prAdapter,
-						prP2pLinkBssInfo->prStaRecOfAP);
-
-					prP2pLinkBssInfo->prStaRecOfAP = NULL;
-				}
-				/* 4 <1.3> Update BSS_INFO_T */
-				if (prAssocRspSwRfb) {
-					p2pFuncUpdateBssInfoForJOIN(prAdapter,
-					    prTargetBssDesc,
-					    prStaRec,
-					    prP2pLinkBssInfo,
-					    prAssocRspSwRfb);
-				} else {
-					DBGLOG(P2P, INFO,
-						"prAssocRspSwRfb is NULL!\n");
-				}
-
-				/* 4 <1.4> Activate current AP's STA_RECORD_T
-				 * in Driver.
-				 */
-				cnmStaRecChangeState(prAdapter,
-					prStaRec, STA_STATE_3);
-
-#if CFG_SUPPORT_P2P_RSSI_QUERY
-				/* <1.5> Update RSSI if necessary */
-				nicUpdateRSSI(prAdapter,
-					prP2pLinkBssInfo->ucBssIndex,
-					(int8_t)(RCPI_TO_dBm(prStaRec->ucRCPI)),
-					0);
-#endif
-
-				/* 4 <1.6> Indicate Connected Event to
-				 * Host immediately.
-				 * Require BSSID, Association ID,
-				 * Beacon Interval..
-				 * from AIS_BSS_INFO_T
-				 * p2pIndicationOfMediaStateToHost(prAdapter,
-				 * MEDIA_STATE_CONNECTED,
-				 * prStaRec->aucMacAddr);
-				 */
-				if (prTargetBssDesc)
-					scanReportBss2Cfg80211(prAdapter,
-						BSS_TYPE_P2P_DEVICE,
-						prTargetBssDesc);
-			}
+			p2pRoleFsmUpdateBssInfoForJOIN(prAdapter,
+				prP2pRoleFsmInfo,
+				prAssocRspSwRfb,
+				prSetupStaRec);
 
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 				prP2pRoleFsmInfo->ucRoleIndex,
