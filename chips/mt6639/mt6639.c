@@ -189,7 +189,7 @@ uint8_t *apucmt6639FwName[] = {
 };
 
 #if CFG_SUPPORT_PCIE_ASPM
-struct mutex pcie_vote_lock;
+static spinlock_t rPCIELock;
 #define WIFI_ROLE	(1)
 #define MD_ROLE		(2)
 #endif
@@ -1610,16 +1610,19 @@ static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
+	unsigned long flags = 0;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	mutex_lock(&pcie_vote_lock);
+	spin_lock_irqsave(&rPCIELock, flags);
+
 	if (role == WIFI_ROLE)
 		prChipInfo->bus_info->fgWifiEnL1_2 = fgEn;
 	else if (role == MD_ROLE)
 		prChipInfo->bus_info->fgMDEnL1_2 = fgEn;
-	mutex_unlock(&pcie_vote_lock);
+
+	spin_unlock_irqrestore(&rPCIELock, flags);
 
 	DBGLOG(HAL, INFO, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
@@ -2105,7 +2108,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
 
 #if CFG_SUPPORT_PCIE_ASPM
-	mutex_init(&pcie_vote_lock);
+	spin_lock_init(&rPCIELock);
 #endif
 
 exit:
