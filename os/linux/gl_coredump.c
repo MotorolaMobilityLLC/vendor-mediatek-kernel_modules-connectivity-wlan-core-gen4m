@@ -402,14 +402,13 @@ static int __coredump_wait_done(struct coredump_ctx *ctx,
 	u_int8_t force_dump,
 	u_int8_t *state_ready)
 {
+	struct ctrl_blk_layout ctrl_blk = {0};
 	unsigned long timeout;
 	int ret = 0;
 
 	timeout = jiffies + msecs_to_jiffies(COREDUMP_TIMEOUT);
 
 	while (TRUE) {
-		struct ctrl_blk_layout ctrl_blk = {0};
-
 		if (time_after(jiffies, timeout)) {
 			DBGLOG(INIT, ERROR, "Coredump timeout.\n");
 			DBGLOG_MEM32(INIT, ERROR, &ctrl_blk, sizeof(ctrl_blk));
