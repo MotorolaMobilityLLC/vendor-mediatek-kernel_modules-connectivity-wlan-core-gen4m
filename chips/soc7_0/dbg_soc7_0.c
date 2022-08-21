@@ -848,6 +848,7 @@ int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
+	uint32_t mu_mimo = 0;
 
 	if (!prRxRateInfo || !prRxV)
 		return -1;
@@ -862,6 +863,8 @@ int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
 				>> SOC7_0_RX_VT_RX_RATE_OFFSET;
 	nsts = (prRxV[0] & SOC7_0_RX_VT_NSTS_MASK)
 				>> SOC7_0_RX_VT_NSTS_OFFSET;
+	mu_mimo = (prRxV[0] & SOC7_0_RX_VT_MUMIMO_MASK)
+				>> SOC7_0_RX_VT_MUMIMO_OFFSET;
 	/* C-B-0 */
 	rxmode = (prRxV[0] & SOC7_0_RX_VT_TXMODE_MASK)
 				>> SOC7_0_RX_VT_TXMODE_OFFSET;
@@ -872,7 +875,15 @@ int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
 	stbc = (prRxV[0] & SOC7_0_RX_VT_STBC_MASK)
 				>> SOC7_0_RX_VT_STBC_OFFSET;
 
-	nsts += 1;
+	/* HE-SU: set to the number of space time streams minus 1
+	 * HE_ER: 0 for 1 space time stream when STBC == 0
+	 *        1 for 2 space time stream when STBC == 1
+	 * HE_MU MU-MIMO: set to the number of space time streams (no minus 1);
+	 * HE_MU Non-MU-MIMO: set to the number of space time streams minus 1
+	 */
+	if (!(rxmode == TX_RATE_MODE_HE_MU && mu_mimo))
+		nsts += 1;
+
 	if (nsts == 1)
 		nss = nsts;
 	else
@@ -890,9 +901,8 @@ int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
 	prRxRateInfo->u4Gi = sgi;
 
 	DBGLOG(SW4, TRACE,
-		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
-		   prRxV[0], rxmode, rate, frmode, sgi, nss
-	);
+		   "rxvec0=0x%x rxmode=%u, rate=%u, bw=%u, sgi=%u, nss=%u mu_mimo=%u\n",
+		   prRxV[0], rxmode, rate, frmode, sgi, nss, mu_mimo);
 
 	return 0;
 }

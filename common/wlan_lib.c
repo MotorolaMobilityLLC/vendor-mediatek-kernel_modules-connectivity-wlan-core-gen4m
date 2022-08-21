@@ -12915,9 +12915,6 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		   txmode == TX_RATE_MODE_HE_MU) { /* AX */
 		uint8_t dcm = 0, ru106 = 0;
 
-		if (txmode == TX_RATE_MODE_HE_MU)
-			nsts--;
-
 		if (nsts == 0 || nsts >= 5) {
 			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;

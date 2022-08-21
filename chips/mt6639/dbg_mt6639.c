@@ -1245,6 +1245,7 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
+	uint32_t mu_mimo = 0;
 
 	if (!prRxRateInfo || !prRxV)
 		return -1;
@@ -1256,12 +1257,21 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 
 	rate = RXV_GET_RX_RATE(prRxV[0]);
 	nsts = RXV_GET_RX_NSTS(prRxV[0]);
+	mu_mimo = RXV_GET_RX_MUMIMO(prRxV[0]);
 	rxmode = RXV_GET_TXMODE(prRxV[2]);
 	frmode = RXV_GET_FR_MODE(prRxV[2]);
 	sgi = RXV_GET_GI(prRxV[2]);
 	stbc = RXV_GET_STBC(prRxV[2]);
 
-	nsts += 1;
+	/* HE-SU: set to the number of space time streams minus 1
+	 * HE_ER: 0 for 1 space time stream when STBC == 0
+	 *        1 for 2 space time stream when STBC == 1
+	 * HE_MU MU-MIMO: set to the number of space time streams (no minus 1);
+	 * HE_MU Non-MU-MIMO: set to the number of space time streams minus 1
+	 */
+	if (!(rxmode == TX_RATE_MODE_HE_MU && mu_mimo))
+		nsts += 1;
+
 	if (nsts == 1)
 		nss = nsts;
 	else
@@ -1279,9 +1289,8 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 	prRxRateInfo->u4Gi = sgi;
 
 	DBGLOG(SW4, TRACE,
-		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
-		   prRxV[0], rxmode, rate, frmode, sgi, nss
-	);
+		   "rxvec0=0x%x rxmode=%u, rate=%u, bw=%u, sgi=%u, nss=%u, mu_mimo=%u\n",
+		   prRxV[0], rxmode, rate, frmode, sgi, nss, mu_mimo);
 
 	return 0;
 }
