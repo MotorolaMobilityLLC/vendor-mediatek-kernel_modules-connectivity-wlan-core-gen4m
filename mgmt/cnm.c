@@ -2852,6 +2852,8 @@ void cnmDbdcOpModeChangeDoneCallback(
 	}
 
 	if (!g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone) {
+		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = true;
+
 		if (fgIsAllActionFrameSuccess) {
 			DBDC_FSM_EVENT_HANDLER(prAdapter,
 				DBDC_FSM_EVENT_ACTION_FRAME_ALL_SUCCESS);
@@ -2859,8 +2861,6 @@ void cnmDbdcOpModeChangeDoneCallback(
 			DBDC_FSM_EVENT_HANDLER(prAdapter,
 				DBDC_FSM_EVENT_ACTION_FRAME_SOME_FAIL);
 		}
-
-		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = true;
 	}
 }
 
