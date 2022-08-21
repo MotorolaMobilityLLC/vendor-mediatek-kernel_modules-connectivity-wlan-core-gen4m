@@ -1386,10 +1386,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		"drv: %d, reason: %s\n",
 		drv, reason);
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	prAdapter = prGlueInfo->prAdapter;
-	prBusInfo = prAdapter->chip_info->bus_info;
-
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1400,6 +1396,10 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return 0;
 	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (drv == CONNV3_DRV_TYPE_CONNV3) {
 		if (prGlueInfo->u4ReadyFlag &&
