@@ -1947,6 +1947,8 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 			prof_ies[profile_count++] = prof;
 			break;
 		}
+		if (profile_count >= max_num)
+			break;
 	}
 
 	/*not a valid profile*/
