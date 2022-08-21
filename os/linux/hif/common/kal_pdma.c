@@ -83,6 +83,9 @@
 #endif
 
 #include "mt66xx_reg.h"
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2107,6 +2110,8 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	return 0;
 }
 
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value)
 {
@@ -2170,4 +2175,75 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 exit:
 	return ret;
 }
+
+int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
+	void *priv_data)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t ret = 0;
+
+	/* Check PCIE status */
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto exit;
+	}
+
+	if (kalIsHalted()) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	halSetDriverOwn(prAdapter);
+	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
+			prAdapter->u4PwrCtrlBlockCnt);
+
+exit:
+	return ret;
+}
+
+int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
+	void *priv_data)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t ret = 0;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto exit;
+	}
+
+	if (kalIsHalted()) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	halSetFWOwn(prAdapter, FALSE);
+	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
+			prAdapter->u4PwrCtrlBlockCnt);
+
+exit:
+	return ret;
+}
+#endif
 

@@ -72,9 +72,6 @@
 
 #include "precomp.h"
 #include "wlan_lib.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-#include "connv3.h"
-#endif
 #include "wlan_pinctrl.h"
 #include "gl_coredump.h"
 #include "gl_rst.h"
@@ -2510,6 +2507,9 @@ static void register_connv3_cbs(void)
 
 	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;
 	cb.rst_cb.post_whole_chip_rst = wlan_post_whole_chip_rst_v3;
+
+	cb.hif_dump_cb.hif_dump_start = wf_reg_start_wrapper;
+	cb.hif_dump_cb.hif_dump_end = wf_reg_end_wrapper;
 
 	ret = connv3_sub_drv_ops_register(CONNV3_DRV_TYPE_WIFI, &cb);
 	if (ret)
