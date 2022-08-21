@@ -122,7 +122,12 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 #endif
 
 void p2pLinkStaRecFree(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec);
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo);
+
+void p2pRemoveAllBssDesc(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 
 void p2pRxDeauthNoWtbl(
 	struct ADAPTER *prAdapter,
@@ -130,6 +135,10 @@ void p2pRxDeauthNoWtbl(
 	struct SW_RFB *prSwRfb);
 
 u_int8_t p2pNeedAppendP2pIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss);
+
+u_int8_t p2pNeedSkipProbeResp(
 	struct ADAPTER *ad,
 	struct BSS_INFO *bss);
 

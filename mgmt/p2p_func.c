@@ -1300,6 +1300,10 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
 				break;
+			} else if (p2pNeedSkipProbeResp(
+				prAdapter, prBssInfo)) {
+				fgDrop = TRUE;
+				break;
 			}
 
 			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
@@ -3393,7 +3397,6 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 		u_int8_t fgSendDeauth, uint16_t u2ReasonCode,
 		u_int8_t fgIsLocallyGenerated)
 {
-	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus;
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 	struct _TWT_HOTSPOT_STA_NODE *prTWTHotspotStaNode = NULL;
 #endif
@@ -3406,8 +3409,6 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 
 		ASSERT_BREAK(prP2pBssInfo->ucBssIndex
 			< prAdapter->ucP2PDevBssIdx);
-
-		eOriMediaStatus = prP2pBssInfo->eConnectionState;
 
 		if (u2ReasonCode == REASON_CODE_DISASSOC_INACTIVITY ||
 			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS) {
@@ -3467,9 +3468,8 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 
 			p2pClearAllLink(prP2pRoleFsmInfo);
 
-			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
-				prP2pBssInfo->aucBSSID,
-				prP2pBssInfo->ucBssIndex);
+			p2pRemoveAllBssDesc(prAdapter,
+				prP2pBssInfo);
 		}
 
 		DBGLOG(P2P, INFO,
@@ -3500,24 +3500,7 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 			wlanReleasePowerControl(prAdapter);
 #endif
 		} else {
-			p2pLinkStaRecFree(prAdapter, prStaRec);
-
-			if ((prP2pBssInfo->eCurrentOPMode
-				!= OP_MODE_ACCESS_POINT) ||
-			    (bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
-				DBGLOG(P2P, TRACE,
-					"No More Client, Media Status DISCONNECTED\n");
-				p2pChangeMediaState(prAdapter,
-					prP2pBssInfo,
-					MEDIA_STATE_DISCONNECTED);
-			}
-
-			if (eOriMediaStatus != prP2pBssInfo->eConnectionState) {
-				/* Update Disconnected state to FW. */
-				nicUpdateBss(prAdapter,
-					prP2pBssInfo->ucBssIndex);
-			}
-
+			p2pLinkStaRecFree(prAdapter, prStaRec, prP2pBssInfo);
 		}
 	} while (FALSE);
 
@@ -6039,7 +6022,7 @@ uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
 
 		if (!p2pNeedAppendP2pIE(prAdapter,
 			prBssInfo)) {
-			DBGLOG(BSS, INFO,
+			DBGLOG(BSS, LOUD,
 				"Skip p2p ie for role%d\n",
 				prBssInfo->u4PrivateData);
 			break;
@@ -6087,7 +6070,7 @@ void p2pFuncGenerateP2p_IEForBeacon(struct ADAPTER *prAdapter,
 
 		if (!p2pNeedAppendP2pIE(prAdapter,
 			prBssInfo)) {
-			DBGLOG(BSS, INFO,
+			DBGLOG(BSS, LOUD,
 				"Skip p2p ie for role%d\n",
 				prBssInfo->u4PrivateData);
 			break;

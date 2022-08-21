@@ -100,13 +100,13 @@ void p2pLinkUninitGCRole(struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *fsm = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prMain = (struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t i;
 
 	if (!prAdapter || p2pGetMode() != RUNNING_P2P_DEV_MODE)
 		return;
 
 	DBGLOG(INIT, TRACE, "\n");
+
 	for (i = 0; i < prAdapter->rWifiVar.ucMldLinkMax; i++) {
 		prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[i];
 		if (prP2pInfo == NULL)
@@ -120,11 +120,8 @@ void p2pLinkUninitGCRole(struct ADAPTER *prAdapter)
 			prAdapter->prGlueInfo,
 			fsm->ucBssIndex,
 			kalGetP2pNetHdl(prAdapter->prGlueInfo, i, FALSE));
-		p2pRoleFsmUninit(prAdapter, i);
 
-		prMain = p2pGetDefaultRoleFsmInfo(prAdapter, IFTYPE_P2P_CLIENT);
-		if (prMain)
-			prMain->aprP2pLinkInfo[i].prP2pBss = NULL;
+		p2pRoleFsmUninit(prAdapter, i);
 	}
 }
 
@@ -403,6 +400,30 @@ void p2pTargetBssDescResetConnecting(
 	}
 }
 
+void p2pRemoveAllBssDesc(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo =
+		mldBssGetByBss(prAdapter, prBssInfo);
+	struct BSS_INFO *bss;
+
+	if (prMldBssInfo) {
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+			scanRemoveConnFlagOfBssDescByBssid(
+				prAdapter,
+				bss->aucBSSID,
+				bss->ucBssIndex);
+		}
+	} else
+#endif
+	scanRemoveConnFlagOfBssDescByBssid(prAdapter,
+		prBssInfo->aucBSSID,
+		prBssInfo->ucBssIndex);
+}
+
 void p2pClearAllLink(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	uint8_t i;
@@ -645,16 +666,50 @@ struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
 	return &(fsm->rChnlReqInfo);
 }
 
+void p2pLinkStaRecFreeImpl(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo)
+{
+	enum ENUM_PARAM_MEDIA_STATE eOriMediaStatus =
+		prP2pBssInfo->eConnectionState;
+
+	/* Change station state. */
+	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+
+	/* Reset Station Record Status. */
+	p2pFuncResetStaRecStatus(prAdapter, prStaRec);
+
+	cnmStaRecFree(prAdapter, prStaRec);
+
+	if ((prP2pBssInfo->eCurrentOPMode
+		!= OP_MODE_ACCESS_POINT) ||
+		(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
+		DBGLOG(P2P, TRACE,
+			"No More Client, Media Status DISCONNECTED\n");
+		p2pChangeMediaState(prAdapter,
+			prP2pBssInfo,
+			MEDIA_STATE_DISCONNECTED);
+	}
+
+	if (eOriMediaStatus != prP2pBssInfo->eConnectionState) {
+		/* Update Disconnected state to FW. */
+		nicUpdateBss(prAdapter,
+			prP2pBssInfo->ucBssIndex);
+	}
+}
 
 void p2pLinkStaRecFree(
 	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec)
+	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prP2pBssInfo)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *mld_starec;
+	struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (mld_starec) {
+	if (mld_starec && IS_AP_STA(prStaRec)) {
 		/* backup mldsta idx firstr because mldstarec is freed
 		 * when all starec unregister
 		 */
@@ -670,33 +725,26 @@ void p2pLinkStaRecFree(
 			    starec->ucMldStaIndex != mldsta_idx)
 				continue;
 
+			bss = prAdapter->aprBssInfo[starec->ucBssIndex];
+			if (!bss) {
+				DBGLOG(P2P, ERROR, "bss shouldn't be NULL!\n");
+				continue;
+			}
+
 			DBGLOG(INIT, INFO,
 				"\tsta: %d, wid: %d, bss: %d\n",
 				starec->ucIndex,
 				starec->ucWlanIndex,
 				starec->ucBssIndex);
 
-			/* Change station state. */
-			cnmStaRecChangeState(prAdapter,
-				starec, STA_STATE_1);
-
-			/* Reset Station Record Status. */
-			p2pFuncResetStaRecStatus(prAdapter,
-				starec);
-
-			cnmStaRecFree(prAdapter,
-				starec);
+			p2pLinkStaRecFreeImpl(
+				prAdapter, starec, bss);
 		}
 	} else
 #endif
 	{
-		/* Change station state. */
-		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-		/* Reset Station Record Status. */
-		p2pFuncResetStaRecStatus(prAdapter, prStaRec);
-
-		cnmStaRecFree(prAdapter, prStaRec);
+		p2pLinkStaRecFreeImpl(
+			prAdapter, prStaRec, prP2pBssInfo);
 	}
 }
 
@@ -1038,5 +1086,32 @@ p2pNeedAppendP2pIE(
 #endif
 
 	return TRUE;
+}
+
+u_int8_t
+p2pNeedSkipProbeResp(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (ad &&
+		ad->rWifiVar.fgSkipP2pProbeResp &&
+		bss &&
+		IS_BSS_APGO(bss)) {
+		struct MLD_BSS_INFO *mld =
+			mldBssGetByBss(ad, bss);
+
+		if (mld &&
+			mld->rBssList.u4NumElem > 1 &&
+			bss->u4PrivateData != P2P_MAIN_LINK_INDEX) {
+			DBGLOG(BSS, LOUD,
+				"Skip p2p ie for role%d\n",
+				bss->u4PrivateData);
+			return TRUE;
+		}
+	}
+#endif
+
+	return FALSE;
 }
 
