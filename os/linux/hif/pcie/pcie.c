@@ -624,34 +624,38 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	pci_channel_state_t state)
 {
 	pci_ers_result_t res = PCI_ERS_RESULT_NONE;
+	u_int8_t fgNeedReset = FALSE;
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_detected state: %d, resetting: %d\n",
 		state, kalIsResetting());
+
+	if (!pci_is_enabled(pdev)) {
+		DBGLOG(HAL, INFO, "pcie is disable\n");
+		goto exit;
+	}
 
 	if (state == pci_channel_io_normal) {
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		u32 ret = mtk_pcie_dump_link_info(0);
 
 		/* bit[6]: Completion timeout status */
-		if (ret & BIT(6) == 0)
-			goto exit;
-#else
-		goto exit;
+		if (ret & BIT(6))
+			fgNeedReset = TRUE;
 #endif
+		goto exit;
 	}
 
-	if (kalIsResetting())
-		res = PCI_ERS_RESULT_CAN_RECOVER;
-	else
-		res = PCI_ERS_RESULT_NEED_RESET;
-
 	fgIsBusAccessFailed = TRUE;
-	if (pci_is_enabled(pdev))
-		pci_disable_device(pdev);
-	else
-		res = PCI_ERS_RESULT_NONE;
+	fgNeedReset = TRUE;
+	pci_disable_device(pdev);
 
 exit:
+	if (fgNeedReset) {
+		if (kalIsResetting())
+			res = PCI_ERS_RESULT_CAN_RECOVER;
+		else
+			res = PCI_ERS_RESULT_NEED_RESET;
+	}
 	return res;
 }
 
