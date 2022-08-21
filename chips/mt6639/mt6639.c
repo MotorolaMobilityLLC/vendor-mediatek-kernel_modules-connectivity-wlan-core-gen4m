@@ -2287,10 +2287,8 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 	ccif_trigger_fw_assert(prAdapter);
 
 	ret = reset_wait_for_trigger_completion();
-	if (ret) {
+	if (ret)
 		fgIsBusAccessFailed = TRUE;
-		reset_done_trigger_completion();
-	}
 
 	return ret;
 }
