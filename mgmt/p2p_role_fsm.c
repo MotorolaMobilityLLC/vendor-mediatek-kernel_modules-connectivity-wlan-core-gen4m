@@ -3530,7 +3530,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				u4CacTimeMs);
 
 			p2pFuncRecordCacStartBootTime();
-
+			p2pFuncSetRadarDetectMode(0);
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 
 			DBGLOG(P2P, INFO,
