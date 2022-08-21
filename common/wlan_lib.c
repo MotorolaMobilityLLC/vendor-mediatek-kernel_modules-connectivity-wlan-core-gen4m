@@ -10632,6 +10632,7 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 {
 	OS_SYSTIME rCurrent = kalGetTimeTick();
 	struct PKT_PROFILE *prPktProfile = &prMsduInfo->rPktProfile;
+	struct EVENT_TX_DONE *prTxDone = prMsduInfo->prTxDone;
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	void *pvPacket = NULL;
@@ -10640,25 +10641,6 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 	u_int8_t fgIsSuccess = FALSE;
 #endif
 
-	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
-		(uint8_t *) DISP_STRING("INVALID"),
-		(uint8_t *) DISP_STRING("802_3"),
-		(uint8_t *) DISP_STRING("1X"),
-		(uint8_t *) DISP_STRING("NON_PROTECTED_1X"),
-		(uint8_t *) DISP_STRING("VLAN_EXIST"),
-		(uint8_t *) DISP_STRING("DHCP"),
-		(uint8_t *) DISP_STRING("ARP"),
-		(uint8_t *) DISP_STRING("ICMP"),
-		(uint8_t *) DISP_STRING("TDLS"),
-		(uint8_t *) DISP_STRING("DNS"),
-#if CFG_SUPPORT_TPENHANCE_MODE
-		(uint8_t *) DISP_STRING("TCP_ACK"),
-#endif /* CFG_SUPPORT_TPENHANCE_MODE */
-#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-		(uint8_t *) DISP_STRING("802_11_MGMT"),
-#endif
-		(uint8_t *) DISP_STRING("ICMPV6"),
-	};
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
 		prMsduInfo->ucPktType = 0;
 
@@ -10693,21 +10675,23 @@ wlanPktTxDone(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MLR
 	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter))
 		DBGLOG(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
-			apucPktType[prMsduInfo->ucPktType],
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d\n",
+			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
+			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
 			prMsduInfo->ucTxSeqNum);
 	else
 #endif
 		DBGLOG_LIMITED(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
-			apucPktType[prMsduInfo->ucPktType],
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d\n",
+			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
+			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
 			prMsduInfo->ucTxSeqNum);
 

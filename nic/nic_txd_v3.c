@@ -332,24 +332,6 @@ void nic_txd_v3_compose(
 	u_int8_t ucWmmQueSet = 0, ucTarQueue, ucTarPort;
 	uint8_t ucEtherTypeOffsetInWord;
 	uint8_t fgIsALTXQueue = FALSE;
-	uint8_t *apucPktType[ENUM_PKT_FLAG_NUM] = {
-		(uint8_t *) DISP_STRING("802_11"),
-		(uint8_t *) DISP_STRING("802_3"),
-		(uint8_t *) DISP_STRING("1X"),
-		(uint8_t *) DISP_STRING("NON_PROTECTED_1X"),
-		(uint8_t *) DISP_STRING("VLAN_EXIST"),
-		(uint8_t *) DISP_STRING("DHCP"),
-		(uint8_t *) DISP_STRING("ARP"),
-		(uint8_t *) DISP_STRING("ICMP"),
-		(uint8_t *) DISP_STRING("TDLS"),
-		(uint8_t *) DISP_STRING("DNS"),
-#if CFG_SUPPORT_TPENHANCE_MODE
-		(uint8_t *) DISP_STRING("TCP_ACK"),
-#endif /* CFG_SUPPORT_TPENHANCE_MODE */
-#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-		(uint8_t *) DISP_STRING("802_11_MGMT"),
-#endif
-	};
 
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -662,8 +644,9 @@ void nic_txd_v3_compose(
 		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
 				prMsduInfo->ucWlanIndex,
 				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
-		DBGLOG(TX, INFO, "TX[%s] PID[%d]\n",
-			apucPktType[prMsduInfo->ucPktType], prMsduInfo->ucPID);
+		DBGLOG(TX, INFO, "TX[%s] WIDX[%u] PID[%u]\n",
+			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
+			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */

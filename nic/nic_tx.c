@@ -226,6 +226,26 @@ static const uint8_t TXS_PID_MAX[TX_PACKET_TYPE_NUM] = {
 };
 #endif
 
+const char *const TXS_PACKET_TYPE[ENUM_PKT_FLAG_NUM] = {
+	DISP_STRING("802_11"),
+	DISP_STRING("802_3"),
+	DISP_STRING("1X"),
+	DISP_STRING("NON_PROTECTED_1X"),
+	DISP_STRING("VLAN_EXIST"),
+	DISP_STRING("DHCP"),
+	DISP_STRING("ARP"),
+	DISP_STRING("ICMP"),
+	DISP_STRING("TDLS"),
+	DISP_STRING("DNS"),
+#if CFG_SUPPORT_TPENHANCE_MODE
+	DISP_STRING("TCP_ACK"),
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
+	DISP_STRING("ICMPV6"),
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	DISP_STRING("802_11_MGMT"),
+#endif
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -4231,7 +4251,7 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 			}
 		}
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
-
+		prMsduInfo->prTxDone = prTxDone;
 		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
 	    (enum ENUM_TX_RESULT_CODE) (prTxDone->ucStatus));
 

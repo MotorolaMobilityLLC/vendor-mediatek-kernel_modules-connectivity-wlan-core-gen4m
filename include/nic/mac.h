@@ -96,6 +96,13 @@
 #define UDP_PORT_DHCPC				0x44
 #define UDP_PORT_DNS				0x35
 #define UDP_PORT_MDNS				5353
+#define UDP_PORT_NTP				123
+
+#define ICMP_TYPE_OFFSET			0
+#define ICMP_CODE_OFFSET			1
+#define ICMP_CHECKSUM_OFFSET			2
+#define ICMP_IDENTIFIER_OFFSET			4
+#define ICMP_SEQ_NUM_OFFSET			6
 
 #if CFG_MSCS_SUPPORT
 #define TCP_FLAG_SYN				0x02
@@ -121,10 +128,6 @@
 #define IP_VERSION_4                            4
 #define IP_VERSION_6                            6
 
-#define IP_PRO_ICMP				0x01
-#define IP_PRO_UDP				0x11
-#define IP_PRO_TCP				0x06
-
 /* IPv4 Header definition */
 #define IPV4_HDR_TOS_OFFSET                     1
 #define IPV4_HDR_TOS_PREC_MASK                  BITS(5, 7)
@@ -143,7 +146,12 @@
 #define IPV6_HDR_IP_DST_ADDR_OFFSET             24
 #define IPV6_HDR_IP_DST_ADDR_MAC_HIGH_OFFSET    32
 #define IPV6_HDR_IP_DST_ADDR_MAC_LOW_OFFSET     37
+#define IPV6_PROTOCOL_HOP_BY_HOP                0
 #define IPV6_PROTOCOL_ICMPV6                    0x3A
+
+
+#define IPV6_UDP_PORT_DHCPC			546
+#define IPV6_UDP_PORT_DHCPS			547
 
 #define IPV6_HDR_TC_PREC_OFFSET                 1
 #define IPV6_HDR_TC_PREC_MASK                   BITS(1, 3)
@@ -154,16 +162,18 @@
 
 #define ICMPV6_TYPE_OFFSET                      0
 #define ICMPV6_FLAG_OFFSET                      4
-#define ICMPV6_TARGET_ADDR_OFFSET				8
-#define ICMPV6_TARGET_LL_ADDR_TYPE_OFFSET		24
-#define ICMPV6_TARGET_LL_ADDR_LEN_OFFSET		25
-#define ICMPV6_TARGET_LL_ADDR_TA_OFFSET			26
+#define ICMPV6_TARGET_ADDR_OFFSET		8
+#define ICMPV6_TARGET_LL_ADDR_TYPE_OFFSET	24
+#define ICMPV6_TARGET_LL_ADDR_LEN_OFFSET	25
+#define ICMPV6_TARGET_LL_ADDR_TA_OFFSET		26
 
 #define ICMPV6_FLAG_ROUTER_BIT                  BIT(7)
 #define ICMPV6_FLAG_SOLICITED_BIT               BIT(6)
 #define ICMPV6_FLAG_OVERWRITE_BIT               BIT(5)
-#define ICMPV6_TYPE_NEIGHBOR_SOLICITATION       0x87
-#define ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT      0x88
+#define ICMPV6_TYPE_ROUTER_SOLICITATION		0x85 /* 133 */
+#define ICMPV6_TYPE_ROUTER_ADVERTISEMENT	0x86 /* 134 */
+#define ICMPV6_TYPE_NEIGHBOR_SOLICITATION       0x87 /* 135 */
+#define ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT      0x88 /* 136 */
 
 #define TCP_HDR_FLAG_OFFSET                     13
 #define TCP_HDR_FLAG_ACK_BIT                    BIT(4)

@@ -1583,6 +1583,12 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 #endif
 	uint8_t ucAcIdx = ucTC;
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	const uint8_t TC_LIMIT = TC_NUM;
+#else
+	const uint8_t TC_LIMIT = NUM_OF_PER_STA_TX_QUEUES;
+#endif
+
 	/* Sanity Check */
 	if (!u4CurrentQuota) {
 		DBGLOG(TX, LOUD,
@@ -1668,7 +1674,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 
 		/* 4 <2.1> Find a Tx allowed STA */
 		/* Only Data frame will be queued in */
-		/* if (prStaRec->fgIsTxAllowed) { */
+		/* if (prStaRec->fgIsTxAllowed) */
 		if (QUEUE_IS_NOT_EMPTY(prCurrQueue)) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				prStaRec->ucBssIndex);
@@ -1928,11 +1934,7 @@ NEXT:
 		u4CurStaUsedResource = 0;
 
 #if QM_FORWARDING_FAIRNESS
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-	if (ucTC < TC_NUM) {
-#else
-	if (ucTC < NUM_OF_PER_STA_TX_QUEUES) {
-#endif
+	if (ucTC < TC_LIMIT) {
 		prQM->au4HeadStaRecIndex[ucTC] = u4CurStaIndex;
 		prQM->au4ResourceUsedCount[ucTC] =
 			u4CurStaUsedResource;

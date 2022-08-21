@@ -944,6 +944,7 @@ struct MSDU_INFO {
 	/* fragment position */
 	enum ENUM_MSDU_FRAG_POS eFragPos;
 #endif
+	struct EVENT_TX_DONE *prTxDone; /* logging TX Done info */
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
