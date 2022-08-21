@@ -238,17 +238,6 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t i = 0;
 
-	prStats->request++;
-
-	if (!prCtrl->initialized) {
-		prStats->skipped++;
-		return 0;
-	} else if (!prCtrl->started) {
-		prCtrl->defered = TRUE;
-		prStats->skipped++;
-		return 0;
-	}
-
 	prAdapter = (struct ADAPTER *)prCtrl->priv;
 	if (!prAdapter) {
 		prStats->skipped++;
@@ -285,9 +274,22 @@ exit:
 int32_t fwLogMmioHandler(void)
 {
 	struct FW_LOG_MMIO_CTRL *prCtrl = &g_ctx;
+	struct FW_LOG_MMIO_STATS *prStats = &prCtrl->stats;
+
+	prStats->request++;
+
+	if (!prCtrl->initialized) {
+		prStats->skipped++;
+		goto exit;
+	} else if (!prCtrl->started) {
+		prCtrl->defered = TRUE;
+		prStats->skipped++;
+		goto exit;
+	}
 
 	queue_work(prCtrl->wq, &prCtrl->work);
 
+exit:
 	return 0;
 }
 
@@ -482,7 +484,8 @@ void fwLogMmioDeInitMcu(void)
 
 	prCtrl->initialized = FALSE;
 
-	destroy_workqueue(prCtrl->wq);
+	if (prCtrl->wq)
+		destroy_workqueue(prCtrl->wq);
 
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++)
 		fwLogCtrlDeInitSubCtrl(prCtrl->priv, prCtrl, i);
