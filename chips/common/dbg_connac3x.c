@@ -3013,6 +3013,32 @@ void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
 
 	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, u4Val);
 }
+
+void connac3x_set_ple_int_no_read(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	if (fgTrigger) {
+		u4Val = (~u4Val & prCr->rToN9IntToggle.u4Mask) |
+			(u4Val & ~prCr->rToN9IntToggle.u4Mask);
+	}
+
+	u4Val &= ~u4ClrMask;
+	u4Val |= u4SetMask;
+
+	/* Write CR (WF_PLE_TOP_TO_N9_INT_ADDR) with 0x0000FFFF and
+	 * Inverted Bit[31] and BIT[0:27] to trigger FW debug SOP
+	*/
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, 0x0000FFFF);
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, u4Val);
+}
+
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)

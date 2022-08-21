@@ -603,8 +603,8 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
-	.getFwDebug = connac3x_get_ple_int,
-	.setFwDebug = connac3x_set_ple_int,
+	.getFwDebug = NULL,
+	.setFwDebug = connac3x_set_ple_int_no_read,
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
