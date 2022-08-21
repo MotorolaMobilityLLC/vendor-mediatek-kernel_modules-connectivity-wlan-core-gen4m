@@ -1209,16 +1209,7 @@ void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 {
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	struct connv3_cr_cb cb;
-#endif
-
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	kalMemZero(&cb, sizeof(cb));
-	cb.read = wf_reg_read_wrapper;
-	cb.write = wf_reg_write_wrapper;
-	cb.write_mask = wf_reg_write_mask_wrapper;
-
-	connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI, &cb, ad);
+	connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI);
 #endif
 }
 

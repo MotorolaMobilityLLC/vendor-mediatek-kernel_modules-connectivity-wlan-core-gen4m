@@ -2485,6 +2485,7 @@ static void unregister_connv3_cbs(void)
 
 static void register_connv3_cbs(void)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct connv3_sub_drv_ops_cb cb;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct sub_drv_ops_cb conninfra_wf_cb;
@@ -2504,6 +2505,12 @@ static void register_connv3_cbs(void)
 	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
 	cb.pre_cal_cb.pre_cal_error = wlanPreCalErr;
 #endif
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	cb.cr_cb.priv_data = prGlueInfo;
+	cb.cr_cb.read = wf_reg_read_wrapper;
+	cb.cr_cb.write = wf_reg_write_wrapper;
+	cb.cr_cb.write_mask = wf_reg_write_mask_wrapper;
 
 	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;
 	cb.rst_cb.post_whole_chip_rst = wlan_post_whole_chip_rst_v3;

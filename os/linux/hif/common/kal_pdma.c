@@ -2115,13 +2115,21 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value)
 {
-	struct ADAPTER *ad = priv;
-	struct GLUE_INFO *glue = ad->prGlueInfo;
+	struct GLUE_INFO *glue = priv;
+	struct ADAPTER *ad = glue->prAdapter;
 	int32_t ret = 0;
+
+	if (kalIsHalted()) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		DBGLOG_LIMITED(HAL, WARN,
+			"HIF is not ready.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2135,13 +2143,21 @@ exit:
 int32_t wf_reg_write_wrapper(void *priv,
 	uint32_t addr, uint32_t value)
 {
-	struct ADAPTER *ad = priv;
-	struct GLUE_INFO *glue = ad->prGlueInfo;
+	struct GLUE_INFO *glue = priv;
+	struct ADAPTER *ad = glue->prAdapter;
 	int32_t ret = 0;
+
+	if (kalIsHalted()) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		DBGLOG_LIMITED(HAL, WARN,
+			"HIF is not ready\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2155,14 +2171,22 @@ exit:
 int32_t wf_reg_write_mask_wrapper(void *priv,
 	uint32_t addr, uint32_t mask, uint32_t value)
 {
-	struct ADAPTER *ad = priv;
-	struct GLUE_INFO *glue = ad->prGlueInfo;
+	struct GLUE_INFO *glue = priv;
+	struct ADAPTER *ad = glue->prAdapter;
 	uint32_t val = 0;
 	int32_t ret = 0;
 
+	if (kalIsHalted()) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG(HAL, WARN, "HIF is not ready\n");
+		DBGLOG_LIMITED(HAL, WARN,
+			"HIF is not ready\n");
 		ret = -EFAULT;
 		goto exit;
 	}
