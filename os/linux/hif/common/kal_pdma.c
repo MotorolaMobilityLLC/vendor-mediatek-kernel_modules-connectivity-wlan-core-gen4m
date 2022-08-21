@@ -1055,7 +1055,9 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
-	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000)) {
+	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
+	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
+	    (u4Register >= 0x18000000 && u4Register < 0x18001000)) {
 		dump_stack();
 		aee_kernel_exception("WLAN",
 			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
@@ -1168,7 +1170,9 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if ((reg >= 0x18050000 && reg <= 0x18051000) ||
-		(reg >= 0x7c050000 && reg <= 0x7c051000)) {
+	    (reg >= 0x7c050000 && reg <= 0x7c051000) ||
+	    (reg >= 0x7c000000 && reg < 0x7c001000) ||
+	    (reg >= 0x18000000 && reg < 0x18001000)) {
 		dump_stack();
 		aee_kernel_exception("WLAN",
 			"Corrupt conninfra cmdbt:  reg: [0x%08x~0x%08x]\n",
