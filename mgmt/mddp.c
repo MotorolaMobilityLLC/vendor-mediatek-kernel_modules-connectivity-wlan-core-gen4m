@@ -150,6 +150,8 @@ enum BOOTMODE {
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
+enum ENUM_MDDPW_DRV_INFO_STATUS g_eMddpStatus;
+struct mutex rMddpLock;
 
 struct mddpw_net_stat_ext_t stats;
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
@@ -932,6 +934,7 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		g_eMddpStatus = status;
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
 		ret = -1;
@@ -1151,6 +1154,15 @@ exit:
 }
 #endif
 
+void __mddpNotifyWifiOnStart(void)
+{
+#if CFG_MTK_CCCI_SUPPORT
+	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
+#endif
+
+	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
+}
+
 void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
@@ -1166,29 +1178,19 @@ void mddpNotifyWifiOnStart(void)
 #endif
 #endif
 
-#if CFG_MTK_CCCI_SUPPORT
-	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
-#endif
-
-	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
+	mutex_lock(&rMddpLock);
+	__mddpNotifyWifiOnStart();
+	mutex_unlock(&rMddpLock);
 }
 
-int32_t mddpNotifyWifiOnEnd(void)
+int32_t __mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret = 0;
 
-	if (!mddpIsSupportMcifWifi())
+	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_START) {
+		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
 		return ret;
-
-	if (!is_cal_flow_finished())
-		return ret;
-
-#if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (is_pwr_on_notify_processing())
-		return ret;
-#endif
-#endif
+	}
 
 	/* Notify Driver own timeout time before Wi-Fi on end */
 	mddpNotifyDrvOwnTimeoutTime();
@@ -1219,22 +1221,33 @@ int32_t mddpNotifyWifiOnEnd(void)
 	return ret;
 }
 
-void mddpNotifyWifiOffStart(void)
+int32_t mddpNotifyWifiOnEnd(void)
 {
-	int32_t ret;
+	int32_t ret = 0;
 
 	if (!mddpIsSupportMcifWifi())
-		return;
+		return ret;
 
 	if (!is_cal_flow_finished())
-		return;
+		return ret;
 
 #if CFG_MTK_ANDROID_WMT
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
-		return;
+		return ret;
 #endif
 #endif
+
+	mutex_lock(&rMddpLock);
+	ret = __mddpNotifyWifiOnEnd();
+	mutex_unlock(&rMddpLock);
+
+	return ret;
+}
+
+void __mddpNotifyWifiOffStart(void)
+{
+	int32_t ret;
 
 	mddpSetMDFwOwn();
 
@@ -1254,10 +1267,8 @@ void mddpNotifyWifiOffStart(void)
 		wait_for_md_off_complete();
 }
 
-void mddpNotifyWifiOffEnd(void)
+void mddpNotifyWifiOffStart(void)
 {
-	int32_t u4ClrBits = 0;
-
 	if (!mddpIsSupportMcifWifi())
 		return;
 
@@ -1271,6 +1282,20 @@ void mddpNotifyWifiOffEnd(void)
 #endif
 #endif
 
+	mutex_lock(&rMddpLock);
+	__mddpNotifyWifiOffStart();
+	mutex_unlock(&rMddpLock);
+}
+
+void __mddpNotifyWifiOffEnd(void)
+{
+	int32_t u4ClrBits = 0;
+
+	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_START) {
+		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
+		return;
+	}
+
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_SHM)
 		u4ClrBits = g_rSettings.u4WifiOnBit;
 	else
@@ -1283,6 +1308,26 @@ void mddpNotifyWifiOffEnd(void)
 	}
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_END);
+}
+
+void mddpNotifyWifiOffEnd(void)
+{
+	if (!mddpIsSupportMcifWifi())
+		return;
+
+	if (!is_cal_flow_finished())
+		return;
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return;
+#endif
+#endif
+
+	mutex_lock(&rMddpLock);
+	__mddpNotifyWifiOffEnd();
+	mutex_unlock(&rMddpLock);
 }
 
 void mddpNotifyWifiReset(void)
@@ -1327,6 +1372,28 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		goto exit;
 	}
 
+	if (!mddpIsSupportMcifWifi()) {
+		DBGLOG(INIT, ERROR, "mcif wifi not support.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	if (!is_cal_flow_finished()) {
+		DBGLOG(INIT, ERROR, "cal flow not finished.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing()) {
+		DBGLOG(INIT, ERROR, "is_pwr_on_notify_processing.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+#endif
+#endif
+
 	if (prMdInfo->info_type == MDDPW_MD_INFO_RESET_IND) {
 		uint32_t i;
 		struct BSS_INFO *prSapBssInfo = (struct BSS_INFO *) NULL;
@@ -1339,8 +1406,10 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		save_mddp_lls_stats();
 		isMdResetSinceLastQuery = TRUE;
 #endif
-		mddpNotifyWifiOnStart();
-		ret = mddpNotifyWifiOnEnd();
+		mutex_lock(&rMddpLock);
+		__mddpNotifyWifiOnStart();
+		ret = __mddpNotifyWifiOnEnd();
+		mutex_unlock(&rMddpLock);
 		if (ret != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
 			return 0;
@@ -1680,6 +1749,8 @@ void mddpInit(void)
 	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
 	g_wifi_boot_mode = tag->bootmode;
 
+	g_eMddpStatus = MDDPW_DRV_INFO_STATUS_OFF_END;
+	mutex_init(&rMddpLock);
 	mddpRegisterCb();
 }
 
