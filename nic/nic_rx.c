@@ -1926,13 +1926,11 @@ void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
 	wlanWakeLogEvent(prEvent->ucEID);
 #endif
 	/* Event handler table */
-	u4Size = sizeof(arEventTable) / sizeof(struct
-					       RX_EVENT_HANDLER);
+	u4Size = ARRAY_SIZE(arEventTable);
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		if (prEvent->ucEID == arEventTable[u4Idx].eEID) {
 			arEventTable[u4Idx].pfnHandler(prAdapter, prEvent);
-
 			break;
 		}
 	}

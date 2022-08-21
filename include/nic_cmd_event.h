@@ -2482,16 +2482,16 @@ struct CMD_PATTERN_FUNC_CONFIG {
 };
 
 struct EVENT_TX_DONE {
-	uint8_t ucPacketSeq;
+	uint8_t ucPacketSeq; /* Match ucPID in MSDU_INFO */
 	uint8_t ucStatus;
-	uint16_t u2SequenceNumber;
+	uint16_t u2SequenceNumber; /* L2 SN */
 
 	uint8_t ucWlanIndex;
 	uint8_t ucTxCount;
 	uint16_t u2TxRate;
 
 	uint8_t ucFlag;
-	uint8_t ucTid;
+	uint8_t ucTid; /* Match ucUserPriority in MSDU_INFO */
 	uint8_t ucRspRate;
 	uint8_t ucRateTableIdx;
 

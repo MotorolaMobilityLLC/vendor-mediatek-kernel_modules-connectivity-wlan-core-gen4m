@@ -338,9 +338,8 @@ struct CMD_INFO *nicGetPendingCmdInfo(struct ADAPTER *prAdapter,
 void removeDuplicatePendingCmd(struct ADAPTER *prAdapter,
 				struct CMD_INFO *prCmdInfo);
 
-struct MSDU_INFO *nicGetPendingTxMsduInfo(
-	struct ADAPTER *prAdapter, uint8_t ucWlanIndex,
-	uint8_t ucSeqNum);
+struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
+		uint8_t ucWlanIndex, uint8_t ucPID, uint8_t ucTID);
 
 void nicFreePendingTxMsduInfo(struct ADAPTER *prAdapter,
 	uint8_t ucIndex, enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType);
