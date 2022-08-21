@@ -156,6 +156,11 @@ void mddpSetMDFwOwn(void);
 u_int8_t mddpIsMDFwOwn(void);
 bool mddpIsSupportMcifWifi(void);
 bool mddpIsSupportMddpWh(void);
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable);
+#endif
+#endif
 
 #endif /* CFG_MTK_MDDP_SUPPORT */
 

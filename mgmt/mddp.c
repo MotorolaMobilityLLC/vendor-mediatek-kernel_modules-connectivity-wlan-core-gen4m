@@ -77,6 +77,8 @@ enum EMUM_MD_NOTIFY_REASON_TYPE_T {
 	MD_STATE_ABNORMAL,
 	MD_TX_DATA_HANG,
 	MD_TX_CMD_FAIL,
+	MD_L12_DISABLE, /* 7 */
+	MD_L12_ENABLE, /* 8 */
 	MD_ENUM_MAX,
 };
 
@@ -1019,6 +1021,83 @@ exit:
 	return ret;
 }
 
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	int32_t ret = 0;
+	uint32_t u32BufSize = 0;
+	uint32_t u32InfoId = 7; /* TODO: use define */
+	uint8_t *buff = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(INIT, INFO, "Notify PCIe L1.2 Status %lu\n", u32Enable);
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto exit;
+	}
+
+	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
+
+	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	if (!u32Enable) {
+		u32InfoId = 7; /* Disable L1ss */
+		GLUE_INC_REF_CNT(prAdapter->u4MddpPCIeL12SeqNum);
+	} else
+		u32InfoId = 8; /* Enable L1ss */
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+			sizeof(uint32_t);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = u32InfoId;
+	prDrvInfo->info_len = sizeof(uint32_t);
+
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]),
+			&prAdapter->u4MddpPCIeL12SeqNum,
+			sizeof(uint32_t));
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+
+exit:
+	if (buff)
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+
+	DBGLOG(INIT, INFO, "ret: %d, info_id: %lu, u32SeqNum:%lu.\n",
+		ret, u32InfoId, prAdapter->u4MddpPCIeL12SeqNum);
+	return ret;
+}
+#endif
+#endif
+
+
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 int32_t mddpNotifyMDUnifiedCmdVer(void)
 {
@@ -1221,6 +1300,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	struct ADAPTER *prAdapter = NULL;
 	int32_t ret = 0;
 	u_int8_t fgHalted = kalIsHalted();
+	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(INIT, INFO, "MD notify mddpMdNotifyInfo.\n");
 
@@ -1236,6 +1316,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		ret = -ENODEV;
 		goto exit;
 	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, INFO,
@@ -1357,6 +1439,22 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			prAdapter->ucMddpBssIndex =
 				(uint8_t) event->dump_payload[1];
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+		} else if (event->u4Reason == MD_L12_DISABLE) {
+			/* disable PCIe L1.2, 2 means md config */
+			if (prBusInfo->configPcieAspm) {
+				prBusInfo->configPcieAspm(prGlueInfo, FALSE, 2);
+				mddpNotifyMDPCIeL12Status(0);
+			}
+		} else if (event->u4Reason == MD_L12_ENABLE) {
+			/* enable PCIe L1.2, 2 means md config */
+			if (prBusInfo->configPcieAspm) {
+				prBusInfo->configPcieAspm(prGlueInfo, TRUE, 2);
+				mddpNotifyMDPCIeL12Status(1);
+			}
+#endif
+#endif
 		} else {
 			glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 			GL_USER_DEFINE_RESET_TRIGGER(prAdapter,

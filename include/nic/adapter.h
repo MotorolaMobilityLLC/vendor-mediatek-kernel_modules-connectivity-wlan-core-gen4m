@@ -2075,6 +2075,11 @@ struct ADAPTER {
 
 	bool fgMddpActivated;
 	uint8_t ucMddpBssIndex;
+#if defined(_HIF_PCIE)
+#if CFG_SUPPORT_PCIE_ASPM
+	uint32_t u4MddpPCIeL12SeqNum;
+#endif
+#endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
