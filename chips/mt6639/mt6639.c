@@ -2312,6 +2312,13 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 	void *vir_addr = NULL;
 	int ret = 0;
 
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return -1;
+#endif
+#endif
+
 	mcif_emi_base = get_smem_phy_start_addr(
 		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
 	if (!mcif_emi_base) {
