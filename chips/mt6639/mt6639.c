@@ -1889,6 +1889,12 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 				u4RegValue);
 			return FALSE;
 		}
+
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x1D0E48,
+			&u4RegValue);
+		DBGLOG(HAL, INFO, "MMIO read 0x1D_0E48 0x%08x\n", u4RegValue);
+
 	} else {
 		return FALSE;
 	}
