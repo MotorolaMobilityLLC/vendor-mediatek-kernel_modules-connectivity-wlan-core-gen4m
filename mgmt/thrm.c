@@ -207,7 +207,7 @@ void thrmProtEventHandler(struct ADAPTER *prAdapter, uint8_t *prBuf)
 {
 	uint8_t ucEventId = (uint8_t) *(prBuf);
 
-	DBGLOG(NIC, INFO, "Thermal protect event: %d\n", ucEventId);
+	DBGLOG(NIC, TRACE, "Thermal protect event: %d\n", ucEventId);
 
 	switch (ucEventId) {
 	case THERMAL_PROTECT_EVENT_DUTY_NOTIFY:
@@ -216,9 +216,10 @@ void thrmProtEventHandler(struct ADAPTER *prAdapter, uint8_t *prBuf)
 
 		prEvent =
 			(struct EXT_EVENT_THERMAL_PROTECT_DUTY_NOTIFY *) prBuf;
-		DBGLOG(NIC, INFO, "Duty Event, level: %d, duty: %d, temp: %d\n",
-			prEvent->u1LevelIdx, prEvent->u1DutyPercent,
-			prEvent->i4Temp);
+		DBGLOG(NIC, INFO,
+			"Duty Event, Band[%d] Level[%d], Duty[%d], Temp[%d]\n",
+			prEvent->u1BandIdx, prEvent->u1LevelIdx,
+			prEvent->u1DutyPercent, prEvent->i4Temp);
 
 	}
 
@@ -231,7 +232,8 @@ void thrmProtEventHandler(struct ADAPTER *prAdapter, uint8_t *prBuf)
 		prEvent =
 			(struct EXT_EVENT_THERMAL_PROTECT_RADIO_NOTIFY *) prBuf;
 
-		DBGLOG(NIC, INFO, "Band[%d] Level[%d] temp[%d] action[%d]\n",
+		DBGLOG(NIC, TRACE,
+			"Radio event, Band[%d] Level[%d] Temp[%d] Action[%d]\n",
 			prEvent->u1BandIdx, prEvent->u1LevelIdx,
 			prEvent->i4Temp, prEvent->eProtectActType);
 	}
