@@ -2380,23 +2380,6 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 	return 0;
 }
 
-static u_int8_t mt6639_is_ap2conn_on_readable(struct ADAPTER *ad)
-{
-	uint32_t value = 0;
-
-	HAL_MCR_RD(ad,
-		   CB_INFRA_RGU_SLP_PROT_RDY_STAT_ADDR,
-		   &value);
-	if ((value & BITS(6, 7)) != 0) {
-		DBGLOG(HAL, ERROR,
-			"ap2conn gals sleep protect status: 0x%08x\n",
-			value);
-		return FALSE;
-	}
-
-	return TRUE;
-}
-
 static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 {
 #define MAX_POLLING_COUNT		4
@@ -2417,7 +2400,7 @@ static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 		HAL_MCR_RD(ad,
 			   CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR,
 			   &value);
-		if ((value & BITS(1, 2)) == BITS(1, 2))
+		if ((value & BIT(1)) && (value & BIT(3)))
 			break;
 
 		retry++;
@@ -2438,12 +2421,10 @@ static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 	HAL_MCR_RD(ad,
 		   CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
 		   &value);
-	if ((value & BITS(0, 2)) != 0x0) {
+	if ((value & BITS(0, 9)) == 0x3FF)
 		DBGLOG(HAL, ERROR,
 			"Conninfra bus hang irq status: 0x%08x\n",
 			value);
-		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -2476,10 +2457,17 @@ static u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
 		   CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
 		   &value);
 	if ((value & BIT(0)) != 0x0) {
-		DBGLOG(HAL, ERROR,
+		DBGLOG(HAL, WARN,
 			"WF mcusys bus hang irq status: 0x%08x\n",
 			value);
-		return FALSE;
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
+			   &value);
+		if (value == 0x100)
+			DBGLOG(HAL, INFO,
+				"Skip conn_infra_vdnr timeout irq.\n");
+		else
+			return FALSE;
 	}
 
 	return TRUE;
@@ -2488,12 +2476,21 @@ static u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
+	struct BUS_INFO *bus_info = NULL;
+	u_int8_t readable = TRUE;
 
 	if (fgIsBusAccessFailed)
 		return 1;
 
-	if (mt6639_is_ap2conn_on_readable(ad) &&
-	    mt6639_is_ap2conn_off_readable(ad) &&
+	bus_info = ad->chip_info->bus_info;
+
+	if (bus_info && bus_info->dumpPcieStatus)
+		readable = bus_info->dumpPcieStatus(ad->prGlueInfo);
+
+	if (readable == FALSE)
+		return 1;
+
+	if (mt6639_is_ap2conn_off_readable(ad) &&
 	    mt6639_is_conn2wf_readable(ad))
 		return 0;
 	else

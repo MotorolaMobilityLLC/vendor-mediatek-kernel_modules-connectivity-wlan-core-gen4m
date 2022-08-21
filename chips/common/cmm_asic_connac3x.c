@@ -2192,9 +2192,6 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
 
-	if (dbg_ops && dbg_ops->dumpBusHangCr)
-		dbg_ops->dumpBusHangCr(prAdapter);
-
 	if (kalIsResetting()) {
 		DBGLOG(HAL, INFO,
 			"Wi-Fi Driver trigger, need do complete.\n");
@@ -2205,6 +2202,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
 		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
+		if (dbg_ops && dbg_ops->dumpBusHangCr)
+			dbg_ops->dumpBusHangCr(prAdapter);
 
 		glSetRstReason(RST_FW_ASSERT);
 

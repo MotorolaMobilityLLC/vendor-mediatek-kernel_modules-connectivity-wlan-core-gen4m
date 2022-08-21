@@ -491,6 +491,9 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
 
+	if (prDbgOps && prDbgOps->dumpBusHangCr)
+		prDbgOps->dumpBusHangCr(prAdapter);
+
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	wifi_rst.rst_trigger_flag = u4RstFlag;
 	schedule_work(&(wifi_rst.rst_trigger_work));

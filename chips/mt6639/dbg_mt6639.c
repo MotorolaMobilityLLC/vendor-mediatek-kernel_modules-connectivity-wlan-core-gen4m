@@ -1216,25 +1216,35 @@ static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	u_int8_t readable = TRUE;
 
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
 		return;
 	}
 
+	prBusInfo = ad->chip_info->bus_info;
 	prHifInfo = &ad->prGlueInfo->rHifInfo;
 	prHifInfo->fgForceReadWriteReg = true;
 
+	if (prBusInfo->dumpPcieStatus)
+		readable = prBusInfo->dumpPcieStatus(ad->prGlueInfo);
+
+	if (readable == FALSE)
+		goto exit;
+
+	mt6639_dumpCbtopReg(ad);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6639_dumpConninfraBus(ad);
 #endif
-	mt6639_dumpCbtopReg(ad);
 	mt6639_dumpWfsyscpupcr(ad);
 	mt6639_dumpPcGprLog(ad);
 	mt6639_dumpN45CoreReg(ad);
 	mt6639_dumpWfTopReg(ad);
 	mt6639_dumpWfBusReg(ad);
 
+exit:
 	prHifInfo->fgForceReadWriteReg = false;
 }
 #endif
