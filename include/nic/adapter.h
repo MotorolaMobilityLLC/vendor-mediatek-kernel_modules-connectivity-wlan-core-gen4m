@@ -1355,9 +1355,6 @@ struct WIFI_VAR {
 	int32_t i4ThrmRadioOffTemp;
 	uint8_t aucThrmLvTxDuty[6];
 #endif
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	u_int8_t fgFwIdxLogTrans;
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
 #if CFG_SUPPORT_PCIE_ASPM
 	/* 0: Keep L0, 1: enable PCIE enter L1.2 */
@@ -2227,10 +2224,6 @@ struct ADAPTER {
 	struct ABNORMAL_WAKEUP_STATISTIC rAbnormalWakeupStat;
 	u_int8_t ucRxDataMode;
 #endif
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	struct FW_LOG_IDX_DATA *prFwLogIdx;
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
 #if CFG_SUPPORT_THERMAL_QUERY
 	struct work_struct thermal_work;

@@ -6634,10 +6634,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	wlanServiceInit(prGlueInfo);
 #endif
 
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-		wlanOpenIdxLogBin(prAdapter);
-#endif
-
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
 		DBGLOG(INIT, TRACE, "init MET procfs...\n");
 		i4Status = kalMetInitProcfs(prGlueInfo);
@@ -7061,10 +7057,6 @@ static void wlanRemove(void)
 #if CFG_SUPPORT_AGPS_ASSIST
 	kalIndicateAgpsNotify(prAdapter, AGPS_EVENT_WLAN_OFF, NULL,
 			      0);
-#endif
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	wlanCloseIdxLogBin(prAdapter);
 #endif
 
 	wlanAdapterStop(prAdapter, FALSE);

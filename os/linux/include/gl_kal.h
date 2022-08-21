@@ -1257,8 +1257,8 @@ int8_t atoi(uint8_t ch);
 #else
 #define WLAN_TAG                        "[wlan]"
 #endif
-#define kalPrint			kalPrintLog
-#define kalPrintLimited(_Fmt...)	kalPrintLogLimited(WLAN_TAG _Fmt)
+#define kalPrint               kalPrintLog
+#define kalPrintLimited(_Fmt...) kalPrintLogLimited(WLAN_TAG _Fmt)
 
 #define kalBreakPoint() \
 do { \
@@ -1827,15 +1827,6 @@ void *kalFirmwareImageMapping(struct GLUE_INFO
 void kalFirmwareImageUnmapping(struct GLUE_INFO
 			       *prGlueInfo,
 			       void *prFwHandle, void *pvMapFileBuf);
-
-uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
-			 uint8_t **apucNameTable);
-uint32_t kalFirmwareClose(struct GLUE_INFO *prGlueInfo);
-uint32_t kalFirmwareSize(struct GLUE_INFO *prGlueInfo,
-			 uint32_t *pu4Size);
-uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
-			 void *prBuf, uint32_t u4Offset,
-			 uint32_t *pu4Size);
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT

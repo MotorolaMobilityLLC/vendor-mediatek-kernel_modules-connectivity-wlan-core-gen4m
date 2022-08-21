@@ -91,11 +91,6 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt6639_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName);
-#endif
-
 #if defined(_HIF_PCIE)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
@@ -558,9 +553,6 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
 #endif
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-	.constrcutIdxLogBin = mt6639_ConstructIdxLogBinName,
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
@@ -1029,30 +1021,6 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 }
-
-#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
-static void mt6639_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucName)
-{
-	int ret = 0;
-	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
-
-	mt6639GetFlavorVer(&aucFlavor[0]);
-
-	/* ex: WIFI_RAM_CODE_MT6639_2_1_idxlog.bin */
-	ret = kalSnprintf(apucName[0],
-			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_RAM_CODE_MT%x_%s_%u_idxlog.bin",
-			  MT6639_CHIP_ID,
-			  aucFlavor,
-			  MT6639_ROM_VERSION);
-
-	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
-		DBGLOG(INIT, ERROR,
-			"[%u] kalSnprintf failed, ret: %d\n",
-			__LINE__, ret);
-}
-#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
 #if defined(_HIF_PCIE)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,

@@ -11421,13 +11421,7 @@ kalSyncTimeToFW(struct ADAPTER *prAdapter, u_int8_t fgInitCmd)
 		kalSyncTimeToFwViaCmd(prAdapter, fgInitCmd, u4Sec, u4Usec);
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
-		/* Must sync time in the 1st trigger time in the main thread.
-		 * So that don't record the updated time in the fw download
-		 * stage, and the 7200 sec time sync period won't start before
-		 * the 1st main thread process.
-		 */
-		if (fgInitCmd != TRUE)
-			prAdapter->u4FWLastUpdateTime = u4Sec;
+		prAdapter->u4FWLastUpdateTime = u4Sec;
 	} else
 		DBGLOG(INIT, WARN,
 			"Failed to sync kernel time to FW.");
