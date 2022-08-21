@@ -132,13 +132,13 @@
 #define WEIGHT_IDX_TPUT_PER                     2
 #define WEIGHT_IDX_PREFERENCE_PER               2
 
-#define ROAM_SCORE_DELTA 15
+#define ROAM_SCORE_DELTA			5
 
-#define APS_AMSDU_HT_3K	(3839)
-#define APS_AMSDU_HT_8K	(7935)
-#define APS_AMSDU_VHT_HE_3K	(3895)
-#define APS_AMSDU_VHT_HE_8K	(7991)
-#define APS_AMSDU_VHT_HE_11K	(11454)
+#define APS_AMSDU_HT_3K				(3839)
+#define APS_AMSDU_HT_8K				(7935)
+#define APS_AMSDU_VHT_HE_3K			(3895)
+#define APS_AMSDU_VHT_HE_8K			(7991)
+#define APS_AMSDU_VHT_HE_11K			(11454)
 
 #define PPDU_DURATION 5 /* ms */
 
