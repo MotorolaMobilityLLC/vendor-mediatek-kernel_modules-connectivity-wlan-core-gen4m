@@ -1341,10 +1341,10 @@ enum ENUM_CSI_MODULATION_BW_TYPE_T {
 #define MAX_NUM_SUPPORTED_CIPHER_SUITES 11
 #if CFG_SUPPORT_802_11W
 /* max number of supported AKM suites */
-#define MAX_NUM_SUPPORTED_AKM_SUITES    16
+#define MAX_NUM_SUPPORTED_AKM_SUITES    17
 #else
 /* max number of supported AKM suites */
-#define MAX_NUM_SUPPORTED_AKM_SUITES    14
+#define MAX_NUM_SUPPORTED_AKM_SUITES    15
 #endif
 
 /* Structure of RSN Information */
@@ -1361,6 +1361,7 @@ struct RSN_INFO {
 	u_int8_t fgRsnCapPresent;
 	uint16_t u2PmkidCount;
 	uint8_t aucPmkid[IW_PMKID_LEN];
+	uint32_t u4GroupMgmtCipherSuite;
 } __KAL_ATTRIB_PACKED__;
 
 /* max number of supported AKM suites */

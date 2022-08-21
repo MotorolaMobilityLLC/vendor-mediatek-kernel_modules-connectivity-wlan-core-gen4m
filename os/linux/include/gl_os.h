@@ -408,6 +408,7 @@ struct GL_WPA_INFO {
 	uint32_t u4KeyMgmt;
 	uint32_t u4CipherGroup;
 	uint32_t u4CipherPairwise;
+	uint32_t u4CipherGroupMgmt;
 	uint32_t u4AuthAlg;
 	u_int8_t fgPrivacyInvoke;
 #if CFG_SUPPORT_802_11W

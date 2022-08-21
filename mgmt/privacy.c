@@ -227,6 +227,9 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [13].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
 #endif
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [14].dot11RSNAConfigAuthenticationSuite =
+		RSN_AKM_SUITE_8021X_SUITE_B_192;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
 		prMib->dot11RSNAConfigAuthenticationSuitesTable
@@ -1000,7 +1003,7 @@ void secRemoveBssBcEntry(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	DBGLOG_LIMITED(RSN, TRACE, "remove all the key related with BSS!");
+	DBGLOG(RSN, TRACE, "remove all the key related with BSS!");
 
 	if (fgRoam) {
 		struct CONNECTION_SETTINGS *prConnSettings =
@@ -1082,7 +1085,9 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 	    || ucAlg == CIPHER_SUITE_WEP128 || ucAlg == CIPHER_SUITE_NONE)
 		fgCheckKeyId = FALSE;
 
-	if (ucKeyId == 0xFF || ucAlg == CIPHER_SUITE_BIP)
+	if (ucKeyId == 0xFF ||
+	    ucAlg == CIPHER_SUITE_BIP ||
+	    ucAlg == CIPHER_SUITE_BIP_GMAC_256)
 		fgCheckKeyId = FALSE;
 
 	if (prBSSInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
@@ -1097,7 +1102,7 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
-	if (ucAlg == CIPHER_SUITE_BIP)
+	if (ucAlg == CIPHER_SUITE_BIP || ucAlg == CIPHER_SUITE_BIP_GMAC_256)
 		ucEntry = ucBssIndex;
 	else
 #endif
@@ -1142,7 +1147,8 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 
 	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
-		if (ucAlg == CIPHER_SUITE_BIP) {
+		if (ucAlg == CIPHER_SUITE_BIP ||
+		    ucAlg == CIPHER_SUITE_BIP_GMAC_256) {
 			/* BIP no need to dump secCheckWTBLAssign */
 			return ucEntry;
 		}
@@ -1155,7 +1161,7 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 				MAC_ADDR_LEN);
 		prWtbl[ucEntry].ucStaIndex = ucStaIdx;
 
-		DBGLOG_LIMITED(RSN, INFO,
+		DBGLOG(RSN, TRACE,
 		       "[Wlan index] BSS#%d keyid#%d P=%d use WlanIndex#%d STAIdx=%d "
 		       MACSTR
 		       " (OpMode:%d, NetworkType:%d, CheckKeyId:%d)\n",

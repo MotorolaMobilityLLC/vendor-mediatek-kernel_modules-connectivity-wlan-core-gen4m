@@ -82,6 +82,7 @@
 #define RSN_CIPHER_SUITE_WEP104         0x05AC0F00
 #if CFG_SUPPORT_802_11W
 #define RSN_CIPHER_SUITE_AES_128_CMAC   0x06AC0F00
+#define RSN_CIPHER_SUITE_BIP_CMAC_128   0x06AC0F00
 #endif
 #define RSN_CIPHER_SUITE_GROUP_NOT_USED 0x07AC0F00
 #define RSN_CIPHER_SUITE_GCMP           0x08AC0F00
@@ -314,6 +315,9 @@ uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter,
 uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 				 *prAdapter, struct STA_RECORD *prStaRec);
 
+uint32_t rsnCheckBipGmacKeyInstall(struct ADAPTER
+				 *prAdapter, struct STA_RECORD *prStaRec);
+
 uint8_t rsnCheckSaQueryTimeout(
 	struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
@@ -345,6 +349,8 @@ void rsnApStartSaQuery(struct ADAPTER *prAdapter,
 void rsnApSaQueryAction(struct ADAPTER *prAdapter,
 			struct SW_RFB *prSwRfb);
 
+uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_802_11W */
 
 #if CFG_SUPPORT_AAA

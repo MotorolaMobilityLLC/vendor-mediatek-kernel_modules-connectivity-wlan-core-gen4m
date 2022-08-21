@@ -1758,6 +1758,8 @@ wlanoidSetInfrastructureMode(struct ADAPTER *prAdapter,
 		FALSE;
 	prAisSpecBssInfo->fgBipKeyInstalled =
 		FALSE;
+	prAisSpecBssInfo->fgBipGmacKeyInstalled =
+		FALSE;
 #endif
 
 #if 0 /* STA record remove at AIS_ABORT nicUpdateBss and DISCONNECT */
@@ -2718,7 +2720,9 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			prAisSpecBssInfo = aisGetAisSpecBssInfo(
 				prAdapter, prNewKey->ucBssIdx);
 #if CFG_SUPPORT_802_11W
-			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
+			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
+			    prCmdKey->ucAlgorithmId ==
+					CIPHER_SUITE_BIP_GMAC_256) {
 				if (prCmdKey->ucKeyId >= 4) {
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
@@ -2731,6 +2735,22 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 					prCmdKey->ucKeyId = 3;
 #endif
 				}
+			}
+
+			if (prCmdKey->ucAlgorithmId ==
+					CIPHER_SUITE_BIP_GMAC_256) {
+				prAisSpecBssInfo->fgBipGmacKeyInstalled = TRUE;
+				/* save IGTK and IPN for SW BIP handling */
+				kalMemCopy(prAisSpecBssInfo->aucIPN,
+					prNewKey->aucKeyPn, 6);
+				kalMemCopy(prAisSpecBssInfo->aucIGTK,
+					prNewKey->aucKeyMaterial,
+					prNewKey->u4KeyLength);
+				DBGLOG_MEM8(RSN, INFO,
+					prAisSpecBssInfo->aucIPN, 6);
+				DBGLOG_MEM8(RSN, INFO,
+					prAisSpecBssInfo->aucIGTK,
+					prCmdKey->ucKeyLen);
 			}
 #endif
 			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_TKIP) {
@@ -2752,7 +2772,9 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 #if CFG_SUPPORT_802_11W
 			/* AP PMF */
 			if ((prCmdKey->ucKeyId >= 4 && prCmdKey->ucKeyId <= 5)
-			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP)) {
+			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
+				prCmdKey->ucAlgorithmId ==
+						CIPHER_SUITE_BIP_GMAC_256)) {
 				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
 				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
@@ -2880,7 +2902,8 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 #if CFG_SUPPORT_802_11W
 		/* AP PMF */
-		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
+		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
+		    prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP_GMAC_256) {
 			if (prCmdKey->ucIsAuthenticator) {
 				DBGLOG_LIMITED(RSN, INFO,
 				"Authenticator BIP bssid:%d\n",

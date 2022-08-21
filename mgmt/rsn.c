@@ -163,6 +163,7 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 	uint8_t *pucPairSuite = NULL;
 	uint8_t *pucAuthSuite = NULL;
 	uint16_t u2PmkidCount = 0;
+	uint32_t u4GroupMgmtSuite = RSN_CIPHER_SUITE_BIP_CMAC_128;
 	uint8_t *cp;
 
 	DEBUGFUNC("rsnParseRsnIE");
@@ -310,6 +311,21 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 			cp += IW_PMKID_LEN;
 			i4RemainRsnIeLen -= IW_PMKID_LEN;
 		}
+
+		/* Parse the Group Management Cipher Suite field */
+		if (i4RemainRsnIeLen < 4) {
+			DBGLOG(RSN, TRACE,
+				"Fail to parse group mgmt cipher suite in RSN IE\n");
+			return FALSE;
+		}
+
+		WLAN_GET_FIELD_32(cp, &u4GroupMgmtSuite);
+		cp += 4;
+		i4RemainRsnIeLen -= 4;
+
+		if (i4RemainRsnIeLen == 0)
+			break;
+
 	} while (FALSE);
 
 	/* Save the RSN information for the BSS. */
@@ -390,6 +406,11 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 	prRsnInfo->u2PmkidCount = u2PmkidCount;
 	DBGLOG(RSN, LOUD, "RSN cap: 0x%04x, PMKID count: %d\n",
 		prRsnInfo->u2RsnCap, prRsnInfo->u2PmkidCount);
+
+	prRsnInfo->u4GroupMgmtCipherSuite = u4GroupMgmtSuite;
+	DBGLOG(RSN, LOUD,
+		"RSN: group mgmt cipher suite 0x%x\n",
+		SWAP32(u4GroupMgmtSuite));
 
 	return TRUE;
 }				/* rsnParseRsnIE */
@@ -1810,9 +1831,12 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 			struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
 				aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+			struct GL_WPA_INFO *prWpaInfo;
 
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 						prMsduInfo->ucStaRecIndex);
+
+			prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 
 			if (!prStaRec) {
 				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
@@ -1864,7 +1888,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 			/* Fill Group Management Cipher field */
 			if (prAisSpecBssInfo->fgMgmtProtection) {
 				WLAN_SET_FIELD_32(cp,
-					RSN_CIPHER_SUITE_AES_128_CMAC);
+					prWpaInfo->u4CipherGroupMgmt);
 				cp += 4;
 				RSN_IE(pucBuffer)->ucLength += 4;
 			}
@@ -2514,6 +2538,23 @@ uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 
 }
 
+uint32_t rsnCheckBipGmacKeyInstall(struct ADAPTER
+				 *prAdapter, struct STA_RECORD *prStaRec)
+{
+	/* caution: prStaRec might be null ! */
+	if (prStaRec) {
+		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
+		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
+			return aisGetAisSpecBssInfo(prAdapter,
+				prStaRec->ucBssIndex)
+				->fgBipGmacKeyInstalled;
+		} else {
+			return FALSE;
+		}
+	} else
+		return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  *
@@ -2970,6 +3011,82 @@ void rsnSaQueryAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 }
+
+uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb) {
+	struct STA_RECORD *prStaRec;
+	struct WLAN_DEAUTH_FRAME_WITH_MIC *prDeauthMICFrame;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
+	uint8_t nounce[12];
+	uint8_t *npos;
+	uint8_t aad_gmac[48];
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
+		prStaRec->ucBssIndex);
+	prDeauthMICFrame =
+		(struct WLAN_DEAUTH_FRAME_WITH_MIC *) prSwRfb->pvHeader;
+
+	DBGLOG(SAA, INFO,
+		"BIP checking for Rx Deauth/Disassoc frame ,DA[" MACSTR
+		"] SA[" MACSTR "] BSSID[" MACSTR "] ReasonCode[0x%x]\n",
+		MAC2STR(prDeauthMICFrame->aucDestAddr),
+		MAC2STR(prDeauthMICFrame->aucSrcAddr),
+		MAC2STR(prDeauthMICFrame->aucBSSID),
+		prDeauthMICFrame->u2ReasonCode);
+
+	/* BIP part 1: replay protection checking
+	 * If IPN in deauth >= saved IPN -> pass
+	 * If IPN in deauth < saved IPN -> fail
+	 */
+	DBGLOG(RSN, INFO, "Dump IPN from deauth/disassoc frame and saved IPN");
+	DBGLOG_MEM8(RSN, INFO, prDeauthMICFrame->aucIPN, 6);
+	DBGLOG_MEM8(RSN, INFO, prAisSpecBssInfo->aucIPN, 6);
+	if (kalMemCmp(prDeauthMICFrame->aucIPN,
+		prAisSpecBssInfo->aucIPN, 6) < 0) {
+		DBGLOG(RSN, WARN, "replay protection checking failure");
+		return FALSE;
+	}
+
+	/* BIP part2: MIC content checking */
+	/* nounce = A2 + IPN in BE order */
+	kalMemCopy(nounce, prDeauthMICFrame->aucSrcAddr, 6);
+	npos = nounce + 6;
+	*npos++ = prDeauthMICFrame->aucIPN[5];
+	*npos++ = prDeauthMICFrame->aucIPN[4];
+	*npos++ = prDeauthMICFrame->aucIPN[3];
+	*npos++ = prDeauthMICFrame->aucIPN[2];
+	*npos++ = prDeauthMICFrame->aucIPN[1];
+	*npos++ = prDeauthMICFrame->aucIPN[0];
+	DBGLOG_MEM8(RSN, INFO, nounce, 12);
+
+	/* AAD-GMAC */
+	/* AAD || Management frame body || MME (MIC field masked to 0) */
+	/* copy FC and skip duration */
+	kalMemCopy(aad_gmac, &prDeauthMICFrame->u2FrameCtrl, 2);
+	/* copy A1,A2,A3 and skip SEQ */
+	kalMemCopy(aad_gmac+2, prDeauthMICFrame->aucDestAddr, 18);
+	/* copy reason code, MIC tag/legnth, keyID, IPN */
+	kalMemCopy(aad_gmac+20, &prDeauthMICFrame->u2ReasonCode, 12);
+	kalMemSet(aad_gmac+32, 0, 16);
+	DBGLOG(RSN, INFO, "Dump AAD for GMAC");
+	DBGLOG_MEM8(RSN, INFO, aad_gmac, 48);
+
+	DBGLOG(RSN, INFO, "Dump IGTK for GMAC");
+	DBGLOG_MEM8(RSN, INFO, prAisSpecBssInfo->aucIGTK, 32);
+
+	if (aes_gcm_ad_impl(aad_gmac, sizeof(aad_gmac),
+		prAisSpecBssInfo->aucIGTK,
+		sizeof(prAisSpecBssInfo->aucIGTK),
+		nounce, sizeof(nounce),
+		prDeauthMICFrame->aucMIC) < 0) {
+		DBGLOG(RSN, WARN, "aes_gcm_ad fail");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 #endif
 
 static u_int8_t rsnCheckWpaRsnInfo(struct BSS_INFO *prBss,

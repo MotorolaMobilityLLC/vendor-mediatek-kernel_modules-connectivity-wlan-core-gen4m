@@ -4473,6 +4473,23 @@ struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
 	uint32_t u4KeyBitmap[4];
 } __KAL_ATTRIB_PACKED__;
 
+struct WLAN_DEAUTH_FRAME_WITH_MIC {
+	/* Authentication MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Deauthentication frame body */
+	uint16_t u2ReasonCode;	/* Reason code */
+	uint8_t aucMicTag;
+	uint8_t aucMicLen;
+	uint16_t u2KeyId;
+	uint8_t aucIPN[6];
+	uint8_t aucMIC[16];
+} __KAL_ATTRIB_PACKED__;
+
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()
 #endif

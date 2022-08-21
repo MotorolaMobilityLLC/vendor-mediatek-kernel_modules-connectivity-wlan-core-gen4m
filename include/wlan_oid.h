@@ -576,6 +576,7 @@ struct PARAM_KEY {
 	uint8_t ucCipher;
 	uint8_t aucKeyMaterial[32];	/*!< Key content by above setting */
 	/* Following add to change the original windows structure */
+	uint8_t aucKeyPn[6];
 };
 
 struct PARAM_REMOVE_KEY {

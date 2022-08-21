@@ -305,6 +305,8 @@
 #include "ais_fsm.h"
 #include "rtt.h"
 
+#include "gcm.h"
+
 #include "fw_log_mmio.h"
 
 #include "mscs.h"

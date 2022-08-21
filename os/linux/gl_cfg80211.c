@@ -228,7 +228,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
- #if DBG
+#if 1
 	if (mac_addr) {
 		DBGLOG(RSN, INFO,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n",
@@ -276,7 +276,7 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 			rKey.ucCipher = CIPHER_SUITE_WPI;
 			break;
 		case WLAN_CIPHER_SUITE_AES_CMAC:
-			rKey.ucCipher = CIPHER_SUITE_BIP;
+			rKey.ucCipher = CIPHER_SUITE_BIP_CMAC_128;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
@@ -284,8 +284,9 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 			break;
 		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
 			DBGLOG(RSN, INFO,
-				"[TODO] Set BIP-GMAC-256, SW should handle it ...\n");
-			return 0;
+				"[BIP-GMAC-256] save IGTK and handle integrity check ...\n");
+			rKey.ucCipher = CIPHER_SUITE_BIP_GMAC_256;
+			break;
 #endif
 		default:
 			ASSERT(FALSE);
@@ -320,6 +321,13 @@ mtk_cfg80211_add_key(struct wiphy *wiphy,
 	rKey.u4KeyLength = params->key_len;
 	rKey.u4Length = OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)
 				+ rKey.u4KeyLength;
+
+	if (params->seq_len) {
+		DBGLOG(RSN, INFO, "Dump IPN if given\n");
+		DBGLOG_MEM8(RSN, INFO, params->seq, params->seq_len);
+		if (params->seq_len == 6) /* IGTK Package Number */
+			kalMemCopy(rKey.aucKeyPn, params->seq, params->seq_len);
+	}
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey,
 			   rKey.u4Length, &u4BufLen);
@@ -1373,6 +1381,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #if CFG_SUPPORT_802_11W
 	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
 	prWpaInfo->ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
+	prWpaInfo->u4CipherGroupMgmt = RSN_CIPHER_SUITE_BIP_CMAC_128;
 #endif
 	aisInitializeConnectionRsnInfo(prGlueInfo->prAdapter, ucBssIndex);
 
@@ -1443,10 +1452,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 							IW_AUTH_CIPHER_CCMP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
-			prWpaInfo->u4CipherPairwise =
-							IW_AUTH_CIPHER_GCMP256;
-			break;
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_GCMP256;
@@ -1491,10 +1496,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 							IW_AUTH_CIPHER_CCMP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
-			prWpaInfo->u4CipherGroup  =
-							IW_AUTH_CIPHER_GCMP256;
-			break;
 		case WLAN_CIPHER_SUITE_GCMP_256:
 			prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_GCMP256;
@@ -1590,8 +1591,12 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			case WLAN_AKM_SUITE_DPP:
 				eAuthMode = AUTH_MODE_WPA2_PSK;
 				u4AkmSuite = RSN_AKM_SUITE_DPP;
-			break;
+				break;
 #endif
+			case WLAN_AKM_SUITE_8021X_SUITE_B_192:
+				eAuthMode = AUTH_MODE_WPA2;
+				u4AkmSuite = RSN_AKM_SUITE_8021X_SUITE_B_192;
+				break;
 			default:
 				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
 				       sme->crypto.akm_suites[0]);
@@ -1667,6 +1672,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 			if (rsnParseRsnIE(prGlueInfo->prAdapter,
 			    (struct RSN_INFO_ELEM *)prDesiredIE, &rRsnInfo)) {
+				prWpaInfo->u4CipherGroupMgmt =
+					rRsnInfo.u4GroupMgmtCipherSuite;
+				DBGLOG(RSN, INFO,
+					"RSN: group mgmt cipher suite 0x%x\n",
+					prWpaInfo->u4CipherGroupMgmt);
 #if CFG_SUPPORT_802_11W
 				if (rRsnInfo.u2RsnCap & ELEM_WPA_CAP_MFPC) {
 					prWpaInfo->ucRSNMfpCap =
