@@ -283,6 +283,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	if (prAdapter == NULL)
 		return ERR_PTR(-ENXIO);
 
+	mtk_p2p_need_remove_iface(prAdapter,
+		wiphy, type);
+
 	/* Both p2p and p2p net device should be in registered state */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED &&
@@ -299,9 +302,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			prAdapter->rP2PNetRegState);
 		return ERR_PTR(-EBUSY);
 	}
-
-	mtk_p2p_need_remove_iface(prAdapter,
-		wiphy, type);
 
 	do {
 		prChipInfo = prAdapter->chip_info;
