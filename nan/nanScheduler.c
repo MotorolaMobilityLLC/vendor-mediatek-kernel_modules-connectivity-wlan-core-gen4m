@@ -8263,7 +8263,11 @@ nanSchedCmdMapStaRecord(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 		(struct _NAN_SCHED_CMD_MAP_STA_REC_T *)prTlvElement->aucbody;
 	kalMemCopy(prCmdMapStaRec->aucNmiAddr, pucNmiAddr, MAC_ADDR_LEN);
 	prCmdMapStaRec->eRoleIdx = eRoleIdx;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	prCmdMapStaRec->ucStaRecIdx = ucWlanIndex;
+#else
+	prCmdMapStaRec->ucStaRecIdx = ucStaRecIdx;
+#endif
 	prCmdMapStaRec->ucNdpCxtId = ucNdpCxtId;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_NAN_EXT_CMD, TRUE,
