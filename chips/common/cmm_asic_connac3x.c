@@ -2170,12 +2170,13 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
 		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
-		if (dbg_ops && dbg_ops->dumpBusHangCr)
-			dbg_ops->dumpBusHangCr(prAdapter);
 
 		glSetRstReason(RST_FW_ASSERT);
 
 		glResetUpdateFlag(TRUE);
+
+		if (dbg_ops && dbg_ops->dumpBusHangCr)
+			dbg_ops->dumpBusHangCr(prAdapter);
 
 		kalSetRstEvent(TRUE);
 	}
@@ -2188,12 +2189,13 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
 
-	if (dbg_ops && dbg_ops->dumpBusHangCr)
-		dbg_ops->dumpBusHangCr(prAdapter);
-
 	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
+
+	if (dbg_ops && dbg_ops->dumpBusHangCr)
+		dbg_ops->dumpBusHangCr(prAdapter);
+
 	kalSetRstEvent(TRUE);
 }
 #endif
