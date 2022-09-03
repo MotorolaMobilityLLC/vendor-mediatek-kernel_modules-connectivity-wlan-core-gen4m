@@ -4508,6 +4508,12 @@ void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
 	fgIsPostponeTimeout = !aisFsmIsInProcessPostpone(prAdapter, ucBssIndex);
 	policy = prConnSettings->eConnectionPolicy;
 
+	/* if we're in join failure state,
+	 * report disconnect before report join failure.
+	 */
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN_FAILURE)
+		fgIsPostponeTimeout = TRUE;
+
 	DBGLOG(AIS, EVENT, "policy %d, timeout %d, trial %d, limit %d\n",
 		policy,	fgIsPostponeTimeout, prAisFsmInfo->ucConnTrialCount,
 		prAisFsmInfo->ucConnTrialCountLimit);
