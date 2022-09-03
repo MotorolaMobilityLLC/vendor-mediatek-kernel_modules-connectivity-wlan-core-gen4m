@@ -1230,6 +1230,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 #endif
 #endif
 
+#if CFG_SUPPORT_PASSPOINT
+	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_HS20_R2)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			    ELEM_EXT_CAP_QOSMAPSET_BIT);
+#endif
+
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BSS_TRANSITION_BIT);
