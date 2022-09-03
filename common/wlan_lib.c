@@ -8445,7 +8445,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4TxDataDelayTimeout = wlanCfgGetUint32(prAdapter,
 			"TxDataDelayTimeout", 2);
 	prWifiVar->u4TxDataDelayCnt = wlanCfgGetUint32(prAdapter,
-			"TxDataDelayCnt", 10);
+			"TxDataDelayCnt", 1);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
