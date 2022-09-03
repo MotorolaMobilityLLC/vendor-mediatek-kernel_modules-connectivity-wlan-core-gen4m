@@ -875,24 +875,20 @@ void asicConnac3xLowPowerOwnSet(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue = 0;
-
 		HAL_MCR_WR(prAdapter,
 				CONNAC3X_BN0_LPCTL_ADDR,
 				PCIE_LPCR_HOST_SET_OWN);
-		HAL_MCR_RD(prAdapter,
-				CONNAC3X_BN0_LPCTL_ADDR,
-				&u4RegValue);
-		*pfgResult = (u4RegValue &
-			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
 
 #if defined(_HIF_PCIE)
 		if (prChipInfo->bus_info->hwControlVote)
 			prChipInfo->bus_info->hwControlVote(prAdapter,
 				TRUE, PCIE_VOTE_USER_DRVOWN);
 #endif
-	} else
-		*pfgResult = TRUE;
+
+	}
+
+	*pfgResult = TRUE;
+
 }
 
 void asicConnac3xLowPowerOwnClear(
@@ -910,6 +906,9 @@ void asicConnac3xLowPowerOwnClear(
 			prChipInfo->bus_info->hwControlVote(prAdapter,
 				FALSE, PCIE_VOTE_USER_DRVOWN);
 #endif
+
+		if (prChipInfo->setCrypto)
+			prChipInfo->setCrypto(prAdapter);
 
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
