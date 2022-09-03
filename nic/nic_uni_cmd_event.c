@@ -176,7 +176,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdGamingMode,
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
-	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdNotSupport, // TODO: wait for FW ready
+	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdSetMultiAddr,
 	[CMD_ID_RSSI_MONITOR] = nicUniCmdSetRssiMonitor,
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
@@ -5225,6 +5225,8 @@ uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		config_tag->fgSmesh = FALSE;
 		config_tag->ucHwBssIndex = cmd->ucBssIndex;
 		config_tag->ucMuarIdx = 0xFF;
+		config_tag->ucMuarIdx = ucIdx;
+		config_tag->ucEntryAdd = TRUE;
 		COPY_MAC_ADDR(config_tag->aucMacAddr, cmd->arAddress[ucIdx]);
 	}
 	DBGLOG_MEM8(NIC, INFO, uni_cmd->aucTlvBuffer,
