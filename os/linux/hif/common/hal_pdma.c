@@ -530,9 +530,6 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
-	if (prChipInfo->setCrypto)
-		prChipInfo->setCrypto(prAdapter);
-
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
