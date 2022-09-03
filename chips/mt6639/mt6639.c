@@ -694,6 +694,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.is_support_sdo = TRUE,
 	.is_support_rro = TRUE,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+	.is_en_wfdma_no_mmio_read = TRUE,
 #endif /* _HIF_PCIE */
 	.txd_append_size = MT6639_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT6639_HIF_TX_DESC_APPEND_LENGTH,
@@ -1521,6 +1522,11 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	kalDevRegWrite(prGlueInfo,
 		       WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
 		       u4Val);
+
+	/* Enable RX periodic delayed interrupt 0x20 * 20us */
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR,
+		   0xF00020);
 }
 
 static void mt6639WfdmaRxRingExtCtrl(

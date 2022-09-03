@@ -1500,6 +1500,7 @@ struct mt66xx_chip_info {
 	const u_int8_t is_support_sdo;		/* support SDO */
 	const u_int8_t is_support_rro;		/* support RRO */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+	const u_int8_t is_en_wfdma_no_mmio_read;
 	unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int hif_txd_append_size; /* hif txd append size */
 	const unsigned int rxd_size;	        /* hw mac rxd size */

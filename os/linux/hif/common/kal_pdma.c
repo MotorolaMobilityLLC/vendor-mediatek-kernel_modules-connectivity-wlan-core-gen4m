@@ -1306,7 +1306,6 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	prMemOps = &prHifInfo->rMemOps;
 	prRxRing = &prHifInfo->RxRing[u2Port];
 
-	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &prRxRing->RxCpuIdx);
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 
@@ -1452,7 +1451,6 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	if (prMemOps->allocRuntimeMem)
 		pucDst = prMemOps->allocRuntimeMem(u4Len);
 
-	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
 	if (prTxRing->TxCpuIdx >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
@@ -1930,8 +1928,6 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 		KAL_HIF_TXRING_LOCK(prTxRing);
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
-		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
-			      &prTxRing->TxCpuIdx);
 		if (prChipInfo->ucMaxSwAmsduNum > 1)
 			kalDevKickAmsduData(prGlueInfo, &rTempList);
 		else

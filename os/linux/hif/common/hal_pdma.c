@@ -652,6 +652,18 @@ static uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter)
 	return u4RxCnt;
 }
 
+static u_int8_t halIsWfdmaRxReady(struct RTMP_RX_RING *prRxRing,
+				  uint32_t u4CpuIdx)
+{
+	struct RTMP_DMACB *pRxCell;
+	struct RXD_STRUCT *pRxD;
+
+	pRxCell = &prRxRing->Cell[u4CpuIdx];
+	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
+
+	return pRxD->DMADONE ? TRUE : FALSE;
+}
+
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 void halDataDmaDoneManualUpdate(struct ADAPTER *prAdapter)
 {
@@ -2072,8 +2084,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	prHifStats->u4RxDataRegCnt++;
-	kalDevRegRead(prAdapter->prGlueInfo, prRxRing->hw_cidx_addr,
-		      &prRxRing->RxCpuIdx);
 
 	u4RxLoopCnt = u4RxCnt;
 	while (u4RxLoopCnt--) {
@@ -2306,7 +2316,7 @@ bool halWpdmaAllocTxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 		}
 
 		pTxD = (struct TXD_STRUCT *)prTxCell->AllocVa;
-		pTxD->DMADONE = 1;
+		pTxD->DMADONE = 0;
 	}
 
 	DBGLOG(HAL, TRACE, "TxRing[%d]: total %d entry allocated\n",
@@ -2877,6 +2887,9 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 	if (prTxRing->fgStopRecycleDmad)
 		return;
 
+	if (prTxRing->u4UsedCnt == 0)
+		return;
+
 	KAL_HIF_TXRING_LOCK(prTxRing);
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
@@ -2884,12 +2897,11 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 			prSwWfdmaInfo->rOps.getDidx(prGlueInfo, &u4DmaIdx);
 		else
 			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
-	} else
-		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+	}
 
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
-	while (u4SwIdx != u4DmaIdx) {
+	while (prTxRing->u4UsedCnt) {
 		pBuffer = prTxRing->Cell[u4SwIdx].pBuffer;
 		PacketPa = prTxRing->Cell[u4SwIdx].PacketPa;
 		pTxD = (struct TXD_STRUCT *) prTxRing->Cell[u4SwIdx].AllocVa;
@@ -2934,6 +2946,7 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0, u4Diff = 0;
 	struct RTMP_TX_RING *prTxRing;
+	struct TXD_STRUCT *pTxD;
 
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	KAL_HIF_TXRING_LOCK_DECLARATION();
@@ -2944,27 +2957,26 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+	if (prTxRing->u4UsedCnt == 0)
+		return;
+
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	KAL_HIF_TXRING_LOCK(prTxRing);
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 
-	HAL_GET_RING_DIDX(prGlueInfo, prTxRing, &u4DmaIdx);
 	u4SwIdx = prTxRing->TxSwUsedIdx;
 
-	if (u4DmaIdx > u4SwIdx) {
-		u4Diff = u4DmaIdx - u4SwIdx;
-		prTxRing->u4UsedCnt -= u4Diff;
-	} else if (u4DmaIdx < u4SwIdx) {
-		u4Diff = (prTxRing->u4RingSize + u4DmaIdx) - u4SwIdx;
-		prTxRing->u4UsedCnt -= u4Diff;
-	} else {
-		/* DMA index == SW used index */
-		if (prTxRing->u4UsedCnt == prTxRing->u4RingSize) {
-			u4Diff = prTxRing->u4RingSize;
-			prTxRing->u4UsedCnt = 0;
-		}
-	}
+	while (prTxRing->u4UsedCnt) {
+		pTxD = (struct TXD_STRUCT *) prTxRing->Cell[u4SwIdx].AllocVa;
+		if (pTxD->DMADONE == 0)
+			break;
 
+		pTxD->DMADONE = 0;
+		prTxRing->u4UsedCnt--;
+		u4Diff++;
+
+		INC_RING_INDEX(u4SwIdx, prTxRing->u4RingSize);
+	}
 	DBGLOG_LIMITED(HAL, TRACE,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
 		u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt);
@@ -2972,7 +2984,7 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 	GLUE_ADD_REF_CNT(u4Diff,
 			prGlueInfo->prAdapter->rHifStats.u4DataTxdoneCount);
 
-	prTxRing->TxSwUsedIdx = u4DmaIdx;
+	prTxRing->TxSwUsedIdx = u4SwIdx;
 
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
@@ -2983,21 +2995,35 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRingNum)
 {
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
-	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt;
+	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt = 0;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
-
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
-	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &prRxRing->RxDmaIdx);
 	u4MaxCnt = prRxRing->u4RingSize;
-	u4CpuIdx = prRxRing->RxCpuIdx;
-	u4DmaIdx = prRxRing->RxDmaIdx;
 
 	if (u4MaxCnt == 0 || u4MaxCnt > RX_RING_SIZE)
-		return 0;
+		goto exit;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead)) {
+		u4CpuIdx = prRxRing->RxCpuIdx;
+		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+		while (halIsWfdmaRxReady(prRxRing, u4CpuIdx)) {
+			if (u4RxPktCnt >= u4MaxCnt)
+				break;
+			INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+			u4RxPktCnt++;
+		}
+		goto exit;
+	}
+
+	HAL_GET_RING_DIDX(prGlueInfo, prRxRing, &prRxRing->RxDmaIdx);
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	u4DmaIdx = prRxRing->RxDmaIdx;
 
 	if (u4CpuIdx > u4DmaIdx)
 		u4RxPktCnt = u4MaxCnt + u4DmaIdx - u4CpuIdx - 1;
@@ -3005,7 +3031,7 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 		u4RxPktCnt = u4DmaIdx - u4CpuIdx - 1;
 	else
 		u4RxPktCnt = u4MaxCnt - 1;
-
+exit:
 	return u4RxPktCnt;
 }
 
@@ -3076,9 +3102,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 				getCidx(prGlueInfo, &prTxRing->TxCpuIdx);
 		else
 			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
-	} else
-		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr,
-			      &prTxRing->TxCpuIdx);
+	}
 
 	if (prTxRing->TxCpuIdx >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);

@@ -1361,7 +1361,7 @@ struct WIFI_VAR {
 	/* 0: Keep L0, 1: enable PCIE enter L1.2 */
 	u_int8_t fgPcieEnableL1ss;
 #endif
-
+	u_int8_t fgEnWfdmaNoMmioRead;
 };
 
 /* cnm_timer module */
