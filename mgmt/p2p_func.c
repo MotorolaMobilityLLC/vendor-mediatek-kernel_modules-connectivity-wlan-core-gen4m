@@ -8594,6 +8594,15 @@ uint8_t p2pFuncIsBufferableMMPDU(struct ADAPTER *prAdapter,
 
 	switch (u2TxFrameCtrl) {
 	case MAC_FRAME_ACTION:
+		/* p2p_device default use band0 to TX,
+		 * and band0 may only support 2.4G for some platform.
+		 * Set FORCE_TX in case p2p_device TX 5G/6G fail.
+		 */
+		if (prMgmtTxMsdu->ucBssIndex == P2P_DEV_BSS_INDEX) {
+			fgIsBufferableMMPDU = FALSE;
+			break;
+		}
+
 		switch (eConnState) {
 		case P2P_CNN_GO_NEG_REQ:
 		case P2P_CNN_GO_NEG_RESP:
