@@ -1372,6 +1372,11 @@ void halTxDelayTimeout(unsigned long arg)
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo;
 
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
+		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip tx delay timeout\n");
+		return;
+	}
+
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
