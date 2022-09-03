@@ -2317,7 +2317,7 @@ static void wlanSetMulticastListWorkQueue(
 	uint8_t ucBssIndex = 0;
 
 	ucBssIndex = g_ucSetMcListIndex;
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (ucBssIndex < KAL_AIS_NUM)
 		return;
 
 	down(&g_halt_sem);
