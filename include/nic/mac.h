@@ -4488,6 +4488,7 @@ struct ACTION_VENDOR_SPEC_PROTECTED_FRAME {
 	uint32_t u4KeyBitmap[4];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct WLAN_DEAUTH_FRAME_WITH_MIC {
 	/* Authentication MAC header */
 	uint16_t u2FrameCtrl;	/* Frame Control */

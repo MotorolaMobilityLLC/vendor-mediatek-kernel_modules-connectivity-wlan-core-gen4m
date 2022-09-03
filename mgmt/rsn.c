@@ -3021,8 +3021,16 @@ uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
 	uint8_t nounce[12];
 	uint8_t *npos;
 	uint8_t aad_gmac[48];
+	uint8_t *prAddr;
+
+	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_DEAUTH_FRAME_WITH_MIC))
+		return FALSE;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec) {
+		DBGLOG(RSN, ERROR, "prStaRec is NULL!");
+		return FALSE;
+	}
 	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
 		prStaRec->ucBssIndex);
 	prDeauthMICFrame =
@@ -3066,7 +3074,8 @@ uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
 	/* copy FC and skip duration */
 	kalMemCopy(aad_gmac, &prDeauthMICFrame->u2FrameCtrl, 2);
 	/* copy A1,A2,A3 and skip SEQ */
-	kalMemCopy(aad_gmac+2, prDeauthMICFrame->aucDestAddr, 18);
+	prAddr = prDeauthMICFrame->aucDestAddr;
+	kalMemCopy(aad_gmac+2, prAddr, 18);
 	/* copy reason code, MIC tag/legnth, keyID, IPN */
 	kalMemCopy(aad_gmac+20, &prDeauthMICFrame->u2ReasonCode, 12);
 	kalMemSet(aad_gmac+32, 0, 16);

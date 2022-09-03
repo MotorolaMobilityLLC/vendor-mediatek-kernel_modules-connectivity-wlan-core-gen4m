@@ -5388,8 +5388,7 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 	struct VHT_SUPPORTED_MCS_FIELD *prVhtSupportedMcsSet;
 	uint8_t i;
 	uint8_t ucMaxBw;
-	uint8_t supportNss = wlanGetSupportNss(
-				prAdapter, prBssInfo->ucBssIndex);
+	uint8_t supportNss;
 
 	if (!prAdapter) {
 		DBGLOG(TDLS, ERROR, "prAdapter error!\n");
@@ -5407,6 +5406,7 @@ uint32_t rlmFillVhtCapIEByAdapter(struct ADAPTER *prAdapter,
 	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	supportNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &
 			VHT_CAP_INFO_MAX_MPDU_LEN_MASK);

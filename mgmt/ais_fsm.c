@@ -3485,6 +3485,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
 	prBssInfo->eBand = prBssDesc->eBand;
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
+	eRfSco = prBssDesc->eSco;
 
 #if CFG_SUPPORT_DBDC
 	ucRfBw = cnmGetDbdcBwCapability(ad, prBssInfo->ucBssIndex);

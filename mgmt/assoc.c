@@ -2339,7 +2339,12 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 		IW_AUTH_ALG_FT)) /* Non-RSN FT */
 		return;
 
-	if (prFtIEs && !prFtIEs->prMDIE) {
+	if (!prFtIEs) {
+		DBGLOG(SAA, ERROR, "prFtIEs is null\n");
+		return;
+	}
+
+	if (!prFtIEs->prMDIE) {
 		struct BSS_DESC *prBssDesc =
 		    aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		uint8_t *pucIE = prBssDesc->pucIeBuf;
