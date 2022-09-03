@@ -1866,7 +1866,6 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	static int32_t ai4RingLock[NUM_OF_TX_RING];
 	uint32_t u4Idx;
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	u_int8_t fgIsTxData = FALSE;
 	uint32_t u4DataCnt = 0;
 #endif
 
@@ -1882,18 +1881,21 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	if (prGlueInfo->prAdapter->fgEnLowLatencyMode ||
+		wlanWfdEnabled(prGlueInfo->prAdapter))
+		goto tx_data;
+
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
 		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    HIF_TX_DATA_DELAY_TIMEOUT_BIT,
 		    prHifInfo->ulTxDataTimeout) ||
 	    u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
-		fgIsTxData = TRUE;
+		goto tx_data;
 
-	if (!fgIsTxData) {
-		halStartTxDelayTimer(prGlueInfo->prAdapter);
-		return 0;
-	}
+	halStartTxDelayTimer(prGlueInfo->prAdapter);
+	return 0;
+tx_data:
 #endif
 
 #if !CFG_SUPPORT_RX_WORK
