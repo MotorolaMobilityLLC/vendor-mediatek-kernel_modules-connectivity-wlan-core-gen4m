@@ -622,7 +622,7 @@ irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
-	DBGLOG(HAL, TRACE, "driver own INT\n");
+	DBGLOG(HAL, INFO, "driver own INT\n");
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
