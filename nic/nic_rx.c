@@ -2109,6 +2109,10 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 	if (rsnCheckBipGmacKeyInstall(prAdapter, prSwRfb->prStaRec)
 		&& (prSwRfb->fgIsBC || prSwRfb->fgIsMC) &&
 		(ucSubtype == 10 || ucSubtype == 12)) {
+		/* HW doesn't support BIP-GMAC, will set fgIsCipherMS, driver
+		 * should reset this flag and let rsnCheckBipGmac do the check
+		 */
+		prSwRfb->fgIsCipherMS = FALSE;
 		if (rsnCheckBipGmac(prAdapter, prSwRfb) != TRUE) {
 			prSwRfb->fgIsCipherMS = TRUE;
 			DBGLOG(RX, WARN,
