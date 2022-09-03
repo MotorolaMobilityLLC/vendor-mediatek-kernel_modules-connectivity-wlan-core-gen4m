@@ -2202,6 +2202,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4Status = 0;
 	u_int8_t fgRet = TRUE;
 
@@ -2209,6 +2210,12 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 		return TRUE;
 
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prBusInfo->hwControlVote)
+		prBusInfo->hwControlVote(prAdapter,
+					 FALSE,
+					 PCIE_VOTE_USER_LOG_RESET);
 
 	if (!prChipInfo->get_sw_interrupt_status)
 		goto exit;
@@ -2227,6 +2234,11 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (u4Status & BIT(SW_INT_WHOLE_RESET))
 		handle_whole_chip_reset(prAdapter);
 #endif
+
+	if (prBusInfo->hwControlVote)
+		prBusInfo->hwControlVote(prAdapter,
+					 TRUE,
+					 PCIE_VOTE_USER_LOG_RESET);
 
 exit:
 	return fgRet;
