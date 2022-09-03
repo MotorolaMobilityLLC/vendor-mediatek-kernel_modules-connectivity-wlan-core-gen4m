@@ -2120,7 +2120,9 @@ void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIndex);
 void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(struct ADAPTER *prAdapter);
-
+void nicTxDirectClearStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIdx);
+void nicTxDirectClearAllStaAcmQ(struct ADAPTER *prAdapter);
 void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter);
 
 uint32_t nicTxDirectStartXmitMain(void *pvPacket,

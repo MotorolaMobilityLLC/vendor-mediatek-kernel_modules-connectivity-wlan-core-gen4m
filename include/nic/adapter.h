@@ -1718,6 +1718,11 @@ struct ADAPTER {
 	uint32_t u4BssAbsentTxBufferBitmap;
 	struct QUE rStaPendQueue[CFG_STA_REC_NUM];
 	uint32_t u4StaPendBitmap;
+#if CFG_SUPPORT_SOFT_ACM
+	struct QUE rStaAcmQueue[CFG_STA_REC_NUM][AC_NUM];
+	int32_t i4StaAcmQueueCnt[CFG_STA_REC_NUM];
+	uint32_t u4StaAcmBitmap;
+#endif /* CFG_SUPPORT_SOFT_ACM */
 	/* TX Direct related : END */
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	struct QUE rMgmtDirectTxQueue;

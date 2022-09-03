@@ -3713,6 +3713,7 @@ uint32_t nicTxFlush(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectClearAllStaAcmQ(prAdapter);
 		nicTxDirectClearAllStaPsQ(prAdapter);
 		nicTxDirectClearAllStaPendQ(prAdapter);
 	} else {
@@ -5868,6 +5869,173 @@ static void nicTxDirectCheckStaPsPendQ(struct ADAPTER *prAdapter,
 	}
 }
 
+#if CFG_SUPPORT_SOFT_ACM
+static void nicTxDirectDequeueStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaIdx, uint8_t ucTC, struct QUE *prQue)
+{
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL)
+		return;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	if (QUEUE_IS_NOT_EMPTY(
+		&prAdapter->rStaAcmQueue[ucStaIdx][ucTC])) {
+		QUEUE_CONCATENATE_QUEUES_HEAD(prQue,
+			&prAdapter->rStaAcmQueue[ucStaIdx][ucTC]);
+		prAdapter->i4StaAcmQueueCnt[ucStaIdx] -= prQue->u4NumElem;
+		if (prAdapter->i4StaAcmQueueCnt[ucStaIdx] == 0)
+			prAdapter->u4StaAcmBitmap &= ~BIT(ucStaIdx);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	DBGLOG(NIC, TRACE, "[ucStaIdx:ucTC]:[%u:%u] => u4Num:%u\n",
+		ucStaIdx, ucTC, prQue->u4NumElem);
+}
+
+static void nicTxDirectEnqueueStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaIdx, uint8_t ucTC, struct QUE *prQue)
+{
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prAdapter == NULL)
+		return;
+
+	DBGLOG(NIC, TRACE, "[ucStaIdx:ucTC]:[%u:%u] => u4Num:%u\n",
+		ucStaIdx, ucTC, prQue->u4NumElem);
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	prAdapter->i4StaAcmQueueCnt[ucStaIdx] += prQue->u4NumElem;
+	QUEUE_CONCATENATE_QUEUES(
+		&prAdapter->rStaAcmQueue[ucStaIdx][ucTC], prQue);
+	if (prAdapter->i4StaAcmQueueCnt[ucStaIdx] != 0)
+		prAdapter->u4StaAcmBitmap |= BIT(ucStaIdx);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+}
+
+static void nicTxDirectCheckStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaIdx, uint8_t ucTC, struct QUE *prQue)
+{
+	struct STA_RECORD *prStaRec;	/* The current focused STA */
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucAc;
+	static const uint8_t aucTc2Ac[] = {ACI_BK, ACI_BE, ACI_VI, ACI_VO};
+	struct MSDU_INFO *prMsduInfo;
+	struct QUE rTmpQue;
+	struct QUE *prTmpQue;
+
+	if (ucTC >= TC_NUM || ucStaIdx >= CFG_STA_REC_NUM) {
+		DBGLOG(NIC, ERROR, "ucTc:%u ucStaIdx:%u\n",
+			ucTC, ucStaIdx);
+		return;
+	}
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
+	if (!prStaRec) {
+		DBGLOG(NIC, WARN, "prStaRec is NULL\n");
+		return;
+	}
+
+	ucAc = aucTc2Ac[nicTxGetAcIdxByTc(ucTC)];
+
+	/* check if acm required */
+	if (likely(!prStaRec->afgAcmRequired[ucAc])) {
+		DBGLOG(NIC, TRACE, "afgAcmRequired:%u\n",
+			prStaRec->afgAcmRequired[ucAc]);
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(NIC, WARN, "prBssInfo is NULL\n");
+		return;
+	}
+
+	prTmpQue = &rTmpQue;
+	QUEUE_INITIALIZE(prTmpQue);
+
+	/* Dequeue ACM Queue */
+	if (prAdapter->u4StaAcmBitmap & BIT(ucStaIdx))
+		nicTxDirectDequeueStaAcmQ(prAdapter, ucStaIdx, ucAc, prQue);
+	else {
+		DBGLOG(NIC, TRACE, "ucStaIdx:%u u4StaAcmBitmap:%u\n",
+			ucStaIdx, prAdapter->u4StaAcmBitmap);
+	}
+
+	QUEUE_MOVE_ALL(prTmpQue, prQue);
+
+	DBGLOG(NIC, TRACE, "Begin [ucStaIdx:ucTC]:[%u:%u] TmpQue:%u Que:%u\n",
+		ucStaIdx, ucTC, prTmpQue->u4NumElem, prQue->u4NumElem);
+
+	while (1) {
+		QUEUE_REMOVE_HEAD(prTmpQue, prMsduInfo,
+				  struct MSDU_INFO *);
+		if (prMsduInfo == NULL)
+			break;
+
+		if (!wmmAcmCanTx(prAdapter, prBssInfo, prStaRec, ucAc,
+			prMsduInfo->u2FrameLength)) {
+			QUEUE_INSERT_HEAD(prTmpQue,
+				  (struct QUE_ENTRY *) prMsduInfo);
+			break;
+		}
+
+		QUEUE_INSERT_TAIL(prQue,
+			  (struct QUE_ENTRY *) prMsduInfo);
+	}
+
+	DBGLOG(NIC, TRACE, "End [ucStaIdx:ucTC]:[%u:%u] TmpQue:%u Que:%u\n",
+		ucStaIdx, ucTC, prTmpQue->u4NumElem, prQue->u4NumElem);
+
+	if (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
+		/* acm cannot tx, so enqueue to ACM queue */
+		nicTxDirectEnqueueStaAcmQ(prAdapter, ucStaIdx, ucAc, prTmpQue);
+	}
+}
+
+void nicTxDirectClearStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucStaRecIdx)
+{
+	struct QUE rNeedToFreeQue;
+	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
+	uint8_t ucAc;
+
+
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
+	TX_DIRECT_LOCK(prAdapter->prGlueInfo);
+
+	for (ucAc = 0; ucAc < ACI_NUM; ucAc++) {
+		nicTxDirectDequeueStaAcmQ(prAdapter, ucStaRecIdx, ucAc,
+			prNeedToFreeQue);
+	}
+
+	TX_DIRECT_UNLOCK(prAdapter->prGlueInfo);
+
+	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue)) {
+		wlanProcessQueuedMsduInfo(prAdapter,
+			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
+	}
+
+	prAdapter->u4StaAcmBitmap &= ~BIT(ucStaRecIdx);
+}
+
+void nicTxDirectClearAllStaAcmQ(struct ADAPTER *prAdapter)
+{
+	uint8_t ucIdx; /* StaRec Index */
+
+	for (ucIdx = 0; ucIdx < CFG_STA_REC_NUM; ++ucIdx) {
+		if (prAdapter->u4StaAcmBitmap == 0)
+			break;
+
+		if (prAdapter->u4StaAcmBitmap & BIT(ucIdx))
+			nicTxDirectClearStaAcmQ(prAdapter, ucIdx);
+	}
+}
+
+#endif /* CFG_SUPPORT_SOFT_ACM */
+
 /*----------------------------------------------------------------------------*/
 /*
  * \brief Get Tc for hif port mapping.
@@ -6127,6 +6295,13 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			QUEUE_INSERT_TAIL(prProcessingQue,
 					  (struct QUE_ENTRY *) prMsduInfo);
 
+#if CFG_SUPPORT_SOFT_ACM
+			nicTxDirectCheckStaAcmQ(prAdapter,
+				prMsduInfo->ucStaRecIndex,
+				prMsduInfo->ucTC,
+				prProcessingQue);
+#endif /* CFG_SUPPORT_SOFT_ACM */
+
 			/* Power-save & TxAllowed STA handling */
 			nicTxDirectCheckStaPsPendQ(prAdapter, prMsduInfo,
 					prMsduInfo->ucStaRecIndex,
@@ -6182,8 +6357,18 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 	} else {
 		if (ucStaRecIndex != 0xff || ucBssIndex != 0xff) {
-			/* Power-save STA handling */
 			if (ucStaRecIndex != 0xff) {
+#if CFG_SUPPORT_SOFT_ACM
+				if (ucCheckTc != 0xff) {
+					DBGLOG(NIC, TRACE, "StaIdx:%u\n",
+						ucStaRecIndex);
+					nicTxDirectCheckStaAcmQ(prAdapter,
+						ucStaRecIndex,
+						ucCheckTc,
+						prProcessingQue);
+				}
+#endif /* CFG_SUPPORT_SOFT_ACM */
+				/* Power-save STA handling */
 				nicTxDirectCheckStaPsPendQ(prAdapter,
 						NULL,
 						ucStaRecIndex,
@@ -6313,13 +6498,36 @@ void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 {
 	uint32_t u4StaPsBitmap, u4BssAbsentTxBufferBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
-#if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	uint8_t ucHifTc = 0;
-#endif
+#if CFG_SUPPORT_SOFT_ACM
+	uint32_t u4StaAcmBitmap;
+#endif /* CFG_SUPPORT_SOFT_ACM */
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 	u4BssAbsentTxBufferBitmap = prAdapter->u4BssAbsentTxBufferBitmap;
 	u4StaPendBitmap = prAdapter->u4StaPendBitmap;
+#if CFG_SUPPORT_SOFT_ACM
+	u4StaAcmBitmap = prAdapter->u4StaAcmBitmap;
+
+	if (u4StaAcmBitmap) {
+		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
+		     ++ucStaRecIndex) {
+			if (u4StaAcmBitmap & BIT(ucStaRecIndex)) {
+				for (ucHifTc = 0; ucHifTc < TC_NUM; ucHifTc++) {
+					nicTxDirectStartXmitMain(NULL, NULL,
+						prAdapter, ucHifTc,
+						ucStaRecIndex, 0xff);
+				}
+
+				DBGLOG(TX, INFO, "Check acm StaIdx=%u\n",
+					ucStaRecIndex);
+				u4StaAcmBitmap &= ~BIT(ucStaRecIndex);
+			}
+			if (u4StaAcmBitmap == 0)
+				break;
+		}
+	}
+#endif /* CFG_SUPPORT_SOFT_ACM */
 
 	if (u4StaPendBitmap) {
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;

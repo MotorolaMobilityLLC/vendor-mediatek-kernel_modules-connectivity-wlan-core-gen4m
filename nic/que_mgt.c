@@ -639,6 +639,8 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 
 	/* 4 <1> Flush TX queues */
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectClearStaAcmQ(prAdapter, prStaRec->ucIndex);
+		nicTxDirectClearStaPendQ(prAdapter, prStaRec->ucIndex);
 		nicTxDirectClearStaPsQ(prAdapter, prStaRec->ucIndex);
 	} else {
 		struct MSDU_INFO *prFlushedTxPacketList = NULL;
