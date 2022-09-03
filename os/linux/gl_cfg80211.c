@@ -6114,6 +6114,9 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 	if (prAdapter == NULL)
 		goto end;
 
+	clear_bit(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+		  &prAdapter->ulSuspendFlag);
+
 	clear_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 		  &prAdapter->ulSuspendFlag);
 
