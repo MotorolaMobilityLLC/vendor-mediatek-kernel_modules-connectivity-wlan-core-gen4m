@@ -312,11 +312,14 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 			i4RemainRsnIeLen -= IW_PMKID_LEN;
 		}
 
+		if (i4RemainRsnIeLen == 0)
+			break;
+
 		/* Parse the Group Management Cipher Suite field */
 		if (i4RemainRsnIeLen < 4) {
 			DBGLOG(RSN, TRACE,
 				"Fail to parse group mgmt cipher suite in RSN IE\n");
-			return FALSE;
+			break;
 		}
 
 		WLAN_GET_FIELD_32(cp, &u4GroupMgmtSuite);
