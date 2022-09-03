@@ -398,8 +398,22 @@ u_int8_t nic_rxd_v3_sanity_check(
 					ucBssIndex,
 					prCurrBssid->arMacAddress);
 			if (prStaRec) {
-				DBGLOG(RSN, EVENT, "MIC_ERR_PKT\n");
+				struct mt66xx_chip_info *prChipInfo;
+
 				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
+				DBGLOG(RX, INFO,
+					"u2PacketLen:%d ucSecMode:%d ucWlanIdx:%d ucStaRecIdx:%d\n",
+				prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
+				prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx);
+				DBGLOG(RSN, EVENT,
+					"MIC_ERR_PKT, dump RXD and RXP\n");
+				/* dump RXD */
+				prChipInfo = prAdapter->chip_info;
+				DBGLOG_MEM8(NIC, INFO, prRxStatus,
+					prChipInfo->rxd_size);
+				/* dump RXP */
+				DBGLOG_MEM8(NIC, INFO, prSwRfb->pvHeader,
+					prSwRfb->u2PacketLen);
 			}
 		} else if (HAL_MAC_CONNAC3X_RX_STATUS_IS_LLC_MIS(prRxStatus)
 			 && !HAL_MAC_CONNAC3X_RX_STATUS_IS_ERROR(prRxStatus)
