@@ -530,6 +530,9 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
+	if (prChipInfo->setCrypto)
+		prChipInfo->setCrypto(prAdapter);
+
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
@@ -544,8 +547,20 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
-		if (!prBusInfo->fgCheckDriverOwnInt ||
-		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
+		if (prAdapter->rWifiVar.u4DrvOwnMode == 1) {
+			DBGLOG(INIT, TRACE, "delay 10ms DRIVER OWN Start\n");
+			HAL_LP_OWN_RD(prAdapter, &fgResult);
+		} else if (prAdapter->fgIsWiFiOnDrvOwn) {
+			DBGLOG(INIT, TRACE, "WIFI On DRIVER OWN Start\n");
+			HAL_LP_OWN_RD(prAdapter, &fgResult);
+		} else if (prBusInfo->fgCheckDriverOwnInt) {
+			if (test_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+				&prAdapter->prGlueInfo->ulFlag)) {
+				DBGLOG(INIT, TRACE,
+					"DRIVER OWN Interrupt Start\n");
+				fgResult = TRUE;
+			}
+		} else
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
@@ -553,6 +568,8 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
+			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+						&prAdapter->prGlueInfo->ulFlag);
 			if (prBusInfo->fgCheckDriverOwnInt)
 				HAL_MCR_WR(prAdapter,
 					prBusInfo->fw_own_clear_addr,

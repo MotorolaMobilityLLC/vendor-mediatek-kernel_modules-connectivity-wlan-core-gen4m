@@ -1659,6 +1659,7 @@ struct mt66xx_chip_info {
 	struct EMI_MEM_INFO rEmiInfo;
 	struct thermal_info thermal_info;
 	struct FW_LOG_INFO fw_log_info;
+	u_int8_t (*setCrypto)(struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {

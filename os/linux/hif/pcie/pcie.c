@@ -613,6 +613,25 @@ exit:
 	return IRQ_HANDLED;
 }
 
+irqreturn_t pcie_drv_own_top_handler(int irq, void *dev_instance)
+{
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	DBGLOG(HAL, TRACE, "driver own INT\n");
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+
+	if (prGlueInfo)
+		set_bit(GLUE_FLAG_DRV_OWN_INT_BIT, &prGlueInfo->ulFlag);
+
+	return IRQ_HANDLED;
+}
+
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 {

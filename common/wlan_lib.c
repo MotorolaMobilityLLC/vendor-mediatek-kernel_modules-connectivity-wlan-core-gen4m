@@ -1333,7 +1333,9 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
+		prAdapter->fgIsWiFiOnDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		prAdapter->fgIsWiFiOnDrvOwn = FALSE;
 		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
@@ -8374,6 +8376,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #endif
 	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
 			FEATURE_ENABLED);
+	prWifiVar->u4DrvOwnMode = wlanCfgGetUint32(prAdapter,
+			"drvOwnMode", 0);
 
 	/* Fast Path Config */
 	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(

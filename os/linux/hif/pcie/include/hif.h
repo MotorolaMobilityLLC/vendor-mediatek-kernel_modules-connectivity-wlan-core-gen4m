@@ -602,6 +602,8 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
 void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
+irqreturn_t pcie_drv_own_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance);
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif

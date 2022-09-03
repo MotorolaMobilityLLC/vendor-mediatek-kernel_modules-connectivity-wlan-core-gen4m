@@ -41,6 +41,7 @@
 #include "coda/mt6639/wf_top_cfg_on.h"
 #include "coda/mt6639/wf_wtblon_top.h"
 #include "coda/mt6639/wf_uwtbl_top.h"
+#include "coda/mt6639/cb_infra_slp_ctrl.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
@@ -157,6 +158,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
+static u_int8_t mt6639_set_crypto(struct ADAPTER *prAdapter);
 static void mt6639_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
@@ -396,8 +398,10 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
-	{"reserved", NULL, NULL, NONE_INT, 0},
+	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
+		pcie_drv_own_thread_handler, AP_INT, 0},
+	{"drv_own_md_timeout_irq", mtk_md_dummy_pci_interrupt,
+				 NULL, MDDP_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
@@ -480,7 +484,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.tx_ring3_data_idx = 3,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
-	.fgCheckDriverOwnInt = FALSE,
+	.fgCheckDriverOwnInt = TRUE,
 	.u4DmaMask = 32,
 	.wfmda_host_tx_group = mt6639_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6639_wfmda_host_tx_group),
@@ -826,6 +830,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 
 	.u4MinTxLen = 2,
+	.setCrypto = mt6639_set_crypto,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {
@@ -1959,6 +1964,16 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	return TRUE;
 }
 #endif
+
+static u_int8_t mt6639_set_crypto(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter->fgIsWiFiOnDrvOwn)
+		HAL_MCR_WR(prAdapter,
+			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
+			BIT(0));
+	return TRUE;
+}
+
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {

@@ -1051,7 +1051,7 @@ struct WIFI_VAR {
 	uint32_t u4WfdSccBalanceMode; /* 0: auto mode, 1: force mode */
 	int32_t i4BssCount[MAX_BSSID_NUM];
 #endif
-
+	uint32_t u4DrvOwnMode; /* 0: default, 1: delay 10ms */
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
 	uint8_t	ucCtrlFlagDebugLevel;
@@ -1693,6 +1693,7 @@ struct ADAPTER {
 	u_int8_t fgIsIntEnableWithLPOwnSet;
 
 	u_int8_t fgIsFwOwn;
+	u_int8_t fgIsWiFiOnDrvOwn;
 	u_int8_t fgWiFiInSleepyState;
 
 	/* Set by callback to make sure WOW done before system suspend */
