@@ -150,7 +150,8 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_CMD_EVT_FAIL"),
 	(uint8_t *) DISP_STRING("RST_WDT"),
 	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL"),
-	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY")
+	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY"),
+	(uint8_t *) DISP_STRING("RST_DEVAPC")
 };
 
 const uint8_t *apucRstAction[] = {
