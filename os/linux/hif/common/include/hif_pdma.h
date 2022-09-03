@@ -954,7 +954,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 			uint32_t u4Num, uint16_t u2Size);
 void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
-		      bool fgSetEvent);
+		      u_int8_t fgSetEvent,
+		      struct QUE *prTxMsduRetQue);
 u_int8_t halRxInsertRecvRfbList(
 	struct ADAPTER *prAdapter,
 	struct QUE *prReceivedRfbList,
