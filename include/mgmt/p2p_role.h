@@ -410,6 +410,10 @@ void p2pRoleFsmDelIface(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx);
 
+void p2pRoleFsmDelIfaceDone(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx);
+
 /*================== Message Event ==================*/
 
 void p2pRoleFsmRunEventAbort(struct ADAPTER *prAdapter,

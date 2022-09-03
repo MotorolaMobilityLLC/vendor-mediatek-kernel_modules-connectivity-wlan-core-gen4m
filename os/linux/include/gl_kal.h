@@ -139,7 +139,11 @@ extern struct platform_device *g_prPlatDev;
 #endif
 
 #if CFG_DUAL_P2PLIKE_INTERFACE
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 #define KAL_P2P_NUM             2
+#else
+#define KAL_P2P_NUM             2
+#endif
 #else
 #define KAL_P2P_NUM             1
 #endif

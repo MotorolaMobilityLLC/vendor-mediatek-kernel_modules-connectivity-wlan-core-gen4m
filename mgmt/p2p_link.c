@@ -498,16 +498,24 @@ struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 
 struct BSS_INFO *p2pGetDefaultLinkBssInfo(
 	struct ADAPTER *prAdapter,
-	enum ENUM_IFTYPE eIftype)
+	struct BSS_INFO *prBssInfo)
 {
-	struct P2P_ROLE_FSM_INFO *fsm =
-		p2pGetDefaultRoleFsmInfo(prAdapter, eIftype);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo =
+		mldBssGetByBss(prAdapter, prBssInfo);
 
-	if (fsm)
-		return p2pGetLinkBssInfo(prAdapter, fsm,
-			P2P_MAIN_LINK_INDEX);
-	else
-		return NULL;
+	if (prMldBssInfo) {
+		struct BSS_INFO *bss =
+			LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
+			struct BSS_INFO,
+			rLinkEntryMld);
+
+		if (bss)
+			return bss;
+	}
+#endif
+
+	return prBssInfo;
 }
 
 struct STA_RECORD *p2pGetDefaultLinkStaRec(
@@ -560,7 +568,7 @@ void p2pGetLinkWmmQueSet(
 	struct BSS_INFO *bss;
 
 	/* main bss must assign wmm first */
-	bss = p2pGetDefaultLinkBssInfo(prAdapter, IFTYPE_UNSPECIFIED);
+	bss = p2pGetDefaultLinkBssInfo(prAdapter, prBssInfo);
 	cnmWmmIndexDecision(prAdapter, bss);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)

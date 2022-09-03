@@ -1310,8 +1310,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	    (ucApMode == RUNNING_P2P_AP_MODE) ||
 	    (ucApMode == RUNNING_DUAL_P2P_MODE) ||
 	    (ucApMode == RUNNING_P2P_DEV_MODE)) {
-		ucRegisterNum = 2;
-		glP2pCreateWirelessDevice(prGlueInfo);
+		ucRegisterNum = KAL_P2P_NUM;
 	}
 
 	do {
@@ -1339,6 +1338,9 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			else
 				fgIsApMode = TRUE;
 		}
+
+		if (!gprP2pRoleWdev[i])
+			glP2pCreateWirelessDevice(prGlueInfo);
 
 		if (!gprP2pRoleWdev[i]) {
 			DBGLOG(P2P, ERROR, "gprP2pRoleWdev[%d] is NULL\n", i);

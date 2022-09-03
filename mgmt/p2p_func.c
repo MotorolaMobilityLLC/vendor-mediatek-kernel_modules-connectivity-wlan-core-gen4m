@@ -1521,6 +1521,9 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		/* Point StaRecOfAP to NULL when GC role stop Complete */
 		prP2pBssInfo->prStaRecOfAP = NULL;
 
+		p2pRoleFsmDelIfaceDone(prAdapter,
+			prP2pBssInfo->u4PrivateData);
+
 		kalP2pNotifyStopApComplete(prAdapter,
 				prP2pBssInfo->u4PrivateData);
 	} while (FALSE);

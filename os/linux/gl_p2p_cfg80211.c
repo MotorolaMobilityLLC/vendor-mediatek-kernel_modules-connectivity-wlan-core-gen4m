@@ -283,8 +283,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	if (prAdapter == NULL)
 		return ERR_PTR(-ENXIO);
 
+#if (KAL_P2P_NUM < 3)
 	mtk_p2p_need_remove_iface(prAdapter,
 		wiphy, type);
+#endif
 
 	/* Both p2p and p2p net device should be in registered state */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -314,7 +316,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			if (prP2pInfo->aprRoleHandler ==
 					prP2pInfo->prDevHandler)
 				break;
-			if (prP2pInfo->aprRoleHandler == NULL) {
+			if ((prP2pInfo->aprRoleHandler == NULL) &&
+				!prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx]) {
 				mtk_p2p_initsettings(prGlueInfo->prAdapter,
 					type, u4Idx);
 				p2pRoleFsmInit(prGlueInfo->prAdapter, u4Idx);
@@ -752,6 +755,20 @@ error:
 			&u4SetInfoLen, u4Idx);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+		if (prP2pInfo->fgDelIface) {
+			uint32_t waitRet = 0;
+
+			reinit_completion(&prP2pInfo->rStopApComp);
+			waitRet = wait_for_completion_timeout(
+				&prP2pInfo->rStopApComp,
+				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+			if (!waitRet)
+				DBGLOG(P2P, WARN,
+					"under deauth procedure, timeout\n");
+			else
+				DBGLOG(P2P, INFO,
+					"under deauth procedure, complete\n");
+		}
 	}
 
 	return i4Ret;

@@ -7879,13 +7879,22 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 					break;
 				}
 				/* Non P2P device*/
-				ASSERT(ucRoleIdx < KAL_P2P_NUM);
+				if (ucRoleIdx >= KAL_P2P_NUM) {
+					DBGLOG(P2P, WARN,
+						"wireless dev match fail2!\n");
+					break;
+				}
 				DBGLOG(P2P, TRACE,
 					"Open packet filer RoleIdx %u\n",
 					ucRoleIdx);
 				prP2pRoleFsmInfo =
 					prGlueInfo->prAdapter->rWifiVar
 					.aprP2pRoleFsmInfo[ucRoleIdx];
+				if (!prP2pRoleFsmInfo)  {
+					DBGLOG(P2P, WARN,
+						"prP2pRoleFsmInfo fail!\n");
+					break;
+				}
 				pu4PacketFilter = &prP2pRoleFsmInfo
 					->u4P2pPacketFilter;
 				*pu4PacketFilter =
