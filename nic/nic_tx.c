@@ -3257,8 +3257,10 @@ void nicTxFreePacket(struct ADAPTER *prAdapter,
 			prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
 		    TX_RESULT_DROPPED_IN_DRIVER);
 
-		if (prNativePacket)
+		if (prNativePacket) {
 			cnmMemFree(prAdapter, prMsduInfo->prHead);
+			prMsduInfo->prPacket = NULL;
+		}
 	} else if (prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
 		GLUE_DEC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
 		GLUE_DEC_REF_CNT(prTxCtrl
