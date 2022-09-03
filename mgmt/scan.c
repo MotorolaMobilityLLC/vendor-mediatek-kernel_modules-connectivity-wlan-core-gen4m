@@ -1511,6 +1511,13 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 		break;
 	}
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eRfBand == BAND_6G &&
+		!rlmDomainIsLegalChannel(prAdapter, eRfBand, ucRnrChNum)) {
+		return FALSE;
+	}
+#endif
+
 	/* Check RNR scan channel is in current scan list or not,
 	 * if RNR scan channel is 2.4G or 5G, ignore it. 6G needs
 	 * to send probe request with BSSID, so keep it.
