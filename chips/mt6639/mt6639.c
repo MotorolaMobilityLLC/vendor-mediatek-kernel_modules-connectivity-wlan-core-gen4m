@@ -136,6 +136,10 @@ static void mt6639WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
+static void mt6639PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser);
 
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
@@ -498,6 +502,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.configWfdmaIntMask = mt6639ConfigIntMask,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
+	.hwControlVote = mt6639PcieHwControlVote,
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
 	.updatePcieAspm = mt6639UpdatePcieAspm,
@@ -1649,6 +1654,14 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	} else {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 	}
+}
+
+static void mt6639PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser)
+{
+	halPcieHwControlVote(prAdapter, enable, u4WifiUser);
 }
 
 #if CFG_SUPPORT_PCIE_ASPM

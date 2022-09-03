@@ -2641,6 +2641,68 @@ void halPciePreSuspendTimeout(
 		PCIE_STATE_PRE_SUSPEND_FAIL;
 }
 
+void halPcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser)
+{
+	uint8_t voteResult = TRUE;
+	int32_t u4VoteState = 0;
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	int32_t err = 0;
+#endif
+
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter null\n");
+		return;
+	}
+
+	if (u4WifiUser >= PCIE_VOTE_USER_NUM) {
+		DBGLOG(HAL, ERROR,
+			"vote user undefined[%d]\n", u4WifiUser);
+		return;
+	}
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_WF_VOTE);
+
+	if (enable) {
+		/* set bit to 0 to vote enable */
+		prAdapter->prGlueInfo->rHifInfo.u4VoteState &=
+			~BIT(u4WifiUser);
+	} else {
+		/* set bit to 1 to vote disable */
+		prAdapter->prGlueInfo->rHifInfo.u4VoteState |=
+			BIT(u4WifiUser);
+	}
+
+	DBGLOG(HAL, TRACE,
+		"enable[%d], user[%d], vote state[0x%08X]\n",
+		enable, u4WifiUser,
+		prAdapter->prGlueInfo->rHifInfo.u4VoteState);
+
+	u4VoteState = prAdapter->prGlueInfo->rHifInfo.u4VoteState;
+
+	/* if all bits are 0's, means all vote to enable hw ctrl */
+	if (!u4VoteState)
+		voteResult = TRUE;
+	else
+		voteResult = FALSE;
+
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	/* vote to enable/disable hw mode */
+	err = mtk_pcie_hw_control_vote(0, voteResult, 1);
+	if (err) {
+		DBGLOG(HAL, ERROR,
+			"hw control mode err[%d]\n", err);
+		fgIsBusAccessFailed = TRUE;
+		GL_DEFAULT_RESET_TRIGGER(prAdapter,
+			RST_PCIE_NOT_READY);
+	}
+#endif
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_WF_VOTE);
+}
+
+
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,

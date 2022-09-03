@@ -204,6 +204,12 @@ enum pcie_aspm_state {
 };
 #endif
 
+enum pcie_vote_user {
+	PCIE_VOTE_USER_DRVOWN = 0,
+	PCIE_VOTE_USER_LOG_RESET,
+	PCIE_VOTE_USER_NUM
+};
+
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
@@ -288,6 +294,7 @@ struct GL_HIF_INFO {
 	bool fgIsBackupIntSta;
 
 	enum pcie_suspend_state eSuspendtate;
+	uint32_t u4VoteState;
 #if CFG_SUPPORT_PCIE_ASPM
 	uint32_t u4PcieLTR;
 	uint32_t u4PcieASPM;
@@ -434,6 +441,8 @@ struct BUS_INFO {
 		u_int32_t intrBitMask);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
+	void (*hwControlVote)(struct ADAPTER *prAdapter,
+		uint8_t enable, uint32_t u4WifiUser);
 #if CFG_SUPPORT_PCIE_ASPM
 	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
 		u_int enable_role);
@@ -579,7 +588,10 @@ void halPciePreSuspendDone(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo);
-
+void halPcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser);
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 

@@ -871,11 +871,6 @@ void asicConnac3xLowPowerOwnSet(
 	u_int8_t *pfgResult)
 {
 	struct mt66xx_chip_info *prChipInfo;
-#if defined(_HIF_PCIE)
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	int32_t err = 0;
-#endif
-#endif
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -892,17 +887,9 @@ void asicConnac3xLowPowerOwnSet(
 			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
 
 #if defined(_HIF_PCIE)
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-		/* vote to enable hw mode */
-		err = mtk_pcie_hw_control_vote(0, TRUE, 1);
-		if (err) {
-			DBGLOG(HAL, ERROR,
-				"hw control mode err[%d]\n", err);
-			fgIsBusAccessFailed = TRUE;
-			GL_DEFAULT_RESET_TRIGGER(prAdapter,
-				RST_PCIE_NOT_READY);
-		}
-#endif
+		if (prChipInfo->bus_info->hwControlVote)
+			prChipInfo->bus_info->hwControlVote(prAdapter,
+				TRUE, PCIE_VOTE_USER_DRVOWN);
 #endif
 	} else
 		*pfgResult = TRUE;
@@ -913,11 +900,6 @@ void asicConnac3xLowPowerOwnClear(
 	u_int8_t *pfgResult)
 {
 	struct mt66xx_chip_info *prChipInfo;
-#if defined(_HIF_PCIE)
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	int32_t err = 0;
-#endif
-#endif
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -925,17 +907,9 @@ void asicConnac3xLowPowerOwnClear(
 		u_int32_t u4RegValue = 0;
 
 #if defined(_HIF_PCIE)
-#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-		/* vote to disable hw mode */
-		err = mtk_pcie_hw_control_vote(0, FALSE, 1);
-		if (err) {
-			DBGLOG(HAL, ERROR,
-				"hw control mode err[%d]\n", err);
-			fgIsBusAccessFailed = TRUE;
-			GL_DEFAULT_RESET_TRIGGER(prAdapter,
-				RST_PCIE_NOT_READY);
-		}
-#endif
+		if (prChipInfo->bus_info->hwControlVote)
+			prChipInfo->bus_info->hwControlVote(prAdapter,
+				FALSE, PCIE_VOTE_USER_DRVOWN);
 #endif
 
 		HAL_MCR_WR(prAdapter,
