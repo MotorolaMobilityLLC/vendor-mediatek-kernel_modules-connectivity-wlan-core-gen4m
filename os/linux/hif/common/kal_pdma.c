@@ -2513,6 +2513,13 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 	}
 
 	halSetDriverOwn(prAdapter);
+	if (prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver own fail.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
 			prAdapter->u4PwrCtrlBlockCnt);
 
