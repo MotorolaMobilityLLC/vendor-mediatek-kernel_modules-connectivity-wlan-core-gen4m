@@ -1631,7 +1631,7 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 		return -1;
 
 	if (prRxV[0] == 0) {
-		DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
+		DBGLOG_LIMITED(SW4, WARN, "u4RxV0 is 0\n");
 		return -1;
 	}
 
@@ -1784,7 +1784,8 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 	return;
 
 wrong_rate:
-	DBGLOG(RX, WARN, "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+	DBGLOG_LIMITED(RX, WARN,
+			"Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
 			rate.preamble, rate.nss, rate.bw, mcsIdx);
 #endif
 }

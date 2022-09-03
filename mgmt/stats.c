@@ -615,11 +615,11 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 				/*130 mlti listener query*/
 				/*143 multi listener report v2*/
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
-				DBGLOG(RX, INFO,
+				DBGLOG_LIMITED(RX, INFO,
 					"<RX><IPv6> hop-by-hop packet\n");
 				break;
 			case EVENT_TX:
-				DBGLOG(TX, INFO,
+				DBGLOG_LIMITED(TX, INFO,
 					"<TX><IPv6> hop-by-hop packet\n");
 				break;
 			}
