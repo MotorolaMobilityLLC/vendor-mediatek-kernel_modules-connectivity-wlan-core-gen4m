@@ -294,8 +294,6 @@ void nic_rxd_v2_fill_rfb(
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_TCL(prRxStatus);
 	prSwRfb->ucKeyID = HAL_MAC_CONNAC2X_RX_STATUS_GET_KID(prRxStatus);
 
-	updateLinkStatsMpduAc(prAdapter, prSwRfb);
-
 #if 0
 	if (prHifRxHdr->ucReorder &
 	    HIF_RX_HDR_80211_HEADER_FORMAT) {
@@ -360,6 +358,11 @@ u_int8_t nic_rxd_v2_sanity_check(
 	ucBssIndex =
 		secGetBssIdxByWlanIdx(prAdapter,
 		HAL_MAC_CONNAC2X_RX_STATUS_GET_WLAN_IDX(prRxStatus));
+
+	if (prSwRfb->pvPacket == NULL) {
+		fgDrop = TRUE;
+		goto end;
+	}
 
 	if (!HAL_MAC_CONNAC2X_RX_STATUS_IS_FCS_ERROR(prRxStatus)
 	    && !HAL_MAC_CONNAC2X_RX_STATUS_IS_DAF(prRxStatus)
@@ -478,7 +481,11 @@ u_int8_t nic_rxd_v2_sanity_check(
 	if (HAL_MAC_CONNAC2X_RX_STATUS_GET_DW5_CLS_BITMAP_OFFSET(prRxStatus))
 		DBGLOG(RX, WARN, "RX DW5[0x%08x]\n", prRxStatus->u4DW5);
 
+end:
 	if (fgDrop) {
+		if (prSwRfb->pvPacket == NULL)
+			RX_INC_CNT(prRxCtrl, RX_NULL_PACKET_COUNT);
+
 		if (HAL_MAC_CONNAC2X_RX_STATUS_IS_FCS_ERROR(prRxStatus))
 			RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
 

@@ -335,6 +335,12 @@ u_int8_t nic_rxd_v1_sanity_check(
 
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->prRxStatus;
+
+	if (prSwRfb->pvPacket == NULL) {
+		fgDrop = TRUE;
+		goto end;
+	}
+
 	/* BA session */
 	if ((prRxStatus->u2StatusFlag & RXS_DW2_AMPDU_nERR_BITMAP)
 	    == RXS_DW2_AMPDU_nERR_VALUE)
@@ -410,7 +416,11 @@ u_int8_t nic_rxd_v1_sanity_check(
 		}
 #endif
 
+end:
 		if (fgDrop) {
+			if (prSwRfb->pvPacket == NULL)
+				RX_INC_CNT(prRxCtrl, RX_NULL_PACKET_COUNT);
+
 			if (HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus))
 				RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
 

@@ -583,6 +583,7 @@ enum ENUM_RX_STATISTIC_COUNTER {
 	RX_NAPI_FIFO_FULL_COUNT,
 	RX_NAPI_FIFO_ABNORMAL_COUNT,
 	RX_NAPI_FIFO_ABN_FULL_COUNT,
+	RX_NULL_PACKET_COUNT,
 	RX_STATISTIC_COUNTER_NUM
 };
 
@@ -1588,8 +1589,5 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 
 void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
-
-void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
-		struct SW_RFB *prSwRfb);
 
 #endif /* _NIC_RX_H */

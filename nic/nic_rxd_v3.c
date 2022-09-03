@@ -326,8 +326,6 @@ void nic_rxd_v3_fill_rfb(
 	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
-	updateLinkStatsMpduAc(prAdapter, prSwRfb);
 }
 
 void nic_rxd_v3_parse_drop_pkt(struct SW_RFB *prSwRfb)
@@ -362,6 +360,11 @@ u_int8_t nic_rxd_v3_sanity_check(
 	ucBssIndex =
 			secGetBssIdxByWlanIdx(prAdapter,
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
+
+	if (prSwRfb->pvPacket == NULL) {
+		fgDrop = TRUE;
+		goto end;
+	}
 
 	if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus)
 	    && !HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus)
@@ -490,7 +493,11 @@ u_int8_t nic_rxd_v3_sanity_check(
 			"Drop fragmented broadcast and multicast\n");
 	}
 
+end:
 	if (fgDrop) {
+		if (prSwRfb->pvPacket == NULL)
+			RX_INC_CNT(prRxCtrl, RX_NULL_PACKET_COUNT);
+
 		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus))
 			RX_INC_CNT(prRxCtrl, RX_FCS_ERR_DROP_COUNT);
 
