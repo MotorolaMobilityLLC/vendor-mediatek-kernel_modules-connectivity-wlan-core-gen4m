@@ -3322,6 +3322,7 @@ uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
 uint32_t nicUniUpdateDevInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -6997,11 +6998,58 @@ void nicUniCmdEventGetTsfDone(struct ADAPTER *prAdapter,
 	struct UNI_EVENT_MAC_INFO_TSF *tag =
 		(struct UNI_EVENT_MAC_INFO_TSF *) evt->aucTlvBuffer;
 	struct EXT_EVENT_MAC_INFO_T legacy = {0};
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt;
+	struct BSS_INFO *prBssInfo;
+#endif
 
 	legacy.rMacInfoResult.rTsfResult.u4TsfBitsLow = tag->u4TsfBit0_31;
 	legacy.rMacInfoResult.rTsfResult.u4TsfBitsHigh = tag->u4TsfBit63_32;
 
-	twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
+
+	prGetTsfCtxt = (struct _TWT_GET_TSF_CONTEXT_T *)
+		prCmdInfo->pvInformationBuffer;
+
+	if (!prGetTsfCtxt) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prGetTsfCtxt\n");
+
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prGetTsfCtxt->ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
+
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
+		twtHotspotPlannerGetTsfDone(prAdapter,
+			prCmdInfo, (uint8_t *)&legacy);
+	} else {
+#endif
+		twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+#if (CFG_SUPPORT_TWT_HOTSPOT == 1)
+	}
+#endif
 }
 #endif
 
