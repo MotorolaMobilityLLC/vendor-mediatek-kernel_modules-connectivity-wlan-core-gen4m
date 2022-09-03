@@ -1248,6 +1248,7 @@ int8_t atoi(uint8_t ch);
 ({									\
 	static DEFINE_RATELIMIT_STATE(_rs,				\
 		DEFAULT_RATELIMIT_INTERVAL, DEFAULT_RATELIMIT_BURST);	\
+	ratelimit_set_flags(&_rs, RATELIMIT_MSG_ON_RELEASE);		\
 									\
 	if (__ratelimit(&_rs))						\
 		kalPrintLog(fmt, ##__VA_ARGS__);			\
