@@ -188,20 +188,12 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 		prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
 	}
 
-#if (CFG_DUMP_TXD == 1)
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpTXD)) {
-		DBGLOG(HAL, INFO, "Dump DATA TXD:\n");
-		DBGLOG_MEM8(HAL, INFO, pucBuffer,
-			NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	}
-#endif
-#if (CFG_DUMP_TXP == 1)
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpTXP)) {
-		DBGLOG(HAL, INFO, "Dump DATA TXP:\n");
-		DBGLOG_MEM8(HAL, INFO, (uint8_t *)prHwTxDescAppend,
+	NIC_DUMP_TXD_HEADER(prAdapter, "Dump DATA TXD:\n");
+	NIC_DUMP_TXD(prAdapter, pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
+
+	NIC_DUMP_TXP_HEADER(prAdapter, "Dump DATA TXP:\n");
+	NIC_DUMP_TXP(prAdapter, (uint8_t *)prHwTxDescAppend,
 			sizeof(prHwTxDescAppend->CONNAC_APPEND));
-	}
-#endif
 }
 
 static char *q_idx_mcu_str[] = {"RQ0", "RQ1", "RQ2", "RQ3", "Invalid"};

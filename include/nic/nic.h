@@ -84,7 +84,7 @@
 #define NIC_IS_BSS_BELOW_11AC(prBssInfo) \
 	((prBssInfo->ucPhyTypeSet >> PHY_TYPE_VHT_INDEX) == 0)
 
-#define NIC_DUMP_RXD(prAdapter, prRxStatus) \
+#define NIC_DUMP_ICV_RXD(prAdapter, prRxStatus) \
 	do { \
 		u_int8_t fgRxIcvErrDbg = \
 			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
@@ -98,13 +98,83 @@
 		} \
 	} while (0)
 
-#define NIC_DUMP_RXP(pvPayload, u4PayloadLen) \
+#define NIC_DUMP_ICV_RXP(pvPayload, u4PayloadLen) \
 	do { \
 		u_int8_t fgRxIcvErrDbg = \
 			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
 		if (fgRxIcvErrDbg) { \
 			DBGLOG(NIC, INFO, "Dump RXP:\n"); \
 			DBGLOG_MEM8(NIC, INFO, pvPayload, u4PayloadLen); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_TXD_HEADER(prAdapter, header) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxD) \
+			DBGLOG(TX, TRACE, header); \
+	} while (0)
+
+#define NIC_DUMP_TXD(prAdapter, addr, size) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxD) { \
+			DBGLOG(TX, TRACE, "Dump TXD:\n"); \
+			DBGLOG_MEM8(TX, TRACE, addr, size); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_TXDMAD_HEADER(prAdapter, header) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxDmad) \
+			DBGLOG(TX, TRACE, header); \
+	} while (0)
+
+#define NIC_DUMP_TXDMAD(prAdapter, addr, size) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxDmad) { \
+			DBGLOG(TX, TRACE, "Dump TXDMAD:\n"); \
+			DBGLOG_MEM8(TX, TRACE, addr, size); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_TXP_HEADER(prAdapter, header) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxP) \
+			DBGLOG(TX, TRACE, header); \
+	} while (0)
+
+#define NIC_DUMP_TXP(prAdapter, addr, size) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpTxP) { \
+			DBGLOG(TX, TRACE, "Dump TXP:\n"); \
+			DBGLOG_MEM8(TX, TRACE, addr, size); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_RXD_HEADER(prAdapter, header) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpRxD) \
+			DBGLOG(RX, TRACE, header); \
+	} while (0)
+
+#define NIC_DUMP_RXD(prAdapter, addr, size) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpRxD) { \
+			DBGLOG(RX, TRACE, "Dump RXD:\n"); \
+			DBGLOG_MEM8(RX, TRACE, addr, size); \
+		} \
+	} while (0)
+
+#define NIC_DUMP_RXDMAD_HEADER(prAdapter, header) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpRxDmad) \
+			DBGLOG(RX, TRACE, header); \
+	} while (0)
+
+#define NIC_DUMP_RXDMAD(prAdapter, addr, size) \
+	do { \
+		if (prAdapter->rWifiVar.fgDumpRxDmad) { \
+			DBGLOG(RX, TRACE, "Dump RXDMAD:\n"); \
+			DBGLOG_MEM8(RX, TRACE, addr, size); \
 		} \
 	} while (0)
 

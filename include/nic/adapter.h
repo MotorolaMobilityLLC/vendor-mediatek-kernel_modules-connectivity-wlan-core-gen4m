@@ -1135,6 +1135,19 @@ struct WIFI_VAR {
 	u_int8_t fgSwRxReordering;
 	u_int8_t fgFlushRxReordering;
 	u_int8_t fgRxIcvErrDbg;
+	union {
+		uint32_t u4TxRxDescDump;
+		struct {
+			uint32_t fgDumpTxD: 1;        /* 0x01 */
+			uint32_t fgDumpTxDmad: 1;     /* 0x02 */
+			uint32_t fgDumpTxP: 1;        /* 0x04 */
+			uint32_t fgDumpReserved: 1;
+
+			uint32_t fgDumpRxD: 1;        /* 0x10 */
+			uint32_t fgDumpRxDmad: 1;     /* 0x20 */
+			uint32_t fgDumpRxDsegment: 1; /* 0x40 */
+		};
+	};
 	uint32_t u4BaShortMissTimeoutMs;
 	uint32_t u4BaMissTimeoutMs;
 
@@ -1323,9 +1336,6 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxs;
-	u_int8_t fgDumpTXD;
-	u_int8_t fgDumpRXD;
-	u_int8_t fgDumpTXP;
 
 	uint8_t ucUdpTspecUp;
 	uint8_t ucTcpTspecUp;

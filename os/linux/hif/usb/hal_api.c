@@ -87,6 +87,9 @@
 ********************************************************************************
 */
 
+#define MAX_DUMP_CMD_LEN	(128)
+#define MAX_DUMP_DATA_LEN	(128)
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -252,6 +255,7 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 		struct CMD_INFO *prCmdInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct USB_REQ *prUsbReq;
 	struct BUF_CTRL *prBufCtrl;
@@ -322,9 +326,7 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 	       ((TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) - u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR));
 	prBufCtrl->u4WrIdx = TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR;
 
-#if (CFG_DUMP_TXD == 1)
-#define MAX_DUMP_CMD_LEN	(128)
-	{
+	if (prAdapter->rWifiVar.fgDumpTxD) {
 		uint32_t dump_len = 0;
 
 		if (prBufCtrl->u4WrIdx > MAX_DUMP_CMD_LEN)
@@ -335,7 +337,6 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 		       prBufCtrl->u4WrIdx);
 		dumpMemory8(prBufCtrl->pucBuf, dump_len);
 	}
-#endif
 
 	prUsbReq->prPriv = (void *) prCmdInfo;
 	usb_fill_bulk_urb(prUsbReq->prUrb,
@@ -576,6 +577,7 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 		struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct USB_REQ *prUsbReq;
@@ -661,9 +663,7 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 		prBufCtrl->u4WrIdx += u4PaddingLength;
 	}
 
-#if (CFG_DUMP_TXD == 1)
-#define MAX_DUMP_DATA_LEN	(128)
-	{
+	if (prAdapter->rWifiVar.fgDumpTxD) {
 		uint32_t dump_len = 0;
 
 		if (prBufCtrl->u4WrIdx > MAX_DUMP_DATA_LEN)
@@ -674,7 +674,6 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 		       prBufCtrl->u4WrIdx);
 		dumpMemory8(prBufCtrl->pucBuf, dump_len);
 	}
-#endif
 
 	if (!prMsduInfo->pfTxDoneHandler)
 		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);

@@ -3679,8 +3679,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					QUEUE_INSERT_TAIL(prReturnedQue,
 						(struct QUE_ENTRY *)
 						prCurrSwRfb);
-					NIC_DUMP_RXD(prAdapter, prRxStatus);
-					NIC_DUMP_RXP(prCurrSwRfb->pvHeader,
+					NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
+					NIC_DUMP_ICV_RXP(prCurrSwRfb->pvHeader,
 						prCurrSwRfb->u2PacketLen);
 
 					continue;
@@ -4070,8 +4070,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					RX_NO_INTEREST_DROP_COUNT);
 				QUEUE_INSERT_TAIL(prReturnedQue,
 					(struct QUE_ENTRY *) prCurrSwRfb);
-				NIC_DUMP_RXD(prAdapter, prRxStatus);
-				NIC_DUMP_RXP(prCurrSwRfb->pvHeader,
+				NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
+				NIC_DUMP_ICV_RXP(prCurrSwRfb->pvHeader,
 						prCurrSwRfb->u2PacketLen);
 				break;
 			}

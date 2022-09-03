@@ -2147,13 +2147,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		prRxStatus = prSwRfb->prRxStatus;
 		ASSERT(prRxStatus);
 
-#if (CFG_DUMP_RXD == 1)
-		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
-			DBGLOG(HAL, INFO, "Dump RXD:\n");
-			DBGLOG_MEM8(HAL, INFO, prRxStatus,
-				prChipInfo->rxd_size);
-		}
-#endif
+		NIC_DUMP_RXD_HEADER(prAdapter, "Dump RXD:\n");
+		NIC_DUMP_RXD(prAdapter, prRxStatus, prChipInfo->rxd_size);
 
 		prSwRfb->ucPacketType =
 			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
@@ -3085,6 +3080,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4TotalLen;
 	void *pucSrc = NULL;
 	enum ENUM_CMD_TX_RESULT ret = CMD_TX_RESULT_SUCCESS;
+	struct ADAPTER *prAdapter;
 
 	KAL_HIF_TXRING_LOCK_DECLARATION();
 
@@ -3095,6 +3091,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prAdapter = prGlueInfo->prAdapter;
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prChipInfo->is_support_wacpu)
@@ -3185,16 +3182,11 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
 
-#if (CFG_DUMP_TXDMAD == 1)
-	DBGLOG(HAL, INFO, "Dump CMD TXDMAD: \n");
-	DBGLOG_MEM8(HAL, INFO, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
-#endif
-#if (CFG_DUMP_TXD == 1)
-	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.fgDumpTXD)) {
-		DBGLOG(HAL, INFO, "Dump CMD TXD:\n");
-		DBGLOG_MEM8(HAL, INFO, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
-	}
-#endif
+	NIC_DUMP_TXDMAD_HEADER(prAdapter, "Dump CMD TXDMAD:\n");
+	NIC_DUMP_TXDMAD(prAdapter, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+
+	NIC_DUMP_TXD_HEADER(prAdapter, "Dump CMD TXD:\n");
+	NIC_DUMP_TXD(prAdapter, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
@@ -3251,12 +3243,14 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
 	uint16_t u2Port = TX_RING_DATA0;
+	struct ADAPTER *prAdapter;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	u2Port = halTxRingDataSelect(
 		prGlueInfo->prAdapter, prToken->prMsduInfo);
@@ -3290,10 +3284,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
 
-#if (CFG_DUMP_TXDMAD == 1)
-	DBGLOG(HAL, INFO, "Dump TXDMAD: \n");
-	dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
-#endif
+	NIC_DUMP_TXDMAD_HEADER(prAdapter, "Dump TXDMAD:\n");
+	NIC_DUMP_TXDMAD(prAdapter, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);

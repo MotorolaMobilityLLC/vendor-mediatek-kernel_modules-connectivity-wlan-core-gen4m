@@ -75,19 +75,19 @@
  */
 #define WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS	(100)
 
-#define CFG_DUMP_TXDMAD		0
-#define CFG_DUMP_RXDMAD		0
-#if CFG_DUMP_NIC_DETAILS
-#define CFG_DUMP_TXD		1
-#define CFG_DUMP_TXP		1
-#define CFG_DUMP_RXD		1
-#else
-#define CFG_DUMP_TXD		0
-#define CFG_DUMP_TXP		0
-#define CFG_DUMP_RXD		0
-#endif
-
-#define CFG_DUMP_RXD_SEGMENT    1
+/**
+ * These static compile options have been moved to wifi.cfg controlled by
+ * "TRXDescDump" with bitmap settings:
+ *   TXP(0x04),        TXDMAD(0x02), TXD(0x01),
+ *   RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
+ *
+ * #define CFG_DUMP_TXDMAD
+ * #define CFG_DUMP_RXDMAD
+ * #define CFG_DUMP_TXD
+ * #define CFG_DUMP_TXP
+ * #define CFG_DUMP_RXD
+ * #define CFG_DUMP_RXD_SEGMENT
+ */
 
 #define WIFI_SER_L1_RST_DONE_TIMEOUT    100 /* in unit of ms */
 

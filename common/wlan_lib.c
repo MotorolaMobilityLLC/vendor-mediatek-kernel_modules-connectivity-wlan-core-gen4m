@@ -7977,6 +7977,19 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->fgRxIcvErrDbg = wlanCfgGetUint32(prAdapter,
 					"RxIcvErrDbg", FEATURE_DISABLED);
+	/**
+	 * Switching dumping TX/RX memory, set by bitmap format.
+	 * TXP(0x04),        TXDMAD(0x02), TXD(0x01),
+	 * RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
+	 */
+	prWifiVar->u4TxRxDescDump = wlanCfgGetUint32(prAdapter,
+					"TRXDescDump", 0x40);
+	DBGLOG(INIT, TRACE,
+		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD=%u,%u,%u/%u,%u,%u",
+		prWifiVar->fgDumpTxP, prWifiVar->fgDumpTxDmad,
+		prWifiVar->fgDumpTxD,
+		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
+		prWifiVar->fgDumpRxD);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
@@ -8395,15 +8408,6 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 			FEATURE_ENABLED);
 	prWifiVar->u4DrvOwnMode = wlanCfgGetUint32(prAdapter,
 			"drvOwnMode", 0);
-
-	prWifiVar->fgDumpTXD = wlanCfgGetInt32(prAdapter, "DumpTXD",
-			FEATURE_DISABLED);
-
-	prWifiVar->fgDumpTXP = wlanCfgGetInt32(prAdapter, "DumpTXP",
-			FEATURE_DISABLED);
-
-	prWifiVar->fgDumpRXD = wlanCfgGetInt32(prAdapter, "DumpRXD",
-			FEATURE_DISABLED);
 
 	/* Fast Path Config */
 	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(

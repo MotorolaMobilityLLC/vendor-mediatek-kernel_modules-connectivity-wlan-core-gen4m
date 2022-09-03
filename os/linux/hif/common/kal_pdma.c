@@ -1368,10 +1368,8 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		goto skip;
 	}
 
-#if (CFG_DUMP_RXDMAD == 1)
-	DBGLOG(HAL, INFO, "Dump RXDMAD: \n");
-	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
-#endif
+	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
+	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 
 	if (prMemOps->copyEvent &&
 	    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
@@ -1426,6 +1424,7 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	struct TXD_STRUCT *pTxD;
 	struct mt66xx_chip_info *prChipInfo;
 	void *pucDst = NULL;
+	struct ADAPTER *prAdapter;
 
 	ASSERT(prGlueInfo);
 	ASSERT(pucBuf);
@@ -1435,6 +1434,7 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
+	prAdapter = prGlueInfo->prAdapter;
 
 	if (prTxRing->u4UsedCnt + 1 >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, TRACE, "Force recycle port %d DMA resource.\n",
@@ -1489,17 +1489,12 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	pTxD->DMADONE = 0;
 
 	if (u2Port == prChipInfo->u2TxInitCmdPort) {
-#if (CFG_DUMP_TXDMAD == 1)
-		DBGLOG(HAL, INFO, "Dump CMD TXDMAD: \n");
-		dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
-#endif
-#if (CFG_DUMP_TXD == 1)
-		if (IS_FEATURE_ENABLED(
-				prGlueInfo->prAdapter->rWifiVar.fgDumpTXD)) {
-			DBGLOG(HAL, INFO, "Dump CMD TXD:\n");
-			dumpMemory8((uint8_t *)pucBuf, u4Len);
-		}
-#endif
+		NIC_DUMP_TXDMAD_HEADER(prAdapter, "Dump CMD TXDMAD:\n");
+		NIC_DUMP_TXDMAD(prAdapter,
+				(uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+
+		NIC_DUMP_TXD_HEADER(prAdapter, "Dump CMD TXD:\n");
+		NIC_DUMP_TXD(prAdapter, (uint8_t *)pucBuf, u4Len);
 	}
 
 	/* Increase TX_CTX_IDX, but write to register later. */
@@ -2207,10 +2202,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	uint8_t ucScatterCnt = 0;
 	uint8_t *pucRecvBuff;
 #endif
-#if CFG_DUMP_RXD_SEGMENT
 	u_int8_t fgSkip = FALSE;
 	u_int8_t fgSegmentFirst = FALSE;
-#endif /* CFG_DUMP_RXD_SEGMENT */
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -2237,10 +2230,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		DBGLOG(HAL, WARN,
 			"Skip Rx segmented data packet, SDL0[%u] LS0[%u]\n",
 			pRxD->SDLen0, pRxD->LastSec0);
-#if CFG_DUMP_RXD_SEGMENT
-		if (prRxRing->fgRxSegPkt == FALSE)
+
+		if (prAdapter->rWifiVar.fgDumpRxDsegment &&
+		    prRxRing->fgRxSegPkt == FALSE)
 			fgSegmentFirst = TRUE;
-#endif /* CFG_DUMP_RXD_SEGMENT */
+
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 		if (prRxRing->fgRxSegPkt == FALSE) {
 			u4CpuIdxScatter = u4CpuIdx;
@@ -2274,11 +2268,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 		if (prRxRing->pvPacket == NULL)
 #endif
-#if CFG_DUMP_RXD_SEGMENT
-		fgSkip = TRUE;
-#else /* CFG_DUMP_RXD_SEGMENT */
-		goto skip;
-#endif /* CFG_DUMP_RXD_SEGMENT */
+			if (prAdapter->rWifiVar.fgDumpRxDsegment)
+				fgSkip = TRUE;
+			else
+				goto skip;
 	}
 
 	prDmaBuf = &pRxCell->DmaBuf;
@@ -2296,14 +2289,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-#if (CFG_DUMP_RXDMAD == 1)
-	DBGLOG(HAL, INFO, "Dump RXDMAD: \n");
-	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
-#endif
+	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
+	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 
-#if CFG_DUMP_RXD_SEGMENT
-	/* dump rxd for large pkt */
-	if (fgSkip) {
+	if (prAdapter->rWifiVar.fgDumpRxDsegment && fgSkip) {
+		/* dump rxd for large pkt */
 		void *pvPayload = prSwRfb->pucRecvBuff;
 		uint32_t u4PayloadLen = pRxD->SDLen0;
 
@@ -2314,14 +2304,13 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 			pvPayload = prSwRfb->pvHeader;
 			u4PayloadLen = prSwRfb->u2PacketLen;
 
-			NIC_DUMP_RXD(prAdapter, prSwRfb->prRxStatus);
+			NIC_DUMP_ICV_RXD(prAdapter, prSwRfb->prRxStatus);
 		}
 
 		/* dump payload */
-		NIC_DUMP_RXP(pvPayload, u4PayloadLen);
+		NIC_DUMP_ICV_RXP(pvPayload, u4PayloadLen);
 		goto skip;
 	}
-#endif /* CFG_DUMP_RXD_SEGMENT */
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
