@@ -2678,18 +2678,40 @@ priv_get_string(struct net_device *prNetDev,
 		struct STA_RECORD *prStaRec = NULL;
 		struct RX_CTRL *prRxCtrl = NULL;
 		struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+		struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		struct MIB_STATS *prMibStats = prAdapter->rMibStats;
+#endif
 		struct PARAM_HW_MIB_INFO *prHwMibInfo;
 		struct PARAM_LINK_SPEED_EX rLinkSpeed;
 		uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 		pSwDbgCtrl = (struct CMD_SW_DBG_CTRL *)aucBuffer;
-		prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
+		prRxCtrl = &prAdapter->rRxCtrl;
 
 		prHwMibInfo = (struct PARAM_HW_MIB_INFO *)kalMemAlloc(
 			sizeof(struct PARAM_HW_MIB_INFO), VIR_MEM_TYPE);
 		if (!prHwMibInfo)
 			return -1;
+		kalMemZero(prHwMibInfo, sizeof(struct PARAM_HW_MIB_INFO));
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		prHwMibInfo->u2Index = 0;
+		prHwMibInfo->u2TagCount = 5;
+
+#define TAG_RANGE(_m, _n) (BITS(_m % 64, _n % 64))
+		/* 0~1, 17~18 */
+		prHwMibInfo->au8TagBitmap[0] = (
+			TAG_RANGE(UNI_CMD_MIB_CNT_RX_FCS_ERR,
+				UNI_CMD_MIB_CNT_RX_FIFO_OVERFLOW) |
+			TAG_RANGE(UNI_CMD_MIB_CNT_P_CCA_TIME,
+				UNI_CMD_MIB_CNT_S_CCA_TIME));
+		/* 74 */
+		prHwMibInfo->au8TagBitmap[1] = (
+			BIT(UNI_CMD_MIB_CNT_BSS1_FRAME_RETRY % 64)
+			);
+#else
 		prHwMibInfo->u4Index = 0;
+#endif
 
 		kalMemZero(arBssid, MAC_ADDR_LEN);
 		kalMemZero(&rQueryStaStatistics, sizeof(rQueryStaStatistics));
@@ -2721,8 +2743,13 @@ priv_get_string(struct net_device *prNetDev,
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
 					"Tx retry count = %d\n",
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					prMibStats->au4FrameRetryCnt[BSSID_1]
+#else
 					prHwMibInfo->rHwMibCnt
-					.au4FrameRetryCnt[BSSID_1]);
+					.au4FrameRetryCnt[BSSID_1]
+#endif
+					);
 
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
@@ -2741,14 +2768,24 @@ priv_get_string(struct net_device *prNetDev,
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
 					"Rx with CRC = %d\n",
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					prMibStats->u4RxFcsErrCnt
+#else
 					prHwMibInfo->rHwMibCnt
-					.u4RxFcsErrCnt);
+					.u4RxFcsErrCnt
+#endif
+					);
 
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
 					"Rx drop due to out of resource = %d\n",
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					prMibStats->u4RxFifoFullCnt
+#else
 					prHwMibInfo->rHwMibCnt
-					.u4RxFifoFullCnt);
+					.u4RxFifoFullCnt
+#endif
+					);
 
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
@@ -2759,14 +2796,24 @@ priv_get_string(struct net_device *prNetDev,
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
 					"False CCA(total) =%d\n",
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					prMibStats->u4PCcaTime
+#else
 					prHwMibInfo->rHwMibCnt
-					.u4PCcaTime);
+					.u4PCcaTime
+#endif
+					);
 
 					pos += kalScnprintf(buf + pos,
 					u4TotalLen - pos,
 					"False CCA(one-second) =%d\n",
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					prMibStats->u4SCcaTime
+#else
 					prHwMibInfo->rHwMibCnt
-					.u4SCcaTime);
+					.u4SCcaTime
+#endif
+					);
 				}
 			}
 		}
@@ -2877,6 +2924,8 @@ priv_get_string(struct net_device *prNetDev,
 			pos += kalScnprintf(buf + pos, u4TotalLen - pos,
 				"\n(STA) Not connected\n");
 		}
+		kalMemFree(prHwMibInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_HW_MIB_INFO));
 	}
 	break;
 #endif
@@ -4918,6 +4967,357 @@ static int priv_driver_get_sta_info(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+static int priv_driver_get_mib_info_uni(struct ADAPTER *prAdapter,
+	uint32_t u4BandIdx,
+	char *pcCommand,
+	int32_t i4TotalLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_HW_MIB_INFO *prParamMibInfo;
+	uint8_t idx;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	struct RX_CTRL *prRxCtrl;
+	struct MIB_STATS *prMibStats = &prAdapter->rMibStats[u4BandIdx];
+	uint64_t u4TxAmpdu, u4TxAmpduMpdu, u4TxAmpduAcked;
+	uint64_t per;
+	uint32_t per_rem;
+
+	DBGLOG(REQ, INFO, "Band index = %d\n", u4BandIdx);
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	prParamMibInfo = (struct PARAM_HW_MIB_INFO *)kalMemAlloc(
+		sizeof(struct PARAM_HW_MIB_INFO), VIR_MEM_TYPE);
+	if (!prParamMibInfo)
+		return -1;
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+		i4BytesWritten,
+		"Dump MIB info of IDX         = %d\n",
+		u4BandIdx);
+
+#define TAG_RANGE(_m, _n) (BITS(_m % 64, _n % 64))
+
+	kalMemZero(prParamMibInfo, sizeof(struct PARAM_HW_MIB_INFO));
+
+	prParamMibInfo->u2Index = (uint16_t)u4BandIdx;
+	prParamMibInfo->u2TagCount = 70;
+
+	/* 16~21, 23~25, 57~63 */
+	prParamMibInfo->au8TagBitmap[0] = (
+		TAG_RANGE(UNI_CMD_MIB_CNT_LEN_MISMATCH,
+			UNI_CMD_MIB_CNT_BCN_TX) |
+		TAG_RANGE(UNI_CMD_MIB_CNT_TX_BW_40MHZ,
+			UNI_CMD_MIB_CNT_TX_BW_160MHZ) |
+		TAG_RANGE(UNI_CMD_MIB_CNT_BSS0_RTS_TX_CNT,
+			UNI_CMD_MIB_CNT_BSS2_RTS_RETRY));
+	/* 64~80, 111~127 */
+	prParamMibInfo->au8TagBitmap[1] = (
+		TAG_RANGE(UNI_CMD_MIB_CNT_BSS3_RTS_RETRY,
+			UNI_CMD_MIB_CNT_BSS3_FRAME_RETRY_2) |
+		TAG_RANGE(UNI_CMD_MIB_CNT_TX_BW_320MHZ,
+			(UNI_CMD_MIB_CNT_BSS0_TX_DATA + 2)));
+	/* 192~211 */
+	prParamMibInfo->au8TagBitmap[3] = (
+		TAG_RANGE((UNI_CMD_MIB_CNT_RX_BYTE_MBSS0 - 1),
+			UNI_CMD_MIB_CNT_AMPDU_ACKED));
+
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryMibInfo,
+		prParamMibInfo, sizeof(struct PARAM_HW_MIB_INFO), &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		kalMemFree(prParamMibInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_HW_MIB_INFO));
+		return -1;
+	}
+
+	kalMemZero(prParamMibInfo, sizeof(struct PARAM_HW_MIB_INFO));
+
+	prParamMibInfo->u2Index = (uint16_t)u4BandIdx;
+	prParamMibInfo->u2TagCount = 74;
+
+	/* 0~3, 7, 10~14 */
+	prParamMibInfo->au8TagBitmap[0] = (
+		TAG_RANGE(UNI_CMD_MIB_CNT_RX_FCS_ERR,
+			UNI_CMD_MIB_CNT_AMDPU_RX_COUNT) |
+		BIT(UNI_CMD_MIB_CNT_CHANNEL_IDLE) |
+		TAG_RANGE(UNI_CMD_MIB_CNT_VEC_MISMATCH,
+			UNI_CMD_MIB_CNT_RX_OFDM_GREEN_MDRDY_TIME));
+
+	/* 128~191 */
+	prParamMibInfo->au8TagBitmap[2] = (
+		TAG_RANGE((UNI_CMD_MIB_CNT_BSS0_TX_DATA + 3),
+			(UNI_CMD_MIB_CNT_RX_BYTE_MBSS0 - 2)));
+
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryMibInfo,
+		prParamMibInfo, sizeof(struct PARAM_HW_MIB_INFO), &u4BufLen);
+
+	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		kalMemFree(prParamMibInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_HW_MIB_INFO));
+		return -1;
+	}
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Rx Related Counters===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx with CRC=%llu\n", prMibStats->u4RxFcsErrCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx drop due to out of resource=%llu\n",
+		prMibStats->u4RxFifoFullCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Mpdu=%llu\n", prMibStats->u4RxMpduCnt);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMpdu=%llu\n", prMibStats->u4RxAMPDUCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Vec Q Mismatch=%llu\n",
+		prMibStats->u4RxVectorMismatchCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx Len Mismatch=%llu\n",
+		prMibStats->u4RxLenMismatchCnt);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx data indicate total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx data retain total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx drop by SW total=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder miss=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_MISS_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder within=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_WITHIN_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder ahead=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_AHEAD_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx reorder behind=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_REORDER_BEHIND_COUNT));
+
+	do {
+		uint32_t u4AmsduCntx100 = 0;
+
+		if (RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT))
+			u4AmsduCntx100 = (uint32_t)div64_u64(
+				RX_GET_CNT(prRxCtrl,
+					RX_DATA_MSDU_IN_AMSDU_COUNT) * 100,
+				RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRx avg MSDU in AMSDU=%1d.%02d\n",
+			u4AmsduCntx100 / 100, u4AmsduCntx100 % 100);
+
+	} while (FALSE);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx total MSDU in AMSDU=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_MSDU_IN_AMSDU_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMSDU=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx AMSDU miss=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DATA_AMSDU_MISS_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx no StaRec drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_NO_STA_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx inactive BSS drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_INACTIVE_BSS_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx HS20 drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_HS20_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx low SwRfb drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_LESS_SW_RFB_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx dupicate drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_DUPICATE_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx MIC err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_MIC_ERROR_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx BAR handle=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_BAR_DROP_COUNT));
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx BAR delayed=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_BAR_DELAY_COUNT));
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx non-interest drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_NO_INTEREST_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx type err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx class err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT));
+
+#if 0
+#if defined(BELLWETHER) || defined(MT7990)
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+	"%s", "===MU TX Counters===\n");
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_BSCR2_ADDR + band_offset,
+	&mu_cnt[0]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR5_ADDR + band_offset,
+	&mu_cnt[1]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR6_ADDR + band_offset,
+	&mu_cnt[2]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR8_ADDR + band_offset,
+	&mu_cnt[3]);
+	HAL_MCR_RD(prAdapter, BN0_WF_MIB_TOP_TSCR7_ADDR + band_offset,
+	&mu_cnt[4]);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+	"\tMUBF=%u, MuToMuFail=%u (PPDU)\n",
+	mu_cnt[0] & BN0_WF_MIB_TOP_BSCR2_MUBF_TX_COUNT_MASK,
+	mu_cnt[3]);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+	"\tMuTotal=%u, MuOK=%u, SU_OK=%u (MPDU)\n",
+	mu_cnt[1],
+	mu_cnt[2],
+	mu_cnt[4]);
+#endif
+#endif
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Phy/Timing Related Counters===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tChannelIdleCnt=%llu\n",
+		prMibStats->u4ChannelIdleCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tCCA_NAV_Tx_Time=%llu\n",
+		prMibStats->u4CcaNavTx);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx_MDRDY_CNT=%llu\n",
+		prMibStats->u4MdrdyCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMdrdyTime CCK=%llu, OFDM=0x%x, OFDM_GREEN=0x%x\n",
+		prMibStats->u4CCKMdrdyCnt,
+		prMibStats->u4OFDMLGMixMdrdy,
+		prMibStats->u4OFDMGreenMdrdy);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPrim CCA Time=%llu\n",
+		prMibStats->u4PCcaTime);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tSec CCA Time=%llu\n",
+		prMibStats->u4SCcaTime);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPrim ED Time=%llu\n",
+		prMibStats->u4PEDTime);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"%s", "===Tx Related Counters(Generic)===\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tBeaconTxCnt=%llu\n",
+		prMibStats->u4BeaconTxCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 40MHz Cnt=%llu\n",
+		prMibStats->u4Tx40MHzCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 80MHz Cnt=%llu\n",
+		prMibStats->u4Tx80MHzCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 160MHz Cnt=%llu\n",
+		prMibStats->u4Tx160MHzCnt);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tTx 320MHz Cnt=%llu\n",
+		prMibStats->u4Tx320MHzCnt);
+
+	u4TxAmpdu = prMibStats->u4TxAmpdu;
+	u4TxAmpduMpdu = prMibStats->u4TxAmpduMpdu;
+	u4TxAmpduAcked = prMibStats->u4TxAmpduAcked;
+	per = (u4TxAmpduMpdu == 0 ?
+		0 : 1000 * (u4TxAmpduMpdu - u4TxAmpduAcked) / u4TxAmpduMpdu);
+	per_rem = do_div(per, 10);
+
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tAMPDU[Cnt:MpduCnt:MpduAckCnt:MpduPER]=[%u:%u:%u:%ld.%1ld%%]\n",
+		u4TxAmpdu, u4TxAmpduMpdu, u4TxAmpduAcked,
+		per, per_rem);
+
+	for (idx = 0; idx < BSSID_NUM; idx++) {
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"===BSSID[%d] Related Counters===\n", idx);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tBA Miss Cnt=%llu\n",
+			prMibStats->au4BaMissedCnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRTS Tx Cnt=%llu\n",
+			prMibStats->au4RtsTxCnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry Cnt=%llu\n",
+			prMibStats->au4FrameRetryCnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry >2 Cnt=%llu\n",
+			prMibStats->au4FrameRetry2Cnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tFrame Retry >3 Cnt=%llu\n",
+			prMibStats->au4FrameRetry3Cnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRTS Retry Cnt=%llu\n",
+			prMibStats->au4RtsRetryCnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tAck Failed Cnt=%llu\n",
+			prMibStats->au4AckFailedCnt[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tTxOk=%llu, TxData=%llu, TxByte=%llu\n",
+			prMibStats->au4TxCnt[idx],
+			prMibStats->au4TxData[idx],
+			prMibStats->au4TxByte[idx]);
+		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+			i4BytesWritten,
+			"\tRxOk=%llu, RxData=%llu, RxByte=%llu\n",
+			prMibStats->au4RxOk[idx],
+			prMibStats->au4RxData[idx],
+			prMibStats->au4RxByte[idx]);
+	}
+
+	/* Dummy delimiter insertion result */
+	DBGLOG(HAL, INFO, "===Dummy delimiter insertion result===\n");
+	DBGLOG(HAL, INFO, "\tRange[0:1:2:3:4]=[%llu:%llu:%llu:%llu:%llu]\n",
+		prMibStats->au4TxDdlmtRng[0],
+		prMibStats->au4TxDdlmtRng[1],
+		prMibStats->au4TxDdlmtRng[2],
+		prMibStats->au4TxDdlmtRng[3],
+		prMibStats->au4TxDdlmtRng[4]);
+
+	/* Per-MBSS T/RX Counters */
+	DBGLOG(HAL, INFO, "===MBSSID Related Counters===\n");
+	for (idx = 0; idx < 16; idx++) {
+		DBGLOG(HAL, INFO,
+			"\tID[%d] TxOk=%llu TxByte=%llu RxOk=%llu RxByte=%llu\n",
+			idx, prMibStats->au4MbssTxOk[idx],
+			prMibStats->au4MbssTxByte[idx],
+			prMibStats->au4MbssRxOk[idx],
+			prMibStats->au4MbssRxByte[idx]);
+	}
+
+	kalMemFree(prParamMibInfo, VIR_MEM_TYPE,
+		sizeof(struct PARAM_HW_MIB_INFO));
+
+	return i4BytesWritten;
+}
+
+#else
 static int priv_driver_get_mib_info_default(struct ADAPTER *prAdapter,
 	uint32_t u4BandIdx,
 	char *pcCommand,
@@ -5254,6 +5654,7 @@ static int priv_driver_get_mib_info_default(struct ADAPTER *prAdapter,
 
 	return i4BytesWritten;
 }
+#endif
 
 static int priv_driver_get_mib_info(struct net_device *prNetDev,
 				    char *pcCommand, int i4TotalLen)
@@ -5283,12 +5684,16 @@ static int priv_driver_get_mib_info(struct net_device *prNetDev,
 	else if (i4Argc >= 2)
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4BandIdx);
 
-	if (prDbgOps->showMibInfo)
-		return prDbgOps->showMibInfo(
-			prGlueInfo->prAdapter, u4BandIdx, pcCommand, i4TotalLen);
-	else
-		return priv_driver_get_mib_info_default(
-			prGlueInfo->prAdapter, u4BandIdx, pcCommand, i4TotalLen);
+	if (u4BandIdx >= ENUM_BAND_NUM)
+		return -1;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return priv_driver_get_mib_info_uni(
+		prGlueInfo->prAdapter, u4BandIdx, pcCommand, i4TotalLen);
+#else
+	return priv_driver_get_mib_info_default(
+		prGlueInfo->prAdapter, u4BandIdx, pcCommand, i4TotalLen);
+#endif
 }
 
 static int priv_driver_set_fw_log(struct net_device *prNetDev,

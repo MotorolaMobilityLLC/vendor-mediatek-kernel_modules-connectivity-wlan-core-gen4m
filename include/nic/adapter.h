@@ -1609,6 +1609,69 @@ struct HOST_SUSPEND_NOTIFY_INFO {
 	uint32_t u4Shift;
 };
 
+#if CFG_SUPPORT_MSP
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct MIB_STATS {
+	uint64_t u4RxFcsErrCnt;
+	uint64_t u4RxFifoFullCnt;
+	uint64_t u4RxMpduCnt;
+	uint64_t u4RxAMPDUCnt;
+	uint64_t u4RxTotalByte;
+	uint64_t u4RxValidAMPDUSF;
+	uint64_t u4RxValidByte;
+	uint64_t u4ChannelIdleCnt;
+	uint64_t u4RxVectorDropCnt;
+	uint64_t u4DelimiterFailedCnt;
+	uint64_t u4RxVectorMismatchCnt;
+	uint64_t u4MdrdyCnt;
+	uint64_t u4CCKMdrdyCnt;
+	uint64_t u4OFDMLGMixMdrdy;
+	uint64_t u4OFDMGreenMdrdy;
+	uint64_t u4PFDropCnt;
+	uint64_t u4RxLenMismatchCnt;
+	uint64_t u4PCcaTime;
+	uint64_t u4SCcaTime;
+	uint64_t u4CcaNavTx;
+	uint64_t u4PEDTime;
+	uint64_t u4BeaconTxCnt;
+	uint64_t u4Tx20MHzCnt;
+	uint64_t u4Tx40MHzCnt;
+	uint64_t u4Tx80MHzCnt;
+	uint64_t u4Tx160MHzCnt;
+	uint64_t u4Tx320MHzCnt;
+	uint64_t u8ObssAirTime;
+	uint64_t u8NonWifiAirTime;
+	uint64_t u8TxDurCnt;
+	uint64_t u8RxDurCnt;
+	uint64_t u8BACnt;
+	uint64_t u4Mac2PHYTxTime;
+	uint64_t u4MacRxFcsOkCnt;
+	uint64_t u4RxOutOfRangeCnt;
+	uint64_t au4RtsTxCnt[BSSID_NUM];
+	uint64_t au4RtsRetryCnt[BSSID_NUM];
+	uint64_t au4BaMissedCnt[BSSID_NUM];
+	uint64_t au4AckFailedCnt[BSSID_NUM];
+	uint64_t au4FrameRetryCnt[BSSID_NUM];
+	uint64_t au4FrameRetry2Cnt[BSSID_NUM];
+	uint64_t au4FrameRetry3Cnt[BSSID_NUM];
+	uint64_t au4TxDdlmtRng[5];
+	uint64_t au4TxCnt[BSSID_NUM];
+	uint64_t au4TxData[BSSID_NUM];
+	uint64_t au4TxByte[BSSID_NUM];
+	uint64_t au4RxOk[BSSID_NUM];
+	uint64_t au4RxData[BSSID_NUM];
+	uint64_t au4RxByte[BSSID_NUM];
+	uint64_t au4MbssTxOk[16];
+	uint64_t au4MbssTxByte[16];
+	uint64_t au4MbssRxOk[16];
+	uint64_t au4MbssRxByte[16];
+	uint64_t u4TxAmpdu;
+	uint64_t u4TxAmpduMpdu;
+	uint64_t u4TxAmpduAcked;
+};
+#endif
+#endif
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1833,6 +1896,10 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_MSP
 	struct EVENT_WLAN_INFO rEventWlanInfo;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	struct MIB_STATS rMibStats[ENUM_BAND_NUM];
+#endif
 #endif
 
 	struct PARAM_LINK_SPEED_EX rLinkQuality;

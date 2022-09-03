@@ -523,7 +523,6 @@ struct CHIP_DBG_OPS mt6655_DebugOps = {
 	.showPleInfo = connac3x_show_ple_info,
 	.showTxdInfo = connac3x_show_txd_Info,
 	.showWtblInfo = connac3x_show_wtbl_info,
-	.showMibInfo = connac3x_show_mib_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)

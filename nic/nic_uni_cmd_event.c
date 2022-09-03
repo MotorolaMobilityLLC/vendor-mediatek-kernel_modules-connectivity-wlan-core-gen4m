@@ -140,6 +140,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_IPV6_ADDRESS] = nicUniCmdOffloadIPV6,
 	[CMD_ID_GET_LTE_CHN] = nicUniCmdGetIdcChnl,
 	[CMD_ID_ROAMING_TRANSIT] = nicUniCmdRoaming,
+	[CMD_ID_MIB_INFO] = nicUniCmdMibInfo,
 	[CMD_ID_GET_STA_STATISTICS] = nicUniCmdGetStaStatistics,
 	[CMD_ID_GET_STATISTICS] = nicUniCmdGetStatistics,
 	[CMD_ID_GET_LINK_QUALITY] = nicUniCmdGetLinkQuality,
@@ -5343,6 +5344,60 @@ uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdMibInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct PARAM_HW_MIB_INFO *prParamMibInfo = {0};
+	struct UNI_CMD_MIB_INFO *uni_cmd;
+	struct UNI_CMD_MIB_DATA *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint8_t i, j, count = 0;
+	uint32_t max_cmd_len;
+
+	if (info->ucCID != CMD_ID_MIB_INFO ||
+	    info->u4SetQueryInfoLen != sizeof(*prParamMibInfo))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prParamMibInfo = (struct PARAM_HW_MIB_INFO *) info->pucInfoBuffer;
+	if (prParamMibInfo->u2TagCount > MAX_MIB_TAG_CNT)
+		return WLAN_STATUS_INVALID_DATA;
+
+	max_cmd_len = sizeof(struct UNI_CMD_MIB_INFO) +
+		sizeof(struct UNI_CMD_MIB_DATA) * prParamMibInfo->u2TagCount;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MIB,
+		max_cmd_len, nicUniEventMibInfo, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_MIB_INFO *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MIB_DATA *) uni_cmd->aucTlvBuffer;
+	uni_cmd->ucBand = (uint8_t)prParamMibInfo->u2Index;
+
+	for (i = 0;
+		i < ARRAY_SIZE(prParamMibInfo->au8TagBitmap) / sizeof(uint64_t);
+		i++) {
+		for (j = 0; j < sizeof(uint64_t) * 8; j++) {
+			if (prParamMibInfo->au8TagBitmap[i] & BIT(j)) {
+				tag->u2Tag = UNI_CMD_MIB_DATA_TAG;
+				tag->u2Length = sizeof(*tag);
+				tag->u4Counter = i * 64 + j;
+				DBGLOG(REQ, LOUD, "mibIdx:%u len:%u\n",
+					i * 64 + j, tag->u2Length);
+				tag += 1;
+				count += 1;
+			}
+			if (count == prParamMibInfo->u2TagCount)
+				goto uni_cmd_mib_done;
+		}
+	}
+
+uni_cmd_mib_done:
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -7336,6 +7391,169 @@ void nicUniEventRfTestHandler(struct ADAPTER
 				WLAN_STATUS_SUCCESS);
 	}
 
+}
+
+void nicUniEventMibInfo(struct ADAPTER *ad,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	uint8_t *tag;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_MIB_INFO);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	uint16_t tags_len = data_len - fixed_len;
+	uint16_t offset = 0;
+	uint8_t i = 0;
+	uint16_t u2BandIdx;
+	uint32_t u4QueryInfoLen = sizeof(struct PARAM_HW_MIB_INFO);
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_MIB_INFO *evt =
+		(struct UNI_EVENT_MIB_INFO *) uni_evt->aucBuffer;
+	struct PARAM_HW_MIB_INFO *prParamMibInfo;
+	struct GLUE_INFO *prGlueInfo = ad->prGlueInfo;
+	struct MIB_STATS *prMibStats;
+	uint64_t *rMibMapTable[UNI_CMD_MIB_CNT_MAX_NUM];
+
+	prParamMibInfo = (struct PARAM_HW_MIB_INFO *)
+			    prCmdInfo->pvInformationBuffer;
+	u2BandIdx = (uint16_t)evt->ucBand;
+	if (u2BandIdx >= ENUM_BAND_NUM)
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_INVALID_DATA);
+	prMibStats = &ad->rMibStats[u2BandIdx];
+
+	/* init mib mapping table */
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_FCS_ERR] = &prMibStats->u4RxFcsErrCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_FIFO_OVERFLOW] =
+		&prMibStats->u4RxFifoFullCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_MPDU] = &prMibStats->u4RxMpduCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_AMDPU_RX_COUNT] =
+		&prMibStats->u4RxAMPDUCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_TOTAL_BYTE] =
+		&prMibStats->u4RxTotalByte;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_VALID_AMPDU_SF] =
+		&prMibStats->u4RxValidAMPDUSF;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_VALID_BYTE] =
+		&prMibStats->u4RxValidByte;
+	rMibMapTable[UNI_CMD_MIB_CNT_CHANNEL_IDLE] =
+		&prMibStats->u4ChannelIdleCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_VEC_DROP] = &prMibStats->u4RxVectorDropCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_DELIMITER_FAIL] =
+		&prMibStats->u4DelimiterFailedCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_VEC_MISMATCH] =
+		&prMibStats->u4RxVectorMismatchCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_MDRDY] = &prMibStats->u4MdrdyCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_CCK_MDRDY_TIME] =
+		&prMibStats->u4CCKMdrdyCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_OFDM_LG_MIXED_MDRDY_TIME] =
+		&prMibStats->u4OFDMLGMixMdrdy;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_OFDM_GREEN_MDRDY_TIME] =
+		&prMibStats->u4OFDMGreenMdrdy;
+	rMibMapTable[UNI_CMD_MIB_CNT_PF_DROP] = &prMibStats->u4PFDropCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_LEN_MISMATCH] =
+		&prMibStats->u4RxLenMismatchCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_P_CCA_TIME] = &prMibStats->u4PCcaTime;
+	rMibMapTable[UNI_CMD_MIB_CNT_S_CCA_TIME] = &prMibStats->u4SCcaTime;
+	rMibMapTable[UNI_CMD_MIB_CNT_CCA_NAV_TX_TIME] = &prMibStats->u4CcaNavTx;
+	rMibMapTable[UNI_CMD_MIB_CNT_P_ED_TIME] = &prMibStats->u4PEDTime;
+	rMibMapTable[UNI_CMD_MIB_CNT_BCN_TX] = &prMibStats->u4BeaconTxCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_BW_20MHZ] = &prMibStats->u4Tx20MHzCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_BW_40MHZ] = &prMibStats->u4Tx40MHzCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_BW_80MHZ] = &prMibStats->u4Tx80MHzCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_BW_160MHZ] = &prMibStats->u4Tx160MHzCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_BW_320MHZ] = &prMibStats->u4Tx320MHzCnt;
+	rMibMapTable[UNI_CMD_RMAC_CNT_OBSS_AIRTIME] =
+		&prMibStats->u8ObssAirTime;
+	rMibMapTable[UNI_CMD_RMAC_CNT_NONWIFI_AIRTIME] =
+		&prMibStats->u8NonWifiAirTime;
+	rMibMapTable[UNI_CMD_MIB_CNT_TX_DUR_CNT] = &prMibStats->u8TxDurCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_DUR_CNT] = &prMibStats->u8RxDurCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_BA_CNT] = &prMibStats->u8BACnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_MAC2PHY_TX_TIME] =
+		&prMibStats->u4Mac2PHYTxTime;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_OUT_OF_RANGE_COUNT] =
+		&prMibStats->u4RxOutOfRangeCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_RX_FCS_OK] = &prMibStats->u4MacRxFcsOkCnt;
+	rMibMapTable[UNI_CMD_MIB_CNT_AMPDU] = &prMibStats->u4TxAmpdu;
+	rMibMapTable[UNI_CMD_MIB_CNT_AMPDU_MPDU] = &prMibStats->u4TxAmpduMpdu;
+	rMibMapTable[UNI_CMD_MIB_CNT_AMPDU_ACKED] = &prMibStats->u4TxAmpduAcked;
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_RTS_TX_CNT + i] =
+			&prMibStats->au4RtsTxCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_RTS_RETRY + i] =
+			&prMibStats->au4RtsRetryCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_BA_MISS + i] =
+			&prMibStats->au4BaMissedCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_ACK_FAIL + i] =
+			&prMibStats->au4AckFailedCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_FRAME_RETRY + i] =
+			&prMibStats->au4FrameRetryCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_FRAME_RETRY_2 + i] =
+			&prMibStats->au4FrameRetry2Cnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_FRAME_RETRY_3 + i] =
+			&prMibStats->au4FrameRetry3Cnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_TX + i] =
+			&prMibStats->au4TxCnt[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_TX_DATA + i] =
+			&prMibStats->au4TxData[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_BSS0_TX_BYTE + i] =
+			&prMibStats->au4TxByte[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_RX_OK_BSS0 + i] =
+			&prMibStats->au4RxOk[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_RX_BYTE_BSS0 + i] =
+			&prMibStats->au4RxByte[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_RX_DATA_BSS0 + i] =
+			&prMibStats->au4RxData[i];
+	}
+
+	for (i = 0; i < 16; i++) {
+		rMibMapTable[UNI_CMD_MIB_CNT_MBSS0_TX_OK + i] =
+			&prMibStats->au4MbssTxOk[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_MBSS0_TX_BYTE + i] =
+			&prMibStats->au4MbssTxByte[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_RX_OK_MBSS0 + i] =
+			&prMibStats->au4MbssRxOk[i];
+		rMibMapTable[UNI_CMD_MIB_CNT_RX_BYTE_MBSS0 + i] =
+			&prMibStats->au4MbssRxByte[i];
+	}
+
+	for (i = 0; i < 5; i++) {
+		rMibMapTable[UNI_CMD_MIB_CNT_TX_DDLMT_RNG0 + i] =
+			&prMibStats->au4TxDdlmtRng[i];
+	}
+
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		if (i >= MAX_MIB_TAG_CNT)
+			break;
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_MIB_DATA_TAG: {
+			struct UNI_EVENT_MIB_DATA *tlv =
+				(struct UNI_EVENT_MIB_DATA *) tag;
+			uint64_t u4Counter = tlv->u4Counter;
+
+			if (u4Counter >= UNI_CMD_MIB_CNT_MAX_NUM)
+				continue;
+			prParamMibInfo->arMibInfo[i].u4Counter = u4Counter;
+			prParamMibInfo->arMibInfo[i].u8Data = tlv->u8Data;
+			if (rMibMapTable[u4Counter]) {
+				*(rMibMapTable[u4Counter]) = tlv->u8Data;
+				DBGLOG(REQ, LOUD, "mib idx:%u data:%llu\n",
+						u4Counter,
+						*rMibMapTable[u4Counter]);
+				i += 1;
+			}
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
 void nicUniEventStaStatistics(struct ADAPTER

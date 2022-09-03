@@ -382,7 +382,6 @@ struct CHIP_DBG_OPS bellwether_DebugOps = {
 	.showPleInfo = connac3x_show_ple_info,
 	.showTxdInfo = connac3x_show_txd_Info,
 	.showWtblInfo = connac3x_show_wtbl_info,
-	.showMibInfo = connac3x_show_mib_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = connac3x_show_dmashdl_info,

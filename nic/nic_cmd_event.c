@@ -2292,7 +2292,45 @@ void nicCmdEventQueryWlanInfo(struct ADAPTER *prAdapter,
 	}
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct PARAM_HW_MIB_INFO *prParamMibInfo;
+	struct EVENT_MIB_INFO *prEventMibInfo;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
 
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	prEventMibInfo = (struct EVENT_MIB_INFO *) pucEventBuf;
+
+	DBGLOG(RSN, INFO, "unified cmd: %s\n", __func__);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	u4QueryInfoLen = sizeof(struct PARAM_HW_MIB_INFO);
+	prParamMibInfo = (struct PARAM_HW_MIB_INFO *)
+			    prCmdInfo->pvInformationBuffer;
+	if (prEventMibInfo && prParamMibInfo) {
+		kalMemCopy(&prParamMibInfo->arMibInfo,
+			   &prEventMibInfo->arMibInfo,
+			   sizeof(struct MIB_INFO) * MAX_MIB_TAG_CNT);
+	}
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+}
+#else
 void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
@@ -2329,6 +2367,7 @@ void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
 		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
+#endif
 #endif
 
 uint32_t nicEventQueryTxResourceEntry(struct ADAPTER *prAdapter,

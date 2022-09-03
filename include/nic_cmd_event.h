@@ -3383,12 +3383,18 @@ struct EVENT_WLAN_INFO {
 };
 
 /* EVENT_ID_MIB_INFO */
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct EVENT_MIB_INFO {
+	struct MIB_INFO arMibInfo[MAX_MIB_TAG_CNT];
+};
+#else
 struct EVENT_MIB_INFO {
 	struct HW_MIB_COUNTER	    rHwMibCnt;
 	struct HW_MIB2_COUNTER	    rHwMib2Cnt;
 	struct HW_TX_AMPDU_METRICS	    rHwTxAmpduMts;
 
 };
+#endif
 #endif
 
 #if (CFG_WIFI_GET_DPD_CACHE == 1)

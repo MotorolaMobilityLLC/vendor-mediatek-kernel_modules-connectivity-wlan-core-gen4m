@@ -558,10 +558,6 @@ struct CHIP_DBG_OPS {
 		char *pcCommand, int i4TotalLen,
 		struct TX_VECTOR_BBP_LATCH *prTxV);
 	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
-	int32_t (*showMibInfo)(struct ADAPTER *prAdapter,
-		uint32_t u4Index,
-		char *pcCommand,
-		int32_t i4TotalLen);
 
 #if CFG_SUPPORT_LLS
 	void (*get_rx_link_stats)(
@@ -1026,11 +1022,6 @@ int32_t connac3x_show_wtbl_info(
 	char *pcCommand,
 	int i4TotalLen);
 int32_t connac3x_show_umac_wtbl_info(
-	struct ADAPTER *prAdapter,
-	uint32_t u4Index,
-	char *pcCommand,
-	int i4TotalLen);
-int32_t connac3x_show_mib_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
 	char *pcCommand,

@@ -340,6 +340,8 @@
 #define MAC_ICS_MODE		2
 #define PHY_ICS_MODE		3
 #endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
+
+#define MAX_MIB_TAG_CNT		74
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2757,6 +2759,25 @@ struct PARAM_HW_WLAN_INFO {
 	struct PARAM_PEER_TX_COUNTER_ALL rWtblTxCounter;
 };
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct MIB_INFO {
+	uint32_t u4Counter;
+	uint64_t u8Data;
+};
+
+struct PARAM_HW_MIB_INFO {
+	uint16_t u2Index;
+	uint16_t u2TagCount;
+	/*
+	 * au8TagBitmap[0]: mibIdx 0~63
+	 * au8TagBitmap[1]: mibIdx 64~127
+	 * au8TagBitmap[2]: mibIdx 128~191
+	 * au8TagBitmap[3]: mibIdx 192~255
+	 */
+	uint64_t au8TagBitmap[4];
+	struct MIB_INFO arMibInfo[MAX_MIB_TAG_CNT];
+};
+#else
 struct HW_TX_AMPDU_METRICS {
 	uint32_t u4TxSfCnt;
 	uint32_t u4TxAckSfCnt;
@@ -2829,6 +2850,7 @@ struct PARAM_HW_MIB_INFO {
 	struct HW_MIB2_COUNTER	rHwMib2Cnt;
 	struct HW_TX_AMPDU_METRICS	rHwTxAmpduMts;
 };
+#endif
 #endif
 
 #if CFG_WIFI_TXPWR_TBL_DUMP
