@@ -1157,6 +1157,7 @@ struct UNI_CMD_STAREC_INSTALL_KEY3 {
 } __KAL_ATTRIB_PACKED__;
 
 /* MLR information (Tag 0x2d) */
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_MLR_INFO {
 	uint16_t  u2Tag;		/* Tag = 0x2d */
 	uint16_t  u2Length;
@@ -6190,6 +6191,7 @@ struct UNI_EVENT_BSS_ER_TX_MODE {
 	uint8_t aucPadding2[16];
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MLR_FSM_UPDATE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
