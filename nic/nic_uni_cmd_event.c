@@ -8830,7 +8830,7 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_P2P_TAG_GC_CSA_PARAM: {
 			struct UNI_EVENT_GC_CSA_PARAM *csa =
 				(struct UNI_EVENT_GC_CSA_PARAM *)tag;
-			struct EVENT_GC_CSA_T legacy;
+			struct EVENT_GC_CSA_T legacy = {0};
 
 			legacy.ucBssIndex = csa->ucBssIndex;
 			legacy.ucChannel = csa->ucChannel;
