@@ -55,27 +55,12 @@ struct FW_LOG_INFO {
 	struct FW_LOG_OPS *ops;
 };
 
-#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO) || IS_ENABLED(CFG_MTK_WIFI_FW_LOG_EMI)
 uint8_t *fw_log_type_to_str(enum ENUM_FW_LOG_CTRL_TYPE eType);
 uint32_t fw_log_init(struct ADAPTER *ad);
 void fw_log_deinit(struct ADAPTER *ad);
 uint32_t fw_log_start(struct ADAPTER *ad);
 void fw_log_stop(struct ADAPTER *ad);
 int32_t fw_log_handler(void);
-#else
-static inline uint8_t *fw_log_type_to_str(enum ENUM_FW_LOG_CTRL_TYPE eType)
-{ return ""; }
-static inline uint32_t fw_log_init(struct ADAPTER *ad)
-{ return 0; }
-static inline void fw_log_deinit(struct ADAPTER *ad)
-{}
-static inline uint32_t fw_log_start(struct ADAPTER *ad)
-{ return 0; }
-static inline void fw_log_stop(struct ADAPTER *ad)
-{}
-static inline int32_t fw_log_handler(void)
-{ return 0; }
-#endif
 
 #endif /* _FW_LOG_H */
 

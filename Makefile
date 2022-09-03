@@ -1468,7 +1468,8 @@ endif
 # ---------------------------------------------------
 MGMT_OBJS += $(MGMT_DIR)stats.o
 
-CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o
+CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o \
+              $(CHIPS_CMM)fw_log.o
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o \
@@ -1481,11 +1482,9 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
               $(CHIPS_CMM)dbg_connac3x.o \
               $(CHIPS_CMM)dbg_wtbl_connac3x.o
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_MMIO), y)
-        CHIPS_OBJS += $(CHIPS_CMM)fw_log.o
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_mmio.o
     endif
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_EMI), y)
-        CHIPS_OBJS += $(CHIPS_CMM)fw_log.o
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_emi.o
     endif
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
