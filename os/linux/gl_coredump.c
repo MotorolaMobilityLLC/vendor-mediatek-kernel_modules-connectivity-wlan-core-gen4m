@@ -750,28 +750,28 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
 	struct cr_region *region;
-	uint32_t idx = 0;
+	uint32_t i = 0, j = 0;
 	int ret = 0;
 
 	if (mem->cr_region_num == 0)
 		goto exit;
 
-	for (idx = 0, region = mem->cr_regions;
-	     idx < mem->cr_region_num;
-	     idx++, region++) {
+	for (i = 0, region = mem->cr_regions;
+	     i < mem->cr_region_num;
+	     i++, region++) {
 		if (!region->buf)
 			continue;
 
-		if (kalDevRegReadRange(glue,
-				       region->base,
-				       region->buf,
-				       region->size) == FALSE) {
-			DBGLOG(INIT, ERROR,
-				"Read mem region failed, 0x%x 0x%x\n",
-				region->base,
-				region->size);
-			ret = -ENOMEM;
-			break;
+		for (j = 0; j < region->size; j += 4) {
+			u_int8_t res = TRUE;
+
+			res = kalDevRegRead(glue,
+					    region->base + j,
+					    (uint32_t *)&region->buf[j]);
+			if (res == FALSE)
+				DBGLOG(INIT, ERROR,
+					"Read cr region failed, 0x%x 0x%x j=0x%x\n",
+					region->base, region->size, j);
 		}
 		region->ready = TRUE;
 	}
