@@ -5222,7 +5222,6 @@ uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		config_tag->fgSmesh = FALSE;
 		config_tag->ucHwBssIndex = cmd->ucBssIndex;
 		config_tag->ucMuarIdx = 0xFF;
-		config_tag->ucMuarIdx = ucIdx;
 		config_tag->ucEntryAdd = TRUE;
 		COPY_MAC_ADDR(config_tag->aucMacAddr, cmd->arAddress[ucIdx]);
 	}
