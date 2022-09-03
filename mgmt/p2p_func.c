@@ -7622,6 +7622,7 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		uint32_t *num_freq_list)
 {
 	struct BSS_INFO *prAisBssInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	DBGLOG(P2P, INFO, "iftype: %d\n", eIftype);
 
@@ -7636,15 +7637,15 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		if (prAdapter->fgIsHwSupport6G)
 			*num_freq_list += p2pFunGetTopPreferFreqByBand(
 				prAdapter,
-				BAND_6G, MAX_BW_80MHZ,
+				BAND_6G, prWifiVar->ucP2p6gBandwidth,
 				MAX_6G_BAND_CHN_NUM,
 				&freq_list[*num_freq_list]);
 #endif
 		*num_freq_list += p2pFunGetTopPreferFreqByBand(prAdapter,
-			BAND_5G, MAX_BW_80MHZ,
+			BAND_5G, prWifiVar->ucP2p5gBandwidth,
 			MAX_5G_BAND_CHN_NUM,
 			&freq_list[*num_freq_list]);
-	} else if (prAdapter->rWifiVar.eDbdcMode ==
+	} else if (prWifiVar->eDbdcMode ==
 		ENUM_DBDC_MODE_DISABLED) {
 		/* DBDC disabled */
 		DBGLOG(P2P, INFO,
@@ -7669,13 +7670,13 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			if (prAdapter->fgIsHwSupport6G)
 				*num_freq_list += p2pFunGetTopPreferFreqByBand(
 					prAdapter,
-					BAND_6G, MAX_BW_80MHZ,
+					BAND_6G, prWifiVar->ucP2p6gBandwidth,
 					MAX_6G_BAND_CHN_NUM,
 					&freq_list[*num_freq_list]);
 #endif
 			*num_freq_list += p2pFunGetTopPreferFreqByBand(
 				prAdapter,
-				BAND_5G, MAX_BW_80MHZ,
+				BAND_5G, prWifiVar->ucP2p5gBandwidth,
 				MAX_5G_BAND_CHN_NUM,
 				&freq_list[*num_freq_list]);
 
@@ -7695,7 +7696,7 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			/* Add 2G channels */
 			*num_freq_list += p2pFunGetTopPreferFreqByBand(
 				prAdapter,
-				BAND_2G4, MAX_BW_20MHZ,
+				BAND_2G4, prWifiVar->ucP2p2gBandwidth,
 				MAX_2G_BAND_CHN_NUM,
 				&freq_list[*num_freq_list]);
 		}
@@ -7988,13 +7989,14 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		if (ucBandIdx == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetVhtS1(prChnRank->ucChannel,
-				VHT_OP_CHANNEL_WIDTH_80) == 0)
+				rlmMaxBwToVhtBw(eChnlBw)) == 0)
 			continue;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
+		/* If eChnlBw == MAX_BW_320MHZ, it will skip 160BW channel */
 		if (ucBandIdx == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetHe6gS1(prChnRank->ucChannel,
-				CW_80MHZ) == 0)
+				rlmMaxBwToVhtBw(eChnlBw)) == 0)
 			continue;
 #endif
 
@@ -8004,6 +8006,18 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		ucInUsedCHNumber++;
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Add 6G 160BW channel after 320BW channel */
+	if (eBandSel & BIT(BAND_6G) && eChnlBw >= MAX_BW_320MHZ) {
+		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum = 197;
+		(paucSortChannelList+ucInUsedCHNumber)->eBand = BAND_6G;
+		ucInUsedCHNumber++;
+		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum = 213;
+		(paucSortChannelList+ucInUsedCHNumber)->eBand = BAND_6G;
+		ucInUsedCHNumber++;
+	}
+#endif
 
 	/*
 	 * 4. Dump the Result
