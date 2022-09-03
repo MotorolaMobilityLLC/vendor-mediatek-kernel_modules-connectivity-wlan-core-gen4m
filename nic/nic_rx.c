@@ -3198,7 +3198,12 @@ uint32_t nicRxNANPMFCheck(struct ADAPTER *prAdapter,
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
 			if (prSwRfb->prStaRec->fgIsTxKeyReady == TRUE) {
 				/* NAN Todo: Not HW_MAC_RX_DESC here */
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+				if (
+				HAL_MAC_CONNAC3X_RX_STATUS_IS_CIPHER_MISMATCH(
+				(struct HW_MAC_CONNAC3X_RX_DESC *)prSwRfb
+						->prRxStatus) == TRUE) {
+#elif (CFG_SUPPORT_CONNAC2X == 1)
 				if (HAL_MAC_CONNAC2X_RX_STATUS_IS_CIPHER_MISMATCH(
 					(struct HW_MAC_CONNAC2X_RX_DESC *)prSwRfb
 							->prRxStatus) == TRUE) {
