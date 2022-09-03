@@ -259,6 +259,9 @@
 #define WLAN_LEGACY_MAX_BA_SIZE 64
 #define WLAN_HE_MAX_BA_SIZE 256
 #define WLAN_EHT_MAX_BA_SIZE 1024
+/* Add to the negotiated WinSize to cope with Ball Behind after Fall Ahead */
+#define WLAN_RX_BA_EXT_SIZE 64
+#define WLAN_RX_BA_EXT_MAX_SIZE 256
 
 /* Define for wifi path usage */
 #define WLAN_FLAG_2G4_WF0		BIT(0)	/*1: support, 0: NOT support */

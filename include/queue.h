@@ -115,20 +115,19 @@ struct QUE {
 
 #define QUEUE_INITIALIZE(prQueue) \
 	{ \
-	    (prQueue)->prHead = (struct QUE_ENTRY *)NULL; \
-	    (prQueue)->prTail = (struct QUE_ENTRY *)NULL; \
+	    (prQueue)->prHead = NULL; \
+	    (prQueue)->prTail = NULL; \
 	    (prQueue)->u4NumElem = 0; \
 	    KAL_MB_W(); \
 	}
 
-#define QUEUE_IS_EMPTY(prQueue)	\
-	(((struct QUE *)(prQueue))->prHead == (struct QUE_ENTRY *)NULL)
+#define QUEUE_IS_EMPTY(prQueue) (((struct QUE *)(prQueue))->prHead == NULL)
 
 #define QUEUE_IS_NOT_EMPTY(prQueue)         ((prQueue)->u4NumElem > 0)
 
-#define QUEUE_GET_HEAD(prQueue)             ((prQueue)->prHead)
+#define QUEUE_GET_HEAD(prQueue)             ((void *)((prQueue)->prHead))
 
-#define QUEUE_GET_TAIL(prQueue)             ((prQueue)->prTail)
+#define QUEUE_GET_TAIL(prQueue)             ((void *)((prQueue)->prTail))
 
 #define QUEUE_GET_NEXT_ENTRY(prQueueEntry)  ((prQueueEntry)->prNext)
 
@@ -144,7 +143,7 @@ struct QUE {
 		if ((prQueue)->prTail == (struct QUE_ENTRY *)NULL) { \
 			(prQueue)->prTail = (prQueueEntry); \
 		} \
-		((prQueue)->u4NumElem)++; \
+		(prQueue)->u4NumElem++; \
 		KAL_MB_W(); \
 	} while (0)
 
@@ -155,14 +154,14 @@ struct QUE {
 	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
-		(prQueueEntry)->prNext = (struct QUE_ENTRY *)NULL; \
+		(prQueueEntry)->prNext = NULL; \
 		if ((prQueue)->prTail) { \
-			((prQueue)->prTail)->prNext = (prQueueEntry); \
+			(prQueue)->prTail->prNext = (prQueueEntry); \
 		} else { \
 			(prQueue)->prHead = (prQueueEntry); \
 		} \
 		(prQueue)->prTail = (prQueueEntry); \
-		((prQueue)->u4NumElem)++; \
+		(prQueue)->u4NumElem++; \
 		KAL_MB_W(); \
 	} while (0)
 
@@ -197,11 +196,9 @@ struct QUE {
 		if (prQueueEntry) { \
 			(prQueue)->prHead = \
 				((struct QUE_ENTRY *)(prQueueEntry))->prNext; \
-			if ((prQueue)->prHead == (struct QUE_ENTRY *)NULL) { \
-				(prQueue)->prTail = (struct QUE_ENTRY *)NULL; \
-			} \
-			((struct QUE_ENTRY *)(prQueueEntry))->prNext = \
-				(struct QUE_ENTRY *)NULL; \
+			if ((prQueue)->prHead == NULL) \
+				(prQueue)->prTail = NULL; \
+			((struct QUE_ENTRY *)(prQueueEntry))->prNext = NULL; \
 			((prQueue)->u4NumElem)--; \
 			KAL_MB_W(); \
 		} \
@@ -215,8 +212,8 @@ struct QUE {
 	do { \
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
-	    *(struct QUE *)prDestQueue = *(struct QUE *)prSrcQueue; \
-	    QUEUE_INITIALIZE(prSrcQueue); \
+		*(struct QUE *)prDestQueue = *(struct QUE *)prSrcQueue; \
+		QUEUE_INITIALIZE(prSrcQueue); \
 	} while (0)
 
 /**
@@ -229,14 +226,13 @@ struct QUE {
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0) { \
 			if ((prDestQueue)->prTail) { \
-				((prDestQueue)->prTail)->prNext = \
+				(prDestQueue)->prTail->prNext = \
 					(prSrcQueue)->prHead; \
 			} else { \
 				(prDestQueue)->prHead = (prSrcQueue)->prHead; \
 			} \
 			(prDestQueue)->prTail = (prSrcQueue)->prTail; \
-			((prDestQueue)->u4NumElem) += \
-				((prSrcQueue)->u4NumElem); \
+			(prDestQueue)->u4NumElem += (prSrcQueue)->u4NumElem; \
 			QUEUE_INITIALIZE(prSrcQueue); \
 		} \
 	} while (0)
@@ -250,11 +246,9 @@ struct QUE {
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0 && (prSrcQueue)->prTail) { \
-			((prSrcQueue)->prTail)->prNext = \
-				(prDestQueue)->prHead; \
+			(prSrcQueue)->prTail->prNext = (prDestQueue)->prHead; \
 			(prDestQueue)->prHead = (prSrcQueue)->prHead; \
-			((prDestQueue)->u4NumElem) += \
-				((prSrcQueue)->u4NumElem); \
+			(prDestQueue)->u4NumElem += (prSrcQueue)->u4NumElem; \
 			if ((prDestQueue)->prTail == NULL) {                 \
 				(prDestQueue)->prTail = (prSrcQueue)->prTail; \
 			}  \

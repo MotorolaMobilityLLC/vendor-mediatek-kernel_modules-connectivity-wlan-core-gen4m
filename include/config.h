@@ -614,7 +614,6 @@
 #if CFG_M0VE_BA_TO_DRIVER
 #define CFG_RX_BA_MAX_WINSIZE                   64
 #endif
-#define CFG_RX_BA_INC_SIZE                      64
 #define CFG_RX_MAX_BA_TID_NUM                   8
 #define CFG_RX_REORDERING_ENABLED               1
 

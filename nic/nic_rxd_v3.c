@@ -292,6 +292,9 @@ void nic_rxd_v3_fill_rfb(
 		HAL_MAC_CONNAC3X_RX_STATUS_IS_HEADER_TRAN(prRxStatus);
 	prSwRfb->ucPayloadFormat =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_PAYLOAD_FORMAT(prRxStatus);
+	prSwRfb->ucRxClassify =
+		HAL_MAC_CONNAC3X_RX_STATUS_GET_CLASSIFY(prRxStatus);
+
 	prSwRfb->fgIcvErr =
 		HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus);
 	prSwRfb->ucSecMode =
@@ -325,7 +328,7 @@ void nic_rxd_v3_fill_rfb(
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		prSwRfb->u4TcpUdpIpCksStatus =
-			HAL_MAC_CONNAC3X_RX_STATUS_GET_CLS_BITMAP(prRxStatus);
+			HAL_MAC_CONNAC3X_RX_STATUS_GET_CHECKSUM(prRxStatus);
 	}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

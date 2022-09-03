@@ -901,6 +901,7 @@ struct SW_RFB {
 
 	struct STA_RECORD *prStaRec;
 
+	uint8_t ucRxClassify;
 	uint8_t ucPacketType;
 	uint8_t ucPayloadFormat;
 	uint8_t ucSecMode;

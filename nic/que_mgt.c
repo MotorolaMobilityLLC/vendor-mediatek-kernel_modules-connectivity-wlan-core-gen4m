@@ -4401,6 +4401,8 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prReorderQueParm;
 	struct RX_CTRL *prRxCtrl;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
 
 #if CFG_SUPPORT_RX_AMSDU
 	uint8_t ucAmsduSubframeIdx;
@@ -4516,6 +4518,9 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	u2WinStart = prReorderQueParm->u2WinStart,
+	u2WinEnd = prReorderQueParm->u2WinEnd;
+
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm,
 		prReturnedQue);
@@ -4523,10 +4528,17 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
 
-	/* Only when a last AMSDU or single MSDU were just eneuqued */
+
+	/* Only when a last AMSDU or single MSDU were just processed */
 	if (ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_MSDU ||
-	    ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU)
+	    ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU) {
+		if (prAdapter->rWifiVar.u4BaVerboseLogging)
+			DBGLOG(QM, TRACE, "Rx SN=%u, Window{%u,%u}->{%u,%u}\n",
+				u2SeqNo, u2WinStart, u2WinEnd,
+				prReorderQueParm->u2WinStart,
+				prReorderQueParm->u2WinEnd);
 		checkToFlushReordering(prAdapter, prReorderQueParm, prRxCtrl);
+	}
 }
 
 void qmProcessBarFrame(struct ADAPTER *prAdapter,
@@ -4575,7 +4587,8 @@ void qmProcessBarFrame(struct ADAPTER *prAdapter,
 static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 		struct RX_BA_ENTRY *prReorderQueParm,
 		uint8_t ucTid, uint16_t u2BarSSN,
-		uint16_t u2SeqNo, uint16_t u2WinStart, uint16_t u2WinEnd)
+		uint16_t u2SeqNo, uint16_t u2WinStart, uint16_t u2WinEnd,
+		uint16_t u2IpId)
 {
 	uint16_t u2LastDrop = prReorderQueParm->u2LastFallBehindDropSN;
 	uint16_t u2DropGap = SEQ_DIFF(u2LastDrop, u2SeqNo);
@@ -4583,20 +4596,32 @@ static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 
 	prReorderQueParm->u2LastFallBehindDropSN = u2SeqNo;
 
+	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
+	if (prAdapter->rWifiVar.u4BaVerboseLogging) {
+		DBGLOG(RX, INFO,
+		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
+		       prReorderQueParm->ucStaRecIdx, ucTid,
+		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
+		       u2WinStart, u2WinEnd, u2IpId,
+		       IS_BAR_SSN_VALID(prReorderQueParm), u2BarSSN, u8Count);
+		return;
+	}
+
 	if (u2DropGap <= 1)
 		return;
 
-	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
 	if (IS_BAR_SSN_VALID(prReorderQueParm))
 		DBGLOG(RX, INFO,
-		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
-		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
-		       u2SeqNo, u2WinStart, u2WinEnd, 1, u2BarSSN, u8Count);
+		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
+		       prReorderQueParm->ucStaRecIdx, ucTid,
+		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
+		       u2WinStart, u2WinEnd, u2IpId, 1, u2BarSSN, u8Count);
 	else
 		DBGLOG(RX, TRACE,
-		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
-		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
-		       u2SeqNo, u2WinStart, u2WinEnd, 0, u2BarSSN, u8Count);
+		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
+		       prReorderQueParm->ucStaRecIdx, ucTid,
+		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
+		       u2WinStart, u2WinEnd, u2IpId, 0, u2BarSSN, u8Count);
 }
 
 void qmInsertReorderPkt(struct ADAPTER *prAdapter,
@@ -4748,6 +4773,8 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 		DBGLOG(RX, TEMP, "QM: Miss Count:[%lu]\n",
 			RX_GET_CNT(&prAdapter->rRxCtrl,
 			RX_DATA_REORDER_MISS_COUNT));
+
+		prReorderQueParm->u2LastRcvdSN = u2SeqNo;
 	} else { /* Case 3: Fall behind */
 #if CFG_SUPPORT_RX_OOR_BAR
 		if (IS_BAR_SSN_VALID(prReorderQueParm) &&
@@ -4813,7 +4840,8 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 				prReturnedQue, RX_REORDER_BEHIND_DROP_COUNT);
 
 		qmLogDropFallBehind(prAdapter, prReorderQueParm,
-		       prSwRfb->ucTid, u2BarSSN, u2SeqNo, u2WinStart, u2WinEnd);
+		       prSwRfb->ucTid, u2BarSSN, u2SeqNo, u2WinStart, u2WinEnd,
+		       GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket));
 		return;
 	}
 }
@@ -5062,10 +5090,53 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 	RX_ADD_CNT(&prAdapter->rRxCtrl, eRxCounter, u4PktCnt);
 }
 
+
+static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
+		struct SW_RFB *prReorderedSwRfb,
+		struct RX_BA_ENTRY *prReorderQueParm,
+		u_int8_t fgDequeuHead,
+		u_int8_t fgMissing,
+		uint8_t fgIsAmsduSubframe,
+		u_int8_t fgWinAdvanced)
+{
+	static const char * const fmt[] = {
+		"MSDU", "Last", "Middle", "First"};
+
+	if  (!prAdapter->rWifiVar.u4BaVerboseLogging)
+		return;
+
+	DBGLOG(RX, TRACE,
+		"[class,type,miss,plfmt,isSub,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
+		prReorderedSwRfb->ucRxClassify, /* class */
+		prReorderedSwRfb->ucPacketType, /* type */
+		fgMissing, /* miss */
+		prReorderedSwRfb->ucPayloadFormat, /* plfmt */
+		fgIsAmsduSubframe, fmt[fgIsAmsduSubframe], /* isSub */
+		prReorderQueParm->u2WinStart, /* WinStart */
+		prReorderedSwRfb->u2SSN, /* cSN */
+		prReorderQueParm->u2SeqNo, /* rSN */
+		prReorderQueParm->u8LastAmsduSubIdx, /* Lsub */
+		fmt[prReorderQueParm->u8LastAmsduSubIdx],
+		fgWinAdvanced, /* WinAdv */
+		fgDequeuHead, /* deq */
+		SEQ_SMALLER(prReorderQueParm->u2WinStart,
+					prReorderedSwRfb->u2SSN), /* inc1 */
+		prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart,
+		prReorderQueParm->u8LastAmsduSubIdx ==
+			RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
+		prReorderQueParm->u8LastAmsduSubIdx ==
+			RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU,
+		prReorderedSwRfb->u2SSN ==
+			prReorderQueParm->u2WinStart, /* inc2 */
+		fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
+			fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU);
+}
+
 void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 	struct RX_BA_ENTRY *prReorderQueParm,
 	struct QUE *prReturnedQue)
 {
+	u_int8_t fgMoveWinOnMissingLast = FALSE;
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
 	u_int8_t fgDequeuHead, fgMissing;
@@ -5092,17 +5163,26 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			break;
 
 		/* Always examine the head packet */
-		prReorderedSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
-			prReorderQue);
+		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
 
 		/* RX reorder for one MSDU in AMSDU issue */
+		/* frameType = curr.frameType */
 		fgIsAmsduSubframe = prReorderedSwRfb->ucPayloadFormat;
+
+		fallWithinVerboseLogging(prAdapter, prReorderedSwRfb,
+				prReorderQueParm, fgDequeuHead,
+				fgMissing, fgIsAmsduSubframe, fgWinAdvanced);
+
 #if CFG_SUPPORT_RX_AMSDU
 		/* If SN + 1 come and last frame is first or middle,
 		 * update winstart
+		 *
+		 * if (WinStart < curr.SN && rcvd.SN != WinStart &&
+		 * (Ba.LastType == 1st || BA.LastType == middle)
 		 */
-		if (SEQ_SMALLER(prReorderQueParm->u2WinStart,
+		if (fgMoveWinOnMissingLast &&
+				SEQ_SMALLER(prReorderQueParm->u2WinStart,
 				prReorderedSwRfb->u2SSN) &&
 		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
 			if (prReorderQueParm->u8LastAmsduSubIdx ==
@@ -5119,6 +5199,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 		/* SN == WinStart, so the head packet shall be indicated
 		 * (advance the window)
 		 */
+		/* if (curr.SN == WinStart) */
 		if (prReorderedSwRfb->u2SSN == prReorderQueParm->u2WinStart) {
 			fgDequeuHead = TRUE;
 
@@ -5135,16 +5216,21 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			/* RX reorder for one MSDU in AMSDU issue */
 			/* if last frame, winstart++.
 			 * Otherwise, keep winstart
+			 *
+			 * if (curr.frameType == Last || curr.frameType == MSDU)
+			 *     WinStart++
 			 */
 			if (fgIsAmsduSubframe ==
 				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
 			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
-				prReorderQueParm->u2WinStart =
-					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
+				SEQ_INC(prReorderQueParm->u2WinStart);
 				fgWinAdvanced = TRUE;
 			}
 #if CFG_SUPPORT_RX_AMSDU
-			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
+			/* BA.LastType = curr.frameType */
+			if (fgMoveWinOnMissingLast)
+				prReorderQueParm->u8LastAmsduSubIdx =
+					fgIsAmsduSubframe;
 #endif
 		} else { /* SN > WinStart, break to update WinEnd */
 			if (!prReorderQueParm->fgHasBubble) {
@@ -5170,17 +5256,22 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				prAdapter->u4QmRxBaMissTimeout
 				))) {
 
-				DBGLOG(RX, TEMP,
-					"QM:RX BA Timout Next Tid %d SSN %d\n",
+				DBGLOG(RX, TRACE,
+					"QM:RX BA Timeout Next Tid %u SSN %u, WinStart:%u->%u\n",
 					prReorderQueParm->ucTid,
-					prReorderedSwRfb->u2SSN);
+					prReorderedSwRfb->u2SSN,
+					prReorderQueParm->u2WinStart,
+					prReorderedSwRfb->u2SSN+1 & MAX_SEQ_NO);
 				fgDequeuHead = TRUE;
+				/* WinStart = curr.SN + 1 */
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 #if CFG_SUPPORT_RX_AMSDU
 				/* RX reorder for one MSDU in AMSDU issue */
-				prReorderQueParm->u8LastAmsduSubIdx =
-					RX_PAYLOAD_FORMAT_MSDU;
+				/* BA.LastType = MSDU */
+				if (fgMoveWinOnMissingLast)
+					prReorderQueParm->u8LastAmsduSubIdx =
+						RX_PAYLOAD_FORMAT_MSDU;
 #endif
 				fgMissing = FALSE;
 			} else
@@ -5202,6 +5293,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 					NULL;
 			}
 			prReorderQue->u4NumElem--;
+
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 				prReorderedSwRfb, prReturnedQue,
 				RX_DATA_REORDER_WITHIN_COUNT);
@@ -5851,7 +5943,7 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 	/* If a free-to-use entry is found,
 	 * configure it and associate it with the STA_REC
 	 */
-	u2WinSize += CFG_RX_BA_INC_SIZE;
+	u2WinSize += prAdapter->rWifiVar.u2BaExtSize;
 	if (prRxBaEntry) {
 		prRxBaEntry->ucStaRecIdx = ucStaRecIdx;
 		prRxBaEntry->ucTid = ucTid;

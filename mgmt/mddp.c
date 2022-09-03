@@ -762,8 +762,7 @@ void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 		    !mddpIsSsnSent(prAdapter, prMdBuf->virtual_buf, u2SSN))
 			break;
 
-		prReorderQueParm->u2WinStart =
-			(u2SSN % MAX_SEQ_NO_COUNT);
+		prReorderQueParm->u2WinStart = u2SSN % MAX_SEQ_NO_COUNT;
 		prReorderQueParm->u2WinEnd =
 			SEQ_ADD(prReorderQueParm->u2WinStart,
 				prReorderQueParm->u2WinSize - 1);
