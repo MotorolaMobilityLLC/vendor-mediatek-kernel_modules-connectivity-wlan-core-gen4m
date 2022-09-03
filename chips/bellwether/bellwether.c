@@ -848,19 +848,15 @@ static int __load_rom_binary(struct ADAPTER *prAdapter,
 	int ret = 0;
 
 	for (idx = 0; name_table[idx]; idx++) {
-		ret = request_firmware(&temp, name_table[idx],
-					  prAdapter->prGlueInfo->prDev);
+		ret = request_firmware(&temp,
+				       name_table[idx],
+				       prAdapter->prGlueInfo->prDev);
 
 		if (ret) {
 			DBGLOG(INIT, WARN,
 				"Request FW image: %s failed, ret: %d\n",
 				name_table[idx], ret);
 			continue;
-		} else if (!temp || !temp->data || !temp->size) {
-			DBGLOG(INIT, ERROR,
-				"Invalid ROM, name: %s.\n",
-				name_table[idx]);
-			break;
 		}
 
 		DBGLOG(INIT, INFO,
@@ -879,9 +875,14 @@ static uint32_t __load_rom_code(struct ADAPTER *prAdapter,
 	const struct firmware *fw = NULL;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 
-	ret = __load_rom_binary(prAdapter, &fw, name_table);
-	if (ret) {
-		ret = WLAN_STATUS_FAILURE;
+	if (__load_rom_binary(prAdapter, &fw, name_table))
+		return WLAN_STATUS_FAILURE;
+
+	if (!fw->data || !fw->size) {
+		DBGLOG(INIT, WARN,
+			"fw->data: 0x%p, fw->size: %d\n",
+			fw->data, fw->size);
+		ret = WLAN_STATUS_INVALID_DATA;
 		goto exit;
 	}
 
