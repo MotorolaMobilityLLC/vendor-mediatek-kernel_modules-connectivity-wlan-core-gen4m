@@ -5811,7 +5811,8 @@ static void nicTxDirectEnqueueStaPendQ(struct ADAPTER *prAdapter,
 	}
 
 	if (secIsProtectedBss(prAdapter, prBssInfo) &&
-	    (prMsduInfo->fgIs802_1x) && (prMsduInfo->fgIs802_1x_NonProtected)) {
+	    (prMsduInfo->fgIs802_1x) && (prMsduInfo->fgIs802_1x_NonProtected) &&
+	    (!prAdapter->fgIsPostponeTxEAPOLM3)) {
 		/* The EAPoL frame can't be blocked. */
 		DBGLOG(TX, TRACE, "Is EAPoL frame\n");
 	} else {
