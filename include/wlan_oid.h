@@ -328,6 +328,8 @@
 #define GED_EVENT_NETWORK           (1 << 11)
 #define GED_EVENT_DOPT_WIFI_SCAN    (1 << 12)
 #define GED_EVENT_TX_DUP_DETECT     (1 << 13)
+#define GED_EVENT_DISABLE_ROAMING   (1 << 14)
+#define GED_EVENT_CAM_MODE          (1 << 15)
 
 #define LOW_LATENCY_MODE_MAGIC_CODE      0x86
 #define LOW_LATENCY_MODE_CMD_V2          0x2

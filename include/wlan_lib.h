@@ -2243,6 +2243,8 @@ u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter);
 
 int wlanChipConfig(struct ADAPTER *prAdapter,
 	char *pcCommand, int i4TotalLen);
+int wlanChipCommand(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen);
 
 uint32_t wlanSetRxBaSize(struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);

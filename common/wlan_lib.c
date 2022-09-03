@@ -8041,7 +8041,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucLowLatencyModeReOrder = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
 	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
-			prAdapter, "LowLatencyModePower", FEATURE_DISABLED);
+			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
 	prWifiVar->ucLowLatencyPacketPriority = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "LowLatencyPacketPriority", BITS(0, 1));
 	prWifiVar->ucLowLatencyCmdData = (uint8_t) wlanCfgGetUint32(
@@ -11945,11 +11945,12 @@ uint32_t wlanSetLowLatencyMode(
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgEnMode = FALSE; /* Low Latency Mode */
 	u_int8_t fgEnScan = FALSE; /* Scan management */
-	u_int8_t fgEnPM = FALSE; /* Power management */
+	u_int8_t fgEnPM = TRUE; /* Power management */
 	u_int8_t fgEnTxDupDetect = FALSE; /* Tx Dup Detect */
-	uint32_t u4PowerFlag;
+	u_int8_t fgEnRoaming = TRUE; /* Roaming management */
 	struct PARAM_POWER_MODE_ rPowerMode;
 	struct WIFI_VAR *prWifiVar = NULL;
+	char arCmd[64]; /* Roaming command buffer */
 
 	DEBUGFUNC("wlanSetLowLatencyMode");
 
@@ -11963,20 +11964,25 @@ uint32_t wlanSetLowLatencyMode(
 
 	/* Initialize */
 	prWifiVar = &prAdapter->rWifiVar;
-	DBGLOG(OID, INFO,
-		"LowLatency(gaming/DPP) event - gas:0x%x, net:0x%x, whitelist:0x%x, txdup:0x%x, scan=%u, reorder=%u, power=%u, cmd data=%u\n",
+
+#define LOW_LATENCY_LOG_TEMPLATE \
+	"LowLatency(gaming/DPP) event - gas:0x%x, net:0x%x, " \
+	"whitelist:0x%x, txdup:0x%x, disable roaming:0x%x, CAM:0x%x, " \
+	"scan=%u, reorder=%u, power=%u, cmd data=%u\n"
+
+	DBGLOG(OID, INFO, LOW_LATENCY_LOG_TEMPLATE,
 		(u4Events & GED_EVENT_GAS),
 		(u4Events & GED_EVENT_NETWORK),
 		(u4Events & GED_EVENT_DOPT_WIFI_SCAN),
 		(u4Events & GED_EVENT_TX_DUP_DETECT),
+		(u4Events & GED_EVENT_DISABLE_ROAMING),
+		(u4Events & GED_EVENT_CAM_MODE),
 		(uint32_t)prWifiVar->ucLowLatencyModeScan,
 		(uint32_t)prWifiVar->ucLowLatencyModeReOrder,
 		(uint32_t)prWifiVar->ucLowLatencyModePower,
 		(uint32_t)prWifiVar->ucLowLatencyCmdData);
 
 	rPowerMode.ucBssIdx = ucBssIndex;
-
-	u4PowerFlag = prBssInfo->u4PowerSaveFlag;
 
 	/* Enable/disable low latency mode decision:
 	 *
@@ -12009,19 +12015,31 @@ uint32_t wlanSetLowLatencyMode(
 		fgEnScan = TRUE; /* It will enable scan management */
 
 	/* Enable/disable power management decision:
+	 *
+	 * Enable constantly awake mode (equivalent to disable power management)
+	 * if user manually set in low latency mode
 	 */
-	if (BIT(PS_CALLER_GPU) & u4PowerFlag)
-		fgEnPM = TRUE;
-	else
+	if (fgEnMode == TRUE && (u4Events & GED_EVENT_CAM_MODE) != 0)
 		fgEnPM = FALSE;
 
-	/* Debug log for the actions */
+	/* Enable/disable roaming decision:
+	 *
+	 * Disable roaming if user manually set in low latency mode
+	 */
+	if (fgEnMode == TRUE && (u4Events & GED_EVENT_DISABLE_ROAMING) != 0)
+		fgEnRoaming = FALSE; /* It will disable roaming */
+
+	/* Debug log for the actions
+	 * log when low latency mode, scan setting changes
+	 * or PS, roaming is manually disable under low latency mode
+	 */
 	if (fgEnMode != prAdapter->fgEnLowLatencyMode
 		|| fgEnScan != prAdapter->fgEnCfg80211Scan
-		|| fgEnPM != fgEnMode) {
+		|| (fgEnMode && !fgEnPM)
+		|| (fgEnMode && !fgEnRoaming)) {
 		DBGLOG(OID, INFO,
-			"LowLatency(gaming/DPP) change (m:%d,s:%d,PM:%d,F:0x%x)\n",
-			fgEnMode, fgEnScan, fgEnPM, u4PowerFlag);
+			"LowLatency(gaming/DPP) change (m:%d,s:%d,PM:%d,r:%d))\n",
+			fgEnMode, fgEnScan, fgEnPM, fgEnRoaming);
 	}
 
 	/* Scan management:
@@ -12056,9 +12074,8 @@ uint32_t wlanSetLowLatencyMode(
 	 * Or, do if 1. the power saving caller is not including GPU
 	 * and 2. it will enable low latency mode.
 	 */
-	if ((prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED) &&
-	    (fgEnPM != fgEnMode)) {
-		if (fgEnMode == TRUE)
+	if (prWifiVar->ucLowLatencyModePower == FEATURE_ENABLED) {
+		if (fgEnPM == FALSE)
 			rPowerMode.ePowerMode = Param_PowerModeCAM;
 		else
 			rPowerMode.ePowerMode = Param_PowerModeFast_PSP;
@@ -12075,6 +12092,13 @@ uint32_t wlanSetLowLatencyMode(
 		#endif
 
 	}
+
+	/* Roaming management:
+	 *
+	 * Disable/enable roaming
+	 */
+	kalSnprintf(arCmd, sizeof(arCmd), "RoamingEnable %d", fgEnRoaming?1:0);
+	wlanChipCommand(prAdapter, &arCmd[0], sizeof(arCmd));
 
 	if (fgEnMode != prAdapter->fgEnLowLatencyMode)
 		prAdapter->fgEnLowLatencyMode = fgEnMode;
@@ -13718,6 +13742,41 @@ int wlanChipConfig(struct ADAPTER *prAdapter,
 	}
 	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
 		     rChipConfigInfo.aucCmd);
+	return i4BytesWritten;
+}
+
+int wlanChipCommand(struct ADAPTER *prAdapter,
+	char *pcCommand, int i4TotalLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	int32_t i4BytesWritten = 0;
+	uint32_t u4BufLen = 0;
+	uint32_t u4CmdLen = 0;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+
+	if (prAdapter == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter null");
+		return -1;
+	}
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	u4CmdLen = kalStrnLen(pcCommand, i4TotalLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rChipConfigInfo.u2MsgSize = u4CmdLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, pcCommand,
+		   CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+	rStatus = wlanSetChipConfig(prAdapter,
+				&rChipConfigInfo, sizeof(rChipConfigInfo),
+				&u4BufLen, FALSE);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "wlan ret=%d\n", rStatus);
+		i4BytesWritten = -1;
+	}
+
 	return i4BytesWritten;
 }
 
