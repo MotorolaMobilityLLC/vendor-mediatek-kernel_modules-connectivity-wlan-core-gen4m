@@ -635,7 +635,6 @@ void rlmRspGenerateErpIE(struct ADAPTER *prAdapter,
 	}
 }
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t rlmCheckMtkOuiChipCap(uint8_t *pucIe, uint64_t u8ChipCap)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
@@ -665,21 +664,6 @@ uint8_t rlmCheckMtkOuiChipCap(uint8_t *pucIe, uint64_t u8ChipCap)
 	return 0;
 }
 
-uint8_t rlmCheckIsSupportedMld(struct ADAPTER *prAdapter,
-	uint8_t *pucIe, uint16_t u2Len)
-{
-	uint16_t offset = 0;
-
-	IE_FOR_EACH(pucIe, u2Len, offset) {
-		if (rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V1) ||
-		    rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V2))
-			return 1;
-	}
-
-	return IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucAcceptAllMld);
-}
-#endif
-
 #if CFG_SUPPORT_MTK_SYNERGY
 uint32_t rlmCalculateMTKOuiIELen(
 	struct ADAPTER *prAdapter,
@@ -692,7 +676,48 @@ uint32_t rlmCalculateMTKOuiIELen(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	len += sizeof(struct IE_MTK_CHIP_CAP);
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	len += sizeof(struct IE_MTK_PRE_WIFI7);
+	len += ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, prStaRec);
+	len += ehtRlmCalculateOpIELen(prAdapter, ucBssIndex, prStaRec);
+	len += mldCalculateMlIELen(prAdapter, ucBssIndex, prStaRec);
 #endif
+#endif
+	return len;
+}
+
+uint16_t rlmGenerateMTKChipCapIE(uint8_t *pucBuf, uint16_t u2FrameLength,
+	uint8_t fgNeedOui, uint64_t u8ChipCap)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	struct IE_MTK_CHIP_CAP *prChipCap;
+	uint8_t *pos = pucBuf;
+	uint16_t len = 0;
+
+	if (fgNeedOui && ELEM_MIN_LEN_MTK_OUI + 2 < u2FrameLength) {
+		kalMemSet(pucBuf, 0, ELEM_MIN_LEN_MTK_OUI + 2);
+		MTK_OUI_IE(pucBuf)->ucId = ELEM_ID_VENDOR;
+		MTK_OUI_IE(pucBuf)->ucLength =
+			ELEM_MIN_LEN_MTK_OUI + sizeof(struct IE_MTK_CHIP_CAP);
+		kalMemCopy(MTK_OUI_IE(pucBuf)->aucOui, aucMtkOui, 3);
+		/* add icv sub ie for mlo device */
+		MTK_OUI_IE(pucBuf)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TLV;
+		pos = MTK_OUI_IE(pucBuf)->aucInfoElem;
+		len += pos - pucBuf;
+	}
+
+	if (len + sizeof(struct IE_MTK_CHIP_CAP) < u2FrameLength) {
+		kalMemSet(pos, 0, sizeof(struct IE_MTK_CHIP_CAP));
+		prChipCap = (struct IE_MTK_CHIP_CAP *) pos;
+		prChipCap->ucId = MTK_OUI_ID_CHIP_CAP;
+		prChipCap->ucLength = sizeof(struct IE_MTK_CHIP_CAP) - 2;
+		prChipCap->u8ChipCap = u8ChipCap;
+		len += sizeof(struct IE_MTK_CHIP_CAP);
+	}
+
+	DBGLOG(RLM, TRACE, "MTK_OUI_CHIP_CAP");
+	DBGLOG_MEM8(RLM, TRACE, pucBuf, len);
 
 	return len;
 }
@@ -707,14 +732,14 @@ uint32_t rlmCalculateMTKOuiIELen(
  */
 /*----------------------------------------------------------------------------*/
 void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
-			 struct MSDU_INFO *prMsduInfo)
+	 struct MSDU_INFO *prMsduInfo)
 {
+	struct WLAN_MAC_MGMT_HEADER *mgmt;
+	uint16_t frame_ctrl;
 	struct BSS_INFO *prBssInfo;
 	uint8_t *pucBuffer;
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct IE_MTK_CHIP_CAP *prChipCap;
-#endif
+	uint16_t len;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -726,6 +751,8 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
+	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 	pucBuffer = (uint8_t *)((uintptr_t)prMsduInfo->prPacket +
 				(uintptr_t)prMsduInfo->u2FrameLength);
 
@@ -768,24 +795,47 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, TRACE, "Add gc csa capa\n");
 	}
 
+	len = IE_SIZE(pucBuffer);
+	prMsduInfo->u2FrameLength += len;
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* add icv sub ie for mlo device */
 	MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
 		MTK_SYNERGY_CAP_SUPPORT_TLV;
-	prChipCap = (struct IE_MTK_CHIP_CAP *)
-		MTK_OUI_IE(pucBuffer)->aucInfoElem;
-	prChipCap->ucId = MTK_OUI_ID_CHIP_CAP;
-	prChipCap->ucLength = 8;
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	prChipCap->u8ChipCap |= CHIP_CAP_ICV_V1;
-#else
-	prChipCap->u8ChipCap |= CHIP_CAP_ICV_V2;
-#endif
-	MTK_OUI_IE(pucBuffer)->ucLength += sizeof(struct IE_MTK_CHIP_CAP);
+	len = rlmGenerateMTKChipCapIE(MTK_OUI_IE(pucBuffer)->aucInfoElem,
+		255, FALSE, MTK_OUI_CHIP_CAP);
+	MTK_OUI_IE(pucBuffer)->ucLength += len;
+	prMsduInfo->u2FrameLength += len;
+
+	/* hide eht & ml ie in vendor ie */
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO &&
+	   (frame_ctrl == MAC_FRAME_PROBE_RSP ||
+	    frame_ctrl == MAC_FRAME_BEACON)) {
+		struct IE_MTK_PRE_WIFI7 *prPreWifi7;
+
+		prPreWifi7 = (struct IE_MTK_PRE_WIFI7 *)
+			(pucBuffer + IE_SIZE(pucBuffer));
+		len = prMsduInfo->u2FrameLength;
+
+		prPreWifi7->ucId = MTK_OUI_ID_PRE_WIFI7;
+		prPreWifi7->ucLength = 0;
+		prPreWifi7->ucVersion0 = 0;
+		prPreWifi7->ucVersion1 = 2;
+
+		prMsduInfo->u2FrameLength += sizeof(struct IE_MTK_PRE_WIFI7);
+		mldGenerateMlIEImpl(prAdapter, prMsduInfo);
+		ehtRlmRspGenerateCapIEImpl(prAdapter, prMsduInfo);
+		ehtRlmRspGenerateOpIEImpl(prAdapter, prMsduInfo);
+
+		prPreWifi7->ucLength = (prMsduInfo->u2FrameLength - len - 2);
+		MTK_OUI_IE(pucBuffer)->ucLength += IE_SIZE(prPreWifi7);
+
+		DBGLOG(RLM, TRACE, "MTK_OUI_PRE_WIFI7");
+		DBGLOG_MEM8(RLM, TRACE, pucBuffer, IE_SIZE(pucBuffer));
+	}
 #endif
 
-	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-	pucBuffer += IE_SIZE(pucBuffer);
+
 } /* rlmGenerateMTKOuiIE */
 
 /*----------------------------------------------------------------------------*/
@@ -843,12 +893,6 @@ u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 		kalMemCopy(&prStaRec->u4Flags, prMtkOuiIE->aucCapability,
 			sizeof(prStaRec->u4Flags));
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (rlmCheckMtkOuiChipCap(pucBuf, CHIP_CAP_ICV_V1))
-			prStaRec->fgMtkMld = 1;
-		else if (rlmCheckMtkOuiChipCap(pucBuf, CHIP_CAP_ICV_V2))
-			prStaRec->fgMtkMld = 2;
-#endif
 		return TRUE;
 	} while (FALSE);
 
@@ -2555,10 +2599,13 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 void rlmParseMtkOui(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prBssInfo,
 	uint8_t *pucIE)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
+	uint8_t *ie, *sub;
+	uint16_t ie_len, ie_offset, sub_len, sub_offset;
 
 	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
 		aucMtkOui, sizeof(aucMtkOui)))
@@ -2580,10 +2627,36 @@ void rlmParseMtkOui(
 		MTK_SYNERGY_CAP_SUPPORT_GC_CSA) &&
 		prAdapter->rWifiVar.fgP2pGcCsa;
 
-	DBGLOG(RLM, LOUD,
-		"GcCsa: %d\n",
-		prStaRec->ucGcCsaSupported);
+	DBGLOG(RLM, LOUD, "GcCsa: %d\n", prStaRec->ucGcCsaSupported);
 
+	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
+	ie_len = IE_LEN(pucIE) - 7;
+
+	IE_FOR_EACH(ie, ie_len, ie_offset) {
+		if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
+			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
+				(struct IE_MTK_PRE_WIFI7 *)ie;
+
+			DBGLOG(RLM, TRACE, "MTK_OUI_PRE_WIFI7 %d.%d",
+				prPreWifi7->ucVersion1, prPreWifi7->ucVersion0);
+			DBGLOG_MEM8(RLM, TRACE, ie, IE_SIZE(ie));
+
+			sub = prPreWifi7->aucInfoElem;
+			sub_len = IE_LEN(prPreWifi7) - 2;
+
+			IE_FOR_EACH(sub, sub_len, sub_offset) {
+#if (CFG_SUPPORT_802_11BE == 1)
+				if (IE_ID_EXT(sub) == ELEM_EXT_ID_EHT_CAPS)
+					ehtRlmRecCapInfo(prAdapter,
+						prStaRec, sub);
+
+				if (IE_ID_EXT(sub) == ELEM_EXT_ID_EHT_OP)
+					ehtRlmRecOperation(prAdapter, prStaRec,
+						prBssInfo, sub);
+#endif
+			}
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2654,15 +2727,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_BTWT == 1)
 	uint8_t fgBtwtIeFound = FALSE;
 #endif
-
-#if (CFG_SUPPORT_802_11BE == 1)
-	uint32_t u4EhtOffset;
-	struct EHT_OP_INFO *prEhtOperInfo = NULL;
-	struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
-#if (CFG_SUPPORT_802_PP_DSCB == 1)
-	uint16_t u2PreDscBitmap = 0;
-#endif
-#endif
 	uint8_t *pucIEOpmode = NULL;
 
 	ASSERT(prAdapter);
@@ -2670,8 +2734,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	ASSERT(pucIE);
 
 	DBGLOG(RLM, LOUD, "Dump beacon content from FW\n");
-	if (aucDebugModule[DBG_RLM_IDX] & DBG_CLASS_LOUD)
-		dumpMemory8((uint8_t *) pucIE, (uint32_t) u2IELength);
+	DBGLOG_MEM8(RLM, LOUD, pucIE, u2IELength);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
 	if (!prStaRec)
@@ -3225,81 +3288,18 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
 				ehtRlmRecCapInfo(prAdapter, prStaRec, pucIE);
-			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
-				ehtRlmRecOperation(prAdapter,
+			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
+				ehtRlmRecOperation(prAdapter, prStaRec,
 					prBssInfo, pucIE);
-
-				/*Backup peer VHT OpInfo*/
-				/*TODO: backup CCFS as well*/
-				prStaRec->ucVhtOpChannelWidth =
-					prBssInfo->ucVhtChannelWidth;
-
-#if CFG_SUPPORT_802_PP_DSCB
-				u4EhtOffset = OFFSET_OF(
-					struct IE_EHT_OP,
-					aucVarInfo[0]);
-
-				if (prBssInfo->fgIsEhtOpPresent) {
-					prEhtOperInfo =
-						(struct EHT_OP_INFO *)
-						(((uint8_t *) pucIE)+
-							u4EhtOffset);
-
-					prBssInfo->ucEhtCtrl =
-						prEhtOperInfo->ucControl;
-
-					prBssInfo->ucEhtCcfs0 =
-						prEhtOperInfo->ucCCFS0;
-
-					prBssInfo->ucEhtCcfs1 =
-						prEhtOperInfo->ucCCFS1;
-
-					if (prBssInfo->fgIsEhtDscbPresent) {
-
-					/* struct IE_EHT_OP is packed,
-					 * save to use sizeof instead of
-					 * using OFFSET_OF with ZERO array
-					 * at end
-					 */
-						u4EhtOffset += sizeof(
-							struct EHT_OP_INFO);
-
-						prEhtDscpInfo =
-							(struct EHT_DSCP_INFO *)
-							(((uint8_t *) pucIE)+
-								u4EhtOffset);
-
-						u2PreDscBitmap =
-							prBssInfo->
-							u2EhtDisSubChanBitmap;
-
-						prBssInfo->
-							u2EhtDisSubChanBitmap =
-
-						prEhtDscpInfo->
-							u2DisSubChannelBitmap;
-
-						nicUpdateDscb(prAdapter,
-							prBssInfo->ucBssIndex,
-							u2PreDscBitmap,
-							prBssInfo->
-							u2EhtDisSubChanBitmap);
-					}
-				}
-#endif
-			}
 #endif
 			break;
-
 #endif /* CFG_SUPPORT_802_11AX */
-
+		case ELEM_ID_VENDOR:
+			rlmParseMtkOui(prAdapter, prStaRec, prBssInfo, pucIE);
+			break;
 		default:
 			break;
 		} /* end of switch */
-
-		if (IE_ID(pucIE) == ELEM_ID_VENDOR)
-			rlmParseMtkOui(prAdapter, prStaRec, pucIE);
-
 	}	 /* end of IE_FOR_EACH */
 
 	if (pucIEOpmode != NULL) {

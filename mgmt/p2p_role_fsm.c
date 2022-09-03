@@ -126,7 +126,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		(struct P2P_MGMT_TX_REQ_INFO *) NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-	uint8_t ucLinkIndex = ucRoleIdx;
 #endif
 
 	do {
@@ -192,18 +191,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			(PFN_MGMT_TIMEOUT_FUNC)
 			p2pRoleFsmRunEventWaitNextReqChnlTimeout,
 			(uintptr_t) prP2pRoleFsmInfo);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx)) {
-			prMldBssInfo = p2pGetMldBssInfo(prAdapter,
-				prP2pRoleFsmInfo);
-			if (!prMldBssInfo) {
-				DBGLOG(P2P, ERROR,
-					"Error allocating mld bss\n");
-				break;
-			}
-		}
-#endif
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P,
@@ -318,10 +305,20 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prMldBssInfo) {
-			prP2pBssInfo->ucLinkIndex = ucLinkIndex;
-			mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
+		p2pMldBssInit(prAdapter, prP2pRoleFsmInfo);
+
+		prMldBssInfo = p2pGetMldBssInfo(prAdapter,
+			prP2pRoleFsmInfo);
+		if (!prMldBssInfo) {
+			DBGLOG(P2P, ERROR,
+				"Error allocating mld bss\n");
+			break;
 		}
+
+		if (p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx))
+			prP2pBssInfo->ucLinkIndex = ucRoleIdx;
+
+		mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
 #endif
 	} while (FALSE);
 
@@ -406,11 +403,8 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 			p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo),
 			prP2pBssInfo);
 
-		if (p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo)->
-			rBssList.u4NumElem == 0)
-			p2pMldBssUninit(prAdapter);
+		p2pMldBssUninit(prAdapter, prP2pRoleFsmInfo);
 #endif
-
 		cnmFreeBssInfo(prAdapter, prP2pBssInfo);
 
 		/* ensure the timer be stopped */

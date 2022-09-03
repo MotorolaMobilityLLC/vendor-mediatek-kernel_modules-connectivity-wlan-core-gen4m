@@ -1333,7 +1333,6 @@ void scanEhtParsingMldElement(struct BSS_DESC *prBssDesc,
 		prBssDesc->rMlInfo.ucMaxSimultaneousLinks =
 			(rMlInfo.u2MldCap & BITS(0, 3));
 	}
-
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
@@ -2871,66 +2870,24 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				}
 			}
 #endif
-#if CFG_SUPPORT_MLR
-			if (pucIE[1] >= 7
-				/* Mediatek Specific OUI */
-				&& (kalMemCmp(pucIE + 2,
-				"\x00\x0c\xe7", 3) == 0)
-				&& (pucIE[5] == 0x01)) {
-				if (pucIE[9] == 0x01) {
-					/* MLR Type = 0x01 */
-					prBssDesc->ucMlrType = pucIE[9];
-					/* MLR Length = 0x01 */
-					prBssDesc->ucMlrLength = pucIE[10];
-					/* LR bitmap:
-					 * BIT[0]-MLR_V1,
-					 * BIT[1]->MLR_V2,
-					 * BIT[2]MLR+,
-					 * BIT[3]->ALR,
-					 * BIT[4]->DUAL_CTS
-					 */
-					prBssDesc->ucMlrSupportBitmap =
-						pucIE[11];
-					prBssDesc->fsIsMlrSupport =
-						MLR_BIT_SUPPORT(prBssDesc
-						->ucMlrSupportBitmap);
 
-					MLR_DBGLOG(prAdapter, SCN, INFO,
-						"MLR beacon - BSSID:" MACSTR
-						" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
-						MAC2STR(prBssDesc->aucBSSID),
-						prBssDesc->fsIsMlrSupport,
-						prBssDesc->ucMlrType,
-						prBssDesc->ucMlrLength,
-						prBssDesc->ucMlrSupportBitmap);
-				}
-			}
-#endif
 			scanCheckAdaptive11rIE(pucIE, prBssDesc);
+
+			scanParseCheckMTKOuiIE(prAdapter,
+				pucIE, prBssDesc, eHwBand,
+				prWlanBeaconFrame->u2FrameCtrl &
+				MASK_FRAME_TYPE);
+
 			break;
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
 #if (CFG_SUPPORT_802_11BE == 1)
-			/* TODO */
-			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS) {
-				struct IE_EHT_CAP *ehtCap = NULL;
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_CAPS)
+				scanParseEhtCapIE(pucIE, prBssDesc);
 
-				ehtCap = (struct IE_EHT_CAP *) pucIE;
-				prBssDesc->fgIsEHTPresent = TRUE;
-				prBssDesc->u2MaximumMpdu =
-					(ehtCap->ucEhtMacCap[0] &
-					EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
-				DBGLOG(SCN, INFO,
-					"BSSID:" MACSTR
-					" SSID:%s, EHT CAP IE\n",
-					MAC2STR(prBssDesc->aucBSSID),
-					prBssDesc->aucSSID);
-				DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
-			}
-			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP) {
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
 				scanParseEhtOpIE(pucIE, prBssDesc, eHwBand);
-			}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
@@ -3074,6 +3031,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			/* no default */
 		}
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prBssDesc->rMlInfo.fgValid &&
+	    prBssDesc->rMlInfo.fgMldType == MLD_TYPE_INVALID)
+		prBssDesc->rMlInfo.fgMldType = MLD_TYPE_EXTERNAL;
+#endif
 
 	/* 4 <3.2> Save information from IEs - SSID */
 	/* Update Flag of Hidden SSID for used in SEARCH STATE. */
@@ -4540,6 +4503,104 @@ void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 		MAC2STR(prBssDesc->aucBSSID), prBssDesc->ucIsAdaptive11r);
 }
 
+void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
+	uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand, uint16_t u2FrameCtrl)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
+	uint8_t *ie, *sub;
+	uint16_t ie_len, ie_offset, sub_len, sub_offset;
+
+	/* only check tlv */
+	if (IE_LEN(pucIE) < ELEM_MIN_LEN_MTK_OUI ||
+	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)) ||
+	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
+
+#if CFG_SUPPORT_MLR
+	if (pucIE[5] == 0x01 && pucIE[9] == 0x01) {
+		/* MLR Type = 0x01 */
+		prBssDesc->ucMlrType = pucIE[9];
+		/* MLR Length = 0x01 */
+		prBssDesc->ucMlrLength = pucIE[10];
+		/* LR bitmap:
+		 * BIT[0]-MLR_V1,
+		 * BIT[1]->MLR_V2,
+		 * BIT[2]MLR+,
+		 * BIT[3]->ALR,
+		 * BIT[4]->DUAL_CTS
+		 */
+		prBssDesc->ucMlrSupportBitmap =
+			pucIE[11];
+		prBssDesc->fsIsMlrSupport =
+			MLR_BIT_SUPPORT(prBssDesc
+			->ucMlrSupportBitmap);
+
+		MLR_DBGLOG(prAdapter, SCN, INFO,
+			"MLR beacon - BSSID:" MACSTR
+			" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->fsIsMlrSupport,
+			prBssDesc->ucMlrType,
+			prBssDesc->ucMlrLength,
+			prBssDesc->ucMlrSupportBitmap);
+
+	}
+#endif
+
+	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
+	ie_len = IE_LEN(pucIE) - 7;
+
+	IE_FOR_EACH(ie, ie_len, ie_offset) {
+		if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
+			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
+				(struct IE_MTK_PRE_WIFI7 *)ie;
+
+			DBGLOG(SCN, TRACE, "MTK_OUI_PRE_WIFI7 %d.%d",
+				prPreWifi7->ucVersion1, prPreWifi7->ucVersion0);
+			DBGLOG_MEM8(SCN, TRACE, ie, IE_SIZE(ie));
+
+			sub = prPreWifi7->aucInfoElem;
+			sub_len = IE_LEN(prPreWifi7) - 2;
+
+			IE_FOR_EACH(sub, sub_len, sub_offset) {
+#if (CFG_SUPPORT_802_11BE == 1)
+				if (IE_ID_EXT(sub) == ELEM_EXT_ID_EHT_CAPS)
+					scanParseEhtCapIE(sub, prBssDesc);
+
+				if (IE_ID_EXT(sub) == ELEM_EXT_ID_EHT_OP)
+					scanParseEhtOpIE(sub, prBssDesc,
+						eHwBand);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				if (IE_ID_EXT(sub) == ELEM_EXT_ID_MLD)
+					scanEhtParsingMldElement(prBssDesc,
+						(const uint8_t *)sub,
+						u2FrameCtrl);
+#endif
+#endif
+			}
+		}
+
+		if (IE_ID(ie) == MTK_OUI_ID_CHIP_CAP && IE_LEN(ie) == 8) {
+			struct IE_MTK_CHIP_CAP *prCapIe =
+				(struct IE_MTK_CHIP_CAP *)ie;
+
+			DBGLOG(SCN, TRACE, "MTK_OUI_CHIP_CAP");
+			DBGLOG_MEM8(SCN, TRACE, prCapIe, IE_SIZE(prCapIe));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prCapIe->u8ChipCap & MLD_TYPE_ICV_METHOD_V1)
+				prBssDesc->rMlInfo.fgMldType =
+					MLD_TYPE_ICV_METHOD_V1;
+			if (prCapIe->u8ChipCap & MLD_TYPE_ICV_METHOD_V2)
+				prBssDesc->rMlInfo.fgMldType =
+					MLD_TYPE_ICV_METHOD_V2;
+#endif
+		}
+	}
+}
+
 void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
@@ -4675,6 +4736,22 @@ void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
+void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
+{
+	struct IE_EHT_CAP *ehtCap = NULL;
+
+	ehtCap = (struct IE_EHT_CAP *) pucIE;
+	prBssDesc->fgIsEHTPresent = TRUE;
+	prBssDesc->u2MaximumMpdu = (ehtCap->ucEhtMacCap[0] &
+		EHT_MAC_CAP_MAX_MPDU_LEN_MASK);
+	DBGLOG(SCN, TRACE,
+		"BSSID:" MACSTR
+		" SSID:%s, EHT CAP IE\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		prBssDesc->aucSSID);
+	DBGLOG_MEM8(SCN, TRACE, pucIE, IE_SIZE(pucIE));
+}
+
 void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	enum ENUM_BAND eHwBand)
 {

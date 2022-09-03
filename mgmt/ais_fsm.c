@@ -164,8 +164,13 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t *ucChTokenId);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
+
+static void aisScanAddRlmIE(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ_V2 *prCmdScanReq);
+#endif
 
 static void aisScanReqInit(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
@@ -1049,6 +1054,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
 		prAisBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
 		mldStarecRegister(prAdapter, prStaRec,
+			prBssDesc->rMlInfo.fgMldType,
 			prBssDesc->rMlInfo.aucMldAddr,
 			prBssDesc->rMlInfo.ucLinkIndex);
 	}
@@ -1946,13 +1952,30 @@ skip_roam_fail:
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *bss =
+		prAdapter->aprBssInfo[prAdapter->ucMldReservedBssIdx];
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+
+	if (!bss->fgIsInUse)
+		return TRUE;
+
+	/* already used by self */
+	if (aisGetLinkBssInfo(prAisFsmInfo, 1) == bss)
+		return TRUE;
+
+	return FALSE;
+}
+
 uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
-	struct BSS_DESC *prBssDesc;
+	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	uint8_t *ie;
-	uint16_t offset = 0, len;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -1961,33 +1984,13 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucMlProbeRetryLimit)
 		return FALSE;
 
-	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+	if (!mldIsMloFeatureEnabled(prAdapter, FALSE) ||
+	    !aisSecondLinkAvailable(prAdapter, ucBssIndex))
 		return FALSE;
 
 	/* already found multi link, no need mlo scan */
 	if (prBssDescSet->ucLinkNum != 1)
 		return FALSE;
-
-	prBssDesc = prBssDescSet->prMainBssDesc;
-	ie = prBssDesc->pucIeBuf;
-	len = prBssDesc->u2IELength;
-
-	IE_FOR_EACH(ie, len, offset) {
-		uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
-		uint8_t sap = FALSE;
-
-		if (IE_ID(ie) == ELEM_ID_VENDOR &&
-		    !kalMemCmp(MTK_OUI_IE(ie)->aucOui,
-				aucMtkOui, sizeof(aucMtkOui)) &&
-		    MTK_OUI_IE(ie)->ucLength >= ELEM_MIN_LEN_MTK_OUI &&
-		    (MTK_OUI_IE(ie)->aucCapability[1] &
-				MTK_SYNERGY_CAP_SUPPORT_GC_CSA))
-			sap = TRUE;
-
-		/* ml scan for mtk icv v1 device excluding sap */
-		if (rlmCheckMtkOuiChipCap(ie, CHIP_CAP_ICV_V1) && !sap)
-			return TRUE;
-	}
 
 	/* target is not mlo, no need mlo scan */
 	if (!prBssDesc->rMlInfo.fgValid ||
@@ -2503,6 +2506,11 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 
 			scanInitEssResult(prAdapter);
 send_msg:
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			aisScanAddRlmIE(prAdapter, prScanReqMsg);
+#endif
+
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *)prScanReqMsg,
 				    MSG_SEND_METHOD_BUF);
@@ -8675,14 +8683,15 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		    (struct MSG_HDR *)prMsgChReq,
 		    MSG_SEND_METHOD_BUF);
 }
-#if (CFG_SUPPORT_802_11BE == 1 && CFG_SUPPORT_802_11BE_MLO == 1)
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc;
-	uint8_t aucIe[32];
+	uint8_t aucIe[100];
 	uint32_t u4ScanIELen = 0;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -8726,6 +8735,83 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	prScanReqMsg->u2IELen = (uint16_t)u4ScanIELen;
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+void aisScanAddRlmIEbyBand(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo, enum ENUM_BAND eBand,
+	struct MSG_SCN_SCAN_REQ_V2 *prCmdScanReq)
+{
+	uint8_t ucBssIndex = prBssInfo->ucBssIndex;
+	enum ENUM_BAND eOldBand = prBssInfo->eBand;
+	struct MSDU_INFO *msdu = NULL;
+	uint32_t len = 0;
+
+	/* change eBand to generate rlm ie */
+	prBssInfo->eBand = eBand;
+
+	len = heRlmCalculateHeCapIELen(prAdapter, ucBssIndex, NULL);
+	len += ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, NULL);
+	if (len > 100)
+		goto done;
+
+	msdu = cnmMgtPktAlloc(prAdapter, len);
+	if (msdu == NULL)
+		goto done;
+
+	msdu->ucBssIndex = ucBssIndex;
+	heRlmFillHeCapIE(prAdapter, prBssInfo, msdu);
+	ehtRlmFillCapIE(prAdapter, prBssInfo, msdu);
+
+	switch (eBand) {
+	case BAND_2G4:
+		kalMemCopy(prCmdScanReq->aucIE2G4,
+			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
+		prCmdScanReq->u2IELen2G4 = msdu->u2FrameLength;
+		break;
+	case BAND_5G:
+		kalMemCopy(prCmdScanReq->aucIE5G,
+			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
+		prCmdScanReq->u2IELen5G = msdu->u2FrameLength;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+		kalMemCopy(prCmdScanReq->aucIE6G,
+			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
+		prCmdScanReq->u2IELen6G = msdu->u2FrameLength;
+		break;
+#endif
+	default:
+		break;
+	}
+
+done:
+	prBssInfo->eBand = eOldBand;
+	cnmMgtPktFree(prAdapter, msdu);
+}
+
+void aisScanAddRlmIE(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ_V2 *prCmdScanReq)
+{
+	struct BSS_INFO *bss;
+
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prCmdScanReq->ucBssIndex);
+	if (!bss) {
+		DBGLOG(SCN, WARN, "no bssinfo %d\n", prCmdScanReq->ucBssIndex);
+		return;
+	}
+
+	prCmdScanReq->u2IELen += rlmGenerateMTKChipCapIE(
+		prCmdScanReq->aucIE + prCmdScanReq->u2IELen,
+		MAX_IE_LENGTH - prCmdScanReq->u2IELen, TRUE,
+		MTK_OUI_CHIP_CAP);
+
+	if (prAdapter->rWifiVar.u4SwTestMode ==	ENUM_SW_TEST_MODE_SIGMA_BE) {
+		aisScanAddRlmIEbyBand(prAdapter, bss, BAND_2G4, prCmdScanReq);
+		aisScanAddRlmIEbyBand(prAdapter, bss, BAND_5G, prCmdScanReq);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		aisScanAddRlmIEbyBand(prAdapter, bss, BAND_6G, prCmdScanReq);
+#endif
+	}
 }
 #endif
 

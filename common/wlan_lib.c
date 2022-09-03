@@ -7077,13 +7077,6 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
 	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMlo", FEATURE_ENABLED);
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	prWifiVar->ucAcceptAllMld = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"AcceptAllMld", FEATURE_DISABLED);
-#else
-	prWifiVar->ucAcceptAllMld = (uint8_t) wlanCfgGetUint32(prAdapter,
-		"AcceptAllMld", FEATURE_ENABLED);
-#endif
 	prWifiVar->ucMaxSimultaneousLinks = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "MaxSimultaneousLinks", 0xff);
 #endif /* CFG_SUPPORT_802_11BE */

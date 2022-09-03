@@ -11,35 +11,45 @@
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 
-struct MLD_BSS_INFO *prP2pMldBssInfo;
+struct MLD_BSS_INFO *gprP2pMldBssInfo;
 
 struct MLD_BSS_INFO *p2pGetMldBssInfo(
 	struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
-	if (prP2pMldBssInfo == NULL) {
+	if (p2pRoleFsmNeedMlo(prAdapter, prP2pRoleFsmInfo->ucRoleIndex)) {
+		if (gprP2pMldBssInfo == NULL) {
+			DBGLOG(INIT, TRACE, "\n");
+			mldBssAlloc(prAdapter, &gprP2pMldBssInfo);
+		}
+
+		prP2pRoleFsmInfo->prP2pMldBssInfo = gprP2pMldBssInfo;
+	} else if (prP2pRoleFsmInfo->prP2pMldBssInfo == NULL) {
+		mldBssAlloc(prAdapter, &prP2pRoleFsmInfo->prP2pMldBssInfo);
+	}
+
+	return prP2pRoleFsmInfo->prP2pMldBssInfo;
+}
+
+void p2pMldBssInit(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+{
+	p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo);
+}
+
+void p2pMldBssUninit(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+{
+	if (prP2pRoleFsmInfo->prP2pMldBssInfo != NULL &&
+	    prP2pRoleFsmInfo->prP2pMldBssInfo->rBssList.u4NumElem == 0) {
+		if (gprP2pMldBssInfo == prP2pRoleFsmInfo->prP2pMldBssInfo)
+			gprP2pMldBssInfo = NULL;
+
+		mldBssFree(prAdapter, prP2pRoleFsmInfo->prP2pMldBssInfo);
+		prP2pRoleFsmInfo->prP2pMldBssInfo = NULL;
 		DBGLOG(INIT, TRACE, "\n");
-		mldBssAlloc(prAdapter, &prP2pMldBssInfo);
 	}
-
-	return prP2pMldBssInfo;
 }
-
-int8_t p2pMldBssInit(struct ADAPTER *prAdapter)
-{
-	DBGLOG(INIT, TRACE, "\n");
-	return 0;
-}
-
-void p2pMldBssUninit(struct ADAPTER *prAdapter)
-{
-	if (prP2pMldBssInfo) {
-		mldBssFree(prAdapter, prP2pMldBssInfo);
-		prP2pMldBssInfo = NULL;
-	}
-	DBGLOG(INIT, TRACE, "\n");
-}
-
 
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
 
@@ -231,7 +241,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	uint16_t u2IELength;
 	const uint8_t *ml;
 	uint16_t u2RxFrameCtrl;
-	uint8_t i;
+	uint8_t i, fgMldType;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
 
@@ -282,12 +292,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (!rlmCheckIsSupportedMld(prAdapter, pucIE, u2IELength)) {
-		DBGLOG(AAA, INFO, "unsupported mld, reject!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	mldStarecRegister(prAdapter, prStaRec,
+	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
+	mldStarecRegister(prAdapter, prStaRec, fgMldType,
 		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
 
 	if (prMlInfo->ucProfNum == 0) {
@@ -366,7 +372,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 			prCurr->ucJoinFailureCount = 0;
 
 			/* ml link info */
-			mldStarecRegister(prAdapter, prCurr,
+			mldStarecRegister(prAdapter, prCurr, fgMldType,
 				prMlInfo->aucMldAddr, prProfiles->ucLinkId);
 		}
 	}
@@ -1004,10 +1010,14 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
 	uint8_t i, j;
 
-	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid) {
+	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid ||
+	    prMainBssDesc->rMlInfo.fgMldType == MLD_TYPE_EXTERNAL) {
 		DBGLOG(P2P, INFO, "no need secondary link");
 		return;
 	}
+
+	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+		return;
 
 	DBGLOG(P2P, INFO,
 		"Main " MACSTR " valid=%d mld_addr="MACSTR"\n",

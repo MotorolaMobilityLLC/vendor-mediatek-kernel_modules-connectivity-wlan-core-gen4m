@@ -70,7 +70,13 @@ void ehtRlmReqGenerateCapIE(
 void ehtRlmRspGenerateCapIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
+void ehtRlmRspGenerateCapIEImpl(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
 void ehtRlmRspGenerateOpIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+void ehtRlmRspGenerateOpIEImpl(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 void ehtRlmRecCapInfo(
@@ -79,6 +85,7 @@ void ehtRlmRecCapInfo(
 	u_int8_t *pucIE);
 void ehtRlmRecOperation(
 	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
 	struct BSS_INFO *prBssInfo,
 	u_int8_t *pucIE);
 uint8_t ehtRlmGetVhtOpBwByEhtOpBw(

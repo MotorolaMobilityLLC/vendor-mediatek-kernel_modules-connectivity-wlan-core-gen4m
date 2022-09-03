@@ -1052,7 +1052,7 @@ struct UNI_CMD_STAREC_EHT_MLD {
 	uint16_t u2Tag;		/* Tag = 0x21 */
 	uint16_t u2Length;
 	uint8_t fgNSEP;
-	uint8_t fgMtkMld; /* 0: non mtk, 1: icv method v1, 2: icv method v2 */
+	uint8_t fgMldType;
 	uint8_t ucReserved;
 	/*
 	 * pucStrBitmap[0] bit[0]: don't care

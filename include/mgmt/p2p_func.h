@@ -338,8 +338,8 @@ void p2pFuncGetStationInfo(struct ADAPTER *prAdapter,
 		struct P2P_STATION_INFO *prStaInfo);
 
 struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
-		uint8_t ucBssIdx,
-		struct WLAN_BEACON_FRAME *prProbeRspFrame);
+	uint8_t ucBssIdx, uint8_t fgNonTxLink, uint8_t fgHide,
+	struct WLAN_BEACON_FRAME *prProbeRspFrame);
 
 #if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
 uint32_t

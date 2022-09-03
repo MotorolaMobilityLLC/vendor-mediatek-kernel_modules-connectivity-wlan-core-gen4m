@@ -520,6 +520,11 @@
 /* Reserve 0~31 for group mld index */
 #define MAT_OWN_MLD_ID_BASE		32
 
+#define MLD_TYPE_INVALID		0
+#define MLD_TYPE_ICV_METHOD_V1		1
+#define MLD_TYPE_ICV_METHOD_V2		2
+#define MLD_TYPE_EXTERNAL		0xff
+
 /*------------------------------------------------------------------------------
  * Flags for workaround
  *------------------------------------------------------------------------------

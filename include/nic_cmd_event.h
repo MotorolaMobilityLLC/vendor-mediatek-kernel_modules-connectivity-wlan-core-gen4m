@@ -96,8 +96,9 @@
 #define CMD_STATUS_REJECTED     1
 #define CMD_STATUS_UNKNOWN      2
 
-#define MAX_IE_LENGTH   (600)
-#define MAX_WSC_IE_LENGTH   (400)
+#define MAX_IE_LENGTH		(600)
+#define MAX_BAND_IE_LENGTH	(100)
+#define MAX_WSC_IE_LENGTH	(400)
 
 /* Action field in structure CMD_CH_PRIVILEGE_T */
 #define CMD_CH_ACTION_REQ           0

@@ -990,6 +990,10 @@ void aisClearAllLink(struct AIS_FSM_INFO *prAisFsmInfo);
 void aisDeactivateAllLink(struct ADAPTER *prAdapter,
 			struct AIS_FSM_INFO *prAisFsmInfo);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+#endif
+
 void aisTargetBssSetConnected(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *ais);
 

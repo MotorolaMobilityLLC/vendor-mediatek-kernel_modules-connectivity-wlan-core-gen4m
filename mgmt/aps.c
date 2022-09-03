@@ -342,7 +342,8 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!mldIsMloFeatureEnabled(ad, FALSE))
+	if (!mldIsMloFeatureEnabled(ad, FALSE) ||
+	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;
 
 	/* TODO: block list for mld */

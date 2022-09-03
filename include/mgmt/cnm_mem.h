@@ -300,7 +300,6 @@ struct STA_RECORD {
 	 */
 	uint8_t ucTidBitmap;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
-	uint8_t fgMtkMld;
 #endif
 
 	uint8_t ucStaState;	/* STATE_1,2,3 */
@@ -866,7 +865,8 @@ struct MLD_STA_RECORD {
 	uint16_t u2PrimaryMldId;
 	uint16_t u2SecondMldId;
 	uint16_t u2SetupWlanId;
-	u_int8_t fgNSEP;
+	uint8_t fgNSEP;
+	uint8_t fgMldType;
 	uint8_t aucStrBitmap[3];
 	uint8_t aucEmlCap[3];
 	struct LINK rStarecList;

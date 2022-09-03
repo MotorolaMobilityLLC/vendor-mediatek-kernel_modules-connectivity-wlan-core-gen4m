@@ -295,6 +295,7 @@ struct ML_INFO {
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
 	uint8_t ucLinkIndex;
 	uint8_t ucMaxSimultaneousLinks;
+	uint8_t fgMldType;
 };
 #endif
 
@@ -580,6 +581,17 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	/* Information Element */
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint16_t u2IELen2G4;
+	uint8_t aucIE2G4[MAX_BAND_IE_LENGTH];
+	uint16_t u2IELen5G;
+	uint8_t aucIE5G[MAX_BAND_IE_LENGTH];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t u2IELen6G;
+	uint8_t aucIE6G[MAX_BAND_IE_LENGTH];
+#endif
+#endif
 };
 
 struct SCHED_SCAN_PARAM {	/* Used by SCAN FSM */
@@ -727,6 +739,17 @@ struct MSG_SCN_SCAN_REQ_V2 {
 
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint16_t u2IELen2G4;
+	uint8_t	aucIE2G4[MAX_BAND_IE_LENGTH];
+	uint16_t u2IELen5G;
+	uint8_t	aucIE5G[MAX_BAND_IE_LENGTH];
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t u2IELen6G;
+	uint8_t	aucIE6G[MAX_BAND_IE_LENGTH];
+#endif
+#endif
 };
 
 struct MSG_SCN_SCAN_CANCEL {
@@ -1066,6 +1089,9 @@ void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 
 uint8_t scanApOverload(uint16_t status, uint16_t reason);
 void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
+void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
+	uint8_t *pucIE, struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand, uint16_t u2FrameCtrl);
 
 void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq);
@@ -1079,6 +1105,7 @@ void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
+void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	enum ENUM_BAND eHwBand);
 #endif

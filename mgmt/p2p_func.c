@@ -100,14 +100,10 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 	, {0, heRlmCalculateHeOpIELen,
 			heRlmRspGenerateHeOpIE}     /* 255, EXT 36 */
 #endif
-#if CFG_SUPPORT_802_11BE
-	, {0, ehtRlmCalculateCapIELen,
-			ehtRlmRspGenerateCapIE}
-	, {0, ehtRlmCalculateOpIELen,
-			ehtRlmRspGenerateOpIE}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
-#endif
+	, {0, ehtRlmCalculateCapIELen, ehtRlmRspGenerateCapIE}
+	, {0, ehtRlmCalculateOpIELen, ehtRlmRspGenerateOpIE}
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {0, rlmCalculateMTKOuiIELen, rlmGenerateMTKOuiIE}
@@ -509,6 +505,7 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucLinkIndex =
 				prBssDesc->rMlInfo.ucLinkIndex;
 			mldStarecRegister(prAdapter, prStaRec,
+				prBssDesc->rMlInfo.fgMldType,
 				prBssDesc->rMlInfo.aucMldAddr,
 				prBssDesc->rMlInfo.ucLinkIndex);
 		}
@@ -1289,6 +1286,11 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			struct WLAN_BEACON_FRAME rProbeRspFrame;
 			struct GL_P2P_INFO *prP2PInfo;
 			struct MSDU_INFO *prNewMgmtTxMsdu;
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+			uint8_t fgHide = TRUE;
+#else
+			uint8_t fgHide = FALSE;
+#endif
 
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -1323,9 +1325,15 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				MAC_TX_RESERVED_FIELD),
 				sizeof(rProbeRspFrame));
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prP2PInfo->u2MlIELen != 0)
+				fgHide = FALSE;
+#endif
+
 			/* compose p2p probe rsp frame */
 			prNewMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter,
-				ucBssIndex, &rProbeRspFrame);
+				ucBssIndex, FALSE, fgHide,
+				&rProbeRspFrame);
 
 			if (prNewMgmtTxMsdu) {
 				cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
@@ -1338,7 +1346,7 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				 * is not 0.
 				 */
 				mldGenerateProbeRspIE(prAdapter, prMgmtTxMsdu,
-					ucBssIndex, prP2PInfo->u2MlIELen != 0,
+					ucBssIndex, &rProbeRspFrame,
 					p2pFuncProcessP2pProbeRsp);
 #endif
 			}
@@ -5478,6 +5486,9 @@ void p2pGenerateWSCIE(struct ADAPTER *prAdapter,
 	if (!prP2pBssInfo)
 		return;
 
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_NON_TX_LINK)
+		return;
+
 	kalP2PGenWSC_IE(prAdapter->prGlueInfo,
 		2,
 		(uint8_t *)
@@ -5509,6 +5520,9 @@ void p2pGenerateWFDIE(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	if (!prP2pBssInfo)
+		return;
+
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_NON_TX_LINK)
 		return;
 
 	kalMemCopy((uint8_t *)
@@ -5561,6 +5575,10 @@ void p2pGenerateP2PIE(struct ADAPTER *prAdapter,
 
 	if (!prP2pBssInfo)
 		return;
+
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_NON_TX_LINK)
+		return;
+
 	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++) {
 		kalP2PGenP2P_IE(prAdapter->prGlueInfo,
 			u4Idx,
@@ -5603,6 +5621,10 @@ void p2pGenerateVendorIE(struct ADAPTER *prAdapter,
 
 	if (!prP2pBssInfo)
 		return;
+
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_NON_TX_LINK)
+		return;
+
 	kalMemCopy((uint8_t *)
 		((uintptr_t) prMsduInfo->prPacket +
 		(uintptr_t) prMsduInfo->u2FrameLength),
@@ -5620,7 +5642,8 @@ void p2pGenerateVendorIE(struct ADAPTER *prAdapter,
 #endif
 
 struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx, struct WLAN_BEACON_FRAME *prProbeRspFrame)
+	uint8_t ucBssIdx, uint8_t fgNonTxLink, uint8_t fgHide,
+	struct WLAN_BEACON_FRAME *prProbeRspFrame)
 {
 	struct MSDU_INFO *prRetMsduInfo = NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -5682,6 +5705,11 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	}
 
 	prRetMsduInfo->ucBssIndex = ucBssIdx;
+
+	if (fgNonTxLink)
+		prRetMsduInfo->ucControlFlag |= MSDU_CONTROL_FLAG_NON_TX_LINK;
+	if (fgHide)
+		prRetMsduInfo->ucControlFlag |= MSDU_CONTROL_FLAG_HIDE_INFO;
 
 	if (prProbeRspFrame)
 		/* 3 Compose / Re-compose probe response frame. */
@@ -5906,7 +5934,7 @@ p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_CUSTOM_VENDOR_IE
 	prP2PInfo->u2VenderIELen = 0;
 #endif
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prP2PInfo->u2MlIELen = 0;
 #endif
 
@@ -5929,7 +5957,7 @@ p2pFuncProcessP2pProbeRspAction(struct ADAPTER *prAdapter,
 		}
 			break;
 		case ELEM_ID_RESERVED:
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_MLD) {
 				kalMemCopy(prP2PInfo->aucMlIE,
 					pucIEBuf, IE_SIZE(pucIEBuf));

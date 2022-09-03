@@ -236,78 +236,46 @@ void scnSendScanReq(struct ADAPTER *prAdapter)
 	scnSendScanReqV2(prAdapter);
 }
 
-#if (CFG_SUPPORT_802_11BE == 1)
-void scanAddRlmIEbyBand(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
-	enum ENUM_BAND eBand, struct CMD_SCAN_REQ_V2 *prCmdScanReq)
-{
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	uint8_t ucBssIndex = prBssInfo->ucBssIndex;
-	enum ENUM_BAND eOldBand = prBssInfo->eBand;
-	struct MSDU_INFO *msdu = NULL;
-	uint32_t len = 0;
-
-	/* change eBand to generate rlm ie */
-	prBssInfo->eBand = eBand;
-
-	len = heRlmCalculateHeCapIELen(prAdapter, ucBssIndex, NULL);
-	len += ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, NULL);
-	if (len > 100)
-		goto done;
-
-	msdu = cnmMgtPktAlloc(prAdapter, len);
-	if (msdu == NULL)
-		goto done;
-
-	msdu->ucBssIndex = ucBssIndex;
-	heRlmFillHeCapIE(prAdapter, prBssInfo, msdu);
-	ehtRlmFillCapIE(prAdapter, prBssInfo, msdu);
-
-	switch (eBand) {
-	case BAND_2G4:
-		kalMemCopy(prCmdScanReq->aucIE2G4,
-			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
-		prCmdScanReq->u2IELen2G4 = msdu->u2FrameLength;
-		break;
-	case BAND_5G:
-		kalMemCopy(prCmdScanReq->aucIE5G,
-			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
-		prCmdScanReq->u2IELen5G = msdu->u2FrameLength;
-		break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	case BAND_6G:
-		kalMemCopy(prCmdScanReq->aucIE6G,
-			(uint8_t *) msdu->prPacket, msdu->u2FrameLength);
-		prCmdScanReq->u2IELen6G = msdu->u2FrameLength;
-		break;
-#endif
-	default:
-		break;
-	}
-
-done:
-	prBssInfo->eBand = eOldBand;
-	cnmMgtPktFree(prAdapter, msdu);
-#endif
-}
-
-void scanAddRlmIE(struct ADAPTER *prAdapter,
+void scanAddPerBandIE(struct ADAPTER *prAdapter,
+	struct SCAN_PARAM *prScanParam,
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq)
 {
-	struct BSS_INFO *prBssInfo;
+#if defined(CFG_SUPPORT_UNIFIED_COMMAND) && (CFG_SUPPORT_802_11BE_MLO == 1)
+	uint16_t len = prScanParam->u2IELen;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prCmdScanReq->ucBssIndex);
-	if (!prBssInfo) {
-		DBGLOG(SCN, WARN, "no bssinfo %d\n", prCmdScanReq->ucBssIndex);
+	len += prScanParam->u2IELen2G4 + prScanParam->u2IELen5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	len += prScanParam->u2IELen6G;
+#endif
+
+	/* FW share scan IE with per band IE, so ensure space is enough here */
+	if (len > MAX_IE_LENGTH) {
+		log_dbg(SCN, WARN, "no space for per band IE (len=%d)\n", len);
 		return;
 	}
 
-	scanAddRlmIEbyBand(prAdapter, prBssInfo, BAND_2G4, prCmdScanReq);
-	scanAddRlmIEbyBand(prAdapter, prBssInfo, BAND_5G, prCmdScanReq);
+	if (prScanParam->u2IELen2G4 > 0 &&
+	    prScanParam->u2IELen2G4 <= MAX_BAND_IE_LENGTH) {
+		prCmdScanReq->u2IELen2G4 = prScanParam->u2IELen2G4;
+		kalMemCopy(prCmdScanReq->aucIE2G4,
+			prScanParam->aucIE2G4, prScanParam->u2IELen2G4);
+	}
+	if (prScanParam->u2IELen5G > 0 &&
+	    prScanParam->u2IELen5G <= MAX_BAND_IE_LENGTH) {
+		prCmdScanReq->u2IELen5G = prScanParam->u2IELen5G;
+		kalMemCopy(prCmdScanReq->aucIE5G,
+			prScanParam->aucIE5G, prScanParam->u2IELen5G);
+	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	scanAddRlmIEbyBand(prAdapter, prBssInfo, BAND_6G, prCmdScanReq);
+	if (prScanParam->u2IELen6G > 0 &&
+	    prScanParam->u2IELen6G <= MAX_BAND_IE_LENGTH) {
+		prCmdScanReq->u2IELen6G = prScanParam->u2IELen6G;
+		kalMemCopy(prCmdScanReq->aucIE6G,
+			prScanParam->aucIE6G, prScanParam->u2IELen6G);
+	}
+#endif
 #endif
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -500,14 +468,11 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 	else
 		prCmdScanReq->u2IELen = MAX_IE_LENGTH;
 
-	if (prScanParam->u2IELen)
+	if (prCmdScanReq->u2IELen)
 		kalMemCopy(prCmdScanReq->aucIE, prScanParam->aucIE,
 			sizeof(uint8_t) * prCmdScanReq->u2IELen);
 
-#if (CFG_SUPPORT_802_11BE == 1)
-	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_BE)
-		scanAddRlmIE(prAdapter, prCmdScanReq);
-#endif
+	scanAddPerBandIE(prAdapter, prScanParam, prCmdScanReq);
 
 	log_dbg(SCN, TRACE, "ScanReqV2: ScanType=%d,BSS=%u,SSIDType=%d,Num=%u,Ext=%u,ChannelType=%d,Num=%d,Ext=%u,Seq=%u,Ver=%u,Dw=%u,Min=%u,IELen=%d,Func=(0x%X,0x%X),Mac="
 		MACSTR ",BSSID:"MACSTR"\n",
@@ -889,6 +854,29 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 #endif
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 #endif /* CFG_MTK_FPGA_PLATFORM */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prScanReqMsg->u2IELen2G4 > 0 &&
+	    prScanParam->u2IELen2G4 <= MAX_BAND_IE_LENGTH) {
+		prScanParam->u2IELen2G4 = prScanReqMsg->u2IELen2G4;
+		kalMemCopy(prScanParam->aucIE2G4,
+			prScanReqMsg->aucIE2G4, prScanParam->u2IELen2G4);
+	}
+	if (prScanReqMsg->u2IELen5G > 0 &&
+	    prScanParam->u2IELen5G <= MAX_BAND_IE_LENGTH) {
+		prScanParam->u2IELen5G = prScanReqMsg->u2IELen5G;
+		kalMemCopy(prScanParam->aucIE5G,
+			prScanReqMsg->aucIE5G, prScanParam->u2IELen5G);
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prScanReqMsg->u2IELen6G > 0 &&
+	    prScanParam->u2IELen6G <= MAX_BAND_IE_LENGTH) {
+		prScanParam->u2IELen6G = prScanReqMsg->u2IELen6G;
+		kalMemCopy(prScanParam->aucIE6G,
+			prScanReqMsg->aucIE6G, prScanParam->u2IELen6G);
+	}
+#endif
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1110,6 +1098,9 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 #endif
 #endif
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
+	mldEnableCocurrentMld(prAdapter);
+#endif
 }	/* end of scnEventScanDone */
 
 

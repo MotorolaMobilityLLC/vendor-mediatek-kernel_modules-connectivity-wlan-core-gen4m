@@ -6315,6 +6315,10 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 				     bssInfoConnType(prAd, bss) ==
 						CONNECTION_P2P_GO))
 					ucCapa = 1;
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+				if (mldStarecExternalMldExist(prAd))
+					ucCapa = 0;
+#endif
 			}
 
 			i4BytesWritten = kalSnprintf(

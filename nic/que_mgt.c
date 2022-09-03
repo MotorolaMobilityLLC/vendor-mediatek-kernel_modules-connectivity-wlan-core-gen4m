@@ -7023,7 +7023,6 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 				}
 			}
 			break;
-
 		default:
 			/* A WMM IE that doesn't matter. Ignore it. */
 			break;

@@ -3625,13 +3625,9 @@ uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 {
 	struct UNI_CMD_STAREC *uni_cmd;
 	struct UNI_CMD_STAREC_MLD_TEARDOWN *tag;
-	struct MLD_STA_RECORD *prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 			sizeof(struct UNI_CMD_STAREC_MLD_TEARDOWN);
 	uint32_t status = WLAN_STATUS_SUCCESS;
-
-	if (!prMldStaRec)
-		return WLAN_STATUS_SUCCESS;
 
 	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
 				RAM_TYPE_MSG, max_cmd_len);
@@ -3682,7 +3678,7 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_MLD;
 	tag->u2Length = sizeof(struct UNI_CMD_STAREC_EHT_MLD);
 	tag->fgNSEP = prMldStarec->fgNSEP;
-	tag->fgMtkMld = prStaRec->fgMtkMld;
+	tag->fgMldType = prMldStarec->fgMldType;
 
 	kalMemCopy(tag->afgStrCapBitmap,
 		prMldStarec->aucStrBitmap,
@@ -3692,7 +3688,7 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		sizeof(tag->aucEmlCap));
 
 	DBGLOG(INIT, INFO,
-		"[%d] bss=%d,nsep=%d,eml=0x%06x,str[0x%x,0x%x,0x%x] mld_type=%d\n",
+		"[%d] bss=%d,nsep=%d,eml=0x%06x,str[0x%x,0x%x,0x%x] mldType=%d\n",
 		prStaRec->ucIndex,
 		cmd->ucBssIndex,
 		tag->fgNSEP,
@@ -3700,7 +3696,7 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		tag->afgStrCapBitmap[0],
 		tag->afgStrCapBitmap[1],
 		tag->afgStrCapBitmap[2],
-		tag->fgMtkMld);
+		tag->fgMldType);
 
 	return tag->u2Length;
 }

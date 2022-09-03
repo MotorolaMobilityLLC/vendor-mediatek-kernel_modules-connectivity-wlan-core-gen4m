@@ -727,7 +727,6 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prStaRec->ucMldStaIndex = MLD_GROUP_NONE;
 			prStaRec->ucTidBitmap = 0xFF;
-			prStaRec->fgMtkMld = 0;
 #endif
 			break;
 		}
