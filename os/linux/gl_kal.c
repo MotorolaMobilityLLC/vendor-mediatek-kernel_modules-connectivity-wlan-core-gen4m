@@ -10165,11 +10165,11 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-end:
 	/* check tx hang */
 	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
+end:
 	DBGLOG(SW4, TRACE, "exit kalPerMonHandler\n");
 }
 
