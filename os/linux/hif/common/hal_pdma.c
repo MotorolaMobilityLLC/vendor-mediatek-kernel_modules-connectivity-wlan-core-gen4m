@@ -308,6 +308,10 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			return WLAN_STATUS_FAILURE;
 		}
 
+		if (!prGlueInfo->u4ReadyFlag)
+			halCheckRxPollingMode(prAdapter, u4Time,
+					      u4TimeoutValue, u4Cnt);
+
 		fgStatus = kalDevPortRead(
 			prGlueInfo, ucNewPort, u4PktLen,
 			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
@@ -317,9 +321,6 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			break;
 		}
 
-		if (!prGlueInfo->u4ReadyFlag)
-			halCheckRxPollingMode(prAdapter, u4Time,
-					      u4TimeoutValue, u4Cnt);
 		if (halIsTimeout(u4Time, u4TimeoutValue)) {
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 			uint32_t u4Value = 0;
