@@ -1605,7 +1605,19 @@ bool IsOverRstTimeThreshold(
 
 void glResetWholeChipResetTrigger(char *pcReason)
 {
+	struct RESET_STRUCT *rst = &wifi_rst;
+	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
+	struct ADAPTER *prAdapter = NULL;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	int ret = -ENOTSUPP;
+
+	if (!fgIsBusAccessFailed && prGlueInfo->u4ReadyFlag) {
+		prAdapter = prGlueInfo->prAdapter;
+		prDebugOps = prAdapter->chip_info->prDebugOps;
+
+		if (prDebugOps && prDebugOps->dumpBusHangCr)
+			prDebugOps->dumpBusHangCr(prAdapter);
+	}
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);
