@@ -206,6 +206,10 @@ static spinlock_t rPCIELock;
 #define WIFI_ROLE	(1)
 #define MD_ROLE		(2)
 #define POLLING_TIMEOUT		(200)
+#define DUMP_PCIE_CR	"0x1F_5004=0x%08x, 0x1F_500C=0x%08x,"\
+		"0x1F_5014=0x%08x, 0x1F_5400=0x%08x, 0x1F_5404=0x%08x,"\
+		"0x1F_6008=0x%08x, 0x1F_6000=0x%08x, 0x1F_6100=0x%08x,"\
+		"0x1F_5300=0x%08x, 0x1F_6550=0x%08x, 0x1F_801C=0x%08x\n"
 #endif
 
 
@@ -1690,7 +1694,7 @@ static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
 
 	spin_unlock_irqrestore(&rPCIELock, flags);
 
-	DBGLOG(HAL, INFO, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
+	DBGLOG(HAL, TRACE, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
 		prChipInfo->bus_info->fgMDEnL1_2);
 
@@ -1823,144 +1827,134 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 {
 	struct pci_dev *pci_dev = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	u_int32_t u4RegValue = 0;
+	u_int32_t u4RegVal[20] = {0};
 	int32_t err = 0;
 
 	err = mtk_pcie_dump_link_info(0);
-	DBGLOG(HAL, INFO, "pcie dump 0x%08x\n", err);
-	if (err & BIT(5)) {
-		DBGLOG(HAL, INFO, "PCIE link OK\n");
 
+	if (err & BIT(5)) {
 		/*read pcie cfg.space 0x488 // level1: pcie*/
 		prHifInfo = &prGlueInfo->rHifInfo;
 		if (prHifInfo)
 			pci_dev = prHifInfo->pdev;
 
 		if (pci_dev) {
-			pci_read_config_dword(pci_dev, 0x0, &u4RegValue);
-			if (u4RegValue == 0) {
+			pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
+			if (u4RegVal[0] == 0) {
 				DBGLOG(HAL, INFO,
-					"PCIE link down/card loss\n");
+					"PCIE link down 0x0=0x%08x\n",
+					u4RegVal[0]);
 				return FALSE;
 			}
-			DBGLOG(HAL, INFO, "PCIE cfg 0x0 0x%08x\n",
-				u4RegValue);
 
 			/*1. read pcie cfg.space 0x488 // level1: pcie*/
-			pci_read_config_dword(pci_dev, 0x488, &u4RegValue);
-			DBGLOG(HAL, INFO, "PCIE cfg 0x488 0x%08x\n",
-				u4RegValue);
-			if (u4RegValue != 0xC0093301)
-				DBGLOG(HAL, INFO, "state mismatch, error\n");
-
-			DBGLOG(HAL, INFO, "PCIE cfg 0x488 0x%08x\n",
-				u4RegValue);
+			pci_read_config_dword(pci_dev, 0x488, &u4RegVal[1]);
+			if (u4RegVal[1] != 0xC0093301)
+				DBGLOG(HAL, INFO,
+					"state mismatch 0x488=0x%08x\n",
+					u4RegVal[1]);
 		}
 
 		/*2. cb_infra/cbtop status*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1E7204,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1E7204 0x%08x\n", u4RegValue);
-		if (u4RegValue < 0x20220811) {
-			DBGLOG(HAL, INFO, "read patch version error\n");
+			&u4RegVal[2]);
+		if (u4RegVal[2] < 0x20220811) {
+			DBGLOG(HAL, INFO, "version error 0x1E7204=0x%08x\n",
+				u4RegVal[2]);
 			return FALSE;
 		}
 
 		/*3. cb_infra_slp_status*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F500C,
-			&u4RegValue);
-		if ((u4RegValue & BITS(1, 3)) != BITS(1, 3)) {
-			DBGLOG(HAL, INFO, "cb_infra_slp_status error 0x%08x\n",
-				u4RegValue);
+			&u4RegVal[3]);
+		if ((u4RegVal[3] & BITS(1, 3)) != BITS(1, 3)) {
+			DBGLOG(HAL, INFO, "cb_infra_slp error=0x%08x\n",
+				u4RegVal[3]);
 			return FALSE;
 		}
 
 		/*4. MMIO dump slp_ctrl setting*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F5004,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_5004 0x%08x\n", u4RegValue);
+			&u4RegVal[4]);
+
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F500C,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_500C 0x%08x\n", u4RegValue);
+			&u4RegVal[5]);
+
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F5014,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_5014 0x%08x\n", u4RegValue);
+			&u4RegVal[6]);
 
 		/*5. MMIO dump slp_ctrl cnt:*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F5400,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_5400 0x%08x\n", u4RegValue);
+			&u4RegVal[7]);
+
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F5404,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_5404 0x%08x\n", u4RegValue);
+			&u4RegVal[8]);
 
 		/*6. MMIO dump ap2conn gals dbg*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F6008,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_6008 0x%08x\n", u4RegValue);
+			&u4RegVal[9]);
 
 		/*6. MMIO dump conn2ap gals dbg*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F6000,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_6000 0x%08x\n", u4RegValue);
+			&u4RegVal[10]);
 
 		/*6. MMIO dump dma2ap gals dbg*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F6100,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_6100 0x%08x\n", u4RegValue);
+			&u4RegVal[11]);
 
 		/*7. MMIO dump 0x1F_5300*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F5300,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_5300 0x%08x\n", u4RegValue);
+			&u4RegVal[12]);
 
 		/*5. MMIO dump 0x1F_6550*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F6550,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_6550 0x%08x\n", u4RegValue);
+			&u4RegVal[13]);
 
 		/*6. MMIO dump 0x1F_801C*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1F801C,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1F_801C 0x%08x\n", u4RegValue);
+			&u4RegVal[14]);
 
 		/*7. MMIO write 0x1E_3020 = 0x0*/
 		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E3020, 0x0);
 		/*8. MMIO write 0x1E_7150 = 0x2*/
 		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E7150, 0x2);
 
+		DBGLOG(HAL, INFO, DUMP_PCIE_CR,
+		u4RegVal[4], u4RegVal[5], u4RegVal[6], u4RegVal[7],
+		u4RegVal[8], u4RegVal[9], u4RegVal[10], u4RegVal[11],
+		u4RegVal[12], u4RegVal[13], u4RegVal[14]);
+
 		/*9. CBTOP REGs dump  0x1E_7154*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1E7154,
-			&u4RegValue);
-		if (u4RegValue != 0x0) {
-			DBGLOG(HAL, INFO, "MMIO read 0x1E_7154 0x%08x\n",
-				u4RegValue);
+			&u4RegVal[15]);
+		if (u4RegVal[15] != 0x0) {
+			DBGLOG(HAL, INFO, "0x1E7154=0x%08x\n",
+				u4RegVal[15]);
 			return FALSE;
 		}
 
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1D0E48,
-			&u4RegValue);
-		DBGLOG(HAL, INFO, "MMIO read 0x1D_0E48 0x%08x\n", u4RegValue);
+			&u4RegVal[16]);
+		DBGLOG(HAL, INFO, "0x1D_0E48=0x%08x\n", u4RegVal[16]);
 
 	} else {
 		return FALSE;
 	}
-	DBGLOG(HAL, INFO, "mt6639DumpPcieDateFlowStatus done\n");
 	return TRUE;
 }
 #endif
