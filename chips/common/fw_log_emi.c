@@ -52,6 +52,13 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 	struct FW_LOG_EMI_SUB_CTRL *sub_ctrl,
 	uint32_t rp)
 {
+	ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+	if (ad->fgIsFwOwn == TRUE) {
+		DBGLOG(INIT, WARN,
+			"Skip due to driver own failed.\n");
+		return;
+	}
+
 	DBGLOG(INIT, TRACE,
 		"[%d %s] rp: 0x%x\n",
 		sub_ctrl->type,
@@ -61,6 +68,8 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 	ccif_set_fw_log_read_pointer(ad,
 				     sub_ctrl->type,
 				     rp);
+
+	wlanReleasePowerControl(ad);
 }
 
 static u_int8_t fw_log_emi_is_empty(struct FW_LOG_EMI_SUB_CTRL *sub_ctrl)
@@ -93,6 +102,12 @@ static void __fw_log_emi_sub_handler(struct ADAPTER *ad,
 		recv = sub_ctrl->wp - sub_ctrl->irp;
 	else
 		recv = sub_ctrl->length - sub_ctrl->irp + sub_ctrl->wp;
+	if (recv > sub_ctrl->length) {
+		DBGLOG(INIT, ERROR,
+			"Invalid rcv length (%u %u)\n",
+			recv, sub_ctrl->length);
+		return;
+	}
 	handled = recv;
 
 	rp = sub_ctrl->irp;
@@ -245,10 +260,9 @@ static void fw_log_emi_refresh_sub_header(struct ADAPTER *ad,
 	sub_ctrl->iwp = sub_header.internal_wp;
 
 	DBGLOG(INIT, TRACE,
-		"[%d %s] buf_base_addr: 0x%x, rp: 0x%x, irp: 0x%x, wp: 0x%x, iwp: 0x%x\n",
+		"[%d %s] rp: 0x%x, irp: 0x%x, wp: 0x%x, iwp: 0x%x\n",
 		sub_ctrl->type,
 		fw_log_type_to_str(sub_ctrl->type),
-		sub_ctrl->buf_base_addr,
 		sub_ctrl->rp,
 		sub_ctrl->irp,
 		sub_ctrl->wp,
@@ -260,13 +274,17 @@ static uint32_t fw_log_emi_sub_ctrl_init(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type)
 {
 	struct FW_LOG_EMI_SUB_CTRL *sub_ctrl = &ctrl->sub_ctrls[type];
+	struct FW_LOG_SUB_HEADER sub_header = {0};
 	uint32_t status = WLAN_STATUS_SUCCESS;
 
 	sub_ctrl->type = type;
 
-	fw_log_emi_refresh_sub_header(ad, ctrl, sub_ctrl);
+	emi_mem_read(ad->chip_info,
+		     sub_ctrl->base_addr,
+		     &sub_header,
+		     sizeof(sub_header));
 
-	sub_ctrl->irp = sub_ctrl->rp;
+	sub_ctrl->buf_base_addr = sub_ctrl->base_addr + sizeof(sub_header);
 	if (sub_ctrl->length) {
 		sub_ctrl->buffer = kalMemAlloc(sub_ctrl->length,
 			VIR_MEM_TYPE);
@@ -276,6 +294,8 @@ static uint32_t fw_log_emi_sub_ctrl_init(struct ADAPTER *ad,
 		} else {
 			kalMemZero(sub_ctrl->buffer, sub_ctrl->length);
 		}
+	} else {
+		status = WLAN_STATUS_INVALID_LENGTH;
 	}
 
 	return status;
