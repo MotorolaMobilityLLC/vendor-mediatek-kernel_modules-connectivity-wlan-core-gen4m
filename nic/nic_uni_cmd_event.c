@@ -4663,11 +4663,12 @@ uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_OFFLOAD_TAG_GTK_REKEY;
 	tag->u2Length = sizeof(*tag);
 	kalMemCopy(tag->aucKek, cmd->aucKek, sizeof(tag->aucKek));
+	kalMemCopy(tag->aucKck, cmd->aucKck, sizeof(tag->aucKck));
 	kalMemCopy(tag->aucReplayCtr,
 		cmd->aucReplayCtr, sizeof(tag->aucReplayCtr));
-	tag->ucRekeyMode = 0;
+	tag->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_UPDATE;
 	tag->ucCurKeyId = 0;
-	tag->ucOption = 0;
+	tag->ucOption = GTK_REKEY_UPDATE_AND_ON;
 	tag->u4Proto = cmd->u4Proto;
 	tag->u4PairwiseCipher = cmd->u4PairwiseCipher;
 	tag->u4GroupCipher = cmd->u4GroupCipher;
