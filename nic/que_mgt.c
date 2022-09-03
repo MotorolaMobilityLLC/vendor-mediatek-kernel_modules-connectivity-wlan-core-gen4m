@@ -7651,23 +7651,31 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	prBssInfo->fgIsNetAbsent = prEventBssStatus->ucIsAbsent;
 	prBssInfo->ucBssFreeQuota = prEventBssStatus->ucBssFreeQuota;
 
-	DBGLOG(QM, INFO, "NAF:B=%d,A=%d,F=%d\n",
-		prEventBssStatus->ucBssIndex, prBssInfo->fgIsNetAbsent,
-		prBssInfo->ucBssFreeQuota);
-
 	if (!prBssInfo->fgIsNetAbsent) {
+		if (!prBssInfo->tmLastPresent)
+			prBssInfo->tmLastPresent = kalGetTimeTick();
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_27);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prAdapter->ucBssAbsentBitmap &= ~BIT(prBssInfo->ucBssIndex);
 #endif
 	} else {
+		if (prBssInfo->tmLastPresent) {
+			prBssInfo->u4PresentTime = kalGetTimeTick() -
+				prBssInfo->tmLastPresent;
+			prBssInfo->tmLastPresent = 0;
+		}
 		/* ToDo:: QM_DBG_CNT_INC */
 		QM_DBG_CNT_INC(&(prAdapter->rQM), QM_DBG_CNT_28);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prAdapter->ucBssAbsentBitmap |= BIT(prBssInfo->ucBssIndex);
 #endif
 	}
+
+	DBGLOG(QM, INFO, "NAF:B=%d,A=%d,F=%d,P=%u\n",
+		prEventBssStatus->ucBssIndex, prBssInfo->fgIsNetAbsent,
+		prBssInfo->ucBssFreeQuota, prBssInfo->u4PresentTime);
+
 	/* From Absent to Present */
 	if (fgIsNetAbsentOld && !prBssInfo->fgIsNetAbsent) {
 		if (HAL_IS_TX_DIRECT(prAdapter)) {

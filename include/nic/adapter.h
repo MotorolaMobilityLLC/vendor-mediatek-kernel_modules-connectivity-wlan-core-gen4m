@@ -311,6 +311,8 @@ struct BSS_INFO {
 	 */
 	u_int8_t fgIsQBSS;
 	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
+	OS_SYSTIME tmLastPresent;
+	uint32_t u4PresentTime; /* in ms */
 
 	/* Stop/Start Subqueue threshold for BSS */
 	uint32_t u4TxStopTh;
@@ -1084,6 +1086,10 @@ struct WIFI_VAR {
 
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+#if CFG_SUPPORT_MCC_BOOST_CPU
+	uint32_t u4MccBoostTputLvTh;
+	uint32_t u4MccBoostPresentTime;
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 	u_int8_t fgBoostCpuEn;
 	uint32_t u4BoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
@@ -2086,6 +2092,9 @@ struct ADAPTER {
 	uint8_t ucSmartGearWfPathSupport;
 
 	struct PERF_MONITOR rPerMonitor;
+#if CFG_SUPPORT_MCC_BOOST_CPU
+	u_int8_t fgMccBoost;
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
 	/* ICAP */
 	u_int8_t ucICapDone;

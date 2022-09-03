@@ -1925,6 +1925,9 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+	prBssInfo->u4PresentTime = 0;
+	prBssInfo->tmLastPresent = 0;
+
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
 
 	if (fgReset40mBw) {

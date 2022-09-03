@@ -9955,6 +9955,47 @@ fail:
 	return WLAN_STATUS_FAILURE;
 }
 
+#if CFG_SUPPORT_MCC_BOOST_CPU
+void kalMccBoostCheck(struct ADAPTER *prAdapter, uint32_t u4TputLv)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct BSS_INFO *prBssInfo;
+	u_int8_t fgMccBoost = FALSE;
+	uint8_t i;
+
+	if (!cnmIsMccMode(prAdapter))
+		goto end;
+
+	if (u4TputLv < prWifiVar->u4MccBoostTputLvTh)
+		goto end;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (!IS_BSS_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		/* no ready yet */
+		if (prBssInfo->u4PresentTime == 0)
+			continue;
+
+		if (prBssInfo->u4PresentTime <
+				prWifiVar->u4MccBoostPresentTime) {
+			DBGLOG(INIT, INFO, "B:%u P:%u TputLv:%d\n",
+				i, prBssInfo->u4PresentTime, u4TputLv);
+			fgMccBoost = TRUE;
+		}
+	}
+
+end:
+	prAdapter->fgMccBoost = fgMccBoost;
+}
+
+u_int8_t kalIsMccBoost(struct ADAPTER *prAdapter)
+{
+	return prAdapter->fgMccBoost;
+}
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+
 void kalPerMonHandler(struct ADAPTER *prAdapter,
 		      unsigned long ulParam)
 {
@@ -10053,6 +10094,11 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				prPerMonitor->u4TarPerfLevel;
 		}
 
+#if CFG_SUPPORT_MCC_BOOST_CPU
+		kalMccBoostCheck(prAdapter,
+			prPerMonitor->u4BoostPerfLevel);
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+
 		if (kalCheckTputLoad(prAdapter,
 			u4PrevBoostPerfLevel,
 			prPerMonitor->u4BoostPerfLevel,
@@ -10086,6 +10132,13 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
 
+#if CFG_SUPPORT_MCC_BOOST_CPU
+			if (kalIsMccBoost(prAdapter)) {
+				kalBoostCpu(prAdapter,
+					PERF_MON_TP_MAX_THRESHOLD - 1,
+					PERF_MON_TP_MAX_THRESHOLD - 1);
+			} else
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 			kalBoostCpu(prAdapter,
 				prPerMonitor->u4BoostPerfLevel,
 				u4BoostCpuTh);
