@@ -163,7 +163,8 @@ static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
 }
 
 static void halTriggerTxHangFwDebugSop(
-	struct ADAPTER *prAdapter, uint32_t u4BssIndex)
+	struct ADAPTER *prAdapter, uint32_t u4Module,
+	uint32_t u4BssIndex, uint32_t u4Reason)
 {
 	struct CHIP_DBG_OPS *prDbgOps = prAdapter->chip_info->prDebugOps;
 
@@ -173,11 +174,13 @@ static void halTriggerTxHangFwDebugSop(
 			prAdapter,
 			true,
 			0xffff,
-			DBG_PLE_INT_TX_MASK |
+			(u4Module << DBG_PLE_INT_MODULE_SHIFT) |
+			(u4BssIndex << DBG_PLE_INT_BAND_BSS_SHIFT) |
 			(1 << DBG_PLE_INT_VER_SHIFT) |
-			(u4BssIndex << DBG_PLE_INT_BAND_BSS_SHIFT)
+			(u4Reason)
 			);
-		DBGLOG(HAL, INFO, "Trigger Fw Debug SOP[%d]\n", u4BssIndex);
+		DBGLOG(HAL, INFO, "Trigger Fw Debug SOP[%d][%d]\n",
+		       u4Module, u4BssIndex);
 	}
 }
 
@@ -238,7 +241,8 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 
 	DBGLOG(HAL, INFO, "BssIndex: %d\n", ucBssIndex);
 
-	halTriggerTxHangFwDebugSop(prAdapter, ucBssIndex);
+	halTriggerTxHangFwDebugSop(prAdapter, DBG_PLE_INT_MOD_TX,
+	   ucBssIndex, DBG_PLE_INT_REASON_MANUAL);
 }
 
 bool halCheckFullDump(struct ADAPTER *prAdapter)
@@ -318,10 +322,14 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 		halSetDrvSer(prAdapter);
 
 	if (prAdapter->u4HifChkFlag & HIF_TRIGGER_FW_DUMP)
-		halTriggerTxHangFwDebugSop(prAdapter, prAdapter->u4HifDbgParam);
+		halTriggerTxHangFwDebugSop(prAdapter, prAdapter->u4HifDbgMod,
+					   prAdapter->u4HifDbgBss,
+					   prAdapter->u4HifDbgReason);
 
 	prAdapter->u4HifChkFlag = 0;
-	prAdapter->u4HifDbgParam = 0;
+	prAdapter->u4HifDbgMod = 0;
+	prAdapter->u4HifDbgBss = 0;
+	prAdapter->u4HifDbgReason = 0;
 
 	if (!fgHifTxHangFullDump) {
 		if (BIT(prAdapter->u4HifTxHangDumpIdx) &

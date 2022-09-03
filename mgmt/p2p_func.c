@@ -3421,7 +3421,9 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 		if (u2ReasonCode == REASON_CODE_DISASSOC_INACTIVITY ||
 			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS) {
 			prAdapter->u4HifChkFlag |= HIF_TRIGGER_FW_DUMP;
-			prAdapter->u4HifDbgParam = prP2pBssInfo->ucBssIndex;
+			prAdapter->u4HifDbgMod = DBG_PLE_INT_MOD_TX;
+			prAdapter->u4HifDbgBss = prP2pBssInfo->ucBssIndex;
+			prAdapter->u4HifDbgReason = DBG_PLE_INT_REASON_MANUAL;
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
 		}
 

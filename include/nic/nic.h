@@ -315,6 +315,10 @@ void nicpmSetFWOwn(struct ADAPTER *prAdapter,
 
 u_int8_t nicpmSetAcpiPowerD0(struct ADAPTER *prAdapter);
 
+void nicTriggerAHDBG(struct ADAPTER *prAdapter,
+	uint32_t u4mod, uint32_t u4reason,
+	uint32_t u4BssIdx, uint32_t u4wlanIdx);
+
 u_int8_t nicpmSetAcpiPowerD3(struct ADAPTER *prAdapter);
 
 #if defined(_HIF_SPI)

@@ -408,6 +408,17 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 
 }
 
+void nicTriggerAHDBG(struct ADAPTER *prAdapter,
+	uint32_t u4mod, uint32_t u4reason,
+	uint32_t u4BssIdx, uint32_t u4wlanIdx)
+{
+	prAdapter->u4HifChkFlag |= HIF_TRIGGER_FW_DUMP;
+	prAdapter->u4HifDbgMod = u4mod;
+	prAdapter->u4HifDbgBss = u4BssIdx;
+	prAdapter->u4HifDbgReason = u4wlanIdx;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief disable global interrupt
