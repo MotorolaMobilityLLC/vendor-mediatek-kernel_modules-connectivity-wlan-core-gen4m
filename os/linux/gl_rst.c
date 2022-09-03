@@ -452,8 +452,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 
-	dump_stack();
-	if (kalIsResetting())
+	if (kalIsResetting() || !prAdapter)
 		return;
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -476,14 +475,12 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 			DBGLOG(INIT, WARN, "WMT is code dumping !\n");
 #endif
 
-	if (prAdapter == NULL)
-		prAdapter = wifi_rst.prGlueInfo->prAdapter;
-
 	prChipInfo = prAdapter->chip_info;
 	prDbgOps = prChipInfo->prDebugOps;
 	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
 	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 
+	dump_stack();
 	DBGLOG(INIT, ERROR,
 		"Trigger chip reset in %s line %u reason %s\n",
 		pucFile, u4Line, apucRstReason[eResetReason]);
