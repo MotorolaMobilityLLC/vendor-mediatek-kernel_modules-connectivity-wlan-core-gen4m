@@ -1533,8 +1533,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	struct WIFI_VAR *prWifiVar;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
-	struct TX_DATA_REQ *prTxDataReq;
-	uint32_t u4Idx;
 	unsigned long flags;
 
 	prMemOps = &prHifInfo->rMemOps;
@@ -1569,17 +1567,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 		kalMemFree(prTxCmdReq, VIR_MEM_TYPE, sizeof(struct TX_CMD_REQ));
 	}
 	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
-
-	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
-		spin_lock_irqsave(&prHifInfo->rTxDataQLock[u4Idx], flags);
-		list_for_each_safe(prCur, prNext, &prHifInfo->rTxDataQ[u4Idx]) {
-			prTxDataReq = list_entry(
-				prCur, struct TX_DATA_REQ, list);
-			list_del(prCur);
-			prHifInfo->u4TxDataQLen[u4Idx]--;
-		}
-		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx], flags);
-	}
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
