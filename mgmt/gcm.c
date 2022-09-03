@@ -688,6 +688,7 @@ int aes_gcm_ae(
 
 	/* Generate hash subkey H = AES_K(0^128) */
 	kalMemSet(PH, 0, AES_BLOCK_SIZE);
+	kalMemSet(H, 0, AES_BLOCK_SIZE);
 	AES_Encrypt(PH, AES_BLOCK_SIZES, key, key_len, H, &h_size);
 
 	/* if (iv_len == 12) */
