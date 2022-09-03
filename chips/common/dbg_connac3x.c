@@ -862,7 +862,7 @@ int32_t connac3xGetTxRateInfo(char *pcCommand, int i4TotalLen,
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s, ",
-				HW_TX_RATE_CCK_STR[rate & (uint8_t)0x3]);
+				HW_TX_RATE_CCK_STR[(uint8_t)(rate & 0x3)]);
 		else if (txmode == TX_RATE_MODE_OFDM)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,

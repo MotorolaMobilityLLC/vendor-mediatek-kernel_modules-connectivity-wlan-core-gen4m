@@ -2023,7 +2023,7 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	KAL_SPIN_LOCK_DECLARATION();
 
 	/* Port idx sanity */
-	if (u4Port >= RX_RING_MAX) {
+	if (u4Port >= NUM_OF_RX_RING) {
 		DBGLOG(RX, ERROR, "Invalid P[%u]\n", u4Port);
 		return;
 	}
@@ -2387,6 +2387,12 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	phys_addr_t RingBasePa;
 	void *RingBaseVa;
 	uint32_t u4Idx;
+
+	/* Port idx sanity */
+	if (u4Num >= NUM_OF_RX_RING) {
+		DBGLOG(RX, ERROR, "Invalid P[%u]\n", u4Num);
+		return false;
+	}
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
