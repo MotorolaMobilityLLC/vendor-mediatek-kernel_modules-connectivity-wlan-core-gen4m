@@ -4871,6 +4871,7 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 	static uint16_t u2SwSn;
 #if CFG_SUPPORT_NAN
 	struct WLAN_MAC_HEADER *prWifiHdr;
+	struct BSS_INFO *prBssInfo;
 #endif
 	ASSERT(prMsduInfo);
 
@@ -4894,16 +4895,21 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 	prMsduInfo->ucUserPriority = 0;
 	prMsduInfo->eSrc = TX_PACKET_MGMT;
 #if CFG_SUPPORT_NAN
-	prWifiHdr =
-		(struct WLAN_MAC_HEADER *)((uint8_t *)(prMsduInfo->prPacket) +
-					       MAC_TX_RESERVED_FIELD);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (IS_BMCAST_MAC_ADDR(prWifiHdr->aucAddr1)) {
-		prMsduInfo->ucStaRecIndex = STA_REC_INDEX_BMCAST;
-		if (pfTxDoneHandler != NULL) {
-			prMsduInfo->pfTxDoneHandler = NULL;
-			DBGLOG(TX, WARN,
-			       "TX done handler can't use for BMC case\n");
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		prWifiHdr =
+			(struct WLAN_MAC_HEADER *)
+			((uint8_t *)(prMsduInfo->prPacket) +
+			MAC_TX_RESERVED_FIELD);
+
+		if (IS_BMCAST_MAC_ADDR(prWifiHdr->aucAddr1)) {
+			prMsduInfo->ucStaRecIndex = STA_REC_INDEX_BMCAST;
+			if (pfTxDoneHandler != NULL) {
+				prMsduInfo->pfTxDoneHandler = NULL;
+				DBGLOG(TX, WARN,
+				       "TX done handler can't use for BMC case\n");
+			}
 		}
 	}
 #endif
