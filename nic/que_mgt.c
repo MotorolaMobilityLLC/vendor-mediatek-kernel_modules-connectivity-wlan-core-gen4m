@@ -263,6 +263,14 @@ do { \
  *******************************************************************************
  */
 
+static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
+		struct SW_RFB *prReorderedSwRfb,
+		struct RX_BA_ENTRY *prReorderQueParm,
+		u_int8_t fgDequeuHead,
+		u_int8_t fgMissing,
+		uint8_t fgIsAmsduSubframe,
+		u_int8_t fgWinAdvanced);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Init Queue Management for TX
@@ -3589,6 +3597,17 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 
 		fgIsBMC = (prCurrSwRfb->fgIsBC | prCurrSwRfb->fgIsMC);
 		fgIsHTran = FALSE;
+
+		if (prAdapter->rWifiVar.u4BaVerboseLogging && fgIsBMC)
+			DBGLOG(QM, INFO,
+				"Rx BMC [Sta,Tid,SN,len]:%u,%u,%u,%u\n",
+				prCurrSwRfb->ucStaRecIdx,
+				prCurrSwRfb->ucTid,
+				HAL_RX_STATUS_GET_SEQFrag_NUM(
+					prCurrSwRfb->prRxStatusGroup4)
+						>> RX_STATUS_SEQ_NUM_OFFSET,
+				prCurrSwRfb->u2PacketLen);
+
 		if (prCurrSwRfb->fgHdrTran) {
 			uint8_t ucBssIndex;
 			struct BSS_INFO *prBssInfo;
@@ -3953,6 +3972,19 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			continue;
 		}
 #endif
+		if (prAdapter->rWifiVar.u4BaVerboseLogging && fgIsBMC)
+			DBGLOG(QM, INFO,
+				"Checked BMC [Sta,Tid,SN,len,fgDataFrame,StaRec,sec]:%u,%u,%u,%u,%u,%p,%u\n",
+				prCurrSwRfb->ucStaRecIdx,
+				prCurrSwRfb->ucTid,
+				HAL_RX_STATUS_GET_SEQFrag_NUM(
+					prCurrSwRfb->prRxStatusGroup4)
+						>> RX_STATUS_SEQ_NUM_OFFSET,
+				prCurrSwRfb->u2PacketLen,
+				prCurrSwRfb->fgDataFrame,
+				prCurrSwRfb->prStaRec,
+				secCheckClassError(prAdapter, prCurrSwRfb,
+					prCurrSwRfb->prStaRec));
 
 		if (fgSwRxReordering &&
 		    prCurrSwRfb->fgReorderBuffer && !fgIsBMC && fgIsHTran) {
@@ -5091,7 +5123,7 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 }
 
 
-static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
+void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		struct SW_RFB *prReorderedSwRfb,
 		struct RX_BA_ENTRY *prReorderQueParm,
 		u_int8_t fgDequeuHead,
@@ -5105,13 +5137,15 @@ static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 	if  (!prAdapter->rWifiVar.u4BaVerboseLogging)
 		return;
 
-	DBGLOG(RX, TRACE,
-		"[class,type,miss,plfmt,isSub,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
+	DBGLOG(RX, INFO,
+		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
 		prReorderedSwRfb->ucRxClassify, /* class */
 		prReorderedSwRfb->ucPacketType, /* type */
 		fgMissing, /* miss */
 		prReorderedSwRfb->ucPayloadFormat, /* plfmt */
 		fgIsAmsduSubframe, fmt[fgIsAmsduSubframe], /* isSub */
+		prReorderQueParm->ucStaRecIdx,
+		prReorderQueParm->ucTid,
 		prReorderQueParm->u2WinStart, /* WinStart */
 		prReorderedSwRfb->u2SSN, /* cSN */
 		prReorderQueParm->u2SeqNo, /* rSN */
