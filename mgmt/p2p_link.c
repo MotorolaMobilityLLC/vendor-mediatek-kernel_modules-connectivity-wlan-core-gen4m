@@ -758,6 +758,10 @@ void p2pLinkStaRecFree(
 				starec->ucWlanIndex,
 				starec->ucBssIndex);
 
+			/* Avoid txdone looping */
+			if (starec != prStaRec)
+				starec->eAuthAssocState = AA_STATE_RESOURCE;
+
 			p2pLinkStaRecFreeImpl(
 				prAdapter, starec, bss);
 		}

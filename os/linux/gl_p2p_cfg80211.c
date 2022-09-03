@@ -313,6 +313,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			/* Expect that only create the new dev with the p2p0 */
 			if (prP2pInfo == NULL)
 				continue;
+#if (KAL_P2P_NUM > 2)
+			if ((type == NL80211_IFTYPE_AP) &&
+				(u4Idx < prAdapter->rWifiVar.ucMldLinkMax))
+				continue;
+#endif
 			if (prP2pInfo->aprRoleHandler ==
 					prP2pInfo->prDevHandler)
 				break;
@@ -768,6 +773,12 @@ error:
 			else
 				DBGLOG(P2P, INFO,
 					"under deauth procedure, complete\n");
+			/* Avoid p2pRoleFsmUninit in txdone callback */
+			rStatus = kalIoctlByBssIdx(prGlueInfo,
+				wlanoidP2pDelIfaceDone, NULL, 0,
+				&u4SetInfoLen, u4Idx);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
 		}
 	}
 

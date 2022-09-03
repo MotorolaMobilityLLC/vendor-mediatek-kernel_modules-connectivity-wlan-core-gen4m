@@ -4794,6 +4794,13 @@ wlanoidP2pDelIface(
 	void *pvSetBuffer,
 	uint32_t u4SetBufferLen,
 	uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidP2pDelIfaceDone(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen);
 #endif
 
 #if CFG_SUPPORT_NAN
