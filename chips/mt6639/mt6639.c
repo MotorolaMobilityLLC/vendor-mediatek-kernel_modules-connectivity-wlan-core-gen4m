@@ -45,6 +45,12 @@
 #include "connv3.h"
 #endif
 #include "wlan_pinctrl.h"
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
+#include "fw_log_mmio.h"
+#endif
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_EMI)
+#include "fw_log_emi.h"
+#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
@@ -649,6 +655,7 @@ struct ATE_OPS_T mt6639_AteOps = {
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 #if defined(_HIF_PCIE)
+#if IS_MOBILE_SEGMENT
 static struct CCIF_OPS mt6639_ccif_ops = {
 	.get_interrupt_status = mt6639_ccif_get_interrupt_status,
 	.notify_utc_time_to_fw = mt6639_ccif_notify_utc_time_to_fw,
@@ -656,6 +663,27 @@ static struct CCIF_OPS mt6639_ccif_ops = {
 	.get_fw_log_read_pointer = mt6639_ccif_get_fw_log_read_pointer,
 	.trigger_fw_assert = mt6639_ccif_trigger_fw_assert,
 };
+
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
+static struct FW_LOG_OPS mt6639_fw_log_mmio_ops = {
+	.init = fwLogMmioInitMcu,
+	.deinit = fwLogMmioDeInitMcu,
+	.start = fwLogMmioStart,
+	.stop = fwLogMmioStop,
+	.handler = fwLogMmioHandler,
+};
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_EMI)
+static struct FW_LOG_OPS mt6639_fw_log_emi_ops = {
+	.init = fw_log_emi_init,
+	.deinit = fw_log_emi_deinit,
+	.start = fw_log_emi_start,
+	.stop = fw_log_emi_stop,
+	.handler = fw_log_emi_handler,
+};
+#endif
+#endif
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY
@@ -769,6 +797,16 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	},
 #endif
 	.trigger_fw_assert = mt6639_trigger_fw_assert,
+	.fw_log_info = {
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
+		.ops = &mt6639_fw_log_mmio_ops,
+#endif
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_EMI)
+		.base = 0x538000,
+		.ops = &mt6639_fw_log_emi_ops,
+#endif
+		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
+	},
 #else
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
@@ -1956,6 +1994,8 @@ static bool mt6639IsValidRegAccess(struct ADAPTER *prAdapter,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY2_ADDR,
+		WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR,
+		WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY2_ADDR,
 		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_ADDR,
 		0x6d010,
 		0x6d014,

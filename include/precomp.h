@@ -307,7 +307,7 @@
 
 #include "gcm.h"
 
-#include "fw_log_mmio.h"
+#include "fw_log.h"
 
 #include "mscs.h"
 

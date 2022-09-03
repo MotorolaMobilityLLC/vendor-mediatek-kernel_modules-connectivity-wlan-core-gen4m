@@ -5528,7 +5528,7 @@ static void consys_log_event_notification(int cmd, int value)
 			sizeof(struct CMD_CONNSYS_FW_LOG), &u4BufLen);
 
 	if (fgRetrieveLog)
-		fw_log_wifi_irq_handler();
+		fw_log_handler();
 }
 #endif
 

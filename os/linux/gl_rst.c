@@ -1203,7 +1203,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 	case ENUM_RST_MSG_L0_START:
 		DBGLOG(INIT, INFO, "Whole chip reset start!\n");
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-		fw_log_wifi_irq_handler();
+		fw_log_handler();
 #endif
 		glResetUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -1229,7 +1229,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 	case ENUM_RST_MSG_L05_START:
 		DBGLOG(INIT, WARN, "WF chip reset start!\n");
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-		fw_log_wifi_irq_handler();
+		fw_log_handler();
 #endif
 		glResetUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)

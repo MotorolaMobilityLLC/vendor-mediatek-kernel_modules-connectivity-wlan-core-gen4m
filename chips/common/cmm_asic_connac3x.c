@@ -2249,7 +2249,7 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 		goto exit;
 
 	if (u4Status & BIT(SW_INT_FW_LOG))
-		fw_log_wifi_irq_handler();
+		fw_log_handler();
 
 #if CFG_WMT_RESET_API_SUPPORT
 	if (u4Status & BIT(SW_INT_SUBSYS_RESET))

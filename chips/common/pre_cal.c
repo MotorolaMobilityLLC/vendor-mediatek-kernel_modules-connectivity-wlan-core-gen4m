@@ -42,7 +42,9 @@ bool gEmiCalUseEmiData;
 
 static u_int8_t g_fgPreCal;
 static u_int8_t g_fgCalEnabled;
+#if CFG_MTK_ANDROID_WMT
 static u_int8_t g_fgEverCal;
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
