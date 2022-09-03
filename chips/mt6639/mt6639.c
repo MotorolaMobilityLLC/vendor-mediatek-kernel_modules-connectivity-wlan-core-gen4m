@@ -2380,6 +2380,18 @@ exit:
 		mt6639_dumpN45CoreReg(ad);
 		mt6639_dumpWfTopReg(ad);
 		mt6639_dumpWfBusReg(ad);
+
+		HAL_MCR_WR(ad, 0x70003304, 0x06030138);
+		HAL_MCR_WR(ad, 0x70000244, 0x000f0000);
+		HAL_MCR_WR(ad, 0x70000244, 0x001f0000);
+		HAL_MCR_WR(ad, 0x70000244, 0x011f0000);
+		kalUdelay(1);
+		HAL_MCR_RD(ad, 0x70000248, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000248: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70025030, &u4Value);
+		DBGLOG(INIT, INFO, "0x70025030: 0x%08x\n",
+			u4Value);
 	}
 
 	return rStatus;
