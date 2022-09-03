@@ -2515,7 +2515,7 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter)
 	return 0;
 }
 
-static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
+u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 {
 #define MAX_POLLING_COUNT		4
 
@@ -2564,7 +2564,7 @@ static u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 	return TRUE;
 }
 
-static u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
+u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad)
 {
 	uint32_t value = 0;
 

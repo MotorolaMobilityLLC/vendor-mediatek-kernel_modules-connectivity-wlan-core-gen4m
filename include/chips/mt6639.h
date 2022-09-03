@@ -149,6 +149,12 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
 void mt6639_dumpWfTopReg(struct ADAPTER *ad);
 void mt6639_dumpWfBusReg(struct ADAPTER *ad);
 void mt6639_dumpCbtopReg(struct ADAPTER *ad);
+
+#if IS_MOBILE_SEGMENT
+u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad);
+u_int8_t mt6639_is_conn2wf_readable(struct ADAPTER *ad);
+#endif
+
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int mt6639_get_rx_rate_info(const uint32_t *prRxV,

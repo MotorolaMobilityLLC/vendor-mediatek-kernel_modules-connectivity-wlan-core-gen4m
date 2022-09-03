@@ -1297,6 +1297,10 @@ void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 	uint32_t general_dump[GENERAL_LOG_NUM];
 	uint32_t ctl_status_dump[CTRL_LOG_NUM];
 
+	if (!mt6639_is_ap2conn_off_readable(ad) ||
+	    !mt6639_is_conn2wf_readable(ad))
+		return;
+
 	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
 	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
 		if (n45_general_dump_list[i].read) {
