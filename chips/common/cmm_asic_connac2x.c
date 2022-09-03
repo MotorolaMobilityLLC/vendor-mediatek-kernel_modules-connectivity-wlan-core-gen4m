@@ -411,14 +411,32 @@ void asicConnac2xWfdmaDummyCrRead(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)
 {
-	u_int32_t u4RegValue = 0;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	u_int32_t u4RegValue = 0, u4Idx = 0;
 
 	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WFDMA_DUMMY_CR,
 		&u4RegValue);
-	*pfgResult = (u4RegValue &
-		CONNAC2X_WFDMA_NEED_REINIT_BIT)
-		== 0 ? TRUE : FALSE;
+
+	if ((u4RegValue & CONNAC2X_WFDMA_NEED_REINIT_BIT) == 0) {
+		*pfgResult = TRUE;
+		return;
+	}
+
+	*pfgResult = TRUE;
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		prTxRing = &prHifInfo->TxRing[u4Idx];
+		if (!prTxRing->hw_cnt_addr)
+			continue;
+		HAL_MCR_RD(prAdapter, prTxRing->hw_cidx_addr,
+			   &prTxRing->TxCpuIdx);
+		if (prTxRing->TxCpuIdx != 0)
+			*pfgResult = FALSE;
+	}
+
+	if (*pfgResult)
+		DBGLOG(HAL, INFO, "CpuIdx == 0, DummyCr[0x%08x]", u4RegValue);
 }
 
 void asicConnac2xWfdmaDummyCrWrite(
