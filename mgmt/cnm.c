@@ -5152,6 +5152,11 @@ void cnmRddOpmodeEventHandler(
 			(struct WIFI_EVENT *)
 			kalMemAlloc(sizeof(struct WIFI_EVENT)+
 			sizeof(struct EVENT_OPMODE_CHANGE), VIR_MEM_TYPE);
+		if (!pEventOpMode) {
+			DBGLOG(P2P, TRACE,
+				"pEventOpMode is null\n");
+			return;
+		}
 		prEventBody =
 			(struct EVENT_OPMODE_CHANGE *)
 			&(pEventOpMode->aucBuffer[0]);
