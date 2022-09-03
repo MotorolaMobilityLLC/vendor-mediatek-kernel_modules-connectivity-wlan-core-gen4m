@@ -181,6 +181,22 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 		u4Recv = prSubCtrl->wp - prSubCtrl->irp;
 	else
 		u4Recv = prSubCtrl->length - prSubCtrl->irp + prSubCtrl->wp;
+	if (u4Recv > prSubCtrl->length) {
+		struct CHIP_DBG_OPS *prDebugOps = NULL;
+
+		DBGLOG(INIT, ERROR,
+			"Invalid rcv length (%u %u)\n",
+			u4Recv, prSubCtrl->length);
+
+		prDebugOps = prAdapter->chip_info->prDebugOps;
+
+		if (prDebugOps && prDebugOps->dumpBusHangCr)
+			prDebugOps->dumpBusHangCr(prAdapter);
+
+		WARN_ON_ONCE(TRUE);
+
+		return;
+	}
 	u4Handled = u4Recv;
 
 	u4Rp = prSubCtrl->irp;
@@ -352,13 +368,16 @@ static uint32_t fwLogCtrlInitSubCtrl(struct ADAPTER *prAdapter,
 	enum ENUM_FW_LOG_CTRL_TYPE eType)
 {
 	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl = &prCtrl->sub_ctrls[eType];
+	struct FW_LOG_SUB_HEADER rSubHeader = {0};
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	prSubCtrl->type = eType;
 
-	fwLogCtrlRefreshSubHeader(prAdapter, prCtrl, prSubCtrl);
+	kalDevRegReadRange(prAdapter->prGlueInfo, prSubCtrl->base_addr,
+			   &rSubHeader,
+			   sizeof(rSubHeader));
 
-	prSubCtrl->irp = prSubCtrl->rp;
+	prSubCtrl->buf_base_addr = prSubCtrl->base_addr + sizeof(rSubHeader);
 	if (prSubCtrl->length) {
 		prSubCtrl->buffer = kalMemAlloc(prSubCtrl->length,
 			VIR_MEM_TYPE);
@@ -368,6 +387,8 @@ static uint32_t fwLogCtrlInitSubCtrl(struct ADAPTER *prAdapter,
 		} else {
 			kalMemZero(prSubCtrl->buffer, prSubCtrl->length);
 		}
+	} else {
+		u4Status = WLAN_STATUS_INVALID_LENGTH;
 	}
 
 	return u4Status;
