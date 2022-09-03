@@ -170,9 +170,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_LIST_MODE] = nicUniCmdTestmodeListmode,
 #endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
-	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
+	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniDPPLowLatencyMode,
 #endif
-	[CMD_ID_SET_FORCE_RTS] = nicUniCmdNotSupport,
+	[CMD_ID_SET_FORCE_RTS] = nicUniCmdGamingMode,
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
 	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdNotSupport, // TODO: wait for FW ready
@@ -6547,6 +6547,74 @@ uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 	COPY_MAC_ADDR(tag->ucSrcMacAddr, cmd->ucSrcMacAddr);
 	COPY_MAC_ADDR(tag->ucDstMacAddr, cmd->ucDstMacAddr);
 	tag->u4PeriodMsec = cmd->u4PeriodMsec;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniDPPLowLatencyMode(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct LOW_LATENCY_MODE_SETTING *cmd;
+	struct UNI_CMD_DPP_LOW_LATENCY_MODE *uni_cmd;
+	struct UNI_CMD_DPP_LOW_LATENCY_MODE_PROCESS_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_DPP_LOW_LATENCY_MODE) +
+		sizeof(struct UNI_CMD_DPP_LOW_LATENCY_MODE_PROCESS_T);
+
+	if (info->ucCID != CMD_ID_SET_LOW_LATENCY_MODE ||
+		info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct LOW_LATENCY_MODE_SETTING *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_DPP_LOW_LATENCY_MODE,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_DPP_LOW_LATENCY_MODE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_DPP_LOW_LATENCY_MODE_PROCESS_T *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_DPP_LOWLATENCY_MODE_PROCESS;
+	tag->u2Length = sizeof(*tag);
+
+	tag->fgEnable = cmd->fgEnable;
+	tag->fgTxDupDetect = cmd->fgTxDupDetect;
+	tag->fgTxDupCertQuery = cmd->fgTxDupCertQuery;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_FORCE_RTS *cmd;
+	struct UNI_CMD_GAMING_MODE *uni_cmd;
+	struct UNI_CMD_GAMING_MODE_PROCESS_T *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GAMING_MODE) +
+		sizeof(struct UNI_CMD_GAMING_MODE_PROCESS_T);
+
+	if (info->ucCID != CMD_ID_SET_FORCE_RTS ||
+		info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_FORCE_RTS *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GAMING_MODE,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GAMING_MODE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_GAMING_MODE_PROCESS_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_GAMING_MODE_PROCESS;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucForceRtsEn = cmd->ucForceRtsEn;
+	tag->ucRtsPktNum = cmd->ucRtsPktNum;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
