@@ -3934,13 +3934,13 @@ void p2pRoleFsmRunEventAAATxFailImpl(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_SWITCH_OP_MODE *prSwitchOpMode =
 		(struct MSG_P2P_SWITCH_OP_MODE *) prMsgHdr;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
-	uint8_t i;
 
 	ASSERT(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM);
 	if (!(prSwitchOpMode->ucRoleIdx < BSS_P2P_NUM)) {
@@ -3978,32 +3978,27 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_INFO *prP2pBssInfo =
-			p2pGetLinkBssInfo(prAdapter,
-			prP2pRoleFsmInfo, i);
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prP2pRoleFsmInfo->ucBssIndex);
 
-		if (!prP2pBssInfo)
-			continue;
+	/* P2P Device / GC. */
+	p2pFuncSwitchOPMode(prAdapter,
+		prP2pBssInfo,
+		prSwitchOpMode->eOpMode,
+		TRUE);
 
-		/* P2P Device / GC. */
-		p2pFuncSwitchOPMode(prAdapter,
-			prP2pBssInfo,
-			prSwitchOpMode->eOpMode,
-			TRUE);
-
-		if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
-				prSwitchOpMode->eIftype == IFTYPE_STATION) {
-			kalP2pUnlinkBss(prAdapter->prGlueInfo,
-				prConnReqInfo->aucBssid);
-		}
-		prP2pBssInfo->eIftype = prSwitchOpMode->eIftype;
-
-		if (prP2pBssInfo->eIftype != IFTYPE_AP)
-			p2pFuncInitConnectionSettings(prAdapter,
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prSwitchOpMode->ucRoleIdx], FALSE);
+	if (prP2pBssInfo->eIftype == IFTYPE_P2P_CLIENT &&
+		prSwitchOpMode->eIftype == IFTYPE_STATION) {
+		kalP2pUnlinkBss(prAdapter->prGlueInfo,
+			prConnReqInfo->aucBssid);
 	}
+	prP2pBssInfo->eIftype = prSwitchOpMode->eIftype;
+
+	if (prP2pBssInfo->eIftype != IFTYPE_AP)
+		p2pFuncInitConnectionSettings(prAdapter,
+		prAdapter->rWifiVar.prP2PConnSettings
+		[prSwitchOpMode->ucRoleIdx], FALSE);
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
