@@ -1533,6 +1533,8 @@ struct PERF_MONITOR {
 	unsigned long ulTxPacketsDiffLastSec[MAX_BSSID_NUM];
 	unsigned long ulRxPacketsDiffLastSec[MAX_BSSID_NUM];
 	uint64_t ulThroughput; /* in bps */
+	/* ulThroughputInPPS = pps * ETHER_MAX_PKT_SZ */
+	uint64_t ulThroughputInPPS; /* in pps */
 	unsigned long ulTxTp[MAX_BSSID_NUM]; /* in Bps */
 	unsigned long ulRxTp[MAX_BSSID_NUM]; /* in Bps */
 	uint32_t u4UpdatePeriod; /* in ms */

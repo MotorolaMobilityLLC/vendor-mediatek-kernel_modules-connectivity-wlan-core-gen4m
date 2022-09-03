@@ -9599,7 +9599,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	unsigned long lastTxBytes, lastRxBytes, lastTxPkts, lastRxPkts;
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
-	uint64_t throughput = 0;
+	uint64_t throughput = 0, throughputInPPS = 0;
 	char *buf = NULL, *head1, *head2, *head3;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
@@ -9687,12 +9687,18 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		perf->ulRxTp[i] = (rxDiffBytes[i] / period) * MSEC_PER_SEC;
 
 		throughput += txDiffBytes[i] + rxDiffBytes[i];
+		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
 	}
 
 	perf->fgIdle = (throughput == 0 && glue->i4TxPendingFrameNum == 0);
 	perf->ulThroughput = throughput * MSEC_PER_SEC;
 	do_div(perf->ulThroughput, period);
 	perf->ulThroughput <<= 3;
+
+	perf->ulThroughputInPPS = throughputInPPS * ETHER_MAX_PKT_SZ
+		* MSEC_PER_SEC;
+	do_div(perf->ulThroughputInPPS, period);
+	perf->ulThroughputInPPS <<= 3;
 
 	/* The length should include
 	 * 1. "[%ld:%ld:%ld:%ld]" for each bss, %ld range is
@@ -9956,6 +9962,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	struct PERF_MONITOR *prPerMonitor;
 	uint32_t u4Idx = 0;
 	uint8_t	i =	0;
+	uint64_t maxTput = 0;
 	bool keep_alive = FALSE;
 	struct net_device *prDevHandler = NULL;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
@@ -10017,9 +10024,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	}
 
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
+	maxTput = max(prPerMonitor->ulThroughput,
+		prPerMonitor->ulThroughputInPPS);
+
 	for (u4Idx = 0; u4Idx < PERF_MON_TP_MAX_THRESHOLD; u4Idx++) {
-		if ((prPerMonitor->ulThroughput >> 20) <
-		    prAdapter->rWifiVar.u4PerfMonTpTh[u4Idx]) {
+		if ((maxTput >> 20) <
+			prAdapter->rWifiVar.u4PerfMonTpTh[u4Idx]) {
 			prPerMonitor->u4TarPerfLevel = u4Idx;
 			break;
 		}
