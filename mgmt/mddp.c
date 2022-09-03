@@ -1364,8 +1364,6 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		goto exit;
 	}
 
-	prBusInfo = prAdapter->chip_info->bus_info;
-
 	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, INFO,
 			"Skip update info. to MD, fgHalted: %d, u4ReadyFlag: %d\n",
@@ -1373,6 +1371,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		ret = -ENODEV;
 		goto exit;
 	}
+
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	if (!mddpIsSupportMcifWifi()) {
 		DBGLOG(INIT, ERROR, "mcif wifi not support.\n");
