@@ -3766,9 +3766,14 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
 	struct UNI_CMD_STAREC_MLR_INFO *tag =
 		(struct UNI_CMD_STAREC_MLR_INFO *)buf;
-	struct MLD_STA_RECORD *mld_starec = mldStarecGetByStarec(ad, prStaRec);
+	struct MLD_STA_RECORD *prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
 
-	if (IS_MLD_STAREC_VALID(mld_starec)) {
+	if (!prStaRec) {
+		DBGLOG(REQ, WARN, "MLR unicmd - prStaRec is NULL\n");
+		return 0;
+	}
+
+	if (IS_MLD_STAREC_VALID(prMldStaRec)) {
 		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
 		return 0;
 	}
