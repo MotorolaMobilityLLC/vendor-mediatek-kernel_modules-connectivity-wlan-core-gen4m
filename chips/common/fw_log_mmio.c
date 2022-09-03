@@ -172,6 +172,7 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 
 	if (fgForceRead)
 		prSubCtrl->wp = prSubCtrl->iwp;
+	prSubCtrl->wp &= ~BITS(0, 2);
 
 	if (fwLogCtrlIsBufEmpty(prSubCtrl))
 		return;
