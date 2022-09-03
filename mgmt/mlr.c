@@ -84,13 +84,13 @@ static u_int8_t mlrCompose80211Header(
 		MAC_FRAME_QOS_DATA : MAC_FRAME_DATA;
 	if (IS_AP_STA(prStaRec)) {
 		u2FrameCtrl |= MASK_FC_TO_DS;
-		if (prStaRec->fgIsInPS)
+		if (qmIsStaInPS(prAdapter, prStaRec))
 			u2FrameCtrl |= MASK_FC_PWR_MGT;
 		if (fgIsFragment &&	ucFragNo < ucSplitTotal)
 			u2FrameCtrl |= MASK_FC_MORE_FRAG;
 	} else if (IS_CLIENT_STA(prStaRec)) {
 		u2FrameCtrl |= MASK_FC_FROM_DS;
-		if (prStaRec->fgIsInPS)
+		if (qmIsStaInPS(prAdapter, prStaRec))
 			u2FrameCtrl |= MASK_FC_PWR_MGT;
 		if (fgIsFragment && ucFragNo < ucSplitTotal)
 			u2FrameCtrl |= MASK_FC_MORE_FRAG;

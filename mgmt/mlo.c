@@ -3095,6 +3095,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 
 	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
+	prMldStarec->u4StaBitmap |= BIT(prStarec->ucIndex);
 
 	DBGLOG(ML, INFO,
 		"MldStaRec: %d, StaRec: %d, link: %d, widx: %d, bss: %d, pri_mld: %d, sec_mld: %d, mld_mac: "
@@ -3146,6 +3147,8 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 		LINK_REMOVE_KNOWN_ENTRY(prStarecList, &prCurrStarec->rLinkEntryMld);
 		break;
 	}
+
+	prMldStarec->u4StaBitmap &= ~BIT(prStarec->ucIndex);
 
 	if (LINK_IS_EMPTY(prStarecList))
 		mldStarecFree(prAdapter, prMldStarec);

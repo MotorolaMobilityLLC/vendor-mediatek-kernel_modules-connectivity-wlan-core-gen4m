@@ -271,7 +271,7 @@ uint32_t dvtActivateNetworkPhTput(struct net_device *prNetDev,
 	prStaRec->fgIsInUse = TRUE;
 	prStaRec->fgIsValid = TRUE;
 	prStaRec->fgIsQoS = TRUE;
-	prStaRec->fgIsInPS = FALSE;
+	qmSetStaPS(prAdapter, prStaRec, FALSE);
 	prStaRec->fgIsTxAllowed = TRUE;
 
 	if (prPhtputSetting->fgIsSec) {

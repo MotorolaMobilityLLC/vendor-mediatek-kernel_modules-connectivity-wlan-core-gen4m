@@ -871,6 +871,7 @@ struct MLD_STA_RECORD {
 	uint8_t aucEmlCap[3];
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
+	uint32_t u4StaBitmap;
 };
 #endif
 

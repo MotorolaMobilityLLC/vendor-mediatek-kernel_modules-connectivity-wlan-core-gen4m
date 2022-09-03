@@ -934,6 +934,7 @@ enum ENUM_BA_ENTRY_STATUS {
 #endif
 
 #define QM_INIT_STA_REC( \
+		prAdapter, \
 		_prStaRec, \
 		_fgIsValid, \
 		_fgIsQoS, \
@@ -943,7 +944,7 @@ enum ENUM_BA_ENTRY_STATUS {
 		ASSERT(_prStaRec); \
 		(_prStaRec)->fgIsValid = (_fgIsValid); \
 		(_prStaRec)->fgIsQoS = (_fgIsQoS); \
-		(_prStaRec)->fgIsInPS = FALSE; \
+		qmSetStaPS(prAdapter, prStaRec, FALSE); \
 		(_prStaRec)->ucPsSessionID = 0xFF; \
 		COPY_MAC_ADDR((_prStaRec)->aucMacAddr, (_pucMacAddr)); \
 	}
@@ -1360,3 +1361,7 @@ extern const uint8_t arNetwork2TcResource[MAX_BSSID_NUM +
 		1][NET_TC_NUM];
 
 #endif /* _QUE_MGT_H */
+
+u_int8_t qmIsStaInPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec);
+void qmSetStaPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	u_int8_t fgIsInPS);

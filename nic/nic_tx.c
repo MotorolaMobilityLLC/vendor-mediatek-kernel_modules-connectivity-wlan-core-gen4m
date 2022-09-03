@@ -5567,7 +5567,7 @@ static void nicTxDirectCheckStaPsQ(struct ADAPTER
 		return;
 	}
 
-	if (prStaRec->fgIsInPS) {
+	if (qmIsStaInPS(prAdapter, prStaRec)) {
 		KAL_SPIN_LOCK_DECLARATION();
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);

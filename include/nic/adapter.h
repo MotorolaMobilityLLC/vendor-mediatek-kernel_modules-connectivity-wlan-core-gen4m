@@ -2192,6 +2192,7 @@ struct ADAPTER {
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint8_t ucBssAbsentBitmap;
 	uint8_t ucMldReservedBssIdx;
+	uint32_t u4StaInPSBitmap;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

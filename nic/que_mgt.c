@@ -404,7 +404,7 @@ void qmInit(struct ADAPTER *prAdapter,
 
 		prStaRec->fgIsValid = TRUE;
 		prStaRec->fgIsQoS = TRUE;
-		prStaRec->fgIsInPS = FALSE;
+		qmSetStaPS(prAdapter, prStaRec, FALSE);
 		prStaRec->ucNetTypeIndex = NETWORK_TYPE_AIS_INDEX;
 		COPY_MAC_ADDR((prStaRec)->aucMacAddr, aucMacAddr);
 
@@ -584,7 +584,7 @@ void qmActivateStaRec(struct ADAPTER *prAdapter,
 
 	/* Init the STA_REC */
 	prStaRec->fgIsValid = TRUE;
-	prStaRec->fgIsInPS = FALSE;
+	qmSetStaPS(prAdapter, prStaRec, FALSE);
 
 	/* Default setting of TX/RX AMPDU */
 	prStaRec->fgTxAmpduEn = IS_FEATURE_ENABLED(
@@ -659,7 +659,7 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 
 	/* 4 <3> Deactivate the STA_REC */
 	prStaRec->fgIsValid = FALSE;
-	prStaRec->fgIsInPS = FALSE;
+	qmSetStaPS(prAdapter, prStaRec, FALSE);
 	prStaRec->fgIsTxKeyReady = FALSE;
 	prStaRec->fgIsMscsSupported = FALSE;
 
@@ -1697,7 +1697,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 			 * limit for this STA
 			 */
 			/* AP mode: STA in PS buffer handling */
-			if (prStaRec->fgIsInPS) {
+			if (qmIsStaInPS(prAdapter, prStaRec)) {
 				if (prStaRec->fgIsQoS &&
 					prStaRec->fgIsUapsdSupported &&
 					(prStaRec->ucBmpTriggerAC &
@@ -1898,7 +1898,8 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 skip_dequeue:
 #endif
 			/* AP mode: Update STA in PS Free quota */
-			if (prStaRec->fgIsInPS && pucPsStaFreeQuota) {
+			if (qmIsStaInPS(prAdapter, prStaRec)
+					&& pucPsStaFreeQuota) {
 				if ((*pucPsStaFreeQuota) >=
 					u4CurStaForwardFrameCount)
 					(*pucPsStaFreeQuota) -=
@@ -7466,7 +7467,7 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 				break;
 			}
 			/* 4 <4.2> Sta in PS */
-			if (prStaRec->fgIsInPS) {
+			if (qmIsStaInPS(prAdapter, prStaRec)) {
 				ucReqResource = halTxGetCmdPageCount(prAdapter,
 					u2FrameLength, FALSE) +
 					prWifiVar->ucCmdRsvResource +
@@ -7622,9 +7623,9 @@ void qmHandleEventStaChangePsMode(struct ADAPTER *prAdapter,
 	/* ASSERT(prStaRec); */
 
 	if (prStaRec) {
-
-		fgIsInPSOld = prStaRec->fgIsInPS;
-		prStaRec->fgIsInPS = prEventStaChangePsMode->ucIsInPs;
+		fgIsInPSOld = qmIsStaInPS(prAdapter, prStaRec);
+		qmSetStaPS(prAdapter, prStaRec,
+				prEventStaChangePsMode->ucIsInPs);
 
 		qmUpdateFreeQuota(prAdapter,
 			prStaRec,
@@ -7638,7 +7639,7 @@ void qmHandleEventStaChangePsMode(struct ADAPTER *prAdapter,
 			prEventStaChangePsMode->ucFreeQuota);
 
 		/* From PS to Awake */
-		if ((fgIsInPSOld) && (!prStaRec->fgIsInPS)) {
+		if ((fgIsInPSOld) && (!qmIsStaInPS(prAdapter, prStaRec))) {
 			if (HAL_IS_TX_DIRECT(prAdapter))
 				nicTxDirectStartCheckQTimer(prAdapter);
 			else {
@@ -9800,4 +9801,39 @@ void qmCheckRxEAPOLM3(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+}
+
+u_int8_t qmIsStaInPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
+{
+	u_int8_t fgIsInPS = prStaRec->fgIsInPS;
+#if CFG_SUPPORT_802_11BE_MLO
+	struct MLD_STA_RECORD *prMldStarec;
+
+	if (!fgIsInPS)
+		return FALSE;
+
+	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (!prMldStarec)
+		return fgIsInPS;
+
+	if ((prMldStarec->u4StaBitmap & prAdapter->u4StaInPSBitmap) ==
+		prMldStarec->u4StaBitmap)
+		return TRUE;
+
+	return FALSE;
+#else /* CFG_SUPPORT_802_11BE_MLO */
+	return fgIsInPS;
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+}
+
+void qmSetStaPS(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	u_int8_t fgIsInPS)
+{
+	prStaRec->fgIsInPS = fgIsInPS;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (fgIsInPS)
+		prAdapter->u4StaInPSBitmap |= BIT(prStaRec->ucIndex);
+	else
+		prAdapter->u4StaInPSBitmap &= ~BIT(prStaRec->ucIndex);
+#endif
 }
