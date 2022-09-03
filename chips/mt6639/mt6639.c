@@ -209,7 +209,8 @@ static spinlock_t rPCIELock;
 #define DUMP_PCIE_CR	"0x1F_5004=0x%08x, 0x1F_500C=0x%08x,"\
 		"0x1F_5014=0x%08x, 0x1F_5400=0x%08x, 0x1F_5404=0x%08x,"\
 		"0x1F_6008=0x%08x, 0x1F_6000=0x%08x, 0x1F_6100=0x%08x,"\
-		"0x1F_5300=0x%08x, 0x1F_6550=0x%08x, 0x1F_801C=0x%08x\n"
+		"0x1F_5300=0x%08x, 0x1F_6550=0x%08x, 0x1F_801C=0x%08x,"\
+		"0x1D_0E48=0x%08x, 0x1D_0E40=0x%08x, 0x1D_0E44=0x%08x\n"
 #endif
 
 
@@ -1926,16 +1927,26 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 			0x1F801C,
 			&u4RegVal[14]);
 
-		/*7. MMIO write 0x1E_3020 = 0x0*/
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E3020, 0x0);
-		/*8. MMIO write 0x1E_7150 = 0x2*/
-		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E7150, 0x2);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x1D0E48,
+			&u4RegVal[16]);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x1D0E40,
+			&u4RegVal[17]);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x1D0E44,
+			&u4RegVal[18]);
 
 		DBGLOG(HAL, INFO, DUMP_PCIE_CR,
 		u4RegVal[4], u4RegVal[5], u4RegVal[6], u4RegVal[7],
 		u4RegVal[8], u4RegVal[9], u4RegVal[10], u4RegVal[11],
-		u4RegVal[12], u4RegVal[13], u4RegVal[14]);
+		u4RegVal[12], u4RegVal[13], u4RegVal[14], u4RegVal[16],
+		u4RegVal[17], u4RegVal[18]);
 
+		/*7. MMIO write 0x1E_3020 = 0x0*/
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E3020, 0x0);
+		/*8. MMIO write 0x1E_7150 = 0x2*/
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E7150, 0x2);
 		/*9. CBTOP REGs dump  0x1E_7154*/
 		HAL_MCR_RD(prGlueInfo->prAdapter,
 			0x1E7154,
@@ -1946,10 +1957,6 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 			return FALSE;
 		}
 
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			0x1D0E48,
-			&u4RegVal[16]);
-		DBGLOG(HAL, INFO, "0x1D_0E48=0x%08x\n", u4RegVal[16]);
 
 	} else {
 		return FALSE;
