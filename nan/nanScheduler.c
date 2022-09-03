@@ -49,6 +49,9 @@
 
 #define NAN_MAX_POTENTIAL_CHNL_LIST 10
 
+#define NAN_MAX_NONNAN_TIMELINE_NUM		1
+	/* Non-Nan timeline number */
+
 enum _ENUM_NAN_WINDOW_T {
 	ENUM_NAN_DW,
 	ENUM_NAN_FAW,
@@ -411,6 +414,12 @@ struct _NAN_SCHED_EVENT_DW_INTERVAL_T {
 	uint8_t ucDwInterval;
 };
 
+struct _NAN_NONNAN_NETWORK_TIMELINE_T {
+	enum ENUM_NETWORK_TYPE eNetworkType;
+	union _NAN_BAND_CHNL_CTRL rChnlInfo;
+	uint32_t u4SlotBitmap;
+};
+
 uint8_t g_aucNanIEBuffer[NAN_IE_BUF_MAX_SIZE];
 
 uint32_t g_u4MaxChnlSwitchTimeUs = 8000;
@@ -490,6 +499,13 @@ struct _NAN_POTENTIAL_CHNL_MAP_T g_arPotentialChnlMap[] = {
 
 	{ 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
 };
+
+#if (CFG_NAN_SCHEDULER_VERSION == 1)
+/* Record Non-NAN network channel bitmap */
+struct _NAN_NONNAN_NETWORK_TIMELINE_T
+g_arNonNanTimeline[NAN_MAX_NONNAN_TIMELINE_NUM] = {0};
+
+#endif
 
 /* Porting from FW, TODO: move to correct file */
 enum _ENUM_CNM_CH_CONCURR_T {
@@ -5004,6 +5020,12 @@ nanSchedNegoInitDb(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 
 	nanSchedNegoAddQos(prAdapter, u4DftNdlQosQuotaVal,
 			   u4DftNdlQosLatencyVal);
+
+#if (CFG_NAN_SCHEDULER_VERSION == 1)
+	nanSchedUpdateNonNanTimelineByAis(prAdapter);
+	nanSchedCommitNonNanChnlList(prAdapter);
+#endif
+
 }
 
 uint32_t
@@ -5856,6 +5878,14 @@ nanSchedNegoIsRmtCrbConflict(
 
 			rLocalChnlInfo =
 				nanGetChnlInfoBySlot(prAdapter, u4SlotIdx);
+
+#if (CFG_NAN_SCHEDULER_VERSION == 1)
+			if ((rLocalChnlInfo.rChannel.u4PrimaryChnl == 0) &&
+				nanRegGetNanChnlBand(rRmtChnlInfo) == BAND_2G4)
+				rLocalChnlInfo = nanQueryNonNanChnlInfoBySlot(
+				prAdapter, u4SlotIdx, BAND_2G4);
+#endif
+
 			if (rLocalChnlInfo.rChannel.u4PrimaryChnl == 0) {
 				if (pfgEmptyMapSet && au4EmptyMap) {
 					*pfgEmptyMapSet = TRUE;
@@ -6208,8 +6238,10 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 	}
 
 	u4NanQuota = NAN_SLOTS_PER_DW_INTERVAL;
+#if (CFG_NAN_SCHEDULER_VERSION == 0)
 	if (!fgChkRmtCondSlot)
 		u4NanQuota -= prAdapter->rWifiVar.ucAisQuotaVal;
+#endif
 
 	/* try to allocate basic CRBs for every DW interval */
 	u4DefCrbNumBackup = u4DefCrbNum;
@@ -6345,6 +6377,11 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		if (u4DefCrbNum)
 			rRetStatus = WLAN_STATUS_RESOURCES;
 	}
+
+#if (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0)
+	nanSchedRemoveDiffBandChnlList(prAdapter, FALSE);
+	nanSchedRemoveDiffBandChnlList(prAdapter, TRUE);
+#endif
 
 GEN_DFT_CRB_DONE:
 
@@ -9647,3 +9684,314 @@ nanSchedGetSchRecBandByMac(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr) {
 	else
 		return BAND_NULL;
 }
+
+#if (CFG_NAN_SCHEDULER_VERSION == 1)
+struct _NAN_NONNAN_NETWORK_TIMELINE_T *
+nanGetNonNanTimeline(struct ADAPTER *prAdapter,
+	uint8_t ucNetIdx) {
+	if (ucNetIdx < NAN_MAX_NONNAN_TIMELINE_NUM)
+		return &g_arNonNanTimeline[ucNetIdx];
+	else
+		return &g_arNonNanTimeline[0];
+}
+
+union _NAN_BAND_CHNL_CTRL
+nanQueryNonNanChnlInfoBySlot(struct ADAPTER *prAdapter,
+	uint16_t u2SlotIdx, enum ENUM_BAND eBand) {
+	uint32_t u4Idx;
+	struct _NAN_NONNAN_NETWORK_TIMELINE_T *prNonNanTimeline;
+
+	for (u4Idx = 0; u4Idx < NAN_MAX_NONNAN_TIMELINE_NUM; u4Idx++) {
+		prNonNanTimeline = nanGetNonNanTimeline(
+				prAdapter, u4Idx);
+		if (prNonNanTimeline->u4SlotBitmap &
+			BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) {
+			if (nanRegGetNanChnlBand(prNonNanTimeline->rChnlInfo)
+				== eBand)
+				return prNonNanTimeline->rChnlInfo;
+		}
+	}
+
+	return g_rNullChnl;
+}
+
+uint32_t
+nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
+	union _NAN_BAND_CHNL_CTRL *prChnl,
+	uint32_t *pu4SlotBitmap) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	struct _NAN_SCHEDULER_T *prNanScheduler;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint32_t u4Bw;
+	uint8_t i;
+
+	ASSERT(prAdapter);
+	prNanScheduler = nanGetScheduler(prAdapter);
+	*pu4SlotBitmap = 0;
+
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (IS_BSS_AIS(prBssInfo) &&
+			(prBssInfo->eConnectionState ==
+			MEDIA_STATE_CONNECTED)) {
+			/* Use NAN BW instead of max(AIS,NAN) */
+			u4Bw = nanSchedConfigGetAllowedBw(prAdapter,
+				prBssInfo->eBand);
+
+			*prChnl = nanRegGenNanChnlInfoByPriChannel(
+				prBssInfo->ucPrimaryChannel, u4Bw);
+
+			break;
+		}
+
+		prChnl->u4RawData = 0;
+	}
+
+	/* Todo: Temporarily use predefined bitmap
+	* should change to get the bitmap from CNM
+	*/
+	if (prChnl->u4RawData == 0)
+		*pu4SlotBitmap = 0;
+	else if (prBssInfo != NULL) {
+		if (prBssInfo->eBand == BAND_2G4)
+			*pu4SlotBitmap = 0xFF00FF00;
+		else
+			*pu4SlotBitmap = 0x00FF00FF;
+	}
+
+	return rRetStatus;
+}
+
+uint32_t
+nanSchedUpdateNonNanTimelineByAis(struct ADAPTER *prAdapter) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	union _NAN_BAND_CHNL_CTRL rChnlInfo;
+	uint32_t u4SlotBitmap = 0;
+	struct _NAN_NONNAN_NETWORK_TIMELINE_T *prNonNanTimeline;
+	struct _NAN_SCHEDULER_T *prNanScheduler;
+
+	ASSERT(prAdapter);
+	prNanScheduler = nanGetScheduler(prAdapter);
+	prNonNanTimeline = nanGetNonNanTimeline(
+		prAdapter, 0);
+
+	if (prNanScheduler->fgInit == FALSE) {
+		DBGLOG(NAN, WARN, "NAN not init\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	nanSchedGetAisChnlUsage(prAdapter, &rChnlInfo, &u4SlotBitmap);
+
+	DBGLOG(NAN, INFO,
+		"AIS chnlRaw:%x, PrimCh:%d, bitmap:%x\n",
+		rChnlInfo.u4RawData, rChnlInfo.rChannel.u4PrimaryChnl,
+		u4SlotBitmap);
+
+	/* Update Non-NAN timeline */
+	if (rChnlInfo.rChannel.u4PrimaryChnl == 0) {
+		prNonNanTimeline->rChnlInfo.u4RawData = 0;
+		prNonNanTimeline->u4SlotBitmap = 0;
+	} else {
+		prNonNanTimeline->rChnlInfo = rChnlInfo;
+		prNonNanTimeline->u4SlotBitmap = u4SlotBitmap;
+	}
+
+	return rRetStatus;
+}
+
+uint32_t
+nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SlotIdx, u4SlotOffset, u4DwIdx;
+	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
+	struct _NAN_NONNAN_NETWORK_TIMELINE_T *prNonNanTimeline;
+	struct _NAN_CHANNEL_TIMELINE_T *prChnlTimelineList;
+	union _NAN_BAND_CHNL_CTRL rNonNanChnlInfo, rCommitChnlInfo;
+	enum ENUM_BAND eNonNanBand, eNanBand = BAND_NULL;
+	uint32_t u4ChnlIdx;
+
+	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
+
+	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
+	prNonNanTimeline = nanGetNonNanTimeline(prAdapter, 0);
+	rNonNanChnlInfo = prNonNanTimeline->rChnlInfo;
+	eNonNanBand = nanRegGetNanChnlBand(rNonNanChnlInfo);
+
+	if (rNonNanChnlInfo.rChannel.u4PrimaryChnl == 0) {
+		DBGLOG(NAN, INFO, "Non-NAN channel = 0\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prChnlTimelineList = prNanTimelineMgmt->arChnlList;
+
+	for (u4ChnlIdx = 0; u4ChnlIdx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
+	     u4ChnlIdx++) {
+		if (prChnlTimelineList[u4ChnlIdx].fgValid == FALSE)
+			continue;
+
+		eNanBand = nanRegGetNanChnlBand(
+			prChnlTimelineList[u4ChnlIdx].rChnlInfo);
+	}
+
+	/* If AIS & NAN are under different band
+	* won't affect current timeline
+	*/
+	if ((eNanBand != BAND_NULL) && (eNonNanBand != eNanBand)) {
+		DBGLOG(NAN, INFO, "Skip. NDP B%d != AIS B%d\n",
+			eNanBand, eNonNanBand);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	/* Skip if NDP not setup, and AIS operated under 2.4G */
+	if ((eNanBand == BAND_NULL) && (eNonNanBand == BAND_2G4)) {
+		DBGLOG(NAN, INFO, "Skip. NDP Null, AIS in 2G\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	for (u4SlotOffset = 0;
+		u4SlotOffset < NAN_SLOTS_PER_DW_INTERVAL;
+		u4SlotOffset++) {
+
+		/* Skip if the slot is not used by non-NAN network */
+		if ((prNonNanTimeline->u4SlotBitmap & BIT(u4SlotOffset)) == 0)
+			continue;
+
+		for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
+			u4SlotIdx = u4SlotOffset +
+				u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
+
+			/* Get committed channel */
+			rCommitChnlInfo = nanQueryChnlInfoBySlot(
+				prAdapter, u4SlotIdx, NULL, TRUE);
+
+			if (rCommitChnlInfo.rChannel.u4PrimaryChnl != 0) {
+				/* If concurrent check fail,
+				* remove original channel, and add new channel
+				* If check pass, use original channel
+				*/
+				if (nanSchedChkConcurrOp(
+					rCommitChnlInfo, rNonNanChnlInfo)
+					== CNM_CH_CONCURR_MCC) {
+					nanSchedDeleteCrbFromChnlList(
+					prAdapter,
+					u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE);
+					nanSchedAddCrbToChnlList(
+					prAdapter,
+					&rNonNanChnlInfo,
+					u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+				}
+			} else
+				nanSchedAddCrbToChnlList(
+					prAdapter,
+					&rNonNanChnlInfo,
+					u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					TRUE, NULL);
+		}
+	}
+
+	return rRetStatus;
+}
+
+uint32_t
+nanSchedSyncNonNanChnlToNan(struct ADAPTER *prAdapter) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SchIdx;
+
+	ASSERT(prAdapter);
+
+	/* step1: Add AIS channel to committed slots */
+	rRetStatus =
+		nanSchedCommitNonNanChnlList(prAdapter);
+	if (rRetStatus != WLAN_STATUS_SUCCESS)
+		return rRetStatus;
+
+	/* step2: determine common FAW CRB */
+	for (u4SchIdx = 0; u4SchIdx < NAN_MAX_CONN_CFG; u4SchIdx++)
+		nanSchedPeerUpdateCommonFAW(prAdapter, u4SchIdx);
+
+	/* step3: release unused slots */
+	nanSchedReleaseUnusedCommitSlot(prAdapter);
+
+	/* Update local timeline to firmware */
+	nanSchedCmdUpdateAvailability(prAdapter);
+
+	nanSchedDbgDumpTimelineDb(prAdapter, __func__, __LINE__);
+
+	return rRetStatus;
+}
+#endif /* (CFG_NAN_SCHEDULER_VERSION == 1) */
+
+#if (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0)
+uint32_t
+nanSchedRemoveDiffBandChnlList(
+	struct ADAPTER *prAdapter, unsigned char fgCommitOrCond) {
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SlotIdx;
+	uint32_t u4ChnlIdx;
+	enum ENUM_BAND eBand, eSelBand = BAND_NULL;
+	unsigned char fgNeedRemove = FALSE;
+	int32_t i4SlotNum[BAND_NUM - 1] = {0};
+	union _NAN_BAND_CHNL_CTRL rChnlInfo;
+	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
+	struct _NAN_CHANNEL_TIMELINE_T *prChnlTimelineList;
+
+	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
+
+	if (fgCommitOrCond)
+		prChnlTimelineList = prNanTimelineMgmt->arChnlList;
+	else
+		prChnlTimelineList = prNanTimelineMgmt->arCondChnlList;
+
+	for (u4ChnlIdx = 0; u4ChnlIdx < NAN_TIMELINE_MGMT_CHNL_LIST_NUM;
+	     u4ChnlIdx++) {
+		if (prChnlTimelineList[u4ChnlIdx].fgValid == FALSE)
+			continue;
+
+		eBand = nanRegGetNanChnlBand(
+			prChnlTimelineList[u4ChnlIdx].rChnlInfo);
+		i4SlotNum[eBand - 1] += prChnlTimelineList[u4ChnlIdx].i4Num;
+	}
+
+	/* Predefined priority: (6G >) 5G > 2G */
+	for (eBand = (BAND_NUM - 1); eBand > 0; eBand--) {
+		if (i4SlotNum[eBand - 1] == 0)
+			continue;
+
+		if (eSelBand == BAND_NULL)
+			eSelBand = eBand;
+
+		if (eBand != eSelBand)
+			fgNeedRemove = TRUE;
+
+		DBGLOG(NAN, INFO,
+			"eSelBand:%d, Band:%d, SlotNum:%d, NeedRemove:%d, fgCommitOrCond:%d\n",
+			eSelBand, eBand, i4SlotNum[eBand-1],
+			fgNeedRemove, fgCommitOrCond);
+	}
+
+	if (fgNeedRemove == FALSE)
+		return rRetStatus;
+
+	for (u4SlotIdx = 0; u4SlotIdx < NAN_TOTAL_SLOT_WINDOWS; u4SlotIdx++) {
+		rChnlInfo =
+			nanQueryChnlInfoBySlot(
+			prAdapter, u4SlotIdx, NULL, fgCommitOrCond);
+		if (rChnlInfo.rChannel.u4PrimaryChnl == 0)
+			continue;
+		eBand = nanRegGetNanChnlBand(rChnlInfo);
+
+		if (eBand != eSelBand)
+			nanSchedDeleteCrbFromChnlList(
+				prAdapter, u4SlotIdx, 1,
+				ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+				fgCommitOrCond);
+	}
+
+	return rRetStatus;
+}
+#endif /* (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0) */

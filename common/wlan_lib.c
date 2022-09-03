@@ -8127,7 +8127,12 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucAisQuotaVal =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanAisQuota", 8);
 	prWifiVar->ucDftNdlQuotaVal =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQuota", 5);
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQuota",
+#if (CFG_NAN_SCHEDULER_VERSION == 1)
+		NAN_DEFAULT_NDL_QUOTA_UP_BOUND);
+#else
+		5);
+#endif
 	prWifiVar->ucDftRangQuotaVal =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftRangQuota", 1);
 	prWifiVar->ucDftQuotaStartOffset =
