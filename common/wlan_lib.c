@@ -8382,6 +8382,15 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4DrvOwnMode = wlanCfgGetUint32(prAdapter,
 			"drvOwnMode", 0);
 
+	prWifiVar->fgDumpTXD = wlanCfgGetInt32(prAdapter, "DumpTXD",
+			FEATURE_DISABLED);
+
+	prWifiVar->fgDumpTXP = wlanCfgGetInt32(prAdapter, "DumpTXP",
+			FEATURE_DISABLED);
+
+	prWifiVar->fgDumpRXD = wlanCfgGetInt32(prAdapter, "DumpRXD",
+			FEATURE_DISABLED);
+
 	/* Fast Path Config */
 	prWifiVar->ucUdpTspecUp = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "UdpTspecUp", 7);

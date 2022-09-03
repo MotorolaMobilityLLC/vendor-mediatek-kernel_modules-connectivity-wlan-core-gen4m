@@ -1317,6 +1317,9 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxs;
+	u_int8_t fgDumpTXD;
+	u_int8_t fgDumpRXD;
+	u_int8_t fgDumpTXP;
 
 	uint8_t ucUdpTspecUp;
 	uint8_t ucTcpTspecUp;

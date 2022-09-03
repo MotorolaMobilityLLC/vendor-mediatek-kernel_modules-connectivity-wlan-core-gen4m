@@ -77,9 +77,16 @@
 
 #define CFG_DUMP_TXDMAD		0
 #define CFG_DUMP_RXDMAD		0
+#if CFG_DUMP_NIC_DETAILS
+#define CFG_DUMP_TXD		1
+#define CFG_DUMP_TXP		1
+#define CFG_DUMP_RXD		1
+#else
 #define CFG_DUMP_TXD		0
 #define CFG_DUMP_TXP		0
 #define CFG_DUMP_RXD		0
+#endif
+
 #define CFG_DUMP_RXD_SEGMENT    1
 
 #define WIFI_SER_L1_RST_DONE_TIMEOUT    100 /* in unit of ms */

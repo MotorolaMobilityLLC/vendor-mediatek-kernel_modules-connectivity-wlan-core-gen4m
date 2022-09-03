@@ -2129,8 +2129,11 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		ASSERT(prRxStatus);
 
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(HAL, INFO, "Dump RXD: \n");
-		DBGLOG_MEM8(HAL, INFO, prRxStatus, prChipInfo->rxd_size);
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(HAL, INFO, "Dump RXD:\n");
+			DBGLOG_MEM8(HAL, INFO, prRxStatus,
+				prChipInfo->rxd_size);
+		}
 #endif
 
 		prSwRfb->ucPacketType =
@@ -3162,8 +3165,10 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	DBGLOG_MEM8(HAL, INFO, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
 #endif
 #if (CFG_DUMP_TXD == 1)
-	DBGLOG(HAL, INFO, "Dump CMD TXD: \n");
-	DBGLOG_MEM8(HAL, INFO, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+	if (IS_FEATURE_ENABLED(prGlueInfo->prAdapter->rWifiVar.fgDumpTXD)) {
+		DBGLOG(HAL, INFO, "Dump CMD TXD:\n");
+		DBGLOG_MEM8(HAL, INFO, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+	}
 #endif
 
 	/* Increase TX_CTX_IDX, but write to register later. */

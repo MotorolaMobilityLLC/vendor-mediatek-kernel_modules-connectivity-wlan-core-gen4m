@@ -189,13 +189,18 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_DUMP_TXD == 1)
-	DBGLOG(HAL, INFO, "Dump DATA TXD: \n");
-	DBGLOG_MEM8(HAL, INFO, pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpTXD)) {
+		DBGLOG(HAL, INFO, "Dump DATA TXD:\n");
+		DBGLOG_MEM8(HAL, INFO, pucBuffer,
+			NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	}
 #endif
 #if (CFG_DUMP_TXP == 1)
-	DBGLOG(HAL, INFO, "Dump DATA TXP: \n");
-	DBGLOG_MEM8(HAL, INFO, (uint8_t *)prHwTxDescAppend,
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpTXP)) {
+		DBGLOG(HAL, INFO, "Dump DATA TXP:\n");
+		DBGLOG_MEM8(HAL, INFO, (uint8_t *)prHwTxDescAppend,
 			sizeof(prHwTxDescAppend->CONNAC_APPEND));
+	}
 #endif
 }
 

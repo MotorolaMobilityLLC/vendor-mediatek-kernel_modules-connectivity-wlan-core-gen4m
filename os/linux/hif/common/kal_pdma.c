@@ -1494,8 +1494,11 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 		dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
 #endif
 #if (CFG_DUMP_TXD == 1)
-		DBGLOG(HAL, INFO, "Dump CMD TXD: \n");
-		dumpMemory8((uint8_t *)pucBuf, u4Len);
+		if (IS_FEATURE_ENABLED(
+				prGlueInfo->prAdapter->rWifiVar.fgDumpTXD)) {
+			DBGLOG(HAL, INFO, "Dump CMD TXD:\n");
+			dumpMemory8((uint8_t *)pucBuf, u4Len);
+		}
 #endif
 	}
 

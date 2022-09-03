@@ -554,6 +554,12 @@ else
     ccflags-y += -DCFG_SUPPORT_TX_FREE_MSDU_WORK=0
 endif
 
+ifeq ($(CONFIG_DUMP_NIC_DETAILS), y)
+    ccflags-y += -DCFG_DUMP_NIC_DETAILS=1
+else
+    ccflags-y += -DCFG_DUMP_NIC_DETAILS=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC2X=1
 else

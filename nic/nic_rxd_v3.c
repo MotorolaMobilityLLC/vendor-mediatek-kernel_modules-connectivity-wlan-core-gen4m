@@ -224,9 +224,12 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_4);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, TRACE, "****** RXD GROUP 4 ******\n");
-		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup4,
-			sizeof(struct HW_MAC_RX_STS_GROUP_4));
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(RX, TRACE, "****** RXD GROUP 4 ******\n");
+			DBGLOG_MEM8(RX, TRACE,
+				(uint32_t *) prSwRfb->prRxStatusGroup4,
+				sizeof(struct HW_MAC_RX_STS_GROUP_4));
+		}
 #endif
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1)) {
@@ -234,9 +237,12 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_1);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, TRACE, "****** RXD GROUP 1 ******\n");
-		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup1,
-			sizeof(struct HW_MAC_RX_STS_GROUP_1));
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(RX, TRACE, "****** RXD GROUP 1 ******\n");
+			DBGLOG_MEM8(RX, TRACE,
+				(uint32_t *) prSwRfb->prRxStatusGroup1,
+				sizeof(struct HW_MAC_RX_STS_GROUP_1));
+		}
 #endif
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) {
@@ -244,9 +250,12 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_2);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, TRACE, "****** RXD GROUP 2 ******\n");
-		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup2,
-			sizeof(struct HW_MAC_RX_STS_GROUP_2));
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(RX, TRACE, "****** RXD GROUP 2 ******\n");
+			DBGLOG_MEM8(RX, TRACE,
+				(uint32_t *) prSwRfb->prRxStatusGroup2,
+				sizeof(struct HW_MAC_RX_STS_GROUP_2));
+		}
 #endif
 	}
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
@@ -254,9 +263,12 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_3_V2);
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, TRACE, "****** RXD GROUP 3 ******\n");
-		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup3,
-			sizeof(struct HW_MAC_RX_STS_GROUP_3_V2));
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(RX, TRACE, "****** RXD GROUP 3 ******\n");
+			DBGLOG_MEM8(RX, TRACE,
+				(uint32_t *) prSwRfb->prRxStatusGroup3,
+				sizeof(struct HW_MAC_RX_STS_GROUP_3_V2));
+		}
 #endif
 	}
 
@@ -265,12 +277,14 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += prChipInfo->group5_size;
 #if (CFG_DUMP_RXD == 1)
-		DBGLOG(RX, TRACE, "****** RXD GROUP 5 ******\n");
-		DBGLOG_MEM8(RX, TRACE, (uint32_t *) prSwRfb->prRxStatusGroup5,
-			prChipInfo->group5_size);
+		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+			DBGLOG(RX, TRACE, "****** RXD GROUP 5 ******\n");
+			DBGLOG_MEM8(RX, TRACE,
+				(uint32_t *) prSwRfb->prRxStatusGroup5,
+				prChipInfo->group5_size);
+		}
 #endif
 	}
-
 
 	prSwRfb->u2RxStatusOffst = u2RxStatusOffset;
 	prSwRfb->pvHeader = (uint8_t *) prRxStatus +

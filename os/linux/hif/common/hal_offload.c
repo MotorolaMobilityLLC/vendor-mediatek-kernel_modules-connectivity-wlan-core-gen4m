@@ -840,8 +840,10 @@ void halUpdateRFBInfo(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 
 #if (CFG_DUMP_RXD == 1)
-	DBGLOG(HAL, INFO, "Dump RXD:\n");
-	dumpMemory8((uint8_t *)prRxStatus, prChipInfo->rxd_size);
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgDumpRXD)) {
+		DBGLOG(HAL, INFO, "Dump RXD:\n");
+		dumpMemory8((uint8_t *)prRxStatus, prChipInfo->rxd_size);
+	}
 #endif
 	if (prRxDescOps->nic_rxd_get_pkt_type) {
 		prSwRfb->ucPacketType =
