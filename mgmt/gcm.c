@@ -654,6 +654,7 @@ static void aes_gctr(
 		inc32(cb);
 	}
 
+	kalMemSet(tmp, 0, AES_BLOCK_SIZE);
 	last = x + xlen - xpos;
 	if (last) {
 		/* Last, partial block */
@@ -737,6 +738,7 @@ int aes_gcm_ad_impl(
 	uint32_t h_size = AES_BLOCK_SIZES;
 
 	kalMemSet(PH, 0, AES_BLOCK_SIZE);
+	kalMemSet(H, 0, AES_BLOCK_SIZE);
 	AES_Encrypt(PH, AES_BLOCK_SIZES, key, key_len, H, &h_size);
 
 	/* Prepare block J_0 = IV || 0^31 || 1 [len(IV) = 96] */

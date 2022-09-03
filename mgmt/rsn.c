@@ -2051,6 +2051,7 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		return;
 	}
 	*pu2StatusCode = STATUS_CODE_INVALID_INFO_ELEMENT;
+	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
 
 	if (rsnParseRsnIE(prAdapter, prIe, &rRsnIe)) {
 		if ((rRsnIe.u4PairwiseKeyCipherSuiteCount != 1)

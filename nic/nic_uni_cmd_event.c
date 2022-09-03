@@ -3628,6 +3628,7 @@ uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 			sizeof(struct UNI_CMD_STAREC_MLD_TEARDOWN);
 	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint16_t widx = 0;
 
 	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
 				RAM_TYPE_MSG, max_cmd_len);
@@ -3638,8 +3639,8 @@ uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 	}
 
 	uni_cmd->ucBssInfoIdx = prStaRec->ucBssIndex;
-	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		prStaRec->ucWlanIndex);
+	widx = (uint16_t) prStaRec->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
 	tag = (struct UNI_CMD_STAREC_MLD_TEARDOWN *)uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_STAREC_TAG_MLD_TEARDOWN;
 	tag->u2Length = sizeof(*tag);
