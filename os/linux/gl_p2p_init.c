@@ -316,6 +316,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t idx = 0;
+	u_int32_t wait = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -324,21 +325,59 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
 
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	g_P2pPrDev = NULL;
 
-	if (prAdapter->rP2PRegState != ENUM_P2P_REG_STATE_REGISTERED ||
-		prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_UNREGISTERED) {
+	/* We must guarantee that all p2p net devices are unregistered with
+	 * kernel before the net devices are freed. Otherwise, when p2pLaunch
+	 * is invoked next time, we will get kernel exception because the old
+	 * p2p net devices registered to kernel were volatile.
+	 */
+retry:
+	wait = 0;
+	while (wait < 2000) {
+		/* p2p net devices are unregistered */
+		if (prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED &&
+			prAdapter->rP2PNetRegState ==
+				ENUM_NET_REG_STATE_UNREGISTERED)
+			break;
+
+		/* p2p net devices are not unregistered yet */
+		if (prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED &&
+			prAdapter->rP2PNetRegState ==
+				ENUM_NET_REG_STATE_REGISTERED) {
+			p2pNetUnregister(prGlueInfo, FALSE);
+			break;
+		}
+
+		kalMsleep(100);
+		wait += 100;
+	}
+
+	if (wait >= 2000) {
 		DBGLOG(P2P, INFO, "skip remove, p2p_state=%d, net_state=%d\n",
 			prAdapter->rP2PRegState,
 			prAdapter->rP2PNetRegState);
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		return FALSE;
 	}
 
-	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERING;
-	prAdapter->p2p_scan_report_all_bss = FALSE;
+	/* Make sure that p2p is in registered state and p2p net is in
+	 * unregistered state before continuing the removal procedure.
+	 */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED &&
+		prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_UNREGISTERED)
+		prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERING;
+	else {
+		/* Someone has changed p2p net register state. Try again. */
+		DBGLOG(P2P, INFO, "retry remove, p2p_state=%d, net_state=%d\n",
+			prAdapter->rP2PRegState,
+			prAdapter->rP2PNetRegState);
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		goto retry;
+	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	prAdapter->p2p_scan_report_all_bss = FALSE;
 
 	glUnregisterP2P(prGlueInfo, 0xff);
 
