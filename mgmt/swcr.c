@@ -307,8 +307,9 @@ void dumpSTA(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	       prStaRec->u2HtCapInfo);
 
 	for (i = 0; i < NUM_OF_PER_STA_TX_QUEUES; i++)
-		DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i,
-		       prStaRec->aprTargetQueue[i]->u4NumElem);
+		if (prStaRec->aprTargetQueue[i])
+			DBGLOG(SW4, INFO, "TC %u Queue Len %u\n", i,
+			       prStaRec->aprTargetQueue[i]->u4NumElem);
 
 	DBGLOG(SW4, INFO, "BmpDeliveryAC %x\n",
 	       prStaRec->ucBmpDeliveryAC);
