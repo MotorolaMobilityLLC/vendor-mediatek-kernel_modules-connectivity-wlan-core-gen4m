@@ -709,7 +709,7 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 1:
 #if QM_FORWARDING_FAIRNESS
-				if (ucOpt1 >= TC_NUM) {
+				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
 					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
 					   ucOpt1);
 					break;
@@ -722,7 +722,7 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 2:
 				/* only one */
-				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
+				if (ucOpt1 >= NUM_OF_PER_TYPE_TX_QUEUES) {
 					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
 					   ucOpt1);
 					break;
