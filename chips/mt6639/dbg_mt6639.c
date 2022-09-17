@@ -49,12 +49,6 @@
 ********************************************************************************
 */
 
-#if defined(_HIF_PCIE)
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-static void mt6639_dumpPcieReg(void);
-#endif
-#endif
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -809,7 +803,7 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 
 #if defined(_HIF_PCIE)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-static void mt6639_dumpPcieReg(void)
+void mt6639_dumpPcieReg(void)
 {
 	uint32_t u4Value = 0;
 
@@ -1563,6 +1557,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	u_int8_t readable = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	int ret = 0;
+	u_int8_t dumpViaBt = fgIsBusAccessFailed && fgTriggerDebugSop;
 #endif
 
 	if (!ad) {
@@ -1577,12 +1572,11 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	if (prBusInfo->dumpPcieStatus)
 		readable = prBusInfo->dumpPcieStatus(ad->prGlueInfo);
 
-	if (readable == FALSE &&
-		!(fgIsBusAccessFailed && fgTriggerDebugSop))
+	if (readable == FALSE && !dumpViaBt)
 		goto exit;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	if (dumpViaBt) {
 		/* Notify BT to start */
 		ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT);
@@ -1595,7 +1589,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6639_dumpConninfraBus(ad);
-	if (fgIsBusAccessFailed && fgTriggerDebugSop)
+	if (dumpViaBt)
 		mt6639_dumpPcieReg();
 #endif
 
@@ -1607,7 +1601,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	mt6639_dumpWfBusReg(ad);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	if (dumpViaBt) {
 		/* Notify BT to end */
 		ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
 			CONNV3_DRV_TYPE_BT);

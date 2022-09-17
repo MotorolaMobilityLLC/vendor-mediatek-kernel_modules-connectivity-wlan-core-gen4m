@@ -646,6 +646,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt6639_dumpWfsyscpupcr,
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	.dumpPcieCr = mt6639_dumpPcieReg,
+#endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt6639_get_rx_rate_info,

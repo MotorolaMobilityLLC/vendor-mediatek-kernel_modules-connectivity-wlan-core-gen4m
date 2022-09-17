@@ -97,6 +97,10 @@
 #include "mt66xx_reg.h"
 #include "wlan_pinctrl.h"
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -2987,6 +2991,9 @@ int32_t glBusFuncOn(void)
 	int ret = 0;
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct CHIP_DBG_OPS *prDbgOps = NULL;
+
 	/*
 	 * Due to connsys chip may be powered on before platform is powered on,
 	 * need to remove pcie port first to ensure no resource is occupied.
@@ -3011,6 +3018,40 @@ int32_t glBusFuncOn(void)
 	}
 
 	if (g_fgDriverProbed == FALSE) {
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		glGetChipInfo((void **)&prChipInfo);
+		if (prChipInfo == NULL) {
+			DBGLOG(HAL, ERROR, "prChipInfo in NULL\n");
+			goto exit_dump;
+		}
+
+		prDbgOps = prChipInfo->prDebugOps;
+		if (prDbgOps == NULL) {
+			DBGLOG(HAL, ERROR, "prDebugOps in NULL\n");
+			goto exit_dump;
+		}
+
+		/* Notify BT to start */
+		ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
+			goto exit_dump;
+		}
+
+		if (prDbgOps->dumpPcieCr)
+			prDbgOps->dumpPcieCr();
+
+		/* Notify BT to end */
+		ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
+			goto exit_dump;
+		}
+
+exit_dump:
+#endif
 		pci_unregister_driver(&mtk_pci_driver);
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		mtk_pcie_remove_port(0);
