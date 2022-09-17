@@ -996,8 +996,7 @@ static u_int8_t isPendingTxsData(uint8_t ucPID, struct MSDU_INFO *prMsduInfo)
 /*!
  * @brief This procedure is used to dequeue from
  *        prAdapter->rTxCtrl.rTxMgmtTxingQueue
- *        by matching (wlanIndex, pid) or
- *        (wlanIndex, tid) for DATA if CFG_SUPPORT_SEPARATE_TXS_PID_POOL == 1
+ *        by matching (wlanIndex, pid, tid)
  *
  * @param    prAdapter   Pointer of ADAPTER_T
  *           ucWlanInde  Wlan index
@@ -1041,17 +1040,18 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 
 		if (isPendingTxsData(ucPID, prMsduInfo)) {
 			/**
-			 * For data frames with TXS.
-			 * Find by matching (widx, tid) to amend the missed
-			 * pending TXS, stop at a perfect match
-			 * (widx, tid, pid).
-			 * This perfect match might be the previous one, but
-			 * the residual could be flushed later when handling
-			 * searching for another TX DONE.
+			 * Find by a perfect match (widx, tid, pid).
 			 */
 			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
-			    prMsduInfo->ucUserPriority == ucTID)
-				break;
+			    prMsduInfo->ucUserPriority == ucTID) {
+				if (prMsduInfo->ucPID == ucPID)
+					break;
+
+				DBGLOG_LIMITED(TX, WARN,
+				       "Skipped Msdu WIDX:PID:TID[%u:%u:%u] len=%u\n",
+				       ucWlanIndex, prMsduInfo->ucPID, ucTID,
+				       QUEUE_LENGTH(prTempQue));
+			}
 		} else {
 			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
 			    prMsduInfo->ucPID == ucPID)

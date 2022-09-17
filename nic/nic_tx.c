@@ -4207,25 +4207,28 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 		       prTxDone->u2SequenceNumber);
 	}
 
+	if (prTxDone->ucPacketSeq == NIC_TX_DESC_PID_RESERVED ||
+	    prTxDone->ucPacketSeq > NIC_TX_DESC_DRIVER_PID_MAX) {
+		DBGLOG_LIMITED(NIC, WARN,
+		       "EVENT_ID_TX_DONE WIDX:PID:TID[%u:%u:%u] Status[%u:%s] SN[%u]\n",
+		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
+		       prTxDone->ucTid,
+		       prTxDone->ucStatus,
+		       prTxResult,
+		       prTxDone->u2SequenceNumber);
+		return;
+	}
+
 	fgStop = FALSE;
 	do {
 		/* If the FW has no resources to respond TX DONE, the TX DONE
 		 * will be discarded, which makes the TX MSDU Info waiting for
 		 * response left in the pending queue.
-		 * Assume the TX DONE with same (wlanIndex, TID) are FIFO,
-		 * Find all packets with same (wlanIndex, TID) and to process
-		 * until a MSDU with same PID were encountered.
+		 * The TX DONE with same (wlanIndex, TID) are not FIFO in MLO,
+		 * free an data MSDU info too early might free a MSDU during TX.
 		 *
-		 * This assumption may fail in MLO, however, free an data MSDU
-		 * info too early does not cause side effect.
-		 *
-		 * This method only apply to "STATELESS DATA" frames.
-		 * Find by matching (widx, tid) to amend the missed
-		 * pending TXS, stop at a perfect match
-		 * (widx, tid, pid).
-		 * This perfect match might be the previous one, but
-		 * the residual could be flushed later when handling
-		 * searching for another TX DONE.
+		 * For "STATELESS DATA" frames.
+		 * Find by perfect matching (widx, pid, tid).
 		 */
 		prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
 						     prTxDone->ucWlanIndex,
