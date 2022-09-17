@@ -896,7 +896,7 @@ void roamingFillScanInfo(struct ADAPTER *ad, enum ENUM_BAND eBand,
 		if (ucChNum < 1 || ucChNum > 14)
 			return;
 
-		index = ucChNum--;
+		index = (ucChNum - 1);
 		prRoamSlotInfo->au2ChIdleTime2G4[index] = u2IdleTime;
 	} else if (eBand == BAND_5G) {
 		if (ucChNum < 36 || ucChNum > 165)
@@ -932,7 +932,7 @@ uint16_t roamingGetChIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 		if (ucChNum < 1 || ucChNum > 14)
 			return 0;
 
-		index = ucChNum--;
+		index = (ucChNum - 1);
 		u2Slot = prRoamSlotInfo->au2ChIdleTime2G4[index];
 	} else if (eBand == BAND_5G) {
 		if (ucChNum < 36 || ucChNum > 165)

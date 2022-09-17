@@ -294,9 +294,14 @@ struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
 	uint8_t *addr, uint8_t bidx, uint8_t is_mld)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
-	struct AP_COLLECTION *a;
+	struct AP_COLLECTION *a = NULL;
 
-	a = s->arApHash[AP_HASH(addr)];
+	if (AP_HASH(addr) >= 0) {
+		a = s->arApHash[AP_HASH(addr)];
+	} else {
+		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
+			MAC2STR(addr));
+	}
 	while (a != NULL &&
 	       (UNEQUAL_MAC_ADDR(a->aucAddr, addr) ||
 	       a->fgIsMld != is_mld))
@@ -308,16 +313,26 @@ void apsHashAdd(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 
-	ap->hnext = s->arApHash[AP_HASH(ap->aucAddr)];
-	s->arApHash[AP_HASH(ap->aucAddr)] = ap;
+	if (AP_HASH(ap->aucAddr) >= 0) {
+		ap->hnext = s->arApHash[AP_HASH(ap->aucAddr)];
+		s->arApHash[AP_HASH(ap->aucAddr)] = ap;
+	} else {
+		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
+			MAC2STR(ap->aucAddr));
+	}
 }
 
 void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
-	struct AP_COLLECTION *a;
+	struct AP_COLLECTION *a = NULL;
 
-	a = s->arApHash[AP_HASH(ap->aucAddr)];
+	if (AP_HASH(ap->aucAddr) >= 0) {
+		a = s->arApHash[AP_HASH(ap->aucAddr)];
+	} else {
+		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
+			MAC2STR(ap->aucAddr));
+	}
 	if (a == NULL)
 		return;
 
