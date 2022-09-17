@@ -125,7 +125,7 @@ static void fwLogCtrlUpdateRp(struct ADAPTER *prAdapter,
 	struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl,
 	uint32_t u4Rp)
 {
-	DBGLOG(INIT, TRACE, "[%d %s] u4Rp: 0x%x\n",
+	DBGLOG(INIT, LOUD, "[%d %s] u4Rp: 0x%x\n",
 		prSubCtrl->type,
 		fw_log_type_to_str(prSubCtrl->type),
 		u4Rp);
@@ -352,7 +352,7 @@ static void fwLogCtrlRefreshSubHeader(struct ADAPTER *prAdapter,
 	prSubCtrl->wp = rSubHeader.wp;
 	prSubCtrl->iwp = rSubHeader.internal_wp;
 
-	DBGLOG(INIT, TRACE,
+	DBGLOG(INIT, LOUD,
 		"[%d %s] buf_base_addr: 0x%x, rp: 0x%x, irp: 0x%x, wp: 0x%x, iwp: 0x%x\n",
 		prSubCtrl->type,
 		fw_log_type_to_str(prSubCtrl->type),

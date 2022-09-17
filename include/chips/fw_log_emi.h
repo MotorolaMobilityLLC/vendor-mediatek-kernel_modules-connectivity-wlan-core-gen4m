@@ -33,13 +33,10 @@ struct FW_LOG_EMI_STATS {
 struct FW_LOG_EMI_CTRL {
 	u_int8_t initialized;
 	u_int8_t started;
-	u_int8_t defered;
 	uint32_t base_addr;
 	struct FW_LOG_EMI_SUB_CTRL sub_ctrls[ENUM_FW_LOG_CTRL_TYPE_NUM];
 	void *priv;
 	struct FW_LOG_EMI_STATS stats;
-	struct workqueue_struct *wq;
-	struct work_struct work;
 };
 
 int32_t fw_log_emi_handler(void);
