@@ -1250,8 +1250,6 @@ void __mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
 
-	mddpSetMDFwOwn();
-
 #if CFG_MTK_CCCI_SUPPORT
 	mtk_ccci_register_md_state_cb(NULL);
 #endif
@@ -1266,6 +1264,8 @@ void __mddpNotifyWifiOffStart(void)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_OFF_START);
 	if (ret == 0)
 		wait_for_md_off_complete();
+
+	mddpSetMDFwOwn();
 }
 
 void mddpNotifyWifiOffStart(void)
