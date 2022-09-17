@@ -1544,7 +1544,7 @@ void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 
 static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 {
-	uint32_t WFDrvOwnStat, MDDrvOwnStat;
+	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
 
 	if (!ad) {
 		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
