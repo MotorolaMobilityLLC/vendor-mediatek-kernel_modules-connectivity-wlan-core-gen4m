@@ -215,7 +215,9 @@ static spinlock_t rPCIELock;
 		"0x1F_5014=0x%08x, 0x1F_5400=0x%08x, 0x1F_5404=0x%08x,"\
 		"0x1F_6008=0x%08x, 0x1F_6000=0x%08x, 0x1F_6100=0x%08x,"\
 		"0x1F_5300=0x%08x, 0x1F_6550=0x%08x, 0x1F_801C=0x%08x,"\
-		"0x1D_0E48=0x%08x, 0x1D_0E40=0x%08x, 0x1D_0E44=0x%08x\n"
+		"0x1D_0E48=0x%08x, 0x1D_0E40=0x%08x, 0x1D_0E44=0x%08x,"\
+		"0x7403018C=0x%08x, 0x7403002C=0x%08x, 0x740310f0=0x%08x,"\
+		"0x740310f4=0x%08x\n"
 #endif
 
 
@@ -1899,7 +1901,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 {
 	struct pci_dev *pci_dev = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	u_int32_t u4RegVal[20] = {0};
+	u_int32_t u4RegVal[25] = {0};
 	int32_t err = 0;
 
 	err = mtk_pcie_dump_link_info(0);
@@ -2009,11 +2011,28 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 			0x1D0E44,
 			&u4RegVal[18]);
 
+		/*pcie msi status*/
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x7403018C,
+			&u4RegVal[19]);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030168, 0xcccc0100);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030164, 0x03020100);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x7403002C,
+			&u4RegVal[20]);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x740310f0,
+			&u4RegVal[21]);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			0x740310f4,
+			&u4RegVal[22]);
+
 		DBGLOG(HAL, INFO, DUMP_PCIE_CR,
 		u4RegVal[4], u4RegVal[5], u4RegVal[6], u4RegVal[7],
 		u4RegVal[8], u4RegVal[9], u4RegVal[10], u4RegVal[11],
 		u4RegVal[12], u4RegVal[13], u4RegVal[14], u4RegVal[16],
-		u4RegVal[17], u4RegVal[18]);
+		u4RegVal[17], u4RegVal[18], u4RegVal[19], u4RegVal[20],
+		u4RegVal[21], u4RegVal[22]);
 
 		/*7. MMIO write 0x1E_3020 = 0x0*/
 		HAL_MCR_WR(prGlueInfo->prAdapter, 0x1E3020, 0x0);
