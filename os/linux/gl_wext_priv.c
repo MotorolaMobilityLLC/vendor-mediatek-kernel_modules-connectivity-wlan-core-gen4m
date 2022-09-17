@@ -6388,9 +6388,13 @@ uint32_t getPreferFreq(struct ADAPTER *prAd,
 	}
 
 	if (fgIsGBand)
-		return AP_DEFAULT_CHANNEL_2G;
+		return nicChannelNum2Freq(
+			AP_DEFAULT_CHANNEL_2G,
+			BAND_2G4) / 1000;
 	else
-		return AP_DEFAULT_CHANNEL_5G;
+		return nicChannelNum2Freq(
+			AP_DEFAULT_CHANNEL_5G,
+			BAND_5G) / 1000;
 }
 
 int priv_driver_get_ml_2nd_freq(struct net_device *prNetDev,
