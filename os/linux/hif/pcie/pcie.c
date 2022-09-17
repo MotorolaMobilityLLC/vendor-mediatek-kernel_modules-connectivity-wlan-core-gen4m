@@ -562,7 +562,13 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (!test_bit(i, &prMsiInfo->ulEnBits)) {
+			uint32_t temp_irq;
+
+			temp_irq = prMsiLayout->irq_num;
 			disable_irq_nosync(prMsiLayout->irq_num);
+			DBGLOG(HAL, INFO,
+				"pci disable irq be=0x%08x/af=0x%08x\n",
+				temp_irq, prMsiLayout->irq_num);
 			set_bit(i, &prMsiInfo->ulEnBits);
 		}
 	}
