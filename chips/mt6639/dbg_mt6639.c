@@ -1544,9 +1544,21 @@ void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 
 static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 {
+	uint32_t WFDrvOwnStat, MDDrvOwnStat;
+
+	if (!ad) {
+		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
+		return;
+	}
+
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	connv3_conninfra_bus_dump(fgIsBusAccessFailed ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
+
+	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_ADDR, &WFDrvOwnStat);
+	HAL_MCR_RD(ad, CONNAC3X_BN0_LPCTL_MD_ADDR, &MDDrvOwnStat);
+	DBGLOG(HAL, INFO, "WF DrvOwn stat=0x%08x, MD DrvOwn stat=0x%08x.\n",
+		WFDrvOwnStat, MDDrvOwnStat);
 #endif
 }
 
