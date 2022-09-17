@@ -5170,7 +5170,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 	struct RX_BA_ENTRY *prReorderQueParm,
 	struct QUE *prReturnedQue)
 {
-	u_int8_t fgMoveWinOnMissingLast = FALSE;
+	u_int8_t fgMoveWinOnMissingLast;
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
 	u_int8_t fgDequeuHead, fgMissing;
@@ -5191,6 +5191,10 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 		GET_CURRENT_SYSTIME(&rCurrentTime);
 	}
 
+	/* Tradeoff of spending time waiting for a never arrived LAST;
+	 * or for MLO, wait for LAST to cope with MSDU interleaving.
+	 */
+	fgMoveWinOnMissingLast = prAdapter->rWifiVar.fgMoveWinOnMissingLast;
 	/* Check whether any packet can be indicated to the higher layer */
 	while (TRUE) {
 		if (QUEUE_IS_EMPTY(prReorderQue))

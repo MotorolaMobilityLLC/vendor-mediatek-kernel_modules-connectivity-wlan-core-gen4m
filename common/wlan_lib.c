@@ -6974,6 +6974,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 			WLAN_EHT_MAX_BA_SIZE);
 	prWifiVar->u2TxEhtBaSize = wlanCfgGetUint32(prAdapter, "TxEhtBaSize",
 			WLAN_EHT_MAX_BA_SIZE);
+
+	prWifiVar->fgMoveWinOnMissingLast = wlanCfgGetUint32(prAdapter,
+			"MoveWinOnMissingLast", FEATURE_DISABLED);
+
 	prWifiVar->u2BaExtSize = wlanCfgGetUint32(prAdapter, "BaExtSize",
 			WLAN_RX_BA_EXT_SIZE);
 	if (prWifiVar->u2BaExtSize > WLAN_RX_BA_EXT_MAX_SIZE)
