@@ -5374,9 +5374,7 @@ uint32_t nicUniCmdMibInfo(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_MIB_DATA *) uni_cmd->aucTlvBuffer;
 	uni_cmd->ucBand = (uint8_t)prParamMibInfo->u2Index;
 
-	for (i = 0;
-		i < ARRAY_SIZE(prParamMibInfo->au8TagBitmap) / sizeof(uint64_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prParamMibInfo->au8TagBitmap); i++) {
 		for (j = 0; j < sizeof(uint64_t) * 8; j++) {
 			if (prParamMibInfo->au8TagBitmap[i] & BIT(j)) {
 				tag->u2Tag = UNI_CMD_MIB_DATA_TAG;
