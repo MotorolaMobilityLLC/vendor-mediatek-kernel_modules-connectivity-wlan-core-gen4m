@@ -22898,6 +22898,12 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen,
 				 &i4BytesWritten);
+#if (CFG_SUPPORT_802_11AX == 1)
+		} else if (strnicmp(pcCommand, CMD_SET_SMPS_PARAMS,
+				strlen(CMD_SET_SMPS_PARAMS)) == 0) {
+			i4BytesWritten = priv_driver_set_smpsparams(prNetDev,
+				pcCommand, i4TotalLen);
+#endif
 		} else
 			i4BytesWritten = priv_cmd_not_support(prNetDev,
 							      pcCommand,
