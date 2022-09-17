@@ -3983,8 +3983,9 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				prCurrSwRfb->u2PacketLen,
 				prCurrSwRfb->fgDataFrame,
 				prCurrSwRfb->prStaRec,
+				prCurrSwRfb->prStaRec ?
 				secCheckClassError(prAdapter, prCurrSwRfb,
-					prCurrSwRfb->prStaRec));
+					prCurrSwRfb->prStaRec) : 0);
 
 		if (fgSwRxReordering &&
 		    prCurrSwRfb->fgReorderBuffer && !fgIsBMC && fgIsHTran) {
