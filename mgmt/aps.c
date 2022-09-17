@@ -400,6 +400,9 @@ uint32_t apsAddBssDescToList(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	uint8_t l = apsBssDescToLink(ad, ap, bss, bidx);
 
+	if (l >= ad->rWifiVar.ucMldLinkMax)
+		return WLAN_STATUS_FAILURE;
+
 	LINK_ENTRY_INITIALIZE(&bss->rLinkEntryEss[aidx]);
 	LINK_INSERT_TAIL(&ap->arLinks[l], &bss->rLinkEntryEss[aidx]);
 	ap->ucTotalCount++;
