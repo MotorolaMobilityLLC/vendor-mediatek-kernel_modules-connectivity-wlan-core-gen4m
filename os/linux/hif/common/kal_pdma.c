@@ -1758,13 +1758,12 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 	prCmdReq->rCmdInfo.pucTxd = aucBuff;
 	aucBuff += u4Size;
 
-	if (u4Size < TX_BUFFER_NORMSIZE) {
-		u4Size = prCmdInfo->u4TxpLen;
-		if ((u4Size + prCmdInfo->u4TxdLen) > TX_BUFFER_NORMSIZE)
-			u4Size = TX_BUFFER_NORMSIZE - prCmdInfo->u4TxdLen;
+	u4Size = prCmdInfo->u4TxpLen;
+	if ((u4Size + prCmdInfo->u4TxdLen) > TX_BUFFER_NORMSIZE)
+		u4Size = TX_BUFFER_NORMSIZE - prCmdInfo->u4TxdLen;
+	if (!aucBuff)
 		kalMemCopy(aucBuff, prCmdInfo->pucTxp, u4Size);
-		prCmdReq->rCmdInfo.pucTxp = aucBuff;
-	}
+	prCmdReq->rCmdInfo.pucTxp = aucBuff;
 
 	return prCmdReq;
 }
