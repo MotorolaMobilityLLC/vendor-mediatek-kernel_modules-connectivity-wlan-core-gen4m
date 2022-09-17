@@ -1884,6 +1884,10 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 
 #define BUF_SIZE 1024U
 	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
+	if (!buf) {
+		DBGLOG(HAL, ERROR, "buf is NULL");
+		goto err;
+	}
 	kalMemZero(buf, BUF_SIZE);
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
