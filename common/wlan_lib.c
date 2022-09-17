@@ -8530,11 +8530,20 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "PcieEnableL1ss", 1);
 #endif
 	prWifiVar->fgEnWfdmaNoMmioRead = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnWfdmaNoMmioRead", 1);
+		prAdapter, "EnWfdmaNoMmioRead", FEATURE_ENABLED);
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnWfdmaNoMmioRead))
 		prWifiVar->fgEnWfdmaNoMmioRead = FEATURE_ENABLED;
 	else if (!prChipInfo->is_en_wfdma_no_mmio_read)
 		prWifiVar->fgEnWfdmaNoMmioRead = FEATURE_DISABLED;
+
+	prWifiVar->u4PrdcIntTime = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PrdcIntTime", 5); /* unit: 20us */
+	prWifiVar->fgEnDlyInt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "EnDlyInt", 1);
+	prWifiVar->u4DlyIntTime = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "DlyIntTime", 2); /* unit: 20us */
+	prWifiVar->u4DlyIntCnt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "DlyIntCnt", 0); /* 0: No check by count */
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

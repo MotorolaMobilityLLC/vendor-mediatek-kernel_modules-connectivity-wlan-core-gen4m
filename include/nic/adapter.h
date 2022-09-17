@@ -1387,6 +1387,11 @@ struct WIFI_VAR {
 	u_int8_t fgPcieEnableL1ss;
 #endif
 	u_int8_t fgEnWfdmaNoMmioRead;
+
+	uint32_t u4PrdcIntTime;
+	u_int8_t fgEnDlyInt;
+	uint32_t u4DlyIntTime;
+	uint32_t u4DlyIntCnt;
 };
 
 /* cnm_timer module */

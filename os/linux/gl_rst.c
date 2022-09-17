@@ -1566,23 +1566,7 @@ bool IsOverRstTimeThreshold(
 		rLastTs->tv_sec,
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs));
 	if (rLastTs->tv_sec != 0) {
-		/* Ignore now time < token time */
-		if (halTimeCompare(rNowTs, rLastTs) > 0) {
-			rTime.tv_sec = rNowTs->tv_sec - rLastTs->tv_sec;
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
-				KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
-			if (KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) >
-				KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs)) {
-				rTime.tv_sec -= 1;
-				KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) +=
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-					SEC_TO_NSEC(1);
-#else
-					SEC_TO_USEC(1);
-#endif
-			}
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
-				KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs);
+		if (halGetDeltaTime(rNowTs, rLastTs, &rTime)) {
 			if (halTimeCompare(&rTime, &rTimeout) >= 0)
 				fgIsTimeout = TRUE;
 			else

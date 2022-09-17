@@ -495,6 +495,9 @@ struct BUS_INFO {
 	u_int8_t (*checkPortForRxEventFromPse)(struct ADAPTER *prAdapter,
 		uint8_t u2Port);
 #endif
+	struct timespec64 rHifIntTs;
+	uint32_t u4EnHifIntTs;
+	uint32_t u4HifIntTsCnt;
 };
 
 struct HIF_PREALLOC_MEM {

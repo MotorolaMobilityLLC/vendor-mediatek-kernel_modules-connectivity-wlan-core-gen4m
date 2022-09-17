@@ -1296,7 +1296,7 @@ do { \
 #define MSEC_TO_JIFFIES(_msec)      msecs_to_jiffies(_msec)
 #define JIFFIES_TO_MSEC(_jiffie)    jiffies_to_msecs(_jiffie)
 
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #define get_ds() KERNEL_DS
 #define kal_access_ok(type, addr, size) access_ok(addr, size)
 #define ktime_get_ts64 ktime_get_real_ts64

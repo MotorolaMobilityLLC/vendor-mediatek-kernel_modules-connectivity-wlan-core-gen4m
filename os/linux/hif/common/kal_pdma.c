@@ -1416,6 +1416,32 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	return true;
 }
 
+#if HIF_INT_TIME_DEBUG
+static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
+{
+	struct BUS_INFO *prBusInfo =
+		prGlueInfo->prAdapter->chip_info->bus_info;
+	struct timespec64 rNowTs, rTime;
+
+	ktime_get_ts64(&rNowTs);
+	if (prBusInfo->u4EnHifIntTs &&
+	    halGetDeltaTime(&rNowTs, &prBusInfo->rHifIntTs, &rTime)) {
+		DBGLOG(HAL, INFO,
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		       "RX[%u] done bit ready time[%lld.%.9ld] cnt[%d]\n",
+#else
+		       "RX[%u] done bit ready time[%lld.%.6ld] cnt[%d]\n",
+#endif
+		       u2Port,
+		       (long long)rTime.tv_sec,
+		       KAL_GET_TIME_OF_USEC_OR_NSEC(rTime),
+		       prBusInfo->u4HifIntTsCnt);
+		prBusInfo->u4EnHifIntTs = 0;
+		prBusInfo->u4HifIntTsCnt = 0;
+	}
+}
+#endif /* HIF_INT_TIME_DEBUG */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read device I/O port
@@ -1470,6 +1496,10 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
 	}
+
+#if HIF_INT_TIME_DEBUG
+	kalTrackRxReadyTime(prGlueInfo, u2Port);
+#endif
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
@@ -2351,6 +2381,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #endif
 	u_int8_t fgSkip = FALSE;
 	u_int8_t fgSegmentFirst = FALSE;
+
 	ASSERT(prGlueInfo);
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -2371,6 +2402,10 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		prRxRing->fgIsDumpLog = true;
 		return false;
 	}
+
+#if HIF_INT_TIME_DEBUG
+	kalTrackRxReadyTime(prGlueInfo, u2Port);
+#endif
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */

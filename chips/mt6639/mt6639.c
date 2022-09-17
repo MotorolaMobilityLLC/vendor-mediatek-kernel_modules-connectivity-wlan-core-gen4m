@@ -1562,6 +1562,39 @@ static void mt6639ConfigWfdmaRxRingThreshold(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "Set WFDMA Rx que threshold to 0x20002\n");
 }
 
+static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4Addr, u4Val;
+
+	/* Enable RX periodic delayed interrupt (unit: 20us) */
+	u4Val = 0xF00000 | prWifiVar->u4PrdcIntTime;
+	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_ADDR;
+	u4Val = prWifiVar->u4DlyIntTime <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_MAX_PTIME_SHFT |
+		prWifiVar->u4DlyIntCnt <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_MAX_PINT_SHFT |
+		prWifiVar->fgEnDlyInt <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_DLY_INT_EN_SHFT |
+		prWifiVar->u4DlyIntTime <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_MAX_PTIME_SHFT |
+		prWifiVar->u4DlyIntCnt <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_MAX_PINT_SHFT |
+		prWifiVar->fgEnDlyInt <<
+		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_DLY_INT_EN_SHFT;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	DBGLOG(HAL, INFO, "prdc int: %uus, dly int[%u]: %uus, cnt=%u",
+	       prWifiVar->u4PrdcIntTime * 20,
+	       prWifiVar->fgEnDlyInt,
+	       prWifiVar->u4DlyIntTime * 20,
+	       prWifiVar->u4DlyIntCnt);
+}
+
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
@@ -1581,18 +1614,19 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 	mt6639ConfigIntMask(prGlueInfo, enable);
 
-	if (enable) {
+	if (!enable)
+		return;
+
 #if defined(_HIF_PCIE)
-		mt6639WpdmaMsiConfig(prGlueInfo->prAdapter);
+	mt6639WpdmaMsiConfig(prGlueInfo->prAdapter);
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
+	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
 #endif
-		GloCfg.field_conn3x.tx_dma_en = 1;
-		GloCfg.field_conn3x.rx_dma_en = 1;
-		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
-		mt6639ConfigWfdmaRxRingThreshold(prAdapter);
-	}
+	GloCfg.field_conn3x.tx_dma_en = 1;
+	GloCfg.field_conn3x.rx_dma_en = 1;
+	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+	mt6639ConfigWfdmaRxRingThreshold(prAdapter);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
@@ -1617,10 +1651,7 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		       WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
 		       u4Val);
 
-	/* Enable RX periodic delayed interrupt 0x20 * 20us */
-	HAL_MCR_WR(prAdapter,
-		   WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR,
-		   0xF00020);
+	mt6639WpdmaDlyInt(prGlueInfo);
 }
 
 static void mt6639WfdmaRxRingExtCtrl(

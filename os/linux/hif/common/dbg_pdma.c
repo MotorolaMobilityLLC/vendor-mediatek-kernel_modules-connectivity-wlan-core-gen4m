@@ -569,6 +569,30 @@ int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
 	return 0;
 }
 
+u_int8_t halGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
+			 struct timespec64 *prTsRst)
+{
+	/* Ignore now time < token time */
+	if (halTimeCompare(prTs1, prTs2) < 0)
+		return FALSE;
+
+	prTsRst->tv_sec = prTs1->tv_sec - prTs2->tv_sec;
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) =
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1);
+	if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2) >
+	    KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1)) {
+		prTsRst->tv_sec -= 1;
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_NSEC(1);
+#else
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_USEC(1);
+#endif
+	}
+	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) -=
+		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2);
+	return TRUE;
+}
+
 static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 				 struct MSDU_TOKEN_HISTORY_INFO *prHistory)
 {
@@ -637,24 +661,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		if (!prToken->fgInUsed)
 			continue;
 
-		/* Ignore now time < token time */
-		if (halTimeCompare(&rNowTs, &prToken->rTs) < 0)
+		if (!halGetDeltaTime(&rNowTs, &prToken->rTs, &rTime))
 			continue;
-
-		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs);
-		if (KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs) >
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs)) {
-			rTime.tv_sec -= 1;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) += SEC_TO_NSEC(1);
-#else
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) += SEC_TO_USEC(1);
-#endif
-		}
-		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
-			KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs);
 
 		if (halTimeCompare(&rTime, &rTimeout) >= 0)
 			fgIsTimeout = true;

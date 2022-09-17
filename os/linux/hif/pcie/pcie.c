@@ -466,7 +466,9 @@ exit:
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if HIF_INT_TIME_DEBUG
 	struct BUS_INFO *prBusInfo = NULL;
+#endif
 #if PCIE_ISR_DEBUG_LOG
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
 #endif
@@ -477,7 +479,14 @@ irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
+#if HIF_INT_TIME_DEBUG
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	if (!prBusInfo->u4EnHifIntTs) {
+		ktime_get_ts64(&prBusInfo->rHifIntTs);
+		prBusInfo->u4EnHifIntTs = 1;
+	}
+	prBusInfo->u4HifIntTsCnt++;
+#endif
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
 

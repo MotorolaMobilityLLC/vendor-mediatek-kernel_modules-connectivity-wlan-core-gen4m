@@ -320,6 +320,8 @@
 #define HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT  1
 #endif
 
+#define HIF_INT_TIME_DEBUG              0
+
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
 
 /*******************************************************************************
@@ -1035,6 +1037,8 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter);
 
 /* Debug functions */
 int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
+u_int8_t halGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
+			 struct timespec64 *prTsRst);
 void halShowPdmaInfo(struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(struct ADAPTER *prAdapter);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,

@@ -1328,25 +1328,8 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 		if (!prToken->fgInUsed)
 			continue;
 
-		/* Ignore now time < token time */
-		if (halTimeCompare(&rNowTs, &prToken->rTs) < 0)
+		if (!halGetDeltaTime(&rNowTs, &prToken->rTs, &rTime))
 			continue;
-
-		rTime.tv_sec = rNowTs.tv_sec - prToken->rTs.tv_sec;
-		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) =
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs);
-		if (KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs) >
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rNowTs)) {
-			rTime.tv_sec -= 1;
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) +=
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-				SEC_TO_NSEC(1);
-#else
-				SEC_TO_USEC(1);
-#endif
-		}
-		KAL_GET_TIME_OF_USEC_OR_NSEC(rTime) -=
-			KAL_GET_TIME_OF_USEC_OR_NSEC(prToken->rTs);
 
 		/* Return token to free stack */
 		if (halTimeCompare(&rTime, &rTimeout) >= 0) {
