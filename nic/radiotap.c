@@ -614,9 +614,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(prAdapter)) {
-		kalRxIndicateOnePkt(prAdapter->prGlueInfo,
-			(void *) GLUE_GET_PKT_DESCRIPTOR(
-				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket)));
+		kalRxIndicateOnePkt(prAdapter->prGlueInfo, prSwRfb->pvPacket);
 		RX_ADD_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT, 1);
 	} else {
 		KAL_SPIN_LOCK_DECLARATION();

@@ -3266,8 +3266,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	}
 #endif
 
-	prQueueEntry = (struct QUE_ENTRY *)
-		       GLUE_GET_PKT_QUEUE_ENTRY(prSkb);
+	prQueueEntry = (struct QUE_ENTRY *) GLUE_GET_PKT_QUEUE_ENTRY(prSkb);
 	prTxQueue = &prGlueInfo->rTxQueue;
 
 	GLUE_SET_PKT_BSS_IDX(prSkb, ucBssIndex);
@@ -12755,8 +12754,7 @@ void kalTpeUpdate(struct GLUE_INFO *prGlueInfo, struct QUE *prSrcQue,
 			  struct QUE_ENTRY *);
 		if (!prQueueEntry)
 			break;
-		prSkb = (struct sk_buff *)
-					  GLUE_GET_PKT_DESCRIPTOR(
+		prSkb = (struct sk_buff *)GLUE_GET_PKT_DESCRIPTOR(
 					  prQueueEntry);
 		pucPktHeadBuf = prSkb->data;
 		pucIpHeader = &pucPktHeadBuf[ETHER_HEADER_LEN];
