@@ -10954,15 +10954,16 @@ uint32_t wlanSendInitSetQueryCmdImpl(struct ADAPTER *prAdapter,
 	"fgWaitResp: %d, fgSkipCheckSeq: %d, " \
 	"ucEvtId: 0x%x, pucEvtBuf: 0x%p, u4EvtSz: 0x%x, " \
 	"u4EvtWaitInterval: %d, u4EvtWaitTimeout: %d\n"
-	DBGLOG(INIT, TRACE,
-		TEMP_LOG_TEMPLATE,
-		ucCmdId, pucCmdBuf, u4CmdSz,
-		fgWaitResp, fgSkipCheckSeq,
-		ucEvtId, pucEvtBuf, u4EvtSz,
-		u4EvtWaitInterval, u4EvtWaitTimeout);
+	if (ucCmdId > 0 && pucCmdBuf && u4CmdSz) {
+		DBGLOG(INIT, LOUD,
+			TEMP_LOG_TEMPLATE,
+			ucCmdId, pucCmdBuf, u4CmdSz,
+			fgWaitResp, fgSkipCheckSeq,
+			ucEvtId, pucEvtBuf, u4EvtSz,
+			u4EvtWaitInterval, u4EvtWaitTimeout);
+		DBGLOG_MEM32(INIT, LOUD, pucCmdBuf, u4CmdSz);
+	}
 #undef TEMP_LOG_TEMPLATE
-	if (ucCmdId > 0 && pucCmdBuf && u4CmdSz)
-		DBGLOG_MEM32(INIT, TRACE, pucCmdBuf, u4CmdSz);
 
 	if (ucCmdId == 0) {
 		u4CmdInfoSz = u4CmdSz;
