@@ -15013,7 +15013,7 @@ int priv_driver_set_om_mu_data_dis(
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t u4Ret, u4Parse;
+	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prNetDev);
