@@ -448,7 +448,8 @@ u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->eBssSCO);
 
-	if (ucLevel == CHNL_LEVEL0) {
+	if ((ucLevel == CHNL_LEVEL0) &&
+		!prAdapter->rWifiVar.fgSapSkipObss) {
 		/* Forced to 20MHz,
 		 * so extended channel is SCN and STA width is zero
 		 */
@@ -457,6 +458,8 @@ u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
 		if (prBssInfo->ucHtOpInfo1 != (uint8_t) CHNL_EXT_SCN) {
 			prBssInfo->ucHtOpInfo1 = (uint8_t) CHNL_EXT_SCN;
 			fgBwChange = TRUE;
+			DBGLOG(RLM, INFO,
+				"BW40: Set fgObssActionForcedTo20M\n");
 		}
 
 		cnmTimerStartTimer(prAdapter,

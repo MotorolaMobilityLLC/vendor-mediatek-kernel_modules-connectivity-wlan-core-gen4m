@@ -8260,6 +8260,9 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->fgSapOffload = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapOffload", FEATURE_DISABLED);
 
+	prWifiVar->fgSapSkipObss = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapSkipObss", FEATURE_DISABLED);
+
 	prWifiVar->fgP2pGcCsa = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "P2pGcCsa", FEATURE_ENABLED);
 

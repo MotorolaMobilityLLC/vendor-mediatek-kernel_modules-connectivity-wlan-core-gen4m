@@ -1231,6 +1231,7 @@ struct WIFI_VAR {
 	uint8_t fgSapOverwriteAcsChnlBw;
 	uint8_t fgSapAddTPEIE;
 	uint8_t fgSapOffload;
+	uint8_t fgSapSkipObss;
 	uint8_t fgP2pGcCsa;
 	uint8_t fgSkipP2pIe;
 	uint8_t fgSkipP2pProbeResp;
