@@ -1247,8 +1247,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		remainingLen -= readLen;
 		data += readLen;
 
-		dumpMemory8((uint8_t *)data, remainingLen);
-
 		while ((remainingLen > 0) &&
 		       (0 !=
 			(readLen = nan_read_tlv((u8 *)data, &outputTlv)))) {
@@ -1584,7 +1582,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		int i = 0;
 
 		DBGLOG(REQ, INFO, "In NAN_MSG_ID_SUBSCRIBE_SERVICE_REQ\n");
-		dumpMemory8((uint8_t *)data, remainingLen);
 
 		pNanSubscribeReq =
 			kmalloc(sizeof(struct NanSubscribeRequest), GFP_ATOMIC);
@@ -1610,9 +1607,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			nanMapSubscribeReqParams((u16 *)data, pNanSubscribeReq);
 		remainingLen -= readLen;
 		data += readLen;
-
-		dumpMemory8((uint8_t *)data, remainingLen);
-
 		while ((remainingLen > 0) &&
 		       (0 !=
 			(readLen = nan_read_tlv((u8 *)data, &outputTlv)))) {
