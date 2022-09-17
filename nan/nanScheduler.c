@@ -9765,7 +9765,7 @@ nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 uint32_t
 nanSchedUpdateNonNanTimelineByAis(struct ADAPTER *prAdapter) {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
-	union _NAN_BAND_CHNL_CTRL rChnlInfo;
+	union _NAN_BAND_CHNL_CTRL rChnlInfo = {0};
 	uint32_t u4SlotBitmap = 0;
 	struct _NAN_NONNAN_NETWORK_TIMELINE_T *prNonNanTimeline;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
@@ -9954,7 +9954,9 @@ nanSchedRemoveDiffBandChnlList(
 
 		eBand = nanRegGetNanChnlBand(
 			prChnlTimelineList[u4ChnlIdx].rChnlInfo);
-		i4SlotNum[eBand - 1] += prChnlTimelineList[u4ChnlIdx].i4Num;
+		if (eBand != BAND_NULL)
+			i4SlotNum[eBand - 1] +=
+			prChnlTimelineList[u4ChnlIdx].i4Num;
 	}
 
 	/* Predefined priority: (6G >) 5G > 2G */
