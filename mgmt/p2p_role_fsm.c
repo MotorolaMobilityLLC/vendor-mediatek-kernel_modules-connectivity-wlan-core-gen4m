@@ -4080,6 +4080,11 @@ void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 	prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"prP2pBssInfo is NULL");
+		goto error;
+	}
 
 	/* P2P Device / GC. */
 	p2pFuncSwitchOPMode(prAdapter,
