@@ -1061,6 +1061,7 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 	uint8_t *fw_version = NULL;
 	uint8_t *aee_str = NULL;
 	uint32_t u4Len = 0;
+	int32_t ret = 0;
 
 	aee_str = kalMemAlloc(AEE_STR_LEN, VIR_MEM_TYPE);
 	fw_version = kalMemAlloc(FW_VER_LEN, VIR_MEM_TYPE);
@@ -1107,17 +1108,23 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 
 		kalSnprintf(force_dump_buf, sizeof(force_dump_buf), "%s",
 			    CONNV3_COREDUMP_FORCE_DUMP);
-		connv3_coredump_start(ctx->handler,
-				      drv_type,
-				      reason,
-				      force_dump_buf,
-				      fw_version);
+		ret = connv3_coredump_start(ctx->handler,
+					    drv_type,
+					    reason,
+					    force_dump_buf,
+					    fw_version);
 	} else {
-		connv3_coredump_start(ctx->handler,
-				      drv_type,
-				      reason,
-				      mem->dump_buff,
-				      fw_version);
+		ret = connv3_coredump_start(ctx->handler,
+					    drv_type,
+					    reason,
+					    mem->dump_buff,
+					    fw_version);
+	}
+	if (ret) {
+		DBGLOG(INIT, ERROR,
+			"connv3_coredump_start ret: %d\n",
+			ret);
+		goto exit;
 	}
 
 	__coredump_to_userspace_cr_region(ctx);
