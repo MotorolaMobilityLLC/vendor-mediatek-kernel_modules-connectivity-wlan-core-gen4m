@@ -602,12 +602,13 @@ static int32_t connac3x_dump_helper_wtbl_info(
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_1),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_2),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_3));
+#define SNR_MAPPING(_snr) ((int32_t)(_snr - 16))
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tSNR= %d %d %d %d\n",
-		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx0),
-		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx1),
-		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx2),
-		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx3));
+		SNR_MAPPING(pWtbl->rx_stat.wtbl_d35.field.snr_rx0),
+		SNR_MAPPING(pWtbl->rx_stat.wtbl_d35.field.snr_rx1),
+		SNR_MAPPING(pWtbl->rx_stat.wtbl_d35.field.snr_rx2),
+		SNR_MAPPING(pWtbl->rx_stat.wtbl_d35.field.snr_rx3));
 
 	i4BytesWritten = connac3x_wtbl_rate_to_string(
 		pcCommand, i4TotalLen, 1, pWtbl, i4BytesWritten);

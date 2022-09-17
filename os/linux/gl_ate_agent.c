@@ -1807,7 +1807,7 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint16_t u2WlanId;
 	int32_t rv;
-	int32_t i4Status = 0;
+	int32_t i4Status = -EINVAL;
 	uint32_t u4BufLen = 0;
 
 	DBGLOG(RFTEST, INFO, "Set_StaRecBfRead\n");
@@ -1815,11 +1815,12 @@ int Set_StaRecBfRead(struct net_device *prNetDev,
 
 	rv = sscanf(prInBuf, "%x", &u2WlanId);
 
-	i4Status = kalIoctl(prGlueInfo,
-			    wlanoidStaRecBFRead,
-			    &u2WlanId,
-			    sizeof(u2WlanId),
-			    &u4BufLen);
+	if (rv == 1)
+		i4Status = kalIoctl(prGlueInfo,
+				    wlanoidStaRecBFRead,
+				    &u2WlanId,
+				    sizeof(u2WlanId),
+				    &u4BufLen);
 	return i4Status;
 }
 
