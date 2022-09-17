@@ -2344,6 +2344,35 @@ void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 
 }				/* p2pFuncStopRdd */
 
+void p2pFuncCsaUpdateGcStaRec(struct BSS_INFO *prBssInfo)
+{
+	struct STA_RECORD *prStaRec = prBssInfo->prStaRecOfAP;
+
+	/* Update VHT op info of target AP */
+	prStaRec->ucVhtOpChannelWidth =
+		prBssInfo->ucVhtChannelWidth;
+	prStaRec->ucVhtOpChannelFrequencyS1 =
+		prBssInfo->ucVhtChannelFrequencyS1;
+	prStaRec->ucVhtOpChannelFrequencyS2 =
+		prBssInfo->ucVhtChannelFrequencyS2;
+
+	/* Update HT, VHT PhyType of StaRec when GC switch channel granted */
+	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11N) {
+		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
+		prStaRec->ucDesiredPhyTypeSet |= PHY_TYPE_BIT_HT;
+	} else {
+		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_HT);
+		prStaRec->ucDesiredPhyTypeSet &= ~(PHY_TYPE_BIT_HT);
+	}
+
+	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_SET_802_11AC) {
+		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+		prStaRec->ucDesiredPhyTypeSet |= PHY_TYPE_BIT_VHT;
+	} else {
+		prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_VHT);
+		prStaRec->ucDesiredPhyTypeSet &= ~(PHY_TYPE_BIT_VHT);
+	}
+}
 
 void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
@@ -7125,6 +7154,19 @@ void p2pFuncSwitchGcChannel(
 
 	DBGLOG(P2P, INFO, "switch gc channel: %s band\n",
 		prP2pBssInfo->eBand == prChnlReqInfo->eBand ? "same" : "cross");
+
+	/* Update HT, VHT PhyType of BssInfo when GC channel switch.
+	 * The PhyType of StaRec will be updated after channel granted.
+	 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prP2pBssInfo->eBand == BAND_6G) {
+		prP2pBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11N);
+		prP2pBssInfo->ucPhyTypeSet &= ~(PHY_TYPE_SET_802_11AC);
+	} else {
+		prP2pBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11N;
+		prP2pBssInfo->ucPhyTypeSet |= PHY_TYPE_SET_802_11AC;
+	}
+#endif
 
 	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
 		cnmGet80211Band(prP2pBssInfo->eBand) !=

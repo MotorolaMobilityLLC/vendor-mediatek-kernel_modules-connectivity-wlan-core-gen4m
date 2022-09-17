@@ -3553,7 +3553,6 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4CacTimeMs;
-	struct STA_RECORD *prStaRec = NULL;
 	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
 #endif
 	uint8_t ucTokenID = 0;
@@ -3665,15 +3664,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
-				/* Update VHT op info of target AP */
-				prStaRec = prBssInfo->prStaRecOfAP;
-
-				prStaRec->ucVhtOpChannelWidth =
-					prBssInfo->ucVhtChannelWidth;
-				prStaRec->ucVhtOpChannelFrequencyS1 =
-					prBssInfo->ucVhtChannelFrequencyS1;
-				prStaRec->ucVhtOpChannelFrequencyS2 =
-					prBssInfo->ucVhtChannelFrequencyS2;
+				p2pFuncCsaUpdateGcStaRec(prBssInfo);
 
 				/* Indicate op mode change to update BW/NSS.
 				 * Note that we have to temporarily set VHT
