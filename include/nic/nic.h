@@ -104,6 +104,8 @@
 			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
 		if (fgRxIcvErrDbg) { \
 			DBGLOG(NIC, INFO, "Dump RXP:\n"); \
+			if (!pvPayload) \
+				break; \
 			DBGLOG_MEM8(NIC, INFO, pvPayload, u4PayloadLen); \
 		} \
 	} while (0)
