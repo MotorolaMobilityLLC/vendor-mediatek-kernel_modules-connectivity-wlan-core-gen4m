@@ -552,6 +552,13 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 	prnanBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prNANSpecInfo->ucBssIndex);
 
+	if (prnanBssInfo == NULL) {
+		DBGLOG(NAN, ERROR,
+			"[%s] prnanBssInfo [%d] is NULL\n",
+			__func__, prNANSpecInfo->ucBssIndex);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prMsgChReq =
 		(struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG,
@@ -585,6 +592,12 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 			->rWifiVar.aprNanSpecificBssInfo[ucIdx];
 		prnanBssInfo = GET_BSS_INFO_BY_INDEX(
 					prAdapter, prNANSpecInfo->ucBssIndex);
+		if (prnanBssInfo == NULL) {
+			DBGLOG(NAN, ERROR,
+				"[%s] prnanBssInfo [%d] is NULL\n",
+				__func__, prNANSpecInfo->ucBssIndex);
+			return WLAN_STATUS_FAILURE;
+		}
 
 		UNSET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
 	}
