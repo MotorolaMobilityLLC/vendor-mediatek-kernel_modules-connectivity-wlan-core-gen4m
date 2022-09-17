@@ -896,8 +896,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	u32 i4Status = -EINVAL;
 	u32 u4DelayIdx;
 	int ret = 0;
+	int remainingLen;
 
-	int remainingLen = (data_len - (sizeof(struct _NanMsgHeader)));
+	if (data_len >= sizeof(struct _NanMsgHeader)) {
+		DBGLOG(NAN, ERROR, "data_len error!\n");
+		return -EINVAL;
+	}
+	remainingLen = (data_len - (sizeof(struct _NanMsgHeader)));
 
 	if (!wiphy) {
 		DBGLOG(NAN, ERROR, "wiphy error!\n");
@@ -2283,6 +2288,15 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				outputTlv.type);
 			if (outputTlv.type ==
 				NAN_TLV_TYPE_TESTMODE_GENERIC_CMD) {
+				if (outputTlv.length >
+					sizeof(
+					struct NanDebugParams
+					)) {
+					DBGLOG(NAN, ERROR,
+						"outputTlv.length is invalid!\n");
+					kfree(pNanDebug);
+					return -EFAULT;
+				}
 				memcpy(pNanDebug, outputTlv.value,
 					outputTlv.length);
 				switch (pNanDebug->cmd) {
