@@ -110,6 +110,8 @@ struct coredump_ctx {
 	void *priv;
 	void *handler;
 	u_int8_t initialized;
+	u_int8_t enable;
+	u_int8_t processing;
 	bushang_chk_func_cb fn_check_bus_hang;
 	struct coredump_mem mem;
 
@@ -134,6 +136,8 @@ enum COREDUMP_SOURCE_TYPE coredump_conn_type_to_src(enum consys_drv_type src);
 enum connv3_drv_type coredump_src_to_connv3_type(enum COREDUMP_SOURCE_TYPE src);
 enum COREDUMP_SOURCE_TYPE coredump_connv3_type_to_src(enum connv3_drv_type src);
 #endif
+void wifi_coredump_set_enable(u_int8_t enable);
+u_int8_t is_wifi_coredump_processing(void);
 #else
 static inline int wifi_coredump_init(void *priv)
 { return 0; }
@@ -142,6 +146,8 @@ static inline void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	char *reason,
 	u_int8_t force_dump) {}
 static inline void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb) {}
+static inline void wifi_coredump_set_enable(u_int8_t enable) {}
+static inline u_int8_t is_wifi_coredump_processing(void) { return FALSE; }
 #endif
 
 #endif /* _GL_COREDUMP_H */

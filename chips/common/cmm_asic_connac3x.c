@@ -2211,6 +2211,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4Status = 0;
@@ -2219,6 +2220,7 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return TRUE;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
@@ -2234,7 +2236,8 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (fgRet == FALSE || u4Status == 0)
 		goto exit;
 
-	if (u4Status & BIT(SW_INT_FW_LOG))
+	if (!(prGlueInfo->ulFlag & GLUE_FLAG_HALT) &&
+	    (u4Status & BIT(SW_INT_FW_LOG)))
 		fw_log_handler();
 
 #if CFG_WMT_RESET_API_SUPPORT

@@ -597,11 +597,6 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
 
 	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
 
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
-		goto exit;
-	}
-
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	fgEnInt = asicConnac3xSwIntHandler(prAdapter);
 #endif

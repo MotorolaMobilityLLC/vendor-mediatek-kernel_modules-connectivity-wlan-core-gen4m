@@ -1160,15 +1160,17 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	u_int8_t force_dump)
 {
 	struct coredump_mem *mem = &ctx->mem;
-	struct GLUE_INFO *glue = ctx->priv;
 	struct mt66xx_chip_info *chip_info;
 	u_int8_t state_ready = FALSE;
 	int ret = 0;
 
-	if (glue->u4ReadyFlag == 0) {
-		DBGLOG(INIT, WARN, "Skip coredump due to NOT ready.\n");
+	if (!ctx->enable) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to NOT enabled.\n");
 		goto exit;
-	} else if (!is_coredump_source_valid(source)) {
+	}
+
+	if (!is_coredump_source_valid(source)) {
 		DBGLOG(INIT, WARN,
 			"Skip coredump due to invalid source(%d).\n",
 			source);
@@ -1187,8 +1189,6 @@ static int __coredump_start(struct coredump_ctx *ctx,
 				   chip_info,
 				   force_dump,
 				   &state_ready);
-	if (ret)
-		goto exit;
 
 	ret = __coredump_init_ctrl_blk(ctx, chip_info);
 	if (ret)
@@ -1243,6 +1243,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 
 	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
 		source, reason, force_dump);
+	ctx->processing = TRUE;
 
 #if CFG_SUPPORT_CONNINFRA
 	{
@@ -1256,6 +1257,7 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	__coredump_start(ctx, source, reason, force_dump);
 #endif
+	ctx->processing = FALSE;
 }
 
 #if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -1365,4 +1367,18 @@ enum COREDUMP_SOURCE_TYPE coredump_connv3_type_to_src(enum connv3_drv_type src)
 	return type;
 }
 #endif
+
+void wifi_coredump_set_enable(u_int8_t enable)
+{
+	struct coredump_ctx *ctx = &g_coredump_ctx;
+
+	ctx->enable = enable;
+}
+
+u_int8_t is_wifi_coredump_processing(void)
+{
+	struct coredump_ctx *ctx = &g_coredump_ctx;
+
+	return ctx->processing;
+}
 
