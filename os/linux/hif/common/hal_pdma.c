@@ -4025,6 +4025,9 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			if (prChipInfo->asicWfdmaReInit)
 				prChipInfo->asicWfdmaReInit(prAdapter);
 
+			if (prBusInfo->configWfdmaIntMask)
+				prBusInfo->configWfdmaIntMask(prGlueInfo, TRUE);
+
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
