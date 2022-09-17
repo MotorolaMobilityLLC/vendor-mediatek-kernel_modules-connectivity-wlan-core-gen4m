@@ -119,15 +119,18 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter);
  */
 u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
 {
+	enum ENUM_TX_RING_IDX eTxIdx = u4Idx;
+	enum ENUM_RX_RING_IDX eRxIdx = u4Idx;
+
 	if (eType == TX_RING) {
-		return (u4Idx == TX_RING_DATA0 ||
-			u4Idx == TX_RING_DATA1 ||
-			u4Idx == TX_RING_DATA_PRIO ||
-			u4Idx == TX_RING_DATA_ALTX);
+		return (eTxIdx == TX_RING_DATA0 ||
+			eTxIdx == TX_RING_DATA1 ||
+			eTxIdx == TX_RING_DATA_PRIO ||
+			eTxIdx == TX_RING_DATA_ALTX);
 	} else if (eType == RX_RING) {
-		return (u4Idx == RX_RING_DATA0 ||
-			u4Idx == RX_RING_DATA1 ||
-			u4Idx == RX_RING_DATA2);
+		return (eRxIdx == RX_RING_DATA0 ||
+			eRxIdx == RX_RING_DATA1 ||
+			eRxIdx == RX_RING_DATA2);
 	}
 	return FALSE;
 }
