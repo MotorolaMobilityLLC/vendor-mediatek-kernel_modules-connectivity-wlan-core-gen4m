@@ -1593,7 +1593,7 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	int ret = -ENOTSUPP;
 
-	if (!fgIsBusAccessFailed && prGlueInfo->u4ReadyFlag) {
+	if (prGlueInfo->u4ReadyFlag) {
 		prAdapter = prGlueInfo->prAdapter;
 		prDebugOps = prAdapter->chip_info->prDebugOps;
 
