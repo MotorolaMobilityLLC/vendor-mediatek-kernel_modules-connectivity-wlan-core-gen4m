@@ -2489,6 +2489,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 			NIC_DUMP_ICV_RXD(prAdapter, prSwRfb->prRxStatus);
 		}
 
+		u4PayloadLen = u4PayloadLen < CFG_RX_MAX_PKT_SIZE ?
+				u4PayloadLen : CFG_RX_MAX_PKT_SIZE;
 		/* dump payload */
 		NIC_DUMP_ICV_RXP(pvPayload, u4PayloadLen);
 		goto skip;
