@@ -7904,6 +7904,7 @@ void nicUniEventThermalAdieTemp(struct ADAPTER *ad,
 		data = cmd->pvInformationBuffer;
 
 		data->u4Temperature = info->u4SensorResult;
+		data->u4Temperature *= 1000;
 	}
 
 	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
@@ -7934,7 +7935,6 @@ void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
 		data = cmd->pvInformationBuffer;
 
 		data->u4Temperature = info->u4SensorResult;
-		data->u4Temperature /= 1000;
 	}
 
 	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,

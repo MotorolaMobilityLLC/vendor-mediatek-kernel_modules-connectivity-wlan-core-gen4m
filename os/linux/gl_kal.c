@@ -13704,16 +13704,30 @@ void kalConfigChksumOffload(
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY
+#define MAX_REFRESH_TIME		(5 * 60) /* sec */
+#define MAX_TEMP_THRESHOLD		(60 * 1000)
 static int get_connsys_thermal_temp(void *data, int *temp)
 {
 	struct thermal_sensor_info *sensor = data;
 	struct ADAPTER *ad = (struct ADAPTER *)sensor->priv;
 	struct THERMAL_TEMP_DATA temp_data;
-	uint32_t status;
+	uint32_t status = WLAN_STATUS_SUCCESS;
 
 	if (kalIsHalted()) {
 		DBGLOG(REQ, INFO, "Skip query temp.\n");
 		status = WLAN_STATUS_FAILURE;
+		*temp = THERMAL_TEMP_INVALID;
+		goto exit;
+	}
+
+	if (ad->prGlueInfo->fgIsInSuspendMode &&
+	    sensor->last_query_temp <= MAX_TEMP_THRESHOLD &&
+	    sensor->last_query_time != 0 &&
+	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			       sensor->last_query_time,
+			       SEC_TO_SYSTIME(MAX_REFRESH_TIME))) {
+		status = WLAN_STATUS_SUCCESS;
+		*temp = sensor->last_query_temp;
 		goto exit;
 	}
 
@@ -13721,19 +13735,21 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 	temp_data.eType = sensor->type;
 	temp_data.ucIdx = sensor->sendor_idx;
 	status = wlanQueryThermalTemp(ad, &temp_data);
-	if (status != WLAN_STATUS_SUCCESS)
-		goto exit;
-
-exit:
-	if (status == WLAN_STATUS_SUCCESS) {
-		*temp = temp_data.u4Temperature;
-		*temp *= 1000;
-	} else {
+	if (status != WLAN_STATUS_SUCCESS) {
+		status = WLAN_STATUS_FAILURE;
 		*temp = THERMAL_TEMP_INVALID;
+		goto exit;
 	}
 
-	DBGLOG(REQ, TRACE, "[%s] temp: %d\n",
-		sensor->name, *temp);
+	*temp = temp_data.u4Temperature;
+	GET_CURRENT_SYSTIME(&(sensor->last_query_time));
+	sensor->last_query_temp = *temp;
+
+exit:
+	DBGLOG(REQ, TRACE, "[%s][%ul] temp: %d\n",
+		sensor->name,
+		sensor->last_query_time,
+		*temp);
 
 	return 0;
 }
@@ -13767,6 +13783,8 @@ static void __register_thermal_cbs(struct work_struct *work)
 			return;
 		}
 		sensor->tzd = tzdev;
+		sensor->last_query_time = 0;
+		sensor->last_query_temp = 0;
 	}
 }
 
