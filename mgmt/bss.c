@@ -557,9 +557,16 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 					      uint8_t ucBssIndex,
 					      struct BSS_DESC *prBssDesc)
 {
+	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucNonHTPhyTypeSet;
 	struct CONNECTION_SETTINGS *prConnSettings;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return NULL;
+	}
 
 	/* 4 <1> Get a valid STA_RECORD_T */
 	prStaRec =
@@ -656,8 +663,19 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 	/* Update default op mode to a impossible value */
 	prStaRec->ucOpModeInOpNotificationIE = 0xff;
 
-	return prStaRec;
+	/* 4 <6> Decide if this BSS 20/40M bandwidth is allowed */
+	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
+	     PHY_TYPE_SET_802_11N) &&
+	    (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
+		prBssInfo->fgAssoc40mBwAllowed =
+			cnmBss40mBwPermitted(prAdapter, ucBssIndex);
+	} else {
+		prBssInfo->fgAssoc40mBwAllowed = FALSE;
+	}
+	DBGLOG(RLM, TRACE, "STA 40mAllowed=%d\n",
+	       prBssInfo->fgAssoc40mBwAllowed);
 
+	return prStaRec;
 }				/* end of bssCreateStaRecFromBssDesc() */
 
 /*---------------------------------------------------------------------------*/

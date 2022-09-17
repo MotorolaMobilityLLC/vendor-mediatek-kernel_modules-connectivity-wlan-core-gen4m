@@ -4611,6 +4611,12 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	/* 4 <1.1> Setup Operation Mode */
 	prAisBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 
+	/* Store limitation about 40Mhz bandwidth capability during
+	 * association.
+	 */
+	prAisBssInfo->fg40mBwAllowed = prAisBssInfo->fgAssoc40mBwAllowed;
+	prAisBssInfo->fgAssoc40mBwAllowed = FALSE;
+
 	/* 4 <1.2> Setup SSID */
 	COPY_SSID(prAisBssInfo->aucSSID, prAisBssInfo->ucSSIDLen,
 		  prConnSettings->aucSSID, prConnSettings->ucSSIDLen);

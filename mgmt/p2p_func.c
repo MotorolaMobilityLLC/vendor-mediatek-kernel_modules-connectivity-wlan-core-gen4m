@@ -657,6 +657,13 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		ASSERT_BREAK(prP2pBssInfo->eCurrentOPMode
 			== OP_MODE_INFRASTRUCTURE);
 
+		/* Store limitation about 40Mhz bandwidth capability during
+		 * association.
+		 */
+		prP2pBssInfo->fg40mBwAllowed =
+			prP2pBssInfo->fgAssoc40mBwAllowed;
+		prP2pBssInfo->fgAssoc40mBwAllowed = FALSE;
+
 		/* 4 <1.2> Setup SSID */
 		COPY_SSID(prP2pBssInfo->aucSSID,
 			prP2pBssInfo->ucSSIDLen,

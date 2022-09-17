@@ -832,14 +832,9 @@ void p2pLinkAcquireChJoin(
 
 		if (i == 0)
 			prSubReq = prMsgChReq;
-		else {
+		else
 			prSubReq = (struct MSG_CH_REQ *)
 				&prMsgChReq->aucBuffer[i];
-
-			prBss->fg40mBwAllowed =
-				cnmBss40mBwPermitted(prAdapter,
-				prBss->ucBssIndex);
-		}
 
 		p2pFuncReleaseCh(prAdapter,
 			prBss->ucBssIndex,

@@ -2580,6 +2580,7 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 		LINK_FOR_EACH_ENTRY(prBssInfo, prBssList, rLinkEntryMld,
 		    struct BSS_INFO) {
 			cnmDumpBssInfo(prAdapter, prBssInfo->ucBssIndex);
+			bssDumpBssInfo(prAdapter, prBssInfo->ucBssIndex);
 			i4BytesWritten += cnmShowBssInfo(prAdapter,
 				prBssInfo, pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten);
