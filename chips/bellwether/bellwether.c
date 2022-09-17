@@ -527,12 +527,6 @@ static uint8_t bellwetherSetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 static bool bellwetherWfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem)
 {
-	/* Port idx sanity */
-	if (RX_RING_DATA1 >= NUM_OF_RX_RING) {
-		DBGLOG(HAL, ERROR, "Invalid P[%u]\n", RX_RING_DATA1);
-		return false;
-	}
-
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_DATA1, RX_RING0_SIZE,
@@ -540,13 +534,6 @@ static bool bellwetherWfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
-
-	/* Port idx sanity */
-	if (RX_RING_DATA2 >= NUM_OF_RX_RING) {
-		DBGLOG(HAL, ERROR, "Invalid P[%u]\n", RX_RING_DATA2);
-		return false;
-	}
-
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_DATA2, RX_RING0_SIZE,
 			RXD_SIZE, CFG_RX_MAX_MPDU_SIZE, fgAllocMem)) {

@@ -1526,10 +1526,9 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
 			pRxD->SDLen0, u4Len);
 		dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
-		if (pRxD->SDLen0 > BITS(0, 13))
+		u4dumpSize = pRxD->SDLen0;
+		if (u4dumpSize > BITS(0, 13))
 			u4dumpSize = BITS(0, 13);
-		else
-			u4dumpSize = pRxD->SDLen0;
 		prBuffer = kalMemAlloc(u4dumpSize, VIR_MEM_TYPE);
 		if (prBuffer) {
 			if (prMemOps->copyEvent &&

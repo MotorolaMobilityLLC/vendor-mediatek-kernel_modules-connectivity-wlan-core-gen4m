@@ -119,8 +119,8 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter);
  */
 u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
 {
-	enum ENUM_TX_RING_IDX eTxIdx = u4Idx;
-	enum ENUM_RX_RING_IDX eRxIdx = u4Idx;
+	enum ENUM_TX_RING_IDX eTxIdx = (enum ENUM_TX_RING_IDX)u4Idx;
+	enum ENUM_RX_RING_IDX eRxIdx = (enum ENUM_RX_RING_IDX)u4Idx;
 
 	if (eType == TX_RING) {
 		return (eTxIdx == TX_RING_DATA0 ||
@@ -2443,6 +2443,12 @@ bool halWpdmaAllocRxRing(struct GLUE_INFO *prGlueInfo, uint32_t u4Num,
 	pRxRing->pvPacket = NULL;
 	pRxRing->u4PacketLen = 0;
 	pRxRing->u4MagicCnt = 0;
+
+	/* Cell idx sanity */
+	if (u4Size > ARRAY_SIZE(pRxRing->Cell)) {
+		DBGLOG(RX, ERROR, "Invalid idx:%u\n", u4Size);
+		return false;
+	}
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		/* Init RX Ring Size, Va, Pa variables */
