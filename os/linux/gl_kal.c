@@ -6358,8 +6358,6 @@ void kalRxTaskSchedule(struct GLUE_INFO *pr)
 
 uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 {
-	struct BUS_INFO *prBusInfo = pr->prAdapter->chip_info->bus_info;
-
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
 		DBGLOG(INIT, ERROR,
 		       "Valid in RX-direct mode only\n");
@@ -6376,9 +6374,6 @@ uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 	} else {
 		/* no more schedule, so enable interrupt */
 		if (fgIsInt) {
-			/* enable wfdma to avoid level/edge trigger int issue */
-			if (prBusInfo->configWfdmaIntMask)
-				prBusInfo->configWfdmaIntMask(pr, TRUE);
 			nicEnableInterrupt(pr->prAdapter);
 			return WLAN_STATUS_SUCCESS;
 		}

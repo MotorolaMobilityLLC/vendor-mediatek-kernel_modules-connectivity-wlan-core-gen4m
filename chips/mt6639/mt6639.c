@@ -1456,11 +1456,19 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
 {
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->configWfdmaIntMask)
+		prBusInfo->configWfdmaIntMask(prAdapter->prGlueInfo, TRUE);
 	asicConnac3xEnablePlatformIRQ(prAdapter);
 }
 
 static void mt6639DisableInterrupt(struct ADAPTER *prAdapter)
 {
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->configWfdmaIntMask)
+		prBusInfo->configWfdmaIntMask(prAdapter->prGlueInfo, FALSE);
 	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 
@@ -1474,7 +1482,7 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 	struct pcie_msi_info *prMsiInfo = NULL;
-	uint32_t u4Value = 0;
+	uint32_t u4Value = 0, u4Addr;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -1541,6 +1549,14 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_MD_INT_LUMP_SEL,
 		u4Value);
 #endif
+
+	u4Addr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR;
+	u4Value =
+	(1 <<
+	 WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_msi_deassert_tmr_en_SHFT) |
+	(64 <<
+	 WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_msi_deassert_tmr_ticks_SHFT);
+	HAL_MCR_WR(prAdapter, u4Addr, u4Value);
 }
 
 static void mt6639ConfigWfdmaRxRingThreshold(struct ADAPTER *prAdapter)
