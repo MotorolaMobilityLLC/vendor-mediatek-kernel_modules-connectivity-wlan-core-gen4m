@@ -1101,13 +1101,13 @@ static inline void halMawdPwrOff(void) {}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if CFG_SUPPORT_RX_PAGE_POOL
-int kalCreateRxPagePool(struct device *dev);
-void kalReleaseRxPagePool(struct device *dev);
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
 u_int8_t kalCreateHifSkbList(void);
 void kalReleaseHifSkbList(void);
 struct sk_buff *kalAllocHifSkb(void);
 void kalFreeHifSkb(struct sk_buff *prSkb);
+
+extern struct page *wifi_page_pool_alloc_page(void) __attribute__((weak));
 #endif
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
