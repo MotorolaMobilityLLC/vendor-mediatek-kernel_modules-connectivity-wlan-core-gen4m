@@ -3077,7 +3077,7 @@ uint8_t rsnCheckBipGmac(struct ADAPTER *prAdapter,
 	/* copy FC and skip duration */
 	kalMemCopy(aad_gmac, &prDeauthMICFrame->u2FrameCtrl, 2);
 	/* copy A1,A2,A3 and skip SEQ */
-	prAddr = prDeauthMICFrame->aucDestAddr;
+	prAddr = (uint8_t *) prDeauthMICFrame->aucDestAddr;
 	kalMemCopy(aad_gmac+2, prAddr, 18);
 	/* copy reason code, MIC tag/legnth, keyID, IPN */
 	kalMemCopy(aad_gmac+20, &prDeauthMICFrame->u2ReasonCode, 12);
