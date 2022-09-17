@@ -1745,9 +1745,20 @@ u_int8_t wlanISR(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 {
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* disable wfdma to avoid level/edge trigger int issue */
+	if (fgEnInt && prBusInfo->configWfdmaIntMask)
+		prBusInfo->configWfdmaIntMask(prGlueInfo, FALSE);
+#endif
 
 	if (prAdapter->fgIsFwOwn == FALSE) {
 		u4Status = nicProcessIST(prAdapter);
@@ -1757,7 +1768,7 @@ void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 				REQ, INFO,
 				"Fail: nicProcessIST! status [%x][0x%08x]\n",
 				u4Status,
-				prAdapter->prGlueInfo->rHifInfo.u4IntStatus);
+				prGlueInfo->rHifInfo.u4IntStatus);
 #else
 			DBGLOG_LIMITED(
 				REQ, INFO,
@@ -1766,15 +1777,19 @@ void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 #endif
 		}
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
-					 prAdapter->prGlueInfo->rIntrWakeLock))
-			KAL_WAKE_UNLOCK(prAdapter,
-					prAdapter->prGlueInfo->rIntrWakeLock);
+		if (KAL_WAKE_LOCK_ACTIVE(prAdapter, prGlueInfo->rIntrWakeLock))
+			KAL_WAKE_UNLOCK(prAdapter, prGlueInfo->rIntrWakeLock);
 #endif
 	}
 
-	if (fgEnInt)
+	if (fgEnInt) {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		/* enable wfdma to avoid level/edge trigger int issue */
+		if (prBusInfo->configWfdmaIntMask)
+			prBusInfo->configWfdmaIntMask(prGlueInfo, TRUE);
+#endif
 		nicEnableInterrupt(prAdapter);
+	}
 }
 
 void wlanClearPendingInterrupt(struct ADAPTER *prAdapter)

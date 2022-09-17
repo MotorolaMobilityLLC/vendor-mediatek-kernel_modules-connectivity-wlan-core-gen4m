@@ -4124,6 +4124,7 @@ void halRxTasklet(unsigned long data)
 
 void halRxWork(struct GLUE_INFO *prGlueInfo)
 {
+	struct BUS_INFO *prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 	bool fgEnInt = FALSE;
 
 	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
@@ -4153,6 +4154,9 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		       "ignore pending interrupt\n");
 	} else {
 		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
+		/* disable wfdma to avoid level/edge trigger int issue */
+		if (fgEnInt && prBusInfo->configWfdmaIntMask)
+			prBusInfo->configWfdmaIntMask(prGlueInfo, FALSE);
 		prGlueInfo->TaskIsrCnt++;
 		wlanIST(prGlueInfo->prAdapter, FALSE);
 	}
