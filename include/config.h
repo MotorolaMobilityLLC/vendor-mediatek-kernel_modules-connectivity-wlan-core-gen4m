@@ -1264,7 +1264,7 @@
  * Flags of SDIO test pattern support
  *------------------------------------------------------------------------------
  */
-#define CFG_SUPPORT_SDIO_READ_WRITE_PATTERN 1
+#define CFG_SUPPORT_SDIO_READ_WRITE_PATTERN 0
 
 /*------------------------------------------------------------------------------
  * Flags of Workaround
