@@ -14524,6 +14524,11 @@ int priv_driver_set_ba_size(struct net_device *prNetDev, char *pcCommand,
 
 		prGlueInfo->prAdapter->rWifiVar.u2TxHeBaSize = u2HeBaSize;
 		prGlueInfo->prAdapter->rWifiVar.u2RxHeBaSize = u2HeBaSize;
+
+#if (CFG_SUPPORT_802_11BE == 1)
+		prGlueInfo->prAdapter->rWifiVar.u2TxEhtBaSize = u2HeBaSize;
+		prGlueInfo->prAdapter->rWifiVar.u2RxEhtBaSize = u2HeBaSize;
+#endif
 	} else {
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_BA_SIZE\n");
 		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
