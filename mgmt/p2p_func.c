@@ -7768,14 +7768,28 @@ p2pFuncNeedWaitRsp(struct ADAPTER *prAdapter,
 u_int8_t
 p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 {
+	struct BSS_INFO *bss;
+	uint8_t ucApForceSleep;
+
 	if (!prAdapter ||
 		!prAdapter->rWifiVar.ucApForceSleep ||
 		(prAdapter->rPerMonitor.u4CurrPerfLevel > 1))
 		return FALSE;
-	else if (!cnmSapIsActive(prAdapter))
+
+	bss = cnmGetSapBssInfo(prAdapter);
+	ucApForceSleep = prAdapter->rWifiVar.ucApForceSleep;
+	if (!bss)
 		return FALSE;
-	else
-		return TRUE;
+	else if ((ucApForceSleep == 1) &&
+		(bss->eConnectionState == MEDIA_STATE_CONNECTED))
+		return FALSE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	else if ((ucApForceSleep == 2) &&
+		prAdapter->u4StaInPSBitmap)
+		return FALSE;
+#endif
+
+	return TRUE;
 }
 
 void
