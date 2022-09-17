@@ -273,9 +273,12 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			ASSERT(FALSE);
 		}
 
-		prP2pBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC = PM_UAPSD_ALL;
-		prP2pBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = PM_UAPSD_ALL;
-		prP2pBssInfo->rPmProfSetupInfo.ucUapsdSp = WMM_MAX_SP_LENGTH_2;
+		prP2pBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC =
+			(uint8_t) prAdapter->u4P2pUapsdAcBmp;
+		prP2pBssInfo->rPmProfSetupInfo.ucBmpTriggerAC =
+			(uint8_t) prAdapter->u4P2pUapsdAcBmp;
+		prP2pBssInfo->rPmProfSetupInfo.ucUapsdSp =
+			(uint8_t) prAdapter->u4P2pMaxSpLen;
 		prP2pBssInfo->ucPrimaryChannel = P2P_DEFAULT_LISTEN_CHANNEL;
 		prP2pBssInfo->eBand = BAND_2G4;
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;

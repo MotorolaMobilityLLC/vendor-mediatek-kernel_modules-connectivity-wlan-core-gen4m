@@ -1070,6 +1070,8 @@ struct WIFI_VAR {
 
 	uint32_t u4UapsdAcBmp;
 	uint32_t u4MaxSpLen;
+	uint32_t u4P2pUapsdAcBmp;
+	uint32_t u4P2pMaxSpLen;
 	/* 0: enable online scan, non-zero: disable online scan */
 	uint32_t fgDisOnlineScan;
 	uint32_t fgDisBcnLostDetection;
@@ -1981,8 +1983,9 @@ struct ADAPTER {
 	uint32_t fgEnArpFilter;
 
 	uint32_t u4UapsdAcBmp;
-
 	uint32_t u4MaxSpLen;
+	uint32_t u4P2pUapsdAcBmp;
+	uint32_t u4P2pMaxSpLen;
 
 	uint32_t u4PsCurrentMeasureEn;
 

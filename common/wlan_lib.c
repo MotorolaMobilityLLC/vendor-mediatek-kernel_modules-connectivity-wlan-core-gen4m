@@ -1133,6 +1133,8 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.fgEnArpFilter;
 	prAdapter->u4UapsdAcBmp = prAdapter->rWifiVar.u4UapsdAcBmp;
 	prAdapter->u4MaxSpLen = prAdapter->rWifiVar.u4MaxSpLen;
+	prAdapter->u4P2pUapsdAcBmp = prAdapter->rWifiVar.u4P2pUapsdAcBmp;
+	prAdapter->u4P2pMaxSpLen = prAdapter->rWifiVar.u4P2pMaxSpLen;
 #endif
 	DBGLOG(INIT, TRACE,
 	       "[1] fgEnArpFilter:0x%x, u4UapsdAcBmp:0x%x, u4MaxSpLen:0x%x",
@@ -7799,6 +7801,12 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 					prAdapter, "UapsdAcBmp", 0);
 	prWifiVar->u4MaxSpLen = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "MaxSpLen", 0);
+	prWifiVar->u4P2pUapsdAcBmp = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "P2pUapsdAcBmp",
+					PM_UAPSD_ALL);
+	prWifiVar->u4P2pMaxSpLen = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "P2pMaxSpLen",
+					WMM_MAX_SP_LENGTH_2);
 	prWifiVar->fgDisOnlineScan = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "DisOnlineScan", 0);
 	prWifiVar->fgDisBcnLostDetection = (uint32_t) wlanCfgGetUint32(
