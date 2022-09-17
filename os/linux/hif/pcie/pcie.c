@@ -3024,8 +3024,10 @@ int32_t glBusFuncOn(void)
 
 void glBusFuncOff(void)
 {
-	pci_unregister_driver(&mtk_pci_driver);
-	g_fgDriverProbed = FALSE;
+	if (g_fgDriverProbed) {
+		pci_unregister_driver(&mtk_pci_driver);
+		g_fgDriverProbed = FALSE;
+	}
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	mtk_pcie_remove_port(0);
 #endif
