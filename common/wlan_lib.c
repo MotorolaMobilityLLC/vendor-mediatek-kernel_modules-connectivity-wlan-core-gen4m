@@ -1605,8 +1605,10 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 	glCustomGenlInit();
 #endif
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prAdapter->chip_info->checkbushang)
 		prAdapter->chip_info->checkbushang((void *) prAdapter, TRUE);
+#endif
 
 	return u4Status;
 }				/* wlanAdapterStart */

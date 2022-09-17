@@ -1934,6 +1934,7 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 		goto exit;
 	}
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prAdapter->chip_info->checkbushang) {
 		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
 				TRUE) != 0) {
@@ -1942,6 +1943,7 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 			goto exit;
 		}
 	}
+#endif
 
 	ucRegionNum = prAdapter->rVerInfo.rCommonTailer.ucRegionNum;
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
