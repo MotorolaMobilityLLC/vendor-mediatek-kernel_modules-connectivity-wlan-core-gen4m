@@ -11632,6 +11632,9 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 			ucBssIdx);
 		enum ENUM_BAND eBand = BAND_NULL;
 
+		if (bss == NULL)
+			return -1;
+
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
 		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
 
