@@ -570,7 +570,6 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance)
 {
-	disable_irq_nosync(irq);
 	return IRQ_WAKE_THREAD;
 }
 
@@ -578,7 +577,6 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	u_int8_t fgEnInt = true;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	prAdapter = prGlueInfo->prAdapter;
@@ -590,13 +588,10 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance)
 	GLUE_INC_REF_CNT(prAdapter->rHifStats.u4SwIsrCount);
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	fgEnInt = asicConnac3xSwIntHandler(prAdapter);
+	asicConnac3xSwIntHandler(prAdapter);
 #endif
 
 exit:
-	if (fgEnInt)
-		enable_irq(irq);
-
 	return IRQ_HANDLED;
 }
 
