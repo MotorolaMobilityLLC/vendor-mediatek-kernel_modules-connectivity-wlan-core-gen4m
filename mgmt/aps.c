@@ -252,7 +252,7 @@ const uint16_t mpduLen[CW_320MHZ + 1] = {
 #define MAC_ADDR_HASH(_addr) \
 	(_addr[0] ^ _addr[1] ^ _addr[2] ^ _addr[3] ^ _addr[4] ^ _addr[5])
 #define AP_HASH(_addr) \
-	(MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1))
+	((uint8_t) (MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1)))
 
 #define CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucProbeRespWeight * \
@@ -296,12 +296,8 @@ struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AP_COLLECTION *a = NULL;
 
-	if (AP_HASH(addr) >= 0) {
-		a = s->arApHash[AP_HASH(addr)];
-	} else {
-		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
-			MAC2STR(addr));
-	}
+	a = s->arApHash[AP_HASH(addr)];
+
 	while (a != NULL &&
 	       (UNEQUAL_MAC_ADDR(a->aucAddr, addr) ||
 	       a->fgIsMld != is_mld))
@@ -313,13 +309,8 @@ void apsHashAdd(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 
-	if (AP_HASH(ap->aucAddr) >= 0) {
-		ap->hnext = s->arApHash[AP_HASH(ap->aucAddr)];
-		s->arApHash[AP_HASH(ap->aucAddr)] = ap;
-	} else {
-		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
-			MAC2STR(ap->aucAddr));
-	}
+	ap->hnext = s->arApHash[AP_HASH(ap->aucAddr)];
+	s->arApHash[AP_HASH(ap->aucAddr)] = ap;
 }
 
 void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
@@ -327,12 +318,8 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AP_COLLECTION *a = NULL;
 
-	if (AP_HASH(ap->aucAddr) >= 0) {
-		a = s->arApHash[AP_HASH(ap->aucAddr)];
-	} else {
-		DBGLOG(APS, INFO, "AP_HASH for " MACSTR " is negative value!",
-			MAC2STR(ap->aucAddr));
-	}
+	a = s->arApHash[AP_HASH(ap->aucAddr)];
+
 	if (a == NULL)
 		return;
 
