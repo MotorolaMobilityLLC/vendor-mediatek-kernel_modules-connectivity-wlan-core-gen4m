@@ -746,10 +746,9 @@ void nic_rxd_v3_check_wakeup_reason(
 				} else {
 					uint8_t ucPfSts = 0;
 
-					ucPfSts = RX_DESC_GET_FIELD(
-					prRxStatus->u4DW4,
-					CONNAC3X_RX_STATUS_PF_STS_MASK,
-					CONNAC3X_RX_STATUS_PF_STS_OFFSET);
+					ucPfSts =
+					HAL_MAC_CONNAC3X_RX_STATUS_GET_PF_STS(
+						prRxStatus);
 					DBGLOG(RX, INFO,
 						"Wakeup by Eth[0x%x] pf[%d]\n",
 						u2Temp, ucPfSts);
