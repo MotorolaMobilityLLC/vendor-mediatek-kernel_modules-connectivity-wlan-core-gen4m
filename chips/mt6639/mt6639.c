@@ -1716,7 +1716,6 @@ static void mt6639PcieHwControlVote(
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
-uint32_t value_ori;
 static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
 				u_int role, u_int8_t fgEn)
 {
@@ -1764,44 +1763,9 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	if (fgEn) {
 		/* Restore original setting*/
 		if (enableL1ss) {
-			if ((value_ori & 0xf00) == 0) {
-				if (pcie_vir_addr)
-					writel(0xe0f, (pcie_vir_addr + 0x194));
-				delay += 10;
-				udelay(10);
-
-				/* Polling RC 0x112f0150[28:24] until =0x10 */
-				while (1) {
-					value = readl(pcie_vir_addr + 0x150);
-					if (((value & BITS(24, 28))
-						>> 24) == 0x10)
-						break;
-					if (delay >= POLLING_TIMEOUT)
-						return;
-					delay += 10;
-					udelay(10);
-				}
-
-				HAL_MCR_WR(prGlueInfo->prAdapter,
-					0x74030194, 0xf);
-				HAL_MCR_RD(prGlueInfo->prAdapter,
-					0x74030194, &value);
-				if (pcie_vir_addr)
-					writel(0xf, (pcie_vir_addr + 0x194));
-			} else {
-				DBGLOG(HAL, TRACE, "Enable aspm no match\n");
-			}
-			DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
-		}
-	} else {
-		/*
-		 *	Backup original setting then
-		 *	disable L1.1, L1.2 and set LTR to 0
-		 */
-		HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value_ori);
-		if ((value_ori & 0xf00) == 0) {
 			if (pcie_vir_addr)
-				writel(0x20f, (pcie_vir_addr + 0x194));
+				writel(0xe0f, (pcie_vir_addr + 0x194));
+
 			delay += 10;
 			udelay(10);
 
@@ -1811,19 +1775,54 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				if (((value & BITS(24, 28))
 					>> 24) == 0x10)
 					break;
+
 				if (delay >= POLLING_TIMEOUT)
 					return;
+
 				delay += 10;
 				udelay(10);
 			}
 
-			HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
-			HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
+			HAL_MCR_WR(prGlueInfo->prAdapter,
+				0x74030194, 0xf);
+			HAL_MCR_RD(prGlueInfo->prAdapter,
+				0x74030194, &value);
 			if (pcie_vir_addr)
-				writel(0xc0f, (pcie_vir_addr + 0x194));
+				writel(0xf, (pcie_vir_addr + 0x194));
+
+			DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
 		} else {
-			DBGLOG(HAL, TRACE, "Disable aspm no match\n");
+			DBGLOG(HAL, TRACE, "Not to enable aspm L1.1/L1.2..\n");
 		}
+	} else {
+		/*
+		 *	Backup original setting then
+		 *	disable L1.1, L1.2 and set LTR to 0
+		 */
+		if (pcie_vir_addr)
+			writel(0x20f, (pcie_vir_addr + 0x194));
+
+		delay += 10;
+		udelay(10);
+
+		/* Polling RC 0x112f0150[28:24] until =0x10 */
+		while (1) {
+			value = readl(pcie_vir_addr + 0x150);
+			if (((value & BITS(24, 28))
+				>> 24) == 0x10)
+				break;
+
+			if (delay >= POLLING_TIMEOUT)
+				return;
+
+			delay += 10;
+			udelay(10);
+		}
+
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
+		HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
+		if (pcie_vir_addr)
+			writel(0xc0f, (pcie_vir_addr + 0x194));
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
