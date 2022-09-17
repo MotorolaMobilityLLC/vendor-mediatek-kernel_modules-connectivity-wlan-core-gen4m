@@ -194,6 +194,14 @@ int32_t fw_log_emi_handler(void)
 	return __fw_log_emi_handler(FALSE);
 }
 
+static u_int8_t __fw_log_emi_check_alignment(uint32_t value)
+{
+	if (value & BITS(0, 2))
+		return FALSE;
+	else
+		return TRUE;
+}
+
 static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 	struct FW_LOG_EMI_CTRL *ctrl)
 {
@@ -244,6 +252,11 @@ static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 			fw_log_type_to_str(i),
 			sub_ctrl->base_addr,
 			sub_ctrl->length);
+		if (!__fw_log_emi_check_alignment(sub_ctrl->base_addr) ||
+		    !__fw_log_emi_check_alignment(sub_ctrl->length)) {
+			ret = -EINVAL;
+			goto exit;
+		}
 	}
 
 exit:
@@ -367,10 +380,10 @@ void fw_log_emi_stop(struct ADAPTER *ad)
 
 	__fw_log_emi_handler(TRUE);
 
+	ctrl->started = FALSE;
+
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++)
 		fw_log_emi_sub_ctrl_deinit(ctrl->priv, ctrl, i);
-
-	ctrl->started = FALSE;
 }
 
 uint32_t fw_log_emi_init(struct ADAPTER *ad)
