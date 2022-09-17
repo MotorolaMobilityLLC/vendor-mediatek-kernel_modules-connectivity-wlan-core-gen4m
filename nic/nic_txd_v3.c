@@ -644,9 +644,6 @@ void nic_txd_v3_compose(
 		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
 				prMsduInfo->ucWlanIndex,
 				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
-		DBGLOG(TX, INFO, "TX[%s] WIDX[%u] PID[%u]\n",
-			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
-			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
@@ -689,8 +686,6 @@ void nic_txd_v3_compose(
 	/* Fix rate */
 	switch (prMsduInfo->ucRateMode) {
 	case MSDU_RATE_MODE_MANUAL_DESC:
-		DBGLOG(TX, INFO, "Rate mode[%d], RateIdx=%u\n",
-			prMsduInfo->ucRateMode, prMsduInfo->u4FixedRateOption);
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc,
 						prMsduInfo->u4FixedRateOption);
@@ -708,6 +703,14 @@ void nic_txd_v3_compose(
 	if (HAL_MAC_CONNAC3X_TXD_IS_FIXED_RATE_ENABLE(prTxDesc))
 		HAL_MAC_CONNAC3X_TXD_UNSET_VALID_TXD_ARRIVAL_TIME(prTxDesc);
 #endif
+
+	if (prMsduInfo->pfTxDoneHandler) {
+		DBGLOG(TX, INFO,
+			"TX[%s] WIDX[%u] PID[%u] Rate mode[%d], RateIdx=%u\n",
+			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
+			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
+			prMsduInfo->ucRateMode, prMsduInfo->u4FixedRateOption);
+	}
 }
 
 void nic_txd_v3_set_pkt_fixed_rate_option(
