@@ -2645,6 +2645,7 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	struct QUE tmp, *que = &tmp;
 	struct SW_RFB *rfb = NULL;
 	struct RX_CTRL *ctrl;
+	uint32_t u4Status;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2676,17 +2677,30 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	QUEUE_INITIALIZE(que);
 	for (i = 0; i < num; i++) {
 		rfb = kalMemAlloc(sizeof(struct SW_RFB), VIR_MEM_TYPE);
-		if (!rfb) {
+		if (unlikely(!rfb)) {
 			DBGLOG_LIMITED(RX, WARN,
 				"No RFB from spared caller=%pS\n", KAL_TRACE);
-			break;
+			goto error;
 		}
-		nicRxSetupRFB(prAdapter, rfb);
+		u4Status = nicRxSetupRFB(prAdapter, rfb);
+		if (unlikely(u4Status != WLAN_STATUS_SUCCESS)) {
+			kalMemFree(rfb, VIR_MEM_TYPE, sizeof(struct SW_RFB));
+			goto error;
+		}
 		QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
 	}
 
-	/* Assume heap is always sufficient, skip check allocated num */
 	return (struct SW_RFB *)QUEUE_GET_HEAD(que);
+
+error:
+	/* The flow shall never reach here */
+	if (i > 0) {
+		do {
+			QUEUE_REMOVE_HEAD(que, rfb, struct SW_RFB *);
+			nicRxReturnRFB(prAdapter, rfb);
+		} while (rfb);
+	}
+	return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
