@@ -917,6 +917,8 @@ void asicConnac3xLowPowerOwnClear(
 		if (prChipInfo->setCrypto)
 			prChipInfo->setCrypto(prAdapter);
 
+		clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+			&prAdapter->prGlueInfo->ulFlag);
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
