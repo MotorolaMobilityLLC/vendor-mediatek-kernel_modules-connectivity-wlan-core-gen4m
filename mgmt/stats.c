@@ -690,14 +690,18 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			switch (eventType) {
 			case EVENT_RX:
 				DBGLOG(RX, INFO,
-					"<RX> EAP Packet: code %d, id %d, type %d\n",
-					pucEapol[4], pucEapol[5], pucEapol[7]);
+					"<RX> EAP Packet: code=%u id=%u len=%u type=%d\n",
+					pucEapol[4], pucEapol[5],
+					NTOHS(*(uint16_t *)&pucEapol[6]),
+					pucEapol[8]);
 				break;
 			case EVENT_TX:
 				DBGLOG(TX, INFO,
-				       "<TX> EAP Packet: code %d, id %d, type %d, SeqNo: %d\n",
-				       pucEapol[4], pucEapol[5], pucEapol[7],
-						GLUE_GET_PKT_SEQ_NO(pvPacket));
+					"<TX> EAP Packet: code=%u id=%u len=%u type=%d SeqNo=%d\n",
+					pucEapol[4], pucEapol[5],
+					NTOHS(*(uint16_t *)&pucEapol[6]),
+					pucEapol[8],
+					GLUE_GET_PKT_SEQ_NO(pvPacket));
 				break;
 			}
 			break;
