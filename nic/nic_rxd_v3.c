@@ -969,7 +969,7 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 					break;
 				}
 				halMsduReportStats(prAdapter, msdu0,
-						tx_delay, stat);
+						tx_delay, air_delay, stat);
 				halProcessToken(prAdapter, msdu0, prFreeQueue);
 				msdu_cnt_handled++;
 			}
@@ -982,7 +982,7 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 					break;
 				}
 				halMsduReportStats(prAdapter, msdu1,
-						tx_delay, stat);
+						tx_delay, air_delay, stat);
 				halProcessToken(prAdapter, msdu1, prFreeQueue);
 				msdu_cnt_handled++;
 			}

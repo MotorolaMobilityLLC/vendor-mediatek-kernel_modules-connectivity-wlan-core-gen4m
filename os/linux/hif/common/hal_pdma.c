@@ -1717,10 +1717,27 @@ static void halAddMacLatencyCount(struct ADAPTER *prAdapter,
 		}
 	}
 }
+
+static void halAddAirLatencyCount(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4AirLatency)
+{
+	uint32_t *pMaxAirDelay = prAdapter->rWifiVar.au4AirTxDelayMax;
+	uint32_t *pAirDelay =
+		prAdapter->rMsduReportStats.rCounting.au4AirLatency
+							[ucBssIndex];
+	uint8_t i;
+
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+		if (u4AirLatency <= *pMaxAirDelay++) {
+			GLUE_INC_REF_CNT(pAirDelay[i]);
+			break;
+		}
+	}
+}
 #endif
 
 void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
-	uint32_t u4MacLatency, uint32_t u4Stat)
+	uint32_t u4MacLatency, uint32_t u4AirLatency, uint32_t u4Stat)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	struct TX_LATENCY_REPORT_STATS *report = &prAdapter->rMsduReportStats;
@@ -1764,6 +1781,8 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 #endif
 
 	halAddMacLatencyCount(prAdapter, ucBssIndex, u4MacLatency);
+	if (u4AirLatency != INVALID_TX_DELAY)
+		halAddAirLatencyCount(prAdapter, ucBssIndex, u4AirLatency);
 
 	if (unlikely(u4Stat)) {
 		uint32_t lim = prWifiVar->u4ContinuousTxFailThreshold;
@@ -1788,8 +1807,8 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	}
 
 	if (prWifiVar->fgPacketLatencyLog)
-		DBGLOG(HAL, INFO, "Latency C: %u M: %u; tok=%u",
-			u4ConnsysLatency, u4MacLatency, u4Token);
+		DBGLOG(HAL, INFO, "Latency C: %u M: %u A: %u; tok=%u",
+			u4ConnsysLatency, u4MacLatency, u4AirLatency, u4Token);
 #endif
 }
 
@@ -1799,6 +1818,7 @@ static void halMsduV3ReportDelayStats(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	halMsduReportStats(prAdapter, u4Token,
 			msduToken->rFormatV3.rP0.u4TxCnt,
+			INVALID_TX_DELAY,
 			msduToken->rFormatV3.rP0.u4Stat);
 #endif
 }
@@ -5154,6 +5174,10 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 			   report->au4MacLatency[0],
 			   stats->rReported.au4MacLatency[0]);
 		diffTxDelayCounter(BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
+			   rDiff.au4AirLatency[0],
+			   report->au4AirLatency[0],
+			   stats->rReported.au4AirLatency[0]);
+		diffTxDelayCounter(BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
 			   rDiff.au4FailConnsysLatency[0],
 			   report->au4FailConnsysLatency[0],
 			   stats->rReported.au4FailConnsysLatency[0]);
@@ -5180,6 +5204,9 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	pos += composeTxDelayLog(buf, pos, u4BufferSize, "M",
 				 prWifiVar->au4MacTxDelayMax,
 				 report->au4MacLatency[0], report_num);
+	pos += composeTxDelayLog(buf, pos, u4BufferSize, "A",
+				 prWifiVar->au4AirTxDelayMax,
+				 report->au4AirLatency[0], report_num);
 	pos += composeTxDelayLog(buf, pos, u4BufferSize, "F",
 				 prWifiVar->au4ConnsysTxFailDelayMax,
 				 report->au4FailConnsysLatency[0], report_num);

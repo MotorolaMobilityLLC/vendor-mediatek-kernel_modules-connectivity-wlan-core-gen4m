@@ -1306,6 +1306,7 @@ struct WIFI_VAR {
 	uint8_t ucCsaDeauthClient;
 
 #define LATENCY_STATS_MAX_SLOTS 5
+#define INVALID_TX_DELAY 0xFFFFFFFF
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	u_int8_t fgPacketLatencyLog;
 	u_int8_t fgTxLatencyKeepCounting;
@@ -1313,6 +1314,7 @@ struct WIFI_VAR {
 	uint32_t u4MsduStatsUpdateInterval; /* in ms */
 	uint32_t u4ContinuousTxFailThreshold;
 
+	uint32_t au4AirTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4MacTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4DriverTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
@@ -1604,6 +1606,7 @@ struct TX_LATENCY_STATS {
 	uint32_t au4DriverLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4ConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4MacLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4AirLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4FailConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t u4TxFail;
 };

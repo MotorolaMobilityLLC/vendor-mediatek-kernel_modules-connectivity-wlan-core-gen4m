@@ -7922,6 +7922,20 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L4);
 	prWifiVar->au4MacTxDelayMax[4] = UINT_MAX;
 
+	prWifiVar->au4AirTxDelayMax[0] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyAirDelayMaxL1",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L1);
+	prWifiVar->au4AirTxDelayMax[1] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyAirDelayMaxL2",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L2);
+	prWifiVar->au4AirTxDelayMax[2] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyAirDelayMaxL3",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L3);
+	prWifiVar->au4AirTxDelayMax[3] = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TxLatencyAirDelayMaxL4",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L4);
+	prWifiVar->au4AirTxDelayMax[4] = UINT_MAX;
+
 	prWifiVar->au4ConnsysTxFailDelayMax[0] = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "TxLatencyFailConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L1);

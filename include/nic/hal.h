@@ -1378,7 +1378,7 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo);
 void halRxProcessMsduReport(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
-	uint32_t u4MacLatency, uint32_t u4Stat);
+	uint32_t u4MacLatency, uint32_t u4AirLatency, uint32_t u4Stat);
 u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 	uint32_t u4Token,
 	struct QUE *prFreeQueue);
