@@ -1038,7 +1038,7 @@ int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	DBGLOG(INIT, INFO, "Notify PCIe L1.2 Status %lu\n", u32Enable);
+	DBGLOG(INIT, TRACE, "Notify PCIe L1.2 Status %lu\n", u32Enable);
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1094,7 +1094,7 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 
-	DBGLOG(INIT, INFO, "ret: %d, info_id: %lu, u32SeqNum:%lu.\n",
+	DBGLOG(INIT, TRACE, "ret: %d, info_id: %lu, u32SeqNum:%lu.\n",
 		ret, u32InfoId, prAdapter->u4MddpPCIeL12SeqNum);
 	return ret;
 }
@@ -1348,7 +1348,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	u_int8_t fgHalted = kalIsHalted();
 	struct BUS_INFO *prBusInfo = NULL;
 
-	DBGLOG(INIT, INFO, "MD notify mddpMdNotifyInfo.\n");
+	DBGLOG(INIT, TRACE, "MD notify mddpMdNotifyInfo.\n");
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
@@ -1496,13 +1496,24 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		}
 		event = (struct wsvc_md_event_comm_t *)
 				&(prMdInfo->buf[1]);
-		DBGLOG(INIT, WARN,
-			"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
-				event->u4Reason,
-				event->u4RstFlag,
-				event->u4Line,
-				event->pucFuncName,
-				event->dump_payload[1]);
+		if (event->u4Reason == MD_L12_DISABLE ||
+			event->u4Reason == MD_L12_ENABLE) {
+			DBGLOG_LIMITED(INIT, WARN,
+				"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
+					event->u4Reason,
+					event->u4RstFlag,
+					event->u4Line,
+					event->pucFuncName,
+					event->dump_payload[1]);
+		} else {
+			DBGLOG(INIT, WARN,
+				"reason:%d, flag:%d, line:%d, func:%s, bssIdx:%d\n",
+					event->u4Reason,
+					event->u4RstFlag,
+					event->u4Line,
+					event->pucFuncName,
+					event->dump_payload[1]);
+		}
 		if (event->u4Reason == MD_TX_DATA_HANG) {
 			prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
 			prAdapter->u4HifChkFlag |= HIF_CHK_MD_TX_HANG;
@@ -1525,11 +1536,19 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			}
 #endif
 #endif
-		} else {
+		} else if (event->u4Reason == MD_INFORMATION_DUMP ||
+				event->u4Reason == MD_DRV_OWN_FAIL ||
+				event->u4Reason == MD_INIT_FAIL ||
+				event->u4Reason == MD_STATE_ABNORMAL ||
+				event->u4Reason == MD_TX_CMD_FAIL) {
 			glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
 			GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
 				RST_MDDP_MD_TRIGGER_EXCEPTION,
 				event->u4RstFlag | RST_FLAG_DO_CORE_DUMP);
+		} else {
+			DBGLOG(INIT, WARN,
+				"MD event reason undefined reason:%d\n",
+					event->u4Reason);
 		}
 	} else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
