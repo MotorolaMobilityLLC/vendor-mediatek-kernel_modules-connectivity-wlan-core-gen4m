@@ -4323,12 +4323,14 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 				prWlanBeacon = (struct WLAN_BEACON_FRAME *)
 								(prSwRfb->pvHeader);
 
-				(prBssInfo->prStaRecOfAP
-					->au4Timestamp[0]) =
+				if (prBssInfo->prStaRecOfAP) {
+					(prBssInfo->prStaRecOfAP
+						->au4Timestamp[0]) =
 					prWlanBeacon->au4Timestamp[0];
-				(prBssInfo->prStaRecOfAP
-					->au4Timestamp[1]) =
+					(prBssInfo->prStaRecOfAP
+						->au4Timestamp[1]) =
 					prWlanBeacon->au4Timestamp[1];
+				}
 #endif
 
 
