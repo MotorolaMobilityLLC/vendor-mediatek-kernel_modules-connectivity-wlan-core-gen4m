@@ -1784,8 +1784,14 @@ void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 #endif
 	}
 
-	if (fgEnInt)
+	if (fgEnInt) {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		/* enable wfdma to avoid level/edge trigger int issue */
+		if (prBusInfo->configWfdmaIntMask)
+			prBusInfo->configWfdmaIntMask(prGlueInfo, TRUE);
+#endif
 		nicEnableInterrupt(prAdapter);
+	}
 }
 
 void wlanClearPendingInterrupt(struct ADAPTER *prAdapter)
