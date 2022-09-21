@@ -2747,8 +2747,8 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			prNetDevPrivate->ucIsP2p = FALSE;
 #endif
 #if CFG_MTK_MDDP_SUPPORT
-			/* only wlan0 supports mddp */
-			prNetDevPrivate->ucMddpSupport = (u4Idx == 0);
+			/* support both wlan0 and wlan1 */
+			prNetDevPrivate->ucMddpSupport = TRUE;
 #else
 			prNetDevPrivate->ucMddpSupport = FALSE;
 #endif
