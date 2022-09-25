@@ -2326,7 +2326,7 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 
 	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
-	if (!prGlueP2pInfo) {
+	if (!prGlueP2pInfo || !prGlueP2pInfo->prWdev) {
 		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
 		return;
 	}
