@@ -4715,6 +4715,12 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		aisGetAisBssInfo(prAdapter, ucBssIndex));
 
 	/* 4 <4.3> Sync with firmware for BSS-INFO */
+	prAisBssInfo->ucBMCWlanIndex = secPrivacySeekForBcEntry(
+				prAdapter, prAisBssInfo->ucBssIndex,
+				prAisBssInfo->aucOwnMacAddr,
+				STA_REC_INDEX_NOT_FOUND,
+				CIPHER_SUITE_NONE, 0xFF);
+
 	nicUpdateBss(prAdapter, ucBssIndex);
 
 	/* 4 <4.4> *DEFER OPERATION* nicPmIndicateBssConnected()
