@@ -2435,6 +2435,7 @@ void mldProcessBeaconAndProbeResp(
 	while(QUEUE_IS_NOT_EMPTY(que)) {
 		QUEUE_REMOVE_HEAD(que, rfb, struct SW_RFB *);
 		scanProcessBeaconAndProbeResp(prAdapter, rfb);
+		nicRxReturnRFB(prAdapter, rfb);
 	}
 }
 
