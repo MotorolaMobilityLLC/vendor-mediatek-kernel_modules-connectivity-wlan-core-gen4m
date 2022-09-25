@@ -1428,6 +1428,15 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK;
 	}
 
+	/* force process all interrupt */
+	if (KAL_TEST_BIT(GLUE_FLAG_HALT_BIT, prAdapter->prGlueInfo->ulFlag)) {
+		*pu4IntStatus |= WHISR_RX0_DONE_INT | WHISR_TX_DONE_INT |
+			WHISR_D2H_SW_INT;
+		u4Value |= prBusInfo->host_int_rxdone_bits |
+			prBusInfo->host_int_txdone_bits |
+			CONNAC_MCU_SW_INT;
+	}
+
 	prHifInfo->u4IntStatus = u4Value;
 
 	/* clear interrupt */
