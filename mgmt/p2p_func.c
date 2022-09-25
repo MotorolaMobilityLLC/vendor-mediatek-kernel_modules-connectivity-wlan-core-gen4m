@@ -4398,6 +4398,12 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	uint8_t i = 0;
 	struct RSN_INFO rRsnIe;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHe = 0;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucEht = 0;
+#endif
 
 	kalMemZero(&rRsnIe, sizeof(struct RSN_INFO));
 
@@ -4431,11 +4437,25 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 
 		prP2pBssInfo->ucCountryIELen = 0;
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (!IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucApHe))
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prP2pBssInfo->u4PrivateData]))
+			ucHe = prAdapter->rWifiVar.ucApHe;
+		else
+			ucHe = prAdapter->rWifiVar.ucP2pGoHe;
+
+		if (!IS_FEATURE_FORCE_ENABLED(ucHe))
 			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-		if (!IS_FEATURE_FORCE_ENABLED(prAdapter->rWifiVar.ucApEht))
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prP2pBssInfo->u4PrivateData]))
+			ucEht = prAdapter->rWifiVar.ucApEht;
+		else
+			ucEht = prAdapter->rWifiVar.ucP2pGoEht;
+
+		if (!IS_FEATURE_FORCE_ENABLED(ucEht))
 			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
 #endif
 
