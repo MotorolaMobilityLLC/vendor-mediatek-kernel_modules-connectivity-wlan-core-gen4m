@@ -3124,6 +3124,12 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 
 #if (CFG_SUPPORT_APF == 1)
 	prGlueInfo = wlanGetGlueInfo();
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
+		return -EFAULT;
+	}
+
 	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
 		kalMemZero(&aucCapablilities[0], sizeof(aucCapablilities));
 #endif
