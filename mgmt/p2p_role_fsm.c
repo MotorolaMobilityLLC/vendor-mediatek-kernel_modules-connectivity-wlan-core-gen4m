@@ -307,9 +307,7 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		p2pMldBssInit(prAdapter, prP2pRoleFsmInfo);
-
-		prMldBssInfo = p2pGetMldBssInfo(prAdapter,
-			prP2pRoleFsmInfo);
+		prMldBssInfo = prP2pRoleFsmInfo->prP2pMldBssInfo;
 		if (!prMldBssInfo) {
 			DBGLOG(P2P, ERROR,
 				"Error allocating mld bss\n");
@@ -402,7 +400,7 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUnregister(prAdapter,
-			p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo),
+			prP2pRoleFsmInfo->prP2pMldBssInfo,
 			prP2pBssInfo);
 
 		p2pMldBssUninit(prAdapter, prP2pRoleFsmInfo);

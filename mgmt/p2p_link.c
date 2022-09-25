@@ -13,8 +13,7 @@
 
 struct MLD_BSS_INFO *gprP2pMldBssInfo;
 
-struct MLD_BSS_INFO *p2pGetMldBssInfo(
-	struct ADAPTER *prAdapter,
+void p2pMldBssInit(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	if (p2pRoleFsmNeedMlo(prAdapter, prP2pRoleFsmInfo->ucRoleIndex)) {
@@ -27,14 +26,6 @@ struct MLD_BSS_INFO *p2pGetMldBssInfo(
 	} else if (prP2pRoleFsmInfo->prP2pMldBssInfo == NULL) {
 		mldBssAlloc(prAdapter, &prP2pRoleFsmInfo->prP2pMldBssInfo);
 	}
-
-	return prP2pRoleFsmInfo->prP2pMldBssInfo;
-}
-
-void p2pMldBssInit(struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
-{
-	p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo);
 }
 
 void p2pMldBssUninit(struct ADAPTER *prAdapter,
