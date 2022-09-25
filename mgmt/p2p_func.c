@@ -5617,9 +5617,11 @@ uint32_t p2pCalculateP2PIELen(struct ADAPTER *prAdapter,
 				u4Idx,
 				(uint8_t)
 				prP2pBssInfo->u4PrivateData);
-	u2EstimateSize +=
-		p2pFuncCalculateP2P_IE_NoA(prAdapter,
-			ucBssIndex, NULL);
+
+	if (u2EstimateSize > 0)
+		u2EstimateSize +=
+			p2pFuncCalculateP2P_IE_NoA(prAdapter,
+				ucBssIndex, NULL);
 
 	return u2EstimateSize;
 }
@@ -5630,12 +5632,15 @@ void p2pGenerateP2PIE(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	uint32_t u4Idx = 0;
+	uint16_t u2OriFrameLength = 0;
 
 	if (!prP2pBssInfo)
 		return;
 
 	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_NON_TX_LINK)
 		return;
+
+	u2OriFrameLength = prMsduInfo->u2FrameLength;
 
 	for (u4Idx = 0; u4Idx < MAX_P2P_IE_SIZE; u4Idx++) {
 		kalP2PGenP2P_IE(prAdapter->prGlueInfo,
@@ -5654,7 +5659,10 @@ void p2pGenerateP2PIE(struct ADAPTER *prAdapter,
 			u4Idx,
 			(uint8_t) prP2pBssInfo->u4PrivateData);
 	}
-	p2pFuncGenerateP2P_IE_NoA(prAdapter, prMsduInfo);
+
+	/* Append NoA only when P2P IE already exists from supplicant */
+	if (prMsduInfo->u2FrameLength > u2OriFrameLength)
+		p2pFuncGenerateP2P_IE_NoA(prAdapter, prMsduInfo);
 }
 
 #if CFG_SUPPORT_CUSTOM_VENDOR_IE
