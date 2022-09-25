@@ -4011,7 +4011,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 
 		} else if (prCurrSwRfb->fgDataFrame) {
 			/* Check Class Error */
-			if (prCurrSwRfb->prStaRec &&
+			if (QM_RX_CHECK_BSS_VALID(prCurrSwRfb->prStaRec) &&
 				(secCheckClassError(prAdapter, prCurrSwRfb,
 				prCurrSwRfb->prStaRec) == TRUE)) {
 				struct RX_BA_ENTRY *prReorderQueParm = NULL;

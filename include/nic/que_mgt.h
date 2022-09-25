@@ -903,6 +903,9 @@ enum ENUM_BA_ENTRY_STATUS {
 #define QM_GET_STA_REC_PTR_FROM_INDEX(_prAdapter, _ucIndex) \
 	cnmGetStaRecByIndex(_prAdapter, _ucIndex)
 
+#define QM_RX_CHECK_BSS_VALID(prStaRec) \
+	(prStaRec && prStaRec->ucBssIndex < MAX_BSSID_NUM)
+
 #if 0
 #define QM_TX_SET_MSDU_INFO_FOR_DATA_PACKET( \
 		_prMsduInfo, \
