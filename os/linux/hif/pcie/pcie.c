@@ -693,6 +693,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		if (ret & BIT(6))
 			fgNeedReset = TRUE;
 #endif
+		DBGLOG(HAL, INFO, "state is pci_channel_io_normal\n");
 		goto exit;
 	}
 

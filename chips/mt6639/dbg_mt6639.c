@@ -27,6 +27,7 @@
 #include "coda/mt6639/wf_hif_dmashdl_top.h"
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
+#include "connectivity_build_in_adapter.h"
 #endif
 
 /*******************************************************************************
@@ -1594,7 +1595,7 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 			CONNV3_DRV_TYPE_BT);
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
-			goto exit;
+			goto exit_debug_sop;
 		}
 	}
 #endif
@@ -1622,6 +1623,18 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 
 		fgTriggerDebugSop = FALSE;
 	}
+
+exit_debug_sop:
+	if (dumpViaBt) {
+		DBGLOG(HAL, INFO, "Trigger SCP dump.\n");
+		connectivity_export_conap_scp_trigger_cmd(CONN_HIF_DBG_WF,
+			CONN_HIF_DBG_CMD_PCIE, 0);
+
+		/* delay 200 ms for async dump */
+		msleep(200);
+		fgTriggerDebugSop = FALSE;
+	}
+
 #endif
 
 exit:
