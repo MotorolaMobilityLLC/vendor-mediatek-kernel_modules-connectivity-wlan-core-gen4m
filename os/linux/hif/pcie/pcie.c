@@ -2077,23 +2077,45 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 {
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	struct pcie_msi_info *prMsiInfo = NULL;
+	uint8_t dbg[512];
+	uint32_t written = 0;
 	uint8_t i = 0;
 
-	prMsiInfo = &prBusInfo->pcie_msi_info;
+	KAL_TIME_INTERVAL_DECLARATION();
 
+	prMsiInfo = &prBusInfo->pcie_msi_info;
+	kalMemZero(dbg, sizeof(dbg));
+
+	KAL_REC_TIME_START();
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
 			&prMsiInfo->prMsiLayout[i];
 		int irqn = pci_irq_vector(pdev, i);
 
+		KAL_TIME_INTERVAL_DECLARATION();
+
 		if (prMsiLayout && !prMsiLayout->top_handler &&
 		    !prMsiLayout->thread_handler)
 			continue;
 
+		KAL_REC_TIME_START();
 		synchronize_irq(irqn);
 		irq_set_affinity_hint(irqn, NULL);
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
+		KAL_REC_TIME_END();
+
+		written += kalSnprintf(dbg + written,
+				       sizeof(dbg) - written,
+				       "[%d] %lu, ",
+				       irqn,
+				       KAL_GET_TIME_INTERVAL());
 	}
+	KAL_REC_TIME_END();
+
+	DBGLOG(INIT, INFO,
+		"Total: %lu us, %s\n",
+		KAL_GET_TIME_INTERVAL(),
+		dbg);
 #endif
 }
 
