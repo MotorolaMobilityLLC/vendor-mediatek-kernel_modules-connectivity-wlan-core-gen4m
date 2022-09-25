@@ -4945,11 +4945,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	/* There are no packets queued in the Reorder Queue */
 	if (QUEUE_GET_HEAD(prReorderQue) == NULL) {
-		((struct QUE_ENTRY *) prSwRfb)->prPrev = NULL;
-		((struct QUE_ENTRY *) prSwRfb)->prNext = NULL;
-		prReorderQue->prHead = (struct QUE_ENTRY *) prSwRfb;
-		prReorderQue->prTail = (struct QUE_ENTRY *) prSwRfb;
-		prReorderQue->u4NumElem++;
+		QUEUE_INSERT_HEAD(prReorderQue, prSwRfb);
 		setReorderingIndexCache(prReorderQueParm, prSwRfb);
 	} else {
 		u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
@@ -4959,8 +4955,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 			getReorderingIndexCache(prReorderQueParm, prSwRfb);
 		do {
 			/* Case 1: Terminate. A duplicate packet */
-			if ((prExaminedQueuedSwRfb->u2SSN) ==
-				(prSwRfb->u2SSN)) {
+			if (prExaminedQueuedSwRfb->u2SSN == prSwRfb->u2SSN) {
 #if CFG_SUPPORT_RX_AMSDU
 				/* RX reorder for one MSDU in AMSDU issue */
 				/* if middle or last and first is not
@@ -5027,34 +5022,12 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 		/* Update the Reorder Queue Parameters according to
 		 * the found insert position
 		 */
-		if (prExaminedQueuedSwRfb == NULL) {
-			/* The received packet shall be placed at the tail */
-			((struct QUE_ENTRY *) prSwRfb)->prPrev =
-				prReorderQue->prTail;
-			((struct QUE_ENTRY *) prSwRfb)->prNext = NULL;
-			(prReorderQue->prTail)->prNext =
-				(struct QUE_ENTRY *) (prSwRfb);
-			prReorderQue->prTail = (struct QUE_ENTRY *) (prSwRfb);
-		} else {
-			((struct QUE_ENTRY *) prSwRfb)->prPrev =
-				((struct QUE_ENTRY *)
-				prExaminedQueuedSwRfb)->prPrev;
-			((struct QUE_ENTRY *) prSwRfb)->prNext =
-				(struct QUE_ENTRY *) prExaminedQueuedSwRfb;
-			if (((struct QUE_ENTRY *) prExaminedQueuedSwRfb) ==
-			    (prReorderQue->prHead)) {
-				/* The received packet will become the head */
-				prReorderQue->prHead =
-					(struct QUE_ENTRY *) prSwRfb;
-			} else {
-				(((struct QUE_ENTRY *)
-				prExaminedQueuedSwRfb)->prPrev)->prNext =
-					(struct QUE_ENTRY *) prSwRfb;
-			}
-			((struct QUE_ENTRY *) prExaminedQueuedSwRfb)->prPrev =
-				(struct QUE_ENTRY *) prSwRfb;
-		}
-		prReorderQue->u4NumElem++;
+		if (prExaminedQueuedSwRfb == NULL) /* add RX packet to tail */
+			QUEUE_INSERT_TAIL(prReorderQue, prSwRfb);
+		else
+			QUEUE_INSERT_BEFORE(prReorderQue, prExaminedQueuedSwRfb,
+					prSwRfb);
+
 		setReorderingIndexCache(prReorderQueParm, prSwRfb);
 	}
 }
@@ -5075,19 +5048,7 @@ void qmInsertFallAheadReorderPkt(struct ADAPTER *prAdapter,
 #endif
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
 	/* There are no packets queued in the Reorder Queue */
-	if (QUEUE_IS_EMPTY(prReorderQue)) {
-		((struct QUE_ENTRY *) prSwRfb)->prPrev = NULL;
-		((struct QUE_ENTRY *) prSwRfb)->prNext = NULL;
-		prReorderQue->prHead = (struct QUE_ENTRY *) prSwRfb;
-	} else {
-		((struct QUE_ENTRY *) prSwRfb)->prPrev =
-			prReorderQue->prTail;
-		((struct QUE_ENTRY *) prSwRfb)->prNext = NULL;
-		(prReorderQue->prTail)->prNext = (struct QUE_ENTRY *) (
-			prSwRfb);
-	}
-	prReorderQue->prTail = (struct QUE_ENTRY *) prSwRfb;
-	prReorderQue->u4NumElem++;
+	QUEUE_INSERT_TAIL(prReorderQue, prSwRfb);
 	setReorderingIndexCache(prReorderQueParm, prSwRfb);
 }
 
@@ -5319,19 +5280,8 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 
 		/* Dequeue the head packet */
 		if (fgDequeuHead) {
-			if (((struct QUE_ENTRY *) prReorderedSwRfb)->prNext ==
-				NULL) {
-				prReorderQue->prHead = NULL;
-				prReorderQue->prTail = NULL;
-			} else {
-				prReorderQue->prHead =
-					((struct QUE_ENTRY *)
-					prReorderedSwRfb)->prNext;
-				(((struct QUE_ENTRY *)
-					prReorderedSwRfb)->prNext)->prPrev =
-					NULL;
-			}
-			prReorderQue->u4NumElem--;
+			QUEUE_REMOVE_HEAD(prReorderQue, prReorderedSwRfb,
+					struct SW_RFB *);
 
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 				prReorderedSwRfb, prReturnedQue,
@@ -5458,17 +5408,9 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 
 		/* Dequeue the head packet */
 		if (fgDequeuHead) {
-			if (((struct QUE_ENTRY *) prReorderedSwRfb)->prNext ==
-				NULL) {
-				prReorderQue->prHead = NULL;
-				prReorderQue->prTail = NULL;
-			} else {
-				prReorderQue->prHead = ((struct QUE_ENTRY *)
-				prReorderedSwRfb)->prNext;
-				(((struct QUE_ENTRY *) prReorderedSwRfb)->
-				prNext)->prPrev = NULL;
-			}
-			prReorderQue->u4NumElem--;
+			QUEUE_REMOVE_HEAD(prReorderQue, prReorderedSwRfb,
+					struct SW_RFB *);
+
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm,
 				prReorderedSwRfb, prReturnedQue,
 				RX_DATA_REORDER_AHEAD_COUNT);

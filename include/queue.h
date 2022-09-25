@@ -140,11 +140,16 @@ struct QUE {
 	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
-		(prQueueEntry)->prNext = (prQueue)->prHead; \
-		(prQueue)->prHead = (prQueueEntry); \
-		if ((prQueue)->prTail == (struct QUE_ENTRY *)NULL) { \
-			(prQueue)->prTail = (prQueueEntry); \
-		} \
+		((struct QUE_ENTRY *)(prQueueEntry))->prPrev = NULL; \
+		((struct QUE_ENTRY *)(prQueueEntry))->prNext = \
+						(prQueue)->prHead; \
+		if ((prQueue)->prHead) \
+			(prQueue)->prHead->prPrev = \
+					(struct QUE_ENTRY *)(prQueueEntry); \
+		else \
+			(prQueue)->prTail = \
+					(struct QUE_ENTRY *)(prQueueEntry); \
+		(prQueue)->prHead = (struct QUE_ENTRY *)(prQueueEntry); \
 		(prQueue)->u4NumElem++; \
 		KAL_MB_W(); \
 	} while (0)
@@ -156,16 +161,44 @@ struct QUE {
 	do { \
 		ASSERT(prQueue); \
 		ASSERT(prQueueEntry); \
-		(prQueueEntry)->prNext = NULL; \
-		if ((prQueue)->prTail) { \
-			(prQueue)->prTail->prNext = (prQueueEntry); \
-		} else { \
-			(prQueue)->prHead = (prQueueEntry); \
-		} \
-		(prQueue)->prTail = (prQueueEntry); \
+		((struct QUE_ENTRY *)(prQueueEntry))->prPrev = \
+						(prQueue)->prTail; \
+		((struct QUE_ENTRY *)(prQueueEntry))->prNext = NULL; \
+		if ((prQueue)->prTail) \
+			(prQueue)->prTail->prNext = \
+					(struct QUE_ENTRY *)(prQueueEntry); \
+		else \
+			(prQueue)->prHead = \
+					(struct QUE_ENTRY *)(prQueueEntry); \
+		(prQueue)->prTail = (struct QUE_ENTRY *)(prQueueEntry); \
 		(prQueue)->u4NumElem++; \
 		KAL_MB_W(); \
 	} while (0)
+
+/**
+ * Given prQueuedEntry in prQueue, insert prInsertEntry to the position
+ * right before prQueuedEntry.
+ * prQueue (QUE) = prQueue (QUE) +
+ *                   prInsertEntry (QUE_ENTRY) + prQueuedEntry (QUE_ENTRY) + ...
+ * if prQueuedEntry == prQueue->prHead, it is equivalant to QUEUE_INSERT_HEAD()
+ */
+#define QUEUE_INSERT_BEFORE(prQueue, prQueuedEntry, prInsertEntry) \
+	do { \
+		((struct QUE_ENTRY *)(prInsertEntry))->prPrev = \
+			((struct QUE_ENTRY *)(prQueuedEntry))->prPrev; \
+		((struct QUE_ENTRY *)(prInsertEntry))->prNext = \
+			(struct QUE_ENTRY *)(prQueuedEntry); \
+		if ((struct QUE_ENTRY *)(prQueuedEntry) == (prQueue)->prHead) \
+			(prQueue)->prHead = (struct QUE_ENTRY *)prInsertEntry; \
+		else \
+			((struct QUE_ENTRY *)(prQueuedEntry))->prPrev->prNext \
+				= (struct QUE_ENTRY *)prInsertEntry; \
+		((struct QUE_ENTRY *)(prQueuedEntry))->prPrev = \
+				(struct QUE_ENTRY *)prInsertEntry; \
+		(prQueue)->u4NumElem++; \
+		KAL_MB_W(); \
+	} while (0)
+
 
 /**
  * prQueue (QUE) = prQueue (QUE) + prQueueEntry (QUE_ENTRY)
@@ -198,10 +231,38 @@ struct QUE {
 		if (prQueueEntry) { \
 			(prQueue)->prHead = \
 				((struct QUE_ENTRY *)(prQueueEntry))->prNext; \
-			if ((prQueue)->prHead == NULL) \
+			if ((prQueue)->prHead) \
+				(prQueue)->prHead->prPrev = NULL; \
+			else \
 				(prQueue)->prTail = NULL; \
+			((struct QUE_ENTRY *)(prQueueEntry))->prPrev = NULL; \
 			((struct QUE_ENTRY *)(prQueueEntry))->prNext = NULL; \
-			((prQueue)->u4NumElem)--; \
+			(prQueue)->u4NumElem--; \
+			KAL_MB_W(); \
+		} \
+	} while (0)
+
+/* NOTE: We assume the queue entry located at the beginning
+ * of "prQueueEntry Type",
+ * so that we can cast the queue entry to other data type without doubts.
+ * And this macro also decrease the total entry count at the same time.
+ * prQueueEntry (QUE_ENTRY) = (_P_TYPE) prQueue[-1]
+ * prQueue = prQueue[1:]
+ */
+#define QUEUE_REMOVE_TAIL(prQueue, prQueueEntry, _P_TYPE) \
+	do { \
+		ASSERT(prQueue); \
+		prQueueEntry = (_P_TYPE)((prQueue)->prTail); \
+		if (prQueueEntry) { \
+			(prQueue)->prTail = \
+				((struct QUE_ENTRY *)(prQueueEntry))->prPrev; \
+			if ((prQueue)->prTail) \
+				(prQueue)->prTail->prNext = NULL; \
+			else \
+				(prQueue)->prHead = NULL; \
+			((struct QUE_ENTRY *)(prQueueEntry))->prPrev = NULL; \
+			((struct QUE_ENTRY *)(prQueueEntry))->prNext = NULL; \
+			(prQueue)->u4NumElem--; \
 			KAL_MB_W(); \
 		} \
 	} while (0)
@@ -230,6 +291,8 @@ struct QUE {
 			if ((prDestQueue)->prTail) { \
 				(prDestQueue)->prTail->prNext = \
 					(prSrcQueue)->prHead; \
+				(prSrcQueue)->prHead->prPrev = \
+					(prDestQueue)->prTail; \
 			} else { \
 				(prDestQueue)->prHead = (prSrcQueue)->prHead; \
 			} \
@@ -249,11 +312,13 @@ struct QUE {
 		ASSERT(prSrcQueue); \
 		if ((prSrcQueue)->u4NumElem > 0 && (prSrcQueue)->prTail) { \
 			(prSrcQueue)->prTail->prNext = (prDestQueue)->prHead; \
+			if ((prDestQueue)->prHead) \
+				(prDestQueue)->prHead->prPrev = \
+							(prSrcQueue)->prTail; \
 			(prDestQueue)->prHead = (prSrcQueue)->prHead; \
-			(prDestQueue)->u4NumElem += (prSrcQueue)->u4NumElem; \
-			if ((prDestQueue)->prTail == NULL) {                 \
+			if ((prDestQueue)->prTail == NULL) \
 				(prDestQueue)->prTail = (prSrcQueue)->prTail; \
-			}  \
+			(prDestQueue)->u4NumElem += (prSrcQueue)->u4NumElem; \
 			QUEUE_INITIALIZE(prSrcQueue); \
 		} \
 	} while (0)
