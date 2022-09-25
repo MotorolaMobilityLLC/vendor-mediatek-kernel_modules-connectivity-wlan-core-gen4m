@@ -842,6 +842,23 @@ struct CMD_ADDBA_REJECT {
 	uint8_t aucReserved[2];
 };
 
+#if ARP_MONITER_ENABLE
+enum ENUM_ARP_MONITOR_TYPE {
+	ARP_MONITOR_TYPE_TX_ARP = 0,
+	ARP_MONITOR_TYPE_RX_ARP,
+	ARP_MONITOR_TYPE_RX_DHCP,
+	ARP_MONITOR_TYPE_MAX
+};
+
+struct MSG_ARP_MONITOR {
+	struct MSG_HDR rMsgHdr; /* Must be the first member */
+	enum ENUM_ARP_MONITOR_TYPE eType;
+	uint8_t ucBssIndex;
+	uint16_t u2PacketLen;
+	uint8_t arData[ETHER_MAX_PKT_SZ];
+};
+#endif /* ARP_MONITER_ENABLE */
+
 #if CFG_M0VE_BA_TO_DRIVER
 /* The status of an TX/RX BA entry in FW
  * (NEGO means the negotiation process is in progress)
@@ -1307,11 +1324,19 @@ void qmAdjustTcQuotaPle(struct ADAPTER *prAdapter,
 #if ARP_MONITER_ENABLE
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 			   struct MSDU_INFO *prMsduInfo);
-void qmResetArpDetect(void);
 void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 			   struct SW_RFB *prSwRfb);
+void qmResetArpDetect(void);
+void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
+	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
+	uint8_t *pucData, uint16_t u2PacketLen);
+void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen);
+uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+	u_int8_t fgFromServer, uint32_t *pDhcpLen);
 #endif
 
 #if defined(CFG_SUPPORT_REPLAY_DETECTION) || \

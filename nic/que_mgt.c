@@ -9116,14 +9116,11 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec;
 	uint8_t *pucData = NULL;
-	uint16_t u2EtherType = 0;
+	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
-	struct BSS_INFO *prAisBssInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	void *pvDevHandler = NULL;
 
 	if (!prAdapter ||
 		!prAdapter->prGlueInfo) {
@@ -9131,14 +9128,6 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	pvDevHandler = kalGetGlueNetDevHdl(prGlueInfo);
-
-	if (!pvDevHandler) {
-		DBGLOG(QM, WARN, "pvDevHandler NULL\n");
-		return;
-	}
 	prWifiVar = &prAdapter->rWifiVar;
 	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
 	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
@@ -9155,9 +9144,6 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
 		return;
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		prStaRec->ucBssIndex);
-
 	if (prMsduInfo->eSrc != TX_PACKET_OS)
 		return;
 
@@ -9170,164 +9156,376 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	if (!pucData)
 		return;
-	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
-		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
 
-	if (u2EtherType != ETH_P_ARP)
+	pucArpPkt = qmGetArpPkt(pucData,
+			kalQueryPacketLength(prMsduInfo->prPacket));
+	if (!pucArpPkt)
 		return;
 
+	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
+			pucArpPkt[ARP_OPERATION_OFFSET + 1];
+	if (arpOpCode != ARP_PRO_REQ)
+		return;
+
+	DBGLOG(QM, LOUD,
+		"apIp:" IPV4STR " gatewayIp:" IPV4STR " TarIp:" IPV4STR "\n",
+		IPV4TOSTR(&apIp[0]),
+		IPV4TOSTR(&gatewayIp[0]),
+		IPV4TOSTR(&pucArpPkt[ARP_TARGET_IP_OFFSET]));
+
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
-	if (kalMemCmp(apIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
+	if (kalMemCmp(apIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
 		sizeof(apIp)) &&
-		kalMemCmp(gatewayIp, &pucData[ETH_TYPE_LEN_OFFSET + 26],
+		kalMemCmp(gatewayIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
 		sizeof(gatewayIp)))
 		return;
 
-	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) |
-		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
-
-	if (arpOpCode == ARP_PRO_REQ) {
-		arpMoniter++;
-		/* Record counts of RX Packets when Tx 1st ARP Req */
-		if (!last_rx_packets) {
-			last_rx_packets =
-				kalGetNetDevRxPacket(pvDevHandler);
-			latest_rx_packets = 0;
-		}
-		/* Record counts of RX Packets when TX ARP Req recently */
-		last_rx_packets = kalGetNetDevRxPacket(pvDevHandler);
-		if (arpMoniter > uArpMonitorNumber) {
-			if ((latest_rx_packets - last_rx_packets) <=
-				uArpMonitorRxPktNum) {
-				DBGLOG(INIT, WARN, "IOT issue, arp no resp!\n");
-				if (prAisBssInfo)
-					prAisBssInfo->u2DeauthReason =
-					REASON_CODE_ARP_NO_RESPONSE;
-				prAdapter->cArpNoResponseIdx =
-					prStaRec->ucBssIndex;
-			} else
-				DBGLOG(INIT, WARN, "ARP, still have %d pkts\n",
-					latest_rx_packets - last_rx_packets);
-			arpMoniter = 0;
-			last_rx_packets = 0;
-			latest_rx_packets = 0;
-			kalMemZero(apIp, sizeof(apIp));
-		}
-	}
+	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_TX_ARP,
+		prStaRec->ucBssIndex,
+		pucData, kalQueryPacketLength(prMsduInfo->prPacket));
 }
 
 void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucData = NULL;
-	uint16_t u2EtherType = 0;
+	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
-	struct BSS_INFO *prAisBssInfo = NULL;
-
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		secGetBssIdxByRfb(prAdapter, prSwRfb));
-
-	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
-		return;
+	uint8_t ucBssIndex;
 
 	pucData = (uint8_t *)prSwRfb->pvHeader;
 	if (!pucData)
 		return;
-	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
-		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
 
-	if (u2EtherType != ETH_P_ARP)
+	pucArpPkt = qmGetArpPkt(pucData,
+			prSwRfb->u2PacketLen);
+	if (!pucArpPkt)
 		return;
 
-	arpOpCode = (pucData[ETH_TYPE_LEN_OFFSET + 8] << 8) |
-		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
-	if (arpOpCode == ARP_PRO_RSP) {
-		arpMoniter = 0;
-		if (prAisBssInfo &&
-			prAisBssInfo->prStaRecOfAP) {
-			if (EQUAL_MAC_ADDR(
-				&(pucData[ETH_TYPE_LEN_OFFSET + 10]),
-				/* source hardware address */
-				prAisBssInfo->
-				prStaRecOfAP->aucMacAddr)) {
-				kalMemCopy(apIp,
-					&(pucData[ETH_TYPE_LEN_OFFSET + 16]),
-					sizeof(apIp));
-				DBGLOG(INIT, TRACE,
-					"get arp response from AP %d.%d.%d.%d\n",
-					apIp[0], apIp[1], apIp[2], apIp[3]);
-			}
-		}
-	}
+	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
+			pucArpPkt[ARP_OPERATION_OFFSET + 1];
+	if (arpOpCode != ARP_PRO_RSP)
+		return;
+
+	ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
+	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_RX_ARP,
+		ucBssIndex, pucData, prSwRfb->u2PacketLen);
 }
 
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucData = NULL;
-	uint8_t *pucEthBody = NULL;
-	uint8_t *pucUdpBody = NULL;
-	uint32_t ipHLen = 0;
-	uint32_t udpLen = 0;
-	uint32_t i = 0;
 	struct BOOTP_PROTOCOL *prBootp = NULL;
-	uint32_t u4DhcpMagicCode = 0;
-	uint8_t dhcpTypeGot = 0;
-	uint8_t dhcpGatewayGot = 0;
-
-	/* check if eth header and ip header is safe to read */
-	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN + IP_HEADER_LEN)
-		return;
+	uint32_t dhcpLen = 0;
+	uint8_t ucBssIndex;
 
 	pucData = (uint8_t *)prSwRfb->pvHeader;
 	if (!pucData)
 		return;
-	if (((pucData[ETH_TYPE_LEN_OFFSET] << 8) |
-		pucData[ETH_TYPE_LEN_OFFSET + 1]) != ETH_P_IPV4)
+
+	/* check if pkt is dhcp from server */
+	prBootp = (struct BOOTP_PROTOCOL *) qmGetDhcpPkt(pucData,
+			prSwRfb->u2PacketLen, TRUE, &dhcpLen);
+	if (!prBootp)
 		return;
+
+	ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
+	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_RX_DHCP,
+		ucBssIndex, pucData, prSwRfb->u2PacketLen);
+}
+
+uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen)
+{
+	uint16_t u2EtherType = 0;
+	uint8_t *pucEthBody = NULL;
+
+	if (u2PacketLen < (ETHER_HEADER_LEN + ARP_PKT_LEN) ||
+		u2PacketLen > ETHER_MAX_PKT_SZ)
+		goto end;
+
+	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
+		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
+	if (u2EtherType != ETH_P_ARP)
+		goto end;
+
+	pucEthBody = &pucData[ETHER_HEADER_LEN];
+
+end:
+	return pucEthBody;
+}
+
+uint8_t *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+	uint32_t *pUdpLen)
+{
+	uint16_t u2EtherType = 0;
+	uint8_t *pucEthBody = NULL;
+	uint8_t *pucUdpPkt = NULL;
+	uint32_t ipHLen = 0;
+	uint32_t udpLen = 0;
+
+	/* check if pkt at least have eth/ip/udp header to read */
+	if (u2PacketLen < (ETHER_HEADER_LEN + IP_HEADER_LEN + UDP_HDR_LEN) ||
+		u2PacketLen > ETHER_MAX_PKT_SZ)
+		goto end;
+
+	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
+		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
+	if (u2EtherType != ETH_P_IPV4)
+		goto end;
 
 	/* check ip version and ip proto */
 	pucEthBody = &pucData[ETHER_HEADER_LEN];
 	if (((pucEthBody[0] & IPVH_VERSION_MASK) >>
 		IPVH_VERSION_OFFSET) != IPVERSION)
-		return;
-	if (pucEthBody[9] != IP_PRO_UDP)
-		return;
+		goto end;
+	if (pucEthBody[IP_PROTO_HLEN] != IP_PRO_UDP)
+		goto end;
 
-	/* check ip header len and if udp header safe to read */
-	ipHLen = (pucEthBody[0] & 0x0F) * 4;
-	if (unlikely(prSwRfb->u2PacketLen <
-		ETHER_HEADER_LEN + ipHLen + UDP_HDR_LEN))
-		return;
+	/* get actual ip header len and check if udp header safe to read */
+	ipHLen = (pucEthBody[0] & 0x0F) << 2;
+	if (unlikely(u2PacketLen < ETHER_HEADER_LEN + ipHLen + UDP_HDR_LEN))
+		goto end;
+
+	/* check if udp payload safe to read */
+	pucUdpPkt = &pucEthBody[ipHLen];
+	udpLen = pucUdpPkt[4] << 8 | pucUdpPkt[5];
+	if (unlikely(u2PacketLen < ETHER_HEADER_LEN + ipHLen + udpLen)) {
+		pucUdpPkt = NULL;
+		udpLen = 0;
+		goto end;
+	}
+end:
+	if (pUdpLen)
+		*pUdpLen = udpLen;
+	return pucUdpPkt;
+}
+
+uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
+	u_int8_t fgFromServer, uint32_t *pDhcpLen)
+{
+	uint8_t *pucUdpPkt = NULL;
+	uint32_t udpLen = 0;
+	uint32_t dhcpLen = 0;
+	uint16_t u2UdpDstPort;
+	uint16_t u2UdpSrcPort;
+	uint8_t *pucDhcpPkt = NULL;
+	struct BOOTP_PROTOCOL *prBootp = NULL;
+	uint32_t u4DhcpMagicCode = 0;
+
+	pucUdpPkt = qmGetUdpPkt(pucData, u2PacketLen, &udpLen);
+	if (!pucUdpPkt)
+		goto end;
 
 	/* check udp port is dhcp */
-	pucUdpBody = &pucEthBody[ipHLen];
-	if ((pucUdpBody[0] << 8 | pucUdpBody[1]) != UDP_PORT_DHCPS ||
-		(pucUdpBody[2] << 8 | pucUdpBody[3]) != UDP_PORT_DHCPC)
-		return;
+	u2UdpDstPort = (pucUdpPkt[2] << 8) | pucUdpPkt[3];
+	u2UdpSrcPort = (pucUdpPkt[0] << 8) | pucUdpPkt[1];
+	if (fgFromServer) {
+		if (u2UdpSrcPort != UDP_PORT_DHCPS ||
+			u2UdpDstPort != UDP_PORT_DHCPC)
+			goto end;
+	} else {
+		if (u2UdpSrcPort != UDP_PORT_DHCPC ||
+			u2UdpDstPort != UDP_PORT_DHCPS)
+			goto end;
+	}
 
-	udpLen = pucUdpBody[4] << 8 | pucUdpBody[5];
-	/* check if udp payload safe to read */
-	if (unlikely(prSwRfb->u2PacketLen <
-		ETHER_HEADER_LEN + ipHLen + udpLen))
-		return;
+	if (udpLen < (UDP_HDR_LEN + sizeof(struct BOOTP_PROTOCOL) +
+		DHCP_OPTIONS_SZ_MIN))
+		goto end;
 
-	prBootp = (struct BOOTP_PROTOCOL *) &pucUdpBody[8];
-
+	prBootp = (struct BOOTP_PROTOCOL *) &pucUdpPkt[UDP_HDR_LEN];
 	WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
 		&u4DhcpMagicCode);
 	if (u4DhcpMagicCode != DHCP_MAGIC_NUMBER) {
 		DBGLOG(INIT, WARN,
 			"dhcp wrong magic number, magic code: %d\n",
 			u4DhcpMagicCode);
+		goto end;
+	}
+
+	dhcpLen = udpLen - UDP_HDR_LEN;
+	pucDhcpPkt = (uint8_t *) prBootp;
+
+	DBGLOG(QM, LOUD, "Len:%u dhcpLen:%u\n", u2PacketLen, dhcpLen);
+end:
+	if (pDhcpLen)
+		*pDhcpLen = dhcpLen;
+	return pucDhcpPkt;
+}
+
+void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
+	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	void *pvDevHandler = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint32_t uArpMonitorNumber;
+	uint32_t uArpMonitorRxPktNum;
+	struct BSS_INFO *prAisBssInfo = NULL;
+	uint8_t *pucArpPkt = NULL;
+	int arpOpCode = 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	if (!prGlueInfo)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
+	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
+
+	if (uArpMonitorNumber == 0)
+		return;
+
+	pvDevHandler = kalGetGlueNetDevHdl(prGlueInfo);
+	if (!pvDevHandler) {
+		DBGLOG(QM, WARN, "pvDevHandler NULL\n");
 		return;
 	}
 
-	/* 1. 248 is from udp header to the beginning of dhcp option
-	 * 2. not sure the dhcp option always usd 255 as a end mark?
+	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
+			prArpMonitorMsg->ucBssIndex);
+		return;
+	}
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		prArpMonitorMsg->ucBssIndex);
+	if (!prAisBssInfo)
+		return;
+
+	pucArpPkt = qmGetArpPkt(&(prArpMonitorMsg->arData[0]),
+			prArpMonitorMsg->u2PacketLen);
+	if (!pucArpPkt)
+		return;
+
+	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
+			pucArpPkt[ARP_OPERATION_OFFSET + 1];
+	if (arpOpCode != ARP_PRO_REQ)
+		return;
+
+	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
+	if (kalMemCmp(apIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
+		sizeof(apIp)) &&
+		kalMemCmp(gatewayIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
+		sizeof(gatewayIp)))
+		return;
+
+	arpMoniter++;
+	/* Record counts of RX Packets when Tx 1st ARP Req */
+	if (!last_rx_packets) {
+		last_rx_packets =
+			kalGetNetDevRxPacket(pvDevHandler);
+		latest_rx_packets = 0;
+	}
+	/* Record counts of RX Packets when TX ARP Req recently */
+	latest_rx_packets = kalGetNetDevRxPacket(pvDevHandler);
+	if (arpMoniter > uArpMonitorNumber) {
+		if ((latest_rx_packets - last_rx_packets) <=
+			uArpMonitorRxPktNum) {
+			DBGLOG(QM, WARN, "IOT issue, arp no resp!\n");
+			if (prAisBssInfo)
+				prAisBssInfo->u2DeauthReason =
+				REASON_CODE_ARP_NO_RESPONSE;
+			prAdapter->cArpNoResponseIdx =
+				prArpMonitorMsg->ucBssIndex;
+		} else
+			DBGLOG(QM, WARN, "ARP, still have %d pkts\n",
+				latest_rx_packets - last_rx_packets);
+		arpMoniter = 0;
+		last_rx_packets = 0;
+		latest_rx_packets = 0;
+		kalMemZero(apIp, sizeof(apIp));
+	}
+
+	DBGLOG(QM, LOUD, "arpMoniter:[%u:%u] rx:[%u:%u:%u]\n",
+		arpMoniter, uArpMonitorNumber,
+		latest_rx_packets, last_rx_packets, uArpMonitorRxPktNum);
+}
+
+void qmArpMonitorHandleRxArpMsg(struct ADAPTER *prAdapter,
+	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+{
+	struct BSS_INFO *prAisBssInfo = NULL;
+	uint8_t *pucArpPkt = NULL;
+	int arpOpCode = 0;
+
+	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
+			prArpMonitorMsg->ucBssIndex);
+		return;
+	}
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		prArpMonitorMsg->ucBssIndex);
+	if (!prAisBssInfo)
+		return;
+
+	pucArpPkt = qmGetArpPkt(&(prArpMonitorMsg->arData[0]),
+			prArpMonitorMsg->u2PacketLen);
+	if (!pucArpPkt)
+		return;
+
+	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
+			pucArpPkt[ARP_OPERATION_OFFSET + 1];
+	if (arpOpCode != ARP_PRO_RSP)
+		return;
+
+	DBGLOG(QM, LOUD,
+		"ArpSrcMac:" MACSTR " ArpSrcIp:" IPV4STR "\n",
+		MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]),
+		IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]));
+
+	arpMoniter = 0;
+	if (prAisBssInfo &&
+		prAisBssInfo->prStaRecOfAP) {
+		if (EQUAL_MAC_ADDR(
+			&(pucArpPkt[ARP_SENDER_MAC_OFFSET]),
+			/* source hardware address */
+			prAisBssInfo->
+			prStaRecOfAP->aucMacAddr)) {
+			kalMemCopy(apIp,
+				&(pucArpPkt[ARP_SENDER_IP_OFFSET]),
+				sizeof(apIp));
+			DBGLOG(INIT, TRACE,
+				"get arp response from AP %d.%d.%d.%d\n",
+				apIp[0], apIp[1], apIp[2], apIp[3]);
+		}
+	}
+}
+
+void qmArpMonitorHandleRxDhcpMsg(struct ADAPTER *prAdapter,
+	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+{
+	uint8_t ucBssIndex;
+	struct BOOTP_PROTOCOL *prBootp = NULL;
+	uint32_t dhcpLen = 0;
+	uint8_t dhcpTypeGot = 0;
+	uint8_t dhcpGatewayGot = 0;
+	uint32_t i = 0;
+
+	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
+			prArpMonitorMsg->ucBssIndex);
+		return;
+	}
+
+	ucBssIndex = prArpMonitorMsg->ucBssIndex;
+
+	/* check if pkt is dhcp from server */
+	prBootp = (struct BOOTP_PROTOCOL *) qmGetDhcpPkt(
+			&(prArpMonitorMsg->arData[0]),
+			prArpMonitorMsg->u2PacketLen, TRUE, &dhcpLen);
+	if (!prBootp)
+		return;
+
+	DBGLOG(QM, LOUD, "BssIdx:%u dhcpLen:%u\n", ucBssIndex, dhcpLen);
+
+	/* 1. start from the beginning of dhcp option
+	 * 2. not sure the dhcp option always use 255 as a end mark?
 	 *    if so, while condition should be removed?
 	 */
-	while (i < udpLen - 248) {
+	while (sizeof(struct BOOTP_PROTOCOL) + i < dhcpLen) {
 		/* bcz of the strange struct BOOTP_PROTOCOL *,
 		 * the dhcp magic code was count in dhcp options
 		 * so need to [i + 4] to skip it
@@ -9360,9 +9558,6 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 						sizeof(gatewayIp));
 				return;
 			} else if (prBootp->aucOptions[i + 6] == 0x05) {
-				uint8_t ucBssIndex =
-					secGetBssIdxByRfb(
-					prAdapter, prSwRfb);
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
@@ -9394,6 +9589,81 @@ void qmResetArpDetect(void)
 	kalMemZero(apIp, sizeof(apIp));
 	kalMemZero(gatewayIp, sizeof(gatewayIp));
 }
+
+void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
+	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
+	uint8_t *pucData, uint16_t u2PacketLen)
+{
+	struct MSG_ARP_MONITOR *prArpMonitorMsg;
+
+	if (u2PacketLen >= ETHER_MAX_PKT_SZ) {
+		DBGLOG(QM, WARN, "Invalid Pkt size %u\n", u2PacketLen);
+		return;
+	}
+
+	prArpMonitorMsg = (struct MSG_ARP_MONITOR *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_ARP_MONITOR));
+	if (!prArpMonitorMsg) {
+		DBGLOG(QM, WARN, "cnmMemAlloc Fail\n");
+		return;
+	}
+
+	prArpMonitorMsg->rMsgHdr.eMsgId = MID_QM_ARP_MONITOR;
+	prArpMonitorMsg->eType = eType;
+	prArpMonitorMsg->ucBssIndex = ucBssIndex;
+	prArpMonitorMsg->u2PacketLen = u2PacketLen;
+	kalMemCopy(&(prArpMonitorMsg->arData[0]), pucData, u2PacketLen);
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
+
+	DBGLOG(QM, LOUD,
+		"Send Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
+		prArpMonitorMsg->rMsgHdr.eMsgId,
+		prArpMonitorMsg->eType,
+		prArpMonitorMsg->ucBssIndex,
+		prArpMonitorMsg->u2PacketLen);
+}
+
+
+void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_ARP_MONITOR *prArpMonitorMsg;
+
+	prArpMonitorMsg = (struct MSG_ARP_MONITOR *) prMsgHdr;
+
+	DBGLOG(QM, LOUD,
+		"Handle Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
+		prArpMonitorMsg->rMsgHdr.eMsgId,
+		prArpMonitorMsg->eType,
+		prArpMonitorMsg->ucBssIndex,
+		prArpMonitorMsg->u2PacketLen);
+
+	switch (prArpMonitorMsg->eType) {
+	case ARP_MONITOR_TYPE_TX_ARP:
+		qmArpMonitorHandleTxArpMsg(prAdapter,
+			prArpMonitorMsg);
+		break;
+
+	case ARP_MONITOR_TYPE_RX_ARP:
+		qmArpMonitorHandleRxArpMsg(prAdapter,
+			prArpMonitorMsg);
+		break;
+
+	case ARP_MONITOR_TYPE_RX_DHCP:
+		qmArpMonitorHandleRxDhcpMsg(prAdapter,
+			prArpMonitorMsg);
+		break;
+
+	default:
+		DBGLOG(QM, WARN, "Invalid eType:%u\n",
+			prArpMonitorMsg->eType);
+		break;
+	}
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
 #endif
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL

@@ -6253,6 +6253,15 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 				prTxQue = qmDetermineStaTxQueue(prAdapter,
 					prMsduInfo,
 					ucActivedTspec, &ucTC);
+#if ARP_MONITER_ENABLE
+				prStaRec =
+					QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
+						prMsduInfo->ucStaRecIndex);
+				if (prStaRec && IS_STA_IN_AIS(prStaRec) &&
+					prMsduInfo->eSrc == TX_PACKET_OS)
+					qmDetectArpNoResponse(prAdapter,
+						prMsduInfo);
+#endif
 				break;	/*default */
 			}	/* switch (prMsduInfo->ucStaRecIndex) */
 
