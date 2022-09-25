@@ -17733,6 +17733,8 @@ static int priv_driver_set_smpsparams(
 
 		DBGLOG(REQ, STATE, "HE Dynamic SMPS is %d\n",
 				prAdapter->rWifiVar.ucHeDynamicSMPS);
+
+		return 0;
 	} else {
 		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
 		return -1;
