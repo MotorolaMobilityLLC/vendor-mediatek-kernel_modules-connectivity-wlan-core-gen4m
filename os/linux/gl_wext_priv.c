@@ -579,6 +579,8 @@ int priv_support_ioctl(struct net_device *prNetDev,
 	case IOC_AP_SET_NSS:
 	/* This case need to fall through */
 	case IOC_AP_SET_BW:
+	/* This case need to fall through */
+	case IOC_AP_SET_AX_MODE:
 		return priv_set_ap(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				     (char *) &(prIwReq->u));
 
@@ -3556,6 +3558,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
+#define CMD_SET_HAPD_AXMODE        "HAPD_SET_AX_MODE"
 #define CMD_SET_MDVT		"SET_MDVT"
 #define CMD_SET_MLO_AGC_TX	"MLOAGCTX"
 #define CMD_GET_MLD_REC		"MLDREC"
@@ -13017,6 +13020,68 @@ error:
 	return -1;
 }
 
+int priv_driver_set_ap_axmode(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	uint8_t ucMode;
+	uint8_t ucApHe;
+	uint8_t ucApEht;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (prAdapter && (i4Argc >= 1)) {
+		u4Ret = kalkStrtou32(apcArgv[i4Argc - 1], 0, &u4Parse);
+		if (u4Ret) {
+			DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+			goto error;
+		}
+		ucMode = (uint8_t) u4Parse;
+
+		ucApHe = ucMode;
+		if (ucApHe > FEATURE_FORCE_ENABLED)
+			ucApHe = FEATURE_FORCE_ENABLED;
+		ucApEht = (ucMode >> 1);
+		if (ucApEht > FEATURE_FORCE_ENABLED)
+			ucApEht = FEATURE_FORCE_ENABLED;
+
+		DBGLOG(REQ, STATE, "ucApHe:%d, ucApEht: %d\n",
+			ucApHe, ucApEht);
+
+		prAdapter->rWifiVar.ucApHe = ucApHe;
+#if (CFG_SUPPORT_802_11BE == 1)
+		prAdapter->rWifiVar.ucApEht = ucApEht;
+#endif
+	} else {
+		DBGLOG(INIT, ERROR,
+		  "iwpriv apx HAPD_SET_AX_MODE <value>\n");
+	}
+
+	return i4BytesWritten;
+
+error:
+
+#endif
+
+	return -1;
+}
+
 int
 __priv_set_ap(struct net_device *prNetDev,
 	struct iw_request_info *prIwReqInfo,
@@ -13128,6 +13193,13 @@ __priv_set_ap(struct net_device *prNetDev,
 	case IOC_AP_SET_BW:
 	i4BytesWritten =
 		priv_driver_set_ap_bw(
+		prNetDev,
+		aucOidBuf,
+		i4TotalFixLen);
+	  break;
+	case IOC_AP_SET_AX_MODE:
+	i4BytesWritten =
+		priv_driver_set_ap_axmode(
 		prNetDev,
 		aucOidBuf,
 		i4TotalFixLen);
@@ -22051,6 +22123,13 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_SET_HAPD_AXMODE,
+		.pfHandler = priv_driver_set_ap_axmode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.policy    = set_stanss_policy
 	},
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{
