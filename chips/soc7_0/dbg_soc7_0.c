@@ -853,11 +853,6 @@ int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
 	if (!prRxRateInfo || !prRxV)
 		return -1;
 
-	if (prRxV[0] == 0) {
-		DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
-		return -1;
-	}
-
 	/* P-RXV1 */
 	rate = (prRxV[0] & SOC7_0_RX_VT_RX_RATE_MASK)
 				>> SOC7_0_RX_VT_RX_RATE_OFFSET;

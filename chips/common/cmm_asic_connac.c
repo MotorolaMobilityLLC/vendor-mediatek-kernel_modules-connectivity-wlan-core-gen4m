@@ -1523,11 +1523,12 @@ void asicRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
 		return;
 	}
-	prGroup3 =
-		(struct HW_MAC_RX_STS_GROUP_3 *)prRetSwRfb->prRxStatusGroup3;
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+
+		prGroup3 = prRetSwRfb->prRxStatusGroup3;
+
 		prRxV[0] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
 		prRxV[1] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 		prRxV[2] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 2);

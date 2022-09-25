@@ -1990,11 +1990,6 @@ int connac_get_rx_rate_info(const uint32_t *prRxV,
 	if (!prRxRateInfo || !prRxV)
 		return -1;
 
-	if (prRxV[0] == 0 || prRxV[1] == 0) {
-		DBGLOG(SW4, WARN, "RxV1 or RxV2 is 0\n");
-		return -1;
-	}
-
 	rate = (prRxV[0] & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
 	nsts = (prRxV[1] & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
 	stbc = (prRxV[0] & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;

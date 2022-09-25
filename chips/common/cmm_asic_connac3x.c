@@ -1625,13 +1625,12 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prGroup3 =
-		(struct HW_MAC_RX_STS_GROUP_3_V2 *)prRetSwRfb->prRxStatusGroup3;
-
-	prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
-	kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
-
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
+		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+		kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
+
+		prGroup3 = prRetSwRfb->prRxStatusGroup3;
+
 		/* P-RXV0[0:31] in RXD Group3 */
 		prRxV[0] = CONNAC3X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
 
@@ -1643,9 +1642,9 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 
 		/* RXD Group3, DW23 */
 		prRxV[3] = prGroup3->u4Rcpi;
-	}
 
-	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
+		nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
+	}
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 
