@@ -996,7 +996,9 @@ static u_int8_t isPendingTxsData(uint8_t ucPID, struct MSDU_INFO *prMsduInfo)
 /*!
  * @brief This procedure is used to dequeue from
  *        prAdapter->rTxCtrl.rTxMgmtTxingQueue
- *        by matching (wlanIndex, pid, tid)
+ *        by matching (wlanIndex, pid) or
+ *        (wlanIndex, tid) for DATA if CFG_SUPPORT_SEPARATE_TXS_PID_POOL == 1
+ *        if pending for long time (2000ms).
  *
  * @param    prAdapter   Pointer of ADAPTER_T
  *           ucWlanInde  Wlan index
@@ -1014,6 +1016,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 	struct QUE *prTempQue = &rTempQue;
 	struct QUE_ENTRY *prQueueEntry = NULL;
 	struct MSDU_INFO *prMsduInfo = NULL;
+	OS_SYSTIME now = kalGetTimeTick();
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1041,9 +1044,20 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 		if (isPendingTxsData(ucPID, prMsduInfo)) {
 			/**
 			 * Find by a perfect match (widx, tid, pid).
+			 * or long-lived (widx, tid) matching.
 			 */
 			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
 			    prMsduInfo->ucUserPriority == ucTID) {
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
+				struct PKT_PROFILE *prPktProfile;
+				OS_SYSTIME diff;
+
+				prPktProfile = &prMsduInfo->rPktProfile;
+				diff = now - prPktProfile->rHifTxDoneTimestamp;
+				if (prPktProfile->rHifTxDoneTimestamp &&
+				    diff > 2000)
+					break;
+#endif
 				if (prMsduInfo->ucPID == ucPID)
 					break;
 

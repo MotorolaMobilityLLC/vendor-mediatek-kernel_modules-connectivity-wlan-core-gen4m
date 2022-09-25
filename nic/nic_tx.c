@@ -4210,12 +4210,12 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	if (prTxDone->ucPacketSeq == NIC_TX_DESC_PID_RESERVED ||
 	    prTxDone->ucPacketSeq > NIC_TX_DESC_DRIVER_PID_MAX) {
 		DBGLOG_LIMITED(NIC, WARN,
-		       "EVENT_ID_TX_DONE WIDX:PID:TID[%u:%u:%u] Status[%u:%s] SN[%u]\n",
-		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
-		       prTxDone->ucTid,
-		       prTxDone->ucStatus,
-		       prTxResult,
-		       prTxDone->u2SequenceNumber);
+			"EVENT_ID_TX_DONE WIDX:PID:TID[%u:%u:%u] Status[%u:%s] SN[%u]\n",
+			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
+			prTxDone->ucTid,
+			prTxDone->ucStatus,
+			prTxResult,
+			prTxDone->u2SequenceNumber);
 		return;
 	}
 
@@ -4229,6 +4229,11 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 		 *
 		 * For "STATELESS DATA" frames.
 		 * Find by perfect matching (widx, pid, tid).
+		 *
+		 * The potential problem is memory leak with the tradeoff of
+		 * freeing a MSDU to be used for transmission.
+		 * To amend the possible MSDU leak, check timestamp to free
+		 * long-lived pending MSDU.
 		 */
 		prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
 						     prTxDone->ucWlanIndex,
