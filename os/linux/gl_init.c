@@ -5250,8 +5250,6 @@ static void ics_log_event_notification(int cmd, int value)
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
-	DBGLOG(INIT, INFO, "cmd=%d, value=%d\n", cmd, value);
-
 	/*
 	 * Special code that matches App behavior:
 	 * 1. set ics log level
@@ -5261,16 +5259,16 @@ static void ics_log_event_notification(int cmd, int value)
 		u4IcsLogOnOffCache = value;
 		if (u4IcsLogOnOffCache == 1 &&
 			u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
-			DBGLOG(INIT, WARN, "IcsLv is disable!!!\n");
+			DBGLOG(INIT, TRACE, "IcsLv is disable!!!\n");
 			u4IcsLogOnOffCache = 0;
 		}
 	} else if (cmd == ICS_LOG_CMD_SET_LEVEL) {
 		u4IcsLogLevelCache = value;
 		if (u4IcsLogLevelCache == ENUM_ICS_LOG_LEVEL_DISABLE) {
-			DBGLOG(INIT, INFO, "IcsLv set to disable.\n");
+			DBGLOG(INIT, TRACE, "IcsLv set to disable.\n");
 			u4IcsLogOnOffCache = 0;
 		} else {
-			DBGLOG(INIT, INFO, "IcsLv set to MAC ICS.\n");
+			DBGLOG(INIT, TRACE, "IcsLv set to MAC ICS.\n");
 			u4IcsLogOnOffCache = 1;
 		}
 	}
@@ -5322,10 +5320,14 @@ static void ics_log_event_notification(int cmd, int value)
 			DBGLOG(INIT, INFO,
 				"wlanoidSetIcsSniffer band1 failed");
 
-		DBGLOG(INIT, INFO, "IcsLog[Lv:OnOff]=[%d:%d]\n",
+		DBGLOG(INIT, INFO,
+			"[Cmd:Value]=[%d:%d] IcsLog[Lv:OnOff]=[%u:%u]\n",
+			cmd, value,
 			u4IcsLogLevelCache, u4IcsLogOnOffCache);
 	} else {
-		DBGLOG(INIT, INFO, "unknown cmd %d\n", cmd);
+		DBGLOG(INIT, INFO,
+			"[Cmd:Value]=[%d:%d] Unknown cmd\n",
+			cmd, value);
 	}
 }
 #endif /* CFG_SUPPORT_ICS */

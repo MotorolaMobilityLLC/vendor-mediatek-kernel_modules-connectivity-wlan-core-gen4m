@@ -7677,7 +7677,7 @@ wlanoidSetIcsSniffer(struct ADAPTER *prAdapter,
 
 	if ((prAdapter->fgEnTmacICS || prAdapter->fgEnRmacICS
 		|| prAdapter->fgEnPhyICS) == FALSE) {
-		DBGLOG(INIT, INFO, "ICS STOP\n");
+		DBGLOG(INIT, TRACE, "ICS STOP\n");
 	}
 
 	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
