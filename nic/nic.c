@@ -1028,8 +1028,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 	prTxingQue = &(prAdapter->rTxCtrl.rTxMgmtTxingQueue);
 	QUEUE_MOVE_ALL(prTempQue, prTxingQue);
 
-	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
-			  struct QUE_ENTRY *);
+	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
 	while (prQueueEntry) {
 		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
@@ -1077,8 +1076,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 
 		prMsduInfo = NULL;
 
-		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
-				  struct QUE_ENTRY *);
+		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
 	}
 	QUEUE_CONCATENATE_QUEUES(prTxingQue, prTempQue);
 

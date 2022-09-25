@@ -302,8 +302,9 @@ struct QUE {
 			if ((prDestQueue)->prTail) { \
 				(prDestQueue)->prTail->prNext = \
 					(prSrcQueue)->prHead; \
-				(prSrcQueue)->prHead->prPrev = \
-					(prDestQueue)->prTail; \
+				if (likely((prSrcQueue)->prHead)) \
+					(prSrcQueue)->prHead->prPrev = \
+						(prDestQueue)->prTail; \
 			} else { \
 				(prDestQueue)->prHead = (prSrcQueue)->prHead; \
 			} \
