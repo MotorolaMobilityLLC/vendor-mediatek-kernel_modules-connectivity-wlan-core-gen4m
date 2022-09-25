@@ -2604,6 +2604,13 @@ int32_t wf_reg_read_wrapper(void *priv,
 		goto exit;
 	}
 
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	HAL_MCR_RD(ad, addr, value);
 
 exit:
@@ -2628,6 +2635,13 @@ int32_t wf_reg_write_wrapper(void *priv,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2657,6 +2671,13 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2694,6 +2715,13 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 	if (kalIsHalted()) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2737,6 +2765,13 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 	if (kalIsHalted()) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
