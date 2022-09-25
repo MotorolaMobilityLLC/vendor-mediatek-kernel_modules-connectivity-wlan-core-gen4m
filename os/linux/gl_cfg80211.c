@@ -2841,6 +2841,10 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+	if (len < sizeof(struct NL80211_DRIVER_SET_KEY_EXTS)) {
+		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
+		return -EINVAL;
+	}
 	if (data == NULL || len == 0) {
 		DBGLOG(INIT, TRACE, "%s data or len is invalid\n", __func__);
 		return -EINVAL;
@@ -3506,6 +3510,11 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
+	if (len < sizeof(struct NL80211_DRIVER_SW_CMD_PARAMS)) {
+		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
+		return -EINVAL;
+	}
+
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_SW_CMD_PARAMS *) data;
 
@@ -3534,6 +3543,10 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 
+	if (len < sizeof(struct NL80211_DRIVER_TEST_MODE_PARAMS)) {
+		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
+		return -EINVAL;
+	}
 	if (!data || !len) {
 		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null data\n");
 		return -EINVAL;
@@ -5519,6 +5532,7 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 	uint8_t i = 0;
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = { 0 };
 	uint8_t index = 0;
+	int32_t i4Ret = 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -5539,10 +5553,23 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 		for (i = 2; i < i4Argc; i++) {
 			DBGLOG(REQ, TRACE,
 				"argc %i, cmd [%s]\n", i4Argc, apcArgv[i]);
-				wlanHwAddrToBin(apcArgv[i], &aucMacAddr[0]);
-			index = (i - 2) * MAC_ADDR_LEN;
+			i4Ret = wlanHwAddrToBin(apcArgv[i], &aucMacAddr[0]);
+			if (i4Ret != 17) {
+				DBGLOG(REQ, WARN,
+				    "BSSID format is wrong! i4Ret=%d\n", i4Ret);
+				continue;
+			}
+
+			if (index + MAC_ADDR_LEN >
+				sizeof(rBlacklist.aucList)) {
+				DBGLOG(REQ, WARN,
+				    "Could only set %d BSSID in blacklist!\n",
+				    i - 2);
+				break;
+			}
 			COPY_MAC_ADDR(&rBlacklist.aucList[index],
 					aucMacAddr);
+			index += MAC_ADDR_LEN;
 		}
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAxBlacklist,
 			(void *)&rBlacklist, sizeof(struct PARAM_AX_BLACKLIST),
