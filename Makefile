@@ -1693,7 +1693,8 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_COMMON_DIR)hif_mem.o \
-             $(HIF_DIR)pcie.o
+             $(HIF_DIR)pcie.o \
+             $(HIF_DIR)pcie_msi.o
 ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
 HIF_OBJS +=  $(HIF_COMMON_DIR)hal_offload.o
 endif

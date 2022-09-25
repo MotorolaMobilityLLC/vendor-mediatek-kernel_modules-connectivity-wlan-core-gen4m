@@ -1583,6 +1583,7 @@ struct PERF_MONITOR {
 
 struct HIF_STATS {
 	unsigned long ulUpdatePeriod; /* in ms */
+	uint32_t u4MsiIsrCount[32];
 	uint32_t u4HwIsrCount;
 	uint32_t u4SwIsrCount;
 	uint32_t u4CmdInCount; /* cmd from main_thread to hif_thread */

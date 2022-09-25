@@ -785,12 +785,15 @@ void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 	mtk_pci_enable_irq(prAdapter->prGlueInfo);
 #else
 	enable_irq(prHifInfo->u4IrqId);
+	KAL_CLR_BIT(0, prHifInfo->ulHifIntEnBits);
 #endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
+	    KAL_TEST_AND_CLEAR_BIT(1, prHifInfo->u4HostIntEn)) {
 		enable_irq(prHifInfo->u4IrqId_1);
+	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
@@ -809,12 +812,15 @@ void asicConnac3xDisablePlatformIRQ(struct ADAPTER *prAdapter)
 	mtk_pci_disable_irq(prAdapter->prGlueInfo);
 #else
 	disable_irq_nosync(prHifInfo->u4IrqId);
+	KAL_SET_BIT(0, prHifInfo->ulHifIntEnBits);
 #endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		disable_irq_nosync(prHifInfo->u4IrqId_1);
+		KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
+	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 

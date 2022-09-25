@@ -899,6 +899,18 @@ struct pcie_msi_info {
 	unsigned long ulEnBits;
 };
 
+enum pcie_msi_wfdma_ring {
+	PCIE_MSI_TX_DATA_BAND0 = 0,
+	PCIE_MSI_TX_DATA_BAND1,
+	PCIE_MSI_TX_FREE_DONE,
+	PCIE_MSI_RX_DATA_BAND0,
+	PCIE_MSI_RX_DATA_BAND1,
+	PCIE_MSI_EVENT,
+	PCIE_MSI_CMD,
+	PCIE_MSI_LUMP,
+	PCIE_MSI_NUM
+};
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************

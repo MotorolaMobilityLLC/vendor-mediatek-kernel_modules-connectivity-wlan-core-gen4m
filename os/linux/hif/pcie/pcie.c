@@ -411,6 +411,49 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 	return (struct mt66xx_hif_driver_data *) mtk_pci_ids[0].driver_data;
 }
 
+struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+#if PCIE_ISR_DEBUG_LOG
+	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
+#endif
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, INFO, "No glue info in %s(%d, %d)\n",
+		       __func__, irq, msi_idx);
+		return NULL;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4MsiIsrCount[msi_idx]);
+	else
+		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4HwIsrCount);
+
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
+		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
+		       irq, msi_idx);
+		return NULL;
+	}
+
+#if HIF_INT_TIME_DEBUG
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	if (!prBusInfo->u4EnHifIntTs) {
+		ktime_get_ts64(&prBusInfo->rHifIntTs);
+		prBusInfo->u4EnHifIntTs = 1;
+	}
+	prBusInfo->u4HifIntTsCnt++;
+#endif
+
+#if PCIE_ISR_DEBUG_LOG
+	if (__ratelimit(&_rs))
+		pr_info("[wlan] In HIF ISR(%d).\n", irq);
+#endif
+
+	return prGlueInfo;
+}
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
 {
@@ -431,75 +474,41 @@ void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct BUS_INFO *prBusInfo = NULL;
-	struct pcie_msi_info *prMsiInfo;
-	struct pcie_msi_layout *prMsiLayout;
-	int i;
-
 	disable_irq_nosync(irq);
-
-	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	if (!prGlueInfo) {
-		DBGLOG(HAL, INFO, "No glue info in %s\n", __func__);
-		return IRQ_NONE;
-	}
-
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	prMsiInfo = &prBusInfo->pcie_msi_info;
-
-	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled)
-		goto exit;
-
-	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
-		prMsiLayout = &prMsiInfo->prMsiLayout[i];
-		if (prMsiLayout->irq_num == irq) {
-			set_bit(i, &prMsiInfo->ulEnBits);
-			break;
-		}
-	}
-
-exit:
 	return IRQ_WAKE_THREAD;
 }
 
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-#if HIF_INT_TIME_DEBUG
+	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
-#endif
-#if PCIE_ISR_DEBUG_LOG
-	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
-#endif
+	struct pcie_msi_info *prMsiInfo;
+	struct pcie_msi_layout *prMsiLayout;
+	int i;
 
-	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	if (!prGlueInfo) {
-		DBGLOG(HAL, INFO, "No glue info in %s\n", __func__);
+	prGlueInfo = get_glue_info_isr(dev_instance, irq, 0);
+	if (!prGlueInfo)
 		return IRQ_NONE;
-	}
 
-#if HIF_INT_TIME_DEBUG
+	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-	if (!prBusInfo->u4EnHifIntTs) {
-		ktime_get_ts64(&prBusInfo->rHifIntTs);
-		prBusInfo->u4EnHifIntTs = 1;
-	}
-	prBusInfo->u4HifIntTsCnt++;
-#endif
+	prMsiInfo = &prBusInfo->pcie_msi_info;
 
-	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
-
-	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
-		return IRQ_NONE;
+	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
+		KAL_SET_BIT(0, prHifInfo->ulHifIntEnBits);
+		goto exit;
 	}
 
+	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
+		if (prMsiLayout->irq_num == irq) {
+			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
+			break;
+		}
+	}
+exit:
 	kalSetIntEvent(prGlueInfo);
-#if PCIE_ISR_DEBUG_LOG
-	if (__ratelimit(&_rs))
-		pr_info("[wlan] In HIF ISR(%d).\n", irq);
-#endif
 
 	return IRQ_HANDLED;
 }
@@ -566,10 +575,10 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 
 			temp_irq = prMsiLayout->irq_num;
 			disable_irq_nosync(prMsiLayout->irq_num);
+			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			DBGLOG(HAL, INFO,
 				"pci disable irq be=0x%08x/af=0x%08x\n",
 				temp_irq, prMsiLayout->irq_num);
-			set_bit(i, &prMsiInfo->ulEnBits);
 		}
 	}
 }
@@ -1942,33 +1951,15 @@ static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
 static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-#if AXI_ISR_DEBUG_LOG
-	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
-#endif
+	struct GL_HIF_INFO *prHifInfo;
 
-	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	if (!prGlueInfo) {
-#if AXI_ISR_DEBUG_LOG
-		DBGLOG(HAL, INFO, "No glue info in %s\n"__func__);
-#endif
+	prGlueInfo = get_glue_info_isr(dev_instance, irq, -1);
+	if (!prGlueInfo)
 		return IRQ_NONE;
-	}
 
-	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
-	halDisableInterrupt(prGlueInfo->prAdapter);
-
-	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
-#if AXI_ISR_DEBUG_LOG
-		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
-#endif
-		return IRQ_NONE;
-	}
-
+	prHifInfo = &prGlueInfo->rHifInfo;
+	KAL_SET_BIT(1, prHifInfo->ulHifIntEnBits);
 	kalSetIntEvent(prGlueInfo);
-#if AXI_ISR_DEBUG_LOG
-	if (__ratelimit(&_rs))
-		LOG_FUNC("[wlan] In HIF ISR(%d).\n", irq);
-#endif
 
 	return IRQ_HANDLED;
 }
@@ -2048,6 +2039,11 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 		else
 			DBGLOG(INIT, ERROR,
 			       "WIFI-OF: get wifi device node fail\n");
+
+		if (!prHifInfo->u4IrqId_1) {
+			DBGLOG(INIT, INFO, "no irq\n");
+			goto exit;
+		}
 
 		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
 		       prHifInfo->u4IrqId_1);

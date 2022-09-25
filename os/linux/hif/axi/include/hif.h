@@ -218,6 +218,8 @@ struct GL_HIF_INFO {
 
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;
+
+	unsigned long ulHifIntEnBits;
 };
 
 struct BUS_INFO {
