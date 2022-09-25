@@ -21,6 +21,10 @@
 #include "connv3_debug_utility.h"
 #endif
 
+#ifdef MT6639
+#include "coda/mt6639/bcrm_on_pwr_wrapper_u_bcrm_on_pwr_bcrm.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -374,6 +378,16 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 			mem->mem_region_num = 0;
 		}
 	}
+
+#ifdef MT6639
+	/*
+	 * Disable way_en for CR region dump.
+	 * Enable this in top pos patch to protect conninfra RGU.
+	 */
+	HAL_MCR_WR(glue->prAdapter,
+		   BCRM_ON_PWR_WRAPPER_U_BCRM_ON_PWR_BCRM_conn_infra_off2on_apb_bus_u_p_d_n9_CTRL_0_ADDR,
+		   0xFFFF);
+#endif
 
 	DBGLOG(INIT, INFO,
 		"state: %d, pdcm[0x%x 0x%x 0x%x 0x%x]\n",
