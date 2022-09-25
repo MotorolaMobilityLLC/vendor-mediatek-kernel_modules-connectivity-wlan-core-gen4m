@@ -612,7 +612,6 @@ exit:
 
 irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance)
 {
-	disable_irq_nosync(irq);
 	return IRQ_WAKE_THREAD;
 }
 
@@ -639,8 +638,6 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	fw_log_handler();
 #endif
-
-	enable_irq(irq);
 
 	return IRQ_HANDLED;
 }
