@@ -809,7 +809,8 @@ void nicProcessFwOwnBackInterrupt(struct ADAPTER
 void nicProcessSoftwareInterruptEx(struct ADAPTER
 				 *prAdapter)
 {
-	if (HAL_IS_RX_DIRECT(prAdapter))
+	if (HAL_IS_RX_DIRECT(prAdapter) &&
+	    !KAL_TEST_BIT(GLUE_FLAG_HALT_BIT, prAdapter->prGlueInfo->ulFlag))
 		kalSetSerIntEvent(prAdapter->prGlueInfo);
 	else
 		nicProcessSoftwareInterrupt(prAdapter);
