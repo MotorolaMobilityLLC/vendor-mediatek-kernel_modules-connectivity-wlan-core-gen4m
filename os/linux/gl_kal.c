@@ -13717,8 +13717,7 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 		goto exit;
 	}
 
-	if (ad->prGlueInfo->fgIsInSuspendMode &&
-	    sensor->last_query_temp <= MAX_TEMP_THRESHOLD &&
+	if (sensor->last_query_temp <= MAX_TEMP_THRESHOLD &&
 	    sensor->last_query_time != 0 &&
 	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 			       sensor->last_query_time,
