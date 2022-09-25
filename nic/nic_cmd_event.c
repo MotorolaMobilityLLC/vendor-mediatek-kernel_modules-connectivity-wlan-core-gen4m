@@ -6265,13 +6265,10 @@ void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 			);
 	}
 
-	if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
-		QM_TX_SET_NEXT_MSDU_INFO((struct SW_RFB *)
-			QUEUE_GET_TAIL(prReturnedQue), NULL);
-	}
+	if (QUEUE_IS_NOT_EMPTY(prReturnedQue))
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue), NULL);
 
-	prRetSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
-				prReturnedQue);
+	prRetSwRfb = QUEUE_GET_HEAD(prReturnedQue);
 	if (prRetSwRfb != NULL)
 		nicRxIndicatePackets(prAdapter, prRetSwRfb);
 }

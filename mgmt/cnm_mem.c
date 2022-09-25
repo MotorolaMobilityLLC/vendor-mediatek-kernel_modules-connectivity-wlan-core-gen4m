@@ -258,8 +258,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 		if (prHead == NULL) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MSDU_INFO_LIST);
-			QUEUE_INSERT_TAIL(prQueList,
-				&prMsduInfo->rQueEntry);
+			QUEUE_INSERT_TAIL(prQueList, &prMsduInfo->rQueEntry);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MSDU_INFO_LIST);
 			return NULL;

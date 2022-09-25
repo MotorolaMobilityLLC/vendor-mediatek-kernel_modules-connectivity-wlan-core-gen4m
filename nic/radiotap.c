@@ -621,8 +621,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
 		QUEUE_INSERT_TAIL(&(prAdapter->rRxQueue),
-			(struct QUE_ENTRY *) GLUE_GET_PKT_QUEUE_ENTRY(
-				prSwRfb->pvPacket));
+				GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
 
 		prRxCtrl->ucNumIndPacket++;

@@ -248,8 +248,7 @@ do { \
 				} \
 			} \
 		} \
-		QUEUE_INSERT_TAIL(prReturnedQue, \
-			(struct QUE_ENTRY *)prCurrSwRfb); \
+		QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb); \
 	} \
 } while (0)
 #endif
@@ -728,21 +727,17 @@ void qmFreeAllByBssIdx(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 		if (prMsduInfo->ucBssIndex == ucBssIndex) {
 			/* QUEUE_INSERT_TAIL */
-			QUEUE_INSERT_TAIL(prNeedToFreeQue,
-				(struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_INSERT_TAIL(prNeedToFreeQue, prMsduInfo);
 		} else {
 			/* QUEUE_INSERT_TAIL */
-			QUEUE_INSERT_TAIL(prQue,
-				(struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_INSERT_TAIL(prQue, prMsduInfo);
 		}
 
-		QUEUE_REMOVE_HEAD(prTempQue, prMsduInfo,
-			struct MSDU_INFO *);
+		QUEUE_REMOVE_HEAD(prTempQue, prMsduInfo, struct MSDU_INFO *);
 	}
 	if (QUEUE_IS_NOT_EMPTY(prNeedToFreeQue))
 		wlanProcessQueuedMsduInfo(prAdapter,
-			(struct MSDU_INFO *)
-			QUEUE_GET_HEAD(prNeedToFreeQue));
+				QUEUE_GET_HEAD(prNeedToFreeQue));
 
 }
 
@@ -793,7 +788,7 @@ struct MSDU_INFO *qmFlushTxQueues(struct ADAPTER *prAdapter)
 		QUEUE_CONCATENATE_QUEUES(prTempQue, prQue);
 	}
 
-	return (struct MSDU_INFO *)QUEUE_GET_HEAD(prTempQue);
+	return QUEUE_GET_HEAD(prTempQue);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -832,7 +827,7 @@ struct MSDU_INFO *qmFlushStaTxQueues(struct ADAPTER *prAdapter,
 		QUEUE_CONCATENATE_QUEUES(prTempQue, prQue);
 	}
 
-	return (struct MSDU_INFO *)QUEUE_GET_HEAD(prTempQue);
+	return QUEUE_GET_HEAD(prTempQue);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -863,25 +858,21 @@ struct SW_RFB *qmFlushRxQueues(struct ADAPTER *prAdapter)
 			if (!prSwRfbListHead) {
 
 				/* The first MSDU_INFO is found */
-				prSwRfbListHead = (struct SW_RFB *)
-					QUEUE_GET_HEAD(
+				prSwRfbListHead = QUEUE_GET_HEAD(
 						&(prQM->arRxBaTable[i].
 						rReOrderQue));
-				prSwRfbListTail = (struct SW_RFB *)
-					QUEUE_GET_TAIL(
+				prSwRfbListTail = QUEUE_GET_TAIL(
 						&(prQM->arRxBaTable[i].
 						rReOrderQue));
 			} else {
 				/* Concatenate the MSDU_INFO list with
 				 * the existing list
 				 */
-				QM_TX_SET_NEXT_MSDU_INFO(prSwRfbListTail,
-					QUEUE_GET_HEAD(
-						&(prQM->arRxBaTable[i].
+				QUEUE_ENTRY_SET_NEXT(prSwRfbListTail,
+					QUEUE_GET_HEAD(&(prQM->arRxBaTable[i].
 						rReOrderQue)));
 
-				prSwRfbListTail = (struct SW_RFB *)
-					QUEUE_GET_TAIL(
+				prSwRfbListTail = QUEUE_GET_TAIL(
 						&(prQM->arRxBaTable[i].
 						rReOrderQue));
 			}
@@ -902,7 +893,7 @@ struct SW_RFB *qmFlushRxQueues(struct ADAPTER *prAdapter)
 
 	/* Terminate the MSDU_INFO list with a NULL pointer */
 	if (prSwRfbListTail)
-		QM_RX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
+		QUEUE_ENTRY_SET_NEXT(prSwRfbListTail, NULL);
 
 	return prSwRfbListHead;
 
@@ -934,9 +925,9 @@ static struct SW_RFB *qmFlushStaRxQueue(struct ADAPTER *prAdapter,
 		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
 	if (QUEUE_IS_NOT_EMPTY(&prReorderQueParm->rReOrderQue)) {
-		prSwRfbListHead = (struct SW_RFB *)
+		prSwRfbListHead =
 			QUEUE_GET_HEAD(&prReorderQueParm->rReOrderQue);
-		prSwRfbListTail = (struct SW_RFB *)
+		prSwRfbListTail =
 			QUEUE_GET_TAIL(&prReorderQueParm->rReOrderQue);
 
 		QUEUE_INITIALIZE(&prReorderQueParm->rReOrderQue);
@@ -954,7 +945,7 @@ static struct SW_RFB *qmFlushStaRxQueue(struct ADAPTER *prAdapter,
 		}
 
 		/* Terminate the MSDU_INFO list with a NULL pointer */
-		QM_RX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
+		QUEUE_ENTRY_SET_NEXT(prSwRfbListTail, NULL);
 	}
 	return prSwRfbListHead;
 }
@@ -1336,8 +1327,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 							prCurrentMsduInfo);
 
 		/* 4 <4> Enqueue the packet */
-		QUEUE_INSERT_TAIL(prTxQue,
-			(struct QUE_ENTRY *) prCurrentMsduInfo);
+		QUEUE_INSERT_TAIL(prTxQue, prCurrentMsduInfo);
 		wlanFillTimestamp(prAdapter, prCurrentMsduInfo->prPacket,
 				  PHASE_ENQ_QM);
 		/*
@@ -1378,10 +1368,8 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 	} while (prNextMsduInfo);
 
 	if (QUEUE_IS_NOT_EMPTY(&rNotEnqueuedQue)) {
-		QM_TX_SET_NEXT_MSDU_INFO((struct MSDU_INFO *)
-			QUEUE_GET_TAIL(&rNotEnqueuedQue), NULL);
-		prMsduInfoReleaseList = (struct MSDU_INFO *) QUEUE_GET_HEAD(
-			&rNotEnqueuedQue);
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(&rNotEnqueuedQue), NULL);
+		prMsduInfoReleaseList = QUEUE_GET_HEAD(&rNotEnqueuedQue);
 	}
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 4 <x> Update TC resource control related variables */
@@ -1671,8 +1659,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 			goto NEXT;
 
 		if (!QUEUE_IS_EMPTY(prCurrQueue)) {
-			prDequeuedPkt = (struct MSDU_INFO *)
-				QUEUE_GET_HEAD(prCurrQueue);
+			prDequeuedPkt = QUEUE_GET_HEAD(prCurrQueue);
 
 			/* Ignore pkts without my TC idx */
 			if (prDequeuedPkt->ucTC != ucTC) {
@@ -1776,8 +1763,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 			 * (2) No packets (3) Fairness
 			 */
 			while (!QUEUE_IS_EMPTY(prCurrQueue)) {
-				prDequeuedPkt = (struct MSDU_INFO *)
-					QUEUE_GET_HEAD(prCurrQueue);
+				prDequeuedPkt = QUEUE_GET_HEAD(prCurrQueue);
 
 				if ((u4CurStaForwardFrameCount >=
 				     u4MaxForwardFrameCountLimit) ||
@@ -1882,9 +1868,7 @@ qmDequeueTxPacketsFromPerStaQueues(struct ADAPTER *prAdapter,
 				/* to record WMM Set */
 				prDequeuedPkt->ucWmmQueSet =
 					prBssInfo->ucWmmQueSet;
-				QUEUE_INSERT_TAIL(prQue,
-					(struct QUE_ENTRY *)
-					prDequeuedPkt);
+				QUEUE_INSERT_TAIL(prQue, prDequeuedPkt);
 				prStaRec->u4DeqeueuCounter++;
 				prQM->u4DequeueCounter++;
 
@@ -2107,8 +2091,7 @@ qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
 
 	/* 4 <2> Dequeue packets */
 	while (!QUEUE_IS_EMPTY(prCurrQueue)) {
-		prDequeuedPkt = (struct MSDU_INFO *) QUEUE_GET_HEAD(
-					prCurrQueue);
+		prDequeuedPkt = QUEUE_GET_HEAD(prCurrQueue);
 		if (prDequeuedPkt->u4PageCount > u4AvaliableResource)
 			break;
 		if ((*prPleCurrentQuota) < NIX_TX_PLE_PAGE_CNT_PER_FRAME)
@@ -2129,9 +2112,7 @@ qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
 				/* to record WMM Set */
 				prDequeuedPkt->ucWmmQueSet =
 					prBssInfo->ucWmmQueSet;
-				QUEUE_INSERT_TAIL(prQue,
-					(struct QUE_ENTRY *)
-					prDequeuedPkt);
+				QUEUE_INSERT_TAIL(prQue, prDequeuedPkt);
 				prBurstEndPkt = prDequeuedPkt;
 				prQM->u4DequeueCounter++;
 				u4AvaliableResource -=
@@ -2140,12 +2121,10 @@ qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
 					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 				QM_DBG_CNT_INC(prQM, QM_DBG_CNT_26);
 			} else {
-				QUEUE_INSERT_TAIL(prMergeQue,
-					(struct QUE_ENTRY *)
-					prDequeuedPkt);
+				QUEUE_INSERT_TAIL(prMergeQue, prDequeuedPkt);
 			}
 		} else {
-			QM_TX_SET_NEXT_MSDU_INFO(prDequeuedPkt, NULL);
+			QUEUE_ENTRY_SET_NEXT(prDequeuedPkt, NULL);
 			wlanProcessQueuedMsduInfo(prAdapter, prDequeuedPkt);
 		}
 	}
@@ -2153,8 +2132,7 @@ qmDequeueTxPacketsFromGlobalQueue(struct ADAPTER *prAdapter,
 	if (QUEUE_IS_NOT_EMPTY(prMergeQue)) {
 		QUEUE_CONCATENATE_QUEUES(prMergeQue, prCurrQueue);
 		QUEUE_MOVE_ALL(prCurrQueue, prMergeQue);
-		QM_TX_SET_NEXT_MSDU_INFO((struct MSDU_INFO *)
-			QUEUE_GET_TAIL(prCurrQueue), NULL);
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prCurrQueue), NULL);
 	}
 
 	return u4AvaliableResource;
@@ -2248,10 +2226,8 @@ struct MSDU_INFO *qmDequeueTxPackets(struct ADAPTER *prAdapter,
 	}
 
 	if (QUEUE_IS_NOT_EMPTY(&rReturnedQue)) {
-		prReturnedPacketListHead = (struct MSDU_INFO *)
-			QUEUE_GET_HEAD(&rReturnedQue);
-		QM_TX_SET_NEXT_MSDU_INFO((struct MSDU_INFO *)
-			QUEUE_GET_TAIL(&rReturnedQue), NULL);
+		prReturnedPacketListHead = QUEUE_GET_HEAD(&rReturnedQue);
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(&rReturnedQue), NULL);
 	}
 
 	return prReturnedPacketListHead;
@@ -2293,8 +2269,7 @@ struct MSDU_INFO *qmDequeueTxPacketsMthread(
 	/* require the resource first to prevent from unsync */
 	prMsduInfo = prReturnedPacketListHead;
 	while (prMsduInfo) {
-		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((
-			struct QUE_ENTRY *) prMsduInfo);
+		prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(prMsduInfo);
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	if (prMsduInfo->ucTC == TC4_INDEX)
 		DBGLOG(TX, ERROR, "[ERROR] sdio tx resource!! ucTC=%d\n",
@@ -3556,8 +3531,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			if (qmHandleRroPkt(prAdapter, prCurrSwRfb)) {
 				prCurrSwRfb->eDst =
 					RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 			}
 		}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
@@ -3565,8 +3539,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		prRxStatus = prCurrSwRfb->prRxStatus;
 		if (prCurrSwRfb->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *) prCurrSwRfb);
+			QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 			DBGLOG(QM, ERROR,
 				"Drop packet when packet length is larger than CFG_RX_MAX_PKT_SIZE. Packet length=%d\n",
 				prCurrSwRfb->u2RxByteCount);
@@ -3621,8 +3594,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				DBGLOG_MEM8(QM, ERROR, prCurrSwRfb->pucRecvBuff,
 					prCurrSwRfb->u2RxByteCount);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *)prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				DBGLOG(RX, WARN,
 				       "rxStatusGroup4 for data packet is NULL, drop this packet, and dump RXD and Packet\n");
 				/* prRxStatus is claimed as void *
@@ -3677,7 +3649,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					prCurrSwRfb->eDst =
 						RX_PKT_DESTINATION_NULL;
 					QUEUE_INSERT_TAIL(prReturnedQue,
-						(struct QUE_ENTRY *)
 						prCurrSwRfb);
 					NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
 					NIC_DUMP_ICV_RXP(prCurrSwRfb->pvHeader,
@@ -3701,11 +3672,8 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					ucBssIndex);
 				RX_INC_CNT(&prAdapter->rRxCtrl,
 					RX_INACTIVE_BSS_DROP_COUNT);
-				prCurrSwRfb->eDst =
-					RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *)
-					prCurrSwRfb);
+				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				continue;
 			}
 
@@ -3737,12 +3705,9 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					"Mark NULL the Packet for Dropped Packet %u\n",
 					ucBssIndex);
 				RX_INC_CNT(&prAdapter->rRxCtrl,
-					RX_HS20_DROP_COUNT);
-				prCurrSwRfb->eDst =
-					RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *)
-					prCurrSwRfb);
+						RX_HS20_DROP_COUNT);
+				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				continue;
 			}
 #endif /* CFG_SUPPORT_PASSPOINT */
@@ -3939,8 +3904,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				DBGLOG(QM, INFO,
 					"drop wpi packet with sec mode\n");
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				continue;
 			}
 		}
@@ -3958,16 +3922,14 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					"Mark NULL the Packet for inactive Bss %u\n",
 					ucBssIndexRly);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				continue;
 			}
 		}
 		if (fgIsBMC && prBssInfoRly && IS_BSS_AIS(prBssInfoRly) &&
 			qmHandleRxReplay(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *) prCurrSwRfb);
+			QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 			DBGLOG(RX, TEMP, "BMC replay\n");
 			continue;
 		}
@@ -4003,8 +3965,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				DBGLOG_MEM8(QM, ERROR,
 					prCurrSwRfb->pucRecvBuff,
 					prCurrSwRfb->u2RxByteCount);
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 			} else
 				qmProcessPktWithReordering(prAdapter,
 					prCurrSwRfb, prReturnedQue);
@@ -4043,8 +4004,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				RX_INC_CNT(&prAdapter->rRxCtrl,
 					RX_CLASS_ERR_DROP_COUNT);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 			}
 		} else {
 			struct WLAN_MAC_HEADER *prWlanMacHeader;
@@ -4069,8 +4029,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 					"Mark NULL the Packet for non-interesting type\n");
 				RX_INC_CNT(&prAdapter->rRxCtrl,
 					RX_NO_INTEREST_DROP_COUNT);
-				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
 				NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
 				NIC_DUMP_ICV_RXP(prCurrSwRfb->pvHeader,
 						prCurrSwRfb->u2PacketLen);
@@ -4082,10 +4041,9 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 
 	/* The returned list of SW_RFBs must end with a NULL pointer */
 	if (QUEUE_IS_NOT_EMPTY(prReturnedQue))
-		QM_TX_SET_NEXT_MSDU_INFO((struct SW_RFB *) QUEUE_GET_TAIL(
-			prReturnedQue), NULL);
+		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue), NULL);
 
-	return (struct SW_RFB *) QUEUE_GET_HEAD(prReturnedQue);
+	return QUEUE_GET_HEAD(prReturnedQue);
 
 #else
 	STATS_RX_PKT_INFO_DISPLAY(prSwRfbListHead);
@@ -4457,8 +4415,7 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(QM, ERROR, prSwRfb->pucRecvBuff,
 			prSwRfb->u2RxByteCount);
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-		QUEUE_INSERT_TAIL(prReturnedQue,
-			(struct QUE_ENTRY *) prSwRfb);
+		QUEUE_INSERT_TAIL(prReturnedQue, prSwRfb);
 		return;
 	}
 
@@ -4469,8 +4426,7 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 		DBGLOG(RX, TEMP,
 			"Reordering but no BA agreement for STA[%d] TID[%d]\n",
 			prStaRec->ucIndex, prSwRfb->ucTid);
-		QUEUE_INSERT_TAIL(prReturnedQue,
-			(struct QUE_ENTRY *) prSwRfb);
+		QUEUE_INSERT_TAIL(prReturnedQue, prSwRfb);
 		return;
 	}
 
@@ -4595,7 +4551,7 @@ void qmProcessBarFrame(struct ADAPTER *prAdapter,
 		OFFSET_BAR_SSC_SN;
 
 	prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-	QUEUE_INSERT_TAIL(prReturnedQue, (struct QUE_ENTRY *) prSwRfb);
+	QUEUE_INSERT_TAIL(prReturnedQue, prSwRfb);
 
 	/* Incorrect STA_REC index */
 	prSwRfb->ucStaRecIdx = secLookupStaRecIndexFromTA(prAdapter,
@@ -4926,7 +4882,7 @@ static struct SW_RFB *getReorderingIndexCache(
 #endif
 	/* Not found, fallback */
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
-	return (struct SW_RFB *)QUEUE_GET_HEAD(prReorderQue);
+	return QUEUE_GET_HEAD(prReorderQue);
 }
 
 void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
@@ -5064,8 +5020,7 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 #endif
 
 	u4PktCnt++;
-	QUEUE_INSERT_TAIL(prReturnedQue,
-		(struct QUE_ENTRY *)prSwRfb);
+	QUEUE_INSERT_TAIL(prReturnedQue, prSwRfb);
 	clearReorderingIndexCache(prReorderQueParm, prSwRfb);
 
 #if 0
@@ -5075,8 +5030,7 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 	while (prAmsduSwRfb) {
 		/* Update MSDU destination of AMSDU */
 		prAmsduSwRfb->eDst = prSwRfb->eDst;
-		QUEUE_INSERT_TAIL(prReturnedQue,
-			(struct QUE_ENTRY *)prAmsduSwRfb);
+		QUEUE_INSERT_TAIL(prReturnedQue, prAmsduSwRfb);
 		QUEUE_REMOVE_HEAD(&prSwRfb->rAmsduQue, prAmsduSwRfb,
 			struct SW_RFB *);
 	}
@@ -5326,8 +5280,7 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			break;
 
 		/* Always examine the head packet */
-		prReorderedSwRfb =
-			(struct SW_RFB *) QUEUE_GET_HEAD(prReorderQue);
+		prReorderedSwRfb = QUEUE_GET_HEAD(prReorderQue);
 		fgDequeuHead = FALSE;
 
 		/* RX reorder for one MSDU in AMSDU issue */
@@ -5610,8 +5563,7 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 
 	/* Expected bubble timeout => pop out packets before win_end */
 	if (prReorderQueParm->u2FirstBubbleSn == prReorderQueParm->u2WinStart) {
-		prReorderedSwRfb = (struct SW_RFB *) QUEUE_GET_TAIL(
-			prReorderQue);
+		prReorderedSwRfb = QUEUE_GET_TAIL(prReorderQue);
 
 		prReorderQueParm->u2WinStart =
 			SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
@@ -5640,12 +5592,10 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 
 		/* process prReturnedQue after unlock prReturnedQue */
 		if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
-			QM_TX_SET_NEXT_MSDU_INFO(
-				(struct SW_RFB *) QUEUE_GET_TAIL(
-				prReturnedQue), NULL);
+			QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue),
+					NULL);
 
-			prSwRfb = (struct SW_RFB *)
-				QUEUE_GET_HEAD(prReturnedQue);
+			prSwRfb = QUEUE_GET_HEAD(prReturnedQue);
 			while (prSwRfb) {
 				DBGLOG(QM, TRACE,
 					"QM:(Bub Flush) STA[%u] TID[%u] Pop Out SN[%u]\n",
@@ -5653,14 +5603,11 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 				  prReorderQueParm->ucTid,
 				  prSwRfb->u2SSN);
 
-				prSwRfb = (struct SW_RFB *)
-					QUEUE_GET_NEXT_ENTRY(
-					(struct QUE_ENTRY *) prSwRfb);
+				prSwRfb = QUEUE_GET_NEXT_ENTRY(prSwRfb);
 			}
 
 			wlanProcessQueuedSwRfb(prAdapter,
-				(struct SW_RFB *)
-				QUEUE_GET_HEAD(prReturnedQue));
+					QUEUE_GET_HEAD(prReturnedQue));
 		} else {
 			DBGLOG(QM, TRACE,
 				"QM:(Bub Flush) STA[%u] TID[%u] Pop Out 0 packet\n",
@@ -6004,9 +5951,7 @@ void qmFlushDeletedBaReorder(struct ADAPTER *prAdapter,
 			prSwRfb = prFlushedPacketList;
 
 			do {
-				prNextSwRfb = (struct SW_RFB *)
-					QUEUE_GET_NEXT_ENTRY(
-					(struct QUE_ENTRY *) prSwRfb);
+				prNextSwRfb = QUEUE_GET_NEXT_ENTRY(prSwRfb);
 				nicRxReturnRFB(prAdapter, prSwRfb);
 				prSwRfb = prNextSwRfb;
 			} while (prSwRfb);
@@ -9929,12 +9874,11 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 	       prSrcQue[TC2_INDEX].u4NumElem, prSrcQue[TC3_INDEX].u4NumElem);
 	/* Concatenate all MSDU_INFOs in TX queues of this STA_REC */
 	for (ucQueArrayIdx = 0; ucQueArrayIdx < TC4_INDEX; ucQueArrayIdx++) {
-		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
-			&prSrcQue[ucQueArrayIdx]);
+		prMsduInfo = QUEUE_GET_HEAD(&prSrcQue[ucQueArrayIdx]);
 		while (prMsduInfo) {
 			prMsduInfo->ucStaRecIndex = ucDstStaIndex;
-			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
-				&prMsduInfo->rQueEntry);
+			prMsduInfo = QUEUE_GET_NEXT_ENTRY(
+					&prMsduInfo->rQueEntry);
 		}
 		QUEUE_CONCATENATE_QUEUES((&prDstQue[ucQueArrayIdx]),
 					 (&prSrcQue[ucQueArrayIdx]));
@@ -9988,12 +9932,11 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	       prAcQueParam[eAci].ucIsACMSet, !!(ucActivedTspec & BIT(eAci)));
 	ucTc = aucWmmAC2TcResourceSet1[eAci];
 	prDstQue = &prStaRec->arTxQueue[ucTc];
-	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(prSrcQue);
+	prMsduInfo = QUEUE_GET_HEAD(prSrcQue);
 	while (prMsduInfo) {
 		prMsduInfo->ucUserPriority = ucNewUp;
 		prMsduInfo->ucTC = ucTc;
-		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
-			&prMsduInfo->rQueEntry);
+		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
 	}
 	QUEUE_CONCATENATE_QUEUES(prDstQue, prSrcQue);
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL

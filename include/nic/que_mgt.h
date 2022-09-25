@@ -886,10 +886,6 @@ enum ENUM_BA_ENTRY_STATUS {
  *******************************************************************************
  */
 
-#define QM_TX_SET_NEXT_MSDU_INFO(_prMsduInfoPreceding, _prMsduInfoNext) \
-	((((_prMsduInfoPreceding)->rQueEntry).prNext) = \
-	(struct QUE_ENTRY *)(_prMsduInfoNext))
-
 #define QM_TX_GET_NEXT_MSDU_INFO(_prMsduInfo) \
 	((struct MSDU_INFO *)(((_prMsduInfo)->rQueEntry).prNext))
 

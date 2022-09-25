@@ -1159,8 +1159,8 @@ void nicFreePendingTxMsduInfo(struct ADAPTER *prAdapter,
 				prMsduInfoListHead =
 					prMsduInfoListTail = prMsduInfo;
 			} else {
-				QM_TX_SET_NEXT_MSDU_INFO(
-					prMsduInfoListTail, prMsduInfo);
+				QUEUE_ENTRY_SET_NEXT(prMsduInfoListTail,
+						prMsduInfo);
 				prMsduInfoListTail = prMsduInfo;
 			}
 		} else {

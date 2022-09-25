@@ -2343,8 +2343,7 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 		}
 #endif
 
-		QUEUE_INSERT_TAIL(prTempCmdQue,
-				  (struct QUE_ENTRY *) prCmdInfo);
+		QUEUE_INSERT_TAIL(prTempCmdQue, prCmdInfo);
 
 		/* <1.4> Set Pending in response to Query Command/Need Response
 		 */
@@ -2399,8 +2398,7 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 			prMemTrack->u2CmdIdAndWhere |= 0x5000;
 		}
 #endif
-		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue,
-				  (struct QUE_ENTRY *) prCmdInfo);
+		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue, prCmdInfo);
 	}
 }
 
@@ -2660,7 +2658,7 @@ void wlanClearTxOidCommand(struct ADAPTER *prAdapter)
 
 		} else {
 			QUEUE_INSERT_TAIL(&prAdapter->rTxCmdQueue,
-					  prQueueEntry);
+					prQueueEntry);
 		}
 
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
@@ -2746,15 +2744,13 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 
 		/* <2> Release Tx resource */
 		nicTxReleaseMsduResource(prAdapter,
-			 (struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort0));
+				QUEUE_GET_HEAD(prDataPort0));
 		nicTxReleaseMsduResource(prAdapter,
-			 (struct MSDU_INFO *) QUEUE_GET_HEAD(prDataPort1));
+				QUEUE_GET_HEAD(prDataPort1));
 
 		/* <3> Return sk buffer */
-		nicTxReturnMsduInfo(prAdapter, (struct MSDU_INFO *)
-						QUEUE_GET_HEAD(prDataPort0));
-		nicTxReturnMsduInfo(prAdapter, (struct MSDU_INFO *)
-						QUEUE_GET_HEAD(prDataPort1));
+		nicTxReturnMsduInfo(prAdapter, QUEUE_GET_HEAD(prDataPort0));
+		nicTxReturnMsduInfo(prAdapter, QUEUE_GET_HEAD(prDataPort1));
 
 		/* <4> Clear pending MSDU info in data done queue */
 		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
@@ -2817,13 +2813,10 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 				if (!QUEUE_GET_HEAD(prDataPort[i][j]))
 					continue;
 				nicTxReleaseMsduResource(prAdapter,
-					(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prDataPort[i][j]));
 				nicTxFreeMsduInfoPacket(prAdapter,
-					(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prDataPort[i][j]));
 				nicTxReturnMsduInfo(prAdapter,
-					(struct MSDU_INFO *)
 					QUEUE_GET_HEAD(prDataPort[i][j]));
 			}
 		}
@@ -3713,8 +3706,7 @@ uint32_t wlanProcessQueuedSwRfb(struct ADAPTER
 
 	do {
 		/* save next first */
-		prNextSwRfb = (struct SW_RFB *) QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *) prSwRfb);
+		prNextSwRfb = QUEUE_GET_NEXT_ENTRY(prSwRfb);
 
 		switch (prSwRfb->eDst) {
 		case RX_PKT_DESTINATION_HOST:

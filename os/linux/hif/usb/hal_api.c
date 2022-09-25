@@ -676,7 +676,8 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (!prMsduInfo->pfTxDoneHandler)
-		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList,
+				prMsduInfo);
 
 	if (usb_anchor_empty(&prHifInfo->rTxDataAnchor[ucTc]))
 		halTxUSBSendAggData(prHifInfo, ucTc, prUsbReq);
@@ -711,7 +712,8 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	prBufCtrl->u4WrIdx += LEN_USB_UDMA_TX_TERMINATOR;
 
 	if (!prMsduInfo->pfTxDoneHandler)
-		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList,
+				prMsduInfo);
 
 	*((uint8_t *)&prUsbReq->prPriv) = ucTc;
 	usb_fill_bulk_urb(prUsbReq->prUrb,
@@ -950,16 +952,23 @@ uint32_t halRxUSBEnqueueRFB(
 					spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
 					break;
 				default:
-					KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-					QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
-					KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+					KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+							SPIN_LOCK_RX_QUE);
+					QUEUE_INSERT_TAIL(
+						&prRxCtrl->rReceivedRfbList,
+						&prSwRfb->rQueEntry);
+					KAL_RELEASE_SPIN_LOCK(prAdapter,
+							SPIN_LOCK_RX_QUE);
 					u4EnqCnt++;
 					break;
 				}
 			} else {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-				QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList, &prSwRfb->rQueEntry);
-				KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_RX_QUE);
+				QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,
+						&prSwRfb->rQueEntry);
+				KAL_RELEASE_SPIN_LOCK(prAdapter,
+						SPIN_LOCK_RX_QUE);
 				u4EnqCnt++;
 			}
 			RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);

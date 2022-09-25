@@ -1617,8 +1617,7 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 	prMsduInfo = prTokenEntry->prMsduInfo;
 	prMsduInfo->prToken = NULL;
 	if (!prMsduInfo->pfTxDoneHandler)
-		QUEUE_INSERT_TAIL(prFreeQueue,
-			(struct QUE_ENTRY *) prMsduInfo);
+		QUEUE_INSERT_TAIL(prFreeQueue, prMsduInfo);
 
 	DBGLOG(HAL, LOUD,
 		       "MsduRpt: Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
@@ -3406,7 +3405,7 @@ void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
 		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, FALSE, prTxMsduRetQue);
 	}
 
-	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(prTxMsduRetQue);
+	prMsduInfo = QUEUE_GET_HEAD(prTxMsduRetQue);
 	if (prMsduInfo) {
 		nicTxFreeMsduInfoPacketEx(prGlueInfo->prAdapter,
 				prMsduInfo, FALSE);
@@ -3438,8 +3437,7 @@ void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 		/* reduce locks */
 		if (prTxMsduRetQue) {
-			QUEUE_INSERT_TAIL(prTxMsduRetQue,
-					  (struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_INSERT_TAIL(prTxMsduRetQue, prMsduInfo);
 		} else
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 		{
