@@ -4090,6 +4090,11 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 			if (prSwWfdmaInfo->rOps.restore)
 				prSwWfdmaInfo->rOps.restore(prGlueInfo);
+
+			if (u4Status & ERROR_DETECT_STOP_PDMA) {
+				prErrRecoveryCtrl->u4Status = u4Status;
+				halHwRecoveryFromError(prAdapter);
+			}
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
