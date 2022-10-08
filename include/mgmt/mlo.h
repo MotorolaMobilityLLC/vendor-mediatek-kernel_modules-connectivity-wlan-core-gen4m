@@ -328,6 +328,8 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+uint8_t mldGetPrimaryWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx);
+
 struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t aucMacAddr[]);

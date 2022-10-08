@@ -181,6 +181,26 @@ uint8_t nic_rxd_v3_get_ofld(
 	return HAL_MAC_CONNAC3X_RX_STATUS_GET_OFLD(
 		(struct HW_MAC_CONNAC3X_RX_DESC *)prRxStatus);
 }
+
+/**
+ * HW RX setting MLD_ID
+ * if (is_QoS_frame)
+ *     if (TID is even):
+ *         MLD_ID = primary_MLD_ID
+ *     else:
+ *         MLD_ID = secondary_MLD_ID
+ * else:
+ *     MLD_ID = primary_MLD_ID
+ */
+static uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
+		uint8_t ucTid, uint8_t ucWlanIdx)
+{
+	if (likely(ucTid & 0x1) == 0)
+		return ucWlanIdx;
+	else
+		return mldGetPrimaryWlanIdx(prAdapter, ucWlanIdx);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill RFB
@@ -274,14 +294,15 @@ void nic_rxd_v3_fill_rfb(
 		(u2RxStatusOffset + u4HeaderOffset));
 	prSwRfb->u2HeaderLen = (uint16_t)
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_HEADER_LEN(prRxStatus);
-	prSwRfb->ucWlanIdx =
-		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus);
-	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
-		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
-	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prSwRfb->ucStaRecIdx);
+	/* For MLO, MLD_ID need to be corrected according to TID */
 	prSwRfb->ucTid =
 		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_TID(prRxStatus);
+	prSwRfb->ucWlanIdx = getPrimaryWlanIdx(prAdapter, prSwRfb->ucTid,
+		(uint8_t)HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
+	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
+			prSwRfb->ucWlanIdx);
+	prSwRfb->prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prSwRfb->ucStaRecIdx);
 	prSwRfb->fgHdrTran =
 		HAL_MAC_CONNAC3X_RX_STATUS_IS_HEADER_TRAN(prRxStatus);
 	prSwRfb->ucPayloadFormat =
@@ -357,8 +378,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = (struct HW_MAC_CONNAC3X_RX_DESC *)prSwRfb->prRxStatus;
 
-	ucBssIndex =
-			secGetBssIdxByWlanIdx(prAdapter,
+	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter,
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 
 	if (prSwRfb->pvPacket == NULL) {

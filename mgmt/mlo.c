@@ -3383,6 +3383,30 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	return prMldStarec;
 }
 
+uint8_t mldGetPrimaryWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldSta = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucStaIndex;
+
+	ucStaIndex = secGetStaIdxByWlanIdx(prAdapter, ucWlanIdx);
+	if (ucStaIndex == STA_REC_INDEX_NOT_FOUND)
+		return ucWlanIdx;
+
+	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaIndex);
+	if (!prStaRec)
+		return ucWlanIdx;
+
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (prMldSta)
+		return prMldSta->u2PrimaryMldId;
+#endif
+
+	return ucWlanIdx;
+}
+
+
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec)
 {
