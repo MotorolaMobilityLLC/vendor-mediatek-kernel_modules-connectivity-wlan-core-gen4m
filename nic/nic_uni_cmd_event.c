@@ -3742,6 +3742,19 @@ uint32_t nicUniCmdStaRecTagBAOffload(struct ADAPTER *ad,
 		tag->u2TxBaSize = cmd->rBaSize.rHtVhtBaSize.ucTxBaSize;
 		tag->u2RxBaSize = cmd->rBaSize.rHtVhtBaSize.ucRxBaSize;
 	}
+
+	DBGLOG(NIC, TRACE,
+		"StaRec[%u] WIDX[%u] Ampdu[%d,%d], Amsdu[%d,%d,len=%d] BaSize[%d,%d]",
+		cmd->ucStaIndex,
+		cmd->ucWlanIndex,
+		tag->ucTxAmpdu,
+		tag->ucRxAmpdu,
+		tag->ucTxAmsduInAmpdu,
+		tag->ucRxAmsduInAmpdu,
+		tag->u4TxMaxAmsduInAmpduLen,
+		tag->u2TxBaSize,
+		tag->u2RxBaSize);
+
 	return tag->u2Length;
 }
 

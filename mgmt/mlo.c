@@ -1822,18 +1822,22 @@ sta:
 		/* (tail - pos) is length of STA Profile
 		 * copy STA profile in Per-STA profile subelement.
 		 */
-		prStaProfile->ucIEbufLen = 0;
+		prStaProfile->u2IEbufLen = 0;
 		if (tail - pos < sizeof(prStaProfile->aucIEbuf)) {
 			if (show_info)
 				DBGLOG(ML, TRACE, "\tcopy sta profile len=%d\n",
 					tail - pos);
 			kalMemCopy(prStaProfile->aucIEbuf,
 				pos, tail - pos);
-			prStaProfile->ucIEbufLen = tail - pos;
+			prStaProfile->u2IEbufLen = tail - pos;
 		} else {
 			DBGLOG(ML, WARN,
 				"sta profile ie len too long %d!!\n",
 				tail - pos);
+			kalMemCopy(prStaProfile->aucIEbuf,
+				pos, sizeof(prStaProfile->aucIEbuf));
+			prStaProfile->u2IEbufLen =
+				sizeof(prStaProfile->aucIEbuf);
 		}
 
 next:
@@ -2241,7 +2245,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	if (padding < 0 || !mldIsValidForCompleteProfile(fctrl, prStaRec))
 		return WLAN_STATUS_INVALID_PACKET;
 
-	if (mldParseProfile(ie, len, prSta->aucIEbuf, prSta->ucIEbufLen,
+	if (mldParseProfile(ie, len, prSta->aucIEbuf, prSta->u2IEbufLen,
 		ies, &ie_count, MAX_DUP_IE_COUNT, FALSE) < 0)
 		return WLAN_STATUS_INVALID_PACKET;
 

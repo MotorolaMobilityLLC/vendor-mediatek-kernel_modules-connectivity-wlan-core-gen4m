@@ -167,8 +167,8 @@ struct STA_PROFILE {
 	uint8_t ucChangeSeq;
 	uint16_t u2CapInfo;
 	uint16_t u2StatusCode;
-	uint8_t ucIEbufLen;
-	uint8_t aucIEbuf[320];
+	uint16_t u2IEbufLen;
+	uint8_t aucIEbuf[400];
 };
 
 struct MULTI_LINK_INFO {
