@@ -2070,90 +2070,6 @@ static const struct file_operations auto_twt_smart_ops = {
 
 #endif
 
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-static ssize_t procCalResultRead(struct file *filp, char __user *buf,
-	size_t count, loff_t *f_pos)
-{
-#if 0
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	uint32_t u4CalSize = 0;
-	uint8_t *prCalResult = NULL;
-
-	/* if *f_pos > 0, it means has read successed last time */
-	if (*f_pos > 0)
-		return 0;
-
-	prGlueInfo = wlanGetGlueInfo();
-	if (!prGlueInfo)
-		return 0;
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter)
-		return 0;
-
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
-	}
-
-	prChipInfo = prAdapter->chip_info;
-	if (!prChipInfo)
-		return 0;
-
-	if (prChipInfo->getCalResult)
-		prCalResult = prChipInfo->getCalResult(&u4CalSize);
-	else
-		return 0;
-
-	if ((prCalResult == NULL) || (u4CalSize == 0)) {
-		DBGLOG(INIT, WARN, "prCalResult NULL\n");
-		return 0;
-	}
-
-	if (copy_to_user(buf, prCalResult, u4CalSize)) {
-		pr_err("copy to user failed\n");
-		return -EFAULT;
-	}
-
-	*f_pos += u4CalSize;
-#endif
-	return 0;
-}
-
-static ssize_t procCalResultWrite(struct file *file, const char __user *buffer,
-	size_t count, loff_t *data)
-{
-#if 0
-	uint32_t u4CopySize = sizeof(g_aucProcBuf);
-
-	kalMemSet(g_aucProcBuf, 0, u4CopySize);
-	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
-
-	if (copy_from_user(g_aucProcBuf, buffer, u4CopySize)) {
-		pr_err("error of copy from user\n");
-		return -EFAULT;
-	}
-
-	g_aucProcBuf[u4CopySize] = '\0';
-#endif
-	return 0;
-}
-#if KERNEL_VERSION(5, 6, 0) <= CFG80211_VERSION_CODE
-static const struct proc_ops cal_result_ops = {
-	.proc_read = procCalResultRead,
-	.proc_write = procCalResultWrite,
-};
-#else
-static const struct file_operations cal_result_ops = {
-	.owner = THIS_MODULE,
-	.read = procCalResultRead,
-	.write = procCalResultWrite,
-};
-#endif
-#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
-
 int32_t procInitFs(void)
 {
 	struct proc_dir_entry *prEntry;
@@ -2219,20 +2135,6 @@ int32_t procInitFs(void)
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	prEntry = proc_create(PROC_CAL_RESULT,
-							0664,
-							gprProcRoot,
-							&cal_result_ops);
-	if (prEntry == NULL) {
-		DBGLOG(INIT, ERROR, "Unable to create /proc entry %s/n",
-				PROC_CAL_RESULT);
-		return -1;
-	}
-	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
-					KGIDT_INIT(PROC_GID_WIFI));
-#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
-
 	return 0;
 }				/* end of procInitProcfs() */
 
@@ -2254,10 +2156,6 @@ int32_t procUninitProcFs(void)
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
 
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	remove_proc_subtree(PROC_CAL_RESULT, gprProcRoot);
-#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
-
 	remove_proc_subtree(PROC_AUTO_PERF_CFG, gprProcRoot);
 	remove_proc_subtree(PROC_DBG_LEVEL_NAME, gprProcRoot);
 
@@ -2267,10 +2165,6 @@ int32_t procUninitProcFs(void)
 	 */
 	remove_proc_subtree(PROC_ROOT_NAME, init_net.proc_net);
 #else
-
-#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	remove_proc_entry(PROC_CAL_RESULT, gprProcRoot);
-#endif /*(CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)*/
 
 	remove_proc_entry(PROC_AUTO_PERF_CFG, gprProcRoot);
 	remove_proc_entry(PROC_DBG_LEVEL_NAME, gprProcRoot);

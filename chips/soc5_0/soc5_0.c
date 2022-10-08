@@ -604,7 +604,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 #endif
 	.checkbushang = soc5_0_CheckBusHang,
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	.getCalResult = wlanGetCalResult,
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */

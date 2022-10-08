@@ -21,7 +21,6 @@ void set_cal_enabled(u_int8_t enabled);
 u_int8_t is_cal_flow_finished(void);
 #endif
 uint32_t wlanPhyAction(struct ADAPTER *prAdapter);
-uint8_t *wlanGetCalResult(uint32_t *prCalSize);
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para);
 #else
 static void set_cal_enabled(u_int8_t enabled) {}

@@ -33,11 +33,9 @@
  *******************************************************************************
  */
 #if CFG_MTK_ANDROID_EMI
-u_int8_t *gEmiCalResult;
-u_int32_t gEmiCalSize;
-u_int32_t gEmiCalOffset;
-u_int32_t gEmiGetCalOffset;
-bool gEmiCalUseEmiData;
+uint32_t gEmiCalSize;
+uint32_t gEmiCalOffset;
+u_int8_t gEmiCalNoUseEmiData;
 #endif
 
 static u_int8_t g_fgPreCal;
@@ -58,61 +56,31 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 #if CFG_MTK_ANDROID_EMI
-
 	do {
 		if (backupEMI == TRUE) {
-			if (gEmiCalResult != NULL) {
-				kalMemFree(gEmiCalResult,
-					VIR_MEM_TYPE,
-					gEmiCalSize);
-				gEmiCalResult = NULL;
-			}
-
 			if (pCalEvent->u4EmiLength == 0) {
 				DBGLOG(INIT, ERROR, "gEmiCalSize 0\n");
 				break;
 			}
 
-			gEmiCalOffset = emi_mem_offset_convert(
-				pCalEvent->u4EmiAddress);
-			gEmiCalSize = pCalEvent->u4EmiLength;
-
-			gEmiCalResult = kalMemAlloc(gEmiCalSize, VIR_MEM_TYPE);
-			if (gEmiCalResult == NULL) {
-				DBGLOG(INIT, ERROR,
-					"gEmiCalResult kalMemAlloc NULL\n");
-				break;
+			if (g_fgCalEnabled == TRUE) {
+				gEmiCalOffset = emi_mem_offset_convert(
+					pCalEvent->u4EmiAddress);
+				gEmiCalSize = pCalEvent->u4EmiLength;
 			}
 
-			emi_mem_read(prAdapter->chip_info,
-				gEmiCalOffset,
-				gEmiCalResult,
-				gEmiCalSize);
-
 			u4Status = WLAN_STATUS_SUCCESS;
-			break;
+		} else {
+			if (gEmiCalNoUseEmiData == TRUE)
+				DBGLOG(INIT, INFO, "No EMI restore.\n");
+			else if (gEmiCalOffset == 0 || gEmiCalSize == 0)
+				DBGLOG(INIT, INFO, "No EMI restore data.\n");
+			else
+				u4Status = WLAN_STATUS_SUCCESS;
 		}
-
-		/* else, put calibration data to EMI */
-
-		if (gEmiCalResult == NULL) {
-			DBGLOG(INIT, ERROR, "gEmiCalResult NULL\n");
-			break;
-		}
-
-		if (gEmiCalUseEmiData == TRUE) {
-			DBGLOG(INIT, INFO, "No Write back to EMI\n");
-			break;
-		}
-#if 0  /* Disable host write EMI */
-		emi_mem_write(prAdapter->chip_info,
-			gEmiCalOffset,
-			gEmiCalResult,
-			gEmiCalSize);
-#endif
-		u4Status = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
 #endif /* CFG_MTK_ANDROID_EMI */
+
 	return u4Status;
 }
 
@@ -294,27 +262,14 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 			prPhyEvent->u4EmiAddress,
 			prPhyEvent->u4EmiLength);
 
-		if ((prPhyEvent->ucEvent ==
-			HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
-			prPhyEvent->ucStatus ==
-			HAL_PHY_ACTION_STATUS_SUCCESS) ||
-			(prPhyEvent->ucEvent ==
-			HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
-			prPhyEvent->ucStatus ==
-			HAL_PHY_ACTION_STATUS_RECAL)) {
-
-#if CFG_MTK_ANDROID_EMI
-			/* Get Emi address and send to Conninfra */
-			gEmiGetCalOffset = prPhyEvent->u4EmiAddress &
-				WIFI_EMI_ADDR_MASK;
-#endif
-
-#if (CFG_SUPPORT_CONNAC3X == 0) /* No need in Connac3 projects */
+		if ((prPhyEvent->ucEvent == HAL_PHY_ACTION_CAL_FORCE_CAL_RSP &&
+		     prPhyEvent->ucStatus == HAL_PHY_ACTION_STATUS_SUCCESS) ||
+		    (prPhyEvent->ucEvent == HAL_PHY_ACTION_CAL_USE_BACKUP_RSP &&
+		     prPhyEvent->ucStatus == HAL_PHY_ACTION_STATUS_RECAL)) {
 			/* read from EMI, backup in driver */
 			wlanAccessCalibrationEMI(prAdapter,
 				prPhyEvent,
 				TRUE);
-#endif
 		}
 
 		u4Status = WLAN_STATUS_SUCCESS;
@@ -712,7 +667,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "fgPreCal = %d\n", g_fgPreCal);
 
 	if (g_fgPreCal == FALSE) {
-	/* Setup calibration data from backup file */
+		/* Setup calibration data from backup file */
 #if CFG_MTK_ANDROID_WMT
 		if (wlanAccessCalibrationEMI(prAdapter, NULL, FALSE) ==
 			WLAN_STATUS_SUCCESS)
@@ -747,7 +702,7 @@ int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 {
 #if CFG_MTK_ANDROID_EMI
 	/* Shift 4 for bypass Cal result CRC */
-	*pEmiCalOffset = gEmiGetCalOffset + 0x4;
+	*pEmiCalOffset = gEmiCalOffset + 0x4;
 
 	/* 2k size for RFCR backup */
 	*pEmiCalSize = 2048;
@@ -823,41 +778,25 @@ u_int8_t is_cal_flow_finished(void)
 }
 #endif
 
-uint8_t *wlanGetCalResult(uint32_t *prCalSize)
-{
-#if CFG_MTK_ANDROID_EMI
-	*prCalSize = gEmiCalSize;
-
-	return gEmiCalResult;
-#else
-	*prCalSize = 0;
-
-	return NULL;
-#endif
-}
-
 void wlanCalDebugCmd(uint32_t cmd, uint32_t para)
 {
 #if CFG_MTK_ANDROID_EMI
 	switch (cmd) {
 	case 0:
-		if (gEmiCalResult != NULL) {
-			kalMemFree(gEmiCalResult,
-				VIR_MEM_TYPE,
-				gEmiCalSize);
-			gEmiCalResult = NULL;
-		}
+		gEmiCalOffset = 0;
+		gEmiCalSize = 0;
 		break;
 
 	case 1:
 		if (para == 1)
-			gEmiCalUseEmiData = TRUE;
+			gEmiCalNoUseEmiData = TRUE;
 		else
-			gEmiCalUseEmiData = FALSE;
+			gEmiCalNoUseEmiData = FALSE;
 		break;
 	}
 
-	DBGLOG(RFTEST, INFO, "gEmiCalResult(0x%x), gEmiCalUseEmiData(%d)\n",
-			gEmiCalResult, gEmiCalUseEmiData);
+	DBGLOG(RFTEST, INFO,
+		"gEmiCalOffset(0x%x), gEmiCalSize(0x%x), gEmiCalNoUseEmiData(%d)\n",
+		gEmiCalOffset, gEmiCalSize, gEmiCalNoUseEmiData);
 #endif
 }

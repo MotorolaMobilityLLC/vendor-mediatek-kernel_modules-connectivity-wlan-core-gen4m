@@ -1211,7 +1211,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.get_sw_interrupt_status = soc3_0_get_sw_interrupt_status,
 #endif
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
-	.getCalResult = wlanGetCalResult,
 	.calDebugCmd = wlanCalDebugCmd,
 #endif
 	.checkbushang = soc3_0_CheckBusHang,
