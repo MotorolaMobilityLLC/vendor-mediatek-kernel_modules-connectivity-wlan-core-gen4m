@@ -1109,6 +1109,7 @@ struct wpa_driver_hs20_data_s {
 
 struct NETDEV_PRIVATE_GLUE_INFO {
 	struct GLUE_INFO *prGlueInfo;
+	struct work_struct workq;
 	uint8_t ucBssIdx;
 #if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
