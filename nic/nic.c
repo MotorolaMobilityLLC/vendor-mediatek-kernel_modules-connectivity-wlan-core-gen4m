@@ -1823,7 +1823,10 @@ uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
 uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 		    uint8_t ucBandwidth)
 {
-	if ((ucBandwidth == CW_80MHZ)
+	if (ucBandwidth == CW_20_40MHZ) {
+		/* S1 is no need for BW20*/
+		return nicGetHe6gS1BW40(ucPrimaryChannel);
+	} else if ((ucBandwidth == CW_80MHZ)
 	    || (ucBandwidth == CW_80P80MHZ)) {
 
 		if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 13)
@@ -1898,7 +1901,74 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 	}
 	return 0;
 }
-#endif
+
+uint8_t nicGetHe6gS1BW40(uint8_t ucPrimaryChannel)
+{
+	if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 5)
+		return 3;
+	else if (ucPrimaryChannel >= 9 && ucPrimaryChannel <= 13)
+		return 11;
+	else if (ucPrimaryChannel >= 17 && ucPrimaryChannel <= 21)
+		return 19;
+	else if (ucPrimaryChannel >= 25 && ucPrimaryChannel <= 29)
+		return 27;
+	else if (ucPrimaryChannel >= 33 && ucPrimaryChannel <= 37)
+		return 35;
+	else if (ucPrimaryChannel >= 41 && ucPrimaryChannel <= 45)
+		return 43;
+	else if (ucPrimaryChannel >= 49 && ucPrimaryChannel <= 53)
+		return 51;
+	else if (ucPrimaryChannel >= 57 && ucPrimaryChannel <= 61)
+		return 59;
+	else if (ucPrimaryChannel >= 65 && ucPrimaryChannel <= 69)
+		return 67;
+	else if (ucPrimaryChannel >= 73 && ucPrimaryChannel <= 77)
+		return 75;
+	else if (ucPrimaryChannel >= 81 && ucPrimaryChannel <= 85)
+		return 83;
+	else if (ucPrimaryChannel >= 89 && ucPrimaryChannel <= 93)
+		return 91;
+	else if (ucPrimaryChannel >= 97 && ucPrimaryChannel <= 101)
+		return 99;
+	else if (ucPrimaryChannel >= 105 && ucPrimaryChannel <= 109)
+		return 107;
+	else if (ucPrimaryChannel >= 113 && ucPrimaryChannel <= 117)
+		return 115;
+	else if (ucPrimaryChannel >= 121 && ucPrimaryChannel <= 125)
+		return 123;
+	else if (ucPrimaryChannel >= 129 && ucPrimaryChannel <= 133)
+		return 131;
+	else if (ucPrimaryChannel >= 137 && ucPrimaryChannel <= 141)
+		return 139;
+	else if (ucPrimaryChannel >= 145 && ucPrimaryChannel <= 149)
+		return 147;
+	else if (ucPrimaryChannel >= 153 && ucPrimaryChannel <= 157)
+		return 155;
+	else if (ucPrimaryChannel >= 161 && ucPrimaryChannel <= 165)
+		return 163;
+	else if (ucPrimaryChannel >= 169 && ucPrimaryChannel <= 173)
+		return 171;
+	else if (ucPrimaryChannel >= 177 && ucPrimaryChannel <= 181)
+		return 179;
+	else if (ucPrimaryChannel >= 185 && ucPrimaryChannel <= 189)
+		return 187;
+	else if (ucPrimaryChannel >= 193 && ucPrimaryChannel <= 197)
+		return 195;
+	else if (ucPrimaryChannel >= 201 && ucPrimaryChannel <= 205)
+		return 203;
+	else if (ucPrimaryChannel >= 209 && ucPrimaryChannel <= 213)
+		return 211;
+	else if (ucPrimaryChannel >= 217 && ucPrimaryChannel <= 221)
+		return 219;
+	else if (ucPrimaryChannel >= 225 && ucPrimaryChannel <= 229)
+		return 227;
+	else
+		return 0;
+
+	return 0;
+}
+
+#endif /* (CFG_SUPPORT_WIFI_6G == 1) */
 
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */

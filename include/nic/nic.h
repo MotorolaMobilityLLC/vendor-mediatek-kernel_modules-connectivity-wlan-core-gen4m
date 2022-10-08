@@ -471,6 +471,7 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 uint8_t nicGetHe6gS2(uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth,
 		uint8_t ucS1);
+uint8_t nicGetHe6gS1BW40(uint8_t ucPrimaryChannel);
 #endif
 
 /* firmware command wrapper */
