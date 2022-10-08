@@ -4493,10 +4493,12 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(struct wiphy *wiphy,
 
 	DBGLOG(P2P, TRACE, "--> %s()\n", __func__);
 
-	if (data && len)
+	if (len < sizeof(struct NL80211_DRIVER_SW_CMD_PARAMS))
+		rstatus = WLAN_STATUS_INVALID_LENGTH;
+	else if (!data)
+		rstatus = WLAN_STATUS_INVALID_DATA;
+	else {
 		prParams = (struct NL80211_DRIVER_SW_CMD_PARAMS *) data;
-
-	if (prParams) {
 		if (prParams->set == 1) {
 			rstatus = kalIoctl(prGlueInfo,
 				(PFN_OID_HANDLER_FUNC) wlanoidSetSwCtrlWrite,
