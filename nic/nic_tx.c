@@ -2862,11 +2862,13 @@ uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_STATISTICS == 1)
 		StatsEnvTxTime2Hif(prAdapter, prMsduInfo);
 #endif
+#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
 		if (HAL_IS_TX_DIRECT(prAdapter)) {
 			if (prMsduInfo->pfHifTxMsduDoneCb)
 				prMsduInfo->pfHifTxMsduDoneCb(prAdapter,
 						prMsduInfo);
 		}
+#endif
 
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
 	}

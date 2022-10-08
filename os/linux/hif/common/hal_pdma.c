@@ -3554,7 +3554,9 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		prHifInfo->u4TxDataQLen[u2Port]--;
 	}
 
+#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
 	if (!HAL_IS_TX_DIRECT(prAdapter))
+#endif
 		if (prMsduInfo->pfHifTxMsduDoneCb)
 			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
