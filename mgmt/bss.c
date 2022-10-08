@@ -508,6 +508,12 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER *prAdapter,
 #endif
 
 	prBssInfo->ucPhyTypeSet &= prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (!(prBssInfo->ucPhyTypeSet &
+		PHY_TYPE_SET_802_11AX))
+		prBssInfo->ucPhyTypeSet &=
+			~(PHY_TYPE_SET_802_11BE);
+#endif
 
 }
 
