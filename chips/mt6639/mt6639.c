@@ -462,7 +462,9 @@ struct BUS_INFO mt6639_bus_info = {
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_3_MASK |
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_15_MASK |
+#if (WFDMA_AP_MSI_NUM == 1)
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK |
+#endif
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_mcu2host_sw_int_sts_MASK),
 	.host_int_rxdone_bits =
 	(WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK |
@@ -1425,13 +1427,13 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
-	uint32_t u4Value = 0;
+	uint32_t u4Value = 0, u4WrValue = 0;
 
 	*pu4IntStatus = 0;
 
 	if (KAL_TEST_BIT(PCIE_MSI_TX_FREE_DONE, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
-		u4Value |=
+		u4WrValue |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK;
 	}
 
@@ -1449,38 +1451,36 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 
 	if (KAL_TEST_BIT(PCIE_MSI_EVENT, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
-		u4Value |=
+		u4WrValue |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK;
 	}
 
 	if (KAL_TEST_BIT(PCIE_MSI_CMD, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
-		u4Value |=
+		u4WrValue |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_15_MASK;
 	}
 
 	if (KAL_TEST_BIT(PCIE_MSI_LUMP, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
-		u4Value |= CONNAC_MCU_SW_INT;
-
-		*pu4IntStatus |= WHISR_TX_DONE_INT;
-		u4Value |=
-			WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK;
+		u4WrValue |= CONNAC_MCU_SW_INT;
 	}
 
 	/* force process all interrupt */
 	if (KAL_TEST_BIT(GLUE_FLAG_HALT_BIT, prAdapter->prGlueInfo->ulFlag)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT | WHISR_TX_DONE_INT |
 			WHISR_D2H_SW_INT;
-		u4Value |= prBusInfo->host_int_rxdone_bits |
+		u4WrValue |= prBusInfo->host_int_rxdone_bits |
 			prBusInfo->host_int_txdone_bits |
 			CONNAC_MCU_SW_INT;
 	}
 
-	prHifInfo->u4IntStatus = u4Value;
+	prHifInfo->u4IntStatus = u4Value | u4WrValue;
 
 	/* clear interrupt */
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4Value);
+	if (u4WrValue)
+		HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR,
+			   u4WrValue);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	mt6639ReadOffloadIntStatus(prAdapter, pu4IntStatus);
@@ -1558,7 +1558,9 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA3_MASK
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA15_MASK |
+#if (WFDMA_AP_MSI_NUM == 1)
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA16_MASK |
+#endif
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -1602,6 +1604,13 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 
 	if (!prMsiInfo->fgMsiEnabled)
 		return;
+
+#if (WFDMA_AP_MSI_NUM == 8)
+	u4Value = 0x40800018;
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR,
+		   u4Value);
+#endif
 
 	/* configure MSI number */
 	u4Value = ((ilog2(WFDMA_AP_MSI_NUM) <<
