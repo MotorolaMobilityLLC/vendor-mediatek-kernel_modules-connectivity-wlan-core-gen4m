@@ -14682,17 +14682,20 @@ void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr)
 
 void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr)
 {
+	int32_t i4TxFreeMsduCpu;
+
 	if (!pr->prTxFreeMsduWorkQueue) {
 		DBGLOG_LIMITED(INIT, ERROR,
 			"prTxFreeMsduWorkQueue is NULL\n");
 		return;
 	}
 
-	if (pr->i4TxFreeMsduCpu == -1) {
+	i4TxFreeMsduCpu = pr->i4TxFreeMsduCpu;
+	if (i4TxFreeMsduCpu == -1) {
 		queue_work(pr->prTxFreeMsduWorkQueue,
 			&pr->rTxFreeMsduWork);
 	} else {
-		queue_work_on(pr->i4TxFreeMsduCpu,
+		queue_work_on(i4TxFreeMsduCpu,
 			pr->prTxFreeMsduWorkQueue,
 			&pr->rTxFreeMsduWork);
 	}
@@ -14745,14 +14748,15 @@ void kalTxWorkUninit(struct GLUE_INFO *pr)
 
 uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 {
-	int32_t i4Cpu;
+	int32_t i4TxWorkCpu, i4Cpu;
 
 	if (!pr->prTxWorkQueue) {
 		DBGLOG_LIMITED(INIT, INFO, "prTxWorkQueue is NULL\n");
 		return kalTxDirectStartXmit(prSkb, pr);
 	}
 
-	if (pr->i4TxWorkCpu == -1) {
+	i4TxWorkCpu = pr->i4TxWorkCpu;
+	if (i4TxWorkCpu == -1) {
 		/* no BoostCpu, just go through tx direct path */
 		return kalTxDirectStartXmit(prSkb, pr);
 	}
@@ -14770,12 +14774,12 @@ uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 		skb_queue_tail(&pr->rTxDirectSkbQueue, prSkb);
 
 	/* magic code 99 will not do schedule on specific cpu */
-	if (pr->i4TxWorkCpu == WORK_ALL_CPU_OK) {
+	if (i4TxWorkCpu == WORK_ALL_CPU_OK) {
 		queue_work(pr->prTxWorkQueue, &pr->rTxWork);
 		goto end;
 	}
 
-	queue_work_on(pr->i4TxWorkCpu, pr->prTxWorkQueue, &pr->rTxWork);
+	queue_work_on(i4TxWorkCpu, pr->prTxWorkQueue, &pr->rTxWork);
 end:
 	return WLAN_STATUS_SUCCESS;
 }
@@ -14825,16 +14829,19 @@ void kalRxWorkUninit(struct GLUE_INFO *pr)
 
 void kalRxWorkSchedule(struct GLUE_INFO *pr)
 {
+	int32_t i4RxWorkCpu;
+
 	if (!pr->prRxWorkQueue) {
 		DBGLOG_LIMITED(INIT, INFO, "prRxWorkQueue is NULL\n");
 		return;
 	}
 
-	if (pr->i4RxWorkCpu == -1 || pr->i4RxWorkCpu == WORK_ALL_CPU_OK) {
+	i4RxWorkCpu = pr->i4RxWorkCpu;
+	if (i4RxWorkCpu == -1 || i4RxWorkCpu == WORK_ALL_CPU_OK) {
 		queue_work(pr->prRxWorkQueue, &pr->rRxWork);
 		return;
 	}
 
-	queue_work_on(pr->i4RxWorkCpu, pr->prRxWorkQueue, &pr->rRxWork);
+	queue_work_on(i4RxWorkCpu, pr->prRxWorkQueue, &pr->rRxWork);
 }
 #endif /* CFG_SUPPORT_RX_WORK */
