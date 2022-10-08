@@ -5281,6 +5281,24 @@ void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 #endif
 #endif
 
+void halUpdateHifConfig(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	if (!prAdapter)
+		return;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prBusInfo->configWfdmaRxRingTh &&
+	    prBusInfo->fgUpdateWfdmaRxTh) {
+		prBusInfo->fgUpdateWfdmaRxTh = FALSE;
+		prBusInfo->configWfdmaRxRingTh(
+			prAdapter, prBusInfo->u4WfdmaRxTh, TRUE);
+	}
+}
 
 void halDumpHifStats(struct ADAPTER *prAdapter)
 {

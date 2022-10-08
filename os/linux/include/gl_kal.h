@@ -293,6 +293,7 @@ struct BOOST_INFO {
 	int32_t i4RxWorkCpu;
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
+	uint32_t u4WfdmaThNum;
 };
 
 #define WORK_ALL_CPU_OK 999
@@ -2508,6 +2509,7 @@ void kalTdlsOpReq(
 #if defined(_HIF_PCIE)
 void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 			  u_int8_t fgKeepPcieWakeup);
+void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
 #endif /* defined(_HIF_PCIE) */
 
 void kalSetISRMask(struct ADAPTER *prAdapter, uint32_t set_mask);

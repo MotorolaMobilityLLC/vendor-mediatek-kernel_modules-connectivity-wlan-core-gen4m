@@ -394,6 +394,11 @@ bool halIsHifStateSuspend(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
+void halUpdateHifConfig(struct ADAPTER *prAdapter)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
 void halDumpHifStats(struct ADAPTER *prAdapter)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);

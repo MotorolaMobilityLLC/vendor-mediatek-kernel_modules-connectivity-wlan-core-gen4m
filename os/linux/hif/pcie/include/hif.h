@@ -429,6 +429,8 @@ struct BUS_INFO {
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
 	void (*configWfdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	void (*configWfdmaRxRingTh)(struct ADAPTER *prAdapter, uint32_t u4Num,
+				    u_int8_t fgIsData);
 	void (*disableSwInterrupt)(struct ADAPTER *prAdapter);
 	void (*processTxInterrupt)(struct ADAPTER *prAdapter);
 	void (*processRxInterrupt)(struct ADAPTER *prAdapter);
@@ -510,6 +512,9 @@ struct BUS_INFO {
 	struct timespec64 rHifIntTs;
 	uint32_t u4EnHifIntTs;
 	uint32_t u4HifIntTsCnt;
+
+	u_int8_t fgUpdateWfdmaRxTh;
+	uint32_t u4WfdmaRxTh;
 };
 
 struct HIF_PREALLOC_MEM {

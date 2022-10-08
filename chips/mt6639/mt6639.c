@@ -128,7 +128,8 @@ static void mt6639DisableInterrupt(struct ADAPTER *prAdapter);
 static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable);
 
-static void mt6639ConfigWfdmaRxRingThreshold(struct ADAPTER *prAdapter);
+static void mt6639ConfigWfdmaRxRingThreshold(
+	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData);
 
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
@@ -540,6 +541,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.enableInterrupt = mt6639EnableInterrupt,
 	.disableInterrupt = mt6639DisableInterrupt,
 	.configWfdmaIntMask = mt6639ConfigIntMask,
+	.configWfdmaRxRingTh = mt6639ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6639InitPcieInt,
 	.hwControlVote = mt6639PcieHwControlVote,
@@ -1659,25 +1661,27 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 #endif
 }
 
-static void mt6639ConfigWfdmaRxRingThreshold(struct ADAPTER *prAdapter)
+static void mt6639ConfigWfdmaRxRingThreshold(
+	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData)
 {
-	if (!prAdapter)
-		return;
+	uint32_t u4Addr = 0, u4Val = u4Num;
 
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR,
-		0x20002);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH32_ADDR,
-		0x20002);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH54_ADDR,
-		0x20002);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH76_ADDR,
-		0x20002);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH98_ADDR,
-		0x20002);
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH1110_ADDR,
-		0x20002);
+	u4Val |= (u4Num <<
+		  WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_RX_DMAD_TH1_SHFT);
+	if (fgIsData) {
+		u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH54_ADDR;
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+		goto exit;
+	}
 
-	DBGLOG(HAL, TRACE, "Set WFDMA Rx que threshold to 0x20002\n");
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH1110_ADDR;
+	     u4Addr += 0x4)
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+exit:
+	DBGLOG(HAL, INFO, "Set WFDMA RxQ[%u] threshold[0x%08x]\n",
+	       fgIsData, u4Val);
 }
 
 static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
@@ -1769,7 +1773,7 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	prGlueInfo->rHifInfo.GloCfg.word = GloCfg.word;
 #endif
-	mt6639ConfigWfdmaRxRingThreshold(prAdapter);
+	mt6639ConfigWfdmaRxRingThreshold(prAdapter, 2, FALSE);
 
 	mt6639WpdmaConfigExt0(prAdapter);
 	mt6639WpdmaConfigExt1(prAdapter);

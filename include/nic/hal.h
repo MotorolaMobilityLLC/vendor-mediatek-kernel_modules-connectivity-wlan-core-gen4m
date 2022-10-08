@@ -1420,6 +1420,7 @@ u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit);
 #if defined(_HIF_AXI)
 void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit);
 #endif
+void halUpdateHifConfig(struct ADAPTER *prAdapter);
 void halDumpHifStats(struct ADAPTER *prAdapter);
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(struct ADAPTER *prAdapter);

@@ -114,6 +114,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = -1,
 		.i4RxWorkCpu = -1,
 		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaThNum = 2,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -140,6 +141,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = WORK_ALL_CPU_OK,
 		.i4RxWorkCpu = 4,
 		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaThNum = 2,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -166,6 +168,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = WORK_ALL_CPU_OK,
 		.i4RxWorkCpu = 7,
 		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaThNum = 2,
 		.fgDramBoost = FALSE
 	},
 	{
@@ -192,6 +195,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = WORK_ALL_CPU_OK,
 		.i4RxWorkCpu = 7,
 		.fgKeepPcieWakeup = TRUE,
+		.u4WfdmaThNum = 1,
 		.fgDramBoost = FALSE
 	}
 };
@@ -391,6 +395,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 
 #if defined(_HIF_PCIE)
 	kalSetPcieKeepWakeup(prGlueInfo, prBoostInfo->fgKeepPcieWakeup);
+	kalConfigWfdmaTh(prGlueInfo, prBoostInfo->u4WfdmaThNum);
 #endif
 
 	kalSetDramBoost(prAdapter, prBoostInfo->fgDramBoost);

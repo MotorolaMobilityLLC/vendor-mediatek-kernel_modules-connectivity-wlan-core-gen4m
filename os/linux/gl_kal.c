@@ -5147,6 +5147,7 @@ int hif_thread(void *data)
 				       &prGlueInfo->ulFlag))
 			prAdapter->fgWiFiInSleepyState = TRUE;
 
+		halUpdateHifConfig(prAdapter);
 		halDumpHifStats(prAdapter);
 
 		/* Release to FW own */
@@ -13705,6 +13706,20 @@ void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 	if (prBusInfo->keepPcieWakeup != NULL)
 		prBusInfo->keepPcieWakeup(prGlueInfo, fgKeepPcieWakeup);
 #endif /* CFG_SUPPORT_PCIE_ASPM */
+}
+
+void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num)
+{
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4WfdmaRxTh != u4Num) {
+		prBusInfo->fgUpdateWfdmaRxTh = TRUE;
+		prBusInfo->u4WfdmaRxTh = u4Num;
+	}
 }
 #endif /* defined(_HIF_PCIE) */
 
