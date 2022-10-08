@@ -3183,10 +3183,11 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 				  struct SW_RFB *);
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
-#if CFG_RFB_TRACK
-		RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_PACKET_SETUP);
-#endif /* CFG_RFB_TRACK */
 		if (prSwRfb) {
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_PACKET_SETUP);
+#endif /* CFG_RFB_TRACK */
 			status = nicRxSetupRFB(prAdapter, prSwRfb);
 			nicRxReturnRFB(prAdapter, prSwRfb);
 		} else {
