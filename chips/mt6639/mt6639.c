@@ -320,9 +320,9 @@ struct wfdma_group_info mt6639_wfmda_host_tx_group[] = {
 
 struct wfdma_group_info mt6639_wfmda_host_rx_group[] = {
 	{"P0R4:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R6:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
+	{"P0R6:AP EVT/TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
 	{"P0R5:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
-	{"P0R7:AP TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
+	{"P0R7:AP ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
 	{"P0R8:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR},
 	{"P0R9:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR},
 	{"P0R10:MD EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_CTRL0_ADDR},
@@ -1162,7 +1162,7 @@ static bool mt6639WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		return false;
 	}
 
-	/* Band0 Tx Free Done Event */
+	/* ICS log */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
 			RX_RING_TXDONE0, RX_RING1_SIZE,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
@@ -1296,15 +1296,22 @@ static void mt6639WfdmaManualPrefetch(
 	uint32_t u4WrVal = 0, u4Addr = 0;
 	uint32_t u4PrefetchCnt = 0x4, u4TxDataPrefetchCnt = 0x10;
 	uint32_t u4PrefetchBase = 0x00400000, u4TxDataPrefetchBase = 0x01000000;
+	uint32_t u4RxDataPrefetchCnt = 0x8;
+	uint32_t u4RxDataPrefetchBase = 0x00800000;
 
 	/* Rx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4RxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4PrefetchBase;
+		u4WrVal += u4RxDataPrefetchBase;
 	}
+
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	u4WrVal += u4PrefetchBase;
 
 #if CFG_MTK_MDDP_SUPPORT
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
@@ -1317,6 +1324,11 @@ static void mt6639WfdmaManualPrefetch(
 #endif
 
 	/* Tx ring */
+	/* fw download reuse tx data ring */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
@@ -1342,26 +1354,21 @@ static void mt6639WfdmaManualPrefetch(
 		u4WrVal += u4TxDataPrefetchBase;
 	}
 
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_EXT_CTRL_ADDR;
-	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4PrefetchBase;
-	}
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	u4WrVal += u4PrefetchBase;
+
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_EXT_CTRL_ADDR;
 	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 	u4WrVal += u4PrefetchBase;
 #endif
 
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR;
-	     u4Addr += 0x4) {
-		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += u4PrefetchBase;
-	}
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	u4WrVal += u4PrefetchBase;
 
 	mt6639SetTRXRingPriorityInterrupt(prAdapter);
 
