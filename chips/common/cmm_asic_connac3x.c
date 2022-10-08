@@ -791,7 +791,7 @@ void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
-	    KAL_TEST_AND_CLEAR_BIT(1, prHifInfo->u4HostIntEn)) {
+	    KAL_TEST_AND_CLEAR_BIT(1, prHifInfo->ulHifIntEnBits)) {
 		enable_irq(prHifInfo->u4IrqId_1);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

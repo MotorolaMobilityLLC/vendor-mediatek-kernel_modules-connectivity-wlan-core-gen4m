@@ -243,6 +243,7 @@ struct GL_HIF_INFO {
 	struct RTMP_TX_RING MawdTxRing[NUM_OF_TX_RING];
 	struct RTMP_DMABUF ErrRptRing;
 	uint32_t u4MawdL2TblCnt;
+	u_int8_t fgIsMawdSuspend;
 
 	/* RRO */
 	struct RTMP_DMABUF RxBlkDescRing;
@@ -257,9 +258,17 @@ struct GL_HIF_INFO {
 	uint32_t u4RcbFreeListCnt;
 	struct hlist_head arRcbHTbl[RRO_PREALLOC_RX_BUF_NUM];
 	struct hlist_head rRcbHTblFreeList;
+	struct hlist_head arPrtSnHTbl[RRO_MAX_WINDOW_NUM];
+	struct RRO_ADDR_ELEM_RECORD arElemRecord[RRO_MAX_WINDOW_NUM];
 	uint32_t u4RroMagicCnt;
 	uint32_t u4IndCmdDmaIdx;
+	uint32_t u4RxBlkDidx;
+	uint32_t u4RxBlkMagicCnt;
 	uint32_t u4OffloadIntStatus;
+	uint32_t u4RcbErrorCnt;
+	uint32_t u4RcbSkipCnt;
+	uint32_t u4RcbFixCnt;
+	uint32_t u4RcbHeadCnt;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIntReadClear;

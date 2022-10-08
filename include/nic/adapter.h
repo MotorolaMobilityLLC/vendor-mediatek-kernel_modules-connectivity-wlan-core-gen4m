@@ -1339,6 +1339,7 @@ struct WIFI_VAR {
 	u_int8_t fgEnableMawdTx;
 	u_int8_t fgEnableSdo;
 	u_int8_t fgEnableRro;
+	u_int8_t fgEnableRroDbg;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxs;

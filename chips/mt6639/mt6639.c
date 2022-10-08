@@ -1217,22 +1217,24 @@ static void mt6639ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	uint32_t u4Sta = prHifInfo->u4IntStatus;
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-#endif
-	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 		if (prHifInfo->u4OffloadIntStatus ||
 		    (KAL_TEST_BIT(RX_RRO_DATA, prAdapter->ulNoMoreRfb)))
 			halRroReadRxData(prAdapter);
+
+		if ((u4Sta &
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
+		    (u4Sta &
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK))
+			halRroReadRxData(prAdapter);
 	} else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-#endif
+#endif /* _HIF_PCIE || _HIF_AXI */
 	{
 		if ((u4Sta &
 		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
@@ -1377,6 +1379,42 @@ static void mt6639WfdmaManualPrefetch(
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DRX_PTR_ADDR, 0xFFFFFFFF);
 }
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+static void mt6639ReadOffloadIntStatus(struct ADAPTER *prAdapter,
+		uint32_t *pu4IntStatus)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr = 0;
+
+	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+		return;
+
+	u4WrValue = 0;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+		u4Addr = MAWD_AP_INTERRUPT_SETTING0;
+		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
+		if (u4RegValue & BIT(0)) {
+			*pu4IntStatus |= WHISR_RX0_DONE_INT;
+			u4WrValue = u4RegValue & BIT(0);
+		}
+		u4Addr = MAWD_AP_INTERRUPT_SETTING1;
+	} else {
+		u4Addr = WF_RRO_TOP_HOST_INT_STS_ADDR;
+		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
+		if (u4RegValue &
+		    WF_RRO_TOP_HOST_INT_STS_HOST_RRO_DONE_INT_MASK) {
+			*pu4IntStatus |= WHISR_RX0_DONE_INT;
+			u4WrValue =
+				(u4RegValue &
+			WF_RRO_TOP_HOST_INT_STS_HOST_RRO_DONE_INT_MASK);
+		}
+	}
+	prHifInfo->u4OffloadIntStatus = u4WrValue;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 #if defined(_HIF_PCIE)
 static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus)
@@ -1441,6 +1479,10 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4Value);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	mt6639ReadOffloadIntStatus(prAdapter, pu4IntStatus);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 #endif
 
@@ -1450,9 +1492,6 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr;
 
 	*pu4IntStatus = 0;
@@ -1490,23 +1529,7 @@ static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-			u4Addr = MAWD_AP_INTERRUPT_SETTING0;
-			HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
-			if (u4RegValue & BIT(0))
-				*pu4IntStatus |= WHISR_RX0_DONE_INT;
-			u4Addr = MAWD_AP_INTERRUPT_SETTING1;
-		} else {
-			u4Addr = WF_RRO_TOP_HOST_INT_STS_ADDR;
-			HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
-			if (u4RegValue &
-			    WF_RRO_TOP_HOST_INT_STS_HOST_RRO_DONE_INT_MASK)
-				*pu4IntStatus |= WHISR_RX0_DONE_INT;
-		}
-		prHifInfo->u4OffloadIntStatus = u4RegValue;
-		HAL_MCR_WR(prAdapter, u4Addr, u4RegValue);
-	}
+	mt6639ReadOffloadIntStatus(prAdapter, pu4IntStatus);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
@@ -1538,7 +1561,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		if (!(IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))) {
+		if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 			u4WrVal |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_subsys_int_ena_MASK;
 		}
@@ -1795,7 +1818,7 @@ static void mt6639WfdmaRxRingExtCtrl(
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* enable wfdma magic cnt */
-	if ((IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro) &&
 	    halIsDataRing(RX_RING, index)) {
 		uint32_t u4Val = 0;
 

@@ -8394,13 +8394,15 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #endif
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	prWifiVar->fgEnableMawd = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableMawd", FEATURE_DISABLED);
+		prAdapter, "EnableMawd", FEATURE_ENABLED);
 	prWifiVar->fgEnableMawdTx = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableMawdTx", FEATURE_DISABLED);
 	prWifiVar->fgEnableSdo = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableSdo", FEATURE_ENABLED);
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableRro", FEATURE_DISABLED);
+		prAdapter, "EnableRro", FEATURE_ENABLED);
+	prWifiVar->fgEnableRroDbg = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableRroDbg", FEATURE_ENABLED);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;

@@ -296,7 +296,13 @@
 #define LOG_DUMP_FULL_DUMP_TIMES	2
 
 #define WFDMA_MAGIC_CNT_NUM      16
-#define MAWD_POWER_UP_RETRY_CNT  100
+#define INDCMD_MAGIC_CNT_NUM     8
+#define RX_BLK_MAGIC_CNT_NUM     4
+#define MAWD_RX_BLK_RING_SIZE    4095
+#define MAWD_ENABLE_WAKEUP_SLEEP 1
+#define MAWD_DUMP_DEBUG_INFO     1
+#define MAWD_POWER_UP_RETRY_CNT  10000
+#define MAWD_POWER_UP_WAIT_TIME  10
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
 #define MAWD_CR_BACKUP_VALID     88
@@ -837,19 +843,24 @@ struct RCB_NODE {
 	struct hlist_node rNode;
 };
 
+struct RRO_ADDR_ELEM_SINGLE {
+	uint32_t addr;
+	uint32_t addr_h:4;
+	uint32_t msdu_cnt:11;
+	uint32_t out_of_range:1;
+	uint32_t rsv:13;
+	uint32_t signature:3;
+};
+
 struct RRO_ADDR_ELEM {
-	uint32_t addr_0;
-	uint32_t addr_h_0:4;
-	uint32_t msdu_cnt_0:11;
-	uint32_t out_of_range_0:1;
-	uint32_t rsv_0:13;
-	uint32_t signature_0:3;
-	uint32_t addr_1;
-	uint32_t addr_h_1:4;
-	uint32_t msdu_cnt_1:11;
-	uint32_t out_of_range_1:1;
-	uint32_t rsv_1:13;
-	uint32_t signature_1:3;
+	struct RRO_ADDR_ELEM_SINGLE elem0;
+	struct RRO_ADDR_ELEM_SINGLE elem1;
+};
+
+struct RRO_ADDR_ELEM_RECORD {
+	uint64_t u8Addr;
+	uint32_t u4Sn;
+	struct hlist_node rNode;
 };
 
 struct RRO_IND_CMD {
@@ -1106,8 +1117,8 @@ void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo);
 u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_TOKEN_ENTRY *prToken);
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo);
-void halMawdWakeup(struct GLUE_INFO *prGlueInfo);
-void halMawdSleep(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);

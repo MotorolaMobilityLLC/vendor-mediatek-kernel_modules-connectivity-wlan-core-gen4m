@@ -2164,7 +2164,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	else
 		glBusFreeLegacyIrq(pdev, prGlueInfo, prBusInfo);
 
-	if (g_prPlatDev) {
+	if (g_prPlatDev && prHifInfo->u4IrqId_1) {
 		synchronize_irq(prHifInfo->u4IrqId_1);
 		irq_set_affinity_hint(prHifInfo->u4IrqId_1, NULL);
 		free_irq(prHifInfo->u4IrqId_1, prGlueInfo);

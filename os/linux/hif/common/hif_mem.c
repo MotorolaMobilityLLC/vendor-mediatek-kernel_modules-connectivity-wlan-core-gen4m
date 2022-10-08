@@ -108,6 +108,11 @@ u_int8_t kalCreateHifSkbList(void)
 			u4Num += RX_RING1_SIZE;
 	}
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (kalIsSupportRro())
+		u4Num += RX_RING0_SIZE;
+#endif
+
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 		prSkb = kalAllocRxSkb(&pucRecvBuff);
 		if (!prSkb) {
