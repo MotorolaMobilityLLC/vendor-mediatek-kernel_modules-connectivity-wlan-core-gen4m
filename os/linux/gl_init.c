@@ -7188,8 +7188,13 @@ int wlanFuncOn(void)
 
 	ret = wlanFuncOnImpl();
 	if (ret) {
+		struct mt66xx_chip_info *chip = NULL;
+
 		DBGLOG(HAL, ERROR, "wlanFuncOnImpl failed, ret=%d\n",
 			ret);
+		glGetChipInfo((void **)&chip);
+		if (chip)
+			wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
 		goto connsys_pwr_off;
 	}
 
