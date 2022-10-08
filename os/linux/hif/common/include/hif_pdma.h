@@ -1128,6 +1128,7 @@ static inline void halMawdPwrOff(void) {}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if CFG_SUPPORT_RX_PAGE_POOL
+void kalSkbMarkForRecycle(struct sk_buff *pkt);
 struct sk_buff *kalAllocRxSkb(uint8_t **ppucData);
 u_int8_t kalCreateHifSkbList(void);
 void kalReleaseHifSkbList(void);

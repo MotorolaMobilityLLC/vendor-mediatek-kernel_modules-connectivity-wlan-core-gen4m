@@ -2026,6 +2026,10 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 
 #if CFG_SUPPORT_RX_GRO
 	if (kal_is_skb_gro(prGlueInfo->prAdapter, ucBssIdx)) {
+#if CFG_SUPPORT_RX_PAGE_POOL
+		/* avoid recycle & non-recycle skb merged to non-recycle skb */
+		kalSkbMarkForRecycle(prSkb);
+#endif
 #if CFG_SUPPORT_RX_NAPI
 		if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 			/* We should stay in NAPI context now */
