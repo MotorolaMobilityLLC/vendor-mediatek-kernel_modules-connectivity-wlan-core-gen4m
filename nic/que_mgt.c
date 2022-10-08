@@ -162,6 +162,7 @@ static uint16_t arpMoniter;
 static uint8_t apIp[4];
 static uint8_t gatewayIp[4];
 static uint32_t last_rx_packets, latest_rx_packets;
+static uint8_t arpIsCriticalThres;
 #endif
 /*******************************************************************************
  *                                 M A C R O S
@@ -9259,6 +9260,7 @@ void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
 	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
+	arpIsCriticalThres = prWifiVar->uArpMonitorCriticalThres;
 
 	if (uArpMonitorNumber == 0)
 		return;
@@ -9327,6 +9329,13 @@ void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
 	DBGLOG(QM, LOUD, "arpMoniter:[%u:%u] rx:[%u:%u:%u]\n",
 		arpMoniter, uArpMonitorNumber,
 		latest_rx_packets, last_rx_packets, uArpMonitorRxPktNum);
+}
+
+u_int8_t qmArpMonitorIsCritical(void)
+{
+	DBGLOG(QM, LOUD, "arpMoniter:[Mon, Thres][%u, %u]\n",
+	   arpMoniter, arpIsCriticalThres);
+	return arpMoniter >= arpIsCriticalThres;
 }
 
 void qmArpMonitorHandleRxArpMsg(struct ADAPTER *prAdapter,

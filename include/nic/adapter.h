@@ -1213,6 +1213,7 @@ struct WIFI_VAR {
 #if ARP_MONITER_ENABLE
 	uint32_t uArpMonitorNumber;
 	uint32_t uArpMonitorRxPktNum;
+	uint8_t uArpMonitorCriticalThres;
 #endif /* ARP_MONITER_ENABLE */
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	uint8_t ucScanNoApRecover;

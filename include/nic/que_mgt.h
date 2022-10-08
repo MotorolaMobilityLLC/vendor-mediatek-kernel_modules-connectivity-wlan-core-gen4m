@@ -1328,6 +1328,7 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 			   struct SW_RFB *prSwRfb);
 void qmResetArpDetect(void);
+u_int8_t qmArpMonitorIsCritical(void);
 void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
 	uint8_t *pucData, uint16_t u2PacketLen);
