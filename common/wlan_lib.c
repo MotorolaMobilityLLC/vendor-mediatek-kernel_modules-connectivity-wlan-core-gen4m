@@ -1757,11 +1757,7 @@ void wlanIST(struct ADAPTER *prAdapter, bool fgEnInt)
 		u4Status = nicProcessIST(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-			DBGLOG_LIMITED(
-				REQ, INFO,
-				"Fail: nicProcessIST! status [%x][0x%08x]\n",
-				u4Status,
-				prAdapter->prGlueInfo->rHifInfo.u4IntStatus);
+			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4IsrNotIndCount);
 #else
 			DBGLOG_LIMITED(
 				REQ, INFO,

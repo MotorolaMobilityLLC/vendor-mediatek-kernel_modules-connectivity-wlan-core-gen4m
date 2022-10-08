@@ -1595,6 +1595,7 @@ struct HIF_STATS {
 	uint32_t u4MsiIsrCount[32];
 	uint32_t u4HwIsrCount;
 	uint32_t u4SwIsrCount;
+	uint32_t u4IsrNotIndCount;
 	uint32_t u4CmdInCount; /* cmd from main_thread to hif_thread */
 	uint32_t u4CmdTxCount; /* cmd from hif_thread to DMA */
 	uint32_t u4CmdTxdoneCount; /* cmd from DMA to consys */
