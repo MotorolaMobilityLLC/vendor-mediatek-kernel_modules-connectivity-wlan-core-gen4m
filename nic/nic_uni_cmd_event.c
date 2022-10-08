@@ -4561,6 +4561,8 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 				sizeof(tag->ucCurRxRCPI1));
 	kalMemCopy(tag->ucCurRxNss, cmd->ucCurRxNss,
 				sizeof(tag->ucCurRxNss));
+	kalMemCopy(tag->ucCurRxNss2, cmd->ucCurRxNss2,
+				sizeof(tag->ucCurRxNss2));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

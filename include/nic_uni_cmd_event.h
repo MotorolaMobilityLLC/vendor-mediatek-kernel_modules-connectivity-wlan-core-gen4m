@@ -3742,7 +3742,8 @@ struct UNI_CMD_PERF_IND_PARM {
 	uint8_t ucCurRxRCPI0[4];
 	uint8_t ucCurRxRCPI1[4];
 	uint8_t ucCurRxNss[4];
-	uint32_t au4Padding[63]; /* reserve for future*/
+	uint8_t ucCurRxNss2[4];
+	uint32_t au4Padding[62]; /* reserve for future*/
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
