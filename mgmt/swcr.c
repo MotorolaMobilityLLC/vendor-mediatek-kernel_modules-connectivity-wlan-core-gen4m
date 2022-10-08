@@ -265,11 +265,11 @@ void dumpQueue(struct ADAPTER *prAdapter)
 #endif
 
 	DBGLOG(SW4, INFO, " rFreeSwRfbList %u\n",
-	       prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem);
+		RX_GET_FREE_RFB_CNT(&prAdapter->rRxCtrl));
 	DBGLOG(SW4, INFO, " rReceivedRfbList %u\n",
-	       prAdapter->rRxCtrl.rReceivedRfbList.u4NumElem);
+		RX_GET_RECEIVED_RFB_CNT(&prAdapter->rRxCtrl));
 	DBGLOG(SW4, INFO, " rIndicatedRfbList %u\n",
-	       prAdapter->rRxCtrl.rIndicatedRfbList.u4NumElem);
+		RX_GET_INDICATED_RFB_CNT(&prAdapter->rRxCtrl));
 	DBGLOG(SW4, INFO, " ucNumIndPacket %u\n",
 	       prAdapter->rRxCtrl.ucNumIndPacket);
 	DBGLOG(SW4, INFO, " ucNumRetainedPacket %u\n",

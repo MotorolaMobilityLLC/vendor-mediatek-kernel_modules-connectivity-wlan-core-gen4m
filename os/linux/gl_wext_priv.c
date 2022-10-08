@@ -7863,17 +7863,17 @@ static int priv_driver_get_sta_stat2(struct net_device *prNetDev,
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	prQueryDrvStatistics->u4RxFreeSwRfbMsduNumElem =
-					prRxCtrl->rFreeSwRfbList.u4NumElem;
+		RX_GET_FREE_RFB_CNT(prRxCtrl);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	prQueryDrvStatistics->u4RxReceivedRfbNumElem =
-					prRxCtrl->rReceivedRfbList.u4NumElem;
+		RX_GET_RECEIVED_RFB_CNT(prRxCtrl);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 	prQueryDrvStatistics->u4RxIndicatedNumElem =
-					prRxCtrl->rIndicatedRfbList.u4NumElem;
+		RX_GET_INDICATED_RFB_CNT(prRxCtrl);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	i4BytesWritten = priv_driver_dump_stat2_info(prAdapter, pcCommand,

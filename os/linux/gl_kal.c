@@ -5611,6 +5611,10 @@ int main_thread(void *data)
 		/* update current throughput */
 		kalPerMonUpdate(prGlueInfo->prAdapter);
 
+#if CFG_RFB_TRACK
+		nicRxRfbTrackCheck(prGlueInfo->prAdapter);
+#endif /* CFG_RFB_TRACK */
+
 		if (test_and_clear_bit(GLUE_FLAG_TIMEOUT_BIT,
 				       &prGlueInfo->ulFlag))
 			TRACE(wlanTimerTimeoutCheck(prGlueInfo->prAdapter),
@@ -9602,7 +9606,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
 	uint64_t throughput = 0, throughputInPPS = 0;
-	char *buf = NULL, *head1, *head2, *head3;
+	char *buf = NULL, *head1, *head2, *head3, *head4;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 	uint8_t fgIsValidNetDevice = FALSE;
@@ -9708,10 +9712,12 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	 * 2. "[%d:...:%d]" for pending frame num, %d range is [-32767, 32767]
 	 * 3. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
 	 *    [0, 18446744073709551615]
+	 * 4. [%lu:%lu:%lu:%lu] rx reordering que cnt
 	 */
 	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
-	       (20 * 4 + 5) * MAX_BSSID_NUM + 1;
+	       (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
+	       (20 + 1) * MAX_BSSID_NUM;
 	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -9766,6 +9772,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 					atomic_long_read(&ndev->rx_dropped));
 		}
 		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+	}
+	pos++;
+	head4 = pos;
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		if (i == MAX_BSSID_NUM - 1) {
+			pos += kalSnprintf(pos, end - pos, "%u",
+				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+		} else {
+			pos += kalSnprintf(pos, end - pos, "%u:",
+				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+		}
 	}
 
 #define FORMAT_INT_8 \
@@ -9882,9 +9899,18 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define RRO_LOG_TEMPLATE ""
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+#if CFG_RFB_TRACK
+#define RRB_TRACK_TEMPLATE \
+	"RfbTrack[%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
+#else /* CFG_RFB_TRACK */
+#define RRB_TRACK_TEMPLATE ""
+#endif /* CFG_RFB_TRACK */
+
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
 	RRO_LOG_TEMPLATE \
+	"RxReorder[%s] " \
+	RRB_TRACK_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
 	"DR,TE,CE,DN,FE,DE,IE,TME,ID,NL]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
 	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
@@ -9917,6 +9943,24 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		/* used when recv abnormal reason */
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM),
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+		head4,
+#if CFG_RFB_TRACK
+		prAdapter->rWifiVar.fgRfbTrackEn,
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_INIT),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FREE),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_HIF),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_RX),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_MAIN),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FIFO),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_NAPI),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_REORDERING_IN),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl,
+			RFB_TRACK_REORDERING_OUT),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_INDICATED),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_PACKET_SETUP),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_MLO),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FAIL),
+#endif /* CFG_RFB_TRACK */
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -12384,6 +12428,7 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	uint32_t work_done = 1;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 		container_of(napi, struct GLUE_INFO, napi);
+	struct ADAPTER *prAdapter;
 	static int32_t i4UserCnt;
 	struct SW_RFB *prSwRfb;
 
@@ -12391,14 +12436,19 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	if (GLUE_INC_REF_CNT(i4UserCnt) > 1)
 		goto end;
 
+	prAdapter = prGlueInfo->prAdapter;
 	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {
 			DBGLOG(RX, ERROR, "prSwRfb null\n");
 			break;
 		}
-		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+#if CFG_RFB_TRACK
+		RX_RFB_TRACK_UPDATE(prAdapter,
+			prSwRfb, RFB_TRACK_NAPI);
+#endif /* CFG_RFB_TRACK */
+		RX_INC_CNT(&prAdapter->rRxCtrl,
 			RX_NAPI_FIFO_OUT_COUNT);
-		nicRxProcessPacketType(prGlueInfo->prAdapter, prSwRfb);
+		nicRxProcessPacketType(prAdapter, prSwRfb);
 		work_done++;
 	}
 	/* Set max work_done budget */

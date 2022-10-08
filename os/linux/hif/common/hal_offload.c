@@ -1083,10 +1083,10 @@ static u_int8_t halRroHandleRxRcb(
 	struct RXD_STRUCT rRxD;
 	struct RTMP_DMABUF rDmaBuf;
 	struct RX_CTRL *prRxCtrl;
+	struct QUE *prQue;
+	struct QUE rQue;
 	struct SW_RFB *prSwRfb;
 	struct sk_buff *prSkb;
-
-	KAL_SPIN_LOCK_DECLARATION();
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1102,10 +1102,14 @@ static u_int8_t halRroHandleRxRcb(
 	}
 #endif /* CFG_SUPPORT_RX_NAPI */
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
-			  prSwRfb, struct SW_RFB *);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	prQue = &rQue;
+	QUEUE_INITIALIZE(prQue);
+#if CFG_RFB_TRACK
+	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_HIF);
+#else /* CFG_RFB_TRACK */
+	nicRxDequeueFreeQue(prAdapter, 1, prQue);
+#endif /* CFG_RFB_TRACK */
+	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
 	if (!prSwRfb) {
 		DBGLOG_LIMITED(RX, WARN, "No More RFB\n");
 		return FALSE;
@@ -1594,9 +1598,9 @@ static u_int8_t halRroHandleRxRcbMsdu(
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
-	if (prRxCtrl->rFreeSwRfbList.u4NumElem < u4MsduCnt) {
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MsduCnt) {
 		DBGLOG_LIMITED(RX, WARN, "RFB[%u], [%u]\n",
-			       prRxCtrl->rFreeSwRfbList.u4NumElem, u4MsduCnt);
+			       RX_GET_FREE_RFB_CNT(prRxCtrl), u4MsduCnt);
 		return FALSE;
 	}
 
@@ -1955,8 +1959,6 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	uint32_t au4RingCnt[NUM_OF_RX_RING] = {0};
 	uint32_t u4Idx, u4TotalCnt = 0;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1975,13 +1977,8 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 		halRroReadIndCmd(prAdapter, au4RingCnt,
 				 prFreeSwRfbList, prRecvRfbList);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList, prFreeSwRfbList);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList, prRecvRfbList);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
+	nicRxConcatRxQue(prAdapter, prRecvRfbList);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++)
 		u4TotalCnt += au4RingCnt[u4Idx];

@@ -356,6 +356,9 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	pucMemHandle = prRxCtrl->pucRxCached;
 	for (i = CFG_RX_MAX_PKT_NUM; i != 0; i--) {
 		prSwRfb = (struct SW_RFB *) pucMemHandle;
+#if CFG_RFB_TRACK
+		RX_RFB_TRACK_INIT(prAdapter, prSwRfb, (i-1));
+#endif /* CFG_RFB_TRACK */
 
 		if (nicRxSetupRFB(prAdapter, prSwRfb)) {
 			DBGLOG(RX, ERROR,
@@ -367,8 +370,7 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 		pucMemHandle += ALIGN_4(sizeof(struct SW_RFB));
 	}
 
-	if (prRxCtrl->rFreeSwRfbList.u4NumElem !=
-	    CFG_RX_MAX_PKT_NUM)
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) != CFG_RX_MAX_PKT_NUM)
 		ASSERT_NOMEM();
 	/* Check if the memory allocation consist with this
 	 * initialization function
@@ -1163,7 +1165,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	prTxCtrl = &prAdapter->rTxCtrl;
 	ASSERT(prTxCtrl);
 
-	u4CurrentRxBufferCount = prRxCtrl->rFreeSwRfbList.u4NumElem;
+	u4CurrentRxBufferCount = RX_GET_FREE_RFB_CNT(prRxCtrl);
 	/* QM USED = $A, AVAILABLE COUNT = $B, INDICATED TO OS = $C
 	 * TOTAL = $A + $B + $C
 	 *
@@ -1458,7 +1460,7 @@ void nicRxProcessGOBroadcastPkt(struct ADAPTER
 
 	ASSERT(CFG_NUM_OF_QM_RX_PKT_NUM >= 16);
 
-	if (prRxCtrl->rFreeSwRfbList.u4NumElem
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl)
 	    >= (CFG_RX_MAX_PKT_NUM - (CFG_NUM_OF_QM_RX_PKT_NUM -
 				      16 /* Reserved for others */))) {
 
@@ -1489,8 +1491,8 @@ void nicRxProcessGOBroadcastPkt(struct ADAPTER
 		}
 	} else {
 		DBGLOG(RX, WARN,
-		       "Stop to forward BMC packet due to less free Sw Rfb %u\n",
-		       prRxCtrl->rFreeSwRfbList.u4NumElem);
+		      "Stop to forward BMC packet due to less free Sw Rfb %u\n",
+		      RX_GET_FREE_RFB_CNT(prRxCtrl));
 	}
 
 	/* 3. Indicate to host */
@@ -2515,7 +2517,7 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 			if ((kalGetTimeTick() - u4Tick) > RX_PROCESS_TIMEOUT) {
 				DBGLOG(RX, WARN,
 					"Process RFBs timeout, pending count: %u\n",
-					prRxCtrl->rReceivedRfbList.u4NumElem);
+					RX_GET_RECEIVED_RFB_CNT(prRxCtrl));
 				kalSetRxProcessEvent(prAdapter->prGlueInfo);
 				break;
 			}
@@ -2531,6 +2533,11 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 
 				if (!prSwRfb)
 					break;
+#if CFG_RFB_TRACK
+				RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+					RFB_TRACK_MAIN);
+#endif /* CFG_RFB_TRACK */
+
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 				if (kalIsWakeupByWlan(prAdapter))
 					nicRxCheckWakeupReason(prAdapter,
@@ -2580,10 +2587,17 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
 {
 	void *pvPacket;
 	uint8_t *pucRecvBuff = NULL;
+#if CFG_RFB_TRACK
+	uint32_t u4RfbTrackId;
+#endif /* CFG_RFB_TRACK */
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+#if CFG_RFB_TRACK
+	/* store rfb track id before memzero */
+	u4RfbTrackId = prSwRfb->u4RfbTrackId;
+#endif /* CFG_RFB_TRACK */
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 #if CFG_SUPPORT_RX_PAGE_POOL
@@ -2612,10 +2626,119 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
 	}
 
 	prSwRfb->prRxStatus = prSwRfb->pucRecvBuff;
+#if CFG_RFB_TRACK
+	prSwRfb->u4RfbTrackId = u4RfbTrackId;
+#endif /* CFG_RFB_TRACK */
 
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of nicRxSetupRFB() */
+
+#if CFG_RFB_TRACK
+void nicRxTrackConcatRxQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine)
+#else /* CFG_RFB_TRACK */
+void nicRxConcatRxQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue)
+#endif /* CFG_RFB_TRACK */
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	struct SW_RFB *prSwRfb = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+#if CFG_RFB_TRACK
+	if (IS_FEATURE_ENABLED(prWifiVar->fgRfbTrackEn)) {
+		while (QUEUE_IS_NOT_EMPTY(prQue)) {
+			QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
+			if (!prSwRfb)
+				break;
+			__RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				ucTrackState, fileAndLine);
+			QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,
+				&prSwRfb->rQueEntry);
+		}
+	} else
+#endif /* CFG_RFB_TRACK */
+	{
+		if (QUEUE_IS_NOT_EMPTY(prQue))
+			QUEUE_CONCATENATE_QUEUES(
+				&prRxCtrl->rReceivedRfbList,
+				prQue);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+}
+
+#if CFG_RFB_TRACK
+void nicRxTrackConcatFreeQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine)
+#else /* CFG_RFB_TRACK */
+void nicRxConcatFreeQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue)
+#endif /* CFG_RFB_TRACK */
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	struct SW_RFB *prSwRfb = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+#if CFG_RFB_TRACK
+	if (IS_FEATURE_ENABLED(prWifiVar->fgRfbTrackEn)) {
+		while (QUEUE_IS_NOT_EMPTY(prQue)) {
+			QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
+			if (!prSwRfb)
+				break;
+			__RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				ucTrackState, fileAndLine);
+			QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList,
+				&prSwRfb->rQueEntry);
+		}
+	} else
+#endif /* CFG_RFB_TRACK */
+	{
+		if (QUEUE_IS_NOT_EMPTY(prQue))
+			QUEUE_CONCATENATE_QUEUES(
+				&prRxCtrl->rFreeSwRfbList,
+				prQue);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+}
+
+#if CFG_RFB_TRACK
+void nicRxTrackDequeueFreeQue(struct ADAPTER *prAdapter, uint32_t u4Num,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine)
+#else /* CFG_RFB_TRACK */
+void nicRxDequeueFreeQue(struct ADAPTER *prAdapter, uint32_t u4Num,
+	struct QUE *prQue)
+#endif /* CFG_RFB_TRACK */
+{
+	uint32_t i;
+	struct RX_CTRL *prRxCtrl;
+	struct SW_RFB *prSwRfb = NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	QUEUE_INITIALIZE(prQue);
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	for (i = 0; i < u4Num; i++) {
+		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,
+			prSwRfb, struct SW_RFB *);
+		if (!prSwRfb)
+			break;
+#if CFG_RFB_TRACK
+		__RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+			ucTrackState, fileAndLine);
+#endif /* CFG_RFB_TRACK */
+		QUEUE_INSERT_TAIL(prQue, &prSwRfb->rQueEntry);
+	}
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2627,8 +2750,12 @@ uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
  * @return swrfb
  */
 /*----------------------------------------------------------------------------*/
-
+#if CFG_RFB_TRACK
+struct SW_RFB *nicRxTrackAcquireRFB(struct ADAPTER *prAdapter, uint16_t num,
+	uint8_t ucTrackState, uint8_t *fileAndLine)
+#else /* CFG_RFB_TRACK */
 struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
+#endif /* CFG_RFB_TRACK */
 {
 	uint16_t i;
 	struct QUE tmp, *que = &tmp;
@@ -2636,31 +2763,28 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	struct RX_CTRL *ctrl;
 	uint32_t u4Status;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	ctrl = &prAdapter->rRxCtrl;
 
 	QUEUE_INITIALIZE(que);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	for (i = 0; i < num; i++) {
-		QUEUE_REMOVE_HEAD(&ctrl->rFreeSwRfbList, rfb, struct SW_RFB *);
-		if (!rfb) {
-			DBGLOG_LIMITED(RX, WARN,
-				"No More RFB caller=%pS\n", KAL_TRACE);
-			break;
-		}
-		QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
-	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+#if CFG_RFB_TRACK
+	nicRxTrackDequeueFreeQue(prAdapter, num, que,
+		ucTrackState, fileAndLine);
+#else /* CFG_RFB_TRACK */
+	nicRxDequeueFreeQue(prAdapter, num, que);
+#endif /* CFG_RFB_TRACK */
 
-	if (likely(i == num))
+	if (likely(que->u4NumElem == num))
 		return QUEUE_GET_HEAD(que);
 
-	/* Fail to get RFB from rFreeSwRfbList */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_CONCATENATE_QUEUES(&ctrl->rFreeSwRfbList, que);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
+	DBGLOG_LIMITED(RX, WARN,
+		"No More RFB caller=%pS\n", KAL_TRACE);
+
+#if CFG_RFB_TRACK
+	nicRxTrackConcatFreeQue(prAdapter, que, ucTrackState, fileAndLine);
+#else /* CFG_RFB_TRACK */
+	nicRxConcatFreeQue(prAdapter, que);
+#endif /* CFG_RFB_TRACK */
 
 	/* Fallback, allocate from spared */
 	QUEUE_INITIALIZE(que);
@@ -2802,6 +2926,9 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 	if (prSwRfb->pvPacket) {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList, prQueEntry);
+#if CFG_RFB_TRACK
+		RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_FREE);
+#endif /* CFG_RFB_TRACK */
 		if (prAdapter->ulNoMoreRfb != 0) {
 			DBGLOG_LIMITED(RX, INFO,
 				"Free rfb and set IntEvent!!!!!\n");
@@ -2810,13 +2937,16 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 	} else {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rIndicatedRfbList, prQueEntry);
+#if CFG_RFB_TRACK
+		RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_INDICATED);
+#endif /* CFG_RFB_TRACK */
 	}
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 done:
 	/* Trigger Rx if there are free SwRfb */
 	if (halIsPendingRx(prAdapter)
-	    && (prRxCtrl->rFreeSwRfbList.u4NumElem > 0))
+	    && (RX_GET_FREE_RFB_CNT(prRxCtrl) > 0))
 		kalSetIntEvent(prGlueInfo);
 } /* end of __nicRxReturnRFB() */
 
@@ -2959,11 +3089,11 @@ void nicRxQueryStatus(struct ADAPTER *prAdapter,
 	SPRINTF_RX_QSTATUS(("\n\nRX CTRL STATUS:"));
 	SPRINTF_RX_QSTATUS(("\n==============="));
 	SPRINTF_RX_QSTATUS(("\nFREE RFB w/i BUF LIST :%9u",
-			    prRxCtrl->rFreeSwRfbList.u4NumElem));
+		RX_GET_FREE_RFB_CNT(prRxCtrl)));
 	SPRINTF_RX_QSTATUS(("\nFREE RFB w/o BUF LIST :%9u",
-			    prRxCtrl->rIndicatedRfbList.u4NumElem));
+		RX_GET_INDICATED_RFB_CNT(prRxCtrl)));
 	SPRINTF_RX_QSTATUS(("\nRECEIVED RFB LIST     :%9u",
-			    prRxCtrl->rReceivedRfbList.u4NumElem));
+		RX_GET_RECEIVED_RFB_CNT(prRxCtrl)));
 
 	SPRINTF_RX_QSTATUS(("\n\n"));
 
@@ -3781,3 +3911,155 @@ void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if CFG_RFB_TRACK
+static uint8_t *apucRfbTrackStatusStr[RFB_TRACK_STATUS_NUM] = {
+	(uint8_t *) DISP_STRING("INIT"),
+	(uint8_t *) DISP_STRING("FREE"),
+	(uint8_t *) DISP_STRING("HIF"),
+	(uint8_t *) DISP_STRING("RX"),
+	(uint8_t *) DISP_STRING("MAIN"),
+	(uint8_t *) DISP_STRING("FIFO"),
+	(uint8_t *) DISP_STRING("NAPI"),
+	(uint8_t *) DISP_STRING("REORDERING_IN"),
+	(uint8_t *) DISP_STRING("REORDERING_OUT"),
+	(uint8_t *) DISP_STRING("INDICATED"),
+	(uint8_t *) DISP_STRING("PACKET_SETUP"),
+	(uint8_t *) DISP_STRING("MLO"),
+	(uint8_t *) DISP_STRING("FAIL"),
+};
+
+void nicRxRfbTrackInit(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint32_t i, uint8_t *fileAndLine)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	struct RFB_TRACK *prRfbTrack;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgRfbTrackEn))
+		return;
+
+	if (i >= CFG_RX_MAX_PKT_NUM) {
+		DBGLOG(NIC, ERROR, "Invalid index[%u] file:%s\n",
+			i, fileAndLine);
+		RFB_TRACK_INC_CNT(prRxCtrl, RFB_TRACK_FAIL);
+		return;
+	}
+
+	prRfbTrack = &(prRxCtrl->rRfbTrack[i]);
+	prRfbTrack->prSwRfb = prSwRfb;
+	prRfbTrack->ucTrackState = RFB_TRACK_INIT;
+	prRfbTrack->pucFileAndLine = fileAndLine;
+	GET_CURRENT_SYSTIME(&prRfbTrack->rTrackTime);
+	RFB_TRACK_INC_CNT(prRxCtrl, RFB_TRACK_INIT);
+
+	prSwRfb->u4RfbTrackId = i;
+
+	DBGLOG(NIC, TEMP,
+		"prSwRfb[%p:%p] TrackId[%u] State[%s] Line[%s] Time[%u]\n",
+		prSwRfb,
+		prRfbTrack->prSwRfb, prSwRfb->u4RfbTrackId,
+		apucRfbTrackStatusStr[prRfbTrack->ucTrackState],
+		prRfbTrack->pucFileAndLine,
+		prRfbTrack->rTrackTime);
+}
+
+void nicRxRfbTrackUpdate(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t ucTrackState,
+	uint8_t *fileAndLine)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	struct RFB_TRACK *prRfbTrack;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgRfbTrackEn))
+		return;
+
+	if (ucTrackState >= RFB_TRACK_STATUS_NUM) {
+		DBGLOG(NIC, ERROR, "Invalid TrackId[%u] file:%s\n",
+			ucTrackState, fileAndLine);
+		RFB_TRACK_INC_CNT(prRxCtrl, RFB_TRACK_FAIL);
+		return;
+	}
+
+	if (prSwRfb->u4RfbTrackId >= CFG_RX_MAX_PKT_NUM) {
+		DBGLOG(NIC, ERROR, "Invalid index[%u] file:%s\n",
+			prSwRfb->u4RfbTrackId, fileAndLine);
+		RFB_TRACK_INC_CNT(prRxCtrl, RFB_TRACK_FAIL);
+		return;
+	}
+
+	prRfbTrack = &(prRxCtrl->rRfbTrack[prSwRfb->u4RfbTrackId]);
+	if (prRfbTrack->prSwRfb != prSwRfb) {
+		DBGLOG(NIC, ERROR,
+			"TrackId[%d] Invalid pointer[%p,%p] file:%s\n",
+			prSwRfb->u4RfbTrackId,
+			prRfbTrack->prSwRfb, prSwRfb, fileAndLine);
+		RFB_TRACK_INC_CNT(prRxCtrl, RFB_TRACK_FAIL);
+		return;
+	}
+
+	/* Decrease from original group */
+	RFB_TRACK_DEC_CNT(prRxCtrl, prRfbTrack->ucTrackState);
+	prRfbTrack->ucTrackState = ucTrackState;
+	prRfbTrack->pucFileAndLine = fileAndLine;
+	GET_BOOT_SYSTIME(&prRfbTrack->rTrackTime);
+	RFB_TRACK_INC_CNT(prRxCtrl, ucTrackState);
+
+	DBGLOG(NIC, TEMP,
+		"prSwRfb[%p] TrackId[%u] State[%s] Line[%s] Time[%u]\n",
+		prSwRfb, prSwRfb->u4RfbTrackId,
+		apucRfbTrackStatusStr[prRfbTrack->ucTrackState],
+		prRfbTrack->pucFileAndLine,
+		prRfbTrack->rTrackTime);
+}
+
+void nicRxRfbTrackCheck(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
+	static OS_SYSTIME last;
+	OS_SYSTIME now;
+	uint32_t i = 0;
+	struct RFB_TRACK *prRfbTrack;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgRfbTrackEn))
+		return;
+
+	GET_BOOT_SYSTIME(&now);
+
+	if (!CHECK_FOR_TIMEOUT(now, last,
+		SEC_TO_SYSTIME(prWifiVar->u4RfbTrackInterval)))
+		return;
+
+	for (i = 0 ; i < CFG_RX_MAX_PKT_NUM; i++) {
+		OS_SYSTIME rTrackTime;
+
+		prRfbTrack = &(prRxCtrl->rRfbTrack[i]);
+		rTrackTime = prRfbTrack->rTrackTime;
+
+		/* no need to check rfb in free rfb list */
+		if (prRfbTrack->ucTrackState == RFB_TRACK_FREE)
+			continue;
+
+		/* rfb track time is change, skip this rfb check */
+		if (rTrackTime > now)
+			continue;
+
+		if (!CHECK_FOR_TIMEOUT(now, rTrackTime,
+			SEC_TO_SYSTIME(prWifiVar->u4RfbTrackTimeout)))
+			continue;
+
+		DBGLOG(NIC, INFO,
+			"prSwRfb[%p] TrackId[%u] State[%s] Line[%s] Time[%u] Diff[%u ms]\n",
+			prRfbTrack->prSwRfb,
+			i,
+			apucRfbTrackStatusStr[prRfbTrack->ucTrackState],
+			prRfbTrack->pucFileAndLine,
+			rTrackTime,
+			now - rTrackTime
+			);
+	}
+
+	last = now;
+}
+#endif /* CFG_RFB_TRACK */

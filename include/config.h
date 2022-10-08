@@ -2012,6 +2012,10 @@
 
 #define CFG_SUPPORT_LIMITED_PKT_PID  1
 
+#ifndef CFG_RFB_TRACK
+#define CFG_RFB_TRACK 1
+#endif /* CFG_RFB_TRACK */
+
 /*------------------------------------------------------------------------------
  * Support FreeMsdu tasklet.
  * Linux version only. Force remove for other platform

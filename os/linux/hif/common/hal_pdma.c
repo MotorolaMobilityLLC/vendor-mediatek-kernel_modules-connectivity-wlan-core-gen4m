@@ -2003,6 +2003,10 @@ u_int8_t halRxInsertRecvRfbList(
 		 * Otherwise, goto default RX-direct policy
 		 */
 		if (prGlueInfo->prRxDirectNapi) {
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_FIFO);
+#endif /* CFG_RFB_TRACK */
 			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
 				RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
@@ -2049,8 +2053,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	static int32_t ai4PortLock[RX_RING_MAX];
 	u_int8_t fgRet = TRUE;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	/* Port idx sanity */
 	if (u4Port >= NUM_OF_RX_RING) {
 		DBGLOG(RX, ERROR, "Invalid P[%u]\n", u4Port);
@@ -2082,9 +2084,9 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	ASSERT(prRxDescOps->nic_rxd_get_sec_mode);
 #endif /* DBG */
 
-	if (!prRxCtrl->rFreeSwRfbList.u4NumElem) {
+	if (!RX_GET_FREE_RFB_CNT(prRxCtrl)) {
 		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u], Ind=%u\n",
-				u4Port, prRxCtrl->rIndicatedRfbList.u4NumElem);
+				u4Port, RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 		KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 		goto end;
 	}
@@ -2108,16 +2110,18 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	QUEUE_INITIALIZE(prFreeSwRfbList);
 	QUEUE_INITIALIZE(prReceivedRfbList);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_MOVE_ALL(prFreeSwRfbList, &prRxCtrl->rFreeSwRfbList);
+#if CFG_RFB_TRACK
+	nicRxDequeueFreeQue(prAdapter, u4RxCnt, prFreeSwRfbList, RFB_TRACK_HIF);
+#else /* CFG_RFB_TRACK */
+	nicRxDequeueFreeQue(prAdapter, u4RxCnt, prFreeSwRfbList);
+#endif /* CFG_RFB_TRACK */
 	if (prFreeSwRfbList->u4NumElem < u4RxCnt) {
 		DBGLOG_LIMITED(RX, WARN,
 			"No More RFB for P[%u], RxCnt:%u, RfbCnt:%u, Ind:%u\n",
 			u4Port, u4RxCnt,
 			prFreeSwRfbList->u4NumElem,
-			prRxCtrl->rIndicatedRfbList.u4NumElem);
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	prHifStats->u4RxDataRegCnt++;
 
@@ -2203,15 +2207,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rFreeSwRfbList,
-		prFreeSwRfbList);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-	QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList,
-		prReceivedRfbList);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
+	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
+	nicRxConcatRxQue(prAdapter, prReceivedRfbList);
 
 	prRxRing->u4PendingCnt = u4RxCnt - u4RxSuccessCnt;
 
@@ -5392,12 +5389,13 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" Msdu[%u/%u] Tok[%u/%u] Rfb[%u/%u]",
+			" Msdu[%u/%u] Tok[%u/%u] Rfb[%u/%u/%u]",
 			prTxCtrl->rFreeMsduInfoList.u4NumElem,
 			CFG_TX_MAX_PKT_NUM,
 			prHifInfo->rTokenInfo.u4UsedCnt,
 			HIF_TX_MSDU_TOKEN_NUM,
-			prRxCtrl->rFreeSwRfbList.u4NumElem,
+			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
 			CFG_RX_MAX_PKT_NUM);
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" txreg[%u] rxreg[%u]",

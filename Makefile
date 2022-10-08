@@ -523,6 +523,12 @@ else
     ccflags-y += -DCFG_VOLT_INFO=0
 endif
 
+ifeq ($(CONFIG_RFB_TRACK_SUPPORT), y)
+    ccflags-y += -DCFG_RFB_TRACK=1
+else
+    ccflags-y += -DCFG_RFB_TRACK=1
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq (,$(filter CFG_RX_DIRECT,$(PLATFORM_FLAGS)))
         ccflags-y += -DCFG_RX_DIRECT=1

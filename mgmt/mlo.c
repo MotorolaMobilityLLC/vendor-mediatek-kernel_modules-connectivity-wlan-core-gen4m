@@ -2205,8 +2205,11 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 		IE_FOR_EACH(pucSubIE, u2SubIElen, u2SubOffset) {
 			if (IE_ID(pucSubIE) != NON_TX_BSSID_PROFILE)
 				continue;
-
+#if CFG_RFB_TRACK
+			rfb = nicRxAcquireRFB(prAdapter, 1, RFB_TRACK_MLO);
+#else /* CFG_RFB_TRACK */
 			rfb = nicRxAcquireRFB(prAdapter, 1);
+#endif /* CFG_RFB_TRACK */
 			if (!rfb)
 				break;
 
@@ -2404,7 +2407,11 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 			FALSE, NULL))
 			continue;
 
+#if CFG_RFB_TRACK
+		rfb = nicRxAcquireRFB(prAdapter, 1, RFB_TRACK_MLO);
+#else /* CFG_RFB_TRACK */
 		rfb = nicRxAcquireRFB(prAdapter, 1);
+#endif /* CFG_RFB_TRACK */
 		if (!rfb)
 			break;
 
@@ -2499,7 +2506,11 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 	sta->rChnlInfo.ucChannelNum = bss->ucPrimaryChannel;
 	sta->rChnlInfo.eBand = bss->eBand;
 
+#if CFG_RFB_TRACK
+	rfb = nicRxAcquireRFB(prAdapter, 1, RFB_TRACK_MLO);
+#else /* CFG_RFB_TRACK */
 	rfb = nicRxAcquireRFB(prAdapter, 1);
+#endif /* CFG_RFB_TRACK */
 	if (!rfb) {
 		DBGLOG(ML, INFO, "no rfb\n");
 		goto fail;

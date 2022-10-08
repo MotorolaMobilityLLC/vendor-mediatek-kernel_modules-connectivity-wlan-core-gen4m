@@ -4340,8 +4340,8 @@ static void checkToFlushReordering(struct ADAPTER *prAdapter,
 #else
 	uint32_t u4ReorderingNum = prReorderQueParm->rReOrderQue->u4NumElem;
 #endif
-	uint32_t u4IndicateSwRfbNum = prRxCtrl->rIndicatedRfbList.u4NumElem;
-	uint32_t u4FreeSwRfbNum = prRxCtrl->rFreeSwRfbList.u4NumElem;
+	uint32_t u4IndicateSwRfbNum = RX_GET_INDICATED_RFB_CNT(prRxCtrl);
+	uint32_t u4FreeSwRfbNum = RX_GET_FREE_RFB_CNT(prRxCtrl);
 	uint32_t u4NewReorderingNum;
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgFlushRxReordering))
@@ -4370,8 +4370,8 @@ static void checkToFlushReordering(struct ADAPTER *prAdapter,
 	DBGLOG(QM, INFO,
 		"Flushed reordering: Reordering=%u->%u Ind=%u->%u FreeRFB=%u->%u\n",
 		u4ReorderingNum, u4NewReorderingNum,
-		u4IndicateSwRfbNum, prRxCtrl->rIndicatedRfbList.u4NumElem,
-		u4FreeSwRfbNum, prRxCtrl->rFreeSwRfbList.u4NumElem);
+		u4IndicateSwRfbNum, RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+		u4FreeSwRfbNum, RX_GET_FREE_RFB_CNT(prRxCtrl));
 #endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
 }
 
@@ -4622,6 +4622,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 	uint16_t u2WinStart;
 	uint16_t u2WinEnd;
 	uint16_t u2BarSSN;
+	uint8_t ucBssIndex;
 
 	/* Start to reorder packets */
 	u2SeqNo = prSwRfb->u2SSN;
@@ -4633,6 +4634,13 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 	DBGLOG(RX, TEMP, "QM:ipid=%d(R)[%u](%u){%u,%u}\n",
 		GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket), prSwRfb->ucTid,
 		u2SeqNo, u2WinStart, u2WinEnd);
+
+	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
+	REORDERING_INC_BSS_CNT(&prAdapter->rRxCtrl, ucBssIndex);
+#if CFG_RFB_TRACK
+	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+		RFB_TRACK_REORDERING_IN);
+#endif /* CFG_RFB_TRACK */
 
 	if (prReorderQueParm->fgNoDrop) {
 		if (!SEQ_SMALLER(u2SeqNo, prReorderQueParm->u2WinStart)) {
@@ -5014,6 +5022,7 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 	enum ENUM_RX_STATISTIC_COUNTER eRxCounter)
 {
 	uint32_t u4PktCnt = 0;
+	uint8_t ucBssIndex;
 	/* RX reorder for one MSDU in AMSDU issue */
 #if 0
 	struct SW_RFB *prAmsduSwRfb;
@@ -5036,6 +5045,13 @@ void qmPopOutReorderPkt(struct ADAPTER *prAdapter,
 	}
 #endif
 	RX_ADD_CNT(&prAdapter->rRxCtrl, eRxCounter, u4PktCnt);
+
+	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
+	REORDERING_DEC_BSS_CNT(&prAdapter->rRxCtrl, ucBssIndex);
+#if CFG_RFB_TRACK
+	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+		RFB_TRACK_REORDERING_OUT);
+#endif /* CFG_RFB_TRACK */
 }
 
 
@@ -8032,11 +8048,11 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 	LOGBUF(pucBuf, u4Max, u4Len, "Total RFB[%u]\n",
 		CFG_RX_MAX_PKT_NUM);
 	LOGBUF(pucBuf, u4Max, u4Len, "FSwRfbList[%u]\n",
-		prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem);
+		RX_GET_FREE_RFB_CNT(&prAdapter->rRxCtrl));
 	LOGBUF(pucBuf, u4Max, u4Len, "RecRfbList[%u]\n",
-		prAdapter->rRxCtrl.rReceivedRfbList.u4NumElem);
+		RX_GET_RECEIVED_RFB_CNT(&prAdapter->rRxCtrl));
 	LOGBUF(pucBuf, u4Max, u4Len, "IndicatedRfbList[%u]\n",
-		prAdapter->rRxCtrl.rIndicatedRfbList.u4NumElem);
+		RX_GET_INDICATED_RFB_CNT(&prAdapter->rRxCtrl));
 	LOGBUF(pucBuf, u4Max, u4Len, "NumIndPacket[%u]\n",
 		prAdapter->rRxCtrl.ucNumIndPacket);
 	LOGBUF(pucBuf, u4Max, u4Len, "NumRetainedPacket[%u]\n",

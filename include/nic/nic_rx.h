@@ -599,6 +599,26 @@ enum ENUM_RX_PKT_DESTINATION {
 	RX_PKT_DESTINATION_NUM
 };
 
+enum ENUM_RFB_TRACK_STATUS {
+	RFB_TRACK_INIT,
+	RFB_TRACK_FREE,
+	RFB_TRACK_HIF,
+	RFB_TRACK_RX,
+	RFB_TRACK_MAIN,
+	RFB_TRACK_FIFO,
+	RFB_TRACK_NAPI,
+	RFB_TRACK_REORDERING_IN,
+	RFB_TRACK_REORDERING_OUT,
+	RFB_TRACK_INDICATED,
+	RFB_TRACK_PACKET_SETUP,
+	RFB_TRACK_MLO,
+	RFB_TRACK_FAIL,
+	RFB_TRACK_STATUS_NUM
+};
+
+#define RFB_TRACK_INTERVAL 60 /* unit: second */
+#define RFB_TRACK_TIMEOUT 10  /* uint: second */
+
 /* Used for MAC RX */
 enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_TX_STATUS = 0,
@@ -960,6 +980,10 @@ struct SW_RFB {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	uint32_t u4IndReason;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+#if CFG_RFB_TRACK
+	uint32_t u4RfbTrackId;
+#endif /* CFG_RBF_TRACK */
 };
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
@@ -979,6 +1003,15 @@ struct RX_CSO_REPORT_T {
 };
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
+#if CFG_RFB_TRACK
+struct RFB_TRACK {
+	struct SW_RFB *prSwRfb;
+	uint8_t ucTrackState;
+	uint8_t *pucFileAndLine;
+	OS_SYSTIME rTrackTime;
+};
+#endif /* CFG_RBF_TRACK */
+
 /*! RX configuration type structure */
 struct RX_CTRL {
 	uint32_t u4RxCachedSize;
@@ -991,6 +1024,11 @@ struct RX_CTRL {
 	uint8_t *pucRxCoalescingBufPtr;
 #endif
 
+	int32_t ai4ReorderingCnt[MAX_BSSID_NUM];
+#if CFG_RFB_TRACK
+	struct RFB_TRACK rRfbTrack[CFG_RX_MAX_PKT_NUM];
+	int32_t ai4RfbStatus[RFB_TRACK_STATUS_NUM];
+#endif /* CFG_RFB_TRACK */
 	void *apvIndPacket[CFG_RX_MAX_PKT_NUM];
 	void *apvRetainedPacket[CFG_RX_MAX_PKT_NUM];
 
@@ -1128,6 +1166,70 @@ struct ACTION_FRAME_SIZE_MAP {
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
 	{kalMemZero(&prRxCtrl->au8Statistics[0], \
 	sizeof(prRxCtrl->au8Statistics)); }
+
+#define RX_GET_FREE_RFB_CNT(prRxCtrl) \
+	((prRxCtrl)->rFreeSwRfbList.u4NumElem)
+
+#define RX_GET_RECEIVED_RFB_CNT(prRxCtrl) \
+	((prRxCtrl)->rReceivedRfbList.u4NumElem)
+
+#define RX_GET_INDICATED_RFB_CNT(prRxCtrl) \
+	((prRxCtrl)->rIndicatedRfbList.u4NumElem)
+
+#define FILE_AND_LINE_NUMBER \
+	(__FILE__ ":" STRLINE(__LINE__))
+
+#define REORDERING_INC_BSS_CNT(prRxCtrl, ucBssIndex) \
+	do { \
+		if (ucBssIndex >= MAX_BSSID_NUM) { \
+			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+				ucBssIndex); \
+			break; \
+		} \
+		GLUE_INC_REF_CNT( \
+			(prRxCtrl)->ai4ReorderingCnt[ucBssIndex]); \
+	} while (0)
+
+#define REORDERING_DEC_BSS_CNT(prRxCtrl, ucBssIndex) \
+	do { \
+		if (ucBssIndex >= MAX_BSSID_NUM) { \
+			DBGLOG(QM, INFO, "Invalid ucBssIndex:%u\n", \
+				ucBssIndex); \
+			break; \
+		} \
+		GLUE_DEC_REF_CNT( \
+			(prRxCtrl)->ai4ReorderingCnt[ucBssIndex]); \
+	} while (0)
+
+#define REORDERING_GET_BSS_CNT(prRxCtrl, ucBssIndex) \
+	(GLUE_GET_REF_CNT( \
+		(prRxCtrl)->ai4ReorderingCnt[(ucBssIndex)]))
+
+#if CFG_RFB_TRACK
+#define RFB_TRACK_INC_CNT(prRxCtrl, eCounter) \
+	(GLUE_INC_REF_CNT( \
+		(prRxCtrl)->ai4RfbStatus[eCounter]))
+
+#define RFB_TRACK_DEC_CNT(prRxCtrl, eCounter) \
+	(GLUE_DEC_REF_CNT( \
+		(prRxCtrl)->ai4RfbStatus[eCounter]))
+
+#define RFB_TRACK_GET_CNT(prRxCtrl, eCounter) \
+	(GLUE_GET_REF_CNT( \
+		(prRxCtrl)->ai4RfbStatus[eCounter]))
+
+#define RX_RFB_TRACK_INIT(prAdapter, prSwRfb, i) \
+	nicRxRfbTrackInit(prAdapter, prSwRfb, i, \
+		FILE_AND_LINE_NUMBER)
+#define __RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, ucTrackState, \
+		fileAndLine) \
+	nicRxRfbTrackUpdate(prAdapter, prSwRfb, ucTrackState, \
+		fileAndLine)
+#define RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, ucTrackState) \
+	nicRxRfbTrackUpdate(prAdapter, prSwRfb, ucTrackState, \
+		FILE_AND_LINE_NUMBER)
+#else /* CFG_RFB_TRACK */
+#endif /* CFG_RFB_TRACK */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #define RX_RRO_INC_CNT(prRxCtrl, eCounter)              \
@@ -1490,7 +1592,34 @@ void nicRxProcessRxReport(struct ADAPTER *prAdapter,
 
 uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter, struct SW_RFB *prRfb);
 
+#if CFG_RFB_TRACK
+void nicRxTrackConcatFreeQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine);
+void nicRxTrackConcatRxQue(struct ADAPTER *prAdapter,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine);
+void nicRxTrackDequeueFreeQue(struct ADAPTER *prAdapter, uint32_t u4Num,
+	struct QUE *prQue, uint8_t ucTrackState, uint8_t *fileAndLine);
+#define nicRxConcatFreeQue(prAdapter, prQue) \
+	nicRxTrackConcatFreeQue(prAdapter, prQue, RFB_TRACK_FREE, \
+		FILE_AND_LINE_NUMBER)
+#define nicRxConcatRxQue(prAdapter, prQue) \
+	nicRxTrackConcatRxQue(prAdapter, prQue, RFB_TRACK_RX, \
+		FILE_AND_LINE_NUMBER)
+#define nicRxDequeueFreeQue(prAdapter, u4Num, prQue, ucTrackState) \
+	nicRxTrackDequeueFreeQue(prAdapter, u4Num, prQue, ucTrackState, \
+		FILE_AND_LINE_NUMBER)
+#define nicRxAcquireRFB(prAdapter, num, ucTrackState) \
+	nicRxTrackAcquireRFB(prAdapter, num, ucTrackState, \
+		FILE_AND_LINE_NUMBER)
+struct SW_RFB *nicRxTrackAcquireRFB(struct ADAPTER *prAdapter, uint16_t num,
+	uint8_t ucTrackState, uint8_t *fileAndLine);
+#else /* CFG_RFB_TRACK */
+void nicRxConcatFreeRfb(struct ADAPTER *prAdapter,
+	struct QUE *prQue);
+void nicRxDequeueFreeRfb(struct ADAPTER *prAdapter, uint32_t u4Num,
+	struct QUE *prQue);
 struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num);
+#endif /* CFG_RFB_TRACK */
 
 void nicRxReceiveRFB(struct ADAPTER *prAdapter, struct SW_RFB *rfb);
 
@@ -1590,4 +1719,12 @@ void nicRxProcessRxv(struct ADAPTER *prAdapter,
 void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
 
+#if CFG_RFB_TRACK
+void nicRxRfbTrackInit(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint32_t i, uint8_t *fileAndLine);
+void nicRxRfbTrackUpdate(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t ucTrackState,
+	uint8_t *fileAndLine);
+void nicRxRfbTrackCheck(struct ADAPTER *prAdapter);
+#endif /* CFG_RFB_TRACK */
 #endif /* _NIC_RX_H */
