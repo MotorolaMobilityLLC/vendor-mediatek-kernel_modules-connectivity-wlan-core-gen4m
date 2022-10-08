@@ -1487,8 +1487,10 @@ uint32_t assocProcessRxAssocReqFrame(
 
 	if (p2pLinkProcessRxAssocReqFrame(prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex),
-		prStaRec, prAssocReqSwRfb) == WLAN_STATUS_SUCCESS)
-		mldStarecSetSetupIdx(prAdapter, prStaRec);
+		prStaRec, prAssocReqSwRfb) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(AAA, WARN, "Link process rx assoc req failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mld_starec) {

@@ -436,6 +436,16 @@ struct AIS_BLACKLIST_ITEM {
 	int32_t i4RssiThreshold;
 #endif
 };
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct MLD_BLOCKLIST_ITEM {
+	struct LINK_ENTRY rLinkEntry;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t ucCount;
+	OS_SYSTIME rAddTime;
+};
+#endif
+
 /* end Support AP Selection */
 
 struct AX_BLACKLIST_ITEM {
@@ -902,6 +912,16 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 	uint32_t sec, int32_t rssiThreshold, uint8_t ucBssIndex);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct MLD_BLOCKLIST_ITEM *aisAddMldBlocklist(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+void aisRemoveMldBlockList(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+void aisRemoveTimeoutMldBlocklist(struct ADAPTER *prAdapter);
+struct MLD_BLOCKLIST_ITEM *aisQueryMldBlockList(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc);
+#endif
 
 /* Support 11K */
 #if CFG_SUPPORT_802_11K

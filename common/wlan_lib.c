@@ -7082,6 +7082,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		"EnableMlo", FEATURE_ENABLED);
 	prWifiVar->ucMaxSimultaneousLinks = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "MaxSimultaneousLinks", 0xff);
+	prWifiVar->ucMldRetryCount = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "MldRetryCount", MLD_RETRY_COUNT);
 #endif /* CFG_SUPPORT_802_11BE */
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);

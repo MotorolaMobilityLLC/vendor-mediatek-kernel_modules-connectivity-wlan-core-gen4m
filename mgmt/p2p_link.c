@@ -286,6 +286,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
 	mldStarecRegister(prAdapter, prStaRec, fgMldType,
 		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
+	mldStarecSetSetupIdx(prAdapter, prStaRec);
 
 	if (prMlInfo->ucProfNum == 0) {
 		DBGLOG(AAA, INFO, "ml ie ["MACSTR"] without links\n",

@@ -179,6 +179,16 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					   profile->ucComplete);
 					return FALSE;
 				}
+				if (profile->u2StatusCode !=
+					STATUS_CODE_SUCCESSFUL) {
+					DBGLOG(ML, ERROR,
+					   "AP reject link (id=%d, addr=" MACSTR
+					   "statusCode=%d)\n",
+					   profile->ucLinkId,
+					   MAC2STR(profile->aucLinkAddr),
+					   profile->u2StatusCode);
+					return FALSE;
+				}
 			}
 
 			/* early leave because check done */

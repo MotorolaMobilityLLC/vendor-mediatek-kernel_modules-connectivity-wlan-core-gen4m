@@ -348,9 +348,17 @@ uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;
 
-	/* TODO: block list for mld */
-	if (bss->rMlInfo.fgValid)
+	if (!bss->rMlInfo.fgValid)
+		return FALSE;
+
+	bss->rMlInfo.prBlock = aisQueryMldBlockList(ad, bss);
+
+	if (!bss->rMlInfo.prBlock ||
+	    bss->rMlInfo.prBlock->ucCount < ad->rWifiVar.ucMldRetryCount)
 		return TRUE;
+
+	DBGLOG(APS, LOUD, "Mld[" MACSTR "] is in mld blocklist\n",
+	       MAC2STR(bss->rMlInfo.aucMldAddr));
 #endif
 	return FALSE;
 }
@@ -1646,6 +1654,10 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 		conn->eConnectionPolicy, reason);
 
 	aisRemoveTimeoutBlacklist(ad);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	aisRemoveTimeoutMldBlocklist(ad);
+#endif
+
 	count = apsUpdateEssApList(ad, bidx);
 
 #if CFG_SUPPORT_802_11K
