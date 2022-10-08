@@ -62,6 +62,9 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#ifdef MT6639
+#include "coda/mt6639/wf_wfdma_mcu_dma0.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1272,9 +1275,17 @@ uint32_t wlanImageSectionConfig(
 				u4Status);
 			u4Status = WLAN_STATUS_FAILURE;
 		} else if (rEvent.ucStatus != 0) {
+			uint32_t u4Value = 0;
+
+#ifdef MT6639
+			HAL_MCR_RD(prAdapter,
+				   WF_WFDMA_MCU_DMA0_PDA_DWLD_STATE_ADDR,
+				   &u4Value);
+#endif
 			DBGLOG(INIT, ERROR,
-				"Event status: %d\n",
-				rEvent.ucStatus);
+				"Event status: %d, u4Value: 0x%x\n",
+				rEvent.ucStatus,
+				u4Value);
 			u4Status = WLAN_STATUS_FAILURE;
 		}
 	}
