@@ -147,7 +147,7 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 #define BACKOFF_VOLT 3550
-#define RESTORE_VOLT 3650
+#define RESTORE_VOLT 3750
 #endif
 
 static uint8_t aucBandTranslate[BAND_NUM] = {
