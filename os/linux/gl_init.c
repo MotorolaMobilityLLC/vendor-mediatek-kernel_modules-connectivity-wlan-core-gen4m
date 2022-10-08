@@ -6587,6 +6587,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 
+		kalWlanUeventInit(); /* FW might send Uevent on start running */
+
 		if (wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
 					 prWifiVar, FALSE)) {
 			i4Status = -EIO;
@@ -6639,23 +6641,21 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #endif
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
-	kalMetInit(prGlueInfo);
+		kalMetInit(prGlueInfo);
 #endif
 
-		kalWlanUeventInit();
-
 #if CFG_SUPPORT_CSI
-	glCsiSupportInit(prGlueInfo);
+		glCsiSupportInit(prGlueInfo);
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
-	prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
-	prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
-	glRegisterAmpc(prGlueInfo);
+		prGlueInfo->rBowInfo.fgIsNetRegistered = FALSE;
+		prGlueInfo->rBowInfo.fgIsRegistered = FALSE;
+		glRegisterAmpc(prGlueInfo);
 #endif
 
 #if (CONFIG_WLAN_SERVICE == 1)
-	wlanServiceInit(prGlueInfo);
+		wlanServiceInit(prGlueInfo);
 #endif
 
 #if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
