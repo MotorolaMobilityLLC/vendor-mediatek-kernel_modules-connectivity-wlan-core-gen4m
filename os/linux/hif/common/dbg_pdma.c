@@ -675,6 +675,8 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			u4TokenId = u4Idx;
 		}
 	}
+	/* Save longest to be compared for pending MSDU */
+	prAdapter->u4LongestPending = rLongest.tv_sec;
 
 	if (fgIsTimeout) {
 		prToken = &prTokenInfo->arToken[u4TokenId];

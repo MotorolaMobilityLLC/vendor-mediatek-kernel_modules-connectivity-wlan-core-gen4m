@@ -1051,11 +1051,13 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 				struct PKT_PROFILE *prPktProfile;
 				OS_SYSTIME diff;
+				OS_SYSTIME expired_sec =
+					prAdapter->u4LongestPending + 2;
 
 				prPktProfile = &prMsduInfo->rPktProfile;
 				diff = now - prPktProfile->rHifTxDoneTimestamp;
 				if (prPktProfile->rHifTxDoneTimestamp &&
-				    diff > 2000)
+				    diff > expired_sec * 1000)
 					break;
 #endif
 				if (prMsduInfo->ucPID == ucPID)
