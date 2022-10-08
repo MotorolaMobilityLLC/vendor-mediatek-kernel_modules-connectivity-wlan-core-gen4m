@@ -20,6 +20,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define MAX_FW_LOG_SIZE				0x20000
 #define FW_LOG_STATS_UPDATE_PERIOD		1000
 #define FW_LOG_KEY				"EMIFWLOG"
 
@@ -254,6 +255,9 @@ static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 			sub_ctrl->length);
 		if (!__fw_log_emi_check_alignment(sub_ctrl->base_addr) ||
 		    !__fw_log_emi_check_alignment(sub_ctrl->length)) {
+			ret = -EINVAL;
+			goto exit;
+		} else if (sub_ctrl->length > MAX_FW_LOG_SIZE) {
 			ret = -EINVAL;
 			goto exit;
 		}
