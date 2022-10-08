@@ -5822,7 +5822,7 @@ int testmode_rtt_test(struct wiphy *wiphy, char *pcCommand,
 	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
 	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (rStatus == WLAN_STATUS_SUCCESS) {
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 2) {
 		DBGLOG(REQ, TRACE, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
 		i4BytesWritten = kalkStrtou8(apcArgv[1], 0, &ucType);
 		if (i4BytesWritten)
@@ -5913,6 +5913,11 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
+	if (data == NULL || len == 0) {
+		DBGLOG(INIT, TRACE, "%s data or len is invalid\n", __func__);
+		return -EINVAL;
+	}
+
 	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
@@ -5967,7 +5972,8 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 
 		pCmdData = (struct OSHARE_MODE_SETTING_V1_T *) &
 			   (pCmdHeader->buffer[0]);
-		pCmdData->osharemode = *(uint8_t *)(cmd + 10) - '0';
+		if (cmd + 10)
+			pCmdData->osharemode = *(uint8_t *)(cmd + 10) - '0';
 
 		DBGLOG(REQ, INFO, "cmd=%s, osharemode=%u\n", cmd,
 		       pCmdData->osharemode);
