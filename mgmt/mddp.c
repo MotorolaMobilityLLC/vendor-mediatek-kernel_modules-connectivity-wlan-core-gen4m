@@ -239,9 +239,8 @@ static void mddpRdFuncSHM(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
 		goto exit;
 	}
 
-	*pu4Val = 0;
-	if (prSysStat->md_stat[0] & prSettings->u4MdOnBit)
-		*pu4Val |= prSettings->u4MdOnBit;
+	*pu4Val = prSysStat->md_stat[0] &
+		(prSettings->u4MdOnBit | prSettings->u4MdOffBit);
 
 	if (prSysStat) {
 		DBGLOG(QM, TRACE,
