@@ -2427,6 +2427,14 @@ void cnmInitDbdcSetting(struct ADAPTER *prAdapter)
 #endif
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 
+		g_rDbdcInfo.eDbdcFsmCurrState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+		g_rDbdcInfo.eDbdcFsmPrevState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
+		prAdapter->rWifiVar.fgDbDcModeEn = g_rDbdcInfo.fgCmdEn;
+
 		/* Just resue dynamic DBDC FSM handler. */
 		cnmDbdcFsmEntryFunc_ENABLE_IDLE(prAdapter);
 		break;
