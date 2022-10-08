@@ -1270,6 +1270,9 @@ void __mddpNotifyWifiOffStart(void)
 
 void mddpNotifyWifiOffStart(void)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
 	if (!mddpIsSupportMcifWifi())
 		return;
 
@@ -1286,6 +1289,20 @@ void mddpNotifyWifiOffStart(void)
 	mutex_lock(&rMddpLock);
 	__mddpNotifyWifiOffStart();
 	mutex_unlock(&rMddpLock);
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	/* avoid power off process MD SER */
+	halNotifyMdCrash(prAdapter);
 }
 
 void __mddpNotifyWifiOffEnd(void)
