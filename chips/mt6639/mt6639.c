@@ -386,13 +386,13 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 #else
 	{"conn_hif_host_int", mtk_pci_isr,
 	 mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
-	{"conn_hif_host_int", mtk_pci_isr, mtk_pci_isr_thread, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
+	{"conn_hif_host_int", NULL, NULL, AP_INT, 0},
 #endif
 #if CFG_MTK_MDDP_SUPPORT
 	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, MDDP_INT, 0},
