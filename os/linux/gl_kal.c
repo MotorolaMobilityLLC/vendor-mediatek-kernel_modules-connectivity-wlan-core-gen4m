@@ -9901,7 +9901,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 #if CFG_RFB_TRACK
 #define RRB_TRACK_TEMPLATE \
-	"RfbTrack[%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
+	"RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
 #else /* CFG_RFB_TRACK */
 #define RRB_TRACK_TEMPLATE ""
 #endif /* CFG_RFB_TRACK */
@@ -9946,6 +9946,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		head4,
 #if CFG_RFB_TRACK
 		prAdapter->rWifiVar.fgRfbTrackEn,
+		prAdapter->rWifiVar.u4RfbTrackInterval,
+		prAdapter->rWifiVar.u4RfbTrackTimeout,
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_INIT),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FREE),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_HIF),
@@ -9953,6 +9955,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_MAIN),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FIFO),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_NAPI),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_DATA),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_REORDERING_IN),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl,
 			RFB_TRACK_REORDERING_OUT),

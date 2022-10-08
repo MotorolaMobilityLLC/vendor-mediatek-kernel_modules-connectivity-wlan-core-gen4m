@@ -1791,6 +1791,11 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 		return;
 	}
 #endif
+
+#if CFG_RFB_TRACK
+	RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_DATA);
+#endif /* CFG_RFB_TRACK */
+
 	nicRxFillRFB(prAdapter, prSwRfb);
 
 	fgDrop = FALSE;
@@ -2429,6 +2434,7 @@ void nicRxProcessPacketType(
 	case RX_PKT_TYPE_MSDU_REPORT:
 		nicRxProcessMsduReport(prAdapter,
 			prSwRfb);
+		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 
 	case RX_PKT_TYPE_RX_REPORT:
