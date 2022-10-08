@@ -4328,6 +4328,17 @@ static u_int8_t needFlushReordering(struct RX_BA_ENTRY *prReorderQueParm,
 	return FALSE;
 }
 
+/**
+ * This feature was developed in the middle of SQC as a remedy to prevent from
+ * deadlock if the waiting SN was queued in RX ring, but driver has no RFB to
+ * receive it.
+ * In the later stage of SQC, with CPU boost and allocating data from heap
+ * were implemented, this mechanism was discovered harm to the RX throughput.
+ *
+ * Flushing early will harm throughput in 2.4GHz bw 40MHz + 6GHz MLO
+ * and especially for 2.4GHz bw 20MHz + 6GHz MLO.
+ * Therefore, this mechanism was disabled by default.
+ */
 static void checkToFlushReordering(struct ADAPTER *prAdapter,
 				struct RX_BA_ENTRY *prReorderQueParm,
 				struct RX_CTRL *prRxCtrl)
