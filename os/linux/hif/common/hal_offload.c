@@ -908,8 +908,6 @@ void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
 				   &prHifInfo->rRcbUsedList[u4Idx]) {
 			prRcb = list_entry(prCur, struct RX_CTRL_BLK, rNode);
 			list_del(prCur);
-			if (!prRcb)
-				continue;
 			if (prMemOps->unmapRxBuf)
 				prMemOps->unmapRxBuf(
 					prHifInfo, prRcb->rPhyAddr,
@@ -923,8 +921,6 @@ void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
 	list_for_each_safe(prCur, prNext, &prHifInfo->rRcbFreeList) {
 		prRcb = list_entry(prCur, struct RX_CTRL_BLK, rNode);
 		list_del(prCur);
-		if (!prRcb)
-			continue;
 		if (prMemOps->unmapRxBuf)
 			prMemOps->unmapRxBuf(
 				prHifInfo, prRcb->rPhyAddr,
@@ -1870,7 +1866,7 @@ static void halRroReadIndCmd(
 	struct RRO_ADDR_ELEM *prAddrElem;
 	struct RX_BLK_DESC rRxBlkD;
 	union RRO_ACK_SN_CMD rAckSn;
-	uint32_t u4Addr, u4Val, u4DmaIdx, u4IndCmdIdx, u4Idx;
+	uint32_t u4Addr, u4Val = 0, u4DmaIdx, u4IndCmdIdx, u4Idx;
 	uint32_t u4Id, u4Sn, u4AddrNum;
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -2073,7 +2069,7 @@ static void halMawdReadSram(
 	uint32_t *pu4ValH)
 {
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4Val, u4Idx;
+	uint32_t u4Val = 0, u4Idx;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
@@ -2111,7 +2107,7 @@ static void halMawdUpdateSram(
 	uint32_t u4ValH)
 {
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4Val, u4Idx;
+	uint32_t u4Val = 0, u4Idx;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 

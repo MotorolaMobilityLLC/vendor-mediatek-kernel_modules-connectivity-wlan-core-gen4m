@@ -256,7 +256,7 @@ struct GL_HIF_INFO {
 	uint32_t u4RcbUsedListCnt[NUM_OF_RX_RING];
 	struct list_head rRcbFreeList;
 	uint32_t u4RcbFreeListCnt;
-	struct hlist_head arRcbHTbl[RRO_PREALLOC_RX_BUF_NUM];
+	DECLARE_HASHTABLE(arRcbHTbl, RRO_HASH_TBL_BITS);
 	struct hlist_head rRcbHTblFreeList;
 	struct hlist_head arPrtSnHTbl[RRO_MAX_WINDOW_NUM];
 	struct RRO_ADDR_ELEM_RECORD arElemRecord[RRO_MAX_WINDOW_NUM];
