@@ -662,6 +662,7 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 			      struct sk_buff *prSkb, struct RX_CTRL_BLK *prRcb)
 {
 	struct RCB_NODE *prNewNode;
+	uint64_t u8TblKey = u8Key & RRO_HASH_KEY_MASK;
 
 	if (halRroHashSearch(prHifInfo, u8Key))
 		return FALSE;
@@ -676,7 +677,7 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 	prNewNode->prSkb = prSkb;
 	prNewNode->prRcb = prRcb;
 
-	hash_add_rcu(prHifInfo->arRcbHTbl, &prNewNode->rNode, u8Key);
+	hash_add_rcu(prHifInfo->arRcbHTbl, &prNewNode->rNode, u8TblKey);
 
 	return TRUE;
 }
@@ -698,9 +699,10 @@ static struct RCB_NODE *halRroHashSearch(
 	struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
 {
 	struct RCB_NODE *prRcbNode;
+	uint64_t u8TblKey = u8Key & RRO_HASH_KEY_MASK;
 
 	hash_for_each_possible_rcu(prHifInfo->arRcbHTbl,
-				   prRcbNode, rNode, u8Key) {
+				   prRcbNode, rNode, u8TblKey) {
 		if (prRcbNode->u8Key == u8Key)
 			return prRcbNode;
 	}
@@ -785,12 +787,10 @@ static struct RRO_ADDR_ELEM_RECORD *halRroPrtSnSearch(
 	struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
 {
 	struct RRO_ADDR_ELEM_RECORD *prRecord;
-
-	if (u8Key == 0)
-		return NULL;
+	uint64_t u8TblKey = u8Key & (RRO_MAX_WINDOW_NUM - 1);
 
 	hash_for_each_possible_rcu(prHifInfo->arPrtSnHTbl,
-				   prRecord, rNode, u8Key) {
+				   prRecord, rNode, u8TblKey) {
 		if (prRecord->u8Addr == u8Key)
 			return prRecord;
 	}
@@ -815,6 +815,7 @@ static u_int8_t halRroPrtSnAdd(struct GL_HIF_INFO *prHifInfo,
 			       uint64_t u8Key, uint32_t u4Sn)
 {
 	struct RRO_ADDR_ELEM_RECORD *prRecord;
+	uint64_t u8TblKey = u8Key & (RRO_MAX_WINDOW_NUM - 1);
 
 	if (u4Sn >= RRO_MAX_WINDOW_NUM)
 		return FALSE;
@@ -823,7 +824,7 @@ static u_int8_t halRroPrtSnAdd(struct GL_HIF_INFO *prHifInfo,
 	halRroPrtSnDel(prHifInfo, prRecord->u8Addr);
 
 	prRecord->u8Addr = u8Key;
-	hash_add_rcu(prHifInfo->arPrtSnHTbl, &prRecord->rNode, u8Key);
+	hash_add_rcu(prHifInfo->arPrtSnHTbl, &prRecord->rNode, u8TblKey);
 
 	return TRUE;
 }
@@ -1652,7 +1653,7 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_DMABUF *prIndCmd, *prAddrArray;
 	struct RRO_IND_CMD *aurIndCmd;
 	struct RRO_ADDR_ELEM *prAddrElem;
-	uint32_t u4Addr, u4Val, u4DmaIdx;
+	uint32_t u4Addr, u4Val = 0, u4DmaIdx;
 	uint32_t u4Id, u4Sn, u4AddrNum;
 
 	prHifInfo = &prGlueInfo->rHifInfo;

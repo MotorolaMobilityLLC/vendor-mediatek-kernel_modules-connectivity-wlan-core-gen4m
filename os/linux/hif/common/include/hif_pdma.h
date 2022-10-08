@@ -309,6 +309,8 @@
 #define MAWD_CR_BACKUP_OFFSET    89
 #define RRO_PREALLOC_RX_BUF_NUM  (RX_RING_SIZE * 3)
 #define RRO_HASH_TBL_BITS        ilog2(RRO_PREALLOC_RX_BUF_NUM)
+#define RRO_HASH_TBL_LEN         (1 << RRO_HASH_TBL_BITS)
+#define RRO_HASH_KEY_MASK        ((1 << RRO_HASH_TBL_BITS) - 1)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define RRO_MAX_STA_NUM          8
