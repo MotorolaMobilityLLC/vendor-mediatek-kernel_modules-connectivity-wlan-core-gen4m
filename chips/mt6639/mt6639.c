@@ -2862,16 +2862,23 @@ static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 {
 	uint32_t ret = WLAN_STATUS_FAILURE;
+	uint32_t u4StrLen = 0;
 
 	if (IS_MOBILE_SEGMENT) {
-		uint8_t aucFlavor[2] = {0};
+		uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
 		if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
-			kalScnprintf(flavor,
-				     CFG_FW_FLAVOR_MAX_LEN,
-				     "%u%s",
-				     CFG_WIFI_IP_SET,
-				     aucFlavor);
+			u4StrLen = kalStrnLen(aucFlavor,
+						CFG_FW_FLAVOR_MAX_LEN);
+			if (u4StrLen == 1) {
+				kalScnprintf(flavor,
+					CFG_FW_FLAVOR_MAX_LEN,
+					"%u%s", CFG_WIFI_IP_SET, aucFlavor);
+			} else {
+				kalScnprintf(flavor,
+					CFG_FW_FLAVOR_MAX_LEN,
+					"%s", aucFlavor);
+			}
 			ret = WLAN_STATUS_SUCCESS;
 		} else if (kalScnprintf(flavor,
 					CFG_FW_FLAVOR_MAX_LEN,
