@@ -1465,7 +1465,6 @@ struct thermal_sensor_info {
 	const enum THERMAL_TEMP_TYPE type;
 	const uint8_t sendor_idx;
 	void *tzd;
-	void *priv;
 	uint32_t last_query_time;
 	int32_t last_query_temp;
 };

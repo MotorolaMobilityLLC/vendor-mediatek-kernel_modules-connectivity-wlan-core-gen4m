@@ -5961,10 +5961,14 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	}
 
+#if CFG_SUPPORT_THERMAL_QUERY
+	thermal_state_reset(prGlueInfo->prAdapter);
+#endif
+
 	/* card is ready */
 	prGlueInfo->u4ReadyFlag = 1;
 #if CFG_MTK_ANDROID_WMT
-		update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
+	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 #endif
 	kalSetHalted(FALSE);
 
@@ -5998,9 +6002,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
-#if CFG_SUPPORT_THERMAL_QUERY
-	register_thermal_cbs(prGlueInfo->prAdapter);
-#endif
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
 	halSetSuspendFlagToFw(prAdapter, FALSE);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
@@ -6918,9 +6919,6 @@ static void wlanRemove(void)
 		return;
 	}
 	prAdapter = prGlueInfo->prAdapter;
-#if CFG_SUPPORT_THERMAL_QUERY
-	unregister_thermal_cbs(prAdapter);
-#endif
 
 	coredump_register_bushang_chk_cb(NULL);
 

@@ -1176,6 +1176,10 @@ static int mtk_axi_probe(struct platform_device *pdev)
 		goto exit;
 #endif
 
+#if CFG_SUPPORT_THERMAL_QUERY
+	thermal_cbs_register(pdev);
+#endif
+
 exit:
 	DBGLOG(INIT, INFO, "mtk_axi_probe() done, ret: %d\n", ret);
 	return ret;
@@ -1187,6 +1191,10 @@ static int mtk_axi_remove(struct platform_device *pdev)
 	struct mt66xx_hif_driver_data *prDriverData =
 		platform_get_drvdata(pdev);
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+#endif
+
+#if CFG_SUPPORT_THERMAL_QUERY
+	thermal_cbs_unregister(pdev);
 #endif
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER

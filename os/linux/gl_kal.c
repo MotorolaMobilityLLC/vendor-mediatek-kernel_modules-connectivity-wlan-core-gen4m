@@ -13774,16 +13774,19 @@ void kalConfigChksumOffload(
 static int get_connsys_thermal_temp(void *data, int *temp)
 {
 	struct thermal_sensor_info *sensor = data;
-	struct ADAPTER *ad = (struct ADAPTER *)sensor->priv;
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
+	struct ADAPTER *ad = NULL;
 	struct THERMAL_TEMP_DATA temp_data;
 	uint32_t status = WLAN_STATUS_SUCCESS;
 
-	if (kalIsHalted()) {
-		DBGLOG(REQ, INFO, "Skip query temp.\n");
+	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_WLAN_ON)) {
 		status = WLAN_STATUS_FAILURE;
 		*temp = THERMAL_TEMP_INVALID;
 		goto exit;
 	}
+
+	ad = glue->prAdapter;
 
 	if (sensor->last_query_temp <= MAX_TEMP_THRESHOLD &&
 	    sensor->last_query_time != 0 &&
@@ -13822,21 +13825,29 @@ static const struct thermal_zone_of_device_ops wf_thermal_ops = {
 	.get_temp = get_connsys_thermal_temp,
 };
 
-static void __register_thermal_cbs(struct work_struct *work)
+int thermal_cbs_register(struct platform_device *pdev)
 {
-	struct ADAPTER *ad = container_of(work, struct ADAPTER, thermal_work);
-	struct mt66xx_chip_info *chip_info = ad->chip_info;
-	struct thermal_info *thermal_info = &chip_info->thermal_info;
+	struct mt66xx_hif_driver_data *data = NULL;
+	struct mt66xx_chip_info *chip_info = NULL;
+	struct thermal_info *thermal_info = NULL;
 	struct thermal_zone_device *tzdev = NULL;
 	uint8_t idx = 0;
 	int err = 0;
+
+	if (!pdev) {
+		err = -EINVAL;
+		goto exit;
+	}
+
+	data = get_platform_driver_data();
+	chip_info = data->chip_info;
+	thermal_info = &chip_info->thermal_info;
 
 	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
 		struct thermal_sensor_info *sensor =
 			&thermal_info->sensor_info[idx];
 
-		sensor->priv = (void *)ad;
-		tzdev = devm_thermal_zone_of_sensor_register(&g_prPlatDev->dev,
+		tzdev = devm_thermal_zone_of_sensor_register(&pdev->dev,
 			idx, sensor, &wf_thermal_ops);
 		if (IS_ERR(tzdev)) {
 			sensor->tzd = NULL;
@@ -13844,50 +13855,32 @@ static void __register_thermal_cbs(struct work_struct *work)
 			DBGLOG(INIT, ERROR,
 				"[%d] Failed to register the thermal cbs: %d\n",
 				idx, err);
-			return;
+			break;
 		}
 		sensor->tzd = tzdev;
-		sensor->last_query_time = 0;
-		sensor->last_query_temp = 0;
 	}
-}
-
-int register_thermal_cbs(struct ADAPTER *ad)
-{
-	struct mt66xx_chip_info *chip_info = ad->chip_info;
-	struct thermal_info *thermal_info = &chip_info->thermal_info;
-	int err = 0;
-
-	if (thermal_info->sensor_num == 0)
-		goto exit;
-
-	if (!g_prPlatDev) {
-		DBGLOG(INIT, ERROR,
-			"NULL platform device.\n");
-		err = -EINVAL;
-		goto exit;
-	}
-
-	INIT_WORK(&ad->thermal_work, __register_thermal_cbs);
-	schedule_work(&ad->thermal_work);
 
 exit:
+	if (err)
+		thermal_cbs_unregister(pdev);
+
 	return err;
 }
 
-void unregister_thermal_cbs(struct ADAPTER *ad)
+void thermal_cbs_unregister(struct platform_device *pdev)
 {
-	struct mt66xx_chip_info *chip_info = ad->chip_info;
-	struct thermal_info *thermal_info = &chip_info->thermal_info;
+	struct mt66xx_hif_driver_data *data = NULL;
+	struct mt66xx_chip_info *chip_info = NULL;
+	struct thermal_info *thermal_info = NULL;
 	uint8_t idx = 0;
 
-	if (thermal_info->sensor_num == 0)
+	if (!pdev)
 		return;
 
-	if (!g_prPlatDev)
-		return;
+	data = get_platform_driver_data();
+	chip_info = data->chip_info;
+	thermal_info = &chip_info->thermal_info;
 
-	cancel_work_sync(&ad->thermal_work);
 	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
 		struct thermal_sensor_info *sensor =
 			&thermal_info->sensor_info[idx];
@@ -13895,9 +13888,27 @@ void unregister_thermal_cbs(struct ADAPTER *ad)
 		if (!sensor->tzd)
 			continue;
 
-		devm_thermal_zone_of_sensor_unregister(&g_prPlatDev->dev,
+		devm_thermal_zone_of_sensor_unregister(&pdev->dev,
 			sensor->tzd);
 		sensor->tzd = NULL;
+	}
+}
+
+void thermal_state_reset(struct ADAPTER *ad)
+{
+	struct mt66xx_chip_info *chip_info = ad->chip_info;
+	struct thermal_info *thermal_info = &chip_info->thermal_info;
+	uint8_t idx = 0;
+
+	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
+		struct thermal_sensor_info *sensor =
+			&thermal_info->sensor_info[idx];
+
+		if (!sensor->tzd)
+			continue;
+
+		sensor->last_query_time = 0;
+		sensor->last_query_temp = 0;
 	}
 }
 #endif
