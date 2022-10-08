@@ -2366,10 +2366,15 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 		     struct CMD_INFO *prCmdInfo)
 {
+	struct MSDU_INFO *prMsduInfo = prCmdInfo->prMsduInfo;
+	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 #if CFG_DBG_MGT_BUF
 	struct MEM_TRACK *prMemTrack = NULL;
 #endif
 
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 		removeDuplicatePendingCmd(prAdapter, prCmdInfo);
 
@@ -2395,6 +2400,18 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 		}
 #endif
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue, prCmdInfo);
+	}
+	KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
+
+	if (prMsduInfo && prMsduInfo->pfTxDoneHandler) {
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_TXING_MGMT_LIST);
+		QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
+				prMsduInfo);
+		KAL_RELEASE_SPIN_LOCK(prAdapter,
+			SPIN_LOCK_TXING_MGMT_LIST);
+		DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
+			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 	}
 }
 

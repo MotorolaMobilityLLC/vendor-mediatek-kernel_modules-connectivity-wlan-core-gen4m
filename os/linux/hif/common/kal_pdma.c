@@ -1802,8 +1802,6 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 	unsigned long flags;
 	struct list_head rTempQ;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAdapter = prGlueInfo->prAdapter;
@@ -1814,18 +1812,10 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 
 	list_for_each_safe(prCur, prNext, &rTempQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
-		KAL_ACQUIRE_PENDING_CMD_LOCK(prAdapter);
 		ret = halWpdmaWriteCmd(prGlueInfo,
 				       &prTxReq->rCmdInfo, prTxReq->ucTC);
-		if (ret == CMD_TX_RESULT_SUCCESS) {
-			if (prTxReq->rCmdInfo.pfHifTxCmdDoneCb)
-				prTxReq->rCmdInfo.pfHifTxCmdDoneCb(
-					prGlueInfo->prAdapter,
-					&prTxReq->rCmdInfo);
-		} else {
+		if (ret != CMD_TX_RESULT_SUCCESS)
 			DBGLOG(HAL, ERROR, "ret: %d\n", ret);
-		}
-		KAL_RELEASE_PENDING_CMD_LOCK(prAdapter);
 		list_del(prCur);
 		list_add_tail(prCur, &prHifInfo->rTxCmdFreeList);
 	}

@@ -2903,8 +2903,6 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 	prTxDescOps = prAdapter->chip_info->prTxDescOps;
@@ -2951,14 +2949,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
 		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
 
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-					prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TXING_MGMT_LIST);
-		} else {
+		if (!prMsduInfo->pfTxDoneHandler) {
 			/* Only return MSDU_INFO */
 			/* NativePacket will be freed at
 			 * CmdData frame CMD callback
@@ -2991,17 +2982,6 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 
 		prCmdInfo->pucTxp = prMsduInfo->prPacket;
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
-
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-					prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
-				prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
-		}
 
 		DBGLOG(INIT, TRACE,
 			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
