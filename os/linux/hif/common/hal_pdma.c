@@ -1449,6 +1449,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prAdapter->ucSerState = SER_IDLE_DONE;
 	prHifInfo->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHifInfo->rErrRecoveryCtl.u4Status = 0;
+	prHifInfo->GloCfg.word = 0;
 
 #if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
 	timer_setup(&prHifInfo->rSerTimer, halHwRecoveryTimeout, 0);

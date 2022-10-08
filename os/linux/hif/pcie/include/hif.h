@@ -237,6 +237,8 @@ struct GL_HIF_INFO {
 	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
 
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* MAWD */
 	struct RTMP_DMABUF HifTxDescRing[NUM_OF_TX_RING];

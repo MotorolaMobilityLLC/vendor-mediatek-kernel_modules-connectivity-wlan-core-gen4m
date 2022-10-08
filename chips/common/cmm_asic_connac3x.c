@@ -612,46 +612,52 @@ void asicConnac3xWfdmaControl(
 	u_int8_t ucDmaIdx,
 	u_int8_t enable)
 {
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	union WPDMA_GLO_CFG_STRUCT *prGloCfg = &prHifInfo->GloCfg;
 	uint32_t u4DmaCfgCr;
-	uint32_t u4DmaRstDtxPtrCr;
-	uint32_t u4DmaRstDrxPtrCr;
 
 	ASSERT(ucDmaIdx < CONNAC3X_MAX_WFDMA_COUNT);
 	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, ucDmaIdx);
-	u4DmaRstDtxPtrCr =
-		asicConnac3xWfdmaIntRstDtxPtrAddrGet(prGlueInfo, ucDmaIdx);
-	u4DmaRstDrxPtrCr =
-		asicConnac3xWfdmaIntRstDrxPtrAddrGet(prGlueInfo, ucDmaIdx);
 
-	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
-	if (enable == TRUE) {
-		GloCfg.field_conn3x.pdma_bt_size = 3;
-		GloCfg.field_conn3x.tx_wb_ddone = 1;
-		GloCfg.field_conn3x.fifo_little_endian = 1;
-		GloCfg.field_conn3x.clk_gate_dis = 1;
-		GloCfg.field_conn3x.omit_tx_info = 1;
+	if (enable) {
+		prGloCfg->field_conn3x.pdma_bt_size = 3;
+		prGloCfg->field_conn3x.tx_wb_ddone = 1;
+		prGloCfg->field_conn3x.csr_axi_bufrdy_byp = 1;
+		prGloCfg->field_conn3x.fifo_little_endian = 1;
+		prGloCfg->field_conn3x.csr_rx_wb_ddone = 1;
+		prGloCfg->field_conn3x.csr_disp_base_ptr_chain_en = 1;
+		prGloCfg->field_conn3x.csr_lbk_rx_q_sel_en = 1;
+		prGloCfg->field_conn3x.omit_rx_info_pfet2 = 1;
 		if (ucDmaIdx == 1)
-			GloCfg.field_conn3x.omit_rx_info = 1;
-		GloCfg.field_conn3x.csr_disp_base_ptr_chain_en = 1;
-		GloCfg.field_conn3x.omit_rx_info_pfet2 = 1;
+			prGloCfg->field_conn3x.omit_rx_info = 1;
+		prGloCfg->field_conn3x.omit_tx_info = 1;
+		prGloCfg->field_conn3x.clk_gate_dis = 1;
 	} else {
-		GloCfg.field_conn3x.tx_dma_en = 0;
-		GloCfg.field_conn3x.rx_dma_en = 0;
-		GloCfg.field_conn3x.csr_disp_base_ptr_chain_en = 0;
-		GloCfg.field_conn3x.omit_tx_info = 0;
-		GloCfg.field_conn3x.omit_rx_info = 0;
-		GloCfg.field_conn3x.omit_rx_info_pfet2 = 0;
+		prGloCfg->field_conn3x.tx_dma_en = 0;
+		prGloCfg->field_conn3x.rx_dma_en = 0;
+		prGloCfg->field_conn3x.csr_disp_base_ptr_chain_en = 0;
+		prGloCfg->field_conn3x.omit_tx_info = 0;
+		prGloCfg->field_conn3x.omit_rx_info = 0;
+		prGloCfg->field_conn3x.omit_rx_info_pfet2 = 0;
 	}
-	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+	HAL_MCR_WR(prAdapter, u4DmaCfgCr, prGloCfg->word);
 
+#if !defined(_HIF_PCIE)
 	if (!enable) {
+		uint32_t u4DmaRstDtxPtrCr, u4DmaRstDrxPtrCr;
+
+		u4DmaRstDtxPtrCr = asicConnac3xWfdmaIntRstDtxPtrAddrGet(
+			prGlueInfo, ucDmaIdx);
+		u4DmaRstDrxPtrCr = asicConnac3xWfdmaIntRstDrxPtrAddrGet(
+			prGlueInfo, ucDmaIdx);
+
 		asicConnac3xWfdmaWaitIdle(prGlueInfo, ucDmaIdx, 100, 1000);
 		/* Reset DMA Index */
 		HAL_MCR_WR(prAdapter, u4DmaRstDtxPtrCr, 0xFFFFFFFF);
 		HAL_MCR_WR(prAdapter, u4DmaRstDrxPtrCr, 0xFFFFFFFF);
 	}
+#endif
 }
 
 u_int8_t asicConnac3xWfdmaWaitIdle(

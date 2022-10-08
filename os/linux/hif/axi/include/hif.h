@@ -187,6 +187,8 @@ struct GL_HIF_INFO {
 	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];
 	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
 
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
 

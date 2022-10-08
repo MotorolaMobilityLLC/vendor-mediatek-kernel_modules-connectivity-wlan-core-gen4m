@@ -1293,16 +1293,9 @@ static void mt6639WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	u_int32_t val = 0;
 	uint32_t u4WrVal = 0, u4Addr = 0;
 	uint32_t u4PrefetchCnt = 0x4, u4TxDataPrefetchCnt = 0x10;
 	uint32_t u4PrefetchBase = 0x00400000, u4TxDataPrefetchBase = 0x01000000;
-
-	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, &val);
-	/* disable prefetch offset calculation auto-mode */
-	val &=
-	~WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_CSR_DISP_BASE_PTR_CHAIN_EN_MASK;
-	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, val);
 
 	/* Rx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
@@ -1602,9 +1595,7 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 		return;
 
 	/* configure MSI number */
-	HAL_MCR_RD(prAdapter, WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR,
-		&u4Value);
-	u4Value |= ((ilog2(WFDMA_AP_MSI_NUM) <<
+	u4Value = ((ilog2(WFDMA_AP_MSI_NUM) <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_MASK);
 #if CFG_MTK_MDDP_SUPPORT
@@ -1715,59 +1706,66 @@ static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	       prWifiVar->u4DlyIntCnt);
 }
 
+static void mt6639WpdmaConfigExt0(struct ADAPTER *prAdapter)
+{
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4Addr = 0, u4Val = 0;
+
+	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo))
+		return;
+
+	/* enable SDO */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR;
+	/* default settings */
+	u4Val = 0x28C004DF |
+		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_SDO_DISP_MODE_MASK;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+}
+
+static void mt6639WpdmaConfigExt1(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Addr = 0, u4Val = 0;
+
+	/* packet based TX flow control */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR;
+	/* default settings */
+	u4Val = 0x8C800404 |
+		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_CSR_TX_FCTRL_MODE_MASK;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
 static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
-	uint32_t u4DmaCfgCr = 0;
-	uint32_t idx = 0, u4Val = 0;
+	uint32_t u4Addr = 0;
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	asicConnac3xWfdmaControl(prGlueInfo, 0, enable);
-	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, 0);
+	GloCfg.word = prGlueInfo->rHifInfo.GloCfg.word;
 #endif
-	HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
-
 	if (!enable)
 		return;
 
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR;
 #if defined(_HIF_PCIE)
 	mt6639WpdmaMsiConfig(prGlueInfo->prAdapter);
-#endif
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	u4DmaCfgCr = asicConnac3xWfdmaCfgAddrGet(prGlueInfo, idx);
+#else
+	HAL_MCR_RD(prAdapter, u4Addr, &GloCfg.word);
 #endif
 	GloCfg.field_conn3x.tx_dma_en = 1;
 	GloCfg.field_conn3x.rx_dma_en = 1;
-	HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+	HAL_MCR_WR(prAdapter, u4Addr, GloCfg.word);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	prGlueInfo->rHifInfo.GloCfg.word = GloCfg.word;
+#endif
 	mt6639ConfigWfdmaRxRingThreshold(prAdapter);
 
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
-		/* enable SDO */
-		HAL_MCR_RD(prAdapter,
-			   WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR,
-			   &u4Val);
-		u4Val |=
-		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_CSR_SDO_DISP_MODE_MASK;
-		HAL_MCR_WR(prAdapter,
-			   WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR,
-			   u4Val);
-	}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
-	/* packet based TX flow control */
-	kalDevRegRead(prGlueInfo,
-		      WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
-		      &u4Val);
-	u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_CSR_TX_FCTRL_MODE_MASK;
-	kalDevRegWrite(prGlueInfo,
-		       WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
-		       u4Val);
+	mt6639WpdmaConfigExt0(prAdapter);
+	mt6639WpdmaConfigExt1(prAdapter);
 
 	mt6639WpdmaDlyInt(prGlueInfo);
 }
@@ -1822,8 +1820,8 @@ static void mt6639WfdmaRxRingExtCtrl(
 	    halIsDataRing(RX_RING, index)) {
 		uint32_t u4Val = 0;
 
-		HAL_MCR_RD(prAdapter, prRxRing->hw_cnt_addr, &u4Val);
-		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
+		u4Val = prRxRing->u4RingSize |
+			WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
 		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr, u4Val);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

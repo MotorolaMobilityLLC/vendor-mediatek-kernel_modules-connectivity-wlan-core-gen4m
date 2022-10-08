@@ -291,7 +291,7 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 	uint32_t idx;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint32_t u4Val = 0;
+	uint32_t u4Val = 0, u4Addr = 0;
 #endif
 
 	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
@@ -333,11 +333,10 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
-		HAL_MCR_RD(prAdapter,
-			   WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR, &u4Val);
-		u4Val &= ~BIT(18);
-		HAL_MCR_WR(prAdapter,
-			   WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR, u4Val);
+		u4Addr = WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR;
+		/* default value mask CR_TXD_ADD_RTN_ENA */
+		u4Val = 0x151000 & ~BIT(18);
+		HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
