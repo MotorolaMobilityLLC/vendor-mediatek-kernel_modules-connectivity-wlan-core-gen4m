@@ -5704,21 +5704,30 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4SetInfoLen = 0;
 	uint8_t ucBssIndex = 0;
-	struct NL80211_DRIVER_STRING_CMD_PARAMS *param =
-		(struct NL80211_DRIVER_STRING_CMD_PARAMS *) data;
-	uint8_t *cmd = (uint8_t *) (param + 1);
+	struct NL80211_DRIVER_STRING_CMD_PARAMS *param;
+	uint8_t *cmd;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	len -= sizeof(struct NL80211_DRIVER_STRING_CMD_PARAMS);
+	if (len <= sizeof(struct NL80211_DRIVER_STRING_CMD_PARAMS)) {
+		DBGLOG(REQ, ERROR, "len [%d] is invalid!\n", len);
+		return -EINVAL;
+	}
+
 	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
+	param = (struct NL80211_DRIVER_STRING_CMD_PARAMS *) data;
+	cmd = (uint8_t *) (param + 1);
+	len -= sizeof(struct NL80211_DRIVER_STRING_CMD_PARAMS);
+
 	DBGLOG(REQ, INFO, "cmd: %s\n", cmd);
 
-	if (strnicmp(cmd, "tdls-ps ", 8) == 0) {
+	/* data is a null-terminated string, len also count null character */
+	if (strlen(cmd) == 9 &&
+			strnicmp(cmd, "tdls-ps ", 8) == 0) {
 #if CFG_SUPPORT_TDLS
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidDisableTdlsPs,
@@ -5732,7 +5741,8 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 		uint8_t *pucSSID = NULL;
 		uint32_t u4SSIDLen = 0;
 
-		if (len > 16 && (strncasecmp(cmd+16, " SSID=", 6) == 0)) {
+		if (strlen(cmd) > 22 &&
+				(strncasecmp(cmd+16, " SSID=", 6) == 0)) {
 			pucSSID = cmd + 22;
 			u4SSIDLen = len - 22;
 			DBGLOG(REQ, INFO, "cmd=%s, ssid len %u, ssid=%s\n", cmd,
@@ -5746,13 +5756,15 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 	} else if (strncasecmp(cmd, "BSS-TRANSITION-QUERY", 20) == 0) {
 		uint8_t *pucReason = NULL;
 
-		if (len > 20 && (strncasecmp(cmd+20, " reason=", 8) == 0))
+		if (strlen(cmd) > 28 &&
+				(strncasecmp(cmd+20, " reason=", 8) == 0))
 			pucReason = cmd + 28;
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSendBTMQuery,
 				   (void *)pucReason, 1, FALSE, FALSE, TRUE,
 				   &u4SetInfoLen,
 				   ucBssIndex);
-	} else if (strnicmp(cmd, "OSHAREMOD ", 10) == 0) {
+	} else if (strlen(cmd) == 11 &&
+			strnicmp(cmd, "OSHAREMOD ", 10) == 0) {
 #if CFG_SUPPORT_OSHARE
 		struct OSHARE_MODE_T cmdBuf;
 		struct OSHARE_MODE_T *pCmdHeader = NULL;
