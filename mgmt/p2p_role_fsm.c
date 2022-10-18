@@ -850,6 +850,10 @@ p2pRoleFsmDeauthCompleteImpl(struct ADAPTER *prAdapter,
 	/* STA_RECORD free */
 	cnmStaRecFree(prAdapter, prStaRec);
 
+	/* Skip when already disconnected to prevent deAuth done twice */
+	if (prP2pBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED)
+		return;
+
 	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
 		(bssGetClientCount(prAdapter, prP2pBssInfo) == 0)) {
 		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
