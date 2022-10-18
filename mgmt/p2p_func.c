@@ -8435,6 +8435,9 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(P2P, ERROR, "Not support 80+80 bw.\n");
 
 	prAcsReqInfo->fgIsProcessing = FALSE;
+	if (prAcsReqInfo->eBand == BAND_2G4)
+		prAcsReqInfo->eChnlBw = MAX_BW_20MHZ;
+
 	kalP2pIndicateAcsResult(prGlueInfo,
 			prAcsReqInfo->ucRoleIdx,
 			prAcsReqInfo->eBand,
