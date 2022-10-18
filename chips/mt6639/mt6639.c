@@ -1626,6 +1626,9 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 		return;
 
 #if (WFDMA_AP_MSI_NUM == 8)
+	/* No need to read int status if msi num is 8 */
+	prAdapter->rWifiVar.u4HifIstLoopCount = 1;
+
 	u4Value = 0x40800018;
 	HAL_MCR_WR(prAdapter,
 		   WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR,
