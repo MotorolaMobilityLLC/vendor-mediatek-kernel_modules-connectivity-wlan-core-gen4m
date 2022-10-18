@@ -2026,6 +2026,8 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 {
 	CPU_STAT_RESET_ALL_CNTS(prGlueInfo);
+	/* Tx direct should be init before Tx Work */
+	kalTxDirectInit(prGlueInfo);
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_WORK */
@@ -2063,6 +2065,7 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 	kalNapiRxDirectUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_GRO */
+	kalTxDirectUninit(prGlueInfo);
 }
 
 static void wlanFreeNetDev(void)
@@ -5732,31 +5735,6 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (!prAdapter->fgTxDirectInited) {
-			skb_queue_head_init(
-					&prGlueInfo->rTxDirectSkbQueue);
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
-			timer_setup(&prGlueInfo->rTxDirectSkbTimer,
-					kalTxDirectTimerCheckSkbQ, 0);
-			timer_setup(&prGlueInfo->rTxDirectHifTimer,
-					kalTxDirectTimerCheckHifQ, 0);
-#else
-			init_timer(&prGlueInfo->rTxDirectSkbTimer);
-			prGlueInfo->rTxDirectSkbTimer.data =
-					(unsigned long)prGlueInfo;
-			prGlueInfo->rTxDirectSkbTimer.function =
-					kalTxDirectTimerCheckSkbQ;
-
-			init_timer(&prGlueInfo->rTxDirectHifTimer);
-			prGlueInfo->rTxDirectHifTimer.data =
-					(unsigned long)prGlueInfo;
-			prGlueInfo->rTxDirectHifTimer.function =
-				kalTxDirectTimerCheckHifQ;
-#endif
-			prAdapter->fgTxDirectInited = TRUE;
-		}
-	}
 }
 
 static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
@@ -6218,13 +6196,6 @@ int32_t wlanOffAtReset(void)
 	wlanOffStopWlanThreads(prGlueInfo);
 
 	glTxRxUninit(prGlueInfo);
-
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
-			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
-		}
-	}
 
 	wlanAdapterStop(prAdapter, TRUE);
 
@@ -7046,13 +7017,6 @@ static void wlanRemove(void)
 	/* Uninit volt info mechanis */
 	kalVnfUninit();
 #endif
-
-	if (HAL_IS_TX_DIRECT(prAdapter)) {
-		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
-			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
-		}
-	}
 
 	/* Destroy wakelock */
 	wlanWakeLockUninit(prGlueInfo);

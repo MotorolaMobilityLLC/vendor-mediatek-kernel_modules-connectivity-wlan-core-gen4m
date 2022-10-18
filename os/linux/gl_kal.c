@@ -5830,9 +5830,7 @@ void kalFlushPendingTxPackets(struct GLUE_INFO *prGlueInfo)
 	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) == 0)
 		return;
 
-	if (HAL_IS_TX_DIRECT()) {
-		kalTxDirectClearSkbQ(prGlueInfo);
-	} else {
+	if (!HAL_IS_TX_DIRECT()) {
 		GLUE_SPIN_LOCK_DECLARATION();
 
 		while (TRUE) {
@@ -13140,6 +13138,12 @@ TpeEndFlush:
 }
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
+
+void kalTxDirectInitSkbQ(struct GLUE_INFO *prGlueInfo)
+{
+	skb_queue_head_init(&prGlueInfo->rTxDirectSkbQueue);
+}
+
 void kalTxDirectClearSkbQ(struct GLUE_INFO *prGlueInfo)
 {
 	struct sk_buff *prSkb;
@@ -14677,6 +14681,58 @@ void kalVnfInit(struct ADAPTER *prAdapter)
 }
 #endif /* CFG_VOLT_INFO */
 
+void kalTxDirectInit(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
+		return;
+	}
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		if (!prAdapter->fgTxDirectInited) {
+			kalTxDirectInitSkbQ(prGlueInfo);
+#if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+			timer_setup(&prGlueInfo->rTxDirectSkbTimer,
+					kalTxDirectTimerCheckSkbQ, 0);
+			timer_setup(&prGlueInfo->rTxDirectHifTimer,
+					kalTxDirectTimerCheckHifQ, 0);
+#else
+			init_timer(&prGlueInfo->rTxDirectSkbTimer);
+			prGlueInfo->rTxDirectSkbTimer.data =
+					(unsigned long)prGlueInfo;
+			prGlueInfo->rTxDirectSkbTimer.function =
+					kalTxDirectTimerCheckSkbQ;
+
+			init_timer(&prGlueInfo->rTxDirectHifTimer);
+			prGlueInfo->rTxDirectHifTimer.data =
+					(unsigned long)prGlueInfo;
+			prGlueInfo->rTxDirectHifTimer.function =
+				kalTxDirectTimerCheckHifQ;
+#endif
+			prAdapter->fgTxDirectInited = TRUE;
+		}
+	}
+}
+
+void kalTxDirectUninit(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
+		return;
+	}
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		if (prAdapter->fgTxDirectInited) {
+			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
+			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
+			kalTxDirectClearSkbQ(prGlueInfo);
+		}
+	}
+}
 
 void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo)
 {

@@ -2595,6 +2595,9 @@ void kalVnfInit(struct ADAPTER *prAdapter);
 void kalVnfEventHandler(struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
 
+void kalTxDirectInit(struct GLUE_INFO *prGlueInfo);
+void kalTxDirectUninit(struct GLUE_INFO *prGlueInfo);
+
 void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
 void kalTxFreeMsduWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu);
