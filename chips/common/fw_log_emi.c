@@ -222,7 +222,6 @@ static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 
 	if (kalMemCmp(common.key, FW_LOG_KEY, sizeof(common.key)) != 0) {
 		DBGLOG(INIT, ERROR, "INVALID FW LOG KEY.\n");
-		DBGLOG_MEM8(INIT, ERROR, &common, sizeof(common));
 		ret = -EINVAL;
 		goto exit;
 	}
@@ -260,10 +259,17 @@ static int32_t fw_log_emi_refresh_common_header(struct ADAPTER *ad,
 		} else if (sub_ctrl->length > MAX_FW_LOG_SIZE) {
 			ret = -EINVAL;
 			goto exit;
+		} else if (emi_mem_offset_convert(sub_ctrl->base_addr) >
+			   emi_mem_get_size(chip_info)) {
+			ret = -EINVAL;
+			goto exit;
 		}
 	}
 
 exit:
+	if (ret)
+		DBGLOG_MEM8(INIT, ERROR, &common, sizeof(common));
+
 	return ret;
 }
 
