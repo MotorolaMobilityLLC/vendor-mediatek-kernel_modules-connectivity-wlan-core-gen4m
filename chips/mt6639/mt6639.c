@@ -2736,7 +2736,7 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_CCCI_SUPPORT
-	uint32_t mcif_emi_base, u4Val = 0;
+	uint32_t mcif_emi_base, u4Val = 0, u4WifiEmi = 0;
 	void *vir_addr = NULL;
 	int ret = 0;
 
@@ -2765,13 +2765,23 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
 		0x18051803);
 
+#if CFG_SUPPORT_WIFI_MCIF_NO_MMIO_READ
+	u4WifiEmi = (uint32_t)emi_mem_get_phy_base(prAdapter->chip_info) +
+		emi_mem_offset_convert(0x518001);
+#endif
+
 	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
 	writel(0x4D4D434D, vir_addr);
 	writel(0x4D4D434D, vir_addr + 0x4);
 	writel(0x00000000, vir_addr + 0x8);
 	writel(0x00000000, vir_addr + 0xC);
+#if CFG_SUPPORT_WIFI_MCIF_NO_MMIO_READ
+	writel(u4WifiEmi, vir_addr + 0x10);
+	writel(0x02000080, vir_addr + 0x14);
+#else
 	writel(0x301B5801, vir_addr + 0x10);
 	writel(0x02000010, vir_addr + 0x14);
+#endif
 	writel(0x301AF00C, vir_addr + 0x18);
 	writel(0x00000001, vir_addr + 0x1C);
 	writel(0x00000000, vir_addr + 0x70);
@@ -2782,7 +2792,8 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 	u4Val = readl(vir_addr + MCIF_EMI_BASE_OFFSET);
 	HAL_MCR_WR(prAdapter, MT6639_MCIF_MD_STATE_WHEN_WIFI_ON_ADDR, u4Val);
 
-	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x]\n", u4Val);
+	DBGLOG(INIT, TRACE, "MCIF_EMI_BASE_OFFSET=[0x%08x] WIFI EMI=[0x%08x]\n",
+	       u4Val, u4WifiEmi);
 	DBGLOG_MEM128(HAL, TRACE, vir_addr, MCIF_EMI_MEMORY_SIZE);
 
 	iounmap(vir_addr);
