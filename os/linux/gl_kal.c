@@ -10100,14 +10100,13 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				* Coex TDD & BSS in 2.4G
 				* The specific BSS Tput > 100M
 				* the PerfMonLv3 still stands for 100M
-		    */
+			*/
 			DBGLOG(SW4, TRACE,
 			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%llu]tpi[%llu]tpth[%d]th[%d]\n",
 			i, prWifiVar->fgIsBoostCpuThAdjustable, keep_alive,
 			prBssInfo->eCoexMode, prBssInfo->eBand,
 			prWifiVar->u4PerfMonTpTh[u4BoostCpuTh],
-			((unsigned long long)(prPerMonitor->ulTxTp[i] +
-					prPerMonitor->ulRxTp[i]) >> 17),
+			kalGetTpMbpsByBssId(prAdapter, PKT_PATH_ALL, i),
 			prWifiVar->u4PerfMonTpTh[2],
 			PERF_MON_COEX_TP_THRESHOLD);
 
@@ -10117,9 +10116,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				(prBssInfo->eCoexMode == COEX_TDD_MODE) &&
 				(prWifiVar->u4PerfMonTpTh[u4BoostCpuTh] >
 					PERF_MON_COEX_TP_THRESHOLD) &&
-				(((unsigned long long)(prPerMonitor->ulTxTp[i] +
-					prPerMonitor->ulRxTp[i]) >> 17) >
-					PERF_MON_COEX_TP_THRESHOLD) &&
+				(kalGetTpMbpsByBssId(prAdapter, PKT_PATH_ALL, i)
+					> PERF_MON_COEX_TP_THRESHOLD) &&
 				(prWifiVar->u4PerfMonTpTh[2] ==
 					PERF_MON_COEX_TP_THRESHOLD)) {
 				/*  3, stands for 100Mbps */
@@ -10369,8 +10367,7 @@ uint32_t kalPerMonGetInfo(struct ADAPTER *prAdapter,
 	return u4Len;
 }
 
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
+uint32_t kalGetTpMbpsByBssId(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx)
 {
@@ -10396,6 +10393,19 @@ uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
 	return u4TpMbps;
 }
 
+uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath)
+{
+	uint32_t u4TpMbps = 0;
+	uint8_t i = 0;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++)
+		u4TpMbps += kalGetTpMbpsByBssId(prAdapter, ePath, i);
+
+	return u4TpMbps;
+}
+
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx)
@@ -10403,19 +10413,11 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4TpMbps = 0;
 	uint8_t ucRet = FALSE;
-	uint8_t i = 0;
 
-	if (!prAdapter
-		|| ucBssIdx > MAX_BSSID_NUM
-		|| ePath > PKT_PATH_ALL)
-		return FALSE;
-
-	if (ucBssIdx == MAX_BSSID_NUM) {
-		for (i = 0; i < MAX_BSSID_NUM; i++)
-			u4TpMbps +=
-				kalGetTpMbps(prAdapter, ePath, i);
-	} else
-		u4TpMbps = kalGetTpMbps(prAdapter, ePath, ucBssIdx);
+	if (ucBssIdx == MAX_BSSID_NUM)
+		u4TpMbps = kalGetTpMbps(prAdapter, ePath);
+	else
+		u4TpMbps = kalGetTpMbpsByBssId(prAdapter, ePath, ucBssIdx);
 
 	if (u4TpMbps > prWifiVar->u4TputThresholdMbps)
 		ucRet = TRUE;

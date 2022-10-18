@@ -2232,10 +2232,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 uint32_t kalPerMonGetInfo(struct ADAPTER *prAdapter,
 			  uint8_t *pucBuf,
 			  uint32_t u4Max);
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
+	enum ENUM_PKT_PATH ePath);
+uint32_t kalGetTpMbpsByBssId(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx);
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx);
