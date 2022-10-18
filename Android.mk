@@ -113,7 +113,7 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6985_6639_mp2
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
 	CONFIG_WLAN_PLATFORM := mt6985
-	CONFIG_WLAN_DUJAC_MP2 := y
+	CONFIG_WLAN_MT6985_MP2 := y
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
 	WLAN_CHIP_ID := 6639

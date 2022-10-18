@@ -82,7 +82,7 @@ ifeq ($(KBUILD_MODPOST_FAIL_ON_WARNINGS),)
     KBUILD_MODPOST_FAIL_ON_WARNINGS=y
 endif
 
-CONFIG_WLAN_DUJAC_MP2 ?= n
+CONFIG_WLAN_MT6985_MP2 ?= n
 
 # ---------------------------------------------------
 # Compile Options
@@ -425,7 +425,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
-    ifeq ($(CONFIG_WLAN_DUJAC_MP2), y)
+    ifeq ($(CONFIG_WLAN_MT6985_MP2), y)
         CONFIG_WFDMA_AP_MSI_NUM=8
         CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
         CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
