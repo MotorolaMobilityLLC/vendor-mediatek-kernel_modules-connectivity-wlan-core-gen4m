@@ -177,6 +177,7 @@ struct HIF_MEM_OPS {
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
+	struct HIF_MEM *(*getRsvEmi)(struct GL_HIF_INFO *prHifInfo);
 	void (*dumpTx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
@@ -499,6 +500,7 @@ struct BUS_INFO {
 	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
+	struct SW_EMI_RING_INFO rSwEmiRingInfo;
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,

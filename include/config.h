@@ -1974,6 +1974,10 @@
 #define CFG_MTK_WIFI_SW_WFDMA			0
 #endif
 
+#ifndef CFG_MTK_WIFI_SW_EMI_RING
+#define CFG_MTK_WIFI_SW_EMI_RING		0
+#endif
+
 #if (CFG_SUPPORT_802_11AX == 1)
 #define CFG_SUPPORT_BSS_MAX_IDLE_PERIOD         1
 #else

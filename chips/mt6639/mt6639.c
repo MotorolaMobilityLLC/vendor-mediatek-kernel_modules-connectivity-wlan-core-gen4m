@@ -136,6 +136,8 @@ static void mt6639WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter);
 
+static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo);
+
 static bool mt6639IsValidRegAccess(struct ADAPTER *prAdapter,
 				   uint32_t u4Register);
 
@@ -278,6 +280,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
+	{0x7c030000, 0x1a0000, 0x10000}, /* CONN_INFRA_ON_CCIF */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x70020000, 0x1f0000, 0x9000},
 	{0x70000000, 0x1e0000, 0x9000},
@@ -589,6 +592,20 @@ struct BUS_INFO mt6639_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 	.DmaShdlInit = mt6639DmashdlInit,
 #endif
+#if defined(_HIF_PCIE)
+	.rSwEmiRingInfo = {
+		.rOps = {
+			.init = halSwEmiInit,
+			.read = halSwEmiRead,
+			.triggerInt = mt6639triggerInt,
+			.debug = halSwEmiDebug,
+		},
+		.fgIsSupport = TRUE,
+		.u4CcifTchnumAddr =
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
+		.u4CcifChlNum = 3,
+	},
+#endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.prDmashdlCfg = &rMt6639DmashdlCfg,
 	.u4UdmaWlCfg_0_Addr = CONNAC3X_UDMA_WLCFG_0,
@@ -2233,6 +2250,21 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		   MT6639_EMI_SIZE_ADDR,
 		   size);
+}
+
+static void mt6639triggerInt(struct GLUE_INFO *prGlueInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		   prSwEmiRingInfo->u4CcifTchnumAddr,
+		   prSwEmiRingInfo->u4CcifChlNum);
 }
 
 static bool mt6639IsValidRegAccess(struct ADAPTER *prAdapter,

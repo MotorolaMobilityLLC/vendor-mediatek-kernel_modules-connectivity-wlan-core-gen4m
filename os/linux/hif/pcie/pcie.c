@@ -284,6 +284,10 @@ static u32 g_u4CsrSize;
 static u_int8_t g_fgDriverProbed = FALSE;
 struct pci_dev *g_prDev;
 
+#if CFG_MTK_WIFI_SW_EMI_RING
+struct HIF_MEM g_rRsvEmiMem;
+#endif
+
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 struct HIF_PREALLOC_MEM grMem;
 unsigned long long gWifiRsvMemSize;
@@ -389,14 +393,15 @@ static void pcieFreeDesc(struct GL_HIF_INFO *prHifInfo,
 static void pcieFreeBuf(void *pucSrc, uint32_t u4Len);
 static void pcieFreePacket(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
+#if CFG_MTK_WIFI_SW_EMI_RING
+static struct HIF_MEM *pcieGetRsvEmi(struct GL_HIF_INFO *prHifInfo);
+#endif
 static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
 static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
-static void pcieAllocMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
-static void pcieFreeMcuEmiMem(struct GL_HIF_INFO *prHifInfo);
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
@@ -953,6 +958,11 @@ static int axiAllocHifMem(struct platform_device *pdev,
 	DBGLOG(INIT, INFO, "pucRsvMemBase[%pa], pucRsvMemVirBase[%pa]\n",
 	       &grMem.pucRsvMemBase,
 	       &grMem.pucRsvMemVirBase);
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+	if (!axiAllocRsvMem(SW_EMI_MEMORY_SIZE, &g_rRsvEmiMem))
+		DBGLOG(INIT, ERROR, "g_rRsvEmiMem alloc fail\n");
+#endif
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (u4Idx == TX_RING_DATA1 &&
@@ -1708,6 +1718,9 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->allocRxBuf = pcieAllocRxBuf;
 	prMemOps->freePacket = pcieFreePacket;
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
+#if CFG_MTK_WIFI_SW_EMI_RING
+	prMemOps->getRsvEmi = pcieGetRsvEmi;
+#endif
 #if 0
 	prMemOps->dumpTx = pcieDumpTx;
 	prMemOps->dumpRx = pcieDumpRx;
@@ -2447,6 +2460,13 @@ static void pcieFreePacket(struct GL_HIF_INFO *prHifInfo,
 {
 	kalPacketFree(NULL, pvPacket);
 }
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+static struct HIF_MEM *pcieGetRsvEmi(struct GL_HIF_INFO *prHifInfo)
+{
+	return &g_rRsvEmiMem;
+}
+#endif
 
 static void pcieDumpTx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,

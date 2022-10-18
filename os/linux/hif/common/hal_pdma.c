@@ -1411,6 +1411,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx;
 
@@ -1419,6 +1420,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -1518,6 +1520,9 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 
 	if (prSwWfdmaInfo->rOps.init)
 		prSwWfdmaInfo->rOps.init(prAdapter->prGlueInfo);
+
+	if (prSwEmiRingInfo->rOps.init)
+		prSwEmiRingInfo->rOps.init(prAdapter->prGlueInfo);
 
 	return true;
 }

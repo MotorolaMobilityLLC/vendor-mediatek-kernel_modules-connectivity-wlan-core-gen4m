@@ -4164,6 +4164,12 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 		      uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidQueryEmiMcrRead(struct ADAPTER *prAdapter,
+		       void *pvQueryBuffer,
+		       uint32_t u4QueryBufferLen,
+		       uint32_t *pu4QueryInfoLen);
+
+uint32_t
 wlanoidQueryUhwMcrRead(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen);

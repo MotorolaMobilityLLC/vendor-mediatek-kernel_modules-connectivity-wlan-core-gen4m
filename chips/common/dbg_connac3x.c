@@ -2798,16 +2798,21 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4DmaNum = 1;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
+
+	if (prSwEmiRingInfo->rOps.debug)
+		prSwEmiRingInfo->rOps.debug(prAdapter->prGlueInfo);
 
 	if (prChipInfo->is_support_wfdma1)
 		u4DmaNum++;

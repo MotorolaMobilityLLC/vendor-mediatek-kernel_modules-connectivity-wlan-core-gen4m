@@ -290,6 +290,9 @@
 #define SW_WFDMA_MAX_RETRY_COUNT	100
 #define SW_WFDMA_RETRY_TIME		10
 
+#define SW_EMI_MEMORY_SIZE		2048
+#define SW_EMI_RING_SIZE		16
+
 #define MSDU_TOKEN_HISTORY_NUM 5
 
 #define LOG_DUMP_COUNT_PERIOD		5
@@ -776,6 +779,34 @@ struct SW_WFDMA_INFO {
 	uint8_t aucCID[SW_WFDMA_CMD_NUM];
 };
 
+struct SW_EMI_CTX {
+	uint32_t u4DrvIdx;
+	uint32_t u4FwIdx;
+	uint32_t u4RingSize;
+	uint32_t au4Addr[SW_EMI_RING_SIZE];
+	uint32_t au4Val[SW_EMI_RING_SIZE];
+};
+
+struct SW_EMI_RING_INFO;
+
+struct SW_EMI_RING_OPS {
+	void (*init)(struct GLUE_INFO *prGlueInfo);
+	u_int8_t (*read)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
+			 uint32_t *pu4Val);
+	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
+	void (*debug)(struct GLUE_INFO *prGlueInfo);
+};
+
+struct SW_EMI_RING_INFO {
+	struct SW_EMI_RING_OPS rOps;
+	struct SW_EMI_CTX *prEmi;
+	u_int8_t fgIsSupport;
+	u_int8_t fgIsEnable;
+	uint32_t u4CcifTchnumAddr;
+	uint32_t u4CcifChlNum;
+	spinlock_t rRingLock;
+};
+
 enum mtk_queue_attr {
 	Q_TX_DATA,
 	Q_TX_CMD,
@@ -1091,6 +1122,11 @@ void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
 bool halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
+
+void halSwEmiInit(struct GLUE_INFO *prGlueInfo);
+u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
+		      uint32_t *pu4Val);
+void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 /* Host Offload */

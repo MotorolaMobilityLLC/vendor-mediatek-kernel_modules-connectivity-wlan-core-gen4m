@@ -426,6 +426,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
     ifeq ($(CONFIG_WLAN_DUJAC_MP2), y)
+        CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -508,6 +509,12 @@ else
     endif
 endif
 # ===== Below will add compile flag based on project setting =====
+
+ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
+    ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=0
+endif
 
 ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
@@ -1705,6 +1712,7 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_COMMON_DIR)kal_pdma.o \
              $(HIF_COMMON_DIR)dbg_pdma.o \
              $(HIF_COMMON_DIR)hif_mem.o \
+             $(HIF_COMMON_DIR)sw_emi_ring.o \
              $(HIF_DIR)pcie.o \
              $(HIF_DIR)pcie_msi.o
 ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)

@@ -6453,6 +6453,50 @@ wlanoidSetDrvMcrWrite(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* wlanoidSetMcrWrite */
 
+uint32_t wlanoidQueryEmiMcrRead(
+	struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
+
+	DEBUGFUNC("wlanoidQueryEmiMcrRead");
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+
+	if (!prSwEmiRingInfo->fgIsEnable)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT);
+	if (u4QueryBufferLen < sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prMcrRdInfo = (struct PARAM_CUSTOM_MCR_RW_STRUCT *)pvQueryBuffer;
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	if (prSwEmiRingInfo->rOps.read) {
+		prSwEmiRingInfo->rOps.read(
+			prAdapter->prGlueInfo,
+			prMcrRdInfo->u4McrOffset & BITS(2, 31),
+			&prMcrRdInfo->u4McrData);
+	}
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	DBGLOG(INIT, TRACE,
+	       "EMI MCR Read: Offset = %#08x, Data = %#08x\n",
+	       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
+
+	return WLAN_STATUS_SUCCESS;
+#else
+	return WLAN_STATUS_NOT_ACCEPTED;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query driver MCR value through UHW.
