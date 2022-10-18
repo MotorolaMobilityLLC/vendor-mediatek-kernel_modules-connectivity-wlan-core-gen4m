@@ -1662,6 +1662,12 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 			/* only support neighbor AP info with
 			*  BSSID
 			*/
+			DBGLOG(SCN, WARN,
+				"RNR w/o BSSID, length(%d,%d),TBTT(%d,%d)\n",
+				IE_LEN(pucIE), ucCurrentLength,
+				u2TbttInfoCount, u2TbttInfoLength);
+			ucCurrentLength += 4 +
+				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
 		}
 		/* If opClass is not 6G, no need to do extra scan
