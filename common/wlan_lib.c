@@ -10954,6 +10954,9 @@ wlanGetStaIdxByWlanIdx(struct ADAPTER *prAdapter,
 
 	if (ucIndex < WTBL_SIZE) {
 		if (prWtbl[ucIndex].ucUsed && prWtbl[ucIndex].ucPairwise) {
+			if (prWtbl[ucIndex].ucStaIndex >= CFG_STA_REC_NUM)
+				return WLAN_STATUS_FAILURE;
+
 			*pucStaIdx = prWtbl[ucIndex].ucStaIndex;
 			return WLAN_STATUS_SUCCESS;
 		}
@@ -13418,7 +13421,7 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 		WLAN_STATUS_SUCCESS) {
 		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
 	} else {
-		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
+		DBGLOG_LIMITED(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
 		return -1;
 	}
 
