@@ -1398,6 +1398,9 @@ struct WIFI_VAR {
 	u_int8_t fgPcieEnableL1ss;
 #endif
 	u_int8_t fgEnWfdmaNoMmioRead;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	u_int8_t fgEnSwEmiRead;
+#endif
 
 	uint32_t u4PrdcIntTime;
 	u_int8_t fgEnDlyInt;

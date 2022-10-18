@@ -507,6 +507,32 @@ do { \
 	*pu2Version = (u4Value & PCIE_HIF_SYS_REV); \
 }
 
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+#define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
+do { \
+	struct mt66xx_chip_info *prChipInfo = NULL; \
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo; \
+	uint32_t u4Value = 0; \
+	u_int8_t fgRet = FALSE; \
+	if (!_prAdapter->chip_info) \
+		ASSERT(0); \
+	*_pfgResult = FALSE; \
+	prChipInfo = _prAdapter->chip_info; \
+	prSwEmiRingInfo = &_prAdapter->chip_info->bus_info->rSwEmiRingInfo; \
+	if (IS_FEATURE_ENABLED(_prAdapter->rWifiVar.fgEnSwEmiRead) && \
+		prSwEmiRingInfo->rOps.read) { \
+		fgRet = prSwEmiRingInfo->rOps.read( \
+			_prAdapter->prGlueInfo, \
+			prChipInfo->sw_sync0, \
+			&u4Value); \
+	} \
+	if (!fgRet) \
+		HAL_MCR_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value); \
+	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) \
+	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
+		*_pfgResult = TRUE; \
+} while (0)
+#else
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo = NULL; \
@@ -520,6 +546,7 @@ do { \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \
 } while (0)
+#endif
 
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \

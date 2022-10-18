@@ -795,6 +795,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.is_support_rro = TRUE,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = TRUE,
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	.is_en_sw_emi_read = TRUE,
+#endif
 #endif /* _HIF_PCIE */
 	.txd_append_size = MT6639_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT6639_HIF_TX_DESC_APPEND_LENGTH,

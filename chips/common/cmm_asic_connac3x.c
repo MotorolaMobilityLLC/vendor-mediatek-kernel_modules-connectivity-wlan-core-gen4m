@@ -410,18 +410,27 @@ void asicConnac3xFillInitCmdTxd(
 	}
 }
 
-void asicConnac3xWfdmaDummyCrRead(
+u_int8_t asicConnac3xWfdmaDummyCrRead(
 	struct ADAPTER *prAdapter,
-	u_int8_t *pfgResult)
+	uint32_t *pu4Value)
 {
-	u_int32_t u4RegValue = 0;
+	u_int32_t u4Addr = CONNAC3X_WFDMA_DUMMY_CR;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
 
-	HAL_MCR_RD(prAdapter,
-		CONNAC3X_WFDMA_DUMMY_CR,
-		&u4RegValue);
-	*pfgResult = (u4RegValue &
-		CONNAC3X_WFDMA_NEED_REINIT_BIT)
-		== 0 ? TRUE : FALSE;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read) {
+		fgRet = prSwEmiRingInfo->rOps.read(
+			prAdapter->prGlueInfo, u4Addr, pu4Value);
+	}
+	if (!fgRet)
+#endif
+		HAL_MCR_RD(prAdapter, u4Addr, pu4Value);
+
+	return (*pu4Value & CONNAC3X_WFDMA_NEED_REINIT_BIT) == 0 ? TRUE : FALSE;
 }
 
 
@@ -430,9 +439,7 @@ void asicConnac3xWfdmaDummyCrWrite(
 {
 	u_int32_t u4RegValue = 0;
 
-	HAL_MCR_RD(prAdapter,
-		CONNAC3X_WFDMA_DUMMY_CR,
-		&u4RegValue);
+	asicConnac3xWfdmaDummyCrRead(prAdapter, &u4RegValue);
 	u4RegValue |= CONNAC3X_WFDMA_NEED_REINIT_BIT;
 
 	HAL_MCR_WR(prAdapter,
@@ -485,10 +492,11 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 void asicConnac3xWfdmaReInit(
 	struct ADAPTER *prAdapter)
 {
-	u_int8_t fgResult;
+	u_int8_t fgResult = FALSE;
+	uint32_t u4Val = 0;
 
 	/*WFDMA re-init flow after chip deep sleep*/
-	asicConnac3xWfdmaDummyCrRead(prAdapter, &fgResult);
+	fgResult = asicConnac3xWfdmaDummyCrRead(prAdapter, &u4Val);
 	if (fgResult) {
 		asicConnac3xWfdmaReInitImpl(prAdapter);
 		asicConnac3xWfdmaDummyCrWrite(prAdapter);
@@ -947,8 +955,14 @@ void asicConnac3xProcessSoftwareInterrupt(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	struct BUS_INFO *prBusInfo;
+	struct WIFI_VAR *prWifiVar;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
+#endif
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
-	uint32_t u4Status = 0;
+	uint32_t u4Status = 0, u4Addr = 0;
 	uint32_t u4HostWpdamBase = 0;
 
 	if (prAdapter->prGlueInfo == NULL) {
@@ -958,6 +972,11 @@ void asicConnac3xProcessSoftwareInterrupt(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prWifiVar = &prAdapter->rWifiVar;
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	if (prAdapter->chip_info->is_support_wfdma1)
@@ -965,9 +984,17 @@ void asicConnac3xProcessSoftwareInterrupt(
 	else
 		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
 
-	kalDevRegRead(prGlueInfo,
-		CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
-		&u4Status);
+	u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
+#if CFG_MTK_WIFI_EN_SW_EMI_READ
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read) {
+		fgRet = prSwEmiRingInfo->rOps.read(
+			prGlueInfo, u4Addr, &u4Status);
+	}
+
+	if (!fgRet)
+#endif
+		kalDevRegRead(prGlueInfo, u4Addr, &u4Status);
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_MASK) {

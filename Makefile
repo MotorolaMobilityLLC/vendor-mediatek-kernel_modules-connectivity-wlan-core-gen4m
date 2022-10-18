@@ -427,6 +427,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
     ifeq ($(CONFIG_WLAN_DUJAC_MP2), y)
         CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
+        CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -512,8 +513,14 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
+    ifeq ($(CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ), y)
+        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=1
+    else
+        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
+    endif
 else
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=0
+    ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
