@@ -5924,7 +5924,9 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 
 	DBGLOG(REQ, INFO, "cmd: %s\n", cmd);
 
-	if (strnicmp(cmd, "tdls-ps ", 8) == 0) {
+	/* data is a null-terminated string, len also count null character */
+	if (strlen(cmd) == 9 &&
+			strnicmp(cmd, "tdls-ps ", 8) == 0) {
 #if CFG_SUPPORT_TDLS
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidDisableTdlsPs,
@@ -5938,7 +5940,8 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 		uint8_t *pucSSID = NULL;
 		uint32_t u4SSIDLen = 0;
 
-		if (len > 16 && (strncasecmp(cmd+16, " SSID=", 6) == 0)) {
+		if (strlen(cmd) > 22 &&
+				(strncasecmp(cmd+16, " SSID=", 6) == 0)) {
 			pucSSID = cmd + 22;
 			u4SSIDLen = len - 22;
 			DBGLOG(REQ, INFO, "cmd=%s, ssid len %u, ssid=%s\n", cmd,
@@ -5951,12 +5954,14 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 	} else if (strncasecmp(cmd, "BSS-TRANSITION-QUERY", 20) == 0) {
 		uint8_t *pucReason = NULL;
 
-		if (len > 20 && (strncasecmp(cmd+20, " reason=", 8) == 0))
+		if (strlen(cmd) > 28 &&
+				(strncasecmp(cmd+20, " reason=", 8) == 0))
 			pucReason = cmd + 28;
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSendBTMQuery,
 				   (void *)pucReason, 1,
 				   &u4SetInfoLen, ucBssIndex);
-	} else if (strnicmp(cmd, "OSHAREMOD ", 10) == 0) {
+	} else if (strlen(cmd) == 11 &&
+			strnicmp(cmd, "OSHAREMOD ", 10) == 0) {
 #if CFG_SUPPORT_OSHARE
 		struct OSHARE_MODE_T cmdBuf;
 		struct OSHARE_MODE_T *pCmdHeader = NULL;
@@ -5972,8 +5977,7 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 
 		pCmdData = (struct OSHARE_MODE_SETTING_V1_T *) &
 			   (pCmdHeader->buffer[0]);
-		if (cmd + 10)
-			pCmdData->osharemode = *(uint8_t *)(cmd + 10) - '0';
+		pCmdData->osharemode = *(uint8_t *)(cmd + 10) - '0';
 
 		DBGLOG(REQ, INFO, "cmd=%s, osharemode=%u\n", cmd,
 		       pCmdData->osharemode);
