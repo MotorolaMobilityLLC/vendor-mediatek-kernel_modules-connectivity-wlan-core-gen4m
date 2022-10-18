@@ -8320,7 +8320,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "SkipP2pIe", FEATURE_ENABLED);
 
 	prWifiVar->fgSkipP2pProbeResp = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "SkipP2pProbeResp", FEATURE_DISABLED);
+		prAdapter, "SkipP2pProbeResp", FEATURE_ENABLED);
 
 	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapChannelSwitchPolicy",
