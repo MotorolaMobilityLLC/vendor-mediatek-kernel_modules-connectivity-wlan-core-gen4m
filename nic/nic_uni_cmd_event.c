@@ -5772,7 +5772,7 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 		tag = (struct UNI_CMD_SR_CAP *) uni_cmd->au1TlvBuffer;
 		tag->u2Tag = UNI_CMD_SR_TAG_HW_CAP_SREN;
 		tag->u2Length = sizeof(*tag);
-		tag->rSrCap.fgSrEn = cmd_sr->rSrCap.fgSrEn;
+		tag->u4Value = cmd_sr->rSrCap.fgSrEn;
 	}
 		break;
 	default: {
@@ -9727,56 +9727,54 @@ void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
-		case UNI_EVENT_SR_TAG_HW_CAP: {
+		case UNI_EVENT_SR_TAG_HW_IND: {
 			struct UNI_EVENT_SR_HW_IND *sr =
 				(struct UNI_EVENT_SR_HW_IND *) tag;
 			DBGLOG(NIC, INFO,
-				"DW_1: [%d:%d:%d]\n",
-				sr->rSrInd.u1NonSrgInterPpduRcpi,
-				sr->rSrInd.u1SrgInterPpduRcpi,
-				sr->rSrInd.u2NonSrgVldCnt);
+				"DW_1: [u2NonSrgVldCnt = %u:u2SrgVldCnt = %u]\n",
+				sr->rSrInd.u2NonSrgVldCnt,
+				sr->rSrInd.u2SrgVldCnt);
 			DBGLOG(NIC, INFO,
-				"DW_2_3: [%d:%d:%d:%d]\n",
-				sr->rSrInd.u2SrgVldCnt,
+				"DW_2_3: [u2IntraBssPpduCnt = %u: u2InterBssPpduCnt = %u: u2NonSrgPpduVldCnt = %u: u2SrgPpduVldCnt = %u]\n",
 				sr->rSrInd.u2IntraBssPpduCnt,
 				sr->rSrInd.u2InterBssPpduCnt,
-				sr->rSrInd.u2NonSrgPpduVldCnt);
+				sr->rSrInd.u2NonSrgPpduVldCnt,
+				sr->rSrInd.u2SrgPpduVldCnt);
 			DBGLOG(NIC, INFO,
-				"DW_4_5_6: [%d:%d:%d]\n",
-				sr->rSrInd.u2SrgPpduVldCnt,
+				"DW_4_5: [u4SrAmpduMpduCnt = %u: u4SrAmpduMpduAckedCnt = %u]\n",
 				sr->rSrInd.u4SrAmpduMpduCnt,
 				sr->rSrInd.u4SrAmpduMpduAckedCnt);
 		}
 			break;
-		case UNI_EVENT_SR_TAG_HW_IND: {
+		case UNI_EVENT_SR_TAG_HW_CAP: {
 			struct UNI_EVENT_SR_HW_CAP *sr =
 				(struct UNI_EVENT_SR_HW_CAP *) tag;
 			DBGLOG(NIC, INFO,
-				"DW_1: [%d:%d:%d:%d]\n",
+				"DW_1: [fgSrEn:%d, fgSrgEn:%d, fgNonSrgEn:%d, fgSingleMdpuRtsctsEn:%d]\n",
 				sr->rSrCap.fgSrEn,
 				sr->rSrCap.fgSrgEn,
 				sr->rSrCap.fgNonSrgEn,
 				sr->rSrCap.fgSingleMdpuRtsctsEn);
 			DBGLOG(NIC, INFO,
-				"DW_2: [%d:%d:%d:%d]\n",
+				"DW_2: [fgHdrDurEn:%d, fgTxopDurEn:%d, fgNonSrgInterPpduPresv:%d, fgSrgInterPpduPresv:%d]\n",
 				sr->rSrCap.fgHdrDurEn,
 				sr->rSrCap.fgTxopDurEn,
 				sr->rSrCap.fgNonSrgInterPpduPresv,
 				sr->rSrCap.fgSrgInterPpduPresv);
 			DBGLOG(NIC, INFO,
-				"DW_3: [%d:%d:%d:%d]\n",
+				"DW_3: [fgSMpduNoTrigEn:%d, fgSrgBssidOrder:%d, fgCtsAfterRts:%d, fgSrpOldRxvEn:%d]\n",
 				sr->rSrCap.fgSMpduNoTrigEn,
 				sr->rSrCap.fgSrgBssidOrder,
 				sr->rSrCap.fgCtsAfterRts,
 				sr->rSrCap.fgSrpOldRxvEn);
 			DBGLOG(NIC, INFO,
-				"DW_4: [%d:%d:%d:%d]\n",
+				"DW_4: [fgSrpNewRxvEn:%d, fgSrpDataOnlyEn:%d, fgFixedRateSrREn:%d, fgWtblSrREn:%d]\n",
 				sr->rSrCap.fgSrpNewRxvEn,
 				sr->rSrCap.fgSrpDataOnlyEn,
 				sr->rSrCap.fgFixedRateSrREn,
 				sr->rSrCap.fgWtblSrREn);
 			DBGLOG(NIC, INFO,
-				"DW_5: [%d:%d:%d:%d]\n",
+				"DW_5: [fgSrRemTimeEn:%d, fgProtInSrWinDis:%d, fgTxCmdDlRateSelEn:%d, fgAmpduTxCntEn:%d]\n",
 				sr->rSrCap.fgSrRemTimeEn,
 				sr->rSrCap.fgProtInSrWinDis,
 				sr->rSrCap.fgTxCmdDlRateSelEn,

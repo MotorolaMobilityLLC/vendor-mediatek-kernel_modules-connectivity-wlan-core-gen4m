@@ -15559,6 +15559,31 @@ int priv_driver_get_sr_cap(
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (i4Argc == 2) {
+		uint32_t u4Ret = 0, u4Parse = 0;
+
+		prCmdSrCap->rSrCmd.u1CmdSubId = SR_CMD_GET_SR_CAP_ALL_INFO;
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+					       u4Ret);
+		prCmdSrCap->rSrCmd.u1DbdcIdx = (uint8_t) u4Parse;
+
+		wlanSendSetQueryExtCmd(prAdapter,
+			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			EXT_CMD_ID_SR_CTRL,
+			FALSE,
+			FALSE,
+			TRUE,
+			NULL,
+			nicOidCmdTimeoutCommon,
+			sizeof(struct _SR_CMD_SR_CAP_T),
+			(uint8_t *) (prCmdSrCap),
+			NULL, 0);
+	} else
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver GET_SR_CAP\n");
+#else
 	if (i4Argc == 1) {
 
 		prCmdSrCap->rSrCmd.u1CmdSubId = SR_CMD_GET_SR_CAP_ALL_INFO;
@@ -15578,7 +15603,7 @@ int priv_driver_get_sr_cap(
 
 	} else
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver GET_SR_CAP\n");
-
+#endif
 	kalMemFree(prCmdSrCap, VIR_MEM_TYPE,
 		   sizeof(struct _SR_CMD_SR_CAP_T));
 
@@ -15617,6 +15642,30 @@ int priv_driver_get_sr_ind(
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	if (i4Argc == 2) {
+		uint32_t u4Ret = 0, u4Parse = 0;
+
+		prCmdSrInd->rSrCmd.u1CmdSubId = SR_CMD_GET_SR_IND_ALL_INFO;
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+					       u4Ret);
+		prCmdSrInd->rSrCmd.u1DbdcIdx = (uint8_t) u4Parse;
+		wlanSendSetQueryExtCmd(prAdapter,
+			CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			EXT_CMD_ID_SR_CTRL,
+			FALSE,
+			FALSE,
+			TRUE,
+			NULL,
+			nicOidCmdTimeoutCommon,
+			sizeof(struct _SR_CMD_SR_IND_T),
+			(uint8_t *) (prCmdSrInd),
+			NULL, 0);
+	} else
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver GET_SR_IND\n");
+#else
 	if (i4Argc == 1) {
 		prCmdSrInd->rSrCmd.u1CmdSubId = SR_CMD_GET_SR_IND_ALL_INFO;
 		prCmdSrInd->rSrCmd.u1DbdcIdx = 0;
@@ -15632,10 +15681,9 @@ int priv_driver_get_sr_ind(
 			sizeof(struct _SR_CMD_SR_IND_T),
 			(uint8_t *) (prCmdSrInd),
 			NULL, 0);
-
 	} else
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver GET_SR_IND\n");
-
+#endif
 	kalMemFree(prCmdSrInd, VIR_MEM_TYPE,
 		   sizeof(struct _SR_CMD_SR_IND_T));
 
@@ -22785,15 +22833,25 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_GET_SR_CAP,
 		.pfHandler = priv_driver_get_sr_cap,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_2,
+		.policy    = set_flag_policy
+#else
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
+#endif
 	},
 	{
 		.pcCmdStr  = CMD_GET_SR_IND,
 		.pfHandler = priv_driver_get_sr_ind,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.policy    = set_flag_policy
+#else
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
+#endif
 	},
 	{
 		.pcCmdStr  = CMD_SET_PP_RX,

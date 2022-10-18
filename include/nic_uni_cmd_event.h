@@ -2881,22 +2881,18 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct WH_SR_IND {
 	/* RMAC */
 	/* DW_1 */
-	uint8_t u1NonSrgInterPpduRcpi;
-	uint8_t u1SrgInterPpduRcpi;
 	uint16_t u2NonSrgVldCnt;
-	/* DW_2 */
 	uint16_t u2SrgVldCnt;
+	/* DW_2 */
 	uint16_t u2IntraBssPpduCnt;
-	/* DW_3 */
 	uint16_t u2InterBssPpduCnt;
+	/* DW_3 */
 	uint16_t u2NonSrgPpduVldCnt;
-	/* DW_4 */
 	uint16_t u2SrgPpduVldCnt;
-	uint8_t RSV[2];
 	/* MIB */
-	/* DW_5 */
+	/* DW_4 */
 	uint32_t u4SrAmpduMpduCnt;
-	/* DW_6 */
+	/* DW_5 */
 	uint32_t u4SrAmpduMpduAckedCnt;
 } __KAL_ATTRIB_PACKED__;
 
@@ -2937,7 +2933,7 @@ struct UNI_CMD_SR_IND {
 	/* DW_0 */
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	struct WH_SR_IND rSrInd;
+	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2945,7 +2941,7 @@ struct UNI_CMD_SR_CAP {
 	/* DW_0 */
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	struct WH_SR_CAP rSrCap;
+	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
