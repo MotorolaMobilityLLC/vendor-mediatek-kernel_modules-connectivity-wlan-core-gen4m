@@ -337,8 +337,8 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 		}
 
 		/* Response packet is not ready */
-		/* use sleep waiting instead of busy waiting */
-		kalUsleep(u4WaitingInterval);
+		/* use delay instead of sleep waiting for schedule out issue*/
+		kalUdelay(u4WaitingInterval);
 		u4Cnt++;
 	} while (TRUE);
 
