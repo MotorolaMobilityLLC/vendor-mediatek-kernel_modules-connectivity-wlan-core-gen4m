@@ -747,7 +747,7 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 #if CFG_SUPPORT_MLR
 	case RATE_MLR_1_5M:
 	case RATE_MLR_3M:
-		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)) {
+		if (prMsduInfo->eSrc == TX_PACKET_OS) {
 			ucRateIdx =
 				FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_WTBL;
 		} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
