@@ -68,7 +68,11 @@
 #define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000200	/* for WPDWifi DLL */
 #define MTK_EM_INTERFACE_VERSION		0x0001
 
+#ifdef CFG_WFDMA_AP_MSI_NUM
+#define WFDMA_AP_MSI_NUM		(CFG_WFDMA_AP_MSI_NUM)
+#else
 #define WFDMA_AP_MSI_NUM		1
+#endif
 #define WFDMA_MD_MSI_NUM		8
 
 extern struct PLE_TOP_CR rMt6639PleTopCr;

@@ -426,6 +426,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
     ifeq ($(CONFIG_WLAN_DUJAC_MP2), y)
+        CONFIG_WFDMA_AP_MSI_NUM=8
         CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
         CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
     endif
@@ -989,6 +990,9 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ifeq ($(call kver_ge,4,8),1)
         ifeq ($(CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT), y)
             ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
+            ifneq ($(CONFIG_WFDMA_AP_MSI_NUM),)
+                ccflags-y += -DCFG_WFDMA_AP_MSI_NUM=$(CONFIG_WFDMA_AP_MSI_NUM)
+            endif
         endif
     endif
     ifeq ($(CONFIG_MTK_WIFI_PCIE_SUPPORT), y)
