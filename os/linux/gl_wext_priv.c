@@ -6307,7 +6307,8 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		} else {
 			/* u4Param: 1: p2p, 0: AP */
-			if (mldIsMloFeatureEnabled(prAd, !u4Param)) {
+			if (mldIsMloFeatureEnabled(prAd, !u4Param) &&
+				(p2pGetMode() == RUNNING_P2P_DEV_MODE)) {
 				struct BSS_INFO *bss =
 				    prAd->aprBssInfo[prAd->ucMldReservedBssIdx];
 

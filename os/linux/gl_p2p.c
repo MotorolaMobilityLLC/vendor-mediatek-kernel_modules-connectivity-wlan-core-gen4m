@@ -2320,6 +2320,10 @@ skip_role:
 			ucBssIdx,
 			prDevBssInfo->ucBssIndex,
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateMldAddrByMainBss(prAdapter,
+			mldBssGetByBss(prAdapter, prBssInfo));
+#endif
 	} else if (prBssInfo) {
 		DBGLOG(INIT, INFO,
 			"[%d][%d] Set random macaddr to " MACSTR ".\n",

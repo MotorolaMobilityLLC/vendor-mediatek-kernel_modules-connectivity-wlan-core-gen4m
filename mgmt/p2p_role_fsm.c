@@ -108,7 +108,8 @@ u_int8_t p2pRoleFsmNeedMlo(
 	u_int8_t fgIsApMode = p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
 
-	return mldIsMloFeatureEnabled(prAdapter, fgIsApMode);
+	return mldIsMloFeatureEnabled(prAdapter, fgIsApMode) &&
+		(p2pGetMode() == RUNNING_P2P_DEV_MODE);
 #else
 	return FALSE;
 #endif
@@ -198,6 +199,7 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 #if (KAL_P2P_NUM > 2)
 			p2pRoleFsmNeedMlo(prAdapter, ucRoleIdx) &&
 #endif
+			(p2pGetMode() == RUNNING_P2P_DEV_MODE) &&
 			(ucRoleIdx != P2P_MAIN_LINK_INDEX));
 
 		if (!prP2pBssInfo) {
