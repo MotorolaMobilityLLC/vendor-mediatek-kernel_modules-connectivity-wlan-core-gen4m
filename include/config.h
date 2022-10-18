@@ -2264,6 +2264,10 @@
 #define CFG_WFD_SCC_BALANCE_SUPPORT		0
 #endif
 
+#ifndef CFG_WFD_SCC_BALANCE_DEF_ENABLE
+#define CFG_WFD_SCC_BALANCE_DEF_ENABLE	0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Fast Path Feature Support
  *------------------------------------------------------------------------------

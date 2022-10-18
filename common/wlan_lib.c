@@ -8456,8 +8456,13 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	}
 	prWifiVar->u4WfdSccBalanceMode = wlanCfgGetUint32(
 		prAdapter, "wfdSccBalanceMode", 0);
+#if (CFG_WFD_SCC_BALANCE_DEF_ENABLE == 1)
+	prWifiVar->u4WfdSccBalanceEnable = wlanCfgGetUint32(
+		prAdapter, "wfdSccBalanceEnable", FEATURE_ENABLED);
+#else
 	prWifiVar->u4WfdSccBalanceEnable = wlanCfgGetUint32(
 		prAdapter, "wfdSccBalanceEnable", FEATURE_DISABLED);
+#endif
 #endif
 	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
 			FEATURE_ENABLED);

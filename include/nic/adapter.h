@@ -1650,6 +1650,7 @@ struct TX_LATENCY_REPORT_STATS {
 	struct TX_LATENCY_STATS rCounting;
 	struct TX_LATENCY_STATS rReported;
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	struct TX_LATENCY_STATS rReported4SccB;
 	struct TX_LATENCY_STATS rDiff;
 #endif
 	uint32_t u4ContinuousTxFail;
