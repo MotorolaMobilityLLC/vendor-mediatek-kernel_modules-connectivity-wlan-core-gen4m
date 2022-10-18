@@ -160,6 +160,11 @@ static uint8_t aucBandTranslate[BAND_NUM] = {
 #endif
 };
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define PCIE_GEN1    1
+#define PCIE_GEN3    3
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -227,6 +232,11 @@ static struct VOLT_INFO_T _rVnfInfo = {
 	.eState = VOLT_INFO_STATE_INIT
 };
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+u_int8_t  pcie_current_speed = PCIE_GEN3;
+uint32_t pcie_monitor_count;
+#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -10064,6 +10074,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	uint32_t u4CoalescingIntTh;
 #endif
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	uint32_t u4Thr = 0, u4Time = 0;
+#endif
+
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
 
@@ -10192,6 +10208,38 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				prPerMonitor->u4BoostPerfLevel,
 				u4BoostCpuTh);
 		}
+
+/* switch pcie gen */
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+		prChipInfo = prAdapter->chip_info;
+		prBusInfo = prChipInfo->bus_info;
+		u4Thr = prAdapter->rWifiVar.u4PcieGenSwitchTputThr;
+		u4Time = prAdapter->rWifiVar.u4PcieGenSwitchJudgeTime;
+		if (kalGetTpMbps(prAdapter, PKT_PATH_ALL) > u4Thr) {
+			/* change to gen3 */
+			pcie_monitor_count = 0;
+			if (pcie_current_speed != PCIE_GEN3 &&
+				prBusInfo->setPcieSpeed) {
+				prBusInfo->setPcieSpeed(prGlueInfo, PCIE_GEN3);
+				DBGLOG(SW4, INFO, "PCIE gen switch to %d\n",
+				pcie_current_speed);
+				pcie_current_speed = PCIE_GEN3;
+			}
+		} else {
+			/* change to gen1 */
+			pcie_monitor_count++;
+			if (pcie_monitor_count > u4Time &&
+				pcie_current_speed != PCIE_GEN1 &&
+				prBusInfo->setPcieSpeed) {
+				prBusInfo->setPcieSpeed(prGlueInfo, PCIE_GEN1);
+				DBGLOG(SW4, INFO, "PCIE gen switch to %d\n",
+				pcie_current_speed);
+				pcie_current_speed = PCIE_GEN1;
+			}
+			if (pcie_monitor_count > 1000000)
+				pcie_monitor_count = 0;
+		}
+#endif
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 		u4CoalescingIntTh =

@@ -3068,3 +3068,77 @@ void glBusFuncOff(void)
 	mtk_pcie_remove_port(0);
 #endif
 }
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+int mtk_pcie_speed(struct pci_dev *dev, int speed)
+{
+	int ret;
+	int pos, ppos;
+	u16 linksta = 0, plinksta = 0, plinkctl2 = 0;
+	struct pci_dev *parent;
+
+	pos = dev->pcie_cap;
+	pci_read_config_word(dev, pos + PCI_EXP_LNKSTA, &linksta);
+	parent = dev->bus->self;
+	ppos = parent->pcie_cap;
+	pci_read_config_word(parent, ppos + PCI_EXP_LNKSTA, &plinksta);
+	DBGLOG(HAL, INFO, "[Gen_Switch] before pcie link status: 0x%x",
+		plinksta);
+	pci_read_config_word(parent, ppos + PCI_EXP_LNKCTL2, &plinkctl2);
+	if ((plinkctl2 & PCI_SPEED_MASK) != speed) {
+		plinkctl2 &= ~PCI_SPEED_MASK;
+		plinkctl2 |= speed;
+		pci_write_config_word(parent,
+			ppos + PCI_EXP_LNKCTL2, plinkctl2);
+	}
+	if (((linksta & PCI_EXP_LNKSTA_CLS) == speed) &&
+		((plinksta & PCI_EXP_LNKSTA_CLS) == speed))
+		return 0;
+	ret = mtk_pcie_retrain(dev);
+	if (ret) {
+		DBGLOG(HAL, ERROR, "retrain fails\n");
+		return ret;
+	}
+	pci_read_config_word(parent, pos + PCI_EXP_LNKSTA, &linksta);
+	DBGLOG(HAL, INFO, "[Gen_Switch] after pcie link status: 0x%x", linksta);
+
+	if ((linksta & PCI_EXP_LNKSTA_CLS) != speed) {
+		DBGLOG(HAL, ERROR, "can't train status = 0x%x\n", linksta);
+		return -1;
+	}
+
+	return 0;
+}
+
+int mtk_pcie_retrain(struct pci_dev *dev)
+{
+	u16 reg16 = 0;
+	struct pci_dev *parent;
+	int pos, ppos;
+	unsigned long start_jiffies;
+
+	parent = dev->bus->self;
+	ppos = parent->pcie_cap;
+	pos = dev->pcie_cap;
+	/* Retrain link */
+	pci_read_config_word(parent, ppos + PCI_EXP_LNKCTL, &reg16);
+	reg16 |= PCI_EXP_LNKCTL_RL;
+	pci_write_config_word(parent, ppos + PCI_EXP_LNKCTL, reg16);
+	/* Wait for link training end. Break out after waiting for timeout */
+	start_jiffies = jiffies;
+	mdelay(10);
+	for (;;) {
+		pci_read_config_word(parent, ppos + PCI_EXP_LNKSTA, &reg16);
+
+		if (!(reg16 & PCI_EXP_LNKSTA_LT))
+			return 0;
+
+		if (time_after(jiffies, start_jiffies + LINK_RETRAIN_TIMEOUT))
+			return -1;
+
+		mdelay(1);
+	}
+	DBGLOG(HAL, ERROR, "mtk_pcie_retrain\n");
+	return 0;
+}
+#endif

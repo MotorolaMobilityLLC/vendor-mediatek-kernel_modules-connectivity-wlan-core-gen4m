@@ -180,6 +180,10 @@ static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type);
 static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+static void mt6639SetPcieSpeed(struct GLUE_INFO *prGlueInfo, uint32_t speed);
+#endif
+
 #if IS_MOBILE_SEGMENT
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
@@ -566,6 +570,9 @@ struct BUS_INFO mt6639_bus_info = {
 	},
 	.showDebugInfo = mt6639ShowPcieDebugInfo,
 	.disableDevice = mtk_pci_disable_device,
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	.setPcieSpeed = mt6639SetPcieSpeed,
+#endif
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,
@@ -2397,6 +2404,26 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad)
 
 	return 0;
 }
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+static void mt6639SetPcieSpeed(struct GLUE_INFO *prGlueInfo, uint32_t speed)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct pci_dev *pdev = NULL;
+
+	ASSERT(prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, INFO, "%s no glue info\n", __func__);
+		return;
+	}
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	pdev = prHifInfo->pdev;
+	DBGLOG(HAL, INFO, "[Gen_Switch] Set pcie speed=%d\n", speed);
+	mtk_pcie_speed(pdev, speed);
+}
+#endif
 
 #if IS_MOBILE_SEGMENT
 static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)

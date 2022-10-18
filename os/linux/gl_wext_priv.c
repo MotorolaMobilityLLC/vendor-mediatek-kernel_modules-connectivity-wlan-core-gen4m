@@ -134,6 +134,10 @@
 #define CMD_SMPS_ACTION_TWO_PARAMS        2
 #define CMD_SMPS_MAX_PARAMS CMD_SMPS_ACTION_FOUR_PARAMS
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define MAX_PCIE_SPEED		3
+#endif
+
 /* Common set/get */
 #define PRIV_CMD_DYNAMIC_ARG_NUM	(0)
 #define PRIV_CMD_GET_ARG_NUM		(1)
@@ -217,6 +221,11 @@ static int priv_driver_coex_ctrl(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen);
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 static int priv_driver_get_dpd_cache(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+static int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif
 
@@ -3801,6 +3810,10 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 
 #if CFG_SUPPORT_WFD
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
+#endif
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define CMD_SET_PCIE_SPEED		"SET_PCIE_SPEED"
 #endif
 
 struct cmd_tlv {
@@ -22898,6 +22911,15 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL
 	},
 #endif
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	{
+		.pcCmdStr  = CMD_SET_PCIE_SPEED,
+		.pfHandler = priv_driver_set_pcie_speed,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
+		.policy    = NULL
+	},
+#endif
 };
 
 uint8_t priv_cmd_validate(struct net_device *prNetDev,
@@ -24005,3 +24027,54 @@ out:
 	return i4BytesWritten;
 }
 #endif /* CFG_WIFI_GET_DPD_CACHE */
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+static int priv_driver_set_pcie_speed(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t status = 0;
+	uint8_t ucPcieSpeed = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc != 2) {
+		DBGLOG(REQ, ERROR, "argc(%d) is error\n", i4Argc);
+		return -1;
+	}
+
+	status = kalkStrtou8(apcArgv[1], 0, &ucPcieSpeed);
+	if (status) {
+		DBGLOG(REQ, ERROR, "parse ucPcieSpeed error u4Ret=%d\n",
+			status);
+		ucPcieSpeed = 0;
+	}
+
+	if (ucPcieSpeed > MAX_PCIE_SPEED) {
+		DBGLOG(REQ, ERROR, "invalid pcie speed %d\n", ucPcieSpeed);
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -1; /* WLAN_STATUS_ADAPTER_NOT_READY */
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	if (prBusInfo->setPcieSpeed)
+		prBusInfo->setPcieSpeed(prGlueInfo, ucPcieSpeed);
+
+	return i4Argc;
+}
+#endif

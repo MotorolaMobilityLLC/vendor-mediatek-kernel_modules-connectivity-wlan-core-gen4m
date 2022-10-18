@@ -118,6 +118,11 @@
 #define PCIE_ASPM_CHECK_L1(reg)	((((reg) & PCI_EXP_LNKCAP_ASPMS) >> 10) & 0x2)
 
 #endif
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define PCI_SPEED_MASK  0xf
+#define LINK_RETRAIN_TIMEOUT HZ
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -502,6 +507,10 @@ struct BUS_INFO {
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 	struct SW_EMI_RING_INFO rSwEmiRingInfo;
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	void (*setPcieSpeed)(struct GLUE_INFO *prGlueInfo, uint32_t speed);
+#endif
+
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,
 		u_int8_t fgEnable);
@@ -656,6 +665,10 @@ extern int mtk_msi_unmask_to_other_mcu(
 extern int mtk_pcie_hw_control_vote(
 	int port, bool hw_mode_en, u8 who) __attribute__((weak));
 extern u32 mtk_pcie_dump_link_info(int port) __attribute__((weak));
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+int mtk_pcie_speed(struct pci_dev *dev, int speed);
+int mtk_pcie_retrain(struct pci_dev *dev);
+#endif
 #endif
 
 /*******************************************************************************

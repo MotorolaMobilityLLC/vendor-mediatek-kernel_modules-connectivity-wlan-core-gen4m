@@ -429,6 +429,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_WFDMA_AP_MSI_NUM=8
         CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
         CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
+        CONFIG_SUPPORT_PCIE_GEN_SWITCH=y
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
@@ -752,6 +753,11 @@ ifeq ($(CONFIG_SUPPORT_PCIE_ASPM), y)
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=1
 else
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=0
+endif
+ifeq ($(CONFIG_SUPPORT_PCIE_GEN_SWITCH), y)
+    ccflags-y += -DCFG_SUPPORT_PCIE_GEN_SWITCH=1
+else
+    ccflags-y += -DCFG_SUPPORT_PCIE_GEN_SWITCH=0
 endif
 
 ifeq ($(CONFIG_WIFI_DRIVER_OWN_DELAY_SUPPORT), y)
