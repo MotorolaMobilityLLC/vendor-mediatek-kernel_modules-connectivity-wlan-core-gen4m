@@ -14135,7 +14135,7 @@ static void kalVnfSchedule(struct VOLT_INFO_T *prVnfInfo)
 
 	/* volt info entry */
 	schedule_delayed_work(&(prVnfInfo->dwork), 0);
-	DBGLOG(SW4, INFO, "VOLT_INFO Schedule\n");
+	DBGLOG(SW4, INFO, "VOLT_INFO Schedule, state[%d]\n", prVnfInfo->eState);
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -14282,6 +14282,51 @@ static uint32_t kalVnfWlanCheck(struct VOLT_INFO_T *prVnfInfo)
 }
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This func is use to for trigger volt info work schedule by battery
+ *        notify
+ *
+ * \param[in] volt : parameter from schedule_delayed_work
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+static void kalVnfBatSchedule(struct work_struct *work)
+{
+	struct ADAPTER *prAdapter =  NULL;
+
+	if (_rVnfInfo.prAdapter == NULL) {
+		DBGLOG(SW4, ERROR,
+			"_rVnfInfo->prAdapter is NULL\n");
+		return;
+	}
+	prAdapter = _rVnfInfo.prAdapter;
+
+	/* To avoid concurrent access for _rVnfInfo
+	 * between battery notify callback thread
+	 * and FW get voltage info event handler on
+	 * Wifi driver main thread.
+	 */
+	mutex_lock(&_rVnfInfo.rMutex);
+
+	/* If there is volt info handler in process,
+	 * skip to trigger volt info work this time,
+	 * Althought the volt will be inaccurate,
+	 * but expected volt info work will re-trigger again soon
+	 */
+	if (prAdapter->rWifiVar.fgVnfEn &&
+			_rVnfInfo.eState != VOLT_INFO_STATE_IN_PROGRESS) {
+		DBGLOG(SW4, INFO, "VOLT_INFO Battery Schedule\n");
+		kalVnfSchedule(&_rVnfInfo);
+	} else {
+		DBGLOG(SW4, INFO,
+			"Skip volt info work, En[%d]State[%d]\n",
+			prAdapter->rWifiVar.fgVnfEn,
+			_rVnfInfo.eState);
+	}
+	mutex_unlock(&_rVnfInfo.rMutex);
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This func is use to send volt info CMD & calculate new upper & lower
  *        battery notify threshold
  *
@@ -14307,46 +14352,14 @@ static void kalVnfBatNotifyCb(unsigned int volt)
 		return;
 	}
 
-	/* 1. If there is volt info handler in process,
-	 *    skip to trigger volt info work this time,
-	 *    Althought the volt will be inaccurate,
-	 *    but expected volt info work will re-trigger again soon
-	 * 2. Since lbat handler will get lbat lock and release after
-	 *    callback function return(which is kalVnfBatNotifyCb).
-	 *    However if there are somebody schedule the the volt info work
-	 *    first(run kalVnfHandler, get vnf lock) while lbat trigger the
-	 *    volt info callback(kalVnfHandler has not executed finish
-	 *    yet), it will cause deadlock due to kalVnfHandler will thry to
-	 *    get lbat lock at modify the volt threshold progress, but due
-	 *    to lbat have take it before, so it can't take it that the deadlock
-	 *    occur.
-	 * 3. Since the problem in (2), the solution is to confirm whether there
-	 *    is volt info work in progress when lbat callback. If the volt info
-	 *    work is in progress, skip this time callback volt info sync, so
-	 *    that lbat can be return to release lbat lock.
-	 *    The original volt info work which is in progress will still
-	 *    continue to execute and will not be block by lbat lock while
-	 *    modify volt threshold.
+	/* To decouple Vnf & lbat lock dependency,
+	 * We schedule a delay work for to determine whether need to trigger
+	 * volt info work schedule
 	 */
-
-	if ((prAdapter->rWifiVar.fgVnfEn != TRUE) ||
-			(_rVnfInfo.eState == VOLT_INFO_STATE_IN_PROGRESS)) {
-		DBGLOG(SW4, INFO,
-			"Skip volt info work, volt[%d]En[%d]State[%d]\n",
-			volt,
-			prAdapter->rWifiVar.fgVnfEn,
-			_rVnfInfo.eState);
-		return;
-	}
-	/* To avoid concurrent access for _rVnfInfo
-	 * between battery notify callback thread
-	 * and FW get voltage info event handler on
-	 * Wifi driver main thread.
-	 */
-	mutex_lock(&_rVnfInfo.rMutex);
-	DBGLOG(SW4, INFO, "volt[%d], Start volt info work\n", volt);
-	kalVnfSchedule(&_rVnfInfo);
-	mutex_unlock(&_rVnfInfo.rMutex);
+	DBGLOG(SW4, INFO,
+		"volt[%d], Battery notifier try schedule Volt Info\n",
+		volt);
+	schedule_delayed_work(&_rVnfInfo.dBatWork, 0);
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -14574,6 +14587,8 @@ static void kalVnfHandler(struct work_struct *work)
 		kalVnfBatNotifyModThresh(&_rVnfInfo);
 
 	_rVnfInfo.eState = VOLT_INFO_STATE_COMPLETE;
+	DBGLOG(SW4, INFO, "Volt_Info work complete, state[%d]",
+		_rVnfInfo.eState);
 	mutex_unlock(&_rVnfInfo.rMutex);
 }
 /*----------------------------------------------------------------------------*/
@@ -14609,7 +14624,10 @@ void kalVnfActive(struct ADAPTER *prAdapter)
 		DBGLOG(SW4, INFO, "VOLT_INFO Active\n");
 		kalVnfSchedule(&_rVnfInfo);
 	} else {
-		DBGLOG(SW4, INFO, "Skip volt info work");
+		DBGLOG(SW4, INFO,
+			"Skip volt info work, En[%d]State[%d]\n",
+			prAdapter->rWifiVar.fgVnfEn,
+			_rVnfInfo.eState);
 	}
 	mutex_unlock(&_rVnfInfo.rMutex);
 }
@@ -14651,11 +14669,15 @@ static void kalVnfRstParam(struct VOLT_INFO_T *prVnfInfo)
 /*----------------------------------------------------------------------------*/
 void kalVnfUninit(void)
 {
-	uint8_t ret;
+	uint8_t ret_BatWork;
+	uint8_t ret_dwork;
 
-	ret = cancel_delayed_work_sync(&_rVnfInfo.dwork);
+	ret_BatWork = cancel_delayed_work_sync(&_rVnfInfo.dBatWork);
+	ret_dwork = cancel_delayed_work_sync(&_rVnfInfo.dwork);
 	kalVnfRstParam(&_rVnfInfo);
-	DBGLOG(SW4, INFO, "VOLT_INFO Uninit\n");
+	DBGLOG(SW4, INFO, "VOLT_INFO Uninit,ret_BatWork[%d],ret_dwork[%d]\n",
+		ret_BatWork,
+		ret_dwork);
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -14676,6 +14698,7 @@ void kalVnfInit(struct ADAPTER *prAdapter)
 	kalVnfRstParam(&_rVnfInfo);
 	_rVnfInfo.prAdapter = prAdapter;
 	INIT_DELAYED_WORK(&_rVnfInfo.dwork, kalVnfHandler);
+	INIT_DELAYED_WORK(&_rVnfInfo.dBatWork, kalVnfBatSchedule);
 	mutex_init(&_rVnfInfo.rMutex);
 	DBGLOG(SW4, INFO, "VOLT_INFO init\n");
 }

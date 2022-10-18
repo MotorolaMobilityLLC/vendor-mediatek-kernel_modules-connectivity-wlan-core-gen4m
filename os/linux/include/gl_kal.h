@@ -554,6 +554,7 @@ struct VOLT_INFO_T {
 	struct VOLT_INFO_BATTERY_NOTIFY_T rBatNotify;
 	struct ADAPTER *prAdapter;
 	struct delayed_work dwork;
+	struct delayed_work dBatWork;
 	struct mutex rMutex;
 	enum ENUM_VOLT_INFO_STATE eState;
 };
