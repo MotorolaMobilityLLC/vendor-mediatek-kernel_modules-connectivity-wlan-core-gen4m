@@ -391,6 +391,7 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 	uint32_t i, u4BlkSzInPower;
 	void *pvMemory;
 	enum ENUM_SPIN_LOCK_CATEGORY_E eLockBufCat;
+	enum ENUM_KAL_MEM_ALLOCATION_TYPE_E eMemAllocType;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -476,10 +477,15 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 	/* kalMemAlloc() shall not included in spin_lock */
 	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
 
+	if (eRamType == RAM_TYPE_ATOMIC_MSG)
+		eMemAllocType = ATOMIC_MEM_TYPE;
+	else
+		eMemAllocType = PHY_MEM_TYPE;
+
 #ifdef LINUX
 #if CFG_DBG_MGT_BUF
 	pvMemory = (void *) kalMemAlloc(u4Length + sizeof(struct MEM_TRACK),
-		PHY_MEM_TYPE);
+		eMemAllocType);
 	if (pvMemory) {
 		struct MEM_TRACK *prMemTrack = (struct MEM_TRACK *)pvMemory;
 
@@ -492,7 +498,7 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		pvMemory = (void *)(prMemTrack + 1);
 	}
 #else
-	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
+	pvMemory = (void *) kalMemAlloc(u4Length, eMemAllocType);
 	if (!pvMemory)
 		DBGLOG(MEM, WARN, "kmalloc fail: %u\n", u4Length);
 #endif

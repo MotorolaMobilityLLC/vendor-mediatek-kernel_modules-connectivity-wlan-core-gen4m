@@ -413,6 +413,7 @@ enum ENUM_KAL_NETWORK_TYPE_INDEX {
 enum ENUM_KAL_MEM_ALLOCATION_TYPE_E {
 	PHY_MEM_TYPE,		/* physically continuous */
 	VIR_MEM_TYPE,		/* virtually continuous */
+	ATOMIC_MEM_TYPE,	/* atomic memalloc */
 	MEM_TYPE_NUM
 };
 
@@ -959,7 +960,10 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 #if DBG
 #define kalMemAlloc(u4Size, eMemType) ({    \
 	void *pvAddr; \
-	if (eMemType == PHY_MEM_TYPE) { \
+	if (eMemType == ATOMIC_MEM_TYPE) { \
+		pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
+	} \
+	else if (eMemType == PHY_MEM_TYPE) { \
 		if (in_interrupt()) \
 			pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
 		else \
@@ -981,7 +985,10 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 #else
 #define kalMemAlloc(u4Size, eMemType) ({    \
 	void *pvAddr; \
-	if (eMemType == PHY_MEM_TYPE) { \
+	if (eMemType == ATOMIC_MEM_TYPE) { \
+		pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
+	} \
+	else if (eMemType == PHY_MEM_TYPE) { \
 		if (in_interrupt()) \
 			pvAddr = kmalloc(u4Size, GFP_ATOMIC);   \
 		else \

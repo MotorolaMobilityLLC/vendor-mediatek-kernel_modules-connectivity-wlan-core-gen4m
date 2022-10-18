@@ -9522,7 +9522,7 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	}
 
 	prArpMonitorMsg = (struct MSG_ARP_MONITOR *) cnmMemAlloc(prAdapter,
-		RAM_TYPE_MSG, sizeof(struct MSG_ARP_MONITOR));
+		RAM_TYPE_ATOMIC_MSG, sizeof(struct MSG_ARP_MONITOR));
 	if (!prArpMonitorMsg) {
 		DBGLOG(QM, WARN, "cnmMemAlloc Fail\n");
 		return;
