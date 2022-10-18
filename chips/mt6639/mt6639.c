@@ -1731,6 +1731,11 @@ static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 
 	/* Enable RX periodic delayed interrupt (unit: 20us) */
 	u4Val = 0xF00000 | prWifiVar->u4PrdcIntTime;
+#if CFG_SUPPORT_WIFI_MDDP_NO_MMIO_READ
+#if CFG_MTK_MDDP_SUPPORT && (WFDMA_MD_MSI_NUM == 8)
+	u4Val |= 0xF000000;
+#endif
+#endif
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
