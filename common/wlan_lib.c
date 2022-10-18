@@ -7791,18 +7791,26 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 					prAdapter, "PowerSave",
 					Param_PowerModeMax);
 
-#if 1
 	/* add more cfg from RegInfo */
 	prWifiVar->u4UapsdAcBmp = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "UapsdAcBmp", 0);
 	prWifiVar->u4MaxSpLen = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "MaxSpLen", 0);
+#if CFG_P2P_UAPSD_SUPPORT
 	prWifiVar->u4P2pUapsdAcBmp = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "P2pUapsdAcBmp",
 					PM_UAPSD_ALL);
 	prWifiVar->u4P2pMaxSpLen = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "P2pMaxSpLen",
 					WMM_MAX_SP_LENGTH_2);
+#else
+	prWifiVar->u4P2pUapsdAcBmp = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "P2pUapsdAcBmp",
+					0);
+	prWifiVar->u4P2pMaxSpLen = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "P2pMaxSpLen",
+					0);
+#endif
 	prWifiVar->fgDisOnlineScan = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "DisOnlineScan", 0);
 	prWifiVar->fgDisBcnLostDetection = (uint32_t) wlanCfgGetUint32(
@@ -7817,7 +7825,6 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->fgEnArpFilter = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "EnArpFilter",
 					FEATURE_ENABLED);
-#endif
 
 	/* Driver Flow Control Dequeue Quota. Now is only used by DBDC */
 	prWifiVar->uDeQuePercentEnable =
