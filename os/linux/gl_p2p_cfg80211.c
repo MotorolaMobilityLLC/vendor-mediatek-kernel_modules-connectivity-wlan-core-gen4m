@@ -2830,6 +2830,8 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 	uint8_t ucBssIdx = 0;
 	uint32_t waitRet = 0;
 	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prCurrStaRec =
+		(struct STA_RECORD *) NULL;
 
 	do {
 		if ((wiphy == NULL) || (dev == NULL))
@@ -2872,6 +2874,9 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			GET_BSS_INFO_BY_INDEX(
 			prGlueInfo->prAdapter,
 			ucBssIdx);
+		prCurrStaRec = bssGetClientByMac(prGlueInfo->prAdapter,
+			prBssInfo,
+			prDisconnectMsg->aucTargetID);
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -2881,11 +2886,13 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		/* if encrypted deauth frame
 		 * is in process, pending remove key
 		*/
-		if (prBssInfo &&
+		if (prBssInfo && prCurrStaRec &&
 			IS_BSS_APGO(prBssInfo) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE)) {
 			reinit_completion(&prBssInfo->rDeauthComp);
+			DBGLOG(P2P, TRACE,
+				"Start deauth wait\n");
 			waitRet = wait_for_completion_timeout(
 				&prBssInfo->rDeauthComp,
 				MSEC_TO_JIFFIES(1000));
