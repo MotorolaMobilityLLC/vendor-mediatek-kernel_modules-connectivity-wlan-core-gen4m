@@ -1591,7 +1591,13 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	/* temp replace BSS eBand to get BW of CSA band */
 	eBandOrig = prBssInfo->eBand;
 	prBssInfo->eBand = eBandCsa;
-	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+	if (prRfChnlInfo->eBand == BAND_5G &&
+		prRfChnlInfo->ucChannelNum == 165)
+		prRfChnlInfo->ucChnlBw =
+			cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+	else
+		prRfChnlInfo->ucChnlBw =
+			cnmGetBssMaxBw(prAdapter, ucBssIdx);
 	prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
 
 	prRfChnlInfo->u2PriChnlFreq =
