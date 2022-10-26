@@ -12547,11 +12547,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		u4MaxRate = g_rDataRateMappingTable.nsts[nsts - 1].bw[frmode]
 				.sgi[sgi].rate[MCS_IDX_MAX_RATE_VHT];
 	} else if ((txmode == TX_RATE_MODE_HE_SU) ||
-		(txmode == TX_RATE_MODE_HE_ER)) { /* AX */
+		(txmode == TX_RATE_MODE_HE_ER) ||
+		(txmode == TX_RATE_MODE_HE_MU)) { /* AX */
 		uint8_t dcm = 0, ru106 = 0;
 
 		if ((nsts == 0) || (nsts >= 5)) {
-			DBGLOG(SW4, ERROR, "nsts error: %u\n", nsts);
+			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
 		if (frmode > 3) {
