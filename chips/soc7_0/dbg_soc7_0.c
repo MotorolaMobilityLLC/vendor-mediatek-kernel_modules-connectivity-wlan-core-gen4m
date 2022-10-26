@@ -872,7 +872,7 @@ int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		WLAN_STATUS_SUCCESS) {
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		if (u4RxVector0 == 0) {
-			DBGLOG(SW4, WARN, "u4RxVector0 is 0\n");
+			DBGLOG_LIMITED(SW4, WARN, "u4RxVector0 is 0\n");
 			return -1;
 		}
 	} else {
@@ -1033,7 +1033,8 @@ void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	return;
 
 wrong_rate:
-	DBGLOG(RX, WARN, "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+	DBGLOG_LIMITED(RX, WARN,
+			"Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
 			rate.preamble, rate.nss, rate.bw, rate.rateMcsIdx);
 #endif
 }

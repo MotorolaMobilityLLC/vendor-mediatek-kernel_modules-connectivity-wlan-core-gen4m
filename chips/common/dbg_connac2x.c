@@ -4184,7 +4184,8 @@ int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		u4RxVector2 = prAdapter->arStaRec[ucStaIdx].u4RxVector2;
 		if ((u4RxVector0 == 0) || (u4RxVector1 == 0) ||
 			(u4RxVector2 == 0)) {
-			DBGLOG(SW4, WARN, "RxVector1 or RxVector2 is 0\n");
+			DBGLOG_LIMITED(SW4, WARN,
+					"RxVector1 or RxVector2 is 0\n");
 			return -1;
 		}
 	} else {

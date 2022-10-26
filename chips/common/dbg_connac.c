@@ -2175,7 +2175,8 @@ int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
 		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
-			DBGLOG(SW4, WARN, "RxVector1 or RxVector2 is 0\n");
+			DBGLOG_LIMITED(SW4, WARN,
+					"RxVector1 or RxVector2 is 0\n");
 			return -1;
 		}
 	} else {
