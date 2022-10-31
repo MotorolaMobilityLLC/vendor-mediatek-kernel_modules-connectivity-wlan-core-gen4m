@@ -4628,7 +4628,6 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
 
@@ -4655,14 +4654,17 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 				goto exit;
 			}
 			// END MOTO IKSWT-58657
+		// Begin Motorola, bccunha, IKSWS-77084, Fix MHS channels while on APM
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prAdapter->fgIsHwSupport6G) {
+		} else if (prAdapter->fgIsHwSupport6G &&
+		    prAcsReqInfo->ucBand & BIT(BAND_6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
-		} else if (prAdapter->fgEnable5GBand) {
+		} else if (prAdapter->fgEnable5GBand &&
+		    prAcsReqInfo->ucBand & BIT(BAND_5G)) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
@@ -4686,6 +4688,8 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 				prAcsReqInfo, BIT(BAND_5G));
 		}
 	}
+	DBGLOG(P2P, INFO, "eHwMode set to %d\n", (int) prAcsReqInfo->eHwMode);
+	// End IKSWS-77084
 
 	initAcsChnlMask(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 

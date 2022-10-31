@@ -957,16 +957,18 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 		/* Note: Default group if no matched country code */
 		NULL, 0,
 		{
-			{81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
-			,			/* CH_SET_2G4_1_13 */
-			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+		// Begin Motorola, bccunha, IKSWS-77084, Fix MHS channels while on APM
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
+			,			/* CH_SET_2G4_1_11 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, TRUE}
 			,			/* CH_SET_UNII_LOW_36_48 */
 			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
 			,			/* CH_SET_UNII_MID_52_64 */
 			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
 			,			/* CH_SET_UNII_WW_100_144 */
-			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
+			{125, BAND_5G, CHNL_SPAN_20, 149, 5, TRUE}
 			,			/* CH_SET_UNII_UPPER_149_165 */
+		// End IKSWS-77084
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
 			,			/* 6G_CH_1_233 */
