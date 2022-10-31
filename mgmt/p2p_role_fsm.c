@@ -5219,14 +5219,17 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 				prAisBssInfo);
 			goto exit;
+	// Begin Motorola, bccunha, IKSWS-77084, Fix MHS channels while on APM
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prAdapter->fgIsHwSupport6G) {
+		} else if (prAdapter->fgIsHwSupport6G &&
+			prAcsReqInfo->ucBand & BIT(BAND_6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
-		} else if (prAdapter->fgEnable5GBand) {
+		} else if (prAdapter->fgEnable5GBand &&
+			prAcsReqInfo->ucBand & BIT(BAND_5G)) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
@@ -5238,18 +5241,22 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
+		if (prAdapter->fgIsHwSupport6G &&
+			prAcsReqInfo->ucBand & BIT(BAND_6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
 		} else
 #endif
-		if (prAdapter->fgEnable5GBand) {
+		if (prAdapter->fgEnable5GBand &&
+			prAcsReqInfo->ucBand & BIT(BAND_5G)) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
 		}
 	}
+	DBGLOG(P2P, INFO, "eHwMode set to %d\n", (int) prAcsReqInfo->eHwMode);
+	// End IKSWS-77084
 
 	initAcsChnlMask(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
