@@ -2910,11 +2910,13 @@ uint32_t nicCmdEventLinkStatsEmiOffset(struct ADAPTER *prAdapter,
 	if (prAdapter->pucLinkStatsSrcBufferAddr) {
 		DBGLOG(INIT, WARN, "LLS EMI stats set, update it.");
 		prAdapter->pucLinkStatsSrcBufferAddr = NULL;
+		nicLinkStatsFreeCacheBuffer(prAdapter);
 	}
 
 	if (prAdapter->pu4TxTimePerLevels) {
 		DBGLOG(INIT, WARN, "LLS EMI PowerLevel set, update it.");
 		prAdapter->pu4TxTimePerLevels = NULL;
+		nicLinkStatsFreeCacheBuffer(prAdapter);
 	}
 
 	/* Update offset */

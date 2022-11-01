@@ -280,6 +280,24 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 
 }				/* end of nicAllocateAdapterMemory() */
 
+void nicLinkStatsFreeCacheBuffer(struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+	struct LinkStatsBuffer *prLinkStatsCache = prAdapter->rLinkStatsCache;
+
+	for (i = 0; i < ARRAY_SIZE(prAdapter->rLinkStatsCache); i++) {
+		if (!prLinkStatsCache[i].pucLinkStatsBuffer)
+			continue;
+
+		kalMemFree(prLinkStatsCache[i].pucLinkStatsBuffer,
+			VIR_MEM_TYPE,
+			prLinkStatsCache[i].pucLinkStatsBufferEnd -
+			prLinkStatsCache[i].pucLinkStatsBuffer);
+		prLinkStatsCache[i].pucLinkStatsBuffer = NULL;
+		prLinkStatsCache[i].pucLinkStatsBufferEnd = NULL;
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for releasing the allocated memory by
@@ -342,6 +360,7 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_LLS
 	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
 	prAdapter->pu4TxTimePerLevels = NULL;
+	nicLinkStatsFreeCacheBuffer(prAdapter);
 #endif
 
 #if CFG_DBG_MGT_BUF

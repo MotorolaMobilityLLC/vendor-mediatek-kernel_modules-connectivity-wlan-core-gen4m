@@ -1290,6 +1290,7 @@ struct WIFI_VAR {
 
 #if CFG_SUPPORT_LLS
 	u_int8_t fgLinkStatsDump;
+	enum LLS_QUERY_MODE ucLinkStatsQueryMode;
 #endif /* CFG_SUPPORT_LLS */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
@@ -1944,6 +1945,10 @@ struct ADAPTER {
 	uint8_t ucLinkStatsBssNum;
 	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
 	struct HAL_LLS_FW_REPORT *pucLinkStatsSrcBufferAddr;
+	struct LinkStatsBuffer {
+		uint8_t *pucLinkStatsBuffer;
+		uint8_t *pucLinkStatsBufferEnd;
+	} rLinkStatsCache[MAX_BSSID_NUM];
 	/* Store in LLS order */
 	uint32_t *pu4TxTimePerLevels;
 	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */

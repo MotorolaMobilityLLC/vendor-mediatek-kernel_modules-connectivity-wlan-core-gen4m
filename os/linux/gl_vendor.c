@@ -1761,6 +1761,12 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 #if CFG_SUPPORT_LLS
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
+	/* 0: always copy from EMI w/o cmd/event
+	 * 1: check reuse cached buffer
+	 */
+	enum LLS_QUERY_MODE ucQueryMode;
+	struct PERF_MONITOR *perf;
+	struct LinkStatsBuffer *prLinkStatsCache;
 
 	union {
 		struct CMD_GET_STATS_LLS cmd;
@@ -1773,7 +1779,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	uint8_t *buf = NULL;
 	struct sk_buff *skb = NULL;
 
-	uint8_t *ptr = NULL;
+	uint8_t *ptr;
 	struct HAL_LLS_FW_REPORT *src;
 	uint8_t ucBssIdx;
 	uint8_t band_hint = 0xFF; /* report all band/radio info */
@@ -1787,11 +1793,14 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	perf = &prAdapter->rPerMonitor;
 
 	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	prLinkStatsCache = &prAdapter->rLinkStatsCache[ucBssIdx];
 	if (prAdapter->ucLinkStatsBssNum == BSSID_NUM)
 		band_hint = 0x00; /* select band/radio by Bss HW band index */
 
+	ucQueryMode = prAdapter->rWifiVar.ucLinkStatsQueryMode;
 	do {
 		src = prAdapter->pucLinkStatsSrcBufferAddr;
 		if (!src) {
@@ -1801,49 +1810,77 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		}
 
 		buf = (uint8_t *)&prAdapter->rLinkStatsDestBuffer;
-		kalMemZero(buf, sizeof(prAdapter->rLinkStatsDestBuffer));
+		if (perf->fgIdle && prLinkStatsCache->pucLinkStatsBuffer &&
+		    ucQueryMode == SEND_CMD_ON_ACTIVE) {
+			/* use preserved stats in last valid collection */
+			buf = prLinkStatsCache->pucLinkStatsBuffer;
+			ptr = prLinkStatsCache->pucLinkStatsBufferEnd;
+			DBGLOG(REQ, TRACE, "Reuse %u bytes for LLS", ptr - buf);
+		} else { /* need to copy from EMI */
+			kalMemZero(buf,
+				sizeof(prAdapter->rLinkStatsDestBuffer));
 
-		query.cmd.u4Tag = STATS_LLS_TAG_LLS_DATA;
-		rStatus = kalIoctl(prGlueInfo,
-			   wlanQueryLinkStats, /* pfnOidHandler */
-			   &query, /* pvInfoBuf */
-			   u4QueryBufLen, /* u4InfoBufLen */
-			   &u4QueryInfoLen); /* pu4QryInfoLen */
-		DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes, status=%u",
+			if (ucQueryMode == SEND_CMD_ON_ACTIVE ||
+			    ucQueryMode == ALWAYS_SEND_CMD) {
+				/* Always read from EMI w/o sending cmd */
+				query.cmd.u4Tag = STATS_LLS_TAG_LLS_DATA;
+				rStatus = kalIoctl(prGlueInfo,
+					   wlanQueryLinkStats,
+					   &query, /* pvInfoBuf */
+					   u4QueryBufLen, /* u4InfoBufLen */
+					   &u4QueryInfoLen); /* pu4QryInfoLen */
+				DBGLOG(REQ, TRACE,
+					"kalIoctl=%x, %u bytes, status=%u",
 					rStatus, u4QueryInfoLen,
 					query.data.eUpdateStatus);
 
-		if (rStatus != WLAN_STATUS_SUCCESS ||
-			u4QueryInfoLen !=
-				sizeof(struct EVENT_STATS_LLS_DATA) ||
-			query.data.eUpdateStatus !=
-				STATS_LLS_UPDATE_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
-					rStatus, u4QueryInfoLen,
-					query.data.eUpdateStatus);
-			rStatus = -EFAULT;
-			break;
+				if (rStatus != WLAN_STATUS_SUCCESS ||
+				    u4QueryInfoLen !=
+					sizeof(struct EVENT_STATS_LLS_DATA) ||
+				    query.data.eUpdateStatus !=
+					STATS_LLS_UPDATE_STATUS_SUCCESS) {
+					DBGLOG(REQ, WARN,
+						"kalIoctl=%x, %u bytes, status=%u",
+						rStatus, u4QueryInfoLen,
+						query.data.eUpdateStatus);
+					rStatus = -EFAULT;
+					break;
+				}
+
+				if (data) {
+					DBGLOG(REQ, WARN,
+						"kalIoctl=%x, %u bytes",
+						rStatus, u4QueryInfoLen);
+					rStatus = -EFAULT;
+					break;
+				}
+			}
+
+			/* Fill returning buffer from shared EMI address(src) */
+			ptr = buf;
+			ptr += fill_iface(ptr, src, prAdapter, ucBssIdx);
+
+			ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM,
+					prAdapter, ucBssIdx, band_hint);
+
+			ptr += fill_power_levels(ptr, prAdapter, ENUM_BAND_NUM,
+					ucBssIdx, band_hint,
+					prAdapter->pu4TxTimePerLevels,
+					prAdapter->u4TxTimePerLevelsSize);
+			DBGLOG(REQ, TRACE, "Collected %u bytes for LLS",
+					ptr - buf);
+
+			if (ucQueryMode == SEND_CMD_ON_ACTIVE &&
+			    prLinkStatsCache->pucLinkStatsBuffer) {
+				kalMemFree(
+					prLinkStatsCache->pucLinkStatsBuffer,
+					VIR_MEM_TYPE,
+					prLinkStatsCache->pucLinkStatsBufEnd -
+					prLinkStatsCache->pucLinkStatsBuffer);
+				prLinkStatsCache->pucLinkStatsBuffer = NULL;
+				prLinkStatsCache->pucLinkStatsBufferEnd = NULL;
+			}
 		}
-
-		if (data) {
-			DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
-					rStatus, u4QueryInfoLen);
-			rStatus = -EFAULT;
-			break;
-		}
-
-		/* Fill returning buffer */
-		ptr = buf;
-		ptr += fill_iface(ptr, src, prAdapter, ucBssIdx);
-
-		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM,
-				prAdapter, ucBssIdx, band_hint);
-
-		ptr += fill_power_levels(ptr, prAdapter, ENUM_BAND_NUM,
-				ucBssIdx, band_hint,
-				prAdapter->pu4TxTimePerLevels,
-				prAdapter->u4TxTimePerLevelsSize);
-		DBGLOG(REQ, TRACE, "Collected %u bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);
 		if (!skb) {
@@ -1859,6 +1896,21 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		}
 
 		rStatus = cfg80211_vendor_cmd_reply(skb);
+
+		/* Save a copy of collected stats from last report */
+		if (ucQueryMode == SEND_CMD_ON_ACTIVE &&
+		    prLinkStatsCache->pucLinkStatsBuffer == NULL) {
+			/* Update newly collected stats to cache buffer */
+			prLinkStatsCache->pucLinkStatsBuffer =
+					kalMemAlloc(ptr - buf, VIR_MEM_TYPE);
+			if (prLinkStatsCache->pucLinkStatsBuffer) {
+				kalMemCopy(prLinkStatsCache->pucLinkStatsBuffer,
+					buf, ptr - buf);
+				prLinkStatsCache->pucLinkStatsBufferEnd =
+					prLinkStatsCache->pucLinkStatsBuffer +
+					(ptr - buf);
+			}
+		}
 		return rStatus;
 	} while (0);
 
