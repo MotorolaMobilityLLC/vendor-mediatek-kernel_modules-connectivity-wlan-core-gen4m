@@ -1107,13 +1107,14 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 
 	if (prMsduInfo) {
 		DBGLOG(TX, TRACE,
-		       "Get Msdu WIDX:PID:TID[%u:%u(%u):%u] SEQ[%u] from Pending Q\n",
+		       "Get Msdu WIDX:PID:TID[%u:%u(%u):%u] SEQ[%u] from Pending Q(len=%u)\n",
 		       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, ucPID,
-		       prMsduInfo->ucUserPriority, prMsduInfo->ucTxSeqNum);
+		       prMsduInfo->ucUserPriority, prMsduInfo->ucTxSeqNum,
+		       QUEUE_LENGTH(prTxingQue));
 	} else {
 		DBGLOG(TX, WARN,
-		       "Cannot get Target Msdu WIDX:PID:TID[%u:%u:%u] from Pending Q\n",
-		       ucWlanIndex, ucPID, ucTID);
+		       "Cannot get Target Msdu WIDX:PID:TID[%u:%u:%u] from Pending Q(len=%u)\n",
+		       ucWlanIndex, ucPID, ucTID, QUEUE_LENGTH(prTxingQue));
 	}
 
 	return prMsduInfo;

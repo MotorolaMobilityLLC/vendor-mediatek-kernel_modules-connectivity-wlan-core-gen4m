@@ -182,25 +182,6 @@ uint8_t nic_rxd_v3_get_ofld(
 		(struct HW_MAC_CONNAC3X_RX_DESC *)prRxStatus);
 }
 
-/**
- * HW RX setting MLD_ID
- * if (is_QoS_frame)
- *     if (TID is even):
- *         MLD_ID = primary_MLD_ID
- *     else:
- *         MLD_ID = secondary_MLD_ID
- * else:
- *     MLD_ID = primary_MLD_ID
- */
-static uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
-		uint8_t ucTid, uint8_t ucWlanIdx)
-{
-	if (likely(ucTid & 0x1) == 0)
-		return ucWlanIdx;
-	else
-		return mldGetPrimaryWlanIdx(prAdapter, ucWlanIdx);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Fill RFB

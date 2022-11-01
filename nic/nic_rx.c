@@ -3914,6 +3914,29 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 	return i4BytesWritten;
 }
 
+/**
+ * HW RX setting MLD_ID
+ * if (is_QoS_frame)
+ *     if (TID is even):
+ *         MLD_ID = primary_MLD_ID
+ *     else:
+ *         MLD_ID = secondary_MLD_ID
+ * else:
+ *     MLD_ID = primary_MLD_ID
+ */
+uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
+		uint8_t ucTid, uint8_t ucWlanIdx)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (likely(ucTid & 0x1) == 0)
+		return ucWlanIdx;
+	else
+		return mldGetPrimaryWlanIdx(prAdapter, ucWlanIdx);
+#else
+	return ucWlanIdx;
+#endif
+}
+
 void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV)
 {
