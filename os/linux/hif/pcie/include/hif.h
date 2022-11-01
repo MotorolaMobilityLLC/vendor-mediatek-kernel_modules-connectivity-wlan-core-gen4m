@@ -463,6 +463,10 @@ struct BUS_INFO {
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	int (*wf_power_dump_start)(void *priv_data, unsigned int force_dump);
+	int (*wf_power_dump_end)(void *priv_data);
+#endif
 #if CFG_SUPPORT_PCIE_ASPM
 	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
 		u_int enable_role);
