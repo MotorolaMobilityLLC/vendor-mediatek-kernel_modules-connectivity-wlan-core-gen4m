@@ -1091,6 +1091,10 @@ struct WIFI_VAR {
 
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	uint32_t u4RfbBoostTpTh[PERF_MON_RFB_MAX_THRESHOLD];
+	uint32_t u4RfbInUseCnt[PERF_MON_RFB_MAX_THRESHOLD];
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 #if CFG_SUPPORT_MCC_BOOST_CPU
 	uint32_t u4MccBoostTputLvTh;
 	uint32_t u4MccBoostPresentTime;
@@ -2223,6 +2227,11 @@ struct ADAPTER {
 	uint32_t u4HifTxHangDumpIdx;
 	uint32_t u4HifTxHangDumpNum;
 	unsigned long ulNoMoreRfb;
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	uint32_t u4RfbInUseCnt;
+	uint32_t u4RfbInUseCntLv;
+	unsigned long ulUpdateRxRfbCntPeriod;
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 	/* Only for PCIE DmaSchdl usage so far. */
 	struct {

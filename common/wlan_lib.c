@@ -3229,7 +3229,7 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 	}
 }
 
-#if (CFG_SUPPORT_RETURN_TASK == 1) || (CFG_SUPPORT_RETURN_WORK == 1)
+#if (CFG_SUPPORT_RETURN_TASK == 1)
 void wlanReturnPacketDelaySetupTasklet(uintptr_t data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
@@ -7884,6 +7884,25 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonTpTh[9] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 3500);
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	prWifiVar->u4RfbBoostTpTh[0] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbBoostTpTh0", 50);
+	prWifiVar->u4RfbBoostTpTh[1] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbBoostTpTh1", 300);
+	prWifiVar->u4RfbBoostTpTh[2] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbBoostTpTh2", 1200);
+	prWifiVar->u4RfbInUseCnt[0] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbInUseCnt0",
+			(CFG_RX_MAX_PKT_NUM >> 2) * 3);
+	prWifiVar->u4RfbInUseCnt[1] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbInUseCnt1",
+			(CFG_RX_MAX_PKT_NUM >> 1));
+	prWifiVar->u4RfbInUseCnt[2] =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "RfbInUseCnt2", 0);
+	/* just set it, not need to adjust it immediately */
+	nicRxSetInUseCnt(prAdapter, prWifiVar->u4RfbInUseCnt[0], FALSE);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 #if CFG_SUPPORT_MCC_BOOST_CPU
 	prWifiVar->u4MccBoostTputLvTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "MccBoostTputLvTh",
@@ -8601,8 +8620,14 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "DlyIntCnt", 0); /* 0: No check by count */
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	prWifiVar->u4PagePoolMinCnt = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PagePoolMinCnt",
+		CFG_RX_MAX_PKT_NUM - nicRxGetInUseCnt(prAdapter));
+#else
 	prWifiVar->u4PagePoolMinCnt = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PagePoolMinCnt", CFG_RX_MAX_PKT_NUM);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 	prWifiVar->u4PagePoolMaxCnt = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PagePoolMaxCnt", CFG_RX_MAX_PKT_NUM * 3);
 	kalSetupPagePoolPageMaxMinNum(prWifiVar->u4PagePoolMinCnt,

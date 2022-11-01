@@ -114,6 +114,7 @@ static uint32_t g_u4CurPageNum;
 static uint32_t g_u4MinPageNum;
 static uint32_t g_u4MaxPageNum;
 static unsigned long g_ulUpdatePagePoolPagePeriod;
+static struct mutex g_rPageLock;
 #endif
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
@@ -984,47 +985,62 @@ uint32_t kalGetPagePoolPageNum(void)
 	return wifi_page_pool_get_page_num();
 }
 
+u_int8_t kalSetPagePoolPageMaxNum(void)
+{
+	return kalSetPagePoolPageNum(g_u4MaxPageNum);
+}
+
 u_int8_t kalIncPagePoolPageNum(void)
 {
 	uint32_t u4Num = 0;
 
-	if (g_u4CurPageNum < g_u4HifRsvNum)
+	mutex_lock(&g_rPageLock);
+
+	if (g_u4CurPageNum < g_u4HifRsvNum) {
+		mutex_unlock(&g_rPageLock);
 		return FALSE;
+	}
 
 	u4Num = (g_u4CurPageNum - g_u4HifRsvNum) +
 		HAL_PAGE_POOL_PAGE_INC_NUM;
 	if (u4Num > g_u4MaxPageNum)
 		u4Num = g_u4MaxPageNum;
 
+	mutex_unlock(&g_rPageLock);
+
 	return kalSetPagePoolPageNum(u4Num);
 }
 
 u_int8_t kalDecPagePoolPageNum(void)
 {
-	u_int8_t fgRet = TRUE;
 	uint32_t u4Num = 0;
 
-	if (g_u4CurPageNum < g_u4HifRsvNum)
+	mutex_lock(&g_rPageLock);
+
+	if (g_u4CurPageNum < g_u4HifRsvNum) {
+		mutex_unlock(&g_rPageLock);
 		return FALSE;
+	}
 
 	if ((g_u4CurPageNum - g_u4HifRsvNum) <
-	    HAL_PAGE_POOL_PAGE_DEC_NUM)
+	    HAL_PAGE_POOL_PAGE_DEC_NUM) {
+		mutex_unlock(&g_rPageLock);
 		return FALSE;
+	}
 
-	if (time_before(jiffies, g_ulUpdatePagePoolPagePeriod))
+	if (time_before(jiffies, g_ulUpdatePagePoolPagePeriod)) {
+		mutex_unlock(&g_rPageLock);
 		return FALSE;
+	}
 
 	u4Num =	(g_u4CurPageNum - g_u4HifRsvNum) -
 		HAL_PAGE_POOL_PAGE_DEC_NUM;
 	if (u4Num < g_u4MinPageNum)
 		u4Num = g_u4MinPageNum;
 
-	fgRet = kalSetPagePoolPageNum(u4Num);
+	mutex_unlock(&g_rPageLock);
 
-	g_ulUpdatePagePoolPagePeriod = jiffies +
-		HAL_PAGE_POOL_PAGE_UPDATE_MIN_INTERVAL * HZ / 1000;
-
-	return fgRet;
+	return kalSetPagePoolPageNum(u4Num);
 }
 
 u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
@@ -1032,6 +1048,7 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 	uint32_t u4SetNum = g_u4HifRsvNum + u4Num;
 	uint32_t u4MaxNum = wifi_page_pool_get_max_page_num();
 	uint32_t u4CurPageNum = g_u4CurPageNum;
+	u_int8_t fgRet = TRUE;
 
 	if (u4SetNum > u4MaxNum)
 		u4SetNum = u4MaxNum;
@@ -1039,18 +1056,26 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 	if (u4SetNum == u4CurPageNum)
 		return TRUE;
 
+	mutex_lock(&g_rPageLock);
+
 	wifi_page_pool_set_page_num(u4SetNum);
 	g_u4CurPageNum = wifi_page_pool_get_page_num();
 
-	DBGLOG(HAL, INFO, "set page pool[req:%u alloc:%u->%u]",
-	       u4SetNum, u4CurPageNum, g_u4CurPageNum);
-
 	if (g_u4CurPageNum < u4SetNum) {
-		DBGLOG(HAL, ERROR, "page pool alloc fail[req:%u alloc:%u]",
-		       u4SetNum, g_u4CurPageNum);
-		return FALSE;
+		DBGLOG(HAL, ERROR, "page pool alloc fail[req:%u alloc:%u->%u]",
+		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
+		fgRet = FALSE;
+	} else {
+		DBGLOG(HAL, INFO, "set page pool[req:%u alloc:%u->%u]",
+		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
 	}
-	return TRUE;
+
+	g_ulUpdatePagePoolPagePeriod = jiffies +
+		HAL_PAGE_POOL_PAGE_UPDATE_MIN_INTERVAL * HZ / 1000;
+
+	mutex_unlock(&g_rPageLock);
+
+	return fgRet;
 }
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
@@ -1111,6 +1136,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 		u4Num += prBusInfo->rx_data_ring_size;
 #endif
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	mutex_init(&g_rPageLock);
 	g_u4HifRsvNum = u4Num;
 	kalSetPagePoolPageNum(0);
 #endif

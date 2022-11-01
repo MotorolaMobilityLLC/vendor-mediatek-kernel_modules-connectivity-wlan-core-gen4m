@@ -1244,6 +1244,7 @@ void kalSkbMarkForRecycle(struct sk_buff *pkt);
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 void kalSetupPagePoolPageMaxMinNum(uint32_t u4Min, uint32_t u4Max);
 uint32_t kalGetPagePoolPageNum(void);
+u_int8_t kalSetPagePoolPageMaxNum(void);
 u_int8_t kalIncPagePoolPageNum(void);
 u_int8_t kalDecPagePoolPageNum(void);
 u_int8_t kalSetPagePoolPageNum(uint32_t u4Num);

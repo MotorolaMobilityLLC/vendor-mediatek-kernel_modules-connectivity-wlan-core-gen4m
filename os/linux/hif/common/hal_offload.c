@@ -1595,6 +1595,11 @@ static u_int8_t halRroHandleRxRcbMsdu(
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MsduCnt)
+		nicRxIncRfbCnt(prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4MsduCnt) {
 		DBGLOG_LIMITED(RX, WARN, "RFB[%u], [%u]\n",
 			       RX_GET_FREE_RFB_CNT(prRxCtrl), u4MsduCnt);
