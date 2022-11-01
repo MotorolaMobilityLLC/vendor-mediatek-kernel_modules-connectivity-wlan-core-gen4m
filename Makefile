@@ -237,6 +237,11 @@ ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_SUPPORT_BW160
 endif
 
+ifneq ($(findstring devonn,$(TARGET_PRODUCT)),)
+ccflags-y:=$(filter-out -UDEVONN,$(ccflags-y))
+ccflags-y += -DMOTO_MT6855_DEVONN
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
 ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
 else
