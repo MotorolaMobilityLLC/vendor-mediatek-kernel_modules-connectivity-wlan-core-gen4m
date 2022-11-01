@@ -785,6 +785,11 @@ struct GLUE_INFO {
 	struct work_struct rTxFreeMsduWork;
 	int32_t i4TxFreeMsduCpu;
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#if CFG_SUPPORT_RETURN_WORK
+	struct workqueue_struct *prRxRfbRetWorkQueue;
+	struct work_struct rRxRfbRetWork;
+	int32_t i4RxRfbRetCpu;
+#endif
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 	struct tasklet_struct rTxMsduRetTask;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */

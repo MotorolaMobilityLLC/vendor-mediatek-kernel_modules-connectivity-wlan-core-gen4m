@@ -1390,7 +1390,6 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter);
 /* Hif power off wifi */
 uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter);
 
-
 bool halHifSwInfoInit(struct ADAPTER *prAdapter);
 void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo);
 void halRxProcessMsduReport(struct ADAPTER *prAdapter,

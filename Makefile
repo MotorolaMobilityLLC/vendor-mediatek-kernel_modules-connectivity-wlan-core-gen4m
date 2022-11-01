@@ -433,6 +433,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_SUPPORT_PCIE_GEN_SWITCH=y
         #CONFIG_SUPPORT_WIFI_MDDP_NO_MMIO_READ=y
         CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=y
+        CONFIG_SUPPORT_WIFI_DYNAMIC_PAGE_POOL=y
         ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
         CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
         ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
@@ -819,11 +820,19 @@ ifeq ($(CONFIG_RX_ZERO_COPY), y)
     ccflags-y += -DCFG_SUPPORT_RX_ZERO_COPY=1
     ifeq ($(CONFIG_RX_PAGE_POOL), y)
         ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=1
+        ifeq ($(CONFIG_SUPPORT_WIFI_DYNAMIC_PAGE_POOL), y)
+            ccflags-y += -DCFG_SUPPORT_DYNAMIC_PAGE_POOL=1
+        else
+            ccflags-y += -DCFG_SUPPORT_DYNAMIC_PAGE_POOL=0
+        endif
     else
         ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=0
+        ccflags-y += -DCFG_SUPPORT_DYNAMIC_PAGE_POOL=0
     endif
 else
     ccflags-y += -DCFG_SUPPORT_RX_ZERO_COPY=0
+    ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=0
+    ccflags-y += -DCFG_SUPPORT_DYNAMIC_PAGE_POOL=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_FLUSH_RX_REORDERING), y)

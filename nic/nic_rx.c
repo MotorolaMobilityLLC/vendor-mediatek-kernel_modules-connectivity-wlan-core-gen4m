@@ -354,6 +354,9 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(&prRxCtrl->rIndicatedRfbList);
 
 	pucMemHandle = prRxCtrl->pucRxCached;
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	kalSetPagePoolPageNum(CFG_RX_MAX_PKT_NUM);
+#endif
 	for (i = CFG_RX_MAX_PKT_NUM; i != 0; i--) {
 		prSwRfb = (struct SW_RFB *) pucMemHandle;
 #if CFG_RFB_TRACK
@@ -1270,6 +1273,12 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	if (!prSwRfb->pvPacket) {
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+		return;
+	}
+#elif CFG_SUPPORT_RETURN_WORK
+	if (!prSwRfb->pvPacket) {
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
 		return;
 	}
 #endif

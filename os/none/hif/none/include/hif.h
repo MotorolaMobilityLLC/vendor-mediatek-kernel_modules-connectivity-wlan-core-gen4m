@@ -90,37 +90,20 @@
 #endif
 
 #define NUM_OF_TX_RING				(5+NUM_OF_WFDMA1_TX_RING)
+
+#define RX_RING_MAX_SIZE			4095
+
 #ifdef CONFIG_MTK_WIFI_HE160
 #define TX_RING_SIZE				1024
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				1024
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				128
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
-#define RX_RING_SIZE				1024 /* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				1024
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #elif defined(CONFIG_MTK_WIFI_VHT80)
 #define TX_RING_SIZE				512
-#define RX_RING_SIZE				512	/* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				512
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #else
 #define TX_RING_SIZE				256
-#define RX_RING_SIZE				256	/* Max Rx ring size */
-/* Data Rx ring */
-#define RX_RING0_SIZE				256
-/* Event/MSDU_report Rx ring */
-#define RX_RING1_SIZE				16
 #endif
 
-#define RXD_SIZE					16
+#define RXD_SIZE				16
 #define RX_BUFFER_AGGRESIZE			3840
 
 /*******************************************************************************
@@ -202,7 +185,7 @@ struct BUS_INFO {
 };
 
 struct RTMP_RX_RING {
-	struct RTMP_DMACB Cell[RX_RING_SIZE];
+	struct RTMP_DMACB Cell[RX_RING_MAX_SIZE];
 	uint32_t RxCpuIdx;
 	uint32_t RxDmaIdx;
 	uint32_t u4BufSize;

@@ -13762,7 +13762,7 @@ void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_PCIE_ASPM */
 }
 
-void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num)
+void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Th)
 {
 	struct ADAPTER *prAdapter;
 	struct BUS_INFO *prBusInfo = NULL;
@@ -13770,9 +13770,9 @@ void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num)
 	prAdapter = prGlueInfo->prAdapter;
 	prBusInfo = prAdapter->chip_info->bus_info;
 
-	if (prBusInfo->u4WfdmaRxTh != u4Num) {
-		prBusInfo->fgUpdateWfdmaRxTh = TRUE;
-		prBusInfo->u4WfdmaRxTh = u4Num;
+	if (prBusInfo->u4WfdmaTh != u4Th) {
+		prBusInfo->fgUpdateWfdmaTh = TRUE;
+		prBusInfo->u4WfdmaTh = u4Th;
 	}
 }
 #endif /* defined(_HIF_PCIE) */
@@ -14870,6 +14870,70 @@ void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr)
 	}
 }
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+
+#if CFG_SUPPORT_RETURN_WORK
+void kalRxRfbReturnWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu)
+{
+	pr->i4RxRfbRetCpu = cpu;
+}
+
+void kalRxRfbReturnWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo =
+		container_of(work, struct GLUE_INFO, rRxRfbRetWork);
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4WfdmaTh)
+		kalIncPagePoolPageNum();
+	else
+		kalDecPagePoolPageNum();
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+
+	TRACE(wlanReturnPacketDelaySetupTasklet((uintptr_t)prGlueInfo),
+	      "RxRfbReturnWork");
+}
+
+void kalRxRfbReturnWorkInit(struct GLUE_INFO *pr)
+{
+	INIT_WORK(&pr->rRxRfbRetWork, kalRxRfbReturnWork);
+	pr->prRxRfbRetWorkQueue = create_workqueue(
+					"wifi_rx_return_rfb_work");
+	if (!pr->prRxRfbRetWorkQueue)
+		DBGLOG(INIT, ERROR, "prRxRfbRetWorkQueue is NULL\n");
+}
+
+void kalRxRfbReturnWorkUninit(struct GLUE_INFO *pr)
+{
+	if (pr->prRxRfbRetWorkQueue) {
+		flush_workqueue(pr->prRxRfbRetWorkQueue);
+		destroy_workqueue(pr->prRxRfbRetWorkQueue);
+		pr->prRxRfbRetWorkQueue = NULL;
+	}
+}
+
+void kalRxRfbReturnWorkSchedule(struct GLUE_INFO *pr)
+{
+	int32_t i4Cpu;
+
+	if (!pr->prRxRfbRetWorkQueue) {
+		DBGLOG_LIMITED(INIT, ERROR,
+			"prRxRfbRetWorkWorkQueue is NULL\n");
+		return;
+	}
+
+	i4Cpu = pr->i4TxFreeMsduCpu;
+	if (i4Cpu == -1) {
+		queue_work(pr->prRxRfbRetWorkQueue,
+			&pr->rRxRfbRetWork);
+	} else {
+		queue_work_on(i4Cpu,
+			pr->prRxRfbRetWorkQueue,
+			&pr->rRxRfbRetWork);
+	}
+}
+#endif /* CFG_SUPPORT_RETURN_WORK */
 
 #if CFG_SUPPORT_TX_WORK
 void kalTxWork(struct work_struct *work)

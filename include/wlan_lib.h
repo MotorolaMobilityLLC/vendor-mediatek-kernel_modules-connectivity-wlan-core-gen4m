@@ -1740,7 +1740,7 @@ void wlanReleasePendingCMDbyBssIdx(struct ADAPTER *prAdapter,
 
 void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter);
 
-#if (CFG_SUPPORT_RETURN_TASK == 1)
+#if (CFG_SUPPORT_RETURN_TASK == 1) || (CFG_SUPPORT_RETURN_WORK == 1)
 void wlanReturnPacketDelaySetupTasklet(uintptr_t data);
 #endif
 

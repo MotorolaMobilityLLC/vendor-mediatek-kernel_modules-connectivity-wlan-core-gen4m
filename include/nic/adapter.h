@@ -1413,6 +1413,11 @@ struct WIFI_VAR {
 	u_int8_t fgEnDlyInt;
 	uint32_t u4DlyIntTime;
 	uint32_t u4DlyIntCnt;
+
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	uint32_t u4PagePoolMinCnt;
+	uint32_t u4PagePoolMaxCnt;
+#endif
 };
 
 /* cnm_timer module */
