@@ -614,6 +614,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			     struct station_info *sinfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
@@ -630,10 +631,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (unlikely(ucBssIndex >= BSSID_NUM ||
-	    !IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)))
+	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
@@ -646,7 +648,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	/* On Android O, this might be wlan0 address */
 	if (UNEQUAL_MAC_ADDR(arBssid, mac)
 	    && UNEQUAL_MAC_ADDR(
-		    prGlueInfo->prAdapter->rWifiVar.aucMacAddress, mac)) {
+		    prAdapter->rWifiVar.aucMacAddress, mac)) {
 		/* wrong MAC address */
 		DBGLOG(REQ, WARN,
 		       "incorrect BSSID: [" MACSTR
@@ -684,9 +686,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
+		struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
+
 		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
+
+		if (perf->fgIdle) {
+			struct BSS_DESC *prBssDesc =
+				scanSearchBssDescByBssid(prAdapter,
+					arBssid);
+
+			if (prBssDesc)
+				i4Rssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
+		}
 		u4RxBw = rLinkSpeed.rLq[ucBssIndex].u4RxBw;
 		if (unlikely(u4RxBw >= ARRAY_SIZE(arBwCfg80211Table))) {
 			DBGLOG(REQ, WARN, "wrong u4RxBw!");
@@ -729,14 +742,29 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
+		struct BSS_DESC *prBssDesc =
+			scanSearchBssDescByBssid(prAdapter,
+				arBssid);
+
+		if (prBssDesc)
+			prGlueInfo->i4RssiCache[ucBssIndex] =
+				RCPI_TO_dBm(prBssDesc->ucRCPI);
+
 		DBGLOG(REQ, WARN,
-			"Query RSSI failed, use last RSSI %d\n",
-			prGlueInfo->i4RssiCache[ucBssIndex]);
+			"Query RSSI failed, use last RSSI %d, ind=%d\n",
+			prGlueInfo->i4RssiCache[ucBssIndex],
+			ucBssIndex);
 		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
 			prGlueInfo->i4RssiCache[ucBssIndex] :
 			PARAM_WHQL_RSSI_INITIAL_DBM;
 	} else if (i4Rssi <= PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi >= PARAM_WHQL_RSSI_MAX_DBM) {
+		struct BSS_DESC *prBssDesc =
+			scanSearchBssDescByBssid(prAdapter,
+				arBssid);
+		if (prBssDesc)
+			prGlueInfo->i4RssiCache[ucBssIndex] =
+				RCPI_TO_dBm(prBssDesc->ucRCPI);
 		DBGLOG(REQ, WARN,
 			"RSSI abnormal %d, use last RSSI %d\n",
 			i4Rssi,
