@@ -13185,7 +13185,6 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucPhyType, ucTxMode = 0, ucMcsIdx = 0, ucSgi = 0;
 	uint8_t ucBw = 0, ucAPBwPermitted = 0, ucNss = 0, ucApNss = 0;
-	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 	struct BSS_DESC *prBssDesc = NULL;
 
 	*pu4CurRate = 0;
@@ -13230,53 +13229,32 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 
 	/* get bandwidth */
 	ucBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
-	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
-	if (prBssDesc) {
-		ucAPBwPermitted = MAX_BW_160MHZ;
-		if (prBssDesc->eChannelWidth == CW_20_40MHZ) {
-			if ((prBssDesc->eSco == CHNL_EXT_SCA)
-			     || (prBssDesc->eSco == CHNL_EXT_SCB))
-				ucAPBwPermitted = MAX_BW_40MHZ;
-			else
-				ucAPBwPermitted = MAX_BW_20MHZ;
-		} else {
-			ucAPBwPermitted = prBssDesc->eChannelWidth + ucOffset;
-		}
-		if ((ucAPBwPermitted < MAX_BW_20MHZ) ||
-		    (ucAPBwPermitted > MAX_BW_80_80_MHZ)) {
-			DBGLOG(SW4, ERROR,
-			       "unknown band width: %u\n", ucAPBwPermitted);
-			goto errhandle;
-		} else if (ucAPBwPermitted == MAX_BW_80_80_MHZ)
-			ucAPBwPermitted = MAX_BW_160MHZ;
-	} else {
-		DBGLOG(SW4, ERROR, "prBssDesc is null\n");
-		goto errhandle;
-	}
+	ucAPBwPermitted = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 	if (ucAPBwPermitted < ucBw)
 		ucBw = ucAPBwPermitted;
 
 	/* get Short GI Tx capability */
-	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) ==
-	    HT_CAP_INFO_SHORT_GI_20M) {
-		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_20M\n");
-		ucSgi = 1;
+	if (ucTxMode == TX_RATE_MODE_HTMIX || ucTxMode == TX_RATE_MODE_HTGF) {
+		if (prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) {
+			DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_20M\n");
+			ucSgi = 1;
+		}
+		if (prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_40M) {
+			DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_40M\n");
+			ucSgi = 1;
+		}
 	}
-	if ((prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_40M) ==
-	    HT_CAP_INFO_SHORT_GI_40M) {
-		DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_40M\n");
-		ucSgi = 1;
-	}
+
 #if CFG_SUPPORT_802_11AC
-	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_80) ==
-	    VHT_CAP_INFO_SHORT_GI_80) {
-		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_80\n");
-		ucSgi = 1;
-	}
-	if ((prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_160_80P80) ==
-	    VHT_CAP_INFO_SHORT_GI_160_80P80) {
-		DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_160_80P80\n");
-		ucSgi = 1;
+	if (ucTxMode == TX_RATE_MODE_VHT) {
+		if (prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_80) {
+			DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_80\n");
+			ucSgi = 1;
+		}
+		if (prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_160_80P80) {
+			DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_160_80P80\n");
+			ucSgi = 1;
+		}
 	}
 #endif
 
@@ -13286,6 +13264,7 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 	}
 
 	/* get antenna number */
+	prBssDesc = aisGetTargetBssDesc(prAdapter, prBssInfo->ucBssIndex);
 	ucNss = wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
 	if (prBssDesc) {
 		ucApNss = bssGetRxNss(prAdapter, prBssDesc);
