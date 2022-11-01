@@ -62,6 +62,12 @@
 
 #define NAN_CATEGORY_HDR_OFFSET 7
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#define NAN_ELEM_MAX_LEN_HE_CAP 256
+#define NAN_ELEM_MAX_LEN_HE_OP 16
+/* According to MAX len of Element ID: 1 byte*/
+#endif
+
 /****************************************************
  *                    Local part
  ****************************************************
@@ -330,6 +336,9 @@ struct _NAN_NDL_INSTANCE_T {
 	/* remote HT-CAP / VHT-CAP IEs */
 	struct IE_HT_CAP rIeHtCap;
 	struct IE_VHT_CAP rIeVhtCap;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t aucIeHeCap[NAN_ELEM_MAX_LEN_HE_CAP];
+#endif
 
 	struct LINK rPendingReqList;
 };
@@ -344,15 +353,20 @@ struct _NAN_DATA_PATH_INFO_T {
 	uint16_t u2TransId;
 
 	unsigned char fgIsECSet;
-	uint8_t aucECAttr[48];
+	uint8_t aucECAttr[322];
 	/* large enought to contain
 	 * OFFSET_OF(struct _NAN_ATTR_ELEMENT_CONTAINER_T, aucElements) +
 	 * ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP +
-	 * ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP
+	 * ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP +
+	 * ELEM_HDR_LEN + NAN_ELEM_MAX_LEN_HE_CAP +
+     * ELEM_HDR_LEN + NAN_ELEM_MAX_LEN_HE_OP
 	 */
 
 	struct IE_HT_CAP *prLocalHtCap;
 	struct IE_VHT_CAP *prLocalVhtCap;
+#if (CFG_SUPPORT_802_11AX == 1)
+	struct _IE_HE_CAP_T *prLocalHeCap;
+#endif
 
 	/* NET-DEV reference count */
 	atomic_t NetDevRefCount[NAN_BSS_INDEX_NUM];

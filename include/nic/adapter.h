@@ -1278,6 +1278,8 @@ struct WIFI_VAR {
 	uint8_t ucNanDiscBcnInterval;
 	uint8_t ucNanCommittedDw;
 	unsigned char fgNoPmf;
+	uint8_t ucNan2gBandwidth;
+	uint8_t ucNan5gBandwidth;
 #endif
 
 #if CFG_SUPPORT_TPENHANCE_MODE

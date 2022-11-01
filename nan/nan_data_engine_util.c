@@ -1397,6 +1397,26 @@ nanElemContainerAttrHandler(
 
 			break;
 
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP) {
+				prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+				if (IE_SIZE(pucIE) > sizeof(prNDL->aucIeHeCap))
+					DBGLOG(NAN, WARN,
+						"HE_CAP IE_LEN (%d) exceed MAX LEN(%d)!\n"
+						, IE_LEN(pucIE)
+						, sizeof(prNDL->aucIeHeCap));
+				else {
+					COPY_IE(&(prNDL->aucIeHeCap), pucIE);
+					kalMemCopy(&(prNDL->aucIeHeCap), pucIE,
+						IE_SIZE(pucIE));
+				}
+				/* TODO: match with local capabilities
+				* for STA-REC params
+				*/
+			}
+#endif
+
 		default:
 			break;
 		}
@@ -2374,6 +2394,14 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 				     struct _NAN_NDL_INSTANCE_T *prNDL,
 				     struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint16_t u2AttrLength;
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t ucHeLen;
+
+	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+				prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
+#endif
+
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -2384,6 +2412,11 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 	u2AttrLength += (ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP);
 #if CFG_SUPPORT_802_11AC
 	u2AttrLength += ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP;
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	ucHeLen = heRlmCalculateHeCapIELen(prAdapter,
+				prBssInfo->ucBssIndex, NULL);
+	u2AttrLength += ucHeLen;
 #endif
 
 	if ((prNDP == NULL) || (prNDL == NULL)) {
@@ -2445,7 +2478,11 @@ nanDataEngineElemContainerAttrAppend(struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+#if (CFG_SUPPORT_DBDC == 1)
+			prAdapter, NAN_BSS_INDEX_BAND1)->ucBssIndex];
+#else
 			prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
+#endif
 	if (prNDP->eCurrentNDPProtocolState == NDP_INITIATOR_TX_DP_REQUEST)
 		nanDataEngineGetECAttrImpl(prAdapter, &pucECAttr,
 					   &u2ECAttrLength, prBssInfo, NULL);
@@ -3641,6 +3678,9 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 	struct IE_VHT_CAP *prVhtCap;
 	uint8_t ucVhtCapMcsOwnNotSupportOffset;
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	uint8_t *prHeCap;
+#endif
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)NULL;
 
@@ -3817,6 +3857,15 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 			((u4PeerNSS - 1) << VHT_OP_MODE_RX_NSS_OFFSET) &
 			VHT_OP_MODE_RX_NSS;
 	}
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+		/* fill HE Capabilities */
+		if ((prNDL->ucPhyTypeSet & PHY_TYPE_BIT_HE)) {
+			DBGLOG(NAN, INFO, "NAN peer supports HE\n");
+			prHeCap = prNDL->aucIeHeCap;
+			heRlmRecHeCapInfo(prAdapter, prStaRec, prHeCap);
+		}
 #endif
 
 	return WLAN_STATUS_SUCCESS;
