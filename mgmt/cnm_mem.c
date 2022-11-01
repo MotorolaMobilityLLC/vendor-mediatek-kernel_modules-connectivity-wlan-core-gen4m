@@ -1449,11 +1449,20 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 {
 	int32_t i4BytesWritten = 0;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tBSS[%d][RF_BAND=%d][OMAC="MACSTR"][LINK_ID=%u]:\n",
+		prBssInfo->ucBssIndex, prBssInfo->eBand,
+		MAC2STR(prBssInfo->aucOwnMacAddr),
+		prBssInfo->ucLinkIndex);
+#else
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 		"\tBSS[%d][RF_BAND=%d][OMAC="MACSTR"]:\n",
 		prBssInfo->ucBssIndex, prBssInfo->eBand,
 		MAC2STR(prBssInfo->aucOwnMacAddr));
+#endif
 
 	if (!prBssInfo->fgIsInUse) {
 		i4BytesWritten += kalSnprintf(
@@ -1506,10 +1515,9 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tGRP_MLD_ID/OWN_MLD_ID/LINK_ID: %u/%u/%u\n",
+		"\tGRP_MLD_ID/OWN_MLD_ID: %u/%u\n",
 		prBssInfo->ucGroupMldId,
-		prBssInfo->ucOwnMldId,
-		prBssInfo->ucLinkIndex);
+		prBssInfo->ucOwnMldId);
 #endif
 
 	return i4BytesWritten;

@@ -4481,11 +4481,14 @@ void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 #endif
+	struct BSS_INFO *prAisBssInfo;
 
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 
+	kalMemZero(prAisBssInfo->aucBSSID, MAC_ADDR_LEN);
 	prAisFsmInfo->ucConnTrialCount = 0;
 	prAdapter->rAddRoamScnChnl.ucChannelListNum = 0;
 	prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;

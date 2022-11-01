@@ -2318,6 +2318,8 @@ omac_choosed:
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;
 
+			kalMemZero(prBssInfo->aucBSSID, MAC_ADDR_LEN);
+
 			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d\n",
 				prBssInfo->ucBssIndex,
 				prBssInfo->eNetworkType,
