@@ -16133,7 +16133,10 @@ uint32_t wlanoidSetMonitor(struct ADAPTER *prAdapter,
 		prGlueInfo->u2Aid,
 		prGlueInfo->fgDropFcsErrorFrame);
 
-	prGlueInfo->aucBandIdxEn[prGlueInfo->ucBandIdx] = prGlueInfo->fgIsEnableMon;
+	if (prGlueInfo->ucBandIdx < CFG_MONITOR_BAND_NUM) {
+		prGlueInfo->aucBandIdxEn[prGlueInfo->ucBandIdx] =
+			prGlueInfo->fgIsEnableMon;
+	}
 
 	prCmdMonitor->ucEnable = prGlueInfo->fgIsEnableMon;
 	prCmdMonitor->ucBand = prGlueInfo->ucBand;

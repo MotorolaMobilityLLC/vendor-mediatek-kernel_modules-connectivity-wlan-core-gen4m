@@ -424,6 +424,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
     ifeq ($(CONFIG_WLAN_MT6985_MP2), y)
+        CONFIG_SNIFFER_RADIOTAP=y
         CONFIG_WFDMA_AP_MSI_NUM=8
         CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
         CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
@@ -835,9 +836,8 @@ ifeq ($(WIFI_ENABLE_GCOV), y)
     GCOV_PROFILE := y
 endif
 
-ifeq ($(SNIFFER_RADIOTAP), y)
+ifeq ($(CONFIG_SNIFFER_RADIOTAP), y)
     ccflags-y += -DCFG_SUPPORT_SNIFFER_RADIOTAP
-    ccflags-y += -DCFG_SUPPORT_BW160
     ccflags-y += -DCFG_SUPPORT_PDMA_SCATTER
 endif
 

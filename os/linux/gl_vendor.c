@@ -1796,6 +1796,11 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	perf = &prAdapter->rPerMonitor;
 
 	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	if (ucBssIdx >= MAX_BSSID_NUM) {
+		DBGLOG(REQ, ERROR, "Invalid BSS Index ucBssIdx=%u\n", ucBssIdx);
+		return -EFAULT;
+	}
+
 	prLinkStatsCache = &prAdapter->rLinkStatsCache[ucBssIdx];
 	if (prAdapter->ucLinkStatsBssNum == BSSID_NUM)
 		band_hint = 0x00; /* select band/radio by Bss HW band index */

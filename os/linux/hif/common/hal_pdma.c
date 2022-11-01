@@ -5386,10 +5386,6 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 
 	halDumpMsduReportStats(prAdapter);
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	if (prGlueInfo->fgIsEnableMon)
-		return;
-#endif
 	prHifStats = &prAdapter->rHifStats;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxCtrl = &prAdapter->rRxCtrl;

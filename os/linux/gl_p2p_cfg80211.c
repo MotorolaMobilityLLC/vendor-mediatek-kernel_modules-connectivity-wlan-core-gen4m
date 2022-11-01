@@ -1204,6 +1204,13 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (prGlueInfo->fgIsEnableMon) {
+			i4RetRslt = -EINVAL;
+			break;
+		}
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+
 		if (wlanIsChipAssert(prGlueInfo->prAdapter))
 			break;
 
