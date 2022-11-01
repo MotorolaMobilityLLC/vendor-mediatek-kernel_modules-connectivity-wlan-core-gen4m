@@ -2656,6 +2656,32 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 		       WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR, u4Val);
 	}
 
+#if MAWD_DEBUG_DUMP
+	{
+		struct RTMP_DMABUF *prRxDesc = &prHifInfo->RxBlkDescRing;
+
+		DBGLOG(HAL, INFO, "Dump RxBlkDesc\n");
+		DBGLOG_MEM32(HAL, INFO, prRxDesc->AllocVa,
+			     prRxDesc->AllocSize);
+	}
+#endif
+#if RRO_DEBUG_DUMP
+	{
+		struct RTMP_DMABUF *prAddrArray, *prIndCmd;
+
+		prAddrArray = &prHifInfo->AddrArray;
+		prIndCmd = &prHifInfo->IndCmdRing;
+
+		DBGLOG(HAL, INFO, "Dump IndCmd\n");
+		DBGLOG_MEM32(HAL, INFO, prIndCmd->AllocVa,
+			     prIndCmd->AllocSize);
+
+		DBGLOG(HAL, INFO, "Dump AddrArray\n");
+		DBGLOG_MEM32(HAL, INFO, prAddrArray->AllocVa,
+			     prAddrArray->AllocSize);
+	}
+#endif
+
 	DBGLOG(HAL, INFO,
 	       "BLK Used[%u][%u] Free[%u] Rcb Err[%u] Skip[%u] Fix[%u] Head[%u]",
 	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA0],

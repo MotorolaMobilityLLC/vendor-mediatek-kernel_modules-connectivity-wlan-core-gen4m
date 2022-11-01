@@ -298,6 +298,9 @@
 #define LOG_DUMP_COUNT_PERIOD		5
 #define LOG_DUMP_FULL_DUMP_TIMES	2
 
+#define MAWD_DEBUG_DUMP          0
+#define RRO_DEBUG_DUMP           0
+
 #define WFDMA_MAGIC_CNT_NUM      16
 #define INDCMD_MAGIC_CNT_NUM     8
 #define RX_BLK_MAGIC_CNT_NUM     4
