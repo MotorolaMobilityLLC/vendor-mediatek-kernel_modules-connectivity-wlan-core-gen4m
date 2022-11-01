@@ -486,10 +486,6 @@
 	((((_prHwRxVector)->u4RxVector[1]) & CONNAC2X_RX_VT_RCPI3_MASK) >> \
 	CONNAC2X_RX_VT_RCPI3_OFFSET)
 
-#define CONNAC2X_HAL_RX_VECTOR_GET_NUM_RX_V2(_prHwRxVector) \
-	((((_prHwRxVector)->u4RxVector[0]) & CONNAC2X_RX_VT_NUM_RX_MASK_V2) >> \
-	CONNAC2X_RX_VT_NUM_RX_OFFSET_V2)
-
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define HAL_IS_CONNAC2X_EXT_TX_DONE_INTR(u4IntrStatus, __u4IntrBits) \
 	((u4IntrStatus & (__u4IntrBits)) ? TRUE : FALSE)

@@ -2105,7 +2105,6 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 {
 	uint8_t ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3;
 	uint8_t ucRcpiValue = 0;
-	uint8_t ucRxNum;
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3 = NULL;
 
 	ASSERT(prSwRfb);
@@ -2129,49 +2128,49 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 	ucRcpi1 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI1_V2(prGroup3);
 	ucRcpi2 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI2_V2(prGroup3);
 	ucRcpi3 = CONNAC2X_HAL_RX_VECTOR_GET_RCPI3_V2(prGroup3);
-	ucRxNum = CONNAC2X_HAL_RX_VECTOR_GET_NUM_RX_V2(prGroup3);
+
+	/*If Rcpi is not available, set it to zero*/
+	if (ucRcpi0 == RCPI_MEASUREMENT_NOT_AVAILABLE)
+		ucRcpi0 = RCPI_LOW_BOUND;
+	if (ucRcpi1 == RCPI_MEASUREMENT_NOT_AVAILABLE)
+		ucRcpi1 = RCPI_LOW_BOUND;
 
 	DBGLOG(RX, TRACE, "RCPI WF0:%d WF1:%d WF2:%d WF3:%d\n",
 	       ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3);
 
-	if (ucRxNum == 0)
-		ucRcpiValue = (ucRcpi0 >= RCPI_MEASUREMENT_NOT_AVAILABLE) ?
-			(ucRcpi1):(ucRcpi0);
-	else {
-		switch (ucRcpiMode) {
-		case RCPI_MODE_WF0:
-			ucRcpiValue = ucRcpi0;
-			break;
+	switch (ucRcpiMode) {
+	case RCPI_MODE_WF0:
+		ucRcpiValue = ucRcpi0;
+		break;
 
-		case RCPI_MODE_WF1:
-			ucRcpiValue = ucRcpi1;
-			break;
+	case RCPI_MODE_WF1:
+		ucRcpiValue = ucRcpi1;
+		break;
 
-		case RCPI_MODE_WF2:
-			ucRcpiValue = ucRcpi2;
-			break;
+	case RCPI_MODE_WF2:
+		ucRcpiValue = ucRcpi2;
+		break;
 
-		case RCPI_MODE_WF3:
-			ucRcpiValue = ucRcpi3;
-			break;
+	case RCPI_MODE_WF3:
+		ucRcpiValue = ucRcpi3;
+		break;
 
-		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
-			ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
-			break;
+	case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
+		ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+		break;
 
-		case RCPI_MODE_MAX:
-			ucRcpiValue =
-				(ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-			break;
+	case RCPI_MODE_MAX:
+		ucRcpiValue =
+			(ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+		break;
 
-		case RCPI_MODE_MIN:
-			ucRcpiValue =
-				(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
-			break;
+	case RCPI_MODE_MIN:
+		ucRcpiValue =
+			(ucRcpi0 < ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+		break;
 
-		default:
-			break;
-		}
+	default:
+		break;
 	}
 
 	return ucRcpiValue;

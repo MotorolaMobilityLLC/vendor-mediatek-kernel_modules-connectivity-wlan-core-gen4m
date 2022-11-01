@@ -1687,8 +1687,6 @@ uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 {
 	uint8_t ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3;
 	uint8_t ucRcpiValue = 0;
-	/* falcon IP donot have this field 'ucRxNum' */
-	/* uint8_t ucRxNum; */
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3 = NULL;
 
 	ASSERT(prSwRfb);
