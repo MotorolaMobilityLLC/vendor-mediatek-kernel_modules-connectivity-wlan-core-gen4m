@@ -75,6 +75,8 @@
  ******************************************************************************
  */
 
+#define MIN_AUTH_TIME_DIFF          100
+
 /******************************************************************************
  *                             D A T A   T Y P E S
  ******************************************************************************
@@ -468,10 +470,24 @@ bow_proc:
 			if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 				if (prStaRec->eAuthAssocState
 					!= AA_STATE_IDLE) {
+					uint32_t rAuthTime;
+					uint32_t rTimeDiff;
 
 					DBGLOG(AAA, WARN,
-						"Previous AuthAssocState (%d) != IDLE.\n",
+						"Prev AAState (%d) != IDLE.\n",
 						prStaRec->eAuthAssocState);
+					GET_CURRENT_SYSTIME(&rAuthTime);
+					rTimeDiff = rAuthTime -
+						prStaRec->rUpdateTime;
+					if (prAuthFrame->u2AuthTransSeqNo ==
+						AUTH_TRANSACTION_SEQ_1 &&
+						rTimeDiff <
+						MIN_AUTH_TIME_DIFF) {
+						DBGLOG(AAA, WARN,
+							"dup auth 1 got.\n",
+						prStaRec->eAuthAssocState);
+						return;
+					}
 				}
 
 				prStaRec->eAuthAssocState =
