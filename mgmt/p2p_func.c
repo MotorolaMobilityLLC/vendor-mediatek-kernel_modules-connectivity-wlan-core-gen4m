@@ -8740,7 +8740,8 @@ void p2pFuncSetAclPolicy(
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-
+	if (!prBssInfo)
+		return;
 	prCmdAclPolicy = (struct CMD_SET_ACL_POLICY *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(*prCmdAclPolicy));
@@ -8750,7 +8751,6 @@ void p2pFuncSetAclPolicy(
 			"cnmMemAlloc for prCmdAclPolicy failed!\n");
 		return;
 	}
-
 	prCmdAclPolicy->ucBssIdx = ucBssIdx;
 	prCmdAclPolicy->ucPolicy = (uint8_t) ePolicy;
 
