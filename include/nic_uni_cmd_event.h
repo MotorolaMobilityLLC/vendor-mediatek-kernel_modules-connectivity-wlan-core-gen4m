@@ -5370,6 +5370,7 @@ enum ENUM_UNI_EVENT_STATISTICS_TAG {
 	UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_EVENT_STATISTICS_TAG_PPDU_LATENCY,
 	UNI_EVENT_STATISTICS_TAG_CURRENT_TX_RATE,
+	UNI_EVENT_STATISTICS_TAG_UEVENT = 0x86,
 };
 
 /* Basic Scan down notify Parameters (Tag00) */
@@ -5502,6 +5503,13 @@ struct UNI_EVENT_GET_STATISTICS {
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_STATS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UEVENT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
@@ -7313,6 +7321,8 @@ void nicUniEventSR(struct ADAPTER *ad,
 void nicUniEventWow(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventCsiData(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniUnsolicitStatsEvt(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #if (CFG_VOLT_INFO == 1)
 void nicUniEventGetVnf(struct ADAPTER *ad,
