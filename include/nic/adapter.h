@@ -1729,6 +1729,25 @@ struct MIB_STATS {
 #endif
 #endif
 
+/**
+ * @u4Delay: accumulated delay for counting average (ms)
+ * @u4DelayNum: accumulated TX count for counting average
+ * @u4DelayLimit: delay limit triggering indication (ms)
+ * @fgTxDelayOverLimitReportInterval: interval for counting average report (ms)
+ * @eTxDelayOverLimitStatsType: choice of report types, average or immediate
+ * @fgTxDelayOverLimitReportEnabled: switching the report on/off
+ * @fgReported: mark if the error has been reported in that interval
+ */
+struct TX_DELAY_OVER_LIMIT_REPORT_STATS {
+	uint32_t u4Delay[MAX_TX_OVER_LIMIT_TYPE];
+	uint32_t u4DelayNum[MAX_TX_OVER_LIMIT_TYPE];
+	uint32_t u4DelayLimit[MAX_TX_OVER_LIMIT_TYPE];
+	uint32_t fgTxDelayOverLimitReportInterval; /* if REPORT_AVERAGE */
+	enum ENUM_TX_OVER_LIMIT_STATS_TYPE eTxDelayOverLimitStatsType;
+	bool fgTxDelayOverLimitReportEnabled;
+	bool fgReported[MAX_TX_OVER_LIMIT_TYPE];
+};
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -2262,6 +2281,8 @@ struct ADAPTER {
 	struct HIF_STATS rHifStats;
 
 	struct TX_LATENCY_REPORT_STATS rMsduReportStats;
+
+	struct TX_DELAY_OVER_LIMIT_REPORT_STATS rTxDelayOverLimitStats;
 
 	unsigned int u4FWLastUpdateTime;
 

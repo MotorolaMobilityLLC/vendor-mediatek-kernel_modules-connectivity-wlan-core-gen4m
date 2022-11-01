@@ -10427,6 +10427,35 @@ void wlanChipRstPreAct(struct ADAPTER *prAdapter)
 }
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
+/**
+ * wlanCountTxDelayOverLimit() - Count and check whether the TX delay over limit
+ *
+ * @prAdapter: pointer to Adapter
+ * @type: delay type, could be DRIVER_DELAY or MAC_DELAY
+ * @u4Latency: the measured latency for one transmitted MSDU
+ *
+ * This function shall be called on handling each MSDU transmission result.
+ */
+void wlanCountTxDelayOverLimit(struct ADAPTER *prAdapter,
+		enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type,
+		uint32_t u4Latency)
+{
+	struct TX_DELAY_OVER_LIMIT_REPORT_STATS *stats =
+			&prAdapter->rTxDelayOverLimitStats;
+
+	if (!stats->fgTxDelayOverLimitReportEnabled)
+		return;
+
+	if (stats->eTxDelayOverLimitStatsType == REPORT_AVERAGE) {
+		stats->u4Delay[type] += u4Latency;
+		stats->u4DelayNum[type]++;
+	} else if (u4Latency >= stats->u4DelayLimit[type] &&
+		   !stats->fgReported[type]) {
+		wlanReportTxDelayOverLimit(prAdapter, type, u4Latency);
+		stats->fgReported[type] = true;
+	}
+}
+
 static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint32_t u4DriverLatency)
 {
@@ -10442,6 +10471,8 @@ static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+
+	wlanCountTxDelayOverLimit(prAdapter, DRIVER_DELAY, u4DriverLatency);
 }
 #endif
 
@@ -10777,6 +10808,24 @@ void wlanUpdateRxStatistics(struct ADAPTER *prAdapter,
 				       prSwRfb->ucStaRecIdx);
 	if (prStaRec && eAci < WMM_AC_INDEX_NUM)
 		prStaRec->arLinkStatistics[eAci].u4RxMsdu++;
+}
+
+void wlanReportTxDelayOverLimit(struct ADAPTER *prAdapter,
+		enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type, uint32_t delay)
+{
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	char uevent[64];
+
+	if (!prAdapter->rTxDelayOverLimitStats.fgTxDelayOverLimitReportEnabled)
+		return;
+
+	DBGLOG(HAL, INFO, "Send uevent abnormaltrx=DIR:TX,event:Ab%sDelay:%u",
+			type == DRIVER_DELAY ? "Driver" : "Mac", delay);
+	kalSnprintf(uevent, sizeof(uevent),
+			"abnormaltrx=DIR:TX,event:Ab%sDelay:%u",
+			type == DRIVER_DELAY ? "Driver" : "Mac", delay);
+	kalSendUevent(uevent);
+#endif
 }
 
 uint32_t
@@ -14080,6 +14129,43 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 	wlanClearTxCommandDoneQueue(prAdapter);
 
 #endif
+}
+
+/**
+ * wlanSetTxDelayOverLimitReport - configure TX delay over limit report
+ *
+ * @enable: switching the report on/off
+ * @isAverage: choice of report types, average or immediate
+ * @interval: interval for counting average report (ms)
+ * @driver_limit: driver delay limit triggering indication (ms)
+ * @mac_limit: MAC delay limit triggering indication (ms)
+ */
+int wlanSetTxDelayOverLimitReport(struct ADAPTER *prAdapter,
+		bool enable, bool isAverage,
+		uint32_t interval, uint32_t driver_limit, uint32_t mac_limit)
+{
+	int32_t rStatus = WLAN_STATUS_CAPS_UNSUPPORTED;
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	struct TX_DELAY_OVER_LIMIT_REPORT_STATS *prTxDelayOverLimitStats;
+
+	prTxDelayOverLimitStats = &prAdapter->rTxDelayOverLimitStats;
+	prTxDelayOverLimitStats->fgTxDelayOverLimitReportEnabled = enable;
+	prTxDelayOverLimitStats->eTxDelayOverLimitStatsType =
+			isAverage ? REPORT_AVERAGE : REPORT_IMMEDIATE;
+	prTxDelayOverLimitStats->fgTxDelayOverLimitReportInterval = interval;
+	prTxDelayOverLimitStats->u4DelayLimit[DRIVER_DELAY] = driver_limit;
+	prTxDelayOverLimitStats->u4DelayLimit[MAC_DELAY] = mac_limit;
+
+	DBGLOG(INIT, INFO, "en=%u, type=%u, interval=%u, limit=%u/%u",
+		prTxDelayOverLimitStats->fgTxDelayOverLimitReportEnabled,
+		prTxDelayOverLimitStats->eTxDelayOverLimitStatsType,
+		prTxDelayOverLimitStats->fgTxDelayOverLimitReportInterval,
+		prTxDelayOverLimitStats->u4DelayLimit[DRIVER_DELAY],
+		prTxDelayOverLimitStats->u4DelayLimit[MAC_DELAY]);
+
+	rStatus = WLAN_STATUS_SUCCESS;
+#endif
+	return rStatus;
 }
 
 void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
