@@ -326,6 +326,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 					type, u4Idx);
 				p2pRoleFsmInit(prGlueInfo->prAdapter, u4Idx);
 				init_completion(&prP2pInfo->rStopApComp);
+				init_completion(&prP2pInfo->rWaitRocComp);
 				break;
 			}
 		}
@@ -2525,6 +2526,30 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 
 		DBGLOG(P2P, INFO,
 			"Cancel remain on channel, cookie: 0x%llx\n", cookie);
+
+		if (prGlueP2pInfo) {
+			uint32_t waitRet = 0;
+			enum ENUM_P2P_CONNECT_STATE eConnState =
+				prGlueInfo->prAdapter->prP2pInfo->eConnState;
+
+			if ((eConnState == P2P_CNN_INVITATION_REQ) ||
+				(eConnState == P2P_CNN_INVITATION_RESP)) {
+				reinit_completion
+					(&prGlueP2pInfo->rWaitRocComp);
+				waitRet =
+					wait_for_completion_timeout(
+					&prGlueP2pInfo->rWaitRocComp,
+					MSEC_TO_JIFFIES(
+					P2P_DEV_WAIT_CHAN_TIME));
+				if (!waitRet)
+					DBGLOG(P2P, TRACE,
+						"Wait, timeout\n");
+				else
+					DBGLOG(P2P, TRACE,
+						"Wait, complete\n");
+			}
+		}
+
 
 		prMsgChnlAbort->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_ABORT;
 		prMsgChnlAbort->u8Cookie = cookie;

@@ -1187,7 +1187,7 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE, "kalP2PIndicateChannelExpired\n");
+		DBGLOG(P2P, TRACE, "cookie:0x%llx\n", u8SeqNum);
 
 		rRfChannelInfo.eBand = eBand;
 		rRfChannelInfo.ucChannelNum = u4ChannelNum;

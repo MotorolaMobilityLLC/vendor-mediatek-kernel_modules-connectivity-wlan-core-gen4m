@@ -242,6 +242,7 @@ struct GL_P2P_INFO {
 
 	/* indicate caller thread for stop ap complete */
 	struct completion rStopApComp;
+	struct completion rWaitRocComp;
 	uint8_t fgDelIface;
 
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
