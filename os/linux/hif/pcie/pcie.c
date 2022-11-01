@@ -2745,6 +2745,7 @@ void halPcieHwControlVote(
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
 	}
+	mtk_pcie_dump_link_info(0);
 #endif
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_WF_VOTE);
 }
