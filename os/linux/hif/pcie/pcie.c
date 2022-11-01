@@ -2744,8 +2744,10 @@ void halPcieHwControlVote(
 		fgIsBusAccessFailed = TRUE;
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
+	} else {
+		if (!voteResult)
+			mtk_pcie_dump_link_info(0);
 	}
-	mtk_pcie_dump_link_info(0);
 #endif
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_WF_VOTE);
 }
