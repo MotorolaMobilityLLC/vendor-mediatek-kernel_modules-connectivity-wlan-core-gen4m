@@ -3104,7 +3104,11 @@ uint32_t nicCfgChipCap6GCap(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	prAdapter->fgIsHwSupport6G = pr6gCap->ucIsSupport6G;
+	if (prAdapter->rWifiVar.ucDisallowBand6G)
+		prAdapter->fgIsHwSupport6G = FALSE;
+	else
+		prAdapter->fgIsHwSupport6G = pr6gCap->ucIsSupport6G;
+
 	prAdapter->rWifiFemCfg.u2WifiPath6G = (uint16_t)(pr6gCap->ucHwWifiPath);
 
 	prAdapter->rWifiFemCfg.u2WifiDBDCAwithA =
