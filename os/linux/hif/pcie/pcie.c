@@ -297,6 +297,9 @@ struct pci_dev *g_prDev;
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter);
 static void halPcieResumeCmd(struct ADAPTER *prAdapter);
 
+static irqreturn_t mtk_axi_isr(int irq, void *dev_instance);
+static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -319,6 +322,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 	if (!prGlueInfo) {
 		DBGLOG(HAL, INFO, "No glue info in %s(%d, %d)\n",
 		       __func__, irq, msi_idx);
+		enable_irq(irq);
 		return NULL;
 	}
 
@@ -331,6 +335,7 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT(%d, %d)\n",
 		       irq, msi_idx);
+		enable_irq(irq);
 		return NULL;
 	}
 
@@ -619,6 +624,68 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 static void mtk_pci_error_resume(struct pci_dev *pdev)
 {
 	DBGLOG(HAL, INFO, "mtk_pci_error_resume\n");
+}
+
+static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
+{
+	uint32_t u4IrqId = 0;
+	int ret = 0;
+#ifdef CONFIG_OF
+	struct device_node *node = NULL;
+	int en_wake_ret = 0;
+#endif
+
+	if (!pdev)
+		return -1;
+
+#ifdef CONFIG_OF
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
+	if (node)
+		u4IrqId = irq_of_parse_and_map(node, 0);
+	else
+		DBGLOG(INIT, ERROR,
+		       "WIFI-OF: get wifi device node fail\n");
+
+	if (!u4IrqId) {
+		DBGLOG(INIT, INFO, "no irq\n");
+		goto exit;
+	}
+
+	DBGLOG(INIT, INFO, "request_irq num(%d)\n", u4IrqId);
+
+	ret = devm_request_threaded_irq(
+		&pdev->dev,
+		u4IrqId,
+		mtk_axi_isr,
+		mtk_axi_isr_thread,
+		IRQF_SHARED,
+		mtk_axi_driver.driver.name,
+		platform_get_drvdata(pdev));
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
+		       u4IrqId, ret);
+		goto exit;
+	}
+
+	en_wake_ret = enable_irq_wake(u4IrqId);
+	if (en_wake_ret)
+		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
+		       u4IrqId, en_wake_ret);
+#endif
+
+exit:
+	*pu4IrqId = u4IrqId;
+	return ret;
+}
+
+void freePlatDevIrq(struct platform_device *pdev, uint32_t u4IrqId)
+{
+	if (!pdev || !u4IrqId)
+		return;
+
+	synchronize_irq(u4IrqId);
+	irq_set_affinity_hint(u4IrqId, NULL);
+	devm_free_irq(&pdev->dev, u4IrqId, platform_get_drvdata(pdev));
 }
 
 static int axiDmaSetup(struct platform_device *pdev,
@@ -1350,8 +1417,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	g_prGlueInfo = prGlueInfo;
 
-	if (prChipInfo)
-		prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
+	prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
 
 	if (g_prPlatDev)
 		SET_NETDEV_DEV(prGlueInfo->prDevHandler, &g_prPlatDev->dev);
@@ -1555,10 +1621,17 @@ static irqreturn_t mtk_axi_isr(int irq, void *dev_instance)
 
 static irqreturn_t mtk_axi_isr_thread(int irq, void *dev_instance)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 
-	prGlueInfo = get_glue_info_isr(dev_instance, irq, -1);
+	prAdapter = (struct ADAPTER *)dev_instance;
+	if (!prAdapter) {
+		DBGLOG(HAL, WARN, "NULL prAdapter.\n");
+		return IRQ_HANDLED;
+	}
+
+	prGlueInfo = get_glue_info_isr(prAdapter->prGlueInfo, irq, -1);
 	if (!prGlueInfo)
 		return IRQ_NONE;
 
@@ -1608,10 +1681,6 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	struct pcie_msi_info *prMsiInfo = NULL;
 	struct pci_dev *pdev = NULL;
 	int ret = 0;
-#ifdef CONFIG_OF
-	struct device_node *node = NULL;
-	int en_wake_ret = 0;
-#endif
 
 	prNetDevice = (struct net_device *)pvData;
 	prGlueInfo = (struct GLUE_INFO *)pvCookie;
@@ -1636,40 +1705,9 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	if (prBusInfo->initPcieInt)
 		prBusInfo->initPcieInt(prGlueInfo);
 
-#ifdef CONFIG_OF
-	if (g_prPlatDev) {
-		node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
-		if (node)
-			prHifInfo->u4IrqId_1 = irq_of_parse_and_map(node, 0);
-		else
-			DBGLOG(INIT, ERROR,
-			       "WIFI-OF: get wifi device node fail\n");
-
-		if (!prHifInfo->u4IrqId_1) {
-			DBGLOG(INIT, INFO, "no irq\n");
-			goto exit;
-		}
-
-		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
-		       prHifInfo->u4IrqId_1);
-		ret = request_threaded_irq(
-			prHifInfo->u4IrqId_1,
-			mtk_axi_isr,
-			mtk_axi_isr_thread,
-			IRQF_SHARED,
-			prNetDevice->name,
-			prGlueInfo);
-		if (ret != 0) {
-			DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
-			       prHifInfo->u4IrqId_1, ret);
-			goto exit;
-		}
-		en_wake_ret = enable_irq_wake(prHifInfo->u4IrqId_1);
-		if (en_wake_ret)
-			DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
-			       prHifInfo->u4IrqId_1, en_wake_ret);
-	}
-#endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	setupPlatDevIrq(g_prPlatDev, &prHifInfo->u4IrqId_1);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 exit:
 	return ret;
@@ -1771,11 +1809,10 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 	else
 		glBusFreeLegacyIrq(pdev, prGlueInfo, prBusInfo);
 
-	if (g_prPlatDev && prHifInfo->u4IrqId_1) {
-		synchronize_irq(prHifInfo->u4IrqId_1);
-		irq_set_affinity_hint(prHifInfo->u4IrqId_1, NULL);
-		free_irq(prHifInfo->u4IrqId_1, prGlueInfo);
-	}
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	freePlatDevIrq(g_prPlatDev, prHifInfo->u4IrqId_1);
+	prHifInfo->u4IrqId_1 = 0;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)

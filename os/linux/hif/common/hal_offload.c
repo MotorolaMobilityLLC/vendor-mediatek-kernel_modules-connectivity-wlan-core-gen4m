@@ -662,7 +662,6 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 			      struct sk_buff *prSkb, struct RX_CTRL_BLK *prRcb)
 {
 	struct RCB_NODE *prNewNode;
-	uint64_t u8TblKey = u8Key & RRO_HASH_KEY_MASK;
 
 	if (halRroHashSearch(prHifInfo, u8Key))
 		return FALSE;
@@ -677,7 +676,7 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 	prNewNode->prSkb = prSkb;
 	prNewNode->prRcb = prRcb;
 
-	hash_add_rcu(prHifInfo->arRcbHTbl, &prNewNode->rNode, u8TblKey);
+	hash_add_rcu(prHifInfo->arRcbHTbl, &prNewNode->rNode, u8Key);
 
 	return TRUE;
 }
@@ -699,10 +698,9 @@ static struct RCB_NODE *halRroHashSearch(
 	struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
 {
 	struct RCB_NODE *prRcbNode;
-	uint64_t u8TblKey = u8Key & RRO_HASH_KEY_MASK;
 
 	hash_for_each_possible_rcu(prHifInfo->arRcbHTbl,
-				   prRcbNode, rNode, u8TblKey) {
+				   prRcbNode, rNode, u8Key) {
 		if (prRcbNode->u8Key == u8Key)
 			return prRcbNode;
 	}
@@ -783,63 +781,21 @@ static uint32_t halRroSearchPrtSnAddrElem(struct GL_HIF_INFO *prHifInfo,
 	return RRO_MAX_WINDOW_NUM;
 }
 
-static struct RRO_ADDR_ELEM_RECORD *halRroPrtSnSearch(
-	struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
-{
-	struct RRO_ADDR_ELEM_RECORD *prRecord;
-	uint64_t u8TblKey = u8Key & (RRO_MAX_WINDOW_NUM - 1);
-
-	hash_for_each_possible_rcu(prHifInfo->arPrtSnHTbl,
-				   prRecord, rNode, u8TblKey) {
-		if (prRecord->u8Addr == u8Key)
-			return prRecord;
-	}
-
-	return NULL;
-}
-
-static u_int8_t halRroPrtSnDel(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
-{
-	struct RRO_ADDR_ELEM_RECORD *prRecord;
-
-	prRecord = halRroPrtSnSearch(prHifInfo, u8Key);
-	if (!prRecord)
-		return FALSE;
-
-	hash_del_rcu(&prRecord->rNode);
-
-	return TRUE;
-}
-
-static u_int8_t halRroPrtSnAdd(struct GL_HIF_INFO *prHifInfo,
-			       uint64_t u8Key, uint32_t u4Sn)
-{
-	struct RRO_ADDR_ELEM_RECORD *prRecord;
-	uint64_t u8TblKey = u8Key & (RRO_MAX_WINDOW_NUM - 1);
-
-	if (u4Sn >= RRO_MAX_WINDOW_NUM)
-		return FALSE;
-
-	prRecord = &prHifInfo->arElemRecord[u4Sn];
-	halRroPrtSnDel(prHifInfo, prRecord->u8Addr);
-
-	prRecord->u8Addr = u8Key;
-	hash_add_rcu(prHifInfo->arPrtSnHTbl, &prRecord->rNode, u8TblKey);
-
-	return TRUE;
-}
-
 void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct HIF_MEM_OPS *prMemOps;
 	struct sk_buff *prSkb = NULL;
 	struct RTMP_DMABUF rDmaBuf;
 	struct RCB_NODE *prNewNode;
 	struct RTMP_DMABUF *prAddrArray;
-	uint32_t u4Cnt, u4Idx;
+	uint32_t u4Cnt, u4Idx, u4RxBufNum = 0;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	prMemOps = &prHifInfo->rMemOps;
 	prAddrArray = &prHifInfo->AddrArray;
 
@@ -852,8 +808,12 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 	hash_init(prHifInfo->arRcbHTbl);
 	INIT_HLIST_HEAD(&prHifInfo->rRcbHTblFreeList);
 
+	u4RxBufNum = prHifInfo->u4RxDataRingSize * prBusInfo->rx_data_ring_num;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRroPreFillRxRing))
+		u4RxBufNum += prHifInfo->u4RxDataRingSize;
+
 	rDmaBuf.AllocSize = CFG_RX_MAX_PKT_SIZE;
-	for (u4Cnt = 0; u4Cnt < RRO_PREALLOC_RX_BUF_NUM; u4Cnt++) {
+	for (u4Cnt = 0; u4Cnt < u4RxBufNum; u4Cnt++) {
 		if (prMemOps->allocRxBuf)
 			prSkb = prMemOps->allocRxBuf(
 				prHifInfo, &rDmaBuf, 0, u4Cnt);
@@ -870,12 +830,6 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 	}
 
 	DBGLOG(HAL, TRACE, "Alloc Rcb[%d]", u4Cnt);
-
-	hash_init(prHifInfo->arPrtSnHTbl);
-	for (u4Idx = 0; u4Idx < RRO_MAX_WINDOW_NUM; u4Idx++) {
-		prHifInfo->arElemRecord[u4Idx].u4Sn = u4Idx;
-		prHifInfo->arElemRecord[u4Idx].u8Addr = 0;
-	}
 }
 
 void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
@@ -1231,6 +1185,19 @@ static void halRroSearchAddrElem(struct ADAPTER *prAdapter,
 			prAddrElem = (struct RRO_ADDR_ELEM *)
 				(prAddrArray->AllocVa +
 				 u4AddrNum * sizeof(struct RRO_ADDR_ELEM));
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+			u8Addr = prAddrElem->elem1.addr_h;
+			u8Addr = (u8Addr << 32) | prAddrElem->elem1.addr;
+			if ((u8Addr & 0xf0000000) == 0x90000000) {
+				void *rAddr = phys_to_virt((phys_addr_t)u8Addr);
+
+				if (rAddr) {
+					DBGLOG(HAL, INFO, "Dump RXD:\n");
+					dumpMemory32(rAddr, 64);
+				}
+			}
+#endif
 			u8Addr = prAddrElem->elem0.addr_h;
 			u8Addr = (u8Addr << 32) | prAddrElem->elem0.addr;
 			if (u8Addr != u8TargetAddr)
@@ -1264,7 +1231,6 @@ static void halRroSearchAddrElem(struct ADAPTER *prAdapter,
 		}
 	}
 }
-
 
 static u_int8_t halRroFixAmsduError(
 	struct ADAPTER *prAdapter,
@@ -1306,6 +1272,15 @@ static u_int8_t halRroFixAmsduError(
 
 	if (u4Pf != 0)
 		return FALSE;
+
+	for (u4Idx = 0; u4Idx < u4MsduCnt; u4Idx++) {
+		if (prRcb->rNode.prev ==
+		    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
+		}
+		prRcb = list_entry(
+			prRcb->rNode.next,
+			struct RX_CTRL_BLK, rNode);
+	}
 
 	for (u4Idx = 0; u4Idx < u4MsduCnt - 1; u4Idx++) {
 		if (prRcb->rNode.prev ==
@@ -1500,6 +1475,12 @@ static void halRroDebugCheckPrevRcbList(
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 
+	if (prRcb->rNode.prev ==
+	    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
+		DBGLOG(HAL, INFO, "it's link head\n");
+		return;
+	}
+
 	aucBuf = (char *)kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
 	if (!aucBuf) {
 		DBGLOG(HAL, ERROR, "alloc buf fail\n");
@@ -1510,11 +1491,6 @@ static void halRroDebugCheckPrevRcbList(
 	prCurRcb = prRcb;
 	/* check previous rcb list */
 	for (u4Idx = 0; u4Idx < 8; u4Idx++) {
-		if (prCurRcb->rNode.prev ==
-		    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
-			DBGLOG(HAL, INFO, "it's link head\n");
-			break;
-		}
 		prPreRcb = list_entry(
 			prCurRcb->rNode.prev,
 			struct RX_CTRL_BLK, rNode);
@@ -1527,9 +1503,10 @@ static void halRroDebugCheckPrevRcbList(
 
 		if (prMemOps->unmapRxBuf) {
 			prMemOps->unmapRxBuf(
-				prHifInfo, prCurRcb->rPhyAddr,
+				prHifInfo, prPreRcb->rPhyAddr,
 				CFG_RX_MAX_PKT_SIZE);
 		}
+
 		u4Sn = halRroGetSn(prSkb->data);
 		u4Pf = HAL_MAC_CONNAC3X_RX_STATUS_GET_PAYLOAD_FORMAT(
 			(struct RRO_MAC_DESC *)prSkb->data);
@@ -1537,17 +1514,17 @@ static void halRroDebugCheckPrevRcbList(
 			pos += kalSnprintf(
 				aucBuf + pos, u4BufSize - pos,
 				"PrevLink [0x%llx]Sn[%u]Pf[%u]",
-				prCurRcb->rPhyAddr, u4Sn, u4Pf);
+				prPreRcb->rPhyAddr, u4Sn, u4Pf);
 		} else {
 			pos += kalSnprintf(
 				aucBuf + pos, u4BufSize - pos,
 				" -> [0x%llx]Sn[%u]Pf[%u]",
-				prCurRcb->rPhyAddr, u4Sn, u4Pf);
+				prPreRcb->rPhyAddr, u4Sn, u4Pf);
 		}
 		dumpMemory32((uint32_t *)prSkb->data, 64);
 
 		if (prMemOps->mapRxBuf) {
-			prCurRcb->rPhyAddr = prMemOps->mapRxBuf(
+			prPreRcb->rPhyAddr = prMemOps->mapRxBuf(
 				prHifInfo, prSkb->data, 0,
 				CFG_RX_MAX_PKT_SIZE);
 		}
@@ -1638,7 +1615,7 @@ void halRroDumpRcb(struct ADAPTER *prAdapter,
 	halRroSearchAddrElem(prAdapter, u8Addr);
 
 #if CFG_SUPPORT_RX_PAGE_POOL
-	if (u8Addr) {
+	if ((u8Addr & 0xf0000000) == 0x90000000) {
 		void *rAddr = phys_to_virt((phys_addr_t)u8Addr);
 
 		if (rAddr) {
@@ -1649,7 +1626,6 @@ void halRroDumpRcb(struct ADAPTER *prAdapter,
 #endif
 }
 
-#if MAWD_DUMP_DEBUG_INFO
 void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
@@ -1705,7 +1681,6 @@ void halRroDumpDebugInfo(struct GLUE_INFO *prGlueInfo)
 	dumpMemory32((uint32_t *)prAddrElem,
 		     sizeof(struct RRO_ADDR_ELEM) * RRO_MAX_WINDOW_NUM);
 }
-#endif /* MAWD_DUMP_DEBUG_INFO */
 
 static u_int8_t halRroHandleReadRxBlk(
 	struct GLUE_INFO *prGlueInfo,
@@ -1716,11 +1691,13 @@ static u_int8_t halRroHandleReadRxBlk(
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
+	struct WIFI_VAR *prWifiVar;
 	struct RX_CTRL_BLK *prRcb;
 	struct RCB_NODE *prRcbHNode;
 	uint64_t u8Addr;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 	prMemOps = &prHifInfo->rMemOps;
 
 	u8Addr = prRxBlkD->addr_h;
@@ -1732,9 +1709,8 @@ static u_int8_t halRroHandleReadRxBlk(
 		       "Cannot find RCB[0x%llx], ignore it\n",
 		       u8Addr);
 		halRroDumpRcb(prGlueInfo->prAdapter, prRxBlkD, u8Addr);
-#if MAWD_DUMP_DEBUG_INFO
-		halRroDumpDebugInfo(prGlueInfo);
-#endif /* MAWD_DUMP_DEBUG_INFO */
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRroDbg))
+			halRroDumpDebugInfo(prGlueInfo);
 		return TRUE;
 	}
 	if (!prRcbHNode->prSkb) {
@@ -1994,12 +1970,18 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 		if (!halIsDataRing(RX_RING, u4Idx))
 			continue;
 
-		if (prHifInfo->u4RcbFreeListCnt >= u4TotalCnt) {
+		halRroUpdateWfdmaRxBlk(
+			prGlueInfo, u4Idx, au4RingCnt[u4Idx]);
+	}
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRroPreFillRxRing)) {
+		for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+			if (!halIsDataRing(RX_RING, u4Idx))
+				continue;
+
 			halRroUpdateWfdmaRxBlk(
-				prGlueInfo, u4Idx, prHifInfo->u4RcbFreeListCnt);
-		} else {
-			halRroUpdateWfdmaRxBlk(
-				prGlueInfo, u4Idx, au4RingCnt[u4Idx]);
+				prGlueInfo, u4Idx,
+				prHifInfo->u4RcbFreeListCnt);
 		}
 	}
 }

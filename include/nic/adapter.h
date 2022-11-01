@@ -1238,6 +1238,9 @@ struct WIFI_VAR {
 	u_int8_t fgCoalescingIntEn;
 	uint32_t u4PerfMonTpCoalescingIntTh;
 #endif
+#if CFG_MTK_MDDP_SUPPORT
+	u_int8_t fgMddpSupport;
+#endif
 
 	uint8_t fgSapCheckPmkidInDriver;
 	uint8_t fgSapChannelSwitchPolicy;
@@ -1354,7 +1357,10 @@ struct WIFI_VAR {
 	u_int8_t fgEnableMawdTx;
 	u_int8_t fgEnableSdo;
 	u_int8_t fgEnableRro;
+	u_int8_t fgEnableRro2Md;
+	u_int8_t fgEnableRroPreFillRxRing;
 	u_int8_t fgEnableRroDbg;
+	u_int8_t fgEnableRroAdvDump;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxs;

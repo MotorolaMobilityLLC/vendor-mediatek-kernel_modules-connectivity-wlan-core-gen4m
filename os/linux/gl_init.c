@@ -6477,10 +6477,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct mt66xx_hif_driver_data *prHifDriverData;
 #endif
 
-#if CFG_MTK_MDDP_SUPPORT
-	mddpNotifyWifiOnStart();
-#endif
-
 #if CFG_CHIP_RESET_SUPPORT
 	if (fgSimplifyResetFlow) {
 		i4Status = wlanOnAtReset();
@@ -6590,6 +6586,13 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			eFailReason = ADAPTER_START_FAIL;
 			break;
 		}
+
+#if CFG_MTK_MDDP_SUPPORT
+		if (!IS_FEATURE_ENABLED(prWifiVar->fgMddpSupport))
+			mddpDisableMddpSupport();
+
+		mddpNotifyWifiOnStart();
+#endif
 
 		kalWlanUeventInit(); /* FW might send Uevent on start running */
 

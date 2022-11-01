@@ -268,25 +268,18 @@
 #define LOG_DUMP_COUNT_PERIOD		5
 #define LOG_DUMP_FULL_DUMP_TIMES	2
 
-#define MAWD_DEBUG_DUMP          0
-#define RRO_DEBUG_DUMP           0
-
 #define WFDMA_MAGIC_CNT_NUM      16
 #define INDCMD_MAGIC_CNT_NUM     8
 #define RX_BLK_MAGIC_CNT_NUM     4
 #define MAWD_RX_BLK_RING_SIZE    4095
 #define MAWD_ENABLE_WAKEUP_SLEEP 1
-#define MAWD_DUMP_DEBUG_INFO     1
 #define MAWD_POWER_UP_RETRY_CNT  10000
 #define MAWD_POWER_UP_WAIT_TIME  10
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
 #define MAWD_CR_BACKUP_VALID     88
 #define MAWD_CR_BACKUP_OFFSET    89
-#define RRO_PREALLOC_RX_BUF_NUM  (4095 * 2)
-#define RRO_HASH_TBL_BITS        ilog2(RRO_PREALLOC_RX_BUF_NUM)
-#define RRO_HASH_TBL_LEN         (1 << RRO_HASH_TBL_BITS)
-#define RRO_HASH_KEY_MASK        ((1 << RRO_HASH_TBL_BITS) - 1)
+#define RRO_HASH_TABLE_SIZE      (RX_RING_MAX_SIZE * 2)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define RRO_MAX_STA_NUM          8
@@ -863,12 +856,6 @@ struct RRO_ADDR_ELEM_SINGLE {
 struct RRO_ADDR_ELEM {
 	struct RRO_ADDR_ELEM_SINGLE elem0;
 	struct RRO_ADDR_ELEM_SINGLE elem1;
-};
-
-struct RRO_ADDR_ELEM_RECORD {
-	uint64_t u8Addr;
-	uint32_t u4Sn;
-	struct hlist_node rNode;
 };
 
 struct RRO_IND_CMD {

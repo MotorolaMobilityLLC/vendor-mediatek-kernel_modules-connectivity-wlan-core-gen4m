@@ -1886,9 +1886,16 @@ u_int8_t mddpIsMDFwOwn(void)
 	return (u4Val & BIT(0)) == BIT(0);
 }
 
+void mddpDisableMddpSupport(void)
+{
+	g_fgMddpEnabled = FALSE;
+	if (gMddpFunc.wifi_handle)
+		mddpUnregisterCb();
+}
+
 bool mddpIsSupportMcifWifi(void)
 {
-	if (!gMddpWFunc.get_mddp_feature)
+	if (!gMddpWFunc.get_mddp_feature || !g_fgMddpEnabled)
 		return false;
 
 	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MCIF_WIFI) != 0;
@@ -1896,7 +1903,7 @@ bool mddpIsSupportMcifWifi(void)
 
 bool mddpIsSupportMddpWh(void)
 {
-	if (!gMddpWFunc.get_mddp_feature)
+	if (!gMddpWFunc.get_mddp_feature || !g_fgMddpEnabled)
 		return false;
 
 	return (gMddpWFunc.get_mddp_feature() & MDDP_FEATURE_MDDP_WH) != 0;

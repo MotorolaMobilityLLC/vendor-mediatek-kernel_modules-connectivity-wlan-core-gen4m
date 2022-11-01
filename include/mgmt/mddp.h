@@ -154,6 +154,7 @@ void mddpMdStateChangedCb(enum MD_STATE old_state,
 #endif
 void mddpSetMDFwOwn(void);
 u_int8_t mddpIsMDFwOwn(void);
+void mddpDisableMddpSupport(void);
 bool mddpIsSupportMcifWifi(void);
 bool mddpIsSupportMddpWh(void);
 #if defined(_HIF_PCIE)

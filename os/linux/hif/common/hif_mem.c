@@ -1123,13 +1123,8 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 	u_int8_t fgRet = TRUE;
 
 	skb_queue_head_init(&g_rHifSkbList);
-
-	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
-		if (halIsDataRing(RX_RING, u4Idx))
-			u4Num += prBusInfo->rx_data_ring_size;
-		else
-			u4Num += prBusInfo->rx_evt_ring_size;
-	}
+	u4Num = (prBusInfo->rx_data_ring_size * prBusInfo->rx_data_ring_num) +
+		(prBusInfo->rx_evt_ring_size * prBusInfo->rx_evt_ring_num);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (kalIsSupportRro())

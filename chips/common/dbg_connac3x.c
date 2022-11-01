@@ -2587,11 +2587,17 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
-	uint32_t u4Val = 0, u4Idx;
+	struct RTMP_DMABUF *prRxDesc;
+	struct RTMP_DMABUF *prAddrArray, *prIndCmd;
+	struct RRO_ADDR_ELEM *prAddrElem;
+	uint32_t u4Val = 0, u4Idx, u4AddrNum, u4Addr;
 
 	prChipInfo = prAdapter->chip_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
+	prRxDesc = &prHifInfo->RxBlkDescRing;
+	prAddrArray = &prHifInfo->AddrArray;
+	prIndCmd = &prHifInfo->IndCmdRing;
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
 	    halMawdCheckInfra(prAdapter)) {
@@ -2656,34 +2662,47 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 		       WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR, u4Val);
 	}
 
-#if MAWD_DEBUG_DUMP
-	{
-		struct RTMP_DMABUF *prRxDesc = &prHifInfo->RxBlkDescRing;
 
-		DBGLOG(HAL, INFO, "Dump RxBlkDesc\n");
-		DBGLOG_MEM32(HAL, INFO, prRxDesc->AllocVa,
-			     prRxDesc->AllocSize);
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRroAdvDump)) {
+		if (prRxDesc->AllocVa) {
+			DBGLOG(HAL, INFO, "Dump RxBlkDesc\n");
+			DBGLOG_MEM32(HAL, INFO, prRxDesc->AllocVa,
+				     prRxDesc->AllocSize);
+		}
+
+		if (prIndCmd->AllocVa) {
+			DBGLOG(HAL, INFO, "Dump IndCmd\n");
+			DBGLOG_MEM32(HAL, INFO, prIndCmd->AllocVa,
+				     prIndCmd->AllocSize);
+		}
+
+		if (prAddrArray->AllocVa) {
+			DBGLOG(HAL, INFO, "Dump AddrArray\n");
+			DBGLOG_MEM32(HAL, INFO, prAddrArray->AllocVa,
+				     prAddrArray->AllocSize);
+
+			u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) *
+				RRO_MAX_WINDOW_NUM;
+			for (u4Idx = 0; u4Idx < u4AddrNum; u4Idx++) {
+				prAddrElem = (struct RRO_ADDR_ELEM *)
+					(prAddrArray->AllocVa +
+					 u4Idx * sizeof(struct RRO_ADDR_ELEM));
+				u4Addr = prAddrElem->elem1.addr;
+				if ((u4Addr & 0xf0000000) == 0x90000000) {
+					void *rAddr = phys_to_virt(
+						(phys_addr_t)u4Addr);
+
+					DBGLOG(HAL, ERROR,
+					       "Dump MD AddrElem[0x%08x]\n",
+					       prAddrElem->elem1.addr);
+					DBGLOG_MEM32(HAL, INFO, rAddr, 64);
+				}
+			}
+		}
 	}
-#endif
-#if RRO_DEBUG_DUMP
-	{
-		struct RTMP_DMABUF *prAddrArray, *prIndCmd;
-
-		prAddrArray = &prHifInfo->AddrArray;
-		prIndCmd = &prHifInfo->IndCmdRing;
-
-		DBGLOG(HAL, INFO, "Dump IndCmd\n");
-		DBGLOG_MEM32(HAL, INFO, prIndCmd->AllocVa,
-			     prIndCmd->AllocSize);
-
-		DBGLOG(HAL, INFO, "Dump AddrArray\n");
-		DBGLOG_MEM32(HAL, INFO, prAddrArray->AllocVa,
-			     prAddrArray->AllocSize);
-	}
-#endif
 
 	DBGLOG(HAL, INFO,
-	       "BLK Used[%u][%u] Free[%u] Rcb Err[%u] Skip[%u] Fix[%u] Head[%u]",
+	       "BLK Used[%u][%u] Free[%u] Err[%u] Skip[%u] Fix[%u] Head[%u]",
 	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA0],
 	       prHifInfo->u4RcbUsedListCnt[RX_RING_DATA1],
 	       prHifInfo->u4RcbFreeListCnt,
