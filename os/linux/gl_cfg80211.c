@@ -614,6 +614,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			     struct station_info *sinfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct SCAN_INFO *prScanInfo;
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
@@ -624,7 +625,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4TotalError;
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
-	uint8_t ucBssIndex = 0;
+	uint8_t ucBssIndex = 0, fgIsScanning = FALSE;
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	uint32_t u4TxBw = 0;
 #endif
@@ -632,7 +633,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
+	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
+	fgIsScanning =
+		(prScanInfo->eCurrentState == SCAN_STATE_SCANNING) ? 1 : 0;
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (unlikely(ucBssIndex >= BSSID_NUM ||
 	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
@@ -692,7 +696,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
-		if (perf->fgIdle) {
+		if (perf->fgIdle && !fgIsScanning) {
 			struct BSS_DESC *prBssDesc =
 				scanSearchBssDescByBssid(prAdapter,
 					arBssid);
@@ -742,14 +746,15 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		struct BSS_DESC *prBssDesc =
-			scanSearchBssDescByBssid(prAdapter,
-				arBssid);
+		if (!fgIsScanning) {
+			struct BSS_DESC *prBssDesc =
+				scanSearchBssDescByBssid(prAdapter,
+					arBssid);
 
-		if (prBssDesc)
-			prGlueInfo->i4RssiCache[ucBssIndex] =
-				RCPI_TO_dBm(prBssDesc->ucRCPI);
-
+			if (prBssDesc)
+				prGlueInfo->i4RssiCache[ucBssIndex] =
+					RCPI_TO_dBm(prBssDesc->ucRCPI);
+		}
 		DBGLOG(REQ, WARN,
 			"Query RSSI failed, use last RSSI %d, ind=%d\n",
 			prGlueInfo->i4RssiCache[ucBssIndex],
@@ -759,12 +764,14 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			PARAM_WHQL_RSSI_INITIAL_DBM;
 	} else if (i4Rssi <= PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi >= PARAM_WHQL_RSSI_MAX_DBM) {
-		struct BSS_DESC *prBssDesc =
-			scanSearchBssDescByBssid(prAdapter,
-				arBssid);
-		if (prBssDesc)
-			prGlueInfo->i4RssiCache[ucBssIndex] =
-				RCPI_TO_dBm(prBssDesc->ucRCPI);
+		if (!fgIsScanning) {
+			struct BSS_DESC *prBssDesc =
+				scanSearchBssDescByBssid(prAdapter,
+					arBssid);
+			if (prBssDesc)
+				prGlueInfo->i4RssiCache[ucBssIndex] =
+					RCPI_TO_dBm(prBssDesc->ucRCPI);
+		}
 		DBGLOG(REQ, WARN,
 			"RSSI abnormal %d, use last RSSI %d\n",
 			i4Rssi,
