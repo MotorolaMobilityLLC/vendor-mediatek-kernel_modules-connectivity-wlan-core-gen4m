@@ -3112,7 +3112,8 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 	}
 };
-#endif
+#endif // MOTO_DYNAMIC_TX_PWR
+#endif // CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1
 
 static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {};
 
@@ -3153,8 +3154,7 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 			/ sizeof(struct COUNTRY_POWER_LIMIT_GROUP_TABLE))
 };
 #endif
-#endif
-
+// #endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
