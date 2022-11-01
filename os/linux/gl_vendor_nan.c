@@ -898,7 +898,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	int ret = 0;
 	int remainingLen;
 
-	if (data_len >= sizeof(struct _NanMsgHeader)) {
+	if (data_len < sizeof(struct _NanMsgHeader)) {
 		DBGLOG(NAN, ERROR, "data_len error!\n");
 		return -EINVAL;
 	}
