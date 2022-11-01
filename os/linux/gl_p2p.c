@@ -108,6 +108,10 @@
  ******************************************************************************
  */
 
+#define	SKIP_ROLE_NONE 0
+#define	SKIP_ROLE_ALL 1
+#define	SKIP_ROLE_EXCEPT_MAIN 2
+
 /******************************************************************************
  *                            P U B L I C   D A T A
  ******************************************************************************
@@ -1240,7 +1244,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	p2pDevFsmInit(prAdapter);
 
-	if (fgSkipRole)
+	if ((fgSkipRole == SKIP_ROLE_ALL) ||
+		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))
 		goto exit;
 
 	prP2PInfo->aprRoleHandler = prP2PInfo->prDevHandler;
@@ -1298,8 +1303,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	struct GL_HIF_INFO *prHif = NULL;
 	struct device *prDev;
 #endif
-	u_int8_t fgSkipRole =
-		(ucApMode == RUNNING_P2P_DEV_MODE) ? TRUE : FALSE;
+	u_int8_t fgSkipRole = SKIP_ROLE_NONE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1308,10 +1312,16 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(prAdapter);
 
+	if (ucApMode == RUNNING_P2P_NO_GROUP_MODE)
+		fgSkipRole = SKIP_ROLE_EXCEPT_MAIN;
+	else if (ucApMode == RUNNING_P2P_DEV_MODE)
+		fgSkipRole = SKIP_ROLE_ALL;
+
 	if ((ucApMode == RUNNING_DUAL_AP_MODE) ||
 	    (ucApMode == RUNNING_P2P_AP_MODE) ||
 	    (ucApMode == RUNNING_DUAL_P2P_MODE) ||
-	    (ucApMode == RUNNING_P2P_DEV_MODE)) {
+	    (ucApMode == RUNNING_P2P_DEV_MODE) ||
+	    (ucApMode == RUNNING_P2P_NO_GROUP_MODE)) {
 		ucRegisterNum = KAL_P2P_NUM;
 	}
 
@@ -1330,12 +1340,14 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			 * RUNNING_P2P_MODE
 			 * RUNNING_DUAL_P2P_MODE
 			 * RUNNING_P2P_DEV_MODE
+			 * RUNNING_P2P_NO_GROUP_MODE
 			 */
 			prSetDevName = prDevName;
 
 			if (ucApMode == RUNNING_P2P_MODE ||
 				ucApMode == RUNNING_DUAL_P2P_MODE ||
-				ucApMode == RUNNING_P2P_DEV_MODE)
+				ucApMode == RUNNING_P2P_DEV_MODE ||
+				ucApMode == RUNNING_P2P_NO_GROUP_MODE)
 				fgIsApMode = FALSE;
 			else
 				fgIsApMode = TRUE;
