@@ -39,7 +39,7 @@ u_int8_t gEmiCalNoUseEmiData;
 #endif
 
 static u_int8_t g_fgPreCal;
-static u_int8_t g_fgCalEnabled;
+static u_int8_t g_fgCalDisabled;
 #if CFG_MTK_ANDROID_WMT
 static u_int8_t g_fgEverCal;
 #endif
@@ -63,11 +63,14 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 				break;
 			}
 
-			if (g_fgCalEnabled == TRUE) {
-				gEmiCalOffset = emi_mem_offset_convert(
-					pCalEvent->u4EmiAddress);
-				gEmiCalSize = pCalEvent->u4EmiLength;
+			if (g_fgCalDisabled) {
+				DBGLOG(INIT, ERROR, "Calibration disabled.\n");
+				break;
 			}
+
+			gEmiCalOffset = emi_mem_offset_convert(
+				pCalEvent->u4EmiAddress);
+			gEmiCalSize = pCalEvent->u4EmiLength;
 
 			u4Status = WLAN_STATUS_SUCCESS;
 		} else {
@@ -328,7 +331,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, INFO, "SendPhyAction begin, tag: %d, cmd: %d, skip: %d\n",
-		u2Tag, ucCalCmd, !g_fgCalEnabled);
+		u2Tag, ucCalCmd, g_fgCalDisabled);
 
 	ASSERT(prAdapter);
 
@@ -533,7 +536,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #else
 		prPhyCal->ucCalSaveResult = 0;
 #endif
-		prPhyCal->ucSkipCal = !g_fgCalEnabled;
+		prPhyCal->ucSkipCal = g_fgCalDisabled;
 
 		/* TAG HAL_PHY_ACTION_TAG_NVRAM */
 		prPhyTlv =
@@ -615,7 +618,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #else
 		prPhyCal->ucCalSaveResult = 0;
 #endif
-		prPhyCal->ucSkipCal = !g_fgCalEnabled;
+		prPhyCal->ucSkipCal = g_fgCalDisabled;
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 		/* TAG HAL_PHY_ACTION_TAG_COM_FEM */
@@ -769,7 +772,10 @@ int wlanPreCalErr(void)
 
 void set_cal_enabled(u_int8_t enabled)
 {
-	g_fgCalEnabled = enabled;
+	if (enabled)
+		g_fgCalDisabled = FALSE;
+	else
+		g_fgCalDisabled = TRUE;
 }
 
 u_int8_t is_cal_flow_finished(void)
