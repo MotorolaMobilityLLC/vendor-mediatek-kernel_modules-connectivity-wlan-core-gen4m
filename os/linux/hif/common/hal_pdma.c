@@ -247,31 +247,13 @@ u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
-static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
-				  uint32_t u4StartTime,
-				  uint32_t u4Timeout,
-				  uint32_t u4Cnt)
-{
-	uint32_t u4CheckPoint1 = u4Timeout / 2;
-	uint32_t u4CheckPoint2 = u4Timeout * 3 / 4;
-
-	if (halIsTimeout(u4StartTime, u4CheckPoint1) ||
-	    halIsTimeout(u4StartTime, u4CheckPoint2) ||
-	    halIsTimeout(u4StartTime, u4Timeout)) {
-		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
-		       u4StartTime, u4Timeout, u4Cnt);
-		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-		halPrintHifDbgInfo(prAdapter);
-	}
-}
-
 uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 	uint8_t *pucRspBuffer, uint32_t u4MaxRespBufferLen,
 	uint32_t *pu4Length, uint32_t u4WaitingInterval,
 	uint32_t u4TimeoutValue)
 {
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4PktLen = 0, u4Time = 0, u4Cnt = 0;
+	uint32_t u4PktLen = 0, u4Time;
 	u_int8_t fgStatus;
 	struct mt66xx_chip_info *prChipInfo;
 	u_int8_t	ucNewPort;
@@ -311,10 +293,6 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 			return WLAN_STATUS_FAILURE;
 		}
 
-		if (!prGlueInfo->u4ReadyFlag)
-			halCheckRxPollingMode(prAdapter, u4Time,
-					      u4TimeoutValue, u4Cnt);
-
 		fgStatus = kalDevPortRead(
 			prGlueInfo, ucNewPort, u4PktLen,
 			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
@@ -339,7 +317,6 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 		/* Response packet is not ready */
 		/* use delay instead of sleep waiting for schedule out issue*/
 		kalUdelay(u4WaitingInterval);
-		u4Cnt++;
 	} while (TRUE);
 
 	return WLAN_STATUS_SUCCESS;
