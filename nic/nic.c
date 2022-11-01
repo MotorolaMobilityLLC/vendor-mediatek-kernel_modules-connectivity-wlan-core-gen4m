@@ -5378,25 +5378,10 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 					u2LinkSpeed);
 			}
 
+
 		}
 		break;
 
-#if 0
-/* #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_P2P_RSSI_QUERY */
-	case NETWORK_TYPE_P2P:
-		if (prAdapter->fgIsP2pLinkQualityValid == FALSE
-		    || (kalGetTimeTick() - prAdapter->rP2pLinkQualityUpdateTime)
-		    > CFG_LINK_QUALITY_VALID_PERIOD) {
-			struct EVENT_LINK_QUALITY_EX *prEventLQEx =
-				(struct EVENT_LINK_QUALITY_EX *)
-				prEventLinkQuality;
-
-			nicUpdateRSSI(prAdapter, ucBssIndex,
-				prEventLQEx->cRssiP2P,
-				prEventLQEx->cLinkQualityP2P);
-		}
-		break;
-#endif
 	default:
 		break;
 
@@ -5482,8 +5467,12 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex, uint16_t u2LinkSpeed)
+	uint8_t ucBssIndex, uint16_t u2TxLinkSpeed)
 {
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4CurRxRate, u4MaxRxRate;
+	struct RxRateInfo rRxRateInfo = {0};
+
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
@@ -5492,28 +5481,41 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
-				      ucBssIndex)->eNetworkType) {
-	case NETWORK_TYPE_AIS:
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex)->eConnectionState ==
-		    MEDIA_STATE_CONNECTED) {
-			/* buffer statistics for further query */
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				fgIsLinkRateValid = TRUE;
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				rLinkRateUpdateTime = kalGetTimeTick();
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
 
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				u2TxLinkSpeed = u2LinkSpeed;
-		}
-		break;
+	if (prBssInfo->eNetworkType != NETWORK_TYPE_AIS ||
+		prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
 
-	default:
-		break;
-
+	/*Fill Rx Rate in unit of 100bps*/
+	if (wlanGetRxRateByBssid(prAdapter->prGlueInfo, ucBssIndex,
+		&u4CurRxRate, &u4MaxRxRate, &rRxRateInfo) == 0) {
+		prAdapter->rLinkQuality.rLq[ucBssIndex].
+			u2RxLinkSpeed = u4CurRxRate * 1000;
+		prAdapter->rLinkQuality.rLq[ucBssIndex].
+			u4RxBw = rRxRateInfo.u4Bw;
+	} else {
+		prAdapter->rLinkQuality.rLq[ucBssIndex].
+			u2RxLinkSpeed = 0;
+		prAdapter->rLinkQuality.rLq[ucBssIndex].
+			u4RxBw = 0;
 	}
 
+	/* change to unit of 100 bps */
+	/*
+	 *  FW report in 500kbps because u2TxLinkSpeed is 16 bytes
+	 *  TODO:
+	 *    driver and fw should change u2TxLinkSpeed to u4
+	 *    because it will overflow in wifi7
+	 */
+	prAdapter->rLinkQuality.rLq[ucBssIndex].
+		u2TxLinkSpeed = u2TxLinkSpeed * 5000;
+
+	prAdapter->rLinkQuality.rLq[ucBssIndex].fgIsLinkRateValid = TRUE;
+	prAdapter->rLinkQuality.rLq[ucBssIndex].rLinkRateUpdateTime
+		= kalGetTimeTick();
 }
 
 #if CFG_SUPPORT_RDD_TEST_MODE
