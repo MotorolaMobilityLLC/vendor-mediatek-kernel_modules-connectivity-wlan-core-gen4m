@@ -1547,7 +1547,11 @@
  *       COUNTRY_CHANNEL_TXPOWER_LIMIT_TYPE_COMP_11AC_V2
  *------------------------------------------------------------------------------
  */
+#ifdef MOTO_MT6855_DEVONN
+#define CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING 1
+#else
 #define CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING 0
+#endif
 
 /*------------------------------------------------------------------------------
  * tx power control:
