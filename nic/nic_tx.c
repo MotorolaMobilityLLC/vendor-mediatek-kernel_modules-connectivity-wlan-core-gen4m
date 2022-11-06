@@ -4009,6 +4009,7 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	char *prTxResult = "UNDEFINED";
 	uint8_t ucBssIndex;
 	u_int8_t fgStop;
+	uint8_t ucWlanIdx;
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
@@ -4182,8 +4183,11 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 		 * To amend the possible MSDU leak, check timestamp to free
 		 * long-lived pending MSDU.
 		 */
+		/* In MLO, TXS for odd TID would return secondary MLD ID */
+		ucWlanIdx = getPrimaryWlanIdx(prAdapter, prTxDone->ucTid,
+				prTxDone->ucWlanIndex);
 		prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
-						     prTxDone->ucWlanIndex,
+						     ucWlanIdx,
 						     prTxDone->ucPacketSeq,
 						     prTxDone->ucTid);
 

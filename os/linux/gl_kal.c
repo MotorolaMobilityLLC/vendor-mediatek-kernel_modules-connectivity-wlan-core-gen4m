@@ -1926,10 +1926,8 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
 
-	DBGLOG(RX, LOUD, "ucBssIdx: %d, netdev name: 0x%p\n",
-		ucBssIdx,
-		prNetDev,
-		prNetDev->name);
+	DBGLOG(RX, LOUD, "ucBssIdx:%u, netdev:0x%p, name:%s\n",
+		ucBssIdx, prNetDev, prNetDev->name);
 
 	if (prNetDev->dev_addr == NULL) {
 		DBGLOG(RX, WARN, "dev_addr == NULL\n");
