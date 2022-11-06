@@ -1633,40 +1633,12 @@ void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length)
 {
 	struct sk_buff *prSkb;
 	struct sk_buff *prSkb1;
-	uint8_t *pucOutputBuf = NULL;
 
 	if (pvPacket && pvPacket1) {
 		prSkb = (struct sk_buff *)pvPacket;
 		prSkb1 = (struct sk_buff *)pvPacket1;
 
-		/* GKI export symbols do not contain skb_split,
-		 * When using the android Kernel to overwrite the MTK
-		 * kernel in user load, this will cause the wifi driver
-		 * not to recognize the skb_split symbol during insmod,
-		 * so we have to use other implementation instead of skb_split
-		 * or upstream the API to google.
-		 */
-#if 0
 		skb_split(prSkb, prSkb1, u4Length);
-#else
-		if (prSkb->len > u4Length) {
-			/* Put the content of the second half of prSkb
-			 * to prSkb1
-			 */
-			pucOutputBuf = skb_put(prSkb1, prSkb->len - u4Length);
-			kalMemCopy(pucOutputBuf, prSkb->data + u4Length,
-				prSkb->len - u4Length);
-
-			/* Use skb_trim to truncate the content of the
-			 * second half
-			 */
-			skb_trim(prSkb, u4Length);
-		} else {
-			DBGLOG(TX, ERROR,
-				"skb length[%u] is less or equal than split length[%d]\n",
-				prSkb->len, u4Length);
-		}
-#endif
 	}
 }
 
