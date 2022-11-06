@@ -2316,9 +2316,19 @@ static void wlanSetMulticastListWorkQueue(
 	struct net_device *prDev = NULL;
 	uint8_t ucBssIndex = 0;
 
+	if (!ifp) {
+		DBGLOG(INIT, INFO,
+			"Can't find container of work.\n");
+			return;
+	}
+
 	ucBssIndex = ifp->ucBssIdx;
-	if (ucBssIndex >= KAL_AIS_NUM)
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(INIT, INFO,
+			"Invalid  Bss index:%d\n", ucBssIndex);
 		return;
+	}
 
 	down(&g_halt_sem);
 	if (g_u4HaltFlag) {
@@ -2326,22 +2336,7 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	if (gprWdev[ucBssIndex]) {
-		prDev = gprWdev[ucBssIndex]->netdev;
-
-		DBGLOG(INIT, INFO,
-		       "Get prDev(%p) by Bss%d\n",
-		       prDev, ucBssIndex);
-	} else {
-		DBGLOG(INIT, WARN,
-		       "prDev for Bss%d not exist.\n",
-				ucBssIndex);
-		up(&g_halt_sem);
-		return;
-	}
-
-	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **)
-					 netdev_priv(prDev)) : NULL;
+	prGlueInfo = ifp->prGlueInfo;
 
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
@@ -2349,9 +2344,18 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	DBGLOG(INIT, TRACE,
-	       "wlanSetMulticastListWorkQueue prDev->flags:0x%x\n",
-	       prDev->flags);
+	prDev = wlanGetNetDev(prGlueInfo, ucBssIndex);
+
+	if (!prDev) {
+		DBGLOG(INIT, WARN,
+			"prDev for Bss%d not exist.\n", ucBssIndex);
+			up(&g_halt_sem);
+		return;
+	}
+
+	DBGLOG(INIT, INFO,
+	       "Bss index:%d prDev->flags:0x%x\n",
+	       ucBssIndex, prDev->flags);
 
 	if (prDev->flags & IFF_PROMISC)
 		u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
