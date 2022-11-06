@@ -4571,16 +4571,6 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 			prLq->u2RxLinkSpeed;
 		pu4LinkSpeed->rLq[ucBssIndex].u4RxBw =
 			prLq->u4RxBw;
-
-		/* change to unit of 100 bps */
-		/*
-		 *  FW report in 500kbps because u2TxLinkSpeed is 16 bytes
-		 *  TODO:
-		 *    driver and fw should change u2TxLinkSpeed to u4
-		 *    because it will overflow in wifi7
-		 */
-		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed *= 5000;
-		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed *= 5000;
 		return WLAN_STATUS_SUCCESS;
 	} else {
 		return wlanSendSetQueryCmd(prAdapter,

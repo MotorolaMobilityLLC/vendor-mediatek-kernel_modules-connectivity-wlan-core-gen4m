@@ -905,8 +905,6 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
-	uint32_t u4CurRxRate, u4MaxRxRate;
-	struct RxRateInfo rRxRateInfo = {0};
 	uint32_t i;
 
 	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
@@ -924,23 +922,17 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 		prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer);
 
 	for (i = 0; i < BSSID_NUM; i++) {
-		/*Fill Tx Rate*/
-		prLinkSpeed->rLq[i].u2TxLinkSpeed
-			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
+		struct LINK_SPEED_EX_ *prLq;
 
-		/*Fill Rx Rate in unit of 100bps*/
-		if (IS_BSS_INDEX_AIS(prAdapter, i) &&
-		    wlanGetRxRateByBssid(prGlueInfo, i, &u4CurRxRate,
-			    &u4MaxRxRate, &rRxRateInfo) == 0) {
-			prLinkSpeed->rLq[i].u2RxLinkSpeed =
-				u4CurRxRate * 1000;
-			prLinkSpeed->rLq[i].u4RxBw = rRxRateInfo.u4Bw;
-		} else {
-			prLinkSpeed->rLq[i].u2RxLinkSpeed = 0;
-			prLinkSpeed->rLq[i].u4RxBw = 0;
-		}
-		/* ranged from (-128 ~ 30) in unit of dBm */
-		prLinkSpeed->rLq[i].cRssi = prLinkQuality->rLq[i].cRssi;
+		if (!prLinkQuality->rLq[i].ucIsLQ0Rdy)
+			continue;
+
+		nicUpdateLinkQuality(prAdapter, i, prLinkQuality);
+		prLq = &prAdapter->rLinkQuality.rLq[i];
+
+		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
+		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
+		prLinkSpeed->rLq[i].cRssi = prLq->cRssi;
 
 		DBGLOG(NIC, TRACE,
 			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
@@ -3318,56 +3310,9 @@ void nicCmdEventQueryTxPowerInfo(struct ADAPTER *prAdapter,
 void nicEventLinkQuality(struct ADAPTER *prAdapter,
 			 struct WIFI_EVENT *prEvent)
 {
-	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CMD_INFO *prCmdInfo;
-	uint8_t ucBssIndex;
 
 	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
-
-#if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_P2P_RSSI_QUERY
-	if (prEvent->u2PacketLen == prChipInfo->event_hdr_size +
-	    sizeof(struct EVENT_LINK_QUALITY_EX)) {
-		struct EVENT_LINK_QUALITY_EX *prLqEx =
-			(struct EVENT_LINK_QUALITY_EX *) (prEvent->aucBuffer);
-
-		if (prLqEx->ucIsLQ0Rdy)
-			nicUpdateLinkQuality(prAdapter, 0,
-				(struct LINK_QUALITY *) prLqEx);
-		if (prLqEx->ucIsLQ1Rdy)
-			nicUpdateLinkQuality(prAdapter, 1,
-				(struct LINK_QUALITY *) prLqEx);
-	} else {
-		/* For old FW, P2P may invoke link quality query,
-		 * and make driver flag becone TRUE.
-		 */
-		DBGLOG(P2P, WARN,
-		       "Old FW version, not support P2P RSSI query.\n");
-
-		/* Must not use NETWORK_TYPE_P2P_INDEX,
-		 * cause the structure is mismatch.
-		 */
-		nicUpdateLinkQuality(prAdapter, 0,
-			(struct LINK_QUALITY *) (prEvent->aucBuffer));
-	}
-#else
-	/*only support ais query */
-	{
-		struct BSS_INFO *prBssInfo;
-
-		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
-		     ucBssIndex++) {
-			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-			if (IS_BSS_AIS(prBssInfo) &&
-			    prBssInfo->fgIsInUse) {
-				nicUpdateLinkQuality(prAdapter, ucBssIndex,
-				(struct EVENT_LINK_QUALITY *)
-				(prEvent->aucBuffer));
-			}
-		}
-	}
-
-#endif
 
 	/* command response handling */
 	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
