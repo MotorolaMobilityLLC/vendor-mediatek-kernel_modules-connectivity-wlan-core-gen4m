@@ -251,6 +251,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
+	[UNI_EVENT_ID_STATISTICS] = nicUniUnsolicitStatsEvt,
 	[UNI_EVENT_ID_SR] = nicUniEventSR,
 	[UNI_EVENT_ID_SPECTRUM] = nicUniEventPhyIcsRawData,
 #if (CFG_VOLT_INFO == 1)
@@ -7846,7 +7847,6 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 #endif
 }
 
-
 void nicUniEventTxPowerInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
@@ -9709,6 +9709,44 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 #endif
+}
+
+static void nicUniEventUevent(uint8_t *pucBuf)
+{
+	struct EVENT_REPORT_U_EVENT *prEventData;
+
+	prEventData = (struct EVENT_REPORT_U_EVENT *) pucBuf;
+	if (prEventData != NULL) {
+		DBGLOG(NIC, TRACE, "UEvent: %s\n",
+		prEventData->aucData);
+		kalSendUevent(prEventData->aucData);
+	}
+}
+
+void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint8_t *tag;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_STATISTICS);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint16_t tags_len = data_len - fixed_len;
+	uint16_t offset = 0;
+
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_STATISTICS_TAG_UEVENT: {
+			struct UNI_EVENT_UEVENT *tlv =
+				(struct UNI_EVENT_UEVENT *) tag;
+			nicUniEventUevent(tlv->aucBuffer);
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
 }
 
 void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
