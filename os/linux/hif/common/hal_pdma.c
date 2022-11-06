@@ -600,6 +600,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	if (prAdapter->fgIsFwDownloaded && prChipInfo->is_support_cr4)
 		fgStatus &= halDriverOwnCheckCR4(prAdapter);
 
+#if !CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 	if (fgStatus) {
 		if (prAdapter->fgIsFwDownloaded) {
 			/*WFDMA re-init flow after chip deep sleep*/
@@ -610,6 +611,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		if (prBusInfo->checkDummyReg)
 			prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
 	}
+#endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
@@ -647,6 +649,26 @@ static uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter)
 	return u4RxCnt;
 }
 
+static u_int8_t halIsWfdmaTxRingEmpty(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	uint32_t u4Idx;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		if (!halIsDataRing(TX_RING, u4Idx) && u4Idx != TX_RING_CMD)
+			continue;
+
+		prTxRing = &prHifInfo->TxRing[u4Idx];
+		if (prTxRing->u4UsedCnt != 0)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 static u_int8_t halIsWfdmaRxReady(struct RTMP_RX_RING *prRxRing,
 				  uint32_t u4CpuIdx)
 {
@@ -659,20 +681,18 @@ static u_int8_t halIsWfdmaRxReady(struct RTMP_RX_RING *prRxRing,
 	return pRxD->DMADONE ? TRUE : FALSE;
 }
 
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-void halDataDmaDoneManualUpdate(struct ADAPTER *prAdapter)
+void halManualUpdateWfdmaDmaDone(struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	uint32_t u4Idx;
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
-		if (!halIsDataRing(TX_RING, u4Idx))
-			continue;
-
-		halWpdmaProcessDataDmaDone(
-				prAdapter->prGlueInfo, u4Idx);
+		if (halIsDataRing(TX_RING, u4Idx))
+			halWpdmaProcessDataDmaDone(prGlueInfo, u4Idx);
+		else if (u4Idx == TX_RING_CMD)
+			halWpdmaProcessCmdDmaDone(prGlueInfo, u4Idx);
 	}
 }
-#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -728,6 +748,16 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		goto unlock;
 	}
 
+	/*
+	 * fw may reset data dma done counter when fw own
+	 * so we need manually update it before it
+	 */
+	halManualUpdateWfdmaDmaDone(prAdapter);
+#if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
+	if (!halIsWfdmaTxRingEmpty(prAdapter))
+		goto unlock;
+#endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		if (!halMawdSleep(prAdapter->prGlueInfo)) {
@@ -741,17 +771,11 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	if (fgEnableGlobalInt) {
 		prAdapter->fgIsIntEnableWithLPOwnSet = TRUE;
 	} else {
+#if !CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
 		/* Write sleep mode magic num to dummy reg */
 		if (prBusInfo->setDummyReg)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
-
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-		/*
-		 * fw may reset data dma done counter when fw own
-		 * so we need manually update it before it
-		 */
-		halDataDmaDoneManualUpdate(prAdapter);
-#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+#endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
 #if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
