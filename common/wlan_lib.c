@@ -8252,6 +8252,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftCommittedDw", 1);
 	prWifiVar->fgNoPmf =
 		(unsigned char)wlanCfgGetUint32(prAdapter, "NanForceNoPmf", 0);
+	prWifiVar->ucNan2gBandwidth = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "Nan2gBw", MAX_BW_20MHZ);
+	prWifiVar->ucNan5gBandwidth = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "Nan5gBw", MAX_BW_80MHZ);
 #endif
 
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
