@@ -1044,6 +1044,7 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 		struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+		struct AIS_FSM_INFO *prAisFsmInfo;
 
 		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
 			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
@@ -1056,6 +1057,12 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
 
 			cnmMemFree(prAdapter, prNeighborAPInfo);
+
+			/* Restart ScanDone timer to avoid RNR scan causing scan timeout */
+			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prScanParam->ucBssIndex);
+			cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
+			cnmTimerStartTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer,
+							   SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
 
 			/* go for next scan */
 			scnFsmSteps(prAdapter, SCAN_STATE_SCANNING);
