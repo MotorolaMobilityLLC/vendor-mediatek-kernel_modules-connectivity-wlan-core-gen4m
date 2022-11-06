@@ -2558,7 +2558,7 @@ void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 			break;
 		DBGLOG(HAL, INFO, "ErrRpt[%d]:0x%08x!\n",
 		       u4Cidx, pu4ErrRpt[u4Cidx]);
-		INC_RING_INDEX(u4Cidx, RX_RING_SIZE);
+		INC_RING_INDEX(u4Cidx, MAWD_RX_BLK_RING_SIZE);
 	}
 	HAL_MCR_WR(prAdapter, prBusInfo->mawd_err_rpt_ctrl2, u4Cidx);
 

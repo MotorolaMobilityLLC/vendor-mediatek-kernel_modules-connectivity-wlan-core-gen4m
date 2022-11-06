@@ -933,7 +933,7 @@ statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 	struct CMD_ACCESS_REG rCmdAccessReg;
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
 	struct STATS_TX_QUEUE_STAT_T *prQueueStat;
-	uint32_t u4MsduTokenUsed = 0;
+	uint32_t u4MsduTokenUsed = 0, u4MsduTokenNum = 0;
 	uint32_t u4BufLen = 0;
 	uint32_t rStatus;
 
@@ -942,8 +942,9 @@ statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 	/* MSDU token */
 	prAdapter = prGlueInfo->prAdapter;
 	u4MsduTokenUsed = prGlueInfo->rHifInfo.rTokenInfo.u4UsedCnt;
+	u4MsduTokenNum = prGlueInfo->rHifInfo.rTokenInfo.u4TokenNum;
 	prQueueStat->u4MsduTokenUsed = u4MsduTokenUsed;
-	prQueueStat->u4MsduTokenRsvd = HIF_TX_MSDU_TOKEN_NUM - u4MsduTokenUsed;
+	prQueueStat->u4MsduTokenRsvd = u4MsduTokenNum - u4MsduTokenUsed;
 
 	/* ple hif */
 	prBusInfo = prAdapter->chip_info->bus_info;

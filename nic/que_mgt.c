@@ -4292,13 +4292,18 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
  *
  * In the case of BA WinSize == 1024, each AMPDU is about 360 x 7 = 2520.
  */
-static u_int8_t needFlushReordering(struct RX_BA_ENTRY *prReorderQueParm,
-					uint32_t u4IndicateSwRfbNum,
-					uint32_t u4FreeSwRfbNum)
+static u_int8_t needFlushReordering(
+	struct ADAPTER *prAdapter,
+	struct RX_BA_ENTRY *prReorderQueParm,
+	uint32_t u4IndicateSwRfbNum,
+	uint32_t u4FreeSwRfbNum)
 {
 #if CFG_SUPPORT_RX_FLUSH_REORDERING
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	uint16_t u2ReorderingHigh = prReorderQueParm->u2WinSize;
-	const uint16_t u2SwRfbLow = RX_RING_SIZE - (RX_RING_SIZE >> 2);
+	const uint16_t u2SwRfbLow = prHifInfo->u4RxDataRingSize -
+		(prHifInfo->u4RxDataRingSize >> 2);
 
 	if (u4FreeSwRfbNum >= u2SwRfbLow)
 		return FALSE;
@@ -4356,7 +4361,7 @@ static void checkToFlushReordering(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgFlushRxReordering))
 		return;
 
-	if (!needFlushReordering(prReorderQueParm,
+	if (!needFlushReordering(prAdapter, prReorderQueParm,
 				u4IndicateSwRfbNum, u4FreeSwRfbNum))
 		return;
 

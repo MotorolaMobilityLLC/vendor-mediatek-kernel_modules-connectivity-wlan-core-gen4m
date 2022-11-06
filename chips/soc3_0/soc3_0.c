@@ -442,20 +442,25 @@ static bool soc3_0WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
 {
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_DATA1,
-			RX_RING0_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			prHifInfo->u4RxDataRingSize, RXD_SIZE,
+			RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE0,
-			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			prHifInfo->u4RxEvtRingSize, RXD_SIZE,
+			RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
 	}
 	if (!halWpdmaAllocRxRing(prGlueInfo, RX_RING_TXDONE1,
-			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			prHifInfo->u4RxEvtRingSize, RXD_SIZE,
+			RX_BUFFER_AGGRESIZE,
 			fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
 		return false;
@@ -983,6 +988,11 @@ struct BUS_INFO soc3_0_bus_info = {
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
 	.tx_ring2_data_idx = 2,
+	.rx_data_ring_num = 2,
+	.rx_evt_ring_num = 3,
+	.rx_data_ring_size = 1024,
+	.rx_evt_ring_size = 16,
+	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,

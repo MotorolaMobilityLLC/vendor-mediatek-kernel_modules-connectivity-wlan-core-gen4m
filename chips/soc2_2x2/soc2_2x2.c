@@ -229,6 +229,11 @@ struct BUS_INFO soc2_2x2_bus_info = {
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
+	.rx_data_ring_num = 1,
+	.rx_evt_ring_num = 1,
+	.rx_data_ring_size = 512,
+	.rx_evt_ring_size = 16,
+	.rx_data_ring_prealloc_size = 512,
 	/* Make sure your HIF_TX_MSDU_TOKEN_NUM is larger enough
 	 * to support max HW(or SW) AMSDU number.
 	 */

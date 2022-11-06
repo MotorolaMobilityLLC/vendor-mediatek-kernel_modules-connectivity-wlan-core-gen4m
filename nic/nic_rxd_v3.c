@@ -939,6 +939,8 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 	struct tx_free_done_rpt *rpt,
 	struct QUE *prFreeQueue)
 {
+	struct MSDU_TOKEN_INFO *prTokenInfo =
+		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	uint16_t len = HAL_TX_FREE_DONE_GET_RX_BYTE_COUNT(rpt->dw0);
 	uint16_t msdu_cnt = HAL_TX_FREE_DONE_GET_MSDU_ID_COUNT(rpt->dw0);
 	uint16_t txd_cnt = HAL_TX_FREE_DONE_GET_TXD_COUNT(rpt->dw1);
@@ -982,7 +984,7 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 			msdu1 = HAL_TX_FREE_DONE_GET_MSDU_ID1(*pos);
 
 			if (msdu0 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
-				if (msdu0 >= HIF_TX_MSDU_TOKEN_NUM) {
+				if (msdu0 >= prTokenInfo->u4TokenNum) {
 					DBGLOG(HAL, ERROR,
 						"Invalid MSDU0 [%u]\n",
 						msdu0);
@@ -995,7 +997,7 @@ static void handle_host_rpt_v5(struct ADAPTER *prAdapter,
 			}
 
 			if (msdu1 != WF_TX_FREE_DONE_EVENT_MSDU_ID0_MASK) {
-				if (msdu1 >= HIF_TX_MSDU_TOKEN_NUM) {
+				if (msdu1 >= prTokenInfo->u4TokenNum) {
 					DBGLOG(HAL, ERROR,
 						"Invalid MSDU1 [%u]\n",
 						msdu1);

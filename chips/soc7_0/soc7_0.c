@@ -395,6 +395,11 @@ struct BUS_INFO soc7_0_bus_info = {
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
 	.tx_ring2_data_idx = 2,
+	.rx_data_ring_num = 2,
+	.rx_evt_ring_num = 2,
+	.rx_data_ring_size = 1024,
+	.rx_evt_ring_size = 128,
+	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
@@ -817,16 +822,18 @@ static uint8_t soc7_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 static bool soc7_0WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem)
 {
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
 	/* Band1 Data Rx path */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_DATA1, RX_RING0_SIZE,
+			RX_RING_DATA1, prHifInfo->u4RxDataRingSize,
 			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
 		return false;
 	}
 	/* Band0 Tx Free Done Event */
 	if (!halWpdmaAllocRxRing(prGlueInfo,
-			RX_RING_TXDONE0, RX_RING1_SIZE,
+			RX_RING_TXDONE0, prHifInfo->u4RxEvtRingSize,
 			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
 		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;

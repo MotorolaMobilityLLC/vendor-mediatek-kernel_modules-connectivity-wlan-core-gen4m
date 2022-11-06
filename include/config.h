@@ -242,14 +242,42 @@
 #define CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION 1
 
 /*------------------------------------------------------------------------------
+ * Enable rx zero copy feature
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_RX_ZERO_COPY
+#define CFG_SUPPORT_RX_ZERO_COPY 0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Use page pool for RX buffer
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_RX_PAGE_POOL
+#define CFG_SUPPORT_RX_PAGE_POOL 0
+#endif
+
+#ifndef CFG_SUPPORT_DYNAMIC_PAGE_POOL
+#define CFG_SUPPORT_DYNAMIC_PAGE_POOL 0
+#endif
+
+/*------------------------------------------------------------------------------
  * Support Return task.
  * Linux version only. Force remove for other platform
  *------------------------------------------------------------------------------
  */
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+#define CFG_SUPPORT_RETURN_TASK		0
+#define CFG_SUPPORT_RETURN_WORK		1
+#else
 #define CFG_SUPPORT_RETURN_TASK		1
+#define CFG_SUPPORT_RETURN_WORK		0
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+
 #ifndef LINUX
 #undef CFG_SUPPORT_RETURN_TASK
 #define CFG_SUPPORT_RETURN_TASK		0
+#define CFG_SUPPORT_RETURN_WORK		0
 #endif /* LINUX */
 
 /* Enable handling BA Request advance SSN before data in previous window */
@@ -1554,22 +1582,6 @@
  */
 #ifndef CFG_PRE_ALLOCATION_IO_BUFFER
 #define CFG_PRE_ALLOCATION_IO_BUFFER 0
-#endif
-
-/*------------------------------------------------------------------------------
- * Enable rx zero copy feature
- *------------------------------------------------------------------------------
- */
-#ifndef CFG_SUPPORT_RX_ZERO_COPY
-#define CFG_SUPPORT_RX_ZERO_COPY 0
-#endif
-
-/*------------------------------------------------------------------------------
- * Use page pool for RX buffer
- *------------------------------------------------------------------------------
- */
-#ifndef CFG_SUPPORT_RX_PAGE_POOL
-#define CFG_SUPPORT_RX_PAGE_POOL 0
 #endif
 
 /*------------------------------------------------------------------------------
