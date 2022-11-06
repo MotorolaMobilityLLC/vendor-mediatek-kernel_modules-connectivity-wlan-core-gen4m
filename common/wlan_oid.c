@@ -10942,7 +10942,6 @@ static uint32_t wlanWaitInitEvt(struct ADAPTER *prAdapter,
 				ucEvtId,
 				prInitEvtHeader->ucEID);
 			u4Status = WLAN_STATUS_FAILURE;
-			break;
 		} else if (!fgSkipCheckSeq &&
 			   ucSeq != prInitEvtHeader->ucSeqNum) {
 			DBGLOG(INIT, ERROR,
@@ -10950,14 +10949,17 @@ static uint32_t wlanWaitInitEvt(struct ADAPTER *prAdapter,
 				ucSeq,
 				prInitEvtHeader->ucSeqNum);
 			u4Status = WLAN_STATUS_FAILURE;
-			break;
 		} else if (u4EvtSz > 0 && u4PktLen > u4EvtSz) {
 			DBGLOG(INIT, ERROR,
 				"Buffer len(%d) NOT enough for pkt(%d)\n",
 				u4EvtSz, u4PktLen);
-			DBGLOG_MEM8(INIT, ERROR,
-				prInitEvtHeader->aucBuffer, u4PktLen);
 			u4Status = WLAN_STATUS_FAILURE;
+		}
+
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG_MEM8(INIT, ERROR, pucBuf,
+				prChipInfo->rxd_size +
+				prInitEvtHeader->u2RxByteCount);
 			break;
 		}
 
@@ -10965,7 +10967,6 @@ static uint32_t wlanWaitInitEvt(struct ADAPTER *prAdapter,
 			kalMemCopy(pucEvtBuf,
 				prInitEvtHeader->aucBuffer,
 				u4PktLen);
-		u4Status = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
 
 exit:
