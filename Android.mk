@@ -135,9 +135,7 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6985_6639_offload
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac3.ko
 	CONFIG_WLAN_PLATFORM := mt6985
-	CONFIG_WLAN_MT6985_MP2 := y
 	WIFI_HOST_OFFLOAD_SUPPORT := y
-	WIFI_MDDP_SUPPORT := n
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
 	include $(LOCAL_PATH)/clear_wlan_drv.mk

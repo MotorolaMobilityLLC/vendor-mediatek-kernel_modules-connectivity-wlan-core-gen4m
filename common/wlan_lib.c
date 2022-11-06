@@ -8280,7 +8280,13 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 			FEATURE_DISABLED);
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+	prWifiVar->fgMddpSupport = (u_int8_t) wlanCfgGetUint32(
+		prAdapter, "MddpSupport", FEATURE_ENABLED);
+	wlanCfgSetUint32(prAdapter, "MddpSupport", prWifiVar->fgMddpSupport);
+#else
 	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_ENABLED);
+#endif
 
 	prWifiVar->u4DiscoverTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
@@ -8468,8 +8474,14 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "EnableSdo", FEATURE_ENABLED);
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableRro", FEATURE_ENABLED);
+	prWifiVar->fgEnableRro2Md = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableRro2Md", FEATURE_DISABLED);
+	prWifiVar->fgEnableRroPreFillRxRing = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableRroPreFillRxRing", FEATURE_ENABLED);
 	prWifiVar->fgEnableRroDbg = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "EnableRroDbg", FEATURE_ENABLED);
+		prAdapter, "EnableRroDbg", FEATURE_DISABLED);
+	prWifiVar->fgEnableRroAdvDump = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableRroAdvDump", FEATURE_DISABLED);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;

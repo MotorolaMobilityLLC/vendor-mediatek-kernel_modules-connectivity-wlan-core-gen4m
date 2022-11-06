@@ -1451,6 +1451,8 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		halRroAllocRcbList(prAdapter->prGlueInfo);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 			halMawdAllocRxBlkRing(prAdapter->prGlueInfo, TRUE);
+	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
+		halRroAllocMem(prAdapter->prGlueInfo);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -2775,6 +2777,8 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 		halRroInit(prGlueInfo);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 			halMawdInitRxBlkRing(prGlueInfo);
+	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
+		halRroInit(prGlueInfo);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
@@ -4065,6 +4069,9 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 				halRroResetRcbList(prGlueInfo);
+				halRroResetMem(prGlueInfo);
+			} else if (IS_FEATURE_ENABLED(
+					   prWifiVar->fgEnableRro2Md)) {
 				halRroResetMem(prGlueInfo);
 			}
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
