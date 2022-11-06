@@ -135,7 +135,6 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 #endif
 
 	if (!prAdapter->fgIsFwDownloaded ||
-	    p2pFuncNeedForceSleep(prAdapter) ||
 	    !prHifInfo->fgIsMawdSuspend)
 		goto exit;
 
@@ -217,6 +216,7 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 	prRxRing = &prHifInfo->RxBlkRing;
 
 	if (!prAdapter->fgIsFwDownloaded ||
+	    p2pFuncNeedForceSleep(prAdapter) ||
 	    prHifInfo->fgIsMawdSuspend ||
 	    prAdapter->ucSerState != SER_IDLE_DONE)
 		goto exit;
