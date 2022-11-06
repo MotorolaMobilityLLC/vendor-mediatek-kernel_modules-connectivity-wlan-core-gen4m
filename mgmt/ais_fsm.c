@@ -1004,6 +1004,8 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		aisFsmGetInstance(prAdapter, ucAisIndex);
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
+		prAdapter->prGlueInfo->prSchedScanRequest;
 	u_int8_t fgHalted = kalIsHalted();
 	uint8_t ucBssIndex;
 
@@ -1049,6 +1051,19 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
 				SPIN_LOCK_NET_DEV);
 	}
+	/* For FW assert trigger reset case, stop sched scan */
+	if (prAdapter->prGlueInfo->prSchedScanRequest != NULL) {
+		if (kalIsResetting()) {
+			kalMemFree(prSchedScanRequest->pucIE,
+				   VIR_MEM_TYPE,
+				   prSchedScanRequest->u4IELength);
+			kalMemFree(prSchedScanRequest,
+				   VIR_MEM_TYPE,
+				   sizeof(struct PARAM_SCHED_SCAN_REQUEST));
+			prAdapter->prGlueInfo->prSchedScanRequest = NULL;
+		}
+	}
+
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
