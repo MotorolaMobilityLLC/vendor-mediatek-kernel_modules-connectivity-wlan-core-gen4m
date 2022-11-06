@@ -73,7 +73,7 @@
  */
 #include "precomp.h"
 #include "radiotap.h"
-#include "coda/tx_free_done_event_besra.h"
+#include "coda/WF_TX_FREE_DONE_EVENT_BESRA_c_header.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
