@@ -471,8 +471,6 @@ struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
-	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
-	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 
 	TX_SET_MMPDU(prAdapter,
@@ -1176,7 +1174,6 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
-	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
 	nicTxSetForceRts(prMsduInfo, TRUE);
 
 	/* 4 <7> Update information of MSDU_INFO_T */
