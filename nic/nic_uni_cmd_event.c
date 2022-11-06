@@ -2445,6 +2445,20 @@ uint32_t nicUniCmdBssInfoTagWapi(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+uint32_t nicUniCmdBssInfoTagStaIot(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
+{
+	struct UNI_CMD_BSSINFO_IOT *tag = (struct UNI_CMD_BSSINFO_IOT *)buf;
+
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_STA_IOT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucIotApAct = cmd->ucIotApAct;
+
+	return tag->u2Length;
+}
+#endif
+
 uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SET_BSS_INFO *cmd)
 {
@@ -2497,6 +2511,9 @@ struct UNI_CMD_BSSINFO_TAG_HANDLE arSetBssInfoTable[] = {
 #endif
 	{sizeof(struct UNI_CMD_BSSINFO_11V_MBSSID), nicUniCmdBssInfoTagMBSSID},
 	{sizeof(struct UNI_CMD_BSSINFO_WAPI), nicUniCmdBssInfoTagWapi},
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	{sizeof(struct UNI_CMD_BSSINFO_IOT), nicUniCmdBssInfoTagStaIot},
+#endif
 	{sizeof(struct UNI_CMD_BSSINFO_MLD), nicUniCmdBssInfoTagMld},
 #if (CFG_SUPPORT_BSS_MAX_IDLE_PERIOD == 1)
 	{sizeof(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD),

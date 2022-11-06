@@ -700,7 +700,8 @@ struct UNI_CMD_BSSINFO_IOT {
 	uint16_t u2Tag; /* Tag = 0x18 */
 	uint16_t u2Length;
 	uint8_t ucIotApBmp;
-	uint8_t aucReserved[3];
+	uint8_t ucIotApAct;
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo IFS time information (Tag 0x19) */
