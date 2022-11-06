@@ -358,6 +358,8 @@ extern struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
 uint32_t nicAllocateAdapterMemory(struct ADAPTER
 				  *prAdapter);
 
+void nicLinkStatsFreeCacheBuffer(struct ADAPTER *prAdapter);
+
 void nicReleaseAdapterMemory(struct ADAPTER *prAdapter);
 
 void nicDisableInterrupt(struct ADAPTER *prAdapter);

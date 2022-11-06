@@ -2247,6 +2247,12 @@ struct PARAM_LINUX_NETDEV_STATISTICS {
 
 
 #if CFG_SUPPORT_LLS
+enum LLS_QUERY_MODE {
+	COPY_EMI_WO_CMD,	/* Always collect data from EMI w/o cmd/event */
+	SEND_CMD_ON_ACTIVE,	/* Save a copy of reported data per BSS */
+	ALWAYS_SEND_CMD,	/* Always send command to let FW update EMI */
+};
+
 /* Cmd */
 struct CMD_GET_STATS_LLS {
 	uint32_t u4Tag; /* enum ENUM_STATS_LLS_TLV_TAG_ID */

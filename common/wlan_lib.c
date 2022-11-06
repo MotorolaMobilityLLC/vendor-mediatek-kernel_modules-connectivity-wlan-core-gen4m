@@ -7891,6 +7891,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_LLS
 	prWifiVar->fgLinkStatsDump = (bool)wlanCfgGetUint32(
 		prAdapter, "LinkStatsDump", 0);
+	prWifiVar->ucLinkStatsQueryMode = (enum LLS_QUERY_MODE)wlanCfgGetUint32(
+		prAdapter, "LinkStatsQuery", SEND_CMD_ON_ACTIVE);
 #endif
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
