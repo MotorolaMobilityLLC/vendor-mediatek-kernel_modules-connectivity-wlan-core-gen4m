@@ -722,7 +722,7 @@ void p2pLinkStaRecFree(
 	struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (mld_starec && IS_AP_STA(prStaRec)) {
+	if (mld_starec) {
 		/* backup mldsta idx firstr because mldstarec is freed
 		 * when all starec unregister
 		 */
