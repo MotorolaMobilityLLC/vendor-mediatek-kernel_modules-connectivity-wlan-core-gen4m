@@ -82,8 +82,6 @@ ifeq ($(KBUILD_MODPOST_FAIL_ON_WARNINGS),)
     KBUILD_MODPOST_FAIL_ON_WARNINGS=y
 endif
 
-CONFIG_WLAN_MT6985_MP2 ?= n
-
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
@@ -435,6 +433,8 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=y
         ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
         CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
+        ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
+        endif
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
