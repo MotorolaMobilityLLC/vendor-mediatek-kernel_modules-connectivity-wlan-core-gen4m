@@ -2116,6 +2116,11 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	ASSERT(prRxDescOps->nic_rxd_get_sec_mode);
 #endif /* DBG */
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (!RX_GET_FREE_RFB_CNT(prRxCtrl))
+		nicRxIncRfbCnt(prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 	if (!RX_GET_FREE_RFB_CNT(prRxCtrl)) {
 		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u], Ind=%u\n",
 				u4Port, RX_GET_INDICATED_RFB_CNT(prRxCtrl));
@@ -2124,6 +2129,11 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	}
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, u4Port);
+
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (RX_GET_FREE_RFB_CNT(prRxCtrl) < u4RxCnt)
+		nicRxIncRfbCnt(prAdapter);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
 	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
 
@@ -5383,6 +5393,12 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 				prAdapter, prBusInfo->u4WfdmaTh, TRUE);
 		}
 	}
+
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
+	/* try to free page pool's page if tput is low */
+	if (prBusInfo->u4WfdmaTh == 0)
+		kalDecPagePoolPageNum();
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 }
 
 static void checkTxDelayOverLimit(struct ADAPTER *prAdapter)
@@ -5524,13 +5540,14 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" Msdu[%u/%u] Tok[%u/%u] Rfb[%u/%u/%u]",
+			" Msdu[%u/%u] Tok[%u/%u] Rfb[%u/%u/%u/%u]",
 			prTxCtrl->rFreeMsduInfoList.u4NumElem,
 			CFG_TX_MAX_PKT_NUM,
 			prHifInfo->rTokenInfo.u4UsedCnt,
 			prTokenInfo->u4TokenNum,
 			RX_GET_FREE_RFB_CNT(prRxCtrl),
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			RX_GET_INUSE_RFB_CNT(prRxCtrl),
 			CFG_RX_MAX_PKT_NUM);
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
