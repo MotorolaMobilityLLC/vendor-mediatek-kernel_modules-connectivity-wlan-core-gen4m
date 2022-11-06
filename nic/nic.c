@@ -282,6 +282,7 @@ uint32_t nicAllocateAdapterMemory(struct ADAPTER
 
 void nicLinkStatsFreeCacheBuffer(struct ADAPTER *prAdapter)
 {
+#if CFG_SUPPORT_LLS
 	uint8_t i;
 	struct LinkStatsBuffer *prLinkStatsCache = prAdapter->rLinkStatsCache;
 
@@ -296,6 +297,7 @@ void nicLinkStatsFreeCacheBuffer(struct ADAPTER *prAdapter)
 		prLinkStatsCache[i].pucLinkStatsBuffer = NULL;
 		prLinkStatsCache[i].pucLinkStatsBufferEnd = NULL;
 	}
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
