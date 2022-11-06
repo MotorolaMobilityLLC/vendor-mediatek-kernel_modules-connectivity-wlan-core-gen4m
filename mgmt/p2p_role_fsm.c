@@ -272,7 +272,7 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			/* Out of memory. */
 			DBGLOG(P2P, ERROR,
 				"Error allocating BSS Info Beacon\n");
-			ASSERT(FALSE);
+			break;
 		}
 
 		prP2pBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC =
