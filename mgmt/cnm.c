@@ -340,6 +340,9 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 
 #endif
 
+#if CFG_SUPPORT_NAN
+uint8_t g_ucNanWmmQueIdx;
+#endif
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -4403,6 +4406,39 @@ void cnmWmmIndexDecision(
 	if (prBssInfo->fgIsWmmInited)
 		return;
 
+#if CFG_SUPPORT_NAN
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+		ucWmmIndex = HW_WMM_NUM;
+		if (prBssInfo->eBand == BAND_2G4) {
+			if ((prAdapter->ucHwWmmEnBit & BIT(0))
+				|| (prAdapter->ucHwWmmEnBit & BIT(2))) {
+				if (!(prAdapter->ucHwWmmEnBit & BIT(1))
+				&& !(prAdapter->ucHwWmmEnBit & BIT(3))) {
+					g_ucNanWmmQueIdx = 3;
+					ucWmmIndex = 3;
+				}
+			} else {
+				g_ucNanWmmQueIdx = 2;
+				ucWmmIndex = 2;
+			}
+		}
+		if (prBssInfo->eBand == BAND_5G) {
+			if (g_ucNanWmmQueIdx == 2)
+				ucWmmIndex = 0;
+			if (g_ucNanWmmQueIdx == 3)
+				ucWmmIndex = 1;
+		}
+		if (ucWmmIndex != HW_WMM_NUM) {
+			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
+			prBssInfo->fgIsWmmInited = TRUE;
+			prBssInfo->ucWmmQueSet = ucWmmIndex;
+
+			DBGLOG(CNM, INFO, "NAN bss%d assign ucWmmIndex: %d\n",
+				prBssInfo->ucBssIndex, ucWmmIndex);
+			return;
+		}
+	}
+#endif
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {
 		if (!(prAdapter->ucHwWmmEnBit & BIT(ucWmmIndex))) {
 			prAdapter->ucHwWmmEnBit |= BIT(ucWmmIndex);
@@ -4446,7 +4482,7 @@ void cnmFreeWmmIndex(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-	DBGLOG(CNM, INFO, "ucWmmQueSet: %d\n", prBssInfo->ucWmmQueSet);
+	DBGLOG(CNM, INFO, "[Free] ucWmmQueSet: %d\n", prBssInfo->ucWmmQueSet);
 
 #if (CFG_HW_WMM_BY_BSS == 1)
 	prAdapter->ucHwWmmEnBit &= (~BIT(prBssInfo->ucWmmQueSet));
