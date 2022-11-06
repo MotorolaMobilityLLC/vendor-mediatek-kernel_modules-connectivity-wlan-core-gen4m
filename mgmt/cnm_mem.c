@@ -404,6 +404,12 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		return NULL;
 	}
 
+	if (eRamType == RAM_TYPE_ATOMIC_MSG)
+		eMemAllocType = ATOMIC_MEM_TYPE;
+	else
+		eMemAllocType = PHY_MEM_TYPE;
+
+
 	if (eRamType == RAM_TYPE_MSG && u4Length <= 256) {
 		prBufInfo = &prAdapter->rMsgBufInfo;
 		u4BlkSzInPower = MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
@@ -476,11 +482,6 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 
 	/* kalMemAlloc() shall not included in spin_lock */
 	KAL_RELEASE_SPIN_LOCK(prAdapter, eLockBufCat);
-
-	if (eRamType == RAM_TYPE_ATOMIC_MSG)
-		eMemAllocType = ATOMIC_MEM_TYPE;
-	else
-		eMemAllocType = PHY_MEM_TYPE;
 
 #ifdef LINUX
 #if CFG_DBG_MGT_BUF
