@@ -573,6 +573,10 @@ struct BUS_INFO mt6639_bus_info = {
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 	.setPcieSpeed = mt6639SetPcieSpeed,
 #endif
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	.wf_power_dump_start = mt6639PowerDumpStart,
+	.wf_power_dump_end = mt6639PowerDumpEnd,
+#endif
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6639ProcessTxInterrupt,
 	.processRxInterrupt = mt6639ProcessRxInterrupt,
@@ -2992,6 +2996,74 @@ static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 
 	return ret;
 }
+
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
+{
+	struct GLUE_INFO *glue = priv_data;
+	struct ADAPTER *ad = glue->prAdapter;
+	uint32_t u4Val = 0;
+
+	if (ad == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL!\n");
+		return 1;
+	}
+
+	if (pcie_vir_addr && glue->u4ReadyFlag)
+		u4Val = readl(pcie_vir_addr + 0x150);
+	else
+		return 1;
+
+	if (force_dump == TRUE) {
+		DBGLOG(REQ, INFO, "wlan_power_dump_start force_dump\n");
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+
+		if (ad->fgIsFwOwn == TRUE) {
+			DBGLOG(REQ, ERROR,
+				"wlan_power_dump_start end: driver own fail!\n");
+			return 1;
+		}
+
+		return 0;
+
+	} else {
+		u4Val = ((u4Val & 0x1F000000) >> 24);
+		DBGLOG(REQ, INFO,
+			"wlan_power_dump_start PCIE status: 0x%08x\n", u4Val);
+
+		if (u4Val == 0x10) {
+			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+
+			if (ad->fgIsFwOwn == TRUE) {
+				DBGLOG(REQ, ERROR,
+					"wlan_power_dump_start end: driver own fail!\n");
+				return 1;
+			}
+			return 0;
+		}
+
+		return 1;
+	}
+
+}
+
+int mt6639PowerDumpEnd(void *priv_data)
+{
+	struct GLUE_INFO *glue = priv_data;
+	struct ADAPTER *ad = glue->prAdapter;
+
+	if (ad == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL!\n");
+		return 0;
+	}
+
+	if (ad->fgIsFwOwn == FALSE && glue->u4ReadyFlag)
+		RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
+
+	return 0;
+}
+#endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
 #endif  /* MT6639 */
 
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter)
