@@ -168,6 +168,9 @@ twtReqFsmSteps(
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	enum _ENUM_TWT_REQUESTER_STATE_T ePreState;
 	uint8_t fgIsTransition;
+#if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
+	uint8_t fgByPassNego = FALSE;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_REQUESTER, ERROR,
@@ -259,16 +262,36 @@ twtReqFsmSteps(
 		case TWT_REQ_STATE_TEARING_DOWN:
 #if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
 			twtPlannerTearingdown(
-				prAdapter, prStaRec, ucTWTFlowId);
-#endif
+				prAdapter, prStaRec,
+				ucTWTFlowId, &fgByPassNego);
 
-			rStatus = twtSendTeardownFrame(
-				prAdapter, prStaRec, ucTWTFlowId,
-				twtReqFsmRunEventTxDone);
-			if (rStatus != WLAN_STATUS_SUCCESS) {
+			/*
+			* Bypass nego, no need to send
+			* teardown frame!!
+			*/
+			if (fgByPassNego) {
 				eNextState = TWT_REQ_STATE_IDLE;
 				fgIsTransition = TRUE;
+
+				DBGLOG(TWT_REQUESTER, STATE,
+					"[TWT_REQ]BSS %d Flow %d bypass nego\n",
+					prStaRec->ucBssIndex,
+					ucTWTFlowId);
+			} else {
+#endif
+
+				rStatus = twtSendTeardownFrame(
+					prAdapter, prStaRec, ucTWTFlowId,
+					twtReqFsmRunEventTxDone);
+
+				if (rStatus != WLAN_STATUS_SUCCESS) {
+					eNextState = TWT_REQ_STATE_IDLE;
+					fgIsTransition = TRUE;
+				}
+
+#if (CFG_TWT_STA_DIRECT_TEARDOWN == 1)
 			}
+#endif
 			break;
 
 		case TWT_REQ_STATE_SUSPENDING:

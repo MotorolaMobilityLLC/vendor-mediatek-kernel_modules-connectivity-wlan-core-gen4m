@@ -17685,6 +17685,7 @@ static int priv_driver_set_twtparams(
 		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
 		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
 		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		prTWTParams->fgByPassNego = FALSE;
 
 		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
@@ -17769,6 +17770,7 @@ static int priv_driver_set_twtparams(
 		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
 		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
 		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		prTWTParams->fgByPassNego = FALSE;
 
 		rTWTCtrl.ucBssIdx = prBssInfo->ucBssIndex;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];
@@ -17818,6 +17820,9 @@ static int priv_driver_set_twtparams(
 		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
 		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
 		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
+		prTWTParams->fgByPassNego =
+			IS_TWT_PARAM_ACTION_ADD_BYPASS(au4Setting[0])
+				? TRUE : FALSE;
 
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
 		rTWTCtrl.ucCtrlAction = au4Setting[0];

@@ -856,6 +856,7 @@ struct _TWT_PARAMS_T {
 	uint8_t ucSetupCmd;
 	uint8_t ucMinWakeDur;
 	uint8_t ucWakeIntvalExponent;
+	uint8_t fgByPassNego;
 	uint16_t u2WakeIntvalMantiss;
 	uint64_t u8TWT;
 };

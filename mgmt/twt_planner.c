@@ -619,7 +619,10 @@ twtPlannerAddAgrtTbl(
 		CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
 	prTWTAgrtUpdate->ucAgrtSpWakeIntvlExponent =
 		prTWTParams->ucWakeIntvalExponent;
-	prTWTAgrtUpdate->ucIsRoleAp = 0;  /* STA role */
+	/* STA role */
+	prTWTAgrtUpdate->ucIsRoleAp =
+			prTWTParams->fgByPassNego ?
+				TWT_ROLE_STA_LOCAL_EMU : TWT_ROLE_STA;
 
 	prTWTAgrtUpdate->ucAgrtParaBitmap =
 	((prTWTParams->fgProtect << TWT_AGRT_PARA_BITMAP_PROTECT_OFFSET) |
@@ -1172,11 +1175,16 @@ uint32_t twtPlannerReset(
 void twtPlannerTearingdown(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	uint8_t ucFlowId)
+	uint8_t ucFlowId,
+	uint8_t *p_fgByPassNego)
 {
 	struct BSS_INFO *prBssInfo;
-	struct _TWT_FLOW_T *prTWTFlow;
+	uint8_t ucAgrtTblIdx;
+	struct _TWT_PARAMS_T rTWTParams;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	struct _TWT_FLOW_T *prTWTFlow;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1200,9 +1208,37 @@ void twtPlannerTearingdown(
 		return;
 	}
 
-	prTWTFlow = &(prStaRec->arTWTFlow[ucFlowId]);
+	rWlanStatus = twtPlannerDrvAgrtGet(
+					prAdapter, prBssInfo->ucBssIndex,
+					ucFlowId, &ucAgrtTblIdx, &rTWTParams);
+
+	if (rWlanStatus) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"No agrt to suspend Bss %u flow %u\n",
+			prBssInfo->ucBssIndex, ucFlowId);
+
+		*p_fgByPassNego = FALSE;
+
+		return;
+	}
+
+	*p_fgByPassNego = rTWTParams.fgByPassNego;
+
+#if (CFG_TWT_SMART_STA == 1)
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
+	prTWTFlow = &(prStaRec->arTWTFlow[ucFlowId]);
+
 	if (prTWTFlow->fgIsMLTWT == TRUE) {
 		/* MLTWT teardown goes over here */
 		mltwtPlannerDelAgrtTbl(
@@ -1226,18 +1262,6 @@ void twtPlannerTearingdown(
 		twtPlannerTeardownAgrtTbl(prAdapter,
 			prStaRec, FALSE, NULL,
 			NULL /* handle TWT cmd timeout? */);
-
-#if (CFG_TWT_SMART_STA == 1)
-	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
-	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
-	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
-	g_TwtSmartStaCtrl.ucBssIndex = 0;
-	g_TwtSmartStaCtrl.ucFlowId = 0;
-	g_TwtSmartStaCtrl.u4CurTp = 0;
-	g_TwtSmartStaCtrl.u4LastTp = 0;
-	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
-	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
-#endif
 }
 #endif
 
@@ -2527,7 +2551,9 @@ void twtPlannerTeardownDone(
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucTWTFlowId;
+#if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
 	struct _TWT_FLOW_T *prTWTFlow;
+#endif
 
 	if (!prAdapter) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -2575,23 +2601,35 @@ void twtPlannerTeardownDone(
 		return;
 	}
 
-	prTWTFlow = &(prStaRec->arTWTFlow[ucTWTFlowId]);
+#if (CFG_TWT_SMART_STA == 1)
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
 
 #if (CFG_SUPPORT_802_11BE_ML_TWT == 1)
-		if (prTWTFlow->fgIsMLTWT == TRUE) {
-			/* MLTWT teardown goes over here */
-			mltwtPlannerDelAgrtTbl(
-				prAdapter,
-				prStaRec,
-				ucTWTFlowId);
+	prTWTFlow = &(prStaRec->arTWTFlow[ucTWTFlowId]);
 
-			/* Enable SCAN after TWT agrt has been tear down */
-			prAdapter->fgEnOnlineScan = TRUE;
+	if (prTWTFlow->fgIsMLTWT == TRUE) {
+		/* MLTWT teardown goes over here */
+		mltwtPlannerDelAgrtTbl(
+			prAdapter,
+			prStaRec,
+			ucTWTFlowId);
 
-			return;
-		}
+		/* Enable SCAN after TWT agrt has been tear down */
+		prAdapter->fgEnOnlineScan = TRUE;
 
-		/* i-TWT teardown goes in existing flow */
+		return;
+	}
+
+	/* i-TWT teardown goes in existing flow */
 #endif
 
 	/* Delete driver & FW TWT agreement entry */
@@ -2605,18 +2643,6 @@ void twtPlannerTeardownDone(
 
 	/* Enable SCAN after TWT agrt has been tear down */
 	prAdapter->fgEnOnlineScan = TRUE;
-
-#if (CFG_TWT_SMART_STA == 1)
-	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
-	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
-	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
-	g_TwtSmartStaCtrl.ucBssIndex = 0;
-	g_TwtSmartStaCtrl.ucFlowId = 0;
-	g_TwtSmartStaCtrl.u4CurTp = 0;
-	g_TwtSmartStaCtrl.u4LastTp = 0;
-	g_TwtSmartStaCtrl.u4TwtSwitch = 0;
-	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
-#endif
 }
 
 void twtPlannerRxInfoFrm(

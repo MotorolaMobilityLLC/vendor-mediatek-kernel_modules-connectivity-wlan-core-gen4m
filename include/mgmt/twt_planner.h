@@ -193,7 +193,8 @@ uint32_t twtPlannerReset(
 void twtPlannerTearingdown(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	uint8_t ucFlowId);
+	uint8_t ucFlowId,
+	uint8_t *p_fgByPassNego);
 #endif
 
 void twtPlannerRxNegoResult(
