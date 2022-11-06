@@ -7297,6 +7297,7 @@ void p2pFuncRemoveOneSap(struct ADAPTER *prAdapter)
 		prSapBssInfo);
 	if (prSapNextBssInfo) {
 		if (p2pGetMode() == RUNNING_P2P_DEV_MODE ||
+			p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE ||
 			p2pGetMode() == RUNNING_P2P_MODE ||
 			p2pGetMode() == RUNNING_DUAL_P2P_MODE) {
 			DBGLOG(P2P, WARN,

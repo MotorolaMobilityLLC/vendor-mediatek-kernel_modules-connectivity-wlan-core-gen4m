@@ -322,6 +322,10 @@ void p2pSetMode(uint8_t ucAPMode)
 		mode = RUNNING_P2P_DEV_MODE;
 		ifname = prP2PInfName;
 		break;
+	case 6:
+		mode = RUNNING_P2P_NO_GROUP_MODE;
+		ifname = prP2PInfName;
+		break;
 	}
 }				/* p2pSetMode */
 
