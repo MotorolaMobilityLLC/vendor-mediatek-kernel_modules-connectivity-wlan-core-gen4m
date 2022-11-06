@@ -605,10 +605,18 @@
 /* TODO: it should be 4096 under emulation mode */
 #define CFG_RX_MAX_PKT_SIZE	(28 + 2312 + 12 /*HIF_RX_HEADER_T*/)
 
+/* Enable this feature may degrade rx peak tput in normal mode */
+#ifndef CFG_SUPPORT_SNIFFER_RADIOTAP_13K
+#define CFG_SUPPORT_SNIFFER_RADIOTAP_13K 0
+#endif
+
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 #define CFG_MONITOR_BAND_NUM	3
-#define CFG_RADIOTAP_HEADROOM	72
-#define CFG_RX_MAX_MPDU_SIZE	13312
+/* HW design: headroom size can only be 128 alignment */
+#define CFG_RADIOTAP_HEADROOM	128
+#endif
+#if CFG_SUPPORT_SNIFFER_RADIOTAP_13K
+#define CFG_RX_MAX_MPDU_SIZE	13312 /* support amsdu 7 */
 #else
 #define CFG_RX_MAX_MPDU_SIZE	CFG_RX_MAX_PKT_SIZE
 #endif

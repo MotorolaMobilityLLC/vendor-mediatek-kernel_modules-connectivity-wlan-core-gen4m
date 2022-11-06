@@ -596,10 +596,8 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	if (!kalProcessRadiotap(prSwRfb->pvPacket, &p_base,
-			radiotap_len, prSwRfb->u2RxByteCount)){
-		DBGLOG(RX, ERROR, "radiotap exceed skb headroom!\n");
+			radiotap_len, prSwRfb->u2RxByteCount))
 		goto bypass;
-	}
 
 	header = (struct IEEE80211_RADIOTAP_HEADER *)p_base;
 	header->ucItVersion = PKTHDR_RADIOTAP_VERSION;

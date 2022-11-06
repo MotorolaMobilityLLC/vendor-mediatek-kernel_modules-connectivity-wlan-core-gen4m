@@ -92,6 +92,11 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 	}
 	kmemleak_not_leak(pkt); /* Omit memleak check */
 	kalSkbMarkForRecycle(pkt);
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	skb_reserve(pkt, CFG_RADIOTAP_HEADROOM);
+#endif
+
 	*ppucData = (uint8_t *) (pkt->data);
 
 	return pkt;

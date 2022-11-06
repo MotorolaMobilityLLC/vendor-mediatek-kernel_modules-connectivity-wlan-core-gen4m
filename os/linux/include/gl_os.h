@@ -894,8 +894,8 @@ struct GLUE_INFO {
 	uint32_t u4RxKfifoBufLen;
 #endif /* CFG_SUPPORT_RX_NAPI */
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t fgIsEnableMon;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t ucPriChannel;
 	uint8_t ucChannelS1;
 	uint8_t ucChannelS2;

@@ -6256,26 +6256,26 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 int mtk_init_sta_role(struct ADAPTER *prAdapter,
 		      struct net_device *ndev)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNdevPriv = NULL;
+	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucBssIndex = 0;
 
 	if ((prAdapter == NULL) || (ndev == NULL))
 		return -1;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
-		return -1;
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		if (ndev != prGlueInfo->prDevHandler)
+			return -1;
+		/* use default idx for wlan0 */
+		ucBssIndex = AIS_DEFAULT_INDEX;
+	}
 
 	/* init AIS FSM */
 	aisFsmInit(prAdapter, NULL, AIS_INDEX(prAdapter, ucBssIndex));
 
 	ndev->netdev_ops = wlanGetNdevOps();
 	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-
-	/* set the ndev's ucBssIdx to the AIS BSS index */
-	prNdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		     netdev_priv(ndev);
-	prNdevPriv->ucBssIdx = ucBssIndex;
 
 	return 0;
 }
@@ -6308,11 +6308,75 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 
 	/* set the ucBssIdx to the illegal value */
 	prNdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		     netdev_priv(ndev);
+			netdev_priv(ndev);
 	prNdevPriv->ucBssIdx = 0xff;
 
 	return 0;
 }
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+void mtk_init_monitor_role(struct wiphy *wiphy,
+		      struct net_device *ndev)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t i = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if ((prGlueInfo == NULL) || (ndev == NULL))
+		return;
+
+	DBGLOG(INIT, INFO, "[type:iftype]:[%d:%d]=>[%d:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype,
+		ARPHRD_IEEE80211_RADIOTAP,
+		NL80211_IFTYPE_MONITOR);
+	ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+	prGlueInfo->fgIsEnableMon = TRUE;
+	prGlueInfo->ucBandIdx = 0xFF;
+	prGlueInfo->fgDropFcsErrorFrame = TRUE;
+	prGlueInfo->u2Aid = 0;
+	for (i = 0; i < CFG_MONITOR_BAND_NUM; i++) {
+		prGlueInfo->aucBandIdxEn[i] = 0;
+		prGlueInfo->u4AmpduRefNum[i] = 0;
+	}
+	DBGLOG(INIT, INFO, "enable sniffer mode\n");
+}
+
+void mtk_uninit_monitor_role(struct wiphy *wiphy,
+			struct net_device *ndev)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t i = 0, ucBandIdx;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if ((prGlueInfo == NULL) || (ndev == NULL))
+		return;
+
+	if (prGlueInfo->fgIsEnableMon) {
+		prGlueInfo->fgIsEnableMon = FALSE;
+		/* store band idx */
+		ucBandIdx = prGlueInfo->ucBandIdx;
+
+		for (i = 0; i < CFG_MONITOR_BAND_NUM; i++) {
+			if (ucBandIdx == 0xFF ||
+				prGlueInfo->aucBandIdxEn[i]) {
+				/* ucBandIdx will be used to disable monitor */
+				prGlueInfo->ucBandIdx = i;
+				mtk_cfg80211_set_monitor_channel(wiphy,
+					NULL);
+			}
+		}
+		prGlueInfo->ucBandIdx = 0xFF;
+	}
+
+	ndev->type = ARPHRD_ETHER;
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+	DBGLOG(INIT, INFO, "disable sniffer mode\n");
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6918,9 +6982,6 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	u32 *flags = NULL;
 #endif
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	uint8_t ucBandIdx = 0;
-#endif
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6975,7 +7036,12 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	/* expect that only AP & STA will be handled here (excluding IBSS) */
+	/* only AP/STA/Monitor will be handled here (excluding IBSS) */
+
+	DBGLOG(INIT, INFO, "[before][type:iftype]:[%d:%d] => [?:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype,
+		type);
 
 	if (type == NL80211_IFTYPE_AP) {
 		/* STA mode change to AP mode */
@@ -6992,7 +7058,13 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			return -EFAULT;
 		}
 
-		mtk_uninit_sta_role(prAdapter, ndev);
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_MONITOR)
+			mtk_uninit_monitor_role(wiphy, ndev);
+		else
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
+			mtk_uninit_sta_role(prAdapter, ndev);
 
 		if (mtk_init_ap_role(prGlueInfo, ndev) != 0) {
 			DBGLOG(INIT, ERROR, "mtk_init_ap_role FAILED\n");
@@ -7004,43 +7076,37 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		}
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	} else if (type == NL80211_IFTYPE_MONITOR) {
-		ndev->type = ARPHRD_IEEE80211_RADIOTAP;
-		ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
-		prGlueInfo->fgIsEnableMon = TRUE;
-		prGlueInfo->ucBandIdx = 0;
-		prGlueInfo->fgDropFcsErrorFrame = TRUE;
-		prGlueInfo->u2Aid = 0;
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
+			mtk_uninit_sta_role(prAdapter, ndev);
+		else if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP)
+			mtk_uninit_ap_role(prGlueInfo, ndev);
 
-		for (ucBandIdx = 0; ucBandIdx < CFG_MONITOR_BAND_NUM; ucBandIdx++) {
-			prGlueInfo->aucBandIdxEn[ucBandIdx] = 0;
-			prGlueInfo->u4AmpduRefNum[ucBandIdx] = 0;
-		}
+		mtk_init_monitor_role(wiphy, ndev);
 #endif
 	} else {
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-		if (prGlueInfo->fgIsEnableMon) {
-			prGlueInfo->fgIsEnableMon = FALSE;
-
-			for (ucBandIdx = 0; ucBandIdx < CFG_MONITOR_BAND_NUM; ucBandIdx++) {
-				if (prGlueInfo->aucBandIdxEn[ucBandIdx]) {
-					prGlueInfo->ucBandIdx = ucBandIdx;
-					mtk_cfg80211_set_monitor_channel(wiphy, NULL);
-				}
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) {
+			/* AP mode change to STA mode */
+			if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
+				DBGLOG(INIT, ERROR,
+					"mtk_uninit_ap_role FAILED\n");
+				return -EFAULT;
 			}
-			ndev->type = ARPHRD_ETHER;
-		} else
-#endif
-		/* AP mode change to STA mode */
-		if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
-			DBGLOG(INIT, ERROR, "mtk_uninit_ap_role FAILED\n");
-			return -EFAULT;
 		}
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		else if (ndev->ieee80211_ptr->iftype ==
+				NL80211_IFTYPE_MONITOR)
+			mtk_uninit_monitor_role(wiphy, ndev);
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 
 		mtk_init_sta_role(prAdapter, ndev);
 
 		/* continue the mtk_cfg80211_change_iface() process */
 		mtk_cfg80211_change_iface(wiphy, ndev, type, flags, params);
 	}
+
+	DBGLOG(INIT, INFO, "[after][type:iftype]:[%d:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype);
 
 	return 0;
 }

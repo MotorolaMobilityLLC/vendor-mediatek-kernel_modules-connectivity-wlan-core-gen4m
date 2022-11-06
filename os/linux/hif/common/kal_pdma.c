@@ -2397,16 +2397,20 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	if (pRxD->LastSec0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
-		DBGLOG(HAL, WARN,
-			"Skip Rx segmented data packet, SDL0[%u] LS0[%u]\n",
-			pRxD->SDLen0, pRxD->LastSec0);
+		if (!prGlueInfo->fgIsEnableMon) {
+			DBGLOG(HAL, WARN,
+				"Skip Rx segmented data packet, SDL0[%u] LS0[%u] Mo[%u]\n",
+				pRxD->SDLen0, pRxD->LastSec0,
+				prGlueInfo->fgIsEnableMon);
+		}
 
 		if (prAdapter->rWifiVar.fgDumpRxDsegment &&
 		    prRxRing->fgRxSegPkt == FALSE)
 			fgSegmentFirst = TRUE;
 
 #ifdef CFG_SUPPORT_PDMA_SCATTER
-		if (prRxRing->fgRxSegPkt == FALSE) {
+		if (prGlueInfo->fgIsEnableMon &&
+			prRxRing->fgRxSegPkt == FALSE) {
 			u4CpuIdxScatter = u4CpuIdx;
 			do {
 				pRxCellScatter = &prRxRing->Cell[u4CpuIdxScatter];
@@ -2424,6 +2428,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 				(ucScatterCnt * CFG_RX_MAX_MPDU_SIZE),
 				FALSE, &pucRecvBuff);
 			prRxRing->u4PacketLen = 0;
+
+			RX_ADD_CNT(&prAdapter->rRxCtrl,
+				RX_PDMA_SCATTER_DATA_COUNT, ucScatterCnt);
 		}
 #endif
 		if (pRxD->LastSec0 == 1) {
@@ -2462,8 +2469,9 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
 	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 
-	if (prAdapter->rWifiVar.fgDumpRxDsegment && fgSkip) {
-		/* dump rxd for large pkt */
+	/* dump rxd for large pkt */
+	if (!prGlueInfo->fgIsEnableMon &&
+		prAdapter->rWifiVar.fgDumpRxDsegment && fgSkip) {
 		void *pvPayload = prSwRfb->pucRecvBuff;
 		uint32_t u4PayloadLen = pRxD->SDLen0;
 
@@ -2493,13 +2501,15 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #endif
 
 #ifdef CFG_SUPPORT_PDMA_SCATTER
-	if (fgRet == FALSE) {
+	if (prGlueInfo->fgIsEnableMon && fgRet == FALSE) {
 		pucRecvBuff = ((struct sk_buff *)prRxRing->pvPacket)->data;
 		pucRecvBuff += prRxRing->u4PacketLen;
 		kalMemCopy(pucRecvBuff, prSwRfb->pucRecvBuff, pRxD->SDLen0);
 		prRxRing->u4PacketLen += pRxD->SDLen0;
 
 		if (prRxRing->fgRxSegPkt == FALSE) {
+			RX_INC_CNT(&prAdapter->rRxCtrl,
+				RX_PDMA_SCATTER_INDICATION_COUNT);
 			kalPacketFree(prGlueInfo, prSwRfb->pvPacket);
 			prSwRfb->pvPacket = prRxRing->pvPacket;
 			prSwRfb->pucRecvBuff =

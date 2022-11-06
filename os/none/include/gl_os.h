@@ -525,8 +525,8 @@ struct GLUE_INFO {
 	/* TODO: os-related */
 	uint32_t u4ReadyFlag;	/* check if card is ready */
 
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t fgIsEnableMon;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	uint8_t ucPriChannel;
 	uint8_t ucChannelS1;
 	uint8_t ucChannelS2;
