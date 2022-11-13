@@ -2602,6 +2602,11 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->prAdapter, prToken->prMsduInfo);
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
+		return false;
+	}
+
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 	prToken->u4CpuIdx = prTxRing->TxCpuIdx;
 	prToken->u2Port = u2Port;
