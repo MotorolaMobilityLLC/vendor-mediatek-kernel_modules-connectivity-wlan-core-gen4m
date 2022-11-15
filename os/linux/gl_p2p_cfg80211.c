@@ -3010,8 +3010,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		if (fsm &&
 			prBssInfo &&
 			IS_BSS_APGO(prBssInfo) &&
-			(fsm->encryptedDeauthIsInProcess ==
-			TRUE) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE)) {
 			fgWpa3Op = TRUE;
