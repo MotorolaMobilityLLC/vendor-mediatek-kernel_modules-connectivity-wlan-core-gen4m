@@ -4030,22 +4030,23 @@ kalOidComplete(struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
+	prIoReq = &prGlueInfo->OidEntry;
 	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p QryInfoLen=%p",
 			prGlueInfo, prCmdInfo,
 			prCmdInfo ? prCmdInfo->pvInformationBuffer : NULL,
-			prGlueInfo->OidEntry.pu4QryInfoLen);
+			prIoReq->pu4QryInfoLen);
 
 	/* remove timeout check timer */
 	wlanoidClearTimeoutCheck(prGlueInfo->prAdapter);
 
-	prGlueInfo->rPendStatus = rOidStatus;
-
-	prIoReq = &prGlueInfo->OidEntry;
-	*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
-
-	prGlueInfo->u4OidCompleteFlag = 1;
 	/* complete ONLY if there are waiters */
 	if (!completion_done(&prGlueInfo->rPendComp)) {
+
+		/* only update when there are waiters */
+		prGlueInfo->rPendStatus = rOidStatus;
+		*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
+		prGlueInfo->u4OidCompleteFlag = 1;
+
 		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
 			NULL, prCmdInfo);
 
@@ -4434,6 +4435,9 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 			ret = prGlueInfo->rPendStatus;
 		else
 			ret = prIoReq->rStatus;
+
+		/* reset u4OidCompleteFlag when wait timeout */
+		prGlueInfo->u4OidCompleteFlag = 0;
 	} else {
 
 #if 0
