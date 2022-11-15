@@ -1459,7 +1459,7 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 				       prTempStaRec->fgIsInUse,
 				       prTempStaRec->eStaType);
 
-				if (prTempStaRec->fgIsInUse) {
+				if (prTempStaRec->fgIsValid) {
 					prMsduInfo->ucStaRecIndex =
 						prTempStaRec->ucIndex;
 					DBGLOG(QM, LOUD, "TX with AP_STA[%u]\n",
@@ -1483,7 +1483,7 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 	prTempStaRec = cnmGetStaRecByAddress(prAdapter,
 			prMsduInfo->ucBssIndex,
 			prMsduInfo->aucEthDestAddr);
-	if (prTempStaRec) {
+	if (prTempStaRec && prTempStaRec->fgIsValid) {
 		prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
 		DBGLOG(QM, LOUD, "TX with STA[%u]\n",
 			prTempStaRec->ucIndex);
