@@ -121,7 +121,7 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
 {
 	uint8_t ucIdx = 0;
-	uint8_t aucFlavor[2] = {0};
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
 	int ret = 0;
 
 	kalGetFwFlavor(&aucFlavor[0]);
@@ -134,7 +134,22 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_soc1_0_1_1.bin */
+		/* Type 0. WIFI_RAM_CODE_soc2_2_flavor_1.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN,
+				"%s_%s_%u.bin",
+				apucSoc2_1x1FwName[ucIdx],
+				aucFlavor,
+				wlanGetEcoVersion(
+					prGlueInfo->prAdapter));
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+					"[%u] kalSnprintf failed, ret: %d\n",
+					__LINE__, ret);
+
+		/* Type 1. WIFI_RAM_CODE_soc2_2_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
 				"%s_%u%s_1.bin",
@@ -148,7 +163,7 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 
-		/* Type 2. WIFI_RAM_CODE_soc1_0_1_1 */
+		/* Type 2. WIFI_RAM_CODE_soc2_2_1_1 */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN,
 				"%s_%u%s_1",
@@ -162,7 +177,7 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 
-		/* Type 3. WIFI_RAM_CODE_soc1_0 */
+		/* Type 3. WIFI_RAM_CODE_soc2_2 */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s",
 				apucSoc2_1x1FwName[ucIdx]);
@@ -173,7 +188,7 @@ void soc2_1x1ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
 
-		/* Type 4. WIFI_RAM_CODE_soc1_0.bin */
+		/* Type 4. WIFI_RAM_CODE_soc2_2.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
 				apucSoc2_1x1FwName[ucIdx]);

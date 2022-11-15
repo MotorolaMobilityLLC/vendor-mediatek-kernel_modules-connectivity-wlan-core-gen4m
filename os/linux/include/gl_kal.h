@@ -187,6 +187,7 @@ extern struct platform_device *g_prPlatDev;
 
 #define PERF_MON_TP_CONDITION (125000)
 #define PERF_MON_COEX_TP_THRESHOLD (100)
+#define PERF_MON_MCC_TP_THRESHOLD	(50)
 
 #define PERF_MON_RFB_MAX_THRESHOLD (3)
 
