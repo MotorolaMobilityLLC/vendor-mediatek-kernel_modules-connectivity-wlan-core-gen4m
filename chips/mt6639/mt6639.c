@@ -1471,7 +1471,7 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 
 	if (KAL_TEST_BIT(PCIE_MSI_TX_FREE_DONE, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
-		u4WrValue |=
+		u4Value |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK;
 	}
 
@@ -1489,7 +1489,7 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 
 	if (KAL_TEST_BIT(PCIE_MSI_EVENT, prMsiInfo->ulEnBits)) {
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
-		u4WrValue |=
+		u4Value |=
 			WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK;
 	}
 
@@ -1647,7 +1647,7 @@ static void mt6639WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	/* No need to read int status if msi num is 8 */
 	prAdapter->rWifiVar.u4HifIstLoopCount = 1;
 
-	u4Value = 0x40800018;
+	u4Value = 0x4080003C;
 	HAL_MCR_WR(prAdapter,
 		   WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR,
 		   u4Value);
