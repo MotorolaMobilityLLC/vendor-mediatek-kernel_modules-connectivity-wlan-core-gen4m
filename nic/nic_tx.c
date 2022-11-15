@@ -5010,6 +5010,7 @@ void nicTxSetPktFixedRateOption(
 
 	if (prTxDescOps->nic_txd_set_pkt_fixed_rate_option)
 		prTxDescOps->nic_txd_set_pkt_fixed_rate_option(
+			prAdapter,
 			prMsduInfo,
 			u2RateCode,
 			ucBandwidth,

@@ -596,6 +596,7 @@ void nic_txd_v1_set_pkt_fixed_rate_option_full(
 }
 
 void nic_txd_v1_set_pkt_fixed_rate_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u2RateCode,
 	uint8_t ucBandwidth,
