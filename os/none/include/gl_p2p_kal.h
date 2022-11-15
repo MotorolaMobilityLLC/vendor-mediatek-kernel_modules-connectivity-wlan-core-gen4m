@@ -531,6 +531,10 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		enum P2P_VENDOR_ACS_HW_MODE eHwMode);
 
+void kalP2pIndicateListenOffloadEvent(
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t event);
+
 void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
 		uint32_t event,

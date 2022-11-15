@@ -1552,6 +1552,34 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+#if CFG_SUPPORT_P2P_LISTEN_OFFLOAD
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_START
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_p2p_listen_offload_start
+		,
+		.policy = nla_p2p_listen_offload_policy,
+		.maxattr = QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX
+	},
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_STOP
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV
+				| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_p2p_listen_offload_stop
+		,
+		.policy = nla_p2p_listen_offload_policy,
+		.maxattr = QCA_WLAN_VENDOR_ATTR_P2P_LO_MAX
+	},
+#endif /* CFG_SUPPORT_P2P_LISTEN_OFFLOAD */
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -1661,6 +1689,10 @@ static const struct nl80211_vendor_cmd_info
 	[WIFI_EVENT_SUBCMD_CSI] {
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_SUBCMD_CSI
+	},
+	[WIFI_EVENT_P2P_LISTEN_OFFLOAD] = {
+		.vendor_id = OUI_QCA,
+		.subcmd = QCA_NL80211_VENDOR_SUBCMD_P2P_LISTEN_OFFLOAD_STOP
 	},
 };
 #endif

@@ -1627,6 +1627,12 @@
 #define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST  1
 
 /*------------------------------------------------------------------------------
+ * Driver supports p2p listen offload
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_P2P_LISTEN_OFFLOAD  1
+
+/*------------------------------------------------------------------------------
  * Flag used for P2P GO to find the best channel list
  * Value 0: Disable
  * Value 1: Enable

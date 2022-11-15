@@ -104,4 +104,17 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
 		enum ENUM_P2P_DEV_STATE eNextState);
 
+u_int8_t
+p2pDevStateInit_LISTEN_OFFLOAD(
+		struct ADAPTER *prAdapter,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+		struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo,
+		enum ENUM_P2P_DEV_STATE *peNextState);
+
+void p2pDevStateAbort_LISTEN_OFFLOAD(
+		struct ADAPTER *prAdapter,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+		struct P2P_LISTEN_OFFLOAD_INFO *pLoInfo,
+		enum ENUM_P2P_DEV_STATE eNextState);
+
 #endif
