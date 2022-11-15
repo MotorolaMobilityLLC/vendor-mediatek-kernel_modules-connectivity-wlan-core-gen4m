@@ -151,7 +151,8 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_WDT"),
 	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL"),
 	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY"),
-	(uint8_t *) DISP_STRING("RST_DEVAPC")
+	(uint8_t *) DISP_STRING("RST_DEVAPC"),
+	(uint8_t *) DISP_STRING("Chip reset by AER")
 };
 
 const uint8_t *apucRstAction[] = {
@@ -1411,7 +1412,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		}
 	}
 
-	if (!fgIsBusAccessFailed)
+	if (!fgIsBusAccessFailed && drv != CONNV3_DRV_TYPE_WIFI)
 		triggerHifDumpIfNeed();
 
 	g_Coredump_source = coredump_connv3_type_to_src(drv);
@@ -1587,19 +1588,7 @@ bool IsOverRstTimeThreshold(
 
 void glResetWholeChipResetTrigger(char *pcReason)
 {
-	struct RESET_STRUCT *rst = &wifi_rst;
-	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
-	struct ADAPTER *prAdapter = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	int ret = -ENOTSUPP;
-
-	if (prGlueInfo->u4ReadyFlag) {
-		prAdapter = prGlueInfo->prAdapter;
-		prDebugOps = prAdapter->chip_info->prDebugOps;
-
-		if (prDebugOps && prDebugOps->dumpBusHangCr)
-			prDebugOps->dumpBusHangCr(prAdapter);
-	}
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);

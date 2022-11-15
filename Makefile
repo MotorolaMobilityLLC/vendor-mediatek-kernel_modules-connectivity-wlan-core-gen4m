@@ -437,6 +437,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_DYNAMIC_RFB_ADJUSTMENT=y
         ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
         CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
+        CONFIG_MTK_WIFI_AER_L05_RESET=y
         ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
         endif
     endif
@@ -1249,6 +1250,12 @@ ifeq ($(CONFIG_GKI_SUPPORT), y)
     ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=1
 else
     ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_AER_L05_RESET), y)
+    ccflags-y += -DCFG_MTK_WIFI_AER_L05_RESET=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_AER_L05_RESET=0
 endif
 
 ifeq ($(MODULE_NAME),)

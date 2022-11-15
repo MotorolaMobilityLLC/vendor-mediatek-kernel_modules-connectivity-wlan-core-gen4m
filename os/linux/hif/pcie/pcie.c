@@ -244,6 +244,8 @@ const struct of_device_id mtk_axi_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+static u_int8_t g_AERRstTriggered;
+static u_int8_t g_AERL05Rst;
 
 static struct platform_driver mtk_axi_driver = {
 	.driver = {
@@ -567,42 +569,63 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	pci_channel_state_t state)
 {
 	pci_ers_result_t res = PCI_ERS_RESULT_NONE;
+	uint32_t dump = 0;
 	u_int8_t fgNeedReset = FALSE;
 
-	DBGLOG(HAL, INFO, "mtk_pci_error_detected state: %d, resetting: %d\n",
-		state, kalIsResetting());
+	DBGLOG(HAL, INFO,
+		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
+		state, g_AERRstTriggered, kalIsResetting());
 
 	if (!pci_is_enabled(pdev)) {
 		DBGLOG(HAL, INFO, "pcie is disable\n");
 		goto exit;
 	}
 
-	if (state == pci_channel_io_normal) {
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-		u32 ret = mtk_pcie_dump_link_info(0);
+	dump = mtk_pcie_dump_link_info(0);
+#endif
+
+	if (g_AERRstTriggered || kalIsResetting())
+		goto exit;
+
+	if (state == pci_channel_io_normal) {
+		uint16_t vnd_id = 0;
 
 		/* bit[6]: Completion timeout status */
-		if (ret & BIT(6))
+		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
-#endif
-		DBGLOG(HAL, INFO, "state is pci_channel_io_normal\n");
-		goto exit;
-	}
-
-	fgIsBusAccessFailed = TRUE;
-	fgNeedReset = TRUE;
-	pci_disable_device(pdev);
+			pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
+			if (vnd_id == 0) {
+				DBGLOG(HAL, WARN, "PCIE link down\n");
+				fgIsBusAccessFailed = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	fgTriggerDebugSop = TRUE;
+				fgTriggerDebugSop = TRUE;
 #endif
+			} else {
+#if CFG_MTK_WIFI_AER_L05_RESET
+				g_AERL05Rst = TRUE;
+#endif
+			}
+		}
+	} else {
+		pci_disable_device(pdev);
+		fgNeedReset = TRUE;
+		fgIsBusAccessFailed = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		fgTriggerDebugSop = TRUE;
+#endif
+	}
 
 exit:
 	if (fgNeedReset) {
-		if (kalIsResetting())
+		if (g_AERRstTriggered || kalIsResetting())
 			res = PCI_ERS_RESULT_CAN_RECOVER;
 		else
 			res = PCI_ERS_RESULT_NEED_RESET;
+
+		g_AERRstTriggered = TRUE;
 	}
+
 	return res;
 }
 
@@ -610,10 +633,15 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 {
 #define AER_RST_STR		"Whole chip reset by AER"
 
-	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, resetting: %d\n",
-		kalIsResetting());
+	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
 
-	if (!kalIsResetting()) {
+	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, L05_rst: %d\n",
+		g_AERL05Rst);
+
+	if (g_AERL05Rst) {
+		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+			RST_AER, RST_FLAG_WF_RESET);
+	} else {
 		glSetRstReasonString(AER_RST_STR);
 		glResetWholeChipResetTrigger(AER_RST_STR);
 	}
@@ -936,6 +964,8 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	fgTriggerDebugSop = FALSE;
 #endif
+	g_AERRstTriggered = FALSE;
+	g_AERL05Rst = FALSE;
 	pci_set_master(pdev);
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
