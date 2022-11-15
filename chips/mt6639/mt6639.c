@@ -1949,19 +1949,14 @@ static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
-	unsigned long flags = 0;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
-
-	spin_lock_irqsave(&rPCIELock, flags);
 
 	if (role == WIFI_ROLE)
 		prChipInfo->bus_info->fgWifiEnL1_2 = fgEn;
 	else if (role == MD_ROLE)
 		prChipInfo->bus_info->fgMDEnL1_2 = fgEn;
-
-	spin_unlock_irqrestore(&rPCIELock, flags);
 
 	DBGLOG(HAL, TRACE, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
@@ -1977,22 +1972,38 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				u_int8_t fgEn, u_int enable_role)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t value = 0, delay = 0;
+	uint32_t value = 0, delay = 0, value1 = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	u_int8_t enableL1ss = FALSE;
+	u_int8_t isL0Status = FALSE;
+	unsigned long flags = 0;
+
+	if (pcie_vir_addr == NULL)
+		return;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
+	spin_lock_irqsave(&rPCIELock, flags);
 	enableL1ss =
 		mt6639SetL1ssEnable(prGlueInfo->prAdapter, enable_role, fgEn);
 
 	if (fgEn) {
 		/* Restore original setting*/
 		if (enableL1ss) {
-			if (pcie_vir_addr)
+			value = readl(pcie_vir_addr + 0x194);
+			value1 = readl(pcie_vir_addr + 0x150);
+			isL0Status = ((value1 & BITS(24, 28)) >> 24) == 0x10;
+			if ((value & BITS(0, 11)) == 0xc0f ||
+				((value & BITS(0, 11)) == 0x20f && isL0Status)) {
 				writel(0xe0f, (pcie_vir_addr + 0x194));
+			} else {
+				DBGLOG(HAL, INFO,
+					"enable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
+					isL0Status, value, value1);
+				goto exit;
+			}
 
 			delay += 10;
 			udelay(10);
@@ -2000,12 +2011,15 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			/* Polling RC 0x112f0150[28:24] until =0x10 */
 			while (1) {
 				value = readl(pcie_vir_addr + 0x150);
+
 				if (((value & BITS(24, 28))
 					>> 24) == 0x10)
 					break;
 
-				if (delay >= POLLING_TIMEOUT)
-					return;
+				if (delay >= POLLING_TIMEOUT) {
+					DBGLOG(HAL, INFO, "Enable L1.2 POLLING_TIMEOUT\n");
+					goto exit;
+				}
 
 				delay += 10;
 				udelay(10);
@@ -2015,8 +2029,8 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				0x74030194, 0xf);
 			HAL_MCR_RD(prGlueInfo->prAdapter,
 				0x74030194, &value);
-			if (pcie_vir_addr)
-				writel(0xf, (pcie_vir_addr + 0x194));
+			writel(0xf, (pcie_vir_addr + 0x194));
+
 
 			DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
 		} else {
@@ -2027,8 +2041,18 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 		 *	Backup original setting then
 		 *	disable L1.1, L1.2 and set LTR to 0
 		 */
-		if (pcie_vir_addr)
-			writel(0x20f, (pcie_vir_addr + 0x194));
+			value = readl(pcie_vir_addr + 0x194);
+			value1 = readl(pcie_vir_addr + 0x150);
+			isL0Status = ((value1 & BITS(24, 28)) >> 24) == 0x10;
+			if ((value & BITS(0, 11)) == 0xf ||
+				((value & BITS(0, 11)) == 0xe0f && isL0Status)) {
+				writel(0x20f, (pcie_vir_addr + 0x194));
+			} else {
+				DBGLOG(HAL, INFO,
+					"disable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
+					isL0Status, value, value1);
+				goto exit;
+			}
 
 		delay += 10;
 		udelay(10);
@@ -2036,12 +2060,15 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 		/* Polling RC 0x112f0150[28:24] until =0x10 */
 		while (1) {
 			value = readl(pcie_vir_addr + 0x150);
+
 			if (((value & BITS(24, 28))
 				>> 24) == 0x10)
 				break;
 
-			if (delay >= POLLING_TIMEOUT)
-				return;
+			if (delay >= POLLING_TIMEOUT) {
+				DBGLOG(HAL, INFO, "Disable L1.2 POLLING_TIMEOUT\n");
+				goto exit;
+			}
 
 			delay += 10;
 			udelay(10);
@@ -2049,14 +2076,16 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 
 		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, 0xc0f);
 		HAL_MCR_RD(prGlueInfo->prAdapter, 0x74030194, &value);
-		if (pcie_vir_addr)
-			writel(0xc0f, (pcie_vir_addr + 0x194));
+		writel(0xc0f, (pcie_vir_addr + 0x194));
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
 		else
 			DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2..\n");
 	}
+
+exit:
+	spin_unlock_irqrestore(&rPCIELock, flags);
 }
 
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
