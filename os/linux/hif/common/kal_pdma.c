@@ -1012,7 +1012,7 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop) {
+		if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegReadViaBT(prGlueInfo,
 				u4Register, pu4Value);
 		}
@@ -1178,7 +1178,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-		if (fgTriggerDebugSop) {
+		if (fgTriggerDebugSop && kalIsResetting()) {
 			return kalDevRegWriteViaBT(prGlueInfo,
 				u4Register, u4Value);
 		}
