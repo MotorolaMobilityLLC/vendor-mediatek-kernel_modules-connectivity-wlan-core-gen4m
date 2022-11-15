@@ -1908,9 +1908,7 @@ void kalReleaseHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
 void kalAcquireHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		unsigned long *plHifTxRingFlags)
 {
-#if !CFG_SUPPORT_RX_WORK
 	unsigned long ulHifTxRingFlags = 0;
-#endif /* CFG_SUPPORT_RX_WORK */
 
 	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
 		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
@@ -1921,13 +1919,9 @@ void kalAcquireHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		return;
 	}
 
-#if CFG_SUPPORT_RX_WORK
-	mutex_lock(&prTxRing->rTxDmaQMutex);
-#else /* CFG_SUPPORT_RX_WORK */
 	spin_lock_irqsave(&prTxRing->rTxDmaQLock,
 			ulHifTxRingFlags);
 	*plHifTxRingFlags = ulHifTxRingFlags;
-#endif /* CFG_SUPPORT_RX_WORK */
 }
 
 void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
@@ -1942,12 +1936,8 @@ void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		return;
 	}
 
-#if CFG_SUPPORT_RX_WORK
-	mutex_unlock(&prTxRing->rTxDmaQMutex);
-#else /* CFG_SUPPORT_RX_WORK */
 	spin_unlock_irqrestore(&prTxRing->rTxDmaQLock,
 		ulHifTxRingFlags);
-#endif /* CFG_SUPPORT_RX_WORK */
 }
 
 void kalAcquireHifOwnLock(struct ADAPTER *prAdapter)

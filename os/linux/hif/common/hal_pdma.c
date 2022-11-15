@@ -2625,11 +2625,7 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 	for (u4Index = 0; u4Index < NUM_OF_TX_RING; u4Index++) {
 		prHifInfo->TxRing[u4Index].TxSwUsedIdx = 0;
 		prHifInfo->TxRing[u4Index].TxCpuIdx = 0;
-#if CFG_SUPPORT_RX_WORK
-		mutex_init(&prHifInfo->TxRing[u4Index].rTxDmaQMutex);
-#else /* CFG_SUPPORT_RX_WORK */
 		spin_lock_init(&prHifInfo->TxRing[u4Index].rTxDmaQLock);
-#endif /* CFG_SUPPORT_RX_WORK */
 	}
 
 	return true;

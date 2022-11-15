@@ -544,11 +544,7 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_addr;
 	uint32_t hw_cnt_mask;
 	uint32_t hw_cnt_shift;
-#if CFG_SUPPORT_RX_WORK
-	struct mutex rTxDmaQMutex;
-#else /* CFG_SUPPORT_RX_WORK */
 	spinlock_t rTxDmaQLock;
-#endif /* CFG_SUPPORT_RX_WORK */
 	u_int8_t fgStopRecycleDmad;
 };
 
