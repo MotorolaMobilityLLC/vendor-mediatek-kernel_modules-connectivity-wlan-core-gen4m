@@ -7129,8 +7129,13 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter, "AmpduTx",
 					FEATURE_ENABLED);
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	prWifiVar->ucAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"AmsduInAmpduRx", FEATURE_DISABLED);
+#else
 	prWifiVar->ucAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"AmsduInAmpduRx", FEATURE_ENABLED);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	prWifiVar->ucAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"AmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucHtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,

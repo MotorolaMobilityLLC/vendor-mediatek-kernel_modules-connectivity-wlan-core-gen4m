@@ -339,24 +339,29 @@ void halRroResetMem(struct GLUE_INFO *prGlueInfo)
 	prAddrArray = &prHifInfo->AddrArray;
 	prIndCmd = &prHifInfo->IndCmdRing;
 
-	memset(prCache->AllocVa, 0, prCache->AllocSize);
+	if (prCache->AllocVa)
+		memset(prCache->AllocVa, 0, prCache->AllocSize);
 
-	memset(prIndCmd->AllocVa, 0, prIndCmd->AllocSize);
-	for (u4Idx = 0; u4Idx < RRO_IND_CMD_RING_SIZE; u4Idx++) {
-		prIndCmdElem = (struct RRO_IND_CMD *)
-			(prIndCmd->AllocVa +
-			 u4Idx * sizeof(struct RRO_IND_CMD));
-		prIndCmdElem->magic_cnt = 4;
+	if (prIndCmd->AllocVa) {
+		memset(prIndCmd->AllocVa, 0, prIndCmd->AllocSize);
+		for (u4Idx = 0; u4Idx < RRO_IND_CMD_RING_SIZE; u4Idx++) {
+			prIndCmdElem = (struct RRO_IND_CMD *)
+				(prIndCmd->AllocVa +
+				 u4Idx * sizeof(struct RRO_IND_CMD));
+			prIndCmdElem->magic_cnt = 4;
+		}
 	}
 
-	memset(prAddrArray->AllocVa, 0, prAddrArray->AllocSize);
-	u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) * RRO_MAX_WINDOW_NUM;
-	for (u4Idx = 0; u4Idx < u4AddrNum; u4Idx++) {
-		prAddrElem = (struct RRO_ADDR_ELEM *)
-			(prAddrArray->AllocVa +
-			 u4Idx * sizeof(struct RRO_ADDR_ELEM));
-		prAddrElem->elem0.signature = 0x7;
-		prAddrElem->elem1.signature = 0x7;
+	if (prAddrArray->AllocVa) {
+		memset(prAddrArray->AllocVa, 0, prAddrArray->AllocSize);
+		u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) * RRO_MAX_WINDOW_NUM;
+		for (u4Idx = 0; u4Idx < u4AddrNum; u4Idx++) {
+			prAddrElem = (struct RRO_ADDR_ELEM *)
+				(prAddrArray->AllocVa +
+				 u4Idx * sizeof(struct RRO_ADDR_ELEM));
+			prAddrElem->elem0.signature = 0x7;
+			prAddrElem->elem1.signature = 0x7;
+		}
 	}
 }
 
@@ -933,7 +938,7 @@ void halRroTurnOff(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 }
 
-void halRroInit(struct GLUE_INFO *prGlueInfo)
+static void halRroSetup(struct GLUE_INFO *prGlueInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
@@ -946,15 +951,55 @@ void halRroInit(struct GLUE_INFO *prGlueInfo)
 		halRroMawdInit(prGlueInfo);
 }
 
-void halRroUninit(struct GLUE_INFO *prGlueInfo)
+void halRroInit(struct GLUE_INFO *prGlueInfo)
 {
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
-	halRroFreeMem(prGlueInfo);
-	halRroFreeRcbList(prGlueInfo);
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+		halMawdInitTxRing(prGlueInfo);
 
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-		halMawdFreeRxBlkRing(prGlueInfo);
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		halRroSetup(prGlueInfo);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			halMawdInitRxBlkRing(prGlueInfo);
+	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
+		halRroSetup(prGlueInfo);
+	}
+}
+
+void halRroUninit(struct GLUE_INFO *prGlueInfo)
+{
+}
+
+void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+		halMawdAllocTxRing(prGlueInfo, TRUE);
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		halRroAllocMem(prGlueInfo);
+		halRroAllocRcbList(prGlueInfo);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			halMawdAllocRxBlkRing(prGlueInfo, TRUE);
+	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
+		halRroAllocMem(prGlueInfo);
+	}
+}
+
+void halOffloadFreeMem(struct GLUE_INFO *prGlueInfo)
+{
+	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		halRroFreeMem(prGlueInfo);
+		halRroFreeRcbList(prGlueInfo);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+			halMawdFreeRxBlkRing(prGlueInfo);
+	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
+		halRroFreeMem(prGlueInfo);
+	}
 }
 
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo)
@@ -1774,7 +1819,7 @@ static void halMawdReadRxBlkRing(
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMACB *prRxCell;
-	struct RX_BLK_DESC *prRxBlkD;
+	struct RX_BLK_DESC rRxBlkD, *prRxBlkD;
 	uint32_t u4RxCnt;
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -1793,7 +1838,10 @@ static void halMawdReadRxBlkRing(
 					 prRxRing->u4MagicCnt))
 			break;
 
-		if (!halRroHandleReadRxBlk(prGlueInfo, prRxBlkD, au4RingCnt,
+		/* copy to cache memory */
+		kalMemCopyFromIo(&rRxBlkD, prRxBlkD,
+				 sizeof(struct RX_BLK_DESC));
+		if (!halRroHandleReadRxBlk(prGlueInfo, &rRxBlkD, au4RingCnt,
 					   prFreeSwRfbList, prRecvRfbList))
 			break;
 
@@ -1994,7 +2042,7 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *prRxRing;
 	struct RTMP_DMABUF *pDmaBuf;
 	struct RTMP_DMACB *prRxCell;
-	struct RXD_STRUCT *pRxD;
+	struct RXD_STRUCT rRxD, *pRxD;
 	struct RX_CTRL_BLK *prRcb;
 	uint32_t u4CpuIdx, u4Cnt, u4Idx;
 
@@ -2014,6 +2062,9 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 	if (u4ResCnt < u4Cnt)
 		u4Cnt = u4ResCnt;
 
+	pRxD = &rRxD;
+	kalMemZero(pRxD, sizeof(struct RXD_STRUCT));
+
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	for (u4Idx = 0; u4Idx < u4Cnt; u4Idx++) {
 		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
@@ -2032,7 +2083,6 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 
 		prRxCell->pPacket = prRcb->prSkb;
 
-		pRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
 		pRxD->SDPtr0 = ((uint64_t)pDmaBuf->AllocPa) &
 			DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
@@ -2044,6 +2094,9 @@ void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 		pRxD->SDLen0 = pDmaBuf->AllocSize;
 		pRxD->DMADONE = 0;
 		pRxD->MagicCnt = prRxRing->u4MagicCnt;
+
+		kalMemCopyToIo(prRxCell->AllocVa, pRxD,
+			       sizeof(struct RXD_STRUCT));
 	}
 
 	prRxRing->RxCpuIdx = u4CpuIdx;

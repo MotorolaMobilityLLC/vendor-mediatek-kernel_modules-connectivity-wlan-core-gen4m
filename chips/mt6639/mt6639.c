@@ -530,7 +530,11 @@ struct BUS_INFO mt6639_bus_info = {
 	.tx_ring3_data_idx = 3,
 	.rx_data_ring_num = 2,
 	.rx_evt_ring_num = 2,
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	.rx_data_ring_size = 4095,
+#else
 	.rx_data_ring_size = 3072,
+#endif
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,

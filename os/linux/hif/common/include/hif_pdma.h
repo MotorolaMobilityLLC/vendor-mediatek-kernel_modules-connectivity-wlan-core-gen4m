@@ -1090,6 +1090,8 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
 void halRroTurnOff(struct GLUE_INFO *prGlueInfo);
 void halRroInit(struct GLUE_INFO *prGlueInfo);
 void halRroUninit(struct GLUE_INFO *prGlueInfo);
+void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo);
+void halOffloadFreeMem(struct GLUE_INFO *prGlueInfo);
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo);
 void halRroResetMem(struct GLUE_INFO *prGlueInfo);
 void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo);
