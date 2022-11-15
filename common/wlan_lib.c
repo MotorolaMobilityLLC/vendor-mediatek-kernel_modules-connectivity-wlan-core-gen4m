@@ -7278,6 +7278,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 					"StaHePpRx", FEATURE_DISABLED);
 	prWifiVar->ucHeDynamicSMPS = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"HeDynamicSMPS", FEATURE_DISABLED);
+	prWifiVar->ucHeHTC = (uint8_t) wlanCfgGetUint32(prAdapter, "HeHTC", FEATURE_ENABLED);
 #endif
 
 	/* 0: disabled
