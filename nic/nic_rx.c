@@ -2358,6 +2358,11 @@ void nicRxProcessPacketType(
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 
+#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
+	if (kalIsWakeupByWlan(prAdapter))
+		nicRxCheckWakeupReason(prAdapter, prSwRfb);
+#endif
+
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
 		if (HAL_IS_RX_DIRECT(prAdapter)) {
@@ -2558,12 +2563,6 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 				RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
 					RFB_TRACK_MAIN);
 #endif /* CFG_RFB_TRACK */
-
-#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
-				if (kalIsWakeupByWlan(prAdapter))
-					nicRxCheckWakeupReason(prAdapter,
-							       prSwRfb);
-#endif
 
 				/* Too many leading tabs -
 				 * consider code refactoring
