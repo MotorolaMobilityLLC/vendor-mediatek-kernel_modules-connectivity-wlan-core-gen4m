@@ -1397,15 +1397,11 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
 		prMemOps->freeBuf = NULL;
 		prMemOps->dumpTx = halCopyPathDumpTx;
-		prMemOps->dumpRx = halCopyPathDumpRx;
 
-#if (CFG_SUPPORT_RX_ZERO_COPY == 0)
-		prMemOps->allocRxBuf = halCopyPathAllocRxBuf;
-		prMemOps->copyRxData = halCopyPathCopyRxData;
-		prMemOps->copyEvent = halCopyPathCopyEvent;
-		prMemOps->mapRxBuf = NULL;
-		prMemOps->unmapRxBuf = NULL;
-		prMemOps->freePacket = NULL;
+#if (CFG_SUPPORT_RX_ZERO_COPY == 1)
+		prMemOps->dumpRx = halZeroCopyPathDumpRx;
+#else
+		glUpdateRxCopyMemOps(prMemOps)
 #endif /* CFG_SUPPORT_RX_ZERO_COPY == 1 */
 	}
 }
@@ -1418,6 +1414,7 @@ void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
 	prMemOps->mapRxBuf = NULL;
 	prMemOps->unmapRxBuf = NULL;
 	prMemOps->freePacket = NULL;
+	prMemOps->dumpRx = halCopyPathDumpRx;
 }
 
 /*----------------------------------------------------------------------------*/
