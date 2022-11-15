@@ -240,7 +240,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
 
 	if (!prMsduInfo)
-		return NULL;
+		goto exit;
 
 	kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
@@ -261,7 +261,8 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			QUEUE_INSERT_TAIL(prQueList, &prMsduInfo->rQueEntry);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TX_MSDU_INFO_LIST);
-			return NULL;
+			prMsduInfo = NULL;
+			goto exit;
 		}
 		prMsduInfo->prHead = prHead;
 		prMsduInfo->prPacket = (uint8_t *)
@@ -276,9 +277,8 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	}
 
 
-#if DBG
+exit:
 	if (prMsduInfo == NULL) {
-		log_dbg(MEM, WARN, "\n");
 		log_dbg(MEM, WARN, "MgtDesc#=%ld\n", prQueList->u4NumElem);
 
 #if CFG_DBG_MGT_BUF
@@ -287,10 +287,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			prAdapter->rMgtBufInfo.u4FreeCount,
 			prAdapter->rMgtBufInfo.u4AllocNullCount);
 #endif
-
-		log_dbg(MEM, WARN, "\n");
 	}
-#endif
 
 	return prMsduInfo;
 }
@@ -497,6 +494,11 @@ void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
 		prMemTrack->pucFileAndLine = fileAndLine;
 		prMemTrack->u2CmdIdAndWhere = 0x0000;
 		pvMemory = (void *)(prMemTrack + 1);
+	} else {
+		DBGLOG(MEM, WARN,
+			"kalMemAlloc fail, type: %d sz: %u\n",
+			eMemAllocType,
+			u4Length + sizeof(struct MEM_TRACK));
 	}
 #else
 	pvMemory = (void *) kalMemAlloc(u4Length, eMemAllocType);
