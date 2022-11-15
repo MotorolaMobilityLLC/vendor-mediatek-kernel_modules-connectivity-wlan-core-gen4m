@@ -52,8 +52,15 @@ uint8_t *glCsiGetCSIBuf(void)
 	return aucCSIBuf;
 }
 
+struct CSI_DATA_T *glCsiGetCSIData(void)
+{
+	return rCSIInfo.prCSIData;
+}
+
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 {
+	kalMemZero(&rCSIInfo, sizeof(rCSIInfo));
+
 	/* init CSI wait queue	*/
 	init_waitqueue_head(&(prGlueInfo->waitq_csi));
 	LINK_INITIALIZE(&(rCSIInfo.rStaList));
@@ -62,7 +69,50 @@ void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 
 void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo)
 {
+	struct CSI_INFO_T *prCSIInfo = glCsiGetCSIInfo();
+
 	glCsiFreeStaList(prGlueInfo);
+
+	if (prCSIInfo->prCSIData) {
+		kalMemFree(prCSIInfo->prCSIData,
+			   VIR_MEM_TYPE,
+			   sizeof(struct CSI_DATA_T));
+		prCSIInfo->prCSIData = NULL;
+	}
+}
+
+void glCsiSetEnable(struct GLUE_INFO *prGlueInfo,
+	struct CSI_INFO_T *prCSIInfo, u_int8_t fgEnable)
+{
+	prCSIInfo->bIncomplete = FALSE;
+	prCSIInfo->u4CopiedDataSize = 0;
+	prCSIInfo->u4RemainingDataSize = 0;
+	prCSIInfo->u4CSIBufferHead = 0;
+	prCSIInfo->u4CSIBufferTail = 0;
+	prCSIInfo->u4CSIBufferUsed = 0;
+
+	if (fgEnable) {
+		if (prCSIInfo->prCSIData) {
+			DBGLOG(REQ, WARN,
+				"CSI data NOT freed before alloc.\n");
+			kalMemFree(prCSIInfo->prCSIData,
+				   VIR_MEM_TYPE,
+				   sizeof(struct CSI_DATA_T));
+			prCSIInfo->prCSIData = NULL;
+		}
+
+		prCSIInfo->prCSIData = kalMemAlloc(sizeof(struct CSI_DATA_T),
+			VIR_MEM_TYPE);
+		if (!prCSIInfo->prCSIData)
+			DBGLOG(REQ, ERROR, "Alloc CSI data failed.\n");
+	} else {
+		if (prCSIInfo->prCSIData) {
+			kalMemFree(prCSIInfo->prCSIData,
+				   VIR_MEM_TYPE,
+				   sizeof(struct CSI_DATA_T));
+			prCSIInfo->prCSIData = NULL;
+		}
+	}
 }
 
 int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,

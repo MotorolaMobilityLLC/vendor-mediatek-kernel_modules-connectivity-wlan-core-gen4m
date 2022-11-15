@@ -3935,12 +3935,9 @@ int mtk_cfg80211_vendor_csi_control(
 
 	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
 		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
-		prCSIInfo->bIncomplete = FALSE;
-		prCSIInfo->u4CopiedDataSize = 0;
-		prCSIInfo->u4RemainingDataSize = 0;
-		prCSIInfo->u4CSIBufferHead = 0;
-		prCSIInfo->u4CSIBufferTail = 0;
-		prCSIInfo->u4CSIBufferUsed = 0;
+		glCsiSetEnable(prGlueInfo,
+			       prCSIInfo,
+			       prCSICtrl->ucMode == CSI_CONTROL_MODE_START);
 		goto send_cmd;
 	}
 
@@ -4024,7 +4021,7 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	struct wiphy *wiphy = gprWdev[0]->wiphy;
 	struct wireless_dev *wdev = gprWdev[0];
 	struct CSI_INFO_T *prCSIInfo = NULL;
-	struct CSI_DATA_T rTempCSIData;
+	struct CSI_DATA_T *prTempCSIData = NULL;
 	struct sk_buff *skb = NULL;
 	uint8_t *temp;
 	int32_t i4Pos = 0;
@@ -4037,12 +4034,18 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	}
 
 	prCSIInfo = glCsiGetCSIInfo();
+	prTempCSIData = glCsiGetCSIData();
 	temp = glCsiGetCSIBuf();
 
-	bStatus = wlanPopCSIData(prAdapter, &rTempCSIData);
+	if (!prTempCSIData) {
+		DBGLOG(REQ, ERROR, "[CSI] NULL CSI data.\n");
+		return -EINVAL;
+	}
+
+	bStatus = wlanPopCSIData(prAdapter, prTempCSIData);
 	if (!bStatus)
 		return 0;
-	i4Pos = wlanCSIDataPrepare(temp,  prCSIInfo, &rTempCSIData);
+	i4Pos = wlanCSIDataPrepare(temp,  prCSIInfo, prTempCSIData);
 
 	skb = cfg80211_vendor_event_alloc(wiphy,
 #if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE

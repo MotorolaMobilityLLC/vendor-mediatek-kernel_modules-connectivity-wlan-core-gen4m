@@ -52,12 +52,23 @@ uint8_t *glCsiGetCSIBuf(void)
 	return aucCSIBuf;
 }
 
+struct CSI_DATA_T *glCsiGetCSIData(void)
+{
+	return rCSIInfo.prCSIData;
+}
+
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void glCsiSetEnable(struct GLUE_INFO *prGlueInfo,
+	struct CSI_INFO_T *prCSIInfo, u_int8_t fgEnable)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
