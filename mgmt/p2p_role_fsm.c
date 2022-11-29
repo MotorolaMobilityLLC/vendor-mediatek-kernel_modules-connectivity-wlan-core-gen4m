@@ -276,6 +276,8 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			if (prP2pRoleFsmInfo)
 				kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE,
 					sizeof(struct P2P_ROLE_FSM_INFO));
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) =
+				NULL;
 			return MAX_BSS_INDEX;
 		}
 
