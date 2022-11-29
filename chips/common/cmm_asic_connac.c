@@ -827,19 +827,36 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct ADAPTER *prAdapter;
+	uint32_t u4Idx = 0, u4Cidx = 0;
 	uint32_t u4Value = 0;
-	uint32_t u4Idx;
+	struct RTMP_TX_RING *prTxRing;
+	u_int8_t fgNeedReset = TRUE;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	kalDevRegRead(prGlueInfo, CONN_DUMMY_CR, &u4Value);
-	DBGLOG(HAL, TRACE, "Check sleep mode DummyReg[0x%x]\n", u4Value);
-	if (u4Value != PDMA_DUMMY_RESET_VALUE)
-		return;
 
-	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		prTxRing = &prHifInfo->TxRing[u4Idx];
+		if (!prTxRing->hw_cnt_addr)
+			continue;
+		HAL_MCR_RD(prAdapter, prTxRing->hw_cidx_addr,
+			&u4Cidx);
+		if (u4Cidx != 0)
+			fgNeedReset = FALSE;
+	}
+
+	if (!fgNeedReset)
+		return; /* no sleep */
+
+	if (u4Value != PDMA_DUMMY_RESET_VALUE)
+		DBGLOG(HAL, WARN, "DummyReg[0x%x]\n",
+			u4Value);
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
-	DBGLOG(HAL, TRACE, "Weakup from sleep mode\n");
+		prHifInfo->TxRing[u4Idx].u4UsedCnt = 0;
+		prHifInfo->TxRing[u4Idx].TxCpuIdx = 0;
+	}
 
 	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_EVT)) {
 		DBGLOG(HAL, TRACE, "Force to read RX event\n");
