@@ -11975,6 +11975,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
 	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
 	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
+	case UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY:
 		nanSchedulerUniEventDispatch(prAdapter, u4SubEvent,
 					  prTlvElement->aucbody);
 		break;
@@ -11998,6 +11999,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL:
 		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2:
+		nicNanNdlFlowCtrlEvtV2(prAdapter, prTlvElement->aucbody);
 		break;
 #endif
 	case UNI_EVENT_NAN_TAG_NDL_DISCONNECT:
@@ -12070,6 +12074,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 	case NAN_EVENT_ID_PEER_AVAILABILITY:
 	case NAN_EVENT_ID_PEER_CAPABILITY:
 	case NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN:
+	case NAN_EVENT_ID_DEVICE_CAPABILITY:
 		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
 					  prTlvElement->aucbody);
 		break;
@@ -12093,6 +12098,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 #if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
 	case NAN_EVENT_NDL_FLOW_CTRL:
 		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_NDL_FLOW_CTRL_V2:
+		nicNanNdlFlowCtrlEvtV2(prAdapter, prTlvElement->aucbody);
 		break;
 #endif
 	case NAN_EVENT_NDL_DISCONNECT:
