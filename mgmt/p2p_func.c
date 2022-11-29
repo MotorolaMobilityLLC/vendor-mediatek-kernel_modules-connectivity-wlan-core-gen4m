@@ -7356,6 +7356,28 @@ struct BSS_INFO *p2pGetAisBssByBand(
 	return NULL;
 }
 
+struct BSS_INFO *p2pGetAisBssRfBand(
+	struct ADAPTER *ad,
+	enum ENUM_BAND eBand)
+{
+	if (eBand == BAND_2G4)
+		return p2pGetAisBssByBand(ad, eBand);
+	else if (eBand == BAND_5G) {
+		if (p2pGetAisBssByBand(ad, BAND_5G))
+			return p2pGetAisBssByBand(ad, BAND_5G);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else
+			return p2pGetAisBssByBand(ad, BAND_6G);
+	} else if (eBand == BAND_6G) {
+		if (p2pGetAisBssByBand(ad, BAND_5G))
+			return p2pGetAisBssByBand(ad, BAND_5G);
+		else
+			return p2pGetAisBssByBand(ad, BAND_6G);
+#endif
+	}
+	return NULL;
+}
+
 struct BSS_INFO *p2pGetAisConnectedBss(
 	struct ADAPTER *ad)
 {
@@ -7379,7 +7401,7 @@ struct BSS_INFO *p2pGetAisConnectedBss(
 			cnmGetOtherSapBssInfo(ad, bss);
 
 		if (bssNext)
-			bssRet = p2pGetAisBssByBand(ad,
+			bssRet = p2pGetAisBssRfBand(ad,
 				bssNext->eBand);
 	}
 
@@ -7530,9 +7552,12 @@ void p2pFuncSwitchSapChannel(
 
 #ifdef CFG_SUPPORT_SKIP_NONPSC
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-		eStaBand == BAND_6G &&
-		!IS_6G_PSC_CHANNEL(ucStaChannelNum)) {
+	if (eStaBand == BAND_6G &&
+		(prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+		!IS_6G_PSC_CHANNEL(ucStaChannelNum)) ||
+		(eSapBand == BAND_5G &&
+		(prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE))) {
 		DBGLOG(P2P, INFO,
 			"[DBDC] STA non-psc: %d -> 6\n",
 			ucStaChannelNum);
