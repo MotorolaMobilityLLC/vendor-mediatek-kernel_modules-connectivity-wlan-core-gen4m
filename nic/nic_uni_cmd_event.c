@@ -5861,14 +5861,14 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 	case SR_CMD_SET_SR_CAP_SREN_CTRL: {
 		struct UNI_CMD_SR_CAP *tag;
 		struct _SR_CMD_SR_CAP_T *cmd_sr;
-
+          
 		max_cmd_len += sizeof(struct UNI_CMD_SR_CAP);
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR,
-			max_cmd_len, nicUniCmdEventSetCommon,
-			nicUniCmdTimeoutCommon);
+			max_cmd_len, NULL,
+			NULL);
 		if (!entry)
 			return WLAN_STATUS_RESOURCES;
-
+          
 		cmd_sr = (struct _SR_CMD_SR_CAP_T *) info->pucInfoBuffer;
 		uni_cmd = (struct UNI_CMD_SR *) entry->pucInfoBuffer;
 		uni_cmd->u1BandIdx = cmd_sr->rSrCmd.u1DbdcIdx;
