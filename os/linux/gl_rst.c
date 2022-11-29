@@ -194,6 +194,13 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			     enum _ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
 #endif
+static void reset_dump_pending_req(struct reset_pending_req *req);
+static uint32_t reset_handle_pending_req(void);
+static uint32_t reset_store_pending_req(struct RESET_STRUCT *rst,
+	const uint32_t flag,
+	const uint8_t *file,
+	const uint32_t line,
+	const u_int8_t fw_acked);
 #else
 #ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void);
@@ -261,6 +268,54 @@ void glResetUpdateFlag(u_int8_t reset)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
+#ifdef CONFIG_PM
+static uint8_t *pm_evt_to_str(const unsigned long pm_event)
+{
+	switch (pm_event) {
+	case PM_HIBERNATION_PREPARE:
+		return "PM_HIBERNATION_PREPARE";
+	case PM_POST_HIBERNATION:
+		return "PM_POST_HIBERNATION";
+	case PM_SUSPEND_PREPARE:
+		return "PM_SUSPEND_PREPARE";
+	case PM_POST_SUSPEND:
+		return "PM_POST_SUSPEND";
+	case PM_RESTORE_PREPARE:
+		return "PM_RESTORE_PREPARE";
+	case PM_POST_RESTORE:
+		return "PM_POST_RESTORE";
+	default:
+		return "PM_UNKNOWN";
+	}
+}
+
+static int wlan_pm_notifier_call(struct notifier_block *notifier,
+	unsigned long pm_event, void *unused)
+{
+	struct RESET_STRUCT *rst;
+
+	rst = (struct RESET_STRUCT *)container_of(notifier,
+		struct RESET_STRUCT, pm_nb);
+
+	DBGLOG(REQ, INFO, "pm_event: %lu %s\n",
+		pm_event, pm_evt_to_str(pm_event));
+
+	switch (pm_event) {
+	case PM_SUSPEND_PREPARE:
+		rst->is_suspend = TRUE;
+		break;
+	case PM_POST_SUSPEND:
+		rst->is_suspend = FALSE;
+		reset_handle_pending_req();
+		break;
+	default:
+		break;
+	}
+
+	return NOTIFY_DONE;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for
@@ -298,7 +353,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
 					&wifi_rst,
 					"wlan_rst_thread");
-	g_SubsysRstCnt = 0;
+#ifdef CONFIG_PM
+	wifi_rst.pm_nb.notifier_call = wlan_pm_notifier_call;
+	register_pm_notifier(&wifi_rst.pm_nb);
+#endif
 #endif
 	wifi_coredump_init(prGlueInfo);
 }
@@ -315,18 +373,27 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 void glResetUninit(void)
 {
+#if CFG_WMT_RESET_API_SUPPORT
 	struct RESET_STRUCT *rst = &wifi_rst;
+#endif
 
 	wifi_coredump_deinit();
 
 #if CFG_WMT_RESET_API_SUPPORT
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
+#ifdef CONFIG_PM
+	unregister_pm_notifier(&wifi_rst.pm_nb);
 #endif
-
+	if (rst->pending_req) {
+		kalMemFree(rst->pending_req, VIR_MEM_TYPE,
+			sizeof(*rst->pending_req));
+		rst->pending_req = NULL;
+	}
 	set_bit(GLUE_FLAG_HALT_BIT, &rst->ulFlag);
 	wake_up_interruptible(&g_waitq_rst);
 	wait_for_completion_interruptible(&rst->halt_comp);
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
+#endif
 #endif
 }
 /*----------------------------------------------------------------------------*/
@@ -352,6 +419,87 @@ void glSendResetRequest(void)
  * If any merge or refactor is possible, then feel free to do it.
  * The following definition is of mobile.
  */
+static void reset_dump_pending_req(struct reset_pending_req *req)
+{
+	if (!req)
+		return;
+
+	DBGLOG(INIT, INFO, "====== DUMP PENDING RESET REQ ======\n");
+
+	DBGLOG(INIT, INFO, "\treq: 0x%p\n", req);
+	DBGLOG(INIT, INFO, "\tflag: 0x%x\n", req->flag);
+	DBGLOG(INIT, INFO, "\tfile: %s#%d\n", req->file, req->line);
+	DBGLOG(INIT, INFO, "\tfw_acked: %d\n", req->fw_acked);
+
+	DBGLOG(INIT, INFO, "============= DUMP END ===========\n");
+}
+
+static uint32_t reset_handle_pending_req(void)
+{
+	struct RESET_STRUCT *rst = &wifi_rst;
+	struct reset_pending_req *req = rst->pending_req;
+
+	if (!req)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (rst->is_suspend) {
+		DBGLOG(INIT, ERROR,
+			"Pending reset request only handled in resume mode.\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	DBGLOG(INIT, INFO, "\n");
+
+	reset_dump_pending_req(req);
+
+	kalSetRstEvent(req->fw_acked);
+
+	kalMemFree(req, VIR_MEM_TYPE, sizeof(*req));
+	rst->pending_req = NULL;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t reset_store_pending_req(struct RESET_STRUCT *rst,
+	const uint32_t flag,
+	const uint8_t *file,
+	const uint32_t line,
+	const u_int8_t fw_acked)
+{
+	struct reset_pending_req *req = rst->pending_req;
+
+	if (!rst->is_suspend) {
+		DBGLOG(INIT, ERROR,
+			"Pending reset request only accepted in suspend mode.\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (req) {
+		DBGLOG(INIT, WARN,
+			"pending reset request NOT handled.\n");
+		reset_dump_pending_req(req);
+		kalMemFree(req, VIR_MEM_TYPE, sizeof(*req));
+		rst->pending_req = NULL;
+	}
+
+	req = kalMemZAlloc(sizeof(*req), VIR_MEM_TYPE);
+	if (!req) {
+		DBGLOG(INIT, ERROR,
+			"Alloc pending reset req failed.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	req->flag = flag;
+	req->fw_acked = fw_acked;
+	kalSnprintf(req->file, sizeof(req->file), "%s", file);
+	req->line = line;
+	req->fw_acked = fw_acked;
+
+	DBGLOG(INIT, INFO, "Store pending req: 0x%p.\n", req);
+	rst->pending_req = req;
+
+	return WLAN_STATUS_SUCCESS;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -450,10 +598,12 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 void glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
+	struct RESET_STRUCT *rst = &wifi_rst;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
-	uint16_t u2FwOwnVersion;
-	uint16_t u2FwPeerVersion;
+#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+	int ret = 0;
+#endif
 
 	if (kalIsResetting() || !prAdapter)
 		return;
@@ -480,12 +630,10 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 
 	prChipInfo = prAdapter->chip_info;
 	prDbgOps = prChipInfo->prDebugOps;
-	u2FwOwnVersion = prAdapter->rVerInfo.u2FwOwnVersion;
-	u2FwPeerVersion = prAdapter->rVerInfo.u2FwPeerVersion;
 
 	dump_stack();
 	DBGLOG(INIT, ERROR,
-		"Trigger chip reset in %s line %u bushang %d flag 0x%x reason %s\n",
+		"Trigger chip reset in %s#%u, bus[%d] flag[0x%x] reason[%s]\n",
 		pucFile,
 		u4Line,
 		g_IsWfsysBusHang,
@@ -499,8 +647,8 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		prDbgOps->dumpBusHangCr(prAdapter);
 
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-	wifi_rst.rst_trigger_flag = u4RstFlag;
-	schedule_work(&(wifi_rst.rst_trigger_work));
+	rst->rst_trigger_flag = u4RstFlag;
+	schedule_work(&rst->rst_trigger_work);
 #else
 	if (u4RstFlag & RST_FLAG_DO_CORE_DUMP)
 		g_fgRstRecover = FALSE;
@@ -508,24 +656,41 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		g_fgRstRecover = TRUE;
 
 	/* check if whole chip reset is triggered */
-	if (g_IsWfsysBusHang == FALSE) {
-		if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
-			glResetWholeChipResetTrigger(g_reason);
-		} else {
-			int ret = 0;
+	if (g_IsWfsysBusHang)
+		return;
 
-			g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
-			if (prChipInfo->trigger_fw_assert) {
-				ret = prChipInfo->trigger_fw_assert(prAdapter);
-				if (ret != -EBUSY) {
-					if (ret == -ETIMEDOUT)
-						kalSetRstEvent(FALSE);
-					else
-						kalSetRstEvent(TRUE);
-				}
-			}
-		}
+	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
+		glResetWholeChipResetTrigger(g_reason);
+		return;
 	}
+
+	g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
+	if (!prChipInfo->trigger_fw_assert) {
+		DBGLOG(INIT, ERROR,
+			"No impl. of trigger_fw_assert API\n");
+		return;
+	}
+
+	ret = prChipInfo->trigger_fw_assert(prAdapter);
+	if (ret == -EBUSY)
+		return;
+
+	if (rst->is_suspend) {
+		uint32_t status;
+
+		status = reset_store_pending_req(rst,
+						 u4RstFlag,
+						 pucFile,
+						 u4Line,
+						 ret != -ETIMEDOUT);
+		if (status == WLAN_STATUS_SUCCESS)
+			return;
+	}
+
+	if (ret == -ETIMEDOUT)
+		kalSetRstEvent(FALSE);
+	else
+		kalSetRstEvent(TRUE);
 #endif
 }
 #else
