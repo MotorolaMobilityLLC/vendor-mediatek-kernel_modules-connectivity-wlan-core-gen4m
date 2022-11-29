@@ -564,7 +564,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		} else
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
-		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+		if (prAdapter->prGlueInfo->fgIsInSuspend) {
+			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
+			u4CurrTick = kalGetTimeTick();
+		} else
+			fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
 			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
 
 		if (fgResult) {

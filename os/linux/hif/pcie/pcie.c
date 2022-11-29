@@ -1106,16 +1106,23 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 
 static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
 #if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
 	struct device *dev = &pdev->dev;
 
+	prGlueInfo = g_prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -1;
+	}
+
+	prGlueInfo->fgIsInSuspend = TRUE;
 	dev->power.driver_flags = DPM_FLAG_SMART_SUSPEND;
 	dev->power.runtime_status = RPM_SUSPENDED;
 	pdev->skip_bus_pm = true;
 	return 0;
 #else
-
-	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 	uint32_t count = 0;
 	int wait = 0;
@@ -1243,10 +1250,18 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 
 int mtk_pci_resume(struct pci_dev *pdev)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
 #if (CFG_DEVICE_SUSPEND_BY_MOBILE == 1)
+	prGlueInfo = g_prGlueInfo;
+	if (!prGlueInfo) {
+		DBGLOG(HAL, ERROR, "prGlueInfo is NULL!\n");
+		return -1;
+	}
+
+	prGlueInfo->fgIsInSuspend = FALSE;
 	return 0;
 #else
-	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
 
 	DBGLOG(HAL, STATE, "mtk_pci_resume()\n");
