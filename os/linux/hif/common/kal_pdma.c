@@ -2579,9 +2579,8 @@ int32_t wf_reg_read_wrapper(void *priv,
 	struct ADAPTER *ad = glue->prAdapter;
 	int32_t ret = 0;
 
-	if (kalIsHalted()) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver in halted state.\n");
+	if (!ad) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2614,9 +2613,8 @@ int32_t wf_reg_write_wrapper(void *priv,
 	struct ADAPTER *ad = glue->prAdapter;
 	int32_t ret = 0;
 
-	if (kalIsHalted()) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver in halted state.\n");
+	if (!ad) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2650,9 +2648,8 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 	uint32_t val = 0;
 	int32_t ret = 0;
 
-	if (kalIsHalted()) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver in halted state.\n");
+	if (!ad) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
