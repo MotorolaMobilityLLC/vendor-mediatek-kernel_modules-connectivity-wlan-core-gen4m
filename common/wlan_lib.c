@@ -5945,14 +5945,12 @@ wlanoidQueryStaStatistics(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	uint8_t ucBssIndex ;
-	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (perf->fgIdle ||
-		(ucBssIndex == aisGetDefaultLinkBssIndex(prAdapter) &&
+	if (ucBssIndex == aisGetDefaultLinkBssIndex(prAdapter) &&
 			!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
 			prAdapter->u4LastLinkQuality,
-			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
+			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY))
 	) {
 		kalMemCopy((struct PARAM_GET_STA_STATISTICS *)pvQueryBuffer,
 			   &prAdapter->rQueryStaStatistics,
@@ -13572,21 +13570,31 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 		return u4Status;
 	COPY_MAC_ADDR(arBssid, prBssInfo->aucBSSID);
 
-	/* send cmd to firmware */
-	prQueryStaStatistics = &(prAdapter->rQueryStaStatistics);
 	prStat = &(prAdapter->rStat);
 	kalMemZero(prStat, sizeof(struct PARAM_802_11_STATISTICS_STRUCT));
-	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, arBssid);
-	prQueryStaStatistics->ucReadClear = TRUE;
-	DBGLOG(REQ, TRACE, "Call prQueryStaStatistics=%p, u4BufLen=%p",
-			prQueryStaStatistics, &prAdapter->u4BufLen);
-	u4Status = wlanQueryStaStatistics(prAdapter,
-				prQueryStaStatistics,
-				sizeof(struct PARAM_GET_STA_STATISTICS),
-				&(prAdapter->u4BufLen),
-				FALSE);
-	DBGLOG(REQ, TRACE, "u4Status=%u, prQueryStaStatistics=%p, u4BufLen=%p",
-			u4Status, prQueryStaStatistics, &prAdapter->u4BufLen);
+
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+			prAdapter->rGetStaUpdateTime,
+			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY)))
+#endif
+	{
+		/* send cmd to firmware */
+		prQueryStaStatistics = &(prAdapter->rQueryStaStatistics);
+		COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, arBssid);
+		prQueryStaStatistics->ucReadClear = TRUE;
+		DBGLOG(REQ, TRACE, "Call prQueryStaStatistics=%p, u4BufLen=%p",
+				prQueryStaStatistics, &prAdapter->u4BufLen);
+		u4Status = wlanQueryStaStatistics(prAdapter,
+					prQueryStaStatistics,
+					sizeof(struct PARAM_GET_STA_STATISTICS),
+					&(prAdapter->u4BufLen),
+					FALSE);
+		DBGLOG(REQ, TRACE,
+				"u4Status=%u, prQueryStaStatistics=%p, u4BufLen=%p",
+				u4Status, prQueryStaStatistics,
+				&prAdapter->u4BufLen);
+	}
 
 	u4Status = wlanQueryStatistics(prAdapter,
 				prStat,

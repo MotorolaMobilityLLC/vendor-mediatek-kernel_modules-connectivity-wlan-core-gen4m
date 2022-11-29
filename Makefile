@@ -449,6 +449,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
         CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
         CONFIG_MTK_WIFI_AER_L05_RESET=y
+        CONFIG_SUPPORT_GET_STATION_ONE_CMD=y
         ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
         endif
     endif
@@ -580,6 +581,12 @@ ifeq ($(CONFIG_SUPPORT_TX_DATA_DELAY), y)
     endif
 else
     ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_GET_STATION_ONE_CMD), y)
+    ccflags-y += -DCFG_SUPPORT_GET_STATION_ONE_CMD=1
+else
+    ccflags-y += -DCFG_SUPPORT_GET_STATION_ONE_CMD=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)

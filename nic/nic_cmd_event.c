@@ -1784,45 +1784,16 @@ void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
 }
 #endif
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called when event for query STA link status
- *        has been retrieved
- *
- * @param prAdapter          Pointer to the Adapter structure.
- * @param prCmdInfo          Pointer to the command information
- * @param pucEventBuf        Pointer to the event buffer
- *
- * @return none
- *
- */
-/*----------------------------------------------------------------------------*/
-void nicCmdEventQueryStaStatistics(struct ADAPTER
-				   *prAdapter, struct CMD_INFO *prCmdInfo,
-				   uint8_t *pucEventBuf)
+void nicUpdateStaStats(struct ADAPTER *prAdapter,
+	struct EVENT_STA_STATISTICS *prEvent,
+	struct PARAM_GET_STA_STATISTICS *prStaStatistics)
 {
-	uint32_t u4QueryInfoLen;
-	struct EVENT_STA_STATISTICS *prEvent;
-	struct GLUE_INFO *prGlueInfo;
-	struct PARAM_GET_STA_STATISTICS *prStaStatistics;
 	enum ENUM_WMM_ACI eAci;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucDbdcIdx, ucIdx;
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 #endif
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-	ASSERT(pucEventBuf);
-	ASSERT(prCmdInfo->pvInformationBuffer);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prEvent = (struct EVENT_STA_STATISTICS *) pucEventBuf;
-	prStaStatistics = (struct PARAM_GET_STA_STATISTICS *)
-			  prCmdInfo->pvInformationBuffer;
-
-	u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
 
 	/* Statistics from FW is valid */
 	if (prEvent->u4Flags & BIT(0)) {
@@ -2075,6 +2046,43 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 		prLinkQualityInfo->u4CurTxRate = prEvent->u2LinkSpeed * 5;
 #endif
 	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is called when event for query STA link status
+ *        has been retrieved
+ *
+ * @param prAdapter          Pointer to the Adapter structure.
+ * @param prCmdInfo          Pointer to the command information
+ * @param pucEventBuf        Pointer to the event buffer
+ *
+ * @return none
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void nicCmdEventQueryStaStatistics(struct ADAPTER
+				   *prAdapter, struct CMD_INFO *prCmdInfo,
+				   uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct EVENT_STA_STATISTICS *prEvent;
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_GET_STA_STATISTICS *prStaStatistics;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+	ASSERT(prCmdInfo->pvInformationBuffer);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prEvent = (struct EVENT_STA_STATISTICS *) pucEventBuf;
+	prStaStatistics = (struct PARAM_GET_STA_STATISTICS *)
+			  prCmdInfo->pvInformationBuffer;
+
+	u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
+
+	nicUpdateStaStats(prAdapter, prEvent, prStaStatistics);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo,

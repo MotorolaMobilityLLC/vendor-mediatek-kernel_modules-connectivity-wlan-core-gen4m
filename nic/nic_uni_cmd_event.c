@@ -7764,6 +7764,74 @@ void nicUniEventLinkQuality(struct ADAPTER
 	nicCmdEventQueryLinkQuality(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+void nicUniEventGetSta(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_STATISTICS *evt =
+		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
+	struct UNI_EVENT_GET_STA *tag =
+		(struct UNI_EVENT_GET_STA *) evt->aucTlvBuffer;
+
+	struct PARAM_GET_STA *prGetSta;
+	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
+	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+	struct EVENT_LINK_QUALITY legacy = {0};
+	struct EVENT_STA_STATISTICS *prStaStatsLegacy;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint32_t u4QueryInfoLen;
+	uint32_t i;
+
+	prGetSta = (struct PARAM_GET_STA *) (prCmdInfo->pvInformationBuffer);
+	prLinkSpeed = prGetSta->prLinkSpeed;
+	prQueryStaStatistics = prGetSta->prGetStaStatistics;
+	prStaStatsLegacy = (struct EVENT_STA_STATISTICS *) tag->aucBuffer;
+
+	/* GET_LINK_QUALITY */
+	for (i = 0; i < 4; i++) {
+		legacy.rLq[i].cRssi = tag->rLq[i].cRssi;
+		legacy.rLq[i].cLinkQuality = tag->rLq[i].cLinkQuality;
+		legacy.rLq[i].u2LinkSpeed = tag->rLq[i].u2LinkSpeed;
+		legacy.rLq[i].ucMediumBusyPercentage =
+				tag->rLq[i].ucMediumBusyPercentage;
+		legacy.rLq[i].ucIsLQ0Rdy = tag->rLq[i].ucIsLQ0Rdy;
+	}
+
+	for (i = 0; i < BSSID_NUM; i++) {
+		struct LINK_SPEED_EX_ *prLq;
+
+		if (!legacy.rLq[i].ucIsLQ0Rdy)
+			continue;
+
+		nicUpdateLinkQuality(prAdapter, i, &legacy);
+		prLq = &prAdapter->rLinkQuality.rLq[i];
+
+		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
+		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
+		prLinkSpeed->rLq[i].cRssi = prLq->cRssi;
+
+		DBGLOG(NIC, TRACE,
+			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
+			i,
+			prLinkSpeed->rLq[i].u2TxLinkSpeed,
+			prLinkSpeed->rLq[i].u2RxLinkSpeed,
+			prLinkSpeed->rLq[i].cRssi);
+	}
+
+	/* GET_STA_STATISTICS */
+	nicUpdateStaStats(prAdapter, prStaStatsLegacy, prQueryStaStatistics);
+	prAdapter->rGetStaUpdateTime = kalGetTimeTick();
+
+	u4QueryInfoLen = (sizeof(struct PARAM_LINK_SPEED_EX) +
+		sizeof(struct PARAM_GET_STA_STATISTICS));
+
+	kalOidComplete(prGlueInfo, prCmdInfo,
+		u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+
+}
+#endif
+
 void nicUniEventQueryRfTestATInfo(struct ADAPTER
 	  *prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {

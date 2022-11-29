@@ -618,8 +618,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
-	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+	struct PARAM_GET_STA rGetSta;
+#endif
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
+	struct PARAM_GET_STA_STATISTICS *prGetStaStatistics;
 	uint32_t u4TotalError;
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
@@ -641,6 +644,17 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
 		return -EINVAL;
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+	rGetSta.prGetStaStatistics = &(
+		prGlueInfo->prAdapter->rQueryStaStatistics);
+	prGetStaStatistics = rGetSta.prGetStaStatistics;
+	rGetSta.prLinkSpeed = &rLinkSpeed;
+#else
+	prGetStaStatistics = &(
+		prGlueInfo->prAdapter->rQueryStaStatistics);
+#endif
+	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, arBssid);
+	prGetStaStatistics->ucReadClear = TRUE;
 
 	/* 1. check input MAC address */
 	/* On Android O, this might be wlan0 address */
@@ -664,6 +678,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return 0;
 	}
 
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+	/* query linkspeed and sta_statistics in one unified cmd */
+	DBGLOG(REQ, TRACE, "Call Glue=%p, GetSta=%p, size=%zu, &u4BufLen=%p",
+		prGlueInfo, &rGetSta, sizeof(rGetSta), &u4BufLen);
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				   wlanoidQueryGetSta, &rGetSta,
+				   (sizeof(rLinkSpeed) +
+				    sizeof(*prGetStaStatistics)),
+				   &u4BufLen, ucBssIndex);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
+		rStatus, prGlueInfo, u4BufLen);
+#else
 	DBGLOG(REQ, TRACE, "Call Glue=%p, LinkSpeed=%p, size=%zu, &u4BufLen=%p",
 		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
@@ -672,8 +698,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				   &u4BufLen, ucBssIndex);
 	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
 		rStatus, prGlueInfo, u4BufLen);
-
-
+#endif
 
 #if CFG_REPORT_MAX_TX_RATE
 	/*rewrite LinkSpeed with Max LinkSpeed*/
@@ -793,25 +818,22 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->tx_bytes = prDevStats->tx_bytes;
 
 		/* 6. fill TX_FAILED */
-		kalMemZero(&rQueryStaStatistics,
-			   sizeof(rQueryStaStatistics));
-		COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr, arBssid);
-		rQueryStaStatistics.ucReadClear = TRUE;
-
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 0)
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidQueryStaStatistics,
-				&rQueryStaStatistics,
-				sizeof(rQueryStaStatistics),
+				prGetStaStatistics,
+				sizeof(*prGetStaStatistics),
 				&u4BufLen, ucBssIndex);
+#endif
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
 			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
 			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
-			u4FcsError = rQueryStaStatistics.rMibInfo[0].u4FcsError;
-			u4TotalError = rQueryStaStatistics.u4TxFailCount +
-				       rQueryStaStatistics.u4TxLifeTimeoutCount;
+			u4FcsError = prGetStaStatistics->rMibInfo[0].u4FcsError;
+			u4TotalError = prGetStaStatistics->u4TxFailCount +
+				       prGetStaStatistics->u4TxLifeTimeoutCount;
 			prGlueInfo->u4FcsErrorCache += u4FcsError;
 			prDevStats->tx_errors += u4TotalError;
 #define TEMP_LOG_TEMPLATE \
@@ -823,8 +845,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				sinfo->txrate.bw, sinfo->rxrate.bw,
 				sinfo->signal,
 				MAC2STR(arBssid),
-				rQueryStaStatistics.u4TxFailCount,
-				rQueryStaStatistics.u4TxLifeTimeoutCount,
+				prGetStaStatistics->u4TxFailCount,
+				prGetStaStatistics->u4TxLifeTimeoutCount,
 				sinfo->tx_packets, sinfo->rx_packets,
 				u4FcsError
 			);

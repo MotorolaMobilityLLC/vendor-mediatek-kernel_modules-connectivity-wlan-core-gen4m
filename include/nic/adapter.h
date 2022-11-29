@@ -2002,6 +2002,10 @@ struct ADAPTER {
 
 	struct PARAM_LINK_SPEED_EX rLinkQuality;
 
+#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+	OS_SYSTIME rGetStaUpdateTime;
+#endif
+
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;
 
