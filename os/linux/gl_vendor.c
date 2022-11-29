@@ -1866,8 +1866,10 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 				if (rStatus != WLAN_STATUS_SUCCESS ||
 				    u4QueryInfoLen !=
 					sizeof(struct EVENT_STATS_LLS_DATA) ||
-				    query.data.eUpdateStatus !=
-					STATS_LLS_UPDATE_STATUS_SUCCESS) {
+				    (query.data.eUpdateStatus !=
+					STATS_LLS_UPDATE_STATUS_SUCCESS &&
+				     query.data.eUpdateStatus !=
+					STATS_LLS_UPDATE_STATUS_PCIE_INVALID)) {
 					DBGLOG(REQ, WARN,
 						"kalIoctl=%x, %u bytes, status=%u",
 						rStatus, u4QueryInfoLen,
