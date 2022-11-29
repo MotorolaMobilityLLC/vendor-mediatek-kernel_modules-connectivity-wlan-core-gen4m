@@ -10095,6 +10095,9 @@ void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			info = (struct EXT_EVENT_THERMAL_PROTECT_DUTY_NOTIFY *)
 					rsp->aucBuffer;
 
+			if (info->u1DutyPercent == 100)
+				break;
+
 			DBGLOG(NIC, INFO,
 				"Duty update, B[%d] L[%d] D[%d] T[%d] P[%d]\n",
 				info->u1BandIdx, info->u1LevelIdx,
