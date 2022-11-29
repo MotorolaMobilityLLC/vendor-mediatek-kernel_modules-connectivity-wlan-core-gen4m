@@ -3191,8 +3191,8 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
 
-	DBGLOG(RX, TRACE, "%s: IndicatedRfbList num = %u\n",
-	       __func__, RX_GET_INDICATED_RFB_CNT(prRxCtrl));
+	DBGLOG(RX, LOUD, "IndicatedRfbList num = %u\n",
+	       RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 
 	while (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rIndicatedRfbList)) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);

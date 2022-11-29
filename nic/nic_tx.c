@@ -5887,7 +5887,7 @@ static void nicTxDirectCheckStaAcmQ(struct ADAPTER *prAdapter,
 
 	/* check if acm required */
 	if (likely(!prStaRec->afgAcmRequired[ucAc])) {
-		DBGLOG(NIC, TRACE, "afgAcmRequired:%u\n",
+		DBGLOG(NIC, LOUD, "afgAcmRequired:%u\n",
 			prStaRec->afgAcmRequired[ucAc]);
 		return;
 	}
