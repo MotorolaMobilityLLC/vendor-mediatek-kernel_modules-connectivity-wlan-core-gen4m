@@ -249,6 +249,9 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 		return 0;
 	}
 
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK(prAdapter, prCtrl->prWakeLock);
+#endif
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_FW_LOG);
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	if (prAdapter->fgIsFwOwn == TRUE) {
@@ -256,6 +259,9 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 			"Skip due to driver own failed.\n");
 		prStats->skipped++;
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
+#if CFG_ENABLE_WAKE_LOCK
+		KAL_WAKE_UNLOCK(prAdapter, prCtrl->prWakeLock);
+#endif
 		goto exit;
 	}
 
@@ -267,6 +273,9 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 	}
 	wlanReleasePowerControl(prAdapter);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_UNLOCK(prAdapter, prCtrl->prWakeLock);
+#endif
 
 	prStats->handled++;
 
@@ -475,6 +484,9 @@ uint32_t fwLogMmioInitMcu(struct ADAPTER *prAdapter)
 		goto exit;
 	}
 	INIT_WORK(&prCtrl->work, fwLogMmioWork);
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(prAdapter, prCtrl->prWakeLock, "wlan_fw_log");
+#endif
 
 	prCtrl->initialized = TRUE;
 
@@ -495,6 +507,12 @@ void fwLogMmioDeInitMcu(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, TRACE, "\n");
 
 	prCtrl->initialized = FALSE;
+
+#if CFG_ENABLE_WAKE_LOCK
+	if (KAL_WAKE_LOCK_ACTIVE(prAdapter, prCtrl->prWakeLock))
+		KAL_WAKE_UNLOCK(prAdapter, prCtrl->prWakeLock);
+	KAL_WAKE_LOCK_DESTROY(prAdapter, prCtrl->prWakeLock);
+#endif
 
 	if (prCtrl->wq)
 		destroy_workqueue(prCtrl->wq);
