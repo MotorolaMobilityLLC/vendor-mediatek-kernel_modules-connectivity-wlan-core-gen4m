@@ -270,7 +270,7 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 	return TRUE;
 }
 
-uint8_t p2pGetMode()
+uint8_t p2pGetMode(void)
 {
 	return mode;
 }
