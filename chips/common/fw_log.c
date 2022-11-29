@@ -114,6 +114,22 @@ void fw_log_stop(struct ADAPTER *ad)
 	fw_log->ops->stop(ad);
 }
 
+void fw_log_set_enabled(struct ADAPTER *ad, u_int8_t enabled)
+{
+	struct FW_LOG_INFO *fw_log = NULL;
+
+	if (!ad ||
+	    !ad->chip_info)
+		return;
+
+	fw_log = &ad->chip_info->fw_log_info;
+	if (!fw_log->ops ||
+	    !fw_log->ops->set_enabled)
+		return;
+
+	fw_log->ops->set_enabled(ad, enabled);
+}
+
 int32_t fw_log_handler(void)
 {
 	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
