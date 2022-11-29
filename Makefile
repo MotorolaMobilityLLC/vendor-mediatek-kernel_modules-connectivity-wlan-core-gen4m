@@ -289,11 +289,18 @@ else
     ccflags-y += -DCFG_ENABLE_HOST_BUS_TIMEOUT=0
 endif
 
-ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
+#ifneq ($(filter SOC2_1x1 SOC2_2x2, $(MTK_COMBO_CHIP)),)
+ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=1
+else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
 else
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
+    ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
 endif
+#endif
 
 ifneq ($(findstring 5_0,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -USOC5_0,$(ccflags-y))
