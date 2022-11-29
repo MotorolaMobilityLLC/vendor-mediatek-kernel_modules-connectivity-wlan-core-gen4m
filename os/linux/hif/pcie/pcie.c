@@ -1366,11 +1366,12 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->freeDesc = halZeroCopyPathFreeDesc;
 	prMemOps->freeExtBuf = halZeroCopyPathFreeDesc;
 	prMemOps->freeBuf = halZeroCopyPathFreeBuf;
+	prMemOps->allocRxEvtBuf = halZeroCopyPathAllocRxBuf;
 #if CFG_SUPPORT_RX_PAGE_POOL
-	prMemOps->allocRxBuf = halZeroCopyPathAllocPagePoolRxBuf;
+	prMemOps->allocRxDataBuf = halZeroCopyPathAllocPagePoolRxBuf;
 	prMemOps->freePacket = halZeroCopyPathFreePagePoolPacket;
 #else
-	prMemOps->allocRxBuf = halZeroCopyPathAllocRxBuf;
+	prMemOps->allocRxDataBuf = halZeroCopyPathAllocRxBuf;
 	prMemOps->freePacket = halZeroCopyPathFreePacket;
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 #if CFG_MTK_WIFI_SW_EMI_RING
@@ -1388,8 +1389,10 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 		prMemOps->allocExtBuf = halCopyPathAllocExtBuf;
 		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
 		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
+		prMemOps->allocRxEvtBuf = halCopyPathAllocRxBuf;
 		prMemOps->allocRuntimeMem = NULL;
 		prMemOps->copyCmd = halCopyPathCopyCmd;
+		prMemOps->copyEvent = halCopyPathCopyEvent;
 		prMemOps->copyTxData = halCopyPathCopyTxData;
 		prMemOps->mapTxBuf = NULL;
 		prMemOps->unmapTxBuf = NULL;
@@ -1408,9 +1411,7 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 
 void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
 {
-	prMemOps->allocRxBuf = halCopyPathAllocRxBuf;
 	prMemOps->copyRxData = halCopyPathCopyRxData;
-	prMemOps->copyEvent = halCopyPathCopyEvent;
 	prMemOps->mapRxBuf = NULL;
 	prMemOps->unmapRxBuf = NULL;
 	prMemOps->freePacket = NULL;

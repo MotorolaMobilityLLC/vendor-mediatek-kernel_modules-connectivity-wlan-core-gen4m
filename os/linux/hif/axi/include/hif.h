@@ -115,9 +115,12 @@ struct HIF_MEM_OPS {
 			      uint32_t u4Num, uint32_t u4Idx);
 	void (*allocTxDataBuf)(struct MSDU_TOKEN_ENTRY *prToken,
 			       uint32_t u4Idx);
-	void *(*allocRxBuf)(struct GL_HIF_INFO *prHifInfo,
-			    struct RTMP_DMABUF *prDmaBuf,
-			    uint32_t u4Num, uint32_t u4Idx);
+	void *(*allocRxEvtBuf)(struct GL_HIF_INFO *prHifInfo,
+			       struct RTMP_DMABUF *prDmaBuf,
+			       uint32_t u4Num, uint32_t u4Idx);
+	void *(*allocRxDataBuf)(struct GL_HIF_INFO *prHifInfo,
+				struct RTMP_DMABUF *prDmaBuf,
+				uint32_t u4Num, uint32_t u4Idx);
 	void *(*allocRuntimeMem)(uint32_t u4SrcLen);
 	bool (*copyCmd)(struct GL_HIF_INFO *prHifInfo,
 			struct RTMP_DMACB *prTxCell, void *pucBuf,

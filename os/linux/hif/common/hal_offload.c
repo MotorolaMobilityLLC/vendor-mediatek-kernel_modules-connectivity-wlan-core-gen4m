@@ -819,8 +819,8 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 
 	rDmaBuf.AllocSize = CFG_RX_MAX_PKT_SIZE;
 	for (u4Cnt = 0; u4Cnt < u4RxBufNum; u4Cnt++) {
-		if (prMemOps->allocRxBuf)
-			prSkb = prMemOps->allocRxBuf(
+		if (prMemOps->allocRxDataBuf)
+			prSkb = prMemOps->allocRxDataBuf(
 				prHifInfo, &rDmaBuf, 0, u4Cnt);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR,
