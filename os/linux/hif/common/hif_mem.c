@@ -909,6 +909,11 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 	if (!prRxCell->pPacket || !prDmaBuf)
 		return;
 
+	if (prDmaBuf->fgIsCopyPath) {
+		halCopyPathDumpRx(prHifInfo, prRxRing, u4Idx, u4DumpLen);
+		return;
+	}
+
 	halZeroCopyPathUnmapRxBuf(prHifInfo, prDmaBuf->AllocPa,
 				  prDmaBuf->AllocSize);
 
