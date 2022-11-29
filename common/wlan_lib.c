@@ -8246,8 +8246,6 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "NanDftNdlQosLatency", 0);
 	prWifiVar->ucDftNdlQosQuotaVal =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQosQuota", 0);
-	prWifiVar->ucNanBandwidth =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanBw", MAX_BW_20MHZ);
 	prWifiVar->fgEnNanVHT =
 		(unsigned char)wlanCfgGetUint32(prAdapter, "NanVHT", 1);
 	prWifiVar->ucNanFtmBw = (uint8_t)wlanCfgGetUint32(
