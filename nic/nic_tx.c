@@ -6187,7 +6187,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 				prStaRec =
 					QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 						prMsduInfo->ucStaRecIndex);
-				if (prStaRec && IS_STA_IN_AIS(prStaRec) &&
+				if (prStaRec &&
 					prMsduInfo->eSrc == TX_PACKET_OS)
 					qmDetectArpNoResponse(prAdapter,
 						prMsduInfo);

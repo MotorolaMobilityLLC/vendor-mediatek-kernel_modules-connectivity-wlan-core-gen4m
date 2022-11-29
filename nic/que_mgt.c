@@ -9029,6 +9029,8 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
 	uint8_t *pucData = NULL;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
@@ -9055,7 +9057,16 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
 		prAdapter, prMsduInfo->ucStaRecIndex);
-	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
+	if (!prStaRec)
+		return;
+
+	/* store it in local variable to prevent timing issue */
+	ucBssIndex = prStaRec->ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	if (!IS_BSS_INFO_IN_AIS(prBssInfo))
 		return;
 
 	if (prMsduInfo->eSrc != TX_PACKET_OS)
