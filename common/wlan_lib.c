@@ -8292,7 +8292,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->fgSapChannelSwitchPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapChannelSwitchPolicy",
-		P2P_CHANNEL_SWITCH_POLICY_SCC);
+		P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER); //MOTO IKSWT-58657 avoid starting SAP on DFS channels
 
 	prWifiVar->fgSapConcurrencyPolicy = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "SapConcurrencyPolicy",
