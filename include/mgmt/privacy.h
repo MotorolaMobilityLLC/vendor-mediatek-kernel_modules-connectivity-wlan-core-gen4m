@@ -272,6 +272,9 @@ uint8_t secLookupStaRecIndexFromTA(struct ADAPTER
 
 void secPrivacyDumpWTBL(struct ADAPTER *prAdapter);
 
+uint8_t secCheckWTBLwlanIdxInUseByOther(struct ADAPTER *prAdapter,
+			uint8_t ucWlanIdx, uint8_t ucBssIndex);
+
 u_int8_t secCheckWTBLAssign(struct ADAPTER *prAdapter);
 
 u_int8_t secIsProtectedBss(struct ADAPTER *prAdapter,
