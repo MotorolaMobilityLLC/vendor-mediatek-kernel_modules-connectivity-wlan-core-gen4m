@@ -1312,6 +1312,8 @@ uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 		return FALSE;
 	if (aisQueryBlackList(ad, bss))
 		return FALSE;
+	if (reason == ROAMING_REASON_TEMP_REJECT)
+		return FALSE;
 	if (reason == ROAMING_REASON_BTM) {
 		struct NEIGHBOR_AP *nei =
 			scanGetNeighborAPEntry(ad, bss->aucBSSID, bidx);

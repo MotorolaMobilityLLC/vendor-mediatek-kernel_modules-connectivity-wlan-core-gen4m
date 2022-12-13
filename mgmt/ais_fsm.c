@@ -3759,11 +3759,13 @@ u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+	struct ROAMING_INFO *prRoamingInfo;
 	uint8_t ucBssIndex = 0;
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	prRoamingInfo =	aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	if (prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
 		/* record temporarily rejected AP for SA query */
@@ -3773,6 +3775,7 @@ u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,
 			TU_TO_MSEC(prStaRec->u4assocComeBackTime);
 		/* Extend trial count during Beacon timeout retry*/
 		prAisFsmInfo->ucConnTrialCountLimit = 5;
+		prRoamingInfo->eReason = ROAMING_REASON_TEMP_REJECT;
 		DBGLOG(AIS, INFO, "reschedule a comeback timer %u msec\n",
 			TU_TO_MSEC(prStaRec->u4assocComeBackTime));
 		return true;
@@ -3910,12 +3913,6 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 #endif
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
-
-	/* If AP reject STA temporarily when roaming, clear all link.
-	 * Thus, ap selection can choose same AP to retry.
-	 */
-	if (fgTempReject)
-		aisClearAllLink(prAisFsmInfo);
 
 	/* aisRestoreAllLink clears target bssdesc and starec if no connection,
 	 * DO NOT use prStaRec or aisGetTargetBssDesc after this point
