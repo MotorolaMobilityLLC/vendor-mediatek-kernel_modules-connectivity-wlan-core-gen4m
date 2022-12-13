@@ -5199,6 +5199,16 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		struct BSS_INFO *prAisBssInfo;
 		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+		// BEGIN MOTO IKSWT-58657
+		/* If STA is working in the 5GHz DFS frequency, run ACS in the 2GHz */
+		if (prAisBssInfo && prAisBssInfo->eBand > BAND_2G4 &&
+				prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+				rlmDomainIsDfsChnls(prAdapter, prAisBssInfo->ucPrimaryChannel)) {
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+				prAcsReqInfo, BIT(BAND_2G4));
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+		} else
+		// END MOTO IKSWT-58657
 		if (prAisBssInfo &&
 			prAisBssInfo->eConnectionState ==
 			MEDIA_STATE_CONNECTED &&
