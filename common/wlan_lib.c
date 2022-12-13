@@ -8402,7 +8402,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgSkipP2pProbeResp,
 		"SkipP2pProbeResp", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgSapChannelSwitchPolicy,
-		"SapChannelSwitchPolicy", P2P_CHANNEL_SWITCH_POLICY_SCC);
+		"SapChannelSwitchPolicy", P2P_CHANNEL_SWITCH_POLICY_SKIP_DFS_USER); //MOTO IKSWT-58657 avoid starting SAP on DFS channels
 	INIT_UINT(prWifiVar->fgSapConcurrencyPolicy,
 		"SapConcurrencyPolicy", P2P_CONCURRENCY_POLICY_REMOVE);
 	INIT_UINT(prWifiVar->fgSapAuthPolicy,
