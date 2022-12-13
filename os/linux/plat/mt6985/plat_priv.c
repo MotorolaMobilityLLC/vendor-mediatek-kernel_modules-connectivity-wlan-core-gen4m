@@ -170,7 +170,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4RxRfbRetWorkCpu = 6,
 		.i4TxWorkCpu = WORK_ALL_CPU_OK,
 		.i4RxWorkCpu = 7,
-		.fgKeepPcieWakeup = FALSE,
+		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 1,
 		.fgDramBoost = FALSE
 	},
