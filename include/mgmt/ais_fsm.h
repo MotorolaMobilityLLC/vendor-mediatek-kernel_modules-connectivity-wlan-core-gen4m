@@ -1141,4 +1141,6 @@ void aisMultiStaSetQuoteTime(
 	uint8_t fgSetQuoteTime);
 #endif
 
+uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 #endif /* _AIS_FSM_H */
