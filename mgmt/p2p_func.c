@@ -7394,7 +7394,7 @@ struct BSS_INFO *p2pGetAisConnectedBss(
 	}
 
 	if (p2pGetMode() != RUNNING_P2P_AP_MODE)
-		bssRet = p2pGetAisBssByBand(ad,
+		bssRet = p2pGetAisBssRfBand(ad,
 			bss->eBand);
 	else {
 		struct BSS_INFO *bssNext =
