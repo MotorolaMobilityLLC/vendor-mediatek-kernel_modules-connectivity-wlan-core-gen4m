@@ -1315,6 +1315,9 @@ struct WIFI_VAR {
 	uint8_t ucApfEnable;
 #endif
 
+	/* rx rate filter */
+	uint32_t u4RxRateProtoFilterMask;
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	u_int8_t fgBARDelayIndicationEn;
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */

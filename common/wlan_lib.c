@@ -8452,6 +8452,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4TputThresholdMbps = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "TputThresholdMbps", 50);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
+	prWifiVar->u4RxRateProtoFilterMask = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "RxRateProtoFilterMask", BIT(ENUM_PKT_ARP));
+
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	prWifiVar->fgBARDelayIndicationEn = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "BARDelayIndicationEn", FEATURE_ENABLED);
