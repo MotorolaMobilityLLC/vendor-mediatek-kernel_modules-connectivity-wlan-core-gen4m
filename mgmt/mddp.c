@@ -1270,7 +1270,6 @@ void __mddpNotifyWifiOffStart(void)
 void mddpNotifyWifiOffStart(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
 
 	if (!mddpIsSupportMcifWifi())
 		return;
@@ -1294,14 +1293,9 @@ void mddpNotifyWifiOffStart(void)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return;
 	}
-	prAdapter = prGlueInfo->prAdapter;
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-		return;
-	}
 
 	/* avoid power off process MD SER */
-	halNotifyMdCrash(prAdapter);
+	kalSetMdCrashEvent(prGlueInfo);
 }
 
 void __mddpNotifyWifiOffEnd(void)
