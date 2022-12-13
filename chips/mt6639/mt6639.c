@@ -443,7 +443,7 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
-		pcie_drv_own_thread_handler, AP_INT, 0},
+		pcie_drv_own_thread_handler, AP_DRV_OWN, 0},
 	{"drv_own_md_timeout_irq", mtk_md_dummy_pci_interrupt,
 				 NULL, MDDP_INT, 0},
 	{"fw_log_irq", pcie_fw_log_top_handler,
