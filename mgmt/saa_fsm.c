@@ -947,8 +947,10 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 	uint16_t u2StatusCode;
 	enum ENUM_AA_STATE eNextState;
 	uint8_t ucWlanIdx;
+	uint8_t ucStaRecIdx;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	ucStaRecIdx = prSwRfb->ucStaRecIdx;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	/* We should have the corresponding Sta Record. */
@@ -957,12 +959,15 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
 
 		DBGLOG(SAA, WARN,
-			"Received a AuthResp: DA[" MACSTR "] bssid[" MACSTR "] wlanIdx[%d] w/o corresponding staRec\n",
+			"Received a AuthResp: DA[" MACSTR "] bssid[" MACSTR
+			"] wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
 			MAC2STR(mgmt->aucDestAddr),
 			MAC2STR(mgmt->aucBSSID),
-			ucWlanIdx);
-
+			ucWlanIdx,
+			ucStaRecIdx);
+#if (CFG_WLAN_CONNAC3_DEV == 1)
  		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
+#endif
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN, "StaRec not found\n");
 			return;
@@ -1154,8 +1159,10 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucWlanIdx;
 	struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHdr;
+	uint8_t ucStaRecIdx;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	ucStaRecIdx = prSwRfb->ucStaRecIdx;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 	ucWlanIdx = prSwRfb->ucWlanIdx;
 
 	/* We should have the corresponding Sta Record. */
@@ -1164,12 +1171,15 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
 
 		DBGLOG(SAA, WARN,
-			"Received a AssocResp: DA[" MACSTR "] bssid[" MACSTR "] wlanIdx[%d] w/o corresponding staRec\n",
+			"Received a AssocResp: DA[" MACSTR "] bssid[" MACSTR
+			"] wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
 			MAC2STR(mgmt->aucDestAddr),
 			MAC2STR(mgmt->aucBSSID),
-			ucWlanIdx);
-
+			ucWlanIdx,
+			ucStaRecIdx);
+#if (CFG_WLAN_CONNAC3_DEV == 1)
 		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
+#endif
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN, "StaRec not found\n");
 			return rStatus;
@@ -1267,10 +1277,12 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 	uint8_t ucWlanIdx;
+	uint8_t ucStaRecIdx;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
 	ucWlanIdx = prSwRfb->ucWlanIdx;
+	ucStaRecIdx = prSwRfb->ucStaRecIdx;
 
 	DBGLOG(SAA, INFO, "Rx Deauth frame ,DA[" MACSTR "] SA[" MACSTR
 	       "] BSSID[" MACSTR "] ReasonCode[0x%x]\n",
@@ -1283,8 +1295,8 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 		/* We should have the corresponding Sta Record. */
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN,
-			       "Received a Deauth: wlanIdx[%d] w/o corresponding staRec\n",
-			       ucWlanIdx);
+			       "Received a Deauth: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
+			       ucWlanIdx, ucStaRecIdx);
 			p2pRxDeauthNoWtbl(prAdapter, prStaRec, prSwRfb);
 			break;
 		}
@@ -1519,10 +1531,12 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct WLAN_DISASSOC_FRAME *prDisassocFrame;
 	uint8_t ucWlanIdx;
+	uint8_t ucStaRecIdx;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	prDisassocFrame = (struct WLAN_DISASSOC_FRAME *) prSwRfb->pvHeader;
 	ucWlanIdx = prSwRfb->ucWlanIdx;
+	ucStaRecIdx = prSwRfb->ucStaRecIdx;
 
 	DBGLOG(SAA, INFO,
 	       "Rx Disassoc frame from SA[" MACSTR "] BSSID[" MACSTR
@@ -1537,8 +1551,8 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 		/* We should have the corresponding Sta Record. */
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN,
-			       "Received a DisAssoc: wlanIdx[%d] w/o corresponding staRec\n",
-			       ucWlanIdx);
+			       "Received a DisAssoc: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
+			       ucWlanIdx, ucStaRecIdx);
 			break;
 		}
 
