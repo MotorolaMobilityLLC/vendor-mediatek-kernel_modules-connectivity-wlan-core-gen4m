@@ -437,7 +437,7 @@ void p2pFuncCancelScan(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prScanCancelMsg,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 	} while (FALSE);
 }				/* p2pFuncCancelScan */
 
@@ -2131,7 +2131,7 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgChRelease,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 	} while (FALSE);
 }				/* p2pFuncReleaseCh */
