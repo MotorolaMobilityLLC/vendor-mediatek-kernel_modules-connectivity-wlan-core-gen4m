@@ -95,9 +95,6 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-uint8_t g_GetResultsBufferedCnt;
-uint8_t g_GetResultsCmdCnt;
-
 const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1] = {
 	[WIFI_ATTR_SCAN_IFACE_TYPE] = {.type = NLA_U8},
@@ -615,7 +612,8 @@ int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 #else
 	nla_strlcpy(cmd, attr, sizeof(cmd));
 #endif
-
+	if (data_len > strlen(cmd))
+		data_len = strlen(cmd);
 	return mtk_cfg80211_process_str_cmd(wiphy, wdev, cmd, data_len);
 }
 
@@ -3708,7 +3706,7 @@ int mtk_cfg80211_vendor_trigger_reset(
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is to handle a reset CMD from FWK.
+ * \brief This routine is to send FWK the number of band/ant combination.
  *
  * \param[in] wiphy wiphy
  * \param[in] wdev wireless_dev
