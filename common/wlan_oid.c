@@ -5876,15 +5876,14 @@ wlanoidUninitAisFsm(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen)
 {
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	uint8_t ucBssIndex;
+	uint8_t ucAisIndex;
 
 	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
 
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	ucAisIndex = *((uint8_t *)pvSetBuffer);
 
-	aisFsmUninit(prAdapter, AIS_INDEX(prAdapter, ucBssIndex));
+	aisFsmUninit(prAdapter, ucAisIndex);
 
 	return WLAN_STATUS_SUCCESS;
 }
