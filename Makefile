@@ -449,9 +449,10 @@ ifeq ($(MTK_ANDROID_WMT), y)
         ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
         CONFIG_SUPPORT_WIFI_SLEEP_COUNT=y
         CONFIG_MTK_WIFI_AER_L05_RESET=y
+
         CONFIG_SUPPORT_GET_STATION_ONE_CMD=y
-        ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
-        endif
+    endif
+    ifeq ($(CONFIG_WLAN_MT6985_MP2_LP), y)
     endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
