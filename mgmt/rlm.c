@@ -6377,7 +6377,8 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				prAdapter->prGlueInfo,
 				prBssInfo->eBssSCO,
 				prBssDesc->ucChannelNum,
-				prBssDesc->eBand);
+				prBssDesc->eBand,
+				prBssInfo->ucBssIndex);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "DFS: BSS: " MACSTR " Desc is not found\n ",
