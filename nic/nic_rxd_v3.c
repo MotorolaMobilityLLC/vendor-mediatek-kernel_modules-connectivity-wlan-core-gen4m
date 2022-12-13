@@ -570,6 +570,10 @@ void nic_rxd_v3_check_wakeup_reason(
 
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_SW_DEFINED:
+
+	prSwRfb->fgHdrTran = nic_rxd_v3_get_HdrTrans(prRxStatus);
+	prSwRfb->ucOFLD = nic_rxd_v3_get_ofld(prRxStatus);
+
 	if (prSwRfb->ucOFLD || prSwRfb->fgHdrTran) {
 		DBGLOG(RX, INFO, "Need to treat as data frame.\n");
 		/*
