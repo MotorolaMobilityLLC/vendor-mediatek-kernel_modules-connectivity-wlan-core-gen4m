@@ -4660,10 +4660,20 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 		prAisBssInfo = aisGetAisBssInfo(prAdapter,
 			AIS_DEFAULT_INDEX);
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-			/* Force SCC, indicate channel directly */
-			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
-				prAisBssInfo);
-			goto exit;
+			// BEGIN MOTO IKSWT-58657
+			/* If STA is working in the 5GHz DFS frequency, run ACS in the 2GHz */
+			if (prAisBssInfo->eBand > BAND_2G4 &&
+					rlmDomainIsDfsChnls(prAdapter, prAisBssInfo->ucPrimaryChannel)) {
+				trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BIT(BAND_2G4));
+				prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+			} else {
+				/* Force SCC, indicate channel directly */
+				indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+					prAisBssInfo);
+				goto exit;
+			}
+			// END MOTO IKSWT-58657
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		} else if (prAdapter->fgIsHwSupport6G) {
 			/* Trim 5G + 6G PSC channels */
