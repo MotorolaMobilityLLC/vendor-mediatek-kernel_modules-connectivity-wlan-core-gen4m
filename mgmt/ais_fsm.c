@@ -1262,6 +1262,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	/* 4 <2.1> sync. to firmware domain */
 	if (prStaRec->ucStaState == STA_STATE_1)
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+	prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
