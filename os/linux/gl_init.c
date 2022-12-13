@@ -6087,14 +6087,6 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	else if ((!prGlueInfo->prAdapter->fgIsNANRegistered) && (!ucEnable))
 		return 0;
 
-	if (ucEnable) {
-		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
-
-		rSetP2P.u4Mode = 0;
-		rSetP2P.u4Enable = 0;
-		set_p2p_mode_handler(netdev, rSetP2P);
-	}
-
 	if (!ucEnable)
 		nanNetUnregister(prGlueInfo, FALSE);
 
