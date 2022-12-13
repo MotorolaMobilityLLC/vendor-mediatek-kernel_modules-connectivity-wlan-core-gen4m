@@ -70,6 +70,7 @@
 #include "precomp.h"
 #include "mgmt/ais_fsm.h"
 #include "mddp.h"
+#include "conn_dbg.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1367,6 +1368,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			if (u4Status != WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, ERROR,
 					"nicInitializeAdapter failed!\n");
+				conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+					"nicInitializeAdapter failed!\n");
 				u4Status = WLAN_STATUS_FAILURE;
 				eFailReason = INIT_ADAPTER_FAIL;
 				break;
@@ -1392,6 +1395,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* 4 <5> HIF SW info initialize */
 		if (!halHifSwInfoInit(prAdapter)) {
 			DBGLOG(INIT, ERROR, "halHifSwInfoInit failed!\n");
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				"halHifSwInfoInit failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = INIT_HIFINFO_FAIL;
 			break;
@@ -1405,6 +1410,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* 4 <7> Get ECO Version */
 		if (wlanSetChipEcoInfo(prAdapter) != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "wlanSetChipEcoInfo failed!\n");
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+					"wlanSetChipEcoInfo failed!\n");
 			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = SET_CHIP_ECO_INFO_FAIL;
 			break;

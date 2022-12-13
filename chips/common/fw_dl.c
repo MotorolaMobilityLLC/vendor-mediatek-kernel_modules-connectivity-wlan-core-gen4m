@@ -65,6 +65,7 @@
 #ifdef MT6639
 #include "coda/mt6639/wf_wfdma_mcu_dma0.h"
 #endif
+#include "conn_dbg.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2021,6 +2022,8 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		rStatus = prFwDlOps->downloadPatch(prAdapter);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "Patch Download fail\n");
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				"Patch Download fail\n");
 			goto exit;
 		}
 	}
@@ -2060,6 +2063,8 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		rStatus = prFwDlOps->phyAction(prAdapter);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "phyAction fail\n");
+			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+				"phyAction fail\n");
 			goto exit;
 		}
 	}
