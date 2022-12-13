@@ -2703,6 +2703,10 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		goto dump;
 #endif
 
+	HAL_MCR_WR(ad,
+		   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
+		   BIT(0));
+
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
 			DBGLOG(INIT, ERROR, "timeout.\n");
@@ -2743,24 +2747,96 @@ dump:
 		WARN_ON_ONCE(TRUE);
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
 			u4Value);
-		mt6639DumpPcieDateFlowStatus(ad->prGlueInfo);
-		mt6639_dumpWfsyscpupcr(ad);
-		mt6639_dumpPcGprLog(ad);
-		mt6639_dumpN45CoreReg(ad);
-		mt6639_dumpWfTopReg(ad);
-		mt6639_dumpWfBusReg(ad);
 
 		HAL_MCR_WR(ad, 0x70003304, 0x06030138);
 		HAL_MCR_WR(ad, 0x70000244, 0x000f0000);
 		HAL_MCR_WR(ad, 0x70000244, 0x001f0000);
+		kalUdelay(10);
 		HAL_MCR_WR(ad, 0x70000244, 0x011f0000);
-		kalUdelay(1);
+		kalUdelay(10);
 		HAL_MCR_RD(ad, 0x70000248, &u4Value);
 		DBGLOG(INIT, INFO, "0x70000248: 0x%08x\n",
 			u4Value);
 		HAL_MCR_RD(ad, 0x70025030, &u4Value);
 		DBGLOG(INIT, INFO, "0x70025030: 0x%08x\n",
 			u4Value);
+
+		HAL_MCR_RD(ad, 0x70000240, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000240: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70000244, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000244: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70000248, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000248: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x7000024C, &u4Value);
+		DBGLOG(INIT, INFO, "0x7000024C: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70003300, &u4Value);
+		DBGLOG(INIT, INFO, "0x70003300: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70003304, &u4Value);
+		DBGLOG(INIT, INFO, "0x70003304: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70003100, &u4Value);
+		DBGLOG(INIT, INFO, "0x70003100: 0x%08x\n",
+			u4Value);
+
+		HAL_MCR_WR(ad, 0x70021008, 0x41B00000);
+		kalUdelay(100);
+		HAL_MCR_RD(ad, 0x70021030, &u4Value);
+		DBGLOG(INIT, INFO, "0x70021030: 0x%08x\n",
+			u4Value);
+		HAL_MCR_RD(ad, 0x70021034, &u4Value);
+		DBGLOG(INIT, INFO, "0x70021034: 0x%08x\n",
+			u4Value);
+
+		HAL_MCR_WR(ad, 0x70003304, 0x06030138);
+		HAL_MCR_WR(ad, 0x70000244, 0x000f0000);
+		HAL_MCR_WR(ad, 0x70000244, 0x001f0000);
+		kalUdelay(10);
+		HAL_MCR_WR(ad, 0x70000244, 0x011f0000);
+		kalUdelay(10);
+		HAL_MCR_RD(ad, 0x70000248, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000248: 0x%08x\n",
+			u4Value);
+
+		HAL_MCR_RD(ad, 0x70026540, &u4Value);
+		u4Value &= ~BIT(3);
+		HAL_MCR_WR(ad, 0x70026540, u4Value);
+		HAL_MCR_WR(ad, 0x70026540, 0xBC);
+		kalMdelay(1);
+		HAL_MCR_RD(ad, 0x7002654C, &u4Value);
+		DBGLOG(INIT, INFO, "0x7002654C: 0x%08x\n",
+			u4Value);
+
+		HAL_MCR_WR(ad, 0x70003304, 0x06030138);
+		HAL_MCR_WR(ad, 0x70000244, 0x000f0000);
+		HAL_MCR_WR(ad, 0x70000244, 0x001f0000);
+		kalUdelay(10);
+		HAL_MCR_WR(ad, 0x70000244, 0x011f0000);
+		kalUdelay(10);
+		HAL_MCR_RD(ad, 0x70000248, &u4Value);
+		DBGLOG(INIT, INFO, "0x70000248: 0x%08x\n",
+			u4Value);
+
+		HAL_MCR_RD(ad, 0x70026540, &u4Value);
+		u4Value &= ~BIT(3);
+		HAL_MCR_WR(ad, 0x70026540, u4Value);
+		kalUdelay(150);
+		HAL_MCR_WR(ad, 0x70026540, 0x1C);
+		kalMdelay(1);
+		HAL_MCR_RD(ad, 0x7002654C, &u4Value);
+		DBGLOG(INIT, INFO, "0x7002654C: 0x%08x\n",
+			u4Value);
+
+		mt6639DumpPcieDateFlowStatus(ad->prGlueInfo);
+		mt6639_dumpWfsyscpupcr(ad);
+		mt6639_dumpPcGprLog(ad);
+		mt6639_dumpN45CoreReg(ad);
+		mt6639_dumpWfTopReg(ad);
+		mt6639_dumpWfBusReg(ad);
 	}
 
 exit:
