@@ -1243,6 +1243,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	p2pDevFsmInit(prAdapter);
+	init_completion(&prP2PInfo->rWaitRocComp);
 
 	if ((fgSkipRole == SKIP_ROLE_ALL) ||
 		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))
@@ -1260,7 +1261,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, (uint8_t) u4Idx);
 	init_completion(&prP2PInfo->rStopApComp);
-	init_completion(&prP2PInfo->rWaitRocComp);
 
 	/* Currently wpasupplicant can't support create interface. */
 	/* so initial the corresponding data structure here. */
