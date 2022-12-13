@@ -2344,9 +2344,10 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 			       ucCenterCh);
 
 		/* Check Central Channel Valid or Not */
-	} else if (eChannelWidth == CW_320MHZ) {
+	} else if (eChannelWidth == CW_320_1MHZ ||
+		   eChannelWidth == CW_320_2MHZ) {
 		//TODO: add checking for 320MHZ
-		DBGLOG(RLM, INFO, "CW320\n", eChannelWidth);
+		DBGLOG(RLM, TRACE, "CW320 %d\n", eChannelWidth);
 	} else {
 		DBGLOG(RLM, ERROR, "Wrong BW =%d\n", eChannelWidth);
 		fgValidChannel = FALSE;
@@ -9749,7 +9750,7 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 {
 	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t channelBw = MAX_BW_320MHZ;
+	uint8_t channelBw = MAX_BW_320_2MHZ;
 #else
 	uint8_t channelBw = MAX_BW_80_80_MHZ;
 #endif
@@ -9757,7 +9758,7 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 	enum ENUM_BAND eChBand;
 
 	//TODO: remove this
-	channelBw = MAX_BW_320MHZ;
+	channelBw = MAX_BW_320_2MHZ;
 
 	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
 			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)

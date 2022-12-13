@@ -236,12 +236,13 @@ uint8_t roamReasonToType[ROAMING_REASON_NUM] = {
 	[ROAMING_REASON_TX_ERR]	       = ROAM_TYPE_PER,
 };
 
-const uint16_t mpduLen[CW_320MHZ + 1] = {
+const uint16_t mpduLen[CW_320_2MHZ + 1] = {
 	[CW_20_40MHZ]  = 40,
 	[CW_80MHZ] = 80,
 	[CW_160MHZ] = 160,
 	[CW_80P80MHZ] = 160,
-	[CW_320MHZ]  = 320
+	[CW_320_1MHZ]  = 320,
+	[CW_320_2MHZ]  = 320
 };
 
 /*******************************************************************************
@@ -599,7 +600,8 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 			break;
 		case CW_160MHZ:
 		case CW_80P80MHZ:
-		case CW_320MHZ:
+		case CW_320_1MHZ:
+		case CW_320_2MHZ:
 			u2Score = BSS_FULL_SCORE;
 			break;
 		}
