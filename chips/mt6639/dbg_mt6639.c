@@ -1585,8 +1585,13 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	if (prBusInfo->dumpPcieStatus)
 		readable = prBusInfo->dumpPcieStatus(ad->prGlueInfo);
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (readable == FALSE && !dumpViaBt)
 		goto exit;
+#else
+	if (readable == FALSE)
+		goto exit;
+#endif
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (dumpViaBt) {
