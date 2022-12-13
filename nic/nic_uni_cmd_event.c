@@ -4953,8 +4953,7 @@ uint32_t nicUniCmdSetP2pLoStart(struct ADAPTER *ad,
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
 		sizeof(struct UNI_CMD_SET_P2P_LO_START_PARAM);
 
-	if (info->ucCID != CMD_ID_SET_P2P_LO_START ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
+	if (info->ucCID != CMD_ID_SET_P2P_LO_START)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_SET_P2P_LO_START_STRUCT *)
@@ -5001,8 +5000,7 @@ uint32_t nicUniCmdSetP2pLoStop(struct ADAPTER *ad,
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
 		sizeof(struct UNI_CMD_SET_P2P_LO_STOP_PARAM);
 
-	if (info->ucCID != CMD_ID_SET_P2P_LO_STOP ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
+	if (info->ucCID != CMD_ID_SET_P2P_LO_STOP)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_SET_P2P_LO_STOP_STRUCT *)
@@ -5881,14 +5879,14 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 	case SR_CMD_SET_SR_CAP_SREN_CTRL: {
 		struct UNI_CMD_SR_CAP *tag;
 		struct _SR_CMD_SR_CAP_T *cmd_sr;
-          
+
 		max_cmd_len += sizeof(struct UNI_CMD_SR_CAP);
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR,
 			max_cmd_len, NULL,
 			NULL);
 		if (!entry)
 			return WLAN_STATUS_RESOURCES;
-          
+
 		cmd_sr = (struct _SR_CMD_SR_CAP_T *) info->pucInfoBuffer;
 		uni_cmd = (struct UNI_CMD_SR *) entry->pucInfoBuffer;
 		uni_cmd->u1BandIdx = cmd_sr->rSrCmd.u1DbdcIdx;
