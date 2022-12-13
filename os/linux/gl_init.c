@@ -6107,10 +6107,6 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered))
 		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
 
-	if (!ucEnable)
-		wlanOnP2pRegistration(prGlueInfo,
-			prGlueInfo->prAdapter, gprWdev[0]);
-
 	return 0;
 }
 #endif
