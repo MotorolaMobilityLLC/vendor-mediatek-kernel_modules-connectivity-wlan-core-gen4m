@@ -7420,9 +7420,15 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 					FEATURE_ENABLED);
 #endif
 	/* Max Tx AMSDU in AMPDU length *in BYTES* */
+	prWifiVar->u4HtTxMaxAmsduInAmpduLen = wlanCfgGetUint32(
+					prAdapter, "HtTxMaxAmsduInAmpduLen",
+					WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
+	prWifiVar->u4VhtTxMaxAmsduInAmpduLen = wlanCfgGetUint32(
+					prAdapter, "VhtTxMaxAmsduInAmpduLen",
+					WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
 	prWifiVar->u4TxMaxAmsduInAmpduLen = wlanCfgGetUint32(
 					prAdapter, "TxMaxAmsduInAmpduLen",
-					11454);
+					WLAN_TX_MAX_AMSDU_IN_AMPDU_LEN);
 
 	prWifiVar->ucTcRestrict = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "TcRestrict", 0xFF);
