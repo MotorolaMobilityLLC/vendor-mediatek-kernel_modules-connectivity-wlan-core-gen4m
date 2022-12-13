@@ -353,7 +353,6 @@ struct CHIP_DBG_OPS connac_debug_ops = {
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = connac_get_rx_rate_info,
 #endif
-	.dumpPhyInfo = haldumpPhyInfo,
 	.show_mcu_debug_info = NULL,
 };
 

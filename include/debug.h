@@ -128,7 +128,6 @@ extern struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 #define DEG_HIF_PSE             BIT(4)
 #define DEG_HIF_PLE             BIT(5)
 #define DEG_HIF_MAC             BIT(6)
-#define DEG_HIF_PHY             BIT(7)
 
 #define DEG_HIF_DEFAULT_DUMP					\
 	(DEG_HIF_HOST_CSR | DEG_HIF_PDMA | DEG_HIF_DMASCH |	\
@@ -568,7 +567,6 @@ struct CHIP_DBG_OPS {
 	int32_t (*get_tx_info_from_txv)(
 		char *pcCommand, int i4TotalLen,
 		struct TX_VECTOR_BBP_LATCH *prTxV);
-	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
 
 #if CFG_SUPPORT_LLS
 	void (*get_rx_link_stats)(
