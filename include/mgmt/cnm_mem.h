@@ -925,6 +925,39 @@ struct CMD_PEER_UPDATE_VHT_CAP {
 
 };
 
+struct CMD_PEER_UPDATE_HE_CAP {
+#if CFG_SUPPORT_TDLS_11AX
+	uint8_t ucHeMacCapInfo[HE_MAC_CAP_BYTE_NUM];
+	uint8_t ucHePhyCapInfo[HE_PHY_CAP_BYTE_NUM];
+	uint16_t u2HeRxMcsMapBW80;
+	uint16_t u2HeRxMcsMapBW80Assoc;
+	uint16_t u2HeTxMcsMapBW80;
+	uint16_t u2HeRxMcsMapBW160;
+	uint16_t u2HeRxMcsMapBW160Assoc;
+	uint16_t u2HeTxMcsMapBW160;
+	uint16_t u2HeRxMcsMapBW80P80;
+	uint16_t u2HeRxMcsMapBW80P80Assoc;
+	uint16_t u2HeTxMcsMapBW80P80;
+#endif
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint16_t u2He6gBandCapInfo;
+#endif
+	uint8_t ucReserved;
+};
+
+struct CMD_PEER_UPDATE_EHT_CAP {
+#if CFG_SUPPORT_TDLS_11BE
+	uint8_t ucEhtMacCapInfo[EHT_MAC_CAP_BYTE_NUM];
+	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
+	uint8_t ucEhtPhyCapInfoExt[EHT_PHY_CAP_BYTE_NUM];
+	uint8_t aucMcsMap20MHzSta[4];
+	uint8_t aucMcsMap80MHz[3];
+	uint8_t aucMcsMap160MHz[3];
+	uint8_t aucMcsMap320MHz[3];
+#endif
+	uint8_t ucReserved;
+};
+
 struct CMD_PEER_UPDATE {
 
 	uint8_t aucPeerMac[6];
@@ -948,9 +981,12 @@ struct CMD_PEER_UPDATE {
 
 	struct CMD_PEER_UPDATE_HT_CAP rHtCap;
 	struct CMD_PEER_UPDATE_VHT_CAP rVHtCap;
-
+	struct CMD_PEER_UPDATE_HE_CAP rHeCap;
+	struct CMD_PEER_UPDATE_EHT_CAP rEhtCap;
 	u_int8_t fgIsSupHt;
 	u_int8_t fgIsSupVht;
+	u_int8_t fgIsSupHe;
+	u_int8_t fgIsSupEht;
 	enum ENUM_STA_TYPE eStaType;
 	uint8_t ucBssIdx;
 

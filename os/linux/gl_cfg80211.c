@@ -4265,6 +4265,19 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 		rCmdUpdate.fgIsSupVht = TRUE;
 	}
 
+	/* he */
+#if CFG_SUPPORT_TDLS_11AX
+	if (prLinkParams->he_capa != NULL) {
+		kalMemCopy(rCmdUpdate.rHeCap.ucHeMacCapInfo,
+			prLinkParams->he_capa->mac_cap_info,
+			HE_MAC_CAP_BYTE_NUM);
+		kalMemCopy(rCmdUpdate.rHeCap.ucHePhyCapInfo,
+			prLinkParams->he_capa->phy_cap_info,
+			HE_PHY_CAP_BYTE_NUM);
+		rCmdUpdate.fgIsSupHe = TRUE;
+	}
+#endif
+
 	/* update a TDLS peer record */
 	/* sanity check */
 	if ((params->sta_flags_set & BIT(
@@ -6250,6 +6263,41 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 	return ret;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+int mtk_IsP2PGoNetDevice(
+	struct GLUE_INFO *prGlueInfo,
+	struct net_device *dev)
+{
+	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	do {
+		if (dev == NULL) {
+			DBGLOG(REQ, WARN, "ndev is NULL\n");
+			break;
+		}
+
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
+			break;
+
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+			break;
+
+		prBssInfo =
+			GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			ucBssIdx);
+
+		if (prBssInfo && IS_BSS_APGO(prBssInfo))
+			return 1;
+	} while (FALSE);
+
+	return 0;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialize the AIS related FSM and data.
@@ -7314,10 +7362,12 @@ int mtk_cfg_change_station(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_change_station(
 			wiphy, ndev, mac, params);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_change_station(wiphy, ndev, mac,
 					   params);
@@ -7343,9 +7393,11 @@ int mtk_cfg_add_station(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_add_station(wiphy, ndev, mac);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_add_station(wiphy, ndev, mac, params);
 }
@@ -7369,11 +7421,12 @@ int mtk_cfg_tdls_oper(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
-	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_tdls_oper(wiphy, ndev, peer, oper);
 }
@@ -7408,10 +7461,17 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
+	if (prGlueInfo->prAdapter->rWifiVar.fgTdlsDisable) {
+		DBGLOG(TDLS, ERROR,
+			"TDLS is disabled\n");
+		return -EINVAL;
+	}
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, dev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
@@ -7427,6 +7487,135 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 				      buf, len);
 #endif
 }
+
+#if CFG_SUPPORT_TDLS_OFFCHANNEL
+int mtk_tdls_channel_switch(struct wiphy *wiphy,
+		      struct net_device *dev,
+		      const u8 *addr, u8 oper_class,
+		      struct cfg80211_chan_def *chandef)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rConfig;
+	uint32_t u4BufLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
+	uint8_t cmd[128] = {0};
+	uint8_t strLen = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo,
+		WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, dev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return -EFAULT;
+	}
+#endif
+
+	ucBssIndex = wlanGetBssIdx(dev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+		"tdls %d " MACSTR " %d %d %d %d",
+		1, /* fgIsChSwEnabled */
+		MAC2STR(addr), /* aucPeerMac */
+		ieee80211_frequency_to_channel(chandef->chan->center_freq),
+		/* ucTargetChan */
+		oper_class, /* ucRegClass */
+		(cfg80211_get_chandef_type(chandef) == NL80211_CHAN_HT40PLUS)
+		? IEEE80211_HT_PARAM_CHA_SEC_ABOVE
+		: IEEE80211_HT_PARAM_CHA_SEC_BELOW, /* ucSecChanOff */
+		ucBssIndex);
+
+	DBGLOG(TDLS, INFO,
+		"[%d] Notify FW %s, strlen=%d",
+		ucBssIndex, cmd, strLen);
+
+	kalMemZero(&rConfig, sizeof(rConfig));
+	rConfig.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rConfig.u2MsgSize = strLen;
+	kalStrnCpy(rConfig.aucCmd, cmd, strLen);
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetChipConfig,
+		&rConfig, sizeof(rConfig),
+		&u4BufLen);
+
+	DBGLOG(REQ, LOUD, "[%d] rStatus: %x",
+		ucBssIndex,
+		rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
+}
+
+void mtk_tdls_cancel_channel_switch(struct wiphy *wiphy,
+		      struct net_device *dev,
+		       const u8 *addr)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rConfig;
+	uint32_t u4BufLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = 0;
+	uint8_t cmd[128] = {0};
+	uint8_t strLen = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo,
+		WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	if (mtk_IsP2PGoNetDevice(prGlueInfo, dev) > 0) {
+		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
+		return;
+	}
+#endif
+
+	ucBssIndex = wlanGetBssIdx(dev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+		"tdls %d " MACSTR " %d %d %d %d",
+		0, /* fgIsChSwEnabled */
+		MAC2STR(addr), /* aucPeerMac */
+		0, /* ucTargetChan */
+		0, /* ucRegClass */
+		0, /* ucSecChanOff */
+		ucBssIndex);
+
+	DBGLOG(TDLS, INFO,
+		"[%d] Notify FW %s, strlen=%d",
+		ucBssIndex, cmd, strLen);
+
+	kalMemZero(&rConfig, sizeof(rConfig));
+	rConfig.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rConfig.u2MsgSize = strLen;
+	kalStrnCpy(rConfig.aucCmd, cmd, strLen);
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetChipConfig,
+		&rConfig, sizeof(rConfig),
+		&u4BufLen);
+
+	DBGLOG(REQ, LOUD, "[%d] rStatus: %x",
+		ucBssIndex,
+		rStatus);
+}
+#endif
 #endif /* CFG_SUPPORT_TDLS */
 
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
