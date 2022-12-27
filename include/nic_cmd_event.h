@@ -4205,6 +4205,10 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER
 				 *prAdapter, struct CMD_INFO *prCmdInfo,
 				 uint8_t *pucEventBuf);
 
+void nicUpdateStatistics(struct ADAPTER *prAdapter,
+	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics,
+	struct EVENT_STATISTICS *prEventStatistics
+);
 void nicCmdEventQueryStatistics(struct ADAPTER
 				*prAdapter, struct CMD_INFO *prCmdInfo,
 				uint8_t *pucEventBuf);

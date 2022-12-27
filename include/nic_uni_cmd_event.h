@@ -2703,9 +2703,6 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY = 1,
 	UNI_CMD_GET_STATISTICS_TAG_STA = 2,
 	UNI_CMD_GET_STATISTICS_TAG_BUG_REPORT = 3,
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-	UNI_CMD_GET_STATISTICS_TAG_GET_STA = 6,
-#endif
 	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
 	UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_CMD_GET_STATISTICS_TAG_PPDU_LATENCY,
@@ -2744,24 +2741,6 @@ struct UNI_CMD_STA_STATISTICS {
 	 * Rate1TxCnt, Rate1FailCnt */
 	uint8_t  ucResetCounter;
 } __KAL_ATTRIB_PACKED__;
-
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_GET_STA {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	/** Peer SW station record index */
-	uint8_t  u1Index;
-	/** TRUE: After event, clear TX fail count & lifetimeout count */
-	uint8_t  ucReadClear;
-	/** TRUE: After event, clear all AC statistics for the peer */
-	uint8_t  ucLlsReadClear;
-	/** TRUE: (RA) clear TransmitCount, TransmitFailCount,
-	 * Rate1TxCnt, Rate1FailCnt
-	 */
-	uint8_t  ucResetCounter;
-} __KAL_ATTRIB_PACKED__;
-#endif
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_LINK_LAYER_STATS {
@@ -5420,9 +5399,6 @@ enum ENUM_UNI_EVENT_STATISTICS_TAG {
 	UNI_EVENT_STATISTICS_TAG_BUG_REPORT = 3,
 	UNI_EVENT_STATISTICS_TAG_TX_STATS = 4,
 	UNI_EVENT_STATISTICS_TAG_ALL_STATS = 5,
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-	UNI_EVENT_STATISTICS_TAG_GET_STA = 6,
-#endif
 	/* Reserved range for compatible with ENUM_STATS_LLS_TLV_TAG_ID */
 	UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS = 0x80,
 	UNI_EVENT_STATISTICS_TAG_PPDU_LATENCY,
@@ -5557,16 +5533,6 @@ struct UNI_EVENT_GET_STATISTICS {
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
-
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_GET_STA {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	struct UNI_LINK_QUALITY rLq[4];
-	uint8_t aucBuffer[0];
-} __KAL_ATTRIB_PACKED__;
-#endif
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_STATS {
@@ -7310,8 +7276,8 @@ void nicUniEventStatistics(struct ADAPTER
 void nicUniEventLinkQuality(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-void nicUniEventGetSta(struct ADAPTER
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+void nicUniEventAllStatsOneCmd(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 void nicUniEventQueryRfTestATInfo(struct ADAPTER

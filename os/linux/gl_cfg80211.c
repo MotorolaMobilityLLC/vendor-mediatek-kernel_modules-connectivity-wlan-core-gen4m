@@ -618,14 +618,17 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			     struct station_info *sinfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-	struct PARAM_GET_STA rGetSta;
-#endif
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	uint32_t u4QueryInfoLen;
+	struct LINK_SPEED_EX_ *prLq;
+#else
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
+#endif
 	struct PARAM_GET_STA_STATISTICS *prGetStaStatistics;
 	uint32_t u4TotalError;
 	uint32_t u4FcsError;
@@ -637,10 +640,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (unlikely(ucBssIndex >= BSSID_NUM ||
-	    !IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)))
+	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
 		return -EINVAL;
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
@@ -648,14 +652,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
 	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
 		return -EINVAL;
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-	rGetSta.prGetStaStatistics = &(
-		prGlueInfo->prAdapter->rQueryStaStatistics);
-	prGetStaStatistics = rGetSta.prGetStaStatistics;
-	rGetSta.prLinkSpeed = &rLinkSpeed;
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	prGetStaStatistics = &prAdapter->rQueryStaStatistics[ucBssIndex];
 #else
 	prGetStaStatistics = &(
-		prGlueInfo->prAdapter->rQueryStaStatistics);
+		prAdapter->rQueryStaStatistics);
 #endif
 	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, arBssid);
 	prGetStaStatistics->ucReadClear = TRUE;
@@ -664,7 +665,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	/* On Android O, this might be wlan0 address */
 	if (UNEQUAL_MAC_ADDR(arBssid, mac)
 	    && UNEQUAL_MAC_ADDR(
-		    prGlueInfo->prAdapter->rWifiVar.aucMacAddress, mac)) {
+		    prAdapter->rWifiVar.aucMacAddress, mac)) {
 		/* wrong MAC address */
 		DBGLOG(REQ, WARN,
 		       "incorrect BSSID: [" MACSTR
@@ -682,17 +683,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return 0;
 	}
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	/* query linkspeed and sta_statistics in one unified cmd */
-	DBGLOG(REQ, TRACE, "Call Glue=%p, GetSta=%p, size=%zu, &u4BufLen=%p",
-		prGlueInfo, &rGetSta, sizeof(rGetSta), &u4BufLen);
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-				   wlanoidQueryGetSta, &rGetSta,
-				   (sizeof(rLinkSpeed) +
-				    sizeof(*prGetStaStatistics)),
-				   &u4BufLen, ucBssIndex);
-	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p, u4BufLen=%u",
-		rStatus, prGlueInfo, u4BufLen);
+		   wlanoidQueryStatsOneCmd, NULL,
+		   0, &u4QueryInfoLen, ucBssIndex);
+	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p",
+		rStatus, prGlueInfo);
 #else
 	DBGLOG(REQ, TRACE, "Call Glue=%p, LinkSpeed=%p, size=%zu, &u4BufLen=%p",
 		prGlueInfo, &rLinkSpeed, sizeof(rLinkSpeed), &u4BufLen);
@@ -713,10 +710,18 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+		prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+		u4TxRate = prLq->u2TxLinkSpeed;
+		u4RxRate = prLq->u2RxLinkSpeed;
+		i4Rssi = prLq->cRssi;
+		u4RxBw = prLq->u4RxBw;
+#else
 		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 		u4RxBw = rLinkSpeed.rLq[ucBssIndex].u4RxBw;
+#endif
 		if (unlikely(u4RxBw >= ARRAY_SIZE(arBwCfg80211Table))) {
 			DBGLOG(REQ, WARN, "wrong u4RxBw!");
 			u4RxBw = 0;
@@ -822,7 +827,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->tx_bytes = prDevStats->tx_bytes;
 
 		/* 6. fill TX_FAILED */
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 0)
+#if (CFG_SUPPORT_STATS_ONE_CMD == 0)
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidQueryStaStatistics,
 				prGetStaStatistics,

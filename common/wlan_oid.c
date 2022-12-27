@@ -4635,21 +4635,15 @@ wlanoidQueryMaxLinkSpeed(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 uint32_t
-wlanoidQueryGetSta(struct ADAPTER *prAdapter,
+wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen)
 {
-	uint8_t ucBssIndex;
-	struct PARAM_GET_STA *prGetSta;
-	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
-	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 
-	struct LINK_SPEED_EX_ *prLq;
-
-	DEBUGFUNC("wlanoidQueryLinkSpeed");
+	DEBUGFUNC("wlanoidQueryStatsOneCmd");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -4659,245 +4653,11 @@ wlanoidQueryGetSta(struct ADAPTER *prAdapter,
 	if (prAdapter->fgIsEnableLpdvt)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
-	*pu4QueryInfoLen = (
-		sizeof(struct PARAM_LINK_SPEED_EX) +
-		sizeof(struct PARAM_GET_STA_STATISTICS));
-
-	if (u4QueryBufferLen < (
-		sizeof(struct PARAM_LINK_SPEED_EX) +
-		sizeof(struct PARAM_GET_STA_STATISTICS)))
-		return WLAN_STATUS_BUFFER_TOO_SHORT;
-
-	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (unlikely(ucBssIndex >= BSSID_NUM))
-		return WLAN_STATUS_INVALID_DATA;
-	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
-
-	prGetSta = (struct PARAM_GET_STA *) (pvQueryBuffer);
-	pu4LinkSpeed = prGetSta->prLinkSpeed;
-	prQueryStaStatistics = prGetSta->prGetStaStatistics;
-	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
-		prLq->fgIsLinkRateValid == TRUE &&
-		!CHECK_FOR_TIMEOUT(kalGetTimeTick(),
-			prAdapter->rGetStaUpdateTime,
-			SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY))
-	) {
-		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
-		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =
-			prLq->u2TxLinkSpeed;
-		pu4LinkSpeed->rLq[ucBssIndex].u2RxLinkSpeed =
-			prLq->u2RxLinkSpeed;
-		pu4LinkSpeed->rLq[ucBssIndex].u4RxBw =
-			prLq->u4RxBw;
-
-		rResult = WLAN_STATUS_SUCCESS;
-	} else {
-		struct STA_RECORD *prStaRec, *prTempStaRec;
-		uint8_t ucStaRecIdx;
-		struct QUE_MGT *prQM;
-		struct UNI_CMD_GET_STATISTICS *uni_cmd;
-		struct UNI_CMD_GET_STA *tag;
-		uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
-			       sizeof(struct UNI_CMD_GET_STA);
-		uint8_t ucIdx;
-		enum ENUM_WMM_ACI eAci;
-
-		DEBUGFUNC("wlanoidQueryGetSta");
-
-		uni_cmd = (struct UNI_CMD_GET_STATISTICS *) cnmMemAlloc(
-				prAdapter,
-				RAM_TYPE_MSG, max_cmd_len);
-		if (!uni_cmd) {
-			DBGLOG(INIT, ERROR,
-			       "Allocate UNI_CMD_GET_STATISTICS ==> FAILED.\n");
-			return WLAN_STATUS_FAILURE;
-		}
-
-		prQM = &prAdapter->rQM;
-
-#if QM_ADAPTIVE_TC_RESOURCE_CTRL
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
-			prQueryStaStatistics->au4TcAverageQueLen[ucIdx] =
-				prQM->au4AverageQueLen[ucIdx];
-			prQueryStaStatistics->au4TcCurrentQueLen[ucIdx] =
-				prQM->au4CurrentTcResource[ucIdx];
-		}
-#endif
-
-		/* 4 2. Get StaRec by MAC address */
-		prStaRec = NULL;
-
-		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-		     ucStaRecIdx++) {
-			prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
-			if (prTempStaRec->fgIsValid &&
-			    prTempStaRec->fgIsInUse) {
-				if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				    prQueryStaStatistics->aucMacAddr)) {
-					prStaRec = prTempStaRec;
-					break;
-				}
-			}
-		}
-
-		if (!prStaRec) {
-			rResult = WLAN_STATUS_INVALID_DATA;
-			return rResult;
-		}
-
-		prQueryStaStatistics->u4Flag |= BIT(0);
-
-#if CFG_ENABLE_PER_STA_STATISTICS
-		/* 4 3. Get driver statistics */
-		prQueryStaStatistics->u4TxTotalCount =
-			prStaRec->u4TotalTxPktsNumber;
-		prQueryStaStatistics->u4RxTotalCount =
-			prStaRec->u4TotalRxPktsNumber;
-		prQueryStaStatistics->u4TxExceedThresholdCount =
-			prStaRec->u4ThresholdCounter;
-		prQueryStaStatistics->u4TxMaxTime =
-			prStaRec->u4MaxTxPktsTime;
-		prQueryStaStatistics->u4TxMaxHifTime =
-			prStaRec->u4MaxTxPktsHifTime;
-
-		if (prStaRec->u4TotalTxPktsNumber) {
-			prQueryStaStatistics->u4TxAverageProcessTime =
-				(prStaRec->u4TotalTxPktsTime /
-				 prStaRec->u4TotalTxPktsNumber);
-			prQueryStaStatistics->u4TxAverageHifTime =
-				prStaRec->u4TotalTxPktsHifTxTime /
-				prStaRec->u4TotalTxPktsNumber;
-		} else
-			prQueryStaStatistics->u4TxAverageProcessTime = 0;
-
-		/*link layer statistics */
-		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-			prQueryStaStatistics->arLinkStatistics[eAci].u4TxMsdu =
-				prStaRec->arLinkStatistics[eAci].u4TxMsdu;
-			prQueryStaStatistics->arLinkStatistics[eAci].u4RxMsdu =
-				prStaRec->arLinkStatistics[eAci].u4RxMsdu;
-			prQueryStaStatistics->arLinkStatistics[
-				eAci].u4TxDropMsdu =
-				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu;
-		}
-
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++) {
-			prQueryStaStatistics->au4TcResourceEmptyCount[ucIdx] =
-				prQM->au4QmTcResourceEmptyCounter[
-				prStaRec->ucBssIndex][ucIdx];
-			/* Reset */
-			prQM->au4QmTcResourceEmptyCounter[
-				prStaRec->ucBssIndex][ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceBackCount[ucIdx] =
-				prQM->au4QmTcResourceBackCounter[ucIdx];
-			prQM->au4QmTcResourceBackCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4DequeueNoTcResource[ucIdx]
-				= prQM->au4DequeueNoTcResourceCounter[ucIdx];
-			prQM->au4DequeueNoTcResourceCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceUsedPageCount[ucIdx]
-				= prQM->au4QmTcUsedPageCounter[ucIdx];
-			prQM->au4QmTcUsedPageCounter[ucIdx] = 0;
-			prQueryStaStatistics->au4TcResourceWantedPageCount[
-				ucIdx] = prQM->au4QmTcWantedPageCounter[ucIdx];
-			prQM->au4QmTcWantedPageCounter[ucIdx] = 0;
-		}
-
-		prQueryStaStatistics->u4EnqueueCounter =
-			prQM->u4EnqueueCounter;
-		prQueryStaStatistics->u4EnqueueStaCounter =
-			prStaRec->u4EnqueueCounter;
-
-		prQueryStaStatistics->u4DequeueCounter =
-			prQM->u4DequeueCounter;
-		prQueryStaStatistics->u4DequeueStaCounter =
-			prStaRec->u4DeqeueuCounter;
-
-		prQueryStaStatistics->IsrCnt =
-			prAdapter->prGlueInfo->IsrCnt;
-		prQueryStaStatistics->IsrPassCnt =
-			prAdapter->prGlueInfo->IsrPassCnt;
-		prQueryStaStatistics->TaskIsrCnt =
-			prAdapter->prGlueInfo->TaskIsrCnt;
-
-		prQueryStaStatistics->IsrAbnormalCnt =
-			prAdapter->prGlueInfo->IsrAbnormalCnt;
-		prQueryStaStatistics->IsrSoftWareCnt =
-			prAdapter->prGlueInfo->IsrSoftWareCnt;
-		prQueryStaStatistics->IsrRxCnt =
-			prAdapter->prGlueInfo->IsrRxCnt;
-		prQueryStaStatistics->IsrTxCnt =
-			prAdapter->prGlueInfo->IsrTxCnt;
-
-		/* 4 4.1 Reset statistics */
-		if (prQueryStaStatistics->ucReadClear) {
-			prStaRec->u4ThresholdCounter = 0;
-			prStaRec->u4TotalTxPktsNumber = 0;
-			prStaRec->u4TotalTxPktsHifTxTime = 0;
-
-			prStaRec->u4TotalTxPktsTime = 0;
-			prStaRec->u4TotalRxPktsNumber = 0;
-			prStaRec->u4MaxTxPktsTime = 0;
-			prStaRec->u4MaxTxPktsHifTime = 0;
-			prQM->u4EnqueueCounter = 0;
-			prQM->u4DequeueCounter = 0;
-			prStaRec->u4EnqueueCounter = 0;
-			prStaRec->u4DeqeueuCounter = 0;
-
-			prAdapter->prGlueInfo->IsrCnt = 0;
-			prAdapter->prGlueInfo->IsrPassCnt = 0;
-			prAdapter->prGlueInfo->TaskIsrCnt = 0;
-
-			prAdapter->prGlueInfo->IsrAbnormalCnt = 0;
-			prAdapter->prGlueInfo->IsrSoftWareCnt = 0;
-			prAdapter->prGlueInfo->IsrRxCnt = 0;
-			prAdapter->prGlueInfo->IsrTxCnt = 0;
-		}
-		/*link layer statistics */
-		if (prQueryStaStatistics->ucLlsReadClear) {
-			for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-				prStaRec->arLinkStatistics[eAci].u4TxMsdu = 0;
-				prStaRec->arLinkStatistics[eAci].u4RxMsdu = 0;
-				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu
-									  = 0;
-			}
-		}
-#endif
-
-		for (ucIdx = TC0_INDEX; ucIdx <= TC3_INDEX; ucIdx++)
-			prQueryStaStatistics->au4TcQueLen[ucIdx] =
-				prStaRec->aprTargetQueue[ucIdx]->u4NumElem;
-
-		DBGLOG(REQ, TRACE, "Call pvQueryBuffer=%p",
-				pvQueryBuffer);
-
-		/* Ensure FW supports get station link status */
-		tag = (struct UNI_CMD_GET_STA *) uni_cmd->aucTlvBuffer;
-		tag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_GET_STA;
-		tag->u2Length = sizeof(*tag);
-		tag->ucReadClear =
-			prQueryStaStatistics->ucReadClear;
-		tag->ucLlsReadClear =
-			prQueryStaStatistics->ucLlsReadClear;
-		tag->ucResetCounter =
-			prQueryStaStatistics->ucResetCounter;
-		tag->u1Index = prStaRec->ucIndex;
-
-		rResult = wlanSendSetQueryUniCmd(prAdapter,
-				      UNI_CMD_ID_GET_STATISTICS,
-				      FALSE,
-				      TRUE,
-				      TRUE,
-				      nicUniEventGetSta,
-				      nicUniCmdTimeoutCommon,
-				      max_cmd_len,
-				      (void *)uni_cmd,
-				      pvQueryBuffer, u4QueryBufferLen);
-		DBGLOG(REQ, TRACE, "rResult=%u, pvQueryBuffer=%p",
-				rResult, pvQueryBuffer);
-		cnmMemFree(prAdapter, uni_cmd);
-
-		prQueryStaStatistics->u4Flag |= BIT(1);
-	}
+	rResult = wlanQueryStatsOneCmd(prAdapter,
+				pvQueryBuffer,
+				u4QueryBufferLen,
+				pu4QueryInfoLen,
+				TRUE);
 	return rResult;
 }
 #endif

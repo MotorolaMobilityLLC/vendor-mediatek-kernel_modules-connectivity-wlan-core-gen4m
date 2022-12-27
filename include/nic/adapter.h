@@ -2008,8 +2008,8 @@ struct ADAPTER {
 
 	struct PARAM_LINK_SPEED_EX rLinkQuality;
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-	OS_SYSTIME rGetStaUpdateTime;
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	OS_SYSTIME rAllStatsUpdateTime;
 #endif
 
 	/* WIFI_VAR_T */
@@ -2284,7 +2284,11 @@ struct ADAPTER {
 	uint32_t u4LastLinkQuality;
 	uint32_t u4LinkQualityCounter;
 	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics[MAX_BSSID_NUM];
+#else
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+#endif
 	struct PARAM_802_11_STATISTICS_STRUCT rStat;
 	uint32_t u4BufLen;
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */

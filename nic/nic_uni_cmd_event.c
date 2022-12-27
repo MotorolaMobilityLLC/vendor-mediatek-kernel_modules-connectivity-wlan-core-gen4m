@@ -7765,70 +7765,148 @@ void nicUniEventLinkQuality(struct ADAPTER
 	nicCmdEventQueryLinkQuality(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-void nicUniEventGetSta(struct ADAPTER
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+void nicUniEventAllStatsOneCmd(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
-	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
-	struct UNI_EVENT_STATISTICS *evt =
-		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
-	struct UNI_EVENT_GET_STA *tag =
-		(struct UNI_EVENT_GET_STA *) evt->aucTlvBuffer;
 
-	struct PARAM_GET_STA *prGetSta;
-	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
-	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
-	struct EVENT_LINK_QUALITY legacy = {0};
-	struct EVENT_STA_STATISTICS *prStaStatsLegacy;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	uint32_t u4QueryInfoLen;
-	uint32_t i;
+	/* update to cache directly */
+	/* linkQuality: prAdapter->rLinkQuality.rLq[ucBssIndex] */
+	/* staStats: prGlueInfo->prAdapter->rQueryStaStatistics[ucBssIndex] */
+	/* Stats: prAdapter->rStat */
+	uint8_t *tag;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_STATISTICS);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	uint16_t tags_len = data_len - fixed_len;
+	uint16_t offset = 0;
 
-	prGetSta = (struct PARAM_GET_STA *) (prCmdInfo->pvInformationBuffer);
-	prLinkSpeed = prGetSta->prLinkSpeed;
-	prQueryStaStatistics = prGetSta->prGetStaStatistics;
-	prStaStatsLegacy = (struct EVENT_STA_STATISTICS *) tag->aucBuffer;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(RX, TRACE, "tag=%u, tag->u2Length=%u\n",
+					TAG_ID(tag), TAG_LEN(tag));
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_STATISTICS_TAG_BASIC: {
+			struct UNI_EVENT_BASIC_STATISTICS *tlv =
+				(struct UNI_EVENT_BASIC_STATISTICS *) tag;
 
-	/* GET_LINK_QUALITY */
-	for (i = 0; i < 4; i++) {
-		legacy.rLq[i].cRssi = tag->rLq[i].cRssi;
-		legacy.rLq[i].cLinkQuality = tag->rLq[i].cLinkQuality;
-		legacy.rLq[i].u2LinkSpeed = tag->rLq[i].u2LinkSpeed;
-		legacy.rLq[i].ucMediumBusyPercentage =
-				tag->rLq[i].ucMediumBusyPercentage;
-		legacy.rLq[i].ucIsLQ0Rdy = tag->rLq[i].ucIsLQ0Rdy;
+			struct EVENT_STATISTICS legacy = {0};
+			struct PARAM_802_11_STATISTICS_STRUCT *prStat;
+
+			prStat = &(prAdapter->rStat);
+
+			kalMemSet(&legacy, 0, sizeof(legacy));
+			legacy.rTransmittedFragmentCount.QuadPart =
+				tlv->u8TransmittedFragmentCount;
+			legacy.rMulticastTransmittedFrameCount.QuadPart =
+				tlv->u8MulticastTransmittedFrameCount;
+			legacy.rFailedCount.QuadPart = tlv->u8FailedCount;
+			legacy.rRetryCount.QuadPart = tlv->u8RetryCount;
+			legacy.rMultipleRetryCount.QuadPart =
+				tlv->u8MultipleRetryCount;
+			legacy.rRTSSuccessCount.QuadPart =
+				tlv->u8RTSSuccessCount;
+			legacy.rRTSFailureCount.QuadPart =
+				tlv->u8RTSFailureCount;
+			legacy.rACKFailureCount.QuadPart =
+				tlv->u8ACKFailureCount;
+			legacy.rFrameDuplicateCount.QuadPart =
+				tlv->u8FrameDuplicateCount;
+			legacy.rReceivedFragmentCount.QuadPart =
+				tlv->u8ReceivedFragmentCount;
+			legacy.rMulticastReceivedFrameCount.QuadPart =
+				tlv->u8MulticastReceivedFrameCount;
+			legacy.rFCSErrorCount.QuadPart = tlv->u8FCSErrorCount;
+			legacy.rMdrdyCnt.QuadPart = tlv->u8MdrdyCnt;
+			legacy.rChnlIdleCnt.QuadPart = tlv->u8ChnlIdleCnt;
+			legacy.u4HwMacAwakeDuration = tlv->u4HwMacAwakeDuration;
+
+			DBGLOG(RX, TRACE,
+				"tag=%u Fail:%lu Retry:%lu RtsF:%lu AckF:%lu Idle:%lu\n",
+					tlv->u8FailedCount, tlv->u8RetryCount,
+					tlv->u8RTSFailureCount,
+					tlv->u8ACKFailureCount,
+					tlv->u8ChnlIdleCnt);
+			nicUpdateStatistics(prAdapter, prStat, &legacy);
+			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_LINK_QUALITY: {
+			struct UNI_EVENT_LINK_QUALITY *tlv =
+				(struct UNI_EVENT_LINK_QUALITY *) tag;
+			struct EVENT_LINK_QUALITY legacy = {0};
+			uint8_t i;
+
+			for (i = 0; i < MAX_BSSID_NUM; i++) {
+				struct LINK_SPEED_EX_ *prLq;
+
+				if (!tlv->rLq[i].ucIsLQ0Rdy)
+					continue;
+				legacy.rLq[i].cRssi = tlv->rLq[i].cRssi;
+				legacy.rLq[i].cLinkQuality =
+					tlv->rLq[i].cLinkQuality;
+				legacy.rLq[i].u2LinkSpeed =
+					tlv->rLq[i].u2LinkSpeed;
+				legacy.rLq[i].ucMediumBusyPercentage =
+					tlv->rLq[i].ucMediumBusyPercentage;
+				legacy.rLq[i].ucIsLQ0Rdy =
+					tlv->rLq[i].ucIsLQ0Rdy;
+				nicUpdateLinkQuality(prAdapter, i, &legacy);
+				prLq = &prAdapter->rLinkQuality.rLq[i];
+
+				DBGLOG(NIC, TRACE,
+					"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
+					i,
+					prLq->u2TxLinkSpeed,
+					prLq->u2RxLinkSpeed,
+					prLq->cRssi);
+			}
+			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_STA: {
+			struct UNI_EVENT_STA_STATISTICS *tlv =
+				(struct UNI_EVENT_STA_STATISTICS *) tag;
+			struct EVENT_STA_STATISTICS *prStaStatsLegacy;
+			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+			struct STA_RECORD *prStaRec;
+			uint8_t ucBssIdx;
+
+			prStaStatsLegacy =
+				(struct EVENT_STA_STATISTICS *) tlv->aucBuffer;
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prStaStatsLegacy->ucStaRecIdx);
+			if (!prStaRec)
+				continue;
+
+			ucBssIdx = prStaRec->ucBssIndex;
+			prQueryStaStatistics =
+				&prAdapter->rQueryStaStatistics[ucBssIdx];
+			nicUpdateStaStats(prAdapter,
+				prStaStatsLegacy, prQueryStaStatistics);
+			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS: {
+			/* do nothing, caller can read emi directly. */
+			struct UNI_EVENT_LINK_STATS *tlv =
+				(struct UNI_EVENT_LINK_STATS *) tag;
+			uint32_t resultSize;
+
+			resultSize = tlv->u2Length - sizeof(*tlv);
+			if (resultSize != sizeof(struct EVENT_STATS_LLS_DATA)) {
+				DBGLOG(RX, WARN,
+					"tag=%u resultSize=%u length mismatch.",
+					tlv->u2Tag, resultSize);
+			}
+			break;
+		}
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
 	}
 
-	for (i = 0; i < BSSID_NUM; i++) {
-		struct LINK_SPEED_EX_ *prLq;
-
-		if (!legacy.rLq[i].ucIsLQ0Rdy)
-			continue;
-
-		nicUpdateLinkQuality(prAdapter, i, &legacy);
-		prLq = &prAdapter->rLinkQuality.rLq[i];
-
-		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
-		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
-		prLinkSpeed->rLq[i].cRssi = prLq->cRssi;
-
-		DBGLOG(NIC, TRACE,
-			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
-			i,
-			prLinkSpeed->rLq[i].u2TxLinkSpeed,
-			prLinkSpeed->rLq[i].u2RxLinkSpeed,
-			prLinkSpeed->rLq[i].cRssi);
-	}
-
-	/* GET_STA_STATISTICS */
-	nicUpdateStaStats(prAdapter, prStaStatsLegacy, prQueryStaStatistics);
-	prAdapter->rGetStaUpdateTime = kalGetTimeTick();
-
-	u4QueryInfoLen = (sizeof(struct PARAM_LINK_SPEED_EX) +
-		sizeof(struct PARAM_GET_STA_STATISTICS));
-
-	kalOidComplete(prGlueInfo, prCmdInfo,
-		u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			0, WLAN_STATUS_SUCCESS);
 
 }
 #endif

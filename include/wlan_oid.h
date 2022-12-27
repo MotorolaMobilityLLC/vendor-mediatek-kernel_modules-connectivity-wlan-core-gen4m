@@ -760,13 +760,6 @@ struct PARAM_LINK_SPEED_EX {
 	struct LINK_SPEED_EX_ rLq[BSSID_NUM];
 };
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
-struct PARAM_GET_STA {
-	struct PARAM_GET_STA_STATISTICS *prGetStaStatistics;
-	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
-};
-#endif
-
 /*--------------------------------------------------------------*/
 /*! \brief Set/Query authentication and encryption capability.  */
 /*--------------------------------------------------------------*/
@@ -5415,9 +5408,9 @@ uint32_t wlanoidGetLinkQualityInfo(struct ADAPTER *prAdapter,
 				   uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-#if (CFG_SUPPORT_GET_STATION_ONE_CMD == 1)
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 uint32_t
-wlanoidQueryGetSta(struct ADAPTER *prAdapter,
+wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen);
 #endif

@@ -948,31 +948,15 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 		u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 }
 
-void nicCmdEventQueryStatistics(struct ADAPTER
-				*prAdapter, struct CMD_INFO *prCmdInfo,
-				uint8_t *pucEventBuf)
+void nicUpdateStatistics(struct ADAPTER *prAdapter,
+	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics,
+	struct EVENT_STATISTICS *prEventStatistics
+)
 {
-	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics;
-	struct EVENT_STATISTICS *prEventStatistics;
-	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4QueryInfoLen;
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 	struct SCAN_INFO *prScanInfo;
 #endif
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	prEventStatistics = (struct EVENT_STATISTICS *) pucEventBuf;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	u4QueryInfoLen = sizeof(struct
-				PARAM_802_11_STATISTICS_STRUCT);
-	prStatistics = (struct PARAM_802_11_STATISTICS_STRUCT *)
-		       prCmdInfo->pvInformationBuffer;
-
 	prStatistics->rTransmittedFragmentCount =
 		prEventStatistics->rTransmittedFragmentCount;
 	prStatistics->rMulticastTransmittedFrameCount =
@@ -1035,7 +1019,7 @@ void nicCmdEventQueryStatistics(struct ADAPTER
 	else
 		prLinkQualityInfo->u2FlagScanning = 0;
 
-	wlanFinishCollectingLinkQuality(prGlueInfo);
+	wlanFinishCollectingLinkQuality(prAdapter->prGlueInfo);
 
 	DBGLOG(SW4, TRACE,
 		   "EVENT_STATISTICS: rTransmittedFragmentCount.QuadPart:%lld, rRetryCount.QuadPart:%lld, rRTSFailureCount.QuadPart:%lld, rACKFailureCount.QuadPart:%lld, rReceivedFragmentCount.QuadPart:%lld, rFCSErrorCount.QuadPart:%lld, rChnlIdleCnt.QuadPart:%lld\n",
@@ -1048,6 +1032,32 @@ void nicCmdEventQueryStatistics(struct ADAPTER
 		   prEventStatistics->rChnlIdleCnt.QuadPart
 	);
 #endif
+}
+
+void nicCmdEventQueryStatistics(struct ADAPTER
+				*prAdapter, struct CMD_INFO *prCmdInfo,
+				uint8_t *pucEventBuf)
+{
+	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics;
+	struct EVENT_STATISTICS *prEventStatistics;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+
+	prEventStatistics = (struct EVENT_STATISTICS *) pucEventBuf;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	u4QueryInfoLen = sizeof(struct
+				PARAM_802_11_STATISTICS_STRUCT);
+	prStatistics = (struct PARAM_802_11_STATISTICS_STRUCT *)
+		       prCmdInfo->pvInformationBuffer;
+
+	nicUpdateStatistics(prAdapter, prStatistics,
+		prEventStatistics);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo, prCmdInfo,
@@ -2042,8 +2052,14 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 #endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-		prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
-		prLinkQualityInfo->u4CurTxRate = prEvent->u2LinkSpeed * 5;
+		if (prStaRec &&
+			prStaRec->ucBssIndex == aisGetDefaultLinkBssIndex(
+				prAdapter)) {
+			/* only update linkQuality for default link bss */
+			prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+			prLinkQualityInfo->u4CurTxRate = (
+				prEvent->u2LinkSpeed * 5);
+		}
 #endif
 	}
 }
