@@ -6281,6 +6281,7 @@ int mtk_IsP2PGoNetDevice(
 	struct GLUE_INFO *prGlueInfo,
 	struct net_device *dev)
 {
+#if CFG_SUPPORT_TDLS_P2P
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -6308,6 +6309,9 @@ int mtk_IsP2PGoNetDevice(
 	} while (FALSE);
 
 	return 0;
+#else
+	return mtk_IsP2PNetDevice(prGlueInfo, dev);
+#endif
 }
 #endif
 

@@ -2338,6 +2338,8 @@
  */
 #if (CFG_TC10_FEATURE == 1) && (CFG_SUPPORT_TDLS == 1)
 #define CFG_SUPPORT_TDLS_OFFCHANNEL	1
+#define CFG_SUPPORT_TDLS_P2P	1
+#define CFG_SUPPORT_TDLS_P2P_AUTO	1
 #if (CFG_SUPPORT_802_11AX == 1)
 #define CFG_SUPPORT_TDLS_11AX		1
 #endif
@@ -2357,6 +2359,9 @@
 #endif
 #ifndef CFG_SUPPORT_TDLS_P2P_OFFCHANNEL
 #define CFG_SUPPORT_TDLS_P2P_OFFCHANNEL	0
+#endif
+#ifndef CFG_SUPPORT_TDLS_P2P_AUTO
+#define CFG_SUPPORT_TDLS_P2P_AUTO	0
 #endif
 
 /*******************************************************************************

@@ -2821,7 +2821,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 		/* cnmStaRecFree(prAdapter, prStaRec); */
 		goto error;
 	}
-#endif
+#endif /* CFG_SUPPORT_TDLS_P2P */
 
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
