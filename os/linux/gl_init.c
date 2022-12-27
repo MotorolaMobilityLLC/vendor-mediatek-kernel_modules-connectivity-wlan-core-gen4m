@@ -6623,7 +6623,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		}
 
 #if CFG_MTK_MDDP_SUPPORT
-		if (!IS_FEATURE_ENABLED(prWifiVar->fgMddpSupport))
+		if (IS_FEATURE_ENABLED(prWifiVar->fgMddpSupport))
+			mddpEnableMddpSupport();
+		else
 			mddpDisableMddpSupport();
 
 		mddpNotifyWifiOnStart();

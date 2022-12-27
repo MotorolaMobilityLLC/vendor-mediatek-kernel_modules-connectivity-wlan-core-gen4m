@@ -1786,6 +1786,7 @@ void mddpInit(void)
 
 void mddpUninit(void)
 {
+	g_fgMddpEnabled = FALSE;
 	mddpUnregisterCb();
 }
 
@@ -1910,9 +1911,14 @@ u_int8_t mddpIsMDFwOwn(void)
 	return (u4Val & BIT(0)) == BIT(0);
 }
 
+void mddpEnableMddpSupport(void)
+{
+	if (!g_fgMddpEnabled)
+		mddpRegisterCb();
+}
+
 void mddpDisableMddpSupport(void)
 {
-	g_fgMddpEnabled = FALSE;
 	if (gMddpFunc.wifi_handle)
 		mddpUnregisterCb();
 }

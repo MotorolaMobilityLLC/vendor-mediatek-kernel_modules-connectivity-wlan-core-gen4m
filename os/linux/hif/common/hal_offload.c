@@ -1318,15 +1318,6 @@ static u_int8_t halRroFixAmsduError(
 	if (u4Pf != 0)
 		return FALSE;
 
-	for (u4Idx = 0; u4Idx < u4MsduCnt; u4Idx++) {
-		if (prRcb->rNode.prev ==
-		    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
-		}
-		prRcb = list_entry(
-			prRcb->rNode.next,
-			struct RX_CTRL_BLK, rNode);
-	}
-
 	for (u4Idx = 0; u4Idx < u4MsduCnt - 1; u4Idx++) {
 		if (prRcb->rNode.prev ==
 		    &prHifInfo->rRcbUsedList[prRcb->u4Idx]) {
