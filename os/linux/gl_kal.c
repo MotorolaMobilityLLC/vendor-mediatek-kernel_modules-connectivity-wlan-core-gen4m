@@ -2983,6 +2983,24 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 				GFP_KERNEL);
 #endif
 
+		if (prConnSettings && prConnSettings->assocIeLen > 0) {
+			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+				   prConnSettings->assocIeLen);
+			prConnSettings->assocIeLen = 0;
+		}
+
+		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
+			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
+				prConnSettings->u4RspIeLength);
+			prConnSettings->u4RspIeLength = 0;
+		}
+
+		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
+			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
+				prConnSettings->u4ReqIeLength);
+			prConnSettings->u4ReqIeLength = 0;
+		}
+
 		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
 		if (prFtIEs) {
 			kalMemFree(prFtIEs->pucIEBuf,
@@ -3037,9 +3055,6 @@ kalUpdateReAssocReqInfo(struct GLUE_INFO *prGlueInfo,
 	prConnSettings = aisGetConnSettings(
 		prGlueInfo->prAdapter,
 		ucBssIndex);
-
-	/* reset */
-	prConnSettings->u4ReqIeLength = 0;
 
 	if (fgReassocRequest) {
 		if (u4FrameBodyLen < 15) {
