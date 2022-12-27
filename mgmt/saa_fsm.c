@@ -967,7 +967,6 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			ucStaRecIdx);
 #if (CFG_WLAN_CONNAC3_DEV == 1)
  		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
-#endif
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN, "StaRec not found\n");
 			return;
@@ -979,6 +978,9 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			IS_AP_STA(prStaRec), prStaRec->eAuthAssocState);
 
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+#else
+		return;
+#endif
 	}
 
 	if (!IS_AP_STA(prStaRec))
@@ -1179,12 +1181,14 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 			ucStaRecIdx);
 #if (CFG_WLAN_CONNAC3_DEV == 1)
 		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
-#endif
 		if (!prStaRec) {
 			DBGLOG(SAA, WARN, "StaRec not found\n");
 			return rStatus;
 		}
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+#else
+		return rStatus;
+#endif
 	}
 
 	if (!IS_AP_STA(prStaRec))
