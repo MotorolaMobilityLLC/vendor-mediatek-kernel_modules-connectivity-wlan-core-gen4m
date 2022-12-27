@@ -677,7 +677,10 @@ static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -796,7 +799,10 @@ static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -918,7 +924,10 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -997,7 +1006,10 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -1075,7 +1087,10 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -1163,7 +1178,10 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
