@@ -2595,6 +2595,8 @@ int32_t wf_reg_read_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
+	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
 	if (!ad) {
@@ -2611,7 +2613,10 @@ int32_t wf_reg_read_wrapper(void *priv,
 		goto exit;
 	}
 
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"PCIe AER.\n");
 		ret = -EFAULT;
@@ -2629,6 +2634,8 @@ int32_t wf_reg_write_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
+	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
 	if (!ad) {
@@ -2645,7 +2652,10 @@ int32_t wf_reg_write_wrapper(void *priv,
 		goto exit;
 	}
 
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"PCIe AER.\n");
 		ret = -EFAULT;
@@ -2663,6 +2673,8 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
+	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	bool dumpViaBt = FALSE;
 	uint32_t val = 0;
 	int32_t ret = 0;
 
@@ -2680,7 +2692,10 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 		goto exit;
 	}
 
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"PCIe AER.\n");
 		ret = -EFAULT;
@@ -2701,6 +2716,8 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
@@ -2724,7 +2741,11 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	prDebugOps = prAdapter->chip_info->prDebugOps;
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"PCIe AER.\n");
 		ret = -EFAULT;
@@ -2751,6 +2772,8 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
@@ -2774,7 +2797,11 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
-	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+	prDebugOps = prAdapter->chip_info->prDebugOps;
+	if (prDebugOps && prDebugOps->checkDumpViaBt)
+		dumpViaBt = prDebugOps->checkDumpViaBt();
+
+	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"PCIe AER.\n");
 		ret = -EFAULT;

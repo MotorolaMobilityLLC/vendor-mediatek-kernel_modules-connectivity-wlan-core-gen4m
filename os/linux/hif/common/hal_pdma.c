@@ -482,9 +482,10 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 			if (IS_MOBILE_SEGMENT && in_interrupt())
 				DBGLOG(INIT, INFO,
 					"Skip reset in tasklet\n");
-			else
+			else {
 				GL_DEFAULT_RESET_TRIGGER(prAdapter,
 						RST_DRV_OWN_FAIL);
+			}
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 	}

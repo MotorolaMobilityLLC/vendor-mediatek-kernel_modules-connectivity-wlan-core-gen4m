@@ -721,6 +721,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	.dumpPcieCr = mt6639_dumpPcieReg,
+	.checkDumpViaBt = mt6639_CheckDumpViaBt,
 #endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
@@ -2153,8 +2154,9 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
 		if (u4RegVal[0] == 0) {
 			DBGLOG(HAL, INFO,
-				"PCIE link down 0x0=0x%08x\n",
-				u4RegVal[0]);
+				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
+			/* block pcie to prevent access */
+			mtk_pcie_disable_data_trans(0);
 			return FALSE;
 		}
 
@@ -2162,8 +2164,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		pci_read_config_dword(pci_dev, 0x488, &u4RegVal[1]);
 		if (u4RegVal[1] != 0xC0093301)
 			DBGLOG(HAL, INFO,
-				"state mismatch 0x488=0x%08x\n",
-				u4RegVal[1]);
+				"state mismatch 0x488=0x%08x\n", u4RegVal[1]);
 	}
 
 	/*2. cb_infra/cbtop status*/
@@ -2282,6 +2283,17 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	if (u4RegVal[15] != 0x0) {
 		DBGLOG(HAL, INFO, "0x1E7154=0x%08x\n",
 			u4RegVal[15]);
+		return FALSE;
+	}
+
+	if (u4RegVal[6] & BITS(12, 13) == BITS(12, 13)) {
+		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal[6]);
+		/* block pcie to prevent access */
+		mtk_pcie_disable_data_trans(0);
+		fgIsMcuOff = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		fgTriggerDebugSop = TRUE;
+#endif
 		return FALSE;
 	}
 
