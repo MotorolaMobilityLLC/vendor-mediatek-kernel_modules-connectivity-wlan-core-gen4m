@@ -138,6 +138,7 @@ typedef uint8_t u8;
  * and almost all of the glue layer includes #include "precomp.h"
  * should we just but it in wlan_lib.h
  */
+extern u_int8_t fgIsMcuOff;
 extern u_int8_t fgIsBusAccessFailed;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 extern u_int8_t fgTriggerDebugSop;

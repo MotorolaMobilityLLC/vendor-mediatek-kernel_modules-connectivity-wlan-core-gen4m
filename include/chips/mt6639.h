@@ -79,6 +79,10 @@ extern struct PLE_TOP_CR rMt6639PleTopCr;
 extern struct PSE_TOP_CR rMt6639PseTopCr;
 extern struct PP_TOP_CR rMt6639PpTopCr;
 
+extern u_int8_t fgIsMcuOff;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+extern u_int8_t fgTriggerDebugSop;
+#endif
 
 /*------------------------------------------------------------------------------
  * MACRO for MT6639 RXVECTOR Parsing
@@ -159,6 +163,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 void mt6639_dumpPcieReg(void);
+bool mt6639_CheckDumpViaBt(void);
 #endif
 
 #if IS_MOBILE_SEGMENT

@@ -589,6 +589,7 @@ struct CHIP_DBG_OPS {
 	void (*dumpBusHangCr)(struct ADAPTER *prAdapter);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	void (*dumpPcieCr)(void);
+	bool (*checkDumpViaBt)(void);
 #endif
 };
 
