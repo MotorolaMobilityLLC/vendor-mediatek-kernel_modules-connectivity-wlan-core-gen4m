@@ -1162,8 +1162,7 @@ do { \
 /*----------------------------------------------------------------------------*/
 /* Macros of systrace operations for using in Driver Layer                    */
 /*----------------------------------------------------------------------------*/
-#if !CONFIG_WLAN_DRV_BUILD_IN
-
+#if (CONFIG_WLAN_DRV_BUILD_IN == 0) && (BUILD_QA_DBG == 1)
 #define kalTraceBegin(_fmt, ...) \
 	tracing_mark_write("B|%d|" _fmt "\n", current->tgid, ##__VA_ARGS__)
 
@@ -1941,7 +1940,7 @@ int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
 int _kalSprintf(char *buf, const char *fmt, ...);
 
 /* systrace utilities */
-#if !CONFIG_WLAN_DRV_BUILD_IN
+#if (CONFIG_WLAN_DRV_BUILD_IN == 0) && (BUILD_QA_DBG == 1)
 void tracing_mark_write(const char *fmt, ...);
 #endif
 

@@ -271,7 +271,7 @@ static uint8_t *apucCr4FwName[] = {
 	NULL
 };
 
-#if !CONFIG_WLAN_DRV_BUILD_IN
+#if (CONFIG_WLAN_DRV_BUILD_IN == 0) && (BUILD_QA_DBG == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  To leverage systrace, use the same name, i.e. tracing_mark_write,
