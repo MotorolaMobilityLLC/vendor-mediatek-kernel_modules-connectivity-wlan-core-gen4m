@@ -355,7 +355,9 @@ uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
 	 * Also release the unused tail room of the composed MMPDU
 	 */
 
-	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+	nicTxConfigPktControlFlag(prMsduInfo,
+		MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE,
+		TRUE);
 
 	/* 4 <6> Inform TXM  to send this Authentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -498,7 +500,9 @@ struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 	 * Also release the unused tail room of the composed MMPDU
 	 */
 
-	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+	nicTxConfigPktControlFlag(prMsduInfo,
+		MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE,
+		TRUE);
 
 	sortMgmtFrameIE(prAdapter, prMsduInfo);
 
