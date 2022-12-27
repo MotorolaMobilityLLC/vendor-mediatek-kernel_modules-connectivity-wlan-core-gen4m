@@ -106,6 +106,11 @@ ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
     include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
 endif
 
+
+ifneq ($(CONFIG_MTK_EMI_LEGACY),)
+ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
+endif
+
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif

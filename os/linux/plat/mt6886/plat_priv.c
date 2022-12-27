@@ -320,9 +320,20 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 }
 #endif
 
-uint32_t kalGetFwVerOffsetAddr(void)
+uint32_t kalGetFwVerOffset(void)
 {
-	return FW_VERSION_OFFSET_ADDRESS;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4FwVerOffset = 0;
+	uint32_t u4FwVerOffsetAddr = FW_VERSION_OFFSET_ADDRESS;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (emi_mem_read(prChipInfo, u4FwVerOffsetAddr, &u4FwVerOffset,
+		sizeof(u4FwVerOffset))) {
+		DBGLOG(INIT, WARN, "emi_mem_read %x failed.\n",
+			u4FwVerOffsetAddr);
+		return WLAN_STATUS_FAILURE;
+	}
+	return u4FwVerOffset;
 }
 
 uint32_t kalGetEmiMetOffset(void)
