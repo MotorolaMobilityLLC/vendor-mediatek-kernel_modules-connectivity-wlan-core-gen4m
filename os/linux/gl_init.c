@@ -2346,6 +2346,7 @@ static int wlanOpen(struct net_device *prDev)
 static int wlanStop(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t fgNeedAbortScan = FALSE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -2353,8 +2354,11 @@ static int wlanStop(struct net_device *prDev)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 
-	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(INIT, WARN, "driver is not ready\n");
+	if (!prGlueInfo) {
+		DBGLOG(INIT, WARN, "driver is not ready, prGlueInfo is NULL\n");
+	} else if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(INIT, WARN, "driver is not ready, u4ReadyFlag = 0\n");
+		prGlueInfo->prScanRequest = NULL;
 	} else {
 		/* CFG80211 down, report to kernel directly and run normal
 		*  scan abort procedure
@@ -2363,11 +2367,13 @@ static int wlanStop(struct net_device *prDev)
 		if (prGlueInfo->prScanRequest) {
 			DBGLOG(INIT, INFO, "wlanStop abort scan!\n");
 			kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
-			aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
-						wlanGetBssIdx(prDev));
 			prGlueInfo->prScanRequest = NULL;
+			fgNeedAbortScan = TRUE;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		if (fgNeedAbortScan)
+			aisFsmStateAbort_SCAN(prGlueInfo->prAdapter,
+							wlanGetBssIdx(prDev));
 	}
 
 	netif_tx_stop_all_queues(prDev);
