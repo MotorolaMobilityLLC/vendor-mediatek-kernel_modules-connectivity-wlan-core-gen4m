@@ -4694,6 +4694,10 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+#if CFG_SUPPORT_P2P_ECSA
+		uint8_t ucRoleIndex = prBssInfo->u4PrivateData;
+#endif
+
 #if CFG_SUPPORT_DBDC
 		ucOpMaxBw = cnmGetDbdcBwCapability(prAdapter,
 				prBssInfo->ucBssIndex);
@@ -4701,6 +4705,24 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 		ucOpMaxBw = cnmGetBssMaxBw(prAdapter,
 				prBssInfo->ucBssIndex);
 #endif
+
+#if CFG_SUPPORT_P2P_ECSA
+		/* ECSA overwrite */
+		if (prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[ucRoleIndex]
+			->fgEcsa) {
+			uint8_t bw = prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->ucEcsaBw;
+
+			if (bw < ucOpMaxBw) {
+				ucOpMaxBw = bw;
+				DBGLOG(P2P, INFO,
+					"ECSA overwrite bw %d\n", bw);
+			}
+		}
+#endif
+
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
 			/* Verify if there is valid S1 */
 			ucS1 = nicGetS1(prBssInfo->eBand,
