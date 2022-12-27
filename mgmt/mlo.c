@@ -1829,6 +1829,13 @@ sta:
 				pos += 2;
 			}
 		}
+
+		if (pos > tail) {
+			DBGLOG(ML, WARN,
+				"invalid STA profile len=%d\n", tail - pos);
+			goto next;
+		}
+
 		/* (tail - pos) is length of STA Profile
 		 * copy STA profile in Per-STA profile subelement.
 		 */
