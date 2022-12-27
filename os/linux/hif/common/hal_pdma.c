@@ -3268,6 +3268,13 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->u4UsedCnt++;
 
+	DBGLOG(HAL, TRACE,
+	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
+	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
+	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
+	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
+	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prSwWfdmaInfo->rOps.setCidx)
 			prSwWfdmaInfo->rOps.
@@ -3279,13 +3286,6 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 			       prTxRing->TxCpuIdx);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
-
-	DBGLOG(HAL, TRACE,
-	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
-	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
-	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
-	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
-	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
 	if (u2Port == TX_RING_CMD
 #if (CFG_SUPPORT_CONNAC2X == 1)
