@@ -2219,7 +2219,7 @@ void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgChReq,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 		prChnlReqInfo->fgIsChannelRequested = TRUE;
 
