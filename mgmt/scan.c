@@ -1398,7 +1398,7 @@ void scanProcessRnrChannel(uint8_t ucRnrChNum,
 	enum ENUM_BAND eBand;
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
-	eBand = kalOperatingClassToBand(u2OpClass);
+	scanOpClassToBand(u2OpClass, (uint8_t *)&eBand);
 	for (i = 0; i < prScanParam->ucChannelListNum; i++) {
 		if (ucRnrChNum == prScanParam->arChnlInfoList[i].ucChannelNum) {
 			ucHasSameCh = TRUE;
@@ -4812,7 +4812,7 @@ void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
 		*band = KAL_BAND_5GHZ;
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	case 131 ... 135:
+	case 131 ... 137:
 		*band = KAL_BAND_6GHZ;
 		break;
 #endif
