@@ -224,6 +224,8 @@ struct GL_P2P_INFO {
 	/*UINT_32 u4PsLevel;*//* TH3 multiple P2P */
 #endif
 
+	struct LINK rWaitTxDoneLink;
+
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 	u_int8_t fgChannelSwitchReq;
 };

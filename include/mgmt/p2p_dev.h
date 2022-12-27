@@ -91,8 +91,6 @@ struct MSG_P2P_CHNL_REQUEST {
 #define P2P_DEV_EXTEND_CHAN_TIME	500
 #endif
 
-#define P2P_DEV_WAIT_CHAN_TIME	500
-
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 #define DBDC_P2P_LISTEN_SW_DELAY_TIME		4000
 #endif
@@ -165,6 +163,11 @@ struct P2P_OFF_CHNL_TX_REQ_INFO {
 	uint64_t u8Cookie; /* cookie used to match with supplicant */
 	uint32_t u4Duration; /* wait time for tx request */
 	uint8_t ucBssIndex;
+};
+
+struct P2P_PENDING_MGMT_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	uint64_t u8PendingMgmtCookie;
 };
 
 struct P2P_DEV_FSM_INFO {

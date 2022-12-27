@@ -792,6 +792,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
 
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
@@ -829,6 +830,16 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			(void **)&prWifiVar->prP2pQueryStaStatistics[ucIdx],
 			sizeof(struct PARAM_GET_STA_STATISTICS));
 #endif
+		while (!LINK_IS_EMPTY(&prGlueInfo->prP2PInfo[ucIdx]->rWaitTxDoneLink)) {
+			LINK_REMOVE_HEAD(
+				&prGlueInfo->prP2PInfo[ucIdx]->rWaitTxDoneLink,
+				prPendingMgmtInfo,
+				struct P2P_PENDING_MGMT_INFO *);
+			DBGLOG(P2P, INFO, "Free pending mgmt link[%u] cookie: 0x%llx\n",
+				ucIdx, prPendingMgmtInfo->u8PendingMgmtCookie);
+			cnmMemFree(prAdapter, prPendingMgmtInfo);
+		}
+
 		p2pFreeMemSafe(prGlueInfo,
 			(void **)&prGlueInfo->prP2PInfo[ucIdx],
 			sizeof(struct GL_P2P_INFO));
@@ -1243,7 +1254,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	p2pDevFsmInit(prAdapter);
-	init_completion(&prP2PInfo->rWaitRocComp);
+	LINK_INITIALIZE(&prP2PInfo->rWaitTxDoneLink);
 
 	if ((fgSkipRole == SKIP_ROLE_ALL) ||
 		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))

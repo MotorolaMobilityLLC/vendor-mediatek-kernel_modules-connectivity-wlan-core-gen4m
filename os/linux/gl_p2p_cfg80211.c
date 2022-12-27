@@ -2515,7 +2515,10 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 		struct wireless_dev *wdev, u64 cookie)
 {
+#define P2P_CANCEL_CHANNEL_RETRY_COUNT 10
 	int32_t i4Rslt = -EINVAL;
+	uint32_t u4Retry = 0;
+	uint8_t ucRoleIdx = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct MSG_P2P_CHNL_ABORT *prMsgChnlAbort =
@@ -2527,7 +2530,12 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, wdev->netdev, &ucRoleIdx)) {
+			DBGLOG(P2P, WARN,
+				"Net device not found\n");
+			ucRoleIdx = 0;
+		}
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 
 		prMsgChnlAbort = cnmMemAlloc(prGlueInfo->prAdapter,
 			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_ABORT));
@@ -2540,29 +2548,18 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO,
 			"Cancel remain on channel, cookie: 0x%llx\n", cookie);
 
-		if (prGlueP2pInfo) {
-			uint32_t waitRet = 0;
-			enum ENUM_P2P_CONNECT_STATE eConnState =
-				prGlueInfo->prAdapter->prP2pInfo->eConnState;
-
-			if ((eConnState == P2P_CNN_INVITATION_REQ) ||
-				(eConnState == P2P_CNN_INVITATION_RESP)) {
-				reinit_completion
-					(&prGlueP2pInfo->rWaitRocComp);
-				waitRet =
-					wait_for_completion_timeout(
-					&prGlueP2pInfo->rWaitRocComp,
-					MSEC_TO_JIFFIES(
-					P2P_DEV_WAIT_CHAN_TIME));
-				if (!waitRet)
-					DBGLOG(P2P, TRACE,
-						"Wait, timeout\n");
-				else
-					DBGLOG(P2P, TRACE,
-						"Wait, complete\n");
-			}
+		while (!LINK_IS_EMPTY(&prGlueP2pInfo->rWaitTxDoneLink) &&
+			u4Retry < P2P_CANCEL_CHANNEL_RETRY_COUNT) {
+			u4Retry++;
+			kalMsleep(50);
 		}
 
+		if (u4Retry >= P2P_CANCEL_CHANNEL_RETRY_COUNT)
+			DBGLOG(P2P, WARN,
+				"Wait pending mgmt TX timeout\n");
+		else
+			DBGLOG(P2P, TRACE,
+				"Check pending mgmt TX complete\n");
 
 		prMsgChnlAbort->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_ABORT;
 		prMsgChnlAbort->u8Cookie = cookie;
