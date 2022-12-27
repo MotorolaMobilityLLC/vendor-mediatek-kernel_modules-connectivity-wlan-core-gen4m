@@ -1073,6 +1073,9 @@ void *kalPacketAllocWithHeadroom(struct GLUE_INFO
 				 uint32_t u4Size, uint8_t **ppucData);
 #endif
 
+#define kalDuplicateSwRfbSanity(_prSwRfb) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 void kalOsTimerInitialize(struct GLUE_INFO *prGlueInfo,
 			  void *prTimerHandler);
 

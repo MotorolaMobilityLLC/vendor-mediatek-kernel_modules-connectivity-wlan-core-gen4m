@@ -5183,6 +5183,9 @@ static int priv_driver_get_mib_info_uni(struct ADAPTER *prAdapter,
 		"\tRx type err drop=%llu\n",
 		RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tRx pointer err drop=%llu\n",
+		RX_GET_CNT(prRxCtrl, RX_POINTER_ERR_DROP_COUNT));
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tRx class err drop=%llu\n",
 		RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT));
 
@@ -5500,6 +5503,10 @@ static int priv_driver_get_mib_info_default(struct ADAPTER *prAdapter,
 			i4TotalLen - i4BytesWritten,
 			"\tRx type err drop=%llu\n",
 			RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT));
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\tRx pointer err drop=%llu\n",
+			RX_GET_CNT(prRxCtrl, RX_POINTER_ERR_DROP_COUNT));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"\tRx class err drop=%llu\n", RX_GET_CNT(prRxCtrl,
