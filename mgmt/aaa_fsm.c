@@ -307,6 +307,7 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 	u_int8_t fgReplyAuth = FALSE;
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct P2P_CONNECTION_SETTINGS *prP2pConnSettings = NULL;
 
 	ASSERT(prAdapter);
 
@@ -473,13 +474,21 @@ bow_proc:
 					uint32_t rAuthTime;
 					uint32_t rTimeDiff;
 
+					prP2pConnSettings =
+						prAdapter->rWifiVar
+						.prP2PConnSettings[
+						prBssInfo->u4PrivateData];
+
 					DBGLOG(AAA, WARN,
 						"Prev AAState (%d) != IDLE.\n",
 						prStaRec->eAuthAssocState);
 					GET_CURRENT_SYSTIME(&rAuthTime);
 					rTimeDiff = rAuthTime -
 						prStaRec->rUpdateTime;
-					if (prAuthFrame->u2AuthTransSeqNo ==
+					if (p2pFuncIsAPMode(
+						prP2pConnSettings) &&
+						prAuthFrame
+						->u2AuthTransSeqNo ==
 						AUTH_TRANSACTION_SEQ_1 &&
 						rTimeDiff <
 						MIN_AUTH_TIME_DIFF) {
