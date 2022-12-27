@@ -1266,7 +1266,6 @@ int8_t atoi(uint8_t ch);
 	    memcpy(pucDestBuffer, skb->data, skb->len); } while (0)
 
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
-
 #define kalGetTimeTickNs()              sched_clock()
 
 #define kalPrintLogLimited(fmt, ...)					\
@@ -1339,6 +1338,10 @@ do { \
 #define KAL_GET_TIME_INTERVAL() \
 	((SEC_TO_USEC(__rTe.tv_sec) + KAL_GET_USEC(__rTe)) - \
 	(SEC_TO_USEC(__rTs.tv_sec) + KAL_GET_USEC(__rTs)))
+#define KAL_GET_TIME_INTERVAL_SPEC(_Start, _End) \
+		((SEC_TO_USEC(_End.tv_sec) + KAL_GET_USEC(_End)) - \
+		(SEC_TO_USEC(_Start.tv_sec) + KAL_GET_USEC(_Start)))
+
 #define KAL_ADD_TIME_INTERVAL(_Interval) \
 	{ \
 		(_Interval) += KAL_GET_TIME_INTERVAL(); \

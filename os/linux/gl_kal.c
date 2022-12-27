@@ -5186,6 +5186,9 @@ int hif_thread(void *data)
 				  &prGlueInfo->ulFlag);
 			continue;
 		}
+
+		strlcpy(prAdapter->prGlueInfo->drv_own_caller,
+			__func__, CALLER_LENGTH);
 		wlanAcquirePowerControl(prAdapter);
 
 		/* Handle Interrupt */
@@ -5261,6 +5264,8 @@ int hif_thread(void *data)
 		halDumpHifStats(prAdapter);
 
 		/* Release to FW own */
+		strlcpy(prAdapter->prGlueInfo->fw_own_caller,
+			__func__, CALLER_LENGTH);
 		wlanReleasePowerControl(prAdapter);
 		kalTraceEnd(); /* hif_thread */
 	}

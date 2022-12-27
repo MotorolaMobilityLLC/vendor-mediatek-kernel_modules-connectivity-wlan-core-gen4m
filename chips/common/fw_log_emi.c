@@ -72,6 +72,7 @@ static void fw_log_emi_update_rp(struct ADAPTER *ad,
 				     sub_ctrl->type,
 				     rp);
 
+	strlcpy(ad->prGlueInfo->fw_own_caller, __func__, CALLER_LENGTH);
 	wlanReleasePowerControl(ad);
 }
 

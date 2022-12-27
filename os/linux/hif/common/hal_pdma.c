@@ -107,6 +107,11 @@
  *******************************************************************************
  */
 
+#define DUMP_DRV_OWN_DONE "[%s]: DRIVER OWN Done[%lu us], sent[%lu us], "\
+						"INT[%lu us], reci[%lu us], set[%lu us]\n"
+#define DUMP_DRV_OWN_FAIL "[%s]: DRIVER OWN Failed[%lu us], sent[%lu us], "\
+						"set[%lu us]\n"
+
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -451,9 +456,14 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 	if (prAdapter->u4CasanLoadType == 1)
 		u4DrvOwnTimeoutMs = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
 
+	/* Decrease Block to Enter Low Power Semaphore count */
+	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
+
+#if 0
 	DBGLOG(INIT, INFO,
 		   "Driver own timeout %u ms\n",
 		   u4DrvOwnTimeoutMs);
+#endif
 
 	prChipInfo = prAdapter->chip_info;
 
@@ -513,6 +523,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
+	unsigned long ulsentDrvOwn, ulINTDrvOwn, ulreciDrvOwn, ulsetDrvOwn;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -527,17 +538,23 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
-	if (prAdapter->fgIsFwOwn == FALSE)
+	if (prAdapter->fgIsFwOwn == FALSE) {
+		DBGLOG(INIT, LOUD, "[%s]: already DRIVER OWN\n",
+			prAdapter->prGlueInfo->drv_own_caller);
 		goto end;
+	}
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
-	KAL_REC_TIME_START();
-
 	u4CurrTick = kalGetTimeTick();
 	i = 0;
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
+	KAL_REC_TIME_START();
 	HAL_LP_OWN_CLR(prAdapter, &fgResult);
+	KAL_REC_TIME_END();
+	ulsentDrvOwn = KAL_GET_TIME_INTERVAL();
+	KAL_REC_TIME_START();
+
 	fgResult = FALSE;
 
 	while (1) {
@@ -574,6 +591,13 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
+			KAL_REC_TIME_END();
+			ulINTDrvOwn = KAL_GET_TIME_INTERVAL_SPEC(
+				__rTs, prAdapter->prGlueInfo->u4DrvOwnIntTick);
+			ulreciDrvOwn = KAL_GET_TIME_INTERVAL_SPEC(
+				prAdapter->prGlueInfo->u4DrvOwnIntTick, __rTe);
+			KAL_REC_TIME_START();
+
 			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 						&prAdapter->prGlueInfo->ulFlag);
 			if (prBusInfo->fgCheckDriverOwnInt)
@@ -647,10 +671,20 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	KAL_REC_TIME_END();
-	DBGLOG(INIT, INFO,
-		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
+	ulsetDrvOwn = KAL_GET_TIME_INTERVAL();
+
+	if (fgResult)
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_DONE,
+			prAdapter->prGlueInfo->drv_own_caller,
+			ulsentDrvOwn + ulINTDrvOwn + ulreciDrvOwn + ulsetDrvOwn,
+			ulsentDrvOwn, ulINTDrvOwn, ulreciDrvOwn, ulsetDrvOwn);
+	else
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
+			prAdapter->prGlueInfo->drv_own_caller,
+			ulsentDrvOwn + ulsetDrvOwn,	ulsentDrvOwn, ulsetDrvOwn);
 
 end:
+	kalMemZero(prAdapter->prGlueInfo->drv_own_caller, CALLER_LENGTH);
 	KAL_HIF_OWN_UNLOCK(prAdapter);
 
 #if !CFG_SUPPORT_RX_WORK
@@ -755,23 +789,38 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	/* During core dump, can't issue fw own, will result
 	 * driver own fail (MCU can't process it).
 	 */
-	if (prAdapter->fgN9AssertDumpOngoing == TRUE)
+	if (prAdapter->fgN9AssertDumpOngoing == TRUE) {
+		DBGLOG(INIT, TRACE, "[%s]: fgN9AssertDumpOngoing\n",
+			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
+	}
 #endif
 
 	if (p2pFuncNeedForceSleep(prAdapter))
-		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
-	else if (!prAdapter->fgWiFiInSleepyState)
+		DBGLOG(INIT, TRACE, "[%s]: SAP: Skip fgWiFiInSleepyState check\n",
+			prAdapter->prGlueInfo->fw_own_caller);
+	else if (!prAdapter->fgWiFiInSleepyState) {
+		DBGLOG(INIT, TRACE, "[%s]: not in fgWiFiInSleepyState\n",
+			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
+	}
 
-	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0)
+	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0) {
+		DBGLOG(INIT, TRACE, "[%s]prAdapter->u4PwrCtrlBlockCnt = %d\n",
+			prAdapter->prGlueInfo->fw_own_caller,
+			prAdapter->u4PwrCtrlBlockCnt);
 		goto unlock;
+	}
 
-	if (prAdapter->fgIsFwOwn == TRUE)
+	if (prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG(INIT, LOUD, "[%s]: alreaddy FW OWN\n",
+			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
+	}
 
 	if (prHifInfo->fgIsPowerOn && halGetWfdmaRxCnt(prAdapter)) {
-		DBGLOG_LIMITED(INIT, STATE, "Skip FW OWN due to pending INT\n");
+		DBGLOG(INIT, INFO, "[%s]: Skip FW OWN due to pending INT\n",
+			prAdapter->prGlueInfo->fw_own_caller);
 		/* pending interrupts */
 		goto unlock;
 	}
@@ -782,15 +831,19 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	 */
 	halManualUpdateWfdmaDmaDone(prAdapter);
 #if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
-	if (!halIsWfdmaTxRingEmpty(prAdapter))
+	if (!halIsWfdmaTxRingEmpty(prAdapter)) {
+		DBGLOG(INIT, INFO, "[%s]: halIsWfdmaTxRing not Empty\n",
+			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
+	}
 #endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		if (!halMawdSleep(prAdapter->prGlueInfo)) {
-			DBGLOG(INIT, STATE,
-			       "Skip FW OWN due to Mawd pending INT\n");
+			DBGLOG(INIT, INFO,
+			       "[%s]: Skip FW OWN due to Mawd pending INT\n",
+			       prAdapter->prGlueInfo->fw_own_caller);
 			goto unlock;
 		}
 	}
@@ -820,12 +873,14 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		prAdapter->fgIsFwOwn = TRUE;
 		prHifInfo->fgIsBackupIntSta = false;
 
-		DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
+		DBGLOG(INIT, INFO, "[%s]: FW OWN:%u, IntSta:0x%08x\n",
+		       prAdapter->prGlueInfo->fw_own_caller,
 		       fgResult, prHifInfo->u4WakeupIntSta);
 		prHifInfo->u4WakeupIntSta = 0;
 	}
 
 unlock:
+	kalMemZero(prAdapter->prGlueInfo->fw_own_caller, CALLER_LENGTH);
 	KAL_HIF_OWN_UNLOCK(prAdapter);
 }
 

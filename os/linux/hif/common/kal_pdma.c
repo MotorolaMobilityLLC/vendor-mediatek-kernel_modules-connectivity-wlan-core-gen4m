@@ -1245,11 +1245,9 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
-			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
-				u4Value);
+			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register, u4Value);
 		else
-			kalDevRegL2Write(prGlueInfo, prChipInfo, u4Register,
-				u4Value);
+			kalDevRegL2Write(prGlueInfo, prChipInfo, u4Register, u4Value);
 	}
 #endif
 
@@ -2752,6 +2750,8 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
+	strlcpy(prAdapter->prGlueInfo->drv_own_caller,
+		__func__, CALLER_LENGTH);
 	halSetDriverOwn(prAdapter);
 	if (prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG_LIMITED(HAL, WARN,
@@ -2808,6 +2808,8 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
+	strlcpy(prAdapter->prGlueInfo->fw_own_caller,
+		__func__, CALLER_LENGTH);
 	halSetFWOwn(prAdapter, FALSE);
 	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
 			prAdapter->u4PwrCtrlBlockCnt);

@@ -552,8 +552,13 @@ irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
-	if (prGlueInfo)
+	if (prGlueInfo) {
+		ktime_get_ts64(&prGlueInfo->u4DrvOwnIntTick);
 		set_bit(GLUE_FLAG_DRV_OWN_INT_BIT, &prGlueInfo->ulFlag);
+	} else {
+		DBGLOG(HAL, WARN, "NULL prGlueInfo.\n");
+		return IRQ_NONE;
+	}
 
 	return IRQ_HANDLED;
 }
@@ -2128,16 +2133,17 @@ void halPcieHwControlVote(
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	/* vote to enable/disable hw mode */
-	err = mtk_pcie_hw_control_vote(0, voteResult, 1);
+	if (prAdapter->prGlueInfo->fgIsSuspended) {
+		err = mtk_pcie_hw_control_vote(0, voteResult, 1);
+		prAdapter->prGlueInfo->fgIsSuspended = FALSE;
+	}
+
 	if (err) {
 		DBGLOG(HAL, ERROR,
 			"hw control mode err[%d]\n", err);
 		fgIsBusAccessFailed = TRUE;
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
-	} else {
-		if (!voteResult)
-			mtk_pcie_dump_link_info(0);
 	}
 #endif
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_WF_VOTE);

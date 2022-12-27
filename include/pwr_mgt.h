@@ -133,14 +133,21 @@ struct PM_PROFILE_SETUP_INFO {
 #define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter)
 #define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST)
 #else
+
 #define ACQUIRE_POWER_CONTROL_FROM_PM(_prAdapter) \
 	{ \
-			nicpmSetDriverOwn(_prAdapter); \
+		if (_prAdapter->prGlueInfo->drv_own_caller[0] == 0) \
+			strlcpy(_prAdapter->prGlueInfo->drv_own_caller, \
+			__func__, CALLER_LENGTH); \
+		nicpmSetDriverOwn(_prAdapter); \
 	}
 
 #define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST) \
 	{ \
-			nicpmSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
+		if (_prAdapter->prGlueInfo->fw_own_caller[0] == 0) \
+			strlcpy(_prAdapter->prGlueInfo->fw_own_caller, \
+			__func__, CALLER_LENGTH); \
+		nicpmSetFWOwn(_prAdapter, _fgEnableGINT_in_IST); \
 	}
 #endif
 

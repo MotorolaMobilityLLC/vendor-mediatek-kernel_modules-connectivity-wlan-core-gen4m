@@ -3891,6 +3891,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			wiphy_dev(prWdev->wiphy));
 
 	prGlueInfo->fgIsInSuspend = FALSE;
+	prGlueInfo->fgIsSuspended = FALSE;
 	/* 4 <3.1.4> set device to glue */
 	prGlueInfo->prDev = prDev;
 
@@ -3902,6 +3903,8 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	prGlueInfo->prScanRequest = NULL;
 	prGlueInfo->prSchedScanRequest = NULL;
 
+	kalMemZero(prGlueInfo->drv_own_caller, CALLER_LENGTH);
+	kalMemZero(prGlueInfo->fw_own_caller, CALLER_LENGTH);
 
 #if CFG_SUPPORT_PASSPOINT
 	/* Init DAD */

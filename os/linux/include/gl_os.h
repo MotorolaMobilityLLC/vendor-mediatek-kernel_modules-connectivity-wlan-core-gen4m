@@ -130,6 +130,9 @@
 #define FW_LOG_CMD_ON_OFF		0
 #define FW_LOG_CMD_SET_LEVEL		1
 
+#define CALLER_LENGTH		60
+#define CALLER_MAX_NUM		10
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -971,6 +974,8 @@ struct GLUE_INFO {
 	uint32_t u4CurrTick;
 	uint64_t u8CurrTime;
 
+	struct timespec64 u4DrvOwnIntTick;
+
 	/* FW Roaming */
 	/* store the FW roaming enable state which FWK determines */
 	/* if it's = 0, ignore the black/whitelists settings from FWK */
@@ -1008,6 +1013,10 @@ struct GLUE_INFO {
 #endif
 
 	bool fgIsInSuspend;
+	bool fgIsSuspended;
+	char drv_own_caller[CALLER_LENGTH];
+	char fw_own_caller[CALLER_LENGTH];
+
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

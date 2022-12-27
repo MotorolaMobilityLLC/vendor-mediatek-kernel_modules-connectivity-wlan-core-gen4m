@@ -271,6 +271,7 @@ static int32_t __fwLogMmioHandler(u_int8_t fgForceRead)
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl,
 				    fgForceRead);
 	}
+	strlcpy(prAdapter->prGlueInfo->fw_own_caller, __func__, CALLER_LENGTH);
 	wlanReleasePowerControl(prAdapter);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 #if CFG_ENABLE_WAKE_LOCK
