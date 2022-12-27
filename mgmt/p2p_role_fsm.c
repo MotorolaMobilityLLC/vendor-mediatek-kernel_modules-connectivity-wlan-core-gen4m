@@ -689,6 +689,7 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	uint8_t ucBssIndex = 0;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pRoleFsmInfo != NULL));
@@ -710,6 +711,14 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex) &&
 				IS_NET_ACTIVE(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex)) {
+				ucBssIndex = prP2pRoleFsmInfo->ucBssIndex;
+				if (prAdapter->aprBssInfo[ucBssIndex]
+					->eConnectionState ==
+					MEDIA_STATE_CONNECTED) {
+					DBGLOG(P2P, TRACE,
+						"Under deauth procedure.\n");
+					break;
+				}
 				DBGLOG(P2P, TRACE,
 					"Role BSS IDLE, deactive network.\n");
 				nicDeactivateNetwork(prAdapter,
