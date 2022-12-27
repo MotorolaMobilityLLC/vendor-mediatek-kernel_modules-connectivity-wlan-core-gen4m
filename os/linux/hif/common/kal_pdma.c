@@ -1474,7 +1474,7 @@ static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 /*----------------------------------------------------------------------------*/
 u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	uint16_t u2Port, uint32_t u4Len,
-	uint8_t *pucBuf, uint32_t u4ValidOutBufSize)
+	uint8_t *pucBuf, uint32_t u4ValidOutBufSize, u_int8_t isPollMode)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -1568,6 +1568,15 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 				 prDmaBuf, pucBuf, u4Len)) {
 		ASSERT(0);
 		return FALSE;
+	}
+
+	if (isPollMode) {
+		struct WIFI_EVENT *prEvent = (struct WIFI_EVENT *)
+			(pucBuf + prAdapter->chip_info->rxd_size);
+
+		if ((prEvent->u2PacketLength == 0) &&
+		    (pRxD->SDLen0 != prEvent->u2PacketLength))
+			return FALSE;
 	}
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;

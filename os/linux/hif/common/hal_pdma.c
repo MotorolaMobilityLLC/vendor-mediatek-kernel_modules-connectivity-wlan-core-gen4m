@@ -322,7 +322,8 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 
 		fgStatus = kalDevPortRead(
 			prGlueInfo, ucNewPort, u4PktLen,
-			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE);
+			pucRspBuffer, HIF_RX_COALESCING_BUFFER_SIZE,
+			TRUE);
 
 		if (fgStatus) {
 			*pu4Length = u4PktLen;
@@ -2239,7 +2240,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 			fgStatus = kalDevPortRead(prGlueInfo,
 				u4Port, CFG_RX_MAX_PKT_SIZE,
-				pucBuf, CFG_RX_MAX_PKT_SIZE);
+				pucBuf, CFG_RX_MAX_PKT_SIZE,
+				FALSE);
 		}
 		if (!fgStatus) {
 			QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
