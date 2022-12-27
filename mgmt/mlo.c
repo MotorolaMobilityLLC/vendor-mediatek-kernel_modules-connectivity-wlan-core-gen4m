@@ -787,25 +787,7 @@ uint8_t *mldHandleRnrMlParam(uint8_t *ie,
 				&prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
 			prProfile->ucLinkId = ucMldLinkId;
 		}
-
-		switch (band) {
-		case KAL_BAND_2GHZ:
-			prProfile->rChnlInfo.eBand = BAND_2G4;
-			break;
-		case KAL_BAND_5GHZ:
-			prProfile->rChnlInfo.eBand = BAND_5G;
-			break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		case KAL_BAND_6GHZ:
-			prProfile->rChnlInfo.eBand = BAND_6G;
-			break;
-#endif
-		default:
-			DBGLOG(ML, WARN, "unsupported band: %d\n",
-				band);
-			break;
-		}
-
+		prProfile->rChnlInfo.eBand = band;
 		prProfile->rChnlInfo.ucChannelNum =
 			prNeighborAPInfoField->ucChannelNum;
 
@@ -2343,6 +2325,11 @@ done:
 		padding - prDst->pucRecvBuff;
 	prDst->ucChnlNum = prSta->rChnlInfo.ucChannelNum;
 	prDst->eRfBand = prSta->rChnlInfo.eBand;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prDst->eRfBand == BAND_6G)
+		prDst->ucChnlNum = ((prDst->ucChnlNum - 1) >> 2) + 181;
+#endif
 
 	DBGLOG(ML, INFO,
 		"Dump duplicated SwRFB for id=%d addr="
