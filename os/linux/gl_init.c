@@ -6259,8 +6259,6 @@ static void wlanRemove(void)
 	kalMetRemoveProcfs();
 #endif
 
-	kalWlanUeventDeinit();
-
 #if CFG_MET_TAG_SUPPORT
 	if (GL_MET_TAG_UNINIT() != 0)
 		DBGLOG(INIT, ERROR, "MET_TAG_UNINIT error!\n");
@@ -6273,6 +6271,8 @@ static void wlanRemove(void)
 #endif
 
 	wlanAdapterStop(prAdapter, FALSE);
+
+	kalWlanUeventDeinit();
 
 	HAL_LP_OWN_SET(prAdapter, &fgResult);
 	DBGLOG(INIT, INFO, "HAL_LP_OWN_SET(%d)\n",
