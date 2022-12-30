@@ -488,14 +488,6 @@ enum WIFI_RESET_TRIGGERED_ATTRIBUTE {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#if CFG_SUPPORT_WAPI
-extern uint8_t
-keyStructBuf[1024];	/* add/remove key shared buffer */
-#else
-extern uint8_t
-keyStructBuf[100];	/* add/remove key shared buffer */
-#endif
-
 extern const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_multista[
