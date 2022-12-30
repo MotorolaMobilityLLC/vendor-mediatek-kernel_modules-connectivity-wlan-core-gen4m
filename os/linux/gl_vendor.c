@@ -92,9 +92,6 @@
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-uint8_t g_GetResultsBufferedCnt;
-uint8_t g_GetResultsCmdCnt;
-
 const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1] = {
 	[WIFI_ATTR_SCAN_IFACE_TYPE] = {.type = NLA_U8},
