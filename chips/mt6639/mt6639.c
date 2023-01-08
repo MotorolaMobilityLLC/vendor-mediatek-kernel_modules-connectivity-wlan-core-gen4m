@@ -2286,7 +2286,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		return FALSE;
 	}
 
-	if (u4RegVal[6] & BITS(12, 13) == BITS(12, 13)) {
+	if ((u4RegVal[6] & BITS(12, 13)) == BITS(12, 13)) {
 		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal[6]);
 		/* block pcie to prevent access */
 		mtk_pcie_disable_data_trans(0);
