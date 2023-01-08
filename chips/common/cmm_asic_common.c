@@ -92,10 +92,18 @@
 uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 			 char *pcBuf, int i4TotalLen)
 {
-	struct TAILER_COMMON_FORMAT_T *prComTailer;
 	uint32_t u4Offset = 0;
+#if !CFG_WLAN_LK_FWDL_SUPPORT
+	struct TAILER_COMMON_FORMAT_T *prComTailer;
 	uint8_t aucBuf[32];
+#endif
 
+	DBGLOG(HAL, INFO, "enter asicGetFwDlInfo\n");
+#if CFG_WLAN_LK_FWDL_SUPPORT
+	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
+				     "Release manifest: %s\n",
+				     prAdapter->rVerInfo.aucReleaseManifest);
+#else
 	prComTailer = &prAdapter->rVerInfo.rCommonTailer;
 
 	kalSnprintf(aucBuf, sizeof(aucBuf), "%10s", prComTailer->aucRamVersion);
@@ -113,6 +121,7 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 				     "Release manifest: %s\n",
 				     prAdapter->rVerInfo.aucReleaseManifest);
 	}
+#endif
 	return u4Offset;
 }
 

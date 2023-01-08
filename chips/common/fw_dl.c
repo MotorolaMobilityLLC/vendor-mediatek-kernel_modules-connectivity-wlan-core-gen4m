@@ -2200,11 +2200,14 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 	struct WIFI_VER_INFO *prVerInfo = &prAdapter->rVerInfo;
 	struct FWDL_OPS_T *prFwDlOps;
 	uint32_t u4Offset = 0;
-	uint8_t aucBuf[32] = {0}, aucDate[32] = {0};
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+#if !CFG_WLAN_LK_FWDL_SUPPORT
+	uint8_t aucBuf[32] = {0}, aucDate[32] = {0};
+#endif
 
 	prFwDlOps = prAdapter->chip_info->fw_dl_ops;
 
+#if !CFG_WLAN_LK_FWDL_SUPPORT
 	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s", prVerInfo->aucFwBranchInfo);
 	kalSnprintf(aucDate, sizeof(aucDate), "%16s", prVerInfo->aucFwDateCode);
 
@@ -2215,7 +2218,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 			(uint32_t)(prVerInfo->u2FwOwnVersion >> 8),
 			(uint32_t)(prVerInfo->u2FwOwnVersion & BITS(0, 7)),
 			prVerInfo->ucFwBuildNumber, aucDate);
-
+#endif
 	if (prFwDlOps->getFwDlInfo)
 		u4Offset += prFwDlOps->getFwDlInfo(prAdapter,
 						   pcBuf + u4Offset,
@@ -2230,6 +2233,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 #endif
 	}
 
+#if !CFG_WLAN_LK_FWDL_SUPPORT
 	kalSnprintf(aucBuf, sizeof(aucBuf), "%4s",
 			prVerInfo->rPatchHeader.aucPlatform);
 	kalSnprintf(aucDate, sizeof(aucDate), "%16s",
@@ -2245,6 +2249,7 @@ uint32_t fwDlGetFwdlInfo(struct ADAPTER *prAdapter,
 			"Drv version %u.%u[DEC]\n",
 			(uint32_t)(prVerInfo->u2FwPeerVersion >> 8),
 			(uint32_t)(prVerInfo->u2FwPeerVersion & BITS(0, 7)));
+#endif
 	return u4Offset;
 }
 
