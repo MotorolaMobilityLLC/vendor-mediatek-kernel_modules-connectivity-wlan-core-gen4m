@@ -448,6 +448,13 @@ void heRlmFillHeCapIE(
 	prHeCap->ucExtId = ELEM_EXT_ID_HE_CAP;
 
 	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+#if CFG_SUPPORT_TDLS_ADJUST_BW
+	ucMaxBw = TdlsAdjustBw(prAdapter,
+			cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex),
+			prBssInfo->ucBssIndex,
+			ucMaxBw);
+#endif
 
 	/* MAC capabilities */
 	HE_RESET_MAC_CAP(prHeCap->ucHeMacCap);
