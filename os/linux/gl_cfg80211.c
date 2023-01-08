@@ -6122,6 +6122,22 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 	} else if (strnicmp(cmd, "RttGetCap",
 			    strlen("RttGetCap")) == 0) {
 		return testmode_rtt_test(wiphy, cmd, len);
+	} else if (strnicmp(cmd, "EnVendorSpecifiedRpt ",
+			    strlen("EnVendorSpecifiedRpt ")) == 0) {
+		uint8_t *pucEnable = NULL;
+
+		/* Command should be EnVendorSpecifiedRpt with 1-space and
+		 * 1-digit
+		 */
+		if (len == (strlen("EnVendorSpecifiedRpt ") + 1)) {
+			pucEnable = cmd + (strlen("EnVendorSpecifiedRpt "));
+
+			rStatus = kalIoctlByBssIdx(prGlueInfo,
+					wlanoidEnableVendorSpecifiedRpt,
+					(void *)pucEnable, 1,
+					&u4SetInfoLen, ucBssIndex);
+		} else
+			rStatus = WLAN_STATUS_INVALID_DATA;
 	} else
 		return -EOPNOTSUPP;
 

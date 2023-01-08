@@ -17941,6 +17941,28 @@ uint32_t wlanoidSendBTMRequest(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_AP_80211V_SUPPORT */
 
+uint32_t wlanoidEnableVendorSpecifiedRpt(struct ADAPTER *prAdapter,
+				    void *pvSetBuffer, uint32_t u4SetBufferLen,
+				    uint32_t *pu4SetInfoLen)
+{
+	uint8_t ucBssIndex = 0;
+	uint8_t ucEnable = FALSE;
+	uint32_t u4Ret = 0;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+
+	if (pvSetBuffer) {
+		u4Ret = kalkStrtou8(pvSetBuffer, 0, &ucEnable);
+		if (u4Ret)
+			DBGLOG(OID, WARN, "parse failed:%d\n", u4Ret);
+	}
+	prAdapter->ucEnVendorSpecifiedRpt = ucEnable;
+	DBGLOG(OID, INFO, "%s vendor specified packet to host\n",
+		ucEnable ? "Enable" : "Disable");
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query SER information.
