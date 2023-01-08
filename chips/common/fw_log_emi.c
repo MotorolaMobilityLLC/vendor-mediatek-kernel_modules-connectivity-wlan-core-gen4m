@@ -160,14 +160,9 @@ static int32_t __fw_log_emi_handler(u_int8_t force)
 	struct ADAPTER *ad = NULL;
 	uint8_t i = 0;
 
-	stats->request++;
-
 	ad = (struct ADAPTER *)ctrl->priv;
 
-	if (!ctrl->initialized || !ctrl->started) {
-		stats->skipped++;
-		goto exit;
-	} else if (!ad) {
+	if (!ad) {
 		stats->skipped++;
 		goto exit;
 	}
@@ -199,7 +194,31 @@ exit:
 
 int32_t fw_log_emi_handler(void)
 {
-	return __fw_log_emi_handler(FALSE);
+	struct FW_LOG_EMI_CTRL *ctrl = &g_fw_log_emi_ctx;
+	struct FW_LOG_EMI_STATS *stats = &ctrl->stats;
+	struct ADAPTER *ad = NULL;
+
+	stats->request++;
+
+	ad = (struct ADAPTER *)ctrl->priv;
+
+	if (!ctrl->initialized || !ctrl->started) {
+		stats->skipped++;
+		goto exit;
+	} else if (!ad) {
+		stats->skipped++;
+		goto exit;
+	}
+
+	queue_work(ctrl->wq, &ctrl->work);
+
+exit:
+	return 0;
+}
+
+static void fw_log_emi_work(struct work_struct *work)
+{
+	__fw_log_emi_handler(FALSE);
 }
 
 static u_int8_t __fw_log_emi_should_flush_buffer(struct FW_LOG_EMI_CTRL *ctrl,
@@ -446,6 +465,8 @@ void fw_log_emi_stop(struct ADAPTER *ad)
 
 	ctrl->started = FALSE;
 
+	cancel_work_sync(&ctrl->work);
+
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++)
 		fw_log_emi_sub_ctrl_deinit(ctrl->priv, ctrl, i);
 }
@@ -463,6 +484,7 @@ void fw_log_emi_set_enabled(struct ADAPTER *ad, u_int8_t enabled)
 uint32_t fw_log_emi_init(struct ADAPTER *ad)
 {
 	struct FW_LOG_EMI_CTRL *ctrl = &g_fw_log_emi_ctx;
+	uint32_t status = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, TRACE, "\n");
 
@@ -472,9 +494,18 @@ uint32_t fw_log_emi_init(struct ADAPTER *ad)
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_INIT(ad, ctrl->wakelock, "wlan_fw_log");
 #endif
+	ctrl->wq = create_singlethread_workqueue("fw_log_emi");
+	if (!ctrl->wq) {
+		DBGLOG(INIT, ERROR,
+			"create_singlethread_workqueue failed.\n");
+		status = WLAN_STATUS_RESOURCES;
+		goto exit;
+	}
+	INIT_WORK(&ctrl->work, fw_log_emi_work);
 	ctrl->initialized = TRUE;
 
-	return WLAN_STATUS_SUCCESS;
+exit:
+	return status;
 }
 
 void fw_log_emi_deinit(struct ADAPTER *ad)
@@ -484,6 +515,8 @@ void fw_log_emi_deinit(struct ADAPTER *ad)
 	DBGLOG(INIT, TRACE, "\n");
 
 	ctrl->initialized = FALSE;
+	if (ctrl->wq)
+		destroy_workqueue(ctrl->wq);
 #if CFG_ENABLE_WAKE_LOCK
 	if (KAL_WAKE_LOCK_ACTIVE(ad, ctrl->wakelock))
 		KAL_WAKE_UNLOCK(ad, ctrl->wakelock);
