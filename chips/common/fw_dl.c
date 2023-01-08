@@ -1602,7 +1602,6 @@ exit:
 }
 #endif
 
-#if 0
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to generate CRC32 checksum
@@ -1677,7 +1676,6 @@ uint32_t wlanCRC32(uint8_t *buf, uint32_t len)
 
 	return ~crc32;
 }
-#endif
 
 uint32_t wlanGetHarvardTailerInfo(struct ADAPTER
 	*prAdapter, void *prFwBuffer, uint32_t u4FwSize,
