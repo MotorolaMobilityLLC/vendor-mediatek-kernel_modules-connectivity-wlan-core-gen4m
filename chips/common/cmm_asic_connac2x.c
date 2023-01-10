@@ -2983,9 +2983,9 @@ void register_plat_connsys_cbs(void)
 	conninfra_wf_cb.time_change_notify = kalSyncTimeToFWByIoctl;
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	/* Register conninfra call back */
-	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
-	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlanPreCal;
-	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlanGetCalResultCb;
+	conninfra_wf_cb.pre_cal_cb.pwr_on_cb = wlan_precal_pwron_v1;
+	conninfra_wf_cb.pre_cal_cb.do_cal_cb = wlan_precal_docal_v1;
+	conninfra_wf_cb.pre_cal_cb.get_cal_result_cb = wlan_precal_get_res;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
 
 	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,

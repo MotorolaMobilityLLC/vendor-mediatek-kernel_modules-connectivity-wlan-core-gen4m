@@ -13,10 +13,12 @@ extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
 extern int32_t update_wr_mtx_down_up_status(uint8_t ucDownUp,
 		uint8_t ucIsBlocking);
-int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize);
-int wlanPreCalPwrOn(void);
-int wlanPreCal(void);
-int wlanPreCalErr(void);
+int wlan_precal_get_res(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize);
+int wlan_precal_pwron_v1(void);
+int wlan_precal_docal_v1(void);
+int wlan_precal_pwron_v2(void);
+int wlan_precal_docal_v2(void);
+int wlan_precal_err(void);
 void set_cal_enabled(u_int8_t enabled);
 u_int8_t is_cal_flow_finished(void);
 #endif
