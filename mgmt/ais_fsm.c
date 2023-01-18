@@ -2106,17 +2106,6 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prScanReqMsg->u2ChannelMinDwellTime = 0;
 			prScanReqMsg->u2TimeoutValue = 0;
 
-			/* Reduce APP scan's dwell time, prevent it affecting
-			 * TX/RX performance
-			 */
-			if (prScanRequest->u4Flags &
-				NL80211_SCAN_FLAG_LOW_SPAN) {
-				prScanReqMsg->u2ChannelDwellTime =
-					SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
-				prScanReqMsg->u2ChannelMinDwellTime =
-					SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
-			}
-
 			/* for 6G OOB scan */
 			kalMemCopy(prScanReqMsg->ucBssidMatchCh,
 				prScanRequest->ucBssidMatchCh,
@@ -2211,6 +2200,18 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				break;
 			default:
 				break;
+			}
+
+			/* Reduce APP scan's dwell time when scan ch > 5,
+			 * prevent it affecting TX/RX performance
+			 */
+			if ((prScanRequest->u4Flags &
+				NL80211_SCAN_FLAG_LOW_SPAN)
+				&& prScanReqMsg->ucChannelListNum > 5) {
+				prScanReqMsg->u2ChannelDwellTime =
+					SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
+				prScanReqMsg->u2ChannelMinDwellTime =
+					SCAN_CHANNEL_MIN_DWELL_TIME_MSEC_APP;
 			}
 
 			if (prAdapter->rWifiVar.u4SwTestMode ==
