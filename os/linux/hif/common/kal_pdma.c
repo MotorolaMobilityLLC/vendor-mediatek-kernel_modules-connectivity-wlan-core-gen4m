@@ -2602,7 +2602,7 @@ int32_t wf_reg_read_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
-	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
@@ -2619,6 +2619,8 @@ int32_t wf_reg_read_wrapper(void *priv,
 		ret = -EFAULT;
 		goto exit;
 	}
+
+	prDebugOps = ad->chip_info->prDebugOps;
 
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
@@ -2641,7 +2643,7 @@ int32_t wf_reg_write_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
-	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
@@ -2658,6 +2660,8 @@ int32_t wf_reg_write_wrapper(void *priv,
 		ret = -EFAULT;
 		goto exit;
 	}
+
+	prDebugOps = ad->chip_info->prDebugOps;
 
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
@@ -2680,7 +2684,7 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 {
 	struct GLUE_INFO *glue = priv;
 	struct ADAPTER *ad = glue->prAdapter;
-	struct CHIP_DBG_OPS *prDebugOps = ad->chip_info->prDebugOps;
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	uint32_t val = 0;
 	int32_t ret = 0;
@@ -2698,6 +2702,8 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 		ret = -EFAULT;
 		goto exit;
 	}
+
+	prDebugOps = ad->chip_info->prDebugOps;
 
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
