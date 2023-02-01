@@ -1900,6 +1900,16 @@ SKIP_START_RDD:
 		if (prP2pChnlReqInfo->eBand == BAND_5G)
 			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 
+		if (prBssInfo &&
+					IS_BSS_P2P(prBssInfo) &&
+					p2pFuncIsAPMode(
+					prAdapter->rWifiVar.prP2PConnSettings
+					[prBssInfo->u4PrivateData]) &&
+					IS_NET_PWR_STATE_ACTIVE(
+					prAdapter,
+					prBssInfo->ucBssIndex))
+			prAdapter->aprSapBssInfo[prBssInfo->u4PrivateData]
+				= prBssInfo;
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 		if (prP2pConnReqInfo->eConnRequest ==
 			P2P_CONNECTION_TYPE_PURE_AP)
@@ -1935,6 +1945,8 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 			&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
 #endif
 		u4ClientCount = bssGetClientCount(prAdapter, prP2pBssInfo);
+		prAdapter->aprSapBssInfo[prP2pBssInfo->u4PrivateData]
+			= NULL;
 
 		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		    && (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
@@ -7997,6 +8009,14 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 		!prAdapter->rWifiVar.ucApForceSleep ||
 		(prAdapter->rPerMonitor.u4CurrPerfLevel > 1))
 		return FALSE;
+
+	if (!prAdapter->fgIsP2PRegistered ||
+		(prAdapter->rP2PNetRegState !=
+			ENUM_NET_REG_STATE_REGISTERED)) {
+		DBGLOG(P2P, WARN,
+			"p2p net dev is not registered\n");
+		return FALSE;
+	}
 
 	bss = cnmGetSapBssInfo(prAdapter);
 	ucApForceSleep = prAdapter->rWifiVar.ucApForceSleep;

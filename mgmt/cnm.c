@@ -4209,21 +4209,15 @@ struct BSS_INFO *cnmGetSapBssInfo(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return NULL;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
-		prBssInfo = prAdapter->aprBssInfo[i];
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		prBssInfo = prAdapter->aprSapBssInfo[i];
 
-		if (prBssInfo &&
-			IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-			prAdapter->rWifiVar.prP2PConnSettings
-			[prBssInfo->u4PrivateData]) &&
-			IS_NET_PWR_STATE_ACTIVE(
-			prAdapter,
-			prBssInfo->ucBssIndex))
+		if (prBssInfo)
 			return prBssInfo;
 	}
 
 	return NULL;
+
 }
 
 struct BSS_INFO *
