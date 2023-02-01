@@ -1823,6 +1823,75 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 }
 #endif
 
+/**
+ * Mark these frames as critical to be transmitted in high priority queuet.
+ * 1. TX Authentication related frames.
+ * 2. TX ARP when queue is stopped.
+ * 3. When monitored ARP TX is over threshold.
+ */
+static bool is_critical_packet(struct net_device *dev,
+	struct sk_buff *skb, u16 orig_queue_index)
+{
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
+	uint8_t *pucPkt;
+	uint16_t u2EtherType;
+	bool is_critical = false;
+
+	if (!skb)
+		return false;
+
+	pucPkt = skb->data;
+	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8)
+			| (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+
+	switch (u2EtherType) {
+	case ETH_P_ARP:
+		if (__netif_subqueue_stopped(dev, orig_queue_index))
+			is_critical = true;
+#if ARP_MONITER_ENABLE
+		if (qmArpMonitorIsCritical())
+			is_critical = true;
+#endif
+		break;
+	case ETH_P_1X:
+	case ETH_P_PRE_1X:
+#if CFG_SUPPORT_WAPI
+	case ETH_WPI_1X:
+#endif
+		is_critical = true;
+		break;
+	default:
+		is_critical = false;
+		break;
+	}
+	return is_critical;
+#else
+	return false;
+#endif
+}
+
+static inline u16 mtk_wlan_ndev_select_queue(
+	struct net_device *dev,
+	struct sk_buff *skb)
+{
+	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
+	u16 queue_index = 0;
+
+	/* cfg80211_classify8021d returns 0~7 */
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
+	skb->priority = cfg80211_classify8021d(skb);
+#else
+	skb->priority = cfg80211_classify8021d(skb, NULL);
+#endif
+	queue_index = ieee8021d_to_queue[skb->priority];
+	if (is_critical_packet(dev, skb, queue_index)) {
+		skb->priority = WMM_UP_VO_INDEX;
+		queue_index = ieee8021d_to_queue[skb->priority];
+	}
+
+	return queue_index;
+}
+
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,
 		    struct sk_buff *skb,

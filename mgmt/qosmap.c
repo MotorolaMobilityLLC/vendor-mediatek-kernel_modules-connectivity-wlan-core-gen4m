@@ -130,16 +130,18 @@ void handleQosMapConf(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	case ACTION_ADDTS_REQ:
 	case ACTION_ADDTS_RSP:
 	case ACTION_SCHEDULE:
-		log_dbg(INIT, INFO, "qos action frame received, action: %d\n",
+		DBGLOG(INIT, INFO, "qos action frame received, action: %d\n",
 			prRxFrame->ucAction);
 		break;
 	case ACTION_QOS_MAP_CONFIGURE:
 		qosHandleQosMapConfigure(prAdapter, prSwRfb);
-		log_dbg(INIT, INFO, "qos map configure frame received, action: %d\n",
+		DBGLOG(INIT, INFO,
+			"qos map configure frame received, action: %d\n",
 			prRxFrame->ucAction);
 		break;
 	default:
-		log_dbg(INIT, INFO, "qos action frame: %d, try to send to supplicant\n",
+		DBGLOG(INIT, INFO,
+			"qos action frame: %d, try to send to supplicant\n",
 			prRxFrame->ucAction);
 		break;
 	}
@@ -161,8 +163,9 @@ int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return -1;
 
-	log_dbg(INIT, INFO,
-	"IEEE 802.11: Received Qos Map Configure Frame from " MACSTR "\n",
+	DBGLOG(INIT, INFO,
+		"IEEE 802.11: Received Qos Map Configure Frame from "
+		MACSTR "\n",
 		MAC2STR(prStaRec->aucMacAddr));
 
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
@@ -244,36 +247,50 @@ void qosParseQosMapSet(struct ADAPTER *prAdapter,
 
 void qosMapSetInit(struct STA_RECORD *prStaRec)
 {
-	/* DSCP to UP maaping based on RFC8325 in the range 0 to 63 */
+	/**
+	 * RFC 8325:
+	 * All unused codepoints are RECOMMENDED to be mapped to UP 0.
+	 */
 	static uint8_t dscp2up[64] = {
-		[0 ... 63] = 0xFF,
-		[0] = WMM_UP_BE_INDEX,
-		[8] = WMM_UP_BK_INDEX,
-		[10] = WMM_UP_BE_INDEX,
-		[12] = WMM_UP_BE_INDEX,
-		[14] = WMM_UP_BE_INDEX,
-		[16] = WMM_UP_BE_INDEX,
-		[18] = WMM_UP_EE_INDEX,
-		[20] = WMM_UP_EE_INDEX,
-		[22] = WMM_UP_EE_INDEX,
-		[24] = WMM_UP_CL_INDEX,
-		[26] = WMM_UP_CL_INDEX,
-		[28] = WMM_UP_CL_INDEX,
-		[30] = WMM_UP_CL_INDEX,
-		[32] = WMM_UP_CL_INDEX,
-		[34] = WMM_UP_CL_INDEX,
-		[36] = WMM_UP_CL_INDEX,
-		[38] = WMM_UP_CL_INDEX,
-		[40] = WMM_UP_VI_INDEX,
-		[44] = WMM_UP_VO_INDEX,
-		[46] = WMM_UP_VO_INDEX,
-		[48] = WMM_UP_VO_INDEX,
-		[56] = WMM_UP_NC_INDEX,
+		[0 ... 63] = 0,         /* PHB, UP, WMM, AC */
+		[0] = WMM_UP_BE_INDEX,  /* DF,   0, BE, AC_BE */
+		[8] = WMM_UP_BK_INDEX,  /* CS1,  1, BK, AC_BK */
+		[10] = WMM_UP_BE_INDEX, /* AF11, 0, BE, AC_BE */
+		[12] = WMM_UP_BE_INDEX, /* AF12, 0, BE, AC_BE */
+		[14] = WMM_UP_BE_INDEX, /* AF13, 0, BE, AC_BE */
+		[16] = WMM_UP_BE_INDEX, /* CS2,  0, BE, AC_BE */
+		[18] = WMM_UP_EE_INDEX, /* AF21, 3, EE, AC_BE */
+		[20] = WMM_UP_EE_INDEX, /* AF22, 3, EE, AC_BE */
+		[22] = WMM_UP_EE_INDEX, /* AF23, 3, EE, AC_BE */
+		[24] = WMM_UP_CL_INDEX, /* CS3,  4, CL, AC_VI */
+		[26] = WMM_UP_CL_INDEX, /* AF31, 4, CL, AC_VI */
+		[28] = WMM_UP_CL_INDEX, /* AF32, 4, CL, AC_VI */
+		[30] = WMM_UP_CL_INDEX, /* AF33, 4, CL, AC_VI */
+		[32] = WMM_UP_CL_INDEX, /* CS4,  4, CL, AC_VI */
+		[34] = WMM_UP_CL_INDEX, /* AF41, 4, CL, AC_VI */
+		[36] = WMM_UP_CL_INDEX, /* AF42, 4, CL, AC_VI */
+		[38] = WMM_UP_CL_INDEX, /* AF43, 4, CL, AC_VI */
+		[40] = WMM_UP_VI_INDEX, /* CS5,  5, VI, AC_VI */
+		[44] = WMM_UP_VO_INDEX, /* VA,   6, VO, AC_VO */
+		[46] = WMM_UP_VO_INDEX, /* EF,   6, VO, AC_VO */
+		/**
+		 * RFC 8325 8.2 Security Recommendations for WLAN QoS:
+		 * it is RECOMMENDED that CS6 and CS7 DSCP be mapped to UP 0 in
+		 * these Wi-Fi-at-the-edge deployment models.
+		 */
+		[48] = 0,               /* CS6,  6, VO, AC_VO */
+		[56] = 0,               /* CS7,  7, NC, AC_VO */
 	};
 
 	kalMemCopy(prStaRec->qosMapSet, dscp2up, 64);
 }
 
+/**
+ * Return the User Priority according to DSCP in IP header according to
+ * the mapping table.
+ *
+ * NOTE: TID (4-bit) = 0(MSB) + User Priority (3-bit)
+ */
 uint8_t getUpFromDscp(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucBssIndex, int dscp)
 {

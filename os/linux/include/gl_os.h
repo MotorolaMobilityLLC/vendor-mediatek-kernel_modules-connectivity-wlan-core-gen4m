@@ -309,9 +309,6 @@ extern const struct ieee80211_iface_combination
 extern const int32_t mtk_iface_combinations_p2p_num;
 extern uint8_t g_aucNvram[];
 extern uint8_t g_aucNvram_OnlyPreCal[];
-#if ARP_MONITER_ENABLE
-extern u_int8_t qmArpMonitorIsCritical(void);
-#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -533,13 +530,13 @@ enum ENUM_NVRAM_STATE {
 /* WMM QOS user priority from 802.1D/802.11e */
 enum ENUM_WMM_UP {
 	WMM_UP_BE_INDEX = 0,
-	WMM_UP_BK_INDEX,
-	WMM_UP_RESV_INDEX,
-	WMM_UP_EE_INDEX,
-	WMM_UP_CL_INDEX,
-	WMM_UP_VI_INDEX,
-	WMM_UP_VO_INDEX,
-	WMM_UP_NC_INDEX,
+	WMM_UP_BK_INDEX = 1,
+	WMM_UP_RESV_INDEX = 2,
+	WMM_UP_EE_INDEX = 3,
+	WMM_UP_CL_INDEX = 4,
+	WMM_UP_VI_INDEX = 5,
+	WMM_UP_VO_INDEX = 6,
+	WMM_UP_NC_INDEX = 7,
 	WMM_UP_INDEX_NUM
 };
 
@@ -1437,69 +1434,6 @@ static __KAL_INLINE__ void glPacketDataTypeCheck(void)
 {
 	DATA_STRUCT_INSPECTING_ASSERT(sizeof(struct
 		PACKET_PRIVATE_DATA) <= sizeof(((struct sk_buff *) 0)->cb));
-}
-
-static bool is_critical_packet(struct net_device *dev,
-	struct sk_buff *skb, u16 orig_queue_index)
-{
-#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
-	uint8_t *pucPkt;
-	uint16_t u2EtherType;
-	bool is_critical = false;
-
-	if (!skb)
-		return false;
-
-	pucPkt = skb->data;
-	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8)
-			| (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
-
-	switch (u2EtherType) {
-	case ETH_P_ARP:
-		if (__netif_subqueue_stopped(dev, orig_queue_index))
-			is_critical = true;
-#if ARP_MONITER_ENABLE
-		if (qmArpMonitorIsCritical())
-			is_critical = true;
-#endif
-		break;
-	case ETH_P_1X:
-	case ETH_P_PRE_1X:
-#if CFG_SUPPORT_WAPI
-	case ETH_WPI_1X:
-#endif
-		is_critical = true;
-		break;
-	default:
-		is_critical = false;
-		break;
-	}
-	return is_critical;
-#else
-	return false;
-#endif
-}
-
-static inline u16 mtk_wlan_ndev_select_queue(
-	struct net_device *dev,
-	struct sk_buff *skb)
-{
-	static u16 ieee8021d_to_queue[8] = { 1, 0, 0, 1, 2, 2, 3, 3 };
-	u16 queue_index = 0;
-
-	/* cfg80211_classify8021d returns 0~7 */
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	skb->priority = cfg80211_classify8021d(skb);
-#else
-	skb->priority = cfg80211_classify8021d(skb, NULL);
-#endif
-	queue_index = ieee8021d_to_queue[skb->priority];
-	if (is_critical_packet(dev, skb, queue_index)) {
-		skb->priority = WMM_UP_VO_INDEX;
-		queue_index = ieee8021d_to_queue[skb->priority];
-	}
-
-	return queue_index;
 }
 
 #if KERNEL_VERSION(2, 6, 34) > LINUX_VERSION_CODE
