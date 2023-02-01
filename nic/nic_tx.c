@@ -6166,7 +6166,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			return WLAN_STATUS_FAILURE;
 		}
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 		/* Check if need to send a MSCS request */
 		if (mscsIsNeedRequest(prAdapter, pvPacket)) {
 			/* Request a mscs frame if needed */

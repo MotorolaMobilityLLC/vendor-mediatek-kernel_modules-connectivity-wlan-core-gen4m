@@ -5169,7 +5169,7 @@ uint32_t wlanEnqueueTxPacket(struct ADAPTER *prAdapter,
 		wlanTxProfilingTagMsdu(prAdapter, prMsduInfo,
 				       TX_PROF_TAG_DRV_ENQUE);
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 		/* Check if need to send a MSCS request */
 		if (mscsIsNeedRequest(prAdapter, prNativePacket)) {
 			/* Request a mscs frame if needed */
@@ -12466,7 +12466,7 @@ uint32_t wlanSetLowLatencyMode(
 			ucBssIndex))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	if (fgEnMode != prAdapter->fgEnLowLatencyMode) {
 		if (!fgEnMode && (MEDIA_STATE_CONNECTED
 			== kalGetMediaStateIndicated(prAdapter->prGlueInfo,

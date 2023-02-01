@@ -24,7 +24,7 @@
  */
 #include "precomp.h"
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -186,7 +186,7 @@ void mscsFlushFiveTuple(struct ADAPTER *prAdapter,
 	}
 }
 
-struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(struct ADAPTER *prAdapter,
+static struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(struct ADAPTER *prAdapter,
 	uint8_t *prTargetTcp)
 {
 	struct STA_RECORD *prStaRec = NULL;
@@ -362,7 +362,7 @@ uint8_t mscsIsTcpNeedMonitor(struct ADAPTER *prAdapter, uint8_t *pucPkt)
 	 * 1) For the same source/desntination IP and port,
 	 * request to monitor after three-way handshake.
 	 */
-	ucTcpFlag = (pucTcpBody[TCP_HDR_FLAG_OFFSET]) & 0x3F;
+	ucTcpFlag = pucTcpBody[TCP_HDR_FLAG_OFFSET] & TCP_HDR_FLAGS;
 	u4Ack = GET_TCP_ACK_FROM_TCP_BODY(pucTcpBody);
 	DBGLOG(TX, LOUD, "[F] TCP flag:%d ack=%d\n", ucTcpFlag, u4Ack);
 
@@ -375,14 +375,14 @@ uint8_t mscsIsTcpNeedMonitor(struct ADAPTER *prAdapter, uint8_t *pucPkt)
 	rTcpInfo.ucFlag = ucTcpFlag;
 	DBGLOG_MEM8(TX, LOUD, &rTcpInfo.u4SrcIp, LEN_OF_TCP_INFO);
 
-	if (ucTcpFlag == TCP_FLAG_SYN) {
+	if (ucTcpFlag == TCP_HDR_FLAG_SYN_BIT) {
 		mscsAddTcpForMonitor(prAdapter, (uint8_t *) &rTcpInfo.u4SrcIp);
 		return FALSE;
-	} else if (ucTcpFlag == TCP_FLAG_ACK) {
+	} else if (ucTcpFlag == TCP_HDR_FLAG_ACK_BIT) {
 		prTcpEntry = mscsSearchTcpEntry(prAdapter,
 			(uint8_t *) &rTcpInfo.u4SrcIp);
-		if (prTcpEntry && prTcpEntry->ucFlag == TCP_FLAG_SYN_ACK &&
-			(u4Ack == prTcpEntry->u4Seq + 1))
+		if (prTcpEntry && prTcpEntry->ucFlag == TCP_HDR_FLAG_SYN_ACK &&
+		    u4Ack == prTcpEntry->u4Seq + 1)
 			return TRUE;
 	}
 	return FALSE;
@@ -394,6 +394,7 @@ uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket)
 	struct MSCS_FIVE_TUPLE_T rTargetFiveTuple;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint16_t u2EtherType;
+	uint8_t ucProtocol;
 	uint8_t *pPkt, *pucEthBody, *pucUdpBody;
 	uint8_t ucMonitorProto = prWifiVar->ucSupportProtocol;
 	uint32_t u4Mark;
@@ -421,15 +422,16 @@ uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket)
 	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
 		| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEthBody = &pPkt[ETH_HLEN];
+	ucProtocol = pucEthBody[IPV4_HDR_IP_PROTOCOL_OFFSET];
 	pucUdpBody = &pucEthBody[IP_HEADER_LEN];
-	DBGLOG(TX, LOUD, "[F] IP protocol:%d\n", pucEthBody[9]);
+	DBGLOG(TX, LOUD, "[F] IP protocol:%d\n", ucProtocol);
 
-	if (u2EtherType != ETH_P_IPV4 || (pucEthBody[9] != IP_PRO_UDP
-		&& pucEthBody[9] != IP_PRO_TCP))
+	if (u2EtherType != ETH_P_IPV4 ||
+	    (ucProtocol != IP_PRO_UDP && ucProtocol != IP_PRO_TCP))
 		return FALSE;
 
-	if ((ucMonitorProto == MONITOR_UDP && pucEthBody[9] != IP_PRO_UDP) ||
-		(ucMonitorProto == MONITOR_TCP && pucEthBody[9] != IP_PRO_TCP))
+	if (ucMonitorProto == MONITOR_UDP && ucProtocol != IP_PRO_UDP ||
+	    ucMonitorProto == MONITOR_TCP && ucProtocol != IP_PRO_TCP)
 		return FALSE;
 
 	/* 3. Check if connected AP support MSCS */
@@ -442,7 +444,7 @@ uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket)
 	SET_DST_IP_FROM_ETH_BODY_STC_IP(&rTargetFiveTuple, pucEthBody);
 	SET_SRC_PORT_FROM_PRO_BODY_DST_PORT(&rTargetFiveTuple, pucUdpBody);
 	SET_DST_PORT_FROM_PRO_BODY_SRC_PORT(&rTargetFiveTuple, pucUdpBody);
-	rTargetFiveTuple.ucProtocol = pucEthBody[9];
+	rTargetFiveTuple.ucProtocol = ucProtocol;
 
 	DBGLOG(TX, LOUD, "[F] original IP content:\n");
 	DBGLOG_MEM8(TX, LOUD, &pucEthBody[IPV4_HDR_IP_SRC_ADDR_OFFSET], 12);
@@ -451,8 +453,7 @@ uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket)
 		return FALSE;
 
 	/* Handle TCP case */
-	if (pucEthBody[9] == IP_PRO_TCP &&
-		!mscsIsTcpNeedMonitor(prAdapter, pPkt))
+	if (ucProtocol == IP_PRO_TCP && !mscsIsTcpNeedMonitor(prAdapter, pPkt))
 		return FALSE;
 
 	return TRUE;
@@ -754,6 +755,8 @@ void mscsHandleRxPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t *pucPkt = NULL;
 	uint8_t *pucEthBody;
 	uint16_t u2EtherType;
+	uint16_t u2TcpFlags;
+	uint8_t ucProtocol;
 	uint8_t *pucTcpBody;
 	uint32_t u4Ack;
 	struct MSCS_TCP_INFO_T *prTcpEntry = NULL;
@@ -769,10 +772,12 @@ void mscsHandleRxPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	pucTcpBody = &pucEthBody[IP_HEADER_LEN];
 	u2EtherType = (pucPkt[ETH_TYPE_LEN_OFFSET] << 8) |
 			(pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
-	DBGLOG(NIC, TRACE, "TCP type:%d protocol:%d raw flag:%d\n", u2EtherType,
-		pucEthBody[9], (pucTcpBody[TCP_HDR_FLAG_OFFSET] & 0x3F));
-	if (u2EtherType != ETH_P_IPV4 || pucEthBody[9] != IP_PRO_TCP
-	    || ((pucTcpBody[TCP_HDR_FLAG_OFFSET] & 0x3F) != TCP_FLAG_SYN_ACK))
+	u2TcpFlags = pucTcpBody[TCP_HDR_FLAG_OFFSET] & TCP_HDR_FLAGS;
+	ucProtocol = pucEthBody[IPV4_HDR_IP_PROTOCOL_OFFSET];
+	DBGLOG(NIC, TRACE, "TCP type:%d protocol:%d raw flag:0x%02x\n",
+			u2EtherType, ucProtocol, u2TcpFlags);
+	if (u2EtherType != ETH_P_IPV4 || ucProtocol != IP_PRO_TCP ||
+	    u2TcpFlags != TCP_HDR_FLAG_SYN_ACK)
 		return;
 
 	prTcpEntry = mscsSearchTcpEntry(prAdapter,
@@ -785,7 +790,7 @@ void mscsHandleRxPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		prTcpEntry->u4Seq);
 	if (prTcpEntry->u4Seq + 1 == u4Ack) {
 		prTcpEntry->u4Seq = GET_TCP_SEQ_FROM_TCP_BODY(pucTcpBody);
-		prTcpEntry->ucFlag = TCP_FLAG_SYN_ACK;
+		prTcpEntry->ucFlag = TCP_HDR_FLAG_SYN_ACK;
 	}
 }
 

@@ -2333,8 +2333,8 @@
  * Flags of Fast Path Feature Support
  *------------------------------------------------------------------------------
  */
-#ifndef CFG_MSCS_SUPPORT
-#define CFG_MSCS_SUPPORT 0
+#ifndef CFG_FAST_PATH_SUPPORT
+#define CFG_FAST_PATH_SUPPORT 0
 #endif
 
 #define CFG_SUPPORT_RTT			(1)

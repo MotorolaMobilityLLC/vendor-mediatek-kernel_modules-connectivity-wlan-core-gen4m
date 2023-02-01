@@ -1442,7 +1442,7 @@ ccflags-y += -DCFG_WFD_SCC_BALANCE_SUPPORT=0
 endif
 
 ifeq ($(CONFIG_MSCS_FAST_PATH_SUPPORT), y)
-ccflags-y += -DCFG_MSCS_SUPPORT=1
+ccflags-y += -DCFG_FAST_PATH_SUPPORT=1
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)

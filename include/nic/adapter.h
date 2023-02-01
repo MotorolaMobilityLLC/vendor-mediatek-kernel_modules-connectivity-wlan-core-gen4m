@@ -592,7 +592,7 @@ struct BSS_INFO {
 
 	u_int8_t fgEnableH2E;
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	struct FAST_PATH_INFO rFastPathInfo;
 #endif
 
@@ -2428,7 +2428,7 @@ struct ADAPTER {
 	uint32_t u4TdlsLinkCount;
 #endif /* CFG_SUPPORT_TDLS */
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif
 	uint8_t ucEnVendorSpecifiedRpt;

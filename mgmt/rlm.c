@@ -1257,6 +1257,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_QOSMAPSET_BIT);
 #endif
+	/* QoS R2 3.2.2:
+	 * A Wi-Fi QoS Management STA shall support and enable by default
+	 * QoS Map per 11.22.9 IEEE std 802.11-2020.
+	 */
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+			ELEM_EXT_CAP_QOSMAPSET_BIT);
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
@@ -1269,7 +1275,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	if (mscsIsFpSupport(prAdapter) && IS_BSS_AIS(prBssInfo))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_MSCS_BIT);
