@@ -1157,12 +1157,20 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent)
 {
-	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	uint8_t ucBssIndex;
 
+	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
 		DBGLOG(CNM, WARN, "Receive duplicate cnmCsaDoneEvent.\n");
 		return;
 	}
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		log_dbg(CNM, ERROR, "Csa bss is invalid!\n");
+		return;
+	}
+	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	/* Clean up CSA variable */
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
@@ -1174,7 +1182,9 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucNewChannelWidth = 0;
 	prAdapter->rWifiVar.ucNewChannelS1 = 0;
 	prAdapter->rWifiVar.ucNewChannelS2 = 0;
-
+	if (!prP2pBssInfo ||
+		prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+		return;
 	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
 #endif
