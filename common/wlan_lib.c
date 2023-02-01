@@ -8617,6 +8617,11 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "CC2Region", FEATURE_ENABLED);
 
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+	prWifiVar->u4TdlsP2pAuto = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "TdlsP2pAuto", FEATURE_ENABLED);
+#endif
+
 	prWifiVar->u4ApChnlHoldTime = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
 
@@ -10947,6 +10952,15 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_PER_STA_STATISTICS
 			wlanTxLifetimeUpdateStaStats(prAdapter, prMsduInfo);
+#endif
+
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+			TdlsP2pAuto(
+				prAdapter,
+				prMsduInfo->ucBssIndex,
+				prMsduInfo->u2FrameLength,
+				0,
+				prMsduInfo->aucEthDestAddr);
 #endif
 		}
 		break;

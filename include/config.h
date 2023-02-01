@@ -2384,6 +2384,9 @@
 #ifndef CFG_SUPPORT_TDLS_ADJUST_BW
 #define CFG_SUPPORT_TDLS_ADJUST_BW	0
 #endif
+#ifndef CFG_SUPPORT_TDLS_LOG
+#define CFG_SUPPORT_TDLS_LOG	0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flag of Wifi Standalone Log Support.
