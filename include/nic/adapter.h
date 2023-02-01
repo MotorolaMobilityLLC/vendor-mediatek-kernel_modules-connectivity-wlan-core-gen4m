@@ -1447,6 +1447,9 @@ struct WIFI_VAR {
 	uint32_t u4PagePoolMinCnt;
 	uint32_t u4PagePoolMaxCnt;
 #endif
+
+	/* 0:BW20, 1:BW40, 2:BW80, 3:BW160 4:BW8080, 5: BW320 */
+	uint32_t u4PhyMaxBandwidth;
 };
 
 /* cnm_timer module */

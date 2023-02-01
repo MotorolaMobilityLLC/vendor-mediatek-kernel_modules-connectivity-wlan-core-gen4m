@@ -4546,16 +4546,17 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (prTestWinfo->chip_cap.support_6g)
 			capability->ph_cap.channel_band |= BIT(2);
 
-		/* ph_cap.bandwidth */
-		capability->ph_cap.bandwidth = BITS(0, 1);
-		if (prAdapter->rWifiVar.ucStaVht)
-			capability->ph_cap.bandwidth |= BIT(2);
-		if (prTestWinfo->chip_cap.support_6g)
-			capability->ph_cap.bandwidth |= BITS(3, 4);
-#if (CFG_SUPPORT_802_11BE == 1)
-		if (capability->ph_cap.protocol & BIT(4))
-			capability->ph_cap.bandwidth |= BIT(5);
-#endif /* (CFG_SUPPORT_802_11BE == 1) */
+		/* ph_cap.bandwidth
+		*  prAdapter->rWifiVar.u4PhyMaxBandwidth is according form
+		*  nicCfgChipCapPhyCap that will query PHY CAP form FW
+		*  0 : support BW20
+		*  1 : support BW20 + BW40
+		*  2 : support BW20 + BW40 + BW80
+		*  3 : support BW20 + BW40 + BW80 + BW 160
+		*  4 : support BW20 + BW40 + BW80 + BW 160 + BW8080
+		*  5 : support BW20 + BW40 + BW80 + BW 160 + BW8080 + BW320
+		*/
+		capability->ph_cap.bandwidth = BITS(0, prAdapter->rWifiVar.u4PhyMaxBandwidth);
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 
