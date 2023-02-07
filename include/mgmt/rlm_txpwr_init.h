@@ -84,6 +84,17 @@
 #define PWR_LIMIT_UNII3_IN_MW_MHZ  BIT(4)
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
+#ifdef MOTO_DYNAMIC_TX_PWR
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	g_rRlmPowerLimitDefault[] = {
+
+	/*Default*/
+	{	{0, 0}
+		, {63, 63, 63, 63, 63}
+		, 0
+	}
+};
+#else
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
@@ -2452,6 +2463,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 };
 #endif
+#endif	//MOTO_DYNAMIC_TX_PWR
 
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
 	g_rRlmPowerLimitConfigurationHE[] = {
@@ -2567,6 +2579,16 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT_6G
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
 
+#ifdef MOTO_DYNAMIC_TX_PWR
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
+	g_rRlmPowerLimitConfiguration[] = {
+
+	/*Default*/
+	{	{0, 0}
+		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+	}
+};
+#else
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
@@ -2865,16 +2887,6 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		/*Default*/
 	{	{0, 0}
 		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63}
-	}
-};
-#else
-#ifdef MOTO_DYNAMIC_TX_PWR
-struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
-	g_rRlmPowerLimitConfiguration[] = {
-
-	/*Default*/
-	{	{0, 0}
-		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 	}
 };
 #else
@@ -3180,6 +3192,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	}
 };
 #endif
+#endif // MOTO_DYNAMIC_TX_PWR
 
 static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {0};
 
@@ -3219,7 +3232,6 @@ struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 		(sizeof(arSupportCountryPowerLmtGrps) \
 			/ sizeof(struct COUNTRY_POWER_LIMIT_GROUP_TABLE))
 };
-#endif
 #endif
 
 /*******************************************************************************
