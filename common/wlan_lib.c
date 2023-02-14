@@ -8378,6 +8378,9 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucMsduReportTimeout =
 		(uint8_t) wlanCfgGetUint32(prAdapter,
 		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
+	prWifiVar->ucMsduReportTimeoutSerTime =
+		(uint8_t) wlanCfgGetUint32(prAdapter,
+		"MsduReportTimeoutSerTime", NIC_MSDU_REPORT_TIMEOUT_SER_TIME);
 
 #if CFG_SUPPORT_DATA_STALL
 	prWifiVar->u4PerHighThreshole = (uint32_t) wlanCfgGetUint32(
