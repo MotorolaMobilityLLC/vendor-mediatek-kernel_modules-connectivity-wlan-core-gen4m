@@ -1583,8 +1583,12 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 			(pucBuf + prAdapter->chip_info->rxd_size);
 
 		if ((prEvent->u2PacketLength == 0) &&
-		    (pRxD->SDLen0 != prEvent->u2PacketLength))
+		    (pRxD->SDLen0 != prEvent->u2PacketLength)) {
+			DBGLOG(RX, ERROR, "Dump RX Event payload len[%d]\n",
+			       pRxD->SDLen0);
+			DBGLOG_MEM8(RX, ERROR, pucBuf, pRxD->SDLen0);
 			return FALSE;
+		}
 	}
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
