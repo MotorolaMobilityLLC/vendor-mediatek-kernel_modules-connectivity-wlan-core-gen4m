@@ -1166,6 +1166,7 @@ struct WIFI_VAR {
 			uint32_t fgDumpRxD: 1;        /* 0x10 */
 			uint32_t fgDumpRxDmad: 1;     /* 0x20 */
 			uint32_t fgDumpRxDsegment: 1; /* 0x40 */
+			uint32_t fgDumpRxEvt: 1;      /* 0x80 */
 		};
 	};
 	uint32_t u4BaShortMissTimeoutMs;

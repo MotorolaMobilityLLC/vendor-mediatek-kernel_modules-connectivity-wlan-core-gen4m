@@ -8275,11 +8275,11 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->u4TxRxDescDump = wlanCfgGetUint32(prAdapter,
 					"TRXDescDump", 0x40);
 	DBGLOG(INIT, TRACE,
-		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD=%u,%u,%u/%u,%u,%u",
+		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u/%u,%u,%u,%u",
 		prWifiVar->fgDumpTxP, prWifiVar->fgDumpTxDmad,
 		prWifiVar->fgDumpTxD,
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
-		prWifiVar->fgDumpRxD);
+		prWifiVar->fgDumpRxD, prWifiVar->fgDumpRxEvt);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
