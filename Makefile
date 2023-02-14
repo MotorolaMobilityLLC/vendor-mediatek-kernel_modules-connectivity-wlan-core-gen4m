@@ -111,6 +111,10 @@ ifneq ($(CONFIG_MTK_EMI_LEGACY),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
 
+ifneq ($(CONFIG_MTK_EMI_LEGACY),)
+ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
+endif
+
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
