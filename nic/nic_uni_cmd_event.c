@@ -7818,6 +7818,27 @@ void nicUniEventLinkQuality(struct ADAPTER
 }
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+
+struct STA_RECORD *findStarecByWtblIdx(struct ADAPTER
+	*prAdapter, uint8_t ucWlanIndex)
+{
+	struct STA_RECORD *prStaRec = NULL, *prTempStaRec;
+	uint8_t ucStaRecIdx;
+
+	for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
+		ucStaRecIdx++) {
+		prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
+		if (prTempStaRec->fgIsValid && prTempStaRec->fgIsInUse) {
+			/* FW starec idx is WTBL idx */
+			if (prTempStaRec->ucWlanIndex == ucWlanIndex) {
+				prStaRec = prTempStaRec;
+				break;
+			}
+		}
+	}
+	return prStaRec;
+}
+
 void nicUniEventAllStatsOneCmd(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
@@ -7919,13 +7940,14 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 				(struct UNI_EVENT_STA_STATISTICS *) tag;
 			struct EVENT_STA_STATISTICS *prStaStatsLegacy;
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
-			struct STA_RECORD *prStaRec;
+			struct STA_RECORD *prStaRec = NULL;
 			uint8_t ucBssIdx;
 
 			prStaStatsLegacy =
 				(struct EVENT_STA_STATISTICS *) tlv->aucBuffer;
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prStaRec = findStarecByWtblIdx(prAdapter,
 				prStaStatsLegacy->ucStaRecIdx);
+
 			if (!prStaRec)
 				continue;
 
@@ -7933,7 +7955,8 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			prQueryStaStatistics =
 				&prAdapter->rQueryStaStatistics[ucBssIdx];
 			nicUpdateStaStats(prAdapter,
-				prStaStatsLegacy, prQueryStaStatistics);
+				prStaStatsLegacy, prQueryStaStatistics,
+				prStaRec->ucIndex);
 			break;
 		}
 		case UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS: {

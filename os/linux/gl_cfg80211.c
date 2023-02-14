@@ -654,11 +654,14 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -EINVAL;
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	prGetStaStatistics = &prAdapter->rQueryStaStatistics[ucBssIndex];
+	/* no need to COPY_MAC_ADDR here
+	 * because main thread will traverse all BSS index
+	 */
 #else
 	prGetStaStatistics = &(
 		prAdapter->rQueryStaStatistics);
-#endif
 	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, arBssid);
+#endif
 	prGetStaStatistics->ucReadClear = TRUE;
 
 	/* 1. check input MAC address */
