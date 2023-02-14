@@ -8653,6 +8653,29 @@ void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
 	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_ALL_CN);
 }
 
+uint8_t p2pFuncIsCsaBlockScan(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prP2pBssInfo =
+		(struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return FALSE;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+						prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo)
+		return FALSE;
+	else
+		return timerPendingTimer(&prP2pRoleFsmInfo->rP2pCsaDoneTimer);
+}
+
 enum ENUM_CHNL_SWITCH_POLICY
 p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
@@ -8699,6 +8722,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct LINK *prClientList;
 	struct STA_RECORD *prCurrStaRec;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 
 	DBGLOG(P2P, INFO, "bss index: %d, policy: %d\n", ucBssIdx, ePolicy);
 
@@ -8706,6 +8730,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 	prClientList = &prBssInfo->rStaRecOfClientList;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, prBssInfo->u4PrivateData);
 	switch (ePolicy) {
 	case CHNL_SWITCH_POLICY_DEAUTH:
 		if (prClientList && prClientList->u4NumElem > 0) {
@@ -8763,6 +8789,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			nicFreq2ChannelNum(
 				prNewChannelInfo->u4CenterFreq1 * 1000);
 		prAdapter->rWifiVar.ucNewChannelS2 = 0;
+		p2pFunAbortOngoingScan(prAdapter);
 
 		/* Send Action Frames */
 		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
@@ -8774,6 +8801,9 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		 * reported once in the beacon.
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		cnmTimerStartTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
+			SEC_TO_MSEC(7));
 
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);

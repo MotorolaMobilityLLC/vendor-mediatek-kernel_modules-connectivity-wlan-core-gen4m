@@ -543,6 +543,8 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 
 void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter);
 
+uint8_t p2pFuncIsCsaBlockScan(struct ADAPTER *prAdapter);
+
 enum ENUM_CHNL_SWITCH_POLICY
 p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,

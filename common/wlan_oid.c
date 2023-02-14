@@ -859,7 +859,11 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 	} else
 #endif
 	{
-		if (prAdapter->fgEnOnlineScan == TRUE) {
+		if (p2pFuncIsCsaBlockScan(prAdapter)) {
+			DBGLOG(OID, WARN,
+		       "Not to do scan during SAP CSA!!\n");
+			return WLAN_STATUS_FAILURE;
+		} else if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 			ucBssIndex)
