@@ -3063,6 +3063,8 @@ void kalIdcRegisterRilNotifier(void)
 	if (!g_init_ril_notifier) {
 		int val = 1;
 
+		DBGLOG(INIT, INFO, "Register RIL Notifier\n");
+
 		register_dev_ril_bridge_event_notifier(
 			&g_ril_notifier_block);
 
@@ -3080,6 +3082,7 @@ void kalIdcUnregisterRilNotifier(void)
 		unregister_dev_ril_bridge_event_notifier(
 			&g_ril_notifier_block);
 		g_init_ril_notifier = 0;
+		DBGLOG(INIT, INFO, "Unregister RIL Notifier\n");
 	}
 }
 #endif
