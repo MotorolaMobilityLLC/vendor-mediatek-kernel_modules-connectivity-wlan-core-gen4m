@@ -594,9 +594,14 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		if (prAdapter->prGlueInfo->fgIsInSuspend) {
 			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
 			u4CurrTick = kalGetTimeTick();
-		} else
-			fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
-			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		} else {
+			if (prAdapter->u4CasanLoadType == 1)
+				fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+				     LP_OWN_BACK_TOTAL_DELAY_CASAN_MS) ? TRUE : FALSE;
+			else
+				fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+				     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
+		}
 
 		if (fgResult) {
 			/* Check WPDMA FW own interrupt status and clear */
