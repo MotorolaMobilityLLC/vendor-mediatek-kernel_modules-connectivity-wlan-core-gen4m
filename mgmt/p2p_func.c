@@ -8002,11 +8002,8 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 
 	if (!prAdapter->fgIsP2PRegistered ||
 		(prAdapter->rP2PNetRegState !=
-			ENUM_NET_REG_STATE_REGISTERED)) {
-		DBGLOG(P2P, WARN,
-			"p2p net dev is not registered\n");
+			ENUM_NET_REG_STATE_REGISTERED))
 		return FALSE;
-	}
 
 	bss = cnmGetSapBssInfo(prAdapter);
 	ucApForceSleep = prAdapter->rWifiVar.ucApForceSleep;
