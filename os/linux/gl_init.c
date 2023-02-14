@@ -95,7 +95,9 @@
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include "ics.h"
 #endif
-
+#if CFG_SUPPORT_SA_LOG
+#include "gl_sa_log.h"
+#endif
 #if CFG_POWER_OFF_CTRL_SUPPORT
 #include <linux/reboot.h>
 #endif
@@ -7501,6 +7503,14 @@ static int initWlan(void)
 	}
 #endif /* CFG_SUPPORT_ICS */
 
+#if (CFG_SUPPORT_SA_LOG == 1)
+	ret = SalogInit();
+	if (ret < 0) {
+		DBGLOG(INIT, INFO, "sa log node init failed!");
+		return ret;
+	}
+#endif /* CFG_SUPPORT_SA_LOG */
+
 	g_u4WlanInitFlag = 1;
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
@@ -7657,6 +7667,10 @@ static void exitWlan(void)
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
 #endif
+
+#if (CFG_SUPPORT_SA_LOG == 1)
+	SalogDeInit();
+#endif /* CFG_SUPPORT_SA_LOG */
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	IcsDeInit();
