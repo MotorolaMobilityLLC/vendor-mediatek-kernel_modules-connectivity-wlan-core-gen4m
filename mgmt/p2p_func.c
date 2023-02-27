@@ -8778,6 +8778,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		 * reported once in the beacon.
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		cnmTimerStopTimer(prAdapter,
+				  &(prP2pRoleFsmInfo->rP2pCsaDoneTimer));
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
 			SEC_TO_MSEC(7));
