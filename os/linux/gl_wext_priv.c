@@ -19387,12 +19387,17 @@ static int priv_driver_show_txd_info(
 int8_t *RxStatCommonUser[] = {
 	/* common user stat info */
 	"rx_fifo_full	: 0x%08x\n",
+#if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v1 */
 	"aci_hit_low	: 0x%08x\n",
 	"aci_hit_high	: 0x%08x\n",
+#endif
 	"mu_pkt_cnt	: 0x%08x\n",
 	"sig_mcs		: 0x%08x\n",
 	"sinr		: 0x%08x\n",
-	"driver_rx_count: 0x%08x\n"
+	"driver_rx_count: 0x%08x\n",
+#if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
+	"ne_var_db	: 0x%08x\n"
+#endif
 };
 
 int8_t *RxStatPerUser[] = {
@@ -19409,7 +19414,10 @@ int8_t *RxStatPerAnt[] = {
 	"fagc_ib_rssi	: %d\n",
 	"fagc_wb_rssi	: %d\n",
 	"inst_ib_rssi	: %d\n",
-	"inst_wb_rssi	: %d\n"
+	"inst_wb_rssi	: %d\n",
+#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
+	"adc_rssi	: %d\n"
+#endif
 };
 
 int8_t *RxStatPerBand[] = {
@@ -19427,7 +19435,11 @@ int8_t *RxStatPerBand[] = {
 	"phy_sig_err_ofdm: 0x%08x\n",
 	"phy_tag_err_ofdm: 0x%08x\n",
 	"phy_mdy_cnt_cck	: 0x%08x\n",
-	"phy_mdy_cnt_ofdm: 0x%08x\n"
+	"phy_mdy_cnt_ofdm: 0x%08x\n",
+#if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
+	"aci_hit_low	: 0x%08x",
+	"aci_hit_high	: 0x%08x"
+#endif
 };
 
 int32_t priv_driver_rx_stat_parser(
