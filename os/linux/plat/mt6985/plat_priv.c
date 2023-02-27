@@ -44,6 +44,10 @@
 #include <linux/pinctrl/consumer.h>
 #include "wlan_pinctrl.h"
 
+/* for dram boost */
+#include "dvfsrc-exp.h"
+#include <linux/interconnect.h>
+
 static uint32_t u4EmiMetOffset = 0x45D400;
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -172,7 +176,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4RxWorkCpu = 7,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 1,
-		.fgDramBoost = FALSE
+		.fgDramBoost = TRUE
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV3 */
@@ -200,7 +204,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4RxWorkCpu = 7,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
-		.fgDramBoost = FALSE
+		.fgDramBoost = TRUE
 	}
 };
 
@@ -317,7 +321,41 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 
 void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 {
-	/* TODO */
+	struct platform_device *pdev = g_prPlatDev;
+#ifdef CONFIG_OF
+	struct device_node *node;
+	static struct icc_path *bw_path;
+#endif /* CONFIG_OF */
+	static unsigned int peak_bw, current_bw;
+	unsigned int prev_bw = 0;
+
+	if (!bw_path) {
+#ifdef CONFIG_OF
+		/* Update the peak bw of dram */
+		node = pdev->dev.of_node;
+		bw_path = of_icc_get(&pdev->dev, "wifi-perf-bw");
+		if (IS_ERR(bw_path)) {
+			DBGLOG(INIT, ERROR, "WLAN-OF: unable to get bw path!\n");
+			return;
+		}
+
+#if IS_ENABLED(CONFIG_MTK_DVFSRC)
+		peak_bw = dvfsrc_get_required_opp_peak_bw(node, 0);
+#endif /* CONFIG_MTK_DVFSRC */
+#endif /* CONFIG_OF */
+	}
+
+	if (bw_path) {
+		prev_bw = current_bw;
+
+		if (onoff)
+			current_bw = peak_bw;
+		else
+			current_bw = 0;
+
+		icc_set_bw(bw_path, 0, current_bw);
+		DBGLOG(INIT, INFO, "bw %u => %u\n", prev_bw, current_bw);
+	}
 }
 
 static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
