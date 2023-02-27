@@ -2880,7 +2880,8 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		connac3x_show_mawd_info(prAdapter);
 
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro) ||
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md))
 		connac3x_show_rro_info(prAdapter);
 #endif
 
