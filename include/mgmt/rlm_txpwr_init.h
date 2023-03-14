@@ -85,6 +85,16 @@
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 #ifdef MOTO_DYNAMIC_TX_PWR
+#if (CFG_SUPPORT_WIFI_6G == 1)
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
+	/*Default*/
+	g_rRlmPowerLimitDefault[] = {
+	{	{0, 0}
+		, {63, 63, 63, 63, 63, 63, 63, 63, 63}
+		, 0
+	}
+};
+#else
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	g_rRlmPowerLimitDefault[] = {
 
@@ -94,6 +104,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 		, 0
 	}
 };
+#endif
 #else
 #if (CFG_SUPPORT_WIFI_6G == 1)
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
@@ -2513,6 +2524,15 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_6E
 #endif
 
 #ifdef MOTO_DYNAMIC_TX_PWR
+#if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
+	g_rRlmPowerLimitConfiguration[] = {
+	/* Default */
+	{	{0, 0}
+		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63, 63}
+	}
+};
+#else
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
 
@@ -2521,6 +2541,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 		, 165, {63, 63, 63, 63, 63, 63, 63, 63, 63}
 	}
 };
+#endif
 #else
 #if (CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 1)
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
