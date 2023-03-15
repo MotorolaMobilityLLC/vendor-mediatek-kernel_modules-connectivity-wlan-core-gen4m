@@ -593,6 +593,9 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	/*Fill Iot AP blacklist here*/
+	{"IOTAP29", "0::::f02f74c4703c:::::2"},
+	{"IOTAP30", "0::::f02f74c42b20:::::2"},
+	{"IOTAP31", "0::::f02f74c42b24:::::2"},
 #endif
 #if CFG_TC3_FEATURE
 	{"ScreenOnBeaconTimeoutCount", "20"},
