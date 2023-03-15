@@ -1743,7 +1743,7 @@ void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	qmHandleRxDhcpPackets(prAdapter, prRetSwRfb);
 #endif
 
-	if (IS_BSS_INDEX_VALID(ucBssIndex))
+	if (ucBssIndex < MAX_BSSID_NUM)
 		GET_BOOT_SYSTIME(&prRxCtrl->u4LastRxTime[ucBssIndex]);
 }
 
