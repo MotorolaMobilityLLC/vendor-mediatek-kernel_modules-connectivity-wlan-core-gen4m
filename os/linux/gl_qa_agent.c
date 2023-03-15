@@ -6110,8 +6110,8 @@ static int32_t HQA_GetDumpRecal(struct net_device *prNetDev,
 
 	DBGLOG(RFTEST, INFO, "prReCalInfo->u4Count = [%d]\n",
 						 prReCalInfo->u4Count);
-	/*according nicExtEventReCalData prCalArray is 2048 groups*/
-	if (prReCalInfo->u4Count > 0 && prReCalInfo->u4Count < 2048) {
+	/*limit prReCalInfo->u4Count is 300 groups due to hqa buf is 4Kbyte*/
+	if (prReCalInfo->u4Count > 0 && prReCalInfo->u4Count < 300) {
 		for (i = 0; i < prReCalInfo->u4Count; i++) {
 
 			if ((6 + u4RespLen + (3 * sizeof(u4Value))) > sizeof(HqaCmdFrame->Data)) {
