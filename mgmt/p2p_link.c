@@ -679,7 +679,7 @@ struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
 	return &(fsm->rChnlReqInfo);
 }
 
-void p2pLinkStaRecFreeImpl(
+void p2pLinkStaRecFree(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct BSS_INFO *prP2pBssInfo)
@@ -709,59 +709,6 @@ void p2pLinkStaRecFreeImpl(
 		/* Update Disconnected state to FW. */
 		nicUpdateBss(prAdapter,
 			prP2pBssInfo->ucBssIndex);
-	}
-}
-
-void p2pLinkStaRecFree(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	struct BSS_INFO *prP2pBssInfo)
-{
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct MLD_STA_RECORD *mld_starec;
-	struct BSS_INFO *bss = (struct BSS_INFO *) NULL;
-
-	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (mld_starec) {
-		/* backup mldsta idx firstr because mldstarec is freed
-		 * when all starec unregister
-		 */
-		uint8_t mldsta_idx = mld_starec->ucIdx;
-		uint16_t i;
-		struct STA_RECORD *starec;
-
-		for (i = 0; i < CFG_STA_REC_NUM; i++) {
-			starec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
-
-			if (!starec ||
-			    !starec->fgIsInUse ||
-			    starec->ucMldStaIndex != mldsta_idx)
-				continue;
-
-			bss = prAdapter->aprBssInfo[starec->ucBssIndex];
-			if (!bss) {
-				DBGLOG(P2P, ERROR, "bss shouldn't be NULL!\n");
-				continue;
-			}
-
-			DBGLOG(INIT, INFO,
-				"\tsta: %d, wid: %d, bss: %d\n",
-				starec->ucIndex,
-				starec->ucWlanIndex,
-				starec->ucBssIndex);
-
-			/* Avoid txdone looping */
-			if (starec != prStaRec)
-				starec->eAuthAssocState = AA_STATE_RESOURCE;
-
-			p2pLinkStaRecFreeImpl(
-				prAdapter, starec, bss);
-		}
-	} else
-#endif
-	{
-		p2pLinkStaRecFreeImpl(
-			prAdapter, prStaRec, prP2pBssInfo);
 	}
 }
 
@@ -937,56 +884,6 @@ void p2pRoleFsmRunEventAAATxFail(
 		prAdapter,
 		prStaRec,
 		prP2pBssInfo);
-}
-
-
-void p2pRxDeauthNoWtbl(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	struct SW_RFB *prSwRfb)
-{
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct BSS_INFO *bss =
-		(struct BSS_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *fsm =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
-
-	if (!prAdapter || !prSwRfb)
-		return;
-	else if (!prStaRec) {
-		fsm = p2pGetDefaultRoleFsmInfo(prAdapter,
-			IFTYPE_P2P_CLIENT);
-
-		if (fsm && (p2pGetGCBssNum(fsm) > 1)) {
-			secHandleNoWtbl(prAdapter, prSwRfb);
-			prStaRec = prSwRfb->prStaRec;
-
-			if ((!prStaRec) ||
-				(!prStaRec->fgIsInUse) ||
-				!IS_BSS_INDEX_VALID(prStaRec->ucBssIndex)) {
-				/* Not to reply association response
-				 * with failure code due to lack of STA_REC
-				 */
-				DBGLOG(AAA, WARN,
-					"get sta fail, widx: %d, sta: %d\n",
-					prSwRfb->ucWlanIdx,
-					prSwRfb->ucStaRecIdx);
-				return;
-			}
-
-			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prStaRec->ucBssIndex);
-
-			if (bss &&
-				IS_BSS_GC(bss) &&
-				IS_BSS_ALIVE(prAdapter, bss))
-				p2pRoleFsmRunEventRxDeauthentication(
-					prAdapter,
-					prStaRec,
-					prSwRfb);
-		}
-	}
-#endif
 }
 
 uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec)
