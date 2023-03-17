@@ -740,7 +740,11 @@ int32_t mddpNotifyWifiOnEnd(void)
 #if (CFG_SUPPORT_CONNAC2X == 0 || CFG_TRI_TX_RING == 1)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
 #else
+#ifdef SOC3_0
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
+#else
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END_QOS);
+#endif
 #endif
 	if (ret == 0)
 		ret = wait_for_md_on_complete() ?
