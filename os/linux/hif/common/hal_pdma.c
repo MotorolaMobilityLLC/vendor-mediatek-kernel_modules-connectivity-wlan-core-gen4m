@@ -2189,7 +2189,7 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 				continue;
 			offset = prBusInfo->tx_ring2_data_idx * MT_RINGREG_DIFF;
 #if CFG_TRI_TX_RING
-		} else if (i == TX_RING_DATA3_IDX_3)
+		} else if (i == TX_RING_DATA3_IDX_3) {
 			if (!prBusInfo->tx_ring3_data_idx)
 				continue;
 			offset = prBusInfo->tx_ring3_data_idx * MT_RINGREG_DIFF;
