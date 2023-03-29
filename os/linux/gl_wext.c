@@ -3749,10 +3749,10 @@ uint32_t country_code_is_in_fcc_group(uint16_t country_code)
 		COUNTRY_CODE_PA, COUNTRY_CODE_PG, COUNTRY_CODE_PY, COUNTRY_CODE_PE,
 		COUNTRY_CODE_PH, COUNTRY_CODE_PR, COUNTRY_CODE_RW, COUNTRY_CODE_ST,
 		COUNTRY_CODE_SN, COUNTRY_CODE_SG, COUNTRY_CODE_ZA, COUNTRY_CODE_LK,
-		/*COUNTRY_CODE_SJ,*/ COUNTRY_CODE_TW, COUNTRY_CODE_TH, COUNTRY_CODE_TT,
+		/*COUNTRY_CODE_SJ,*/ /*COUNTRY_CODE_TW,*/COUNTRY_CODE_TH, COUNTRY_CODE_TT,
 		COUNTRY_CODE_TC, COUNTRY_CODE_UG, COUNTRY_CODE_US, /*COUNTRY_CODE_UM,*/
 		COUNTRY_CODE_UY, COUNTRY_CODE_VU, COUNTRY_CODE_VE, COUNTRY_CODE_VN,
-		COUNTRY_CODE_VI, COUNTRY_CODE_KR, COUNTRY_CODE_IN, COUNTRY_CODE_JP
+		COUNTRY_CODE_VI, /*COUNTRY_CODE_KR,*/ COUNTRY_CODE_IN, COUNTRY_CODE_JP
 	};
 
 	for (i = 0; i < ARRAY_SIZE(country_code_fcc); i++) {
@@ -3816,6 +3816,64 @@ uint32_t country_code_is_in_ce_group(uint16_t country_code)
 	return 0;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is ncc or not
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *	 country domain.
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t country_code_is_in_ncc_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_ncc[] = {
+		COUNTRY_CODE_TW
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_ncc); i++) {
+		if (country_code == country_code_ncc[i])
+			return 1;
+	}
+	return 0;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is KOR or not
+ *
+ * \param[in] country_code country code requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *	 country domain.
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t country_code_is_in_kor_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_kor[] = {
+		COUNTRY_CODE_KR
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_kor); i++) {
+		if (country_code == country_code_kor[i])
+			return 1;
+	}
+	return 0;
+}
+
+
 uint16_t priCountryCode = COUNTRY_CODE_CN;
 
 /*----------------------------------------------------------------------------*/
@@ -3838,25 +3896,30 @@ int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
 	char name[64] = {0};
 	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = {0};
 	uint32_t u4SetInfoLen = 0;
+	uint32_t clear_applied = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	if ((country_code_is_in_fcc_group(priCountryCode) &&
-		!country_code_is_in_fcc_group(u2CountryCode)) ||
-		(country_code_is_in_ce_group(priCountryCode) &&
-		!country_code_is_in_ce_group(u2CountryCode))) {
-		if (country_code_is_in_fcc_group(priCountryCode)) {
-			kalStrnCpy(name, "FCCScenario",
-				strlen("FCCScenario") + 1);
-			index = 0;
-		}
-		if (country_code_is_in_ce_group(priCountryCode)) {
-			kalStrnCpy(name, "CEScenario",
-				strlen("CEScenario") + 1);
-			index = 0;
-		}
-		rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	if (country_code_is_in_fcc_group(priCountryCode)) {
+		kalStrnCpy(name, "FCCScenario", strlen("FCCScenario") + 1);
+		clear_applied = 1;
+	}
+	else if (country_code_is_in_ce_group(priCountryCode)) {
+		kalStrnCpy(name, "CEScenario", strlen("CEScenario") + 1);
+		clear_applied = 1;
+	}
+	else if (country_code_is_in_ncc_group(priCountryCode)) {
+		kalStrnCpy(name, "NCCScenario", strlen("NCCScenario") + 1);
+		clear_applied = 1;
+	}
+	else if (country_code_is_in_kor_group(priCountryCode)) {
+		kalStrnCpy(name, "KORScenario", strlen("KORScenario") + 1);
+		clear_applied = 1;
+	}
+
+	if (clear_applied) {
+		rPwrCtrlParam.fgApplied = FALSE;
 		rPwrCtrlParam.name = name;
-		rPwrCtrlParam.index = index;
+		rPwrCtrlParam.index = 0;
 		DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
 			rPwrCtrlParam.fgApplied,
 			rPwrCtrlParam.name,
@@ -3878,6 +3941,14 @@ int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
 	}
 	else if (country_code_is_in_fcc_group(u2CountryCode)) {
 		kalStrnCpy(name, "FCCScenario", strlen("FCCScenario") + 1);
+		index = 1;
+	}
+	else if (country_code_is_in_ncc_group(u2CountryCode)) {
+		kalStrnCpy(name, "NCCScenario", strlen("NCCScenario") + 1);
+		index = 1;
+	}
+	else if (country_code_is_in_kor_group(u2CountryCode)) {
+		kalStrnCpy(name, "KORScenario", strlen("KORScenario") + 1);
 		index = 1;
 	}
 	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
@@ -3902,7 +3973,6 @@ int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
 		return -1;
 	return 0;
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
