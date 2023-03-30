@@ -172,8 +172,13 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter,
 void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER
 				     *prAdapter, u_int8_t fgIsPureAp,
 				     struct BSS_INFO *prBssInfo);
-int8_t bssGetRxNss(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
+
+int8_t bssGetHtRxNss(struct BSS_DESC *prBssDesc);
+int8_t bssGetVhtRxNss(struct BSS_DESC *prBssDesc);
+int8_t bssGetHeRxNss(struct BSS_DESC *prBssDesc);
+int8_t bssGetEhtRxNss(struct BSS_DESC *prBssDesc);
+int8_t bssGetRxNss(struct BSS_DESC *prBssDesc);
+
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
