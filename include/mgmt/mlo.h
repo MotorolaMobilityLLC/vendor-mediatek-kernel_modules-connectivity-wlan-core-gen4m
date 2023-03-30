@@ -306,6 +306,9 @@ void mldStarecDump(struct ADAPTER *prAdapter);
 
 uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter);
 
+void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
 #ifdef CFG_AAD_NONCE_NO_REPLACE
 void mldEnableCocurrentMld(struct ADAPTER *prAdapter);
 #endif
