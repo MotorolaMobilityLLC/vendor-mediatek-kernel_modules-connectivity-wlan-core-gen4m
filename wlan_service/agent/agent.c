@@ -2393,7 +2393,7 @@ static s_int32 hqa_get_rx_statistics_all(
 		goto error2;
 
 	/* check wifi path combination for specific band */
-	ret = mt_serv_get_wf_path_comb(serv_test,
+	mt_serv_get_wf_path_comb(serv_test,
 			band_idx,
 			dbdc_mode,
 			path,
@@ -4267,6 +4267,9 @@ static s_int32 hqa_set_ru_info_v2(
 		 ("%s: _segment(%d), sta_count:%d\n",
 		 __func__, cnt1, seg_sta_cnt[cnt1]));
 
+		if (seg_sta_cnt[cnt1] >= MAX_MULTI_TX_STA)
+			break;
+
 		for (cnt2 = 0; cnt2 < seg_sta_cnt[cnt1]; cnt2++) {
 			param_loop = param_cnt;
 
@@ -5243,12 +5246,10 @@ static s_int32 hqa_listmode_tx_seg(
 					SERV_DBG_LVL_ERROR,
 					("%s: allocate eeprom memory fail\n",
 					__func__));
+
 				ret = SERV_STATUS_AGENT_INVALID_PARAM;
-
 				update_hqa_frame(hqa_frame, 2, ret);
-
-				return ret;
-
+				break;
 			}
 
 			/* segment parser */
@@ -5485,12 +5486,10 @@ static s_int32 hqa_listmode_rx_seg(
 				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 					("%s: allocate eeprom memory fail\n",
 					__func__));
+
 				ret = SERV_STATUS_AGENT_INVALID_PARAM;
-
 				update_hqa_frame(hqa_frame, 2, ret);
-
-				return ret;
-
+				break;
 			}
 
 			/* segment parser */
