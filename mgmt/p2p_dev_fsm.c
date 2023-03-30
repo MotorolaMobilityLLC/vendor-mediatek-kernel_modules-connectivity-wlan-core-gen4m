@@ -1386,7 +1386,7 @@ void p2pDevFsmRunEventMgmtFrameRegister(struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventMgmtFrameRegister */
 
-void p2pDevFsmRunEventActiveDevBss(struct ADAPTER *prAdapter,
+void p2pDevFsmRunEventUpdateDevBss(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
@@ -1410,7 +1410,7 @@ void p2pDevFsmRunEventActiveDevBss(struct ADAPTER *prAdapter,
 
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
-}				/* p2pDevFsmRunEventActiveDevBss */
+}				/* p2pDevFsmRunEventUpdateDevBss */
 
 void
 p2pDevFsmNotifyP2pRx(struct ADAPTER *prAdapter, uint8_t p2pFrameType,

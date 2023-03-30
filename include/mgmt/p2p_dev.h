@@ -146,7 +146,7 @@ struct WFD_CFG_SETTINGS {
 
 #endif
 
-struct MSG_P2P_ACTIVE_DEV_BSS {
+struct MSG_P2P_UPDATE_DEV_BSS {
 	struct MSG_HDR rMsgHdr;
 };
 
@@ -308,7 +308,7 @@ void p2pDevFsmRunEventMgmtFrameRegister(struct ADAPTER *prAdapter,
 
 /* /////////////////////////////// */
 
-void p2pDevFsmRunEventActiveDevBss(struct ADAPTER *prAdapter,
+void p2pDevFsmRunEventUpdateDevBss(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 void
