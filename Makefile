@@ -1536,7 +1536,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)platform.o \
 		$(OS_DIR)gl_emi.o \
 		$(OS_DIR)gl_csi.o \
-		$(OS_DIR)gl_sys_lock.o
+		$(OS_DIR)gl_sys_lock.o \
+		$(OS_DIR)gl_cmd_validate.o
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         OS_OBJS += $(OS_DIR)gl_fw_log.o
     endif
