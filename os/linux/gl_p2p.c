@@ -947,14 +947,19 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		if (fgIsRtnlLockAcquired) {
+		if (prDevHandler->reg_state == NETREG_UNINITIALIZED) {
+			if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-			i4RetReg = cfg80211_register_netdevice(prDevHandler);
+				i4RetReg = cfg80211_register_netdevice(prDevHandler);
 #else
-			i4RetReg = register_netdevice(prDevHandler);
+				i4RetReg = register_netdevice(prDevHandler);
 #endif
-		} else
-			i4RetReg = register_netdev(prDevHandler);
+			} else
+				i4RetReg = register_netdev(prDevHandler);
+		} else {
+			DBGLOG(INIT, ERROR, "netdevice reg state: %u\n",
+				prDevHandler->reg_state);
+		}
 
 		/* register for net device */
 		if (i4RetReg < 0) {
@@ -1109,6 +1114,9 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 #endif
 			} else
 				unregister_netdev(prP2PInfo->prDevHandler);
+		} else {
+			DBGLOG(INIT, ERROR, "netdevice reg state: %u\n",
+				prP2PInfo->prDevHandler->reg_state);
 		}
 	}
 
