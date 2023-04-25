@@ -2612,11 +2612,19 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value)
 {
-	struct GLUE_INFO *glue = priv;
-	struct ADAPTER *ad = glue->prAdapter;
+	struct GLUE_INFO *glue = NULL;
+	struct ADAPTER *ad = NULL;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
+
+	if (!priv) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+	glue = priv;
+	ad = glue->prAdapter;
 
 	if (!ad) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
@@ -2633,7 +2641,6 @@ int32_t wf_reg_read_wrapper(void *priv,
 	}
 
 	prDebugOps = ad->chip_info->prDebugOps;
-
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
 
@@ -2653,11 +2660,19 @@ exit:
 int32_t wf_reg_write_wrapper(void *priv,
 	uint32_t addr, uint32_t value)
 {
-	struct GLUE_INFO *glue = priv;
-	struct ADAPTER *ad = glue->prAdapter;
+	struct GLUE_INFO *glue = NULL;
+	struct ADAPTER *ad = NULL;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
+
+	if (!priv) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+	glue = priv;
+	ad = glue->prAdapter;
 
 	if (!ad) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
@@ -2674,7 +2689,6 @@ int32_t wf_reg_write_wrapper(void *priv,
 	}
 
 	prDebugOps = ad->chip_info->prDebugOps;
-
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
 
@@ -2694,12 +2708,20 @@ exit:
 int32_t wf_reg_write_mask_wrapper(void *priv,
 	uint32_t addr, uint32_t mask, uint32_t value)
 {
-	struct GLUE_INFO *glue = priv;
-	struct ADAPTER *ad = glue->prAdapter;
+	struct GLUE_INFO *glue = NULL;
+	struct ADAPTER *ad = NULL;
 	struct CHIP_DBG_OPS *prDebugOps = NULL;
 	bool dumpViaBt = FALSE;
 	uint32_t val = 0;
 	int32_t ret = 0;
+
+	if (!priv) {
+		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+	glue = priv;
+	ad = glue->prAdapter;
 
 	if (!ad) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
@@ -2716,7 +2738,6 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 	}
 
 	prDebugOps = ad->chip_info->prDebugOps;
-
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt();
 
