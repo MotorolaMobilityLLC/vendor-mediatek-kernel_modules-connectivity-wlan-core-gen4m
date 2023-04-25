@@ -584,6 +584,8 @@ struct AIS_FSM_INFO {
 
 	struct LINK rAxBlacklist;
 	struct LINK rHeHtcBlacklist;
+	/* rssi monitor */
+	struct PARAM_RSSI_MONITOR_T rRSSIMonitor;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo;
 	uint8_t ucMlProbeSendCount;

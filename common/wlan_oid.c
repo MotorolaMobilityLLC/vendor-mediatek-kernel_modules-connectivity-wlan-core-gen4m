@@ -8347,6 +8347,7 @@ uint32_t
 wlanoidRssiMonitor(struct ADAPTER *prAdapter,
 		   void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		   uint32_t *pu4QueryInfoLen) {
+	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct PARAM_RSSI_MONITOR_T rRssi;
 	int8_t orig_max_rssi_value;
 	int8_t orig_min_rssi_value;
@@ -8360,6 +8361,7 @@ wlanoidRssiMonitor(struct ADAPTER *prAdapter,
 		ASSERT(pvQueryBuffer);
 
 	*pu4QueryInfoLen = sizeof(struct PARAM_RSSI_MONITOR_T);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	/* Check for query buffer length */
 	if (u4QueryBufferLen < *pu4QueryInfoLen) {
@@ -8376,8 +8378,7 @@ wlanoidRssiMonitor(struct ADAPTER *prAdapter,
 	kalMemCopy(&rRssi, pvQueryBuffer,
 		   sizeof(struct PARAM_RSSI_MONITOR_T));
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) ==
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
 	    MEDIA_STATE_DISCONNECTED) {
 		DBGLOG(OID, TRACE,
 			"Set RSSI monitor when disconnected, enable=%d\n",
@@ -8391,6 +8392,8 @@ wlanoidRssiMonitor(struct ADAPTER *prAdapter,
 		rRssi.max_rssi_value = 0;
 		rRssi.min_rssi_value = 0;
 	}
+	kalMemCopy(&prAisFsmInfo->rRSSIMonitor, &rRssi,
+		   sizeof(struct PARAM_RSSI_MONITOR_T));
 
 	DBGLOG(OID, TRACE,
 	       "enable=%d, max_rssi_value=%d, min_rssi_value=%d, orig_max_rssi_value=%d, orig_min_rssi_value=%d\n",
