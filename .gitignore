@@ -29,3 +29,7 @@ Module.*
 *.PS
 *.SearchResults
 *.WK3
+
+# Vs code project files
+.coverity
+.vscode
