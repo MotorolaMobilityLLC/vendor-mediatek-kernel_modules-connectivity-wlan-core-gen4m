@@ -667,20 +667,6 @@ uint8_t kalP2PIsTxCarrierOn(struct GLUE_INFO *prGlueInfo,
 	return netif_carrier_ok(prDevHandler);
 }
 
-void kalP2PEnableNetDev(struct GLUE_INFO *prGlueInfo,
-		struct BSS_INFO *prBssInfo)
-{
-	uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
-
-	kalP2PTxCarrierOn(prGlueInfo,
-			prBssInfo);
-
-	if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
-		prGlueInfo->prP2PInfo[ucRoleIdx]->fgChannelSwitchReq = TRUE;
-		kalP2pIndicateChnlSwitch(prGlueInfo->prAdapter, prBssInfo);
-	}
-}
-
 void kalP2PGenP2P_IE(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucIndex, uint8_t *pucBuffer, uint8_t ucRoleIdx)
 {

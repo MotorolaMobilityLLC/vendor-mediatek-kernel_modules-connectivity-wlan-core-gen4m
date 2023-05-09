@@ -1899,8 +1899,19 @@ SKIP_START_RDD:
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
-		if (prP2pChnlReqInfo->eBand == BAND_5G)
-			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
+
+		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
+		if (prP2pChnlReqInfo->eBand == BAND_5G &&
+		    p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+			struct GL_P2P_INFO *prP2PInfo;
+			struct GLUE_INFO *prGlueInfo;
+			uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
+
+			prGlueInfo = prAdapter->prGlueInfo;
+			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+			prP2PInfo->fgChannelSwitchReq = TRUE;
+			kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+		}
 
 		if (prBssInfo &&
 					IS_BSS_P2P(prBssInfo) &&
