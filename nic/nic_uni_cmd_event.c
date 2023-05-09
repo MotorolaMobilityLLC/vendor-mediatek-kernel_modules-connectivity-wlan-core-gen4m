@@ -10302,6 +10302,14 @@ void nicUniEventDelayBar(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				break;
 			}
 
+			if (prDelayBarInfo->ucBaNum >
+				BAR_DELAY_INDICATION_BA_MAX) {
+				DBGLOG(NIC, INFO,
+					"skip due to invalid BaNum:%u.\n",
+					prDelayBarInfo->ucBaNum);
+				break;
+			}
+
 			for (i = 0; i < prDelayBarInfo->ucBaNum; i++) {
 				kalMemCopy(&(legacy.arBAR[i]),
 					&(prDelayBarInfo->arBAR[i]),
