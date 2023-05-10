@@ -527,12 +527,8 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	size_t count, loff_t *data)
 {
-/*	UINT_32 u4DriverCmd, u4DriverValue;
- *	UINT_8 *temp = &g_aucProcBuf[0];
- */
 	uint32_t u4CopySize = sizeof(g_aucProcBuf);
 	struct GLUE_INFO *prGlueInfo;
-/*	PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P; */
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
@@ -703,6 +699,8 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 		rMcrInfo.u4McrData));
 
 	u4Count = kalStrLen(g_aucProcBuf);
+	if (u4Count > count)
+		u4Count = count;
 	if (copy_to_user(buf, g_aucProcBuf, u4Count)) {
 		pr_err("copy to user failed\n");
 		return -EFAULT;
@@ -1120,6 +1118,8 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 			"Current Country Code: NULL\n");
 
 	u4CopySize = kalStrLen(g_aucProcBuf);
+	if (u4CopySize > count)
+		u4CopySize = count;
 	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
 		pr_err("copy to user failed\n");
 		return -EFAULT;

@@ -1174,6 +1174,13 @@ uint32_t bssUpdateBeaconContentEx(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+	if (!prBssInfo || !prBssInfo->fgIsInUse) {
+		DBGLOG(P2P, WARN,
+			"bss%d is not in used\n",
+			ucBssIndex);
+		return 0;
+	}
+
 	/* 4 <1> Allocate a PKT_INFO_T for Beacon Frame */
 	/* Allocate a MSDU_INFO_T */
 	/* For Beacon */
