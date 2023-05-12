@@ -340,7 +340,7 @@ nanRangingInstanceSearchById(struct ADAPTER *prAdapter, uint16_t u2RangingId) {
 
 	dl_list_for_each(prRanging, ranging_list,
 			 struct _NAN_RANGING_INSTANCE_T, list) {
-		if (ranging_list == NULL)
+		if (prRanging == NULL)
 			return NULL;
 		if (prRanging) {
 			if (prRanging->ranging_ctrl.u2RangingId == u2RangingId)
@@ -1761,6 +1761,8 @@ nanRangingFtmDoneEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
 	prRanging->ranging_ctrl.rNanFtmReport.ucRangeEntryCnt = ucRangeEntryCnt;
 
 	for (u4Idx = 0; u4Idx < ucRangeEntryCnt; u4Idx++) {
+		if (u4Idx >= NAN_FTM_REPORT_OK_MAX_NUM)
+			break;
 		kalMemCopy(&prRanging->ranging_ctrl.rNanFtmReport
 				    .arRangeEntry[u4Idx],
 			   &prEvent->rNanFtmReport.arRangeEntry[u4Idx],

@@ -604,10 +604,10 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4TxRate, u4RxRate, u4RxBw;
+	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
-	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 	uint32_t u4TotalError;
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
@@ -1027,6 +1027,10 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prGlueInfo->fgIsEnableMon)
+		return -EINVAL;
+#endif
 	ucBssIndex = wlanGetBssIdx(request->wdev->netdev);
 	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
 		return -EINVAL;
@@ -3342,19 +3346,35 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 	uint32_t u4BufLen;
 	uint8_t u1buf = 0;
 	uint32_t i = 0;
+#if IS_ENABLED(CONFIG_ARM64)
 	uint32_t arBugReport[sizeof(struct EVENT_BUG_REPORT)];
+#else
+	uint32_t *arBugReport;
+#endif
 	struct PARAM_802_11_STATISTICS_STRUCT rStatistics;
 	struct EVENT_BUG_REPORT *prBugReport;
 	struct sk_buff *skb;
 
 	ASSERT(wiphy);
 	ASSERT(prGlueInfo);
-
+#if !IS_ENABLED(CONFIG_ARM64)
+	arBugReport = (uint32_t *)kalMemAlloc(
+			sizeof(struct EVENT_BUG_REPORT), VIR_MEM_TYPE);
+	if (!arBugReport) {
+		DBGLOG(QM, TRACE, "%s allocate arBugReport failed\n",
+		       __func__);
+		return -ENOMEM;
+	}
+#endif
 	prBugReport = (struct EVENT_BUG_REPORT *) kalMemAlloc(
 			      sizeof(struct EVENT_BUG_REPORT), VIR_MEM_TYPE);
 	if (!prBugReport) {
 		DBGLOG(QM, TRACE, "%s allocate prBugReport failed\n",
 		       __func__);
+#if !IS_ENABLED(CONFIG_ARM64)
+	kalMemFree(arBugReport, VIR_MEM_TYPE,
+		sizeof(struct EVENT_BUG_REPORT));
+#endif
 		return -ENOMEM;
 	}
 	skb = cfg80211_testmode_alloc_reply_skb(wiphy,
@@ -3363,7 +3383,11 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 
 	if (!skb) {
 		kalMemFree(prBugReport, VIR_MEM_TYPE,
-			   sizeof(struct EVENT_BUG_REPORT));
+				sizeof(struct EVENT_BUG_REPORT));
+#if !IS_ENABLED(CONFIG_ARM64)
+		kalMemFree(arBugReport, VIR_MEM_TYPE,
+				sizeof(struct EVENT_BUG_REPORT));
+#endif
 		DBGLOG(QM, TRACE, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
 	}
@@ -3492,6 +3516,10 @@ mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
 	i4Status = cfg80211_testmode_reply(skb);
 	kalMemFree(prBugReport, VIR_MEM_TYPE,
 		   sizeof(struct EVENT_BUG_REPORT));
+#if !IS_ENABLED(CONFIG_ARM64)
+	kalMemFree(arBugReport, VIR_MEM_TYPE,
+		sizeof(struct EVENT_BUG_REPORT));
+#endif
 	return i4Status;
 
 nla_put_failure:
@@ -3499,6 +3527,10 @@ nla_put_failure:
 	kfree_skb(skb);
 	kalMemFree(prBugReport, VIR_MEM_TYPE,
 		   sizeof(struct EVENT_BUG_REPORT));
+#if !IS_ENABLED(CONFIG_ARM64)
+	kalMemFree(arBugReport, VIR_MEM_TYPE,
+			sizeof(struct EVENT_BUG_REPORT));
+#endif
 	return -EFAULT;
 }
 
@@ -4160,19 +4192,11 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 			params->ht_capa->mcs.tx_params;
 		rCmdUpdate.fgIsSupHt = TRUE;
 	}
-
 	/* vht */
+
 	if (params->vht_capa != NULL) {
-		rCmdUpdate.rVHtCap.u4CapInfo = params->vht_capa->vht_cap_info;
-		rCmdUpdate.rVHtCap.rVMCS.u2RxMcsMap =
-				params->vht_capa->supp_mcs.rx_mcs_map;
-		rCmdUpdate.rVHtCap.rVMCS.u2RxHighest =
-				params->vht_capa->supp_mcs.rx_highest;
-		rCmdUpdate.rVHtCap.rVMCS.u2TxMcsMap =
-				params->vht_capa->supp_mcs.tx_mcs_map;
-		rCmdUpdate.rVHtCap.rVMCS.u2TxHighest =
-				params->vht_capa->supp_mcs.tx_highest;
-		rCmdUpdate.fgIsSupVht = TRUE;
+		/* rCmdUpdate.rVHtCap */
+		/* rCmdUpdate.rVHtCap */
 	}
 
 	/* update a TDLS peer record */
@@ -6300,15 +6324,20 @@ int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 int mtk_init_sta_role(struct ADAPTER *prAdapter,
 		      struct net_device *ndev)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNdevPriv = NULL;
+	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucBssIndex = 0;
 
 	if ((prAdapter == NULL) || (ndev == NULL))
 		return -1;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
-		return -1;
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		if (ndev != prGlueInfo->prDevHandler)
+			return -1;
+		/* use default idx for wlan0 */
+		ucBssIndex = AIS_DEFAULT_INDEX;
+	}
 
 	/* init AIS FSM */
 	aisFsmInit(prAdapter, ucBssIndex);
@@ -6320,11 +6349,6 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 
 	ndev->netdev_ops = wlanGetNdevOps();
 	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
-
-	/* set the ndev's ucBssIdx to the AIS BSS index */
-	prNdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		     netdev_priv(ndev);
-	prNdevPriv->ucBssIdx = ucBssIndex;
 
 	return 0;
 }
@@ -6367,6 +6391,46 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 
 	return 0;
 }
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+void mtk_init_monitor_role(struct wiphy *wiphy,
+		      struct net_device *ndev)
+{
+	struct GLUE_INFO *prGlueInfo;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if ((prGlueInfo == NULL) || (ndev == NULL))
+		return;
+
+	DBGLOG(INIT, INFO, "[type:iftype]:[%d:%d]=>[%d:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype,
+		ARPHRD_IEEE80211_RADIOTAP,
+		NL80211_IFTYPE_MONITOR);
+	ndev->type = ARPHRD_IEEE80211_RADIOTAP;
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
+	prGlueInfo->fgIsEnableMon = TRUE;
+	DBGLOG(INIT, INFO, "enable sniffer mode\n");
+}
+
+void mtk_uninit_monitor_role(struct wiphy *wiphy,
+			struct net_device *ndev)
+{
+	struct GLUE_INFO *prGlueInfo;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if ((prGlueInfo == NULL) || (ndev == NULL))
+		return;
+
+	prGlueInfo->fgIsEnableMon = FALSE;
+	mtk_cfg80211_set_monitor_channel(wiphy, NULL);
+	ndev->type = ARPHRD_ETHER;
+	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
+	DBGLOG(INIT, INFO, "disable sniffer mode\n");
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6735,7 +6799,12 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	/* expect that only AP & STA will be handled here (excluding IBSS) */
+	/* only AP/STA/Monitor will be handled here (excluding IBSS) */
+
+	DBGLOG(INIT, INFO, "[before][type:iftype]:[%d:%d] => [?:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype,
+		type);
 
 	if (type == NL80211_IFTYPE_AP) {
 		/* STA mode change to AP mode */
@@ -6752,7 +6821,13 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			return -EFAULT;
 		}
 
-		mtk_uninit_sta_role(prAdapter, ndev);
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_MONITOR)
+			mtk_uninit_monitor_role(wiphy, ndev);
+		else
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
+			mtk_uninit_sta_role(prAdapter, ndev);
 
 		if (mtk_init_ap_role(prGlueInfo, ndev) != 0) {
 			DBGLOG(INIT, ERROR, "mtk_init_ap_role FAILED\n");
@@ -6762,18 +6837,40 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			mtk_init_sta_role(prAdapter, ndev);
 			return -EFAULT;
 		}
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	} else if (type == NL80211_IFTYPE_MONITOR) {
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_STATION)
+			mtk_uninit_sta_role(prAdapter, ndev);
+		else if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP)
+			mtk_uninit_ap_role(prGlueInfo, ndev);
+
+		mtk_init_monitor_role(wiphy, ndev);
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 	} else {
-		/* AP mode change to STA mode */
-		if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
-			DBGLOG(INIT, ERROR, "mtk_uninit_ap_role FAILED\n");
-			return -EFAULT;
+		if (ndev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) {
+			/* AP mode change to STA mode */
+			if (mtk_uninit_ap_role(prGlueInfo, ndev) != 0) {
+				DBGLOG(INIT, ERROR,
+					"mtk_uninit_ap_role FAILED\n");
+				return -EFAULT;
+			}
 		}
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		else if (ndev->ieee80211_ptr->iftype ==
+				NL80211_IFTYPE_MONITOR)
+			mtk_uninit_monitor_role(wiphy, ndev);
+
+#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 
 		mtk_init_sta_role(prAdapter, ndev);
 
 		/* continue the mtk_cfg80211_change_iface() process */
 		mtk_cfg80211_change_iface(wiphy, ndev, type, flags, params);
 	}
+
+	DBGLOG(INIT, INFO, "[after][type:iftype]:[%d:%d]\n",
+		ndev->type,
+		ndev->ieee80211_ptr->iftype);
 
 	return 0;
 }
@@ -8021,3 +8118,95 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 
 	return 0;
 }
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+int mtk_cfg80211_set_monitor_channel(struct wiphy *wiphy,
+			struct cfg80211_chan_def *chandef)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t ucBand = BAND_NULL;
+	uint8_t ucSco = 0;
+	uint8_t ucChannelWidth = 0;
+	uint8_t ucPriChannel = 0;
+	uint8_t ucChannelS1 = 0;
+	uint8_t ucChannelS2 = 0;
+	uint32_t u4BufLen;
+	uint32_t rStatus;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (chandef) {
+		ucPriChannel =
+		ieee80211_frequency_to_channel(chandef->chan->center_freq);
+		ucChannelS1 =
+		ieee80211_frequency_to_channel(chandef->center_freq1);
+		ucChannelS2 =
+		ieee80211_frequency_to_channel(chandef->center_freq2);
+
+		switch (chandef->chan->band) {
+		case NL80211_BAND_2GHZ:
+			ucBand = BAND_2G4;
+			break;
+		case NL80211_BAND_5GHZ:
+			ucBand = BAND_5G;
+			break;
+		default:
+			return -EFAULT;
+		}
+
+		switch (chandef->width) {
+		case NL80211_CHAN_WIDTH_80P80:
+			ucChannelWidth = CW_80P80MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_160:
+			ucChannelWidth = CW_160MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+			ucChannelWidth = CW_80MHZ;
+			break;
+		case NL80211_CHAN_WIDTH_40:
+			ucChannelWidth = CW_20_40MHZ;
+			if (ucChannelS1 > ucPriChannel)
+				ucSco = CHNL_EXT_SCA;
+			else
+				ucSco = CHNL_EXT_SCB;
+			break;
+		case NL80211_CHAN_WIDTH_20:
+			ucChannelWidth = CW_20_40MHZ;
+			break;
+		default:
+			return -EFAULT;
+		}
+	}
+
+	prGlueInfo->ucPriChannel = ucPriChannel;
+	prGlueInfo->ucChannelS1 = ucChannelS1;
+	prGlueInfo->ucChannelS2 = ucChannelS2;
+	prGlueInfo->ucBand = ucBand;
+	prGlueInfo->ucChannelWidth = ucChannelWidth;
+	prGlueInfo->ucSco = ucSco;
+
+	DBGLOG(REQ, INFO,
+		"en[%d],bn[%d],pc[%d],sco[%d],bw[%d],cc1[%d],cc2[%d],bidx[%d],aid[%d],fcs[%d]\n",
+		prGlueInfo->fgIsEnableMon,
+		prGlueInfo->ucBand,
+		prGlueInfo->ucPriChannel,
+		prGlueInfo->ucSco,
+		prGlueInfo->ucChannelWidth,
+		prGlueInfo->ucChannelS1,
+		prGlueInfo->ucChannelS2,
+		prGlueInfo->ucBandIdx,
+		prGlueInfo->u2Aid,
+		prGlueInfo->fgDropFcsErrorFrame);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetMonitor,
+		NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
+
+	return 0;
+}
+#endif

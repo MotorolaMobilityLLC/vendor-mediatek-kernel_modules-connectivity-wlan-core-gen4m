@@ -2323,6 +2323,7 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 		return WLAN_STATUS_FAILURE;
 	}
 
+
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (!prGlueInfo) {
@@ -2535,6 +2536,8 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device
 	       "QA_AGENT HQA_ReadBulkEEPROM Offset : %d\n", Offset);
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM Len : %d\n",
 	       Len);
+
+
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	rAccessEfuseInfo.u4Address = (Offset / EFUSE_BLOCK_SIZE) *
@@ -9626,7 +9629,7 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 		MT_ATEStart(prNetDev, "ATESTART");
 
 	if (!prIwReqData || prIwReqData->data.length == 0 ||
-		   prIwReqData->data.length > sizeof(*HqaCmdFrame)) {
+		prIwReqData->data.length > sizeof(*HqaCmdFrame)) {
 		i4Status = -EINVAL;
 		goto ERROR0;
 	}
@@ -9674,6 +9677,10 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 				+ sizeof((HqaCmdFrame)->Length)
 				+ sizeof((HqaCmdFrame)->Sequence)
 				+ ntohs((HqaCmdFrame)->Length);
+
+			if (prIwReqData->data.length == 0 ||
+			    prIwReqData->data.length > sizeof(*HqaCmdFrame))
+				return -EFAULT;
 
 			if (copy_to_user(prIwReqData->data.pointer
 				, (uint8_t *) (HqaCmdFrame)

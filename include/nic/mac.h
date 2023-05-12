@@ -3777,12 +3777,6 @@ struct IE_OCE_SUPPRESSION_BSSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.170 Reduced Neighbor Report element */
-struct IE_RNR {
-	uint8_t      ucId;
-	uint8_t      ucLength;
-	uint8_t      aucInfoField[0];
-} __KAL_ATTRIB_PACKED__;
-
 struct NEIGHBOR_AP_INFO_FIELD {
 	uint16_t     u2TbttInfoHdr;
 	uint8_t      ucOpClass;
@@ -4025,8 +4019,8 @@ struct RSNX_INFO_ELEM {
 	} while (FALSE)
 
 #define IE_FOR_EACH(_pucIEsBuf, _u2IEsBufLen, _u2Offset) \
-for ((_u2Offset) = 0;	\
-	((((_u2Offset) + 2) <= (_u2IEsBufLen)) && \
+for ((_u2Offset) = 0U;	\
+	((((_u2Offset) + 2U) <= (_u2IEsBufLen)) && \
 	(((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen))); \
 	(_u2Offset) += IE_SIZE(_pucIEsBuf), (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
 

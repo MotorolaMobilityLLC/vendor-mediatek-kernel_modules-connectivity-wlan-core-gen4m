@@ -2202,21 +2202,29 @@ static s_int32 hqa_get_rx_statistics_leg(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	struct hqa_rx_stat_leg rx_stat;
-	struct test_rx_stat_leg test_rx_stat;
+	struct hqa_rx_stat_leg *rx_stat = NULL;
+	struct test_rx_stat_leg *test_rx_stat = NULL;
 	u_char dw_cnt = 0, dw_idx = 0;
 	u_char *ptr2 = NULL;
 	u_int32 *ptr = NULL;
 	u_int32 buf;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	ret = sys_ad_alloc_mem((u_char **)&rx_stat,
+		sizeof(struct hqa_rx_stat_leg));
+	if (ret != SERV_STATUS_SUCCESS)
+		goto error1;
+	ret = sys_ad_alloc_mem((u_char **)&test_rx_stat,
+		sizeof(struct hqa_rx_stat_leg));
+	if (ret != SERV_STATUS_SUCCESS)
+		goto error1;
 
-	ret = mt_serv_get_rx_stat_leg(serv_test, &test_rx_stat);
-	sys_ad_move_mem(&rx_stat, &test_rx_stat,
+	ret = mt_serv_get_rx_stat_leg(serv_test, test_rx_stat);
+	sys_ad_move_mem(rx_stat, test_rx_stat,
 			sizeof(struct hqa_rx_stat_leg));
 	dw_cnt = sizeof(struct hqa_rx_stat_leg) >> 2;
 
-	for (dw_idx = 0, ptr = (u_int32 *)&rx_stat, ptr2 = hqa_frame->data + 2;
+	for (dw_idx = 0, ptr = (u_int32 *)rx_stat, ptr2 = hqa_frame->data + 2;
 			dw_idx < dw_cnt; dw_idx++, ptr++, ptr2 += 4) {
 		buf = SERV_OS_HTONL(*ptr);
 		sys_ad_move_mem(ptr2, &buf, sizeof(u_int32));
@@ -2225,6 +2233,21 @@ static s_int32 hqa_get_rx_statistics_leg(
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2 + sizeof(struct hqa_rx_stat_leg), ret);
 
+	if (rx_stat)
+		sys_ad_free_mem(rx_stat);
+	if (test_rx_stat)
+		sys_ad_free_mem(test_rx_stat);
+	return ret;
+error1:
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("%s: memory allocation fail for rx stat.\n",
+		__func__));
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	if (rx_stat)
+		sys_ad_free_mem(rx_stat);
+	if (test_rx_stat)
+		sys_ad_free_mem(test_rx_stat);
 	return ret;
 }
 
@@ -3879,7 +3902,10 @@ static s_int32 hqa_set_ru_info(
 				   (u_char *)&seg_sta_cnt[1]);
 
 	if (seg_sta_cnt[1] >= SEG_STA_CNT)
-		seg_sta_cnt[1] = 1;
+		return SERV_STATUS_AGENT_INVALID_LEN;
+
+	if (seg_sta_cnt[0]+seg_sta_cnt[1] >= (2*SEG_STA_CNT))
+		return SERV_STATUS_AGENT_INVALID_LEN;
 
 	len -= sizeof(u_int32)*3;		/* array length */
 

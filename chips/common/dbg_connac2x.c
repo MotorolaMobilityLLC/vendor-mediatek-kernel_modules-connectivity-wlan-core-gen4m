@@ -1678,7 +1678,7 @@ int32_t connac2x_show_umac_wtbl_info(
 		| puwtbl->serial_no.wtbl_d0.field.pn0);
 	/* UMAC WTBL DW 0,1 */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"UWTBL DW 0,1\n\tpn:%d\n\tcom_sn:%d\n",
+		"UWTBL DW 0,1\n\tpn:%llu\n\tcom_sn:%u\n",
 		pn,
 		puwtbl->serial_no.wtbl_d1.field.com_sn);
 
@@ -1972,7 +1972,7 @@ int32_t connac2x_show_stat_info(
 	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
 	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
-	struct PARAM_LINK_SPEED_EX rLinkSpeed;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 
 #if 0
 	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
@@ -2935,7 +2935,7 @@ void connac2x_show_wfdma_glo_info(
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr;
 	uint32_t u4DmaCfgCrAddr = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
+	union WPDMA_GLO_CFG_STRUCT GloCfgValue = {0};
 
 	for (idx = 0; idx < u4DmaNum; idx++) {
 		if (enum_wfdma_type == WFDMA_TYPE_HOST)
@@ -4179,15 +4179,16 @@ int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
+
+		if ((prAdapter->arStaRec[ucStaIdx].fgPRXVValid == 0) ||
+			(prAdapter->arStaRec[ucStaIdx].fgCRXVValid == 0)) {
+			DBGLOG_LIMITED(SW4, TEMP, "CRxV or PRxV is invalid\n");
+			return -1;
+		}
+
 		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
 		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
 		u4RxVector2 = prAdapter->arStaRec[ucStaIdx].u4RxVector2;
-		if ((u4RxVector0 == 0) || (u4RxVector1 == 0) ||
-			(u4RxVector2 == 0)) {
-			DBGLOG_LIMITED(SW4, WARN,
-					"RxVector1 or RxVector2 is 0\n");
-			return -1;
-		}
 	} else {
 		DBGLOG(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
 		return -1;

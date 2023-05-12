@@ -665,7 +665,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 {
 	struct BUS_INFO *prBusInfo =
 			prGlueInfo->prAdapter->chip_info->bus_info;
-	union WPDMA_INT_MASK IntMask;
+	union WPDMA_INT_MASK IntMask = {0};
 
 	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
 

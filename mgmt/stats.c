@@ -314,7 +314,7 @@ void statsParseARPInfo(struct sk_buff *skb,
 	case EVENT_RX:
 		GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 		if (u2OpCode == ARP_PRO_REQ)
-			DBGLOG(RX, INFO,
+			DBGLOG_LIMITED(RX, INFO,
 				"<RX> Arp Req From IP: " IPV4STR "\n",
 				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]));
 		else if (u2OpCode == ARP_PRO_RSP)
@@ -491,6 +491,8 @@ void statsParseIPV4Info(struct sk_buff *skb,
 		break;
 	}
 	case IP_PRO_UDP:
+		if (eventType == EVENT_RX)
+			GLUE_SET_PKT_FLAG(skb, ENUM_PKT_UDP);
 		statsParseUDPInfo(skb, pucEthBody, eventType, u2IpId);
 	}
 }

@@ -298,6 +298,7 @@ enum ENUM_TX_RING_IDX {
 	TX_RING_FWDL_IDX_4,
 	TX_RING_WA_CMD_IDX_5,
 #endif /* CFG_TRI_TX_RING */
+	TX_RING_MAX,
 };
 
 enum ENUM_RX_RING_IDX {
@@ -435,6 +436,8 @@ struct RTMP_RX_RING {
 	uint32_t hw_cnt_addr;
 	bool fgIsDumpLog;
 	uint32_t u4PendingCnt;
+	void *pvPacket;
+	uint32_t u4PacketLen;
 };
 
 struct PCIE_CHIP_CR_MAPPING {

@@ -2667,7 +2667,7 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t ucMatchSsidNum;
 	uint8_t aucPadding_0;
 	uint16_t u2IELen;
-	struct PARAM_SSID auSsid[16];
+	struct PARAM_SSID auSsid[10];
 	struct SSID_MATCH_SETS auMatchSsid[16];
 	uint8_t ucChannelType;
 	uint8_t ucChnlNum;
@@ -2843,19 +2843,6 @@ struct EVENT_LTE_SAFE_CHN {
 	uint32_t u4Flags;	/* Bit0: valid */
 	struct LTE_SAFE_CHN_INFO rLteSafeChn;
 };
-
-#if CFG_SUPPORT_SNIFFER
-struct CMD_MONITOR_SET_INFO {
-	uint8_t ucEnable;
-	uint8_t ucBand;
-	uint8_t ucPriChannel;
-	uint8_t ucSco;
-	uint8_t ucChannelWidth;
-	uint8_t ucChannelS1;
-	uint8_t ucChannelS2;
-	uint8_t aucResv[9];
-};
-#endif
 
 struct EVENT_WIFI_RDD_TEST {
 	uint32_t u4FuncIndex;

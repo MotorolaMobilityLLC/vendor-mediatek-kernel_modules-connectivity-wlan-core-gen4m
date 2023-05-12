@@ -1457,7 +1457,7 @@ void show_wfdma_glo_info_without_adapter(
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr = 0;
 	uint32_t u4DmaCfgCrAddr = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
+	union WPDMA_GLO_CFG_STRUCT GloCfgValue = {0};
 
 	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
 

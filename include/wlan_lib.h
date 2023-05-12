@@ -270,6 +270,10 @@
 #define CFG_SUPPORT_TXPOWER_INFO		1
 #endif
 
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define TXPOWER_INFO_DEBUG 0
+#endif
+
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define AGG_RANGE_SEL_NUM		15
 #else

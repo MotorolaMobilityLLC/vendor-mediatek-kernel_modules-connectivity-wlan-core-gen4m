@@ -446,6 +446,8 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	scanLogCacheFlushAll(prAdapter, &(prScanInfo->rScanLogCache),
 		LOG_SCAN_REQ_D2F);
 	scanReqLog(prCmdScanReq);
+	if (prCmdScanReq->ucBssIndex == KAL_NETWORK_TYPE_AIS_INDEX)
+		scanInitEssResult(prAdapter);
 
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
@@ -931,27 +933,6 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING
 		&& prScanDone->ucSeqNum == prScanParam->ucSeqNum) {
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-		struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-
-		if (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
-			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
-				prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
-
-			kalMemCopy(prScanParam, &prNeighborAPInfo->rScanParam,
-				sizeof(prScanInfo->rScanParam));
-
-			/* restore for later scan done event */
-			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
-
-			cnmMemFree(prAdapter, prNeighborAPInfo);
-
-			/* go for next scan */
-			scnFsmSteps(prAdapter, SCAN_STATE_SCANNING);
-			return;
-		}
-#endif
-
 		scanRemoveBssDescsByPolicy(prAdapter,
 		       SCN_RM_POLICY_EXCLUDE_CONNECTED | SCN_RM_POLICY_TIMEOUT);
 
@@ -1459,18 +1440,23 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIndex = 0;
+	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(prAdapter);
 
 	ucBssIndex =
 		prAdapter->rWifiVar.rScanInfo.rSchedScanParam.ucBssIndex;
-
-	if (aisGetAisBssInfo(prAdapter,
-		ucBssIndex) == NULL) {
-		log_dbg(SCN, WARN,
-			"prAisBssInfo%d is NULL\n",
-			ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	if (prAisBssInfo == NULL) {
+		log_dbg(SCN, WARN, "prAisBssInfo is NULL\n");
 		return FALSE;
+	}
+
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
+		IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex)) {
+		UNSET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
+		/* sync with firmware */
+		nicDeactivateNetwork(prAdapter,	prAisBssInfo->ucBssIndex);
 	}
 
 	if (!scnFsmSchedScanSetAction(prAdapter, SCHED_SCAN_ACT_DISABLE)) {

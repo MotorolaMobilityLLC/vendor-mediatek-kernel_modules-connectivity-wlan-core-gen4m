@@ -746,12 +746,14 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 		u4IeLen = rlmFillHtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 		PHY_TYPE_SET_802_11AC) {
 		u4IeLen = rlmFillVhtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#endif
 #endif
 
 	/* 3.16 20/40 BSS Coexistence */
@@ -932,6 +934,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 							  pPkt);
 			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 		}
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 		if (prAdapter->rWifiVar.ucAvailablePhyTypeSet &
 		    PHY_TYPE_SET_802_11AC) {
@@ -939,6 +942,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 							   pPkt);
 			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 		}
+#endif
 #endif
 
 		/* 3.17 20/40 BSS Coexistence */
@@ -1366,11 +1370,13 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
 
+#if 0 /* TODO: VHT support */
 #if CFG_SUPPORT_802_11AC
 	if (prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) {
 		u4IeLen = rlmFillVhtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#endif
 #endif
 
 	/* 3.14 20/40 BSS Coexistence */

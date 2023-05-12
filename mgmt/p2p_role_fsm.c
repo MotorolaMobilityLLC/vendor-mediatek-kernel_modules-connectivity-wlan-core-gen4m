@@ -71,11 +71,8 @@ static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 uint8_t *
 	p2pRoleFsmGetFsmState(
 	IN enum ENUM_P2P_ROLE_STATE eCurrentState) {
-	if (eCurrentState
-		>= P2P_ROLE_STATE_IDLE &&
-		eCurrentState
-		< P2P_ROLE_STATE_NUM)
-		return apucDebugP2pRoleState[eCurrentState];
+	if (eCurrentState < P2P_ROLE_STATE_NUM)
+		return apucDebugP2pRoleState[(uint32_t)eCurrentState];
 
 	return (uint8_t *) DISP_STRING("UNKNOWN");
 }
@@ -1435,13 +1432,6 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 #endif
 	}
 
-	/* Clear current AP's STA_RECORD_T and current AID to prevent
-	 * using previous p2p connection state. This is needed because
-	 * upper layer may add keys before we start SAP/GO.
-	 */
-	prP2pBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
-	prP2pBssInfo->u2AssocId = 0;
-
 	/* Clear list to ensure no client staRec */
 	if (bssGetClientCount(prAdapter, prP2pBssInfo) != 0) {
 		DBGLOG(P2P, WARN,
@@ -1651,7 +1641,6 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 		nicDeactivateNetwork(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 	}
 
 error:
@@ -1917,10 +1906,36 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		uint8_t ucNumOfChannel;
 		uint8_t ch_idx = 0;
 		uint8_t ucChannelNum = 36;
+#if IS_ENABLED(CONFIG_ARM64)
 		struct RF_CHANNEL_INFO aucChannelList
 			[MAX_5G_BAND_CHN_NUM] = {};
 		struct RF_CHANNEL_INFO aucChannelListRdd
 			[MAX_5G_BAND_CHN_NUM] = {};
+#else
+		struct RF_CHANNEL_INFO *aucChannelList = NULL;
+		struct RF_CHANNEL_INFO *aucChannelListRdd = NULL;
+
+		aucChannelList = (struct RF_CHANNEL_INFO *)
+			kalMemAlloc(sizeof(
+				struct RF_CHANNEL_INFO) * MAX_5G_BAND_CHN_NUM,
+				VIR_MEM_TYPE);
+		if (!aucChannelList)
+			goto error;
+
+		aucChannelListRdd = (struct RF_CHANNEL_INFO *)
+			kalMemAlloc(sizeof(
+				struct RF_CHANNEL_INFO) *
+				MAX_5G_BAND_CHN_NUM,
+				VIR_MEM_TYPE);
+		if (!aucChannelListRdd) {
+			kalMemFree(aucChannelList, VIR_MEM_TYPE, sizeof(
+				struct  RF_CHANNEL_INFO) * MAX_5G_BAND_CHN_NUM);
+			goto error;
+		}
+
+		kalMemZero(aucChannelList, sizeof(struct RF_CHANNEL_INFO));
+		kalMemZero(aucChannelListRdd, sizeof(struct RF_CHANNEL_INFO));
+#endif
 
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC) {
 			p2pRoleFsmStateTransition(prAdapter,
@@ -1977,6 +1992,14 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 				(struct MSG_HDR *)
 				&prP2pConnReqInfo->rMsgStartAp);
 		}
+#if !IS_ENABLED(CONFIG_ARM64)
+		if (aucChannelList)
+			kalMemFree(aucChannelList, VIR_MEM_TYPE, sizeof(
+				struct	RF_CHANNEL_INFO) * MAX_5G_BAND_CHN_NUM);
+		if (aucChannelListRdd)
+			kalMemFree(aucChannelListRdd, VIR_MEM_TYPE, sizeof(
+				struct	RF_CHANNEL_INFO) * MAX_5G_BAND_CHN_NUM);
+#endif
 	}
 
 error:
@@ -2102,6 +2125,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 			/* SAP: Skip channel request/abort for
 			 * STA+SAP/MCC concurrent cases.
 			 */
+#if !CFG_P2P_FORCE_ROC_CSA
 			if (prAisBssInfo &&
 				(prAisBssInfo->ucPrimaryChannel !=
 				prP2pBssInfo->ucPrimaryChannel) &&
@@ -2110,11 +2134,11 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 				p2pFuncDfsSwitchCh(prAdapter,
 					prP2pBssInfo,
 					prP2pRoleFsmInfo->rChnlReqInfo);
-			} else {
+			} else
+#endif
 				p2pRoleFsmStateTransition(prAdapter,
 					prP2pRoleFsmInfo,
 					P2P_ROLE_STATE_SWITCH_CHANNEL);
-			}
 		}
 	} else { /* GO */
 		DBGLOG(P2P, INFO, "GO CSA done: %s band\n",
@@ -4427,7 +4451,7 @@ static void trimAcsScanList(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 		if (IS_CHANNEL_IN_DESENSE_RANGE(prAdapter,
 			prRfChannelInfo1->ucChannelNum,
-			prRfChannelInfo1->eBand))
+			(uint32_t)prRfChannelInfo1->eBand))
 			continue;
 #endif
 		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
@@ -4529,13 +4553,7 @@ u_int8_t indicateApAcsOverwrite(
 			ucPrimaryCh = prAdapter->rWifiVar.ucApAcsChannel[0];
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		} else if (p2pFuncIsDualAPMode(prAdapter)) {
-			struct BSS_INFO *bss =
-				aisGetConnectedBssInfo(prAdapter);
-
-			if (!bss)
-				ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
-			else if (bss->eBand == BAND_2G4)
-				ucPrimaryCh = bss->ucPrimaryChannel;
+			ucPrimaryCh = AP_DEFAULT_CHANNEL_2G;
 			eChnlBw = prAdapter->rWifiVar.ucAp2gBandwidth;
 		}
 	} else if ((eBand == BAND_5G) &&
@@ -4629,15 +4647,12 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 	}
 
 
-	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
+	if (prAcsReqInfo->eHwMode >= P2P_VENDOR_ACS_HW_MODE_11A) {
 		struct BSS_INFO *prAisBssInfo;
 
 		prAisBssInfo = aisGetAisBssInfo(prAdapter,
 			AIS_DEFAULT_INDEX);
-		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
-			(!p2pFuncIsDualAPMode(prAdapter) ||
-			(p2pFuncIsDualAPMode(prAdapter) &&
-			prAisBssInfo->eBand > BAND_2G4))) {
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 				prAisBssInfo);
@@ -4654,23 +4669,10 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
-		} else {
+		} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_2G4));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
-		}
-	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G) {
-			/* Trim 5G + 6G PSC channels */
-			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
-		} else
-#endif
-		if (prAdapter->fgEnable5GBand) {
-			/* Trim 5G channels */
-			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_5G));
 		}
 	}
 

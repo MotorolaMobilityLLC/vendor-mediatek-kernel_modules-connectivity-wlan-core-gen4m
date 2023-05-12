@@ -251,6 +251,12 @@
 #define TXPOWER_FORMAT_LEGACY 0
 #define TXPOWER_FORMAT_HE 1
 
+#define TXPOWER_INFO_BAND_2G4 0
+#define TXPOWER_INFO_BAND_5G 1
+#if (CFG_SUPPORT_WIFI_6G == 1)
+#define TXPOWER_INFO_BAND_6G 2
+#endif
+
 /* 1M, 2M, 5.5M, 11M */
 #define MODULATION_SYSTEM_CCK_NUM       4
 
@@ -259,7 +265,11 @@
 
 #define MODULATION_SYSTEM_HT20_NUM      8       /* MCS0~7 */
 #define MODULATION_SYSTEM_HT40_NUM      9       /* MCS0~7, MCS32 */
+#if (CFG_TMAC_POWER_LEGACY == 1)
 #define MODULATION_SYSTEM_VHT20_NUM     10      /* MCS0~9 */
+#else
+#define MODULATION_SYSTEM_VHT20_NUM     12      /* MCS0~11 */
+#endif
 #define MODULATION_SYSTEM_VHT40_NUM     MODULATION_SYSTEM_VHT20_NUM
 #define MODULATION_SYSTEM_VHT80_NUM     MODULATION_SYSTEM_VHT20_NUM
 #define MODULATION_SYSTEM_VHT160_NUM    MODULATION_SYSTEM_VHT20_NUM
@@ -288,7 +298,8 @@
 #define TXPOWER_RATE_VHT160_OFFSET      (TXPOWER_RATE_VHT80_OFFSET + \
 					 MODULATION_SYSTEM_VHT80_NUM)
 
-#define TXPOWER_RATE_HE26_OFFSET    (TXPOWER_RATE_VHT160_OFFSET)
+#define TXPOWER_RATE_HE26_OFFSET    (TXPOWER_RATE_VHT160_OFFSET + \
+					MODULATION_SYSTEM_VHT160_NUM)
 #define TXPOWER_RATE_HE52_OFFSET    (TXPOWER_RATE_HE26_OFFSET + \
 					MODULATION_SYSTEM_HE_26_MCS_NUM)
 #define TXPOWER_RATE_HE106_OFFSET   (TXPOWER_RATE_HE52_OFFSET + \
@@ -2496,19 +2507,6 @@ struct PARAM_HS20_SET_BSSID_POOL {
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if CFG_SUPPORT_SNIFFER
-struct PARAM_CUSTOM_MONITOR_SET_STRUCT {
-	uint8_t ucEnable;
-	uint8_t ucBand;
-	uint8_t ucPriChannel;
-	uint8_t ucSco;
-	uint8_t ucChannelWidth;
-	uint8_t ucChannelS1;
-	uint8_t ucChannelS2;
-	uint8_t aucResv[9];
-};
-#endif
-
 /*--------------------------------------------------------------*/
 /*! \brief MTK Auto Channel Selection related Container         */
 /*--------------------------------------------------------------*/
@@ -2605,6 +2603,14 @@ struct EXT_CMD_SER_T {
 	uint8_t aucReserve[1];
 };
 
+enum ENUM_TXPOWER_BAND {
+	ENUM_TXPOWER_BAND_0,
+#if (CFG_TXPOWR_SUPPORT_DBDC == 1)
+	ENUM_TXPOWER_BAND_1,
+#endif
+	ENUM_TXPOWER_BAND_NUM,
+};
+
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 struct HAL_FRAME_POWER_SET_T {
 	int8_t icFramePowerDbm;
@@ -2612,7 +2618,7 @@ struct HAL_FRAME_POWER_SET_T {
 
 struct FRAME_POWER_CONFIG_INFO_T {
 	struct HAL_FRAME_POWER_SET_T
-		aicFramePowerConfig[TXPOWER_RATE_NUM][ENUM_BAND_NUM];
+		aicFramePowerConfig[TXPOWER_RATE_NUM][ENUM_TXPOWER_BAND_NUM];
 };
 
 struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
@@ -3891,20 +3897,6 @@ wlanoidSetHS20Info(IN struct ADAPTER *prAdapter,
 		   OUT uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-#if CFG_SUPPORT_SNIFFER
-uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
-			   IN void *pvSetBuffer,
-			   IN uint32_t u4SetBufferLen,
-			   OUT uint32_t *pu4SetInfoLen);
-#endif
-
-#if CFG_SUPPORT_RSSI_DISCONNECT
-uint32_t wlanoidQueryRssiDisconnect(IN struct ADAPTER *prAdapter,
-			IN void *pvSetBuffer,
-			IN uint32_t u4SetBufferLen,
-			OUT uint32_t *pu4SetInfoLen);
-#endif
-
 uint32_t
 wlanoidNotifyFwSuspend(IN struct ADAPTER *prAdapter,
 		       IN void *pvSetBuffer,
@@ -4309,6 +4301,13 @@ uint32_t wlanoidSetFwParam(IN struct ADAPTER *prAdapter,
 uint32_t wlanoidUpdateFtIes(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			    IN uint32_t u4SetBufferLen,
 			    OUT uint32_t *pu4SetInfoLen);
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
+				IN void *pvSetBuffer,
+				IN uint32_t u4SetBufferLen,
+				OUT uint32_t *pu4SetInfoLen);
+#endif
 
 uint32_t wlanoidSync11kCapabilities(IN struct ADAPTER *prAdapter,
 				    IN void *pvSetBuffer,

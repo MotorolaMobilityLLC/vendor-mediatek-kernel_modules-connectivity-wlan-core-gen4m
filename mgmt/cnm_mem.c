@@ -178,7 +178,12 @@ struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 
+#if CFG_DBG_MGT_BUF
+	prMsduInfo = cnmPktAllocX(prAdapter, u4Length, pucStr);
+#else
 	prMsduInfo = cnmPktAlloc(prAdapter, u4Length);
+#endif
+
 	log_dbg(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n",
 		prMsduInfo, pucStr);
 
@@ -212,7 +217,12 @@ void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_DBG_MGT_BUF
+struct MSDU_INFO *cnmPktAllocX(struct ADAPTER *prAdapter, uint32_t u4Length,
+	uint8_t *fileAndLine)
+#else
 struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
+#endif
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct QUE *prQueList;
@@ -229,8 +239,13 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 	if (prMsduInfo) {
 		if (u4Length) {
+#if CFG_DBG_MGT_BUF
+			prMsduInfo->prPacket = cnmMemAllocX(prAdapter,
+				RAM_TYPE_BUF, u4Length, fileAndLine);
+#else
 			prMsduInfo->prPacket = cnmMemAlloc(prAdapter,
 				RAM_TYPE_BUF, u4Length);
+#endif
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->ucControlFlag = 0;
 
@@ -1663,11 +1678,6 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	uint8_t ucRate;
 	uint16_t i, j;
 
-#if CFG_SUPPORT_802_11AC
-	uint8_t ucRxNss = 1;
-	struct WIFI_VAR *prWifiVar;
-#endif /* CFG_SUPPORT_802_11AC */
-
 	/* sanity check */
 	if ((!prAdapter) || (!pvSetBuffer) || (!pu4SetInfoLen))
 		return TDLS_STATUS_FAIL;
@@ -1767,7 +1777,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				}
 			}
 		} else {
-			if (prCmd->fgIsSupVht)
+			if (prCmd->rVHtCap.u2CapInfo)
 				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 
 			if (prCmd->fgIsSupHt)
@@ -1835,7 +1845,9 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	}
 
 	/* ++HT capability */
+
 	if (prCmd->fgIsSupHt) {
+		prAdapter->rWifiVar.eRateSetting = FIXED_RATE_NONE;
 		prStaRec->ucDesiredPhyTypeSet |= PHY_TYPE_BIT_HT;
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 		prStaRec->u2HtCapInfo = prCmd->rHtCap.u2CapInfo;
@@ -1854,83 +1866,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			prCmd->rHtCap.rMCS.arRxMask,
 			sizeof(prStaRec->aucRxMcsBitmask));
 	}
-
-#if CFG_SUPPORT_802_11AC
-	prWifiVar = &prAdapter->rWifiVar;
-	/* ++VHT capability */
-	if (prCmd->fgIsSupVht) {
-		prStaRec->u4VhtCapInfo = prCmd->rVHtCap.u4CapInfo;
-
-		/* Set Tx LDPC capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxLdpc))
-			prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_RX_LDPC;
-		else if (IS_FEATURE_DISABLED(prWifiVar->ucTxLdpc))
-			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_RX_LDPC;
-
-		/* Set Tx STBC capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxStbc))
-			prStaRec->u4VhtCapInfo |=
-				VHT_CAP_INFO_RX_STBC_MASK;
-		else if (IS_FEATURE_DISABLED(prWifiVar->ucTxStbc))
-			prStaRec->u4VhtCapInfo &=
-				~VHT_CAP_INFO_RX_STBC_MASK;
-
-		/* Set Tx TXOP PS capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxopPsTx))
-			prStaRec->u4VhtCapInfo |=
-				VHT_CAP_INFO_VHT_TXOP_PS;
-		else if (IS_FEATURE_DISABLED(prWifiVar->ucTxopPsTx))
-			prStaRec->u4VhtCapInfo &=
-				~VHT_CAP_INFO_VHT_TXOP_PS;
-
-		/* Set Tx Short GI capability */
-		if (IS_FEATURE_FORCE_ENABLED(prWifiVar->ucTxShortGI)) {
-			prStaRec->u4VhtCapInfo |=
-				VHT_CAP_INFO_SHORT_GI_80;
-			prStaRec->u4VhtCapInfo |=
-				VHT_CAP_INFO_SHORT_GI_160_80P80;
-		} else if (IS_FEATURE_DISABLED(
-					prWifiVar->ucTxShortGI)) {
-			prStaRec->u4VhtCapInfo &=
-				~VHT_CAP_INFO_SHORT_GI_80;
-			prStaRec->u4VhtCapInfo &=
-				~VHT_CAP_INFO_SHORT_GI_160_80P80;
-		}
-
-		prStaRec->u2VhtRxMcsMap = prCmd->rVHtCap.rVMCS.u2RxMcsMap;
-		prStaRec->u2VhtRxHighestSupportedDataRate =
-					prCmd->rVHtCap.rVMCS.u2RxHighest;
-
-		prStaRec->u2VhtTxMcsMap = prCmd->rVHtCap.rVMCS.u2TxMcsMap;
-		prStaRec->u2VhtTxHighestSupportedDataRate =
-					prCmd->rVHtCap.rVMCS.u2TxHighest;
-
-		prStaRec->ucVhtOpMode =
-			VHT_OP_MODE_CHANNEL_WIDTH_20 |
-			VHT_OP_MODE_CHANNEL_WIDTH_80;
-		/* no op mode IE, use HT/VHT cap to check BW */
-		if (prCmd->fgIsSupHt &&
-			prBssInfo->fg40mBwAllowed &&
-			(prCmd->rHtCap.u2CapInfo & HT_CAP_INFO_SUP_CHNL_WIDTH))
-			prStaRec->ucVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_40;
-		if ((prCmd->rVHtCap.u4CapInfo &
-			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160) ||
-		    (prCmd->rVHtCap.u4CapInfo &
-			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80))
-			prStaRec->ucVhtOpMode |=
-				VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
-
-		/* no op mode IE, use MCS set to check NSS */
-		if (((prCmd->rVHtCap.rVMCS.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_2SS_MASK) >>
-			VHT_CAP_INFO_MCS_2SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 2;
-		prStaRec->ucVhtOpMode |=
-			((ucRxNss - 1)	<< VHT_OP_MODE_RX_NSS_OFFSET) &
-			VHT_OP_MODE_RX_NSS;
-	}
-#endif /* CFG_SUPPORT_802_11AC */
+	/* TODO ++VHT */
 
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 

@@ -2967,7 +2967,7 @@ uint32_t soc3_0_wlanImageSectionDownloadStage(
 	u_int8_t fgIsNotDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct patch_dl_target target;
+	struct patch_dl_target target = {0};
 	struct PATCH_FORMAT_T *prPatchHeader;
 	struct ROM_EMI_HEADER *prRomEmiHeader;
 	struct FWDL_OPS_T *prFwDlOps;

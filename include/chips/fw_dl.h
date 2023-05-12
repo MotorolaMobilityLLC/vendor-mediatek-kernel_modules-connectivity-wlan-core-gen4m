@@ -125,6 +125,9 @@ extern unsigned long long gConEmiSize;
 #define PATCH_SEC_TYPE_MASK	0x0000ffff
 #define PATCH_SEC_TYPE_BIN_INFO	0x2
 
+/* Used for sanity check */
+#define FW_MAX_SECTION_NUM	1024
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,

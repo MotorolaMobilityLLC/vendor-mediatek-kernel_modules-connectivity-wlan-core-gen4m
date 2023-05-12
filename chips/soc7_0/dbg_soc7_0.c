@@ -777,16 +777,16 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	uint32_t u4BufferSize = 512, pos = 0;
 	char *buf;
 
-	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
-	if (buf == NULL)
-		return;
-	kalMemZero(buf, u4BufferSize);
-
 	if (!prAdapter)
 		return;
 
 	if (enum_wfdma_type != WFDMA_TYPE_HOST)
 		return;
+
+	buf = (char *)kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (buf == NULL)
+		return;
+	kalMemZero(buf, u4BufferSize);
 
 	u4DbgIdxAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_IDX_ADDR;
 	u4DbgProbeAddr = WF_WFDMA_HOST_DMA0_WPDMA_DBG_PROBE_ADDR;
@@ -991,7 +991,7 @@ void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 	if (rate.preamble == LLS_MODE_CCK)
 		rate.rateMcsIdx &= 0x3; /* 0: 1M; 1: 2M; 2: 5.5M; 3: 11M  */
 	else if (rate.preamble == LLS_MODE_OFDM)
-		rate.rateMcsIdx = OFDM_RATE[rate.rateMcsIdx & 0x7];
+		rate.rateMcsIdx = OFDM_RATE[(uint8_t)(rate.rateMcsIdx & 0x7)];
 
 	if (rate.nss >= STATS_LLS_MAX_NSS_NUM)
 		goto wrong_rate;

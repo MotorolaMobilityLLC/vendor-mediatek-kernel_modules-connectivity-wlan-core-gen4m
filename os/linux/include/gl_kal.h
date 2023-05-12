@@ -157,54 +157,6 @@ extern bool fgIsTxPowerDecreased;
 #define GLUE_FLAG_TX_PROCESS  0xFFFFFFFF
 #endif
 
-#if CFG_SUPPORT_SNIFFER
-#define RADIOTAP_FIELD_TSFT			BIT(0)
-#define RADIOTAP_FIELD_FLAGS		BIT(1)
-#define RADIOTAP_FIELD_RATE			BIT(2)
-#define RADIOTAP_FIELD_CHANNEL		BIT(3)
-#define RADIOTAP_FIELD_ANT_SIGNAL	BIT(5)
-#define RADIOTAP_FIELD_ANT_NOISE	BIT(6)
-#define RADIOTAP_FIELD_ANT			BIT(11)
-#define RADIOTAP_FIELD_MCS			BIT(19)
-#define RADIOTAP_FIELD_AMPDU		BIT(20)
-#define RADIOTAP_FIELD_VHT			BIT(21)
-#define RADIOTAP_FIELD_VENDOR       BIT(30)
-
-#define RADIOTAP_LEN_VHT			48
-#define RADIOTAP_FIELDS_VHT (RADIOTAP_FIELD_TSFT | \
-				    RADIOTAP_FIELD_FLAGS | \
-				    RADIOTAP_FIELD_RATE | \
-				    RADIOTAP_FIELD_CHANNEL | \
-				    RADIOTAP_FIELD_ANT_SIGNAL | \
-				    RADIOTAP_FIELD_ANT_NOISE | \
-				    RADIOTAP_FIELD_ANT | \
-				    RADIOTAP_FIELD_AMPDU | \
-				    RADIOTAP_FIELD_VHT | \
-				    RADIOTAP_FIELD_VENDOR)
-
-#define RADIOTAP_LEN_HT				36
-#define RADIOTAP_FIELDS_HT (RADIOTAP_FIELD_TSFT | \
-				    RADIOTAP_FIELD_FLAGS | \
-				    RADIOTAP_FIELD_RATE | \
-				    RADIOTAP_FIELD_CHANNEL | \
-				    RADIOTAP_FIELD_ANT_SIGNAL | \
-				    RADIOTAP_FIELD_ANT_NOISE | \
-				    RADIOTAP_FIELD_ANT | \
-				    RADIOTAP_FIELD_MCS | \
-				    RADIOTAP_FIELD_AMPDU | \
-				    RADIOTAP_FIELD_VENDOR)
-
-#define RADIOTAP_LEN_LEGACY			26
-#define RADIOTAP_FIELDS_LEGACY (RADIOTAP_FIELD_TSFT | \
-				    RADIOTAP_FIELD_FLAGS | \
-				    RADIOTAP_FIELD_RATE | \
-				    RADIOTAP_FIELD_CHANNEL | \
-				    RADIOTAP_FIELD_ANT_SIGNAL | \
-				    RADIOTAP_FIELD_ANT_NOISE | \
-				    RADIOTAP_FIELD_ANT | \
-				    RADIOTAP_FIELD_VENDOR)
-#endif
-
 #define PERF_MON_INIT_BIT       (0)
 #define PERF_MON_DISABLE_BIT    (1)
 #define PERF_MON_STOP_BIT       (2)
@@ -251,9 +203,11 @@ extern bool fgIsTxPowerDecreased;
 #define TRAFFIC_RHRESHOLD	150
 #endif
 
-#if CFG_SUPPORT_SA_LOG
 #define WIFI_LOG_MSG_MAX	(512)
+#if IS_ENABLED(CONFIG_ARM64)
 #define WIFI_LOG_MSG_BUFFER	(WIFI_LOG_MSG_MAX * 2)
+#else
+#define WIFI_LOG_MSG_BUFFER	(768)
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
@@ -321,6 +275,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 #if CFG_SUPPORT_NAN
 	SPIN_LOCK_NAN_NEGO_CRB,
 #endif
+	SPIN_LOCK_PMKID,
 	SPIN_LOCK_NUM
 };
 
@@ -390,102 +345,6 @@ u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter,
 			       uint8_t cmd,
 			       uint8_t *data, uint16_t dataLen);
 #endif /* CFG_SUPPORT_AGPS_ASSIST */
-
-#if CFG_SUPPORT_SNIFFER
-/* Vendor Namespace
- * Bit Number 30
- * Required Alignment 2 bytes
- */
-struct RADIOTAP_FIELD_VENDOR_ {
-	uint8_t aucOUI[3];
-	uint8_t ucSubNamespace;
-	uint16_t u2DataLen;
-	uint8_t ucData;
-} __KAL_ATTRIB_PACKED__;
-
-struct MONITOR_RADIOTAP {
-	/* radiotap header */
-	uint8_t ucItVersion;	/* set to 0 */
-	uint8_t ucItPad;
-	uint16_t u2ItLen;	/* entire length */
-	uint32_t u4ItPresent;	/* fields present */
-
-	/* TSFT
-	 * Bit Number 0
-	 * Required Alignment 8 bytes
-	 * Unit microseconds
-	 */
-	uint64_t u8MacTime;
-
-	/* Flags
-	 * Bit Number 1
-	 */
-	uint8_t ucFlags;
-
-	/* Rate
-	 * Bit Number 2
-	 * Unit 500 Kbps
-	 */
-	uint8_t ucRate;
-
-	/* Channel
-	 * Bit Number 3
-	 * Required Alignment 2 bytes
-	 */
-	uint16_t u2ChFrequency;
-	uint16_t u2ChFlags;
-
-	/* Antenna signal
-	 * Bit Number 5
-	 * Unit dBm
-	 */
-	uint8_t ucAntennaSignal;
-
-	/* Antenna noise
-	 * Bit Number 6
-	 * Unit dBm
-	 */
-	uint8_t ucAntennaNoise;
-
-	/* Antenna
-	 * Bit Number 11
-	 * Unit antenna index
-	 */
-	uint8_t ucAntenna;
-
-	/* MCS
-	 * Bit Number 19
-	 * Required Alignment 1 byte
-	 */
-	uint8_t ucMcsKnown;
-	uint8_t ucMcsFlags;
-	uint8_t ucMcsMcs;
-
-	/* A-MPDU status
-	 * Bit Number 20
-	 * Required Alignment 4 bytes
-	 */
-	uint32_t u4AmpduRefNum;
-	uint16_t u2AmpduFlags;
-	uint8_t ucAmpduDelimiterCRC;
-	uint8_t ucAmpduReserved;
-
-	/* VHT
-	 * Bit Number 21
-	 * Required Alignment 2 bytes
-	 */
-	uint16_t u2VhtKnown;
-	uint8_t ucVhtFlags;
-	uint8_t ucVhtBandwidth;
-	uint8_t aucVhtMcsNss[4];
-	uint8_t ucVhtCoding;
-	uint8_t ucVhtGroupId;
-	uint16_t u2VhtPartialAid;
-
-	/* extension space */
-	uint8_t aucReserve[12];
-} __KAL_ATTRIB_PACKED__;
-#endif
 
 struct KAL_HALT_CTRL_T {
 	struct semaphore lock;
@@ -1058,20 +917,18 @@ int8_t atoi(uint8_t ch);
 
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
 
-#if CFG_SUPPORT_SA_LOG
-#define kalPrintSALogLimited(fmt, ...)					\
+#define kalPrintLogLimited(fmt, ...)					\
 ({									\
 	static DEFINE_RATELIMIT_STATE(_rs,				\
 		DEFAULT_RATELIMIT_INTERVAL, DEFAULT_RATELIMIT_BURST);	\
 									\
 	if (__ratelimit(&_rs))						\
-		kalPrintSALog(fmt, ##__VA_ARGS__);			\
+		kalPrintLog(fmt, ##__VA_ARGS__);			\
 })
-#endif
 
 #define WLAN_TAG                        "[wlan]"
-#define kalPrint(_Fmt...)               pr_info(WLAN_TAG _Fmt)
-#define kalPrintLimited(_Fmt...)        pr_info_ratelimited(WLAN_TAG _Fmt)
+#define kalPrint               kalPrintLog
+#define kalPrintLimited(_Fmt...) kalPrintLogLimited(WLAN_TAG _Fmt)
 
 #define kalBreakPoint() \
 do { \
@@ -1166,6 +1023,7 @@ do { \
 /*----------------------------------------------------------------------------*/
 /* Macros of systrace operations for using in Driver Layer                    */
 /*----------------------------------------------------------------------------*/
+/* Not build-in project and not userload */
 #if (CONFIG_WLAN_DRV_BUILD_IN == 0) && (BUILD_QA_DBG == 1)
 #define kalTraceBegin(_fmt, ...) \
 	tracing_mark_write("B|%d|" _fmt "\n", current->tgid, ##__VA_ARGS__)
@@ -1216,12 +1074,16 @@ do { \
 #define TRACE(_expr, _fmt, ...) _expr
 
 #endif
-
 /*----------------------------------------------------------------------------*/
 /* Macros of wiphy operations for using in Driver Layer                       */
 /*----------------------------------------------------------------------------*/
 #define WIPHY_PRIV(_wiphy, _priv) \
 	(_priv = *((struct GLUE_INFO **) wiphy_priv(_wiphy)))
+
+/******************************************************************************
+ * 64 bit operand
+ ******************************************************************************/
+#define kal_div64_u64(_a, _b) div64_u64(_a, _b)
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
@@ -1965,9 +1827,8 @@ void kalSyncTimeToFWByIoctl(void);
 void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);
 
-#if CFG_SUPPORT_SA_LOG
-void kalPrintSALog(const char *fmt, ...);
-#endif
+extern uint32_t get_wifi_standalone_log_mode(void);
+void kalPrintLog(const char *fmt, ...);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,

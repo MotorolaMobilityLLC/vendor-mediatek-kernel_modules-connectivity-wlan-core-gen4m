@@ -150,8 +150,12 @@ void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	case ACTION_WNM_BSS_TRANSITION_MANAGEMENT_REQ:
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
-		/* btm offload */
-		wnmRecvBTMRequest(prAdapter, prSwRfb);
+		if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_NONE
+			&& IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucBTMOffloadEnabled))
+			wnmRecvBTMRequest(prAdapter, prSwRfb);
+		else
+			aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #else
 		DBGLOG(RX, INFO,
 		       "WNM: action frame %d, try to send to supplicant\n",

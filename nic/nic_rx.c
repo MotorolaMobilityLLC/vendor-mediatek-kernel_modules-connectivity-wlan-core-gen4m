@@ -76,6 +76,7 @@
 #if CFG_SUPPORT_NAN
 #include "nan_data_engine.h"
 #endif
+#include "radiotap.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1456,404 +1457,6 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
 
 }
 
-#if CFG_SUPPORT_SNIFFER
-void nicRxFillRadiotapMCS(IN OUT struct MONITOR_RADIOTAP
-			  *prMonitorRadiotap,
-			  IN struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3)
-{
-	uint8_t ucFrMode;
-	uint8_t ucShortGI;
-	uint8_t ucRxMode;
-	uint8_t ucLDPC;
-	uint8_t ucSTBC;
-	uint8_t ucNess;
-
-	ucFrMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
-	/* VHTA1 B0-B1 */
-	ucShortGI = ((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_SHORT_GI) ? 1 : 0;	/* HT_shortgi */
-	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
-	ucLDPC = ((prRxStatusGroup3)->u4RxVector[0] & RX_VT_LDPC) ?
-		 1 : 0;	/* HT_adcode */
-	ucSTBC = (((prRxStatusGroup3)->u4RxVector[0] &
-		   RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET);	/* HT_stbc */
-	ucNess = (((prRxStatusGroup3)->u4RxVector[0] &
-		   RX_VT_NESS_MASK) >> RX_VT_NESS_OFFSET);	/* HT_extltf */
-
-	prMonitorRadiotap->ucMcsKnown =
-		(BITS(0, 6) | (((ucNess & BIT(1)) >> 1) << 7));
-
-	prMonitorRadiotap->ucMcsFlags = ((ucFrMode) |
-		(ucShortGI << 2) |
-		((ucRxMode & BIT(0)) << 3) |
-		(ucLDPC << 4) | (ucSTBC << 5) |
-		((ucNess & BIT(0)) << 7));
-	/* Bit[6:0] for 802.11n, mcs0 ~ mcs7 */
-	prMonitorRadiotap->ucMcsMcs = ((
-		prRxStatusGroup3)->u4RxVector[0] & RX_VT_RX_RATE_MASK);
-}
-
-void nicRxFillRadiotapVHT(IN OUT struct MONITOR_RADIOTAP
-			  *prMonitorRadiotap,
-			  IN struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3)
-{
-	uint8_t ucSTBC;
-	uint8_t ucTxopPsNotAllow;
-	uint8_t ucShortGI;
-	uint8_t ucNsym;
-	uint8_t ucLdpcExtraOfdmSym;
-	uint8_t ucBeamFormed;
-	uint8_t ucFrMode;
-	uint8_t ucNsts;
-	uint8_t ucMcs;
-
-	prMonitorRadiotap->u2VhtKnown = RADIOTAP_VHT_ALL_KNOWN;
-	prMonitorRadiotap->u2VhtKnown &=
-		~RADIOTAP_VHT_SHORT_GI_NSYM_KNOWN;
-
-	ucSTBC = (((prRxStatusGroup3)->u4RxVector[0] &
-		   RX_VT_STBC_MASK) >>
-		  RX_VT_STBC_OFFSET);	/* BIT[7]: VHTA1 B3 */
-	ucTxopPsNotAllow = ((prRxStatusGroup3)->u4RxVector[0] &
-			    RX_VT_TXOP_PS_NOT_ALLOWED) ? 1 : 0;	/* VHTA1 B22 */
-	/*
-	 * ucNsym = ((prRxStatusGroup3)->u4RxVector[0]
-	 * & RX_VT_SHORT_GI_NSYM) ? 1 : 0;	//VHTA2 B1
-	 */
-	ucNsym = 0; /* Invalid in MT6632*/
-	ucShortGI = ((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
-	ucLdpcExtraOfdmSym = ((prRxStatusGroup3)->u4RxVector[0] &
-			      RX_VT_LDPC_EXTRA_OFDM_SYM) ? 1 : 0; /* VHTA2 B3 */
-	ucBeamFormed = ((prRxStatusGroup3)->u4RxVector[0] &
-			RX_VT_BEAMFORMED) ? 1 : 0;	/* VHTA2 B8 */
-	prMonitorRadiotap->ucVhtFlags = ((ucSTBC) |
-		(ucTxopPsNotAllow << 1) |
-		(ucShortGI << 2) | (ucNsym << 3)
-		| (ucLdpcExtraOfdmSym << 4)
-		| (ucBeamFormed << 5));
-
-	ucFrMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET);
-	/* VHTA1 B0-B1 */
-	switch (ucFrMode) {
-	case RX_VT_FR_MODE_20:
-		prMonitorRadiotap->ucVhtBandwidth = 0;
-		break;
-	case RX_VT_FR_MODE_40:
-		prMonitorRadiotap->ucVhtBandwidth = 1;
-		break;
-	case RX_VT_FR_MODE_80:
-		prMonitorRadiotap->ucVhtBandwidth = 4;
-		break;
-	case RX_VT_FR_MODE_160:
-		prMonitorRadiotap->ucVhtBandwidth = 11;
-		break;
-	default:
-		prMonitorRadiotap->ucVhtBandwidth = 0;
-	}
-
-	/* Set to 0~7 for 1~8 space time streams */
-	ucNsts = (((prRxStatusGroup3)->u4RxVector[1] &
-		   RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET) + 1;
-	/* VHTA1 B10-B12 */
-
-	/* Bit[3:0] for 802.11ac, mcs0 ~ mcs9 */
-	ucMcs = ((prRxStatusGroup3)->u4RxVector[0] &
-		 RX_VT_RX_RATE_AC_MASK);
-
-	prMonitorRadiotap->aucVhtMcsNss[0] = ((ucMcs << 4) |
-		(ucNsts - ucSTBC));	/* STBC = Nsts - Nss */
-
-	/*
-	 * prMonitorRadiotap->ucVhtCoding =
-	 *		(((prRxStatusGroup3)->u4RxVector[0]
-	 * & RX_VT_CODING_MASK) >> RX_VT_CODING_OFFSET);
-	 */
-	prMonitorRadiotap->ucVhtCoding = 0; /* Invalid in MT6632*/
-
-	/* VHTA2 B2-B3 */
-
-	prMonitorRadiotap->ucVhtGroupId =
-		(((((prRxStatusGroup3)->u4RxVector[1] &
-		    RX_VT_GROUPID_1_MASK) >> RX_VT_GROUPID_1_OFFSET) << 2) |
-		 (((prRxStatusGroup3)->u4RxVector[0] & RX_VT_GROUPID_0_MASK)
-		  >> RX_VT_GROUPID_0_OFFSET));
-	/* VHTA1 B4-B9 */
-	/* VHTA1 B13-B21 */
-	prMonitorRadiotap->u2VhtPartialAid = ((((
-			prRxStatusGroup3)->u4RxVector[2]
-			& RX_VT_AID_1_MASK) << 4) |
-	    (((prRxStatusGroup3)->u4RxVector[1]
-				& RX_VT_AID_0_MASK) >>
-				RX_VT_AID_0_OFFSET));
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Process HIF monitor packet
- *
- * @param prAdapter pointer to the Adapter handler
- * @param prSWRfb the RFB to receive rx data
- *
- * @return (none)
- *
- */
-/*----------------------------------------------------------------------------*/
-void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
-			       IN OUT struct SW_RFB *prSwRfb)
-{
-	struct sk_buff *prSkb = NULL;
-	struct RX_CTRL *prRxCtrl;
-	void *prRxStatus;
-	struct HW_MAC_RX_STS_GROUP_2 *prRxStatusGroup2;
-	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
-	struct MONITOR_RADIOTAP rMonitorRadiotap;
-	struct RADIOTAP_FIELD_VENDOR_ rRadiotapFieldVendor;
-	uint8_t *prVendorNsOffset;
-	uint32_t u4VendorNsLen;
-	uint32_t u4RadiotapLen;
-	uint32_t u4ItPresent;
-	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
-	uint8_t ucRxRate;
-	uint8_t ucRxMode;
-	uint8_t ucChanNum = 0;
-	uint8_t ucMcs;
-	uint8_t ucFrMode;
-	uint8_t ucShortGI;
-	uint8_t ucGroupid;
-	uint8_t ucNsts;
-	uint32_t u4PhyRate;
-	struct RX_DESC_OPS_T *prRxDescOps;
-	enum ENUM_BAND eBand = 0;
-
-#if CFG_SUPPORT_MULTITHREAD
-	KAL_SPIN_LOCK_DECLARATION();
-#endif
-
-	DEBUGFUNC("nicRxProcessMonitorPacket");
-
-	ASSERT(prAdapter);
-	ASSERT(prSwRfb);
-	prRxDescOps = prAdapter->chip_info->prRxDescOps;
-
-	prRxCtrl = &prAdapter->rRxCtrl;
-
-	nicRxFillRFB(prAdapter, prSwRfb);
-
-	/* can't parse radiotap info if no rx vector */
-	if (((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) == 0)
-	    || ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0)) {
-		nicRxReturnRFB(prAdapter, prSwRfb);
-		return;
-	}
-
-	prRxStatus = prSwRfb->prRxStatus;
-	prRxStatusGroup2 = prSwRfb->prRxStatusGroup2;
-	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
-
-	/* Bit Number 30 Vendor Namespace */
-	u4VendorNsLen = sizeof(struct RADIOTAP_FIELD_VENDOR_);
-	rRadiotapFieldVendor.aucOUI[0] = aucMtkOui[0];
-	rRadiotapFieldVendor.aucOUI[1] = aucMtkOui[1];
-	rRadiotapFieldVendor.aucOUI[2] = aucMtkOui[2];
-	rRadiotapFieldVendor.ucSubNamespace = 0;
-	rRadiotapFieldVendor.u2DataLen = u4VendorNsLen - 6;
-	/* VHTA1 B0-B1 */
-	rRadiotapFieldVendor.ucData = (((
-		prRxStatusGroup3)->u4RxVector[0]
-			& RX_VT_FR_MODE_MASK) >>
-			RX_VT_FR_MODE_OFFSET);
-
-	ucRxMode = (((prRxStatusGroup3)->u4RxVector[0] &
-		     RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET);
-
-	if (ucRxMode == RX_VT_VHT_MODE) {
-		u4RadiotapLen = RADIOTAP_LEN_VHT;
-		u4ItPresent = RADIOTAP_FIELDS_VHT;
-	} else if ((ucRxMode == RX_VT_MIXED_MODE)
-		   || (ucRxMode == RX_VT_GREEN_MODE)) {
-		u4RadiotapLen = RADIOTAP_LEN_HT;
-		u4ItPresent = RADIOTAP_FIELDS_HT;
-	} else {
-		u4RadiotapLen = RADIOTAP_LEN_LEGACY;
-		u4ItPresent = RADIOTAP_FIELDS_LEGACY;
-	}
-
-	/* Radiotap Header & Bit Number 30 Vendor Namespace */
-	prVendorNsOffset = (uint8_t *) &rMonitorRadiotap +
-			   u4RadiotapLen;
-	u4RadiotapLen += u4VendorNsLen;
-	kalMemSet(&rMonitorRadiotap, 0,
-		  sizeof(struct MONITOR_RADIOTAP));
-	kalMemCopy(prVendorNsOffset,
-		   (uint8_t *) &rRadiotapFieldVendor, u4VendorNsLen);
-	rMonitorRadiotap.u2ItLen = cpu_to_le16(u4RadiotapLen);
-	rMonitorRadiotap.u4ItPresent = u4ItPresent;
-
-	/* Bit Number 0 TSFT */
-	rMonitorRadiotap.u8MacTime =
-		(prRxStatusGroup2->u4Timestamp);
-
-	/* Bit Number 1 FLAGS */
-	if (prSwRfb->fgIsFrag)
-		rMonitorRadiotap.ucFlags |= BIT(3);
-
-	if (prSwRfb->fgIsFCS)
-		rMonitorRadiotap.ucFlags |= BIT(6);
-
-	/* Bit Number 2 RATE */
-	if (ucRxMode == RX_VT_LEGACY_CCK || ucRxMode == RX_VT_LEGACY_OFDM) {
-		/* Bit[2:0] for Legacy CCK, Bit[3:0] for Legacy OFDM */
-		ucRxRate = prRxStatusGroup3->u4RxVector[0] & BITS(0, 3);
-		rMonitorRadiotap.ucRate = nicGetHwRateByPhyRate(ucRxRate);
-	} else {
-		ucMcs = prRxStatusGroup3->u4RxVector[0] & RX_VT_RX_RATE_AC_MASK;
-		/* VHTA1 B0-B1 */
-		ucFrMode = (prRxStatusGroup3->u4RxVector[0] &
-				RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-		ucShortGI = (prRxStatusGroup3->u4RxVector[0] &
-				RX_VT_SHORT_GI) ? 1 : 0;	/* VHTA2 B0 */
-		ucNsts = (prRxStatusGroup3->u4RxVector[1] &
-				RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
-		ucGroupid = (prRxStatusGroup3->u4RxVector[1] &
-				RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
-
-		if (ucNsts == 0)
-			ucNsts = 1;
-		if (!ucGroupid || ucGroupid == 63)
-			ucNsts += 1;
-
-		if (ucRxMode == RX_VT_MIXED_MODE)
-			ucMcs %= 8;
-		/* ucRate(500kbs) = u4PhyRate(100kbps) / 5, max ucRate = 0xFF */
-		u4PhyRate = nicGetPhyRateByMcsRate(ucMcs, ucFrMode, ucShortGI);
-		if (ucRxMode == RX_VT_MIXED_MODE)
-			u4PhyRate *= ucNsts;
-		if (u4PhyRate > 1275)
-			rMonitorRadiotap.ucRate = 0xFF;
-		else
-			rMonitorRadiotap.ucRate = u4PhyRate / 5;
-	}
-
-	/* Bit Number 3 CHANNEL */
-	if (ucRxMode == RX_VT_LEGACY_CCK)
-		rMonitorRadiotap.u2ChFlags |= BIT(5);
-	else			/* OFDM */
-		rMonitorRadiotap.u2ChFlags |= BIT(6);
-
-	RX_STATUS_GET(prRxDescOps, ucChanNum, get_ch_num, prRxStatus);
-	RX_STATUS_GET(prRxDescOps, eBand, get_rf_band, prRxStatus);
-
-	nicRxdChNumTranslate(eBand, &ucChanNum);
-
-	if (eBand == BAND_2G4) {
-		rMonitorRadiotap.u2ChFlags |= BIT(7);
-		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 2407);
-	} else if (eBand == BAND_5G) {		/* BAND_5G */
-		rMonitorRadiotap.u2ChFlags |= BIT(8);
-		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 5000);
-	}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	else if (eBand == BAND_6G)		/* BAND_6G */
-		rMonitorRadiotap.u2ChFrequency = (ucChanNum * 5 + 5950);
-#endif
-
-
-	/* Bit Number 5 ANT SIGNAL */
-	rMonitorRadiotap.ucAntennaSignal =
-		RCPI_TO_dBm(HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3));
-
-	/* Bit Number 6 ANT NOISE */
-	rMonitorRadiotap.ucAntennaNoise = ((((
-			prRxStatusGroup3)->u4RxVector[5]
-				& RX_VT_NF0_MASK) >> 1) +
-				128);
-
-	/* Bit Number 11 ANT, Invalid for MT6632 and MT7615 */
-	rMonitorRadiotap.ucAntenna = ((
-		prRxStatusGroup3)->u4RxVector[2] & RX_VT_SEL_ANT) ? 1 : 0;
-
-	/* Bit Number 19 MCS */
-	if ((u4ItPresent & RADIOTAP_FIELD_MCS))
-		nicRxFillRadiotapMCS(&rMonitorRadiotap, prRxStatusGroup3);
-
-	/* Bit Number 20 AMPDU */
-	if (prSwRfb->fgIsAmpdu) {
-		if (prSwRfb->ucRxvSeqNo)
-			++prRxCtrl->u4AmpduRefNum;
-		rMonitorRadiotap.u4AmpduRefNum = prRxCtrl->u4AmpduRefNum;
-	}
-
-	/* Bit Number 21 VHT */
-	if ((u4ItPresent & RADIOTAP_FIELD_VHT))
-		nicRxFillRadiotapVHT(&rMonitorRadiotap, prRxStatusGroup3);
-
-	prSwRfb->pvHeader -= u4RadiotapLen;
-	kalMemCopy(prSwRfb->pvHeader, &rMonitorRadiotap,
-		   u4RadiotapLen);
-
-	prSkb = (struct sk_buff *)(prSwRfb->pvPacket);
-	prSkb->data = (unsigned char *)(prSwRfb->pvHeader);
-
-	skb_reset_tail_pointer(prSkb);
-	skb_trim(prSkb, 0);
-	skb_put(prSkb, (u4RadiotapLen + prSwRfb->u2PacketLen));
-
-#if CFG_SUPPORT_MULTITHREAD
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
-	QUEUE_INSERT_TAIL(&(prAdapter->rRxQueue),
-			  (struct QUE_ENTRY *) GLUE_GET_PKT_QUEUE_ENTRY(
-				  prSwRfb->pvPacket));
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
-
-	prRxCtrl->ucNumIndPacket++;
-	kalSetTxEvent2Rx(prAdapter->prGlueInfo);
-#else
-	prRxCtrl->apvIndPacket[prRxCtrl->ucNumIndPacket] =
-		prSwRfb->pvPacket;
-	prRxCtrl->ucNumIndPacket++;
-#endif
-
-	prSwRfb->pvPacket = NULL;
-	/* Return RFB */
-	if (nicRxSetupRFB(prAdapter, prSwRfb)) {
-		DBGLOG(RX, WARN,
-		       "Cannot allocate packet buffer for SwRfb!\n");
-		if (!timerPendingTimer(
-			    &prAdapter->rPacketDelaySetupTimer)) {
-			DBGLOG(RX, WARN,
-				"Start ReturnIndicatedRfb Timer (%u)\n",
-			  RX_RETURN_INDICATED_RFB_TIMEOUT_SEC);
-			cnmTimerStartTimer(prAdapter,
-				&prAdapter->rPacketDelaySetupTimer,
-				SEC_TO_MSEC(
-					RX_RETURN_INDICATED_RFB_TIMEOUT_SEC));
-		}
-	}
-	nicRxReturnRFB(prAdapter, prSwRfb);
-}
-#else
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Process HIF monitor packet
- *
- * @param prAdapter pointer to the Adapter handler
- * @param prSWRfb the RFB to receive rx data
- *
- * @return (none)
- *
- */
-/*----------------------------------------------------------------------------*/
-void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
-			       IN OUT struct SW_RFB *prSwRfb)
-{
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Process & Parsing RXV for traffic indicator
@@ -2055,6 +1658,7 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_RFB *prRetSwRfb, *prNextSwRfb;
 	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIndex;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
@@ -2088,6 +1692,8 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 		case RX_PKT_DESTINATION_HOST:
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 					prRetSwRfb->ucStaRecIdx);
+			if (prStaRec)
+				ucBssIndex = prStaRec->ucBssIndex;
 #if ARP_MONITER_ENABLE
 			if (prStaRec &&
 				IS_STA_IN_AIS(prStaRec)) {
@@ -2114,14 +1720,11 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 			}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
-			if (prStaRec &&
-			prStaRec->ucBssIndex < MAX_BSSID_NUM) {
+			if (prStaRec && ucBssIndex < MAX_BSSID_NUM) {
 				GET_BOOT_SYSTIME(
-					&prRxCtrl->u4LastRxTime
-					[prStaRec->ucBssIndex]);
+					&prRxCtrl->u4LastRxTime[ucBssIndex]);
 			}
-			nicRxProcessPktWithoutReorder(
-				prAdapter, prRetSwRfb);
+			nicRxProcessPktWithoutReorder(prAdapter, prRetSwRfb);
 			break;
 
 		case RX_PKT_DESTINATION_FORWARD:
@@ -2181,6 +1784,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prAdapter->prGlueInfo->fgIsEnableMon) {
+		radiotapFillRadiotap(prAdapter, prSwRfb);
+		return;
+	}
+#endif
 	nicRxFillRFB(prAdapter, prSwRfb);
 
 	fgDrop = FALSE;
@@ -3904,11 +3513,15 @@ void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
 	}
 
 	/* P-B-0[0:31] */
-	if (RX_RPT_GET_RXV_TYPE_PRXV1_VLD(prRxRpt))
+	if (RX_RPT_GET_RXV_TYPE_PRXV1_VLD(prRxRpt)) {
 		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector0 =
 			prRxRptBlkRxv->u4PRxv1[0];
-	else
-		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector0 = 0;
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].fgPRXVValid = 1;
+	} else {
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].fgPRXVValid = 0;
+	}
+
+	prAdapter->arStaRec[prSwRfb->ucStaRecIdx].fgCRXVValid = 0;
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	if (RX_RPT_GET_RXV_TYPE_CRXV1_VLD(prRxRpt)) {
@@ -3924,16 +3537,8 @@ void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
 		/* C-B-3[0:31] */
 		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector4 =
 			prRxRptBlkRxv->u4CRxv1[6];
-	} else {
-		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector1 =
-			0;
-		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector2 =
-			0;
-		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector3 =
-			0;
-		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxVector4 =
-			0;
-		DBGLOG(RX, WARN, "RX_RPT C-RXV1 not valid!\n");
+
+		prAdapter->arStaRec[prSwRfb->ucStaRecIdx].fgCRXVValid = 1;
 	}
 #endif
 
@@ -4016,20 +3621,6 @@ static void nicRxProcessPacketType(
 
 	switch (prSwRfb->ucPacketType) {
 	case RX_PKT_TYPE_RX_DATA:
-		if (HAL_IS_RX_DIRECT(prAdapter)
-			&& HAL_MON_EN(prAdapter)) {
-			spin_lock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
-			nicRxProcessMonitorPacket(
-				prAdapter, prSwRfb);
-			spin_unlock_bh(&prGlueInfo->rSpinLock[
-				SPIN_LOCK_RX_DIRECT]);
-			break;
-		} else if (HAL_MON_EN(prAdapter)) {
-			nicRxProcessMonitorPacket(
-				prAdapter, prSwRfb);
-			break;
-		}
 		if (HAL_IS_RX_DIRECT(prAdapter)) {
 			spin_lock_bh(&prGlueInfo->rSpinLock[
 				SPIN_LOCK_RX_DIRECT]);
@@ -4080,20 +3671,12 @@ static void nicRxProcessPacketType(
 				if (HAL_IS_RX_DIRECT(prAdapter)) {
 					spin_lock_bh(&prGlueInfo->rSpinLock[
 						SPIN_LOCK_RX_DIRECT]);
-					if (HAL_MON_EN(prAdapter))
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-					else
-						nicRxProcessDataPacket(
+					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
 					spin_unlock_bh(&prGlueInfo->rSpinLock[
 						SPIN_LOCK_RX_DIRECT]);
 				} else {
-					if (HAL_MON_EN(prAdapter))
-						nicRxProcessMonitorPacket(
-							prAdapter, prSwRfb);
-					else
-						nicRxProcessDataPacket(
+					nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
 				}
 			}
@@ -4269,7 +3852,7 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 		pvPacket = kalPacketAlloc(prAdapter->prGlueInfo,
-					  CFG_RX_MAX_PKT_SIZE, &pucRecvBuff);
+					  CFG_RX_MAX_MPDU_SIZE, &pucRecvBuff);
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;
 
@@ -4323,7 +3906,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList, prQueEntry);
 		if (prAdapter->u4NoMoreRfb != 0) {
-			DBGLOG_LIMITED(RX, INFO,
+			DBGLOG_LIMITED(RX, TEMP,
 				"Free rfb and set IntEvent!!!!!\n");
 			kalSetDrvIntEvent(prAdapter->prGlueInfo);
 		}

@@ -1043,6 +1043,11 @@ static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
 		configWfdmaRxRingThreshold(prAdapter);
 	}
+
+	/* Enable RX periodic delayed interrupt 1ms */
+	HAL_MCR_WR(prAdapter,
+		   WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR,
+		   0xF14);
 }
 
 int soc5_0_Trigger_fw_assert(void)
@@ -1907,7 +1912,7 @@ uint32_t soc5_0_wlanImageSectionDownloadStage(
 	u_int8_t fgIsNotDownload = FALSE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct patch_dl_target target;
+	struct patch_dl_target target = {0};
 	struct PATCH_FORMAT_T *prPatchHeader;
 	struct ROM_EMI_HEADER *prRomEmiHeader;
 	struct FWDL_OPS_T *prFwDlOps;

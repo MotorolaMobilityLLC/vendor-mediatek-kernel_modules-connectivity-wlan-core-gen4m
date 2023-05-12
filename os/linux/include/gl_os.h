@@ -484,6 +484,7 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_TCP_ACK,
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	ENUM_PKT_ICMPV6,		/* ICMPV6 */
+	ENUM_PKT_UDP,
 	ENUM_PKT_FLAG_NUM
 };
 
@@ -818,10 +819,17 @@ struct GLUE_INFO {
 	uint16_t u2MetUdpPort;
 #endif
 
-#if CFG_SUPPORT_SNIFFER
-	u_int8_t fgIsEnableMon;
-	struct net_device *prMonDevHandler;
-	struct work_struct monWork;
+	uint8_t fgIsEnableMon;
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	uint8_t ucPriChannel;
+	uint8_t ucChannelS1;
+	uint8_t ucChannelS2;
+	uint8_t ucBand;
+	uint8_t ucChannelWidth;
+	uint8_t ucSco;
+	uint8_t ucBandIdx;
+	uint8_t fgDropFcsErrorFrame;
+	uint16_t u2Aid;
 #endif
 
 	int32_t i4RssiCache[BSSID_NUM];

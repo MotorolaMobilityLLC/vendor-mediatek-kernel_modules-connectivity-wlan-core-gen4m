@@ -108,6 +108,9 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_MTK_ANDROID_EMI
 	if (prSwWfdmaInfo->pucIoremapAddr) {
 		DBGLOG(INIT, ERROR, "prDmad already remap\n");
+		prSwWfdmaInfo->prDmad =
+			(struct SW_WFDMAD *)(prSwWfdmaInfo->pucIoremapAddr);
+		halSwWfdmaReset(prSwWfdmaInfo);
 		return;
 	}
 
@@ -192,8 +195,10 @@ void halSwWfdmaEn(struct GLUE_INFO *prGlueInfo, bool fgEn)
 
 void halSwWfdmaReset(struct SW_WFDMA_INFO *prSwWfdmaInfo)
 {
-	if (!prSwWfdmaInfo->prDmad)
+	if (!prSwWfdmaInfo->prDmad) {
+		DBGLOG(INIT, ERROR, "prSwWfdmaInfo->prDmad is NULL\n");
 		return;
+	}
 
 	prSwWfdmaInfo->u4CpuIdx = 0;
 	prSwWfdmaInfo->u4DmaIdx = 0;
@@ -201,6 +206,8 @@ void halSwWfdmaReset(struct SW_WFDMA_INFO *prSwWfdmaInfo)
 	prSwWfdmaInfo->prDmad->u4FwIdx = 0;
 	memset_io(prSwWfdmaInfo->prDmad->aucBuf, 0,
 		   SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE);
+
+	DBGLOG(INIT, TRACE, "Reset SW WFDMA\n");
 }
 
 void halSwWfdmaBackup(struct GLUE_INFO *prGlueInfo)
@@ -335,6 +342,9 @@ bool halSwWfdmaIsFull(struct GLUE_INFO *prGlueInfo)
 
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 {
+#define WAIT_FW_TOTAL_DELAY_MS 2048
+#define WAIT_FW_LOOP_DELAY_MIN_US 900
+#define WAIT_FW_LOOP_DELAY_MAX_US 1000
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -346,6 +356,8 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 	struct CMD_INFO *prCmdInfo;
 	uint32_t u4Size;
 	void *prBuf;
+	uint32_t u4CurrTick = 0;
+	u_int8_t fgTimeout = FALSE;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -359,15 +371,32 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 	prTxRing = &prHifInfo->TxRing[TX_RING_CMD_IDX_3];
 #endif
 
-	if (!prSwWfdmaInfo->fgIsEnSwWfdma || !prSwWfDmad)
+	if (!prSwWfdmaInfo->fgIsEnSwWfdma || !prSwWfDmad) {
+		DBGLOG(HAL, TRACE, "SW WFDMA is not supported\n");
 		return false;
+	}
 
-	if (prSwWfdmaInfo->u4DmaIdx == prSwWfdmaInfo->u4CpuIdx)
+	if (prSwWfdmaInfo->u4DmaIdx == prSwWfdmaInfo->u4CpuIdx) {
+		DBGLOG(HAL, TRACE, "SW WFDMA is empty\n");
 		return false;
+	}
+
+	u4CurrTick = kalGetTimeTick();
 
 	while (prSwWfdmaInfo->u4DmaIdx != prSwWfdmaInfo->u4CpuIdx) {
-		if (halSwWfdmaIsFull(prGlueInfo))
-			break;
+		while (halSwWfdmaIsFull(prGlueInfo)) {
+			if (prGlueInfo->u4ReadyFlag == TRUE)
+				return true;
+
+			fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+				WAIT_FW_TOTAL_DELAY_MS) ? TRUE : FALSE;
+			if (fgTimeout) {
+				DBGLOG(HAL, TRACE, "Timeout, break\n");
+				return false;
+			}
+			kalUsleep_range(WAIT_FW_LOOP_DELAY_MIN_US,
+				WAIT_FW_LOOP_DELAY_MAX_US);
+		}
 
 		prBuf = (void *)prSwWfDmad->aucBuf[prSwWfDmad->u4DrvIdx];
 		pTxCell = &prTxRing->Cell[prSwWfdmaInfo->u4DmaIdx];

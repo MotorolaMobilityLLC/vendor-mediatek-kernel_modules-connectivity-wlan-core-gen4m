@@ -239,6 +239,11 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE) {
 		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
 
+		prBssInfo->ucHeOpParams[0]
+			|= HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK;
+		prBssInfo->ucHeOpParams[1]
+			|= HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
+
 		/* Disable BSS color support*/
 		if (!prAdapter->rWifiVar.fgSapAddTPEIE)
 			prBssInfo->ucBssColorInfo |=

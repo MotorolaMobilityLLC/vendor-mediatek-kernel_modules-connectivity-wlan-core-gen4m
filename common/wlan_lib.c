@@ -1413,6 +1413,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			case WAIT_FIRMWARE_READY_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
+				halHifSwInfoUnInit(prAdapter->prGlueInfo);
 			case INIT_HIFINFO_FAIL:
 				nicRxUninitialize(prAdapter);
 				nicTxRelease(prAdapter, FALSE);
@@ -5177,8 +5178,8 @@ uint32_t wlanGetMiniTxPower(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	startOfs = arRange[bandIdx][ePhyMode].startOfs;
-	endOfs = arRange[bandIdx][ePhyMode].endOfs;
+	startOfs = arRange[(uint8_t)bandIdx][(uint8_t)ePhyMode].startOfs;
+	endOfs = arRange[(uint8_t)bandIdx][(uint8_t)ePhyMode].endOfs;
 
 
 	/*NVRAM start addreess :0*/
@@ -8130,6 +8131,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "GROFlushTimeout", 1);
 	prWifiVar->ucGROEnableTput = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "GROEnableTput", 6250000);
+	prWifiVar->u4UdpEnableGroTputTh = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "UdpEnableGroTputTh", 500000000);
 #endif
 	prWifiVar->ucMsduReportTimeout =
 		(uint8_t) wlanCfgGetUint32(prAdapter,
@@ -8184,7 +8187,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucDftNdcStartOffset =
 		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdcStartOffset", 0);
 	prWifiVar->ucNanFixChnl =
-		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 0);
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 6);
 	prWifiVar->fgEnableNDPE =
 		wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 1);
 	prWifiVar->u2DftNdlQosLatencyVal =
@@ -8322,7 +8325,24 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->fgEnOnlyScan6g = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableOnlyScan6g", FEATURE_DISABLED);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
-
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+	prWifiVar->fgAggressiveLoadBanalancing = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "AggressiveLoadBanalancing", FEATURE_DISABLED);
+	prWifiVar->u2DisallowBtmTimeout = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "DisallowBtmTimeout", 1800);
+	prWifiVar->u2ConsecutiveBtmReqTimeout = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "ConsecutiveBtmReqTimeout", 300);
+	prWifiVar->ucConsecutiveBtmReqNum = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "ConsecutiveBtmReqNum", 3);
+	prWifiVar->u2DisallowPerTimeout = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "DisallowPerTimeout", 1800);
+	prWifiVar->u2ConsecutivePerReqTimeout = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "ConsecutivePerReqTimeout", 300);
+	prWifiVar->ucConsecutivePerReqNum = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "ConsecutivePerReqNum", 2);
+	prWifiVar->ucBTMOffloadEnabled = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "BTMOffloadEnable", FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
@@ -10470,6 +10490,7 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 	enum ENUM_WMM_ACI eAci = WMM_AC_BE_INDEX;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	OS_SYSTIME rCurTime;
+	struct WIFI_WMM_AC_STAT *prAcStats;
 
 	eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
 
@@ -10486,11 +10507,13 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prMsduInfo->ucBssIndex);
 
-			if (fgTxDrop)
-				prBssInfo->arLinkStatistics[eAci].
-					u4TxDropMsdu++;
-			else
-				prBssInfo->arLinkStatistics[eAci].u4TxMsdu++;
+			if (prBssInfo) {
+				prAcStats = &prBssInfo->arLinkStatistics[eAci];
+				if (fgTxDrop)
+					prAcStats->u4TxDropMsdu++;
+				else
+					prAcStats->u4TxMsdu++;
+			}
 		}
 	}
 

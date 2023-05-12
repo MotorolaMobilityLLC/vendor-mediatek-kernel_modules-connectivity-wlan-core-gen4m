@@ -996,6 +996,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	struct BSS_INFO *prBssInfo;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
+	kalMemZero(&rLinkSpeed, sizeof(struct PARAM_LINK_SPEED_EX));
+
 	ASSERT(wiphy);
 
 	do {
@@ -1115,6 +1117,13 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			break;
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+		if (prGlueInfo->fgIsEnableMon) {
+			i4RetRslt = -EINVAL;
+			break;
+		}
+#endif
 
 		if (wlanIsChipAssert(prGlueInfo->prAdapter))
 			break;
@@ -1535,6 +1544,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	struct ADAPTER *prAdapter = (struct ADAPTER *) NULL;
 	struct WIFI_VAR *prWifiVar = (struct WIFI_VAR *) NULL;
+
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
 	/* RF_CHANNEL_INFO_T rRfChnlInfo; */
 /* P_IE_SSID_T prSsidIE = (P_IE_SSID_T)NULL; */
@@ -3352,6 +3363,8 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	struct net_device *dev = NULL;
 
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	if ((wiphy == NULL) || (chandef == NULL))
 		return i4Rslt;
 
@@ -4436,7 +4449,6 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(IN struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t rStatus;
-	uint32_t u4BufLen;
 	int fgIsValid = 0;
 
 	ASSERT(wiphy);
@@ -4469,15 +4481,11 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(IN struct wiphy *wiphy,
 	kalMemCopy(pmkid.arPMKID, prParams->aucPmkid, IW_PMKID_LEN);
 	pmkid.ucBssIdx = ucBssIdx;
 	if (prParams->ucAddRemove) {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID),
-				   FALSE, FALSE, FALSE, &u4BufLen);
+		rStatus = rsnSetPmkid(prGlueInfo->prAdapter, &pmkid);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "add pmkid error:%x\n", rStatus);
 	} else {
-		rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
-				   sizeof(struct PARAM_PMKID),
-				   FALSE, FALSE, FALSE, &u4BufLen);
+		rStatus = rsnDelPmkid(prGlueInfo->prAdapter, &pmkid);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "remove pmkid error:%x\n", rStatus);
 	}
