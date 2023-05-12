@@ -93,7 +93,6 @@
  */
 #define PROC_MAX_BUF_SIZE        3000
 
-
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define PROC_ROOT_NAME							"ra"
 #else
@@ -1647,6 +1646,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 	    "'D': driver part current setting\n"
 	    "===================================\n";
 	u4StrLen = kalStrLen(str);
+	temp = pucProcBuf;
 	kalStrnCpy(temp, str, u4StrLen);
 	temp += u4StrLen;
 
@@ -1753,7 +1753,6 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 		goto freeBuf;
 	}
 
-	kalMemSet(pucProcBuf, 0, u4CopySize);
 	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
 	pucTmp = pucProcBuf;
