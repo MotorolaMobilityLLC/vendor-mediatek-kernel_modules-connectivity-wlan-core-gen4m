@@ -1222,11 +1222,15 @@ struct tx_pwr_section {
 
 struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT {
 	uint8_t aucCountryCode[2];
-	/* 0: ch 1 ~14
-	 * 1: ch 36 ~48
-	 * 2: ch 52 ~64
-	 * 3: ch 100 ~144
-	 * 4: ch 149 ~165
+	/* 0: 2.4G ch   1 ~  14
+	 * 1: 5G   ch  36 ~  48
+	 * 2: 5G   ch  52 ~  64
+	 * 3: 5G   ch 100 ~ 144
+	 * 4: 5G   ch 149 ~ 165
+	 * 5: 6G   ch  95 ~ 115
+	 * 6: 6G   ch 117 ~ 151
+	 * 7: 6G   ch 153 ~ 185
+	 * 8: 6G   ch 187 ~ 233
 	 */
 	int8_t aucPwrLimitSubBand[PWR_LMT_DEF_PWR_NUM];
 	/* bit0: cPwrLimit2G4, bit1: cPwrLimitUnii1; bit2: cPwrLimitUnii2A;*/
