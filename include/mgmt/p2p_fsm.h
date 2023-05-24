@@ -93,5 +93,7 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
-void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter);
+void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
+		unsigned long ulParamPtr);
+
 #endif /* _P2P_FSM_H */

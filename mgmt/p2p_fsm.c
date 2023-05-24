@@ -515,8 +515,8 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	return prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]
 		->rJoinInfo.prTargetBssDesc;
 }
-
-void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter)
+void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
+		unsigned long ulParamPtr)
 {
 	DBGLOG(P2P, TRACE,
 		"CSA block scan timeout\n");
