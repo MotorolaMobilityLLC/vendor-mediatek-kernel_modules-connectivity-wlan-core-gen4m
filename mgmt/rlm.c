@@ -3619,9 +3619,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		prBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prBssInfo->ucHtOpInfo1 &=
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
-
-		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prAdapter);
 	}
 
 #if CFG_SUPPORT_QUIET && 0
