@@ -426,6 +426,10 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgEcsa;
 	u_int8_t ucEcsaBw;
 #endif
+
+	/* OWE */
+	uint8_t *pucDHIEBuf;
+	uint8_t ucDHIELen;
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

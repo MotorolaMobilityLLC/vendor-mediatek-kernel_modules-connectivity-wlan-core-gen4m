@@ -297,7 +297,7 @@ uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
 	     i++) {
 		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
 			u2EstimatedExtraIELen +=
-				txAssocRespIETable[i].u2EstimatedFixedIELen;
+				txAuthIETable[i].u2EstimatedFixedIELen;
 		else if (txAuthIETable[i].pfnCalculateVariableIELen !=
 			 NULL)
 			u2EstimatedExtraIELen +=

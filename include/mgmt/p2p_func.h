@@ -584,3 +584,9 @@ struct BSS_INFO *p2pGetAisBssByBand(
 struct BSS_INFO *p2pGetAisConnectedBss(
 	struct ADAPTER *prAdapter);
 
+uint32_t p2pFuncCalculateP2p_IELenForOwe(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
+
+void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
