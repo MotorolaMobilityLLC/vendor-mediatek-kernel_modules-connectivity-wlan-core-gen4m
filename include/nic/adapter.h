@@ -2109,10 +2109,6 @@ struct ADAPTER {
 	u_int8_t ucANTCtrlPendingCount;
 #endif
 
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	struct LINK rNeighborAPInfoList;
-#endif
-
 #ifdef CFG_MSCS_SUPPORT
 	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif

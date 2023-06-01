@@ -106,11 +106,13 @@
 #include <linux/kobject.h>
 
 /* for wifi standalone log */
+#if CFG_SUPPORT_SA_LOG
 #define CREATE_TRACE_POINTS
 #include "mtk_wifi_trace.h"
 #include <linux/jiffies.h>
 #include <linux/ratelimit.h>
 #include <linux/rtc.h>
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -227,7 +229,10 @@ static struct notifier_block wlan_fb_notifier = {
 
 static struct miscdevice wlan_object;
 
+#if CFG_SUPPORT_SA_LOG
 static unsigned long rtc_update;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -4682,7 +4687,9 @@ int main_thread(void *data)
 	DBGLOG(INIT, INFO, "%s:%u starts running...\n",
 	       KAL_GET_CURRENT_THREAD_NAME(), KAL_GET_CURRENT_THREAD_ID());
 
+#if CFG_SUPPORT_SA_LOG
 	rtc_update = jiffies;	/* update rtc_update time base */
+#endif
 
 	while (TRUE) {
 #ifdef UT_TEST_MODE
@@ -9859,6 +9866,7 @@ void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
 					% OID_HDLR_REC_NUM;
 }
 
+#if CFG_SUPPORT_SA_LOG
 void kalPrintUTC(char *msg_buf, int msg_buf_size)
 {
 	int ret = 0;
@@ -9884,7 +9892,7 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 			tm_android.tm_min, tm_android.tm_sec,
 			(unsigned int)(tv_android.tv_nsec/1000));
 		if (ret < 0) {
-			kalPrintLog("[%u] snprintf failed, ret: %d",
+			kalPrintSALog("[%u] snprintf failed, ret: %d",
 				__LINE__, ret);
 		} else {
 			trace_wifi_standalone_log(msg_buf);
@@ -9892,12 +9900,24 @@ void kalPrintUTC(char *msg_buf, int msg_buf_size)
 	}
 }
 
-void kalPrintTrace(char *buffer, const int len)
+void kalPrintSALog(const char *fmt, ...)
 {
-	if (buffer[len - 1] == '\n')
-		buffer[len - 1] = '\0';
+	char buffer[WIFI_LOG_MSG_BUFFER] = {0};
+	int ret = 0;
+	va_list args;
 
-	if (len < WIFI_LOG_MSG_MAX) {
+	va_start(args, fmt);
+	ret = vsnprintf(buffer, WIFI_LOG_MSG_BUFFER, fmt, args);
+	if (ret < 0) {
+		kalPrintSALog("[%u] vsnprintf failed, ret: %d",
+			__LINE__, ret);
+	}
+	va_end(args);
+
+	if (buffer[strlen(buffer) - 1] == '\n')
+		buffer[strlen(buffer) - 1] = '\0';
+
+	if (strlen(buffer) < WIFI_LOG_MSG_MAX) {
 		trace_wifi_standalone_log(buffer);
 	} else {
 		char sub_buffer[WIFI_LOG_MSG_MAX];
@@ -9918,30 +9938,7 @@ void kalPrintTrace(char *buffer, const int len)
 		kalPrintUTC(buffer, WIFI_LOG_MSG_BUFFER);
 	}
 }
-
-void kalPrintLog(const char *fmt, ...)
-{
-	char buffer[WIFI_LOG_MSG_BUFFER];
-	int ret = 0;
-	struct va_format vaf;
-	va_list args;
-
-	va_start(args, fmt);
-	vaf.fmt = fmt;
-	vaf.va = &args;
-	ret = vsnprintf(buffer, sizeof(buffer), fmt, args);
-	if (ret < 0) {
-		kalPrintLog("[%u] vsnprintf failed, ret: %d",
-			__LINE__, ret);
-	} else if (get_wifi_standalone_log_mode() == 1) {
-		kalPrintTrace(buffer, strlen(buffer));
-	} else {
-		pr_info("%s%s", WLAN_TAG, buffer);
-	}
-
-	va_end(args);
-}
-
+#endif /* CFG_SUPPORT_SA_LOG */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,

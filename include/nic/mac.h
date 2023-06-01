@@ -3777,6 +3777,12 @@ struct IE_OCE_SUPPRESSION_BSSID {
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.170 Reduced Neighbor Report element */
+struct IE_RNR {
+	uint8_t      ucId;
+	uint8_t      ucLength;
+	uint8_t      aucInfoField[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct NEIGHBOR_AP_INFO_FIELD {
 	uint16_t     u2TbttInfoHdr;
 	uint8_t      ucOpClass;
