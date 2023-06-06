@@ -77,6 +77,9 @@
  */
 extern uint8_t g_arTdlsLink[MAXNUM_TDLS_PEER];
 extern const uint8_t *apucACI2Str[4];
+#if ARP_MONITER_ENABLE
+extern uint8_t aucGatewayMacAddr[MAC_ADDR_LEN];
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1330,7 +1333,8 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prSwRfb);
 void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 			   struct SW_RFB *prSwRfb);
-void qmResetArpDetect(void);
+void qmResetArpDetect(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
 u_int8_t qmArpMonitorIsCritical(void);
 void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
@@ -1340,6 +1344,10 @@ void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
 uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen);
 uint8_t *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
 	u_int8_t fgFromServer, uint32_t *pDhcpLen);
+void qmGetRxSrcMac(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *prMacAddr);
+void qmArpMonitorGetUnicastPktTime(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 #endif
 
 #if defined(CFG_SUPPORT_REPLAY_DETECTION) || \

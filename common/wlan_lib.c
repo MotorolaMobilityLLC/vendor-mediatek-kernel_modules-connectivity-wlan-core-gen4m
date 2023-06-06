@@ -8549,11 +8549,13 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 
 #if ARP_MONITER_ENABLE
 	prWifiVar->uArpMonitorNumber = (uint32_t) wlanCfgGetUint32(
-		prAdapter, "ArpMonitorNumber", 20);
+		prAdapter, "ArpMonitorNumber", 5);
 	prWifiVar->uArpMonitorRxPktNum = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ArpMonitorRxPktNum", 0);
 	prWifiVar->uArpMonitorCriticalThres = (uint8_t) wlanCfgGetUint32(
-		prAdapter, "ArpMonitorCriticalThres", 4);
+		prAdapter, "ArpMonitorCriticalThres", 2);
+	prWifiVar->ucArpMonitorUseRule = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "ArpMonitorUseRule", 1);
 #endif /* ARP_MONITER_ENABLE */
 
 

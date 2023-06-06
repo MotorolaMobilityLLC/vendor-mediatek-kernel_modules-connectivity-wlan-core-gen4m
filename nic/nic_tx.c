@@ -358,8 +358,6 @@ void nicTxInitialize(struct ADAPTER *prAdapter)
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
 
-	prAdapter->cArpNoResponseIdx = -1;
-
 	qmInit(prAdapter, halIsTxResourceControlEn(prAdapter));
 
 	TX_RESET_ALL_CNTS(prTxCtrl);
@@ -4435,20 +4433,6 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 		prRetMsduInfo = qmEnqueueTxPackets(prAdapter,
 				QUEUE_GET_HEAD(prDataPort0));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
-#if ARP_MONITER_ENABLE
-		if (prAdapter->cArpNoResponseIdx >= 0) {
-#if CFG_SUPPORT_DATA_STALL
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_ARP_NO_RESPONSE,
-				(uint16_t)sizeof(uint32_t),
-				prAdapter->cArpNoResponseIdx,
-				FALSE);
-#endif /* CFG_SUPPORT_DATA_STALL */
-			aisBssBeaconTimeout(prAdapter,
-				prAdapter->cArpNoResponseIdx);
-			prAdapter->cArpNoResponseIdx = -1;
-		}
-#endif /* ARP_MONITER_ENABLE */
 		/* post-process for dropped packets */
 		if (prRetMsduInfo) {	/* unable to enqueue */
 			nicTxFreeMsduInfoPacket(prAdapter, prRetMsduInfo);

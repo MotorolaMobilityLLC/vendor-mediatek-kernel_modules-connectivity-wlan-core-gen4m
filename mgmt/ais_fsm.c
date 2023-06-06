@@ -4039,6 +4039,10 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			prAisFsmInfo->ucConnTrialCount = 0;
 			prAisFsmInfo->ucIsStaRoaming = FALSE;
 
+#if ARP_MONITER_ENABLE
+			qmResetArpDetect(prAdapter, prStaRec->ucBssIndex);
+#endif
+
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
 			    MEDIA_STATE_CONNECTED) {
