@@ -7806,13 +7806,10 @@ void nicUniEventStatistics(struct ADAPTER
 	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
 	struct UNI_EVENT_STATISTICS *evt =
 		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
-	struct UNI_EVENT_GET_STATISTICS *tag =
-		(struct UNI_EVENT_GET_STATISTICS *) evt->aucTlvBuffer;
 	struct UNI_EVENT_BASIC_STATISTICS *basic =
-		(struct UNI_EVENT_BASIC_STATISTICS *)tag->aucBuffer;
+		(struct UNI_EVENT_BASIC_STATISTICS *)evt->aucTlvBuffer;
 	struct EVENT_STATISTICS legacy = {0};
 
-	kalMemSet(&legacy, 0, sizeof(legacy));
 	legacy.rTransmittedFragmentCount.QuadPart =
 		basic->u8TransmittedFragmentCount;
 	legacy.rMulticastTransmittedFrameCount.QuadPart =
@@ -7859,27 +7856,6 @@ void nicUniEventLinkQuality(struct ADAPTER
 }
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
-
-struct STA_RECORD *findStarecByWtblIdx(struct ADAPTER
-	*prAdapter, uint8_t ucWlanIndex)
-{
-	struct STA_RECORD *prStaRec = NULL, *prTempStaRec;
-	uint8_t ucStaRecIdx;
-
-	for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-		ucStaRecIdx++) {
-		prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
-		if (prTempStaRec->fgIsValid && prTempStaRec->fgIsInUse) {
-			/* FW starec idx is WTBL idx */
-			if (prTempStaRec->ucWlanIndex == ucWlanIndex) {
-				prStaRec = prTempStaRec;
-				break;
-			}
-		}
-	}
-	return prStaRec;
-}
-
 void nicUniEventAllStatsOneCmd(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
@@ -7986,8 +7962,10 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 
 			prStaStatsLegacy =
 				(struct EVENT_STA_STATISTICS *) tlv->aucBuffer;
-			prStaRec = findStarecByWtblIdx(prAdapter,
-				prStaStatsLegacy->ucStaRecIdx);
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+					secGetStaIdxByWlanIdx(
+						prAdapter,
+						prStaStatsLegacy->ucStaRecIdx));
 
 			if (!prStaRec)
 				continue;
