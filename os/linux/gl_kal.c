@@ -2481,9 +2481,21 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 				cfg80211_roamed(prDevHandler,
 					&rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 15, 78) <= CFG80211_VERSION_CODE
+#if (CFG_ADVANCED_80211_MLO == 1)
+				if (ucAuthorized)
+					cfg80211_port_authorized(prDevHandler,
+						arBssid, NULL, 0, GFP_KERNEL);
+#else
 				if (ucAuthorized)
 					cfg80211_port_authorized(prDevHandler,
 						arBssid, GFP_KERNEL);
+#endif
+#else
+				if (ucAuthorized)
+					cfg80211_port_authorized(prDevHandler,
+						arBssid, GFP_KERNEL);
+#endif
 #endif
 #else
 				cfg80211_roamed_bss(
