@@ -402,7 +402,9 @@ static struct ieee80211_channel mtk_6ghz_channels[] = {
 	CHAN6G(221, 0),
 	CHAN6G(225, 0),
 	CHAN6G(229, 0),
+#ifdef MOT_WLAN_ENABLE_6G_CH233
 	CHAN6G(233, 0)
+#endif
 };
 #endif
 
