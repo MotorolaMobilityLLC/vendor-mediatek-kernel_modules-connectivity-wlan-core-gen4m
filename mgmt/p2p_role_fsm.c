@@ -5200,14 +5200,23 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prAisBssInfo;
 		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
 		// BEGIN MOTO IKSWT-58657
+		// Begin Motorola, bccunha, IKSWT-155739, Fix STA+AP 6GHz behavior
 		/* If STA is working in the 5GHz DFS frequency, run ACS in the 2GHz */
-		if (prAisBssInfo && prAisBssInfo->eBand > BAND_2G4 &&
+		if (prAisBssInfo && prAisBssInfo->eBand == BAND_5G &&
 				prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 				rlmDomainIsDfsChnls(prAdapter, prAisBssInfo->ucPrimaryChannel)) {
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_2G4));
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		} else if (prAisBssInfo && prAisBssInfo->eBand == BAND_6G &&
+			prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+				prAcsReqInfo, BIT(BAND_2G4));
+			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#endif
 		} else
+		// End IKSWT-155739
 		// END MOTO IKSWT-58657
 		if (prAisBssInfo &&
 			prAisBssInfo->eConnectionState ==
@@ -5215,6 +5224,7 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			(!p2pFuncIsDualAPMode(prAdapter) ||
 			(p2pFuncIsDualAPMode(prAdapter) &&
 			prAisBssInfo->eBand > BAND_2G4))) {
+			DBGLOG(P2P, INFO, "Forcing SCC on band %d\n", (int) prAisBssInfo->eBand);
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 				prAisBssInfo);
