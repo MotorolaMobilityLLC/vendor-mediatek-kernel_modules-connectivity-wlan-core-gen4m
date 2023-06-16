@@ -4660,18 +4660,27 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			AIS_DEFAULT_INDEX);
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			// BEGIN MOTO IKSWT-58657
+			// Begin Motorola, bccunha, IKSWT-155739, Fix STA+AP 6GHz behavior
 			/* If STA is working in the 5GHz DFS frequency, run ACS in the 2GHz */
-			if (prAisBssInfo->eBand > BAND_2G4 &&
+			if (prAisBssInfo->eBand == BAND_5G &&
 					rlmDomainIsDfsChnls(prAdapter, prAisBssInfo->ucPrimaryChannel)) {
 				trimAcsScanList(prAdapter, prMsgAcsRequest,
 					prAcsReqInfo, BIT(BAND_2G4));
 				prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			} else if (prAisBssInfo->eBand == BAND_6G) {
+				trimAcsScanList(prAdapter, prMsgAcsRequest,
+					prAcsReqInfo, BIT(BAND_2G4));
+				prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
+#endif
 			} else {
 				/* Force SCC, indicate channel directly */
+				DBGLOG(P2P, INFO, "Forcing SCC on band %d\n", (int) prAisBssInfo->eBand);
 				indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 					prAisBssInfo);
 				goto exit;
 			}
+			// End IKSWT-155739
 			// END MOTO IKSWT-58657
 		// Begin Motorola, bccunha, IKSWS-77084, Fix MHS channels while on APM
 #if (CFG_SUPPORT_WIFI_6G == 1)
