@@ -1337,6 +1337,7 @@ uint8_t scanSearchBssidInCurrentList(
 	}
 	return FALSE;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Allocate new NEIGHBOR_AP_INFO structure
@@ -1363,7 +1364,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDescTemp = NULL;
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
-
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
 		|| !prScanInfo->rScanParam.fg6gOobRnrParseEn) {
@@ -1566,9 +1566,11 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 			}
 		}
 
-		/* Get RNR channel */
+		/* Get RNR channel, must be 6G here because we have filter out
+		 * 2.4G and 5G.
+		 */
 		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
-		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
+		if (!rlmDomainIsLegalChannel(prAdapter, BAND_6G, ucRnrChNum)) {
 			DBGLOG(SCN, TRACE, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
 			if (ucNewLink)
@@ -4702,3 +4704,31 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 		prBssDesc->fgIsHE6GPresent = FALSE;
 }
 #endif
+
+void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
+{
+	switch (ucOpClass) {
+	case 112:
+	case 115 ... 127:
+	case 128 ... 130:
+		*band = BAND_5G;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case 131 ... 137:
+		*band = BAND_6G;
+		break;
+#endif
+	case 81:
+	case 82:
+	case 83:
+	case 84:
+		*band = BAND_2G4;
+		break;
+	/* not support 60Ghz */
+	case 180:
+	default:
+		*band = BAND_NULL;
+		log_dbg(SCN, WARN, "OpClass%d illegal\n", ucOpClass);
+		break;
+	}
+}

@@ -783,7 +783,7 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 #endif /* DBG_DISABLE_ALL_LOG */
 
 #define IS_6G_OP_CLASS(_opClass) \
-	((_opClass >= 131) && (_opClass <= 135))
+	((_opClass >= 131) && (_opClass <= 137))
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -1042,6 +1042,7 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 	IN enum ENUM_BAND eHwBand);
 #endif
 
+void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);
 void updateLinkStatsApRec(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc);
 #endif /* _SCAN_H */
