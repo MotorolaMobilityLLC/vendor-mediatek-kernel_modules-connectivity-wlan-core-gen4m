@@ -1352,7 +1352,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 {
 	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
 	uint8_t ucShortSsidOffset, ucBssParamOffset;
-	uint8_t ucBssidNum = 0, ucShortSsidNum = 0;
+	uint8_t ucBssidNum = 0, ucShortSsidNum = 0, eBand;
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength, u2CurrentLength = 0;
@@ -1570,7 +1570,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		 * 2.4G and 5G.
 		 */
 		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
-		if (!rlmDomainIsLegalChannel(prAdapter, BAND_6G, ucRnrChNum)) {
+		scanOpClassToBand(ucOpClass, &eBand);
+		if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucRnrChNum)) {
 			DBGLOG(SCN, TRACE, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
 			if (ucNewLink)
