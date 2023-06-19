@@ -7510,6 +7510,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucHeHTC = (uint8_t) wlanCfgGetUint32(prAdapter, "HeHTC", FEATURE_ENABLED);
 #endif
 
+	prWifiVar->ucBtmCap = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"BtmCap", FEATURE_ENABLED);
 	/* 0: disabled
 	 * 1: Tx done event to driver
 	 * 2: Tx status to FW only

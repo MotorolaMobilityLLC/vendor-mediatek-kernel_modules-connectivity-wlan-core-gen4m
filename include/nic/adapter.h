@@ -114,6 +114,7 @@ enum {
 	ENUM_SW_TEST_MODE_SIGMA_AX_AP = 0x16,
 	ENUM_SW_TEST_MODE_SIGMA_OCE = 0x17,
 	ENUM_SW_TEST_MODE_SIGMA_BE = 0x18,
+	ENUM_SW_TEST_MODE_SIGMA_WPA3 = 0x19,
 	ENUM_SW_TEST_MODE_NUM
 };
 
@@ -875,6 +876,7 @@ struct WIFI_VAR {
 	uint8_t ucHeDynamicSMPS;
 	uint8_t ucHeHTC;
 #endif
+	uint8_t ucBtmCap;
 #if (CFG_SUPPORT_TWT == 1)
 	uint8_t ucTWTRequester;
 	uint8_t ucTWTResponder;

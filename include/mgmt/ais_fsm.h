@@ -399,9 +399,6 @@ struct CONNECTION_SETTINGS {
 	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
 	uint8_t bmfgApsdEnAc;
 
-	/* for RSN info store, when upper layer set rsn info */
-	struct RSN_INFO rRsnInfo;
-
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	u_int8_t fgSecModeChangeStartTimer;
 #endif
@@ -944,7 +941,8 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter,
 			uint8_t ucAisIndex);
 
 struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
-			struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
+			struct BSS_INFO *prAisBssInfo,
+			struct BSS_DESC *prBssDesc);
 
 /*******************************************************************************
  *                              F U N C T I O N S

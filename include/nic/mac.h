@@ -647,11 +647,10 @@
 /* 7.3.1.1 Authentication Algorithm Number field */
 #define AUTH_ALGORITHM_NUM_FIELD_LEN                2
 
-#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0	/* Open System */
-#define AUTH_ALGORITHM_NUM_SHARED_KEY           1	/* Shared Key */
-#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  \
-	2	/* Fast BSS Transition */
-#define AUTH_ALGORITHM_NUM_SAE                  3	/* WPA3 - SAE */
+#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0 /* Open System */
+#define AUTH_ALGORITHM_NUM_SHARED_KEY           1 /* Shared Key */
+#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  2 /* Fast BSS Transition */
+#define AUTH_ALGORITHM_NUM_SAE                  3 /* WPA3 - SAE */
 
 /* 7.3.1.2 Authentication Transaction Sequence Number field */
 #define AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN      2
@@ -4708,6 +4707,14 @@ do { \
 	if ((_ucBit) < ((_ucFieldLength) * 8)) { \
 		uint8_t *aucExtCap = (uint8_t *)(_aucField); \
 		((aucExtCap)[(_ucBit) / 8]) |= BIT((_ucBit) % 8); \
+	} \
+} while (FALSE)
+
+#define CLEAR_EXT_CAP(_aucField, _ucFieldLength, _ucBit) \
+do { \
+	if ((_ucBit) < ((_ucFieldLength) * 8)) { \
+		uint8_t *aucExtCap = (uint8_t *)(_aucField); \
+		((aucExtCap)[(_ucBit) / 8]) &= ~BIT((_ucBit) % 8); \
 	} \
 } while (FALSE)
 

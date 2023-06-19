@@ -1289,6 +1289,15 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	} else
 		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
+	/* Disable BTM cap for WPA3 cert. */
+	if (IS_BSS_AIS(prBssInfo)
+		&& IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucBtmCap)) {
+		CLEAR_EXT_CAP(prExtCap->aucCapabilities,
+					ELEM_MAX_LEN_EXT_CAP,
+					ELEM_EXT_CAP_BSS_TRANSITION_BIT);
+		DBGLOG(RLM, INFO, "Disable BTM cap due to wifi.cfg");
+	}
+
 	while (prExtCap->ucLength > 0 &&
 		prExtCap->aucCapabilities[prExtCap->ucLength - 1] == 0) {
 		prExtCap->ucLength--;

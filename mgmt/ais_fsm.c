@@ -361,22 +361,22 @@ void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
 void aisInitializeConnectionRsnInfo(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
-	struct CONNECTION_SETTINGS *prConnSettings;
-	int i = 0;
+	struct IEEE_802_11_MIB *prMib;
+	uint8_t i;
 
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prMib = aisGetMib(prAdapter, ucBssIndex);
 
-	prConnSettings->rRsnInfo.ucElemId = 0x30;
-	prConnSettings->rRsnInfo.u2Version = 0x0001;
-	prConnSettings->rRsnInfo.u4GroupKeyCipherSuite = 0;
-	prConnSettings->rRsnInfo.u4PairwiseKeyCipherSuiteCount = 0;
+	/* reset cipher */
+	prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_NONE;
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
-		prConnSettings->rRsnInfo.au4PairwiseKeyCipherSuite[i] = 0;
-	prConnSettings->rRsnInfo.u4AuthKeyMgtSuiteCount = 0;
-	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++)
-		prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[i] = 0;
-	prConnSettings->rRsnInfo.u2RsnCap = 0;
-	prConnSettings->rRsnInfo.fgRsnCapPresent = FALSE;
+		prMib->dot11RSNAConfigPairwiseCiphersTable
+		    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
+
+	/* reset akm */
+	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
+		prMib->dot11RSNAConfigAuthenticationSuitesTable
+		    [i].dot11RSNAConfigAuthenticationSuiteEnabled = FALSE;
+	}
 } /* end of aisInitializeConnectionRsnInfo() */
 
 #if CFG_SUPPORT_802_11K
@@ -1136,27 +1136,24 @@ bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
-			struct STA_RECORD *prStaRec,
-			uint8_t ucBssIndex)
+			struct BSS_INFO *prAisBssInfo,
+			struct BSS_DESC *prBssDesc)
 {
 	struct PMKID_ENTRY *entry = NULL;
 
-	if (!prStaRec) {
-		DBGLOG(AIS, ERROR, "prStaRec is NULL!");
-		return NULL;
-	}
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
+	if (mldIsMultiLinkFormed(prAdapter, prAisBssInfo->prStaRecOfAP)) {
 		entry = rsnSearchPmkidEntry(prAdapter,
-		      prStaRec->aucMldAddr, ucBssIndex);
+			prBssDesc->rMlInfo.aucMldAddr,
+			prAisBssInfo->ucBssIndex);
 	} else
 #endif
 		entry = rsnSearchPmkidEntry(prAdapter,
-		      prStaRec->aucMacAddr, ucBssIndex);
+			prBssDesc->aucBSSID,
+			prAisBssInfo->ucBssIndex);
 
 	/* do not use invalid PMKID */
-	if (entry && entry->u2StatusCode == STATUS_INVALID_PMKID)
+	if (entry && rsnApInvalidPMK(entry->u2StatusCode))
 		entry = NULL;
 
 	return entry;
@@ -1281,7 +1278,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIndex)
 {
-	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct STA_RECORD *prStaRec;
@@ -1299,15 +1296,15 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
 	prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, ucLinkIndex);
-	prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, ucLinkIndex);
+	prBssInfo = aisGetLinkBssInfo(prAisFsmInfo, ucLinkIndex);
 
-	if (!prAisBssInfo) {
+	if (!prBssInfo) {
 		DBGLOG(AIS, ERROR,
 			"aisFsmStateInit_JOIN failed because prAisBssInfo is NULL, return.\n");
 		return;
 	}
 
-	ucBssIndex = prAisBssInfo->ucBssIndex;
+	ucBssIndex = prBssInfo->ucBssIndex;
 
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting |= BIT(ucBssIndex);
@@ -1332,7 +1329,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
+	if (prBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED
 		/* not in reconnection */
 		&& (!aisFsmIsInProcessPostpone(prAdapter, ucBssIndex)
 		|| prAisFsmInfo->ucReasonOfDisconnect ==
@@ -1344,28 +1341,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 		switch (prConnSettings->eAuthMode) {
 		case AUTH_MODE_OPEN:
-			if (prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0]
-					== WLAN_AKM_SUITE_SAE) {
-				if (!aisSearchPmkidEntry(prAdapter,
-						prStaRec, ucBssIndex)) {
-					prAisFsmInfo->ucAvailableAuthTypes =
-					(uint8_t) AUTH_TYPE_SAE;
-					DBGLOG(AIS, INFO,
-						"JOIN INIT: change AUTH to SAE when PMK not found\n");
-				} else {
-					prAisFsmInfo->ucAvailableAuthTypes =
-					(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
-						   AUTH_TYPE_SAE);
-					DBGLOG(AIS, INFO,
-						"JOIN INIT: eAuthMode == OPEN | SAE\n");
-				}
-			} else {
-				prAisFsmInfo->ucAvailableAuthTypes =
-				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
-				DBGLOG(AIS, INFO,
-					"JOIN INIT: eAuthMode == OPEN\n");
-			}
-			break;
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
 		case AUTH_MODE_WPA:
@@ -1384,7 +1359,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			break;
 
 		case AUTH_MODE_AUTO_SWITCH:
-			DBGLOG(AIS, LOUD,
+			DBGLOG(AIS, INFO,
 			       "JOIN INIT: eAuthMode == AUTH_MODE_AUTO_SWITCH\n");
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
@@ -1392,12 +1367,25 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			break;
 
 		case AUTH_MODE_WPA3_SAE:
-			DBGLOG(AIS, LOUD,
-			       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
-			prAisFsmInfo->ucAvailableAuthTypes =
-			    (uint8_t) AUTH_TYPE_SAE;
+			if (prWpaInfo->u4AuthAlg == IW_AUTH_ALG_SAE) {
+				DBGLOG(AIS, INFO,
+				       "JOIN INIT: eAuthMode == AUTH_MODE_SAE\n");
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_SAE;
+			} else if (!aisSearchPmkidEntry(prAdapter,
+					prBssInfo, prBssDesc)) {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_SAE;
+				DBGLOG(AIS, INFO,
+					"JOIN INIT: change AUTH to SAE when PMK not found\n");
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
+						   AUTH_TYPE_SAE);
+				DBGLOG(AIS, INFO,
+					"JOIN INIT: eAuthMode == OPEN | SAE\n");
+			}
 			break;
-
 		default:
 			DBGLOG(AIS, ERROR,
 			       "JOIN INIT: Auth Algorithm : %d was not supported by JOIN\n",
@@ -1417,8 +1405,8 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
 		/* Update Bss info before join */
-		prAisBssInfo->eBand = prBssDesc->eBand;
-		prAisBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
+		prBssInfo->eBand = prBssDesc->eBand;
+		prBssInfo->ucPrimaryChannel = prBssDesc->ucChannelNum;
 
 #if (CFG_SUPPORT_HE_ER == 1)
 		prStaRec->fgIsExtendedRange = FALSE;
@@ -1441,35 +1429,44 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		 */
 		switch (prConnSettings->eAuthMode) {
 		case AUTH_MODE_OPEN:
+		case AUTH_MODE_WPA_PSK:
+		case AUTH_MODE_WPA2_PSK:
+		case AUTH_MODE_WPA3_OWE:
 			if (prWpaInfo->u4WpaVersion ==
-			IW_AUTH_WPA_VERSION_DISABLED
-			&& prWpaInfo->u4AuthAlg ==
-			IW_AUTH_ALG_FT) {
+				IW_AUTH_WPA_VERSION_DISABLED &&
+			    prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FT) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
 				DBGLOG(AIS, INFO, "FT: Non-RSN FT roaming\n");
 			} else {
+				/* make sure wpa3 transition mode using open */
 				prAisFsmInfo->ucAvailableAuthTypes =
-					prAisSpecificBssInfo->
-					ucRoamingAuthTypes;
+				    (uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 			}
 			break;
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
-			DBGLOG(AIS, TRACE, "FT: RSN FT roaming\n");
+			DBGLOG(AIS, INFO, "FT: RSN FT roaming\n");
 			break;
 		case AUTH_MODE_WPA3_SAE:
-			if (aisSearchPmkidEntry(prAdapter,
-					prStaRec, ucBssIndex)) {
+			if (rsnKeyMgmtFT(prBssInfo->u4RsnSelectedAKMSuite)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
-					(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
-				DBGLOG(AIS, INFO,
-					"SAE: change AUTH to OPEN when roaming with PMK\n");
-			} else {
+				    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+				DBGLOG(AIS, INFO, "FT: RSN FT roaming\n");
+			} else if (!aisSearchPmkidEntry(prAdapter,
+					prBssInfo, prBssDesc)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_SAE;
+				DBGLOG(AIS, INFO,
+					"SAE: change AUTH to SAE when roaming but PMK not found\n");
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) (AUTH_TYPE_OPEN_SYSTEM |
+						   AUTH_TYPE_SAE);
+				DBGLOG(AIS, INFO,
+					"SAE: change AUTH to OPEN | SAE when roaming with PMK\n");
 			}
 			break;
 		default:
@@ -1521,6 +1518,9 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		   AUTH_TYPE_SAE) {
 		DBGLOG(AIS, LOUD,
 		       "JOIN INIT: Try to do Authentication with AuthType == SAE.\n");
+
+		prAisFsmInfo->ucAvailableAuthTypes &=
+		    ~(uint8_t) AUTH_TYPE_SAE;
 
 		prStaRec->ucAuthAlgNum =
 		    (uint8_t) AUTH_ALGORITHM_NUM_SAE;
@@ -1587,33 +1587,24 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
-	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DEBUGFUNC("aisFsmStateInit_RetryJOIN()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	/* Retry other AuthType if possible */
 	if (!prAisFsmInfo->ucAvailableAuthTypes)
 		return FALSE;
 
-	if ((prStaRec->u2StatusCode !=
-		STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED) &&
-		(prStaRec->u2StatusCode !=
-		STATUS_CODE_AUTH_TIMEOUT) &&
-		(prStaRec->u2StatusCode !=
-		STATUS_CODE_INVALID_INFO_ELEMENT) &&
-		(prStaRec->u2StatusCode !=
-		STATUS_INVALID_PMKID)) {
+	if (prStaRec->u2StatusCode != STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED
+	    && prStaRec->u2StatusCode != STATUS_CODE_AUTH_TIMEOUT
+	    /* try without invalid PMKID */
+	    && !rsnApInvalidPMK(prStaRec->u2StatusCode)) {
 		prAisFsmInfo->ucAvailableAuthTypes = 0;
 		return FALSE;
 	}
 
-	if (prConnSettings->rRsnInfo.au4AuthKeyMgtSuite[0]
-		== WLAN_AKM_SUITE_SAE &&
-		prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
-		AUTH_TYPE_SAE) {
+	if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t) AUTH_TYPE_SAE) {
 		DBGLOG(AIS, INFO,
 		       "RETRY JOIN INIT: Retry Authentication with AuthType == SAE.\n");
 
@@ -2044,7 +2035,9 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 {
 	uint8_t i;
 	struct BSS_INFO *prMainBss;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
+	prConnSettings = &prAisFsmInfo->rConnSettings;
 	/* main bss must assign wmm first */
 	prMainBss = aisGetMainLinkBssInfo(prAisFsmInfo);
 	cnmWmmIndexDecision(prAdapter, prMainBss);
@@ -2071,6 +2064,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			}
 		}
 
+		prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 		prAisBssInfo->u4RsnSelectedGroupCipher =
 			prBssDesc->u4RsnSelectedGroupCipher;
 		prAisBssInfo->u4RsnSelectedPairwiseCipher =
@@ -2583,7 +2577,7 @@ static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	    eAuthMode == AUTH_MODE_WPA_PSK ||
 	    eAuthMode == AUTH_MODE_WPA_NONE) {
 		prBssRsnInfo = &prBss->rWPAInfo;
-	} else if (rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex)) {
+	} else if (rsnKeyMgmtRsn(eAuthMode)) {
 		prBssRsnInfo = &prBss->rRSNInfo;
 #if CFG_SUPPORT_PASSPOINT
 	} else if (eAuthMode == AUTH_MODE_WPA_OSEN) {
@@ -3864,9 +3858,13 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	uint8_t ucRfBw, ucRfCenterFreqSeg1, ucPrimaryChannel;
 	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
 	enum ENUM_CHNL_EXT eRfSco;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	if (!prBssInfo || !prBssDesc)
 		return;
+
+	prConnSettings = aisGetConnSettings(ad, prBssInfo->ucBssIndex);
+	prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
 
 	prBssInfo->u4RsnSelectedGroupCipher =
 		prBssDesc->u4RsnSelectedGroupCipher;
@@ -3996,6 +3994,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	struct PMKID_ENTRY *prPmkidEntry;
 	enum ENUM_AIS_STATE eNextState;
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame = NULL;
 	uint16_t u2IELength = 0;
@@ -4058,7 +4057,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		       prBssDesc->ucJoinFailureCount,
 		       prBssDesc->rJoinFailTime);
 
-	} else if (scanApOverload(prStaRec->u2StatusCode,
+	} else if (rsnApOverload(prStaRec->u2StatusCode,
 			prStaRec->u2ReasonCode)) {
 		aisAddBlacklist(prAdapter, prBssDesc);
 		DBGLOG(AIS, INFO,
@@ -4067,14 +4066,6 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		       prStaRec->u2StatusCode,
 		       prStaRec->u2ReasonCode,
 		       prBssDesc->rJoinFailTime);
-	} else if (prStaRec->u2StatusCode == STATUS_INVALID_PMKID) {
-		struct PMKID_ENTRY *entry;
-
-		entry = aisSearchPmkidEntry(prAdapter, prStaRec, ucBssIndex);
-		if (entry)
-			entry->u2StatusCode = STATUS_INVALID_PMKID;
-		DBGLOG(AIS, INFO,
-			"Disallow PMKID due to STATUS_INVALID_PMKID\n");
 #if CFG_SUPPORT_MBO
 	} else if (pucIE && prStaRec->u2StatusCode ==
 			STATUS_CODE_ASSOC_DENIED_POOR_CHANNEL) {
@@ -4105,6 +4096,10 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		}
 #endif
 	}
+
+	prPmkidEntry = aisSearchPmkidEntry(prAdapter, prAisBssInfo, prBssDesc);
+	if (prPmkidEntry)
+		prPmkidEntry->u2StatusCode = prStaRec->u2StatusCode;
 
 	if (prBssDesc->prBlack)
 		prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
