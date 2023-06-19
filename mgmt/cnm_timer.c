@@ -252,9 +252,9 @@ void cnmTimerInitialize(struct ADAPTER *prAdapter)
 
 	/* Note: glue layer have configured timer */
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
-
 	log_dbg(CNM, WARN, "reset timer list\n");
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
 	/* Remove all pending timers */
 	prTimerList = &(prAdapter->rRootTimer.rLinkHead);
@@ -437,7 +437,7 @@ void cnmTimerStopTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer)
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "stop timer, timer %p func %ps\n",
+	DBGLOG_LIMITED(CNM, TRACE, "stop timer, timer %p func %ps\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc);
 
 	cnmTimerStopTimer_impl(prAdapter, prTimer, TRUE);
@@ -460,13 +460,15 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	struct ROOT_TIMER *prRootTimer;
 	struct LINK *prTimerList;
 	OS_SYSTIME rCurSysTime, rExpiredSysTime, rTimeoutSystime;
+	OS_SYSTIME rInvalidNextExpiredSysTime;
+	u_int8_t fgInvalidTime = FALSE;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "start timer, timer %p func %ps %d ms\n",
+	DBGLOG_LIMITED(CNM, TRACE, "start timer, timer %p func %ps %d ms\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc, u4TimeoutMs);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
@@ -490,7 +492,7 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 
 	if (gDoTimeOut) {
 		/* monitor the timer start in callback */
-		log_dbg(CNM, INFO,
+		DBGLOG_LIMITED(CNM, INFO,
 			"In DoTimeOut, timer %p func %ps %d ms timercount %d\n",
 			prTimer, prTimer->pfMgmtTimeOutFunc,
 			u4TimeoutMs, prTimerList->u4NumElem);
@@ -525,8 +527,9 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	if (TIME_BEFORE(prRootTimer->rNextExpiredSysTime, rCurSysTime) &&
 		!KAL_TEST_BIT(GLUE_FLAG_TIMEOUT_BIT,
 				       prAdapter->prGlueInfo->ulFlag)) {
-		log_dbg(CNM, WARN, "Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
-			prRootTimer->rNextExpiredSysTime, rCurSysTime);
+		fgInvalidTime = TRUE;
+		rInvalidNextExpiredSysTime =
+			prRootTimer->rNextExpiredSysTime;
 		KAL_SET_BIT(GLUE_FLAG_TIMEOUT_BIT,
 				       prAdapter->prGlueInfo->ulFlag);
 	}
@@ -555,6 +558,12 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 	}
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
+
+	if (fgInvalidTime) {
+		DBGLOG_LIMITED(CNM, WARN,
+			"Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
+			rInvalidNextExpiredSysTime, rCurSysTime);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
