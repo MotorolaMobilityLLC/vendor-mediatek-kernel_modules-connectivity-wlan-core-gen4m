@@ -3875,8 +3875,7 @@ void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 		aisSetLinkBssDesc(ais, prBssDesc, i);
 		aisSetLinkStaRec(ais, prAisBssInfo->prStaRecOfAP, i);
 
-		prAisBssInfo->eHwBandIdx = prAisBssInfo->prStaRecOfAP ?
-			prAisBssInfo->prStaRecOfAP->eHwBandIdx : ENUM_BAND_AUTO;
+		prAisBssInfo->eHwBandIdx = prAisBssInfo->eBackupHwBandIdx;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUpdateBandIdxBitmap(ad, prAisBssInfo);

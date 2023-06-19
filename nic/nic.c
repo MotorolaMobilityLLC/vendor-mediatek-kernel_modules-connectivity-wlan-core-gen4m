@@ -2159,6 +2159,9 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 				       (uint8_t *)&rCmdActivateCtrl, NULL, 0);
 
 	if (fgClearStaRec) {
+		prBssInfo->eHwBandIdx = ENUM_BAND_AUTO;
+		prBssInfo->eBackupHwBandIdx = ENUM_BAND_AUTO;
+
 		secRemoveBssBcEntry(prAdapter, prBssInfo, FALSE);
 
 		/* free all correlated station records */
