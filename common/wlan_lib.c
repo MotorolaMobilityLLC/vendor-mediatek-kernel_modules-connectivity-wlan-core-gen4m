@@ -852,9 +852,6 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 		prAdapter->ucHwBssIdNum = MAX_BSSID_NUM;
 		prAdapter->ucWmmSetNum = MAX_BSSID_NUM;
 		prAdapter->ucP2PDevBssIdx = MAX_BSSID_NUM;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prAdapter->ucMldReservedBssIdx = MAX_BSSID_NUM - 1;
-#endif
 		prAdapter->ucWtblEntryNum = WTBL_SIZE;
 		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 
@@ -7299,6 +7296,23 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
 	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MldLinkMax", MLD_LINK_MAX);
+	prWifiVar->ucStaMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"StaMldLinkMax", MLD_LINK_MAX);
+	prWifiVar->ucP2pMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"P2pMldLinkMax", MLD_LINK_MAX);
+	if (prWifiVar->ucStaMldLinkMax > prWifiVar->ucMldLinkMax) {
+		DBGLOG(INIT, WARN,
+			"StaMldLinkMax %d => %d\n",
+			prWifiVar->ucStaMldLinkMax, prWifiVar->ucMldLinkMax);
+		prWifiVar->ucStaMldLinkMax = prWifiVar->ucMldLinkMax;
+	}
+	if (prWifiVar->ucP2pMldLinkMax > prWifiVar->ucMldLinkMax) {
+		DBGLOG(INIT, WARN,
+			"P2pMldLinkMax %d => %d\n",
+			prWifiVar->ucP2pMldLinkMax, prWifiVar->ucMldLinkMax);
+		prWifiVar->ucP2pMldLinkMax = prWifiVar->ucMldLinkMax;
+	}
+
 	prWifiVar->ucApMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
 		prAdapter, "ApMldMainLinkIdx", MLD_LINK_ID_NONE);
 	prWifiVar->ucStaMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
@@ -7314,6 +7328,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		wlanCfgGetUint32(prAdapter, "MaxSimultaneousLinks", 0xff);
 	prWifiVar->ucMldRetryCount = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "MldRetryCount", MLD_RETRY_COUNT);
+
 #endif /* CFG_SUPPORT_802_11BE */
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);

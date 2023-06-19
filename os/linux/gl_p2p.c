@@ -1149,6 +1149,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct GL_HIF_INFO *prHif = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint8_t ucBssIndex;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1261,8 +1262,11 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
-	p2pDevFsmInit(prAdapter);
+	ucBssIndex = p2pDevFsmInit(prAdapter);
 	LINK_INITIALIZE(&prP2PInfo->rWaitTxDoneLink);
+
+	if (IS_BSS_INDEX_VALID(ucBssIndex))
+		prNetDevPriv->ucBssIdx = ucBssIndex;
 
 	if ((fgSkipRole == SKIP_ROLE_ALL) ||
 		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))

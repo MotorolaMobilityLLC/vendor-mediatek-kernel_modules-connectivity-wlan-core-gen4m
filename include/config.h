@@ -585,7 +585,7 @@
 #define OM_REMAP_IDX_NONE		0xff
 #define MLD_LINK_ID_NONE		0xff
 #define ML_PROBE_RETRY_COUNT		2
-#define MLD_RETRY_COUNT			2
+#define MLD_RETRY_COUNT			6
 /* Reserve 0~31 for group mld index */
 #define MAT_OWN_MLD_ID_BASE		32
 
@@ -1224,6 +1224,10 @@
 
 #ifndef CFG_SUPPORT_802_11BE_MLO
 #define CFG_SUPPORT_802_11BE_MLO                 0
+#endif
+
+#ifndef CFG_MLO_LINK_PLAN_MODE
+#define CFG_MLO_LINK_PLAN_MODE			 0
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && \
