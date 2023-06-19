@@ -97,6 +97,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 				struct STA_PROFILE *profile =
 					&info->rStaProfiles[i];
 				uint8_t count = 0;
+				uint8_t found = FALSE;
 
 				LINK_FOR_EACH_ENTRY(bss, links,
 					rLinkEntryMld, struct BSS_INFO) {
@@ -107,13 +108,13 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					}
 
 					if (profile->ucLinkId ==
-						bss->ucLinkIndex &&
-					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
-						bss->aucOwnMacAddr))
+					    bss->ucLinkIndex) {
+						found = TRUE;
 						break;
+					}
 					count++;
 				}
-				if (bss == NULL || !profile->ucComplete) {
+				if (!found || !profile->ucComplete) {
 					DBGLOG(ML, ERROR,
 					   "STA wrong link (id=%d, addr=" MACSTR
 					   "complete=%d)\n",
@@ -154,6 +155,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 				struct STA_PROFILE *profile =
 					&info->rStaProfiles[i];
 				uint8_t count = 0;
+				uint8_t found = FALSE;
 
 				LINK_FOR_EACH_ENTRY(starec, links,
 					rLinkEntryMld, struct STA_RECORD) {
@@ -166,11 +168,13 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					if (profile->ucLinkId ==
 						starec->ucLinkIndex &&
 					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
-						starec->aucMacAddr))
+						starec->aucMacAddr)) {
+						found = TRUE;
 						break;
+					}
 					count++;
 				}
-				if (starec == NULL || !profile->ucComplete) {
+				if (!found || !profile->ucComplete) {
 					DBGLOG(ML, ERROR,
 					   "AP Wrong link (id=%d, addr=" MACSTR
 					   "complete=%d)\n",
@@ -179,16 +183,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					   profile->ucComplete);
 					return FALSE;
 				}
-				if (profile->u2StatusCode !=
-					STATUS_CODE_SUCCESSFUL) {
-					DBGLOG(ML, ERROR,
-					   "AP reject link (id=%d, addr=" MACSTR
-					   "statusCode=%d)\n",
-					   profile->ucLinkId,
-					   MAC2STR(profile->aucLinkAddr),
-					   profile->u2StatusCode);
-					return FALSE;
-				}
+				starec->u2StatusCode = profile->u2StatusCode;
 			}
 
 			/* early leave because check done */
@@ -928,17 +923,13 @@ uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 
 uint8_t mldDupProfileSkipIE(uint8_t *pucBuf)
 {
-	return IE_ID(pucBuf) == ELEM_ID_RNR ||
-	       IE_ID(pucBuf) == ELEM_ID_NEIGHBOR_REPORT ||
-	       IE_ID(pucBuf) == ELEM_ID_MBSSID ||
-	       (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
-		IE_ID_EXT(pucBuf) == ELEM_EXT_ID_MLD) ||
-	       (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
-		IE_ID_EXT(pucBuf) == ELEM_EXT_ID_NON_INHERITANCE);
+	return (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
+		IE_ID_EXT(pucBuf) == ELEM_EXT_ID_MLD);
 }
 
 uint8_t mldDupStaProfileSkipIE(uint8_t *pucBuf)
 {
+	/* 80211be d2.3, 35.3.3.4*/
 	return IE_ID(pucBuf) == ELEM_ID_SSID ||
 	       IE_ID(pucBuf) == ELEM_ID_TIM ||
 	       IE_ID(pucBuf) == ELEM_ID_BSS_MAX_IDLE_PERIOD ||
@@ -2031,11 +2022,12 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 		need_profile = FALSE;
 		need_add = FALSE;
 
-		if (mldDupProfileSkipIE(ie))
-			continue;
-
-		if (fgParseMbss) { /* mbss fast path */
+		/* 80211be D2.3, 9.4.2.45 */
+		if (fgParseMbss) {
 			switch (IE_ID(ie)) {
+			case ELEM_ID_MBSSID:
+			case ELEM_ID_MBSSID_INDEX:
+				break;
 			case ELEM_ID_TIM:
 			case ELEM_ID_DS_PARAM_SET:
 			case ELEM_ID_IBSS_PARAM_SET:
@@ -2058,25 +2050,27 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 			case ELEM_ID_RESERVED:
 				/* Check Element ID Extension */
 				switch (IE_ID_EXT(ie)) {
-					case ELEM_EXT_ID_HE_CAP:
-					case ELEM_EXT_ID_HE_OP:
-					case ELEM_EXT_ID_HE_6G_BAND_CAP:
-					case ELEM_EXT_ID_SR_PARAM:
-					case ELEM_EXT_ID_BSS_COLOR_CHANGE:
-					case ELEM_EXT_ID_EHT_OP:
-					case ELEM_EXT_ID_EHT_CAPS:
-						need_add = TRUE;
-						break;
-					default:
-						need_profile = TRUE;
-						break;
+				case ELEM_EXT_ID_MBSS_CONFIG:
+					break;
+				case ELEM_EXT_ID_HE_CAP:
+				case ELEM_EXT_ID_HE_OP:
+				case ELEM_EXT_ID_HE_6G_BAND_CAP:
+				case ELEM_EXT_ID_SR_PARAM:
+				case ELEM_EXT_ID_BSS_COLOR_CHANGE:
+				case ELEM_EXT_ID_EHT_OP:
+				case ELEM_EXT_ID_EHT_CAPS:
+					need_add = TRUE;
+					break;
+				default:
+					need_profile = TRUE;
+					break;
 				}
 				break;
 			default:
 				need_profile = TRUE;
 				break;
 			}
-		} else {
+		} else if (!mldDupProfileSkipIE(ie)) {
 			need_profile = TRUE;
 		}
 
@@ -3235,6 +3229,21 @@ void mldEnableCocurrentMld(struct ADAPTER *prAdapter)
 }
 #endif
 
+void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStarec)
+{
+	struct LINK *prStarecList = &prMldStarec->rStarecList;
+	struct STA_RECORD *prStarec;
+
+	prStarec = LINK_PEEK_HEAD(prStarecList,
+		struct STA_RECORD, rLinkEntryMld);
+	prMldStarec->u2PrimaryMldId = prStarec ? prStarec->ucWlanIndex : 0;
+
+	prStarec = LINK_PEEK_TAIL(prStarecList,
+		struct STA_RECORD, rLinkEntryMld);
+	prMldStarec->u2SecondMldId = prStarec ? prStarec->ucWlanIndex : 0;
+}
+
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec, uint8_t fgMldType,
 	uint8_t aucMacAddr[], uint8_t ucLinkId)
@@ -3305,17 +3314,12 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (LINK_IS_EMPTY(prStarecList)) {
-		prMldStarec->u2PrimaryMldId = prStarec->ucWlanIndex;
-		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
-	} else if (prStarecList->u4NumElem == 1) {
-		prMldStarec->u2SecondMldId = prStarec->ucWlanIndex;
-	}
-
 	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
 	prMldStarec->fgMldType = fgMldType;
 	LINK_INSERT_TAIL(prStarecList, &prStarec->rLinkEntryMld);
 	prMldStarec->u4StaBitmap |= BIT(prStarec->ucIndex);
+
+	mldStarecUpdateMldId(prAdapter, prMldStarec);
 
 	DBGLOG(ML, INFO,
 		"MldStaRec: %d, StaRec: %d, link: %d, widx: %d, bss: %d, pri_mld: %d, sec_mld: %d, mld_mac: "
@@ -3363,6 +3367,8 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 		LINK_REMOVE_KNOWN_ENTRY(prStarecList, &prCurrStarec->rLinkEntryMld);
 		break;
 	}
+
+	mldStarecUpdateMldId(prAdapter, prMldStarec);
 
 	prMldStarec->u4StaBitmap &= ~BIT(prStarec->ucIndex);
 
