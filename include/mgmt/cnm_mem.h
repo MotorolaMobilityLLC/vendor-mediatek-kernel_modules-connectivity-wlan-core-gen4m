@@ -858,7 +858,12 @@ struct STA_RECORD {
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_STA_RECORD {
-	u_int8_t fgIsInUse;
+	struct LINK_ENTRY rLinkEntry;
+
+	uint8_t fgIsInUse;
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	uint8_t fgIsEnabled;
+#endif
 	uint8_t ucIdx;
 	uint8_t ucGroupMldId; /* id from mld bss */
 	uint8_t aucPeerMldAddr[MAC_ADDR_LEN];
@@ -867,7 +872,7 @@ struct MLD_STA_RECORD {
 	uint16_t u2SetupWlanId;
 	uint8_t fgNSEP;
 	uint8_t fgMldType;
-	uint8_t aucStrBitmap[3];
+	uint8_t aucStrBitmap[UNI_MLD_LINK_MAX];
 	uint8_t aucEmlCap[3];
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];

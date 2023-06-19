@@ -7317,6 +7317,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prAdapter, "ApMldMainLinkIdx", MLD_LINK_ID_NONE);
 	prWifiVar->ucStaMldMainLinkIdx = (uint8_t) wlanCfgGetInt32(
 		prAdapter, "StaMldMainLinkIdx", MLD_LINK_ID_NONE);
+	prWifiVar->ucStaPreferMldAddr = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"StaPreferMldAddr", FEATURE_DISABLED);
 	wlanCfgGet(prAdapter, "MloP2pPreferFreq",
 		prWifiVar->aucMloP2pPreferFreq,
 		"2462 5180 5975", 0);

@@ -19,12 +19,12 @@ void p2pMldBssInit(struct ADAPTER *prAdapter,
 	if (p2pRoleFsmNeedMlo(prAdapter, prP2pRoleFsmInfo->ucRoleIndex)) {
 		if (gprP2pMldBssInfo == NULL) {
 			DBGLOG(INIT, TRACE, "\n");
-			mldBssAlloc(prAdapter, &gprP2pMldBssInfo);
+			gprP2pMldBssInfo = mldBssAlloc(prAdapter);
 		}
 
 		prP2pRoleFsmInfo->prP2pMldBssInfo = gprP2pMldBssInfo;
 	} else if (prP2pRoleFsmInfo->prP2pMldBssInfo == NULL) {
-		mldBssAlloc(prAdapter, &prP2pRoleFsmInfo->prP2pMldBssInfo);
+		prP2pRoleFsmInfo->prP2pMldBssInfo = mldBssAlloc(prAdapter);
 	}
 }
 
@@ -284,23 +284,30 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	}
 
 	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
-	mldStarecRegister(prAdapter, prStaRec, fgMldType,
-		prMlInfo->aucMldAddr, prBssInfo->ucLinkIndex);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldStarec = mldStarecGetByMldAddr(prAdapter,
+		prMldBssInfo, prMlInfo->aucMldAddr);
+	if (prMldStarec) {
+		DBGLOG(AAA, WARN, "MldStarec%d ucGroupMldId=%d already exist\n",
+			prMldStarec->ucIdx, prMldStarec->ucGroupMldId);
+		mldStarecFree(prAdapter, prMldStarec);
+	}
+
+	prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo,
+		prMlInfo->aucMldAddr, fgMldType);
+	if (!prMldStarec) {
+		DBGLOG(AAA, WARN, "Can't alloc mldstarec!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	mldStarecRegister(prAdapter, prMldStarec, prStaRec,
+				prBssInfo->ucLinkIndex);
 	mldStarecSetSetupIdx(prAdapter, prStaRec);
 
 	if (prMlInfo->ucProfNum == 0) {
 		DBGLOG(AAA, INFO, "ml ie ["MACSTR"] without links\n",
 			MAC2STR(prMlInfo->aucMldAddr));
 		return WLAN_STATUS_SUCCESS;
-	}
-
-	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-	prMldStarec = mldStarecGetByMldAddr(prAdapter,
-		prMldBssInfo, prStaRec->aucMldAddr);
-	if (!prMlInfo->ucValid || !prMldStarec) {
-		DBGLOG(AAA, WARN, "Incorrect ml valid=%d, mldStarec=%p!\n",
-			prMlInfo->ucValid, prMldStarec);
-		return WLAN_STATUS_FAILURE;
 	}
 
 	prStarecList = &prMldStarec->rStarecList;
@@ -364,8 +371,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 			prCurr->ucJoinFailureCount = 0;
 
 			/* ml link info */
-			mldStarecRegister(prAdapter, prCurr, fgMldType,
-				prMlInfo->aucMldAddr, prProfiles->ucLinkId);
+			mldStarecRegister(prAdapter, prMldStarec, prCurr,
+				prProfiles->ucLinkId);
 		}
 	}
 
