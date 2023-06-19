@@ -2471,6 +2471,7 @@ uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter)
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
 #if CFG_DBG_MGT_BUF
+		prMemTrack = NULL;
 		if (prCmdInfo->pucInfoBuffer &&
 				!IS_FROM_BUF(prAdapter,
 					prCmdInfo->pucInfoBuffer))
