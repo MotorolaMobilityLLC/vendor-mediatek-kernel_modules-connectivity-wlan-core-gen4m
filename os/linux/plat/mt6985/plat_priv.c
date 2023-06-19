@@ -23,7 +23,7 @@
 #endif
 
 #define MAX_CPU_FREQ (3050 * 1000)
-#define AUTO_CPU_FREQ (-1)
+#define AUTO_CPU_FREQ (0)
 #define UNDEFINED_CPU_FREQ (-2)
 #define CPU_ALL_CORE (0xff)
 #define CPU_BIG_CORE (0xf0)
@@ -300,10 +300,11 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 			wReq->cpu = cpu;
 
 			ret = freq_qos_add_request(&policy->constraints,
-				&wReq->qos_req, FREQ_QOS_MIN, 0);
+				&wReq->qos_req, FREQ_QOS_MIN, AUTO_CPU_FREQ);
 			if (ret < 0) {
-				pr_info("%s: freq_qos_add_request fail cpu%d\n",
-					__func__, cpu);
+				DBGLOG(INIT, INFO,
+					"freq_qos_add_request fail cpu%d ret=%d\n",
+					wReq->cpu, ret);
 				kfree(wReq);
 				break;
 			}
@@ -314,8 +315,15 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 	}
 
 	list_for_each_entry(wReq, &wlan_policy_list, list) {
-		if ((0x1 << wReq->cpu) & set_mask)
-			freq_qos_update_request(&wReq->qos_req, freq);
+		if (!((0x1 << wReq->cpu) & set_mask))
+			continue;
+
+		ret = freq_qos_update_request(&wReq->qos_req, freq);
+		if (ret < 0) {
+			DBGLOG(INIT, INFO,
+				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
+				wReq->cpu, freq, ret);
+		}
 	}
 }
 
