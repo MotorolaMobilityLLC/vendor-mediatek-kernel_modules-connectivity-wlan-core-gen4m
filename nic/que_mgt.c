@@ -9313,6 +9313,7 @@ void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
 	struct MSG_ARP_MONITOR *prArpMonitorMsg)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucBssIndex;
 	void *pvDevHandler = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct RX_CTRL	*prRxCtrl = NULL;
@@ -9339,14 +9340,13 @@ void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
-		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
-			prArpMonitorMsg->ucBssIndex);
+	ucBssIndex = prArpMonitorMsg->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		prArpMonitorMsg->ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prAisBssInfo)
 		return;
 
@@ -9378,25 +9378,22 @@ void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
 	/* Record the time that rx unicast when Tx 1st ARP Req */
 	if (!last_rx_unicast_packet_time) {
 		last_rx_unicast_packet_time =
-			prRxCtrl->u4LastUnicastRxTime[
-				prArpMonitorMsg->ucBssIndex];
+			prRxCtrl->u4LastUnicastRxTime[ucBssIndex];
 		latest_rx_unicast_packet_time = 0;
 	}
 
 	/* Record counts of RX Packets when TX ARP Req recently */
 	latest_rx_packets = kalGetNetDevRxPacket(pvDevHandler);
 	/* Record the time that rx unicast when TX ARP Req recently */
-	latest_rx_unicast_packet_time = prRxCtrl->u4LastUnicastRxTime[
-		prArpMonitorMsg->ucBssIndex];
+	latest_rx_unicast_packet_time =
+		prRxCtrl->u4LastUnicastRxTime[ucBssIndex];
 
 	if (arpMoniter > uArpMonitorNumber) {
-		if (qmArpMonitorIsIOTIssue(prAdapter,
-			prArpMonitorMsg->ucBssIndex)) {
+		if (qmArpMonitorIsIOTIssue(prAdapter, ucBssIndex)) {
 			DBGLOG(QM, WARN, "IOT issue, arp no resp!\n");
 			prAisBssInfo->u2DeauthReason =
 				REASON_CODE_ARP_NO_RESPONSE;
-			qmArpMonitorSetBTOEvent(prAdapter,
-				prArpMonitorMsg->ucBssIndex);
+			qmArpMonitorSetBTOEvent(prAdapter, ucBssIndex);
 		} else {
 			if (prWifiVar->ucArpMonitorUseRule == 0)
 				DBGLOG(QM, WARN, "ARP, still have %d pkts\n",
@@ -9434,18 +9431,18 @@ u_int8_t qmArpMonitorIsCritical(void)
 void qmArpMonitorHandleRxArpMsg(struct ADAPTER *prAdapter,
 	struct MSG_ARP_MONITOR *prArpMonitorMsg)
 {
+	uint8_t ucBssIndex;
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
 
-	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
-		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
-			prArpMonitorMsg->ucBssIndex);
+	ucBssIndex = prArpMonitorMsg->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		prArpMonitorMsg->ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (!prAisBssInfo)
 		return;
 
@@ -9492,13 +9489,11 @@ void qmArpMonitorHandleRxDhcpMsg(struct ADAPTER *prAdapter,
 	uint8_t dhcpGatewayGot = 0;
 	uint32_t i = 0;
 
-	if (!IS_BSS_INDEX_VALID(prArpMonitorMsg->ucBssIndex)) {
-		DBGLOG(QM, WARN, "Invalid BssIndex %u\n",
-			prArpMonitorMsg->ucBssIndex);
+	ucBssIndex = prArpMonitorMsg->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
-
-	ucBssIndex = prArpMonitorMsg->ucBssIndex;
 
 	/* check if pkt is dhcp from server */
 	prBootp = (struct BOOTP_PROTOCOL *) qmGetDhcpPkt(
@@ -9717,8 +9712,6 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	prArpMonitorMsg->ucBssIndex = ucBssIndex;
 	prArpMonitorMsg->u2PacketLen = u2PacketLen;
 	kalMemCopy(&(prArpMonitorMsg->arData[0]), pucData, u2PacketLen);
-	mboxSendMsg(prAdapter, MBOX_ID_0,
-		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
 
 	DBGLOG(QM, LOUD,
 		"Send Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
@@ -9726,6 +9719,9 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 		prArpMonitorMsg->eType,
 		prArpMonitorMsg->ucBssIndex,
 		prArpMonitorMsg->u2PacketLen);
+
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
 }
 
 
