@@ -1538,7 +1538,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 {
 	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
 	uint8_t ucShortSsidOffset, ucBssParamOffset;
-	uint8_t ucBssidNum = 0, ucShortSsidNum = 0;
+	uint8_t ucBssidNum = 0, ucShortSsidNum = 0, eBand;
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
 	uint16_t u2TbttInfoCount, u2TbttInfoLength, u2CurrentLength = 0;
@@ -1755,7 +1755,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 
 		/* Get RNR channel */
 		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
-		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
+		scanOpClassToBand(ucOpClass, &eBand);
+		if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucRnrChNum)) {
 			DBGLOG(SCN, TRACE, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
 			if (ucNewLink)
@@ -5270,3 +5271,30 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 }
 #endif
 
+void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
+{
+	switch (ucOpClass) {
+	case 112:
+	case 115 ... 127:
+	case 128 ... 130:
+		*band = BAND_5G;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case 131 ... 137:
+		*band = BAND_6G;
+		break;
+#endif
+	case 81:
+	case 82:
+	case 83:
+	case 84:
+		*band = BAND_2G4;
+		break;
+	/* not support 60Ghz */
+	case 180:
+	default:
+		*band = BAND_NULL;
+		log_dbg(SCN, WARN, "OpClass%d illegal\n", ucOpClass);
+		break;
+	}
+}
