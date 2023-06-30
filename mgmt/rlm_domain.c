@@ -1106,8 +1106,10 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			,			/* CH_SET_UNII_UPPER_149_165 */
 		// End IKSWS-77084
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+		// Begin Motorola, bccunha, IKSWT-168035, Deactivate 6GHz MHS on default CC
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, TRUE}
 			,			/* 6G_CH_1_233 */
+		// End IKSWT-168035
 #endif
 			{0, BAND_NULL, 0, 0, 0, FALSE}
 		}
