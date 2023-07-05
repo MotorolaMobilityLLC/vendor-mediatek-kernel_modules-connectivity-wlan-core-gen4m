@@ -5850,6 +5850,7 @@ int testmode_reassoc(struct wiphy *wiphy,
 		rNewSsid.pucSsid = aucSSID;
 		rNewSsid.u4SsidLen = ucSSIDLen;
 		rNewSsid.ucBssIdx = ucBssIndex;
+		rNewSsid.fgTestMode = TRUE;
 
 		DBGLOG(INIT, INFO,
 		       "Reassoc ssid=%s(%d) bssid=" MACSTR " freq=%d\n",
@@ -5973,7 +5974,6 @@ label_exit:
 	kalMemFree(prRoamScnChnl, sizeof(struct CFG_SCAN_CHNL), VIR_MEM_TYPE);
 	return rStatus;
 }
-
 
 int testmode_set_ax_blacklist(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)

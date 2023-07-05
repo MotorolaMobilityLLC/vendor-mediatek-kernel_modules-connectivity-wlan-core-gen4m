@@ -1347,8 +1347,9 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		if (fgEqualSsid) {
 			DBGLOG(INIT, INFO, "Same ssid\n");
 			prAisAbortMsg->ucReasonOfDisconnect =
+				pParamConn->fgTestMode ?
+				DISCONNECT_REASON_CODE_TEST_MODE :
 				DISCONNECT_REASON_CODE_ROAMING;
-			roam->eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
 			if (fgEqualBssid) {
 				DBGLOG(INIT, INFO, "Same bssid\n");
 				kalSetMediaStateIndicated(prGlueInfo,
@@ -3098,7 +3099,7 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			    ret != WLAN_STATUS_PENDING)
 				return ret;
 		}
-	} else if (IS_MLD_BSSINFO_VALID(prMldBssInfo) &&
+	} else if (IS_MLD_BSSINFO_MULTI(prMldBssInfo) &&
 		prAdapter->rWifiVar.ucPresetLinkId != MLD_LINK_ID_NONE) {
 		struct BSS_INFO *bss;
 

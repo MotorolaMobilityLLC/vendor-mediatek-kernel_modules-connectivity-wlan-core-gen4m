@@ -2117,8 +2117,10 @@ uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
 	/* if the connection policy is BSSID/BSSID_HINT, means upper layer
 	 * order driver connect to specific AP, we need still do connect
 	 */
-	if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID ||
-	    prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID_HINT)
+	if ((prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID &&
+	     prBssDescSet->fgIsMatchBssid) ||
+	    (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID_HINT &&
+	     prBssDescSet->fgIsMatchBssidHint))
 		return TRUE;
 
 	if (prBssDescSet->ucLinkNum != aisGetLinkNum(prAisFsmInfo))
@@ -2381,11 +2383,11 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 
 			/* reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
-			/* connection triggered by supplicant,
-			 * must indicate the connection status
+			/* DISCONNECT_REASON_CODE_ROAMING is triggered by
+			 * supplicant, must indicate the connection status,
 			 */
-			if (prAisFsmInfo->ucReasonOfDisconnect
-				== DISCONNECT_REASON_CODE_ROAMING) {
+			if (prAisFsmInfo->ucReasonOfDisconnect ==
+			    DISCONNECT_REASON_CODE_ROAMING) {
 				aisIndicationOfMediaStateToHost(
 					prAdapter,
 					MEDIA_STATE_CONNECTED,
@@ -2398,15 +2400,19 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 
 		if (!aisBssDescAllowed(prAdapter,
 				prAisFsmInfo, prBssDescSet)) {
-			if (prAisFsmInfo->ucReasonOfDisconnect !=
-				DISCONNECT_REASON_CODE_REASSOCIATION &&
-			    prAisFsmInfo->ucReasonOfDisconnect !=
-				DISCONNECT_REASON_CODE_ROAMING)
-				return aisSearchHandleBadBssDesc(prAdapter,
-					prBssDescSet, ucBssIndex);
-			else
+			/* roaming triggered by user space */
+			if (prAisFsmInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_REASSOCIATION ||
+			    prAisFsmInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_ROAMING ||
+			    prAisFsmInfo->ucReasonOfDisconnect ==
+				DISCONNECT_REASON_CODE_TEST_MODE)
 				return aisFsmStateSearchAction(prAdapter,
 					ucBssIndex);
+			else
+				return aisSearchHandleBadBssDesc(prAdapter,
+					prBssDescSet, ucBssIndex);
+
 		}
 
 		aisFillBssInfoFromBssDesc(prAdapter,
@@ -3588,7 +3594,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 			u2DeauthReason);
 
 	/* to support user space triggered roaming */
-	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING &&
+	if ((ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING ||
+	     ucReasonOfDisconnect == DISCONNECT_REASON_CODE_TEST_MODE) &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 		cnmTimerStopTimer(prAdapter,
@@ -3615,7 +3622,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 	aisFsmClearRequest(prAdapter, AIS_REQUEST_RECONNECT, ucBssIndex);
 	/* for new connection triggered by upper layer,
-	 * DISCONNECT_REASON_CODE_ROAMING is already handled ahead,
+	 * DISCONNECT_REASON_CODE_ROAMING, DISCONNECT_REASON_CODE_TEST_MODE
+	 * are already handled ahead,
 	 * DISCONNECT_REASON_CODE_REASSOCIATION is handled in aisFsmStateAbort,
 	 * so only add request for DISCONNECT_REASON_CODE_NEW_CONNECTION
 	 */
@@ -3670,7 +3678,8 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 	    prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION &&
-	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
+	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING &&
+	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_TEST_MODE)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
 
@@ -8119,6 +8128,35 @@ static uint64_t aisGetBssTermTsf(uint8_t *pucSubIe, uint8_t ucLength)
 	return 0;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void aisCollectNeighborMld(struct ADAPTER *prAdapter,
+	struct NEIGHBOR_AP *prNeighborAP, uint8_t *pucSubIe, uint8_t ucLength)
+{
+	const uint8_t *ml;
+	struct MULTI_LINK_INFO parse, *info = &parse;
+
+	ml = mldFindMlIE(pucSubIe, ucLength, ML_CTRL_TYPE_BASIC);
+	if (ml) {
+		mldParseBasicMlIE(info, ml,
+			IE_SIZE(ml),
+			prNeighborAP->aucBssid,
+			MAC_FRAME_BEACON,
+			__func__);
+
+		if (!info->ucValid)
+			return;
+
+		prNeighborAP->fgIsMld = TRUE;
+		COPY_MAC_ADDR(prNeighborAP->aucMldAddr, info->aucMldAddr);
+
+		if (!(info->ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT))
+			prNeighborAP->u2ValidLinks = BITS(0, 15);
+		else
+			prNeighborAP->u2ValidLinks = info->u2ValidLinks;
+	}
+}
+#endif
+
 uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			  uint16_t u2ApBufLen, uint8_t ucValidInterval,
 			  uint8_t ucBssIndex)
@@ -8179,6 +8217,14 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,
 					       aucSubElem));
 		COPY_MAC_ADDR(prNeighborAP->aucBssid, prIe->aucBSSID);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		aisCollectNeighborMld(prAdapter, prNeighborAP,
+			prIe->aucSubElem,
+			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,
+					       aucSubElem));
+#endif
+
 		DBGLOG(AIS, INFO,
 		       "Bssid " MACSTR
 		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x\n",

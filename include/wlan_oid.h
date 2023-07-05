@@ -465,6 +465,7 @@ struct PARAM_CONNECT {
 	uint8_t ucBssIdx;
 	uint8_t *pucIEs;
 	uint32_t u4IesLen;
+	u_int8_t fgTestMode;
 };
 
 struct PARAM_EXTERNAL_AUTH {

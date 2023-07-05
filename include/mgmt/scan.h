@@ -802,6 +802,10 @@ struct NEIGHBOR_AP_INFO {
 struct BSS_DESC_SET {
 	struct BSS_DESC *prMainBssDesc;
 	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
+	u_int8_t fgIsMatchBssid;
+	u_int8_t fgIsMatchBssidHint;
+	u_int8_t fgIsAllLinkInBlackList;
+	u_int8_t fgIsAllLinkConnected;
 	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
 };
 
