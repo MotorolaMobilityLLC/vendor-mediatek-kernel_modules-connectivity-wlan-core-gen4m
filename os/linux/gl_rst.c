@@ -293,6 +293,12 @@ void glResetUpdateFlag(u_int8_t reset)
 #endif
 }
 
+void glResetCleanResetFlag(void)
+{
+	glResetUpdateFlag(FALSE);
+	glResetOnEndUpdateFlag(FALSE);
+}
+
 #if CFG_CHIP_RESET_SUPPORT
 #ifdef CONFIG_PM
 static uint8_t *pm_evt_to_str(const unsigned long pm_event)
@@ -686,11 +692,14 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		g_fgRstRecover = TRUE;
 
 	/* check if whole chip reset is triggered */
-	if (g_IsWfsysBusHang)
+	if (g_IsWfsysBusHang) {
+		glResetCleanResetFlag();
 		goto exit;
+	}
 
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 		glResetWholeChipResetTrigger(g_reason);
+		glResetCleanResetFlag();
 		goto exit;
 	}
 
@@ -698,12 +707,15 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prChipInfo->trigger_fw_assert) {
 		DBGLOG(INIT, ERROR,
 			"No impl. of trigger_fw_assert API\n");
+		glResetCleanResetFlag();
 		goto exit;
 	}
 
 	ret = prChipInfo->trigger_fw_assert(prAdapter);
-	if (ret == -EBUSY)
+	if (ret == -EBUSY) {
+		glResetCleanResetFlag();
 		goto exit;
+	}
 
 	if (rst->is_suspend) {
 		uint32_t status;
@@ -713,8 +725,10 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 						 pucFile,
 						 u4Line,
 						 ret != -ETIMEDOUT);
-		if (status == WLAN_STATUS_SUCCESS)
+		if (status == WLAN_STATUS_SUCCESS) {
+			glResetCleanResetFlag();
 			goto exit;
+		}
 	}
 
 	if (ret == -ETIMEDOUT)
