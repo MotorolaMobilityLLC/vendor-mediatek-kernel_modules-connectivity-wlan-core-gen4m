@@ -142,7 +142,7 @@ struct PM_PROFILE_SETUP_INFO {
 		if (_prAdapter->prGlueInfo->drv_own_caller[0] == 0) \
 			strlcpy(_prAdapter->prGlueInfo->drv_own_caller, \
 			__func__, CALLER_LENGTH); \
-		nicpmSetDriverOwn(_prAdapter); \
+		wlanAcquirePowerControl(_prAdapter); \
 	}
 
 #define RECLAIM_POWER_CONTROL_TO_PM(_prAdapter, _fgEnableGINT_in_IST) \

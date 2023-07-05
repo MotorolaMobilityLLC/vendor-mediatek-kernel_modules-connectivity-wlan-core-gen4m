@@ -814,7 +814,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		DBGLOG(INIT, TRACE, "[%s]: SAP: Skip fgWiFiInSleepyState check\n",
 			prAdapter->prGlueInfo->fw_own_caller);
 	else if (!prAdapter->fgWiFiInSleepyState) {
-		DBGLOG(INIT, TRACE, "[%s]: not in fgWiFiInSleepyState\n",
+		DBGLOG(INIT, LOUD, "[%s]: not in fgWiFiInSleepyState\n",
 			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
 	}
@@ -827,7 +827,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	}
 
 	if (prAdapter->fgIsFwOwn == TRUE) {
-		DBGLOG(INIT, LOUD, "[%s]: alreaddy FW OWN\n",
+		DBGLOG(INIT, LOUD, "[%s]: already FW OWN\n",
 			prAdapter->prGlueInfo->fw_own_caller);
 		goto unlock;
 	}

@@ -2798,9 +2798,7 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
-	strlcpy(prAdapter->prGlueInfo->drv_own_caller,
-		__func__, CALLER_LENGTH);
-	halSetDriverOwn(prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	if (prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"Driver own fail.\n");
@@ -2856,9 +2854,7 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
-	strlcpy(prAdapter->prGlueInfo->fw_own_caller,
-		__func__, CALLER_LENGTH);
-	halSetFWOwn(prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
 			prAdapter->u4PwrCtrlBlockCnt);
 
