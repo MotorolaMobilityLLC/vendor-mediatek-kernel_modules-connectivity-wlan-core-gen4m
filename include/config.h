@@ -957,8 +957,8 @@
 #define CFG_SHOW_FULL_MACADDR     1
 #define CFG_SHOW_FULL_IPADDR			1
 #else
-#define CFG_SHOW_FULL_MACADDR     0
-#define CFG_SHOW_FULL_IPADDR			0
+#define CFG_SHOW_FULL_MACADDR     1      /*IKSWT-168467 */
+#define CFG_SHOW_FULL_IPADDR			1      /*IKSWT-168467 */
 #endif
 
 #ifndef CFG_SUPPORT_VO_ENTERPRISE
