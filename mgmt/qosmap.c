@@ -277,9 +277,10 @@ void qosMapSetInit(struct STA_RECORD *prStaRec)
 		 * RFC 8325 8.2 Security Recommendations for WLAN QoS:
 		 * it is RECOMMENDED that CS6 and CS7 DSCP be mapped to UP 0 in
 		 * these Wi-Fi-at-the-edge deployment models.
+		 * Keep this to make 0xd0 map to VO to compatilbe with WMM test.
 		 */
-		[48] = 0,               /* CS6,  6, VO, AC_VO */
-		[56] = 0,               /* CS7,  7, NC, AC_VO */
+		[48] = WMM_UP_VO_INDEX, /* CS6,  6, VO, AC_VO */
+		[56] = WMM_UP_NC_INDEX, /* CS7,  7, NC, AC_VO */
 	};
 
 	kalMemCopy(prStaRec->qosMapSet, dscp2up, 64);
