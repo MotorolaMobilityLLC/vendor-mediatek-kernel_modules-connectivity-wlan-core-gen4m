@@ -3874,6 +3874,35 @@ uint32_t country_code_is_in_kor_group(uint16_t country_code)
 }
 
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is JP or not
+ *
+ * \param[in] country_code country code requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *	 country domain.
+ */
+/*----------------------------------------------------------------------------*/
+
+uint32_t country_code_is_in_jp_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_jp[] = {
+		COUNTRY_CODE_JP
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_jp); i++) {
+		if (country_code == country_code_jp[i])
+			return 1;
+	}
+	return 0;
+}
+
+
 uint16_t priCountryCode = COUNTRY_CODE_CN;
 
 /*----------------------------------------------------------------------------*/
@@ -3974,6 +4003,82 @@ int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
 	return 0;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief set additional rules for special one in ce or fcc country list to fw
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *	 country domain.
+ */
+/*----------------------------------------------------------------------------*/
+int priv_driver_set_spec_country(struct GLUE_INFO *prGlueInfo,
+		uint16_t u2CountryCode)
+{
+	uint8_t index = 0;
+	char name[64] = {0};
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = {0};
+	uint32_t u4SetInfoLen = 0;
+	uint32_t clear_applied = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (country_code_is_in_jp_group(priCountryCode)) {
+		kalStrnCpy(name, "JPScenario", strlen("JPScenario") + 1);
+		clear_applied = 1;
+	}
+
+	if (clear_applied) {
+		rPwrCtrlParam.fgApplied = FALSE;
+		rPwrCtrlParam.name = name;
+		rPwrCtrlParam.index = 0;
+		DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+			rPwrCtrlParam.fgApplied,
+			rPwrCtrlParam.name,
+			rPwrCtrlParam.index);
+		rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+			wlanoidTxPowerControl,
+			(void *)&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			FALSE,
+			FALSE,
+			TRUE,
+			&u4SetInfoLen);
+	}
+
+	priCountryCode = u2CountryCode;
+	if (country_code_is_in_jp_group(u2CountryCode)) {
+		kalStrnCpy(name, "JPScenario", strlen("JPScenario") + 1);
+		index = 1;
+	}
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
+	if (rPwrCtrlParam.fgApplied) {
+		DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+			rPwrCtrlParam.fgApplied,
+			rPwrCtrlParam.name,
+			rPwrCtrlParam.index);
+		rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+			wlanoidTxPowerControl,
+			(void *)&rPwrCtrlParam,
+			sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			FALSE,
+			FALSE,
+			TRUE,
+			&u4SetInfoLen);
+	}
+	DBGLOG(REQ, INFO, " priv_driver_set_spec_country command end\n");
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		return -1;
+	return 0;
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set country code
@@ -4016,6 +4121,7 @@ static int wext_set_country(IN struct net_device *prNetDev,
 	u2CountryCode = (((uint16_t) aucCountry[COUNTRY_CODE_LEN - 2]) << 8) |
 		((uint16_t) aucCountry[COUNTRY_CODE_LEN - 1]);
 	rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo, u2CountryCode);
+	rStatus |= priv_driver_set_spec_country(prGlueInfo, u2CountryCode);
 	rStatus |= kalIoctl(prGlueInfo,
 			   wlanoidSetCountryCode,
 			   &aucCountry[COUNTRY_CODE_LEN - 2], 2,
