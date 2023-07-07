@@ -1413,6 +1413,13 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 	prSchedScanCmd->ucScnFuncMask |= prRequest->ucScnFuncMask;
 
+	if (kalIsValidMacAddr(prRequest->aucRandomMac)) {
+		prSchedScanCmd->ucScnFuncMask |=
+			(ENUM_SCN_RANDOM_MAC_EN | ENUM_SCN_RANDOM_SN_EN);
+		kalMemCopy(prSchedScanCmd->aucRandomMac,
+			prRequest->aucRandomMac, MAC_ADDR_LEN);
+	}
+
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
 	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)Func(0x%X)\n",
