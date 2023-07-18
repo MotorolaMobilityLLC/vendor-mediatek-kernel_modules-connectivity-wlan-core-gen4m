@@ -2680,7 +2680,12 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 
 	/* Ch notify */
 #if (CFG_ADVANCED_80211_MLO == 1)
+#if KERNEL_VERSION(5, 15, 94) <= CFG80211_VERSION_CODE
+	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa,
+				linkIdx, 0);
+#else
 	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa, linkIdx);
+#endif
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &prP2PInfo->chandefCsa);
 #endif

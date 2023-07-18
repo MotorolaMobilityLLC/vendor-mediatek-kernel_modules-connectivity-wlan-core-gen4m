@@ -10846,7 +10846,11 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
 #if (CFG_ADVANCED_80211_MLO == 1)
+#if KERNEL_VERSION(5, 15, 94) <= CFG80211_VERSION_CODE
+	cfg80211_ch_switch_notify(prDevHandler, &chandef, linkIdx, 0);
+#else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef, linkIdx);
+#endif
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
