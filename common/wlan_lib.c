@@ -6981,8 +6981,6 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 		if (prIotApRule->ucDataMaskLen &&
 			prIotApRule->ucDataMaskLen != prIotApRule->ucDataLen)
 			prIotApRule->u2MatchFlag = 0;
-		if (prIotApRule->ucAction >= WLAN_IOT_AP_ACT_MAX)
-			prIotApRule->u2MatchFlag = 0;
 		if (prIotApRule->u2MatchFlag == 0)
 			DBGLOG(INIT, INFO, "Invalid Rule IOTAP%d\n", ucCnt);
 	}
