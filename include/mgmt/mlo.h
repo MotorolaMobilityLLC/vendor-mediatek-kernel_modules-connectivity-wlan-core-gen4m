@@ -381,4 +381,8 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 	uint8_t *pucIe, uint16_t u2Len);
 
+void mldDumpStarecList(struct ADAPTER *prAdapter,
+	struct MLD_STA_RECORD *prMldStarec);
+
+void mldCheckStarecList(struct ADAPTER *prAdapter);
 #endif /* !_MLO_H */

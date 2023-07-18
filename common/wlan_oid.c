@@ -3077,6 +3077,7 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldCheckStarecList(prAdapter);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	prMldStaRec = mldStarecGetByLinkAddr(prAdapter,
 		prMldBssInfo, prNewKey->arBSSID);

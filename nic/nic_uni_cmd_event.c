@@ -9289,6 +9289,7 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			break;
 		}
 	}
+	mldCheckStarecList(ad);
 }
 
 static void nicUniEventPpStat(
