@@ -1152,8 +1152,13 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 			prBssDesc->aucBSSID,
 			prAisBssInfo->ucBssIndex);
 
-	/* do not use invalid PMKID */
-	if (entry && rsnApInvalidPMK(entry->u2StatusCode))
+	/* Do not use PMKID if
+	 * 1. it is invalid
+	 * 2. it's pmk is going to expire
+	 */
+	if (entry &&
+	    (rsnApInvalidPMK(entry->u2StatusCode) ||
+	     rsnCheckPmkExpiration(prAdapter, entry, prAisBssInfo->ucBssIndex)))
 		entry = NULL;
 
 	return entry;

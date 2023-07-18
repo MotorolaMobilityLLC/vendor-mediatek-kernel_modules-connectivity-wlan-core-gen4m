@@ -1469,6 +1469,8 @@ struct WIFI_VAR {
 
 	/* 0:BW20, 1:BW40, 2:BW80, 3:BW160 4:BW8080, 5: BW320 */
 	uint32_t u4PhyMaxBandwidth;
+
+	uint32_t u4PmkRefreshThreshold;
 };
 
 /* cnm_timer module */

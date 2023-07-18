@@ -2158,6 +2158,30 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	return 0;
 }
 
+void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
+	struct PARAM_PMKID *param, uint8_t ucBssIndex)
+{
+	kalMemZero(param, sizeof(*param));
+	kalMemCopy(param->arPMKID, pmksa->pmkid, IW_PMKID_LEN);
+
+	if (pmksa->bssid)
+		COPY_MAC_ADDR(param->arBSSID, pmksa->bssid);
+
+	if (pmksa->pmk && pmksa->pmk_len) {
+		if (pmksa->pmk_len > sizeof(param->arPMK)) {
+			DBGLOG(REQ, WARN, "pmk len=%d too big\n",
+				(int)pmksa->pmk_len);
+		} else {
+			kalMemCopy(param->arPMK, pmksa->pmk,
+				pmksa->pmk_len);
+			param->u2PMKLen = pmksa->pmk_len;
+		}
+	}
+
+	param->u4Expiration = pmksa->pmk_lifetime;
+	param->ucBssIdx = ucBssIndex;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to cache
@@ -2188,9 +2212,7 @@ int mtk_cfg80211_set_pmksa(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
-	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
-	pmkid.ucBssIdx = ucBssIndex;
+	wlanParsePmksa(pmksa, &pmkid, ucBssIndex);
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetPmkid, &pmkid,
 			   sizeof(struct PARAM_PMKID),
 			   &u4BufLen);
@@ -2230,9 +2252,7 @@ int mtk_cfg80211_del_pmksa(struct wiphy *wiphy,
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
 
-	COPY_MAC_ADDR(pmkid.arBSSID, pmksa->bssid);
-	kalMemCopy(pmkid.arPMKID, pmksa->pmkid, IW_PMKID_LEN);
-	pmkid.ucBssIdx = ucBssIndex;
+	wlanParsePmksa(pmksa, &pmkid, ucBssIndex);
 	rStatus = kalIoctl(prGlueInfo, wlanoidDelPmkid, &pmkid,
 			   sizeof(struct PARAM_PMKID),
 			   &u4BufLen);

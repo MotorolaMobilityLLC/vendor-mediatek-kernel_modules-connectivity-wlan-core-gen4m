@@ -8910,6 +8910,10 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	kalSetupPagePoolPageMaxMinNum(prWifiVar->u4PagePoolMinCnt,
 				      prWifiVar->u4PagePoolMaxCnt);
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+
+	prWifiVar->u4PmkRefreshThreshold = (uint32_t)wlanCfgGetUint32(
+		prAdapter, "PmkRefreshThresholdSec",
+		PMK_REFRESH_THRESHOLD_SEC);
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

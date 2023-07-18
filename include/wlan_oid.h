@@ -590,6 +590,9 @@ struct PARAM_PMKID {
 	uint8_t arBSSID[PARAM_MAC_ADDR_LEN];
 	uint8_t arPMKID[IW_PMKID_LEN];
 	uint8_t ucBssIdx;
+	uint8_t arPMK[64];
+	uint16_t u2PMKLen;
+	uint32_t u4Expiration;
 };
 
 struct PARAM_PMKID_CANDIDATE {
