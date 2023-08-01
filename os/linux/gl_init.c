@@ -4491,27 +4491,31 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
 
-    // IKSWR-130356
+    // IKSWT-165541
 	DBGLOG(INIT, ERROR, "wlanGetParseConfig.\n");
-	get_moto_config_file_name(motoConfigName, WIFI_CFG_INDEX);
-	if (strlen(motoConfigName)) {
-		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev);
-	}
-	// END IKSWR-130356
-	if (motoRet == 0) {
-		/* ToDo:: Nothing */
-	} else
 	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
 		   &u4ConfigReadLen, TRUE,
 		   prAdapter->prGlueInfo->prDev) == 0) {
 		/* ToDo:: Nothing */
-	} else if (kalRequestFirmware("wifi.cfg", &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev) == 0) {
-		/* ToDo:: Nothing */
+	} else {
+		    // IKSWR-130356
+         	get_moto_config_file_name(motoConfigName, WIFI_CFG_INDEX);
+	        if (strlen(motoConfigName)) {
+		       motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+		       &u4ConfigReadLen, TRUE,
+		       prAdapter->prGlueInfo->prDev);
+	        }
+	        // END IKSWR-130356
+
+	        if (motoRet == 0) {
+		      /* ToDo:: Nothing */
+	        } else if (kalRequestFirmware("wifi.cfg", &pucConfigBuf,
+		       &u4ConfigReadLen, TRUE,
+		       prAdapter->prGlueInfo->prDev) == 0) {
+		       /* ToDo:: Nothing */
+	        }
 	}
+	// END IKSWT-165541
 
 	if (pucConfigBuf) {
 		wlanCfgParse(prAdapter, pucConfigBuf, u4ConfigReadLen,
@@ -4546,27 +4550,31 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
 
-	// IKSWR-130356
+	// IKSWT-165541
 	DBGLOG(INIT, ERROR, "wlanGetConfig\n");
-	get_moto_config_file_name(motoConfigName, 0);
-	if (strlen(motoConfigName)) {
-		motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev);
-	}
-	// END IKSWR-130356
-	if (motoRet == 0) {
-		/* ToDo:: Nothing */
-	} else
 	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
 		   &u4ConfigReadLen, TRUE,
 		   prAdapter->prGlueInfo->prDev) == 0) {
 		/* ToDo:: Nothing */
-	} else if (kalRequestFirmware(WIFI_CFG_FN, &pucConfigBuf,
-		   &u4ConfigReadLen, TRUE,
-		   prAdapter->prGlueInfo->prDev) == 0) {
-		/* ToDo:: Nothing */
+	} else {
+		    // IKSWR-130356
+         	get_moto_config_file_name(motoConfigName, WIFI_CFG_INDEX);
+	        if (strlen(motoConfigName)) {
+		       motoRet = kalRequestFirmware(motoConfigName, &pucConfigBuf,
+		       &u4ConfigReadLen, TRUE,
+		       prAdapter->prGlueInfo->prDev);
+	        }
+	        // END IKSWR-130356
+
+	        if (motoRet == 0) {
+		       /* ToDo:: Nothing */
+	        } else if (kalRequestFirmware("wifi.cfg", &pucConfigBuf,
+		       &u4ConfigReadLen, TRUE,
+		       prAdapter->prGlueInfo->prDev) == 0) {
+		       /* ToDo:: Nothing */
+	        }
 	}
+	// END IKSWT-165541
 
 	if (pucConfigBuf) {
 		wlanCfgInit(prAdapter, pucConfigBuf, u4ConfigReadLen,
