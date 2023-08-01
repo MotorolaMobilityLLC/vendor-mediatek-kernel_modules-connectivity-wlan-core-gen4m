@@ -1159,6 +1159,8 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint8_t ucBssIndex;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
 	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
@@ -1171,6 +1173,17 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 		return;
 	}
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (!prP2pBssInfo)
+		return;
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo ||
+		prP2pRoleFsmInfo->eCurrentState ==
+		P2P_ROLE_STATE_SCAN) {
+		log_dbg(CNM, ERROR, "prP2pRoleFsmInfo is invalid!\n");
+		return;
+	}
 
 	/* Clean up CSA variable */
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
@@ -1182,8 +1195,7 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucNewChannelWidth = 0;
 	prAdapter->rWifiVar.ucNewChannelS1 = 0;
 	prAdapter->rWifiVar.ucNewChannelS2 = 0;
-	if (!prP2pBssInfo ||
-		prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
 		return;
 	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
