@@ -8911,6 +8911,9 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 				      prWifiVar->u4PagePoolMaxCnt);
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
+	prWifiVar->fgEnSwAmsduSorting = (uint8_t)wlanCfgGetUint32(
+		prAdapter, "EnSwAmsduSorting", FEATURE_DISABLED);
+
 	prWifiVar->u4PmkRefreshThreshold = (uint32_t)wlanCfgGetUint32(
 		prAdapter, "PmkRefreshThresholdSec",
 		PMK_REFRESH_THRESHOLD_SEC);

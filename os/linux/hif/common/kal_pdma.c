@@ -2331,6 +2331,8 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
 	struct list_head *prCur, *prNext;
 	struct TX_DATA_REQ *prTxReq;
 	struct MSDU_INFO *prMsduInfo;
@@ -2342,6 +2344,8 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	list_for_each_safe(prCur, prNext, prHead) {
 		prTxReq = list_entry(prCur, struct TX_DATA_REQ, list);
@@ -2352,7 +2356,16 @@ static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	list_sort((void *)prGlueInfo, prHead, kalAmsduTxDCmp);
+	/*
+	 * Only Connac1.x supports SW AMSDU
+	 * the purpose for msdu sorting is to make more packet do amsdu
+	 * But do msdu sorting may cause packet out-of-order
+	 * add config and default disable is expected default setting,
+	 * but make this switchable just in case.
+	 * For the long time, this option and sorting can be removed.
+	 */
+	if (prWifiVar->fgEnSwAmsduSorting == FEATURE_ENABLED)
+		list_sort((void *)prGlueInfo, prHead, kalAmsduTxDCmp);
 
 	for (prCur = prHead->next; prCur != prHead; prCur = prNext) {
 		u4Num = kalGetNumOfAmsdu(prGlueInfo, prCur, prHead, &u2Size);
