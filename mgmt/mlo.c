@@ -3331,6 +3331,12 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 
 	prMldBssInfo = mldBssGetByIdx(prAdapter, prMldStarec->ucGroupMldId);
 
+	if (!prMldBssInfo) {
+		DBGLOG(ML, WARN, "null MldBssInfo! GroupMldId:%u\n",
+			prMldStarec->ucGroupMldId);
+		return;
+	}
+
 	prStarec = LINK_PEEK_HEAD(prStarecList,
 		struct STA_RECORD, rLinkEntryMld);
 	prMldStarec->u2PrimaryMldId = prStarec ? prStarec->ucWlanIndex : 0;
