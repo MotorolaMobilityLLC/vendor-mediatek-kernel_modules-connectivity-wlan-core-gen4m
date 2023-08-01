@@ -4594,6 +4594,8 @@ int mtk_p2p_cfg80211_testmode_update_sta_pmkid_cmd(struct wiphy *wiphy,
 		DBGLOG(P2P, WARN, "p2pFuncRoleToBssIdx\n");
 		return -EINVAL;
 	}
+	memset(&pmkid, 0,
+		sizeof(struct PARAM_PMKID));
 
 	COPY_MAC_ADDR(pmkid.arBSSID, prParams->aucSta);
 	kalMemCopy(pmkid.arPMKID, prParams->aucPmkid, IW_PMKID_LEN);
