@@ -295,7 +295,7 @@ struct P2P_JOIN_INFO {
 	uint8_t ucAvailableAuthTypes;
 	struct STA_RECORD *prTargetStaRec;
 	struct BSS_DESC *prTargetBssDesc;
-	u_int8_t fgIsJoinComplete;
+	uint8_t fgIsJoinSuccess;
 	/* For ASSOC Rsp. */
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
