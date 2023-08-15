@@ -16233,8 +16233,14 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			prCnmInfo->ucBssOMACSet[ucBssIdx],
 			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
 			_getStrFromBssOpBw(prBssInfo),
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			prCnmInfo->ucBssOpTxNss[ucBssIdx],
+			prCnmInfo->ucBssOpRxNss[ucBssIdx]);
+#else
 			ucOpTxNss,
 			ucOpRxNss);
+#endif
+
 #ifdef CONFIG_SUPPORT_OPENWRT
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "BW=BW%s\n",
