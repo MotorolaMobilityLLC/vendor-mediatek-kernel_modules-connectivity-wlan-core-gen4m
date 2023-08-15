@@ -1281,6 +1281,7 @@ void aisAllocMldStarec(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct STA_RECORD **prMainStaRec,
 	uint8_t ucLinkIndex)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1325,6 +1326,17 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
 		return;
 	}
+
+	if (*prMainStaRec == NULL)
+		*prMainStaRec = prStaRec;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
+		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		mldStarecJoin(prAdapter, prAisFsmInfo->prMldBssInfo,
+			*prMainStaRec, prStaRec, prBssDesc);
+	}
+#endif
 
 	aisSetLinkStaRec(prAisFsmInfo, prStaRec, ucLinkIndex);
 
@@ -2918,6 +2930,8 @@ send_msg:
 			break;
 
 		case AIS_STATE_JOIN: {
+			struct STA_RECORD *prMainStaRec = NULL;
+
 			for (i = 0; i < MLD_LINK_MAX; i++) {
 				struct BSS_INFO *bss = aisGetLinkBssInfo(
 					prAisFsmInfo, i);
@@ -2931,13 +2945,9 @@ send_msg:
 						   &bss->ucOpTxNss);
 				aisFsmStateInit_JOIN(prAdapter,
 						prAisFsmInfo,
+						&prMainStaRec,
 						i);
 			}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			aisAllocMldStarec(prAdapter, prAisFsmInfo);
-#endif
-
 			break;
 		}
 		case AIS_STATE_JOIN_FAILURE:

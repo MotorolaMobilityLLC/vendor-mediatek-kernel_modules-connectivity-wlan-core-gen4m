@@ -831,7 +831,7 @@ send_response:
 	if (prBtmParam->fgPendingResponse) {
 		prBtmParam->fgPendingResponse = false;
 		wnmSendBTMResponseFrame(prAdapter,
-			aisGetStaRecOfAP(prAdapter, ucBssIndex),
+			aisGetStaRecOfAP(prAdapter,  prBtmParam->ucRspBssIndex),
 			prBtmParam->ucDialogToken,
 			ucStatus, MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
 			0, NULL);

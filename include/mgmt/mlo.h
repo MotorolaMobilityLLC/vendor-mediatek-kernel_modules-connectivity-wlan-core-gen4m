@@ -336,6 +336,10 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 void mldStarecFree(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec);
 
+struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, struct STA_RECORD *prMainStarec,
+	struct STA_RECORD *prStarec, struct BSS_DESC *prBssDesc);
+
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
