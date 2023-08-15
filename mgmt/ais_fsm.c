@@ -1232,11 +1232,6 @@ void aisAllocMldStarec(struct ADAPTER *prAdapter,
 	if (!prMldBssInfo)
 		return;
 
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	/* disable old clients before alloc new mld starec */
-	mldBssDisableAllClients(prAdapter, prMldBssInfo);
-#endif
-
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
@@ -2977,11 +2972,6 @@ send_msg:
 		case AIS_STATE_NORMAL_TR:
 			/* recycle unused bssinfo */
 			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
-			mldBssEnableAllClients(prAdapter,
-				prAisFsmInfo->prMldBssInfo);
-#endif
 
 			/* Don't do anything when rJoinTimeoutTimer
 			 * is still ticking

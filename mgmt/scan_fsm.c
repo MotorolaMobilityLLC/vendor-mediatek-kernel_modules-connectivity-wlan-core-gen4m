@@ -1097,10 +1097,6 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
 #endif
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
-	mldEnableConcurrentMld(prAdapter);
-#endif
 }	/* end of scnEventScanDone */
 
 

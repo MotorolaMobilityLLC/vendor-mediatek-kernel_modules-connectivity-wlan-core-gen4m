@@ -312,16 +312,6 @@ uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter);
 void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);
 
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-void mldBssDisableAllClients(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo);
-
-void mldBssEnableAllClients(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo);
-
-void mldEnableConcurrentMld(struct ADAPTER *prAdapter);
-#endif
-
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec,
 	uint8_t ucLinkId);
