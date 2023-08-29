@@ -1337,9 +1337,12 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 	uint32_t u4WpaVersion, enum ENUM_PARAM_AUTH_MODE *prAuthMode,
 	uint32_t *pu4AkmSuite, struct IEEE_802_11_MIB *prMib)
 {
-	enum ENUM_PARAM_AUTH_MODE eOriAuthMode = *prAuthMode;
+	enum ENUM_PARAM_AUTH_MODE eOriAuthMode = AUTH_MODE_OPEN;
 	uint8_t i, j;
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
+
+	if (prAuthMode)
+		eOriAuthMode = *prAuthMode;
 
 	for (i = 0; i < u4AkmSuitesCount; i++) {
 		uint32_t u4AkmSuite = 0;

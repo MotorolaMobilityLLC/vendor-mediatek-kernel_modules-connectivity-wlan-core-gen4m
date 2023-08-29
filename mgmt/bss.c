@@ -315,8 +315,11 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 	prStaRec->ucVhtCapNumSoundingDimensions =
 	    prBssDesc->ucVhtCapNumSoundingDimensions;
 #endif
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-			prStaRec->ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(BSS, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	/* Decide AIS PHY type set */
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
