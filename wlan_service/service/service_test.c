@@ -1665,7 +1665,10 @@ s_int32 mt_serv_get_rx_stat(
 	case TEST_RX_STAT_PATH:
 		if (blk_idx >= TEST_ANT_NUM)
 			break;
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
+		if ((dbdc_mode == 1) && (band_idx == 1))
+			blk_idx = ANT_WF1;
+#endif
 		ret = ops->op_get_rx_stat_path(
 		serv_test->test_winfo,
 		band_idx,
