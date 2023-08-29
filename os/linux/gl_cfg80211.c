@@ -191,7 +191,7 @@ mtk_cfg80211_change_iface(struct wiphy *wiphy,
 	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->ucRSNMfpCap = 0;
 #endif
 
@@ -1443,6 +1443,9 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 
 			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
 				TRUE;
+
+			prMib->dot11RSNAConfigAkm |=
+				rsnKeyMgmtToBit(u4AkmSuite);
 		}
 
 		if (i == 0) {
@@ -1450,24 +1453,6 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 				*prAuthMode = eAuthMode;
 			if (pu4AkmSuite)
 				*pu4AkmSuite = u4AkmSuite;
-		}
-	}
-
-	if (*prAuthMode == AUTH_MODE_WPA2_PSK ||
-		*prAuthMode == AUTH_MODE_WPA3_SAE) {
-		/* support cross wpa2/sae */
-		for (j = 0; j < MAX_NUM_SUPPORTED_AKM_SUITES; j++) {
-			prEntry =
-			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[j];
-
-			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_PSK &&
-				prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_SAE)
-				continue;
-
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-				TRUE;
 		}
 	}
 
@@ -1557,7 +1542,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 	prWpaInfo->fgPrivacyInvoke = FALSE;
 #if CFG_SUPPORT_802_11W
-	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->ucRSNMfpCap = RSN_AUTH_MFP_DISABLED;
 	prWpaInfo->u4CipherGroupMgmt = RSN_CIPHER_SUITE_BIP_CMAC_128;
 #endif
@@ -1607,6 +1592,17 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		break;
 	}
 
+	if (sme->crypto.n_akm_suites) {
+		DBGLOG(REQ, INFO, "n_akm_suites=%x, akm_suites=%x",
+			sme->crypto.n_akm_suites,
+			sme->crypto.akm_suites[0]);
+		if (wlanParseAkmSuites(sme->crypto.akm_suites,
+			sme->crypto.n_akm_suites, prWpaInfo->u4WpaVersion,
+			&eAuthMode, &u4AkmSuite, prMib) < 0) {
+			return -EINVAL;
+		}
+	}
+
 	if (sme->crypto.n_ciphers_pairwise) {
 		DBGLOG(RSN, INFO, "cipher pairwise (0x%x)\n",
 		       sme->crypto.ciphers_pairwise[0]);
@@ -1619,12 +1615,18 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_TKIP;
+			if (eAuthMode == AUTH_MODE_WPA_PSK ||
+			    eAuthMode == AUTH_MODE_WPA2_PSK)
+				prWpaInfo->u4CipherPairwise |=
+					IW_AUTH_CIPHER_CCMP;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_CCMP;
-			break;
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_CCMP;
+			if (eAuthMode == AUTH_MODE_WPA_PSK ||
+			    eAuthMode == AUTH_MODE_WPA2_PSK)
+				prWpaInfo->u4CipherPairwise |=
+					IW_AUTH_CIPHER_TKIP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
@@ -1656,12 +1658,18 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 			break;
 		case WLAN_CIPHER_SUITE_TKIP:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_TKIP;
+			if (eAuthMode == AUTH_MODE_WPA_PSK ||
+			    eAuthMode == AUTH_MODE_WPA2_PSK)
+				prWpaInfo->u4CipherGroup |=
+					IW_AUTH_CIPHER_CCMP;
 			break;
 		case WLAN_CIPHER_SUITE_CCMP:
-			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_CCMP;
-			break;
 		case WLAN_CIPHER_SUITE_AES_CMAC:
 			prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_CCMP;
+			if (eAuthMode == AUTH_MODE_WPA_PSK ||
+			    eAuthMode == AUTH_MODE_WPA2_PSK)
+				prWpaInfo->u4CipherGroup |=
+					IW_AUTH_CIPHER_TKIP;
 			break;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 		case WLAN_CIPHER_SUITE_GCMP_256:
@@ -1676,17 +1684,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		default:
 			DBGLOG(REQ, WARN, "invalid cipher group (%d)\n",
 			       sme->crypto.cipher_group);
-			return -EINVAL;
-		}
-	}
-
-	if (sme->crypto.n_akm_suites) {
-		DBGLOG(REQ, INFO, "n_akm_suites=%x, akm_suites=%x",
-			sme->crypto.n_akm_suites,
-			sme->crypto.akm_suites[0]);
-		if (wlanParseAkmSuites(sme->crypto.akm_suites,
-			sme->crypto.n_akm_suites, prWpaInfo->u4WpaVersion,
-			&eAuthMode, &u4AkmSuite, prMib) < 0) {
 			return -EINVAL;
 		}
 	}
@@ -1790,24 +1787,23 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 #if CFG_SUPPORT_802_11W
 	switch (sme->mfp) {
 	case NL80211_MFP_NO:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		/* Change Mfp parameter from DISABLED to OPTIONAL
 		* if upper layer set MFPC = 1 in RSNE
 		* since upper layer can't bring MFP OPTIONAL information
 		* to driver by sme->mfp
 		*/
 		if (prWpaInfo->ucRSNMfpCap == RSN_AUTH_MFP_OPTIONAL)
-			prWpaInfo->u4Mfp = IW_AUTH_MFP_OPTIONAL;
-		else if (prWpaInfo->ucRSNMfpCap ==
-					RSN_AUTH_MFP_REQUIRED)
+			prWpaInfo->u4Mfp = RSN_AUTH_MFP_OPTIONAL;
+		else if (prWpaInfo->ucRSNMfpCap == RSN_AUTH_MFP_REQUIRED)
 			DBGLOG(REQ, WARN,
 				"mfp parameter(DISABLED) conflict with mfp cap(REQUIRED)\n");
 		break;
 	case NL80211_MFP_REQUIRED:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_REQUIRED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_REQUIRED;
 		break;
 	default:
-		prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_DISABLED;
 		break;
 	}
 	/* DBGLOG(REQ, INFO, ("MFP=%d\n", prWpaInfo->u4Mfp)); */
@@ -2315,16 +2311,17 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	int32_t i4Rslt = -EINVAL;
 	struct GL_WPA_INFO *prWpaInfo;
 	uint8_t ucBssIndex = 0;
+	struct BSS_INFO *prBssInfo;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
 	ucBssIndex = wlanGetBssIdx(dev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prBssInfo)
 		return -EINVAL;
 
-	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter, ucBssIndex);
 
 	/* if ucEapolSuspendOffload 1 => suspend rekey offload */
 	/* So we store key data here */
@@ -2378,15 +2375,14 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 		ucBssIndex);
 
 	prGtkData->u4Proto = NL80211_WPA_VERSION_2;
-	if (prWpaInfo->u4WpaVersion ==
-	    IW_AUTH_WPA_VERSION_WPA)
+	if (prWpaInfo->u4WpaVersion == IW_AUTH_WPA_VERSION_WPA)
 		prGtkData->u4Proto = NL80211_WPA_VERSION_1;
 
-	if (prWpaInfo->u4CipherPairwise ==
-	    IW_AUTH_CIPHER_TKIP)
+	if (GET_SELECTOR_TYPE(prBssInfo->u4RsnSelectedPairwiseCipher) ==
+			    CIPHER_SUITE_TKIP)
 		prGtkData->u4PairwiseCipher = BIT(3);
-	else if (prWpaInfo->u4CipherPairwise ==
-		 IW_AUTH_CIPHER_CCMP)
+	else if (GET_SELECTOR_TYPE(prBssInfo->u4RsnSelectedPairwiseCipher) ==
+			    CIPHER_SUITE_CCMP)
 		prGtkData->u4PairwiseCipher = BIT(4);
 	else {
 		kalMemFree(prGtkData, VIR_MEM_TYPE,
@@ -2394,19 +2390,19 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 		return 0;
 	}
 
-	if (prWpaInfo->u4CipherGroup ==
-	    IW_AUTH_CIPHER_TKIP)
-		prGtkData->u4GroupCipher    = BIT(3);
-	else if (prWpaInfo->u4CipherGroup ==
-		 IW_AUTH_CIPHER_CCMP)
-		prGtkData->u4GroupCipher    = BIT(4);
+	if (GET_SELECTOR_TYPE(prBssInfo->u4RsnSelectedGroupCipher) ==
+			    CIPHER_SUITE_TKIP)
+		prGtkData->u4GroupCipher = BIT(3);
+	else if (GET_SELECTOR_TYPE(prBssInfo->u4RsnSelectedGroupCipher) ==
+			    CIPHER_SUITE_CCMP)
+		prGtkData->u4GroupCipher = BIT(4);
 	else {
 		kalMemFree(prGtkData, VIR_MEM_TYPE,
 			   sizeof(struct PARAM_GTK_REKEY_DATA));
 		return 0;
 	}
 
-	prGtkData->u4KeyMgmt = prWpaInfo->u4KeyMgmt;
+	prGtkData->u4KeyMgmt = prBssInfo->u4RsnSelectedAKMSuite;
 	prGtkData->u4MgmtGroupCipher = 0;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetGtkRekeyData, prGtkData,

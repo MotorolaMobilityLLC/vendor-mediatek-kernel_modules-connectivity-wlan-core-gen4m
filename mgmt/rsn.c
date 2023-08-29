@@ -134,7 +134,8 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 		default:
 			break;
 		}
-	} else if (version == IW_AUTH_WPA_VERSION_WPA) {
+	} else if (version == IW_AUTH_WPA_VERSION_WPA ||
+		   version == IW_AUTH_WPA_VERSION_WPA2) {
 		switch (akm) {
 		case WPA_AKM_SUITE_802_1X:
 			eAuthMode = AUTH_MODE_WPA;
@@ -142,12 +143,6 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 		case WPA_AKM_SUITE_PSK:
 			eAuthMode = AUTH_MODE_WPA_PSK;
 			break;
-		default:
-			DBGLOG(REQ, WARN, "invalid Akm Suite (0x%x)\n", akm);
-			break;
-		}
-	} else if (version == IW_AUTH_WPA_VERSION_WPA2) {
-		switch (akm) {
 		case RSN_AKM_SUITE_802_1X:
 			eAuthMode = AUTH_MODE_WPA2;
 			break;
@@ -204,6 +199,76 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 	}
 
 	return eAuthMode;
+}
+
+uint32_t rsnCipherToBit(uint32_t cipher)
+{
+#define WPACIPHER2BIT(x) \
+	do { \
+	case (WPA_CIPHER_SUITE_##x): return (WPA_CIPHER_SUITE_##x##_BIT); \
+	} while (FALSE)
+
+#define RSNCIPHER2BIT(x) \
+	do { \
+	case (RSN_CIPHER_SUITE_##x): return (RSN_CIPHER_SUITE_##x##_BIT); \
+	} while (FALSE)
+
+	/* sync with dot11RSNAConfigPairwiseCiphersTable */
+	switch (cipher) {
+	WPACIPHER2BIT(WEP40);
+	WPACIPHER2BIT(TKIP);
+	WPACIPHER2BIT(CCMP);
+	WPACIPHER2BIT(WEP104);
+	RSNCIPHER2BIT(WEP40);
+	RSNCIPHER2BIT(TKIP);
+	RSNCIPHER2BIT(CCMP);
+	RSNCIPHER2BIT(WEP104);
+	RSNCIPHER2BIT(GROUP_NOT_USED);
+	RSNCIPHER2BIT(GCMP_256);
+	RSNCIPHER2BIT(GCMP);
+		break;
+	default:
+		DBGLOG(REQ, WARN, "invalid Cipher (0x%x)\n", cipher);
+		return BIT(0);
+	}
+}
+
+uint32_t rsnKeyMgmtToBit(uint32_t akm)
+{
+#define WPAAKM2BIT(x) \
+	do { \
+	case (WPA_AKM_SUITE_##x): return (WPA_AKM_SUITE_##x##_BIT); \
+	} while (FALSE)
+#define RSNAKM2BIT(x) \
+	do { \
+	case (RSN_AKM_SUITE_##x): return (RSN_AKM_SUITE_##x##_BIT); \
+	} while (FALSE)
+
+	/* sync with dot11RSNAConfigAuthenticationSuitesTable */
+	switch (akm) {
+	WPAAKM2BIT(NONE);
+	WPAAKM2BIT(802_1X);
+	WPAAKM2BIT(PSK);
+	RSNAKM2BIT(NONE);
+	RSNAKM2BIT(802_1X);
+	RSNAKM2BIT(PSK);
+	RSNAKM2BIT(FT_802_1X);
+	RSNAKM2BIT(FT_PSK);
+	RSNAKM2BIT(OSEN);
+	RSNAKM2BIT(SAE);
+	RSNAKM2BIT(OWE);
+	RSNAKM2BIT(DPP);
+	RSNAKM2BIT(8021X_SUITE_B_192);
+	RSNAKM2BIT(SAE_EXT_KEY);
+	RSNAKM2BIT(802_1X_SHA256);
+	RSNAKM2BIT(PSK_SHA256);
+	RSNAKM2BIT(FT_OVER_SAE);
+	RSNAKM2BIT(FT_SAE_EXT_KEY);
+		break;
+	default:
+		DBGLOG(REQ, WARN, "invalid Akm Suite (0x%x)\n", akm);
+		return BIT(0);
+	}
 }
 
 uint8_t rsnApOverload(uint16_t status, uint16_t reason)
@@ -801,27 +866,17 @@ u_int8_t rsnParseWpaIE(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rsnSearchSupportedCipher(struct ADAPTER *prAdapter,
-				  uint32_t u4Cipher, uint32_t *pu4Index,
-				  uint8_t ucBssIndex)
+				  uint32_t u4Cipher, uint8_t ucBssIndex)
 {
-	uint8_t i;
-	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY *prEntry;
 	struct IEEE_802_11_MIB *prMib;
 
 	DEBUGFUNC("rsnSearchSupportedCipher");
 
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
-	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++) {
-		prEntry = &prMib->dot11RSNAConfigPairwiseCiphersTable[i];
-		if (prEntry->dot11RSNAConfigPairwiseCipher == u4Cipher &&
-		    prEntry->dot11RSNAConfigPairwiseCipherEnabled) {
-			*pu4Index = i;
-			return TRUE;
-		}
-	}
-	return FALSE;
-}				/* rsnSearchSupportedCipher */
+	return !!(rsnCipherToBit(u4Cipher) &
+		prMib->dot11RSNAConfigPairwiseCipher);
+} /* rsnSearchSupportedCipher */
 
 void rsnDumpSupportedCipher(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
@@ -842,6 +897,9 @@ void rsnDumpSupportedCipher(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 				SWAP32(prEntry->dot11RSNAConfigPairwiseCipher));
 #endif
 	}
+
+	DBGLOG(RSN, WARN, "Support cipher bmap=0x%x\n",
+		prMib->dot11RSNAConfigPairwiseCipher);
 }
 /*----------------------------------------------------------------------------*/
 /*!
@@ -857,11 +915,11 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 			  struct RSN_INFO *prBssRsnInfo,
 			  uint8_t ucBssIndex)
 {
-	uint32_t i, j, c, k;
+	uint32_t i, c, k;
 
 	/* check group */
 	k = prBssRsnInfo->u4GroupKeyCipherSuite;
-	if (!rsnSearchSupportedCipher(prAdapter, k, &j, ucBssIndex)) {
+	if (!rsnSearchSupportedCipher(prAdapter, k, ucBssIndex)) {
 		DBGLOG(RSN, WARN, "Break by GroupKey=0x%x\n", SWAP32(k));
 		rsnDumpSupportedCipher(prAdapter, ucBssIndex);
 		return FALSE;
@@ -871,11 +929,12 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 	c = prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
 	for (i = 0; i < c; i++) {
 		k = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
-		if (rsnSearchSupportedCipher(prAdapter, k, &j, ucBssIndex)) {
+		if (rsnSearchSupportedCipher(prAdapter, k, ucBssIndex)) {
 			break;
 		} else if (i == c - 1) {
 			DBGLOG(RSN, WARN, "Break by PairwisKey=0x%x\n",
 				SWAP32(k));
+			rsnDumpSupportedCipher(prAdapter, ucBssIndex);
 			return FALSE;
 		}
 	}
@@ -888,7 +947,7 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 	c = prBssRsnInfo->u4AuthKeyMgtSuiteCount;
 	for (i = 0; i < c; i++) {
 		k = prBssRsnInfo->au4AuthKeyMgtSuite[i];
-		if (rsnSearchAKMSuite(prAdapter, k, &j, ucBssIndex)) {
+		if (rsnSearchAKMSuite(prAdapter, k, ucBssIndex)) {
 			break;
 		} else if (i == c - 1) {
 			DBGLOG(RSN, WARN, "Break by AuthKey=0x%x\n",
@@ -919,27 +978,16 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
-			   uint32_t u4AkmSuite, uint32_t *pu4Index,
-			   uint8_t ucBssIndex)
+			   uint32_t u4AkmSuite, uint8_t ucBssIndex)
 {
-	uint8_t i;
-	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
 	struct IEEE_802_11_MIB *prMib;
 
 	DEBUGFUNC("rsnSearchAKMSuite");
 
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
-	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
-		prEntry = &prMib->dot11RSNAConfigAuthenticationSuitesTable[i];
-		if (prEntry->dot11RSNAConfigAuthenticationSuite == u4AkmSuite &&
-		    prEntry->dot11RSNAConfigAuthenticationSuiteEnabled) {
-			*pu4Index = i;
-			return TRUE;
-		}
-	}
-	return FALSE;
-}				/* rsnSearchAKMSuite */
+	return !!(rsnKeyMgmtToBit(u4AkmSuite) & prMib->dot11RSNAConfigAkm);
+} /* rsnSearchAKMSuite */
 
 void rsnDumpSupportedAKMSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
@@ -960,22 +1008,22 @@ void rsnDumpSupportedAKMSuite(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			   SWAP32(prEntry->dot11RSNAConfigAuthenticationSuite));
 #endif
 	}
+
+	DBGLOG(RSN, WARN, "Support akm bmap=0x%x\n", prMib->dot11RSNAConfigAkm);
 }
 
 uint8_t rsnSearchFTSuite(struct ADAPTER *ad, uint8_t bssidx)
 {
-	uint32_t i;
-
-	return rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_PSK, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_PSK_SHA384, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_802_1X, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_OVER_SAE, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_802_1X_SHA384, &i, bssidx) ||
+	return rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_PSK, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_PSK_SHA384, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_802_1X, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_OVER_SAE, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_802_1X_SHA384, bssidx) ||
 	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED,
-								  &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_SAE_EXT_KEY, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_FILS_SHA256, &i, bssidx) ||
-	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_FILS_SHA384, &i, bssidx);
+								bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_SAE_EXT_KEY, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_FILS_SHA256, bssidx) ||
+	    rsnSearchAKMSuite(ad, RSN_AKM_SUITE_FT_FILS_SHA384, bssidx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -983,7 +1031,7 @@ uint8_t rsnSearchFTSuite(struct ADAPTER *ad, uint8_t bssidx)
  * \brief refer to wpa_supplicant wpa_key_mgmt_wpa
  */
 
-uint8_t rsnKeyMgmtRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
+uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
 {
 	return eAuthMode == AUTH_MODE_WPA2 ||
 	       eAuthMode == AUTH_MODE_WPA2_PSK ||
@@ -1013,6 +1061,170 @@ uint8_t rsnKeyMgmtWpa3for6g(struct ADAPTER *prAdapter,
 	return (fgIsOWE || fgIsSAEH2E);
 }
 
+void rsnMatchCipherSuite(struct RSN_INFO *prBssRsnInfo,
+	enum ENUM_WEP_STATUS eEncStatus, uint32_t *pu4PairwiseCipher,
+	uint32_t *pu4GroupCipher)
+{
+	int32_t i;
+	uint32_t u4PairwiseCipher = 0;
+	uint32_t u4GroupCipher = 0;
+	uint32_t u4Cipher;
+
+	/* Select pairwise/group ciphers */
+	switch (eEncStatus) {
+	case ENUM_ENCRYPTION4_ENABLED: {
+		u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			/* TODO: WTBL cipher filed cannot
+			* 1-1 mapping to spec cipher suite number
+			*/
+			if (u4Cipher == RSN_CIPHER_SUITE_GCMP_256 ||
+			    u4Cipher == RSN_CIPHER_SUITE_GCMP)
+				u4PairwiseCipher = u4Cipher;
+		}
+		if (u4PairwiseCipher != 0)
+			break;
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_CCMP)
+				u4PairwiseCipher = u4Cipher;
+		}
+	}
+		break;
+
+	case ENUM_ENCRYPTION3_ENABLED: {
+		u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_CCMP)
+				u4PairwiseCipher = u4Cipher;
+
+		}
+		if (u4PairwiseCipher != 0)
+			break;
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_TKIP)
+				u4PairwiseCipher = u4Cipher;
+		}
+	}
+		break;
+
+
+	case ENUM_ENCRYPTION2_ENABLED: {
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_TKIP)
+				u4PairwiseCipher = u4Cipher;
+		}
+		if (GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite) ==
+		    CIPHER_SUITE_CCMP)
+			DBGLOG(RSN, TRACE, "Cannot join CCMP BSS\n");
+		else
+			u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
+	}
+		break;
+
+	case ENUM_ENCRYPTION1_ENABLED: {
+		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+			i++) {
+			u4Cipher = prBssRsnInfo->au4PairwiseKeyCipherSuite[i];
+			if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP40 ||
+			    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP104)
+				u4PairwiseCipher = u4Cipher;
+		}
+		if (GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite) ==
+		    CIPHER_SUITE_CCMP ||
+		    GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite) ==
+		    CIPHER_SUITE_TKIP)
+			DBGLOG(RSN, TRACE,
+				"Cannot join CCMP/TKIP BSS\n");
+		else
+			u4GroupCipher =	prBssRsnInfo->u4GroupKeyCipherSuite;
+	}
+		break;
+
+	default:
+		break;
+	}
+
+
+	*pu4PairwiseCipher = u4PairwiseCipher;
+	*pu4GroupCipher = u4GroupCipher;
+}
+
+void rsnAllowCrossAkm(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	uint8_t i;
+	struct IEEE_802_11_MIB *prMib;
+	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY *prEntry;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	struct GL_WPA_INFO *prWpaInfo;
+
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+	prMib = aisGetMib(prAdapter, ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
+
+#if (CFG_TC10_FEATURE == 1)
+	if (eAuthMode == AUTH_MODE_WPA_PSK ||
+	    eAuthMode == AUTH_MODE_WPA2_PSK) {
+		/* support cross wpa/wpa2 psk */
+		for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
+			prEntry =
+			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[i];
+
+			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
+				WPA_AKM_SUITE_PSK &&
+			    prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_PSK)
+				continue;
+
+			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
+				TRUE;
+
+			prMib->dot11RSNAConfigAkm |=
+				rsnKeyMgmtToBit(
+				prEntry->dot11RSNAConfigAuthenticationSuite);
+		}
+	}
+#endif
+
+#if KERNEL_VERSION(6, 10, 0) > CFG80211_VERSION_CODE
+	if (eAuthMode == AUTH_MODE_WPA2_PSK ||
+	    eAuthMode == AUTH_MODE_WPA3_SAE) {
+		/* support cross wpa2/sae/sae-ext */
+		for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
+			prEntry =
+			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[i];
+
+			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_PSK &&
+				prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_SAE &&
+				prEntry->dot11RSNAConfigAuthenticationSuite !=
+				RSN_AKM_SUITE_SAE_EXT_KEY)
+				continue;
+
+			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
+				TRUE;
+
+			prMib->dot11RSNAConfigAkm |=
+				rsnKeyMgmtToBit(
+				prEntry->dot11RSNAConfigAuthenticationSuite);
+		}
+	}
+#endif
+
+	if (prWpaInfo->u4Mfp == RSN_AUTH_MFP_OPTIONAL)
+		prWpaInfo->u4Mfp = RSN_AUTH_MFP_OPTIONAL_REQUIRED;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to perform RSNA or TSN policy
@@ -1033,16 +1245,12 @@ u_int8_t rsnPerformPolicySelection(
 		struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 		uint8_t ucBssIndex)
 {
-#if CFG_SUPPORT_802_11W
 	int32_t i;
-	uint32_t j;
-#else
-	uint32_t i, j;
-#endif
 	u_int8_t fgSuiteSupported;
 	uint32_t u4PairwiseCipher = 0;
 	uint32_t u4GroupCipher = 0;
 	uint32_t u4AkmSuite = 0;
+	uint8_t u4MgmtProtection = 0;
 	struct RSN_INFO *prBssRsnInfo;
 	u_int8_t fgIsWpsActive = (u_int8_t) FALSE;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode, eNewAuthMode;
@@ -1062,6 +1270,9 @@ u_int8_t rsnPerformPolicySelection(
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	eOPMode = aisGetOPMode(prAdapter, ucBssIndex);
 	eEncStatus = aisGetEncStatus(prAdapter, ucBssIndex);
+
+	DBGLOG(RSN, TRACE, "BSS["MACSTR"] AuthMode [%d], EncStatus [%d]",
+		MAC2STR(prBss->aucBSSID), eAuthMode, eEncStatus);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBss->eBand == BAND_6G) {
@@ -1108,18 +1319,22 @@ u_int8_t rsnPerformPolicySelection(
 	if (eAuthMode == AUTH_MODE_WPA ||
 	    eAuthMode == AUTH_MODE_WPA_PSK ||
 	    eAuthMode == AUTH_MODE_WPA_NONE) {
-
 		if (prBss->fgIEWPA) {
 			prBssRsnInfo = &prBss->rWPAInfo;
+		} else if (eAuthMode == AUTH_MODE_WPA_PSK &&
+			   prBss->fgIERSN) {
+			prBssRsnInfo = &prBss->rRSNInfo;
 		} else {
 			DBGLOG(RSN, INFO,
 			       "WPA Information Element does not exist.\n");
 			return FALSE;
 		}
-	} else if (rsnKeyMgmtRsn(eAuthMode)) {
-
+	} else if (rsnAuthModeRsn(eAuthMode)) {
 		if (prBss->fgIERSN) {
 			prBssRsnInfo = &prBss->rRSNInfo;
+		} else if (eAuthMode == AUTH_MODE_WPA2_PSK &&
+			   prBss->fgIEWPA) {
+			prBssRsnInfo = &prBss->rWPAInfo;
 		} else {
 			DBGLOG(RSN, INFO,
 			       "RSN Information Element does not exist.\n");
@@ -1159,28 +1374,29 @@ u_int8_t rsnPerformPolicySelection(
 
 		switch (prBssRsnInfo->u4GroupKeyCipherSuite) {
 		case RSN_CIPHER_SUITE_GCMP_256:
-			if (eEncStatus == ENUM_ENCRYPTION4_ENABLED)
-				fgSuiteSupported = TRUE;
-			break;
 		case RSN_CIPHER_SUITE_GCMP:
 			if (eEncStatus == ENUM_ENCRYPTION4_ENABLED)
 				fgSuiteSupported = TRUE;
 			break;
 		case WPA_CIPHER_SUITE_CCMP:
 		case RSN_CIPHER_SUITE_CCMP:
-			if (eEncStatus == ENUM_ENCRYPTION3_ENABLED)
+			if (eEncStatus == ENUM_ENCRYPTION4_ENABLED ||
+			    eEncStatus == ENUM_ENCRYPTION3_ENABLED)
 				fgSuiteSupported = TRUE;
 			break;
 
 		case WPA_CIPHER_SUITE_TKIP:
 		case RSN_CIPHER_SUITE_TKIP:
-			if (eEncStatus == ENUM_ENCRYPTION2_ENABLED)
+			if (eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
+			    eEncStatus == ENUM_ENCRYPTION2_ENABLED)
 				fgSuiteSupported = TRUE;
 			break;
 
 		case WPA_CIPHER_SUITE_WEP40:
 		case WPA_CIPHER_SUITE_WEP104:
-			if (eEncStatus == ENUM_ENCRYPTION1_ENABLED)
+			if (eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
+			    eEncStatus == ENUM_ENCRYPTION2_ENABLED ||
+			    eEncStatus == ENUM_ENCRYPTION1_ENABLED)
 				fgSuiteSupported = TRUE;
 			break;
 		}
@@ -1204,95 +1420,9 @@ u_int8_t rsnPerformPolicySelection(
 		       eEncStatus,
 		       prBssRsnInfo->u4PairwiseKeyCipherSuiteCount,
 		       prBssRsnInfo->au4PairwiseKeyCipherSuite[0]);
-		/* Select pairwise/group ciphers */
-		switch (eEncStatus) {
-		case ENUM_ENCRYPTION4_ENABLED:
-		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
-			i++) {
-			/* TODO: WTBL cipher filed cannot
-			* 1-1 mapping to spec cipher suite number
-			*/
-			if (prBssRsnInfo->au4PairwiseKeyCipherSuite[i] ==
-				    RSN_CIPHER_SUITE_GCMP_256 ||
-			    prBssRsnInfo->au4PairwiseKeyCipherSuite[i] ==
-				    RSN_CIPHER_SUITE_GCMP) {
-				u4PairwiseCipher =
-					prBssRsnInfo->
-					au4PairwiseKeyCipherSuite[i];
-			}
-		}
-		u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
-			break;
 
-		case ENUM_ENCRYPTION3_ENABLED:
-			for (i = 0; i < prBssRsnInfo->
-				u4PairwiseKeyCipherSuiteCount; i++) {
-				if (GET_SELECTOR_TYPE(
-					prBssRsnInfo->
-						au4PairwiseKeyCipherSuite[i])
-					== CIPHER_SUITE_CCMP) {
-					u4PairwiseCipher =
-						prBssRsnInfo->
-						au4PairwiseKeyCipherSuite[i];
-				}
-			}
-			u4GroupCipher = prBssRsnInfo->u4GroupKeyCipherSuite;
-			break;
-
-		case ENUM_ENCRYPTION2_ENABLED:
-			for (i = 0;
-			     i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
-			     i++) {
-				if (GET_SELECTOR_TYPE
-				    (prBssRsnInfo->au4PairwiseKeyCipherSuite[i])
-				    == CIPHER_SUITE_TKIP) {
-					u4PairwiseCipher =
-					    prBssRsnInfo->
-					    au4PairwiseKeyCipherSuite[i];
-				}
-			}
-			if (GET_SELECTOR_TYPE
-			    (prBssRsnInfo->u4GroupKeyCipherSuite)
-			    == CIPHER_SUITE_CCMP)
-				DBGLOG(RSN, TRACE, "Cannot join CCMP BSS\n");
-			else
-				u4GroupCipher =
-				    prBssRsnInfo->u4GroupKeyCipherSuite;
-			break;
-
-		case ENUM_ENCRYPTION1_ENABLED:
-			for (i = 0;
-				i < prBssRsnInfo->
-					u4PairwiseKeyCipherSuiteCount;
-				i++) {
-				if (GET_SELECTOR_TYPE(
-					    prBssRsnInfo->
-						au4PairwiseKeyCipherSuite[i])
-					== CIPHER_SUITE_WEP40 ||
-				    GET_SELECTOR_TYPE(
-					    prBssRsnInfo->
-						au4PairwiseKeyCipherSuite[i])
-					== CIPHER_SUITE_WEP104) {
-					u4PairwiseCipher = prBssRsnInfo->
-						au4PairwiseKeyCipherSuite[i];
-				}
-			}
-			if (GET_SELECTOR_TYPE(prBssRsnInfo->
-				u4GroupKeyCipherSuite)
-			    == CIPHER_SUITE_CCMP ||
-			    GET_SELECTOR_TYPE(prBssRsnInfo->
-				u4GroupKeyCipherSuite) == CIPHER_SUITE_TKIP) {
-				DBGLOG(RSN, TRACE,
-					"Cannot join CCMP/TKIP BSS\n");
-			} else {
-				u4GroupCipher =
-					prBssRsnInfo->u4GroupKeyCipherSuite;
-			}
-			break;
-
-		default:
-			break;
-		}
+		rsnMatchCipherSuite(prBssRsnInfo, eEncStatus,
+			&u4PairwiseCipher, &u4GroupCipher);
 	}
 
 	/* Exception handler */
@@ -1303,6 +1433,7 @@ u_int8_t rsnPerformPolicySelection(
 		DBGLOG(RSN, INFO,
 		       "Failed to select pairwise/group cipher (0x%08x/0x%08x)\n",
 		       u4PairwiseCipher, u4GroupCipher);
+		rsnDumpSupportedCipher(prAdapter, ucBssIndex);
 		return FALSE;
 	}
 #if CFG_ENABLE_WIFI_DIRECT
@@ -1336,12 +1467,12 @@ u_int8_t rsnPerformPolicySelection(
 
 	/* Verify if selected pairwisse cipher is supported */
 	fgSuiteSupported = rsnSearchSupportedCipher(prAdapter,
-		u4PairwiseCipher, &i, ucBssIndex);
+		u4PairwiseCipher, ucBssIndex);
 
 	/* Verify if selected group cipher is supported */
 	if (fgSuiteSupported)
 		fgSuiteSupported = rsnSearchSupportedCipher(prAdapter,
-			u4GroupCipher, &i, ucBssIndex);
+			u4GroupCipher, ucBssIndex);
 
 	if (!fgSuiteSupported) {
 		DBGLOG(RSN, INFO,
@@ -1355,21 +1486,24 @@ u_int8_t rsnPerformPolicySelection(
 	 *  the given BSS, we fail to perform RSNA policy selection.
 	 */
 	/* Attempt to find any overlapping supported AKM suite. */
-#if CFG_SUPPORT_802_11W
-	if (i != 0)
+	if (eAuthMode ==  AUTH_MODE_WPA2_FT_PSK &&
+	    rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_FT_PSK, ucBssIndex))
+		u4AkmSuite = RSN_AKM_SUITE_FT_PSK;
+	else if (eAuthMode == AUTH_MODE_WPA2_FT &&
+	  rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_FT_802_1X, ucBssIndex))
+		u4AkmSuite = RSN_AKM_SUITE_FT_802_1X;
+	else {
 		for (i = (prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1); i >= 0;
 		     i--) {
-#else
-		for (i = 0; i < prBssRsnInfo->u4AuthKeyMgtSuiteCount; i++) {
-#endif
 			if (rsnSearchAKMSuite(prAdapter,
-				prBssRsnInfo->au4AuthKeyMgtSuite[i], &j,
+				prBssRsnInfo->au4AuthKeyMgtSuite[i],
 				ucBssIndex)) {
 				u4AkmSuite =
 					prBssRsnInfo->au4AuthKeyMgtSuite[i];
 				break;
 			}
 		}
+	}
 
 	if (u4AkmSuite == 0) {
 		DBGLOG(RSN, TRACE, "Cannot support any AKM suites\n");
@@ -1384,32 +1518,47 @@ u_int8_t rsnPerformPolicySelection(
 	       "Selected AKM suite: 0x%x\n", SWAP32(u4AkmSuite));
 
 #if CFG_SUPPORT_802_11W
-	DBGLOG(RSN, TRACE, "[MFP] MFP setting = %d\n",
-	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex));
+	/* check pmf only when rsn ie is selected */
+	if (prBssRsnInfo->ucElemId == ELEM_ID_RSN) {
+		if (kalGetMfpSetting(prAdapter->prGlueInfo,
+			ucBssIndex) == RSN_AUTH_MFP_REQUIRED) {
+			if (!prBssRsnInfo->fgRsnCapPresent) {
+				DBGLOG(RSN, TRACE,
+				       "[MFP] Skip RSN IE, No MFP Required Capability.\n");
+				return FALSE;
+			} else if (!(prBssRsnInfo->u2RsnCap &
+					ELEM_WPA_CAP_MFPC)) {
+				DBGLOG(RSN, WARN,
+				       "[MFP] Skip RSN IE, No MFP Required\n");
+				return FALSE;
+			}
+			u4MgmtProtection =
+				ELEM_WPA_CAP_MFPR | ELEM_WPA_CAP_MFPC;
+		} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
+			ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
+			u4MgmtProtection = prBssRsnInfo->u2RsnCap &
+				ELEM_WPA_CAP_MFPC;
+		} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
+			ucBssIndex) == RSN_AUTH_MFP_OPTIONAL_REQUIRED) {
+			u4MgmtProtection = prBssRsnInfo->u2RsnCap &
+				(ELEM_WPA_CAP_MFPC | ELEM_WPA_CAP_MFPR);
+		} else {
+			if ((prBssRsnInfo->fgRsnCapPresent) &&
+			(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
+				DBGLOG(RSN, INFO,
+				       "[MFP] Skip RSN IE, No MFP Required Capability\n");
+				return FALSE;
+			}
+		}
 
-	if (kalGetMfpSetting(prAdapter->prGlueInfo,
-		ucBssIndex) == RSN_AUTH_MFP_REQUIRED) {
-		if (!prBssRsnInfo->fgRsnCapPresent) {
-			DBGLOG(RSN, TRACE,
-			       "[MFP] Skip RSN IE, No MFP Required Capability.\n");
-			return FALSE;
-		} else if (!(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPC)) {
-			DBGLOG(RSN, WARN,
-			       "[MFP] Skip RSN IE, No MFP Required\n");
-			return FALSE;
-		}
-	} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
-		ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
-	} else {
-		if ((prBssRsnInfo->fgRsnCapPresent) &&
-		(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
-			DBGLOG(RSN, INFO,
-			       "[MFP] Skip RSN IE, No MFP Required Capability\n");
-			return FALSE;
-		}
+		DBGLOG(RSN, TRACE,
+		       "[MFP] MFP setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = 0x%x\n",
+		       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
+		       prBssRsnInfo->u2RsnCap,
+		       prBssRsnInfo->fgRsnCapPresent,
+		       u4MgmtProtection);
 	}
 #endif
-
 
 	eNewAuthMode = rsnKeyMgmtToAuthMode(eAuthMode,
 		prWpaInfo->u4WpaVersion, u4AkmSuite);
@@ -1423,6 +1572,10 @@ u_int8_t rsnPerformPolicySelection(
 	prBss->u4RsnSelectedGroupCipher = u4GroupCipher;
 	prBss->u4RsnSelectedAKMSuite = u4AkmSuite;
 	prBss->eRsnSelectedAuthMode = eAuthMode;
+	prBss->u4RsnSelectedPmf = u4MgmtProtection;
+	if (prBss->u4RsnSelectedProto != IW_AUTH_WPA_VERSION_DISABLED)
+		prBss->u4RsnSelectedProto = rsnAuthModeRsn(eAuthMode) ?
+			IW_AUTH_WPA_VERSION_WPA2 : IW_AUTH_WPA_VERSION_WPA;
 
 	return TRUE;
 }				/* rsnPerformPolicySelection */
@@ -1441,7 +1594,6 @@ u_int8_t rsnPerformPolicySelection(
 void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo)
 {
-	uint32_t i;
 	struct WPA_INFO_ELEM *prWpaIE;
 	uint32_t u4Suite;
 	uint16_t u2SuiteCount;
@@ -1485,16 +1637,16 @@ void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 	cp = (uint8_t *) &prWpaIE->aucPairwiseKeyCipherSuite1[0];
 
 	if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_CCMP, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_CCMP, ucBssIndex))
 		u4Suite = WPA_CIPHER_SUITE_CCMP;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_TKIP, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_TKIP, ucBssIndex))
 		u4Suite = WPA_CIPHER_SUITE_TKIP;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP104, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_WEP104, ucBssIndex))
 		u4Suite = WPA_CIPHER_SUITE_WEP104;
 	else if (rsnSearchSupportedCipher(prAdapter,
-		WPA_CIPHER_SUITE_WEP40, &i, ucBssIndex))
+		WPA_CIPHER_SUITE_WEP40, ucBssIndex))
 		u4Suite = WPA_CIPHER_SUITE_WEP40;
 	else
 		u4Suite = WPA_CIPHER_SUITE_TKIP;
@@ -1525,10 +1677,10 @@ void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 	cp += 2;
 
 	if (rsnSearchAKMSuite(prAdapter,
-		WPA_AKM_SUITE_802_1X, &i, ucBssIndex))
+		WPA_AKM_SUITE_802_1X, ucBssIndex))
 		u4Suite = WPA_AKM_SUITE_802_1X;
 	else if (rsnSearchAKMSuite(prAdapter,
-		WPA_AKM_SUITE_PSK, &i, ucBssIndex))
+		WPA_AKM_SUITE_PSK, ucBssIndex))
 		u4Suite = WPA_AKM_SUITE_PSK;
 	else
 		u4Suite = WPA_AKM_SUITE_NONE;
@@ -1842,7 +1994,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 	    (IS_BSS_BOW(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex))) ||
 #endif
 	    (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
-	     (rsnKeyMgmtRsn(aisGetAuthMode(prAdapter, ucBssIndex)) ||
+	     (rsnAuthModeRsn(aisGetAuthMode(prAdapter, ucBssIndex)) ||
 	      rsnIsOsenAuthModeWithRSN(prAdapter, ucBssIndex)))) {
 		/* Construct a RSN IE for association request frame. */
 		RSN_IE(pucBuffer)->ucElemId = ELEM_ID_RSN;
@@ -1859,7 +2011,6 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 			pucBuffer)->u2PairwiseKeyCipherSuiteCount, 1);
 		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
 			ucBssIndex)->u4RsnSelectedPairwiseCipher);
-
 		cp += 4;
 
 		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
@@ -1905,20 +2056,17 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 				       ucBssIndex)->u2RsnSelectedCapInfo);
  #if CFG_SUPPORT_802_11W
 		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-			if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
-				ucBssIndex) ==
-				   RSN_AUTH_MFP_REQUIRED) {
+			struct BSS_DESC *prBssDesc =
+				aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+			if (kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex)
+					!= RSN_AUTH_MFP_DISABLED && prBssDesc) {
 				WLAN_SET_FIELD_16(cp,
-					ELEM_WPA_CAP_MFPC | ELEM_WPA_CAP_MFPR);
+					prBssDesc->u4RsnSelectedPmf);
 					/* Capabilities */
 				DBGLOG(RSN, TRACE,
-					"RSN_AUTH_MFP - MFPC & MFPR\n");
-			} else if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
-				ucBssIndex) ==
-				   RSN_AUTH_MFP_OPTIONAL) {
-				WLAN_SET_FIELD_16(cp, ELEM_WPA_CAP_MFPC);
-					/* Capabilities */
-				DBGLOG(RSN, TRACE, "RSN_AUTH_MFP - MFPC\n");
+					"RSN_AUTH_MFP - 0x%x\n",
+					prBssDesc->u4RsnSelectedPmf);
 			} else {
 				DBGLOG(RSN, TRACE,
 					"!RSN_AUTH_MFP - No MFPC!\n");
