@@ -1258,6 +1258,7 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_WEP_STATUS eEncStatus;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct GL_WPA_INFO *prWpaInfo;
+	struct IEEE_802_11_MIB *prMib;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
@@ -1270,6 +1271,10 @@ u_int8_t rsnPerformPolicySelection(
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 	eOPMode = aisGetOPMode(prAdapter, ucBssIndex);
 	eEncStatus = aisGetEncStatus(prAdapter, ucBssIndex);
+	prMib = aisGetMib(prAdapter, ucBssIndex);
+
+	u4PairwiseCipher = prMib->dot11RSNAConfigPairwiseCipher;
+	u4GroupCipher = prMib->dot11RSNAConfigGroupCipher;
 
 	DBGLOG(RSN, TRACE, "BSS["MACSTR"] AuthMode [%d], EncStatus [%d]",
 		MAC2STR(prBss->aucBSSID), eAuthMode, eEncStatus);
@@ -1290,22 +1295,31 @@ u_int8_t rsnPerformPolicySelection(
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter, ucBssIndex)->fgWpsActive;
 	/* CR1640, disable the AP select privacy check */
-	if (fgIsWpsActive &&
-	    eAuthMode < AUTH_MODE_WPA &&
+	if (fgIsWpsActive && eAuthMode < AUTH_MODE_WPA &&
 	    eOPMode == NET_TYPE_INFRA) {
 		DBGLOG(RSN, INFO, "-- Skip the Protected BSS check\n");
-		return TRUE;
+		goto selected;
 	}
 #endif
 
 	/* Protection is not required in this BSS. */
 	if ((prBss->u2CapInfo & CAP_INFO_PRIVACY) == 0) {
 		if (secEnabledInAis(prAdapter, ucBssIndex) == FALSE)
-			return TRUE;
+			goto selected;
 
 		DBGLOG(RSN, INFO, "-- Protected BSS but No need\n");
 		return FALSE;
 	}
+
+#if CFG_SUPPORT_WAPI
+	if (aisGetWapiMode(prAdapter, ucBssIndex)) {
+		if (!wapiPerformPolicySelection(prAdapter, prBss, ucBssIndex)) {
+			DBGLOG(APS, WARN, MACSTR " wapi policy select fail.\n",
+				MAC2STR(prBss->aucBSSID));
+			return FALSE;
+		}
+	}
+#endif
 
 	/* Protection is required in this BSS. */
 	if ((prBss->u2CapInfo & CAP_INFO_PRIVACY) != 0) {
@@ -1345,16 +1359,12 @@ u_int8_t rsnPerformPolicySelection(
 		if (prBss->fgIERSN)
 			prBssRsnInfo = &prBss->rRSNInfo;
 		else
-			return TRUE;
+			goto selected;
 #endif
-	} else if (eEncStatus != ENUM_ENCRYPTION1_ENABLED) {
-		/* If the driver is configured to use WEP only,
-		 * ignore this BSS.
-		 */
-		return FALSE;
-	} else if (eEncStatus == ENUM_ENCRYPTION1_ENABLED) {
-		/* If the driver is configured to use WEP only, use this BSS. */
-		return TRUE;
+	} else if (eEncStatus == ENUM_ENCRYPTION1_ENABLED ||
+		   eEncStatus == ENUM_ENCRYPTION2_ENABLED) {
+		/* If driver is configured to use WEP/TKIP, use this BSS.*/
+		goto selected;
 	} else {
 		DBGLOG(RSN, INFO, "unknown\n");
 		return FALSE;
@@ -1560,6 +1570,7 @@ u_int8_t rsnPerformPolicySelection(
 	}
 #endif
 
+selected:
 	eNewAuthMode = rsnKeyMgmtToAuthMode(eAuthMode,
 		prWpaInfo->u4WpaVersion, u4AkmSuite);
 	if (eNewAuthMode != eAuthMode) {

@@ -9928,8 +9928,8 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	DBGLOG_LIMITED(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
 
-	if (ucSecMode != CIPHER_SUITE_CCMP
-	    && ucSecMode != CIPHER_SUITE_TKIP) {
+	if (!(prWpaInfo->u4CipherGroup &
+		(IW_AUTH_CIPHER_TKIP | IW_AUTH_CIPHER_CCMP))) {
 		DBGLOG_LIMITED(QM, TRACE,
 			"SecMode: %d and CipherGroup: %d, no need check replay\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
