@@ -5027,6 +5027,16 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 			   index, u4NvramStartOffset,
 			   u1TypeID, u4NvramFragmentSize);
 
+			if (u4NvramFragmentSize >
+				sizeof(struct CMD_NVRAM_FRAGMENT)) {
+				DBGLOG(INIT, ERROR,
+				"ID[%d]copy size[%d]bigger than buf size[%d]\n",
+				u1TypeID,
+				u4NvramFragmentSize,
+				sizeof(struct CMD_NVRAM_FRAGMENT));
+				return WLAN_STATUS_FAILURE;
+			}
+
 			kalMemCopy(prCmdNvramFragment,
 					   (pu1Addr + u4NvramStartOffset),
 					   u4NvramFragmentSize);
