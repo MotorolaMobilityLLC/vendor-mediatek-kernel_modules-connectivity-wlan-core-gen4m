@@ -2279,7 +2279,6 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
-	struct FT_IES *prFtIEs;
 	enum ENUM_BAND eBand;
 #if (CFG_ADVANCED_80211_MLO == 1)
 	uint8_t ucLinkIdx = 0;
@@ -2717,33 +2716,8 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 
 #endif
 		}
-		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-		if (prConnSettings && prConnSettings->assocIeLen > 0) {
-			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-				   prConnSettings->assocIeLen);
-			prConnSettings->assocIeLen = 0;
-		}
 
-		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
-			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
-				prConnSettings->u4RspIeLength);
-			prConnSettings->u4RspIeLength = 0;
-		}
-
-		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
-			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
-				prConnSettings->u4ReqIeLength);
-			prConnSettings->u4ReqIeLength = 0;
-		}
-
-		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
-		if (prFtIEs) {
-			kalMemFree(prFtIEs->pucIEBuf,
-				VIR_MEM_TYPE,
-				prFtIEs->u4IeLength);
-			kalMemZero(prFtIEs,
-				sizeof(*prFtIEs));
-		}
+		aisFreeIesMem(prAdapter, ucBssIndex);
 
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,
@@ -2998,32 +2972,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 				GFP_KERNEL);
 #endif
 
-		if (prConnSettings && prConnSettings->assocIeLen > 0) {
-			kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
-				   prConnSettings->assocIeLen);
-			prConnSettings->assocIeLen = 0;
-		}
-
-		if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
-			kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
-				prConnSettings->u4RspIeLength);
-			prConnSettings->u4RspIeLength = 0;
-		}
-
-		if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
-			kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
-				prConnSettings->u4ReqIeLength);
-			prConnSettings->u4ReqIeLength = 0;
-		}
-
-		prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
-		if (prFtIEs) {
-			kalMemFree(prFtIEs->pucIEBuf,
-				VIR_MEM_TYPE,
-				prFtIEs->u4IeLength);
-			kalMemZero(prFtIEs,
-				sizeof(*prFtIEs));
-		}
+		aisFreeIesMem(prAdapter, ucBssIndex);
 
 		kalSetMediaStateIndicated(prGlueInfo,
 			MEDIA_STATE_DISCONNECTED,

@@ -648,6 +648,8 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 
 void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex);
 
+void aisFreeIesMem(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
