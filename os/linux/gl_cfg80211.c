@@ -8442,6 +8442,11 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data,
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!wdev) {
+		DBGLOG(REQ, ERROR,
+			"mtk_cfg80211_testmode_cmd null wdev\n");
+		return -EINVAL;
+	}
 
 	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
 		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
