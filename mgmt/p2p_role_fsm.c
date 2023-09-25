@@ -1475,6 +1475,14 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 		prP2pBssInfo->u2BeaconInterval = DOT11_BEACON_PERIOD_DEFAULT;
 	}
 
+	if (prAdapter->rWifiVar.ucGoBcnIntrvl != 0) {
+		prP2pBssInfo->u2BeaconInterval =
+			prAdapter->rWifiVar.ucGoBcnIntrvl;
+		DBGLOG(P2P, TRACE,
+			"Updated u2BeaconInterval to :%u by customize.\n",
+			prP2pBssInfo->u2BeaconInterval);
+	}
+
 	if (prP2pStartAPMsg->u4DtimPeriod) {
 		DBGLOG(P2P, TRACE,
 			"DTIM interval updated to :%u\n",

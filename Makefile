@@ -657,8 +657,10 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X_2x2), y)
     ccflags-y += -DCFG_SUPPORT_CONNAC2X_2x2=1
+    ccflags-y += -DCFG_SUPPORT_MINIMIZE_BEACON_INTERVAL=1
 else
     ccflags-y += -DCFG_SUPPORT_CONNAC2X_2x2=0
+    ccflags-y += -DCFG_SUPPORT_MINIMIZE_BEACON_INTERVAL=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)

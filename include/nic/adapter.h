@@ -848,6 +848,7 @@ struct WIFI_VAR {
 	struct LINK_MGMT rMldBlockList;
 	uint8_t ucMldRetryCount;
 #endif
+	uint8_t ucGoBcnIntrvl;
 	uint8_t ucApHt;
 	uint8_t ucApVht;
 	uint8_t ucP2pGoHt;
