@@ -259,6 +259,7 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 	uint8_t ucVhtBw;
 	enum ENUM_CHNL_EXT eSco;
 	uint8_t ucBssIndex;
+	uint8_t fgHasStopTx;
 };
 #endif
 
@@ -374,6 +375,11 @@ u_int8_t rlmParseCheckRxsmmOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
 			       u_int8_t *pfgRxsmmEnable);
 #endif
 
+uint32_t rlmCalculateCsaIELen(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	struct STA_RECORD *prStaRec);
+
 void rlmGenerateCsaIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 
@@ -468,7 +474,8 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
 
-void rlmResetCSAParams(struct BSS_INFO *prBssInfo);
+void rlmResetCSAParams(struct BSS_INFO *prBssInfo,
+	uint8_t fgClearStopTx);
 
 void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				uintptr_t ulParamPtr);
@@ -485,13 +492,10 @@ rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
 
 void
 rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex);
+	struct BSS_INFO *prBssInfo);
 
 uint16_t
 rlmOpClassToBandwidth(uint8_t ucOpClass);
-
-void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
 
 uint32_t
 rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,

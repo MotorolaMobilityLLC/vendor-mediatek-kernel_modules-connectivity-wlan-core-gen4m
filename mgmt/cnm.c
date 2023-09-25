@@ -1159,10 +1159,9 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint8_t ucBssIndex;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	DBGLOG(CNM, INFO, "cnmCsaDoneEvent.\n");
+
 	if (prAdapter->rWifiVar.fgCsaInProgress == FALSE) {
 		DBGLOG(CNM, WARN, "Receive duplicate cnmCsaDoneEvent.\n");
 		return;
@@ -1173,19 +1172,19 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 		return;
 	}
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-	if (!prP2pBssInfo)
-		return;
-	prP2pRoleFsmInfo =
-		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-			prP2pBssInfo->u4PrivateData);
-	if (!prP2pRoleFsmInfo ||
-		prP2pRoleFsmInfo->eCurrentState ==
-		P2P_ROLE_STATE_SCAN) {
-		log_dbg(CNM, ERROR, "prP2pRoleFsmInfo is invalid!\n");
-		return;
-	}
 
 	/* Clean up CSA variable */
+	cnmCsaResetParams(prAdapter, prP2pBssInfo);
+	if (!prP2pBssInfo ||
+		prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+		return;
+
+	p2pFunChnlSwitchNotifyDone(prAdapter);
+}
+
+void cnmCsaResetParams(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
 	prAdapter->rWifiVar.fgCsaInProgress = FALSE;
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
 	prAdapter->rWifiVar.ucNewOperatingClass = 0;
@@ -1195,9 +1194,6 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucNewChannelWidth = 0;
 	prAdapter->rWifiVar.ucNewChannelS1 = 0;
 	prAdapter->rWifiVar.ucNewChannelS2 = 0;
-	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
-		return;
-	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
 #endif
 
@@ -2352,8 +2348,7 @@ omac_choosed:
 				&prBssInfo->rCsaTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 				(uintptr_t)ucBssIndex);
-			rlmResetCSAParams(prBssInfo);
-			prBssInfo->fgHasStopTx = FALSE;
+			rlmResetCSAParams(prBssInfo, TRUE);
 #endif
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;

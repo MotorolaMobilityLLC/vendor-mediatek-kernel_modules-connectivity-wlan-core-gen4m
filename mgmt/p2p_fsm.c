@@ -515,10 +515,17 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	return prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]
 		->rJoinInfo.prTargetBssDesc;
 }
+
 void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
-		unsigned long ulParamPtr)
+	uintptr_t ulParamPtr)
 {
-	DBGLOG(P2P, TRACE,
-		"CSA block scan timeout\n");
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *)ulParamPtr;
+
+	DBGLOG(P2P, WARN,
+		"[%d] CSA timeout\n",
+		prP2pBssInfo->ucBssIndex);
+
+	cnmCsaResetParams(prAdapter, prP2pBssInfo);
+	kalP2pStopApInterface(prAdapter, prP2pBssInfo);
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */

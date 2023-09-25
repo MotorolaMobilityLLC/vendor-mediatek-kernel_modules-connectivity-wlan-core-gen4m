@@ -1988,6 +1988,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		struct cfg80211_csa_settings *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	int32_t i4Rslt = -EINVAL;
 	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
 		(struct MSG_P2P_BEACON_UPDATE *) NULL;
@@ -1996,6 +1997,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIdx = 0;
 	uint32_t u4Len = 0;
 
@@ -2022,28 +2024,24 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				break;
 			}
 		}
-		kalMemZero(
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
-			sizeof(struct cfg80211_chan_def));
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
-			= (struct ieee80211_channel *)
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
-		kalMemZero(
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			sizeof(struct ieee80211_channel));
+		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+		kalMemZero(&(prGlueP2pInfo->chandefCsa),
+			   sizeof(struct cfg80211_chan_def));
+		prGlueP2pInfo->chandefCsa.chan = (struct ieee80211_channel *)
+			&(prGlueP2pInfo->chanCsa);
+		kalMemZero(prGlueP2pInfo->chandefCsa.chan,
+			   sizeof(struct ieee80211_channel));
 
 		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq1 =
+		prGlueP2pInfo->chandefCsa.center_freq1 =
 			params->chandef.center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq2 =
+		prGlueP2pInfo->chandefCsa.center_freq2 =
 			params->chandef.center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.width = params->chandef.width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			params->chandef.chan,
-			sizeof(struct ieee80211_channel));
+		prGlueP2pInfo->chandefCsa.width = params->chandef.width;
+		memcpy(prGlueP2pInfo->chandefCsa.chan,
+		       params->chandef.chan,
+		       sizeof(struct ieee80211_channel));
 
 		if (params) {
 			kalChannelFormatSwitch(&params->chandef,
@@ -2056,11 +2054,10 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO, "ucRoleIdx: %d, ucBssIdx: %d\n",
 				ucRoleIdx, ucBssIdx);
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
-			dfs_state == NL80211_DFS_AVAILABLE
+		if (prGlueP2pInfo->chandefCsa.chan->dfs_state ==
+			NL80211_DFS_AVAILABLE
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan->
-			dfs_cac_ms != 0
+			&& prGlueP2pInfo->chandefCsa.chan->dfs_cac_ms != 0
 #endif
 			)
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
@@ -2068,12 +2065,56 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
 		/* Set CSA IE parameters */
-		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode =
+			params->block_tx;
+		ieee80211_chandef_to_operating_class(&params->chandef,
+			&prGlueInfo->prAdapter->rWifiVar.ucNewOperatingClass);
 		prGlueInfo->prAdapter->rWifiVar.ucNewChannelNumber =
-			nicFreq2ChannelNum(
-				params->chandef.chan->center_freq * 1000);
+			nicFreq2ChannelNum(params->chandef.chan->center_freq *
+				1000);
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchCount =
 			params->count;
+		switch (cfg80211_get_chandef_type(&params->chandef)) {
+		case NL80211_CHAN_HT40PLUS:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCA;
+			break;
+		case NL80211_CHAN_HT40MINUS:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCB;
+			break;
+		default:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCN;
+			break;
+		}
+		switch (params->chandef.width) {
+		case NL80211_CHAN_WIDTH_320:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_320_1;
+			break;
+		case NL80211_CHAN_WIDTH_160:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_160;
+			break;
+		case NL80211_CHAN_WIDTH_80P80:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_80P80;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_80;
+			break;
+		case NL80211_CHAN_WIDTH_40:
+		default:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_20_40;
+			break;
+		}
+		prGlueInfo->prAdapter->rWifiVar.ucNewChannelS1 =
+			params->chandef.center_freq1;
+		prGlueInfo->prAdapter->rWifiVar.ucNewChannelS2 =
+			params->chandef.center_freq2;
 
 		/* To prevent race condition, we have to set CSA flags
 		 * after all CSA parameters are updated. In this way,
@@ -2081,6 +2122,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		 * reported once in the beacon.
 		 */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prGlueP2pInfo->fgChannelSwitchReq = TRUE;
 
 		/* Set new channel parameters */
 		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
@@ -2169,6 +2211,15 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 				MBOX_ID_0,
 				(struct MSG_HDR *) prP2pBcnUpdateMsg,
 				MSG_SEND_METHOD_BUF);
+
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+				prGlueInfo->prAdapter,
+				ucBssIdx);
+			kalP2pIndicateChnlSwitchStarted(prGlueInfo->prAdapter,
+				prBssInfo,
+				&rRfChnlInfo,
+				params->count,
+				params->block_tx);
 
 			i4Rslt = 0; /* Return Success */
 		}
