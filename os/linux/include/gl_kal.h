@@ -1765,6 +1765,8 @@ int8_t kalIndicateOpModeChange(struct ADAPTER *prAdapter,
 					uint8_t ucRxNss);
 #endif
 
+void kalTxTimeoutDump(struct ADAPTER *prAdapter);
+void kalSetTxTimeoutDump(struct GLUE_INFO *pr);
 
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
