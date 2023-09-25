@@ -3288,7 +3288,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			kalInitDevWakeup(prGlueInfo->prAdapter,
 				wiphy_dev(prWdev->wiphy));
 
-		if (prWdev->netdev->reg_state != NETREG_REGISTERED &&
+		if (prWdev->netdev->reg_state == NETREG_UNINITIALIZED &&
 		    register_netdev(prWdev->netdev) < 0) {
 			DBGLOG(INIT, ERROR,
 				"Register net_device %d %p failed\n",
