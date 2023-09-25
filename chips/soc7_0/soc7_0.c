@@ -103,6 +103,7 @@ static void soc7_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 static void soc7_0EnableFwDlMode(struct ADAPTER *prAdapter);
 
 static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
+static int soc7_0_CheckWfdmaHang(struct ADAPTER *prAdapter);
 static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -2413,6 +2414,48 @@ static void soc7_0_DumpBusHangCr(struct ADAPTER *prAdapter)
 	soc7_0_DumpHostCr(prAdapter);
 }
 
+static int soc7_0_DehangWfdmaDuringSER(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Value = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl = NULL;
+
+	if (prAdapter == NULL) {
+		DBGLOG(HAL, INFO, "prAdapter NULL\n");
+		return -1;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+	if (prErrRecoveryCtrl->eErrRecovState != ERR_RECOV_STOP_IDLE &&
+		soc7_0_CheckWfdmaHang(prAdapter)) {
+		/* Dump WFDMA and De-Hang Here */
+		connac2x_DbgCrRead(prAdapter, 0x18027050, &u4Value);
+		u4Value = u4Value | BIT(0);
+		connac2x_DbgCrWrite(prAdapter, 0x18027050, u4Value);
+		connac2x_DbgCrRead(prAdapter, 0x18027050, &u4Value);
+		u4Value = u4Value | BITS(12, 14);
+		connac2x_DbgCrWrite(prAdapter, 0x18027050, u4Value);
+
+		connac2x_DbgCrRead(prAdapter, 0x18027050, &u4Value);
+		if (u4Value & BIT(1)) {
+			DBGLOG(HAL, INFO,
+				"DONE 0x18027050:[%lu] SER:[%d]\n",
+				u4Value,
+				prErrRecoveryCtrl->eErrRecovState);
+		} else {
+			DBGLOG(HAL, INFO,
+				"ERR 0x18027050:[%lu] SER:[%d]\n",
+				u4Value,
+				prErrRecoveryCtrl->eErrRecovState);
+		}
+	}
+
+	return 0;
+}
+
 static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 {
 	struct ADAPTER *prAdapter = (struct ADAPTER *) adapter;
@@ -2517,6 +2560,8 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR)))
 			soc7_0_DumpHostCr(prAdapter);
 
+		soc7_0_DehangWfdmaDuringSER(prAdapter);
+
 		if (conninfra_reset) {
 			g_IsWfsysBusHang = TRUE;
 			glResetWholeChipResetTrigger("bus hang");
@@ -2549,6 +2594,19 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	}
 
 	return ret;
+}
+
+static int soc7_0_CheckWfdmaHang(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Value = 0;
+
+	wf_ioremap_read(0x18027078, &u4Value);
+	DBGLOG(HAL, INFO, "0x18027078: %lu\n", u4Value);
+
+	if ((u4Value&BIT(24)) && !(u4Value&BIT(22)) && !(u4Value&BIT(13)))
+		return 1;
+	else
+		return 0;
 }
 
 static u_int8_t soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,

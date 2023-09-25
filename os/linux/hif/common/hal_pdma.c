@@ -4115,6 +4115,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	struct WIFI_VAR *prWifiVar;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
+	struct CHIP_DBG_OPS *prDbgOps;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -4123,6 +4124,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	u4Status = prErrRecoveryCtrl->u4Status;
 	prErrRecoveryCtrl->u4Status = 0;
@@ -4156,6 +4158,9 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				halRxReceiveRFBs(
 					prAdapter, RX_RING_EVT, FALSE);
 #endif
+			if (prDbgOps && prDbgOps->showPdmaInfo)
+				prDbgOps->showPdmaInfo(prAdapter);
+
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetRxProcessEvent(prAdapter->prGlueInfo);
 			DBGLOG(HAL, INFO,
