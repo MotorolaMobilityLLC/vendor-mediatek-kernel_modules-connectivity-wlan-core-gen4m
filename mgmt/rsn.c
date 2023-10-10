@@ -1311,6 +1311,15 @@ u_int8_t rsnPerformPolicySelection(
 		return FALSE;
 	}
 
+	/* Protection is required in this BSS. */
+	if ((prBss->u2CapInfo & CAP_INFO_PRIVACY) != 0) {
+		if (secEnabledInAis(prAdapter,
+			ucBssIndex) == FALSE) {
+			DBGLOG(RSN, INFO, "-- Protected BSS\n");
+			return FALSE;
+		}
+	}
+
 #if CFG_SUPPORT_WAPI
 	if (aisGetWapiMode(prAdapter, ucBssIndex)) {
 		if (!wapiPerformPolicySelection(prAdapter, prBss, ucBssIndex)) {
@@ -1320,15 +1329,6 @@ u_int8_t rsnPerformPolicySelection(
 		}
 	}
 #endif
-
-	/* Protection is required in this BSS. */
-	if ((prBss->u2CapInfo & CAP_INFO_PRIVACY) != 0) {
-		if (secEnabledInAis(prAdapter,
-			ucBssIndex) == FALSE) {
-			DBGLOG(RSN, INFO, "-- Protected BSS\n");
-			return FALSE;
-		}
-	}
 
 	if (eAuthMode == AUTH_MODE_WPA ||
 	    eAuthMode == AUTH_MODE_WPA_PSK ||

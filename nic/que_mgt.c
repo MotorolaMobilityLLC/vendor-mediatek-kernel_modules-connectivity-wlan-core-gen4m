@@ -9944,16 +9944,16 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	DBGLOG_LIMITED(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
 
-	if (!(prWpaInfo->u4CipherGroup &
-		(IW_AUTH_CIPHER_TKIP | IW_AUTH_CIPHER_CCMP))) {
+	if (ucSecMode != CIPHER_SUITE_CCMP
+		&& ucSecMode != CIPHER_SUITE_TKIP) {
 		DBGLOG_LIMITED(QM, TRACE,
 			"SecMode: %d and CipherGroup: %d, no need check replay\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
 		return FALSE;
 	}
 
-	if (prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_TKIP &&
-		prWpaInfo->u4CipherGroup != IW_AUTH_CIPHER_CCMP) {
+	if (!(prWpaInfo->u4CipherGroup &
+		(IW_AUTH_CIPHER_TKIP | IW_AUTH_CIPHER_CCMP))) {
 		DBGLOG(QM, ERROR,
 			"RX status Chipher mode doens't match AP's setting\n");
 		return FALSE;

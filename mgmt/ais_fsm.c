@@ -2138,12 +2138,13 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DBDC
 		/* DBDC decsion.may change OpNss */
-		cnmDbdcPreConnectionEnableDecision(
-			prAdapter,
-			prAisBssInfo->ucBssIndex,
-			prBssDesc->eBand,
-			prBssDesc->ucChannelNum,
-			prAisBssInfo->ucWmmQueSet);
+		if (cnmDbdcIsDisabled(prAdapter))
+			cnmDbdcPreConnectionEnableDecision(
+				prAdapter,
+				prAisBssInfo->ucBssIndex,
+				prBssDesc->eBand,
+				prBssDesc->ucChannelNum,
+				prAisBssInfo->ucWmmQueSet);
 #endif /*CFG_SUPPORT_DBDC*/
 		DBGLOG(AIS, INFO, "[%d] mac: " MACSTR ", band: %d, ch: %d, wmm: %d\n",
 			i,
@@ -4300,6 +4301,13 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 							     prAisFsmInfo,
 							     prAssocRspSwRfb,
 							     prStaRec);
+
+				/* 3.1 Update DBDC mode */
+#if CFG_SUPPORT_DBDC
+				cnmDbdcRuntimeCheckDecision(prAdapter,
+								 ucBssIndex,
+								 FALSE);
+#endif
 
 				/* 4 <1.6> Indicate Connected Event to Host
 				 * immediately.
