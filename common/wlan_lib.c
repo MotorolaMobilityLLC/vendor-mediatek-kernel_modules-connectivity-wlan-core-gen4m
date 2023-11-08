@@ -28,6 +28,9 @@
 #if (CFG_HW_DETECT_REPORT == 1)
 #include "conn_dbg.h"
 #endif
+//Moto, read MACs from boot params
+#include <linux/of.h>
+#include <linux/of_address.h>
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -3783,6 +3786,83 @@ void wlanoidClearTimeoutCheck(struct ADAPTER *prAdapter)
 	cnmTimerStopTimer(prAdapter, &(prAdapter->rOidTimeoutTimer));
 }
 
+#ifdef MOTO_UTAGS_MAC
+/* moto, reed wifi mac add from bootargs */
+#define MACSTRLEN 17
+/* use moto bootargs to get device name & radio parameters */
+static char *bootargs_str = NULL;
+
+static int mmi_get_bootarg_dt(char *key, char **value, char *prop, char *spl_flag)
+{
+	const char *bootargs_tmp = NULL;
+	char *idx = NULL;
+	char *kvpair = NULL;
+	int err = 1;
+	struct device_node *n = of_find_node_by_path("/chosen");
+	size_t bootargs_tmp_len = 0;
+
+	if (n == NULL)
+		goto err;
+
+	if (of_property_read_string(n, prop, &bootargs_tmp) != 0)
+		goto putnode;
+
+	bootargs_tmp_len = strlen(bootargs_tmp);
+	if (!bootargs_str) {
+		/* The following operations need a non-const
+		 * version of bootargs
+		 */
+		bootargs_str = kzalloc(bootargs_tmp_len + 1, GFP_KERNEL);
+		if (!bootargs_str)
+			goto putnode;
+	}
+	strlcpy(bootargs_str, bootargs_tmp, bootargs_tmp_len + 1);
+
+	idx = strnstr(bootargs_str, key, strlen(bootargs_str));
+	if (idx) {
+		kvpair = strsep(&idx, " ");
+		if (kvpair)
+			if (strsep(&kvpair, "=")) {
+				*value = strsep(&kvpair, spl_flag);
+				if (*value)
+					err = 0;
+			}
+	}
+
+putnode:
+	of_node_put(n);
+err:
+	return err;
+}
+
+int mmi_get_bootarg(char *key, char **value)
+{
+#ifdef CONFIG_BOOT_CONFIG
+	return mmi_get_bootarg_dt(key, value, "mmi,bootconfig", "\n");
+#else
+	return mmi_get_bootarg_dt(key, value, "bootargs", " ");
+#endif
+}
+
+void mmi_free_bootarg_res(void)
+{
+	kfree(bootargs_str);
+	bootargs_str = NULL;
+}
+
+static inline void strtomac(char * buf, unsigned char macaddr[6]) {
+        if (strchr(buf, ':'))
+                sscanf(buf, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+                        &macaddr[0],&macaddr[1], &macaddr[2], &macaddr[3], &macaddr[4], &macaddr[5]);
+        else if (strchr(buf, '-'))
+                sscanf(buf, "%hhx-%hhx-%hhx-%hhx-%hhx-%hhx",
+                        &macaddr[0],&macaddr[1], &macaddr[2], &macaddr[3], &macaddr[4], &macaddr[5]);
+        else
+                DBGLOG(INIT, ERROR, "%s,Can not parse mac address: %s", __func__,buf);
+}
+#endif
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to override network address
@@ -3802,8 +3882,33 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
 	uint32_t u4SysTime;
+#ifdef MOTO_UTAGS_MAC
+	char *s;
+	char macStr[MACSTRLEN+1] ={0};
+	bool utagMac = FALSE;
+#endif
 
 	ASSERT(prAdapter);
+
+#ifdef MOTO_UTAGS_MAC
+        //Moto, read MACs from bootparams
+        if (mmi_get_bootarg("androidboot.wifimacaddr=", &s) == 0) {
+            DBGLOG(INIT, ERROR, "%s: get wlan MACs bootargs = %s \n", __func__, s);
+            memcpy(macStr, s, MACSTRLEN);
+            utagMac = TRUE;
+            mmi_free_bootarg_res();
+        }
+        else {
+            DBGLOG(INIT, ERROR, "%s: WIFI_MAC_BOOTARG not present in bootargs", __func__);
+        }
+
+        if (utagMac == TRUE) {
+#if CFG_SHOW_MACADDR_SOURCE
+                DBGLOG(INIT, INFO, " Using MAC from boot params=%s\n", macStr);
+#endif
+                strtomac(macStr,rMacAddr);
+        } else
+#endif
 
 	if (kalRetrieveNetworkAddress(prAdapter->prGlueInfo, rMacAddr) == FALSE
 	    || IS_BMCAST_MAC_ADDR(rMacAddr)
@@ -3822,9 +3927,9 @@ uint32_t wlanUpdateNetworkAddress(struct ADAPTER
 		/* dynamic generate */
 		u4SysTime = (uint32_t) kalGetTimeTick();
 
-		rMacAddr[0] = 0x00;
-		rMacAddr[1] = 0x08;
-		rMacAddr[2] = 0x22;
+		rMacAddr[0] = 0xF0;
+		rMacAddr[1] = 0xD7;
+		rMacAddr[2] = 0xAA;
 
 		kalMemCopy(&rMacAddr[3], &u4SysTime, 3);
 
