@@ -18,6 +18,8 @@ static moto_product products_list[] = {
 		{"tesla",    "NA", "wifi",     "txpowerctrl_na"},
 		{"tesla",    "all", "wifi",     "txpowerctrl"},
 		{"lyriq",   "JAPAN", "wifi",     "txpowerctrl_JAPAN"},
+		{"maui",    "NA",  "wifi_epa", "txpowerctrl_EPA"},
+		{"maui",    "NA_CARRIERS",  "wifi", "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
 };
 
