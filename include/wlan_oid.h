@@ -5003,6 +5003,14 @@ wlanoidSetHS20Info(struct ADAPTER *prAdapter,
 		   uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
+#if CFG_SUPPORT_RSSI_DISCONNECT
+uint32_t wlanoidQueryRssiDisconnect(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen);
+#endif
+
 uint32_t
 wlanoidNotifyFwSuspend(struct ADAPTER *prAdapter,
 		       void *pvSetBuffer,
