@@ -14357,6 +14357,9 @@ static int priv_driver_run_hqa(
 	dataptr = kalMemAlloc(datalen, VIR_MEM_TYPE);
 	if (dataptr == NULL)
 		return -1;
+	/* Backup Original Ptr /Len for mem Free */
+	oridataptr = dataptr;
+	oridatalen = datalen;
 
 	/* Backup Original Ptr /Len for mem Free */
 	oridataptr = dataptr;
@@ -14412,6 +14415,7 @@ static int priv_driver_run_hqa(
 			}
 		}
 	}
+
 	kalMemFree(oridataptr, VIR_MEM_TYPE, oridatalen);
 #else
 	DBGLOG(REQ, ERROR,

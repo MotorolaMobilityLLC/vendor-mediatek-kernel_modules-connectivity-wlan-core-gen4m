@@ -171,6 +171,14 @@ extern uint32_t g_au4IQData[256];
 #define RLM_MAX_TX_PWR		20	/* dbm */
 #define RLM_MIN_TX_PWR		8	/* dbm */
 
+#if CFG_SUPPORT_BFER
+#define MODE_HT 2
+#define MODE_VHT 4
+#if (CFG_SUPPORT_802_11AX == 1)
+#define MODE_HE_SU 8
+#endif
+#endif
+
 #if CFG_SUPPORT_802_11AC
 #if CFG_SUPPORT_BFEE
 #define FIELD_VHT_CAP_INFO_BFEE \
@@ -506,6 +514,22 @@ void
 rlmDummyChangeOpHandler(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, bool fgIsChangeSuccess);
 
+#if CFG_SUPPORT_BFER
+void
+rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec);
+
+void
+rlmETxBfTriggerPeriodicSounding(struct ADAPTER *prAdapter);
+
+bool
+rlmClientSupportsVhtETxBF(struct STA_RECORD *prStaRec);
+
+uint8_t
+rlmClientSupportsVhtBfeeStsCap(struct STA_RECORD *prStaRec);
+
+bool
+rlmClientSupportsHtETxBF(struct STA_RECORD *prStaRec);
+#endif
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 uint32_t rlmCalBackup(
