@@ -9621,47 +9621,39 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	prCmdPerfReport->u2CmdLen = sizeof(struct CMD_PERF_IND);
 
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
+	prCmdPerfReport->ucBssNum = MAX_BSSID_NUM;
 
-	for (i = 0; i < 4; i++) {
-		prCmdPerfReport->ulCurTxBytes[i] =
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
-		prCmdPerfReport->ulCurRxBytes[i] =
+		prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurRxBytes[i];
-		prCmdPerfReport->u2CurRxRate[i] =
+		prCmdPerfReport->rUniCmdParm[i].u2CurRxRate =
 			prAdapter->prGlueInfo->PerfIndCache.u2CurRxRate[i];
-		prCmdPerfReport->ucCurRxRCPI0[i] =
+		prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI0 =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI0[i];
-		prCmdPerfReport->ucCurRxRCPI1[i] =
+		prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI1 =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxRCPI1[i];
-		prCmdPerfReport->ucCurRxNss[i] =
+		prCmdPerfReport->rUniCmdParm[i].ucCurRxNss =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss[i];
-		prCmdPerfReport->ucCurRxNss2[i] =
+		prCmdPerfReport->rUniCmdParm[i].ucCurRxNss2 =
 			prAdapter->prGlueInfo->PerfIndCache.ucCurRxNss2[i];
-		u4CurrentTp += (prCmdPerfReport->ulCurTxBytes[i] +
-			prCmdPerfReport->ulCurRxBytes[i]);
+		u4CurrentTp +=
+		    prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes +
+		    prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes;
 	}
 	if (u4CurrentTp != 0) {
-		DBGLOG(SW4, TRACE,
-			"Total TP[%d] TX-Byte[%d][%d][%d][%d],RX-Byte[%d][%d][%d][%d]\n",
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			DBGLOG(SW4, TRACE,
+			"Total TP[%d] BSS[%d] TX-Byte[%d],RX-Byte[%d],Rate[%d],RCPI0[%d],RCPI1[%d]\n",
 			u4CurrentTp,
-			prCmdPerfReport->ulCurTxBytes[0],
-			prCmdPerfReport->ulCurTxBytes[1],
-			prCmdPerfReport->ulCurTxBytes[2],
-			prCmdPerfReport->ulCurTxBytes[3],
-			prCmdPerfReport->ulCurRxBytes[0],
-			prCmdPerfReport->ulCurRxBytes[1],
-			prCmdPerfReport->ulCurRxBytes[2],
-			prCmdPerfReport->ulCurRxBytes[3]);
-		DBGLOG(SW4, TRACE,
-			"Rate[%d][%d][%d][%d] RCPI[%d][%d][%d][%d]\n",
-			prCmdPerfReport->u2CurRxRate[0],
-			prCmdPerfReport->u2CurRxRate[1],
-			prCmdPerfReport->u2CurRxRate[2],
-			prCmdPerfReport->u2CurRxRate[3],
-			prCmdPerfReport->ucCurRxRCPI0[0],
-			prCmdPerfReport->ucCurRxRCPI0[1],
-			prCmdPerfReport->ucCurRxRCPI0[2],
-			prCmdPerfReport->ucCurRxRCPI0[3]);
+			i,
+			prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes,
+			prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes,
+			prCmdPerfReport->rUniCmdParm[i].u2CurRxRate,
+			prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI0,
+			prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI1);
+		}
 
 		wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_PERF_IND,

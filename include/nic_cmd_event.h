@@ -1941,7 +1941,16 @@ struct CMD_SET_ACL_POLICY {
 	uint8_t aucAddr[MAC_ADDR_LEN];
 	uint8_t aucReserve[4];
 };
-
+struct CMD_PERF_IND_PARM {
+	uint32_t u4CurTxBytes;    /* in Bps */
+	uint32_t u4CurRxBytes;    /* in Bps */
+	uint16_t u2CurRxRate;    /* Unit 500 Kbps */
+	uint8_t ucCurRxRCPI0;
+	uint8_t ucCurRxRCPI1;
+	uint8_t ucCurRxNss;
+	uint8_t ucCurRxNss2;
+	uint16_t u2Reserve;
+};
 struct CMD_PERF_IND {
 	/* DWORD_0 - Common Part */
 	uint8_t  ucCmdVer;
@@ -1949,15 +1958,10 @@ struct CMD_PERF_IND {
 	uint16_t u2CmdLen;       /* cmd size including common part and body. */
 	/* DWORD_1 ~ x - Command Body */
 	uint32_t u4VaildPeriod;   /* in ms */
-	/* Current State */
-	uint32_t ulCurTxBytes[4];   /* in Bps */
-	uint32_t ulCurRxBytes[4];   /* in Bps */
-	uint16_t u2CurRxRate[4];     /* Unit 500 Kbps */
-	uint8_t ucCurRxRCPI0[4];
-	uint8_t ucCurRxRCPI1[4];
-	uint8_t ucCurRxNss[4];
-	uint8_t ucCurRxNss2[4];
-	uint32_t au4Reserve[62];
+	uint8_t ucBssNum;
+	uint8_t  ucReserve[3];
+	struct CMD_PERF_IND_PARM rUniCmdParm[MAX_BSSID_NUM];
+	//uint32_t au4Reserve[62];
 };
 
 #if CFG_SUPPORT_SMART_GEAR
