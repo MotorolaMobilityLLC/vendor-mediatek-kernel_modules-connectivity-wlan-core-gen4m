@@ -453,6 +453,7 @@ void soc3_0ReadExtIntStatus(
 	uint32_t ap_write_value = 0;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	*pu4IntStatus = 0;
 
@@ -475,6 +476,9 @@ void soc3_0ReadExtIntStatus(
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
 	}
 
+	if (prSwWfdmaInfo->fgIsEnSwWfdma)
+		*pu4IntStatus |= WHISR_TX_DONE_INT;
+
 	if (u4RegValue & CONNAC_MCU_SW_INT) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 		ap_write_value |= (u4RegValue & CONNAC_MCU_SW_INT);
@@ -493,7 +497,17 @@ void soc3_0ReadExtIntStatus(
 void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
+
+	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+		if (prSwWfdmaInfo->rOps.processDmaDone)
+			prSwWfdmaInfo->rOps.
+				processDmaDone(prAdapter->prGlueInfo);
+		else
+			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
+	}
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_16)
@@ -784,6 +798,27 @@ struct BUS_INFO soc3_0_bus_info = {
 	.devReadIntStatus = soc3_0ReadExtIntStatus,
 	.DmaShdlInit = mt6885DmashdlInit,
 	.wfdmaAllocRxRing = soc3_0WfdmaAllocRxRing,
+
+	.rSwWfdmaInfo = {
+		.rOps = {
+			.init = halSwWfdmaInit,
+			.uninit = halSwWfdmaUninit,
+			.reset = halSwWfdmaReset,
+			.backup = halSwWfdmaBackup,
+			.restore = halSwWfdmaRestore,
+			.getCidx = halSwWfdmaGetCidx,
+			.setCidx = halSwWfdmaSetCidx,
+			.getDidx = halSwWfdmaGetDidx,
+			.writeCmd = halSwWfdmaWriteCmd,
+			.processDmaDone = halSwWfdmaProcessDmaDone,
+			.dumpDebugLog = halSwWfdmaDumpDebugLog,
+		},
+		.fgIsSupportSwWfdma = TRUE,
+		.fgIsEnSwWfdma = FALSE,
+		.u4CpuIdx = 0,
+		.u4DmaIdx = 0,
+		.u4MaxCnt = TX_RING_SIZE,
+	},
 #endif			/*_HIF_PCIE || _HIF_AXI */
 };
 
@@ -2733,9 +2768,13 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
 
 	ASSERT(prAdapter);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
 	if (!conninfra_reg_readable_no_lock()) {
 		DBGLOG(HAL, ERROR,
@@ -2807,6 +2846,10 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		g_IsWfsysBusHang = TRUE;
 		kalSetRstEvent();
 	}
+#if 0
+	/* BIT(3): reset without coredump
+	 * change to sw wfdma cmd done interrupt
+	 */
 	if (value & BIT(3)) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
@@ -2817,6 +2860,13 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		fgIsResetting = TRUE;
 		update_driver_reset_status(fgIsResetting);
 		kalSetRstEvent();
+	}
+#endif
+
+	/* SW wfdma cmd done interrupt */
+	if (value & BIT(3) && prSwWfdmaInfo->fgIsEnSwWfdma) {
+		DBGLOG(HAL, TRACE, "FW trigger SwWfdma INT.\n");
+		kalSetDrvIntEvent(prAdapter->prGlueInfo);
 	}
 }
 
