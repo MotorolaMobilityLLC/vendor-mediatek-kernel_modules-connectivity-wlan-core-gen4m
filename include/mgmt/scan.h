@@ -1062,4 +1062,7 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 
 void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);
 
+void updateLinkStatsApRec(struct ADAPTER *prAdapter,
+		struct BSS_DESC *prBssDesc);
+
 #endif /* _SCAN_H */
