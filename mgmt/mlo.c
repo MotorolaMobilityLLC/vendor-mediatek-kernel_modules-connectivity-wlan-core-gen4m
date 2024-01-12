@@ -3644,9 +3644,16 @@ struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 {
 	struct MLD_STA_RECORD *prMldSta;
 	struct LINK *prClientList;
+	const uint8_t offset =
+			aucMacAddr[5] % ARRAY_SIZE(prAdapter->aprMldStarec);
 
 	if (!prMldBssInfo)
 		return NULL;
+
+	/* Try hash index first, if miss, fallback to original traversal */
+	prMldSta = &prAdapter->aprMldStarec[offset];
+	if (EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
+		return prMldSta;
 
 	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
 	LINK_FOR_EACH_ENTRY(prMldSta, prClientList, rLinkEntry,
@@ -3912,17 +3919,22 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 	uint16_t u2EmlCap, uint16_t u2MldCap)
 {
 	struct MLD_STA_RECORD *prMldStarec = NULL;
+	const uint8_t offset =
+			aucMacAddr[5] % ARRAY_SIZE(prAdapter->aprMldStarec);
 	uint8_t i = 0;
+	uint8_t idx;
 
 	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
-		if (prAdapter->aprMldStarec[i].fgIsInUse)
+		idx = (i + offset) % ARRAY_SIZE(prAdapter->aprMldStarec);
+
+		if (prAdapter->aprMldStarec[idx].fgIsInUse)
 			continue;
 
-		prMldStarec = &prAdapter->aprMldStarec[i];
+		prMldStarec = &prAdapter->aprMldStarec[idx];
 		kalMemZero(prMldStarec, sizeof(*prMldStarec));
 		LINK_INITIALIZE(&prMldStarec->rStarecList);
 		prMldStarec->fgIsInUse = TRUE;
-		prMldStarec->ucIdx = i;
+		prMldStarec->ucIdx = idx;
 		prMldStarec->fgMldType = fgMldType;
 		prMldStarec->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 
@@ -3951,6 +3963,9 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 				MAC2STR(prMldStarec->aucPeerMldAddr));
 		break;
 	}
+
+	if (i == ARRAY_SIZE(prAdapter->aprMldStarec))
+		prMldStarec = NULL;
 
 	return prMldStarec;
 }

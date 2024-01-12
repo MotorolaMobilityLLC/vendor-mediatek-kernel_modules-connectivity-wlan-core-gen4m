@@ -625,15 +625,19 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i, k;
+	const uint8_t offset = pucMacAddr[5] % CFG_STA_REC_NUM;
+	uint8_t idx;
 
 	ASSERT(prAdapter);
 
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prStaRec = &prAdapter->arStaRec[i];
+		/* A naive hash to find a free starec from offset */
+		idx = (i + offset) % CFG_STA_REC_NUM;
+		prStaRec = &prAdapter->arStaRec[idx];
 
 		if (!prStaRec->fgIsInUse) {
 			kalMemZero(prStaRec, sizeof(struct STA_RECORD));
-			prStaRec->ucIndex = (uint8_t) i;
+			prStaRec->ucIndex = (uint8_t) idx;
 			prStaRec->ucBssIndex = ucBssIndex;
 			prStaRec->fgIsInUse = TRUE;
 			prStaRec->eStaType = eStaType;
@@ -657,7 +661,7 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			LINK_INITIALIZE(&prStaRec->rMscsTcpMonitorList);
 			DBGLOG(MEM, WARN,
 				"LINK_INITIALIZE list=%p, BssIdx=%d, StaRecIdx=%d\n",
-				&prStaRec->rMscsMonitorList, ucBssIndex, i);
+				&prStaRec->rMscsMonitorList, ucBssIndex, idx);
 #if CFG_ENABLE_PER_STA_STATISTICS && CFG_ENABLE_PKT_LIFETIME_PROFILE
 			prStaRec->u4TotalTxPktsNumber = 0;
 			prStaRec->u4TotalTxPktsTime = 0;
@@ -911,8 +915,10 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Get STA_RECORD_T by Peer MAC Address(Usually TA).
+ * @brief Get STA_RECORD_T by Peer MAC Address(Usually TA) with BSS index.
  *
+ * @param[in] ucBssIndex	  Given BSS index, or
+ *				  ANY_BSS_INDEX if don't need to match BSS index
  * @param[in] pucPeerMacAddr      Given Peer MAC Address.
  *
  * @retval   Pointer to STA_RECORD_T, if found. NULL, if not found
@@ -923,19 +929,28 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i;
+	uint16_t offset;
+	uint8_t ucLastByte;
+	uint8_t idx;
 
 	ASSERT(prAdapter);
 
 	if (!pucPeerMacAddr)
 		return NULL;
 
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		prStaRec = &prAdapter->arStaRec[i];
+	/* A naive hash to find a match starec by peer MAC address */
+	ucLastByte = pucPeerMacAddr[5];
+	offset = ucLastByte % CFG_STA_REC_NUM;
 
-		if (prStaRec->fgIsInUse
-			&& prStaRec->ucBssIndex == ucBssIndex
-			&& EQUAL_MAC_ADDR(
-				prStaRec->aucMacAddr, pucPeerMacAddr)) {
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		idx = (i + offset) % CFG_STA_REC_NUM;
+		prStaRec = &prAdapter->arStaRec[idx];
+
+		if (prStaRec->fgIsInUse &&
+		    (ucBssIndex == ANY_BSS_INDEX ||
+		     prStaRec->ucBssIndex == ucBssIndex) &&
+		    prStaRec->aucMacAddr[5] == ucLastByte &&
+		    EQUAL_MAC_ADDR(prStaRec->aucMacAddr, pucPeerMacAddr)) {
 			break;
 		}
 	}
