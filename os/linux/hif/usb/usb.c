@@ -1282,6 +1282,10 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 
+	if (prGlueInfo->prAdapter == NULL) {
+		DBGLOG(INIT, WARN, "Adapter is null\n");
+		return;
+	}
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 #endif

@@ -2568,7 +2568,7 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 
 	if (u4Scenario == UINT_MAX) {
 		index = 0;
-	} else if ((u4Scenario >= 0) && (u4Scenario <= 4)) {
+	} else if (u4Scenario <= 4) {
 		index = u4Scenario + 1;
 	} else {
 		DBGLOG(REQ, ERROR, "invalid scenario index: %u\n", u4Scenario);
@@ -3410,7 +3410,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	outputData.u2FlagScanning = rLinkQualityInfo.u2FlagScanning;
 
 	DBGLOG(REQ, INFO,
-	       "LQ: Tx(rate:%u, total:%u, Rty:%lu, fail:%lu, RTSF:%lu, ACKF:%lu), Rx(rate:%u, total:%u, dup:%u, error:%lu), Idle:%lu AwakeDur:%lu\n",
+	       "LQ: Tx(rate:%u, total:%llu, Rty:%lu, fail:%lu, RTSF:%lu, ACKF:%lu), Rx(rate:%u, total:%llu, dup:%u, error:%lu), Idle:%lu AwakeDur:%lu\n",
 	       outputData.u4CurTxRate, /* tx rate, current tx link speed */
 	       outputData.u8TxTotalCount, /* tx total packages */
 	       outputData.u8TxRetryCount, /* tx retry count */
@@ -3644,7 +3644,7 @@ int mtk_cfg80211_vendor_comb_matrix(
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
 		return -ENOMEM;
 	}
-	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%d\n,",
+	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%lu\n,",
 		sizeof(struct ANDROID_T_COMB_MATRIX));
 
 

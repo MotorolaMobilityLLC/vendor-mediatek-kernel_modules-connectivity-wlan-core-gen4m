@@ -213,15 +213,16 @@ void rrmFreeMeasurementResources(struct ADAPTER *prAdapter,
 	while (!LINK_IS_EMPTY(prReportLink)) {
 		LINK_REMOVE_HEAD(prReportLink, prReportEntry,
 				 struct RM_MEASURE_REPORT_ENTRY *);
+		if (!prReportEntry)
+			continue;
 
 		if (prReportEntry->pucMeasReport)
 			kalMemFree(prReportEntry->pucMeasReport,
 				VIR_MEM_TYPE,
 				prReportEntry->u2MeasReportLen);
-		if (prReportEntry)
-			kalMemFree(prReportEntry,
-				VIR_MEM_TYPE,
-				sizeof(*prReportEntry));
+		kalMemFree(prReportEntry,
+			VIR_MEM_TYPE,
+			sizeof(*prReportEntry));
 	}
 	kalMemZero(prRmReq, sizeof(*prRmReq));
 	kalMemZero(prRmRep, sizeof(*prRmRep));

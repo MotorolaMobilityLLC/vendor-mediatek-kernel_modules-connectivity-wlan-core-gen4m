@@ -4203,16 +4203,19 @@ int32_t kalThreadSchedUnmark(struct task_struct *pThread,
 uint8_t GET_IOCTL_BSSIDX(
 	struct ADAPTER *prAdapter)
 {
-	uint8_t ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
+	uint8_t ucBssIndex = 0;
+	struct GL_IO_REQ *prIoReq = NULL;
 
 	if (prAdapter) {
-		struct GL_IO_REQ *prIoReq = NULL;
+		ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
 
-		prIoReq =
-			&(prAdapter->prGlueInfo
-			->OidEntry);
+		if (prAdapter->prGlueInfo) {
+			prIoReq =
+				&(prAdapter->prGlueInfo
+				->OidEntry);
 
-		ucBssIndex = prIoReq->ucBssIndex;
+			ucBssIndex = prIoReq->ucBssIndex;
+		}
 	}
 
 	return ucBssIndex;
@@ -4395,12 +4398,12 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	 */
 	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
 
-	DBGLOG(OID, TRACE, "waiting, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+	DBGLOG(OID, TRACE, "waiting, Glue=%p, rPend=%p, BufLen=%u, QryLen=%p",
 			prGlueInfo, &prGlueInfo->rPendComp,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
 				MSEC_TO_JIFFIES(30*1000));
-	DBGLOG(OID, TRACE, "wait=%u, Glue=%p, rPend=%p, BufLen=%p, QryLen=%p",
+	DBGLOG(OID, TRACE, "wait=%u, Glue=%p, rPend=%p, BufLen=%u, QryLen=%p",
 			waitRet, prGlueInfo, &prGlueInfo->rPendComp,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
@@ -7179,7 +7182,7 @@ kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 		    || (pucFrameBuf == NULL)
 		    || (u4FrameLen == 0)) {
 			DBGLOG(AIS, TRACE,
-			       "Unexpected pointer PARAM. 0x%lx, 0x%lx, %d.",
+			       "Unexpected pointer PARAM. 0x%p, 0x%p, %d.",
 			       prGlueInfo, pucFrameBuf, u4FrameLen);
 			ASSERT(FALSE);
 			break;
@@ -9902,7 +9905,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				* the PerfMonLv3 still stands for 100M
 		    */
 			DBGLOG(SW4, TRACE,
-			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%llu]tpi[%llu]tpth[%d]th[%d]\n",
+			"Coex_i[%d]ad[%d]k[%d]m[%d]eb[%d]tp[%u]tpi[%llu]tpth[%d]th[%d]\n",
 			i, prWifiVar->fgIsBoostCpuThAdjustable, keep_alive,
 			prBssInfo->eCoexMode, prBssInfo->eBand,
 			prWifiVar->u4PerfMonTpTh[u4BoostCpuTh],
@@ -10314,7 +10317,7 @@ int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 	} else {
 		kfree(map);
 		map = NULL;
-		DBGLOG(RX, WARN, "Empty RPS bits, rps=0x%02x; cpu=0x%02x\n",
+		DBGLOG(RX, WARN, "Empty RPS bits, rps=0x%lx; cpu=0x%lx\n",
 			rps_value, cpu_online_mask->bits[0]);
 		return -EINVAL;
 	}
@@ -10907,10 +10910,7 @@ int kalMaskMemCmp(const void *cs, const void *ct,
 
 	for (su1 = cs, su2 = ct, su3 = mask;
 		count > 0; ++su1, ++su2, ++su3, count--) {
-		if (mask != NULL)
-			res = ((*su1)&(*su3)) - ((*su2)&(*su3));
-		else
-			res = (*su1) - (*su2);
+		res = ((*su1)&(*su3)) - ((*su2)&(*su3));
 		if (res != 0)
 			break;
 	}

@@ -2085,7 +2085,7 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 
 		if (!err) {
 			DBGLOG(INIT, INFO,
-				"Find nvram file: %s by insmod data:0x%p,size:%d\n",
+				"Find nvram file: %s by insmod data:0x%p,size:%lu\n",
 				gprifnamenvram,
 				fw->data,
 				fw->size);
@@ -4142,6 +4142,11 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* prGlueInfo is allocated with net_device */
 	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
+	if (prGlueInfo->prAdapter)
+		DBGLOG(INIT, INFO, "Prepare to Destroy Adapter: %px\n",
+			prGlueInfo->prAdapter);
+	else
+		DBGLOG(INIT, WARN, "Adapter is null\n");
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 	skb_queue_purge(&(prGlueInfo->rCoreDumpSkbQueue));
@@ -4164,11 +4169,6 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 
 	glClearHifInfo(prGlueInfo);
 
-	if (prGlueInfo->prAdapter)
-		DBGLOG(INIT, INFO, "Destroy Adapter: %px\n",
-			prGlueInfo->prAdapter);
-	else
-		DBGLOG(INIT, WARN, "Adapter is null\n");
 	wlanAdapterDestroy(prGlueInfo->prAdapter);
 	prGlueInfo->prAdapter = NULL;
 
@@ -6037,7 +6037,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 					&u4SetInfoLen);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
-				DBGLOG(INIT, WARN, "set MAC%f addr fail 0x%x\n",
+				DBGLOG(INIT, WARN, "set MAC%d addr fail 0x%x\n",
 								i, rStatus);
 			} else {
 				kalMemCopy(ndev->dev_addr,
@@ -6265,7 +6265,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
 			       sizeof(uint32_t), &u4BufLen);
 
-	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08lx\n",
+	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08x\n",
 	       (uint32_t)rWlanStatus);
 
 	/* Need to check fgIsNANRegistered, in case of whole chip reset.
