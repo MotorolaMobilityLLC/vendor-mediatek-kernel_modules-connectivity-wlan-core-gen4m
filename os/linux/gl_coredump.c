@@ -560,7 +560,6 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 	if (chip_info->checkbushang) {
 		if (chip_info->checkbushang(glue->prAdapter, TRUE)) {
 			DBGLOG(INIT, INFO, "Bus check failed.\n");
-			mem->cr_region_num = 0;
 			mem->mem_region_num = 0;
 		}
 	}
