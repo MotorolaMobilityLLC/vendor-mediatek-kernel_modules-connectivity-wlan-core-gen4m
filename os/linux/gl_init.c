@@ -4288,7 +4288,6 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-	mddpRegisterCb(prGlueInfo->prAdapter);
 	mddpNotifyDrvMac(prGlueInfo->prAdapter);
 #endif
 
