@@ -100,7 +100,11 @@ enum ENUM_USB_END_POINT {
 #define HIF_IST_LOOP_COUNT              (4)
 #define HIF_IST_TX_THRESHOLD            (1) /* Min msdu count to trigger Tx during INT polling state */
 
+#ifdef CFG_HIF_NUM_OF_QM_RX_PKT_NUM
+#define HIF_NUM_OF_QM_RX_PKT_NUM        (CFG_HIF_NUM_OF_QM_RX_PKT_NUM)
+#else
 #define HIF_NUM_OF_QM_RX_PKT_NUM        (512)
+#endif
 
 #define HIF_TX_BUFF_COUNT_TC0            256
 #define HIF_TX_BUFF_COUNT_TC1            256
