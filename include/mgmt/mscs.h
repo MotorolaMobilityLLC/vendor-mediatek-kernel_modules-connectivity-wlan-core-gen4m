@@ -188,20 +188,20 @@ struct FAST_PATH_INFO {
  *******************************************************************************
  */
 
-uint8_t mscsIsFpSupport(IN struct ADAPTER *prAdapter);
-uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket);
-uint32_t mscsRequest(IN struct ADAPTER *prAdapter, IN void *prPacket,
-	IN enum ENUM_MSCS_REQUEST_ACTION eAction,
-	IN enum ENUM_MSCS_TCLAS_TYPE eTCLASType);
-void mscsProcessRobustAVStreaming(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
-void mscsDeactivate(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec);
-void fpEventHandler(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
-void fpProcessVendorSpecProtectedFrame(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
-void mscsHandleRxPacket(IN struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
+uint8_t mscsIsFpSupport(struct ADAPTER *prAdapter);
+uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket);
+uint32_t mscsRequest(struct ADAPTER *prAdapter, void *prPacket,
+	enum ENUM_MSCS_REQUEST_ACTION eAction,
+	enum ENUM_MSCS_TCLAS_TYPE eTCLASType);
+void mscsProcessRobustAVStreaming(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+void mscsDeactivate(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+void fpEventHandler(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+void fpProcessVendorSpecProtectedFrame(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+void mscsHandleRxPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 #endif
 #endif /* _MSCS_H */

@@ -257,25 +257,25 @@ void soc3_0_show_pse_info(
 	struct ADAPTER *prAdapter);
 
 void soc3_0_show_wfdma_info(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 
 void soc3_0_show_wfdma_info_by_type(
-	IN struct ADAPTER *prAdapter,
+	struct ADAPTER *prAdapter,
 	bool bShowWFDMA_type);
 
 void soc3_0_show_wfdma_info_by_type_without_adapter(
 	bool bIsHostDMA);
 
 void soc3_0_show_wfdma_dbg_probe_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 
 void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter);
 
 void soc3_0_show_dmashdl_info(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 void soc3_0_dump_mac_info(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 void soc3_0EnableInterrupt(
 	struct ADAPTER *prAdapter);
 
@@ -297,7 +297,7 @@ void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 
 void wlanCoAntWiFi(void);
 void wlanCoAntMD(void);
-void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
+void wlanCoAntVFE28En(struct ADAPTER *prAdapter);
 void wlanCoAntVFE28Dis(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

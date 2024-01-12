@@ -100,9 +100,11 @@
 *              F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static u_int8_t kalDevRegRead_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value);
+static u_int8_t kalDevRegRead_impl(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4Register, uint32_t *pu4Value);
 
-static u_int8_t kalDevRegWrite_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value);
+static u_int8_t kalDevRegWrite_impl(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4Register, uint32_t u4Value);
 
 /*******************************************************************************
 *                          F U N C T I O N S
@@ -121,7 +123,8 @@ static u_int8_t kalDevRegWrite_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t
 * \retval FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t *pu4Value)
 {
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -152,7 +155,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 * \retval FALSE
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t u4Value)
 {
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -185,8 +189,8 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
-	       IN uint16_t u2Port, IN uint16_t u2Len, OUT uint8_t *pucBuf, IN uint16_t u2ValidOutBufSize)
+kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint16_t u2Len,
+		uint8_t *pucBuf, uint16_t u2ValidOutBufSize)
 {
 	uint32_t i;
 
@@ -247,8 +251,8 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
-		IN uint16_t u2Port, IN uint16_t u2Len, IN uint8_t *pucBuf, IN uint16_t u2ValidInBufSize)
+kalDevPortWrite(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint16_t u2Len,
+		uint8_t *pucBuf, uint16_t u2ValidInBufSize)
 {
 	uint32_t i;
 
@@ -307,7 +311,8 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Addr, IN uint8_t ucData)
+u_int8_t kalDevWriteWithSdioCmd52(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
+		uint8_t ucData)
 {
 	uint32_t u4RegValue;
 	u_int8_t bRet;
@@ -348,7 +353,8 @@ u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u
 * \retval FALSE
 */
 /*----------------------------------------------------------------------------*/
-static u_int8_t kalDevRegRead_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
+static u_int8_t kalDevRegRead_impl(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4Register, uint32_t *pu4Value)
 {
 	ASSERT(prGlueInfo);
 
@@ -387,7 +393,8 @@ static u_int8_t kalDevRegRead_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t 
 * \retval FALSE
 */
 /*----------------------------------------------------------------------------*/
-static u_int8_t kalDevRegWrite_impl(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
+static u_int8_t kalDevRegWrite_impl(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4Register, uint32_t u4Value)
 {
 	ASSERT(prGlueInfo);
 

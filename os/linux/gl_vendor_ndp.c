@@ -1032,7 +1032,7 @@ nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb) {
 /*----------------------------------------------------------------------------*/
 
 uint32_t
-nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
+nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 		   struct _NAN_NDP_INSTANCE_T *prNDP,
 		   struct _NAN_NDL_INSTANCE_T *prNDL) {
 	struct sk_buff *skb = NULL;
@@ -1162,7 +1162,7 @@ nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 
 uint32_t
-nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
+nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 		       struct _NAN_NDP_INSTANCE_T *prNDP) {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
@@ -1262,7 +1262,7 @@ nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 
 uint32_t
-nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
+nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 			   struct _NAN_NDP_INSTANCE_T *prNDP) {
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;

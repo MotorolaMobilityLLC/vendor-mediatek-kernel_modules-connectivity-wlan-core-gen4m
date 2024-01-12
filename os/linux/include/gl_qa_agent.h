@@ -492,7 +492,7 @@ struct HQA_CMD_FRAME {
 
 typedef int32_t(*HQA_CMD_HANDLER) (struct net_device
 				   *prNetDev,
-				   IN union iwreq_data *prIwReqData,
+				   union iwreq_data *prIwReqData,
 				   struct HQA_CMD_FRAME *HqaCmdFrame);
 
 struct HQA_CMD_TABLE {
@@ -519,12 +519,12 @@ extern struct list_mode_event g_HqaListModeStatus;
  */
 
 int HQA_CMDHandler(struct net_device *prNetDev,
-		   IN union iwreq_data *prIwReqData,
+		   union iwreq_data *prIwReqData,
 		   struct HQA_CMD_FRAME *HqaCmdFrame);
 
-int priv_qa_agent(IN struct net_device *prNetDev,
-		  IN struct iw_request_info *prIwReqInfo,
-		  IN union iwreq_data *prIwReqData, IN char *pcExtra);
+int priv_qa_agent(struct net_device *prNetDev,
+		  struct iw_request_info *prIwReqInfo,
+		  union iwreq_data *prIwReqData, char *pcExtra);
 
 int32_t mt6632SetICapStart(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Trigger, uint32_t u4RingCapEn,

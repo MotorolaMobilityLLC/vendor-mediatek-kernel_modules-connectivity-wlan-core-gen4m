@@ -274,7 +274,7 @@ void glSetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T
 
 int glSetRstReason(void);
 
-uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter);
+uint32_t glResetSelectAction(struct ADAPTER *prAdapter);
 
 void glResetTrigger(struct ADAPTER *prAdapter,
 		    uint32_t u4RstFlag, const uint8_t *pucFile,

@@ -90,8 +90,8 @@
 extern int allocatedMemSize;
 #endif
 
-u_int8_t kalP2pFuncGetChannelType(IN enum ENUM_CHNL_EXT rChnlSco,
-		OUT enum nl80211_channel_type *channel_type);
+u_int8_t kalP2pFuncGetChannelType(enum ENUM_CHNL_EXT rChnlSco,
+		enum nl80211_channel_type *channel_type);
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -124,155 +124,155 @@ u_int8_t kalP2pFuncGetChannelType(IN enum ENUM_CHNL_EXT rChnlSco,
  */
 
 /* Service Discovery */
-void kalP2PIndicateSDRequest(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
-		IN uint8_t ucSeqNum);
+void kalP2PIndicateSDRequest(struct GLUE_INFO *prGlueInfo,
+		uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
+		uint8_t ucSeqNum);
 
-void kalP2PIndicateSDResponse(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
-		IN uint8_t ucSeqNum);
+void kalP2PIndicateSDResponse(struct GLUE_INFO *prGlueInfo,
+		uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
+		uint8_t ucSeqNum);
 
-void kalP2PIndicateTXDone(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucSeqNum, IN uint8_t ucStatus);
+void kalP2PIndicateTXDone(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucSeqNum, uint8_t ucStatus);
 
 /*------------------------------------------------------------------------*/
 /* Wi-Fi Direct handling                                                      */
 /*------------------------------------------------------------------------*/
-/*ENUM_PARAM_MEDIA_STATE_T kalP2PGetState(IN P_GLUE_INFO_T prGlueInfo);*/
+/*ENUM_PARAM_MEDIA_STATE_T kalP2PGetState(P_GLUE_INFO_T prGlueInfo);*/
 
 /*VOID
- *kalP2PSetState(IN P_GLUE_INFO_T prGlueInfo,
- *		IN ENUM_PARAM_MEDIA_STATE_T eState,
- *		IN PARAM_MAC_ADDRESS rPeerAddr,
- *		IN UINT_8 ucRole);
+ *kalP2PSetState(P_GLUE_INFO_T prGlueInfo,
+ *		ENUM_PARAM_MEDIA_STATE_T eState,
+ *		PARAM_MAC_ADDRESS rPeerAddr,
+ *		UINT_8 ucRole);
  */
 
 void
-kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t *pucFrameBody,
-		IN uint32_t u4FrameBodyLen,
-		IN u_int8_t fgReassocRequest,
-		IN uint8_t ucBssIndex);
+kalP2PUpdateAssocInfo(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucFrameBody,
+		uint32_t u4FrameBodyLen,
+		u_int8_t fgReassocRequest,
+		uint8_t ucBssIndex);
 
-/*UINT_32 kalP2PGetFreqInKHz(IN P_GLUE_INFO_T prGlueInfo);*/
+/*UINT_32 kalP2PGetFreqInKHz(P_GLUE_INFO_T prGlueInfo);*/
 
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 		void *pvNdev,
 		uint8_t *pucRoleIdx);
 
-uint8_t kalP2PGetRole(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx);
+uint8_t kalP2PGetRole(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx);
 
 #if 1
-void kalP2PSetRole(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRole,
-		IN uint8_t ucRoleIdx);
+void kalP2PSetRole(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRole,
+		uint8_t ucRoleIdx);
 
 #else
 void
-kalP2PSetRole(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucResult,
-		IN uint8_t *pucSSID,
-		IN uint8_t ucSSIDLen,
-		IN uint8_t ucRole);
+kalP2PSetRole(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucResult,
+		uint8_t *pucSSID,
+		uint8_t ucSSIDLen,
+		uint8_t ucRole);
 #endif
 
-void kalP2PSetCipher(IN struct GLUE_INFO *prGlueInfo,
-		IN uint32_t u4Cipher,
-		IN uint8_t ucRoleIdx);
+void kalP2PSetCipher(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4Cipher,
+		uint8_t ucRoleIdx);
 
-u_int8_t kalP2PGetCipher(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx);
+u_int8_t kalP2PGetCipher(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx);
 
-u_int8_t kalP2PGetWepCipher(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx);
+u_int8_t kalP2PGetWepCipher(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx);
 
-u_int8_t kalP2PGetTkipCipher(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx);
+u_int8_t kalP2PGetTkipCipher(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx);
 
-u_int8_t kalP2PGetCcmpCipher(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx);
+u_int8_t kalP2PGetCcmpCipher(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx);
 
-void kalP2PSetWscMode(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucWscMode);
+void kalP2PSetWscMode(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucWscMode);
 
-uint8_t kalP2PGetWscMode(IN struct GLUE_INFO *prGlueInfo);
+uint8_t kalP2PGetWscMode(struct GLUE_INFO *prGlueInfo);
 
-uint16_t kalP2PCalWSC_IELen(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucType,
-		IN uint8_t ucRoleIdx);
+uint16_t kalP2PCalWSC_IELen(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucType,
+		uint8_t ucRoleIdx);
 
-void kalP2PGenWSC_IE(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucType,
-		IN uint8_t *pucBuffer,
-		IN uint8_t ucRoleIdx);
+void kalP2PGenWSC_IE(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucType,
+		uint8_t *pucBuffer,
+		uint8_t ucRoleIdx);
 
-void kalP2PUpdateWSC_IE(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucType,
-		IN uint8_t *pucBuffer,
-		IN uint16_t u2BufferLength,
-		IN uint8_t ucRoleIdx);
+void kalP2PUpdateWSC_IE(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucType,
+		uint8_t *pucBuffer,
+		uint16_t u2BufferLength,
+		uint8_t ucRoleIdx);
 
-uint16_t kalP2PCalP2P_IELen(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucIndex,
-		IN uint8_t ucRoleIdx);
+uint16_t kalP2PCalP2P_IELen(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucIndex,
+		uint8_t ucRoleIdx);
 
-void kalP2PGenP2P_IE(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucIndex,
-		IN uint8_t *pucBuffer,
-		IN uint8_t ucRoleIdx);
+void kalP2PGenP2P_IE(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucIndex,
+		uint8_t *pucBuffer,
+		uint8_t ucRoleIdx);
 
-void kalP2PTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
-		IN struct BSS_INFO *prBssInfo);
+void kalP2PTxCarrierOn(struct GLUE_INFO *prGlueInfo,
+		struct BSS_INFO *prBssInfo);
 
-u_int8_t kalP2PIsTxCarrierOn(IN struct GLUE_INFO *prGlueInfo,
-		IN struct BSS_INFO *prBssInfo);
+u_int8_t kalP2PIsTxCarrierOn(struct GLUE_INFO *prGlueInfo,
+		struct BSS_INFO *prBssInfo);
 
-void kalP2PEnableNetDev(IN struct GLUE_INFO *prGlueInfo,
-		IN struct BSS_INFO *prBssInfo);
+void kalP2PEnableNetDev(struct GLUE_INFO *prGlueInfo,
+		struct BSS_INFO *prBssInfo);
 
-void kalP2PUpdateP2P_IE(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucIndex,
-		IN uint8_t *pucBuffer,
-		IN uint16_t u2BufferLength,
-		IN uint8_t ucRoleIdx);
+void kalP2PUpdateP2P_IE(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucIndex,
+		uint8_t *pucBuffer,
+		uint16_t u2BufferLength,
+		uint8_t ucRoleIdx);
 
-u_int8_t kalP2PIndicateFound(IN struct GLUE_INFO *prGlueInfo);
+u_int8_t kalP2PIndicateFound(struct GLUE_INFO *prGlueInfo);
 
-void kalP2PIndicateConnReq(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t *pucDevName,
-		IN int32_t u4NameLength,
-		IN uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
-		IN uint8_t ucDevType,	/* 0: P2P Device / 1: GC / 2: GO */
-		IN int32_t i4ConfigMethod,
-		IN int32_t i4ActiveConfigMethod);
+void kalP2PIndicateConnReq(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucDevName,
+		int32_t u4NameLength,
+		uint8_t rPeerAddr[PARAM_MAC_ADDR_LEN],
+		uint8_t ucDevType,	/* 0: P2P Device / 1: GC / 2: GO */
+		int32_t i4ConfigMethod,
+		int32_t i4ActiveConfigMethod);
 
-/*VOID kalP2PInvitationStatus(IN P_GLUE_INFO_T prGlueInfo,
- *		IN UINT_32 u4InvStatus);
+/*VOID kalP2PInvitationStatus(P_GLUE_INFO_T prGlueInfo,
+ *		UINT_32 u4InvStatus);
  */
 
 void
-kalP2PInvitationIndication(IN struct GLUE_INFO *prGlueInfo,
-		IN struct P2P_DEVICE_DESC *prP2pDevDesc,
-		IN uint8_t *pucSsid,
-		IN uint8_t ucSsidLen,
-		IN uint8_t ucOperatingChnl,
-		IN uint8_t ucInvitationType,
-		IN uint8_t *pucGroupBssid);
+kalP2PInvitationIndication(struct GLUE_INFO *prGlueInfo,
+		struct P2P_DEVICE_DESC *prP2pDevDesc,
+		uint8_t *pucSsid,
+		uint8_t ucSsidLen,
+		uint8_t ucOperatingChnl,
+		uint8_t ucInvitationType,
+		uint8_t *pucGroupBssid);
 
 struct net_device *kalP2PGetDevHdlr(struct GLUE_INFO *prGlueInfo);
 
 void
-kalGetChnlList(IN struct GLUE_INFO *prGlueInfo,
-		IN enum ENUM_BAND eSpecificBand,
-		IN uint8_t ucMaxChannelNum,
-		IN uint8_t *pucNumOfChannel,
-		IN struct RF_CHANNEL_INFO *paucChannelList);
+kalGetChnlList(struct GLUE_INFO *prGlueInfo,
+		enum ENUM_BAND eSpecificBand,
+		uint8_t ucMaxChannelNum,
+		uint8_t *pucNumOfChannel,
+		struct RF_CHANNEL_INFO *paucChannelList);
 
 #if CFG_SUPPORT_ANTI_PIRACY
-void kalP2PIndicateSecCheckRsp(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t *pucRsp,
-		IN uint16_t u2RspLen);
+void kalP2PIndicateSecCheckRsp(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucRsp,
+		uint16_t u2RspLen);
 #endif
 
 /******************************************************************************
@@ -281,139 +281,139 @@ void kalP2PIndicateSecCheckRsp(IN struct GLUE_INFO *prGlueInfo,
  */
 
 void
-kalP2PIndicateChannelReady(IN struct GLUE_INFO *prGlueInfo,
-		IN uint64_t u8SeqNum,
-		IN uint32_t u4ChannelNum,
-		IN enum ENUM_BAND eBand,
-		IN enum ENUM_CHNL_EXT eSco,
-		IN uint32_t u4Duration);
+kalP2PIndicateChannelReady(struct GLUE_INFO *prGlueInfo,
+		uint64_t u8SeqNum,
+		uint32_t u4ChannelNum,
+		enum ENUM_BAND eBand,
+		enum ENUM_CHNL_EXT eSco,
+		uint32_t u4Duration);
 
-void kalP2PIndicateScanDone(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN u_int8_t fgIsAbort);
-
-void
-kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t *pucFrameBuf,
-		IN uint32_t u4BufLen,
-		IN struct RF_CHANNEL_INFO *prChannelInfo,
-		IN int32_t i4SignalStrength);
+void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex,
+		u_int8_t fgIsAbort);
 
 void
-kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
-		IN struct GLUE_INFO *prGlueInfo,
-		IN struct SW_RFB *prSwRfb,
-		IN u_int8_t fgIsDevInterface,
-		IN uint8_t ucRoleIdx);
-
-void kalP2PIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN u_int8_t fgIsAck);
+kalP2PIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucFrameBuf,
+		uint32_t u4BufLen,
+		struct RF_CHANNEL_INFO *prChannelInfo,
+		int32_t i4SignalStrength);
 
 void
-kalP2PIndicateChannelExpired(IN struct GLUE_INFO *prGlueInfo,
-		IN uint64_t u8SeqNum,
-		IN uint32_t u4ChannelNum,
-		IN enum ENUM_BAND eBand,
-		IN enum ENUM_CHNL_EXT eSco);
+kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
+		struct GLUE_INFO *prGlueInfo,
+		struct SW_RFB *prSwRfb,
+		u_int8_t fgIsDevInterface,
+		uint8_t ucRoleIdx);
+
+void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
+		struct MSDU_INFO *prMsduInfo,
+		u_int8_t fgIsAck);
 
 void
-kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN struct P2P_CONNECTION_REQ_INFO *prP2pConnInfo,
-		IN uint8_t *pucRxIEBuf,
-		IN uint16_t u2RxIELen,
-		IN uint16_t u2StatusReason,
-		IN uint32_t eStatus);
+kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
+		uint64_t u8SeqNum,
+		uint32_t u4ChannelNum,
+		enum ENUM_BAND eBand,
+		enum ENUM_CHNL_EXT eSco);
 
 void
-kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN struct STA_RECORD *prCliStaRec,
-		IN u_int8_t fgIsNew);
+kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex,
+		struct P2P_CONNECTION_REQ_INFO *prP2pConnInfo,
+		uint8_t *pucRxIEBuf,
+		uint16_t u2RxIELen,
+		uint16_t u2StatusReason,
+		uint32_t eStatus);
+
+void
+kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex,
+		struct STA_RECORD *prCliStaRec,
+		u_int8_t fgIsNew);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void
-kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex);
+kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex);
 
 void
-kalP2PCacFinishedUpdate(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex);
+kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex);
 void
-kalP2PCacStartedUpdate(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex);
+kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex);
 #endif
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
-u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t rbssid[PARAM_MAC_ADDR_LEN],
-		IN u_int8_t fgIsblock,
-		IN uint8_t ucRoleIndex);
+u_int8_t kalP2PSetBlackList(struct GLUE_INFO *prGlueInfo,
+		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
+		u_int8_t fgIsblock,
+		uint8_t ucRoleIndex);
 
-u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex);
+u_int8_t kalP2PResetBlackList(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex);
 
 #if CFG_AP_80211KVR_INTERFACE
-void kalP2PCatBlackList(IN struct GLUE_INFO *prGlueInfo,
-		IN bool flag);
+void kalP2PCatBlackList(struct GLUE_INFO *prGlueInfo,
+		bool flag);
 #endif
 
-u_int8_t kalP2PCmpBlackList(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t rbssid[PARAM_MAC_ADDR_LEN],
-		IN uint8_t ucRoleIndex);
+u_int8_t kalP2PCmpBlackList(struct GLUE_INFO *prGlueInfo,
+		uint8_t rbssid[PARAM_MAC_ADDR_LEN],
+		uint8_t ucRoleIndex);
 
-void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo,
-		IN uint32_t u4MaxClient,
-		IN uint8_t ucRoleIndex);
+void kalP2PSetMaxClients(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4MaxClient,
+		uint8_t ucRoleIndex);
 
-u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo,
-		IN uint32_t u4NumClient,
-		IN uint8_t ucRoleIndex);
+u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
+		uint32_t u4NumClient,
+		uint8_t ucRoleIndex);
 
 #endif
 
-void kalP2pUnlinkBss(IN struct GLUE_INFO *prGlueInfo, IN uint8_t aucBSSID[]);
+void kalP2pUnlinkBss(struct GLUE_INFO *prGlueInfo, uint8_t aucBSSID[]);
 
-void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
-		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+void kalP2pIndicateQueuedMgmtFrame(struct GLUE_INFO *prGlueInfo,
+		struct P2P_QUEUED_ACTION_FRAME *prFrame);
 
-void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN enum ENUM_BAND eBand,
-		IN uint8_t ucPrimaryCh,
-		IN uint8_t ucSecondCh,
-		IN uint8_t ucSeg0Ch,
-		IN uint8_t ucSeg1Ch,
-		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
-		IN enum P2P_VENDOR_ACS_HW_MODE eHwMode);
+void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex,
+		enum ENUM_BAND eBand,
+		uint8_t ucPrimaryCh,
+		uint8_t ucSecondCh,
+		uint8_t ucSeg0Ch,
+		uint8_t ucSeg1Ch,
+		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		enum P2P_VENDOR_ACS_HW_MODE eHwMode);
 
 void kalP2pPreStartRdd(
-		IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIdx,
-		IN uint32_t ucPrimaryCh,
-		IN enum ENUM_BAND eBand);
+		struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx,
+		uint32_t ucPrimaryCh,
+		enum ENUM_BAND eBand);
 
-void kalP2pIndicateRadarEvent(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t ucRoleIndex,
-		IN uint32_t event,
-		IN uint32_t freq);
+void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIndex,
+		uint32_t event,
+		uint32_t freq);
 
-void kalP2pNotifyStopApComplete(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIndex);
+void kalP2pNotifyStopApComplete(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIndex);
 
-u_int8_t kalP2pIsStoppingAp(IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo);
+u_int8_t kalP2pIsStoppingAp(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 
-void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo);
+void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
 
 int32_t kalP2pFuncPreStartRdd(
-	IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucRoleIdx,
-	IN struct cfg80211_chan_def *chandef,
-	IN unsigned int cac_time_ms);
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t ucRoleIdx,
+	struct cfg80211_chan_def *chandef,
+	unsigned int cac_time_ms);
 
 void kalP2pClearCsaChan(
 	struct GL_P2P_INFO *prGlueP2pInfo);

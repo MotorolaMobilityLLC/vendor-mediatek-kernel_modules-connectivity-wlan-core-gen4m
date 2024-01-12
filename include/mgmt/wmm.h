@@ -187,8 +187,8 @@ void wmmNotifyDisconnected(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void wmmReSyncPsParamWithFw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 		      uint8_t *pucEventBuf);
-void wmmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-void wmmUnInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void wmmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void wmmUnInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 u_int8_t wmmTsmIsOngoing(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void wmmRemoveAllTsmMeasurement(struct ADAPTER *prAdapter,
 	u_int8_t fgOnlyTriggered, uint8_t ucBssIndex);

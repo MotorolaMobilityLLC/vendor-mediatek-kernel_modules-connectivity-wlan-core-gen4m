@@ -106,24 +106,24 @@ extern const uint8_t aucDataRate[];
 /* Routines in rate.c                                                         */
 /*----------------------------------------------------------------------------*/
 void
-rateGetRateSetFromIEs(IN struct IE_SUPPORTED_RATE_IOT
+rateGetRateSetFromIEs(struct IE_SUPPORTED_RATE_IOT
 		      *prIeSupportedRate,
-		      IN struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate, OUT
+		      struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate,
 		      uint16_t *pu2OperationalRateSet,
-		      OUT uint16_t *pu2BSSBasicRateSet,
-		      OUT u_int8_t *pfgIsUnknownBSSBasicRate);
+		      uint16_t *pu2BSSBasicRateSet,
+		      u_int8_t *pfgIsUnknownBSSBasicRate);
 
 void
-rateGetDataRatesFromRateSet(IN uint16_t
-			    u2OperationalRateSet, IN uint16_t u2BSSBasicRateSet,
-			    OUT uint8_t *pucDataRates, OUT
+rateGetDataRatesFromRateSet(uint16_t
+			    u2OperationalRateSet, uint16_t u2BSSBasicRateSet,
+			    uint8_t *pucDataRates,
 			    uint8_t *pucDataRatesLen);
 
 u_int8_t rateGetHighestRateIndexFromRateSet(
-	IN uint16_t u2RateSet, OUT uint8_t *pucHighestRateIndex);
+	uint16_t u2RateSet, uint8_t *pucHighestRateIndex);
 
 u_int8_t rateGetLowestRateIndexFromRateSet(
-	IN uint16_t u2RateSet, OUT uint8_t *pucLowestRateIndex);
+	uint16_t u2RateSet, uint8_t *pucLowestRateIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S

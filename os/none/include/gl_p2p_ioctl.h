@@ -550,16 +550,16 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy,
 int mtk_p2p_cfg80211_set_channel(struct wiphy *wiphy,
 		struct cfg80211_chan_def *chandef);
 
-void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
+void mtk_p2p_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 		struct wireless_dev *wdev,
-		IN u16 frame_type,
-		IN bool reg);
+		u16 frame_type,
+		bool reg);
 
 int
-mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
-		IN struct net_device *dev,
-		IN const u8 *peer,
-		IN const struct cfg80211_bitrate_mask *mask);
+mtk_p2p_cfg80211_set_bitrate_mask(struct wiphy *wiphy,
+		struct net_device *dev,
+		const u8 *peer,
+		const struct cfg80211_bitrate_mask *mask);
 
 #ifdef CONFIG_NL80211_TESTMODE
 #if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
@@ -572,33 +572,33 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 		void *data,
 		int len);
 #endif
-int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
+int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(struct wiphy *wiphy,
+		void *data,
+		int len);
 
-int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
+int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(struct wiphy *wiphy,
+		void *data,
+		int len);
 
 #if CFG_SUPPORT_WFD
-int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
-		IN void *data,
-				IN int len);
+int mtk_p2p_cfg80211_testmode_wfd_update_cmd(struct wiphy *wiphy,
+		void *data,
+				int len);
 #endif
 
-int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
+int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(struct wiphy *wiphy,
+		void *data,
+		int len);
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
+int mtk_p2p_cfg80211_testmode_get_best_channel(struct wiphy *wiphy,
+		void *data,
+		int len);
 #endif
 
-int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
-		IN void *data,
-		IN int len);
+int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(struct wiphy *wiphy,
+		void *data,
+		int len);
 
 #else
 /* IGNORE KERNEL DEPENCY ERRORS*/
@@ -616,222 +616,222 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
  */
 #if 0
 int
-mtk_p2p_wext_get_priv(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_priv(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_reconnect(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_reconnect(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_auth(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_auth(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_key(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_key(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_mlme_handler(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_mlme_handler(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_powermode(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_powermode(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_get_powermode(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_powermode(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 /* Private Wireless I/O Controls takes use of iw_handler */
 int
-mtk_p2p_wext_set_local_dev_info(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_local_dev_info(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_provision_complete(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_provision_complete(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_start_stop_discovery(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_start_stop_discovery(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_discovery_results(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_discovery_results(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_wsc_ie(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_wsc_ie(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_connect_disconnect(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_connect_disconnect(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_password_ready(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_password_ready(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_request_dev_info(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_request_dev_info(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_invitation_indicate(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_invitation_indicate(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_invitation_status(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_invitation_status(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_pm_param(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_pm_param(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_ps_profile(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_ps_profile(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_network_address(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_network_address(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_int(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_int(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 /* Private Wireless I/O Controls for IOC_SET_STRUCT/IOC_GET_STRUCT */
 int
-mtk_p2p_wext_set_struct(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_struct(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_get_struct(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_struct(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 /* IOC_SET_STRUCT/IOC_GET_STRUCT: Service Discovery */
 int
-mtk_p2p_wext_get_service_discovery_request(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_service_discovery_request(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_get_service_discovery_response(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_service_discovery_response(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_send_service_discovery_request(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_send_service_discovery_request(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_send_service_discovery_response(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_send_service_discovery_response(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_terminate_service_discovery_phase(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_terminate_service_discovery_phase(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 #if CFG_SUPPORT_ANTI_PIRACY
 int
-mtk_p2p_wext_set_sec_check_request(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_sec_check_request(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_get_sec_check_response(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_sec_check_response(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 #endif
 
 int
-mtk_p2p_wext_set_noa_param(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_noa_param(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_oppps_param(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_oppps_param(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_set_p2p_version(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_set_p2p_version(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 int
-mtk_p2p_wext_get_p2p_version(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_p2p_version(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
-void mtk_p2p_wext_set_Multicastlist(IN struct GLUE_INFO *prGlueInfo);
+void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_P2P_RSSI_QUERY
 int
-mtk_p2p_wext_get_rssi(IN struct net_device *prDev,
-		IN struct iw_request_info *info,
-		IN OUT union iwreq_data *wrqu,
-		IN OUT char *extra);
+mtk_p2p_wext_get_rssi(struct net_device *prDev,
+		struct iw_request_info *info,
+		union iwreq_data *wrqu,
+		char *extra);
 
 struct iw_statistics *mtk_p2p_wext_get_wireless_stats(
 		struct net_device *prDev);
@@ -839,9 +839,9 @@ struct iw_statistics *mtk_p2p_wext_get_wireless_stats(
 #endif
 
 int
-mtk_p2p_wext_set_txpow(IN struct net_device *prDev,
-		IN struct iw_request_info *prIwrInfo,
-		IN OUT union iwreq_data *prTxPow,
-		IN char *pcExtra);
+mtk_p2p_wext_set_txpow(struct net_device *prDev,
+		struct iw_request_info *prIwrInfo,
+		union iwreq_data *prTxPow,
+		char *pcExtra);
 #endif
 #endif /* _GL_P2P_IOCTL_H */

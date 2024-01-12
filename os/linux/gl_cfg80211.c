@@ -517,8 +517,8 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t wlanGetTxRateFromLinkStats(
-	IN struct GLUE_INFO *prGlueInfo, IN uint32_t *pu4TxRate,
-	IN uint32_t *pu4TxBw, IN uint8_t ucBssIndex)
+	struct GLUE_INFO *prGlueInfo, uint32_t *pu4TxRate,
+	uint32_t *pu4TxBw, uint8_t ucBssIndex)
 {
 	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
 #if CFG_SUPPORT_LLS
@@ -2383,10 +2383,10 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	return i4Rslt;
 }
 
-void mtk_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
-				      IN struct wireless_dev *wdev,
-				      IN u16 frame_type,
-				      IN bool reg)
+void mtk_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
+				      struct wireless_dev *wdev,
+				      u16 frame_type,
+				      bool reg)
 {
 #if 0
 	struct MSG_P2P_MGMT_FRAME_REGISTER *prMgmtFrameRegister =
@@ -2621,10 +2621,10 @@ int mtk_cfg80211_cancel_remain_on_channel(
 
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 int _mtk_cfg80211_mgmt_tx_via_data_path(
-		IN struct GLUE_INFO *prGlueInfo,
-		IN struct wireless_dev *wdev,
-		IN const u8 *buf,
-		IN size_t len, IN u64 u8GlCookie)
+		struct GLUE_INFO *prGlueInfo,
+		struct wireless_dev *wdev,
+		const u8 *buf,
+		size_t len, u64 u8GlCookie)
 {
 	int32_t i4Rslt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -2893,10 +2893,10 @@ int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 
 #ifdef CONFIG_NL80211_TESTMODE
 #if CFG_SUPPORT_WAPI
-int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
+int mtk_cfg80211_testmode_set_key_ext(struct wiphy
 				      *wiphy,
-		IN struct wireless_dev *wdev,
-		IN void *data, IN int len)
+		struct wireless_dev *wdev,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_SET_KEY_EXTS *prParams =
@@ -2982,9 +2982,9 @@ int mtk_cfg80211_testmode_set_key_ext(IN struct wiphy
 #endif
 
 int
-mtk_cfg80211_testmode_get_sta_statistics(IN struct wiphy
-		*wiphy, IN void *data, IN int len,
-		IN struct GLUE_INFO *prGlueInfo)
+mtk_cfg80211_testmode_get_sta_statistics(struct wiphy
+		*wiphy, void *data, int len,
+		struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen;
@@ -3379,11 +3379,11 @@ nla_put_failure:
 }
 
 int
-mtk_cfg80211_testmode_get_link_detection(IN struct wiphy
+mtk_cfg80211_testmode_get_link_detection(struct wiphy
 		*wiphy,
-		IN struct wireless_dev *wdev,
-		IN void *data, IN int len,
-		IN struct GLUE_INFO *prGlueInfo)
+		struct wireless_dev *wdev,
+		void *data, int len,
+		struct GLUE_INFO *prGlueInfo)
 {
 
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -3551,9 +3551,9 @@ nla_put_failure:
 	return -EFAULT;
 }
 
-int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
-		IN struct wireless_dev *wdev,
-		IN void *data, IN int len)
+int mtk_cfg80211_testmode_sw_cmd(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_SW_CMD_PARAMS *prParams =
@@ -3670,9 +3670,9 @@ int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy,
 #endif
 
 #if CFG_SUPPORT_SCHED_SCAN
-int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
-			  IN struct net_device *ndev,
-			  IN struct cfg80211_sched_scan_request *request)
+int mtk_cfg80211_sched_scan_start(struct wiphy *wiphy,
+			  struct net_device *ndev,
+			  struct cfg80211_sched_scan_request *request)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
@@ -3899,12 +3899,12 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 }
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
-				 IN struct net_device *ndev,
-				 IN u64 reqid)
+int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
+				 struct net_device *ndev,
+				 u64 reqid)
 #else
-int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
-				 IN struct net_device *ndev)
+int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
+				 struct net_device *ndev)
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -4020,9 +4020,9 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy,
 
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 
-int mtk_cfg80211_testmode_get_scan_done(IN struct wiphy
-					*wiphy, IN void *data, IN int len,
-					IN struct GLUE_INFO *prGlueInfo)
+int mtk_cfg80211_testmode_get_scan_done(struct wiphy
+					*wiphy, void *data, int len,
+					struct GLUE_INFO *prGlueInfo)
 {
 	int32_t i4Status = -EINVAL;
 
@@ -4848,8 +4848,8 @@ bool is_world_regdom(const char *alpha2)
 #endif
 
 void
-mtk_reg_notify(IN struct wiphy *pWiphy,
-	       IN struct regulatory_request *pRequest)
+mtk_reg_notify(struct wiphy *pWiphy,
+	       struct regulatory_request *pRequest)
 {
 	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
 	struct ADAPTER *prAdapter;
@@ -4891,7 +4891,7 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 }
 
 void
-cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
+cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 {
 	/*
 	 * register callback
@@ -4942,7 +4942,7 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 }
 #else
 void
-cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
+cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 {
 }
 #endif
@@ -4964,8 +4964,8 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 #define CMD_NCHO_MODE_SET			"SETNCHOMODE"
 #define CMD_NCHO_MODE_GET			"GETNCHOMODE"
 
-int testmode_set_ncho_roam_trigger(IN struct wiphy *wiphy,
-				  IN char *pcCommand, IN int i4TotalLen)
+int testmode_set_ncho_roam_trigger(struct wiphy *wiphy,
+				  char *pcCommand, int i4TotalLen)
 {
 	int32_t i4Param = 0;
 	int32_t i4Argc = 0;
@@ -5006,8 +5006,8 @@ int testmode_set_ncho_roam_trigger(IN struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_get_ncho_roam_trigger(IN struct wiphy *wiphy,
-				  IN char *pcCommand, IN int i4TotalLen)
+int testmode_get_ncho_roam_trigger(struct wiphy *wiphy,
+				  char *pcCommand, int i4TotalLen)
 {
 	int32_t i4BytesWritten = -1;
 	int32_t i4Param = 0;
@@ -5054,8 +5054,8 @@ int testmode_get_ncho_roam_trigger(IN struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
-int testmode_set_ncho_roam_delta(IN struct wiphy *wiphy,
-				    IN char *pcCommand, IN int i4TotalLen)
+int testmode_set_ncho_roam_delta(struct wiphy *wiphy,
+				    char *pcCommand, int i4TotalLen)
 {
 	int32_t i4Param = 0;
 	uint32_t u4SetInfoLen = 0;
@@ -5095,8 +5095,8 @@ int testmode_set_ncho_roam_delta(IN struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_get_ncho_roam_delta(IN struct wiphy *wiphy,
-				    IN char *pcCommand, IN int i4TotalLen)
+int testmode_get_ncho_roam_delta(struct wiphy *wiphy,
+				    char *pcCommand, int i4TotalLen)
 {
 	int32_t i4BytesWritten = -1;
 	int32_t i4Param = 0;
@@ -5134,8 +5134,8 @@ int testmode_get_ncho_roam_delta(IN struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
-int testmode_set_ncho_roam_scn_period(IN struct wiphy *wiphy,
-					 IN char *pcCommand, IN int i4TotalLen)
+int testmode_set_ncho_roam_scn_period(struct wiphy *wiphy,
+					 char *pcCommand, int i4TotalLen)
 {
 	uint32_t u4Param = 0;
 	uint32_t u4SetInfoLen = 0;
@@ -5175,8 +5175,8 @@ int testmode_set_ncho_roam_scn_period(IN struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_get_ncho_roam_scn_period(IN struct wiphy *wiphy,
-					 IN char *pcCommand, IN int i4TotalLen)
+int testmode_get_ncho_roam_scn_period(struct wiphy *wiphy,
+					 char *pcCommand, int i4TotalLen)
 {
 	int32_t i4BytesWritten = -1;
 	int32_t i4Param = 0;
@@ -5222,8 +5222,8 @@ int testmode_get_ncho_roam_scn_period(IN struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
-int testmode_set_ncho_roam_scn_chnl(IN struct wiphy *wiphy,
-	IN char *pcCommand, IN int i4TotalLen, IN uint8_t changeMode)
+int testmode_set_ncho_roam_scn_chnl(struct wiphy *wiphy,
+	char *pcCommand, int i4TotalLen, uint8_t changeMode)
 {
 	uint32_t u4ChnlInfo = 0;
 	uint8_t i = 1;
@@ -5315,8 +5315,8 @@ int testmode_set_ncho_roam_scn_chnl(IN struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_get_ncho_roam_scn_chnl(IN struct wiphy *wiphy,
-				       IN char *pcCommand, IN int i4TotalLen)
+int testmode_get_ncho_roam_scn_chnl(struct wiphy *wiphy,
+				       char *pcCommand, int i4TotalLen)
 {
 	uint8_t i = 0;
 	uint32_t u4BufLen = 0;
@@ -5371,8 +5371,8 @@ int testmode_get_ncho_roam_scn_chnl(IN struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
-int testmode_set_ncho_roam_scn_ctrl(IN struct wiphy *wiphy,
-				       IN char *pcCommand, IN int i4TotalLen)
+int testmode_set_ncho_roam_scn_ctrl(struct wiphy *wiphy,
+				       char *pcCommand, int i4TotalLen)
 {
 	uint32_t u4Param = 0;
 	uint32_t u4SetInfoLen = 0;
@@ -5415,8 +5415,8 @@ int testmode_set_ncho_roam_scn_ctrl(IN struct wiphy *wiphy,
 	return rStatus;
 }
 
-int testmode_get_ncho_roam_scn_ctrl(IN struct wiphy *wiphy,
-				       IN char *pcCommand, IN int i4TotalLen)
+int testmode_get_ncho_roam_scn_ctrl(struct wiphy *wiphy,
+				       char *pcCommand, int i4TotalLen)
 {
 	int32_t i4BytesWritten = -1;
 	uint32_t u4Param = 0;
@@ -5453,8 +5453,8 @@ int testmode_get_ncho_roam_scn_ctrl(IN struct wiphy *wiphy,
 		buf, i4BytesWritten + 1);
 }
 
-int testmode_set_ncho_mode(IN struct wiphy *wiphy, IN char *pcCommand,
-			IN int i4TotalLen)
+int testmode_set_ncho_mode(struct wiphy *wiphy, char *pcCommand,
+			int i4TotalLen)
 {
 	uint32_t u4Param = 0;
 	int32_t i4Argc = 0;
@@ -5498,8 +5498,8 @@ int testmode_set_ncho_mode(IN struct wiphy *wiphy, IN char *pcCommand,
 	return rStatus;
 }
 
-int testmode_get_ncho_mode(IN struct wiphy *wiphy, IN char *pcCommand,
-			 IN int i4TotalLen)
+int testmode_get_ncho_mode(struct wiphy *wiphy, char *pcCommand,
+			 int i4TotalLen)
 {
 	int32_t i4BytesWritten = -1;
 	uint32_t u4Param = 0;
@@ -5546,7 +5546,7 @@ int testmode_get_ncho_mode(IN struct wiphy *wiphy, IN char *pcCommand,
 #endif /* CFG_SUPPORT_NCHO */
 
 int testmode_add_roam_scn_chnl(
-	IN struct wiphy *wiphy, IN char *pcCommand, IN int i4TotalLen)
+	struct wiphy *wiphy, char *pcCommand, int i4TotalLen)
 {
 	uint32_t u4ChnlInfo = 0;
 	uint8_t i = 1;
@@ -5645,8 +5645,8 @@ label_exit:
 	return rStatus;
 }
 
-int testmode_reassoc(IN struct wiphy *wiphy, IN char *pcCommand,
-	IN int i4TotalLen, IN uint8_t ucBssIndex)
+int testmode_reassoc(struct wiphy *wiphy, char *pcCommand,
+	int i4TotalLen, uint8_t ucBssIndex)
 {
 	uint32_t u4FreqInfo = 0;
 	uint32_t u4SetInfoLen = 0;
@@ -5715,8 +5715,8 @@ int testmode_reassoc(IN struct wiphy *wiphy, IN char *pcCommand,
 
 #define CMD_SET_AX_BLACKLIST                    "SET_AX_BLACKLIST"
 
-int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
-				IN int i4TotalLen)
+int testmode_set_ax_blacklist(struct wiphy *wiphy, char *pcCommand,
+				int i4TotalLen)
 {
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -5767,8 +5767,8 @@ int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
 	}
 	return rStatus;
 }
-int testmode_rtt_test(IN struct wiphy *wiphy, IN char *pcCommand,
-				IN int i4TotalLen)
+int testmode_rtt_test(struct wiphy *wiphy, char *pcCommand,
+				int i4TotalLen)
 {
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
@@ -5845,7 +5845,7 @@ int testmode_rtt_test(IN struct wiphy *wiphy, IN char *pcCommand,
 }
 
 int32_t mtk_cfg80211_process_str_cmd_reply(
-	IN struct wiphy *wiphy, IN char *data, IN int len)
+	struct wiphy *wiphy, char *data, int len)
 {
 	struct sk_buff *skb;
 	int32_t i4Err = 0;
@@ -5866,7 +5866,7 @@ int32_t mtk_cfg80211_process_str_cmd_reply(
 	return cfg80211_vendor_cmd_reply(skb);
 }
 
-int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
+int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 		struct wireless_dev *wdev, uint8_t *data, int32_t len)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -7296,9 +7296,9 @@ void mtk_cfg_abort_scan(struct wiphy *wiphy,
 #endif
 
 #if CFG_SUPPORT_SCHED_SCAN
-int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
-			     IN struct net_device *ndev,
-			     IN struct cfg80211_sched_scan_request *request)
+int mtk_cfg_sched_scan_start(struct wiphy *wiphy,
+			     struct net_device *ndev,
+			     struct cfg80211_sched_scan_request *request)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -7320,12 +7320,12 @@ int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
 }
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
-int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
-			    IN struct net_device *ndev,
-			    IN u64 reqid)
+int mtk_cfg_sched_scan_stop(struct wiphy *wiphy,
+			    struct net_device *ndev,
+			    u64 reqid)
 #else
-int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
-			    IN struct net_device *ndev)
+int mtk_cfg_sched_scan_stop(struct wiphy *wiphy,
+			    struct net_device *ndev)
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;

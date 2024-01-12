@@ -83,9 +83,9 @@ void mt7990_show_wfdma_info(struct ADAPTER *prAdapter);
 void mt7990_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void mt7990_show_pse_info(struct ADAPTER *prAdapter);
 bool mt7990_show_host_csr_info(struct ADAPTER *prAdapter);
-void mt7990_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
-void mt7990_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void mt7990_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void mt7990_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 
 #endif  /* mt7990 */

@@ -121,10 +121,10 @@
  */
 /*----------------------------------------------------------------------------*/
 void
-nicRxAddP2pDevice(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_P2P_DEV_DISCOVER_RESULT *prP2pResult,
-		IN uint8_t *pucRxIEBuf,
-		IN uint16_t u2RxIELength)
+nicRxAddP2pDevice(struct ADAPTER *prAdapter,
+		struct EVENT_P2P_DEV_DISCOVER_RESULT *prP2pResult,
+		uint8_t *pucRxIEBuf,
+		uint16_t u2RxIELength)
 {
 	struct P2P_INFO *prP2pInfo = (struct P2P_INFO *) NULL;
 	struct EVENT_P2P_DEV_DISCOVER_RESULT *prTargetResult =

@@ -766,8 +766,8 @@ struct PP_TOP_CR rSoc5_0_PpTopCr = {
  *******************************************************************************
  */
 
-void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void soc5_0_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x31, 0x2D, 0x2, 0x3, 0x54, 0x4,
 		0x29, 0x30, 0x5, 0x7, 0xA, 0xB, 0xC};
@@ -794,8 +794,8 @@ void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void soc5_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t u4DmaCfgCr = 0;
 	uint32_t u4RegValue = 0;
@@ -842,7 +842,7 @@ void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
+void soc5_0_dump_mac_info(struct ADAPTER *prAdapter)
 {
 #define BUF_SIZE 1024
 #define CR_COUNT 13
@@ -1029,8 +1029,8 @@ void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int soc5_0_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo)
+int soc5_0_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo)
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
@@ -1085,8 +1085,8 @@ int soc5_0_get_rx_rate_info(IN const uint32_t *prRxV,
 #endif
 
 
-void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV)
+void soc5_0_get_rx_link_stats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint32_t *pu4RxV)
 {
 #if CFG_SUPPORT_LLS
 	static const uint8_t TX_MODE_2_LLS_MODE[] = {

@@ -145,9 +145,9 @@ uint32_t asicGetChipID(struct ADAPTER *prAdapter)
 	return u4ChipID;
 }
 
-void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
-			 IN struct MSDU_INFO *prMsduInfo,
-			 OUT uint8_t *prTxDescBuffer)
+void fillNicTxDescAppend(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo,
+			 uint8_t *prTxDescBuffer)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
@@ -158,11 +158,11 @@ void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
 	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
 }
 
-void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx,
-	IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer)
+void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint16_t u4MsduId,
+	dma_addr_t rDmaAddr, uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer)
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
@@ -217,7 +217,7 @@ static char *q_idx_lmac_str[] = {"WMM0_AC0", "WMM0_AC1", "WMM0_AC2", "WMM0_AC3",
 	"Band1_ALTX", "Band1_BMC", "Band1_BNC", "Band1_PSMP",
 	"Invalid"};
 
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info)
+void halDumpTxdInfo(struct ADAPTER *prAdapter, uint8_t *tmac_info)
 {
 	struct TMAC_TXD_S *txd_s;
 	struct TMAC_TXD_0 *txd_0;
@@ -373,7 +373,7 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info)
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
+void asicWakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
 
@@ -392,8 +392,8 @@ void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
 #endif /* _HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)
-void fillUsbHifTxDesc(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
-	IN uint8_t ucPacketType)
+void fillUsbHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
+	uint8_t ucPacketType)
 {
 	/*USB TX Descriptor (4 bytes)*/
 	/* BIT[15:0] - TX Bytes Count

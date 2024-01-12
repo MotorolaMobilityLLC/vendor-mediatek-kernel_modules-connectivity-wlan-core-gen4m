@@ -1729,7 +1729,7 @@ static void soc5_0_McuDeInit(struct ADAPTER *prAdapter)
 	}
 }
 
-void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
+void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
 	u_int8_t fgCoAnt;

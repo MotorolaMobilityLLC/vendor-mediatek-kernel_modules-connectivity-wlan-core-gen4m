@@ -123,7 +123,7 @@ static char *BW_STATE_TBLE[] = {"UNCHANGED", "DOWN", "N/A"};
  *******************************************************************************
  */
 
-void halShowPseInfo(IN struct ADAPTER *prAdapter)
+void halShowPseInfo(struct ADAPTER *prAdapter)
 {
 #define BUF_SIZE 512
 
@@ -431,7 +431,7 @@ void halSetPleInt(struct ADAPTER *prAdapter, bool fgTrigger,
 	HAL_MCR_WR(prAdapter, PLE_TO_N9_INT, u4Val);
 }
 
-void halShowPleInfo(IN struct ADAPTER *prAdapter,
+void halShowPleInfo(struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
 {
 #define BUF_SIZE 1024
@@ -658,7 +658,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 #undef BUF_SIZE
 }
 
-void halShowDmaschInfo(IN struct ADAPTER *prAdapter)
+void halShowDmaschInfo(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t value = 0;
@@ -1204,7 +1204,7 @@ void halShowTxdInfo(
 }
 
 int32_t halShowStatInfo(struct ADAPTER *prAdapter,
-			IN char *pcCommand, IN int i4TotalLen,
+			char *pcCommand, int i4TotalLen,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup)
@@ -1981,8 +1981,8 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-int connac_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo)
+int connac_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo)
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t groupid = 0, stbc = 0, nss = 0;

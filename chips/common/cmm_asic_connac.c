@@ -141,7 +141,7 @@ uint8_t arAcQIdx2GroupId[MAC_TXQ_NUM] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
-void asicCapInit(IN struct ADAPTER *prAdapter)
+void asicCapInit(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -221,8 +221,8 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
-			  IN u_int8_t fgEnable)
+void asicEnableFWDownload(struct ADAPTER *prAdapter,
+			  u_int8_t fgEnable)
 {
 	struct GLUE_INFO *prGlueInfo;
 
@@ -270,9 +270,9 @@ void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void fillNicTxDescAppendWithCR4(IN struct ADAPTER
-				*prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				OUT uint8_t *prTxDescBuffer)
+void fillNicTxDescAppendWithCR4(struct ADAPTER
+				*prAdapter, struct MSDU_INFO *prMsduInfo,
+				uint8_t *prTxDescBuffer)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
@@ -287,11 +287,11 @@ void fillNicTxDescAppendWithCR4(IN struct ADAPTER
 		prMsduInfo->ucBssIndex;
 }
 
-void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
-	IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer)
+void fillTxDescAppendByHost(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint16_t u4MsduId,
+	phys_addr_t rDmaAddr, uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer)
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	struct TXD_PTR_LEN *prPtrLen;
@@ -314,11 +314,11 @@ void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
-	IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer)
+void fillTxDescAppendByCR4(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint16_t u4MsduId,
+	phys_addr_t rDmaAddr, uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer)
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 
@@ -331,8 +331,8 @@ void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 		prMsduInfo->u2FrameLength;
 }
 
-void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
-			   IN struct MSDU_INFO *prMsduInfo,
+void fillTxDescTxByteCount(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo,
 			   void *prTxDesc)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -353,8 +353,8 @@ void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 		(struct HW_MAC_TX_DESC *)prTxDesc, u4TxByteCount);
 }
 
-void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
-				  *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+void fillTxDescTxByteCountWithCR4(struct ADAPTER
+				  *prAdapter, struct MSDU_INFO *prMsduInfo,
 				  void *prTxDesc)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -376,7 +376,7 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
+void asicPcieDmaShdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t u4BaseAddr, u4MacVal = 0;
 	uint32_t u4GroupCtrl0 = 0, u4GroupCtrl1 = 0, u4GroupCtrl2 = 0,
@@ -640,8 +640,8 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucWmmIndex, IN uint32_t u4MaxQuota)
+uint32_t asicUpdatTxRingMaxQuota(struct ADAPTER *prAdapter,
+	uint8_t ucWmmIndex, uint32_t u4MaxQuota)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4BaseAddr, u4GroupIdx;
@@ -717,7 +717,7 @@ uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
 }
 
 
-void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
+void asicEnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -727,7 +727,7 @@ void asicEnableInterrupt(IN struct ADAPTER *prAdapter)
 	enable_irq(prHifInfo->u4IrqId);
 }
 
-void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
+void asicDisableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -737,8 +737,8 @@ void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
 	disable_irq_nosync(prHifInfo->u4IrqId);
 }
 
-void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,
-			 OUT u_int8_t *pfgResult)
+void asicLowPowerOwnRead(struct ADAPTER *prAdapter,
+			 u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue = 0;
 
@@ -747,8 +747,8 @@ void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,
 		     TRUE : FALSE;
 }
 
-void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter,
-			OUT u_int8_t *pfgResult)
+void asicLowPowerOwnSet(struct ADAPTER *prAdapter,
+			u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue = 0;
 
@@ -758,8 +758,8 @@ void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter,
 	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 1;
 }
 
-void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
-			  OUT u_int8_t *pfgResult)
+void asicLowPowerOwnClear(struct ADAPTER *prAdapter,
+			  u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue = 0;
 
@@ -770,8 +770,8 @@ void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
-			  OUT u_int8_t *pfgResult)
+void asicLowPowerOwnClearPCIe(struct ADAPTER *prAdapter,
+			  u_int8_t *pfgResult)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHif = NULL;
@@ -785,7 +785,7 @@ void asicLowPowerOwnClearPCIe(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
+bool asicIsValidRegAccess(struct ADAPTER *prAdapter, uint32_t u4Register)
 {
 	uint32_t au4ExcludeRegs[] = { CONN_HIF_ON_LPCTL };
 	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
@@ -806,8 +806,8 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 	return false;
 }
 
-void asicGetMailboxStatus(IN struct ADAPTER *prAdapter,
-			  OUT uint32_t *pu4Val)
+void asicGetMailboxStatus(struct ADAPTER *prAdapter,
+			  uint32_t *pu4Val)
 {
 #define WF_MAILBOX_DBG (CONN_HIF_BASE + 0x11C)
 
@@ -905,7 +905,7 @@ void asicPdmaRxRingExtCtrl(
 
 #if defined(_HIF_USB)
 /* DMS Scheduler Init */
-void asicUsbDmaShdlGroupInit(IN struct ADAPTER *prAdapter,
+void asicUsbDmaShdlGroupInit(struct ADAPTER *prAdapter,
 			     uint32_t u4RefillGroup)
 {
 	uint32_t u4BaseAddr, u4MacVal = 0;
@@ -1079,7 +1079,7 @@ void asicUsbDmaShdlGroupInit(IN struct ADAPTER *prAdapter,
 		   u4MacVal);
 }
 
-void asicUsbDmaShdlInit(IN struct ADAPTER *prAdapter)
+void asicUsbDmaShdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t u4BaseAddr, u4MacVal;
 	struct mt66xx_chip_info *prChipInfo;
@@ -1132,8 +1132,8 @@ void asicUsbDmaShdlInit(IN struct ADAPTER *prAdapter)
 		   CONN_HIF_DMASHDL_OPTIONAL_CONTROL(u4BaseAddr), 0x7004801c);
 }
 
-u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter,
-			IN struct GLUE_INFO *prGlueInfo)
+u_int8_t asicUsbSuspend(struct ADAPTER *prAdapter,
+			struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Value;
 	uint32_t count = 0;
@@ -1228,7 +1228,7 @@ u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+uint8_t asicUsbEventEpDetected(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1281,7 +1281,7 @@ uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter)
 		return USB_EVENT_EP_IN;
 }
 
-void asicUdmaTxTimeoutEnable(IN struct ADAPTER *prAdapter)
+void asicUdmaTxTimeoutEnable(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Value;
@@ -1302,8 +1302,8 @@ void asicUdmaTxTimeoutEnable(IN struct ADAPTER *prAdapter)
 		   u4Value);
 }
 
-void asicUdmaRxFlush(IN struct ADAPTER *prAdapter,
-		     IN u_int8_t bEnable)
+void asicUdmaRxFlush(struct ADAPTER *prAdapter,
+		     u_int8_t bEnable)
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Value;
@@ -1320,8 +1320,8 @@ void asicUdmaRxFlush(IN struct ADAPTER *prAdapter,
 		   u4Value);
 }
 
-void asicPdmaHifReset(IN struct ADAPTER *prAdapter,
-		      IN u_int8_t bRelease)
+void asicPdmaHifReset(struct ADAPTER *prAdapter,
+		      u_int8_t bRelease)
 {
 	uint32_t u4Value;
 
@@ -1511,8 +1511,8 @@ void asicInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prRetSwRfb)
+void asicRxProcessRxvforMSP(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
@@ -1538,8 +1538,8 @@ void asicRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MSP */
 
 uint8_t asicRxGetRcpiValueFromRxv(
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb)
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb)
 {
 	uint8_t ucRcpi0, ucRcpi1;
 	uint8_t ucRcpiValue = 0;
@@ -1614,9 +1614,9 @@ uint8_t asicRxGetRcpiValueFromRxv(
 }
 
 #if (CFG_SUPPORT_PERF_IND == 1)
-void asicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb,
-			       IN uint8_t ucBssIndex)
+void asicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb,
+			       uint8_t ucBssIndex)
 {
 	/* This Feature First MP on MT6779 */
 	struct GLUE_INFO *prGlueInfo;

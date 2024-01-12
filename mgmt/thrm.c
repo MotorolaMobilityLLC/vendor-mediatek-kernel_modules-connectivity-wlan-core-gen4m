@@ -63,10 +63,10 @@ enum ENUM_THERMAL_PROTECT_LEVEL {
  *******************************************************************************
  */
 
-uint32_t thrmProtEnable(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
-			IN uint8_t ucProtType, IN uint8_t ucTrigType,
-			IN int32_t i4TrigTemp, IN int32_t i4RestoreTemp,
-			IN uint32_t u4CheckTime)
+uint32_t thrmProtEnable(struct ADAPTER *prAdapter, uint8_t ucBand,
+			uint8_t ucProtType, uint8_t ucTrigType,
+			int32_t i4TrigTemp, int32_t i4RestoreTemp,
+			uint32_t u4CheckTime)
 {
 	struct EXT_CMD_THERMAL_PROTECT_ENABLE *ext_cmd_buf;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -102,8 +102,8 @@ uint32_t thrmProtEnable(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
 	return rStatus;
 }
 
-uint32_t thrmProtDisable(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
-		IN uint8_t ucProtType, IN uint8_t ucTrigType)
+uint32_t thrmProtDisable(struct ADAPTER *prAdapter, uint8_t ucBand,
+		uint8_t ucProtType, uint8_t ucTrigType)
 {
 	struct EXT_CMD_THERMAL_PROTECT_DISABLE *ext_cmd_buf;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -135,8 +135,8 @@ uint32_t thrmProtDisable(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
 	return rStatus;
 }
 
-uint32_t thrmProtDutyCfg(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
-	IN uint8_t ucLevel, IN uint8_t ucDuty)
+uint32_t thrmProtDutyCfg(struct ADAPTER *prAdapter, uint8_t ucBand,
+	uint8_t ucLevel, uint8_t ucDuty)
 {
 	struct EXT_CMD_THERMAL_PROTECT_DUTY_CFG *ext_cmd_buf;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -169,8 +169,8 @@ uint32_t thrmProtDutyCfg(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
 	return rStatus;
 }
 
-uint32_t thrmProtStateAct(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
-	IN uint8_t ucProtType, IN uint8_t ucTrigType, IN uint8_t ucState)
+uint32_t thrmProtStateAct(struct ADAPTER *prAdapter, uint8_t ucBand,
+	uint8_t ucProtType, uint8_t ucTrigType, uint8_t ucState)
 {
 	struct EXT_CMD_THERMAL_PROTECT_STATE_ACT *ext_cmd_buf;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -203,7 +203,7 @@ uint32_t thrmProtStateAct(IN struct ADAPTER *prAdapter, IN uint8_t ucBand,
 	return rStatus;
 }
 
-void thrmProtEventHandler(IN struct ADAPTER *prAdapter, IN uint8_t *prBuf)
+void thrmProtEventHandler(struct ADAPTER *prAdapter, uint8_t *prBuf)
 {
 	uint8_t ucEventId = (uint8_t) *(prBuf);
 
@@ -276,7 +276,7 @@ void thrmProtEventHandler(IN struct ADAPTER *prAdapter, IN uint8_t *prBuf)
 	}
 }
 
-void thrmProtUpdateDutyCfg(IN struct ADAPTER *prAdapter, IN uint8_t ucDuty)
+void thrmProtUpdateDutyCfg(struct ADAPTER *prAdapter, uint8_t ucDuty)
 {
 	uint8_t i = 0, j = 0;
 
@@ -304,7 +304,7 @@ void thrmProtUpdateDutyCfg(IN struct ADAPTER *prAdapter, IN uint8_t ucDuty)
 	prAdapter->rThrmProtCfg.ucCurrDutyCfg = ucDuty;
 }
 
-int thrmProtLvHandler(IN struct ADAPTER *prAdapter, IN uint8_t ucLevel)
+int thrmProtLvHandler(struct ADAPTER *prAdapter, uint8_t ucLevel)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucOrigLevel;
@@ -351,7 +351,7 @@ int thrmProtLvHandler(IN struct ADAPTER *prAdapter, IN uint8_t ucLevel)
 	return 0;
 }
 
-void thrmInit(IN struct ADAPTER *prAdapter)
+void thrmInit(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 

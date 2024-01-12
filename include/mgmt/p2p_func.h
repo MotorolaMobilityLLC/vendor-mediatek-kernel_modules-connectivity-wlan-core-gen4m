@@ -113,92 +113,92 @@ enum _ENUM_DFS_STATE_T {
  ******************************************************************************
  */
 
-void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo);
+void p2pFuncRequestScan(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct P2P_SCAN_REQ_INFO *prScanReqInfo);
 
-void p2pFuncCancelScan(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo);
-
-void
-p2pFuncUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
-		IN struct BSS_DESC *prBssDesc,
-		IN struct STA_RECORD *prStaRec,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN struct SW_RFB *prAssocRspSwRfb);
-
-void p2pFuncAcquireCh(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+void p2pFuncCancelScan(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct P2P_SCAN_REQ_INFO *prScanReqInfo);
 
 void
-p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN struct STA_RECORD *prStaRec,
-		IN u_int8_t fgSendDeauth,
-		IN uint16_t u2ReasonCode,
-		IN u_int8_t fgIsLocallyGenerated);
+p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
+		struct BSS_DESC *prBssDesc,
+		struct STA_RECORD *prStaRec,
+		struct BSS_INFO *prP2pBssInfo,
+		struct SW_RFB *prAssocRspSwRfb);
 
-struct BSS_INFO *p2pFuncBSSIDFindBssInfo(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucBSSID);
-
-void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
-		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-		IN struct P2P_JOIN_INFO *prP2pJoinInfo);
-
-void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo);
+void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 void
-p2pFuncStartGO(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo,
-		IN struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
+p2pFuncDisconnect(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		struct STA_RECORD *prStaRec,
+		u_int8_t fgSendDeauth,
+		uint16_t u2ReasonCode,
+		u_int8_t fgIsLocallyGenerated);
 
-void p2pFuncStopGO(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo);
+struct BSS_INFO *p2pFuncBSSIDFindBssInfo(struct ADAPTER *prAdapter,
+		uint8_t *pucBSSID);
 
-uint32_t p2pFuncRoleToBssIdx(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIdx,
-		OUT uint8_t *pucBssIdx);
+void p2pFuncGCJoin(struct ADAPTER *prAdapter,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		struct P2P_JOIN_INFO *prP2pJoinInfo);
 
-struct P2P_ROLE_FSM_INFO *p2pFuncGetRoleByBssIdx(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex);
+void p2pFuncStopComplete(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo);
 
 void
-p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN enum ENUM_OP_MODE eOpMode,
-		IN u_int8_t fgSyncToFW);
+p2pFuncStartGO(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo,
+		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
 
-void p2pFuncReleaseCh(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+void p2pFuncStopGO(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo);
+
+uint32_t p2pFuncRoleToBssIdx(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx,
+		uint8_t *pucBssIdx);
+
+struct P2P_ROLE_FSM_INFO *p2pFuncGetRoleByBssIdx(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex);
+
+void
+p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_OP_MODE eOpMode,
+		u_int8_t fgSyncToFW);
+
+void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-void p2pFuncSetDfsChannelAvailable(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucChannel, IN uint8_t ucAvailable);
+void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
+		uint8_t ucChannel, uint8_t ucAvailable);
 
-void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
-		IN uint16_t ucFilteredCh, IN uint8_t ucFilteredBw,
-		IN uint8_t pucNumOfChannel,
-		IN struct RF_CHANNEL_INFO *paucChannelList,
-		OUT uint8_t *pucOutNumOfChannel,
-		OUT struct RF_CHANNEL_INFO *paucOutChannelList);
+void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
+		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
+		uint8_t pucNumOfChannel,
+		struct RF_CHANNEL_INFO *paucChannelList,
+		uint8_t *pucOutNumOfChannel,
+		struct RF_CHANNEL_INFO *paucOutChannelList);
 
-void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
+void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
-void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
+void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
-void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
+void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
-int32_t p2pFuncSetDriverCacTime(IN uint32_t u4CacTime);
+int32_t p2pFuncSetDriverCacTime(uint32_t u4CacTime);
 
 void p2pFuncEnableManualCac(void);
 
@@ -208,19 +208,19 @@ u_int8_t p2pFuncIsManualCac(void);
 
 void p2pFuncRadarInfoInit(void);
 
-void p2pFuncShowRadarInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
+void p2pFuncShowRadarInfo(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
-void p2pFuncGetRadarInfo(IN struct P2P_RADAR_INFO *prP2pRadarInfo);
+void p2pFuncGetRadarInfo(struct P2P_RADAR_INFO *prP2pRadarInfo);
 
 uint8_t *p2pFuncJpW53RadarType(void);
 
 uint8_t *p2pFuncJpW56RadarType(void);
 
-void p2pFuncSetRadarDetectMode(IN uint8_t ucRadarDetectMode);
+void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode);
 
 uint8_t p2pFuncGetRadarDetectMode(void);
 
-void p2pFuncSetDfsState(IN uint8_t ucDfsState);
+void p2pFuncSetDfsState(uint8_t ucDfsState);
 
 uint8_t p2pFuncGetDfsState(void);
 
@@ -228,342 +228,342 @@ uint8_t *p2pFuncShowDfsState(void);
 
 uint8_t p2pFuncGetCsaBssIndex(void);
 
-void p2pFuncSetCsaBssIndex(IN uint8_t ucBssIdx);
+void p2pFuncSetCsaBssIndex(uint8_t ucBssIdx);
 
 void p2pFuncRecordCacStartBootTime(void);
 
 uint32_t p2pFuncGetCacRemainingTime(void);
 #endif
 
-void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIdx,
-		IN struct RF_CHANNEL_INFO *prRfChannelInfo);
+void p2pFuncSetChannel(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx,
+		struct RF_CHANNEL_INFO *prRfChannelInfo);
 
-u_int8_t p2pFuncRetryJOIN(IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec,
-		IN struct P2P_JOIN_INFO *prJoinInfo);
-
-uint32_t
-p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct MSDU_INFO *prMgmtTxMsdu,
-		IN u_int8_t fgNonCckRate);
+u_int8_t p2pFuncRetryJOIN(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		struct P2P_JOIN_INFO *prJoinInfo);
 
 uint32_t
-p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN struct P2P_BEACON_UPDATE_INFO *prBcnUpdateInfo,
-		IN uint8_t *pucNewBcnHdr,
-		IN uint32_t u4NewHdrLen,
-		IN uint8_t *pucNewBcnBody,
-		IN uint32_t u4NewBodyLen);
+p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct MSDU_INFO *prMgmtTxMsdu,
+		u_int8_t fgNonCckRate);
 
 uint32_t
-p2pFuncAssocRespUpdate(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN uint8_t *AssocRespIE,
-		IN uint32_t u4AssocRespLen);
+p2pFuncBeaconUpdate(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		struct P2P_BEACON_UPDATE_INFO *prBcnUpdateInfo,
+		uint8_t *pucNewBcnHdr,
+		uint32_t u4NewHdrLen,
+		uint8_t *pucNewBcnBody,
+		uint32_t u4NewBodyLen);
+
+uint32_t
+p2pFuncAssocRespUpdate(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t *AssocRespIE,
+		uint32_t u4AssocRespLen);
 
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
 uint32_t
-p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen,
-		IN enum ENUM_IE_UPD_METHOD eMethod);
+p2pFuncProbeRespUpdate(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t *ProbeRespIE, uint32_t u4ProbeRespLen,
+		enum ENUM_IE_UPD_METHOD eMethod);
 #endif
 
 u_int8_t
-p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prSwRfb,
-		IN struct STA_RECORD **pprStaRec, OUT uint16_t *pu2StatusCode);
+p2pFuncValidateAuth(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct SW_RFB *prSwRfb,
+		struct STA_RECORD **pprStaRec, uint16_t *pu2StatusCode);
 
-u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb, OUT uint16_t *pu2StatusCode);
+u_int8_t p2pFuncValidateAssocReq(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, uint16_t *pu2StatusCode);
 
-void p2pFuncResetStaRecStatus(IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec);
+void p2pFuncResetStaRecStatus(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec);
 
 void
-p2pFuncInitConnectionSettings(IN struct ADAPTER *prAdapter,
-		IN struct P2P_CONNECTION_SETTINGS *prP2PConnSettings,
-		IN u_int8_t fgIsApMode);
+p2pFuncInitConnectionSettings(struct ADAPTER *prAdapter,
+		struct P2P_CONNECTION_SETTINGS *prP2PConnSettings,
+		u_int8_t fgIsApMode);
 
-u_int8_t p2pFuncParseCheckForP2PInfoElem(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucBuf, OUT uint8_t *pucOuiType);
+u_int8_t p2pFuncParseCheckForP2PInfoElem(struct ADAPTER *prAdapter,
+		uint8_t *pucBuf, uint8_t *pucOuiType);
 
-u_int8_t p2pFuncParseCheckForTKIPInfoElem(IN uint8_t *pucBuf);
+u_int8_t p2pFuncParseCheckForTKIPInfoElem(uint8_t *pucBuf);
 
 u_int8_t
-p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags,
-		IN u_int8_t fgIsDevInterface, IN uint8_t ucRoleIdx);
+p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, uint32_t *pu4ControlFlags,
+		u_int8_t fgIsDevInterface, uint8_t ucRoleIdx);
 
-void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		IN u_int8_t fgIsDevInterface, IN uint8_t ucRoleIdx);
+void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		u_int8_t fgIsDevInterface, uint8_t ucRoleIdx);
 
-u_int8_t p2pFuncIsAPMode(IN struct P2P_CONNECTION_SETTINGS *prP2pConnSettings);
+u_int8_t p2pFuncIsAPMode(struct P2P_CONNECTION_SETTINGS *prP2pConnSettings);
 
-u_int8_t p2pFuncIsDualAPMode(IN struct ADAPTER *prAdapter);
+u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter);
 
-u_int8_t p2pFuncIsDualGOMode(IN struct ADAPTER *prAdapter);
+u_int8_t p2pFuncIsDualGOMode(struct ADAPTER *prAdapter);
 
 void
-p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN uint8_t *pucIEInfo, IN uint32_t u4IELen);
+p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t *pucIEInfo, uint32_t u4IELen);
 
 struct BSS_DESC *
-p2pFuncKeepOnConnection(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-		IN struct P2P_SCAN_REQ_INFO *prScanReqInfo);
+p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
+		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		struct P2P_SCAN_REQ_INFO *prScanReqInfo);
 
-void p2pFuncStoreAssocRspIEBuffer(IN struct ADAPTER *prAdapter,
-		IN struct P2P_JOIN_INFO *prP2pJoinInfo,
-		IN struct SW_RFB *prSwRfb);
+void p2pFuncStoreAssocRspIEBuffer(struct ADAPTER *prAdapter,
+		struct P2P_JOIN_INFO *prP2pJoinInfo,
+		struct SW_RFB *prSwRfb);
 
 void
-p2pFuncMgmtFrameRegister(IN struct ADAPTER *prAdapter,
-		IN uint16_t u2FrameType,
-		IN u_int8_t fgIsRegistered,
-		OUT uint32_t *pu4P2pPacketFilter);
+p2pFuncMgmtFrameRegister(struct ADAPTER *prAdapter,
+		uint16_t u2FrameType,
+		u_int8_t fgIsRegistered,
+		uint32_t *pu4P2pPacketFilter);
 
-void p2pFuncUpdateMgmtFrameRegister(IN struct ADAPTER *prAdapter,
-		IN uint32_t u4OsFilter);
+void p2pFuncUpdateMgmtFrameRegister(struct ADAPTER *prAdapter,
+		uint32_t u4OsFilter);
 
-void p2pFuncGetStationInfo(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucMacAddr,
-		OUT struct P2P_STATION_INFO *prStaInfo);
+void p2pFuncGetStationInfo(struct ADAPTER *prAdapter,
+		uint8_t *pucMacAddr,
+		struct P2P_STATION_INFO *prStaInfo);
 
-struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		IN struct WLAN_BEACON_FRAME *prProbeRspFrame);
+struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		struct WLAN_BEACON_FRAME *prProbeRspFrame);
 
 #if 0 /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
 uint32_t
-p2pFuncCalculateExtra_IELenForBeacon(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+p2pFuncCalculateExtra_IELenForBeacon(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void p2pFuncGenerateExtra_IEForBeacon(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pFuncGenerateExtra_IEForBeacon(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
 #else
-uint32_t p2pFuncCalculateP2p_IELenForBeacon(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+uint32_t p2pFuncCalculateP2p_IELenForBeacon(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void p2pFuncGenerateP2p_IEForBeacon(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pFuncGenerateP2p_IEForBeacon(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
-uint32_t p2pFuncCalculateWSC_IELenForBeacon(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+uint32_t p2pFuncCalculateWSC_IELenForBeacon(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void p2pFuncGenerateWSC_IEForBeacon(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pFuncGenerateWSC_IEForBeacon(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 #endif
 uint32_t
-p2pFuncCalculateP2p_IELenForAssocRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+p2pFuncCalculateP2p_IELenForAssocRsp(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void p2pFuncGenerateP2p_IEForAssocRsp(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
 uint32_t
-p2pFuncCalculateP2P_IELen(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec,
-		IN struct APPEND_VAR_ATTRI_ENTRY arAppendAttriTable[],
-		IN uint32_t u4AttriTableSize);
+p2pFuncCalculateP2P_IELen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec,
+		struct APPEND_VAR_ATTRI_ENTRY arAppendAttriTable[],
+		uint32_t u4AttriTableSize);
 
 void
-p2pFuncGenerateP2P_IE(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN u_int8_t fgIsAssocFrame,
-		IN uint16_t *pu2Offset,
-		IN uint8_t *pucBuf,
-		IN uint16_t u2BufSize,
-		IN struct APPEND_VAR_ATTRI_ENTRY arAppendAttriTable[],
-		IN uint32_t u4AttriTableSize);
+p2pFuncGenerateP2P_IE(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		u_int8_t fgIsAssocFrame,
+		uint16_t *pu2Offset,
+		uint8_t *pucBuf,
+		uint16_t u2BufSize,
+		struct APPEND_VAR_ATTRI_ENTRY arAppendAttriTable[],
+		uint32_t u4AttriTableSize);
 
 uint32_t
-p2pFuncAppendAttriStatusForAssocRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN u_int8_t fgIsAssocFrame,
-		IN uint16_t *pu2Offset,
-		IN uint8_t *pucBuf,
-		IN uint16_t u2BufSize);
+p2pFuncAppendAttriStatusForAssocRsp(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		u_int8_t fgIsAssocFrame,
+		uint16_t *pu2Offset,
+		uint8_t *pucBuf,
+		uint16_t u2BufSize);
 
 uint32_t
-p2pFuncAppendAttriExtListenTiming(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN u_int8_t fgIsAssocFrame,
-		IN uint16_t *pu2Offset,
-		IN uint8_t *pucBuf,
-		IN uint16_t u2BufSize);
+p2pFuncAppendAttriExtListenTiming(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		u_int8_t fgIsAssocFrame,
+		uint16_t *pu2Offset,
+		uint8_t *pucBuf,
+		uint16_t u2BufSize);
 
 void
-p2pFuncDissolve(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo,
-		IN u_int8_t fgSendDeauth,
-		IN uint16_t u2ReasonCode,
-		IN u_int8_t fgIsLocallyGenerated);
+p2pFuncDissolve(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		u_int8_t fgSendDeauth,
+		uint16_t u2ReasonCode,
+		u_int8_t fgIsLocallyGenerated);
 
 struct IE_HDR *
-p2pFuncGetSpecIE(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucIEBuf,
-		IN uint16_t u2BufferLen,
-		IN uint8_t ucElemID,
-		IN u_int8_t *pfgIsMore);
+p2pFuncGetSpecIE(struct ADAPTER *prAdapter,
+		uint8_t *pucIEBuf,
+		uint16_t u2BufferLen,
+		uint8_t ucElemID,
+		u_int8_t *pfgIsMore);
 
 struct P2P_ATTRIBUTE *
-p2pFuncGetSpecAttri(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucOuiType,
-		IN uint8_t *pucIEBuf,
-		IN uint16_t u2BufferLen,
-		IN uint8_t ucAttriID);
+p2pFuncGetSpecAttri(struct ADAPTER *prAdapter,
+		uint8_t ucOuiType,
+		uint8_t *pucIEBuf,
+		uint16_t u2BufferLen,
+		uint8_t ucAttriID);
 
-uint32_t p2pCalculateWSCIELen(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculateWSCIELen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec);
 
-void p2pGenerateWSCIE(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerateWSCIE(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
 #if CFG_SUPPORT_WFD
-uint32_t p2pCalculateWFDIELen(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculateWFDIELen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec);
 
-void p2pGenerateWFDIE(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerateWFDIE(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 #endif
 
-uint32_t p2pCalculateP2PIELen(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculateP2PIELen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec);
 
-void p2pGenerateP2PIE(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerateP2PIE(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
 #if CFG_SUPPORT_CUSTOM_VENDOR_IE
-uint32_t p2pCalculateVendorIELen(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculateVendorIELen(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct STA_RECORD *prStaRec);
 
-void p2pGenerateVendorIE(IN struct ADAPTER *p2pGenerateVendorIE,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerateVendorIE(struct ADAPTER *p2pGenerateVendorIE,
+		struct MSDU_INFO *prMsduInfo);
 #endif
 
 #if CFG_SUPPORT_WFD
-uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+uint32_t wfdFuncCalculateWfdIELenForAssocRsp(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void wfdFuncGenerateWfdIEForAssocRsp(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 #endif
 
-uint32_t p2pFuncCalculateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx, IN struct STA_RECORD *prStaRec);
+uint32_t p2pFuncCalculateP2P_IE_NoA(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx, struct STA_RECORD *prStaRec);
 
-void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pFuncGenerateP2P_IE_NoA(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
-void p2pFunCleanQueuedMgmtFrame(IN struct ADAPTER *prAdapter,
-		IN struct P2P_QUEUED_ACTION_FRAME *prFrame);
+void p2pFunCleanQueuedMgmtFrame(struct ADAPTER *prAdapter,
+		struct P2P_QUEUED_ACTION_FRAME *prFrame);
 
-void p2pFuncSwitchGcChannel(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prP2pBssInfo);
+void p2pFuncSwitchGcChannel(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo);
 
-void p2pFuncSwitchSapChannel(IN struct ADAPTER *prAdapter);
+void p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter);
 
-uint32_t p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
-		IN enum ENUM_IFTYPE eIftype, OUT uint32_t *freq_list,
-		OUT uint32_t *num_freq_list);
+uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
+		enum ENUM_IFTYPE eIftype, uint32_t *freq_list,
+		uint32_t *num_freq_list);
 
 enum ENUM_P2P_CONNECT_STATE
-p2pFuncGetP2pActionFrameType(IN struct MSDU_INFO *prMgmtMsdu);
+p2pFuncGetP2pActionFrameType(struct MSDU_INFO *prMgmtMsdu);
 
 u_int8_t
-p2pFuncCheckOnRocChnl(IN struct RF_CHANNEL_INFO *prTxChnl,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+p2pFuncCheckOnRocChnl(struct RF_CHANNEL_INFO *prTxChnl,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
 
 u_int8_t
-p2pFuncNeedWaitRsp(IN struct ADAPTER *prAdapter,
-		IN enum ENUM_P2P_CONNECT_STATE eConnState);
+p2pFuncNeedWaitRsp(struct ADAPTER *prAdapter,
+		enum ENUM_P2P_CONNECT_STATE eConnState);
 
 u_int8_t
-p2pFuncNeedForceSleep(IN struct ADAPTER *prAdapter);
+p2pFuncNeedForceSleep(struct ADAPTER *prAdapter);
 
 void
-p2pFunClearAllTxReq(IN struct ADAPTER *prAdapter,
-		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);
+p2pFunClearAllTxReq(struct ADAPTER *prAdapter,
+		struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo);
 
-uint8_t p2pFunGetAcsBestCh(IN struct ADAPTER *prAdapter,
-		IN enum ENUM_BAND eBand,
-		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
-		IN uint32_t u4LteSafeChnMask_2G,
-		IN uint32_t u4LteSafeChnMask_5G_1,
-		IN uint32_t u4LteSafeChnMask_5G_2,
-		IN uint32_t u4LteSafeChnMask_6G);
+uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		uint32_t u4LteSafeChnMask_2G,
+		uint32_t u4LteSafeChnMask_5G_1,
+		uint32_t u4LteSafeChnMask_5G_2,
+		uint32_t u4LteSafeChnMask_6G);
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 
-void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
-		IN uint8_t eBand,
-		IN enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
-		IN uint32_t u4LteSafeChnMask_2G,
-		IN uint32_t u4LteSafeChnMask_5G_1,
-		IN uint32_t u4LteSafeChnMask_5G_2,
-		IN uint32_t u4LteSafeChnMask_6G,
-		OUT uint8_t *pucSortChannelNumber,
-		OUT struct RF_CHANNEL_INFO *paucSortChannelList);
+void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
+		uint8_t eBand,
+		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
+		uint32_t u4LteSafeChnMask_2G,
+		uint32_t u4LteSafeChnMask_5G_1,
+		uint32_t u4LteSafeChnMask_5G_2,
+		uint32_t u4LteSafeChnMask_6G,
+		uint8_t *pucSortChannelNumber,
+		struct RF_CHANNEL_INFO *paucSortChannelList);
 #endif
-void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIndex,
-		IN struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
-		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo);
+void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIndex,
+		struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
+		struct P2P_ACS_REQ_INFO *prAcsReqInfo);
 
-void p2pFunIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
-		IN struct P2P_ACS_REQ_INFO *prAcsReqInfo);
+void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
+		struct P2P_ACS_REQ_INFO *prAcsReqInfo);
 
-void p2pFunCalAcsChnScores(IN struct ADAPTER *prAdapter);
+void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter);
 
 enum ENUM_CHNL_SWITCH_POLICY
-p2pFunDetermineChnlSwitchPolicy(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
-		IN struct RF_CHANNEL_INFO *prNewChannelInfo);
+p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		struct RF_CHANNEL_INFO *prNewChannelInfo);
 
 void
-p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx,
+p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
 		enum ENUM_CHNL_SWITCH_POLICY ePolicy,
-		IN struct RF_CHANNEL_INFO *prNewChannelInfo);
+		struct RF_CHANNEL_INFO *prNewChannelInfo);
 
 void
-p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter);
+p2pFunChnlSwitchNotifyDone(struct ADAPTER *prAdapter);
 
-uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
-		IN enum ENUM_P2P_CONNECT_STATE eConnState,
-		IN struct MSDU_INFO *prMgmtTxMsdu);
+uint8_t p2pFuncIsBufferableMMPDU(struct ADAPTER *prAdapter,
+		enum ENUM_P2P_CONNECT_STATE eConnState,
+		struct MSDU_INFO *prMgmtTxMsdu);
 
 void p2pFuncSetAclPolicy(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIdx,
-	IN enum ENUM_PARAM_CUSTOM_ACL_POLICY ePolicy,
-	IN uint8_t aucAddr[]);
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	enum ENUM_PARAM_CUSTOM_ACL_POLICY ePolicy,
+	uint8_t aucAddr[]);
 
 #endif
 
 #if CFG_AP_80211KVR_INTERFACE
 void p2pFunMulAPAgentBssStatusNotification(
-		IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo);
+		struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
 #endif
 
 struct BSS_INFO *p2pGetAisBssByBand(
-	IN struct ADAPTER *prAdapter,
-	IN enum ENUM_BAND eBand);
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand);
 
 struct BSS_INFO *p2pGetAisConnectedBss(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 

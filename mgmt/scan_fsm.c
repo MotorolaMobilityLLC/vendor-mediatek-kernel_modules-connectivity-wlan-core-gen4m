@@ -128,8 +128,8 @@ static uint8_t *apucDebugScanState[SCAN_STATE_NUM] = {
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmSteps(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_SCAN_STATE eNextState)
+void scnFsmSteps(struct ADAPTER *prAdapter,
+	enum ENUM_SCAN_STATE eNextState)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -229,7 +229,7 @@ void scnFsmSteps(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnSendScanReq(IN struct ADAPTER *prAdapter)
+void scnSendScanReq(struct ADAPTER *prAdapter)
 {
 	log_dbg(SCN, WARN,
 		"CMD_ID_SCAN_REQ is deprecated, use CMD_ID_SCAN_REQ_V2\n");
@@ -245,7 +245,7 @@ void scnSendScanReq(IN struct ADAPTER *prAdapter)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
+void scnSendScanReqV2(struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -480,7 +480,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmMsgStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void scnFsmMsgStart(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -525,7 +525,7 @@ void scnFsmMsgStart(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
+void scnFsmMsgAbort(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SCN_SCAN_CANCEL *prScanCancel;
 	struct SCAN_INFO *prScanInfo;
@@ -616,8 +616,8 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmHandleScanMsg(IN struct ADAPTER *prAdapter,
-	IN struct MSG_SCN_SCAN_REQ *prScanReqMsg)
+void scnFsmHandleScanMsg(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ *prScanReqMsg)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -695,8 +695,8 @@ void scnFsmHandleScanMsg(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
-	IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
+void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
+	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -822,8 +822,8 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter, IN uint8_t ucSeqNum,
-	IN uint8_t ucBssIndex)
+void scnFsmRemovePendingMsg(struct ADAPTER *prAdapter, uint8_t ucSeqNum,
+	uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -904,8 +904,8 @@ void scnFsmRemovePendingMsg(IN struct ADAPTER *prAdapter, IN uint8_t ucSeqNum,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnEventScanDone(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_SCAN_DONE *prScanDone, u_int8_t fgIsNewVersion)
+void scnEventScanDone(struct ADAPTER *prAdapter,
+	struct EVENT_SCAN_DONE *prScanDone, u_int8_t fgIsNewVersion)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -1048,8 +1048,8 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_SCAN_DONE *prScanDone)
+scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
+	struct EVENT_SCAN_DONE *prScanDone)
 {
 	uint8_t ucScanChNum = 0;
 	uint8_t ucChCnt = 0;
@@ -1149,9 +1149,9 @@ scnFsmDumpScanDoneInfo(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_MSG_ID eMsgId, IN uint8_t ucSeqNum, IN uint8_t ucBssIndex,
-	IN enum ENUM_SCAN_STATUS eScanStatus)
+scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
+	enum ENUM_MSG_ID eMsgId, uint8_t ucSeqNum, uint8_t ucBssIndex,
+	enum ENUM_SCAN_STATUS eScanStatus)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -1210,7 +1210,7 @@ scnFsmGenerateScanDoneMsg(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter,
+u_int8_t scnQuerySparseChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prSparseBand, uint8_t *pucSparseChannel)
 {
 	struct SCAN_INFO *prScanInfo;
@@ -1243,8 +1243,8 @@ u_int8_t scnQuerySparseChannel(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
-	IN struct EVENT_SCHED_SCAN_DONE *prSchedScanDone)
+void scnEventSchedScanDone(struct ADAPTER *prAdapter,
+	struct EVENT_SCHED_SCAN_DONE *prSchedScanDone)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCHED_SCAN_PARAM *prSchedScanParam;
@@ -1334,8 +1334,8 @@ bool scnEnableSplitScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
-	IN struct PARAM_SCHED_SCAN_REQUEST *prRequest)
+scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
+	struct PARAM_SCHED_SCAN_REQUEST *prRequest)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCHED_SCAN_PARAM *prSchedScanParam;
@@ -1520,7 +1520,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
  * \return        TRUE if send stop command successfully. FALSE otherwise
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
+u_int8_t scnFsmSchedScanStopRequest(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIndex = 0;
 
@@ -1557,8 +1557,8 @@ u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
-		 IN enum ENUM_SCHED_SCAN_ACT ucSchedScanAct)
+scnFsmSchedScanSetAction(struct ADAPTER *prAdapter,
+		 enum ENUM_SCHED_SCAN_ACT ucSchedScanAct)
 {
 	struct CMD_SET_SCHED_SCAN_ENABLE rCmdSchedScanAction;
 	uint32_t rStatus;
@@ -1603,8 +1603,8 @@ scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
-		IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
+scnFsmSchedScanSetCmd(struct ADAPTER *prAdapter,
+		struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
 {
 	uint16_t u2IeSize = 0;
 	uint32_t rStatus;
@@ -1638,8 +1638,8 @@ scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
-		IN struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
+scnSetSchedScanPlan(struct ADAPTER *prAdapter,
+		struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
 {
 	/* Set Multiple Scan Plan here */
 	log_dbg(SCN, TRACE, "--> %s()\n", __func__);
@@ -1664,9 +1664,9 @@ scnSetSchedScanPlan(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_SCAN_DONE *prScanDone,
-		IN struct SCAN_INFO *prScanInfo, IN uint8_t ucBssIndex)
+scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
+		struct EVENT_SCAN_DONE *prScanDone,
+		struct SCAN_INFO *prScanInfo, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -1736,8 +1736,8 @@ scnDoZeroMdrdyRecoveryCheck(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-scnDoScanTimeoutRecoveryCheck(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIndex)
+scnDoScanTimeoutRecoveryCheck(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct SCAN_INFO *prScanInfo;
@@ -1773,9 +1773,9 @@ enum ENUM_SCN_DONE_REASON {
 };
 
 void
-scnFsmNotifyEvent(IN struct ADAPTER *prAdapter,
-		IN enum ENUM_SCAN_STATUS eStatus,
-		IN uint8_t ucBssIndex)
+scnFsmNotifyEvent(struct ADAPTER *prAdapter,
+		enum ENUM_SCAN_STATUS eStatus,
+		uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *prScanInfo;
 	char uEvent[300], strbuf[200] = "N/A";

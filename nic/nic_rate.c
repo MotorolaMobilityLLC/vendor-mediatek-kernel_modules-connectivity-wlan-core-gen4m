@@ -259,9 +259,9 @@ char *HW_TX_RATE_BW[] = {"BW20", "BW40", "BW80", "BW160/BW8080",
  */
 uint32_t
 nicGetPhyRateByMcsRate(
-	IN uint8_t ucIdx,
-	IN uint8_t ucBw,
-	IN uint8_t ucGI)
+	uint8_t ucIdx,
+	uint8_t ucBw,
+	uint8_t ucGI)
 {
 	if (ARRAY_SIZE(arMcsRate2PhyRate) <= ucIdx ||
 			ucBw > RX_VT_FR_MODE_160 ||
@@ -276,16 +276,16 @@ nicGetPhyRateByMcsRate(
 
 uint32_t
 nicGetHwRateByPhyRate(
-	IN uint8_t ucIdx)
+	uint8_t ucIdx)
 {
 	return	aucHwRate2PhyRate[ucIdx]; /* uint : 500 kbps */
 }
 
 uint32_t
 nicSwIndex2RateIndex(
-	IN uint8_t ucRateSwIndex,
-	OUT uint8_t *pucRateIndex,
-	OUT uint8_t *pucPreambleOption
+	uint8_t ucRateSwIndex,
+	uint8_t *pucRateIndex,
+	uint8_t *pucPreambleOption
 )
 {
 	ASSERT(pucRateIndex);
@@ -301,8 +301,8 @@ nicSwIndex2RateIndex(
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicRateIndex2RateCode(IN uint8_t ucPreambleOption,
-	IN uint8_t ucRateIndex, OUT uint16_t *pu2RateCode)
+uint32_t nicRateIndex2RateCode(uint8_t ucPreambleOption,
+	uint8_t ucRateIndex, uint16_t *pu2RateCode)
 {
 	switch (ucPreambleOption) {
 	case PREAMBLE_DEFAULT_LONG_NONE:
@@ -350,10 +350,10 @@ uint32_t nicRateIndex2RateCode(IN uint8_t ucPreambleOption,
 
 uint32_t
 nicRateCode2PhyRate(
-	IN uint16_t  u2RateCode,
-	IN uint8_t   ucBandwidth,
-	IN uint8_t   ucGI,
-	IN uint8_t   ucRateNss)
+	uint16_t  u2RateCode,
+	uint8_t   ucBandwidth,
+	uint8_t   ucGI,
+	uint8_t   ucRateNss)
 {
 	uint8_t ucPhyRate;
 	uint16_t u2TxMode;
@@ -392,9 +392,9 @@ nicRateCode2PhyRate(
 
 uint32_t
 nicRateCode2DataRate(
-	IN uint16_t  u2RateCode,
-	IN uint8_t   ucBandwidth,
-	IN uint8_t   ucGI)
+	uint16_t  u2RateCode,
+	uint8_t   ucBandwidth,
+	uint8_t   ucGI)
 {
 	uint8_t ucPhyRate, ucIdx, ucBw = 0;
 	uint32_t u4PhyRateIn100Kbps = 0;
@@ -440,10 +440,10 @@ nicRateCode2DataRate(
 
 u_int8_t
 nicGetRateIndexFromRateSetWithLimit(
-	IN uint16_t u2RateSet,
-	IN uint32_t u4PhyRateLimit,
-	IN u_int8_t fgGetLowest,
-	OUT uint8_t *pucRateSwIndex)
+	uint16_t u2RateSet,
+	uint32_t u4PhyRateLimit,
+	u_int8_t fgGetLowest,
+	uint8_t *pucRateSwIndex)
 {
 	uint32_t i;
 	uint32_t u4CurPhyRate, u4TarPhyRate, u4HighestPhyRate,
@@ -796,8 +796,8 @@ uint32_t nicRateHeLtfCheckGi(
 }
 
 uint8_t nicGetTxSgiInfo(
-	IN struct PARAM_PEER_CAP *prWtblPeerCap,
-	IN uint8_t u1TxMode)
+	struct PARAM_PEER_CAP *prWtblPeerCap,
+	uint8_t u1TxMode)
 {
 	if (!prWtblPeerCap)
 		return FALSE;
@@ -817,8 +817,8 @@ uint8_t nicGetTxSgiInfo(
 }
 
 uint8_t nicGetTxLdpcInfo(
-	IN uint8_t ucTxMode,
-	IN struct PARAM_TX_CONFIG *prWtblTxConfig)
+	uint8_t ucTxMode,
+	struct PARAM_TX_CONFIG *prWtblTxConfig)
 {
 	if (!prWtblTxConfig)
 		return 0;
@@ -842,8 +842,8 @@ uint8_t nicGetTxLdpcInfo(
 	}
 }
 
-uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
-				  IN uint8_t ucWlanIdx)
+uint16_t nicGetStatIdxInfo(struct ADAPTER *prAdapter,
+				  uint8_t ucWlanIdx)
 {
 	static uint8_t aucWlanIdxArray[CFG_STAT_DBG_PEER_NUM] = {0};
 	static uint16_t u2ValidBitMask;	/* support max 16 peers */
@@ -893,7 +893,7 @@ uint16_t nicGetStatIdxInfo(IN struct ADAPTER *prAdapter,
 	return 0xFFFF;
 }
 
-int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
+int32_t nicGetTxRateInfo(char *pcCommand, int i4TotalLen,
 			u_int8_t fgDumpAll,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics)
@@ -1149,8 +1149,8 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 	return i4BytesWritten;
 }
 
-int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
-				 IN int i4TotalLen, IN uint8_t ucWlanIdx)
+int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, char *pcCommand,
+				 int i4TotalLen, uint8_t ucWlanIdx)
 {
 	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, groupid, mu;
 	int32_t i4BytesWritten = 0;
@@ -1266,8 +1266,8 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 	return i4BytesWritten;
 }
 
-uint16_t nicRateInfo2RateCode(IN uint32_t  u4TxMode,
-	IN uint32_t  u4Rate)
+uint16_t nicRateInfo2RateCode(uint32_t  u4TxMode,
+	uint32_t  u4Rate)
 {
 	uint16_t u2RateCode = 0;
 

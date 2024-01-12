@@ -106,7 +106,7 @@
  *                              F U N C T I O N S
  ******************************************************************************
  */
-static u_int8_t p2pFsmUseRoleIf(IN struct ADAPTER *prAdapter,
+static u_int8_t p2pFsmUseRoleIf(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx)
 {
 	u_int8_t fgUseRoleInterface = FALSE;
@@ -147,8 +147,8 @@ static u_int8_t p2pFsmUseRoleIf(IN struct ADAPTER *prAdapter,
 	return fgUseRoleInterface;
 }
 
-void p2pFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventScanRequest(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg =
 		(struct MSG_P2P_SCAN_REQUEST *) NULL;
@@ -191,8 +191,8 @@ void p2pFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventChGrant(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
@@ -245,8 +245,8 @@ void p2pFsmRunEventChGrant(IN struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* p2pFsmRunEventChGrant */
 
-void p2pFsmRunEventNetDeviceRegister(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventNetDeviceRegister(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_P2P_NETDEV_REGISTER *prNetDevRegisterMsg =
 		(struct MSG_P2P_NETDEV_REGISTER *) NULL;
@@ -267,8 +267,8 @@ void p2pFsmRunEventNetDeviceRegister(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pFsmRunEventNetDeviceRegister */
 
-void p2pFsmRunEventUpdateMgmtFrame(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventUpdateMgmtFrame(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_P2P_MGMT_FRAME_UPDATE *prP2pMgmtFrameUpdateMsg =
 		(struct MSG_P2P_MGMT_FRAME_UPDATE *) NULL;
@@ -296,8 +296,8 @@ void p2pFsmRunEventUpdateMgmtFrame(IN struct ADAPTER *prAdapter,
 }				/* p2pFsmRunEventUpdateMgmtFrame */
 
 #if CFG_SUPPORT_WFD
-void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventWfdSettingUpdate(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
 		(struct WFD_CFG_SETTINGS *) NULL;
@@ -391,8 +391,8 @@ void p2pFsmRunEventWfdSettingUpdate(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void p2pFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventScanDone(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SCN_SCAN_DONE *prScanDoneMsg =
 		(struct MSG_SCN_SCAN_DONE *) NULL;
@@ -434,8 +434,8 @@ void p2pFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	}
 }				/* p2pFsmRunEventScanDone */
 
-void p2pFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
 			(struct MSG_MGMT_TX_REQUEST *) NULL;
@@ -455,8 +455,8 @@ void p2pFsmRunEventMgmtFrameTx(IN struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* p2pFsmRunEventMgmtFrameTx */
 
-void p2pFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pFsmRunEventTxCancelWait(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_CANCEL_TX_WAIT_REQUEST *prCancelTxWaitMsg =
 			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
@@ -479,8 +479,8 @@ void p2pFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
 }				/* p2pFsmRunEventTxCancelWait */
 
 struct BSS_DESC *p2pGetTargetBssDesc(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex) {
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex) {
 
 	uint8_t i = 0;
 

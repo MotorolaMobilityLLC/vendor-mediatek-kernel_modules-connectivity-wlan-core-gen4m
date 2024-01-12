@@ -504,9 +504,9 @@ void mldGenerateProbeRspIE(
 }
 
 uint8_t *mldGenerateBasicCommonInfo(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN uint16_t u2FrameCtrl)
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u2FrameCtrl)
 {
 	uint8_t *cp;
 	struct MLD_BSS_INFO *mld_bssinfo;
@@ -1886,8 +1886,8 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	return (struct SW_RFB *) QUEUE_GET_HEAD(que);
 }
 
-uint8_t *mldHandleRnrMlParam(IN uint8_t *ie,
-			      IN struct MULTI_LINK_INFO *prMlInfo)
+uint8_t *mldHandleRnrMlParam(uint8_t *ie,
+			      struct MULTI_LINK_INFO *prMlInfo)
 {
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField =
 		(struct NEIGHBOR_AP_INFO_FIELD *)ie;
@@ -2486,9 +2486,9 @@ void mldBssDump(struct ADAPTER *prAdapter)
 }
 
 void mldBssUpdateMldAddr(
-	IN struct ADAPTER *prAdapter,
-	IN struct MLD_BSS_INFO *prMldBssInfo,
-	IN const uint8_t *paucBssId)
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	const uint8_t *paucBssId)
 {
 	if (!prAdapter || !prMldBssInfo)
 		return;
@@ -2501,8 +2501,8 @@ void mldBssUpdateMldAddr(
 }
 
 void mldBssUpdateMldAddrByMainBss(
-	IN struct ADAPTER *prAdapter,
-	IN struct MLD_BSS_INFO *prMldBssInfo)
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 
@@ -2533,8 +2533,8 @@ void mldBssUpdateMldAddrByMainBss(
 }
 
 void mldBssUpdateOmacIdx(
-	IN struct ADAPTER *prAdapter,
-	IN struct MLD_BSS_INFO *prMldBssInfo,
+	struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBssInfo)
 {
 	if (!prAdapter || !prMldBssInfo ||
@@ -3146,8 +3146,8 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 }
 
 uint8_t mldIsMloFeatureEnabled(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t fgIsApMode)
+	struct ADAPTER *prAdapter,
+	uint8_t fgIsApMode)
 {
 	uint8_t ret;
 

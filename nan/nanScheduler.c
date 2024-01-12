@@ -516,11 +516,11 @@ enum _ENUM_CNM_CH_CONCURR_T {
 };
 
 void
-cnmGetChBound(IN uint8_t ucPrimaryCh, IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
-	      IN enum ENUM_CHNL_EXT eSCO, IN uint8_t ucChannelS1,
-	      IN uint8_t ucChannelS2, OUT uint8_t *pucChLowBound1,
-	      OUT uint8_t *pucChHighBound1, OUT uint8_t *pucChLowBound2,
-	      OUT uint8_t *pucChHighBound2) {
+cnmGetChBound(uint8_t ucPrimaryCh, enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	      enum ENUM_CHNL_EXT eSCO, uint8_t ucChannelS1,
+	      uint8_t ucChannelS2, uint8_t *pucChLowBound1,
+	      uint8_t *pucChHighBound1, uint8_t *pucChLowBound2,
+	      uint8_t *pucChHighBound2) {
 	switch (eChannelWidth) {
 	case CW_20_40MHZ:
 		if (eSCO == CHNL_EXT_SCB) {
@@ -563,13 +563,13 @@ cnmGetChBound(IN uint8_t ucPrimaryCh, IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
 }
 
 enum _ENUM_CNM_CH_CONCURR_T
-cnmChConCurrType(IN uint8_t ucPrimaryChNew,
-		 IN enum ENUM_CHANNEL_WIDTH eChannelWidthNew,
-		 IN enum ENUM_CHNL_EXT eSCONew, IN uint8_t ucChannelS1New,
-		 IN uint8_t ucChannelS2New, IN uint8_t ucPrimaryChCurr,
-		 IN enum ENUM_CHANNEL_WIDTH eChannelWidthCurr,
-		 IN enum ENUM_CHNL_EXT eSCOCurr, IN uint8_t ucChannelS1Curr,
-		 IN uint8_t ucChannelS2Curr) {
+cnmChConCurrType(uint8_t ucPrimaryChNew,
+		 enum ENUM_CHANNEL_WIDTH eChannelWidthNew,
+		 enum ENUM_CHNL_EXT eSCONew, uint8_t ucChannelS1New,
+		 uint8_t ucChannelS2New, uint8_t ucPrimaryChCurr,
+		 enum ENUM_CHANNEL_WIDTH eChannelWidthCurr,
+		 enum ENUM_CHNL_EXT eSCOCurr, uint8_t ucChannelS1Curr,
+		 uint8_t ucChannelS2Curr) {
 	uint8_t ucChLowBound_New1;
 	uint8_t ucChHighBound_New1;
 	uint8_t ucChLowBound_New2;
@@ -4688,8 +4688,8 @@ nanSchedNegoSyncSchFindNextPeerSchRec(struct ADAPTER *prAdapter) {
 
 static enum _ENUM_NAN_SYNC_SCH_UPDATE_STATE_T
 nanSchedNegoSyncSchUpdateFsmStep(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_NAN_SYNC_SCH_UPDATE_STATE_T eNextState) {
+	struct ADAPTER *prAdapter,
+	enum _ENUM_NAN_SYNC_SCH_UPDATE_STATE_T eNextState) {
 	enum _ENUM_NAN_SYNC_SCH_UPDATE_STATE_T eLastState;
 	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
 	struct _NAN_PEER_SCHEDULE_RECORD_T *prPeerSchRec;
@@ -8001,7 +8001,7 @@ nanSchedGetPublicAvailAttr(struct ADAPTER *prAdapter,
 }
 
 uint32_t
-nanSchedCmdUpdatePotentialChnlList(IN struct ADAPTER *prAdapter) {
+nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
 	uint32_t u4CmdBufferLen;
@@ -8172,7 +8172,7 @@ nanSchedCmdUpdatePotentialChnlList(IN struct ADAPTER *prAdapter) {
 }
 
 uint32_t
-nanSchedCmdUpdateCRB(IN struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
+nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
 	uint32_t u4CmdBufferLen;
@@ -8248,7 +8248,7 @@ nanSchedCmdUpdateCRB(IN struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 }
 
 uint32_t
-nanSchedCmdMapStaRecord(IN struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
+nanSchedCmdMapStaRecord(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 			enum NAN_BSS_ROLE_INDEX eRoleIdx, uint8_t ucStaRecIdx,
 			uint8_t ucNdpCxtId, uint8_t ucWlanIndex) {
 	uint32_t rStatus;
@@ -8385,7 +8385,7 @@ nanSchedCmdUpdatePeerCapability(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 }
 
 uint32_t
-nanSchedCmdManagePeerSchRecord(IN struct ADAPTER *prAdapter, uint32_t u4SchIdx,
+nanSchedCmdManagePeerSchRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx,
 			       unsigned char fgActivate) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -8589,7 +8589,7 @@ nanSchedCmdUpdateAvailabilityCtrl(struct ADAPTER *prAdapter) {
 }
 
 uint32_t
-nanSchedCmdUpdateAvailability(IN struct ADAPTER *prAdapter) {
+nanSchedCmdUpdateAvailability(struct ADAPTER *prAdapter) {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
 	struct _NAN_SCHEDULER_T *prScheduler;
@@ -8638,7 +8638,7 @@ nanSchedCmdUpdateAvailability(IN struct ADAPTER *prAdapter) {
 }
 
 uint32_t
-nanSchedCmdUpdatePhySettigns(IN struct ADAPTER *prAdapter,
+nanSchedCmdUpdatePhySettigns(struct ADAPTER *prAdapter,
 			     struct _NAN_PHY_SETTING_T *pr2P4GPhySettings,
 			     struct _NAN_PHY_SETTING_T *pr5GPhySettings) {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;

@@ -46,7 +46,7 @@ struct CSI_INFO_T *glCsiGetCSIInfo(void)
 	return &rCSIInfo;
 }
 
-void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo)
+void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 {
 	/* init CSI wait queue	*/
 	init_waitqueue_head(&(prGlueInfo->waitq_csi));
@@ -54,12 +54,12 @@ void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo)
 	rCSIInfo.eCSIOutput = CSI_OUTPUT_PROC_FILE;
 }
 
-void glCsiSupportDeinit(IN struct GLUE_INFO *prGlueInfo)
+void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo)
 {
 	glCsiFreeStaList(prGlueInfo);
 }
 
-int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
+int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 			struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
@@ -113,7 +113,7 @@ int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
 	return 0;
 }
 
-int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
+int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 			struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
@@ -162,7 +162,7 @@ int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
 	return 0;
 }
 
-void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo)
+void glCsiFreeStaList(struct GLUE_INFO *prGlueInfo)
 {
 	struct CSI_STA *prCSISta = NULL;
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
@@ -179,8 +179,8 @@ void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo)
 	KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_CSI_STA_LIST);
 }
 
-void nicEventCSIData(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventCSIData(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 	struct CSI_TLV_ELEMENT *prCSITlvData;
 	int32_t i4EventLen;
@@ -554,7 +554,7 @@ out:
 }
 
 u_int8_t
-wlanPushCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
 
@@ -589,7 +589,7 @@ wlanPushCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 }
 
 u_int8_t
-wlanPopCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+wlanPopCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
 

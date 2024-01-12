@@ -57,7 +57,7 @@ static uint16_t wmmAcmTxTimeCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 static uint16_t wmmAcmTxTimeHtCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 				  uint8_t ucMcsId, uint8_t ucFlags);
 
-static void wmmAcmDequeueTimeOut(IN struct ADAPTER *prAdapter,
+static void wmmAcmDequeueTimeOut(struct ADAPTER *prAdapter,
 				 uintptr_t ulParamPtr);
 
 #define FLAG_S_PREAMBLE BIT(0)
@@ -100,7 +100,7 @@ static inline uint8_t LMR_PREAMBL_TIME(uint8_t __fgIsGmode,
 uint8_t const aucUp2ACIMap[8] = {ACI_BE, ACI_BK, ACI_BK, ACI_BE,
 				 ACI_VI, ACI_VI, ACI_VO, ACI_VO};
 
-void wmmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void wmmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct WMM_INFO *prWmmInfo = aisGetWMMInfo(prAdapter, ucBssIndex);
 	struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
@@ -127,7 +127,7 @@ void wmmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	DBGLOG(WMM, TRACE, "wmm init done\n");
 }
 
-void wmmUnInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void wmmUnInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct WMM_INFO *prWmmInfo = aisGetWMMInfo(prAdapter, ucBssIndex);
 	struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
@@ -167,8 +167,8 @@ void wmmFillTsinfo(struct PARAM_QOS_TSINFO *prTsInfo, uint8_t *pucTsInfo)
 	pucTsInfo[2] = (u4TsInfoValue >> 16) & 0xff;
 }
 
-void wmmComposeTspecIE(IN struct ADAPTER *prAdapter,
-		       IN struct MSDU_INFO *prMsduInfo,
+void wmmComposeTspecIE(struct ADAPTER *prAdapter,
+		       struct MSDU_INFO *prMsduInfo,
 		       struct PARAM_QOS_TSPEC *prParamQosTspec)
 {
 	struct IE_WMM_TSPEC *prIeWmmTspec = NULL;
@@ -481,8 +481,8 @@ uint8_t wmmHasActiveTspec(struct WMM_INFO *prWmmInfo)
 	return ucACList;
 }
 
-void wmmRunEventTSOperate(IN struct ADAPTER *prAdapter,
-			  IN struct MSG_HDR *prMsgHdr)
+void wmmRunEventTSOperate(struct ADAPTER *prAdapter,
+			  struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_TS_OPERATE *prMsgTsOperate =
 		(struct MSG_TS_OPERATE *)prMsgHdr;
@@ -1032,8 +1032,8 @@ void wmmRemoveAllTsmMeasurement(struct ADAPTER *prAdapter,
 	prWmmInfo->rTriggeredTsmRptTime = 0;
 }
 
-u_int8_t wmmParseQosAction(IN struct ADAPTER *prAdapter,
-			   IN struct SW_RFB *prSwRfb)
+u_int8_t wmmParseQosAction(struct ADAPTER *prAdapter,
+			   struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prWlanActionFrame = NULL;
 	uint8_t *pucIE = NULL;
@@ -1898,7 +1898,7 @@ static uint16_t wmmAcmTxTimeHtCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 	return u2TxTime;
 } /* End of ACM_TX_TimeCalHT */
 
-static void wmmAcmDequeueTimeOut(IN struct ADAPTER *prAdapter,
+static void wmmAcmDequeueTimeOut(struct ADAPTER *prAdapter,
 				 uintptr_t ulParamPtr)
 {
 	DBGLOG(WMM, INFO, "Timeout, trigger to do ACM dequeue\n");

@@ -486,9 +486,9 @@ uint32_t nanSubscribeRequest(struct ADAPTER *prAdapter,
 uint32_t nanTransmitRequest(struct ADAPTER *prAdapter,
 			   struct NanTransmitFollowupRequest *msg);
 
-void nanCmdManageScid(IN struct ADAPTER *prAdapter, unsigned char fgAddDelete,
+void nanCmdManageScid(struct ADAPTER *prAdapter, unsigned char fgAddDelete,
 		      uint8_t ucPubID, uint8_t *pucScid);
-void nanCmdAddCsid(IN struct ADAPTER *prAdapter, uint8_t ucPubID,
+void nanCmdAddCsid(struct ADAPTER *prAdapter, uint8_t ucPubID,
 		   uint8_t ucNumCsid, uint8_t *pucCsidList);
 
 uint32_t nanDiscUpdateCipherSuiteInfoAttr(struct ADAPTER *prAdapter,

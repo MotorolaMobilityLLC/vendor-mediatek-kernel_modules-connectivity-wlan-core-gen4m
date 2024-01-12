@@ -601,9 +601,9 @@ bool receive_del_txs_queue(
 * Send specific type of packet and check if TXS is back
 */
 int priv_driver_txs_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -728,9 +728,9 @@ int priv_driver_txs_test(
 * Check TXS test result
 */
 int priv_driver_txs_test_result(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -854,9 +854,9 @@ int is_frame_test(struct ADAPTER *pAd, uint8_t send_received)
 	}
 }
 
-uint32_t AutomationTxDone(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t AutomationTxDone(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(REQ, LOUD, "AutomationTxDone!\n");
 	if (rTxDoneStatus)
@@ -876,9 +876,9 @@ uint32_t AutomationTxDone(IN struct ADAPTER *prAdapter,
 *        matched with specific rate
 */
 int priv_driver_rxv_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -975,9 +975,9 @@ int priv_driver_rxv_test(
 * This routine is used to judge result of RXV DVT.
 */
 int priv_driver_rxv_test_result(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1020,8 +1020,8 @@ int priv_driver_rxv_test_result(
 * Note. This is FALCON RXV format
 */
 void connac2x_rxv_correct_test(
-	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	uint32_t prxv1, crxv1;
 	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc;
@@ -1093,9 +1093,9 @@ void connac2x_rxv_correct_test(
 * step3. Passed if throughput is normal
 */
 int priv_driver_cso_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -1148,8 +1148,8 @@ int priv_driver_cso_test(
 * Set a value to allow how many packets be transmitting
 */
 int priv_driver_set_tx_test(
-			IN struct net_device *prNetDev, IN char *pcCommand,
-			IN int i4TotalLen)
+			struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
@@ -1189,8 +1189,8 @@ int priv_driver_set_tx_test(
 * Assign specific AC of Data to verify HW behavior when receive Trigger frame
 */
 int priv_driver_set_tx_test_ac(
-			IN struct net_device *prNetDev, IN char *pcCommand,
-			IN int i4TotalLen)
+			struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
@@ -1230,9 +1230,9 @@ int priv_driver_set_tx_test_ac(
 * from RXD. Ignore this error
 */
 int priv_driver_skip_legal_ch_check(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen)
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;

@@ -972,11 +972,11 @@ u16 wlanSelectQueue(struct net_device *dev,
 void wlanDebugInit(void);
 #endif
 
-uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx,
-			       IN uint32_t u4DbgMask);
+uint32_t wlanSetDriverDbgLevel(uint32_t u4DbgIdx,
+			       uint32_t u4DbgMask);
 
-uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx,
-			       OUT uint32_t *pu4DbgMask);
+uint32_t wlanGetDriverDbgLevel(uint32_t u4DbgIdx,
+			       uint32_t *pu4DbgMask);
 
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			u_int8_t fgEnable);
@@ -995,14 +995,14 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 
 uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter);
 
-void *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucAisIndex);
+void *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucAisIndex);
 
-void *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucP2pIndex);
+void *wlanGetP2pNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucP2pIndex);
 
-void *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex);
+void *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex);
 
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
@@ -1057,11 +1057,11 @@ extern const uint8_t *kalFindIeExtIE(uint8_t eid,
 #define kalMetTagPacket(_prGlueInfo, _prPacket, _eTag) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-void kalMetTagPacket(IN struct GLUE_INFO *prGlueInfo,
-		     IN void *prPacket, IN enum ENUM_TX_PROFILING_TAG eTag);
+void kalMetTagPacket(struct GLUE_INFO *prGlueInfo,
+		     void *prPacket, enum ENUM_TX_PROFILING_TAG eTag);
 #endif
 
-void kalMetInit(IN struct GLUE_INFO *prGlueInfo);
+void kalMetInit(struct GLUE_INFO *prGlueInfo);
 #endif
 
 #ifdef CFG_REMIND_IMPLEMENT

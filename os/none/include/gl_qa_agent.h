@@ -397,7 +397,7 @@ struct HQA_CMD_FRAME {
 
 /* TODO: os-related, implement with correspoinding structure in OS */
 typedef int32_t(*HQA_CMD_HANDLER) (void *prNetDev,
-				   IN void *prIwReqData,
+				   void *prIwReqData,
 				   struct HQA_CMD_FRAME *HqaCmdFrame);
 
 struct HQA_CMD_TABLE {
@@ -430,9 +430,9 @@ int HQA_CMDHandler(void *prNetDev,
 		   void *prIwReqData,
 		   struct HQA_CMD_FRAME *HqaCmdFrame);
 
-int priv_qa_agent(IN void *prNetDev,
-		  IN void *prIwReqInfo,
-		  IN void *prIwReqData, IN char *pcExtra);
+int priv_qa_agent(void *prNetDev,
+		  void *prIwReqInfo,
+		  void *prIwReqData, char *pcExtra);
 
 int32_t mt6632SetICapStart(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Trigger, uint32_t u4RingCapEn,

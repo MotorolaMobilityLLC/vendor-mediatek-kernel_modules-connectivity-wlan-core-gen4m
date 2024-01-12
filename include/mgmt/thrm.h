@@ -207,9 +207,9 @@ struct THRM_PROT_CFG_CONTEXT {
 */
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 
-void thrmProtEventHandler(IN struct ADAPTER *prAdapter, IN uint8_t *prEventBuf);
-int thrmProtLvHandler(IN struct ADAPTER *prAdapter, IN uint8_t ucLevel);
-void thrmInit(IN struct ADAPTER *prAdapter);
+void thrmProtEventHandler(struct ADAPTER *prAdapter, uint8_t *prEventBuf);
+int thrmProtLvHandler(struct ADAPTER *prAdapter, uint8_t ucLevel);
+void thrmInit(struct ADAPTER *prAdapter);
 
 #endif
 #endif /* _THRM_H */

@@ -27,7 +27,7 @@ void (*hostapd_config_defaults_bss)(struct hostapd_bss_config *bss) =
 	_hostapd_config_defaults_bss;
 
 int
-secRxProcessEapol_AP(IN struct SW_RFB *prSwRfb, uint8_t *pucSendAddr) {
+secRxProcessEapol_AP(struct SW_RFB *prSwRfb, uint8_t *pucSendAddr) {
 #ifndef CFG_SUPPORT_NAN
 	int ret = 0;
 

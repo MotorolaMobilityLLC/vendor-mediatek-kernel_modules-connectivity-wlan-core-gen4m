@@ -238,7 +238,7 @@ static const char * const apucBandwidth[] = {
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxInitialize(IN struct ADAPTER *prAdapter)
+void nicTxInitialize(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct TX_CTRL *prTxCtrl;
@@ -329,7 +329,7 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 
 }				/* end of nicTxInitialize() */
 
-u_int8_t nicTxSanityCheckResource(IN struct ADAPTER
+u_int8_t nicTxSanityCheckResource(struct ADAPTER
 				  *prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
@@ -409,8 +409,8 @@ u_int8_t nicTxSanityCheckResource(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 
-u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucTC)
+u_int8_t nicTxResourceIsPleCtrlNeeded(struct ADAPTER
+				      *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
@@ -439,8 +439,8 @@ u_int8_t nicTxResourceIsPleCtrlNeeded(IN struct ADAPTER
 #endif
 }
 
-u_int8_t nicTxResourceIsPseCtrlNeeded(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucTC)
+u_int8_t nicTxResourceIsPseCtrlNeeded(struct ADAPTER
+				      *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
@@ -457,8 +457,8 @@ u_int8_t nicTxResourceIsPseCtrlNeeded(IN struct ADAPTER
 #endif
 }
 
-uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucTC)
+uint32_t nicTxResourceGetPleFreeCount(struct ADAPTER
+				      *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
@@ -476,8 +476,8 @@ uint32_t nicTxResourceGetPleFreeCount(IN struct ADAPTER
 	return prTc->au4FreePageCount_PLE[ucTC];
 }
 
-uint32_t nicTxResourceGetPseFreeCount(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucTC)
+uint32_t nicTxResourceGetPseFreeCount(struct ADAPTER
+				      *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
@@ -510,8 +510,8 @@ uint32_t nicTxResourceGetPseFreeCount(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 
-uint32_t nicTxAcquireResourcePLE(IN struct ADAPTER
-				 *prAdapter, IN uint8_t ucTC)
+uint32_t nicTxAcquireResourcePLE(struct ADAPTER
+				 *prAdapter, uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct TX_TCQ_STATUS *prTc;
@@ -562,9 +562,9 @@ uint32_t nicTxAcquireResourcePLE(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 uint32_t u4CurrTick;
-uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucTC, IN uint32_t u4PageCount,
-			      IN u_int8_t fgReqLock)
+uint32_t nicTxAcquireResource(struct ADAPTER *prAdapter,
+			      uint8_t ucTC, uint32_t u4PageCount,
+			      u_int8_t fgReqLock)
 {
 #define TC4_NO_RESOURCE_DELAY_MS      5    /* exponential of 5s */
 
@@ -670,8 +670,8 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_FAILURE   Resource is not available.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucTC)
+uint32_t nicTxPollingResource(struct ADAPTER *prAdapter,
+			      uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
@@ -743,9 +743,9 @@ uint32_t nicTxPollingResource(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucTc, IN uint32_t u4PageCount,
-			      IN u_int8_t fgReqLock, IN u_int8_t fgPLE)
+u_int8_t nicTxReleaseResource(struct ADAPTER *prAdapter,
+			      uint8_t ucTc, uint32_t u4PageCount,
+			      u_int8_t fgReqLock, u_int8_t fgPLE)
 {
 	struct TX_TCQ_STATUS *prTcqStatus;
 	u_int8_t bStatus = FALSE;
@@ -816,8 +816,8 @@ u_int8_t nicTxReleaseResource(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
-			      IN struct MSDU_INFO *prMsduInfoListHead)
+void nicTxReleaseMsduResource(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfoListHead)
 {
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead,
 				  *prNextMsduInfo;
@@ -853,7 +853,7 @@ void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
  * @return WLAN_STATUS_SUCCESS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
+uint32_t nicTxResetResource(struct ADAPTER *prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint32_t u4MaxDataPageCntPerFrame = 0;
@@ -1055,7 +1055,7 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 
 #if QM_FAST_TC_RESOURCE_CTRL
 uint32_t
-nicTxGetAdjustableResourceCnt(IN struct ADAPTER *prAdapter)
+nicTxGetAdjustableResourceCnt(struct ADAPTER *prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint8_t ucIdx;
@@ -1114,8 +1114,8 @@ nicTxGetAdjustableResourceCnt(IN struct ADAPTER *prAdapter)
  * @retval UINT_8        The number of corresponding TC number
  */
 /*----------------------------------------------------------------------------*/
-uint16_t nicTxGetResource(IN struct ADAPTER *prAdapter,
-			  IN uint8_t ucTC)
+uint16_t nicTxGetResource(struct ADAPTER *prAdapter,
+			  uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 
@@ -1130,8 +1130,8 @@ uint16_t nicTxGetResource(IN struct ADAPTER *prAdapter,
 		return prTxCtrl->rTc.au4FreePageCount[ucTC];
 }
 
-uint8_t nicTxGetFrameResourceType(IN uint8_t eFrameType,
-				  IN struct MSDU_INFO *prMsduInfo)
+uint8_t nicTxGetFrameResourceType(uint8_t eFrameType,
+				  struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t ucTC;
 
@@ -1157,7 +1157,7 @@ uint8_t nicTxGetFrameResourceType(IN uint8_t eFrameType,
 	return ucTC;
 }
 
-uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO
+uint8_t nicTxGetCmdResourceType(struct CMD_INFO
 				*prCmdInfo)
 {
 	uint8_t ucTC;
@@ -1186,23 +1186,23 @@ uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO
 	return ucTC;
 }
 
-uint8_t nicTxGetTxQByTc(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucTc)
+uint8_t nicTxGetTxQByTc(struct ADAPTER *prAdapter,
+			uint8_t ucTc)
 {
 	return arTcResourceControl[ucTc].ucHifTxQIndex;
 }
 
-uint8_t nicTxGetTxDestPortIdxByTc(IN uint8_t ucTc)
+uint8_t nicTxGetTxDestPortIdxByTc(uint8_t ucTc)
 {
 	return arTcResourceControl[ucTc].ucDestPortIndex;
 }
 
-uint8_t nicTxGetTxDestQIdxByTc(IN uint8_t ucTc)
+uint8_t nicTxGetTxDestQIdxByTc(uint8_t ucTc)
 {
 	return arTcResourceControl[ucTc].ucDestQueueIndex;
 }
 
-uint32_t nicTxGetRemainingTxTimeByTc(IN uint8_t ucTc)
+uint32_t nicTxGetRemainingTxTimeByTc(uint8_t ucTc)
 {
 	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
@@ -1217,7 +1217,7 @@ uint32_t nicTxGetRemainingTxTimeByTc(IN uint8_t ucTc)
 	return arTcTrafficSettings[ucTc].u4RemainingTxTime;
 }
 
-uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc)
+uint8_t nicTxGetTxCountLimitByTc(uint8_t ucTc)
 {
 	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
@@ -1233,7 +1233,7 @@ uint8_t nicTxGetTxCountLimitByTc(IN uint8_t ucTc)
 	return arTcTrafficSettings[ucTc].ucTxCountLimit;
 }
 
-uint8_t nicTxDescLengthByTc(IN uint8_t ucTc)
+uint8_t nicTxDescLengthByTc(uint8_t ucTc)
 {
 	const uint8_t ucMaxLen = ARRAY_SIZE(arTcTrafficSettings);
 
@@ -1258,8 +1258,8 @@ uint8_t nicTxDescLengthByTc(IN uint8_t ucTc)
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
-			   IN struct MSDU_INFO *prMsduInfoListHead)
+uint32_t nicTxMsduInfoList(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfoListHead)
 {
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
 	struct QUE qDataPort0, qDataPort1;
@@ -1343,8 +1343,8 @@ uint32_t nicTxMsduInfoList(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicTxDropInvalidMsduInfo(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void nicTxDropInvalidMsduInfo(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	uint32_t u4PageCnt = 0;
 
@@ -1394,8 +1394,8 @@ void nicTxDropInvalidMsduInfo(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
-	*prAdapter, IN struct MSDU_INFO *prMsduInfoListHead)
+uint32_t nicTxMsduInfoListMthread(struct ADAPTER
+	*prAdapter, struct MSDU_INFO *prMsduInfoListHead)
 {
 #if CFG_FIX_2_TX_PORT
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
@@ -1548,7 +1548,7 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
+uint32_t nicTxMsduQueueMthread(struct ADAPTER *prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
 	struct QUE qDataPort0, qDataPort1;
@@ -2022,7 +2022,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 }
 
-uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
+uint32_t nicTxGetMsduPendingCnt(struct ADAPTER
 				*prAdapter)
 {
 #if CFG_FIX_2_TX_PORT
@@ -2041,9 +2041,9 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
 
 #endif
 
-void nicTxComposeDescAppend(IN struct ADAPTER *prAdapter,
-			    IN struct MSDU_INFO *prMsduInfo,
-			    OUT uint8_t *prTxDescBuffer)
+void nicTxComposeDescAppend(struct ADAPTER *prAdapter,
+			    struct MSDU_INFO *prMsduInfo,
+			    uint8_t *prTxDescBuffer)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 
@@ -2065,11 +2065,11 @@ void nicTxComposeDescAppend(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void
 nicTxComposeDesc(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN uint32_t u4TxDescLength,
-	IN u_int8_t fgIsTemplate,
-	OUT uint8_t *prTxDescBuffer)
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint32_t u4TxDescLength,
+	u_int8_t fgIsTemplate,
+	uint8_t *prTxDescBuffer)
 {
 	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
 
@@ -2116,9 +2116,9 @@ void nicTxForceAmsduForCert(struct ADAPTER *prAdapter, u_int8_t *prTxDescBuffer)
 #endif
 }
 
-u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER
-				   *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				   IN struct STA_RECORD *prStaRec)
+u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
+				   *prAdapter, struct MSDU_INFO *prMsduInfo,
+				   struct STA_RECORD *prStaRec)
 {
 	if (prMsduInfo->fgIsTXDTemplateValid) {
 		if (prMsduInfo->fgIs802_1x)
@@ -2156,9 +2156,9 @@ u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 void
-nicTxFillDesc(IN struct ADAPTER *prAdapter,
-	      IN struct MSDU_INFO *prMsduInfo,
-	      OUT uint8_t *prTxDescBuffer, OUT uint32_t *pu4TxDescLength)
+nicTxFillDesc(struct ADAPTER *prAdapter,
+	      struct MSDU_INFO *prMsduInfo,
+	      uint8_t *prTxDescBuffer, uint32_t *pu4TxDescLength)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	void *prTxDesc = prTxDescBuffer;
@@ -2340,8 +2340,8 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 }
 
 void
-nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
-		  IN struct MSDU_INFO *prMsduInfo)
+nicTxFillDataDesc(struct ADAPTER *prAdapter,
+		  struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *pucOutputBuf;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
@@ -2369,9 +2369,9 @@ nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 }
 
 void
-nicTxCopyDesc(IN struct ADAPTER *prAdapter,
-	      IN uint8_t *pucTarTxDesc, IN uint8_t *pucSrcTxDesc,
-	      OUT uint8_t *pucTxDescLength)
+nicTxCopyDesc(struct ADAPTER *prAdapter,
+	      uint8_t *pucTarTxDesc, uint8_t *pucSrcTxDesc,
+	      uint8_t *pucTxDescLength)
 {
 	struct TX_DESC_OPS_T *prTxDescOps;
 	uint8_t ucTxDescLength;
@@ -2398,8 +2398,8 @@ nicTxCopyDesc(IN struct ADAPTER *prAdapter,
  * @retval VOID
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
-				   *prAdapter, IN struct STA_RECORD *prStaRec)
+uint32_t nicTxGenerateDescTemplate(struct ADAPTER
+				   *prAdapter, struct STA_RECORD *prStaRec)
 {
 	uint8_t ucTid;
 	uint8_t ucTc;
@@ -2548,8 +2548,8 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
  * @retval VOID
  */
 /*----------------------------------------------------------------------------*/
-void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
-			   IN struct STA_RECORD *prStaRec)
+void nicTxFreeDescTemplate(struct ADAPTER *prAdapter,
+			   struct STA_RECORD *prStaRec)
 {
 	uint8_t ucTid;
 	uint8_t ucTxDescSize;
@@ -2624,10 +2624,10 @@ void nicTxFreeDescTemplate(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void nicTxSetHwAmsduDescTemplate(
-	IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec,
-	IN uint8_t ucTid,
-	IN u_int8_t fgSet)
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTid,
+	u_int8_t fgSet)
 {
 	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
 
@@ -2654,8 +2654,8 @@ void nicTxSetHwAmsduDescTemplate(
  * \retval FALSE         operation fail
  */
 /*----------------------------------------------------------------------------*/
-void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo,
-		     IN struct QUE *prQue)
+void nicTxMsduDoneCb(struct GLUE_INFO *prGlueInfo,
+		     struct QUE *prQue)
 {
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
 	struct QUE rFreeQueue;
@@ -2715,8 +2715,8 @@ void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo)
+void nicHifTxMsduDoneCb(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct TX_CTRL *prTxCtrl;
 
@@ -2753,7 +2753,7 @@ void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
+uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 			uint8_t ucPortIdx, struct QUE *prQue)
 {
 	struct HIF_STATS *prHifStats = NULL;
@@ -2875,8 +2875,8 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
-		  IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+uint32_t nicTxCmd(struct ADAPTER *prAdapter,
+		  struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
@@ -3019,8 +3019,8 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxRelease(IN struct ADAPTER *prAdapter,
-		  IN u_int8_t fgProcTxDoneHandler)
+void nicTxRelease(struct ADAPTER *prAdapter,
+		  u_int8_t fgProcTxDoneHandler)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct MSDU_INFO *prMsduInfo = NULL;
@@ -3071,7 +3071,7 @@ void nicTxRelease(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+void nicProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_MULTITHREAD
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -3134,8 +3134,8 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 #endif
 } /* end of nicProcessTxInterrupt() */
 
-void nicTxFreePacket(IN struct ADAPTER *prAdapter,
-		     IN struct MSDU_INFO *prMsduInfo, IN u_int8_t fgDrop)
+void nicTxFreePacket(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo, u_int8_t fgDrop)
 {
 	void *prNativePacket;
 	struct TX_CTRL *prTxCtrl;
@@ -3226,15 +3226,15 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfoListHead)
+void nicTxFreeMsduInfoPacket(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfoListHead)
 {
 	nicTxFreeMsduInfoPacketEx(prAdapter, prMsduInfoListHead, TRUE);
 }
 
-void nicTxFreeMsduInfoPacketEx(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfoListHead,
-	IN u_int8_t fgDrop)
+void nicTxFreeMsduInfoPacketEx(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfoListHead,
+	u_int8_t fgDrop)
 {
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead;
 	struct TX_CTRL *prTxCtrl;
@@ -3263,8 +3263,8 @@ void nicTxFreeMsduInfoPacketEx(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
-			 IN struct MSDU_INFO *prMsduInfoListHead)
+void nicTxReturnMsduInfo(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfoListHead)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead,
@@ -3314,8 +3314,8 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_LIMITED_PKT_PID
 void nicTxInitPktPID(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucWlanIndex
+	struct ADAPTER *prAdapter,
+	uint8_t ucWlanIndex
 )
 {
 	int i = 0;
@@ -3331,8 +3331,8 @@ void nicTxInitPktPID(
 }
 
 static inline bool nicTxPktPIDIsLimited(
-	IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo
 )
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -3359,8 +3359,8 @@ static inline bool nicTxPktPIDIsLimited(
 }
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
-static u_int8_t txsRequired(IN struct ADAPTER *prAdapter,
-			IN struct MSDU_INFO *prMsduInfo)
+static u_int8_t txsRequired(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo)
 {
 	if (prMsduInfo->ucPktType == 0)
 		return FALSE;
@@ -3407,8 +3407,8 @@ static u_int8_t txsRequired(IN struct ADAPTER *prAdapter,
  * @retval FALSE     Fail to extract correct information
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
-			   IN struct MSDU_INFO *prMsduInfo, IN void *prPacket)
+u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo, void *prPacket)
 {
 	struct GLUE_INFO *prGlueInfo;
 	u_int8_t fgIsLowestRate = FALSE;
@@ -3566,7 +3566,7 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   Updated successfully
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxAdjustTcq(IN struct ADAPTER *prAdapter)
+uint32_t nicTxAdjustTcq(struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_MULTITHREAD
 	struct TX_TCQ_ADJUST rTcqAdjust;
@@ -3664,7 +3664,7 @@ uint32_t nicTxAdjustTcq(IN struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 
-uint32_t nicTxFlush(IN struct ADAPTER *prAdapter)
+uint32_t nicTxFlush(struct ADAPTER *prAdapter)
 {
 	struct MSDU_INFO *prMsduInfo;
 
@@ -3709,8 +3709,8 @@ uint32_t nicTxFlush(IN struct ADAPTER *prAdapter)
  * @retval WLAN_STATUS_FAILURE   Bus access fail.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
-		      IN struct CMD_INFO *prCmdInfo, IN uint16_t u2Port)
+uint32_t nicTxInitCmd(struct ADAPTER *prAdapter,
+		      struct CMD_INFO *prCmdInfo, uint16_t u2Port)
 {
 	uint16_t u2OverallBufferLength;
 	/* Pointer to Transmit Data Structure Frame */
@@ -3770,7 +3770,7 @@ uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   Reset is done successfully.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxInitResetResource(IN struct ADAPTER
+uint32_t nicTxInitResetResource(struct ADAPTER
 				*prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
@@ -3857,8 +3857,8 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
  * @retval TRUE   Process success.
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
-			       IN struct MSDU_INFO *prMsduInfo)
+u_int8_t nicTxProcessCmdDataPacket(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo)
 {
 #if (CFG_SUPPORT_CONNAC2X == 0)
 #define _SET_PKT_FORMAT HAL_MAC_TX_DESC_SET_PKT_FORMAT
@@ -3951,8 +3951,8 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
-			       IN struct MSDU_INFO *prMsduInfo)
+u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
+			       struct MSDU_INFO *prMsduInfo)
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
@@ -4003,8 +4003,8 @@ u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
+void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
+			     struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
@@ -4234,8 +4234,8 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   Reset is done successfully.
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
-			  IN struct MSDU_INFO *prMsduInfo)
+uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
+			  struct MSDU_INFO *prMsduInfo)
 {
 	struct TX_CTRL *prTxCtrl;
 	struct MSDU_INFO *prNextMsduInfo, *prRetMsduInfo,
@@ -4523,7 +4523,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
  * @param u4Length	Length to alloc
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *nicAllocMgmtPktForDataQ(IN struct ADAPTER *prAdapter,
+struct MSDU_INFO *nicAllocMgmtPktForDataQ(struct ADAPTER *prAdapter,
 	uint32_t u4Length)
 {
 	struct MSDU_INFO *prRetMsduInfo = NULL;
@@ -4548,7 +4548,7 @@ struct MSDU_INFO *nicAllocMgmtPktForDataQ(IN struct ADAPTER *prAdapter,
 
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
-uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
+uint32_t nicTxMgmtDirectTxMsduMthread(struct ADAPTER *prAdapter)
 {
 	struct QUE *prMgmtQueue = &prAdapter->rMgmtDirectTxQueue;
 	struct QUE rTempHifQueue;
@@ -4628,7 +4628,7 @@ uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
-void nicTxClearMgmtDirectTxQ(IN struct ADAPTER *prAdapter)
+void nicTxClearMgmtDirectTxQ(struct ADAPTER *prAdapter)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 
@@ -4705,7 +4705,7 @@ uint8_t nicTxGetWlanIdx(struct ADAPTER *prAdapter,
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicTxIsMgmtResourceEnough(IN struct ADAPTER
+u_int8_t nicTxIsMgmtResourceEnough(struct ADAPTER
 				   *prAdapter)
 {
 	if (nicTxGetFreeCmdCount(prAdapter) >
@@ -4724,7 +4724,7 @@ u_int8_t nicTxIsMgmtResourceEnough(IN struct ADAPTER
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter)
+uint32_t nicTxGetFreeCmdCount(struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
 
@@ -4741,14 +4741,14 @@ uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter)
  * @retval page count of this frame
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicTxGetDataPageCount(IN struct ADAPTER *prAdapter,
-			   IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+uint32_t nicTxGetDataPageCount(struct ADAPTER *prAdapter,
+			   uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return halTxGetDataPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
-			      IN struct CMD_INFO *prCmdInfo)
+uint32_t nicTxGetCmdPageCount(struct ADAPTER *prAdapter,
+			      struct CMD_INFO *prCmdInfo)
 {
 	uint32_t u4PageCount;
 
@@ -4893,7 +4893,7 @@ void nicTxSetPktRetryLimit(struct MSDU_INFO *prMsduInfo,
 	prMsduInfo->u4Option |= MSDU_OPT_MANUAL_RETRY_LIMIT;
 }
 
-void nicTxSetForceRts(IN struct MSDU_INFO *prMsduInfo,
+void nicTxSetForceRts(struct MSDU_INFO *prMsduInfo,
 				int8_t fgForceRts)
 {
 	if (fgForceRts)
@@ -4985,8 +4985,8 @@ void nicTxSetPktFixedRateOption(
 			__func__);
 }
 
-void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
-				IN struct MSDU_INFO *prMsduInfo)
+void nicTxSetPktLowestFixedRate(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo)
 {
 	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(
 					     prAdapter, prMsduInfo->ucBssIndex);
@@ -5072,8 +5072,8 @@ void nicTxSetPktMoreData(struct MSDU_INFO
 	}
 }
 
-uint8_t nicTxAssignPID(IN struct ADAPTER *prAdapter,
-		       IN uint8_t ucWlanIndex)
+uint8_t nicTxAssignPID(struct ADAPTER *prAdapter,
+		       uint8_t ucWlanIndex)
 {
 	uint8_t ucRetval;
 	uint8_t *pucPidPool;
@@ -5120,9 +5120,9 @@ void nicTxSetPktEOSP(struct MSDU_INFO *prCurrentMsduInfo,
 }
 
 uint32_t
-nicTxDummyTxDone(IN struct ADAPTER *prAdapter,
-		 IN struct MSDU_INFO *prMsduInfo,
-		 IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+nicTxDummyTxDone(struct ADAPTER *prAdapter,
+		 struct MSDU_INFO *prMsduInfo,
+		 enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct PERF_MONITOR *prPerMonitor = &prAdapter->rPerMonitor;
 
@@ -5253,13 +5253,13 @@ void nicTxUpdateStaRecDefaultRate(struct ADAPTER *prAdapter, struct STA_RECORD
 
 }
 
-void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
-			   IN struct CMD_INFO *prCmdInfo)
+void nicTxCancelSendingCmd(struct ADAPTER *prAdapter,
+			   struct CMD_INFO *prCmdInfo)
 {
 	halTxCancelSendingCmd(prAdapter, prCmdInfo);
 }
 
-uint32_t nicTxGetMaxCmdPageCntPerFrame(IN struct ADAPTER *prAdapter)
+uint32_t nicTxGetMaxCmdPageCntPerFrame(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
 	return 1;
@@ -5268,7 +5268,7 @@ uint32_t nicTxGetMaxCmdPageCntPerFrame(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-uint32_t nicTxGetMaxDataPageCntPerFrame(IN struct ADAPTER *prAdapter)
+uint32_t nicTxGetMaxDataPageCntPerFrame(struct ADAPTER *prAdapter)
 {
 	uint32_t page_size = halGetHifTxDataPageSize(prAdapter);
 
@@ -5299,13 +5299,13 @@ uint32_t nicTxGetMaxDataPageCntPerFrame(IN struct ADAPTER *prAdapter)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void nicTxDirectStartCheckQTimer(IN struct ADAPTER
+void nicTxDirectStartCheckQTimer(struct ADAPTER
 				 *prAdapter)
 {
 	kalTxDirectStartCheckQTimer(prAdapter->prGlueInfo, 1);
 }
 
-void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
+void nicTxDirectClearHifQ(struct ADAPTER *prAdapter)
 {
 	uint8_t ucHifTc = 0;
 	struct QUE rNeedToFreeQue;
@@ -5333,7 +5333,7 @@ void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
+void nicTxDirectClearStaPsQ(struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIndex)
 {
 	struct QUE rNeedToFreeQue;
@@ -5354,7 +5354,7 @@ void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicTxDirectClearBssAbsentQ(IN struct ADAPTER
+void nicTxDirectClearBssAbsentQ(struct ADAPTER
 				*prAdapter, uint8_t ucBssIndex)
 {
 	struct QUE rNeedToFreeQue;
@@ -5379,7 +5379,7 @@ void nicTxDirectClearBssAbsentQ(IN struct ADAPTER
 	}
 }
 
-void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
+void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIdx)
 {
 	struct QUE rNeedToFreeQue;
@@ -5405,7 +5405,7 @@ void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
 	prAdapter->u4StaPendBitmap &= ~BIT(ucStaRecIdx);
 }
 
-void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
+void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter)
 {
 	uint8_t ucStaRecIndex;
 	uint32_t u4StaPsBitmap;
@@ -5428,7 +5428,7 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter)
+void nicTxDirectClearAllStaPendQ(struct ADAPTER *prAdapter)
 {
 	uint8_t ucIdx; /* StaRec Index */
 
@@ -5454,7 +5454,7 @@ void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-static void nicTxDirectCheckStaPsQ(IN struct ADAPTER
+static void nicTxDirectCheckStaPsQ(struct ADAPTER
 	*prAdapter, struct STA_RECORD *prStaRec, struct QUE *prQue)
 {
 	struct MSDU_INFO *prMsduInfo;
@@ -5576,7 +5576,7 @@ u_int8_t isNetAbsent(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
+static void nicTxDirectCheckBssAbsentQ(struct ADAPTER
 	*prAdapter, uint8_t ucBssIndex, struct QUE *prQue)
 {
 	struct BSS_INFO *prBssInfo;
@@ -5666,7 +5666,7 @@ static void nicTxDirectCheckBssAbsentQ(IN struct ADAPTER
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-static void nicTxDirectDequeueStaPendQ(IN struct ADAPTER *prAdapter,
+static void nicTxDirectDequeueStaPendQ(struct ADAPTER *prAdapter,
 				uint8_t ucStaIdx, struct QUE *prQue)
 {
 	KAL_SPIN_LOCK_DECLARATION();
@@ -5702,7 +5702,7 @@ static void nicTxDirectDequeueStaPendQ(IN struct ADAPTER *prAdapter,
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-static void nicTxDirectEnqueueStaPendQ(IN struct ADAPTER *prAdapter,
+static void nicTxDirectEnqueueStaPendQ(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
 {
 	struct BSS_INFO *prBssInfo;
@@ -5751,7 +5751,7 @@ static void nicTxDirectEnqueueStaPendQ(IN struct ADAPTER *prAdapter,
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-static void nicTxDirectCheckStaPsPendQ(IN struct ADAPTER *prAdapter,
+static void nicTxDirectCheckStaPsPendQ(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo, uint8_t ucStaIdx, struct QUE *prQue)
 {
 	struct STA_RECORD *prStaRec;	/* The current focused STA */
@@ -6221,7 +6221,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
+void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter)
 {
 	uint32_t u4StaPsBitmap, u4BssAbsentTxBufferBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
@@ -6298,7 +6298,7 @@ void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 
-void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
+void nicTxResourceUpdate_v1(struct ADAPTER *prAdapter)
 {
 	uint8_t string[128], idx, i, tc_num, ret = 0;
 	uint32_t u4share, u4remains;
@@ -6471,7 +6471,7 @@ void nicTxResourceUpdate_v1(IN struct ADAPTER *prAdapter)
 }
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
-void nicTxResourceUpdate_v2(IN struct ADAPTER *prAdapter)
+void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 {
 	uint8_t string[32];
 	uint8_t ucMaxTcNum = TC_NUM;
@@ -6709,8 +6709,8 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 #endif
 }
 
-int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
-				   IN struct TX_VECTOR_BBP_LATCH *prTxV)
+int32_t nicTxGetVectorInfo(char *pcCommand, int i4TotalLen,
+				   struct TX_VECTOR_BBP_LATCH *prTxV)
 {
 	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc, txpwr;
 	int32_t i4BytesWritten = 0;
@@ -6819,8 +6819,8 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 	return i4BytesWritten;
 }
 
-u_int8_t nicTxIsPrioPackets(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo)
+u_int8_t nicTxIsPrioPackets(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
 {
 	return prMsduInfo && prMsduInfo->ucTC == TC3_INDEX;
 }

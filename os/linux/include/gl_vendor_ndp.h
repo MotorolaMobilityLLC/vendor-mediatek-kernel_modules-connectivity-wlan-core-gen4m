@@ -255,14 +255,14 @@ uint32_t nanNdpResponderReqHandler(struct GLUE_INFO *prGlueInfo,
 
 uint32_t nanNdpEndReqHandler(struct GLUE_INFO *prGlueInfo, struct nlattr **tb);
 
-uint32_t nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
+uint32_t nanNdpDataIndEvent(struct ADAPTER *prAdapter,
 			    struct _NAN_NDP_INSTANCE_T *prNDP,
 			    struct _NAN_NDL_INSTANCE_T *prNDL);
 
-uint32_t nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
+uint32_t nanNdpDataConfirmEvent(struct ADAPTER *prAdapter,
 				struct _NAN_NDP_INSTANCE_T *prNDP);
 
-uint32_t nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
+uint32_t nanNdpDataTerminationEvent(struct ADAPTER *prAdapter,
 				    struct _NAN_NDP_INSTANCE_T *prNDP);
 
 int mtk_cfg80211_vendor_ndp(struct wiphy *wiphy, struct wireless_dev *wdev,

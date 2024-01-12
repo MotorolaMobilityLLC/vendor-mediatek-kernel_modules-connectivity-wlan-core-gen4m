@@ -298,13 +298,13 @@ struct DMASHDL_DVT_CMD_T {
  *******************************************************************************
  */
 int32_t priv_driver_dmashdl_dvt_item(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int32_t i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int32_t i4TotalLen);
 int32_t priv_driver_show_dmashdl_allcr(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 #endif
 #endif /* __DVT_DMASHDL_H__ */
 

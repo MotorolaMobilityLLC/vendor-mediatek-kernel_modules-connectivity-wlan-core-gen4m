@@ -157,7 +157,7 @@ uint32_t aaaFsmSendEventJoinComplete(uint32_t rJoinStatus,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void aaaFsmRunEventStart(IN struct MSG_HDR *prMsgHdr)
+void aaaFsmRunEventStart(struct MSG_HDR *prMsgHdr)
 {
 	P_MSG_SAA_JOIN_REQ_T prJoinReqMsg;
 	struct STA_RECORD *prStaRec;
@@ -217,8 +217,8 @@ void aaaFsmRunEventStart(IN struct MSG_HDR *prMsgHdr)
 
 #if CFG_SUPPORT_AAA
 
-void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
-		IN uintptr_t plParamPtr)
+void aaaFsmRunEventTxReqTimeOut(struct ADAPTER *prAdapter,
+		uintptr_t plParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
 	struct BSS_INFO *prBssInfo;
@@ -296,8 +296,8 @@ void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*---------------------------------------------------------------------------*/
-void aaaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb)
+void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
@@ -575,8 +575,8 @@ bow_proc:
  * @retval WLAN_STATUS_SUCCESS           Always return success
  */
 /*---------------------------------------------------------------------------*/
-uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb)
+uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
@@ -946,9 +946,9 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
  */
 /*---------------------------------------------------------------------------*/
 uint32_t
-aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
@@ -1429,8 +1429,8 @@ error:
 #endif /* #if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM */
 
 void aaaMulAPAgentStaEventNotify(
-	IN struct STA_RECORD *prStaRec, IN unsigned char *pucAddr,
-	IN unsigned char fgIsConnected)
+	struct STA_RECORD *prStaRec, unsigned char *pucAddr,
+	unsigned char fgIsConnected)
 {
 	int32_t i4Ret = 0;
 	struct T_MULTI_AP_STA_EVENT_NOTIFY *prStaEventNotify;
@@ -1491,7 +1491,7 @@ void aaaMulAPAgentStaEventNotify(
 }
 
 void aaaMulAPAgentUnassocStaMeasureTimeout(
-	IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
+	struct ADAPTER *prAdapter, uintptr_t ulParamPtr)
 {
 	int32_t i4Ret = 0;
 	uint8_t ucIndex = 0;
@@ -1590,7 +1590,7 @@ void aaaMulAPAgentUnassocStaMeasureTimeout(
  * \return none
  */
 /*---------------------------------------------------------------------------*/
-void saaFsmRunEventAbort(IN struct MSG_HDR *prMsgHdr)
+void saaFsmRunEventAbort(struct MSG_HDR *prMsgHdr)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct STA_RECORD *prStaRec;
@@ -1659,7 +1659,7 @@ void saaFsmRunEventAbort(IN struct MSG_HDR *prMsgHdr)
  * \retval WLAN_STATUS_FAILURE   Fail because of Join Timeout
  */
 /*----------------------------------------------------------------------------*/
-uint32_t joinFsmRunEventJoinTimeOut(IN struct ADAPTER *prAdapter)
+uint32_t joinFsmRunEventJoinTimeOut(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct STA_RECORD *prStaRec;
@@ -1712,7 +1712,7 @@ uint32_t joinFsmRunEventJoinTimeOut(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromPeerBss(IN struct ADAPTER *prAdapter)
+void joinAdoptParametersFromPeerBss(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct BSS_DESC *prBssDesc;
@@ -1750,7 +1750,7 @@ void joinAdoptParametersFromPeerBss(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromCurrentBss(IN struct ADAPTER *prAdapter)
+void joinAdoptParametersFromCurrentBss(struct ADAPTER *prAdapter)
 {
 	/* P_JOIN_INFO_T prJoinInfo = &prAdapter->rJoinInfo; */
 	struct BSS_INFO *prBssInfo;
@@ -1780,7 +1780,7 @@ void joinAdoptParametersFromCurrentBss(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinComplete(IN struct ADAPTER *prAdapter)
+void joinComplete(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct BSS_DESC *prBssDesc;

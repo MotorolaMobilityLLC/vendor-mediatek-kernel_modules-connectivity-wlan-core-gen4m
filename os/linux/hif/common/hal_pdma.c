@@ -111,7 +111,7 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter);
+static void halDumpMsduReportStats(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -133,8 +133,8 @@ u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
 }
 
 uint8_t halRingDataSelectByWmmIndex(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucWmmIndex)
+	struct ADAPTER *prAdapter,
+	uint8_t ucWmmIndex)
 {
 	struct BUS_INFO *bus_info;
 	uint16_t u2Port = TX_RING_DATA0;
@@ -158,8 +158,8 @@ uint8_t halRingDataSelectByWmmIndex(
  * @return TxRingData number
  */
 /*----------------------------------------------------------------------------*/
-uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+uint8_t halTxRingDataSelect(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct BUS_INFO *bus_info;
 
@@ -214,7 +214,7 @@ static inline bool halIsTimeout(uint32_t u4StartTime, uint32_t u4Timeout)
  * @retval FALSE         CHIP ID is different from the setting compiled
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
+u_int8_t halVerifyChipID(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -244,10 +244,10 @@ u_int8_t halVerifyChipID(IN struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
-uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
-	OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen,
-	OUT uint32_t *pu4Length, IN uint32_t u4WaitingInterval,
-	IN uint32_t u4TimeoutValue)
+uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
+	uint8_t *pucRspBuffer, uint32_t u4MaxRespBufferLen,
+	uint32_t *pu4Length, uint32_t u4WaitingInterval,
+	uint32_t u4TimeoutValue)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4PktLen = 0, u4Time;
@@ -328,7 +328,7 @@ uint32_t halRxWaitResponse(IN struct ADAPTER *prAdapter, IN uint8_t ucPortIdx,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halEnableInterrupt(IN struct ADAPTER *prAdapter)
+void halEnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = NULL;
 
@@ -351,7 +351,7 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halDisableInterrupt(IN struct ADAPTER *prAdapter)
+void halDisableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 
@@ -486,7 +486,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -642,7 +642,7 @@ end:
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
+void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -735,7 +735,7 @@ unlock:
 
 }
 
-void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
+void halWakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 
@@ -746,12 +746,12 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 		prBusInfo->wakeUpWiFi(prAdapter);
 }
 
-void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo)
+void halTxCancelSendingCmd(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo)
 {
 }
 
-u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
+u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -794,8 +794,8 @@ u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_TX_RING *prTxRing;
@@ -842,7 +842,7 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
-static void halDefaultProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+static void halDefaultProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -886,7 +886,7 @@ static void halDefaultProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 }
 
 
-void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessTxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
@@ -897,7 +897,7 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 }
 
 
-void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
+void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
@@ -974,7 +974,7 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
 }
 
-void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
+void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
@@ -1037,7 +1037,7 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
 }
 
-uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
+uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter)
 {
 	struct PERF_MONITOR *prPerMonitor;
 	struct MSDU_TOKEN_INFO *prTokenInfo =
@@ -1048,7 +1048,7 @@ uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter)
 	return HIF_TX_MSDU_TOKEN_NUM - prTokenInfo->u4UsedCnt;
 }
 
-struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
+struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 	uint32_t u4TokenNum)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo =
@@ -1057,7 +1057,7 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
 	return &prTokenInfo->arToken[u4TokenNum];
 }
 
-struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 					     uint8_t ucBssIndex)
 {
 #if CFG_SUPPORT_PCIE_ASPM
@@ -1123,7 +1123,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 
-static void halResetMsduToken(IN struct ADAPTER *prAdapter)
+static void halResetMsduToken(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
@@ -1168,7 +1168,7 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
+void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 #if CFG_SUPPORT_PCIE_ASPM
@@ -1315,7 +1315,7 @@ void halTxDelayTimeout(unsigned long arg)
 	kalSetTxEvent2Hif(prGlueInfo);
 }
 
-void halStartTxDelayTimer(IN struct ADAPTER *prAdapter)
+void halStartTxDelayTimer(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -1337,7 +1337,7 @@ void halStartTxDelayTimer(IN struct ADAPTER *prAdapter)
 }
 #endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
 
-bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
+bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct HIF_MEM_OPS *prMemOps = NULL;
@@ -1438,7 +1438,7 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	return true;
 }
 
-void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
+void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct mt66xx_chip_info *prChipInfo;
@@ -1496,9 +1496,9 @@ void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
 #endif
 }
 
-u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Token,
-	IN struct QUE *prFreeQueue)
+u_int8_t halProcessToken(struct ADAPTER *prAdapter,
+	uint32_t u4Token,
+	struct QUE *prFreeQueue)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_ENTRY *prTokenEntry;
@@ -1559,8 +1559,8 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
-static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN uint32_t u4ConnsysLatency)
+static void halAddConnsysLatencyCount(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4ConnsysLatency)
 {
 	uint32_t *pMaxConnsysDelay = prAdapter->rWifiVar.au4ConnsysTxDelayMax;
 	uint32_t *pConnsysDelay =
@@ -1576,8 +1576,8 @@ static void halAddConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void halAddTxFailConnsysLatencyCount(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN uint32_t u4ConnsysLatency)
+static void halAddTxFailConnsysLatencyCount(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4ConnsysLatency)
 {
 	uint32_t *pMaxFailConnsysDelay =
 		prAdapter->rWifiVar.au4ConnsysTxFailDelayMax;
@@ -1594,8 +1594,8 @@ static void halAddTxFailConnsysLatencyCount(IN struct ADAPTER *prAdapter,
 	}
 }
 
-static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex, IN uint32_t u4MacLatency)
+static void halAddMacLatencyCount(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4MacLatency)
 {
 	uint32_t *pMaxMacDelay = prAdapter->rWifiVar.au4MacTxDelayMax;
 	uint32_t *pMacDelay =
@@ -1612,8 +1612,8 @@ static void halAddMacLatencyCount(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
-	IN uint32_t u4MacLatency, IN uint32_t u4Stat)
+void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
+	uint32_t u4MacLatency, uint32_t u4Stat)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	struct TX_LATENCY_REPORT_STATS *report = &prAdapter->rMsduReportStats;
@@ -1686,8 +1686,8 @@ void halMsduReportStats(IN struct ADAPTER *prAdapter, IN uint32_t u4Token,
 #endif
 }
 
-static void halMsduV3ReportDelayStats(IN struct ADAPTER *prAdapter,
-		IN uint32_t u4Token, IN union HW_MAC_MSDU_TOKEN_T *msduToken)
+static void halMsduV3ReportDelayStats(struct ADAPTER *prAdapter,
+		uint32_t u4Token, union HW_MAC_MSDU_TOKEN_T *msduToken)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	halMsduReportStats(prAdapter, u4Token,
@@ -1696,9 +1696,9 @@ static void halMsduV3ReportDelayStats(IN struct ADAPTER *prAdapter,
 #endif
 }
 
-static void halDefaultProcessMsduReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb,
-	IN OUT struct QUE *prFreeQueue)
+static void halDefaultProcessMsduReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct QUE *prFreeQueue)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
@@ -1768,8 +1768,8 @@ static void halDefaultProcessMsduReport(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb)
+void halRxProcessMsduReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct RX_DESC_OPS_T *prRxDescOps;
 	struct QUE rFreeQueue;
@@ -1842,31 +1842,31 @@ void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 	prDataToken->u4PktDmaLength = prMsduInfo->u2FrameLength;
 }
 
-static uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+static uint32_t halTxGetPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return 1;
 }
 
-uint32_t halTxGetDataPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+uint32_t halTxGetDataPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-uint32_t halTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
+uint32_t halTxGetCmdPageCount(struct ADAPTER *prAdapter,
+	uint32_t u4FrameLength, u_int8_t fgIncludeDesc)
 {
 	return halTxGetPageCount(prAdapter, u4FrameLength, fgIncludeDesc);
 }
 
-uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
+uint32_t halTxPollingResource(struct ADAPTER *prAdapter, uint8_t ucTC)
 {
 	nicTxReleaseResource(prAdapter, ucTC, 1, TRUE, FALSE);
 	return WLAN_STATUS_SUCCESS;
 }
 
-void halSerHifReset(IN struct ADAPTER *prAdapter)
+void halSerHifReset(struct ADAPTER *prAdapter)
 {
 }
 
@@ -1911,7 +1911,7 @@ u_int8_t halRxInsertRecvRfbList(
 	return fgRet;
 }
 
-void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
+void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	uint8_t fgRxData)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -2128,7 +2128,7 @@ end:
 #endif /* CFG_SUPPORT_RX_NAPI */
 }
 
-static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)
+static void halDefaultProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	union WPDMA_INT_STA_STRUCT rIntrStatus;
@@ -2155,7 +2155,7 @@ static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 
@@ -2547,7 +2547,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void halEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable)
+void halEnableFWDownload(struct ADAPTER *prAdapter, u_int8_t fgEnable)
 {
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -2626,7 +2626,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 		prBusInfo->setDummyReg(prGlueInfo);
 }
 
-void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo, bool fgResetHif)
+void halWpdmaInitTxRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
@@ -2730,7 +2730,7 @@ uint8_t halSetRxRingHwAddr(
 	return TRUE;
 }
 
-void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
+void halWpdmaInitRxRing(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct RTMP_RX_RING *prRxRing = NULL;
@@ -2789,8 +2789,8 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 	}
 }
 
-void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
-	IN uint16_t u2Port)
+void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
+	uint16_t u2Port)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -2868,8 +2868,8 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 
 }
 
-void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
-	IN uint16_t u2Port)
+void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
+	uint16_t u2Port)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0, u4Diff = 0;
@@ -2919,8 +2919,8 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 }
 
-uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucRingNum)
+uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucRingNum)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct RTMP_RX_RING *prRxRing;
@@ -2949,8 +2949,8 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 	return u4RxPktCnt;
 }
 
-enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-		      IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
+		      struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -3565,8 +3565,8 @@ u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
 	return TRUE;
 }
 
-u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value)
+u_int8_t halGetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
+			     uint32_t u4ChipAddr, uint32_t *pu4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -3586,8 +3586,8 @@ u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
-			     IN uint32_t u4ChipAddr, IN uint32_t u4Value)
+u_int8_t halSetDynamicMapReg(struct GLUE_INFO *prGlueInfo,
+			     uint32_t u4ChipAddr, uint32_t u4Value)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -3606,7 +3606,7 @@ u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter)
+u_int8_t halIsPendingRx(struct ADAPTER *prAdapter)
 {
 	/* TODO: check pending Rx
 	 * if previous Rx handling is break due to lack of SwRfb
@@ -3614,7 +3614,7 @@ u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetValidCoalescingBufSize(struct ADAPTER *prAdapter)
 {
 	uint32_t u4BufSize;
 
@@ -3626,17 +3626,17 @@ uint32_t halGetValidCoalescingBufSize(IN struct ADAPTER *prAdapter)
 	return u4BufSize;
 }
 
-uint32_t halAllocateIOBuffer(IN struct ADAPTER *prAdapter)
+uint32_t halAllocateIOBuffer(struct ADAPTER *prAdapter)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t halReleaseIOBuffer(IN struct ADAPTER *prAdapter)
+uint32_t halReleaseIOBuffer(struct ADAPTER *prAdapter)
 {
 	return WLAN_STATUS_SUCCESS;
 }
 
-void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessAbnormalInterrupt(struct ADAPTER *prAdapter)
 {
 	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 	halPrintHifDbgInfo(prAdapter);
@@ -3645,7 +3645,7 @@ void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 }
 
 static void halDefaultProcessSoftwareInterrupt(
-	IN struct ADAPTER *prAdapter)
+	struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -3672,7 +3672,7 @@ static void halDefaultProcessSoftwareInterrupt(
 	}
 }
 
-void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
+void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = NULL;
 
@@ -3742,7 +3742,7 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 				MCU_INT_DRIVER_SER);
 }
 
-static void halStartSerTimer(IN struct ADAPTER *prAdapter)
+static void halStartSerTimer(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
@@ -3754,7 +3754,7 @@ static void halStartSerTimer(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "Start SER timer\n");
 }
 
-void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
+void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -3998,7 +3998,7 @@ void halTxCompleteTasklet(unsigned long data)
 }
 
 /* Hif power off wifi */
-uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
+uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Retry = 0;
@@ -4079,26 +4079,26 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	return rStatus;
 }
 
-u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)
+u_int8_t halIsTxResourceControlEn(struct ADAPTER *prAdapter)
 {
 	return FALSE;
 }
 
-void halTxResourceResetHwTQCounter(IN struct ADAPTER *prAdapter)
+void halTxResourceResetHwTQCounter(struct ADAPTER *prAdapter)
 {
 }
 
-static uint32_t halGetHifTxPageSize(IN struct ADAPTER *prAdapter)
+static uint32_t halGetHifTxPageSize(struct ADAPTER *prAdapter)
 {
 	return HIF_TX_PAGE_SIZE;
 }
 
-uint32_t halGetHifTxDataPageSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetHifTxDataPageSize(struct ADAPTER *prAdapter)
 {
 	return halGetHifTxPageSize(prAdapter);
 }
 
-uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
+uint32_t halGetHifTxCmdPageSize(struct ADAPTER *prAdapter)
 {
 	return halGetHifTxPageSize(prAdapter);
 }
@@ -4112,7 +4112,7 @@ uint32_t halGetHifTxCmdPageSize(IN struct ADAPTER *prAdapter)
 * @return (TRUE: ready, FALSE: not ready)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
+u_int8_t halIsHifStateReady(struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
 	/* PCIE owner should implement this function */
 
@@ -4128,14 +4128,14 @@ u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 * @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
 */
 /*----------------------------------------------------------------------------*/
-bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+bool halIsHifStateSuspend(struct ADAPTER *prAdapter)
 {
 	/* PCIE owner should implement this function */
 
 	return FALSE;
 }
 
-void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
+void halUpdateTxMaxQuota(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Ret;
@@ -4216,7 +4216,7 @@ void halDisableSlpProt(struct GLUE_INFO *prGlueInfo)
 }
 
 #if CFG_MTK_MDDP_SUPPORT
-void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
+void halNotifyMdCrash(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -4500,7 +4500,7 @@ static inline uint32_t composeTxDelayLog(char *buf, uint32_t pos,
 	return pos;
 }
 
-static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
+static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	static unsigned long next_update; /* in ms */
@@ -4588,7 +4588,7 @@ static void halDumpMsduReportStats(IN struct ADAPTER *prAdapter)
 #endif
 }
 
-void halDumpHifStats(IN struct ADAPTER *prAdapter)
+void halDumpHifStats(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct HIF_STATS *prHifStats;
@@ -4686,7 +4686,7 @@ void halDumpHifStats(IN struct ADAPTER *prAdapter)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 {
 	if (!prAdapter) {
 		DBGLOG(HAL, ERROR, "ADAPTER is NULL\n");
@@ -4699,8 +4699,8 @@ uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter)
 }
 #endif /* CFG_CHIP_RESET_SUPPORT */
 
-void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
-				       IN uint16_t u2Port)
+void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
+				       uint16_t u2Port)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct RTMP_TX_RING *prTxRing = &prHifInfo->TxRing[u2Port];
@@ -4710,8 +4710,8 @@ void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
 	prTxRing->fgStopRecycleDmad = TRUE;
 }
 
-uint32_t halSetSuspendFlagToFw(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgSuspend)
+uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
+	u_int8_t fgSuspend)
 {
 	struct HOST_SUSPEND_NOTIFY_INFO *prNotifyInfo =
 			&prAdapter->rHostSuspendInfo;
