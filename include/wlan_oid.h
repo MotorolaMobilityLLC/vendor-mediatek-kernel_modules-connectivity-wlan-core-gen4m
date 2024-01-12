@@ -4861,6 +4861,12 @@ wlanoidSetFwLog2Host(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen);
 
+uint32_t
+wlanoidSetPhyCtrl(struct ADAPTER *prAdapter,
+		    void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+
 #if 0
 uint32_t
 wlanoidSetNoaParam(struct ADAPTER *prAdapter,

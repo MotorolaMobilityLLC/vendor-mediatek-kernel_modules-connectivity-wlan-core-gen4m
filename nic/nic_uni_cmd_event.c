@@ -4511,6 +4511,23 @@ uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+void nicUniCmdEventSetPhyCtrl(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_PHY_LIST_DUMP *phycr_evt =
+		(struct UNI_EVENT_PHY_LIST_DUMP *)uni_evt->aucBuffer;
+	struct UNI_EVENT_PHY_LIST_DUMP_CR *tag =
+		(struct UNI_EVENT_PHY_LIST_DUMP_CR *) phycr_evt->aucTlvBuffer;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	DBGLOG(NIC, INFO, "PhyCtrl List Size: %ld", tag->u4ListSize);
+	nicCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
+}
+
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {

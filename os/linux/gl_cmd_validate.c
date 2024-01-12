@@ -108,7 +108,13 @@ struct CMD_VALIDATE_POLICY set_miracast_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 				 .max = MIRACAST_MODE_SINK}
 };
 #endif
-
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct CMD_VALIDATE_POLICY phy_ctrl_policy[COMMON_CMD_GET_ARG_NUM(4)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
+};
+#endif
 struct CMD_VALIDATE_POLICY set_mcr_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U32, .min = 0, .max = U32_MAX},
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
@@ -551,6 +557,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = get_mcr_policy,
 		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
 	},
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	{
+		.pcCmdStr  = CMD_PHY_CTRL,
+		.pfHandler = priv_driver_phy_ctrl,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(4),
+		.policy    = phy_ctrl_policy,
+		.u4PolicySize = ARRAY_SIZE(phy_ctrl_policy)
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_SET_MCR,
 		.pfHandler = priv_driver_set_mcr,

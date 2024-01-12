@@ -13778,6 +13778,59 @@ wlanoidSetFwLog2Host(
 }
 
 uint32_t
+wlanoidSetPhyCtrl(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	struct UNI_CMD_PHY_CTRL_LIST_DUMP *phycrcmdbuf;
+	struct UNI_CMD_PHY_LIST_DUMP_CR *tag;
+
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP) +
+				sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR);
+
+	if (prAdapter == NULL || pu4SetInfoLen == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP))
+		return WLAN_STATUS_INVALID_LENGTH;
+	if (!pvSetBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	phycrcmdbuf = (struct UNI_CMD_PHY_CTRL_LIST_DUMP *)
+				cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+
+	if (!phycrcmdbuf) {
+		DBGLOG(INIT, ERROR,
+				"Allocate UNI_CMD_PHY_CTRL_LIST_DUMP ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	memcpy(phycrcmdbuf, pvSetBuffer, max_cmd_len);
+
+	phycrcmdbuf->ucAction =
+		((struct UNI_CMD_PHY_CTRL_LIST_DUMP *)pvSetBuffer)->ucAction;
+	tag = (struct UNI_CMD_PHY_LIST_DUMP_CR *) phycrcmdbuf->aucTlvBuffer;
+	tag->u2Length = sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR);
+
+	return wlanSendSetQueryUniCmd(prAdapter,
+				   UNI_CMD_ID_PHY_LIST_DUMP,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicUniCmdEventSetPhyCtrl,
+				   nicOidCmdTimeoutCommon,
+				   max_cmd_len,
+				   (uint8_t *)phycrcmdbuf,
+				   pvSetBuffer, u4SetBufferLen);
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t
 wlanoidNotifyFwSuspend(
 	struct ADAPTER *prAdapter,
 	void *pvSetBuffer,

@@ -252,6 +252,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
 	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x7E, /* TX RESET SCRAMBLE */
+	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4112,6 +4113,49 @@ struct UNI_CMD_ICS_SNIFFER {
 #endif
 
 __KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PHY_CTRL_LIST_DUMP {
+
+	/*fixed field*/
+	uint8_t ucAction;
+	uint8_t aucReserved[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *
+	 *   TAG                             | ID  | structure
+	 *   -------------                   | ----| -------------
+	 *   UNI_CMD_PHY_LIST_DUMP_RESERVED  | 0x0 | UNI_CMD_PHY_LSIT_DUMP_T
+	 *   UNI_CMD_PHY_LIST_DUMP_HW_PHY    | 0x1 | UNI_CMD_PHY_LSIT_DUMP_T
+	 *   UNI_CMD_PHY_LIST_DUMP_HW_EMLSR  | 0x2 | UNI_CMD_PHY_LSIT_DUMP_T
+	 *   UNI_CMD_PHY_LIST_DUMP_SW_PHY    | 0x3 | UNI_CMD_PHY_LSIT_DUMP_T
+	 *   UNI_CMD_PHY_LIST_DUMP_SW_EMLSR  | 0x4 | UNI_CMD_PHY_LSIT_DUMP_T
+	 */
+
+} __KAL_ATTRIB_PACKED__;
+
+/* Suspend command Tag */
+
+enum ENUM_UNI_CMD_PHY_LIST_DUMP_TAG {
+	UNI_CMD_PHY_LIST_DUMP_TAG_RESERVED = 0,
+	UNI_CMD_PHY_LIST_DUMP_TAG_HW_PHY = 1,
+	UNI_CMD_PHY_LIST_DUMP_TAG_HW_EMLSR = 2,
+	UNI_CMD_PHY_LIST_DUMP_TAG_SW_PHY = 3,
+	UNI_CMD_PHY_LIST_DUMP_TAG_SW_EMLSR = 4,
+	UNI_CMD_PHY_LIST_DUMP_TAG_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+
+struct UNI_CMD_PHY_LIST_DUMP_CR {
+
+	uint16_t u2Tag;                   // Tag = 0x00
+	uint16_t u2Length;
+	uint32_t u4Stamp;
+} __KAL_ATTRIB_PACKED__;
+
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_ACS_POLICY {
 	/*fixed field*/
 	uint8_t aucReserved[4];
@@ -4912,6 +4956,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_HW_ERROR_REPORT = 0x76,
 	UNI_EVENT_ID_UPDATE_LP       = 0x77,
+	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
 	UNI_EVENT_ID_NUM
 };
 
@@ -7521,6 +7566,34 @@ struct UNI_EVENT_LP_KEEP_PWR_CTRL {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_PHY_LIST_DUMP {
+	/*fixed field*/
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_PHY_LIST_DUMP_TAG {
+	UNI_EVENT_PHY_LIST_DUMP_TAG_RESERVED = 0x0,
+	UNI_EVENT_PHY_LIST_DUMP_TAG_HW_PHY = 1,
+	UNI_EVENT_PHY_LIST_DUMP_TAG_HW_EMLSR = 2,
+	UNI_EVENT_PHY_LIST_DUMP_TAG_SW_PHY = 3,
+	UNI_EVENT_PHY_LIST_DUMP_TAG_SW_EMLSR = 4,
+	UNI_EVENT_PHY_LIST_DUMP_TAG_NUM
+
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_PHY_LIST_DUMP_CR {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4ListSize;
+	uint8_t aucReserved[4];
+
+} __KAL_ATTRIB_PACKED__;
+
 #if CFG_SUPPORT_FW_DROP_SSN
 struct UNI_EVENT_FW_DROP_SSN {
 	/* fixed field */
@@ -7816,6 +7889,8 @@ uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+void nicUniCmdEventSetPhyCtrl(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateSrParams(struct ADAPTER *ad,
