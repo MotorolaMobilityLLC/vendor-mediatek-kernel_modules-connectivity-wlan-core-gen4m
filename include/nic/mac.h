@@ -104,6 +104,8 @@
 #endif
 #define ETH_EAPOL_KEY                           3
 
+#define ETH_PRO_TDLS                            0x890d
+
 /* 802.3 Frame If Ether Type/Len <= 1500 */
 #define ETH_802_3_MAX_LEN                       1500
 
@@ -113,8 +115,13 @@
 #define IP_VERSION_4                            4
 #define IP_VERSION_6                            6
 
-#define IP_PROTOCOL_TCP                         6
-#define IP_PROTOCOL_UDP                         17
+#define IP_PRO_ICMP				0x01
+#define IP_PRO_UDP				0x11
+#define IP_PRO_TCP				0x06
+
+#define UDP_PORT_DHCPS				0x43
+#define UDP_PORT_DHCPC				0x44
+#define UDP_PORT_DNS				0x35
 
 /* IPv4 Header definition */
 #define IPV4_HDR_TOS_OFFSET                     1
@@ -179,6 +186,8 @@
 
 #define ARP_PRO_REQ				1
 #define ARP_PRO_RSP				2
+
+#define TDLS_ACTION_CODE_OFFSET                 2
 
 #define LLC_LEN                                 8	/* LLC(3) + SNAP(3) + EtherType(2) */
 
