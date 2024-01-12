@@ -201,9 +201,6 @@ uint8_t kalP2PGetWscMode(struct GLUE_INFO *prGlueInfo);
 #define kalP2PIsTxCarrierOn(_prGlueInfo, _prBssInfo) \
 		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalP2PEnableNetDev(_prGlueInfo, _prBssInfo) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
-
 #define kalP2PUpdateP2P_IE(_prGlueInfo, _ucIndex, _pucBuffer, \
 	_u2BufferLength, _ucRoleIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
@@ -236,9 +233,6 @@ void kalP2PTxCarrierOn(struct GLUE_INFO *prGlueInfo,
 		struct BSS_INFO *prBssInfo);
 
 u_int8_t kalP2PIsTxCarrierOn(struct GLUE_INFO *prGlueInfo,
-		struct BSS_INFO *prBssInfo);
-
-void kalP2PEnableNetDev(struct GLUE_INFO *prGlueInfo,
 		struct BSS_INFO *prBssInfo);
 
 void kalP2PUpdateP2P_IE(struct GLUE_INFO *prGlueInfo,

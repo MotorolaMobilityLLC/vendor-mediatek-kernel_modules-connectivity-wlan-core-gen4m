@@ -1801,8 +1801,22 @@ SKIP_START_RDD:
 			P2P_CONNECTION_TYPE_PURE_AP)
 			kalIdcGetRilInfo();
 #endif
-		if (prP2pChnlReqInfo->eBand == BAND_5G)
-			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
+
+		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		if (prP2pChnlReqInfo->eBand == BAND_5G &&
+		    p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+			struct GL_P2P_INFO *prP2PInfo;
+			struct GLUE_INFO *prGlueInfo;
+			uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
+
+			prGlueInfo = prAdapter->prGlueInfo;
+			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+			prP2PInfo->fgChannelSwitchReq = TRUE;
+			kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+		}
+#endif
 
 		if (prBssInfo &&
 			IS_BSS_P2P(prBssInfo) &&
