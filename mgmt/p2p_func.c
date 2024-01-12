@@ -7184,6 +7184,9 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 		case P2P_CNN_GO_NEG_CONF:
 		case P2P_CNN_INVITATION_REQ:
 		case P2P_CNN_INVITATION_RESP:
+		case P2P_CNN_DEV_DISC_RESP:
+		case P2P_CNN_PROV_DISC_REQ:
+		case P2P_CNN_PROV_DISC_RESP:
 			fgIsBufferableMMPDU = FALSE;
 			break;
 		default:
