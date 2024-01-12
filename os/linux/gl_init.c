@@ -972,7 +972,7 @@ static const struct wiphy_vendor_command
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
 		.policy = nla_parse_offloading_policy,
-		.maxattr = MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC
+		.maxattr = MKEEP_ALIVE_ATTRIBUTE_MAX
 #endif
 	},
 	{
@@ -985,7 +985,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_packet_keep_alive_stop
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_parse_offloading_policy,
+		.maxattr = MKEEP_ALIVE_ATTRIBUTE_MAX
 #endif
 	},
 	/* Get Driver Version or Firmware Version */
