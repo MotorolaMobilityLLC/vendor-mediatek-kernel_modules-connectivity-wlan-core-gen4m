@@ -2217,14 +2217,9 @@ struct ADAPTER {
 #if CFG_SUPPORT_MULTITHREAD
 	struct QUE rTxCmdQueue;
 	struct QUE rTxCmdDoneQueue;
-#if CFG_FIX_2_TX_PORT
-	struct QUE rTxP0Queue;
-	struct QUE rTxP1Queue;
-#else
 	struct QUE rTxPQueue[MAX_BSSID_NUM][TC_NUM];
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
 	struct QUE rTxHifPQueue[MAX_BSSID_NUM][TC_NUM];
-#endif
 #endif
 	struct QUE rRxQueue;
 	struct QUE rTxDataDoneQueue;

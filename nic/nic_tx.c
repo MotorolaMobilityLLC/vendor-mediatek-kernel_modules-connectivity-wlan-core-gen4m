@@ -1321,65 +1321,6 @@ uint32_t nicTxMsduInfoList(struct ADAPTER *prAdapter,
 uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 	*prAdapter, struct MSDU_INFO *prMsduInfoListHead)
 {
-#if CFG_FIX_2_TX_PORT
-	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
-	struct QUE qDataPort0, qDataPort1;
-	struct QUE *prDataPort0, *prDataPort1;
-
-	KAL_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prAdapter);
-	ASSERT(prMsduInfoListHead);
-
-	prMsduInfo = prMsduInfoListHead;
-
-	prDataPort0 = &qDataPort0;
-	prDataPort1 = &qDataPort1;
-
-	QUEUE_INITIALIZE(prDataPort0);
-	QUEUE_INITIALIZE(prDataPort1);
-
-	/* Separate MSDU_INFO_T lists into 2 categories: for Port#0 & Port#1 */
-	while (prMsduInfo) {
-		prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(prMsduInfo);
-
-		nicTxFillDataDesc(prAdapter, prMsduInfo);
-
-		switch (prMsduInfo->ucTC) {
-		case TC0_INDEX:
-		case TC1_INDEX:
-		case TC2_INDEX:
-		case TC3_INDEX:
-			QUEUE_ENTRY_SET_NEXT(prMsduInfo, NULL);
-			QUEUE_INSERT_TAIL(prDataPort0, prMsduInfo);
-			break;
-
-		case TC4_INDEX:	/* Management packets */
-			QUEUE_ENTRY_SET_NEXT(prMsduInfo, NULL);
-			QUEUE_INSERT_TAIL(prDataPort1, prMsduInfo);
-			break;
-
-		default:
-			ASSERT(0);
-			break;
-		}
-
-		prMsduInfo = prNextMsduInfo;
-	}
-
-	if (prDataPort0->u4NumElem > 0
-	    || prDataPort1->u4NumElem > 0) {
-
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		QUEUE_CONCATENATE_QUEUES((&(prAdapter->rTxP0Queue)),
-					 (prDataPort0));
-		QUEUE_CONCATENATE_QUEUES((&(prAdapter->rTxP1Queue)),
-					 (prDataPort1));
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
-	}
-#else
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
 	struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
 	struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
@@ -1433,7 +1374,6 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
 
-#endif
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -1450,63 +1390,6 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 uint32_t nicTxMsduQueueMthread(struct ADAPTER *prAdapter)
 {
-#if CFG_FIX_2_TX_PORT
-	struct QUE qDataPort0, qDataPort1;
-	struct QUE *prDataPort0, *prDataPort1;
-	uint32_t u4TxLoopCount;
-
-	KAL_SPIN_LOCK_DECLARATION();
-
-	prDataPort0 = &qDataPort0;
-	prDataPort1 = &qDataPort1;
-
-	QUEUE_INITIALIZE(prDataPort0);
-	QUEUE_INITIALIZE(prDataPort1);
-
-	u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
-
-	while (u4TxLoopCount--) {
-		while (QUEUE_IS_NOT_EMPTY(&(prAdapter->rTxP0Queue))) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-			QUEUE_MOVE_ALL(prDataPort0, &(prAdapter->rTxP0Queue));
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-			nicTxMsduQueue(prAdapter, 0, prDataPort0);
-
-			if (QUEUE_IS_NOT_EMPTY(prDataPort0)) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_PORT_QUE);
-				QUEUE_CONCATENATE_QUEUES_HEAD(
-					&(prAdapter->rTxP0Queue),
-					prDataPort0);
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_PORT_QUE);
-
-				break;
-			}
-		}
-
-		while (QUEUE_IS_NOT_EMPTY(&(prAdapter->rTxP1Queue))) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-			QUEUE_MOVE_ALL(prDataPort1, &(prAdapter->rTxP1Queue));
-			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-			nicTxMsduQueue(prAdapter, 1, prDataPort1);
-
-			if (QUEUE_IS_NOT_EMPTY(prDataPort1)) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_PORT_QUE);
-				QUEUE_CONCATENATE_QUEUES_HEAD(
-					&(prAdapter->rTxP1Queue),
-					prDataPort1);
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_PORT_QUE);
-
-				break;
-			}
-		}
-	}
-#else
 	uint32_t u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1537,7 +1420,6 @@ uint32_t nicTxMsduQueueMthread(struct ADAPTER *prAdapter)
 		else
 			nicTxMsduQueueByPrio(prAdapter);
 	}
-#endif
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -1919,10 +1801,6 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 uint32_t nicTxGetMsduPendingCnt(struct ADAPTER
 				*prAdapter)
 {
-#if CFG_FIX_2_TX_PORT
-	return prAdapter->rTxP0Queue.u4NumElem +
-		prAdapter->rTxP1Queue.u4NumElem;
-#else
 	int32_t i, j;
 	uint32_t retValue = 0;
 
@@ -1930,7 +1808,6 @@ uint32_t nicTxGetMsduPendingCnt(struct ADAPTER
 		for (j = 0; j < TC_NUM; j++)
 			retValue += prAdapter->rTxPQueue[i][j].u4NumElem;
 	return retValue;
-#endif
 }
 
 #endif
@@ -6746,20 +6623,6 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 */
 #if CFG_SUPPORT_MULTITHREAD
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-#if CFG_FIX_2_TX_PORT
-	prMsduInfo = QUEUE_GET_HEAD(&prAdapter->rTxP0Queue);
-	while (prMsduInfo) {
-		if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
-			prMsduInfo->ucWlanIndex = ucNewWlanIndex;
-		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
-	}
-	prMsduInfo = QUEUE_GET_HEAD(&prAdapter->rTxP1Queue);
-	while (prMsduInfo) {
-		if (prMsduInfo->ucWlanIndex == ucOldWlanIndex)
-			prMsduInfo->ucWlanIndex = ucNewWlanIndex;
-		prMsduInfo = QUEUE_GET_NEXT_ENTRY(&prMsduInfo->rQueEntry);
-	}
-#else
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (ucIndex = 0; ucIndex < TC_NUM; ucIndex++) {
 			prMsduInfo = QUEUE_GET_HEAD(
@@ -6773,7 +6636,6 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 			}
 		}
 	}
-#endif
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
 	for (i = 0; i < MAX_BSSID_NUM; i++) {

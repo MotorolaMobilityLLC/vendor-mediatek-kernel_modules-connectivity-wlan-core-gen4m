@@ -886,10 +886,6 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MULTITHREAD
 	QUEUE_INITIALIZE(&prAdapter->rTxCmdQueue);
 	QUEUE_INITIALIZE(&prAdapter->rTxCmdDoneQueue);
-#if CFG_FIX_2_TX_PORT
-	QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
-	QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
-#else
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		for (j = 0; j < TC_NUM; j++)
 			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
@@ -897,7 +893,6 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		for (j = 0; j < TC_NUM; j++)
 			QUEUE_INITIALIZE(&prAdapter->rTxHifPQueue[i][j]);
-#endif
 #endif
 	QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
@@ -2796,50 +2791,6 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 	if (HAL_IS_TX_DIRECT(prAdapter))
 		nicTxDirectClearHifQ(prAdapter);
 	else {
-#if CFG_FIX_2_TX_PORT
-		struct QUE qDataPort0, qDataPort1;
-		struct QUE *prDataPort0, *prDataPort1;
-		struct MSDU_INFO *prMsduInfo;
-
-		KAL_SPIN_LOCK_DECLARATION();
-
-		prDataPort0 = &qDataPort0;
-		prDataPort1 = &qDataPort1;
-
-		QUEUE_INITIALIZE(prDataPort0);
-		QUEUE_INITIALIZE(prDataPort1);
-
-		/* <1> Move whole list of CMD_INFO to temp queue */
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		QUEUE_MOVE_ALL(prDataPort0, &prAdapter->rTxP0Queue);
-		QUEUE_MOVE_ALL(prDataPort1, &prAdapter->rTxP1Queue);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-
-		/* <2> Release Tx resource */
-		nicTxReleaseMsduResource(prAdapter,
-				QUEUE_GET_HEAD(prDataPort0));
-		nicTxReleaseMsduResource(prAdapter,
-				QUEUE_GET_HEAD(prDataPort1));
-
-		/* <3> Return sk buffer */
-		nicTxReturnMsduInfo(prAdapter, QUEUE_GET_HEAD(prDataPort0));
-		nicTxReturnMsduInfo(prAdapter, QUEUE_GET_HEAD(prDataPort1));
-
-		/* <4> Clear pending MSDU info in data done queue */
-		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-		while (QUEUE_IS_NOT_EMPTY(&prAdapter->rTxDataDoneQueue)) {
-			QUEUE_REMOVE_HEAD(&prAdapter->rTxDataDoneQueue,
-					  prMsduInfo, struct MSDU_INFO *);
-			if (prMsduInfo == NULL) {
-				DBGLOG(TX, WARN, "prMsduInfo is NULL\n");
-				break;
-			}
-			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-		}
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-#else
-
 		struct QUE qDataPort[MAX_BSSID_NUM][TC_NUM];
 		struct QUE *prDataPort[MAX_BSSID_NUM][TC_NUM];
 		struct MSDU_INFO *prMsduInfo = NULL;
@@ -2904,7 +2855,6 @@ void wlanClearDataQueue(struct ADAPTER *prAdapter)
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
 		KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
-#endif
 	}
 }
 
