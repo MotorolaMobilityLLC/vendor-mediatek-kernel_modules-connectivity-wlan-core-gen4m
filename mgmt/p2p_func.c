@@ -1624,6 +1624,7 @@ p2pFuncValidateAuth(IN P_ADAPTER_T prAdapter,
 		}
 
 		if (bssGetClientCount(prAdapter, prP2pBssInfo) >= P2P_MAXIMUM_CLIENT_COUNT
+			|| !p2pRoleProcessACLInspection(prAdapter, prStaRec->aucMacAddr, prP2pBssInfo->ucBssIndex)
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 			|| kalP2PMaxClients(prAdapter->prGlueInfo, bssGetClientCount(prAdapter, prP2pBssInfo),
 			(UINT_8) prP2pBssInfo->u4PrivateData)

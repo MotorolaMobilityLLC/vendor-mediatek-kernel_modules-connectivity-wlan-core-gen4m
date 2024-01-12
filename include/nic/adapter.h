@@ -469,6 +469,7 @@ struct _BSS_INFO_T {
 	BOOLEAN fgIsGranted;
 	ENUM_BAND_T eBandGranted;
 	UINT_8 ucPrimaryChannelGranted;
+	PARAM_CUSTOM_ACL rACL;
 };
 
 struct _AIS_SPECIFIC_BSS_INFO_T {

@@ -299,6 +299,10 @@ VOID p2pRoleFsmDeauthTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
 
 VOID p2pRoleFsmRunEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prP2pBssInfo);
 
+VOID p2pRoleUpdateACLEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx);
+
+BOOL p2pRoleProcessACLInspection(IN P_ADAPTER_T prAdapter, IN PUCHAR pMacAddr, IN UINT_8 ucBssIdx);
+
 WLAN_STATUS
 p2pRoleFsmRunEventAAAComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN P_BSS_INFO_T prP2pBssInfo);
 
