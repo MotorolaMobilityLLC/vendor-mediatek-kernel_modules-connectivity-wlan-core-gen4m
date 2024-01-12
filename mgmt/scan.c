@@ -1307,7 +1307,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t ucPowerConstraint = 0;
 	struct IE_COUNTRY *prCountryIE = NULL;
 	struct RX_DESC_OPS_T *prRxDescOps;
-#if (CFG_SUPPORT_HE_ER == 1)
+#if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_HE_ER == 1))
 	struct _IE_HE_OP_T *prHeOp;
 	struct _IE_HE_CAP_T *prHeCap;
 #endif
