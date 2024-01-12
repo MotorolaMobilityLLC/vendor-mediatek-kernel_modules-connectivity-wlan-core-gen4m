@@ -7599,12 +7599,12 @@ void qmResetTcControlResource(IN struct ADAPTER *prAdapter)
 /* To change PN number to UINT64 */
 #define CCMPTSCPNNUM	6
 u_int8_t qmRxPNtoU64(uint8_t *pucPN, uint8_t uPNNum,
-	uint64_t *pu8Rets)
+	uint64_t *pu64Rets)
 {
 	uint8_t ucCount = 0;
-	uint64_t u8Data = 0;
+	uint64_t u64Data = 0;
 
-	if (!pu8Rets) {
+	if (!pu64Rets) {
 		DBGLOG(QM, ERROR, "Please input valid pu8Rets\n");
 		return FALSE;
 	}
@@ -7614,10 +7614,10 @@ u_int8_t qmRxPNtoU64(uint8_t *pucPN, uint8_t uPNNum,
 		return FALSE;
 	}
 
-	*pu8Rets = 0;
+	*pu64Rets = 0;
 	for (; ucCount < uPNNum; ucCount++) {
-		u8Data = pucPN[ucCount] << 8 * ucCount;
-		*pu8Rets +=  u8Data;
+		u64Data = ((uint64_t) pucPN[ucCount]) << (8 * ucCount);
+		*pu64Rets +=  u64Data;
 	}
 	return TRUE;
 }
