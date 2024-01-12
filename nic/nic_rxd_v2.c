@@ -741,7 +741,10 @@ uint8_t nic_rxd_v2_fill_radiotap(
 	prRadiotapInfo->ucNess = HAL_MAC_CONNAC2X_RX_VT_GET_NESS(prRxStatusGroup5);
 	prRadiotapInfo->ucLDPC = HAL_MAC_CONNAC2X_RX_VT_GET_LDPC(prRxStatusGroup3);
 	prRadiotapInfo->ucMcs = HAL_MAC_CONNAC2X_RX_VT_GET_RX_RATE(prRxStatusGroup3);
-	prRadiotapInfo->ucRcpi0 = HAL_MAC_CONNAC2X_RX_VT_GET_RCPI0(prRxStatusGroup5);
+	prRadiotapInfo->ucRcpi0 =
+		HAL_MAC_CONNAC2X_RX_VT_GET_RCPI0(prRxStatusGroup5);
+	prRadiotapInfo->ucRcpi1 =
+		HAL_MAC_CONNAC2X_RX_VT_GET_RCPI1(prRxStatusGroup5);
 	prRadiotapInfo->ucTxopPsNotAllow = HAL_MAC_CONNAC2X_RX_VT_TXOP_PS_NOT_ALLOWED(prRxStatusGroup5);
 	prRadiotapInfo->ucLdpcExtraOfdmSym = HAL_MAC_CONNAC2X_RX_VT_LDPC_EXTRA_OFDM_SYM(prRxStatusGroup5);
 	prRadiotapInfo->ucVhtGroupId = HAL_MAC_CONNAC2X_RX_VT_GET_GROUP_ID(prRxStatusGroup5);
@@ -756,8 +759,9 @@ uint8_t nic_rxd_v2_fill_radiotap(
 		prRadiotapInfo->ucSigBRU2 = HAL_MAC_CONNAC2X_RX_VT_GET_SIGB_RU2(prRxStatusGroup5);
 		prRadiotapInfo->ucSigBRU3 = HAL_MAC_CONNAC2X_RX_VT_GET_SIGB_RU3(prRxStatusGroup5);
 		prRadiotapInfo->u2VhtPartialAid = HAL_MAC_CONNAC2X_RX_VT_GET_PART_AID(prRxStatusGroup5);
-		prRadiotapInfo->u2RuAllocation = ((HAL_MAC_CONNAC2X_RX_VT_GET_RU_ALLOC1(prRxStatusGroup3) >> 1) |
-				(HAL_MAC_CONNAC2X_RX_VT_GET_RU_ALLOC2(prRxStatusGroup3) << 3));
+		prRadiotapInfo->u2RuAllocation =
+		(HAL_MAC_CONNAC2X_RX_VT_GET_RU_ALLOC1(prRxStatusGroup3) |
+		(HAL_MAC_CONNAC2X_RX_VT_GET_RU_ALLOC2(prRxStatusGroup3) << 4));
 		prRadiotapInfo->u2BssClr = HAL_MAC_CONNAC2X_RX_VT_GET_BSS_COLOR(prRxStatusGroup5);
 		prRadiotapInfo->u2BeamChange = HAL_MAC_CONNAC2X_RX_VT_GET_BEAM_CHANGE(prRxStatusGroup5);
 		prRadiotapInfo->u2UlDl = HAL_MAC_CONNAC2X_RX_VT_GET_UL_DL(prRxStatusGroup5);

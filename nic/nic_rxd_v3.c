@@ -818,7 +818,10 @@ uint8_t nic_rxd_v3_fill_radiotap(
 	prRadiotapInfo->ucNess = HAL_MAC_CONNAC3X_RX_VT_GET_NESS(prRxStatusGroup5);
 	prRadiotapInfo->ucLDPC = HAL_MAC_CONNAC3X_RX_VT_GET_LDPC(prRxStatusGroup3);
 	prRadiotapInfo->ucMcs = HAL_MAC_CONNAC3X_RX_VT_GET_RX_RATE(prRxStatusGroup3);
-	prRadiotapInfo->ucRcpi0 = HAL_MAC_CONNAC3X_RX_VT_GET_RCPI0(prRxStatusGroup5);
+	prRadiotapInfo->ucRcpi0 =
+		HAL_MAC_CONNAC3X_RX_VT_GET_RCPI0(prRxStatusGroup5);
+	prRadiotapInfo->ucRcpi1 =
+		HAL_MAC_CONNAC3X_RX_VT_GET_RCPI1(prRxStatusGroup5);
 	prRadiotapInfo->ucTxopPsNotAllow = HAL_MAC_CONNAC3X_RX_VT_TXOP_PS_NOT_ALLOWED(prRxStatusGroup5);
 	prRadiotapInfo->ucLdpcExtraOfdmSym = HAL_MAC_CONNAC3X_RX_VT_LDPC_EXTRA_OFDM_SYM(prRxStatusGroup5);
 	prRadiotapInfo->ucVhtGroupId = HAL_MAC_CONNAC3X_RX_VT_GET_GROUP_ID(prRxStatusGroup5);
@@ -846,6 +849,14 @@ uint8_t nic_rxd_v3_fill_radiotap(
 		prRadiotapInfo->u2Ltf = HAL_MAC_CONNAC3X_RX_VT_GET_LTF(prRxStatusGroup5) + 1;
 		prRadiotapInfo->u2Doppler = HAL_MAC_CONNAC3X_RX_VT_GET_DOPPLER(prRxStatusGroup5);
 		prRadiotapInfo->u2Txop = HAL_MAC_CONNAC3X_RX_VT_GET_TXOP(prRxStatusGroup5);
+		prRadiotapInfo->ucPpduTypeComp =
+		HAL_MAC_CONNAC3X_RX_VT_GET_PPDU_TYPE_COMP(prRxStatusGroup5);
+		prRadiotapInfo->ucEhtSigMcs =
+		HAL_MAC_CONNAC3X_RX_VT_GET_EHT_SIG_MCS(prRxStatusGroup5);
+		prRadiotapInfo->ucEhtLtfSymNum =
+		HAL_MAC_CONNAC3X_RX_VT_GET_EHT_LTF_SYM_NUM(prRxStatusGroup5);
+		prRadiotapInfo->ucEhtSigSymNum =
+		HAL_MAC_CONNAC3X_RX_VT_GET_EHT_SIG_SYM_NUM(prRxStatusGroup5);
 	}
 
 	return TRUE;

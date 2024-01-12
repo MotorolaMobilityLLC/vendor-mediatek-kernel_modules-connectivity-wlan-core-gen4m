@@ -69,7 +69,131 @@ static void radiotap_fill_vendor(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info
 	p_vendor->u2DataLen = p_radiotap_info->u2VendorLen;
 }
 
-static void radiotap_fill_he_mu(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_tlv_vendor(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+{
+	struct TLV_VENDOR_NAMESPACE *vendor =
+		(struct TLV_VENDOR_NAMESPACE *)p_data;
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+
+	vendor->u2Type = IEEE80211_RADIOTAP_TLV_VENDOR;
+	vendor->u2Length =
+	sizeof(struct TLV_VENDOR_NAMESPACE) + p_radiotap_info->u2VendorLen - 4;
+
+	vendor->aucOUI[0] = aucMtkOui[0];
+	vendor->aucOUI[1] = aucMtkOui[1];
+	vendor->aucOUI[2] = aucMtkOui[2];
+	vendor->ucSubType = p_radiotap_info->ucSubNamespace;
+}
+
+static void radiotap_fill_tlv_eht(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+{
+	struct TLV_EHT *eht = (struct TLV_EHT *)p_data;
+	uint32_t u4Known = 0;
+	uint32_t u4Data0 = 0;
+	uint32_t u4Data8 = 0;
+	uint32_t u4UserInfo0 = 0;
+
+	eht->u2Type = IEEE80211_RADIOTAP_TLV_EHT;
+	eht->u2Length = sizeof(struct TLV_EHT) - 4;
+
+	u4Known = IEEE80211_RADIOTAP_TLV_EHT_KNOWN;
+
+	u4Data0 = (IEEE80211_RADIOTAP_TLV_EHT_SPATIAL_REUSE_MASK &
+		(p_radiotap_info->u2SpatialReuse1 <<
+		IEEE80211_RADIOTAP_TLV_EHT_SPATIAL_REUSE_SHFT));
+	u4Data0 |= (IEEE80211_RADIOTAP_TLV_EHT_GI_MASK &
+		(p_radiotap_info->ucShortGI <<
+		IEEE80211_RADIOTAP_TLV_EHT_GI_SHFT));
+	u4Data0 |= (IEEE80211_RADIOTAP_TLV_EHT_LTF_MASK &
+		(p_radiotap_info->u2Ltf <<
+		IEEE80211_RADIOTAP_TLV_EHT_LTF_SHFT));
+	u4Data0 |= (IEEE80211_RADIOTAP_TLV_EHT_EHT_LTF_MASK &
+		(p_radiotap_info->ucEhtLtfSymNum <<
+		IEEE80211_RADIOTAP_TLV_EHT_EHT_LTF_SHFT));
+	u4Data0 |= (IEEE80211_RADIOTAP_TLV_EHT_LDPC_EXTRA_SYM_MASK &
+		(p_radiotap_info->ucLdpcExtraOfdmSym <<
+		IEEE80211_RADIOTAP_TLV_EHT_LDPC_EXTRA_SYM_SHFT));
+	u4Data0 |= (IEEE80211_RADIOTAP_TLV_EHT_PE_DIS_AMB_MASK &
+		(p_radiotap_info->ucPeDisamb <<
+		IEEE80211_RADIOTAP_TLV_EHT_PE_DIS_AMB_SHFT));
+
+	/* for PS 160 */
+	u4Data8 = (p_radiotap_info->u2RuAllocation & BIT(8)) ? 1 : 0;
+	u4Data8 |= (IEEE80211_RADIOTAP_TLV_EHT_RU_ALLOC_B0_B7_MASK &
+		(p_radiotap_info->u2RuAllocation <<
+		IEEE80211_RADIOTAP_TLV_EHT_RU_ALLOC_B0_B7_SHFT));
+
+	u4UserInfo0 = IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_KNOWN;
+	u4UserInfo0 |= (IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_STA_ID_MASK &
+		(p_radiotap_info->u2VhtPartialAid <<
+		IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_STA_ID_SHFT));
+	u4UserInfo0 |= (IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_CODING_MASK &
+		(p_radiotap_info->ucLDPC <<
+		IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_CODING_SHFT));
+	u4UserInfo0 |= (IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_MCS_MASK &
+		(p_radiotap_info->ucMcs <<
+		IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_MCS_SHFT));
+	u4UserInfo0 |= (IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_NSS_MASK &
+		(p_radiotap_info->ucNsts <<
+		IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_NSS_SHFT));
+	u4UserInfo0 |= (IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_BF_MASK &
+		(p_radiotap_info->ucBeamFormed <<
+		IEEE80211_RADIOTAP_TLV_EHT_USER_INFO_BF_SHFT));
+
+	eht->u4Known = u4Known;
+	eht->au4Data[0] = u4Data0;
+	eht->au4Data[8] = u4Data8;
+	eht->au4UserInfo[0] = u4UserInfo0;
+}
+
+static void radiotap_fill_tlv_usig(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+{
+	struct TLV_USIG *usig = (struct TLV_USIG *)p_data;
+	uint32_t u4Comm = 0;
+	uint32_t u4Value = 0;
+	uint32_t u4Mask = 0;
+
+	usig->u2Type = IEEE80211_RADIOTAP_TLV_USIG;
+	usig->u2Length = sizeof(struct TLV_USIG) - 4;
+
+	u4Comm = IEEE80211_RADIOTAP_TLV_USIG_KNOWN;
+	u4Comm |= (IEEE80211_RADIOTAP_TLV_USIG_BW_MASK &
+		(p_radiotap_info->ucFrMode <<
+		IEEE80211_RADIOTAP_TLV_USIG_BW_SHFT));
+	u4Comm |= (IEEE80211_RADIOTAP_TLV_USIG_UL_DL_MASK &
+		(p_radiotap_info->u2UlDl <<
+		IEEE80211_RADIOTAP_TLV_USIG_UL_DL_SHFT));
+	u4Comm |= (IEEE80211_RADIOTAP_TLV_USIG_BSS_COLOR_MASK &
+		(p_radiotap_info->u2BssClr <<
+		IEEE80211_RADIOTAP_TLV_USIG_BSS_COLOR_SHFT));
+	u4Comm |= (IEEE80211_RADIOTAP_TLV_USIG_TXOP_MASK &
+		(p_radiotap_info->u2Txop <<
+		IEEE80211_RADIOTAP_TLV_USIG_TXOP_SHFT));
+
+	u4Value = (IEEE80211_RADIOTAP_TLV_USIG_PPDU_TYPE_COMP_MASK &
+		(p_radiotap_info->ucPpduTypeComp <<
+		IEEE80211_RADIOTAP_TLV_USIG_PPDU_TYPE_COMP_SHFT));
+	u4Value |= (IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_MCS_MASK &
+		(p_radiotap_info->ucEhtSigMcs <<
+		IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_MCS_SHFT));
+	u4Value |= (IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_SYM_MASK &
+		(p_radiotap_info->ucEhtSigSymNum <<
+		IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_SYM_SHFT));
+
+	u4Mask = IEEE80211_RADIOTAP_TLV_USIG_PPDU_TYPE_COMP_MASK;
+	u4Mask |= IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_MCS_MASK;
+	u4Mask |= IEEE80211_RADIOTAP_TLV_USIG_EHT_SIG_SYM_MASK;
+
+	usig->u4Comm = u4Comm;
+	usig->u4Value = u4Value;
+	usig->u4Mask = u4Mask;
+}
+
+static void radiotap_fill_he_mu(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct HE_MU *heMu = (struct HE_MU *)p_data;
 	uint16_t flags1 = 0;
@@ -104,17 +228,20 @@ static void radiotap_fill_he_mu(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info,
 
 	flags2 = p_radiotap_info->ucFrMode;
 	flags2 |= IEEE80211_RADIOTAP_HE_MU_BW_KNOWN_MASK;
-	flags2 |= (IEEE80211_RADIOTAP_HE_MU_USER_MASK & (p_radiotap_info->ucNumUser << IEEE80211_RADIOTAP_HE_MU_USER_SHFT));
+	flags2 |= (IEEE80211_RADIOTAP_HE_MU_USER_MASK &
+	(p_radiotap_info->ucNumUser << IEEE80211_RADIOTAP_HE_MU_USER_SHFT));
 
 	heMu->u2Flag1 = flags1;
 	heMu->u2Flag2 = flags2;
 }
 
-static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_he(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct HE *he = (struct HE *)p_data;
 	uint16_t bw_ru_alloc;
 	uint16_t spatial_reuse = 0;
+	uint16_t ru_alloc_offset = p_radiotap_info->u2RuAllocation >> 1;
 
 	/* Data 1 */
 	switch (p_radiotap_info->ucTxMode) {
@@ -123,13 +250,11 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 		he->u2Data1 |= IEEE80211_RADIOTAP_HE_KNOWN_SPATIAL_REUSE1;
 		spatial_reuse = p_radiotap_info->u2SpatialReuse1;
 		break;
-	case TX_RATE_MODE_EHT_ER:
 	case TX_RATE_MODE_HE_ER:
 		he->u2Data1 = IEEE80211_RADIOTAP_HE_EXT_SU;
 		he->u2Data1 |= IEEE80211_RADIOTAP_HE_KNOWN_SPATIAL_REUSE1;
 		spatial_reuse = p_radiotap_info->u2SpatialReuse1;
 		break;
-	case TX_RATE_MODE_EHT_TRIG:
 	case TX_RATE_MODE_HE_TRIG:
 		he->u2Data1 = IEEE80211_RADIOTAP_HE_TRIG;
 		he->u2Data1 |= (IEEE80211_RADIOTAP_HE_KNOWN_SPATIAL_REUSE1 |
@@ -141,7 +266,6 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 						(p_radiotap_info->u2SpatialReuse3 << IEEE80211_RADIOTAP_HE_SPATIAL_REUSE3_SHFT) |
 						(p_radiotap_info->u2SpatialReuse4 << IEEE80211_RADIOTAP_HE_SPATIAL_REUSE4_SHFT));
 		break;
-	case TX_RATE_MODE_EHT_MU:
 	case TX_RATE_MODE_HE_MU:
 		he->u2Data1 = IEEE80211_RADIOTAP_HE_MU;
 		he->u2Data1 |= (IEEE80211_RADIOTAP_HE_KNOWN_SPATIAL_REUSE1 |
@@ -157,7 +281,8 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 
 	/* Data 2 */
 	he->u2Data2 = IEEE80211_RADIOTAP_HE_KNOWN_DATA2;
-	he->u2Data2 |= ((p_radiotap_info->u2RuAllocation << IEEE80211_RADIOTAP_HE_RU_ALLOC_OFFSET_OFFSET) &
+	he->u2Data2 |= ((ru_alloc_offset <<
+		IEEE80211_RADIOTAP_HE_RU_ALLOC_OFFSET_OFFSET) &
 		IEEE80211_RADIOTAP_HE_RU_ALLOC_OFFSET_MASK);
 
 	/* Data 3 */
@@ -174,19 +299,19 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 	he->u2Data4 = spatial_reuse;
 
 	/* Data 5 */
-	if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_26_RU37)
+	if (ru_alloc_offset <= IEEE80211_RADIOTAP_HE_RU_IDX_26_RU37)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_26;
-	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_52_RU16)
+	else if (ru_alloc_offset <= IEEE80211_RADIOTAP_HE_RU_IDX_52_RU16)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_52;
-	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_106_RU8)
+	else if (ru_alloc_offset <= IEEE80211_RADIOTAP_HE_RU_IDX_106_RU8)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_106;
-	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_242_RU4)
+	else if (ru_alloc_offset <= IEEE80211_RADIOTAP_HE_RU_IDX_242_RU4)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_242;
-	else if (p_radiotap_info->u2RuAllocation <= IEEE80211_RADIOTAP_HE_RU_IDX_484_RU2)
+	else if (ru_alloc_offset <= IEEE80211_RADIOTAP_HE_RU_IDX_484_RU2)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_484;
-	else if (p_radiotap_info->u2RuAllocation == IEEE80211_RADIOTAP_HE_RU_IDX_996_RU1)
+	else if (ru_alloc_offset == IEEE80211_RADIOTAP_HE_RU_IDX_996_RU1)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_996;
-	else if (p_radiotap_info->u2RuAllocation == IEEE80211_RADIOTAP_HE_RU_IDX_2x_996_RU1)
+	else if (ru_alloc_offset == IEEE80211_RADIOTAP_HE_RU_IDX_2x_996_RU1)
 		bw_ru_alloc = IEEE80211_RADIOTAP_HE_RU_2x_996;
 	else
 		bw_ru_alloc = p_radiotap_info->ucFrMode;
@@ -203,7 +328,8 @@ static void radiotap_fill_he(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, ui
 		(p_radiotap_info->u2Txop << IEEE80211_RADIOTAP_HE_TXOP_SHFT));
 }
 
-static void radiotap_fill_timestamp(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_timestamp(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct TIMESTAMP *p_timestamp = (struct TIMESTAMP *)p_data;
 
@@ -214,7 +340,8 @@ static void radiotap_fill_timestamp(struct IEEE80211_RADIOTAP_INFO *p_radiotap_i
 	p_timestamp->ucFlags = 0x1;
 }
 
-static void radiotap_fill_vht(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_vht(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct VHT *vht = (struct VHT *)p_data;
 	uint8_t flags = 0;
@@ -265,14 +392,16 @@ static void radiotap_fill_vht(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, u
 	vht->u2VhtPartialAid = p_radiotap_info->u2VhtPartialAid;
 }
 
-static void radiotap_fill_ampdu(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_ampdu(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct AMPDU *p_ampdu = (struct AMPDU *)p_data;
 
 	p_ampdu->u4AmpduRefNum = p_radiotap_info->u4AmpduRefNum;
 }
 
-static void radiotap_fill_mcs(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_mcs(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct MCS *p_mcs = (struct MCS *)p_data;
 	uint8_t flags = 0;
@@ -304,21 +433,42 @@ static void radiotap_fill_mcs(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, u
 	p_mcs->ucMcsMcs = p_radiotap_info->ucMcs;
 }
 
-static void radiotap_fill_antenna(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_antenna_0(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct ANTENNA *p_antenna = (struct ANTENNA *)p_data;
 
 	p_antenna->ucAntIdx = 0;
 }
 
-static void radiotap_fill_ant_signal(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_antenna_1(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+{
+	struct ANTENNA *p_antenna = (struct ANTENNA *)p_data;
+
+	p_antenna->ucAntIdx = 1;
+}
+
+static void radiotap_fill_ant_signal_0(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct ANT_SIGNAL *p_ant_signal = (struct ANT_SIGNAL *)p_data;
 
-	p_ant_signal->i1AntennaSignal = (int8_t)RCPI_TO_dBm(p_radiotap_info->ucRcpi0);
+	p_ant_signal->i1AntennaSignal =
+		(int8_t)RCPI_TO_dBm(p_radiotap_info->ucRcpi0);
 }
 
-static void radiotap_fill_channel(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_ant_signal_1(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+{
+	struct ANT_SIGNAL *p_ant_signal = (struct ANT_SIGNAL *)p_data;
+
+	p_ant_signal->i1AntennaSignal =
+		(int8_t)RCPI_TO_dBm(p_radiotap_info->ucRcpi1);
+}
+
+static void radiotap_fill_channel(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct CHANNEL *p_channel = (struct CHANNEL *)p_data;
 	enum ENUM_BAND eBand = (enum ENUM_BAND)p_radiotap_info->ucRfBand;
@@ -352,14 +502,16 @@ static void radiotap_fill_channel(struct IEEE80211_RADIOTAP_INFO *p_radiotap_inf
 	p_channel->u2ChFlags = flags;
 }
 
-static void radiotap_fill_rate(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_rate(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct RATE *p_rate = (struct RATE *)p_data;
 
 	p_rate->ucRate = nicGetHwRateByPhyRate(p_radiotap_info->ucMcs);
 }
 
-static void radiotap_fill_flags(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
+static void radiotap_fill_flags(
+	struct IEEE80211_RADIOTAP_INFO *p_radiotap_info, uint8_t *p_data)
 {
 	struct FLAGS *p_flags = (struct FLAGS *)p_data;
 	uint8_t flags = 0;
@@ -392,6 +544,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	uint16_t radiotap_len = sizeof(struct IEEE80211_RADIOTAP_HEADER);
 	uint16_t padding_len = 0;
 	uint32_t present;
+	uint32_t present0;
 
 	if (prRxDescOps->nic_rxd_fill_radiotap) {
 		prSwRfb->prRadiotapInfo = &radiotapInfo;
@@ -406,33 +559,42 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	switch (radiotapInfo.ucTxMode) {
 	case TX_RATE_MODE_CCK:
 	case TX_RATE_MODE_OFDM:
-		present = IEEE80211_RADIOTAP_FIELD_PRESENT_LEGACY;
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_LEGACY;
+		present = IEEE80211_RADIOTAP_FIELD_PRESENT_OFDM;
 		break;
 	case TX_RATE_MODE_HTMIX:
 	case TX_RATE_MODE_HTGF:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
 		present = IEEE80211_RADIOTAP_FIELD_PRESENT_HT;
 		break;
 	case TX_RATE_MODE_VHT:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
 		present = IEEE80211_RADIOTAP_FIELD_PRESENT_VHT;
 		break;
-	case TX_RATE_MODE_EHT_ER:
-	case TX_RATE_MODE_EHT_TRIG:
 	case TX_RATE_MODE_HE_SU:
 	case TX_RATE_MODE_HE_ER:
 	case TX_RATE_MODE_HE_TRIG:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
 		present = IEEE80211_RADIOTAP_FIELD_PRESENT_HE;
 		break;
-	case TX_RATE_MODE_EHT_MU:
 	case TX_RATE_MODE_HE_MU:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
 		present = IEEE80211_RADIOTAP_FIELD_PRESENT_HE_MU;
 		break;
+	case TX_RATE_MODE_EHT_ER:
+	case TX_RATE_MODE_EHT_TRIG:
+	case TX_RATE_MODE_EHT_MU:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
+		present = IEEE80211_RADIOTAP_FIELD_PRESENT_EHT;
+		break;
 	default:
+		present0 = IEEE80211_RADIOTAP_FIELD_PRESENT_NON_LEGACY;
 		present = IEEE80211_RADIOTAP_FIELD_VENDOR;
 		break;
 	}
 
 	/* Bit Number 1 FLAGS */
-	if (present & IEEE80211_RADIOTAP_FIELD_FLAGS) {
+	if (present0 & IEEE80211_RADIOTAP_FIELD_FLAGS) {
 		radiotap_fill_func[func_num].offset = radiotap_len;
 		radiotap_fill_func[func_num].radiotap_fill_func = radiotap_fill_flags;
 		radiotap_len += sizeof(struct FLAGS);
@@ -440,7 +602,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	/* Bit Number 2 RATE */
-	if (present & IEEE80211_RADIOTAP_FIELD_RATE) {
+	if (present0 & IEEE80211_RADIOTAP_FIELD_RATE) {
 		radiotap_fill_func[func_num].offset = radiotap_len;
 		radiotap_fill_func[func_num].radiotap_fill_func = radiotap_fill_rate;
 		radiotap_len += sizeof(struct RATE);
@@ -448,7 +610,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	/* Bit Number 3 CHANNEL */
-	if (present & IEEE80211_RADIOTAP_FIELD_CHANNEL) {
+	if (present0 & IEEE80211_RADIOTAP_FIELD_CHANNEL) {
 		/* Required Alignment 2 bytes */
 		padding_len = radiotap_len % 2;
 		radiotap_len += padding_len;
@@ -459,9 +621,28 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	}
 
 	/* Bit Number 5 ANT SIGNAL */
+	if (present0 & IEEE80211_RADIOTAP_FIELD_ANT_SIGNAL) {
+		radiotap_fill_func[func_num].offset = radiotap_len;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_ant_signal_0;
+		radiotap_len += sizeof(struct ANT_SIGNAL);
+		func_num++;
+	}
+
+	/* Bit Number 11 ANTENNA */
+	if (present0 & IEEE80211_RADIOTAP_FIELD_ANTENNA) {
+		radiotap_fill_func[func_num].offset = radiotap_len;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_antenna_0;
+		radiotap_len += sizeof(struct ANTENNA);
+		func_num++;
+	}
+
+	/* Bit Number 5 ANT SIGNAL */
 	if (present & IEEE80211_RADIOTAP_FIELD_ANT_SIGNAL) {
 		radiotap_fill_func[func_num].offset = radiotap_len;
-		radiotap_fill_func[func_num].radiotap_fill_func = radiotap_fill_ant_signal;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_ant_signal_1;
 		radiotap_len += sizeof(struct ANT_SIGNAL);
 		func_num++;
 	}
@@ -469,7 +650,8 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	/* Bit Number 11 ANTENNA */
 	if (present & IEEE80211_RADIOTAP_FIELD_ANTENNA) {
 		radiotap_fill_func[func_num].offset = radiotap_len;
-		radiotap_fill_func[func_num].radiotap_fill_func = radiotap_fill_antenna;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_antenna_1;
 		radiotap_len += sizeof(struct ANTENNA);
 		func_num++;
 	}
@@ -537,6 +719,31 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 		func_num++;
 	}
 
+	/* Bit Number 28 TLV */
+	if (present & IEEE80211_RADIOTAP_FIELD_TLV) {
+		/* Required Alignment 4 bytes */
+		padding_len =
+		((radiotap_len % 4) == 0) ? 0 : (4 - (radiotap_len % 4));
+		radiotap_len += padding_len;
+		radiotap_fill_func[func_num].offset = radiotap_len;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_tlv_eht;
+		radiotap_len += sizeof(struct TLV_EHT);
+		func_num++;
+		/* Required Alignment 4 bytes */
+		radiotap_fill_func[func_num].offset = radiotap_len;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_tlv_usig;
+		radiotap_len += sizeof(struct TLV_USIG);
+		func_num++;
+		/* Required Alignment 4 bytes */
+		radiotap_fill_func[func_num].offset = radiotap_len;
+		radiotap_fill_func[func_num].radiotap_fill_func =
+			radiotap_fill_tlv_vendor;
+		radiotap_len += sizeof(struct TLV_VENDOR_NAMESPACE);
+		func_num++;
+	}
+
 	/* Bit Number 30 Vendor Namespace */
 	if (present & IEEE80211_RADIOTAP_FIELD_VENDOR) {
 		/* Required Alignment 2 bytes */
@@ -556,6 +763,7 @@ void radiotapFillRadiotap(struct ADAPTER *prAdapter,
 	header->ucItVersion = PKTHDR_RADIOTAP_VERSION;
 	radiotap_len += radiotapInfo.u2VendorLen;
 	header->u2ItLen = CPU_TO_LE16(radiotap_len);
+	header->u4ItPresent0 = present0;
 	header->u4ItPresent = present;
 
 	for (func_idx = 0; func_idx < func_num; func_idx++)	{
