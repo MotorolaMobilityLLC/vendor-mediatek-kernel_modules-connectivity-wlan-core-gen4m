@@ -3860,6 +3860,11 @@ u_int8_t p2pFuncRetryJOIN(struct ADAPTER *prAdapter,
 		if (!prJoinInfo->ucAvailableAuthTypes)
 			break;
 
+		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
+			DBGLOG(P2P, TRACE, "Do not retry join for SAE.");
+			break;
+		}
+
 		if (prJoinInfo->ucAvailableAuthTypes
 			& (uint8_t) AUTH_TYPE_SHARED_KEY) {
 

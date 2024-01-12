@@ -2909,10 +2909,6 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 
 			SET_NET_PWR_STATE_IDLE(prAdapter,
 				prP2pBssInfo->ucBssIndex);
-
-			p2pRoleFsmStateTransition(prAdapter,
-				prP2pRoleFsmInfo,
-				P2P_ROLE_STATE_IDLE);
 		}
 		break;
 	case OP_MODE_ACCESS_POINT:
@@ -3241,7 +3237,9 @@ void p2pRoleFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 				prSetupStaRec->ucJoinFailureCount++;
 
 				if (prSetupStaRec->ucJoinFailureCount >=
-						P2P_SAA_RETRY_COUNT) {
+						P2P_SAA_RETRY_COUNT ||
+				    prSetupStaRec->ucAuthAlgNum ==
+						AUTH_ALGORITHM_NUM_SAE) {
 #define DISCONNECT_LOCALLY WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY
 					/* Join failed after retries */
 					kalP2PGCIndicateConnectionStatus(
@@ -3315,7 +3313,7 @@ void p2pRoleFsmRunEventScanRequest(struct ADAPTER *prAdapter,
 	struct P2P_SSID_STRUCT *prP2pSsidStruct =
 		(struct P2P_SSID_STRUCT *) NULL;
 	struct BSS_INFO *prP2pBssInfo = NULL;
-
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = NULL;
 
 	prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) prMsgHdr;
 
@@ -3330,13 +3328,17 @@ void p2pRoleFsmRunEventScanRequest(struct ADAPTER *prAdapter,
 		goto error;
 	}
 
-	prP2pScanReqMsg = (struct MSG_P2P_SCAN_REQUEST *) prMsgHdr;
 	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
+	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-	DBGLOG(P2P, TRACE, "p2pDevFsmRunEventScanRequest\n");
+	DBGLOG(P2P, TRACE, "ConnType:%u, reason:%u",
+	       prConnReqInfo->eConnRequest, prP2pScanReqMsg->eScanReason);
 
-	/* Do we need to be in IDLE state? */
-	/* p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo); */
+	/* For GC, make sure we are in IDLE state to abort previous GC_JOIN */
+	if (prConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GC) {
+		prConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_IDLE;
+		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
 
 	prScanReqInfo->fgIsAbort = TRUE;
 	prScanReqInfo->eScanType = prP2pScanReqMsg->eScanType;
