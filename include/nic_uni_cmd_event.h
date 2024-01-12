@@ -4798,6 +4798,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_FW_DROP_SSN     = 0x62,
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_HW_ERROR_REPORT = 0x76,
+	UNI_EVENT_ID_UPDATE_LP       = 0x77,
 	UNI_EVENT_ID_NUM
 };
 
@@ -7437,6 +7438,53 @@ struct UNI_EVENT_FW_DROP_SSN_INFO {
 };
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 
+/** This structure is used for UNI_EVENT_UPDATE_LP event (0x77)
+ *
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucReserved      reserved fixed field
+ * @param[in] aucTlvBuffer     TLVs
+ */
+/* Update LP event */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UPDATE_LP {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Update LP event tags */
+enum ENUM_UNI_EVENT_UPDATE_LP_TAG {
+	UNI_EVENT_UPDATE_LP_TX_DELAY = 0,
+	UNI_EVENT_UPDATE_LP_TAG_NUM
+};
+
+/**
+ * This structure is used for UNI_EVENT_UPDATE_LP_TX_DELAY tag(0x00)
+ * of UNI_EVENT_UPDATE_LP event (0x77) to identify Tx delay status
+ *
+ * @param[in] u2Tag         Tag id
+ * @param[in] u2Length      The length of this TLV
+ * @param[in] i4Scen        Scen tput value
+ * @param[in] u4Tx          Tx tput value
+ * @param[in] u4Rx          Rx tput value
+ * @param[in] ucDelay       Tx delay timeout
+ * @param[in] u4PktCnt      Tx delay buffer count
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	int32_t i4Scen;
+	uint32_t u4Tx;
+	uint32_t u4Rx;
+	uint8_t ucDelay;
+	uint8_t aucPadding[3];
+	uint32_t u4PktCnt;
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -8064,6 +8112,8 @@ void nicUniEventRtt(struct ADAPTER *ad,
 #if (CFG_CE_ASSERT_DUMP == 1)
 void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 #endif
+void nicUniEventUpdateLp(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 
 
 uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
