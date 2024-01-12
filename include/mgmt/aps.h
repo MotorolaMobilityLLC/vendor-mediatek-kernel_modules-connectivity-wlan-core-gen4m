@@ -27,7 +27,7 @@ struct AP_COLLECTION {
 	uint8_t ucLinkNum;
 	uint8_t ucTotalCount; /* total BssDesc count */
 	uint8_t aucMask[MAX_LINK_PLAN_NUM];
-	uint8_t fgIsMld;
+	uint8_t fgIsMultiLink;
 	uint8_t fgIsMatchBssid;
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlackList;

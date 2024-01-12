@@ -7330,6 +7330,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"ApMldMainLinkIdx", MLD_LINK_ID_NONE);
 	INIT_UINT(prWifiVar->ucStaMldMainLinkIdx,
 		"StaMldMainLinkIdx", MLD_LINK_ID_NONE);
+	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
+		"StaPreferMldAddr", FEATURE_DISABLED);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
 		"MloP2pPreferFreq", "2462 5180 5975");
 	INIT_UINT(prWifiVar->ucMlProbeRetryLimit,

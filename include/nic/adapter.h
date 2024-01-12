@@ -558,6 +558,8 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 struct MLD_BSS_INFO {
 	struct LINK rBssList;
+	struct LINK rMldStaRecOfClientList;
+
 	u_int8_t fgIsInUse;
 	uint8_t ucOmacIdx;
 	uint8_t ucGroupMldId;
@@ -795,6 +797,7 @@ struct WIFI_VAR {
 	uint8_t ucP2pMldLinkMax;
 	uint8_t ucApMldMainLinkIdx;
 	uint8_t ucStaMldMainLinkIdx;
+	uint8_t ucStaPreferMldAddr;
 	uint8_t ucEnableMlo;
 	uint8_t ucMaxSimuLinks;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];

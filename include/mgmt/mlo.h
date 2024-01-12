@@ -303,8 +303,7 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss);
 
-int8_t mldBssAlloc(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO **pprMldBss);
+struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter);
 
 void mldBssFree(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);
@@ -327,24 +326,29 @@ void mldStarecDump(struct ADAPTER *prAdapter);
 uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter);
 
 #ifdef CFG_AAD_NONCE_NO_REPLACE
-void mldEnableCocurrentMld(struct ADAPTER *prAdapter);
+void mldBssDisableAllClients(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
+void mldBssEnableAllClients(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
+void mldEnableConcurrentMld(struct ADAPTER *prAdapter);
 #endif
 
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStarec, uint8_t fgMldType,
-	uint8_t aucMacAddr[], uint8_t ucLinkId, uint16_t u2EmlCap,
-	uint16_t u2MldCap);
+	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec,
+	uint8_t ucLinkId);
 
 void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);
 
-int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
+struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
-	struct MLD_STA_RECORD **pprMldStarec,
-	uint8_t *aucMacAddr);
+	uint8_t *aucMacAddr, uint8_t fgMldType,
+	uint16_t u2EmlCap, uint16_t u2MldCap);
 
 void mldStarecFree(struct ADAPTER *prAdapter,
-	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStaRec);
+	struct MLD_STA_RECORD *prMldStarec);
 
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
