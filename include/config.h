@@ -253,6 +253,16 @@
 /* Enable WOW Support */
 #define CFG_WOW_SUPPORT		1
 
+/* Disable WOW EINT mode */
+#ifndef CFG_SUPPORT_WOW_EINT
+#define CFG_SUPPORT_WOW_EINT	0
+#endif
+
+/* when wow wakeup host, send keyevent to screen on */
+#ifndef CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP
+#define CFG_SUPPORT_WOW_EINT_KEYEVENT_WAKEUP	0
+#endif
+
 /* Enable A-MSDU RX Reordering Support */
 #define CFG_SUPPORT_RX_AMSDU	1
 
