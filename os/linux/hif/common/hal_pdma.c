@@ -2304,6 +2304,8 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t rv;
+	struct RXD_STRUCT *pRxD;
+	uint32_t j = 0;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -2328,6 +2330,19 @@ void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo)
 			prRxRing->RxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
 			prRxRing->u4RingSize);
+		/* Reset DMADONE bit */
+		for (j = 0; j < prRxRing->u4RingSize; j++) {
+			pRxD = (struct RXD_STRUCT *) prRxRing->Cell[j].AllocVa;
+			if (pRxD->DMADONE != 0) {
+			/* There was a packet in rx_ring before WFDMA reinit!
+			 * Clear done bit can prevent WFDMA coherence issue but
+			 * the packe will loss after WFDMA reinit
+			 */
+				DBGLOG(HAL, WARN,
+				"-->RX_RING_%d[%d]: DMADONE !=0\n", i, j);
+				pRxD->DMADONE = 0;
+			}
+		}
 
 		if (prBusInfo->rx_ring_ext_ctrl)
 			prBusInfo->rx_ring_ext_ctrl(prGlueInfo, prRxRing, i);
