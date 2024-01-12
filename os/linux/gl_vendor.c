@@ -1560,7 +1560,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 				if (prWifiVar->fgLinkStatsDump) {
 					DBGLOG(REQ, TRACE, "valid rate %u", j);
 					DBGLOG(REQ, TRACE,
-						"memcpy(dst_rate=(%u), src_rate=(%u))",
+						"memcpy(dst_rate=(%td), src_rate=(%td))",
 						(uint8_t *)dst_rate -
 							(uint8_t *)dst,
 						(uint8_t *)src_rate -
@@ -1580,7 +1580,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 				i, dst_peer->num_rate);
 	}
 
-	DBGLOG(REQ, TRACE, "advanced %u bytes", dst - orig);
+	DBGLOG(REQ, TRACE, "advanced %td bytes", dst - orig);
 	return dst - orig;
 }
 
@@ -1647,7 +1647,7 @@ uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 	dst += fill_peer_info(dst, src->peer_info,
 			&iface->num_peers, prAdapter, bss_idx);
 
-	DBGLOG(REQ, TRACE, "advanced %u bytes, %u peers",
+	DBGLOG(REQ, TRACE, "advanced %td bytes, %u peers",
 			dst - orig, iface->num_peers);
 
 	return dst - orig;
@@ -1735,7 +1735,7 @@ uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 				i, radio->num_channels);
 	}
 
-	DBGLOG(REQ, TRACE, "advanced %u bytes", dst - orig);
+	DBGLOG(REQ, TRACE, "advanced %td bytes", dst - orig);
 	return dst - orig;
 }
 
@@ -1767,7 +1767,7 @@ uint32_t fill_power_levels(uint8_t *dst, struct ADAPTER *prAdapter,
 		dst += sizeof(uint32_t) * TX_POWER_LEVELS;
 	}
 
-	DBGLOG(REQ, INFO, "Copy power level %u bytes", dst - orig);
+	DBGLOG(REQ, INFO, "Copy power level %td bytes", dst - orig);
 
 	return dst - orig;
 }
