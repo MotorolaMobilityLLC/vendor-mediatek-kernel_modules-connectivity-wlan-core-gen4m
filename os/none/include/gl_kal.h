@@ -661,8 +661,6 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 #define kalStrrChr(s, c)                   strrchr(s, c)
 #define kalStrnChr(s, n, c)                strnchr(s, n, c)
 #define kalStrLen(s)                       strlen(s)
-#define kalStrnLen(s, b)                   strnlen(s, b)
-#define kalStrniCmp(ct, cs, n)             strncasecmp(ct, cs, n)
 /* #define kalStrtoul(cp, endp, base)      simple_strtoul(cp, endp, base) */
 /* #define kalStrtol(cp, endp, base)       simple_strtol(cp, endp, base) */
 #define kalkStrtou8(cp, base, resp)        kal_strtou8(cp, base, resp)
@@ -677,14 +675,11 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 /* remove for AOSP */
 /* #define kalSScanf(buf, fmt, ...)        sscanf(buf, fmt, __VA_ARGS__) */
 #define kalStrStr(ct, cs)                  strstr(ct, cs)
-#define kalStrSep(s, ct)                   strsep(s, ct)
 #define kalStrCat(dest, src)               strcat(dest, src)
 #define kalStrnCat(dst, src, n)            strncat(dst, src, n)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kal_strtoint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kal_strtoul(_data, _base, _res)
-#define kalStrtokR(_buf, _tok, _saved) \
-	strtok_r((char *)_buf, _tok, (char **)_saved)
 /* implementation for no op API */
 int8_t kal_atoi(uint8_t ch);
 #define kalAtoi(_ch) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
@@ -2050,6 +2045,12 @@ uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucNumOfChannel,
 			enum ENUM_BAND eBand);
+
+int kalStrniCmp(const char *s1, const char *s2, size_t n);
+char *kalStrSep(char **stringp, const char *delim);
+size_t kalStrnLen(const char *s, size_t b);
+char *kalStrtokR(char *s, const char *delim, char **last);
+int kalFfs(int s);
 
 void *kalGetNetDevPriv(void *prNet);
 
