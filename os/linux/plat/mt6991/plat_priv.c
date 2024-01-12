@@ -1077,14 +1077,12 @@ int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size)
 		return -EINVAL;
 	}
 
-	if (of_property_read_u64(scp_node, "dfd-cmd-addr", addr))
+	if (of_property_read_u64(scp_node, "dfd-value-addr", addr))
 		return -EINVAL;
 
-	if (of_property_read_u32(scp_node, "dfd-cmd-size", size))
+	if (of_property_read_u32(scp_node, "dfd-value-size", size))
 		return -EINVAL;
 
-	DBGLOG(INIT, INFO, "scp dump addr:0x%llx, size:%u\n",
-		addr, size);
 	return 0;
 }
 
