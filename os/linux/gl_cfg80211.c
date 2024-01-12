@@ -4296,8 +4296,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
 	kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
-		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, FALSE, FALSE,
-		 /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
+		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, TRUE, FALSE,
 		 &u4BufLen);
 	return 0;
 
@@ -4338,8 +4337,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 		kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
 	kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
-		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, FALSE, FALSE,
-		 /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
+		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, TRUE, FALSE,
 		 &u4BufLen);
 	return 0;
 
@@ -4372,7 +4370,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_oper\n");
+	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_oper, oper=%d", oper);
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;

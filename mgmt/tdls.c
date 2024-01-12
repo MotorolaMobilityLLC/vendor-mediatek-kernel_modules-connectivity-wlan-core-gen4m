@@ -100,6 +100,7 @@ uint8_t g_arTdlsLink[MAXNUM_TDLS_PEER] = {
  *******************************************************************************
  */
 static u_int8_t fgIsPtiTimeoutSkip = FALSE;
+static u_int8_t fgIsWaitForTxDone = FALSE;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -143,8 +144,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		       void *pvSetBuffer, uint32_t u4SetBufferLen,
 		       uint32_t *pu4SetInfoLen)
 {
-	/* from supplicant -- wpa_supplicant_tdls_peer_addset() */
-
+	uint32_t rResult = TDLS_STATUS_SUCCESS;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	struct TDLS_CMD_LINK_MGT *prCmd;
@@ -173,43 +173,33 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	switch (prCmd->ucActionCode) {
 
 	case TDLS_FRM_ACTION_DISCOVERY_REQ:
-		/* printk("\n\n\n  TDLS_FRM_ACTION_DISCOVERY_REQ\n\n\n"); */
 		if (prStaRec == NULL)
 			return 0;
-		if (TdlsDataFrameSend_DISCOVERY_REQ(prAdapter,
+		rResult = TdlsDataFrameSend_DISCOVERY_REQ(prAdapter,
 					    prStaRec,
 					    prCmd->aucPeer,
 					    prCmd->ucActionCode,
 					    prCmd->ucDialogToken,
 					    prCmd->u2StatusCode,
 					    (uint8_t *) (prCmd->aucSecBuf),
-					    prCmd->u4SecBufLen)
-						    != TDLS_STATUS_SUCCESS) {
-			return -1;
-		}
-
+					    prCmd->u4SecBufLen);
 		break;
 
 	case TDLS_FRM_ACTION_SETUP_REQ:
-		/* printk("\n\n\n  TDLS_FRM_ACTION_SETUP_REQ\n\n\n"); */
 		if (prStaRec == NULL)
 			return 0;
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
 				prCmd->aucPeer);
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
-		if (TdlsDataFrameSend_SETUP_REQ(prAdapter,
+		rResult = TdlsDataFrameSend_SETUP_REQ(prAdapter,
 					prStaRec,
 					prCmd->aucPeer,
 					prCmd->ucActionCode,
 					prCmd->ucDialogToken,
 					prCmd->u2StatusCode,
 					(uint8_t *) (prCmd->aucSecBuf),
-					prCmd->u4SecBufLen)
-						!= TDLS_STATUS_SUCCESS) {
-			return -1;
-		}
-
+					prCmd->u4SecBufLen);
 		break;
 
 	case TDLS_FRM_ACTION_SETUP_RSP:
@@ -220,81 +210,66 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		if (prBssInfo->fgTdlsIsProhibited)
 			return 0;
 
-		/* printk("\n\n\n  TDLS_FRM_ACTION_SETUP_RSP\n\n\n"); */
-		if (TdlsDataFrameSend_SETUP_RSP(prAdapter,
+		rResult = TdlsDataFrameSend_SETUP_RSP(prAdapter,
 					prStaRec,
 					prCmd->aucPeer,
 					prCmd->ucActionCode,
 					prCmd->ucDialogToken,
 					prCmd->u2StatusCode,
 					(uint8_t *) (prCmd->aucSecBuf),
-					prCmd->u4SecBufLen)
-						!= TDLS_STATUS_SUCCESS) {
-			return -1;
-		}
-
+					prCmd->u4SecBufLen);
 		break;
 
 	case TDLS_FRM_ACTION_DISCOVERY_RSP:
-		/* printk("\n\n\n  TDLS_FRM_ACTION_DISCOVERY_RSP\n\n\n"); */
-		if (TdlsDataFrameSend_DISCOVERY_RSP(prAdapter,
-					    prStaRec,
-					    prCmd->aucPeer,
-					    prCmd->ucActionCode,
-					    prCmd->ucDialogToken,
-					    prCmd->u2StatusCode,
-					    (uint8_t *) (prCmd->aucSecBuf),
-					    prCmd->u4SecBufLen)
-						!= TDLS_STATUS_SUCCESS) {
-			return -1;
-		}
-
+		rResult = TdlsDataFrameSend_DISCOVERY_RSP(prAdapter,
+					prStaRec,
+					prCmd->aucPeer,
+					prCmd->ucActionCode,
+					prCmd->ucDialogToken,
+					prCmd->u2StatusCode,
+					(uint8_t *) (prCmd->aucSecBuf),
+					prCmd->u4SecBufLen);
 		break;
 
 	case TDLS_FRM_ACTION_CONFIRM:
-		/* printk("\n\n\n  TDLS_FRM_ACTION_CONFIRM\n\n\n"); */
-		if (TdlsDataFrameSend_CONFIRM(prAdapter,
-					      prStaRec,
-					      prCmd->aucPeer,
-					      prCmd->ucActionCode,
-					      prCmd->ucDialogToken,
-					      prCmd->u2StatusCode,
-					      (uint8_t *) (prCmd->aucSecBuf),
-					      prCmd->u4SecBufLen)
-						!= TDLS_STATUS_SUCCESS) {
-			return -1;
-		}
+		rResult = TdlsDataFrameSend_CONFIRM(prAdapter,
+					prStaRec,
+					prCmd->aucPeer,
+					prCmd->ucActionCode,
+					prCmd->ucDialogToken,
+					prCmd->u2StatusCode,
+					(uint8_t *) (prCmd->aucSecBuf),
+					prCmd->u4SecBufLen);
 		break;
 
 	case TDLS_FRM_ACTION_TEARDOWN:
-
 		prStaRec = cnmGetTdlsPeerByAddress(prAdapter,
 				prAdapter->prAisBssInfo->ucBssIndex,
 				prCmd->aucPeer);
 		if (prCmd->u2StatusCode == TDLS_REASON_CODE_UNREACHABLE)
 			g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 
-		if (TdlsDataFrameSend_TearDown(prAdapter,
-					       prStaRec,
-					       prCmd->aucPeer,
-					       prCmd->ucActionCode,
-					       prCmd->ucDialogToken,
-					       prCmd->u2StatusCode,
-					       (uint8_t *) (prCmd->aucSecBuf),
-					       prCmd->u4SecBufLen)
-						!= TDLS_STATUS_SUCCESS) {
-			/* printk("\n teardown frrame  send failure\n"); */
-			return -1;
-		}
+		rResult = TdlsDataFrameSend_TearDown(prAdapter,
+					prStaRec,
+					prCmd->aucPeer,
+					prCmd->ucActionCode,
+					prCmd->ucDialogToken,
+					prCmd->u2StatusCode,
+					(uint8_t *) (prCmd->aucSecBuf),
+					prCmd->u4SecBufLen);
 		break;
 
 	default:
-		/* printk("\n\n\n  default\n\n\n"); */
+		DBGLOG(TDLS, INFO, "default=%d", prCmd->ucActionCode);
 		return -EINVAL;
 	}
 
-	return 0;
+	if (rResult == TDLS_STATUS_PENDING)
+		fgIsWaitForTxDone = TRUE;
 
+	DBGLOG(TDLS, INFO, "rResult=%d", rResult);
+
+	return rResult;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -588,7 +563,7 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
 
-	return TDLS_STATUS_SUCCESS;
+	return TDLS_STATUS_PENDING;
 }
 
 /*!
@@ -786,7 +761,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
 
-	return TDLS_STATUS_SUCCESS;
+	return TDLS_STATUS_PENDING;
 }
 
 uint32_t
@@ -981,7 +956,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
 
-	return TDLS_STATUS_SUCCESS;
+	return TDLS_STATUS_PENDING;
 }
 
 uint32_t
@@ -1102,7 +1077,7 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
 
-	return TDLS_STATUS_SUCCESS;
+	return TDLS_STATUS_PENDING;
 }
 
 /*
@@ -1207,7 +1182,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	/* 5. send the data frame */
 	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
 
-	return TDLS_STATUS_SUCCESS;
+	return TDLS_STATUS_PENDING;
 }
 
 uint32_t
@@ -1574,6 +1549,28 @@ TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
 			    sizeof(struct CMD_TDLS_CH_SW),
 			    (uint8_t *)&rCmdTdlsChSwCtrl, NULL, 0);
 	return TDLS_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to handle TX done for TDLS data packet.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[in] rTxDoneStatus TX Done status
+ *
+ * \retval none
+ */
+/*----------------------------------------------------------------------------*/
+void TdlsHandleTxDoneStatus(struct ADAPTER *prAdapter,
+			enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	DBGLOG(TDLS, INFO, "TdlsHandleTxDoneStatus=%d, fgIsWaitForTxDone=%d",
+				rTxDoneStatus, fgIsWaitForTxDone);
+	if (fgIsWaitForTxDone == TRUE) {
+		kalOidComplete(prAdapter->prGlueInfo, 0, 0,
+			WLAN_STATUS_SUCCESS);
+		fgIsWaitForTxDone = FALSE;
+	}
 }
 
 #endif /* CFG_SUPPORT_TDLS */
