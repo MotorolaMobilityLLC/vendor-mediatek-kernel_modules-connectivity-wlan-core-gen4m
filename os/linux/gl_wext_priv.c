@@ -3805,8 +3805,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 /* Mediatek private command */
 #define CMD_SET_MCR		"SET_MCR"
 #define CMD_GET_MCR		"GET_MCR"
+#if (CFG_WLAN_ASSISTANT_NVRAM == 1)
 #define CMD_SET_NVRAM	"SET_NVRAM"
 #define CMD_GET_NVRAM	"GET_NVRAM"
+#endif
 #define CMD_SET_DRV_MCR		"SET_DRV_MCR"
 #define CMD_GET_DRV_MCR		"GET_DRV_MCR"
 #define CMD_SET_UHW_MCR		"SET_UHW_MCR"
@@ -15673,6 +15675,7 @@ static int priv_driver_calibration(
 	return i4BytesWritten;
 }
 
+#if (CFG_WLAN_ASSISTANT_NVRAM == 1)
 static int priv_driver_get_nvram(IN struct net_device *prNetDev,
 			       IN char *pcCommand, IN int i4TotalLen)
 {
@@ -15814,6 +15817,8 @@ int priv_driver_set_nvram(IN struct net_device *prNetDev, IN char *pcCommand,
 	return i4BytesWritten;
 
 }
+#endif
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 int priv_driver_thermal_protect_enable(IN struct net_device *prNetDev,
 		IN char *pcCommand, IN int i4TotalLen)
@@ -16232,8 +16237,10 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if CFG_SUPPORT_DBDC
 	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
 #endif
+#if CFG_WLAN_ASSISTANT_NVRAM
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
+#endif
 #if CFG_MTK_WIFI_SW_WFDMA
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
 #endif
