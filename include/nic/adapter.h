@@ -482,6 +482,12 @@ struct BSS_INFO {
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
 #endif
+
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+	uint8_t ucMaxBSSIDIndicator;
+	uint8_t ucMBSSIDIndex;
+#endif
+
 	/*-------------------------------------------------------------------*/
 	/* Required protection modes (CM)                                    */
 	/*-------------------------------------------------------------------*/
