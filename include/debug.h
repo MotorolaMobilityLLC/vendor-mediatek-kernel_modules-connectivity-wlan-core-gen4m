@@ -588,6 +588,8 @@ struct CHIP_DBG_OPS {
 		struct ADAPTER *prAdapter,
 		uint8_t ucCase);
 #endif
+	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
+	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 };
 
 enum PKT_PHASE {

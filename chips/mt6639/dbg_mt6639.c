@@ -17,10 +17,17 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "dbg_mt6639.h"
+#if defined(_HIF_PCIE)
+#include "hif_pdma.h"
+#endif
 #include "coda/mt6639/wf_ple_top.h"
 #include "coda/mt6639/wf_pse_top.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_hif_dmashdl_top.h"
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -41,6 +48,13 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+#if defined(_HIF_PCIE)
+static void mt6639_dumpPcGprLog(struct ADAPTER *ad);
+static void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
+static void mt6639_dumpWfTopReg(struct ADAPTER *ad);
+static void mt6639_dumpWfBusReg(struct ADAPTER *ad);
+static void mt6639_dumpCbtopReg(struct ADAPTER *ad);
+#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -793,5 +807,445 @@ void mt6639_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 				u4RegValue);
 	}
 }
+
+#if defined(_HIF_PCIE)
+static void mt6639_dumpCbtopReg(struct ADAPTER *ad)
+{
+	struct dump_cr_set *dump = NULL;
+	uint32_t size = 0;
+	uint32_t i = 0;
+	uint32_t val = 0;
+
+	dump = cbtop_dump_list;
+	size = ARRAY_SIZE(cbtop_dump_list);
+	for (i = 0; i < size; i++) {
+		if (dump[i].read) {
+			HAL_MCR_RD(ad,
+				   dump[i].addr,
+				   &val);
+			DBGLOG(HAL, INFO, "RD 0x%08x=0x%08x\n",
+				dump[i].addr,
+				val);
+		} else {
+			HAL_MCR_RD(ad,
+				   dump[i].addr,
+				   &val);
+			val &= ~dump[i].mask;
+			val |= ((dump[i].value << dump[i].shift) &
+				dump[i].mask);
+			HAL_MCR_WR(ad,
+				   dump[i].addr,
+				   val);
+			DBGLOG(HAL, INFO, "WR 0x%08x=0x%08x\n",
+				dump[i].addr,
+				val);
+		}
+	}
+}
+
+void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
+{
+#define CPUPCR_LOG_NUM	5
+#define CPUPCR_BUF_SZ	50
+
+	uint32_t i = 0;
+	uint32_t var_pc = 0;
+	uint32_t var_lp = 0;
+	uint64_t log_sec = 0;
+	uint64_t log_nsec = 0;
+	char log_buf_pc[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
+	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
+
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+		0x3F,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+		0x3F,
+		CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_WF_MCU_DBG_PC_LOG_MASK);
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
+		log_sec = local_clock();
+		log_nsec = do_div(log_sec, 1000000000)/1000;
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			   &var_pc);
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			   &var_lp);
+
+		kalSnprintf(log_buf_pc[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_pc);
+
+		kalSnprintf(log_buf_lp[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_lp);
+	}
+
+	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+		log_buf_pc[0],
+		log_buf_pc[1],
+		log_buf_pc[2],
+		log_buf_pc[3],
+		log_buf_pc[4]);
+
+	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+		log_buf_lp[0],
+		log_buf_lp[1],
+		log_buf_lp[2],
+		log_buf_lp[3],
+		log_buf_lp[4]);
+}
+
+static void mt6639_dumpPcGprLog(struct ADAPTER *ad)
+{
+#define PC_LOG_NUM			35
+#define GPR_LOG_NUM			35
+
+	uint32_t i = 0;
+	uint32_t pc_dump[PC_LOG_NUM];
+	uint32_t gpr_dump[GPR_LOG_NUM];
+
+	DBGLOG(HAL, INFO, "Dump PC log / GPR log\n");
+
+	HAL_MCR_WR_FIELD(ad,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR,
+		0x0,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_SHFT,
+		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
+
+	kalMemZero(pc_dump, sizeof(pc_dump));
+	for (i = 0; i < PC_LOG_NUM; i++) {
+		HAL_MCR_WR_FIELD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_ADDR,
+			i,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_SHFT,
+			CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_SEL_WF_MCU_DBG_PC_LOG_SEL_MASK);
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
+			   &pc_dump[i]);
+	}
+	connac3x_dump_format_memory32(pc_dump, PC_LOG_NUM, "PC log");
+
+	kalMemZero(gpr_dump, sizeof(gpr_dump));
+	for (i = 0; i < GPR_LOG_NUM; i++) {
+		HAL_MCR_WR_FIELD(ad,
+			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_ADDR,
+			i,
+			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_SHFT,
+			CONN_DBG_CTL_WF_MCU_DBG_GPR_LOG_SEL_WF_MCU_DBG_GPR_LOG_SEL_MASK);
+		HAL_MCR_RD(ad,
+			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
+			   &gpr_dump[i]);
+	}
+	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
+}
+
+static void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
+{
+#define GENERAL_LOG_NUM			32
+#define CTRL_LOG_NUM			5
+
+	uint32_t i = 0, idx = 0;
+	uint32_t val = 0;
+	uint32_t general_dump[GENERAL_LOG_NUM];
+	uint32_t ctl_status_dump[CTRL_LOG_NUM];
+
+	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
+	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_general_dump_list); i++) {
+		if (n45_general_dump_list[i].read) {
+			HAL_MCR_RD(ad,
+				   n45_general_dump_list[i].addr,
+				   &val);
+			general_dump[idx++] = val;
+		} else {
+			HAL_MCR_WR_FIELD(ad,
+				n45_general_dump_list[i].addr,
+				n45_general_dump_list[i].value,
+				n45_general_dump_list[i].shift,
+				n45_general_dump_list[i].mask);
+		}
+	}
+	connac3x_dump_format_memory32(general_dump,
+		GENERAL_LOG_NUM,
+		"N45 General Purpose Registers");
+
+	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
+	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_ctrl_status_dump_list); i++) {
+		if (n45_ctrl_status_dump_list[i].read) {
+			HAL_MCR_RD(ad,
+				   n45_ctrl_status_dump_list[i].addr,
+				   &val);
+			ctl_status_dump[idx++] = val;
+		} else {
+			HAL_MCR_WR_FIELD(ad,
+				n45_ctrl_status_dump_list[i].addr,
+				n45_ctrl_status_dump_list[i].value,
+				n45_ctrl_status_dump_list[i].shift,
+				n45_ctrl_status_dump_list[i].mask);
+		}
+	}
+	connac3x_dump_format_memory32(ctl_status_dump,
+		CTRL_LOG_NUM,
+		"N45 Control & Status Registers");
+}
+
+static void mt6639_dumpWfTopMiscOn(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t au4List[] = {
+		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
+		0x00000010, 0x00000012, 0x00000017, 0x00000018, 0x00000019,
+		0x0000001A, 0x0000001B, 0x0000001D
+	};
+
+	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR;
+	u4WrVal = 0x00000001;
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+
+	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR;
+	u4RdAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR;
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
+		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpWfTopMiscVon(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t au4List[] = {
+		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
+		0x00000008
+	};
+
+	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR;
+	u4WrVal = 0x00000001;
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	DBGLOG(HAL, INFO,
+	       "\tW 0x%08x=[0x%08x]\n",
+	       u4WrAddr, u4WrVal);
+
+	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_SEL_FR_HIF_ADDR;
+	u4RdAddr = CONN_DBG_CTL_WF_VON_DEBUG_OUT_ADDR;
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
+		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t au4List[] = {
+		WF_TOP_CFG_ON_DEBUG_FLAG0_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG1_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG2_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG3_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG4_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG5_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG6_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG7_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG8_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG9_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG10_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG11_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG12_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG13_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG14_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG15_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG16_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG17_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG18_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG19_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG20_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG21_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG22_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG23_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG24_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG25_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG26_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG27_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG28_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG29_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG30_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG31_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG32_ADDR,
+		WF_TOP_CFG_ON_DEBUG_FLAG33_ADDR,
+	};
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tR 0x%08x=[0x%08x]\n",
+		       u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpWfTopReg(struct ADAPTER *ad)
+{
+	/* Section A: Dump wf_top_misc_on monflag */
+	mt6639_dumpWfTopMiscOn(ad);
+
+	/* Section B: Dump wf_top_misc_von monflag */
+	mt6639_dumpWfTopMiscVon(ad);
+
+	/* Section C: Dump wf_top_cfg_on debug CR */
+	mt6639_dumpWfTopCfgon(ad);
+}
+
+static void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
+	uint32_t au4List[] = {
+		0x00010001, 0x00020001, 0x00030001, 0x00040001, 0x00050001,
+		0x00060001, 0x00070001, 0x00080001, 0x00090001, 0x00010002,
+		0x00020002, 0x00030002, 0x00040002, 0x00050002
+	};
+
+	u4RdAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR;
+	u4WrAddr = CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR;
+	u4WrVal = 0x4;
+	HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+	DBGLOG(HAL, INFO,
+	       "\tR 0x%08x=[0x%08x], W 0x%08x=[0x%08x]\n",
+	       u4RdAddr, u4Val, u4WrAddr, u4WrVal);
+
+	u4WrAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_DEBUGSYS_CTRL_ADDR;
+	u4RdAddr = CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR;
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4WrVal = au4List[u4Idx];
+		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
+		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t au4List[] = {
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT2_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT3_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT4_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT5_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT6_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT7_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT8_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT9_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT10_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT11_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT12_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT13_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT14_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT15_ADDR,
+		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_ADDR,
+	};
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tR 0x%08x=[0x%08x]\n",
+		       u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
+{
+	uint32_t u4RdAddr, u4Val = 0, u4Idx;
+	uint32_t au4List[] = {
+		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_ADDR_ADDR,
+		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_INFO_ADDR,
+		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_ID_ADDR,
+		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_LYR_ADDR,
+		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_CTRL_ADDR
+	};
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
+		u4RdAddr = au4List[u4Idx];
+		HAL_MCR_RD(ad, u4RdAddr, &u4Val);
+		DBGLOG(HAL, INFO,
+		       "\tR 0x%08x=[0x%08x]\n",
+		       u4RdAddr, u4Val);
+	}
+}
+
+static void mt6639_dumpWfBusReg(struct ADAPTER *ad)
+{
+	/* Section A: Dump VDNR timeout host side info */
+	mt6639_dumpHostVdnrTimeoutInfo(ad);
+
+	/* Section B: Dump VDNR timeout wf side info */
+	mt6639_dumpWfVdnrTimeoutInfo(ad);
+
+	/* Section C: Dump AHB APB timeout info */
+	mt6639_dumpAhbApbTimeoutInfo(ad);
+}
+
+static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
+{
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	struct connv3_cr_cb cb;
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	kalMemZero(&cb, sizeof(cb));
+	cb.read = wf_reg_read_wrapper;
+	cb.write = wf_reg_write_wrapper;
+	cb.write_mask = wf_reg_write_mask_wrapper;
+
+	connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI, &cb, ad);
+#endif
+}
+
+void mt6639_DumpBusHangCr(struct ADAPTER *ad)
+{
+	if (!ad) {
+		DBGLOG(HAL, ERROR, "NULL ADAPTER.\n");
+		return;
+	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	mt6639_dumpConninfraBus(ad);
+#endif
+	mt6639_dumpCbtopReg(ad);
+	mt6639_dumpWfsyscpupcr(ad);
+	mt6639_dumpPcGprLog(ad);
+	mt6639_dumpN45CoreReg(ad);
+	mt6639_dumpWfTopReg(ad);
+	mt6639_dumpWfBusReg(ad);
+}
+#endif
 
 #endif /* MT6639 */

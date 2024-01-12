@@ -1048,8 +1048,10 @@ int wlanPreCalPwrOn(void)
 	}
 
 	if (eFailReason != POWER_ON_INIT_DONE) {
-		if (prChipInfo->dumpBusHangCr)
-			prChipInfo->dumpBusHangCr(NULL);
+		struct CHIP_DBG_OPS *debug_ops = prChipInfo->prDebugOps;
+
+		if (debug_ops && debug_ops->dumpBusHangCr)
+			debug_ops->dumpBusHangCr(NULL);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 	}
 

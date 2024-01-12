@@ -939,4 +939,12 @@ void kalDmaSyncForDevice(void *rAddr);
 #endif
 void halWpdmaStopRecycleDmad(IN struct GLUE_INFO *prGlueInfo,
 				       IN uint16_t u2Port);
+
+int32_t wf_reg_read_wrapper(void *priv,
+	uint32_t addr, uint32_t *value);
+int32_t wf_reg_write_wrapper(void *priv,
+	uint32_t addr, uint32_t value);
+int32_t wf_reg_write_mask_wrapper(void *priv,
+	uint32_t addr, uint32_t mask, uint32_t value);
+
 #endif /* HIF_PDMA_H__ */

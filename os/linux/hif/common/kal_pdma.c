@@ -1590,3 +1590,38 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 #endif
 	return 0;
 }
+
+int32_t wf_reg_read_wrapper(void *priv,
+	uint32_t addr, uint32_t *value)
+{
+	struct ADAPTER *ad = priv;
+
+	HAL_MCR_RD(ad, addr, value);
+
+	return 0;
+}
+
+int32_t wf_reg_write_wrapper(void *priv,
+	uint32_t addr, uint32_t value)
+{
+	struct ADAPTER *ad = priv;
+
+	HAL_MCR_WR(ad, addr, value);
+
+	return 0;
+}
+
+int32_t wf_reg_write_mask_wrapper(void *priv,
+	uint32_t addr, uint32_t mask, uint32_t value)
+{
+	struct ADAPTER *ad = priv;
+	uint32_t val = 0;
+
+	HAL_MCR_RD(ad, addr, &val);
+	val &= ~mask;
+	val |= value;
+	HAL_MCR_WR(ad, addr, val);
+
+	return 0;
+}
+

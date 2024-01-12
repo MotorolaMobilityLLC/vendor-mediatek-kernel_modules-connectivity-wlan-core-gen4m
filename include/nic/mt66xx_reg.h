@@ -1606,7 +1606,6 @@ struct mt66xx_chip_info {
 	void (*coantVFE28Dis)(void);
 	u_int8_t (*get_sw_interrupt_status)(struct ADAPTER *prAdapter,
 		uint32_t *status);
-	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
 	uint32_t (*dmashdlQuotaDecision)(IN struct ADAPTER *prAdapter,
@@ -1614,7 +1613,6 @@ struct mt66xx_chip_info {
 	u_int8_t is_support_nvram_fragment;
 	int (*checkbushang)(void *prAdapter,
 		uint8_t ucWfResetEnable);
-	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
 	uint32_t u4ADieVer;
 	uint64_t chip_capability;
 

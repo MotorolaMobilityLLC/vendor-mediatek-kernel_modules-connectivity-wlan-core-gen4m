@@ -130,14 +130,21 @@ static bool halIsTxHang(struct ADAPTER *prAdapter, uint32_t *u4Token);
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+
 	if (!prAdapter->fgIsFwOwn) {
 		halCheckHifState(prAdapter);
 		halDumpHifDebugLog(prAdapter);
 	} else {
 		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
 	}
-	if (prAdapter->chip_info->dumpwfsyscpupcr)
-		prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
+
+	if (chip_info) {
+		struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
+
+		if (debug_ops && debug_ops->dumpwfsyscpupcr)
+			debug_ops->dumpwfsyscpupcr(prAdapter);
+	}
 }
 
 static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
