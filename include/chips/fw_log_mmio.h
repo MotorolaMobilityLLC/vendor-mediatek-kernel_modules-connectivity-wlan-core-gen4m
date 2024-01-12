@@ -38,6 +38,9 @@ struct FW_LOG_MMIO_CTRL {
 	uint32_t base_addr;
 	struct FW_LOG_MMIO_SUB_CTRL sub_ctrls[ENUM_FW_LOG_CTRL_TYPE_NUM];
 	void *priv;
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T *prWakeLock;
+#endif
 	struct FW_LOG_MMIO_STATS stats;
 	struct workqueue_struct *wq;
 	struct work_struct work;
