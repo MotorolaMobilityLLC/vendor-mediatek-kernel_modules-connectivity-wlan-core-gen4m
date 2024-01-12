@@ -147,6 +147,9 @@
  */
 #define FWDL_REDL_MAX_PKT_SIZE			(0x3FFF & ~15u)
 
+/* Used for sanity check, if need can modified it. */
+#define FW_MAX_SECTION_NUM 1024
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
