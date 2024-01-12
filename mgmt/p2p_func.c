@@ -581,6 +581,8 @@ p2pFuncUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		 * Basic Rate Set/Operational Rate Set
 		 */
 		prP2pBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;
+		DBGLOG(P2P, INFO, "prP2pBssInfo->ucPhyTypeSet(%02x)\n",
+			prP2pBssInfo->ucPhyTypeSet);
 
 		prP2pBssInfo->ucNonHTBasicPhyType =
 			prStaRec->ucNonHTBasicPhyType;
@@ -6030,14 +6032,22 @@ void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
 	uint32_t u4AttributeLen;
 	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo = NULL;
 
-	prBssInfo =
-		prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.
+		prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
 
 	if (p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings
 		[prBssInfo->u4PrivateData]))
 		return;
+
+	if (prP2pSpecificBssInfo->ucNoATimingCount == 0) {
+		DBGLOG(P2P, INFO, "No need add NoA attr.\n");
+		return;
+	}
 
 	prIeP2P = (struct IE_P2P *)
 		((unsigned long) prMsduInfo->prPacket +
