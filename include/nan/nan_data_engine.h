@@ -863,6 +863,18 @@ void nanDataEngineDevCapAttrAppend(struct ADAPTER *prAdapter,
 				   struct _NAN_NDL_INSTANCE_T *prNDL,
 				   struct _NAN_NDP_INSTANCE_T *prNDP);
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+uint16_t
+nanDataEngineDevCapExtAttrLength(struct ADAPTER *prAdapter,
+			      struct _NAN_NDL_INSTANCE_T *prNDL,
+			      struct _NAN_NDP_INSTANCE_T *prNDP);
+
+void nanDataEngineDevCapExtAttrAppend(struct ADAPTER *prAdapter,
+				   struct MSDU_INFO *prMsduInfo,
+				   struct _NAN_NDL_INSTANCE_T *prNDL,
+				   struct _NAN_NDP_INSTANCE_T *prNDP);
+#endif
+
 uint16_t
 nanDataEngineNanAvailAttrLength(struct ADAPTER *prAdapter,
 				struct _NAN_NDL_INSTANCE_T *prNDL,

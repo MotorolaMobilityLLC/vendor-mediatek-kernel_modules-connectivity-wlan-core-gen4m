@@ -10744,6 +10744,7 @@ priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
 	int32_t i4ArgNum = 3;
 	uint8_t ucChnl = 0;
 	uint32_t u4SlotBitmap = 0;
+	enum ENUM_BAND eBand;
 
 	if (!prNetDev) {
 		DBGLOG(NAN, ERROR, "prNetDev error!\n");
@@ -10759,7 +10760,15 @@ priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= i4ArgNum) {
-		u4Ret = kalkStrtou8(apcArgv[1], 0, &(ucChnl));
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(eBand));
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD,
+			       "parse FAW CONFIG band error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &(ucChnl));
 		if (u4Ret) {
 			DBGLOG(REQ, LOUD,
 			       "parse FAW CONFIG channel error u4Ret=%d\n",
@@ -10767,7 +10776,7 @@ priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
 			return -1;
 		}
 
-		u4Ret = kalkStrtou32(apcArgv[2], 0, &(u4SlotBitmap));
+		u4Ret = kalkStrtou32(apcArgv[3], 0, &(u4SlotBitmap));
 		if (u4Ret) {
 			DBGLOG(REQ, LOUD,
 			       "parse FAW CONFIG slotBitmap error u4Ret=%d\n",
@@ -10775,8 +10784,9 @@ priv_driver_set_faw_config(struct net_device *prNetDev, char *pcCommand,
 			return -1;
 		}
 
-		nanSchedNegoCustFawConfigCmd(prGlueInfo->prAdapter, ucChnl,
-					     u4SlotBitmap);
+		nanSchedNegoCustFawConfigCmd(prGlueInfo->prAdapter,
+			ucChnl, eBand,
+			u4SlotBitmap);
 	}
 
 	return 0;

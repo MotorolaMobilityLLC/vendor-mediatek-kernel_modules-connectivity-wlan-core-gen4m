@@ -53,6 +53,10 @@ static struct _APPEND_ATTR_ENTRY_T txDataAttributeTable[] = {
 	  nanDataEngineNDPEAttrAppend },
 	{ NAN_ATTR_ID_DEVICE_CAPABILITY, nanDataEngineDevCapAttrLength,
 	  nanDataEngineDevCapAttrAppend },
+#if (CFG_SUPPORT_NAN_6G == 1)
+	{ NAN_ATTR_ID_DEVICE_CAPABILITY_EXT, nanDataEngineDevCapExtAttrLength,
+	  nanDataEngineDevCapExtAttrAppend },
+#endif
 	{ NAN_ATTR_ID_NAN_AVAILABILITY, nanDataEngineNanAvailAttrLength,
 	  nanDataEngineNanAvailAttrAppend },
 	{ NAN_ATTR_ID_NDC, nanDataEngineNdcAttrLength,

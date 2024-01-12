@@ -1397,6 +1397,10 @@ struct WIFI_VAR {
 	uint8_t ucDftQuotaStartOffset; /* Unit: NAN slot */
 	uint8_t ucDftNdcStartOffset;
 	uint8_t ucNanFixChnl;
+	uint8_t ucNanFixBand;
+	uint8_t ucNanEnable6g;
+	uint8_t ucNanBandChnlType;
+	uint8_t ucNan6gBandwidth;
 	unsigned char fgEnableNDPE;
 	uint8_t ucDftNdlQosQuotaVal;    /* Unit: NAN slot */
 	uint16_t u2DftNdlQosLatencyVal; /* Unit: NAN slot */

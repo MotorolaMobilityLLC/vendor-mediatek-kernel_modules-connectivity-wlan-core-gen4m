@@ -6,7 +6,12 @@
 #include "precomp.h"
 
 /* Table E4 - Global Operating Classes */
+#if (CFG_SUPPORT_NAN_6G == 1)
+#define REG_MAX_SUPPORT_CHANNEL 59
+#else
 #define REG_MAX_SUPPORT_CHANNEL 13
+#endif
+
 #define REG_MAX_DB_SIZE 25
 
 struct _NAN_CHNL_REG_INFO_T {
@@ -27,6 +32,216 @@ struct _NAN_CHNL_REG_INFO_T {
  * Table E4 - Global Operating Classes
  *******************************************
  */
+#if (CFG_SUPPORT_NAN_6G == 1)
+struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[REG_MAX_DB_SIZE] = {
+		{81, 20, CHNL_EXT_SCN,
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+			11, 12,  13,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{82, 20, CHNL_EXT_SCN,
+			{14, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{83, 40, CHNL_EXT_SCA,
+			{1, 2, 3, 4, 5, 6, 7, 8, 9, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{84, 40, CHNL_EXT_SCB,
+			{5, 6, 7, 8, 9, 10, 11, 12, 13, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{115, 20, CHNL_EXT_SCN,
+			{36, 40, 44, 48, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{116, 40, CHNL_EXT_SCA,
+			{36, 44, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{117, 40, CHNL_EXT_SCB,
+			{40, 48, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{118, 20, CHNL_EXT_SCN,
+			{52, 56, 60, 64, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{119, 40, CHNL_EXT_SCA,
+			{52, 60, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{120, 40, CHNL_EXT_SCB,
+			{56, 64, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{121, 20, CHNL_EXT_SCN,
+			{100, 104, 108, 112, 116, 120, 124, 128, 132, 136,
+			140, 144,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{122, 40, CHNL_EXT_SCA,
+			{100, 108, 116, 124, 132, 140, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{123, 40, CHNL_EXT_SCB,
+			{104, 112, 120, 128, 136, 144, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+
+		},
+		{124, 20, CHNL_EXT_SCN,
+			{149, 153, 157, 161, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{125, 20, CHNL_EXT_SCN,
+			{149, 153, 157, 161, 165, 169, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{126, 40, CHNL_EXT_SCA,
+			{149, 157, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{127, 40, CHNL_EXT_SCB,
+			{153, 161, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},
+		{128, 80, CHNL_EXT_SCN,
+			{42, 58, 106, 122, 138, 155, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},    /* center channel list */
+		{129, 160, CHNL_EXT_SCN,
+			{50, 114, 0, 0, 0, 0, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},  /* center channel list */
+		{130, 80, CHNL_EXT_SCN,
+			{42, 58, 106, 122, 138, 155, 0, 0, 0, 0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		},    /* center channel list */
+		{ 131, 20, CHNL_EXT_SCN,
+			{  1,   5,   9,  13,  17,  21,  25,  29,  33,  37,
+			41,  45,  49,  53,  57,  61,  65,  69,  73,  77,
+			81,  85,  89,  93,  97, 101, 105, 109, 113, 117,
+			121, 125, 129, 133, 137, 141, 145, 149, 153, 157,
+			161, 165, 169, 173, 177, 181, 185, 189, 193, 197,
+			201, 205, 209, 213, 217, 221, 225, 229, 233}
+		},
+		{ 132, 40, CHNL_EXT_SCN,
+			{  3,  11,  19,  27,  35,  43,  51,  59,  67,  75,
+			83,  91,  99, 107, 115, 123, 131, 139, 147, 155,
+			163, 171, 179, 187, 195, 203, 211, 219, 227,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+			/* 6G BW40 => Center Channel */
+		},
+		{ 133, 80, CHNL_EXT_SCN,
+			{  7,  23,  39,  55,  71,  87, 103, 119, 135, 151,
+			167, 183, 199, 215,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+			/* 6G BW80 => Center Channel */
+		},
+		{ 134, 160, CHNL_EXT_SCN,
+			{ 15,  47,  79, 111, 143, 175, 207,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+			/* 6G BW160 => Center Channel */
+		},
+		/* should be the last one */
+		{0, 0, 0,
+			{  0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
+			0,   0,   0,   0,   0,   0,   0,   0,   0}
+		}
+		/* should be the last one */
+		};
+#else
 struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[REG_MAX_DB_SIZE] = {
 	{ 81, 20, CHNL_EXT_SCN, { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13 } },
 	{ 82, 20, CHNL_EXT_SCN, { 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
@@ -90,6 +305,7 @@ struct _NAN_CHNL_REG_INFO_T g_rNanRegInfo[REG_MAX_DB_SIZE] = {
 	  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	    0 } } /* should be the last one */
 };
+#endif
 
 /*******************************************
  * Table E4 - Global Operating Classes
@@ -129,8 +345,57 @@ uint8_t nanRegGet20MHzPrimaryChnlIndex(uint8_t ucOperatingClass,
 
 uint8_t
 nanRegGetChannelByOrder(uint8_t ucOperatingClass, uint16_t *pu2ChnlBitmap) {
-	uint8_t i, j;
+	uint32_t i, j;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint8_t *pucBuf;
+	uint32_t u4MaxChnlBitmap = sizeof(*pu2ChnlBitmap) * 8;
 
+	uint8_t aucSupportChnlList[(REG_MAX_SUPPORT_CHANNEL / 8) + 1];
+	uint8_t uc6gStartChnl = 0, uc6gChnlNum = 0;
+
+	pucBuf = (uint8_t *)pu2ChnlBitmap;
+
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
+		uc6gStartChnl = pucBuf[0];
+		uc6gChnlNum = pucBuf[1];
+
+		nanRegConvert6gChannelBitmap(ucOperatingClass,
+			pu2ChnlBitmap,
+			aucSupportChnlList);
+		pucBuf = aucSupportChnlList;
+		u4MaxChnlBitmap = REG_MAX_SUPPORT_CHANNEL;
+	}
+
+	i = nanRegFindRecordIdx(ucOperatingClass);
+	if (i != REG_MAX_DB_SIZE) {
+		for (j = 0; j < u4MaxChnlBitmap; j++) {
+			uint8_t ucTmp =
+				g_rNanRegInfo[i].aucSupportChnlList[j+1];
+			uint8_t ucReturnTmp =
+				g_rNanRegInfo[i].aucSupportChnlList[j];
+			if (pucBuf[j / 8] & BIT(j % 8)) {
+				pucBuf[j / 8] &= (~(BIT(j % 8)));
+				if (IS_6G_OP_CLASS(ucOperatingClass)) {
+					if (ucTmp != 0) {
+						uc6gStartChnl = ucTmp;
+						uc6gChnlNum--;
+						*pu2ChnlBitmap =
+							((uc6gChnlNum << 8) |
+							uc6gStartChnl);
+						DBGLOG(NAN, LOUD,
+							"New 6g s:%02x, c:%02x, %02x\n",
+							uc6gChnlNum,
+							uc6gStartChnl,
+							*pu2ChnlBitmap);
+					}
+				}
+				if (ucReturnTmp != 0)
+					return ucReturnTmp;
+			}
+		}
+	}
+#else
 	i = nanRegFindRecordIdx(ucOperatingClass);
 	if (i != REG_MAX_DB_SIZE) {
 		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
@@ -143,6 +408,7 @@ nanRegGetChannelByOrder(uint8_t ucOperatingClass, uint16_t *pu2ChnlBitmap) {
 			}
 		}
 	}
+#endif
 
 	return REG_INVALID_INFO;
 }
@@ -155,6 +421,15 @@ nanRegGetChannelBitmap(uint8_t ucOperatingClass, uint8_t ucChannel,
 
 	pucBuf = (uint8_t *)pu2ChnlBitmap;
 	i = nanRegFindRecordIdx(ucOperatingClass);
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		pucBuf[0] = ucChannel;
+		pucBuf[1] = 1;
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif
+
 	if (i != REG_MAX_DB_SIZE) {
 		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
 			if (g_rNanRegInfo[i].aucSupportChnlList[j] == ucChannel)
@@ -189,24 +464,98 @@ nanRegGetSco(uint8_t ucOperatingClass) {
 
 uint8_t
 nanRegGetPrimaryChannel(uint8_t ucChannel, uint8_t ucBw, uint8_t ucNonContBw,
-			uint8_t ucPriChnlIdx) {
-	if ((ucBw == 20) || (ucBw == 40))
+			uint8_t ucPriChnlIdx, uint8_t ucOperatingClass) {
+	uint8_t ucIs6gChnl = IS_6G_OP_CLASS(ucOperatingClass);
+
+	if ((ucBw == 20) || ((ucBw == 40) && !ucIs6gChnl))
 		return ucChannel;
 	else if ((ucBw == 160) && (ucNonContBw == 0))
 		ucChannel = ucChannel - 14 + (ucPriChnlIdx * 4);
+	else if ((ucBw == 40) && ucIs6gChnl)
+		ucChannel = ucChannel - 2 + (ucPriChnlIdx * 4);
 	else
 		ucChannel = ucChannel - 6 + (ucPriChnlIdx * 4);
 
 	return ucChannel;
 }
 
-uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
+uint8_t
+nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 		uint16_t *pu2ChnlBitmap, uint8_t ucNonContBw,
 		uint8_t ucPriChnlBitmap)
 {
 	uint32_t i, j;
 	uint8_t *pucBuf;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint32_t u4MaxChnlBitmap = sizeof(*pu2ChnlBitmap) * 8;
+	uint8_t aucSupportChnlList[(REG_MAX_SUPPORT_CHANNEL / 8) + 1];
+	uint8_t uc6gStartChnl = 0, uc6gChnlNum = 0;
 
+	pucBuf = (uint8_t *)pu2ChnlBitmap;
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+
+		kalMemZero(aucSupportChnlList, sizeof(aucSupportChnlList));
+		uc6gStartChnl = pucBuf[0];
+		uc6gChnlNum = pucBuf[1];
+
+		nanRegConvert6gChannelBitmap(ucOperatingClass,
+			pu2ChnlBitmap,
+			aucSupportChnlList);
+		pucBuf = aucSupportChnlList;
+		u4MaxChnlBitmap = REG_MAX_SUPPORT_CHANNEL;
+/*
+ * nanUtilDump(NULL, "[6g Prim Chnl Map]",
+ * (uint8_t *)pucBuf,
+ * sizeof(aucSupportChnlList));
+ */
+	}
+	i = nanRegFindRecordIdx(ucOperatingClass);
+	if (i != REG_MAX_DB_SIZE) {
+		for (j = 0; j < u4MaxChnlBitmap; j++) {
+			uint8_t ucTmp =
+				g_rNanRegInfo[i].aucSupportChnlList[j+1];
+
+			if (pucBuf[j / 8] & BIT(j % 8)) {
+				pucBuf[j / 8] &= (~(BIT(j % 8)));
+				/*
+				 * Because there's a while loop in caller,
+				 * here should clear bitmap once
+				 * the channel has been selected
+				 */
+				if (IS_6G_OP_CLASS(ucOperatingClass)) {
+					if ((j < (u4MaxChnlBitmap - 1)) &&
+						(ucTmp != 0) &&
+						(uc6gChnlNum > 1)) {
+						uc6gStartChnl = ucTmp;
+						uc6gChnlNum--;
+						*pu2ChnlBitmap =
+							((uc6gChnlNum << 8) |
+							uc6gStartChnl);
+					} else {
+						*pu2ChnlBitmap = 0;
+					}
+					DBGLOG(NAN, LOUD,
+						"ReNew 6g chnl s:%d, c:%d, 0x%04x\n",
+						uc6gStartChnl,
+						uc6gChnlNum,
+						*pu2ChnlBitmap);
+				}
+				if (g_rNanRegInfo[i].aucSupportChnlList[j] !=
+				    0) {
+					return nanRegGetPrimaryChannel(
+						g_rNanRegInfo[i]
+							.aucSupportChnlList[j],
+						nanRegGetBw(ucOperatingClass),
+						ucNonContBw,
+						nanRegGet20MHzPrimaryChnlIndex(
+							ucOperatingClass,
+							ucPriChnlBitmap),
+							ucOperatingClass);
+				}
+			}
+		}
+	}
+#else
 	pucBuf = (uint8_t *)pu2ChnlBitmap;
 	i = nanRegFindRecordIdx(ucOperatingClass);
 	if (i == REG_MAX_DB_SIZE)
@@ -225,8 +574,10 @@ uint8_t nanRegGetPrimaryChannelByOrder(uint8_t ucOperatingClass,
 			nanRegGetBw(ucOperatingClass),
 			ucNonContBw,
 			nanRegGet20MHzPrimaryChnlIndex(ucOperatingClass,
-				ucPriChnlBitmap));
+				ucPriChnlBitmap),
+				ucOperatingClass);
 	}
+#endif
 
 	return REG_INVALID_INFO;
 }
@@ -246,6 +597,10 @@ nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass, uint8_t ucPrimaryChnl) {
 		ucBw = g_rNanRegInfo[i].ucBw;
 		if (ucBw == 20)
 			ucRang = 0;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		else if ((ucBw == 40) && IS_6G_OP_CLASS(ucOperatingClass))
+			ucRang = 2;
+#endif
 		else if (ucBw == 40)
 			ucRang = 0;
 		else if (ucBw == 80)
@@ -271,6 +626,10 @@ nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass, uint8_t ucPrimaryChnl) {
 				else if (nanRegGetSco(ucOperatingClass) ==
 					 CHNL_EXT_SCB)
 					ucCenterChnl = ucChnl - 2;
+#if (CFG_SUPPORT_NAN_6G == 1)
+				else
+					ucCenterChnl = ucChnl;
+#endif
 			} else {
 				ucCenterChnl = ucChnl;
 			}
@@ -282,13 +641,22 @@ nanRegGetCenterChnlByPriChnl(uint8_t ucOperatingClass, uint8_t ucPrimaryChnl) {
 
 uint8_t
 nanRegGetOperatingClass(uint8_t ucBw, uint8_t ucChannel,
-			enum ENUM_CHNL_EXT eSco) {
+			enum ENUM_CHNL_EXT eSco, enum ENUM_BAND eBand) {
 	int i, j;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint8_t ucIs6gChnl = (eBand == BAND_6G) ? TRUE : FALSE;
+#endif
 
 	for (i = 0; i < REG_MAX_DB_SIZE; i++) {
 		if (g_rNanRegInfo[i].ucOperatingClass == 0)
 			break;
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (ucIs6gChnl !=
+			IS_6G_OP_CLASS(
+			g_rNanRegInfo[i].ucOperatingClass))
+			continue;
+#endif
 		if ((g_rNanRegInfo[i].ucBw == ucBw) &&
 		    (g_rNanRegInfo[i].eSco == eSco)) {
 			for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
@@ -310,7 +678,7 @@ union _NAN_BAND_CHNL_CTRL
 nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 		enum ENUM_CHANNEL_WIDTH eChannelWidth,
 		enum ENUM_CHNL_EXT eSco, uint8_t ucChannelS1,
-		uint8_t ucChannelS2) {
+		uint8_t ucChannelS2, enum ENUM_BAND eBand) {
 	union _NAN_BAND_CHNL_CTRL rChnlInfo;
 	uint8_t ucOperatingClass = REG_INVALID_INFO;
 
@@ -326,18 +694,31 @@ nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 	}
 	switch (eChannelWidth) {
 	case CW_20_40MHZ:
-		if (eSco == CHNL_EXT_SCN)
-			ucOperatingClass =
-				nanRegGetOperatingClass(20, ucPriChannel, eSco);
+		if (eSco == CHNL_EXT_SCN) {
+#if (CFG_SUPPORT_NAN_6G == 1)
+			if ((eBand == BAND_6G) && (ucChannelS1 != 0))
+				ucOperatingClass =
+					nanRegGetOperatingClass(40,
+						ucPriChannel,
+						eSco, eBand);
+			else
+#endif
+				ucOperatingClass =
+					nanRegGetOperatingClass(20,
+						ucPriChannel,
+						eSco, eBand);
+		}
 		else if ((eSco == CHNL_EXT_SCA) || (eSco == CHNL_EXT_SCB))
 			ucOperatingClass =
-				nanRegGetOperatingClass(40, ucPriChannel, eSco);
+				nanRegGetOperatingClass(40,
+					ucPriChannel,
+					eSco, eBand);
 		break;
 
 	case CW_80MHZ:
 	case CW_160MHZ:
 		ucOperatingClass =
-			nanRegGetOperatingClass(80, ucChannelS1, eSco);
+			nanRegGetOperatingClass(80, ucChannelS1, eSco, eBand);
 		break;
 
 	case CW_80P80MHZ:
@@ -361,7 +742,11 @@ nanRegGenNanChnlInfo(uint8_t ucPriChannel,
 }
 
 union _NAN_BAND_CHNL_CTRL
-nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel, uint8_t ucBw) {
+nanRegGenNanChnlInfoByPriChannel(
+	uint8_t ucPriChannel,
+	uint8_t ucBw,
+	enum ENUM_BAND eBand)
+{
 	uint32_t u4Idx;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth;
 	enum ENUM_CHNL_EXT eSco;
@@ -369,6 +754,9 @@ nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel, uint8_t ucBw) {
 	uint8_t ucChannelS2;
 	unsigned char fgFound = FALSE;
 	uint8_t ucCenterChnl;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint8_t ucIs6gChnl = (eBand == BAND_6G) ? TRUE : FALSE;
+#endif
 
 	for (u4Idx = 0; (u4Idx < REG_MAX_DB_SIZE) && !fgFound; u4Idx++) {
 		if (g_rNanRegInfo[u4Idx].ucOperatingClass == 0)
@@ -376,6 +764,13 @@ nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel, uint8_t ucBw) {
 
 		if (g_rNanRegInfo[u4Idx].ucBw != ucBw)
 			continue;
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (ucIs6gChnl !=
+			IS_6G_OP_CLASS(
+			g_rNanRegInfo[u4Idx].ucOperatingClass))
+			continue;
+#endif
 
 		ucCenterChnl = nanRegGetCenterChnlByPriChnl(
 			g_rNanRegInfo[u4Idx].ucOperatingClass, ucPriChannel);
@@ -393,6 +788,10 @@ nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel, uint8_t ucBw) {
 	ucChannelS1 = ucChannelS2 = 0;
 	if ((ucBw == 20) || (ucBw == 40)) {
 		eChannelWidth = CW_20_40MHZ;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (ucIs6gChnl && (ucBw == 40))
+			ucChannelS1 = ucCenterChnl;
+#endif
 	} else if (ucBw == 80) {
 		eChannelWidth = CW_80MHZ;
 		ucChannelS1 = ucCenterChnl;
@@ -402,7 +801,7 @@ nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel, uint8_t ucBw) {
 	}
 
 	return nanRegGenNanChnlInfo(ucPriChannel, eChannelWidth, eSco,
-				    ucChannelS1, ucChannelS2);
+				    ucChannelS1, ucChannelS2, eBand);
 }
 
 uint32_t
@@ -428,6 +827,13 @@ nanRegConvertNanChnlInfo(union _NAN_BAND_CHNL_CTRL rChnlInfo,
 	*pucChannelS1 = *pucChannelS2 = 0;
 	if ((ucBw == 20) || (ucBw == 40)) {
 		*peChannelWidth = CW_20_40MHZ;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (IS_6G_OP_CLASS(rChnlInfo.rChannel.u4OperatingClass)) {
+			*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
+				rChnlInfo.rChannel.u4OperatingClass,
+				rChnlInfo.rChannel.u4PrimaryChnl);
+			}
+#endif
 	} else if ((ucBw == 80) && (rChnlInfo.rChannel.u4AuxCenterChnl == 0)) {
 		*peChannelWidth = CW_80MHZ;
 		*pucChannelS1 = nanRegGetCenterChnlByPriChnl(
@@ -456,10 +862,16 @@ nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 
 	if (rNanChnlInfo.rChannel.u4Type ==
 		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
-		if (rNanChnlInfo.rChannel.u4PrimaryChnl < 36)
-			eBand = BAND_2G4;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (IS_6G_OP_CLASS(
+			rNanChnlInfo.rChannel.u4OperatingClass))
+			eBand = BAND_6G;
 		else
-			eBand = BAND_5G;
+#endif
+			if (rNanChnlInfo.rChannel.u4PrimaryChnl < 36)
+				eBand = BAND_2G4;
+			else
+				eBand = BAND_5G;
 	} else {
 		if (rNanChnlInfo.rBand.u4BandIdMask &
 			BIT(NAN_SUPPORTED_BAND_ID_2P4G))
@@ -467,8 +879,53 @@ nanRegGetNanChnlBand(union _NAN_BAND_CHNL_CTRL rNanChnlInfo)
 		else if (rNanChnlInfo.rBand.u4BandIdMask &
 			BIT(NAN_SUPPORTED_BAND_ID_5G))
 			eBand = BAND_5G;
+#if (CFG_SUPPORT_NAN_6G == 1)
+		else if (rNanChnlInfo.rBand.u4BandIdMask &
+			BIT(NAN_SUPPORTED_BAND_ID_6G))
+			eBand = BAND_6G;
+#endif
 	}
 
 	return eBand;
 }
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+uint32_t
+nanRegConvert6gChannelBitmap(uint8_t ucOperatingClass,
+	uint16_t *pu2ChnlBitmap,
+	uint8_t *pucNewChnlBitmap)
+{
+	int i, j, u4StartIdx = 0;
+	uint8_t *pucBuf;
+	uint8_t uc6gStartChnl, uc6gChnlNum;
+
+	pucBuf = (uint8_t *)pu2ChnlBitmap;
+
+	i = nanRegFindRecordIdx(ucOperatingClass);
+
+	if (!IS_6G_OP_CLASS(ucOperatingClass))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	uc6gStartChnl = pucBuf[0];
+	uc6gChnlNum = pucBuf[1];
+
+	DBGLOG(NAN, LOUD, "6g s:%d, c:%d, 0x%04x\n",
+		uc6gStartChnl, uc6gChnlNum, *pu2ChnlBitmap);
+
+	if (i != REG_MAX_DB_SIZE) {
+		for (j = 0; j < REG_MAX_SUPPORT_CHANNEL; j++) {
+			if (g_rNanRegInfo[i].aucSupportChnlList[j] ==
+				uc6gStartChnl) {
+				u4StartIdx = j;
+			}
+
+			if ((g_rNanRegInfo[i].aucSupportChnlList[j] >=
+				uc6gStartChnl) &&
+				((j - u4StartIdx) < uc6gChnlNum))
+				pucNewChnlBitmap[j / 8] |= BIT(j % 8);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif

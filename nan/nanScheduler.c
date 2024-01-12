@@ -35,6 +35,26 @@
 #define NAN_5G_HIGH_BW80_DISC_CH_OP_CLASS 128
 #define NAN_5G_LOW_BW80_DISC_CH_OP_CLASS 128
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+/* 6G chnl info */
+#define NAN_6G_BW20_DEFAULT_CHANNEL	37
+
+#define NAN_6G_BW20_OP_CLASS	131
+#define NAN_6G_BW40_OP_CLASS	132
+#define NAN_6G_BW80_OP_CLASS	133
+#define NAN_6G_BW160_OP_CLASS	134
+
+#define NAN_6G_BW20_START_CHNL	1
+#define NAN_6G_BW40_START_CHNL	3
+#define NAN_6G_BW80_START_CHNL	7
+
+#define NAN_6G_BW20_TOTAL_CHNL_NUM	59
+#define NAN_6G_BW40_TOTAL_CHNL_NUM	29
+#define NAN_6G_BW80_TOTAL_CHNL_NUM	14
+#endif
+
+#define NAN_MAX_PREFER_CHNL_SEL			4
+
 #define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)                           \
 	((pu4AvailMap[u2SlotIdx / NAN_SLOTS_PER_DW_INTERVAL] &                 \
 	  BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) != 0)
@@ -333,6 +353,7 @@ struct _NAN_SCHEDULER_T {
 	unsigned char fgEn2g;
 	unsigned char fgEn5gH;
 	unsigned char fgEn5gL;
+	unsigned char fgEn6g;
 
 	uint8_t ucNanAvailAttrSeqId; /* shared by all availability attr */
 	uint16_t u2NanAvailAttrControlField;     /* tracking changed flags */
@@ -424,7 +445,7 @@ struct _NAN_SCHED_EVENT_SCHEDULE_CONFIG_T {
 	uint8_t fgEn2g;
 	uint8_t fgEn5gH;
 	uint8_t fgEn5gL;
-	uint8_t aucRsvd[1];
+	uint8_t fgEn6g;
 };
 
 struct _NAN_SCHED_EVENT_DW_INTERVAL_T {
@@ -466,6 +487,15 @@ union _NAN_BAND_CHNL_CTRL g_r5gDwChnl = {
 	.rChannel.u4PrimaryChnl = NAN_5G_HIGH_DISC_CHANNEL,
 	.rChannel.u4AuxCenterChnl = 0
 };
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+union _NAN_BAND_CHNL_CTRL g_r6gDefChnl = {
+	.rChannel.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+	.rChannel.u4OperatingClass = NAN_6G_BW20_OP_CLASS,
+	.rChannel.u4PrimaryChnl = NAN_6G_BW20_DEFAULT_CHANNEL,
+	.rChannel.u4AuxCenterChnl = 0
+};
+#endif
 
 union _NAN_BAND_CHNL_CTRL g_rPreferredChnl = {
 	.rChannel.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
@@ -521,6 +551,21 @@ struct _NAN_POTENTIAL_CHNL_MAP_T g_arPotentialChnlMap[] = {
 
 	{ 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 } }
 };
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+struct _NAN_POTENTIAL_CHNL_T g_ar6gPotentialChnlMap[NAN_CHNL_BW_NUM] = {
+	{NAN_6G_BW20_OP_CLASS, 0,
+		((NAN_6G_BW20_START_CHNL & 0xFF) |
+		(NAN_6G_BW20_TOTAL_CHNL_NUM << 8))},
+	{NAN_6G_BW40_OP_CLASS, BIT(1),
+		((NAN_6G_BW40_START_CHNL & 0xFF) |
+		(NAN_6G_BW40_TOTAL_CHNL_NUM << 8))},
+	{NAN_6G_BW80_OP_CLASS, BIT(1),
+		((NAN_6G_BW80_START_CHNL & 0xFF) |
+		(NAN_6G_BW80_TOTAL_CHNL_NUM << 8))},
+	{0, 0, 0},
+};
+#endif
 
 #if (CFG_NAN_SCHEDULER_VERSION == 1)
 /* Record Non-NAN network channel bitmap */
@@ -747,44 +792,31 @@ nanGetNegoControlBlock(struct ADAPTER *prAdapter) {
 }
 
 unsigned char
-nanIsAllowedChannel(struct ADAPTER *prAdapter, uint8_t ucChnl) {
+nanIsAllowedChannel(struct ADAPTER *prAdapter,
+	union _NAN_BAND_CHNL_CTRL rNanChnlInfo) {
 	enum ENUM_BAND eBand;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
-#ifdef NAN_UNUSED
-	if (ucChnl < 36) {
-		eBand = BAND_2G4;
+	eBand = nanRegGetNanChnlBand(rNanChnlInfo);
 
+	if (eBand == BAND_2G4) {
 		if (!prNanScheduler->fgEn2g)
 			return FALSE;
-	} else if (ucChnl < 100) {
-		eBand = BAND_5G;
-
-		if (!prNanScheduler->fgEn5gL)
-			return FALSE;
-	} else {
-		eBand = BAND_5G;
-
-		if (!prNanScheduler->fgEn5gH)
+	} else if (eBand == BAND_5G) {
+		if (!prNanScheduler->fgEn5gL && !prNanScheduler->fgEn5gH)
 			return FALSE;
 	}
-#else
-	if (ucChnl < 36) {
-		eBand = BAND_2G4;
-
-		if (!prNanScheduler->fgEn2g)
-			return FALSE;
-	} else {
-		eBand = BAND_5G;
-
-		if (!prNanScheduler->fgEn5gL && !prNanScheduler->fgEn5gH)
+#if (CFG_SUPPORT_NAN_6G == 1)
+	else if (eBand == BAND_6G) {
+		if (!prNanScheduler->fgEn6g)
 			return FALSE;
 	}
 #endif
 
-	if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucChnl))
+	if (!rlmDomainIsLegalChannel(prAdapter, eBand,
+		rNanChnlInfo.rChannel.u4PrimaryChnl))
 		return FALSE;
 
 	return TRUE;
@@ -1666,6 +1698,29 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 	u4Bw = nanRegGetBw(ucOperatingClass);
 	prChnlEntry->ucOperatingClass = ucOperatingClass;
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (IS_6G_OP_CLASS(ucOperatingClass)) {
+		if (u4Bw == 20) {
+			prChnlEntry->ucPrimaryChnlBitmap = 0;
+			prChnlEntry->u2AuxChannelBitmap = 0;
+			nanRegGetChannelBitmap(ucOperatingClass, ucPrimaryChnl,
+				       &prChnlEntry->u2ChannelBitmap);
+		} else if ((u4Bw == 40) || (u4Bw == 80)) {
+			ucCenterChnl = nanRegGetCenterChnlByPriChnl(
+				ucOperatingClass, ucPrimaryChnl);
+			nanRegGetChannelBitmap(ucOperatingClass, ucCenterChnl,
+				       &prChnlEntry->u2ChannelBitmap);
+			ucChnlLowerBound = (u4Bw == 40) ?
+				(ucCenterChnl - 2) : (ucCenterChnl - 6);
+			prChnlEntry->ucPrimaryChnlBitmap =
+				(1 << ((ucPrimaryChnl - ucChnlLowerBound) / 4));
+		} else {
+			/* to be add */
+		}
+		return WLAN_STATUS_SUCCESS;
+	}
+#endif
+
 	if (u4Bw == 20 || u4Bw == 40) {
 		prChnlEntry->ucPrimaryChnlBitmap = 0;
 		prChnlEntry->u2AuxChannelBitmap = 0;
@@ -1775,7 +1830,13 @@ uint32_t nanParserGenBandChnlEntryListField(struct ADAPTER *prAdapter,
 			prBandChnlList->ucNumberOfEntry++;
 			pucPos++;
 		}
-
+#if (CFG_SUPPORT_NAN_6G == 1)
+		if (u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_6G)) {
+			*pucPos = NAN_SUPPORTED_BAND_ID_6G;
+			prBandChnlList->ucNumberOfEntry++;
+			pucPos++;
+		}
+#endif
 		*pu4BandChnlEntryListFieldLength =
 			(pucPos - pucBandChnlEntryListField);
 	} else {
@@ -1889,6 +1950,11 @@ nanQueryPeerPotentialChnlInfoBySlot(
 	uint32_t u4ChnlIdx;
 	union _NAN_BAND_CHNL_CTRL rSelChnl = g_rNullChnl;
 	union _NAN_BAND_CHNL_CTRL *prCurrChnl;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint32_t u4PrefChnlIdx;
+	union _NAN_BAND_CHNL_CTRL rPrefChnl = g_rNullChnl;
+	enum ENUM_BAND eBand, ePrefBand;
+#endif
 
 	prPeerSchDesc = nanSchedGetPeerSchDesc(prAdapter, u4SchIdx);
 	if (prPeerSchDesc == NULL)
@@ -1925,13 +1991,60 @@ nanQueryPeerPotentialChnlInfoBySlot(
 			continue;
 		}
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+		/* Select potential channel by local prefrence priority */
+		for (u4PrefChnlIdx = 0;
+			u4PrefChnlIdx < NAN_MAX_PREFER_CHNL_SEL;
+			u4PrefChnlIdx++) {
+			switch (u4PrefChnlIdx) {
+			case 0:
+				rPrefChnl = g_rPreferredChnl;
+				break;
+			case 1:
+				rPrefChnl = g_r6gDefChnl;
+				break;
+			case 2:
+				rPrefChnl = g_r5gDwChnl;
+				break;
+			case 3:
+				rPrefChnl = g_r2gDwChnl;
+				break;
+			default:
+				break;
+			}
+			ePrefBand =
+				nanRegGetNanChnlBand(rPrefChnl);
+
+			prCurrChnl = &prNanAvailEntry->arBandChnlCtrl[0];
+			for (u4ChnlIdx = 0;
+			     u4ChnlIdx < prNanAvailEntry->ucNumBandChnlCtrl;
+			     u4ChnlIdx++, prCurrChnl++) {
+				if (nanIsAllowedChannel(
+					    prAdapter,
+					    *prCurrChnl)) {
+					eBand =
+					    nanRegGetNanChnlBand(*prCurrChnl);
+
+					if (!rSelChnl.rChannel.u4PrimaryChnl)
+						rSelChnl = *prCurrChnl;
+
+					if ((eBand == ePrefBand)
+					    &&
+					    (prCurrChnl->rChannel.u4PrimaryChnl
+					    ==
+					    rPrefChnl.rChannel.u4PrimaryChnl))
+						return *prCurrChnl;
+				}
+			}
+		}
+#else
 		prCurrChnl = &prNanAvailEntry->arBandChnlCtrl[0];
 		for (u4ChnlIdx = 0;
-		     u4ChnlIdx < prNanAvailEntry->ucNumBandChnlCtrl;
-		     u4ChnlIdx++) {
+			 u4ChnlIdx < prNanAvailEntry->ucNumBandChnlCtrl;
+			 u4ChnlIdx++) {
 			if (nanIsAllowedChannel(
-				    prAdapter,
-				    prCurrChnl->rChannel.u4PrimaryChnl)) {
+					prAdapter,
+					*prCurrChnl)) {
 				if (rSelChnl.rChannel.u4PrimaryChnl == 0)
 					rSelChnl = *prCurrChnl;
 
@@ -1948,6 +2061,8 @@ nanQueryPeerPotentialChnlInfoBySlot(
 				}
 			}
 		}
+#endif
+
 	}
 
 	return rSelChnl;
@@ -2652,6 +2767,12 @@ nanSchedChkConcurrOp(union _NAN_BAND_CHNL_CTRL rCurrChnlInfo,
 	uint8_t ucChannelS1Curr;
 	uint8_t ucChannelS2Curr;
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (nanRegGetNanChnlBand(rCurrChnlInfo) !=
+		nanRegGetNanChnlBand(rNewChnlInfo))
+		return CNM_CH_CONCURR_MCC;
+#endif
+
 	if (nanRegConvertNanChnlInfo(rCurrChnlInfo, &ucPrimaryChCurr,
 				     &eChannelWidthCurr, &eSCOCurr,
 				     &ucChannelS1Curr,
@@ -2719,13 +2840,17 @@ nanSchedConvergeChnlInfo(struct ADAPTER *prAdapter,
 			 union _NAN_BAND_CHNL_CTRL rChnlInfo) {
 	union _NAN_BAND_CHNL_CTRL rSelChnlInfo;
 	uint32_t u4MaxAllowedBw;
+	enum ENUM_BAND eBand;
+
+	eBand = nanRegGetNanChnlBand(rChnlInfo);
 
 	u4MaxAllowedBw = nanSchedConfigGetAllowedBw(
-		prAdapter, rChnlInfo.rChannel.u4PrimaryChnl);
+		prAdapter, eBand);
 	if (nanRegGetBw(rChnlInfo.rChannel.u4OperatingClass) !=
 	    u4MaxAllowedBw) {
 		rSelChnlInfo = nanRegGenNanChnlInfoByPriChannel(
-			rChnlInfo.rChannel.u4PrimaryChnl, u4MaxAllowedBw);
+			rChnlInfo.rChannel.u4PrimaryChnl, u4MaxAllowedBw,
+			eBand);
 	} else {
 		rSelChnlInfo = rChnlInfo;
 	}
@@ -2741,33 +2866,51 @@ nanSchedChooseBestFromChnlBitmap(struct ADAPTER *prAdapter,
 	uint8_t ucChnl;
 	uint8_t ucFirstChnl;
 	uint8_t ucPriChnl;
+	union _NAN_BAND_CHNL_CTRL rNanChnlInfo;
+	enum ENUM_BAND eBand;
 
 	ucPriChnl = ucFirstChnl = 0;
+
 	do {
-		ucChnl = nanRegGetPrimaryChannelByOrder(ucOperatingClass,
-				pu2ChnlBitmap, fgNonContBw, ucPriChnlBitmap);
+		ucChnl = nanRegGetPrimaryChannelByOrder(
+			ucOperatingClass, pu2ChnlBitmap, fgNonContBw,
+			ucPriChnlBitmap);
 		if (ucChnl == REG_INVALID_INFO)
 			break;
 
 		if (ucFirstChnl == 0)
 			ucFirstChnl = ucChnl;
 
-		if (!nanIsAllowedChannel(prAdapter, ucChnl))
+		rNanChnlInfo.rChannel.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
+		rNanChnlInfo.rChannel.u4OperatingClass = ucOperatingClass;
+		rNanChnlInfo.rChannel.u4PrimaryChnl = ucChnl;
+		rNanChnlInfo.rChannel.u4AuxCenterChnl = 0;
+
+		if (!nanIsAllowedChannel(prAdapter, rNanChnlInfo))
 			continue;
+
+		eBand = nanRegGetNanChnlBand(rNanChnlInfo);
 
 		if (ucPriChnl == 0)
 			ucPriChnl = ucChnl;
 
-		if (ucChnl < 36) {
+		if (eBand == BAND_2G4) {
 			if (ucChnl == g_r2gDwChnl.rChannel.u4PrimaryChnl) {
 				ucPriChnl = ucChnl;
 				break;
 			}
-		} else {
+		} else if (eBand == BAND_5G) {
 			if (ucChnl == g_r5gDwChnl.rChannel.u4PrimaryChnl) {
 				ucPriChnl = ucChnl;
 				break;
 			}
+		} else {
+#if (CFG_SUPPORT_NAN_6G == 1)
+			if (ucChnl == g_r6gDefChnl.rChannel.u4PrimaryChnl) {
+				ucPriChnl = ucChnl;
+				break;
+			}
+#endif
 		}
 	} while (TRUE);
 
@@ -2784,9 +2927,10 @@ nanSchedGetFixedChnlInfo(struct ADAPTER *prAdapter) {
 
 	if (prAdapter->rWifiVar.ucNanFixChnl != 0) {
 		u4Bw = nanSchedConfigGetAllowedBw(
-			prAdapter, prAdapter->rWifiVar.ucNanFixChnl);
+			prAdapter, prAdapter->rWifiVar.ucNanFixBand);
 		rSelChnlInfo = nanRegGenNanChnlInfoByPriChannel(
-			prAdapter->rWifiVar.ucNanFixChnl, u4Bw);
+			prAdapter->rWifiVar.ucNanFixChnl, u4Bw,
+			prAdapter->rWifiVar.ucNanFixBand);
 	}
 
 	return rSelChnlInfo;
@@ -4122,9 +4266,7 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 						 u4SlotIdx);
 
 				/* Update used band to peer schedule record */
-				eBand =
-				(rLocalChnlInfo.rChannel.u4PrimaryChnl < 36)
-						? BAND_2G4 : BAND_5G;
+				eBand = nanRegGetNanChnlBand(rLocalChnlInfo);
 				i4SlotNum[eBand - 1]++;
 				break;
 			}
@@ -4151,15 +4293,20 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 }
 
 uint32_t
-nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter, uint8_t ucChannel) {
+nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter, enum ENUM_BAND eBand) {
 	enum _NAN_CHNL_BW_MAP eBwMap;
 	uint32_t u4SupportedBw;
 
-	eBwMap = (ucChannel < 36) ?
-		prAdapter->rWifiVar.ucNan2gBandwidth :
-		prAdapter->rWifiVar.ucNan5gBandwidth;
-	/* NAN 2G BW check */
-	if (((ucChannel < 36) || (!prAdapter->rWifiVar.fgEnNanVHT)) &&
+	if (eBand == BAND_5G)
+		eBwMap = prAdapter->rWifiVar.ucNan5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
+	else if (eBand == BAND_6G)
+		eBwMap = prAdapter->rWifiVar.ucNan6gBandwidth;
+#endif
+	else
+		eBwMap = prAdapter->rWifiVar.ucNan2gBandwidth;
+
+	if (((eBand == BAND_2G4) || (!prAdapter->rWifiVar.fgEnNanVHT)) &&
 	    (eBwMap > NAN_CHNL_BW_40))
 		eBwMap = NAN_CHNL_BW_40;
 
@@ -4218,24 +4365,35 @@ nanSchedConfigDefRangingNumSlots(struct ADAPTER *prAdapter,
 
 uint32_t
 nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
-			  unsigned char fgEn5gH, unsigned char fgEn5gL) {
+			  unsigned char fgEn5gH, unsigned char fgEn5gL,
+			  unsigned char fgEn6g) {
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	/* whsu */
 	/* UINT_8 ucDiscChnlBw = BW_20; */
 	uint8_t ucDisc2GChnlBw = MAX_BW_20MHZ;
 	uint8_t ucDisc5GChnlBw = MAX_BW_20MHZ;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	uint8_t ucDisc6GChnlBw = MAX_BW_20MHZ;
+#endif
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
 	prNanScheduler->fgEn2g = fgEn2g;
 	prNanScheduler->fgEn5gH = fgEn5gH;
 	prNanScheduler->fgEn5gL = fgEn5gL;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	prNanScheduler->fgEn6g = fgEn6g && prAdapter->rWifiVar.ucNanEnable6g;
+#endif
 
-	DBGLOG(NAN, INFO, "Allowed Band: %d, %d, %d\n", fgEn2g, fgEn5gH,
-	       fgEn5gL);
+	DBGLOG(NAN, INFO, "Allowed Band: %d, %d, %d, %d, %d\n", fgEn2g, fgEn5gH,
+	       fgEn5gL, fgEn6g, prNanScheduler->fgEn6g);
 
 	ucDisc2GChnlBw = prAdapter->rWifiVar.ucNan2gBandwidth;
 	ucDisc5GChnlBw = prAdapter->rWifiVar.ucNan5gBandwidth;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	ucDisc6GChnlBw = prAdapter->rWifiVar.ucNan6gBandwidth;
+#endif
+
 	/* NAN 2G BW check */
 	if ((!prAdapter->rWifiVar.fgEnNanVHT) &&
 	    (ucDisc2GChnlBw > NAN_CHNL_BW_40))
@@ -4279,6 +4437,25 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 				NAN_5G_LOW_BW80_DISC_CH_OP_CLASS;
 	}
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+	g_r6gDefChnl.rChannel.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
+	g_r6gDefChnl.rChannel.u4AuxCenterChnl = 0;
+	if (prNanScheduler->fgEn6g) {
+		g_r6gDefChnl.rChannel.u4PrimaryChnl =
+			NAN_6G_BW20_DEFAULT_CHANNEL;
+
+		if (ucDisc6GChnlBw == NAN_CHNL_BW_20)
+			g_r6gDefChnl.rChannel.u4OperatingClass =
+				NAN_6G_BW20_OP_CLASS;
+		else if (ucDisc6GChnlBw == NAN_CHNL_BW_40)
+			g_r6gDefChnl.rChannel.u4OperatingClass =
+				NAN_6G_BW40_OP_CLASS;
+		else
+			g_r6gDefChnl.rChannel.u4OperatingClass =
+				NAN_6G_BW80_OP_CLASS;
+	}
+#endif
+
 	if (fgEn2g)
 		g_rPreferredChnl = g_r2gDwChnl;
 
@@ -4286,6 +4463,11 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 		g_rPreferredChnl = g_r5gDwChnl;
 	else if (fgEn5gL)
 		g_rPreferredChnl = g_r5gDwChnl;
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (prNanScheduler->fgEn6g)
+		g_rPreferredChnl = g_r6gDefChnl;
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -4663,7 +4845,7 @@ nanSchedNegoSelectChnlInfo(struct ADAPTER *prAdapter, uint32_t u4SlotIdx) {
 			continue;
 		else if (!nanIsAllowedChannel(
 				 prAdapter,
-				 rSelChnlInfo.rChannel.u4PrimaryChnl))
+				 rSelChnlInfo))
 			continue;
 		else {
 #ifdef NAN_UNUSED
@@ -4700,7 +4882,7 @@ nanSchedNegoSelectChnlInfo(struct ADAPTER *prAdapter, uint32_t u4SlotIdx) {
 			continue;
 		else if (!nanIsAllowedChannel(
 				 prAdapter,
-				 rSelChnlInfo.rChannel.u4PrimaryChnl))
+				 rSelChnlInfo))
 			continue;
 		else {
 #ifdef NAN_UNUSED
@@ -4733,7 +4915,7 @@ nanSchedNegoSelectChnlInfo(struct ADAPTER *prAdapter, uint32_t u4SlotIdx) {
 			continue;
 		else if (!nanIsAllowedChannel(
 				 prAdapter,
-				 rSelChnlInfo.rChannel.u4PrimaryChnl))
+				 rSelChnlInfo))
 			continue;
 		else {
 #ifdef NAN_UNUSED
@@ -4764,6 +4946,11 @@ nanSchedNegoSelectChnlInfo(struct ADAPTER *prAdapter, uint32_t u4SlotIdx) {
 			prAdapter, u4SchIdx, u4AvailDbIdx, u4SlotIdx);
 		u4BandIdMask |= rSelBandInfo.rBand.u4BandIdMask;
 	}
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (((u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_6G)) != 0) &&
+		prNanScheduler->fgEn6g)
+		return g_r6gDefChnl;
+#endif
 	if (((u4BandIdMask & BIT(NAN_SUPPORTED_BAND_ID_5G)) != 0) &&
 	    (prNanScheduler->fgEn5gH || prNanScheduler->fgEn5gL))
 		return g_r5gDwChnl;
@@ -4971,7 +5158,7 @@ nanSchedNegoCustFawResetCmd(struct ADAPTER *prAdapter) {
 
 uint32_t
 nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter, uint8_t ucChnl,
-			     uint32_t u4SlotBitmap) {
+	enum ENUM_BAND eBand, uint32_t u4SlotBitmap) {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
 	union _NAN_BAND_CHNL_CTRL rChnlInfo;
 	uint32_t u4Bw;
@@ -4983,8 +5170,8 @@ nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter, uint8_t ucChnl,
 
 	prScheduler = nanGetScheduler(prAdapter);
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
-	u4Bw = nanSchedConfigGetAllowedBw(prAdapter, ucChnl);
-	rChnlInfo = nanRegGenNanChnlInfoByPriChannel(ucChnl, u4Bw);
+	u4Bw = nanSchedConfigGetAllowedBw(prAdapter, eBand);
+	rChnlInfo = nanRegGenNanChnlInfoByPriChannel(ucChnl, u4Bw, eBand);
 
 	if (prScheduler->fgEn2g)
 		u4SlotBitmap &= ~(BIT(NAN_2G_DW_INDEX));
@@ -6120,7 +6307,7 @@ nanSchedNegoIsRmtCrbConflict(
 			}
 			if (!nanIsAllowedChannel(
 				    prAdapter,
-				    rRmtChnlInfo.rChannel.u4PrimaryChnl)) {
+				    rRmtChnlInfo)) {
 				DBGLOG(NAN, WARN,
 				       "rmt channel (%d) not allowed\n",
 				       rRmtChnlInfo.rChannel.u4PrimaryChnl);
@@ -6213,7 +6400,7 @@ nanSchedNegoIsLocalCrbConflict(
 				fgConflict = FALSE;
 			else if (!nanIsAllowedChannel(
 					 prAdapter,
-					 rRmtChnlInfo.rChannel.u4PrimaryChnl))
+					 rRmtChnlInfo))
 				continue;
 
 			if (nanSchedChkConcurrOp(rLocalChnlInfo,
@@ -6485,7 +6672,7 @@ static void updateDbTimeline(struct ADAPTER *prAdapter,
 			break;
 		} else if (rRmtChnlInfo.rChannel.u4PrimaryChnl != 0) {
 			if (!nanIsAllowedChannel(prAdapter,
-				rRmtChnlInfo.rChannel.u4PrimaryChnl))
+				rRmtChnlInfo))
 				continue;
 
 			if (prLocalChnlInfo->rChannel.u4PrimaryChnl != 0) {
@@ -7893,7 +8080,180 @@ static uint16_t setEntryControl(uint8_t ucAvailType, uint8_t ucPref,
 }
 
 uint32_t
-nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
+nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf)
+{
+#if (CFG_SUPPORT_NAN_6G == 1)
+#define NAN_POTENTIAL_BAND 1
+#define NAN_POTENTIAL_CHANNEL 1
+	uint8_t *pucPos;
+	uint8_t *pucTmp;
+	uint32_t u4EntryIdx;
+	struct _NAN_AVAILABILITY_ENTRY_T *prAvailEntry;
+	uint32_t u4RetLength;
+	uint32_t u2EntryControl;
+	uint32_t au4PotentialAvailMap[NAN_TOTAL_DW];
+	struct _NAN_SCHEDULER_T *prScheduler;
+	uint32_t u4Idx;
+#if NAN_POTENTIAL_BAND
+	union _NAN_BAND_CHNL_CTRL rPotentialBandInfo;
+#endif
+#if NAN_POTENTIAL_CHANNEL
+	uint8_t *pucPotentialChnls;
+	uint32_t u4PotentialChnlSize;
+#endif
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNanSpecificBssInfo;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucOpRxNss = 1;
+
+	prScheduler = nanGetScheduler(prAdapter);
+	prNanSpecificBssInfo =
+		nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_BAND0);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prNanSpecificBssInfo->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		DBGLOG(NAN, ERROR, "NULL prBssInfo, idx=%d\n",
+			prNanSpecificBssInfo->ucBssIndex);
+	else
+		ucOpRxNss = prBssInfo->ucOpRxNss;
+
+	pucPos = pucBuf;
+
+	kalMemSet(au4PotentialAvailMap, 0xFF, sizeof(au4PotentialAvailMap));
+	if (prScheduler->fgEn2g) {
+		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
+			NAN_TIMELINE_UNSET(
+				au4PotentialAvailMap,
+				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
+					NAN_2G_DW_INDEX);
+	}
+	if (prScheduler->fgEn5gH || prScheduler->fgEn5gL) {
+		for (u4EntryIdx = 0; u4EntryIdx < NAN_TOTAL_DW; u4EntryIdx++)
+			NAN_TIMELINE_UNSET(
+				au4PotentialAvailMap,
+				u4EntryIdx * NAN_SLOTS_PER_DW_INTERVAL +
+					NAN_5G_DW_INDEX);
+	}
+
+/* potential channel */
+#if NAN_POTENTIAL_CHANNEL
+	if (prAdapter->rWifiVar.ucNanBandChnlType ==
+		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
+		pucTmp = pucPos;
+
+		prAvailEntry =
+			(struct _NAN_AVAILABILITY_ENTRY_T *)
+			pucTmp;
+
+		/* whsu */
+		u2EntryControl =
+			((prBssInfo->ucOpRxNss <<
+			NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
+			NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
+			((1 <<
+			NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT_OFFSET) &
+			NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) |
+			((3 <<
+			NAN_AVAIL_ENTRY_CTRL_USAGE_PREF_OFFSET) &
+			 NAN_AVAIL_ENTRY_CTRL_USAGE_PREF) |
+			((
+			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN <<
+			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET) &
+			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE);
+
+		prAvailEntry->u2EntryControl = u2EntryControl;
+		pucPos += 4 /* length(2)+entry control(2) */;
+
+		nanParserGenTimeBitmapField(
+			prAdapter, au4PotentialAvailMap,
+			pucPos, &u4RetLength);
+		pucPos += u4RetLength;
+
+		*pucPos = ((prScheduler->u4NumOfPotentialChnlList
+			    << NAN_BAND_CH_ENTRY_LIST_NUM_ENTRY_OFFSET) |
+			   (NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL));
+		pucPos++;
+		for (u4Idx = 0;
+			u4Idx < prScheduler->u4NumOfPotentialChnlList;
+			u4Idx++) {
+			pucPotentialChnls =
+				(uint8_t *)&
+				prScheduler->arPotentialChnlList[u4Idx];
+			u4PotentialChnlSize = 4;
+
+			kalMemCopy(pucPos,
+				pucPotentialChnls,
+				u4PotentialChnlSize);
+
+			pucPos += u4PotentialChnlSize;
+		}
+
+		prAvailEntry->u2Length = (pucPos - pucTmp) - 2 /* length(2) */;
+	}
+#endif
+
+/* potential band */
+#if NAN_POTENTIAL_BAND
+	if (prAdapter->rWifiVar.ucNanBandChnlType ==
+		NAN_BAND_CH_ENTRY_LIST_TYPE_BAND) {
+
+		rPotentialBandInfo.rBand.u4BandIdMask = 0;
+		rPotentialBandInfo.rBand.u4Type =
+			NAN_BAND_CH_ENTRY_LIST_TYPE_BAND;
+		if (prScheduler->fgEn2g)
+			rPotentialBandInfo.rBand.u4BandIdMask |=
+				BIT(NAN_SUPPORTED_BAND_ID_2P4G);
+		if (prScheduler->fgEn5gH || prScheduler->fgEn5gL)
+			rPotentialBandInfo.rBand.u4BandIdMask |=
+				BIT(NAN_SUPPORTED_BAND_ID_5G);
+		if (prScheduler->fgEn6g)
+			rPotentialBandInfo.rBand.u4BandIdMask |=
+				BIT(NAN_SUPPORTED_BAND_ID_6G);
+
+		if (rPotentialBandInfo.rBand.u4BandIdMask != 0) {
+			pucTmp = pucPos;
+			prAvailEntry =
+				(struct _NAN_AVAILABILITY_ENTRY_T *)
+				pucTmp;
+
+			u2EntryControl =
+				((prBssInfo->ucOpRxNss <<
+				NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET)
+				&
+				NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
+				((1 <<
+				NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT_OFFSET)
+				&
+				NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) |
+				((3 <<
+				NAN_AVAIL_ENTRY_CTRL_USAGE_PREF_OFFSET) &
+				NAN_AVAIL_ENTRY_CTRL_USAGE_PREF) |
+				((
+				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN <<
+				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET) &
+				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE);
+
+			prAvailEntry->u2EntryControl = u2EntryControl;
+			/* length(2)+entry control(2) */
+			pucPos += 4;
+
+			nanParserGenTimeBitmapField(
+				prAdapter, au4PotentialAvailMap,
+				pucPos, &u4RetLength);
+			pucPos += u4RetLength;
+
+			nanParserGenBandChnlEntryListField(prAdapter,
+				&rPotentialBandInfo, 1,
+				pucPos, &u4RetLength);
+			pucPos += u4RetLength;
+
+			/* length(2) */
+			prAvailEntry->u2Length = (pucPos - pucTmp) - 2;
+		}
+
+	}
+#endif
+#else
 #define NAN_POTENTIAL_BAND 0
 #define NAN_POTENTIAL_CHANNEL 1
 	uint8_t *pucPos;
@@ -8009,6 +8369,7 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf) {
 		prAvailEntry->u2Length = (pucPos - pucTmp) - 2 /* length(2) */;
 	}
 #endif
+#endif /* CFG_SUPPORT_NAN_6G */
 
 	nanUtilDump(prAdapter, "Potential Windows", pucBuf, (pucPos - pucBuf));
 	return (pucPos - pucBuf);
@@ -8208,6 +8569,10 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 			BIT(NAN_SUPPORTED_BAND_ID_2P4G);
 	if (prScheduler->fgEn5gL || prScheduler->fgEn5gH)
 		prAttrDevCap->ucSupportedBands |= BIT(NAN_SUPPORTED_BAND_ID_5G);
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (prScheduler->fgEn6g)
+		prAttrDevCap->ucSupportedBands |= BIT(NAN_SUPPORTED_BAND_ID_6G);
+#endif
 
 	/* Support VHT Mode */
 	prAttrDevCap->ucOperationMode |= BIT(NAN_DEV_CAP_OP_MODE_PHY_MODE);
@@ -8246,6 +8611,68 @@ nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 
 	return rRetStatus;
 }
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+uint32_t
+nanSchedGetDevCapabilityExtAttr(struct ADAPTER *prAdapter,
+		uint8_t **ppucDevCapExtAttr,
+		uint32_t *pu4DevCapExtAttrLength)
+{
+	uint8_t *pucPos;
+	struct _NAN_ATTR_DEVICE_CAPABILITY_EXT_T *prAttrDevCapExt;
+	struct _NAN_ATTR_EXT_CAPABILITIES_T *prExtCap;
+	struct _NAN_SCHEDULER_T *prScheduler;
+
+	prScheduler = nanGetScheduler(prAdapter);
+
+	prAttrDevCapExt =
+		(struct _NAN_ATTR_DEVICE_CAPABILITY_EXT_T *)
+		g_aucNanIEBuffer;
+	kalMemZero(g_aucNanIEBuffer, NAN_IE_BUF_MAX_SIZE);
+
+	prAttrDevCapExt->ucAttrId = NAN_ATTR_ID_DEVICE_CAPABILITY_EXT;
+	prAttrDevCapExt->u2Length = 0;
+
+	pucPos = prAttrDevCapExt->aucExtCapabilities;
+
+	prExtCap = (struct _NAN_ATTR_EXT_CAPABILITIES_T *)pucPos;
+
+	if (prScheduler->fgEn6g) {
+		prExtCap->ucRegulatoryInfo |=
+			NAN_DEVICE_CAPABILITY_EXT_REG_INFO_EN;
+		prExtCap->ucRegulatoryInfo |=
+			(2 << NAN_DEVICE_CAPABILITY_EXT_REG_INFO_OFFSET);
+	}
+	prExtCap->ucRegulatoryInfo =
+		(prExtCap->ucRegulatoryInfo &
+		NAN_DEVICE_CAPABILITY_EXT_REG_INFO_EN)
+		| (prExtCap->ucRegulatoryInfo &
+		NAN_DEVICE_CAPABILITY_EXT_REG_INFO);
+
+	prExtCap->ucSettings =
+		(prExtCap->ucSettings &
+		(NAN_DEVICE_CAPABILITY_EXT_PARING_SETUP_EN >>
+		NAN_DEVICE_CAPABILITY_EXT_SETTING_OFFSET))
+		|
+		(prExtCap->ucSettings &
+		(NAN_DEVICE_CAPABILITY_EXT_NPK_NIK_CACHE_EN >>
+		NAN_DEVICE_CAPABILITY_EXT_SETTING_OFFSET));
+
+	pucPos += 2; /* RegulatoryInfo(1) + Settings(1) */
+	prAttrDevCapExt->u2Length += 2;
+
+	if (ppucDevCapExtAttr)
+		*ppucDevCapExtAttr = g_aucNanIEBuffer;
+	if (pu4DevCapExtAttrLength)
+		*pu4DevCapExtAttrLength = (pucPos - g_aucNanIEBuffer);
+
+	/* nanUtilDump(prAdapter, "Avail Attr",
+	 *		g_aucNanIEBuffer, (pucPos-g_aucNanIEBuffer));
+	 */
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t
 nanSchedGetUnalignedScheduleAttr(struct ADAPTER *prAdapter,
@@ -8308,6 +8735,10 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 	enum _NAN_CHNL_BW_MAP eBwMap;
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	union _NAN_BAND_CHNL_CTRL rFixChnl;
+	struct _NAN_CHNL_ENTRY_T rChnlEntry;
+#if (CFG_SUPPORT_NAN_6G == 1)
+	struct _NAN_POTENTIAL_CHNL_T *pr6gPotentialChnlMap;
+#endif
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
@@ -8351,6 +8782,24 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 
 	u4Num = 0;
 	prPotentialChnlList = prCmdUpdatePontentialChnlList->arChnlList;
+
+#if (CFG_SUPPORT_NAN_6G == 1)
+	if (prNanScheduler->fgEn6g) {
+		/* Generate 6G potential channel list */
+		eBwMap = prAdapter->rWifiVar.ucNan6gBandwidth;
+		u4Idx = 0;
+		for (pr6gPotentialChnlMap = g_ar6gPotentialChnlMap;
+			(pr6gPotentialChnlMap->ucOpClass != 0) &&
+			(u4Idx <= eBwMap);
+			pr6gPotentialChnlMap++, u4Idx++) {
+			if (u4Num < NAN_MAX_POTENTIAL_CHNL_LIST) {
+				prPotentialChnlList[u4Num] =
+					*pr6gPotentialChnlMap;
+				u4Num++;
+			}
+		}
+	}
+#endif
 
 	for (prPotentialChnlMap =
 		g_arPotentialChnlMap;
@@ -8417,22 +8866,19 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 	prCmdUpdatePontentialChnlList->u4Num = u4Num;
 
 	rFixChnl = nanSchedGetFixedChnlInfo(prAdapter);
+
 	if (rFixChnl.rChannel.u4PrimaryChnl != 0) {
+		nanParserGenChnlEntryField(prAdapter, &rFixChnl, &rChnlEntry);
 		u4Num = 1;
 		prCmdUpdatePontentialChnlList->u4Num = u4Num;
 		prCmdUpdatePontentialChnlList->arChnlList[0].ucOpClass =
 			rFixChnl.rChannel.u4OperatingClass;
 		prCmdUpdatePontentialChnlList->arChnlList[0].ucPriChnlBitmap =
-			0; /* Fixme */
-		prCmdUpdatePontentialChnlList->arChnlList[0].u2ChnlBitmap = 0;
-		nanRegGetChannelBitmap(
-			prCmdUpdatePontentialChnlList->arChnlList[0].ucOpClass,
-			rFixChnl.rChannel.u4PrimaryChnl,
-			&prCmdUpdatePontentialChnlList->arChnlList[0]
-				 .u2ChnlBitmap);
+			rChnlEntry.ucPrimaryChnlBitmap;
+		prCmdUpdatePontentialChnlList->arChnlList[0].u2ChnlBitmap =
+			rChnlEntry.u2ChannelBitmap;
 	}
 
-#if 1
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
 		DBGLOG(NAN, INFO,
 		       "[%d] OpClass:%d, PriChnlBitmap:0x%x, ChnlBitmap:0x%x, Bw:%d\n",
@@ -8441,7 +8887,6 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 		       prPotentialChnlList[u4Idx].u2ChnlBitmap,
 		       nanRegGetBw(prPotentialChnlList[u4Idx].ucOpClass));
 	}
-#endif
 
 	prNanScheduler->u4NumOfPotentialChnlList =
 		prCmdUpdatePontentialChnlList->u4Num;
@@ -9085,7 +9530,8 @@ nanSchedEventScheduleConfig(struct ADAPTER *prAdapter, uint32_t u4SubEvent,
 
 	nanSchedConfigAllowedBand(prAdapter, prEventScheduleConfig->fgEn2g,
 				  prEventScheduleConfig->fgEn5gH,
-				  prEventScheduleConfig->fgEn5gL);
+				  prEventScheduleConfig->fgEn5gL,
+				  prEventScheduleConfig->fgEn6g);
 	nanSchedConfigDefNdlNumSlots(prAdapter, prWifiVar->ucDftNdlQuotaVal);
 	nanSchedConfigDefRangingNumSlots(prAdapter,
 					 prWifiVar->ucDftRangQuotaVal);
@@ -9731,9 +10177,9 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 	switch (u4Data) {
 	case 0:
 #ifdef NAN_UNUSED
-		nanSchedConfigAllowedBand(prAdapter, TRUE, TRUE, TRUE);
+		nanSchedConfigAllowedBand(prAdapter, TRUE, TRUE, TRUE, TRUE);
 #else
-		nanSchedConfigAllowedBand(prAdapter, TRUE, FALSE, FALSE);
+		nanSchedConfigAllowedBand(prAdapter, TRUE, FALSE, FALSE, FALSE);
 #endif
 		nanSchedConfigDefNdlNumSlots(prAdapter, 3);
 		nanSchedConfigDefRangingNumSlots(prAdapter, 1);
@@ -10152,10 +10598,11 @@ uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 		    prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			/* Use NAN BW instead of max(AIS,NAN) */
 			u4Bw = nanSchedConfigGetAllowedBw(prAdapter,
-				prBssInfo->ucPrimaryChannel);
+				prBssInfo->eBand);
 
 			*prChnl = nanRegGenNanChnlInfoByPriChannel(
-				prBssInfo->ucPrimaryChannel, u4Bw);
+				prBssInfo->ucPrimaryChannel, u4Bw,
+				prBssInfo->eBand);
 
 			break;
 		}

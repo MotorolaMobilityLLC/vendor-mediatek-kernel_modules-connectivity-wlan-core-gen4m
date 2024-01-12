@@ -8458,7 +8458,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		(prWifiVar->ucNanFixChnl < 36) ? 0:1, FEATURE_TO_CUSTOMER);
 	}
 	INIT_UINT(prWifiVar->fgNanUnrollInstallTk, "NanUnrollInstallTk", 0,
-		  FEATURE_TO_CUSTOMER);
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanFixBand, "NanFixBand", BAND_2G4,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanEnable6g, "NanEnable6g", 1,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNanBandChnlType, "NanBandChnlType",
+		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucNan6gBandwidth, "Nan6gBw", MAX_BW_20MHZ,
+		FEATURE_TO_CUSTOMER);
 #endif
 
 #ifdef CFG_REUSE_RSN_IE

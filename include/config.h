@@ -2259,6 +2259,10 @@
 #define CFG_SUPPORT_NAN_SHOULD_REMOVE_FOR_NO_TYPEDEF 0
 #endif
 
+#ifndef CFG_SUPPORT_NAN_6G
+#define CFG_SUPPORT_NAN_6G  (0)
+#endif
+
 #ifdef SOC7_0
 #define CFG_SUPPORT_AVOID_DESENSE 1
 #else
