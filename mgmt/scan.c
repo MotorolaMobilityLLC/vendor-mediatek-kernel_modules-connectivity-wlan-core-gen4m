@@ -1398,7 +1398,7 @@ uint8_t scanProcessRnrChannel(IN struct ADAPTER *prAdapter,
 	ieee80211_operating_class_to_band(
 			prNeighborAPInfoField->ucOpClass, &band);
 
-	prChannel = ieee80211_get_channel(priv_to_wiphy(prAdapter->prGlueInfo),
+	prChannel = ieee80211_get_channel(wlanGetWiphy(),
 					ieee80211_channel_to_frequency
 					(prNeighborAPInfoField->ucChannelNum,
 					band));
