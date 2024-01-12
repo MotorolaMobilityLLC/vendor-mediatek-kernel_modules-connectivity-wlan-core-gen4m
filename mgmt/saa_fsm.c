@@ -1242,6 +1242,8 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 
 		if (IS_STA_IN_AIS(prStaRec)) {
 			struct BSS_INFO *prAisBssInfo;
+			struct AIS_FSM_INFO *prAisFsmInfo;
+			struct BSS_DESC *prBssDesc;
 			uint8_t ucBssIndex = 0;
 
 			if (!IS_AP_STA(prStaRec))
@@ -1249,8 +1251,19 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 
 			ucBssIndex = prStaRec->ucBssIndex;
 
-			prAisBssInfo = aisGetAisBssInfo(prAdapter,
-				ucBssIndex);
+			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+			prBssDesc = prAisFsmInfo->prTargetBssDesc;
+
+			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prDeauthFrame->aucSrcAddr)) {
+				DBGLOG(SAA, WARN,
+					"Received a Deauth[" MACSTR
+					"] unmatch target[" MACSTR "]\n",
+					MAC2STR(prDeauthFrame->aucSrcAddr),
+					MAC2STR(prBssDesc->aucBSSID));
+				break;
+			}
 
 			/* if state != CONNECTED, don't do disconnect again */
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
@@ -1460,6 +1473,8 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 
 		if (IS_STA_IN_AIS(prStaRec)) {
 			struct BSS_INFO *prAisBssInfo;
+			struct AIS_FSM_INFO *prAisFsmInfo;
+			struct BSS_DESC *prBssDesc;
 			uint8_t ucBssIndex = 0;
 
 			if (!IS_AP_STA(prStaRec))
@@ -1467,8 +1482,19 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 
 			ucBssIndex = prStaRec->ucBssIndex;
 
-			prAisBssInfo = aisGetAisBssInfo(prAdapter,
-				ucBssIndex);
+			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+			prBssDesc = prAisFsmInfo->prTargetBssDesc;
+
+			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prDisassocFrame->aucSrcAddr)) {
+				DBGLOG(SAA, WARN,
+					"Received a DisAssoc[" MACSTR
+					"] unmatch target[" MACSTR "]\n",
+					MAC2STR(prDisassocFrame->aucSrcAddr),
+					MAC2STR(prBssDesc->aucBSSID));
+				break;
+			}
 
 			if (prStaRec->ucStaState > STA_STATE_1) {
 
