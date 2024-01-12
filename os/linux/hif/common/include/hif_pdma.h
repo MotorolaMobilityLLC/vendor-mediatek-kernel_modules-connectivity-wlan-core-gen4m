@@ -582,6 +582,8 @@ struct RTMP_RX_RING {
 	uint32_t hw_cnt_mask;
 	uint32_t hw_cnt_shift;
 	bool fgIsDumpLog;
+	bool fgIsWaitRxDmaDoneTimeout;
+	uint32_t u4LastRxEventWaitDmaDoneCnt;
 	uint32_t u4PendingCnt;
 	void *pvPacket;
 	uint32_t u4PacketLen;

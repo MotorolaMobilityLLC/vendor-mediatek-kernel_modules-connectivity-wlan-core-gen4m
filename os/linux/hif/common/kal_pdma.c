@@ -1474,7 +1474,9 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 	prDmaBuf = &pRxCell->DmaBuf;
 
-	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port) == 0)
+	prRxRing->u4LastRxEventWaitDmaDoneCnt =
+		halWpdmaGetRxDmaDoneCnt(prGlueInfo, u2Port);
+	if (prRxRing->u4LastRxEventWaitDmaDoneCnt == 0)
 		return FALSE;
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
@@ -1482,8 +1484,10 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(HAL, ERROR, "RX Done bit not ready(PortRead)\n");
 		}
 		prRxRing->fgIsDumpLog = true;
+		prRxRing->fgIsWaitRxDmaDoneTimeout = true;
 		return FALSE;
-	}
+	} else
+		prRxRing->fgIsWaitRxDmaDoneTimeout = false;
 
 #if HIF_INT_TIME_DEBUG
 	kalTrackRxReadyTime(prGlueInfo, u2Port);
@@ -1506,13 +1510,16 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		goto skip;
 	}
 
-	if (pRxD->SDLen0 > u4Len) {
+	if (pRxD->SDLen0 > u4Len || prAdapter->rWifiVar.fgDumpRxEvt) {
 		uint8_t *prBuffer = NULL;
 		uint32_t u4dumpSize = 0;
 
-		DBGLOG(HAL, WARN,
-			"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
-			pRxD->SDLen0, u4Len);
+		if (pRxD->SDLen0 > u4Len) {
+			DBGLOG(HAL, WARN,
+				"Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n",
+				pRxD->SDLen0, u4Len);
+		}
+		DBGLOG(RX, ERROR, "Dump RX Event RxD\n");
 		dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 		u4dumpSize = pRxD->SDLen0;
 		if (u4dumpSize > BITS(0, 13))
@@ -1522,14 +1529,15 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 			if (prMemOps->copyEvent &&
 			    prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
 						prDmaBuf, prBuffer,
-						sizeof(*prBuffer))) {
-				DBGLOG(RX, ERROR, "Dump RX payload\n");
+						u4dumpSize)) {
+				DBGLOG(RX, ERROR, "Dump RX Event payload\n");
 				DBGLOG_MEM8(RX, ERROR, prBuffer,
-						sizeof(*prBuffer));
+						u4dumpSize);
 			}
 			kalMemFree(prBuffer, VIR_MEM_TYPE, sizeof(prBuffer));
 		}
-		goto skip;
+		if (pRxD->SDLen0 > u4Len)
+			goto skip;
 	}
 
 	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
