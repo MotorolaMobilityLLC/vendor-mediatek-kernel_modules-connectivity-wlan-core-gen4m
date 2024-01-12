@@ -2532,13 +2532,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	int iPayloadOffset = 0;
 	uint16_t u2Offset = 0;
 
-	struct WLAN_BEACON_FRAME *prWlanBeaconFrame
-		= (struct WLAN_BEACON_FRAME *) NULL;
-	struct IE_SSID *prIeSsid = (struct IE_SSID *) NULL;
-	struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate
-		= (struct IE_SUPPORTED_RATE_IOT *) NULL;
-	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate
-		= (struct IE_EXT_SUPPORTED_RATE *) NULL;
+	struct WLAN_BEACON_FRAME *prWlanBeaconFrame = NULL;
+	struct IE_SSID *prIeSsid = NULL;
+	struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate = NULL;
+	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate = NULL;
 	uint8_t ucIeDsChannelNum = 0;
 	uint8_t ucIeHtChannelNum = 0;
 	u_int8_t fgIsValidSsid = FALSE;
@@ -2586,7 +2583,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prScanParam = &prAdapter->rWifiVar.rScanInfo.rScanParam;
 
 	eHwBand = prSwRfb->eRfBand;
-	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+	prWlanBeaconFrame = prSwRfb->pvHeader;
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
@@ -4178,13 +4175,12 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 				       struct SW_RFB *prSwRfb)
 {
 	struct SCAN_INFO *prScanInfo;
-	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
+	struct BSS_DESC *prBssDesc = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t *pau4ChBitMap;
-	struct WLAN_BEACON_FRAME *prWlanBeaconFrame
-		= (struct WLAN_BEACON_FRAME *) NULL;
+	struct WLAN_BEACON_FRAME *prWlanBeaconFrame = NULL;
 #if CFG_SLT_SUPPORT
-	struct SLT_INFO *prSltInfo = (struct SLT_INFO *) NULL;
+	struct SLT_INFO *prSltInfo = NULL;
 #endif
 	uint32_t u4Idx = 0;
 	struct WLAN_INFO *prWlanInfo;

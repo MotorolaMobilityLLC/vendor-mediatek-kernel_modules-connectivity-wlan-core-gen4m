@@ -1316,11 +1316,9 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	return prMsduInfo;
 }
 
-uint32_t
-p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
-		uint8_t ucBssIndex,
-		struct MSDU_INFO *prMgmtTxMsdu,
-		u_int8_t fgNonCckRate)
+uint32_t p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
+			    struct MSDU_INFO *prMgmtTxMsdu,
+			    u_int8_t fgNonCckRate)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	/* P_MSDU_INFO_T prTxMsduInfo = (P_MSDU_INFO_T)NULL; */
@@ -5989,7 +5987,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prRetMsduInfo = NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	uint16_t u2EstimateSize = 0, u2EstimatedExtraIELen = 0;
-	uint32_t u4IeArraySize = 0, u4Idx = 0;
+	uint32_t u4Idx = 0;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
@@ -6004,10 +6002,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 
 	u2EstimatedExtraIELen = 0;
 
-	u4IeArraySize =
-		sizeof(txProbeRspIETable) /
-		sizeof(struct APPEND_VAR_IE_ENTRY);
-	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(txProbeRspIETable); u4Idx++) {
 		if (txProbeRspIETable[u4Idx].u2EstimatedFixedIELen) {
 			u2EstimatedExtraIELen +=
 				txProbeRspIETable[u4Idx]
@@ -6082,7 +6077,7 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(struct ADAPTER *prAdapter,
 
 	prRetMsduInfo->ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;
 
-	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(txProbeRspIETable); u4Idx++) {
 		if (txProbeRspIETable[u4Idx].pfnAppendIE)
 			txProbeRspIETable[u4Idx]
 				.pfnAppendIE(prAdapter, prRetMsduInfo);

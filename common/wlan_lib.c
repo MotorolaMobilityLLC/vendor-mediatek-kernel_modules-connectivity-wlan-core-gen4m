@@ -5423,8 +5423,7 @@ uint32_t wlanGetBandIndexByNetwork(struct ADAPTER
  * @return WLAN_STATUS_SUCCESS
  */
 /*----------------------------------------------------------------------------*/
-uint32_t wlanCheckSystemConfiguration(struct ADAPTER
-				      *prAdapter)
+uint32_t wlanCheckSystemConfiguration(struct ADAPTER *prAdapter)
 {
 #if (CFG_NVRAM_EXISTENCE_CHECK == 1) || (CFG_SW_NVRAM_VERSION_CHECK == 1)
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;

@@ -441,9 +441,7 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 			prChnlReqInfo);
 }				/* p2pDevSateAbort_OFF_CHNL_TX */
 
-void p2pComposeLoProbeRsp(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+void p2pComposeLoProbeRsp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct WLAN_BEACON_FRAME rProbeRspFrame;
 	struct WLAN_BEACON_FRAME *prFrame;
@@ -517,10 +515,9 @@ void p2pComposeLoProbeRsp(
 #endif
 
 	/* compose p2p probe rsp frame */
-	prNewMgmtTxMsdu =
-		p2pFuncProcessP2pProbeRsp(prAdapter,
-		ucBssIndex, FALSE, fgHide,
-		&rProbeRspFrame);
+	prNewMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter, ucBssIndex,
+						    FALSE, fgHide,
+						    &rProbeRspFrame);
 
 	if (prNewMgmtTxMsdu) {
 		cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
@@ -538,8 +535,7 @@ void p2pComposeLoProbeRsp(
 #endif
 	}
 
-	prFrame = (struct WLAN_BEACON_FRAME *)
-		prMgmtTxMsdu->prPacket;
+	prFrame = (struct WLAN_BEACON_FRAME *)prMgmtTxMsdu->prPacket;
 
 	DBGLOG(P2P, TRACE,
 		"Dump probe response content to FW.\n");
