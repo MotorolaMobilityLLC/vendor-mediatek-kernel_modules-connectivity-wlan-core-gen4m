@@ -468,13 +468,15 @@ static void ehtRlmFillOpIE(
 	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo,
 		prBssInfo->eBand);
 
-	/* filling operation info field*/
+	/* filling operation info field */
 	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
 
+	/* fixed field in operation info */
 	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
 	prEhtOpInfo->ucCCFS0 = nicGetS1(prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel, ehtRlmGetEhtOpBwByBssOpBw(eht_bw));
 	prEhtOpInfo->ucCCFS1 = 0;
+	u4OverallLen += 3;
 
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
 		prEhtOpInfo->ucControl);
