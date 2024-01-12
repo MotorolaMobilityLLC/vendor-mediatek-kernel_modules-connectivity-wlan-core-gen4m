@@ -304,10 +304,21 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prMldBss = p2pMldBssInit(prGlueInfo->prAdapter, rMacAddr,
 			type == NL80211_IFTYPE_AP);
+		if (!prMldBss) {
+			DBGLOG(P2P, ERROR, "Null prMldBss, type=%d\n", type);
+			break;
+		}
 		ucGroupMldId = prMldBss->ucGroupMldId;
 #endif
 		ucBssIdx = p2pRoleFsmInit(prGlueInfo->prAdapter,
 			u4Idx, ucGroupMldId, rMacAddr);
+		if (ucBssIdx == MAX_BSSID_NUM) {
+			DBGLOG(P2P, ERROR, "p2pRoleFsmInit failed.\n");
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			p2pMldBssUninit(prGlueInfo->prAdapter, prMldBss);
+#endif
+			break;
+		}
 
 		oriRoleHandler = prP2pInfo->aprRoleHandler;
 
