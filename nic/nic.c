@@ -5929,7 +5929,7 @@ void nicAbnormalWakeupHandler(struct ADAPTER *prAdapter)
 			prWifiVar->ucAbnWakeupPktThld) {
 		if (!CHECK_FOR_TIMEOUT(rCurrent,
 				prAdapter->rAbnormalWakeupStat.rStartTime,
-			SEC_TO_SYSTIME(prWifiVar->ucAbnWakeupPktThld))) {
+			SEC_TO_SYSTIME(prWifiVar->ucAbnWakeupDetectIntv))) {
 			prAdapter->ucRxDataMode = RX_DATA_MODE_SUSPEND_TO_FW;
 			nicRXDataModeConfig(prAdapter);
 		} else {
