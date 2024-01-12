@@ -4865,10 +4865,6 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 	prGlueInfo->prAdapter->fgIsInSuspendMode = fgEnable;
 
-#if CFG_SUPPORT_PKT_OFLD
-	nicAbnormalWakeupMonReset(prGlueInfo->prAdapter);
-#endif
-
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		prDev = wlanGetAisNetDev(prGlueInfo, u4Idx);
 		if (!prDev)
