@@ -3931,13 +3931,10 @@ nanCmdDataEnd(struct ADAPTER *prAdapter,
 	dumpMemory8(prNanCmdDataEnd->aucInitiatorDataAddress, MAC_ADDR_LEN);
 #endif
 
-	prNDL = nanDataUtilSearchNdlByMac(
-		prAdapter, prNanCmdDataEnd->aucInitiatorDataAddress);
-	if (prNDL != NULL)
-		prNDP = nanDataUtilSearchNdpByNdpId(prAdapter, prNDL,
-						    prNanCmdDataEnd->ucNDPId);
+	prNDP = nanDataUtilSearchNdpByNdpIdOnly(prAdapter,
+					    prNanCmdDataEnd->ucNDPId);
 
-	if (prNDL == NULL || prNDP == NULL) {
+	if (prNDP == NULL) {
 		/* no matching NDL/NDP - it should have been created when NAF
 		 * - Data Path Request is received
 		 */
