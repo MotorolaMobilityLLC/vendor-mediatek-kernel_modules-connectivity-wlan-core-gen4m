@@ -496,6 +496,18 @@ twtPlannerAddAgrtTbl(
 				(uint8_t *) (prTWTAgrtUpdate),
 				NULL, 0);
 
+#if (CFG_TWT_SMART_STA == 1)
+	if (g_TwtSmartStaCtrl.fgTwtSmartStaReq == TRUE) {
+		g_TwtSmartStaCtrl.fgTwtSmartStaActivated = TRUE;
+		g_TwtSmartStaCtrl.ucFlowId = ucFlowId;
+		g_TwtSmartStaCtrl.ucBssIndex
+			= prBssInfo ? prBssInfo->ucBssIndex : 0;
+		g_TwtSmartStaCtrl.eState
+			= TWT_SMART_STA_STATE_SUCCESS;
+	}
+#endif
+
+
 	return rWlanStatus;
 }
 
@@ -792,6 +804,18 @@ uint32_t twtPlannerReset(
 
 	/* Enable scan after TWT agrt reset */
 	prAdapter->fgEnOnlineScan = TRUE;
+
+#if (CFG_TWT_SMART_STA == 1)
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
 
 	return rWlanStatus;
 }
@@ -1336,6 +1360,19 @@ void twtPlannerTeardownDone(
 
 	/* Enable SCAN after TWT agrt has been tear down */
 	prAdapter->fgEnOnlineScan = TRUE;
+
+#if (CFG_TWT_SMART_STA == 1)
+	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaReq = FALSE;
+	g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq = FALSE;
+	g_TwtSmartStaCtrl.ucBssIndex = 0;
+	g_TwtSmartStaCtrl.ucFlowId = 0;
+	g_TwtSmartStaCtrl.u4CurTp = 0;
+	g_TwtSmartStaCtrl.u4LastTp = 0;
+	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
+	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
+#endif
+
 }
 
 void twtPlannerRxInfoFrm(

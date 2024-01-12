@@ -888,7 +888,9 @@ struct WIFI_VAR {
 	uint8_t ucTWTResponder;
 	uint8_t ucTWTStaBandBitmap;
 #endif
-
+#if (CFG_TWT_SMART_STA == 1)
+	uint8_t ucTWTSmartSta;
+#endif
 	uint8_t ucTspec;
 	uint8_t ucUapsd;
 	uint8_t ucStaUapsd;
