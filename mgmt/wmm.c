@@ -97,56 +97,48 @@ static void wmmAcmDequeueTimeOut(IN struct ADAPTER *prAdapter,
 uint8_t const aucUp2ACIMap[8] = {ACI_BE, ACI_BK, ACI_BK, ACI_BE,
 				 ACI_VI, ACI_VI, ACI_VO, ACI_VO};
 
-void wmmInit(IN struct ADAPTER *prAdapter)
+void wmmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	uint8_t i;
+	struct WMM_INFO *prWmmInfo = aisGetWMMInfo(prAdapter, ucBssIndex);
+	struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
+	uint8_t ucTid = 0;
 
-	for (i = 0; i < KAL_AIS_NUM; i++) {
-		struct WMM_INFO *prWmmInfo =
-			aisGetWMMInfo(prAdapter, i);
-		struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
-		uint8_t ucTid = 0;
-
-		for (ucTid = 0; ucTid < WMM_TSPEC_ID_NUM;
-			ucTid++, prTspecInfo++) {
-			prTspecInfo->ucTid = ucTid;
-			cnmTimerInitTimer(prAdapter,
-			&prTspecInfo->rAddTsTimer,
-			(PFN_MGMT_TIMEOUT_FUNC)
-			wmmSetupTspecTimeOut,
-			(unsigned long)prTspecInfo);
-		}
-#if CFG_SUPPORT_SOFT_ACM
-		cnmTimerInitTimer(prAdapter, &prWmmInfo->rAcmDeqTimer,
-				wmmAcmDequeueTimeOut, i);
-		kalMemZero(&prWmmInfo->arAcmCtrl[0],
-				sizeof(prWmmInfo->arAcmCtrl));
-#endif
-		LINK_INITIALIZE(&prWmmInfo->rActiveTsmReq);
-		prWmmInfo->rTriggeredTsmRptTime = 0;
+	for (ucTid = 0; ucTid < WMM_TSPEC_ID_NUM;
+		ucTid++, prTspecInfo++) {
+		prTspecInfo->ucTid = ucTid;
+		cnmTimerInitTimer(prAdapter,
+		&prTspecInfo->rAddTsTimer,
+		(PFN_MGMT_TIMEOUT_FUNC)
+		wmmSetupTspecTimeOut,
+		(unsigned long)prTspecInfo);
 	}
+#if CFG_SUPPORT_SOFT_ACM
+	cnmTimerInitTimer(prAdapter, &prWmmInfo->rAcmDeqTimer,
+			wmmAcmDequeueTimeOut, ucBssIndex);
+	kalMemZero(&prWmmInfo->arAcmCtrl[0],
+			sizeof(prWmmInfo->arAcmCtrl));
+#endif
+	LINK_INITIALIZE(&prWmmInfo->rActiveTsmReq);
+	prWmmInfo->rTriggeredTsmRptTime = 0;
+
 	DBGLOG(WMM, TRACE, "wmm init done\n");
 }
 
-void wmmUnInit(IN struct ADAPTER *prAdapter)
+void wmmUnInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	uint8_t i;
+	struct WMM_INFO *prWmmInfo = aisGetWMMInfo(prAdapter, ucBssIndex);
+	struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
+	uint8_t ucTid = 0;
 
-	for (i = 0; i < KAL_AIS_NUM; i++) {
-		struct WMM_INFO *prWmmInfo =
-			aisGetWMMInfo(prAdapter, i);
-		struct TSPEC_INFO *prTspecInfo = &prWmmInfo->arTsInfo[0];
-		uint8_t ucTid = 0;
-
-		for (ucTid = 0; ucTid < WMM_TSPEC_ID_NUM;
-			ucTid++, prTspecInfo++)
-			cnmTimerStopTimer(prAdapter,
-				&prTspecInfo->rAddTsTimer);
+	for (ucTid = 0; ucTid < WMM_TSPEC_ID_NUM;
+		ucTid++, prTspecInfo++)
+		cnmTimerStopTimer(prAdapter,
+			&prTspecInfo->rAddTsTimer);
 #if CFG_SUPPORT_SOFT_ACM
-		cnmTimerStopTimer(prAdapter, &prWmmInfo->rAcmDeqTimer);
+	cnmTimerStopTimer(prAdapter, &prWmmInfo->rAcmDeqTimer);
 #endif
-		wmmRemoveAllTsmMeasurement(prAdapter, FALSE, i);
-	}
+	wmmRemoveAllTsmMeasurement(prAdapter, FALSE, ucBssIndex);
+
 	DBGLOG(WMM, TRACE, "wmm uninit done\n");
 }
 

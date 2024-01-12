@@ -862,9 +862,11 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 			return count;
 
 		for (i = 0; i < KAL_AIS_NUM; i++) {
-			nicConfigProcSetCamCfgWrite(prAdapter,
-				fgSetCamCfg,
-				i);
+			struct AIS_FSM_INFO *prAisFsmInfo =
+				aisFsmGetInstance(prAdapter, i);
+
+			nicConfigProcSetCamCfgWrite(prAdapter, fgSetCamCfg,
+			      aisGetMainLinkBssIndex(prAisFsmInfo));
 		}
 	}
 
