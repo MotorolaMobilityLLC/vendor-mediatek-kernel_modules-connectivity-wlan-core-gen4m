@@ -227,6 +227,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct QUE *prQueList;
 	uint32_t u4TxHeadRoomSize = 0;
+	uint8_t *prHead;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -238,43 +239,44 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 	QUEUE_REMOVE_HEAD(prQueList, prMsduInfo, struct MSDU_INFO *);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
 
-	if (prMsduInfo) {
-		if (u4Length) {
-			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
-				prAdapter->chip_info->txd_append_size;
-#if CFG_DBG_MGT_BUF
-			prMsduInfo->prHead = cnmMemAllocX(prAdapter,
-				RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize,
-				fileAndLine);
-#else
-			prMsduInfo->prHead = cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize);
-#endif
-			prMsduInfo->prPacket = (uint8_t *)
-				((uintptr_t)prMsduInfo->prHead +
-				u4TxHeadRoomSize);
-			prMsduInfo->aucTxDescBuffer = prMsduInfo->prHead;
-			prMsduInfo->eSrc = TX_PACKET_MGMT;
-			prMsduInfo->u4Option = 0;
-			prMsduInfo->ucControlFlag = 0;
-			prMsduInfo->fgMgmtUseDataQ = FALSE;
-			prMsduInfo->fgIsPacketSkb = FALSE;
+	if (!prMsduInfo)
+		return NULL;
 
-			if (prMsduInfo->prHead == NULL) {
-				KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_MSDU_INFO_LIST);
-				QUEUE_INSERT_TAIL(prQueList,
-					&prMsduInfo->rQueEntry);
-				KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TX_MSDU_INFO_LIST);
-				prMsduInfo = NULL;
-			}
-		} else {
-			prMsduInfo->prHead = NULL;
-			prMsduInfo->prPacket = NULL;
+	kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
+
+	if (u4Length) {
+		u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+			prAdapter->chip_info->txd_append_size;
+#if CFG_DBG_MGT_BUF
+		prHead = cnmMemAllocX(prAdapter,
+			RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize,
+			fileAndLine);
+#else
+		prHead = cnmMemAlloc(prAdapter,
+			RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize);
+#endif
+		if (prHead == NULL) {
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_TX_MSDU_INFO_LIST);
+			QUEUE_INSERT_TAIL(prQueList,
+				&prMsduInfo->rQueEntry);
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_TX_MSDU_INFO_LIST);
+			return NULL;
 		}
-		prMsduInfo->prTxP = NULL;
+		prMsduInfo->prHead = prHead;
+		prMsduInfo->prPacket = (uint8_t *)
+			((uintptr_t)prMsduInfo->prHead +
+			u4TxHeadRoomSize);
+		prMsduInfo->aucTxDescBuffer = prMsduInfo->prHead;
+		prMsduInfo->eSrc = TX_PACKET_MGMT;
+		prMsduInfo->u4Option = 0;
+		prMsduInfo->ucControlFlag = 0;
+		prMsduInfo->fgMgmtUseDataQ = FALSE;
+		prMsduInfo->fgIsPacketSkb = FALSE;
 	}
+
+
 #if DBG
 	if (prMsduInfo == NULL) {
 		log_dbg(MEM, WARN, "\n");
@@ -320,6 +322,8 @@ void cnmPktFree(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 		cnmMemFree(prAdapter, prMsduInfo->prHead);
 		prMsduInfo->prHead = NULL;
 		prMsduInfo->prPacket = NULL;
+		prMsduInfo->prTxP = NULL;
+		prMsduInfo->aucTxDescBuffer = NULL;
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MSDU_INFO_LIST);
