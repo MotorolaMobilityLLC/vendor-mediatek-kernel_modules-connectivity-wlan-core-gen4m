@@ -428,8 +428,10 @@ else
     CONFIG_MTK_WIFI_NAN=n
 endif
 ifeq ($(MTK_ANDROID_WMT), y)
-    #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
-    #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
+    CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
+    CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
+    CONFIG_MTK_WIFI_FW_LOG_MMIO=y
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
@@ -725,6 +727,8 @@ ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/base/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/connsyslog
+
+    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
 else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1

@@ -1970,9 +1970,10 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 		 * Download flow expects that the BT patch download is coming.
 		 * The cal won't start after WF patch download finish.
 		 */
-		wlanPatchSendComplete(prAdapter, PATCH_FNSH_TYPE_WF_MD);
+		u4Status = wlanPatchSendComplete(prAdapter,
+			PATCH_FNSH_TYPE_WF_MD);
 #else
-		wlanPatchSendComplete(prAdapter);
+		u4Status = wlanPatchSendComplete(prAdapter);
 #endif
 #endif
 /* Dynamic memory map::End */

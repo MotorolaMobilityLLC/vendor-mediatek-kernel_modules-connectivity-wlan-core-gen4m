@@ -9459,6 +9459,11 @@ int32_t __weak kalCheckVcoreBoost(IN struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+int32_t __weak kalPlatOpsInit(void)
+{
+	return 0;
+}
+
 /* mimic store_rps_map as net-sysfs.c does */
 int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 {
