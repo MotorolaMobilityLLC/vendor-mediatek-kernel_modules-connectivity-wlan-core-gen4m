@@ -313,7 +313,7 @@ void wpa_hexdump_dbg(int level, const char *title, const void *buf, size_t len);
 			wpa_##level##_printf(__VA_ARGS__);                     \
 	} while (0)
 
-#define NAN_SEC_DETAIL_LOG 1
+#define NAN_SEC_DETAIL_LOG CFG_SUPPORT_NAN
 #define wpa_MSG_ERROR_printf(...) DBGLOG(NAN, ERROR, __VA_ARGS__)
 #define wpa_MSG_WARNING_printf(...) DBGLOG(NAN, WARN, __VA_ARGS__)
 #define wpa_MSG_INFO_printf(...) DBGLOG(NAN, INFO, __VA_ARGS__)

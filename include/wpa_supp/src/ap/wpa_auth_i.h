@@ -149,7 +149,7 @@ struct wpa_state_machine {
 #endif
 };
 
-#ifdef CFG_SUPPORT_NAN
+#if (CFG_SUPPORT_NAN == 1)
 extern struct wpa_state_machine
 	g_arNanWpaAuthSm[NAN_MAX_SUPPORT_NDL_NUM *
 			 NAN_MAX_SUPPORT_NDP_NUM]; /*TODO_CJ:def*/

@@ -1420,6 +1420,7 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_NAN), y)
 ccflags-y += -DCFG_SUPPORT_NAN=1
+NEED_CRYPTO=y
 else
 ccflags-y += -DCFG_SUPPORT_NAN=0
 endif
@@ -1582,9 +1583,9 @@ endif
 
 ccflags-y += -DDBG=0
 ccflags-y += -I$(KO_CODE_PATH)/os -I$(KO_CODE_PATH)/os/$(os)/include
-ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips
+ccflags-y += -I$(KO_CODE_PATH)/include -I$(KO_CODE_PATH)/include/nic -I$(KO_CODE_PATH)/include/mgmt -I$(KO_CODE_PATH)/include/chips -I$(KO_CODE_PATH)/include/wpa_supp
 ifeq ($(CONFIG_MTK_WIFI_NAN), y)
-ccflags-y += -I$(KO_CODE_PATH)/include/nan -I$(KO_CODE_PATH)/include/nan/wpa_supp
+ccflags-y += -I$(KO_CODE_PATH)/include/nan
 endif
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
 ccflags-y += -I$(KO_CODE_PATH)/include/dvt
@@ -1809,6 +1810,7 @@ MGMT_DIR    := mgmt/
 NAN_DIR     := nan/
 CHIPS       := chips/
 CHIPS_CMM   := $(CHIPS)common/
+WPA_DIR     := wpa_supp/
 
 ifneq ($(CONFIG_WLAN_PLATFORM),)
 PLAT_DIR    := os/$(os)/plat/$(CONFIG_WLAN_PLATFORM)/
@@ -1923,6 +1925,26 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)mlr.o \
 		$(MGMT_DIR)wlan_ring.o \
 		$(MGMT_DIR)gcm.o
+
+ifeq ($(NEED_CRYPTO), y)
+CRYPTO_OBJS :=  $(WPA_DIR)FourWayHandShake.o\
+                $(WPA_DIR)src/crypto/sha1.o\
+                $(WPA_DIR)src/crypto/sha1-internal.o\
+                $(WPA_DIR)src/crypto/sha1-prf.o\
+                $(WPA_DIR)src/crypto/aes-wrap.o\
+                $(WPA_DIR)src/crypto/aes-internal.o\
+                $(WPA_DIR)src/crypto/aes-unwrap.o\
+                $(WPA_DIR)src/crypto/aes-internal-enc.o\
+                $(WPA_DIR)src/crypto/aes-internal-dec.o\
+                $(WPA_DIR)src/crypto/sha256.o\
+                $(WPA_DIR)src/crypto/sha256-prf.o\
+                $(WPA_DIR)src/crypto/sha256-internal.o\
+                $(WPA_DIR)src/crypto/pbkdf2-sha256.o\
+                $(WPA_DIR)src/crypto/sha384-internal.o\
+                $(WPA_DIR)src/crypto/sha512-internal.o\
+                $(WPA_DIR)src/crypto/sha384-prf.o\
+                $(WPA_DIR)src/crypto/sha384.o
+endif
 
 
 # ---------------------------------------------------
@@ -2111,30 +2133,13 @@ NAN_OBJS := $(NAN_DIR)nan_dev.o \
             $(NAN_DIR)nan_txm.o
 
 NAN_SEC_OBJS := $(NAN_DIR)nan_sec.o\
-                $(NAN_DIR)wpa_supp/FourWayHandShake.o\
-                $(NAN_DIR)wpa_supp/src/ap/wpa_auth.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha1.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha1-internal.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha1-prf.o\
-                $(NAN_DIR)wpa_supp/src/common/wpa_common.o\
-                $(NAN_DIR)wpa_supp/src/crypto/aes-wrap.o\
-                $(NAN_DIR)wpa_supp/src/crypto/aes-internal.o\
-                $(NAN_DIR)wpa_supp/src/utils/common.o\
-                $(NAN_DIR)wpa_supp/src/rsn_supp/wpa.o\
-                $(NAN_DIR)wpa_supp/src/crypto/aes-unwrap.o\
-                $(NAN_DIR)wpa_supp/src/crypto/aes-internal-enc.o\
-                $(NAN_DIR)wpa_supp/src/crypto/aes-internal-dec.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha256.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha256-prf.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha256-internal.o\
-                $(NAN_DIR)wpa_supp/wpa_supplicant/wpas_glue.o\
-                $(NAN_DIR)wpa_supp/wpa_supplicant/wpa_supplicant.o\
-                $(NAN_DIR)wpa_supp/src/ap/wpa_auth_glue.o\
-                $(NAN_DIR)wpa_supp/src/crypto/pbkdf2-sha256.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha384-internal.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha512-internal.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha384-prf.o\
-                $(NAN_DIR)wpa_supp/src/crypto/sha384.o
+                $(WPA_DIR)src/ap/wpa_auth.o\
+                $(WPA_DIR)src/common/wpa_common.o\
+                $(WPA_DIR)src/utils/common.o\
+                $(WPA_DIR)src/rsn_supp/wpa.o\
+                $(WPA_DIR)wpa_supplicant/wpas_glue.o\
+                $(WPA_DIR)wpa_supplicant/wpa_supplicant.o\
+                $(WPA_DIR)src/ap/wpa_auth_glue.o
 endif
 
 # ---------------------------------------------------
@@ -2267,6 +2272,7 @@ $(MODULE_NAME)-objs  += $(HIF_OBJS)
 $(MODULE_NAME)-objs  += $(MGMT_OBJS)
 $(MODULE_NAME)-objs  += $(CHIPS_OBJS)
 $(MODULE_NAME)-objs  += $(SYSDVT_OBJS)
+$(MODULE_NAME)-objs  += $(CRYPTO_OBJS)
 $(MODULE_NAME)-objs  += $(NAN_OBJS)
 $(MODULE_NAME)-objs  += $(NAN_SEC_OBJS)
 
