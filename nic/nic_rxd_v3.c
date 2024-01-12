@@ -279,23 +279,6 @@ void nic_rxd_v3_fill_rfb(
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-void nic_rxd_v3_parse_drop_pkt(struct SW_RFB *prSwRfb)
-{
-	uint16_t *pu2EtherType;
-
-	pu2EtherType = (uint16_t *)
-			((uint8_t *)prSwRfb->pvHeader +
-			2 * MAC_ADDR_LEN);
-	DBGLOG(RX, INFO,
-		"u2PacketLen:%d ucSecMode:%d ucWlanIdx:%d ucStaRecIdx:%d\n",
-		prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
-		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
-	);
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
-#endif
-}
-
 u_int8_t nic_rxd_v3_sanity_check(
 	struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
@@ -332,7 +315,6 @@ u_int8_t nic_rxd_v3_sanity_check(
 		else if (HAL_MAC_CONNAC3X_RX_STATUS_IS_FRAG(prRxStatus))
 			prSwRfb->fgFragFrame = TRUE;
 	} else {
-		DBGLOG(RX, TEMP, "Sanity check to drop\n");
 		fgDrop = TRUE;
 		if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
 		    && HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(
@@ -350,10 +332,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 				struct mt66xx_chip_info *prChipInfo;
 
 				rsnTkipHandleMICFailure(prAdapter, prStaRec, 0);
-				DBGLOG(RX, INFO,
-					"u2PacketLen:%d ucSecMode:%d ucWlanIdx:%d ucStaRecIdx:%d\n",
-				prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
-				prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx);
+				nicRxParseDropPkt(prSwRfb);
 				DBGLOG(RSN, EVENT,
 					"MIC_ERR_PKT, dump RXD and RXP\n");
 				/* dump RXD */
@@ -399,7 +378,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 		}
 
-		DBGLOG(RSN, TRACE, "Sanity check to drop:%d\n", fgDrop);
+		DBGLOG(RSN, TEMP, "Sanity check to drop:%d\n", fgDrop);
 	}
 
 	/* Drop plain text during security connection */
@@ -428,10 +407,10 @@ u_int8_t nic_rxd_v3_sanity_check(
 				"Don't drop NAN MC pkt for sec\n");
 #endif
 		} else {
-			nic_rxd_v3_parse_drop_pkt(prSwRfb);
-
+			nicRxParseDropPkt(prSwRfb);
+			RX_INC_CNT(prRxCtrl, RX_CIPHER_MISMATCH_DROP_COUNT);
 			fgDrop = TRUE;
-			DBGLOG(RSN, INFO,
+			DBGLOG(RSN, TEMP,
 				"Drop plain text during security connection\n");
 		}
 	}
@@ -440,8 +419,9 @@ u_int8_t nic_rxd_v3_sanity_check(
 	/* Drop fragmented broadcast and multicast frame */
 	if ((prSwRfb->fgIsBC | prSwRfb->fgIsMC)
 		&& (prSwRfb->fgFragFrame == TRUE)) {
+		RX_INC_CNT(prRxCtrl, RX_FRAGMENT_BMC_DROP_COUNT);
 		fgDrop = TRUE;
-		DBGLOG(RSN, INFO,
+		DBGLOG(RSN, TEMP,
 			"Drop fragmented broadcast and multicast\n");
 	}
 
@@ -477,7 +457,7 @@ end:
 	}
 
 	if (HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus))
-		DBGLOG(RSN, INFO, "De-amsdu fail, drop:%d\n", fgDrop);
+		DBGLOG(RSN, TEMP, "De-amsdu fail, drop:%d\n", fgDrop);
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
 	return fgDrop;
