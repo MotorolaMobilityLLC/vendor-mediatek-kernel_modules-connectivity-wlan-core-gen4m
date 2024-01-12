@@ -7921,6 +7921,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		MCC_BOOST_LEVEL);
 	INIT_UINT(prWifiVar->u4MccBoostPresentTime,
 		"MccBoostPresentTimeMin", MCC_BOOST_MIN_TIME);
+	INIT_UINT(prWifiVar->u4MccBoostForAllTputLvTh,
+		"MccBoostForAllTputLvTh", MCC_BOOST_FOR_ALL_LEVEL);
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
 #if CFG_SUPPORT_LLS

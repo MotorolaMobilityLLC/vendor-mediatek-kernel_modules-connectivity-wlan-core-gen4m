@@ -10118,14 +10118,31 @@ void kalMccBoostCheck(struct ADAPTER *prAdapter, uint32_t u4TputLv)
 
 		if (prBssInfo->u4PresentTime <
 				prWifiVar->u4MccBoostPresentTime) {
-			DBGLOG(INIT, INFO, "B:%u P:%u TputLv:%d\n",
-				i, prBssInfo->u4PresentTime, u4TputLv);
 			fgMccBoost = TRUE;
+			DBGLOG(INIT, INFO,
+				"B:%u P:%u TputLv:%d State:%u->%u\n",
+				i, prBssInfo->u4PresentTime, u4TputLv,
+				prAdapter->fgMccBoost, fgMccBoost);
 		}
 	}
 
+	/* Boost CPU when Tput > 100Mbps */
+	if (u4TputLv >= prWifiVar->u4MccBoostForAllTputLvTh) {
+		fgMccBoost = TRUE;
+		DBGLOG(INIT, INFO, "TputLv:%u Th:%u State:%u->%u\n",
+			u4TputLv,
+			prWifiVar->u4MccBoostForAllTputLvTh,
+			prAdapter->fgMccBoost, fgMccBoost);
+	}
 end:
+	prAdapter->fgMccStateChange =
+		(prAdapter->fgMccBoost != fgMccBoost) ? TRUE : FALSE;
 	prAdapter->fgMccBoost = fgMccBoost;
+}
+
+u_int8_t kalIsMccStateChange(struct ADAPTER *prAdapter)
+{
+	return prAdapter->fgMccStateChange;
 }
 
 u_int8_t kalIsMccBoost(struct ADAPTER *prAdapter)
@@ -10257,8 +10274,11 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			/* boost current level due to overloading */
 			kalBoostCpu(prAdapter, u4CurrTputLv,
 				u4CurrTputLv);
-		} else if ((u4CurrTputLv != u4PrevTputLv) &&
-			(u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
+		} else if (((u4CurrTputLv != u4PrevTputLv)
+#if CFG_SUPPORT_MCC_BOOST_CPU
+			|| kalIsMccStateChange(prAdapter)
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+			) && (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u->%u th:%u fg:0x%lx\n",
 			(unsigned long) (prPerMonitor->ulThroughput >> 20),
