@@ -547,6 +547,8 @@ WLAN_STATUS aaaFsmRunEventRxAssoc(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRf
 		UINT_16 u2IELength;
 		PUINT_8 pucIE;
 
+		cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
+
 		if ((((P_WLAN_ASSOC_REQ_FRAME_T) (prSwRfb->pvHeader))->u2FrameCtrl & MASK_FRAME_TYPE) ==
 		    MAC_FRAME_REASSOC_REQ) {
 
@@ -676,6 +678,10 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 
 					/* NOTE(Kevin): Change to STATE_2 at TX Done */
 					cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_2);
+					/* Error handle if can not complete the ASSOC flow */
+					cnmTimerStartTimer(prAdapter,
+							   &prStaRec->rTxReqDoneOrRxRespTimer,
+							   TU_TO_MSEC(TX_ASSOCIATE_TIMEOUT_TU));
 				} else {
 
 					prStaRec->eAuthAssocState = AA_STATE_IDLE;
@@ -754,7 +760,11 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 		 * The AssocState is changed to IDLE after first TX done.
 		 * Free station record when IDLE is seriously wrong.
 		 */
-		/* /cnmStaRecFree(prAdapter, prStaRec); */
+		/* 2017-01-12 Do nothing only when STA is in state 3 */
+		/* Free the StaRec if found any unexpected status */
+		if (prStaRec->ucStaState != STA_STATE_3)
+			cnmStaRecFree(prAdapter, prStaRec);
+		break;
 
 	default:
 		break;		/* Ignore other cases */
