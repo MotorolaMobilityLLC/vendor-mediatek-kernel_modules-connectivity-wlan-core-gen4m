@@ -13929,7 +13929,7 @@ static int priv_driver_set_twtparams(
 		 *	au2Setting[8]: TWT Wake Interval Mantissa
 		 */
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
-			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
 			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
@@ -14013,7 +14013,7 @@ static int priv_driver_set_twtparams(
 		 *	au2Setting[10]: MLTWT param last: 0(No)|1(Yes) 
 		 */
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
-			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
 			DBGLOG(REQ, INFO, "Invalid ML-TWT Params\n");
@@ -14063,7 +14063,7 @@ static int priv_driver_set_twtparams(
 		 *  au2Setting[8]: TWT Wake Interval Mantissa
 		 */
 		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
-			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[2] > TWT_SETUP_CMD_ID_DEMAND ||
 			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
 			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
