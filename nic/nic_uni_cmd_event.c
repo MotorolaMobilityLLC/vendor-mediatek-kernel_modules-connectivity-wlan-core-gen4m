@@ -1294,7 +1294,12 @@ uint32_t nicUniCmdSetMbmc(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_MBMC *) entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_MBMC_SETTING *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_MBMC_TAG_SETTING;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (cmd->ucNoResp)
+		tag->u2Tag = UNI_CMD_MBMC_NO_RESP_TAG_SETTING;
+	else
+#endif
+		tag->u2Tag = UNI_CMD_MBMC_TAG_SETTING;
 	tag->u2Length = sizeof(*tag);
 	tag->ucMbmcEn = cmd->ucDbdcEn;
 	tag->ucAAModeEn = cmd->ucDBDCAAMode;
