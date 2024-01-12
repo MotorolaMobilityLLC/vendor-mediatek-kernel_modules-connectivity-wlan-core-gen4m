@@ -2087,11 +2087,13 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter);
 
 void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter);
-uint32_t nicTxDirectStartXmitMain(struct sk_buff
-		*prSkb, struct MSDU_INFO *prMsduInfo,
+
+uint32_t nicTxDirectStartXmitMain(void *pvPacket,
+		struct MSDU_INFO *prMsduInfo,
 		struct ADAPTER *prAdapter,
 		uint8_t ucCheckTc, uint8_t ucStaRecIndex,
 		uint8_t ucBssIndex);
+
 
 /* TX Direct functions : END */
 

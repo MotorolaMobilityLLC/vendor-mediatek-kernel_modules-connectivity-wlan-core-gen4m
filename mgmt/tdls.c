@@ -479,7 +479,7 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	struct sk_buff *prMsduInfo;
+	void *pvPacket = NULL;
 	uint8_t *pPkt;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t ReasonCode;
@@ -496,16 +496,13 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
+	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 1600, &pPkt);
 
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 1600,
-						&pPkt);
-	if (prMsduInfo == NULL)
+	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
-
-	prMsduInfo->dev = wlanGetNetDev(prGlueInfo,
-		prStaRec->ucBssIndex);
-	if (prMsduInfo->dev == NULL) {
-		kalPacketFree(prGlueInfo, prMsduInfo);
+	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
+	if (kalGetPacketDev(pvPacket) == NULL) {
+		kalPacketFree(prGlueInfo, pvPacket);
 		return TDLS_STATUS_FAIL;
 	}
 
@@ -574,11 +571,11 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	pPkt += u4IeLen;
 	u4PktLen += u4IeLen;
 
-	/* 5. Update packet length */
-	prMsduInfo->len = u4PktLen;
+	/* 4. Update packet length */
+	kalSetPacketLength(pvPacket, u4PktLen);
 
 	/* 5. send the data frame */
-	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
+	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
 	return TDLS_STATUS_PENDING;
 }
@@ -607,7 +604,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	struct sk_buff *prMsduInfo;
+	void *pvPacket = NULL;
 	uint8_t *pPkt;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t u2CapInfo;
@@ -624,15 +621,12 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
-	if (prMsduInfo == NULL)
+	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
-
-	prMsduInfo->dev = wlanGetNetDev(prGlueInfo,
-		prStaRec->ucBssIndex);
-	if (prMsduInfo->dev == NULL) {
-		kalPacketFree(prGlueInfo, prMsduInfo);
+	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
+	if (kalGetPacketDev(pvPacket) == NULL) {
+		kalPacketFree(prGlueInfo, pvPacket);
 		return TDLS_STATUS_FAIL;
 	}
 
@@ -775,12 +769,11 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(u4IeLen);
 
 	/* 4. Update packet length */
-	prMsduInfo->len = u4PktLen;
-
+	kalSetPacketLength(pvPacket, u4PktLen);
 	DBGLOG(TDLS, INFO, "wlanHardStartXmit, u4PktLen=%d", u4PktLen);
 
 	/* 5. send the data frame */
-	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
+	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
 	return TDLS_STATUS_PENDING;
 }
@@ -796,7 +789,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	struct sk_buff *prMsduInfo;
+	void *pvPacket = NULL;
 	uint8_t *pPkt;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t u2CapInfo;
@@ -812,15 +805,12 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	}
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
-	if (prMsduInfo == NULL)
+	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
-
-	prMsduInfo->dev = wlanGetNetDev(prGlueInfo,
-		prStaRec->ucBssIndex);
-	if (prMsduInfo->dev == NULL) {
-		kalPacketFree(prGlueInfo, prMsduInfo);
+	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
+	if (kalGetPacketDev(pvPacket) == NULL) {
+		kalPacketFree(prGlueInfo, pvPacket);
 		return TDLS_STATUS_FAIL;
 	}
 
@@ -976,10 +966,10 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	}
 
 	/* 4. Update packet length */
-	prMsduInfo->len = u4PktLen;
+	kalSetPacketLength(pvPacket, u4PktLen);
 
 	/* 5. send the data frame */
-	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
+	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
 	return TDLS_STATUS_PENDING;
 }
@@ -996,7 +986,7 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	struct sk_buff *prMsduInfo;
+	void *pvPacket = NULL;
 	uint8_t *pPkt;
 	uint32_t u4PktLen, u4IeLen;
 
@@ -1012,18 +1002,14 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
-	if (prMsduInfo == NULL)
+	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
-
-	prMsduInfo->dev = wlanGetNetDev(prGlueInfo,
-		prStaRec->ucBssIndex);
-	if (prMsduInfo->dev == NULL) {
-		kalPacketFree(prGlueInfo, prMsduInfo);
+	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
+	if (kalGetPacketDev(pvPacket) == NULL) {
+		kalPacketFree(prGlueInfo, pvPacket);
 		return TDLS_STATUS_FAIL;
 	}
-
 	/* make up frame content */
 	/* 1. 802.3 header */
 	kalMemCopy(pPkt, pPeerMac, TDLS_FME_MAC_ADDR_LEN);
@@ -1104,10 +1090,10 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(u4IeLen);
 
 	/* 4. Update packet length */
-	prMsduInfo->len = u4PktLen;
+	kalSetPacketLength(pvPacket, u4PktLen);
 
 	/* 5. send the data frame */
-	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
+	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
 	return TDLS_STATUS_PENDING;
 }
@@ -1135,8 +1121,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo;
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
-	struct sk_buff *prMsduInfo;
-	struct MSDU_INFO *prMsduInfoMgmt;
+	void *pvPacket = NULL;
 	uint8_t *pPkt, *pucInitiator, *pucResponder;
 	uint32_t u4PktLen, u4IeLen;
 
@@ -1156,21 +1141,15 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	/* allocate/init packet */
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
-	prMsduInfo = NULL;
-	prMsduInfoMgmt = NULL;
-
 	/* make up frame content */
-	prMsduInfo = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
-	if (prMsduInfo == NULL)
+	pvPacket = kalPacketAllocWithHeadroom(prGlueInfo, 512, &pPkt);
+	if (pvPacket == NULL)
 		return TDLS_STATUS_RESOURCES;
-
-	prMsduInfo->dev = wlanGetNetDev(prGlueInfo,
-		prStaRec->ucBssIndex);
-	if (prMsduInfo->dev == NULL) {
-		kalPacketFree(prGlueInfo, prMsduInfo);
+	kalSetPacketDev(prGlueInfo, prStaRec->ucBssIndex, pvPacket);
+	if (kalGetPacketDev(pvPacket) == NULL) {
+		kalPacketFree(prGlueInfo, pvPacket);
 		return TDLS_STATUS_FAIL;
 	}
-
 	/* 1. 802.3 header */
 	kalMemCopy(pPkt, pPeerMac, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
@@ -1216,10 +1195,10 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	LR_TDLS_FME_FIELD_FILL(u4IeLen);
 
 	/* 4. Update packet length */
-	prMsduInfo->len = u4PktLen;
+	kalSetPacketLength(pvPacket, u4PktLen);
 
 	/* 5. send the data frame */
-	wlanHardStartXmit(prMsduInfo, prMsduInfo->dev);
+	kalWlanHardStartXmit(pvPacket, kalGetPacketDev(pvPacket));
 
 	return TDLS_STATUS_PENDING;
 }

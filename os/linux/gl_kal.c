@@ -1094,6 +1094,429 @@ void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return			length of socket buffer (skb)
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+kalQueryPacketLength(void *pvPacket)
+{
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0;
+
+	skb = (struct sk_buff *)pvPacket;
+	return skb->len;
+}
+
+void
+kalSetPacketLength(void *pvPacket, uint32_t u4len)
+{
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return;
+
+	skb = (struct sk_buff *)pvPacket;
+	skb->len = u4len;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		16-bits of EtherType extracted from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint16_t
+kalQueryPacketEtherType(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFFFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return (uint16_t) ((pucEth[ETH_TYPE_LEN_OFFSET] << 8)
+					| (pucEth[ETH_TYPE_LEN_OFFSET + 1]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		8-bits value extended from 4-bits of IP
+ * *			Version field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t
+kalQueryPacketIPVersion(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return ((pucEth[ETH_HLEN] & IPVH_VERSION_MASK) >> IPVH_VERSION_OFFSET);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		8-bits value extended from 3-bits of precedence
+ *			field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t
+kalQueryPacketIPV4Precedence(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return ((pucEth[ETH_HLEN+1] & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		8-bits of IPv4 Protocol field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t
+kalQueryPacketIPv4Protocol(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return pucEth[ETH_HLEN+9];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		16-bits of IPv4 Identiication field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint16_t
+kalQueryPacketIPv4Identification(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFFFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return (uint16_t) ((pucEth[ETH_HLEN+4] << 8)
+			| (pucEth[ETH_HLEN+5]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \return		16-bits of source port field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint16_t
+kalQueryPacketIPv4TCPUDPSrcPort(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFFFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return (uint16_t) ((pucEth[ETH_HLEN+20] << 8)
+			| (pucEth[ETH_HLEN+21]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ * \retur		16-bits of destination port field from skb payload
+ */
+/*----------------------------------------------------------------------------*/
+uint16_t
+kalQueryPacketIPv4TCPUDPDstPort(void *pvPacket)
+{
+	uint8_t *pucEth;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFFFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	return (uint16_t) ((pucEth[ETH_HLEN+22] << 8)
+			| (pucEth[ETH_HLEN+23]));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ *		  pattern	pattern to be compared
+ *		  length	length of pattern
+ * \return			same as strncmp
+ */
+/*----------------------------------------------------------------------------*/
+int
+kalComparePacketIPv4UDPPayload(void *pvPacket, int8_t *pattern, size_t length)
+{
+	uint8_t *pucEth;
+	uint8_t *pucUdp;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return 0xFFFFFFFF;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	pucUdp = &pucEth[ETH_HLEN+28];
+
+	return strncmp(pucUdp, pattern, length);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ *		  offset	offset to be filled
+ *		  pattern	pattern to be filled
+ *		  length	length of pattern
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void
+kalUpdatePacketIPv4UDPPayload(void *pvPacket,
+		uint16_t offset,
+		void *pattern,
+		size_t length)
+{
+	uint8_t *pucEth;
+	uint8_t *pucUdp;
+	struct sk_buff *skb;
+
+	if (!pvPacket)
+		return;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	pucEth = skb->data;
+
+	pucUdp = &pucEth[ETH_HLEN+28];
+
+	memcpy(&(pucUdp[offset]), pattern, length);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ *	      ppucData  pointer to packet buffer
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void kalGetPacketBuf(void *pvPacket,
+				uint8_t **ppucData)
+{
+	struct sk_buff *skb;
+
+	if (!pvPacket) {
+		*ppucData = NULL;
+		return;
+	}
+
+	skb = (struct sk_buff *)pvPacket;
+	*ppucData = (uint8_t *) (skb->data);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ *	      ppucData  pointer to packet buffer
+ *	      length	postive value for skb_pull, negative for skb_push
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void kalGetPacketBufHeadManipulate(void *pvPacket,
+		uint8_t **ppucData,
+		int16_t length)
+{
+	struct sk_buff *skb;
+	int len;
+
+	if (!pvPacket)
+		return;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	if (length > 0) {
+		len = length;
+		skb_pull(skb, len);
+	} else if (length < 0) {
+		len = -length;
+		skb_push(skb, len);
+	}
+
+	*ppucData = (uint8_t *) (skb->data);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Only handles driver own creating packet (coalescing buffer).
+ *
+ * \param pvPacket	socket buffer (skb)
+ *	      ppucData  pointer to packet buffer
+ *	      length	postive value for skb_put, negative for skb_trim
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void kalGetPacketBufTailManipulate(void *pvPacket,
+		uint8_t **ppucData,
+		int16_t length)
+{
+	struct sk_buff *skb;
+	int len;
+
+	if (!pvPacket)
+		return;
+
+	skb = (struct sk_buff *)pvPacket;
+
+	if (length > 0) {
+		len = length;
+		skb_put(skb, len);
+	} else if (length < 0) {
+		len = -length;
+		skb_trim(skb, len);
+	}
+
+	*ppucData = (uint8_t *) (skb->data);
+}
+
+
+uint32_t kalGetPacketMark(void *pvPacket)
+{
+	struct sk_buff *skb;
+	uint32_t u4Mark;
+
+
+	if (!pvPacket) {
+		u4Mark = 0;
+	} else {
+		skb = (struct sk_buff *)pvPacket;
+		u4Mark = skb->mark;
+	}
+
+	return u4Mark;
+}
+
+u_int8_t kalProcessRadiotap(void *pvPacket,
+	uint8_t **ppucData,
+	uint16_t radiotap_len,
+	uint16_t u2RxByteCount)
+{
+	struct sk_buff *prSkb;
+
+	prSkb = (struct sk_buff *)pvPacket;
+	/* exceed skb headroom the kernel will panic */
+	if (skb_headroom(prSkb) < radiotap_len)
+		return FALSE;
+
+	skb_push(prSkb, radiotap_len);
+	*ppucData = (uint8_t *)(prSkb->data);
+	kalMemZero(*ppucData, radiotap_len);
+
+	skb_reset_tail_pointer(prSkb);
+	skb_trim(prSkb, 0);
+	skb_put(prSkb, (radiotap_len + u2RxByteCount));
+
+	return TRUE;
+}
+
+void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex,
+	void *pvPacket)
+{
+	struct sk_buff *skb;
+
+	if (pvPacket) {
+		skb = (struct sk_buff *)pvPacket;
+		skb->dev = wlanGetNetDev(prGlueInfo,
+		ucBssIndex);
+	}
+}
+
+void *kalGetPacketDev(void *pvPacket)
+{
+	struct sk_buff *skb;
+
+	if (pvPacket) {
+		skb = (struct sk_buff *)pvPacket;
+		return (void *)skb->dev;
+	}
+
+	return (void *)NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Process the received packet for indicating to OS.
  *
  * \param[in] prGlueInfo     Pointer to the Adapter structure.
@@ -12367,8 +12790,8 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 			break;
 		}
 
-		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff,
-					 0xff, 0xff);
+		nicTxDirectStartXmitMain((void *)prSkb, prMsduInfo,
+			prAdapter, 0xff, 0xff, 0xff);
 	}
 
 	TX_INC_CNT(&prGlueInfo->prAdapter->rTxCtrl,
@@ -12927,3 +13350,15 @@ void kalReleaseHifStateLock(struct GLUE_INFO *prGlueInfo,
 		ulFlags);
 }
 #endif
+
+void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
+{
+	struct sk_buff *skb;
+	struct net_device *dev;
+
+	skb = (struct sk_buff *)pvPacket;
+	dev = (struct net_device *)pvDev;
+
+	wlanHardStartXmit(skb, dev);
+}
+

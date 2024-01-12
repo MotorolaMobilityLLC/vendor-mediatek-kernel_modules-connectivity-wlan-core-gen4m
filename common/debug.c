@@ -113,7 +113,7 @@ void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 	struct CMD_TRACE_ENTRY *prCurCmd =
 			&gprCmdTraceEntry[u2CurEntry];
 
-	prCurCmd->u8TxTime = sched_clock();
+	prCurCmd->u8TxTime = kalGetTimeTickNs();
 	prCurCmd->eCmdType = prCmd->eCmdType;
 	if (prCmd->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME) {
 		struct WLAN_MAC_MGMT_HEADER *prMgmt = (struct
@@ -122,12 +122,8 @@ void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 		prCurCmd->u.rMgmtFrame.u2FrameCtl = prMgmt->u2FrameCtrl;
 		prCurCmd->u.rMgmtFrame.u2DurationID = prMgmt->u2Duration;
 	} else if (prCmd->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-		uint8_t *pucPkt = (uint8_t *)((struct sk_buff *)
-					      prCmd->prPacket)->data;
-
 		prCurCmd->u.rDataFrame.u2EthType =
-			(pucPkt[ETH_TYPE_LEN_OFFSET] << 8) |
-			(pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
+				kalQueryPacketEtherType(prCmd->prPacket);
 	} else {
 		prCurCmd->u.rCmd.ucCID = prCmd->ucCID;
 		prCurCmd->u.rCmd.ucCmdSeqNum = prCmd->ucCmdSeqNum;
@@ -146,7 +142,7 @@ void wlanTraceReleaseTcRes(struct ADAPTER *prAdapter,
 	struct TC_RES_RELEASE_ENTRY *prCurBuf =
 			&gprTcReleaseTraceBuffer[u2CurEntry];
 
-	prCurBuf->u8RelaseTime = sched_clock();
+	prCurBuf->u8RelaseTime = kalGetTimeTickNs();
 	prCurBuf->u4Tc4RelCnt =  u4TxRlsCnt;
 	prCurBuf->u4AvailableTc4 = u4Available;
 	u2CurEntry++;
@@ -883,41 +879,57 @@ static void wlanSetBE32(uint32_t u4Val, uint8_t *pucBuf)
 void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase)
 {
-	struct sk_buff *skb = (struct sk_buff *)pvPacket;
-	uint8_t *pucEth = NULL;
+	uint16_t u2EtherType = 0, u2Offset = 0;
+	struct REAL_TIME rTm = {0};
+	uint32_t u4Timestamp[2] = {0};
 	uint32_t u4Length = 0;
+	uint8_t *pucEth = NULL;
 	uint8_t *pucUdp = NULL;
-	OS_SYSTIME rCurrentTime;
 
-	if (!prAdapter || !prAdapter->rDebugInfo.fgVoE5_7Test || !skb)
+	if (!prAdapter || !prAdapter->rDebugInfo.fgVoE5_7Test
+			|| !pvPacket)
 		return;
-	pucEth = skb->data;
-	u4Length = skb->len;
-	if (u4Length < 200 ||
-	    ((pucEth[ETH_TYPE_LEN_OFFSET] << 8) |
-	     (pucEth[ETH_TYPE_LEN_OFFSET + 1])) != ETH_P_IPV4)
+
+	kalGetPacketBuf(pvPacket, &pucEth);
+	u4Length = kalQueryPacketLength(pvPacket);
+	u2EtherType =
+		(pucEth[ETH_TYPE_LEN_OFFSET] << 8) |
+	     (pucEth[ETH_TYPE_LEN_OFFSET + 1]);
+
+	if (u4Length < 200 || u2EtherType != ETH_P_IPV4)
 		return;
-	if (pucEth[ETH_HLEN+9] != IP_PRO_UDP)
+	if (pucEth[ETH_HLEN+9]  != IP_PRO_UDP)
 		return;
+
 	pucUdp = &pucEth[ETH_HLEN+28];
 	if (kalStrnCmp(pucUdp, "1345678", 7))
 		return;
 
-	rCurrentTime = kalGetTimeTick();
+	kalGetRealTime(&rTm);
 
 	switch (ucPhase) {
 	case PHASE_XMIT_RCV: /* xmit */
-		pucUdp += 20;
+		u2Offset = 20;
 		break;
 	case PHASE_ENQ_QM: /* enq */
-		pucUdp += 28;
+		u2Offset = 28;
 		break;
 	case PHASE_HIF_TX: /* tx */
-		pucUdp += 36;
+		u2Offset = 36;
 		break;
 	}
 
-	wlanSetBE32(SYSTIME_TO_SEC(rCurrentTime), pucUdp);
-	wlanSetBE32(SYSTIME_TO_USEC(rCurrentTime) % USEC_PER_SEC, pucUdp+4);
+	u4Timestamp[0] = rTm.u4TvValSec;
+	u4Timestamp[1] = rTm.u4TvValUsec;
+
+
+	kalUpdatePacketIPv4UDPPayload(pvPacket,
+			u2Offset,
+			&(u4Timestamp[0]),
+			sizeof(uint32_t));
+	kalUpdatePacketIPv4UDPPayload(pvPacket,
+			u2Offset + 4,
+			&(u4Timestamp[1]),
+			sizeof(uint32_t));
 }
 /* End: Functions used to breakdown packet jitter, for test case VoE 5.7 */

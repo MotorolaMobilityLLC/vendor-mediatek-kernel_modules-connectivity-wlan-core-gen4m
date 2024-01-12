@@ -283,9 +283,10 @@ u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
 
 u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
 			    IN uint8_t *pucMicKey);
-
 u_int8_t tkipMicDecapsulateInRxHdrTransMode(
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey);
+	IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN uint8_t *pucMicKey);
 
 void secPostUpdateAddr(IN struct ADAPTER *prAdapter,
 		       IN struct BSS_INFO *prBssInfo);

@@ -231,6 +231,7 @@ do { \
 					fgMicErr = TRUE; \
 				} \
 				else if (tkipMicDecapsulateInRxHdrTransMode( \
+					prAdapter, \
 					prCurrSwRfb, pucMicKey) == FALSE) { \
 					fgMicErr = TRUE; \
 				} \
@@ -5754,16 +5755,18 @@ void qmDelRxBaEntry(IN struct ADAPTER *prAdapter,
 
 u_int8_t qmIsIndependentPkt(IN struct SW_RFB *prSwRfb)
 {
-	struct sk_buff *skb = NULL;
+
+	void *pvPacket = NULL;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
 		return FALSE;
 
-	skb = (struct sk_buff *)(prSwRfb->pvPacket);
-	if (!skb)
+	pvPacket = prSwRfb->pvPacket;
+
+	if (!pvPacket)
 		return FALSE;
 
-	if (GLUE_GET_INDEPENDENT_PKT(skb))
+	if (GLUE_GET_INDEPENDENT_PKT(pvPacket))
 		return TRUE;
 
 	return FALSE;
@@ -8709,7 +8712,6 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prStaRec;
-	struct sk_buff *prSkb = NULL;
 	uint8_t *pucData = NULL;
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
@@ -8749,12 +8751,13 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	if (prMsduInfo->eSrc != TX_PACKET_OS)
 		return;
 
-	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
-
-	if (!prSkb || (prSkb->len <= ETHER_HEADER_LEN))
+	if (!(prMsduInfo->prPacket)
+		|| (kalQueryPacketLength(prMsduInfo->prPacket)
+				<= ETHER_HEADER_LEN))
 		return;
 
-	pucData = prSkb->data;
+	kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+
 	if (!pucData)
 		return;
 	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
@@ -9484,7 +9487,6 @@ void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb, uint8_t ucBssIndex)
 {
 	uint8_t *pPkt = NULL;
-	struct sk_buff *skb = NULL;
 	uint16_t u2EtherType;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
@@ -9494,8 +9496,7 @@ void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
 	if (!pPkt)
 		return;
 
-	skb = (struct sk_buff *)(prSwRfb->pvPacket);
-	if (!skb)
+	if (!prSwRfb->pvPacket)
 		return;
 
 	/* get ethernet protocol */

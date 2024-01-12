@@ -271,6 +271,143 @@ void kalConfigChksumOffload(
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 #endif
+
+uint32_t
+kalQueryPacketLength(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+void
+kalSetPacketLength(void *pvPacket, uint32_t u4len)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint16_t
+kalQueryPacketEtherType(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
+uint8_t
+kalQueryPacketIPVersion(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+uint8_t
+kalQueryPacketIPV4Precedence(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+uint8_t
+kalQueryPacketIPv4Protocol(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+uint16_t
+kalQueryPacketIPv4Identification(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
+uint16_t
+kalQueryPacketIPv4TCPUDPSrcPort(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
+uint16_t
+kalQueryPacketIPv4TCPUDPDstPort(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
+int
+kalComparePacketIPv4UDPPayload(void *pvPacket, int8_t *pattern, size_t length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
+void
+kalUpdatePacketIPv4UDPPayload(void *pvPacket,
+		uint16_t offset,
+		void *pattern,
+		size_t length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalGetPacketBuf(void *pvPacket,
+				uint8_t **ppucData)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalGetPacketBufHeadManipulate(void *pvPacket,
+		uint8_t **ppucData,
+		int16_t length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalGetPacketBufTailManipulate(void *pvPacket,
+		uint8_t **ppucData,
+		int16_t length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint32_t kalGetPacketMark(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+u_int8_t kalProcessRadiotap(void *pvPacket,
+	uint8_t **ppucData,
+	uint16_t radiotap_len,
+	uint16_t u2RxByteCount)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+void kalSetPacketDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex,
+	void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void *kalGetPacketDev(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len)
