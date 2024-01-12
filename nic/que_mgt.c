@@ -298,6 +298,7 @@ void qmInit(IN struct ADAPTER *prAdapter,
 		prQM->arRxBaTable[u4Idx].u2WinStart = 0xFFFF;
 		prQM->arRxBaTable[u4Idx].u2WinEnd = 0xFFFF;
 		prQM->arRxBaTable[u4Idx].u2BarSSN = 0;
+		prQM->arRxBaTable[u4Idx].u2BarSSNIsValid = 0;
 		prQM->arRxBaTable[u4Idx].u2LastRcvdSN = 0;
 
 		prQM->arRxBaTable[u4Idx].fgIsWaitingForPktWithSsn = FALSE;
@@ -4250,7 +4251,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_RX_AMSDU
 	uint8_t u8AmsduSubframeIdx;
-	uint32_t u4SeqNo;
+	uint32_t u2SeqNo;
 #endif
 	DEBUGFUNC("qmProcessPktWithReordering");
 
@@ -4298,7 +4299,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 
 	/* prMpduSwRfb = prReorderQueParm->prMpduSwRfb; */
-	u4SeqNo = (uint32_t)prSwRfb->u2SSN;
+	u2SeqNo = prSwRfb->u2SSN;
 
 	switch (u8AmsduSubframeIdx) {
 	case RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU:
@@ -4316,7 +4317,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->fgAmsduNeedLastFrame = TRUE;
 		RX_INC_CNT(&prAdapter->rRxCtrl,
 			   RX_DATA_MSDU_IN_AMSDU_COUNT);
-		if (prReorderQueParm->u4SeqNo != u4SeqNo) {
+		if (prReorderQueParm->u2SeqNo != u2SeqNo) {
 			RX_INC_CNT(&prAdapter->rRxCtrl,
 				RX_DATA_AMSDU_MISS_COUNT);
 			RX_INC_CNT(&prAdapter->rRxCtrl,
@@ -4327,7 +4328,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->fgAmsduNeedLastFrame = FALSE;
 		RX_INC_CNT(&prAdapter->rRxCtrl,
 			   RX_DATA_MSDU_IN_AMSDU_COUNT);
-		if (prReorderQueParm->u4SeqNo != u4SeqNo) {
+		if (prReorderQueParm->u2SeqNo != u2SeqNo) {
 			RX_INC_CNT(&prAdapter->rRxCtrl,
 				RX_DATA_AMSDU_MISS_COUNT);
 			RX_INC_CNT(&prAdapter->rRxCtrl,
@@ -4346,7 +4347,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
-	prReorderQueParm->u4SeqNo = u4SeqNo;
+	prReorderQueParm->u2SeqNo = u2SeqNo;
 #endif
 
 	if (HAL_IS_RX_DIRECT(prAdapter))
@@ -4366,8 +4367,8 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 
 		prReorderQueParm->u2WinStart = prSwRfb->u2SSN;
 		prReorderQueParm->u2WinEnd =
-		    ((prReorderQueParm->u2WinStart) +
-		     (prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+			SEQ_ADD(prReorderQueParm->u2WinStart,
+				prReorderQueParm->u2WinSize - 1);
 		prReorderQueParm->fgFirstSnToWinStart = FALSE;
 	}
 #endif
@@ -4426,29 +4427,29 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
  */
 static void qmLogDropFallBehind(IN struct ADAPTER *prAdapter,
 		IN struct RX_BA_ENTRY *prReorderQueParm,
-		uint8_t ucTid, uint32_t u4BarSSN,
-		uint32_t u4SeqNo, uint32_t u4WinStart, uint32_t u4WinEnd)
+		uint8_t ucTid, uint16_t u2BarSSN,
+		uint16_t u2SeqNo, uint16_t u2WinStart, uint16_t u2WinEnd)
 {
 	uint16_t u2LastDrop = prReorderQueParm->u2LastFallBehindDropSN;
-	uint16_t u2DropGap = (u4SeqNo - u2LastDrop) & MAX_SEQ_NO;
+	uint16_t u2DropGap = SEQ_DIFF(u2LastDrop, u2SeqNo);
 	uint64_t u8Count;
 
-	prReorderQueParm->u2LastFallBehindDropSN = u4SeqNo;
+	prReorderQueParm->u2LastFallBehindDropSN = u2SeqNo;
 
 	if (u2DropGap <= 1)
 		return;
 
 	u8Count = RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT);
-	if (IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN))
+	if (IS_BAR_SSN_VALID(prReorderQueParm))
 		DBGLOG(RX, INFO,
 		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
 		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
-		       u4SeqNo, u4WinStart, u4WinEnd, 1, u4BarSSN, u8Count);
+		       u2SeqNo, u2WinStart, u2WinEnd, 1, u2BarSSN, u8Count);
 	else
 		DBGLOG(RX, TRACE,
 		       "QM:(D)[%u:%u](~%u)(%u~){%u,%u} BAR SSN:%u/%u total:%lu",
 		       prReorderQueParm->ucStaRecIdx, ucTid, u2LastDrop,
-		       u4SeqNo, u4WinStart, u4WinEnd, 0, u4BarSSN, u8Count);
+		       u2SeqNo, u2WinStart, u2WinEnd, 0, u2BarSSN, u8Count);
 }
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
@@ -4456,25 +4457,24 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 	IN struct RX_BA_ENTRY *prReorderQueParm,
 	OUT struct QUE *prReturnedQue)
 {
-	uint32_t u4SeqNo;
-	uint32_t u4WinStart;
-	uint32_t u4WinEnd;
-	uint32_t u4BarSSN;
+	uint16_t u2SeqNo;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
+	uint16_t u2BarSSN;
 
 	/* Start to reorder packets */
-	u4SeqNo = (uint32_t) (prSwRfb->u2SSN);
-	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
-	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
-	u4BarSSN = (uint32_t) (prReorderQueParm->u2BarSSN) & MAX_SEQ_NO;
+	u2SeqNo = prSwRfb->u2SSN;
+	u2WinStart = prReorderQueParm->u2WinStart;
+	u2WinEnd = prReorderQueParm->u2WinEnd;
+	u2BarSSN = prReorderQueParm->u2BarSSN;
 
 	/* Debug */
 	DBGLOG(RX, TEMP, "QM:ipid=%d(R)[%u](%u){%u,%u}\n",
 		GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket), prSwRfb->ucTid,
-		u4SeqNo, u4WinStart, u4WinEnd);
+		u2SeqNo, u2WinStart, u2WinEnd);
 
 	if (prReorderQueParm->fgNoDrop) {
-		if (!qmCompareSnIsLessThan(u4SeqNo,
-			prReorderQueParm->u2WinStart)) {
+		if (!SEQ_SMALLER(u2SeqNo, prReorderQueParm->u2WinStart)) {
 			/* Fall behind SSN pkts started to Fall within
 			 * StartWin
 			 */
@@ -4486,30 +4486,29 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 				prReorderQueParm->u4SNOverlapCount = 0;
 				prReorderQueParm->fgNoDrop = FALSE;
 				DBGLOG(QM, INFO, "NO drop = FALSE, [%d][%d]\n",
-					u4SeqNo, prReorderQueParm->u2WinStart);
+					u2SeqNo, prReorderQueParm->u2WinStart);
 			}
 		}
 	}
 	/* Case 1: Fall within */
-	if			/* 0 - start - sn - end - 4095 */
-	(((u4WinStart <= u4SeqNo) && (u4SeqNo <= u4WinEnd))
-	    /* 0 - end - start - sn - 4095 */
-	    || ((u4WinEnd < u4WinStart) && (u4WinStart <= u4SeqNo))
-	    /* 0 - sn - end - start - 4095 */
-	    || ((u4SeqNo <= u4WinEnd) && (u4WinEnd < u4WinStart))) {
+	if ((SEQ_SMALLER(u2WinStart, u2SeqNo) || u2SeqNo == u2WinStart) &&
+	    (SEQ_SMALLER(u2SeqNo, u2WinEnd) || u2SeqNo == u2WinEnd)) {
 		DBGLOG(RX, TEMP, "RxPkt=%p seq=%d fall within\n",
-			prSwRfb, u4SeqNo);
+			prSwRfb, u2SeqNo);
 
 #if CFG_SUPPORT_RX_OOR_BAR
-		if (IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN) &&
-		    (u4SeqNo == u4BarSSN || SEQ_SMALLER(u4BarSSN, u4SeqNo))) {
+		if (IS_BAR_SSN_VALID(prReorderQueParm) &&
+		    (u2SeqNo == u2BarSSN || SEQ_SMALLER(u2BarSSN, u2SeqNo))) {
 			prReorderQueParm->u2BarSSN = 0;
+			CLR_BAR_SSN_VALID(prReorderQueParm);
 			prReorderQueParm->u2LastRcvdSN = 0;
 			DBGLOG(RX, INFO,
-				"Clear BAR SSN, SN %d >= u4BarSSN %d received\n",
-				u4SeqNo, u4BarSSN);
+				"Clear %u:%u BAR SSN, SN %d >= u2BarSSN %d\n",
+				prReorderQueParm->ucStaRecIdx,
+				prReorderQueParm->ucTid,
+				u2SeqNo, u2BarSSN);
 		}
-		prReorderQueParm->u2LastRcvdSN = u4SeqNo;
+		prReorderQueParm->u2LastRcvdSN = u2SeqNo;
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
 
 		qmInsertFallWithinReorderPkt(prAdapter, prSwRfb,
@@ -4521,13 +4520,12 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 			 * pass the reorder check
 			 */
 			DBGLOG(RX, TEMP, "QM:(A)[%d](%u){%u,%u}\n",
-				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd);
+				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd);
 
-			prReorderQueParm->u2WinStart = (uint16_t) u4SeqNo;
+			prReorderQueParm->u2WinStart = u2SeqNo;
 			prReorderQueParm->u2WinEnd =
-				((prReorderQueParm->u2WinStart) +
-				 (prReorderQueParm->u2WinSize) - 1) %
-				 MAX_SEQ_NO_COUNT;
+				SEQ_ADD(prReorderQueParm->u2WinStart,
+					prReorderQueParm->u2WinSize - 1);
 			prReorderQueParm->fgIsWaitingForPktWithSsn = FALSE;
 #if CFG_SUPPORT_RX_AMSDU
 			/* RX reorder for one MSDU in AMSDU issue */
@@ -4539,26 +4537,13 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 
 		qmPopOutDueToFallWithin(prAdapter, prReorderQueParm,
 			prReturnedQue);
-	}
-	/* Case 2: Fall ahead */
-	else if
-	/* 0 - start - end - sn - (start+2048) - 4095 */
-	(((u4WinStart < u4WinEnd) && (u4WinEnd < u4SeqNo) &&
-		(u4SeqNo < (u4WinStart + HALF_SEQ_NO_COUNT)))
-		/* 0 - sn - (start+2048) - start - end - 4095 */
-	  || ((u4SeqNo < u4WinStart) && (u4WinStart < u4WinEnd) &&
-			((u4SeqNo + MAX_SEQ_NO_COUNT) <
-			(u4WinStart + HALF_SEQ_NO_COUNT)))
-			/* 0 - end - sn - (start+2048) - start - 4095 */
-			|| ((u4WinEnd < u4SeqNo) && (u4SeqNo < u4WinStart) &&
-			((u4SeqNo + MAX_SEQ_NO_COUNT) < (u4WinStart +
-			HALF_SEQ_NO_COUNT)))) {
-
+	} else if (SEQ_SMALLER(u2WinEnd, u2SeqNo) &&
+		   SEQ_SMALLER(u2WinStart, u2SeqNo)) { /* Case 2: Fall ahead */
 		uint16_t u2Delta, u2BeforeWinEnd;
 		uint32_t u4BeforeCount, u4MissingCount;
 
 		DBGLOG(RX, TEMP, "RxPkt=%p seq=%d fall ahead\n",
-			prSwRfb, u4SeqNo);
+			prSwRfb, u2SeqNo);
 
 #if QM_RX_WIN_SSN_AUTO_ADVANCING
 		if (prReorderQueParm->fgIsWaitingForPktWithSsn)
@@ -4571,11 +4556,10 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		u2BeforeWinEnd = prReorderQueParm->u2WinEnd;
 
 		/* Advance the window after inserting a new tail */
-		prReorderQueParm->u2WinEnd = (uint16_t) u4SeqNo;
+		prReorderQueParm->u2WinEnd = u2SeqNo;
 		prReorderQueParm->u2WinStart =
-			(((prReorderQueParm->u2WinEnd) + MAX_SEQ_NO_COUNT -
-			prReorderQueParm->u2WinSize + 1) %
-			MAX_SEQ_NO_COUNT);
+			SEQ_ADD(prReorderQueParm->u2WinEnd,
+				-(prReorderQueParm->u2WinSize - 1));
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prReorderQueParm->u8LastAmsduSubIdx =
@@ -4585,12 +4569,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm,
 			prReturnedQue);
 
-		if (prReorderQueParm->u2WinEnd >= u2BeforeWinEnd)
-			u2Delta = prReorderQueParm->u2WinEnd - u2BeforeWinEnd;
-		else
-			u2Delta = MAX_SEQ_NO_COUNT - (u2BeforeWinEnd -
-				prReorderQueParm->u2WinEnd);
-
+		u2Delta = SEQ_DIFF(u2BeforeWinEnd, prReorderQueParm->u2WinEnd);
 		u4MissingCount = u2Delta - (u4BeforeCount -
 			prReorderQueParm->rReOrderQue.u4NumElem);
 
@@ -4610,19 +4589,17 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 		DBGLOG(RX, TEMP, "QM: Miss Count:[%lu]\n",
 			RX_GET_CNT(&prAdapter->rRxCtrl,
 			RX_DATA_REORDER_MISS_COUNT));
-	}
-	/* Case 3: Fall behind */
-	else {
+	} else { /* Case 3: Fall behind */
 #if CFG_SUPPORT_RX_OOR_BAR
-		if (IS_BAR_SSN_VALID(prReorderQueParm->u2BarSSN) &&
-		    SEQ_SMALLER(u4SeqNo, u4BarSSN) &&
-		    (u4SeqNo == prReorderQueParm->u2LastRcvdSN || /* AMSDU */
-		     SEQ_SMALLER(prReorderQueParm->u2LastRcvdSN, u4SeqNo))) {
+		if (IS_BAR_SSN_VALID(prReorderQueParm) &&
+		    SEQ_SMALLER(u2SeqNo, u2BarSSN) &&
+		    (u2SeqNo == prReorderQueParm->u2LastRcvdSN || /* AMSDU */
+		     SEQ_SMALLER(prReorderQueParm->u2LastRcvdSN, u2SeqNo))) {
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TRACE,
 				"QM: Data after BAR:[%d](%d){%d,%d} total:%lu",
-				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd,
+				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
 				RX_DATA_REORDER_BEHIND_COUNT));
 			return;
@@ -4636,7 +4613,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TEMP,
 				"QM: No drop packet:[%d](%d){%d,%d} total:%lu\n",
-				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd,
+				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
 					RX_DATA_REORDER_BEHIND_COUNT));
 			return;
@@ -4648,7 +4625,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
 				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
 			DBGLOG(RX, TEMP, "QM:(P)[%u](%u){%u,%u} total:%lu\n",
-				prSwRfb->ucTid, u4SeqNo, u4WinStart, u4WinEnd,
+				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
 				RX_GET_CNT(&prAdapter->rRxCtrl,
 					RX_DATA_REORDER_BEHIND_COUNT));
 			return;
@@ -4661,7 +4638,7 @@ void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
 				prReturnedQue, RX_REORDER_BEHIND_DROP_COUNT);
 
 		qmLogDropFallBehind(prAdapter, prReorderQueParm,
-		       prSwRfb->ucTid, u4BarSSN, u4SeqNo, u4WinStart, u4WinEnd);
+		       prSwRfb->ucTid, u2BarSSN, u2SeqNo, u2WinStart, u2WinEnd);
 		return;
 	}
 }
@@ -4699,7 +4676,7 @@ static struct SW_RFB *getReorderingIndexCache(
 	uint16_t u2WinStart = prReorderQueParm->u2WinStart;
 
 	for (i = prSwRfb->u2SSN;
-	     SEQ_SMALLER(u2WinStart, i) || u2WinStart == i; SEQ_ADD(i, -1)) {
+	     SEQ_SMALLER(u2WinStart, i) || u2WinStart == i; SEQ_DEC(i)) {
 		if (prCacheIndex[i & HALF_SEQ_MASK])
 			return prCacheIndex[i & HALF_SEQ_MASK];
 	}
@@ -4789,8 +4766,8 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 			}
 
 			/* Case 2: Terminate. The insert point is found */
-			else if (qmCompareSnIsLessThan((prSwRfb->u2SSN),
-				(prExaminedQueuedSwRfb->u2SSN)))
+			else if (SEQ_SMALLER(prSwRfb->u2SSN,
+					     prExaminedQueuedSwRfb->u2SSN))
 				break;
 
 			/* Case 3: Insert point not found.
@@ -4942,18 +4919,15 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 		/* If SN + 1 come and last frame is first or middle,
 		 * update winstart
 		 */
-		if ((qmCompareSnIsLessThan((prReorderQueParm->u2WinStart),
-			(prReorderedSwRfb->u2SSN)))
-			&& (prReorderQueParm->u4SeqNo !=
-			prReorderQueParm->u2WinStart)) {
+		if (SEQ_SMALLER(prReorderQueParm->u2WinStart,
+				prReorderedSwRfb->u2SSN) &&
+		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
 			if (prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU
 				|| prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
-				prReorderQueParm->u2WinStart =
-					(((prReorderQueParm->u2WinStart) + 1) %
-					MAX_SEQ_NO_COUNT);
+				SEQ_INC(prReorderQueParm->u2WinStart);
 				prReorderQueParm->u8LastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
@@ -4974,8 +4948,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU
 				|| fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU)
 				prReorderQueParm->u2WinStart =
-				(((prReorderedSwRfb->u2SSN) + 1) %
-				MAX_SEQ_NO_COUNT);
+					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
@@ -5012,8 +4985,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 					prReorderedSwRfb->u2SSN);
 				fgDequeuHead = TRUE;
 				prReorderQueParm->u2WinStart =
-					(((prReorderedSwRfb->u2SSN) + 1) %
-					MAX_SEQ_NO_COUNT);
+					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 #if CFG_SUPPORT_RX_AMSDU
 				/* RX reorder for one MSDU in AMSDU issue */
 				prReorderQueParm->u8LastAmsduSubIdx =
@@ -5060,9 +5032,8 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 
 	/* After WinStart has been determined, update the WinEnd */
 	prReorderQueParm->u2WinEnd =
-		(((prReorderQueParm->u2WinStart) +
-		(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT);
-
+		SEQ_ADD(prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinSize - 1);
 }
 
 void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
@@ -5092,18 +5063,15 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 		/* If SN + 1 come and last frame is first or middle,
 		 * update winstart
 		 */
-		if ((qmCompareSnIsLessThan((prReorderQueParm->u2WinStart),
-			(prReorderedSwRfb->u2SSN)))
-			&& (prReorderQueParm->u4SeqNo !=
-			prReorderQueParm->u2WinStart)) {
+		if (SEQ_SMALLER(prReorderQueParm->u2WinStart,
+				prReorderedSwRfb->u2SSN) &&
+		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
 			if (prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU
 				|| prReorderQueParm->u8LastAmsduSubIdx ==
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
-				prReorderQueParm->u2WinStart =
-					(((prReorderQueParm->u2WinStart) + 1) %
-					MAX_SEQ_NO_COUNT);
+				SEQ_INC(prReorderQueParm->u2WinStart);
 				prReorderQueParm->u8LastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
@@ -5124,8 +5092,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
 				fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU)
 				prReorderQueParm->u2WinStart =
-				(((prReorderedSwRfb->u2SSN) + 1) %
-				MAX_SEQ_NO_COUNT);
+					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
@@ -5134,9 +5101,8 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 		/* SN < WinStart, so the head packet shall be
 		 * indicated (do not advance the window)
 		 */
-		else if (qmCompareSnIsLessThan((uint32_t)(
-			prReorderedSwRfb->u2SSN),
-			(uint32_t)(prReorderQueParm->u2WinStart)))
+		else if (SEQ_SMALLER(prReorderedSwRfb->u2SSN,
+				     prReorderQueParm->u2WinStart))
 			fgDequeuHead = TRUE;
 
 		/* SN > WinStart, break to update WinEnd */
@@ -5189,17 +5155,19 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 
 	/* After WinStart has been determined, update the WinEnd */
 	prReorderQueParm->u2WinEnd =
-		(((prReorderQueParm->u2WinStart) +
-		(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT);
-
+		SEQ_ADD(prReorderQueParm->u2WinStart,
+			prReorderQueParm->u2WinSize - 1);
 }
 
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	IN unsigned long ulParamPtr)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct RX_BA_ENTRY *prReorderQueParm =
-		(struct RX_BA_ENTRY *) ulParamPtr;
+	struct RX_BA_ENTRY *prReorderQueParm = (struct RX_BA_ENTRY *)ulParamPtr;
+	uint16_t u2FirstBubbleSn;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
+	u_int8_t fgHasBubble;
 
 	ASSERT(prAdapter);
 
@@ -5222,14 +5190,25 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
 		prReorderQueParm->u2FirstBubbleSn);
 
-	prGlueInfo = prAdapter->prGlueInfo;
+	fgHasBubble = prReorderQueParm->fgHasBubble;
+	u2FirstBubbleSn = prReorderQueParm->u2FirstBubbleSn;
+	u2WinStart = prReorderQueParm->u2WinStart;
+	u2WinEnd = prReorderQueParm->u2WinEnd;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
 		SPIN_LOCK_RX_DIRECT);
 	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
 	KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
 		SPIN_LOCK_RX_DIRECT);
 
+	DBGLOG(QM, INFO,
+		"QM:(Bub Timeout) %u:%u Bub(%u)[%u]{%u,%u} -> Bub(%u)[%u]{%u,%u}\n",
+		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
+		fgHasBubble, u2FirstBubbleSn, u2WinStart, u2WinEnd,
+		prReorderQueParm->fgHasBubble,
+		prReorderQueParm->u2FirstBubbleSn,
+		prReorderQueParm->u2WinStart, prReorderQueParm->u2WinEnd);
 }
 
 void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
@@ -5292,12 +5271,11 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 		prReorderedSwRfb = (struct SW_RFB *) QUEUE_GET_TAIL(
 			prReorderQue);
 
-		prReorderQueParm->u2WinStart = prReorderedSwRfb->u2SSN + 1;
-		if (prReorderQueParm->u2WinStart >= MAX_SEQ_NO_COUNT)
-			prReorderQueParm->u2WinStart %= MAX_SEQ_NO_COUNT;
+		prReorderQueParm->u2WinStart =
+			SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 		prReorderQueParm->u2WinEnd =
-			((prReorderQueParm->u2WinStart) +
-			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+			SEQ_ADD(prReorderQueParm->u2WinStart,
+				prReorderQueParm->u2WinSize - 1);
 #if CFG_SUPPORT_RX_AMSDU
 		prReorderQueParm->u8LastAmsduSubIdx =
 			RX_PAYLOAD_FORMAT_MSDU;
@@ -5380,22 +5358,6 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 			"QM:(Bub Check) Reset prMissTimeout to current time\n");
 		GET_CURRENT_SYSTIME(prMissTimeout);
 	}
-}
-
-u_int8_t qmCompareSnIsLessThan(IN uint32_t u4SnLess, IN uint32_t u4SnGreater)
-{
-	/* 0 <--->  SnLess   <--(gap>2048)--> SnGreater : SnLess > SnGreater */
-	if ((u4SnLess + HALF_SEQ_NO_COUNT) <= u4SnGreater)
-		return FALSE;
-
-	/* 0 <---> SnGreater <--(gap>2048)--> SnLess    : SnLess < SnGreater */
-	else if ((u4SnGreater + HALF_SEQ_NO_COUNT) < u4SnLess)
-		return TRUE;
-
-	/* 0 <---> SnGreater <--(gap<2048)--> SnLess    : SnLess > SnGreater */
-	/* 0 <--->  SnLess   <--(gap<2048)--> SnGreater : SnLess < SnGreater */
-	else
-		return u4SnLess < u4SnGreater;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5628,8 +5590,7 @@ u_int8_t qmAddRxBaEntry(IN struct ADAPTER *prAdapter,
 		prRxBaEntry->ucTid = ucTid;
 		prRxBaEntry->u2WinStart = u2WinStart;
 		prRxBaEntry->u2WinSize = u2WinSize;
-		prRxBaEntry->u2WinEnd = ((u2WinStart + u2WinSize - 1) %
-			MAX_SEQ_NO_COUNT);
+		prRxBaEntry->u2WinEnd = SEQ_ADD(u2WinStart, u2WinSize - 1);
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prRxBaEntry->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
@@ -9429,13 +9390,13 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 }
 
 void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint32_t u4SSN,
+	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint16_t u2SSN,
 	OUT struct QUE *prReturnedQue)
 {
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prReorderQueParm;
-	uint32_t u4WinStart;
-	uint32_t u4WinEnd;
+	uint16_t u2WinStart;
+	uint16_t u2WinEnd;
 
 	/* Check whether the STA_REC is activated */
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
@@ -9457,24 +9418,27 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_LOCK(prAdapter->prGlueInfo, 0);
 
-	u4WinStart = (uint32_t) (prReorderQueParm->u2WinStart);
-	u4WinEnd = (uint32_t) (prReorderQueParm->u2WinEnd);
+	u2WinStart = prReorderQueParm->u2WinStart;
+	u2WinEnd = prReorderQueParm->u2WinEnd;
 
-	if (qmCompareSnIsLessThan(u4WinStart, u4SSN)) {
+	if (SEQ_SMALLER(u2WinStart, u2SSN)) {
 #if CFG_SUPPORT_RX_OOR_BAR
-		prReorderQueParm->u2BarSSN = u4SSN;
+		prReorderQueParm->u2BarSSN = u2SSN;
 		DBGLOG(RX, INFO,
-			"BAR: update WinStart from %u to %u, LastRcvdSN=%u",
+			"BAR: update %u:%u WinStart %u -> %u, LRcvdSN=%u, B=%u",
+			prReorderQueParm->ucStaRecIdx,
+			prReorderQueParm->ucTid,
 			prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2BarSSN,
-			prReorderQueParm->u2LastRcvdSN);
-		SET_BAR_SSN_VALID(prReorderQueParm->u2BarSSN);
+			prReorderQueParm->u2LastRcvdSN,
+			prReorderQueParm->u2FirstBubbleSn);
+		SET_BAR_SSN_VALID(prReorderQueParm);
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
 
-		prReorderQueParm->u2WinStart = (uint16_t) u4SSN;
+		prReorderQueParm->u2WinStart = u2SSN;
 		prReorderQueParm->u2WinEnd =
-			((prReorderQueParm->u2WinStart) +
-			(prReorderQueParm->u2WinSize) - 1) % MAX_SEQ_NO_COUNT;
+			SEQ_ADD(prReorderQueParm->u2WinStart,
+				prReorderQueParm->u2WinSize - 1);
 
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
@@ -9483,14 +9447,14 @@ void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(RX, TEMP,
 			"QM:(BAR U)[%d](%u){%hu,%hu}\n",
-			ucTid, u4SSN,
+			ucTid, u2SSN,
 			prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinEnd);
 		qmPopOutDueToFallAhead(prAdapter, prReorderQueParm,
 			prReturnedQue);
 	} else {
 		DBGLOG(RX, TEMP, "QM:(BAR I)(%d)(%u){%u,%u}\n",
-			ucTid, u4SSN, u4WinStart, u4WinEnd);
+			ucTid, u2SSN, u2WinStart, u2WinEnd);
 	}
 
 	if (HAL_IS_RX_DIRECT(prAdapter))

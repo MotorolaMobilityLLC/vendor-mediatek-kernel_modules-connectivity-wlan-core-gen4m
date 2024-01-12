@@ -437,10 +437,9 @@ void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinStart =
 			(u2SSN % MAX_SEQ_NO_COUNT);
 		prReorderQueParm->u2WinEnd =
-			(((prReorderQueParm->u2WinStart) +
-			  (prReorderQueParm->u2WinSize) - 1) %
-			 MAX_SEQ_NO_COUNT);
-		u2SSN = (u2SSN + 1) % MAX_SEQ_NO_COUNT;
+			SEQ_ADD(prReorderQueParm->u2WinStart,
+				prReorderQueParm->u2WinSize - 1);
+		SEQ_INC(u2SSN);
 		DBGLOG(QM, TRACE,
 			"Update reorder window: SSN: %d, start: %d, end: %d.\n",
 			u2SSN,
