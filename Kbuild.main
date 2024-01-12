@@ -1416,6 +1416,18 @@ else
     ccflags-y += -DCONFIG_ROM_CODE_DOWNLOAD=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_OSHARE), y)
+    ccflags-y += -DCFG_SUPPORT_OSHARE=1
+else ifeq ($(CONFIG_SUPPORT_OSHARE), n)
+    ccflags-y += -DCFG_SUPPORT_OSHARE=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_LOWLATENCY_MODE), y)
+    ccflags-y += -DCFG_SUPPORT_LOWLATENCY_MODE=1
+else ifeq ($(CONFIG_SUPPORT_LOWLATENCY_MODE), n)
+    ccflags-y += -DCFG_SUPPORT_LOWLATENCY_MODE=0
+endif
+
 ifneq ($(CFG_CFG80211_VERSION),)
 VERSION_STR = $(subst \",,$(subst ., , $(subst -, ,$(subst v,,$(CFG_CFG80211_VERSION)))))
 $(info VERSION_STR=$(VERSION_STR))
