@@ -183,10 +183,6 @@ struct CONNECTION_SETTINGS {
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	uint8_t aucBSSIDHint[MAC_ADDR_LEN];
 
-	u_int8_t fgIsConnReqIssued;
-	u_int8_t fgIsDisconnectedByNonRequest;
-	enum ENUM_RECONNECT_LEVEL_T eReConnectLevel;
-
 	uint8_t ucSSIDLen;
 	uint8_t aucSSID[ELEM_MAX_LEN_SSID];
 
@@ -1139,6 +1135,8 @@ struct WIFI_VAR {
 
 	uint8_t fgReuseRSNIE;
 
+	uint32_t u4DiscoverTimeout;
+	uint32_t u4InactiveTimeout;
 };
 
 /* cnm_timer module */
@@ -1210,27 +1208,32 @@ struct P2P_FUNCTION_LINKER {
 
 #endif
 
+struct CFG_SCAN_CHNL {
+	uint8_t ucChannelListNum;
+	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+};
+
 #if CFG_SUPPORT_NCHO
-enum _ENUM_NCHO_ITEM_SET_TYPE_T {
+enum ENUM_NCHO_ITEM_SET_TYPE {
 	ITEM_SET_TYPE_NUM,
 	ITEM_SET_TYPE_STR
 };
 
-enum _ENUM_NCHO_BAND_T {
+enum ENUM_NCHO_BAND {
 	NCHO_BAND_AUTO = 0,
 	NCHO_BAND_5G,
 	NCHO_BAND_2G4,
 	NCHO_BAND_NUM
 };
 
-enum _ENUM_NCHO_DFS_SCN_MODE_T {
+enum ENUM_NCHO_DFS_SCN_MODE {
 	NCHO_DFS_SCN_DISABLE = 0,
 	NCHO_DFS_SCN_ENABLE1,
 	NCHO_DFS_SCN_ENABLE2,
 	NCHO_DFS_SCN_NUM
 };
 
-struct _CFG_NCHO_RE_ASSOC_T {
+struct CFG_NCHO_RE_ASSOC {
 	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
 	uint32_t u4SsidLen;
 	uint8_t aucSsid[ELEM_MAX_LEN_SSID];
@@ -1238,12 +1241,9 @@ struct _CFG_NCHO_RE_ASSOC_T {
 	uint32_t u4CenterFreq;
 };
 
-struct _CFG_NCHO_SCAN_CHNL_T {
-	uint8_t ucChannelListNum;
-	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
-};
+#define CFG_NCHO_SCAN_CHNL CFG_SCAN_CHNL
 
-struct _NCHO_ACTION_FRAME_PARAMS_T {
+struct NCHO_ACTION_FRAME_PARAMS {
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	int32_t i4channel;
 	int32_t i4DwellTime;
@@ -1251,7 +1251,7 @@ struct _NCHO_ACTION_FRAME_PARAMS_T {
 	uint8_t aucData[520];
 };
 
-struct _NCHO_AF_INFO_T {
+struct NCHO_AF_INFO {
 	uint8_t *aucBssid;
 	int32_t i4channel;
 	int32_t i4DwellTime;
@@ -1259,8 +1259,8 @@ struct _NCHO_AF_INFO_T {
 	uint8_t *pucData;
 };
 
-struct _NCHO_INFO_T {
-	u_int8_t fgECHOEnabled;
+struct NCHO_INFO {
+	u_int8_t fgNCHOEnabled;
 	u_int8_t fgChGranted;
 	u_int8_t fgIsSendingAF;
 	int32_t i4RoamTrigger;		/* db */
@@ -1271,11 +1271,12 @@ struct _NCHO_INFO_T {
 	uint32_t u4ScanHomeawayTime;	/* ms */
 	uint32_t u4ScanNProbes;
 	uint32_t u4WesMode;
-	enum _ENUM_NCHO_BAND_T eBand;
-	enum _ENUM_NCHO_DFS_SCN_MODE_T eDFSScnMode;
+	enum ENUM_NCHO_BAND eBand;
+	enum ENUM_NCHO_DFS_SCN_MODE eDFSScnMode;
 	uint32_t u4RoamScanControl;
-	struct _CFG_NCHO_SCAN_CHNL_T rRoamScnChnl;
-	struct _NCHO_ACTION_FRAME_PARAMS_T rParamActionFrame;
+	struct CFG_NCHO_SCAN_CHNL rRoamScnChnl;
+	struct CFG_NCHO_SCAN_CHNL rAddRoamScnChnl;
+	struct NCHO_ACTION_FRAME_PARAMS rParamActionFrame;
 };
 #endif
 
@@ -1607,8 +1608,9 @@ struct ADAPTER {
 #endif
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
-	struct _NCHO_INFO_T rNchoInfo;
+	struct NCHO_INFO rNchoInfo;
 #endif
+	struct CFG_SCAN_CHNL rAddRoamScnChnl;
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 	uint8_t aucEepromVaule[16]; /* HQA CMD for Efuse Block size contents */

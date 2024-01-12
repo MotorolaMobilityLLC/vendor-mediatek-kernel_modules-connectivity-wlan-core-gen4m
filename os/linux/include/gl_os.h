@@ -850,6 +850,13 @@ struct NL80211_DRIVER_TEST_MODE_PARAMS {
 	uint32_t buflen;
 };
 
+struct NL80211_DRIVER_STRING_CMD_PARAMS {
+	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
+	uint32_t reply_buf_size;
+	uint32_t reply_len;
+	uint8_t *reply_buf;
+};
+
 /*SW CMD */
 struct NL80211_DRIVER_SW_CMD_PARAMS {
 	struct NL80211_DRIVER_TEST_MODE_PARAMS hdr;
