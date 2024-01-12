@@ -28,7 +28,7 @@ nanConvertMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 		}
 		DBGLOG(INIT, INFO, "nan: filter[%d] =  %d\n", u4Idx,
 		       pucFilterSrc);
-		ucLen = atoi(*pucFilterSrc);
+		ucLen = hexDigitToInt(*pucFilterSrc);
 		*pucFilterDst = ucLen;
 		pucFilterDst++;
 		u4Idx++;

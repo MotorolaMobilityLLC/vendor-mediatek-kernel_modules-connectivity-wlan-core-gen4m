@@ -1075,15 +1075,13 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 #define kalStrnCat(dst, src, n)            strncat(dst, src, n)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kstrtoint(_data, _base, _res)
+#define kalStrtouint(_data, _base, _res) kstrtouint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kstrtoul(_data, _base, _res)
 char *strtok_r(char *s, const char *delim, char **last);
 #define kalStrtokR(_buf, _tok, _saved) \
 	strtok_r(_buf, _tok, _saved)
 
 #define kalFfs ffs
-
-int8_t atoi(uint8_t ch);
-#define kalAtoi(_ch) atoi(_ch)
 
 #define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
 	{\

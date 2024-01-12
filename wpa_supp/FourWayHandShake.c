@@ -412,17 +412,6 @@ os_strcmp(const char *s1, const char *s2) {
 	return *s1 - *s2;
 }
 
-#if 0 /*/*/
-int atoi(const char *s)
-{
-	int sum = 0, i;
-
-	for (i = 0; s[i] != '\0'; i++)
-		sum = sum * 10 + s[i] - '0';
-	return sum;
-}
-#endif
-
 int
 os_snprintf_error(size_t size, int res) {
 	return res < 0 || (unsigned int)res >= size;

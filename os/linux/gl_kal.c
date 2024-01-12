@@ -11375,18 +11375,6 @@ cont:
 	}
 }
 
-int8_t atoi(uint8_t ch)
-{
-	if (ch >= 'a' && ch <= 'f')
-		return ch - 87;
-	else if (ch >= 'A' && ch <= 'F')
-		return ch - 55;
-	else if (ch >= '0' && ch <= '9')
-		return ch - 48;
-
-	return 0;
-}
-
 #if CFG_SUPPORT_WPA3
 int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			   struct STA_RECORD *prStaRec)

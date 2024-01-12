@@ -671,6 +671,13 @@ int kal_strtoint(const char *s, unsigned int base, int *res)
 	return 0;
 }
 
+int kal_strtouint(const char *s, unsigned int base, unsigned int *res)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
 int kal_strtoul(const char *s, unsigned int base, unsigned long *res)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);

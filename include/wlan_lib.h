@@ -2293,4 +2293,6 @@ void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
 uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 	struct THERMAL_TEMP_DATA *data);
 
+int8_t hexDigitToInt(uint8_t ch);
+
 #endif /* _WLAN_LIB_H */
