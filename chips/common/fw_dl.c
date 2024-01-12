@@ -2109,6 +2109,7 @@ void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr)
 	struct HEADER_RELEASE_INFO *prRelInfo;
 	uint8_t *pucCurPtr = pucStartPtr + RELEASE_INFO_SEPARATOR_LEN;
 	uint16_t u2Len = 0, u2Offset = 0;
+	uint8_t ucManifestExist = 0;
 
 	prFirstInfo = (struct HEADER_RELEASE_INFO *)pucCurPtr;
 	DBGLOG(INIT, INFO, "Release info tag[%u] len[%u]\n",
@@ -2125,6 +2126,12 @@ void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr)
 		switch (prRelInfo->ucTag) {
 		case 0x01:
 			fwDlGetReleaseManifest(prAdapter, prRelInfo, pucCurPtr);
+			ucManifestExist = 1;
+			break;
+		case 0x02:
+			if (!ucManifestExist)
+				fwDlGetReleaseManifest(prAdapter,
+					prRelInfo, pucCurPtr);
 			break;
 		default:
 			DBGLOG(INIT, WARN, "Not support release info tag[%u]\n",
