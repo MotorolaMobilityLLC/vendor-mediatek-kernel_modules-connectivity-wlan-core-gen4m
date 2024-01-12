@@ -443,8 +443,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	}
 
 	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, false);
+	kalSetEmiMpuProtection(gConEmiPhyBase, false);
 	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
 	DBGLOG(INIT, INFO,
 	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
@@ -456,8 +455,7 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 
 	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
 
-	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
-			       WIFI_EMI_MEM_SIZE, true);
+	kalSetEmiMpuProtection(gConEmiPhyBase, true);
 	iounmap(pucEmiBaseAddr);
 	release_mem_region(gConEmiPhyBase, gConEmiSize);
 #endif /* CFG_MTK_ANDROID_EMI */
