@@ -741,6 +741,25 @@ struct thermal_sensor_info mt7935_thermal_sensor_info[] = {
 };
 #endif
 
+#if CFG_NEW_HIF_DEV_REG_IF
+enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
+	HIF_DEV_REG_HIF_READ,
+	HIF_DEV_REG_HIF_DBG,
+	HIF_DEV_REG_HIF_EXTDBG,
+	HIF_DEV_REG_ONOFF_READ,
+	HIF_DEV_REG_ONOFF_DBG,
+	HIF_DEV_REG_RESET_READ,
+	HIF_DEV_REG_COREDUMP_DBG,
+	HIF_DEV_REG_LPOWN_READ,
+	HIF_DEV_REG_SER_READ,
+	HIF_DEV_REG_CCIF_READ,
+	HIF_DEV_REG_PLAT_DBG,
+	HIF_DEV_REG_UMAC_DBG,
+	HIF_DEV_REG_WTBL_DBG,
+	HIF_DEV_REG_OID_DBG,
+};
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.bus_info = &mt7935_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -872,6 +891,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 #endif
 	.u4MinTxLen = 2,
 	.wifiNappingCtrl = mt7935WiFiNappingCtrl,
+#if CFG_NEW_HIF_DEV_REG_IF
+	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
+	.prValidMmioReadReason = mt7935ValidMmioReadReason,
+	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt7935ValidMmioReadReason),
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935 = {
@@ -2556,7 +2580,7 @@ static u_int8_t mt7935_check_recovery_needed(struct ADAPTER *ad)
 	 * do recovery flow
 	 */
 
-	HAL_RMCR_RD(UNDEFINE, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+	HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
@@ -2565,7 +2589,7 @@ static u_int8_t mt7935_check_recovery_needed(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE5_ADDR,
+	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
@@ -2575,7 +2599,7 @@ static u_int8_t mt7935_check_recovery_needed(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE6_ADDR,
+	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
@@ -2609,7 +2633,7 @@ static uint32_t mt7935_mcu_reinit(struct ADAPTER *ad)
 
 	/* Wait conninfra wakeup */
 	while (TRUE) {
-		HAL_RMCR_RD(UNDEFINE, ad,
+		HAL_RMCR_RD(ONOFF_READ, ad,
 			CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 			&u4Value);
 
@@ -2654,11 +2678,11 @@ static uint32_t mt7935_mcu_reinit(struct ADAPTER *ad)
 
 	kalMdelay(50);
 
-	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
+	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
 
-	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
+	HAL_RMCR_RD(ONOFF_READ, ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
 
@@ -2679,7 +2703,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 
 	DBGLOG(INIT, INFO, "mt7935_mcu_reset..\n");
 
-	HAL_RMCR_RD(UNDEFINE, ad,
+	HAL_RMCR_RD(RESET_READ, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		&u4Value);
 	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
@@ -2690,7 +2714,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 
 	kalMdelay(1);
 
-	HAL_RMCR_RD(UNDEFINE, ad,
+	HAL_RMCR_RD(RESET_READ, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		&u4Value);
 	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
@@ -2699,7 +2723,7 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		u4Value);
 
-	HAL_RMCR_RD(UNDEFINE, ad,
+	HAL_RMCR_RD(RESET_READ, ad,
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x.\n",
@@ -2758,7 +2782,7 @@ static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 			goto dump;
 		}
 
-		HAL_RMCR_RD(UNDEFINE, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+		HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 			&u4Value);
 		if (u4Value == MCU_IDLE)
 			break;
@@ -2802,14 +2826,14 @@ dump:
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
 			   0x011f0000);
 		kalUdelay(1);
-		HAL_RMCR_RD(UNDEFINE, ad,
+		HAL_RMCR_RD(ONOFF_DBG, ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			   &u4Value);
 		DBGLOG(INIT, INFO,
 			"0x%08x=0x%08x\n",
 			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			u4Value);
-		HAL_RMCR_RD(UNDEFINE, ad,
+		HAL_RMCR_RD(ONOFF_DBG, ad,
 			   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			   &u4Value);
 		DBGLOG(INIT, INFO,

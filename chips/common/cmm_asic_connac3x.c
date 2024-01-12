@@ -2693,16 +2693,31 @@ void register_plat_connsys_cbs(void)
 #endif
 
 #if CFG_NEW_HIF_DEV_REG_IF
+static void connac3xInitValidMmioReadReasonAry(
+	struct mt66xx_chip_info *prChipInfo)
+{
+	uint32_t u4Idx, u4Num, u4Size = prChipInfo->u4ValidMmioReadReasonSize;
+
+	if (prChipInfo->fgIsInitValidMmioReadAry)
+		return;
+
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		u4Num = prChipInfo->prValidMmioReadReason[u4Idx];
+		prChipInfo->u4ValidMmioReadAry[u4Num] = TRUE;
+	}
+
+	prChipInfo->fgIsInitValidMmioReadAry = TRUE;
+}
+
 u_int8_t connac3xIsValidMmioReadReason(
 	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason)
 {
-	uint32_t u4Idx, u4Size = prChipInfo->u4ValidMmioReadReasonSize;
+	connac3xInitValidMmioReadReasonAry(prChipInfo);
 
-	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
-		if (prChipInfo->prValidMmioReadReason[u4Idx] == eReason)
-			return TRUE;
-	}
-	return FALSE;
+	if (eReason >= HIF_DEV_REG_MAX)
+		return FALSE;
+
+	return prChipInfo->u4ValidMmioReadAry[eReason];
 }
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 

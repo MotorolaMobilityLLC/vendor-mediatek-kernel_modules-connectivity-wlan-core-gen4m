@@ -3500,8 +3500,8 @@ uint32_t wlanSetChipEcoInfo(struct ADAPTER *prAdapter)
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 #if (CFG_DIRECT_READ_CHIP_INFO == 1)
-	HAL_RMCR_RD(UNDEFINE, prAdapter, prChipInfo->top_hvr, &hw_version);
-	HAL_RMCR_RD(UNDEFINE, prAdapter, prChipInfo->top_fvr, &sw_version);
+	HAL_RMCR_RD(ONOFF_READ, prAdapter, prChipInfo->top_hvr, &hw_version);
+	HAL_RMCR_RD(ONOFF_READ, prAdapter, prChipInfo->top_fvr, &sw_version);
 
 	if ((hw_version == 0) || (sw_version == 0)) {
 		DBGLOG(INIT, ERROR,

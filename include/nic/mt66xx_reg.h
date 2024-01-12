@@ -1628,6 +1628,8 @@ struct mt66xx_chip_info {
 #if CFG_NEW_HIF_DEV_REG_IF
 	const enum HIF_DEV_REG_REASON *prValidMmioReadReason;
 	const uint32_t u4ValidMmioReadReasonSize;
+	u_int8_t u4ValidMmioReadAry[HIF_DEV_REG_MAX];
+	u_int8_t fgIsInitValidMmioReadAry;
 	u_int8_t (*isValidMmioReadReason)(
 		struct mt66xx_chip_info *prChipInfo,
 		enum HIF_DEV_REG_REASON eReason);
