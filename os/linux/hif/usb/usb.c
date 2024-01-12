@@ -132,7 +132,11 @@ static struct usb_driver mtk_usb_driver = {
 	.suspend = NULL,
 	.resume = NULL,
 	.reset_resume = NULL,
+#if CFG_USB_AUTO_SUSPEND
+	.supports_autosuspend = 1,
+#else
 	.supports_autosuspend = 0,
+#endif
 };
 
 /*******************************************************************************
@@ -319,12 +323,13 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	/* TODO : support auto-suspend in stopped dev?
 	* ref : history of __dev_open()
 	*/
+#if !CFG_USB_AUTO_SUSPEND
 	if (PMSG_IS_AUTO(message) &&
 		!netif_running(prGlueInfo->prDevHandler)) {
 		DBGLOG(HAL, WARN, "unable suspend w/o ruuning dev\n");
 		return -EPERM;
 	}
-
+#endif
 	prGlueInfo->fgIsInSuspendMode = TRUE;
 
 	/* Stop upper layers calling the device hard_start_xmit routine. */
