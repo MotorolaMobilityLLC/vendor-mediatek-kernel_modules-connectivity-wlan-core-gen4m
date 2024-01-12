@@ -291,8 +291,12 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 	/* Tx sequence number */
 	prAdapter->ucTxSeqNum = 0;
 	/* PID pool */
-	for (i = 0; i < WTBL_SIZE; i++)
+	for (i = 0; i < WTBL_SIZE; i++) {
 		prAdapter->aucPidPool[i] = NIC_TX_DESC_DRIVER_PID_MIN;
+#if CFG_SUPPORT_LIMITED_PKT_PID
+		nicTxInitPktPID(prAdapter, i);
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+	}
 
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
@@ -2898,6 +2902,52 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 
 }
 
+#if CFG_SUPPORT_LIMITED_PKT_PID
+void nicTxInitPktPID(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucWlanIndex
+)
+{
+	int i = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(ucWlanIndex < WTBL_SIZE);
+
+	for (i = 0; i < ENUM_PKT_FLAG_NUM; i++) {
+		GET_CURRENT_SYSTIME(
+			&prAdapter->u4PktPIDTime[ucWlanIndex][i]
+		);
+	}
+}
+
+static inline bool nicTxPktPIDIsLimited(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo
+)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t ucWlanIndex = prMsduInfo->ucWlanIndex;
+	uint8_t ucPktType = prMsduInfo->ucPktType;
+
+	/* only limit dns */
+	if (ucPktType != ENUM_PKT_DNS)
+		return FALSE;
+
+	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(),
+		prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType],
+		prWifiVar->u4PktPIDTimeout
+		)) {
+
+		GET_CURRENT_SYSTIME(
+			&prAdapter->u4PktPIDTime[ucWlanIndex][ucPktType]
+		);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief this function fills packet information to P_MSDU_INFO_T
@@ -2978,8 +3028,17 @@ u_int8_t nicTxFillMsduInfo(IN struct ADAPTER *prAdapter,
 		}
 #endif
 		if (prMsduInfo->ucPktType != 0) {
+#if CFG_SUPPORT_LIMITED_PKT_PID
+			if (!nicTxPktPIDIsLimited(prAdapter, prMsduInfo)) {
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 			prMsduInfo->pfTxDoneHandler = wlanPktTxDone;
 			prMsduInfo->ucTxSeqNum = GLUE_GET_PKT_SEQ_NO(prPacket);
+#if CFG_SUPPORT_LIMITED_PKT_PID
+			} else {
+				TX_INC_CNT(&prAdapter->rTxCtrl,
+					TX_DROP_PID_COUNT);
+			}
+#endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 		}
 
 #if CFG_SUPPORT_WIFI_SYSDVT
