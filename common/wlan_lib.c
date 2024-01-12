@@ -6943,6 +6943,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4PlatformBoostLittleCpuTh = 1;
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	/* Feature options will be filled by config file */
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
@@ -8226,6 +8229,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "EnableSdo", FEATURE_DISABLED);
 	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "EnableRro", FEATURE_DISABLED);
+	if (!prChipInfo->is_support_rro)
+		prWifiVar->fgEnableRro = FEATURE_DISABLED;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
