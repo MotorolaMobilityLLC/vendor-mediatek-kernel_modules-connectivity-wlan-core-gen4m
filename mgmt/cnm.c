@@ -1566,14 +1566,14 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum
 	    || ucBssIndex >= prAdapter->ucHwBssIdNum)
 		prBssInfo = NULL;
-#if CFG_SUPPORT_PNO
 	if (prBssInfo) {
+#if CFG_SUPPORT_PNO
 		prBssInfo->fgIsPNOEnable = FALSE;
 		prBssInfo->fgIsNetRequestInActive = FALSE;
-	}
 #endif
-	/* init add key action */
-	prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+		/* init add key action */
+		prBssInfo->eKeyAction = SEC_TX_KEY_COMMAND;
+	}
 	return prBssInfo;
 }
 
