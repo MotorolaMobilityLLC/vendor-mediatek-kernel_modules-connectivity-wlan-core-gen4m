@@ -561,7 +561,9 @@ void cnmTimerDoTimeOutCheck(struct ADAPTER *prAdapter)
 				if (prTimer->u2Minutes > 0) {
 					prTimer->u2Minutes--;
 					prTimer->rExpiredSysTime = rCurSysTime +
-						MSEC_TO_SYSTIME(MSEC_PER_MIN);
+						MSEC_TO_SYSTIME(MSEC_PER_MIN) -
+						(rCurSysTime -
+						prTimer->rExpiredSysTime);
 					LINK_INSERT_TAIL(prTimerList,
 						&prTimer->rLinkEntry);
 				} else if (pfMgmtTimeOutFunc) {
