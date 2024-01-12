@@ -8597,7 +8597,7 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 			switch (prBssInfo->ucVhtChannelWidth) {
 			case VHT_OP_CHANNEL_WIDTH_320:
 				prStaRec->rTxBfPfmuStaInfo.ucCBW =
-					MAX_BW_320MHZ;
+					VHT_OP_CHANNEL_WIDTH_320;
 				ucBFeeMaxNr =
 					GET_DOT11BE_PHY_CAP_BFEE_320M(
 						u4EhtPhyCap1);
