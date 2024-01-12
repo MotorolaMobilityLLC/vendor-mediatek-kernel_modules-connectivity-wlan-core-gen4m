@@ -356,7 +356,7 @@ void thrmInit(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
-	DBGLOG(NIC, INFO, "Radio off temp[%d] Duty control temp[%d]\n",
+	DBGLOG(NIC, TRACE, "Radio off temp[%d] Duty control temp[%d]\n",
 		prWifiVar->i4ThrmRadioOffTemp, prWifiVar->i4ThrmCtrlTemp);
 
 	prAdapter->rThrmProtCfg.ucLevel = CONN_PWR_THR_LV_MAX;
@@ -364,7 +364,7 @@ void thrmInit(struct ADAPTER *prAdapter)
 	/* Register power level handler */
 	kalPwrLevelHdlrRegister(prAdapter, thrmProtLvHandler);
 
-	DBGLOG(NIC, INFO, "Duty[%d]\n",
+	DBGLOG(NIC, TRACE, "Duty[%d]\n",
 			prAdapter->rThrmProtCfg.ucCurrDutyCfg);
 }
 

@@ -1799,7 +1799,7 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 	prAdapter = prGlueInfo->prAdapter;
 	/* conninfra CR: 0x7c060010 = 0x70007154: cb-infra CR */
 	HAL_MCR_RD(prAdapter, 0x70007154, &u4Value);
-	DBGLOG(HAL, INFO, "Dump 0x70007154 = 0x%08x\n", u4Value);
+	DBGLOG(HAL, TRACE, "Dump 0x70007154 = 0x%08x\n", u4Value);
 #endif
 	KAL_REC_TIME_START();
 #if (CFG_MTK_ANDROID_WMT == 1) && defined(MT6639)
@@ -2011,7 +2011,7 @@ bool glBusConfigASPM(struct pci_dev *dev, int i4Enable)
 		if (PCIE_ASPM_CHECK_L1(u4Reg)) {
 			pcieSetASPML1(parent, i4Enable);
 			pcieSetASPML1(dev, i4Enable);
-			DBGLOG(INIT, INFO, "ASPM STATUS %d\n", i4Enable);
+			DBGLOG(INIT, TRACE, "ASPM STATUS %d\n", i4Enable);
 			return TRUE;
 		}
 	}
@@ -2026,7 +2026,7 @@ bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
 		if (pcieCheckASPML1SS(dev, i4Enable)) {
 			pcieSetASPML1SS(parent, i4Enable);
 			pcieSetASPML1SS(dev, i4Enable);
-			DBGLOG(INIT, INFO, "Config ASPM-L1SS\n");
+			DBGLOG(INIT, TRACE, "Config ASPM-L1SS\n");
 			return TRUE;
 		}
 	}
