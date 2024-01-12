@@ -4708,7 +4708,344 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 #endif
 #endif
 
-#ifdef CONFIG_NL80211_TESTMODE
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+
+#if (CFG_BUILT_IN_DRIVER == 1)
+/* in kernel-x.x/net/wireless/reg.c */
+#else
+bool is_world_regdom(const char *alpha2)
+{
+	if (!alpha2)
+		return false;
+
+	return (alpha2[0] == '0') && (alpha2[1] == '0');
+}
+#endif
+
+enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
+{
+	switch (pRequest->initiator) {
+	case NL80211_REGDOM_SET_BY_USER:
+		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_USER\n");
+
+		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_USER,
+						pRequest);
+
+	case NL80211_REGDOM_SET_BY_DRIVER:
+		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_DRIVER\n");
+
+		return rlmDomainStateTransition(
+			       REGD_STATE_SET_COUNTRY_DRIVER, pRequest);
+
+	case NL80211_REGDOM_SET_BY_CORE:
+		DBGLOG(RLM, INFO,
+		       "regd_state_machine: NL80211_REGDOM_SET_BY_CORE\n");
+
+		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE,
+						pRequest);
+
+	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
+		DBGLOG(RLM, WARN,
+		       "============== WARNING ==============\n");
+		DBGLOG(RLM, WARN,
+		       "regd_state_machine: SET_BY_COUNTRY_IE\n");
+		DBGLOG(RLM, WARN, "Regulatory rule is updated by IE.\n");
+		DBGLOG(RLM, WARN,
+		       "============== WARNING ==============\n");
+
+		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE,
+						pRequest);
+
+	default:
+		return rlmDomainStateTransition(REGD_STATE_INVALID,
+						pRequest);
+	}
+}
+
+
+void
+mtk_apply_custom_regulatory(IN struct wiphy *pWiphy,
+			    IN const struct ieee80211_regdomain *pRegdom)
+{
+	u32 band_idx, ch_idx;
+	struct ieee80211_supported_band *sband;
+	struct ieee80211_channel *chan;
+
+	DBGLOG(RLM, INFO, "%s()\n", __func__);
+
+	/* to reset cha->flags*/
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		sband = pWiphy->bands[band_idx];
+		if (!sband)
+			continue;
+
+		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
+			chan = &sband->channels[ch_idx];
+
+			/*reset chan->flags*/
+			chan->flags = 0;
+		}
+
+	}
+
+	/* update to kernel */
+	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
+}
+
+void
+mtk_reg_notify(IN struct wiphy *pWiphy,
+	       IN struct regulatory_request *pRequest)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	enum regd_state old_state;
+	struct wiphy *pBaseWiphy = wlanGetWiphy();
+
+	if (g_u4HaltFlag) {
+		DBGLOG(RLM, WARN, "wlan is halt, skip reg callback\n");
+		return;
+	}
+
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "pWiphy = NULL!\n");
+		return;
+	}
+
+	/*
+	 * Awlays use wlan0's base wiphy pointer to update reg notifier.
+	 * Because only one reg state machine is handled.
+	 */
+	if (pBaseWiphy && (pWiphy != pBaseWiphy)) {
+		pWiphy = pBaseWiphy;
+		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=%p)\n",
+			pBaseWiphy);
+	}
+
+	old_state = rlmDomainGetCtrlState();
+
+	/*
+	 * Magic flow for driver to send inband command after kernel's calling
+	 * reg_notifier callback
+	 */
+	if (!pRequest) {
+		/*triggered by our driver in wlan initial process.*/
+
+		if (old_state == REGD_STATE_INIT) {
+			if (rlmDomainIsUsingLocalRegDomainDataBase()) {
+				DBGLOG(RLM, WARN,
+				       "County Code is not assigned. Use default WW.\n");
+				goto DOMAIN_SEND_CMD;
+
+			} else {
+				DBGLOG(RLM, ERROR,
+				       "Invalid REG state happened. state = 0x%x\n",
+				       old_state);
+				return;
+			}
+		} else if ((old_state == REGD_STATE_SET_WW_CORE) ||
+			   (old_state == REGD_STATE_SET_COUNTRY_USER) ||
+			   (old_state == REGD_STATE_SET_COUNTRY_DRIVER)) {
+			goto DOMAIN_SEND_CMD;
+		} else {
+			DBGLOG(RLM, ERROR,
+			       "Invalid REG state happened. state = 0x%x\n",
+			       old_state);
+			return;
+		}
+	}
+
+	/*
+	 * Ignore the CORE's WW setting when using local data base of regulatory
+	 * rules
+	 */
+	if ((pRequest->initiator == NL80211_REGDOM_SET_BY_CORE) &&
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
+	    (pWiphy->flags & WIPHY_FLAG_CUSTOM_REGULATORY))
+#else
+	    (pWiphy->regulatory_flags & REGULATORY_CUSTOM_REG))
+#endif
+		return;/*Ignore the CORE's WW setting*/
+
+	/*
+	 * State machine transition
+	 */
+	DBGLOG(RLM, INFO,
+	       "request->alpha2=%s, initiator=%x, intersect=%d\n",
+	       pRequest->alpha2, pRequest->initiator, pRequest->intersect);
+
+	regd_state_machine(pRequest);
+
+	if (rlmDomainGetCtrlState() == old_state) {
+		if (((old_state == REGD_STATE_SET_COUNTRY_USER)
+		     || (old_state == REGD_STATE_SET_COUNTRY_DRIVER))
+		    && (!(rlmDomainIsSameCountryCode(pRequest->alpha2,
+					     sizeof(pRequest->alpha2)))))
+			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
+		else
+			/* Change to same state or same country, ignore */
+			return;
+	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
+		DBGLOG(RLM, ERROR,
+		       "\n%s():\n---> WARNING. Transit to invalid state.\n",
+		       __func__);
+		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
+		rlmDomainAssert(0);
+	}
+
+	/*
+	 * Set country code
+	 */
+	if (pRequest->initiator != NL80211_REGDOM_SET_BY_DRIVER) {
+		rlmDomainSetCountryCode(pRequest->alpha2,
+					sizeof(pRequest->alpha2));
+	} else {
+		/*SET_BY_DRIVER*/
+
+		if (rlmDomainIsEfuseUsed()) {
+			if (!rlmDomainIsUsingLocalRegDomainDataBase())
+				DBGLOG(RLM, WARN,
+				       "[WARNING!!!] Local DB must be used if country code from efuse.\n");
+		} else {
+			/* iwpriv case */
+			if (rlmDomainIsUsingLocalRegDomainDataBase() &&
+			    (!rlmDomainIsEfuseUsed())) {
+				/*iwpriv set country but local data base*/
+				u32 country_code =
+						rlmDomainGetTempCountryCode();
+
+				rlmDomainSetCountryCode((char *)&country_code,
+							sizeof(country_code));
+			} else {
+				/*iwpriv set country but query CRDA*/
+				rlmDomainSetCountryCode(pRequest->alpha2,
+						sizeof(pRequest->alpha2));
+			}
+		}
+	}
+
+	rlmDomainSetDfsRegion(pRequest->dfs_region);
+
+
+DOMAIN_SEND_CMD:
+	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = 0x%x\n",
+	       rlmDomainGetCountryCode());
+
+	/*
+	 * Check if using customized regulatory rule
+	 */
+	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
+		const struct ieee80211_regdomain *pRegdom;
+		u32 country_code = rlmDomainGetCountryCode();
+		char alpha2[4];
+
+		/*fetch regulatory rules from local data base*/
+		alpha2[0] = country_code & 0xFF;
+		alpha2[1] = (country_code >> 8) & 0xFF;
+		alpha2[2] = (country_code >> 16) & 0xFF;
+		alpha2[3] = (country_code >> 24) & 0xFF;
+
+		pRegdom = rlmDomainSearchRegdomainFromLocalDataBase(alpha2);
+		if (!pRegdom) {
+			DBGLOG(RLM, ERROR,
+			       "%s(): Error, Cannot find the correct RegDomain. country = %u\n",
+			       __func__, rlmDomainGetCountryCode());
+
+			rlmDomainAssert(0);
+			return;
+		}
+
+		mtk_apply_custom_regulatory(pWiphy, pRegdom);
+	}
+
+	/*
+	 * Parsing channels
+	 */
+	rlmDomainParsingChannel(pWiphy); /*real regd update*/
+
+	/*
+	 * Check if firmawre support single sku.
+	 * no need to send information to FW due to FW is not supported.
+	 */
+	if (!regd_is_single_sku_en())
+		return;
+
+	/*
+	 * Always use the wlan GlueInfo as parameter.
+	 */
+	prGlueInfo = rlmDomainGetGlueInfo();
+	if (!prGlueInfo) {
+		DBGLOG(RLM, ERROR, "prGlueInfo is NULL!\n");
+		return; /*interface is not up yet.*/
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
+		return; /*interface is not up yet.*/
+	}
+
+	/*
+	 * Send commands to firmware
+	 */
+	prAdapter->rWifiVar.u2CountryCode =
+		(uint16_t)rlmDomainGetCountryCode();
+	rlmDomainSendCmd(prAdapter);
+}
+
+void
+cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
+{
+	/*
+	 * register callback
+	 */
+	prWiphy->reg_notifier = mtk_reg_notify;
+
+
+	/*
+	 * clear REGULATORY_CUSTOM_REG flag
+	 */
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
+	/*tells kernel that assign WW as default*/
+	prWiphy->flags &= ~(WIPHY_FLAG_CUSTOM_REGULATORY);
+#else
+	prWiphy->regulatory_flags &= ~(REGULATORY_CUSTOM_REG);
+
+	/*ignore the hint from IE*/
+	prWiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE;
+#endif
+
+
+	/*
+	 * set REGULATORY_CUSTOM_REG flag
+	 */
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
+	/*tells kernel that assign WW as default*/
+	prWiphy->flags |= (WIPHY_FLAG_CUSTOM_REGULATORY);
+#else
+	prWiphy->regulatory_flags |= (REGULATORY_CUSTOM_REG);
+#endif
+	/* assigned a defautl one */
+	if (rlmDomainGetLocalDefaultRegd())
+		wiphy_apply_custom_regulatory(prWiphy,
+					      rlmDomainGetLocalDefaultRegd());
+#endif
+
+
+	/*
+	 * Initialize regd control information
+	 */
+	rlmDomainResetCtrlInfo(FALSE);
+}
+
+#else
+void
+cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
+{
+}
+#endif
+
+
 #if CFG_SUPPORT_NCHO
 /* NCHO related command definition. Setting by supplicant */
 #define CMD_NCHO_ROAM_TRIGGER_GET		"GETROAMTRIGGER"
@@ -5523,10 +5860,9 @@ int testmode_set_link_id_for_key(IN struct wiphy *wiphy, IN char *pcCommand,
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	IN struct wiphy *wiphy, IN char *data, IN int len)
 {
-
 	struct sk_buff *skb;
 
-	skb = cfg80211_testmode_alloc_reply_skb(wiphy, len);
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, len);
 
 	if (!skb) {
 		DBGLOG(REQ, INFO, "%s allocate skb failed\n", __func__);
@@ -5535,24 +5871,20 @@ int32_t mtk_cfg80211_process_str_cmd_reply(
 
 	nla_put_nohdr(skb, len, data);
 
-	return cfg80211_testmode_reply(skb);
+	return cfg80211_vendor_cmd_reply(skb);
 }
 
 int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
-		struct wireless_dev *wdev,
-		uint8_t *data, int32_t len)
+		struct wireless_dev *wdev, uint8_t *data, int32_t len)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4SetInfoLen = 0;
 	uint8_t ucBssIndex = 0;
-	struct NL80211_DRIVER_STRING_CMD_PARAMS *param =
-		(struct NL80211_DRIVER_STRING_CMD_PARAMS *) data;
-	uint8_t *cmd = (uint8_t *) (param + 1);
+	uint8_t *cmd = data;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	len -= sizeof(struct NL80211_DRIVER_STRING_CMD_PARAMS);
 	ucBssIndex = wlanGetBssIdx(wdev->netdev);
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;
@@ -5691,345 +6023,6 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 
 	return rStatus;
 }
-
-#endif /* CONFIG_NL80211_TESTMODE */
-
-#if (CFG_SUPPORT_SINGLE_SKU == 1)
-
-#if (CFG_BUILT_IN_DRIVER == 1)
-/* in kernel-x.x/net/wireless/reg.c */
-#else
-bool is_world_regdom(const char *alpha2)
-{
-	if (!alpha2)
-		return false;
-
-	return (alpha2[0] == '0') && (alpha2[1] == '0');
-}
-#endif
-
-enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
-{
-	switch (pRequest->initiator) {
-	case NL80211_REGDOM_SET_BY_USER:
-		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_USER\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_USER,
-						pRequest);
-
-	case NL80211_REGDOM_SET_BY_DRIVER:
-		DBGLOG(RLM, INFO, "regd_state_machine: SET_BY_DRIVER\n");
-
-		return rlmDomainStateTransition(
-			       REGD_STATE_SET_COUNTRY_DRIVER, pRequest);
-
-	case NL80211_REGDOM_SET_BY_CORE:
-		DBGLOG(RLM, INFO,
-		       "regd_state_machine: NL80211_REGDOM_SET_BY_CORE\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE,
-						pRequest);
-
-	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
-		DBGLOG(RLM, WARN,
-		       "============== WARNING ==============\n");
-		DBGLOG(RLM, WARN,
-		       "regd_state_machine: SET_BY_COUNTRY_IE\n");
-		DBGLOG(RLM, WARN, "Regulatory rule is updated by IE.\n");
-		DBGLOG(RLM, WARN,
-		       "============== WARNING ==============\n");
-
-		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE,
-						pRequest);
-
-	default:
-		return rlmDomainStateTransition(REGD_STATE_INVALID,
-						pRequest);
-	}
-}
-
-
-void
-mtk_apply_custom_regulatory(IN struct wiphy *pWiphy,
-			    IN const struct ieee80211_regdomain *pRegdom)
-{
-	u32 band_idx, ch_idx;
-	struct ieee80211_supported_band *sband;
-	struct ieee80211_channel *chan;
-
-	DBGLOG(RLM, INFO, "%s()\n", __func__);
-
-	/* to reset cha->flags*/
-	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
-		sband = pWiphy->bands[band_idx];
-		if (!sband)
-			continue;
-
-		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
-			chan = &sband->channels[ch_idx];
-
-			/*reset chan->flags*/
-			chan->flags = 0;
-		}
-
-	}
-
-	/* update to kernel */
-	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
-}
-
-void
-mtk_reg_notify(IN struct wiphy *pWiphy,
-	       IN struct regulatory_request *pRequest)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct ADAPTER *prAdapter;
-	enum regd_state old_state;
-	struct wiphy *pBaseWiphy = wlanGetWiphy();
-
-	if (g_u4HaltFlag) {
-		DBGLOG(RLM, WARN, "wlan is halt, skip reg callback\n");
-		return;
-	}
-
-	if (!pWiphy) {
-		DBGLOG(RLM, ERROR, "pWiphy = NULL!\n");
-		return;
-	}
-
-	/*
-	 * Awlays use wlan0's base wiphy pointer to update reg notifier.
-	 * Because only one reg state machine is handled.
-	 */
-	if (pBaseWiphy && (pWiphy != pBaseWiphy)) {
-		pWiphy = pBaseWiphy;
-		DBGLOG(RLM, ERROR, "Use base wiphy to update (p=%p)\n",
-			pBaseWiphy);
-	}
-
-	old_state = rlmDomainGetCtrlState();
-
-	/*
-	 * Magic flow for driver to send inband command after kernel's calling
-	 * reg_notifier callback
-	 */
-	if (!pRequest) {
-		/*triggered by our driver in wlan initial process.*/
-
-		if (old_state == REGD_STATE_INIT) {
-			if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-				DBGLOG(RLM, WARN,
-				       "County Code is not assigned. Use default WW.\n");
-				goto DOMAIN_SEND_CMD;
-
-			} else {
-				DBGLOG(RLM, ERROR,
-				       "Invalid REG state happened. state = 0x%x\n",
-				       old_state);
-				return;
-			}
-		} else if ((old_state == REGD_STATE_SET_WW_CORE) ||
-			   (old_state == REGD_STATE_SET_COUNTRY_USER) ||
-			   (old_state == REGD_STATE_SET_COUNTRY_DRIVER)) {
-			goto DOMAIN_SEND_CMD;
-		} else {
-			DBGLOG(RLM, ERROR,
-			       "Invalid REG state happened. state = 0x%x\n",
-			       old_state);
-			return;
-		}
-	}
-
-	/*
-	 * Ignore the CORE's WW setting when using local data base of regulatory
-	 * rules
-	 */
-	if ((pRequest->initiator == NL80211_REGDOM_SET_BY_CORE) &&
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	    (pWiphy->flags & WIPHY_FLAG_CUSTOM_REGULATORY))
-#else
-	    (pWiphy->regulatory_flags & REGULATORY_CUSTOM_REG))
-#endif
-		return;/*Ignore the CORE's WW setting*/
-
-	/*
-	 * State machine transition
-	 */
-	DBGLOG(RLM, INFO,
-	       "request->alpha2=%s, initiator=%x, intersect=%d\n",
-	       pRequest->alpha2, pRequest->initiator, pRequest->intersect);
-
-	regd_state_machine(pRequest);
-
-	if (rlmDomainGetCtrlState() == old_state) {
-		if (((old_state == REGD_STATE_SET_COUNTRY_USER)
-		     || (old_state == REGD_STATE_SET_COUNTRY_DRIVER))
-		    && (!(rlmDomainIsSameCountryCode(pRequest->alpha2,
-					     sizeof(pRequest->alpha2)))))
-			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
-		else
-			/* Change to same state or same country, ignore */
-			return;
-	} else if (rlmDomainIsCtrlStateEqualTo(REGD_STATE_INVALID)) {
-		DBGLOG(RLM, ERROR,
-		       "\n%s():\n---> WARNING. Transit to invalid state.\n",
-		       __func__);
-		DBGLOG(RLM, ERROR, "---> WARNING.\n ");
-		rlmDomainAssert(0);
-	}
-
-	/*
-	 * Set country code
-	 */
-	if (pRequest->initiator != NL80211_REGDOM_SET_BY_DRIVER) {
-		rlmDomainSetCountryCode(pRequest->alpha2,
-					sizeof(pRequest->alpha2));
-	} else {
-		/*SET_BY_DRIVER*/
-
-		if (rlmDomainIsEfuseUsed()) {
-			if (!rlmDomainIsUsingLocalRegDomainDataBase())
-				DBGLOG(RLM, WARN,
-				       "[WARNING!!!] Local DB must be used if country code from efuse.\n");
-		} else {
-			/* iwpriv case */
-			if (rlmDomainIsUsingLocalRegDomainDataBase() &&
-			    (!rlmDomainIsEfuseUsed())) {
-				/*iwpriv set country but local data base*/
-				u32 country_code =
-						rlmDomainGetTempCountryCode();
-
-				rlmDomainSetCountryCode((char *)&country_code,
-							sizeof(country_code));
-			} else {
-				/*iwpriv set country but query CRDA*/
-				rlmDomainSetCountryCode(pRequest->alpha2,
-						sizeof(pRequest->alpha2));
-			}
-		}
-	}
-
-	rlmDomainSetDfsRegion(pRequest->dfs_region);
-
-
-DOMAIN_SEND_CMD:
-	DBGLOG(RLM, INFO, "g_mtk_regd_control.alpha2 = 0x%x\n",
-	       rlmDomainGetCountryCode());
-
-	/*
-	 * Check if using customized regulatory rule
-	 */
-	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
-		const struct ieee80211_regdomain *pRegdom;
-		u32 country_code = rlmDomainGetCountryCode();
-		char alpha2[4];
-
-		/*fetch regulatory rules from local data base*/
-		alpha2[0] = country_code & 0xFF;
-		alpha2[1] = (country_code >> 8) & 0xFF;
-		alpha2[2] = (country_code >> 16) & 0xFF;
-		alpha2[3] = (country_code >> 24) & 0xFF;
-
-		pRegdom = rlmDomainSearchRegdomainFromLocalDataBase(alpha2);
-		if (!pRegdom) {
-			DBGLOG(RLM, ERROR,
-			       "%s(): Error, Cannot find the correct RegDomain. country = %u\n",
-			       __func__, rlmDomainGetCountryCode());
-
-			rlmDomainAssert(0);
-			return;
-		}
-
-		mtk_apply_custom_regulatory(pWiphy, pRegdom);
-	}
-
-	/*
-	 * Parsing channels
-	 */
-	rlmDomainParsingChannel(pWiphy); /*real regd update*/
-
-	/*
-	 * Check if firmawre support single sku.
-	 * no need to send information to FW due to FW is not supported.
-	 */
-	if (!regd_is_single_sku_en())
-		return;
-
-	/*
-	 * Always use the wlan GlueInfo as parameter.
-	 */
-	prGlueInfo = rlmDomainGetGlueInfo();
-	if (!prGlueInfo) {
-		DBGLOG(RLM, ERROR, "prGlueInfo is NULL!\n");
-		return; /*interface is not up yet.*/
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter) {
-		DBGLOG(RLM, ERROR, "prAdapter is NULL!\n");
-		return; /*interface is not up yet.*/
-	}
-
-	/*
-	 * Send commands to firmware
-	 */
-	prAdapter->rWifiVar.u2CountryCode =
-		(uint16_t)rlmDomainGetCountryCode();
-	rlmDomainSendCmd(prAdapter);
-}
-
-void
-cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
-{
-	/*
-	 * register callback
-	 */
-	prWiphy->reg_notifier = mtk_reg_notify;
-
-
-	/*
-	 * clear REGULATORY_CUSTOM_REG flag
-	 */
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	/*tells kernel that assign WW as default*/
-	prWiphy->flags &= ~(WIPHY_FLAG_CUSTOM_REGULATORY);
-#else
-	prWiphy->regulatory_flags &= ~(REGULATORY_CUSTOM_REG);
-
-	/*ignore the hint from IE*/
-	prWiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE;
-#endif
-
-
-	/*
-	 * set REGULATORY_CUSTOM_REG flag
-	 */
-#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	/*tells kernel that assign WW as default*/
-	prWiphy->flags |= (WIPHY_FLAG_CUSTOM_REGULATORY);
-#else
-	prWiphy->regulatory_flags |= (REGULATORY_CUSTOM_REG);
-#endif
-	/* assigned a defautl one */
-	if (rlmDomainGetLocalDefaultRegd())
-		wiphy_apply_custom_regulatory(prWiphy,
-					      rlmDomainGetLocalDefaultRegd());
-#endif
-
-
-	/*
-	 * Initialize regd control information
-	 */
-	rlmDomainResetCtrlInfo(FALSE);
-}
-
-#else
-void
-cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
-{
-}
-#endif
 
 int mtk_cfg80211_suspend(struct wiphy *wiphy,
 			 struct cfg80211_wowlan *wow)

@@ -1119,7 +1119,7 @@ static const struct wiphy_vendor_command
 	{
 		{
 			.vendor_id = OUI_MTK,
-			.subcmd = NL80211_VENDOR_SUBCMD_NAN
+			.subcmd = MTK_SUBCMD_NAN
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV |
@@ -1133,7 +1133,7 @@ static const struct wiphy_vendor_command
 	{
 		{
 			.vendor_id = OUI_MTK,
-			.subcmd = NL80211_VENDOR_SUBCMD_NDP
+			.subcmd = MTK_SUBCMD_NDP
 		},
 		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
 				WIPHY_VENDOR_CMD_NEED_NETDEV |
@@ -1146,6 +1146,21 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_STRING_CMD
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_string_cmd
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = nla_string_cmd_policy,
+		.maxattr = STRING_ATTRIBUTE_MAX
+#endif
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
@@ -1240,11 +1255,11 @@ static const struct nl80211_vendor_cmd_info
 	},
 	{
 		.vendor_id = OUI_MTK,
-		.subcmd = NL80211_VENDOR_SUBCMD_NAN
+		.subcmd = MTK_SUBCMD_NAN
 	},
 	{
 		.vendor_id = OUI_MTK,
-		.subcmd = NL80211_VENDOR_SUBCMD_NDP
+		.subcmd = MTK_SUBCMD_NDP
 	}
 };
 #endif
