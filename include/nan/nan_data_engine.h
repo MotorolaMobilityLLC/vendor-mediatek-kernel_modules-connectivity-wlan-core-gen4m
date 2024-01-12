@@ -48,7 +48,7 @@
 
 #define NAN_PROTOCOL_TIMEOUT 10000 /*2000*/
 #define NAN_SECURITY_TIMEOUT 1000
-#define NAN_DATA_RETRY_TIMEOUT 3000 /*300*/
+#define NAN_DATA_RETRY_TIMEOUT 4500 /*300*/
 #define NAN_DATA_RETRY_LIMIT 2
 
 /* Macros used by NAN Data Engine */
