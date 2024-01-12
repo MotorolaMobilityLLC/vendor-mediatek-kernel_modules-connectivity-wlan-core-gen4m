@@ -925,4 +925,9 @@ void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
 void scanResetBssDesc(IN struct ADAPTER *prAdapter,
 		      IN struct BSS_DESC *prBssDesc);
 
+/* Check if VHT IE filled in Epigram IE */
+void scanCheckEpigramVhtIE(IN uint8_t *pucBuf, IN struct BSS_DESC *prBssDesc);
+void scanParseVHTCapIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
+void scanParseVHTOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc);
+
 #endif /* _SCAN_H */
