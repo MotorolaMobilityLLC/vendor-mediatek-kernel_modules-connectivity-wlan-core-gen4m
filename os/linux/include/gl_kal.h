@@ -2230,6 +2230,7 @@ uint32_t kalGetConnsysVersion(void);
 uint32_t kalGetWfIpVersion(void);
 uint32_t kalGetFwVerOffset(void);
 uint32_t kalGetEmiMetOffset(void);
+uint32_t kalGetProjectId(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(struct GLUE_INFO *glue, unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);

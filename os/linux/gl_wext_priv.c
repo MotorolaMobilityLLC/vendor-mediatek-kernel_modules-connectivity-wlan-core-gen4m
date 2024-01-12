@@ -34,11 +34,8 @@
 #include "gl_p2p_os.h"
 #endif
 
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
-#include "connsys_debug_utility.h"
-#include "metlog.h"
-#endif
+#if CFG_SUPPORT_MET_LOG
+#include "gl_met_log.h"
 #endif
 
 #if CFG_SUPPORT_NAN
@@ -10371,15 +10368,10 @@ int priv_driver_set_chip_config(struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	uint32_t u4CmdLen = 0;
 	uint32_t u4PrefixLen = 0;
-
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	struct conn_metlog_info rMetInfo;
-	int32_t i4MetRes = 0;
-	phys_addr_t u4ConEmiPhyBase = 0;
+#if CFG_SUPPORT_MET_LOG
+	int32_t i4Ret = 0;
 	uint32_t u4EmiMetOffset = 0;
-#endif
 #endif
 
 	ASSERT(prNetDev);
@@ -10414,31 +10406,28 @@ int priv_driver_set_chip_config(struct net_device *prNetDev,
 			   CHIP_CONFIG_RESP_SIZE - 1);
 		rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_SUPPORT_MET_LOG
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 3", 8) == 0) {
-			i4MetRes = kstrtouint(rChipConfigInfo.aucCmd + 9, 16,
+			i4Ret = kstrtouint(rChipConfigInfo.aucCmd + 9, 16,
 							&u4EmiMetOffset);
-			if (i4MetRes) {
+			if (i4Ret) {
 				DBGLOG(REQ, ERROR,
-					"Convert Emi Met Offset error res: %d",
-							i4MetRes);
+					"Convert Emi Met Offset error, ret: %d\n",
+					i4Ret);
 			} else {
+				DBGLOG(REQ, INFO,
+					"Set Emi Met Offset: 0x%x\n",
+					u4EmiMetOffset);
 				kalSetEmiMetOffset(u4EmiMetOffset);
-				DBGLOG(REQ, INFO, "Set Emi Met Offset: 0x%x",
-							u4EmiMetOffset);
 			}
 		}
-
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 2", 8) == 0) {
-			DBGLOG(REQ, INFO, "Stop MET log");
-			i4MetRes = conn_metlog_stop(CONNDRV_TYPE_WIFI);
-			if (i4MetRes != 0)
+			i4Ret = met_log_stop(prGlueInfo);
+			if (i4Ret != 0)
 				DBGLOG(REQ, ERROR,
-					"conn_metlog_stop error res: %d\n",
-					i4MetRes);
+					"met_log_stop() error, ret: %d\n",
+					i4Ret);
 		}
-#endif
 #endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -10462,38 +10451,14 @@ int priv_driver_set_chip_config(struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		}
 
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if CFG_SUPPORT_MET_LOG
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 1", 8) == 0) {
-			u4ConEmiPhyBase = emi_mem_get_phy_base(
-				prGlueInfo->prAdapter->chip_info);
-			u4EmiMetOffset = emi_mem_offset_convert(
-				kalGetEmiMetOffset());
-			DBGLOG(REQ, INFO, "Start MET log, u4ConEmiPhyBase:%d",
-				u4ConEmiPhyBase);
-			if (!u4ConEmiPhyBase) {
-				DBGLOG(INIT, ERROR,
-				       "conninfra_get_phy_addr error\n");
-			} else {
-				rMetInfo.type = CONNDRV_TYPE_WIFI;
-				rMetInfo.read_cr =
-					u4ConEmiPhyBase + u4EmiMetOffset;
-				rMetInfo.write_cr =
-					u4ConEmiPhyBase + u4EmiMetOffset + 0x4;
-				rMetInfo.met_base_ap =
-					u4ConEmiPhyBase + u4EmiMetOffset + 0x8;
-				rMetInfo.met_base_fw =
-					0xF0000000 + u4EmiMetOffset + 0x8;
-				rMetInfo.met_size = 0x8000 - 0x8;
-				rMetInfo.output_len = 64;
-				i4MetRes = conn_metlog_start(&rMetInfo);
-				if (i4MetRes != 0)
-					DBGLOG(REQ, ERROR,
-					"conn_metlog_start error res: %d\n",
-					i4MetRes);
-			}
+			i4Ret = met_log_start(prGlueInfo);
+			if (i4Ret != 0)
+				DBGLOG(REQ, ERROR,
+					"met_log_start() error, ret: %d\n",
+					i4Ret);
 		}
-#endif
 #endif
 	}
 

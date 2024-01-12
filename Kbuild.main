@@ -480,6 +480,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
     CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
     CONFIG_MTK_WIFI_FW_LOG_EMI=y
+    CONFIG_MTK_WIFI_MET_LOG_EMI=y
     ifeq ($(call kver_ge,5,15),1)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
@@ -542,6 +543,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
     CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
     CONFIG_MTK_WIFI_FW_LOG_EMI=y
+    CONFIG_MTK_WIFI_MET_LOG_EMI=y
     ifeq ($(call kver_ge,5,15),1)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
@@ -1128,6 +1130,7 @@ ifeq ($(WMT_SUPPORT), y)
         CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT=y
     endif
     ccflags-y += -DCFG_ENABLE_WAKE_LOCK=1
+    ccflags-y += -DCFG_SUPPORT_MET_LOG=1
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
@@ -1490,6 +1493,12 @@ ifeq ($(CONFIG_MTK_WIFI_FW_LOG_EMI), y)
     ccflags-y += -DCFG_MTK_WIFI_FW_LOG_EMI=1
 else
     ccflags-y += -DCFG_MTK_WIFI_FW_LOG_EMI=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_MET_LOG_EMI), y)
+    ccflags-y += -DCFG_MTK_WIFI_MET_LOG_EMI=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_MET_LOG_EMI=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_DEBUG_SOP), y)
@@ -1895,7 +1904,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_sa_log.o \
                 $(OS_DIR)gl_ics.o \
 		$(OS_DIR)gl_reg_rule.o \
-		$(OS_DIR)gl_cmd_validate.o
+		$(OS_DIR)gl_cmd_validate.o \
+		$(OS_DIR)gl_met_log.o
 	ifeq ($(WMT_SUPPORT), y)
 		OS_OBJS += $(OS_DIR)gl_sys_lock.o
 	endif
@@ -1994,6 +2004,9 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
     endif
     ifeq ($(CONFIG_MTK_WIFI_FW_LOG_EMI), y)
         CHIPS_OBJS += $(CHIPS_CMM)fw_log_emi.o
+    endif
+    ifeq ($(CONFIG_MTK_WIFI_MET_LOG_EMI), y)
+        CHIPS_OBJS += $(CHIPS_CMM)met_log_emi.o
     endif
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v3.o \

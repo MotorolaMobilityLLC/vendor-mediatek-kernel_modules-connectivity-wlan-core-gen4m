@@ -2615,6 +2615,18 @@
 
 #define CFG_ENABLE_MAWD_MD_RING 0
 
+/*------------------------------------------------------------------------------
+ * Flag of MET log Feature Support
+ * CE default 0, if need, define 1 in makefile
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_MET_LOG
+#define CFG_SUPPORT_MET_LOG	0
+#endif
+#ifndef CFG_MTK_WIFI_MET_LOG_EMI
+#define CFG_MTK_WIFI_MET_LOG_EMI	0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
