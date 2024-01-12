@@ -10663,7 +10663,7 @@ wlanQueryLteSafeChannel(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIndex)
 {
 	uint32_t rResult = WLAN_STATUS_FAILURE;
-	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN;
+	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN = {0};
 	struct PARAM_GET_CHN_INFO *prQueryLteChn;
 
 	DBGLOG(P2P, TRACE, "[ACS] Get safe LTE Channels\n");

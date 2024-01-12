@@ -185,6 +185,8 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
 	if (u4FrameBodyLen <= CFG_CFG80211_IE_BUF_LEN &&
 		!IS_BSS_APGO(prBssInfo)) {
 		struct P2P_ROLE_FSM_INFO *fsm =

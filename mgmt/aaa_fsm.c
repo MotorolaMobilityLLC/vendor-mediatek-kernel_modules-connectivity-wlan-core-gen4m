@@ -227,6 +227,8 @@ void aaaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return;
 
 	DBGLOG(AAA, LOUD,
 		"EVENT-TIMER: TX REQ TIMEOUT, Current Time = %d\n",

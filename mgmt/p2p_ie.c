@@ -66,7 +66,8 @@ uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 		ASSERT_BREAK((prStaRec != NULL) && (prAdapter != NULL));
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
+		if (!prP2pBssInfo)
+			break;
 		prP2pRoleFsmInfo =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 				(uint8_t) prP2pBssInfo->u4PrivateData);

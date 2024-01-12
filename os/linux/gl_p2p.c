@@ -1146,7 +1146,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	}
 
 	/* FIXME: check KAL_P2P_NUM in trunk? */
-	if (u4Idx < 0 || u4Idx >= KAL_P2P_NUM) {
+	if (u4Idx >= KAL_P2P_NUM) {
 		DBGLOG(INIT, ERROR, "u4Idx(%d) is out of range!!\n", u4Idx);
 		return -1;
 	}
@@ -2052,6 +2052,8 @@ netdev_tx_t p2pHardStartXmit(IN struct sk_buff *prSkb,
 
 	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return NETDEV_TX_BUSY;
 	if ((prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) ||
 		(prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0))
 		kalPerMonStart(prGlueInfo);

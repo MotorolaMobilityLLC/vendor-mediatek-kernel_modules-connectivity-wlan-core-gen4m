@@ -1993,8 +1993,7 @@ p2pFuncSwitchOPMode(IN struct ADAPTER *prAdapter,
 			}
 
 			if (1) {
-				struct P2P_DISCONNECT_INFO rP2PDisInfo;
-
+				struct P2P_DISCONNECT_INFO rP2PDisInfo = {0};
 				rP2PDisInfo.ucRole = 2;
 				wlanSendSetQueryCmd(prAdapter,
 				    CMD_ID_P2P_ABORT,
@@ -5453,7 +5452,8 @@ uint32_t p2pCalculateWSCIELen(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
+	if (!prP2pBssInfo)
+		return 0;
 	return kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 2,
 					(uint8_t) prP2pBssInfo->u4PrivateData);
 }
@@ -5464,7 +5464,8 @@ void p2pGenerateWSCIE(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-
+	if (!prP2pBssInfo)
+		return;
 
 	kalP2PGenWSC_IE(prAdapter->prGlueInfo,
 		2,
@@ -5495,6 +5496,8 @@ void p2pGenerateWFDIE(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prP2pBssInfo)
+		return;
 
 	kalMemCopy((uint8_t *)
 		((uintptr_t) prMsduInfo->prPacket +
@@ -5569,7 +5572,8 @@ uint32_t p2pCalculateVendorIELen(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prP2pBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
+	if (!prP2pBssInfo)
+		return 0;
 	return prAdapter->prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData]
 			->u2VenderIELen;
 }
@@ -5739,6 +5743,8 @@ p2pFuncProcessP2pProbeRspVendor(IN struct ADAPTER *prAdapter,
 	uint32_t u4Idx;
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prP2pBssInfo)
+		return;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
 		prP2pBssInfo->u4PrivateData];
 
@@ -6065,7 +6071,8 @@ void p2pFuncGenerateWSC_IEForBeacon(IN struct ADAPTER *prAdapter,
 	ASSERT(prMsduInfo);
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-
+	if (!prP2pBssInfo)
+		return;
 	if (prP2pBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return;
 
@@ -6102,7 +6109,8 @@ uint32_t p2pFuncCalculateP2p_IELenForAssocRsp(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+	if (!prBssInfo ||
+		prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
 	return p2pFuncCalculateP2P_IELen(prAdapter,
@@ -6893,7 +6901,7 @@ void p2pFuncGenerateP2P_IE_NoA(IN struct ADAPTER *prAdapter,
 {
 	struct IE_P2P *prIeP2P;
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
-	uint32_t u4AttributeLen;
+	uint32_t u4AttributeLen = 0;
 	struct BSS_INFO *prBssInfo;
 
 	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
