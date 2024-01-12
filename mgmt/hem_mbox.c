@@ -97,6 +97,7 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CONNECTION_REQ"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CONNECTION_ABORT"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_BEACON_UPDATE"),
+	(uint8_t *) DISP_STRING("MID_MNY_P2P_BEACON_REINIT"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_STOP_AP"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CHNL_REQ"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CHNL_ABORT"),
@@ -241,6 +242,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_CONNECTION_ABORT, p2pRoleFsmRunEventConnectionAbort},
 #if CFG_ENABLE_WIFI_DIRECT
 	{MID_MNY_P2P_BEACON_UPDATE, p2pRoleFsmRunEventBeaconUpdate},
+	{MID_MNY_P2P_BEACON_REINIT, p2pRoleFsmReInitBeaconAll},
 	{MID_MNY_P2P_STOP_AP, p2pRoleFsmRunEventStopAP},
 #endif
 	{MID_MNY_P2P_CHNL_REQ, p2pDevFsmRunEventChannelRequest},	/* V */

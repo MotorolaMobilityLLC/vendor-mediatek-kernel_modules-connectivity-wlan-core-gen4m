@@ -6149,14 +6149,20 @@ u_int8_t nicSerIsRxStop(struct ADAPTER *prAdapter)
 
 void nicSerReInitBeaconFrame(struct ADAPTER *prAdapter)
 {
-	struct P2P_ROLE_FSM_INFO *prRoleP2pFsmInfo;
+	struct MSG_HDR *prBeaconReinitMsg;
 
-	prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-			   0);
-	if (prRoleP2pFsmInfo != NULL) {
-		bssUpdateBeaconContent(prAdapter,
-				       prRoleP2pFsmInfo->ucBssIndex);
-		DBGLOG(NIC, INFO, "SER beacon frame is updated\n");
+	prBeaconReinitMsg = cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_HDR));
+	if (!prBeaconReinitMsg) {
+		DBGLOG(HAL, WARN, "Allocate memory fail\n");
+	} else {
+		/* To manipulate p2p role in main_thread */
+		prBeaconReinitMsg->eMsgId =
+			MID_MNY_P2P_BEACON_REINIT;
+		mboxSendMsg(prAdapter,
+			MBOX_ID_0,
+			prBeaconReinitMsg,
+			MSG_SEND_METHOD_BUF);
 	}
 }
 #endif
