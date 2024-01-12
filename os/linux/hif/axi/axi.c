@@ -659,7 +659,7 @@ static int _init_resv_mem(struct platform_device *pdev)
 	of_node_put(np);
 
 	return ret;
-#elif
+#else
 	DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
 	return -1;
 #endif
