@@ -438,32 +438,25 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 	 * 10: BW7
 	 * 12: BW320
 	 */
-	/* BW Mapping in FW
-	 * 0: BW20
-	 * 1: BW40
-	 * 2: BW80
-	 * 3: BW160C
-	 * 4: BW160NC
-	 * 5: BW5
-	 * 6: BW10
-	 * 7: BW320
+	/* BW Mapping in FW hal_cal_flow_rom.h
+	 * 0: CDBW_20
+	 * 1: CDBW_40
+	 * 2: CDBW_80
+	 * 3: CDBW_160
+	 * 4: CDBW_320
+	 * 5: CDBW_5
+	 * 6: CDBW_10
+	 * 7: CDBW_80P80
 	 */
-	if (bw == 0)
-		bw_mapping = 0;
-	else if (bw == 1)
-		bw_mapping = 1;
-	else if (bw == 2)
-		bw_mapping = 2;
-	else if (bw == 3)
-		bw_mapping = 6;
-	else if (bw == 4)
-		bw_mapping = 5;
-	else if (bw == 5)
-		bw_mapping = 3;
-	else if (bw == 6)
-		bw_mapping = 4;
-	else if (bw == 12)
-		bw_mapping = 7;
+
+	u_int32 mapping_table[13] = {
+		0, 1, 2, 6, 5, 3, 7, 0,
+		0, 0, 0, 0, 4
+	};
+
+	if (bw < 13)
+		bw_mapping = mapping_table[bw];
+
 #else
 
 	/* BW Mapping in QA Tool
