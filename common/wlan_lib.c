@@ -5391,6 +5391,13 @@ uint8_t wlanGetChannelNumberByNetwork(IN struct ADAPTER
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR,
+			"Invalid bss idx: %d\n",
+			ucBssIndex);
+		return 1;
+	}
+
 	return prBssInfo->ucPrimaryChannel;
 }
 
@@ -5414,6 +5421,13 @@ uint32_t wlanGetBandIndexByNetwork(IN struct ADAPTER
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(INIT, ERROR,
+			"Invalid bss idx: %d\n",
+			ucBssIndex);
+		return BAND_2G4;
+	}
 
 	return prBssInfo->eBand;
 }
@@ -11246,6 +11260,12 @@ wlanGetSpeIdx(IN struct ADAPTER *prAdapter,
 		return ucRetValSpeIdx;
 	}
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(SW4, ERROR,
+			"Invalid bss idx: %d\n",
+			ucBssIndex);
+		return ucRetValSpeIdx;
+	}
 	/*
 	 * if DBDC enable return 0, else depend 2.4G/5G & support WF path
 	 * retrun accurate value
@@ -11342,6 +11362,13 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 #endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(CNM, ERROR,
+			"Invalid bss idx: %d\n",
+			ucBssIndex);
+		return 1;
+	}
+
 	if (IS_BSS_APGO(prBssInfo)) {
 		if (p2pFuncIsAPMode(
 			prAdapter->rWifiVar.prP2PConnSettings
