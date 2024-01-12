@@ -1016,43 +1016,12 @@ int32_t connac3x_show_umac_wtbl_info(
 			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_en,
 			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_num + 1,
 			puwtbl->key_msdu_mlo.wtbl_d8.field.amsdu_num);
-	if (amsdu_len == 0)
-		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
-			i4BytesWritten,
-			"\t%sinvalid (WTBL value=0x%x)\n",
-			"HW AMSDU Len",
-			amsdu_len);
-	else if (amsdu_len == 1)
-		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 			i4BytesWritten,
 			"\t%s:%d~%d (WTBL value=0x%x)\n",
 			"HW AMSDU Len",
-			1,
-			255,
-			amsdu_len);
-	else if (amsdu_len == 2)
-		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
-			i4BytesWritten,
-			"\t%s:%d~%d (WTBL value=0x%x)\n",
-			"HW AMSDU Len",
-			256,
-			511,
-			amsdu_len);
-	else if (amsdu_len == 3)
-		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
-			i4BytesWritten,
-			"\t%s:%d~%d (WTBL value=0x%x)\n",
-			"HW AMSDU Len",
-			512,
-			767,
-			amsdu_len);
-	else
-		i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
-			i4BytesWritten,
-			"\t%s:%d~%d (WTBL value=0x%x)\n",
-			"HW AMSDU Len",
-			256 * (amsdu_len - 1),
-			256 * (amsdu_len - 1) + 255,
+			256 * amsdu_len,
+			256 * (amsdu_len + 1) - 1,
 			amsdu_len);
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen,
 			i4BytesWritten,
