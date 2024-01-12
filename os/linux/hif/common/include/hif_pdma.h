@@ -94,11 +94,14 @@
 #define TX_RING_DATA_SIZE			1024
 #if defined(MT7925)
 #define TX_RING_CMD_SIZE			512
+#define HIF_TX_MSDU_TOKEN_NUM			8064
 #else
 #define TX_RING_CMD_SIZE			256
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 4)
 #endif
 #define HIF_NUM_OF_QM_RX_PKT_NUM		4096
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 4)
+
+
 
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
