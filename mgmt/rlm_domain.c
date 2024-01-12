@@ -2230,7 +2230,14 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 
 	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
 		prSubBand = &prDomainInfo->rSubBand[i];
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		/* If HW doesn't support 6G,
+		 * we should not add 6G channel into command.
+		 */
+		if (prAdapter->fgIsHwSupport6G == FALSE
+			&& prSubBand->ucBand == BAND_6G)
+			continue;
+#endif
 		prCmd->rSubBand[i].ucRegClass = prSubBand->ucRegClass;
 		prCmd->rSubBand[i].ucBand = prSubBand->ucBand;
 
@@ -2328,7 +2335,14 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 
 	for (i = 0; i < MAX_SUBBAND_NUM; i++) {
 		prSubBand = &prDomainInfo->rSubBand[i];
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		/* If HW doesn't support 6G,
+		 * we should not add 6G channel into command.
+		 */
+		if (prAdapter->fgIsHwSupport6G == FALSE
+			&& prSubBand->ucBand == BAND_6G)
+			continue;
+#endif
 		prCmd->rSubBand[i].ucRegClass = prSubBand->ucRegClass;
 		prCmd->rSubBand[i].ucBand = prSubBand->ucBand;
 
