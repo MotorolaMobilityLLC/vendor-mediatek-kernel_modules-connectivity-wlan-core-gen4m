@@ -619,7 +619,7 @@ VOID p2pRoleFsmRunEventRxDeauthentication(IN P_ADAPTER_T prAdapter, IN P_STA_REC
 				ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
 
 
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 /* Indicate disconnect to Host. */
 				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 								(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
@@ -709,7 +709,7 @@ VOID p2pRoleFsmRunEventRxDisassociation(IN P_ADAPTER_T prAdapter, IN P_STA_RECOR
 
 				u2IELength = prSwRfb->u2PacketLen - (WLAN_MAC_HEADER_LEN + REASON_CODE_FIELD_LEN);
 
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 				/* Indicate disconnect to Host. */
 				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					(UINT_8) prP2pBssInfo->u4PrivateData, NULL,
@@ -787,7 +787,7 @@ VOID p2pRoleFsmRunEventBeaconTimeout(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T p
 
 		if (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Indicate disconnect to Host. */
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
@@ -1512,7 +1512,7 @@ VOID p2pRoleFsmRunEventConnectionAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T 
 					break;
 				}
 
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 						prP2pRoleFsmInfo->ucRoleIndex,
 						NULL, NULL, 0, 0,
@@ -1713,7 +1713,7 @@ VOID p2pRoleFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 					if (prJoinInfo->prTargetBssDesc)
 						scanReportBss2Cfg80211(prAdapter,
 								       OP_MODE_P2P_DEVICE, prJoinInfo->prTargetBssDesc);
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 					kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 									prP2pRoleFsmInfo->ucRoleIndex,
 									&prP2pRoleFsmInfo->rConnReqInfo,
@@ -1749,7 +1749,7 @@ VOID p2pRoleFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 
 						prBssDesc->fgIsConnecting = FALSE;
 
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 						kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 								prP2pRoleFsmInfo->ucRoleIndex,
 								&prP2pRoleFsmInfo->rConnReqInfo,

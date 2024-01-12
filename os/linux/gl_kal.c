@@ -1064,7 +1064,7 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 					     (&(prGlueInfo->prAdapter->rWifiVar.rAisFsmInfo)))->prTargetBssDesc;
 
 				if (prBssDesc != NULL) {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 					bss = cfg80211_inform_bss(priv_to_wiphy(prGlueInfo),
 								prChannel,
 								CFG80211_BSS_FTYPE_PRESP,
@@ -1141,7 +1141,7 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 		if (prGlueInfo->fgIsRegistered == TRUE) {
 			P_BSS_INFO_T prBssInfo = prGlueInfo->prAdapter->prAisBssInfo;
 			UINT_16 u2DeauthReason = 0;
-#if CFG_WPS_DISCONNECT || (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 
 			if (prBssInfo)
 				u2DeauthReason = prBssInfo->u2DeauthReason;
@@ -4260,14 +4260,14 @@ VOID kalIndicateRxMgmtFrame(IN P_GLUE_INFO_T prGlueInfo, IN P_SW_RFB_T prSwRfb)
 
 		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0))
+#if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 				i4Freq,	/* in MHz */
 				RCPI_TO_dBm((UINT_8) nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
 				prSwRfb->pvHeader, prSwRfb->u2PacketLen,
 				NL80211_RXMGMT_FLAG_ANSWERED);
 
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0))
+#elif (KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr, i4Freq,	/* in MHz */
 						RCPI_TO_dBm((UINT_8)
 						nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
