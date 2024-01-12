@@ -690,6 +690,11 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 			switch (ucOpt0) {
 			case 0:
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
+				if (ucOpt1 >= TC_NUM) {
+					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+					   ucOpt1);
+					break;
+				}
 				g_au4SwCr[1] =
 					(QM_GET_TX_QUEUE_LEN(prAdapter,
 						ucOpt1));
@@ -704,6 +709,11 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 1:
 #if QM_FORWARDING_FAIRNESS
+				if (ucOpt1 >= TC_NUM) {
+					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+					   ucOpt1);
+					break;
+				}
 				g_au4SwCr[1] =
 					prQM->au4ResourceUsedCount[ucOpt1];
 				g_au4SwCr[2] = prQM->au4HeadStaRecIndex[ucOpt1];
@@ -712,6 +722,11 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 2:
 				/* only one */
+				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
+					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+					   ucOpt1);
+					break;
+				}
 				g_au4SwCr[1] =
 					prQM->arTxQueue[ucOpt1].u4NumElem;
 
@@ -725,6 +740,11 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 			prTxCtrl = &prAdapter->rTxCtrl;
 			switch (ucOpt0) {
 			case 0:
+				if (ucOpt1 >= TC_NUM) {
+					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+					   ucOpt1);
+					break;
+				}
 				g_au4SwCr[1] =
 					prAdapter->rTxCtrl.rTc.
 					au4FreeBufferCount[ucOpt1];
@@ -789,6 +809,11 @@ void swCtrlCmdCategory1(struct ADAPTER *prAdapter,
 		/* Read */
 		switch (ucIndex) {
 		case SWCTRL_STA_QUE_INFO: {
+			if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
+				DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+				   ucOpt1);
+				break;
+			}
 			g_au4SwCr[1] = prStaRec->arTxQueue[ucOpt1].u4NumElem;
 		}
 		break;
