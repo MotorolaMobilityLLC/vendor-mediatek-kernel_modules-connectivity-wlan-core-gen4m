@@ -2334,8 +2334,8 @@ void
 nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo)
 {
-	uint8_t *pucOutputBuf;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	uint8_t *pucOutputBuf = NULL;
 	int16_t i2HeadLength;
 
 	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
@@ -4685,9 +4685,10 @@ void nicTxClearMgmtDirectTxQ(struct ADAPTER *prAdapter)
 	while (QUEUE_IS_NOT_EMPTY(&prAdapter->rMgmtDirectTxQueue)) {
 		QUEUE_REMOVE_HEAD(&prAdapter->rMgmtDirectTxQueue,
 				  prMsduInfo, struct MSDU_INFO *);
-
-		nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		if (prMsduInfo) {
+			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
 	}
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_TX_DATA_DONE_QUE);
 }
@@ -4860,7 +4861,7 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+	if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
 		prWifiHdr =
 			(struct WLAN_MAC_HEADER *)
 			((uint8_t *)(prMsduInfo->prPacket) +
