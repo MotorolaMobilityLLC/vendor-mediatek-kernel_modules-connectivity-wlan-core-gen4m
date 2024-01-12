@@ -862,8 +862,6 @@ u_int8_t rsnPerformPolicySelection(
 	prBss->u4RsnSelectedAKMSuite = 0;
 	prBss->ucEncLevel = 0;
 
-	aisGetAisSpecBssInfo(prAdapter,
-		ucBssIndex)->fgMgmtProtection = FALSE;
 	eAuthMode =
 	    aisGetAuthMode(prAdapter, ucBssIndex);
 	eOPMode =
@@ -948,15 +946,11 @@ u_int8_t rsnPerformPolicySelection(
 			return FALSE;
 		}
 #if CFG_SUPPORT_PASSPOINT
-	} else if (eAuthMode ==
-		   AUTH_MODE_WPA_OSEN) {
-		prBssRsnInfo = &prBss->rRSNInfo;
-		aisGetConnSettings(prAdapter, ucBssIndex)->fgAuthOsenWithRSN =
-			(prBss->fgIEOsen ? FALSE : TRUE);
-		if (prBss->fgIEOsen)
-			DBGLOG(RSN, WARN, "HS20: using OSEN\n");
+	} else if (eAuthMode == AUTH_MODE_WPA_OSEN) {
+		if (prBss->fgIERSN)
+			prBssRsnInfo = &prBss->rRSNInfo;
 		else
-			DBGLOG(RSN, WARN, "RSN: using OSEN (within RSN)\n");
+			return TRUE;
 #endif
 	} else if (eEncStatus != ENUM_ENCRYPTION1_ENABLED) {
 		/* If the driver is configured to use WEP only,
@@ -975,10 +969,6 @@ u_int8_t rsnPerformPolicySelection(
 	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex))
 		return FALSE;
 #endif
-
-
-
-	/* end Support AP Selection */
 
 	if (prBssRsnInfo->u4PairwiseKeyCipherSuiteCount == 1 &&
 	    GET_SELECTOR_TYPE(prBssRsnInfo->au4PairwiseKeyCipherSuite[0]) ==
@@ -1246,15 +1236,8 @@ u_int8_t rsnPerformPolicySelection(
 			       "[MFP] Skip RSN IE, No MFP Required\n");
 			return FALSE;
 		}
-		aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
-			->fgMgmtProtection = TRUE;
 	} else if (kalGetMfpSetting(prAdapter->prGlueInfo,
-		ucBssIndex) ==
-		   RSN_AUTH_MFP_OPTIONAL) {
-		if (prBssRsnInfo->u2RsnCap & (ELEM_WPA_CAP_MFPR |
-					      ELEM_WPA_CAP_MFPC))
-			aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
-			->fgMgmtProtection = TRUE;
+		ucBssIndex) == RSN_AUTH_MFP_OPTIONAL) {
 	} else {
 		if ((prBssRsnInfo->fgRsnCapPresent) &&
 		(prBssRsnInfo->u2RsnCap & ELEM_WPA_CAP_MFPR)) {
@@ -1263,14 +1246,6 @@ u_int8_t rsnPerformPolicySelection(
 			return FALSE;
 		}
 	}
-
-	DBGLOG(RSN, TRACE,
-	       "setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
-	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
-	       prBssRsnInfo->u2RsnCap,
-	       prBssRsnInfo->fgRsnCapPresent,
-	       aisGetAisSpecBssInfo(prAdapter, ucBssIndex)
-			->fgMgmtProtection);
 #endif
 
 	/* TODO: WTBL cipher filed cannot

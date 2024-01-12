@@ -143,6 +143,9 @@ static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 	uint8_t ucBssIndex);
 
+static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBss, uint8_t ucBssIndex);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -1438,6 +1441,9 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	if (ucLinkIndex != 0)
 		return;
 
+	/* update fgMgmtProtection from main link only */
+	aisFsmUpdateRsnSetting(prAdapter, prBssDesc, ucBssIndex);
+
 	if (prBssDesc->ucSSIDLen)
 		COPY_SSID(prConnSettings->aucSSID, prConnSettings->ucSSIDLen,
 			  prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
@@ -2476,6 +2482,71 @@ u_int8_t aisScanChannelFixed(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 				prBand, pucPrimaryChannel);
 	}
 	return FALSE;
+}
+
+static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBss, uint8_t ucBssIndex)
+{
+	struct RSN_INFO *prBssRsnInfo = NULL;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
+	if (eAuthMode == AUTH_MODE_WPA ||
+	    eAuthMode == AUTH_MODE_WPA_PSK ||
+	    eAuthMode == AUTH_MODE_WPA_NONE) {
+		prBssRsnInfo = &prBss->rWPAInfo;
+	} else if (rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex)) {
+		prBssRsnInfo = &prBss->rRSNInfo;
+#if CFG_SUPPORT_PASSPOINT
+	} else if (eAuthMode == AUTH_MODE_WPA_OSEN) {
+		if (prBss->fgIERSN) {
+			prBssRsnInfo = &prBss->rRSNInfo;
+			aisGetConnSettings(prAdapter, ucBssIndex)
+				->fgAuthOsenWithRSN = TRUE;
+		} else {
+			aisGetConnSettings(prAdapter, ucBssIndex)
+				->fgAuthOsenWithRSN = FALSE;
+		}
+		DBGLOG(AIS, INFO, "OSEN: OSEN=%d, RSN=%d\n",
+			prBss->fgIEOsen, prBss->fgIERSN);
+#endif
+	}
+
+	if (!prBssRsnInfo) {
+		DBGLOG(AIS, WARN, "bss%d no rsninfo\n", ucBssIndex);
+		return FALSE;
+	}
+
+#if CFG_SUPPORT_802_11W
+	DBGLOG(AIS, INFO, "[MFP] MFP setting = %d\n",
+	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex));
+
+	if (kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex) ==
+	    RSN_AUTH_MFP_REQUIRED) {
+		prAisSpecificBssInfo->fgMgmtProtection = TRUE;
+	} else if (kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex) ==
+		   RSN_AUTH_MFP_OPTIONAL) {
+		if (prBssRsnInfo->u2RsnCap & (ELEM_WPA_CAP_MFPR |
+					      ELEM_WPA_CAP_MFPC))
+			prAisSpecificBssInfo->fgMgmtProtection = TRUE;
+		else
+			prAisSpecificBssInfo->fgMgmtProtection = FALSE;
+	} else {
+		prAisSpecificBssInfo->fgMgmtProtection = FALSE;
+	}
+
+	DBGLOG(AIS, INFO,
+	       "setting=%d, Cap=%d, CapPresent=%d, MgmtProtection = %d\n",
+	       kalGetMfpSetting(prAdapter->prGlueInfo, ucBssIndex),
+	       prBssRsnInfo->u2RsnCap,
+	       prBssRsnInfo->fgRsnCapPresent,
+	       prAisSpecificBssInfo->fgMgmtProtection);
+#endif
+
+	return TRUE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3708,7 +3779,7 @@ void aisFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 }				/* end of aisFsmRunEventJoinComplete() */
 
 void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
-	struct BSS_DESC *prBssDesc)
+	struct BSS_DESC *prBssDesc, uint8_t ucLinkIndex)
 {
 	uint8_t ucRfCenterFreqSeg1, ucPrimaryChannel;
 	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
@@ -3734,6 +3805,10 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 
 	prBssInfo->ucVhtChannelWidth = eRfChannelWidth;
 	prBssInfo->eBssSCO = eRfSco;
+
+	/* update fgMgmtProtection from main link only */
+	if (ucLinkIndex == 0)
+		aisFsmUpdateRsnSetting(ad, prBssDesc, prBssInfo->ucBssIndex);
 }
 
 void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
@@ -3780,7 +3855,8 @@ void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 				DBGLOG(AIS, ERROR,
 					"Can't find target BssDesc %d\n", i);
 			else
-				aisRestoreBssInfo(ad, prAisBssInfo, prBssDesc);
+				aisRestoreBssInfo(ad, prAisBssInfo,
+					prBssDesc, i);
 		}
 	}
 }
