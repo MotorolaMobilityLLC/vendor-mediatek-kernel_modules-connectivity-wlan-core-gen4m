@@ -147,7 +147,7 @@ void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 	pucEth += ETH_HLEN;
 	u2IPID = pucEth[4] << 8 | pucEth[5];
 
-	DBGLOG(RX, TEMP, "u2IpId=%d rx_packets=%lu\n",
+	DBGLOG(RX, TEMP, "u2IpId=%d rx_packets=%u\n",
 		u2IPID, kalGetNetDevRxPacket(prNetDev));
 
 	if ((g_ucTxRxFlag & BIT(1)) == 0)
@@ -188,7 +188,7 @@ void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 			break;
 		}
 		DBGLOG(RX, INFO,
-	"IPID 0x%04x src %d dst %d UP %d,delay %u us,int2rx %lu us,IntTime %llu,%u/%u,leave at %02d:%02d:%02d.%06ld\n",
+	"IPID 0x%04x src %d dst %d UP %d,delay %u us,int2rx %lu us,IntTime %llu,%u/%u,leave at %02d:%02d:%02d.%06u\n",
 			u2IPID, u2UdpSrcPort, u2UdpDstPort,
 			((pucEth[1] & IPTOS_PREC_MASK) >> IPTOS_PREC_OFFSET),
 			u4Delay,
