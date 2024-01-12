@@ -3909,7 +3909,7 @@ void scanLogCacheAddBSS(struct LINK *prList,
 void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	const uint16_t logBufLen)
 {
-	char logBuf[logBufLen];
+	char *prlogBuf;
 	uint32_t idx = 0;
 	struct SCAN_LOG_ELEM_BSS *pBss = NULL;
 #if CFG_SHOW_FULL_MACADDR
@@ -3927,6 +3927,12 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 	if (LINK_IS_EMPTY(prList))
 		return;
 
+	prlogBuf = kalMemAlloc(logBufLen, VIR_MEM_TYPE);
+	if (prlogBuf == NULL) {
+		DBGLOG(SCN, WARN, "logBuf is NULL, skip!\n");
+		return;
+	}
+	kalMemZero(prlogBuf, logBufLen);
 	/* The maximum characters of uint32_t could be 10. Thus, the
 	 * mininum size should be 10+3 for the format "%u: ".
 	 */
@@ -3938,13 +3944,13 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 		}
 		return;
 	}
-	idx += kalSnprintf(logBuf, sizeof(logBuf), "%u: ", prList->u4NumElem);
+	idx += kalSnprintf(prlogBuf, logBufLen, "%u: ", prList->u4NumElem);
 
 	while (!LINK_IS_EMPTY(prList)) {
 		if (idx+dataLen+1 > logBufLen) {
-			logBuf[idx] = 0; /* terminating null byte */
+			prlogBuf[idx] = 0; /* terminating null byte */
 			if (prefix != LOG_SCAN_D2D)
-				scanlog_dbg(prefix, INFO, "%s\n", logBuf);
+				scanlog_dbg(prefix, INFO, "%s\n", prlogBuf);
 			idx = 0;
 		}
 
@@ -3952,7 +3958,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			pBss, struct SCAN_LOG_ELEM_BSS *);
 
 #if CFG_SHOW_FULL_MACADDR
-		idx += kalSnprintf(logBuf+idx, dataLen+1,
+		idx += kalSnprintf(prlogBuf+idx, dataLen+1,
 			"%02x%02x%02x%02x%02x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
@@ -3961,7 +3967,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			((uint8_t *)pBss->aucBSSID)[4],
 			((uint8_t *)pBss->aucBSSID)[5]);
 #else
-		idx += kalSnprintf(logBuf+idx, dataLen+1,
+		idx += kalSnprintf(prlogBuf+idx, dataLen+1,
 			"%02x%02x%03x%02x",
 			((uint8_t *)pBss->aucBSSID)[0],
 			((uint8_t *)pBss->aucBSSID)[1],
@@ -3973,9 +3979,9 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 
 	}
 	if (idx != 0) {
-		logBuf[idx] = 0; /* terminating null byte */
+		prlogBuf[idx] = 0; /* terminating null byte */
 		if (prefix != LOG_SCAN_D2D)
-			scanlog_dbg(prefix, INFO, "%s\n", logBuf);
+			scanlog_dbg(prefix, INFO, "%s\n", prlogBuf);
 		idx = 0;
 	}
 }
