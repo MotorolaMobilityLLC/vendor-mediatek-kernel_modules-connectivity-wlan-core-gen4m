@@ -165,6 +165,13 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 			prnanBssInfo->u2BSSBasicRateSet,
 			prnanBssInfo->aucAllSupportedRates,
 			&prnanBssInfo->ucAllSupportedRatesLen);
+
+		/* Set DBRTS to 0x3FF as defalt */
+		prnanBssInfo->ucHeOpParams[0] |=
+			HE_OP_PARAM0_TXOP_DUR_RTS_THRESHOLD_MASK;
+		prnanBssInfo->ucHeOpParams[1] |=
+			HE_OP_PARAM1_TXOP_DUR_RTS_THRESHOLD_MASK;
+
 		/* Activate NAN BSS */
 		if (!IS_BSS_ACTIVE(
 			    prAdapter->aprBssInfo
