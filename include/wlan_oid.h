@@ -5484,4 +5484,12 @@ wlanoidQueryEmlInfo(struct ADAPTER *prAdapter,
 			  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			  uint32_t *pu4QueryInfoLen);
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+uint32_t
+wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer, uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
+
 #endif /* _WLAN_OID_H */

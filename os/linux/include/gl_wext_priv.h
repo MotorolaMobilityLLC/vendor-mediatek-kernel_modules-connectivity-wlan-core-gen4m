@@ -1043,8 +1043,10 @@ int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 int priv_driver_phy_ctrl(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif
-
-
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

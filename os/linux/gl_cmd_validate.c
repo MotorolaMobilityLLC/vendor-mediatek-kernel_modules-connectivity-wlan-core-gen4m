@@ -290,6 +290,17 @@ struct CMD_VALIDATE_POLICY reassoc_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
 };
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+struct CMD_VALIDATE_POLICY set_6g_pwr_mode_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING,
+				.min = 0,
+				.max = 17},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8,
+				.min = 0,
+				.max = PWR_MODE_6G_NUM}
+};
+#endif
+
 struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_AP_START,
@@ -2239,6 +2250,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = NULL
+	},
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	{
+		.pcCmdStr  = CMD_SET_6G_POWER_MODE,
+		.pfHandler = priv_driver_set_6g_pwr_mode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = set_6g_pwr_mode_policy,
+		.u4PolicySize = ARRAY_SIZE(set_6g_pwr_mode_policy)
 	},
 #endif
 /*
