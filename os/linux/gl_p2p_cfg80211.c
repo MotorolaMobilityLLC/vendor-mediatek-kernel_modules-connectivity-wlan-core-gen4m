@@ -1093,9 +1093,11 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_start_ap.\n");
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
-		/*Chun todo 20161220_DFS*/
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		/*DFS todo 20161220_DFS*/
 		netif_carrier_on(dev);
 		netif_tx_start_all_queues(dev);
+#endif
 
 		chandef = &settings->chandef;
 
@@ -1355,7 +1357,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_channel_switch.\n");
 		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
 
-		/* Todo: 20161220_DFS_Chun */
+		/*DFS todo 20161220_DFS*/
 		netif_carrier_on(dev);
 		netif_tx_start_all_queues(dev);
 
