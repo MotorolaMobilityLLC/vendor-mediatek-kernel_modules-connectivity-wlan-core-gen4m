@@ -1423,8 +1423,7 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_nan
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		,
-		.policy = mtk_wlan_vendor_nan_policy,
-		.maxattr = NL80211_ATTR_MAX
+		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
 	{
@@ -5896,6 +5895,11 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	uint32_t u4BufLen = 0;
 
 	if (kalIsResetting())
+		return 0;
+
+	if (prGlueInfo->prAdapter->fgIsNANRegistered && ucEnable)
+		return 0;
+	else if ((!prGlueInfo->prAdapter->fgIsNANRegistered) && (!ucEnable))
 		return 0;
 
 	if (ucEnable) {
