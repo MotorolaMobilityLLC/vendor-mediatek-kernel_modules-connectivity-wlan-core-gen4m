@@ -2876,7 +2876,8 @@ struct ADAPTER {
 	IS_BSS_P2P(GET_BSS_INFO_BY_INDEX(_prAdapter, _BssIndex)))
 
 #define IS_BSS_BOW(_prBssInfo) \
-	((_prBssInfo)->eNetworkType == NETWORK_TYPE_BOW)
+	(_prBssInfo && \
+	(_prBssInfo)->eNetworkType == NETWORK_TYPE_BOW)
 
 #define IS_BSS_APGO(_prBssInfo) \
 	(IS_BSS_P2P(_prBssInfo) && \
