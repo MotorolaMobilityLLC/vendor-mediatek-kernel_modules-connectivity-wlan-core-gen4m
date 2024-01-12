@@ -3702,6 +3702,19 @@ struct _NAN_CMD_DW_INTERVAL_T {
 	uint8_t aucReserved[3];
 };
 
+struct _NAN_EVENT_REPORT_BEACON {
+	enum ENUM_BAND eRfBand;
+	int32_t i4Rssi;
+	uint32_t au4LocalTsf[2];
+	uint16_t u2BeaconLength;
+	uint16_t u2TxMode;
+	uint8_t ucRate;
+	uint8_t ucHwChnl;
+	uint8_t ucBw;
+	uint8_t aucReserved[5];
+	uint8_t aucBeaconFrame[];
+};
+
 enum _ENUM_NAN_SUB_CMD {
 	NAN_CMD_TEST, /* 0 */
 	NAN_TXM_TEST,
