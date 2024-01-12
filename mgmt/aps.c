@@ -1321,8 +1321,8 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 #endif
 
 #define TEMP_LOG_TEMPLATE\
-		"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],DE[%d]"\
-		",RSSI[%d],GBandCoex[%d],SCC[%d],BD[%d],BL[%d],SAA[%d]"\
+		"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],GBandCoex[%d]"\
+		",SCC[%d],DE[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		",TPUT[%d]%s\n"
 
@@ -1519,6 +1519,8 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			}
 			break;
 		}
+		case ROAMING_REASON_INACTIVE_TIMER:
+		case ROAMING_REASON_SCAN_TIMER:
 		case ROAMING_REASON_POOR_RCPI:
 		case ROAMING_REASON_RETRY:
 		{
@@ -1544,7 +1546,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		}
 #endif
 		/* onle limited for wlan1 */
-		if (ais && ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+		if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
 			struct AIS_FSM_INFO *mainAis =
 				aisFsmGetInstance(prAdapter, AIS_DEFAULT_INDEX);
 			struct BSS_DESC *mainBssDesc =
