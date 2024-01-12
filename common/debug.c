@@ -640,6 +640,13 @@ uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
 void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module, uint32_t u4level)
 {
+	wlanDbgSetLogLevel(prAdapter, u4Version, u4Module, u4level, FALSE);
+}
+
+void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t u4Module,
+		uint32_t u4level, u_int8_t fgEarlySet)
+{
 	uint32_t u4DriverLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 	uint32_t u4FwLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -676,7 +683,16 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 			cmd.ucVersion = u4Version;
 			cmd.ucLogLevel = u4level;
 
-			rStatus = wlanSendSetQueryCmd(prAdapter,
+			if (fgEarlySet) {
+				/* Set during wifi on flow */
+				rStatus = wlanSendFwLogControlCmd(prAdapter,
+					CMD_ID_LOG_UI_INFO,
+					nicCmdEventSetCommon,
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_EVENT_LOG_UI_INFO),
+					(uint8_t *)&cmd);
+			} else {
+				rStatus = wlanSendSetQueryCmd(prAdapter,
 					CMD_ID_LOG_UI_INFO,
 					TRUE,
 					FALSE,
@@ -687,6 +703,8 @@ void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
 					(uint8_t *)&cmd,
 					NULL,
 					0);
+			}
+
 			if (rStatus != WLAN_STATUS_FAILURE)
 				prAdapter->fgSetLogLevel = true;
 			else
