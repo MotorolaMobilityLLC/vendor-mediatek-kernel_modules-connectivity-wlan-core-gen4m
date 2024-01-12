@@ -4053,6 +4053,12 @@ struct SUB_IE_BSS_TERM_DURATION {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
+struct SESSION_INFO_URL {
+	uint8_t ucURLLength;
+	uint8_t aucURL[255];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct SUB_IE_BSS_CAND_PREFERENCE {
 	uint8_t ucSubId;
 	uint8_t ucLength;
