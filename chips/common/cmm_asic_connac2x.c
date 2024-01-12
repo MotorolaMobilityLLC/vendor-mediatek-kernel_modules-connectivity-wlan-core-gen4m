@@ -882,7 +882,7 @@ void asicConnac2xLowPowerOwnRead(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue;
+		u_int32_t u4RegValue = 0;
 
 		HAL_MCR_RD(prAdapter,
 				CONNAC2X_BN0_LPCTL_ADDR,
