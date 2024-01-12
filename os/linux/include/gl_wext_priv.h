@@ -199,6 +199,7 @@
 #endif
 #define PRIV_CMD_SHOW_CHANNEL		46
 
+#define PRIV_CMD_SET_MDVT		47
 
 
 
