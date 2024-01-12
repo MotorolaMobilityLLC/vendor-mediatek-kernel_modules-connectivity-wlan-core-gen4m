@@ -71,6 +71,7 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+#include "nic_cmd_event.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -219,12 +220,6 @@ enum ENUM_CNM_NETWORK_TYPE_T {
 	ENUM_CNM_NETWORK_TYPE_NUM
 };
 
-enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T {
-	BSS_OPTRX_BW_CHANGE_BY_DBDC = 0,
-	BSS_OPTRX_BW_CHANGE_BY_COANT = 1,
-	BSS_OPTRX_BW_CHANGE_NUM
-};
-
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -367,7 +362,7 @@ struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
 enum ENUM_OP_CHANGE_STATUS_T cnmSetOpTRxNssBw(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T eSource,
+	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON_T eSource,
 	IN bool fgEnable,
 	IN uint8_t ucOpRxNss,
 	IN uint8_t ucOpTxNss,
@@ -379,6 +374,11 @@ void cnmGetOpTRxNss(
 	IN uint8_t ucBssIndex,
 	OUT uint8_t *pucOpRxNss,
 	OUT uint8_t *pucOpTxNss
+);
+
+void cnmEventOpmodeChange(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent
 );
 
 /*******************************************************************************

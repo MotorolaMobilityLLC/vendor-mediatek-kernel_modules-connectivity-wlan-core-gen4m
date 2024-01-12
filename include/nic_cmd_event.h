@@ -669,6 +669,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_LTE_IDC_REPORT = 0x62,
 #endif
 #endif
+	EVENT_ID_OPMODE_CHANGE = 0x63,
 	EVENT_ID_DBDC_SWITCH_DONE = 0x78,
 	EVENT_ID_GET_CNM = 0x79,
 	EVENT_ID_TDLS = 0x80,	/* TDLS event_id */
@@ -804,6 +805,7 @@ enum ENUM_PF_OPCODE {
 
 enum ENUM_SCN_FUNC_MASK {
 	ENUM_SCN_RANDOM_MAC_EN = (1 << 0),
+	ENUM_SCN_DBDC_SCAN_DIS = (1 << 1),
 };
 
 struct CMD_PACKET_FILTER_CAP {
@@ -3579,6 +3581,25 @@ struct CMD_EVENT_LOG_UI_INFO {
 struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE {
 	uint8_t ucWlanIdx;
 	uint8_t ucAmsduLen;
+};
+
+enum ENUM_EVENT_OPMODE_CHANGE_REASON_T {
+	EVENT_OPMODE_CHANGE_REASON_DBDC      = 0,
+	EVENT_OPMODE_CHANGE_REASON_COANT     = 1,
+	EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN = 2,
+	EVENT_OPMODE_CHANGE_REASON_SMARTGEAR = 3,
+};
+
+struct EVENT_OPMODE_CHANGE {
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	uint16_t u2EvtLen;
+	uint8_t  ucBssBitmap;
+	uint8_t  ucEnable;
+	uint8_t  ucOpTxNss;
+	uint8_t  ucOpRxNss;
+	uint8_t  ucReason;		/* ENUM_EVENT_OPMODE_CHANGE_REASON_T */
+	uint8_t  aucPadding2[63];
 };
 
 /*******************************************************************************

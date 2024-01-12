@@ -180,8 +180,11 @@ struct BSS_OPTRX_BW_BY_SOURCE_T {
 	uint8_t ucOpTxNss;
 };
 
+/* ENUM_EVENT_OPMODE_CHANGE_REASON_T */
+#define OPTRX_CHANGE_REASON_NUM 4
 struct BSS_OPTRX_BW_CONTROL_T {
-	struct BSS_OPTRX_BW_BY_SOURCE_T rOpTRxBw[BSS_OPTRX_BW_CHANGE_NUM];
+	struct BSS_OPTRX_BW_BY_SOURCE_T
+		rOpTRxBw[OPTRX_CHANGE_REASON_NUM];
 };
 
 /*******************************************************************************
@@ -457,7 +460,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 	prCnmInfo = &prAdapter->rCnmInfo;
 	prCnmInfo->fgChGranted = FALSE;
 	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
-		for (j = 0; j < BSS_OPTRX_BW_CHANGE_NUM; j++)
+		for (j = 0; j < OPTRX_CHANGE_REASON_NUM; j++)
 			g_arBssOpTRxBwControl[i].rOpTRxBw[j].fgEnable = false;
 	}
 #if CFG_SUPPORT_IDC_CH_SWITCH
@@ -2077,7 +2080,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 		    ucBssLoopIndex++) {
 			prBssOpSourceCtrl =
 				&(g_arBssOpTRxBwControl[ucBssLoopIndex].
-				rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC]);
+				rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC]);
 			prBssOpSourceCtrl->fgEnable = TRUE;
 			prBssOpSourceCtrl->ucOpRxNss = 1;
 			prBssOpSourceCtrl->ucOpTxNss = 1;
@@ -2174,7 +2177,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 			eBssOpmodeChange = cnmSetOpTRxNssBw(prAdapter,
 					ucBssIndex,
-					BSS_OPTRX_BW_CHANGE_BY_DBDC,
+					EVENT_OPMODE_CHANGE_REASON_DBDC,
 					fgDbdcEn,
 					ucTRxNss, /* [DBDC] RxNss = TxNss */
 					ucTRxNss,
@@ -2228,7 +2231,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 			 */
 			cnmSetOpTRxNssBw(prAdapter,
 					ucBssIndex,
-					BSS_OPTRX_BW_CHANGE_BY_DBDC,
+					EVENT_OPMODE_CHANGE_REASON_DBDC,
 					fgDbdcEn,
 					ucTRxNss, /* [DBDC] RxNss = TxNss */
 					ucTRxNss,
@@ -3399,13 +3402,22 @@ cnmGetOpTRxNssSourcePriority(
 {
 	struct BSS_OPTRX_BW_BY_SOURCE_T *prBssOpSourceCtrl;
 
-	/* Priority: DBDC > CoAnt */
-	if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC].fgEnable)
+	/* Priority: DBDC > DBDC Scan > CoAnt */
+	if (prBssOpCtrl->
+		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC].fgEnable)
 		prBssOpSourceCtrl =
-			&prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC];
-	else if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_COANT].fgEnable)
+			&prBssOpCtrl->
+			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC];
+	else if (prBssOpCtrl->
+		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN].fgEnable)
 		prBssOpSourceCtrl =
-			&prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_COANT];
+			&prBssOpCtrl->
+			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC_SCAN];
+	else if (prBssOpCtrl->
+		rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_COANT].fgEnable)
+		prBssOpSourceCtrl =
+			&prBssOpCtrl->
+			rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_COANT];
 	else
 		prBssOpSourceCtrl = NULL;
 
@@ -3435,7 +3447,7 @@ enum ENUM_OP_CHANGE_STATUS_T
 cnmSetOpTRxNssBw(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN enum ENUM_BSS_OPTRX_BW_CHANGE_SOURCE_T eSource,
+	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON_T eSource,
 	IN bool fgEnable,
 	IN uint8_t ucOpRxNss,
 	IN uint8_t ucOpTxNss,
@@ -3486,7 +3498,9 @@ cnmSetOpTRxNssBw(
 	 */
 	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
-		if (prBssOpCtrl->rOpTRxBw[BSS_OPTRX_BW_CHANGE_BY_DBDC].fgEnable)
+		if (prBssOpCtrl->
+				rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC].
+				fgEnable)
 			ucOpBwFinal = ucOpBwFinal > MAX_BW_80MHZ ?
 				MAX_BW_80MHZ : ucOpBwFinal;
 
@@ -3549,3 +3563,54 @@ void cnmGetOpTRxNss(
 	*pucOpRxNss = ucOpRxNss;
 	*pucOpTxNss = ucOpTxNss;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Handle OpMode Change event from FW.
+ *
+ * @param prAdapter
+ * @param prEvent
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+void cnmEventOpmodeChange(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	uint8_t	ucBssIndex;
+	struct EVENT_OPMODE_CHANGE *prOpChangeEvt;
+
+	ASSERT(prAdapter);
+	prOpChangeEvt = (struct EVENT_OPMODE_CHANGE *)
+		(prEvent->aucBuffer);
+
+	DBGLOG(CNM, INFO,
+		"Change OpMode, BssBitmap:0x%X, T:%u R:%u, caller:%u\n",
+		prOpChangeEvt->ucBssBitmap,
+		prOpChangeEvt->ucOpTxNss,
+		prOpChangeEvt->ucOpRxNss,
+		prOpChangeEvt->ucReason);
+
+	/* Update BSS TRXNss if BSS bit map is set.
+	 * NOTICE that if your feature needs TxDone from action frame,
+	 * Please add another hook by ucReason!!
+	 */
+	for (ucBssIndex = 0;
+		 ucBssIndex < (prAdapter->ucHwBssIdNum + 1);
+		 ucBssIndex++) {
+		if (prOpChangeEvt->ucBssBitmap & BIT(ucBssIndex)) {
+			cnmSetOpTRxNssBw(
+				prAdapter,
+				ucBssIndex,
+				prOpChangeEvt->ucReason,
+				prOpChangeEvt->ucEnable,
+				prOpChangeEvt->ucOpRxNss,
+				prOpChangeEvt->ucOpTxNss,
+				NULL
+			);
+		}
+	}
+}
+
+

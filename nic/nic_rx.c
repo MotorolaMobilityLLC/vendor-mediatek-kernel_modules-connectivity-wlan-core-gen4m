@@ -189,7 +189,8 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
 #endif
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
-	{EVENT_ID_GET_CNM, nicEventCnmInfo}
+	{EVENT_ID_GET_CNM, nicEventCnmInfo},
+	{EVENT_ID_OPMODE_CHANGE, cnmEventOpmodeChange}
 };
 
 /*******************************************************************************
