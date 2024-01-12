@@ -1139,11 +1139,10 @@ uint8_t cnmDecideSapNewChannel(
 			.rLteSafeChn.au4SafeChannelBitmask[2];
 	}
 
-	if ((ucSwitchMode == CH_SWITCH_2G)
-			&& (!(u4LteSafeChnBitMask_2G & BITS(1, 14)))) {
+	if (ucSwitchMode == CH_SWITCH_2G) {
+		if (!(u4LteSafeChnBitMask_2G & BITS(1, 14))) {
 		DBGLOG(P2P, WARN,
 			"FW report 2.4G all channels unsafe!?\n");
-		u4LteSafeChnBitMask_2G = BITS(1, 14);
 #if CFG_SUPPORT_IDC_CROSS_BAND_SWITCH
 		/* Choose 5G non-RDD Channel */
 		if ((u4LteSafeChnBitMask_5G_1 || u4LteSafeChnBitMask_5G_2)
@@ -1157,6 +1156,26 @@ uint8_t cnmDecideSapNewChannel(
 			return 0;
 		}
 #endif
+		}
+	} else { /*ucSwitchMode == CH_SWITCH_5G*/
+		if ((!(u4LteSafeChnBitMask_5G_1 & BITS(0, 27))) &&
+			(!(u4LteSafeChnBitMask_5G_2 & BITS(0, 8)))) {
+		DBGLOG(P2P, WARN,
+			"FW report 5G all channels unsafe!?\n");
+#if CFG_SUPPORT_IDC_CROSS_BAND_SWITCH
+		/* Choose 2.4G non-RDD Channel */
+		if (u4LteSafeChnBitMask_2G
+			&& prGlueInfo->prAdapter->rWifiVar
+			.fgCrossBandSwitchEn) {
+			ucSwitchMode = CH_SWITCH_2G;
+			DBGLOG(P2P, WARN,
+				"Switch to 2.4G channel instead\n");
+		} else {
+			/* not to switch channel*/
+			return 0;
+		}
+#endif
+		}
 	}
 
 	return p2pFunGetAcsBestCh(prGlueInfo->prAdapter,
