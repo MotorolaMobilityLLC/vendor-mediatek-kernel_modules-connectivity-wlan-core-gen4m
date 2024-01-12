@@ -2040,7 +2040,6 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedPairwiseCipher;
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
-		prAisBssInfo->eBand = prBssDesc->eBand;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 		/* connac3 MLO all bss use the same wmm index as main bss use */
@@ -3887,6 +3886,16 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	/* update fgMgmtProtection from main link only */
 	if (ucLinkIndex == 0)
 		aisFsmUpdateRsnSetting(ad, prBssDesc, prBssInfo->ucBssIndex);
+
+#if CFG_SUPPORT_DBDC
+	/* DBDC decsion.may change OpNss */
+	cnmDbdcPreConnectionEnableDecision(
+		ad,
+		prBssInfo->ucBssIndex,
+		prBssDesc->eBand,
+		prBssDesc->ucChannelNum,
+		prBssInfo->ucWmmQueSet);
+#endif /*CFG_SUPPORT_DBDC*/
 }
 
 void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
@@ -9227,23 +9236,6 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 			&prSubReq->eRfChannelWidth,
 			&prSubReq->ucRfCenterFreqSeg1,
 			&prSubReq->ucPrimaryChannel);
-
-		/* Fix the IOT issue of low DL t-put of VHT40 and HE40.
-		 * The root cause is that the channel width of operation
-		 * mode notification element in association request is
-		 * wrong. According to 11ac 10.41, it shall be the
-		 * maximum receiving bandwidth in operation rather than
-		 * maximum chip capability. For example, it shall be
-		 * 40MHz rather than 80MHz in VHT40 and HE40. Otherwise,
-		 * some AP will try to transmit packets in 80MHz first
-		 * even we can only receive packets with bandwidth up to
-		 * 40MHz. So, we copy the bandwidth information in
-		 * MID_MNY_CNM_CH_REQ to AIS BssInfo for later reference
-		 * of the gereration of the operation mode notification
-		 * element.
-		 */
-		prBss->ucVhtChannelWidth = prSubReq->eRfChannelWidth;
-		prBss->eBssSCO = prSubReq->eRfSco;
 	}
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,

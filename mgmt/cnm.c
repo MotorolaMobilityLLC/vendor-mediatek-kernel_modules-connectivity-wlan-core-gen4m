@@ -2610,10 +2610,28 @@ static u_int8_t cnmDbdcIsConcurrent(
 		} else
 #endif
 		{
-			eBandBss = prBssInfo->eBand;
+			if (IS_BSS_AIS(prBssInfo)) {
+				struct BSS_DESC *prBssDesc =
+				     aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+				if (prBssDesc) {
+					eBandBss = prBssDesc->eBand;
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-			ucPrimaryChBss = prBssInfo->ucPrimaryChannel;
+					ucPrimaryChBss =
+						prBssDesc->ucChannelNum;
 #endif
+				} else {
+					eBandBss = BAND_NULL;
+					log_dbg(CNM, WARN,
+						"[DBDC] Bss%d no target bssdesc\n",
+						ucBssIndex);
+				}
+			} else {
+				eBandBss = prBssInfo->eBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+				ucPrimaryChBss = prBssInfo->ucPrimaryChannel;
+#endif
+			}
 		}
 
 		if (eBandBss > BAND_NULL && eBandBss < BAND_NUM) {

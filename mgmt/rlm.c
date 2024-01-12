@@ -1615,7 +1615,7 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER *prAdapter,
 		 * current state
 		 */
 		rlmFillVhtOpNotificationIE(prAdapter, prBssInfo, prMsduInfo,
-					   FALSE);
+					   TRUE);
 	}
 }
 
@@ -1713,8 +1713,53 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	       prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucOpRxNss);
 
 	if (fgIsOwnCap) {
-		ucOpModeBw = cnmGetDbdcBwCapability(prAdapter,
-						    prBssInfo->ucBssIndex);
+		struct BSS_DESC *prBssDesc = NULL;
+		uint8_t ucRfCenterFreqSeg1, ucPrimaryChannel;
+		enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
+		enum ENUM_CHNL_EXT eRfSco;
+
+		if (IS_BSS_AIS(prBssInfo))
+			prBssDesc = aisGetTargetBssDesc(prAdapter,
+				prMsduInfo->ucBssIndex);
+#if CFG_ENABLE_WIFI_DIRECT
+		else if (IS_BSS_P2P(prBssInfo))
+			prBssDesc = p2pGetTargetBssDesc(prAdapter,
+				prMsduInfo->ucBssIndex);
+#endif
+		if (prBssDesc) {
+			ucPrimaryChannel = prBssDesc->ucChannelNum;
+			eRfSco = prBssDesc->eSco;
+			eRfChannelWidth = prBssDesc->eChannelWidth;
+			ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand,
+				ucPrimaryChannel, eRfChannelWidth);
+
+			/* Fix the IOT issue of low DL t-put of VHT40 and HE40.
+			 * The root cause is that the channel width of operation
+			 * mode notification element in association request is
+			 * wrong. According to 11ac 10.41, it shall be the
+			 * maximum receiving bandwidth in operation rather than
+			 * maximum chip capability. For example, it shall be
+			 * 40MHz rather than 80MHz in VHT40 and HE40. Otherwise,
+			 * some AP will try to transmit packets in 80MHz first
+			 * even we can only receive packets with bandwidth up to
+			 * 40MHz. So, we copy the bandwidth information in
+			 * MID_MNY_CNM_CH_REQ to AIS BssInfo for later reference
+			 * of the gereration of the operation mode notification
+			 * element.
+			 */
+			rlmReviseMaxBw(prAdapter, prMsduInfo->ucBssIndex,
+				&eRfSco, &eRfChannelWidth,
+				&ucRfCenterFreqSeg1, &ucPrimaryChannel);
+			ucOpModeBw = rlmGetBssOpBwByChannelWidth(eRfSco,
+				eRfChannelWidth);
+		} else {
+			ucOpModeBw = cnmGetDbdcBwCapability(prAdapter,
+				    prBssInfo->ucBssIndex);
+			DBGLOG(RLM, ERROR,
+				"Bss%d can't find bssdesc, fallback opmodebw=%d\n",
+				prBssInfo->ucBssIndex, ucOpModeBw);
+		}
+
 		/*handle 80P80 case*/
 		if (ucOpModeBw >= MAX_BW_160MHZ) {
 			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
@@ -7300,6 +7345,32 @@ uint8_t rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
 	}
 
 	return ucOpMaxBw;
+}
+
+uint8_t rlmGetBssOpBwByChannelWidth(enum ENUM_CHNL_EXT eSco,
+	enum ENUM_CHANNEL_WIDTH eChannelWidth)
+{
+	switch (eChannelWidth) {
+	case CW_20_40MHZ:
+		if (eSco != CHNL_EXT_SCN)
+			return MAX_BW_40MHZ;
+		else
+			return MAX_BW_20MHZ;
+	case CW_80MHZ:
+		return MAX_BW_80MHZ;
+	case CW_160MHZ:
+		return MAX_BW_160MHZ;
+	case CW_80P80MHZ:
+		return MAX_BW_80_80_MHZ;
+	case CW_320_1MHZ:
+		return MAX_BW_320_1MHZ;
+	case CW_320_2MHZ:
+		return MAX_BW_320_2MHZ;
+	default:
+		DBGLOG(RLM, WARN, "unexpected channel width: %d\n",
+			eChannelWidth);
+		return 0;
+	}
 }
 
 /*----------------------------------------------------------------------------*/

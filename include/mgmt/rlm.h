@@ -480,6 +480,9 @@ uint8_t
 rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
+uint8_t rlmGetBssOpBwByChannelWidth(enum ENUM_CHNL_EXT eSco,
+	enum ENUM_CHANNEL_WIDTH eChannelWidth);
+
 uint8_t
 rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw);
 
