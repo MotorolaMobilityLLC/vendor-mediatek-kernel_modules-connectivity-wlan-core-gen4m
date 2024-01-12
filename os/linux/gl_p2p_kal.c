@@ -1124,15 +1124,27 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 	struct RF_CHANNEL_INFO rRfChannelInfo;
 
 	do {
-		if (prGlueInfo == NULL) {
-			ASSERT(FALSE);
+		if (prGlueInfo == NULL || prGlueInfo->prAdapter == NULL) {
+			DBGLOG(P2P, ERROR,
+				"prGlueInfo=0x%p prAdapter=0x%p\n",
+				prGlueInfo,
+				prGlueInfo != NULL ?
+					prGlueInfo->prAdapter : NULL);
 			break;
 		}
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 
-		if (prGlueP2pInfo == NULL) {
-			ASSERT(FALSE);
+		if (prGlueP2pInfo == NULL ||
+		    prGlueP2pInfo->prDevHandler == NULL ||
+		    prGlueInfo->prAdapter->rP2PNetRegState !=
+				ENUM_NET_REG_STATE_REGISTERED) {
+			DBGLOG(P2P, ERROR,
+				"prGlueP2pInfo=0x%p prDevHandler=0x%p rP2PNetRegState=%d\n",
+				prGlueP2pInfo,
+				prGlueP2pInfo != NULL ?
+					prGlueP2pInfo->prDevHandler : NULL,
+				prGlueInfo->prAdapter->rP2PNetRegState);
 			break;
 		}
 
