@@ -601,8 +601,14 @@ void ehtRlmRecOperation(
 	// TODO: The format of EHT operation Information subfield is missing in spec D1.1
 	prBssInfo->ucVhtChannelWidth =
 		ehtRlmGetVhtOpBwByEhtOpBw(prEhtOp->ucEhtOpParams[0]);
-	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
-		prBssInfo->ucVhtChannelWidth);
+	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel, prBssInfo->ucVhtChannelWidth);
+	prBssInfo->ucVhtChannelFrequencyS2 = 0;
+
+	DBGLOG(RLM, INFO, "EHT channel width: %d, s1: %d, s2: %d\n",
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->ucVhtChannelFrequencyS2);
 
 	memcpy(prBssInfo->ucEhtOpParams, prEhtOp->ucEhtOpParams,
 		HE_OP_BYTE_NUM);
