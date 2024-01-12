@@ -208,6 +208,8 @@ void beGenerateRnrIE(struct ADAPTER *prAdapter,
 void beParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 	IN uint8_t *pucIE);
 
+void mldBssDump(struct ADAPTER *prAdapter);
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss);
@@ -252,6 +254,10 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
+
+void mldStarecLogRxData(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucHwBandIdx);
 
 int8_t mldStarecInit(struct ADAPTER *prAdapter);
 

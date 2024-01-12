@@ -308,36 +308,11 @@ void nic_rxd_v3_fill_rfb(
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus);
 	prSwRfb->ucChnlNum =
 		HAL_MAC_CONNAC3X_RX_STATUS_GET_CHNL_NUM(prRxStatus);
-#if 0
-	if (prHifRxHdr->ucReorder &
-	    HIF_RX_HDR_80211_HEADER_FORMAT) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_802_11_FORMAT;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_802_11_FORMAT\n");
-	}
+	prSwRfb->ucHwBandIdx =
+		HAL_MAC_CONNAC3X_RX_STATUS_GET_BAND_IDX(prRxStatus);
 
-	if (prHifRxHdr->ucReorder & HIF_RX_HDR_DO_REORDER) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_DO_REORDERING;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_DO_REORDERING\n");
-
-		/* Get Seq. No and TID, Wlan Index info */
-		if (prHifRxHdr->u2SeqNoTid & HIF_RX_HDR_BAR_FRAME) {
-			prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_BAR_FRAME;
-			DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_BAR_FRAME\n");
-		}
-
-		prSwRfb->u2SSN = prHifRxHdr->u2SeqNoTid &
-				 HIF_RX_HDR_SEQ_NO_MASK;
-		prSwRfb->ucTid = (uint8_t) ((prHifRxHdr->u2SeqNoTid &
-					     HIF_RX_HDR_TID_MASK)
-					    >> HIF_RX_HDR_TID_OFFSET);
-		DBGLOG(RX, TRACE, "u2SSN = %d, ucTid = %d\n",
-		       prSwRfb->u2SSN, prSwRfb->ucTid);
-	}
-
-	if (prHifRxHdr->ucReorder & HIF_RX_HDR_WDS) {
-		prSwRfb->u4HifRxHdrFlag |= HIF_RX_HDR_FLAG_AMP_WDS;
-		DBGLOG(RX, TRACE, "HIF_RX_HDR_FLAG_AMP_WDS\n");
-	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldStarecLogRxData(prAdapter, prSwRfb->prStaRec, prSwRfb->ucHwBandIdx);
 #endif
 }
 
