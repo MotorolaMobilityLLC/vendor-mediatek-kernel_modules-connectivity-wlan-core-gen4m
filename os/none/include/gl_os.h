@@ -418,7 +418,8 @@ struct GLUE_INFO {
 	uint64_t u8RoamFailTime;
 
 	/* 11R */
-	struct FT_IES rFtIeForTx;
+	struct FT_IES rFtIeR0;
+	struct FT_IES rFtIeR1;
 	uint32_t IsrAbnormalCnt;
 	uint32_t IsrSoftWareCnt;
 

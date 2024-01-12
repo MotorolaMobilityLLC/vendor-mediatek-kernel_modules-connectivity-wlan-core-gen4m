@@ -1365,6 +1365,13 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 			case WLAN_AKM_SUITE_FT_OVER_SAE:
 				u4AkmSuite = RSN_AKM_SUITE_FT_OVER_SAE;
 				break;
+			case WLAN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED:
+				u4AkmSuite =
+				    RSN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED;
+				break;
+			case WLAN_AKM_SUITE_FT_SAE_EXT_KEY:
+				u4AkmSuite = RSN_AKM_SUITE_FT_SAE_EXT_KEY;
+				break;
 #endif
 #if CFG_SUPPORT_802_11W
 			/* Notice:: Need kernel patch!! */
@@ -1398,7 +1405,7 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 				u4AkmSuite = RSN_AKM_SUITE_8021X_SUITE_B_192;
 				break;
 			default:
-				DBGLOG(REQ, WARN, "invalid Akm Suite (%d)\n",
+				DBGLOG(REQ, WARN, "invalid Akm Suite (0x%x)\n",
 				       au4AkmSuites[i]);
 				return -EINVAL;
 			}

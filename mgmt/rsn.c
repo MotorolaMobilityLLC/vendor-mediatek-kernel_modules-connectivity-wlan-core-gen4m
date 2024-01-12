@@ -113,12 +113,14 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 			break;
 #if CFG_SUPPORT_802_11R
 		case RSN_AKM_SUITE_FT_802_1X:
+		case RSN_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED:
 			eAuthMode = AUTH_MODE_WPA2_FT;
 			break;
 		case RSN_AKM_SUITE_FT_PSK:
 			eAuthMode = AUTH_MODE_WPA2_FT_PSK;
 			break;
 		case RSN_AKM_SUITE_FT_OVER_SAE:
+		case RSN_AKM_SUITE_FT_SAE_EXT_KEY:
 			eAuthMode = AUTH_MODE_WPA3_SAE;
 			break;
 #endif
@@ -1782,7 +1784,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 	ucBssIndex = prMsduInfo->ucBssIndex;
 
 	/* For FT, we reuse the RSN Element composed in userspace */
-	if (authAddRSNIE_impl(prAdapter, prMsduInfo)) {
+	if (authAddRSNIE_impl(prAdapter, prMsduInfo, AIS_FT_R1)) {
 		DBGLOG(RSN, TRACE, "RSN IE: authAddRSNIE return\n");
 		return;
 	}
@@ -4040,7 +4042,8 @@ u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,
 uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			     struct STA_RECORD *prStaRec)
 {
-	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
+	/* Use R0 with auth, R1 with assoc */
+	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx, AIS_FT_R1);
 
 	if (!prFtIEs || !prFtIEs->prFTIE || !prStaRec ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
@@ -4055,7 +4058,8 @@ void rsnGenerateFTIE(struct ADAPTER *prAdapter,
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint32_t ucFtIeSize = 0;
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
-	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
+	/* Use R0 with auth, R1 with assoc */
+	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx, AIS_FT_R1);
 
 	if (!prFtIEs || !prFtIEs->prFTIE ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prMsduInfo->ucStaRecIndex))

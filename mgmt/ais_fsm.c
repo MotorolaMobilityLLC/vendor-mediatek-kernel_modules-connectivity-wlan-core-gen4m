@@ -300,8 +300,10 @@ void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 	aisInitializeConnectionRsnInfo(prAdapter, ucBssIndex);
 
-	kalMemZero(&prConnSettings->rFtIeForTx,
-		sizeof(prConnSettings->rFtIeForTx));
+	kalMemZero(&prConnSettings->rFtIeR0,
+		sizeof(prConnSettings->rFtIeR0));
+	kalMemZero(&prConnSettings->rFtIeR1,
+		sizeof(prConnSettings->rFtIeR1));
 } /* end of aisFsmInitializeConnectionSettings() */
 
 /*----------------------------------------------------------------------------*/
@@ -4816,7 +4818,15 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		prConnSettings->aucReqIe = NULL;
 	}
 
-	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R0);
+	if (prFtIEs) {
+		kalMemFree(prFtIEs->pucIEBuf,
+			VIR_MEM_TYPE,
+			prFtIEs->u4IeLength);
+		kalMemZero(prFtIEs,
+			sizeof(*prFtIEs));
+	}
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex, AIS_FT_R1);
 	if (prFtIEs) {
 		kalMemFree(prFtIEs->pucIEBuf,
 			VIR_MEM_TYPE,
@@ -8936,12 +8946,18 @@ struct GL_DETECT_REPLAY_INFO *aisGetDetRplyInfo(
 
 struct FT_IES *aisGetFtIe(
 	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+	uint8_t ucBssIndex,
+	uint8_t ucR0R1)
 {
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return NULL;
 
-	return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtIeForTx;
+	if (ucR0R1 == AIS_FT_R0)
+		return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtIeR0;
+	else if (ucR0R1 == AIS_FT_R1)
+		return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtIeR1;
+
+	return NULL;
 }
 
 struct FT_EVENT_PARAMS *aisGetFtEventParam(

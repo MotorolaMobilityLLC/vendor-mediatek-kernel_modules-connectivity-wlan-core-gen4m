@@ -848,6 +848,10 @@
 #define STATUS_CODE_ASSOC_DENIED_LARGE_LIS_INTERVAL 51
 /* Invalid pairwise master key identifier (PMKID) */
 #define STATUS_INVALID_PMKID                        53
+/* Invalid MDE */
+#define STATUS_INVALID_MDE                          54
+/* Invalid FTE */
+#define STATUS_INVALID_FTE                          55
 /* Denied because the requesting STA is afflicated with a
  * non-AP MLD that is associated with the AP MLD
  */
