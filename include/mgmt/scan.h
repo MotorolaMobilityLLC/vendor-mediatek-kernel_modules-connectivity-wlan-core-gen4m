@@ -332,6 +332,17 @@ struct BSS_DESC {
 	u_int8_t fgIsHTPresent;
 	u_int8_t fgIsVHTPresent;
 
+#if (CFG_SUPPORT_802_11V_MBSSID == 1)
+	/* Max BSSID indicator. Range from 1 to 8.
+	* 0 means MBSSID function is disabled
+	*/
+	u_int8_t ucMaxBSSIDIndicator;
+	/* MBSSID index which DUT connected for this BSS.
+	* 0 means DUT connect to transmitted BSSID
+	*/
+	u_int8_t ucMBSSIDIndex;
+#endif
+
 	uint8_t ucPhyTypeSet;	/* Available PHY Type Set of this BSS */
 
 	/* record from bcn or probe response */
