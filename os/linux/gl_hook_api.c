@@ -4552,6 +4552,10 @@ uint32_t ServiceWlanOid(void *winfos,
 			capability->ph_cap.bandwidth |= BIT(2);
 		if (prTestWinfo->chip_cap.support_6g)
 			capability->ph_cap.bandwidth |= BITS(3, 4);
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (capability->ph_cap.protocol & BIT(4))
+			capability->ph_cap.bandwidth |= BIT(5);
+#endif /* (CFG_SUPPORT_802_11BE == 1) */
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 
