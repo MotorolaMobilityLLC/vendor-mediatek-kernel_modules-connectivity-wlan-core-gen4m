@@ -218,6 +218,10 @@ typedef void(*remove_card) (void);
 #define ALIGN_8(_value)             (((_value) + 7) & ~7u)
 #endif /* ALIGN_4 */
 
+#ifndef ALIGN_16
+#define ALIGN_16(_value)             (((_value) + 15) & ~15u)
+#endif /* ALIGN_16 */
+
 /* This macro check the DW alignment of the input value.
  * _value - value of address need to check
  */

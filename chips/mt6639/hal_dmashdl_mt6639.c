@@ -10,7 +10,7 @@
 */
 
 #ifdef MT6639
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -288,8 +288,11 @@ struct DMASHDL_CFG rMt6639DmashdlCfg = {
 
 void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 {
+	uint32_t idx;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	uint32_t idx, u4Val = 0;
+	uint32_t u4Val = 0;
+#endif
 
 	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
 					 rMt6639DmashdlCfg.u2PktPleMaxPage);
@@ -339,5 +342,5 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
 #endif /* MT6639 */
