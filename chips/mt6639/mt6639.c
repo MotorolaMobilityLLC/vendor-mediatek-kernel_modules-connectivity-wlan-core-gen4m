@@ -176,7 +176,10 @@ static void mt6639PcieHwControlVote(
 	uint32_t u4WifiUser);
 
 #if CFG_SUPPORT_PCIE_ASPM
-static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
+					u_int8_t fgEn);
+static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
+				u_int enable_role);
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 				u_int8_t fgWakeup);
@@ -230,6 +233,13 @@ uint8_t *apucmt6639FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_6639",
 	NULL
 };
+
+#if CFG_SUPPORT_PCIE_ASPM
+static spinlock_t rPCIELock;
+#define WIFI_ROLE	(1)
+#define MD_ROLE		(2)
+#define POLLING_TIMEOUT		(200)
+#endif
 
 #if defined(_HIF_PCIE)
 struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
@@ -575,6 +585,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.configPcieAspm = mt6639ConfigPcieAspm,
 	.updatePcieAspm = mt6639UpdatePcieAspm,
 	.keepPcieWakeup = mt6639KeepPcieWakeup,
+	.fgWifiEnL1_2 = TRUE,
+	.fgMDEnL1_2 = TRUE,
 #endif
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
@@ -2023,6 +2035,10 @@ static void mt6639WfdmaRxRingExtCtrl(
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
+#if CFG_SUPPORT_PCIE_ASPM
+void *pcie_vir_addr;
+#endif
+
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t value = 0;
@@ -2038,6 +2054,15 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
+#if CFG_SUPPORT_PCIE_ASPM
+	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
+	if (pcie_vir_addr) {
+		writel(0x08021000, (pcie_vir_addr + 0x74));
+		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%x\n", pcie_vir_addr);
+	} else {
+		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
+	}
+#endif
 }
 
 static void mt6639PcieHwControlVote(
@@ -2049,44 +2074,154 @@ static void mt6639PcieHwControlVote(
 }
 
 #if CFG_SUPPORT_PCIE_ASPM
-static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
+				u_int role, u_int8_t fgEn)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	if (role == WIFI_ROLE)
+		prChipInfo->bus_info->fgWifiEnL1_2 = fgEn;
+	else if (role == MD_ROLE)
+		prChipInfo->bus_info->fgMDEnL1_2 = fgEn;
+
+	DBGLOG(HAL, TRACE, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
+		prChipInfo->bus_info->fgWifiEnL1_2,
+		prChipInfo->bus_info->fgMDEnL1_2);
+
+	if (prChipInfo->bus_info->fgWifiEnL1_2
+		&& prChipInfo->bus_info->fgMDEnL1_2)
+		return TRUE;
+	else
+		return FALSE;
+}
+static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgEn, u_int enable_role)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t u4Val = 0;
+	uint32_t value = 0, delay = 0, value1 = 0;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+	u_int8_t enableL1ss = FALSE;
+	u_int8_t isL0Status = FALSE;
+	unsigned long flags = 0;
+
+	if (pcie_vir_addr == NULL)
+		return;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	spin_lock_irqsave(&rPCIELock, flags);
+	enableL1ss =
+		mt6639SetL1ssEnable(prGlueInfo->prAdapter, enable_role, fgEn);
 
 	if (fgEn) {
 		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   prHifInfo->u4PcieLTR);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   prHifInfo->u4PcieASPM);
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2 0x%08x\n",
-			prHifInfo->u4PcieASPM);
+		if (enableL1ss) {
+			value = readl(pcie_vir_addr + 0x194);
+			value1 = readl(pcie_vir_addr + 0x150);
+			isL0Status = ((value1 & BITS(24, 28)) >> 24) == 0x10;
+			if ((value & BITS(0, 11)) == 0xc0f ||
+				((value & BITS(0, 11)) == 0x20f &&
+				isL0Status)) {
+				writel(0xe0f, (pcie_vir_addr + 0x194));
+			} else {
+				DBGLOG(HAL, INFO,
+					"enable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
+					isL0Status, value, value1);
+				goto exit;
+			}
+
+			delay += 10;
+			udelay(10);
+
+			/* Polling RC 0x112f0150[28:24] until =0x10 */
+			while (1) {
+				value = readl(pcie_vir_addr + 0x150);
+
+				if (((value & BITS(24, 28))
+					>> 24) == 0x10)
+					break;
+
+				if (delay >= POLLING_TIMEOUT) {
+					DBGLOG(HAL, INFO,
+						"Enable L1.2 POLLING_TIMEOUT\n");
+					goto exit;
+				}
+
+				delay += 10;
+				udelay(10);
+			}
+
+			HAL_MCR_WR(prGlueInfo->prAdapter,
+				PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, 0xf);
+			HAL_MCR_RD(prGlueInfo->prAdapter,
+				PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, &value);
+			writel(0xf, (pcie_vir_addr + 0x194));
+
+
+			DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
+		} else {
+			DBGLOG(HAL, TRACE, "Not to enable aspm L1.1/L1.2..\n");
+		}
 	} else {
 		/*
 		 *	Backup original setting then
 		 *	disable L1.1, L1.2 and set LTR to 0
 		 */
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   &prHifInfo->u4PcieLTR);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   &prHifInfo->u4PcieASPM);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR, 0);
+			value = readl(pcie_vir_addr + 0x194);
+			value1 = readl(pcie_vir_addr + 0x150);
+			isL0Status = ((value1 & BITS(24, 28)) >> 24) == 0x10;
+			if ((value & BITS(0, 11)) == 0xf ||
+				((value & BITS(0, 11)) == 0xe0f &&
+				isL0Status)) {
+				writel(0x20f, (pcie_vir_addr + 0x194));
+			} else {
+				DBGLOG(HAL, INFO,
+					"disable isL0Status=%d, value=0x%08x, value1=0x%08x\n",
+					isL0Status, value, value1);
+				goto exit;
+			}
 
-		u4Val = prHifInfo->u4PcieASPM &
-			~PCIE_LOW_POWER_CTRL_DIS_L1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_2;
+		delay += 10;
+		udelay(10);
+
+		/* Polling RC 0x112f0150[28:24] until =0x10 */
+		while (1) {
+			value = readl(pcie_vir_addr + 0x150);
+
+			if (((value & BITS(24, 28))
+				>> 24) == 0x10)
+				break;
+
+			if (delay >= POLLING_TIMEOUT) {
+				DBGLOG(HAL, INFO,
+					"Disable L1.2 POLLING_TIMEOUT\n");
+				goto exit;
+			}
+
+			delay += 10;
+			udelay(10);
+		}
+
 		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
-			   u4Val);
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
+			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, 0xc0f);
+		HAL_MCR_RD(prGlueInfo->prAdapter,
+			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, &value);
+		writel(0xc0f, (pcie_vir_addr + 0x194));
+
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
+		else
+			DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2..\n");
 	}
+
+exit:
+	spin_unlock_irqrestore(&rPCIELock, flags);
 }
 
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
@@ -2102,9 +2237,9 @@ static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 
 	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
 		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
-			mt6639ConfigPcieAspm(prGlueInfo, TRUE);
+			mt6639ConfigPcieAspm(prGlueInfo, TRUE, 1);
 		else
-			mt6639ConfigPcieAspm(prGlueInfo, FALSE);
+			mt6639ConfigPcieAspm(prGlueInfo, FALSE, 1);
 		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
 	}
 }
@@ -2707,7 +2842,10 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
-
+#if CFG_SUPPORT_PCIE_ASPM
+	pcie_vir_addr = ioremap(0x112f0000, 0x2000);
+	spin_lock_init(&rPCIELock);
+#endif
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
@@ -2925,6 +3063,11 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad)
 
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
+
+#if CFG_SUPPORT_PCIE_ASPM
+	if (pcie_vir_addr)
+		iounmap(pcie_vir_addr);
+#endif
 }
 
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)

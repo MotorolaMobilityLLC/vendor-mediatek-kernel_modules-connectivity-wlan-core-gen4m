@@ -413,9 +413,12 @@ struct BUS_INFO {
 	void (*hwControlVote)(struct ADAPTER *prAdapter,
 		uint8_t enable, uint32_t u4WifiUser);
 #if CFG_SUPPORT_PCIE_ASPM
-	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
+		u_int enable_role);
 	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
+	u_int8_t fgWifiEnL1_2;
+	u_int8_t fgMDEnL1_2;
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
