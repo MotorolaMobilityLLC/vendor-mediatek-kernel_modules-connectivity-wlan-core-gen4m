@@ -6865,12 +6865,8 @@ uint8_t aisCheckNeedDriverRoaming(
 		if (bss == NULL)
 			return FALSE;
 
-		/* multi-link case */
-		if (aisGetLinkNum(ais) != 1 || set.ucLinkNum != 1)
-			return aisBssDescAllowed(prAdapter, ais, &set);
-
-		/* single link, prefer 5g/6g */
-		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		/* Driver roaming prefer 5g/6g */
+		target = aisGetMainLinkBssDesc(ais);
 
 		/* 2.4 -> 5 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
