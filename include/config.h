@@ -1958,6 +1958,19 @@
 #define CFG_SUPPORT_TX_MGMT_USE_DATAQ  0
 #endif
 
+/*------------------------------------------------------------------------------
+ * Suppoot to get Tx/Rx MCS Info
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_WIFI_GET_MCS_INFO
+#define CFG_WIFI_GET_MCS_INFO (0)
+#endif
+
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+#define MCS_INFO_SAMPLE_CNT                 10
+#define MCS_INFO_SAMPLE_PERIOD              100 /* Unit: ms */
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

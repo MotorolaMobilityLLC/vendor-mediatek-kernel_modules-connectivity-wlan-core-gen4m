@@ -358,6 +358,10 @@
 #define RX_VT_SMOOTH               BIT(20)
 #define RX_VT_NO_SOUNDING          BIT(21)
 #define RX_VT_SOUNDING             BIT(21)
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+#define RX_MCS_INFO_MASK           BITS(0, 17)
+#endif
+
 #if 0
 /* VHT_SIG_A2[B1], not defined in MT6632 */
 #define RX_VT_SHORT_GI_NSYM	   BIT(22)

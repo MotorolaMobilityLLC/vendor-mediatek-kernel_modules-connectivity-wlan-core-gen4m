@@ -2106,3 +2106,8 @@ uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 					int32_t i4EdVal5G, uint32_t u4Sel);
 #endif
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
+					unsigned long ulParamPtr);
+#endif
+
