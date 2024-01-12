@@ -1848,9 +1848,16 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
 	tag->u2Length = sizeof(*tag);
 	tag->ucGroupMldId = MLD_GROUP_NONE;
-	tag->ucOwnMldId = bss->ucOwnMacIndex;
+	tag->ucOwnMldId = bss->ucBssIndex;
 	COPY_MAC_ADDR(tag->aucOwnMldAddr, cmd->aucBSSID);
 	tag->ucOmRemapIdx = OM_REMAP_IDX_NONE;
+
+	DBGLOG(NIC, INFO, "[%d] GroupMldId: %d, OwnMldId: %d, OmRemapIdx: %d, OwnMldAddr: " MACSTR "\n",
+		cmd->ucBssIndex,
+		tag->ucGroupMldId,
+		tag->ucOwnMldId,
+		tag->ucOmRemapIdx,
+		MAC2STR(tag->aucOwnMldAddr));
 
 	return tag->u2Length;
 }
