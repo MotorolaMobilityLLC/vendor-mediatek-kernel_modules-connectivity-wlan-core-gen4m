@@ -1928,9 +1928,11 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 	struct PARAM_EXTERNAL_AUTH auth;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
-	if (!prGlueInfo)
+	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN,
 		       "SAE-confirm failed with invalid prGlueInfo\n");
+		return -EFAULT;
+	}
 
 	COPY_MAC_ADDR(auth.bssid, params->bssid);
 	auth.status = params->status;

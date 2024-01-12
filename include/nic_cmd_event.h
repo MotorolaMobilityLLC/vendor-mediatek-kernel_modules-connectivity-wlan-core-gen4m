@@ -96,7 +96,7 @@
 #define CMD_STATUS_REJECTED     1
 #define CMD_STATUS_UNKNOWN      2
 
-#define MAX_IE_LENGTH		(600)
+#define MAX_IE_LENGTH		(640) /* align with CFG_CFG80211_IE_BUF_LEN*/
 #define MAX_BAND_IE_LENGTH	(100)
 #define MAX_WSC_IE_LENGTH	(400)
 
