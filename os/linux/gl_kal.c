@@ -12884,9 +12884,7 @@ kalApplyCustomRegulatory(const void *pRegdom)
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 {
-	struct CMD_TX_POWER_PERCENTAGE_CTRL_T  rTxPwrPercentage;
-
-	ASSERT(prAdapter);
+	struct CMD_TX_POWER_PERCENTAGE_CTRL_T  rTxPwrPercentage = {0};
 
 	if (!prAdapter)
 		return;
@@ -12909,15 +12907,12 @@ void kalEnableTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 
 void kalSetTxPwrBackoffByBattVolt(struct ADAPTER *prAdapter, bool ucEnable)
 {
-	struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T  rTxPwrDrop;
+	struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T  rTxPwrDrop = {0};
 
-	ASSERT(prAdapter);
 
 	if (!prAdapter)
 		return;
 
-	kalMemZero(&rTxPwrDrop,
-		sizeof(struct CMD_TX_POWER_PERCENTAGE_DROP_CTRL_T));
 	rTxPwrDrop.ucPowerCtrlFormatId = PERCENTAGE_DROP_CTRL;
 	if (ucEnable)
 		rTxPwrDrop.i1PowerDropLevel =
