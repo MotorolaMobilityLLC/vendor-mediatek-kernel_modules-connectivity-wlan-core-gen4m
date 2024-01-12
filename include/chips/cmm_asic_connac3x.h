@@ -1460,6 +1460,11 @@ uint16_t asicConnac3xUsbRxByteCount(
 u_int8_t connac3xIsValidMmioReadReason(
 	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason);
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+void connac3xClearEvtRingTillCmdRingEmpty(struct ADAPTER *prAdapter);
+#endif /*_HIF_PCIE || _HIF_AXI */
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 #endif /* _CMM_ASIC_CONNAC3X_H */
 

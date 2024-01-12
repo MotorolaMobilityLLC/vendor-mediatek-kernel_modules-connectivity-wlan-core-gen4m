@@ -3041,4 +3041,29 @@ u_int8_t connac3xIsValidMmioReadReason(
 }
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+void connac3xClearEvtRingTillCmdRingEmpty(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	uint32_t u4Idx = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTxRing = &prHifInfo->TxRing[TX_RING_CMD];
+	for (u4Idx = 0; u4Idx < HIF_CMD_POWER_OFF_RETRY_COUNT; u4Idx++) {
+		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo, TX_RING_CMD);
+		if (prTxRing->u4UsedCnt == 0)
+			break;
+
+		kalMsleep(HIF_CMD_POWER_OFF_RETRY_TIME);
+		nicProcessISTWithSpecifiedCount(prAdapter, 1);
+
+	}
+	if (u4Idx) {
+		DBGLOG(HAL, INFO,
+		       "try to clear event ring, cmd[%u] retry[%u]\n",
+		       prTxRing->u4UsedCnt, u4Idx);
+	}
+}
+#endif /*_HIF_PCIE || _HIF_AXI */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

@@ -691,6 +691,7 @@ struct BUS_INFO mt6653_bus_info = {
 #endif /* _HIF_PCIE */
 	.setRxRingHwAddr = mt6653SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6653WfdmaAllocRxRing,
+	.clearEvtRingTillCmdRingEmpty = connac3xClearEvtRingTillCmdRingEmpty,
 	.setupMcuEmiAddr = mt6653SetupMcuEmiAddr,
 #if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
 	.rSwEmiRingInfo = {
