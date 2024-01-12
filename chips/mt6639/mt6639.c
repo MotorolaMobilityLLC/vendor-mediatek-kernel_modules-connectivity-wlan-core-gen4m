@@ -936,7 +936,8 @@ static void mt6639WfdmaManualPrefetch(
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	u_int32_t val = 0;
-	uint32_t u4WrVal = 0x00000004, u4Addr = 0;
+	uint32_t u4WrVal = 0, u4Addr = 0;
+	uint32_t u4PrefetchCnt = 0x4, u4TxDataPrefetchCnt = 0x10;
 
 	HAL_MCR_RD(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, &val);
 	/* disable prefetch offset calculation auto-mode */
@@ -948,28 +949,48 @@ static void mt6639WfdmaManualPrefetch(
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
+
+#if CFG_MTK_MDDP_SUPPORT
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_EXT_CTRL_ADDR;
+	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+		u4WrVal += 0x00400000;
+	}
+#endif
 
 	/* Tx ring */
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += 0x00400000;
+		u4WrVal += 0x01000000;
 	}
 
+#if CFG_MTK_MDDP_SUPPORT
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-		u4WrVal += 0x00400000;
+		u4WrVal += 0x01000000;
 	}
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_EXT_CTRL_ADDR;
+	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	u4WrVal += 0x00400000;
+#endif
 
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += 0x00400000;
 	}
