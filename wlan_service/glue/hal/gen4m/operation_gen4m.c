@@ -2627,8 +2627,17 @@ s_int32 mt_op_set_band_mode(
 
 	SET_TEST_DBDC(winfos, dbdc_enb);
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+
+	band_state->band_mode =
+		(band_state->band_mode & 0xffffff00) |	dbdc_enb;
+
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_ENABLE, band_state->band_mode);
+#else
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_ENABLE, dbdc_enb);
+#endif
 
 	return ret;
 }
