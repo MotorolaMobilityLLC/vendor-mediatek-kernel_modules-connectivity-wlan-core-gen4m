@@ -222,8 +222,7 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
 
 	if (prRegInfo) {
-		prConnSettings->ucAdHocChannelNum =
-		    (uint8_t) nicFreq2ChannelNum(prRegInfo->u4StartFreq);
+		prConnSettings->ucAdHocChannelNum = 0;
 		prConnSettings->eAdHocBand =
 		    prRegInfo->u4StartFreq < 5000000 ? BAND_2G4 : BAND_5G;
 		prConnSettings->eAdHocMode =
