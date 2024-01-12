@@ -452,7 +452,8 @@ static void heRlmFillHeCapIE(
 		HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 	}
 
-	HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
+	if (IS_FEATURE_ENABLED(prWifiVar->ucHeOMCtrl))
+		HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
 
 	HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(prHeCap->ucHeMacCap,
 		prWifiVar->ucMaxAmpduLenExp);
