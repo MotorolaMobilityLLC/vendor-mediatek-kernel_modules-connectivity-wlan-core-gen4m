@@ -456,6 +456,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     CONFIG_MTK_WIFI_AER_RESET=y
     CONFIG_DRV_OWN_INT_MODE=y
+    CONFIG_RX_WORK_SUPPORT=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
@@ -500,6 +501,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     endif
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     CONFIG_MTK_WIFI_AER_RESET=y
+    CONFIG_RX_WORK_SUPPORT=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
@@ -708,6 +710,12 @@ ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
         ccflags-y += -DCFG_TX_DIRECT_VIA_HIF_THREAD=1
     endif
+endif
+
+ifeq ($(CONFIG_RX_WORK_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_RX_WORK=1
+else
+    ccflags-y += -DCFG_SUPPORT_RX_WORK=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)

@@ -1789,6 +1789,7 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 	struct TX_CMD_REQ *prTxReq;
 	enum ENUM_CMD_TX_RESULT ret;
 	unsigned long flags;
+	struct list_head rTempQ;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1797,7 +1798,10 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
-	list_for_each_safe(prCur, prNext, &prHifInfo->rTxCmdQ) {
+	list_replace_init(&prHifInfo->rTxCmdQ, &rTempQ);
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
+
+	list_for_each_safe(prCur, prNext, &rTempQ) {
 		prTxReq = list_entry(prCur, struct TX_CMD_REQ, list);
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		ret = halWpdmaWriteCmd(prGlueInfo,
@@ -1814,7 +1818,6 @@ bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		list_add_tail(prCur, &prHifInfo->rTxCmdFreeList);
 	}
-	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
 
 	return true;
 }
@@ -2066,8 +2069,10 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 tx_data:
 #endif
 
+#if !CFG_SUPPORT_RX_WORK
 	/* disable softirq to improve processing efficiency */
 	KAL_HIF_BH_DISABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (!halIsDataRing(TX_RING, u4Idx))
@@ -2120,7 +2125,9 @@ end:
 		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	del_timer_sync(&prHifInfo->rTxDelayTimer);

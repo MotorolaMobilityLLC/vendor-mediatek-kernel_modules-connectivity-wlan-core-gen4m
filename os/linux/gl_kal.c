@@ -6511,6 +6511,11 @@ void kalSetSerTimeoutEvent(struct GLUE_INFO *pr)
 
 void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 {
+	tasklet_hi_schedule(&pr->rRxTask);
+}
+
+void kalRxTaskSchedule(struct GLUE_INFO *pr)
+{
 	uint32_t u4Cnt;
 
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
@@ -6534,10 +6539,14 @@ void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 		return;
 	}
 
-	tasklet_hi_schedule(&pr->rRxTask);
+#if CFG_SUPPORT_RX_WORK
+	kalRxWorkSchedule(pr);
+#else /* CFG_SUPPORT_RX_WORK */
+	kalRxTaskletSchedule(pr);
+#endif /* CFG_SUPPORT_RX_WORK */
 }
 
-uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
+uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 {
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
 		DBGLOG(INIT, ERROR,
@@ -6547,7 +6556,11 @@ uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 
 	if (GLUE_DEC_REF_CNT(pr->u4RxTaskScheduleCnt) > 0) {
 		/* reschedule RxTasklet due to pending INT */
-		tasklet_hi_schedule(&pr->rRxTask);
+#if CFG_SUPPORT_RX_WORK
+		kalRxWorkSchedule(pr);
+#else /* CFG_SUPPORT_RX_WORK */
+		kalRxTaskletSchedule(pr);
+#endif /* CFG_SUPPORT_RX_WORK */
 	} else {
 		/* no more schedule, so enable interrupt */
 		if (fgIsInt) {
@@ -6574,7 +6587,7 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	/* when we got interrupt, we wake up service thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
-		kalRxTaskletSchedule(pr);
+		kalRxTaskSchedule(pr);
 	else
 		wake_up_interruptible(&pr->waitq_hif);
 #else
@@ -6592,7 +6605,7 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 	/* when we got interrupt, we wake up servie thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))
-		kalRxTaskletSchedule(pr);
+		kalRxTaskSchedule(pr);
 	else
 		wake_up_interruptible(&pr->waitq_hif);
 #else
@@ -14976,3 +14989,59 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags,
 	}
 }
 
+#if CFG_SUPPORT_RX_WORK
+void kalRxWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo = container_of(work,
+					struct GLUE_INFO, rRxWork);
+	halRxWork(prGlueInfo);
+}
+
+void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
+{
+	if ((i4CpuIdx != -1 && i4CpuIdx != WORK_ALL_CPU_OK) &&
+		i4CpuIdx > num_possible_cpus()) {
+		DBGLOG(INIT, INFO, "Invalid CpuIdx:%d\n", i4CpuIdx);
+		return;
+	}
+	pr->i4RxWorkCpu = i4CpuIdx;
+}
+
+void kalRxWorkInit(struct GLUE_INFO *pr)
+{
+	/* init cpu idx as free run */
+	pr->i4RxWorkCpu = -1;
+	INIT_WORK(&pr->rRxWork, kalRxWork);
+	pr->prRxWorkQueue = create_workqueue("wifi_rx_work");
+	if (!pr->prRxWorkQueue)
+		DBGLOG(INIT, ERROR, "prRxWorkQueue is NULL\n");
+}
+
+void kalRxWorkUninit(struct GLUE_INFO *pr)
+{
+	struct workqueue_struct *prWq;
+
+	prWq = pr->prRxWorkQueue;
+	pr->prRxWorkQueue = NULL;
+	if (prWq) {
+		flush_workqueue(prWq);
+		destroy_workqueue(prWq);
+	}
+}
+
+void kalRxWorkSchedule(struct GLUE_INFO *pr)
+{
+	int32_t i4RxWorkCpu;
+
+	if (!pr->prRxWorkQueue) {
+		DBGLOG_LIMITED(INIT, INFO, "prRxWorkQueue is NULL\n");
+		return;
+	}
+	i4RxWorkCpu = pr->i4RxWorkCpu;
+	if (i4RxWorkCpu == -1 || i4RxWorkCpu == WORK_ALL_CPU_OK) {
+		queue_work(pr->prRxWorkQueue, &pr->rRxWork);
+		return;
+	}
+	queue_work_on(i4RxWorkCpu, pr->prRxWorkQueue, &pr->rRxWork);
+}
+#endif /* CFG_SUPPORT_RX_WORK */
