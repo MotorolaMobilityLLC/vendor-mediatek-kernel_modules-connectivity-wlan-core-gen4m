@@ -370,6 +370,10 @@ uint8_t apsBssDescToLink(struct ADAPTER *ad,
 	}
 
 	if (i == ap->ucLinkNum && i < ad->rWifiVar.ucMldLinkMax) {
+#ifdef MT7990
+		/* wifi7 PF testbed only, support 5+6 */
+		ap->aucMask[i] = BIT(bss->eBand);
+#else
 		if (bss->eBand == BAND_2G4) {
 			ap->aucMask[i] = BIT(BAND_2G4);
 		} else {
@@ -378,6 +382,7 @@ uint8_t apsBssDescToLink(struct ADAPTER *ad,
 			ap->aucMask[i] |= BIT(BAND_6G);
 #endif
 		}
+#endif
 		ap->ucLinkNum++;
 		return i;
 	}
