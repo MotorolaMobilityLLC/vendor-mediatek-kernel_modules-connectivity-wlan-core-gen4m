@@ -235,8 +235,9 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 			prMsduInfo->prHead = cnmMemAlloc(prAdapter,
 				RAM_TYPE_BUF,
 				u4Length + u4TxHeadRoomSize);
-			prMsduInfo->prPacket = prMsduInfo->prHead +
-				u4TxHeadRoomSize;
+			prMsduInfo->prPacket = (uint8_t *)
+				((uintptr_t)prMsduInfo->prHead +
+				u4TxHeadRoomSize);
 			prMsduInfo->aucTxDescBuffer = prMsduInfo->prHead;
 			prMsduInfo->eSrc = TX_PACKET_MGMT;
 			prMsduInfo->u4Option = 0;
