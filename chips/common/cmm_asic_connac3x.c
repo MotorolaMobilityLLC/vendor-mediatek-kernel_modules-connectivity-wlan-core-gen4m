@@ -29,7 +29,7 @@
 #include "wlan_pinctrl.h"
 #include "gl_coredump.h"
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 #include <linux/soc/mediatek/devapc_public.h>
 #endif
 
@@ -48,7 +48,7 @@
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 u_int8_t g_fgIsRegDevapcCb;
 #endif
 
@@ -2806,7 +2806,7 @@ static void register_connv3_cbs(void)
 }
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 static void wlan_devapc_debug_dump(void)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -2853,7 +2853,7 @@ void register_plat_connsys_cbs(void)
 	power_throttling_init();
 #endif
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 	if (!g_fgIsRegDevapcCb) {
 		register_devapc_vio_callback(&wlan_devapc_vio_handle);
 		g_fgIsRegDevapcCb = TRUE;

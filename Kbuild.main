@@ -1739,6 +1739,14 @@ else ifeq ($(CONFIG_MTK_WIFI_CCCI_SUPPORT), n)
 CONFIG_MTK_ECCCI_DRIVER :=
 endif
 
+ifneq ($(CONFIG_MTK_DEVAPC),)
+ccflags-y += -DCFG_MTK_WIFI_DEVAPC=1
+else ifneq ($(CONFIG_DEVICE_MODULES_MTK_DEVAPC),)
+ccflags-y += -DCFG_MTK_WIFI_DEVAPC=1
+else
+ccflags-y += -DCFG_MTK_WIFI_DEVAPC=0
+endif
+
 ifneq ($(CONFIG_MTK_ECCCI_DRIVER),)
 ccflags-y += -DCFG_MTK_CCCI_SUPPORT=1
 else

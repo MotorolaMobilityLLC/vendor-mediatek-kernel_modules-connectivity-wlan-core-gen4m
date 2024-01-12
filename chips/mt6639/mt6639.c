@@ -194,7 +194,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 static void mt6639ShowDevapcDebugInfo(void);
 #endif
 
@@ -829,7 +829,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if defined(_HIF_PCIE)
 	.dumpWfBusSectionA = mt6639_dumpHostVdnrTimeoutInfo,
 #endif
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 	.showDevapcDebugInfo = mt6639ShowDevapcDebugInfo,
 #endif
 };
@@ -2610,7 +2610,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
 }
 
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 static void mt6639ShowDevapcDebugInfo(void)
 {
 	uint32_t u4Val = 0;

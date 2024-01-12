@@ -553,7 +553,7 @@ struct CHIP_DBG_OPS {
 	void (*dumpPcieCr)(void);
 	bool (*checkDumpViaBt)(void);
 #endif
-#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#if CFG_MTK_WIFI_DEVAPC
 	void (*showDevapcDebugInfo)(void);
 #endif
 };
