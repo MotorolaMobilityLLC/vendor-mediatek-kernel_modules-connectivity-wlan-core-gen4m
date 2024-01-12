@@ -473,9 +473,8 @@ static void ehtRlmFillOpIE(
 
 	/* fixed field in operation info */
 	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
-	prEhtOpInfo->ucCCFS0 = nicGetS1(prBssInfo->eBand,
-		prBssInfo->ucPrimaryChannel, ehtRlmGetEhtOpBwByBssOpBw(eht_bw));
-	prEhtOpInfo->ucCCFS1 = 0;
+	prEhtOpInfo->ucCCFS0 = prBssInfo->ucVhtChannelFrequencyS1;
+	prEhtOpInfo->ucCCFS1 = prBssInfo->ucVhtChannelFrequencyS2;
 	u4OverallLen += 3;
 
 	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
