@@ -116,10 +116,6 @@ extern const struct net_device_ops p2p_netdev_ops;
  ******************************************************************************
  */
 
-extern struct net_device *g_P2pPrDev;
-extern struct wireless_dev *gprP2pWdev[KAL_P2P_NUM];
-extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
-
 /******************************************************************************
  *                           P R I V A T E   D A T A
  ******************************************************************************
@@ -129,22 +125,11 @@ extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
  *                  F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
-
 struct GL_P2P_INFO {
-
-	/* P2P Device interface handle */
-	/*only first p2p have this devhandler*/
-	struct net_device *prDevHandler;
-	/*struct net_device *prRoleDevHandler;*//* TH3 multiple P2P */
-
-	struct net_device *aprRoleHandler;
-
 	/* Todo : should move to the glueinfo or not*/
 	/*UINT_8 ucRoleInterfaceNum;*//* TH3 multiple P2P */
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	/* cfg80211 */
-	struct wireless_dev *prWdev;
 	/*struct wireless_dev *prRoleWdev[KAL_P2P_NUM];*//* TH3 multiple P2P */
 
 	/*struct cfg80211_scan_request *prScanRequest;*//* TH3 multiple P2P */
@@ -244,14 +229,6 @@ struct GL_P2P_INFO {
 };
 
 struct GL_P2P_DEV_INFO {
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	struct cfg80211_scan_request *prScanRequest;
-#if 0
-	struct cfg80211_scan_request rBackupScanRequest;
-#endif
-	uint64_t u8Cookie;
-	uint32_t u4OsMgmtFrameFilter;
-#endif
 	uint32_t u4PacketFilter;
 	uint8_t aucMCAddrList[MAX_NUM_GROUP_ADDR][PARAM_MAC_ADDR_LEN];
 	uint8_t ucWSCRunning;
@@ -372,13 +349,6 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo,
 		const char *prDevName,
 		const char *prDevName2,
 		uint8_t ucApMode);
-
-int glSetupP2P(struct GLUE_INFO *prGlueInfo,
-		struct wireless_dev *prP2pWdev,
-		struct net_device *prP2pDev,
-		uint8_t u4Idx,
-		u_int8_t fgIsApMode,
-		u_int8_t fgSkipRole);
 
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx);
 

@@ -266,6 +266,21 @@ typedef void(*remove_card) (void);
 
 #endif
 
+#if 1
+#define CPU_TO_LE16(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define CPU_TO_LE32(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define CPU_TO_LE64(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define LE16_TO_CPU(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define LE32_TO_CPU(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define LE64_TO_CPU(_val) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
 #define CPU_TO_LE16 cpu_to_le16
 #define CPU_TO_LE32 cpu_to_le32
 #define CPU_TO_LE64 cpu_to_le64
@@ -273,6 +288,7 @@ typedef void(*remove_card) (void);
 #define LE16_TO_CPU le16_to_cpu
 #define LE32_TO_CPU le32_to_cpu
 #define LE64_TO_CPU le64_to_cpu
+#endif
 
 #define SWAP32(x) \
 	((uint32_t) (\

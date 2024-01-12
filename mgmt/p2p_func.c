@@ -4087,6 +4087,9 @@ p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 {
 	u_int8_t fgIsReplyProbeRsp = FALSE;
 	u_int8_t fgApplyp2PDevFilter = FALSE;
+	void *prRoleHandler = NULL;
+	void *prDevHandler = NULL;
+
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 
@@ -4103,10 +4106,15 @@ p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 		if (fgIsDevInterface)
 			fgApplyp2PDevFilter = TRUE;
 		else {
-			if (prAdapter->prGlueInfo->prP2PInfo[0]->prDevHandler ==
-				prAdapter->prGlueInfo->prP2PInfo
-					[ucRoleIdx]->aprRoleHandler)
+			prRoleHandler = kalGetP2pNetHdl(
+							prAdapter->prGlueInfo,
+							ucRoleIdx, TRUE);
+			prDevHandler = kalGetP2pNetHdl(
+							prAdapter->prGlueInfo,
+							0, FALSE);
+			if (prDevHandler == prRoleHandler)
 				fgApplyp2PDevFilter = TRUE;
+
 			else
 				fgApplyp2PDevFilter = FALSE;
 		}
@@ -8584,8 +8592,8 @@ void p2pFunMulAPAgentBssStatusNotification(
 
 	kalMemZero(prBssReport, sizeof(*prBssReport));
 	/* Interface Index */
-	i4Ret = sscanf(prAdapter->prGlueInfo->prP2PInfo[1]->prDevHandler->name,
-		"ap%u", &prBssReport->uIfIndex);
+	i4Ret = kalGetMulAPIfIdx(prAdapter->prGlueInfo, 1,
+				&prBssReport->uIfIndex);
 	if (i4Ret != 1)
 		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
 

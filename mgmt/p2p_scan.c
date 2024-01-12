@@ -189,7 +189,7 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Skip report beacon to upper layer if no p2p scan */
-	if (prAdapter->prGlueInfo->prP2PDevInfo->prScanRequest == NULL &&
+	if (kalGetP2pDevScanReq(prAdapter->prGlueInfo) == NULL &&
 			fgIsBeacon)
 		fgIsSkipThisBeacon = TRUE;
 

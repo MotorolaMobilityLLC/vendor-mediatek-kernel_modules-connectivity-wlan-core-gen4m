@@ -5163,9 +5163,7 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				aucLineEnd, sizeof(aucLineEnd));
 
 			if (kalEnqCoreDumpLog(prAdapter,
-					aucVersionBuf, kalStrLen(aucVersionBuf),
-					&prAdapter->prGlueInfo
-					->rCoreDumpSkbQueue)
+					aucVersionBuf, kalStrLen(aucVersionBuf))
 					!= WLAN_STATUS_SUCCESS) {
 				DBGLOG(NIC, ERROR,
 						"Add FW version in core dump header fail\n");
@@ -5193,10 +5191,8 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				prAdapter->fgKeepPrintCoreDump = FALSE;
 
 			if (kalEnqCoreDumpLog(prAdapter,
-					prEvent->aucBuffer, u2BufSize,
-					&prAdapter->prGlueInfo
-					->rCoreDumpSkbQueue)
-					!= WLAN_STATUS_SUCCESS) {
+				prEvent->aucBuffer, u2BufSize)
+				!= WLAN_STATUS_SUCCESS) {
 				DBGLOG(NIC, ERROR,
 						"kalEnqCoreDumpLog fail\n");
 			}

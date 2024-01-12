@@ -2835,8 +2835,8 @@ static void handle_sw_wfdma_event(struct ADAPTER *prAdapter)
 		&prChipInfo->bus_info->rSwWfdmaInfo;
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
-		if (test_bit(GLUE_FLAG_HALT_BIT,
-			&prAdapter->prGlueInfo->ulFlag)) {
+		if (KAL_TEST_BIT(GLUE_FLAG_HALT_BIT,
+			prAdapter->prGlueInfo->ulFlag)) {
 			DBGLOG(HAL, TRACE,
 				"GLUE_FLAG_HALT skip SwWfdma INT\n");
 		} else {

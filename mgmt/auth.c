@@ -884,14 +884,13 @@ uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter,
 			 */
 		} else if (prAuthFrame->u2AuthTransSeqNo ==
 			   AUTH_TRANSACTION_SEQ_2) {
-			struct cfg80211_ft_event_params *prFtEvent =
+			struct FT_EVENT_PARAMS *prFtParam =
 				aisGetFtEventParam(prAdapter,
 				secGetBssIdxByRfb(prAdapter,
 				prSwRfb));
-
-			prFtEvent->ies =
+			prFtParam->pcIe =
 			    &prAuthFrame->aucInfoElem[0];
-			prFtEvent->ies_len = u2IEsLen;
+			prFtParam->u2IeLen = u2IEsLen;
 		}
 	}
 

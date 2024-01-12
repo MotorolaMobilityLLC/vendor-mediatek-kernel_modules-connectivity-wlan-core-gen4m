@@ -12017,7 +12017,7 @@ int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 {
 	return kalRequestFirmware(pcFileName, pucBuf,
 			 u4MaxFileLen, pu4ReadFileLen,
-			 prAdapter->prGlueInfo->prDev);
+			kalGetGlueDevHdl(prAdapter->prGlueInfo));
 }
 
 void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
@@ -13722,8 +13722,8 @@ wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo->prAdapter == NULL)
 		return;
 
-	while (!(test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
-		&prGlueInfo->prAdapter->ulSuspendFlag))) {
+	while (!(KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+		prGlueInfo->prAdapter->ulSuspendFlag))) {
 		if (u1Count > HIF_SUSPEND_MAX_WAIT_TIME) {
 			DBGLOG(HAL, ERROR, "cfg80211 not suspend\n");
 			/* no cfg80211 suspend called, do pre-suspend flow here */

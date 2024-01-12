@@ -523,12 +523,12 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 
 	/* Check if root timer expired but not timeout. */
 	if (TIME_BEFORE(prRootTimer->rNextExpiredSysTime, rCurSysTime) &&
-		!test_bit(GLUE_FLAG_TIMEOUT_BIT,
-				       &prAdapter->prGlueInfo->ulFlag)) {
+		!KAL_TEST_BIT(GLUE_FLAG_TIMEOUT_BIT,
+				       prAdapter->prGlueInfo->ulFlag)) {
 		log_dbg(CNM, WARN, "Invalid NextExpiredSysTime: %u, currentSysTime: %u\n",
 			prRootTimer->rNextExpiredSysTime, rCurSysTime);
-		set_bit(GLUE_FLAG_TIMEOUT_BIT,
-				       &prAdapter->prGlueInfo->ulFlag);
+		KAL_SET_BIT(GLUE_FLAG_TIMEOUT_BIT,
+				       prAdapter->prGlueInfo->ulFlag);
 	}
 
 	/* If no timer pending or the fast time interval is used. */

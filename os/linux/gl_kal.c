@@ -2618,12 +2618,22 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				break;
 			}
 			case ENUM_STATUS_TYPE_FT_AUTH_STATUS: {
-				struct cfg80211_ft_event_params *prFtEvent =
-					aisGetFtEventParam(prAdapter,
-					ucBssIndex);
+				struct FT_EVENT_PARAMS *prFtParam =
+						aisGetFtEventParam(prAdapter,
+						ucBssIndex);
+				struct cfg80211_ft_event_params rFtEvent = {0};
+
+				rFtEvent.ies = prFtParam->pcIe;
+				rFtEvent.ies_len = prFtParam->u2IeLen;
+				rFtEvent.target_ap =
+						prFtParam->pcTargetAp;
+				rFtEvent.ric_ies =
+						prFtParam->pcRicIes;
+				rFtEvent.ric_ies_len =
+						prFtParam->u2RicIesLen;
 
 				cfg80211_ft_event(prDevHandler,
-						  prFtEvent);
+						  &rFtEvent);
 			}
 				break;
 
@@ -8096,9 +8106,10 @@ uint64_t kalGetBootTime(void)
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
-			     uint16_t u2Size, struct sk_buff_head *queue)
+			     uint16_t u2Size)
 {
 	struct sk_buff *skb_tmp = NULL;
+	struct sk_buff_head *queue = NULL;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -8108,7 +8119,7 @@ uint32_t kalEnqCoreDumpLog(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
 
 	memcpy(skb_tmp->data, pucBuffer, u2Size);
 	skb_tmp->len = u2Size;
-
+	queue = &prAdapter->prGlueInfo->rCoreDumpSkbQueue;
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
 	skb_queue_tail(queue, skb_tmp);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CORE_DUMP);
@@ -13406,3 +13417,33 @@ kalProcessRttReportDone(struct GLUE_INFO *prGlueInfo,
 	return (void *) skb;
 }
 
+void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo)
+{
+	return (void *)(prGlueInfo->prDevHandler);
+}
+
+struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo)
+{
+	return prGlueInfo->prDev;
+}
+
+void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	prGlueInfo->prScanRequest = NULL;
+}
+
+void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	return (void *)(prGlueInfo->prScanRequest);
+}
+void kalGetFtIeParam(void *pvftie,
+	uint16_t *pu2MDID, uint32_t *pu4IeLength,
+	const uint8_t **pucIe)
+{
+	struct cfg80211_update_ft_ies_params *ftie = NULL;
+
+	ftie = (struct cfg80211_update_ft_ies_params *)pvftie;
+	*pu2MDID = ftie->md;
+	*pu4IeLength = ftie->ie_len;
+	*pucIe = ftie->ie;
+}

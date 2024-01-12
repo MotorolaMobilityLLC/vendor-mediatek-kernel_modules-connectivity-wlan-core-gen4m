@@ -125,8 +125,8 @@ void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter)
 		wlanBindBssIdxToNetInterface(
 			prAdapter->prGlueInfo,
 			fsm->ucBssIndex,
-			(void *) prP2pInfo->prDevHandler);
-
+			kalGetP2pNetHdl(prAdapter->prGlueInfo,
+				i, FALSE));
 		p2pRoleFsmUninit(prAdapter, i);
 	}
 }

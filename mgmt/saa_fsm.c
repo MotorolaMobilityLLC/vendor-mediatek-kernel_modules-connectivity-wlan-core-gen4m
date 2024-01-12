@@ -176,14 +176,14 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 				struct PARAM_STATUS_INDICATION rStatus = {
 				.eStatusType =
 				ENUM_STATUS_TYPE_FT_AUTH_STATUS};
-				struct cfg80211_ft_event_params *prFtEvent =
+				struct FT_EVENT_PARAMS *prFtParam =
 				aisGetFtEventParam(prAdapter,
 				prStaRec->ucBssIndex);
 
-				prFtEvent->target_ap = prStaRec->aucMacAddr;
+				prFtParam->pcTargetAp = prStaRec->aucMacAddr;
 				/* now, we don't support RIC first */
-				prFtEvent->ric_ies = NULL;
-				prFtEvent->ric_ies_len = 0;
+				prFtParam->pcRicIes = NULL;
+				prFtParam->u2RicIesLen = 0;
 				DBGLOG(SAA, INFO,
 					"[%d] FT: notify supplicant to update FT IEs\n",
 					prStaRec->ucBssIndex);

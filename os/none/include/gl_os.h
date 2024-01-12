@@ -462,8 +462,6 @@ struct GLUE_INFO {
 
 	/* 11R */
 	struct FT_IES rFtIeForTx;
-	struct cfg80211_ft_event_params rFtEventParam;
-
 	uint32_t IsrAbnormalCnt;
 	uint32_t IsrSoftWareCnt;
 
@@ -517,16 +515,6 @@ struct GLUE_INFO {
 	 * common/cmm_asic_connac.c
 	 */
 	uint32_t u4InfType;
-
-	/*
-	 * needed by
-	 * mgmt/tdls.c
-	 */
-	/* Device handle */
-	struct net_device *prDevHandler;
-
-	/* Device */
-	struct device *prDev;
 	/* not necessary for built */
 	/* TODO: os-related */
 	uint32_t u4ReadyFlag;	/* check if card is ready */
@@ -549,20 +537,9 @@ struct GLUE_INFO {
 	struct GL_PERF_IND_INFO PerfIndCache;
 #endif
 
-#if (CFG_CE_ASSERT_DUMP == 1)
-	wait_queue_head_t waitq_fwdump;
-	struct sk_buff_head rCoreDumpSkbQueue;
-#endif
-
-/* for cfg80211 scan done indication */
-	struct cfg80211_scan_request *prScanRequest;
-
 #if CFG_SUPPORT_SCHED_SCAN
 	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest;
-#else
-	struct cfg80211_sched_scan_request *prSchedScanRequest;
 #endif
-
 	kal_completion rPendComp;	/* indicate main thread halt complete */
 
 	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
