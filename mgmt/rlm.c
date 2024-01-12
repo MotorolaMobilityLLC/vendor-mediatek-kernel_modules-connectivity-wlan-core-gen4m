@@ -530,6 +530,42 @@ BOOLEAN rlmParseCheckMTKOuiIE(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN PU
 * \return none
 */
 /*----------------------------------------------------------------------------*/
+VOID rlmGenerateCsaIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo)
+{
+	P_BSS_INFO_T prBssInfo;
+	PUINT_8 pucBuffer;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	if (prAdapter->rWifiVar.fgCsaInProgress) {
+		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+		if (!prBssInfo)
+			return;
+
+		pucBuffer = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
+
+		CSA_IE(pucBuffer)->ucId = ELEM_ID_CH_SW_ANNOUNCEMENT;
+		CSA_IE(pucBuffer)->ucLength = ELEM_MIN_LEN_CSA;
+		CSA_IE(pucBuffer)->ucChannelSwitchMode = prAdapter->rWifiVar.ucChannelSwitchMode;
+		CSA_IE(pucBuffer)->ucNewChannelNum = prAdapter->rWifiVar.ucNewChannelNumber;
+		CSA_IE(pucBuffer)->ucChannelSwitchCount = prAdapter->rWifiVar.ucChannelSwitchCount;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
+		pucBuffer += IE_SIZE(pucBuffer);
+	}
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
 static VOID rlmFillHtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO_T prMsduInfo)
 {
 	P_IE_HT_CAP_T prHtCap;

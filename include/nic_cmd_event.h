@@ -123,6 +123,11 @@
 #define RDD_PULSE_OFFSET6               6
 #define RDD_PULSE_OFFSET7               7
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#define RDD_IN_SEL_0                    0
+#define RDD_IN_SEL_1                    1
+#endif
+
 #if CFG_SUPPORT_QA_TOOL
 #define IQ_FILE_LINE_OFFSET     18
 #define IQ_FILE_IQ_STR_LEN	 8
@@ -505,6 +510,10 @@ typedef enum _ENUM_CMD_ID_T {
 	CMD_ID_GET_BUG_REPORT = 0x89,	/* 0x89 (Query) */
 	CMD_ID_GET_NIC_CAPABILITY_V2 = 0x8A,/* 0x8A (Query) */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	CMD_ID_RDD_ON_OFF_CTRL = 0x8F, /* 0x8F(Set) */
+#endif
+
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,	/* 0xAE (Set / Query) */
 #endif
@@ -609,6 +618,11 @@ typedef enum _ENUM_EVENT_ID_T {
 #if CFG_SUPPORT_MU_MIMO
 	EVENT_ID_MU_GET_QD = 0x53,
 	EVENT_ID_MU_GET_LQ = 0x54,
+#endif
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	EVENT_ID_RDD_REPORT = 0x60,
+	EVENT_ID_CSA_DONE = 0x61,
 #endif
 
 	EVENT_ID_TDLS = 0x80,	/* TDLS event_id */
@@ -1560,6 +1574,15 @@ typedef struct _CMD_BT_OVER_WIFI {
 	UINT_8 ucReserved[1];
 } CMD_BT_OVER_WIFI, *P_CMD_BT_OVER_WIFI;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+typedef struct _CMD_RDD_ON_OFF_CTRL_T {
+	UINT_8 ucDfsCtrl;
+	UINT_8 ucRddIdx;
+	UINT_8 ucRddInSel;
+	UINT_8 ucReserve[1];
+} CMD_RDD_ON_OFF_CTRL_T, *P_CMD_RDD_ON_OFF_CTRL_T;
+#endif
+
 /* EVENT_BT_OVER_WIFI */
 typedef struct _EVENT_BT_OVER_WIFI {
 	UINT_8 ucLinkStatus;
@@ -1753,6 +1776,16 @@ typedef enum _ENUM_TXS_CONTROL_FLAG_T {
 	TXS_WITH_ADVANCED_INFO = 0,
 	TXS_IS_EXIST
 } ENUM_TXS_CONTROL_FLAG_T, *P_ENUM_TXS_CONTROL_FLAG_T;
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+typedef enum _ENUM_DFS_CTRL_T {
+	RDD_STOP = 0,
+	RDD_START,
+	RDD_DET_MODE,
+	RDD_RADAR_EMULATE,
+	RDD_START_TXQ
+} ENUM_DFS_CTRL_T, *P_ENUM_DFS_CTRL_T;
+#endif
 
 typedef struct _CMD_BSS_ACTIVATE_CTRL {
 	UINT_8 ucBssIndex;

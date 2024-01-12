@@ -158,6 +158,10 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.set_tx_power = mtk_p2p_cfg80211_set_txpower,
 	.get_tx_power = mtk_p2p_cfg80211_get_txpower,
 	.set_power_mgmt = mtk_p2p_cfg80211_set_power_mgmt,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	.start_radar_detection = mtk_p2p_cfg80211_start_radar_detection,
+	.channel_switch = mtk_p2p_cfg80211_channel_switch,
+#endif
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_p2p_cfg80211_testmode_cmd,
 #endif
@@ -1029,7 +1033,11 @@ BOOLEAN glP2pCreateWirelessDevice(P_GLUE_INFO_T prGlueInfo)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
 	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY | WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME;
 #else
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME | WIPHY_FLAG_HAS_CHANNEL_SWITCH;
+#else
 	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL | WIPHY_FLAG_HAVE_AP_SME;
+#endif
 	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
 #endif
 	prWiphy->ap_sme_capa = 1;
@@ -1266,8 +1274,16 @@ static int p2pOpen(IN struct net_device *prDev)
 #endif
 
 	/* 2. carrier on & start TX queue */
+	/*DFS todo 20161220_DFS*/
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	if (prDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP) {
+		netif_carrier_on(prDev);
+		netif_tx_start_all_queues(prDev);
+	}
+#else
 	netif_carrier_on(prDev);
 	netif_tx_start_all_queues(prDev);
+#endif
 
 	return 0;		/* success */
 }				/* end of p2pOpen() */

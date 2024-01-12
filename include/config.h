@@ -154,6 +154,7 @@
 
 #define CFG_SUPPORT_RRM             0	/* Radio Reasource Measurement (802.11k) */
 #define CFG_SUPPORT_DFS             1	/* DFS (802.11h) */
+#define CFG_SUPPORT_DFS_MASTER      0
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
 #define CFG_SUPPORT_QUIET           0	/* Quiet (802.11h) */

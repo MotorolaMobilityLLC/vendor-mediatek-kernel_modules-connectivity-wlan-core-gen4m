@@ -146,6 +146,13 @@ static PUINT_8 apucDebugMsg[] = {
 	(PUINT_8) DISP_STRING("MID_MNY_P2P_NET_DEV_REGISTER"),
 	(PUINT_8) DISP_STRING("MID_MNY_P2P_START_AP"),
 	(PUINT_8) DISP_STRING("MID_MNY_P2P_UPDATE_IE_BUF"),
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	(PUINT_8) DISP_STRING("MID_CNM_P2P_RADAR_DETECT"),
+	(PUINT_8) DISP_STRING("MID_CNM_P2P_CSA_DONE"),
+	(PUINT_8) DISP_STRING("MID_MNY_P2P_DFS_CAC"),
+	(PUINT_8) DISP_STRING("MID_MNY_P2P_SET_NEW_CHANNEL"),
+#endif
+
 #endif
 
 #if CFG_SUPPORT_ADHOC
@@ -177,6 +184,11 @@ static MSG_HNDL_ENTRY_T arMsgMapTable[] = {
 	{MID_CNM_P2P_CH_GRANT, p2pFsmRunEventChGrant},	/*set in gl_p2p_init.c */
 #else
 	{MID_CNM_P2P_CH_GRANT, mboxDummy},
+#endif
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	{MID_CNM_P2P_RADAR_DETECT, p2pRoleFsmRunEventRadarDet},
+	{MID_CNM_P2P_CSA_DONE, p2pRoleFsmRunEventCsaDone},
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
@@ -252,6 +264,10 @@ static MSG_HNDL_ENTRY_T arMsgMapTable[] = {
 	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventStartAP},
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
 	{MID_MNY_P2P_MGMT_FRAME_UPDATE, p2pFsmRunEventUpdateMgmtFrame},
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	{MID_MNY_P2P_DFS_CAC, p2pRoleFsmRunEventDfsCac},
+	{MID_MNY_P2P_SET_NEW_CHANNEL, p2pRoleFsmRunEventSetNewChannel},
+#endif
 #if CFG_SUPPORT_WFD
 	{MID_MNY_P2P_WFD_CFG_UPDATE, p2pFsmRunEventWfdSettingUpdate},
 #endif

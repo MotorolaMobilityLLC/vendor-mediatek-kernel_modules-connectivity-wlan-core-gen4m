@@ -60,7 +60,13 @@ static PUINT_8 apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
 	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_SCAN"),
 	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_REQING_CHANNEL"),
 	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_AP_CHNL_DETECTION"),
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_GC_JOIN"),
+	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_DFS_CAC"),
+	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_SWITCH_CHANNEL")
+#else
 	(PUINT_8) DISP_STRING("P2P_ROLE_STATE_GC_JOIN")
+#endif
 };
 
 /*lint -restore */
@@ -373,6 +379,29 @@ p2pRoleFsmStateTransition(IN P_ADAPTER_T prAdapter,
 							  prP2pRoleFsmInfo, &(prP2pRoleFsmInfo->rJoinInfo), eNextState);
 			}
 			break;
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		case P2P_ROLE_STATE_DFS_CAC:
+			if (!fgIsTransitionOut) {
+				p2pRoleStateInit_DFS_CAC(prAdapter,
+								prP2pRoleFsmInfo->ucBssIndex,
+								&(prP2pRoleFsmInfo->rChnlReqInfo));
+			} else {
+				p2pRoleStateAbort_DFS_CAC(prAdapter, prP2pRoleBssInfo,
+								 prP2pRoleFsmInfo, eNextState);
+			}
+			break;
+		case P2P_ROLE_STATE_SWITCH_CHANNEL:
+			if (!fgIsTransitionOut) {
+				p2pRoleStateInit_SWITCH_CHANNEL(prAdapter,
+								prP2pRoleFsmInfo->ucBssIndex,
+								&(prP2pRoleFsmInfo->rChnlReqInfo));
+			} else {
+				p2pRoleStateAbort_SWITCH_CHANNEL(prAdapter, prP2pRoleBssInfo,
+								 prP2pRoleFsmInfo, eNextState);
+			}
+			break;
+#endif
 		default:
 			ASSERT(FALSE);
 			break;
@@ -409,6 +438,12 @@ VOID p2pRoleFsmRunEventTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 			DBGLOG(P2P, ERROR,
 			       "Current P2P Role State P2P_ROLE_STATE_GC_JOIN is unexpected for FSM timeout event.\n");
 			break;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		case P2P_ROLE_STATE_DFS_CAC:
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+			break;
+#endif
 		default:
 			DBGLOG(P2P, ERROR,
 			       "Current P2P Role State %d is unexpected for FSM timeout event.\n",
@@ -1066,6 +1101,184 @@ VOID p2pRoleFsmRunEventStopAP(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 }				/* p2pRoleFsmRunEventStopAP */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_MSG_P2P_DFS_CAC_T prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) NULL;
+	P_P2P_CONNECTION_REQ_INFO_T prP2pConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	ENUM_CHANNEL_WIDTH_T rChannelWidth;
+#if CFG_SUPPORT_DBDC
+	CNM_DBDC_CAP_T rDbdcCap;
+#endif /*CFG_SUPPORT_DBDC*/
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac\n");
+
+		prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) prMsgHdr;
+
+		rChannelWidth = prP2pDfsCacMsg->eChannelWidth;
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pDfsCacMsg->ucRoleIdx);
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac with Role(%d)\n", prP2pDfsCacMsg->ucRoleIdx);
+
+		if (!prP2pRoleFsmInfo) {
+			DBGLOG(P2P, ERROR,
+			       "p2pRoleFsmRunEventDfsCac: Corresponding P2P Role FSM empty: %d.\n",
+			       prP2pDfsCacMsg->ucRoleIdx);
+			break;
+		}
+
+		prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+
+		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
+			prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
+		else
+			prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
+
+#if CFG_SUPPORT_DBDC
+		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
+		cnmGetDbdcCapability(prAdapter,
+			prP2pBssInfo->ucBssIndex,
+			prP2pConnReqInfo->rChannelInfo.eBand,
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+			prAdapter->rWifiVar.ucNSS,
+			&rDbdcCap);
+
+		DBGLOG(P2P, INFO,
+			"p2pRoleFsmRunEventDfsCac: Set channel at CH %u.\n",
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum);
+
+		prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
+		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
+		prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
+#endif /*CFG_SUPPORT_DBDC*/
+
+		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
+			/* Make sure the state is in IDLE state. */
+			p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+		}
+
+		/* Leave IDLE state. */
+		SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
+
+		prP2pBssInfo->eIntendOPMode = OP_MODE_ACCESS_POINT;
+		prP2pBssInfo->fgIsDfsActive = TRUE;
+
+		if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
+			DBGLOG(P2P, INFO, "Role(%d) Set channel at CH(%d)\n",
+				prP2pDfsCacMsg->ucRoleIdx,
+				prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum);
+
+			p2pRoleStatePrepare_To_DFS_CAC_STATE(prAdapter,
+						GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
+						rChannelWidth,
+						&(prP2pRoleFsmInfo->rConnReqInfo),
+						&(prP2pRoleFsmInfo->rChnlReqInfo));
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_DFS_CAC);
+		} else
+			ASSERT(FALSE);
+
+
+	} while (FALSE);
+
+}				/*p2pRoleFsmRunEventDfsCac*/
+
+VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	P_MSG_P2P_RADAR_DETECT_T prMsgP2pRddDetMsg;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet\n");
+
+		prMsgP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) prMsgHdr;
+
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet with Role(%d)\n", prP2pRoleFsmInfo->ucRoleIndex);
+
+		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_DFS_CAC &&
+				prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
+			ASSERT(FALSE);
+
+		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+
+		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+
+	} while (FALSE);
+
+}				/*p2pRoleFsmRunEventRadarDet*/
+
+VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	P_MSG_P2P_SET_NEW_CHANNEL_T prMsgP2pSetNewChannelMsg;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventSetNewChannel\n");
+
+		prMsgP2pSetNewChannelMsg = (P_MSG_P2P_SET_NEW_CHANNEL_T) prMsgHdr;
+
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pSetNewChannelMsg->ucBssIndex);
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prMsgP2pSetNewChannelMsg->ucRoleIdx);
+
+		prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+		prP2pRoleFsmInfo->rChnlReqInfo.eBand = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
+		prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth = prMsgP2pSetNewChannelMsg->eChannelWidth;
+		prP2pBssInfo->ucPrimaryChannel = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+
+		prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS1 =
+			nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel, prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
+		prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
+
+
+	} while (FALSE);
+
+}				/*p2pRoleFsmRunEventCsaDone*/
+
+VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+{
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+	P_MSG_P2P_CSA_DONE_T prMsgP2pCsaDoneMsg;
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventCsaDone\n");
+
+		prMsgP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) prMsgHdr;
+
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pCsaDoneMsg->ucBssIndex);
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+
+		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SWITCH_CHANNEL);
+
+
+	} while (FALSE);
+
+}				/*p2pRoleFsmRunEventCsaDone*/
+#endif
+
+
 VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 {
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
@@ -1712,6 +1925,9 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 {
 	P_P2P_CHNL_REQ_INFO_T prChnlReqInfo = (P_P2P_CHNL_REQ_INFO_T) NULL;
 	P_MSG_CH_GRANT_T prMsgChGrant = (P_MSG_CH_GRANT_T) NULL;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
+#endif
 	UINT_8 ucTokenID = 0;
 
 	do {
@@ -1722,6 +1938,10 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 		prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
 		ucTokenID = prMsgChGrant->ucTokenID;
 		prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
+#endif
 		if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
 			DBGLOG(P2P, WARN,
 			       "P2P Role:%d Request Channel Interval:%d, Grant Interval:%d\n",
@@ -1752,6 +1972,22 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 
 				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
 				break;
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+			case P2P_ROLE_STATE_DFS_CAC:
+				p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
+				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+					prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->cac_time_ms);
+
+				DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
+					prAdapter->prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->
+					cac_time_ms/1000);
+				break;
+			case P2P_ROLE_STATE_SWITCH_CHANNEL:
+				p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);
+				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+				break;
+#endif
 			default:
 				/* Channel is granted under unexpected state.
 				 * Driver should cancel channel privileagea before leaving the states.

@@ -436,6 +436,15 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wirele
 
 int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *dev, bool enabled, int timeout);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
+						struct net_device *dev,
+						struct cfg80211_chan_def *chandef,
+						unsigned int cac_time_ms);
+
+int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params);
+#endif
+
 int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, struct bss_parameters *params);
 
 int mtk_p2p_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_deauth_request *req);

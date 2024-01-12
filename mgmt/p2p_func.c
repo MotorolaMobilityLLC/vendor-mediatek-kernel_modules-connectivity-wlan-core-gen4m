@@ -1254,6 +1254,98 @@ VOID p2pFuncAcquireCh(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHN
 	} while (FALSE);
 }				/* p2pFuncAcquireCh */
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
+{
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+
+	DEBUGFUNC("p2pFuncStartRdd()");
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL));
+
+		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
+
+		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+
+		if (prCmdRddOnOffCtrl->ucRddIdx)
+			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
+		else
+			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_0;
+
+		DBGLOG(P2P, INFO, "p2pFuncStartRdd: Start Radar detection - DFS ctrl: %.d, RDD index: %d\n",
+				prCmdRddOnOffCtrl->ucDfsCtrl, prCmdRddOnOffCtrl->ucRddIdx);
+
+		wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(CMD_RDD_ON_OFF_CTRL_T), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+	} while (FALSE);
+}				/* p2pFuncStartRdd */
+
+VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P2P_CHNL_REQ_INFO_T rP2pChnlReqInfo)
+{
+
+	P_GLUE_INFO_T prGlueInfo;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
+	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+
+	DEBUGFUNC("p2pFuncDfsSwitchCh()");
+
+	do {
+		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
+
+		/*  Setup Channel, Band */
+		prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
+		prBssInfo->eBand = rP2pChnlReqInfo.eBand;
+		prBssInfo->eBssSCO = rP2pChnlReqInfo.eChnlSco;
+
+		/* Setup channel and bandwidth */
+		rlmBssInitForAPandIbss(prAdapter, prBssInfo);
+
+		/* Update Beacon again for network phy type confirmed. */
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
+		/* Reset HW TSF Update Mode and Beacon Mode */
+		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
+		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+						sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
+
+		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
+
+		wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_RDD_ON_OFF_CTRL,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(CMD_RDD_ON_OFF_CTRL_T), (PUINT_8) prCmdRddOnOffCtrl, NULL, 0);
+
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBssInfo->u4PrivateData);
+
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS\n");
+		cfg80211_ch_switch_notify(prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->prDevHandler,
+						prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
+		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
+
+	} while (FALSE);
+}				/* p2pFuncDfsSwitchCh */
+#endif
+
 #if 0
 WLAN_STATUS
 p2pFuncBeaconUpdate(IN P_ADAPTER_T prAdapter,

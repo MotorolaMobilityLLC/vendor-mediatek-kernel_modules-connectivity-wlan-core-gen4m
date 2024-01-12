@@ -1234,6 +1234,9 @@
 #define MTK_SYNERGY_CAP2                            0x0
 #define MTK_SYNERGY_CAP3                            0x0
 
+/* 802.11h CSA element */
+#define ELEM_MIN_LEN_CSA                            3
+
 /* 3 Management frame body components (III): 7.4 Action frame format details. */
 /* 7.4.1 Spectrum Measurement Action frame details */
 #define ACTION_MEASUREMENT_REQ                      0	/* Spectrum measurement request */
@@ -2634,6 +2637,8 @@ typedef struct _IE_MTK_OUI_T {
 #define QUIET_IE(fp)            ((P_IE_QUIET_T) fp)
 
 #define MTK_OUI_IE(fp)          ((P_IE_MTK_OUI_T) fp)
+
+#define CSA_IE(fp)              ((P_IE_CHANNEL_SWITCH_T) fp)
 
 #define SUPPORTED_CHANNELS_IE(fp) ((P_IE_SUPPORTED_CHANNELS_T)fp)
 #define TIMEOUT_INTERVAL_IE(fp)	((IE_TIMEOUT_INTERVAL_T *)fp)

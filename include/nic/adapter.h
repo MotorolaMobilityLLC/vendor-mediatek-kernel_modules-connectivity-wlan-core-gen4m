@@ -243,6 +243,10 @@ struct _BSS_INFO_T {
 	ENUM_OP_MODE_T eIntendOPMode;
 #endif
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	BOOLEAN fgIsDfsActive;
+#endif
+
 	BOOLEAN fgIsInUse;	/* For CNM to assign BSS_INFO */
 	BOOLEAN fgIsNetActive;	/* TRUE if this network has been activated */
 
@@ -743,6 +747,11 @@ typedef struct _WIFI_VAR_T {
 	UINT_32 u4MtkOuiCap;
 	UINT_8 aucMtkFeature[4];
 #endif
+
+	BOOLEAN fgCsaInProgress;
+	UINT_8 ucChannelSwitchMode;
+	UINT_8 ucNewChannelNumber;
+	UINT_8 ucChannelSwitchCount;
 
 	UINT_32 u4HifIstLoopCount;
 	UINT_32 u4Rx2OsLoopCount;

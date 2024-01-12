@@ -172,6 +172,9 @@ ATE_PRIV_CMD rAtePrivCmdTable[] = {
 
 	{"WriteEfuse", WriteEfuse},
 	{"TxPower", SetTxTargetPower},
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	{"RDDReport", SetRddReport},
+#endif
 
 	{NULL,}
 };
@@ -2010,6 +2013,44 @@ int SetTxTargetPower(struct net_device *prNetDev, UINT_8 *prInBuf)
 	return i4Status;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief  This routine is called to Set Tx Power.
+*
+* \param[in] prNetDev		Pointer to the Net Device
+* \param[in] prInBuf		A pointer to the command string buffer
+* \param[out] None
+*
+* \retval 0				On success.
+* \retval -EINVAL			If invalid argument.
+*/
+/*----------------------------------------------------------------------------*/
+int SetRddReport(struct net_device *prNetDev, UINT_8 *prInBuf)
+{
+	INT_32 i4Status;
+	INT_32 rv;
+	int dbdcIdx;
+	UINT_8 ucDbdcIdx;
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set RDD Report, buf: %s\n", prInBuf);
+
+	/* rv = sscanf(prInBuf, "%u", &addr);*/
+	rv = kstrtoint(prInBuf, 0, &dbdcIdx);
+
+	DBGLOG(REQ, INFO, "MT6632 : ATE_AGENT iwpriv Set RDD Report, prInBuf: %s\n", prInBuf);
+	DBGLOG(INIT, ERROR, "MT6632 : ATE_AGENT iwpriv Set RDD Report : Band %d\n", dbdcIdx);
+
+	ucDbdcIdx = (UINT_8) dbdcIdx;
+
+	if (rv == 0)
+		i4Status = MT_ATESetRddReport(prNetDev, ucDbdcIdx);
+	else
+		return -EINVAL;
+
+	return i4Status;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

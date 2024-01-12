@@ -94,6 +94,32 @@ p2pRoleStateAbort_GC_JOIN(IN P_ADAPTER_T prAdapter,
 			  IN P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo,
 			  IN P_P2P_JOIN_INFO_T prJoinInfo, IN ENUM_P2P_ROLE_STATE_T eNextState);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+VOID
+p2pRoleStateInit_DFS_CAC(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo);
+
+VOID
+p2pRoleStateAbort_DFS_CAC(IN P_ADAPTER_T prAdapter,
+				 IN P_BSS_INFO_T prP2pRoleBssInfo,
+				 IN P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo, IN ENUM_P2P_ROLE_STATE_T eNextState);
+
+VOID
+p2pRoleStateInit_SWITCH_CHANNEL(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo);
+
+VOID
+p2pRoleStateAbort_SWITCH_CHANNEL(IN P_ADAPTER_T prAdapter,
+				 IN P_BSS_INFO_T prP2pRoleBssInfo,
+				 IN P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo, IN ENUM_P2P_ROLE_STATE_T eNextState);
+
+VOID
+p2pRoleStatePrepare_To_DFS_CAC_STATE(IN P_ADAPTER_T prAdapter,
+					    IN P_BSS_INFO_T prBssInfo,
+					    IN ENUM_CHANNEL_WIDTH_T rChannelWidth,
+					    IN P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo,
+					    OUT P_P2P_CHNL_REQ_INFO_T prChnlReqInfo);
+
+#endif
+
 VOID
 p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 					    IN P_BSS_INFO_T prBssInfo,
