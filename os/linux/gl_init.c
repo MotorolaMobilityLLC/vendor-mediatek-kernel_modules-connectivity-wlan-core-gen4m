@@ -4195,6 +4195,15 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->u4HifThreadPid = 0xffffffff;
 #endif
 
+	if (test_and_clear_bit(GLUE_FLAG_OID_BIT, &prGlueInfo->ulFlag) &&
+			!completion_done(&prGlueInfo->rPendComp)) {
+		struct GL_IO_REQ *prIoReq;
+
+		DBGLOG(INIT, INFO, "Complete on-going ioctl as failure.\n");
+		prIoReq = &(prGlueInfo->OidEntry);
+		prIoReq->rStatus = WLAN_STATUS_FAILURE;
+		complete(&prGlueInfo->rPendComp);
+	}
 }
 
 
