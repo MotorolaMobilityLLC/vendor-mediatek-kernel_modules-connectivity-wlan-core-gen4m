@@ -88,7 +88,11 @@
  *******************************************************************************
  */
 #define PROC_MCR_ACCESS                         "mcr"
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define PROC_ROOT_NAME							"ra"
+#else
 #define PROC_ROOT_NAME							"wlan"
+#endif
 
 #if CFG_SUPPORT_DEBUG_FS
 #define PROC_ROAM_PARAM							"roam_param"

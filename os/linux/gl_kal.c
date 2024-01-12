@@ -7134,7 +7134,11 @@ int kalMetInitProcfs(IN struct GLUE_INFO *prGlueInfo)
 	/*
 	 * Directory: Root (/proc/net/wlan0)
 	 */
+#ifdef CFG_COMBO_SLT_GOLDEN
+	pMetProcDir = proc_mkdir("ra0", init_net.proc_net);
+#else
 	pMetProcDir = proc_mkdir("wlan0", init_net.proc_net);
+#endif
 	if (pMetProcDir == NULL)
 		return -ENOENT;
 	/*
@@ -7164,7 +7168,11 @@ int kalMetRemoveProcfs(void)
 	remove_proc_entry(PROC_MET_PROF_CTRL, pMetProcDir);
 	remove_proc_entry(PROC_MET_PROF_PORT, pMetProcDir);
 	/* remove root directory (proc/net/wlan0) */
+#ifdef CFG_COMBO_SLT_GOLDEN
+	remove_proc_entry("ra0", init_net.proc_net);
+#else
 	remove_proc_entry("wlan0", init_net.proc_net);
+#endif
 	/* clear MetGlobalData */
 	pMetGlobalData = NULL;
 
@@ -7203,7 +7211,11 @@ int kalWlanUeventInit(void)
 	int ret = 0;
 
 	/* dev init */
+#ifdef CFG_COMBO_SLT_GOLDEN
+	wlan_object.name = "ra";
+#else
 	wlan_object.name = "wlan";
+#endif
 	wlan_object.minor = MISC_DYNAMIC_MINOR;
 	ret = misc_register(&wlan_object);
 	if (ret) {

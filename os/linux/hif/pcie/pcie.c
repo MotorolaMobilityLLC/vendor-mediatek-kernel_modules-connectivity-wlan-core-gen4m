@@ -106,9 +106,17 @@
 #define NICSOC5_0_PCIe_DEVICE_ID  0x0789
 #define NICSOC7_0_PCIe_DEVICE_ID  0x0789
 #define NICBELLWETHER_PCIe_DEVICE_ID1 0x3107 /* used for FPGA */
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define NICBELLWETHER_PCIe_DEVICE_ID2 0xF922 /* used for SLT golden */
+#else
 #define NICBELLWETHER_PCIe_DEVICE_ID2 0x7902 /* used for asic & FPGA */
+#endif
 #define NIC6639_PCIe_DEVICE_ID1 0x3107
+#ifdef CFG_COMBO_SLT_GOLDEN
+#define NIC6639_PCIe_DEVICE_ID2 0xE639 /*used for SLT golden */
+#else
 #define NIC6639_PCIe_DEVICE_ID2 0x6639
+#endif
 #define NIC7990_PCIe_DEVICE_ID 0x7990
 
 static const struct pci_device_id mtk_pci_ids[] = {
@@ -228,7 +236,7 @@ static struct platform_driver mtk_axi_driver = {
 };
 
 static struct pci_driver mtk_pci_driver = {
-	.name = "wlan",
+	.name = KBUILD_MODNAME,
 	.id_table = mtk_pci_ids,
 	.probe = NULL,
 	.remove = NULL,

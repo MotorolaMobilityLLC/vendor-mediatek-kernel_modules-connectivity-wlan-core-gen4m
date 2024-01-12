@@ -753,6 +753,11 @@ ifeq ($(MODULE_NAME),)
 MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
 
+ifeq ($(CONFIG_MTK_COMBO_SLT), golden)
+slt_postfix = _mc
+MODULE_NAME := $(MODULE_NAME)$(slt_postfix)
+endif
+
 ccflags-y += -DDBG=0
 ccflags-y += -I$(src)/os -I$(src)/os/$(os)/include
 ccflags-y += -I$(src)/include -I$(src)/include/nic -I$(src)/include/mgmt -I$(src)/include/chips
