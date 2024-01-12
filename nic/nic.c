@@ -4555,10 +4555,12 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 	/* Privicy setting 0: Open / 1: WEP/WPA/WPA2 enabled */
 	uint32_t u4Privacy = u2CapInfo & CAP_INFO_PRIVACY ? 1 : 0;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	rWeakestRssi = (int32_t) INT_MAX;
 	u4BufferSize = ARRAY_SIZE(prWlanInfo->aucScanIEBuf);
@@ -4587,48 +4589,43 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 		}
 
 		/* find weakest entry && not connected one */
-		if (bUnMatch &&
-		    prWlanInfo->arScanResult[i].rRssi < rWeakestRssi) {
+		if (bUnMatch && prScanResult[i].rRssi < rWeakestRssi) {
 			u4IdxWeakest = i;
-			rWeakestRssi = prWlanInfo->arScanResult[i].rRssi;
+			rWeakestRssi = prScanResult[i].rRssi;
 		}
 
-		if (prWlanInfo->arScanResult[i].eOpMode == eOpMode &&
-		    EQUAL_MAC_ADDR(&(prWlanInfo->arScanResult[i].arMacAddress),
-				   rMacAddr) &&
-		    (EQUAL_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
-				prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+		if (prScanResult[i].eOpMode == eOpMode &&
+		    EQUAL_MAC_ADDR(&prScanResult[i].arMacAddress, rMacAddr) &&
+		    (EQUAL_SSID(prScanResult[i].rSsid.aucSsid,
+				prScanResult[i].rSsid.u4SsidLen,
 				prSsid->aucSsid, prSsid->u4SsidLen) ||
-		     prWlanInfo->arScanResult[i].rSsid.u4SsidLen == 0)) {
+		     prScanResult[i].rSsid.u4SsidLen == 0)) {
 			/* replace entry */
 			bReplace = TRUE;
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
-			kalMemZero(&(prWlanInfo->arScanResult[i]),
+			kalMemZero(&prScanResult[i],
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prWlanInfo->arScanResult[i].u4Length =
+			prScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
-				rMacAddr);
-			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
-				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+			COPY_MAC_ADDR(prScanResult[i].arMacAddress, rMacAddr);
+			COPY_SSID(prScanResult[i].rSsid.aucSsid,
+				  prScanResult[i].rSsid.u4SsidLen,
 				  prSsid->aucSsid, prSsid->u4SsidLen);
-			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
-			prWlanInfo->arScanResult[i].rRssi = rRssi;
-			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
-				eNetworkType;
-			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+			prScanResult[i].u4Privacy = u4Privacy;
+			prScanResult[i].rRssi = rRssi;
+			prScanResult[i].eNetworkTypeInUse = eNetworkType;
+			kalMemCopy(&prScanResult[i].rConfiguration,
 				   prConfiguration,
 				   sizeof(struct PARAM_802_11_CONFIG));
-			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+			prScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prScanResult[i].rSupportedRates,
 				   rSupportedRates,
 				   sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX);
-			prWlanInfo->arScanResult[i].u4IELength =
-				(uint32_t) u2IELength;
+			prScanResult[i].u4IELength = (uint32_t) u2IELength;
 
 			/* IE - allocate buffer and update pointer */
 			if (u2IELength > 0) {
@@ -4648,10 +4645,8 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 						+= ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prWlanInfo->arScanResult[i].u4Length -=
-						u2IELength;
-					prWlanInfo->arScanResult[i].u4IELength =
-						0;
+					prScanResult[i].u4Length -= u2IELength;
+					prScanResult[i].u4IELength = 0;
 					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
@@ -4667,30 +4662,27 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 			i = prWlanInfo->u4ScanResultNum;
 
 			/* zero */
-			kalMemZero(&(prWlanInfo->arScanResult[i]),
+			kalMemZero(&prScanResult[i],
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prWlanInfo->arScanResult[i].u4Length =
+			prScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
-				      rMacAddr);
-			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
-				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+			COPY_MAC_ADDR(prScanResult[i].arMacAddress, rMacAddr);
+			COPY_SSID(prScanResult[i].rSsid.aucSsid,
+				  prScanResult[i].rSsid.u4SsidLen,
 				  prSsid->aucSsid, prSsid->u4SsidLen);
-			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
-			prWlanInfo->arScanResult[i].rRssi = rRssi;
-			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
-				eNetworkType;
-			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+			prScanResult[i].u4Privacy = u4Privacy;
+			prScanResult[i].rRssi = rRssi;
+			prScanResult[i].eNetworkTypeInUse = eNetworkType;
+			kalMemCopy(&prScanResult[i].rConfiguration,
 				   prConfiguration,
 				   sizeof(struct PARAM_802_11_CONFIG));
-			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+			prScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prScanResult[i].rSupportedRates,
 				   rSupportedRates,
-				   (sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX));
-			prWlanInfo->arScanResult[i].u4IELength =
-				(uint32_t) u2IELength;
+				   sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX);
+			prScanResult[i].u4IELength = (uint32_t) u2IELength;
 
 			/* IE - allocate buffer and update pointer */
 			if (u2IELength > 0) {
@@ -4710,10 +4702,8 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 						ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prWlanInfo->arScanResult[i].u4Length -=
-						u2IELength;
-					prWlanInfo->arScanResult[i].u4IELength =
-						0;
+					prScanResult[i].u4Length -= u2IELength;
+					prScanResult[i].u4IELength = 0;
 					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
@@ -4727,30 +4717,27 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
-			kalMemZero(&(prWlanInfo->arScanResult[i]),
+			kalMemZero(&prScanResult[i],
 				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
 
 			/* then fill buffer */
-			prWlanInfo->arScanResult[i].u4Length =
+			prScanResult[i].u4Length =
 				sizeof(struct PARAM_BSSID_EX) + u2IELength;
-			COPY_MAC_ADDR(prWlanInfo->arScanResult[i].arMacAddress,
-				      rMacAddr);
-			COPY_SSID(prWlanInfo->arScanResult[i].rSsid.aucSsid,
-				  prWlanInfo->arScanResult[i].rSsid.u4SsidLen,
+			COPY_MAC_ADDR(prScanResult[i].arMacAddress, rMacAddr);
+			COPY_SSID(prScanResult[i].rSsid.aucSsid,
+				  prScanResult[i].rSsid.u4SsidLen,
 				  prSsid->aucSsid, prSsid->u4SsidLen);
-			prWlanInfo->arScanResult[i].u4Privacy = u4Privacy;
-			prWlanInfo->arScanResult[i].rRssi = rRssi;
-			prWlanInfo->arScanResult[i].eNetworkTypeInUse =
-				eNetworkType;
-			kalMemCopy(&prWlanInfo->arScanResult[i].rConfiguration,
+			prScanResult[i].u4Privacy = u4Privacy;
+			prScanResult[i].rRssi = rRssi;
+			prScanResult[i].eNetworkTypeInUse = eNetworkType;
+			kalMemCopy(&prScanResult[i].rConfiguration,
 				   prConfiguration,
 				   sizeof(struct PARAM_802_11_CONFIG));
-			prWlanInfo->arScanResult[i].eOpMode = eOpMode;
-			kalMemCopy(prWlanInfo->arScanResult[i].rSupportedRates,
+			prScanResult[i].eOpMode = eOpMode;
+			kalMemCopy(prScanResult[i].rSupportedRates,
 				   rSupportedRates,
 				   (sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX));
-			prWlanInfo->arScanResult[i].u4IELength =
-				(uint32_t) u2IELength;
+			prScanResult[i].u4IELength = (uint32_t) u2IELength;
 
 			if (u2IELength > 0) {
 				/* IE - allocate buffer and update pointer */
@@ -4770,10 +4757,8 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 						ALIGN_4(u2IELength);
 				} else {
 					/* buffer is not enough */
-					prWlanInfo->arScanResult[i].u4Length -=
-						u2IELength;
-					prWlanInfo->arScanResult[i].u4IELength =
-						0;
+					prScanResult[i].u4Length -= u2IELength;
+					prScanResult[i].u4IELength = 0;
 					prWlanInfo->apucScanResultIEs[i] = NULL;
 				}
 			} else {
@@ -4800,18 +4785,20 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	uint8_t *pucPivot, *pucMovePivot;
 	uint32_t u4MoveSize, u4FreeSize, u4ReserveSize;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 	ASSERT(u4Idx < CFG_MAX_NUM_BSS_LIST);
 
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
-	if (prWlanInfo->arScanResult[u4Idx].u4IELength == 0 ||
+	if (prScanResult[u4Idx].u4IELength == 0 ||
 	    prWlanInfo->apucScanResultIEs[u4Idx] == NULL) {
 		return;
 	}
 
-	u4FreeSize = ALIGN_4(prWlanInfo->arScanResult[u4Idx].u4IELength);
+	u4FreeSize = ALIGN_4(prScanResult[u4Idx].u4IELength);
 
 	pucPivot = prWlanInfo->apucScanResultIEs[u4Idx];
 	pucMovePivot = (uint8_t *) ((uintptr_t) (
@@ -4839,7 +4826,7 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	}
 
 	/* 1.2 reset the freed one */
-	prWlanInfo->arScanResult[u4Idx].u4IELength = 0;
+	prScanResult[u4Idx].u4IELength = 0;
 	prWlanInfo->apucScanResultIEs[i] = NULL;
 
 	/* 2. reduce IE buffer usage */
