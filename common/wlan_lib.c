@@ -1295,10 +1295,12 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* set FALSE after wifi init flow or reset (not reinit WFDMA) */
 		prAdapter->fgIsFwDownloaded = FALSE;
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
+		prAdapter->fgIsWiFiOnDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-		DBGLOG(INIT, INFO,
+		prAdapter->fgIsWiFiOnDrvOwn = FALSE;
+		DBGLOG(INIT, TRACE,
 		       "wlanAdapterStart(): Acquiring LP-OWN-end\n");
 
 #if (CFG_ENABLE_FULL_PM == 0)
@@ -8155,7 +8157,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prAdapter, "wfdSccBalanceEnable", FEATURE_DISABLED);
 #endif
 #endif
-	INIT_UINT(prWifiVar->fgIcmpTxs, "IcmpTxs", FEATURE_ENABLED);
+	prWifiVar->fgIcmpTxs = wlanCfgGetInt32(prAdapter, "IcmpTxs",
+			FEATURE_ENABLED);
+	prWifiVar->u4DrvOwnMode = wlanCfgGetUint32(prAdapter,
+			"drvOwnMode", 0);
 
 	/* Fast Path Config */
 	INIT_UINT(prWifiVar->ucUdpTspecUp, "UdpTspecUp", 7);

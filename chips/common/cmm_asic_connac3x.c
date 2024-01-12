@@ -869,6 +869,7 @@ void asicConnac3xLowPowerOwnRead(
 		*pfgResult = TRUE;
 }
 
+#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 void asicConnac3xLowPowerOwnSet(
 	struct ADAPTER *prAdapter,
 	u_int8_t *pfgResult)
@@ -878,24 +879,19 @@ void asicConnac3xLowPowerOwnSet(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue = 0;
 
 		HAL_MCR_WR(prAdapter,
-				CONNAC3X_BN0_LPCTL_ADDR,
-				PCIE_LPCR_HOST_SET_OWN);
-		HAL_MCR_RD(prAdapter,
-				CONNAC3X_BN0_LPCTL_ADDR,
-				&u4RegValue);
-		*pfgResult = (u4RegValue &
-			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
+			CONNAC3X_BN0_LPCTL_ADDR,
+			PCIE_LPCR_HOST_SET_OWN);
 
 #if defined(_HIF_PCIE)
 		if (prChipInfo->bus_info->hwControlVote)
 			prChipInfo->bus_info->hwControlVote(prAdapter,
 				TRUE, PCIE_VOTE_USER_DRVOWN);
 #endif
-	} else
-		*pfgResult = TRUE;
+
+	}
+	*pfgResult = TRUE;
 }
 
 void asicConnac3xLowPowerOwnClear(
@@ -907,7 +903,74 @@ void asicConnac3xLowPowerOwnClear(
 	prChipInfo = prAdapter->chip_info;
 
 	if (prChipInfo->is_support_asic_lp) {
-		u_int32_t u4RegValue = 0;
+
+#if defined(_HIF_PCIE)
+		if (prChipInfo->bus_info->hwControlVote)
+			prChipInfo->bus_info->hwControlVote(prAdapter,
+				FALSE, PCIE_VOTE_USER_DRVOWN);
+#endif
+
+		if (prChipInfo->setCrypto)
+			prChipInfo->setCrypto(prAdapter);
+
+		clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+			&prAdapter->prGlueInfo->ulFlag);
+
+		HAL_MCR_WR(prAdapter,
+			CONNAC3X_BN0_LPCTL_ADDR,
+			PCIE_LPCR_HOST_CLR_OWN);
+
+		if (prAdapter->rWifiVar.u4DrvOwnMode == 1)
+			kalMdelay(10);
+	}
+
+	*pfgResult = TRUE;
+}
+
+#else /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+
+void asicConnac3xLowPowerOwnSet(
+	struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	u_int32_t u4RegValue = 0;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_asic_lp) {
+
+		HAL_MCR_WR(prAdapter,
+			CONNAC3X_BN0_LPCTL_ADDR,
+			PCIE_LPCR_HOST_SET_OWN);
+
+		HAL_MCR_RD(prAdapter,
+			CONNAC3X_BN0_LPCTL_ADDR,
+			&u4RegValue);
+
+		*pfgResult = (u4RegValue &
+			PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
+
+#if defined(_HIF_PCIE)
+		if (prChipInfo->bus_info->hwControlVote)
+			prChipInfo->bus_info->hwControlVote(prAdapter,
+				TRUE, PCIE_VOTE_USER_DRVOWN);
+#endif
+
+	} else
+		*pfgResult = TRUE;
+}
+
+void asicConnac3xLowPowerOwnClear(
+	struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
+{
+	u_int32_t u4RegValue = 0;
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_asic_lp) {
 
 #if defined(_HIF_PCIE)
 		if (prChipInfo->bus_info->hwControlVote)
@@ -918,14 +981,18 @@ void asicConnac3xLowPowerOwnClear(
 		HAL_MCR_WR(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			PCIE_LPCR_HOST_CLR_OWN);
+
 		HAL_MCR_RD(prAdapter,
 			CONNAC3X_BN0_LPCTL_ADDR,
 			&u4RegValue);
+
 		*pfgResult = (u4RegValue &
 				PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0;
+
 	} else
 		*pfgResult = TRUE;
 }
+#endif /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 
 void asicConnac3xProcessSoftwareInterrupt(
 	struct ADAPTER *prAdapter)

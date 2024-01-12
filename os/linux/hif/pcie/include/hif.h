@@ -591,6 +591,8 @@ irqreturn_t mtk_pci_isr_rx_data1_thread(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_rx_event_thread(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_tx_cmd_thread(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_lump_thread(int irq, void *dev_instance);
+irqreturn_t pcie_drv_own_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance);
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif

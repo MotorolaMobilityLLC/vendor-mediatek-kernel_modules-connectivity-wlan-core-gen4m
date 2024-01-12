@@ -902,6 +902,7 @@ enum pcie_msi_int_type {
 	AP_MISC_INT,
 	MDDP_INT,
 	CCIF_INT,
+	AP_DRV_OWN,
 	NONE_INT
 };
 
@@ -1031,6 +1032,12 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #define KAL_HIF_BH_ENABLE(prGlueInfo) \
 	kalBhEnable(prGlueInfo)
 
+#define KAL_HIF_OWN_LOCK(prAdapter) \
+	kalAcquireHifOwnLock(prAdapter)
+
+#define KAL_HIF_OWN_UNLOCK(prAdapter) \
+	kalReleaseHifOwnLock(prAdapter)
+
 void kalBhDisable(struct GLUE_INFO *prGlueInfo);
 void kalBhEnable(struct GLUE_INFO *prGlueInfo);
 void kalAcquireHifTxDataQLock(struct GL_HIF_INFO *prHifInfo,
@@ -1043,6 +1050,8 @@ void kalAcquireHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		unsigned long *plHifTxRingFlags);
 void kalReleaseHifTxRingLock(struct RTMP_TX_RING *prTxRing,
 		unsigned long ulHifTxRingFlags);
+void kalAcquireHifOwnLock(struct ADAPTER *prAdapter);
+void kalReleaseHifOwnLock(struct ADAPTER *prAdapter);
 
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);

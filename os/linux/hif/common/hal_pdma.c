@@ -472,16 +472,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	/* if direct trx,  set drv/fw own will be called
-	*  in softirq/tasklet/thread context,
-	*  if normal trx, set drv/fw own will only
-	*  be called in thread context
-	*/
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_lock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_LOCK(prAdapter);
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
@@ -502,14 +493,45 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		/* Delay for LP engine to complete its operation. */
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
 
+#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+		if (prAdapter->rWifiVar.u4DrvOwnMode == 1) {
+			DBGLOG(INIT, TRACE, "delay 10ms DRIVER OWN Start\n");
+			HAL_LP_OWN_RD(prAdapter, &fgResult);
+		} else if (prAdapter->fgIsWiFiOnDrvOwn) {
+			DBGLOG(INIT, TRACE, "WIFI On DRIVER OWN Start\n");
+			HAL_LP_OWN_RD(prAdapter, &fgResult);
+		} else if (prBusInfo->fgCheckDriverOwnInt) {
+			if (test_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+				&prAdapter->prGlueInfo->ulFlag)) {
+				DBGLOG(INIT, TRACE,
+					"DRIVER OWN Interrupt Start\n");
+				fgResult = TRUE;
+			}
+		} else
+#else
 		if (!prBusInfo->fgCheckDriverOwnInt ||
-		    test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
+		   test_bit(GLUE_FLAG_INT_BIT, &prAdapter->prGlueInfo->ulFlag))
+#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
+#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+		if (KAL_TEST_BIT(SUSPEND_FLAG_FOR_WAKEUP_REASON,
+				prAdapter->ulSuspendFlag) &&
+			KAL_TEST_BIT(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
+				prAdapter->ulSuspendFlag)) {
+			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
+			u4CurrTick = kalGetTimeTick();
+		} else
+#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
 			     LP_OWN_BACK_TOTAL_DELAY_MS) ? TRUE : FALSE;
 
 		if (fgResult) {
+#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
+				&prAdapter->prGlueInfo->ulFlag);
+#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+
 			/* Check WPDMA FW own interrupt status and clear */
 			if (prBusInfo->fgCheckDriverOwnInt)
 				HAL_MCR_WR(prAdapter,
@@ -584,11 +606,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
 
 end:
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_unlock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_UNLOCK(prAdapter);
 
 	if (fgIsDriverOwnTimeout) {
 		if (HAL_IS_TX_DIRECT(prAdapter) ||
