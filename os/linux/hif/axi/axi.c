@@ -225,7 +225,7 @@ static int hifAxiProbe(void)
 
 	ASSERT(prPlatDev);
 
-	DBGLOG(INIT, INFO, "driver.name = %s\n", prPlatDev->id_entry->name);
+	DBGLOG(INIT, TRACE, "driver.name = %s\n", prPlatDev->id_entry->name);
 
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
@@ -237,7 +237,7 @@ static int hifAxiProbe(void)
 	}
 	g_fgDriverProbed = TRUE;
 out:
-	DBGLOG(INIT, INFO, "hifAxiProbe() done(%d)\n", ret);
+	DBGLOG(INIT, TRACE, "hifAxiProbe() done(%d)\n", ret);
 
 	return ret;
 }
@@ -248,8 +248,8 @@ static int hifAxiRemove(void)
 
 	if (g_fgDriverProbed)
 		pfWlanRemove();
-	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
-	DBGLOG(INIT, INFO, "hifAxiRemove() done\n");
+	DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
+	DBGLOG(INIT, TRACE, "hifAxiRemove() done\n");
 	return 0;
 }
 
@@ -840,11 +840,9 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo->u4IrqId = AXI_WLAN_IRQ_NUMBER;
 #ifdef CONFIG_OF
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
-	if (node) {
+	if (node)
 		prHifInfo->u4IrqId = irq_of_parse_and_map(node, 0);
-		DBGLOG(INIT, INFO,
-			"WIFI-OF: get wifi irq(%d)\n", prHifInfo->u4IrqId);
-	} else
+	else
 		DBGLOG(INIT, ERROR,
 			"WIFI-OF: get wifi device node fail\n");
 #endif
