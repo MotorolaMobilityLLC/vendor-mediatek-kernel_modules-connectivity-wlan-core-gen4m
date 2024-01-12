@@ -2283,10 +2283,13 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 
 		/* write to ring, ret: written */
 		ret = kalIcsWrite(pucRecvBuff, u4Size);
-		if (ret != u4Size)
+		if (ret != u4Size) {
 			DBGLOG_LIMITED(NIC, INFO,
 				"dropped written:%d rxByteCount:%d\n",
 				ret, prIcsAggHeader->rxByteCount);
+			RX_INC_CNT(&prAdapter->rRxCtrl,
+				RX_ICS_DROP_COUNT);
+		}
 
 		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
 	}
