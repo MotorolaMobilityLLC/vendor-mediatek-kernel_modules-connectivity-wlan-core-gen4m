@@ -2590,6 +2590,8 @@ static void wlanSetMulticastListWorkQueue(
 			if (i < MAX_NUM_GROUP_ADDR) {
 				kalMemCopy((prMCAddrList + i * ETH_ALEN),
 					   GET_ADDR(ha), ETH_ALEN);
+				DBGLOG(INIT, LOUD, "%u MAC: "MACSTR"\n",
+					i, MAC2STR(GET_ADDR(ha)));
 				i++;
 			}
 		}
@@ -2604,6 +2606,12 @@ static void wlanSetMulticastListWorkQueue(
 
 		kalMemFree(prMCAddrList, VIR_MEM_TYPE,
 			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
+	} else if (u4PacketFilter & PARAM_PACKET_FILTER_ALL_MULTICAST) {
+		DBGLOG(INIT, INFO,
+			"Clear previous MAR settings to rx all mc pkt\n");
+		kalIoctlByBssIdx(prGlueInfo,
+			 wlanoidSetMulticastList, NULL, 0,
+			 &u4SetInfoLen, ucBssIndex);
 	}
 
 }				/* end of wlanSetMulticastList() */
@@ -4206,7 +4214,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			&u4SetInfoLen) != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR, "set packet filter failed.\n");
 
-#if !CFG_SUPPORT_DROP_ALL_MC_PACKET
+#if (!CFG_SUPPORT_DROP_ALL_MC_PACKET && !CFG_WOW_SUPPORT)
 		if (fgEnable) {
 			/* Prepare IPv6 RA packet when suspend */
 			uint8_t MC_address[ETH_ALEN] = {0x33, 0x33, 0, 0, 0, 1};
@@ -4257,6 +4265,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 				MAX_NUM_GROUP_ADDR * ETH_ALEN);
 		}
 #endif
+
 		kalSetNetAddressFromInterface(prGlueInfo, prDev, fgEnable);
 		wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 	}
