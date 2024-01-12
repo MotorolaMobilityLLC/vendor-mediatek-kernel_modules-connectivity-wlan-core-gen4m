@@ -861,8 +861,7 @@ struct UNI_CMD_STAREC_PHY_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 /* Update RA Info */
-struct UNI_CMD_STAREC_RA_INFO
-{
+struct UNI_CMD_STAREC_RA_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint16_t      u2DesiredNonHTRateSet;
@@ -870,8 +869,7 @@ struct UNI_CMD_STAREC_RA_INFO
 } __KAL_ATTRIB_PACKED__;
 
 /* Update BA_OFFLOAD Info */
-struct UNI_CMD_STAREC_BA_OFFLOAD_INFO
-{
+struct UNI_CMD_STAREC_BA_OFFLOAD_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint8_t       ucTxAmpdu;
@@ -883,8 +881,7 @@ struct UNI_CMD_STAREC_BA_OFFLOAD_INFO
 	uint16_t      u2RxBaSize;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_STAREC_DEFAULT_KEY
-{
+struct UNI_CMD_STAREC_DEFAULT_KEY {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint8_t       ucKeyId;
@@ -988,8 +985,7 @@ struct UNI_CMD_STAREC_MLD_TEARDOWN {
 } __KAL_ATTRIB_PACKED__;
 
 /* Update UAPSD Info */
-struct UNI_CMD_STAREC_UAPSD_INFO
-{
+struct UNI_CMD_STAREC_UAPSD_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint8_t       fgIsUapsdSupported;
@@ -999,16 +995,14 @@ struct UNI_CMD_STAREC_UAPSD_INFO
 } __KAL_ATTRIB_PACKED__;
 
 /* Remove STAREC */
-struct UNI_CMD_STAREC_REMOVE_INFO
-{
+struct UNI_CMD_STAREC_REMOVE_INFO {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint8_t       ucActionType; /* ENUM_STA_REC_CMD_ACTION_T */
 	uint8_t       aucReserve[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_STAREC_INSTALL_KEY3
-{
+struct UNI_CMD_STAREC_INSTALL_KEY3 {
 	uint16_t      u2Tag;
 	uint16_t      u2Length;
 	uint8_t       ucAddRemove;
@@ -1027,8 +1021,7 @@ struct UNI_CMD_STAREC_INSTALL_KEY3
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
-struct UNI_CMD_EDCA
-{
+struct UNI_CMD_EDCA {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
 	uint8_t aucPadding[3];
@@ -1038,15 +1031,13 @@ struct UNI_CMD_EDCA
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command Tag */
-enum ENUM_UNI_CMD_EDCA_TAG
-{
+enum ENUM_UNI_CMD_EDCA_TAG {
 	UNI_CMD_EDCA_TAG_AC_PARM = 0,
 	UNI_CMD_EDCA_TAG_NUM
 };
 
 /* EDCA AC Parameters (Tag0) */
-struct UNI_CMD_EDCA_AC_PARM
-{
+struct UNI_CMD_EDCA_AC_PARM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucAcIndex;
@@ -1066,8 +1057,7 @@ struct UNI_CMD_EDCA_AC_PARM
 	uint8_t aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SUSPEND
-{
+struct UNI_CMD_SUSPEND {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
 	uint8_t aucPadding[3];
@@ -1086,8 +1076,7 @@ struct UNI_CMD_SUSPEND
 } __KAL_ATTRIB_PACKED__;
 
 /* Suspend command Tag */
-enum ENUM_UNI_CMD_SUSPEND_TAG
-{
+enum ENUM_UNI_CMD_SUSPEND_TAG {
 	UNI_CMD_SUSPEND_TAG_MODE_SETTING = 0,
 	UNI_CMD_SUSPEND_TAG_WOW_CTRL = 1,
 	UNI_CMD_SUSPEND_TAG_WOW_GPIO_PARAM = 2,
@@ -1097,8 +1086,7 @@ enum ENUM_UNI_CMD_SUSPEND_TAG
 };
 
 /* suspend mode setting (Tag0) */
-struct UNI_CMD_SUSPEND_MODE_SETTING
-{
+struct UNI_CMD_SUSPEND_MODE_SETTING {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
 
@@ -1110,8 +1098,7 @@ struct UNI_CMD_SUSPEND_MODE_SETTING
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SUSPEND_WOW_CTRL
-{
+struct UNI_CMD_SUSPEND_WOW_CTRL {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
 
@@ -1123,8 +1110,7 @@ struct UNI_CMD_SUSPEND_WOW_CTRL
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM
-{
+struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
 
@@ -1137,8 +1123,7 @@ struct UNI_CMD_SUSPEND_WOW_GPIO_PARAM
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_SUSPEND_WOW_WAKEUP_PORT
-{
+struct UNI_CMD_SUSPEND_WOW_WAKEUP_PORT {
 	uint16_t u2Tag;                   // Tag = 0x03
 	uint16_t u2Length;
 
@@ -1155,8 +1140,7 @@ struct UNI_CMD_SUSPEND_WOW_WAKEUP_PORT
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_OFFLOAD
-{
+struct UNI_CMD_OFFLOAD {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
 	uint8_t aucPadding[3];
@@ -1173,8 +1157,7 @@ struct UNI_CMD_OFFLOAD
         */
 };
 
-enum ENUM_UNI_CMD_OFFLOAD_TAG
-{
+enum ENUM_UNI_CMD_OFFLOAD_TAG {
 	UNI_CMD_OFFLOAD_TAG_ARPNS_IPV4 = 0,
 	UNI_CMD_OFFLOAD_TAG_ARPNS_IPV6 = 1,
 	UNI_CMD_OFFLOAD_TAG_GTK_REKEY = 2,
@@ -1182,19 +1165,16 @@ enum ENUM_UNI_CMD_OFFLOAD_TAG
 	UNI_CMD_OFFLOAD_TAG_NUM
 };
 
-struct IPV4_ADDRESS_V0
-{
+struct IPV4_ADDRESS_V0 {
 	uint8_t aucIpAddr[IPV4_ADDR_LEN];
 };
 
-struct IPV4_ADDRESS
-{
+struct IPV4_ADDRESS {
 	uint8_t aucIpAddr[IPV4_ADDR_LEN];
 	uint8_t aucIpMask[IPV4_ADDR_LEN];
 };
 
-struct UNI_CMD_OFFLOAD_ARPNS_IPV4
-{
+struct UNI_CMD_OFFLOAD_ARPNS_IPV4 {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
 
@@ -1206,13 +1186,11 @@ struct UNI_CMD_OFFLOAD_ARPNS_IPV4
 	struct IPV4_ADDRESS arIpv4NetAddress[0];
 } __KAL_ATTRIB_PACKED__;
 
-struct IPV6_ADDRESS
-{
+struct IPV6_ADDRESS {
 	uint8_t aucIpAddr[IPV6_ADDR_LEN];
 };
 
-struct UNI_CMD_OFFLOAD_ARPNS_IPV6
-{
+struct UNI_CMD_OFFLOAD_ARPNS_IPV6 {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
 
@@ -1223,8 +1201,7 @@ struct UNI_CMD_OFFLOAD_ARPNS_IPV6
 	struct IPV6_ADDRESS arIpv6NetAddress[0];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_OFFLOAD_GTK_REKEY
-{
+struct UNI_CMD_OFFLOAD_GTK_REKEY {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
 
@@ -1246,8 +1223,7 @@ struct UNI_CMD_OFFLOAD_GTK_REKEY
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT
-{
+struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT {
 	uint16_t u2Tag;                   // Tag = 0x03
 	uint16_t u2Length;
 
@@ -1260,8 +1236,7 @@ struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_HIF_CTRL
-{
+struct UNI_CMD_HIF_CTRL {
 	/*fixed field*/
 	uint8_t ucHifType;
 	uint8_t aucPadding[3];
@@ -1276,14 +1251,12 @@ struct UNI_CMD_HIF_CTRL
 } __KAL_ATTRIB_PACKED__;
 
 /* Suspend command Tag */
-enum ENUM_UNI_CMD_HIF_CTRL_TAG
-{
+enum ENUM_UNI_CMD_HIF_CTRL_TAG {
 	UNI_CMD_HIF_CTRL_TAG_BASIC = 0,
 	UNI_CMD_HIF_CTRL_TAG_NUM
 };
 
-struct UNI_CMD_HIF_CTRL_BASIC
-{
+struct UNI_CMD_HIF_CTRL_BASIC {
 	uint16_t u2Tag;                   // Tag = 0x00
 	uint16_t u2Length;
 
@@ -1293,8 +1266,7 @@ struct UNI_CMD_HIF_CTRL_BASIC
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BAND_CONFIG
-{
+struct UNI_CMD_BAND_CONFIG {
 	/*fixed field*/
 	uint8_t ucDbdcIdx;
 	uint8_t aucPadding[3];
@@ -1315,8 +1287,7 @@ struct UNI_CMD_BAND_CONFIG
 } __KAL_ATTRIB_PACKED__;
 
 /* Band config Tag */
-enum ENUM_UNI_CMD_BAND_CONFIG_TAG
-{
+enum ENUM_UNI_CMD_BAND_CONFIG_TAG {
 	UNI_CMD_BAND_CONFIG_TAG_RADIO_ONOFF = 0,
 	UNI_CMD_BAND_CONFIG_TAG_RXV_CTRL = 1,
 	UNI_CMD_BAND_CONFIG_TAG_SET_RX_FILTER = 2,
@@ -1327,16 +1298,14 @@ enum ENUM_UNI_CMD_BAND_CONFIG_TAG
 	UNI_CMD_BAND_CONFIG_MAX_NUM
 };
 
-struct UNI_CMD_BAND_CONFIG_RADIO_ONOFF
-{
+struct UNI_CMD_BAND_CONFIG_RADIO_ONOFF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t fgRadioOn;
 	uint8_t  aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BAND_CONFIG_RXV_CTRL
-{
+struct UNI_CMD_BAND_CONFIG_RXV_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  ucRxvOfRxEnable;
@@ -1344,15 +1313,13 @@ struct UNI_CMD_BAND_CONFIG_RXV_CTRL
 	uint8_t  aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BAND_CONFIG_SET_RX_FILTER
-{
+struct UNI_CMD_BAND_CONFIG_SET_RX_FILTER {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4RxPacketFilter;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BAND_CONFIG_DROP_CTRL_FRAME
-{
+struct UNI_CMD_BAND_CONFIG_DROP_CTRL_FRAME {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucDropRts;
@@ -1361,8 +1328,7 @@ struct UNI_CMD_BAND_CONFIG_DROP_CTRL_FRAME
 	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_BAND_CONFIG_AGG_AC_LIMIT
-{
+struct UNI_CMD_BAND_CONFIG_AGG_AC_LIMIT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucWmmIdx;
@@ -1371,8 +1337,7 @@ struct UNI_CMD_BAND_CONFIG_AGG_AC_LIMIT
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCCA OnOff Control (Tag5) */
-struct UNI_CMD_BAND_CONFIG_EDCCA_ENABLE_CTRL
-{
+struct UNI_CMD_BAND_CONFIG_EDCCA_ENABLE_CTRL {
 	uint16_t u2Tag;    // Tag = 0x05
 	uint16_t u2Length;
 	uint8_t fgEDCCAEnable;
@@ -1380,8 +1345,7 @@ struct UNI_CMD_BAND_CONFIG_EDCCA_ENABLE_CTRL
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCCA Threshold Control (Tag6) */
-struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL
-{
+struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL {
 	uint16_t u2Tag;    // Tag = 0x06
 	uint16_t u2Length;
 	uint8_t u1EDCCAThreshold[3];
@@ -1389,8 +1353,7 @@ struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL
 } __KAL_ATTRIB_PACKED__;
 
 /* WSYS Config set command (0x0B) */
-struct UNI_CMD_WSYS_CONFIG
-{
+struct UNI_CMD_WSYS_CONFIG {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -1408,8 +1371,7 @@ struct UNI_CMD_WSYS_CONFIG
 }  __KAL_ATTRIB_PACKED__;
 
 /* WSYS Config set command TLV List */
-enum ENUM_UNI_CMD_WSYS_CONFIG_TAG
-{
+enum ENUM_UNI_CMD_WSYS_CONFIG_TAG {
 	UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_CTRL = 0,
 	UNI_CMD_WSYS_CONFIG_TAG_FW_DBG_CTRL = 1,
 	UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_UI_CTRL = 2,
@@ -1419,8 +1381,7 @@ enum ENUM_UNI_CMD_WSYS_CONFIG_TAG
 };
 
 /* FW Log Basic Setting (Tag0) */
-struct UNI_CMD_FW_LOG_CTRL_BASIC
-{
+struct UNI_CMD_FW_LOG_CTRL_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucFwLog2HostCtrl;
@@ -1434,8 +1395,7 @@ struct UNI_CMD_FW_LOG_CTRL_BASIC
 } __KAL_ATTRIB_PACKED__;
 
 /* FW Log UI Setting (Tag2) */
-struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL
-{
+struct UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t ucVersion; // default is 1
@@ -1453,8 +1413,7 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_ROAMING
-{
+struct UNI_CMD_ROAMING {
 	/* fixed field */
 	uint8_t ucBssInfoIdx;
 	uint8_t ucDbdcIdx;
@@ -1469,15 +1428,13 @@ struct UNI_CMD_ROAMING
         */
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_ROAMING_TAG
-{
+enum ENUM_UNI_CMD_ROAMING_TAG {
 	UNI_CMD_ROAMING_TAG_TRANSIT_FSM = 0,
 	UNI_CMD_ROAMING_TAG_NUM
 };
 
 /* Show roaming (Tag0) */
-struct UNI_CMD_ROAMING_TRANSIT_FSM
-{
+struct UNI_CMD_ROAMING_TRANSIT_FSM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint16_t u2Event;
@@ -1490,8 +1447,7 @@ struct UNI_CMD_ROAMING_TRANSIT_FSM
 } __KAL_ATTRIB_PACKED__;
 
 /* register access command (0x0D) */
-struct UNI_CMD_ACCESS_REG
-{
+struct UNI_CMD_ACCESS_REG {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -1506,23 +1462,20 @@ struct UNI_CMD_ACCESS_REG
 } __KAL_ATTRIB_PACKED__;
 
 /* Register access command TLV List */
-enum ENUM_UNI_CMD_ACCESS_REG_TAG
-{
+enum ENUM_UNI_CMD_ACCESS_REG_TAG {
 	UNI_CMD_ACCESS_REG_TAG_BASIC = 0,
 	UNI_CMD_ACCESS_REG_TAG_RF_REG_BASIC,
 	UNI_CMD_ACCESS_REG_TAG_NUM
 };
 
-struct UNI_CMD_ACCESS_REG_BASIC
-{
+struct UNI_CMD_ACCESS_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4Addr;
 	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_ACCESS_RF_REG_BASIC
-{
+struct UNI_CMD_ACCESS_RF_REG_BASIC {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint16_t u2WifiStream;
@@ -1532,8 +1485,7 @@ struct UNI_CMD_ACCESS_RF_REG_BASIC
 } __KAL_ATTRIB_PACKED__;
 
 /* Chip Config set command (0x0E) */
-struct UNI_CMD_CHIP_CONFIG
-{
+struct UNI_CMD_CHIP_CONFIG {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -1550,8 +1502,7 @@ struct UNI_CMD_CHIP_CONFIG
 } __KAL_ATTRIB_PACKED__;
 
 /* Chip Config set command TLV List */
-enum ENUM_UNI_CMD_CHIP_CONFIG_TAG
-{
+enum ENUM_UNI_CMD_CHIP_CONFIG_TAG {
 	UNI_CMD_CHIP_CONFIG_TAG_SW_DBG_CTRL = 0,
 	UNI_CMD_CHIP_CONFIG_TAG_CUSTOMER_CFG = 1,
 	UNI_CMD_CHIP_CONFIG_TAG_CHIP_CFG = 2,
@@ -1560,8 +1511,7 @@ enum ENUM_UNI_CMD_CHIP_CONFIG_TAG
 };
 
 /* SW DBG control Setting (Tag0) */
-struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL
-{
+struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL {
 	uint16_t u2Tag; // Tag = 0x00
 	uint16_t u2Length;
 	uint32_t u4Id;
@@ -1569,8 +1519,7 @@ struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL
 }__KAL_ATTRIB_PACKED__;
 
 /* Customer Configuration Setting (Tag1) */
-struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG
-{
+struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint16_t cmdBufferLen;
@@ -1580,15 +1529,13 @@ struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG
 }__KAL_ATTRIB_PACKED__;
 
 /* get or set chip configuration (Tag2) */
-struct UNI_CMD_CHIP_CONFIG_CHIP_CFG
-{
+struct UNI_CMD_CHIP_CONFIG_CHIP_CFG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t aucbuffer[0];
 }__KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP
-{
+struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP {
 	uint16_t u2Id;
 	uint8_t ucType;
 	uint8_t ucRespType;
@@ -1598,14 +1545,12 @@ struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP
 }__KAL_ATTRIB_PACKED__;
 
 /* Get Connsys Cpability (Tag3) */
-struct UNI_CMD_CHIP_CONFIG_NIC_CAPABILITY
-{
+struct UNI_CMD_CHIP_CONFIG_NIC_CAPABILITY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 }__KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_POWER_CTRL
-{
+struct UNI_CMD_POWER_CTRL {
 	/* fixed field */
 	uint8_t ucReserved[4];
 
@@ -1618,14 +1563,12 @@ struct UNI_CMD_POWER_CTRL
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_POWER_CTRL_TAG
-{
+enum ENUM_UNI_CMD_POWER_CTRL_TAG {
 	UNI_CMD_POWER_CTRL_TAG_OFF = 0,
 	UNI_CMD_POWER_CTRL_TAG_NUM
 };
 
-struct UNI_CMD_POWER_OFF
-{
+struct UNI_CMD_POWER_OFF {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucPowerMode;
@@ -1679,8 +1622,7 @@ struct UNI_CMD_SET_AP_CONSTRAINT_PWR_LIMIT_PARAM {
 } __KAL_ATTRIB_PACKED__;
 
 /* Rx header translation command (0x12) */
-struct UNI_CMD_SER
-{
+struct UNI_CMD_SER {
 	/* fixed field */
 	uint8_t aucReserved[4];
 
@@ -1697,8 +1639,7 @@ struct UNI_CMD_SER
 } __KAL_ATTRIB_PACKED__;
 
 /* SER command TLV List */
-enum ENUM_UNI_CMD_SER_TAG
-{
+enum ENUM_UNI_CMD_SER_TAG {
 	UNI_CMD_SER_TAG_QUERY = 0,
 	UNI_CMD_SER_TAG_ENABLE = 1,
 	UNI_CMD_SER_TAG_SET = 2,
@@ -1708,15 +1649,13 @@ enum ENUM_UNI_CMD_SER_TAG
 };
 
 /* Show ser (Tag0) */
-struct UNI_CMD_SER_QUERY
-{
+struct UNI_CMD_SER_QUERY {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* Enable/disable ser (Tag1) */
-struct UNI_CMD_SER_ENABLE
-{
+struct UNI_CMD_SER_ENABLE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t fgEnable;
@@ -1724,16 +1663,14 @@ struct UNI_CMD_SER_ENABLE
 } __KAL_ATTRIB_PACKED__;
 
 /* config ser (Tag2) */
-struct UNI_CMD_SER_SET
-{
+struct UNI_CMD_SER_SET {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4EnableMask;
 } __KAL_ATTRIB_PACKED__;
 
 /* trigger ser recovery (Tag3) */
-struct UNI_CMD_SER_TRIGGER
-{
+struct UNI_CMD_SER_TRIGGER {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucTriggerMethod;
@@ -1741,8 +1678,7 @@ struct UNI_CMD_SER_TRIGGER
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_TWT
-{
+struct UNI_CMD_TWT {
 	/*fixed field*/
 	uint8_t ucBssInfoIdx;
 	uint8_t aucPadding[3];
@@ -1755,14 +1691,12 @@ struct UNI_CMD_TWT
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_TWT_TAG
-{
+enum ENUM_UNI_CMD_TWT_TAG {
 	UNI_CMD_TWT_TAG_AGRT_UPDATE = 0,
 	UNI_CMD_TWT_TAG_NUM
 };
 
-struct UNI_CMD_TWT_ARGT_UPDATE
-{
+struct UNI_CMD_TWT_ARGT_UPDATE {
 	uint16_t    u2Tag;    /* Tag = 0x00 */
 	uint16_t    u2Length;
 	uint8_t      ucAgrtTblIdx;
@@ -1786,8 +1720,7 @@ struct UNI_CMD_TWT_ARGT_UPDATE
 	uint16_t     au2StaList[UNI_TWT_GRP_MAX_MEMBER_CNT];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_DOMAIN_SET_INFO
-{
+struct UNI_CMD_DOMAIN_SET_INFO {
 	/* fixed field */
 	uint32_t u4CountryCode;
 	uint8_t  uc2G4Bandwidth; /* CONFIG_BW_20_40M or CONFIG_BW_20M */
@@ -1805,15 +1738,13 @@ struct UNI_CMD_DOMAIN_SET_INFO
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_CMD_DOMAIN_TAG
-{
+enum ENUM_UNI_CMD_DOMAIN_TAG {
 	UNI_CMD_DOMAIN_TAG_SUBBAND = 1,
 	UNI_CMD_DOMAIN_TAG_ACTCHNL = 2,
 	UNI_CMD_DOMAIN_TAG_NUM
 };
 
-struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND
-{
+struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND {
 	uint16_t u2Tag;                   // Tag = 0x01
 	uint16_t u2Length;
 	uint16_t u2IsSetPassiveScan;
@@ -1822,8 +1753,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND
 	uint8_t  aucSubBandInfoBuffer[0]; // UNI_CMD_DOMAIN_SUBBAND_INFO
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_DOMAIN_SUBBAND_INFO
-{
+struct UNI_CMD_DOMAIN_SUBBAND_INFO {
 	uint8_t ucRegClass;
 	uint8_t ucBand;
 	uint8_t ucChannelSpan;
@@ -1833,8 +1763,7 @@ struct UNI_CMD_DOMAIN_SUBBAND_INFO
 	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST
-{
+struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST {
 	uint16_t u2Tag;                   // Tag = 0x02
 	uint16_t u2Length;
 	uint8_t  u1ActiveChNum2g;
@@ -1845,8 +1774,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC command (0x17) */
-struct UNI_CMD_IDC
-{
+struct UNI_CMD_IDC {
 	uint8_t ucReserved[4];
 
 	/* tlv */
@@ -1862,8 +1790,7 @@ struct UNI_CMD_IDC
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC config Tag */
-enum ENUM_UNI_CMD_IDC_TAG
-{
+enum ENUM_UNI_CMD_IDC_TAG {
 	UNI_CMD_IDC_TAG_GET_IDC_CHN = 0,
 	UNI_CMD_IDC_TAG_ALWAYS_SCAN_PARAM_SETTING = 1,
 	UNI_CMD_IDC_TAG_CCCI_MSG = 2,
@@ -1872,15 +1799,13 @@ enum ENUM_UNI_CMD_IDC_TAG
 };
 
 /* IDC Setting (Tag0) */
-struct UNI_CMD_GET_IDC_CHN
-{
+struct UNI_CMD_GET_IDC_CHN {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC Setting (Tag1) */
-struct UNI_CMD_ALWAYS_SCAN_PARAM_SETTING
-{
+struct UNI_CMD_ALWAYS_SCAN_PARAM_SETTING {
 	uint16_t   u2Tag;
 	uint16_t   u2Length;
 	uint8_t  fgAlwaysScanEnable;
@@ -2221,8 +2146,7 @@ struct UNI_CMD_LINK_QUALITY {
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_CMD_STA_STATISTICS
-{
+struct UNI_CMD_STA_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	/** Peer SW station record index */
@@ -2469,6 +2393,39 @@ struct UNI_CMD_MBMC_SETTING {
 	uint8_t ucMbmcEn;
 	uint8_t ucRfBand;
 	uint8_t aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_POWER_LIMIT {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/** Power Limit command TLV List */
+enum UNI_CMD_POWER_LIMIT_TAG {
+	UNI_CMD_POWER_LIMIT_TABLE_CTRL = 0,
+	UNI_CMD_POWER_LIMIT_PER_RATE_TABLE = 1,
+	UNI_CMD_POWER_LIMIT_TAG_MAX_NUM
+} __KAL_ATTRIB_PACKED__;
+
+/* Power limit table (Tag0) */
+struct UNI_CMD_SET_PWR_LIMIT_PARAM {
+	/* Tag = 0x00 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT_V2 config;
+} __KAL_ATTRIB_PACKED__;
+
+/* Power limit per rate table (Tag1) */
+struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
+	/* Tag = 0x01 */
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE config;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_RA {
@@ -4038,6 +3995,10 @@ uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetCountryPwrLimit(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
