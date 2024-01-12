@@ -10469,7 +10469,7 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
-	DBGLOG(REQ, WARN, "bssidx=%d has NULL netdev caller=%pS\n",
+	DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
 		ucBssIndex, KAL_TRACE);
 
 	return NULL;
@@ -11344,7 +11344,6 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	struct AIS_FSM_INFO *prAisFsmInfo;
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	struct BSS_DESC *prBssDesc;
 #endif
@@ -11360,7 +11359,7 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		return 1;
 	}
 #endif
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (IS_BSS_APGO(prBssInfo)) {
 		if (p2pFuncIsAPMode(
@@ -11386,16 +11385,21 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		}
 	}
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
-	else if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
-		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-		if (prBssDesc != NULL &&
-		    bssGetIotApAction(prAdapter,
-				      prBssDesc) == WLAN_IOT_AP_DBDC_1SS) {
-			DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blacklist\n");
-			ucRetValNss = 1;
-		} else if (prAdapter->rWifiVar.fgSta1NSS) {
-			DBGLOG(SW4, INFO, "Use 1x1 due to FWK cmd\n");
-			ucRetValNss = 1;
+	else if (IS_BSS_AIS(prBssInfo)) {
+		struct AIS_FSM_INFO *prAisFsmInfo =
+			aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+		if (prAisFsmInfo) {
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			if (prBssDesc != NULL &&
+			    bssGetIotApAction(prAdapter, prBssDesc) ==
+					WLAN_IOT_AP_DBDC_1SS) {
+				DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blk\n");
+				ucRetValNss = 1;
+			} else if (prAdapter->rWifiVar.fgSta1NSS) {
+				DBGLOG(SW4, INFO, "Use 1x1 due to FWK cmd\n");
+				ucRetValNss = 1;
+			}
 		}
 	}
 #endif

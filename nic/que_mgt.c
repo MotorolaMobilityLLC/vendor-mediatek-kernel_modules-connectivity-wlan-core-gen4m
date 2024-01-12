@@ -3242,9 +3242,9 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		} else {
 			uint16_t u2FrameCtrl = 0;
 			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
-			struct BSS_INFO *prAisBssInfo = NULL;
+			struct BSS_INFO *prBssInfo = NULL;
 
-			prAisBssInfo = aisGetAisBssInfo(prAdapter,
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				secGetBssIdxByWlanIdx(
 					prAdapter,
 					prCurrSwRfb->ucWlanIdx));
@@ -3308,8 +3308,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 
 			if (prCurrSwRfb->prStaRec == NULL &&
 				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
-				(prAisBssInfo) &&
-				(prAisBssInfo->eConnectionState ==
+				(prBssInfo) && (prBssInfo->eConnectionState ==
 				MEDIA_STATE_CONNECTED)) {
 				/* rx header translation */
 				log_dbg(QM, WARN, "RXD Trans: FrameCtrl=0x%02x GVLD=0x%x, StaRecIdx=%d, WlanIdx=%d PktLen=%d\n",
@@ -3324,17 +3323,16 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						u2PacketLen > 32) ? 32 :
 						prCurrSwRfb->
 						u2PacketLen);
-				if (prAisBssInfo
-				    && prAisBssInfo->prStaRecOfAP)
+				if (prBssInfo && prBssInfo->prStaRecOfAP)
 				if (EQUAL_MAC_ADDR(
 							prWlanHeader->
 							aucAddr1,
-							prAisBssInfo->
+							prBssInfo->
 							aucOwnMacAddr)
 				    && EQUAL_MAC_ADDR(
 							prWlanHeader->
 							aucAddr2,
-							prAisBssInfo->
+							prBssInfo->
 							aucBSSID)) {
 					uint16_t u2MACLen = 0;
 					/* QoS data, VHT */
@@ -3367,7 +3365,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 
 					/* record StaRec related info */
 					prCurrSwRfb->prStaRec =
-						prAisBssInfo->
+						prBssInfo->
 						prStaRecOfAP;
 					prCurrSwRfb->ucStaRecIdx =
 						prCurrSwRfb->prStaRec->

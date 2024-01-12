@@ -870,7 +870,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
-	DBGLOG(HAL, INFO,
+	DBGLOG(HAL, LOUD,
 		       "Acquire Entry[0x%p] Tok[%u] Buf[%p] Len[%u]\n",
 		       prToken, prToken->u4Token,
 		       prToken->prPacket, prToken->u4DmaLength);
@@ -1172,7 +1172,7 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 	}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-	DBGLOG(HAL, INFO, "MsduRpt: Tok[%u] Free[%u]\n",
+	DBGLOG(HAL, LOUD, "MsduRpt: Tok[%u] Free[%u]\n",
 		u4Token,
 		halGetMsduTokenFreeCnt(prAdapter));
 #else
@@ -1182,7 +1182,7 @@ u_int8_t halProcessToken(IN struct ADAPTER *prAdapter,
 		QUEUE_INSERT_TAIL(prFreeQueue,
 			(struct QUE_ENTRY *) prMsduInfo);
 
-	DBGLOG_LIMITED(HAL, TRACE,
+	DBGLOG(HAL, LOUD,
 		       "MsduRpt: Tok[%u] Msdu[0x%p] TxDone[%u] Free[%u]\n",
 		       u4Token, prMsduInfo,
 		       (prMsduInfo->pfTxDoneHandler ? TRUE : FALSE),

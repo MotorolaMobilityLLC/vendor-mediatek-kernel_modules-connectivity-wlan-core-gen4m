@@ -1712,8 +1712,6 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 
 	DEBUGFUNC("rsnGenerateRSNIE");
 
@@ -1722,8 +1720,6 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				 prMsduInfo->u2FrameLength);
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
-	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
-	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 
 	/* For FT, we reuse the RSN Element composed in userspace */
 	if (authAddRSNIE_impl(prAdapter, prMsduInfo)) {
@@ -1740,22 +1736,18 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 	if (
 #if CFG_ENABLE_WIFI_DIRECT
-		((prAdapter->fgIsP2PRegistered) &&
-		 (GET_BSS_INFO_BY_INDEX(prAdapter,
-			ucBssIndex)->eNetworkType == NETWORK_TYPE_P2P)
-		 && (kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
-			(uint8_t) prBssInfo->u4PrivateData))) ||
+	    (prAdapter->fgIsP2PRegistered &&
+	     IS_BSS_P2P(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)) &&
+	     kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
+		(uint8_t) prBssInfo->u4PrivateData)) ||
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
-		(GET_BSS_INFO_BY_INDEX(prAdapter,
-			ucBssIndex)->eNetworkType == NETWORK_TYPE_BOW)
-		||
+	    (IS_BSS_BOW(GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex))) ||
 #endif
-		   (GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex)->eNetworkType ==
-		    NETWORK_TYPE_AIS /* prCurrentBss->fgIERSN */  &&
-		    (rsnKeyMgmtWpa(prAdapter, eAuthMode, ucBssIndex) ||
-		    rsnIsOsenAuthModeWithRSN(prAdapter, ucBssIndex)))) {
+	    (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+	     (rsnKeyMgmtWpa(prAdapter,
+			aisGetAuthMode(prAdapter, ucBssIndex), ucBssIndex) ||
+	      rsnIsOsenAuthModeWithRSN(prAdapter, ucBssIndex)))) {
 		/* Construct a RSN IE for association request frame. */
 		RSN_IE(pucBuffer)->ucElemId = ELEM_ID_RSN;
 		RSN_IE(pucBuffer)->ucLength = ELEM_ID_RSN_LEN_FIXED;
@@ -1816,8 +1808,7 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		       "Gen RSN IE = %x\n", GET_BSS_INFO_BY_INDEX(prAdapter,
 				       ucBssIndex)->u2RsnSelectedCapInfo);
  #if CFG_SUPPORT_802_11W
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-			ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS) {
+		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 			if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
 				ucBssIndex) ==
 				   RSN_AUTH_MFP_REQUIRED) {
@@ -1848,8 +1839,10 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 		cp += 2;
 
 		/* Fill PMKID and Group Management Cipher for AIS */
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex)->eNetworkType == NETWORK_TYPE_AIS) {
+		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+			struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
+				aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 						prMsduInfo->ucStaRecIndex);
 
@@ -1893,10 +1886,8 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				 * Group Management Cipher field
 				 * need to be filled
 				 */
-				if (prAisSpecBssInfo
-					->fgMgmtProtection) {
-					WLAN_SET_FIELD_16(cp, 0)
-
+				if (prAisSpecBssInfo->fgMgmtProtection) {
+					WLAN_SET_FIELD_16(cp, 0);
 					cp += 2;
 					RSN_IE(pucBuffer)->ucLength += 2;
 				}
@@ -3858,7 +3849,7 @@ uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 {
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!prFtIEs->prFTIE ||
+	if (!prFtIEs || !prFtIEs->prFTIE ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
 		return 0;
 	return IE_SIZE(prFtIEs->prFTIE);
@@ -3873,7 +3864,7 @@ void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx = prMsduInfo->ucBssIndex;
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx);
 
-	if (!prFtIEs->prFTIE ||
+	if (!prFtIEs || !prFtIEs->prFTIE ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prMsduInfo->ucStaRecIndex))
 		return;
 	ucFtIeSize = IE_SIZE(prFtIEs->prFTIE);
