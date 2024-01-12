@@ -1494,9 +1494,10 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 {
 	const uint8_t *pos, *end;
 	uint8_t ucMlCtrlType, ucMlCtrlPreBmp;
-	struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
 	uint8_t show_info;
 	uint8_t *tmp = NULL;
+	u_int16_t u2Ctrl;
+	u_int8_t *aucCommonInfo;
 
 	show_info = !!(aucDebugModule[DBG_ML_IDX] & DBG_CLASS_LOUD) ||
 		u2FrameCtrl == MAC_FRAME_ASSOC_REQ ||
@@ -1513,14 +1514,33 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	kalMemSet(prMlInfo, 0, sizeof(struct MULTI_LINK_INFO));
 
 	end = pucIE + IE_SIZE(pucIE);
-	prMlInfoIe = (struct IE_MULTI_LINK_CONTROL *)pucIE;
-	pos = prMlInfoIe->aucCommonInfo;
+
+	if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC)) {
+		struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
+
+		prMlInfoIe = (struct IE_MULTI_LINK_CONTROL *)pucIE;
+		u2Ctrl = prMlInfoIe->u2Ctrl;
+		aucCommonInfo = prMlInfoIe->aucCommonInfo;
+		pos = prMlInfoIe->aucCommonInfo;
+	} else if (IE_ID(pucIE) == ELEM_ID_NR_BASIC_MULTI_LINK) {
+		struct SUB_IE_MULTI_LINK_CONTROL *prMlInfoIe;
+
+		prMlInfoIe = (struct SUB_IE_MULTI_LINK_CONTROL *)pucIE;
+		u2Ctrl = prMlInfoIe->u2Ctrl;
+		aucCommonInfo = prMlInfoIe->aucCommonInfo;
+		pos = prMlInfoIe->aucCommonInfo;
+	} else {
+		DBGLOG(ML, INFO, "[%s] UNKNOWN IE, IE_LEN = %d\n",
+			pucDesc, IE_LEN(pucIE));
+		DBGLOG_MEM8(ML, INFO, (uint8_t *)pucIE, IE_SIZE(pucIE));
+		return;
+	}
 
 	/* ML control bits[4,15] is presence bitmap */
-	ucMlCtrlPreBmp = ((prMlInfoIe->u2Ctrl & ML_CTRL_PRE_BMP_MASK)
-				>> ML_CTRL_PRE_BMP_SHIFT);
+	ucMlCtrlPreBmp = (u2Ctrl & ML_CTRL_PRE_BMP_MASK)
+				>> ML_CTRL_PRE_BMP_SHIFT;
 	/* ML control bits[0,2] is type */
-	ucMlCtrlType = (prMlInfoIe->u2Ctrl & ML_CTRL_TYPE_MASK);
+	ucMlCtrlType = (u2Ctrl & ML_CTRL_TYPE_MASK);
 
 	/* It shall be Basic variant ML element*/
 	if (ucMlCtrlType != ML_CTRL_TYPE_BASIC) {
@@ -1591,14 +1611,19 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 				prMlInfo->ucMldId);
 		pos += 1;
 	}
-	if (pos - prMlInfoIe->aucCommonInfo !=
-			prMlInfo->ucCommonInfoLength) {
-		prMlInfo->ucValid = FALSE;
+	if (ucMlCtrlPreBmp & ML_CTRL_EXT_MLD_CAP_OP_PRESENT) {
+		prMlInfo->u2ExtMldCap = *pos;
+		if (show_info)
+			DBGLOG(ML, INFO, "\tML common Info MLD ID = 0x%x\n",
+				prMlInfo->u2ExtMldCap);
+		pos += 2;
+	}
+	if (pos - aucCommonInfo != prMlInfo->ucCommonInfoLength) {
 		DBGLOG(ML, WARN,
 			"invalid ML control len: real %ld != expected %d\n",
-			pos - prMlInfoIe->aucCommonInfo,
+			pos - aucCommonInfo,
 			prMlInfo->ucCommonInfoLength);
-		return;
+		pos = aucCommonInfo + prMlInfo->ucCommonInfoLength;
 	}
 
 	if (u2Left > IE_SIZE(pucIE)) {

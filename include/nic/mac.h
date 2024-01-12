@@ -2330,6 +2330,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_CTRL_EML_CAPA_PRESENT			BIT(3)
 #define ML_CTRL_MLD_CAPA_PRESENT			BIT(4)
 #define ML_CTRL_MLD_ID_PRESENT				BIT(5)
+#define ML_CTRL_EXT_MLD_CAP_OP_PRESENT			BIT(6)
 
 /* Figure 9-788eo - STA Control field format */
 #define SUB_IE_MLD_PER_STA_PROFILE			0

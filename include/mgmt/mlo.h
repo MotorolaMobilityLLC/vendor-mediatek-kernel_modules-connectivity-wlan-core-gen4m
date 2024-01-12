@@ -68,6 +68,9 @@
 #define BE_IS_ML_CTRL_PRESENCE_MLD_ID(_u2ctrl) \
 	(_u2ctrl & (ML_CTRL_MLD_ID_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
 
+#define BE_IS_ML_CTRL_PRESENCE_EXT_MLD(_u2ctrl) \
+	(_u2ctrl & (ML_CTRL_EXT_MLD_CAP_OP_PRESENT << ML_CTRL_PRE_BMP_SHIFT))
+
 #define BE_SET_MLD_CAP_MAX_SIMULTANEOUS_LINKS(_u2Cap, _num) \
 {\
 	(_u2Cap) &= ~(MLD_CAP_MAX_SIMULTANEOUS_LINK_MASK); \
@@ -89,6 +92,14 @@ struct IE_MULTI_LINK_CONTROL {
 	u_int8_t  ucExtId;
 	u_int16_t u2Ctrl;	/* control field - BITS(0, 2): type, BIT(3): reserved, BITS(4, 15): presence bitmap*/
 	u_int8_t aucCommonInfo[0];	/* common field - varied by presence bitmap of control field*/
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct SUB_IE_MULTI_LINK_CONTROL {
+	u_int8_t  ucId;
+	u_int8_t  ucLength;
+	u_int16_t u2Ctrl;
+	u_int8_t aucCommonInfo[0];
 } __KAL_ATTRIB_PACKED__;
 
 #define BE_SET_ML_STA_CTRL_LINK_ID(_u2ctrl, _val) \
@@ -189,6 +200,7 @@ struct MULTI_LINK_INFO {
 	uint16_t u2EmlCap;
 	uint16_t u2MldCap;
 	uint8_t ucMldId;
+	uint16_t u2ExtMldCap;
 	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	uint8_t ucProfNum;
 	struct STA_PROFILE rStaProfiles[MLD_LINK_MAX];
