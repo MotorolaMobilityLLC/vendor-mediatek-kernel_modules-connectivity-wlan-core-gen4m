@@ -6656,7 +6656,7 @@ void wlanSetNicResourceParameters(IN struct ADAPTER
 
 		/* construct prefix: Tc0Page, Tc1Page... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
+		kalSnprintf(string, sizeof(string) / sizeof(uint8_t),
 			 "Tc%xPage", idx);
 
 		/* update the final value */
@@ -6671,7 +6671,7 @@ void wlanSetNicResourceParameters(IN struct ADAPTER
 
 		/* construct prefix: Tc0Grt, Tc1Grt... */
 		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
+		kalSnprintf(string, sizeof(string) / sizeof(uint8_t),
 			 "Tc%xGrt", idx);
 
 		/* update the final value */

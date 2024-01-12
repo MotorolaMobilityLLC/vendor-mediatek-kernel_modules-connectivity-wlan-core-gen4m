@@ -1469,7 +1469,7 @@ int32_t GetIQData(struct ADAPTER *prAdapter,
 	*prIQAry = prAdapter->rIcapInfo.au4IQData;
 
 	/* sprintf(aucPath, "/pattern.txt");             // CSD's Pattern */
-	sprintf(aucPath, "/tmp/dump_out_%05hu_WF%u.txt",
+	kalSprintf(aucPath, "/tmp/dump_out_%05hu_WF%u.txt",
 		prAdapter->rIcapInfo.u2DumpIndex - 1, u4GetWf1);
 	if (kalCheckPath(aucPath) == -1) {
 		kalSnprintf(aucPath, sizeof(aucPath),
@@ -2095,10 +2095,10 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter,
 
 		prAdapter->rIcapInfo.eIcapState = ICAP_STATE_FW_DUMP_DONE;
 
-		sprintf(aucPath_done, "/file_dump_done.txt");
+		kalSprintf(aucPath_done, "/file_dump_done.txt");
 		if (kalCheckPath(aucPath_done) == -1) {
 			kalMemSet(aucPath_done, 0x00, 256);
-			sprintf(aucPath_done, "/data/file_dump_done.txt");
+			kalSprintf(aucPath_done, "/data/file_dump_done.txt");
 		}
 		DBGLOG(INIT, INFO, ": ==> gen done_file\n");
 		kalWriteToFile(aucPath_done, FALSE, aucPath_done,
@@ -3955,7 +3955,7 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pucEventBuf);
 
-	sprintf(aucPath, "/dump_%05hu.hex",
+	kalSprintf(aucPath, "/dump_%05hu.hex",
 		prAdapter->rIcapInfo.u2DumpIndex);
 
 	prEventDumpMem = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)
@@ -3963,7 +3963,7 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
 
 	if (kalCheckPath(aucPath) == -1) {
 		kalMemSet(aucPath, 0x00, 256);
-		sprintf(aucPath, "/data/dump_%05hu.hex",
+		kalSprintf(aucPath, "/data/dump_%05hu.hex",
 			prAdapter->rIcapInfo.u2DumpIndex);
 	}
 
@@ -3978,11 +3978,11 @@ void nicExtEventQueryMemDump(IN struct ADAPTER *prAdapter,
 		/* if blbist mkdir undre /data/blbist,
 		 * the dump files wouls put on it
 		 */
-		sprintf(aucPath, "/dump_%05hu.hex",
+		kalSprintf(aucPath, "/dump_%05hu.hex",
 			prAdapter->rIcapInfo.u2DumpIndex);
 		if (kalCheckPath(aucPath) == -1) {
 			kalMemSet(aucPath, 0x00, 256);
-			sprintf(aucPath, "/data/dump_%05hu.hex",
+			kalSprintf(aucPath, "/data/dump_%05hu.hex",
 				prAdapter->rIcapInfo.u2DumpIndex);
 		}
 #else
