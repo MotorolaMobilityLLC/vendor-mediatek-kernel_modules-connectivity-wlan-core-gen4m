@@ -1776,7 +1776,6 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-#if (CFG_SUPPORT_WIFI_RNR == 1)
 void scanHandleRnrSsid(IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest,
 	IN struct BSS_DESC *prBssDesc, IN uint8_t ucBssidNum)
 {
