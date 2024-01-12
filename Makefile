@@ -1196,6 +1196,12 @@ else
     ccflags-y += -DCFG_CE_ASSERT_DUMP=0
 endif
 
+ifeq ($CONFIG_IP_FRAG_DISABLE_HW_CHECKSUM), y)
+    ccflags-y += -DCFG_IP_FRAG_DISABLE_HW_CHECKSUM=1
+else
+    ccflags-y += -DCFG_IP_FRAG_DISABLE_HW_CHECKSUM=0
+endif
+
 ifeq ($(MODULE_NAME),)
 MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif

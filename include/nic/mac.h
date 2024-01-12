@@ -133,6 +133,10 @@
 #define IPV4_HDR_TOS_PREC_MASK                  BITS(5, 7)
 #define IPV4_HDR_TOS_PREC_OFFSET                5
 #define IPV4_HDR_IP_IDENTIFICATION_OFFSET       4
+#define IPV4_HDR_IP_FRAG_OFFSET                 6
+#define IPV4_HDR_IP_FRAG_PART1_MASK             BITS(0, 4)
+#define IPV4_HDR_IP_FLAGS_MASK                  BITS(5, 7)
+#define IPV4_HDR_IP_FLAGS_MF_MASK               BIT(5)
 #define IPV4_HDR_IP_PROTOCOL_OFFSET             9
 #define IPV4_HDR_IP_CSUM_OFFSET                 10
 #define IPV4_HDR_IP_SRC_ADDR_OFFSET             12
