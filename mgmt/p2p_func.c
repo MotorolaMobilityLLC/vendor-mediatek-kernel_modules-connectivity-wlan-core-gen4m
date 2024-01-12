@@ -1110,108 +1110,67 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	uint8_t ucBssIdx,
 	struct MSDU_INFO *prMgmtTxMsdu)
 {
-	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct MSDU_INFO *prRetMsduInfo = NULL;
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct MSDU_INFO *prMsduInfo;
-	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame =
-		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
-	uint8_t *pucIEBuf = (uint8_t *) NULL;
-	uint16_t u2Offset = 0, u2IELength = 0, u2RspHdrLen = 0;
-	uint8_t aucExtDHIE[1024];
-	uint16_t u2ExtDHIELen;
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame;
+	uint8_t *pucIEBuf;
+	uint16_t u2Offset, u2IELength, u2RspHdrLen;
 
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,	ucBssIdx);
-	if (!prP2pBssInfo ||
-		(prP2pBssInfo->u4RsnSelectedAKMSuite !=
-		RSN_AKM_SUITE_OWE)) {
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE) {
 		DBGLOG(P2P, TRACE, "[OWE] Incorrect akm\n");
 		return prMgmtTxMsdu;
 	}
 
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
+		prP2pBssInfo->u4PrivateData];
 	prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
 		((uintptr_t) prMgmtTxMsdu->prPacket +
 		MAC_TX_RESERVED_FIELD);
 
-	u2RspHdrLen =
-		(MAC_TX_RESERVED_FIELD +
-	    WLAN_MAC_MGMT_HEADER_LEN +
-	    CAP_INFO_FIELD_LEN +
-	    STATUS_CODE_FIELD_LEN +
-	    AID_FIELD_LEN);
+	u2RspHdrLen = (MAC_TX_RESERVED_FIELD +
+		       WLAN_MAC_MGMT_HEADER_LEN +
+		       CAP_INFO_FIELD_LEN +
+		       STATUS_CODE_FIELD_LEN +
+		       AID_FIELD_LEN);
 
 	pucIEBuf = prAssocRspFrame->aucInfoElem;
 	u2IELength = prMgmtTxMsdu->u2FrameLength - u2RspHdrLen;
 
-	u2ExtDHIELen = 0;
-
 	IE_FOR_EACH(pucIEBuf, u2IELength, u2Offset) {
-		if ((IE_ID(pucIEBuf) == ELEM_ID_RESERVED)
-			&& (IE_ID_EXT(pucIEBuf) ==
-			ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM)) {
-			kalMemCopy(aucExtDHIE,
-				pucIEBuf, IE_SIZE(pucIEBuf));
-			u2ExtDHIELen = IE_SIZE(pucIEBuf);
+		if (IE_ID(pucIEBuf) == ELEM_ID_RESERVED &&
+		    IE_ID_EXT(pucIEBuf) == ELEM_EXT_ID_DIFFIE_HELLMAN_PARAM) {
+			prP2pSpecBssInfo->pucDHIEBuf = pucIEBuf;
+			prP2pSpecBssInfo->ucDHIELen = IE_SIZE(pucIEBuf);
 			break;
 		}
-
 	}
 
-	if (!u2ExtDHIELen) {
+	if (!prP2pSpecBssInfo->ucDHIELen) {
 		DBGLOG(P2P, WARN, "[OWE] No DH IE\n");
 		return prMgmtTxMsdu;
 	}
 
-	prMsduInfo = assocComposeReAssocRespFrame(
-		prAdapter, prStaRec);
+	prMsduInfo = assocComposeReAssocRespFrame(prAdapter, prStaRec);
 	if (!prMsduInfo) {
 		DBGLOG(P2P, WARN, "[OWE] Compose fail\n");
 		return prMgmtTxMsdu;
 	}
-
-	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
-			(int32_t) (prMsduInfo->u2FrameLength +
-			u2ExtDHIELen +
-			MAC_TX_RESERVED_FIELD));
-	if (!prRetMsduInfo) {
-		DBGLOG(P2P, WARN, "[OWE] alloc fail\n");
-		cnmMgtPktFree(prAdapter, prMsduInfo);
-		return prMgmtTxMsdu;
-	}
-
-	kalMemCopy((uint8_t *)
-		((uintptr_t) prRetMsduInfo->prPacket),
-		prMsduInfo->prPacket,
-		prMsduInfo->u2FrameLength);
-
-	prRetMsduInfo->u2FrameLength = prMsduInfo->u2FrameLength;
-
-	/* free after copy done */
-	cnmMgtPktFree(prAdapter, prMsduInfo);
-
-	kalMemCopy((uint8_t *)
-		((uintptr_t) prRetMsduInfo->prPacket +
-		(uintptr_t) prRetMsduInfo->u2FrameLength),
-		aucExtDHIE,
-		u2ExtDHIELen);
-
-	prRetMsduInfo->u2FrameLength += (uint16_t) u2ExtDHIELen;
-
-	DBGLOG_MEM8(P2P, TRACE, (uint8_t *) aucExtDHIE,
-		(uint32_t) u2ExtDHIELen);
-
-	/* free after copy done, prMgmtTxMsdu is replaced by prRetMsduInfo */
 	cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
 
-	sortMgmtFrameIE(prAdapter, prRetMsduInfo);
-
-	/* update correct bssindex before generate ml ie */
-	prRetMsduInfo->ucBssIndex = ucBssIdx;
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldGenerateAssocIE(prAdapter, prStaRec, prRetMsduInfo,
+	mldGenerateAssocIE(prAdapter, prStaRec, prMsduInfo,
 		assocComposeReAssocRespFrame);
 #endif
-	return prRetMsduInfo;
+
+	prP2pSpecBssInfo->pucDHIEBuf = NULL;
+	prP2pSpecBssInfo->ucDHIELen = 0;
+
+	return prMsduInfo;
 }
 
 uint32_t
@@ -1373,14 +1332,14 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				"[OWE] Dump assoc resp from supplicant.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
-			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
-				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			pu8GlCookie =
 				(uint64_t *) ((uintptr_t)
 					prMgmtTxMsdu->prPacket +
 					(uintptr_t)
 					prMgmtTxMsdu->u2FrameLength +
 					MAC_TX_RESERVED_FIELD);
+			prMgmtTxMsdu = p2pFuncProcessP2pAssocResp(prAdapter,
+				prStaRec, ucBssIndex, prMgmtTxMsdu);
 			*pu8GlCookie = u8GlCookie;
 			DBGLOG(P2P, TRACE, "[OWE] Dump assoc resp to FW.\n");
 			DBGLOG_MEM8(P2P, TRACE, prMgmtTxMsdu->prPacket,
@@ -9196,5 +9155,68 @@ void p2pFuncClearUnsolProbeInfo(struct ADAPTER *prAdapter,
 
 	prUnsolProbeInfo->fgValid = FALSE;
 	prUnsolProbeInfo->u4Length = 0;
+}
+
+uint32_t p2pFuncCalculateP2p_IELenForOwe(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+
+	if (!prAdapter)
+		return 0;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE) {
+		return 0;
+	}
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
+		prP2pBssInfo->u4PrivateData];
+	if (prP2pSpecBssInfo == NULL ||
+	    prP2pSpecBssInfo->ucDHIELen == 0 ||
+	    prP2pSpecBssInfo->pucDHIEBuf == NULL) {
+		return 0;
+	}
+
+	return prP2pSpecBssInfo->ucDHIELen;
+}
+
+void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct WIFI_VAR *prWifiVar;
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	uint8_t *pucBuf;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (prP2pBssInfo == NULL ||
+	    prP2pBssInfo->u4RsnSelectedAKMSuite != RSN_AKM_SUITE_OWE) {
+		return;
+	}
+
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
+		prP2pBssInfo->u4PrivateData];
+	if (prP2pSpecBssInfo == NULL ||
+	    prP2pSpecBssInfo->ucDHIELen == 0 ||
+	    prP2pSpecBssInfo->pucDHIEBuf == NULL) {
+		return;
+	}
+
+	pucBuf = (uint8_t *)((uintptr_t) prMsduInfo->prPacket +
+			     (uint32_t) prMsduInfo->u2FrameLength);
+
+	kalMemCopy(pucBuf,
+		   prP2pSpecBssInfo->pucDHIEBuf,
+		   prP2pSpecBssInfo->ucDHIELen);
+	prMsduInfo->u2FrameLength += prP2pSpecBssInfo->ucDHIELen;
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */

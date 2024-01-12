@@ -178,6 +178,9 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	rsnPmfGenerateTimeoutIE}
 	,			/* 56 */
 #endif
+	{(0), p2pFuncCalculateP2p_IELenForOwe,
+	 p2pFuncGenerateP2p_IEForOwe}
+	,
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNXIE}
 	/* 244 */
 };

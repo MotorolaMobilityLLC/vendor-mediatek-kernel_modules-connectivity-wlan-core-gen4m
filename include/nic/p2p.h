@@ -381,6 +381,10 @@ struct P2P_SPECIFIC_BSS_INFO {
 #endif
 	struct P2P_FILS_DISCOVERY_INFO rFilsInfo;
 	struct P2P_UNSOL_PROBE_RESP_INFO rUnsolProbeInfo;
+
+	/* OWE */
+	uint8_t *pucDHIEBuf;
+	uint8_t ucDHIELen;
 };
 
 struct P2P_QUEUED_ACTION_FRAME {
