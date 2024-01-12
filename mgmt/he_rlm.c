@@ -2000,7 +2000,7 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	const uint8_t *pucIE)
 {
 	uint32_t u4Offset;
-	struct _IE_BTWT_T *prBTWTIE = (struct _IE_BTWT_T *) pucIE;
+	struct _IE_BTWT_T *prBTWTIE = NULL;
 	const uint8_t *pucBTWT_PARAMS_HEAD = NULL;
 	const uint8_t *pucBTWT_PARAMS = NULL;
 	struct _TWT_PARAMS_T  *prTWT_PARAMS = NULL;
@@ -2009,7 +2009,7 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	uint64_t u8Temp = 0;
 	uint64_t u8twt_interval = 0;
 	uint64_t u8Mod = 0;
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	if (prAdapter == NULL)
 		return;
@@ -2017,7 +2017,7 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (prStaRec == NULL)
 		return;
 
-	if (prBTWTIE == NULL)
+	if (pucIE == NULL)
 		return;
 
 	if (GET_BTWT_CTRL_NEGO(prBTWTIE->ucCtrl) != 0x2)
@@ -2029,12 +2029,14 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	DBGLOG(RLM, WARN, "(struct _IE_BTWT_T, u2ReqType)=%d\n", u4Offset);
 
+	prBTWTIE = (struct _IE_BTWT_T *) pucIE;
+
 	pucBTWT_PARAMS_HEAD = pucIE + u4Offset;
 
-	if (pucBTWT_PARAMS_HEAD == NULL)
-		return;
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL)
+		return;
 
 	/* parse BTWT IE and insert BTWT param into */
 	/* prStaRec->arTWTFlow[flow_id].rTWTPeerParams */
