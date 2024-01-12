@@ -1361,31 +1361,21 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 		/* we are initiator */
 		pucInitiator = prBssInfo->aucOwnMacAddr;
 		pucResponder = pPeerMac;
-
-		if (prStaRec != NULL)
-			prStaRec->flgTdlsIsInitiator = TRUE;
+		prStaRec->flgTdlsIsInitiator = TRUE;
 		break;
 
 	case TDLS_FRM_ACTION_SETUP_RSP:
 		/* peer is initiator */
 		pucInitiator = pPeerMac;
 		pucResponder = prBssInfo->aucOwnMacAddr;
-
-		if (prStaRec != NULL)
-			prStaRec->flgTdlsIsInitiator = FALSE;
+		prStaRec->flgTdlsIsInitiator = FALSE;
 		break;
 
 	case TDLS_FRM_ACTION_TEARDOWN:
-		if (prStaRec != NULL) {
-			if (prStaRec->flgTdlsIsInitiator == TRUE) {
-				/* we are initiator */
-				pucInitiator = prBssInfo->aucOwnMacAddr;
-				pucResponder = pPeerMac;
-			} else {
-				/* peer is initiator */
-				pucInitiator = pPeerMac;
-				pucResponder = prBssInfo->aucOwnMacAddr;
-			}
+		if (prStaRec->flgTdlsIsInitiator == TRUE) {
+			/* we are initiator */
+			pucInitiator = prBssInfo->aucOwnMacAddr;
+			pucResponder = pPeerMac;
 		} else {
 			/* peer is initiator */
 			pucInitiator = pPeerMac;
