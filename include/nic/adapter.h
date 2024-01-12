@@ -652,6 +652,14 @@ struct _NAN_SPECIFIC_BSS_INFO_T {
 };
 #endif
 
+#if (CFG_SUPPORT_CONN_LOG == 1)
+struct BUFFERED_LOG_ENTRY {
+	uint8_t fgBuffered;
+	uint8_t ucSn;
+	uint8_t aucLog[64];
+};
+#endif
+
 #if CFG_SLT_SUPPORT
 struct SLT_INFO {
 
@@ -1408,6 +1416,9 @@ struct WIFI_VAR {
 	uint8_t ucB2CUFactorScore2;
 	uint8_t ucB3CUFactorScore1;
 	uint8_t ucB3CUFactorScore2;
+#endif
+#if (CFG_SUPPORT_CONN_LOG == 1)
+	struct BUFFERED_LOG_ENTRY rBufferedLog[MAX_BSSID_NUM];
 #endif
 #if CFG_SUPPORT_LIMITED_PKT_PID
 	uint32_t u4PktPIDTimeout;
