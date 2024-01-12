@@ -491,7 +491,12 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 
 	while (1) {
 		/* Delay for LP engine to complete its operation. */
+#if CFG_SUPPORT_RX_WORK
+		kalUsleep_range(LP_OWN_BACK_LOOP_DELAY_MIN_US,
+				LP_OWN_BACK_LOOP_DELAY_MAX_US);
+#else /* !CFG_SUPPORT_RX_WORK */
 		kalUdelay(LP_OWN_BACK_LOOP_DELAY_MAX_US);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 #if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 		if (prAdapter->rWifiVar.u4DrvOwnMode == 1) {
@@ -562,9 +567,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	}
 
 	if (fgIsDriverOwnTimeout) {
+#if !CFG_SUPPORT_RX_WORK
 		if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 			goto end;
 		else
+#endif /* !CFG_SUPPORT_RX_WORK */
 			halDriverOwnTimeout(prAdapter, u4CurrTick, fgTimeout);
 	}
 
@@ -608,12 +615,14 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 end:
 	KAL_HIF_OWN_UNLOCK(prAdapter);
 
+#if !CFG_SUPPORT_RX_WORK
 	if (fgIsDriverOwnTimeout) {
 		if (HAL_IS_TX_DIRECT(prAdapter) ||
 				HAL_IS_RX_DIRECT(prAdapter))
 			halDriverOwnTimeout(prAdapter,
 					u4CurrTick, fgTimeout);
 	}
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	return fgStatus;
 }
@@ -699,16 +708,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	/* if direct trx,  set drv/fw own will be called
-	*  in softirq/tasklet/thread context,
-	*  if normal trx, set drv/fw own will only
-	*  be called in thread context
-	*/
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_lock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+	KAL_HIF_OWN_LOCK(prAdapter);
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
@@ -723,19 +723,20 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 	if (p2pFuncNeedForceSleep(prAdapter))
 		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
-	else if (!(prAdapter->fgWiFiInSleepyState &&
-		(prAdapter->u4PwrCtrlBlockCnt == 0))
+	else if (!(prAdapter->fgWiFiInSleepyState)
 #if CFG_CHIP_RESET_SUPPORT
 		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
 #endif
 		)
 		goto unlock;
 
+	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0)
+		goto unlock;
+
 	if (prAdapter->fgIsFwOwn == TRUE)
 		goto unlock;
 
-	if (!prHifInfo->fgIsPowerOff &&
-		nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
+	if (!prHifInfo->fgIsPowerOff && halGetWfdmaRxCnt(prAdapter)) {
 		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
 		/* pending interrupts */
 		goto unlock;
@@ -791,12 +792,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	}
 
 unlock:
-	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
-		spin_unlock_bh(
-			&prAdapter->prGlueInfo->rSpinLock[SPIN_LOCK_SET_OWN]);
-	else
-		KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
-
+	KAL_HIF_OWN_UNLOCK(prAdapter);
 }
 
 void halWakeUpWiFi(struct ADAPTER *prAdapter)
@@ -3159,7 +3155,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_DISABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	KAL_HIF_TXRING_LOCK(prTxRing);
 
@@ -3277,7 +3275,9 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 unlock:
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
 
+#if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);
+#endif /* !CFG_SUPPORT_RX_WORK */
 
 	return ret;
 }
@@ -4142,6 +4142,11 @@ void halDeAggRxPktWorker(struct work_struct *work)
 void halRxTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+	halRxWork(prGlueInfo);
+}
+
+void halRxWork(struct GLUE_INFO *prGlueInfo)
+{
 	bool fgEnInt = FALSE;
 
 	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
@@ -4175,9 +4180,13 @@ void halRxTasklet(unsigned long data)
 		wlanIST(prGlueInfo->prAdapter, FALSE);
 	}
 
+#if CFG_SUPPORT_RX_WORK
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_WORK_COUNT);
+#else /* CFG_SUPPORT_RX_WORK */
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
+#endif /* CFG_SUPPORT_RX_WORK */
 
-	if (kalRxTaskletWorkDone(prGlueInfo, fgEnInt)) {
+	if (kalRxTaskWorkDone(prGlueInfo, fgEnInt)) {
 		/* interrupt is not enabled, keep int bit */
 		KAL_SET_BIT(GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);

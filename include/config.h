@@ -347,6 +347,10 @@
 #define CFG_NATIVE_802_11                       0
 #endif
 
+#ifndef CFG_SUPPORT_RX_WORK
+#define CFG_SUPPORT_RX_WORK                      0
+#endif /* CFG_SUPPORT_RX_WORK */
+
 /* By using GRO at NAPI level, the driver is doing the aggregation to a large
  * SKB very early, right at the receive completion handler. This means that all
  * the next functions in the receive stack do much less processing.

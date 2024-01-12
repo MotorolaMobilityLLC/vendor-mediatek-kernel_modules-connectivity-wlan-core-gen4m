@@ -236,10 +236,13 @@ struct BOOST_INFO {
 	struct THREAD_INFO rRxThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
+	int32_t i4RxWorkCpu;
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaThNum;
 };
+
+#define WORK_ALL_CPU_OK 999
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_FSM = 0,
@@ -1922,9 +1925,9 @@ void kalSetEvent(struct GLUE_INFO *pr);
 
 void kalSetSerTimeoutEvent(struct GLUE_INFO *pr);
 
-void kalRxTaskletSchedule(struct GLUE_INFO *pr);
+void kalRxTaskSchedule(struct GLUE_INFO *pr);
 
-uint32_t kalRxTaskletWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
+uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt);
 
 void kalSetIntEvent(struct GLUE_INFO *pr);
 
@@ -2522,6 +2525,14 @@ void kalVnfUninit(void);
 void kalVnfInit(struct ADAPTER *prAdapter);
 void kalVnfEventHandler(struct ADAPTER *prAdapter);
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_RX_WORK
+void kalRxWork(struct work_struct *work);
+void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
+void kalRxWorkInit(struct GLUE_INFO *pr);
+void kalRxWorkUninit(struct GLUE_INFO *pr);
+void kalRxWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_RX_WORK */
 
 #endif /* _GL_KAL_H */
 

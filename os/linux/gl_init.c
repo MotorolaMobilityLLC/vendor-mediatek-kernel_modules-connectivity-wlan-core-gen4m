@@ -2387,6 +2387,9 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 {
 	kalTxDirectInit(prGlueInfo);
+#if CFG_SUPPORT_RX_WORK
+	kalRxWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_WORK */
 #if CFG_SUPPORT_RX_GRO
 	kalNapiInit(prGlueInfo);
 #if CFG_SUPPORT_RX_NAPI
@@ -2399,6 +2402,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_RX_WORK
+	kalRxWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_WORK */
 	glTaskletUninit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI
@@ -6136,7 +6142,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 	/* do schedule for the first time */
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
-		kalRxTaskletSchedule(prGlueInfo);
+		kalRxTaskSchedule(prGlueInfo);
 
 	if (!bAtResetFlow)
 		g_u4HaltFlag = 0;
