@@ -166,9 +166,9 @@ void asicConnac3xCapInit(
 	case MT_DEV_INF_AXI:
 
 		prChipInfo->u2TxInitCmdPort =
-			TX_RING_CMD_IDX_3; /* Ring17 for CMD */
+			TX_RING_CMD; /* Ring17 for CMD */
 		prChipInfo->u2TxFwDlPort =
-			TX_RING_FWDL_IDX_4; /* Ring16 for FWDL */
+			TX_RING_FWDL; /* Ring16 for FWDL */
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = CONNAC3X_HIF_DMASHDL_BASE;
 
@@ -408,8 +408,8 @@ static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 		}
 
 		if (halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
-					    RX_RING_EVT_IDX_1)) {
-			KAL_SET_BIT(RX_RING_EVT_IDX_1,
+					    RX_RING_EVT)) {
+			KAL_SET_BIT(RX_RING_EVT,
 				prAdapter->ulNoMoreRfb);
 		}
 	}
@@ -624,8 +624,8 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 
 	do {
 		HAL_MCR_RD(prAdapter, u4RegAddr, &GloCfg.word);
-		if ((GloCfg.field.TxDMABusy == 0) &&
-		    (GloCfg.field.RxDMABusy == 0)) {
+		if ((GloCfg.field_conn3x.tx_dma_busy == 0) &&
+		    (GloCfg.field_conn3x.rx_dma_busy == 0)) {
 			DBGLOG(HAL, TRACE, "==>  DMAIdle, GloCfg=0x%x\n",
 			       GloCfg.word);
 			return TRUE;
@@ -651,16 +651,18 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (index == TX_RING_CMD_IDX_3)
+	if (index == TX_RING_CMD)
 		ext_offset = prBusInfo->tx_ring_cmd_idx * 4;
-	else if (index == TX_RING_FWDL_IDX_4)
+	else if (index == TX_RING_FWDL)
 		ext_offset = prBusInfo->tx_ring_fwdl_idx * 4;
 	else if (prChipInfo->is_support_wacpu) {
-		if (index == TX_RING_DATA0_IDX_0)
+		if (index == TX_RING_DATA0)
 			ext_offset = prBusInfo->tx_ring0_data_idx * 4;
-		if (index == TX_RING_DATA1_IDX_1)
+		if (index == TX_RING_DATA1)
 			ext_offset = prBusInfo->tx_ring1_data_idx * 4;
-		if (index == TX_RING_WA_CMD_IDX_5)
+		if (index == TX_RING_DATA_PRIO)
+			ext_offset = prBusInfo->tx_ring2_data_idx * 4;
+		if (index == TX_RING_WA_CMD)
 			ext_offset = prBusInfo->tx_ring_wa_cmd_idx * 4;
 	} else
 		ext_offset = index * 4;
@@ -686,19 +688,19 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 	prBusInfo = prChipInfo->bus_info;
 
 	switch (index) {
-	case RX_RING_EVT_IDX_1:
+	case RX_RING_EVT:
 		ext_offset = 0;
 		break;
-	case RX_RING_DATA_IDX_0:
+	case RX_RING_DATA0:
 		ext_offset = (index + 2) * 4;
 		break;
-	case RX_RING_DATA1_IDX_2:
-	case RX_RING_TXDONE0_IDX_3:
-	case RX_RING_TXDONE1_IDX_4:
+	case RX_RING_DATA1:
+	case RX_RING_TXDONE0:
+	case RX_RING_TXDONE1:
 		ext_offset = (index + 1) * 4;
 		break;
-	case RX_RING_WAEVT0_IDX_5:
-	case RX_RING_WAEVT1_IDX_6:
+	case RX_RING_WAEVT0:
+	case RX_RING_WAEVT1:
 		ext_offset = (index - 4) * 4;
 		break;
 	default:
@@ -1193,7 +1195,7 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	uint8_t *pucData;
 	struct BUS_INFO *prBusInfo;
 	union mawd_l2tbl rL2Tbl = {0};
-	uint16_t u2EtherTypeLen = 0, u2Port = TX_RING_DATA0_IDX_0;
+	uint16_t u2EtherTypeLen = 0, u2Port = TX_RING_DATA0;
 	uint8_t ucType = 0;
 	uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
 	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM * 2];

@@ -39,7 +39,7 @@
 #define MT6639_DMASHDL_GROUP_0_REFILL_EN               (1)
 #define MT6639_DMASHDL_GROUP_1_REFILL_EN               (1)
 #define MT6639_DMASHDL_GROUP_2_REFILL_EN               (1)
-#define MT6639_DMASHDL_GROUP_3_REFILL_EN               (0)
+#define MT6639_DMASHDL_GROUP_3_REFILL_EN               (1)
 #define MT6639_DMASHDL_GROUP_4_REFILL_EN               (0)
 #define MT6639_DMASHDL_GROUP_5_REFILL_EN               (0)
 #define MT6639_DMASHDL_GROUP_6_REFILL_EN               (0)
@@ -55,7 +55,7 @@
 #define MT6639_DMASHDL_GROUP_0_MAX_QUOTA               (0xfff)
 #define MT6639_DMASHDL_GROUP_1_MAX_QUOTA               (0xfff)
 #define MT6639_DMASHDL_GROUP_2_MAX_QUOTA               (0xfff)
-#define MT6639_DMASHDL_GROUP_3_MAX_QUOTA               (0x0)
+#define MT6639_DMASHDL_GROUP_3_MAX_QUOTA               (0xfff)
 #define MT6639_DMASHDL_GROUP_4_MAX_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_5_MAX_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_6_MAX_QUOTA               (0x0)
@@ -71,7 +71,7 @@
 #define MT6639_DMASHDL_GROUP_0_MIN_QUOTA               (0x10)
 #define MT6639_DMASHDL_GROUP_1_MIN_QUOTA               (0x10)
 #define MT6639_DMASHDL_GROUP_2_MIN_QUOTA               (0x10)
-#define MT6639_DMASHDL_GROUP_3_MIN_QUOTA               (0x0)
+#define MT6639_DMASHDL_GROUP_3_MIN_QUOTA               (0x10)
 #define MT6639_DMASHDL_GROUP_4_MIN_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_5_MIN_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_6_MIN_QUOTA               (0x0)
@@ -100,7 +100,7 @@
 #define MT6639_DMASHDL_QUEUE_13_TO_GROUP               (0x0)   /* LMAC AC31 */
 #define MT6639_DMASHDL_QUEUE_14_TO_GROUP               (0x0)   /* LMAC AC32 */
 #define MT6639_DMASHDL_QUEUE_15_TO_GROUP               (0x2)   /* LMAC AC33 */
-#define MT6639_DMASHDL_QUEUE_16_TO_GROUP               (0x0)   /* ALTX */
+#define MT6639_DMASHDL_QUEUE_16_TO_GROUP               (0x3)   /* ALTX */
 #define MT6639_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
 #define MT6639_DMASHDL_QUEUE_18_TO_GROUP               (0x0)   /* BCN */
 #define MT6639_DMASHDL_QUEUE_19_TO_GROUP               (0x1)   /* HW Reserved */
@@ -132,10 +132,10 @@
 #define MT6639_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define MT6639_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define MT6639_DMASHDL_PRIORITY15_GROUP                (0xF)
-/* 4 rings are used (3 data + cmd) */
-#define MT6639_DMASHDL_HIF_ACK_CNT_TH                  (0x4)
-/* Ring 0/1/2/15 are used */
-#define MT6639_DMASHDL_HIF_GUP_ACT_MAP                 (0x8007)
+/* 5 rings are used (4 data + cmd) */
+#define MT6639_DMASHDL_HIF_ACK_CNT_TH                  (0x5)
+/* Ring 0/1/2/3/15 are used */
+#define MT6639_DMASHDL_HIF_GUP_ACT_MAP                 (0x800F)
 
 #elif defined(_HIF_USB)
 

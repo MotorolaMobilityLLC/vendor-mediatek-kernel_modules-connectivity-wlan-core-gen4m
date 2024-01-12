@@ -186,8 +186,8 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	case MT_DEV_INF_PCIE:
 	case MT_DEV_INF_AXI:
-		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_4;
-		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_4;
+		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL;
+		prChipInfo->u2TxFwDlPort = TX_RING_FWDL;
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = PCIE_HIF_DMASHDL_BASE;
 
@@ -662,13 +662,13 @@ uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
 	 * in asicPcieDmaShdlInit.
 	 */
 	switch (u2Port) {
-	case TX_RING_DATA0_IDX_0:
+	case TX_RING_DATA0:
 		u4GroupIdx = 0;
 		break;
-	case TX_RING_DATA1_IDX_1:
+	case TX_RING_DATA1:
 		u4GroupIdx = 1;
 		break;
-	case TX_RING_DATA2_IDX_2:
+	case TX_RING_DATA_PRIO:
 		u4GroupIdx = 2;
 		break;
 	default:
@@ -841,13 +841,13 @@ void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo)
 		prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
 	DBGLOG(HAL, TRACE, "Weakup from sleep mode\n");
 
-	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_EVT_IDX_1)) {
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_EVT)) {
 		DBGLOG(HAL, TRACE, "Force to read RX event\n");
-		KAL_SET_BIT(RX_RING_EVT_IDX_1, prAdapter->ulNoMoreRfb);
+		KAL_SET_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb);
 	}
-	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_DATA_IDX_0)) {
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, RX_RING_DATA0)) {
 		DBGLOG(HAL, TRACE, "Force to read RX data\n");
-		KAL_SET_BIT(RX_RING_DATA_IDX_0, prAdapter->ulNoMoreRfb);
+		KAL_SET_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb);
 	}
 	/* Write sleep mode magic num to dummy reg */
 	asicSetDummyReg(prGlueInfo);

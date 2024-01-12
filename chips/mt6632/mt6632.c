@@ -162,8 +162,8 @@ void mt6632CapInit(IN struct ADAPTER *prAdapter)
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
 	case MT_DEV_INF_PCIE:
-		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_4;
-		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_4;
+		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL;
+		prChipInfo->u2TxFwDlPort = TX_RING_FWDL;
 		break;
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
