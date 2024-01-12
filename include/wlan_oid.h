@@ -3061,6 +3061,43 @@ struct PARAM_OFLD_INFO {
 };
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
+#define COEX_CTRL_BUF_LEN 460
+#define COEX_INFO_LEN 115
+
+/* CMD_COEX_CTRL & EVENT_COEX_CTRL */
+/************************************************/
+/*  UINT_32 u4SubCmd : Coex Ctrl Sub Command    */
+/*  UINT_8 aucBuffer : Reserve for Sub Command  */
+/*                        Data Structure        */
+/************************************************/
+struct PARAM_COEX_HANDLER {
+	uint32_t u4SubCmd;
+	uint8_t  aucBuffer[COEX_CTRL_BUF_LEN];
+};
+
+#if (CFG_WIFI_ISO_DETECT == 1)
+/* Isolation Structure */
+/************************************************/
+/*  UINT_32 u4IsoPath : BITS[7:0]:WF Path (WF0/WF1)*/
+/*                      BITS[15:8]:BT Path (BT0/BT1)*/
+/*  UINT_32 u4Channel : WF Channel*/
+/*  UINT_32 u4Isolation  : Isolation value     */
+/************************************************/
+struct PARAM_COEX_ISO_DETECT {
+	uint32_t u4IsoPath;
+	uint32_t u4Channel;
+	uint32_t u4Isolation;
+};
+#endif
+
+/* Coex Info Structure */
+/************************************************/
+/*  char   cCoexInfo[];                        */
+/************************************************/
+struct PARAM_COEX_GET_INFO {
+	uint32_t   u4CoexInfo[COEX_INFO_LEN];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4755,4 +4792,11 @@ wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
+#if (CFG_WIFI_ISO_DETECT == 1)
+uint32_t
+wlanoidQueryCoexIso(IN struct ADAPTER *prAdapter,
+		    IN void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen);
+#endif
 #endif /* _WLAN_OID_H */
