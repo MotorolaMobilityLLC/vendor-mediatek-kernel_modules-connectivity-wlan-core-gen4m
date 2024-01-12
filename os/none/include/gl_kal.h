@@ -2197,7 +2197,8 @@ uint32_t kalGetNetDevRxPacket(void *prNet);
 #if CFG_SUPPORT_TDLS
 void kalTdlsOpReq(
 	struct GLUE_INFO *prGlueInfo,
-	struct STA_RECORD *prStaRec,
+	uint8_t ucBssIndex,
+	uint8_t *aucMacAddr,
 	uint16_t eOpMode,
 	uint16_t u2ReasonCode
 	);
