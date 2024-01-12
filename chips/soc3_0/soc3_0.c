@@ -3564,7 +3564,7 @@ uint32_t soc3_0_wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 		sizeof(struct INIT_EVENT_PHY_ACTION_CAL);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 	if (aucBuffer == NULL) {
-		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		DBGLOG(INIT, ERROR, "kalMemAlloc failed\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -3656,7 +3656,7 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 	struct HAL_PHY_ACTION_TLV *prPhyTlv;
 	struct INIT_CMD_PHY_ACTION_CAL *prPhyCal;
 
-	DBGLOG(INIT, INFO, "soc3_0_wlanSendPhyAction Begin\n");
+	DBGLOG(INIT, INFO, "SendPhyAction begin\n");
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -3672,7 +3672,7 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 		u4CmdSize);
 
 	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+		DBGLOG(INIT, ERROR, "cmdBufAllocateCmdInfo failed\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -3726,7 +3726,7 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 						 ucTC) != WLAN_STATUS_SUCCESS) {
 				u4Status = WLAN_STATUS_FAILURE;
 				DBGLOG(INIT, ERROR,
-				       "Fail to get TX resource return within timeout\n");
+				       "nicTxPollingResource failed\n");
 				goto exit;
 			}
 			continue;
@@ -3738,7 +3738,7 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 				 WLAN_STATUS_SUCCESS) {
 			u4Status = WLAN_STATUS_FAILURE;
 			DBGLOG(INIT, ERROR,
-			       "Fail to transmit WIFI PHY command\n");
+			       "nicTxInitCmd failed\n");
 			goto exit;
 		}
 
@@ -3748,9 +3748,9 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 	u4Status = soc3_0_wlanRcvPhyActionRsp(prAdapter, ucCmdSeqNum);
 
 	if (u4Status != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, INFO, "soc3_0_wlanSendPhyAction failed\n");
+		DBGLOG(INIT, WARN, "SendPhyAction failed\n");
 	else
-		DBGLOG(INIT, INFO, "soc3_0_wlanSendPhyAction success!!\n");
+		DBGLOG(INIT, INFO, "SendPhyAction success!!\n");
 
 exit:
 	/* 6. Free CMD Info Packet. */
@@ -3795,7 +3795,6 @@ int soc3_0_wlanPreCalPwrOn(void)
 
 int soc3_0_wlanPreCal(void)
 {
-#if defined(SOC3_0)
 #if defined(_HIF_AXI)
 /* prPlatDev is already created by initWlan()->glRegisterBus()::axi.c */
 	void *pvData = (void *)g_prPlatDev;
@@ -3806,9 +3805,7 @@ int soc3_0_wlanPreCal(void)
 	void *pvData = NULL;
 	void *pvDriverData = (void *)&mt66xx_driver_data_soc3_0;
 #endif
-#endif
 
-	int32_t i4Status = 0;
 	enum ENUM_POWER_ON_INIT_FAIL_REASON {
 					BUS_INIT_FAIL = 0,
 					NET_CREATE_FAIL,
@@ -3822,13 +3819,12 @@ int soc3_0_wlanPreCal(void)
 					FAIL_REASON_NUM
 	} eFailReason;
 	uint32_t i = 0;
-	int32_t i4DevIdx = 0;
 	struct wireless_dev *prWdev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 
-	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::begin\n");
+	DBGLOG(INIT, INFO, "PreCal begin\n");
 
 	eFailReason = FAIL_REASON_NUM;
 
@@ -3855,10 +3851,7 @@ int soc3_0_wlanPreCal(void)
 		prWdev = wlanNetCreate(pvData, pvDriverData);
 
 		if (prWdev == NULL) {
-			DBGLOG(INIT, ERROR,
-				"[Wi-Fi Pre-Cal] No memory for dev and its private\n");
-
-			i4Status = -ENOMEM;
+			DBGLOG(INIT, ERROR, "wlanNetCreate Error\n");
 			eFailReason = NET_CREATE_FAIL;
 			break;
 		}
@@ -3870,16 +3863,14 @@ int soc3_0_wlanPreCal(void)
 	    gPrDev = prGlueInfo->prDevHandler;
 
 	    /* Setup IRQ */
-	    i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
-
-		if (i4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "[Wi-Fi Pre-Cal] Set IRQ error\n");
-
+		if (glBusSetIrq(prWdev->netdev, NULL, prGlueInfo)
+			!= WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "glBusSetIrq error\n");
 			eFailReason = BUS_SET_IRQ_FAIL;
 			break;
 		}
 
-	    prGlueInfo->i4DevIdx = i4DevIdx;
+	    prGlueInfo->i4DevIdx = 0;
 	    prAdapter = prGlueInfo->prAdapter;
 	    prChipInfo = prAdapter->chip_info;
 
@@ -3917,9 +3908,7 @@ int soc3_0_wlanPreCal(void)
 			WLAN_STATUS_SUCCESS) {
 
 			DBGLOG(INIT, ERROR,
-				"[Wi-Fi Pre-Cal] nicAllocateAdapterMemory Error!\n");
-
-			i4Status = -ENOMEM;
+				"nicAllocateAdapterMemory Error!\n");
 			eFailReason = ALLOC_ADAPTER_MEM_FAIL;
 			break;
 		}
@@ -3934,8 +3923,7 @@ int soc3_0_wlanPreCal(void)
 		if (nicInitializeAdapter(prAdapter) != WLAN_STATUS_SUCCESS) {
 
 			DBGLOG(INIT, ERROR,
-				"[Wi-Fi Pre-Cal] nicInitializeAdapter failed!\n");
-
+				"nicInitializeAdapter failed!\n");
 			eFailReason = INIT_ADAPTER_FAIL;
 			break;
 		}
@@ -3952,8 +3940,7 @@ int soc3_0_wlanPreCal(void)
 		if (!halHifSwInfoInit(prAdapter)) {
 
 			DBGLOG(INIT, ERROR,
-				"[Wi-Fi Pre-Cal] halHifSwInfoInit failed!\n");
-
+				"halHifSwInfoInit failed!\n");
 			eFailReason = INIT_HIFINFO_FAIL;
 			break;
 		}
@@ -3970,19 +3957,14 @@ int soc3_0_wlanPreCal(void)
 		prChipInfo = prAdapter->chip_info;
 
 		if (prChipInfo->pwrondownload) {
-
-			DBGLOG_LIMITED(INIT, INFO,
-				"[Wi-Fi Pre-Cal] patch download Start\n");
-
 			if (prChipInfo->pwrondownload(prAdapter,
 					ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH)
 				!= WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, ERROR,
+					"pwrondownload failed!\n");
 				eFailReason = ROM_PATCH_DOWNLOAD_FAIL;
 				break;
 			}
-
-			DBGLOG_LIMITED(INIT, INFO,
-				"[Wi-Fi Pre-Cal] patch download End\n");
 		}
 
 		soc3_0_wlanSendPhyAction(prAdapter,
@@ -4073,8 +4055,12 @@ int soc3_0_wlanPreCal(void)
 
 	wf_pwr_off_consys_mcu();
 
-	DBGLOG(INIT, INFO, "soc3_0_wlanPreCal::end\n");
-	return (int)i4Status;
+	DBGLOG(INIT, INFO, "PreCal end (%d)\n", eFailReason);
+
+	if (eFailReason == POWER_ON_INIT_DONE)
+		return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
+	else
+		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 }
 
 uint8_t *soc3_0_wlanGetCalResult(uint32_t *prCalSize)
