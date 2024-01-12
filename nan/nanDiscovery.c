@@ -236,16 +236,6 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 	kalMemZero(prPublishReq, sizeof(struct NanFWPublishRequest));
 	prPublishReq->publish_id = msg->publish_id;
 
-	DBGLOG(INIT, INFO, "nan: service_name_len = %d\n",
-	       msg->service_name_len);
-	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
-		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	prPublishReq->service_name_len = msg->service_name_len;
-	if (prPublishReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
-		prPublishReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	kalMemCopy(prPublishReq->service_name, msg->service_name,
-		   prPublishReq->service_name_len);
-
 	prPublishReq->service_specific_info_len =
 		msg->service_specific_info_len;
 	if (prPublishReq->service_specific_info_len >
@@ -330,7 +320,7 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct NanFWPublishRequest *prPublishReq = NULL;
-	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN + 1];
+	char aucServiceName[NAN_MAX_SERVICE_NAME_LEN  + 1];
 	struct nan_rdf_sha256_state r_SHA_256_state;
 	struct _NAN_PUBLISH_SPECIFIC_INFO_T *prPubSpecificInfo = NULL;
 
@@ -413,11 +403,6 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	prPublishReq->rssi_threshold_flag = msg->rssi_threshold_flag;
 	prPublishReq->recv_indication_cfg = msg->recv_indication_cfg;
 
-	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN) {
-		DBGLOG(NAN, ERROR, "Service name length error:%d\n",
-				msg->service_name_len);
-		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	}
 
 	/* Bit0 of recv_indication_cfg indicate report terminate event or not */
 	if (prPublishReq->recv_indication_cfg & BIT(0))
@@ -425,15 +410,10 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	else
 		prPubSpecificInfo->ucReportTerminate = TRUE;
 
-	prPublishReq->service_name_len = msg->service_name_len;
-	if (prPublishReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
-		prPublishReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	kalMemCopy(prPublishReq->service_name, msg->service_name,
-		   prPublishReq->service_name_len);
 	kalMemZero(aucServiceName, sizeof(aucServiceName));
 	kalMemCopy(aucServiceName,
 			msg->service_name,
-			NAN_FW_MAX_SERVICE_NAME_LEN);
+			NAN_MAX_SERVICE_NAME_LEN);
 	for (u4Idx = 0; u4Idx < kalStrLen(aucServiceName); u4Idx++) {
 		if ((aucServiceName[u4Idx] >= 'A') &&
 		    (aucServiceName[u4Idx] <= 'Z'))
@@ -704,7 +684,7 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	struct NanFWSubscribeRequest *prSubscribeReq = NULL;
 	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
-	char aucServiceName[NAN_FW_MAX_SERVICE_NAME_LEN + 1];
+	char aucServiceName[NAN_MAX_SERVICE_NAME_LEN  + 1];
 	struct nan_rdf_sha256_state r_SHA_256_state;
 
 	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
@@ -790,21 +770,10 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 
 	prSubscribeReq->period = msg->period;
 
-	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN) {
-		DBGLOG(NAN, ERROR, "Service name length error:%d\n",
-				msg->service_name_len);
-		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	}
-
-	prSubscribeReq->service_name_len = msg->service_name_len;
-	if (prSubscribeReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
-		prSubscribeReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
-	kalMemCopy(prSubscribeReq->service_name, msg->service_name,
-		   prSubscribeReq->service_name_len);
 	kalMemZero(aucServiceName, sizeof(aucServiceName));
 	kalMemCopy(aucServiceName,
 			msg->service_name,
-			NAN_FW_MAX_SERVICE_NAME_LEN);
+			NAN_MAX_SERVICE_NAME_LEN);
 	for (u4Idx = 0; u4Idx < kalStrLen(aucServiceName); u4Idx++)
 		aucServiceName[u4Idx] = tolower(aucServiceName[u4Idx]);
 

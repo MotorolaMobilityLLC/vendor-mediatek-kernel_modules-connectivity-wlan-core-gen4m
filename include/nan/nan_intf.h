@@ -37,8 +37,7 @@
 #define NAN_MAX_SERVICE_SPECIFIC_INFO_LEN 255
 #define NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN 255
 
-#define NAN_FW_MAX_SERVICE_NAME_LEN 64
-#define NAN_FW_MAX_MATCH_FILTER_LEN 64
+#define NAN_FW_MAX_MATCH_FILTER_LEN 255
 #define NAN_FW_MAX_SERVICE_SPECIFIC_INFO_LEN 255
 #define NAN_FW_MAX_SCID_BUF_LEN 128
 #define NAN_FW_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN 255
@@ -47,7 +46,7 @@
 #define NAN_MAX_MESH_DATA_LEN 32
 #define NAN_MAX_INFRA_DATA_LEN 32
 #define NAN_MAX_CLUSTER_ATTRIBUTE_LEN 255
-#define NAN_MAX_SUBSCRIBE_MAX_ADDRESS 42
+#define NAN_MAX_SUBSCRIBE_MAX_ADDRESS 20
 #define NAN_MAX_FAM_CHANNELS 32
 #define NAN_MAX_POSTDISCOVERY_LEN 5
 #define NAN_MAX_FRAME_DATA_LEN 504
@@ -1052,7 +1051,7 @@ struct NanPublishRequest {
 	/* length of service name */
 	uint16_t service_name_len;
 	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
+	uint8_t service_name[NAN_MAX_SERVICE_NAME_LEN];
 
 	/* Field which specifies how the matching indication to host is
 	 * controlled.
@@ -1239,7 +1238,7 @@ struct NanSubscribeRequest {
 	/* length of service name */
 	uint16_t service_name_len;
 	/* UTF-8 encoded string identifying the service */
-	uint8_t service_name[NAN_FW_MAX_SERVICE_NAME_LEN];
+	uint8_t service_name[NAN_MAX_SERVICE_NAME_LEN];
 
 	/* Sequence of values which further specify the published service
 	 * beyond the service name
