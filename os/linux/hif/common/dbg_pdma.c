@@ -561,7 +561,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prHistory = &prTokenInfo->rHistory;
 	prWifiVar = &prAdapter->rWifiVar;
 
-	rTimeout.tv_sec = prWifiVar->ucMsduReportTimeout;
+	rTimeout.tv_sec = prWifiVar->u4MsduReportTimeout;
 	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
 	rLongest.tv_sec = 0;
 	KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) = 0;

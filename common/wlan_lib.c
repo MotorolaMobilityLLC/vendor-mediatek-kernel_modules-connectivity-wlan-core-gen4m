@@ -7853,7 +7853,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucGROFlushTimeout, "GROFlushTimeout", 1);
 	INIT_UINT(prWifiVar->ucGROEnableTput, "GROEnableTput", 6250000);
 #endif
-	INIT_UINT(prWifiVar->ucMsduReportTimeout,
+	INIT_UINT(prWifiVar->u4MsduReportTimeout,
 		"MsduReportTimeout", NIC_MSDU_REPORT_DUMP_TIMEOUT);
 
 #if CFG_SUPPORT_DATA_STALL
