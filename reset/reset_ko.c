@@ -67,13 +67,14 @@
 ***********************************************************************
 */
 #include <linux/kernel.h>
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/wait.h>
 #include <linux/list.h>
 #include <linux/mutex.h>
 #include <linux/kthread.h>
+#include <linux/timer.h>
 
-#include "reset_ko.h"
 #include "reset.h"
 
 
@@ -81,12 +82,26 @@
 *                                 M A C R O S
 ***********************************************************************
 */
-
+#ifndef MSEC_PER_SEC
+#define MSEC_PER_SEC 1000
+#endif
 
 /**********************************************************************
 *                              C O N S T A N T S
 ***********************************************************************
 */
+const char *eventName[RFSM_EVENT_MAX + 1] = {
+	"RFSM_EVENT_TRIGGER_RESET",
+	"RFSM_EVENT_TIMEOUT",
+	"RFSM_EVENT_PROBE_START",
+	"RFSM_EVENT_PROBE_FAIL",
+	"RFSM_EVENT_PROBE_SUCCESS",
+	"RFSM_EVENT_REMOVE",
+	"RFSM_EVENT_L0_RESET_READY",
+	"RFSM_EVENT_L0_RESET_GOING",
+	"RFSM_EVENT_L0_RESET_DONE",
+	"RFSM_EVENT_All"
+};
 
 
 /**********************************************************************
@@ -129,7 +144,7 @@ static void rstHandleEventWork(struct work_struct *work);
 ***********************************************************************
 */
 struct ResetInfo resetInfo = {0};
-
+static char moduleName[RESET_MODULE_TYPE_MAX][RFSM_NAME_MAX_LEN];
 static bool fgL0ResetDone;
 
 /**********************************************************************
@@ -193,8 +208,10 @@ static void pushResetEvent(struct ResetEvent *event)
 {
 	if (!event ||
 	    ((unsigned int)event->module >= RESET_MODULE_TYPE_MAX) ||
-	    ((unsigned int)event->event >= RFSM_EVENT_MAX))
+	    ((unsigned int)event->event >= RFSM_EVENT_MAX)) {
+		MR_Err("%s: argument error\n", __func__);
 		return;
+	}
 
 	mutex_lock(&resetInfo.eventMutex);
 	list_add_tail(&event->node, &resetInfo.eventList);
@@ -216,12 +233,34 @@ static struct ResetEvent *popResetEvent(void)
 	return event;
 }
 
+static void removeResetEvent(enum ModuleType module,
+			    enum ResetFsmEvent event)
+{
+	struct ResetEvent *cur, *next;
+
+	mutex_lock(&resetInfo.eventMutex);
+	if (list_empty(&resetInfo.eventList)) {
+		mutex_unlock(&resetInfo.eventMutex);
+		return;
+	}
+	list_for_each_entry_safe(cur, next, &resetInfo.eventList, node) {
+		if ((cur->module == module) &&
+		    ((cur->event == event) || (event == RFSM_EVENT_All))) {
+			list_del(&cur->node);
+			freeResetEvent(cur);
+		}
+	}
+	mutex_unlock(&resetInfo.eventMutex);
+}
+
 static int resetko_thread_main(void *data)
 {
 	struct FsmEntity *fsm;
 	struct ResetEvent *resetEvent;
 	enum ModuleType module, begin, end;
 	int ret = 0;
+
+	MR_Info("%s: start\n", __func__);
 
 	while (true) {
 		do {
@@ -233,6 +272,7 @@ static int resetko_thread_main(void *data)
 			mutex_lock(&resetInfo.moduleMutex);
 			/* loop for all related module */
 			if ((resetEvent->event == RFSM_EVENT_TRIGGER_RESET) ||
+			    (resetEvent->event == RFSM_EVENT_L0_RESET_GOING) ||
 			    (resetEvent->event == RFSM_EVENT_L0_RESET_DONE)) {
 				begin = 0;
 				end = RESET_MODULE_TYPE_MAX - 1;
@@ -246,13 +286,20 @@ static int resetko_thread_main(void *data)
 					if (resetEvent->event ==
 					    RFSM_EVENT_L0_RESET_READY)
 						fsm->fgReadyForReset = ~false;
+					MR_Info("[%s] in [%s] state rcv [%s]\n",
+						fsm->name,
+						fsm->fsmState->name,
+						eventName[resetEvent->event]);
 					resetFsmHandlevent(fsm,
 							   resetEvent->event);
 				}
 			}
 			mutex_unlock(&resetInfo.moduleMutex);
-		};
+			freeResetEvent(resetEvent);
+		}
 	}
+
+	MR_Info("%s: stop\n", __func__);
 
 	return 0;
 }
@@ -260,12 +307,11 @@ static int resetko_thread_main(void *data)
 void resetkoNotifyEvent(struct FsmEntity *fsm, enum ModuleNotifyEvent event)
 {
 	if (!fsm) {
-		MR_Info("%s: fsm is NULL\n", __func__);
+		MR_Err("%s: fsm is NULL\n", __func__);
 		return;
 	}
 	if (fsm->notifyFunc != NULL) {
-		MR_Info("%s: notify event %d to %s module\n",
-			__func__, event, fsm->name);
+		MR_Info("[%s] %s %d\n", fsm->name, __func__, event);
 		fsm->notifyFunc((unsigned int)event, NULL);
 	}
 }
@@ -287,15 +333,14 @@ bool isAllModuleReadyForReset(void)
 
 	/* mutex is hold in function resetko_thread_main */
 	list_for_each_entry_safe(fsm, next_fsm, &resetInfo.moduleList, node) {
-		MR_Info("%s: module %s is %s\n", __func__, fsm->name,
+		MR_Info("[%s] %s: %s\n", fsm->name, __func__,
 			fsm->fgReadyForReset ? "ready" : "not ready");
 		if (!fsm->fgReadyForReset)
 			ret = false;
 	}
 
-	/* set flag for L0ResetDone when all module is ready for reset */
-	if (ret)
-		fgL0ResetDone = false;
+	/* clear L0ResetDone flag when check all module is ready for reset */
+	fgL0ResetDone = false;
 
 	return ret;
 }
@@ -305,26 +350,25 @@ void callResetFuncByResetApiType(struct FsmEntity *fsm)
 	struct FsmEntity *cur_fsm, *next_fsm;
 	unsigned int i;
 
-	if (fgL0ResetDone)
+	if (fgL0ResetDone) {
+		MR_Info("[%s] %s L0ResetDone\n", fsm->name, __func__);
 		return;
+	}
 
 	for (i = TRIGGER_RESET_TYPE_UNSUPPORT; i < TRIGGER_RESET_API_TYPE_MAX;
 	     i++) {
-		MR_Info("%s: try to find resetFunc by resetApiType %d\n",
-			__func__, i);
 		list_for_each_entry_safe(cur_fsm, next_fsm,
 					 &resetInfo.moduleList, node) {
 			if (cur_fsm->resetApiType ==
 			    TRIGGER_RESET_TYPE_UNSUPPORT){
-				MR_Err("%s: %s module don't support reset\n",
-					__func__, cur_fsm->name);
+				MR_Err("[%s] %s module don't support reset\n",
+					cur_fsm->name, __func__);
 				fgL0ResetDone = true;
 				return;
 			}
 			if ((cur_fsm->resetApiType == i) &&
 			    (cur_fsm->resetFunc != NULL)) {
-				MR_Info("%s: call resetFunc in %s module\n",
-					__func__, cur_fsm->name);
+				MR_Info("[%s] %s\n", cur_fsm->name, __func__);
 				cur_fsm->resetFunc();
 				break;
 			}
@@ -336,10 +380,58 @@ void callResetFuncByResetApiType(struct FsmEntity *fsm)
 	send_reset_event(fsm->eModuleType, RFSM_EVENT_L0_RESET_DONE);
 }
 
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+static void resetkoTimeoutHandler(struct timer_list *timer)
+#else
+static void resetkoTimeoutHandler(unsigned long arg)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct FsmEntity *fsm = from_timer(fsm, timer, resetTimer);
+#else
+	struct FsmEntity *fsm = (struct FsmEntity *)arg;
+#endif
+	if (!fsm) {
+		MR_Err("%s: fsm is null\n", __func__);
+		return;
+	}
+
+	MR_Info("[%s] %s\n", fsm->name, __func__);
+	send_reset_event(fsm->eModuleType, RFSM_EVENT_TIMEOUT);
+}
+
+void resetkoStartTimer(struct FsmEntity *fsm, unsigned int ms)
+{
+	if (!fsm) {
+		MR_Err("%s: fsm is null\n", __func__);
+		return;
+	}
+	MR_Info("[%s] %s %dms\n", fsm->name, __func__, ms);
+	if (ms == 0)
+		return;
+
+	mod_timer(&fsm->resetTimer, jiffies + ms * HZ / MSEC_PER_SEC);
+}
+
+void resetkoCancleTimer(struct FsmEntity *fsm)
+{
+	if (!fsm) {
+		MR_Err("%s: fsm is null\n", __func__);
+		return;
+	}
+	MR_Info("[%s] %s\n", fsm->name, __func__);
+
+	del_timer(&fsm->resetTimer);
+	removeResetEvent(fsm->eModuleType, RFSM_EVENT_TIMEOUT);
+}
+
 enum ReturnStatus send_reset_event(enum ModuleType module,
 				 enum ResetFsmEvent event)
 {
 	struct ResetEvent *resetEvent;
+
+	dump_stack();
 
 	if (((unsigned int)module >= RESET_MODULE_TYPE_MAX) ||
 	    ((unsigned int)event >= RFSM_EVENT_MAX)) {
@@ -353,7 +445,7 @@ enum ReturnStatus send_reset_event(enum ModuleType module,
 		return RESET_RETURN_STATUS_FAIL;
 	}
 
-	MR_Info("%s: module %d send event %d\n", __func__, module, event);
+	MR_Info("[%s] %s %s\n", moduleName[module], __func__, eventName[event]);
 	resetEvent->module = module;
 	resetEvent->event = event;
 	pushResetEvent(resetEvent);
@@ -369,6 +461,8 @@ enum ReturnStatus send_msg_to_module(enum ModuleType srcModule,
 				    void *msg)
 {
 	struct FsmEntity *srcfsm, *dstfsm;
+
+	dump_stack();
 
 	if (!msg) {
 		MR_Err("%s: %d -> %d, msg is NULL\n",
@@ -416,6 +510,8 @@ enum ReturnStatus resetko_register_module(enum ModuleType module,
 {
 	struct FsmEntity *fsm;
 
+	dump_stack();
+
 	if (!name) {
 		MR_Err("%s: insmod module(%d) with no name\n",
 			__func__, module);
@@ -436,8 +532,20 @@ enum ReturnStatus resetko_register_module(enum ModuleType module,
 			__func__, module);
 		return RESET_RETURN_STATUS_FAIL;
 	}
+
+#if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
+	timer_setup(&fsm->resetTimer, resetkoTimeoutHandler, 0);
+#else
+	init_timer(&fsm->resetTimer);
+	fsm->resetTimer.function = resetkoTimeoutHandler;
+	fsm->resetTimer.data = (unsigned long)fsm;
+#endif
+	memcpy(&moduleName[module][0], fsm->name, RFSM_NAME_MAX_LEN);
 	addResetFsm(fsm);
 	mutex_unlock(&resetInfo.moduleMutex);
+
+	MR_Info("[%s] %s, module type %d, reset type %d\n",
+			name, __func__, module, resetApiType);
 
 	return RESET_RETURN_STATUS_SUCCESS;
 }
@@ -448,6 +556,8 @@ enum ReturnStatus resetko_unregister_module(enum ModuleType module)
 {
 	struct FsmEntity *fsm;
 
+	dump_stack();
+
 	mutex_lock(&resetInfo.moduleMutex);
 	fsm = findResetFsm(module);
 	if (!fsm) {
@@ -456,6 +566,10 @@ enum ReturnStatus resetko_unregister_module(enum ModuleType module)
 			__func__, module);
 		return RESET_RETURN_STATUS_SUCCESS;
 	}
+	resetkoCancleTimer(fsm);
+	removeResetEvent(module, RFSM_EVENT_All);
+
+	MR_Info("[%s] %s, module type %d\n", fsm->name, __func__, module);
 	removeResetFsm(module);
 	mutex_unlock(&resetInfo.moduleMutex);
 
@@ -466,7 +580,7 @@ EXPORT_SYMBOL(resetko_unregister_module);
 
 int resetKoInit(void)
 {
-	MR_Err("%s\n", __func__);
+	MR_Info("%s\n", __func__);
 
 	if (resetInfo.fgInited != 0) {
 		MR_Err("%s: reset ko already inited\n", __func__);
@@ -481,7 +595,7 @@ int resetKoInit(void)
 	INIT_LIST_HEAD(&resetInfo.eventList);
 	init_waitqueue_head(&resetInfo.resetko_waitq);
 	resetInfo.resetko_thread = kthread_run(resetko_thread_main,
-						NULL, "resetko_thread");
+					       NULL, "resetko_thread");
 
 	return 0;
 }
@@ -489,6 +603,11 @@ int resetKoInit(void)
 
 void resetKoExit(void)
 {
+	int i;
+
+	for (i = 0; i < RESET_MODULE_TYPE_MAX; i++)
+		resetko_unregister_module((enum ModuleType)i);
+
 	resetInfo.fgInited = 0;
-	MR_Dbg("%s\n", __func__);
+	MR_Info("%s\n", __func__);
 }

@@ -68,7 +68,7 @@
 */
 #include <linux/string.h>
 #include <linux/slab.h>
-#include "reset_fsm.h"
+#include "reset.h"
 
 /**********************************************************************
 *                                 M A C R O S
@@ -159,7 +159,7 @@ void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event)
 	int i;
 
 	if ((fsm == NULL) || (fsm->name == NULL) || (fsm->fsmState == NULL)) {
-		RFSM_Err("fsm args error\n");
+		MR_Err("fsm args error\n");
 		return;
 	}
 
@@ -167,11 +167,9 @@ void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event)
 	if ((currentFsmState->name == NULL) ||
 	    (currentFsmState->eventActionList == 0) ||
 	    (currentFsmState->eventActionList == NULL)) {
-		RFSM_Info("[%s] RFSM ignore event [%d]\n", fsm->name, event);
+		MR_Err("[%s] RFSM ignore event [%d]\n", fsm->name, event);
 		return;
 	}
-	RFSM_Info("[%s] RFSM in [%s] state handl event [%d]\n",
-		fsm->name, currentFsmState->name, event);
 
 	for (i = 0; i < currentFsmState->eventActionListCount; i++) {
 		currentEventAction = &currentFsmState->eventActionList[i];
@@ -189,7 +187,7 @@ void RFSM_handle_event(struct FsmEntity *fsm, unsigned int event)
 				if (currentFsmState->leave_func != NULL)
 					currentFsmState->leave_func(fsm,
 								nextFsmState);
-				RFSM_Info("[%s] RFSM: [%s] -> [%s]",
+				MR_Info("[%s] state: [%s] -> [%s]",
 					fsm->name,
 					currentFsmState->name,
 					nextFsmState->name);

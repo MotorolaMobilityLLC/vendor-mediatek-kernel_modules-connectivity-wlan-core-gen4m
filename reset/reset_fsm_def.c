@@ -67,6 +67,7 @@
 ***********************************************************************
 */
 #include "reset_fsm_def.h"
+#include "reset.h"
 
 /**********************************************************************
 *                                 M A C R O S
@@ -93,9 +94,12 @@
 ***********************************************************************
 */
 static void enter_INIT(struct FsmEntity *fsm, struct FsmState *prev);
+
 static void enter_L0_PRE_RESET(struct FsmEntity *fsm, struct FsmState *prev);
-static void enter_L0_RESET_GOING(struct FsmEntity *fsm, struct FsmState *prev);
 static bool gaurd_L0_PRE_RESET_L0_RESET_READY(struct FsmEntity *fsm);
+static void leave_L0_PRE_RESET(struct FsmEntity *fsm, struct FsmState *next);
+
+static void enter_L0_RESET_GOING(struct FsmEntity *fsm, struct FsmState *prev);
 
 
 /**********************************************************************
@@ -111,7 +115,6 @@ static bool gaurd_L0_PRE_RESET_L0_RESET_READY(struct FsmEntity *fsm);
 static struct FsmState RFSM_INIT;
 static struct FsmState RFSM_WAIT_PROBE;
 static struct FsmState RFSM_PROBED;
-static struct FsmState RFSM_L05_RESET_GOING;
 static struct FsmState RFSM_L0_PRE_RESET;
 static struct FsmState RFSM_L0_RESET_GOING;
 
@@ -121,8 +124,7 @@ static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_INIT[] = {
 };
 
 static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_WAIT_PROBE[] = {
-	{RFSM_EVENT_TIMEOUT, NULL, NULL, &RFSM_L0_PRE_RESET},
-	{RFSM_EVENT_PROBE_FAIL, NULL, NULL, &RFSM_L0_PRE_RESET},
+	{RFSM_EVENT_PROBE_FAIL, NULL, NULL, &RFSM_INIT},
 	{RFSM_EVENT_PROBE_SUCCESS, NULL, NULL, &RFSM_PROBED},
 	{RFSM_EVENT_TRIGGER_RESET, NULL, NULL, &RFSM_L0_PRE_RESET},
 	{RFSM_EVENT_L0_RESET_DONE, NULL, NULL, &RFSM_INIT}
@@ -130,14 +132,6 @@ static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_WAIT_PROBE[] = {
 
 static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_PROBED[] = {
 	{RFSM_EVENT_REMOVE, NULL, NULL, &RFSM_INIT},
-	{RFSM_EVENT_L05_START, NULL, NULL, &RFSM_L05_RESET_GOING},
-	{RFSM_EVENT_TRIGGER_RESET, NULL, NULL, &RFSM_L0_PRE_RESET},
-	{RFSM_EVENT_L0_RESET_DONE, NULL, NULL, &RFSM_INIT}
-};
-
-static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_L05_RESET_GOING[] = {
-	{RFSM_EVENT_L05_FAIL, NULL, NULL, &RFSM_L0_PRE_RESET},
-	{RFSM_EVENT_L05_SUCCESS, NULL, NULL, &RFSM_PROBED},
 	{RFSM_EVENT_TRIGGER_RESET, NULL, NULL, &RFSM_L0_PRE_RESET},
 	{RFSM_EVENT_L0_RESET_DONE, NULL, NULL, &RFSM_INIT}
 };
@@ -146,6 +140,8 @@ static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_L0_PRE_RESET[] = {
 	{RFSM_EVENT_TIMEOUT, NULL, NULL, &RFSM_L0_RESET_GOING},
 	{RFSM_EVENT_L0_RESET_READY, gaurd_L0_PRE_RESET_L0_RESET_READY, NULL,
 		&RFSM_L0_RESET_GOING},
+	{RFSM_EVENT_L0_RESET_GOING, NULL, NULL, &RFSM_L0_RESET_GOING},
+	{RFSM_EVENT_TIMEOUT, NULL, NULL, &RFSM_L0_RESET_GOING},
 	{RFSM_EVENT_L0_RESET_DONE, NULL, NULL, &RFSM_INIT}
 };
 
@@ -155,7 +151,7 @@ static struct ResetFsmEventAction RFSM_EVENT_ACTION_LIST_L0_RESET_GOING[] = {
 
 static struct FsmState RFSM_INIT = {
 	.name = "INIT",
-	.enter_func = NULL,
+	.enter_func = enter_INIT,
 	.leave_func = NULL,
 	.eventActionListCount = ARRAY_SIZE(RFSM_EVENT_ACTION_LIST_INIT),
 	.eventActionList = RFSM_EVENT_ACTION_LIST_INIT
@@ -174,18 +170,10 @@ static struct FsmState RFSM_PROBED = {
 	.eventActionListCount = ARRAY_SIZE(RFSM_EVENT_ACTION_LIST_PROBED),
 	.eventActionList = RFSM_EVENT_ACTION_LIST_PROBED
 };
-static struct FsmState RFSM_L05_RESET_GOING = {
-	.name = "L05_RESET_GOING",
-	.enter_func = NULL,
-	.leave_func = NULL,
-	.eventActionListCount =
-		ARRAY_SIZE(RFSM_EVENT_ACTION_LIST_L05_RESET_GOING),
-	.eventActionList = RFSM_EVENT_ACTION_LIST_L05_RESET_GOING
-};
 static struct FsmState RFSM_L0_PRE_RESET = {
 	.name = "L0_PRE_RESET",
 	.enter_func = enter_L0_PRE_RESET,
-	.leave_func = NULL,
+	.leave_func = leave_L0_PRE_RESET,
 	.eventActionListCount =
 		ARRAY_SIZE(RFSM_EVENT_ACTION_LIST_L0_PRE_RESET),
 	.eventActionList = RFSM_EVENT_ACTION_LIST_L0_PRE_RESET
@@ -205,33 +193,41 @@ static struct FsmState RFSM_L0_RESET_GOING = {
 **********************************************************************/
 static void enter_INIT(struct FsmEntity *fsm, struct FsmState *prev)
 {
-	RFSM_Info("module [%s]: %s\n", fsm->name, __func__);
+	MR_Info("[%s] %s\n", fsm->name, __func__);
 	clearAllModuleReadyForReset();
+
 	if (prev == &RFSM_L0_RESET_GOING)
 		resetkoNotifyEvent(fsm, MODULE_NOTIFY_RESET_DONE);
 }
 
 static void enter_L0_PRE_RESET(struct FsmEntity *fsm, struct FsmState *prev)
 {
-	RFSM_Info("module [%s]: %s\n", fsm->name, __func__);
+	MR_Info("[%s] %s\n", fsm->name, __func__);
+	resetkoStartTimer(fsm, WAIT_ALL_MODULE_READY_TIMEOUT);
 	resetkoNotifyEvent(fsm, MODULE_NOTIFY_PRE_RESET);
-}
-
-static void enter_L0_RESET_GOING(struct FsmEntity *fsm, struct FsmState *prev)
-{
-	RFSM_Info("module [%s]: %s\n", fsm->name, __func__);
-	resetkoNotifyEvent(fsm, MODULE_NOTIFY_RESET_GOING);
-	callResetFuncByResetApiType(fsm);
 }
 
 static bool gaurd_L0_PRE_RESET_L0_RESET_READY(struct FsmEntity *fsm)
 {
 	bool ret = isAllModuleReadyForReset();
 
-	RFSM_Info("module [%s]: %s %s\n",
-		  fsm->name, __func__, ret ? "pass" : "fail");
+	MR_Info("[%s] %s %s\n", fsm->name, __func__, ret ? "pass" : "fail");
 
 	return ret;
+}
+
+static void leave_L0_PRE_RESET(struct FsmEntity *fsm, struct FsmState *next)
+{
+	MR_Info("[%s] %s\n", fsm->name, __func__);
+	resetkoCancleTimer(fsm);
+}
+
+static void enter_L0_RESET_GOING(struct FsmEntity *fsm, struct FsmState *prev)
+{
+	MR_Info("[%s] %s\n", fsm->name, __func__);
+	send_reset_event(fsm->eModuleType, RFSM_EVENT_L0_RESET_GOING);
+	resetkoNotifyEvent(fsm, MODULE_NOTIFY_RESET_GOING);
+	callResetFuncByResetApiType(fsm);
 }
 
 struct FsmEntity *allocResetFsm(char *name,

@@ -79,6 +79,7 @@
 #include <linux/mmc/sdio_ids.h>
 #include <linux/errno.h>
 #include "precomp.h"
+#include "reset.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -170,7 +171,7 @@ void resetSetState(enum ENUM_RST_STATE_TYPE_T eNextstate)
 		"RST_STATE_DUMP",
 	};
 
-	MR_Dbg("%s: current_state[%s], next_state[%s]\n", __func__,
+	MR_Info("%s: current_state[%s], next_state[%s]\n", __func__,
 		apcState[g_prResetInfo.eResetState],
 		apcState[eNextstate]);
 
@@ -264,7 +265,7 @@ void resetSdioTogglePin(void)
 
 static void resetTogglePin(void)
 {
-	MR_Dbg("%s: toggle reset pin\n", __func__);
+	MR_Info("%s: toggle reset pin\n", __func__);
 
 	resetSetState(RST_STATE_GOING);
 
@@ -310,7 +311,7 @@ enum ENUM_RST_MODULE_RET_TYPE_T rstNotifyWholeChipRstStatus(
 	};
 
 
-	MR_Dbg("%s: module[%s], status[%s]\n", __func__,
+	MR_Info("%s: module[%s], status[%s]\n", __func__,
 		apcModule[module], apcStatus[status]);
 
 #if defined(_HIF_SDIO)
@@ -324,7 +325,7 @@ enum ENUM_RST_MODULE_RET_TYPE_T rstNotifyWholeChipRstStatus(
 			goto TOGGLE_PIN;
 		} else if (fgBtProbed == FALSE
 			|| fgWiFiProbed == FALSE) {
-			MR_Dbg("WiFi or BT not probe start\n");
+			MR_Info("WiFi or BT not probe start\n");
 		}
 		break;
 
@@ -429,7 +430,7 @@ EXPORT_SYMBOL(rstNotifyWholeChipRstStatus);
 
 static int __init resetInit(void)
 {
-	MR_Err("%s\n", __func__);
+	MR_Info("%s\n", __func__);
 	resetKoInit();
 	mutex_init(&g_prResetInfo.rResetMutex);
 	g_prResetInfo.eResetState = RST_STATE_UNKNOWN;
@@ -439,7 +440,7 @@ static int __init resetInit(void)
 
 static void __exit resetExit(void)
 {
-	MR_Dbg("%s\n", __func__);
+	MR_Info("%s\n", __func__);
 	resetKoExit();
 }
 

@@ -113,10 +113,6 @@ enum ENUM_RST_MODULE_RET_TYPE_T {
 *                                 M A C R O S
 ********************************************************************************
 */
-#define MR_Dbg(_Fmt...)  pr_info("[reset] " _Fmt)
-#define MR_Info(_Fmt...)  pr_info("[reset] " _Fmt)
-#define MR_Err(_Fmt...) pr_info("[reset] " _Fmt)
-
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S

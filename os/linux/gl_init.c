@@ -6184,7 +6184,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	if (fgIsResetHangState == SER_L0_HANG_RST_TRGING) {
 		DBGLOG(INIT, STATE, "[SER][L0] SET hang!\n");
 			fgIsResetHangState = SER_L0_HANG_RST_HANG;
-			fgIsResetting = TRUE;
+			glResetUpdateFlag(TRUE);
 	}
 	DBGLOG(INIT, STATE, "[SER][L0] PASS!!\n");
 #endif
@@ -6684,6 +6684,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOnStart();
 #endif
+#if CFG_CHIP_RESET_KO_SUPPORT
+	send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_PROBE_START);
+#endif
 
 #if CFG_CHIP_RESET_SUPPORT
 	if (fgSimplifyResetFlow) {
@@ -6691,6 +6694,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_MTK_MDDP_SUPPORT
 		if (i4Status == WLAN_STATUS_SUCCESS)
 			mddpNotifyWifiOnEnd();
+#endif
+#if CFG_CHIP_RESET_KO_SUPPORT
+		if (i4Status == WLAN_STATUS_SUCCESS)
+			send_reset_event(RESET_MODULE_TYPE_WIFI,
+					 RFSM_EVENT_PROBE_SUCCESS);
+		else
+			send_reset_event(RESET_MODULE_TYPE_WIFI,
+					 RFSM_EVENT_PROBE_FAIL);
 #endif
 		return i4Status;
 	}
@@ -6705,11 +6716,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		 *      initialized by glBusInit().
 		 * _HIF_SDIO: bus driver handle
 		 */
-#ifdef CFG_CHIP_RESET_KO_SUPPORT
-		rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
-			RST_MODULE_STATE_PROBE_START, NULL);
-#endif
-
 		DBGLOG(INIT, INFO, "enter wlanProbe\n");
 
 		bRet = glBusInit(pvData);
@@ -6938,6 +6944,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 #if CFG_MTK_MDDP_SUPPORT
 		mddpNotifyWifiOnEnd();
 #endif
+#if CFG_CHIP_RESET_KO_SUPPORT
+		send_reset_event(RESET_MODULE_TYPE_WIFI,
+				 RFSM_EVENT_PROBE_SUCCESS);
+#endif
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);
@@ -6998,12 +7008,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		default:
 			break;
 		}
-	}
-
-#ifdef CFG_CHIP_RESET_KO_SUPPORT
-	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
-		RST_MODULE_STATE_PROBE_DONE, NULL);
+#if CFG_CHIP_RESET_KO_SUPPORT
+		send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_PROBE_FAIL);
 #endif
+	}
 
 	return i4Status;
 }				/* end of wlanProbe() */
@@ -7083,6 +7091,10 @@ static void wlanRemove(void)
 #if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyWifiOffEnd();
 #endif
+#if CFG_CHIP_RESET_KO_SUPPORT
+			send_reset_event(RESET_MODULE_TYPE_WIFI,
+					 RFSM_EVENT_REMOVE);
+#endif
 			return;
 		}
 	}
@@ -7092,7 +7104,7 @@ static void wlanRemove(void)
 	ASSERT(u4WlanDevNum <= CFG_MAX_WLAN_DEVICES);
 	if (u4WlanDevNum == 0) {
 		DBGLOG(INIT, ERROR, "u4WlanDevNum = 0\n");
-		return;
+		goto WLAN_REMOVE_RETURN;
 	}
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	register_set_p2p_mode_handler(NULL);
@@ -7106,7 +7118,7 @@ static void wlanRemove(void)
 	ASSERT(prDev);
 	if (prDev == NULL) {
 		DBGLOG(INIT, ERROR, "prDev is NULL\n");
-		return;
+		goto WLAN_REMOVE_RETURN;
 	}
 
 #if CFG_SUPPORT_PERSIST_NETDEV
@@ -7121,7 +7133,7 @@ static void wlanRemove(void)
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, INFO, "prGlueInfo is NULL\n");
 		wlanFreeNetDev();
-		return;
+		goto WLAN_REMOVE_RETURN;
 	}
 	prAdapter = prGlueInfo->prAdapter;
 #if CFG_SUPPORT_THERMAL_QUERY
@@ -7339,10 +7351,13 @@ static void wlanRemove(void)
 	}
 #endif
 
+WLAN_REMOVE_RETURN:
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUpdateFlag(FALSE);
+#if CFG_CHIP_RESET_KO_SUPPORT
+	send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_REMOVE);
 #endif
-
+#endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOffEnd();
 #endif
@@ -7717,10 +7732,15 @@ static int initWlan(void)
 
 	DBGLOG(INIT, INFO, "initWlan\n");
 
-#ifdef CFG_CHIP_RESET_KO_SUPPORT
-	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
-		RST_MODULE_STATE_KO_INSMOD, NULL);
-#endif
+#if (CFG_CHIP_RESET_SUPPORT)
+#if CFG_CHIP_RESET_KO_SUPPORT
+	resetko_register_module(RESET_MODULE_TYPE_WIFI,
+				"wifi",
+				TRIGGER_RESET_TYPE_GPIO_API,
+				resetkoReset,
+				resetkoNotifyFunc);
+#endif  /* CFG_CHIP_RESET_KO_SUPPORT */
+#endif  /* CFG_CHIP_RESET_SUPPORT */
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 	if (kalStrLen(gprifnamesta) > CUSTOM_IFNAMESIZ ||
@@ -7728,7 +7748,8 @@ static int initWlan(void)
 	    kalStrLen(gprifnameap) > CUSTOM_IFNAMESIZ) {
 		DBGLOG(INIT, ERROR, "custom infname len illegal > %d\n",
 		       CUSTOM_IFNAMESIZ);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto INIT_WLAN_RETURN;
 	}
 
 #endif /*  CFG_DRIVER_INF_NAME_CHANGE */
@@ -7752,8 +7773,10 @@ static int initWlan(void)
 #endif
 
 	wlanCreateWirelessDevice();
-	if (gprWdev[0] == NULL)
-		return -ENOMEM;
+	if (gprWdev[0] == NULL) {
+		ret = -ENOMEM;
+		goto INIT_WLAN_RETURN;
+	}
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 #if CFG_ENABLE_WIFI_DIRECT
@@ -7801,7 +7824,7 @@ static int initWlan(void)
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO) {
 		kalUninitIOBuffer();
-		return ret;
+		goto INIT_WLAN_RETURN;
 	}
 
 #if CFG_MTK_ANDROID_WMT
@@ -7833,7 +7856,7 @@ static int initWlan(void)
 	ret = IcsInit();
 	if (ret < 0) {
 		DBGLOG(INIT, INFO, "ics log node init failed!");
-		return ret;
+		goto INIT_WLAN_RETURN;
 	} else {
 		wifi_ics_event_func_register(ics_log_event_notification);
 	}
@@ -7848,11 +7871,20 @@ static int initWlan(void)
 	nl_sk = netlink_kernel_create(&init_net, NETLINK_OSS_KERNEL, NULL);
 	if (!nl_sk) {
 		DBGLOG(INIT, ERROR, "netlink create failed!\n");
-		return -EBUSY;
+		ret = -EBUSY;
+		goto INIT_WLAN_RETURN;
 	}
 #endif /* CFG_AP_80211KVR_INTERFACE */
 
 	DBGLOG(INIT, INFO, "initWlan::End\n");
+
+INIT_WLAN_RETURN:
+#if CFG_CHIP_RESET_SUPPORT
+#if CFG_CHIP_RESET_KO_SUPPORT
+	if (ret)
+		resetko_unregister_module(RESET_MODULE_TYPE_WIFI);
+#endif  /* CFG_CHIP_RESET_KO_SUPPORT */
+#endif  /* CFG_CHIP_RESET_SUPPORT */
 
 	return ret;
 }				/* end of initWlan() */
@@ -7895,6 +7927,9 @@ static void exitWlan(void)
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
+#if CFG_CHIP_RESET_KO_SUPPORT
+	resetko_unregister_module(RESET_MODULE_TYPE_WIFI);
+#endif
 	glResetUninit();
 #endif
 
@@ -7942,11 +7977,6 @@ static void exitWlan(void)
 
 	DBGLOG(INIT, INFO, "Free wlan device..\n");
 	wlanFreeNetDev();
-#endif
-
-#ifdef CFG_CHIP_RESET_KO_SUPPORT
-	rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
-		RST_MODULE_STATE_KO_RMMOD, NULL);
 #endif
 
 #if CFG_DC_USB_WOW_CALLBACK

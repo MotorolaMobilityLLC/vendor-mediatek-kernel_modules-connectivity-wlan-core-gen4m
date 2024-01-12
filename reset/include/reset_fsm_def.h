@@ -73,6 +73,13 @@
 *                                 M A C R O S
 ***********************************************************************
 */
+#ifndef MSEC_PER_SEC
+#define MSEC_PER_SEC 1000
+#endif
+
+#define INIT_TO_START_PROBE_TIMEOUT	(10 * MSEC_PER_SEC)
+#define WAIT_PROBE_TIMEOUT		(5 * MSEC_PER_SEC)
+#define WAIT_ALL_MODULE_READY_TIMEOUT	(5 * MSEC_PER_SEC)
 
 /**********************************************************************
 *                              C O N S T A N T S
@@ -91,14 +98,12 @@ enum ResetFsmEvent {
 	RFSM_EVENT_PROBE_FAIL,
 	RFSM_EVENT_PROBE_SUCCESS,
 	RFSM_EVENT_REMOVE,
-	RFSM_EVENT_L05_START,
-	RFSM_EVENT_L05_FAIL,
-	RFSM_EVENT_L05_SUCCESS,
 	RFSM_EVENT_L0_RESET_READY,
 	RFSM_EVENT_L0_RESET_GOING,
 	RFSM_EVENT_L0_RESET_DONE,
 
-	RFSM_EVENT_MAX
+	RFSM_EVENT_All,
+	RFSM_EVENT_MAX = RFSM_EVENT_All
 };
 
 enum ModuleNotifyEvent {
@@ -130,6 +135,10 @@ void clearAllModuleReadyForReset(void);
 bool isAllModuleReadyForReset(void);
 
 void callResetFuncByResetApiType(struct FsmEntity *fsm);
+
+void resetkoStartTimer(struct FsmEntity *fsm, unsigned int ms);
+void resetkoCancleTimer(struct FsmEntity *fsm);
+
 /**********************************************************************
 *                            P U B L I C   D A T A
 ***********************************************************************

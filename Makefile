@@ -1204,6 +1204,8 @@ endif
 
 ifeq ($(CONFIG_CHIP_RESET_SUPPORT), n)
     ccflags-y += -DCFG_CHIP_RESET_SUPPORT=0
+else
+    ccflags-y += -DCFG_CHIP_RESET_SUPPORT=1
 endif
 
 ifeq ($(CONFIG_CHIP_RESET_USE_DTS_GPIO_NUM), y)
@@ -1833,8 +1835,8 @@ endif
 #
 # mtreset
 #
-ifeq ($(CONFIG_GKI_SUPPORT), y)
-ccflags-y += -DCFG_CHIP_RESET_KO_SUPPORT
+ifeq ($(CONFIG_CHIP_RESET_KO_SUPPORT), y)
+ccflags-y += -DCFG_CHIP_RESET_KO_SUPPORT=1
 ccflags-y += -I$(src)/reset/include
 MODULE_NAME_RESET = $(MODULE_NAME)_reset
 RESET_OBJS += reset/reset.o
@@ -1843,6 +1845,8 @@ RESET_OBJS += reset/reset_fsm.o
 RESET_OBJS += reset/reset_fsm_def.o
 $(MODULE_NAME_RESET)-objs += $(RESET_OBJS)
 obj-m += $(MODULE_NAME_RESET).o
+else
+ccflags-y += -DCFG_CHIP_RESET_KO_SUPPORT=0
 endif
 
 #
