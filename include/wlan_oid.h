@@ -371,6 +371,8 @@ struct PARAM_CONNECT {
 	uint8_t *pucBssidHint;
 	uint32_t u4CenterFreq;
 	uint8_t ucBssIdx;
+	uint8_t *pucIEs;
+	uint32_t u4IesLen;
 };
 
 struct PARAM_EXTERNAL_AUTH {
