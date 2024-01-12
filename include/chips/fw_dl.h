@@ -71,6 +71,7 @@
 
 #define DOWNLOAD_CONFIG_ENCRYPTION_MODE     BIT(0)
 #define DOWNLOAD_CONFIG_KEY_INDEX_MASK		BITS(1, 2)
+#define DOWNLOAD_CONFIG_KEY_INDEX_SHFT		(1)
 #define DOWNLOAD_CONFIG_RESET_OPTION        BIT(3)
 #define DOWNLOAD_CONFIG_WORKING_PDA_OPTION	BIT(4)
 #define DOWNLOAD_CONFIG_VALID_RAM_ENTRY	    BIT(5)
@@ -124,6 +125,27 @@ extern unsigned long long gConEmiSize;
 #define PATCH_VERSION_MAGIC_NUM 0xffffffff
 #define PATCH_SEC_TYPE_MASK	0x0000ffff
 #define PATCH_SEC_TYPE_BIN_INFO	0x2
+
+/*
+ * Patch Format v2 SectionSpec3 : Security info
+ */
+#define PATCH_SECINFO_NOT_SUPPORT		(0xFFFFFFFF)
+
+#define PATCH_SECINFO_ENC_TYPE_MASK		(0xFF000000)
+#define PATCH_SECINFO_ENC_TYPE_SHFT		(24)
+#define PATCH_SECINFO_ENC_TYPE_PLAIN		(0x00)
+#define PATCH_SECINFO_ENC_TYPE_AES		(0x01)
+#define PATCH_SECINFO_ENC_TYPE_SCRAMBLE		(0x02)
+#define PATCH_SECINFO_ENC_SCRAMBLE_INFO_MASK	(0x0000FFFF)
+#define PATCH_SECINFO_ENC_AES_KEY_MASK		(0x000000FF)
+
+/*
+ * Patch Format v2 SectionSpec5 : BINARY TYPE
+ * BT uses this field to determind each section' type.
+ */
+#define FW_SECT_BINARY_TYPE_BT_PATCH			0x00000002
+#define FW_SECT_BINARY_TYPE_BT_ILM_TEXT_EX9_DATA	0x00000080
+#define FW_SECT_BINARY_TYPE_WF_PATCH			0x00000100
 
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
@@ -267,7 +289,7 @@ struct PATCH_SEC_MAP {
 		struct {
 			uint32_t dl_addr;
 			uint32_t dl_size;
-			uint32_t sec_key_idx;
+			uint32_t sec_info;
 			uint32_t align_len;
 			uint32_t reserved[9];
 		} bin_info_spec;

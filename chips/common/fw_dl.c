@@ -255,6 +255,7 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 	struct PATCH_SEC_MAP *sec_map;
 	uint8_t *img_ptr;
 	uint32_t num_of_region, i;
+	uint32_t sec_info = 0;
 
 	/* patch header */
 	img_ptr = pvFwImageMapFile;
@@ -325,6 +326,7 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 				be2cpu32(sec_map->bin_info_spec.dl_size);
 			region->img_ptr = pvFwImageMapFile +
 				be2cpu32(sec_map->section_offset);
+			sec_info = be2cpu32(sec_map->bin_info_spec.sec_info);
 
 			DBGLOG(INIT, INFO,
 				"\tTarget address: 0x%x, length: 0x%x\n",
@@ -334,7 +336,33 @@ void wlanImageSectionGetPatchInfoV2(IN struct ADAPTER
 			DBGLOG(INIT, INFO, "\tNot binary\n");
 		}
 	}
-	*pu4DataMode = wlanGetDataMode(prAdapter, IMG_DL_IDX_PATCH, 0);
+
+#if CFG_ENABLE_FW_DOWNLOAD_ACK
+	*pu4DataMode = DOWNLOAD_CONFIG_ACK_OPTION;	/* ACK needed */
+#endif
+
+	if (sec_info == PATCH_SECINFO_NOT_SUPPORT)
+		return;
+
+	switch ((sec_info & PATCH_SECINFO_ENC_TYPE_MASK) >>
+		PATCH_SECINFO_ENC_TYPE_SHFT) {
+	case PATCH_SECINFO_ENC_TYPE_PLAIN:
+		break;
+	case PATCH_SECINFO_ENC_TYPE_AES:
+		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
+		*pu4DataMode |= ((sec_info & PATCH_SECINFO_ENC_AES_KEY_MASK)
+				 << DOWNLOAD_CONFIG_KEY_INDEX_SHFT) &
+				DOWNLOAD_CONFIG_KEY_INDEX_MASK;
+		*pu4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
+		break;
+	case PATCH_SECINFO_ENC_TYPE_SCRAMBLE:
+		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRYPTION_MODE;
+		*pu4DataMode |= DOWNLOAD_CONFIG_ENCRY_MODE_SEL;
+		*pu4DataMode |= DOWNLOAD_CONFIG_RESET_OPTION;
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "Encryption type not support!\n");
+	}
 }
 
 uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
