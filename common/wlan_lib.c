@@ -921,6 +921,11 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		for (j = 0; j < TC_NUM; j++)
 			QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	for (i = 0; i < MAX_BSSID_NUM; i++)
+		for (j = 0; j < TC_NUM; j++)
+			QUEUE_INITIALIZE(&prAdapter->rTxHifPQueue[i][j]);
+#endif
 #endif
 	QUEUE_INITIALIZE(&prAdapter->rRxQueue);
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
@@ -2784,6 +2789,17 @@ void wlanClearDataQueue(IN struct ADAPTER *prAdapter)
 			}
 		}
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			for (j = 0; j < TC_NUM; j++) {
+				QUEUE_CONCATENATE_QUEUES_HEAD(prDataPort[i][j],
+					&prAdapter->rTxHifPQueue[i][j]);
+				kalTraceEvent("Move TxHifPQueue%d_%d %d", i, j,
+					prDataPort[i][j]->u4NumElem);
+			}
+		}
+#endif
 
 		/* <2> Return sk buffer */
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
@@ -8298,6 +8314,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "EnableFastPath", FEATURE_ENABLED);
 	prWifiVar->ucFastPathAllPacket = (uint8_t) wlanCfgGetUint32(
 			prAdapter, "FastPathAllPacket", FEATURE_DISABLED);
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	prWifiVar->ucEnableTxHifPortQ = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "EnableTxHifPortQ", FEATURE_ENABLED);
+#endif
 #if (CFG_VOLT_INFO == 1)
 	prWifiVar->fgVnfEn = (bool) wlanCfgGetUint32(
 		prAdapter, "VoltInfoEnable", FEATURE_ENABLED);

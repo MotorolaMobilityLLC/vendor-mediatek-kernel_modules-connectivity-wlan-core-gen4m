@@ -1003,7 +1003,7 @@ bool halShowHostCsrInfo(IN struct ADAPTER *prAdapter)
 
 	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Driver own info: 0x%08x = 0x%08x\n",
-		HOST_CSR_BASE, u4Value);
+		HOST_CSR_DRIVER_OWN_INFO, u4Value);
 	fgIsDriverOwn = (u4Value & PCIE_LPCR_HOST_SET_OWN) == 0;
 
 	for (i = 0; i < 5; i++) {

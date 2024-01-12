@@ -1279,6 +1279,9 @@ struct WIFI_VAR {
 	uint8_t ucCheckBeacon;
 	uint8_t ucEnableFastPath;
 	uint8_t ucFastPathAllPacket;
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	uint8_t ucEnableTxHifPortQ;
+#endif
 #if (CFG_VOLT_INFO == 1)
 	uint8_t fgVnfEn;
 	uint32_t u4VnfDebTimes;
@@ -1668,6 +1671,9 @@ struct ADAPTER {
 	struct QUE rTxP1Queue;
 #else
 	struct QUE rTxPQueue[MAX_BSSID_NUM][TC_NUM];
+#if (CFG_TX_HIF_PORT_QUEUE == 1)
+	struct QUE rTxHifPQueue[MAX_BSSID_NUM][TC_NUM];
+#endif
 #endif
 	struct QUE rRxQueue;
 	struct QUE rTxDataDoneQueue;
