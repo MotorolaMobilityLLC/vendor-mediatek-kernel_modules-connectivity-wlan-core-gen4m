@@ -1031,6 +1031,16 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
+#if defined(_HIF_PCIE)
+	if (prGlueInfo &&
+	    prGlueInfo->rHifInfo.pdev->current_state != PCI_D0) {
+		DBGLOG(HAL, STATE,
+			   "Invalid access due to pdev->current_state = %d\n",
+			   prGlueInfo->rHifInfo.pdev->current_state);
+		*pu4Value = HIF_DEADFEED_VALUE;
+		return FALSE;
+	}
+#endif
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);

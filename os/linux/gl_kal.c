@@ -10545,6 +10545,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t u4CoalescingIntTh;
 #endif
+	bool fgIsStopPerfMon = FALSE;
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag))
 		return;
@@ -10616,6 +10617,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			wlan_perf_monitor_force_enable, wlan_fb_power_down,
 			prGlueInfo->fgIsInSuspendMode, keep_alive);
 		kalPerMonStop(prGlueInfo);
+		fgIsStopPerfMon = TRUE;
 	} else {
 		uint32_t u4CurrTputLv;
 
@@ -10765,8 +10767,10 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 	/* check tx hang */
-	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
-	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+	if (!fgIsStopPerfMon) {
+		prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
+		kalSetHifDbgEvent(prAdapter->prGlueInfo);
+	}
 
 end:
 	DBGLOG(SW4, TRACE, "exit kalPerMonHandler\n");
