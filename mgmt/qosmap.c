@@ -298,7 +298,7 @@ void qosParseQosMapSet(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	/* Copy for struct QOS_MAP */
 	updateCachedQosMap(prStaRec, (dscp_range - dscp_exception) / 2,
 			dscp_exception, dscp_range);
-	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %d\n",
+	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %td\n",
 			(dscp_range - dscp_exception) / 2);
 }
 
