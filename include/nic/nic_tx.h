@@ -904,6 +904,10 @@ struct MSDU_INFO {
 	/* sanity drop flag */
 	u_int8_t fgDrop;
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
+
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	uint64_t u8Cookie;
+#endif
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)

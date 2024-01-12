@@ -2714,6 +2714,42 @@ int mtk_cfg80211_cancel_remain_on_channel(
 	return i4Rslt;
 }
 
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+int _mtk_cfg80211_mgmt_tx_via_data_path(
+		IN struct GLUE_INFO *prGlueInfo,
+		IN struct wireless_dev *wdev,
+		IN const u8 *buf,
+		IN size_t len, IN u64 u8GlCookie)
+{
+	int32_t i4Rslt = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct sk_buff *prSkb = NULL;
+	uint8_t *pucRecvBuff = NULL;
+	uint8_t ucBssIndex = 0;
+
+	DBGLOG(P2P, INFO, "len[%d], cookie: 0x%llx.\n", len, u8GlCookie);
+	prSkb = kalPacketAlloc(prGlueInfo, len, &pucRecvBuff);
+	if (prSkb) {
+		kalMemCopy(pucRecvBuff, buf, len);
+		skb_put(prSkb, len);
+		prSkb->dev = wdev->netdev;
+		GLUE_SET_PKT_FLAG(prSkb, ENUM_PKT_802_11_MGMT);
+		GLUE_SET_PKT_COOKIE(prSkb, u8GlCookie);
+		ucBssIndex = wlanGetBssIdx(wdev->netdev);
+		if (!IS_BSS_INDEX_VALID(ucBssIndex))
+			return -EINVAL;
+		rStatus = kalHardStartXmit(prSkb,
+			wdev->netdev,
+			prGlueInfo,
+			ucBssIndex);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			i4Rslt = -EINVAL;
+	} else
+		i4Rslt = -ENOMEM;
+
+	return i4Rslt;
+}
+#endif
 int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		struct wireless_dev *wdev, struct ieee80211_channel *chan,
 		bool offchan, unsigned int wait, const u8 *buf, size_t len,
@@ -2726,6 +2762,9 @@ int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	uint16_t u2MgmtTxMaxLen = 0;
+#endif
 
 	do {
 		if ((wiphy == NULL) || (wdev == NULL) || (cookie == NULL))
@@ -2735,6 +2774,22 @@ int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		ASSERT(prGlueInfo);
 
 		*cookie = prGlueInfo->u8Cookie++;
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+		u2MgmtTxMaxLen = prGlueInfo->prAdapter
+				->chip_info->cmd_max_pkt_size
+						- prGlueInfo->prAdapter
+						->chip_info->u2CmdTxHdrSize;
+#if defined(_HIF_USB)
+		u2MgmtTxMaxLen -= LEN_USB_UDMA_TX_TERMINATOR;
+#endif
+		/* to fix WFDMA entry size limitation, >1600 MGMT frame
+		*  send into data flow and bypass MCU
+		*/
+		if (len > u2MgmtTxMaxLen)
+			return _mtk_cfg80211_mgmt_tx_via_data_path(
+				prGlueInfo, wdev, buf,
+				len, *cookie);
+#endif
 
 		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_MSG,
