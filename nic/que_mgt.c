@@ -10274,6 +10274,9 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	if (!pucData)
 		return FALSE;
 
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
+		return FALSE;
+
 	if (ucBssIndex <= MAX_BSSID_NUM)
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
