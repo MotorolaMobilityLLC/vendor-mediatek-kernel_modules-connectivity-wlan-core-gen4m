@@ -1267,6 +1267,7 @@ struct mt66xx_chip_info {
 #endif
 	void (*asicDumpSerDummyCR)(IN struct ADAPTER *prAdapter);
 	void (*asicWfdmaReInit)(IN struct ADAPTER *prAdapter);
+	void *pdev;
 };
 
 struct mt66xx_hif_driver_data {

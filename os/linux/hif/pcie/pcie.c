@@ -268,6 +268,7 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 {
 	int ret = 0;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(pdev);
 	ASSERT(id);
@@ -279,21 +280,33 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 
+#if defined(SOC3_0)
+	if ((void *)&mt66xx_driver_data_soc3_0 == (void *)id->driver_data)
+		DBGLOG(INIT, INFO,
+			"[MJ]&mt66xx_driver_data_soc3_0 == id->driver_data\n");
+#endif
+
 	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
 
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+				id->driver_data)->chip_info;
+	prChipInfo->pdev = (void *)pdev;
+
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+		g_fgDriverProbed = TRUE;
+		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
+#else
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
 		pfWlanRemove();
 		ret = -1;
 	} else {
-		struct mt66xx_chip_info *prChipInfo;
-
-		prChipInfo = ((struct mt66xx_hif_driver_data *)
-			id->driver_data)->chip_info;
 		g_fgDriverProbed = TRUE;
 		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 	}
+#endif
+
 out:
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
 

@@ -481,6 +481,7 @@ struct FWDL_OPS_T mt7668_fw_dl_ops = {
 	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanHarvardFormatDownload,
+	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetHarvardFwInfo,
 	.getFwDlInfo = mt7668GetFwDlInfo,
 };
