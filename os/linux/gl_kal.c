@@ -536,6 +536,8 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 		case IMG_DL_IDX_ZB_PATCH:
 			break;
 #endif
+		case IMG_DL_IDX_DSP_FW:
+			break;
 		default:
 			ASSERT(0);
 			break;
@@ -597,6 +599,11 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 			if (prChipInfo->fw_dl_ops->constructRomName)
 				prChipInfo->fw_dl_ops->constructRomName(
 					prGlueInfo, eDlIdx, apucName, &idx);
+		} else if (eDlIdx == IMG_DL_IDX_DSP_FW) {
+			if (prChipInfo->fw_dl_ops->constructDspName) {
+				prChipInfo->fw_dl_ops->constructDspName(
+					prGlueInfo, apucName, &idx);
+			}
 		} else {
 			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
 				apucName[sub_idx] =

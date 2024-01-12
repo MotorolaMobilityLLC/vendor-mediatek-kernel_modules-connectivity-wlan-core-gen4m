@@ -88,6 +88,8 @@ uint32_t wlanGetDataMode(struct ADAPTER *prAdapter,
 
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
 		u4DataMode |= DOWNLOAD_CONFIG_WORKING_PDA_OPTION;
+	else if (eDlIdx == IMG_DL_IDX_DSP_FW)
+		u4DataMode |= DOWNLOAD_CONFIG_WORKING_PDA_OPTION;
 
 #if CFG_ENABLE_FW_DOWNLOAD_ACK
 	u4DataMode |= DOWNLOAD_CONFIG_ACK_OPTION;	/* ACK needed */
@@ -131,17 +133,21 @@ uint32_t wlanGetPatchDataModeV2(struct ADAPTER *prAdapter,
 }
 
 void wlanGetHarvardFwInfo(struct ADAPTER *prAdapter,
-	uint8_t u4SecIdx, enum ENUM_IMG_DL_IDX_T eDlIdx,
-	uint32_t *pu4Addr, uint32_t *pu4Len,
-	uint32_t *pu4DataMode, u_int8_t *pfgIsEMIDownload,
+	struct WIFI_VER_INFO *prVerInfo,
+	uint8_t u4SecIdx,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint32_t *pu4Addr,
+	uint32_t *pu4Len,
+	uint32_t *pu4DataMode,
+	u_int8_t *pfgIsEMIDownload,
 	u_int8_t *pfgIsNotDownload)
 {
 	struct TAILER_FORMAT_T *prTailer;
 
 	if (eDlIdx == IMG_DL_IDX_N9_FW)
-		prTailer = &prAdapter->rVerInfo.rN9tailer[u4SecIdx];
+		prTailer = &prVerInfo->rN9tailer[u4SecIdx];
 	else
-		prTailer = &prAdapter->rVerInfo.rCR4tailer[u4SecIdx];
+		prTailer = &prVerInfo->rCR4tailer[u4SecIdx];
 
 	*pu4Addr = prTailer->addr;
 	*pu4Len = (prTailer->len + LEN_4_BYTE_CRC);
@@ -152,13 +158,17 @@ void wlanGetHarvardFwInfo(struct ADAPTER *prAdapter,
 }
 
 void wlanGetConnacFwInfo(struct ADAPTER *prAdapter,
-	uint8_t u4SecIdx, enum ENUM_IMG_DL_IDX_T eDlIdx,
-	uint32_t *pu4Addr, uint32_t *pu4Len,
-	uint32_t *pu4DataMode, u_int8_t *pfgIsEMIDownload,
+	struct WIFI_VER_INFO *prVerInfo,
+	uint8_t u4SecIdx,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint32_t *pu4Addr,
+	uint32_t *pu4Len,
+	uint32_t *pu4DataMode,
+	u_int8_t *pfgIsEMIDownload,
 	u_int8_t *pfgIsNotDownload)
 {
 	struct TAILER_REGION_FORMAT_T *prTailer =
-			&prAdapter->rVerInfo.rRegionTailers[u4SecIdx];
+			&prVerInfo->rRegionTailers[u4SecIdx];
 
 	*pu4Addr = prTailer->u4Addr;
 	*pu4Len = prTailer->u4Len;
@@ -791,11 +801,13 @@ u_int8_t wlanImageSectionCheckFwCompressInfo(
 	return FALSE;
 }
 
-uint32_t wlanCompressedImageSectionDownloadStage(
-	struct ADAPTER *prAdapter, void *pvFwImageMapFile,
-	uint32_t u4FwImageFileLength, uint8_t ucSectionNumber,
+uint32_t wlanCompressedImageSectionDownloadStage(struct ADAPTER *prAdapter,
+	struct WIFI_VER_INFO *prVerInfo,
+	void *pvFwImageMapFile,
+	uint32_t u4FwImageFileLength,
+	uint8_t ucSectionNumber,
 	enum ENUM_IMG_DL_IDX_T eDlIdx,
-	uint8_t *pucIsCompressed,
+	uint8_t *ucIsCompressed,
 	struct INIT_CMD_WIFI_DECOMPRESSION_START *prFwImageInFo)
 {
 	uint32_t i;
@@ -881,18 +893,21 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 		*pucIsCompressed = TRUE;
 	} else {
 		u4Status = wlanImageSectionDownloadStage(prAdapter,
-				pvFwImageMapFile, u4FwImageFileLength,
-				ucSectionNumber, eDlIdx, &fgIsDynamicMemMap);
+			prVerInfo, pvFwImageMapFile, u4FwImageFileLength,
+			ucSectionNumber, eDlIdx, &fgIsDynamicMemMap);
 		*pucIsCompressed = FALSE;
 	}
 	return u4Status;
 }
 #endif
 
-uint32_t wlanImageSectionDownloadStage(
-	struct ADAPTER *prAdapter, void *pvFwImageMapFile,
-	uint32_t u4FwImageFileLength, uint8_t ucSectionNumber,
-	enum ENUM_IMG_DL_IDX_T eDlIdx, u_int8_t *pfgIsDynamicMemMap)
+uint32_t wlanImageSectionDownloadStage(struct ADAPTER *prAdapter,
+	struct WIFI_VER_INFO *prVerInfo,
+	void *pvFwImageMapFile,
+	uint32_t u4FwImageFileLength,
+	uint8_t ucSectionNumber,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	u_int8_t *pfgIsDynamicMemMap)
 {
 	uint32_t u4SecIdx, u4Offset = 0;
 	uint32_t u4Addr, u4Len, u4DataMode = 0;
@@ -978,10 +993,15 @@ uint32_t wlanImageSectionDownloadStage(
 	} else {
 		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
 		     u4SecIdx++, u4Offset += u4Len) {
-			prChipInfo->fw_dl_ops->getFwInfo(prAdapter, u4SecIdx,
-				eDlIdx, &u4Addr,
-				&u4Len, &u4DataMode, &fgIsEMIDownload,
-				&fgIsNotDownload);
+			prChipInfo->fw_dl_ops->getFwInfo(prAdapter,
+							 prVerInfo,
+							 u4SecIdx,
+							 eDlIdx,
+							 &u4Addr,
+							 &u4Len,
+							 &u4DataMode,
+							 &fgIsEMIDownload,
+							 &fgIsNotDownload);
 
 			DBGLOG(INIT, TRACE,
 			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
@@ -1362,6 +1382,8 @@ uint32_t wlanConfigWifiFunc(struct ADAPTER *prAdapter,
 
 	if (ucPDA == PDA_CR4)
 		rCmd.u4Override |= START_WORKING_PDA_OPTION;
+	else if (ucPDA == PDA_DSP)
+		rCmd.u4Override |= START_CRC_CHECK;
 
 	rCmd.u4Address = u4StartAddress;
 
@@ -1681,7 +1703,8 @@ uint32_t wlanGetHarvardTailerInfo(struct ADAPTER
 }
 
 uint32_t wlanGetConnacTailerInfo(struct WIFI_VER_INFO *prVerInfo,
-	void *prFwBuffer, uint32_t u4FwSize,
+	void *prFwBuffer,
+	uint32_t u4FwSize,
 	enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
 	struct TAILER_COMMON_FORMAT_T *prComTailer;
@@ -1810,10 +1833,11 @@ uint32_t wlanHarvardFormatDownload(struct ADAPTER
 
 	wlanGetHarvardTailerInfo(prAdapter, prFwBuffer, u4FwSize,
 				 ucTotSecNum, eDlIdx);
+
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
-	rDlStatus = wlanCompressedImageSectionDownloadStage(
-			    prAdapter, prFwBuffer, u4FwSize, ucTotSecNum,
-			    eDlIdx, &fgIsCompressed, &rFwImageInFo);
+	rDlStatus = wlanCompressedImageSectionDownloadStage(prAdapter,
+		&prAdapter->rVerInfo, prFwBuffer, u4FwSize, ucTotSecNum,
+		eDlIdx, &fgIsCompressed, &rFwImageInFo);
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
 		prAdapter->fgIsCr4FwDownloaded = TRUE;
 	if (fgIsCompressed == TRUE)
@@ -1823,8 +1847,8 @@ uint32_t wlanHarvardFormatDownload(struct ADAPTER
 		rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, ucPDA);
 #else
 	rDlStatus = wlanImageSectionDownloadStage(prAdapter,
-			prFwBuffer, u4FwSize, ucTotSecNum, eDlIdx,
-			&fgIsDynamicMemMap);
+		&prAdapter->rVerInfo, prFwBuffer, u4FwSize,
+		ucTotSecNum, eDlIdx, &fgIsDynamicMemMap);
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
 		prAdapter->fgIsCr4FwDownloaded = TRUE;
 	rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, ucPDA);
@@ -1902,8 +1926,8 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 	}
 
 	if (wlanGetConnacTailerInfo(&prAdapter->rVerInfo,
-					prFwBuffer, u4FwSize,
-					eDlIdx) != WLAN_STATUS_SUCCESS) {
+				    prFwBuffer, u4FwSize,
+				    eDlIdx) != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
 		rDlStatus = WLAN_STATUS_FAILURE;
 		goto exit;
@@ -1924,8 +1948,8 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
 
 	rDlStatus = wlanImageSectionDownloadStage(prAdapter,
-			prFwBuffer, u4FwSize, ucRegionNum, eDlIdx,
-			&fgIsDynamicMemMap);
+		&prAdapter->rVerInfo, prFwBuffer, u4FwSize,
+		ucRegionNum, eDlIdx, &fgIsDynamicMemMap);
 
 	if (rDlStatus != WLAN_STATUS_SUCCESS)
 		goto exit;
@@ -2028,22 +2052,33 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		}
 	}
 
-	DBGLOG(INIT, INFO, "FW download Start\n");
-
+	DBGLOG(INIT, TRACE, "FW download Start\n");
 	if (prFwDlOps->downloadFirmware) {
 		rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						      IMG_DL_IDX_N9_FW);
-		if ((prChipInfo->is_support_cr4 || prChipInfo->is_support_wacpu)
-		    && rStatus == WLAN_STATUS_SUCCESS)
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			goto exit;
+		} else if (prChipInfo->is_support_cr4 ||
+			   prChipInfo->is_support_wacpu) {
 			rStatus = prFwDlOps->downloadFirmware(prAdapter,
 						IMG_DL_IDX_CR4_FW);
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				goto exit;
+		}
 	}
 
-exit:
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+	DBGLOG(INIT, TRACE, "DSP FW download Start\n");
+	if (prFwDlOps->downloadDspFw) {
+		rStatus = prFwDlOps->downloadDspFw(prAdapter);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			goto exit;
+	}
+#endif
 	DBGLOG(INIT, TRACE, "FW download End\n");
 
+exit:
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
-
 
 	return rStatus;
 }
@@ -2085,13 +2120,13 @@ uint32_t wlanDownloadPatch(struct ADAPTER *prAdapter)
 	/* Patch DL */
 	do {
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
-		u4Status = wlanCompressedImageSectionDownloadStage(
-			prAdapter, prFwBuffer, u4FwSize, 1,
+		u4Status = wlanCompressedImageSectionDownloadStage(prAdapter,
+			NULL, prFwBuffer, u4FwSize, 1,
 			IMG_DL_IDX_PATCH, &ucIsCompressed, NULL);
 #else
-		u4Status = wlanImageSectionDownloadStage(
-			prAdapter, prFwBuffer, u4FwSize, 1, IMG_DL_IDX_PATCH,
-			&fgIsDynamicMemMap);
+		u4Status = wlanImageSectionDownloadStage(prAdapter,
+			NULL, prFwBuffer, u4FwSize, 1,
+			IMG_DL_IDX_PATCH, &fgIsDynamicMemMap);
 #endif
 
 		if (u4Status != WLAN_STATUS_SUCCESS)
@@ -2853,5 +2888,78 @@ out:
 #endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 
+#if CFG_MTK_WIFI_SUPPORT_DSP_FWDL
+uint32_t wlanDownloadDspFw(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VER_INFO *prVerInfo = NULL;
+	void *prFwBuffer = NULL;
+	uint32_t u4FwSize = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint32_t u4Addr = 0;
+	u_int8_t fgIsDynamicMemMap = FALSE;
+	uint8_t ucRegionNum;
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(INIT, INFO, "DSP download start\n");
+
+	kalFirmwareImageMapping(prAdapter->prGlueInfo,
+				&prFwBuffer,
+				&u4FwSize,
+				IMG_DL_IDX_DSP_FW);
+	if (!prFwBuffer) {
+		DBGLOG(INIT, WARN, "FW load error!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prVerInfo = kalMemAlloc(sizeof(struct WIFI_VER_INFO),
+				VIR_MEM_TYPE);
+	if (!prVerInfo) {
+		DBGLOG(INIT, ERROR,
+			"kalMemAlloc(%u) failed.\n",
+			sizeof(struct WIFI_VER_INFO));
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	u4Status = wlanGetConnacTailerInfo(prVerInfo,
+					   prFwBuffer,
+					   u4FwSize,
+					   IMG_DL_IDX_DSP_FW);
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Get tailer info error!\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	ucRegionNum = prVerInfo->rCommonTailer.ucRegionNum;
+	u4Addr = wlanDetectRamEntry(prVerInfo);
+
+	u4Status = wlanImageSectionDownloadStage(prAdapter,
+						 prVerInfo,
+						 prFwBuffer,
+						 u4FwSize,
+						 ucRegionNum,
+						 IMG_DL_IDX_DSP_FW,
+						 &fgIsDynamicMemMap);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	u4Status = wlanConfigWifiFunc(prAdapter,
+				      (u4Addr == 0) ? FALSE : TRUE,
+				      0,
+				      PDA_DSP);
+
+exit:
+	DBGLOG(INIT, INFO, "DSP download end[%d].\n", u4Status);
+
+	kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
+				  NULL,
+				  prFwBuffer);
+
+	return u4Status;
+}
+#endif
 
 #endif  /* CFG_ENABLE_FW_DOWNLOAD */
