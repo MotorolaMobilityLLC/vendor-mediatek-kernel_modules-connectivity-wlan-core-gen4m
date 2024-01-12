@@ -4669,7 +4669,7 @@ struct UNI_CMD_CSI_SET_FRAME_TYPE {
 	uint16_t   u2Length;
 	uint8_t    ucFrameTypeIndex;
 	uint32_t    u4FrameType;
-	uint8_t    aucPadding[2];
+	uint8_t    aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* Set max chain number (Tag3) */
