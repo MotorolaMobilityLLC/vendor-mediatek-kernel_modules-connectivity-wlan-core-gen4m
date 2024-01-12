@@ -2550,11 +2550,9 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 static void glTaskletResInit(struct GLUE_INFO *prGlueInfo)
 {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	prGlueInfo->u4TxMsduRetFifoLen = CFG_TX_MAX_PKT_NUM * sizeof(void *);
 	prGlueInfo->prTxMsduRetFifoBuf = kalMemAlloc(
-		prGlueInfo->u4TxMsduRetFifoLen,
-		PHY_MEM_TYPE);
+		prGlueInfo->u4TxMsduRetFifoLen, VIR_MEM_TYPE);
 
 	if (prGlueInfo->prTxMsduRetFifoBuf) {
 		KAL_FIFO_INIT(&prGlueInfo->rTxMsduRetFifo,
@@ -2566,12 +2564,10 @@ static void glTaskletResInit(struct GLUE_INFO *prGlueInfo)
 				prGlueInfo->u4TxMsduRetFifoLen);
 		prGlueInfo->u4TxMsduRetFifoLen = 0;
 	}
-#endif /* _HIF_PCIE or _HIF_AXI */
 }
 
 static void glTaskletResUninit(struct GLUE_INFO *prGlueInfo)
 {
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prGlueInfo->prTxMsduRetFifoBuf) {
 		struct MSDU_INFO *prMsduInfo;
 
@@ -2585,12 +2581,11 @@ static void glTaskletResUninit(struct GLUE_INFO *prGlueInfo)
 				FALSE);
 			nicTxReturnMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
 		}
-		kalMemFree(prGlueInfo->prTxMsduRetFifoBuf, PHY_MEM_TYPE,
+		kalMemFree(prGlueInfo->prTxMsduRetFifoBuf, VIR_MEM_TYPE,
 			prGlueInfo->u4TxMsduRetFifoLen);
 		prGlueInfo->prTxMsduRetFifoBuf = NULL;
 		prGlueInfo->u4TxMsduRetFifoLen = 0;
 	}
-#endif /* _HIF_PCIE or _HIF_AXI */
 }
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
@@ -2610,11 +2605,9 @@ static void glTaskletInit(struct GLUE_INFO *prGlueInfo)
 #endif
 
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	tasklet_init(&prGlueInfo->rTxMsduRetTask,
 			halWpdmaFreeMsduTasklet,
 			(unsigned long)prGlueInfo);
-#endif /* _HIF_PCIE or _HIF_AXI */
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 	tasklet_init(&prGlueInfo->rTxCompleteTask,
@@ -2630,9 +2623,7 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 	tasklet_kill(&prGlueInfo->rTxCompleteTask);
 
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	tasklet_kill(&prGlueInfo->rTxMsduRetTask);
-#endif /* _HIF_PCIE or _HIF_AXI */
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
