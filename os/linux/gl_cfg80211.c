@@ -610,6 +610,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	int32_t i4Rssi = 0;
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	struct PARAM_GET_STATS_ONE_CMD rParam;
 	uint32_t u4QueryInfoLen;
 	struct LINK_SPEED_EX_ *prLq;
 #else
@@ -666,10 +667,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	rParam.u4Period = CFG_STATS_ONE_CMD_PERIOD;
 	/* query linkspeed and sta_statistics in one unified cmd */
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
-		   wlanoidQueryStatsOneCmd, NULL,
-		   0, &u4QueryInfoLen, ucBssIndex);
+		   wlanoidQueryStatsOneCmd, &rParam,
+		   sizeof(rParam), &u4QueryInfoLen, ucBssIndex);
 	DBGLOG(REQ, TRACE, "kalIoctlByBssIdx()=%u, prGlueInfo=%p",
 		rStatus, prGlueInfo);
 #else

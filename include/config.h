@@ -1904,6 +1904,10 @@
  */
 #define CFG_REPORT_MAX_TX_RATE	0
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+#define CFG_STATS_ONE_CMD_PERIOD 3000
+#endif
+
 /*------------------------------------------------------------------------------
  * Link Quality Monitor
  * Link quality monitor execution period base on performance monitor timer

@@ -990,8 +990,6 @@ void nicUpdateStatistics(struct ADAPTER *prAdapter,
 	else
 		prLinkQualityInfo->u2FlagScanning = 0;
 
-	wlanFinishCollectingLinkQuality(prAdapter->prGlueInfo);
-
 	DBGLOG(SW4, TRACE,
 		   "EVENT_STATISTICS: rTransmittedFragmentCount.QuadPart:%lld, rRetryCount.QuadPart:%lld, rRTSFailureCount.QuadPart:%lld, rACKFailureCount.QuadPart:%lld, rReceivedFragmentCount.QuadPart:%lld, rFCSErrorCount.QuadPart:%lld, rChnlIdleCnt.QuadPart:%lld\n",
 		   prEventStatistics->rTransmittedFragmentCount.QuadPart,
@@ -3010,7 +3008,7 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 	prAdapter->prStatsAllRegStat =
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
-	prAdapter->u4RegStatLastUpdateMs = 0;
+	prAdapter->u4RegStatLastSyncFwMs = 0;
 
 	DBGLOG(INIT, INFO, "offset:%x addr:%p\n",
 	       offset,
