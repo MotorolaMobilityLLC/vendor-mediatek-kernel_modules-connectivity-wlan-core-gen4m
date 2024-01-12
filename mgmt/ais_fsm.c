@@ -5521,12 +5521,6 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgDoAbortIndication = FALSE;
-#ifdef CFG_SUPPORT_UNIFIED_COMMAND
-	u_int8_t fgIsReasonPER = FALSE;
-#else
-	u_int8_t fgIsReasonPER =
-		(ucBcnTimeoutReason == BEACON_TIMEOUT_REASON_HIGH_PER);
-#endif
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
@@ -5544,13 +5538,6 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 
 		if (prStaRec)
 			fgDoAbortIndication = TRUE;
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
-		if (mldIsMultiLinkFormed(prAdapter, prStaRec) &&
-			ucBcnTimeoutReason !=
-			UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD)
-			fgDoAbortIndication = FALSE;
-#endif
 	} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
 		fgDoAbortIndication = TRUE;
 	}
@@ -5570,10 +5557,11 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 
 		aisFsmStateAbort(prAdapter,
 			ucDisconnectReason,
-			!fgIsReasonPER,
+			TRUE,
 			ucBssIndex);
 	}
 }				/* end of aisBssBeaconTimeout() */
+
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 void aisBssSecurityChanged(struct ADAPTER *prAdapter,

@@ -4648,10 +4648,17 @@ bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_SUPPORT_UNIFIED_COMMAND)
+	if (prBssInfo &&
+	    mldIsMultiLinkFormed(prAdapter, prBssInfo->prStaRecOfAP) &&
+	    ucBcnTimeoutReason != UNI_ENUM_BCN_MLINK_NULL_FRAME_THRESHOLD) {
+		DBGLOG(ML, INFO, "MLO but only single link BTO");
+		return FALSE;
+	}
+#endif
+
 	if (IS_BSS_AIS(prBssInfo)) {
-		if (ucBcnTimeoutReason == BEACON_TIMEOUT_REASON_HIGH_PER) {
-			bValid = true;
-		} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
+		if (!CHECK_FOR_TIMEOUT(u4CurrentTime,
 			prRxCtrl->u4LastRxTime[ucBssIdx],
 			SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
 			/* Policy 1, if RX in the past duration (in ms) */
