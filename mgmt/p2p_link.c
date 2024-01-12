@@ -316,29 +316,31 @@ struct BSS_INFO *p2pGetLinkBssInfo(
 	return GET_BSS_INFO_BY_INDEX(prAdapter, fsm->ucBssIndex);
 }
 
-uint8_t p2pGetLinkWmmQueSet(
+void p2pGetLinkWmmQueSet(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
-	if (!prAdapter || !prBssInfo)
-		return MAX_HW_WMM_INDEX;
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prBssInfo = p2pGetDefaultLinkBssInfo(prAdapter,
+	struct BSS_INFO *bss = p2pGetDefaultLinkBssInfo(prAdapter,
 		IFTYPE_UNSPECIFIED);
-#endif
 
-	if (prBssInfo) {
-		if (prBssInfo->fgIsWmmInited == FALSE)
-			prBssInfo->ucWmmQueSet =
+	if (bss) {
+		if (bss->fgIsWmmInited == FALSE)
+			bss->ucWmmQueSet =
 				cnmWmmIndexDecision(prAdapter,
-				prBssInfo);
+				bss);
 
-		return prBssInfo->ucWmmQueSet;
-	}
+		prBssInfo->fgIsWmmInited = TRUE;
+		prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
+	} else
+#endif
+		prBssInfo->ucWmmQueSet = cnmWmmIndexDecision(
+			prAdapter, prBssInfo);
 
-	return MAX_HW_WMM_INDEX;
+	DBGLOG(P2P, TRACE, "bss[%d] = %d\n",
+		prBssInfo->ucBssIndex, prBssInfo->ucWmmQueSet);
 }
+
 
 void p2pSetLinkBssDesc(
 	IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,

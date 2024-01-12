@@ -2675,6 +2675,10 @@ p2pFuncBeaconUpdate(IN struct ADAPTER *prAdapter,
 		/* Update BSS INFO related information. */
 		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 			prBcnFrame->aucSrcAddr);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateMldAddrByMainBss(prAdapter,
+			mldBssGetByBss(prAdapter, prP2pBssInfo));
+#endif
 		COPY_MAC_ADDR(prP2pBssInfo->aucBSSID, prBcnFrame->aucBSSID);
 		prP2pBssInfo->u2CapInfo = prBcnFrame->u2CapInfo;
 
