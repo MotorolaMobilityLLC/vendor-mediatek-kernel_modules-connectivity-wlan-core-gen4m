@@ -1569,6 +1569,13 @@ struct NCHO_INFO {
 };
 #endif
 
+#if CFG_SUPPORT_MANIPULATE_TID
+struct MANIPULATE_TID_INFO {
+	uint8_t fgManipulateTidEnabled;
+	uint8_t ucUserPriority;
+};
+#endif
+
 struct WIFI_FEM_CFG {
 	/* WiFi FEM path */
 	uint16_t u2WifiPath;
@@ -2445,6 +2452,9 @@ struct ADAPTER {
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 	uint32_t u4LongestPending; /* longest pending token in seconds */
 	uint32_t u4WaitOffTimeoutPeriod;
+#if CFG_SUPPORT_MANIPULATE_TID
+	struct MANIPULATE_TID_INFO rManipulateTidInfo;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

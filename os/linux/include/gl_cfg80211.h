@@ -838,6 +838,10 @@ int testmode_set_scan_param(struct wiphy *wiphy,
 int testmode_set_latency_crt_data(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #endif
+#if CFG_SUPPORT_MANIPULATE_TID
+int testmode_manipulate_tid(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

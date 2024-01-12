@@ -399,6 +399,9 @@
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
 #define CMD_LATENCY_CRT_DATA_SET		"SET_LATENCY_CRT_DATA"
 #define CMD_DWELL_TIME_SET			"SET_DWELL_TIME"
+#if CFG_SUPPORT_MANIPULATE_TID
+#define CMD_MANIPULATE_TID_SET			"SET_TID"
+#endif
 
 /*****************************************************************************
 *                             D A T A   T Y P E S
