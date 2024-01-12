@@ -8084,31 +8084,39 @@ kalGetIPv6Address(struct net_device *prDev,
 }
 #endif /* IS_ENABLED(CONFIG_IPV6) */
 
-void
-kalSetNetAddress(struct GLUE_INFO *prGlueInfo,
+/**
+ * @prGlueInfo: pointer to Glue Info
+ * @ucBssIdx: BSS index to set IP address
+ * @pucIPv4Addr: buffer holding IPv4 addresses, containing IP address and
+ *		 net mask (8 bytes in total) for each entry.
+ * @u4NumIPv4Addr: number of IPv4 address in pucIPv4Addr,
+ *		   IP address and net mask (8 bytes in total) for each entry.
+ * @pucIPv6Addr: buffer holding IPv6 addresses
+ * @u4NumIPv6Addr: number of IPv6 address in pucIPv6Addr
+ */
+void kalSetNetAddress(struct GLUE_INFO *prGlueInfo,
 		 uint8_t ucBssIdx,
 		 uint8_t *pucIPv4Addr, uint32_t u4NumIPv4Addr,
 		 uint8_t *pucIPv6Addr, uint32_t u4NumIPv6Addr)
 {
 	uint32_t rStatus;
 	uint32_t u4SetInfoLen = 0;
-	uint32_t u4Len = OFFSET_OF(struct
-				   PARAM_NETWORK_ADDRESS_LIST, arAddress);
+	uint32_t u4Len = 0;
 	struct PARAM_NETWORK_ADDRESS_LIST *prParamNetAddrList;
 	struct PARAM_NETWORK_ADDRESS *prParamNetAddr;
-	uint32_t i, u4AddrLen;
+	uint32_t i;
 
 	/* 4 <1> Calculate buffer size */
+	u4Len += sizeof(struct PARAM_NETWORK_ADDRESS_LIST);
 	/* IPv4 */
-	u4Len += (((sizeof(struct PARAM_NETWORK_ADDRESS) - 1) +
-		IPV4_ADDR_LEN) * u4NumIPv4Addr * 2);
+	u4Len += (OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
+		  IPV4_ADDR_LEN * 2) * u4NumIPv4Addr;
 	/* IPv6 */
-	u4Len += (((sizeof(struct PARAM_NETWORK_ADDRESS) - 1) +
-		   IPV6_ADDR_LEN) * u4NumIPv6Addr);
+	u4Len += (OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
+		  IPV6_ADDR_LEN) * u4NumIPv6Addr;
 
 	/* 4 <2> Allocate buffer */
-	prParamNetAddrList = (struct PARAM_NETWORK_ADDRESS_LIST *)
-			     kalMemAlloc(u4Len, VIR_MEM_TYPE);
+	prParamNetAddrList = kalMemAlloc(u4Len, VIR_MEM_TYPE);
 
 	if (!prParamNetAddrList) {
 		DBGLOG(INIT, WARN,
@@ -8117,45 +8125,43 @@ kalSetNetAddress(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 	/* 4 <3> Fill up network address */
-	prParamNetAddrList->u2AddressType =
-		PARAM_PROTOCOL_ID_TCP_IP;
+	prParamNetAddrList->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
 	prParamNetAddrList->u4AddressCount = 0;
 	prParamNetAddrList->ucBssIdx = ucBssIdx;
 
 	/* 4 <3.1> Fill up IPv4 address */
-	u4AddrLen = IPV4_ADDR_LEN;
-	prParamNetAddr = prParamNetAddrList->arAddress;
+	prParamNetAddr =
+		(struct PARAM_NETWORK_ADDRESS *)(prParamNetAddrList + 1);
 	for (i = 0; i < u4NumIPv4Addr; i++) {
 		prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-		prParamNetAddr->u2AddressLength = u4AddrLen;
+		prParamNetAddr->u2AddressLength = IPV4_ADDR_LEN;
 		kalMemCopy(prParamNetAddr->aucAddress,
-			&pucIPv4Addr[i*u4AddrLen*2], u4AddrLen*2);
+			&pucIPv4Addr[IPV4_ADDR_LEN * 2 * i], IPV4_ADDR_LEN * 2);
 
 		prParamNetAddr = (struct PARAM_NETWORK_ADDRESS *)
 			((unsigned long) prParamNetAddr +
-			(unsigned long) (u4AddrLen*2 +
+			(unsigned long) (IPV4_ADDR_LEN * 2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 	prParamNetAddrList->u4AddressCount += u4NumIPv4Addr;
 
 	/* 4 <3.2> Fill up IPv6 address */
-	u4AddrLen = IPV6_ADDR_LEN;
 	for (i = 0; i < u4NumIPv6Addr; i++) {
 		prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-		prParamNetAddr->u2AddressLength = u4AddrLen;
+		prParamNetAddr->u2AddressLength = IPV6_ADDR_LEN;
 		kalMemCopy(prParamNetAddr->aucAddress,
-			   &pucIPv6Addr[i * u4AddrLen], u4AddrLen);
+			   &pucIPv6Addr[IPV6_ADDR_LEN * i], IPV6_ADDR_LEN);
 
 		prParamNetAddr = (struct PARAM_NETWORK_ADDRESS *) ((
 			unsigned long) prParamNetAddr + (unsigned long) (
-			u4AddrLen + OFFSET_OF(
+			IPV6_ADDR_LEN + OFFSET_OF(
 			struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 	prParamNetAddrList->u4AddressCount += u4NumIPv6Addr;
 
 	/* 4 <4> IOCTL to main_thread */
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetNetworkAddress,
-			   (void *) prParamNetAddrList, u4Len, &u4SetInfoLen);
+			   prParamNetAddrList, u4Len, &u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, WARN, "%s: Fail to set network address\n",

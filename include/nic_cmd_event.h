@@ -2733,7 +2733,7 @@ struct EVENT_DEBUG_MSG {
 	uint32_t u4Value;	/* memory addre or ... */
 	uint16_t u2MsgSize;
 	uint8_t aucReserved0[2];
-	uint8_t aucMsg[1];
+	uint8_t aucMsg[];
 };
 
 struct CMD_EDGE_TXPWR_LIMIT {

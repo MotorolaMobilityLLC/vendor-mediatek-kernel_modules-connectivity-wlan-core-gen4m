@@ -9815,8 +9815,7 @@ wlanoidSetNetworkAddress(struct ADAPTER *prAdapter,
 			 uint32_t *pu4SetInfoLen) {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t i, u4IPv4AddrIdx;
-	struct CMD_SET_NETWORK_ADDRESS_LIST
-		*prCmdNetworkAddressList;
+	struct CMD_SET_NETWORK_ADDRESS_LIST *prCmdNetworkAddressList;
 	struct PARAM_NETWORK_ADDRESS_LIST *prNetworkAddressList;
 	struct PARAM_NETWORK_ADDRESS *prNetworkAddress;
 	uint32_t u4IPv4AddrCount, u4CmdSize;
@@ -9828,18 +9827,17 @@ wlanoidSetNetworkAddress(struct ADAPTER *prAdapter,
 
 	*pu4SetInfoLen = 4;
 
-	if (u4SetBufferLen < OFFSET_OF(struct
-				       PARAM_NETWORK_ADDRESS_LIST, arAddress))
+	if (u4SetBufferLen < sizeof(struct PARAM_NETWORK_ADDRESS_LIST))
 		return WLAN_STATUS_INVALID_DATA;
 
-	prNetworkAddressList =
-		(struct PARAM_NETWORK_ADDRESS_LIST *) pvSetBuffer;
+	prNetworkAddressList = pvSetBuffer;
 	*pu4SetInfoLen = 0;
 	u4IPv4AddrCount = 0;
 
 	/* 4 <1.1> Get IPv4 address count */
 	/* We only suppot IPv4 address setting */
-	prNetworkAddress = prNetworkAddressList->arAddress;
+	prNetworkAddress =
+		(struct PARAM_NETWORK_ADDRESS *)(prNetworkAddressList + 1);
 	for (i = 0; i < prNetworkAddressList->u4AddressCount; i++) {
 		if ((prNetworkAddress->u2AddressType ==
 		     PARAM_PROTOCOL_ID_TCP_IP) &&
@@ -9885,14 +9883,14 @@ wlanoidSetNetworkAddress(struct ADAPTER *prAdapter,
 	prCmdNetworkAddressList->ucVersion = 1;
 
 	/* 4 <4> Fill P_CMD_SET_NETWORK_ADDRESS_LIST */
-	prCmdNetworkAddressList->ucBssIndex =
-		prNetworkAddressList->ucBssIdx;
+	prCmdNetworkAddressList->ucBssIndex = prNetworkAddressList->ucBssIdx;
 
 	/* only to set IP address to FW once ARP filter is enabled */
 	if (prAdapter->fgEnArpFilter) {
 		prCmdNetworkAddressList->ucAddressCount =
 			(uint8_t) u4IPv4AddrCount;
-		prNetworkAddress = prNetworkAddressList->arAddress;
+		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+					(prNetworkAddressList + 1);
 
 		/* DBGLOG(INIT, INFO, ("%s: u4IPv4AddrCount (%lu)\n",
 		 *        __FUNCTION__, u4IPv4AddrCount));
@@ -10008,16 +10006,15 @@ wlanoidSetIPv6NetworkAddress(struct ADAPTER *prAdapter,
 
 	*pu4SetInfoLen = 4;
 
-	if (u4SetBufferLen < OFFSET_OF(struct
-				       PARAM_NETWORK_ADDRESS_LIST, arAddress))
+	if (u4SetBufferLen < sizeof(struct PARAM_NETWORK_ADDRESS_LIST))
 		return WLAN_STATUS_INVALID_DATA;
 
-	prNetworkAddressList =
-		(struct PARAM_NETWORK_ADDRESS_LIST *) pvSetBuffer;
+	prNetworkAddressList = pvSetBuffer;
 	*pu4SetInfoLen = 0;
 
 	/* 4 <1.1> Get IPv6 address count */
-	prNetworkAddress = prNetworkAddressList->arAddress;
+	prNetworkAddress =
+		(struct PARAM_NETWORK_ADDRESS *)(prNetworkAddressList + 1);
 	for (i = 0; i < prNetworkAddressList->u4AddressCount; i++) {
 		if ((prNetworkAddress->u2AddressType ==
 		     PARAM_PROTOCOL_ID_TCP_IP) &&
@@ -10068,7 +10065,8 @@ wlanoidSetIPv6NetworkAddress(struct ADAPTER *prAdapter,
 	if (prAdapter->fgEnArpFilter) {
 		prCmdIPv6NetworkAddressList->ucAddressCount =
 			(uint8_t) u4IPv6AddrCount;
-		prNetworkAddress = prNetworkAddressList->arAddress;
+		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
+			(prNetworkAddressList + 1);
 
 		for (i = 0, u4IPv6AddrCount = 0;
 		     i < prNetworkAddressList->u4AddressCount; i++) {

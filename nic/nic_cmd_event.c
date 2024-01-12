@@ -796,8 +796,7 @@ void nicCmdEventSetIpAddress(struct ADAPTER *prAdapter,
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
 			prCmdInfo,
-			OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST,
-			arAddress) + u4Count *
+			sizeof(struct PARAM_NETWORK_ADDRESS_LIST) + u4Count *
 			(OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
 				sizeof(struct PARAM_NETWORK_ADDRESS_IP)),
 			WLAN_STATUS_SUCCESS);
@@ -822,8 +821,7 @@ void nicCmdEventSetIpv6Address(struct ADAPTER *prAdapter,
 		/* Update Set Information Length */
 		kalOidComplete(prAdapter->prGlueInfo,
 			prCmdInfo,
-			OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST,
-			arAddress) + u4Count *
+			sizeof(struct PARAM_NETWORK_ADDRESS_LIST) + u4Count *
 			(OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
 				sizeof(struct PARAM_NETWORK_ADDRESS_IPV6)),
 			WLAN_STATUS_SUCCESS);

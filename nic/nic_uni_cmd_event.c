@@ -11182,12 +11182,12 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				(struct UNI_EVENT_FW_LOG_FORMAT *) tag;
 			struct EVENT_DEBUG_MSG *legacy;
 			uint32_t len = log->u2Length - sizeof(*log);
-			uint32_t size = sizeof(*legacy) + len;
+			/* Reserved to set [u2MsgSize] = '\0' later */
+			uint32_t size = sizeof(*legacy) + len + sizeof('\0');
 
 			ASSERT(log->u2Length > sizeof(*log));
 
-			legacy = (struct EVENT_DEBUG_MSG *) kalMemAlloc(
-				size, VIR_MEM_TYPE);
+			legacy = kalMemAlloc(size, VIR_MEM_TYPE);
 			if (!legacy) {
 				DBGLOG(NIC, WARN, "tag=%d OOM\n", TAG_ID(tag));
 				break;
