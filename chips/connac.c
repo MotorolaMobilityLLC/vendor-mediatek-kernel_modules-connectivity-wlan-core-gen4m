@@ -77,6 +77,7 @@
  */
 PUINT_8 apucConnacFwName[] = {
 	(PUINT_8) CFG_FW_FILENAME "_P18",
+	(PUINT_8) CFG_FW_FILENAME "_soc1_0",
 	NULL
 };
 
