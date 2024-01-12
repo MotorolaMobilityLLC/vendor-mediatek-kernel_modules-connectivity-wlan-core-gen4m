@@ -2732,10 +2732,10 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 #if (CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
-		prBssInfo->ucLinkIndex);
+		prBssInfo->ucLinkIndex, 0);
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
-		linkIdx);
+		linkIdx, 0);
 #endif
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &chandef);
