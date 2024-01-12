@@ -1000,6 +1000,8 @@ u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regist
 			ucResult = kalDevRegRead(prGlueInfo,
 						MCR_D2HRM1R, &value);
 			*pu4Value = value;
+			/* Set MCR_H2DSM0R to 0 for ack to FW. */
+			ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, 0);
 			return	TRUE;
 		}
 
@@ -1120,6 +1122,8 @@ u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Regis
 				u4Register, value);
 				return  FALSE;
 			}
+			/* Set MCR_H2DSM0R to 0 for ack to FW. */
+			ucResult = kalDevRegWrite(prGlueInfo, MCR_H2DSM0R, 0);
 			return	TRUE;
 		}
 

@@ -111,8 +111,14 @@
 
 #define HIF_TX_MAX_AGG_LENGTH           (511 * 512) /* 511 blocks x 512 */
 
-#define HIF_RX_MAX_AGG_NUM              SDIO_RX1_AGG_NUM
-/*!< Setting the maximum RX aggregation number 0: no limited (16) */
+#if (CFG_SDIO_INTR_ENHANCE_FORMAT == 1)
+#define HIF_RX_MAX_AGG_NUM              16 /* 7663 SDIO HW limilation */
+#elif (CFG_SDIO_INTR_ENHANCE_FORMAT == 2)
+#define HIF_RX_MAX_AGG_NUM              128 /* 7961 SDIO HW limilation */
+#endif
+
+/*!< Setting the maximum RX aggregation number 0: no limited (128) */
+#define HIF_RX_CFG_AGG_NUM              SDIO_RX1_AGG_NUM
 
 #define HIF_TX_BUFF_COUNT_TC0           8
 #define HIF_TX_BUFF_COUNT_TC1           167
@@ -146,7 +152,8 @@
 #endif
 
 #if CFG_SDIO_RX_AGG
-#define HIF_RX_COALESCING_BUFFER_SIZE       ((HIF_RX_MAX_AGG_NUM  + 1) * CFG_RX_MAX_PKT_SIZE)
+#define HIF_RX_COALESCING_BUFFER_SIZE \
+	((HIF_RX_CFG_AGG_NUM  + 1) * CFG_RX_MAX_PKT_SIZE)
 #else
 #define HIF_RX_COALESCING_BUFFER_SIZE       (CFG_RX_MAX_PKT_SIZE)
 #endif
@@ -267,8 +274,8 @@ struct SDIO_INT_LOG_T {
 	uint32_t u4Idx;
 	uint8_t aucIntSts[128];
 	uint32_t u4Flag;
-	uint16_t au2RxPktLen[HIF_RX_MAX_AGG_NUM];
-	uint32_t au4RxPktInfo[HIF_RX_MAX_AGG_NUM];
+	uint16_t au2RxPktLen[HIF_RX_CFG_AGG_NUM];
+	uint32_t au4RxPktInfo[HIF_RX_CFG_AGG_NUM];
 	uint8_t ucRxPktCnt;
 };
 
