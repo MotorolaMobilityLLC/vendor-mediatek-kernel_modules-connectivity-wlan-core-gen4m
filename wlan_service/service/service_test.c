@@ -1056,17 +1056,27 @@ error:
 }
 
 s_int32 mt_serv_get_freq_offset(
-	struct service_test *serv_test, u_int32 *freq_offset)
+	struct service_test *serv_test, u_int32 type, u_int32 *freq_offset)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
 	struct test_operation *ops;
 
 	ops = serv_test->test_op;
-	ret = ops->op_get_freq_offset(
+
+	if (type == SERV_FREQ_C1) {
+		ret = ops->op_get_freq_offset(
 			serv_test->test_winfo,
 			ctrl_band_idx,
 			freq_offset);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	} else if (type == SERV_FREQ_C2) {
+		ret = ops->op_get_freq_offset_C2(
+			serv_test->test_winfo,
+			ctrl_band_idx,
+			freq_offset);
+#endif
+	}
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,

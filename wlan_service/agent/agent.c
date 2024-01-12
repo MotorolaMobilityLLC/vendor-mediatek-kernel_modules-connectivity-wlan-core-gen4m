@@ -1598,7 +1598,7 @@ static s_int32 hqa_get_freq_offset(
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
-	ret = mt_serv_get_freq_offset(serv_test, &freq_offset);
+	ret = mt_serv_get_freq_offset(serv_test, SERV_FREQ_C1, &freq_offset);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: freq offset: %d\n", __func__, freq_offset));
@@ -1978,6 +1978,44 @@ static s_int32 hqa_get_tx_tone_pwr(
 	return ret;
 }
 
+static s_int32 hqa_read_bulk_eeprom_v2(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	return ret;
+}
+
+static s_int32 hqa_write_bulk_eeprom_v2(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	return ret;
+}
+
+static s_int32 hqa_get_freq_offset_c2(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 freq_offset = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	ret = mt_serv_get_freq_offset(serv_test, SERV_FREQ_C2, &freq_offset);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+		("%s: freq offset: %d\n", __func__, freq_offset));
+
+	/* update hqa_frame with response: status (2 bytes) */
+	freq_offset = SERV_OS_HTONL(freq_offset);
+
+	sys_ad_move_mem(hqa_frame->data + 2, &freq_offset, sizeof(freq_offset));
+	update_hqa_frame(hqa_frame, 2 + sizeof(freq_offset), ret);
+
+	return ret;
+}
+
 static struct hqa_cmd_entry CMD_SET3[] = {
 	/* cmd id start from 0x1300 */
 	{0x0,	hqa_mac_bbp_reg_read},
@@ -2003,7 +2041,10 @@ static struct hqa_cmd_entry CMD_SET3[] = {
 	{0x17,	legacy_function},
 	{0x18,	hqa_ca53_reg_read},
 	{0x19,	hqa_ca53_reg_write},
-	{0x1a,	hqa_get_tx_tone_pwr}
+	{0x1a,	hqa_get_tx_tone_pwr},
+	{0x1b,	hqa_read_bulk_eeprom_v2},
+	{0x1c,	hqa_write_bulk_eeprom_v2},
+	{0x1f,	hqa_get_freq_offset_c2},
 };
 
 static s_int32 hqa_get_thermal_val(
