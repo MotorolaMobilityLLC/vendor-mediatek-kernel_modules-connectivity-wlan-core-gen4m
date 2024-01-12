@@ -1371,6 +1371,13 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 			IN struct PARAM_MCR_RW_STRUCT *prMcrRdInfo);
 
 /*----------------------------------------------------------------------------*/
+/* Get minimal tx power setting from NVRAM */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanGetMiniTxPower(IN struct ADAPTER *prAdapter,
+				  IN enum ENUM_BAND eBand,
+				  IN enum ENUM_PHY_MODE_TYPE ePhyMode,
+				  OUT int8_t *pTxPwr);
+/*----------------------------------------------------------------------------*/
 /* Loading Manufacture Data                                                   */
 /*----------------------------------------------------------------------------*/
 uint32_t wlanLoadManufactureData(IN struct ADAPTER *prAdapter,
