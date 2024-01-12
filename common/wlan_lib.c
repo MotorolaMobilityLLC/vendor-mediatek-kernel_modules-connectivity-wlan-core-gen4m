@@ -1248,6 +1248,17 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		if (!bAtResetFlow)
 			wlanOnPostFirmwareReady(prAdapter, prRegInfo);
+		else {
+#if CFG_SUPPORT_NVRAM
+			/* load manufacture data */
+			if (kalIsConfigurationExist(prAdapter->prGlueInfo)
+				== TRUE)
+				wlanLoadManufactureData(prAdapter, prRegInfo);
+			else
+				DBGLOG(INIT, WARN,
+				"%s: load manufacture data fail\n", __func__);
+#endif
+		}
 	} while (FALSE);
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {
