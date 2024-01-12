@@ -842,6 +842,13 @@ struct ARP_MONITOR {
 	uint8_t arpIsCriticalThres;
 };
 
+struct ARP_MONITOR_PKT_INFO {
+	uint8_t ucBssIndex;
+	uint16_t u2PacketLen;
+	uint8_t aucTaAddr[MAC_ADDR_LEN];
+	uint8_t *pucData;
+};
+
 enum ENUM_ARP_MONITOR_TYPE {
 	ARP_MONITOR_TYPE_TX_ARP = 0,
 	ARP_MONITOR_TYPE_RX_ARP,
@@ -852,8 +859,7 @@ enum ENUM_ARP_MONITOR_TYPE {
 struct MSG_ARP_MONITOR {
 	struct MSG_HDR rMsgHdr; /* Must be the first member */
 	enum ENUM_ARP_MONITOR_TYPE eType;
-	uint8_t ucBssIndex;
-	uint16_t u2PacketLen;
+	struct ARP_MONITOR_PKT_INFO rArpMonPktInfo;
 	uint8_t arData[ETHER_MAX_PKT_SZ];
 };
 #endif /* ARP_MONITER_ENABLE */
@@ -1343,14 +1349,14 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 void qmArpMonitorHandleLegacyBTOEvent(struct ADAPTER *prAdapter);
 #if CFG_QM_ARP_MONITOR_MSG
 void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
-	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
-	uint8_t *pucData, uint16_t u2PacketLen);
+	enum ENUM_ARP_MONITOR_TYPE eType,
+	struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo);
 void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
 #else /* CFG_QM_ARP_MONITOR_MSG */
 void qmArpMonitorHandlePkt(struct ADAPTER *prAdapter,
-	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
-	uint8_t *pucData, uint16_t u2PacketLen);
+	enum ENUM_ARP_MONITOR_TYPE eType,
+	struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen);
 struct DHCP_PROTOCOL *qmGetDhcpPkt(uint8_t *pucData, uint16_t u2PacketLen,
