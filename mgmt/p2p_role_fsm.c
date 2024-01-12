@@ -1722,6 +1722,31 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
 
 #endif
 
+void
+p2pRoleFsmScanTargetBss(IN struct ADAPTER *prAdapter,
+		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+		IN uint8_t ucChannelNum,
+		IN struct P2P_SSID_STRUCT *prSsid)
+{
+	/* Update scan parameter... to scan target device. */
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+			&(prP2pRoleFsmInfo->rScanReqInfo);
+
+	prScanReqInfo->ucNumChannelList = 1;
+	prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+	prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
+	prScanReqInfo->arScanChannelList[0].ucChannelNum = ucChannelNum;
+	prScanReqInfo->ucSsidNum = 1;
+	kalMemCopy(&(prScanReqInfo->arSsidStruct[0]), prSsid,
+			sizeof(struct P2P_SSID_STRUCT));
+	/* Prevent other P2P ID in IE. */
+	prScanReqInfo->u4BufLength = 0;
+	prScanReqInfo->fgIsAbort = TRUE;
+
+	p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_SCAN);
+}
 
 void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
@@ -1814,26 +1839,10 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		scanP2pSearchDesc(prAdapter, prConnReqInfo);
 
 	if (prJoinInfo->prTargetBssDesc == NULL) {
-		/* Update scan parameter... to scan target device. */
-		struct P2P_SCAN_REQ_INFO *prScanReqInfo =
-			&(prP2pRoleFsmInfo->rScanReqInfo);
-
-		prScanReqInfo->ucNumChannelList = 1;
-		prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
-		prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
-		prScanReqInfo->arScanChannelList[0].ucChannelNum =
-			prP2pConnReqMsg->rChannelInfo.ucChannelNum;
-		prScanReqInfo->ucSsidNum = 1;
-		kalMemCopy(&(prScanReqInfo->arSsidStruct[0]),
-			&(prP2pConnReqMsg->rSsid),
-			sizeof(struct P2P_SSID_STRUCT));
-		/* Prevent other P2P ID in IE. */
-		prScanReqInfo->u4BufLength = 0;
-		prScanReqInfo->fgIsAbort = TRUE;
-
-		p2pRoleFsmStateTransition(prAdapter,
-			prP2pRoleFsmInfo,
-			P2P_ROLE_STATE_SCAN);
+		p2pRoleFsmScanTargetBss(prAdapter,
+				prP2pRoleFsmInfo,
+				prP2pConnReqMsg->rChannelInfo.ucChannelNum,
+				&(prP2pConnReqMsg->rSsid));
 	} else {
 		prChnlReqInfo->u8Cookie = 0;
 		prChnlReqInfo->ucReqChnlNum =
@@ -2267,24 +2276,27 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 				prBssDesc->fgIsConnecting = FALSE;
 
+				if (prStaRec->ucJoinFailureCount >=
+						P2P_SAA_RETRY_COUNT) {
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				kalP2PGCIndicateConnectionStatus(
-					prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					&prP2pRoleFsmInfo->rConnReqInfo,
-					prJoinInfo->aucIEBuf,
-					prJoinInfo->u4BufLength,
-					prStaRec->u2StatusCode,
-					WLAN_STATUS_MEDIA_DISCONNECT);
+					kalP2PGCIndicateConnectionStatus(
+						prAdapter->prGlueInfo,
+						prP2pRoleFsmInfo->ucRoleIndex,
+						&prP2pRoleFsmInfo->rConnReqInfo,
+						prJoinInfo->aucIEBuf,
+						prJoinInfo->u4BufLength,
+						prStaRec->u2StatusCode,
+						WLAN_STATUS_MEDIA_DISCONNECT);
 #else
-				kalP2PGCIndicateConnectionStatus(
-					prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					&prP2pRoleFsmInfo->rConnReqInfo,
-					prJoinInfo->aucIEBuf,
-					prJoinInfo->u4BufLength,
-					prStaRec->u2StatusCode);
+					kalP2PGCIndicateConnectionStatus(
+						prAdapter->prGlueInfo,
+						prP2pRoleFsmInfo->ucRoleIndex,
+						&prP2pRoleFsmInfo->rConnReqInfo,
+						prJoinInfo->aucIEBuf,
+						prJoinInfo->u4BufLength,
+						prStaRec->u2StatusCode);
 #endif
+				}
 
 			}
 
@@ -2292,10 +2304,26 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	}
 
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
-		/* Return to IDLE state. */
-		p2pRoleFsmStateTransition(prAdapter,
-			prP2pRoleFsmInfo,
-			P2P_ROLE_STATE_IDLE);
+		if (prP2pBssInfo->eConnectionState ==
+				PARAM_MEDIA_STATE_CONNECTED) {
+			/* Return to IDLE state. */
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_IDLE);
+		} else {
+			struct BSS_DESC *prBssDesc;
+			struct P2P_SSID_STRUCT rSsid;
+
+			prBssDesc = prJoinInfo->prTargetBssDesc;
+
+			COPY_SSID(rSsid.aucSsid,
+				rSsid.ucSsidLen,
+				prBssDesc->aucSSID,
+				prBssDesc->ucSSIDLen);
+			p2pRoleFsmScanTargetBss(prAdapter,
+				prP2pRoleFsmInfo,
+				prBssDesc->ucChannelNum,
+				&rSsid);
+		}
 	}
 
 error:
