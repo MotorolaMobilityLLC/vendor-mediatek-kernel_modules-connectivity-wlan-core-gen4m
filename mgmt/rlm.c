@@ -2944,13 +2944,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prBssInfo->ucVhtChannelFrequencyS1;
 			prBssDesc->ucCenterFreqS2 =
 				prBssInfo->ucVhtChannelFrequencyS2;
+
 			if (IS_BSS_P2P(prBssInfo))
 				p2pFuncSwitchGcChannel(prAdapter, prBssInfo);
 			else
 				kalIndicateChannelSwitch(
 					prAdapter->prGlueInfo,
 					prBssInfo->eBssSCO,
-					prBssDesc->ucChannelNum);
+					prBssDesc->ucChannelNum,
+					prBssDesc->eBand);
+
 		} else {
 			DBGLOG(RLM, INFO,
 			       "DFS: BSS: " MACSTR " Desc is not found\n ",
@@ -5351,6 +5354,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prAdapter);
+
 			if (prBssDesc) {
 				prBssDesc->ucChannelNum =
 						prBssInfo->ucPrimaryChannel;

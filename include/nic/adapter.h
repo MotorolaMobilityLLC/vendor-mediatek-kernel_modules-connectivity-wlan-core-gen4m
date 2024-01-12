@@ -780,6 +780,7 @@ struct WIFI_VAR {
 	uint16_t u2CountryCode;
 	uint8_t uc2G4BandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	uint8_t uc5GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
+	uint8_t uc6GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	/* Support AP Selection */
 	struct LINK_MGMT rBlackList;
 #if CFG_SUPPORT_MBO
@@ -963,11 +964,14 @@ struct WIFI_VAR {
 	uint8_t ucStaBandwidth;
 	uint8_t ucSta5gBandwidth;
 	uint8_t ucSta2gBandwidth;
+	uint8_t ucSta6gBandwidth;
 	uint8_t ucApBandwidth;
 	uint8_t ucAp2gBandwidth;
 	uint8_t ucAp5gBandwidth;
+	uint8_t ucAp6gBandwidth;
 	uint8_t ucP2p5gBandwidth;
 	uint8_t ucP2p2gBandwidth;
+	uint8_t ucP2p6gBandwidth;
 
 	/* If enable, AP channel bandwidth Channel
 	 * Center Frequency Segment 0/1
@@ -986,8 +990,10 @@ struct WIFI_VAR {
 
 	uint8_t ucNSS;
 	uint8_t fgSta1NSS; /* Less or euqal than ucNss */
+	uint8_t ucAp6gNSS; /* Less or euqal than ucNss */
 	uint8_t ucAp5gNSS; /* Less or euqal than ucNss */
 	uint8_t ucAp2gNSS; /* Less or euqal than ucNss */
+	uint8_t ucGo6gNSS; /* Less or euqal than ucNss */
 	uint8_t ucGo5gNSS; /* Less or euqal than ucNss */
 	uint8_t ucGo2gNSS; /* Less or euqal than ucNss */
 
@@ -1880,9 +1886,14 @@ struct ADAPTER {
 	uint32_t u4PwrLevel;
 	struct conn_pwr_event_max_temp *rTempInfo;
 #endif
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	bool fgPowerForceOneNss;
 	bool fgPowerNeedDisconnect;
+#endif
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u_int8_t fgEnable6GBand;
 #endif
 };				/* end of _ADAPTER_T */
 

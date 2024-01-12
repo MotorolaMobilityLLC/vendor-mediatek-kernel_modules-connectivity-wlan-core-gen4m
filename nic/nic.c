@@ -1276,6 +1276,10 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum)
 /*----------------------------------------------------------------------------*/
 uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint32_t u4FreqInMHz = 0;
+#endif
+
 	switch (u4FreqInKHz) {
 	case 2412000:
 		return 1;
@@ -1424,6 +1428,13 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 	case 5865000:
 		return 173;
 	default:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (u4FreqInKHz % 5000 == 0) {
+			u4FreqInMHz = u4FreqInKHz / 1000;
+			if ((u4FreqInMHz > 5950) && (u4FreqInMHz <= 7115))
+				return ((u4FreqInMHz - 5950) / 5);
+		}
+#endif
 		DBGLOG(BSS, INFO, "Return Invalid Channelnum = 0.\n");
 		return 0;
 	}

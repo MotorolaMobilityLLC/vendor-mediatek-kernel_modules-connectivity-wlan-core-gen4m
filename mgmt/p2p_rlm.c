@@ -1281,18 +1281,28 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth =
 					prAdapter->rWifiVar.ucAp2gBandwidth;
-			else
+			else if (prBssInfo->eBand == BAND_5G)
 				ucMaxBandwidth =
 					prAdapter->rWifiVar.ucAp5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth =
+					prAdapter->rWifiVar.ucAp6gBandwidth;
+#endif
 		}
 		/* P2P mode */
 		else {
 			if (prBssInfo->eBand == BAND_2G4)
 				ucMaxBandwidth =
 					prAdapter->rWifiVar.ucP2p2gBandwidth;
-			else
+			else if (prBssInfo->eBand == BAND_5G)
 				ucMaxBandwidth =
 					prAdapter->rWifiVar.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth =
+					prAdapter->rWifiVar.ucP2p6gBandwidth;
+#endif
 		}
 
 		if (ucMaxBandwidth < MAX_BW_40MHZ)

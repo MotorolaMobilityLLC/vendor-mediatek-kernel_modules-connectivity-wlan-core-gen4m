@@ -1460,6 +1460,10 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 
 	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
 	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWiphy->bands[KAL_BAND_6GHZ] = &mtk_band_6ghz;
+	DBGLOG(INIT, INFO, "P2P support 6G\n");
+#endif
 
 	prWiphy->mgmt_stypes = mtk_cfg80211_default_mgmt_stypes;
 	prWiphy->max_remain_on_channel_duration = 5000;

@@ -2593,6 +2593,7 @@ uint32_t scanAddScanResult(IN struct ADAPTER *prAdapter,
 			   prBssDesc->aucRawBuf,
 			   prBssDesc->u2RawLength,
 			   prBssDesc->ucChannelNum,
+			   prBssDesc->eBand,
 			   RCPI_TO_dBm(prBssDesc->ucRCPI));
 	}
 
@@ -3641,6 +3642,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 					SpecificprBssDesc->aucRawBuf,
 					SpecificprBssDesc->u2RawLength,
 					SpecificprBssDesc->ucChannelNum,
+					SpecificprBssDesc->eBand,
 					RCPI_TO_dBm(
 					SpecificprBssDesc->ucRCPI));
 			} else {
@@ -3698,6 +3700,7 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 							prBssDesc->aucRawBuf,
 							prBssDesc->u2RawLength,
 							prBssDesc->ucChannelNum,
+							prBssDesc->eBand,
 							RCPI_TO_dBm(
 							prBssDesc->ucRCPI));
 					}
