@@ -216,6 +216,7 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
 #endif
 	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
+	{EVENT_ID_RDD_OPMODE_CHANGE, cnmRddOpmodeEventHandler},
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif

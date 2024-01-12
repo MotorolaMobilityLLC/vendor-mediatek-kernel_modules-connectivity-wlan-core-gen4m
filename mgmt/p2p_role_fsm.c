@@ -1335,6 +1335,9 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 	}
 
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	prAdapter->rWifiVar
+		.prP2pSpecificBssInfo[prP2pStartAPMsg->ucRoleIdx]
+		->fgIsRddOpchng = FALSE;
 
 	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
@@ -1986,6 +1989,7 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 		uint8_t ucNumOfChannel;
 		uint8_t ch_idx = 0;
 		uint8_t ucChannelNum = 36;
+		uint8_t ucRoleIndex = prP2pBssInfo->u4PrivateData;
 		struct RF_CHANNEL_INFO aucChannelList
 			[MAX_5G_BAND_CHN_NUM] = {};
 		struct RF_CHANNEL_INFO aucChannelListRdd
@@ -2012,17 +2016,27 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			aucChannelList);
 
 		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-		p2pFuncChannelListFiltering(prAdapter,
-			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-			prP2pBssInfo->ucVhtChannelWidth,
-			ucNumOfChannel,
-			aucChannelList,
-			&ucNumOfChannel,
-			aucChannelListRdd);
 
-		ch_idx = kalRandomNumber() % ucNumOfChannel;
-		if (ch_idx < MAX_5G_BAND_CHN_NUM)
-			ucChannelNum = aucChannelListRdd[ch_idx].ucChannelNum;
+		if (prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->fgIsRddOpchng == TRUE) {
+			ucChannelNum = prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->ucRddCh;
+		} else {
+			p2pFuncChannelListFiltering(prAdapter,
+				prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+				prP2pBssInfo->ucVhtChannelWidth,
+				ucNumOfChannel,
+				aucChannelList,
+				&ucNumOfChannel,
+				aucChannelListRdd);
+
+			ch_idx = kalRandomNumber() % ucNumOfChannel;
+
+			if (ch_idx < MAX_5G_BAND_CHN_NUM)
+				ucChannelNum = aucChannelListRdd[ch_idx]
+					.ucChannelNum;
+		}
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_ACCESS_POINT;
 		prP2pConnReqInfo->rChannelInfo.ucChannelNum = ucChannelNum;
 		/* Use rConnReqInfo bw */

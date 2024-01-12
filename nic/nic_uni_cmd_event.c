@@ -6212,6 +6212,23 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			RUN_RX_EVENT_HANDLER(EVENT_ID_OPMODE_CHANGE, &legacy);
 		}
 			break;
+		case UNI_EVENT_CNM_TAG_OPMODE_CHANGE_RDD: {
+			struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE *opmode =
+				(struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE *)tag;
+			struct EVENT_RDD_OPMODE_CHANGE legacy;
+
+			legacy.ucBssBitmap = (uint8_t) opmode->u2BssBitmap;
+			legacy.ucEnable = opmode->ucEnable;
+			legacy.ucOpTxNss = opmode->ucOpTxNss;
+			legacy.ucOpRxNss = opmode->ucOpRxNss;
+			legacy.ucReason = opmode->ucReason;
+			legacy.ucPriChannel = opmode->ucPriChannel;
+			legacy.ucChBw = opmode->ucChBw;
+			legacy.ucAction = opmode->ucAction;
+			RUN_RX_EVENT_HANDLER(EVENT_ID_RDD_OPMODE_CHANGE,
+				&legacy);
+		}
+			break;
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)

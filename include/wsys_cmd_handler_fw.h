@@ -592,6 +592,7 @@ enum ENUM_EVENT_ID {
 
 	EVENT_ID_INIT_EVENT_CMD_RESULT = 0xFD,
 	/* 0xFD (Generic event for cmd not found, added by CONNAC) */
+	EVENT_ID_RDD_OPMODE_CHANGE = 0xFE,
 
 	EVENT_ID_END
 };
@@ -2145,6 +2146,7 @@ enum ENUM_EVENT_OPMODE_CHANGE_REASON {
 	EVENT_OPMODE_CHANGE_REASON_ANT_CTRL_1T2R    = 7,
 	EVENT_OPMODE_CHANGE_REASON_AOL              = 8,
 	EVENT_OPMODE_CHANGE_REASON_USER_CONFIG = 9,
+	EVENT_OPMODE_CHANGE_REASON_RDD    = 10,
 };
 
 struct EVENT_OPMODE_CHANGE {
@@ -2160,6 +2162,23 @@ struct EVENT_OPMODE_CHANGE {
 
 	uint8_t  ucReason;       /* ENUM_EVENT_OPMODE_CHANGE_REASON_T*/
 	uint8_t  aucPadding1[63];
+};
+
+struct EVENT_RDD_OPMODE_CHANGE {
+	/* DWORD_0 - Common Part*/
+	uint16_t u2Tag;
+	uint16_t u2EvtLen;
+
+	uint16_t  ucBssBitmap;    /*Bit[3:0]*/
+	uint8_t  ucEnable;       /*Enable OpTxRx limitation/change*/
+	uint8_t  ucOpTxNss;      /*0: don't care*/
+	uint8_t  ucOpRxNss;      /*0: don't care*/
+
+	uint8_t  ucReason;       /* ENUM_EVENT_OPMODE_CHANGE_REASON_T*/
+	uint8_t  ucPriChannel;
+	uint8_t  ucChBw;
+	uint8_t  ucAction;
+	uint8_t  aucPadding1[60];
 };
 
 #define EVENT_GET_CNM_BAND_NUM          2  /* ENUM_BAND_NUM*/

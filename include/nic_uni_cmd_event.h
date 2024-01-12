@@ -4235,6 +4235,7 @@ enum ENUM_UNI_EVENT_CNM_TAG {
 	UNI_EVENT_CNM_TAG_GET_BSS_INFO = 2,
 	UNI_EVENT_CNM_TAG_OPMODE_CHANGE = 3,
 	UNI_EVENT_CNM_TAG_CH_PRIVILEGE_MLO_SUB_GRANT = 4,
+	UNI_EVENT_CNM_TAG_OPMODE_CHANGE_RDD = 5,
 	UNI_EVENT_CNM_TAG_NUM
 }__KAL_ATTRIB_PACKED__;
 
@@ -4306,6 +4307,19 @@ struct UNI_EVENT_CNM_OPMODE_CHANGE {
 	uint8_t          ucOpRxNss;
 	uint8_t          ucReason;
 	uint8_t          aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE {
+	uint16_t         u2Tag;
+	uint16_t         u2Length;
+	uint16_t         u2BssBitmap;
+	uint8_t          ucEnable;
+	uint8_t          ucOpTxNss;
+	uint8_t          ucOpRxNss;
+	uint8_t          ucReason;
+	uint8_t          ucPriChannel;
+	uint8_t          ucChBw;
+	uint8_t          ucAction;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_MBMC {
