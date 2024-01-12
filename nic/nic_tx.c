@@ -1964,8 +1964,13 @@ nicTxFillDataDesc(IN struct ADAPTER *prAdapter,
 
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 	/* dump TXD to debug TX issue */
-	if (prAdapter->rWifiVar.ucDataTxDone == 1)
-		halDumpTxdInfo(prAdapter, (uint32_t *)pucOutputBuf);
+	if (prAdapter->rWifiVar.ucDataTxDone == 1) {
+		struct CHIP_DBG_OPS *prDbgOps =
+			prAdapter->chip_info->prDebugOps;
+		if (prDbgOps && prDbgOps->dumpTxdInfo)
+			prDbgOps->dumpTxdInfo(prAdapter,
+			(uint8_t *)pucOutputBuf);
+	}
 }
 
 void
@@ -2452,9 +2457,13 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
 		/* dump TXD to debug TX issue */
-		if (prAdapter->rWifiVar.ucDataTxDone == 3)
-			halDumpTxdInfo(prAdapter,
-				(uint32_t *)prMsduInfo->aucTxDescBuffer);
+		if (prAdapter->rWifiVar.ucDataTxDone == 3) {
+			struct CHIP_DBG_OPS *prDbgOps =
+				prAdapter->chip_info->prDebugOps;
+			if (prDbgOps && prDbgOps->dumpTxdInfo)
+				prDbgOps->dumpTxdInfo(prAdapter,
+				(uint8_t *)prMsduInfo->aucTxDescBuffer);
+		}
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
 		if (prTxDescOps->nic_txd_long_format_op(
@@ -2501,9 +2510,13 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
 
 		/* dump TXD to debug TX issue */
-		if (prAdapter->rWifiVar.ucDataTxDone == 3)
-			halDumpTxdInfo(prAdapter,
-				(uint32_t *)prMsduInfo->aucTxDescBuffer);
+		if (prAdapter->rWifiVar.ucDataTxDone == 3) {
+			struct CHIP_DBG_OPS *prDbgOps =
+				prAdapter->chip_info->prDebugOps;
+			if (prDbgOps && prDbgOps->dumpTxdInfo)
+				prDbgOps->dumpTxdInfo(prAdapter,
+				(uint8_t *)prMsduInfo->aucTxDescBuffer);
+		}
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
 		if (prTxDescOps->nic_txd_long_format_op(

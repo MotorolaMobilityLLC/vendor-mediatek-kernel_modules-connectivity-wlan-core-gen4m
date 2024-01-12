@@ -469,6 +469,7 @@ struct CHIP_DBG_OPS {
 	bool (*showCsrInfo)(struct ADAPTER *prAdapter);
 	void (*showDmaschInfo)(struct ADAPTER *prAdapter);
 	void (*dumpMacInfo)(struct ADAPTER *prAdapter);
+	void (*dumpTxdInfo)(struct ADAPTER *prAdapter, uint8_t *tmac_info);
 	uint32_t (*getFwDebug)(struct ADAPTER *prAdapter);
 	void (*setFwDebug)(struct ADAPTER *prAdapter, bool fgTrigger,
 			   uint32_t u4SetMask, uint32_t u4ClrMask);
@@ -827,7 +828,7 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
 void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
 void haldumpMacInfo(IN struct ADAPTER *prAdapter);
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info);
 void halShowTxdInfo(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
@@ -849,6 +850,9 @@ int connac_get_rx_rate_info(struct ADAPTER *prAdapter,
 void connac2x_show_txd_Info(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
+void connac2x_dump_tmac_info(
+	struct ADAPTER *prAdapter,
+	uint8_t *tmac_info);
 int32_t connac2x_show_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
