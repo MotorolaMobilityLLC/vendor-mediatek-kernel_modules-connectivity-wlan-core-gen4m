@@ -257,7 +257,7 @@ struct BUS_INFO soc2_1x1_bus_info = {
 	.initPcieInt = NULL,
 #endif
 	.DmaShdlInit = asicPcieDmaShdlInit,
-	.setPdmaIntMask = asicPdmaIntMaskConfig,
+	.setDmaIntMask = asicPdmaIntMaskConfig,
 #endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,

@@ -587,6 +587,12 @@ struct pci_queue_layout {
 	const struct pci_rx_queue_desc *rx_queue_layout;
 };
 
+enum ENUM_DMA_INT_TYPE {
+	DMA_INT_TYPE_MCU2HOST,
+	DMA_INT_TYPE_TRX,
+	DMA_INT_TYPE_NUM
+};
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
