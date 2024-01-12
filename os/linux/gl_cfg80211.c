@@ -7421,11 +7421,9 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	if (prGlueInfo->prAdapter->rWifiVar.fgTdlsDisable) {
-		DBGLOG(TDLS, ERROR,
-			"TDLS is disabled\n");
+	if (!TdlsEnabled(prGlueInfo->prAdapter))
 		return -EINVAL;
-	}
+
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PGoNetDevice(prGlueInfo, dev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");

@@ -432,6 +432,16 @@ TdlsSendChSwControlCmd(struct ADAPTER *prAdapter,
 void TdlsHandleTxDoneStatus(struct ADAPTER *prAdapter,
 			enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
+uint8_t TdlsEnabled(struct ADAPTER *pAd);
+uint8_t TdlsValid(struct ADAPTER *pAd, uint8_t bss);
+uint8_t TdlsAllowed(struct ADAPTER *pAd, uint8_t bss);
+uint8_t TdlsNeedAdjustBw(struct ADAPTER *pAd, uint8_t bss);
+uint8_t TdlsAdjustBw(
+	struct ADAPTER *pAd,
+	struct STA_RECORD *sta,
+	uint8_t bss,
+	uint8_t bw);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

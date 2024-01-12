@@ -2073,6 +2073,13 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 					}
 				}
 			}
+#if CFG_SUPPORT_TDLS_11AX
+			if (prCmd->fgIsSupHe)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+
+			if (prCmd->fgIsSupVht)
+				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+#endif
 		} else {
 #if CFG_SUPPORT_TDLS_11AX
 			if (prCmd->fgIsSupHe)
