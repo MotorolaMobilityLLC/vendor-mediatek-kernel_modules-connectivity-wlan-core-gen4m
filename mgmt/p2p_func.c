@@ -5014,12 +5014,16 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 {
 	uint8_t ucOuiType = 0;
 	uint16_t u2SubTypeVersion = 0;
+	/* Do not compare P2P SSID with AIS SSID to avoid changing
+	 * p2p bss index unexpectedly.
+	*/
+	uint8_t ucP2pStartIdx = KAL_AIS_NUM;
 
 	switch (ucElemIdType) {
 	case ELEM_ID_SSID:
 		{
 			if (SSID_IE(pucIEBuf)->ucLength > 7) {
-				for ((*ucBssIdx) = 0;
+				for ((*ucBssIdx) = ucP2pStartIdx;
 					(*ucBssIdx) < prAdapter->ucHwBssIdNum;
 					(*ucBssIdx)++) {
 					*prP2pBssInfo =
