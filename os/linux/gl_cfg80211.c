@@ -547,7 +547,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				   wlanoidQueryLinkSpeedEx, &rLinkSpeed,
 				   sizeof(rLinkSpeed), TRUE, FALSE, FALSE,
 				   &u4BufLen, ucBssIndex);
-	if (ucBssIndex < BSSID_NUM)
+	if (IS_BSS_INDEX_VALID(ucBssIndex))
 		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
@@ -567,10 +567,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	}
 
 	/* 3. fill RSSI */
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
-				sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
-
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+				   wlanoidQueryRssi,
+				   &rLinkSpeed, sizeof(rLinkSpeed),
+				   TRUE, FALSE, FALSE,
+				   &u4BufLen, ucBssIndex);
+	if (IS_BSS_INDEX_VALID(ucBssIndex))
+		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
 	sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
 #else
@@ -745,9 +748,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryRssi, &i4Rssi,
-				sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen,
-				ucBssIndex);
+				wlanoidQueryRssi,
+				&rLinkSpeed, sizeof(rLinkSpeed),
+				TRUE, FALSE, FALSE,
+				&u4BufLen, ucBssIndex);
+		if (IS_BSS_INDEX_VALID(ucBssIndex))
+			i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		sinfo->filled |= STATION_INFO_SIGNAL;
 
@@ -836,7 +842,7 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen;
-	int32_t i4Rssi;
+	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
 	struct net_device_stats *prDevStats;
@@ -873,10 +879,13 @@ int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
-		rStatus = kalIoctlByBssIdx(prGlueInfo,
-			wlanoidQueryRssi, &i4Rssi,
-			sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen,
-			ucBssIndex);
+		rStatus = kalIoctlByBssIdx
+			(prGlueInfo,
+			 wlanoidQueryRssi,
+			 &rLinkSpeed, sizeof(rLinkSpeed),
+			 TRUE, FALSE, FALSE,
+			 &u4BufLen, ucBssIndex);
+
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
 	}
