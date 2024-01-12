@@ -183,6 +183,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_THERMAL_PROTECT] = nicUniCmdThermalProtect,
 	[EXT_CMD_ID_RF_TEST] = nicUniExtCmdTestmodeCtrl,
 	[EXT_CMD_ID_EFUSE_BUFFER_MODE] = nicUniCmdEfuseBufferMode,
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+	[EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED] = nicUniCmdTwtStaGetCnmGranted,
+#endif
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -3067,6 +3070,43 @@ uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct _EXT_CMD_GET_MAC_INFO_T *cmd;
+	struct UNI_CMD_GET_MAC_INFO *uni_cmd;
+	struct UNI_CMD_MAC_INFO_TWT_STA_CNM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	struct _TWT_GET_TSF_CONTEXT_T *twt;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_MAC_INFO) +
+			sizeof(struct UNI_CMD_MAC_INFO_TWT_STA_CNM);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+	    info->ucExtCID != EXT_CMD_ID_TWT_STA_GET_CNM_GRANTED)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct _EXT_CMD_GET_MAC_INFO_T *) info->pucInfoBuffer;
+	twt = (struct _TWT_GET_TSF_CONTEXT_T *) info->pvSetQueryBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_MAC_INFO, max_cmd_len,
+			nicUniCmdEventTWTGetCnmGrantedDone, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GET_MAC_INFO *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MAC_INFO_TWT_STA_CNM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MAC_INFO_TAG_TWT_STA_CNM;
+	tag->u2Length = sizeof(*tag);
+	tag->ucDbdcIdx = ENUM_BAND_AUTO;
+	tag->ucHwBssidIndex = cmd->rExtraArgument.rTsfArg.ucHwBssidIndex;
+	tag->ucBssIndex = twt->ucBssIdx;
+	tag->fgTwtEn = (twt->ucTwtStaCnmReason == TWT_STA_CNM_SETUP) ? 1 : 0;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 uint32_t nicUniUpdateDevInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -5877,6 +5917,63 @@ void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 
 	twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+void nicUniCmdEventTWTGetCnmGrantedDone(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_MAC_IFNO *evt =
+		(struct UNI_EVENT_MAC_IFNO *)uni_evt->aucBuffer;
+	struct UNI_EVENT_MAC_INFO_TWT_STA_CNM *tag =
+		(struct UNI_EVENT_MAC_INFO_TWT_STA_CNM *) evt->aucTlvBuffer;
+	struct _TWT_GET_TSF_CONTEXT_T *prGetTsfCtxt;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIdx, ucFlowId;
+
+	prGetTsfCtxt = (struct _TWT_GET_TSF_CONTEXT_T *)
+		prCmdInfo->pvInformationBuffer;
+
+	if (!prGetTsfCtxt) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prGetTsfCtxt\n");
+
+		return;
+	}
+
+	DBGLOG(CNM, ERROR,
+		"TWT STA(%d,%d) R=%d CNM granted result %d\n",
+		tag->ucBssIndex,
+		tag->ucDbdcIdx,
+		prGetTsfCtxt->ucTwtStaCnmReason,
+		tag->fgCnmGranted);
+
+	if (prGetTsfCtxt->ucTwtStaCnmReason == TWT_STA_CNM_SETUP) {
+		if (tag->fgCnmGranted == TRUE)
+			twtPlannerGetCnmGrantedDone(prAdapter, prCmdInfo, NULL);
+		else {
+			/* Release prGetTsfCtxt by twtPlannerSetParams */
+			/* For the CNM granted failure case */
+			kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE,
+				sizeof(*prGetTsfCtxt));
+		}
+	} else if (prGetTsfCtxt->ucTwtStaCnmReason == TWT_STA_CNM_TEARDOWN) {
+		ucBssIdx = prGetTsfCtxt->ucBssIdx;
+		ucFlowId = prGetTsfCtxt->ucTWTFlowId;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+		prStaRec = prBssInfo->prStaRecOfAP;
+
+		/* For teardown we don't need this */
+		kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
+		/* Do the teardown thing in existing flow */
+		twtPlannerSendReqTeardown(prAdapter, prStaRec, ucFlowId);
+	}
+}
+#endif
 
 void nicUniCmdEventInstallKey(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)

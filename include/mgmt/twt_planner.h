@@ -180,6 +180,11 @@ void twtPlannerSetParams(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
 
+uint32_t twtPlannerSendReqTeardown(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
 uint32_t twtPlannerReset(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
@@ -228,6 +233,13 @@ void twtPlannerGetTsfDone(
 	struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+void twtPlannerGetCnmGrantedDone(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+#endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)
 void twtHotspotPlannerSetParams(
