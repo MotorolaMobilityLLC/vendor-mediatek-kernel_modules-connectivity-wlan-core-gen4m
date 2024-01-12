@@ -506,10 +506,10 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961;
 
 #define WPDMA_PAUSE_RX_Q_TH10				(PCIE_HIF_BASE + 0x0260)
 #define WPDMA_PAUSE_RX_Q_TH32				(PCIE_HIF_BASE + 0x0264)
-#define WPDMA_PAUSE_RX_Q_TH0				1
-#define WPDMA_PAUSE_RX_Q_TH1				1
-#define WPDMA_PAUSE_RX_Q_TH2				1
-#define WPDMA_PAUSE_RX_Q_TH3				1
+#define WPDMA_PAUSE_RX_Q_TH0				2
+#define WPDMA_PAUSE_RX_Q_TH1				2
+#define WPDMA_PAUSE_RX_Q_TH2				2
+#define WPDMA_PAUSE_RX_Q_TH3				2
 #define WPDMA_PAUSE_RX_Q_TH0_MASK			0x00000FFF
 #define WPDMA_PAUSE_RX_Q_TH1_MASK			0x0FFF0000
 #define WPDMA_PAUSE_RX_Q_TH2_MASK			0x00000FFF
