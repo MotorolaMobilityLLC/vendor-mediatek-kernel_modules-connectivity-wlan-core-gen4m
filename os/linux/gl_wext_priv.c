@@ -84,11 +84,11 @@
 #include "gl_p2p_os.h"
 #endif
 
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "connsys_debug_utility.h"
-#endif
 #include "metlog.h"
+#endif
 #endif
 
 #if CFG_SUPPORT_NAN
@@ -3998,9 +3998,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_FW_PARAM				"set_fw_param"
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 #define CMD_SET_WHOLE_CHIP_RESET "SET_WHOLE_CHIP_RESET"
 #define CMD_SET_WFSYS_RESET      "SET_WFSYS_RESET"
+#endif
 #endif
 
 #if CFG_MTK_WIFI_SW_WFDMA
@@ -8998,11 +9000,13 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 	/* PCHAR  apcArgv[WLAN_CFG_ARGV_MAX] = {0}; */
 
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	struct conn_metlog_info rMetInfo;
 	int32_t i4MetRes = 0;
 	phys_addr_t u4ConEmiPhyBase = 0;
 	uint32_t u4EmiMetOffset = 0;
+#endif
 #endif
 
 	ASSERT(prNetDev);
@@ -9040,6 +9044,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 			   CHIP_CONFIG_RESP_SIZE - 1);
 		rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 3", 8) == 0) {
 			i4MetRes = kstrtouint(rChipConfigInfo.aucCmd + 9, 16,
@@ -9064,6 +9069,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 					i4MetRes);
 		}
 #endif
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 		if (kalStrnCmp("FrdHeTrig2Host",
@@ -9086,6 +9092,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 			i4BytesWritten = -1;
 		}
 
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (kalStrnCmp(rChipConfigInfo.aucCmd, "Wf_MET 1", 8) == 0) {
 			conninfra_get_phy_addr(&u4ConEmiPhyBase, NULL);
@@ -9114,6 +9121,7 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 					i4MetRes);
 			}
 		}
+#endif
 #endif
 	}
 
@@ -15160,6 +15168,7 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 
 }
 
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 static int priv_driver_trigger_whole_chip_reset(
 	struct net_device *prNetDev,
@@ -15197,6 +15206,7 @@ static int priv_driver_trigger_whole_chip_reset(
 
 	return i4BytesWritten;
 }
+
 static int priv_driver_trigger_wfsys_reset(
 	struct net_device *prNetDev,
 	char *pcCommand,
@@ -15230,6 +15240,8 @@ static int priv_driver_trigger_wfsys_reset(
 	return i4BytesWritten;
 }
 #endif
+#endif
+
 #if (CFG_SUPPORT_CONNAC2X == 1)
 static int priv_driver_get_umac_fwtbl(
 	struct net_device *prNetDev,
@@ -16197,9 +16209,11 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
 #endif
+#if CFG_WMT_RESET_API_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	{CMD_SET_WHOLE_CHIP_RESET, priv_driver_trigger_whole_chip_reset},
 	{CMD_SET_WFSYS_RESET, priv_driver_trigger_wfsys_reset},
+#endif
 #endif
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	{CMD_GET_FWTBL_UMAC, priv_driver_get_umac_fwtbl},

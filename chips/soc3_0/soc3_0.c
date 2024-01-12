@@ -2345,7 +2345,9 @@ static int wf_pwr_off_consys_mcu(void)
 	int value = 0;
 	int ret = 0;
 	int polling_count;
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	int retryCount = 0;
+#endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 	while (g_IsNeedWaitCoredump) {

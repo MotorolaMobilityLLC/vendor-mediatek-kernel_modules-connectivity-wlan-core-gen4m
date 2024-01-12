@@ -1655,6 +1655,10 @@
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 0)
+#define CFG_SUPPORT_POWER_THROTTLING 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flag used for packet offload support.
  * Value 0: Do not enable packet offload.
@@ -1674,9 +1678,7 @@
 #ifndef CFG_SUPPORT_APF
 #define CFG_SUPPORT_APF 0
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 0)
-#define CFG_SUPPORT_POWER_THROTTLING 0
-#endif
+
 /*------------------------------------------------------------------------------
  * Support NAN or not.
  *------------------------------------------------------------------------------
@@ -1734,12 +1736,6 @@
 #define DEFAULT_NSS (CFG_NSS)
 #else
 #define DEFAULT_NSS (2)
-#endif
-
-#if (CFG_SUPPORT_CONNINFRA == 0)
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#undef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#endif
 #endif
 
 #ifndef CFG_MTK_WIFI_SW_WFDMA

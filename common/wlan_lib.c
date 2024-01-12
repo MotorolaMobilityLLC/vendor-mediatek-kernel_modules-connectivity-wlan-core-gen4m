@@ -13467,7 +13467,7 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 
 void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter)
 {
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	uint32_t u4BufLen;
 #endif
@@ -13482,7 +13482,7 @@ void wlanSetConnsysFwLog(IN struct ADAPTER *prAdapter)
 			ENUM_WIFI_LOG_MODULE_FW,
 			u4LogLevel, TRUE);
 
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
 
 	rFwLogCmd.fgCmd = (int)FW_LOG_CMD_ON_OFF;

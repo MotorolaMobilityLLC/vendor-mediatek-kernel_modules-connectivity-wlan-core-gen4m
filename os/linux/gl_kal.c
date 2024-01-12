@@ -4614,7 +4614,7 @@ int main_thread(void *data)
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 time;
 #endif
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	uint32_t u4BufLen;
 	uint32_t u4FwLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
@@ -4940,7 +4940,7 @@ int main_thread(void *data)
 			}
 		}
 #endif
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 		if (!prGlueInfo->prAdapter->fgSetLogOnOff) {
 			kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
 			rFwLogCmd.fgCmd = FW_LOG_CMD_ON_OFF;
@@ -9553,7 +9553,7 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd,
 void
 kalSyncTimeToFWByIoctl(void)
 {
-#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct GLUE_INFO *prGlueInfo;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);

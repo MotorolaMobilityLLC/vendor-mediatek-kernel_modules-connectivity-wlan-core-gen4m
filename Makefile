@@ -256,14 +256,13 @@ ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_SUPPORT_BW160
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
-ccflags-y += -DCFG_SUPPORT_BW160
 endif
 
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UBELLWETHER,$(ccflags-y))
 ccflags-y += -DBELLWETHER
 CONFIG_MTK_MDDP_SUPPORT=
-CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH=
+CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH := n
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
@@ -292,7 +291,7 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 CONFIG_MTK_MDDP_SUPPORT=
-CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH=
+CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH := n
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
@@ -321,7 +320,6 @@ ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7990,$(ccflags-y))
 ccflags-y += -DMT7990
 CONFIG_MTK_MDDP_SUPPORT=
-CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH=
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
@@ -365,6 +363,12 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
+endif
+
+ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
+ifneq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
+    ccflags-y += -DCFG_SUPPORT_CONNAC1X=1
+endif
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
@@ -529,6 +533,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
+        ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include

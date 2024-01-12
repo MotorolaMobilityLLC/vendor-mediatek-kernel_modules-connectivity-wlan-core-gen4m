@@ -366,9 +366,8 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter);
  */
 /*----------------------------------------------------------------------------*/
 
-static struct mt66xx_hif_driver_data *get_platform_driver_data(void)
+struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 {
-	ASSERT(g_prDev);
 	if (!g_prDev)
 		return NULL;
 
@@ -777,8 +776,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #else
 	if (pfWlanProbe((void *) pdev,
 		(void *) id->driver_data) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, INFO, "pfWlanProbe fail!call pfWlanRemove()\n");
-		pfWlanRemove();
+		DBGLOG(INIT, INFO, "pfWlanProbe fail!\n");
 		ret = -1;
 	} else {
 		g_fgDriverProbed = TRUE;
@@ -795,10 +793,11 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 {
 	ASSERT(pdev);
 
-	if (g_fgDriverProbed)
+	if (g_fgDriverProbed) {
 		pfWlanRemove();
+		DBGLOG(INIT, INFO, "pfWlanRemove done\n");
+	}
 
-	DBGLOG(INIT, INFO, "pfWlanRemove done\n");
 	DBGLOG(INIT, INFO, "mtk_pci_remove() done\n");
 }
 
@@ -1010,9 +1009,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	if (platform_driver_register(&mtk_axi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
-	ret = (pci_register_driver(&mtk_pci_driver) == 0) ?
-		WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
-
 	return ret;
 }
 
@@ -1031,7 +1027,6 @@ void glUnregisterBus(remove_card pfRemove)
 		pfRemove();
 		g_fgDriverProbed = FALSE;
 	}
-	pci_unregister_driver(&mtk_pci_driver);
 	platform_driver_unregister(&mtk_axi_driver);
 }
 
@@ -1850,3 +1845,24 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 		DBGLOG_MEM32(HAL, INFO, prRxCell->pPacket, u4DumpLen);
 }
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
+
+int32_t glBusFunOn(void)
+{
+	int ret = pci_register_driver(&mtk_pci_driver);
+
+	if (ret)
+		return ret;
+
+	if (g_prDev == NULL) {
+		pci_unregister_driver(&mtk_pci_driver);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+void glBusFunOff(void)
+{
+	pci_unregister_driver(&mtk_pci_driver);
+	g_fgDriverProbed = FALSE;
+}
