@@ -1495,8 +1495,7 @@ void secHandleNoWtbl(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
 	/* Wtbl error handling. if no Wtbl */
-	struct WLAN_ACTION_FRAME *prMgmtHdr =
-		(struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
+	struct WLAN_MAC_MGMT_HEADER *prMgmtHdr = prSwRfb->pvHeader;
 
 	prSwRfb->ucStaRecIdx =
 		secLookupStaRecIndexFromTA(prAdapter, prMgmtHdr->aucSrcAddr);
