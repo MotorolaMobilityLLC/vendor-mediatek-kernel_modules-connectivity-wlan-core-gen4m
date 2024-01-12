@@ -2274,7 +2274,7 @@ wlanoidSetAddKey(IN P_ADAPTER_T prAdapter, IN PVOID pvSetBuffer, IN UINT_32 u4Se
 	}
 	/* increase command sequence number */
 	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, INFO, "ucCmdSeqNum = %d\n", ucCmdSeqNum);
+	DBGLOG(RSN, TRACE, "ucCmdSeqNum = %d\n", ucCmdSeqNum);
 
 	/* compose CMD_802_11_KEY cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
@@ -2793,7 +2793,6 @@ wlanoidSetDefaultKey(IN P_ADAPTER_T prAdapter,
 	UINT_8 ucWlanIndex = WTBL_RESERVED_ENTRY;
 
 	DEBUGFUNC("wlanoidSetDefaultKey");
-	DBGLOG(REQ, LOUD, "\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
@@ -2810,9 +2809,8 @@ wlanoidSetDefaultKey(IN P_ADAPTER_T prAdapter,
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Dump PARAM_DEFAULT_KEY_T content. */
-	DBGLOG(RSN, INFO, "Key Index : %d\n", prDefaultKey->ucKeyID);
-	DBGLOG(RSN, INFO, "Unicast Key : %d\n", prDefaultKey->ucUnicast);
-	DBGLOG(RSN, INFO, "Multicast Key : %d\n", prDefaultKey->ucMulticast);
+	DBGLOG(RSN, INFO, "Key Index : %d, Unicast Key : %d, Multicast Key : %d\n",
+	       prDefaultKey->ucKeyID, prDefaultKey->ucUnicast, prDefaultKey->ucMulticast);
 
 	/* prWlanTable = prAdapter->rWifiVar.arWtbl; */
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -2868,7 +2866,8 @@ wlanoidSetDefaultKey(IN P_ADAPTER_T prAdapter,
 	}
 	/* increase command sequence number */
 	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, INFO, "ucCmdSeqNum = %d\n", ucCmdSeqNum);
+	DBGLOG(RSN, TRACE, "ucCmdSeqNum = %d, CMD_ID_DEFAULT_KEY_ID (%d) with wlan idx = %d\n",
+	       ucCmdSeqNum, prDefaultKey->ucKeyID, ucWlanIndex);
 
 	/* compose CMD_802_11_KEY cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
@@ -6505,12 +6504,12 @@ wlanLoadDefaultCustomerSetting(IN P_ADAPTER_T prAdapter) {
 
 
 	ucItemNum = (sizeof(g_rDefaulteSetting) / sizeof(PARAM_CUSTOM_KEY_CFG_STRUCT_T));
-	DBGLOG(INIT, INFO, "[wlanLoadDefaultCustomerSetting] default firmware setting %d item\n", ucItemNum);
+	DBGLOG(INIT, TRACE, "Default firmware setting %d item\n", ucItemNum);
 
 
 	for (i = 0; i < ucItemNum; i++) {
 		wlanCfgSet(prAdapter, g_rDefaulteSetting[i].aucKey, g_rDefaulteSetting[i].aucValue, 0);
-		DBGLOG(INIT, INFO, "%s with %s\n", g_rDefaulteSetting[i].aucKey, g_rDefaulteSetting[i].aucValue);
+		DBGLOG(INIT, TRACE, "%s with %s\n", g_rDefaulteSetting[i].aucKey, g_rDefaulteSetting[i].aucValue);
 	}
 
 #if 1
