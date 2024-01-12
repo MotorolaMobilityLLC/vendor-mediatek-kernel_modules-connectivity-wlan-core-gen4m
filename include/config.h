@@ -1854,10 +1854,6 @@
 #define CFG_SUPPORT_POWER_THROTTLING 0
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 0)
-#define CFG_SUPPORT_POWER_THROTTLING 0
-#endif
-
 /*
 *   Add callback for DC off low power settings for MTK DTV
 */

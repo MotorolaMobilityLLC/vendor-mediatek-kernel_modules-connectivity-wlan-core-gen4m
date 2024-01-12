@@ -420,6 +420,7 @@ ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    CONFIG_MTK_WIFI_POWER_THROTTLING=y
     ifneq ($(CONFIG_PAGE_POOL),)
         CONFIG_RX_PAGE_POOL=y
     endif
@@ -767,7 +768,6 @@ else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
     ccflags-y += -DCFG_ANDORID_CONNINFRA_SUPPORT=1
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
-    ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
@@ -816,6 +816,7 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_POWER_THROTTLING), y)
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=1
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
 else
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=0
 endif
