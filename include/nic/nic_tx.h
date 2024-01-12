@@ -92,17 +92,17 @@
 
 /* Maximum buffer count for individual HIF TCQ */
 #define NIC_TX_PAGE_COUNT_TC0 \
-	(NIC_TX_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC0 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_PAGE_COUNT_TC1 \
-	(NIC_TX_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC1 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_PAGE_COUNT_TC2 \
-	(NIC_TX_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC2 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_PAGE_COUNT_TC3 \
-	(NIC_TX_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC3 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_PAGE_COUNT_TC4 \
-	(NIC_TX_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC4 * nicTxGetMaxCmdPageCntPerFrame(prAdapter))
 #define NIC_TX_PAGE_COUNT_TC5 \
-	(NIC_TX_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_BUFF_COUNT_TC5 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 
 #define NIC_TX_BUFF_COUNT_TC0           HIF_TX_BUFF_COUNT_TC0
 #define NIC_TX_BUFF_COUNT_TC1           HIF_TX_BUFF_COUNT_TC1
@@ -134,17 +134,17 @@
 						NIC_TX_INIT_BUFF_COUNT_TC5)
 
 #define NIC_TX_INIT_PAGE_COUNT_TC0 \
-	(NIC_TX_INIT_BUFF_COUNT_TC0 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC0 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_INIT_PAGE_COUNT_TC1 \
-	(NIC_TX_INIT_BUFF_COUNT_TC1 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC1 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_INIT_PAGE_COUNT_TC2 \
-	(NIC_TX_INIT_BUFF_COUNT_TC2 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC2 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_INIT_PAGE_COUNT_TC3 \
-	(NIC_TX_INIT_BUFF_COUNT_TC3 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC3 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 #define NIC_TX_INIT_PAGE_COUNT_TC4 \
-	(NIC_TX_INIT_BUFF_COUNT_TC4 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC4 * nicTxGetMaxCmdPageCntPerFrame(prAdapter))
 #define NIC_TX_INIT_PAGE_COUNT_TC5 \
-	(NIC_TX_INIT_BUFF_COUNT_TC5 * nicTxGetMaxPageCntPerFrame(prAdapter))
+	(NIC_TX_INIT_BUFF_COUNT_TC5 * nicTxGetMaxDataPageCntPerFrame(prAdapter))
 
 #endif
 
@@ -674,7 +674,7 @@ struct TX_CTRL {
 	uint32_t u4TxCachedSize;
 	uint8_t *pucTxCached;
 
-	uint32_t u4PageSize;
+	uint32_t u4DataPageSize;
 
 	uint32_t u4TotalPageNum;
 
@@ -712,7 +712,10 @@ struct TX_CTRL {
 	/* enable/disable TX resource control */
 	u_int8_t fgIsTxResourceCtrl;
 	/* page counts for a wifi frame */
-	uint32_t u4MaxPageCntPerFrame;
+	uint32_t u4MaxDataPageCntPerFrame;
+
+	/* page counts for a inband cmd */
+	uint32_t u4MaxCmdPageCntPerFrame;
 
 	/* Store SysTime of Last TxDone successfully */
 	uint32_t u4LastTxTime[MAX_BSSID_NUM];
@@ -1898,7 +1901,7 @@ u_int8_t nicTxIsMgmtResourceEnough(IN struct ADAPTER *prAdapter);
 
 uint32_t nicTxGetFreeCmdCount(IN struct ADAPTER *prAdapter);
 
-uint32_t nicTxGetPageCount(IN struct ADAPTER *prAdapter,
+uint32_t nicTxGetDataPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc);
 
 uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
@@ -2031,7 +2034,9 @@ void nicTxMsduDoneCb(IN struct GLUE_INFO *prGlueInfo, IN struct QUE *prQue);
 
 void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
-uint32_t nicTxGetMaxPageCntPerFrame(IN struct ADAPTER *prAdapter);
+
+uint32_t nicTxGetMaxDataPageCntPerFrame(IN struct ADAPTER *prAdapter);
+uint32_t nicTxGetMaxCmdPageCntPerFrame(IN struct ADAPTER *prAdapter);
 
 /* TX Direct functions : BEGIN */
 void nicTxDirectStartCheckQTimer(IN struct ADAPTER *prAdapter);
