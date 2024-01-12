@@ -547,6 +547,7 @@ ifeq ($(WM_RAM),ce)
     endif
 else
     ccflags-y += -DCONFIG_WM_RAM_TYPE=0
+    CONFIG_SUPPORT_SCAN_NO_AP_RECOVERY=y
     ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
         include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
     endif
@@ -743,6 +744,12 @@ else
     ccflags-y += -DCFG_SUPPORT_BTWT=0
     ccflags-y += -DCFG_SUPPORT_802_11BE_ML_TWT=0
     ccflags-y += -DCFG_SUPPORT_TWT_STA_CNM=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_SCAN_NO_AP_RECOVERY), y)
+    ccflags-y += -DCFG_SCAN_NO_AP_RECOVERY=1
+else
+    ccflags-y += -DCFG_SCAN_NO_AP_RECOVERY=0
 endif
 
 # TODO
