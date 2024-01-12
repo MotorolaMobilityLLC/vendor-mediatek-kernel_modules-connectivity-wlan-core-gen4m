@@ -1314,6 +1314,9 @@ void twtPlannerGetTsfDone(
 
 	switch (prGetTsfCtxt->ucReason) {
 	case TWT_GET_TSF_FOR_ADD_AGRT_BYPASS:
+		if (prGetTsfCtxt->ucTWTFlowId >= TWT_AGRT_MAX_NUM)
+			return;
+
 		prGetTsfCtxt->rTWTParams.u8TWT = u8CurTsf + TSF_OFFSET_FOR_EMU;
 		twtPlannerAddAgrtTbl(prAdapter, prBssInfo,
 				prStaRec, &(prGetTsfCtxt->rTWTParams),
