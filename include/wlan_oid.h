@@ -1577,7 +1577,7 @@ struct CMD_MANUAL_ASSOC_STRUCT {
 };
 
 struct TX_BF_SOUNDING_START {
-	uint8_t ucCmdCategoryID;
+	uint8_t ucTxBfCategory;
 	uint8_t ucSuMuSndMode;
 	uint8_t ucStaNum;
 	uint8_t ucReserved;
