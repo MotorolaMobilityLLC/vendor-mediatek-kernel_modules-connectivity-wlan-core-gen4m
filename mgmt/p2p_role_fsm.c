@@ -690,6 +690,18 @@ p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter,
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
 			MEDIA_STATE_DISCONNECTED);
+		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex,
+					NULL, NULL, 0, 0,
+					WLAN_STATUS_MEDIA_DISCONNECT);
+#else
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex,
+					NULL, NULL, 0, 0);
+#endif
+		}
 	}
 
 	/* STOP BSS if power is IDLE */
@@ -2022,17 +2034,6 @@ void p2pRoleFsmRunEventConnectionAbort(IN struct ADAPTER *prAdapter,
 				MAC2STR(prDisconnMsg->aucTargetID));
 				break;
 			}
-
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, 0,
-					WLAN_STATUS_MEDIA_DISCONNECT);
-#else
-			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-					prP2pRoleFsmInfo->ucRoleIndex,
-					NULL, NULL, 0, 0);
-#endif
 
 			prStaRec = prP2pBssInfo->prStaRecOfAP;
 

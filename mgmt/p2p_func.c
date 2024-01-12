@@ -435,10 +435,6 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 		} else {
 			DBGLOG(P2P, ERROR,
 				"JOIN INIT: Join Request when connected.\n");
-			ASSERT(FALSE);
-			/* TODO: Shall we considering ROAMIN case
-			 * for P2P Device?.
-			 */
 			break;
 		}
 
