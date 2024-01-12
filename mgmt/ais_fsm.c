@@ -6557,6 +6557,11 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 		if (prNeighborAP->fgPrefPresence &&
 		    prNeighborAP->ucPreference == 0)
 			u2PrefIsZeroCount++;
+
+		if (u2BufLen < IE_SIZE(prIe)) {
+			DBGLOG(AIS, WARN, "Truncated neighbor report\n");
+			break;
+		}
 	}
 	prAisSpecBssInfo->rNeiApRcvTime = kalGetTimeTick();
 	prAisSpecBssInfo->u4NeiApValidInterval =
