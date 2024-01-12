@@ -163,6 +163,15 @@ enum ENUM_WFSYS_RESET_STATE_TYPE_T {
 	WFSYS_RESET_STATE_MAX
 };
 
+#if CFG_WMT_RESET_API_SUPPORT
+struct reset_pending_req {
+	uint32_t flag;
+	uint8_t file[256];
+	uint32_t line;
+	u_int8_t fw_acked;
+};
+#endif
+
 struct RESET_STRUCT {
 	struct GLUE_INFO *prGlueInfo;
 	struct work_struct rst_work;
@@ -173,6 +182,9 @@ struct RESET_STRUCT {
 	struct work_struct rst_trigger_work;
 	uint32_t rst_trigger_flag;
 	struct completion halt_comp;
+	struct notifier_block pm_nb;
+	u_int8_t is_suspend;
+	struct reset_pending_req *pending_req;
 #endif
 };
 
