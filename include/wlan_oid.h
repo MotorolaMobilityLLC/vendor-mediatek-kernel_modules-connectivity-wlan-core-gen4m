@@ -3137,6 +3137,19 @@ wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 		     OUT uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidInitAisFsm(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
+
+
+uint32_t
+wlanoidUninitAisFsm(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer,
+		     IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidManualAssoc(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer,
 		   IN uint32_t u4SetBufferLen,
@@ -4266,11 +4279,6 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 		  		IN uint32_t u4SetBufferLen,
 		  		OUT uint32_t *pu4SetInfoLen);
 #endif
-
-uint32_t wlanoidSync11kCapabilities(IN struct ADAPTER *prAdapter,
-				    IN void *pvSetBuffer,
-				    IN uint32_t u4SetBufferLen,
-				    OUT uint32_t *pu4SetInfoLen);
 
 uint32_t wlanoidSendNeighborRequest(IN struct ADAPTER *prAdapter,
 				    IN void *pvSetBuffer,

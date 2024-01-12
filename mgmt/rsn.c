@@ -2308,15 +2308,17 @@ struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
-	IN uint8_t ucBssIndex)
+	IN uint8_t ucAisIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex;
 
-	if (!prBss)
+	if (!prBss || !wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex))
 		return;
 
+	ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisSpecBssInfo =

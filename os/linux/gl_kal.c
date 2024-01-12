@@ -2423,8 +2423,9 @@ uint32_t kalResetStats(IN struct net_device *prDev)
 {
 	DBGLOG(QM, LOUD, "Reset NetDev[0x%p] statistics\n", prDev);
 
-	kalMemZero(kalGetStats(prDev),
-		   sizeof(struct net_device_stats));
+	if (prDev)
+		kalMemZero(kalGetStats(prDev),
+			   sizeof(struct net_device_stats));
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -6980,8 +6981,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	char uevent[30];
 
 	wiphy = wlanGetWiphy();
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
-		ucBssIdx))->ieee80211_ptr;
+	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, ucBssIdx))->ieee80211_ptr;
 
 	if (!wiphy || !wdev || !prWifiVar)
 		return -EINVAL;
