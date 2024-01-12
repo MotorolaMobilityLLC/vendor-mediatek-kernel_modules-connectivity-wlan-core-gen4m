@@ -1351,27 +1351,27 @@ p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		/* 4 <3.3> Update Beacon again
 		 * for network phy type confirmed.
 		 */
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (prBssInfo->eBand == BAND_6G) {
+			/* Update unsolicited probe response as beacon */
 			bssUpdateBeaconContentEx(prAdapter,
 				prBssInfo->ucBssIndex,
 				IE_UPD_METHOD_UNSOL_PROBE_RSP);
-		} else
-#endif
-		{
-			if (p2pFuncProbeRespUpdate(prAdapter,
-				prBssInfo,
-				prBssInfo->prBeacon->prPacket,
-				prBssInfo->prBeacon->u2FrameLength,
-				IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
-					WLAN_STATUS_FAILURE) {
-				DBGLOG(P2P, ERROR,
-					"Update probe resp IEs fail!\n");
-			}
 		}
-#else /* !CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP */
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+#endif
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		if (p2pFuncProbeRespUpdate(prAdapter,
+			prBssInfo,
+			prBssInfo->prBeacon->prPacket,
+			prBssInfo->prBeacon->u2FrameLength,
+			IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
+				WLAN_STATUS_FAILURE) {
+			DBGLOG(P2P, ERROR,
+				"Update probe resp IEs fail!\n");
+		}
 #endif
 
 		/* 4 <3.4> Setup BSSID */
