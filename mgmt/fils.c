@@ -1630,9 +1630,6 @@ void filsRemoveKey(struct ADAPTER *ad, uint32_t keyidx, uint8_t bssidx)
 	uint32_t len;
 	struct PARAM_REMOVE_KEY param;
 
-	DBGLOG(FILS, INFO, "Bss%d BSSID[" MACSTR "] remove key %d\n",
-		bssidx, MAC2STR(param.arBSSID), keyidx);
-
 	if (!bss)
 		return;
 
@@ -1642,6 +1639,9 @@ void filsRemoveKey(struct ADAPTER *ad, uint32_t keyidx, uint8_t bssidx)
 	COPY_MAC_ADDR(param.arBSSID, bss->aucBSSID);
 	if (bss->aucBSSID[0] != '\0')
 		param.u4KeyIndex |= BIT(30);
+
+	DBGLOG(FILS, INFO, "Bss%d BSSID[" MACSTR "] remove key %d\n",
+		bssidx, MAC2STR(param.arBSSID), keyidx);
 
 	wlanSetRemoveKey(ad,
 		(void *)&param,

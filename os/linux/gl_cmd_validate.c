@@ -562,6 +562,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(phy_ctrl_policy)
 	},
 #endif
+#if BUILD_QA_DBG
 	{
 		.pcCmdStr  = CMD_SET_MCR,
 		.pfHandler = priv_driver_set_mcr,
@@ -620,6 +621,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = get_mcr_policy,
 		.u4PolicySize = ARRAY_SIZE(get_mcr_policy)
 	},
+#endif /* BUILD_QA_DBG */
 	{
 		.pcCmdStr  = CMD_SET_TEST_MODE,
 		.pfHandler = priv_driver_set_test_mode,
@@ -1169,6 +1171,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if BUILD_QA_DBG
 	{
 		.pcCmdStr  = CMD_EFUSE,
 		.pfHandler = priv_driver_efuse_ops,
@@ -1187,6 +1190,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#endif /* BUILD_QA_DBG */
 #if CFG_SUPPORT_ADVANCE_CONTROL
 	{
 		.pcCmdStr  = CMD_SET_NOISE,
@@ -1379,6 +1383,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if BUILD_QA_DBG
 	{
 		.pcCmdStr  = CMD_CALIBRATION,
 		.pfHandler = priv_driver_calibration,
@@ -1387,7 +1392,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
-
+#endif
 #if CFG_SUPPORT_DBDC
 	{
 		.pcCmdStr  = CMD_SET_STA1NSS,
@@ -1672,6 +1677,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if BUILD_QA_DBG
 	{
 		.pcCmdStr  = CMD_GET_EMI,
 		.pfHandler = priv_driver_get_emi_info,
@@ -1680,6 +1686,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = u32_policy,
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_QUERY_THERMAL_TEMP,
 		.pfHandler = priv_driver_query_thermal_temp,

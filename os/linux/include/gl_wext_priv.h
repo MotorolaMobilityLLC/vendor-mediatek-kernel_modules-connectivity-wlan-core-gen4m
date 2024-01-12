@@ -88,7 +88,9 @@
 
 #define PRIV_CMD_TEST_MODE              17
 #define PRIV_CMD_TEST_CMD               18
+#if BUILD_QA_DBG
 #define PRIV_CMD_ACCESS_MCR             19
+#endif
 #define PRIV_CMD_SW_CTRL                20
 
 #if 1				/* ANTI_PRIVCY */
