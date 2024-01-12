@@ -626,6 +626,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct TXD_STRUCT *pTxD;
+	struct mt66xx_chip_info *prChipInfo;
 	void *pucDst = NULL;
 
 	ASSERT(prGlueInfo);
@@ -633,6 +634,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(u4Len <= u4ValidInBufSize);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
@@ -688,6 +690,17 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	pTxD->SDPtr1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
+
+	if (u2Port == prChipInfo->u2TxInitCmdPort) {
+#if (CFG_DUMP_TXDMAD == 1)
+		DBGLOG(HAL, INFO, "Dump CMD TXDMAD: \n");
+		dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+#endif
+#if (CFG_DUMP_TXD == 1)
+		DBGLOG(HAL, INFO, "Dump CMD TXD: \n");
+		dumpMemory8((uint8_t *)pucBuf, u4Len);
+#endif
+	}
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);

@@ -5939,7 +5939,7 @@ static int initWlan(void)
 #endif
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
-#ifdef CONFIG_MTK_EMI
+#if CFG_MTK_ANDROID_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 #endif

@@ -203,6 +203,8 @@ endif
 ifneq ($(filter BELLWETHER,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UBELLWETHER,$(ccflags-y))
 ccflags-y += -DBELLWETHER
+CONFIG_MTK_MDDP_SUPPORT=
+CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH=
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
@@ -222,6 +224,8 @@ endif
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
+CONFIG_MTK_MDDP_SUPPORT=
+CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH=
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
@@ -374,7 +378,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
     ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/power_throttling
     ccflags-y += -DCFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT=1
-    ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
+    ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/platform/include
         ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/base/include

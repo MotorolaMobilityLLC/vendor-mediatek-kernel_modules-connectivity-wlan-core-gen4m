@@ -85,7 +85,9 @@
 #endif
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "connsys_debug_utility.h"
+#endif
 #include "metlog.h"
 #endif
 

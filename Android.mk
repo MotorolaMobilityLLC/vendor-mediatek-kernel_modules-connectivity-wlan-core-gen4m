@@ -27,6 +27,15 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_NAME := wlan_drv_gen4m_6879
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	WLAN_CHIP_ID := bellwether
+	WIFI_CHIP := BELLWETHER
+	CONNAC_VER := 3_0
+	WIFI_HIF := pcie
+	WIFI_WMT := n
+	WIFI_EMI := n
+	WIFI_NAME := wlan_drv_gen4m_bellwether
+	WIFI_CHRDEV_MODULE :=
 else
 	WIFI_NAME := wlan_drv_gen4m
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
