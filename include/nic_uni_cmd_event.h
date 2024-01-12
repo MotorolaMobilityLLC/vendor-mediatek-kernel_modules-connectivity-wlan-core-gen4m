@@ -6245,13 +6245,15 @@ struct UNI_EVENT_CNM {
 	/* tlv */
 	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
 	*
-	*   TAG                              | ID  | structure
-	*   ---------------------------------|-----|--------------
-	*   UNI_EVENT_CNM_CH_PRIVILEGE_GRANT | 0x0 | UNI_EVENT_CH_PRIVILEGE_GRANT_T
-	*   UNI_EVENT_CNM_GET_CHANNEL_INFO   | 0x1 | UNI_EVENT_CNM_GET_CHANNEL_INFO_T
-	*   UNI_EVENT_CNM_GET_BSS_INFO       | 0x2 | UNI_EVENT_CNM_GET_BSS_INFO_T
-	*   UNI_EVENT_CNM_OPMODE_CHANGE      | 0x3 | UNI_EVENT_CNM_OPMODE_CHANGE_T
-	*   UNI_EVENT_CNM_CH_PRIVILEGE_GRANT | 0x4 | UNI_EVENT_CH_PRIVILEGE_GRANT_T
+	*   TAG                                      | ID  | structure
+	*   -----------------------------------------|-----|--------------
+	*   UNI_EVENT_CNM_CH_PRIVILEGE_GRANT         | 0x0 | UNI_EVENT_CH_PRIVILEGE_GRANT_T
+	*   UNI_EVENT_CNM_GET_CHANNEL_INFO           | 0x1 | UNI_EVENT_CNM_GET_CHANNEL_INFO_T
+	*   UNI_EVENT_CNM_GET_BSS_INFO               | 0x2 | UNI_EVENT_CNM_GET_BSS_INFO_T
+	*   UNI_EVENT_CNM_OPMODE_CHANGE              | 0x3 | UNI_EVENT_CNM_OPMODE_CHANGE_T
+	*   UNI_EVENT_CNM_CH_PRIVILEGE_MLO_SUB_GRANT | 0x4 | UNI_EVENT_CNM_CH_PRIVILEGE_GRANT_T
+	*   UNI_EVENT_CNM_OPMODE_CHANGE_RDD          | 0x5 | UNI_EVENT_CNM_OPMODE_CHANGE_RDD_T
+	*   UNI_EVENT_CNM_CH_GRANT_INFO              | 0x6 | UNI_EVENT_CNM_CH_GRANT_INFO_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -6264,6 +6266,7 @@ enum ENUM_UNI_EVENT_CNM_TAG {
 	UNI_EVENT_CNM_TAG_OPMODE_CHANGE = 3,
 	UNI_EVENT_CNM_TAG_CH_PRIVILEGE_MLO_SUB_GRANT = 4,
 	UNI_EVENT_CNM_TAG_OPMODE_CHANGE_RDD = 5,
+	UNI_EVENT_CNM_TAG_CH_GRANT_INFO = 6,
 	UNI_EVENT_CNM_TAG_NUM
 }__KAL_ATTRIB_PACKED__;
 
@@ -6284,6 +6287,16 @@ struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT {
 	uint8_t          ucDBDCBand;         // ENUM_CMD_REQ_DBDC_BAND_T
 	uint8_t          aucReserved[1];
 	uint32_t         u4GrantInterval;    /* In unit of ms */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_CNM_CH_GRANT_INFO {
+	uint16_t         u2Tag;
+	uint16_t         u2Length;
+	uint8_t          ucTxNss;        /*Set channel TX Nss*/
+	uint8_t          ucRxNss;        /*Set channel RX Nss*/
+	uint8_t          ucChannelWidth; /*Set channel Bandwidth*/
+	uint8_t          aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

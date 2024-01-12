@@ -2134,11 +2134,17 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
  * @return
  */
 /*----------------------------------------------------------------------------*/
-uint8_t cnmGetDbdcBwCapability(struct ADAPTER
-			       *prAdapter,
-			       uint8_t ucBssIndex)
+uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
+	struct BSS_INFO *prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
 	uint8_t ucMaxBw = MAX_BW_20MHZ;
+
+	if (prBssInfo && prBssInfo->ucGrantBW != MAX_BW_UNKNOWN) {
+		DBGLOG(CNM, TRACE, "BW = %d\n", prBssInfo->ucGrantBW);
+		return prBssInfo->ucGrantBW;
+	}
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 
@@ -2150,6 +2156,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER
 #endif
 #endif
 
+	DBGLOG(CNM, TRACE, "BW = %d\n", ucMaxBw);
 	return ucMaxBw;
 }
 
@@ -2245,6 +2252,7 @@ omac_choosed:
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
+			prBssInfo->ucGrantBW = MAX_BW_UNKNOWN;
 			prBssInfo->eHwBandIdx = ENUM_BAND_AUTO;
 			prBssInfo->eBackupHwBandIdx = ENUM_BAND_AUTO;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
@@ -5060,6 +5068,8 @@ void cnmOpModeGetTRxNss(
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
 	enum ENUM_CNM_OPMODE_REQ_T eCurrMaxIdx = CNM_OPMODE_REQ_MAX_CAP;
 	uint8_t ucOpRxNss, ucOpTxNss;
+	struct BSS_INFO *prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	if (pucOpRxNss == NULL || pucOpTxNss == NULL ||
 		ucBssIndex >= MAX_BSSID_NUM) {
@@ -5070,6 +5080,14 @@ void cnmOpModeGetTRxNss(
 	}
 
 	ucOpRxNss = ucOpTxNss = wlanGetSupportNss(prAdapter, ucBssIndex);
+
+	if (prBssInfo && prBssInfo->ucGrantTxNss && prBssInfo->ucGrantRxNss) {
+		ucOpTxNss = prBssInfo->ucGrantTxNss;
+		ucOpRxNss = prBssInfo->ucGrantRxNss;
+		DBGLOG(CNM, TRACE, "Granted TxNss = %d, RxNss = %d\n",
+			ucOpTxNss, ucOpRxNss);
+	}
+
 	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
 
 	*pucOpTxNss = ucOpTxNss;
