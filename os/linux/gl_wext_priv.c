@@ -9804,7 +9804,8 @@ int parseValueInString(
 			} else {
 				kalStrnCpy(aucValue, pucValueHead, u4Len);
 				*((char *)aucValue + u4Len) = '\0';
-				DBGLOG(REQ, TRACE, "STR type = %s\n", aucValue);
+				DBGLOG(REQ, TRACE,
+					"STR type = %s\n", (char *)aucValue);
 			}
 			return 0;
 		}
@@ -9941,7 +9942,9 @@ int priv_driver_set_ap_set_cfg(IN struct net_device *prNetDev,
 	prWifiVar = &prAdapter->rWifiVar;
 
 	/* get role index from ndev */
-	mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx);
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		goto error;
+
 	DBGLOG(REQ, INFO, "ucRoleIdx = %d\n", ucRoleIdx);
 
 	/* Cfg */
@@ -10180,6 +10183,7 @@ priv_set_ap(IN struct net_device *prNetDev,
 				__func__, i4TotalLen);
 				return -EFAULT;
 		}
+		pcExtra[i4TotalLen - 1] = '\0';
 	}
 
 	DBGLOG(REQ, INFO, "%s pcExtra %s\n", __func__, pcExtra);
@@ -10250,14 +10254,8 @@ exit:
 
 	DBGLOG(REQ, INFO, "pcExtra done\n");
 
-	if (i4BytesWritten > 0) {
-		if (i4BytesWritten > i4TotalFixLen)
-			i4BytesWritten = i4TotalFixLen;
-		prIwReqData->data.length =
-			i4BytesWritten;
-	} else if (i4BytesWritten == 0) {
+	if (i4BytesWritten >= 0)
 		prIwReqData->data.length = i4BytesWritten;
-	}
 
 	return 0;
 }
