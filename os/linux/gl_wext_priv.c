@@ -15940,14 +15940,12 @@ int priv_driver_efuse_ops(struct net_device *prNetDev,
 	/* Start operation */
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (prGlueInfo == NULL) {
+	if (prGlueInfo == NULL || !prGlueInfo->prAdapter) {
 		DBGLOG(REQ, ERROR, "prGlueInfo is null\n");
 		goto efuse_op_invalid;
 	}
 
-	if (prGlueInfo &&
-	    prGlueInfo->prAdapter &&
-	    prGlueInfo->prAdapter->chip_info &&
+	if (prGlueInfo->prAdapter->chip_info &&
 	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
 		u4Offset += kalSnprintf(pcCommand + u4Offset,
 				     i4TotalLen - u4Offset,
