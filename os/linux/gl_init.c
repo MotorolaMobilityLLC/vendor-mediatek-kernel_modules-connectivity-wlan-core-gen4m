@@ -5674,7 +5674,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	if (!bAtResetFlow) {
 		uint8_t i;
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
-		struct sockaddr MacAddr;
+		struct sockaddr MacAddr = {0};
 		uint32_t u4SetInfoLen = 0;
 
 		for (i = 0; i < KAL_AIS_NUM; i++) {
