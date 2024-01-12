@@ -122,6 +122,7 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_OID_AIS_FSM_JOIN_REQ"),
 	(uint8_t *) DISP_STRING("MID_OID_AIS_FSM_ABORT"),
 	(uint8_t *) DISP_STRING("MID_AIS_SAA_FSM_START"),
+	(uint8_t *) DISP_STRING("MID_OID_SAA_FSM_CONTINUE"),
 	(uint8_t *) DISP_STRING("MID_AIS_SAA_FSM_ABORT"),
 	(uint8_t *) DISP_STRING("MID_SAA_AIS_JOIN_COMPLETE"),
 
@@ -169,6 +170,7 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX"),
+	(uint8_t *) DISP_STRING("MID_WNM_AIS_BSS_TRANSITION"),
 #if CFG_SUPPORT_NCHO
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_NCHO_ACTION_FRAME")
 #endif
@@ -238,6 +240,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_OID_AIS_FSM_JOIN_REQ, aisFsmRunEventAbort},
 	{MID_OID_AIS_FSM_ABORT, aisFsmRunEventAbort},
 	{MID_AIS_SAA_FSM_START, saaFsmRunEventStart},
+	{MID_OID_SAA_FSM_CONTINUE, saaFsmRunEventFTContinue},
 	{MID_AIS_SAA_FSM_ABORT, saaFsmRunEventAbort},
 	{MID_SAA_AIS_JOIN_COMPLETE, aisFsmRunEventJoinComplete},
 
@@ -290,7 +293,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 		aisFsmRunEventRemainOnChannel},
 	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 		aisFsmRunEventCancelRemainOnChannel},
-	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx}
+	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx},
+	{MID_WNM_AIS_BSS_TRANSITION, aisFsmRunEventBssTransition},
+	{MID_OID_WMM_TSPEC_OPERATE, wmmRunEventTSOperate},
+	{MID_RLM_RM_SCHEDULE, rlmRunEventProcessNextRm},
 #if CFG_SUPPORT_NCHO
 	{MID_MNY_AIS_NCHO_ACTION_FRAME,
 		aisFsmRunEventNchoActionFrameTx},

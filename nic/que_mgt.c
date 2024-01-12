@@ -906,12 +906,11 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 		QM_TX_SET_NEXT_SW_RFB(prSwRfbListTail, NULL);
 	}
 	return prSwRfbListHead;
-
 }
 
 struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	OUT uint8_t *pucTC)
+				  IN struct MSDU_INFO *prMsduInfo,
+				  IN uint8_t ucActiveTs, OUT uint8_t *pucTC)
 {
 	struct QUE *prTxQue = NULL;
 	struct STA_RECORD *prStaRec;
@@ -957,7 +956,12 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 				ASSERT(0);
 			}
 			if ((prBssInfo->arACQueParms[eAci].ucIsACMSet) &&
-				(eAci != WMM_AC_BK_INDEX)) {
+			    !(ucActiveTs & BIT(eAci)) &&
+			    (eAci != WMM_AC_BK_INDEX)) {
+				DBGLOG(WMM, TRACE,
+					"ucUserPriority: %d, aucNextUP[eAci]: %d",
+					prMsduInfo->ucUserPriority,
+					aucNextUP[eAci]);
 				prMsduInfo->ucUserPriority = aucNextUP[eAci];
 				fgCheckACMAgain = TRUE;
 			}
@@ -1092,6 +1096,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgDropPacket;
+	uint8_t ucActivedTspec = 0;
 
 	DBGLOG(QM, LOUD, "Enter qmEnqueueTxPackets\n");
 
@@ -1101,6 +1106,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 	prCurrentMsduInfo = NULL;
 	QUEUE_INITIALIZE(&rNotEnqueuedQue);
 	prNextMsduInfo = prMsduInfoListHead;
+	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
 
 	do {
 		prCurrentMsduInfo = prNextMsduInfo;
@@ -1167,8 +1173,9 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 				break;
 
 			default:
-				prTxQue = qmDetermineStaTxQueue(prAdapter,
-					prCurrentMsduInfo, &ucTC);
+				prTxQue = qmDetermineStaTxQueue(
+					prAdapter, prCurrentMsduInfo,
+					ucActivedTspec, &ucTC);
 				if (!prTxQue) {
 					DBGLOG(QM, INFO,
 						"Drop the Packet for TxQue is NULL\n");
@@ -1252,6 +1259,8 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 		/* 4 <4> Enqueue the packet */
 		QUEUE_INSERT_TAIL(prTxQue,
 			(struct QUE_ENTRY *) prCurrentMsduInfo);
+		wlanFillTimestamp(prAdapter, prCurrentMsduInfo->prPacket,
+				  PHASE_ENQ_QM);
 		/*
 		 * Record how many packages enqueue
 		 * to TX during statistic intervals
@@ -1471,6 +1480,11 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	uint8_t *pucPsStaFreeQuota;
+#if CFG_SUPPORT_SOFT_ACM
+	uint8_t ucAc;
+	u_int8_t fgAcmFlowCtrl = FALSE;
+	static const uint8_t aucTc2Ac[] = {ACI_BK, ACI_BE, ACI_VI, ACI_VO};
+#endif
 
 	/* Sanity Check */
 	if (!u4CurrentQuota) {
@@ -1562,6 +1576,22 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						prStaRec, prBssInfo,
 						u4TotalQuota);
 #endif
+#if CFG_SUPPORT_SOFT_ACM
+			if (ucTC <= TC3_INDEX &&
+			    prStaRec->afgAcmRequired[aucTc2Ac[ucTC]]) {
+				ucAc = aucTc2Ac[ucTC];
+				DBGLOG(QM, TRACE, "AC %d Pending Pkts %u\n",
+				       ucAc, prCurrQueue->u4NumElem);
+				/* Quick check remain medium time and pending
+				** packets
+				*/
+				if (QUEUE_IS_EMPTY(prCurrQueue) ||
+				    !wmmAcmCanDequeue(prAdapter, ucAc, 0))
+					goto skip_dequeue;
+				fgAcmFlowCtrl = TRUE;
+			} else
+				fgAcmFlowCtrl = FALSE;
+#endif
 			/* 4 <2.3> Dequeue packet */
 			/* Three cases to break: (1) No resource
 			 * (2) No packets (3) Fairness
@@ -1602,6 +1632,19 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						"sta_rec is not valid\n");
 					break;
 				}
+#if CFG_SUPPORT_SOFT_ACM
+				if (fgAcmFlowCtrl) {
+					uint32_t u4PktTxTime = 0;
+
+					u4PktTxTime = wmmCalculatePktUsedTime(
+						prBssInfo, prStaRec,
+						prDequeuedPkt->u2FrameLength -
+							ETH_HLEN);
+					if (!wmmAcmCanDequeue(prAdapter, ucAc,
+							      u4PktTxTime))
+						break;
+				}
+#endif
 				/* Available to be Tx */
 
 				QUEUE_REMOVE_HEAD(prCurrQueue, prDequeuedPkt,
@@ -1629,7 +1672,9 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				u4AvailableResourcePLE -=
 					NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 			}
-
+#if CFG_SUPPORT_SOFT_ACM
+skip_dequeue:
+#endif
 			/* AP mode: Update STA in PS Free quota */
 			if (prStaRec->fgIsInPS && pucPsStaFreeQuota) {
 				if ((*pucPsStaFreeQuota) >=
@@ -4956,12 +5001,27 @@ void mqmParseAssocRspWmmIe(IN uint8_t *pucIE,
 
 	if ((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM)
 		&& (!kalMemCmp(WMM_IE_OUI(pucIE), aucWfaOui, 3))) {
+		struct IE_WMM_PARAM *prWmmParam = (struct IE_WMM_PARAM *) pucIE;
+		enum ENUM_ACI eAci;
 
 		switch (WMM_IE_OUI_SUBTYPE(pucIE)) {
 		case VENDOR_OUI_SUBTYPE_WMM_PARAM:
 			if (IE_LEN(pucIE) != 24)
 				break;	/* WMM Info IE with a wrong length */
 			prStaRec->fgIsQoS = TRUE;
+			prStaRec->fgIsUapsdSupported =
+				!!(prWmmParam->ucQosInfo & WMM_QOS_INFO_UAPSD);
+			for (eAci = ACI_BE; eAci < ACI_NUM; eAci++)
+				prStaRec->afgAcmRequired[eAci] = !!(
+					prWmmParam->arAcParam[eAci].ucAciAifsn &
+					WMM_ACIAIFSN_ACM);
+			DBGLOG(WMM, INFO,
+			       "WMM: " MACSTR "ACM BK=%d BE=%d VI=%d VO=%d\n",
+			       MAC2STR(prStaRec->aucMacAddr),
+			       prStaRec->afgAcmRequired[ACI_BK],
+			       prStaRec->afgAcmRequired[ACI_BE],
+			       prStaRec->afgAcmRequired[ACI_VI],
+			       prStaRec->afgAcmRequired[ACI_VO]);
 			break;
 
 		case VENDOR_OUI_SUBTYPE_WMM_INFO:
@@ -5409,11 +5469,19 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TDLS
 			TdlsBssExtCapParse(prStaRec, pucIE);
 #endif /* CFG_SUPPORT_TDLS */
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+			prStaRec->fgSupportBTM =
+				!!((*(uint32_t *)(pucIE + 2)) &
+			BIT(ELEM_EXT_CAP_BSS_TRANSITION_BIT));
+#endif
 			break;
 
 		case ELEM_ID_WMM:
 			if ((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM) &&
 			    (!kalMemCmp(WMM_IE_OUI(pucIE), aucWfaOui, 3))) {
+				struct IE_WMM_PARAM *prWmmParam =
+					(struct IE_WMM_PARAM *)pucIE;
+				enum ENUM_ACI eAci;
 
 				switch (WMM_IE_OUI_SUBTYPE(pucIE)) {
 				case VENDOR_OUI_SUBTYPE_WMM_PARAM:
@@ -5422,11 +5490,26 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 						break;
 					prStaRec->fgIsWmmSupported = TRUE;
 					prStaRec->fgIsUapsdSupported =
-						((((
-						(struct IE_WMM_PARAM *)
-						pucIE)->ucQosInfo)
-						& WMM_QOS_INFO_UAPSD)
-						? TRUE : FALSE);
+						!!(prWmmParam->ucQosInfo &
+						   WMM_QOS_INFO_UAPSD);
+					for (eAci = ACI_BE; eAci < ACI_NUM;
+					     eAci++)
+						prStaRec->afgAcmRequired
+							[eAci] = !!(
+							prWmmParam
+								->arAcParam
+									[eAci]
+								.ucAciAifsn &
+							WMM_ACIAIFSN_ACM);
+					DBGLOG(WMM, INFO,
+					       "WMM: " MACSTR
+					       "ACM BK=%d BE=%d VI=%d VO=%d\n",
+					       MAC2STR(prStaRec->aucMacAddr),
+					       prStaRec->afgAcmRequired[ACI_BK],
+					       prStaRec->afgAcmRequired[ACI_BE],
+					       prStaRec->afgAcmRequired[ACI_VI],
+					       prStaRec->afgAcmRequired
+						       [ACI_VO]);
 					break;
 
 				case VENDOR_OUI_SUBTYPE_WMM_INFO:
@@ -7833,3 +7916,85 @@ qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	return FALSE;
 }
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
+		      struct STA_RECORD *prDstStaRec)
+{
+	uint8_t ucQueArrayIdx;
+	struct QUE *prSrcQue = NULL;
+	struct QUE *prDstQue = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	uint8_t ucDstStaIndex = 0;
+
+	ASSERT(prSrcStaRec);
+	ASSERT(prDstStaRec);
+
+	prSrcQue = &prSrcStaRec->arTxQueue[0];
+	prDstQue = &prDstStaRec->arTxQueue[0];
+	ucDstStaIndex = prDstStaRec->ucIndex;
+
+	DBGLOG(QM, INFO, "Pending MSDUs for TC 0~3, %u %u %u %u\n",
+	       prSrcQue[TC0_INDEX].u4NumElem, prSrcQue[TC1_INDEX].u4NumElem,
+	       prSrcQue[TC2_INDEX].u4NumElem, prSrcQue[TC3_INDEX].u4NumElem);
+	/* Concatenate all MSDU_INFOs in TX queues of this STA_REC */
+	for (ucQueArrayIdx = 0; ucQueArrayIdx < TC4_INDEX; ucQueArrayIdx++) {
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
+			&prSrcQue[ucQueArrayIdx]);
+		while (prMsduInfo) {
+			prMsduInfo->ucStaRecIndex = ucDstStaIndex;
+			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+				&prMsduInfo->rQueEntry);
+		}
+		QUEUE_CONCATENATE_QUEUES((&prDstQue[ucQueArrayIdx]),
+					 (&prSrcQue[ucQueArrayIdx]));
+	}
+}
+
+void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+		      enum ENUM_ACI eAci)
+{
+	uint8_t aucNextUP[ACI_NUM] = {1 /* BEtoBK */, 1 /*na */, 0 /*VItoBE */,
+				      4 /*VOtoVI */};
+	enum ENUM_ACI aeNextAci[ACI_NUM] = {ACI_BK, ACI_BK, ACI_BE, ACI_VI};
+	uint8_t ucActivedTspec = 0;
+	uint8_t ucNewUp = 0;
+	struct QUE *prSrcQue = NULL;
+	struct QUE *prDstQue = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	struct AC_QUE_PARMS *prAcQueParam = NULL;
+	uint8_t ucTc = 0;
+
+	if (!prStaRec || eAci == ACI_NUM || eAci == ACI_BK || !prAdapter ||
+	    !prAdapter->prAisBssInfo) {
+		DBGLOG(QM, ERROR, "prSta NULL %d, eAci %d, prAdapter NULL %d\n",
+		       !prStaRec, eAci, !prAdapter);
+		return;
+	}
+	prSrcQue = &prStaRec->arTxQueue[aucWmmAC2TcResourceSet1[eAci]];
+	prAcQueParam = &(prAdapter->prAisBssInfo->arACQueParms[0]);
+	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
+
+	while (prAcQueParam[eAci].ucIsACMSet &&
+			!(ucActivedTspec & BIT(eAci)) && eAci != ACI_BK) {
+		eAci = aeNextAci[eAci];
+		ucNewUp = aucNextUP[eAci];
+	}
+	DBGLOG(QM, INFO, "new ACI %d, ACM %d, HasTs %d\n", eAci,
+	       prAcQueParam[eAci].ucIsACMSet, !!(ucActivedTspec & BIT(eAci)));
+	ucTc = aucWmmAC2TcResourceSet1[eAci];
+	prDstQue = &prStaRec->arTxQueue[ucTc];
+	prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(prSrcQue);
+	while (prMsduInfo) {
+		prMsduInfo->ucUserPriority = ucNewUp;
+		prMsduInfo->ucTC = ucTc;
+		prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_NEXT_ENTRY(
+			&prMsduInfo->rQueEntry);
+	}
+	QUEUE_CONCATENATE_QUEUES(prDstQue, prSrcQue);
+#if QM_ADAPTIVE_TC_RESOURCE_CTRL
+	qmUpdateAverageTxQueLen(prAdapter);
+	qmReassignTcResource(prAdapter);
+#endif
+	nicTxAdjustTcq(prAdapter);
+	kalSetEvent(prAdapter->prGlueInfo);
+}

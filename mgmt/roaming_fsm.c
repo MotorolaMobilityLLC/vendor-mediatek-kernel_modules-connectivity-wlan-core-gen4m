@@ -95,6 +95,7 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("IDLE"),
 	(uint8_t *) DISP_STRING("DECISION"),
 	(uint8_t *) DISP_STRING("DISCOVERY"),
+	(uint8_t *) DISP_STRING("REQ_CAND_LIST"),
 	(uint8_t *) DISP_STRING("ROAM")
 };
 
@@ -113,7 +114,14 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
+static void roamingWaitCandidateTimeout(IN struct ADAPTER *prAdapter,
+					unsigned long ulParamPtr)
+{
+	DBGLOG(ROAMING, INFO,
+	       "Time out, Waiting for neighbor response");
 
+	roamingFsmSteps(prAdapter, ROAMING_STATE_DISCOVERY);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialize the value in ROAMING_FSM_INFO_T for ROAMING FSM operation
@@ -142,6 +150,9 @@ void roamingFsmInit(IN struct ADAPTER *prAdapter)
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
 	prRoamingFsmInfo->fgDrvRoamingAllow = TRUE;
+	cnmTimerInitTimer(prAdapter, &prRoamingFsmInfo->rWaitCandidateTimer,
+			  (PFN_MGMT_TIMEOUT_FUNC)roamingWaitCandidateTimeout,
+			  (unsigned long)NULL);
 }				/* end of roamingFsmInit() */
 
 /*----------------------------------------------------------------------------*/
@@ -165,6 +176,7 @@ void roamingFsmUninit(IN struct ADAPTER *prAdapter)
 			   (prAdapter->rWifiVar.rRoamingInfo);
 
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
+	cnmTimerStopTimer(prAdapter, &prRoamingFsmInfo->rWaitCandidateTimer);
 }				/* end of roamingFsmUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -437,6 +449,10 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 			fgIsNeedScan = TRUE;
 #endif
 
+			cnmTimerStopTimer(
+				prAdapter,
+				&prRoamingFsmInfo->rWaitCandidateTimer);
+
 			GET_CURRENT_SYSTIME(&rCurrentTime);
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 			      prRoamingFsmInfo->rRoamingDiscoveryUpdateTime,
@@ -455,7 +471,32 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_NCHO */
 		}
 		break;
-
+		case ROAMING_STATE_REQ_CAND_LIST:
+		{
+#if CFG_SUPPORT_802_11K
+			struct BSS_INFO *prBssInfo = prAdapter->prAisBssInfo;
+			struct BSS_DESC *prBssDesc =
+				prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+			/* if AP supports Neighbor AP report, then it can used
+			** to assist roaming candicate selection
+			*/
+			if (prBssInfo && prBssInfo->prStaRecOfAP) {
+				if (prBssDesc &&
+				    (prBssDesc->aucRrmCap[0] &
+				     BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))) {
+					aisSendNeighborRequest(prAdapter);
+					cnmTimerStartTimer(
+						prAdapter,
+						&prRoamingFsmInfo
+							 ->rWaitCandidateTimer,
+						100);
+				}
+			}
+#endif
+			fgIsTransition = TRUE;
+			eNextState = ROAMING_STATE_DISCOVERY;
+			break;
+		}
 		case ROAMING_STATE_ROAM:
 			break;
 
@@ -550,7 +591,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 	    ROAMING_STATE_DECISION)
 		return;
 
-	eNextState = ROAMING_STATE_DISCOVERY;
+	eNextState = ROAMING_STATE_REQ_CAND_LIST;
 	/* DECISION -> DISCOVERY */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		struct BSS_INFO *prAisBssInfo;
@@ -582,7 +623,7 @@ void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter,
 				arBssid, TRUE, &rSsid);
 		if (prBssDesc) {
 			prBssDesc->ucRCPI = (uint8_t)(prTransit->u2Data & 0xff);
-			DBGLOG(ROAMING, INFO, "uint8_t %u\n",
+			DBGLOG(ROAMING, INFO, "ucRCPI %u\n",
 				prBssDesc->ucRCPI);
 		}
 		roamingFsmSteps(prAdapter, eNextState);

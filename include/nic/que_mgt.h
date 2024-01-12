@@ -956,7 +956,7 @@ struct SW_RFB *qmFlushRxQueues(IN struct ADAPTER
 
 struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER
 				  *prAdapter, IN struct MSDU_INFO *prMsduInfo,
-				  OUT uint8_t *pucTC);
+				  IN uint8_t ucActiveTs, OUT uint8_t *pucTC);
 
 void qmSetTxPacketDescTemplate(IN struct ADAPTER *prAdapter,
 			       IN struct MSDU_INFO *prMsduInfo);
@@ -1163,6 +1163,10 @@ u_int8_t
 qmIsNoDropPacket(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
+		      struct STA_RECORD *prDstStaRec);
+void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+		      enum ENUM_ACI eAci);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

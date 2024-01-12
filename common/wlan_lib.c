@@ -9376,3 +9376,139 @@ int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	return kalReadToFile(pcFileName, pucBuf,
 				u4MaxFileLen, pu4ReadFileLen);
 }
+
+void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
+{
+	struct QUE *prCmdQue;
+	struct QUE rTempCmdQue;
+	struct QUE *prTempCmdQue = &rTempCmdQue;
+	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
+	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	ASSERT(prAdapter);
+	DBGLOG(OID, INFO, "Remove pending Cmd: CID %d\n", ucCid);
+
+	/* 1: Clear Pending OID in prAdapter->rPendingCmdQueue */
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+
+	prCmdQue = &prAdapter->rPendingCmdQueue;
+	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
+
+	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
+	while (prQueueEntry) {
+		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
+		if (prCmdInfo->ucCID != ucCid) {
+			QUEUE_INSERT_TAIL(prCmdQue, prQueueEntry);
+			continue;
+		}
+
+		if (prCmdInfo->pfCmdTimeoutHandler) {
+			prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
+		} else if (prCmdInfo->fgIsOid) {
+			kalOidComplete(prAdapter->prGlueInfo,
+				       prCmdInfo->fgSetQuery, 0,
+				       WLAN_STATUS_FAILURE);
+		}
+
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
+				  struct QUE_ENTRY *);
+	}
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+}
+
+/* Translate Decimals string to Hex
+** The result will be put in a 2bytes variable.
+** Integer part will occupy the left most 3 bits, and decimal part is in the
+** left 13 bits
+** Integer part can be parsed by kstrtou16, decimal part should be translated by
+** mutiplying
+** 16 and then pick integer part.
+** For example
+*/
+uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out)
+{
+	uint8_t aucDecimalStr[32] = {0,};
+	uint8_t *pucDecimalPart = NULL;
+	uint8_t *tmp = NULL;
+	uint32_t u4Result = 0;
+	uint32_t u4Ret = 0;
+	uint32_t u4Degree = 0;
+	uint32_t u4Remain = 0;
+	uint8_t ucAccuracy = 4; /* Hex decimals accuarcy is 4 bytes */
+	uint32_t u4Base = 1;
+
+	if (!pu2Out || !pucDecimalStr)
+		return 1;
+
+	while (*pucDecimalStr == '0')
+		pucDecimalStr++;
+	kalStrnCpy(aucDecimalStr, pucDecimalStr, sizeof(aucDecimalStr) - 1);
+	pucDecimalPart = strchr(aucDecimalStr, '.');
+	if (!pucDecimalPart) {
+		DBGLOG(INIT, INFO, "No decimal part, ori str %s\n",
+		       pucDecimalStr);
+		goto integer_part;
+	}
+	*pucDecimalPart++ = 0;
+	/* get decimal degree */
+	tmp = pucDecimalPart + strlen(pucDecimalPart);
+	do {
+		if (tmp == pucDecimalPart) {
+			DBGLOG(INIT, INFO,
+			       "Decimal part are all 0, ori str %s\n",
+			       pucDecimalStr);
+			goto integer_part;
+		}
+		tmp--;
+	} while (*tmp == '0');
+
+	*(++tmp) = 0;
+	u4Degree = (uint32_t)(tmp - pucDecimalPart);
+	/* if decimal part is not 0, translate it to hexadecimal decimals */
+	/* Power(10, degree) */
+	for (; u4Remain < u4Degree; u4Remain++)
+		u4Base *= 10;
+
+	while (*pucDecimalPart == '0')
+		pucDecimalPart++;
+
+	u4Ret = kstrtou32(pucDecimalPart, 0, &u4Remain);
+	if (u4Ret) {
+		DBGLOG(INIT, ERROR, "Parse decimal str %s error, degree %u\n",
+			   pucDecimalPart, u4Degree);
+		return u4Ret;
+	}
+
+	do {
+		u4Remain *= 16;
+		u4Result |= (u4Remain / u4Base) << ((ucAccuracy-1) * 4);
+		u4Remain %= u4Base;
+		ucAccuracy--;
+	} while (u4Remain && ucAccuracy > 0);
+	/* Each Hex Decimal byte was left shift more than 3 bits, so need
+	** right shift 3 bits at last
+	** For example, mmmnnnnnnnnnnnnn.
+	** mmm is integer part, n represents decimals part.
+	** the left most 4 n are shift 9 bits. But in for loop, we shift 12 bits
+	**/
+	u4Result >>= 3;
+	u4Remain = 0;
+
+integer_part:
+	u4Ret = kstrtou32(aucDecimalStr, 0, &u4Remain);
+	u4Result |= u4Remain << 13;
+
+	if (u4Ret)
+		DBGLOG(INIT, ERROR, "Parse integer str %s error\n",
+		       aucDecimalStr);
+	else {
+		*pu2Out = u4Result & 0xffff;
+		DBGLOG(INIT, TRACE, "Result 0x%04x\n", *pu2Out);
+	}
+	return u4Ret;
+}
+

@@ -119,6 +119,8 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
  *                                 M A C R O S
  *******************************************************************************
  */
+#define IS_BSS_INDEX_VALID(_ucBssIndex)     ((_ucBssIndex) <= P2P_DEV_BSS_INDEX)
+
 #define GET_BSS_INFO_BY_INDEX(_prAdapter, _ucBssIndex) \
 	((_prAdapter)->aprBssInfo[(_ucBssIndex)])
 

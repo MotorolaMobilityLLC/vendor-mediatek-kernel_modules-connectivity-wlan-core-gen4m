@@ -192,7 +192,7 @@ uint32_t nicAllocateAdapterMemory(IN struct ADAPTER
 		prRxCtrl->pucRxCached = (uint8_t *) NULL;
 
 		/* 4 <1> Memory for Management Memory Pool and CMD_INFO_T */
-		/* Allocate memory for the CMD_INFO_T
+		/* Allocate memory for the struct CMD_INFO
 		 * and its MGMT memory pool.
 		 */
 		prAdapter->u4MgtBufCachedSize = MGT_BUFFER_SIZE;
@@ -1585,19 +1585,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 			rCmdSetBssInfo.ucAuthMode = AUTH_MODE_WPA2;
 		else
 #endif
-			/* Firmware didn't define AUTH_MODE_NON_RSN_FT,
-			 * so AUTH_MODE_OPEN is zero in firmware, but it is 1 in
-			 * driver. so we need to minus 1 for all authmode except
-			 * AUTH_MODE_NON_RSN_FT, because AUTH_MODE_NON_RSN_FT
-			 * will be same as AUTH_MODE_OPEN in firmware
-			 */
-			if (prConnSettings->eAuthMode != AUTH_MODE_NON_RSN_FT)
-				rCmdSetBssInfo.ucAuthMode =
-					(uint8_t) prConnSettings->eAuthMode - 1;
-			else
-				rCmdSetBssInfo.ucAuthMode =
-					(uint8_t) prConnSettings->eAuthMode;
-
+		rCmdSetBssInfo.ucAuthMode = (uint8_t) prConnSettings->eAuthMode;
 		rCmdSetBssInfo.ucEncStatus = (uint8_t)
 					     prConnSettings->eEncStatus;
 		rCmdSetBssInfo.ucWapiMode = (uint8_t)
@@ -1651,6 +1639,15 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 					     ENUM_ENCRYPTION3_KEY_ABSENT;
 #endif
 	}
+	/* Firmware didn't define AUTH_MODE_NON_RSN_FT, so AUTH_MODE_OPEN is
+	** zero in firmware,
+	** but it is 1 in driver. so we need to minus 1 for all authmode except
+	** AUTH_MODE_NON_RSN_FT,
+	** because AUTH_MODE_NON_RSN_FT will be same as AUTH_MODE_OPEN in
+	** firmware
+	**/
+	if (rCmdSetBssInfo.ucAuthMode != AUTH_MODE_NON_RSN_FT)
+		rCmdSetBssInfo.ucAuthMode -= 1;
 
 	rCmdSetBssInfo.ucDisconnectDetectTh = 0;
 
@@ -1825,7 +1822,15 @@ uint32_t nicPmIndicateBssConnected(IN struct ADAPTER
 		&& (prAdapter->fgIsP2PRegistered))
 #endif
 	   ) {
-		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
+		    prBssInfo->prStaRecOfAP) {
+			uint8_t ucUapsd = wmmCalculateUapsdSetting(prAdapter);
+
+			/* should sync Tspec uapsd settings */
+			rCmdIndicatePmBssConnected.ucBmpDeliveryAC =
+				(ucUapsd >> 4) & 0xf;
+			rCmdIndicatePmBssConnected.ucBmpTriggerAC =
+				ucUapsd & 0xf;
 			rCmdIndicatePmBssConnected.fgIsUapsdConnection =
 				(uint8_t) prBssInfo->prStaRecOfAP->
 				fgIsUapsdSupported;
@@ -2850,6 +2855,8 @@ void nicInitMGMT(IN struct ADAPTER *prAdapter,
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
 
+	wmmInit(prAdapter);
+
 	/* RLM Module - initialization */
 	rlmFsmEventInit(prAdapter);
 
@@ -2899,6 +2906,8 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	/* SCN Module - unintiailization */
 	scnUninit(prAdapter);
 
+	wmmUnInit(prAdapter);
+
 	/* RLM Module - uninitialization */
 	rlmFsmEventUninit(prAdapter);
 
@@ -2926,7 +2935,7 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void
+uint32_t
 nicAddScanResult(IN struct ADAPTER *prAdapter,
 		 IN uint8_t rMacAddr[PARAM_MAC_ADDR_LEN],
 		 IN struct PARAM_SSID *prSsid,
@@ -3215,7 +3224,9 @@ nicAddScanResult(IN struct ADAPTER *prAdapter,
 					= NULL;
 			}
 		}
+		return i;
 	}
+	return i - 1;
 }
 
 /*----------------------------------------------------------------------------*/

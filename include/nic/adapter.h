@@ -576,6 +576,21 @@ struct ESS_CHNL_INFO {
 };
 /* end Support AP Selection */
 
+struct NEIGHBOR_AP_T {
+	struct LINK_ENTRY rLinkEntry;
+	uint8_t aucBssid[MAC_ADDR_LEN];
+	u_int8_t fgHT:1;
+	u_int8_t fgSameMD:1;
+	u_int8_t fgRmEnabled:1;
+	u_int8_t fgFromBtm:1;
+	u_int8_t fgQoS:1;
+	uint8_t ucReserved:3;
+	u_int8_t fgPrefPresence;
+	uint8_t ucPreference;
+	uint8_t ucChannel;
+	uint64_t u8TermTsf;
+};
+
 struct AIS_SPECIFIC_BSS_INFO {
 	/* This value indicate the roaming type used in AIS_JOIN */
 	uint8_t ucRoamingAuthTypes;
@@ -645,6 +660,11 @@ struct AIS_SPECIFIC_BSS_INFO {
 	uint8_t ucCurEssChnlInfoNum;
 	struct LINK rCurEssLink;
 	/* end Support AP Selection */
+
+	struct BSS_TRANSITION_MGT_PARAM_T rBTMParam;
+	struct LINK_MGMT  rNeighborApList;
+	OS_SYSTIME rNeiApRcvTime;
+	uint32_t u4NeiApValidInterval;
 };
 
 struct BOW_SPECIFIC_BSS_INFO {
@@ -977,6 +997,13 @@ struct WIFI_VAR {
 	uint8_t ucLowLatencyModeReOrder;
 	uint8_t ucLowLatencyModePower;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+	/* 11K */
+	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;
+	struct RADIO_MEASUREMENT_REPORT_PARAMS rRmRepParams;
+
+	/* WMMAC */
+	struct WMM_INFO rWmmInfo;
 };
 
 /* cnm_timer module */
@@ -1497,6 +1524,8 @@ struct ADAPTER {
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;
 #endif
+
+	struct WLAN_DEBUG_INFO rDebugInfo;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
