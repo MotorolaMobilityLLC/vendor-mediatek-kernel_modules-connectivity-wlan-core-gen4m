@@ -7,6 +7,9 @@ ifeq ($(os),)
 os=linux
 endif
 
+ccflags-y += -Wno-unused-value
+ccflags-y += -Wno-unused-result
+
 ifeq ($(os), none)
 ccflags-y += -I/usr/include/
 ccflags-y += -DCFG_VIRTUAL_OS
