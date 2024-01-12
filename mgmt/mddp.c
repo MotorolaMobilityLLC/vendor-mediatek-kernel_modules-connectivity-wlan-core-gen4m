@@ -290,6 +290,7 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	struct mddp_txd_t *prMddpTxd;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct net_device *prNetdev;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	uint32_t u32BufSize = 0;
 	uint8_t *buff = NULL;
 	int32_t ret = 0;
@@ -321,6 +322,12 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 	prNetdev = (struct net_device *) wlanGetNetInterfaceByBssIdx(
 			prAdapter->prGlueInfo, prStaRec->ucBssIndex);
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prNetdev);
+
+	if (!prNetDevPrivate->ucMddpSupport) {
+		goto exit;
+	}
 
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) +
