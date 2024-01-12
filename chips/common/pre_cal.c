@@ -43,7 +43,7 @@ u_int8_t gEmiCalNoUseEmiData;
 static u_int8_t g_fgPreCal;
 static u_int8_t g_fgCalDisabled;
 #if CFG_MTK_ANDROID_WMT
-static u_int8_t g_fgEverCal;
+static u_int8_t g_fgEverCal = FALSE;
 #endif
 
 /*******************************************************************************
@@ -781,7 +781,10 @@ int wlan_precal_get_res(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 
 int wlan_precal_pwron_v1(void)
 {
-	DBGLOG(INIT, INFO, "\n");
+	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+
+	if (g_fgEverCal == TRUE)
+		return 1;
 
 #if CFG_MTK_ANDROID_EMI
 	/* CONNAC 2 use backup /restore EMI */
@@ -797,28 +800,27 @@ int wlan_precal_docal_v1(void)
 {
 	int32_t ret = 0;
 
-	DBGLOG(INIT, INFO, "\n");
+	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
 
-	update_pre_cal_status(1);
-	g_fgPreCal = TRUE;
+	if (!g_fgEverCal) {
+		update_pre_cal_status(1);
+		g_fgPreCal = TRUE;
 
-	ret = wlanFuncOnImpl();
-	if (ret) {
-		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
-		goto exit;
-	}
+		ret = wlanFuncOnImpl();
+		if (ret) {
+			DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+			goto exit;
+		}
 
-	wlanFuncOffImpl();
+		wlanFuncOffImpl();
 
 exit:
-	g_fgPreCal = FALSE;
-	update_pre_cal_status(0);
-
-	if (!g_fgEverCal)
+		g_fgPreCal = FALSE;
+		update_pre_cal_status(0);
 		g_fgEverCal = TRUE;
 
-	wfsys_unlock();
-
+		wfsys_unlock();
+	}
 	return ret;
 }
 
