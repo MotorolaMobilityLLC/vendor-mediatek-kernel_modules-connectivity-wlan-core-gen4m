@@ -195,6 +195,12 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	return NULL;
 }
 
+uint32_t kalGetSKBSharedInfoSize(void)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 void kalSetMgmtDirectTxEvent2Hif(
 		struct GLUE_INFO *pr)

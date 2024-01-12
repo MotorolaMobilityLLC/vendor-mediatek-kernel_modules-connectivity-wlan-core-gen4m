@@ -1930,10 +1930,10 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 
-#if (CFG_TX_MGMT_BY_DATA_Q == 1)
-void nicTxSetMgmtByDataQ(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo);
+struct MSDU_INFO *nicAllocMgmtPktForDataQ(IN struct ADAPTER *prAdapter,
+	uint32_t u4Length);
 
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
 uint32_t nicTxMgmtDirectTxMsduMthread(IN struct ADAPTER *prAdapter);
 
 void nicTxClearMgmtDirectTxQ(IN struct ADAPTER *prAdapter);

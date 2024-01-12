@@ -5653,9 +5653,8 @@ struct MSDU_INFO *p2pFuncProcessP2pProbeRsp(IN struct ADAPTER *prAdapter,
 	u2EstimateSize += MAX_LEN_OF_MLIE;
 #endif
 
-	/* add sizeof(UINT_64) for Cookie */
-	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
-		u2EstimateSize + sizeof(uint64_t));
+	prRetMsduInfo = nicAllocMgmtPktForDataQ(
+		prAdapter, u2EstimateSize + sizeof(uint64_t));
 
 	if (prRetMsduInfo == NULL) {
 		DBGLOG(P2P, WARN,
