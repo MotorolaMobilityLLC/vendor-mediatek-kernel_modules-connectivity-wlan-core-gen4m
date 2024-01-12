@@ -1569,7 +1569,7 @@ VOID rlmDomainCheckCountryPowerLimitTable(P_ADAPTER_T prAdapter)
 
 		/*Repetition Entry Check */
 		for (j = i + 1;
-		     j < ARRAY_SIZE(g_rRlmPowerLimitConfiguration);
+		     j < sizeof(g_rRlmPowerLimitConfiguration) / sizeof(COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION);
 		     j++) {
 
 			WLAN_GET_FIELD_BE16(&g_rRlmPowerLimitConfiguration[j].aucCountryCode[0], &u2CountryCodeCheck);
