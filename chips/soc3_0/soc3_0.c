@@ -2692,7 +2692,8 @@ int soc3_0_Trigger_whole_chip_rst(char *reason)
 {
 	return conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, reason);
 }
-void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
+
+bool soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 {
 	int value = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -2704,10 +2705,9 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
-	if (!conninfra_reg_readable_no_lock()) {
+	if (!conninfra_reg_readable()) {
 		DBGLOG(HAL, ERROR,
 			"conninfra_reg_readable fail\n");
-		disable_irq_nosync(prHifInfo->u4IrqId_1);
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 		g_eWfRstSource = WF_RST_SOURCE_FW;
 		if (!prAdapter->prGlueInfo->u4ReadyFlag)
@@ -2718,7 +2718,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 		fgIsResetting = TRUE;
 		update_driver_reset_status(fgIsResetting);
 		kalSetRstEvent();
-		return;
+		return false;
 	}
 	HAL_MCR_WR(prAdapter,
 		   prBusInfo->ap2wf_remap_1,
@@ -2801,6 +2801,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 					  HIF_FLAG_SW_WFDMA_INT_BIT);
 		}
 	}
+	return true;
 }
 
 void soc3_0_Conninfra_cb_register(void)
