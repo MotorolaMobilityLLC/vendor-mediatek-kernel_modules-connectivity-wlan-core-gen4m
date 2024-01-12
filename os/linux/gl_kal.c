@@ -6598,7 +6598,8 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	prAisBssInfo = aisGetConnectedBssInfo(
 		prGlueInfo->prAdapter);
 
-	DBGLOG(PF, INFO,
+	if (prAisBssInfo)
+		DBGLOG(PF, INFO,
 	       "PF, pAd ucBssIndex=%d, ucOwnMacIndex=%d\n",
 	       prAisBssInfo->ucBssIndex,
 	       prAisBssInfo->ucOwnMacIndex);
