@@ -1758,3 +1758,7 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter,
 		WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
 }
 
+void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
+{
+}
+
