@@ -1676,7 +1676,7 @@ int32_t connac2x_show_umac_wtbl_info(
 		| puwtbl->serial_no.wtbl_d0.field.pn0);
 	/* UMAC WTBL DW 0,1 */
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"UWTBL DW 0,1\n\tpn:%d\n\tcom_sn:%d\n",
+		"UWTBL DW 0,1\n\tpn:%llu\n\tcom_sn:%d\n",
 		pn,
 		puwtbl->serial_no.wtbl_d1.field.com_sn);
 
