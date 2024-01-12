@@ -483,10 +483,10 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 {
-	uint32_t u4BaseAddr, u4MacVal;
+	uint32_t u4BaseAddr, u4MacVal = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4FreePageCnt;
+	uint32_t u4FreePageCnt = 0;
 
 	ASSERT(prAdapter);
 
@@ -706,7 +706,7 @@ uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4BaseAddr, u4GroupIdx;
-	uint32_t u4MacVal, u4SrcCnt, u4RsvCnt, u4TxRingBitmap;
+	uint32_t u4MacVal = 0, u4SrcCnt, u4RsvCnt, u4TxRingBitmap = 0;
 
 #define DMASHDL_MAX_QUOTA (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET)
 	ASSERT(prAdapter);
@@ -796,7 +796,7 @@ void asicDisableInterrupt(IN struct ADAPTER *prAdapter)
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,
 			 OUT u_int8_t *pfgResult)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 
 	HAL_MCR_RD(prAdapter, CONN_HIF_ON_LPCTL, &u4RegValue);
 	*pfgResult = (u4RegValue & PCIE_LPCR_HOST_SET_OWN) == 0 ?
@@ -806,7 +806,7 @@ void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter,
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter,
 			OUT u_int8_t *pfgResult)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 
 	HAL_MCR_WR(prAdapter, CONN_HIF_ON_LPCTL,
 		   PCIE_LPCR_HOST_SET_OWN);
@@ -817,7 +817,7 @@ void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter,
 void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 			  OUT u_int8_t *pfgResult)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 
 	HAL_MCR_WR(prAdapter, CONN_HIF_ON_LPCTL,
 		   PCIE_LPCR_HOST_CLR_OWN);
@@ -882,7 +882,7 @@ bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register)
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter,
 			  OUT uint32_t *pu4Val)
 {
-	uint32_t u4RegValue;
+	uint32_t u4RegValue = 0;
 
 	HAL_MCR_RD(prAdapter,
 		   CONN_MCU_CONFG_ON_HOST_MAILBOX_WF_ADDR, &u4RegValue);

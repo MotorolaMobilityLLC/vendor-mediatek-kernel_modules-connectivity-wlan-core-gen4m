@@ -1778,9 +1778,9 @@ void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo)
 		else if (prChipInfo->is_support_wacpu) {
 			if (i == TX_RING_DATA0_IDX_0)
 				idx = prBusInfo->tx_ring0_data_idx;
-			if (i == TX_RING_DATA1_IDX_1)
+			else if (i == TX_RING_DATA1_IDX_1)
 				idx = prBusInfo->tx_ring1_data_idx;
-			if (i == TX_RING_WA_CMD_IDX_4)
+			else if (i == TX_RING_WA_CMD_IDX_4)
 				idx = prBusInfo->tx_ring_wa_cmd_idx;
 			offset = idx * MT_RINGREG_DIFF;
 		}
@@ -1916,7 +1916,7 @@ void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	struct TXD_STRUCT *pTxD;
 	phys_addr_t PacketPa = 0;
 	void *pBuffer = NULL;
-	uint32_t u4SwIdx, u4DmaIdx;
+	uint32_t u4SwIdx, u4DmaIdx = 0;
 
 	ASSERT(prGlueInfo);
 
@@ -1960,7 +1960,7 @@ void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo,
 	IN uint16_t u2Port)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4SwIdx, u4DmaIdx;
+	uint32_t u4SwIdx, u4DmaIdx = 0;
 	struct RTMP_TX_RING *prTxRing;
 
 	ASSERT(prGlueInfo);
@@ -1993,7 +1993,7 @@ uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
-	uint32_t u4MaxCnt, u4CpuIdx, u4DmaIdx, u4RxPktCnt;
+	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
@@ -2093,7 +2093,11 @@ bool halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
-	if (u2Port == TX_RING_CMD_IDX_2 || u2Port == TX_RING_WA_CMD_IDX_4)
+	if (u2Port == TX_RING_CMD_IDX_2
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			|| u2Port == TX_RING_WA_CMD_IDX_4
+#endif /* CFG_SUPPORT_CONNAC2 == 1 */
+		)
 		nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
 			TC4_INDEX,
 			nicTxGetPageCount(prGlueInfo->prAdapter,
