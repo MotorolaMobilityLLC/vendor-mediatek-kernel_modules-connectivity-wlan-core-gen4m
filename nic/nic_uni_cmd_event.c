@@ -5221,7 +5221,7 @@ void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 		} else {
-			DBGLOG(RX, INFO,
+			DBGLOG(RX, TRACE,
 				"UNHANDLED RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 			  prEvent->ucEID, prEvent->ucSeqNum,
 			  prEvent->u2PacketLength);
@@ -5537,7 +5537,7 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(CNM, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(CNM, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_CNM_TAG_GET_BSS_INFO: {
@@ -5627,7 +5627,7 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(NIC, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_RF_TEST_RESULT_TAG: {
@@ -5640,10 +5640,10 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 				prCapStatus = (struct EXT_EVENT_RBIST_CAP_STATUS_T *)
 							(tag + sizeof(struct UNI_EVENT_RF_TEST_TLV));
 
-				DBGLOG(RFTEST, INFO, "%s:iCapDone=%d, icap state=%d\n",
-						__func__,
-					   prCapStatus->u4CapDone,
-					   prAdapter->rIcapInfo.eIcapState);
+				DBGLOG(RFTEST, INFO,
+					"iCapDone=%d, icap state=%d\n",
+					prCapStatus->u4CapDone,
+					prAdapter->rIcapInfo.eIcapState);
 
 				if (prCapStatus->u4CapDone &&
 					prIcapInfo->eIcapState != ICAP_STATE_FW_DUMP_DONE) {
@@ -5657,10 +5657,10 @@ void nicUniEventRfTestHandler(IN struct ADAPTER
 				}
 			} else if (prRfResult->u4FuncIndex == GET_ICAP_RAW_DATA) {
 
-				DBGLOG(RFTEST, INFO, "%s:u4FuncIndex=%d, icap state=%d\n",
-						__func__,
-					   prRfResult->u4FuncIndex,
-					   prAdapter->rIcapInfo.eIcapState);
+				DBGLOG(RFTEST, INFO,
+					"u4FuncIndex=%d, icap state=%d\n",
+					prRfResult->u4FuncIndex,
+					prAdapter->rIcapInfo.eIcapState);
 
 				if (prAteOps->getRbistDataDumpEvent) {
 					prAteOps->getRbistDataDumpEvent(prAdapter,
@@ -5857,7 +5857,7 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(SCN, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(SCN, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_SCAN_DONE_TAG_BASIC: {
@@ -5948,7 +5948,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(CNM, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(CNM, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_CNM_TAG_CH_PRIVILEGE_MLO_SUB_GRANT: {
@@ -6017,7 +6017,7 @@ void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(CNM, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		DBGLOG(CNM, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_MBMC_TAG_SWITCH_DONE:
