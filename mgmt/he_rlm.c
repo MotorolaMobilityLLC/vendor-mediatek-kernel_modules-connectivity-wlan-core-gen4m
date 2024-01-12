@@ -2044,9 +2044,6 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	pucBTWT_PARAMS_HEAD = pucIE + u4Offset;
 
-	if (pucBTWT_PARAMS_HEAD == NULL)
-		return;
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	if (prBssInfo == NULL)

@@ -175,8 +175,14 @@ twtReqFsmSteps(
 		case TWT_REQ_STATE_IDLE:
 			/* Notify TWT Planner of the negotiation result */
 			if (ePreState == TWT_REQ_STATE_WAIT_RSP) {
-				if (pParam != NULL)
-					preTwtType =
+				if (pParam == NULL) {
+					DBGLOG(TWT_REQUESTER, ERROR,
+						"invalid pParam\n");
+
+					return;
+				}
+
+				preTwtType =
 					(enum _ENUM_TWT_TYPE_T *)pParam;
 
 				twtReqFsmSendEvent(prAdapter, prStaRec,
@@ -188,8 +194,14 @@ twtReqFsmSteps(
 				/* Enable SCAN after TWT agrt has been tear down */
 				prAdapter->fgEnOnlineScan = TRUE;
 #else
-				if (pParam != NULL)
-					preTwtType =
+				if (pParam == NULL) {
+					DBGLOG(TWT_REQUESTER, ERROR,
+						"invalid pParam\n");
+
+					return;
+				}
+
+				preTwtType =
 					(enum _ENUM_TWT_TYPE_T *)pParam;
 
 				twtReqFsmSendEvent(prAdapter, prStaRec,
@@ -201,8 +213,14 @@ twtReqFsmSteps(
 			}
 #if (CFG_SUPPORT_BTWT == 1)
 			else if (ePreState == TWT_REQ_STATE_TEARING_DOWN_BTWT) {
-				if (pParam != NULL)
-					preTwtType =
+				if (pParam == NULL) {
+					DBGLOG(TWT_REQUESTER, ERROR,
+						"invalid pParam\n");
+
+					return;
+				}
+
+				preTwtType =
 					(enum _ENUM_TWT_TYPE_T *)pParam;
 
 				twtReqFsmSendEvent(prAdapter, prStaRec,
@@ -323,8 +341,14 @@ twtReqFsmSteps(
 			break;
 
 		case TWT_REQ_STATE_SUSPENDED:
-			if (pParam != NULL)
-				preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
+			if (pParam == NULL) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid pParam\n");
+
+				return;
+			}
+
+			preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
 
 			twtReqFsmSendEvent(prAdapter, prStaRec,
 				ucTWTFlowId, (*preTwtType),
@@ -333,8 +357,14 @@ twtReqFsmSteps(
 			break;
 
 		case TWT_REQ_STATE_RX_TEARDOWN:
-			if (pParam != NULL)
-				preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
+			if (pParam == NULL) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid pParam\n");
+
+				return;
+			}
+
+			preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
 
 			twtReqFsmSendEvent(prAdapter, prStaRec,
 				ucTWTFlowId, (*preTwtType),
@@ -385,9 +415,14 @@ twtReqFsmSteps(
 			break;
 
 		case TWT_REQ_STATE_RX_TEARDOWN_BTWT:
-			if (pParam != NULL)
-				preTwtType =
-					(enum _ENUM_TWT_TYPE_T *)pParam;
+			if (pParam == NULL) {
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"invalid pParam\n");
+
+				return;
+			}
+
+			preTwtType = (enum _ENUM_TWT_TYPE_T *)pParam;
 
 			twtReqFsmSendEvent(prAdapter, prStaRec,
 				ucTWTFlowId, (*preTwtType),
