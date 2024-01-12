@@ -217,7 +217,16 @@
 #define NIC_TX_DESC_DRIVER_PID_DATA_MAX         31
 #define NIC_TX_DESC_DRIVER_PID_MGMT_MIN         32
 #define NIC_TX_DESC_DRIVER_PID_MGMT_MAX         127
+
+#define IS_TXS_DATA_PID(_ucPID) \
+	((_ucPID) >= NIC_TX_DESC_DRIVER_PID_DATA_MIN && \
+	 (_ucPID) <= NIC_TX_DESC_DRIVER_PID_DATA_MAX)
 #endif
+
+#define IS_TXS_STATELESS_DATA_TYPE(_ucType) \
+	((_ucType) == ENUM_PKT_ICMP || (_ucType) == ENUM_PKT_ICMPV6 || \
+	 (_ucType) == ENUM_PKT_ARP || (_ucType) == ENUM_PKT_DHCP || \
+	 (_ucType) == ENUM_PKT_DNS)
 
 #define NIC_TX_DATA_DEFAULT_RETRY_COUNT_LIMIT   30
 #define NIC_TX_MGMT_DEFAULT_RETRY_COUNT_LIMIT   30

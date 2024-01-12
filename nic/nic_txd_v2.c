@@ -558,6 +558,13 @@ void nic_txd_v2_compose(
 		HAL_MAC_CONNAC2X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
 		HAL_MAC_CONNAC2X_TXD_UNSET_HW_AMSDU(prTxDesc);
+
+		DBGLOG(TX, TEMP,
+			"TXS MSDU: w/p/t/up=%u/%u/%u/%u\n",
+			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucPID,
+			prMsduInfo->ucTC,
+			prMsduInfo->ucUserPriority);
 	} else if (prAdapter->rWifiVar.ucDataTxDone == 2) {
 		/* Log mode: only TxS to FW, no event to driver */
 		HAL_MAC_CONNAC2X_TXD_SET_PID(

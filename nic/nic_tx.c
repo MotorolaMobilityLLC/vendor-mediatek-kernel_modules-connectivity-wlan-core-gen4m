@@ -207,7 +207,8 @@ static uint8_t *apucTxResultStr[TX_RESULT_NUM] = {
 	(uint8_t *) DISP_STRING("DP_IN_DRV"),		/* drop in driver */
 	(uint8_t *) DISP_STRING("DP_IN_FW"),		/* drop in FW */
 	(uint8_t *) DISP_STRING("QUE_CLR"),		/* queue clearance */
-	(uint8_t *) DISP_STRING("INACT_BSS")		/* inactive BSS */
+	(uint8_t *) DISP_STRING("INACT_BSS"),		/* inactive BSS */
+	(uint8_t *) DISP_STRING("FLUSH_PENDING")	/* flush pending msdu */
 };
 
 static const char * const apucBandwidth[] = {
@@ -4087,6 +4088,8 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	const char *prBw = "INVALID";
 	char *prTxResult = "UNDEFINED";
+	uint8_t ucBssIndex;
+	u_int8_t fgStop;
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
@@ -4232,35 +4235,74 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 		       prTxDone->u2SequenceNumber);
 	}
 
-	/* call related TX Done Handler */
-	prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
-					     prTxDone->ucWlanIndex,
-					     prTxDone->ucPacketSeq);
+	if (prTxDone->ucPacketSeq == NIC_TX_DESC_PID_RESERVED ||
+	    prTxDone->ucPacketSeq > NIC_TX_DESC_DRIVER_PID_MAX) {
+		DBGLOG_LIMITED(NIC, WARN,
+			"EVENT_ID_TX_DONE WIDX:PID:TID[%u:%u:%u] Status[%u:%s] SN[%u]\n",
+			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
+			prTxDone->ucTid,
+			prTxDone->ucStatus,
+			prTxResult,
+			prTxDone->u2SequenceNumber);
+		return;
+	}
+
+	fgStop = FALSE;
+	do {
+		/* If the FW has no resources to respond TX DONE, the TX DONE
+		 * will be discarded, which makes the TX MSDU Info waiting for
+		 * response left in the pending queue.
+		 * The TX DONE with same (wlanIndex, TID) are not FIFO in MLO,
+		 * free an data MSDU info too early might free a MSDU during TX.
+		 *
+		 * For "STATELESS DATA" frames.
+		 * Find by perfect matching (widx, pid, tid).
+		 *
+		 * The potential problem is memory leak with the tradeoff of
+		 * freeing a MSDU to be used for transmission.
+		 * To amend the possible MSDU leak, check timestamp to free
+		 * long-lived pending MSDU.
+		 */
+		prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
+						     prTxDone->ucWlanIndex,
+						     prTxDone->ucPacketSeq,
+						     prTxDone->ucTid);
+
+		if (prMsduInfo && prMsduInfo->ucPID == prTxDone->ucPacketSeq)
+			fgStop = TRUE;
 
 #if CFG_SUPPORT_802_11V_TIMING_MEASUREMENT
-	DBGLOG(NIC, TRACE,
-	       "EVENT_ID_TX_DONE u4TimeStamp = %x u2AirDelay = %x\n",
-	       prTxDone->au4Reserved1, prTxDone->au4Reserved2);
+		if (fgStop) {
+			DBGLOG(NIC, TRACE,
+			       "EVENT_ID_TX_DONE u4TimeStamp = %x u2AirDelay = %x\n",
+			       prTxDone->au4Reserved1, prTxDone->au4Reserved2);
 
-	wnmReportTimingMeas(prAdapter, prMsduInfo->ucStaRecIndex,
-			    prTxDone->au4Reserved1,
-			    prTxDone->au4Reserved1 + prTxDone->au4Reserved2);
+			wnmReportTimingMeas(prAdapter,
+					prMsduInfo->ucStaRecIndex,
+					prTxDone->au4Reserved1,
+					prTxDone->au4Reserved1 +
+						prTxDone->au4Reserved2);
+		}
 #endif
 
 #if CFG_SUPPORT_WIFI_SYSDVT
-	if (is_frame_test(prAdapter, 1) != 0) {
-		prAdapter->auto_dvt->txs.received_pid = prTxDone->ucPacketSeq;
-		receive_del_txs_queue(prTxDone->u2SequenceNumber,
-			prTxDone->ucPacketSeq, prTxDone->ucWlanIndex,
-			prTxDone->u4Timestamp);
-		DBGLOG(REQ, LOUD,
-			"Done receive_del_txs_queue pid=%d timestamp=%d\n",
-			prTxDone->ucPacketSeq, prTxDone->u4Timestamp);
-	}
+		if (fgStop && is_frame_test(prAdapter, 1) != 0) {
+			prAdapter->auto_dvt->txs.received_pid =
+				prTxDone->ucPacketSeq;
+			receive_del_txs_queue(prTxDone->u2SequenceNumber,
+				prTxDone->ucPacketSeq, prTxDone->ucWlanIndex,
+				prTxDone->u4Timestamp);
+			DBGLOG(REQ, LOUD,
+				"Done receive_del_txs_queue pid=%d timestamp=%d\n",
+				prTxDone->ucPacketSeq, prTxDone->u4Timestamp);
+		}
 #endif
 
-	if (prMsduInfo) {
-		uint8_t ucBssIndex = prMsduInfo->ucBssIndex;
+		if (!prMsduInfo)
+			break;
+
+		/* Process the retrieved MSDU Info*/
+		ucBssIndex = prMsduInfo->ucBssIndex;
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
@@ -4279,9 +4321,11 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 			}
 		}
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
-		prMsduInfo->prTxDone = prTxDone;
+		if (fgStop)
+			prMsduInfo->prTxDone = prTxDone;
 		prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
-	    (enum ENUM_TX_RESULT_CODE) (prTxDone->ucStatus));
+				fgStop ? prTxDone->ucStatus :
+					TX_RESULT_FLUSH_PENDING);
 
 		if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 			cnmMgtPktFree(prAdapter, prMsduInfo);
@@ -4294,9 +4338,9 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
 		}
 
-		if (prTxDone->ucStatus == 0 && ucBssIndex < MAX_BSSID_NUM)
+		if (fgStop && !prTxDone->ucStatus && ucBssIndex < MAX_BSSID_NUM)
 			GET_BOOT_SYSTIME(&prTxCtrl->u4LastTxTime[ucBssIndex]);
-	}
+	} while (prMsduInfo && !fgStop);
 }
 
 /*----------------------------------------------------------------------------*/

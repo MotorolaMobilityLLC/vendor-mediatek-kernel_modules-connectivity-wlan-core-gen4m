@@ -956,27 +956,47 @@ void removeDuplicatePendingCmd(struct ADAPTER *prAdapter,
 	}
 }
 
+static u_int8_t isPendingTxsData(uint8_t ucPID, struct MSDU_INFO *prMsduInfo)
+{
+	u_int8_t result = TRUE;
+
+#if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
+	if (!IS_TXS_DATA_PID(ucPID))
+		result = FALSE;
+#else
+		result = FALSE;
+#endif
+
+	result = result && IS_TXS_STATELESS_DATA_TYPE(prMsduInfo->ucPktType);
+
+	return result;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This procedure is used to dequeue from
  *        prAdapter->rTxCtrl.rTxMgmtTxingQueue
- *        with specified sequential number
+ *        by matching (wlanIndex, pid) or
+ *        (wlanIndex, tid) for DATA if CFG_SUPPORT_SEPARATE_TXS_PID_POOL == 1
+ *        if pending for long time (2000ms).
  *
  * @param    prAdapter   Pointer of ADAPTER_T
- *           ucSeqNum    Sequential Number
+ *           ucWlanInde  Wlan index
+ *           ucPID       Packet id
+ *           ucTID       Traffic id
  *
- * @retval - P_MSDU_INFO_T
+ * @retval Pinter to MSDU_INFO
  */
 /*----------------------------------------------------------------------------*/
-struct MSDU_INFO *nicGetPendingTxMsduInfo(
-	struct ADAPTER *prAdapter, uint8_t ucWlanIndex,
-	uint8_t ucPID)
+struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
+		uint8_t ucWlanIndex, uint8_t ucPID, uint8_t ucTID)
 {
 	struct QUE *prTxingQue;
 	struct QUE rTempQue;
 	struct QUE *prTempQue = &rTempQue;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
+	struct QUE_ENTRY *prQueueEntry = NULL;
+	struct MSDU_INFO *prMsduInfo = NULL;
+	OS_SYSTIME now = kalGetTimeTick();
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -987,21 +1007,55 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	prTxingQue = &(prAdapter->rTxCtrl.rTxMgmtTxingQueue);
 	QUEUE_MOVE_ALL(prTempQue, prTxingQue);
 
-	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
-			  struct QUE_ENTRY *);
+	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
 	while (prQueueEntry) {
 		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
-		if ((prMsduInfo->ucPID == ucPID)
-		    && (prMsduInfo->ucWlanIndex == ucWlanIndex))
-			break;
+		DBGLOG(TX, TEMP,
+			"Looking for w/p/t=%u/%u/%u; MSDU info: w/p/t/up/tp=%u/%u/%u/%u/%u\n",
+			ucWlanIndex, ucPID, ucTID,
+			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucPID,
+			prMsduInfo->ucTC,
+			prMsduInfo->ucUserPriority,
+			prMsduInfo->ucPktType);
+
+		if (isPendingTxsData(ucPID, prMsduInfo)) {
+			/**
+			 * Find by a perfect match (widx, tid, pid).
+			 * or long-lived (widx, tid) matching.
+			 */
+			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
+			    prMsduInfo->ucUserPriority == ucTID) {
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
+				struct PKT_PROFILE *prPktProfile;
+				OS_SYSTIME diff;
+
+				prPktProfile = &prMsduInfo->rPktProfile;
+				diff = now - prPktProfile->rHifTxDoneTimestamp;
+				if (prPktProfile->rHifTxDoneTimestamp &&
+				    diff > 2000)
+					break;
+#endif
+				if (prMsduInfo->ucPID == ucPID)
+					break;
+
+				DBGLOG_LIMITED(TX, WARN,
+				       "Skipped Msdu WIDX:PID:TID[%u:%u:%u] len=%u\n",
+				       ucWlanIndex, prMsduInfo->ucPID, ucTID,
+				       QUEUE_LENGTH(prTempQue));
+			}
+		} else {
+			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
+			    prMsduInfo->ucPID == ucPID)
+				break;
+		}
 
 		QUEUE_INSERT_TAIL(prTxingQue, prQueueEntry);
 
 		prMsduInfo = NULL;
 
-		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
-				  struct QUE_ENTRY *);
+		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, struct QUE_ENTRY *);
 	}
 	QUEUE_CONCATENATE_QUEUES(prTxingQue, prTempQue);
 
@@ -1009,13 +1063,13 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 
 	if (prMsduInfo) {
 		DBGLOG(TX, TRACE,
-		       "Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
-		       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID,
-		       prMsduInfo->ucTxSeqNum);
+		       "Get Msdu WIDX:PID:TID[%u:%u(%u):%u] SEQ[%u] from Pending Q\n",
+		       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, ucPID,
+		       prMsduInfo->ucUserPriority, prMsduInfo->ucTxSeqNum);
 	} else {
 		DBGLOG(TX, WARN,
-		       "Cannot get Target Msdu WIDX:PID[%u:%u] from Pending Q\n",
-		       ucWlanIndex, ucPID);
+		       "Cannot get Target Msdu WIDX:PID:TID[%u:%u:%u] from Pending Q\n",
+		       ucWlanIndex, ucPID, ucTID);
 	}
 
 	return prMsduInfo;
