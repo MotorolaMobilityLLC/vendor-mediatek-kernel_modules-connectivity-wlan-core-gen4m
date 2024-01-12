@@ -276,18 +276,25 @@ static void mtk_vif_destructor(struct net_device *dev)
 	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
 	uint32_t u4Idx = 0;
 
-	DBGLOG(P2P, INFO, "mtk_newInf_destructor\n");
+	DBGLOG(P2P, INFO, "mtk_vif_destructor\n");
 	if (dev) {
 		prWdev = dev->ieee80211_ptr;
 		free_netdev(dev);
-		if (prWdev) {
-			/* Role[i] and Dev share the same wireless dev by default */
+		/* Expect that the gprP2pWdev isn't freed here */
+		if ((prWdev) && (prWdev != gprP2pWdev)) {
+			/* Role[i] and Dev share the same wdev by default */
 			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
-				if ((prWdev == gprP2pRoleWdev[u4Idx]) &&
-					(gprP2pRoleWdev[u4Idx] != gprP2pWdev)) {
-					DBGLOG(P2P, INFO, "mtk_newInf_destructor remove added Wd\n");
+				if (prWdev != gprP2pRoleWdev[u4Idx])
+					continue;
+				/* In the initWlan gprP2pRoleWdev[0] is equal to
+				 * gprP2pWdev. And other gprP2pRoleWdev[] should
+				 * be NULL, if the 2nd P2P dev isn't created.
+				 */
+				if (u4Idx == 0)
 					gprP2pRoleWdev[u4Idx] = gprP2pWdev;
-				}
+				else
+					gprP2pRoleWdev[u4Idx] = NULL;
+				break;
 			}
 			kfree(prWdev);
 		}
@@ -306,17 +313,17 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 {
 	/* 2 TODO: Fit kernel 3.10 modification */
 	struct ADAPTER *prAdapter;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct net_device *prNewNetDevice = NULL;
 	uint32_t u4Idx = 0;
-	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct GL_HIF_INFO *prHif = NULL;
-	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) NULL;
-	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg = NULL;
+	struct wireless_dev *prWdev = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
-	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = (struct MSG_P2P_ACTIVE_DEV_BSS *) NULL;
+	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
 
@@ -326,7 +333,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (prGlueInfo == NULL)
-			break;
+			return ERR_PTR(-EINVAL);
 
 		prAdapter = prGlueInfo->prAdapter;
 		prChipInfo = prAdapter->chip_info;
@@ -346,26 +353,55 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		}
 
 		/*u4Idx = 0;*/
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface u4Idx=%d\n", u4Idx);
+		DBGLOG(P2P, TRACE, "%s: u4Idx=%d\n", __func__, u4Idx);
 
 		if (u4Idx == KAL_P2P_NUM) {
 			/* Role port full. */
-			break;
+			return ERR_PTR(-EINVAL);
 		}
 
 		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface name = %s\n", name);
+		/* Alloc all resource here to avoid do unregister_netdev for
+		 * error case (kernel exception).
+		 */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
 		prNewNetDevice = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name,
 						NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
 #else
 		prNewNetDevice = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name, ether_setup, CFG_MAX_TXQ_NUM);
 #endif
+
 		if (prNewNetDevice == NULL) {
-			DBGLOG(P2P, TRACE, "alloc_netdev_mq fail\n");
+			DBGLOG(P2P, ERROR, "can't alloc prNewNetDevice\n");
 			break;
 		}
+
+		prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
+		if (prWdev == NULL) {
+			DBGLOG(P2P, ERROR, "can't alloc prWdev\n");
+			break;
+		}
+
+		prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(
+					prGlueInfo->prAdapter, RAM_TYPE_MSG,
+					sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+		if (prSwitchModeMsg == NULL) {
+			DBGLOG(P2P, ERROR, "can't alloc prSwitchModeMsg\n");
+			break;
+		}
+
+		prMsgActiveBss = (struct MSG_P2P_ACTIVE_DEV_BSS *) cnmMemAlloc(
+					prGlueInfo->prAdapter, RAM_TYPE_MSG,
+					sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
+
+		if (prMsgActiveBss == NULL) {
+			DBGLOG(P2P, ERROR, "can't alloc prMsgActiveBss\n");
+			break;
+		}
+
+		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface name = %s\n", name);
+
 		prP2pInfo->aprRoleHandler = prNewNetDevice;
 		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) = prGlueInfo;
 		prNewNetDevice->needed_headroom += NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
@@ -381,14 +417,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-		prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
-		if (!prWdev) {
-			DBGLOG(P2P, ERROR, "allocate p2p wireless device fail, no memory\n");
-			prWdev = ERR_PTR(-ENOMEM);
-			free_netdev(prP2pInfo->aprRoleHandler);
-			prP2pInfo->aprRoleHandler = NULL;
-			break;
-		}
 		kalMemCopy(prWdev, gprP2pWdev, sizeof(struct wireless_dev));
 		prWdev->netdev = prNewNetDevice;
 		prWdev->iftype = type;
@@ -420,14 +448,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		if (register_netdevice(prP2pInfo->aprRoleHandler) < 0) {
 			DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface 456\n");
 			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
-
-			free_netdev(prP2pInfo->aprRoleHandler);
-			kfree(prWdev);
-			prWdev = ERR_PTR(-ENOMEM);
-			prP2pInfo->aprRoleHandler = NULL;
-			prNewNetDevice = NULL;
-			/* FIXME: What is the error handler? */
-			gprP2pRoleWdev[u4Idx] = prOrigWdev;
 			break;
 		} else {
 			DBGLOG(P2P, TRACE, "register_netdev OK\n");
@@ -467,74 +487,70 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n", prNetDevPriv->ucBssIdx);
 
 		/* Switch OP MOde. */
-		prSwitchModeMsg =
-			(struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-								 sizeof(struct MSG_P2P_SWITCH_OP_MODE));
-
-		if (prSwitchModeMsg == NULL) {
-			ASSERT(FALSE);
-			DBGLOG(INIT, WARN, "unable to alloc msg\n");
-
-			free_netdev(prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler);
-			kfree(prWdev);
-			prWdev = ERR_PTR(-ENOMEM);
-			prP2pInfo->aprRoleHandler = NULL;
-			prNewNetDevice = NULL;
-			/* FIXME: What is the error handler? */
-			gprP2pRoleWdev[u4Idx] = prOrigWdev;
+		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
+		prSwitchModeMsg->ucRoleIdx = 0;
+		switch (type) {
+		case NL80211_IFTYPE_P2P_CLIENT:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
 			break;
-		} else {
-			prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
-			prSwitchModeMsg->ucRoleIdx = 0;
-			switch (type) {
-			case NL80211_IFTYPE_P2P_CLIENT:
-				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
-				/* This case need to fall through */
-			case NL80211_IFTYPE_STATION:
-				if (type == NL80211_IFTYPE_STATION)
-					DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
-				prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
-				kalP2PSetRole(prGlueInfo, 1, u4Idx);
-				break;
-			case NL80211_IFTYPE_AP:
-				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
-				kalP2PSetRole(prGlueInfo, 2, u4Idx);
-				/* This case need to fall through */
-			case NL80211_IFTYPE_P2P_GO:
-				if (type == NL80211_IFTYPE_P2P_GO)
-					DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
-				prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
-				kalP2PSetRole(prGlueInfo, 2, u4Idx);
-				break;
-			default:
-				DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
-				prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
-				kalP2PSetRole(prGlueInfo, 0, u4Idx);
-				break;
-			}
-			mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prSwitchModeMsg,
-				MSG_SEND_METHOD_BUF);
+		case NL80211_IFTYPE_STATION:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
+			break;
+		case NL80211_IFTYPE_AP:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		case NL80211_IFTYPE_P2P_GO:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		default:
+			DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
+			prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
+			kalP2PSetRole(prGlueInfo, 0, u4Idx);
+			break;
 		}
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prSwitchModeMsg,
+			MSG_SEND_METHOD_BUF);
 
 		/* Send Msg to DevFsm and active P2P dev BSS */
-		prMsgActiveBss = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
-
-		if (prMsgActiveBss == NULL) {
-			DBGLOG(INIT, WARN, "unable to alloc prMsgActiveBss\n");
-			kfree(prWdev);
-			prWdev = ERR_PTR(-ENOMEM);
-			free_netdev(prP2pInfo->aprRoleHandler);
-			prP2pInfo->aprRoleHandler = NULL;
-			/* FIXME: What is the error handler? */
-			gprP2pRoleWdev[u4Idx] = prOrigWdev;
-			break;
-		}
-
 		prMsgActiveBss->rMsgHdr.eMsgId = MID_MNY_P2P_ACTIVE_BSS;
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgActiveBss, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prMsgActiveBss, MSG_SEND_METHOD_BUF);
+		/* Success */
+		return prWdev;
 	} while (FALSE);
 
-	return prWdev;
+	/* Start Error Handle */
+
+	if (prNewNetDevice != NULL) {
+		free_netdev(prNewNetDevice);
+		prP2pInfo->aprRoleHandler = NULL;
+	}
+
+	if (prWdev != NULL) {
+		kfree(prWdev);
+
+		if ((gprP2pRoleWdev[u4Idx] != NULL) &&
+		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev)) {
+			gprP2pRoleWdev[u4Idx] = prOrigWdev;
+		}
+	}
+
+	if (prSwitchModeMsg != NULL)
+		cnmMemFree(prAdapter, prSwitchModeMsg);
+
+	if (prMsgActiveBss != NULL)
+		cnmMemFree(prAdapter, prMsgActiveBss);
+
+	return ERR_PTR(-ENOMEM);
 }				/* mtk_p2p_cfg80211_add_iface */
 
 int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
@@ -577,7 +593,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct net_device *UnregRoleHander = (struct net_device *)NULL;
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
-#if CFG_ENABLE_UNIFY_WIPHY
+#if 1
 	struct cfg80211_scan_request *prScanRequest = NULL;
 #endif
 
@@ -631,7 +647,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	/* Wait for kalSendCompleteAndAwakeQueue() complete */
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
-#if CFG_ENABLE_UNIFY_WIPHY
+#if 1
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&
 	    (prScanRequest->wdev == UnregRoleHander->ieee80211_ptr)) {
@@ -641,10 +657,20 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	/* Check the Scan request is pending and we abort it before delete interface */
-#if CFG_ENABLE_UNIFY_WIPHY
-	if (prScanRequest)
+#if 1
+	if (prScanRequest) {
+		DBGLOG(INIT, INFO, "do scan done (req=%p)\n", prScanRequest);
 		kalCfg80211ScanDone(prScanRequest, TRUE);
+	}
 #else
+	/* 2017/12/18: This part is for error case that p2p-p2p0-0 which is
+	 * deleted when doing scan causes some exception for scan done action.
+	 * The newest driver doesn't observed this error case, so just do the
+	 * normal scan done process (use prP2pGlueDevInfo->prScanRequest, not
+	 * prP2pGlueDevInfo->rBackupScanRequest). Keep this part for the
+	 * reference, if the exception case occurs again.
+	 * Can reference the related part in the mtk_p2p_cfg80211_scan.
+	 */
 	if (prP2pGlueDevInfo->prScanRequest != NULL) {
 		/* Check the wdev with backup scan req due to */
 		/* the kernel will free this request by error handling */
@@ -654,7 +680,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 			prP2pGlueDevInfo->prScanRequest = NULL;
 		}
 	}
-#endif /* CFG_ENABLE_UNIFY_WIPHY */
+#endif
 
 	/* prepare for removal */
 	if (netif_carrier_ok(UnregRoleHander))
@@ -666,10 +692,6 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	unregister_netdevice(UnregRoleHander);
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
-#if CFG_ENABLE_UNIFY_WIPHY
-	/* Role[0] and Dev share the same wireless dev */
-	gprP2pRoleWdev[0] = gprP2pWdev;
-#endif
 
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
@@ -709,8 +731,9 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &ucRoleIdx) != 0)
 		return -EINVAL;
-#if DBG
+
 	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_add_key\n");
+#if DBG
 	if (mac_addr) {
 		DBGLOG(RSN, INFO,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
@@ -808,6 +831,7 @@ int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	/* not implemented yet */
+	DBGLOG(RSN, INFO, "not support this func\n");
 
 	return -EINVAL;
 }
@@ -825,11 +849,11 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 	ASSERT(wiphy);
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_del_key\n");
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &ucRoleIdx) < 0)
 		return -EINVAL;
 #if DBG
-	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_del_key\n");
 	if (mac_addr) {
 		DBGLOG(RSN, TRACE,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
@@ -876,11 +900,11 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	ASSERT(wiphy);
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_set_default_key\n");
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, netdev, &ucRoleIdx) != 0)
 		return -EINVAL;
 #if DBG
-	DBGLOG(RSN, TRACE, "mtk_p2p_cfg80211_set_default_key\n");
 	DBGLOG(RSN, TRACE, "keyIdx = %d unicast = %d multicast = %d\n", key_index, unicast, multicast);
 #endif
 
@@ -1165,7 +1189,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		/* free the original scan request structure */
 		/* In this case, the scan resoure could be locked by kernel, and */
 		/* driver needs this work around to clear the state */
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
+#if 0
 		kalMemCopy(&(prP2pGlueDevInfo->rBackupScanRequest),
 			prP2pGlueDevInfo->prScanRequest, sizeof(struct cfg80211_scan_request));
 #endif
@@ -1245,6 +1269,7 @@ int mtk_p2p_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *dev, stru
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
+	DBGLOG(P2P, INFO, "not support now\n");
 	/* not implemented yet */
 
 	return -EINVAL;
@@ -1258,6 +1283,7 @@ int mtk_p2p_cfg80211_leave_ibss(struct wiphy *wiphy, struct net_device *dev)
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
+	DBGLOG(P2P, INFO, "not support now\n");
 	/* not implemented yet */
 
 	return -EINVAL;
@@ -1270,6 +1296,7 @@ int mtk_p2p_cfg80211_set_txpower(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 
+	DBGLOG(P2P, INFO, "%s: not support now\n", __func__);
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	/* not implemented yet */
@@ -1283,6 +1310,7 @@ int mtk_p2p_cfg80211_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
 
 	ASSERT(wiphy);
 
+	DBGLOG(P2P, INFO, "%s: not support now\n", __func__);
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	/* not implemented yet */
@@ -1343,6 +1371,7 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 		if ((wiphy == NULL) || (settings == NULL))
 			break;
 
+		DBGLOG(P2P, INFO, "%s\n", __func__);
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -2142,6 +2171,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		if ((wiphy == NULL) || (wdev == NULL) || (params == 0) || (cookie == NULL))
 			break;
 
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_mgmt_tx\n");
+
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		/* The owner of this function please check following line*/
@@ -2255,6 +2286,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			break;
 		}
 
+		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_mgmt_tx\n");
+
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		prGlueP2pDevInfo = prGlueInfo->prP2PDevInfo;
@@ -2347,6 +2380,7 @@ int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy, struct wireless_de
 {
 	int32_t i4Rslt = -EINVAL;
 
+	DBGLOG(P2P, INFO, "%s: not support now\n", __func__);
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_mgmt_tx_cancel_wait */
 
@@ -2357,6 +2391,7 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, str
 
 	ASSERT(wiphy);
 
+	DBGLOG(P2P, INFO, "%s\n", __func__);
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	switch (params->use_cts_prot) {

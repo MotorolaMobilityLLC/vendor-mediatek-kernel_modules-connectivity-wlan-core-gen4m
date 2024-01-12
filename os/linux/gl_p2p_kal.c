@@ -1245,6 +1245,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				 IN uint32_t eStatus)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct ADAPTER *prAdapter = NULL;
 
 	do {
 		if (prGlueInfo == NULL) {
@@ -1252,11 +1253,14 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		prAdapter = prGlueInfo->prAdapter;
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		/* FIXME: This exception occurs at wlanRemove. */
 		if ((prGlueP2pInfo == NULL) ||
 		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+		    (prAdapter->rP2PNetRegState !=
+				ENUM_NET_REG_STATE_REGISTERED) ||
 		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
 			break;
 		}
@@ -1290,6 +1294,7 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 				 IN uint8_t *pucRxIEBuf, IN uint16_t u2RxIELen, IN uint16_t u2StatusReason)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct ADAPTER *prAdapter = NULL;
 
 	do {
 		if (prGlueInfo == NULL) {
@@ -1297,11 +1302,14 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		prAdapter = prGlueInfo->prAdapter;
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		/* FIXME: This exception occurs at wlanRemove. */
 		if ((prGlueP2pInfo == NULL) ||
 		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+		    (prAdapter->rP2PNetRegState !=
+				ENUM_NET_REG_STATE_REGISTERED) ||
 		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
 			break;
 		}
