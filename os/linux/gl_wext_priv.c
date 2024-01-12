@@ -11537,17 +11537,17 @@ static int priv_driver_set_wow_tcpport(IN struct net_device *prNetDev,
 		if (ucVer == 0) {
 			kalMemZero(
 				prGlueInfo->prAdapter->rWowCtrl.stWowPort
-				.ausIPv4UdpPort,
+				.ausIPv4TcpPort,
 				sizeof(uint16_t) * MAX_TCP_UDP_PORT);
 			prGlueInfo->prAdapter->rWowCtrl.stWowPort
-				.ucIPv4UdpPortCnt = 0;
+				.ucIPv4TcpPortCnt = 0;
 		} else {
 			kalMemZero(
 				prGlueInfo->prAdapter->rWowCtrl.stWowPort
-				.ausIPv6UdpPort,
+				.ausIPv6TcpPort,
 				sizeof(uint16_t) * MAX_TCP_UDP_PORT);
 			prGlueInfo->prAdapter->rWowCtrl.stWowPort
-				.ucIPv6UdpPortCnt = 0;
+				.ucIPv6TcpPortCnt = 0;
 		}
 
 		return 0;
