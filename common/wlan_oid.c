@@ -1224,6 +1224,8 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	prConnSettings->ucSSIDLen = 0;
 	kalMemZero(prConnSettings->aucBSSID,
 		   sizeof(prConnSettings->aucBSSID));
+	kalMemZero(prConnSettings->aucBSSIDHint,
+			sizeof(prConnSettings->aucBSSIDHint));
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
 	prConnSettings->fgIsConnByBssidIssued = FALSE;
 
@@ -1253,6 +1255,14 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 		} else
 			DBGLOG(INIT, INFO, "wrong bssid " MACSTR "to connect\n",
 			       MAC2STR(pParamConn->pucBssid));
+	} else if (pParamConn->pucBssidHint) {
+		if (!EQUAL_MAC_ADDR(aucZeroMacAddr, pParamConn->pucBssidHint)
+			&& IS_UCAST_MAC_ADDR(pParamConn->pucBssidHint)) {
+			prConnSettings->eConnectionPolicy =
+				CONNECT_BY_BSSID_HINT;
+			COPY_MAC_ADDR(prConnSettings->aucBSSIDHint,
+				pParamConn->pucBssidHint);
+		}
 	} else
 		DBGLOG(INIT, INFO, "No Bssid set\n");
 	prConnSettings->u4FreqInKHz = pParamConn->u4CenterFreq;
@@ -1348,12 +1358,12 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *) prAisAbortMsg, MSG_SEND_METHOD_BUF);
 
-	DBGLOG(INIT, INFO,
-	       "ssid %s, bssid " MACSTR
-	       ", conn policy %d, disc reason %d\n",
-	       prConnSettings->aucSSID, MAC2STR(prConnSettings->aucBSSID),
-	       prConnSettings->eConnectionPolicy,
-	       prAisAbortMsg->ucReasonOfDisconnect);
+	DBGLOG(INIT, INFO, "ssid %s, bssid " MACSTR
+		", bssid_hint " MACSTR ", conn policy %d, disc reason %d\n",
+		prConnSettings->aucSSID, MAC2STR(prConnSettings->aucBSSID),
+		MAC2STR(prConnSettings->aucBSSIDHint),
+		prConnSettings->eConnectionPolicy,
+		prAisAbortMsg->ucReasonOfDisconnect);
 	return WLAN_STATUS_SUCCESS;
 } /* end of wlanoidSetConnect */
 

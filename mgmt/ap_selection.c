@@ -499,6 +499,16 @@ try_again:
 			}
 			prCandBssDesc = prBssDesc;
 			break;
+		} else if (prConnSettings->eConnectionPolicy ==
+			CONNECT_BY_BSSID_HINT &&
+			EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+				prConnSettings->aucBSSIDHint)) {
+			if (!scanSanityCheckBssDesc(prAdapter, prBssDesc,
+				eBand, ucChannel, fgIsFixedChannel))
+				continue;
+
+			prCandBssDesc = prBssDesc;
+			break;
 		}
 
 		if (!fgSearchBlackList) {

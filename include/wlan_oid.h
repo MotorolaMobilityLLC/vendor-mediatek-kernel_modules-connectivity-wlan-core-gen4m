@@ -364,6 +364,7 @@ struct PARAM_CONNECT {
 				 */
 	uint8_t *pucSsid;
 	uint8_t *pucBssid;
+	uint8_t *pucBssidHint;
 	uint32_t u4CenterFreq;
 };
 
