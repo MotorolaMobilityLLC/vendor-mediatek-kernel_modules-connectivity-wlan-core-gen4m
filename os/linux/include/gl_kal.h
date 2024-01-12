@@ -582,6 +582,8 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 	else { \
 		pvAddr = vmalloc(u4Size);   \
 	} \
+	if (!pvAddr) \
+		ASSERT_NOMEM(); \
 	pvAddr; \
 })
 #endif
