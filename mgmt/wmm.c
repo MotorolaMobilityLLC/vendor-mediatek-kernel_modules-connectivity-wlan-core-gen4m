@@ -1404,14 +1404,20 @@ uint32_t wmmCalculatePktUsedTime(struct BSS_INFO *prBssInfo,
 					break;
 			}
 		}
-		if (prBssInfo->fgUseShortPreamble)
-			ucFlags |= FLAG_S_PREAMBLE;
-		u4TxTime = wmmAcmTxTimeCal(ucSecurityPadding, u2PktLen,
-					   u2DataRate, aucDataRate[i], ucFlags);
-		DBGLOG(WMM, INFO,
-		       "DataRate %d, BasicRate %d, Tx %d bytes, SecExtra %d bytes, Flags %02x, Time %u us\n",
-		       u2DataRate, aucDataRate[i], u2PktLen, ucSecurityPadding,
-		       ucFlags, u4TxTime);
+
+		if (i >= 0) {
+			if (prBssInfo->fgUseShortPreamble)
+				ucFlags |= FLAG_S_PREAMBLE;
+			u4TxTime = wmmAcmTxTimeCal(ucSecurityPadding, u2PktLen,
+					u2DataRate, aucDataRate[i], ucFlags);
+			DBGLOG(WMM, INFO,
+			       "DataRate %d, BasicRate %d, Tx %d bytes, SecExtra %d bytes, Flags %02x, Time %u us\n",
+			       u2DataRate, aucDataRate[i], u2PktLen,
+			       ucSecurityPadding, ucFlags, u4TxTime);
+		} else {
+			u4TxTime = 0;
+			DBGLOG(WMM, ERROR, "i is %d !!", i);
+		}
 	}
 	return u4TxTime;
 }

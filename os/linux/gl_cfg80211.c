@@ -4232,6 +4232,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	struct TDLS_CMD_LINK_MGT rCmdMgt;
 	uint32_t u4BufLen;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(REQ, INFO, "mtk_cfg80211_tdls_mgmt\n");
 
@@ -4252,12 +4253,16 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 	kalMemCopy(&(rCmdMgt.aucPeer), peer, 6);
 	kalMemCopy(&(rCmdMgt.aucSecBuf), buf, len);
 
-	kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
-		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, FALSE, FALSE,
-		 /* FALSE,    //6628 -> 6630  fgIsP2pOid-> x */
+	rStatus = kalIoctl(prGlueInfo, TdlsexLinkMgt, &rCmdMgt,
+		 sizeof(struct TDLS_CMD_LINK_MGT), FALSE, TRUE, FALSE,
 		 &u4BufLen);
-	return 0;
 
+	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
 }
 #elif KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int
@@ -4363,6 +4368,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 	uint32_t u4BufLen;
 	struct ADAPTER *prAdapter;
 	struct TDLS_CMD_LINK_OPER rCmdOper;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
@@ -4376,32 +4382,16 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 
 	rCmdOper.oper = oper;
 
-	if (oper == NL80211_TDLS_DISABLE_LINK) {
-		/* [ALPS03767042] wlan: fix TDLS 5.3 test issue
-		 * [Detail]
-		 * Timing issue of data direct path design
-		 *   - Data sent directly through HW (new design in Cervino)
-		 *   - Command sent to FW to process (original design)
-		 * Issue occurs while
-		 *   - Tear down packet sent by wlanHardStartXmit(),
-		 *       but not real sent out
-		 *   - CMD_ID_REMOVE_STA_RECORD sent to FW to disable TDLS link
-		 * [Solution]
-		 * Short-term
-		 *   - Delay TDLS disable link to let tear down data package
-		 *     to send
-		 * Long-term
-		 *   - Enhance the TDLS flow to guarantee TX can send out
-		 *     successfully
-		 */
-		DBGLOG(TDLS, INFO, "NL80211_TDLS_DISABLE_LINK, kalMsleep(20)");
-		kalMsleep(20);
-	}
-
-	kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
+	rStatus = kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
 			sizeof(struct TDLS_CMD_LINK_OPER), FALSE, FALSE, FALSE,
 			&u4BufLen);
-	return 0;
+
+	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		return 0;
+	else
+		return -EINVAL;
 }
 #else
 int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
@@ -4424,28 +4414,6 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 	kalMemCopy(rCmdOper.aucPeerMac, peer, 6);
 
 	rCmdOper.oper = oper;
-
-	if (oper == NL80211_TDLS_DISABLE_LINK) {
-		/* [ALPS03767042] wlan: fix TDLS 5.3 test issue
-		 * [Detail]
-		 * Timing issue of data direct path design
-		 *   - Data sent directly through HW (new design in Cervino)
-		 *   - Command sent to FW to process (original design)
-		 * Issue occurs while
-		 *   - Tear down packet sent by wlanHardStartXmit(),
-		 *       but not real sent out
-		 *   - CMD_ID_REMOVE_STA_RECORD sent to FW to disable TDLS link
-		 * [Solution]
-		 * Short-term
-		 *   - Delay TDLS disable link to let tear down data package
-		 *     to send
-		 * Long-term
-		 *   - Enhance the TDLS flow to guarantee TX can send out
-		 *     successfully
-		 */
-		DBGLOG(TDLS, INFO, "NL80211_TDLS_DISABLE_LINK, kalMsleep(20)");
-		kalMsleep(20);
-	}
 
 	kalIoctl(prGlueInfo, TdlsexLinkOper, &rCmdOper,
 			sizeof(struct TDLS_CMD_LINK_OPER), FALSE, FALSE, FALSE,
