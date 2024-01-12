@@ -10382,17 +10382,8 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 				prBssInfo->ucGrantRxNss = info->ucRxNss;
 
 				switch (info->ucChannelWidth) {
-				case UNI_CMD_CNM_CHANNEL_WIDTH_20_40MHZ:
-					prBssInfo->ucGrantBW = MAX_BW_20MHZ;
-					break;
-				case UNI_CMD_CNM_CHANNEL_WIDTH_80MHZ:
-					prBssInfo->ucGrantBW = MAX_BW_80MHZ;
-					break;
 				case UNI_CMD_CNM_CHANNEL_WIDTH_160MHZ:
 					prBssInfo->ucGrantBW = MAX_BW_160MHZ;
-					break;
-				case UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ:
-					prBssInfo->ucGrantBW = MAX_BW_80_80_MHZ;
 					break;
 				case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
 					prBssInfo->ucGrantBW =
@@ -10402,7 +10393,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 						MAX_BW_320_2MHZ;
 					break;
 				default:
-					prBssInfo->ucGrantBW = MAX_BW_20MHZ;
+					prBssInfo->ucGrantBW = MAX_BW_UNKNOWN;
 				break;
 				}
 
