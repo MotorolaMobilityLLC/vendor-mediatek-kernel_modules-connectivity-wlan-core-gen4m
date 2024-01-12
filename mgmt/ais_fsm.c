@@ -1088,11 +1088,20 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
 	struct PMKID_ENTRY *entry = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
 	struct BSS_DESC *prBssDesc = NULL;
 	uint8_t	*prBssid = NULL;
 	struct PARAM_SSID rSsid = {0};
 	uint8_t	*prFilsCacheId = NULL;
 
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
+
+	if (!prAisBssInfo) {
+		DBGLOG(AIS, ERROR, "prAisBssInfo is NULL!");
+		return NULL;
+	}
 	if (!prStaRec) {
 		DBGLOG(AIS, ERROR, "prStaRec is NULL!");
 		return NULL;
@@ -1116,7 +1125,7 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 		prBssid, /* bssid */
 		&rSsid, /* SSDID */
 		prFilsCacheId, /* cache id */
-		ucBssIndex);
+		prAisBssInfo->ucBssIndex); /* pmksa of main link*/
 
 	/* do not use invalid PMKID */
 	if (entry && rsnApInvalidPMK(entry->u2StatusCode))
@@ -1186,57 +1195,6 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 	}
 } /* rsnCheckPmkidCache */
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-void aisAllocMldStarec(struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo)
-{
-	uint8_t i;
-	struct MLD_BSS_INFO *prMldBssInfo = prAisFsmInfo->prMldBssInfo;
-	struct MLD_STA_RECORD *prMldStaRec = NULL;
-
-	if (!prMldBssInfo)
-		return;
-
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	/* disable old clients before alloc new mld starec */
-	mldBssDisableAllClients(prAdapter, prMldBssInfo);
-#endif
-
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct STA_RECORD *prStaRec =
-			aisGetLinkStaRec(prAisFsmInfo, i);
-		struct BSS_INFO *prBssInfo =
-			aisGetLinkBssInfo(prAisFsmInfo, i);
-		struct BSS_DESC *prBssDesc =
-			aisGetLinkBssDesc(prAisFsmInfo, i);
-
-		if (!prBssInfo || !prStaRec || !prBssDesc)
-			continue;
-
-		if (!mldSingleLink(prAdapter, prStaRec, prBssInfo->ucBssIndex))
-			continue;
-
-		if (prMldStaRec == NULL) {
-			prMldStaRec = mldStarecAlloc(prAdapter, prMldBssInfo,
-				prBssDesc->rMlInfo.aucMldAddr,
-				prBssDesc->rMlInfo.fgMldType,
-				prBssDesc->rMlInfo.u2EmlCap,
-				prBssDesc->rMlInfo.u2MldCap);
-		}
-
-		if (prMldStaRec == NULL) {
-			DBGLOG(AIS, ERROR, "AIS%d can't alloc prMldStaRec\n",
-				prAisFsmInfo->ucAisIndex);
-			return;
-		}
-
-		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
-		mldStarecRegister(prAdapter, prMldStaRec, prStaRec,
-			prBssDesc->rMlInfo.ucLinkIndex);
-	}
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialization of JOIN STATE
@@ -1248,6 +1206,7 @@ void aisAllocMldStarec(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct STA_RECORD **prMainStaRec,
 	uint8_t ucLinkIndex)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1290,6 +1249,17 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
 		return;
 	}
+
+	if (*prMainStaRec == NULL)
+		*prMainStaRec = prStaRec;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
+		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		mldStarecJoin(prAdapter, prAisFsmInfo->prMldBssInfo,
+			*prMainStaRec, prStaRec, prBssDesc);
+	}
+#endif
 
 	aisSetLinkStaRec(prAisFsmInfo, prStaRec, ucLinkIndex);
 
@@ -2975,6 +2945,8 @@ send_msg:
 			break;
 
 		case AIS_STATE_JOIN: {
+			struct STA_RECORD *prMainStaRec = NULL;
+
 			for (i = 0; i < MLD_LINK_MAX; i++) {
 				struct BSS_INFO *bss = aisGetLinkBssInfo(
 					prAisFsmInfo, i);
@@ -2988,13 +2960,9 @@ send_msg:
 						   &bss->ucOpTxNss);
 				aisFsmStateInit_JOIN(prAdapter,
 						prAisFsmInfo,
+						&prMainStaRec,
 						i);
 			}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			aisAllocMldStarec(prAdapter, prAisFsmInfo);
-#endif
-
 			break;
 		}
 		case AIS_STATE_JOIN_FAILURE:
