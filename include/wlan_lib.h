@@ -1580,6 +1580,17 @@ struct RTT_RESULT {
 	int32_t i4NegotiatedBustNum;
 };
 
+enum ENUM_TX_OVER_LIMIT_STATS_TYPE {
+	REPORT_IMMEDIATE,
+	REPORT_AVERAGE,
+};
+
+enum ENUM_TX_OVER_LIMIT_DELAY_TYPE {
+	DRIVER_DELAY,
+	MAC_DELAY,
+	MAX_TX_OVER_LIMIT_TYPE,
+};
+
 enum CHAN_FLAGS {
 	CHAN_RADAR,
 	CHAN_NO_HT40,
@@ -2033,6 +2044,17 @@ u_int8_t wlanIsChipRstRecEnabled(struct ADAPTER *prAdapter);
 u_int8_t wlanIsChipAssert(struct ADAPTER *prAdapter);
 
 void wlanChipRstPreAct(struct ADAPTER *prAdapter);
+
+void wlanCountTxDelayOverLimit(struct ADAPTER *prAdapter,
+		enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type,
+		uint32_t u4Latency);
+
+void wlanReportTxDelayOverLimit(struct ADAPTER *prAdapter,
+	enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type, uint32_t delay);
+
+int wlanSetTxDelayOverLimitReport(struct ADAPTER *prAdapter,
+		bool enable, bool isAverage,
+		uint32_t interval, uint32_t driver_limit, uint32_t mac_limit);
 
 void wlanTxProfilingTagPacket(struct ADAPTER *prAdapter, void *prPacket,
 			      enum ENUM_TX_PROFILING_TAG eTag);
