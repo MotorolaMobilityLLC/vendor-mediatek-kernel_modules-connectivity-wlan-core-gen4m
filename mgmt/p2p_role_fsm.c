@@ -625,6 +625,11 @@ p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter,
 		DBGLOG(P2P, WARN,
 			"Skip deauth tx done since AAA fsm is in progress.\n");
 		return;
+	} else if (prStaRec->eAuthAssocState == SAA_STATE_SEND_AUTH1 ||
+		prStaRec->eAuthAssocState == SAA_STATE_SEND_ASSOC1) {
+		DBGLOG(P2P, WARN,
+			"Skip deauth tx done since SAA fsm is in progress.\n");
+		return;
 	}
 
 	ASSERT_BREAK(prP2pRoleFsmInfo != NULL);
