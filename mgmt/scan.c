@@ -3640,6 +3640,9 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 #endif
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		prAisBssInfo->He6gRegInfo = prBssDesc->He6gRegInfo;
+#endif
 		if ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE &&
 		      prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS
@@ -4721,6 +4724,9 @@ void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			pr6gOperInfor->ucChannelCenterFreqSeg1;
 
 		prBssDesc->eSco = CHNL_EXT_SCN;
+
+		prBssDesc->He6gRegInfo =
+			pr6gOperInfor->rControl.bits.RegulatoryInfo;
 
 		rlmTransferHe6gOpInfor(prBssDesc->ucChannelNum,
 			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
