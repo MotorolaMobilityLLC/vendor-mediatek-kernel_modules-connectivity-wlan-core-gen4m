@@ -1530,6 +1530,10 @@ wlanoidUpdateConnect(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	pParamConn = (struct PARAM_CONNECT *) pvSetBuffer;
 
+	/* no need to replace conn ie for test mode */
+	if (pParamConn->fgTestMode)
+		return WLAN_STATUS_SUCCESS;
+
 	/* Check former assocIE to prevent memory leakage in situations like
 	* upper layer requests connection without disconnecting first, ...
 	*/

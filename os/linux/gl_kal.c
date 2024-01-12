@@ -3045,8 +3045,14 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 
 				rFtEvent.ies = prFtParam->pcIe;
 				rFtEvent.ies_len = prFtParam->u2IeLen;
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 				rFtEvent.target_ap =
-						prFtParam->pcTargetAp;
+					cnmStaRecAuthAddr(prAdapter,
+						prFtParam->prTargetAp);
+#else
+				rFtEvent.target_ap =
+					prFtParam->prTargetAp->aucMacAddr;
+#endif
 				rFtEvent.ric_ies =
 						prFtParam->pcRicIes;
 				rFtEvent.ric_ies_len =

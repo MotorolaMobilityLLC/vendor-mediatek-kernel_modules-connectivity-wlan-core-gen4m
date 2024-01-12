@@ -101,10 +101,10 @@ uint32_t rsnKeyMgmtToAuthMode(enum ENUM_PARAM_AUTH_MODE eOriAuthMode,
 		}
 	} else if (version == IW_AUTH_WPA_VERSION_WPA) {
 		switch (akm) {
-		case RSN_AKM_SUITE_802_1X:
+		case WPA_AKM_SUITE_802_1X:
 			eAuthMode = AUTH_MODE_WPA;
 			break;
-		case RSN_AKM_SUITE_PSK:
+		case WPA_AKM_SUITE_PSK:
 			eAuthMode = AUTH_MODE_WPA_PSK;
 			break;
 		default:

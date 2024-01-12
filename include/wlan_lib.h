@@ -887,7 +887,7 @@ struct REAL_TIME {
 struct FT_EVENT_PARAMS {
 	const uint8_t *pcIe;
 	uint16_t u2IeLen;
-	const uint8_t *pcTargetAp;
+	struct STA_RECORD *prTargetAp;
 	const uint8_t *pcRicIes;
 	uint16_t u2RicIesLen;
 };
