@@ -291,8 +291,6 @@ u_int8_t cnmBss80mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
-uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo, enum ENUM_BAND eBand);
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
@@ -310,17 +308,17 @@ void cnmWmmIndexDecision(struct ADAPTER *prAdapter,
 void cnmFreeWmmIndex(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
+uint8_t cnmGetDbdcBwCapability(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex
+);
+
 #if CFG_SUPPORT_DBDC
 void cnmInitDbdcSetting(struct ADAPTER *prAdapter);
 
 uint32_t cnmUpdateDbdcSetting(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDbdcEn);
-
-uint8_t cnmGetDbdcBwCapability(
-	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex
-);
 
 void cnmDbdcPreConnectionEnableDecision(
 	struct ADAPTER *prAdapter,

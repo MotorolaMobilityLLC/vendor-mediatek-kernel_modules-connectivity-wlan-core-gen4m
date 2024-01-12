@@ -1963,7 +1963,6 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
-	uint8_t ucRoleIndex = 0;
 #endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	uint8_t ucChannelBw;
@@ -2001,6 +2000,11 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
 #endif
 
+		/* max bw is BW320_1 but ap is BW320_2, downgrade to BW160 */
+		if (ucMaxBandwidth == MAX_BW_320_1MHZ &&
+		    prBssDesc && prBssDesc->eChannelWidth == CW_320_2MHZ)
+			ucMaxBandwidth = MAX_BW_160MHZ;
+
 		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
@@ -2017,17 +2021,24 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			if (p2pFuncIsAPMode(
 					prAdapter->rWifiVar.prP2PConnSettings[
 						prBssInfo->u4PrivateData])) {
-				if (prBssInfo->eBand == BAND_2G4)
+				if (prBssInfo->eBand == BAND_2G4) {
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucAp2gBandwidth;
-				else if (prBssInfo->eBand == BAND_5G)
+				} else if (prBssInfo->eBand == BAND_5G) {
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucAp5gBandwidth;
+					/* Use platform capability */
+					if (prAdapter->rWifiVar.u4SwTestMode ==
+						ENUM_SW_TEST_MODE_SIGMA_AX_AP)
+						ucMaxBandwidth =
+						prAdapter->rWifiVar
+							.ucApBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				else if (prBssInfo->eBand == BAND_6G)
+				} else if (prBssInfo->eBand == BAND_6G) {
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucAp6gBandwidth;
 #endif
+				}
 
 				if (ucMaxBandwidth
 					> prAdapter->rWifiVar.ucApBandwidth)
@@ -2036,28 +2047,35 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			}
 			/* P2P mode */
 			else {
-				if (prBssInfo->eBand == BAND_2G4)
+				prBssDesc =
+				    prP2pRoleFsmInfo->rJoinInfo.prTargetBssDesc;
+				if (prBssDesc)
+					eBand = prBssDesc->eBand;
+				else
+					eBand = prBssInfo->eBand;
+
+				if (eBand == BAND_2G4)
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucP2p2gBandwidth;
-				else if (prBssInfo->eBand == BAND_5G)
+				else if (eBand == BAND_5G)
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucP2p5gBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-				else if (prBssInfo->eBand == BAND_6G)
+				else if (eBand == BAND_6G)
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucP2p6gBandwidth;
 #endif
+
+				/* gc only, max bw is BW320_1 but go is BW320_2,
+				 * downgrade to BW160
+				 */
+				if (ucMaxBandwidth == MAX_BW_320_1MHZ &&
+				    prBssDesc &&
+				    prBssDesc->eChannelWidth == CW_320_2MHZ)
+					ucMaxBandwidth = MAX_BW_160MHZ;
 			}
 
 		}
-		ucRoleIndex = prBssInfo->u4PrivateData;
-
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
-			ucMaxBandwidth = prAdapter->rWifiVar
-				.prP2pSpecificBssInfo[ucRoleIndex]
-				->ucRddBw;
-#endif
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 	}
 
@@ -2094,81 +2112,6 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	return ucMaxBandwidth;
 }
 
-uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo,
-	enum ENUM_BAND eBand)
-{
-	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
-
-	if (IS_BSS_AIS(prBssInfo)) {
-		if (eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
-		else if (eBand == BAND_5G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (eBand == BAND_6G)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
-#endif
-		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
-			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
-	} else if (IS_BSS_P2P(prBssInfo)) {
-#if CFG_ENABLE_WIFI_DIRECT
-		/* AP mode */
-		if (p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings[
-					prBssInfo->u4PrivateData])) {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G) {
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp5gBandwidth;
-				/* Use platform capability */
-				if (prAdapter->rWifiVar.u4SwTestMode ==
-					ENUM_SW_TEST_MODE_SIGMA_AX_AP)
-					ucMaxBandwidth = prAdapter->rWifiVar
-						.ucApBandwidth;
-			}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucAp6gBandwidth;
-#endif
-			if (ucMaxBandwidth
-				> prAdapter->rWifiVar.ucApBandwidth)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucApBandwidth;
-		}
-		/* P2P mode */
-		else {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p2gBandwidth;
-			else if (prBssInfo->eBand == BAND_5G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			else if (prBssInfo->eBand == BAND_6G)
-				ucMaxBandwidth = prAdapter->rWifiVar
-					.ucP2p6gBandwidth;
-#endif
-		}
-#endif /* CFG_ENABLE_WIFI_DIRECT */
-	}
-#if CFG_SUPPORT_NAN
-	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
-		if (prBssInfo->eBand == BAND_2G4)
-			ucMaxBandwidth = prAdapter->rWifiVar
-				.ucNan2gBandwidth;
-		else if (prBssInfo->eBand == BAND_5G)
-			ucMaxBandwidth = prAdapter->rWifiVar
-				.ucNan5gBandwidth;
-	}
-#endif
-
-	return ucMaxBandwidth;
-}
-
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
 			       *prAdapter,
 			       uint8_t ucBssIndex)
@@ -2177,6 +2120,34 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
 						ucBssIndex);
 	return ucMaxBandwidth == MAX_BW_20MHZ ? ucMaxBandwidth :
 	       (ucMaxBandwidth - 1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Get maximum bandwidth capability with considering DBDC mode
+ *
+ * @param (none)
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t cnmGetDbdcBwCapability(struct ADAPTER
+			       *prAdapter,
+			       uint8_t ucBssIndex)
+{
+	uint8_t ucMaxBw = MAX_BW_20MHZ;
+
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+
+#if CFG_SUPPORT_DBDC
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
+	/* Can't use BW160 when DBDC enabled */
+	if (USE_DBDC_CAPABILITY() && (ucMaxBw >= MAX_BW_160MHZ))
+		ucMaxBw = MAX_BW_80MHZ;
+#endif
+#endif
+
+	return ucMaxBw;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3845,33 +3816,6 @@ cnmDbdcFsmExitFunc_WAIT_HW_DISABLE(
 		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 }
 
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Get maximum bandwidth capability with considering DBDC mode
- *
- * @param (none)
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-uint8_t cnmGetDbdcBwCapability(struct ADAPTER
-			       *prAdapter,
-			       uint8_t ucBssIndex)
-{
-	uint8_t ucMaxBw = MAX_BW_20MHZ;
-
-	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
-
-#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
-	/* Can't use BW160 when DBDC enabled */
-	if (USE_DBDC_CAPABILITY() && (ucMaxBw >= MAX_BW_160MHZ))
-		ucMaxBw = MAX_BW_80MHZ;
-#endif
-
-	return ucMaxBw;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    Run-time check if DBDC Need enable or update guard time.
@@ -4741,13 +4685,16 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-#if CFG_SUPPORT_DBDC
 		ucOpMaxBw = cnmGetDbdcBwCapability(prAdapter,
 				prBssInfo->ucBssIndex);
-#else
-		ucOpMaxBw = cnmGetBssMaxBw(prAdapter,
-				prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
+			ucOpMaxBw = prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[prBssInfo->u4PrivateData]
+				->ucRddBw;
 #endif
+
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
 			/* Verify if there is valid S1 */
 			ucS1 = nicGetS1(prBssInfo->eBand,

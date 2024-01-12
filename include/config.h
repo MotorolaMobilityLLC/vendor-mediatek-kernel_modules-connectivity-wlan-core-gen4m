@@ -2039,6 +2039,24 @@
 #define DEFAULT_NSS (2)
 #endif
 
+#ifdef CFG_STA_2G_BW
+#define DEFAULT_STA_2G_BW (CFG_STA_2G_BW)
+#else
+#define DEFAULT_STA_2G_BW (MAX_BW_20MHZ)
+#endif
+
+#ifdef CFG_STA_5G_BW
+#define DEFAULT_STA_5G_BW (CFG_STA_5G_BW)
+#else
+#define DEFAULT_STA_5G_BW (MAX_BW_160MHZ)
+#endif
+
+#ifdef CFG_STA_6G_BW
+#define DEFAULT_STA_6G_BW (CFG_STA_6G_BW)
+#else
+#define DEFAULT_STA_6G_BW (MAX_BW_320_2MHZ)
+#endif
+
 #ifndef CFG_MTK_WIFI_SW_WFDMA
 #define CFG_MTK_WIFI_SW_WFDMA			0
 #endif
