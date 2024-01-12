@@ -1276,7 +1276,7 @@ WLAN_STATUS nicActivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 /*	const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
 
 	ASSERT(prAdapter);
-	ASSERT(IS_BSS_INDEX_VALID(ucBssIndex));
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1332,7 +1332,7 @@ WLAN_STATUS nicDeactivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	P_BSS_INFO_T prBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(IS_BSS_INDEX_VALID(ucBssIndex));
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1388,7 +1388,7 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	P_WIFI_VAR_T prWifiVar = &prAdapter->rWifiVar;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -1558,7 +1558,7 @@ WLAN_STATUS nicPmIndicateBssCreated(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssInd
 	CMD_INDICATE_PM_BSS_CREATED rCmdIndicatePmBssCreated;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1594,7 +1594,7 @@ WLAN_STATUS nicPmIndicateBssConnected(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssI
 	CMD_INDICATE_PM_BSS_CONNECTED rCmdIndicatePmBssConnected;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1654,7 +1654,7 @@ WLAN_STATUS nicPmIndicateBssAbort(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex
 	CMD_INDICATE_PM_BSS_ABORT rCmdIndicatePmBssAbort;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	rCmdIndicatePmBssAbort.ucBssIndex = ucBssIndex;
 
@@ -1677,7 +1677,7 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 
 	ASSERT(prAdapter);
 
-	if (ucBssIndex > MAX_BSS_INDEX) {
+	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		ASSERT(0);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
@@ -1806,7 +1806,7 @@ WLAN_STATUS nicEnterTPTestMode(IN P_ADAPTER_T prAdapter, IN UINT_8 ucFuncMask)
 		}
 		/* 3. Keep at CAM mode */
 		if (ucFuncMask & TEST_MODE_FIXED_CAM_MODE)
-			for (ucBssIdx = 0; ucBssIdx < BSS_INFO_NUM; ucBssIdx++) {
+			for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
 				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 				if (prBssInfo->fgIsInUse && (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE))
 					nicConfigPowerSaveProfile(prAdapter, ucBssIdx, Param_PowerModeCAM, FALSE);
@@ -1826,7 +1826,7 @@ WLAN_STATUS nicEnterTPTestMode(IN P_ADAPTER_T prAdapter, IN UINT_8 ucFuncMask)
 			NULL, NULL, sizeof(CMD_SW_DBG_CTRL_T), (PUINT_8)&rCmdSwCtrl, NULL, 0);
 
 		/* 3. Keep at Fast PS */
-		for (ucBssIdx = 0; ucBssIdx < BSS_INFO_NUM; ucBssIdx++) {
+		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 			if (prBssInfo->fgIsInUse && (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE))
 				nicConfigPowerSaveProfile(prAdapter, ucBssIdx, Param_PowerModeFast_PSP, FALSE);
@@ -3254,7 +3254,7 @@ VOID nicUpdateLinkQuality(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_E
 	UINT_16 u2AdjustRssi = 10;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 	ASSERT(prEventLinkQuality);
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType) {
@@ -3314,7 +3314,7 @@ VOID nicUpdateLinkQuality(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_E
 VOID nicUpdateRSSI(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN INT_8 cRssi, IN INT_8 cLinkQuality)
 {
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -3365,7 +3365,7 @@ VOID nicUpdateRSSI(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN INT_8 cRss
 VOID nicUpdateLinkSpeed(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN UINT_16 u2LinkSpeed)
 {
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -3430,7 +3430,7 @@ WLAN_STATUS nicApplyNetworkAddress(IN P_ADAPTER_T prAdapter)
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
-		for (i = 0; i < BSS_INFO_NUM; i++) {
+		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 			if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType == NETWORK_TYPE_P2P) {
 				COPY_MAC_ADDR(prAdapter->rWifiVar.arBssInfoPool[i].aucOwnMacAddr,
 					      prAdapter->rWifiVar.aucDeviceAddress);
@@ -3440,7 +3440,7 @@ WLAN_STATUS nicApplyNetworkAddress(IN P_ADAPTER_T prAdapter)
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType == NETWORK_TYPE_BOW) {
 			COPY_MAC_ADDR(prAdapter->rWifiVar.arBssInfoPool[i].aucOwnMacAddr,
 				      prAdapter->rWifiVar.aucDeviceAddress);

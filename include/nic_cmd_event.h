@@ -1132,7 +1132,7 @@ typedef struct _EVENT_NIC_CAPABILITY_T {
 	UINT_8 ucFwBuildNumber;
 	UINT_8 ucHwSetNss1x1;
 	UINT_8 ucHwNotSupportDBDC;
-	UINT_8 aucReserved0[1];
+	UINT_8 ucHwBssIdNum;
 	UINT_8 aucReserved1[56];
 } EVENT_NIC_CAPABILITY_T, *P_EVENT_NIC_CAPABILITY_T;
 
@@ -2727,7 +2727,7 @@ typedef struct _EVENT_UPDATE_COEX_PHYRATE_T {
 	UINT_8 ucVersion;
 	UINT_8 aucReserved1[3];    /* 4 byte alignment */
 	UINT_32 u4Flags;
-	UINT_32 au4PhyRateLimit[HW_BSSID_NUM+1];
+	UINT_32 au4PhyRateLimit[MAX_BSSID_NUM + 1];
 } EVENT_UPDATE_COEX_PHYRATE_T, *P_EVENT_UPDATE_COEX_PHYRATE_T;
 
 /*#endif*/

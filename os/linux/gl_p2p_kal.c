@@ -206,7 +206,7 @@ kalP2PUpdateAssocInfo(IN P_GLUE_INFO_T prGlueInfo,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 
-	if (ucBssIndex == P2P_DEV_BSS_INDEX)
+	if (ucBssIndex == prGlueInfo->prAdapter->ucP2PDevBssIdx)
 		prNetdevice = prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData]->prDevHandler;
 	else
 		prNetdevice = prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData]->aprRoleHandler;
@@ -1054,7 +1054,7 @@ VOID kalP2PIndicateMgmtTxStatus(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T pr
 		    (PUINT_64) ((ULONG) prMsduInfo->prPacket +
 				(ULONG) prMsduInfo->u2FrameLength + MAC_TX_RESERVED_FIELD);
 
-		if (prMsduInfo->ucBssIndex == P2P_DEV_BSS_INDEX) {
+		if (prMsduInfo->ucBssIndex == prGlueInfo->prAdapter->ucP2PDevBssIdx) {
 			prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 

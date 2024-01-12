@@ -838,7 +838,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		/* TODO: */
 		/* Find a way to distinct DEV port scan & ROLE port scan.
 		 */
-		ucBssIdx = P2P_DEV_BSS_INDEX;
+		ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
 		DBGLOG(P2P, TRACE, "Device Port Scan.\n");
 
 		u4MsgSize = sizeof(MSG_P2P_SCAN_REQUEST_T) +
@@ -1549,7 +1549,7 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		/* The owner of this function please check following line*/
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
 			/* Device Interface. */
-			ucBssIdx = P2P_DEV_BSS_INDEX;
+			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
 		} else {
 			ASSERT(ucRoleIdx < KAL_P2P_NUM);
 			/* Role Interface. */
@@ -1658,7 +1658,7 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		dev = wdev->netdev;
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
 			/* Device Interface. */
-			ucBssIdx = P2P_DEV_BSS_INDEX;
+			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
 		} else {
 			ASSERT(ucRoleIdx < KAL_P2P_NUM);
 			/* Role Interface. */

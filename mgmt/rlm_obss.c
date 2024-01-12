@@ -120,7 +120,9 @@ VOID rlmObssInit(P_ADAPTER_T prAdapter)
 	P_BSS_INFO_T prBssInfo;
 	UINT_8 i;
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	ASSERT(prAdapter);
+
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		cnmTimerInitTimer(prAdapter, &prBssInfo->rObssScanTimer,

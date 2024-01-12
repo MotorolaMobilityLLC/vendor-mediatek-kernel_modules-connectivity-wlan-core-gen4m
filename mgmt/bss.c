@@ -440,7 +440,7 @@ VOID bssComposeNullFrame(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuffer, IN P_ST
 	ASSERT(prStaRec);
 	ucBssIndex = prStaRec->ucBssIndex;
 
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	ASSERT(pucBuffer);
 
@@ -515,7 +515,7 @@ bssComposeQoSNullFrame(IN P_ADAPTER_T prAdapter,
 	ASSERT(prStaRec);
 	ucBssIndex = prStaRec->ucBssIndex;
 
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	ASSERT(pucBuffer);
 
@@ -1044,7 +1044,7 @@ WLAN_STATUS bssUpdateBeaconContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssInde
 	DEBUGFUNC("bssUpdateBeaconContent");
 	DBGLOG(INIT, LOUD, "\n");
 
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1119,7 +1119,7 @@ bssSendBeaconProbeResponse(IN P_ADAPTER_T prAdapter,
 	UINT_32 u4IeArraySize = 0;
 	UINT_32 i;
 
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -1260,9 +1260,9 @@ WLAN_STATUS bssProcessProbeRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 		fgIsBcBssid = FALSE;
 
 	/* 4 <2> Check network conditions before reply Probe Response Frame (Consider Concurrent) */
-	for (ucBssIndex = 0; ucBssIndex <= P2P_DEV_BSS_INDEX; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucP2PDevBssIdx; ucBssIndex++) {
 
-		if ((ucBssIndex >= BSS_INFO_NUM) && (ucBssIndex != P2P_DEV_BSS_INDEX))
+		if ((ucBssIndex >= prAdapter->ucHwBssIdNum) && (ucBssIndex != prAdapter->ucP2PDevBssIdx))
 			continue;
 
 		if (!IS_NET_ACTIVE(prAdapter, ucBssIndex))
@@ -1295,7 +1295,7 @@ WLAN_STATUS bssProcessProbeRequest(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwR
 
 			fgReplyProbeResp =
 			    p2pFuncValidateProbeReq(prAdapter, prSwRfb, &u4CtrlFlagsForProbeResp,
-						    (prBssInfo->ucBssIndex == P2P_DEV_BSS_INDEX),
+						    (prBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx),
 						    (UINT_8) prBssInfo->u4PrivateData);
 		}
 #endif
@@ -2382,7 +2382,7 @@ VOID bssDumpBssInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	/* P_LINK_T prStaRecOfClientList = (P_LINK_T) NULL; */
 	/* P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL; */
 
-	if (ucBssIndex > MAX_BSS_INDEX) {
+	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIndex);
 		return;
 	}

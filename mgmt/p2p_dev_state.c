@@ -86,8 +86,8 @@ p2pDevStateInit_IDLE(IN P_ADAPTER_T prAdapter,
 
 		if (fgIsShareInterface) {
 			/* Stay in IDLE state. */
-			UNSET_NET_ACTIVE(prAdapter, P2P_DEV_BSS_INDEX);
-			nicDeactivateNetwork(prAdapter, P2P_DEV_BSS_INDEX);
+			UNSET_NET_ACTIVE(prAdapter, prAdapter->ucP2PDevBssIdx);
+			nicDeactivateNetwork(prAdapter, prAdapter->ucP2PDevBssIdx);
 		}
 	} while (FALSE);
 
@@ -169,7 +169,7 @@ p2pDevStateAbort_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
 		switch (eNextState) {
 		case P2P_DEV_STATE_IDLE:
 			/* Channel abort case. */
-			p2pFuncReleaseCh(prAdapter, P2P_DEV_BSS_INDEX, prChnlReqInfo);
+			p2pFuncReleaseCh(prAdapter, prAdapter->ucP2PDevBssIdx, prChnlReqInfo);
 			break;
 		case P2P_DEV_STATE_CHNL_ON_HAND:
 			/* Channel on hand case. */
@@ -333,7 +333,7 @@ p2pDevStateAbort_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 							   prP2pOffChnlTxPkt->prMgmtTxMsdu, FALSE);
 			}
 
-			p2pFuncReleaseCh(prAdapter, P2P_DEV_BSS_INDEX, prChnlReqInfo);
+			p2pFuncReleaseCh(prAdapter, prAdapter->ucP2PDevBssIdx, prChnlReqInfo);
 		}
 	} while (FALSE);
 }				/* p2pDevSateAbort_OFF_CHNL_TX */

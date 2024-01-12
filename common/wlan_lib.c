@@ -327,6 +327,8 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 
 	prAdapter->u4OwnFailedCount = 0;
 	prAdapter->u4OwnFailedLogCount = 0;
+	prAdapter->ucHwBssIdNum = BSS_DEFAULT_NUM;
+	prAdapter->ucP2PDevBssIdx = BSS_DEFAULT_NUM;
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
 #if CFG_SUPPORT_MULTITHREAD
@@ -350,9 +352,9 @@ WLAN_STATUS wlanAdapterStart(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo
 	 * Important: index shall be same when mapping between aprBssInfo[]
 	 *            and arBssInfoPool[]. rP2pDevInfo is indexed to final one.
 	 */
-	for (i = 0; i < BSS_INFO_NUM; i++)
+	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prAdapter->aprBssInfo[i] = &prAdapter->rWifiVar.arBssInfoPool[i];
-	prAdapter->aprBssInfo[P2P_DEV_BSS_INDEX] = &prAdapter->rWifiVar.rP2pDevInfo;
+	prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] = &prAdapter->rWifiVar.rP2pDevInfo;
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsBusAccessFailed = FALSE;
@@ -4861,6 +4863,11 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
 	if (prEventNicCapability->ucHwNotSupportDBDC)
 		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
 #endif
+	if (prEventNicCapability->ucHwBssIdNum > 0 && prEventNicCapability->ucHwBssIdNum != BSS_DEFAULT_NUM) {
+		prAdapter->ucHwBssIdNum = prEventNicCapability->ucHwBssIdNum;
+		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
+		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] = &prAdapter->rWifiVar.rP2pDevInfo;
+	}
 
 #if CFG_ENABLE_CAL_LOG
 	DBGLOG(INIT, TRACE, "RF CAL FAIL  = (%d),BB CAL FAIL  = (%d)\n",
@@ -5639,7 +5646,7 @@ VOID wlanSetPreferBandByNetwork(IN P_ADAPTER_T prAdapter, IN ENUM_BAND_T eBand, 
 {
 	ASSERT(prAdapter);
 	ASSERT(eBand <= BAND_NUM);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 
 	/* 1. set prefer band according to network type */
@@ -5669,7 +5676,7 @@ UINT_8 wlanGetChannelNumberByNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIn
 	P_BSS_INFO_T prBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
@@ -5932,7 +5939,7 @@ VOID wlanDumpBssStatistics(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIdx)
 	WIFI_WMM_AC_STAT_T arLLStats[WMM_AC_INDEX_NUM];
 	UINT_8 ucIdx;
 
-	if (ucBssIdx > MAX_BSS_INDEX) {
+	if (ucBssIdx > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIdx);
 		return;
 	}
@@ -6003,7 +6010,7 @@ VOID wlanDumpAllBssStatistics(IN P_ADAPTER_T prAdapter)
 
 	/* wlanUpdateAllBssStatistics(prAdapter); */
 
-	for (ucIdx = 0; ucIdx < BSS_INFO_NUM; ucIdx++) {
+	for (ucIdx = 0; ucIdx < prAdapter->ucHwBssIdNum; ucIdx++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucIdx);
 		if (!IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG(SW4, TRACE, "Invalid BssInfo index[%u], skip dump!\n", ucIdx);
@@ -6486,7 +6493,7 @@ VOID wlanBindBssIdxToNetInterface(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucBssIn
 {
 	P_NET_INTERFACE_INFO_T prNetIfInfo;
 
-	if (ucBssIndex > MAX_BSS_INDEX)
+	if (ucBssIndex > prGlueInfo->prAdapter->ucHwBssIdNum)
 		return;
 
 	prNetIfInfo = &prGlueInfo->arNetInterfaceInfo[ucBssIndex];
@@ -6512,7 +6519,9 @@ UINT_8 wlanGetBssIdxByNetInterface(IN P_GLUE_INFO_T prGlueInfo, IN PVOID pvNetIn
 {
 	UINT_8 ucIdx = 0;
 
-	for (ucIdx = 0; ucIdx < HW_BSSID_NUM; ucIdx++) {
+	ASSERT(prGlueInfo);
+
+	for (ucIdx = 0; ucIdx < prGlueInfo->prAdapter->ucHwBssIdNum; ucIdx++) {
 		if (prGlueInfo->arNetInterfaceInfo[ucIdx].pvNetInterface == pvNetInterface)
 			break;
 	}
@@ -8370,7 +8379,7 @@ VOID wlanChipRstPreAct(IN P_ADAPTER_T prAdapter)
 	prAdapter->fgIsChipAssert = TRUE;
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CHIP_RST);
 
-	for (i4BssIdx = 0; i4BssIdx < HW_BSSID_NUM; i4BssIdx++) {
+	for (i4BssIdx = 0; i4BssIdx < prAdapter->ucHwBssIdNum; i4BssIdx++) {
 		prBssInfo = prAdapter->aprBssInfo[i4BssIdx];
 
 		if (!prBssInfo->fgIsInUse)
@@ -9233,7 +9242,7 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	P_BSS_INFO_T prBssInfo;
 	ENUM_BAND_T eBand = BAND_NULL;
 
-	if (ucBssIndex > MAX_BSS_INDEX) {
+	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIndex);
 		return ucRetValSpeIdx;
 	}
@@ -9282,7 +9291,7 @@ wlanGetSupportNss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	P_BSS_INFO_T prBssInfo;
 	ENUM_BAND_T eBand = BAND_NULL;
 
-	if (ucBssIndex > MAX_BSS_INDEX) {
+	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n", ucBssIndex);
 		return ucRetValNss;
 	}

@@ -656,7 +656,7 @@ aaaFsmRunEventTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN E
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return WLAN_STATUS_SUCCESS;	/* For the case of replying ERROR STATUS CODE */
 
-	ASSERT(prStaRec->ucBssIndex <= MAX_BSS_INDEX);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 

@@ -125,7 +125,7 @@ scanP2pProcessBeaconAndProbeResp(IN P_ADAPTER_T prAdapter,
 			UINT_32 u4Idx = 0;
 			P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 
-			for (u4Idx = 0; u4Idx < BSS_INFO_NUM; u4Idx++) {
+			for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
 				/* Check BSS for P2P. */
 				/* Check BSSID. */
 				prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, (UINT_8) u4Idx);

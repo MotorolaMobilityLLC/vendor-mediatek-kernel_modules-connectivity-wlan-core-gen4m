@@ -112,7 +112,7 @@ const PUINT_8 apucACI2Str[WMM_AC_INDEX_NUM] = {
 	"BE", "BK", "VI", "VO"
 };
 
-const UINT_8 arNetwork2TcResource[HW_BSSID_NUM + 1][NET_TC_NUM] = {
+const UINT_8 arNetwork2TcResource[MAX_BSSID_NUM + 1][NET_TC_NUM] = {
 	/* HW Queue Set 1 */
 	/* AC_BE, AC_BK, AC_VI, AC_VO, MGMT, BMC */
 	{TC1_INDEX, TC0_INDEX, TC2_INDEX, TC3_INDEX, TC4_INDEX, BMC_TC_INDEX},	/* AIS */
@@ -176,7 +176,7 @@ do { \
 				P_BSS_INFO_T prBssInfo = NULL; \
 				PUINT_8      pucMicKey = NULL; \
 				ucBssIndex = prCurrSwRfb->prStaRec->ucBssIndex; \
-				ASSERT(ucBssIndex < BSS_INFO_NUM); \
+				ASSERT(ucBssIndex < prAdapter->ucHwBssIdNum); \
 				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex); \
 				ASSERT(prBssInfo); \
 				if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) { \
@@ -3881,7 +3881,7 @@ VOID mqmProcessBcn(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, IN PUINT_8 p
 
 	fgNewParameter = FALSE;
 
-	for (i = 0; i < BSS_INFO_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		if (IS_BSS_ACTIVE(prBssInfo)) {
@@ -4974,6 +4974,8 @@ UINT_32 qmDumpQueueStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_3
 
 	DEBUGFUNC(("%s", __func__));
 
+	ASSERT(prAdapter);
+
 	prTxCtrl = &prAdapter->rTxCtrl;
 	prQM = &prAdapter->rQM;
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -5031,7 +5033,7 @@ UINT_32 qmDumpQueueStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_3
 		GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdNum));
 
 #if defined(LINUX)
-	for (i = 0; i < HW_BSSID_NUM; i++) {
+	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		LOGBUF(pucBuf, u4Max, u4Len, "Pending BSS[%u] QLen[%u:%u:%u:%u]\n", i,
 			prGlueInfo->ai4TxPendingFrameNumPerQueue[i][0],
 			prGlueInfo->ai4TxPendingFrameNumPerQueue[i][1],

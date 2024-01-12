@@ -1744,7 +1744,7 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 			UINT_8 ucBssIndex;
 			P_BSS_INFO_T prBssInfo;
 
-			for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+			for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 				prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 				if ((prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
@@ -1752,7 +1752,7 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 					break;
 			}
 
-			if (ucBssIndex >= BSS_INFO_NUM)
+			if (ucBssIndex >= prAdapter->ucHwBssIdNum)
 				ucBssIndex = 1;	/* No hit(bss1 for default ais network) */
 			/* printk("=======> rssi with bss%d ,%d\n",ucBssIndex,
 			 * ((P_EVENT_LINK_QUALITY_V2)(prEvent->aucBuffer))->rLq[ucBssIndex].cRssi);
@@ -2177,7 +2177,7 @@ VOID nicRxProcessEventPacket(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb
 
 			prEventBssBeaconTimeout = (P_EVENT_BSS_BEACON_TIMEOUT_T) (prEvent->aucBuffer);
 
-			if (prEventBssBeaconTimeout->ucBssIndex >= BSS_INFO_NUM)
+			if (prEventBssBeaconTimeout->ucBssIndex >= prAdapter->ucHwBssIdNum)
 				break;
 
 			DBGLOG(INIT, INFO, "Reason code: %d\n", prEventBssBeaconTimeout->ucReasonCode);
@@ -3237,7 +3237,8 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 			rlmProcessPublicAction(prAdapter, prSwRfb);
 			if (prBssInfo)
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb,
-				(prBssInfo->ucBssIndex == P2P_DEV_BSS_INDEX), (UINT_8) prBssInfo->u4PrivateData);
+					(prBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx),
+					(UINT_8) prBssInfo->u4PrivateData);
 			else
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb, TRUE, 0);
 		}
@@ -3252,7 +3253,8 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 		if (prAdapter->fgIsP2PRegistered) {
 			if (prBssInfo)
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb,
-				(prBssInfo->ucBssIndex == P2P_DEV_BSS_INDEX), (UINT_8) prBssInfo->u4PrivateData);
+					(prBssInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx),
+					(UINT_8) prBssInfo->u4PrivateData);
 			else
 				p2pFuncValidateRxActionFrame(prAdapter, prSwRfb, TRUE, 0);
 		}

@@ -3692,7 +3692,7 @@ VOID aisFsmRoamingDisconnectPrevAP(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 	aisChangeMediaState(prAdapter, PARAM_MEDIA_STATE_DISCONNECTED);
 
 	/* 4 <4.1> sync. with firmware */
-	prTargetStaRec->ucBssIndex = (MAX_BSS_INDEX + 1);	/* Virtial BSSID */
+	prTargetStaRec->ucBssIndex = (prAdapter->ucHwBssIdNum + 1);	/* Virtial BSSID */
 	nicUpdateBss(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
 
 	secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
