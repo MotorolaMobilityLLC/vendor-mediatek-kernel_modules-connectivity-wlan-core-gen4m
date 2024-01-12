@@ -1785,6 +1785,11 @@ u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 	uint32_t reg, void *buf, uint32_t total_size);
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if CFG_MTK_WIFI_SW_EMI_RING
+u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,
+			    uint32_t u4Reg, uint32_t *pu4Val);
+#endif
+
 u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Register, uint32_t *pu4Value);
 

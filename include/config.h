@@ -2307,8 +2307,8 @@
 #define CFG_MTK_WIFI_SW_EMI_RING		0
 #endif
 
-#ifndef CFG_MTK_WIFI_EN_SW_EMI_READ
-#define CFG_MTK_WIFI_EN_SW_EMI_READ		0
+#ifndef CFG_MTK_WIFI_MBU
+#define CFG_MTK_WIFI_MBU			0
 #endif
 
 #ifndef CFG_MTK_WIFI_MISC_RSV_MEM

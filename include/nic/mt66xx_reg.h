@@ -1527,7 +1527,7 @@ struct mt66xx_chip_info {
 	void (*enableWfdmaWb)(struct GLUE_INFO *prGlueInfo);
 	void (*runWfdmaCidxFetch)(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
+#if CFG_MTK_WIFI_SW_EMI_RING
 	const u_int8_t is_en_sw_emi_read;
 #endif
 	unsigned int txd_append_size;	/* hw mac txd append */

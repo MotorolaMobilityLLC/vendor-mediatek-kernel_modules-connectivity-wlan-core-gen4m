@@ -1480,6 +1480,27 @@ u_int8_t kalDevRegReadRange(
 }
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if CFG_MTK_WIFI_SW_EMI_RING
+u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,
+			    uint32_t u4Reg, uint32_t *pu4Val)
+{
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *prChipInfo;
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+	u_int8_t fgRet = FALSE;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
+
+	prSwEmiRingInfo = &prChipInfo->bus_info->rSwEmiRingInfo;
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnSwEmiRead) &&
+	    prSwEmiRingInfo->rOps.read)
+		fgRet = prSwEmiRingInfo->rOps.read(prGlueInfo, u4Reg, pu4Val);
+
+	return fgRet;
+}
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
+
 static void kalWaitRxDmaDoneDebug(
 	struct GLUE_INFO *prGlueInfo, struct RTMP_RX_RING *prRxRing,
 	struct RXD_STRUCT *pRxD, uint16_t u2Port)

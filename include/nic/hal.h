@@ -138,6 +138,17 @@ extern struct TIMER rSerSyncTimer;
 #define HAL_TEST_FLAG(_M, _F)            ((_M)->u4HwFlags & (_F))
 #define HAL_TEST_FLAGS(_M, _F)           (((_M)->u4HwFlags & (_F)) == (_F))
 
+#if CFG_MTK_WIFI_SW_EMI_RING
+#define HAL_MCR_EMI_RD(_prAdapter, _u4Offset, _pu4Value, _puRet) { \
+	*_puRet = kalDevRegReadByEmi( \
+		_prAdapter->prGlueInfo, _u4Offset, _pu4Value); \
+}
+#else
+#define HAL_MCR_EMI_RD(_prAdapter, _u4Offset, _pu4Value, _puRet) { \
+	*_puRet = FALSE; \
+}
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
+
 #if defined(_HIF_SDIO)
 #define HAL_MCR_RD(_prAdapter, _u4Offset, _pu4Value) \
 do { \
@@ -567,33 +578,7 @@ do { \
 	*pu2Version = (u4Value & PCIE_HIF_SYS_REV); \
 }
 
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-#define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
-do { \
-	struct mt66xx_chip_info *prChipInfo = NULL; \
-	struct SW_EMI_RING_INFO *prSwEmiRingInfo; \
-	uint32_t u4Value = 0; \
-	u_int8_t fgRet = FALSE; \
-	if (!_prAdapter->chip_info) \
-		ASSERT(0); \
-	*_pfgResult = FALSE; \
-	prChipInfo = _prAdapter->chip_info; \
-	prSwEmiRingInfo = &_prAdapter->chip_info->bus_info->rSwEmiRingInfo; \
-	if (IS_FEATURE_ENABLED(_prAdapter->rWifiVar.fgEnSwEmiRead) && \
-		prSwEmiRingInfo->rOps.read) { \
-		fgRet = prSwEmiRingInfo->rOps.read( \
-			_prAdapter->prGlueInfo, \
-			prChipInfo->sw_sync0, \
-			&u4Value); \
-	} \
-	if (!fgRet) \
-		HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
-			       prChipInfo->sw_sync0, &u4Value);	\
-	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) \
-	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
-		*_pfgResult = TRUE; \
-} while (0)
-#elif (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
+#if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
 #define HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	uint32_t u4Value = 0; \
@@ -607,12 +592,15 @@ do { \
 do { \
 	struct mt66xx_chip_info *prChipInfo = NULL; \
 	uint32_t u4Value = 0; \
+	u_int8_t fgRet = FALSE; \
 	if (!_prAdapter->chip_info) \
 		ASSERT(0); \
 	*_pfgResult = FALSE; \
 	prChipInfo = _prAdapter->chip_info; \
-	HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
-		       prChipInfo->sw_sync0, &u4Value); \
+	HAL_MCR_EMI_RD(_prAdapter, prChipInfo->sw_sync0, &u4Value, &fgRet); \
+	if (!fgRet) \
+		HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
+			       prChipInfo->sw_sync0, &u4Value);	\
 	if ((u4Value & (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \

@@ -848,9 +848,20 @@ struct SW_EMI_CTX {
 	uint32_t au4Val[SW_EMI_RING_SIZE];
 };
 
-#if CFG_MTK_WIFI_SW_EMI_RING
-struct SW_EMI_RING_INFO;
+#if CFG_MTK_WIFI_MBU
+struct MBU_MSI_MIRROR {
+	uint32_t u4IntSta;
+	uint32_t au4SidebandSignal[2];
+	uint32_t au4Rsv;
+};
+struct MBU_EMI_CTX {
+	uint32_t u4Val;
+	uint32_t au4Rsv[3];
+	struct MBU_MSI_MIRROR arMsiMirror[8];
+};
+#endif /* CFG_MTK_WIFI_MBU */
 
+#if CFG_MTK_WIFI_SW_EMI_RING
 struct SW_EMI_RING_OPS {
 	void (*init)(struct GLUE_INFO *prGlueInfo);
 	u_int8_t (*read)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
@@ -867,6 +878,12 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4CcifTchnumAddr;
 	uint32_t u4CcifChlNum;
 	uint32_t u4ReadBlockCnt;
+#if CFG_MTK_WIFI_MBU
+	struct MBU_EMI_CTX *prMbuEmiData;
+	uint32_t u4RemapAddr;
+	uint32_t u4RemapVal;
+	uint32_t u4RemapDefVal;
+#endif
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
@@ -1226,11 +1243,18 @@ void halSwWfdmaGetDidx(struct GLUE_INFO *prGlueInfo, uint32_t *pu4Didx);
 bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo);
 bool halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo);
-
+#if CFG_MTK_WIFI_SW_EMI_RING
 void halSwEmiInit(struct GLUE_INFO *prGlueInfo);
 u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 		      uint32_t *pu4Val);
 void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
+#endif
+#if CFG_MTK_WIFI_MBU
+void halMbuInit(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
+		    uint32_t *pu4Val);
+void halMbuDebug(struct GLUE_INFO *prGlueInfo);
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 /* Host Offload */

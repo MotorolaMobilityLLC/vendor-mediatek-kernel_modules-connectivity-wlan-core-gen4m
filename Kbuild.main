@@ -507,7 +507,6 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_WFDMA_AP_MSI_NUM=8
     CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
     CONFIG_SUPPORT_WIFI_MISC_RSV_MEM=y
-    CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ=y
     CONFIG_SUPPORT_WIFI_WFDMA_TX_RING_BK_RS=y
     CONFIG_SUPPORT_WIFI_MDDP_NO_MMIO_READ=y
     CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=y
@@ -588,6 +587,8 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_DISABLE_CMD_DDONE_INTR=y
     CONFIG_SUPPORT_WIFI_POWER_METRICS=y
     CONFIG_SUPPORT_WIFI_ICCM=y
+    CONFIG_SUPPORT_WIFI_SW_EMI_RING=y
+    CONFIG_SUPPORT_MTK_WIFI_MBU=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
@@ -829,14 +830,14 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_SW_EMI_RING), y)
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=1
-    ifeq ($(CONFIG_SUPPORT_WIFI_EN_SW_EMI_READ), y)
-        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=1
+    ifeq ($(CONFIG_SUPPORT_MTK_WIFI_MBU), y)
+        ccflags-y += -DCFG_MTK_WIFI_MBU=1
     else
-        ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
+        ccflags-y += -DCFG_MTK_WIFI_MBU=0
     endif
 else
     ccflags-y += -DCFG_MTK_WIFI_SW_EMI_RING=0
-    ccflags-y += -DCFG_MTK_WIFI_EN_SW_EMI_READ=0
+    ccflags-y += -DCFG_MTK_WIFI_MBU=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_WIFI_MISC_RSV_MEM), y)
@@ -2671,6 +2672,9 @@ HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \
              $(HIF_DIR)pcie_msi.o
 ifeq ($(CONFIG_MTK_HOST_OFFLOAD_SUPPORT), y)
 HIF_OBJS +=  $(HIF_COMMON_DIR)hal_offload.o
+endif
+ifeq ($(CONFIG_SUPPORT_MTK_WIFI_MBU), y)
+HIF_OBJS +=  $(HIF_COMMON_DIR)hal_mbu.o
 endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
 HIF_OBJS :=  $(HIF_COMMON_DIR)hal_pdma.o \

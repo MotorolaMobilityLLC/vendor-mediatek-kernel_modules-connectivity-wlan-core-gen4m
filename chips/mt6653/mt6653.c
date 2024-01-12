@@ -237,11 +237,7 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x820c8000, 0x0c000, 0xA000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0xE000},  /* WF_UMAC_TOP (PP) */
 	{0x83000000, 0x10000, 0x10000},  /* WF_PHY_MAP3 */
-#if CFG_MTK_FPGA_PLATFORM == 1
 	{0x74030000, 0x10000, 0x2000}, /* PCIe MAC (conninfra remap) */
-#else
-	{0x74030000, 0x1d0000, 0x2000}, /* PCIe MAC (cbtop remap) */
-#endif
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
 	{0x820e2000, 0x20800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
@@ -291,13 +287,17 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
+	{0x7c090000, 0x150000, 0x10000}, /* CONN_BUS_CR_VON_VON */
 	{0x7c030000, 0x160000, 0x10000}, /* CONN_INFRA_CCIF */
 	{0x7c050000, 0x1a0000, 0x10000}, /* CONN_INFRA PCIE2AP REM */
-#if CFG_MTK_FPGA_PLATFORM != 1
 	{0x70010000, 0x1c0000, 0x10000},
+	{0x74030000, 0x1d0000, 0x2000}, /* PCIe MAC (cbtop remap) */
 	{0x70000000, 0x1e0000, 0x9000},
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
+#if CFG_MTK_WIFI_MBU
+	{0x74130000, 0x1e0000, 0x10000}, /* CB_INFRA_MBU (dynamic)*/
 #endif
+
 	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
@@ -663,6 +663,20 @@ struct BUS_INFO mt6653_bus_info = {
 	.setRxRingHwAddr = mt6653SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6653WfdmaAllocRxRing,
 	.setupMcuEmiAddr = mt6653SetupMcuEmiAddr,
+#if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
+	.rSwEmiRingInfo = {
+		.rOps = {
+			.init = halMbuInit,
+			.read = halMbuRead,
+			.debug = halMbuDebug,
+		},
+		.fgIsSupport = TRUE,
+		.u4RemapAddr = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
+		.u4RemapVal = 0x70027413,
+		.u4RemapDefVal = 0x70027000,
+
+	},
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 #endif /*_HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.DmaShdlInit = mt6653DmashdlInit,
@@ -984,6 +998,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.is_support_rro = TRUE,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = FALSE,
+#if CFG_MTK_WIFI_SW_EMI_RING
+	.is_en_sw_emi_read = TRUE,
+#endif
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.is_support_wfdma_write_back = TRUE,

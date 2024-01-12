@@ -368,19 +368,10 @@ u_int8_t asicConnac3xWfdmaDummyCrRead(
 	uint32_t *pu4Value)
 {
 	u_int32_t u4Addr = CONNAC3X_WFDMA_DUMMY_CR;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	struct SW_EMI_RING_INFO *prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	u_int8_t fgRet = FALSE;
 
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
-	    prSwEmiRingInfo->rOps.read) {
-		fgRet = prSwEmiRingInfo->rOps.read(
-			prAdapter->prGlueInfo, u4Addr, pu4Value);
-	}
+	HAL_MCR_EMI_RD(prAdapter, u4Addr, pu4Value, &fgRet);
 	if (!fgRet)
-#endif
 		HAL_RMCR_RD(HIF_READ, prAdapter, u4Addr, pu4Value);
 
 	return (*pu4Value & CONNAC3X_WFDMA_NEED_REINIT_BIT) == 0 ? TRUE : FALSE;
@@ -1166,15 +1157,10 @@ void asicConnac3xProcessSoftwareInterrupt(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	struct BUS_INFO *prBusInfo;
-	struct WIFI_VAR *prWifiVar;
-	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
-	u_int8_t fgRet = FALSE;
-#endif
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0, u4Addr = 0;
 	uint32_t u4HostWpdamBase = 0;
+	u_int8_t fgRet = FALSE;
 
 	if (prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
@@ -1183,11 +1169,6 @@ void asicConnac3xProcessSoftwareInterrupt(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prWifiVar = &prAdapter->rWifiVar;
-	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
-#endif
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	if (prAdapter->chip_info->is_support_wfdma1)
@@ -1196,15 +1177,8 @@ void asicConnac3xProcessSoftwareInterrupt(
 		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
 
 	u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
-	    prSwEmiRingInfo->rOps.read) {
-		fgRet = prSwEmiRingInfo->rOps.read(
-			prGlueInfo, u4Addr, &u4Status);
-	}
-
+	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
 	if (!fgRet)
-#endif
 		HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
@@ -1247,15 +1221,10 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	struct BUS_INFO *prBusInfo;
-	struct WIFI_VAR *prWifiVar;
-	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
-	u_int8_t fgRet = FALSE;
-#endif
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0, u4Addr = 0;
 	uint32_t u4HostWpdamBase = 0;
+	u_int8_t fgRet = FALSE;
 
 	if (prAdapter->prGlueInfo == NULL) {
 		DBGLOG(HAL, ERROR, "prGlueInfo is NULL\n");
@@ -1264,11 +1233,6 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prWifiVar = &prAdapter->rWifiVar;
-	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
-#endif
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	if (prAdapter->chip_info->is_support_wfdma1)
@@ -1277,15 +1241,8 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
 
 	u4Addr = CONNAC3X_WPDMA_MCU2MD_SW_INT_STA(u4HostWpdamBase);
-#if CFG_MTK_WIFI_EN_SW_EMI_READ
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiRead) &&
-	    prSwEmiRingInfo->rOps.read) {
-		fgRet = prSwEmiRingInfo->rOps.read(
-			prGlueInfo, u4Addr, &u4Status);
-	}
-
+	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
 	if (!fgRet)
-#endif
 		HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
 
 	return u4Status & BITS(0, 15);
