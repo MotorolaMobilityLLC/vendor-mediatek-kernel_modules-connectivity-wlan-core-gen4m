@@ -1877,6 +1877,7 @@ int wf_pwr_on_consys_mcu(void)
 	int check;
 	int value = 0;
 	int ret = 0;
+	int conninfra_hang_ret = 0;
 	unsigned int polling_count;
 
 	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
@@ -1973,6 +1974,19 @@ int wf_pwr_on_consys_mcu(void)
 			"Polling wfsys rgu off fail. (0x%x)\n",
 			value);
 		return ret;
+	}
+
+	if (!conninfra_reg_readable()) {
+		DBGLOG(HAL, ERROR,
+			"conninfra_reg_readable fail\n");
+
+		conninfra_hang_ret = conninfra_is_bus_hang();
+
+		if (conninfra_hang_ret > 0) {
+
+			DBGLOG(HAL, ERROR,
+				"conninfra_is_bus_hang, Chip reset\n");
+		}
 	}
 	/* Turn off "conn_infra to wfsys"/ wfsys to conn_infra" bus
 	 * sleep protect 0x218001620[0] = 1'b0
@@ -2291,6 +2305,13 @@ int wf_pwr_off_consys_mcu(void)
 			value);
 		return ret;
 	}
+	/* Toggle WFSYS EMI request 0x18001c14[0] = 1'b1 -> 1'b0 */
+	wf_ioremap_read(CONN_INFRA_WFSYS_EMI_REQ_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WFSYS_EMI_REQ_ADDR, value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WFSYS_EMI_REQ_ADDR, value);
+
 	/* Reset WFSYS semaphore 0x18000018[0] = 1'b0 */
 	wf_ioremap_read(WFSYS_SW_RST_B_ADDR, &value);
 	value &= 0xFFFFFFFE;
@@ -3999,8 +4020,7 @@ int soc3_0_wlanPreCal(void)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo;
-	uint32_t u4Value = 0;
-	uint32_t u4WaitCount = 0;
+
 
 	if (g_u4WlanInitFlag == 0) {
 		DBGLOG(INIT, WARN,
@@ -4245,23 +4265,12 @@ int soc3_0_wlanPreCal(void)
 	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
 		PCIE_LPCR_HOST_SET_OWN);
 
-	/* polling check 0x180602C8 [21] */
-	while (u4WaitCount < 10)  {
-		wf_ioremap_read(CONN_HOST_CSR_TOP_BASE_ADDR + 0x02C8,
-			&u4Value);
-
-		if ((u4Value&BIT(21)) != BIT(21))
-			break;
-
-		u4WaitCount++;
-		mdelay(1);
-	}
 
 	wf_pwr_off_consys_mcu();
 
-	DBGLOG(INIT, INFO, "PreCal end(%d) OffWaitCount(%d)\n",
-		eFailReason,
-		u4WaitCount);
+	DBGLOG(INIT, INFO, "PreCal end(%d)\n",
+		eFailReason);
+
 
 	if (eFailReason == POWER_ON_INIT_DONE)
 		return CONNINFRA_CB_RET_CAL_PASS_POWER_OFF;
