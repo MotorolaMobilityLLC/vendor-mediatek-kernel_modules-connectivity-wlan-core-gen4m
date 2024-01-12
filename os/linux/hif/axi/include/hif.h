@@ -148,6 +148,9 @@ struct GL_HIF_INFO {
 	struct RTMP_DMABUF rRingMdDidx;
 
 	struct WFDMA_EMI_DONE_FLAG rIntFlag;
+	u_int8_t fgIsUrgentCidxFetch;
+	u_int8_t fgIsNeeidxFetchFlag;
+	unsigned long ulCidxFetchTimeout;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 	uint32_t u4RxDataRingSize;
 	uint32_t u4RxEvtRingSize;

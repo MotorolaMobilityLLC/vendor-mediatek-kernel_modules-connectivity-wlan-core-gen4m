@@ -378,6 +378,8 @@ do { \
 #define HAL_SET_RING_CIDX(_A, _R, _V) \
 { \
 	if (_R->fgEnEmiCidx) { \
+		_R->u4LastCidx = *_R->pu2EmiCidx; \
+		_R->u4LastDidx = *_R->pu2EmiDidx; \
 		*_R->pu2EmiCidx = _V; \
 		if (_R->triggerCidx) \
 			_R->triggerCidx(_A->prGlueInfo, _R); \
@@ -591,6 +593,7 @@ struct RTMP_TX_RING {
 	uint32_t TxDmaIdx;
 	uint32_t u4BufSize;
 	uint32_t u4RingSize;
+	uint32_t u4RingIdx;
 	uint32_t TxSwUsedIdx;
 	uint32_t u4UsedCnt;
 	uint32_t hw_desc_base;
@@ -611,6 +614,8 @@ struct RTMP_TX_RING {
 	u_int8_t fgEnEmiCidx;
 	uint16_t *pu2EmiDidx;
 	uint32_t *pu2EmiCidx;
+	uint32_t u4LastCidx;
+	uint32_t u4LastDidx;
 	void (*triggerCidx)(struct GLUE_INFO *prGlueInfo,
 			    struct RTMP_TX_RING *prTxRing);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
@@ -622,6 +627,7 @@ struct RTMP_RX_RING {
 	uint32_t RxDmaIdx;
 	uint32_t u4BufSize;
 	uint32_t u4RingSize;
+	uint32_t u4RingIdx;
 	u_int8_t fgRxSegPkt;
 	uint32_t hw_desc_base;
 	uint32_t hw_desc_base_ext;
@@ -646,6 +652,8 @@ struct RTMP_RX_RING {
 	u_int8_t fgEnEmiCidx;
 	uint16_t *pu2EmiDidx;
 	uint32_t *pu2EmiCidx;
+	uint32_t u4LastCidx;
+	uint32_t u4LastDidx;
 	void (*triggerCidx)(struct GLUE_INFO *prGlueInfo,
 			    struct RTMP_RX_RING *prRxRing);
 #endif /* CFG_ENABLE_MAWD_MD_RING */

@@ -149,6 +149,7 @@ static void mt7935ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus);
 static void mt7935ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 				   u_int8_t enable);
+static void mt7935RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo);
 static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
 				     struct RTMP_TX_RING *prTxRing);
 static void mt7935TriggerWfdmaRxCidx(struct GLUE_INFO *prGlueInfo,
@@ -899,6 +900,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.allocWfdmaWbBuffer = asicConnac3xAllocWfdmaWbBuffer,
 	.freeWfdmaWbBuffer = asicConnac3xFreeWfdmaWbBuffer,
 	.enableWfdmaWb = mt79353EnableWfdmaWb,
+	.runWfdmaCidxFetch = mt7935RunWfdmaCidxFetch,
 #endif
 	.txd_append_size = MT7935_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT7935_HIF_TX_DESC_APPEND_LENGTH,
@@ -1857,6 +1859,13 @@ static void mt7935WfdmaConfigWriteBack(struct GLUE_INFO *prGlueInfo)
 	u4WrVal = ((uint64_t)prRingDmyRd->AllocPa) & DMA_LOWER_32BITS_MASK;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
+	/* set dmy read ext address */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_DMY_CTRL3_ADDR;
+	u4WrVal = (((uint64_t)prRingDmyRd->AllocPa >> DMA_BITS_OFFSET) <<
+	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_DMY_CTRL3_DMY_RD_BASE_PTR_EXT_SHFT) &
+	WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_DMY_CTRL3_DMY_RD_BASE_PTR_EXT_MASK;
+	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+
 	/* set DIDX_WB_BASE_PTR */
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_CTRL0_ADDR;
 	u4WrVal = ((uint64_t)prRingDidx->AllocPa) & DMA_LOWER_32BITS_MASK;
@@ -1958,6 +1967,8 @@ static void mt7935WfdmaConfigCidxFetch(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_ADDR;
 	u4WrVal = WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_RX_EN_MASK |
 		WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_TX_EN_MASK;
+	u4WrVal |= 0x0 <<
+		WF_WFDMA_HOST_DMA0_WPDMA_CIDX_FET_CTRL2_CFET_DLY_TIME_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 }
 
@@ -1982,34 +1993,117 @@ static void mt7935ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 		mt7935WfdmaConfigCidxFetch(prGlueInfo);
 }
 
-static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
-				   struct RTMP_TX_RING *prTxRing)
+static void mt7935TriggerWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t u4Addr = 0, u4WrVal = 0;
+
+	u4Addr = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_ADDR;
+	u4WrVal = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_WF_DRV_CIDX_TRIG_MASK;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
+
+	prHifInfo->fgIsCidxFetchNewTx = FALSE;
+	prHifInfo->ulCidxFetchTimeout =
+		jiffies +
+		prAdapter->rWifiVar.u4WfdmaCidxFetchTimeout * HZ / 1000;
+}
+
+static u_int8_t mt7935CheckWfdmaCidxFetchTimeout(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	uint32_t u4Idx;
+
+	if (time_before(jiffies, prHifInfo->ulCidxFetchTimeout))
+		return FALSE;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		prTxRing = &prHifInfo->TxRing[u4Idx];
+		HAL_GET_RING_CIDX(HIF_READ, prAdapter,
+				  prTxRing, &prTxRing->TxCpuIdx);
+		HAL_GET_RING_DIDX(HIF_READ, prAdapter,
+				  prTxRing, &prTxRing->TxDmaIdx);
+
+		if (prTxRing->TxCpuIdx != prTxRing->TxDmaIdx)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static void mt7935RunWfdmaCidxFetch(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (prHifInfo->fgIsNeedCidxFetchFlag) {
+		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByNewTx);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
+			DBGLOG(HAL, INFO, "Trigger cidx fetch by new tx");
+		goto fetch;
+	}
+
+	if (prHifInfo->fgIsCidxFetchNewTx &&
+	    mt7935CheckWfdmaCidxFetchTimeout(prGlueInfo)) {
+		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByTimeout);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
+			DBGLOG(HAL, INFO, "Trigger cidx fetch by timeout");
+		goto fetch;
+	}
+
+	return;
+fetch:
+	prHifInfo->fgIsNeedCidxFetchFlag = FALSE;
+	mt7935TriggerWfdmaCidxFetch(prGlueInfo);
+}
+
+static void mt7935TriggerWfdmaTxCidx(struct GLUE_INFO *prGlueInfo,
+				     struct RTMP_TX_RING *prTxRing)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	uint32_t u4Addr = 0, u4WrVal = 0;
+	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	if (!prChipInfo->is_support_wfdma_cidx_fetch)
 		return;
 
-	u4Addr = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_ADDR;
-	u4WrVal = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_WF_DRV_CIDX_TRIG_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+	if (!halIsDataRing(TX_RING, prTxRing->u4RingIdx)) {
+		mt7935TriggerWfdmaCidxFetch(prGlueInfo);
+		GLUE_INC_REF_CNT(prHifStats->u4CidxFetchByCmd);
+		if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg))
+			DBGLOG(HAL, INFO, "Trigger cidx fetch by cmd");
+		goto exit;
+	}
+
+	if (prHifInfo->fgIsUrgentCidxFetch) {
+		prHifInfo->fgIsUrgentCidxFetch = FALSE;
+		prHifInfo->fgIsNeedCidxFetchFlag = TRUE;
+	}
+
+	if (prTxRing->u4LastCidx == prTxRing->u4LastDidx)
+		prHifInfo->fgIsNeedCidxFetchFlag = TRUE;
+
+	prHifInfo->fgIsCidxFetchNewTx = TRUE;
+
+exit:
+	if (IS_FEATURE_ENABLED(prWifiVar->fgWfdmaCidxFetchDbg)) {
+		DBGLOG(HAL, INFO,
+		       "Ring[%u]: old cidx[%u]didx[%u]",
+		       prTxRing->u4RingIdx,
+		       prTxRing->u4LastCidx,
+		       prTxRing->u4LastDidx);
+	}
 }
 
 static void mt7935TriggerWfdmaRxCidx(struct GLUE_INFO *prGlueInfo,
-				   struct RTMP_RX_RING *prRxRing)
+				     struct RTMP_RX_RING *prRxRing)
 {
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	uint32_t u4Addr = 0, u4WrVal = 0;
-
-	if (!prChipInfo->is_support_wfdma_cidx_fetch)
-		return;
-
-	u4Addr = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_ADDR;
-	u4WrVal = CONN_HOST_CSR_TOP_WF_DRV_CIDX_TRIG_WF_DRV_CIDX_TRIG_MASK;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 }
 
 static void mt79353EnableWfdmaWb(struct GLUE_INFO *prGlueInfo)
@@ -2019,7 +2113,6 @@ static void mt79353EnableWfdmaWb(struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
-
 	uint32_t u4Idx = 0;
 
 	prHifInfo = &prGlueInfo->rHifInfo;

@@ -8511,6 +8511,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_INT(prWifiVar->icRegPwrLmtMin, "RegPwrLmtMin",
 		TX_PWR_REG_LMT_MIN);
+
+#if CFG_MTK_WIFI_WFDMA_WB
+	INIT_UINT(prWifiVar->u4WfdmaCidxFetchTimeout,
+		  "WfdmaCidxFetchTimeout", 500);
+	INIT_UINT(prWifiVar->fgWfdmaCidxFetchDbg,
+		  "WfdmaCidxFetchDbg", FEATURE_DISABLED);
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

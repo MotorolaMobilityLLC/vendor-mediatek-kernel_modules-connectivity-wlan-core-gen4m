@@ -658,6 +658,7 @@ void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,
 	pRxRing = &prHifInfo->RxBlkRing[u4Num];
 	pRxRing->u4BufSize = u4BufSize;
 	pRxRing->u4RingSize = prHifInfo->u4RxDataRingSize;
+	pRxRing->u4RingIdx = u4Num;
 	pRxRing->fgRxSegPkt = FALSE;
 	pRxRing->pvPacket = NULL;
 	pRxRing->u4PacketLen = 0;
