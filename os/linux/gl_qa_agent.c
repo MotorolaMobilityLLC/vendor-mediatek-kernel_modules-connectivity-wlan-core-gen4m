@@ -85,7 +85,7 @@ u_int8_t g_DBDCEnable = FALSE;
 /* For SA Buffer Mode Temp Solution */
 u_int8_t	g_BufferDownload = FALSE;
 uint32_t	u4EepromMode = 4;
-uint32_t g_u4Chip_ID;
+/* uint32_t g_u4Chip_ID; */
 
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
@@ -888,15 +888,8 @@ static int32_t HQA_SetTxPowerExt(struct net_device
 	u4Ant_idx = ntohl(u4Ant_idx);
 
 	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetTxPowerExt u4Power : %d\n", u4Power);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetTxPowerExt u4Dbdc_idx : %d\n", u4Dbdc_idx);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetTxPowerExt u4Channel : %d\n", u4Channel);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetTxPowerExt u4Band_idx : %d\n", u4Band_idx);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetTxPowerExt u4Ant_idx : %d\n", u4Ant_idx);
+		" QA_AGENT HQA_SetTxPowerExt u4Power : %u,u4Dbdc_idx:%u, u4Channel:%u,u4Band_idx:%u, u4Ant_idx:%u\n",
+		u4Power, u4Dbdc_idx, u4Channel, u4Band_idx, u4Ant_idx);
 
 	MT_ATESetDBDCBandIndex(prNetDev, u4Dbdc_idx);
 	MT_ATESetTxPower0(prNetDev, u4Power);
@@ -1769,16 +1762,12 @@ static int32_t HQA_SetFAGCRssiPath(struct net_device
 	memcpy(&u4FAGC_Path, HqaCmdFrame->Data + 4 * 1, 4);
 	u4FAGC_Path = ntohl(u4FAGC_Path);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetFAGCRssiPath u4band_idx : %d\n",
-	       u4band_idx);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetFAGCRssiPath u4FAGC_Path : %d\n",
-	       u4FAGC_Path);
+	DBGLOG(RFTEST, INFO, "u4band_idx : %d, u4FAGC_Path : %d\n",
+			     u4band_idx, u4FAGC_Path);
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_FAGC_RSSI_PATH;
-	rRfATInfo.u4FuncData = (uint32_t) ((u4band_idx << 16)
-					   || (u4FAGC_Path & BITS(0, 15)));
+	rRfATInfo.u4FuncData = (uint32_t) ((u4band_idx << 16) |
+					   (u4FAGC_Path & BITS(0, 15)));
 
 	i4Ret = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			 wlanoidRftestSetAutoTest,	/* pfnOidHandler */
@@ -1941,18 +1930,13 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MACBbpRegBulkRead\n");
-
 	memcpy(&u4Offset, HqaCmdFrame->Data, 4);
 	u4Offset = ntohl(u4Offset);
 	memcpy(&u2Len, HqaCmdFrame->Data + 4, 2);
 	u2Len = ntohs(u2Len);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_MACBbpRegBulkRead Offset = 0x%08x\n",
-	       u4Offset);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_MACBbpRegBulkRead Len = 0x%08x\n", u2Len);
+	DBGLOG(RFTEST, INFO, "Offset = 0x%08x, Len = 0x%08x\n",
+				u4Offset, u2Len);
 
 	for (u4Index = 0; u4Index < u2Len; u4Index++) {
 		rMcrInfo.u4McrOffset = u4Offset + u4Index * 4;
@@ -1967,7 +1951,7 @@ static int32_t HQA_MACBbpRegBulkRead(struct net_device
 			u4Value = rMcrInfo.u4McrData;
 
 			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT Address = 0x%08x, Result = 0x%08x\n",
+			       "Address = 0x%08x, Result = 0x%08x\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -2005,8 +1989,6 @@ static int32_t HQA_RfRegBulkRead(struct net_device
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkRead\n");
-
 	memcpy(&u4WfSel, HqaCmdFrame->Data, 4);
 	u4WfSel = ntohl(u4WfSel);
 	memcpy(&u4Offset, HqaCmdFrame->Data + 4, 4);
@@ -2014,12 +1996,8 @@ static int32_t HQA_RfRegBulkRead(struct net_device
 	memcpy(&u4Length, HqaCmdFrame->Data + 8, 4);
 	u4Length = ntohl(u4Length);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkRead WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkRead Offset = 0x%08x\n", u4Offset);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkRead Length = %d\n", u4Length);
+	DBGLOG(RFTEST, INFO, " WfSel  = %u, Offset = 0x%08x, Length = %u\n",
+		u4WfSel, u4Offset, u4Length);
 
 	if (u4WfSel == 0)
 		u4Offset = u4Offset | 0x99900000;
@@ -2040,7 +2018,7 @@ static int32_t HQA_RfRegBulkRead(struct net_device
 			u4Value = rMcrInfo.u4McrData;
 
 			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT Address = 0x%08x, Result = 0x%08x\n",
+			       "Address = 0x%08x, Result = 0x%08x\n",
 			       u4Offset + u4Index * 4, u4Value);
 
 			u4Value = ntohl(u4Value);
@@ -2078,8 +2056,6 @@ static int32_t HQA_RfRegBulkWrite(struct net_device
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RfRegBulkWrite\n");
-
 	memcpy(&u4WfSel, HqaCmdFrame->Data, 4);
 	u4WfSel = ntohl(u4WfSel);
 	memcpy(&u4Offset, HqaCmdFrame->Data + 4, 4);
@@ -2090,13 +2066,8 @@ static int32_t HQA_RfRegBulkWrite(struct net_device
 	u4Value = ntohl(u4Value);
 
 	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkWrite WfSel  = %d\n", u4WfSel);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkWrite Offset = 0x%08x\n", u4Offset);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkWrite Length = %d\n", u4Length);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_RfRegBulkWrite Value  = 0x%08x\n", u4Value);
+		"WfSel  = %u, Offset = 0x%08x, Length = %u, Value  = 0x%08x\n",
+		u4WfSel, u4Offset, u4Length, u4Value);
 
 	if (u4WfSel == 0)
 		u4Offset = u4Offset | 0x99900000;
@@ -2155,12 +2126,22 @@ static int32_t HQA_ReadEEPROM(struct net_device *prNetDev,
 
 #if  (CFG_EEPROM_PAGE_ACCESS == 1)
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	if (prGlueInfo->prAdapter &&
+	    prGlueInfo->prAdapter->chip_info &&
+	    !prGlueInfo->prAdapter->chip_info->is_support_efuse) {
+		rStatus = WLAN_STATUS_NOT_SUPPORTED;
+		log_dbg(RFTEST, WARN, "Efuse not support\n");
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, rStatus);
+		return rStatus;
+	}
+
 	kalMemSet(&rAccessEfuseInfo, 0,
-		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+		sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 
 
-	rAccessEfuseInfo.u4Address = (Offset / EFUSE_BLOCK_SIZE) *
-				     EFUSE_BLOCK_SIZE;
+	rAccessEfuseInfo.u4Address =
+		(Offset / EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 
 
 	rStatus = kalIoctl(prGlueInfo,
@@ -2304,16 +2285,26 @@ static int32_t HQA_ReadBulkEEPROM(struct net_device
 
 	uint16_t Buffer;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t tmp = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
 
 	kalMemSet(&rAccessEfuseInfo, 0,
 		  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 #endif
 
 	DBGLOG(INIT, INFO, "QA_AGENT HQA_ReadBulkEEPROM\n");
+	if (prAdapter->chip_info &&
+	    !prAdapter->chip_info->is_support_efuse) {
+		log_dbg(RFTEST, WARN, "Efuse not support\n");
+		rStatus = WLAN_STATUS_NOT_SUPPORTED;
+		ResponseToQA(HqaCmdFrame, prIwReqData,
+			     2, rStatus);
+		return rStatus;
+	}
 
 	memcpy(&Offset, HqaCmdFrame->Data + 2 * 0, 2);
 	Offset = ntohs(Offset);
@@ -2485,11 +2476,7 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 	testBuffer2 = ntohs(testBuffer1);
 	testBuffer = ntohs(testBuffer1);
 
-
-	DBGLOG(INIT, INFO,
-	       "QA_AGENT HQA_WriteBulkEEPROM Offset : %x\n", Offset);
-	DBGLOG(INIT, INFO,
-	       "QA_AGENT HQA_WriteBulkEEPROM Len : %d\n", Len);
+	DBGLOG(INIT, INFO, "Offset : %x, Len : %u\n", Offset, Len);
 
 	/* Support Delay Calibraiton */
 	if (prGlueInfo->prAdapter->fgIsSupportQAAccessEfuse ==
@@ -2529,6 +2516,14 @@ static int32_t HQA_WriteBulkEEPROM(struct net_device
 			/* Read */
 			DBGLOG(INIT, INFO,
 			       "QA_AGENT HQA_WriteBulkEEPROM  Read\n");
+			if (prAdapter->chip_info &&
+			    !prAdapter->chip_info->is_support_efuse) {
+				log_dbg(RFTEST, WARN, "Efuse not support\n");
+				rStatus = WLAN_STATUS_NOT_SUPPORTED;
+				ResponseToQA(HqaCmdFrame, prIwReqData,
+					     2, rStatus);
+				return rStatus;
+			}
 			kalMemSet(&rAccessEfuseInfoRead, 0,
 				  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
 			rAccessEfuseInfoRead.u4Address =
@@ -2848,12 +2843,8 @@ static int32_t HQA_GetTxPower(struct net_device *prNetDev,
 	memcpy(&u4Ch_Band, HqaCmdFrame->Data + 4 * 2, 4);
 	u4Ch_Band = ntohl(u4Ch_Band);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_GetTxPower u4Channel : %d\n", u4Channel);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_GetTxPower u4Band : %d\n", u4Band);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_GetTxPower u4Ch_Band : %d\n", u4Ch_Band);
+	DBGLOG(RFTEST, INFO, "u4Channel : %u, u4Band : %u, u4Ch_Band : %u\n",
+		u4Channel, u4Band, u4Ch_Band);
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -2912,19 +2903,34 @@ static int32_t HQA_SetCfgOnOff(struct net_device *prNetDev,
 	memcpy(&Band, HqaCmdFrame->Data + 4 * 2, 4);
 	Band = ntohl(Band);
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetCfgOnOff Type : %d\n",
-	       Type);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_SetCfgOnOff Enable : %d\n", Enable);
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_SetCfgOnOff Band : %d\n",
-	       Band);
+	DBGLOG(RFTEST, INFO, "Type : %u, Enable : %u, Band : %u\n",
+						 Type, Enable, Band);
 
-	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TSSI;
+	switch (Type) {
+	case 0: /* TSSI */
+		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_TSSI;
+		break;
+	case 1: /* DPD */
+		rRfATInfo.u4FuncIndex = RF_AT_FUNCID_DPD_MODE;
+		break;
+	default:
+		DBGLOG(RFTEST, WARN, "Type [%d] not support\n", Type);
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+		return i4Ret;
+	}
+
+
+
 	rRfATInfo.u4FuncData = 0;
 
-	if (Band == 0 && Enable == 1)
+	if (Enable == 0)
+		rRfATInfo.u4FuncData &= ~BIT(0);
+	else
 		rRfATInfo.u4FuncData |= BIT(0);
-	else if (Band == 1 && Enable == 1)
+
+	if (Band == 0)
+		rRfATInfo.u4FuncData &= ~BIT(1);
+	else
 		rRfATInfo.u4FuncData |= BIT(1);
 
 	rStatus = kalIoctl(prGlueInfo,	/* prGlueInfo */
@@ -2965,9 +2971,19 @@ static int32_t HQA_GetFreqOffset(struct net_device
 	uint32_t u4FreqOffset = 0;
 	uint32_t u4BufLen = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo && prGlueInfo->prAdapter)
+		prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	/* Mobile chips don't support GetFreqOffset */
+	if (prChipInfo && prChipInfo->u4ChipIpVersion
+						== CONNAC_CHIP_IP_VERSION) {
+		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+		return i4Ret;
+	}
 
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_GET_FREQ_OFFSET;
 	rRfATInfo.u4FuncData = 0;
@@ -3047,29 +3063,16 @@ static int32_t HQA_DBDCTXTone(struct net_device *prNetDev,
 	       4);	/* Digi_Power: (0.25db) -32~31 */
 	i4Digi_Power = ntohl(i4Digi_Power);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone BandIdx = 0x%08x\n", i4BandIdx);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone Control = 0x%08x\n", i4Control);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone AntIndex = 0x%08x\n", i4AntIndex);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone ToneType = 0x%08x\n", i4ToneType);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone ToneFreq = 0x%08x\n", i4ToneFreq);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone DcOffsetI = 0x%08x\n",
-	       i4DcOffsetI);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone DcOffsetQ = 0x%08x\n",
-	       i4DcOffsetQ);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone Band = 0x%08x\n", i4Band);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone RF_Power = 0x%08x\n", i4RF_Power);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DBDCTXTone Digi_Power = 0x%08x\n",
-	       i4Digi_Power);
+	DBGLOG(RFTEST, INFO, "BandIdx = 0x%08x\n", i4BandIdx);
+	DBGLOG(RFTEST, INFO, "Control = 0x%08x\n", i4Control);
+	DBGLOG(RFTEST, INFO, "AntIndex = 0x%08x\n", i4AntIndex);
+	DBGLOG(RFTEST, INFO, "ToneType = 0x%08x\n", i4ToneType);
+	DBGLOG(RFTEST, INFO, "ToneFreq = 0x%08x\n", i4ToneFreq);
+	DBGLOG(RFTEST, INFO, "DcOffsetI = 0x%08x\n", i4DcOffsetI);
+	DBGLOG(RFTEST, INFO, "DcOffsetQ = 0x%08x\n", i4DcOffsetQ);
+	DBGLOG(RFTEST, INFO, "Band = 0x%08x\n", i4Band);
+	DBGLOG(RFTEST, INFO, "RF_Power = 0x%08x\n", i4RF_Power);
+	DBGLOG(RFTEST, INFO, "Digi_Power = 0x%08x\n", i4Digi_Power);
 
 	/*
 	 * Select TX Antenna
@@ -3887,9 +3890,13 @@ static int32_t HQA_DoCalibrationTestItem(struct net_device
 	uint32_t u4Band_idx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+	struct ADAPTER *prAdapter;
 	uint32_t u4BufLen = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
 
 	memcpy(&u4Item, HqaCmdFrame->Data, 4);
 	u4Item = ntohl(u4Item);
@@ -3909,6 +3916,9 @@ static int32_t HQA_DoCalibrationTestItem(struct net_device
 	rRfATInfo.u4FuncIndex = RF_AT_FUNCID_SET_RECAL_CAL_STEP;
 	rRfATInfo.u4FuncData = u4Item;
 
+	kalMemSet((void *)&prAdapter->rReCalInfo,
+			  0,
+			  sizeof(struct RECAL_INFO_T));
 	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
 			    wlanoidRftestSetAutoTest,	/* pfnOidHandler */
 			    &rRfATInfo,	/* pvInfoBuf */
@@ -4237,20 +4247,21 @@ static int32_t HQA_GetChipID(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 	uint32_t u4ChipId;
-	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	/* UINT_32 u4BufLen = 0;
 	 * PARAM_CUSTOM_MCR_RW_STRUCT_T rMcrInfo;
 	 */
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_GetChipID\n");
-
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
-	g_u4Chip_ID = prChipInfo->chip_id;
-	u4ChipId = 0x00006632;
+	/* g_u4Chip_ID = prChipInfo->chip_id; */
+	if (prChipInfo->u4ChipIpVersion == CONNAC_CHIP_IP_VERSION)
+		u4ChipId = 0x00066310;
+	else
+		u4ChipId = 0x00006632;
 
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA_GetChipID ChipId = 0x%08x\n", u4ChipId);
@@ -5118,14 +5129,10 @@ static int32_t HQA_DevInfoUpdate(struct net_device
 	OwnMacIdx = ntohl(OwnMacIdx);
 	memcpy(ucAddr1, HqaCmdFrame->Data + 4 * 2, 6);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DevInfoUpdate Band : %d\n", Band);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DevInfoUpdate OwnMacIdx : %d\n", OwnMacIdx);
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_DevInfoUpdate addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
-	       ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4],
-	       ucAddr1[5]);
+	DBGLOG(RFTEST, INFO, "Band : %d, OwnMacIdx : %d\n", Band, OwnMacIdx);
+	DBGLOG(RFTEST, INFO, "addr1:%02x:%02x:%02x:%02x:%02x:%02x\n",
+			ucAddr1[0], ucAddr1[1], ucAddr1[2],
+			ucAddr1[3], ucAddr1[4], ucAddr1[5]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 	kalSprintf(prInBuf,
@@ -5190,6 +5197,92 @@ static int32_t HQA_LogOnOff(struct net_device *prNetDev,
 
 	return i4Ret;
 }
+
+
+static int32_t HQA_GetDumpRecal(struct net_device *prNetDev,
+				IN union iwreq_data *prIwReqData,
+				struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct RECAL_INFO_T *prReCalInfo = NULL;
+	struct RECAL_DATA_T *prCalArray = NULL;
+	uint32_t i = 0, u4Value = 0, u4RespLen = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+	prReCalInfo = &prAdapter->rReCalInfo;
+	prCalArray = prReCalInfo->prCalArray;
+
+	DBGLOG(RFTEST, INFO, "prReCalInfo->u4Count = [%d]\n",
+						 prReCalInfo->u4Count);
+	if (prReCalInfo->u4Count > 0) {
+		for (i = 0; i < prReCalInfo->u4Count; i++) {
+			u4Value = ntohl(prCalArray[i].u4CalId);
+			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
+					   &u4Value,
+					   sizeof(u4Value));
+			u4RespLen += sizeof(u4Value);
+
+			u4Value = ntohl(prCalArray[i].u4CalAddr);
+			DBGLOG(RFTEST, INFO, "CalAddr[%d] = [0x%08x]\n",
+					     i, prCalArray[i].u4CalAddr);
+			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
+					   &u4Value,
+					   sizeof(u4Value));
+			u4RespLen += sizeof(u4Value);
+
+			u4Value = ntohl(prCalArray[i].u4CalValue);
+			kalMemCopy(HqaCmdFrame->Data + 6 + u4RespLen,
+					   &u4Value,
+					   sizeof(u4Value));
+			u4RespLen += sizeof(u4Value);
+		}
+
+		u4Value = ntohl(prReCalInfo->u4Count);
+		kalMemCopy(HqaCmdFrame->Data + 2, &u4Value, sizeof(u4Value));
+		ResponseToQA(HqaCmdFrame,
+			     prIwReqData,
+			     6 + prReCalInfo->u4Count * 12,
+			     0);
+	} else {
+		kalMemCopy(HqaCmdFrame->Data + 2, &prReCalInfo->u4Count, 4);
+		ResponseToQA(HqaCmdFrame, prIwReqData, 6, 0);
+	}
+
+	/* free resources */
+	if (prReCalInfo->prCalArray != NULL) {
+		kalMemFree(prReCalInfo->prCalArray,
+			       VIR_MEM_TYPE,
+			       2048 * sizeof(struct RECAL_DATA_T));
+		prReCalInfo->prCalArray = 0;
+		prReCalInfo->u4Count = 0;
+	}
+
+	return 0;
+}
+
+static int32_t HQA_GetDumpRXV(struct net_device *prNetDev,
+			      IN union iwreq_data *prIwReqData,
+			      struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	int32_t i4Count = 0, i4Ret = 0;
+
+	i4Ret = MT_ATEGetDumpRXV(prNetDev, HqaCmdFrame->Data, &i4Count);
+	ResponseToQA(HqaCmdFrame, prIwReqData, 6 + i4Count, i4Ret);
+	return i4Ret;
+}
+
+static HQA_CMD_HANDLER HQA_ReCal_CMDS[] = {
+	HQA_GetDumpRecal,			/*0x1581 */
+};
+
+static HQA_CMD_HANDLER HQA_RXV_CMDS[] = {
+	HQA_GetDumpRXV,		/* 0x1581 */
+};
+
 
 static HQA_CMD_HANDLER HQA_CMD_SET5[] = {
 	/* cmd id start from 0x1500 */
@@ -7055,7 +7148,7 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 	uint32_t u4Band = 0;
 	uint32_t u4WFNum;
 	uint32_t u4IQ;
-	uint32_t u4DataLen = 0;
+	uint32_t u4DataLen = 0, u4TempLen = 0;
 	int32_t i4Ret = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -7065,8 +7158,7 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 	memcpy((uint8_t *)&u4Control, HqaCmdFrame->Data + 4 * 0, 4);
 	u4Control = ntohl(u4Control);
 
-	DBGLOG(RFTEST, INFO,
-	       "QA_AGENT HQA_CapWiFiSpectrum u4Control = %d\n", u4Control);
+	DBGLOG(RFTEST, INFO, "u4Control = %d\n", u4Control);
 
 	if (u4Control == 1) {
 		if (prAteOps->setICapStart) {
@@ -7101,34 +7193,12 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 
 			/* AT Command #1, Trigger always = 1 */
 			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4Trigger = %d\n",
-			       u4Trigger);
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4RingCapEn = %d\n",
-			       u4RingCapEn);
+				"u4Trigger=%u, u4RingCapEn=%u, u4TriggerEvent=%u\n",
+				u4Trigger, u4RingCapEn, u4Trigger);
 			/* AT Command #81 */
 			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4Event = %d\n",
-			       u4Event);
-			/* AT Command #80 */
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4Node = %d\n",
-			       u4Node);
-			/* AT Command #83 */
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4Len = %d\n",
-			       u4Len);
-			/* AT Command #84 */
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4StopCycle = %d\n",
-			       u4StopCycle);
-			/* AT Command #71 */
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4BW = %d\n",
-			       u4BW);
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4Band = %d\n",
-			       u4Band);
+				"u4Node=%u, u4Len=%u, u4topCycle=%u, u4BW=%u, u4Band=%d",
+				u4Node, u4Len, u4StopCycle, u4BW, u4Band);
 
 			u4SourceAddrLSB = ((aucSourceAddress[0]) |
 					   (aucSourceAddress[1] << 8) |
@@ -7139,11 +7209,13 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 					   (0x1 << 16));
 
 			prGlueInfo->prAdapter->rIcapInfo.u4CapNode = u4Node;
-			prAteOps->setICapStart(prGlueInfo, u4Trigger,
-					u4RingCapEn, u4Event, u4Node, u4Len,
-					u4StopCycle, u4BW, u4MacTriggerEvent,
-					u4SourceAddrLSB, u4SourceAddrMSB,
-					u4Band);
+			i4Ret = prAteOps->setICapStart(prGlueInfo, u4Trigger,
+					       u4RingCapEn, u4Event, u4Node,
+					       u4Len, u4StopCycle, u4BW,
+					       u4MacTriggerEvent,
+					       u4SourceAddrLSB,
+					       u4SourceAddrMSB, u4Band);
+			prGlueInfo->prAdapter->fgIcapMode = u4Trigger;
 		} else
 			i4Ret = 1;
 
@@ -7167,34 +7239,39 @@ static int32_t HQA_CapWiFiSpectrum(struct net_device
 			u4IQ = ntohl(u4IQ);
 
 			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4WFNum = %d\n",
-			       u4WFNum);
-			DBGLOG(RFTEST, INFO,
-			       "QA_AGENT HQA_CapWiFiSpectrum u4IQ = %d\n",
-			       u4IQ);
+			       "u4WFNum = %d, u4IQ = %d\n", u4WFNum, u4IQ);
 
-			u4DataLen = prAteOps->getICapIQData(prGlueInfo,
-				    HqaCmdFrame->Data + 2 + 4 * 4, u4IQ,
-				    u4WFNum);
+			u4DataLen = prAteOps->getICapIQData(
+						prGlueInfo,
+						&HqaCmdFrame->Data[2 + 4 * 4],
+						u4IQ,
+						u4WFNum);
+			u4TempLen = u4DataLen;
 			u4Control = ntohl(u4Control);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 0,
-				   (uint8_t *)&u4Control, sizeof(u4Control));
+					   (uint8_t *)&u4Control,
+					   sizeof(u4Control));
 			u4WFNum = ntohl(u4WFNum);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 1,
-				   (uint8_t *)&u4WFNum, sizeof(u4WFNum));
+					   (uint8_t *)&u4WFNum,
+					   sizeof(u4WFNum));
 			u4IQ = ntohl(u4IQ);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 2,
-				   (uint8_t *)&u4IQ,
-				   sizeof(u4IQ));
-			u4DataLen = ntohl(u4DataLen);
+					   (uint8_t *)&u4IQ,
+					   sizeof(u4IQ));
+			u4TempLen = ntohl(u4DataLen);
 			kalMemCopy(HqaCmdFrame->Data + 2 + 4 * 3,
-				   (uint8_t *)&u4DataLen, sizeof(u4DataLen));
-		} else
-			i4Ret = 0;
+					   (uint8_t *)&u4TempLen,
+					   sizeof(u4DataLen));
 
+		}
+
+		i4Ret = 0;
 		/* Get IQ Data and transmit them to UI DLL */
-		ResponseToQA(HqaCmdFrame, prIwReqData,
-			     2 + 4 * 4 + u4DataLen, i4Ret);
+		ResponseToQA(HqaCmdFrame,
+			     prIwReqData,
+			     2 + 4 * 4 + u4DataLen * sizeof(int32_t),
+			     i4Ret);
 	} else {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 	}
@@ -7417,26 +7494,51 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BufLen = 0, u4IQArrayLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
+	if (u4Trigger) {
+		if (prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable) {
+			log_dbg(RFTEST, ERROR, "Already starting, ignore\n");
+			return 1;
+		}
+	} else {
+		log_dbg(RFTEST, INFO, "Shutdown Icap\n");
+		prGlueInfo->prAdapter->rIcapInfo.fgIcapEnable = FALSE;
+		if (prGlueInfo->prAdapter->rIcapInfo.prIQArray != NULL)
+			kalMemFree(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
+				   VIR_MEM_TYPE,
+				   u4IQArrayLen);
+		prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
+		prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
+		prGlueInfo->prAdapter->rIcapInfo.prIQArray = NULL;
+		return 0;
+	}
+
 	prICapInfo = &(rRfATInfo.Data.rICapInfo);
 	prICapInfo->u4Trigger = u4Trigger;
 	prICapInfo->u4TriggerEvent = u4Event;
 
-	u4IQArrayLen = MAX_ICAP_IQ_DATA_CNT * sizeof(
-			       struct _RBIST_IQ_DATA_T);
-	prGlueInfo->prAdapter->rIcapInfo.prIQArray = kalMemAlloc(
-				u4IQArrayLen, VIR_MEM_TYPE);
+	u4IQArrayLen = MAX_ICAP_IQ_DATA_CNT * sizeof(struct _RBIST_IQ_DATA_T);
+#if 0
+	if (prGlueInfo->prAdapter->rIcapInfo.prIQArray != NULL)
+		kalMemFree(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
+			   VIR_MEM_TYPE,
+			   u4IQArrayLen);
+#endif
+
 	if (!prGlueInfo->prAdapter->rIcapInfo.prIQArray) {
-		DBGLOG(RFTEST, ERROR, "Not enough memory for IQ_Array\n");
-		return 0;
+		prGlueInfo->prAdapter->rIcapInfo.prIQArray =
+				kalMemAlloc(u4IQArrayLen, VIR_MEM_TYPE);
+		if (!prGlueInfo->prAdapter->rIcapInfo.prIQArray) {
+			DBGLOG(RFTEST, ERROR,
+				"Not enough memory for IQ_Array\n");
+			return 0;
+		}
 	}
 
 	prGlueInfo->prAdapter->rIcapInfo.u4IQArrayIndex = 0;
 	prGlueInfo->prAdapter->rIcapInfo.u4ICapEventCnt = 0;
-	kalMemZero(
-		prGlueInfo->prAdapter->rIcapInfo.au4ICapDumpIndex,
+	kalMemZero(prGlueInfo->prAdapter->rIcapInfo.au4ICapDumpIndex,
 		sizeof(prGlueInfo->prAdapter->rIcapInfo.au4ICapDumpIndex));
-	kalMemZero(prGlueInfo->prAdapter->rIcapInfo.prIQArray,
-		   u4IQArrayLen);
+	kalMemZero(prGlueInfo->prAdapter->rIcapInfo.prIQArray, u4IQArrayLen);
 
 	if (prICapInfo->u4TriggerEvent == CAP_FREE_RUN)
 		prICapInfo->u4RingCapEn = CAP_RING_MODE_DISABLE;
@@ -7454,6 +7556,22 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 	prICapInfo->u4EnBitWidth = 0;
 	prICapInfo->u4Architech = 1;
 	prICapInfo->u4PhyIdx = 0;
+#ifdef CONFIG_MTK_EMI
+	prICapInfo->u4EmiStartAddress =
+		(uint32_t) (gConEmiPhyBase & 0xFFFFFFFF);
+	prICapInfo->u4EmiEndAddress =
+		(uint32_t) ((gConEmiPhyBase + gConEmiSize) & 0xFFFFFFFF);
+	prICapInfo->u4EmiMsbAddress =
+		(uint32_t) ((((uint64_t) gConEmiPhyBase) >> 32) & 0xFFFFFFFF);
+
+	DBGLOG(RFTEST, INFO,
+		"startAddr = 0x%08x, endAddress = 0x%08x, MsbAddr = 0x%08x\n",
+		  prICapInfo->u4EmiStartAddress,
+		  prICapInfo->u4EmiEndAddress,
+		  prICapInfo->u4EmiMsbAddress);
+#else
+	DBGLOG(RFTEST, WARN, "Platform doesn't support WMT, no EMI address\n");
+#endif
 
 	DBGLOG(RFTEST, INFO,
 	       "%s :\n prICapInfo->u4Trigger = 0x%08x\n prICapInfo->u4RingCapEn = 0x%08x\n"
@@ -7553,7 +7671,7 @@ int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo,
 	struct ICAP_INFO_T *prICapInfo = NULL;
 	int32_t i = 0;
 	uint32_t u4MaxTxCount = 0;
-	uint32_t *pu4DumpIndex = NULL;
+	uint32_t u4DumpIndex = 0;
 	uint32_t u4Value, u4RespLen = 0;
 
 	ASSERT(prGlueInfo);
@@ -7562,31 +7680,30 @@ int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo,
 	prICapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prICapInfo->prIQArray;
 	ASSERT(prIQArray);
-	pu4DumpIndex =
-		&prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
+	u4DumpIndex = prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType];
 
 	/* 1. Maximum 1KB = ICAP_EVENT_DATA_SAMPLE (256) slots */
-	u4MaxTxCount = prICapInfo->u4IQArrayIndex - *pu4DumpIndex;
+	u4MaxTxCount = prICapInfo->u4IQArrayIndex - u4DumpIndex;
 	if (u4MaxTxCount > ICAP_EVENT_DATA_SAMPLE)
 		u4MaxTxCount = ICAP_EVENT_DATA_SAMPLE;
 
-	DBGLOG(RFTEST, INFO,
-	       "prICapInfo->au4ICapDumpIndex[%d][%c] = %d\n",
-	       u4WFNum,
-	       (u4IQType == CAP_I_TYPE) ? 'I' : 'Q',
-	       *pu4DumpIndex);
+	DBGLOG(RFTEST, INFO, "prICapInfo->au4ICapDumpIndex[%d][%c] = %d\n",
+						u4WFNum,
+						(u4IQType == CAP_I_TYPE) ?
+						'I' : 'Q',
+						u4DumpIndex);
 
 	/* 2. Copy to buffer */
 	for (i = 0; i < u4MaxTxCount; i++) {
-		u4Value = ntohl(prIQArray[(*pu4DumpIndex)
-					  ++].u4IQArray[u4WFNum][u4IQType]);
+		u4Value = prIQArray[u4DumpIndex++].u4IQArray[u4WFNum][u4IQType];
+		u4Value = ntohl(u4Value);
 		kalMemCopy(pData + u4RespLen, (uint8_t *) &u4Value,
-			   sizeof(u4Value));
+						sizeof(u4Value));
 		u4RespLen += sizeof(u4Value);
 	}
-
+	prICapInfo->au4ICapDumpIndex[u4WFNum][u4IQType] = u4DumpIndex;
 	DBGLOG(RFTEST, INFO, "u4MaxTxCount = %d\n", u4MaxTxCount);
-	return sizeof(int32_t) * u4MaxTxCount;
+	return u4MaxTxCount;
 }
 
 
@@ -8520,30 +8637,30 @@ static int32_t hqa_ext_cmds(struct net_device *prNetDev,
 			    struct HQA_CMD_FRAME *HqaCmdFrame)
 {
 	int32_t i4Ret = 0;
-	int32_t i4Idx = 0;
+	uint32_t u4Idx = 0;
 
-	memmove((uint8_t *)&i4Idx, (uint8_t *)&HqaCmdFrame->Data,
+	memmove((uint8_t *)&u4Idx, (uint8_t *)&HqaCmdFrame->Data,
 		4);
-	i4Idx = ntohl(i4Idx);
+	u4Idx = ntohl(u4Idx);
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds index : %d\n",
-	       i4Idx);
+	       u4Idx);
 
-	if (i4Idx < (sizeof(hqa_ext_cmd_set) / sizeof(HQA_CMD_HANDLER))) {
-		if (hqa_ext_cmd_set[i4Idx] != NULL) {
+	if (u4Idx < (sizeof(hqa_ext_cmd_set) / sizeof(HQA_CMD_HANDLER))) {
+		if (hqa_ext_cmd_set[u4Idx] != NULL) {
 			/* valid command */
-			i4Ret = (*hqa_ext_cmd_set[i4Idx])(prNetDev,
+			i4Ret = (*hqa_ext_cmd_set[u4Idx])(prNetDev,
 				prIwReqData, HqaCmdFrame);
 		} else {
 			/* invalid command */
 			DBGLOG(RFTEST, INFO,
 			       "QA_AGENT hqa_ext_cmds cmd idx is NULL: %d\n",
-			       i4Idx);
+			       u4Idx);
 		}
 	} else {
 		/* invalid command */
 		DBGLOG(RFTEST, INFO,
-		"QA_AGENT hqa_ext_cmds cmd idx is not supported: %d\n", i4Idx);
+		"QA_AGENT hqa_ext_cmds cmd idx is not supported: %d\n", u4Idx);
 	}
 
 	return i4Ret;
@@ -8612,6 +8729,18 @@ static struct HQA_CMD_TABLE HQA_CMD_TABLES[] = {
 		sizeof(HQA_ICAP_CMDS) / sizeof(HQA_CMD_HANDLER),
 		0x1580,
 	}
+	,
+	{
+	 HQA_ReCal_CMDS,
+	 sizeof(HQA_ReCal_CMDS) / sizeof(HQA_CMD_HANDLER),
+	 0x1581,
+	 }
+	,
+	{
+	 HQA_RXV_CMDS,
+	 sizeof(HQA_RXV_CMDS) / sizeof(HQA_CMD_HANDLER),
+	 0x1582,
+	 }
 	,
 	{
 		HQA_CMD_SET6,

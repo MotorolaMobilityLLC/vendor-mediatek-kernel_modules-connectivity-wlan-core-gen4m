@@ -1706,6 +1706,18 @@ struct _RBIST_IQ_DATA_T {
 	int32_t u4IQArray[4][2]; /* IQ_Array[WF][IQ] */
 };
 
+struct RECAL_DATA_T {
+	uint32_t u4CalId;
+	uint32_t u4CalAddr;
+	uint32_t u4CalValue;
+};
+
+struct RECAL_INFO_T {
+	u_int8_t fgDumped;
+	uint32_t u4Count;
+	struct RECAL_DATA_T *prCalArray;
+};
+
 struct ICAP_INFO_T {
 	u_int8_t fgCaptureDone;
 	u_int8_t fgIcapEnable;

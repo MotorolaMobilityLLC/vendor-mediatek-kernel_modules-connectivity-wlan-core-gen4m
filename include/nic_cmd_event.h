@@ -1678,6 +1678,15 @@ struct CMD_STAREC_UPDATE {
 	uint8_t aucBuffer[0];
 };
 
+struct EXT_EVENT_BF_STATUS_T {
+	uint8_t ucEventCategoryID;
+	uint8_t ucBw;
+	uint16_t u2SubCarrIdx;
+	u_int8_t fgBFer;
+	uint8_t aucReserved[3];
+	uint8_t aucBuf[1000]; /* temp size */
+};
+
 struct EVENT_PFMU_TAG_READ {
 	union PFMU_PROFILE_TAG1 ru4TxBfPFMUTag1;
 	union PFMU_PROFILE_TAG2 ru4TxBfPFMUTag2;
@@ -3322,6 +3331,16 @@ struct EXT_EVENT_RBIST_CAP_STATUS_T {
 	uint32_t u4CapDone;
 	uint32_t u4Reserved[15];
 };
+
+struct EXT_EVENT_RECAL_DATA_T {
+	uint32_t u4FuncIndex;
+	uint32_t u4Type;	/* 0 for string, 1 for int data */
+	union {
+		uint8_t ucData[32];
+		uint32_t u4Data[3];
+	} u;
+};
+
 
 struct CMD_SUSPEND_MODE_SETTING {
 	uint8_t ucBssIndex;
