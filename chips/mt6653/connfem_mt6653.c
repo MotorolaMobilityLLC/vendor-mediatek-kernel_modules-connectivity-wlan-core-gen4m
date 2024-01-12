@@ -404,7 +404,6 @@ bool connfem_is_available(enum connfem_type fem_type)
 	pr_info("%s, Default setting: %d", __func__, res);
 	return res;
 }
-EXPORT_SYMBOL(connfem_is_available);
 
 int connfem_epaelna_get_fem_info(struct connfem_epaelna_fem_info *fem_info)
 {
@@ -412,7 +411,6 @@ int connfem_epaelna_get_fem_info(struct connfem_epaelna_fem_info *fem_info)
 	memset(fem_info, 0, sizeof(*fem_info));
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(connfem_epaelna_get_fem_info);
 
 int connfem_epaelna_get_bt_fem_info(struct connfem_epaelna_fem_info *fem_info)
 {
@@ -420,7 +418,6 @@ int connfem_epaelna_get_bt_fem_info(struct connfem_epaelna_fem_info *fem_info)
 	memset(fem_info, 0, sizeof(*fem_info));
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(connfem_epaelna_get_bt_fem_info);
 
 int connfem_epaelna_get_pin_info(struct connfem_epaelna_pin_info *pin_info)
 {
@@ -428,7 +425,6 @@ int connfem_epaelna_get_pin_info(struct connfem_epaelna_pin_info *pin_info)
 	memset(pin_info, 0, sizeof(*pin_info));
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(connfem_epaelna_get_pin_info);
 
 int connfem_epaelna_laa_get_pin_info(
 		struct connfem_epaelna_laa_pin_info *laa_pin_info)
@@ -437,14 +433,12 @@ int connfem_epaelna_laa_get_pin_info(
 	memset(laa_pin_info, 0, sizeof(*laa_pin_info));
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(connfem_epaelna_laa_get_pin_info);
 
 int connfem_epaelna_get_flags(enum connfem_subsys subsys, void *flags)
 {
 	pr_info("%s, Default setting: Not support", __func__);
 	return -EOPNOTSUPP;
 }
-EXPORT_SYMBOL(connfem_epaelna_get_flags);
 
 int connfem_sku_data(const struct connfem_sku **sku)
 {
@@ -469,7 +463,6 @@ int connfem_sku_data(const struct connfem_sku **sku)
 
 	return 0;
 }
-EXPORT_SYMBOL(connfem_sku_data);
 
 int connfem_sku_flag_u8(enum connfem_subsys subsys,
 			const char *name,
@@ -517,7 +510,6 @@ int connfem_sku_flag_u8(enum connfem_subsys subsys,
 
 	return -ENOENT;
 }
-EXPORT_SYMBOL(connfem_sku_flag_u8);
 
 static void cfm_sku_dump(const struct connfem_sku *sku)
 {
