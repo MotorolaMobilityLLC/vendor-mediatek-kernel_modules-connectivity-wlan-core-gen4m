@@ -224,6 +224,12 @@ extern struct platform_device *g_prPlatDev;
 #define PCIE_GEN_SWITCH_MONITOR_TIMES_MAX 1000000
 #endif
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#define MAWD_VER_NONE	0
+#define MAWD_VER_1_0	1
+#define MAWD_VER_1_1	2
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2609,6 +2615,8 @@ int32_t kalPlatOpsInit(void);
 u_int8_t kalIsSupportMawd(void);
 u_int8_t kalIsSupportSdo(void);
 u_int8_t kalIsSupportRro(void);
+uint32_t kalGetMawdVer(void);
+uint32_t kalGetConnInfraId(void);
 #endif
 
 #if CFG_SUPPORT_CPU_STAT

@@ -2181,9 +2181,6 @@ void asicConnac3xDmashdlLiteSetQueueMapping(
 		return;
 
 	u4Idx = ucQueue >> 2;
-	if (u4Idx >= 16)
-		return;
-
 	u4Addr = prCfg->rQueueMapping0Queue0.u4Addr + (u4Idx << 2);
 	u4Mask = prCfg->rQueueMapping0Queue0.u4Mask << ((ucQueue % 4) << 3);
 	u4Shft = (ucQueue % 4) << 3;

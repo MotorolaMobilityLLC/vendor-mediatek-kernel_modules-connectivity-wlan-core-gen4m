@@ -759,6 +759,16 @@ u_int8_t __weak kalIsSupportRro(void)
 {
 	return FALSE;
 }
+uint32_t __weak kalGetMawdVer(void)
+{
+	return 0;
+}
+
+uint32_t __weak kalGetConnInfraId(void)
+{
+	return 0;
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
 			 uint8_t **apucNameTable)
@@ -786,6 +796,3 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;
 }
-
-
-#endif

@@ -11103,6 +11103,15 @@ u_int8_t __weak kalIsSupportRro(void)
 	return FALSE;
 }
 #endif /* CFG_MTK_FPGA_PLATFORM */
+uint32_t kalGetMawdVer(void)
+{
+	return 0;
+}
+
+uint32_t kalGetConnInfraId(void)
+{
+	return 0;
+}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 uint32_t __weak kalGetTxBigCpuMask(void)

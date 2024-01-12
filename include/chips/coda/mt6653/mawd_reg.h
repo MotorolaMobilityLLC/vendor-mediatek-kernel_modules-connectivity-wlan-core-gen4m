@@ -6,11 +6,7 @@
 #ifndef __MAWD_REG_H__
 #define __MAWD_REG_H__
 
-#if CFG_MTK_FPGA_PLATFORM
 #define MAWD_REG_BASE			0x47000
-#else
-#define MAWD_REG_BASE			0x18047000
-#endif
 
 #define MAWD_IND_CMD_CTRL0		(MAWD_REG_BASE + 0x0)
 #define MAWD_IND_CMD_CTRL1		(MAWD_REG_BASE + 0x4)

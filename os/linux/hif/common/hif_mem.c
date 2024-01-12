@@ -1249,6 +1249,8 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 	mutex_init(&g_rPageLock);
 	g_u4HifRsvNum = u4Num;
 	kalSetPagePoolPageNum(0);
+#else
+	wifi_page_pool_set_page_num(wifi_page_pool_get_max_page_num());
 #endif
 
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
