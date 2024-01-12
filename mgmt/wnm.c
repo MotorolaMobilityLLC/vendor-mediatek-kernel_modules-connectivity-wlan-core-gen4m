@@ -691,10 +691,6 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	prBssDesc = scanSearchBssDescByBssid(prAdapter, prRxFrame->aucBSSID);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	prBtmParam->ucRspBssIndex = ucBssIndex;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prBtmParam->ucRspBssIndex = mldGetBssIndexByHwBand(prAdapter,
-		prSwRfb->ucHwBandIdx, ucBssIndex);
-#endif
 
 	DBGLOG(WNM, INFO,
 	       "BTM: Req 0x%x, VInt %d, DiscTimer %d, Token %d\n",
