@@ -1065,9 +1065,9 @@ struct PARAM_RSSI_MONITOR_EVENT {
 
 /* Packet Keep Alive */
 struct PARAM_PACKET_KEEPALIVE_T {
-	bool enable;	/* 1=Start, 0=Stop*/
+	uint8_t enable;	/* 1=Start, 0=Stop*/
 	uint8_t index;
-	int16_t u2IpPktLen;
+	uint16_t u2IpPktLen;
 	uint8_t pIpPkt[256];
 	uint8_t ucSrcMacAddr[PARAM_MAC_ADDR_LEN];
 	uint8_t ucDstMacAddr[PARAM_MAC_ADDR_LEN];
