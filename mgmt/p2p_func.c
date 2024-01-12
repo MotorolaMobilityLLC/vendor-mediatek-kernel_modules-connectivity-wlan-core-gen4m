@@ -6927,6 +6927,7 @@ void p2pFuncSwitchGcChannel(
 void p2pFuncRemoveOneSap(IN struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prSapBssInfo;
+	struct BSS_INFO *prSapNextBssInfo;
 
 	if (!prAdapter)
 		return;
@@ -6937,15 +6938,27 @@ void p2pFuncRemoveOneSap(IN struct ADAPTER *prAdapter)
 		return;
 	}
 
-	if (cnmGetOtherSapBssInfo(prAdapter,
-		prSapBssInfo)) {
-		/* Remove first one */
-		DBGLOG(P2P, WARN,
-			"Remove sap (role%d)\n",
-			prSapBssInfo->u4PrivateData);
-		p2pFuncStopGO(prAdapter, prSapBssInfo);
-		SET_NET_PWR_STATE_IDLE(prAdapter,
-			prSapBssInfo->ucBssIndex);
+	prSapNextBssInfo = cnmGetOtherSapBssInfo(prAdapter,
+		prSapBssInfo);
+	if (prSapNextBssInfo) {
+		if (p2pGetMode() == RUNNING_P2P_DEV_MODE ||
+			p2pGetMode() == RUNNING_P2P_MODE ||
+			p2pGetMode() == RUNNING_DUAL_P2P_MODE) {
+			DBGLOG(P2P, WARN,
+				"Remove sap (role%d)\n",
+				prSapNextBssInfo->u4PrivateData);
+			p2pFuncStopGO(prAdapter, prSapNextBssInfo);
+			SET_NET_PWR_STATE_IDLE(prAdapter,
+				prSapNextBssInfo->ucBssIndex);
+		} else {
+			/* Remove first one */
+			DBGLOG(P2P, WARN,
+				"Remove sap (role%d)\n",
+				prSapBssInfo->u4PrivateData);
+			p2pFuncStopGO(prAdapter, prSapBssInfo);
+			SET_NET_PWR_STATE_IDLE(prAdapter,
+				prSapBssInfo->ucBssIndex);
+		}
 	}
 }
 

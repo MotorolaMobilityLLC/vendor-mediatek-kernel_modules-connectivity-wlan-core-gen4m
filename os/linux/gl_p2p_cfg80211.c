@@ -186,10 +186,7 @@ static void mtk_vif_destructor(struct net_device *dev)
 				 * be NULL, if the 2nd P2P dev isn't created.
 				 */
 				DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
-				if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
-					gprP2pRoleWdev[u4Idx] = NULL;
-				else
-					gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
+				gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
 				break;
 			}
 			kfree(prWdev);
