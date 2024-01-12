@@ -588,6 +588,48 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
  *******************************************************************************
  */
 
+static int compat_priv(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+		 IN union iwreq_data *prIwReqData, IN char *pcExtra,
+	     int (*priv_func)(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+		 IN union iwreq_data *prIwReqData, IN char *pcExtra))
+{
+	struct iw_point *prIwp;
+	int ret = 0;
+#ifdef CONFIG_COMPAT
+	struct compat_iw_point *iwp_compat = NULL;
+	struct iw_point iwp;
+#endif
+
+	if (!prIwReqData)
+		return -EINVAL;
+
+#ifdef CONFIG_COMPAT
+	if (prIwReqInfo->flags & IW_REQUEST_FLAG_COMPAT) {
+		iwp_compat = (struct compat_iw_point *) &prIwReqData->data;
+		iwp.pointer = compat_ptr(iwp_compat->pointer);
+		iwp.length = iwp_compat->length;
+		iwp.flags = iwp_compat->flags;
+		prIwp = &iwp;
+	} else
+#endif
+	prIwp = &prIwReqData->data;
+
+
+	ret = priv_func(prNetDev, prIwReqInfo,
+				(union iwreq_data *)prIwp, pcExtra);
+
+#ifdef CONFIG_COMPAT
+	if (prIwReqInfo->flags & IW_REQUEST_FLAG_COMPAT) {
+		iwp_compat->pointer = ptr_to_compat(iwp.pointer);
+		iwp_compat->length = iwp.length;
+		iwp_compat->flags = iwp.flags;
+	}
+#endif
+	return ret;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Dispatching function for private ioctl region (SIOCIWFIRSTPRIV ~
@@ -850,7 +892,7 @@ short_buf:
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_set_int(IN struct net_device *prNetDev,
+__priv_set_int(IN struct net_device *prNetDev,
 	     IN struct iw_request_info *prIwReqInfo,
 	     IN union iwreq_data *prIwReqData, IN char *pcExtra)
 {
@@ -1137,6 +1179,20 @@ priv_set_int(IN struct net_device *prNetDev,
 	}
 
 	return status;
+}				/* __priv_set_int */
+
+int
+priv_set_int(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_set_int);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1155,7 +1211,7 @@ priv_set_int(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_get_int(IN struct net_device *prNetDev,
+__priv_get_int(IN struct net_device *prNetDev,
 	     IN struct iw_request_info *prIwReqInfo,
 	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
 {
@@ -1366,7 +1422,21 @@ priv_get_int(IN struct net_device *prNetDev,
 	}
 
 	return status;
-}				/* priv_get_int */
+}				/* __priv_get_int */
+
+int
+priv_get_int(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_get_int);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1385,7 +1455,7 @@ priv_get_int(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_set_ints(IN struct net_device *prNetDev,
+__priv_set_ints(IN struct net_device *prNetDev,
 	      IN struct iw_request_info *prIwReqInfo,
 	      IN union iwreq_data *prIwReqData, IN char *pcExtra)
 {
@@ -1495,6 +1565,20 @@ priv_set_ints(IN struct net_device *prNetDev,
 	}
 
 	return status;
+}				/* __priv_set_ints */
+
+int
+priv_set_ints(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_set_ints);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1513,7 +1597,7 @@ priv_set_ints(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_get_ints(IN struct net_device *prNetDev,
+__priv_get_ints(IN struct net_device *prNetDev,
 	      IN struct iw_request_info *prIwReqInfo,
 	      IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
 {
@@ -1573,7 +1657,21 @@ priv_get_ints(IN struct net_device *prNetDev,
 	}
 
 	return status;
-}				/* priv_get_int */
+}				/* __priv_get_ints */
+
+int
+priv_get_ints(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	    prIwReqData, pcExtra, __priv_get_ints);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1589,7 +1687,7 @@ priv_get_ints(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_set_struct(IN struct net_device *prNetDev,
+__priv_set_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo,
 		IN union iwreq_data *prIwReqData, IN char *pcExtra)
 {
@@ -1773,6 +1871,20 @@ priv_set_struct(IN struct net_device *prNetDev,
 	}
 
 	return status;
+}				/* __priv_set_struct */
+
+int
+priv_set_struct(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_set_struct);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1790,7 +1902,7 @@ priv_set_struct(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_get_struct(IN struct net_device *prNetDev,
+__priv_get_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo,
 		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
 {
@@ -1918,7 +2030,21 @@ priv_get_struct(IN struct net_device *prNetDev,
 		DBGLOG(REQ, WARN, "get struct cmd:0x%x\n", u4SubCmd);
 		return -EOPNOTSUPP;
 	}
-}				/* priv_get_struct */
+}				/* __priv_get_struct */
+
+int
+priv_get_struct(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_get_struct);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
