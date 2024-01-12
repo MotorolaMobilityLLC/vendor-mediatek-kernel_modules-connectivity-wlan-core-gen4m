@@ -2531,9 +2531,18 @@ static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(IN struct ADAPTER *prAdapter)
 {
 	uint8_t ucWmmIndex;
+	uint8_t ucBssIndex;
+	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
 
 	if (cnmDBDCIsReqPeivilegeLock()) {
 		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
+	}
+
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+		ucBssIndex++) {
+		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
+		prBssOpCtrl->rRunning.fgIsRunning = false;
+		prBssOpCtrl->arReqPool[CNM_OPMODE_REQ_DBDC].fgEnable = false;
 	}
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
@@ -3093,6 +3102,10 @@ cnmDbdcFsmEventHandler_WAIT_PROTOCOL_DISABLE(
 
 	switch (eEvent) {
 	case DBDC_FSM_EVENT_BSS_DISCONNECT_LEAVE_AG:
+		/* Return to idle state to prevent getting stuck */
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_DISABLE_IDLE;
+		break;
 	case DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG:
 		/* IGNORE */
 		break;
