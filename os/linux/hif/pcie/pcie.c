@@ -729,7 +729,14 @@ static int axiAllocHifMem(struct platform_device *pdev,
 		else if (u4Idx == TX_RING_DATA_ALTX &&
 				!prChipInfo->bus_info->tx_ring3_data_idx)
 			continue;
-		if (!axiAllocRsvMem(TX_RING_SIZE * TXD_SIZE,
+		if (u4Idx == TX_RING_DATA0 ||
+		    u4Idx == TX_RING_DATA1 ||
+		    u4Idx == TX_RING_DATA_PRIO ||
+		    u4Idx == TX_RING_DATA_ALTX)
+			u4Size = TX_RING_DATA_SIZE;
+		else
+			u4Size = TX_RING_CMD_SIZE;
+		if (!axiAllocRsvMem(u4Size * TXD_SIZE,
 				    &grMem.rTxDesc[u4Idx]))
 			DBGLOG(INIT, ERROR, "TxDesc[%u] alloc fail\n", u4Idx);
 	}
@@ -744,13 +751,13 @@ static int axiAllocHifMem(struct platform_device *pdev,
 			DBGLOG(INIT, ERROR, "RxDesc[%u] alloc fail\n", u4Idx);
 	}
 
-	for (u4Idx = 0; u4Idx < TX_RING_SIZE; u4Idx++) {
+	for (u4Idx = 0; u4Idx < TX_RING_CMD_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(AXI_TX_CMD_BUFF_SIZE,
 				    &grMem.rTxCmdBuf[u4Idx]))
 			DBGLOG(INIT, ERROR, "TxCmdBuf[%u] alloc fail\n", u4Idx);
 	}
 
-	for (u4Idx = 0; u4Idx < TX_RING_SIZE; u4Idx++) {
+	for (u4Idx = 0; u4Idx < TX_RING_CMD_SIZE; u4Idx++) {
 		if (!axiAllocRsvMem(AXI_TX_CMD_BUFF_SIZE,
 				    &grMem.rTxFwdlBuf[u4Idx]))
 			DBGLOG(INIT, ERROR,

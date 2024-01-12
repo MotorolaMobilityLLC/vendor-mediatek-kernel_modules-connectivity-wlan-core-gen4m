@@ -2171,7 +2171,7 @@ static void fwDlSetupRedlDmad(struct ADAPTER *prAdapter,
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
 
-	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
 	prTxRing->u4UsedCnt++;
 }

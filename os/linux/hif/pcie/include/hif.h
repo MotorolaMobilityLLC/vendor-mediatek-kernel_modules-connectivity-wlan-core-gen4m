@@ -457,9 +457,9 @@ struct HIF_PREALLOC_MEM {
 	struct HIF_MEM rTxDesc[NUM_OF_TX_RING];
 	struct HIF_MEM rRxDesc[NUM_OF_RX_RING];
 	/* Tx Command */
-	struct HIF_MEM rTxCmdBuf[TX_RING_SIZE];
+	struct HIF_MEM rTxCmdBuf[TX_RING_CMD_SIZE];
 	/* FWDL */
-	struct HIF_MEM rTxFwdlBuf[TX_RING_SIZE];
+	struct HIF_MEM rTxFwdlBuf[TX_RING_CMD_SIZE];
 	/* Rx Data */
 	struct HIF_MEM rRxDataBuf[RX_RING0_SIZE];
 	/* Rx Event */

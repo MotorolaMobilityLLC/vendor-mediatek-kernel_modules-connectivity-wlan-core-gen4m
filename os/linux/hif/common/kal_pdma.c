@@ -875,13 +875,13 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+	if (prTxRing->u4UsedCnt + 1 >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, INFO, "Force recycle port %d DMA resource.\n",
 			u2Port);
 		halWpdmaProcessCmdDmaDone(prGlueInfo, u2Port);
 	}
 
-	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+	if (prTxRing->u4UsedCnt + 1 >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Port %d TX resource is NOT enough.\n",
 			u2Port);
 		return FALSE;
@@ -891,7 +891,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 		pucDst = prMemOps->allocRuntimeMem(u4Len);
 
 	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &prTxRing->TxCpuIdx);
-	if (prTxRing->TxCpuIdx >= TX_RING_SIZE) {
+	if (prTxRing->TxCpuIdx >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
 		if (prMemOps->freeBuf)
 			prMemOps->freeBuf(pucDst, u4Len);
@@ -940,7 +940,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* Increase TX_CTX_IDX, but write to register later. */
-	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
 	prTxRing->u4UsedCnt++;
 
