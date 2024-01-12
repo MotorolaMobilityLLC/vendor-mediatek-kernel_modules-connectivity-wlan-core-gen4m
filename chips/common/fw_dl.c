@@ -2073,7 +2073,6 @@ uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER
 	struct TAILER_FORMAT_T *prTailers;
 	uint8_t *pucStartPtr;
 	uint32_t u4SecIdx;
-	uint8_t aucBuf[32];
 
 	pucStartPtr = prFwBuffer + u4FwSize - sizeof(
 			      struct TAILER_FORMAT_T) * ucTotSecNum;
@@ -2096,11 +2095,10 @@ uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER
 		       prTailers[u4SecIdx].eco_code + 1,
 		       prTailers[u4SecIdx].feature_set);
 
-		kalMemZero(aucBuf, 32);
-		kalStrnCpy(aucBuf, prTailers[u4SecIdx].ram_version,
-			   sizeof(aucBuf) - 1);
+
 		DBGLOG(INIT, INFO, "date[%s] version[%s]\n",
-		       prTailers[u4SecIdx].ram_built_date, aucBuf);
+		       prTailers[u4SecIdx].ram_built_date,
+		       prTailers[u4SecIdx].ram_version);
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -2117,7 +2115,6 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 	uint8_t *pucTailertPtr;
 	uint8_t *pucStartPtr;
 	uint32_t u4SecIdx;
-	uint8_t aucBuf[32];
 
 	pucImgPtr = prFwBuffer;
 	pucStartPtr = prFwBuffer + u4FwSize -
@@ -2125,10 +2122,6 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 	prComTailer = (struct TAILER_COMMON_FORMAT_T *) pucStartPtr;
 	kalMemCopy(&prVerInfo->rCommonTailer, prComTailer,
 		   sizeof(struct TAILER_COMMON_FORMAT_T));
-
-	kalMemZero(aucBuf, 32);
-	kalStrnCpy(aucBuf, prComTailer->aucRamVersion,
-		   sizeof(aucBuf) - 1);
 
 	/* Dump image information */
 	DBGLOG(INIT, INFO,
@@ -2138,7 +2131,7 @@ uint32_t wlanGetConnacTailerInfo(IN struct ADAPTER
 			prComTailer->ucEcoCode + 1,
 			prComTailer->ucRegionNum,
 			prComTailer->aucRamBuiltDate,
-			aucBuf);
+			prComTailer->aucRamVersion);
 
 	if (prComTailer->ucRegionNum > MAX_FWDL_SECTION_NUM) {
 		DBGLOG(INIT, INFO,
