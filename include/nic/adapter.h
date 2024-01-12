@@ -2118,6 +2118,10 @@ struct ADAPTER {
 #if CFG_SUPPORT_CSI
 	struct CSI_INFO_T rCSIInfo;
 #endif
+
+#if CFG_SUPPORT_TDLS
+	uint32_t u4TdlsLinkCount;
+#endif /* CFG_SUPPORT_TDLS */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
