@@ -4013,7 +4013,10 @@ static s_int32 hqa_set_txcontent_ext(
 	phdr->sequence = (u_int16)param.seq;
 
 	/* Error check for txlen and payload_len */
-	if ((param.txlen == 0) || (param.payload_len == 0)) {
+	/* the fixed_payload means Normal : 0,  repeat:1 , random:2*/
+	/* random:2 dont follow this rule*/
+	if ((param.txlen == 0) ||
+		((param.payload_len == 0) && (param.fixed_payload != 2))) {
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: txlen/payload_len=%u/%u can't be 0!!\n",
 			__func__, param.txlen, param.payload_len));
