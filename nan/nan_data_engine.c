@@ -6868,9 +6868,13 @@ void
 nanDataEngingDisconnectEvt(struct ADAPTER *prAdapter,
 		uint8_t *pcuEvtBuf) {
 	struct _NAN_SCHED_EVENT_NDL_DISCONN_T *prNDLDisconn;
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	uint8_t ucWlanIdx = 0;
+#endif
 
 	prNDLDisconn = (struct _NAN_SCHED_EVENT_NDL_DISCONN_T *)pcuEvtBuf;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	ucWlanIdx = prNDLDisconn->ucStaIdx;
 	/* [Con3] NAN fw: sta idx == wlan idx,
 	 * drv: sta idx != wlan idx
@@ -6881,6 +6885,8 @@ nanDataEngingDisconnectEvt(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, INFO, "Station Record Not Found\n");
 		return;
 	}
+#endif
+
 	DBGLOG(NAN, INFO, "[%s] NDL Timeout, Sta:%d\n", __func__,
 	       prNDLDisconn->ucStaIdx);
 	nanDataEngineDisconnectByStaIdx(prAdapter, prNDLDisconn->ucStaIdx);
