@@ -290,7 +290,6 @@ void mt6655DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Val = 0;
 #endif
@@ -333,8 +332,7 @@ void mt6655DmashdlInit(struct ADAPTER *prAdapter)
 		rMt6655DmashdlCfg.u2HifGupActMap);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_sdo &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
 		HAL_MCR_RD(prAdapter,
 			   WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR, &u4Val);
 		u4Val &= ~BIT(18);

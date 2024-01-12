@@ -695,3 +695,20 @@ bool kal_is_err(void *ptr)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+u_int8_t __weak kalIsSupportMawd(void)
+{
+	return FALSE;
+}
+
+u_int8_t __weak kalIsSupportSdo(void)
+{
+	return FALSE;
+}
+
+u_int8_t __weak kalIsSupportRro(void)
+{
+	return FALSE;
+}
+#endif

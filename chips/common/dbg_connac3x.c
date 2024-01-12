@@ -2537,8 +2537,7 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 	wlanGetDriverDbgLevel(DBG_HAL_IDX, &u4DebugLevel);
 
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
 	    halMawdCheckInfra(prAdapter)) {
 
 		DBGLOG(HAL, INFO, "==============================\n");
@@ -2761,12 +2760,10 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	connac3xDumpPPDebugCr(prAdapter);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
 		connac3x_show_mawd_info(prAdapter);
 
-	if (prChipInfo->is_support_rro &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		connac3x_show_rro_info(prAdapter);
 #endif
 

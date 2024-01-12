@@ -123,7 +123,6 @@ void halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 	u4Val = BIT(0);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
-	/* BKRS down */
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 		if ((u4Val & BIT(2)) == BIT(2))
@@ -131,7 +130,7 @@ void halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 		kalUdelay(10);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
-		DBGLOG(HAL, ERROR, "BKRS failed\n");
+		DBGLOG(HAL, ERROR, "Mawd wakeup failed\n");
 
 	/* restore AP_rx_blk_ring_cpu_idx */
 	u4Addr = MAWD_AP_RX_BLK_CTRL2;
@@ -177,25 +176,10 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 		kalUdelay(10);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
-		DBGLOG(HAL, ERROR, "1. Mawd Sleep failed\n");
-
-	kalDevRegWrite(prGlueInfo, u4Addr, 3);
-	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
-		if ((u4Val & BIT(2)) == BIT(2))
-			break;
-		kalUdelay(10);
-	}
-	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
-		DBGLOG(HAL, ERROR, "2. Mawd Sleep failed\n");
-
-	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
-	u4Val &= ~BIT(0);
-	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+		DBGLOG(HAL, ERROR, "Mawd sleep failed\n");
 
 	u4Addr = MAWD_AP_WAKE_UP;
 	kalDevRegWrite(prGlueInfo, u4Addr, 0);
-
 exit:
 	__halMawdSleep();
 }
@@ -376,8 +360,7 @@ static void halRroSetupIndicateCmdRing(struct GLUE_INFO *prGlueInfo)
 	u4Val = 0;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_0_ADDR;
 		u4Val = MAWD_IND_CMD_SIGNATURE0 | MAWD_WFDMA_LOW_ADDR;
 		kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
@@ -796,7 +779,6 @@ void halRroTurnOff(struct GLUE_INFO *prGlueInfo)
 
 void halRroInit(struct GLUE_INFO *prGlueInfo)
 {
-	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	halRroSetupBaBitmap(prGlueInfo);
@@ -804,21 +786,18 @@ void halRroInit(struct GLUE_INFO *prGlueInfo)
 	halRroSetupIndicateCmdRing(prGlueInfo);
 	halRroSetupTimeoutConfig(prGlueInfo);
 
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halRroMawdInit(prGlueInfo);
 }
 
 void halRroUninit(struct GLUE_INFO *prGlueInfo)
 {
-	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	halRroFreeMem(prGlueInfo);
 	halRroFreeRcbList(prGlueInfo);
 
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halMawdFreeRxBlkRing(prGlueInfo);
 }
 
@@ -1232,8 +1211,7 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prFreeSwRfbList);
 	QUEUE_INITIALIZE(prRecvRfbList);
 
-	if (prChipInfo->is_support_mawd &&
-	    IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 		halMawdReadRxBlkRing(prAdapter, au4RingCnt,
 				     prFreeSwRfbList, prRecvRfbList);
 	else
@@ -1901,7 +1879,6 @@ void halMawdPwrOff(void)
 {
 	if (!kalIsSupportMawd())
 		return;
-
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	conninfra_pwr_off(CONNDRV_TYPE_MAWD);
 #endif
