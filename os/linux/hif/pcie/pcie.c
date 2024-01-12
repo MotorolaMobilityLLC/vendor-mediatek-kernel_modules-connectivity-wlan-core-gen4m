@@ -428,7 +428,9 @@ struct mt66xx_hif_driver_data *get_platform_driver_data(void)
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if PCIE_ISR_DEBUG_LOG
 	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *) dev_instance;
 	if (!prGlueInfo) {
@@ -445,8 +447,10 @@ irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 	}
 
 	kalSetIntEvent(prGlueInfo);
+#if PCIE_ISR_DEBUG_LOG
 	if (__ratelimit(&_rs))
 		pr_info("[wlan] In HIF ISR(%d).\n", irq);
+#endif
 
 	return IRQ_HANDLED;
 }
@@ -2324,6 +2328,22 @@ void halPciePreSuspendTimeout(
 
 	prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
 		PCIE_STATE_PRE_SUSPEND_FAIL;
+}
+
+void halPcieShowDebugInfo(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4Addr, u4Val = 0;
+
+	if (!in_interrupt()) {
+		u4Addr = 0x112F0184;
+		wf_ioremap_read(u4Addr, &u4Val);
+		DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+		for (u4Addr = 0x112F0C04; u4Addr <= 0x112F0C1C; u4Addr += 4) {
+			wf_ioremap_read(u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "PCIE CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
+		}
+	}
 }
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER

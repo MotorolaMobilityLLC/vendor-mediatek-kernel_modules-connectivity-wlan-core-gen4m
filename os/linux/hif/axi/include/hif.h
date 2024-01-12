@@ -353,6 +353,7 @@ struct BUS_INFO {
 		uint8_t ucType, u_int8_t fgEnable);
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
+	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 	uint32_t (*setWfdmaCoalescingInt)(struct ADAPTER *prAdapter,

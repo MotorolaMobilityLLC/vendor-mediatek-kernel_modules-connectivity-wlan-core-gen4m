@@ -187,8 +187,6 @@ static void mt7961EnableInterrupt(
 	else
 		u4HostWpdamBase = CONNAC2X_HOST_WPDMA_0_BASE;
 
-	prAdapter->fgIsIntEnable = TRUE;
-
 	HAL_MCR_RD(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
 	IntMask.word = 0;
@@ -241,8 +239,6 @@ static void mt7961DisableInterrupt(
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
 	HAL_MCR_RD(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &IntMask.word);
-
-	prAdapter->fgIsIntEnable = FALSE;
 
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }

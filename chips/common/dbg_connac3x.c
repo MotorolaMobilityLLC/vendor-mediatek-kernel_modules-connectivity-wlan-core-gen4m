@@ -2769,7 +2769,10 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		connac3x_show_rro_info(prAdapter);
 #endif
-#endif
+
+	if (prBusInfo->showDebugInfo)
+		prBusInfo->showDebugInfo(prAdapter->prGlueInfo);
+#endif /*_HIF_PCIE || _HIF_AXI */
 }
 
 void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
@@ -2875,7 +2878,6 @@ void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
 }
 
-
 static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)
 {
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_QUEUE_EMPTY_ADDR, &ple_stat[0]);
@@ -2908,6 +2910,52 @@ static void chip_get_dis_sta_map(struct ADAPTER *prAdapter, uint32_t *dis_sta_ma
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP2_ADDR, &dis_sta_map[2]);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP3_ADDR, &dis_sta_map[3]);
 }
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+/* =============================================================================
+ *                         Debug Interrupt Interface v1
+ * +---------------------------------------------------------------------------+
+ * |Toggle|Rsv[30:28]|Ver[27:24]|Rsv[23:18]|BSSInx[17:14]|Mod[13:8]|Reason[7:0]|
+ * +---------------------------------------------------------------------------+
+ * =============================================================================
+ */
+uint32_t connac3x_get_ple_int(struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &u4Val);
+
+	return u4Val;
+}
+
+void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
+			  uint32_t u4ClrMask, uint32_t u4SetMask)
+{
+	struct BUS_INFO *prBusInfo;
+	struct PLE_TOP_CR *prCr;
+	uint32_t u4Val = 0;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCr = prBusInfo->prPleTopCr;
+
+	HAL_MCR_RD(prAdapter, prCr->rToN9IntToggle.u4Addr, &u4Val);
+
+	if (fgTrigger) {
+		u4Val = (~u4Val & prCr->rToN9IntToggle.u4Mask) |
+			(u4Val & ~prCr->rToN9IntToggle.u4Mask);
+	}
+
+	u4Val &= ~u4ClrMask;
+	u4Val |= u4SetMask;
+
+	HAL_MCR_WR(prAdapter, prCr->rToN9IntToggle.u4Addr, u4Val);
+}
+#endif /*_HIF_PCIE || _HIF_AXI */
 
 void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 {
