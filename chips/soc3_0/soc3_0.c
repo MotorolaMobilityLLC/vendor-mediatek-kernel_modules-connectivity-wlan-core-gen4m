@@ -1691,7 +1691,7 @@ int hifWmmcuPwrOn(void)
 	/* conninfra power on */
 	if (!kalIsWholeChipResetting()) {
 		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
-		if (ret != 0)
+		if ((ret != CONNINFRA_ERR_RST_ONGOING) && (ret != 0))
 			return ret;
 	}
 #endif
