@@ -1543,6 +1543,8 @@ void fillConnac3xTxDescAppendBySdo(
 	uint8_t *pucBuffer)
 {
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
+	uint32_t u4AddrExt = ((uint64_t)rDmaAddr >> DMA_BITS_OFFSET) &
+		DMA_HIGHER_4BITS_MASK;
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
@@ -1550,7 +1552,8 @@ void fillConnac3xTxDescAppendBySdo(
 	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
 	prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
-	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] =
+		prMsduInfo->u2FrameLength | (u4AddrExt << 12);
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1569,6 +1572,8 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
+	uint32_t u4AddrExt = ((uint64_t)rDmaAddr >> DMA_BITS_OFFSET) &
+		DMA_HIGHER_4BITS_MASK;
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	uint8_t *pucData;
 	struct BUS_INFO *prBusInfo;
@@ -1661,10 +1666,11 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	prHwTxDescAppend->CR4_APPEND.ucBufNum = 2;
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
 	/* eth header */
-	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = ETH_HLEN;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] =
+		ETH_HLEN | (u4AddrExt << 12);
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[1] = (rDmaAddr + ETH_HLEN);
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] =
-		prMsduInfo->u2FrameLength - ETH_HLEN;
+		(prMsduInfo->u2FrameLength - ETH_HLEN) | (u4AddrExt << 12);
 
 	DBGLOG(HAL, INFO, "Fill HIF TXD + payload[%d]\n", u4MawdPacketCnt++);
 	DBGLOG_MEM32(HAL, INFO, pTxCell->AllocVa,
