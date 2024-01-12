@@ -14670,9 +14670,6 @@ int priv_driver_set_tx_om_packet(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
-#if (CFG_SUPPORT_802_11BE == 1)
-	prAdapter->fgEhtHtcOM = FALSE;
-#endif
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -14682,6 +14679,9 @@ int priv_driver_set_tx_om_packet(
 		if (u4Ret)
 			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
 			       u4Ret);
+		/* Null frame MAX number limit to 10. */
+		if (u4Parse > 10)
+			u4Parse = 10;
 
 		DBGLOG(REQ, STATE,
 			"tx om packet:: Send %d htc null frame\n",
@@ -14699,6 +14699,12 @@ int priv_driver_set_tx_om_packet(
 			"iwpriv wlanXX driver TX_ACTION <number>\n");
 		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
 	}
+
+	/* Clear EHT setting, reset to HE setting. */
+#if (CFG_SUPPORT_802_11BE == 1)
+	prAdapter->fgEhtHtcOM = FALSE;
+	heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+#endif
 
 	return i4BytesWritten;
 }
