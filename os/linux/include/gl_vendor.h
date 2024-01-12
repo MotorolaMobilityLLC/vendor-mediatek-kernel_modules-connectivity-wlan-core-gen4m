@@ -173,6 +173,7 @@ enum MTK_WIFI_VENDOR_SUB_COMMAND {
 	MTK_SUBCMD_NAN = 12,
 	MTK_SUBCMD_CSI = 17,
 	MTK_SUBCMD_NDP = 81,
+	MTK_SUBCMD_GET_USABLE_CHANNEL = 82,
 
 	MTK_SUBCMD_STRING_CMD = 0x2454,
 };
@@ -539,6 +540,22 @@ enum wifi_radio_combinations_matrix_attributes {
 	WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MAX
 };
 
+enum WIFI_USABLE_CHANNEL_RESP_ATTRIBUTE {
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_RESP_INVALID,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_ARRAY,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_RESP_MAX
+};
+
+
+enum WIFI_USABLE_CHANNEL_REQ_ATTRIBUTE {
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_INVALID,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_IFACE,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_FILTER,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE,
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX
+};
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -597,6 +614,9 @@ extern const struct nla_policy mtk_wfd_tx_br_montr_policy[
 
 extern const struct nla_policy nla_trx_stats_policy[
 	WIFI_ATTRIBUTE_STATS_MAX + 1];
+
+extern const struct nla_policy mtk_usable_channel_policy[
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX + 1];
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************
@@ -1226,6 +1246,29 @@ struct ANDROID_T_COMB_MATRIX {
 	struct ANDROID_T_COMB_UNIT comb_mtx[COMB_MATRIX_LEN];
 };
 
+enum ANDROID_USABLE_CHANNEL_WIDTH {
+	ANDROID_WIFI_CHAN_WIDTH_20    = 0,
+	ANDROID_WIFI_CHAN_WIDTH_40    = 1,
+	ANDROID_WIFI_CHAN_WIDTH_80    = 2,
+	ANDROID_WIFI_CHAN_WIDTH_160   = 3,
+	ANDROID_WIFI_CHAN_WIDTH_80P80 = 4,
+	ANDROID_WIFI_CHAN_WIDTH_5     = 5,
+	ANDROID_WIFI_CHAN_WIDTH_10    = 6,
+	ANDROID_WIFI_CHAN_WIDTH_320   = 7,
+	ANDROID_WIFI_CHAN_WIDTH_INVALID = -1
+};
+
+struct ANDROID_USABLE_CHANNEL_UNIT {
+	uint16_t channel_freq;
+	enum ANDROID_USABLE_CHANNEL_WIDTH channel_width;
+	uint32_t iface_mode_mask;
+};
+
+struct ANDROID_USABLE_CHANNEL_ARRAY {
+	uint16_t array_size;
+	struct ANDROID_USABLE_CHANNEL_UNIT channel_array[];
+};
+
 /* RTT Capabilities */
 struct PARAM_WIFI_RTT_CAPABILITIES {
 	/* if 1-sided rtt data collection is supported */
@@ -1535,4 +1578,7 @@ int mtk_cfg80211_vendor_event_csi_raw_data(
 	struct ADAPTER *prAdapter);
 #endif
 
+int mtk_cfg80211_vendor_get_usable_channel(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
 #endif /* _GL_VENDOR_H */
