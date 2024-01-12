@@ -1567,11 +1567,18 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 					    force_dump_buf,
 					    fw_version);
 	} else {
-		ret = connv3_coredump_start(ctx->handler,
-					    drv_type,
-					    reason,
-					    mem->dump_buff,
-					    fw_version);
+		if (mem->dump_buff != NULL) {
+			ret = connv3_coredump_start(
+					ctx->handler,
+					drv_type,
+					reason,
+					mem->dump_buff,
+					fw_version);
+		} else {
+			DBGLOG(INIT, ERROR,
+				"NULL dump buffer.\n");
+			ret = -EINVAL;
+		}
 	}
 	if (ret) {
 		DBGLOG(INIT, ERROR,
