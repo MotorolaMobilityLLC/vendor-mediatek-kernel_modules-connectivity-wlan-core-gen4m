@@ -1538,6 +1538,7 @@ struct ADAPTER {
 	bool fgEnHifDbgInfo;
 	uint32_t u4HifDbgFlag;
 	uint32_t u4HifChkFlag;
+	uint32_t u4TxHangFlag;
 
 #if CFG_SUPPORT_OSHARE
 	bool fgEnOshareMode;

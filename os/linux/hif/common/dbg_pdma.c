@@ -323,6 +323,7 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
+	struct MSDU_INFO *prMsduInfo;
 	struct timeval rNowTs, rTime, rLongest, rTimeout;
 	uint32_t u4Idx = 0, u4TokenId = 0;
 	bool fgIsTimeout = false;
@@ -340,7 +341,13 @@ static bool halIsTxHang(struct ADAPTER *prAdapter)
 
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
-		if (!prToken->fgInUsed)
+		prMsduInfo = prToken->prMsduInfo;
+		if (!prToken->fgInUsed || !prMsduInfo)
+			continue;
+
+		/* check tx hang is enabled */
+		if ((prAdapter->u4TxHangFlag &
+		      BIT(prMsduInfo->ucBssIndex)) == 0)
 			continue;
 
 		/* Ignore now time < token time */
