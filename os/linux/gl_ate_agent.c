@@ -1427,19 +1427,20 @@ int Set_TxBfTxApply(struct net_device *prNetDev,
 		    uint8_t *prInBuf)
 {
 	uint32_t u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf;
+	uint32_t u4PhaseCali = 0;
 	int32_t i4Status = 0;
 	int32_t rv;
 
 	DBGLOG(RFTEST, ERROR, "TxBfTxApply\n");
 
-	rv = sscanf(prInBuf, "%d:%d:%d:%d", &u4WlanId, &u4ETxBf,
-		    &u4ITxBf, &u4MuTxBf);
-	if (rv == 4) {
+	rv = sscanf(prInBuf, "%d:%d:%d:%d:%d", &u4WlanId, &u4ETxBf,
+		    &u4ITxBf, &u4MuTxBf, &u4PhaseCali);
+	if (rv >= 4) {
 		DBGLOG(RFTEST, ERROR,
 		       "TxBfTxApply prInBuf = %s, u4WlanId = %d, u4ETxBf = %d, u4ITxBf = %d, u4MuTxBf = %d\n",
 		       prInBuf, u4WlanId, u4ETxBf, u4ITxBf, u4MuTxBf);
 		i4Status = TxBfTxApply(prNetDev, u4WlanId, u4ETxBf, u4ITxBf,
-				       u4MuTxBf);
+				       u4MuTxBf, u4PhaseCali);
 	} else
 		return -EINVAL;
 
