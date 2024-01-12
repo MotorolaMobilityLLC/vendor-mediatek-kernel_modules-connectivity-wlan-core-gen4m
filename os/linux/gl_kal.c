@@ -10589,8 +10589,10 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 	struct BSS_INFO *prBssInfo;
 	uint8_t i = 0;
 
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	struct cpufreq_policy *prCpuPolicy;
 	int i4cpu;
+#endif
 
 	char *buf = NULL;
 	char *pos = NULL, *end = NULL;
