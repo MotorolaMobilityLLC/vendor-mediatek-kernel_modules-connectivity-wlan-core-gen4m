@@ -1576,11 +1576,6 @@ uint8_t nicRxGetRcpiValueFromRxv(
 int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 			IN int i4TotalLen, IN uint8_t ucWlanIdx);
 
-#if CFG_SUPPORT_CSI
-void nicEventCSIData(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
-#endif
-
 void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prSwRfb);
 #endif /* _NIC_RX_H */

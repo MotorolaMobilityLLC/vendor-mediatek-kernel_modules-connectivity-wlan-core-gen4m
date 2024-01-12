@@ -3694,6 +3694,72 @@ struct UNI_CMD_NAN_DISABLE_REQUEST {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+#if CFG_SUPPORT_CSI
+/* CSI set command (0x48) */
+struct UNI_CMD_CSI {
+	uint8_t ucBandIdx;
+	uint8_t ucReserved[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*   TAG                           | ID   | structure
+	*   ---------------------------   |----- |--------------
+	*    UNI_CMD_CSI_STOP             | 0x00 | UNI_CMD_CSI_STOP
+	*    UNI_CMD_CSI_START            | 0x01 | UNI_CMD_CSI_START
+	*    UNI_CMD_CSI_SET_FRAME_TYPE   | 0x02 | UNI_CMD_CSI_SET_FRAME_TYPE
+	*    UNI_CMD_CSI_SET_CHAIN_NUMBER | 0x03 | UNI_CMD_CSI_SET_CHAIN_NUMBER
+	*    UNI_CMD_CSI_SET_FILTER_MODE  | 0x04 | UNI_CMD_CSI_SET_FILTER_MODE
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* CSI set command Tag */
+enum ENUM_UNI_CMD_CSI_TAG {
+	UNI_CMD_CSI_TAG_STOP = 0,
+	UNI_CMD_CSI_TAG_START = 1,
+	UNI_CMD_CSI_TAG_SET_FRAME_TYPE = 2,
+	UNI_CMD_CS_TAGI_SET_CHAIN_NUMBER = 3,
+	UNI_CMD_CSI_TAG_SET_FILTER_MODE = 4,
+};
+
+/* Stop capturing CSI data (Tag0) */
+struct UNI_CMD_CSI_STOP {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/* Start capturing CSI data (Tag1) */
+struct UNI_CMD_CSI_START {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/* Set frame type (Tag2) */
+struct UNI_CMD_CSI_SET_FRAME_TYPE {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint8_t    ucFrameTypeIndex;
+	uint8_t    ucFrameType;
+	uint8_t    aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set max chain number (Tag3) */
+struct UNI_CMD_CSI_SET_CHAIN_NUMBER {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint8_t    ucMaxChain;
+	uint8_t    aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set filter mode (Tag4) */
+struct UNI_CMD_CSI_SET_FILTER_MODE {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint8_t    ucOperation;
+	uint8_t    aucPadding[1];
+	uint8_t    aucMACAddr[6];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -5607,6 +5673,43 @@ struct UNI_EVENT_WOW_WAKEUP_REASON_INFO {
 	uint8_t aucPadding[1];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_CSI
+struct UNI_EVENT_CSI {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*   TAG                  | ID  | structure
+	*   -------------        | ----| -------------
+	*   UNI_EVENT_CSI_DATA   | 0x0 | UNI_EVENT_CSI_DATA_T
+	*
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_CSI_TAG {
+	UNI_EVENT_CSI_TAG_DATA = 0,
+	UNI_EVENT_CSI_TAG_MAX_NUM
+};
+
+/**
+ * This structure is used for UNI_EVENT_CSI_DATA tag(0x0) of UNI_EVENT_ID_CSI
+ * event (0x4A) to report CSI data. (unsolicited)
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x00
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] aucBuffer            the CSI data
+ */
+/* CSI data (Tag0) */
+struct UNI_EVENT_CSI_DATA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5906,6 +6009,8 @@ uint32_t nicUniCmdACLPolicy(struct ADAPTER *ad,
 uint32_t nicUniCmdQueryThermalTemperature(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
+uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -6042,6 +6147,8 @@ void nicUniEventNan(struct ADAPTER *ad,
 void nicUniEventBF(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventWow(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventCsiData(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************

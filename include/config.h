@@ -350,14 +350,6 @@
 
 #define CFG_SUPPORT_SKB_CLONED_COPY		1
 
-#ifndef CFG_SUPPORT_CSI
-#define CFG_SUPPORT_CSI 0
-#endif
-
-#if CFG_SUPPORT_CSI
-#define CFG_CSI_DEBUG 0
-#endif
-
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT
  *------------------------------------------------------------------------------
@@ -2172,6 +2164,20 @@
 #undef CFG_SUPPORT_THERMAL_QUERY
 #define CFG_SUPPORT_THERMAL_QUERY 0
 #endif
+#endif
+
+/*------------------------------------------------------------------------------
+ * Flags of CSI (Channel State Information) Support
+ *------------------------------------------------------------------------------
+ */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define CFG_SUPPORT_CSI 1
+#else
+#define CFG_SUPPORT_CSI 0
+#endif
+
+#if (CFG_SUPPORT_CSI == 1)
+#define CFG_CSI_DEBUG 1
 #endif
 
 /*******************************************************************************
