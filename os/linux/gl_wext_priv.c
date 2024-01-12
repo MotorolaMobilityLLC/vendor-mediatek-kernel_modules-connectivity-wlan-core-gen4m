@@ -4241,7 +4241,7 @@ static int priv_driver_get_sta_statistics(
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4ArgNum = 3;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	int32_t rRssi;
@@ -6723,7 +6723,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
 	uint8_t ucWlanIndex = 0;
 	uint8_t *pucMacAddr = NULL;
 	struct PARAM_HW_WLAN_INFO *prHwWlanInfo = NULL;
@@ -8824,7 +8824,7 @@ static int priv_driver_get_uhw_mcr(IN struct net_device *prNetDev,
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret;
 
 	/* Add Antenna Selection Input */
@@ -20809,7 +20809,7 @@ static int priv_driver_coex_ctrl(IN struct net_device *prNetDev,
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int32_t i4ArgNum = 2;
-	signed char *apcArgv[WLAN_CFG_ARGV_MAX];
+	signed char *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret = 0;
 	uint32_t u4Offset = 0;
 	enum ENUM_COEX_CMD_CTRL CoexCmdCtrl;
