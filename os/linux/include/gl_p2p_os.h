@@ -160,7 +160,7 @@ struct GL_P2P_INFO {
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	uint8_t aucMlIE[MAX_LEN_OF_MLIE];
+	uint8_t aucMlIE[ELEM_HDR_LEN + MAX_LEN_OF_MLIE];
 	uint16_t u2MlIELen;
 #endif
 
