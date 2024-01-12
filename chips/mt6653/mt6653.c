@@ -3522,7 +3522,7 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	}
 
 	u4WifiEmi = (uint32_t)emi_mem_get_phy_base(prAdapter->chip_info) +
-		emi_mem_offset_convert(0x518001);
+		emi_mem_offset_convert(0x235C01);
 
 #if CFG_MTK_WIFI_WFDMA_WB
 #if CFG_MTK_MDDP_SUPPORT
