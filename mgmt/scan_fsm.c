@@ -662,12 +662,13 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
 	uint32_t i;
+#if CFG_MTK_FPGA_PLATFORM
 	uint8_t ch_list[] = {1, 6, 11,
 			  36, 40, 44, 52, 64, 100, 149, 153, 157, 161};
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ch_list_6g[] = {37};
 #endif
-
+#endif /* CFG_MTK_FPGA_PLATFORM */
 
 	ASSERT(prAdapter);
 	ASSERT(prScanReqMsg);
@@ -750,7 +751,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 		&prScanReqMsg->aucExtBssid[0][0],
 		CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
 
-	// TODO: dvt workaround
+#if CFG_MTK_FPGA_PLATFORM
 	prScanParam->ucChannelListNum = ARRAY_SIZE(ch_list);
 	for (i = 0; i < ARRAY_SIZE(ch_list); i++) {
 		prScanParam->arChnlInfoList[i].ucChannelNum
@@ -761,11 +762,13 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	prScanParam->ucChannelListNum += ARRAY_SIZE(ch_list_6g);
 	for (i = 0; i < ARRAY_SIZE(ch_list_6g); i++) {
-		prScanParam->arChnlInfoList[i + ARRAY_SIZE(ch_list)].ucChannelNum
-			= ch_list_6g[i];
-		prScanParam->arChnlInfoList[i + ARRAY_SIZE(ch_list)].eBand = BAND_6G;
+		prScanParam->arChnlInfoList[i +
+			ARRAY_SIZE(ch_list)].ucChannelNum = ch_list_6g[i];
+		prScanParam->arChnlInfoList[i +
+			ARRAY_SIZE(ch_list)].eBand = BAND_6G;
 	}
 #endif
+#endif /* CFG_MTK_FPGA_PLATFORM */
 
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 }
