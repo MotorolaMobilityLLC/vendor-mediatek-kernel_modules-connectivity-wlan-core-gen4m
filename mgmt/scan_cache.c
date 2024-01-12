@@ -93,7 +93,8 @@ static OS_SYSTIME getCurrentScanTime(void)
 {
 	OS_SYSTIME rCurrentTime = 0;
 
-	GET_CURRENT_SYSTIME(&rCurrentTime);
+	GET_BOOT_SYSTIME(&rCurrentTime);
+
 	return rCurrentTime;
 }
 
