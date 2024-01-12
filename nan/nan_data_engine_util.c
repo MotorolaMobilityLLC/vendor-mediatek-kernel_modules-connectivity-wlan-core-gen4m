@@ -4131,7 +4131,7 @@ nanDataEngineEnrollNMIContext(IN struct ADAPTER *prAdapter,
 					      : STA_REC_INDEX_NOT_FOUND),
 		       (prNdpCxt->prNanStaRec
 				? prNdpCxt->prNanStaRec->ucBssIndex
-				: KAL_BSS_NUM /* BSS_INFO_NUM */),
+				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
 		       prNdpCxt->ucNumEnrollee);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
@@ -4288,7 +4288,7 @@ nanDataEngineUnrollNMIContext(IN struct ADAPTER *prAdapter,
 					      : STA_REC_INDEX_NOT_FOUND),
 		       (prNdpCxt->prNanStaRec
 				? prNdpCxt->prNanStaRec->ucBssIndex
-				: KAL_BSS_NUM /* BSS_INFO_NUM */),
+				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
 		       prNdpCxt->ucNumEnrollee);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
@@ -4485,7 +4485,7 @@ nanDataEngineEnrollNDPContext(IN struct ADAPTER *prAdapter,
 					      : STA_REC_INDEX_NOT_FOUND),
 		       (prNdpCxt->prNanStaRec
 				? prNdpCxt->prNanStaRec->ucBssIndex
-				: KAL_BSS_NUM /* BSS_INFO_NUM */),
+				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
 		       prNdpCxt->ucNumEnrollee);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],
@@ -4628,7 +4628,7 @@ nanDataEngineUnrollNDPContext(IN struct ADAPTER *prAdapter,
 					      : STA_REC_INDEX_NOT_FOUND),
 		       (prNdpCxt->prNanStaRec
 				? prNdpCxt->prNanStaRec->ucBssIndex
-				: KAL_BSS_NUM /* BSS_INFO_NUM */),
+				: MAX_BSSID_NUM /* BSS_INFO_NUM */),
 		       prNdpCxt->ucNumEnrollee);
 		DBGLOG(NAN, INFO, "Local=> %02x:%02x:%02x:%02x:%02x:%02x\n",
 		       prNdpCxt->aucLocalNDIAddr[0],

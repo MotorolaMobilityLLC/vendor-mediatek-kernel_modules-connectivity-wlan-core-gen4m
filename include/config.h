@@ -521,8 +521,8 @@
 #define CFG_ENABLE_CAL_LOG		1
 #define CFG_REPORT_RFBB_VERSION		1
 
-#define MAX_BSSID_NUM			4	/* MAX BSSID number */
-#define MAX_MLDDEV_NUM			4;
+#define MAX_BSSID_NUM			4	/* MAX SW BSSID number */
+#define MAX_MLDDEV_NUM			4
 
 #ifndef CFG_CHIP_RESET_SUPPORT
 #define CFG_CHIP_RESET_SUPPORT		1

@@ -534,7 +534,7 @@ static struct DBDC_INFO_T g_rDbdcInfo;
 OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
-static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
+static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[MAX_BSSID_NUM];
 static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("ANT Ctrl"),
 	(uint8_t *) DISP_STRING("DBDC"),
@@ -557,7 +557,7 @@ static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
 	(uint8_t *) DISP_STRING("N/A")
 };
 
-static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[BSS_DEFAULT_NUM];
+static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[MAX_BSSID_NUM];
 static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("N/A"),
@@ -604,10 +604,10 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	if (prAdapter->ucHwBssIdNum > BSS_DEFAULT_NUM) {
+	if (prAdapter->ucHwBssIdNum > MAX_BSSID_NUM) {
 		/* Unexpected! out of bounds access may happen... */
 		DBGLOG(CNM, WARN,
-			"HwBssNum(%d) > BSS_DEFAULT_NUM !!!\n",
+			"HwBssNum(%d) > MAX_BSSID_NUM !!!\n",
 			prAdapter->ucHwBssIdNum);
 	}
 
@@ -624,7 +624,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 		prAdapter->ucWmmSetNum > MAX_BSSID_NUM) {
 		/* Unexpected! out of bounds access may happen... */
 		DBGLOG(CNM, WARN,
-			"HwBssNum(%d)WmmNum(%d) > BSS_DEFAULT_NUM !!!\n",
+			"HwBssNum(%d)WmmNum(%d) > MAX_BSSID_NUM !!!\n",
 			prAdapter->ucHwBssIdNum,
 			prAdapter->ucWmmSetNum);
 		ASSERT(0);
@@ -1063,8 +1063,7 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 	prP2pRddDetMsg->rMsgHdr.eMsgId =
 		MID_CNM_P2P_RADAR_DETECT;
 
-	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM;
-	     ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < MAX_BSSID_NUM; ucBssIndex++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  ucBssIndex);
 
@@ -2176,14 +2175,11 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				      enum ENUM_NETWORK_TYPE eNetworkType,
-				      uint8_t ucMldGroupIdx,
-				      u_int8_t fgIsP2pDevice)
+				      u_int8_t fgIsP2pDevice,
+				      u_int8_t fgIsMldReserved)
 {
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
-	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByIdx(prAdapter, ucMldGroupIdx);
-#endif
 
 	ASSERT(prAdapter);
 
@@ -2198,7 +2194,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucOwnMacIndex = prAdapter->ucHwBssIdNum;
 
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex;
-		prBssInfo->ucGroupMldId = ucMldGroupIdx;
+		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
 
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -2211,15 +2207,6 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 
 		return prBssInfo;
 	}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
-	if (prMldBssInfo && prMldBssInfo->ucOmacIdx != INVALID_OMAC_IDX) {
-		ucOwnMacIdx = prMldBssInfo->ucOmacIdx;
-		DBGLOG(CNM, INFO, "Use mld omac idx %d instead\n",
-			ucOwnMacIdx);
-		goto omac_choosed;
-	}
-#endif
 
 	/* Find available HW set  with the order 1,2,..*/
 	do {
@@ -2253,13 +2240,21 @@ omac_choosed:
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			/* reserve for mld secondary link */
+			if ((fgIsMldReserved &&
+			     ucBssIndex != prAdapter->ucMldReservedBssIdx) ||
+			    (!fgIsMldReserved &&
+			     ucBssIndex == prAdapter->ucMldReservedBssIdx))
+				continue;
+#endif
 			prBssInfo->fgIsInUse = TRUE;
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
 			prBssInfo->eBandIdx = ENUM_BAND_AUTO;
 			prBssInfo->ucOwnMldId = ucBssIndex;
-			prBssInfo->ucGroupMldId = ucMldGroupIdx;
+			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;
@@ -2280,10 +2275,7 @@ omac_choosed:
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
 #endif
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
-			if (prMldBssInfo && prMldBssInfo->ucOmacIdx == INVALID_OMAC_IDX)
-				prMldBssInfo->ucOmacIdx = ucOwnMacIdx;
-#endif
+
 			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d,omld=%d\n",
 				prBssInfo->ucBssIndex,
 				prBssInfo->eNetworkType,
@@ -4465,7 +4457,7 @@ void cnmOpModeCallbackDispatcher(
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
 
 	ASSERT(prAdapter);
-	if (ucBssIndex >= BSS_DEFAULT_NUM) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(CNM, WARN,
 			"CbOpMode, invalid,B[%d]\n",
 			ucBssIndex);
@@ -4666,7 +4658,7 @@ cnmOpModeSetTRxNss(
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
-		ucBssIndex >= BSS_DEFAULT_NUM) {
+		ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(CNM, WARN, "SetOpMode invalid BSS[%d]\n", ucBssIndex);
 		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
 	}
@@ -4850,7 +4842,7 @@ void cnmOpModeGetTRxNss(
 	uint8_t ucOpRxNss, ucOpTxNss;
 
 	if (pucOpRxNss == NULL || pucOpTxNss == NULL ||
-		ucBssIndex >= BSS_DEFAULT_NUM) {
+		ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(CNM, WARN,
 			"GetOpMode invalid param B[%d]\n",
 			ucBssIndex);

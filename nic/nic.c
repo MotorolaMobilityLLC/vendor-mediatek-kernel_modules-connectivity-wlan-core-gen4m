@@ -2501,7 +2501,7 @@ nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter,
 	if ((!prAdapter))
 		return WLAN_STATUS_FAILURE;
 
-	if (ucBssIndex >= BSS_DEFAULT_NUM)
+	if (ucBssIndex >= MAX_BSSID_NUM)
 		return WLAN_STATUS_FAILURE;
 	rPowerSaveMode.ucBssIndex = ucBssIndex;
 
