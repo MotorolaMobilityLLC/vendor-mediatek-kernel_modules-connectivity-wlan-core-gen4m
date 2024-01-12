@@ -212,6 +212,10 @@ uint32_t mt7961setWfdmaCoalescingInt(
 #endif
 
 #endif /* _HIF_PCIE || _HIF_AXI */
+
+void mt7961SerInit(IN struct ADAPTER *prAdapter,
+		   IN const u_int8_t fgAtResetFlow);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

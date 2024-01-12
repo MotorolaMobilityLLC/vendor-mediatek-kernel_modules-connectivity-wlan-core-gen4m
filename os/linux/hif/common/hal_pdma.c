@@ -3510,8 +3510,14 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 	if (prAdapter->rWifiVar.eEnableSerL1 !=
 	     FEATURE_OPT_SER_ENABLE) {
+		if (prChipInfo->asicDumpSerDummyCR)
+			prChipInfo->asicDumpSerDummyCR(prAdapter);
+
 		DBGLOG(HAL, WARN,
 		       "[SER][L1] Bypass L1 reset due to wifi.cfg\n");
+
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L1_FAIL);
+
 		return;
 	}
 
