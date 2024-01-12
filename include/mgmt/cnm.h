@@ -264,6 +264,9 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 
+void cnmCsaResetParams(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
 uint8_t cnmOwnGcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
 	uint8_t ucCh,

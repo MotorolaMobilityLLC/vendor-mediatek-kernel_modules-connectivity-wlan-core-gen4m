@@ -473,9 +473,10 @@ void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *)ulParamPtr;
 
 	DBGLOG(P2P, WARN,
-		"[%d] CSA block scan timeout\n",
+		"[%d] CSA timeout\n",
 		prP2pBssInfo->ucBssIndex);
 
+	cnmCsaResetParams(prAdapter, prP2pBssInfo);
 	kalP2pStopApInterface(prAdapter, prP2pBssInfo);
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */
