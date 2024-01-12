@@ -1250,15 +1250,6 @@ static s_int32 mt_engine_store_tx_info(
 		goto err_out;
 	}
 
-	if (tx_info == NULL) {
-		ret = -1;
-		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_ERROR,
-			("%s: test_tx_info is NULL\n",
-			__func__));
-
-		goto err_out;
-	}
-
 	if (is_mt_engine_stack_full(configs) == FALSE) {
 		if (tx_info) {
 			net_ad_fill_phy_info(virtual_wtbl, tx_info);
@@ -1268,17 +1259,18 @@ static s_int32 mt_engine_store_tx_info(
 				net_ad_handle_mcs32(winfos,
 						    virtual_wtbl,
 						    tx_info->bw);
+		}  else {
+			ret = SERV_STATUS_ENGINE_INVALID_NULL_POINTER;
+			goto err_out;
 		}
 
 		net_ad_apply_wtbl(winfos, virtual_device, virtual_wtbl);
 
-		if (tx_info) {
-			sta_idx = mt_engine_stack_push(configs,
+		sta_idx = mt_engine_stack_push(configs,
 						       virtual_device,
 						       da,
 						       virtual_wtbl,
 						       tx_info);
-		}
 
 		if (sta_idx > -1 && sta_idx < MAX_MULTI_TX_STA) {
 			u_int8 *pate_pkt = configs->test_pkt;
@@ -1289,11 +1281,8 @@ static s_int32 mt_engine_store_tx_info(
 			tx_time_param = &configs->tx_time_param;
 			pkt_tx_time = tx_time_param->pkt_tx_time;
 
-			if (tx_info) {
-				tx_len = tx_info->mpdu_length;
-				configs->tx_len = tx_info->mpdu_length;
-			} else
-				tx_len = configs->tx_len;
+			tx_len = tx_info->mpdu_length;
+			configs->tx_len = tx_info->mpdu_length;
 
 			/* Prepare tx packet */
 			ret = mt_engine_gen_pkt(winfos,
