@@ -538,6 +538,14 @@ struct AIS_FSM_INFO {
 #if CFG_SUPPORT_ROAMING
 	uint8_t ucIsStaRoaming;
 #endif
+#if CFG_SUPPORT_LLW_SCAN
+	/* scan parameters */
+	uint16_t u2OpChStayTimeMs;
+	uint8_t ucNonDfsChDwellTimeMs;
+	uint8_t ucDfsChDwellTimeMs;
+	uint8_t ucPerScanChannelCnt;
+	uint8_t ucLatencyCrtDataMode;
+#endif
 	struct LINK rAxBlacklist;
 	struct LINK rHeHtcBlacklist;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

@@ -3310,6 +3310,15 @@ struct PARAM_TX_MCS_INFO {
 };
 #endif
 
+#if CFG_SUPPORT_LLW_SCAN
+struct PARAM_SCAN {
+	uint8_t ucDfsChDwellTimeMs;
+	uint8_t ucNonDfsChDwellTimeMs;
+	uint16_t u2OpChStayTimeMs;
+	uint16_t u2OpChAwayTimeMs;
+};
+#endif
+
 struct PARAM_AX_BLACKLIST {
 	uint8_t ucType;
 	uint8_t ucCount;
@@ -5538,5 +5547,19 @@ uint32_t wlanoidSetLpKeepPwrCtrl(struct ADAPTER *prAdapter,
 			void *pvSetBuffer,
 			uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen);
+
+#if CFG_SUPPORT_LLW_SCAN
+uint32_t
+wlanoidSetScanParam(struct ADAPTER *prAdapter,
+			void *pvSetBuffer,
+			uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetLatencyCrtData(struct ADAPTER *prAdapter,
+			    void *pvSetBuffer,
+			    uint32_t u4SetBufferLen,
+			    uint32_t *pu4SetInfoLen);
+#endif
 
 #endif /* _WLAN_OID_H */

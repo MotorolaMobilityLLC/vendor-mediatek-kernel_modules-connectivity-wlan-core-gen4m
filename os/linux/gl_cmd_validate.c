@@ -2471,6 +2471,24 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if CFG_SUPPORT_LLW_SCAN
+	{
+		.pcCmdStr  = CMD_LATENCY_CRT_DATA_SET,
+		.pfHandler = testmode_set_latency_crt_data,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+	{
+		.pcCmdStr  = CMD_DWELL_TIME_SET,
+		.pfHandler = testmode_set_scan_param,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(5),
+		.policy    = u32_policy,
+		.u4PolicySize = ARRAY_SIZE(u32_policy)
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_SET_AX_BLACKLIST,
 		.pfHandler = testmode_set_ax_blacklist,

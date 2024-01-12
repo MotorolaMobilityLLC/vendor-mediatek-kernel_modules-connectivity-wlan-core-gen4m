@@ -384,6 +384,12 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 		prScanParam->u2ChannelMinDwellTime;
 	prCmdScanReq->u2TimeoutValue = prScanParam->u2TimeoutValue;
 
+#if CFG_SUPPORT_LLW_SCAN
+	prCmdScanReq->u2OpChStayTimeMs = prScanParam->u2OpChStayTime;
+	prCmdScanReq->ucDfsChDwellTimeMs = prScanParam->ucDfsChDwellTime;
+	prCmdScanReq->ucPerScanChannelCnt = prScanParam->ucPerScanChCnt;
+#endif
+
 	/* If ProbeDelayTime bigger than MinDwellTime,
 	 * reset ProbeDelayTime to 0
 	 */
@@ -777,6 +783,11 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 	prScanParam->u2ChannelMinDwellTime =
 		prScanReqMsg->u2ChannelMinDwellTime;
 	prScanParam->u2TimeoutValue = prScanReqMsg->u2TimeoutValue;
+#if CFG_SUPPORT_LLW_SCAN
+	prScanParam->u2OpChStayTime = prScanReqMsg->u2OpChStayTime;
+	prScanParam->ucDfsChDwellTime = prScanReqMsg->ucDfsChDwellTime;
+	prScanParam->ucPerScanChCnt = prScanReqMsg->ucPerScanChCnt;
+#endif
 	prScanParam->ucSeqNum = prScanReqMsg->ucSeqNum;
 	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
 	prScanParam->fgIsScanV2 = TRUE;
@@ -1005,7 +1016,6 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 
 			/* restore for later scan done event */
 			prScanParam->ucSeqNum = prScanDone->ucSeqNum;
-
 			cnmMemFree(prAdapter, prNeighborAPInfo);
 
 			/* Restart ScanDone timer to avoid RNR scan
@@ -1015,6 +1025,22 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 						prScanParam->ucBssIndex)) {
 				prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
 					prScanParam->ucBssIndex);
+#if CFG_SUPPORT_LLW_SCAN
+				/* using customized scan parameters */
+				prScanParam->u2ChannelDwellTime =
+					prAisFsmInfo->ucNonDfsChDwellTimeMs;
+				prScanParam->u2ChannelMinDwellTime =
+					(prScanParam->u2ChannelDwellTime <
+					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC) ?
+					prScanParam->u2ChannelDwellTime :
+					SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+				prScanParam->u2OpChStayTime =
+					prAisFsmInfo->u2OpChStayTimeMs;
+				prScanParam->ucDfsChDwellTime =
+					prAisFsmInfo->ucDfsChDwellTimeMs;
+				prScanParam->ucPerScanChCnt =
+					prAisFsmInfo->ucPerScanChannelCnt;
+#endif
 				cnmTimerStopTimer(prAdapter,
 					&prAisFsmInfo->rScanDoneTimer);
 				cnmTimerStartTimer(prAdapter,

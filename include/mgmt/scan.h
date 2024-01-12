@@ -516,6 +516,11 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint16_t u2ChannelDwellTime;
 	uint16_t u2ChannelMinDwellTime;
 	uint16_t u2TimeoutValue;
+#if CFG_SUPPORT_LLW_SCAN
+	uint16_t u2OpChStayTime;
+	uint8_t ucDfsChDwellTime;
+	uint8_t ucPerScanChCnt;
+#endif
 
 	uint8_t aucBSSID[CFG_SCAN_OOB_MAX_NUM][MAC_ADDR_LEN];
 
@@ -685,7 +690,11 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	uint16_t u2ChannelDwellTime;	/* In TU. 1024us. */
 	uint16_t u2ChannelMinDwellTime;	/* In TU. 1024us. */
 	uint16_t u2TimeoutValue;	/* ms unit */
-
+#if CFG_SUPPORT_LLW_SCAN
+	uint16_t u2OpChStayTime;	/* ms unit */
+	uint8_t ucDfsChDwellTime;	/* ms unit */
+	uint8_t ucPerScanChCnt;
+#endif
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	enum ENUM_SCAN_CHANNEL eScanChannel;
 	uint8_t ucChannelListNum;

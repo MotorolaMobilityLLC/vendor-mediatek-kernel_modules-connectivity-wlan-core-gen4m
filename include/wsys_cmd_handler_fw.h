@@ -1304,7 +1304,10 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t		 aucPadding_1[3];
 	uint32_t	 u4ScnFuncMaskExtend;
 	uint8_t          ucScnSourceMask;
-	uint8_t		 aucPadding_3[23];
+	uint16_t	 u2OpChStayTimeMs;
+	uint8_t		 ucDfsChDwellTimeMs;
+	uint8_t		 ucPerScanChannelCnt;
+	uint8_t		 aucPadding_3[19];
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	uint16_t	 u2IELen2G4;
 	uint8_t		 aucIE2G4[100];  /*depends on u2IELen24G*/

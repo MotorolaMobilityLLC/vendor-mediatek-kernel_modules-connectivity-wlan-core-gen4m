@@ -2226,6 +2226,9 @@ struct UNI_CMD_SCAN_MISC {
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t ucShortSSIDNum;
 	uint8_t aucReserved[1];
+	uint8_t ucDfsChDwellTimeMs;
+	uint8_t ucPerScanChannelCnt;
+	uint16_t u2OpChStayTimeMs;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

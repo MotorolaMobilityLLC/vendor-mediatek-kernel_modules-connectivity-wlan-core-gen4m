@@ -1942,9 +1942,16 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #else
 	issued = ais->fgTargetChnlScanIssued;
 #endif
+#if CFG_SUPPORT_LLW_SCAN
+	/* If CRT DATA is 2, prohibit full roaming scan
+	 * even if fgTargetChnlScanIssued is FALSE.
+	 */
+	if (ais->ucLatencyCrtDataMode == 2)
+		issued = TRUE;
+#endif
 
 	return (discovering && issued) ||
-	       (postponing && trial < AIS_ROAMING_CONNECTION_TRIAL_LIMIT);
+		(postponing && trial < AIS_ROAMING_CONNECTION_TRIAL_LIMIT);
 }
 
 void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
@@ -9425,6 +9432,25 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 	prScanReqMsg->u2ChannelDwellTime = 0;
 	prScanReqMsg->u2ChannelMinDwellTime = 0;
 	prScanReqMsg->u2TimeoutValue = 0;
+
+#if CFG_SUPPORT_LLW_SCAN
+	/* using customized scan parameters */
+	prScanReqMsg->u2ChannelDwellTime =
+		prAisFsmInfo->ucNonDfsChDwellTimeMs;
+	prScanReqMsg->u2ChannelMinDwellTime =
+		(prScanReqMsg->u2ChannelDwellTime <
+		SCAN_CHANNEL_DWELL_TIME_MIN_MSEC) ?
+		prScanReqMsg->u2ChannelDwellTime :
+		SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+
+	/* using customized scan parameters */
+	prScanReqMsg->u2OpChStayTime =
+		prAisFsmInfo->u2OpChStayTimeMs;
+	prScanReqMsg->ucDfsChDwellTime =
+		prAisFsmInfo->ucDfsChDwellTimeMs;
+	prScanReqMsg->ucPerScanChCnt =
+		prAisFsmInfo->ucPerScanChannelCnt;
+#endif
 
 	/* for 6G OOB scan */
 	kalMemCopy(prScanReqMsg->ucBssidMatchCh,
