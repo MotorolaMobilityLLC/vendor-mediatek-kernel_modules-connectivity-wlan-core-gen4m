@@ -708,7 +708,8 @@ int32_t mddpNotifyMDUnifiedCmdVer(void)
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	u32UnifiedCmdVer = 1;
 #else
-	u32UnifiedCmdVer = 0;
+	DBGLOG(INIT, INFO, "Unified Cmd not support.\n");
+	goto exit;
 #endif
 
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
