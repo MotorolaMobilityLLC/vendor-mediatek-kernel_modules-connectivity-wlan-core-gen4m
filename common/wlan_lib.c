@@ -5865,7 +5865,7 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	uint8_t ucStaRecIdx;
 	struct QUE_MGT *prQM;
-	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics;
+	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics = {0};
 	uint8_t ucIdx;
 	enum ENUM_WMM_ACI eAci;
 
@@ -6096,7 +6096,7 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		       OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
 {
-	struct CMD_QUERY_STATISTICS rQueryCmdStatistics;
+	struct CMD_QUERY_STATISTICS rQueryCmdStatistics = {0};
 
 	DEBUGFUNC("wlanQueryStatistics");
 
@@ -10191,7 +10191,7 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 				       prMsduInfo->ucStaRecIndex);
 
-	if (eAci >= 0 && eAci < WMM_AC_INDEX_NUM) {
+	if (eAci < WMM_AC_INDEX_NUM) {
 		if (prStaRec) {
 			if (fgTxDrop)
 				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu++;
@@ -10246,7 +10246,7 @@ void wlanUpdateRxStatistics(IN struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 				       prSwRfb->ucStaRecIdx);
-	if (prStaRec && eAci >= 0 && eAci < WMM_AC_INDEX_NUM)
+	if (prStaRec && eAci < WMM_AC_INDEX_NUM)
 		prStaRec->arLinkStatistics[eAci].u4RxMsdu++;
 }
 
@@ -13571,7 +13571,7 @@ uint32_t wlanSetForceRTS(
 	IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnForceRTS)
 {
-	struct CMD_SET_FORCE_RTS rForceRts;
+	struct CMD_SET_FORCE_RTS rForceRts = {0};
 
 	rForceRts.ucForceRtsEn = fgEnForceRTS;
 	rForceRts.ucRtsPktNum = 0;
