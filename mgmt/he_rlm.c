@@ -2022,6 +2022,8 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (pucIE == NULL)
 		return;
 
+	prBTWTIE = (struct _IE_BTWT_T *) pucIE;
+
 	if (GET_BTWT_CTRL_NEGO(prBTWTIE->ucCtrl) != 0x2)
 		return;
 
@@ -2030,8 +2032,6 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		u2ReqType);
 
 	DBGLOG(RLM, WARN, "(struct _IE_BTWT_T, u2ReqType)=%d\n", u4Offset);
-
-	prBTWTIE = (struct _IE_BTWT_T *) pucIE;
 
 	pucBTWT_PARAMS_HEAD = pucIE + u4Offset;
 
