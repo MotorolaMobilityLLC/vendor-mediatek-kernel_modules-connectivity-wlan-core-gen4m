@@ -7058,6 +7058,8 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		"EnableMlo", FEATURE_ENABLED);
 	prWifiVar->ucEnableMloSingleLink = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMloSingleLink", FEATURE_ENABLED);
+	prWifiVar->ucMaxSimultaneousLinks = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "MaxSimultaneousLinks", 0xff);
 #endif /* CFG_SUPPORT_802_11BE */
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);

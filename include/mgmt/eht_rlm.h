@@ -56,6 +56,10 @@ u_int32_t ehtRlmCalculateCapIELen(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndex,
 	struct STA_RECORD *prStaRec);
+void ehtRlmFillCapIE(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct MSDU_INFO *prMsduInfo);
 u_int32_t ehtRlmCalculateOpIELen(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucBssIndex,
