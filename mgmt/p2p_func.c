@@ -7332,8 +7332,6 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 		break;
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
-		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-		prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
@@ -7349,6 +7347,14 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 
 		/* Send Action Frame */
 		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
+
+		/* To prevent race condition, we have to set CSA flags
+		 * after all CSA parameters are updated. In this way,
+		 * we can guarantee that CSA IE will be and only be
+		 * reported once in the beacon.
+		 */
+		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
