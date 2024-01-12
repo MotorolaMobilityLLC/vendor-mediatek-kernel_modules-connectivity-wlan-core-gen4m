@@ -990,6 +990,7 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	uint64_t u8GlCookie;
+	enum ENUM_P2P_CONNECT_STATE eConnState = P2P_CNN_NORMAL;
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
@@ -1096,6 +1097,12 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 
 		nicTxSetPktRetryLimit(prMgmtTxMsdu, ucRetryLimit);
 
+		eConnState = p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
+
+		if (p2pFuncNeedWaitRsp(prAdapter,
+				prAdapter->prP2pInfo->eConnState))
+			prAdapter->prP2pInfo->eConnState = eConnState;
+
 		/* Bufferable MMPDUs are suggested to be queued */
 		/* when GC is sleeping according to SPEC, */
 		/* instead of being sent to ALTX Q. */
@@ -1103,16 +1110,10 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		/* GO discoverability REQ needs to be sent to GC */
 		/* when GC is awake due to P2P-6.1.10 cert fail */
 
-		if (!p2pFuncIsBufferableMMPDU(prMgmtTxMsdu))
+		if (!p2pFuncIsBufferableMMPDU(prAdapter,
+			eConnState, prMgmtTxMsdu))
 			nicTxConfigPktControlFlag(prMgmtTxMsdu,
 				MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
-
-		if (p2pFuncNeedWaitRsp(prAdapter,
-				prAdapter->prP2pInfo->eConnState))
-			prAdapter->prP2pInfo->eConnState =
-				p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
-		else
-			p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 
 		nicTxEnqueueMsdu(prAdapter, prMgmtTxMsdu);
 
@@ -7150,11 +7151,13 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
 			MSG_SEND_METHOD_BUF);
 }
 
-uint8_t p2pFuncIsBufferableMMPDU(IN struct MSDU_INFO *prMgmtTxMsdu)
+uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECT_STATE eConnState,
+		IN struct MSDU_INFO *prMgmtTxMsdu)
 {
 	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
 	uint16_t u2TxFrameCtrl;
-	uint8_t fgIsBufferableMMPDU;
+	uint8_t fgIsBufferableMMPDU = FALSE;
 
 	prWlanHdr = (struct WLAN_MAC_HEADER *)
 		((unsigned long) prMgmtTxMsdu->prPacket +
@@ -7168,6 +7171,19 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct MSDU_INFO *prMgmtTxMsdu)
 
 	switch (u2TxFrameCtrl) {
 	case MAC_FRAME_ACTION:
+		switch (eConnState) {
+		case P2P_CNN_GO_NEG_REQ:
+		case P2P_CNN_GO_NEG_RESP:
+		case P2P_CNN_GO_NEG_CONF:
+		case P2P_CNN_INVITATION_REQ:
+		case P2P_CNN_INVITATION_RESP:
+			fgIsBufferableMMPDU = FALSE;
+			break;
+		default:
+			fgIsBufferableMMPDU = TRUE;
+			break;
+		}
+		break;
 	case MAC_FRAME_DISASSOC:
 	case MAC_FRAME_DEAUTH:
 		fgIsBufferableMMPDU = TRUE;
