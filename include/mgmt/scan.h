@@ -461,9 +461,6 @@ struct BSS_DESC {
 	 */
 	uint8_t ucIsAdaptive11r;
 
-	/* The received IE length exceed the maximum IE buffer size */
-	u_int8_t fgIsIEOverflow;
-
 	uint16_t u2RawLength;		/* The byte count of aucRawBuf[] */
 	uint16_t u2IELength;		/* The byte count of aucIEBuf[] */
 
@@ -471,7 +468,7 @@ struct BSS_DESC {
 	union ULARGE_INTEGER u8TimeStamp;
 
 	uint8_t aucRawBuf[CFG_RAW_BUFFER_SIZE];
-	uint8_t aucIEBuf[CFG_IE_BUFFER_SIZE];
+	uint8_t *pucIeBuf;
 	uint16_t u2JoinStatus;
 	OS_SYSTIME rJoinFailTime;
 

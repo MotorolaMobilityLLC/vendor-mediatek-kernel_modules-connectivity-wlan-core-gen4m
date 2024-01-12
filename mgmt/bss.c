@@ -2569,7 +2569,7 @@ int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
 
 	pucIe = kalFindIeMatchMask(
 		ELEM_ID_HT_CAP,
-		&prBssDesc->aucIEBuf[0],
+		prBssDesc->pucIeBuf,
 		prBssDesc->u2IELength,
 		NULL, 0, 0, NULL);
 
@@ -2642,7 +2642,7 @@ uint32_t bssGetIotApAction(IN struct ADAPTER *prAdapter,
 	prBssDesc->fgIotApActionValid = TRUE;
 	prBssDesc->ucIotApAct = WLAN_IOT_AP_VOID;
 
-	pucIes = &prBssDesc->aucIEBuf[0];
+	pucIes = prBssDesc->pucIeBuf;
 	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
 		prIotApRule = &prAdapter->rIotApRule[ucCnt];
 		u2MatchFlag = prIotApRule->u2MatchFlag;
