@@ -1412,7 +1412,7 @@ void p2pRoleFsmRunEventPreStartAP(IN struct ADAPTER *prAdapter,
 	}
 
 	/* STA+SAP will follow STA BW */
-	if (aisGetConnectedBssInfo(prAdapter))
+	if (p2pGetAisBssByBand(prAdapter, BAND_5G))
 		bSkipCac = TRUE;
 	else if (p2pFuncIsManualCac() &&
 		(prAdapter->rWifiVar.u4ByPassCacTime <= 2)) {
