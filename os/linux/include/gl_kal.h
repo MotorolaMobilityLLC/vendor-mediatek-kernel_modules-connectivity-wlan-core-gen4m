@@ -1474,4 +1474,6 @@ static inline void kal_skb_reset_mac_len(struct sk_buff
 }
 #endif
 
-#endif				/* _GL_KAL_H */
+void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev);
+
+#endif /* _GL_KAL_H */
