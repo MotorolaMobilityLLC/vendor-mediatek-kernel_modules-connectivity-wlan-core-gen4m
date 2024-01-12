@@ -994,10 +994,11 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			return 0;
 		}
 
-		kalIoctl(prGlueInfo,
-			wlanoidQueryLinkSpeedEx,
-			&rLinkSpeed, sizeof(rLinkSpeed),
-			TRUE, FALSE, FALSE, &u4BufLen);
+		kalIoctlByBssIdx(prGlueInfo,
+				 wlanoidQueryLinkSpeedEx,
+				 &rLinkSpeed, sizeof(rLinkSpeed),
+				 TRUE, FALSE, FALSE,
+				 &u4BufLen, ucBssIdx);
 		if (ucBssIdx < BSSID_NUM) {
 			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2LinkSpeed;
 			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
