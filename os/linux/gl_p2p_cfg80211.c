@@ -50,27 +50,27 @@
  *
  *****************************************************************************/
 /*
-** Id: @(#) gl_p2p_cfg80211.c@@
-*/
+ ** Id: @(#) gl_p2p_cfg80211.c@@
+ */
 
 /*! \file   gl_p2p_cfg80211.c
-*    \brief  Main routines of Linux driver interface for Wi-Fi Direct
-*	    using cfg80211 interface
-*
-*    This file contains the main routines of Linux driver for MediaTek Inc. 802.11
-*    Wireless LAN Adapters.
-*/
+ *    \brief  Main routines of Linux driver interface for Wi-Fi Direct
+ *	    using cfg80211 interface
+ *
+ *    This file contains the main routines of Linux driver
+ *    for MediaTek Inc. 802.11 Wireless LAN Adapters.
+ */
 
 
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+/******************************************************************************
+ *                         C O M P I L E R   F L A G S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ ******************************************************************************
+ */
 
 #include "config.h"
 
@@ -89,30 +89,30 @@
 #pragma GCC diagnostic ignored "-Wformat"
 #endif
 
-/*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              C O N S T A N T S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                             D A T A   T Y P E S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+/******************************************************************************
+ *                                 M A C R O S
+ ******************************************************************************
+ */
 
 #if CFG_ENABLE_UNIFY_WIPHY
 #define P2P_WIPHY_PRIV(_wiphy, _priv) \
@@ -122,19 +122,20 @@
 	(_priv = *((struct GLUE_INFO **) wiphy_priv(_wiphy)))
 #endif
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              F U N C T I O N S
+ ******************************************************************************
+ */
 
 u_int8_t
-mtk_p2p_cfg80211func_channel_sco_switch(IN enum nl80211_channel_type channel_type,
-					   IN enum ENUM_CHNL_EXT *prChnlSco)
+mtk_p2p_cfg80211func_channel_sco_switch(
+		IN enum nl80211_channel_type channel_type,
+		IN enum ENUM_CHNL_EXT *prChnlSco)
 {
 	u_int8_t fgIsValid = FALSE;
 
@@ -168,9 +169,10 @@ mtk_p2p_cfg80211func_channel_sco_switch(IN enum nl80211_channel_type channel_typ
 }
 
 u_int8_t
-mtk_p2p_cfg80211func_channel_format_switch(IN struct cfg80211_chan_def *channel_def,
-					   IN struct ieee80211_channel *channel,
-					   IN struct RF_CHANNEL_INFO *prRfChnlInfo)
+mtk_p2p_cfg80211func_channel_format_switch(
+		IN struct cfg80211_chan_def *channel_def,
+		IN struct ieee80211_channel *channel,
+		IN struct RF_CHANNEL_INFO *prRfChnlInfo)
 {
 	u_int8_t fgIsValid = FALSE;
 
@@ -178,10 +180,13 @@ mtk_p2p_cfg80211func_channel_format_switch(IN struct cfg80211_chan_def *channel_
 		if (channel == NULL)
 			break;
 
-		DBGLOG(P2P, INFO, "switch channel band: %d, freq: %d\n", channel->band, channel->center_freq);
+		DBGLOG(P2P, INFO,
+			"switch channel band: %d, freq: %d\n",
+			channel->band, channel->center_freq);
 
 		if (prRfChnlInfo) {
-			prRfChnlInfo->ucChannelNum = nicFreq2ChannelNum(channel->center_freq * 1000);
+			prRfChnlInfo->ucChannelNum =
+				nicFreq2ChannelNum(channel->center_freq * 1000);
 
 			switch (channel->band) {
 			case KAL_BAND_2GHZ:
@@ -234,7 +239,8 @@ mtk_p2p_cfg80211func_channel_format_switch(IN struct cfg80211_chan_def *channel_
 
 /* mtk_p2p_cfg80211func_channel_format_switch */
 
-int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo, struct net_device *ndev, uint8_t *pucRoleIdx)
+int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
+		struct net_device *ndev, uint8_t *pucRoleIdx)
 {
 	int32_t i4Ret = -1;
 	uint32_t u4Idx = 0;
@@ -303,12 +309,12 @@ static void mtk_vif_destructor(struct net_device *dev)
 
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
-						const char *name, unsigned char name_assign_type,
-						enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+		const char *name, unsigned char name_assign_type,
+		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 #else
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
-						const char *name,
-						enum nl80211_iftype type, u32 *flags, struct vif_params *params)
+		const char *name,
+		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 #endif
 {
 	/* 2 TODO: Fit kernel 3.10 modification */
@@ -365,11 +371,14 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		/* Alloc all resource here to avoid do unregister_netdev for
 		 * error case (kernel exception).
 		 */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0)
-		prNewNetDevice = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name,
-						NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+		prNewNetDevice = alloc_netdev_mq(
+			sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name,
+			NET_NAME_PREDICTABLE, ether_setup, CFG_MAX_TXQ_NUM);
 #else
-		prNewNetDevice = alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name, ether_setup, CFG_MAX_TXQ_NUM);
+		prNewNetDevice = alloc_netdev_mq(
+			sizeof(struct NETDEV_PRIVATE_GLUE_INFO), name,
+			ether_setup, CFG_MAX_TXQ_NUM);
 #endif
 
 		if (prNewNetDevice == NULL) {
@@ -400,11 +409,15 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface name = %s\n", name);
+		DBGLOG(P2P, TRACE,
+			"mtk_p2p_cfg80211_add_iface name = %s\n", name);
 
 		prP2pInfo->aprRoleHandler = prNewNetDevice;
-		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) = prGlueInfo;
-		prNewNetDevice->needed_headroom += NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
+		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) =
+			prGlueInfo;
+		prNewNetDevice->needed_headroom +=
+			NIC_TX_DESC_AND_PADDING_LENGTH +
+			prChipInfo->txd_append_size;
 		prNewNetDevice->netdev_ops = &p2p_netdev_ops;
 
 		prHif = &prGlueInfo->rHifInfo;
@@ -437,8 +450,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 		/* set HW checksum offload */
 		if (prAdapter->fgIsSupportCsumOffload)
-			prNewNetDevice->features = NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
-						   NETIF_F_RXCSUM;
+			prNewNetDevice->features = NETIF_F_IP_CSUM
+				| NETIF_F_IPV6_CSUM | NETIF_F_RXCSUM;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 		kalResetStats(prNewNetDevice);
@@ -447,11 +460,14 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		/* register for net device */
 		if (register_netdevice(prP2pInfo->aprRoleHandler) < 0) {
 			DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface 456\n");
-			DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
+			DBGLOG(INIT, WARN,
+				"unable to register netdevice for p2p\n");
 			break;
+
 		} else {
 			DBGLOG(P2P, TRACE, "register_netdev OK\n");
-			prGlueInfo->prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+			prGlueInfo->prAdapter->rP2PNetRegState =
+				ENUM_NET_REG_STATE_REGISTERED;
 
 			netif_carrier_off(prP2pInfo->aprRoleHandler);
 			netif_tx_stop_all_queues(prP2pInfo->aprRoleHandler);
@@ -459,9 +475,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx];
 
 		/* 13. bind netdev pointer to netdev index */
-		wlanBindBssIdxToNetInterface(prGlueInfo, prP2pRoleFsmInfo->ucBssIndex,
-									(void *) prP2pInfo->aprRoleHandler);
-		prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prP2pInfo->aprRoleHandler);
+		wlanBindBssIdxToNetInterface(prGlueInfo,
+			prP2pRoleFsmInfo->ucBssIndex,
+			(void *) prP2pInfo->aprRoleHandler);
+		prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prP2pInfo->aprRoleHandler);
 		prNetDevPriv->prGlueInfo = prGlueInfo;
 		prNetDevPriv->ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
 #if CFG_ENABLE_UNIFY_WIPHY
@@ -472,19 +490,25 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		/* 4.2 fill hardware address */
 		COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
 		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
-		    (type == NL80211_IFTYPE_P2P_CLIENT || type == NL80211_IFTYPE_P2P_GO)) {
+			(type == NL80211_IFTYPE_P2P_CLIENT
+			|| type == NL80211_IFTYPE_P2P_GO)) {
 			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
 		} else {
-			rMacAddr[0] |= 0x2; /* change to local administrated address */
+			/* change to local administrated address */
+			rMacAddr[0] |= 0x2;
 			if (u4Idx > 0)
 				rMacAddr[0] ^= u4Idx << 2;
 			else
-				rMacAddr[0] ^= prGlueInfo->prAdapter->prP2pInfo->u4DeviceNum << 2;
+				rMacAddr[0] ^=
+					prGlueInfo->prAdapter
+						->prP2pInfo->u4DeviceNum << 2;
 		}
 		kalMemCopy(prNewNetDevice->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
 
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n", prNetDevPriv->ucBssIdx);
+		DBGLOG(P2P, TRACE,
+			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n",
+			prNetDevPriv->ucBssIdx);
 
 		/* Switch OP MOde. */
 		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
@@ -557,16 +581,18 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 {
 #if 0
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *) NULL;
-	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = (struct MSG_P2P_ACTIVE_DEV_BSS *) NULL;
+	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
+		(struct MSG_P2P_DEL_IFACE *) NULL;
+	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss =
+		(struct MSG_P2P_ACTIVE_DEV_BSS *) NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
 	if (prGlueInfo == NULL)
 		return -EINVAL;
 
-	prP2pDelIfaceMsg =
-		(struct MSG_P2P_DEL_IFACE *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							 sizeof(struct MSG_P2P_DEL_IFACE));
+	prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *)
+		cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+		sizeof(struct MSG_P2P_DEL_IFACE));
 
 	if (prP2pDelIfaceMsg == NULL) {
 		ASSERT(FALSE);
@@ -575,21 +601,32 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
 		prP2pDelIfaceMsg->ucRoleIdx = 0;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pDelIfaceMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pDelIfaceMsg,
+			MSG_SEND_METHOD_BUF);
 
 		/* Send Msg to DevFsm and Deactive P2P dev BSS */
-		prMsgActiveBss = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
+		prMsgActiveBss = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG,
+			sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
 		prMsgActiveBss->rMsgHdr.eMsgId = MID_MNY_P2P_ACTIVE_BSS;
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgActiveBss, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgActiveBss,
+			MSG_SEND_METHOD_BUF);
 	}
 
 #else
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *) NULL;
+	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
+		(struct MSG_P2P_DEL_IFACE *) NULL;
 	struct ADAPTER *prAdapter;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
-	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo = (struct GL_P2P_DEV_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
 	struct net_device *UnregRoleHander = (struct net_device *)NULL;
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
@@ -627,7 +664,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
 	wlanBindBssIdxToNetInterface(prGlueInfo, ucBssIdx,
-				(void *) prGlueInfo->prP2PInfo[0]->prDevHandler);
+		(void *) prGlueInfo->prP2PInfo[0]->prDevHandler);
 
 	UnregRoleHander = prP2pInfo->aprRoleHandler;
 
@@ -666,9 +703,13 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	if (prP2pGlueDevInfo->prScanRequest != NULL) {
 		/* Check the wdev with backup scan req due to */
 		/* the kernel will free this request by error handling */
-		if (prP2pGlueDevInfo->rBackupScanRequest.wdev == UnregRoleHander->ieee80211_ptr) {
-			kalCfg80211ScanDone(&(prP2pGlueDevInfo->rBackupScanRequest), TRUE);
-			/* clear the request to avoid the Role FSM calls the scan_done again */
+		if (prP2pGlueDevInfo->rBackupScanRequest.wdev
+			== UnregRoleHander->ieee80211_ptr) {
+			kalCfg80211ScanDone(
+				&(prP2pGlueDevInfo->rBackupScanRequest), TRUE);
+			/* clear the request to avoid the Role FSM
+			 * calls the scan_done again
+			 */
 			prP2pGlueDevInfo->prScanRequest = NULL;
 		}
 	}
@@ -688,9 +729,9 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
-	prP2pDelIfaceMsg =
-		(struct MSG_P2P_DEL_IFACE *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							 sizeof(struct MSG_P2P_DEL_IFACE));
+	prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *)
+		cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+			sizeof(struct MSG_P2P_DEL_IFACE));
 
 	if (prP2pDelIfaceMsg == NULL) {
 		ASSERT(FALSE);
@@ -699,15 +740,20 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
 		prP2pDelIfaceMsg->ucRoleIdx = 0;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pDelIfaceMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pDelIfaceMsg,
+			MSG_SEND_METHOD_BUF);
 	}
 #endif
 	return 0;
 }				/* mtk_p2p_cfg80211_del_iface */
 
 int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
-			     struct net_device *ndev,
-			     u8 key_index, bool pairwise, const u8 *mac_addr, struct key_params *params)
+		 struct net_device *ndev,
+		 u8 key_index, bool pairwise,
+		 const u8 *mac_addr,
+		 struct key_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Rslt = -EINVAL;
@@ -729,9 +775,12 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 #if DBG
 	if (mac_addr) {
 		DBGLOG(RSN, INFO,
-		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
+			"keyIdx = %d pairwise = %d mac = " MACSTR "\n",
+			key_index, pairwise, MAC2STR(mac_addr));
 	} else {
-		DBGLOG(RSN, INFO, "keyIdx = %d pairwise = %d null mac\n", key_index, pairwise);
+		DBGLOG(RSN, INFO,
+			"keyIdx = %d pairwise = %d null mac\n",
+			key_index, pairwise);
 	}
 	DBGLOG(RSN, TRACE, "Cipher = %x\n", params->cipher);
 	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
@@ -741,7 +790,8 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 
 	kalMemZero(&rKey, sizeof(struct P2P_PARAM_KEY));
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &rKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &rKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 	rKey.u4KeyIndex = key_index;
@@ -784,7 +834,9 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		}
 	}
 
-	/* For BC addr case: ex: AP mode, driver_nl80211 will not have mac_addr */
+	/* For BC addr case: ex: AP mode,
+	 * driver_nl80211 will not have mac_addr
+	 */
 	if (pairwise) {
 		rKey.u4KeyIndex |= BIT(31);	/* Tx */
 		rKey.u4KeyIndex |= BIT(30);	/* Pairwise */
@@ -801,9 +853,14 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 	if (params->key)
 		kalMemCopy(rKey.aucKeyMaterial, params->key, params->key_len);
 	rKey.u4KeyLength = params->key_len;
-	rKey.u4Length = ((unsigned long)&(((struct P2P_PARAM_KEY *) 0)->aucKeyMaterial)) + rKey.u4KeyLength;
+	rKey.u4Length = ((unsigned long)
+		&(((struct P2P_PARAM_KEY *) 0)->aucKeyMaterial))
+		+ rKey.u4KeyLength;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, &rKey, rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo,
+		wlanoidSetAddKey,
+		&rKey, rKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
+
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		i4Rslt = 0;
 
@@ -811,11 +868,12 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 }
 
 int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
-			     struct net_device *ndev,
-			     u8 key_index,
-			     bool pairwise,
-			     const u8 *mac_addr, void *cookie, void (*callback) (void *cookie, struct key_params *)
-)
+		struct net_device *ndev,
+		u8 key_index,
+		bool pairwise,
+		const u8 *mac_addr, void *cookie,
+		void (*callback)
+			(void *cookie, struct key_params *))
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -830,7 +888,8 @@ int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
 }
 
 int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
-			     struct net_device *ndev, u8 key_index, bool pairwise, const u8 *mac_addr)
+		struct net_device *ndev,
+		u8 key_index, bool pairwise, const u8 *mac_addr)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_REMOVE_KEY rRemoveKey;
@@ -849,15 +908,19 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 #if DBG
 	if (mac_addr) {
 		DBGLOG(RSN, TRACE,
-		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n", key_index, pairwise, MAC2STR(mac_addr));
+		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n",
+		       key_index, pairwise, MAC2STR(mac_addr));
 	} else {
-		DBGLOG(RSN, TRACE, "keyIdx = %d pairwise = %d null mac\n", key_index, pairwise);
+		DBGLOG(RSN, TRACE,
+			"keyIdx = %d pairwise = %d null mac\n",
+			key_index, pairwise);
 	}
 #endif
 
 	kalMemZero(&rRemoveKey, sizeof(struct PARAM_REMOVE_KEY));
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &rRemoveKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &rRemoveKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 	if (mac_addr)
@@ -870,7 +933,9 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 	}
 
 	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidSetRemoveKey, &rRemoveKey, rRemoveKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
+			wlanoidSetRemoveKey,
+			&rRemoveKey, rRemoveKey.u4Length,
+			FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		i4Rslt = 0;
@@ -880,7 +945,8 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 
 int
 mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
-				 struct net_device *netdev, u8 key_index, bool unicast, bool multicast)
+		struct net_device *netdev,
+		u8 key_index, bool unicast, bool multicast)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_DEFAULT_KEY rDefaultKey;
@@ -898,12 +964,15 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, netdev, &ucRoleIdx) != 0)
 		return -EINVAL;
 #if DBG
-	DBGLOG(RSN, TRACE, "keyIdx = %d unicast = %d multicast = %d\n", key_index, unicast, multicast);
+	DBGLOG(RSN, TRACE,
+		"keyIdx = %d unicast = %d multicast = %d\n",
+		key_index, unicast, multicast);
 #endif
 
 
 	/* For wep case, this set the key for tx */
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &rDefaultKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &rDefaultKey.ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 
@@ -920,8 +989,10 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 		fgMgtDef = TRUE;
 
 	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidSetDefaultKey,
-			   &rDefaultKey, sizeof(struct PARAM_DEFAULT_KEY), FALSE, FALSE, TRUE, &u4BufLen);
+		wlanoidSetDefaultKey,
+		&rDefaultKey,
+		sizeof(struct PARAM_DEFAULT_KEY),
+		FALSE, FALSE, TRUE, &u4BufLen);
 
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
@@ -931,7 +1002,7 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 	return i4Rst;
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for setting the default mgmt key index
  *
@@ -940,8 +1011,9 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
  * @retval 0:       successful
  *         others:  failure
  */
-/*----------------------------------------------------------------------------*/
-int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy, struct net_device *dev, u8 key_index)
+/*---------------------------------------------------------------------------*/
+int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
+		struct net_device *dev, u8 key_index)
 {
 	DBGLOG(RSN, INFO, "mtk_p2p_cfg80211_set_mgmt_key, kid:%d\n", key_index);
 
@@ -961,7 +1033,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 	ASSERT(wiphy);
 
 	do {
-		if ((wiphy == NULL) || (ndev == NULL) || (sinfo == NULL) || (mac == NULL))
+		if ((wiphy == NULL) || (ndev == NULL)
+			|| (sinfo == NULL) || (mac == NULL))
 			break;
 
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_get_station\n");
@@ -977,7 +1050,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 
 		/* Get station information. */
 		/* 1. Inactive time? */
-		p2pFuncGetStationInfo(prGlueInfo->prAdapter, (uint8_t *)mac, &rP2pStaInfo);
+		p2pFuncGetStationInfo(prGlueInfo->prAdapter,
+			(uint8_t *)mac, &rP2pStaInfo);
 
 		/* Inactive time. */
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
@@ -994,7 +1068,9 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 	return i4RetRslt;
 }
 #else
-int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u8 *mac, struct station_info *sinfo)
+int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
+		struct net_device *ndev,
+		u8 *mac, struct station_info *sinfo)
 {
 	int32_t i4RetRslt = -EINVAL;
 	uint8_t ucRoleIdx = 0;
@@ -1005,7 +1081,8 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u
 	ASSERT(wiphy);
 
 	do {
-		if ((wiphy == NULL) || (ndev == NULL) || (sinfo == NULL) || (mac == NULL))
+		if ((wiphy == NULL) || (ndev == NULL)
+			|| (sinfo == NULL) || (mac == NULL))
 			break;
 
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_get_station\n");
@@ -1035,22 +1112,26 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev, u
 }
 #endif
 
-int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
+int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
+		struct cfg80211_scan_request *request)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
-	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo = (struct GL_P2P_DEV_INFO *) NULL;
-	struct MSG_P2P_SCAN_REQUEST *prMsgScanRequest = (struct MSG_P2P_SCAN_REQUEST *) NULL;
+	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
+	struct MSG_P2P_SCAN_REQUEST *prMsgScanRequest = (
+		struct MSG_P2P_SCAN_REQUEST *) NULL;
 	uint32_t u4MsgSize = 0, u4Idx = 0;
 	int32_t i4RetRslt = -EINVAL;
-	struct RF_CHANNEL_INFO *prRfChannelInfo = (struct RF_CHANNEL_INFO *) NULL;
+	struct RF_CHANNEL_INFO *prRfChannelInfo =
+		(struct RF_CHANNEL_INFO *) NULL;
 	struct P2P_SSID_STRUCT *prSsidStruct = (struct P2P_SSID_STRUCT *) NULL;
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_ssid *prSsid = NULL;
 	uint8_t ucBssIdx = 0;
 	u_int8_t fgIsFullChanScan = FALSE;
 
-	/* [---------Channel---------] [---------SSID---------][---------IE---------] */
+	/* [-----Channel-----] [-----SSID-----][-----IE-----] */
 
 	do {
 		if ((wiphy == NULL) || (request == NULL))
@@ -1072,8 +1153,11 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_scan.\n");
 
 		if (prP2pGlueDevInfo->prScanRequest != NULL) {
-			/* There have been a scan request on-going processing. */
-			DBGLOG(P2P, TRACE, "There have been a scan request on-going processing.\n");
+			/* There have been a scan request
+			 * on-going processing.
+			 */
+			DBGLOG(P2P, TRACE,
+				"There have been a scan request on-going processing.\n");
 			break;
 		}
 
@@ -1083,7 +1167,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
 			request->n_channels = MAXIMUM_OPERATION_CHANNEL_LIST;
 			fgIsFullChanScan = TRUE;
-			DBGLOG(P2P, TRACE, "Channel list exceed the maximun support.\n");
+			DBGLOG(P2P, TRACE,
+				"Channel list exceed the maximun support.\n");
 		}
 		/* TODO: */
 		/* Find a way to distinct DEV port scan & ROLE port scan.
@@ -1093,9 +1178,11 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 
 		u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) +
 		    (request->n_channels * sizeof(struct RF_CHANNEL_INFO)) +
-		    (request->n_ssids * sizeof(struct PARAM_SSID)) + request->ie_len;
+		    (request->n_ssids * sizeof(struct PARAM_SSID)) +
+		    request->ie_len;
 
-		prMsgScanRequest = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, u4MsgSize);
+		prMsgScanRequest = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, u4MsgSize);
 
 		if (prMsgScanRequest == NULL) {
 			ASSERT(FALSE);
@@ -1109,17 +1196,24 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		prMsgScanRequest->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 		prMsgScanRequest->ucBssIdx = ucBssIdx;
 
-		DBGLOG(P2P, INFO, "Requesting channel number:%d.\n", request->n_channels);
+		DBGLOG(P2P, INFO,
+			"Requesting channel number:%d.\n", request->n_channels);
 
 		for (u4Idx = 0; u4Idx < request->n_channels; u4Idx++) {
 			/* Translate Freq from MHz to channel number. */
-			prRfChannelInfo = &(prMsgScanRequest->arChannelListInfo[u4Idx]);
+			prRfChannelInfo =
+				&(prMsgScanRequest->arChannelListInfo[u4Idx]);
 			prChannel = request->channels[u4Idx];
 
-			prRfChannelInfo->ucChannelNum = nicFreq2ChannelNum(prChannel->center_freq * 1000);
+			prRfChannelInfo->ucChannelNum =
+				nicFreq2ChannelNum(
+					prChannel->center_freq * 1000);
+
 			DBGLOG(P2P, TRACE,
-			       "Scanning Channel:%d,  freq: %d\n", prRfChannelInfo->ucChannelNum,
+			       "Scanning Channel:%d,  freq: %d\n",
+			       prRfChannelInfo->ucChannelNum,
 			       prChannel->center_freq);
+
 			switch (prChannel->band) {
 			case KAL_BAND_2GHZ:
 				prRfChannelInfo->eBand = BAND_2G4;
@@ -1128,7 +1222,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 				prRfChannelInfo->eBand = BAND_5G;
 				break;
 			default:
-				DBGLOG(P2P, TRACE, "UNKNOWN Band info from supplicant\n");
+				DBGLOG(P2P, TRACE,
+					"UNKNOWN Band info from supplicant\n");
 				prRfChannelInfo->eBand = BAND_NULL;
 				break;
 			}
@@ -1138,8 +1233,10 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		}
 		prMsgScanRequest->u4NumChannel = request->n_channels;
 		if (fgIsFullChanScan) {
-			prMsgScanRequest->u4NumChannel = SCN_P2P_FULL_SCAN_PARAM;
-			DBGLOG(P2P, INFO, "request->n_channels = SCN_P2P_FULL_SCAN_PARAM\n");
+			prMsgScanRequest->u4NumChannel =
+				SCN_P2P_FULL_SCAN_PARAM;
+			DBGLOG(P2P, INFO,
+				"request->n_channels = SCN_P2P_FULL_SCAN_PARAM\n");
 		}
 		DBGLOG(P2P, TRACE, "Finish channel list.\n");
 
@@ -1147,13 +1244,18 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		prSsid = request->ssids;
 		prSsidStruct = (struct P2P_SSID_STRUCT *) prRfChannelInfo;
 		if (request->n_ssids) {
-			ASSERT((unsigned long) prSsidStruct == (unsigned long)&(prMsgScanRequest->arChannelListInfo[u4Idx]));
+			ASSERT((unsigned long) prSsidStruct
+				== (unsigned long)
+				&(prMsgScanRequest->arChannelListInfo[u4Idx]));
+
 			prMsgScanRequest->prSSID = prSsidStruct;
 		}
 
 		for (u4Idx = 0; u4Idx < request->n_ssids; u4Idx++) {
 			COPY_SSID(prSsidStruct->aucSsid,
-				  prSsidStruct->ucSsidLen, request->ssids->ssid, request->ssids->ssid_len);
+				  prSsidStruct->ucSsidLen,
+				  request->ssids->ssid,
+				  request->ssids->ssid_len);
 
 			prSsidStruct++;
 			prSsid++;
@@ -1166,7 +1268,8 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 		/* IE BUFFERS */
 		prMsgScanRequest->pucIEBuf = (uint8_t *) prSsidStruct;
 		if (request->ie_len) {
-			kalMemCopy(prMsgScanRequest->pucIEBuf, request->ie, request->ie_len);
+			kalMemCopy(prMsgScanRequest->pucIEBuf,
+				request->ie, request->ie_len);
 			prMsgScanRequest->u4IELen = request->ie_len;
 		} else {
 			prMsgScanRequest->u4IELen = 0;
@@ -1174,17 +1277,23 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgScanRequest, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgScanRequest,
+			MSG_SEND_METHOD_BUF);
 
 		/* Backup scan request structure */
-		/* The purpose of this backup is due to the kernel free the scan req */
-		/* when the wpa supplicant down the iface before down, and it will */
-		/* free the original scan request structure */
-		/* In this case, the scan resoure could be locked by kernel, and */
-		/* driver needs this work around to clear the state */
+		/* The purpose of this backup is due
+		 * to the kernel free the scan req
+		 * when the wpa supplicant down the iface before down,
+		 * and it will free the original scan request structure
+		 * In this case, the scan resoure could be locked by kernel,
+		 * and driver needs this work around to clear the state
+		 */
 #if 0
 		kalMemCopy(&(prP2pGlueDevInfo->rBackupScanRequest),
-			prP2pGlueDevInfo->prScanRequest, sizeof(struct cfg80211_scan_request));
+			prP2pGlueDevInfo->prScanRequest,
+			sizeof(struct cfg80211_scan_request));
 #endif
 		i4RetRslt = 0;
 	} while (FALSE);
@@ -1204,10 +1313,14 @@ void mtk_p2p_cfg80211_abort_scan(struct wiphy *wiphy, struct wireless_dev *wdev)
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 	rStatus = kalIoctl(prGlueInfo,
-					   wlanoidAbortP2pScan,
-					   &u4Value, sizeof(u4Value), FALSE, FALSE, TRUE, &u4SetInfoLen);
+		wlanoidAbortP2pScan,
+		&u4Value, sizeof(u4Value),
+		FALSE, FALSE, TRUE, &u4SetInfoLen);
+
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, ERROR, "mtk_p2p_cfg80211_abort_scan fail 0x%x\n", rStatus);
+		DBGLOG(REQ, ERROR,
+			"mtk_p2p_cfg80211_abort_scan fail 0x%x\n",
+			rStatus);
 }
 
 int mtk_p2p_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
@@ -1225,27 +1338,32 @@ int mtk_p2p_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
 
 		if (changed & WIPHY_PARAM_RETRY_SHORT) {
 			/* TODO: */
-			DBGLOG(P2P, TRACE, "The RETRY short param is changed.\n");
+			DBGLOG(P2P, TRACE,
+				"The RETRY short param is changed.\n");
 		}
 
 		if (changed & WIPHY_PARAM_RETRY_LONG) {
 			/* TODO: */
-			DBGLOG(P2P, TRACE, "The RETRY long param is changed.\n");
+			DBGLOG(P2P, TRACE,
+				"The RETRY long param is changed.\n");
 		}
 
 		if (changed & WIPHY_PARAM_FRAG_THRESHOLD) {
 			/* TODO: */
-			DBGLOG(P2P, TRACE, "The RETRY fragmentation threshold is changed.\n");
+			DBGLOG(P2P, TRACE,
+				"The RETRY fragmentation threshold is changed.\n");
 		}
 
 		if (changed & WIPHY_PARAM_RTS_THRESHOLD) {
 			/* TODO: */
-			DBGLOG(P2P, TRACE, "The RETRY RTS threshold is changed.\n");
+			DBGLOG(P2P, TRACE,
+				"The RETRY RTS threshold is changed.\n");
 		}
 
 		if (changed & WIPHY_PARAM_COVERAGE_CLASS) {
 			/* TODO: */
-			DBGLOG(P2P, TRACE, "The coverage class is changed???\n");
+			DBGLOG(P2P, TRACE,
+				"The coverage class is changed???\n");
 		}
 
 		i4Rslt = 0;
@@ -1254,7 +1372,9 @@ int mtk_p2p_cfg80211_set_wiphy_params(struct wiphy *wiphy, u32 changed)
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_set_wiphy_params */
 
-int mtk_p2p_cfg80211_join_ibss(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_ibss_params *params)
+int mtk_p2p_cfg80211_join_ibss(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_ibss_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -1283,7 +1403,8 @@ int mtk_p2p_cfg80211_leave_ibss(struct wiphy *wiphy, struct net_device *dev)
 }
 
 int mtk_p2p_cfg80211_set_txpower(struct wiphy *wiphy,
-				 struct wireless_dev *wdev, enum nl80211_tx_power_setting type, int mbm)
+		struct wireless_dev *wdev,
+		enum nl80211_tx_power_setting type, int mbm)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -1297,7 +1418,8 @@ int mtk_p2p_cfg80211_set_txpower(struct wiphy *wiphy,
 	return -EINVAL;
 }
 
-int mtk_p2p_cfg80211_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev, int *dbm)
+int mtk_p2p_cfg80211_get_txpower(struct wiphy *wiphy,
+		struct wireless_dev *wdev, int *dbm)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -1311,7 +1433,8 @@ int mtk_p2p_cfg80211_get_txpower(struct wiphy *wiphy, struct wireless_dev *wdev,
 	return -EINVAL;
 }
 
-int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev, bool enabled, int timeout)
+int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy,
+		struct net_device *ndev, bool enabled, int timeout)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	enum PARAM_POWER_MODE ePowerMode;
@@ -1330,28 +1453,35 @@ int mtk_p2p_cfg80211_set_power_mgmt(struct wiphy *wiphy, struct net_device *ndev
 
 	DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_set_power_mgmt ps=%d.\n", enabled);
 
-	if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &ucRoleIdx) != 0)
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+		ndev, &ucRoleIdx) != 0)
 		return -EINVAL;
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &rPowerMode.ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &rPowerMode.ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 	rPowerMode.ePowerMode = ePowerMode;
 
 	/* p2p_set_power_save */
 	kalIoctl(prGlueInfo,
-		 wlanoidSet802dot11PowerSaveProfile, &rPowerMode, sizeof(rPowerMode), FALSE, FALSE, TRUE, &u4Leng);
+		wlanoidSet802dot11PowerSaveProfile,
+		&rPowerMode, sizeof(rPowerMode),
+		FALSE, FALSE, TRUE, &u4Leng);
 
 	return 0;
 }
 
-/* &&&&&&&&&&&&&&&&&&&&&&&&&& Add for ICS Wi-Fi Direct Support. &&&&&&&&&&&&&&&&&&&&&&& */
-int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_ap_settings *settings)
+int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_ap_settings *settings)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) NULL;
-	struct MSG_P2P_START_AP *prP2pStartAPMsg = (struct MSG_P2P_START_AP *) NULL;
+	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
+		(struct MSG_P2P_BEACON_UPDATE *) NULL;
+	struct MSG_P2P_START_AP *prP2pStartAPMsg =
+		(struct MSG_P2P_START_AP *) NULL;
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct cfg80211_chan_def *chandef;
@@ -1377,43 +1507,55 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			break;
 
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
+			mtk_p2p_cfg80211func_channel_format_switch(chandef,
+				chandef->chan, &rRfChnlInfo);
 
-			/* Follow the channel info from wifi.cfg prior to hostapd.conf */
+			/* Follow the channel info from wifi.cfg
+			 * prior to hostapd.conf
+			 */
 			{
-				struct ADAPTER *prAdapter = (struct ADAPTER *) NULL;
-				struct WIFI_VAR *prWifiVar = (struct WIFI_VAR *)NULL;
+				struct ADAPTER *prAdapter =
+					(struct ADAPTER *) NULL;
+				struct WIFI_VAR *prWifiVar =
+					(struct WIFI_VAR *)NULL;
 
 				prAdapter = prGlueInfo->prAdapter;
 				prWifiVar = &prAdapter->rWifiVar;
 
 				if ((prWifiVar->ucApChannel != 0) &&
 					(prWifiVar->ucApChnlDefFromCfg != 0) &&
-					(prWifiVar->ucApChannel != rRfChnlInfo.ucChannelNum)) {
-					rRfChnlInfo.ucChannelNum = prWifiVar->ucApChannel;
+					(prWifiVar->ucApChannel !=
+					rRfChnlInfo.ucChannelNum)) {
+					rRfChnlInfo.ucChannelNum =
+						prWifiVar->ucApChannel;
 					rRfChnlInfo.eBand =
-						(rRfChnlInfo.ucChannelNum <= 14) ? BAND_2G4 : BAND_5G;
-					/* [TODO][20160829]If we will set SCO by nl80211_channel_type afterward,
-					* to check if we need to modify SCO by wifi.cfg here
-					*/
+						(rRfChnlInfo.ucChannelNum <= 14)
+						? BAND_2G4 : BAND_5G;
+					/* [TODO][20160829]If we will set SCO
+					 * by nl80211_channel_type afterward,
+					 * to check if we need to modify SCO
+					 * by wifi.cfg here
+					 */
 				}
 			}
 
-			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
+			p2pFuncSetChannel(prGlueInfo->prAdapter,
+				ucRoleIdx, &rRfChnlInfo);
 		} else
 			DBGLOG(P2P, INFO, "!!! no CH def!!!\n");
 
-		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) cnmMemAlloc(prGlueInfo->prAdapter,
-									    RAM_TYPE_MSG,
-									    (sizeof(struct MSG_P2P_BEACON_UPDATE)
-									     +
-									     settings->beacon.head_len +
-									     settings->beacon.tail_len +
-									     settings->beacon.assocresp_ies_len
+		prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+			    RAM_TYPE_MSG,
+			    (sizeof(struct MSG_P2P_BEACON_UPDATE)
+			     +
+			     settings->beacon.head_len +
+			     settings->beacon.tail_len +
+			     settings->beacon.assocresp_ies_len
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-										 + settings->beacon.proberesp_ies_len
+				 + settings->beacon.proberesp_ies_len
 #endif
-									     ));
+			     ));
 
 		if (prP2pBcnUpdateMsg == NULL) {
 			ASSERT(FALSE);
@@ -1426,14 +1568,16 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
+		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
-		}
 #endif
 		if (settings->beacon.head_len != 0) {
-			kalMemCopy(pucBuffer, settings->beacon.head, settings->beacon.head_len);
+			kalMemCopy(pucBuffer,
+				settings->beacon.head,
+				settings->beacon.head_len);
 
-			prP2pBcnUpdateMsg->u4BcnHdrLen = settings->beacon.head_len;
+			prP2pBcnUpdateMsg->u4BcnHdrLen =
+				settings->beacon.head_len;
 
 			prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
 
@@ -1448,7 +1592,9 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			uint8_t ucLen = settings->beacon.tail_len;
 
 			prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
-			kalMemCopy(pucBuffer, settings->beacon.tail, settings->beacon.tail_len);
+			kalMemCopy(pucBuffer,
+				settings->beacon.tail,
+				settings->beacon.tail_len);
 
 			prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
 
@@ -1459,30 +1605,42 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			prP2pBcnUpdateMsg->pucBcnBody = NULL;
 		}
 
-		if (settings->beacon.assocresp_ies_len != 0 && settings->beacon.assocresp_ies != NULL) {
+		if (settings->beacon.assocresp_ies_len != 0
+			&& settings->beacon.assocresp_ies != NULL) {
 			prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
-			kalMemCopy(pucBuffer, settings->beacon.assocresp_ies, settings->beacon.assocresp_ies_len);
-			prP2pBcnUpdateMsg->u4AssocRespLen = settings->beacon.assocresp_ies_len;
+			kalMemCopy(pucBuffer,
+				settings->beacon.assocresp_ies,
+				settings->beacon.assocresp_ies_len);
+			prP2pBcnUpdateMsg->u4AssocRespLen =
+				settings->beacon.assocresp_ies_len;
 		} else {
 			prP2pBcnUpdateMsg->u4AssocRespLen = 0;
 			prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 		}
 
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-		if (settings->beacon.proberesp_ies_len != 0 && settings->beacon.proberesp_ies != NULL) {
+		if (settings->beacon.proberesp_ies_len != 0
+			&& settings->beacon.proberesp_ies != NULL) {
 			prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
-			kalMemCopy(pucBuffer, settings->beacon.proberesp_ies, settings->beacon.proberesp_ies_len);
-			prP2pBcnUpdateMsg->u4ProbeRespLen = settings->beacon.proberesp_ies_len;
+			kalMemCopy(pucBuffer,
+				settings->beacon.proberesp_ies,
+				settings->beacon.proberesp_ies_len);
+			prP2pBcnUpdateMsg->u4ProbeRespLen =
+				settings->beacon.proberesp_ies_len;
 		} else {
 			prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
 			prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
 		}
 #endif
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pBcnUpdateMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pBcnUpdateMsg,
+			MSG_SEND_METHOD_BUF);
 
-		prP2pStartAPMsg = (struct MSG_P2P_START_AP *) cnmMemAlloc(prGlueInfo->prAdapter,
-								     RAM_TYPE_MSG, sizeof(struct MSG_P2P_START_AP));
+		prP2pStartAPMsg = (struct MSG_P2P_START_AP *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG, sizeof(struct MSG_P2P_START_AP));
 
 		if (prP2pStartAPMsg == NULL) {
 			ASSERT(FALSE);
@@ -1505,9 +1663,14 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 
 		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
-		COPY_SSID(prP2pStartAPMsg->aucSsid, prP2pStartAPMsg->u2SsidLen, settings->ssid, settings->ssid_len);
+		COPY_SSID(prP2pStartAPMsg->aucSsid,
+			prP2pStartAPMsg->u2SsidLen,
+			settings->ssid, settings->ssid_len);
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pStartAPMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pStartAPMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 
@@ -1516,23 +1679,23 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 	return i4Rslt;
 
 /* /////////////////////// */
-    /**
-	 * struct cfg80211_ap_settings - AP configuration
-	 *
-	 * Used to configure an AP interface.
-	 *
-	 * @beacon: beacon data
-	 * @beacon_interval: beacon interval
-	 * @dtim_period: DTIM period
-	 * @ssid: SSID to be used in the BSS (note: may be %NULL if not provided from
-	 *      user space)
-	 * @ssid_len: length of @ssid
-	 * @hidden_ssid: whether to hide the SSID in Beacon/Probe Response frames
-	 * @crypto: crypto settings
-	 * @privacy: the BSS uses privacy
-	 * @auth_type: Authentication type (algorithm)
-	 * @inactivity_timeout: time in seconds to determine station's inactivity.
-	 */
+/**
+ * struct cfg80211_ap_settings - AP configuration
+ *
+ * Used to configure an AP interface.
+ *
+ * @beacon: beacon data
+ * @beacon_interval: beacon interval
+ * @dtim_period: DTIM period
+ * @ssid: SSID to be used in the BSS (note: may be %NULL if not provided from
+ *      user space)
+ * @ssid_len: length of @ssid
+ * @hidden_ssid: whether to hide the SSID in Beacon/Probe Response frames
+ * @crypto: crypto settings
+ * @privacy: the BSS uses privacy
+ * @auth_type: Authentication type (algorithm)
+ * @inactivity_timeout: time in seconds to determine station's inactivity.
+ */
 /* struct cfg80211_ap_settings { */
 /* struct cfg80211_beacon_data beacon; */
 /*  */
@@ -1550,12 +1713,15 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 
-static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, struct net_device *dev,
-					struct cfg80211_chan_def *chandef, unsigned int cac_time_ms)
+static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_chan_def *chandef,
+		unsigned int cac_time_ms)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *) NULL;
+	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 
@@ -1571,36 +1737,47 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 			break;
 
 		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef = (struct cfg80211_chan_def *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
+				(struct cfg80211_chan_def *)
+					cnmMemAlloc(prGlueInfo->prAdapter,
+					RAM_TYPE_BUF,
+					sizeof(struct cfg80211_chan_def));
 
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan = (struct ieee80211_channel *)
-				cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
+				(struct ieee80211_channel *)
+					cnmMemAlloc(prGlueInfo->prAdapter,
+					RAM_TYPE_BUF,
+					sizeof(struct ieee80211_channel));
 		}
 
 		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->center_freq1 = chandef->center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->center_freq2 = chandef->center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width = chandef->width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan, chandef->chan,
-							sizeof(struct ieee80211_channel));
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq1 = chandef->center_freq1;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq2 = chandef->center_freq2;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->width = chandef->width;
+		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
+			chandef->chan, sizeof(struct ieee80211_channel));
 		prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
 
-
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
+			mtk_p2p_cfg80211func_channel_format_switch(chandef,
+				chandef->chan, &rRfChnlInfo);
 
-			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
+			p2pFuncSetChannel(prGlueInfo->prAdapter,
+				ucRoleIdx, &rRfChnlInfo);
 		}
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_start_radar_detection.(role %d)\n", ucRoleIdx);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_start_radar_detection.(role %d)\n",
+			ucRoleIdx);
 
 		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
-		prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *) cnmMemAlloc(prGlueInfo->prAdapter,
-								RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
+		prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
 
 		if (prP2pDfsCacMsg == NULL) {
 			ASSERT(FALSE);
@@ -1634,7 +1811,10 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 
 		prP2pDfsCacMsg->ucRoleIdx = ucRoleIdx;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pDfsCacMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pDfsCacMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 
@@ -1644,15 +1824,17 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy, stru
 }
 
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
-int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_device *dev,
-					struct cfg80211_chan_def *chandef, unsigned int cac_time_ms)
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_chan_def *chandef, unsigned int cac_time_ms)
 {
 	return mtk_p2p_cfg80211_start_radar_detection_impl(
 			wiphy, dev, chandef, cac_time_ms);
 }
 #else
-int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_device *dev,
-					struct cfg80211_chan_def *chandef)
+int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_chan_def *chandef)
 {
 	return mtk_p2p_cfg80211_start_radar_detection_impl(
 			wiphy, dev, chandef, IEEE80211_DFS_MIN_CAC_TIME_MS);
@@ -1660,12 +1842,16 @@ int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_devic
 #endif
 
 #if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
-int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
+int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_csa_settings *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) NULL;
-	struct MSG_P2P_SET_NEW_CHANNEL *prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
+	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
+		(struct MSG_P2P_BEACON_UPDATE *) NULL;
+	struct MSG_P2P_SET_NEW_CHANNEL *prP2pSetNewChannelMsg =
+		(struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
@@ -1687,29 +1873,39 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		netif_tx_start_all_queues(dev);
 
 		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef = (struct cfg80211_chan_def *)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
+				(struct cfg80211_chan_def *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_BUF, sizeof(struct cfg80211_chan_def));
 
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan = (struct ieee80211_channel *)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
+				(struct ieee80211_channel *)
 				cnmMemAlloc(prGlueInfo->prAdapter,
 				RAM_TYPE_BUF, sizeof(struct ieee80211_channel));
 		}
 		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->center_freq1 = params->chandef.center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->center_freq2 = params->chandef.center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->width = params->chandef.width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan, params->chandef.chan,
-							sizeof(struct ieee80211_channel));
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq1 = params->chandef.center_freq1;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->center_freq2 = params->chandef.center_freq2;
+		prGlueInfo->prP2PInfo[ucRoleIdx]
+			->chandef->width = params->chandef.width;
+		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
+			params->chandef.chan,
+			sizeof(struct ieee80211_channel));
 
 		if (params) {
-			mtk_p2p_cfg80211func_channel_format_switch(&params->chandef,
-								params->chandef.chan, &rRfChnlInfo);
+			mtk_p2p_cfg80211func_channel_format_switch(
+				&params->chandef,
+				params->chandef.chan, &rRfChnlInfo);
 
-			p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
+			p2pFuncSetChannel(prGlueInfo->prAdapter,
+				ucRoleIdx, &rRfChnlInfo);
 		}
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_channel_switch.(role %d)\n", ucRoleIdx);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_channel_switch.(role %d)\n",
+			ucRoleIdx);
 
 		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
@@ -1717,12 +1913,15 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
 		prGlueInfo->prAdapter->rWifiVar.ucNewChannelNumber =
-							nicFreq2ChannelNum(params->chandef.chan->center_freq * 1000);
-		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchCount = params->count;
+			nicFreq2ChannelNum(
+				params->chandef.chan->center_freq * 1000);
+		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchCount =
+			params->count;
 
 		/* Set new channel parameters */
-		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *) cnmMemAlloc(prGlueInfo->prAdapter,
-								RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
+		prP2pSetNewChannelMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
+			cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(*prP2pSetNewChannelMsg));
 
 		if (prP2pSetNewChannelMsg == NULL) {
 			ASSERT(FALSE);
@@ -1730,7 +1929,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 			break;
 		}
 
-		prP2pSetNewChannelMsg->rMsgHdr.eMsgId = MID_MNY_P2P_SET_NEW_CHANNEL;
+		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
+			MID_MNY_P2P_SET_NEW_CHANNEL;
 
 		switch (params->chandef.width) {
 		case NL80211_CHAN_WIDTH_20_NOHT:
@@ -1756,8 +1956,10 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 
-		for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+		for (ucBssIndex = 0;
+			ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(
+				prGlueInfo->prAdapter, ucBssIndex);
 
 			if (prBssInfo && prBssInfo->fgIsDfsActive) {
 				prP2pSetNewChannelMsg->ucBssIndex = ucBssIndex;
@@ -1765,13 +1967,20 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 			}
 		}
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pSetNewChannelMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pSetNewChannelMsg,
+			MSG_SEND_METHOD_BUF);
 
 		/* Update beacon */
-		if ((params->beacon_csa.head_len != 0) || (params->beacon_csa.tail_len != 0)) {
-			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) cnmMemAlloc(prGlueInfo->prAdapter,
-							RAM_TYPE_MSG, (sizeof(struct MSG_P2P_BEACON_UPDATE)
-							+ params->beacon_csa.head_len + params->beacon_csa.tail_len));
+		if ((params->beacon_csa.head_len != 0)
+			|| (params->beacon_csa.tail_len != 0)) {
+			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+				cnmMemAlloc(prGlueInfo->prAdapter,
+					RAM_TYPE_MSG,
+					(sizeof(struct MSG_P2P_BEACON_UPDATE)
+					+ params->beacon_csa.head_len
+					+ params->beacon_csa.tail_len));
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
@@ -1780,17 +1989,24 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 			}
 
 			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
-			prP2pBcnUpdateMsg->rMsgHdr.eMsgId = MID_MNY_P2P_BEACON_UPDATE;
+			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
+				MID_MNY_P2P_BEACON_UPDATE;
 			pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 
 			if (params->beacon_csa.head_len != 0) {
-				kalMemCopy(pucBuffer, params->beacon_csa.head, params->beacon_csa.head_len);
+				kalMemCopy(pucBuffer,
+					params->beacon_csa.head,
+					params->beacon_csa.head_len);
 
-				prP2pBcnUpdateMsg->u4BcnHdrLen = params->beacon_csa.head_len;
+				prP2pBcnUpdateMsg->u4BcnHdrLen =
+					params->beacon_csa.head_len;
 
 				prP2pBcnUpdateMsg->pucBcnHdr = pucBuffer;
 
-				pucBuffer = (uint8_t *) ((unsigned long) pucBuffer + (unsigned long) params->beacon_csa.head_len);
+				pucBuffer = (uint8_t *) ((unsigned long)
+					pucBuffer
+					+ (unsigned long)
+					params->beacon_csa.head_len);
 			} else {
 				prP2pBcnUpdateMsg->u4BcnHdrLen = 0;
 
@@ -1801,7 +2017,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 				uint8_t ucLen = params->beacon_csa.tail_len;
 
 				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
-				kalMemCopy(pucBuffer, params->beacon_csa.tail, params->beacon_csa.tail_len);
+				kalMemCopy(pucBuffer,
+					params->beacon_csa.tail,
+					params->beacon_csa.tail_len);
 
 				prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
 			} else {
@@ -1812,7 +2030,9 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
 			mboxSendMsg(prGlueInfo->prAdapter,
-					MBOX_ID_0, (struct MSG_HDR *) prP2pBcnUpdateMsg, MSG_SEND_METHOD_BUF);
+				MBOX_ID_0,
+				(struct MSG_HDR *) prP2pBcnUpdateMsg,
+				MSG_SEND_METHOD_BUF);
 
 			i4Rslt = 0; /* Return Success */
 		}
@@ -1840,11 +2060,13 @@ struct cfg80211_beacon_data {
 };
 #endif
 
-int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_beacon_data *info)
+int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
+		struct net_device *dev, struct cfg80211_beacon_data *info)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *) NULL;
+	struct MSG_P2P_BEACON_UPDATE *prP2pBcnUpdateMsg =
+		(struct MSG_P2P_BEACON_UPDATE *) NULL;
 	uint8_t *pucBuffer = (uint8_t *) NULL;
 	uint8_t ucRoleIdx = 0;
 
@@ -1860,15 +2082,17 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 			break;
 
 		if ((info->head_len != 0) || (info->tail_len != 0)) {
-			prP2pBcnUpdateMsg =
-			    (struct MSG_P2P_BEACON_UPDATE *) cnmMemAlloc(prGlueInfo->prAdapter,
-								    RAM_TYPE_MSG, (sizeof(struct MSG_P2P_BEACON_UPDATE)
-										   + info->head_len + info->tail_len
-										   + info->assocresp_ies_len
+			prP2pBcnUpdateMsg = (struct MSG_P2P_BEACON_UPDATE *)
+			    cnmMemAlloc(prGlueInfo->prAdapter,
+					RAM_TYPE_MSG,
+					(sizeof(struct MSG_P2P_BEACON_UPDATE)
+					+ info->head_len
+					+ info->tail_len
+					+ info->assocresp_ies_len
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-										   + info->proberesp_ies_len
+					+ info->proberesp_ies_len
 #endif
-											));
+					));
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
@@ -1877,11 +2101,14 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 			}
 
 			prP2pBcnUpdateMsg->ucRoleIndex = ucRoleIdx;
-			prP2pBcnUpdateMsg->rMsgHdr.eMsgId = MID_MNY_P2P_BEACON_UPDATE;
+			prP2pBcnUpdateMsg->rMsgHdr.eMsgId =
+				MID_MNY_P2P_BEACON_UPDATE;
 			pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 
 			if (info->head_len != 0) {
-				kalMemCopy(pucBuffer, info->head, info->head_len);
+				kalMemCopy(pucBuffer,
+					info->head,
+					info->head_len);
 
 				prP2pBcnUpdateMsg->u4BcnHdrLen = info->head_len;
 
@@ -1898,7 +2125,9 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 				uint8_t ucLen = info->tail_len;
 
 				prP2pBcnUpdateMsg->pucBcnBody = pucBuffer;
-				kalMemCopy(pucBuffer, info->tail, info->tail_len);
+				kalMemCopy(pucBuffer,
+					info->tail,
+					info->tail_len);
 
 				prP2pBcnUpdateMsg->u4BcnBodyLen = ucLen;
 
@@ -1908,21 +2137,30 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 				prP2pBcnUpdateMsg->pucBcnBody = NULL;
 			}
 
-			if (info->assocresp_ies_len != 0 && info->assocresp_ies != NULL) {
+			if (info->assocresp_ies_len != 0
+				&& info->assocresp_ies != NULL) {
 
 				prP2pBcnUpdateMsg->pucAssocRespIE = pucBuffer;
-				kalMemCopy(pucBuffer, info->assocresp_ies, info->assocresp_ies_len);
-				prP2pBcnUpdateMsg->u4AssocRespLen = info->assocresp_ies_len;
+				kalMemCopy(pucBuffer,
+					info->assocresp_ies,
+					info->assocresp_ies_len);
+				prP2pBcnUpdateMsg->u4AssocRespLen =
+					info->assocresp_ies_len;
 			} else {
 				prP2pBcnUpdateMsg->u4AssocRespLen = 0;
 				prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 			}
 
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-			if (info->proberesp_ies_len != 0 && info->proberesp_ies != NULL) {
+			if (info->proberesp_ies_len != 0
+				&& info->proberesp_ies != NULL) {
+
 				prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
-				kalMemCopy(pucBuffer, info->proberesp_ies, info->proberesp_ies_len);
-				prP2pBcnUpdateMsg->u4ProbeRespLen = info->proberesp_ies_len;
+				kalMemCopy(pucBuffer,
+					info->proberesp_ies,
+					info->proberesp_ies_len);
+				prP2pBcnUpdateMsg->u4ProbeRespLen =
+					info->proberesp_ies_len;
 			} else {
 				prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
 				prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
@@ -1932,7 +2170,9 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
 			mboxSendMsg(prGlueInfo->prAdapter,
-				    MBOX_ID_0, (struct MSG_HDR *) prP2pBcnUpdateMsg, MSG_SEND_METHOD_BUF);
+				MBOX_ID_0,
+				(struct MSG_HDR *) prP2pBcnUpdateMsg,
+				MSG_SEND_METHOD_BUF);
 
 			i4Rslt = 0; /* Return Success */
 		}
@@ -1984,7 +2224,8 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode = (struct MSG_P2P_SWITCH_OP_MODE *) NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prP2pSwitchMode =
+		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
 	uint8_t ucRoleIdx = 0;
 
 	do {
@@ -2004,7 +2245,8 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 		/* Switch OP MOde. */
-		prP2pSwitchMode = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+		prP2pSwitchMode = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_SWITCH_OP_MODE));
 
 		if (prP2pSwitchMode == NULL) {
 			ASSERT(FALSE);
@@ -2015,7 +2257,10 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		prP2pSwitchMode->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_AP;
 		prP2pSwitchMode->ucRoleIdx = ucRoleIdx;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pSwitchMode, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prP2pSwitchMode,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2024,7 +2269,9 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 }				/* mtk_p2p_cfg80211_stop_ap */
 
 /* TODO: */
-int mtk_p2p_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_deauth_request *req)
+int mtk_p2p_cfg80211_deauth(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_deauth_request *req)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 
@@ -2039,7 +2286,9 @@ int mtk_p2p_cfg80211_deauth(struct wiphy *wiphy, struct net_device *dev, struct 
 }				/* mtk_p2p_cfg80211_deauth */
 
 /* TODO: */
-int mtk_p2p_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_disassoc_request *req)
+int mtk_p2p_cfg80211_disassoc(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct cfg80211_disassoc_request *req)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 
@@ -2055,13 +2304,16 @@ int mtk_p2p_cfg80211_disassoc(struct wiphy *wiphy, struct net_device *dev, struc
 }				/* mtk_p2p_cfg80211_disassoc */
 
 int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
-				       struct wireless_dev *wdev,
-				       struct ieee80211_channel *chan, unsigned int duration, u64 *cookie)
+		struct wireless_dev *wdev,
+		struct ieee80211_channel *chan,
+		unsigned int duration, u64 *cookie)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo = (struct GL_P2P_DEV_INFO *) NULL;
-	struct MSG_P2P_CHNL_REQUEST *prMsgChnlReq = (struct MSG_P2P_CHNL_REQUEST *) NULL;
+	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
+	struct MSG_P2P_CHNL_REQUEST *prMsgChnlReq =
+		(struct MSG_P2P_CHNL_REQUEST *) NULL;
 
 	DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_remain_on_channel\n");
 
@@ -2078,7 +2330,8 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 
 		*cookie = prGlueP2pDevInfo->u8Cookie++;
 
-		prMsgChnlReq = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_REQUEST));
+		prMsgChnlReq = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_REQUEST));
 
 		if (prMsgChnlReq == NULL) {
 			ASSERT(FALSE);
@@ -2086,7 +2339,9 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, INFO, "Remain on channel, cookie: 0x%llx\n", *cookie);
+		DBGLOG(P2P, INFO,
+			"Remain on channel, cookie: 0x%llx\n",
+			*cookie);
 
 		prMsgChnlReq->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_REQ;
 		prMsgChnlReq->u8Cookie = *cookie;
@@ -2094,10 +2349,14 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		prMsgChnlReq->eChnlReqType = CH_REQ_TYPE_P2P_LISTEN;
 
 		mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
-							   &prMsgChnlReq->rChannelInfo);
-		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgChnlReq->eChnlSco);
+			&prMsgChnlReq->rChannelInfo);
+		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT,
+			&prMsgChnlReq->eChnlSco);
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgChnlReq, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgChnlReq,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2107,12 +2366,14 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 
 /* mtk_p2p_cfg80211_remain_on_channel */
 
-int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev, u64 cookie)
+int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
+		struct wireless_dev *wdev, u64 cookie)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
-	struct MSG_P2P_CHNL_ABORT *prMsgChnlAbort = (struct MSG_P2P_CHNL_ABORT *) NULL;
+	struct MSG_P2P_CHNL_ABORT *prMsgChnlAbort =
+		(struct MSG_P2P_CHNL_ABORT *) NULL;
 
 	do {
 		if ((wiphy == NULL) /* || (dev == NULL) */)
@@ -2122,7 +2383,8 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wirele
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
 
-		prMsgChnlAbort = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_ABORT));
+		prMsgChnlAbort = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_CHNL_ABORT));
 
 		if (prMsgChnlAbort == NULL) {
 			ASSERT(FALSE);
@@ -2130,12 +2392,16 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wirele
 			break;
 		}
 
-		DBGLOG(P2P, INFO, "Cancel remain on channel, cookie: 0x%llx\n", cookie);
+		DBGLOG(P2P, INFO,
+			"Cancel remain on channel, cookie: 0x%llx\n", cookie);
 
 		prMsgChnlAbort->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_ABORT;
 		prMsgChnlAbort->u8Cookie = cookie;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgChnlAbort, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgChnlAbort,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2144,14 +2410,15 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy, struct wirele
 }				/* mtk_p2p_cfg80211_cancel_remain_on_channel */
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
-				struct wireless_dev *wdev,
-				struct cfg80211_mgmt_tx_params *params,
-				u64 *cookie)
+			struct wireless_dev *wdev,
+			struct cfg80211_mgmt_tx_params *params,
+			u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq = (struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
+	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq =
+		(struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -2159,7 +2426,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	struct net_device *dev = NULL;
 
 	do {
-		if ((wiphy == NULL) || (wdev == NULL) || (params == 0) || (cookie == NULL))
+		if ((wiphy == NULL) || (wdev == NULL)
+			|| (params == 0) || (cookie == NULL))
 			break;
 
 		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_mgmt_tx\n");
@@ -2178,7 +2446,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		} else {
 			ASSERT(ucRoleIdx < KAL_P2P_NUM);
 			/* Role Interface. */
-			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+				ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
 				/* Can't find BSS index. */
 				break;
 			}
@@ -2187,7 +2456,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		*cookie = prGlueInfo->u8Cookie++;
 
 		/* Channel & Channel Type & Wait time are ignored. */
-		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
+		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
 
 		if (prMsgTxReq == NULL) {
 			ASSERT(FALSE);
@@ -2199,9 +2469,12 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE, "   Off channel TRUE\n");
 			prMsgTxReq->fgIsOffChannel = TRUE;
 
-			mtk_p2p_cfg80211func_channel_format_switch(NULL, params->chan,
-								   &prMsgTxReq->rChannelInfo);
-			mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
+			mtk_p2p_cfg80211func_channel_format_switch(NULL,
+				params->chan,
+				&prMsgTxReq->rChannelInfo);
+			mtk_p2p_cfg80211func_channel_sco_switch(
+				NL80211_CHAN_NO_HT,
+				&prMsgTxReq->eChnlExt);
 		} else {
 			prMsgTxReq->fgIsOffChannel = FALSE;
 		}
@@ -2217,7 +2490,9 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			prMsgTxReq->fgIsWaitRsp = TRUE;
 		prMgmtFrame =
 		    cnmMgtPktAlloc(prGlueInfo->prAdapter,
-				(int32_t) (params->len + sizeof(uint64_t) + MAC_TX_RESERVED_FIELD));
+				(int32_t)
+				(params->len + sizeof(uint64_t)
+				+ MAC_TX_RESERVED_FIELD));
 		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
 		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
 			/* ASSERT(FALSE); */
@@ -2229,9 +2504,16 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_P2P_MGMT_TX;
 		prMsgTxReq->ucBssIdx = ucBssIdx;
 
-		pucFrameBuf = (uint8_t *) ((unsigned long) prMgmtFrame->prPacket + MAC_TX_RESERVED_FIELD);
+		pucFrameBuf =
+			(uint8_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ MAC_TX_RESERVED_FIELD);
 
-		pu8GlCookie = (uint64_t *) ((unsigned long) prMgmtFrame->prPacket + (unsigned long)params->len + MAC_TX_RESERVED_FIELD);
+		pu8GlCookie =
+			(uint64_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ (unsigned long)params->len
+			+ MAC_TX_RESERVED_FIELD);
 
 		kalMemCopy(pucFrameBuf, params->buf, params->len);
 
@@ -2239,14 +2521,18 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 
 		prMgmtFrame->u2FrameLength = params->len;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgTxReq, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgTxReq,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
 
 	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
 		if (prMsgTxReq->prMgmtMsduInfo != NULL)
-			cnmMgtPktFree(prGlueInfo->prAdapter, prMsgTxReq->prMgmtMsduInfo);
+			cnmMgtPktFree(prGlueInfo->prAdapter,
+				prMsgTxReq->prMgmtMsduInfo);
 
 		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
 	}
@@ -2261,9 +2547,11 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			     bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo = (struct GL_P2P_DEV_INFO *) NULL;
+	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq = (struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
+	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq =
+		(struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -2290,7 +2578,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		} else {
 			ASSERT(ucRoleIdx < KAL_P2P_NUM);
 			/* Role Interface. */
-			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) < 0) {
+			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+				ucRoleIdx, &ucBssIdx) < 0) {
 				/* Can't find BSS index. */
 				break;
 			}
@@ -2299,7 +2588,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		*cookie = prGlueP2pDevInfo->u8Cookie++;
 
 		/* Channel & Channel Type & Wait time are ignored. */
-		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
+		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
 
 		if (prMsgTxReq == NULL) {
 			ASSERT(FALSE);
@@ -2312,8 +2602,9 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			prMsgTxReq->fgIsOffChannel = TRUE;
 
 			mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
-								   &prMsgTxReq->rChannelInfo);
-			mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
+				&prMsgTxReq->rChannelInfo);
+			mtk_p2p_cfg80211func_channel_sco_switch(
+				NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
 		} else {
 			prMsgTxReq->fgIsOffChannel = FALSE;
 		}
@@ -2327,8 +2618,13 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			prMsgTxReq->fgIsWaitRsp = FALSE;
 		else
 			prMsgTxReq->fgIsWaitRsp = TRUE;
+
 		prMgmtFrame =
-		    cnmMgtPktAlloc(prGlueInfo->prAdapter, (uint32_t) (len + sizeof(uint64_t) + MAC_TX_RESERVED_FIELD));
+		    cnmMgtPktAlloc(prGlueInfo->prAdapter,
+		    (uint32_t)
+		    (len + sizeof(uint64_t)
+		    + MAC_TX_RESERVED_FIELD));
+
 		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
 		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
 			/* ASSERT(FALSE); */
@@ -2340,25 +2636,38 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_P2P_MGMT_TX;
 		prMsgTxReq->ucBssIdx = ucBssIdx;
 
-		pucFrameBuf = (uint8_t *) ((unsigned long) prMgmtFrame->prPacket + MAC_TX_RESERVED_FIELD);
+		pucFrameBuf =
+			(uint8_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ MAC_TX_RESERVED_FIELD);
 
-		pu8GlCookie = (uint64_t *) ((unsigned long) prMgmtFrame->prPacket + (unsigned long) len + MAC_TX_RESERVED_FIELD);
+		pu8GlCookie =
+			(uint64_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ (unsigned long) len
+			+ MAC_TX_RESERVED_FIELD);
 
 		kalMemCopy(pucFrameBuf, buf, len);
 
 		*pu8GlCookie = *cookie;
-		DBGLOG(P2P, INFO, "cfg80211: Tx frame with cookie: 0x%llx\n", *cookie);
+		DBGLOG(P2P, INFO,
+			"cfg80211: Tx frame with cookie: 0x%llx\n",
+			*cookie);
 
 		prMgmtFrame->u2FrameLength = len;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgTxReq, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgTxReq,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
 
 	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
 		if (prMsgTxReq->prMgmtMsduInfo != NULL)
-			cnmMgtPktFree(prGlueInfo->prAdapter, prMsgTxReq->prMgmtMsduInfo);
+			cnmMgtPktFree(prGlueInfo->prAdapter,
+				prMsgTxReq->prMgmtMsduInfo);
 
 		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
 	}
@@ -2367,7 +2676,8 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 }				/* mtk_p2p_cfg80211_mgmt_tx */
 #endif
 
-int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy, struct wireless_dev *wdev, u64 cookie)
+int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
+		struct wireless_dev *wdev, u64 cookie)
 {
 	int32_t i4Rslt = -EINVAL;
 
@@ -2375,7 +2685,9 @@ int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy, struct wireless_de
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_mgmt_tx_cancel_wait */
 
-int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, struct bss_parameters *params)
+int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct bss_parameters *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
@@ -2419,7 +2731,8 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, str
 	/* not implemented yet */
 	p2pFuncChangeBssParam(prGlueInfo->prAdapter,
 			      prBssInfo->fgIsProtection,
-			      prBssInfo->fgIsShortPreambleAllowed, prBssInfo->fgUseShortSlotTime,
+			      prBssInfo->fgIsShortPreambleAllowed,
+			      prBssInfo->fgUseShortSlotTime,
 			      /* Basic rates */
 			      /* basic rates len */
 			      /* ap isolate */
@@ -2435,12 +2748,15 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, str
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 static const u8 bcast_addr[ETH_ALEN] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
-int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, struct station_del_parameters *params)
+int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
+		struct net_device *dev,
+		struct station_del_parameters *params)
 {
 	const u8 *mac = params->mac ? params->mac : bcast_addr;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *) NULL;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBcMac[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
 
@@ -2451,19 +2767,22 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, st
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ". reason: %d\n", mac, params->reason_code);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_del_station " MACSTR ". reason: %d\n",
+			mac, params->reason_code);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
-		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
+		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
+		 * kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
 		 * VIR_MEM_TYPE);
 		 */
 
-		prDisconnectMsg =
-		    (struct MSG_P2P_CONNECTION_ABORT *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							       sizeof(struct MSG_P2P_CONNECTION_ABORT));
+		prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
+		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
 			ASSERT(FALSE);
@@ -2478,7 +2797,10 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, st
 		prDisconnectMsg->fgSendDeauth = TRUE;
 
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prDisconnectMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prDisconnectMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2487,11 +2809,13 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, st
 
 }				/* mtk_p2p_cfg80211_del_station */
 #else
-int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, const u8 *mac)
+int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
+		struct net_device *dev, const u8 *mac)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *) NULL;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBcMac[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
 
@@ -2502,19 +2826,21 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, co
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
-		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
+		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
+		 * kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
 		 * VIR_MEM_TYPE);
 		 */
 
-		prDisconnectMsg =
-		    (struct MSG_P2P_CONNECTION_ABORT *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							       sizeof(struct MSG_P2P_CONNECTION_ABORT));
+		prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
+			cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
 			ASSERT(FALSE);
@@ -2529,7 +2855,10 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, co
 		prDisconnectMsg->fgSendDeauth = TRUE;
 
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prDisconnectMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prDisconnectMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2539,11 +2868,13 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, co
 }				/* mtk_p2p_cfg80211_del_station */
 #endif
 #else
-int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, u8 *mac)
+int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
+		struct net_device *dev, u8 *mac)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *) NULL;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBcMac[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
 
@@ -2554,19 +2885,22 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, u8
 		if (mac == NULL)
 			mac = aucBcMac;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_del_station " MACSTR ".\n", mac);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
-		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
+		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
+		 * kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
 		 * VIR_MEM_TYPE);
 		 */
 
 		prDisconnectMsg =
-		    (struct MSG_P2P_CONNECTION_ABORT *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							       sizeof(struct MSG_P2P_CONNECTION_ABORT));
+		    (struct MSG_P2P_CONNECTION_ABORT *)
+		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnectMsg == NULL) {
 			ASSERT(FALSE);
@@ -2581,7 +2915,10 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, u8
 		prDisconnectMsg->fgSendDeauth = TRUE;
 
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prDisconnectMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prDisconnectMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2591,11 +2928,13 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy, struct net_device *dev, u8
 }				/* mtk_p2p_cfg80211_del_station */
 #endif
 
-int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_connect_params *sme)
+int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
+		struct net_device *dev, struct cfg80211_connect_params *sme)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct MSG_P2P_CONNECTION_REQUEST *prConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) NULL;
+	struct MSG_P2P_CONNECTION_REQUEST *prConnReqMsg =
+		(struct MSG_P2P_CONNECTION_REQUEST *) NULL;
 	uint8_t ucRoleIdx = 0;
 	const u8 *bssid = NULL;
 	struct ieee80211_channel *channel = NULL;
@@ -2623,7 +2962,8 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 			break;
 		}
 
-		DBGLOG(P2P, INFO, "bssid: " MACSTR ", band: %d, freq: %d.\n",
+		DBGLOG(P2P, INFO,
+			"bssid: " MACSTR ", band: %d, freq: %d.\n",
 			MAC2STR(bssid), channel->band, channel->center_freq);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
@@ -2632,9 +2972,11 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 			break;
 
 		prConnReqMsg =
-		    (struct MSG_P2P_CONNECTION_REQUEST *) cnmMemAlloc(prGlueInfo->prAdapter,
-								 RAM_TYPE_MSG,
-								 (sizeof(struct MSG_P2P_CONNECTION_REQUEST) + sme->ie_len));
+		    (struct MSG_P2P_CONNECTION_REQUEST *)
+		    cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				(sizeof(struct MSG_P2P_CONNECTION_REQUEST)
+				+ sme->ie_len));
 
 		if (prConnReqMsg == NULL) {
 			ASSERT(FALSE);
@@ -2645,12 +2987,16 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 		prConnReqMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_REQ;
 		prConnReqMsg->ucRoleIdx = ucRoleIdx;
 
-		COPY_SSID(prConnReqMsg->rSsid.aucSsid, prConnReqMsg->rSsid.ucSsidLen, sme->ssid, sme->ssid_len);
+		COPY_SSID(prConnReqMsg->rSsid.aucSsid,
+			prConnReqMsg->rSsid.ucSsidLen,
+			sme->ssid, sme->ssid_len);
 
 		COPY_MAC_ADDR(prConnReqMsg->aucBssid, bssid);
 		COPY_MAC_ADDR(prConnReqMsg->aucSrcMacAddr, dev->dev_addr);
 
-		DBGLOG(P2P, TRACE, "Assoc Req IE Buffer Length:%zu\n", sme->ie_len);
+		DBGLOG(P2P, TRACE,
+			"Assoc Req IE Buffer Length:%zu\n", sme->ie_len);
+
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
@@ -2660,27 +3006,36 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 			switch (sme->crypto.ciphers_pairwise[0]) {
 			case WLAN_CIPHER_SUITE_WEP40:
 			case WLAN_CIPHER_SUITE_WEP104:
-				kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_WEP40, ucRoleIdx);
+				kalP2PSetCipher(prGlueInfo,
+					IW_AUTH_CIPHER_WEP40, ucRoleIdx);
 				break;
 			case WLAN_CIPHER_SUITE_TKIP:
-				kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_TKIP, ucRoleIdx);
+				kalP2PSetCipher(prGlueInfo,
+					IW_AUTH_CIPHER_TKIP, ucRoleIdx);
 				break;
 			case WLAN_CIPHER_SUITE_CCMP:
 			case WLAN_CIPHER_SUITE_AES_CMAC:
-				kalP2PSetCipher(prGlueInfo, IW_AUTH_CIPHER_CCMP, ucRoleIdx);
+				kalP2PSetCipher(prGlueInfo,
+					IW_AUTH_CIPHER_CCMP, ucRoleIdx);
 				break;
 			default:
 				cnmMemFree(prGlueInfo->prAdapter, prConnReqMsg);
-				DBGLOG(REQ, WARN, "invalid cipher pairwise (%d)\n", sme->crypto.ciphers_pairwise[0]);
+				DBGLOG(REQ, WARN,
+					"invalid cipher pairwise (%d)\n",
+					sme->crypto.ciphers_pairwise[0]);
 				return -EINVAL;
 			}
 		}
 
 		mtk_p2p_cfg80211func_channel_format_switch(NULL, channel,
-						&prConnReqMsg->rChannelInfo);
-		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
+			&prConnReqMsg->rChannelInfo);
+		mtk_p2p_cfg80211func_channel_sco_switch(
+			NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prConnReqMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prConnReqMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2688,11 +3043,13 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy, struct net_device *dev, struct
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_connect */
 
-int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *dev, u16 reason_code)
+int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
+		struct net_device *dev, u16 reason_code)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct MSG_P2P_CONNECTION_ABORT *prDisconnMsg = (struct MSG_P2P_CONNECTION_ABORT *) NULL;
+	struct MSG_P2P_CONNECTION_ABORT *prDisconnMsg =
+		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBCAddr[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
 
@@ -2700,16 +3057,21 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *dev, u16
 		if ((wiphy == NULL) || (dev == NULL))
 			break;
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_disconnect reason: %d.\n", reason_code);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_disconnect reason: %d.\n",
+			reason_code);
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
-/* prDisconnMsg = (P_MSG_P2P_CONNECTION_ABORT_T)kalMemAlloc(sizeof(P_MSG_P2P_CONNECTION_ABORT_T), VIR_MEM_TYPE); */
+/* prDisconnMsg = (P_MSG_P2P_CONNECTION_ABORT_T)
+ * MemAlloc(sizeof(P_MSG_P2P_CONNECTION_ABORT_T), VIR_MEM_TYPE);
+ */
 		prDisconnMsg =
-		    (struct MSG_P2P_CONNECTION_ABORT *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							       sizeof(struct MSG_P2P_CONNECTION_ABORT));
+		    (struct MSG_P2P_CONNECTION_ABORT *)
+		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
 		if (prDisconnMsg == NULL) {
 			ASSERT(FALSE);
@@ -2723,7 +3085,10 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *dev, u16
 		prDisconnMsg->fgSendDeauth = TRUE;
 		COPY_MAC_ADDR(prDisconnMsg->aucTargetID, aucBCAddr);
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prDisconnMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prDisconnMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2733,12 +3098,15 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy, struct net_device *dev, u16
 
 int
 mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
-			      IN struct net_device *ndev,
-			      IN enum nl80211_iftype type, IN u32 *flags, IN struct vif_params *params)
+		IN struct net_device *ndev,
+		IN enum nl80211_iftype type,
+		IN u32 *flags,
+		IN struct vif_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg =
+		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
 	uint8_t ucRoleIdx = 0;
 
 	do {
@@ -2747,7 +3115,8 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_change_iface, type: %d\n", type);
+		DBGLOG(P2P, INFO,
+			"mtk_p2p_cfg80211_change_iface, type: %d\n", type);
 
 		if (ndev->ieee80211_ptr)
 			ndev->ieee80211_ptr->iftype = type;
@@ -2755,13 +3124,15 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &ucRoleIdx) != 0) {
-			DBGLOG(P2P, TRACE, "Device Interface no need to change interface type.\n");
+			DBGLOG(P2P, TRACE,
+				"Device Interface no need to change interface type.\n");
 			return 0;
 		}
 		/* Switch OP MOde. */
 		prSwitchModeMsg =
-		    (struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-							     sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+		    (struct MSG_P2P_SWITCH_OP_MODE *)
+		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_SWITCH_OP_MODE));
 
 		if (prSwitchModeMsg == NULL) {
 			ASSERT(FALSE);
@@ -2788,7 +3159,8 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			/* This case need to fall through */
 		case NL80211_IFTYPE_P2P_GO:
 			if (type == NL80211_IFTYPE_P2P_GO)
-				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+				DBGLOG(P2P, TRACE,
+					"NL80211_IFTYPE_P2P_GO not AP.\n");
 			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 			break;
@@ -2799,7 +3171,10 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			break;
 		}
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prSwitchModeMsg, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prSwitchModeMsg,
+			MSG_SEND_METHOD_BUF);
 
 		i4Rslt = 0;
 
@@ -2809,7 +3184,8 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 
 }				/* mtk_p2p_cfg80211_change_iface */
 
-int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy, struct cfg80211_chan_def *chandef)
+int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
+		struct cfg80211_chan_def *chandef)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
@@ -2827,12 +3203,14 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy, struct cfg80211_chan_de
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		mtk_p2p_cfg80211func_channel_format_switch(chandef, chandef->chan, &rRfChnlInfo);
+		mtk_p2p_cfg80211func_channel_format_switch(
+			chandef, chandef->chan, &rRfChnlInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
-		p2pFuncSetChannel(prGlueInfo->prAdapter, ucRoleIdx, &rRfChnlInfo);
+		p2pFuncSetChannel(prGlueInfo->prAdapter,
+			ucRoleIdx, &rRfChnlInfo);
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -2845,8 +3223,9 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy, struct cfg80211_chan_de
 
 int
 mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
-				  IN struct net_device *dev,
-				  IN const u8 *peer, IN const struct cfg80211_bitrate_mask *mask)
+		IN struct net_device *dev,
+		IN const u8 *peer,
+		IN const struct cfg80211_bitrate_mask *mask)
 {
 	int32_t i4Rslt = -EINVAL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
@@ -2868,15 +3247,18 @@ mtk_p2p_cfg80211_set_bitrate_mask(IN struct wiphy *wiphy,
 }				/* mtk_p2p_cfg80211_set_bitrate_mask */
 
 void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
-					  struct wireless_dev *wdev, IN u16 frame_type, IN bool reg)
+		struct wireless_dev *wdev,
+		IN u16 frame_type, IN bool reg)
 {
 #if 0
-	struct MSG_P2P_MGMT_FRAME_REGISTER *prMgmtFrameRegister = (struct MSG_P2P_MGMT_FRAME_REGISTER *) NULL;
+	struct MSG_P2P_MGMT_FRAME_REGISTER *prMgmtFrameRegister =
+		(struct MSG_P2P_MGMT_FRAME_REGISTER *) NULL;
 #endif
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	uint8_t ucRoleIdx = 0;
 	uint32_t *pu4P2pPacketFilter = NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	do {
 		if ((wiphy == NULL) || (wdev == NULL))
@@ -2886,44 +3268,66 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		/* since p2p device share the aprRoleHandler so needs to check DevHandler 1st */
+		/* since p2p device share the aprRoleHandler
+		 * so needs to check DevHandler 1st
+		 */
 		if (prGlueInfo->prP2PInfo[0]->prDevHandler == wdev->netdev) {
 			/* P2P device*/
-			pu4P2pPacketFilter = &prGlueInfo->prP2PDevInfo->u4OsMgmtFrameFilter;
+			pu4P2pPacketFilter =
+				&prGlueInfo->prP2PDevInfo->u4OsMgmtFrameFilter;
 		} else {
-			if (mtk_Netdev_To_RoleIdx(prGlueInfo, wdev->netdev, &ucRoleIdx) < 0) {
+			if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+				wdev->netdev, &ucRoleIdx) < 0) {
 				/* P2P device*/
-				DBGLOG(P2P, WARN, "mtk_p2p_cfg80211_mgmt_frame_register wireless dev match fail!\n");
-				pu4P2pPacketFilter = &prGlueInfo->prP2PDevInfo->u4OsMgmtFrameFilter;
+				DBGLOG(P2P, WARN,
+					"mtk_p2p_cfg80211_mgmt_frame_register wireless dev match fail!\n");
+				pu4P2pPacketFilter =
+					&prGlueInfo->prP2PDevInfo
+						->u4OsMgmtFrameFilter;
 			} else {
 				/* Non P2P device*/
 				ASSERT(ucRoleIdx < KAL_P2P_NUM);
-				DBGLOG(P2P, TRACE, "Open packet filer RoleIdx %u\n", ucRoleIdx);
-				prP2pRoleFsmInfo = prGlueInfo->prAdapter->rWifiVar.aprP2pRoleFsmInfo[ucRoleIdx];
-				pu4P2pPacketFilter = &prP2pRoleFsmInfo->u4P2pPacketFilter;
+				DBGLOG(P2P, TRACE,
+					"Open packet filer RoleIdx %u\n",
+					ucRoleIdx);
+				prP2pRoleFsmInfo =
+					prGlueInfo->prAdapter
+					->rWifiVar.aprP2pRoleFsmInfo[ucRoleIdx];
+				pu4P2pPacketFilter =
+					&prP2pRoleFsmInfo->u4P2pPacketFilter;
 			}
 		}
 		switch (frame_type) {
 		case MAC_FRAME_PROBE_REQ:
 			if (reg) {
-				*pu4P2pPacketFilter |= PARAM_PACKET_FILTER_PROBE_REQ;
-				DBGLOG(P2P, TRACE, "Open packet filer probe request\n");
+				*pu4P2pPacketFilter
+					|= PARAM_PACKET_FILTER_PROBE_REQ;
+				DBGLOG(P2P, TRACE,
+					"Open packet filer probe request\n");
 			} else {
-				*pu4P2pPacketFilter &= ~PARAM_PACKET_FILTER_PROBE_REQ;
-				DBGLOG(P2P, TRACE, "Close packet filer probe request\n");
+				*pu4P2pPacketFilter
+					&= ~PARAM_PACKET_FILTER_PROBE_REQ;
+				DBGLOG(P2P, TRACE,
+					"Close packet filer probe request\n");
 			}
 			break;
 		case MAC_FRAME_ACTION:
 			if (reg) {
-				*pu4P2pPacketFilter |= PARAM_PACKET_FILTER_ACTION_FRAME;
-				DBGLOG(P2P, TRACE, "Open packet filer action frame.\n");
+				*pu4P2pPacketFilter
+					|= PARAM_PACKET_FILTER_ACTION_FRAME;
+				DBGLOG(P2P, TRACE,
+					"Open packet filer action frame.\n");
 			} else {
-				*pu4P2pPacketFilter &= ~PARAM_PACKET_FILTER_ACTION_FRAME;
-				DBGLOG(P2P, TRACE, "Close packet filer action frame.\n");
+				*pu4P2pPacketFilter
+					&= ~PARAM_PACKET_FILTER_ACTION_FRAME;
+				DBGLOG(P2P, TRACE,
+					"Close packet filer action frame.\n");
 			}
 			break;
 		default:
-			DBGLOG(P2P, ERROR, "Ask frog to add code for mgmt:%x\n", frame_type);
+			DBGLOG(P2P, ERROR,
+				"Ask frog to add code for mgmt:%x\n",
+				frame_type);
 			break;
 		}
 
@@ -2937,20 +3341,26 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 #if 0
 
 		prMgmtFrameRegister =
-		    (struct MSG_P2P_MGMT_FRAME_REGISTER *) cnmMemAlloc(prGlueInfo->prAdapter,
-								  RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_FRAME_REGISTER));
+		    (struct MSG_P2P_MGMT_FRAME_REGISTER *)
+		    cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_MGMT_FRAME_REGISTER));
 
 		if (prMgmtFrameRegister == NULL) {
 			ASSERT(FALSE);
 			break;
 		}
 
-		prMgmtFrameRegister->rMsgHdr.eMsgId = MID_MNY_P2P_MGMT_FRAME_REGISTER;
+		prMgmtFrameRegister->rMsgHdr.eMsgId =
+			MID_MNY_P2P_MGMT_FRAME_REGISTER;
 
 		prMgmtFrameRegister->u2FrameType = frame_type;
 		prMgmtFrameRegister->fgIsRegister = reg;
 
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMgmtFrameRegister, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMgmtFrameRegister,
+			MSG_SEND_METHOD_BUF);
 
 #endif
 
@@ -2962,11 +3372,12 @@ void mtk_p2p_cfg80211_mgmt_frame_register(IN struct wiphy *wiphy,
 
 #if KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
-				  struct wireless_dev *wdev, void *data,
-				  int len)
+		struct wireless_dev *wdev, void *data,
+		int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_TEST_PARAMS *prParams = (struct NL80211_DRIVER_TEST_PARAMS *) NULL;
+	struct NL80211_DRIVER_TEST_PARAMS *prParams =
+		(struct NL80211_DRIVER_TEST_PARAMS *) NULL;
 	int32_t i4Status = -EINVAL;
 
 	ASSERT(wiphy);
@@ -2979,7 +3390,8 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 	if (data && len) {
 		prParams = (struct NL80211_DRIVER_TEST_PARAMS *) data;
 	} else {
-		DBGLOG(P2P, ERROR, "mtk_p2p_cfg80211_testmode_cmd, data is NULL\n");
+		DBGLOG(P2P, ERROR,
+			"mtk_p2p_cfg80211_testmode_cmd, data is NULL\n");
 		return i4Status;
 	}
 	if (prParams->index >> 24 == 0x01) {
@@ -3000,52 +3412,76 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 		case 1:	/* P2P Simga */
 #if CFG_SUPPORT_HOTSPOT_OPTIMIZATION
 			{
-				struct NL80211_DRIVER_SW_CMD_PARAMS *prParamsCmd;
+				struct NL80211_DRIVER_SW_CMD_PARAMS
+					*prParamsCmd;
 
-				prParamsCmd = (struct NL80211_DRIVER_SW_CMD_PARAMS *) data;
+				prParamsCmd =
+					(struct NL80211_DRIVER_SW_CMD_PARAMS *)
+					data;
 
-				if ((prParamsCmd->adr & 0xffff0000) == 0xffff0000) {
-					i4Status = mtk_p2p_cfg80211_testmode_sw_cmd(wiphy, data, len);
+				if ((prParamsCmd->adr & 0xffff0000)
+					== 0xffff0000) {
+					i4Status =
+					mtk_p2p_cfg80211_testmode_sw_cmd(
+						wiphy, data, len);
 					break;
 				}
 			}
 #endif
-			i4Status = mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(wiphy, data, len);
+			i4Status = mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(
+				wiphy, data, len);
 			break;
 		case 2:	/* WFD */
 #if CFG_SUPPORT_WFD
 			/* use normal driver command wifi_display */
-			/* i4Status = mtk_p2p_cfg80211_testmode_wfd_update_cmd(wiphy, data, len); */
+			/* i4Status =
+			 * mtk_p2p_cfg80211_testmode_wfd_update_cmd(
+			 * wiphy, data, len);
+			 */
 #endif
 			break;
 		case 3:	/* Hotspot Client Management */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-			i4Status = mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(wiphy, data, len);
+			i4Status =
+			mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(
+				wiphy, data, len);
 #endif
 			break;
 		case 0x10:
-			i4Status = mtk_cfg80211_testmode_get_sta_statistics(wiphy, data, len, prGlueInfo);
+			i4Status =
+				mtk_cfg80211_testmode_get_sta_statistics(
+					wiphy, data, len, prGlueInfo);
 			break;
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 		case 0x11:	/*NFC Beam + Indication */
 			if (data && len) {
-				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams = (struct NL80211_DRIVER_SET_NFC_PARAMS *) data;
+				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams =
+					(struct NL80211_DRIVER_SET_NFC_PARAMS *)
+					data;
 
-				DBGLOG(P2P, INFO, "NFC: BEAM[%d]\n", prParams->NFC_Enable);
+				DBGLOG(P2P, INFO,
+					"NFC: BEAM[%d]\n",
+					prParams->NFC_Enable);
 			}
 			break;
 		case 0x12:	/*NFC Beam + Indication */
 			DBGLOG(P2P, INFO, "NFC: Polling\n");
-			i4Status = mtk_cfg80211_testmode_get_scan_done(wiphy, data, len, prGlueInfo);
+			i4Status =
+				mtk_cfg80211_testmode_get_scan_done(
+					wiphy, data, len, prGlueInfo);
 			break;
 #endif
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		case 0x30:
-			i4Status = mtk_p2p_cfg80211_testmode_get_best_channel(wiphy, data, len);
+			i4Status =
+				mtk_p2p_cfg80211_testmode_get_best_channel(
+					wiphy, data, len);
 			break;
 #endif
 		case TESTMODE_CMD_ID_HS_CONFIG:
-			i4Status = mtk_p2p_cfg80211_testmode_hotspot_config_cmd(wiphy, data, len);
+			i4Status =
+				mtk_p2p_cfg80211_testmode_hotspot_config_cmd(
+					wiphy, data, len);
 			break;
 
 		default:
@@ -3061,7 +3497,8 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
 int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_TEST_PARAMS *prParams = (struct NL80211_DRIVER_TEST_PARAMS *) NULL;
+	struct NL80211_DRIVER_TEST_PARAMS *prParams =
+		(struct NL80211_DRIVER_TEST_PARAMS *) NULL;
 	int32_t i4Status = -EINVAL;
 
 	ASSERT(wiphy);
@@ -3094,52 +3531,75 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 		case 1:	/* P2P Simga */
 #if CFG_SUPPORT_HOTSPOT_OPTIMIZATION
 			{
-				struct NL80211_DRIVER_SW_CMD_PARAMS *prParamsCmd;
+				struct NL80211_DRIVER_SW_CMD_PARAMS
+					*prParamsCmd;
 
-				prParamsCmd = (struct NL80211_DRIVER_SW_CMD_PARAMS *) data;
+				prParamsCmd =
+					(struct NL80211_DRIVER_SW_CMD_PARAMS *)
+					data;
 
-				if ((prParamsCmd->adr & 0xffff0000) == 0xffff0000) {
-					i4Status = mtk_p2p_cfg80211_testmode_sw_cmd(wiphy, data, len);
+				if ((prParamsCmd->adr & 0xffff0000)
+					== 0xffff0000) {
+					i4Status =
+					mtk_p2p_cfg80211_testmode_sw_cmd(
+						wiphy, data, len);
 					break;
 				}
 			}
 #endif
-			i4Status = mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(wiphy, data, len);
+			i4Status = mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(
+				wiphy, data, len);
 			break;
 		case 2:	/* WFD */
 #if CFG_SUPPORT_WFD
 			/* use normal driver command wifi_display */
-			/* i4Status = mtk_p2p_cfg80211_testmode_wfd_update_cmd(wiphy, data, len); */
+			/* i4Status = mtk_p2p_cfg80211_testmode_wfd_update_cmd(
+			 * wiphy, data, len);
+			 */
 #endif
 			break;
 		case 3:	/* Hotspot Client Management */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-			i4Status = mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(wiphy, data, len);
+			i4Status =
+			mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(
+				wiphy, data, len);
 #endif
 			break;
 		case 0x10:
-			i4Status = mtk_cfg80211_testmode_get_sta_statistics(wiphy, data, len, prGlueInfo);
+			i4Status =
+				mtk_cfg80211_testmode_get_sta_statistics(
+					wiphy, data, len, prGlueInfo);
 			break;
 #if CFG_SUPPORT_NFC_BEAM_PLUS
 		case 0x11:	/*NFC Beam + Indication */
 			if (data && len) {
-				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams = (struct NL80211_DRIVER_SET_NFC_PARAMS *) data;
+				struct NL80211_DRIVER_SET_NFC_PARAMS *prParams =
+					(struct NL80211_DRIVER_SET_NFC_PARAMS *)
+					data;
 
-				DBGLOG(P2P, INFO, "NFC: BEAM[%d]\n", prParams->NFC_Enable);
+				DBGLOG(P2P, INFO,
+					"NFC: BEAM[%d]\n",
+					prParams->NFC_Enable);
 			}
 			break;
 		case 0x12:	/*NFC Beam + Indication */
 			DBGLOG(P2P, INFO, "NFC: Polling\n");
-			i4Status = mtk_cfg80211_testmode_get_scan_done(wiphy, data, len, prGlueInfo);
+			i4Status =
+				mtk_cfg80211_testmode_get_scan_done(
+					wiphy, data, len, prGlueInfo);
 			break;
 #endif
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
 		case 0x30:  /* Auto channel selection in LTE safe channels */
-			i4Status = mtk_p2p_cfg80211_testmode_get_best_channel(wiphy, data, len);
+			i4Status =
+				mtk_p2p_cfg80211_testmode_get_best_channel(
+					wiphy, data, len);
 			break;
 #endif
 		case TESTMODE_CMD_ID_HS_CONFIG:
-			i4Status = mtk_p2p_cfg80211_testmode_hotspot_config_cmd(wiphy, data, len);
+			i4Status =
+				mtk_p2p_cfg80211_testmode_hotspot_config_cmd(
+					wiphy, data, len);
 			break;
 
 		default:
@@ -3153,10 +3613,12 @@ int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 }
 #endif
 
-int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *prParams = (struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *) NULL;
+	struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *prParams =
+		(struct NL80211_DRIVER_HOTSPOT_CONFIG_PARAMS *) NULL;
 	uint32_t index;
 	uint32_t value;
 	uint32_t i;
@@ -3176,7 +3638,7 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy, IN void
 	value = prParams->value;
 
 	DBGLOG(P2P, INFO, "NL80211_ATTR_TESTDATA, idx=%d value=%d\n",
-			    (uint32_t) prParams->idx, (uint32_t) prParams->value);
+			(uint32_t) prParams->idx, (uint32_t) prParams->value);
 
 	switch (index) {
 	case 1:		/* Max Clients */
@@ -3190,12 +3652,16 @@ int mtk_p2p_cfg80211_testmode_hotspot_config_cmd(IN struct wiphy *wiphy, IN void
 	return 0;
 }
 
-int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct NL80211_DRIVER_TEST_PRE_PARAMS rParams;
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo = (struct P2P_SPECIFIC_BSS_INFO *) NULL;
-	/* P_P2P_CONNECTION_SETTINGS_T prP2pConnSettings = (P_P2P_CONNECTION_SETTINGS_T)NULL; */
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
+		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
+	/* P_P2P_CONNECTION_SETTINGS_T prP2pConnSettings =
+	 * (P_P2P_CONNECTION_SETTINGS_T)NULL;
+	 */
 	uint32_t index_mode;
 	uint32_t index;
 	int32_t value;
@@ -3209,21 +3675,28 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void 
 
 	kalMemZero(&rParams, sizeof(struct NL80211_DRIVER_TEST_PRE_PARAMS));
 
-	prP2pSpecificBssInfo = prGlueInfo->prAdapter->rWifiVar.prP2pSpecificBssInfo[0];
-	/* prP2pConnSettings = prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings; */
+	prP2pSpecificBssInfo =
+		prGlueInfo->prAdapter->rWifiVar.prP2pSpecificBssInfo[0];
+	/* prP2pConnSettings =
+	 * prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings;
+	 */
 
 	if (data && len)
 		memcpy(&rParams, data, len);
 
-	DBGLOG(P2P, TRACE, "NL80211_ATTR_TESTDATA, idx_mode=%d idx=%d value=%lu\n",
-	       (int16_t) rParams.idx_mode, (int16_t) rParams.idx, rParams.value);
+	DBGLOG(P2P, TRACE,
+		"NL80211_ATTR_TESTDATA, idx_mode=%d idx=%d value=%lu\n",
+		(int16_t) rParams.idx_mode,
+		(int16_t) rParams.idx,
+		rParams.value);
 
 	index_mode = rParams.idx_mode;
 	index = rParams.idx;
 	value = rParams.value;
 
 	/* 3 FIX ME: Add p2p role index selection */
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, 0, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(
+		prGlueInfo->prAdapter, 0, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 	switch (index) {
@@ -3234,27 +3707,42 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void 
 	case 4:		/* Noa duration */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaDurationMs = value;
 		/* only to apply setting when setting NOA count */
-		/* status = mtk_p2p_wext_set_noa_param(prDev, info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam); */
+		/* status =
+		 * mtk_p2p_wext_set_noa_param(prDev,
+		 * info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam);
+		 */
 		break;
 	case 5:		/* Noa interval */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaIntervalMs = value;
 		/* only to apply setting when setting NOA count */
-		/* status = mtk_p2p_wext_set_noa_param(prDev, info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam); */
+		/* status =
+		 * mtk_p2p_wext_set_noa_param(prDev,
+		 * info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam);
+		 */
 		break;
 	case 6:		/* Noa count */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaCount = value;
-		/* status = mtk_p2p_wext_set_noa_param(prDev, info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam); */
+		/* status =
+		 * mtk_p2p_wext_set_noa_param(prDev,
+		 * info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam);
+		 */
 		break;
 	case 100:		/* Oper CH */
-		/* 20110920 - frog: User configurations are placed in ConnSettings. */
+		/* 20110920 - frog:
+		 * User configurations are placed in ConnSettings.
+		 */
 		/* prP2pConnSettings->ucOperatingChnl = value; */
 		break;
 	case 101:		/* Local config Method, for P2P SDK */
 		/* prP2pConnSettings->u2LocalConfigMethod = value; */
 		break;
 	case 102:		/* Sigma P2p reset */
-		/* kalMemZero(prP2pConnSettings->aucTargetDevAddr, MAC_ADDR_LEN); */
-		/* prP2pConnSettings->eConnectionPolicy = ENUM_P2P_CONNECTION_POLICY_AUTO; */
+		/* kalMemZero(prP2pConnSettings->aucTargetDevAddr,
+		 * MAC_ADDR_LEN);
+		 */
+		/* prP2pConnSettings->eConnectionPolicy =
+		 * ENUM_P2P_CONNECTION_POLICY_AUTO;
+		 */
 		/* p2pFsmUninit(prGlueInfo->prAdapter); */
 		/* p2pFsmInit(prGlueInfo->prAdapter); */
 		break;
@@ -3274,7 +3762,9 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void 
 
 			kalIoctl(prGlueInfo,
 				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode, sizeof(rPowerMode), FALSE, FALSE, TRUE, &u4Leng);
+				 &rPowerMode,
+				 sizeof(rPowerMode),
+				 FALSE, FALSE, TRUE, &u4Leng);
 		}
 		break;
 	case 107:		/* P2P set opps, CTWindowl */
@@ -3292,7 +3782,9 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void 
 
 			kalIoctl(prGlueInfo,
 				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode, sizeof(rPowerMode), FALSE, FALSE, TRUE, &u4Leng);
+				 &rPowerMode,
+				 sizeof(rPowerMode),
+				 FALSE, FALSE, TRUE, &u4Leng);
 		}
 		break;
 	default:
@@ -3303,12 +3795,17 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_pre_cmd(IN struct wiphy *wiphy, IN void 
 
 }
 
-int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_P2P_SIGMA_PARAMS *prParams = (struct NL80211_DRIVER_P2P_SIGMA_PARAMS *) NULL;
-	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo = (struct P2P_SPECIFIC_BSS_INFO *) NULL;
-	/* P_P2P_CONNECTION_SETTINGS_T prP2pConnSettings = (P_P2P_CONNECTION_SETTINGS_T)NULL; */
+	struct NL80211_DRIVER_P2P_SIGMA_PARAMS *prParams =
+		(struct NL80211_DRIVER_P2P_SIGMA_PARAMS *) NULL;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
+		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
+	/* P_P2P_CONNECTION_SETTINGS_T prP2pConnSettings =
+	 * (P_P2P_CONNECTION_SETTINGS_T)NULL;
+	 */
 	uint32_t index;
 	int32_t value;
 	int status = 0;
@@ -3329,8 +3826,11 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-	prP2pSpecificBssInfo = prGlueInfo->prAdapter->rWifiVar.prP2pSpecificBssInfo[0];
-	/* prP2pConnSettings = prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings; */
+	prP2pSpecificBssInfo =
+		prGlueInfo->prAdapter->rWifiVar.prP2pSpecificBssInfo[0];
+	/* prP2pConnSettings =
+	 * prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings;
+	 */
 
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_P2P_SIGMA_PARAMS *) data;
@@ -3342,7 +3842,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 	       (int32_t) prParams->idx, (int32_t) prParams->value);
 
 	/* 3 FIX ME: Add p2p role index selection */
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, 0, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+	if (p2pFuncRoleToBssIdx(
+		prGlueInfo->prAdapter, 0, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 		return -EINVAL;
 
 	switch (index) {
@@ -3353,35 +3854,54 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 	case 4:		/* Noa duration */
 		prNoaParams = data;
 		prP2pSpecificBssInfo->rNoaParam.u4NoaCount = prNoaParams->count;
-		prP2pSpecificBssInfo->rNoaParam.u4NoaIntervalMs = prNoaParams->interval;
-		prP2pSpecificBssInfo->rNoaParam.u4NoaDurationMs = prNoaParams->duration;
-		DBGLOG(P2P, INFO, "SET NOA: %d %d %d\n",
-		       prNoaParams->count, prNoaParams->interval, prNoaParams->duration);
+		prP2pSpecificBssInfo->rNoaParam.u4NoaIntervalMs =
+			prNoaParams->interval;
+		prP2pSpecificBssInfo->rNoaParam.u4NoaDurationMs =
+			prNoaParams->duration;
+		DBGLOG(P2P, INFO,
+			"SET NOA: %d %d %d\n",
+			prNoaParams->count,
+			prNoaParams->interval,
+			prNoaParams->duration);
 
 		/* only to apply setting when setting NOA count */
-		kalIoctl(prGlueInfo, wlanoidSetNoaParam, &prP2pSpecificBssInfo->rNoaParam,
-			 sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT),
-			 FALSE, FALSE, TRUE, &u4Leng);
+		kalIoctl(prGlueInfo,
+			wlanoidSetNoaParam,
+			&prP2pSpecificBssInfo->rNoaParam,
+			sizeof(struct PARAM_CUSTOM_NOA_PARAM_STRUCT),
+			FALSE, FALSE, TRUE, &u4Leng);
 		break;
 	case 5:		/* Noa interval */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaIntervalMs = value;
 		/* only to apply setting when setting NOA count */
-		/* status = mtk_p2p_wext_set_noa_param(prDev, info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam); */
+		/* status =
+		 * mtk_p2p_wext_set_noa_param(prDev,
+		 * info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam);
+		 */
 		break;
 	case 6:		/* Noa count */
 		prP2pSpecificBssInfo->rNoaParam.u4NoaCount = value;
-		/* status = mtk_p2p_wext_set_noa_param(prDev, info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam); */
+		/* status =
+		 * mtk_p2p_wext_set_noa_param(prDev,
+		 * info, wrqu, (char *)&prP2pSpecificBssInfo->rNoaParam);
+		 */
 		break;
 	case 100:		/* Oper CH */
-		/* 20110920 - frog: User configurations are placed in ConnSettings. */
+		/* 20110920 - frog:
+		 * User configurations are placed in ConnSettings.
+		 */
 		/* prP2pConnSettings->ucOperatingChnl = value; */
 		break;
 	case 101:		/* Local config Method, for P2P SDK */
 		/* prP2pConnSettings->u2LocalConfigMethod = value; */
 		break;
 	case 102:		/* Sigma P2p reset */
-		/* kalMemZero(prP2pConnSettings->aucTargetDevAddr, MAC_ADDR_LEN); */
-		/* prP2pConnSettings->eConnectionPolicy = ENUM_P2P_CONNECTION_POLICY_AUTO; */
+		/* kalMemZero(prP2pConnSettings->aucTargetDevAddr,
+		 * MAC_ADDR_LEN);
+		 */
+		/* prP2pConnSettings->eConnectionPolicy =
+		 * ENUM_P2P_CONNECTION_POLICY_AUTO;
+		 */
 		break;
 	case 103:		/* WPS MODE */
 		kalP2PSetWscMode(prGlueInfo, value);
@@ -3399,16 +3919,20 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 
 			kalIoctl(prGlueInfo,
 				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode, sizeof(rPowerMode), FALSE, FALSE, TRUE, &u4Leng);
+				 &rPowerMode,
+				 sizeof(rPowerMode),
+				 FALSE, FALSE, TRUE, &u4Leng);
 		}
 		break;
 	case 107:		/* P2P set opps, CTWindowl */
 		prP2pSpecificBssInfo->rOppPsParam.u4CTwindowMs = value;
 
 		DBGLOG(P2P, INFO, "SET OPPS: %d\n", value);
-		kalIoctl(prGlueInfo, wlanoidSetOppPsParam, &prP2pSpecificBssInfo->rOppPsParam,
-			 sizeof(struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT),
-			 FALSE, FALSE, TRUE, &u4Leng);
+		kalIoctl(prGlueInfo,
+			wlanoidSetOppPsParam,
+			&prP2pSpecificBssInfo->rOppPsParam,
+			sizeof(struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT),
+			FALSE, FALSE, TRUE, &u4Leng);
 		break;
 	case 108:		/* p2p_set_power_save */
 		{
@@ -3419,7 +3943,8 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 
 			kalIoctl(prGlueInfo,
 				 wlanoidSet802dot11PowerSaveProfile,
-				 &rPowerMode, sizeof(rPowerMode), FALSE, FALSE, TRUE, &u4Leng);
+				 &rPowerMode, sizeof(rPowerMode),
+				 FALSE, FALSE, TRUE, &u4Leng);
 		}
 		break;
 	case 109:		/* Max Clients */
@@ -3430,7 +3955,10 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 		break;
 	case 110:		/* Hotspot WPS mode */
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
-		kalIoctl(prGlueInfo, wlanoidSetP2pWPSmode, &value, sizeof(value), FALSE, FALSE, TRUE, &u4Leng);
+		kalIoctl(prGlueInfo,
+			wlanoidSetP2pWPSmode,
+			&value, sizeof(value),
+			FALSE, FALSE, TRUE, &u4Leng);
 #endif
 		break;
 	default:
@@ -3443,13 +3971,17 @@ int mtk_p2p_cfg80211_testmode_p2p_sigma_cmd(IN struct wiphy *wiphy, IN void *dat
 
 #if CFG_SUPPORT_WFD && 0
 /* obsolete/decrepated */
-int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_WFD_PARAMS *prParams = (struct NL80211_DRIVER_WFD_PARAMS *) NULL;
+	struct NL80211_DRIVER_WFD_PARAMS *prParams =
+		(struct NL80211_DRIVER_WFD_PARAMS *) NULL;
 	int status = 0;
-	struct WFD_CFG_SETTINGS *prWfdCfgSettings = (struct WFD_CFG_SETTINGS *) NULL;
-	struct MSG_WFD_CONFIG_SETTINGS_CHANGED *prMsgWfdCfgUpdate = (struct MSG_WFD_CONFIG_SETTINGS_CHANGED *) NULL;
+	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
+		(struct WFD_CFG_SETTINGS *) NULL;
+	struct MSG_WFD_CONFIG_SETTINGS_CHANGED *prMsgWfdCfgUpdate =
+		(struct MSG_WFD_CONFIG_SETTINGS_CHANGED *) NULL;
 
 	ASSERT(wiphy);
 
@@ -3462,15 +3994,25 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 #if 1
 
 	DBGLOG(P2P, INFO, "WFD Enable:%x\n", prParams->WfdEnable);
-	DBGLOG(P2P, INFO, "WFD Session Available:%x\n", prParams->WfdSessionAvailable);
-	DBGLOG(P2P, INFO, "WFD Couple Sink Status:%x\n", prParams->WfdCoupleSinkStatus);
+	DBGLOG(P2P, INFO,
+		"WFD Session Available:%x\n",
+		prParams->WfdSessionAvailable);
+	DBGLOG(P2P, INFO,
+		"WFD Couple Sink Status:%x\n",
+		prParams->WfdCoupleSinkStatus);
 	/* aucReserved0[2] */
 	DBGLOG(P2P, INFO, "WFD Device Info:%x\n", prParams->WfdDevInfo);
 	DBGLOG(P2P, INFO, "WFD Control Port:%x\n", prParams->WfdControlPort);
-	DBGLOG(P2P, INFO, "WFD Maximum Throughput:%x\n", prParams->WfdMaximumTp);
+	DBGLOG(P2P, INFO,
+		"WFD Maximum Throughput:%x\n",
+		prParams->WfdMaximumTp);
 	DBGLOG(P2P, INFO, "WFD Extend Capability:%x\n", prParams->WfdExtendCap);
-	DBGLOG(P2P, INFO, "WFD Couple Sink Addr " MACSTR "\n", MAC2STR(prParams->WfdCoupleSinkAddress));
-	DBGLOG(P2P, INFO, "WFD Associated BSSID " MACSTR "\n", MAC2STR(prParams->WfdAssociatedBssid));
+	DBGLOG(P2P, INFO,
+		"WFD Couple Sink Addr " MACSTR "\n",
+		MAC2STR(prParams->WfdCoupleSinkAddress));
+	DBGLOG(P2P, INFO,
+		"WFD Associated BSSID " MACSTR "\n",
+		MAC2STR(prParams->WfdAssociatedBssid));
 	/* UINT_8 aucVideolp[4]; */
 	/* UINT_8 aucAudiolp[4]; */
 	DBGLOG(P2P, INFO, "WFD Video Port:%x\n", prParams->WfdVideoPort);
@@ -3479,10 +4021,16 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 	DBGLOG(P2P, INFO, "WFD Policy:%x\n", prParams->WfdPolicy);
 	DBGLOG(P2P, INFO, "WFD State:%x\n", prParams->WfdState);
 	/* UINT_8 aucWfdSessionInformationIE[24*8]; */
-	DBGLOG(P2P, INFO, "WFD Session Info Length:%x\n", prParams->WfdSessionInformationIELen);
+	DBGLOG(P2P, INFO,
+		"WFD Session Info Length:%x\n",
+		prParams->WfdSessionInformationIELen);
 	/* UINT_8 aucReserved1[2]; */
-	DBGLOG(P2P, INFO, "WFD Primary Sink Addr " MACSTR "\n", MAC2STR(prParams->aucWfdPrimarySinkMac));
-	DBGLOG(P2P, INFO, "WFD Secondary Sink Addr " MACSTR "\n", MAC2STR(prParams->aucWfdSecondarySinkMac));
+	DBGLOG(P2P, INFO,
+		"WFD Primary Sink Addr " MACSTR "\n",
+		MAC2STR(prParams->aucWfdPrimarySinkMac));
+	DBGLOG(P2P, INFO,
+		"WFD Secondary Sink Addr " MACSTR "\n",
+		MAC2STR(prParams->aucWfdSecondarySinkMac));
 	DBGLOG(P2P, INFO, "WFD Advanced Flag:%x\n", prParams->WfdAdvanceFlag);
 	DBGLOG(P2P, INFO, "WFD Sigma mode:%x\n", prParams->WfdSigmaMode);
 	/* UINT_8 aucReserved2[64]; */
@@ -3491,11 +4039,16 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 
 #endif
 
-	prWfdCfgSettings = &(prGlueInfo->prAdapter->rWifiVar.rWfdConfigureSettings);
+	prWfdCfgSettings =
+		&(prGlueInfo->prAdapter->rWifiVar.rWfdConfigureSettings);
 
-	kalMemCopy(&prWfdCfgSettings->u4WfdCmdType, &prParams->WfdCmdType, sizeof(struct WFD_CFG_SETTINGS));
+	kalMemCopy(&prWfdCfgSettings->u4WfdCmdType,
+		&prParams->WfdCmdType,
+		sizeof(struct WFD_CFG_SETTINGS));
 
-	prMsgWfdCfgUpdate = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_WFD_CONFIG_SETTINGS_CHANGED));
+	prMsgWfdCfgUpdate = cnmMemAlloc(prGlueInfo->prAdapter,
+		RAM_TYPE_MSG,
+		sizeof(struct MSG_WFD_CONFIG_SETTINGS_CHANGED));
 
 	if (prMsgWfdCfgUpdate == NULL) {
 		ASSERT(FALSE);
@@ -3505,7 +4058,11 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 	prMsgWfdCfgUpdate->rMsgHdr.eMsgId = MID_MNY_P2P_WFD_CFG_UPDATE;
 	prMsgWfdCfgUpdate->prWfdCfgSettings = prWfdCfgSettings;
 
-	mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgWfdCfgUpdate, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prGlueInfo->prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prMsgWfdCfgUpdate,
+		MSG_SEND_METHOD_BUF);
+
 #if 0				/* Test Only */
 /* prWfdCfgSettings->ucWfdEnable = 1; */
 /* prWfdCfgSettings->u4WfdFlag |= WFD_FLAGS_DEV_INFO_VALID; */
@@ -3517,9 +4074,11 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 	prWfdCfgSettings->u4WfdFlag |= WFD_FLAGS_SINK_INFO_VALID;
 	prWfdCfgSettings->ucWfdCoupleSinkStatus = 0xAB;
 	{
-		uint8_t aucTestAddr[MAC_ADDR_LEN] = { 0x77, 0x66, 0x55, 0x44, 0x33, 0x22 };
+		uint8_t aucTestAddr[MAC_ADDR_LEN] = {
+			0x77, 0x66, 0x55, 0x44, 0x33, 0x22 };
 
-		COPY_MAC_ADDR(prWfdCfgSettings->aucWfdCoupleSinkAddress, aucTestAddr);
+		COPY_MAC_ADDR(prWfdCfgSettings->aucWfdCoupleSinkAddress,
+			aucTestAddr);
 	}
 
 	prWfdCfgSettings->u4WfdFlag |= WFD_FLAGS_EXT_CAPABILITY_VALID;
@@ -3534,10 +4093,12 @@ int mtk_p2p_cfg80211_testmode_wfd_update_cmd(IN struct wiphy *wiphy, IN void *da
 
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 
-int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_hotspot_block_PARAMS *prParams = (struct NL80211_DRIVER_hotspot_block_PARAMS *) NULL;
+	struct NL80211_DRIVER_hotspot_block_PARAMS *prParams =
+		(struct NL80211_DRIVER_hotspot_block_PARAMS *) NULL;
 	int fgIsValid = 0;
 	uint32_t i;
 
@@ -3548,10 +4109,15 @@ int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy, IN 
 	if (data && len)
 		prParams = (struct NL80211_DRIVER_hotspot_block_PARAMS *) data;
 
-	DBGLOG(P2P, INFO, "%s" MACSTR "\n", prParams->ucblocked?"Block":"Unblock", MAC2STR(prParams->aucBssid));
+	DBGLOG(P2P, INFO,
+		"%s" MACSTR "\n",
+		prParams->ucblocked?"Block":"Unblock",
+		MAC2STR(prParams->aucBssid));
 
 	for (i = 0; i < KAL_P2P_NUM; i++)
-		fgIsValid |= kalP2PSetBlackList(prGlueInfo, prParams->aucBssid, prParams->ucblocked, i);
+		fgIsValid |=
+			kalP2PSetBlackList(prGlueInfo,
+				prParams->aucBssid, prParams->ucblocked, i);
 
 	return fgIsValid;
 
@@ -3559,10 +4125,12 @@ int mtk_p2p_cfg80211_testmode_hotspot_block_list_cmd(IN struct wiphy *wiphy, IN 
 
 #endif
 
-int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct NL80211_DRIVER_SW_CMD_PARAMS *prParams = (struct NL80211_DRIVER_SW_CMD_PARAMS *) NULL;
+	struct NL80211_DRIVER_SW_CMD_PARAMS *prParams =
+		(struct NL80211_DRIVER_SW_CMD_PARAMS *) NULL;
 	uint32_t rstatus = WLAN_STATUS_SUCCESS;
 	int fgIsValid = 0;
 	uint32_t u4SetInfoLen = 0;
@@ -3579,8 +4147,9 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN i
 	if (prParams) {
 		if (prParams->set == 1) {
 			rstatus = kalIoctl(prGlueInfo,
-					   (PFN_OID_HANDLER_FUNC) wlanoidSetSwCtrlWrite,
-					   &prParams->adr, (uint32_t) 8, FALSE, FALSE, TRUE, &u4SetInfoLen);
+				(PFN_OID_HANDLER_FUNC) wlanoidSetSwCtrlWrite,
+				&prParams->adr, (uint32_t) 8,
+				FALSE, FALSE, TRUE, &u4SetInfoLen);
 		}
 	}
 
@@ -3591,7 +4160,8 @@ int mtk_p2p_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN i
 }
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy,
+		IN void *data, IN int len)
 {
 
 	struct sk_buff *skb;
@@ -3601,13 +4171,15 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct RF_CHANNEL_INFO aucChannelList[MAX_2G_BAND_CHN_NUM];
 	uint8_t ucNumOfChannel, i, ucIdx;
-	uint16_t u2APNumScore = 0, u2UpThreshold = 0, u2LowThreshold = 0, ucInnerIdx = 0;
+	uint16_t u2APNumScore = 0, u2UpThreshold = 0,
+		u2LowThreshold = 0, ucInnerIdx = 0;
 	uint32_t u4BufLen, u4LteSafeChnBitMask_2G = 0;
 	uint32_t u4AcsChnReport[5];
 
 	struct PARAM_GET_CHN_INFO *prGetChnLoad, *prQueryLteChn;
 	struct PARAM_PREFER_CHN_INFO rPreferChannel = { 0, 0xFFFF, 0 };
-	struct PARAM_PREFER_CHN_INFO arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
+	struct PARAM_PREFER_CHN_INFO
+		arChannelDirtyScore_2G[MAX_2G_BAND_CHN_NUM];
 	/* For ACS information print */
 	int8_t acLogChannel[ACS_PRINT_BUFFER_LEN];
 	int8_t acLogAPNum[ACS_PRINT_BUFFER_LEN];
@@ -3641,7 +4213,7 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 	 * 1. Get 2.4G Band channel list in current regulatory domain
 	 */
 	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
-			     MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
+		MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
 
 	/*
 	 * 2. Calculate each channel's dirty score
@@ -3652,7 +4224,9 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 		ucIdx = aucChannelList[i].ucChannelNum - 1;
 
 		/* Current channel's dirty score */
-		u2APNumScore = prGetChnLoad->rEachChnLoad[ucIdx].u2APNum * CHN_DIRTY_WEIGHT_UPPERBOUND;
+		u2APNumScore =
+			prGetChnLoad->rEachChnLoad[ucIdx].u2APNum
+			* CHN_DIRTY_WEIGHT_UPPERBOUND;
 		u2LowThreshold = u2UpThreshold = 3;
 
 		if (ucIdx < 3) {
@@ -3664,24 +4238,30 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 		}
 
 		/* Lower channel's dirty score */
-		for (ucInnerIdx = 0; ucInnerIdx < u2LowThreshold; ucInnerIdx++) {
+		for (ucInnerIdx = 0;
+			ucInnerIdx < u2LowThreshold; ucInnerIdx++) {
 			u2APNumScore +=
-				(prGetChnLoad->rEachChnLoad[ucIdx - ucInnerIdx - 1].u2APNum *
-				 (CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
+			(prGetChnLoad->rEachChnLoad
+			[ucIdx - ucInnerIdx - 1].u2APNum *
+			(CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
 		}
 
 		/* Upper channel's dirty score */
 		for (ucInnerIdx = 0; ucInnerIdx < u2UpThreshold; ucInnerIdx++) {
 			u2APNumScore +=
-				(prGetChnLoad->rEachChnLoad[ucIdx + ucInnerIdx + 1].u2APNum *
-				 (CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
+			(prGetChnLoad->rEachChnLoad
+			[ucIdx + ucInnerIdx + 1].u2APNum *
+			(CHN_DIRTY_WEIGHT_UPPERBOUND - 1 - ucInnerIdx));
 		}
 
-		arChannelDirtyScore_2G[i].ucChannel = aucChannelList[i].ucChannelNum;
+		arChannelDirtyScore_2G[i].ucChannel =
+			aucChannelList[i].ucChannelNum;
 		arChannelDirtyScore_2G[i].u2APNumScore = u2APNumScore;
 
-		kalSprintf(acLogChannel + i*5, "%5d", aucChannelList[i].ucChannelNum);
-		kalSprintf(acLogAPNum + i*5, "%5d", prGetChnLoad->rEachChnLoad[ucIdx].u2APNum);
+		kalSprintf(acLogChannel + i*5, "%5d",
+			aucChannelList[i].ucChannelNum);
+		kalSprintf(acLogAPNum + i*5, "%5d",
+			prGetChnLoad->rEachChnLoad[ucIdx].u2APNum);
 		kalSprintf(acLogScore + i*5, "%5d", u2APNumScore);
 	}
 
@@ -3692,7 +4272,8 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 	/*
 	 * 3. Query LTE safe channels
 	 */
-	prQueryLteChn = kalMemAlloc(sizeof(struct PARAM_GET_CHN_INFO), VIR_MEM_TYPE);
+	prQueryLteChn = kalMemAlloc(
+		sizeof(struct PARAM_GET_CHN_INFO), VIR_MEM_TYPE);
 	if (prQueryLteChn == NULL) {
 		DBGLOG(P2P, ERROR, "Alloc prQueryLteChn failed\n");
 		/* Continue anyway */
@@ -3714,62 +4295,89 @@ int mtk_p2p_cfg80211_testmode_get_best_channel(IN struct wiphy *wiphy, IN void *
 
 		u4LteSafeChnBitMask_2G =
 			prQueryLteChn->rLteSafeChnList.au4SafeChannelBitmask
-				[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1];
+			[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1];
 		if (!u4LteSafeChnBitMask_2G) {
-			DBGLOG(P2P, WARN, "FW report 2.4G all channels unsafe!?\n");
+			DBGLOG(P2P, WARN,
+				"FW report 2.4G all channels unsafe!?\n");
 			u4LteSafeChnBitMask_2G = BITS(1, 14);
 		}
 
-		kalMemFree(prQueryLteChn, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CHN_INFO));
+		kalMemFree(prQueryLteChn,
+			VIR_MEM_TYPE,
+			sizeof(struct PARAM_GET_CHN_INFO));
 	}
 
 #if CFG_TC1_FEATURE
-	/* Restrict 2.4G band channel selection range to 1/6/11 per customer's request */
+	/* Restrict 2.4G band channel selection range
+	 * to 1/6/11 per customer's request
+	 */
 	u4LteSafeChnBitMask_2G &= 0x0842;
 #elif CFG_TC10_FEATURE
-	/* Restrict 2.4G band channel selection range to 1~11 per customer's request */
+	/* Restrict 2.4G band channel selection range
+	 * to 1~11 per customer's request
+	 */
 	u4LteSafeChnBitMask_2G &= 0x0FFE;
 #endif
 
 	/* 4. Find out the best channel, skip LTE unsafe channels */
 	for (i = 0; i < ucNumOfChannel; i++) {
-		if (!(u4LteSafeChnBitMask_2G & BIT(arChannelDirtyScore_2G[i].ucChannel)))
+		if (!(u4LteSafeChnBitMask_2G
+			& BIT(arChannelDirtyScore_2G[i].ucChannel)))
 			continue;
 
-		if (rPreferChannel.u2APNumScore >= arChannelDirtyScore_2G[i].u2APNumScore) {
-			rPreferChannel.ucChannel = arChannelDirtyScore_2G[i].ucChannel;
-			rPreferChannel.u2APNumScore = arChannelDirtyScore_2G[i].u2APNumScore;
+		if (rPreferChannel.u2APNumScore
+			>= arChannelDirtyScore_2G[i].u2APNumScore) {
+			rPreferChannel.ucChannel =
+				arChannelDirtyScore_2G[i].ucChannel;
+			rPreferChannel.u2APNumScore =
+				arChannelDirtyScore_2G[i].u2APNumScore;
 		}
 	}
 
-	u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1] = fgIsReady ? BIT(31) : 0;
+	u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1] =
+			fgIsReady ? BIT(31) : 0;
 	if (rPreferChannel.ucChannel > 0)
-		u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1] |= BIT(rPreferChannel.ucChannel - 1);
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1]
+			|= BIT(rPreferChannel.ucChannel - 1);
 
 	/* ToDo: Support 5G Channel Selection */
 
 acs_report:
-	if (unlikely(nla_put_u32(skb, NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1,
-		     u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1]) < 0))
+	if (unlikely(nla_put_u32(skb,
+		NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1,
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_2G_BASE_1 - 1]) < 0))
 		goto nla_put_failure;
 
-	if (unlikely(nla_put_u32(skb, NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36,
-		     u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36 - 1]) < 0))
+	if (unlikely(nla_put_u32(skb,
+		NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36,
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_36 - 1]) < 0))
 		goto nla_put_failure;
 
-	if (unlikely(nla_put_u32(skb, NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_52,
-		     u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_52 - 1]) < 0))
+	if (unlikely(nla_put_u32(skb,
+		NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_52,
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_52 - 1]) < 0))
 		goto nla_put_failure;
 
-	if (unlikely(nla_put_u32(skb, NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_100,
-		     u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_100 - 1]) < 0))
+	if (unlikely(nla_put_u32(skb,
+		NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_100,
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_100 - 1]) < 0))
 		goto nla_put_failure;
 
-	if (unlikely(nla_put_u32(skb, NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149,
-		     u4AcsChnReport[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149 - 1]) < 0))
+	if (unlikely(nla_put_u32(skb,
+		NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149,
+		u4AcsChnReport
+		[NL80211_TESTMODE_AVAILABLE_CHAN_ATTR_5G_BASE_149 - 1]) < 0))
 		goto nla_put_failure;
 
-	DBGLOG(P2P, INFO, "[ACS]Relpy u4AcsChnReport[2G_BASE_1]=0x%08x\n", u4AcsChnReport[0]);
+	DBGLOG(P2P, INFO,
+		"[ACS]Relpy u4AcsChnReport[2G_BASE_1]=0x%08x\n",
+		u4AcsChnReport[0]);
 
 	return cfg80211_testmode_reply(skb);
 
