@@ -145,11 +145,13 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	prChipInfo->u2HifTxdSize = 0;
 	prChipInfo->u2TxInitCmdPort = 0;
@@ -202,7 +204,8 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 		prChipInfo->u4ExtraTxByteCount =
 			EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
-		asicUsbDmaShdlInit(prAdapter);
+		if (prBusInfo->DmaShdlInit)
+			prBusInfo->DmaShdlInit(prAdapter);
 		asicUdmaTxTimeoutEnable(prAdapter);
 		asicUdmaRxFlush(prAdapter, FALSE);
 		asicPdmaHifReset(prAdapter, TRUE);
