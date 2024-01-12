@@ -434,6 +434,28 @@ void asicConnac3xWfdmaDummyCrWrite(
 		u4RegValue);
 }
 
+u_int8_t asicConnac3xWfdmaIsNeedReInit(
+	struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	u_int8_t fgNeedReInit;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->asicWfdmaReInit == NULL)
+		return FALSE;
+
+#if 0
+	/* for bus hang debug purpose */
+	if (prAdapter->chip_info->checkbushang)
+		prAdapter->chip_info->checkbushang((void *) prAdapter, TRUE);
+#endif
+
+	asicConnac3xWfdmaDummyCrRead(prAdapter, &fgNeedReInit);
+
+	return fgNeedReInit;
+}
+
 static void asicConnac3xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1208,6 +1230,15 @@ u_int8_t asicConnac3xUsbResume(
 #endif
 
 	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
+
+	if (asicConnac3xWfdmaIsNeedReInit(prAdapter)) {
+		DBGLOG(INIT, INFO,
+		       "Deep sleep happens in suspend\n");
+
+		/* reinit USB because LP could clear WFDMA's CR */
+		if (prChipInfo->asicWfdmaReInit)
+			prChipInfo->asicWfdmaReInit(prAdapter);
+	}
 
 	for (u4Loop = 0; u4Loop < MAX_POLLING_LOOP; u4Loop++) {
 		for (u4Idx = 0;
