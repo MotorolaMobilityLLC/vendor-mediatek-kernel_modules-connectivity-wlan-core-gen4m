@@ -1932,7 +1932,16 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		DBGLOG(P2P, INFO, "ucRoleIdx: %d, ucBssIdx: %d\n",
 				ucRoleIdx, ucBssIdx);
 
-		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+			dfs_state == NL80211_DFS_AVAILABLE
+#if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
+			&& prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan->
+			dfs_cac_ms != 0
+#endif
+			)
+			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+		else
+			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
 		/* Set CSA IE parameters */
 		prGlueInfo->prAdapter->rWifiVar.fgCsaInProgress = TRUE;
