@@ -5617,7 +5617,7 @@ static uint8_t nicTxDirectGetHifTc(struct MSDU_INFO
 {
 	uint8_t ucHifTc = 0;
 
-	if (prMsduInfo->ucTC >= 0 && prMsduInfo->ucTC < TC_NUM)
+	if (prMsduInfo->ucTC < TC_NUM)
 		ucHifTc = prMsduInfo->ucTC;
 	else
 		ASSERT(0);
