@@ -195,6 +195,19 @@ struct WAKEUP_STATISTIC {
 #define PS_CALLER_ACTIVE \
 		(BITS(0, (PS_CALLER_MAX_NUM - 1)) & (~BIT(PS_CALLER_WOW)))
 
+#define NETWORK_BSSID_MASK BITS(0, 5)
+#define NETWORK_BSSID_OFFSET 0
+#define NETWORK_LINKID_MASK BITS(6, 7)
+#define NETWORK_LINKID_OFFSET 6
+#define NETWORK_ID(_bss_idx, _link_idx) \
+	((((uint8_t)_link_idx) << NETWORK_LINKID_OFFSET) | \
+	(((uint8_t)_bss_idx) & NETWORK_BSSID_MASK))
+#define NETWORK_BSS_ID(_network_idx) \
+	(((uint8_t)_network_idx) & NETWORK_BSSID_MASK)
+#define NETWORK_LINK_ID(_network_idx) \
+	((((uint8_t)_network_idx) & NETWORK_LINKID_MASK) >> \
+	 NETWORK_LINKID_OFFSET)
+
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
@@ -319,14 +332,14 @@ uint8_t nicGetHe6gS1(IN uint8_t ucPrimaryChannel,
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */
 uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex);
+			    IN uint8_t ucNetworkIndex);
 uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex,
+			    IN uint8_t ucNetworkIndex,
 			    IN uint8_t fgReset40mBw);
 uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex);
+				IN uint8_t ucNetworkIndex);
 uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
-				IN uint8_t ucBssIndex,
+				IN uint8_t ucNetworkIndex,
 				IN uint8_t fgClearStaRec);
 
 /* BSS-INFO */
