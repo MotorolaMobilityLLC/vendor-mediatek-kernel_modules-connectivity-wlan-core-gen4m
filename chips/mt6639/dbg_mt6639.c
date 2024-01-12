@@ -48,13 +48,6 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-#if defined(_HIF_PCIE)
-static void mt6639_dumpPcGprLog(struct ADAPTER *ad);
-static void mt6639_dumpN45CoreReg(struct ADAPTER *ad);
-static void mt6639_dumpWfTopReg(struct ADAPTER *ad);
-static void mt6639_dumpWfBusReg(struct ADAPTER *ad);
-static void mt6639_dumpCbtopReg(struct ADAPTER *ad);
-#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -1417,7 +1410,7 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-static void mt6639_dumpCbtopReg(struct ADAPTER *ad)
+void mt6639_dumpCbtopReg(struct ADAPTER *ad)
 {
 	struct dump_cr_set *dump = NULL;
 	uint32_t size = 0;
@@ -1520,7 +1513,7 @@ void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
 		log_buf_lp[4]);
 }
 
-static void mt6639_dumpPcGprLog(struct ADAPTER *ad)
+void mt6639_dumpPcGprLog(struct ADAPTER *ad)
 {
 #define PC_LOG_NUM			35
 #define GPR_LOG_NUM			35
@@ -1564,7 +1557,7 @@ static void mt6639_dumpPcGprLog(struct ADAPTER *ad)
 	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
 }
 
-static void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
+void mt6639_dumpN45CoreReg(struct ADAPTER *ad)
 {
 #define GENERAL_LOG_NUM			32
 #define CTRL_LOG_NUM			5
@@ -1717,7 +1710,7 @@ static void mt6639_dumpWfTopCfgon(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpWfTopReg(struct ADAPTER *ad)
+void mt6639_dumpWfTopReg(struct ADAPTER *ad)
 {
 	/* Section A: Dump wf_top_misc_on monflag */
 	mt6639_dumpWfTopMiscOn(ad);
@@ -1809,7 +1802,7 @@ static void mt6639_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
 	}
 }
 
-static void mt6639_dumpWfBusReg(struct ADAPTER *ad)
+void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 {
 	/* Section A: Dump VDNR timeout host side info */
 	mt6639_dumpHostVdnrTimeoutInfo(ad);
