@@ -2927,7 +2927,7 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 	/* ADDTS Request frame body */
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
-	uint8_t aucInfoElem[5];	/* Information elements */
+	uint8_t aucInfoElem[13]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.4.2.1 ADDTS Request frame format */
@@ -3686,6 +3686,8 @@ struct IE_SHORT_SSID_LIST {
 #define MTK_OUI_IE(fp)          ((struct IE_MTK_OUI *) fp)
 
 #define CSA_IE(fp)              ((struct IE_CHANNEL_SWITCH *) fp)
+#define SEC_OFFSET_IE(fp)	((struct IE_SECONDARY_OFFSET *) fp)
+#define WIDE_BW_IE(fp)		((struct IE_WIDE_BAND_CHANNEL *) fp)
 
 #define SUPPORTED_CHANNELS_IE(fp) ((struct IE_SUPPORTED_CHANNELS *)fp)
 #define TIMEOUT_INTERVAL_IE(fp)	((struct IE_TIMEOUT_INTERVAL *)fp)

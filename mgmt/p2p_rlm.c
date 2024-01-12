@@ -122,6 +122,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	prBssInfo->fg40mBwAllowed = FALSE;
 	prBssInfo->fgAssoc40mBwAllowed = FALSE;
 	prBssInfo->eBssSCO = CHNL_EXT_SCN;
+	prBssInfo->ucHtOpInfo1 = 0;
 
 	/* Check if AP can set its bw to 40MHz
 	 * But if any of BSS is setup in 40MHz,
@@ -140,6 +141,10 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 			prBssInfo->fg40mBwAllowed = TRUE;
 			prBssInfo->fgAssoc40mBwAllowed = TRUE;
+
+			prBssInfo->ucHtOpInfo1 = (uint8_t)
+				(((uint32_t) prBssInfo->eBssSCO)
+				| HT_OP_INFO1_STA_CHNL_WIDTH);
 		}
 	}
 
@@ -250,13 +255,8 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	rlmBssUpdateChannelParams(prAdapter, prBssInfo);
 
 	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
-		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
-			prBssInfo->ucHtOpInfo1 = (uint8_t)
-				(((uint32_t) prBssInfo->eBssSCO)
-				| HT_OP_INFO1_STA_CHNL_WIDTH);
-
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
 			rlmUpdateBwByChListForAP(prAdapter, prBssInfo);
-		}
 	}
 
 	/* We may limit AP/GO Nss by RfBand in some case, ex CoAnt.
@@ -1325,6 +1325,48 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 
 		if (ucMaxBandwidth < MAX_BW_40MHZ)
 			eSCO = CHNL_EXT_SCN;
+	}
+
+	return eSCO;
+}
+
+enum ENUM_CHNL_EXT rlmGetScoByChnInfo(struct ADAPTER *prAdapter,
+		struct RF_CHANNEL_INFO *prChannelInfo)
+{
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	int32_t i4DeltaBw;
+	uint32_t u4AndOneSCO;
+
+	if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+		/* If BW 40, compare S0 and primary channel freq */
+		if (prChannelInfo->u4CenterFreq1
+			> prChannelInfo->u2PriChnlFreq)
+			eSCO = CHNL_EXT_SCA;
+		else
+			eSCO = CHNL_EXT_SCB;
+	} else if (prChannelInfo->ucChnlBw > MAX_BW_40MHZ) {
+		/* P: PriChnlFreq,
+		 * A: CHNL_EXT_SCA,
+		 * B: CHNL_EXT_SCB, -:BW SPAN 5M
+		 */
+		/* --|----|--CenterFreq1--|----|-- */
+		/* --|----|--CenterFreq1--B----P-- */
+		/* --|----|--CenterFreq1--P----A-- */
+		i4DeltaBw = prChannelInfo->u2PriChnlFreq
+			- prChannelInfo->u4CenterFreq1;
+		u4AndOneSCO = CHNL_EXT_SCB;
+		eSCO = CHNL_EXT_SCA;
+		if (i4DeltaBw < 0) {
+			/* --|----|--CenterFreq1--|----|-- */
+			/* --P----A--CenterFreq1--|----|-- */
+			/* --B----P--CenterFreq1--|----|-- */
+			u4AndOneSCO = CHNL_EXT_SCA;
+			eSCO = CHNL_EXT_SCB;
+			i4DeltaBw = -i4DeltaBw;
+		}
+		i4DeltaBw = i4DeltaBw - (CHANNEL_SPAN_20 >> 1);
+		if ((i4DeltaBw/CHANNEL_SPAN_20) & 1)
+			eSCO = u4AndOneSCO;
 	}
 
 	return eSCO;

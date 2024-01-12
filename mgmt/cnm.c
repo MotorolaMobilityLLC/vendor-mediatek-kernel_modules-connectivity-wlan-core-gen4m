@@ -1252,6 +1252,7 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
+	enum ENUM_BAND eBandOrig, eBandCsa;
 
 	ASSERT(ch_num);
 
@@ -1269,19 +1270,25 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 
 	if (prBssInfo->ucPrimaryChannel != ch_num) {
 		rRfChnlInfo.ucChannelNum = ch_num;
-		/* TODO: Cross band */
-		rRfChnlInfo.eBand = prBssInfo->eBand;
-		rRfChnlInfo.ucChnlBw =
-			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+		eBandCsa = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
+		rRfChnlInfo.eBand = eBandCsa;
+
+		/* temp replace BSS eBand to get BW of CSA band */
+		eBandOrig = prBssInfo->eBand;
+		prBssInfo->eBand = eBandCsa;
+		rRfChnlInfo.ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+		prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
+
 		rRfChnlInfo.u2PriChnlFreq =
 			nicChannelNum2Freq(
-				ch_num, prBssInfo->eBand) / 1000;
+				ch_num, eBandCsa) / 1000;
 		rRfChnlInfo.u4CenterFreq1 =
 			rRfChnlInfo.u2PriChnlFreq;
 		rRfChnlInfo.u4CenterFreq2 = 0;
 
 		DBGLOG(REQ, INFO,
-		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1=%d\n",
+		"[CSA]CH=%d,Band=%d,BW=%d,PriFreq=%d,S1Freq=%d\n",
 			rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand,
 			rRfChnlInfo.ucChnlBw,
