@@ -8178,6 +8178,15 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "BackoffLevel", 3);
 #endif
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	prWifiVar->ucAbnWakeupDetectEn = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "AbnWakeupDetectEn", FEATURE_ENABLED);
+	prWifiVar->ucAbnWakeupPktThld = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "AbnWakeupPktThld", 10);
+	prWifiVar->ucAbnWakeupDetectIntv = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "AbnWakeupDetectIntv", 50);
+#endif
+
 #if (CFG_SUPPORT_APF == 1)
 	prWifiVar->ucApfEnable = (uint32_t) wlanCfgGetUint32(
 			prAdapter, "ApfEnable", FEATURE_ENABLED);

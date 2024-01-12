@@ -189,6 +189,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_MSCS_SUPPORT
 	[CMD_ID_FAST_PATH] = nicUniCmdFastPath,
 #endif
+#if CFG_SUPPORT_PKT_OFLD
+	[CMD_ID_PKT_OFLD] = nicUniCmdPktOfldOp,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -6290,6 +6293,57 @@ uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
 }
 #endif
 
+#if CFG_SUPPORT_PKT_OFLD
+uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_PKT_OFLD *uni_cmd;
+	struct UNI_CMD_PKT_OFLD_GENERAL_OP *tag;
+	struct PARAM_OFLD_INFO *prInfo;
+
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PKT_OFLD) +
+			       sizeof(struct UNI_CMD_PKT_OFLD_GENERAL_OP);
+
+	if (info->ucCID != CMD_ID_PKT_OFLD ||
+		info->u4SetQueryInfoLen != sizeof(*prInfo))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prInfo = (struct PARAM_OFLD_INFO *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_PKT_OFLD, max_cmd_len,
+			info->fgNeedResp ? nicUniEventQueryOfldInfo :
+			nicUniCmdEventSetCommon,
+			nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_PKT_OFLD *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_PKT_OFLD_GENERAL_OP *) uni_cmd->aucTlvBuffer;
+
+	if (prInfo->ucType == PKT_OFLD_TYPE_APF) {
+		if (info->fgNeedResp)
+			tag->u2Tag = UNI_CMD_PKT_OFLD_TAG_APF_QUERY;
+		else
+			tag->u2Tag = UNI_CMD_PKT_OFLD_TAG_APF_INSTALL;
+	}
+
+	tag->u2Length = sizeof(*tag);
+	tag->ucType = prInfo->ucType;
+	tag->ucOp = prInfo->ucOp;
+	tag->ucFragNum = prInfo->ucFragNum;
+	tag->ucFragSeq = prInfo->ucFragSeq;
+	tag->u4TotalLen = prInfo->u4TotalLen;
+	tag->u4BufLen = prInfo->u4BufLen;
+	kalMemCopy(tag->aucBuf, prInfo->aucBuf,
+			prInfo->u4BufLen);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -9235,3 +9289,41 @@ void nicUniEventFastPath(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #endif
 }
 
+#if CFG_SUPPORT_PKT_OFLD
+void nicUniEventQueryOfldInfo(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_PKT_OFLD *evt =
+		(struct UNI_EVENT_PKT_OFLD *)uni_evt->aucBuffer;
+	struct UNI_CMD_PKT_OFLD_GENERAL_OP *tag =
+		(struct UNI_CMD_PKT_OFLD_GENERAL_OP *) evt->aucTlvBuffer;
+
+	struct CMD_OFLD_INFO legacy;
+
+	legacy.ucType = tag->ucType;
+	legacy.ucOp = tag->ucOp;
+	legacy.ucFragNum = tag->ucFragNum;
+	legacy.ucFragSeq = tag->ucFragSeq;
+	legacy.u4TotalLen = tag->u4TotalLen;
+	legacy.u4BufLen = tag->u4BufLen;
+
+	DBGLOG(REQ, INFO,
+		"ucType[%d] ucOp[%d] ucFragNum[%d] ucFragSeq[%d] u4TotalLen[%d] u4BufLen[%d]\n",
+		legacy.ucType, legacy.ucOp, legacy.ucFragNum,
+		legacy.ucFragSeq, legacy.u4TotalLen, tag->u4BufLen);
+
+	if (tag->u4TotalLen > 0 &&
+			tag->u4BufLen > 0 &&
+			tag->u4BufLen <= PKT_OFLD_BUF_SIZE) {
+		kalMemCopy(legacy.aucBuf, tag->aucBuf, tag->u4BufLen);
+
+	} else {
+		DBGLOG(REQ, INFO,
+			"Invalid query result, length: %d Buf size: %d.\n",
+				tag->u4TotalLen, tag->u4BufLen);
+	}
+
+	nicCmdEventQueryOfldInfo(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+#endif
