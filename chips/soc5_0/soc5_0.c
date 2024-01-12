@@ -18,7 +18,9 @@
 #include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
 #include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
-
+#include <connectivity_build_in_adapter.h>
+#include <linux/mfd/mt6359p/registers.h>
+#include <linux/regmap.h>
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 #include "fw_log_wifi.h"
@@ -116,6 +118,8 @@ u_int32_t gEmiCalSize;
 u_int32_t gEmiCalOffset;
 bool gEmiCalUseEmiData;
 #endif
+
+bool gCoAntVFE28En = FALSE;
 
 struct wireless_dev *grWdev;
 #endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
@@ -558,7 +562,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.pwrondownload = NULL,
 #endif
 	.triggerfwassert = soc5_0_Trigger_fw_assert,
-
+	.coantVFE28En = wlanCoAntVFE28En,
+	.coantVFE28Dis = wlanCoAntVFE28Dis,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
@@ -1700,6 +1705,62 @@ int hifWmmcuPwrOff(void)
 	}
 #endif
 	return ret;
+}
+
+void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
+{
+	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
+	struct REG_INFO *prRegInfo;
+	u_int8_t fgCoAnt;
+
+	if (g_NvramFsm != NVRAM_STATE_READY) {
+		DBGLOG(INIT, INFO, "CoAntVFE28 NVRAM Not ready\n");
+		return;
+	}
+
+	ASSERT(prAdapter);
+	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
+	ASSERT(prRegInfo);
+	prNvramSettings = prRegInfo->prNvramSettings;
+	ASSERT(prNvramSettings);
+
+	fgCoAnt = prNvramSettings->ucSupportCoAnt;
+
+	if (fgCoAnt) {
+		if (gCoAntVFE28En == FALSE) {
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+			regmap_write(g_regmap,
+				MT6359_LDO_VFE28_OP_EN_SET, 0x1 << 8);
+			regmap_write(g_regmap,
+				MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+#else
+			KERNEL_pmic_ldo_vfe28_lp(8, 0, 1, 0);
+#endif
+			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Enable\n");
+			gCoAntVFE28En = TRUE;
+		} else {
+			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Already Enable\n");
+		}
+	} else {
+		DBGLOG(INIT, INFO, "Not Support CoAnt Enable\n");
+	}
+}
+
+void wlanCoAntVFE28Dis(void)
+{
+	if (gCoAntVFE28En == TRUE) {
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_EN_CLR, 0x1 << 8);
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+		regmap_write(g_regmap, MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+#else
+		KERNEL_pmic_ldo_vfe28_lp(8, 0, 0, 0);
+#endif
+		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Disable\n");
+		gCoAntVFE28En = FALSE;
+	} else {
+		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Already Disable\n");
+	}
 }
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

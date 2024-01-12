@@ -128,6 +128,7 @@ extern struct completion g_triggerComp;
 extern bool g_IsTriggerTimeout;
 extern u_int8_t fgIsResetting;
 extern u_int8_t g_fgRstRecover;
+extern struct regmap *g_regmap;
 #endif
 
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
@@ -200,6 +201,8 @@ extern void wlanNetDestroy(
 int hifWmmcuPwrOn(void);
 int hifWmmcuPwrOff(void);
 int soc5_0_Trigger_fw_assert(void);
+void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter);
+void wlanCoAntVFE28Dis(void);
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);
