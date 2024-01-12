@@ -3431,46 +3431,47 @@ u_int8_t qmHandleRroPkt(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
 static void processNanBmcRx(struct ADAPTER *prAdapter,
-		struct SW_RFB *prCurrSwRfb, uint8_t ucBssIndex,
+		struct SW_RFB *prCurrSwRfb,
 		struct WLAN_MAC_HEADER *prWlanHeader, uint16_t u2FrameCtrl)
 {
 #if (CFG_SUPPORT_NAN == 1)
 	struct BSS_INFO *prBssInfo;
 	uint16_t u2MACLen = 0;
+	uint8_t ucBssIndex;
 
-	if (prCurrSwRfb->prStaRec == NULL)
+	if (!prCurrSwRfb->prStaRec)
 		prCurrSwRfb->prStaRec =
 			nanGetStaRecByNDI(prAdapter, prWlanHeader->aucAddr2);
 
-	if (prCurrSwRfb->prStaRec &&
-	    ucBssIndex < ARRAY_SIZE(prAdapter->aprBssInfo)) {
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (!prCurrSwRfb->prStaRec)
+		return;
 
-		if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
-			DBGLOG(QM, INFO, "NAN special case for BMC packet\n");
-			if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
-				u2MACLen = sizeof(struct WLAN_MAC_HEADER_QOS);
-			else
-				u2MACLen = sizeof(struct WLAN_MAC_HEADER);
+	ucBssIndex = prCurrSwRfb->prStaRec->ucBssIndex;
+	if (ucBssIndex >= ARRAY_SIZE(prAdapter->aprBssInfo))
+		return;
 
-			u2MACLen += ETH_LLC_LEN + ETH_SNAP_OUI_LEN;
-			u2MACLen -= ETHER_TYPE_LEN_OFFSET;
-			prCurrSwRfb->pvHeader += u2MACLen;
-			kalMemCopy(prCurrSwRfb->pvHeader,
-					prWlanHeader->aucAddr1, MAC_ADDR_LEN);
-			kalMemCopy(prCurrSwRfb->pvHeader + MAC_ADDR_LEN,
-					prWlanHeader->aucAddr2, MAC_ADDR_LEN);
-			prCurrSwRfb->u2PacketLen -= u2MACLen;
-			/* record StaRec related info */
-			prCurrSwRfb->ucStaRecIdx =
-				prCurrSwRfb->prStaRec->ucIndex;
-			prCurrSwRfb->ucWlanIdx =
-				prCurrSwRfb->prStaRec->ucWlanIndex;
-			GLUE_SET_PKT_BSS_IDX(prCurrSwRfb->pvPacket,
-					secGetBssIdxByWlanIdx(prAdapter,
-						prCurrSwRfb->ucWlanIdx));
-		}
-	}
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo->eNetworkType != NETWORK_TYPE_NAN)
+		return;
+
+	DBGLOG(QM, INFO, "NAN special case for BMC packet\n");
+	if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
+		u2MACLen = sizeof(struct WLAN_MAC_HEADER_QOS);
+	else
+		u2MACLen = sizeof(struct WLAN_MAC_HEADER);
+
+	u2MACLen += ETH_LLC_LEN + ETH_SNAP_OUI_LEN;
+	u2MACLen -= ETHER_TYPE_LEN_OFFSET;
+	prCurrSwRfb->pvHeader += u2MACLen;
+	kalMemCopy(prCurrSwRfb->pvHeader, prWlanHeader->aucAddr1, MAC_ADDR_LEN);
+	kalMemCopy(prCurrSwRfb->pvHeader + MAC_ADDR_LEN, prWlanHeader->aucAddr2,
+					MAC_ADDR_LEN);
+	prCurrSwRfb->u2PacketLen -= u2MACLen;
+	/* record StaRec related info */
+	prCurrSwRfb->ucStaRecIdx = prCurrSwRfb->prStaRec->ucIndex;
+	prCurrSwRfb->ucWlanIdx = prCurrSwRfb->prStaRec->ucWlanIndex;
+	GLUE_SET_PKT_BSS_IDX(prCurrSwRfb->pvPacket,
+		secGetBssIdxByWlanIdx(prAdapter, prCurrSwRfb->ucWlanIdx));
 #endif
 }
 
@@ -3728,7 +3729,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 
 			if (fgIsBMC)
 				processNanBmcRx(prAdapter, prCurrSwRfb,
-					prCurrSwRfb->prStaRec->ucBssIndex,
 					prWlanHeader, u2FrameCtrl);
 
 			if (prCurrSwRfb->prStaRec == NULL &&
