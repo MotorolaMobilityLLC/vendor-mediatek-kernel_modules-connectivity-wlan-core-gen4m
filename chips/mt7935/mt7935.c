@@ -695,7 +695,7 @@ struct CHIP_DBG_OPS mt7935_DebugOps = {
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.getFwDebug = NULL,
-	.setFwDebug = connac3x_set_ple_int_no_read,
+	.setFwDebug = NULL,
 #endif
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
