@@ -248,7 +248,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
 	[UNI_EVENT_ID_IE_COUNTDOWN] = nicUniEventCountdown,
 	[UNI_EVENT_ID_STAREC] = nicUniEventStaRec,
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	[UNI_EVENT_ID_RDD] = nicUniEventRDD,
+#endif
 #if CFG_SUPPORT_TDLS
 	[UNI_EVENT_ID_TDLS] = nicUniEventTdls,
 #endif
@@ -7941,6 +7943,8 @@ uint32_t nicUniUpdateStaRecFastAll(
 	return status;
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+
 void nicUniEventRDD(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt)
 {
@@ -8002,6 +8006,7 @@ void nicUniEventRDD(struct ADAPTER *ad,
 	}
 
 }
+#endif
 
 void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 	uint8_t ucBssIdx,

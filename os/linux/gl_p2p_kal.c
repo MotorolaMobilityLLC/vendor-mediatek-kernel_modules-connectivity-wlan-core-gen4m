@@ -669,15 +669,19 @@ uint8_t kalP2PIsTxCarrierOn(struct GLUE_INFO *prGlueInfo,
 void kalP2PEnableNetDev(struct GLUE_INFO *prGlueInfo,
 		struct BSS_INFO *prBssInfo)
 {
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
+#endif
 
 	kalP2PTxCarrierOn(prGlueInfo,
 			prBssInfo);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
 		prGlueInfo->prP2PInfo[ucRoleIdx]->fgChannelSwitchReq = TRUE;
 		kalP2pIndicateChnlSwitch(prGlueInfo->prAdapter, prBssInfo);
 	}
+#endif
 }
 
 void kalP2PGenP2P_IE(struct GLUE_INFO *prGlueInfo,
@@ -2284,6 +2288,8 @@ void kalP2pIndicateQueuedMgmtFrame(struct GLUE_INFO *prGlueInfo,
 #endif
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+
 void kalP2pPreStartRdd(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRoleIdx,
@@ -2369,7 +2375,7 @@ nla_put_failure:
 		kfree_skb(vendor_event);
 #endif
 }
-
+#endif /* CFG_SUPPORT_DFS_MASTER */
 
 void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
@@ -2709,6 +2715,8 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	netif_tx_start_all_queues(prP2PInfo->prDevHandler);
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+
 int32_t kalP2pFuncPreStartRdd(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRoleIdx,
@@ -2812,6 +2820,7 @@ int32_t kalP2pFuncPreStartRdd(
 out:
 	return i4Rslt;
 }
+#endif
 
 void kalP2pClearCsaChan(struct GL_P2P_INFO *prGlueP2pInfo)
 {

@@ -129,6 +129,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 #endif
 };
 
+uint8_t g_ucBssIdx;
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 u_int8_t g_fgManualCac = FALSE;
 uint32_t g_u4DriverCacTime;
@@ -136,7 +138,7 @@ uint32_t g_u4CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
-uint8_t g_ucBssIdx;
+
 static uint8_t *apucDfsState[DFS_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("DFS_STATE_INACTIVE"),
 	(uint8_t *) DISP_STRING("DFS_STATE_CHECKING"),
@@ -2520,7 +2522,9 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			FALSE);
 
 #endif
+#if CFG_SUPPORT_IDC_CH_SWITCH
 	cnmIdcSwitchSapChannel(prAdapter);
+#endif
 	if (prAdapter->rWifiVar
 		.prP2pSpecificBssInfo[role_idx]
 		->fgIsRddOpchng == TRUE) {
@@ -2637,19 +2641,6 @@ uint8_t p2pFuncGetDfsState(void)
 	return g_ucDfsState;
 }
 
-uint8_t p2pFuncGetCsaBssIndex(void)
-{
-	return g_ucBssIdx;
-}
-
-void p2pFuncSetCsaBssIndex(uint8_t ucBssIdx)
-{
-	DBGLOG(P2P, TRACE,
-		"ucBssIdx = %d\n", ucBssIdx);
-
-	g_ucBssIdx = ucBssIdx;
-}
-
 uint8_t *p2pFuncShowDfsState(void)
 {
 	return apucDfsState[g_ucDfsState];
@@ -2714,6 +2705,18 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 }
 
 #endif
+uint8_t p2pFuncGetCsaBssIndex(void)
+{
+	return g_ucBssIdx;
+}
+
+void p2pFuncSetCsaBssIndex(uint8_t ucBssIdx)
+{
+	DBGLOG(P2P, TRACE,
+		"ucBssIdx = %d\n", ucBssIdx);
+
+	g_ucBssIdx = ucBssIdx;
+}
 
 void p2pFuncParseH2E(struct BSS_INFO *prP2pBssInfo)
 {
@@ -7035,6 +7038,7 @@ static u_int8_t p2pFuncSwitchSapChannelToDbdc(
 }
 #endif
 
+
 void p2pFuncSwitchGcChannel(
 		struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo)
@@ -7372,10 +7376,12 @@ void p2pFuncSwitchSapChannel(
 		goto exit;
 	}
 
+#if CFG_SUPPORT_DFS_MASTER
 	if ((eSapBand == BAND_5G) &&
 		(p2pFuncGetDfsState() != DFS_STATE_ACTIVE))
 		fgIsSapDfs = rlmDomainIsLegalDfsChannel(prAdapter,
 			eSapBand, ucSapChannelNum);
+#endif
 
 	/* STA is not connected */
 	if (ucStaChannelNum == 0) {

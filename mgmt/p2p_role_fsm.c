@@ -685,8 +685,10 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
 	struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+#endif
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pRoleFsmInfo != NULL));
@@ -1423,15 +1425,18 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 		/* STA+SAP will follow STA BW */
 		if (p2pGetAisBssByBand(prAdapter, BAND_5G))
 			bSkipCac = TRUE;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 		else if (p2pFuncIsManualCac() &&
 			(prAdapter->rWifiVar.u4ByPassCacTime <= 2)) {
 			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
 			bSkipCac = TRUE;
 		}
+#endif
 	}
 
 	if (bSkipCac)
 		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	else {
 		memcpy(&prP2pConnReqInfo->rMsgStartAp,
 			prMsgHdr,
@@ -1441,7 +1446,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 			ucChannelNum,
 			eBand);
 	}
-
+#endif
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
@@ -1857,9 +1862,9 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
-#endif
 
 SKIP_END_RDD:
+#endif
 
 	rsnFlushPmkid(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -2165,6 +2170,22 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventRadarDet*/
 
+
+void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
+		uintptr_t ulParamPtr)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
+
+	DBGLOG(P2P, INFO,
+		"p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
+
+	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+
+}				/* p2pRoleFsmRunEventDfsShutDownTimeout */
+
+#endif
 void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -2343,22 +2364,6 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
-
-void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
-		uintptr_t ulParamPtr)
-{
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *) ulParamPtr;
-
-	DBGLOG(P2P, INFO,
-		"p2pRoleFsmRunEventDfsShutDownTimeout: DFS shut down.\n");
-
-	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
-	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-
-}				/* p2pRoleFsmRunEventDfsShutDownTimeout */
-
-#endif
 
 void p2pRoleFsmRunEventWaitNextReqChnlTimeout(struct ADAPTER *prAdapter,
 		uintptr_t ulParamPtr)

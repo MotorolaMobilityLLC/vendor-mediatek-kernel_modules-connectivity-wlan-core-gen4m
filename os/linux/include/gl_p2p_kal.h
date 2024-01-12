@@ -389,6 +389,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		enum P2P_VENDOR_ACS_HW_MODE eHwMode);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+
 void kalP2pPreStartRdd(
 		struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIdx,
@@ -399,6 +401,7 @@ void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
 		uint32_t event,
 		uint32_t freq);
+#endif
 
 void kalP2pNotifyStopApComplete(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
@@ -409,11 +412,13 @@ u_int8_t kalP2pIsStoppingAp(struct ADAPTER *prAdapter,
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 int32_t kalP2pFuncPreStartRdd(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRoleIdx,
 	struct cfg80211_chan_def *chandef,
 	unsigned int cac_time_ms);
+#endif
 
 void kalP2pClearCsaChan(
 	struct GL_P2P_INFO *prGlueP2pInfo);

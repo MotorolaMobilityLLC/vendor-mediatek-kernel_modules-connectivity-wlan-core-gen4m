@@ -8227,13 +8227,14 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	if (prWifiVar->ucDfsRegion)
 		rlmDomainSetDfsRegion(prWifiVar->ucDfsRegion);
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	prWifiVar->u4ByPassCacTime = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ByPassCacTime", 0);
 	if (prWifiVar->u4ByPassCacTime) {
 		p2pFuncEnableManualCac();
 		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
 	}
-
+#endif
 	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "CC2Region", FEATURE_ENABLED);
 

@@ -11191,7 +11191,6 @@ int priv_driver_set_country(struct net_device *prNetDev,
 	return 0;
 }
 
-#if CFG_SUPPORT_IDC_CH_SWITCH
 int priv_driver_set_csa(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen)
 {
@@ -11228,8 +11227,12 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
 
 		if (IS_BSS_APGO(bss))
+#if CFG_SUPPORT_IDC_CH_SWITCH
 			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
+#else
+			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
+#endif
 		else if (IS_BSS_GC(bss))
 			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
@@ -11243,7 +11246,6 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 
 	return 0;
 }
-#endif
 
 int priv_driver_set_csa_ex(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen)
@@ -11284,8 +11286,13 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
 
 		if (IS_BSS_APGO(bss))
+#if CFG_SUPPORT_IDC_CH_SWITCH
 			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
+#else
+			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
+#endif
+
 		else if (IS_BSS_GC(bss))
 			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);

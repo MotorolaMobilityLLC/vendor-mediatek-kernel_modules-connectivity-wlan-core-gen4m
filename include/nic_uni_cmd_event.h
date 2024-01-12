@@ -7127,8 +7127,10 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventP2p(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 void nicUniEventRDD(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventCountdown(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventStaRec(struct ADAPTER *ad,

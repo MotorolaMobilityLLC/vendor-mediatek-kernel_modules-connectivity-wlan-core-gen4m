@@ -1909,7 +1909,6 @@ struct CMD_BT_OVER_WIFI {
 	uint8_t ucReserved[1];
 };
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
 enum ENUM_REG_DOMAIN {
 	ENUM_RDM_CE = 0,
 	ENUM_RDM_FCC,
@@ -1920,6 +1919,8 @@ enum ENUM_REG_DOMAIN {
 	ENUM_RDM_KR,
 	ENUM_RDM_REGION_NUM
 };
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 
 struct CMD_RDD_ON_OFF_CTRL {
 	uint8_t ucDfsCtrl;
