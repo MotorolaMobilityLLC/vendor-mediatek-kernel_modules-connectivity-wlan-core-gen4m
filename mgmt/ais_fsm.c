@@ -4785,7 +4785,6 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 		 prAisFsmInfo->eCurrentState == AIS_STATE_JOIN)) {
 		if (prAisBssInfo->eConnectionStateIndicated ==
 						eConnectionState) {
-			aisFsmDisconnectedAction(prAdapter, ucBssIndex);
 			return;
 		}
 	}
