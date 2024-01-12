@@ -823,7 +823,7 @@ int wf_ioremap_read(size_t addr, unsigned int *val)
 
 	*val = readl(vir_addr);
 	iounmap(vir_addr);
-	DBGLOG(INIT, ERROR, "Read CONSYS 0x%08x=0x%08x.\n", addr, *val);
+	DBGLOG(INIT, TRACE, "Read CONSYS 0x%08x=0x%08x.\n", addr, *val);
 
 	return 0;
 }
@@ -839,7 +839,7 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 
 	writel(val, vir_addr);
 	iounmap(vir_addr);
-	DBGLOG(INIT, ERROR, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
+	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
 
 	return 0;
 }
@@ -864,7 +864,7 @@ int wf_pwr_on_consys_mcu(void)
 	int ret = 0;
 	unsigned int polling_count;
 
-	DBGLOG(INIT, ERROR, "wmmcu power-on start.\n");
+	DBGLOG(INIT, INFO, "wmmcu power-on start.\n");
 	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value |= 0x00000001;
@@ -1067,14 +1067,14 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
 
 	/* Check CONNSYS power-on completion
-	 * Polling "10 times" and each polling interval is "0.5ms"
+	 * Polling "100 times" and each polling interval is "0.5ms"
 	 * Polling 0x81021604[31:0] = 0x00001D1E
 	 */
 	wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
 	check = 0;
 	polling_count = 0;
 	while (value != CONNSYS_ROM_DONE_CHECK) {
-		if (polling_count > 10) {
+		if (polling_count > 100) {
 			check = -1;
 			ret = -1;
 			break;
@@ -1092,7 +1092,7 @@ int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
 	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
-	DBGLOG(INIT, ERROR, "wmmcu power-on done.\n");
+	DBGLOG(INIT, INFO, "wmmcu power-on done.\n");
 	return ret;
 }
 
