@@ -917,6 +917,12 @@ void testPsSetupBss(struct ADAPTER *prAdapter,
 	DEBUGFUNC("testPsSetupBss()");
 	DBGLOG(SW4, INFO, "index %d\n", ucBssIndex);
 
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(RLM, ERROR,
+			"Invalid bssidx:%d\n", ucBssIndex);
+		return;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (prBssInfo == NULL) {
 		DBGLOG(SW4, WARN, "Get BSS info by index fail.\n");
