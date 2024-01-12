@@ -3954,14 +3954,17 @@ struct UNI_CMD_PERF_IND {
 	/* tlv */
 	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
 	*
-	*  TAG                          | ID   | structure
-	*  -------------                | -----| -------------
-	*  UNI_CMD_ID_PERF_IND          | 0x0  | UNI_CMD_ID_PERF_IND_PARM_T
+	*  TAG                             | ID   | structure
+	*  -------------                   | -----| -------------
+	*  UNI_CMD_ID_PERF_IND             | 0x0  | UNI_CMD_ID_PERF_IND_PARM_T
+	*  UNI_CMD_PERF_IND_TAG_TPUT_FACTOR| 0x1  | UNI_CMD_PERF_IND_TPUT_FACTOR
+
 	*/
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_CMD_PERF_IND_TAG {
 	UNI_CMD_PERF_IND_TAG_PARM = 0,
+	UNI_CMD_PERF_IND_TAG_TPUT_FACTOR = 1,
 	UNI_CMD_PERF_IND_TAG_NUM
 };
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3988,6 +3991,13 @@ struct UNI_CMD_PERF_IND_PARM {
 	uint8_t  ucReserve[3];
 	struct STRU_UNI_CMD_PERF_IND_PARM rUniCmdParm[MAX_BSSID_NUM];
 	//uint32_t au4Padding[62]; /* reserve for future*/
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_PERF_IND_TPUT_FACTOR {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4WtblBitMap;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -8370,6 +8380,11 @@ uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,
 uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+
+#if CFG_SUPPORT_TPUT_FACTOR
+uint32_t nicUniCmdGetTputFactor(struct ADAPTER *ad, uint32_t u4WtblFlag);
+#endif
+
 /*******************************************************************************
  *                   Event
  *******************************************************************************

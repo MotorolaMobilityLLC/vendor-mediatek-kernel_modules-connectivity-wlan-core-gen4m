@@ -1539,6 +1539,12 @@ else
     ccflags-y += -DCFG_ENABLE_AEE_MSG=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_TPUT_FACTOR), y)
+    ccflags-y += -DCFG_SUPPORT_TPUT_FACTOR=1
+else
+    ccflags-y += -DCFG_SUPPORT_TPUT_FACTOR=0
+endif
+
 # Disable ASSERT() for user load, enable for others
 $(info CONFIG_MTK_WIFI_PRODUCT: $(CONFIG_MTK_WIFI_PRODUCT))
 ifneq ($(CONFIG_BUILD_NONE_STA), y)

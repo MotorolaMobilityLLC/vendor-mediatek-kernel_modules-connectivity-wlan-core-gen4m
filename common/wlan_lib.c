@@ -8550,6 +8550,17 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->u4RecoveryMsiRxCnt, "RecoveryMsiRxCnt", 5);
 	INIT_UINT(prWifiVar->u4RecoveryMsiTime, "RecoveryMsiTime", 1000);
+
+#if CFG_SUPPORT_TPUT_FACTOR
+	prWifiVar->fgTputFactorDump = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "TputFactorDump", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->u4TputFactorDumpPeriodL1,
+		  "TputFactorDumpPeriodL1", 500);
+	INIT_UINT(prWifiVar->u4TputFactorDumpPeriodL2,
+		  "TputFactorDumpPeriodL2", 10000);
+	INIT_UINT(prWifiVar->u4TputFactorDumpThresh,
+		  "TputFactorDumpThresh", 100);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)

@@ -1658,6 +1658,17 @@ struct WIFI_VAR {
 
 	uint32_t u4RecoveryMsiRxCnt;
 	uint32_t u4RecoveryMsiTime;
+
+#if CFG_SUPPORT_TPUT_FACTOR
+	u_int8_t fgTputFactorDump;
+	/* throughput factor dump flag 0: disabled, 1:enabled */
+	uint32_t u4TputFactorDumpPeriodL1;
+	/* throughput factor log lv 1 dump period unit:ms */
+	uint32_t u4TputFactorDumpPeriodL2;
+	/* throughput factor log lv 2 dump period unit:ms */
+	uint32_t u4TputFactorDumpThresh;
+	/* throughput factor dump threshold unit:mbps */
+#endif
 };
 
 /* cnm_timer module */

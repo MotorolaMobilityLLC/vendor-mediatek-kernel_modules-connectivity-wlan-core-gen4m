@@ -5190,9 +5190,17 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 	struct CMD_PERF_IND *cmd;
 	struct UNI_CMD_PERF_IND *uni_cmd;
 	struct UNI_CMD_PERF_IND_PARM *tag;
+#if CFG_SUPPORT_TPUT_FACTOR
+	struct UNI_CMD_PERF_IND_TPUT_FACTOR *tput_factor_tag;
+#endif
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_PERF_IND) +
-	     		       sizeof(struct UNI_CMD_PERF_IND_PARM);
+#if CFG_SUPPORT_TPUT_FACTOR
+			sizeof(struct UNI_CMD_PERF_IND_PARM) +
+			sizeof(struct UNI_CMD_PERF_IND_TPUT_FACTOR);
+#else
+			sizeof(struct UNI_CMD_PERF_IND_PARM);
+#endif
 
 	if (info->ucCID != CMD_ID_PERF_IND ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -5215,6 +5223,14 @@ uint32_t nicUniCmdPerfInd(struct ADAPTER *ad,
 
 	kalMemCopy(tag->rUniCmdParm, cmd->rUniCmdParm,
 				sizeof(tag->rUniCmdParm));
+
+#if CFG_SUPPORT_TPUT_FACTOR
+	tput_factor_tag = (struct UNI_CMD_PERF_IND_TPUT_FACTOR *)
+		(uni_cmd->aucTlvBuffer + sizeof(*tag));
+	tput_factor_tag->u2Tag = UNI_CMD_PERF_IND_TAG_TPUT_FACTOR;
+	tput_factor_tag->u2Length = sizeof(*tput_factor_tag);
+	tput_factor_tag->u4WtblBitMap = cmd->u4WtblBitMap;
+#endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
