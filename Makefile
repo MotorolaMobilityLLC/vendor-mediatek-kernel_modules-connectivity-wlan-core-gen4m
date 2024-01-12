@@ -831,8 +831,10 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
     ccflags-y += -D_HIF_SDIO=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ccflags-y += -D_HIF_PCIE=1
-    ifeq ($(CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT), y)
-        ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
+    ifeq ($(call kver_ge,4,8),1)
+        ifeq ($(CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT), y)
+            ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
+        endif
     endif
     ifeq ($(CONFIG_MTK_PCIE_PROBE_SUPPORT), y)
         ccflags-y += -DCFG_MTK_PCIE_PROBE_SUPPORT
