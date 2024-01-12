@@ -2000,8 +2000,15 @@ void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 void nicTxDirectClearBssAbsentQ(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter);
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void nicTxDirectTimerCheckSkbQ(struct timer_list *timer);
+void nicTxDirectTimerCheckHifQ(struct timer_list *timer);
+#else
 void nicTxDirectTimerCheckSkbQ(unsigned long data);
 void nicTxDirectTimerCheckHifQ(unsigned long data);
+#endif
+
 uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
 	struct GLUE_INFO *prGlueInfo);
 /* TX Direct functions : END */
