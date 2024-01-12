@@ -806,15 +806,15 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucStaRecIndexExcluded)
 {
-#if CFG_ENABLE_WIFI_DIRECT
 	struct BSS_INFO *prBssInfo;
-#endif
 	struct STA_RECORD *prStaRec;
 	uint16_t i;
 	enum ENUM_STA_REC_CMD_ACTION eAction;
 
 	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
 		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)
 		eAction = STA_REC_CMD_ACTION_BSS_EXCLUDE_STA;
@@ -824,6 +824,11 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	cnmStaSendRemoveCmd(prAdapter,
 		eAction,
 		ucStaRecIndexExcluded, ucBssIndex);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssTeardownAllClients(prAdapter,
+		mldBssGetByBss(prAdapter, prBssInfo));
+#endif
 
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
@@ -838,7 +843,6 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	 *        be invoked after state sync of STA_REC
 	 * Update system operation parameters for AP mode
 	 */
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (prAdapter->fgIsP2PRegistered &&
 	    prBssInfo &&
 	    prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
