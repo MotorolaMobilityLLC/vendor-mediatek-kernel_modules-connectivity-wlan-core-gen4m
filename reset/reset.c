@@ -49,8 +49,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  **********************************************************************/
-/*! \file   reset_ko.c
-*   \brief  reset ko
+/*! \file   reset.c
+*   \brief  reset module
 *
 *    This file contains all implementations of reset module
 */
@@ -60,7 +60,6 @@
 *                         C O M P I L E R   F L A G S
 ***********************************************************************
 */
-
 
 /**********************************************************************
 *                    E X T E R N A L   R E F E R E N C E S
@@ -75,6 +74,9 @@
 #include <linux/kthread.h>
 #include <linux/timer.h>
 #include "precomp.h"
+#include "reset.h"
+
+
 
 /**********************************************************************
 *                                 M A C R O S
@@ -130,12 +132,10 @@ struct ResetEvent {
 ***********************************************************************
 */
 
-
 /**********************************************************************
 *                            P U B L I C   D A T A
 ***********************************************************************
 */
-
 
 /**********************************************************************
 *                           P R I V A T E   D A T A
@@ -144,6 +144,7 @@ struct ResetEvent {
 static struct ResetInfo resetInfo = {0};
 static char moduleName[RESET_MODULE_TYPE_MAX][RFSM_NAME_MAX_LEN];
 static bool fgL0ResetDone;
+static bool fgExit;
 
 /**********************************************************************
 *                              F U N C T I O N S
@@ -257,21 +258,25 @@ static int resetko_thread_main(void *data)
 	struct ResetEvent *resetEvent;
 	enum ModuleType module, begin, end;
 	int ret = 0;
+	unsigned int evt;
 
 	MR_Info("%s: start\n", __func__);
 
-	while (true) {
+	while (!fgExit) {
 		do {
 			ret = wait_event_interruptible(resetInfo.resetko_waitq,
 						       isEventEmpty() == false);
 		} while (ret != 0);
 
 		while (resetEvent = popResetEvent(), resetEvent != NULL) {
+			evt = (unsigned int)resetEvent->event;
+			if (evt > RFSM_EVENT_MAX)
+				continue;
 			mutex_lock(&resetInfo.moduleMutex);
 			/* loop for all related module */
-			if ((resetEvent->event == RFSM_EVENT_TRIGGER_RESET) ||
-			    (resetEvent->event == RFSM_EVENT_L0_RESET_GOING) ||
-			    (resetEvent->event == RFSM_EVENT_L0_RESET_DONE)) {
+			if ((evt == RFSM_EVENT_TRIGGER_RESET) ||
+			    (evt == RFSM_EVENT_L0_RESET_GOING) ||
+			    (evt == RFSM_EVENT_L0_RESET_DONE)) {
 				begin = 0;
 				end = RESET_MODULE_TYPE_MAX - 1;
 			} else {
@@ -281,15 +286,13 @@ static int resetko_thread_main(void *data)
 			for (module = begin; module <= end; module++) {
 				fsm = findResetFsm(module);
 				if (fsm != NULL) {
-					if (resetEvent->event ==
-					    RFSM_EVENT_L0_RESET_READY)
+					if (evt == RFSM_EVENT_L0_RESET_READY)
 						fsm->fgReadyForReset = ~false;
 					MR_Info("[%s] in [%s] state rcv [%s]\n",
 						fsm->name,
 						fsm->fsmState->name,
-						eventName[resetEvent->event]);
-					resetFsmHandlevent(fsm,
-							   resetEvent->event);
+						eventName[evt]);
+					resetFsmHandlevent(fsm, evt);
 				}
 			}
 			mutex_unlock(&resetInfo.moduleMutex);
@@ -528,6 +531,7 @@ enum ReturnStatus resetko_register_module(enum ModuleType module,
 		mutex_unlock(&resetInfo.moduleMutex);
 		MR_Err("%s: insmod module(%d) existed\n",
 			__func__, module);
+		freeResetFsm(fsm);
 		return RESET_RETURN_STATUS_FAIL;
 	}
 
@@ -576,11 +580,12 @@ enum ReturnStatus resetko_unregister_module(enum ModuleType module)
 EXPORT_SYMBOL(resetko_unregister_module);
 
 
-static int __init resetKoInit(void)
+static int __init resetInit(void)
 {
 	MR_Info("%s\n", __func__);
 
 	fgL0ResetDone = false;
+	fgExit = false;
 
 	mutex_init(&resetInfo.moduleMutex);
 	mutex_init(&resetInfo.eventMutex);
@@ -593,17 +598,17 @@ static int __init resetKoInit(void)
 	return 0;
 }
 
-
-static void __exit resetKoExit(void)
+static void __exit resetExit(void)
 {
 	int i;
 
 	for (i = 0; i < RESET_MODULE_TYPE_MAX; i++)
 		resetko_unregister_module((enum ModuleType)i);
+	fgExit = true;
 
 	MR_Info("%s\n", __func__);
 }
 
-module_init(resetKoInit);
-module_exit(resetKoExit);
+module_init(resetInit);
+module_exit(resetExit);
 

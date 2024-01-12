@@ -204,6 +204,7 @@ static void enter_L0_PRE_RESET(struct FsmEntity *fsm, struct FsmState *prev)
 {
 	MR_Info("[%s] %s\n", fsm->name, __func__);
 	resetkoStartTimer(fsm, WAIT_ALL_MODULE_READY_TIMEOUT);
+	fsm->fgReadyForReset = false;
 	resetkoNotifyEvent(fsm, MODULE_NOTIFY_PRE_RESET);
 }
 
