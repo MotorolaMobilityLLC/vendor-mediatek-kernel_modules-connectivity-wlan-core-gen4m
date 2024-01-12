@@ -377,7 +377,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 						    &u4Opt);
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					kalSnprintf(buf, 49, "DISCOVERY");
+					kalSnprintf(buf, 49, "DISCOVER");
 					break;
 				case 0x35010200:
 					kalSnprintf(buf, 49, "OFFER");
@@ -413,8 +413,7 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					kalSnprintf(buf, 49,
-						"client DISCOVERY");
+					kalSnprintf(buf, 49, "client DISCOVER");
 					break;
 				case 0x35010200:
 					kalSnprintf(buf, 49, "server OFFER");
@@ -479,12 +478,13 @@ void statsParseIPV4Info(void *pvPacket,
 		uint16_t u2IcmpId, u2IcmpSeq;
 		uint8_t *pucIcmp = &pucEthBody[20];
 
-		ucIcmpType = pucIcmp[0];
+		ucIcmpType = pucIcmp[ICMP_TYPE_OFFSET];
 		/* don't log network unreachable packet */
 		if (ucIcmpType == 3)
 			break;
-		u2IcmpId = *(uint16_t *) &pucIcmp[4];
-		u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
+		u2IcmpId = HTONS(*(uint16_t *)&pucIcmp[ICMP_IDENTIFIER_OFFSET]);
+		u2IcmpSeq = HTONS(*(uint16_t *)&pucIcmp[ICMP_SEQ_NUM_OFFSET]);
+
 		switch (eventType) {
 		case EVENT_RX:
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
@@ -551,7 +551,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 
 		statsLogData(eventType, WLAN_WAKE_IPV6);
 		switch (ucIpv6Proto) {
-		case 0x06:/*tcp*/
+		case IP_PRO_TCP:
 			switch (eventType) {
 			case EVENT_RX:
 				DBGLOG(RX, TRACE, "<RX><IPv6> tcp packet\n");
@@ -562,7 +562,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			}
 			break;
 
-		case 0x11:/*UDP*/
+		case IP_PRO_UDP:
 			switch (eventType) {
 			case EVENT_RX:
 			{
@@ -575,20 +575,20 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 					pucEthBody[IPV6_HDR_LEN + 1];
 
 				switch (ucIpv6UDPSrcPort) {
-				case 53:/*dns port*/
+				case UDP_PORT_DNS:
 					DBGLOG(RX, TRACE,
 						"<RX><IPv6> dns packet\n");
 					GLUE_SET_INDEPENDENT_PKT(
 						pvPacket, TRUE);
 					break;
-				case 547:/*dhcp*/
-				case 546:
+				case IPV6_UDP_PORT_DHCPC:
+				case IPV6_UDP_PORT_DHCPS:
 					DBGLOG(RX, INFO,
 						"<RX><IPv6> dhcp packet\n");
 					GLUE_SET_INDEPENDENT_PKT(
 						pvPacket, TRUE);
 					break;
-				case 123:/*ntp port*/
+				case UDP_PORT_NTP:
 					DBGLOG(RX, INFO,
 						"<RX><IPv6> ntp packet\n");
 					GLUE_SET_INDEPENDENT_PKT(
@@ -608,7 +608,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			}
 			break;
 
-		case 0x00:/*IPv6  hop-by-hop*/
+		case IPV6_PROTOCOL_HOP_BY_HOP:
 			switch (eventType) {
 			case EVENT_RX:
 				/*need chech detai pakcet type*/
@@ -625,7 +625,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 			}
 			break;
 
-		case 0x3a:/*ipv6 ICMPV6*/
+		case IPV6_PROTOCOL_ICMPV6:
 			switch (eventType) {
 			case EVENT_RX:
 			{
@@ -635,12 +635,12 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket,
 				ucICMPv6Type = pucEthBody[IPV6_HDR_LEN];
 				GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 				switch (ucICMPv6Type) {
-				case 0x85: /*ICMPV6_TYPE_ROUTER_SOLICITATION*/
+				case ICMPV6_TYPE_ROUTER_SOLICITATION:
 					DBGLOG_LIMITED(RX, INFO,
 				"<RX><IPv6> ICMPV6 Router Solicitation\n");
 					break;
 
-				case 0x86: /*ICMPV6_TYPE_ROUTER_ADVERTISEMENT*/
+				case ICMPV6_TYPE_ROUTER_ADVERTISEMENT:
 					DBGLOG_LIMITED(RX, INFO,
 				"<RX><IPv6> ICMPV6 Router Advertisement\n");
 					break;
