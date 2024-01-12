@@ -6828,11 +6828,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucP2pGcEht = (uint8_t)
 		wlanCfgGetUint32(prAdapter, "P2pGcEHT",
 				FEATURE_ENABLED);
-	prWifiVar->u2RxEhtBaSize = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "RxEhtBaSize",
+	prWifiVar->u2RxEhtBaSize = wlanCfgGetUint32(prAdapter, "RxEhtBaSize",
 			WLAN_EHT_MAX_BA_SIZE);
-	prWifiVar->u2TxEhtBaSize = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "TxEhtBaSize",
+	prWifiVar->u2TxEhtBaSize = wlanCfgGetUint32(prAdapter, "TxEhtBaSize",
 			WLAN_EHT_MAX_BA_SIZE);
 	prWifiVar->ucEhtAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EhtAmsduInAmpduRx", FEATURE_ENABLED);
