@@ -1301,6 +1301,28 @@ void mt6639_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 void mt6639_dumpPcieReg(void)
 {
 	uint32_t u4Value = 0;
+	uint32_t u4RegVal[4] = {0};
+
+	/* MalfTLP dump */
+	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030168, 0x88880100);
+	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030164, 0x5055585B);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x7403002C, &u4RegVal[0]);
+	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030168, 0x88880100);
+	connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030164, 0x5C000000);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x7403002C, &u4RegVal[1]);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030150, &u4RegVal[2]);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x74030154, &u4RegVal[3]);
+	DBGLOG(HAL, INFO,
+		"MalfTLP [0x%08x] [0x%08x] [0x%08x] [0x%08x]\n",
+		u4RegVal[0], u4RegVal[1], u4RegVal[2], u4RegVal[3]);
 
 	DBGLOG(HAL, INFO, "Start mt6639_dumpPcieReg.\n");
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
