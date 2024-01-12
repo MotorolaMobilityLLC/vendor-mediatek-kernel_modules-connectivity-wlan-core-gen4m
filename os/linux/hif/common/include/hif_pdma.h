@@ -96,7 +96,14 @@
 #define NUM_OF_RX_RING				(2 + NUM_OF_WFDMA1_RX_RING)
 
 #if defined(CONFIG_MTK_WIFI_BW320)
+#ifdef BELLWETHER
 #define TX_RING_SIZE				1024
+#else
+#define TX_RING_SIZE				3072
+#endif
+#define TX_RING_DATA_SIZE			TX_RING_SIZE
+#define TX_RING_CMD_SIZE			256
+
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define RX_RING_SIZE				4095 /* Max Rx ring size */
 /* Data Rx ring */
@@ -106,50 +113,62 @@
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
 #endif
+
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128
 #define HIF_NUM_OF_QM_RX_PKT_NUM		10240
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 7)
+#define HIF_PLE_PAGE_SIZE			0xBC0
+#define HIF_AMSDU_COUNT				4
+#define HIF_TX_MSDU_TOKEN_NUM \
+	(HIF_PLE_PAGE_SIZE * HIF_AMSDU_COUNT)
 
 #elif defined(CONFIG_MTK_WIFI_HE160)
 #define TX_RING_SIZE				1024
+#define TX_RING_DATA_SIZE			1024
+#define TX_RING_CMD_SIZE			256
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				128
 #define HIF_NUM_OF_QM_RX_PKT_NUM		4096
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 4)
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 4)
 
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
+#define TX_RING_DATA_SIZE			1024
+#define TX_RING_CMD_SIZE			256
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 2)
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 2)
 
 #elif defined(CONFIG_MTK_WIFI_VHT80)
 #define TX_RING_SIZE				512
+#define TX_RING_DATA_SIZE			512
+#define TX_RING_CMD_SIZE			256
 #define RX_RING_SIZE				512 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				512
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 3)
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 
 #else
 #define TX_RING_SIZE				256
+#define TX_RING_DATA_SIZE			256
+#define TX_RING_CMD_SIZE			256
 #define RX_RING_SIZE				256 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
 /* Event/MSDU_report Rx ring */
 #define RX_RING1_SIZE				16
 #define HIF_NUM_OF_QM_RX_PKT_NUM		2048
-#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_SIZE * 3)
+#define HIF_TX_MSDU_TOKEN_NUM			(TX_RING_DATA_SIZE * 3)
 #endif
 
 /* TXD_SIZE = TxD + TxInfo */
@@ -174,7 +193,7 @@
 #define HIF_TX_BUFF_COUNT_TC1				4096
 #define HIF_TX_BUFF_COUNT_TC2				4096
 #define HIF_TX_BUFF_COUNT_TC3				4096
-#define HIF_TX_BUFF_COUNT_TC4				(TX_RING_SIZE - 1)
+#define HIF_TX_BUFF_COUNT_TC4				(TX_RING_CMD_SIZE - 1)
 #define HIF_TX_BUFF_COUNT_TC5				4096
 
 /* enable/disable TX resource control */
@@ -490,6 +509,7 @@ struct RTMP_TX_RING {
 	uint32_t TxCpuIdx;
 	uint32_t TxDmaIdx;
 	uint32_t u4BufSize;
+	uint32_t u4RingSize;
 	uint32_t TxSwUsedIdx;
 	uint32_t u4UsedCnt;
 	uint32_t hw_desc_base;
@@ -801,8 +821,7 @@ struct pcie_msi_info {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-u_int8_t halIsDataRing(struct ADAPTER *prAdapter,
-		       enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx);
+u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx);
 void halHifRst(struct GLUE_INFO *prGlueInfo);
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem);
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);

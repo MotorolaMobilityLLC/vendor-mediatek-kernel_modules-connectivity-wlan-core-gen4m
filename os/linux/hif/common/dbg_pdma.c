@@ -420,13 +420,18 @@ static void halDumpTxRing(IN struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *prTxRing;
 	struct TXD_STRUCT *pTxD;
 
-	if (u2Port >= NUM_OF_TX_RING || u4Idx >= TX_RING_SIZE) {
-		DBGLOG(HAL, INFO, "Dump fail u2Port[%u] u4Idx[%u]\n",
-		       u2Port, u4Idx);
+	if (u2Port >= NUM_OF_TX_RING) {
+		DBGLOG(HAL, INFO, "Dump fail u2Port[%u]\n",
+		       u2Port);
 		return;
 	}
 
 	prTxRing = &prHifInfo->TxRing[u2Port];
+	if (u4Idx >= prTxRing->u4RingSize) {
+		DBGLOG(HAL, INFO, "Dump fail u2Port[%u] u4Idx[%u]\n",
+		       u2Port, u4Idx);
+		return;
+	}
 
 	pTxD = (struct TXD_STRUCT *) prTxRing->Cell[u4Idx].AllocVa;
 
@@ -673,7 +678,7 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
 
-	if (u4Num >= TX_RING_SIZE)
+	if (u4Num >= prTxRing->u4RingSize)
 		return;
 
 	pTxCell = &prTxRing->Cell[u4Num];

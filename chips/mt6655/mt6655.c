@@ -1310,7 +1310,7 @@ static void mt6655WfdmaRxRingExtCtrl(
 	/* enable wfdma magic cnt */
 	if ((prChipInfo->is_support_rro &&
 	     IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
-	    halIsDataRing(prAdapter, RX_RING, index)) {
+	    halIsDataRing(RX_RING, index)) {
 		HAL_MCR_RD(prAdapter, prRxRing->hw_cnt_addr, &u4Val);
 		u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL1_MGC_ENA_MASK;
 		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr, u4Val);

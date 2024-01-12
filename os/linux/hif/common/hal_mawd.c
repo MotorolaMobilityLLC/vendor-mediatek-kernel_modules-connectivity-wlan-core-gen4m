@@ -1213,7 +1213,7 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
-		if (!halIsDataRing(prAdapter, RX_RING, u4Idx))
+		if (!halIsDataRing(RX_RING, u4Idx))
 			continue;
 
 		if (prHifInfo->u4RcbFreeListCnt >= u4TotalCnt) {
@@ -1387,7 +1387,7 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	u4Val = prWfdmaTxRing->hw_didx_addr - MAWD_WFDMA_ADDR_OFFSET;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 	u4Addr = prBusInfo->mawd_ring_ctrl3 + u4WfdmaOffset;
-	u4Val = (TX_RING_SIZE << 19) | (TXD_SIZE << 12) |
+	u4Val = (prTxRing->u4RingSize << 19) | (TXD_SIZE << 12) |
 		(MAWD_WFDMA_HIGH_ADDR << 4) | MAWD_WFDMA_HIGH_ADDR;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
@@ -1414,7 +1414,7 @@ static void halMawdSetupTxRing(struct GLUE_INFO *prGlueInfo,
 	/* setup tx ring/hif txd size */
 	u4DWCnt = BYTE_TO_DWORD(NIC_TX_DESC_LONG_FORMAT_LENGTH +
 				prChipInfo->hif_txd_append_size);
-	u4Val = (TX_RING_SIZE << 16) | (u4DWCnt << 8);
+	u4Val = (prTxRing->u4RingSize << 16) | (u4DWCnt << 8);
 	kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr, u4Val);
 }
 
@@ -1501,6 +1501,7 @@ static u_int8_t halMawdAllocHifTxRing(struct GLUE_INFO *prGlueInfo,
 	 * Initialize Tx Ring Descriptor and associated buffer memory
 	 */
 	pTxRing = &prHifInfo->MawdTxRing[u4Num];
+	pTxRing->u4RingSize = u4Size;
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		/* Init Tx Ring Size, Va, Pa variables */
 		prTxCell = &pTxRing->Cell[u4Idx];
@@ -1535,7 +1536,7 @@ u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem)
 		     prChipInfo->hif_txd_append_size;
 
 	for (u4Num = 0; u4Num < MAWD_MD_TX_RING_NUM; u4Num++) {
-		if (!halMawdAllocHifTxRing(prGlueInfo, u4Num, TX_RING_SIZE,
+		if (!halMawdAllocHifTxRing(prGlueInfo, u4Num, TX_RING_DATA_SIZE,
 					   u4TxDSize, fgAllocMem)) {
 			DBGLOG(HAL, ERROR, "AllocMawdTxRing[%d] fail\n",
 			       u4Num);
@@ -1584,7 +1585,7 @@ void halMawdInitTxRing(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, TRACE,
 		       "-->MAWD TX_RING_%d[0x%x]: Base=0x%x, Cnt=%d!\n",
 		       u4Idx, prHifInfo->TxRing[u4Idx].hw_desc_base,
-		       u4PhyAddr, TX_RING_SIZE);
+		       u4PhyAddr, prMawdTxRing->u4RingSize);
 	}
 
 	halMawdInitErrRptRing(prGlueInfo);
@@ -1619,7 +1620,7 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 	pTxCell->prToken = prToken;
 
 	/* Increase TX_CTX_IDX, but write to register later. */
-	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
+	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
 	/* Update HW Tx DMA ring */
 	prTxRing->u4UsedCnt++;
