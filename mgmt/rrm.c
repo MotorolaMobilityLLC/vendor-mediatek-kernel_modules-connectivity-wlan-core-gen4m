@@ -619,6 +619,10 @@ u_int8_t rrmFillScanParam(struct ADAPTER *prAdapter,
 	prCurrReq = prRmReq->prCurrMeasElem;
 	prBeaconReq = (struct RM_BCN_REQ *)&prCurrReq->aucRequestFields[0];
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgForceRrmMloScan))
+		prParam->fgNeedMloScan = TRUE;
+#endif
 	prParam->fgIsRrm = TRUE;
 	prParam->ucBssIndex = ucBssIndex;
 	prParam->u4SsidNum = 0;
@@ -1784,7 +1788,8 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	}
 
 	/* Fixed length field */
-	rep.ucRegulatoryClass = bcnReq->ucRegulatoryClass;
+	rep.ucRegulatoryClass = rlmGetOpClassForChannel(
+		prBssDesc->ucChannelNum, prBssDesc->eBand);
 	rep.ucChannel = prBssDesc->ucChannelNum;
 	rep.u2Duration = bcnReq->u2Duration;
 	/* ucReportInfo: Bit 0 is the type of frame, 0 means beacon/probe
@@ -1816,9 +1821,9 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 		 ies_len >= 2);
 
 	DBGLOG(RRM, TRACE,
-	       "Bss "MACSTR", ReportDeail %d, IncludeIE Num %d, chnl %d\n",
+	       "Bss "MACSTR",ReportDeail %d,IncludeIE Num %d,chnl %d,op %d\n",
 	       MAC2STR(bssid), data->reportDetail, data->reportIeIdsLen,
-	       prBssDesc->ucChannelNum);
+	       rep.ucChannel, rep.ucRegulatoryClass);
 }
 
 void rrmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)

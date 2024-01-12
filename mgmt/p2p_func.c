@@ -327,6 +327,8 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 			kalMemSet(prScanReqV2->ucBssidMatchSsidInd,
 				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanReqV2->ucBssidMatchSsidInd));
+			prScanReqV2->ucScnFuncMask |=
+				ENUM_SCN_USE_PADDING_AS_BSSID;
 			prScanReqV2->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
 		}
 #endif

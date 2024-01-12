@@ -2103,6 +2103,8 @@ int32_t wlanHexToArrayR(int8_t *hexString, int8_t *hexArray, uint8_t arrayLen);
 
 int32_t wlanHwAddrToBin(int8_t *txt, uint8_t *addr);
 
+int32_t wlanNumBitSet(uint32_t val);
+
 u_int8_t wlanIsChipNoAck(struct ADAPTER *prAdapter);
 
 u_int8_t wlanIsChipRstRecEnabled(struct ADAPTER *prAdapter);
