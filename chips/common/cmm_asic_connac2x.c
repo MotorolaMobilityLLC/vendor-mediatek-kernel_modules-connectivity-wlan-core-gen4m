@@ -1437,7 +1437,7 @@ void asicConnac2xWfdmaInitForUSB(
 
 	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
 				    "DmaShdlEnable",
-				    FEATURE_ENABLED);
+				    FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
 	if (!prChipInfo->is_support_dma_shdl) {
 		/*
 		 *	To disable 0x7C0252B0[6] DMASHDL

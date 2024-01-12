@@ -3169,19 +3169,19 @@ static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 	 * In common cases, set ping = TXS + !AMSDU.
 	 * In test case reuqired AMSDU cases, set ping = !TXS + AMSDU.
 	 *
-	 * In normal case, fgIcmpTxs == 1, set ping with TXS.
+	 * In normal case, fgIcmpTxDone == 1, set ping with TXS.
 	 * For fragmented ping, each frames will set TXS required;
 	 * AMSDU will be cleared later if TX Done handler is set,
 	 * then each frame will reply its own TX Done event.
 	 *
-	 * If fgIcmpTxs == 0, no TXS requeid for ICMP. No TX Done handler
+	 * If fgIcmpTxDone == 0, no TXS requeid for ICMP. No TX Done handler
 	 * will be set, ICMP will be treated as normal frames.
 	 *
 	 * ICMP controls the AMSDU flag by itself, therefore, later in
 	 * nic_txd_*_chksum_op() skips the ICMP patch of unsetting AMSDU.
 	 */
 	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP &&
-	    !prAdapter->rWifiVar.fgIcmpTxs)
+	    !prAdapter->rWifiVar.fgIcmpTxDone)
 		return FALSE;
 
 #if CFG_SUPPORT_LIMITED_PKT_PID
@@ -6358,7 +6358,8 @@ void nicTxResourceUpdate_v1(struct ADAPTER *prAdapter)
 			/* update the final value */
 			prWifiVar->au4TcPageCount[idx] =
 				(uint32_t) wlanCfgGetUint32(prAdapter,
-				string, prWifiVar->au4TcPageCount[idx]);
+				string, prWifiVar->au4TcPageCount[idx],
+				FEATURE_TO_CUSTOMER);
 		}
 	}
 
@@ -6377,7 +6378,8 @@ void nicTxResourceUpdate_v1(struct ADAPTER *prAdapter)
 			/* update the final value */
 			prQM->au4GuaranteedTcResource[idx] =
 				(uint32_t) wlanCfgGetUint32(prAdapter,
-				string, prQM->au4GuaranteedTcResource[idx]);
+				string, prQM->au4GuaranteedTcResource[idx],
+				FEATURE_TO_CUSTOMER);
 		}
 	}
 #endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
@@ -6509,7 +6511,7 @@ void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 		/* update the final value */
 		prWifiVar->au4TcPageCount[idx] =
 			(uint32_t) wlanCfgGetUint32(prAdapter,
-	    string, prWifiVar->au4TcPageCount[idx]);
+	    string, prWifiVar->au4TcPageCount[idx], FEATURE_TO_CUSTOMER);
 	}
 
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
@@ -6524,7 +6526,7 @@ void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 		/* update the final value */
 		prQM->au4GuaranteedTcResource[idx] =
 			(uint32_t) wlanCfgGetUint32(prAdapter,
-	    string, prQM->au4GuaranteedTcResource[idx]);
+	    string, prQM->au4GuaranteedTcResource[idx], FEATURE_TO_CUSTOMER);
 	}
 #endif /* end of #if QM_ADAPTIVE_TC_RESOURCE_CTRL */
 #endif /* end of #if CFG_SUPPORT_CFG_FILE */
