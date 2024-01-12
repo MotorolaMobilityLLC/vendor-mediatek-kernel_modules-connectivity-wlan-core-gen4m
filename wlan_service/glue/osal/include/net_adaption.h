@@ -1395,6 +1395,14 @@ struct list_mode_event {
 	};
 };
 
+/* Test tmr for service */
+struct test_tmr_info {
+	u_int32 setting;
+	u_int32 version;
+	u_int32 through_hold;
+	u_int32 iter;
+};
+
 /* Test operation hook handlers for service */
 struct test_operation {
 	s_int32 (*op_set_tr_mac)(
@@ -1513,6 +1521,9 @@ struct test_operation {
 		struct test_wlan_info *winfos,
 		u_char band_idx,
 		struct test_configuration *configs);
+	s_int32 (*op_set_tmr)(
+		struct test_wlan_info *winfos,
+		struct test_tmr_info *test_tmr);
 	s_int32 (*op_set_preamble)(
 		struct test_wlan_info *winfos,
 		u_char mode);
@@ -1823,14 +1834,6 @@ struct test_operation {
 		u_int32 band_idx,
 		u_int32 wf_path,
 		u_int32 *dbv_value);
-};
-
-/* Test tmr for service */
-struct test_tmr_info {
-	u_int32 setting;
-	u_int32 version;
-	u_int32 through_hold;
-	u_int32 iter;
 };
 
 /*****************************************************************************
