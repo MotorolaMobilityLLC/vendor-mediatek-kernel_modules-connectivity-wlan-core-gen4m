@@ -12,8 +12,6 @@ int wpa_debug_show_keys = 1;
 
 uint32_t g_u4Randomseed;
 
-uint32_t g_u4OsMallocCnt;
-
 unsigned char g_EnableHostPrintWpa = TRUE;
 
 struct ADAPTER *g_prAdapter;
@@ -166,15 +164,6 @@ os_memcmp_const(const void *a, const void *b, size_t len) {
 	return kalMemCmp(a, b, len);
 }
 
-void *os_memdup(const void *src, size_t len)
-{
-	void *r = os_malloc(len);
-
-	if (r && src)
-		os_memcpy(r, src, len);
-	return r;
-}
-
 void *
 os_memmove(void *dest, const void *src, size_t n) {
 	return kalMemMove(dest, src, n);
@@ -188,16 +177,6 @@ os_get_time(struct os_time *t) {
 	t->usec = u4CurTime % USEC_PER_SEC;
 	return 0;
 }
-
-/*void * _os_malloc(size_t size)
-*{
-*    void * n = cnmMemAlloc(RAM_TYPE_BUF, size); //or RAM_TYPE_TCM
-*    g_u4OsMallocCnt++;
-*    wpa_printf(MSG_INFO, "os_malloc@[%s][LINE:%d][CNT:%d] len:%d,
-*	 addr:0x%p", __func__, __LINE__, g_u4OsMallocCnt, size, n);
-*    return n;
-*}
-*/
 
 int
 os_snprintf(char *str, size_t size, const char *format, ...) {
@@ -226,43 +205,6 @@ os_strlen(const char *s) {
 	return p - s;
 }
 
-void
-_os_free(void *ptr, const char *func, int line) {
-#ifdef NAN_UNUSED
-	DBGLOG(NAN, INFO, "[TEST][free] ptr:%p, %s:%d\n", ptr, func, line);
-#endif
-
-	if (ptr == NULL) {
-		/*DBGLOG(MEM, WARN, */
-		/* ("[%s] Warning! Try to free a NULL pointer\n", */
-		/*__func__));*/
-	} else {
-		cnmMemFree(g_prAdapter, ptr);
-		g_u4OsMallocCnt--;
-		ptr = NULL;
-	}
-}
-
-void *
-_os_malloc(size_t size, const char *func, int line) {
-	void *n = cnmMemAlloc(g_prAdapter, RAM_TYPE_BUF, size);
-
-#ifdef NAN_UNUSED
-	DBGLOG(NAN, INFO, "[TEST][malloc] ptr:%p, %s:%d\n", n, func, line);
-#endif
-
-	return n;
-}
-
-void *
-_os_zalloc(size_t size, const char *func, int line) {
-	void *n = _os_malloc(size, func, line);
-
-	if (n)
-		return os_memset(n, 0, size);
-	return NULL;
-}
-
 void *
 os_zalloc_TCM(size_t size) {
 	void *n = cnmMemAlloc(g_prAdapter, RAM_TYPE_BUF, size);
@@ -270,20 +212,6 @@ os_zalloc_TCM(size_t size) {
 	if (n)
 		return os_memset(n, 0, size);
 	return NULL;
-}
-
-char *
-os_strdup(const char *s) {
-	char *res;
-	size_t len;
-
-	if (s == NULL)
-		return NULL;
-	len = os_strlen(s);
-	res = os_malloc(len + 1);
-	if (res)
-		os_memcpy(res, s, len + 1);
-	return res;
 }
 
 /*Must after CMD_ID_ACTIVATE_CTRL for set own MAC*/
@@ -371,26 +299,6 @@ os_strstr(const char *haystack, const char *needle) {
 	return NULL;
 }
 
-void *
-os_realloc(void *ptr, size_t new_size, size_t old_size) {
-
-	size_t copy_len;
-	void *n;
-
-	if (ptr == NULL)
-		return os_malloc(new_size);
-
-	n = os_malloc(new_size);
-	if (n == NULL)
-		return NULL;
-	copy_len = old_size;
-	if (copy_len > new_size)
-		copy_len = new_size;
-	os_memcpy(n, ptr, copy_len);
-	os_free(ptr);
-	return n;
-}
-
 int
 os_strncmp(const char *s1, const char *s2, size_t n) {
 	if (n == 0)
@@ -462,12 +370,6 @@ int os_reltime_expired(struct os_reltime *now,
 		   (age.sec == timeout_secs && age.usec > 0);
 }
 #endif
-void *
-os_calloc(size_t nmemb, size_t size) {
-	if (size && nmemb > (~(size_t)0) / size)
-		return NULL;
-	return os_zalloc(nmemb * size);
-}
 
 int
 os_strcasecmp(const char *s1, const char *s2) {
