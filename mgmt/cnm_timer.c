@@ -99,7 +99,8 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-
+static void cnmTimerStopTimer_impl(IN struct ADAPTER *prAdapter,
+		IN struct TIMER *prTimer, IN u_int8_t fgAcquireSpinlock);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -248,13 +249,19 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 			struct TIMER, rLinkEntry);
 
 		if (prPendingTimer == prTimer) {
-			log_dbg(CNM, WARN, "re-init timer, timer %p func %p\n",
+			log_dbg(CNM, WARN, "re-init timer, timer %p func %pf\n",
 				prTimer, pfFunc);
-			/* Remove pending timer to prevent breaking list */
-			LINK_REMOVE_KNOWN_ENTRY(
-				&prAdapter->rRootTimer.rLinkHead,
-				&prTimer->rLinkEntry);
-			break;
+
+			/* Remove timer to prevent timer list collapse */
+			cnmTimerStopTimer_impl(prAdapter, prTimer, FALSE);
+
+			/* Search entire list again because of nest del and add
+			 * timers and current MGMT_TIMER could be volatile after
+			 * stopped
+			 */
+			prLinkEntry = (struct LINK_ENTRY *) prTimerList;
+			if (prLinkEntry == NULL)
+				break;
 		}
 	}
 
@@ -329,7 +336,7 @@ void cnmTimerStopTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer)
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "stop timer, timer %p func %p\n",
+	log_dbg(CNM, TRACE, "stop timer, timer %p func %pf\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc);
 
 	cnmTimerStopTimer_impl(prAdapter, prTimer, TRUE);
@@ -358,7 +365,7 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
-	log_dbg(CNM, TRACE, "start timer, timer %p func %p\n",
+	log_dbg(CNM, TRACE, "start timer, timer %p func %pf\n",
 		prTimer, prTimer->pfMgmtTimeOutFunc);
 
 #if (CFG_SUPPORT_STATISTICS == 1)
@@ -368,7 +375,8 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	if ((prTimer != NULL) && (&(prAdapter->rOidTimeoutTimer) != prTimer)
 		&& (wlan_fb_power_down == TRUE)) {
 		DBGLOG_LIMITED(CNM, INFO,
-			"[WLAN-LP] Start timer %u ms -handler(%pf)\n",
+			"[WLAN-LP] Start timer %p %u ms -handler(%pf)\n",
+			prTimer,
 			u4TimeoutMs,
 			prTimer->pfMgmtTimeOutFunc);
 	}
@@ -493,7 +501,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 						SPIN_LOCK_TIMER);
 				}
 			} else {
-				log_dbg(CNM, WARN, "timer was re-inited, timer %p func %p\n",
+				log_dbg(CNM, WARN, "timer was re-inited, timer %p func %pf\n",
 					prTimer, prTimer->pfMgmtTimeOutFunc);
 				break;
 			}
