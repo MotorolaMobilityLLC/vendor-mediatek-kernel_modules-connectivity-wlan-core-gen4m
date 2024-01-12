@@ -1658,6 +1658,7 @@ void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	struct RX_CTRL *prRxCtrl;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
@@ -1665,12 +1666,14 @@ void nicRxProcessPacketToHost(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
+	/* store it in local variable to prevent timing issue */
 	ucBssIndex = prStaRec->ucBssIndex;
-	if (ucBssIndex >= MAX_BSSID_NUM)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
 		return;
 
 #if ARP_MONITER_ENABLE
-	if (IS_STA_IN_AIS(prStaRec))
+	if (IS_BSS_INFO_IN_AIS(prBssInfo))
 		qmHandleRxArpPackets(prAdapter, prRetSwRfb);
 
 	/* STA or GC */
