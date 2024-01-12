@@ -2077,6 +2077,14 @@ int wlanDoIOCTL(struct net_device *prDev,
 	return ret;
 }				/* end of wlanDoIOCTL() */
 
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+int wlanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+		void __user *prData, int i4Cmd)
+{
+	return wlanDoIOCTL(prDev, prIfReq, i4Cmd);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Export wlan GLUE_INFO_T pointer to p2p module
@@ -3015,6 +3023,9 @@ const struct net_device_ops wlan_netdev_ops = {
 	.ndo_set_rx_mode = wlanSetMulticastList,
 	.ndo_get_stats = wlanGetStats,
 	.ndo_do_ioctl = wlanDoIOCTL,
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	.ndo_siocdevprivate = wlanDoPrivIOCTL,
+#endif
 	.ndo_start_xmit = wlanHardStartXmit,
 	.ndo_init = wlanInit,
 	.ndo_uninit = wlanUninit,
