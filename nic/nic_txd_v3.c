@@ -317,10 +317,19 @@ void nic_txd_v3_compose(
 			ucWmmQueSet, prMsduInfo->ucWmmQueSet);
 	}
 
-	ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-	if (ucTarPort == PORT_INDEX_LMAC)
-		ucTarQueue +=
-			(ucWmmQueSet * WMM_AC_INDEX_NUM);
+#if (CFG_SUPPORT_FORCE_ALTX == 1)
+	if (ucTarPort == PORT_INDEX_MCU &&
+		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
+		/* To MCU packet with always tx flag */
+		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
+	} else
+#endif
+	{
+		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+		if (ucTarPort == PORT_INDEX_LMAC)
+			ucTarQueue +=
+				(ucWmmQueSet * WMM_AC_INDEX_NUM);
+	}
 
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
