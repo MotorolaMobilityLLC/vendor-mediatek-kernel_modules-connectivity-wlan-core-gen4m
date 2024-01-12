@@ -181,6 +181,11 @@ void kal_virt_cancel_tx_rx(struct ADAPTER *ad)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad);
 }
 
+void kal_virt_resume_tx_rx(struct ADAPTER *ad)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad);
+}
+
 uint32_t kal_virt_toggle_wfsys_rst(struct ADAPTER *ad)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, ad);
