@@ -155,9 +155,6 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_PKT_OFLD] = nicUniCmdPktOfldOp,
 #endif
 	[CMD_ID_WFC_KEEP_ALIVE] = nicUniCmdKeepAlive,
-#if (CFG_CE_ASSERT_DUMP == 1)
-	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
-#endif
 #if CFG_SUPPORT_MDNS_OFFLOAD
 	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
 #endif
@@ -244,6 +241,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
 	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
+#if (CFG_CE_ASSERT_DUMP == 1)
+	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
+#endif
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
