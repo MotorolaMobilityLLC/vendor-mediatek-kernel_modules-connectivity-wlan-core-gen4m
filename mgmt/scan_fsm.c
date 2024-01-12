@@ -1038,7 +1038,7 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 				prNeighborParam->ucScnFuncMask;
 			prScanParam->u2IELen = prNeighborParam->u2IELen;
 
-			kalMemCopy(prNeighborParam->aucIE, prScanParam->aucIE,
+			kalMemCopy(prScanParam->aucIE, prNeighborParam->aucIE,
 					prNeighborParam->u2IELen);
 
 			for (i = 0; i < prNeighborParam->ucSSIDNum &&
