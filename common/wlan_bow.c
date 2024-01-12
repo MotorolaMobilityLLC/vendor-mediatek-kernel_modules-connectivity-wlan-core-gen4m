@@ -1293,13 +1293,13 @@ void wlanbowCmdEventSetSetupConnection(IN struct ADAPTER *prAdapter, IN struct C
 /*----------------------------------------------------------------------------*/
 void wlanbowCmdEventReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct LINK_QUALITY *prLinkQuality;
 	struct BT_OVER_WIFI_EVENT *prEvent;
 	struct BOW_LINK_QUALITY *prBowLinkQuality;
 
 	ASSERT(prAdapter);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
 
 	/* fill event header */
 	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)), VIR_MEM_TYPE);
@@ -1330,13 +1330,13 @@ void wlanbowCmdEventReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct CMD_
 /*----------------------------------------------------------------------------*/
 void wlanbowCmdEventReadRssi(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct LINK_QUALITY *prLinkQuality;
 	struct BT_OVER_WIFI_EVENT *prEvent;
 	struct BOW_RSSI *prBowRssi;
 
 	ASSERT(prAdapter);
 
-	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
 
 	/* fill event header */
 	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)), VIR_MEM_TYPE);
@@ -1470,7 +1470,7 @@ void bowStopping(IN struct ADAPTER *prAdapter)
 		/* prBowBssInfo->fgIsNetActive = FALSE; */
 		/* prBowBssInfo->fgIsBeaconActivated = FALSE; */
 		nicPmIndicateBssAbort(prAdapter, prBowBssInfo->ucBssIndex);
-		bowChangeMediaState(prBowBssInfo, PARAM_MEDIA_STATE_DISCONNECTED);
+		bowChangeMediaState(prBowBssInfo, MEDIA_STATE_DISCONNECTED);
 		nicUpdateBss(prAdapter, prBowBssInfo->ucBssIndex);
 		/*temp solution for FW hal_pwr_mgt.c#3037 ASSERT */
 		nicDeactivateNetwork(prAdapter, prBowBssInfo->ucBssIndex);
@@ -2166,7 +2166,8 @@ void bowFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR 
 #endif
 
 			/* 4 <1.1> Change FW's Media State immediately. */
-			bowChangeMediaState(prBowBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+			bowChangeMediaState(prBowBssInfo,
+				MEDIA_STATE_CONNECTED);
 
 			mqmProcessAssocRsp(prAdapter, prAssocRspSwRfb, pucIE, u2IELength);
 
@@ -2249,7 +2250,7 @@ bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 	/* For indicating the Disconnect Event only if current media state is
 	 * disconnected and we didn't do indication yet.
 	 */
-	if (prBssInfo->eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED) {
+	if (prBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
 		if (prBssInfo->eConnectionStateIndicated == eConnectionState)
 			return;
 	}
@@ -2261,7 +2262,7 @@ bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 		/* 4 <1> Fill EVENT_CONNECTION_STATUS */
 		rEventConnStatus.ucMediaStatus = (uint8_t) eConnectionState;
 
-		if (eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+		if (eConnectionState == MEDIA_STATE_CONNECTED) {
 			rEventConnStatus.ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED;
 
 			if (prBssInfo->eCurrentOPMode == OP_MODE_BOW) {
@@ -2313,7 +2314,7 @@ bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
 		prBssInfo->eConnectionStateIndicated = eConnectionState;
 	} else {
 		/* NOTE: Only delay the Indication of Disconnect Event */
-		ASSERT(eConnectionState == PARAM_MEDIA_STATE_DISCONNECTED);
+		ASSERT(eConnectionState == MEDIA_STATE_DISCONNECTED);
 
 		DBGLOG(BOW, INFO, "Postpone the indication of Disconnect for %d seconds\n",
 		       prConnSettings->ucDelayTimeOfDisconnectEvent);
@@ -2382,7 +2383,7 @@ uint32_t bowRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECO
 	DBGLOG(BOW, EVENT, "BoW AAA complete [" MACSTR "]\n", MAC2STR(prStaRec->aucMacAddr));
 
 	/*Update BssInfo to connected */
-	bowChangeMediaState(prBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+	bowChangeMediaState(prBssInfo, MEDIA_STATE_CONNECTED);
 	nicUpdateBss(prAdapter, prBowFsmInfo->ucBssIndex);
 
 	/*Update StaRec to State3 */
@@ -2593,7 +2594,7 @@ u_int8_t bowValidateAssocReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prS
 #endif
 
 		/*Update BssInfo to FW */
-		bowChangeMediaState(prBowBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+		bowChangeMediaState(prBowBssInfo, MEDIA_STATE_CONNECTED);
 		nicUpdateBss(prAdapter, prStaRec->ucBssIndex);
 
 		/*reply successful */

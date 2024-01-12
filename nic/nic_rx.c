@@ -148,7 +148,7 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_BT_OVER_WIFI, nicEventBtOverWifi},
 #endif
 	{EVENT_ID_STATISTICS, nicEventStatistics},
-	{EVENT_ID_WLAN_INFO, nicEventWlanInfo},
+	{EVENT_ID_WTBL_INFO, nicEventWlanInfo},
 	{EVENT_ID_MIB_INFO, nicEventMibInfo},
 	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
 	{EVENT_ID_BSS_ABSENCE_PRESENCE, qmHandleEventBssAbsencePresence},
@@ -2031,10 +2031,10 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			DbgPrint("RX EVENT: EVENT_ID_CONNECTION_STATUS = %d\n",
 				 prConnectionStatus->ucMediaStatus);
 			if (prConnectionStatus->ucMediaStatus ==
-			    PARAM_MEDIA_STATE_DISCONNECTED) {
+			    MEDIA_STATE_DISCONNECTED) {
 				/* disconnected */
 				if (kalGetMediaStateIndicated(prGlueInfo) !=
-				    PARAM_MEDIA_STATE_DISCONNECTED) {
+				    MEDIA_STATE_DISCONNECTED) {
 
 					kalIndicateStatusAndComplete(prGlueInfo,
 						WLAN_STATUS_MEDIA_DISCONNECT,
@@ -2044,7 +2044,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 						kalGetTimeTick();
 				}
 			} else if (prConnectionStatus->ucMediaStatus ==
-				   PARAM_MEDIA_STATE_CONNECTED) {
+				   MEDIA_STATE_CONNECTED) {
 				/* connected */
 				prAdapter->rWlanInfo.u4SysTime =
 					kalGetTimeTick();
@@ -2184,7 +2184,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 					ucBssIndex = 1;
 
 				nicUpdateLinkQuality(prAdapter, ucBssIndex,
-					(struct EVENT_LINK_QUALITY_V2 *)
+					(struct EVENT_LINK_QUALITY *)
 						(prEvent->aucBuffer));
 			}
 
@@ -2603,7 +2603,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			break;
 
 #if CFG_SUPPORT_MSP
-		case EVENT_ID_WLAN_INFO:
+		case EVENT_ID_WTBL_INFO:
 			/* buffer statistics for further query */
 			prAdapter->fgIsStatValid = TRUE;
 			prAdapter->rStatUpdateTime = kalGetTimeTick();
@@ -2611,7 +2611,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 				prEvent->aucBuffer,
 				sizeof(struct EVENT_WLAN_INFO));
 
-			DBGLOG(RSN, INFO, "EVENT_ID_WLAN_INFO");
+			DBGLOG(RSN, INFO, "EVENT_ID_WTBL_INFO");
 			/* command response handling */
 			prCmdInfo = nicGetPendingCmdInfo(prAdapter,
 							 prEvent->ucSeqNum);

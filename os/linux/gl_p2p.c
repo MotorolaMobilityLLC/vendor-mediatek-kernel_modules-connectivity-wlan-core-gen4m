@@ -953,7 +953,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			 */
 			if ((prP2pBssInfo != NULL) &&
 			    (prP2pBssInfo->eConnectionState ==
-				PARAM_MEDIA_STATE_CONNECTED) &&
+				MEDIA_STATE_CONNECTED) &&
 			    ((iftype == NL80211_IFTYPE_P2P_CLIENT) ||
 			     (iftype == NL80211_IFTYPE_STATION))) {
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 2, 0) <= CFG80211_VERSION_CODE)
@@ -1689,7 +1689,7 @@ static int p2pStop(IN struct net_device *prDev)
 #endif
 	/* 3. stop queue and turn off carrier */
 	/* TH3 multiple P2P */
-	/*prGlueInfo->prP2PInfo[0]->eState = PARAM_MEDIA_STATE_DISCONNECTED;*/
+	/*prGlueInfo->prP2PInfo[0]->eState = MEDIA_STATE_DISCONNECTED;*/
 
 	netif_tx_stop_all_queues(prDev);
 	if (netif_carrier_ok(prDev))
@@ -1861,7 +1861,7 @@ int p2pHardStartXmit(IN struct sk_buff *prSkb, IN struct net_device *prDev)
 
 	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	if ((prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) ||
+	if ((prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) ||
 		(prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0))
 		kalPerMonStart(prGlueInfo);
 

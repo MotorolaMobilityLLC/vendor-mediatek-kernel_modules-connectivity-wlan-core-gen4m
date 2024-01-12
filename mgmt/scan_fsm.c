@@ -1258,7 +1258,7 @@ scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
 	}
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_SCHED_SCAN_ENABLE,
+			    CMD_ID_SET_SCAN_SCHED_ENABLE,
 			    TRUE,
 			    FALSE,
 			    FALSE,
@@ -1294,7 +1294,7 @@ scnFsmSchedScanSetCmd(IN struct ADAPTER *prAdapter,
 	if (prSchedScanCmd)
 		u2IeSize = prSchedScanCmd->u2IELen;
 	rStatus = wlanSendSetQueryCmd(prAdapter,
-			    CMD_ID_SET_SCHED_SCAN_REQ,
+			    CMD_ID_SET_SCAN_SCHED_REQ,
 			    TRUE,
 			    FALSE,
 			    FALSE,

@@ -822,7 +822,7 @@ void scanSearchBssDescOfRoamSsid(IN struct ADAPTER *prAdapter)
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 
-	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED)
+	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
 		return;
 
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
@@ -2689,7 +2689,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo != NULL) &&
 		    (prAisBssInfo->eConnectionState ==
-		     PARAM_MEDIA_STATE_CONNECTED) &&
+		     MEDIA_STATE_CONNECTED) &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE
 		    && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		    || (prBssDesc->eBSSType == BSS_TYPE_IBSS
@@ -2761,7 +2761,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS
 		     && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
 			if (prAisBssInfo->eConnectionState
-				== PARAM_MEDIA_STATE_CONNECTED) {
+				== MEDIA_STATE_CONNECTED) {
 
 				/* *not* checking prBssDesc->fgIsConnected
 				 * anymore, due to Linksys AP uses " " as

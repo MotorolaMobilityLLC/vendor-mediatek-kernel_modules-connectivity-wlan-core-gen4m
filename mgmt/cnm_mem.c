@@ -986,7 +986,7 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	kalMemZero(prCmdContent, sizeof(struct CMD_UPDATE_STA_RECORD));
 
 	if (prTxBfPfmuStaInfo) {
-		memcpy(&prCmdContent->rTxBfPfmuInfo, prTxBfPfmuStaInfo,
+		memcpy(&prCmdContent->u2PfmuId, prTxBfPfmuStaInfo,
 			sizeof(struct TXBF_PFMU_STA_INFO));
 	}
 
@@ -1096,12 +1096,15 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	prCmdContent->u4TxMaxAmsduInAmpduLen
 		= prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
 
-	prCmdContent->ucTxBaSize = prAdapter->rWifiVar.ucTxBaSize;
+	prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
+		= prAdapter->rWifiVar.ucTxBaSize;
 
 	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AC)
-		prCmdContent->ucRxBaSize = prAdapter->rWifiVar.ucRxVhtBaSize;
+		prCmdContent->rBaSize.rHtVhtBaSize.ucTxBaSize
+			= prAdapter->rWifiVar.ucRxVhtBaSize;
 	else
-		prCmdContent->ucRxBaSize = prAdapter->rWifiVar.ucRxHtBaSize;
+		prCmdContent->rBaSize.rHeBaSize.u2TxBaSize
+			= prAdapter->rWifiVar.ucRxHtBaSize;
 
 	/* RTS Policy */
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucSigTaRts)) {

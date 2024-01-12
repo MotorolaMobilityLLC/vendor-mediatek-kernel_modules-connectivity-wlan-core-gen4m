@@ -1570,7 +1570,7 @@ wext_get_ap(IN struct net_device *prNetDev,
 	/* } */
 
 	if (prGlueInfo->eParamMediaStateIndicated ==
-	    PARAM_MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED) {
 		memset(prAddr, 0, sizeof(struct sockaddr));
 		return 0;
 	}
@@ -4313,7 +4313,7 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
 
 		prPmkid->u4Length = 8 + sizeof(struct PARAM_BSSID_INFO);
 		prPmkid->u4BSSIDInfoCount = 1;
-		kalMemCopy(prPmkid->arBSSIDInfo->arBSSID,
+		kalMemCopy(prPmkid->arBSSIDInfo->aucBssid,
 			   ((struct iw_pmksa *)prExtraBuf)->bssid.sa_data,
 			   6);
 		kalMemCopy(prPmkid->arBSSIDInfo->arPMKID,

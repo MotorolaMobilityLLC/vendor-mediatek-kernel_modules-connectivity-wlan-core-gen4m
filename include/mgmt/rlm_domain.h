@@ -71,6 +71,7 @@
  *  E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
+ #include "wsys_cmd_handler_fw.h"
 
 /*******************************************************************************
  *   C O N S T A N T S
@@ -855,23 +856,6 @@ struct SINGLE_SKU_INFO {
 	uint8_t  ucReserved[7];
 };
 
-
-/*
- * channel structure
- */
-struct channel {
-	u16 chNum;
-	u8	reserved[2];
-	u32 flags; /*enum ieee80211_channel_flags*/
-};
-
-struct acctive_channel_list {
-	u8 n_channels_2g;
-	u8 n_channels_5g;
-	u8 ucReserved[2];
-	struct channel channels[0];
-};
-
 /*
  * single sku control structure
  */
@@ -899,7 +883,7 @@ struct mtk_regd_control {
 	struct GLUE_INFO *pGlueInfo; /*wlan GlueInfo*/
 	u8 n_channel_active_2g;
 	u8 n_channel_active_5g;
-	struct channel channels[MAX_SUPPORTED_CH_COUNT];
+	struct CMD_DOMAIN_CHANNEL channels[MAX_SUPPORTED_CH_COUNT];
 	enum nl80211_dfs_regions dfs_region;
 };
 
@@ -1004,9 +988,9 @@ void rlmDomainResetCtrlInfo(u_int8_t force);
 void rlmDomainAddActiveChannel(u8 band);
 u8 rlmDomainGetActiveChannelCount(u8 band);
 void rlmDomainParsingChannel(IN struct wiphy *pWiphy);
-struct channel *rlmDomainGetActiveChannels(void);
+struct CMD_DOMAIN_CHANNEL *rlmDomainGetActiveChannels(void);
 void rlmExtractChannelInfo(u32 max_ch_count,
-			   struct acctive_channel_list *prBuff);
+			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff);
 void regd_set_using_local_regdomain_db(void);
 void rlmDomainSetDefaultCountryCode(void);
 enum regd_state rlmDomainGetCtrlState(void);

@@ -3305,8 +3305,8 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	rBssRlmParam.ucVhtChannelFrequencyS2 =
 		prBssInfo->ucVhtChannelFrequencyS2;
 	rBssRlmParam.u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
-	rBssRlmParam.ucOpRxNss = prBssInfo->ucOpRxNss;
-	rBssRlmParam.ucOpTxNss = prBssInfo->ucOpTxNss;
+	rBssRlmParam.ucRxNss = prBssInfo->ucOpRxNss;
+	rBssRlmParam.ucTxNss = prBssInfo->ucOpTxNss;
 
 	rlmRecIeInfoForClient(prAdapter, prBssInfo, pucIE, u2IELength);
 
@@ -3331,8 +3331,8 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 		rBssRlmParam.ucVhtChannelFrequencyS2 !=
 			prBssInfo->ucVhtChannelFrequencyS2 ||
 		rBssRlmParam.u2VhtBasicMcsSet != prBssInfo->u2VhtBasicMcsSet ||
-		rBssRlmParam.ucOpRxNss != prBssInfo->ucOpRxNss ||
-		rBssRlmParam.ucOpTxNss != prBssInfo->ucOpTxNss)
+		rBssRlmParam.ucRxNss != prBssInfo->ucOpRxNss ||
+		rBssRlmParam.ucTxNss != prBssInfo->ucOpTxNss)
 		fgNewParameter = TRUE;
 	else {
 		DBGLOG(RLM, TRACE,
@@ -3382,7 +3382,7 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 			if (prBssInfo->eCurrentOPMode ==
 				    OP_MODE_INFRASTRUCTURE &&
 			    prBssInfo->eConnectionState ==
-				    PARAM_MEDIA_STATE_CONNECTED) {
+				    MEDIA_STATE_CONNECTED) {
 				/* P2P client or AIS infra STA */
 				if (EQUAL_MAC_ADDR(
 					    prBssInfo->aucBSSID,
@@ -3780,8 +3780,8 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 	prCmdBody->ucVhtChannelFrequencyS1 = prBssInfo->ucVhtChannelFrequencyS1;
 	prCmdBody->ucVhtChannelFrequencyS2 = prBssInfo->ucVhtChannelFrequencyS2;
 	prCmdBody->u2VhtBasicMcsSet = prBssInfo->u2BSSBasicRateSet;
-	prCmdBody->ucOpTxNss = prBssInfo->ucOpTxNss;
-	prCmdBody->ucOpRxNss = prBssInfo->ucOpRxNss;
+	prCmdBody->ucTxNss = prBssInfo->ucOpTxNss;
+	prCmdBody->ucRxNss = prBssInfo->ucOpRxNss;
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
 		DBGLOG(RLM, INFO,
@@ -3794,8 +3794,8 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 		       prCmdBody->ucVhtChannelWidth,
 		       prCmdBody->ucVhtChannelFrequencyS1,
 		       prCmdBody->ucVhtChannelFrequencyS2,
-		       prCmdBody->ucOpRxNss,
-		       prCmdBody->ucOpTxNss);
+		       prCmdBody->ucRxNss,
+		       prCmdBody->ucTxNss);
 	} else {
 		DBGLOG(RLM, INFO, "N=%d closed\n", prCmdBody->ucBssIndex);
 	}

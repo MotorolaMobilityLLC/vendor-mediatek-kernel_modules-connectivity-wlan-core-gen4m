@@ -180,7 +180,7 @@ struct BSS_OPTRX_BW_BY_SOURCE_T {
 	uint8_t ucOpTxNss;
 };
 
-/* ENUM_EVENT_OPMODE_CHANGE_REASON_T */
+/* ENUM_EVENT_OPMODE_CHANGE_REASON */
 #define OPTRX_CHANGE_REASON_NUM 4
 struct BSS_OPTRX_BW_CONTROL_T {
 	struct BSS_OPTRX_BW_BY_SOURCE_T
@@ -1433,7 +1433,7 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER
 		if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 			continue;
 		if (prBssInfo->eConnectionState ==
-		    PARAM_MEDIA_STATE_CONNECTED ||
+		    MEDIA_STATE_CONNECTED ||
 		    (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT
 		     && prBssInfo->eIntendOPMode == OP_MODE_NUM)) {
 			*prBand = prBssInfo->eBand;
@@ -3516,7 +3516,7 @@ enum ENUM_OP_CHANGE_STATUS_T
 cnmSetOpTRxNssBw(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex,
-	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON_T eSource,
+	IN enum ENUM_EVENT_OPMODE_CHANGE_REASON eSource,
 	IN bool fgEnable,
 	IN uint8_t ucOpRxNss,
 	IN uint8_t ucOpTxNss,
@@ -3569,9 +3569,10 @@ cnmSetOpTRxNssBw(
 		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		if (prBssOpCtrl->
 				rOpTRxBw[EVENT_OPMODE_CHANGE_REASON_DBDC].
-				fgEnable)
+				fgEnable) {
 			ucOpBwFinal = ucOpBwFinal > MAX_BW_80MHZ ?
 				MAX_BW_80MHZ : ucOpBwFinal;
+		}
 
 		return rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
@@ -3579,8 +3580,9 @@ cnmSetOpTRxNssBw(
 					ucOpRxNssFinal,
 					ucOpTxNssFinal,
 					pfnCallback);
-	} else
+	} else {
 		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+	}
 }
 
 

@@ -689,7 +689,7 @@ p2pRoleFsmDeauhComplete(IN struct ADAPTER *prAdapter,
 				"Deauth done, Media Status DISCONNECTED\n");
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
-			PARAM_MEDIA_STATE_DISCONNECTED);
+			MEDIA_STATE_DISCONNECTED);
 	}
 
 	/* STOP BSS if power is IDLE */
@@ -1101,7 +1101,7 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucRoleIndex);
 
 		if (prP2pBssInfo->eConnectionState
-			== PARAM_MEDIA_STATE_CONNECTED) {
+			== MEDIA_STATE_CONNECTED) {
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 			/* Indicate disconnect to Host. */
@@ -2247,7 +2247,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 			/* 4 <1.1> Change FW's Media State immediately. */
 			p2pChangeMediaState(prAdapter,
 				prP2pBssInfo,
-				PARAM_MEDIA_STATE_CONNECTED);
+				MEDIA_STATE_CONNECTED);
 
 			/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
 			 * in Driver if have.
@@ -2289,7 +2289,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 			 * Require BSSID, Association ID, Beacon Interval..
 			 * from AIS_BSS_INFO_T
 			 * p2pIndicationOfMediaStateToHost(prAdapter,
-			 * PARAM_MEDIA_STATE_CONNECTED,
+			 * MEDIA_STATE_CONNECTED,
 			 * prStaRec->aucMacAddr);
 			 */
 			if (prJoinInfo->prTargetBssDesc)
@@ -2365,7 +2365,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 
 	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
 		if (prP2pBssInfo->eConnectionState ==
-				PARAM_MEDIA_STATE_CONNECTED) {
+				MEDIA_STATE_CONNECTED) {
 			/* do nothing & wait for timeout or EAPOL 4/4 TX done */
 		} else {
 			struct BSS_DESC *prBssDesc;
@@ -2952,7 +2952,7 @@ p2pRoleFsmRunEventAAAComplete(IN struct ADAPTER *prAdapter,
 
 		p2pChangeMediaState(prAdapter,
 			prP2pBssInfo,
-			PARAM_MEDIA_STATE_CONNECTED);
+			MEDIA_STATE_CONNECTED);
 
 		/* Update Connected state to FW. */
 		if (eOriMediaState != prP2pBssInfo->eConnectionState)
@@ -3276,7 +3276,7 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (prP2pBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
+	if (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		if ((prP2pBssInfo->eCurrentOPMode
 			!= OP_MODE_INFRASTRUCTURE) &&
 			(prP2pBssInfo->eCurrentOPMode

@@ -318,7 +318,7 @@ wlanoidQueryNetworkTypeInUse(IN struct ADAPTER *prAdapter,
 	}
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED)
+	    MEDIA_STATE_CONNECTED)
 		rCurrentNetworkTypeInUse = (enum ENUM_PARAM_NETWORK_TYPE) (
 				prAdapter->rWlanInfo.ucNetworkType);
 	else
@@ -464,7 +464,7 @@ wlanoidQueryBssid(IN struct ADAPTER *prAdapter,
 	ASSERT(pu4QueryInfoLen);
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED)
+	    MEDIA_STATE_CONNECTED)
 		kalMemCopy(pvQueryBuffer,
 			   prAdapter->rWlanInfo.rCurrBssId.arMacAddress,
 			   MAC_ADDR_LEN);
@@ -656,7 +656,7 @@ wlanoidSetBssidListScan(IN struct ADAPTER *prAdapter,
 		if ((prAdapter->fgEnOnlineScan == TRUE)
 		    && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-			    PARAM_MEDIA_STATE_CONNECTED)
+			    MEDIA_STATE_CONNECTED)
 				aisFsmScanRequest(prAdapter, prSsid, NULL, 0);
 			else
 				return WLAN_STATUS_FAILURE;
@@ -668,7 +668,7 @@ wlanoidSetBssidListScan(IN struct ADAPTER *prAdapter,
 		if (prAdapter->fgEnOnlineScan == TRUE)
 			aisFsmScanRequest(prAdapter, prSsid, NULL, 0);
 		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-			 PARAM_MEDIA_STATE_CONNECTED)
+			 MEDIA_STATE_CONNECTED)
 			aisFsmScanRequest(prAdapter, prSsid, NULL, 0);
 		else
 			return WLAN_STATUS_FAILURE;
@@ -749,7 +749,7 @@ wlanoidSetBssidListScanExt(IN struct ADAPTER *prAdapter,
 		if ((prAdapter->fgEnOnlineScan == TRUE)
 		    && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-			    PARAM_MEDIA_STATE_CONNECTED)
+			    MEDIA_STATE_CONNECTED)
 				aisFsmScanRequest(prAdapter, prSsid, pucIe,
 						  u4IeLength);
 			else
@@ -762,7 +762,7 @@ wlanoidSetBssidListScanExt(IN struct ADAPTER *prAdapter,
 		if (prAdapter->fgEnOnlineScan == TRUE)
 			aisFsmScanRequest(prAdapter, prSsid, pucIe, u4IeLength);
 		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-			 PARAM_MEDIA_STATE_CONNECTED)
+			 MEDIA_STATE_CONNECTED)
 			aisFsmScanRequest(prAdapter, prSsid, pucIe, u4IeLength);
 		else
 			return WLAN_STATUS_FAILURE;
@@ -832,7 +832,7 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 		if ((prAdapter->fgEnOnlineScan == TRUE)
 		    && (prAdapter->ucRddStatus)) {
 			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-					!= PARAM_MEDIA_STATE_CONNECTED) {
+					!= MEDIA_STATE_CONNECTED) {
 				aisFsmScanRequestAdv(prAdapter, prScanRequest);
 			} else
 				return WLAN_STATUS_FAILURE;
@@ -844,7 +844,7 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 		if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
-				!= PARAM_MEDIA_STATE_CONNECTED) {
+				!= MEDIA_STATE_CONNECTED) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else
 			return WLAN_STATUS_FAILURE;
@@ -905,11 +905,11 @@ wlanoidSetBssid(IN struct ADAPTER *prAdapter,
 
 	/* re-association check */
 	if (kalGetMediaStateIndicated(prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		if (EQUAL_MAC_ADDR(
 		    prAdapter->rWlanInfo.rCurrBssId.arMacAddress, pAddr)) {
 			kalSetMediaStateIndicated(prGlueInfo,
-					PARAM_MEDIA_STATE_TO_BE_INDICATED);
+					MEDIA_STATE_TO_BE_INDICATED);
 			ucReasonOfDisconnect =
 					DISCONNECT_REASON_CODE_REASSOCIATION;
 		} else {
@@ -1040,13 +1040,13 @@ wlanoidSetSsid(IN struct ADAPTER *prAdapter,
 	/* prepare for CMD_BUILD_CONNECTION & CMD_GET_CONNECTION_STATUS */
 	/* re-association check */
 	if (kalGetMediaStateIndicated(prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		if (EQUAL_SSID(
 			    prAdapter->rWlanInfo.rCurrBssId.rSsid.aucSsid,
 			    prAdapter->rWlanInfo.rCurrBssId.rSsid.u4SsidLen,
 			    pParamSsid->aucSsid, pParamSsid->u4SsidLen)) {
 			kalSetMediaStateIndicated(prGlueInfo,
-					PARAM_MEDIA_STATE_TO_BE_INDICATED);
+					MEDIA_STATE_TO_BE_INDICATED);
 		} else
 			kalIndicateStatusAndComplete(prGlueInfo,
 					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
@@ -1270,13 +1270,13 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 	/* prepare for CMD_BUILD_CONNECTION & CMD_GET_CONNECTION_STATUS */
 	/* re-association check */
 	if (kalGetMediaStateIndicated(prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		if (fgEqualSsid) {
 			prAisAbortMsg->ucReasonOfDisconnect =
 				DISCONNECT_REASON_CODE_ROAMING;
 			if (fgEqualBssid) {
 				kalSetMediaStateIndicated(prGlueInfo,
-					PARAM_MEDIA_STATE_TO_BE_INDICATED);
+					MEDIA_STATE_TO_BE_INDICATED);
 				prAisAbortMsg->ucReasonOfDisconnect =
 					DISCONNECT_REASON_CODE_REASSOCIATION;
 			}
@@ -1413,7 +1413,7 @@ wlanoidQuerySsid(IN struct ADAPTER *prAdapter,
 		   sizeof(prAssociatedSsid->aucSsid));
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		prAssociatedSsid->u4SsidLen =
 			prAdapter->rWlanInfo.rCurrBssId.rSsid.u4SsidLen;
 
@@ -3747,12 +3747,12 @@ wlanoidQueryPmkid(IN struct ADAPTER *prAdapter,
 		prAisSpecBssInfo->u4PmkidCacheCount;
 
 	for (i = 0; i < prAisSpecBssInfo->u4PmkidCacheCount; i++) {
-		kalMemCopy(prPmkid->arBSSIDInfo[i].arBSSID,
-			   prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.arBSSID,
-			   (sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
+		kalMemCopy(prPmkid->arBSSIDInfo[i].aucBssid,
+			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.aucBssid,
+			(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
 		kalMemCopy(prPmkid->arBSSIDInfo[i].arPMKID,
-			   prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.arPMKID,
-			   (sizeof(uint8_t) * 16));
+			prAisSpecBssInfo->arPmkidCache[i].rBssidInfo.arPMKID,
+			(sizeof(uint8_t) * 16));
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -3840,7 +3840,7 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 		 *  then set the PMKID
 		 */
 		if (!rsnSearchPmkidEntry(prAdapter,
-		    (uint8_t *) prPmkid->arBSSIDInfo[i].arBSSID, &j)) {
+		    (uint8_t *) prPmkid->arBSSIDInfo[i].aucBssid, &j)) {
 			/* No entry found for the specified BSSID, so add one
 			 * entry
 			 */
@@ -3849,8 +3849,8 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 				j = prAisSpecBssInfo->u4PmkidCacheCount;
 				kalMemCopy(
 					prAisSpecBssInfo->arPmkidCache[j]
-					.rBssidInfo.arBSSID,
-					prPmkid->arBSSIDInfo[i].arBSSID,
+					.rBssidInfo.aucBssid,
+					prPmkid->arBSSIDInfo[i].aucBssid,
 					(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
 				prAisSpecBssInfo->u4PmkidCacheCount++;
 			} else {
@@ -3868,7 +3868,7 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 			       "Add BSSID " MACSTR " idx=%u PMKID value " MACSTR
 			       "\n",
 			       MAC2STR(prAisSpecBssInfo->arPmkidCache[j]
-			       .rBssidInfo.arBSSID),
+			       .rBssidInfo.aucBssid),
 			       j,
 			       MAC2STR(prAisSpecBssInfo->arPmkidCache[j]
 			       .rBssidInfo.arPMKID));
@@ -3883,13 +3883,13 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 
 		if ((prPmkid->u4Length & BIT(31)) ||
 		    (prBssDesc && EQUAL_MAC_ADDR(
-		    prPmkid->arBSSIDInfo[0].arBSSID, prBssDesc->aucBSSID))) {
+		    prPmkid->arBSSIDInfo[0].aucBssid, prBssDesc->aucBSSID))) {
 			if (j == CFG_MAX_PMKID_CACHE) {
 				j = 0;
 				kalMemCopy(
 					prAisSpecBssInfo->arPmkidCache[0]
-					.rBssidInfo.arBSSID,
-					prPmkid->arBSSIDInfo[0].arBSSID,
+					.rBssidInfo.aucBssid,
+					prPmkid->arBSSIDInfo[0].aucBssid,
 					(sizeof(uint8_t) * PARAM_MAC_ADDR_LEN));
 				kalMemCopy(
 					prAisSpecBssInfo->arPmkidCache[0]
@@ -3903,7 +3903,7 @@ wlanoidSetPmkid(IN struct ADAPTER *prAdapter,
 				   .arPMKID;
 			log_dbg(RSN, INFO, MACSTR " OKC PMKID %02x%02x%02x%02x%02x%02x%02x%02x...\n",
 				MAC2STR(prAisSpecBssInfo->
-				arPmkidCache[j].rBssidInfo.arBSSID),
+				arPmkidCache[j].rBssidInfo.aucBssid),
 				pucPmkID[0], pucPmkID[1],
 				pucPmkID[2], pucPmkID[3],
 				pucPmkID[4], pucPmkID[5],
@@ -4254,7 +4254,7 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 	}
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED) {
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	} else if (prAdapter->fgIsLinkQualityValid == TRUE &&
 		   (kalGetTimeTick() - prAdapter->rLinkQualityUpdateTime) <=
@@ -4567,7 +4567,7 @@ wlanoidQueryBugReport(IN struct ADAPTER *prAdapter,
 		ASSERT(pvQueryBuffer);
 	ASSERT(pu4QueryInfoLen);
 
-	*pu4QueryInfoLen = sizeof(struct _EVENT_BUG_REPORT_T);
+	*pu4QueryInfoLen = sizeof(struct EVENT_BUG_REPORT);
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(OID, WARN,
@@ -4576,7 +4576,7 @@ wlanoidQueryBugReport(IN struct ADAPTER *prAdapter,
 		*pu4QueryInfoLen = sizeof(uint32_t);
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	} else if (u4QueryBufferLen < sizeof(struct
-					     _EVENT_BUG_REPORT_T)) {
+					     EVENT_BUG_REPORT)) {
 		DBGLOG(OID, WARN, "Too short length %u\n",
 		       u4QueryBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
@@ -4802,7 +4802,7 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) !=
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	} else if (prAdapter->fgIsLinkRateValid == TRUE &&
 		   (kalGetTimeTick() - prAdapter->rLinkRateUpdateTime) <=
@@ -7858,7 +7858,7 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	}
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_DISCONNECTED)
+	    MEDIA_STATE_DISCONNECTED)
 		rStatus1 = WLAN_STATUS_ADAPTER_NOT_READY;
 
 	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
@@ -8403,7 +8403,7 @@ wlanoidSetDisassociate(IN struct ADAPTER *prAdapter,
 
 	/* indicate for disconnection */
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED)
+	    MEDIA_STATE_CONNECTED)
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL, 0);
 #if !defined(LINUX)
@@ -8667,7 +8667,7 @@ wlanoidQueryFrequency(IN struct ADAPTER *prAdapter,
 	if (prAdapter->rWifiVar.rConnSettings.eOPMode ==
 	    NET_TYPE_INFRA) {
 		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-		    PARAM_MEDIA_STATE_CONNECTED)
+		    MEDIA_STATE_CONNECTED)
 			*(uint32_t *) pvQueryBuffer = nicChannelNum2Freq(
 				prAdapter->prAisBssInfo->ucPrimaryChannel);
 		else
@@ -8786,7 +8786,7 @@ wlanoidQueryBeaconInterval(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-	    PARAM_MEDIA_STATE_CONNECTED) {
+	    MEDIA_STATE_CONNECTED) {
 		if (prAdapter->rWifiVar.rConnSettings.eOPMode ==
 		    NET_TYPE_INFRA)
 			*(uint32_t *) pvQueryBuffer =
@@ -9135,7 +9135,7 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		u4CmdSize =
 			OFFSET_OF(struct CMD_SET_NETWORK_ADDRESS_LIST,
 				  arNetAddress) +
-			(sizeof(struct IPV4_NETWORK_ADDRESS) *
+			(sizeof(struct CMD_IPV4_NETWORK_ADDRESS) *
 			u4IPv4AddrCount);
 
 	/* 4 <3> Allocate command buffer */
@@ -9150,7 +9150,8 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 #if CFG_ENABLE_GTK_FRAME_FILTER
 	u4IpV4AddrListSize =
 			OFFSET_OF(struct IPV4_NETWORK_ADDRESS_LIST, arNetAddr) +
-			(u4IPv4AddrCount * sizeof(struct IPV4_NETWORK_ADDRESS));
+			(u4IPv4AddrCount *
+			sizeof(struct CMD_IPV4_NETWORK_ADDRESS));
 	if (prBssInfo->prIpV4NetAddrList)
 		FREE_IPV4_NETWORK_ADDR_LIST(prBssInfo->prIpV4NetAddrList);
 	prBssInfo->prIpV4NetAddrList =
@@ -12343,7 +12344,7 @@ wlanoidSetStartSchedScan(IN struct ADAPTER *prAdapter,
 	else if (pvSetBuffer == NULL)
 		return WLAN_STATUS_INVALID_DATA;
 	else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
-		 PARAM_MEDIA_STATE_CONNECTED
+		 MEDIA_STATE_CONNECTED
 		 && prAdapter->fgEnOnlineScan == FALSE)
 		return WLAN_STATUS_FAILURE;
 
@@ -13030,7 +13031,7 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 	/*  *pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum; */
 
 	return wlanSendSetQueryCmd(prAdapter,
-				   CMD_ID_WLAN_INFO,
+				   CMD_ID_WTBL_INFO,
 				   FALSE,
 				   TRUE,
 				   TRUE,
@@ -15079,7 +15080,7 @@ uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prAdapter->prAisBssInfo)
 		return WLAN_STATUS_INVALID_DATA;
 	prAisBssInfo = prAdapter->prAisBssInfo;
-	if (prAisBssInfo->eConnectionState != PARAM_MEDIA_STATE_CONNECTED) {
+	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
 		DBGLOG(OID, ERROR, "didn't connected any Access Point\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -15132,7 +15133,7 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	if (!prAdapter->prAisBssInfo ||
 	    prAdapter->prAisBssInfo->eConnectionState !=
-		PARAM_MEDIA_STATE_CONNECTED) {
+		MEDIA_STATE_CONNECTED) {
 		DBGLOG(OID, INFO, "Not connected yet\n");
 		return WLAN_STATUS_FAILURE;
 	}
@@ -15881,7 +15882,7 @@ uint32_t wlanoidSetLowLatencyMode(
 	 */
 	if ((u4Events & GED_EVENT_GAS) != 0
 	    && (u4Events & GED_EVENT_NETWORK) != 0
-	    && PARAM_MEDIA_STATE_CONNECTED
+	    && MEDIA_STATE_CONNECTED
 	    == kalGetMediaStateIndicated(prAdapter->prGlueInfo))
 		fgEnMode = TRUE; /* It will enable low latency mode */
 
