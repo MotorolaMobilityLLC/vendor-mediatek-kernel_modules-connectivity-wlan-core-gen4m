@@ -1273,9 +1273,10 @@ void nicCmdEventQueryEepromRead(IN struct ADAPTER
 
 		prEepromRdInfo = (struct PARAM_CUSTOM_EEPROM_RW_STRUCT *)
 			prCmdInfo->pvInformationBuffer;
-		prEepromRdInfo->ucEepromIndex = (uint8_t) (
+		prEepromRdInfo->info.rEeprom.ucEepromIndex = (uint8_t) (
 			prEventAccessEeprom->u2Offset);
-		prEepromRdInfo->u2EepromData = prEventAccessEeprom->u2Data;
+		prEepromRdInfo->info.rEeprom.u2EepromData =
+			prEventAccessEeprom->u2Data;
 
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
