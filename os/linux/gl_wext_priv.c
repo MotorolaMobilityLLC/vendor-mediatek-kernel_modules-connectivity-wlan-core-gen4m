@@ -20988,7 +20988,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_GET_STA_STAT,
 		.pfHandler = priv_driver_get_sta_stat,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
