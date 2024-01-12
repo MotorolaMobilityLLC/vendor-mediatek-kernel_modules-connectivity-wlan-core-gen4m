@@ -786,6 +786,10 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 
 		/* We do roaming while the medium is connected */
 		prStaRec->fgIsReAssoc = TRUE;
+		if (prStaRec->ucStaState != STA_STATE_1) {
+			prStaRec->ucStaState = STA_STATE_1;
+			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+		}
 
 		/* TODO(Kevin): We may call a sub function to
 		 * acquire the Roaming Auth Type
@@ -1449,7 +1453,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 #define BSS_DESC_BAD_CASE \
 	(!prBssDesc || ((prBssDesc->fgIsConnected & BIT(ucBssIndex)) && \
-	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID) || \
+	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID && \
+	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID_HINT) || \
 	prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 		/* 4 <3.a> Following cases will go back to NORMAL_TR.
 		 * Precondition: not user space triggered roaming
