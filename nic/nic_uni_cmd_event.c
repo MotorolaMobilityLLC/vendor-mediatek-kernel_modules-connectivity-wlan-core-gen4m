@@ -166,6 +166,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdSetNvramSettings,
 	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
 	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
+#if (CONFIG_WLAN_SERVICE == 1)
+	[CMD_ID_LIST_MODE] = nicUniCmdTestmodeListmode,
+#endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
 #endif
@@ -5488,6 +5491,43 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct UNI_CMD_TESTMODE_CTRL *uni_cmd;
+	struct UNI_CMD_TESTMODE_LISTMODE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
+				sizeof(struct UNI_CMD_TESTMODE_LISTMODE);
+
+	if (info->ucCID != CMD_ID_LIST_MODE)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	if (info->u4SetQueryInfoLen > TESTMODE_LISTMODE_DATA_LEN)
+		return WLAN_STATUS_RESOURCES;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_TESTMODE_CTRL,
+			max_cmd_len, nicCmdEventListmode,
+			nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE_CTRL *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_TESTMODE_LISTMODE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_LISTMODE;
+	tag->u2Length = sizeof(*tag);
+	kalMemCopy(tag->aucData,
+				info->pucInfoBuffer,
+				info->u4SetQueryInfoLen);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* (CONFIG_WLAN_SERVICE == 1) */
 
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
