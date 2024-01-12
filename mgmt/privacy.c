@@ -1047,6 +1047,15 @@ secPrivacySeekForBcEntry(struct ADAPTER *prAdapter,
 	if (prBSSInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		fgCheckKeyId = FALSE;
 
+
+#if CFG_SINGLE_WTBL_GTK_REKEY
+	if (prBSSInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
+		prBSSInfo->eNetworkType == NETWORK_TYPE_AIS) {
+		fgCheckKeyId = FALSE;
+		DBGLOG(RSN, WARN, "Always install gtk in same wtbl\n");
+	}
+#endif
+
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 	/* reserve wtbl IDX 0~3 for BIP*/
 	ucStartIDX = 4;
