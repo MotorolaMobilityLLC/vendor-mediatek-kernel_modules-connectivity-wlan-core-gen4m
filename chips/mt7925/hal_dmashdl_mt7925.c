@@ -291,29 +291,22 @@ struct DMASHDL_CFG rMt7925DmashdlCfg = {
 
 void mt7925DmashdlInit(struct ADAPTER *prAdapter)
 {
-	uint32_t idx;
-#if (SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 == 1)
-	uint32_t u4Val = 0;
-#endif
+	uint32_t idx, u4DefVal;
 
-	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
-					 rMt7925DmashdlCfg.u2PktPleMaxPage);
-
-	asicConnac3xDmashdlSetPsePktMaxPage(prAdapter,
-					 rMt7925DmashdlCfg.u2PktPseMaxPage);
+	asicConnac3xDmashdlSetPlePsePktMaxPage(
+		prAdapter,
+		rMt7925DmashdlCfg.u2PktPleMaxPage,
+		rMt7925DmashdlCfg.u2PktPseMaxPage);
 
 	for (idx = 0; idx < ENUM_DMASHDL_GROUP_NUM; idx++) {
 		asicConnac3xDmashdlSetRefill(
 			prAdapter, idx,
 			rMt7925DmashdlCfg.afgRefillEn[idx]);
 
-		asicConnac3xDmashdlSetMaxQuota(
+		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter, idx,
+			rMt7925DmashdlCfg.au2MinQuota[idx],
 			rMt7925DmashdlCfg.au2MaxQuota[idx]);
-
-		asicConnac3xDmashdlSetMinQuota(
-			prAdapter, idx,
-			rMt7925DmashdlCfg.au2MinQuota[idx]);
 	}
 
 	for (idx = 0; idx < 32; idx++)
@@ -326,18 +319,28 @@ void mt7925DmashdlInit(struct ADAPTER *prAdapter)
 			prAdapter, idx,
 			rMt7925DmashdlCfg.aucPriority2Group[idx]);
 
-	asicConnac3xDmashdlSetSlotArbiter(prAdapter,
-				       rMt7925DmashdlCfg.fgSlotArbiterEn);
+	u4DefVal = WF_HIF_DMASHDL_TOP_PAGE_SETTING_QUP_ACL_SLOT_CG_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SRC_CNT_PRI_EN_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_01_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_DUMMY_00_MASK |
+#if (SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 == 1)
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SLOT_TYPE_ARBITER_CONTROL_MASK;
+#else
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_SLOT_TYPE_ARBITER_CONTROL_MASK |
+		WF_HIF_DMASHDL_TOP_PAGE_SETTING_PP_OFFSET_ADD_ENA_MASK;
+#endif
+	asicConnac3xDmashdlSetSlotArbiter(
+		prAdapter, rMt7925DmashdlCfg.fgSlotArbiterEn,
+		u4DefVal);
 
+	u4DefVal =
+WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_MIN_RR_ENA_MASK |
+		WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_HIF_ASK_RR_ENA_MASK;
 	asicConnac3xDmashdlSetOptionalControl(prAdapter,
 		rMt7925DmashdlCfg.u2HifAckCntTh,
-		rMt7925DmashdlCfg.u2HifGupActMap);
-
-#if (SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 == 1)
-	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, &u4Val);
-	u4Val &= ~WF_HIF_DMASHDL_TOP_PAGE_SETTING_PP_OFFSET_ADD_ENA_MASK;
-	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, u4Val);
-#endif
+		rMt7925DmashdlCfg.u2HifGupActMap,
+		u4DefVal);
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */

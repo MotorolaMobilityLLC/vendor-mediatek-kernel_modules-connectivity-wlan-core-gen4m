@@ -268,10 +268,13 @@ struct DMASHDL_CFG {
 	uint16_t u2PktPleMaxPage;
 	uint16_t u2PktPseMaxPage;
 	u_int8_t afgRefillEn[ENUM_DMASHDL_GROUP_NUM];
+	uint32_t u4RefillCtrl;
 	uint16_t au2MaxQuota[ENUM_DMASHDL_GROUP_NUM];
 	uint16_t au2MinQuota[ENUM_DMASHDL_GROUP_NUM];
 	uint8_t aucQueue2Group[ENUM_DMASHDL_GROUP_NUM * 2];
+	uint32_t u4Queue2Group[4];
 	uint8_t aucPriority2Group[ENUM_DMASHDL_GROUP_NUM];
+	uint32_t u4Priority2Group[2];
 	uint16_t u2HifAckCntTh;
 	uint16_t u2HifGupActMap;
 	uint32_t u4GroupNum;
