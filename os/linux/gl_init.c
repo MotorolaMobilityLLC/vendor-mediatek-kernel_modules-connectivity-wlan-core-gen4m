@@ -2423,12 +2423,12 @@ struct GLUE_INFO *wlanGetGlueInfo(void)
  */
 /*----------------------------------------------------------------------------*/
 
-static struct delayed_work workq;
 struct net_device *gPrDev;
 
 static void wlanSetMulticastList(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 	if (!prDev)
 		return;
@@ -2440,11 +2440,24 @@ static void wlanSetMulticastList(struct net_device *prDev)
 		return;
 	}
 
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
+	if (!prNetDevPrivate) {
+		DBGLOG(REQ, WARN, "prNetDevPrivate is NULL\n");
+		return;
+	}
+
+	DBGLOG(INIT, INFO,
+		       "Bss[%d] set multicast list.\n",
+		       prNetDevPrivate->ucBssIdx);
+
 	/* Allow to receive all multicast for WOW */
 	DBGLOG(INIT, TRACE, "flags: 0x%x\n", prDev->flags);
 	prDev->flags |= (IFF_MULTICAST | IFF_ALLMULTI);
 	gPrDev = prDev;
-	schedule_delayed_work(&workq, 0);
+	schedule_work(&(prNetDevPrivate->workq));
 }
 
 /* FIXME: Since we cannot sleep in the wlanSetMulticastList, we arrange
@@ -2455,7 +2468,8 @@ static void wlanSetMulticastList(struct net_device *prDev)
 static void wlanSetMulticastListWorkQueue(
 	struct work_struct *work)
 {
-
+	struct NETDEV_PRIVATE_GLUE_INFO *ifp = container_of(work,
+				struct NETDEV_PRIVATE_GLUE_INFO, workq);
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4PacketFilter = 0;
 	uint32_t u4SetInfoLen;
@@ -2463,9 +2477,19 @@ static void wlanSetMulticastListWorkQueue(
 	uint8_t ucBssIndex = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	ucBssIndex = wlanGetBssIdx(prDev);
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (!ifp) {
+		DBGLOG(INIT, INFO,
+			"Can't find container of work.\n");
+			return;
+	}
+
+	ucBssIndex = ifp->ucBssIdx;
+
+	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+		DBGLOG(INIT, INFO,
+			"Invalid  Bss index:%d\n", ucBssIndex);
 		return;
+	}
 
 	down(&g_halt_sem);
 	if (g_u4HaltFlag) {
@@ -2473,27 +2497,26 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	prGlueInfo = (prDev != NULL) ? *((struct GLUE_INFO **)
-					 netdev_priv(prDev)) : NULL;
-	ASSERT(prDev);
-	ASSERT(prGlueInfo);
-	if (!prDev || !prGlueInfo) {
-		DBGLOG(INIT, WARN,
-		       "abnormal dev or skb: prDev(0x%p), prGlueInfo(0x%p)\n",
-		       prDev, prGlueInfo);
-		up(&g_halt_sem);
-		return;
-	}
+	prGlueInfo = ifp->prGlueInfo;
 
-	if (!prGlueInfo->u4ReadyFlag) {
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		up(&g_halt_sem);
 		return;
 	}
 
-	DBGLOG(INIT, TRACE,
-	       "wlanSetMulticastListWorkQueue prDev->flags:0x%x\n",
-	       prDev->flags);
+	prDev = wlanGetNetDev(prGlueInfo, ucBssIndex);
+
+	if (!prDev) {
+		DBGLOG(INIT, WARN,
+			"prDev for Bss%d not exist.\n", ucBssIndex);
+			up(&g_halt_sem);
+		return;
+	}
+
+	DBGLOG(INIT, INFO,
+	       "Bss index:%d prDev->flags:0x%x\n",
+	       ucBssIndex, prDev->flags);
 
 	if (prDev->flags & IFF_PROMISC)
 		u4PacketFilter |= PARAM_PACKET_FILTER_PROMISCUOUS;
@@ -2554,7 +2577,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		up(&g_halt_sem);
 
-		rStatus = kalIoctlByBssIdx(prGlueInfo,
+		kalIoctlByBssIdx(prGlueInfo,
 			 wlanoidSetMulticastList, prMCAddrList, (i * ETH_ALEN),
 			 &u4SetInfoLen, ucBssIndex);
 
@@ -2767,12 +2790,17 @@ void wlanDebugInit(void)
 static int wlanInit(struct net_device *prDev)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 	if (!prDev)
 		return -ENXIO;
 
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
-	INIT_DELAYED_WORK(&workq, wlanSetMulticastListWorkQueue);
+	INIT_WORK(&(prNetDevPrivate->workq), wlanSetMulticastListWorkQueue);
 
 	/* 20150205 work queue for sched_scan */
 	INIT_DELAYED_WORK(&sched_workq,
@@ -2800,6 +2828,18 @@ static int wlanInit(struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 static void wlanUninit(struct net_device *prDev)
 {
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
+	if (!prNetDevPrivate) {
+		DBGLOG(REQ, WARN, "prNetDevPrivate is NULL\n");
+		return;
+	}
+
+	cancel_work_sync(&(prNetDevPrivate->workq));
 }				/* end of wlanUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -6315,6 +6355,7 @@ int32_t wlanOffAtReset(void)
 	struct net_device *prDev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint8_t i;
 #endif
@@ -6368,7 +6409,14 @@ int32_t wlanOffAtReset(void)
 	 */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-	cancel_delayed_work_sync(&workq);
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
+	if (!prNetDevPrivate)
+		DBGLOG(REQ, WARN, "prNetDevPrivate is NULL\n");
+	else
+		cancel_work_sync(&(prNetDevPrivate->workq));
 
 	flush_delayed_work(&sched_workq);
 
@@ -7057,6 +7105,7 @@ wlanOffNotifyCfg80211Disconnect(struct GLUE_INFO *prGlueInfo)
 static void wlanRemove(void)
 {
 	struct net_device *prDev = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	struct WLANDEV_INFO *prWlandevInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -7203,7 +7252,14 @@ static void wlanRemove(void)
 
 	flush_delayed_work(&sched_workq);
 
-	cancel_delayed_work_sync(&workq);
+	prNetDevPrivate
+			= (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+
+	if (!prNetDevPrivate)
+		DBGLOG(REQ, WARN, "prNetDevPrivate is NULL\n");
+	else
+		cancel_work_sync(&(prNetDevPrivate->workq));
 
 #if CFG_AP_80211KVR_INTERFACE
 	cancel_delayed_work_sync(&prAdapter->prGlueInfo->rChanNoiseControlWork);
