@@ -1261,8 +1261,10 @@ struct CAP_PHY_CAP {
 };
 
 struct CAP_LIMITED {
-	uint8_t ucLimitedMaxMcs; /* Limited Max MCS index */
-	uint8_t ucReserved[3];
+	uint8_t ucLimitedMaxMcs2g; /* Limited 2G Max MCS index */
+	uint8_t ucLimitedMaxMcs5g; /* Limited 5G Max MCS index */
+	uint8_t ucLimitedMaxMcs6g; /* Limited 6G Max MCS index */
+	uint8_t ucReserved[1];
 };
 
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)

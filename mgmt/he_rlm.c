@@ -192,18 +192,22 @@ uint32_t heRlmCalculateHeOpIELen(
 	return u4OverallLen;
 }
 
-static uint8_t heRlmGetHeSupportedMcs(struct ADAPTER *prAdapter)
+static uint8_t heRlmGetHeSupportedMcs(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
 {
-	uint8_t ucMcs = HE_CAP_INFO_MCS_MAP_MCS11;
-
-	if (prAdapter->ucLimitedMaxMcs)
-		if (prAdapter->ucLimitedMaxMcs == 9)
-			ucMcs = HE_CAP_INFO_MCS_MAP_MCS9;
-
-	DBGLOG(RLM, TRACE, "Limited MCS: %u, return %u",
-	       prAdapter->ucLimitedMaxMcs, ucMcs);
-
-	return ucMcs;
+	switch (prBssInfo->eBand) {
+	case BAND_2G4:
+		return  prAdapter->rWifiVar.ucHeMaxMcsMap2g;
+	case BAND_5G:
+		return prAdapter->rWifiVar.ucHeMaxMcsMap5g;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+		return  prAdapter->rWifiVar.ucHeMaxMcsMap6g;
+#endif
+	default:
+		return HE_CAP_INFO_MCS_NOT_SUPPORTED;
+	}
 }
 
 static void heRlmFillMCSMap(
@@ -227,7 +231,10 @@ static void heRlmFillMCSMap(
 					prAdapter->ucMcsMapSetFromSigma,
 					HE_CAP_INFO_MCS_MAP_MCS11);
 			else
-				ucMcsMap = heRlmGetHeSupportedMcs(prAdapter);
+				ucMcsMap = heRlmGetHeSupportedMcs(prAdapter,
+								prBssInfo);
+
+			DBGLOG(RLM, TRACE, "Supported MCS Map: %u", ucMcsMap);
 		} else {
 			ucMcsMap = HE_CAP_INFO_MCS_NOT_SUPPORTED;
 		}

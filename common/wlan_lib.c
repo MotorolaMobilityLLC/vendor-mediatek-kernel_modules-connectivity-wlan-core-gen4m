@@ -7146,6 +7146,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		INIT_UINT(prWifiVar->ucApHe, "ApHE", FEATURE_ENABLED);
 		INIT_UINT(prWifiVar->ucP2pGoHe, "P2pGoHE", FEATURE_ENABLED);
 		INIT_UINT(prWifiVar->ucP2pGcHe, "P2pGcHE", FEATURE_ENABLED);
+		INIT_UINT(prWifiVar->ucHeMaxMcsMap2g,
+			"HeMaxMcsMap2g", HE_CAP_INFO_MCS_MAP_MCS11);
+		INIT_UINT(prWifiVar->ucHeMaxMcsMap5g,
+			"HeMaxMcsMap5g", HE_CAP_INFO_MCS_MAP_MCS11);
+		INIT_UINT(prWifiVar->ucHeMaxMcsMap6g,
+			"HeMaxMcsMap6g", HE_CAP_INFO_MCS_MAP_MCS11);
 	}
 #endif
 

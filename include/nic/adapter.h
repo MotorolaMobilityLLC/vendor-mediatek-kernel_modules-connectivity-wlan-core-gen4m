@@ -837,6 +837,9 @@ struct WIFI_VAR {
 	uint8_t ucP2pGoHe;
 	uint8_t ucP2pGcHe;
 	uint8_t ucVcoreBoostEnable;
+	uint8_t ucHeMaxMcsMap2g;
+	uint8_t ucHeMaxMcsMap5g;
+	uint8_t ucHeMaxMcsMap6g;
 #endif
 	uint8_t ucHtSmps2g4;
 	uint8_t ucHtSmps5g;
@@ -2579,8 +2582,6 @@ struct ADAPTER {
 	u_int8_t fgEnLowLatencyMode;
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
-
-	uint8_t ucLimitedMaxMcs;
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	struct __HE_CFG_INFO_T rHeCfg;
