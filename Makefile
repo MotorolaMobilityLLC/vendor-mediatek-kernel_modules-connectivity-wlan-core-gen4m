@@ -109,18 +109,6 @@ ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
     include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
 endif
 
-ifeq ($(WM_RAM),ce)
-    ccflags-y += -DCONFIG_WM_RAM_TYPE=1
-    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig),)
-        include $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig
-    endif
-else
-    ccflags-y += -DCONFIG_WM_RAM_TYPE=0
-    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
-        include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
-    endif
-endif
-
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
 endif
@@ -213,7 +201,7 @@ CONFIG_SUPPORT_FORCE_ALTX=y
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_MTK_WIFI_SW_WFDMA=1
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE80
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
@@ -328,7 +316,7 @@ CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP=y
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_MTK_WIFI_SW_WFDMA=1
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE80
 endif
 
@@ -369,7 +357,7 @@ endif
 ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
 ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_SUPPORT_BW160
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 endif
 
@@ -415,7 +403,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 endif
 
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
@@ -445,7 +433,7 @@ endif
 CONFIG_MTK_WIFI_TRX_DIRECT=y
 CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
 ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
@@ -470,7 +458,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
 endif
@@ -500,8 +488,22 @@ CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
-ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 endif
+
+# ===== Before is project setting =====
+ifeq ($(WM_RAM),ce)
+    ccflags-y += -DCONFIG_WM_RAM_TYPE=1
+    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig),)
+        include $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig
+    endif
+else
+    ccflags-y += -DCONFIG_WM_RAM_TYPE=0
+    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
+        include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
+    endif
+endif
+# ===== Below will add compile flag based on project setting =====
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
     ccflags-y += -DCFG_VOLT_INFO=1
@@ -1201,6 +1203,12 @@ endif
 
 ifeq ($(CONFIG_MSCS_FAST_PATH_SUPPORT), y)
 ccflags-y += -DCFG_MSCS_SUPPORT=1
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)
+    ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=0
 endif
 
 # ---------------------------------------------------
