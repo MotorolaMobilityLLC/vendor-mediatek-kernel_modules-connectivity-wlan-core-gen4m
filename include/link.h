@@ -50,34 +50,34 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/link.h#1
-*/
+ ** Id: include/link.h
+ */
 
 /*! \file   link.h
-*    \brief  Definition for simple doubly linked list operations.
-*
-*    In this file we define the simple doubly linked list data structure and its
-*    operation MACROs and INLINE functions.
-*/
+ *    \brief  Definition for simple doubly linked list operations.
+ *
+ *    In this file we define the simple doubly linked list data structure
+ *    and its operation MACROs and INLINE functions.
+ */
 
 #ifndef _LINK_H
 #define _LINK_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "gl_typedef.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 /* May cause page fault & unalignment issue (data abort) */
 #define INVALID_LINK_POISON1    ((void *) 0x00100101)
 
@@ -85,9 +85,9 @@
 #define INVALID_LINK_POISON2    ((void *) 0x00100201)
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 /* Simple Doubly Linked List Structures - Entry Part */
 struct LINK_ENTRY {
 	struct LINK_ENTRY *prNext, *prPrev;
@@ -101,21 +101,24 @@ struct LINK {
 };
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
-#if 0				/* No one use it, temporarily mark it for [Lint - Info 773] */
-#define LINK_ADDR(rLink)        { (struct LINK_ENTRY *)(&(rLink)), (struct LINK_ENTRY *)(&(rLink)), 0 }
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+#if 0
+/* No one use it, temporarily mark it for [Lint - Info 773] */
+#define LINK_ADDR(rLink)        \
+	{ (struct LINK_ENTRY *)(&(rLink)), \
+	  (struct LINK_ENTRY *)(&(rLink)), 0 }
 
 #define LINK_DECLARATION(rLink) \
 	struct LINK rLink = LINK_ADDR(rLink)
@@ -123,31 +126,40 @@ struct LINK {
 
 #define LINK_INITIALIZE(prLink) \
 	do { \
-		((struct LINK *)(prLink))->prNext = (struct LINK_ENTRY *)(prLink); \
-		((struct LINK *)(prLink))->prPrev = (struct LINK_ENTRY *)(prLink); \
+		((struct LINK *)(prLink))->prNext = \
+			(struct LINK_ENTRY *)(prLink); \
+		((struct LINK *)(prLink))->prPrev = \
+			(struct LINK_ENTRY *)(prLink); \
 		((struct LINK *)(prLink))->u4NumElem = 0; \
 	} while (0)
 
 #define LINK_ENTRY_INITIALIZE(prEntry) \
 	do { \
-		((struct LINK_ENTRY *)(prEntry))->prNext = (struct LINK_ENTRY *)NULL; \
-		((struct LINK_ENTRY *)(prEntry))->prPrev = (struct LINK_ENTRY *)NULL; \
+		((struct LINK_ENTRY *)(prEntry))->prNext = \
+			(struct LINK_ENTRY *)NULL; \
+		((struct LINK_ENTRY *)(prEntry))->prPrev = \
+			(struct LINK_ENTRY *)NULL; \
 	} while (0)
 
 #define LINK_ENTRY_INVALID(prEntry) \
 	do { \
-		((struct LINK_ENTRY *)(prEntry))->prNext = (struct LINK_ENTRY *)INVALID_LINK_POISON1; \
-		((struct LINK_ENTRY *)(prEntry))->prPrev = (struct LINK_ENTRY *)INVALID_LINK_POISON2; \
+		((struct LINK_ENTRY *)(prEntry))->prNext = \
+			(struct LINK_ENTRY *)INVALID_LINK_POISON1; \
+		((struct LINK_ENTRY *)(prEntry))->prPrev = \
+			(struct LINK_ENTRY *)INVALID_LINK_POISON2; \
 	} while (0)
 
-#define LINK_IS_EMPTY(prLink)           (((struct LINK *)(prLink))->prNext == (struct LINK_ENTRY *)(prLink))
+#define LINK_IS_EMPTY(prLink)           \
+	(((struct LINK *)(prLink))->prNext == (struct LINK_ENTRY *)(prLink))
 
-/* NOTE: We should do memory zero before any LINK been initiated, so we can check
- * if it is valid before parsing the LINK.
+/* NOTE: We should do memory zero before any LINK been initiated,
+ *       so we can check if it is valid before parsing the LINK.
  */
-#define LINK_IS_INVALID(prLink)         (((struct LINK *)(prLink))->prNext == (struct LINK_ENTRY *)NULL)
+#define LINK_IS_INVALID(prLink)         \
+	(((struct LINK *)(prLink))->prNext == (struct LINK_ENTRY *)NULL)
 
-#define LINK_IS_VALID(prLink)           (((struct LINK *)(prLink))->prNext != (struct LINK_ENTRY *)NULL)
+#define LINK_IS_VALID(prLink)           \
+	(((struct LINK *)(prLink))->prNext != (struct LINK_ENTRY *)NULL)
 
 #define LINK_ENTRY(ptr, type, member)   ENTRY_OF(ptr, type, member)
 
@@ -187,13 +199,14 @@ struct LINK {
 #define LINK_REMOVE_HEAD(prLink, prEntry, _P_TYPE) \
 	{ \
 	    ASSERT(prLink); \
-	    if (LINK_IS_EMPTY(prLink)) { \
-		prEntry = (_P_TYPE)NULL; \
+		if (LINK_IS_EMPTY(prLink)) { \
+			prEntry = (_P_TYPE)NULL; \
 	    } \
-	    else { \
-		prEntry = (_P_TYPE)(((struct LINK *)(prLink))->prNext); \
-		linkDel((struct LINK_ENTRY *)prEntry); \
-		((prLink)->u4NumElem)--; \
+		else { \
+			prEntry = \
+			    (_P_TYPE)(((struct LINK *)(prLink))->prNext); \
+			linkDel((struct LINK_ENTRY *)prEntry); \
+			((prLink)->u4NumElem)--; \
 	    } \
 	}
 
@@ -247,26 +260,28 @@ struct LINK {
 	 prNextObj = LINK_ENTRY(prNextObj->rMember.prNext, _TYPE, rMember))
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is only for internal link list manipulation.
-*
-* \param[in] prNew  Pointer of new link head
-* \param[in] prPrev Pointer of previous link head
-* \param[in] prNext Pointer of next link head
-*
-* \return (none)
-*/
+ * \brief This function is only for internal link list manipulation.
+ *
+ * \param[in] prNew  Pointer of new link head
+ * \param[in] prPrev Pointer of previous link head
+ * \param[in] prNext Pointer of next link head
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void __linkAdd(IN struct LINK_ENTRY *prNew, IN struct LINK_ENTRY *prPrev, IN struct LINK_ENTRY *prNext)
+static __KAL_INLINE__ void __linkAdd(IN struct LINK_ENTRY
+				     *prNew, IN struct LINK_ENTRY *prPrev,
+				     IN struct LINK_ENTRY *prNext)
 {
 	prNext->prPrev = prNew;
 	prNew->prNext = prNext;
@@ -276,45 +291,50 @@ static __KAL_INLINE__ void __linkAdd(IN struct LINK_ENTRY *prNew, IN struct LINK
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will add a new entry after the specified link head.
-*
-* \param[in] prNew  New entry to be added
-* \param[in] prHead Specified link head to add it after
-*
-* \return (none)
-*/
+ * \brief This function will add a new entry after the specified link head.
+ *
+ * \param[in] prNew  New entry to be added
+ * \param[in] prHead Specified link head to add it after
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkAdd(IN struct LINK_ENTRY *prNew, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkAdd(IN struct LINK_ENTRY
+				   *prNew, IN struct LINK *prLink)
 {
-	__linkAdd(prNew, (struct LINK_ENTRY *) prLink, prLink->prNext);
+	__linkAdd(prNew, (struct LINK_ENTRY *) prLink,
+		  prLink->prNext);
 }				/* end of linkAdd() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will add a new entry before the specified link head.
-*
-* \param[in] prNew  New entry to be added
-* \param[in] prHead Specified link head to add it before
-*
-* \return (none)
-*/
+ * \brief This function will add a new entry before the specified link head.
+ *
+ * \param[in] prNew  New entry to be added
+ * \param[in] prHead Specified link head to add it before
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkAddTail(IN struct LINK_ENTRY *prNew, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkAddTail(IN struct LINK_ENTRY
+				       *prNew, IN struct LINK *prLink)
 {
-	__linkAdd(prNew, prLink->prPrev, (struct LINK_ENTRY *) prLink);
+	__linkAdd(prNew, prLink->prPrev,
+		  (struct LINK_ENTRY *) prLink);
 }				/* end of linkAddTail() */
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function is only for internal link list manipulation.
-*
-* \param[in] prPrev Pointer of previous link head
-* \param[in] prNext Pointer of next link head
-*
-* \return (none)
-*/
+ * \brief This function is only for internal link list manipulation.
+ *
+ * \param[in] prPrev Pointer of previous link head
+ * \param[in] prNext Pointer of next link head
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY *prPrev, IN struct LINK_ENTRY *prNext)
+static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY
+				     *prPrev, IN struct LINK_ENTRY *prNext)
 {
 	prNext->prPrev = prPrev;
 	prPrev->prNext = prNext;
@@ -322,15 +342,16 @@ static __KAL_INLINE__ void __linkDel(IN struct LINK_ENTRY *prPrev, IN struct LIN
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will delete a specified entry from link list.
-*        NOTE: the entry is in an initial state.
-*
-* \param prEntry    Specified link head(entry)
-*
-* \return (none)
-*/
+ * \brief This function will delete a specified entry from link list.
+ *        NOTE: the entry is in an initial state.
+ *
+ * \param prEntry    Specified link head(entry)
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkDel(IN struct LINK_ENTRY *prEntry)
+static __KAL_INLINE__ void linkDel(IN struct LINK_ENTRY
+				   *prEntry)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 
@@ -339,16 +360,17 @@ static __KAL_INLINE__ void linkDel(IN struct LINK_ENTRY *prEntry)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will delete a specified entry from link list and then add it
-*        after the specified link head.
-*
-* \param[in] prEntry        Specified link head(entry)
-* \param[in] prOtherHead    Another link head to add it after
-*
-* \return (none)
-*/
+ * \brief This function will delete a specified entry from link list
+ *        and then add it after the specified link head.
+ *
+ * \param[in] prEntry        Specified link head(entry)
+ * \param[in] prOtherHead    Another link head to add it after
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkMove(IN struct LINK_ENTRY *prEntry, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkMove(IN struct LINK_ENTRY
+				    *prEntry, IN struct LINK *prLink)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 	linkAdd(prEntry, prLink);
@@ -356,16 +378,17 @@ static __KAL_INLINE__ void linkMove(IN struct LINK_ENTRY *prEntry, IN struct LIN
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This function will delete a specified entry from link list and then add it
-*        before the specified link head.
-*
-* \param[in] prEntry        Specified link head(entry)
-* \param[in] prOtherHead    Another link head to add it before
-*
-* \return (none)
-*/
+ * \brief This function will delete a specified entry from link list
+ *        and then add it before the specified link head.
+ *
+ * \param[in] prEntry        Specified link head(entry)
+ * \param[in] prOtherHead    Another link head to add it before
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-static __KAL_INLINE__ void linkMoveTail(IN struct LINK_ENTRY *prEntry, IN struct LINK *prLink)
+static __KAL_INLINE__ void linkMoveTail(IN struct LINK_ENTRY
+					*prEntry, IN struct LINK *prLink)
 {
 	__linkDel(prEntry->prPrev, prEntry->prNext);
 	linkAddTail(prEntry, prLink);
