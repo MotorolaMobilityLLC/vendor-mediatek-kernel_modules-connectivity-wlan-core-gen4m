@@ -183,24 +183,26 @@ u_int8_t fgIsRstPreventFwOwn = FALSE;
  *******************************************************************************
  */
 #if CFG_CHIP_RESET_SUPPORT
+static void mtk_wifi_reset(struct work_struct *work);
+static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
+					u_int8_t fgL0Reset);
 
 #if CFG_WMT_RESET_API_SUPPORT
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
-static void mtk_wifi_reset(struct work_struct *work);
 static void mtk_wifi_trigger_reset(struct work_struct *work);
 static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 			     enum _ENUM_WMTDRV_TYPE_T eDstType,
 			     enum _ENUM_WMTMSG_TYPE_T eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
-#endif
-#else
+#endif /* IS_ENABLED(CFG_SUPPORT_CONNAC1X) */
+#else /* CFG_WMT_RESET_API_SUPPORT */
 #ifndef CFG_CHIP_RESET_KO_SUPPORT
 static u_int8_t is_bt_exist(void);
 static u_int8_t rst_L0_notify_step1(void);
 static void wait_core_dump_end(void);
-#endif
-#endif
-#endif
+#endif /* CFG_CHIP_RESET_KO_SUPPORT */
+#endif /* CFG_WMT_RESET_API_SUPPORT */
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -986,10 +988,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d, ret: %d\n",
 		fgResult, ret);
 }
-#endif
 
-#if CFG_WMT_RESET_API_SUPPORT
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is called for wifi reset
@@ -1022,15 +1021,29 @@ static void mtk_wifi_reset(struct work_struct *work)
 	 */
 	if (prChipDbg->show_mcu_debug_info) {
 		HAL_LP_OWN_RD(prAdapter, &fgDrvOwn);
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+		if (rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+						RST_MODULE_STATE_DUMP_START,
+						NULL) == RST_MODULE_RET_FAIL)
+			return;
+#endif
 		if (fgDrvOwn)
 			prChipDbg->show_mcu_debug_info(prAdapter, NULL, 0,
 						       DBG_MCU_DBG_ALL, NULL);
 		else
 			DBGLOG(INIT, INFO,
 			       "[SER][L0] not drv own, cannot get mcu info\n");
+#ifdef CFG_CHIP_RESET_KO_SUPPORT
+		rstNotifyWholeChipRstStatus(RST_MODULE_WIFI,
+					RST_MODULE_STATE_DUMP_END, NULL);
+#endif
 	}
 	mtk_wifi_reset_main(rst, FALSE);
 }
+#endif
+
+#if CFG_WMT_RESET_API_SUPPORT
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 
 static void mtk_wifi_trigger_reset(struct work_struct *work)
 {
