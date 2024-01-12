@@ -807,7 +807,7 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 
 	UINT_16 u2RaRunningCnt;
 	UINT_8 ucRaStatus;
-	UINT_8 ucMaxAmpduFactor;
+	UINT_8 ucFlag;
 	UINT_8 aucTxQuality[MAX_TX_QUALITY_INDEX];
 	UINT_8 ucTxRateUpPenalty;
 	UINT_8 ucLowTrafficMode;
