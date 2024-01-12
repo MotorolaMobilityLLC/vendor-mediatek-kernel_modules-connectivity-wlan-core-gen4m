@@ -1496,13 +1496,26 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 
 	for (j = 0; j < 20; j++) {
 		HAL_MCR_RD(prAdapter, 0x820FD020, &value);
-		DBGLOG(HAL, INFO, "0x820FD020: 0x%08x\n", value);
+		DBGLOG(HAL, INFO, "slot idle: 0x820FD020: 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x820F4128, &value);
+		DBGLOG(HAL, INFO,
+		       "TX state machine/CCA: 0x820F4128 = 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x820F20D0, &value);
+		DBGLOG(HAL, INFO,
+		       "AGG state machine band0: 0x820F20D0 = 0x%08x\n", value);
+		HAL_MCR_RD(prAdapter, 0x820F20D4, &value);
+		DBGLOG(HAL, INFO,
+		       "AGG state machine band1: 0x820F20D4 = 0x%08x\n", value);
+		/* 1: empty, 0: non-empty */
+		HAL_MCR_RD(prAdapter, 0x82060220, &value);
+		DBGLOG(HAL, INFO, "queue empty: 0x82060220: 0x%08x\n", value);
 		kalMdelay(1);
 	}
 
 	HAL_MCR_RD(prAdapter, 0x820F4124, &value);
-	DBGLOG(HAL, INFO, "Dump CR: 0x820F4124 = %08x\n", value);
+	DBGLOG(HAL, INFO, "TXV count: 0x820F4124 = %08x\n", value);
 
+	/* TXV1-TXV7 */
 	for (j = 0x820F4130; j < 0x820F4148; j += 4) {
 		HAL_MCR_RD(prAdapter, j, &value);
 		DBGLOG(HAL, INFO, "0x%08x: 0x%08x\n", j, value);
@@ -1542,6 +1555,11 @@ void haldumpMacInfo(struct ADAPTER *prAdapter)
 	}
 
 	DBGLOG(HAL, INFO, "Dump ARB\n");
+	HAL_MCR_RD(prAdapter, 0x802f3190, &value);
+	DBGLOG(HAL, INFO, "0x802f3190: 0x%08x\n", value);
+
+	HAL_MCR_WR(prAdapter, 0x820f082C, 0xf);
+	HAL_MCR_WR(prAdapter, 0x80025100, 0x1f);
 	HAL_MCR_WR(prAdapter, 0x80025104, 0x04040404);
 	flag = 0x01010000;
 	for (i = 0; i < 64; i++) {
