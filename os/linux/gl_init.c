@@ -6661,7 +6661,6 @@ int32_t wlanOnAtReset(void)
 		ADAPTER_START_FAIL,
 		NET_REGISTER_FAIL,
 		PROC_INIT_FAIL,
-		FAIL_MET_INIT_PROCFS,
 		FAIL_REASON_NUM
 	} eFailReason = FAIL_REASON_NUM;
 
@@ -7083,17 +7082,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		wlanOpenIdxLogBin(prAdapter);
 #endif
 
-#if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
-		DBGLOG(INIT, TRACE, "init MET procfs...\n");
-		i4Status = kalMetInitProcfs(prGlueInfo);
-		if (i4Status < 0) {
-			DBGLOG(INIT, ERROR,
-			       "wlanProbe: init MET procfs failed\n");
-			eFailReason = FAIL_MET_INIT_PROCFS;
-			break;
-		}
-#endif
-
 		/* Configure 5G band for registered wiphy */
 		if (prAdapter->fgEnable5GBand)
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
@@ -7160,9 +7148,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       eFailReason);
 		switch (eFailReason) {
 		case FAIL_BY_RESET:
-		case FAIL_MET_INIT_PROCFS:
-			kalMetRemoveProcfs();
 			kal_fallthrough;
+			/* fallthrough */
 		case PROC_INIT_FAIL:
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
@@ -7495,10 +7482,6 @@ static void wlanRemove(void)
 #if CFG_ENABLE_BT_OVER_WIFI
 	if (prGlueInfo->rBowInfo.fgIsRegistered)
 		glUnregisterAmpc(prGlueInfo);
-#endif
-
-#if (CFG_MET_PACKET_TRACE_SUPPORT == 1)
-	kalMetRemoveProcfs();
 #endif
 
 #if CFG_SUPPORT_CSI
