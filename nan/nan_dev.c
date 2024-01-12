@@ -72,17 +72,7 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		 */
 		prnanBssInfo->fgIsProtection = FALSE;
 
-#if (CFG_HW_WMM_BY_BSS == 1)
-		if (prnanBssInfo->fgIsWmmInited == FALSE)
-			prnanBssInfo->ucWmmQueSet = cnmWmmIndexDecision(
-				prAdapter, prnanBssInfo);
-#else
-		prnanBssInfo->ucWmmQueSet =
-			(prAdapter->rWifiVar.ucDbdcMode ==
-			DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX
-			: DBDC_2G_WMM_INDEX;
-#endif
-
+		cnmWmmIndexDecision(prAdapter, prnanBssInfo);
 
 #if (CFG_SUPPORT_DBDC == 1)
 		if (ucIdx == NAN_BSS_INDEX_BAND1)

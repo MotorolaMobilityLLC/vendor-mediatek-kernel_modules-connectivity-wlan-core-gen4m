@@ -342,7 +342,7 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
 #endif
 
-uint8_t cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
+void cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
 void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo);
