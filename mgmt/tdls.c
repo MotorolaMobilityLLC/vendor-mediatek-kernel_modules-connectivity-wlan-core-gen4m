@@ -600,6 +600,14 @@ int32_t TdlsAuto(
 		(u4PacketLen < ETH_HLEN))
 		return -1;
 
+#if CFG_SUPPORT_NAN
+	if (pAd->fgIsNANRegistered) {
+		DBGLOG(TDLS, INFO,
+			"Disable tdls auto for NAN\n");
+		return -1;
+	}
+#endif
+
 	b = GET_BSS_INFO_BY_INDEX(
 		pAd, bss);
 	if (!b)
