@@ -1898,7 +1898,7 @@ int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_
 			       wlanoidSetP2pMode,
 			       (PVOID) &rSetP2P, sizeof(PARAM_CUSTOM_P2P_SET_STRUCT_T), FALSE, FALSE, TRUE, &u4BufLen);
 
-	DBGLOG(INIT, INFO, "set_p2p_mode_handler ret = 0x%08lx\n", (UINT_32) rWlanStatus);
+	DBGLOG(INIT, INFO, "set_p2p_mode_handler ret = 0x%08x\n", (UINT_32) rWlanStatus);
 
 
 	/* Need to check fgIsP2PRegistered, in case of whole chip reset.
