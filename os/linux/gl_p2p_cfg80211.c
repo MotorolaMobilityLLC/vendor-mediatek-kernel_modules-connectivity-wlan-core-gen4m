@@ -3341,6 +3341,8 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	struct net_device *dev = NULL;
 
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	if ((wiphy == NULL) || (chandef == NULL))
 		return i4Rslt;
 
