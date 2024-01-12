@@ -221,7 +221,16 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	{0x0, 0x0, 0x0} /* End */
 };
 #elif defined(_HIF_AXI)
+/*
+ * HIF only ioremap 700k range in axiCsrIoremap (refer to dts)
+ * The address we can use is 0x18000000 ~ 0x186FFFFF
+ */
 struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
+	/*
+	 * For example:
+	 * WF_MCU_BUS_CR_REMAP:
+	 *   {0x830c0000, 0x830c0FFF} => {0x18400000, 0x18400FFF}
+	 */
 	/* chip addr, bus addr, range */
 	{0x830c0000, 0x400000, 0x1000},    /* WF_MCU_BUS_CR_REMAP */
 	{0x54000000, 0x402000, 0x1000},    /* WFDMA PCIE0 MCU DMA0 */
@@ -274,8 +283,8 @@ struct PCIE_CHIP_CR_MAPPING soc7_0_bus2chip_cr_mapping[] = {
 	{0x80010000, 0x4d4000, 0x1000},    /* WF_AXIDMA */
 	{0x83010000, 0x4e0000, 0x10000},   /* WF_PHY_MAP4 */
 	{0x88000000, 0x4f0000, 0x10000},   /* WF_MCU_CFG_LS */
-	{0x7c000000, 0x000000, 0x1000000}, /* CONN_INFRA */
-	{0x7c500000, 0x500000, 0x2000000}, /* remap */
+	{0x7c000000, 0x000000, 0x100000},  /* CONN_INFRA */
+	{0x7c500000, 0x500000, 0x200000},  /* remap, for fwdl */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
