@@ -28,6 +28,15 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
+	WLAN_CHIP_ID := 6895
+	WIFI_CHIP := CONNAC2X2_SOC7_0
+	WIFI_IP_SET := 1
+	CONNAC_VER := 2_0
+	WIFI_NAME := wlan_drv_gen4m_6895
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
+	include $(LOCAL_PATH)/build_wlan_drv.mk
+
+	# Keep combo chip as last to avoid build fail by bus mismatch
 	WLAN_CHIP_ID := bellwether
 	WIFI_CHIP := BELLWETHER
 	CONNAC_VER := 3_0
@@ -36,14 +45,6 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_EMI := n
 	WIFI_NAME := wlan_drv_gen4m_bellwether
 	WIFI_CHRDEV_MODULE :=
-
-	WLAN_CHIP_ID := 6895
-	WIFI_CHIP := CONNAC2X2_SOC7_0
-	WIFI_IP_SET := 1
-	CONNAC_VER := 2_0
-	WIFI_NAME := wlan_drv_gen4m_6895
-	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi_connac2.ko
-
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
 	WLAN_CHIP_ID := 6855
