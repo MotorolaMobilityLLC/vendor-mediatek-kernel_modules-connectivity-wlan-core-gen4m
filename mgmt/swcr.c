@@ -200,8 +200,6 @@ void dumpQueue(struct ADAPTER *prAdapter)
 	       prQM->arTxQueue[0].u4NumElem);
 	DBGLOG(SW4, INFO, "Pending %d\n",
 	       prGlueInfo->i4TxPendingFrameNum);
-	DBGLOG(SW4, INFO, "Pending CmdData %d\n",
-	       prGlueInfo->i4TxPendingCmdDataFrameNum);
 #if defined(LINUX)
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < CFG_MAX_TXQ_NUM; j++) {

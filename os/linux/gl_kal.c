@@ -3931,8 +3931,8 @@ void *kalGetStats(struct net_device *prDev)
  * \return -
  */
 /*----------------------------------------------------------------------------*/
-void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
-				  *prGlueInfo, void *pvPacket)
+void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
+	uint32_t u4Status)
 {
 	struct net_device *prDev = NULL;
 	struct sk_buff *prSkb = NULL;
@@ -3947,17 +3947,22 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 #endif
 
 	prAdapter = prGlueInfo->prAdapter;
-	ASSERT(pvPacket);
-	/* ASSERT(prGlueInfo->i4TxPendingFrameNum); */
+	if (!pvPacket)
+		return;
 
 	prSkb = (struct sk_buff *)pvPacket;
 	u2QueueIdx = skb_get_queue_mapping(prSkb);
-	ASSERT(u2QueueIdx < CFG_MAX_TXQ_NUM);
+	if (unlikely(u2QueueIdx >= CFG_MAX_TXQ_NUM)) {
+		DBGLOG(TX, ERROR, "Invalid QIDX[%u]\n", u2QueueIdx);
+		goto end;
+	}
 
 	ucBssIndex = GLUE_GET_PKT_BSS_IDX(pvPacket);
 
-	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
-		return;
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM)) {
+		DBGLOG(TX, ERROR, "Invalid BSS[%u]\n", ucBssIndex);
+		goto end;
+	}
 
 	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_DEC_REF_CNT(
@@ -4016,12 +4021,14 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 		}
 	}
 
-end:
-	dev_kfree_skb_any((struct sk_buff *)pvPacket);
-
 	DBGLOG(TX, LOUD, "----- pending frame %d -----\n",
 	       prGlueInfo->i4TxPendingFrameNum);
 
+end:
+	if (u4Status == WLAN_STATUS_SUCCESS)
+		dev_consume_skb_any((struct sk_buff *)pvPacket);
+	else
+		dev_kfree_skb_any((struct sk_buff *)pvPacket);
 }
 
 #if CFG_SUPPORT_EXT_CONFIG
@@ -5007,95 +5014,6 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 			KAL_GET_TIME_INTERVAL());
 
 	return ret;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is used to clear all pending CmdData frames
- *
- * \param prGlueInfo     Pointer of GLUE Data Structure
- *
- * \retval none
- */
-/*----------------------------------------------------------------------------*/
-void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo)
-{
-	struct QUE *prCmdQue;
-	struct QUE rTempCmdQue;
-	struct QUE *prTempCmdQue = &rTempCmdQue;
-	struct QUE rReturnCmdQue;
-	struct QUE *prReturnCmdQue = &rReturnCmdQue;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prGlueInfo);
-
-	QUEUE_INITIALIZE(prReturnCmdQue);
-	/* Clear pending CmdData frames in prGlueInfo->rCmdQueue */
-	prCmdQue = &prGlueInfo->rCmdQueue;
-
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
-	while (prQueueEntry) {
-		QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
-
-		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-				  struct QUE_ENTRY *);
-	}
-
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-	QUEUE_CONCATENATE_QUEUES_HEAD(prCmdQue, prReturnCmdQue);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is used to clear pending CmdData frames
- *        belongs to dedicated network type
- *
- * \param prGlueInfo         Pointer of GLUE Data Structure
- * \param eNetworkTypeIdx    Network Type Index
- *
- * \retval none
- */
-/*----------------------------------------------------------------------------*/
-void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO *prGlueInfo,
-		uint8_t ucBssIndex)
-{
-	struct QUE *prCmdQue;
-	struct QUE rTempCmdQue;
-	struct QUE *prTempCmdQue = &rTempCmdQue;
-	struct QUE rReturnCmdQue;
-	struct QUE *prReturnCmdQue = &rReturnCmdQue;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-
-	ASSERT(prGlueInfo);
-
-	QUEUE_INITIALIZE(prReturnCmdQue);
-	/* Clear pending CmdData frames in prGlueInfo->rCmdQueue */
-	prCmdQue = &prGlueInfo->rCmdQueue;
-
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
-	while (prQueueEntry) {
-		QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
-
-		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-				  struct QUE_ENTRY *);
-	}
-
-	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
-	QUEUE_CONCATENATE_QUEUES_HEAD(prCmdQue, prReturnCmdQue);
-	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6141,10 +6059,6 @@ int main_thread(void *data)
 	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) > 0)
 		kalFlushPendingTxPackets(prGlueInfo);
 
-	/* flush pending CmdData frames */
-	if (GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingCmdDataFrameNum) > 0)
-		kalClearCmdDataFrames(prGlueInfo);
-
 	/* remove pending oid */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
@@ -6535,30 +6449,6 @@ void kalHandleAssocInfo(struct GLUE_INFO *prGlueInfo,
 			struct EVENT_ASSOC_INFO *prAssocInfo)
 {
 	/* to do */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * * @brief Notify OS with SendComplete event of the specific packet.
- * *        Linux should free packets here.
- * *
- * * @param pvGlueInfo     Pointer of GLUE Data Structure
- * * @param pvPacket       Pointer of Packet Handle
- * * @param status         Status Code for OS upper layer
- * *
- * * @return none
- */
-/*----------------------------------------------------------------------------*/
-
-/* / Todo */
-void kalCmdDataFrameSendComplete(struct GLUE_INFO
-			  *prGlueInfo, void *pvPacket, uint32_t rStatus)
-{
-	ASSERT(pvPacket);
-
-	/* dev_kfree_skb((struct sk_buff *) pvPacket); */
-	kalSendCompleteAndAwakeQueue(prGlueInfo, pvPacket);
-	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdDataFrameNum);
 }
 
 uint32_t kalGetTxPendingFrameCount(struct GLUE_INFO

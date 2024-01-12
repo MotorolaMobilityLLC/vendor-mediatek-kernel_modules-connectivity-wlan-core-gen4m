@@ -687,7 +687,6 @@ struct GLUE_INFO {
 	uint32_t u4TxStartTh[MAX_BSSID_NUM];
 	int32_t ai4TxPendingFrameNumPerQueue[MAX_BSSID_NUM][CFG_MAX_TXQ_NUM];
 	int32_t i4TxPendingFrameNum;
-	int32_t i4TxPendingCmdDataFrameNum;
 	int32_t i4TxPendingCmdNum;
 
 	/* Tx: for NetDev to BSS index mapping */

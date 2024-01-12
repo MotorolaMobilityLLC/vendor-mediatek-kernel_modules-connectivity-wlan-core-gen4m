@@ -334,38 +334,5 @@ u_int8_t nicpmSetAcpiPowerD3(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-#if 0
-	/* 1. MGMT - unitialization */
-	nicUninitMGMT(prAdapter);
-
-	/* 2. Disable Interrupt */
-	nicDisableInterrupt(prAdapter);
-
-	/* 3. emit CMD_NIC_POWER_CTRL command packet */
-	wlanSendNicPowerCtrlCmd(prAdapter, 1);
-
-	/* 4. Clear Interrupt Status */
-	i = 0;
-	while (i < CFG_IST_LOOP_COUNT
-	       && nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
-		i++;
-	};
-
-	/* 5. Remove pending TX */
-	nicTxRelease(prAdapter, TRUE);
-
-	/* 5.1 clear pending CmdData / Management Frames */
-	kalClearCmdDataFrames(prAdapter->prGlueInfo);
-	kalClearMgmtFrames(prAdapter->prGlueInfo);
-
-	/* 5.2 clear pending TX packet queued in glue layer */
-	kalFlushPendingTxPackets(prAdapter->prGlueInfo);
-
-	/* 6. Set Onwership to F/W */
-	nicpmSetFWOwn(prAdapter, FALSE);
-
-	/* 7. Set variables */
-	prAdapter->rAcpiState = ACPI_STATE_D3;
-#endif
 	return TRUE;
 }

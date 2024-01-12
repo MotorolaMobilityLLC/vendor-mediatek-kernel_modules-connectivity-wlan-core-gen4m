@@ -1210,13 +1210,13 @@ char *strtok_r(char *s, const char *delim, char **last);
  *
  * \param[in] prGlueInfo     Pointer of GLUE Data Structure
  * \param[in] pvPacket       Pointer of Packet Handle
- * \param[in] status         Status Code for OS upper layer
+ * \param[in] u4Status       Status Code for OS upper layer
  *
  * \return -
  */
 /*----------------------------------------------------------------------------*/
-#define kalSendComplete(prGlueInfo, pvPacket, status)   \
-	    kalSendCompleteAndAwakeQueue(prGlueInfo, pvPacket)
+void kalSendComplete(struct GLUE_INFO *prGlueInfo, void *pvPacket,
+	uint32_t u4Status);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1693,10 +1693,6 @@ kalQueryTxPacketHeader(struct GLUE_INFO *prGlueInfo,
 		       uint8_t *pucEthDestAddr);
 #endif /* CFG_TX_FRAGMENT */
 
-void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
-				  *prGlueInfo,
-				  void *pvPacket);
-
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 void kalQueryTxChksumOffloadParam(void *pvPacket,
 				  uint8_t *pucFlag);
@@ -1977,14 +1973,6 @@ u_int8_t kalUninitBowDevice(struct GLUE_INFO
 			    *prGlueInfo);
 #endif /* CFG_BOW_SEPARATE_DATA_PATH */
 #endif /* CFG_ENABLE_BT_OVER_WIFI */
-
-/*----------------------------------------------------------------------------*/
-/* Command Data Frame Clearance                                               */
-/*----------------------------------------------------------------------------*/
-void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo);
-
-void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO *prGlueInfo,
-				    uint8_t ucBssIndex);
 
 /*----------------------------------------------------------------------------*/
 /* Management Frame Clearance                                                 */

@@ -176,8 +176,6 @@ void p2pDevFsmUninit(struct ADAPTER *prAdapter)
 		/* Clear CmdQue */
 		kalClearMgmtFramesByBssIdx(prAdapter->prGlueInfo,
 			prP2pBssInfo->ucBssIndex);
-		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
-			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingCmdQue */
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
 			prP2pBssInfo->ucBssIndex);
