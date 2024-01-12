@@ -2351,9 +2351,15 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 
 	if (prChipInfo->chip_capability & BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) {
 		ktime_get_real_ts64(&time);
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
 			(unsigned int)time.tv_sec,
 			(unsigned int)NSEC_TO_USEC(time.tv_nsec));
+#else
+		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
+			(unsigned int)time.tv_sec,
+			time.tv_usec);
+#endif
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, WARN,

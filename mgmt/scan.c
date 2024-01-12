@@ -1471,9 +1471,9 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 {
 	uint8_t i, ucHasSameCh = FALSE;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	enum nl80211_band band = NL80211_BAND_6GHZ;
+	enum nl80211_band band = KAL_BAND_6GHZ;
 #else
-	enum nl80211_band band = NL80211_BAND_2GHZ;
+	enum nl80211_band band = KAL_BAND_2GHZ;
 #endif
 
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
