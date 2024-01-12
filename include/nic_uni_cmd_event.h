@@ -5841,7 +5841,7 @@ struct UNI_EVENT_CNM_GET_CHANNEL_INFO {
 	uint8_t      ucDBDCBand;
 	uint8_t      fgIsCnmTimelineEnabled;
 	uint8_t      ucOpChNum;
-	uint8_t      aucReserved[1];
+	uint8_t      fgIsDBDCEnabled;
 
 	uint8_t      aucChnlInfo[0];
 } __KAL_ATTRIB_PACKED__;

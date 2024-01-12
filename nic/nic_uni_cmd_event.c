@@ -8140,6 +8140,7 @@ void nicUniEventQueryCnmInfo(struct ADAPTER
 			if (b >= ENUM_BAND_NUM)
 				break;
 
+			legacy.fgIsDbdcEnable = info->fgIsDBDCEnabled;
 			legacy.ucOpChNum[b] = info->ucOpChNum;
 			for (i = 0; i < info->ucOpChNum; i++) {
 				if (i >= MAX_OP_CHNL_NUM) break;

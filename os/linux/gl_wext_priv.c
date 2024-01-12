@@ -16420,7 +16420,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 				   (prCnmInfo->fgIsDbdcEnable) ?
 				   "Enable" : "Disable");
 
-	eDbdcIdxMax = (prCnmInfo->fgIsDbdcEnable)?ENUM_BAND_NUM:ENUM_BAND_1;
+	eDbdcIdxMax = ENUM_BAND_NUM;
 	for (eDbdcIdx = ENUM_BAND_0; eDbdcIdx < eDbdcIdxMax; eDbdcIdx++) {
 		/* Do not clean history information */
 		/* if argc is bigger than 1 */
@@ -16437,7 +16437,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 		/* backward compatible for 7668 format */
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
 					   i4TotalLen - i4BytesWritten,
-					   "BAND%u channels : %u %u %u\n",
+					   "BAND %u channels : %u %u %u\n",
 					   eDbdcIdx,
 					   prCnmInfo->ucChList[eDbdcIdx][0],
 					   prCnmInfo->ucChList[eDbdcIdx][1],
