@@ -32,6 +32,8 @@
 ********************************************************************************
 */
 
+#define EHT_CAP_INFO_MCS_MAP_MCS13	3
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -131,13 +133,23 @@ static void ehtRlmFillBW80MCSMap(
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
+	ucSupportedNss = wlanGetSupportNss(prAdapter,
+		prBssInfo->ucBssIndex);
+	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+
 	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW80_MCS_MAP) {
 		WLAN_SET_FIELD_24(_prEhtSupportedMcsSet,
 			prAdapter->u4EhtMcsMap80MHzSetFromSigma);
+	} else if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP) {
+		uint8_t map = prAdapter->ucMcsMapSetFromSigma;
+
+		if (map >= HE_CAP_INFO_MCS_MAP_MCS9)
+			_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
+		if (map >= HE_CAP_INFO_MCS_MAP_MCS11)
+			_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+		if (map >= EHT_CAP_INFO_MCS_MAP_MCS13)
+			_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
 	} else {
-		ucSupportedNss = wlanGetSupportNss(prAdapter,
-			prBssInfo->ucBssIndex);
-		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
 		_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
@@ -155,13 +167,25 @@ static void ehtRlmFillBW20MCSMap(
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
+	ucSupportedNss = wlanGetSupportNss(prAdapter,
+		prBssInfo->ucBssIndex);
+	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+
 	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW20_MCS_MAP) {
 		WLAN_SET_FIELD_32(_prEhtSupportedMcsSet,
 			prAdapter->u4EhtMcsMap20MHzSetFromSigma);
+	} else if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP) {
+		uint8_t map = prAdapter->ucMcsMapSetFromSigma;
+
+		if (map >= HE_CAP_INFO_MCS_MAP_MCS7)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
+		if (map >= HE_CAP_INFO_MCS_MAP_MCS9)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+		if (map >= HE_CAP_INFO_MCS_MAP_MCS11)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+		if (map >= EHT_CAP_INFO_MCS_MAP_MCS13)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
 	} else {
-		ucSupportedNss = wlanGetSupportNss(prAdapter,
-			prBssInfo->ucBssIndex);
-		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
 		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;

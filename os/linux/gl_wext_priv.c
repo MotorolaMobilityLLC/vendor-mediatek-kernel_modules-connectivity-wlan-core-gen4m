@@ -14189,7 +14189,10 @@ int priv_driver_set_mcsmap(struct net_device *prNetDev, char *pcCommand,
 
 		ucTxMcsMap = (uint8_t) u4Parse;
 #if (CFG_SUPPORT_802_11AX == 1)
-		if (ucTxMcsMap <= 2) {
+		if (ucTxMcsMap == 255) {
+			prGlueInfo->prAdapter->fgMcsMapBeenSet &=
+				(~SET_HE_MCS_MAP);
+		} else {
 			prAdapter = prGlueInfo->prAdapter;
 			prAdapter->ucMcsMapSetFromSigma = ucTxMcsMap;
 
@@ -14198,9 +14201,6 @@ int priv_driver_set_mcsmap(struct net_device *prNetDev, char *pcCommand,
 
 			prGlueInfo->prAdapter->fgMcsMapBeenSet |=
 				SET_HE_MCS_MAP;
-		} else {
-			prGlueInfo->prAdapter->fgMcsMapBeenSet &=
-				(~SET_HE_MCS_MAP);
 		}
 #endif
 	} else {
