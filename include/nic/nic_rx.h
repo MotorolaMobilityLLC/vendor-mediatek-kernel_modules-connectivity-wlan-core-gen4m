@@ -669,8 +669,8 @@ enum ENUM_RXPI_MODE {
  * Format version of this tx done event.
  *	0: MT7615
  *	1: MT7622, CONNAC (X18/P18/MT7663)
- *	2: MT7619_AXE, MT7915 E1, Petrus
-  *	3: MT7915 E2, Buzzard
+ *	2: MT7619_AXE, MT7915 E1, MT6885
+  *	3: MT7915 E2, MT7961
  */
 enum {
 	TFD_EVT_VER_0,
