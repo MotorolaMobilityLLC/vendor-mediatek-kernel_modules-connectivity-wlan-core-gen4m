@@ -54,11 +54,13 @@
 
 #define AIS_JOIN_CH_GRANT_THRESHOLD         10
 #if CFG_MTK_FPGA_PLATFORM
+#define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
 #define AIS_JOIN_CH_REQUEST_INTERVAL        40000
 #else
+#define AIS_SCN_DONE_TIMEOUT_SEC            30 /* 30 for 2.4G + 5G */	/* 5 */
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
 #endif
-#define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
+
 
 /* Support AP Selection*/
 #define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
