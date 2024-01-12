@@ -1091,7 +1091,7 @@ int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void)
 {
-	return TRUE;
+	return FALSE;
 }
 
 u_int8_t kalIsSupportSdo(void)
@@ -1101,7 +1101,7 @@ u_int8_t kalIsSupportSdo(void)
 
 u_int8_t kalIsSupportRro(void)
 {
-	return TRUE;
+	return FALSE;
 }
 
 uint32_t kalGetMawdVer(void)
