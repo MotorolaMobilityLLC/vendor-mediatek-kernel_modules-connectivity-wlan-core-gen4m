@@ -1044,8 +1044,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		}
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANEnableRsp,
 				    (void *)&nanEnableRsp,
-				    sizeof(struct NanEnableRequest), FALSE,
-				    FALSE, FALSE, &u4BufLen);
+				    sizeof(struct NanEnableRequest), &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1098,8 +1097,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		}
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANDisableRsp,
 				    (void *)&nanDisableRsp,
-				    sizeof(struct NanDisableRspMsg), FALSE,
-				    FALSE, FALSE, &u4BufLen);
+				    sizeof(struct NanDisableRspMsg), &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1150,7 +1148,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		}
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANConfigRsp,
 			(void *)&nanConfigRsp, sizeof(struct NanConfigRspMsg),
-			FALSE, FALSE, FALSE, &u4BufLen);
+			&u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1177,8 +1175,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		}
 		i4Status = kalIoctl(prGlueInfo, wlanoidGetNANCapabilitiesRsp,
 				    (void *)&nanCapabilitiesRsp,
-				    sizeof(struct NanCapabilitiesRspMsg), FALSE,
-				    FALSE, FALSE, &u4BufLen);
+				    sizeof(struct NanCapabilitiesRspMsg),
+				    &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1395,7 +1393,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		i4Status = kalIoctl(prGlueInfo, wlanoidNanPublishRsp,
 				    (void *)pNanPublishRsp,
 				    sizeof(struct NanPublishServiceRspMsg),
-				    FALSE, FALSE, FALSE, &u4BufLen);
+				    &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1453,7 +1451,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kalIoctl(prGlueInfo, wlanoidNANCancelPublishRsp,
 				 (void *)pNanPublishCancelRsp,
 				 sizeof(struct NanPublishServiceCancelRspMsg),
-				 FALSE, FALSE, FALSE, &u4BufLen);
+				 &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1705,7 +1703,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
 				       (void *)pNanSubscribeRsp,
 				       sizeof(struct NanSubscribeServiceRspMsg),
-				       FALSE, FALSE, FALSE, &u4BufLen);
+				       &u4BufLen);
 			if (i4Status != WLAN_STATUS_SUCCESS) {
 				DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 				return -EFAULT;
@@ -1729,7 +1727,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		i4Status = kalIoctl(prGlueInfo, wlanoidNanSubscribeRsp,
 				    (void *)pNanSubscribeRsp,
 				    sizeof(struct NanSubscribeServiceRspMsg),
-				    FALSE, FALSE, FALSE, &u4BufLen);
+				    &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1796,7 +1794,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			kalIoctl(prGlueInfo, wlanoidNANCancelSubscribeRsp,
 				 (void *)pNanSubscribeCancelRsp,
 				 sizeof(struct NanSubscribeServiceCancelRspMsg),
-				 FALSE, FALSE, FALSE, &u4BufLen);
+				 &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1889,7 +1887,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANFollowupRsp,
 				    (void *)pNanXmitFollowupRsp,
 				    sizeof(struct NanTransmitFollowupRspMsg),
-				    FALSE, FALSE, FALSE, &u4BufLen);
+				    &u4BufLen);
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;

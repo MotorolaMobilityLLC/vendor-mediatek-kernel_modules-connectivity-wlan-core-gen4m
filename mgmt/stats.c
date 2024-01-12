@@ -945,7 +945,7 @@ statsTxQueueHdlr(struct GLUE_INFO *prGlueInfo,
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMcrRead,
 			&rCmdAccessReg, sizeof(rCmdAccessReg),
-			TRUE, TRUE, TRUE, &u4BufLen);
+			&u4BufLen);
 	prQueueStat->u4PleHifUsed = ((rCmdAccessReg.u4Data &
 		prCr->rHifPgInfoHifSrcCnt.u4Mask) >>
 		prCr->rHifPgInfoHifSrcCnt.u4Shift);
@@ -983,7 +983,7 @@ statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
 	rParam.prLinkQualityInfo = &rLinkQualityInfo;
 	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo,
 		 &rParam, sizeof(struct PARAM_GET_LINK_QUALITY_INFO),
-		 TRUE, FALSE, FALSE, &u4BufLen);
+		 &u4BufLen);
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR, "wlanoidGetLinkQualityInfo error\n");
 	else {
@@ -1109,9 +1109,6 @@ statsCgsAirLatHdlr(struct GLUE_INFO *prGlueInfo,
 			wlanQueryLinkStats,
 			&query,
 			u4QueryBufLen,
-			TRUE,
-			TRUE,
-			TRUE,
 			&u4QueryInfoLen);
 	DBGLOG(REQ, INFO, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryInfoLen);

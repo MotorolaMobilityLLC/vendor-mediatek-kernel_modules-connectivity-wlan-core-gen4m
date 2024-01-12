@@ -7634,7 +7634,7 @@ void rlmDomainParsingChannel(struct ADAPTER *prAdapter)
 		DBGLOG(RLM, STATE, "%s(): Disconnect! CH%d is DISABLED\n",
 			__func__, ucChannelNum);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
-				   NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
+				   NULL, 0, &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(RLM, WARN, "disassociate error:%lx\n", rStatus);

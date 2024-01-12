@@ -454,7 +454,7 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		return -EFAULT;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
-			   country, 2, FALSE, FALSE, TRUE, &u4BufLen);
+			country, 2, &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "Set country code error: %x\n", rStatus);
 		return -EFAULT;
@@ -522,8 +522,7 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 		rParamMacOui.ucMacOui[2]);
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetScanMacOui,
-		&rParamMacOui, sizeof(rParamMacOui),
-		FALSE, FALSE, FALSE, &u4BufLen);
+		&rParamMacOui, sizeof(rParamMacOui), &u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		log_dbg(REQ, ERROR, "Set MAC oui error: 0x%X\n", rStatus);
 		return -EFAULT;
@@ -650,8 +649,7 @@ int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 
 	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidSetChipConfig,
-		&rChipConfigInfo, sizeof(rChipConfigInfo),
-		FALSE, FALSE, TRUE, &u4BufLen);
+		&rChipConfigInfo, sizeof(rChipConfigInfo), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "%s: kalIoctl ret=%d\n", __func__,
@@ -1398,9 +1396,6 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			   wlanQueryLinkStats, /* pfnOidHandler */
 			   &query, /* pvInfoBuf */
 			   u4QueryBufLen, /* u4InfoBufLen */
-			   TRUE, /* fgRead */
-			   TRUE, /* fgWaitResp */
-			   TRUE, /* fgCmd */
 			   &u4QueryInfoLen); /* pu4QryInfoLen */
 		DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes, status=%u",
 					rStatus, u4QueryInfoLen,
@@ -1608,7 +1603,7 @@ int mtk_cfg80211_vendor_set_roaming_param(struct wiphy *wiphy,
 		rStatus = kalIoctl(prGlueInfo, wlanoidBssDisallowedList,
 				   &request,
 				   sizeof(struct PARAM_BSS_DISALLOWED_LIST),
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "disallowed error:%x\n", rStatus);
@@ -1661,7 +1656,7 @@ int mtk_cfg80211_vendor_set_roaming_policy(
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 			   wlanoidSetDrvRoamingPolicy,
-			   &setRoaming, sizeof(uint32_t), FALSE, FALSE, TRUE,
+			   &setRoaming, sizeof(uint32_t),
 			   &u4BufLen,
 			   ucBssIndex);
 
@@ -1732,10 +1727,9 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidRssiMonitor,
+	rStatus = kalIoctl(prGlueInfo, wlanoidRssiMonitor,
 			   &rRSSIMonitor, sizeof(struct PARAM_RSSI_MONITOR_T),
-			   FALSE, FALSE, TRUE, &u4BufLen);
+			   &u4BufLen);
 	return rStatus;
 
 nla_put_failure:
@@ -1843,10 +1837,9 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidPacketKeepAlive,
+	rStatus = kalIoctl(prGlueInfo, wlanoidPacketKeepAlive,
 			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
-			   FALSE, FALSE, TRUE, &u4BufLen);
+			   &u4BufLen);
 	kalMemFree(prPkt, VIR_MEM_TYPE,
 		   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return rStatus;
@@ -1898,10 +1891,9 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidPacketKeepAlive,
+	rStatus = kalIoctl(prGlueInfo, wlanoidPacketKeepAlive,
 			   prPkt, sizeof(struct PARAM_PACKET_KEEPALIVE_T),
-			   FALSE, FALSE, TRUE, &u4BufLen);
+			   &u4BufLen);
 	kalMemFree(prPkt, VIR_MEM_TYPE,
 		   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 	return rStatus;
@@ -2171,13 +2163,8 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 	       UINT_MAX,
 	       wdev->iftype);
 
-	rStatus = kalIoctl(prGlueInfo,
-		 wlanoidTxPowerControl,
-		 (void *)&rPwrCtrlParam,
-		 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
-		 FALSE,
-		 FALSE,
-		 TRUE,
+	rStatus = kalIoctl(prGlueInfo, wlanoidTxPowerControl,
+		 (void *)&rPwrCtrlParam, sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
 		 &u4SetInfoLen);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
@@ -2242,14 +2229,8 @@ int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
 	}
 
 #if 0
-	u4Status = kalIoctl(prGlueInfo,
-			wlanoidSetMultiStaPrimaryInterface,
-			&u4AisIndex,
-			sizeof(uint32_t),
-			FALSE,
-			FALSE,
-			FALSE,
-			&u4BufLen);
+	u4Status = kalIoctl(prGlueInfo, wlanoidSetMultiStaPrimaryInterface,
+			&u4AisIndex, sizeof(uint32_t), &u4BufLen);
 #endif
 
 	return u4Status;
@@ -2283,14 +2264,8 @@ int mtk_cfg80211_vendor_set_multista_use_case(
 	DBGLOG(REQ, INFO, "Multiple station use case=%d\n", u4UseCase);
 
 #if 0
-	u4Status = kalIoctl(prGlueInfo,
-		wlanoidSetMultiStaUseCase,
-		&u4UseCase,
-		sizeof(uint32_t),
-		FALSE,
-		FALSE,
-		FALSE,
-		&u4BufLen);
+	u4Status = kalIoctl(prGlueInfo, wlanoidSetMultiStaUseCase,
+		&u4UseCase, sizeof(uint32_t), &u4BufLen);
 #endif
 
 	return u4Status;
@@ -2756,10 +2731,8 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 				u4ProgLen, u4SentLen,
 				ucFragNum, ucFragSeq);
 
-		rStatus = kalIoctl(prGlueInfo,
-				wlanoidSetOffloadInfo, &rInfo,
-				sizeof(struct PARAM_OFLD_INFO),
-				FALSE, FALSE, TRUE, &u4SetInfoLen);
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO), &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "APF install fail:0x%x\n", rStatus);
@@ -2813,10 +2786,8 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	rInfo.u4BufLen = PKT_OFLD_BUF_SIZE;
 
 	do {
-		rStatus = kalIoctl(prGlueInfo,
-				wlanoidQueryOffloadInfo, &rInfo,
-				sizeof(struct PARAM_OFLD_INFO),
-				TRUE, TRUE, TRUE, &u4SetInfoLen);
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryOffloadInfo, &rInfo,
+				sizeof(struct PARAM_OFLD_INFO), &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "APF query fail:0x%x\n", rStatus);
@@ -2974,9 +2945,8 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	rParam.ucBssIdx = 0; /* prNetDevPrivate->ucBssIdx; */
 	rParam.prLinkQualityInfo = &rLinkQualityInfo;
 	WIPHY_PRIV(wiphy, prGlueInfo);
-	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo,
-		 &rParam, sizeof(struct PARAM_GET_LINK_QUALITY_INFO),
-		 TRUE, FALSE, FALSE, &u4BufLen);
+	i4Status = kalIoctl(prGlueInfo, wlanoidGetLinkQualityInfo, &rParam,
+			sizeof(struct PARAM_GET_LINK_QUALITY_INFO), &u4BufLen);
 	if (i4Status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "wlanoidGetLinkQualityInfo error\n");
 		goto err_handle_label;

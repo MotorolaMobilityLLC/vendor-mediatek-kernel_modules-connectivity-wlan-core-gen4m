@@ -3252,27 +3252,13 @@ wlanQueryInformation(IN struct ADAPTER *prAdapter,
 		 */
 		return WLAN_STATUS_SUCCESS;
 	}
-#if 1
-	/* most OID handler will just queue a command packet */
+	/* most OID handler will just queue a command packet
+	 * for power state transition OIDs, handler will acquire power control
+	 * by itself
+	 */
 	status = pfnOidQryHandler(prAdapter, pvInfoBuf,
 				  u4InfoBufLen, pu4QryInfoLen);
 	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidQryHandler, status);
-#else
-	if (wlanIsHandlerNeedHwAccess(pfnOidQryHandler, FALSE)) {
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-
-		/* Reset sleepy state */
-		if (prAdapter->fgWiFiInSleepyState == TRUE)
-			prAdapter->fgWiFiInSleepyState = FALSE;
-
-		status = pfnOidQryHandler(prAdapter, pvInfoBuf,
-					  u4InfoBufLen, pu4QryInfoLen);
-
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-	} else
-		status = pfnOidQryHandler(prAdapter, pvInfoBuf,
-					  u4InfoBufLen, pu4QryInfoLen);
-#endif
 
 	return status;
 
@@ -3321,7 +3307,6 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 		 */
 		return WLAN_STATUS_SUCCESS;
 	}
-#if 1
 	/* most OID handler will just queue a command packet
 	 * for power state transition OIDs, handler will acquire power control
 	 * by itself
@@ -3329,23 +3314,6 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 	status = pfnOidSetHandler(prAdapter, pvInfoBuf,
 				  u4InfoBufLen, pu4SetInfoLen);
 	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidSetHandler, status);
-#else
-	if (wlanIsHandlerNeedHwAccess(pfnOidSetHandler, TRUE)) {
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-
-		/* Reset sleepy state */
-		if (prAdapter->fgWiFiInSleepyState == TRUE)
-			prAdapter->fgWiFiInSleepyState = FALSE;
-
-		status = pfnOidSetHandler(prAdapter, pvInfoBuf,
-					  u4InfoBufLen, pu4SetInfoLen);
-
-		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-	} else {
-		status = pfnOidSetHandler(prAdapter, pvInfoBuf,
-					  u4InfoBufLen, pu4SetInfoLen);
-	}
-#endif
 
 	return status;
 }
@@ -8131,7 +8099,7 @@ void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetSwCtrlWrite,
 				   &rSwCtrlInfo, sizeof(rSwCtrlInfo),
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				   &u4BufLen);
 
 	}
 }
@@ -8169,7 +8137,7 @@ void wlanCfgSetChip(IN struct ADAPTER *prAdapter)
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
 				   &rChipConfigInfo, sizeof(rChipConfigInfo),
-				   FALSE, FALSE, TRUE, &u4BufLen);
+				   &u4BufLen);
 	}
 }
 
@@ -13411,8 +13379,7 @@ int wlanChipConfig(struct ADAPTER *prAdapter,
 		   CHIP_CONFIG_RESP_SIZE - 1);
 	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryChipConfig,
-		&rChipConfigInfo, sizeof(rChipConfigInfo),
-		TRUE, TRUE, TRUE, &u4BufLen);
+		&rChipConfigInfo, sizeof(rChipConfigInfo), &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "%s: kalIoctl ret=%d\n", __func__,
@@ -13479,8 +13446,7 @@ uint32_t wlanSetRxBaSize(IN struct GLUE_INFO *prGlueInfo,
 
 	rStatus = kalIoctl(prGlueInfo,
 		wlanoidSetAddbaReject, &rAddbaReject,
-		sizeof(struct CMD_ADDBA_REJECT),
-		FALSE, FALSE, TRUE, &u4BufLen);
+		sizeof(struct CMD_ADDBA_REJECT), &u4BufLen);
 
 	DBGLOG(OID, INFO, "%s i4Type:%d BaSize:%d\n",
 		__func__, i4Type, u2BaSize);
@@ -13520,9 +13486,8 @@ uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 	rTxAmpdu.fgEnable = TRUE;
 	rTxAmpdu.fgApply = TRUE;
 
-	rStatus = kalIoctl(prGlueInfo,
-		wlanoidSetTxAmpdu, &rTxAmpdu, sizeof(struct CMD_TX_AMPDU),
-		FALSE, FALSE, TRUE, &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetTxAmpdu,
+			&rTxAmpdu, sizeof(struct CMD_TX_AMPDU), &u4BufLen);
 
 	DBGLOG(OID, INFO, "%s i4Type:%d BaSize:%d\n",
 		__func__, i4Type, u2BaSize);
@@ -13775,7 +13740,7 @@ uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 	DBGLOG(REQ, INFO, "rSwCtrlInfo.u4Data=0x%x,\n", rSwCtrlInfo.u4Data);
 
 	return kalIoctl(prGlueInfo, wlanoidSetSwCtrlWrite, &rSwCtrlInfo,
-		sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
+		sizeof(rSwCtrlInfo), &u4BufLen);
 }
 #endif
 

@@ -276,9 +276,6 @@ int kalDcSetWow(void)
 						wlanoidAisPreSuspend,
 						NULL,
 						0,
-						TRUE,
-						FALSE,
-						TRUE,
 						&u4BufLen);
 
 			/* TODO: p2pProcessPreSuspendFlow
@@ -2215,10 +2212,8 @@ static void wlanSetMulticastListWorkQueue(
 
 	up(&g_halt_sem);
 
-	if (kalIoctl(prGlueInfo,
-		     wlanoidSetCurrentPacketFilter,
-		     &u4PacketFilter,
-		     sizeof(u4PacketFilter), FALSE, FALSE, TRUE,
+	if (kalIoctl(prGlueInfo, wlanoidSetCurrentPacketFilter,
+		     &u4PacketFilter, sizeof(u4PacketFilter),
 		     &u4SetInfoLen) != WLAN_STATUS_SUCCESS) {
 		return;
 	}
@@ -2260,8 +2255,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		kalIoctlByBssIdx(prGlueInfo,
 			 wlanoidSetMulticastList, prMCAddrList, (i * ETH_ALEN),
-			 FALSE, FALSE, TRUE, &u4SetInfoLen,
-			 ucBssIndex);
+			 &u4SetInfoLen, ucBssIndex);
 
 		kalMemFree(prMCAddrList, VIR_MEM_TYPE,
 			   MAX_NUM_GROUP_ADDR * ETH_ALEN);
@@ -3867,10 +3861,8 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->prAdapter->u4OsPacketFilter &
 			(~PARAM_PACKET_FILTER_P2P_MASK);
 #endif
-		if (kalIoctl(prGlueInfo,
-			wlanoidSetCurrentPacketFilter,
-			&u4PacketFilter,
-			sizeof(u4PacketFilter), FALSE, FALSE, TRUE,
+		if (kalIoctl(prGlueInfo, wlanoidSetCurrentPacketFilter,
+			&u4PacketFilter, sizeof(u4PacketFilter),
 			&u4SetInfoLen) != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, ERROR, "set packet filter failed.\n");
 
@@ -3879,9 +3871,8 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			/* Prepare IPv6 RA packet when suspend */
 			uint8_t MC_address[ETH_ALEN] = {0x33, 0x33, 0, 0, 0, 1};
 
-			kalIoctl(prGlueInfo,
-				wlanoidSetMulticastList, MC_address, ETH_ALEN,
-				FALSE, FALSE, TRUE, &u4SetInfoLen);
+			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
+					MC_address, ETH_ALEN, &u4SetInfoLen);
 		} else if (u4PacketFilter & PARAM_PACKET_FILTER_MULTICAST) {
 			/* Prepare multicast address list when resume */
 			struct netdev_hw_addr *ha;
@@ -3920,8 +3911,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 			up(&g_halt_sem);
 
 			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
-				prMCAddrList, (i * ETH_ALEN), FALSE, FALSE,
-				TRUE, &u4SetInfoLen);
+				prMCAddrList, (i * ETH_ALEN), &u4SetInfoLen);
 
 			kalMemFree(prMCAddrList, VIR_MEM_TYPE,
 				MAX_NUM_GROUP_ADDR * ETH_ALEN);
@@ -4027,8 +4017,7 @@ void reset_p2p_mode(struct GLUE_INFO *prGlueInfo)
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
-			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-			FALSE, FALSE, TRUE, &u4BufLen);
+			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT), &u4BufLen);
 
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
 
@@ -4099,7 +4088,7 @@ int set_p2p_mode_handler(struct net_device *netdev,
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetP2pMode,
 			(void *) &rSetP2P,
 			sizeof(struct PARAM_CUSTOM_P2P_SET_STRUCT),
-			FALSE, FALSE, TRUE, &u4BufLen);
+			&u4BufLen);
 
 	DBGLOG(INIT, INFO,
 		"Mode%d: ret = 0x%08x, p2p reg = %d, resetting = %d\n",
@@ -4288,7 +4277,7 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 				wlanoidQueryProcessAccessEfuseRead,
 				prAccessEfuseInfo,
 				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				TRUE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 			if (prGlueInfo->prAdapter->aucEepromVaule[1]
 				== (chip_id>>8)) {
 				prAdapter->rWifiVar.ucEfuseBufferModeCal
@@ -4374,7 +4363,7 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetEfusBufferMode,
 				(void *)prSetEfuseBufModeInfo,
 				sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE),
-				FALSE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 	}
 
 	retWlanStat = WLAN_STATUS_SUCCESS;
@@ -4471,10 +4460,8 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		prAccessEfuseInfo->u4Address = (u4Efuse_addr /
 			EFUSE_BLOCK_SIZE) * EFUSE_BLOCK_SIZE;
 		rStatus = kalIoctl(prGlueInfo,
-			wlanoidQueryProcessAccessEfuseRead,
-			prAccessEfuseInfo,
-			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-			TRUE, TRUE, TRUE, &u4BufLen);
+			wlanoidQueryProcessAccessEfuseRead, prAccessEfuseInfo,
+			sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE), &u4BufLen);
 		if (prGlueInfo->prAdapter->aucEepromVaule[1]
 			== (chip_id>>8)) {
 			prAdapter->rWifiVar.ucEfuseBufferModeCal
@@ -4556,8 +4543,7 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 	rStatus = kalIoctl(prGlueInfo, wlanoidConnacSetEfusBufferMode,
 		(void *)prSetEfuseBufModeInfo,
 		OFFSET_OF(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
-		aBinContent) + u4ContentLen,
-		FALSE, TRUE, TRUE, &u4BufLen);
+		aBinContent) + u4ContentLen, &u4BufLen);
 
 	retWlanStat = WLAN_STATUS_SUCCESS;
 
@@ -4650,7 +4636,7 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 				wlanoidQueryProcessAccessEfuseRead,
 				prAccessEfuseInfo,
 				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
-				TRUE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 			if (prGlueInfo->prAdapter->aucEepromVaule[1]
 				== (chip_id>>8)) {
 				prAdapter->rWifiVar.ucEfuseBufferModeCal
@@ -4754,7 +4740,7 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 			(void *) prSetEfuseBufModeInfo, OFFSET_OF(
 				struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
 				aBinContent) + prSetEfuseBufModeInfo->u2Count,
-			FALSE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR,
@@ -4934,7 +4920,7 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 			(void *) prSetEfuseBufModeInfo, OFFSET_OF(
 				struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
 				aBinContent) + prSetEfuseBufModeInfo->u2Count,
-			FALSE, TRUE, TRUE, &u4BufLen);
+				&u4BufLen);
 
 		/* update remain size */
 		u4ContentLen -= prSetEfuseBufModeInfo->u2Count;
@@ -5188,10 +5174,8 @@ static void ics_log_event_notification(int cmd, int value)
 		rSniffer.ucCondition[4] = 0;
 		rSniffer.ucCondition[5] = 0;
 
-		rStatus = kalIoctl(prGlueInfo,
-			wlanoidSetIcsSniffer,
-			&rSniffer, sizeof(rSniffer),
-			FALSE, FALSE, TRUE, &u4BufLen);
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
+			&rSniffer, sizeof(rSniffer), &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(INIT, INFO, "wlanoidSetIcsSniffer failed");
 		DBGLOG(INIT, INFO, "IcsLog[Lv:OnOff]=[%d:%d]\n",
@@ -5406,12 +5390,8 @@ static void consys_log_event_notification(int cmd, int value)
 	rFwLogCmd.fgValue = value;
 	rFwLogCmd.fgEarlySet = FALSE;
 
-	rStatus = kalIoctl(prGlueInfo,
-				   connsysFwLogControl,
-				   &rFwLogCmd,
-				   sizeof(struct CMD_CONNSYS_FW_LOG),
-				   FALSE, FALSE, FALSE,
-				   &u4BufLen);
+	rStatus = kalIoctl(prGlueInfo, connsysFwLogControl, &rFwLogCmd,
+			sizeof(struct CMD_CONNSYS_FW_LOG), &u4BufLen);
 }
 #endif
 
@@ -5674,7 +5654,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 			u4SetInfoLen = i;
 			rStatus = kalIoctl(prGlueInfo, wlanoidQueryCurrentAddr,
 					&MacAddr.sa_data, PARAM_MAC_ADDR_LEN,
-					TRUE, TRUE, TRUE, &u4SetInfoLen);
+					&u4SetInfoLen);
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, WARN, "set MAC%f addr fail 0x%x\n",
@@ -5701,8 +5681,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCSUMOffload,
 				   (void *) &u4CSUMFlags,
-				   sizeof(uint32_t),
-				   FALSE, FALSE, TRUE, &u4SetInfoLen);
+				   sizeof(uint32_t), &u4SetInfoLen);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
 			for (i = 0; i < KAL_AIS_NUM; i++) {
@@ -5913,7 +5892,7 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 		nanNetUnregister(prGlueInfo, FALSE);
 
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
-			       sizeof(uint32_t), FALSE, FALSE, TRUE, &u4BufLen);
+			       sizeof(uint32_t), &u4BufLen);
 
 	DBGLOG(INIT, INFO, "set_nan_handler ret = 0x%08lx\n",
 	       (uint32_t)rWlanStatus);
@@ -6200,7 +6179,7 @@ int32_t wlanOnAtReset(void)
 			rStatus = kalIoctl(prGlueInfo, wlanoidSetStartSchedScan,
 					prGlueInfo->prSchedScanRequest,
 					sizeof(struct PARAM_SCHED_SCAN_REQUEST),
-					false, FALSE, TRUE, &u4BufLen);
+					&u4BufLen);
 			if (rStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(INIT, WARN,
 				"SCN: Start sched scan failed after chip reset 0x%x\n",
@@ -6237,7 +6216,7 @@ int32_t wlanOnAtReset(void)
 			rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidSetDisassociate,
 				&u4DisconnectReason,
-				0, FALSE, FALSE, TRUE, &u4BufLen,
+				0, &u4BufLen,
 				AIS_MAIN_BSS_INDEX(prAdapter, u4Idx));
 
 			if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -7931,9 +7910,6 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			   wlanoidNotifyFwSuspend,
 			   (void *)&rSuspendCmd,
 			   sizeof(rSuspendCmd),
-			   FALSE,
-			   FALSE,
-			   TRUE,
 			   &u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)

@@ -1178,7 +1178,6 @@ uint32_t aaaMulAPAgentChanNoiseControl(
 				wlanoidAdvCtrl,
 				cmd_traffic,
 				sizeof(*cmd_traffic),
-				TRUE, TRUE, TRUE,
 				&u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%x)\r\n", rStatus);
@@ -1205,7 +1204,6 @@ uint32_t aaaMulAPAgentChanNoiseControl(
 				wlanoidAdvCtrl,
 				cmd_noise,
 				sizeof(*cmd_noise),
-				TRUE, TRUE, TRUE,
 				&u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%x)\r\n", rStatus);
@@ -1309,7 +1307,6 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 		wlanoidAdvCtrl,
 		cmd_traffic,
 		sizeof(*cmd_traffic),
-		TRUE, TRUE, TRUE,
 		&u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%x)\r\n", rStatus);
@@ -1339,7 +1336,6 @@ void  aaaMulAPAgentChanNoiseCollectionWorkHandler(
 		wlanoidAdvCtrl,
 		cmd_noise,
 		sizeof(*cmd_noise),
-		TRUE, TRUE, TRUE,
 		&u4BufLen);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%x)\r\n", rStatus);
