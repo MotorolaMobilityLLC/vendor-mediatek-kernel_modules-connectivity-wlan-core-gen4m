@@ -862,7 +862,7 @@ void nicCmdEventQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 			pu4LinkSpeed->rLq[i].cRssi
 				= prLinkQuality->rLq[i].cRssi;
 
-			DBGLOG(P2P, TRACE,
+			DBGLOG(NIC, TRACE,
 				"ucBssIdx = %d, rate = %u, signal = %d\n",
 				i,
 				pu4LinkSpeed->rLq[i].u2LinkSpeed,
