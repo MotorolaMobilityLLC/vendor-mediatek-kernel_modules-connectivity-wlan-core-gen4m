@@ -8437,6 +8437,9 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 	struct CMD_STAREC_UPDATE *prStaRecUpdateInfo;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4SetBufferLen = sizeof(struct CMD_STAREC_BF);
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint32_t u4EhtPhyCap1 = 0;
+#endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	ASSERT(prBssInfo);
@@ -8451,6 +8454,11 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 	if (RLM_NET_IS_11AX(prBssInfo) &&
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer))
 		ucMode = MODE_HE_SU;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (RLM_NET_IS_11BE(prBssInfo) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer))
+		ucMode = MODE_EHT_SU;
 #endif
 
 	prStaRecBF =
@@ -8475,6 +8483,83 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 	prStaRec->rTxBfPfmuStaInfo.u2PfmuId = 0xFFFF;
 
 	switch (ucMode) {
+#if (CFG_SUPPORT_802_11BE == 1)
+	case MODE_EHT_SU:
+		memcpy(&u4EhtPhyCap1, prStaRec->ucEhtPhyCapInfo,
+			sizeof(u4EhtPhyCap1));
+		prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
+		prStaRec->rTxBfPfmuStaInfo.u1TxBfCap =
+			(u4EhtPhyCap1 & DOT11BE_PHY_CAP_SU_BFEE);
+
+		if (prStaRec->rTxBfPfmuStaInfo.u1TxBfCap) {
+			/* OFDM, NDPA/Report Poll/CTS2Self tx mode */
+			prStaRec->rTxBfPfmuStaInfo.ucSoundingPhy =
+						TX_RATE_MODE_OFDM;
+
+			/* 9: OFDM 24M */
+			prStaRec->rTxBfPfmuStaInfo.ucNdpaRate = PHY_RATE_24M;
+
+			/* VHT mode, NDP tx mode */
+			prStaRec->rTxBfPfmuStaInfo.ucTxMode =
+				TX_RATE_MODE_EHT_MU;
+
+			/* 0: MCS0 */
+			prStaRec->rTxBfPfmuStaInfo.ucNdpRate = PHY_RATE_MCS0;
+
+			/* 9: OFDM 24M */
+			prStaRec->rTxBfPfmuStaInfo.ucReptPollRate =
+				PHY_RATE_24M;
+
+			switch (prBssInfo->ucVhtChannelWidth) {
+			case VHT_OP_CHANNEL_WIDTH_320:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW =
+					MAX_BW_320MHZ;
+				ucBFeeMaxNr =
+					GET_DOT11BE_PHY_CAP_BFEE_320M(
+						u4EhtPhyCap1);
+				break;
+			case VHT_OP_CHANNEL_WIDTH_160:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW =
+					MAX_BW_160MHZ;
+				ucBFeeMaxNr =
+					GET_DOT11BE_PHY_CAP_BFEE_160M(
+						u4EhtPhyCap1);
+				break;
+			case VHT_OP_CHANNEL_WIDTH_80:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+				ucBFeeMaxNr =
+					GET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(
+						u4EhtPhyCap1);
+				break;
+			case VHT_OP_CHANNEL_WIDTH_20_40:
+			default:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+				if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+					prStaRec->rTxBfPfmuStaInfo.ucCBW =
+								MAX_BW_40MHZ;
+				ucBFeeMaxNr =
+					GET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(
+						u4EhtPhyCap1);
+				break;
+			}
+
+			ucBFerMaxNr = 1;
+			prStaRec->rTxBfPfmuStaInfo.ucNr =
+				(ucBFerMaxNr < ucBFeeMaxNr) ?
+					ucBFerMaxNr : ucBFeeMaxNr;
+
+			if (RLM_NET_IS_11AC(prBssInfo)) {
+				prStaRec->rTxBfPfmuStaInfo.ucNc =
+					((prStaRec->u2VhtRxMcsMap &
+					VHT_CAP_INFO_MCS_2SS_MASK) !=
+						BITS(2, 3)) ? 1 : 0;
+			} else if (RLM_NET_IS_11N(prBssInfo)) {
+				prStaRec->rTxBfPfmuStaInfo.ucNc =
+				     (prStaRec->aucRxMcsBitmask[1] > 0) ? 1 : 0;
+			}
+		}
+		break;
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 case MODE_HE_SU:
 	prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
@@ -8499,6 +8584,9 @@ case MODE_HE_SU:
 		prStaRec->rTxBfPfmuStaInfo.ucReptPollRate = PHY_RATE_24M;
 
 		switch (prBssInfo->ucVhtChannelWidth) {
+		case VHT_OP_CHANNEL_WIDTH_160:
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_160MHZ;
+			break;
 		case VHT_OP_CHANNEL_WIDTH_80:
 			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
 			break;
@@ -8513,7 +8601,12 @@ case MODE_HE_SU:
 		}
 
 		ucBFerMaxNr = 1;
-		ucBFeeMaxNr = HE_GET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prStaRec->ucHePhyCapInfo);
+		ucBFeeMaxNr = (prBssInfo->ucVhtChannelWidth <=
+			VHT_OP_CHANNEL_WIDTH_80) ?
+			HE_GET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(
+				prStaRec->ucHePhyCapInfo) :
+			HE_GET_PHY_CAP_BFMEE_STS_GT_80M(
+				prStaRec->ucHePhyCapInfo);
 		prStaRec->rTxBfPfmuStaInfo.ucNr =
 			(ucBFerMaxNr < ucBFeeMaxNr) ?
 				ucBFerMaxNr : ucBFeeMaxNr;
@@ -8554,6 +8647,10 @@ case MODE_HE_SU:
 			prStaRec->rTxBfPfmuStaInfo.ucReptPollRate = PHY_RATE_24M;
 
 			switch (prBssInfo->ucVhtChannelWidth) {
+			case VHT_OP_CHANNEL_WIDTH_160:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW =
+					MAX_BW_160MHZ;
+				break;
 			case VHT_OP_CHANNEL_WIDTH_80:
 				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
 				break;
