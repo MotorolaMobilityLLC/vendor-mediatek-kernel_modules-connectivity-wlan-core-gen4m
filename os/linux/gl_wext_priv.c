@@ -12461,124 +12461,6 @@ static int priv_driver_set_amsdu_size(IN struct net_device *prNetDev,
 
 }
 
-static int priv_driver_get_wfdma_info(
-	struct net_device *prNetDev,
-	char *pcCommand,
-	int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	struct CHIP_DBG_OPS *prDbgOps;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
-
-	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
-
-	if (prDbgOps && prDbgOps->showPdmaInfo)
-		prDbgOps->showPdmaInfo(prGlueInfo->prAdapter);
-	return i4BytesWritten;
-
-}
-static int priv_driver_get_ple_info(
-	struct net_device *prNetDev,
-	char *pcCommand,
-	int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	struct CHIP_DBG_OPS *prDbgOps;
-	uint8_t fgDumpTxd = FALSE;
-	int32_t u4Ret = 0, u4Val = 0;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
-
-	if (i4Argc >= 2)
-		u4Ret = kalkStrtos32(apcArgv[1], 0, &u4Val);
-	if (!u4Ret && u4Val)
-		fgDumpTxd = TRUE;
-
-	if (prDbgOps && prDbgOps->showPleInfo)
-		prDbgOps->showPleInfo(prGlueInfo->prAdapter, fgDumpTxd);
-	return i4BytesWritten;
-
-}
-
-static int priv_driver_get_pse_info(
-	struct net_device *prNetDev,
-	char *pcCommand,
-	int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	struct CHIP_DBG_OPS *prDbgOps;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
-
-	if (prDbgOps && prDbgOps->showPseInfo)
-		prDbgOps->showPseInfo(prGlueInfo->prAdapter);
-	return i4BytesWritten;
-
-}
-
-static int priv_driver_get_dmasch_info(
-	struct net_device *prNetDev,
-	char *pcCommand,
-	int i4TotalLen)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4BytesWritten = 0;
-	int32_t i4Argc = 0;
-	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	struct CHIP_DBG_OPS *prDbgOps;
-
-	ASSERT(prNetDev);
-	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
-		return -1;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	prDbgOps = prGlueInfo->prAdapter->chip_info->prDebugOps;
-
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
-	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
-
-	if (prDbgOps && prDbgOps->showDmaschInfo)
-		prDbgOps->showDmaschInfo(prGlueInfo->prAdapter);
-	return i4BytesWritten;
-
-}
-
 #if (CFG_SUPPORT_CONNINFRA == 1)
 static int priv_driver_trigger_whole_chip_reset(
 	struct net_device *prNetDev,
@@ -13178,10 +13060,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 	{CMD_SET_PWR_CTRL, priv_driver_set_power_control},
 #endif
-	{CMD_GET_PLE_INFO, priv_driver_get_ple_info},
-	{CMD_GET_PSE_INFO, priv_driver_get_pse_info},
-	{CMD_GET_DMASCH_INFO, priv_driver_get_dmasch_info},
-	{CMD_GET_WFDMA_INFO, priv_driver_get_wfdma_info},
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	{CMD_SET_WHOLE_CHIP_RESET, priv_driver_trigger_whole_chip_reset},
 	{CMD_SET_WFSYS_RESET, priv_driver_trigger_wfsys_reset},
@@ -13388,6 +13266,30 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 				 wlanoidShowDmaschInfo,
 				 (void *) pcCommand, i4TotalLen,
 				 FALSE, FALSE, TRUE, &i4BytesWritten);
+			} else if (strnicmp(pcCommand, CMD_GET_WFDMA_INFO,
+					strlen(CMD_GET_WFDMA_INFO)) == 0) {
+				kalIoctl(prGlueInfo,
+					 wlanoidShowPdmaInfo,
+					 (void *) pcCommand, i4TotalLen,
+					 FALSE, FALSE, TRUE, &i4BytesWritten);
+			} else if (strnicmp(pcCommand, CMD_GET_PLE_INFO,
+					strlen(CMD_GET_PLE_INFO)) == 0) {
+				kalIoctl(prGlueInfo,
+					 wlanoidShowPleInfo,
+					 (void *) pcCommand, i4TotalLen,
+					 FALSE, FALSE, TRUE, &i4BytesWritten);
+			} else if (strnicmp(pcCommand, CMD_GET_PSE_INFO,
+					strlen(CMD_GET_PSE_INFO)) == 0) {
+				kalIoctl(prGlueInfo,
+					 wlanoidShowPseInfo,
+					 (void *) pcCommand, i4TotalLen,
+					 FALSE, FALSE, TRUE, &i4BytesWritten);
+			} else if (strnicmp(pcCommand, CMD_GET_DMASCH_INFO,
+					strlen(CMD_GET_DMASCH_INFO)) == 0) {
+				kalIoctl(prGlueInfo,
+					 wlanoidShowDmaschInfo,
+					 (void *) pcCommand, i4TotalLen,
+					 FALSE, FALSE, TRUE, &i4BytesWritten);
 		} else if (!strnicmp(pcCommand, CMD_DUMP_TS,
 				     strlen(CMD_DUMP_TS)) ||
 			   !strnicmp(pcCommand, CMD_ADD_TS,
