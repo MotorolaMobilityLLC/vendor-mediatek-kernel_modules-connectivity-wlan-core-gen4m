@@ -12094,6 +12094,8 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	struct sk_buff *prSkb = NULL;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)
 		container_of(napi, struct GLUE_INFO, napi);
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct RX_BA_ENTRY *prReorderQueParm;
 
 	struct sk_buff_head rFlushSkbQ;
 	struct sk_buff_head *prRxNapiSkbQ, *prFlushSkbQ;
@@ -12102,6 +12104,16 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+
+	/* Added in qmHandleReorderBubbleTimeout */
+	while (prReorderQueParm =
+			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry))
+		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+
+	/* Added in qmDelRxBaEntry */
+	while (prReorderQueParm =
+			getReorderQueParm(&prAdapter->rFlushRxBaEntry))
+		qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
 
 	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		/* Handle SwRFBs under RX-direct mode */
