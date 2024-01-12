@@ -132,6 +132,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_STATS_REG_MONTR_EMI_OFFSET,
 				nicCfgChipCapStatsRegMontrEmiOffset),
 #endif
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_SW_SYNC_BY_EMI,
+				nicCfgGetSwSyncEMIOffset),
+#endif
 };
 
 /*******************************************************************************
@@ -3018,6 +3022,69 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 }
 #endif
 
+/* This function is used to get the EMI offset sent by FW.
+ * Driver will handle the returned EMI offset only if it is valid.
+ * The format of the returned event buffer is shown as follows.
+ * struct buffer {
+ *     uint32_t num_of_tables;
+ *     struct sw_sync_emi_info tables[num_of_tables] = {
+ *         // {tag, isValid, EMI offset}
+ *         {0, 1, 0x20000},
+ *         {2, 0, 0x0},
+ *         ...
+ *     };
+ * };
+ */
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+uint32_t nicCfgGetSwSyncEMIOffset(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4Idx, u4NumOfTables = 0, *pu4NumOfTables = NULL;
+	struct sw_sync_emi_info *prInfo = NULL, *prOnOffInfo = NULL;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
+
+	/* Get the number of struct sw_sync_emi_info */
+	pu4NumOfTables = (uint32_t *)pucEventBuf;
+	if (pu4NumOfTables == NULL) {
+		DBGLOG(INIT, ERROR, "NULL EVT buffer.\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+	u4NumOfTables = *pu4NumOfTables;
+	if (u4NumOfTables == 0) {
+		DBGLOG(INIT, WARN,
+		"None of Host/FW EMI sync info is available.\n");
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+	++pu4NumOfTables;
+	/* Start to parsing sw_sync_emi_info table */
+	prInfo = (struct sw_sync_emi_info *)pu4NumOfTables;
+	for (u4Idx = 0; u4Idx < u4NumOfTables; ++u4Idx) {
+		switch (prInfo[u4Idx].tag) {
+		case SW_SYNC_ON_OFF_TAG: {
+			DBGLOG(INIT, INFO,
+			"WiFi On/Off EMI valid flag:[%s], Offset:[0x%08x]\n",
+			prInfo[u4Idx].isValid ? "valid" : "invalid",
+			prInfo[u4Idx].offset);
+			prOnOffInfo =
+			  &prChipInfo->sw_sync_emi_info[SW_SYNC_ON_OFF_TAG];
+			if (prInfo[u4Idx].isValid)
+				kalMemCopy(prOnOffInfo,
+					   &prInfo[u4Idx],
+					   sizeof(prInfo[u4Idx]));
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 uint32_t nicCmdEventCasanLoadType(struct ADAPTER *prAdapter,
 					uint8_t *pucEventBuf)
 {
@@ -3378,7 +3445,8 @@ void nicParsingNicCapV2(struct ADAPTER *prAdapter,
 	     table_idx++) {
 
 		/* find the corresponding tag's handler */
-		if (gNicCapabilityV2InfoTable[table_idx].tag_type == u4Type) {
+		if (gNicCapabilityV2InfoTable[table_idx].tag_type == u4Type &&
+		    gNicCapabilityV2InfoTable[table_idx].hdlr != NULL) {
 			gNicCapabilityV2InfoTable[table_idx].hdlr(
 				prAdapter, pucEventBuf);
 			break;

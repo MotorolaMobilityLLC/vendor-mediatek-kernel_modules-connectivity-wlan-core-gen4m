@@ -431,6 +431,7 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = BELLWETHER_TX_DESC_APPEND_LENGTH,
 	.rxd_size = BELLWETHER_RX_DESC_LENGTH,
 	.init_evt_rxd_size = BELLWETHER_RX_INIT_DESC_LENGTH,

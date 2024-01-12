@@ -545,6 +545,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.patch_addr = MT7915_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = TRUE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = MT7915_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7915_RX_DESC_LENGTH,
 	.init_evt_rxd_size = MT7915_RX_DESC_LENGTH,

@@ -610,6 +610,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6655 = {
 	.patch_addr = MT6655_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = NULL,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	.is_support_mawd = TRUE,
 	.is_support_sdo = TRUE,

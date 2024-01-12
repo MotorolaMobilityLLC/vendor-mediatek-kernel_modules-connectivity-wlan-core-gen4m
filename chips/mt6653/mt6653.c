@@ -969,6 +969,7 @@ struct EMI_WIFI_MISC_RSV_MEM_INFO mt6653_wifi_misc_rsv_mem_info[] = {
 	{WIFI_MISC_MEM_BLOCK_TX_POWER, 20480, {0}}
 };
 #endif
+static struct sw_sync_emi_info mt6653_sw_sync_emi_info[SW_SYNC_TAG_NUM];
 
 struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.bus_info = &mt6653_bus_info,
@@ -992,6 +993,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.patch_addr = MT6653_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = mt6653_sw_sync_emi_info,
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	.wifi_off_magic_num = MT6653_WIFI_OFF_MAGIC_NUM,
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 #if defined(_HIF_PCIE)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	.is_support_mawd = TRUE,
@@ -3223,12 +3228,22 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	struct mt66xx_chip_info *prChipInfo = NULL;
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	prChipInfo = ad->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "NULL prChipInfo.\n");
+		rStatus = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
 #if CFG_MTK_FPGA_PLATFORM != 1
 	set_cbinfra_remap(ad);
@@ -3306,7 +3321,11 @@ dump:
 			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			u4Value);
 	}
-
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	if (prChipInfo->sw_sync_emi_info)
+		kalMemSet(prChipInfo->sw_sync_emi_info, 0x0,
+		sizeof(struct sw_sync_emi_info) * SW_SYNC_TAG_NUM);
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 exit:
 	return rStatus;
 }
