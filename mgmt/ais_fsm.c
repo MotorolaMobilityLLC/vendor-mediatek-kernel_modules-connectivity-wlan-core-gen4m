@@ -1426,7 +1426,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 #define BSS_DESC_BAD_CASE \
 	(!prBssDesc || (prBssDesc->fgIsConnected && \
-	EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)) || \
+	EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID) && \
+	prConnSettings->eConnectionPolicy != CONNECT_BY_BSSID) || \
 	prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
 		/* 4 <3.a> Following cases will go back to NORMAL_TR.
 		 * Precondition: not user space triggered roaming
@@ -1445,8 +1446,8 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		 *
 		 * CASE III: Normal case, we can't find other candidate to roam
 		 * out, so only the current AP will be matched.
-		 *
-		 * CASE VI: Timestamp of the current AP might be reset
+		 * however, if the connection policy is BSSID, means upper layer
+		 * order driver connect to specific AP, we need still do connect
 		 */
 		if (prAisBssInfo->ucReasonOfDisconnect !=
 			DISCONNECT_REASON_CODE_REASSOCIATION &&
