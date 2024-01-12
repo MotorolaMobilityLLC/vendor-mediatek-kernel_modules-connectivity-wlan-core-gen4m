@@ -7760,12 +7760,28 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 				prAisBssInfo->eBand) / 1000;
 			(*num_freq_list)++;
 		} else {
-			/* Prefer SCC/2G if STA is connected at 5G/6G */
-			/* Add SCC channel */
-			freq_list[*num_freq_list] = nicChannelNum2Freq(
-				prAisBssInfo->ucPrimaryChannel,
-				prAisBssInfo->eBand) / 1000;
-			(*num_freq_list)++;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prWifiVar->ucDisallowP2PAcs6G &&
+				prAisBssInfo->eBand == BAND_6G) {
+				/* CE platform does not support P2P 6G now
+				 * if Ais at 6G, apply MCC at 5G
+				 * through DisallowP2PAcs6G in wifi cfg
+				 */
+				*num_freq_list += p2pFunGetTopPreferFreqByBand(
+					prAdapter,
+					BAND_5G, prWifiVar->ucP2p6gBandwidth,
+					MAX_5G_BAND_CHN_NUM,
+					&freq_list[*num_freq_list]);
+			} else
+#endif
+			{
+				/* Prefer SCC/2G if STA is connected at 5G/6G */
+				/* Add SCC channel */
+				freq_list[*num_freq_list] = nicChannelNum2Freq(
+					prAisBssInfo->ucPrimaryChannel,
+					prAisBssInfo->eBand) / 1000;
+				(*num_freq_list)++;
+			}
 
 			/* Add 2G channels */
 			*num_freq_list += p2pFunGetTopPreferFreqByBand(
