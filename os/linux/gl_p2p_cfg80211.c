@@ -597,6 +597,11 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	if (prGlueInfo == NULL)
 		return -EINVAL;
 
+	if (wdev == NULL) {
+		DBGLOG(P2P, ERROR, "wdev is NULL\n");
+		return -EINVAL;
+	}
+
 	prAdapter = prGlueInfo->prAdapter;
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
 
