@@ -76,6 +76,10 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#include "fw_log_wifi.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -210,6 +214,11 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	wifi_rst.prGlueInfo = prGlueInfo;
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
 #if (CFG_SUPPORT_CONNINFRA == 1)
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	fw_log_connsys_coredump_init();
+#endif
+
 	KAL_WAKE_LOCK_INIT(NULL, &g_IntrWakeLock, "WLAN Reset");
 	init_waitqueue_head(&g_waitq_rst);
 	init_completion(&g_RstComp);
@@ -217,7 +226,8 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	wlan_reset_thread = kthread_run(wlan_reset_thread_main,
 					&g_rst_data, "wlan_rst_thread");
 	g_SubsysRstCnt = 0;
-#endif
+
+#endif /* CFG_SUPPORT_CONNINFRA */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -237,6 +247,11 @@ void glResetUninit(void)
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_msgcb_unreg(WMTDRV_TYPE_WIFI);
 #else
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+	fw_log_connsys_coredump_deinit();
+#endif
+
 	set_bit(GLUE_FLAG_HALT_BIT, &g_ulFlag);
 	wake_up_interruptible(&g_waitq_rst);
 #endif
@@ -628,6 +643,11 @@ int wlan_reset_thread_main(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, &g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, &g_IntrWakeLock);
+
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			fw_log_connsys_coredump_start();
+#endif
+
 			if (g_IsWholeChipRst) {
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
 							WMTRSTMSG_RESET_START);
