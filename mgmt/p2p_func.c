@@ -2232,6 +2232,8 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	prBssInfo->fgIsOpChangeRxNss = FALSE;
 
+	nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
+
 	/* Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
