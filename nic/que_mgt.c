@@ -3591,7 +3591,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		prNextSwRfb = QM_RX_GET_NEXT_SW_RFB(prCurrSwRfb);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (likely(fgIsHwRROSupport)) {
+		if (unlikely(fgIsHwRROSupport)) {
 			if (qmHandleRroPkt(prAdapter, prCurrSwRfb)) {
 				prCurrSwRfb->eDst =
 					RX_PKT_DESTINATION_NULL;
@@ -3724,8 +3724,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				prCurrSwRfb->ucWlanIdx =
 					prCurrSwRfb->prStaRec->ucWlanIndex;
 				GLUE_SET_PKT_BSS_IDX(prCurrSwRfb->pvPacket,
-					secGetBssIdxByWlanIdx(prAdapter,
-						prCurrSwRfb->ucWlanIdx));
+					prCurrSwRfb->prStaRec->ucBssIndex);
 			}
 
 			ucBssIndex = prCurrSwRfb->prStaRec->ucBssIndex;
@@ -3799,20 +3798,24 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 						prWlanHeader);
 		}
 
+#if CFG_SUPPORT_STATISTICS
+		/*
+		 * Independent pkt is marked in stats,
+		 * so it should be placed before rx reordering
+		 */
+		STATS_RX_PKT_INFO_DISPLAY(prCurrSwRfb);
+#endif
+
 #if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
 			qmAmsduAttackDetection(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *) prCurrSwRfb);
 			DBGLOG(QM, INFO, "drop AMSDU attack packet\n");
 		}
 
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
 			qmDetectRxInvalidEAPOL(prAdapter, prCurrSwRfb)) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *) prCurrSwRfb);
 			DBGLOG(QM, INFO,
 				"drop EAPOL packet not in sec mode\n");
 		}
@@ -3977,6 +3980,10 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(prReturnedQue);
 
 #else
+
+#if CFG_SUPPORT_STATISTICS
+	STATS_RX_PKT_INFO_DISPLAY(prSwRfbListHead);
+#endif
 
 	/* DbgPrint("QM: Enter qmHandleRxPackets()\n"); */
 	return prSwRfbListHead;
