@@ -55,35 +55,35 @@ union hetb_tx_usr {
 #if (CFG_SUPPORT_CONNAC3X == 1)
 union ehttb_tx_usr {
 	struct {
-		u_int32 aid:8;
-		u_int32 neoab:1;
-		u_int32 mimo_nss:3;
-		u_int32 allocation:8;
-		u_int32 coding:1;
-		u_int32 mcs:4;
-		u_int32 reserve:1;
-		u_int32 start_ss:4;
-		u_int32 Nos:2;
-		u_int32 TargetRssi:7;
-		u_int32 Ps160:1;
-		u_int32 reserve2:22;
-		u_int32 UserType:2;
+		u_int64 aid:8;
+		u_int64 neoab:1;
+		u_int64 mimo_nss:3;
+		u_int64 allocation:8;
+		u_int64 coding:1;
+		u_int64 mcs:4;
+		u_int64 dcm:1;
+		u_int64 start_ss:4;
+		u_int64 Nos:2;
+		u_int64 TargetRssi:7;
+		u_int64 Ps160:1;
+		u_int64 reserve2:22;
+		u_int64 UserType:2;
 	} field;
-	u_int32 usr_info;
+	u_int64 usr_info;
 };
 
 union ehttb_spec_usr {
 	struct {
-		u_int32 aid:12;
-		u_int32 PhyId:3;
-		u_int32 ExtUlBw:2;
-		u_int32 SR1:4;
-		u_int32 SR2:4;
-		u_int32 disregard:12;
-		u_int32 reserve:25;
-		u_int32 UserType:2;
+		u_int64 aid:12;
+		u_int64 PhyId:3;
+		u_int64 ExtUlBw:2;
+		u_int64 SR1:4;
+		u_int64 SR2:4;
+		u_int64 disregard:12;
+		u_int64 reserve:25;
+		u_int64 UserType:2;
 	} field;
-	u_int32 usr_info;
+	u_int64 usr_info;
 };
 #endif
 
@@ -1242,8 +1242,8 @@ static void mt_op_set_manual_he_tb_value(
 	usr.field.aid = 0x1;
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
-	usr.field.mcs = ru_sta->rate & ~BIT(5);
-	usr.field.dcm = (ru_sta->rate & BIT(5)) >> 5;
+	usr.field.mcs = ru_sta->rate & ~BIT(4);
+	usr.field.dcm = (ru_sta->rate & BIT(4)) >> 4;
 	usr.field.ss_allocation =
 	((ru_sta->nss-1) << 3) | (ru_sta->start_sp_st & 0x7);
 
@@ -1281,6 +1281,12 @@ static void mt_op_set_manual_he_tb_value(
 		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR5, 0xffffffff);
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR6, 0xffffffff);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR7, 0);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8, 0);
+#endif
 
 }
 
@@ -1358,8 +1364,8 @@ static void mt_op_set_manual_eht_tb_value(
 	usr.field.mimo_nss = 0;
 	usr.field.allocation = ru_sta->ru_index;
 	usr.field.coding = ru_sta->ldpc;
-	usr.field.mcs = ru_sta->rate & ~BIT(5);
-	usr.field.reserve = 0;
+	usr.field.mcs = ru_sta->rate & ~BIT(4);
+	usr.field.dcm = (ru_sta->rate & BIT(4)) >> 4;
 	usr.field.start_ss = ru_sta->start_sp_st & 0xF;
 	usr.field.Nos = (nss-1);
 	usr.field.Ps160 = ru_sta->ps160;
@@ -1382,6 +1388,7 @@ static void mt_op_set_manual_eht_tb_value(
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 	("%s: [TF TTRCR2 ] cr_value:0x%08x\n",
 	__func__, (u_int32)(usr.usr_info & 0xffffffff)));
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 	("%s: [TF TTRCR3 ] cr_value:0x%08x\n",
 	__func__, (u_int32)((usr.usr_info & 0xffffffff00000000) >> 32)));
@@ -1437,6 +1444,7 @@ static void mt_op_set_manual_eht_tb_value(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8,
 		((specUsr.usr_info & 0xffffffff00000000) >> 32));
+
 }
 #endif
 
