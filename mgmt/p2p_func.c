@@ -2675,10 +2675,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	 */
 	prBssInfo->fgIsOpChangeRxNss = TRUE;
 
-	if (fgIsPureAp)
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
-	else if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 
 	if (prFilsInfo->fgValid) {
 		nicUpdateFilsDiscIETemplate(prAdapter,
