@@ -2384,7 +2384,7 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIpProto;
 	uint8_t ucSeqNo;
 	uint8_t *pucUdpHdr, *pucIcmp;
-	uint16_t u2DstPort, u2IcmpId, u2IcmpSeq;
+	uint16_t u2DstPort;
 	struct BOOTP_PROTOCOL *prBootp;
 	uint32_t u4DhcpMagicCode;
 	uint16_t u2IpId;
@@ -2441,56 +2441,28 @@ kalIPv4FrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		/* BOOTP/DHCP protocol */
 		if ((u2DstPort == IP_PORT_BOOTP_SERVER) ||
 		    (u2DstPort == IP_PORT_BOOTP_CLIENT)) {
-
 			prBootp = (struct BOOTP_PROTOCOL *)
 							&pucUdpHdr[UDP_HDR_LEN];
-
 			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
 					    &u4DhcpMagicCode);
-
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
-				uint32_t u4Xid;
-
-				WLAN_GET_FIELD_BE32(&prBootp->u4TransId,
-						    &u4Xid);
-
 				ucSeqNo = nicIncreaseTxSeqNum(
 							prGlueInfo->prAdapter);
 				GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
-				DBGLOG_LIMITED(TX, INFO,
-					"DHCP PKT[0x%p] XID[0x%08x] OPT[%u] TYPE[%u], SeqNo: %d\n",
-					prPacket, u4Xid, prBootp->aucOptions[4],
-					prBootp->aucOptions[6], ucSeqNo);
 				prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DHCP);
 			}
 		} else if (u2DstPort == UDP_PORT_DNS) {
-			uint8_t *pucUdpPayload = &pucUdpHdr[UDP_HDR_LEN];
-			uint16_t u2TransId = (pucUdpPayload[0] << 8) |
-					     pucUdpPayload[1];
-
 			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-			DBGLOG_LIMITED(TX, INFO,
-				"<TX> DNS: [0x%p] IPID[0x%02x] TransID[0x%04x] SeqNo[%d]\n",
-				prPacket, u2IpId, u2TransId, ucSeqNo);
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_DNS);
 		}
 	} else if (ucIpProto == IP_PRO_ICMP) {
-		/* the number of ICMP packets is seldom so we print log here */
 		pucIcmp = &pucIpHdr[20];
 		ucIcmpType = pucIcmp[0];
-		if (ucIcmpType ==
-		    3) /* don't log network unreachable packet */
+		if (ucIcmpType == 3) /* don't log network unreachable packet */
 			return FALSE;
-		u2IcmpId = *(uint16_t *) &pucIcmp[4];
-		u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
-
 		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-		DBGLOG_LIMITED(TX, INFO,
-			"<TX> ICMP: IPID[0x%04x] Type %d, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
-			u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMP);
 	}
 #if CFG_SUPPORT_WIFI_SYSDVT
@@ -2558,22 +2530,9 @@ kalArpFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		      IN void *prPacket, IN uint8_t *pucIpHdr,
 		      OUT struct TX_PACKET_INFO *prTxPktInfo)
 {
-	uint16_t u2ArpOp;
 	uint8_t ucSeqNo;
-
 	ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-	WLAN_GET_FIELD_BE16(&pucIpHdr[ARP_OPERATION_OFFSET],
-			    &u2ArpOp);
-
-	DBGLOG(TX, INFO,
-		"ARP %s PKT[0x%p] TAR MAC/IP["
-		MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
-		u2ArpOp == ARP_OPERATION_REQUEST ? "REQ" : "RSP",
-		prPacket, MAC2STR(&pucIpHdr[ARP_TARGET_MAC_OFFSET]),
-		IPV4TOSTR(&pucIpHdr[ARP_TARGET_IP_OFFSET]), ucSeqNo);
-
 	GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
 	prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ARP);
 	return TRUE;
 }
@@ -2584,16 +2543,9 @@ kalTdlsFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 		       OUT struct TX_PACKET_INFO *prTxPktInfo)
 {
 	uint8_t ucSeqNo;
-	uint8_t ucActionCode;
-
-	ucActionCode = pucIpHdr[TDLS_ACTION_CODE_OFFSET];
-
-	DBGLOG(TX, INFO, "TDLS action code: %d\n", ucActionCode);
 
 	ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-
 	GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
 	prTxPktInfo->u2Flag |= BIT(ENUM_PKT_TDLS);
 
 	return TRUE;
@@ -2608,10 +2560,6 @@ kalSecurityFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucEapol;
 	uint8_t ucEapolType;
 	uint8_t ucSeqNo;
-
-	uint8_t ucSubType; /* sub type filed*/
-	uint16_t u2Length;
-	uint16_t u2Seq;
 	uint8_t	ucEAPoLKey = 0;
 	uint8_t	ucEapOffset = ETHER_HEADER_LEN;
 	uint16_t u2KeyInfo = 0;
@@ -2636,50 +2584,13 @@ kalSecurityFrameClassifier(IN struct GLUE_INFO *prGlueInfo,
 					BIT(ENUM_PKT_NON_PROTECTED_1X);
 		}
 
-
-		switch (ucEapolType) {
-		case 0: /* eap packet */
-
-			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
-			DBGLOG(TX, INFO,
-			       "<TX> EAP Packet: code %d, id %d, type %d, PKT[0x%p], SeqNo: %d\n",
-			       pucEapol[4], pucEapol[5], pucEapol[7], prPacket,
-			       ucSeqNo);
-			break;
-		case 1: /* eapol start */
-			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
-			DBGLOG(TX, INFO,
-			       "<TX> EAPOL: start, PKT[0x%p], SeqNo: %d\n",
-			       prPacket, ucSeqNo);
-			break;
-		case 3: /* key */
-
-			ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
-			GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
-
-			DBGLOG(TX, INFO,
-			       "<TX> EAPOL: key, KeyInfo 0x%04x, PKT[0x%p], SeqNo: %d\n",
-			       *((uint16_t *)(&pucEapol[5])), prPacket,
-			       ucSeqNo);
-			break;
-		}
+		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
+		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 #if CFG_SUPPORT_WAPI
 	} else if (u2EthType == ETH_WPI_1X) {
-
-		ucSubType = pucEapol[3]; /* sub type filed*/
-		u2Length = *(uint16_t *)&pucEapol[6];
-		u2Seq = *(uint16_t *)&pucEapol[8];
 		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_NON_PROTECTED_1X);
-
-		DBGLOG(TX, INFO,
-		       "<TX> WAPI: subType %d, Len %d, Seq %d, PKT[0x%p], SeqNo: %d\n",
-		       ucSubType, u2Length, u2Seq, prPacket, ucSeqNo);
 #endif
 	}
 	prTxPktInfo->u2Flag |= BIT(ENUM_PKT_1X);
@@ -2746,9 +2657,6 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	/* 4 <3> Handle ethernet format */
 	switch (u2EtherTypeLen) {
 	case ETH_P_IPV4:
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_IPV4);
-#endif
 		/* IPv4 header length check */
 		if (u4PacketLen < (ucEthTypeLenOffset + ETHER_TYPE_LEN +
 				   IPV4_HDR_LEN)) {
@@ -2771,9 +2679,6 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		break;
 
 	case ETH_P_ARP:
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_ARP);
-#endif
 		kalArpFrameClassifier(prGlueInfo, prPacket, pucNextProtocol,
 				      prTxPktInfo);
 		break;
@@ -2783,18 +2688,12 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WAPI
 	case ETH_WPI_1X:
 #endif
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_1X);
-#endif
 		kalSecurityFrameClassifier(prGlueInfo, prPacket,
 			pucNextProtocol, u2EtherTypeLen, aucLookAheadBuf,
 			prTxPktInfo);
 		break;
 
 	case ETH_PRO_TDLS:
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_TDLS);
-#endif
 		kalTdlsFrameClassifier(prGlueInfo, prPacket,
 				       pucNextProtocol, prTxPktInfo);
 		break;
@@ -2807,9 +2706,6 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_IPV6);
-#endif
 #if DSCP_SUPPORT
 		if (GLUE_GET_PKT_BSS_IDX(prSkb) != P2P_DEV_BSS_INDEX) {
 			uint16_t u2Tmp;
@@ -2829,14 +2725,13 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 		break;
 
 	default:
-#if (CFG_SUPPORT_STATISTICS == 1)
-		wlanLogTxData(WLAN_WAKE_OTHER);
-#endif
 		/* 4 <4> Handle 802.3 format if LEN <= 1500 */
 		if (u2EtherTypeLen <= ETH_802_3_MAX_LEN)
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_802_3);
 		break;
 	}
+
+	STATS_TX_PKT_INFO_DISPLAY(prSkb);
 
 	/* 4 <4.1> Check for PAL (BT over Wi-Fi) */
 	/* Move to kalBowFrameClassifier */
