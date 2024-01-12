@@ -2811,7 +2811,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 						prBssDesc, eHwBand);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
-				DBGLOG(SCN, INFO,
+				DBGLOG(SCN, TRACE,
 					"ER: BSSID:" MACSTR
 					" SSID:%s,rx:%x, er:%x\n",
 					MAC2STR(prBssDesc->aucBSSID),
