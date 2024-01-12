@@ -293,10 +293,6 @@
 /* Define magic key of test mode (Don't change it for future compatibity) */
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
 #define PRIV_CMD_TEST_MAGIC_KEY_ICAP                         2013
-#ifdef CFG_MODIFY_TX_POWER_BY_BAT_VOLT
-#define TX_POWER_PERCENTAGE_CTRL                        0x1
-#define TX_POWER_DROP_CTRL                              0x2
-#endif
 
 #define IW_PRIV_SET_BUF_SIZE			2000
 #define IW_PRIV_GET_BUF_SIZE			2047
