@@ -92,6 +92,11 @@ union _NAN_BAND_CHNL_CTRL {
 	uint32_t u4RawData;
 };
 
+struct NAN_EVT_NDL_FLOW_CTRL_V2 {
+	uint32_t au4RemainingTime[NAN_MAX_CONN_CFG];
+	union _NAN_BAND_CHNL_CTRL arBandChnlInfo[NAN_MAX_CONN_CFG];
+};
+
 enum _ENUM_NAN_NEGO_TYPE_T {
 	ENUM_NAN_NEGO_DATA_LINK,
 	ENUM_NAN_NEGO_RANGING,
@@ -281,6 +286,7 @@ uint32_t nanGetPeerPrimaryChnlBySlot(struct ADAPTER *prAdapter,
 		uint16_t u2SlotIdx, unsigned char fgChkRmtCondSlot);
 
 uint32_t nanSchedConfigPhyParams(struct ADAPTER *prAdapter);
+uint32_t nanSchedCmdUpdateSchedVer(struct ADAPTER *prAdapter);
 uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 		uint8_t ucChannel);
 
