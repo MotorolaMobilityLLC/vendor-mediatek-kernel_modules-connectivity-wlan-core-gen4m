@@ -1097,6 +1097,13 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	if (wlanIsChipAssert(prGlueInfo->prAdapter))
 		return -EBUSY;
 
+#if CFG_SUPPORT_RTT
+	if (rttIsRunning(prAdapter)) {
+		DBGLOG(REQ, ERROR, "RTT is running\n");
+		return -EBUSY;
+	}
+#endif
+
 #if (CFG_CE_ASSERT_DUMP == 1)
 	if (prGlueInfo->prAdapter->fgN9AssertDumpOngoing)
 		return -EBUSY;
@@ -5578,10 +5585,6 @@ int testmode_rtt_test(struct wiphy *wiphy,
 			request.arRttConfigs[0].ePreamble =
 				WIFI_RTT_PREAMBLE_VHT;
 			request.arRttConfigs[0].eBw = WIFI_RTT_BW_80;
-			request.arRttConfigs[0].fgASAP = 1;
-			request.arRttConfigs[0].ucMinDeltaIn100US = 40;
-			request.arRttConfigs[0].u8LocalTSFTime = 0;
-			request.arRttConfigs[0].u8PeerTSFTime = 0;
 			rStatus = kalIoctl(prGlueInfo, wlanoidHandleRttRequest,
 					   &request,
 					   sizeof(struct PARAM_RTT_REQUEST),

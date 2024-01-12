@@ -6096,6 +6096,62 @@ struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter)
 }
 #endif
 
+enum ENUM_BAND cnmGetBandByFreq(uint32_t u4Freq)
+{
+	enum ENUM_BAND eBand = BAND_NULL;
+
+	if (u4Freq >= 2412 && u4Freq <= 2484)
+		eBand = BAND_2G4;
+	else if (u4Freq >= 5180 && u4Freq <= 5900)
+		eBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (u4Freq >= 5935 && u4Freq <= 7115)
+		eBand = BAND_6G;
+#endif
+
+	return eBand;
+}
+
+void cnmFreqToChnl(uint32_t u4Freq, u8 *ucChannel, enum ENUM_BAND *eBand)
+{
+	/* Initialize data */
+	*ucChannel = 0;
+	*eBand = BAND_NULL;
+
+	/* 2.4 GHz */
+	if (u4Freq >= 2412 && u4Freq <= 2472) {
+		*ucChannel = (u4Freq - 2407) / 5;
+		*eBand = BAND_2G4;
+	}
+
+	if (u4Freq == 2484) {
+		*ucChannel = 14;
+		*eBand = BAND_2G4;
+	}
+
+	/* 5 GHz */
+	if (u4Freq >= 5180 && u4Freq <= 5900) {
+		*ucChannel = (u4Freq - 5000) / 5;
+		*eBand = BAND_5G;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6 GHz */
+	if (u4Freq > 5950 && u4Freq <= 7115) {
+		*ucChannel = (u4Freq - 5950) / 5;
+		*eBand = BAND_6G;
+	}
+
+	/* Channel 2 */
+	if (u4Freq == 5935) {
+		*ucChannel = 2;
+		*eBand = BAND_6G;
+	}
+#endif
+
+}
+
+
 enum ENUM_BAND_80211 cnmGet80211Band(enum ENUM_BAND eBand)
 {
 	enum ENUM_BAND_80211 eBand80211 = BAND_80211_NUM;

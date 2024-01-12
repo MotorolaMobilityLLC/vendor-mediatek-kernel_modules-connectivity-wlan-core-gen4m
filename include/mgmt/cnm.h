@@ -403,6 +403,8 @@ struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter);
 
 bool cnmIsMccMode(struct ADAPTER *prAdapter);
 
+void cnmFreqToChnl(uint32_t u4Freq, u8 *ucChannel, enum ENUM_BAND *eBand);
+enum ENUM_BAND cnmGetBandByFreq(uint32_t u4Freq);
 enum ENUM_BAND_80211 cnmGet80211Band(enum ENUM_BAND eBand);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
