@@ -7751,6 +7751,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prAdapter, "ucScanNoApRecoverTh", 3);
 
 #endif
+
+	prWifiVar->fgSapCheckPmkidInDriver = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "SapCheckPmkidInDriver", FEATURE_ENABLED);
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
