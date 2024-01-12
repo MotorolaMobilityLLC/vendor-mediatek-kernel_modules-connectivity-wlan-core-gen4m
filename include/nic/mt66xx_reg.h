@@ -1497,6 +1497,7 @@ struct mt66xx_chip_info {
 	uint32_t u4ChipIpConfig;
 	uint16_t u2ADieChipVersion;
 	void *CSRBaseAddress;
+	uint32_t u4CsrOffset;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,
