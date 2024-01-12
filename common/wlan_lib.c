@@ -11442,7 +11442,8 @@ wlanGetSpeIdx(struct ADAPTER *prAdapter,
 	 * if DBDC enable return 0, else depend 2.4G/5G & support WF path
 	 * retrun accurate value
 	 */
-	if (!prAdapter->rWifiVar.fgDbDcModeEn) {
+	if (prAdapter->chip_info->eDefaultDbdcMode == ENUM_DBDC_MODE_STATIC ||
+	    !prAdapter->rWifiVar.fgDbDcModeEn) {
 		if (prBssInfo->fgIsGranted)
 			eBand = prBssInfo->eBandGranted;
 		else

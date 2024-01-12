@@ -1500,6 +1500,9 @@ struct mt66xx_chip_info {
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
+
+	uint32_t eDefaultDbdcMode; /* enum ENUM_CNM_DBDC_MODE */
+
 	/* chip ip version from FW */
 	uint32_t u4ChipIpVersion;
 	uint32_t u4ChipIpConfig;

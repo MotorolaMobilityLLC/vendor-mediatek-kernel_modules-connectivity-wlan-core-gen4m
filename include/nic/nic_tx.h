@@ -1107,6 +1107,7 @@ struct TX_DESC_OPS_T {
 		u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming,
 		uint8_t ucAntennaIndex);
 	void (*nic_txd_set_pkt_fixed_rate_option)(
+		struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		uint16_t u2RateCode,
 		uint8_t ucBandwidth,
