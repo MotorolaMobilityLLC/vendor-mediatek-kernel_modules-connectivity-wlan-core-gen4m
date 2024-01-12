@@ -3598,6 +3598,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	if ((*pprChipInfo)->asicCapInit)
 		(*pprChipInfo)->asicCapInit(prAdapter);
 
+	/* Default efuse control enable AX */
+	fgEfuseCtrlAxOn = 1; /* run time control if support AX by efuse */
+
 	/* Default support 2.4/5G MIMO */
 	prAdapter->rWifiFemCfg.u2WifiPath = (
 			WLAN_FLAG_2G4_WF0 | WLAN_FLAG_5G_WF0 |
