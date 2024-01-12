@@ -1962,7 +1962,9 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (fgRet == FALSE || r4Status == 0)
 		goto exit;
 
-	fgNeedPwrCtrl = IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO);
+#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
+	fgNeedPwrCtrl = TRUE;
+#endif
 
 	if (fgNeedPwrCtrl)
 		wlanAcquirePowerControl(prAdapter);
