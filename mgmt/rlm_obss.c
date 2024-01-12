@@ -73,7 +73,7 @@ void rlmObssInit(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		cnmTimerInitTimer(prAdapter, &prBssInfo->rObssScanTimer,

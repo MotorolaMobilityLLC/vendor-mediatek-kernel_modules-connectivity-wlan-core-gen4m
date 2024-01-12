@@ -2414,7 +2414,7 @@ wext_get_rate(struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
 
-	if (ucBssIndex >= BSSID_NUM)
+	if (ucBssIndex >= MAX_BSSID_NUM)
 		return -EFAULT;
 
 	kalMemSet(&rLinkSpeed, 0, sizeof(rLinkSpeed));
@@ -4359,7 +4359,7 @@ struct iw_statistics *wext_get_wireless_stats(
 	if (!prGlueInfo)
 		goto stat_out;
 
-	if (ucBssIndex < BSSID_NUM)
+	if (ucBssIndex < MAX_BSSID_NUM)
 		pStats = (struct iw_statistics *)
 			(&(prGlueInfo->rIwStats[ucBssIndex]));
 

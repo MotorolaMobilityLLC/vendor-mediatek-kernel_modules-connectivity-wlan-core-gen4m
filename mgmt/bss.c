@@ -1500,7 +1500,7 @@ uint32_t bssProcessProbeRequest(struct ADAPTER *prAdapter,
 	/* 4 <2> Check network conditions before reply Probe Response Frame
 	 *         (Consider Concurrent)
 	 */
-	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucP2PDevBssIdx;
+	for (ucBssIndex = 0; ucBssIndex <= MAX_BSSID_NUM;
 	     ucBssIndex++) {
 
 		if (!IS_NET_ACTIVE(prAdapter, ucBssIndex))
@@ -2480,7 +2480,7 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	/* P_LINK_T prStaRecOfClientList = (P_LINK_T) NULL; */
 	/* P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL; */
 
-	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
+	if (ucBssIndex > prAdapter->ucSwBssIdNum) {
 		DBGLOG(SW4, INFO, "Invalid BssInfo index[%u], skip dump!\n",
 		       ucBssIndex);
 		return;

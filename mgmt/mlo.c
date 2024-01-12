@@ -3956,7 +3956,7 @@ static uint32_t mldUpdatePerLinkMlo(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	if (!IS_NET_ACTIVE(prAdapter, prStaRec->ucBssIndex)) {
 		DBGLOG(ML, INFO, "Network is not activated\n");

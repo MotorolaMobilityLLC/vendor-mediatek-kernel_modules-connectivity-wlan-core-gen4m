@@ -91,7 +91,7 @@ struct DBDC_INFO_T {
 	struct LINK rPendingMsgList;
 
 	bool fgDbdcDisableOpmodeChangeDone;
-	enum ENUM_OPMODE_STATE_T eBssOpModeState[BSSID_NUM];
+	enum ENUM_OPMODE_STATE_T eBssOpModeState[MAX_BSSID_NUM];
 
 	/* Set DBDC setting for incoming network */
 	uint8_t ucPrimaryChannel;
@@ -565,30 +565,13 @@ void cnmInit(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	if (prAdapter->ucHwBssIdNum > MAX_BSSID_NUM) {
-		/* Unexpected! out of bounds access may happen... */
-		DBGLOG(CNM, WARN,
-			"HwBssNum(%d) > MAX_BSSID_NUM !!!\n",
-			prAdapter->ucHwBssIdNum);
-	}
-
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 		ucBssIndex++) {
 		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
 		for (eReqIdx = CNM_OPMODE_REQ_START;
 				eReqIdx < CNM_OPMODE_REQ_NUM; eReqIdx++)
 			prBssOpCtrl->arReqPool[eReqIdx].fgEnable = false;
-	}
-
-	if (prAdapter->ucHwBssIdNum > MAX_BSSID_NUM ||
-		prAdapter->ucWmmSetNum > MAX_BSSID_NUM) {
-		/* Unexpected! out of bounds access may happen... */
-		DBGLOG(CNM, WARN,
-			"HwBssNum(%d)WmmNum(%d) > MAX_BSSID_NUM !!!\n",
-			prAdapter->ucHwBssIdNum,
-			prAdapter->ucWmmSetNum);
-		ASSERT(0);
 	}
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
@@ -753,10 +736,10 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	prCmdBody->aucReserved2[7] = 0;
 
 	ASSERT(prCmdBody->ucBssIndex <=
-	       prAdapter->ucHwBssIdNum);
+	       prAdapter->ucSwBssIdNum);
 
 	/* For monkey testing 20110901 */
-	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (prCmdBody->ucBssIndex > prAdapter->ucSwBssIdNum)
 		log_dbg(CNM, ERROR,
 		       "CNM: ChReq with wrong netIdx=%d\n\n",
 		       prCmdBody->ucBssIndex);
@@ -868,10 +851,10 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 	       prCmdBody->ucDBDCBand);
 
 	ASSERT(prCmdBody->ucBssIndex <=
-	       prAdapter->ucHwBssIdNum);
+	       prAdapter->ucSwBssIdNum);
 
 	/* For monkey testing 20110901 */
-	if (prCmdBody->ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (prCmdBody->ucBssIndex > prAdapter->ucSwBssIdNum)
 		log_dbg(CNM, ERROR,
 		       "CNM: ChAbort with wrong netIdx=%d\n\n",
 		       prCmdBody->ucBssIndex);
@@ -955,7 +938,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	       prEventBody->u4GrantInterval);
 
 	ASSERT(prEventBody->ucBssIndex <=
-	       prAdapter->ucHwBssIdNum);
+	       prAdapter->ucSwBssIdNum);
 	ASSERT(prEventBody->ucStatus == EVENT_CH_STATUS_GRANT);
 
 	prBssInfo =
@@ -1466,7 +1449,7 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return;
 
-	for (i = cnmGetIdcBssIdx(prAdapter); i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = cnmGetIdcBssIdx(prAdapter); i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo &&
@@ -1523,7 +1506,7 @@ cnmPreferredChannel(struct ADAPTER *prAdapter,
 	ASSERT(pucPrimaryChannel);
 	ASSERT(prBssSCO);
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 		if (prBssInfo) {
@@ -1571,7 +1554,7 @@ u_int8_t cnmAisInfraChannelFixed(struct ADAPTER
 		return FALSE;
 	}
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 #if 0
@@ -1630,7 +1613,7 @@ u_int8_t cnmAisDetectP2PChannel(struct ADAPTER
 	ASSERT(prAdapter);
 
 #if CFG_ENABLE_WIFI_DIRECT
-	for (; i < prAdapter->ucHwBssIdNum; i++) {
+	for (; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 			continue;
@@ -1668,7 +1651,7 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
 	prAisBssInfo = NULL;
 	prBowBssInfo = NULL;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
@@ -1718,7 +1701,7 @@ u_int8_t cnmAisIbssIsPermitted(struct ADAPTER
 	ASSERT(prAdapter);
 
 	/* P2P device network shall be included */
-	for (i = 0; i <= prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i <= prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)
@@ -1749,7 +1732,7 @@ u_int8_t cnmP2PIsPermitted(struct ADAPTER *prAdapter)
 
 	fgBowIsActive = FALSE;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo)) {
@@ -1788,7 +1771,7 @@ u_int8_t cnmBowIsPermitted(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	/* P2P device network shall be included */
-	for (i = 0; i <= prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i <= prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) &&
@@ -1911,19 +1894,6 @@ u_int8_t cnmBss40mBwPermitted(struct ADAPTER *prAdapter,
 	if (cnmGetAPBwPermitted(prAdapter,
 				ucBssIndex) < MAX_BW_40MHZ)
 		return FALSE;
-#endif
-#if 0
-	/* Decide max by other BSS */
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
-		if (i != ucBssIndex) {
-			prBssInfo = prAdapter->aprBssInfo[i];
-
-			if (prBssInfo && IS_BSS_ACTIVE(prBssInfo) &&
-			    (prBssInfo->fg40mBwAllowed
-			     || prBssInfo->fgAssoc40mBwAllowed))
-				return FALSE;
-		}
-	}
 #endif
 
 	return TRUE;
@@ -2227,7 +2197,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	/* Find available HW set  with the order 1,2,..*/
 	do {
 		for (ucBssIndex = 0;
-		     ucBssIndex < prAdapter->ucHwBssIdNum;
+		     ucBssIndex < prAdapter->ucSwBssIdNum;
 		     ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -2236,7 +2206,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				break;
 		}
 
-		if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
+		if (ucBssIndex >= prAdapter->ucSwBssIdNum) {
 			/* No hit the ucOwnMacIndex could be
 			 * assigned to this new bss
 			 */
@@ -2251,7 +2221,7 @@ omac_choosed:
 
 	/* Find available BSS_INFO */
 	for (ucBssIndex = 0;
-	     ucBssIndex < prAdapter->ucHwBssIdNum;
+	     ucBssIndex < prAdapter->ucSwBssIdNum;
 	     ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -2435,7 +2405,7 @@ void cnmInitDbdcSetting(struct ADAPTER *prAdapter)
 		g_rDbdcInfo.fgDbdcDisableOpmodeChangeDone = TRUE;
 
 		for (ucBssLoopIndex = 0;
-		     ucBssLoopIndex < prAdapter->ucHwBssIdNum;
+		     ucBssLoopIndex < prAdapter->ucSwBssIdNum;
 		     ucBssLoopIndex++)
 			g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] =
 				ENUM_OPMODE_STATE_DONE;
@@ -2446,7 +2416,7 @@ void cnmInitDbdcSetting(struct ADAPTER *prAdapter)
 	case ENUM_DBDC_MODE_STATIC:
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
 		for (ucBssLoopIndex = 0;
-		    ucBssLoopIndex < prAdapter->ucHwBssIdNum;
+		    ucBssLoopIndex < prAdapter->ucSwBssIdNum;
 		    ucBssLoopIndex++) {
 			prOpModeReq =
 				&(g_arBssOpControl[ucBssLoopIndex].
@@ -2551,11 +2521,11 @@ static u_int8_t cnmDbdcIsConcurrent(
 	uint8_t uc5gCH = 0, uc6gCH = 0;
 #endif
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
-	uint8_t ucBssNum = prAdapter->ucHwBssIdNum + 1;
+	uint8_t ucBssNum = prAdapter->ucSwBssIdNum + 1;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 			prAdapter->rWifiVar.prP2pDevFsmInfo;
 #else
-	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
+	uint8_t ucBssNum = prAdapter->ucSwBssIdNum;
 #endif
 	u_int8_t fgDbdcP2pListening = FALSE;
 	u_int8_t i;
@@ -2752,7 +2722,7 @@ void cnmUpdateStaticDbdcQuota(
 	uint8_t ucWmmCompare = 0;
 	uint8_t ucWmmQueSet = 0;
 	uint8_t ucWmmIndex = 0;
-	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
+	uint8_t ucBssNum = prAdapter->ucSwBssIdNum;
 	uint32_t u4ReqQuota;
 	u_int8_t fgDBDCConcurrent = FALSE;
 	u_int8_t fgWMMConcurrent = FALSE;
@@ -2839,7 +2809,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 
 	/* Always there are only up to 4 (BSSID_NUM) connected BSS. */
 	for (ucBssIndex = 0;
-		ucBssIndex < prAdapter->ucHwBssIdNum && ucBssIndex < BSSID_NUM;
+		ucBssIndex < prAdapter->ucSwBssIdNum;
 		ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 		ucTRxNss = cnmGetDbdcNss(prAdapter, ucBssIndex, fgDbdcEn);
@@ -2933,7 +2903,7 @@ void cnmDbdcOpModeChangeDoneCallback(
 	       g_rDbdcInfo.eBssOpModeState[BSSID_3]);
 
 	for (ucBssLoopIndex = 0;
-	     ucBssLoopIndex < prAdapter->ucHwBssIdNum;
+	     ucBssLoopIndex < prAdapter->ucSwBssIdNum;
 	     ucBssLoopIndex++) {
 
 		if (g_rDbdcInfo.eBssOpModeState[ucBssLoopIndex] ==
@@ -3003,7 +2973,7 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 		 * This is used to indicate the WmmGroupSet is associated
 		 * to Band#1 (otherwise, use for band#0)
 		 */
-		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+		for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 			ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -3017,7 +2987,7 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 			}
 		}
 		/* For P2P Device, we force it to use WMM3 */
-		prBssInfo = prAdapter->aprBssInfo[P2P_DEV_BSS_INDEX];
+		prBssInfo = prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx];
 		if (prBssInfo->eBand == BAND_2G4)
 			prCmdBody->ucWmmBandBitmap |= BIT(MAX_HW_WMM_INDEX);
 	}
@@ -3215,7 +3185,7 @@ cnmDbdcFsmEntryFunc_DISABLE_IDLE(struct ADAPTER *prAdapter)
 		cnmDBDCFsmActionReqPeivilegeUnLock(prAdapter);
 	}
 
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 		ucBssIndex++) {
 		prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 		prBssOpCtrl->rRunning.fgIsRunning = false;
@@ -4283,7 +4253,7 @@ cnmGetOtherSapBssInfo(
 	if (!prAdapter)
 		return NULL;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if ((prSapBssInfo != prBssInfo) &&
 			IS_BSS_P2P(prBssInfo) &&
@@ -4860,7 +4830,7 @@ cnmOpModeSetTRxNss(
 #endif
 
 	ASSERT(prAdapter);
-	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
+	if (ucBssIndex > prAdapter->ucSwBssIdNum ||
 		ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(CNM, WARN, "SetOpMode invalid BSS[%d]\n", ucBssIndex);
 		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
@@ -5197,7 +5167,7 @@ void cnmOpmodeEventHandler(
 		prEvtOpMode->ucOpRxNss);
 
 	for (ucBssIndex = 0;
-		 ucBssIndex < prAdapter->ucHwBssIdNum;
+		 ucBssIndex < prAdapter->ucSwBssIdNum;
 		 ucBssIndex++) {
 		if (prEvtOpMode->ucBssBitmap & BIT(ucBssIndex)) {
 			cnmOpModeSetTRxNss(
@@ -5262,7 +5232,7 @@ void cnmRddOpmodeEventHandler(
 		(prEvent->aucBuffer);
 
 	for (ucBssIndex = 0;
-		 ucBssIndex < prAdapter->ucHwBssIdNum;
+		 ucBssIndex < prAdapter->ucSwBssIdNum;
 		 ucBssIndex++) {
 		if (prRddEvtOpMode->ucBssBitmap & BIT(ucBssIndex))
 			break;
@@ -5578,7 +5548,7 @@ struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return NULL;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 
 		if (prBssInfo &&

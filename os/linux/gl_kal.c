@@ -2929,7 +2929,7 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxErrCount = 0;
 #endif
-		if (ucBssIndex < BSSID_NUM) {
+		if (ucBssIndex < MAX_BSSID_NUM) {
 			prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = 0;
 			prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = 0;
 		}
@@ -3012,7 +3012,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				rPayload.u2ReasonCode = u2DeauthReason;
 			}
 
-			if (prGlueInfo->prAdapter && ucBssIndex < BSSID_NUM) {
+			if (prGlueInfo->prAdapter &&
+			    ucBssIndex < MAX_BSSID_NUM) {
 				rPayload.cRssi =
 					prGlueInfo->prAdapter->rLinkQuality
 					.rLq[ucBssIndex].cRssi;
@@ -7004,7 +7005,7 @@ kalUpdateRSSI(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo || unlikely(ucBssIndex >= BSSID_NUM)) {
+	if (!prBssInfo || unlikely(ucBssIndex >= MAX_BSSID_NUM)) {
 		DBGLOG(AIS, WARN, "bss is In-valid\n");
 		return;
 	}

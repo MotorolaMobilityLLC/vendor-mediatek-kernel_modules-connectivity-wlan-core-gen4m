@@ -339,7 +339,7 @@ uint32_t CmdExtBssInfoUpdate2WA(
 	struct CMD_BSSINFO_UPDATE_T *prCmdContent;
 
 	ASSERT(pAd);
-	ASSERT(ucBssIndex <= pAd->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= pAd->ucSwBssIdNum);
 
 	prBssInfo = pAd->aprBssInfo[ucBssIndex];
 

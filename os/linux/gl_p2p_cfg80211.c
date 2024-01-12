@@ -277,7 +277,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			}
 		}
 
-		if (ucBssIdx >= MAX_BSS_INDEX) {
+		if (ucBssIdx >= MAX_BSSID_NUM) {
 			DBGLOG(P2P, ERROR, "can't init p2p fsm\n");
 			break;
 		}
@@ -1144,7 +1144,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
 			rStatus, prGlueInfo, u4BufLen);
 		if (rStatus == WLAN_STATUS_SUCCESS
-			&& ucBssIdx < BSSID_NUM) {
+			&& ucBssIdx < MAX_BSSID_NUM) {
 			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2TxLinkSpeed;
 			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 		}

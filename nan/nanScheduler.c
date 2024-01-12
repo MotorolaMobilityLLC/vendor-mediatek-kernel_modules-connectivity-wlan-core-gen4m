@@ -9886,7 +9886,7 @@ nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 	prNanScheduler = nanGetScheduler(prAdapter);
 	*pu4SlotBitmap = 0;
 
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
 		if (IS_BSS_AIS(prBssInfo) &&
 			(prBssInfo->eConnectionState ==

@@ -888,7 +888,7 @@ void secPrivacyFreeForEntry(struct ADAPTER *prAdapter, uint8_t ucEntry)
 	if (prWtbl[ucEntry].ucUsed) {
 		prWtbl[ucEntry].ucUsed = FALSE;
 		prWtbl[ucEntry].ucKeyId = 0xff;
-		prWtbl[ucEntry].ucBssIndex = prAdapter->ucHwBssIdNum + 1;
+		prWtbl[ucEntry].ucBssIndex = prAdapter->ucSwBssIdNum + 1;
 		prWtbl[ucEntry].ucPairwise = 0;
 		kalMemZero(prWtbl[ucEntry].aucMacAddr, MAC_ADDR_LEN);
 		prWtbl[ucEntry].ucStaIndex = STA_REC_INDEX_NOT_FOUND;

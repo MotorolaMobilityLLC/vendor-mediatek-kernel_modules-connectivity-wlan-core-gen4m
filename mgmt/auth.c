@@ -867,7 +867,7 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 	OS_SYSTIME rCurrentTime;
 	int32_t i4NewEntryIndex, i;
 	uint8_t ucStaRecIdx = STA_REC_INDEX_NOT_FOUND;
-	uint8_t ucBssIndex = prAdapter->ucHwBssIdNum;
+	uint8_t ucBssIndex = prAdapter->ucSwBssIdNum;
 	uint8_t aucBMC[] = BC_MAC_ADDR;
 
 	/* NOTE(Kevin): The best way to reply the Deauth is according to
@@ -904,7 +904,7 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 		       MAC2STR(prWlanMacHeader->aucAddr3),
 		       prWlanMacHeader->u2SeqCtrl);
 		/* Check if corresponding BSS is able to send Deauth */
-		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 			if (!prBssInfo) {
 				DBGLOG(SAA, ERROR, "prBssInfo is null\n");

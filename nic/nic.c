@@ -2198,7 +2198,7 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 	/*	const UINT_8 aucZeroMacAddr[] = NULL_MAC_ADDR; */
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -2283,7 +2283,7 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 	uint8_t ucLinkIndex = NETWORK_LINK_ID(ucNetworkIndex);
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -2531,7 +2531,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	struct CMD_SET_BSS_INFO rCmdSetBssInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
@@ -2862,7 +2862,7 @@ uint32_t nicPmIndicateBssCreated(struct ADAPTER
 	struct CMD_INDICATE_PM_BSS_CREATED rCmdIndicatePmBssCreated = {0};
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -2907,7 +2907,7 @@ uint32_t nicPmIndicateBssConnected(struct ADAPTER
 	struct CMD_INDICATE_PM_BSS_CONNECTED rCmdIndicatePmBssConnected = {0};
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -3000,7 +3000,7 @@ uint32_t nicPmIndicateBssAbort(struct ADAPTER *prAdapter,
 	struct CMD_INDICATE_PM_BSS_ABORT rCmdIndicatePmBssAbort = {0};
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	rCmdIndicatePmBssAbort.ucBssIndex = ucBssIndex;
 
@@ -3675,7 +3675,7 @@ uint32_t nicEnterTPTestMode(struct ADAPTER *prAdapter,
 		}
 		/* 3. Keep at CAM mode */
 		if (ucFuncMask & TEST_MODE_FIXED_CAM_MODE)
-			for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
+			for (ucBssIdx = 0; ucBssIdx < prAdapter->ucSwBssIdNum;
 			     ucBssIdx++) {
 				prBssInfo =
 					GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -3704,7 +3704,7 @@ uint32_t nicEnterTPTestMode(struct ADAPTER *prAdapter,
 				    (uint8_t *)&rCmdSwCtrl, NULL, 0);
 
 		/* 3. Keep at Fast PS */
-		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
+		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucSwBssIdNum;
 		     ucBssIdx++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 			if (prBssInfo && prBssInfo->fgIsInUse
@@ -5588,10 +5588,10 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 	struct LINK_SPEED_EX_ *prLq;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 	ASSERT(prEventLinkQuality);
 
-	if (ucBssIndex >= BSSID_NUM) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
 		return;
 	}
@@ -5659,9 +5659,9 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 	struct LINK_SPEED_EX_ *prLq;
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
-	if (ucBssIndex >= BSSID_NUM) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
 		return;
 	}
@@ -5716,9 +5716,9 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 	struct RxRateInfo rRxRateInfo = {0};
 
 	ASSERT(prAdapter);
-	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
 
-	if (ucBssIndex >= BSSID_NUM) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
 		return;
 	}
@@ -5834,7 +5834,7 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
-		for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+		for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 			if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType ==
 			    NETWORK_TYPE_P2P) {
 				COPY_MAC_ADDR(
@@ -5849,7 +5849,7 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
-	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType ==
 		    NETWORK_TYPE_BOW) {
 			COPY_MAC_ADDR(

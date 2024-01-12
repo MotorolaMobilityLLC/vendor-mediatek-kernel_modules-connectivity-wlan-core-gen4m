@@ -730,7 +730,7 @@ struct LINK_SPEED_EX_ {
 };
 
 struct PARAM_LINK_SPEED_EX {
-	struct LINK_SPEED_EX_ rLq[BSSID_NUM];
+	struct LINK_SPEED_EX_ rLq[MAX_BSSID_NUM];
 };
 
 /*--------------------------------------------------------------*/

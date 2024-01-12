@@ -533,7 +533,7 @@ static uint32_t wlanGetTxRateFromLinkStats(
 	uint32_t u4QueryInfoLen;
 	struct _STATS_LLS_TX_RATE_INFO targetRateInfo;
 
-	if (unlikely(ucBssIndex >= BSSID_NUM))
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
 		return WLAN_STATUS_FAILURE;
 
 	kalMemZero(&query, sizeof(query));
@@ -630,7 +630,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	prAdapter = prGlueInfo->prAdapter;
 
 	ucBssIndex = wlanGetBssIdx(ndev);
-	if (unlikely(ucBssIndex >= BSSID_NUM ||
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM ||
 	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
 		return -EINVAL;
 
@@ -922,7 +922,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 					   &u4BufLen, ucBssIndex);
 		DBGLOG(REQ, TRACE, "rStatus=%u, prGlueInfo=%p, u4BufLen=%u",
 			rStatus, prGlueInfo, u4BufLen);
-		if (ucBssIndex < BSSID_NUM)
+		if (ucBssIndex < MAX_BSSID_NUM)
 			u4Rate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
@@ -951,7 +951,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				wlanoidQueryRssi,
 				&rLinkSpeed, sizeof(rLinkSpeed),
 				&u4BufLen, ucBssIndex);
-		if (ucBssIndex < BSSID_NUM)
+		if (ucBssIndex < MAX_BSSID_NUM)
 			i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		sinfo->filled |= STATION_INFO_SIGNAL;
@@ -6381,7 +6381,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	/* BssIdx should not be 0 if add successfully */
 	ucBssIdx = wlanGetBssIdxByNetInterface(prGlueInfo,
 					       gprWdev[ucAisIndex]->netdev);
-	if (ucBssIdx != AIS_DEFAULT_INDEX && ucBssIdx != HW_BSSID_NUM)
+	if (ucBssIdx != AIS_DEFAULT_INDEX && ucBssIdx != MAX_BSSID_NUM)
 		return prWdev;
 
 	/* Do uninit flow since wlanoidInitAisFsm failed */

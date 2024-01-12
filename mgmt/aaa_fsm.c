@@ -860,7 +860,7 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return WLAN_STATUS_SUCCESS;
 
-	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
+	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucSwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!prBssInfo)

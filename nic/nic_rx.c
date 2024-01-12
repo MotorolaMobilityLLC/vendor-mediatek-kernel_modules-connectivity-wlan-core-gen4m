@@ -1631,7 +1631,7 @@ static void nicRxProcessDropPacket(struct ADAPTER *prAdapter,
 	if ((u2FrameCtrl & (MASK_FC_FROM_DS | MASK_FC_TO_DS)) == 0)
 		return;
 
-	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucHwBssIdNum;
+	for (ucBssIndex = 0; ucBssIndex < prAdapter->ucSwBssIdNum;
 			ucBssIndex++) {
 		struct BSS_INFO *prBssInfo;
 		u_int8_t fgSendDeauth = FALSE;

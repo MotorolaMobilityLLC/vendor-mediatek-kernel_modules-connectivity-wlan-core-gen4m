@@ -583,7 +583,7 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
-	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum)
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
@@ -653,7 +653,7 @@ void rlmProcessPublicAction(struct ADAPTER *prAdapter,
 	if (!prStaRec)
 		return;
 
-	if (prStaRec->ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (prStaRec->ucBssIndex > prAdapter->ucSwBssIdNum)
 		return;
 
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
@@ -690,7 +690,7 @@ void rlmHandleObssStatusEventPkt(struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prObssStatus);
 	ASSERT(prObssStatus->ucBssIndex
-		< prAdapter->ucHwBssIdNum);
+		< prAdapter->ucSwBssIdNum);
 
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prObssStatus->ucBssIndex);
