@@ -1128,6 +1128,7 @@ struct WIFI_VAR {
 	enum ENUM_CNM_DBDC_MODE eDbdcMode;
 	u_int8_t fgDbDcModeEn;
 	uint8_t ucDbdcOMFrame;
+	u_int8_t fgWmmConcurrent;
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	uint8_t ucDbdcP2pLisEn;
 	uint32_t u4DbdcP2pLisSwDelayTime;
