@@ -157,7 +157,7 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 *                              F U N C T I O N S
 ********************************************************************************
 */
-uint8_t _heGetBssBandBw(struct ADAPTER *prAdapter,
+uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	enum ENUM_BAND eBand)
 {
@@ -483,21 +483,21 @@ static void heRlmFillHeCapIE(
 	/* PHY capabilities */
 	HE_RESET_PHY_CAP(prHeCap->ucHePhyCap);
 
-	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_2G4)
+	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_2G4)
 		>= MAX_BW_40MHZ
 		&& prBssInfo->fgAssoc40mBwAllowed)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(prHeCap->ucHePhyCap);
 
-	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
 		>= MAX_BW_40MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(
 			prHeCap->ucHePhyCap);
 
-	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
 		>= MAX_BW_160MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW160_5G(prHeCap->ucHePhyCap);
 
-	if (_heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
+	if (heGetBssBandBw(prAdapter, prBssInfo, BAND_5G)
 		>= MAX_BW_80_80_MHZ)
 		HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(prHeCap->ucHePhyCap);
 
@@ -652,7 +652,10 @@ static void heRlmFillHeOpIE(
 	struct MSDU_INFO *prMsduInfo)
 {
 	struct _IE_HE_OP_T *prHeOp;
-	uint32_t u4OverallLen = OFFSET_OF(struct _IE_HE_OP_T, aucVarInfo[0]);
+	uint32_t u4Offset = OFFSET_OF(struct _IE_HE_OP_T, aucVarInfo[0]);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct _6G_OPER_INFOR_T *pr6gOperInfor = NULL;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -668,7 +671,24 @@ static void heRlmFillHeOpIE(
 	prHeOp->ucBssColorInfo = prBssInfo->ucBssColorInfo;
 	prHeOp->u2HeBasicMcsSet = CPU_TO_LE16(prBssInfo->u2HeBasicMcsSet);
 
-	prHeOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (IS_BSS_APGO(prBssInfo) &&
+		HE_IS_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams)) {
+
+		if (HE_IS_CO_HOSTED_BSS(prBssInfo->ucHeOpParams))
+			u4Offset += sizeof(uint8_t);
+
+		pr6gOperInfor = (struct _6G_OPER_INFOR_T *)
+			(((uint8_t *) prHeOp) + u4Offset);
+
+		memcpy(pr6gOperInfor, &prBssInfo->r6gOperInfor,
+			sizeof(struct _6G_OPER_INFOR_T));
+
+		u4Offset += sizeof(struct _6G_OPER_INFOR_T);
+	}
+#endif
+
+	prHeOp->ucLength = u4Offset - ELEM_HDR_LEN;
 	prMsduInfo->u2FrameLength += IE_SIZE(prHeOp);
 }
 

@@ -2761,7 +2761,8 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
 					u2IELen);
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-	} else if (eIeUpdMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP) {
+	} else if (eIeUpdMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP
+		    || eIeUpdMethod == IE_UPD_METHOD_UNSOL_PROBE_RSP) {
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
 					aucIE) + u2IELen;
 		DBGLOG(NIC, INFO,

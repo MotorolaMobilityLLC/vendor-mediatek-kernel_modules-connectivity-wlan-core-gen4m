@@ -551,7 +551,11 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN struct ADAPTER *prAdapter,
 		prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_MS;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
 
-		if (prBssInfo->eBand == BAND_5G) {
+		if (prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prBssInfo->eBand == BAND_6G
+#endif
+		) {
 			/* Decide RF BW by own OP BW */
 			ucRfBw = cnmGetDbdcBwCapability(prAdapter,
 				prBssInfo->ucBssIndex);
@@ -569,8 +573,11 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN struct ADAPTER *prAdapter,
 		prChnlReqInfo->ucCenterFreqS2 = 0;
 
 		/* If the S1 is invalid, force to change bandwidth */
-		if ((prBssInfo->eBand == BAND_5G) &&
-			(prChnlReqInfo->ucCenterFreqS1 == 0))
+		if ((prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prBssInfo->eBand == BAND_6G
+#endif
+			) && (prChnlReqInfo->ucCenterFreqS1 == 0))
 			prChnlReqInfo->eChannelWidth =
 				VHT_OP_CHANNEL_WIDTH_20_40;
 

@@ -181,6 +181,24 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		for (i = 1; i < 8; i++)
 			prBssInfo->u2HeBasicMcsSet |=
 				(HE_CAP_INFO_MCS_NOT_SUPPORTED << 2 * i);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (IS_BSS_APGO(prBssInfo) && prBssInfo->eBand == BAND_6G) {
+			DBGLOG(RLM, INFO, "Set 6G operating info\n");
+
+			HE_SET_6G_OP_INFOR_PRESENT(prBssInfo->ucHeOpParams);
+
+			prBssInfo->r6gOperInfor.rControl.bits.ChannelWidth =
+				heGetBssBandBw(prAdapter, prBssInfo, BAND_6G);
+			prBssInfo->r6gOperInfor.ucPrimaryChannel =
+				prBssInfo->ucPrimaryChannel;
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg0 =
+				nicGetS1(prBssInfo->eBand,
+					prBssInfo->ucPrimaryChannel,
+					prBssInfo->ucVhtChannelWidth);
+			prBssInfo->r6gOperInfor.ucChannelCenterFreqSeg1 = 0;
+			prBssInfo->r6gOperInfor.ucMinimumRate = 6;
+		}
+#endif
 	} else {
 		memset(prBssInfo->ucHeOpParams, 0, HE_OP_BYTE_NUM);
 		prBssInfo->ucBssColorInfo = 0;
