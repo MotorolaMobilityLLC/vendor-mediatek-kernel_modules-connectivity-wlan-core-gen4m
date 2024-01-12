@@ -14301,6 +14301,18 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			if (prCnmInfo->ucOpChNum[eDbdcIdx] < 1)
 				prCnmInfo->ucChList[eDbdcIdx][0] = 0;
 		}
+
+#if (CFG_GET_CNM_INFO_BC == 1)
+		/* backward compatible for 7668 format */
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+					   i4TotalLen - i4BytesWritten,
+					   "BAND%u channels : %u %u %u\n",
+					   eDbdcIdx,
+					   prCnmInfo->ucChList[eDbdcIdx][0],
+					   prCnmInfo->ucChList[eDbdcIdx][1],
+					   prCnmInfo->ucChList[eDbdcIdx][2]);
+#endif
+
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 					   i4TotalLen - i4BytesWritten,
 					   "Band %u OPCH %d [%u, %u, %u]\n",
