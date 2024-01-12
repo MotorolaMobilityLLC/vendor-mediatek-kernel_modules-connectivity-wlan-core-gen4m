@@ -388,6 +388,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 #endif
 #endif
 	uint8_t *u1EpaELnaDataPointer = NULL;
+	uint8_t u1EpaElnaDummyArray[10] = {0};
 	uint32_t u4EpaELnaDataSize = 0, u4CmdSize = 0, u4EvtSize = 0;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
@@ -401,7 +402,11 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 	if (u1EpaELnaDataPointer == NULL) {
 		DBGLOG(INIT, ERROR, "Get u1EpaELnaDataPointer failed\n");
-		return WLAN_STATUS_FAILURE;
+#if (CFG_MTK_ANDROID_WMT == 1)
+		KAL_WARN_ON(TRUE);
+#endif
+		u1EpaELnaDataPointer = u1EpaElnaDummyArray;
+		u4EpaELnaDataSize = 0;
 	}
 
 #if (CFG_SUPPORT_CONNFEM == 1)
