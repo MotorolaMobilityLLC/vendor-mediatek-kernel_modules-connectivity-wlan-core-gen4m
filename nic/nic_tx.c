@@ -6525,16 +6525,21 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 				"%s, ", sgi == 0 ? "SGI" :
 				(sgi == 1 ? "MGI" : "LGI"));
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s%s%s%s%s\n",
 			(txmode < ENUM_TX_MODE_NUM ?
 			HW_TX_MODE_STR[txmode] : "N/A"),
-#if (CFG_SUPPORT_CONNAC2X == 1)
 			dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
-#else
-			"", "",
-#endif
 			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
+#else
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "%s%s%s%s%s\n",
+			(txmode < ENUM_TX_MODE_NUM ?
+			HW_TX_MODE_STR[txmode] : "N/A"),
+			"", "",
+			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
+#endif
 	}
 
 	return i4BytesWritten;

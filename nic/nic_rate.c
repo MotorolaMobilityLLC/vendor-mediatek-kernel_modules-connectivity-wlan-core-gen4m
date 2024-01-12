@@ -1052,21 +1052,31 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 #endif
 
 		if (prQueryStaStatistics->ucSkipAr) {
+#if (CFG_SUPPORT_CONNAC2X == 1)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s%s%s%s%s\n",
 				txmode <= ENUM_TX_MODE_NUM ?
 				    HW_TX_MODE_STR[txmode] : "N/A",
-#if (CFG_SUPPORT_CONNAC2X == 1)
 				dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
-#else
-				"", "",
-#endif
 				stbc ? ", STBC, " : ", ",
 				nicGetTxLdpcInfo(txmode,
 				    &prHwWlanInfo->rWtblTxConfig) == 0 ?
 				    "BCC" : "LDPC");
+#else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%s%s%s%s\n",
+				txmode <= ENUM_TX_MODE_NUM ?
+				    HW_TX_MODE_STR[txmode] : "N/A",
+				"", "",
+				stbc ? ", STBC, " : ", ",
+				nicGetTxLdpcInfo(txmode,
+				    &prHwWlanInfo->rWtblTxConfig) == 0 ?
+				    "BCC" : "LDPC");
+#endif
 		} else {
 #if (CFG_SUPPORT_RA_GEN == 0)
 			if (prQueryStaStatistics->aucArRatePer[
@@ -1100,23 +1110,35 @@ int32_t nicGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 					    prQueryStaStatistics
 					    ->aucRateEntryIndex[i]]);
 #else
+#if (CFG_SUPPORT_CONNAC2X == 1)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%s%s%s%s%s\n",
 				txmode < ENUM_TX_MODE_NUM ?
 				    HW_TX_MODE_STR[txmode] : "N/A",
-#if (CFG_SUPPORT_CONNAC2X == 1)
 				dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
-#else
-				"", "",
-#endif
 				stbc ? ", STBC, " : ", ",
 				((nicGetTxLdpcInfo(txmode,
 				    &prHwWlanInfo->rWtblTxConfig) == 0) ||
 				    (txmode == TX_RATE_MODE_CCK) ||
 				    (txmode == TX_RATE_MODE_OFDM)) ?
 				    "BCC" : "LDPC");
+#else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s%s%s%s%s\n",
+				txmode < ENUM_TX_MODE_NUM ?
+				    HW_TX_MODE_STR[txmode] : "N/A",
+				"", "",
+				stbc ? ", STBC, " : ", ",
+				((nicGetTxLdpcInfo(txmode,
+				    &prHwWlanInfo->rWtblTxConfig) == 0) ||
+				    (txmode == TX_RATE_MODE_CCK) ||
+				    (txmode == TX_RATE_MODE_OFDM)) ?
+				    "BCC" : "LDPC");
+#endif
 #endif
 		}
 
