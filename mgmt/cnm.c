@@ -4155,7 +4155,7 @@ uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
 	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
 	uint8_t ucS1 = 0;
 
-	if (1) { /* prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT */
+	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 		ucOpMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
@@ -4176,7 +4176,7 @@ uint8_t cnmOpModeGetMaxBw(IN struct ADAPTER *prAdapter,
 					ucOpMaxBw = MAX_BW_80MHZ;
 			}
 
-			if (ucS1 == 0) {  /* Invalid S1 */
+			if (ucS1 == 0) { /* Invalid S1 */
 				DBGLOG(CNM, INFO,
 					"fallback to BW20, BssIdx[%d], CH[%d], MaxBw[%d]\n",
 					prBssInfo->ucBssIndex,
@@ -4272,7 +4272,7 @@ cnmOpModeSetTRxNss(
 		 */
 		ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
-		if ((eRunReq ==  CNM_OPMODE_REQ_DBDC ||
+		if ((eRunReq == CNM_OPMODE_REQ_DBDC ||
 			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
 			ucOpBwFinal > MAX_BW_80MHZ) {
 			DBGLOG(CNM, INFO,
@@ -4283,6 +4283,25 @@ cnmOpModeSetTRxNss(
 			ucOpBwFinal = MAX_BW_80MHZ;
 		}
 #endif
+
+		/* When DBDC is off, we should rollback STA's bandwidth
+		 * as peer's bandwidth capability.
+		 */
+		if (eNewReq == CNM_OPMODE_REQ_DBDC && !fgEnable) {
+			if (prBssInfo->eCurrentOPMode ==
+				OP_MODE_INFRASTRUCTURE) {
+				ucOpBwFinal =
+					rlmGetBssOpBwByOwnAndPeerCapability(
+						prAdapter, prBssInfo);
+				DBGLOG(CNM, INFO,
+					"SetOpMode Bss[%d] %s %s override BW to %d\n",
+					ucBssIndex,
+					apucCnmOpModeReq[eNewReq],
+					fgEnable ? "En" : "Dis",
+					ucOpBwFinal);
+			}
+		}
+
 		if (eNewReq == CNM_OPMODE_REQ_COEX) {
 			if (fgEnable) {
 				if (ucOpBwFinal == MAX_BW_40MHZ &&
