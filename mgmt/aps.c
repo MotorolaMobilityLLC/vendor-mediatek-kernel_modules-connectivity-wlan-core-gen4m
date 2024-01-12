@@ -1311,6 +1311,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	uint32_t bmap;
 	uint8_t connected;
 	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct CONNECTION_SETTINGS *conn =
+				aisGetConnSettings(prAdapter, ucBssIndex);
+#endif
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	uint32_t i = 0;
@@ -1395,6 +1399,17 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			apucBandStr[prBssDesc->eBand]);
 		return FALSE;
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prBssDesc->rMlInfo.fgValid &&
+		!(BIT(prBssDesc->rMlInfo.ucLinkIndex) & conn->u2LinkIdBitmap)) {
+		DBGLOG(APS, WARN, MACSTR" LinkID[%d] is not allowed [%d]\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->rMlInfo.ucLinkIndex,
+			conn->u2LinkIdBitmap);
+		return FALSE;
+	}
+#endif
 
 	if (prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE) {
 		DBGLOG(APS, WARN, MACSTR" is not infrastructure\n",

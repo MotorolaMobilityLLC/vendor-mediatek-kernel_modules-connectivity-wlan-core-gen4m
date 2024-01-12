@@ -1149,6 +1149,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	kalMemZero(prConnSettings->aucBSSIDHint,
 			sizeof(prConnSettings->aucBSSIDHint));
 	prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_ANY;
+	prConnSettings->u2LinkIdBitmap = pParamConn->u2LinkIdBitmap;
 
 	if (pParamConn->pucSsid) {
 		prConnSettings->eConnectionPolicy =
@@ -1307,14 +1308,15 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO,
 		"ucBssIndex %d, ssid %s, bssid " MACSTR ", bssid_hint " MACSTR
-		", conn policy %d, disc reason %d, freqInMHZ %d\n",
+		", conn policy %d, disc reason %d, freqInMHZ %d, AllowLinkID %d\n",
 		ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prConnSettings->aucBSSID),
 		MAC2STR(prConnSettings->aucBSSIDHint),
 		prConnSettings->eConnectionPolicy,
 		prAisAbortMsg->ucReasonOfDisconnect,
-		prConnSettings->u4FreqInMHz);
+		prConnSettings->u4FreqInMHz,
+		prConnSettings->u2LinkIdBitmap);
 	return WLAN_STATUS_SUCCESS;
 } /* end of wlanoidSetConnect */
 

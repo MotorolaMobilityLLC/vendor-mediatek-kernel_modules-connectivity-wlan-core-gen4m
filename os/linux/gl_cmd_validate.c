@@ -285,9 +285,10 @@ struct CMD_VALIDATE_POLICY set_rst_hang_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 };
 #endif
 
-struct CMD_VALIDATE_POLICY reassoc_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
+struct CMD_VALIDATE_POLICY reassoc_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 17},
-	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX},
+	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U16, .min = 0, .max = U16_MAX}
 };
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
@@ -2349,7 +2350,7 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_REASSOC,
 		.pfHandler = testmode_reassoc,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
 		.policy    = reassoc_policy,
 		.u4PolicySize = ARRAY_SIZE(reassoc_policy)
