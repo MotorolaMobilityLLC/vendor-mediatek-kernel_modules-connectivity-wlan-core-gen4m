@@ -661,7 +661,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 #if (CFG_SUPPORT_CONNINFRA == 1)
 void kalSetRstEvent(void)
 {
-	KAL_WAKE_LOCK(NULL, &g_IntrWakeLock);
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	set_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag);
 
@@ -879,9 +879,14 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->rErrRecoveryCtl.u4Status = 0;
 	prHif->fgIsErrRecovery = FALSE;
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	timer_setup(&prHif->rSerTimer, halHwRecoveryTimeout, 0);
+	prHif->rSerTimerData = (unsigned long)prGlueInfo;
+#else
 	init_timer(&prHif->rSerTimer);
 	prHif->rSerTimer.function = halHwRecoveryTimeout;
 	prHif->rSerTimer.data = (unsigned long)prGlueInfo;
+#endif
 	prHif->rSerTimer.expires =
 		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
 

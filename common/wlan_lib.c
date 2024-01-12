@@ -1440,9 +1440,9 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 		}
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
-					 &prAdapter->prGlueInfo->rIntrWakeLock))
+					 prAdapter->prGlueInfo->rIntrWakeLock))
 			KAL_WAKE_UNLOCK(prAdapter,
-					&prAdapter->prGlueInfo->rIntrWakeLock);
+					prAdapter->prGlueInfo->rIntrWakeLock);
 #endif
 	}
 
