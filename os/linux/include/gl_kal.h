@@ -240,6 +240,7 @@ struct BOOST_INFO {
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	int32_t i4RxRfbRetWorkCpu;
+	int32_t i4TxWorkCpu;
 	int32_t i4RxWorkCpu;
 	int32_t i4TxFreeMsduWorkCpu;
 	u_int8_t fgDramBoost;
@@ -2516,6 +2517,29 @@ u_int8_t kalIsSupportSdo(void);
 u_int8_t kalIsSupportRro(void);
 #endif
 
+#if CFG_SUPPORT_CPU_STAT
+#define CPU_STAT_INC_CNT(pr, idx) \
+({ \
+	int cpu; \
+	\
+	cpu = get_cpu(); \
+	if (cpu < CPU_STAT_MAX_CPU) \
+		GLUE_INC_REF_CNT(pr->aCpuStatCnt[idx][cpu]); \
+	put_cpu(); \
+})
+#define CPU_STAT_GET_CNT(pr, idx, cpu) \
+	(GLUE_GET_REF_CNT(pr->aCpuStatCnt[idx][cpu]))
+#define CPU_STAT_RESET_ALL_CNTS(pr) \
+do { \
+	int i, j; \
+	for (i = 0; i < CPU_STATISTICS_MAX; i++) { \
+		for (j = 0; j < CPU_STAT_MAX_CPU; j++) { \
+			GLUE_SET_REF_CNT(0, pr->aCpuStatCnt[i][j]); \
+		} \
+	} \
+} while (0)
+#endif /* CFG_SUPPORT_CPU_STAT */
+
 #if CFG_SUPPORT_THERMAL_QUERY
 int thermal_cbs_register(struct platform_device *pdev);
 void thermal_cbs_unregister(struct platform_device *pdev);
@@ -2548,6 +2572,13 @@ void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr);
 void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_TX_WORK
+void kalTxWork(struct work_struct *work);
+void kalTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
+void kalTxWorkInit(struct GLUE_INFO *pr);
+void kalTxWorkUninit(struct GLUE_INFO *pr);
+uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work);
 void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);

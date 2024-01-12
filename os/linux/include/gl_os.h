@@ -198,9 +198,9 @@
 #endif
 #endif
 
-#if CFG_SUPPORT_RX_WORK
+#if CFG_SUPPORT_TX_WORK || CFG_SUPPORT_RX_WORK
 #include <linux/workqueue.h>
-#endif /* CFG_SUPPORT_RX_WORK */
+#endif /* CFG_SUPPORT_TX_WORK || CFG_SUPPORT_RX_WORK */
 
 #include "gl_typedef.h"
 #include "typedef.h"
@@ -485,6 +485,20 @@ enum ENUM_WMM_UP {
 	WMM_UP_INDEX_NUM
 };
 
+#if CFG_SUPPORT_CPU_STAT
+enum ENUM_CPU_STAT_CNT {
+	CPU_TX_IN,
+	CPU_RX_IN,
+#if CFG_SUPPORT_TX_WORK
+	CPU_TX_WORK_DONE,
+#endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_RX_WORK
+	CPU_RX_WORK_DONE,
+#endif /* CFG_SUPPORT_RX_WORK */
+	CPU_STATISTICS_MAX
+};
+#endif /* CFG_SUPPORT_CPU_STAT */
+
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
 	/* wait_queue_head_t       cmdwait_q; */
@@ -698,6 +712,15 @@ struct GLUE_INFO {
 	struct task_struct *rx_thread;
 
 #endif
+#if CFG_SUPPORT_CPU_STAT
+	/* cpu statistics */
+	atomic_t aCpuStatCnt[CPU_STATISTICS_MAX][CPU_STAT_MAX_CPU];
+#endif /* CFG_SUPPORT_CPU_STAT */
+#if CFG_SUPPORT_TX_WORK
+	int32_t i4TxWorkCpu; /* controlled by CPU Boost */
+	struct workqueue_struct *prTxWorkQueue;
+	struct work_struct rTxWork;
+#endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
 	int32_t i4RxWorkCpu; /* controlled by CPU Boost */
 	struct workqueue_struct *prRxWorkQueue;

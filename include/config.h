@@ -388,6 +388,27 @@
 #define CFG_SUPPORT_RX_WORK                     0
 #endif /* CFG_SUPPORT_RX_WORK */
 
+/*
+ * TX Work is feature to reschedule Tx Direct to big CPU when BoostCpu
+ */
+#ifndef CFG_SUPPORT_TX_WORK
+#define CFG_SUPPORT_TX_WORK                     0
+#endif /* CFG_SUPPORT_TX_WORK */
+
+/*
+ * CPU Statistics is a feature to know the cpu scheduling behavior on
+ * smartphone
+ */
+#ifndef CFG_SUPPORT_CPU_STAT
+#define CFG_SUPPORT_CPU_STAT                    0
+#endif /* CFG_SUPPORT_CPU_STAT */
+
+#if CFG_SUPPORT_CPU_STAT
+#ifndef CPU_STAT_MAX_CPU
+#define CPU_STAT_MAX_CPU                        8
+#endif /* CPU_STAT_MAX_CPU */
+#endif /* CFG_SUPPORT_CPU_STAT */
+
 /* By using GRO at NAPI level, the driver is doing the aggregation to a large
  * SKB very early, right at the receive completion handler. This means that all
  * the next functions in the receive stack do much less processing.
