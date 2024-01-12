@@ -504,6 +504,9 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[1] |= HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD)
 
+#define HE_UNSET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[1] &= ~HE_PHY_CAP1_LDPC_CODING_IN_PAYLOAD)
+
 #define HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[2] |= HE_PHY_CAP2_STBC_TX_LT_OR_EQ_80M)
 
