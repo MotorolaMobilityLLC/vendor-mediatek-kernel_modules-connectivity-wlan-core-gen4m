@@ -75,6 +75,9 @@
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
 #include "wlan_oid.h"
+#if CFG_SUPPORT_CSI
+#include "gl_csi.h"
+#endif
 
 #if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 
@@ -273,6 +276,16 @@ const struct nla_policy nla_set_rtt_config_policy[
 	[RTT_ATTRIBUTE_TARGET_PREAMBLE] = {.type = NLA_U8},
 	[RTT_ATTRIBUTE_TARGET_BW] = {.type = NLA_U8},
 };
+
+#if CFG_SUPPORT_CSI
+const struct nla_policy nla_get_csi_policy[
+		WIFI_ATTRIBUTE_CSI_MAX + 1] = {
+	[WIFI_ATTRIBUTE_CSI_CONTROL_MODE] = {.type = NLA_U8},
+	[WIFI_ATTRIBUTE_CSI_CONFIG_ITEM] = {.type = NLA_U8},
+	[WIFI_ATTRIBUTE_CSI_VALUE_1] = {.type = NLA_U8},
+	[WIFI_ATTRIBUTE_CSI_VALUE_2] = {.type = NLA_U32},
+};
+#endif
 
 /*******************************************************************************
  *                           P R I V A T E   D A T A
@@ -3425,3 +3438,256 @@ nla_put_failure:
 	kfree_skb(skb);
 	return -ENOMEM;
 }
+
+#if CFG_SUPPORT_CSI
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to set CSI CMD from FWK.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data
+ * \param[in] data_len
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_csi_control(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *tb[WIFI_ATTRIBUTE_CSI_MAX + 1] = {};
+	uint32_t rStatus;
+	uint32_t u4BufLen;
+	int32_t i4Status = 0;
+	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
+	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct BSS_INFO *prAisBssInfo;
+
+	if (!wiphy || !wdev || data == NULL || data_len == 0)
+		return -EINVAL;
+
+	prGlueInfo = wlanGetGlueInfo();
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	DBGLOG(REQ, INFO,
+	       "[CSI] vendor command: data_len=%d, iftype=%d\n", data_len,
+	       wdev->iftype);
+
+	prCSIInfo = glCsiGetCSIInfo();
+	prCSICtrl = (struct CMD_CSI_CONTROL_T *) kalMemAlloc(
+			sizeof(struct CMD_CSI_CONTROL_T), VIR_MEM_TYPE);
+	if (!prCSICtrl) {
+		DBGLOG(REQ, LOUD,
+			"[CSI] allocate memory for prCSICtrl failed\n");
+		i4Status = -ENOMEM;
+		goto out;
+	}
+
+	kalMemZero(tb, sizeof(struct nlattr *) *
+			   (WIFI_ATTRIBUTE_CSI_MAX + 1));
+
+	if (NLA_PARSE(tb, WIFI_ATTRIBUTE_CSI_MAX, (struct nlattr *)data,
+			data_len, nla_get_csi_policy)) {
+		DBGLOG(REQ, ERROR, "[CSI] parse csi attr fail.\n");
+		i4Status = -EINVAL;
+		goto out;
+	}
+
+	if (!tb[WIFI_ATTRIBUTE_CSI_CONTROL_MODE]) {
+		DBGLOG(REQ, LOUD, "[CSI] parse csi mode error.\n");
+		i4Status = -EINVAL;
+		goto out;
+	}
+	prCSICtrl->ucMode = nla_get_u8(tb[WIFI_ATTRIBUTE_CSI_CONTROL_MODE]);
+	if (prCSICtrl->ucMode >= CSI_CONTROL_MODE_NUM) {
+		DBGLOG(REQ, ERROR, "[CSI] Invalid csi mode %d\n",
+			prCSICtrl->ucMode);
+		i4Status = -EINVAL;
+		goto out;
+	}
+	prCSIInfo->ucMode = prCSICtrl->ucMode;
+
+	prAisBssInfo = aisGetAisBssInfo(
+			prGlueInfo->prAdapter, wlanGetBssIdx(wdev->netdev));
+	if (prAisBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			|| prAisBssInfo->eBand == BAND_6G
+#endif
+		)
+		prCSICtrl->ucBandIdx = ENUM_BAND_1;
+	else
+		prCSICtrl->ucBandIdx = ENUM_BAND_0;
+
+	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
+		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
+		prCSIInfo->bIncomplete = FALSE;
+		prCSIInfo->u4CopiedDataSize = 0;
+		prCSIInfo->u4RemainingDataSize = 0;
+		prCSIInfo->u4CSIBufferHead = 0;
+		prCSIInfo->u4CSIBufferTail = 0;
+		prCSIInfo->u4CSIBufferUsed = 0;
+		goto send_cmd;
+	}
+
+	if (!tb[WIFI_ATTRIBUTE_CSI_CONFIG_ITEM]) {
+		DBGLOG(REQ, LOUD, "[CSI] parse cfg item error.\n");
+		i4Status = -EINVAL;
+		goto out;
+	}
+	prCSICtrl->ucCfgItem = nla_get_u8(tb[WIFI_ATTRIBUTE_CSI_CONFIG_ITEM]);
+
+	if (prCSICtrl->ucCfgItem >= CSI_CONFIG_ITEM_NUM) {
+		DBGLOG(REQ, ERROR, "[CSI] Invalid csi cfg_item %u\n",
+			prCSICtrl->ucCfgItem);
+		i4Status = -EINVAL;
+		goto out;
+	}
+
+	if (!tb[WIFI_ATTRIBUTE_CSI_VALUE_1]) {
+		DBGLOG(REQ, LOUD, "[CSI] parse csi cfg value1 error.\n");
+		i4Status = -EINVAL;
+		goto out;
+	}
+	prCSICtrl->ucValue1 = nla_get_u8(tb[WIFI_ATTRIBUTE_CSI_VALUE_1]);
+	prCSIInfo->ucValue1[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue1;
+
+	if (prCSICtrl->ucCfgItem == CSI_CONFIG_OUTPUT_METHOD) {
+		if (prCSICtrl->ucValue1 == CSI_PROC_FILE_COMMAND) {
+			prCSIInfo->eCSIOutput = CSI_OUTPUT_PROC_FILE;
+			DBGLOG(REQ, INFO,
+				"[CSI] Set CSI data output to proc file\n");
+		} else if (prCSICtrl->ucMode == CSI_VENDOR_EVENT_COMMAND) {
+			prCSIInfo->eCSIOutput = CSI_OUTPUT_VENDOR_EVENT;
+			DBGLOG(REQ, INFO,
+				"[CSI] Set CSI data output to vendor event\n");
+		} else
+			DBGLOG(REQ, ERROR,
+				"[CSI] Invalid csi output method %d\n",
+				prCSICtrl->ucMode);
+	}
+
+	if (tb[WIFI_ATTRIBUTE_CSI_VALUE_2]) {
+		prCSICtrl->u4Value2 =
+			nla_get_u32(tb[WIFI_ATTRIBUTE_CSI_VALUE_2]);
+		prCSIInfo->u4Value2[prCSICtrl->ucCfgItem] = prCSICtrl->u4Value2;
+	}
+
+send_cmd:
+	DBGLOG(REQ, STATE,
+	   "[CSI] Set band idx %d, mode %d, csi cfg item %d, value1 %d, value2 %d",
+		prCSICtrl->ucBandIdx,
+		prCSICtrl->ucMode, prCSICtrl->ucCfgItem,
+		prCSICtrl->ucValue1, prCSICtrl->u4Value2);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetCSIControl, prCSICtrl,
+				sizeof(struct CMD_CSI_CONTROL_T), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] send CSI control cmd failed, rStatus %u\n",
+			rStatus);
+		i4Status = -EFAULT;
+	}
+
+out:
+	if (prCSICtrl)
+		kalMemFree(prCSICtrl, VIR_MEM_TYPE,
+				sizeof(struct CMD_CSI_CONTROL_T));
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to send FWK a event of CSI raw data.
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_event_csi_raw_data(
+	struct ADAPTER *prAdapter)
+{
+	struct wiphy *wiphy = gprWdev[0]->wiphy;
+	struct wireless_dev *wdev = gprWdev[0];
+	struct CSI_DATA_T *prTmpCSIData = NULL;
+	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct sk_buff *skb = NULL;
+	uint8_t *prBuffer = NULL;
+	uint32_t u4BufferSize = 0;
+	uint32_t u4CopySize = 0;
+	uint16_t u2CSIDynamicDataSize = 0;
+
+	if (!wiphy || !wdev || !wdev->netdev) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] %s wrong input parameters\n", __func__);
+		return -EINVAL;
+	}
+
+	prCSIInfo = glCsiGetCSIInfo();
+
+	prTmpCSIData = (struct CSI_DATA_T *) kalMemAlloc(
+			sizeof(struct CSI_DATA_T), VIR_MEM_TYPE);
+	if (!prTmpCSIData) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] allocate memory for prTmpCSIData failed\n");
+		goto err_handle;
+	}
+	kalMemZero(prTmpCSIData, sizeof(struct CSI_DATA_T));
+	wlanPopCSIData(prAdapter, prTmpCSIData);
+
+	/* Approximately raw data size */
+	u2CSIDynamicDataSize =
+			prTmpCSIData->u2DataCount * sizeof(int16_t) * 2 +
+			prTmpCSIData->ucRsvd1Cnt * sizeof(int32_t) * 2;
+	u4BufferSize = CSI_FIX_DATA_SIZE + u2CSIDynamicDataSize + 16;
+	DBGLOG(REQ, INFO, "[CSI] Approximately data size = %d\n", u4BufferSize);
+
+	prBuffer = (uint8_t *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (!prBuffer) {
+		DBGLOG(REQ, ERROR,
+			"[CSI] allocate memory for prBuffer failed\n");
+		goto err_handle;
+	}
+	kalMemZero(prBuffer, u4BufferSize);
+
+	u4CopySize = wlanCSIDataPrepare(prBuffer, prCSIInfo, prTmpCSIData);
+	DBGLOG(REQ, INFO, "[CSI] Actually data size = %d", u4CopySize);
+
+	skb = cfg80211_vendor_event_alloc(wiphy,
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			wdev,
+#endif
+			u4CopySize,
+			WIFI_EVENT_SUBCMD_CSI,
+			GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "[CSI] %s allocate skb failed\n", __func__);
+		goto err_handle;
+	}
+
+	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_CSI,
+				u4CopySize, prBuffer) < 0)) {
+		DBGLOG(REQ, ERROR, "[CSI] nla_put failure: len=%u, ptr=%p\n",
+		       u4CopySize, prBuffer);
+		goto err_handle;
+	}
+
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	kalMemFree(prTmpCSIData, VIR_MEM_TYPE, sizeof(struct CSI_DATA_T));
+	kalMemFree(prBuffer, VIR_MEM_TYPE, u4BufferSize);
+	return 0;
+
+err_handle:
+	if (prTmpCSIData)
+		kalMemFree(
+			prTmpCSIData, VIR_MEM_TYPE, sizeof(struct CSI_DATA_T));
+	if (prBuffer)
+		kalMemFree(prBuffer, VIR_MEM_TYPE, u4BufferSize);
+	if (skb)
+		kfree_skb(skb);
+
+	return -ENOMEM;
+}
+#endif

@@ -6061,12 +6061,12 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 			tag->u2Tag = UNI_CMD_CSI_TAG_SET_FRAME_TYPE;
 			tag->u2Length = sizeof(*tag);
 			tag->ucFrameTypeIndex = cmd->ucValue1;
-			tag->ucFrameType = cmd->ucValue2;
+			tag->u4FrameType = cmd->u4Value2;
 #if CFG_CSI_DEBUG
 			DBGLOG(NIC, INFO,
 			   "[CSI] Set frame type %d, %d\n",
 				tag->ucFrameTypeIndex,
-				tag->ucFrameType);
+				tag->u4FrameType);
 #endif
 		} else if (cmd->ucCfgItem == CSI_CONFIG_OUTPUT_FORMAT) {
 			struct UNI_CMD_CSI_SET_CHAIN_NUMBER *tag;
