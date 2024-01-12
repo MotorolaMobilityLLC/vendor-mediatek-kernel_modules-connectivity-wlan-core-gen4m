@@ -6653,7 +6653,7 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 	    aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	struct LINK_MGMT *prAPlist = &prAisSpecBssInfo->rNeighborApList;
 	struct IE_NEIGHBOR_REPORT *prIe = (struct IE_NEIGHBOR_REPORT *)pucApBuf;
-	uint16_t u2BufLen;
+	int16_t c2BufLen;
 	uint16_t u2PrefIsZeroCount = 0;
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
@@ -6661,7 +6661,7 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 	if (!prIe || !u2ApBufLen || u2ApBufLen < prIe->ucLength)
 		return;
 	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
-	for (u2BufLen = u2ApBufLen; u2BufLen > 0; u2BufLen -= IE_SIZE(prIe),
+	for (c2BufLen = u2ApBufLen; c2BufLen > 0; c2BufLen -= IE_SIZE(prIe),
 	     prIe = (struct IE_NEIGHBOR_REPORT *)((uint8_t *) prIe +
 						  IE_SIZE(prIe))) {
 		/* BIT0-1: AP reachable, BIT2: same security with current
@@ -6720,7 +6720,7 @@ void aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 		    prNeighborAP->ucPreference == 0)
 			u2PrefIsZeroCount++;
 
-		if (u2BufLen < IE_SIZE(prIe)) {
+		if (c2BufLen < IE_SIZE(prIe)) {
 			DBGLOG(AIS, WARN, "Truncated neighbor report\n");
 			break;
 		}
