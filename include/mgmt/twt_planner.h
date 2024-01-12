@@ -208,6 +208,14 @@ void twtPlannerGetCnmGrantedDone(
 	struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
+
+uint32_t twtPlannerAbortCnmGranted(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId, uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
 #endif
 
 #if (CFG_SUPPORT_TWT_HOTSPOT == 1)

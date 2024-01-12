@@ -875,6 +875,7 @@ twtReqFsmRunEventTxDone(
 	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
 	enum _ENUM_TWT_REQUESTER_STATE_T eNextState;
 	uint8_t ucTWTFlowId;
 	enum _ENUM_TWT_TYPE_T eTwtType = ENUM_TWT_TYPE_DEFAULT;
@@ -898,6 +899,15 @@ twtReqFsmRunEventTxDone(
 	if (!prStaRec) {
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"EVENT-TXDONE: No valid STA Record\n");
+
+		return WLAN_STATUS_INVALID_PACKET;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (prBssInfo == NULL) {
+		DBGLOG(TWT_REQUESTER, ERROR,
+			"EVENT-TXDONE: No valid BSS_INFO\n");
 
 		return WLAN_STATUS_INVALID_PACKET;
 	}
@@ -933,6 +943,24 @@ twtReqFsmRunEventTxDone(
 
 		twtReqFsmSteps(prAdapter,
 			prStaRec, eNextState, ucTWTFlowId, NULL);
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+		/*
+		 * Upon TWT setup frame failure, inform F/W
+		 * to abort CNM request under CNM + TWT,
+		 * because the F/W CNM would assert!!!
+		 */
+		if (rTxDoneStatus != TX_RESULT_SUCCESS) {
+			twtPlannerAbortCnmGranted(
+				prAdapter,
+				prBssInfo,
+				prStaRec,
+				ucTWTFlowId,
+				FALSE,
+				NULL,
+				NULL);
+		}
+#endif
 
 		break;
 
