@@ -473,6 +473,7 @@ struct FWDL_OPS_T mt7925_fw_dl_ops = {
 #endif
 #endif
 	.getFwVerInfo = wlanParseRamCodeReleaseManifest,
+	.getFlavorVer = mt7925GetFlavorVer,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
