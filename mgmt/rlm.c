@@ -8489,7 +8489,7 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 			sizeof(u4EhtPhyCap1));
 		prStaRec->rTxBfPfmuStaInfo.fgSU_MU = FALSE;
 		prStaRec->rTxBfPfmuStaInfo.u1TxBfCap =
-			(u4EhtPhyCap1 & DOT11BE_PHY_CAP_SU_BFEE);
+			((u4EhtPhyCap1 & DOT11BE_PHY_CAP_SU_BFEE) >> 6);
 
 		if (prStaRec->rTxBfPfmuStaInfo.u1TxBfCap) {
 			/* OFDM, NDPA/Report Poll/CTS2Self tx mode */
