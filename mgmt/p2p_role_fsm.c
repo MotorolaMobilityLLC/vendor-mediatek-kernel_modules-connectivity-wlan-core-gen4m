@@ -1403,7 +1403,9 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
-	u_int8_t bSkipCac = TRUE;
+	u_int8_t bSkipRdd = TRUE;
+	/* start Rdd without CAC time */
+	u_int8_t bSkipCac = FALSE;
 	enum ENUM_BAND eBand;
 	uint8_t ucChannelNum;
 
@@ -1434,45 +1436,51 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
 
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-			.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx])) {
-		if ((eBand == BAND_5G) &&
-			rlmDomainIsLegalDfsChannel(
-			prAdapter,
-			eBand,
-			ucChannelNum))
-			bSkipCac = FALSE;
-		else if ((eBand == BAND_5G) &&
-			(prAdapter->rWifiVar.ucAp5gBandwidth >=
-			MAX_BW_160MHZ)) {
-			uint8_t ucRfBw =
-				prAdapter->rWifiVar.ucAp5gBandwidth;
+	if ((eBand == BAND_5G) &&
+		rlmDomainIsLegalDfsChannel(
+		prAdapter,
+		eBand,
+		ucChannelNum))
+		bSkipRdd = FALSE;
+	else if ((eBand == BAND_5G) &&
+		(prAdapter->rWifiVar.ucAp5gBandwidth >=
+		MAX_BW_160MHZ)) {
+		uint8_t ucRfBw =
+			prAdapter->rWifiVar.ucAp5gBandwidth;
 
-			/* Downgrade */
-			if (p2pFuncIsDualAPMode(prAdapter) &&
-				(ucRfBw >= MAX_BW_160MHZ))
-				ucRfBw = MAX_BW_80MHZ;
+		/* Downgrade */
+		if (p2pFuncIsDualAPMode(prAdapter) &&
+			(ucRfBw >= MAX_BW_160MHZ))
+			ucRfBw = MAX_BW_80MHZ;
 
-			/* Revise to VHT OP BW */
-			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-			if (nicGetVhtS1(
-				ucChannelNum,
-				ucRfBw) &&
-				(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
-				bSkipCac = FALSE;
-		}
-
-		/* STA+SAP will follow STA BW */
-		if (p2pGetAisBssByBand(prAdapter, BAND_5G))
-			bSkipCac = TRUE;
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		else if (p2pFuncIsManualCac() &&
-			(prAdapter->rWifiVar.u4ByPassCacTime <= 2)) {
-			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
-			bSkipCac = TRUE;
-		}
-#endif
+		/* Revise to VHT OP BW */
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+		if (nicGetVhtS1(
+			ucChannelNum,
+			ucRfBw) &&
+			(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
+			bSkipRdd = FALSE;
 	}
+
+	/* STA+SAP will follow STA BW */
+	if (!bSkipRdd && p2pGetAisBssByBand(prAdapter, BAND_5G)
+		&& p2pFuncIsAPMode(prAdapter->rWifiVar
+			.prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx]))
+		bSkipRdd = TRUE;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	if (!bSkipRdd && p2pFuncIsManualCac() &&
+		(prAdapter->rWifiVar.u4ByPassCacTime <= 2))
+		bSkipCac = TRUE;
+#endif
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	/* start rdd without cac */
+	if (!bSkipRdd && bSkipCac) {
+		p2pFuncStartRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+		p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+		DBGLOG(P2P, INFO, "start rdd without cac\n");
+	}
+#endif
 
 	p2pFuncStoreFilsInfo(prAdapter,
 			     &prP2pStartAPMsg->rFilsDiscovery,
@@ -1481,7 +1489,7 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 				   &prP2pStartAPMsg->rUnsolProbe,
 				   prP2pRoleFsmInfo->ucBssIndex);
 
-	if (bSkipCac)
+	if (bSkipRdd || bSkipCac)
 		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	else {
