@@ -7621,7 +7621,7 @@ wlanoidSetEepromWrite(IN struct ADAPTER *prAdapter,
 
 } /* wlanoidSetEepromWrite */
 
-#define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00006620	/* for WPDWifi DLL */
+#define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000020	/* for WPDWifi DLL */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query current the OID interface version,
