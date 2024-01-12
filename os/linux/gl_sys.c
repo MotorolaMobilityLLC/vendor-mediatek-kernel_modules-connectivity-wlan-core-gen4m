@@ -374,7 +374,7 @@ void sysUninitWifiVer(void)
 
 void sysCreateSoftap(void)
 {
-	struct REG_INFO *prRegInfo;
+	struct REG_INFO *prRegInfo = NULL;
 
 	uint8_t ucOffset = 0;
 	u_int8_t fgDbDcModeEn = FALSE;
