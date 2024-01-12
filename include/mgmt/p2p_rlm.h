@@ -99,6 +99,11 @@
  ******************************************************************************
  */
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
+#endif
+
 void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
