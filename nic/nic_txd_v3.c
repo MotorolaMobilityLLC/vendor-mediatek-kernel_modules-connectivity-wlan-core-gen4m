@@ -659,9 +659,9 @@ void nic_txd_v3_compose(
 	/** DW5 **/
 	/* PID */
 	if (prMsduInfo->pfTxDoneHandler) {
-		prMsduInfo->ucPID = nicTxAssignPID(
-				prAdapter, prMsduInfo->ucWlanIndex);
-
+		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
+				prMsduInfo->ucWlanIndex,
+				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
 		DBGLOG(TX, INFO, "TX[%s] PID[%d]\n",
 			apucPktType[prMsduInfo->ucPktType], prMsduInfo->ucPID);
 		HAL_MAC_CONNAC3X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);

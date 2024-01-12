@@ -548,8 +548,9 @@ void nic_txd_v2_compose(
 	}
 	/* PID */
 	if (prMsduInfo->pfTxDoneHandler) {
-		prMsduInfo->ucPID = nicTxAssignPID(
-				prAdapter, prMsduInfo->ucWlanIndex);
+		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
+				prMsduInfo->ucWlanIndex,
+				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
 		HAL_MAC_CONNAC2X_TXD_SET_PID(prTxDesc, prMsduInfo->ucPID);
 		HAL_MAC_CONNAC2X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
