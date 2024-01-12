@@ -168,6 +168,7 @@ void mt6639_dumpCbtopReg(struct ADAPTER *ad);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 void mt6639_dumpPcieReg(void);
+void mt6639_dumpPcieRegWithScanDump(void);
 bool mt6639_CheckDumpViaBt(void);
 #endif
 

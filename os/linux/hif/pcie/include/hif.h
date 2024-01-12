@@ -614,6 +614,7 @@ int mtk_pcie_speed(struct pci_dev *dev, int speed);
 int mtk_pcie_retrain(struct pci_dev *dev);
 #endif
 #endif
+u_int8_t mtk_get_aer_triggered(void);
 
 /*******************************************************************************
  *                              F U N C T I O N S

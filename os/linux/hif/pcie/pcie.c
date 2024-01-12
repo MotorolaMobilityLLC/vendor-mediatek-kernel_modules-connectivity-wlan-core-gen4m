@@ -700,6 +700,15 @@ static void mtk_pci_error_resume(struct pci_dev *pdev)
 }
 #endif
 
+u_int8_t mtk_get_aer_triggered(void)
+{
+#if CFG_MTK_WIFI_AER_RESET
+	return g_AERRstTriggered;
+#else
+	return 0;
+#endif
+}
+
 static int32_t setupPlatDevIrq(struct platform_device *pdev, uint32_t *pu4IrqId)
 {
 	uint32_t u4IrqId = 0;
