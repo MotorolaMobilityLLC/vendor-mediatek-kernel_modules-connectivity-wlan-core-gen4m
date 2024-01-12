@@ -1624,7 +1624,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos = aucCommonInfo + prMlInfo->ucCommonInfoLength;
 	}
 
-	if (u2Left > IE_SIZE(pucIE)) {
+	if ((u2Left > IE_SIZE(pucIE)) && (u2Left < CONTROL_BUFFER_SIZE)) {
 		const uint8_t *tmp_pos, *tmp_end;
 		uint8_t *p;
 		uint8_t found = FALSE;

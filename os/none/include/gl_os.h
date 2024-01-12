@@ -142,6 +142,7 @@ extern u_int8_t fgTriggerDebugSop;
 #define FW_LOG_CMD_ON_OFF		0
 #define FW_LOG_CMD_SET_LEVEL		1
 
+#define CONTROL_BUFFER_SIZE		(1025)
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
