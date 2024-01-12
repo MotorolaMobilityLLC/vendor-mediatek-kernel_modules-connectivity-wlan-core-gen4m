@@ -6136,8 +6136,8 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 		}
 		/* Parse AC parameters and write to HW CRs */
 		if (prStaRec->fgIsQoS) {
-			mqmParseEdcaParameters(prAdapter, prSwRfb, pucIEStart,
-				u2IELength, TRUE);
+			mqmIsBssEdcaParamsUpdated(prAdapter, prSwRfb,
+					pucIEStart, u2IELength, TRUE);
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (fgEfuseCtrlAxOn == 1) {
 				mqmParseMUEdcaParams(prAdapter, prSwRfb,
@@ -6213,7 +6213,7 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 				((struct WLAN_MAC_MGMT_HEADER *)
 				(prSwRfb->pvHeader))->aucBSSID)) {
 
-				fgNewParameter = mqmParseEdcaParameters(
+				fgNewParameter = mqmIsBssEdcaParamsUpdated(
 						prAdapter, prSwRfb, pucIE,
 						u2IELength, FALSE);
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -6248,49 +6248,79 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 	}
 }
 
+/* Return TRUE if WMM IE has been updated to BSS_INFO */
+u_int8_t mqmHandleWMMEdcaParams(struct BSS_INFO *prBssInfo,
+		const uint8_t *pucIE, u_int8_t fgForceOverwrite)
+{
+	struct IE_WMM_PARAM *prIeWmmParam;
+	u_int8_t fgUpdated = FALSE;
 
-u_int8_t mqmUpdateEdcaParameters(struct BSS_INFO *prBssInfo,
-	const uint8_t *pucIE, u_int8_t fgForceOverride)
+	if (IE_LEN(pucIE) != sizeof(struct IE_WMM_PARAM) - ELEM_HDR_LEN)
+		return fgUpdated;	/* WMM Param IE with a wrong length */
+
+	prIeWmmParam = (struct IE_WMM_PARAM *) pucIE;
+	/* Check the Parameter Set Count to determine
+	 * whether EDCA parameters have been changed
+	 */
+	if (!fgForceOverwrite)
+		fgUpdated = mqmIsEdcaParamsChanged(prBssInfo,
+				prIeWmmParam->ucQosInfo,
+				prIeWmmParam->arAcParam);
+	if (fgUpdated || fgForceOverwrite) {
+		mqmUpdateEdcaParams(prBssInfo, prIeWmmParam->ucQosInfo,
+				prIeWmmParam->arAcParam);
+		fgUpdated = TRUE;
+	}
+
+	return fgUpdated;
+}
+
+/* Return TRUE if EDCA Param Set IE has been updated to BSS_INFO */
+u_int8_t mqmHandle80211EdcaParamSet(struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE, u_int8_t fgForceOverwrite)
+{
+	struct IE_EDCA_PARAM_SET *pr80211Edca;
+	u_int8_t fgUpdated = FALSE;
+
+	if (IE_LEN(pucIE) != sizeof(struct IE_EDCA_PARAM_SET) - ELEM_HDR_LEN)
+		return fgUpdated;
+
+	pr80211Edca = (struct IE_EDCA_PARAM_SET *)pucIE;
+
+	if (!fgForceOverwrite)
+		fgUpdated = mqmIsEdcaParamsChanged(prBssInfo,
+				pr80211Edca->ucQosInfo, pr80211Edca->arAcParam);
+	if (fgUpdated || fgForceOverwrite) {
+		mqmUpdateEdcaParams(prBssInfo, pr80211Edca->ucQosInfo,
+				pr80211Edca->arAcParam);
+		fgUpdated = TRUE;
+	}
+	return fgUpdated;
+}
+
+void mqmUpdateEdcaParams(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
+		struct WMM_AC_PARAM *arAcParam)
 {
 	struct AC_QUE_PARMS *prAcQueParams;
-	struct IE_WMM_PARAM *prIeWmmParam;
+	struct WMM_AC_PARAM *prAcParam;
 	enum ENUM_WMM_ACI eAci;
-	u_int8_t fgNewParameter = FALSE;
 
-	do {
-		if (IE_LEN(pucIE) != 24)
-			break;	/* WMM Param IE with a wrong length */
-
-		prIeWmmParam = (struct IE_WMM_PARAM *) pucIE;
-
-		/* Check the Parameter Set Count to determine
-		 * whether EDCA parameters have been changed
-		 */
-		if (!fgForceOverride) {
-			if (mqmCompareEdcaParameters(prIeWmmParam, prBssInfo)) {
-				fgNewParameter = FALSE;
-				break;
-			}
-		}
-
-		fgNewParameter = TRUE;
-		/* Update Parameter Set Count */
-		prBssInfo->ucWmmParamSetCount = (prIeWmmParam->ucQosInfo &
+	/* Update Parameter Set Count */
+	prBssInfo->ucWmmParamSetCount = (ucQosInfo &
 			WMM_QOS_INFO_PARAM_SET_CNT);
-		/* Update EDCA parameters */
-		for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
-			prAcQueParams = &prBssInfo->arACQueParms[eAci];
-			mqmFillAcQueParam(prIeWmmParam, eAci, prAcQueParams);
-			log_dbg(QM, INFO, "BSS[%u]: eAci[%d] ACM[%d] Aifsn[%d] CWmin/max[%d/%d] TxopLimit[%d] NewParameter[%d]\n",
-				prBssInfo->ucBssIndex, eAci,
-				prAcQueParams->ucIsACMSet,
-				prAcQueParams->u2Aifsn, prAcQueParams->u2CWmin,
-				prAcQueParams->u2CWmax,
-				prAcQueParams->u2TxopLimit, fgNewParameter);
-		}
-	} while (FALSE);
-
-	return fgNewParameter;
+	/* Update EDCA parameters */
+	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
+		prAcQueParams = &prBssInfo->arACQueParms[eAci];
+		prAcParam = &arAcParam[eAci];
+		mqmFillAcQueParam(prAcParam, prAcQueParams);
+		DBGLOG(QM, INFO,
+			"BSS[%u]: eAci[%d] ACM[%d] Aifsn[%d] CWmin/max[%d/%d] TxopLimit[%d]\n",
+			prBssInfo->ucBssIndex, eAci,
+			prAcQueParams->ucIsACMSet,
+			prAcQueParams->u2Aifsn, prAcQueParams->u2CWmin,
+			prAcQueParams->u2CWmax,
+			prAcQueParams->u2TxopLimit);
+	}
 }
 
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -6455,22 +6485,21 @@ uint8_t mqmParseMUEdcaParams(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief To parse WMM Parameter IE (in BCN or Assoc_Rsp)
+ * \brief To parse EDCA Parameter IE (in BCN or Assoc_Rsp)
  *
  * \param[in] prAdapter          Adapter pointer
  * \param[in] prSwRfb            The received frame
  * \param[in] pucIE              The pointer to the first IE in the frame
  * \param[in] u2IELength         The total length of IEs in the frame
- * \param[in] fgForceOverride    TRUE: If EDCA parameters are found, always set
- *                               to HW CRs.
+ * \param[in] fgForceOverwrite   TRUE: If EDCA parameters are found, always set
+ *                               to BSS INFO.
  *
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t
-mqmParseEdcaParameters(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb, const uint8_t *pucIE,
-	uint16_t u2IELength, u_int8_t fgForceOverride)
+u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, const uint8_t *pucIE,
+		uint16_t u2IELength, u_int8_t fgForceOverwrite)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2Offset;
@@ -6506,26 +6535,20 @@ mqmParseEdcaParameters(struct ADAPTER *prAdapter,
 	/* Goal: Obtain the EDCA parameters */
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
+		case ELEM_ID_EDCA_PARAM_SET:
+			fgNewParameter = mqmHandle80211EdcaParamSet(
+					prBssInfo, pucIE, fgForceOverwrite);
+			break;
 		case ELEM_ID_WMM:
 			if (!((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM) &&
 			      (!kalMemCmp(WMM_IE_OUI(pucIE), aucWfaOui, 3))))
 				break;
-
-			switch (WMM_IE_OUI_SUBTYPE(pucIE)) {
-			case VENDOR_OUI_SUBTYPE_WMM_PARAM:
-				fgNewParameter =
-					mqmUpdateEdcaParameters(prBssInfo,
-					pucIE, fgForceOverride);
+			if (WMM_IE_OUI_SUBTYPE(pucIE) !=
+					VENDOR_OUI_SUBTYPE_WMM_PARAM)
 				break;
+			fgNewParameter = mqmHandleWMMEdcaParams(prBssInfo,
+					pucIE, fgForceOverwrite);
 
-			default:
-				/* Other WMM QoS IEs. Ignore */
-				break;
-			}
-
-			/* else: VENDOR_OUI_TYPE_WPA, VENDOR_OUI_TYPE_WPS, ...
-			 * (not cared)
-			 */
 			break;
 		default:
 			break;
@@ -6535,76 +6558,68 @@ mqmParseEdcaParameters(struct ADAPTER *prAdapter,
 	return fgNewParameter;
 }
 
-u_int8_t mqmCompareEdcaParameters(struct IE_WMM_PARAM *prIeWmmParam,
-	struct BSS_INFO *prBssInfo)
+/* Return TRUE if EDCA param set in IE is different from the set in BssInfo */
+u_int8_t mqmIsEdcaParamsChanged(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
+		struct WMM_AC_PARAM *arAcParam)
 {
 	struct AC_QUE_PARMS *prAcQueParams;
 	struct WMM_AC_PARAM *prWmmAcParams;
 	enum ENUM_WMM_ACI eAci;
 
-	/* return FALSE; */
-
 	/* Check Set Count */
 	if (prBssInfo->ucWmmParamSetCount !=
-	(prIeWmmParam->ucQosInfo & WMM_QOS_INFO_PARAM_SET_CNT))
-		return FALSE;
+		(ucQosInfo & WMM_QOS_INFO_PARAM_SET_CNT))
+		return TRUE;
 
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
 		prAcQueParams = &prBssInfo->arACQueParms[eAci];
-		prWmmAcParams = &prIeWmmParam->arAcParam[eAci];
+		prWmmAcParams = &arAcParam[eAci];
 
 		/* ACM */
-		if (prAcQueParams->ucIsACMSet != ((prWmmAcParams->ucAciAifsn &
-			WMM_ACIAIFSN_ACM) ? TRUE : FALSE))
-			return FALSE;
+		if (prAcQueParams->ucIsACMSet != !!(prWmmAcParams->ucAciAifsn &
+			WMM_ACIAIFSN_ACM))
+			return TRUE;
 
 		/* AIFSN */
 		if (prAcQueParams->u2Aifsn != (prWmmAcParams->ucAciAifsn &
 			WMM_ACIAIFSN_AIFSN))
-			return FALSE;
+			return TRUE;
 
 		/* CW Max */
 		if (prAcQueParams->u2CWmax !=
 			(BIT((prWmmAcParams->ucEcw & WMM_ECW_WMAX_MASK) >>
 			WMM_ECW_WMAX_OFFSET) - 1))
-			return FALSE;
+			return TRUE;
 
 		/* CW Min */
 		if (prAcQueParams->u2CWmin != (BIT(prWmmAcParams->ucEcw &
 			WMM_ECW_WMIN_MASK) - 1))
-			return FALSE;
+			return TRUE;
 
 		if (prAcQueParams->u2TxopLimit !=
 			prWmmAcParams->u2TxopLimit)
-			return FALSE;
+			return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is used for parsing EDCA parameters specified in the
- *        WMM Parameter IE
- *
- * \param[in] prAdapter           Adapter pointer
- * \param[in] prIeWmmParam        The pointer to the WMM Parameter IE
- * \param[in] u4AcOffset          The offset specifying the AC queue for parsing
- * \param[in] prHwAcParams        The parameter structure used to configure the
- *                                HW CRs
- *
+ * \brief This function is used for filling EDCA IE (including 80211 Edca Set
+ * and WFA WMM Edca) into AC_QUE_PARAMS in BssInfo
+ * \param prAcParam           The pointer to WMM_AC_PARAM in IE
+ * \param prAcQueParams       The parameter structure used to store EDCA params
+ *                                in BssInfo
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mqmFillAcQueParam(struct IE_WMM_PARAM *prIeWmmParam,
-	uint32_t u4AcOffset,
-	struct AC_QUE_PARMS *prAcQueParams)
+void mqmFillAcQueParam(struct WMM_AC_PARAM *prAcParam,
+		struct AC_QUE_PARMS *prAcQueParams)
 {
-	struct WMM_AC_PARAM *prAcParam =
-		&prIeWmmParam->arAcParam[u4AcOffset];
 
-	prAcQueParams->ucIsACMSet = (prAcParam->ucAciAifsn &
-		WMM_ACIAIFSN_ACM) ? TRUE : FALSE;
+	prAcQueParams->ucIsACMSet = !!(prAcParam->ucAciAifsn &
+		WMM_ACIAIFSN_ACM);
 
 	prAcQueParams->u2Aifsn = (prAcParam->ucAciAifsn &
 		WMM_ACIAIFSN_AIFSN);
