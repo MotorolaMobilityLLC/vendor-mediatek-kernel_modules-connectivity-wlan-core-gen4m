@@ -379,7 +379,7 @@ uint32_t apsAddBssDescToList(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	uint8_t l = apsBssDescToLink(ad, ap, bss, bidx);
 
-	if (l >= MLD_LINK_MAX)
+	if (l >= MAX_LINK_PLAN_NUM)
 		return WLAN_STATUS_FAILURE;
 
 	LINK_ENTRY_INITIALIZE(&bss->rLinkEntryEss[aidx]);
@@ -414,7 +414,7 @@ struct AP_COLLECTION *apsAddAp(struct ADAPTER *ad,
 	DBGLOG(APS, TRACE, "Add APC[" MACSTR "][MLO=%d]\n",
 		MAC2STR(ap->aucAddr), ap->fgIsMultiLink);
 
-	for (i = 0; i < MLD_LINK_MAX; i++)
+	for (i = 0; i < MAX_LINK_PLAN_NUM; i++)
 		LINK_INITIALIZE(&ap->arLinks[i]);
 
 	if (apsAddBssDescToList(ad, ap, bss, bidx)) {
