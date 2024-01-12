@@ -1083,12 +1083,6 @@ void asicConnac2xWfdmaInitForUSB(
 
 	}
 
-#ifdef MT7915
-	/* 7915U E1 Workaround. TODO: check chip version */
-	/* Driver need to write rx ring cpu index for receiving data */
-	HAL_MCR_WR(prAdapter,
-		CONNAC2X_RX_RING_CIDX(CONNAC2X_HOST_WPDMA_0_BASE), 0x1);
-#endif
 	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
 				    "DmaShdlEnable",
 				    FEATURE_ENABLED);
