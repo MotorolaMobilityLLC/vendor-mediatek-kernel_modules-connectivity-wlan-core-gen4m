@@ -2987,7 +2987,7 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 	       "Bss index:%d prDev->flags:0x%x\n",
 	       ucBssIndex, prDev->flags);
 
@@ -3065,7 +3065,7 @@ static void wlanSetMulticastListWorkQueue(
 		rMcAddrList.ucBssIdx = ucBssIndex;
 		rMcAddrList.ucAddrNum = 0;
 
-		DBGLOG(INIT, INFO,
+		DBGLOG(INIT, TRACE,
 			"Clear previous MAR settings to rx all mc pkt\n");
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidSetMulticastList,

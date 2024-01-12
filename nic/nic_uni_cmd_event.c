@@ -5923,7 +5923,7 @@ uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 	uni_cmd = (struct UNI_CMD_MUAR *) entry->pucInfoBuffer;
 	uni_cmd->ucBand = ENUM_BAND_AUTO;
 
-	DBGLOG(RX, INFO, "clean_tag[%p]", uni_cmd->aucTlvBuffer);
+	DBGLOG(RX, TRACE, "clean_tag[%p]", uni_cmd->aucTlvBuffer);
 
 	/* Fill-in clean tag*/
 	clean_tag = (struct UNI_CMD_MUAR_CLEAN_PARAM *) uni_cmd->aucTlvBuffer;
@@ -5932,7 +5932,7 @@ uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 	clean_tag->ucHwBssIndex = cmd->ucBssIndex;
 	clean_tag++;
 
-	DBGLOG(RX, INFO, "Number of address[%d] config_tag[%p]",
+	DBGLOG(RX, TRACE, "Number of address[%d] config_tag[%p]",
 		cmd->u4NumOfGroupAddr, clean_tag);
 
 	/* Fill-in config tag*/
@@ -5946,7 +5946,7 @@ uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		config_tag->ucEntryAdd = TRUE;
 		COPY_MAC_ADDR(config_tag->aucMacAddr, cmd->arAddress[ucIdx]);
 	}
-	DBGLOG_MEM8(NIC, INFO, uni_cmd->aucTlvBuffer,
+	DBGLOG_MEM8(NIC, TRACE, uni_cmd->aucTlvBuffer,
 		(sizeof(struct UNI_CMD_MUAR_CLEAN_PARAM) +
 		sizeof(struct UNI_CMD_MUAR_ENTRY_PARAM) * cmd->u4NumOfGroupAddr));
 

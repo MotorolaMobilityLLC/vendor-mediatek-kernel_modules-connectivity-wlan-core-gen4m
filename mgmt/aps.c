@@ -755,7 +755,7 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_GBAND_COEX_DOWNGRADE / 100);
 #endif
 
-	DBGLOG(APS, INFO, "BSS["MACSTR
+	DBGLOG(APS, TRACE, "BSS["MACSTR
 		"] EST:%d ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d]\n",
 		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
 		slope, rcpi, tput, airTime, slot, fgIsGBandCoex);
@@ -1305,7 +1305,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		",TPUT[%d]%s\n"
 
-	DBGLOG(APS, INFO,
+	DBGLOG(APS, TRACE,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID),
 		u2ScoreTotal, apucBandStr[prBssDesc->eBand],
