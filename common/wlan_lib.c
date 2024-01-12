@@ -7873,10 +7873,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->fgSwRxReordering = wlanCfgGetUint32(prAdapter,
 					"SwRxReordering", FEATURE_ENABLED);
-
+#if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,
 					"BaShortMissTimeoutMs",
 					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT);
+#endif
 	prWifiVar->u4BaMissTimeoutMs = wlanCfgGetUint32(prAdapter,
 					"BaMissTimeoutMs",
 					QM_RX_BA_ENTRY_MISS_TIMEOUT_MS);
@@ -12967,7 +12968,9 @@ static int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, uint32_t *prRxV,
 	struct ADAPTER *prAdapter;
 	struct RxRateInfo rRxRateInfo = {0};
 	int32_t rv;
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct CHIP_DBG_OPS *prChipDbg;
+#endif
 
 	if (pu4CurRate)
 		*pu4CurRate = 0;
@@ -12977,13 +12980,18 @@ static int wlanGetRxRate(IN struct GLUE_INFO *prGlueInfo, uint32_t *prRxV,
 		*prRxRateInfo = (const struct RxRateInfo){0};
 	prAdapter = prGlueInfo->prAdapter;
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prChipDbg = prAdapter->chip_info->prDebugOps;
+
 	if (prChipDbg && prChipDbg->get_rx_rate_info) {
 		rv = prChipDbg->get_rx_rate_info(prRxV, &rRxRateInfo);
 
 		if (rv < 0)
 			goto errhandle;
 	}
+#else
+	goto errhandle;
+#endif
 
 	if (prRxRateInfo)
 		*prRxRateInfo = rRxRateInfo;
@@ -13140,7 +13148,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 
-#if CFG_SUPPORT_DATA_STALL
+#if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
 	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo, ucBssIndex);
 #endif
 
@@ -13224,7 +13232,7 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-#if CFG_SUPPORT_DATA_STALL
+#if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx)
 {

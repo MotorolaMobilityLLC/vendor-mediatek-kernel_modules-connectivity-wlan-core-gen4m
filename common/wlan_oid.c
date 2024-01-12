@@ -4443,6 +4443,8 @@ wlanoidQueryCurrentAddr(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 } /* wlanoidQueryCurrentAddr */
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+
 /*----------------------------------------------------------------------------*/
 /*! \brief  This routine is called to query NIC link speed.
  *
@@ -4579,6 +4581,7 @@ wlanoidQueryLinkSpeedEx(IN struct ADAPTER *prAdapter,
 					pvQueryBuffer, u4QueryBufferLen);
 	}
 }
+#endif
 
 #if CFG_REPORT_MAX_TX_RATE
 uint32_t

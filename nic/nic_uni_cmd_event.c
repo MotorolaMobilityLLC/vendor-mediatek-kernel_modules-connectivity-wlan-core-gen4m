@@ -165,7 +165,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_NVRAM_SETTINGS] = nicUniCmdSetNvramSettings,
 	[CMD_ID_TEST_CTRL] = nicUniCmdTestmodeCtrl,
 	[CMD_ID_ACCESS_RX_STAT] = nicUniCmdTestmodeRxStat,
+#if CFG_SUPPORT_LOWLATENCY_MODE
 	[CMD_ID_SET_LOW_LATENCY_MODE] = nicUniCmdNotSupport,
+#endif
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdNotSupport,
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
@@ -6823,6 +6825,7 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 
 void nicUniEventPhyIcsRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
+#if CFG_SUPPORT_PHY_ICS
 	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
@@ -6848,6 +6851,7 @@ void nicUniEventPhyIcsRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			break;
 		}
 	}
+#endif
 }
 
 void nicUniEventRfTestHandler(IN struct ADAPTER
