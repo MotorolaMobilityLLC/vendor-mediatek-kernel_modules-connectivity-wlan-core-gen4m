@@ -5006,6 +5006,43 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 	uint16_t u2SubTypeVersion = 0;
 
 	switch (ucElemIdType) {
+	case ELEM_ID_SSID:
+		{
+			if (SSID_IE(pucIEBuf)->ucLength > 7) {
+				for ((*ucBssIdx) = 0;
+					(*ucBssIdx) < prAdapter->ucHwBssIdNum;
+					(*ucBssIdx)++) {
+					*prP2pBssInfo =
+						GET_BSS_INFO_BY_INDEX(
+							prAdapter, *ucBssIdx);
+					if (!(*prP2pBssInfo))
+						continue;
+					if (EQUAL_SSID(
+						(*prP2pBssInfo)->aucSSID,
+						(*prP2pBssInfo)->ucSSIDLen,
+						SSID_IE(pucIEBuf)->aucSSID,
+						SSID_IE(pucIEBuf)->ucLength)) {
+						break;
+					}
+				}
+				if ((*ucBssIdx) == prAdapter->ucP2PDevBssIdx)
+					*prP2pBssInfo =
+						GET_BSS_INFO_BY_INDEX(
+							prAdapter, *ucBssIdx);
+			} else {
+				*prP2pBssInfo =
+					GET_BSS_INFO_BY_INDEX(
+						prAdapter,
+						prAdapter->ucP2PDevBssIdx);
+				COPY_SSID(
+					(*prP2pBssInfo)->aucSSID,
+					(*prP2pBssInfo)->ucSSIDLen,
+					SSID_IE(pucIEBuf)->aucSSID,
+					SSID_IE(pucIEBuf)->ucLength);
+
+			}
+		}
+		break;
 	case ELEM_ID_VENDOR:
 		if (rsnParseCheckForWFAInfoElem(prAdapter,
 			pucIEBuf, &ucOuiType, &u2SubTypeVersion)) {
