@@ -171,6 +171,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
+static void mt6653_set_crypto(struct ADAPTER *prAdapter);
 static void mt6653_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
 	uint32_t sec,
 	uint32_t usec);
@@ -1126,6 +1127,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
 	.checkbushang = mt6653_CheckBusHang,
+	.setCrypto = mt6653_set_crypto,
 	.rEmiInfo = {
 #if CFG_MTK_ANDROID_EMI
 		.type = EMI_ALLOC_TYPE_LK,
@@ -2897,6 +2899,14 @@ static void mt6653WfdmaRxRingExtCtrl(
 #if CFG_MTK_WIFI_WFDMA_WB
 	mt6653WfdmaRxRingWbExtCtrl(prGlueInfo, prRxRing, index);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+}
+
+static void mt6653_set_crypto(struct ADAPTER *prAdapter)
+{
+	if (!prAdapter->fgIsWiFiOnDrvOwn)
+		HAL_MCR_WR(prAdapter,
+			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_SET_ADDR,
+			BIT(0));
 }
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
