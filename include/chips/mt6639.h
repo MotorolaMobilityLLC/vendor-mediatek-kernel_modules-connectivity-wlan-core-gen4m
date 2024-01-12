@@ -22,15 +22,17 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define CONN_INFRA_CFG_BASE					0x830C0000
-#define CONNAC3X_CONN_CFG_ON_BASE				0x7C060000
-#define MCU_SW_CR_BASE						0x7C05B100
-#define MT6639_TX_DESC_APPEND_LENGTH				32
-#define MT6639_HIF_TX_DESC_APPEND_LENGTH			44
-#define MT6639_RX_INIT_DESC_LENGTH				32
-#define MT6639_RX_DESC_LENGTH					32
-#define MT6639_CHIP_ID						0x6639
-#define MT6639_CONNINFRA_VERSION_ID				0x03010001
+#define CONN_INFRA_CFG_BASE                 0x830C0000
+#define CONNAC3X_CONN_CFG_ON_BASE           0x7C060000
+#define MCU_SW_CR_BASE                      0x7C05B100
+#define MT6639_TX_DESC_APPEND_LENGTH        32
+#define MT6639_HIF_TX_DESC_APPEND_LENGTH    44
+#define MT6639_RX_INIT_DESC_LENGTH          32
+#define MT6639_RX_DESC_LENGTH               32
+#define MT6639_CHIP_ID                      0x6639
+#define MT6639_CONNINFRA_VERSION_ID         0x03010001
+#define USB_VND_PWR_ON_ADDR                 (MCU_SW_CR_BASE + 0x20)
+#define USB_VND_PWR_ON_ACK_BIT              BIT(0)
 #if defined(_HIF_USB) /* TODO */
 #define CONNAC3X_TOP_HCR					0x70010200
 #define CONNAC3X_TOP_HVR					0x70010204

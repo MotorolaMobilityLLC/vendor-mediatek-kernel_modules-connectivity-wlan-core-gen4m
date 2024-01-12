@@ -1128,6 +1128,21 @@ do { \
 		*_pfgResult = TRUE; \
 } while (0)
 
+#define HAL_VDR_PWR_ON_READY_CHECK(_prAdapter, _pfgResult) \
+do { \
+	struct mt66xx_chip_info *prChipInfo = NULL; \
+	uint32_t u4Value = 0; \
+	if (!_prAdapter->chip_info) \
+		ASSERT(0); \
+	*_pfgResult = FALSE; \
+	prChipInfo = _prAdapter->chip_info; \
+	HAL_MCR_RD(_prAdapter, prChipInfo->vdr_pwr_on, &u4Value); \
+	if ((u4Value & prChipInfo->vdr_pwr_on_chk_bit) \
+		 == prChipInfo->vdr_pwr_on_chk_bit) \
+		*_pfgResult = TRUE; \
+} while (0)
+
+
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	struct mt66xx_chip_info *prChipInfo = NULL; \
