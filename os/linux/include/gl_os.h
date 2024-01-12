@@ -1435,6 +1435,8 @@ extern const uint8_t *kalFindIeMatchMask(uint8_t eid,
 				int match_len, int match_offset,
 				const uint8_t *match_mask);
 
+extern const uint8_t *kalFindVendorIe(uint32_t oui, int type,
+				const uint8_t *ies, int len);
 
 void wlanNvramSetState(enum ENUM_NVRAM_STATE state);
 enum ENUM_NVRAM_STATE wlanNvramGetState(void);

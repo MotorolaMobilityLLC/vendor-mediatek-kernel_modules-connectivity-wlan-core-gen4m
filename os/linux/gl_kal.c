@@ -8767,6 +8767,25 @@ const uint8_t *kalFindIeMatchMask(uint8_t eid,
 	return NULL;
 }
 
+const uint8_t *kalFindVendorIe(uint32_t oui, int type,
+				const uint8_t *ies, int len)
+{
+	const uint8_t *ie;
+	uint8_t match[] = {oui >> 16, oui >> 8, oui, type};
+	int match_len = type < 0 ? 3 : sizeof(match);
+
+	if (WARN_ON(type > 0xff))
+		return NULL;
+
+	ie = kalFindIeMatchMask(ELEM_ID_VENDOR, ies, len, match,
+		match_len, 2, NULL);
+
+	if (ie && (ie[1] < 4))
+		return NULL;
+
+	return ie;
+}
+
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...)
 {
 	int retval;
