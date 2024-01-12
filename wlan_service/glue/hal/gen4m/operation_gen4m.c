@@ -241,6 +241,11 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR4 = 162,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR5 = 163,
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR6 = 164,
+	RF_AT_FUNCID_SET_SECURITY_MODE = 165,
+	RF_AT_FUNCID_SET_LP_MODE = 166,
+
+	/* Set HW TX enable */
+	RF_AT_FUNCID_SET_HWTX_MODE = 167
 };
 
 /* Command */
@@ -1216,6 +1221,8 @@ s_int32 mt_op_start_tx(
 		RF_AT_FUNCID_GI, configs->sgi);
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_NSS, configs->nss);
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_HWTX_MODE, winfos->hw_tx_enable);
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_COMMAND, RF_AT_COMMAND_STARTTX);
 
