@@ -1546,6 +1546,18 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 static void p2pFuncStartGOBcnImpl(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
+	struct WIFI_VAR *prWifiVar;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
+	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
+	uint8_t ucRoleIdx;
+
+	ucRoleIdx = prBssInfo->u4PrivateData;
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pSpecificBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	prFilsInfo = &prP2pSpecificBssInfo->rFilsInfo;
+	prUnsolProbeInfo = &prP2pSpecificBssInfo->rUnsolProbeInfo;
+
 	/* 4 <3.2> Reset HW TSF Update Mode and Beacon Mode */
 	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 
@@ -1554,15 +1566,6 @@ static void p2pFuncStartGOBcnImpl(struct ADAPTER *prAdapter,
 	 */
 	bssUpdateBeaconContent(prAdapter,
 		prBssInfo->ucBssIndex);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
-		/* Update unsolicited probe response as beacon */
-		bssUpdateBeaconContentEx(prAdapter,
-			prBssInfo->ucBssIndex,
-			IE_UPD_METHOD_UNSOL_PROBE_RSP);
-	}
-#endif
 
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
 	if (p2pFuncProbeRespUpdate(prAdapter,
@@ -1573,6 +1576,25 @@ static void p2pFuncStartGOBcnImpl(struct ADAPTER *prAdapter,
 			WLAN_STATUS_FAILURE) {
 		DBGLOG(P2P, ERROR,
 			"Update probe resp IEs fail!\n");
+	}
+#endif
+
+	if (prFilsInfo->fgValid) {
+		nicUpdateFilsDiscIETemplate(prAdapter,
+					    prBssInfo->ucBssIndex,
+					    prFilsInfo->u4MaxInterval,
+					    prFilsInfo->u4MinInterval,
+					    prFilsInfo->aucIEBuf,
+					    prFilsInfo->u4Length);
+	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssInfo->eBand == BAND_6G &&
+		 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+		  prUnsolProbeInfo->fgValid)) {
+		/* Update unsolicited probe response as beacon */
+		bssUpdateBeaconContentEx(prAdapter,
+					 prBssInfo->ucBssIndex,
+					 IE_UPD_METHOD_UNSOL_PROBE_RSP);
 	}
 #endif
 }
@@ -2398,12 +2420,15 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo)
 {
-
 	struct GLUE_INFO *prGlueInfo;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
-	uint8_t role_idx = 0;
+	struct WIFI_VAR *prWifiVar;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
+	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
+	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
+	uint8_t ucRoleIdx;
 	u_int8_t fgIsCrossBand = FALSE;
 	u_int8_t fgIsPureAp = TRUE;
 
@@ -2411,6 +2436,12 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
 		return;
 	}
+
+	ucRoleIdx = prBssInfo->u4PrivateData;
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucRoleIdx];
+	prFilsInfo = &prP2pSpecBssInfo->rFilsInfo;
+	prUnsolProbeInfo = &prP2pSpecBssInfo->rUnsolProbeInfo;
 
 	if (prBssInfo->eBand != prP2pChnlReqInfo->eBand)
 		fgIsCrossBand = TRUE;
@@ -2494,12 +2525,22 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	else if (rlmUpdateParamsForAP(prAdapter, prBssInfo, FALSE) == FALSE)
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 
+	if (prFilsInfo->fgValid) {
+		nicUpdateFilsDiscIETemplate(prAdapter,
+					    prBssInfo->ucBssIndex,
+					    prFilsInfo->u4MaxInterval,
+					    prFilsInfo->u4MinInterval,
+					    prFilsInfo->aucIEBuf,
+					    prFilsInfo->u4Length);
+	}
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prBssInfo->eBand == BAND_6G) {
+	else if (prBssInfo->eBand == BAND_6G &&
+		 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+		  prUnsolProbeInfo->fgValid)) {
 		/* Update unsolicited probe response as beacon */
 		bssUpdateBeaconContentEx(prAdapter,
-			prBssInfo->ucBssIndex,
-			IE_UPD_METHOD_UNSOL_PROBE_RSP);
+					 prBssInfo->ucBssIndex,
+					 IE_UPD_METHOD_UNSOL_PROBE_RSP);
 	}
 #endif
 
@@ -2555,11 +2596,10 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 			prBssInfo->u4PrivateData);
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	role_idx = prP2pRoleFsmInfo->ucRoleIndex;
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 	wlanUpdateDfsChannelTable(prGlueInfo,
-		role_idx,
+		ucRoleIdx,
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth,
 		prBssInfo->eBssSCO,
@@ -2575,12 +2615,8 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	/* Down the flag */
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
 #if CFG_SUPPORT_P2P_ECSA
-	prAdapter
-		->rWifiVar.prP2pSpecificBssInfo[role_idx]
-		->fgEcsa = FALSE;
-	prAdapter
-		->rWifiVar.prP2pSpecificBssInfo[role_idx]
-		->ucEcsaBw = 0;
+	prP2pSpecBssInfo->fgEcsa = FALSE;
+	prP2pSpecBssInfo->ucEcsaBw = 0;
 #endif
 #if CFG_SUPPORT_DBDC
 	/* Check DBDC status */
@@ -2592,20 +2628,13 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	cnmIdcSwitchSapChannel(prAdapter);
 #endif
-	if (prAdapter->rWifiVar
-		.prP2pSpecificBssInfo[role_idx]
-		->fgIsRddOpchng == TRUE) {
+	if (prP2pSpecBssInfo->fgIsRddOpchng == TRUE) {
 		cnmOpmodeEventHandler(prAdapter,
-			prAdapter->rWifiVar
-			.prP2pSpecificBssInfo[role_idx]
-			->prRddPostOpchng);
-		prAdapter->rWifiVar
-			.prP2pSpecificBssInfo[role_idx]
-			->fgIsRddOpchng = FALSE;
-		kalMemFree(prAdapter->rWifiVar
-			.prP2pSpecificBssInfo[role_idx]
-			->prRddPostOpchng,
-			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+			prP2pSpecBssInfo->prRddPostOpchng);
+		prP2pSpecBssInfo->fgIsRddOpchng = FALSE;
+		kalMemFree(prP2pSpecBssInfo->prRddPostOpchng,
+			VIR_MEM_TYPE,
+			sizeof(struct WIFI_EVENT) +
 			sizeof(struct EVENT_OPMODE_CHANGE));
 	}
 } /* p2pFuncDfsSwitchCh */
@@ -9044,4 +9073,122 @@ void p2pFunMulAPAgentBssStatusNotification(
 	kalMemFree(prBssReport, VIR_MEM_TYPE, sizeof(*prBssReport));
 }
 #endif /* CFG_AP_80211KVR_INTERFACE */
+
+uint32_t p2pFuncStoreFilsInfo(struct ADAPTER *prAdapter,
+	struct MSG_P2P_FILS_DISCOVERY_UPDATE *prMsg,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
+
+	if (!prMsg || !prMsg->u4Length || !prMsg->prBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo
+			[prP2pBssInfo->u4PrivateData];
+	prFilsInfo = &prSpecBssInfo->rFilsInfo;
+
+	DBGLOG(P2P, INFO, "[FILS_DISC] bss[%d]max[%d]min[%d]\n",
+		prP2pBssInfo->ucBssIndex,
+		prMsg->u4MaxInterval,
+		prMsg->u4MinInterval);
+	DBGLOG_MEM8(P2P, TRACE,
+		prMsg->prBuffer,
+		prMsg->u4Length);
+	prFilsInfo->u4MaxInterval = prMsg->u4MaxInterval;
+	prFilsInfo->u4MinInterval = prMsg->u4MinInterval;
+	prFilsInfo->u4Length = prMsg->u4Length;
+	kalMemCopy(prFilsInfo->aucIEBuf,
+		   prMsg->prBuffer,
+		   prMsg->u4Length);
+
+	prFilsInfo->fgValid = TRUE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void p2pFuncClearFilsInfo(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return;
+
+	DBGLOG(P2P, INFO, "ucBssIndex: %d\n",
+		ucBssIndex);
+
+	prSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo
+			[prP2pBssInfo->u4PrivateData];
+	prFilsInfo = &prSpecBssInfo->rFilsInfo;
+
+	prFilsInfo->fgValid = FALSE;
+	prFilsInfo->u4Length = 0;
+}
+
+uint32_t p2pFuncStoreUnsolProbeInfo(struct ADAPTER *prAdapter,
+	struct MSG_P2P_UNSOL_PROBE_UPDATE *prMsg,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
+
+	if (!prMsg || !prMsg->u4Length || !prMsg->prBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return WLAN_STATUS_INVALID_DATA;
+
+	prSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo
+			[prP2pBssInfo->u4PrivateData];
+	prUnsolProbeInfo = &prSpecBssInfo->rUnsolProbeInfo;
+
+	DBGLOG(P2P, INFO, "[UNSOL_PROBE] bss[%d]interval[%d]\n",
+		prP2pBssInfo->ucBssIndex,
+		prMsg->u4Interval);
+	DBGLOG_MEM8(P2P, TRACE,
+		prMsg->prBuffer,
+		prMsg->u4Length);
+	prUnsolProbeInfo->u4Interval = prMsg->u4Interval;
+	prUnsolProbeInfo->u4Length = prMsg->u4Length;
+	kalMemCopy(prUnsolProbeInfo->aucIEBuf,
+		   prMsg->prBuffer,
+		   prMsg->u4Length);
+
+	prUnsolProbeInfo->fgValid = TRUE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void p2pFuncClearUnsolProbeInfo(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prP2pBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prSpecBssInfo;
+	struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return;
+
+	DBGLOG(P2P, INFO, "ucBssIndex: %d\n",
+		ucBssIndex);
+
+	prSpecBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo
+			[prP2pBssInfo->u4PrivateData];
+	prUnsolProbeInfo = &prSpecBssInfo->rUnsolProbeInfo;
+
+	prUnsolProbeInfo->fgValid = FALSE;
+	prUnsolProbeInfo->u4Length = 0;
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

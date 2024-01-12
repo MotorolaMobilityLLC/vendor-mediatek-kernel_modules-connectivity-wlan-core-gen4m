@@ -4007,6 +4007,15 @@ static void wlanCreateWirelessDevice(void)
 	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_FILS_SK_OFFLOAD);
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
+#if KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE
+	wiphy_ext_feature_set(prWiphy,
+			      NL80211_EXT_FEATURE_FILS_DISCOVERY);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	wiphy_ext_feature_set(prWiphy,
+			      NL80211_EXT_FEATURE_UNSOL_BCAST_PROBE_RESP);
+#endif
+#endif
+
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) /

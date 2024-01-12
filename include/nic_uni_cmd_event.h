@@ -318,6 +318,7 @@ enum ENUM_UNI_CMD_BSSINFO_TAG {
 	UNI_CMD_BSSINFO_TAG_PM_DISABLE = 0x1B,
 	UNI_CMD_BSSINFO_TAG_MAX_IDLE_PERIOD = 0x1D,
 	UNI_CMD_BSSINFO_TAG_EHT = 0x1E,
+	UNI_CMD_BSSINFO_TAG_FILS_DISCOVERY = 0x22,
 	UNI_CMD_BSSINFO_NUM
 };
 
@@ -453,6 +454,17 @@ struct UNI_CMD_BSSINFO_BCN_CONTENT {
 	uint8_t  ucAction;
 	uint8_t  aucPktContentType;
 	uint16_t u2PktLength;
+	uint8_t  aucPktContent[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_BSSINFO_FILS_REQ {
+	uint16_t u2Tag;       /* Tag = 0x1F */
+	uint16_t u2Length;
+	uint32_t u4MinInterval;
+	uint32_t u4MaxInterval;
+	uint16_t u2PktLength;
+	uint8_t aucReserved[2];
 	uint8_t  aucPktContent[0];
 } __KAL_ATTRIB_PACKED__;
 
@@ -7375,6 +7387,9 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdFilsDiscovery(struct ADAPTER *ad,
+		uint8_t bss_idx, uint32_t max_interval,
+		uint32_t min_interval, uint8_t *ie, uint16_t ie_len);
 uint32_t nicUniCmdPmDisable(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdPmEnable(struct ADAPTER *ad,

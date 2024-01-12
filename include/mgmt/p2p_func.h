@@ -529,3 +529,17 @@ struct BSS_INFO *p2pGetAisBssByBand(
 struct BSS_INFO *p2pGetAisConnectedBss(
 	struct ADAPTER *prAdapter);
 
+uint32_t p2pFuncStoreFilsInfo(struct ADAPTER *prAdapter,
+	struct MSG_P2P_FILS_DISCOVERY_UPDATE *prMsg,
+	uint8_t ucBssIndex);
+
+void p2pFuncClearFilsInfo(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+uint32_t p2pFuncStoreUnsolProbeInfo(struct ADAPTER *prAdapter,
+	struct MSG_P2P_UNSOL_PROBE_UPDATE *prMsg,
+	uint8_t ucBssIndex);
+
+void p2pFuncClearUnsolProbeInfo(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+

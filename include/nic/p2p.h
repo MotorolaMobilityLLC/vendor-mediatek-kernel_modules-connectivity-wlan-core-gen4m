@@ -293,6 +293,21 @@ struct NOA_TIMING {
 	uint32_t u4StartTime;	/* Start Time */
 };
 
+struct P2P_FILS_DISCOVERY_INFO {
+	u_int8_t fgValid;
+	uint32_t u4MinInterval;
+	uint32_t u4MaxInterval;
+	uint32_t u4Length;
+	uint8_t aucIEBuf[MAX_IE_LENGTH];
+};
+
+struct P2P_UNSOL_PROBE_RESP_INFO {
+	u_int8_t fgValid;
+	uint32_t u4Interval;
+	uint32_t u4Length;
+	uint8_t aucIEBuf[MAX_IE_LENGTH];
+};
+
 struct P2P_SPECIFIC_BSS_INFO {
 	/* For GO(AP) Mode - Compose TIM IE */
 	/*UINT_16 u2SmallestAID;*//* TH3 multiple P2P */
@@ -364,6 +379,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgEcsa;
 	u_int8_t ucEcsaBw;
 #endif
+	struct P2P_FILS_DISCOVERY_INFO rFilsInfo;
+	struct P2P_UNSOL_PROBE_RESP_INFO rUnsolProbeInfo;
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

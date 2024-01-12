@@ -476,6 +476,14 @@ nicUpdateBeaconIETemplate(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex, uint16_t u2Capability,
 			  uint8_t *aucIe, uint16_t u2IELen);
 
+uint32_t
+nicUpdateFilsDiscIETemplate(struct ADAPTER *prAdapter,
+			    uint8_t ucBssIndex,
+			    uint32_t u4MaxInterval,
+			    uint32_t u4MinInterval,
+			    uint8_t *aucIe,
+			    uint16_t u2IELen);
+
 uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #if (CFG_SUPPORT_802_11AX == 1)
