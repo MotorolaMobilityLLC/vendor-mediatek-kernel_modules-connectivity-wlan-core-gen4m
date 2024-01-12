@@ -1201,6 +1201,28 @@ struct MSDU_INFO *p2pFuncProcessAuth(
 	return prMgmtTxMsdu;
 #else
 	struct MSDU_INFO *prRetMsduInfo = NULL;
+	struct WLAN_AUTH_FRAME *prAuthFrame = prMgmtTxMsdu->prPacket;
+	struct MLD_STA_RECORD *prMldSta;
+	int32_t i4Offset;
+
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	i4Offset = sortGetPayloadOffset(prAdapter, prMgmtTxMsdu->prPacket);
+	if (i4Offset >= 0 && prMldSta) {
+		prAuthFrame = prMgmtTxMsdu->prPacket;
+		/*
+		 * 1. For SAE auth, assume ML IE is appended in wpa_supplicant
+		 * 2. For open auth, ML IE is only appended in NEW
+		 *    wpa_supplicant. For backward compatible, check ML IE in
+		 *    driver before append it.
+		 */
+		if ((prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE) ||
+		    (prAuthFrame->u2AuthAlgNum ==
+		     AUTH_ALGORITHM_NUM_OPEN_SYSTEM &&
+		     mldFindMlIE(prMgmtTxMsdu->prPacket + i4Offset,
+				 prMgmtTxMsdu->u2FrameLength - i4Offset,
+				 ML_CTRL_TYPE_BASIC)))
+			return prMgmtTxMsdu;
+	}
 
 	prRetMsduInfo = cnmMgtPktAlloc(prAdapter,
 		(int32_t) (prMgmtTxMsdu->u2FrameLength + /* incl. cookie */

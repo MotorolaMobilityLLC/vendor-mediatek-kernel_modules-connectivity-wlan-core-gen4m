@@ -46,10 +46,6 @@ void p2pMldBssUninit(struct ADAPTER *prAdapter,
 	}
 }
 
-#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
-
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 void p2pLinkInitGCRole(struct ADAPTER *prAdapter)
 {
 	struct GL_P2P_INFO *prP2pInfo = NULL;
@@ -143,9 +139,47 @@ uint8_t p2pGetGCBssNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 
 	return num;
 }
-#endif
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static uint8_t *p2pLinkGetAuthSaeCommitIes(struct WLAN_AUTH_FRAME *prAuthFrame,
+	uint16_t u2IELength)
+{
+	uint8_t *pucIE = prAuthFrame->aucInfoElem;
+	uint16_t u2Group, u2Offset = 0;
+
+	if (prAuthFrame->u2StatusCode != WLAN_STATUS_SAE_HASH_TO_ELEMENT)
+		return NULL;
+
+	if (u2IELength < 2)
+		return NULL;
+
+	/* SAE H2E commit message (group, scalar, FFE) */
+	WLAN_GET_FIELD_16(&prAuthFrame->aucInfoElem[0], &u2Group);
+	switch (u2Group) {
+	case 19:
+		u2Offset = 2 + 32 + 32 * 2;
+		break;
+	case 20:
+		u2Offset = 2 + 48 + 48 * 2;
+		break;
+	case 21:
+		u2Offset = 2 + 66 + 66 * 2;
+		break;
+	default:
+		DBGLOG(AAA, WARN,
+			"Unsupported group(%u)\n",
+			u2Group);
+		return NULL;
+	}
+
+	if (u2Offset > u2IELength) {
+		DBGLOG(AAA, WARN, "Invalid offset %u, group %u\n",
+			u2Offset, u2Group);
+		return NULL;
+	}
+
+	return pucIE + u2Offset;
+}
+
 uint32_t p2pLinkProcessRxAuthReqFrame(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
@@ -156,20 +190,25 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	struct WLAN_AUTH_FRAME *prAuthFrame = NULL;
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
-	uint8_t *pucIE;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct MLD_STA_RECORD *prMldStarec = NULL;
+	uint8_t *pucIE = NULL;
 	uint16_t u2IELength;
 	const uint8_t *ml = NULL;
 	uint16_t u2RxFrameCtrl;
+	u_int8_t fgMldType;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	if (IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo))
-		return WLAN_STATUS_SUCCESS;
+		goto exit;
 
 	if (!prSwRfb || !prBssInfo || !prStaRec || !prStaRec->fgIsInUse) {
 		DBGLOG(AAA, WARN,
 			"Invalid parameters swrfb=%p, bss=%p, starec=%p, used=%d, skip!\n",
 			prSwRfb, prBssInfo, prStaRec,
 			prStaRec ? prStaRec->fgIsInUse : -1);
-		return WLAN_STATUS_FAILURE;
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
 	if (prSwRfb->u2PacketLen <
@@ -180,7 +219,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 			prSwRfb->u2PacketLen);
 		DBGLOG_MEM8(AAA, WARN, prSwRfb->pvHeader,
 			prSwRfb->u2PacketLen);
-		return WLAN_STATUS_FAILURE;
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
@@ -191,13 +231,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 
 	if (u2RxFrameCtrl != MAC_FRAME_AUTH) {
 		DBGLOG(AAA, WARN, "Incorrect frame type, failure!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* sae auth frames are handled by hostapd, delay register until assoc */
-	if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
-		DBGLOG(AAA, INFO, "auth_alg=SAE, handle ml ie in hostapd\n");
-		return WLAN_STATUS_SUCCESS;
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
 	u2IELength = prSwRfb->u2PacketLen -
@@ -205,34 +240,61 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		aucInfoElem[0]);
 	if (u2IELength > 0) {
 		pucIE = prAuthFrame->aucInfoElem;
-		ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
+		if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_SAE) {
+			DBGLOG_MEM8(AAA, TRACE, prSwRfb->pvHeader,
+				prSwRfb->u2PacketLen);
+			if (prAuthFrame->u2AuthTransSeqNo == 1)
+				pucIE = p2pLinkGetAuthSaeCommitIes(prAuthFrame,
+					u2IELength);
+			else
+				goto exit;
+		}
 	}
+	if (!pucIE)
+		goto exit;
 
-	if (ml) {
-		MLD_PARSE_BASIC_MLIE(prMlInfo, ml,
-			IE_SIZE(ml), /* no need fragment */
-			prAuthFrame->aucBSSID,
-			u2RxFrameCtrl);
-	} else {
-		DBGLOG(AAA, INFO, "no ml ie\n");
-		return WLAN_STATUS_SUCCESS;
-	}
+	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
+	if (!ml)
+		goto exit;
 
+	MLD_PARSE_BASIC_MLIE(prMlInfo, ml,
+		IE_SIZE(ml), /* no need fragment */
+		prAuthFrame->aucBSSID,
+		u2RxFrameCtrl);
 	if (!prMlInfo->ucValid) {
-		DBGLOG(AAA, INFO, "Invalid mld_info, reject!\n");
-		return WLAN_STATUS_NOT_SUPPORTED;
+		DBGLOG(AAA, ERROR, "Invalid mld_info, reject!\n");
+		u4Status = WLAN_STATUS_NOT_SUPPORTED;
+		goto exit;
 	}
 
-	COPY_MAC_ADDR(prStaRec->aucMldAddr, prMlInfo->aucMldAddr);
+	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldStarec = mldStarecGetByMldAddr(prAdapter,
+		prMldBssInfo, prMlInfo->aucMldAddr);
+	if (!prMldStarec) {
+		prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo,
+			prMlInfo->aucMldAddr, fgMldType,
+			prMlInfo->u2EmlCap, prMlInfo->u2MldCap);
+		if (!prMldStarec) {
+			DBGLOG(AAA, ERROR, "Can't alloc mldstarec!\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
+		mldStarecRegister(prAdapter, prMldStarec, prStaRec,
+			prBssInfo->ucLinkIndex);
+		mldStarecSetSetupIdx(prAdapter, prStaRec);
+	}
 
-	return WLAN_STATUS_SUCCESS;
+exit:
+	return u4Status;
 }
 
 uint32_t p2pLinkProcessRxAssocReqFrame(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct STA_RECORD *prStaRec,
-	struct SW_RFB *prSwRfb)
+	struct SW_RFB *prSwRfb,
+	uint16_t *pu2StatusCode)
 {
 	struct WLAN_ASSOC_REQ_FRAME *prFrame = NULL;
 	struct MLD_STA_RECORD *prMldStarec = NULL;
@@ -245,7 +307,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	uint16_t u2IELength;
 	const uint8_t *ml;
 	uint16_t u2RxFrameCtrl;
-	uint8_t i, fgMldType;
+	uint8_t i;
 
 	if (!prAdapter || !prSwRfb || !prBssInfo) {
 		DBGLOG(AAA, WARN, "Invalid parameters, ignore pkt!\n");
@@ -288,31 +350,20 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	}
 
 	if (!prMlInfo->ucValid) {
-		DBGLOG(AAA, INFO, "Invalid mld_info, reject!\n");
-		return WLAN_STATUS_FAILURE;
+		DBGLOG(AAA, ERROR, "Invalid mld_info, reject!\n");
+		*pu2StatusCode = STATUS_CODE_DENIED_EXISTING_MLD_ASSOC;
+		return WLAN_STATUS_SUCCESS;
 	}
 
-	fgMldType = mldCheckMldType(prAdapter, pucIE, u2IELength);
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	prMldStarec = mldStarecGetByMldAddr(prAdapter,
 		prMldBssInfo, prMlInfo->aucMldAddr);
-	if (prMldStarec) {
-		DBGLOG(AAA, WARN, "MldStarec%d ucGroupMldId=%d already exist\n",
-			prMldStarec->ucIdx, prMldStarec->ucGroupMldId);
-		mldStarecFree(prAdapter, prMldStarec);
-	}
-
-	prMldStarec = mldStarecAlloc(prAdapter, prMldBssInfo,
-		prMlInfo->aucMldAddr, fgMldType,
-		prMlInfo->u2EmlCap, prMlInfo->u2MldCap);
 	if (!prMldStarec) {
-		DBGLOG(AAA, WARN, "Can't alloc mldstarec!\n");
-		return WLAN_STATUS_FAILURE;
+		DBGLOG(AAA, ERROR, "mld sta search failed, addr="MACSTR"\n",
+			MAC2STR(prMlInfo->aucMldAddr));
+		*pu2StatusCode = STATUS_CODE_DENIED_EXISTING_MLD_ASSOC;
+		return WLAN_STATUS_SUCCESS;
 	}
-
-	mldStarecRegister(prAdapter, prMldStarec, prStaRec,
-				prBssInfo->ucLinkIndex);
-	mldStarecSetSetupIdx(prAdapter, prStaRec);
 
 	if (prMlInfo->ucProfNum == 0) {
 		DBGLOG(AAA, INFO, "ml ie ["MACSTR"] without links\n",
@@ -399,7 +450,6 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 	return WLAN_STATUS_SUCCESS;
 }
-
 #endif
 
 void p2pTargetBssDescResetConnecting(

@@ -1409,9 +1409,12 @@ uint32_t assocProcessRxAssocReqFrame(
 
 	if (p2pLinkProcessRxAssocReqFrame(prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex),
-		prStaRec, prAssocReqSwRfb) != WLAN_STATUS_SUCCESS) {
+		prStaRec, prAssocReqSwRfb, pu2StatusCode) !=
+		WLAN_STATUS_SUCCESS) {
 		DBGLOG(AAA, WARN, "Link process rx assoc req failed\n");
 		return WLAN_STATUS_FAILURE;
+	} else if (*pu2StatusCode != STATUS_CODE_SUCCESSFUL) {
+		return WLAN_STATUS_SUCCESS;
 	}
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
@@ -1468,29 +1471,29 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	struct STA_RECORD *prStaRec,
 	uint16_t *pu2StatusCode)
 {
-	 struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
-	 struct BSS_INFO *prBssInfo;
-	 struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
+	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
+	struct BSS_INFO *prBssInfo;
+	struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
-	 struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *)NULL;
+	struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *)NULL;
 #endif
-	 struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate =
-		 (struct IE_SUPPORTED_RATE_IOT *)NULL;
-	 struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =
-		 (struct IE_EXT_SUPPORTED_RATE *)NULL;
-	 struct WIFI_VAR *prWifiVar = NULL;
-	 uint8_t *pucIE, *pucIEStart;
-	 uint16_t u2IELength;
-	 uint16_t u2Offset = 0;
-	 uint16_t u2StatusCode = STATUS_CODE_SUCCESSFUL;
-	 uint16_t u2RxFrameCtrl;
-	 uint16_t u2BSSBasicRateSet;
-	 uint8_t ucFixedFieldLength;
-	 u_int8_t fgIsUnknownBssBasicRate;
-	 uint32_t i;
-	 u_int8_t fgIsTKIP = FALSE;
-	 enum ENUM_BAND eBand = 0;
-	 struct RX_DESC_OPS_T *prRxDescOps;
+	struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate =
+		(struct IE_SUPPORTED_RATE_IOT *)NULL;
+	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =
+		(struct IE_EXT_SUPPORTED_RATE *)NULL;
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint8_t *pucIE, *pucIEStart;
+	uint16_t u2IELength;
+	uint16_t u2Offset = 0;
+	uint16_t u2StatusCode = STATUS_CODE_SUCCESSFUL;
+	uint16_t u2RxFrameCtrl;
+	uint16_t u2BSSBasicRateSet;
+	uint8_t ucFixedFieldLength;
+	u_int8_t fgIsUnknownBssBasicRate;
+	uint32_t i;
+	u_int8_t fgIsTKIP = FALSE;
+	enum ENUM_BAND eBand = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	prWifiVar = &(prAdapter->rWifiVar);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
