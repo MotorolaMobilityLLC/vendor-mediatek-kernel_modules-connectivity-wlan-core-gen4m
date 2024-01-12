@@ -2396,6 +2396,7 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t ucBssIndex;
 	uint32_t u4Flags;
+	uint8_t aucBssid[CFG_SCAN_SSID_MAX_NUM][MAC_ADDR_LEN];
 };
 
 /*--------------------------------------------------------------*/

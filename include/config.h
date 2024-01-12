@@ -633,7 +633,7 @@
  * we should set correct num when query of scan capability from FW is done
  */
 #define SCAN_CMD_EXT_SSID_NUM                   (0)
-#define SCAN_CMD_EXT_CHNL_NUM                   (0)
+#define SCAN_CMD_EXT_CHNL_NUM                   (32)
 #else
 #define SCAN_CMD_EXT_SSID_NUM                   (6)
 #define SCAN_CMD_EXT_CHNL_NUM                   (32)
