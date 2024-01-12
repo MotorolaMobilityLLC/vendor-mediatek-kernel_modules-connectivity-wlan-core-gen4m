@@ -1496,6 +1496,9 @@ void asicConnac2xDmashdlSetOptionalControl(
 bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter);
 int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info);
 int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int32_t fw_log_wifi_irq_handler(void);
+#endif
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 

@@ -566,6 +566,10 @@ void glBusFuncOff(void);
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
+#if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
+irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance);
+#endif
 #if CFG_MTK_MDDP_SUPPORT
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif

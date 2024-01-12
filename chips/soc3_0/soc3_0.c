@@ -1145,6 +1145,9 @@ struct ATE_OPS_T soc3_0_AteOps = {
 };
 #endif
 
+static struct FW_LOG_OPS soc3_0_fw_log_ops = {
+	.handler = fw_log_wifi_irq_handler,
+};
 
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
@@ -1218,6 +1221,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 		.type = EMI_ALLOC_TYPE_CONNINFRA,
 	},
 #endif
+	.fw_log_info = {
+		.ops = &soc3_0_fw_log_ops,
+	},
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
