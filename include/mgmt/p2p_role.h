@@ -115,6 +115,7 @@ struct MSG_P2P_BEACON_UPDATE {
 #if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
 	uint8_t *pucProbeRespIE;
 #endif
+	u_int8_t fgIsWepCipher;
 	uint8_t aucBuffer[1];	/* Header & Body & Extra IEs are put here. */
 };
 

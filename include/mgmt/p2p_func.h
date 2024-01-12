@@ -275,6 +275,8 @@ p2pFuncInitConnectionSettings(IN struct ADAPTER *prAdapter,
 u_int8_t p2pFuncParseCheckForP2PInfoElem(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucBuf, OUT uint8_t *pucOuiType);
 
+u_int8_t p2pFuncParseCheckForTKIPInfoElem(IN uint8_t *pucBuf);
+
 u_int8_t
 p2pFuncValidateProbeReq(IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags,

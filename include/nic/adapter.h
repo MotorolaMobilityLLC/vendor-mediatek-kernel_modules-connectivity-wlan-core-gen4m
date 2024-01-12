@@ -352,6 +352,7 @@ struct BSS_INFO {
 	uint8_t ucNonHTBasicPhyType;
 	/* The configuration of AdHoc/AP Mode. e.g. 11g or 11b */
 	uint8_t ucConfigAdHocAPMode;
+	u_int8_t fgIsWepCipherGroup;
 
 	/* For Infra/AP Mode, it is a threshold of Beacon Lost Count to
 	 *  confirm connection was lost
@@ -828,6 +829,14 @@ struct WIFI_VAR {
 	/* and secondary channel offset will align wifi.cfg */
 	/* Otherwise align cfg80211 */
 	uint8_t ucApChnlDefFromCfg;
+
+	/*
+	 * According TGn/TGac 4.2.44, AP should not connect
+	 * with TKIP client with HT/VHT capabilities. We leave
+	 * a wifi.cfg item for user to decide whether to
+	 * enable HT/VHT capabilities in that case
+	 */
+	uint8_t ucApAllowHtVhtTkip;
 
 	uint8_t ucNSS;
 

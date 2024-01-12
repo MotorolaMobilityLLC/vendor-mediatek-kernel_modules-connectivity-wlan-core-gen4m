@@ -3099,6 +3099,8 @@ void p2pRoleFsmRunEventBeaconUpdate(IN struct ADAPTER *prAdapter,
 		GET_BSS_INFO_BY_INDEX(prAdapter,
 			prRoleP2pFsmInfo->ucBssIndex);
 
+	prP2pBssInfo->fgIsWepCipherGroup = prBcnUpdateMsg->fgIsWepCipher;
+
 	prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
 
 	p2pFuncBeaconUpdate(prAdapter,

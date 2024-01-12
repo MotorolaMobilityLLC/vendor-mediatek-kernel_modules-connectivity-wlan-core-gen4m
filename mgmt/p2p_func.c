@@ -3316,6 +3316,40 @@ u_int8_t p2pFuncValidateAssocReq(IN struct ADAPTER *prAdapter,
 
 /*---------------------------------------------------------------------------*/
 /*!
+* @brief This function is used to check the TKIP IE
+*
+*
+* @return none
+*/
+/*----------------------------------------------------------------------------*/
+u_int8_t p2pFuncParseCheckForTKIPInfoElem(IN uint8_t *pucBuf)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
+	struct WPA_INFO_ELEM *prWpaIE = (struct WPA_INFO_ELEM *) NULL;
+	uint32_t u4GroupKeyCipher = 0;
+
+	if (pucBuf == NULL)
+		return FALSE;
+
+	prWpaIE = (struct WPA_INFO_ELEM *) pucBuf;
+
+	if (prWpaIE->ucLength <= ELEM_MIN_LEN_WFA_OUI_TYPE_SUBTYPE)
+		return FALSE;
+
+	if (kalMemCmp(prWpaIE->aucOui, aucWfaOui, sizeof(aucWfaOui)))
+		return FALSE;
+
+	WLAN_GET_FIELD_32(&prWpaIE->u4GroupKeyCipherSuite, &u4GroupKeyCipher);
+
+	if (prWpaIE->ucOuiType == VENDOR_OUI_TYPE_WPA &&
+		u4GroupKeyCipher == WPA_CIPHER_SUITE_TKIP)
+		return TRUE;
+	else
+		return FALSE;
+}				/* p2pFuncParseCheckForP2PInfoElem */
+
+/*---------------------------------------------------------------------------*/
+/*!
  * @brief This function is used to check the P2P IE
  *
  *
