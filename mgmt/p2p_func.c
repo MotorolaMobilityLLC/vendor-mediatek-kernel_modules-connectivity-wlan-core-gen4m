@@ -1516,6 +1516,7 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		/* Reset current OPMode */
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
+		prP2pBssInfo->u4RsnSelectedAKMSuite = 0;
 
 		/* Point StaRecOfAP to NULL when GC role stop Complete */
 		prP2pBssInfo->prStaRecOfAP = NULL;
@@ -1791,6 +1792,17 @@ SKIP_START_RDD:
 		if (prP2pChnlReqInfo->eBand == BAND_5G)
 			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 
+		if (prBssInfo &&
+			IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+				prAdapter->rWifiVar.prP2PConnSettings
+				[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+				prAdapter,
+				prBssInfo->ucBssIndex))
+			prAdapter->aprSapBssInfo[prBssInfo->u4PrivateData]
+				= prBssInfo;
+
 #if CFG_AP_80211KVR_INTERFACE
 		/* 5. BSS status notification */
 		p2pFunMulAPAgentBssStatusNotification(prAdapter,
@@ -1821,6 +1833,8 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 			&prAdapter->prGlueInfo->rChanNoiseGetInfoWork);
 #endif
 		u4ClientCount = bssGetClientCount(prAdapter, prP2pBssInfo);
+		prAdapter->aprSapBssInfo[prP2pBssInfo->u4PrivateData]
+			= NULL;
 
 		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		    && (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
@@ -7898,6 +7912,11 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 		(prAdapter->rPerMonitor.u4CurrPerfLevel > 1))
 		return FALSE;
 
+	if (!prAdapter->fgIsP2PRegistered ||
+		(prAdapter->rP2PNetRegState !=
+		ENUM_NET_REG_STATE_REGISTERED))
+		return FALSE;
+
 	bss = cnmGetSapBssInfo(prAdapter);
 	ucApForceSleep = prAdapter->rWifiVar.ucApForceSleep;
 	if (!bss)
@@ -8532,7 +8551,30 @@ void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
 	wlanCalculateAllChannelDirtiness(prAdapter);
 	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_ALL_CN);
 }
+#if CFG_ENABLE_CSA_BLOCK_SCAN
+uint8_t p2pFuncIsCsaBlockScan(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prP2pBssInfo =
+		(struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
+	ucBssIndex = p2pFuncGetCsaBssIndex();
+
+	prP2pBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return FALSE;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+						prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo)
+		return FALSE;
+	else
+		return timerPendingTimer(&prP2pRoleFsmInfo->rP2pCsaDoneTimer);
+}
+#endif
 enum ENUM_CHNL_SWITCH_POLICY
 p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
@@ -8579,6 +8621,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct LINK *prClientList;
 	struct STA_RECORD *prCurrStaRec;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 
 	DBGLOG(P2P, INFO, "bss index: %d, policy: %d\n", ucBssIdx, ePolicy);
 
@@ -8586,6 +8629,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 	prClientList = &prBssInfo->rStaRecOfClientList;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prAdapter, prBssInfo->u4PrivateData);
 	switch (ePolicy) {
 	case CHNL_SWITCH_POLICY_DEAUTH:
 		if (prClientList && prClientList->u4NumElem > 0) {
@@ -8643,6 +8688,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			nicFreq2ChannelNum(
 				prNewChannelInfo->u4CenterFreq1 * 1000);
 		prAdapter->rWifiVar.ucNewChannelS2 = 0;
+		p2pFunAbortOngoingScan(prAdapter);
 
 		/* Send Action Frames */
 		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
@@ -8654,7 +8700,11 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		 * reported once in the beacon.
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-
+#if CFG_ENABLE_CSA_BLOCK_SCAN
+		cnmTimerStartTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
+			SEC_TO_MSEC(7));
+#endif
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
 		break;

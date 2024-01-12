@@ -811,6 +811,20 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 	} else
 #endif
 	{
+#if CFG_ENABLE_CSA_BLOCK_SCAN
+		if (p2pFuncIsCsaBlockScan(prAdapter)) {
+			DBGLOG(OID, WARN,
+		       "Not to do scan during SAP CSA!!\n");
+			return WLAN_STATUS_FAILURE;
+		} else if (prAdapter->fgEnOnlineScan == TRUE) {
+			aisFsmScanRequestAdv(prAdapter, prScanRequest);
+		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex)
+				!= MEDIA_STATE_CONNECTED) {
+			aisFsmScanRequestAdv(prAdapter, prScanRequest);
+		} else
+			return WLAN_STATUS_FAILURE;
+#else
 		if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
@@ -819,6 +833,7 @@ wlanoidSetBssidListScanAdv(struct ADAPTER *prAdapter,
 			aisFsmScanRequestAdv(prAdapter, prScanRequest);
 		} else
 			return WLAN_STATUS_FAILURE;
+#endif
 	}
 	cnmTimerStartTimer(prAdapter,
 			   aisGetScanDoneTimer(prAdapter, ucBssIndex),

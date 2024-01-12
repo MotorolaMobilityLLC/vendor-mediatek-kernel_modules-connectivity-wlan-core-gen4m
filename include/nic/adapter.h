@@ -1681,6 +1681,8 @@ struct ADAPTER {
 	u_int8_t fgAllMulicastFilter;	/* mDNS filter used by OS */
 
 	struct BSS_INFO *aprBssInfo[MAX_BSSID_NUM + 1];
+	struct BSS_INFO *aprSapBssInfo[KAL_P2P_NUM];
+
 	uint8_t ucHwBssIdNum;
 	uint8_t ucWmmSetNum;
 	uint8_t ucWtblEntryNum;

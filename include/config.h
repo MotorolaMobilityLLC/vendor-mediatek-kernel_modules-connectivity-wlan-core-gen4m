@@ -937,6 +937,7 @@
 #define CFG_SUPPORT_SAP_DFS_CHANNEL             1
 #endif
 #define CFG_ENABLE_WIFI_DIRECT                  1
+#define CFG_ENABLE_CSA_BLOCK_SCAN               1
 
 /*------------------------------------------------------------------------------
  * Driver supports preferred frequency list for p2p operating channel
@@ -974,6 +975,7 @@
 #define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST     0
 #define CFG_SUPPORT_P2PGO_ACS                   0
 #define CFG_SUPPORT_WFD                         0
+#define CFG_ENABLE_CSA_BLOCK_SCAN               0
 
 #endif /* CFG_SUPPORT_AAA */
 
