@@ -1321,6 +1321,47 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint16_t u2TxChecksum;   /* bit0: IP, bit1: UDP, bit2: TCP */
 	uint8_t ucCtrlFlagAssertPath;
 	uint8_t aucPadding[3];
+
+/* register access command (0x0D) */
+struct UNI_CMD_ACCESS_REG
+{
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                              | ID  | structure
+        *   ---------------------------------|-----|--------------
+        *   UNI_CMD_ACCESS_REG_BASIC         | 0x0 | UNI_CMD_ACCESS_REG_BASIC_T
+        *   UNI_CMD_ACCESS_RF_REG_BASIC      | 0x1 | UNI_CMD_ACCESS_RF_REG_BASIC_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* Register access command TLV List */
+enum ENUM_UNI_CMD_ACCESS_REG_TAG
+{
+	UNI_CMD_ACCESS_REG_TAG_BASIC = 0,
+	UNI_CMD_ACCESS_REG_TAG_RF_REG_BASIC,
+	UNI_CMD_ACCESS_REG_TAG_NUM
+};
+
+struct UNI_CMD_ACCESS_REG_BASIC
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4Addr;
+	uint32_t u4Value;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_ACCESS_RF_REG_BASIC
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2WifiStream;
+	uint16_t u2Reserved;
+	uint32_t u4Addr;
+	uint32_t u4Value;
 } __KAL_ATTRIB_PACKED__;
 
 /* Chip Config set command (0x0E) */
@@ -2251,6 +2292,49 @@ struct UNI_EVENT_CMD_RESULT {
 	uint32_t u4Status;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_ACCESS_REG
+{
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+        *
+        *   TAG                              | ID  | structure
+        *   ---------------------------------|-----|---------------------------------
+        *   UNI_EVENT_ACCESS_REG_BASIC       | 0x0 | UNI_EVENT_ACCESS_REG_BASIC_T
+        *   UNI_EVENT_ACCESS_RF_REG_BASIC    | 0x1 | UNI_EVENT_ACCESS_RF_REG_BASIC_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* Register access event Tag */
+enum ENUM_UNI_EVENT_ACCESS_REG_TAG
+{
+	UNI_EVENT_ACCESS_REG_TAG_BASIC = 0,
+	UNI_EVENT_ACCESS_REG_TAG_RF_REG_BASIC,
+	UNI_EVENT_ACCESS_REG_TAG_NUM
+} __KAL_ATTRIB_PACKED__;
+
+/* Access Register (Tag0) */
+struct UNI_EVENT_ACCESS_REG_BASIC
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4Addr;
+	uint32_t u4Value;
+} __KAL_ATTRIB_PACKED__;
+
+/* Access RF address (Tag1) */
+struct UNI_EVENT_ACCESS_RF_REG_BASIC
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2WifiStream;
+	uint16_t u2Reserved;
+	uint32_t u4Addr;
+	uint32_t u4Value;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_CHIP_CONFIG
 {
 	/* fixed field */
@@ -2886,6 +2970,11 @@ uint32_t wlanSendSetQueryUniCmdAdv(IN struct ADAPTER *prAdapter,
 			IN uint32_t u4SetQueryBufferLen,
 			enum EUNM_CMD_SEND_METHOD eMethod);
 
+/*******************************************************************************
+ *                   Command
+ *******************************************************************************
+ */
+
 uint32_t nicUniCmdExtCommon(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdNotSupport(struct ADAPTER *ad,
@@ -2944,6 +3033,8 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateMuEdca(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdOffloadIPV4(struct ADAPTER *ad,
@@ -2953,6 +3044,11 @@ uint32_t nicUniCmdOffloadIPV6(struct ADAPTER *ad,
 uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
+/*******************************************************************************
+ *                   Event
+ *******************************************************************************
+ */
+
 void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
 			     IN OUT struct SW_RFB *prSwRfb);
 void nicUniCmdEventSetCommon(IN struct ADAPTER
@@ -2960,6 +3056,12 @@ void nicUniCmdEventSetCommon(IN struct ADAPTER
 	IN uint8_t *pucEventBuf);
 void nicUniCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 			    IN struct CMD_INFO *prCmdInfo);
+
+/*******************************************************************************
+ *                   Solicited Event
+ *******************************************************************************
+ */
+
 void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
@@ -2969,6 +3071,14 @@ void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucEventBuf);
 void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+
+/*******************************************************************************
+ *                   Unsolicited Event
+ *******************************************************************************
+ */
+
 void nicUniEventScanDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,

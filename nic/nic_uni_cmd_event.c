@@ -119,6 +119,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_POWER_SAVE_MODE] = nicUniCmdPowerSaveMode,
 	[CMD_ID_LAYER_0_EXT_MAGIC_NUM] = nicUniCmdExtCommon,
 	[CMD_ID_UPDATE_WMM_PARMS] = nicUniCmdUpdateEdcaSet,
+	[CMD_ID_ACCESS_REG] = nicUniCmdAccessReg,
 	[CMD_ID_SET_BSS_RLM_PARAM] = nicUniCmdSetBssRlm,
 	[CMD_ID_MQM_UPDATE_MU_EDCA_PARMS] = nicUniCmdUpdateMuEdca,
 	[CMD_ID_SET_IP_ADDRESS] = nicUniCmdOffloadIPV4,
@@ -2648,6 +2649,46 @@ uint32_t nicUniCmdChPrivilege(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdAccessReg(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ACCESS_REG *cmd;
+	struct UNI_CMD_ACCESS_REG *uni_cmd;
+	struct UNI_CMD_ACCESS_REG_BASIC *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ACCESS_REG) +
+	     		       sizeof(struct UNI_CMD_ACCESS_REG_BASIC);
+
+	if (info->ucCID != CMD_ID_ACCESS_REG ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ACCESS_REG *) info->pucInfoBuffer;
+
+	if (info->fgSetQuery)
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ACCESS_REG,
+				max_cmd_len, nicUniCmdEventSetCommon,
+				nicUniCmdTimeoutCommon);
+	else
+		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ACCESS_REG,
+				max_cmd_len, nicUniCmdEventQueryMcrRead,
+				nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_ACCESS_REG *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_ACCESS_REG_BASIC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_ACCESS_REG_TAG_BASIC;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Addr = cmd->u4Address;
+	tag->u4Value = cmd->u4Data;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -2944,92 +2985,6 @@ void nicUniCmdTimeoutCommon(IN struct ADAPTER *prAdapter,
 	nicOidCmdTimeoutCommon(prAdapter, prCmdInfo);
 }
 
-void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
-{
-	int32_t tags_len;
-	uint8_t *tag;
-	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SCAN_DONE);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
-	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
-	int i;
-	struct UNI_EVENT_SCAN_DONE *scan_done;
-	struct EVENT_SCAN_DONE legacy;
-
-	scan_done = (struct UNI_EVENT_SCAN_DONE *) data;
-	legacy.ucSeqNum = scan_done->ucSeqNum;
-
-	tags_len = data_len - fixed_len;
-	tag = data + fixed_len;
-	TAG_FOR_EACH(tag, tags_len, offset) {
-		DBGLOG(SCN, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-
-		switch (TAG_ID(tag)) {
-		case UNI_EVENT_SCAN_DONE_TAG_BASIC: {
-			struct UNI_EVENT_SCAN_DONE_BASIC *basic =
-				(struct UNI_EVENT_SCAN_DONE_BASIC *) tag;
-
-			legacy.ucCompleteChanCount = basic->ucCompleteChanCount;
-			legacy.ucCurrentState = basic->ucCurrentState;
-			legacy.ucScanDoneVersion = basic->ucScanDoneVersion;
-			legacy.fgIsPNOenabled = basic->fgIsPNOenabled;
-			legacy.u4ScanDurBcnCnt = basic->u4ScanDurBcnCnt;
-		}
-			break;
-		case UNI_EVENT_SCAN_DONE_TAG_SPARSECHNL: {
-			struct UNI_EVENT_SCAN_DONE_SPARSECHNL *sparse =
-				(struct UNI_EVENT_SCAN_DONE_SPARSECHNL *) tag;
-
-			legacy.ucSparseChannelValid =
-				sparse->ucSparseChannelValid;
-			legacy.rSparseChannel.ucBand = sparse->ucBand;
-			legacy.rSparseChannel.ucChannelNum =
-				sparse->ucChannelNum;
-			legacy.ucSparseChannelArrayValidNum =
-				sparse->ucSparseChannelArrayValidNum;
-		}
-			break;
-		case UNI_EVENT_SCAN_DONE_TAG_CHNLINFO: {
-			struct UNI_EVENT_SCAN_DONE_CHNLINFO *chnlinfo =
-				(struct UNI_EVENT_SCAN_DONE_CHNLINFO *) tag;
-			struct UNI_EVENT_CHNLINFO *chnl =
-				(struct UNI_EVENT_CHNLINFO *)
-				chnlinfo->aucChnlInfoBuffer;
-
-			ASSERT(chnlinfo->ucNumOfChnl <
-				SCAN_DONE_EVENT_MAX_CHANNEL_NUM);
-			ASSERT(chnlinfo->u2Length == sizeof(*chnlinfo) +
-				chnlinfo->ucNumOfChnl * sizeof(*chnl));
-			for (i = 0; i < chnlinfo->ucNumOfChnl; i++, chnl++) {
-				legacy.aucChannelNum[i] =
-					chnl->ucChannelNum;
-				legacy.au2ChannelIdleTime[i] =
-					chnl->u2ChannelIdleTime;
-				legacy.aucChannelBAndPCnt[i] =
-					chnl->ucChannelBAndPCnt;
-				legacy.aucChannelMDRDYCnt[i] =
-					chnl->ucChannelMDRDYCnt;
-				legacy.au2ChannelScanTime[i] =
-					chnl->u2ChannelScanTime;
-			}
-		}
-			break;
-		case UNI_EVENT_SCAN_DONE_TAG_NLO:{
-			// TODO: uni cmd
-		}
-			break;
-		default:
-			fail_cnt++;
-			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
-			DBGLOG(SCN, WARN, "invalid tag = %d\n", TAG_ID(tag));
-			break;
-		}
-	}
-
-	scnEventScanDone(ad, &legacy, TRUE);
-}
-
 void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
@@ -3177,6 +3132,107 @@ void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 		 info->fgCodebook75Mu,
 		 info->u1HeLtf);
 	nicCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
+}
+
+void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct UNI_EVENT_ACCESS_REG *evt =
+		(struct UNI_EVENT_ACCESS_REG *)pucEventBuf;
+	struct UNI_EVENT_ACCESS_REG_BASIC *tag =
+		(struct UNI_EVENT_ACCESS_REG_BASIC *) evt->aucTlvBuffer;
+	struct CMD_ACCESS_REG legacy;
+
+	legacy.u4Address = tag->u4Addr;
+	legacy.u4Data = tag->u4Value;
+
+	nicCmdEventQueryMcrRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_SCAN_DONE);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	int i;
+	struct UNI_EVENT_SCAN_DONE *scan_done;
+	struct EVENT_SCAN_DONE legacy;
+
+	scan_done = (struct UNI_EVENT_SCAN_DONE *) data;
+	legacy.ucSeqNum = scan_done->ucSeqNum;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(SCN, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_SCAN_DONE_TAG_BASIC: {
+			struct UNI_EVENT_SCAN_DONE_BASIC *basic =
+				(struct UNI_EVENT_SCAN_DONE_BASIC *) tag;
+
+			legacy.ucCompleteChanCount = basic->ucCompleteChanCount;
+			legacy.ucCurrentState = basic->ucCurrentState;
+			legacy.ucScanDoneVersion = basic->ucScanDoneVersion;
+			legacy.fgIsPNOenabled = basic->fgIsPNOenabled;
+			legacy.u4ScanDurBcnCnt = basic->u4ScanDurBcnCnt;
+		}
+			break;
+		case UNI_EVENT_SCAN_DONE_TAG_SPARSECHNL: {
+			struct UNI_EVENT_SCAN_DONE_SPARSECHNL *sparse =
+				(struct UNI_EVENT_SCAN_DONE_SPARSECHNL *) tag;
+
+			legacy.ucSparseChannelValid =
+				sparse->ucSparseChannelValid;
+			legacy.rSparseChannel.ucBand = sparse->ucBand;
+			legacy.rSparseChannel.ucChannelNum =
+				sparse->ucChannelNum;
+			legacy.ucSparseChannelArrayValidNum =
+				sparse->ucSparseChannelArrayValidNum;
+		}
+			break;
+		case UNI_EVENT_SCAN_DONE_TAG_CHNLINFO: {
+			struct UNI_EVENT_SCAN_DONE_CHNLINFO *chnlinfo =
+				(struct UNI_EVENT_SCAN_DONE_CHNLINFO *) tag;
+			struct UNI_EVENT_CHNLINFO *chnl =
+				(struct UNI_EVENT_CHNLINFO *)
+				chnlinfo->aucChnlInfoBuffer;
+
+			ASSERT(chnlinfo->ucNumOfChnl <
+				SCAN_DONE_EVENT_MAX_CHANNEL_NUM);
+			ASSERT(chnlinfo->u2Length == sizeof(*chnlinfo) +
+				chnlinfo->ucNumOfChnl * sizeof(*chnl));
+			for (i = 0; i < chnlinfo->ucNumOfChnl; i++, chnl++) {
+				legacy.aucChannelNum[i] =
+					chnl->ucChannelNum;
+				legacy.au2ChannelIdleTime[i] =
+					chnl->u2ChannelIdleTime;
+				legacy.aucChannelBAndPCnt[i] =
+					chnl->ucChannelBAndPCnt;
+				legacy.aucChannelMDRDYCnt[i] =
+					chnl->ucChannelMDRDYCnt;
+				legacy.au2ChannelScanTime[i] =
+					chnl->u2ChannelScanTime;
+			}
+		}
+			break;
+		case UNI_EVENT_SCAN_DONE_TAG_NLO:{
+			// TODO: uni cmd
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(SCN, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	scnEventScanDone(ad, &legacy, TRUE);
 }
 
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
