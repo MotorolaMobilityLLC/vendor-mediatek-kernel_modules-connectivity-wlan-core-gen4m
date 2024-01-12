@@ -250,7 +250,8 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 		struct GLUE_INFO *prGlueInfo,
 		struct SW_RFB *prSwRfb,
 		u_int8_t fgIsDevInterface,
-		uint8_t ucRoleIdx);
+		uint8_t ucRoleIdx,
+		uint32_t u4LinkId);
 
 void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 		struct MSDU_INFO *prMsduInfo,

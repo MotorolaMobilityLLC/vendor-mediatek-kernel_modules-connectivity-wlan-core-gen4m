@@ -1303,39 +1303,6 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	return prMsduInfo;
 }
 
-static void
-p2pFuncMgmtHeaderTranslation(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMgmtTxMsdu,
-	uint8_t ucBssIndex)
-{
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct WLAN_MAC_HEADER *prWlanHdr;
-	struct MLD_BSS_INFO *prMldBss;
-	struct BSS_INFO *prBssInfo;
-
-	prWlanHdr = (struct WLAN_MAC_HEADER *)
-		((uintptr_t) prMgmtTxMsdu->prPacket +
-		MAC_TX_RESERVED_FIELD);
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		ucBssIndex);
-	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
-
-	if (prMldBss &&
-	    EQUAL_MAC_ADDR(prMldBss->aucOwnMldAddr, prWlanHdr->aucAddr2)) {
-		DBGLOG(P2P, TRACE,
-			"Change A2/A3 from [" MACSTR " / " MACSTR "] to ["
-			MACSTR " / " MACSTR "]\n",
-			MAC2STR(prWlanHdr->aucAddr2),
-			MAC2STR(prWlanHdr->aucAddr3),
-			MAC2STR(prBssInfo->aucOwnMacAddr),
-			MAC2STR(prBssInfo->aucBSSID));
-		COPY_MAC_ADDR(prWlanHdr->aucAddr2, prBssInfo->aucOwnMacAddr);
-		COPY_MAC_ADDR(prWlanHdr->aucAddr3, prBssInfo->aucBSSID);
-	}
-#endif
-}
-
 uint32_t
 p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex,
@@ -1345,6 +1312,10 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	/* P_MSDU_INFO_T prTxMsduInfo = (P_MSDU_INFO_T)NULL; */
 	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *prMldSta = NULL;
+	struct MLD_BSS_INFO *prMldBss = NULL;
+#endif
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	uint8_t ucRetryLimit = 0;
 	uint32_t u4TxLifeTimeInMs = 0;
@@ -1377,7 +1348,39 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			MAC_TX_RESERVED_FIELD);
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 			ucBssIndex, prWlanHdr->aucAddr1);
-		/* prMgmtTxMsdu->ucBssIndex = ucBssIndex; */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			ucBssIndex);
+		if (!prBssInfo) {
+			DBGLOG(P2P, ERROR,
+				"Null prBssInfo by idx(%u)\n",
+				ucBssIndex);
+			fgDrop = TRUE;
+			goto drop;
+		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+		prMldSta = mldStarecGetByMldAddr(prAdapter, prMldBss,
+			prWlanHdr->aucAddr1);
+
+		if (!prStaRec && prMldBss && prMldSta) {
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				secGetStaIdxByWlanIdx(prAdapter,
+					prMldSta->u2SetupWlanId));
+			if (prStaRec) {
+				ucBssIndex = prStaRec->ucBssIndex;
+				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					ucBssIndex);
+				if (!prBssInfo) {
+					DBGLOG(P2P, ERROR,
+						"Null prBssInfo by idx(%u)\n",
+						ucBssIndex);
+					fgDrop = TRUE;
+					goto drop;
+				}
+			}
+		}
+#endif
 
 		ucRetryLimit = prAdapter->rWifiVar.ucP2pMgmtTxRetryLimit;
 
@@ -1393,11 +1396,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 #endif
 
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				ucBssIndex);
-			if (!prBssInfo ||
-				!nicTxIsMgmtResourceEnough(prAdapter) ||
-				isNetAbsent(prAdapter, prBssInfo)) {
+			if (!nicTxIsMgmtResourceEnough(prAdapter) ||
+			    isNetAbsent(prAdapter, prBssInfo)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
@@ -1407,8 +1407,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				    prBssInfo->fgIsSwitchingChnl)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to CSA\n");
-			} else if (p2pNeedSkipProbeResp(
-				prAdapter, prBssInfo)) {
+			} else if (p2pNeedSkipProbeResp(prAdapter,
+							prBssInfo)) {
 				fgDrop = TRUE;
 				break;
 			}
@@ -1504,8 +1504,11 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				fgDrop = TRUE;
 				break;
 			}
-			p2pFuncMgmtHeaderTranslation(prAdapter, prMgmtTxMsdu,
-						     ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			nicMgmtMAT_M2L(prAdapter, prMgmtTxMsdu,
+				       prBssInfo->ucGroupMldId,
+				       prStaRec->ucWlanIndex);
+#endif
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			DBGLOG(P2P, TRACE,
@@ -1538,8 +1541,11 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				fgDrop = TRUE;
 				break;
 			}
-			p2pFuncMgmtHeaderTranslation(prAdapter, prMgmtTxMsdu,
-						     ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			nicMgmtMAT_M2L(prAdapter, prMgmtTxMsdu,
+				       prBssInfo->ucGroupMldId,
+				       prStaRec->ucWlanIndex);
+#endif
 			prMgmtTxMsdu->ucStaRecIndex = prStaRec->ucIndex;
 			prMgmtTxMsdu->ucBssIndex = ucBssIndex;
 			DBGLOG(P2P, TRACE,
@@ -1565,12 +1571,12 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			break;
 		}
 
+drop:
 		if (fgDrop) {
 			/* Drop this frame */
 			p2pDevFsmRunEventMgmtFrameTxDone(prAdapter,
 				prMgmtTxMsdu, TX_RESULT_DROPPED_IN_DRIVER);
 			cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
-
 			break;
 		}
 
@@ -1609,8 +1615,6 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
 		nicTxEnqueueMsdu(prAdapter, prMgmtTxMsdu);
-
-
 	} while (FALSE);
 
 	return rWlanStatus;
@@ -4377,7 +4381,8 @@ p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
 			/* Leave the probe response to p2p_supplicant. */
 			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
-				prSwRfb, fgIsDevInterface, ucRoleIdx);
+				prSwRfb, fgIsDevInterface, ucRoleIdx,
+				MLD_LINK_ID_NONE);
 		}
 
 	} while (FALSE);
@@ -4590,7 +4595,8 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 		/* Leave the Action frame to p2p_supplicant. */
 		kalP2PIndicateRxMgmtFrame(prAdapter,
 			prAdapter->prGlueInfo,
-			prSwRfb, fgIsDevInterface, ucRoleIdx);
+			prSwRfb, fgIsDevInterface, ucRoleIdx,
+			MLD_LINK_ID_NONE);
 	}
 
 	return;
