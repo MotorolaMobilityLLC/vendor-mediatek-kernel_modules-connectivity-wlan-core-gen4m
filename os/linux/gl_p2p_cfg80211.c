@@ -921,11 +921,6 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *req
 
 		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
-			sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
-#endif
-
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgScanRequest, MSG_SEND_METHOD_BUF);
 
 		/* Backup scan request structure */

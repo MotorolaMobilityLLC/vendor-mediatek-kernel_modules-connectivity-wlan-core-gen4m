@@ -439,6 +439,7 @@
   */
 #define MAX_CHN_NUM                             39 /* CH1~CH14, CH36~CH48, CH52~CH64, CH100~CH144, CH149~CH165 */
 #define MAX_2G_BAND_CHN_NUM                     14
+#define MAX_5G_BAND_CHN_NUM                     (MAX_CHN_NUM - MAX_2G_BAND_CHN_NUM)
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Ad-Hoc

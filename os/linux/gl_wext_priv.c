@@ -6948,17 +6948,44 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev, IN char 
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	UINT_32 i4BytesWritten = 0;
-	INT_8 ucIdx = 0;
+	INT_8 ucIdx = 0, ucIdx2 = 0, ucChannelNum = 0,
+		ucNumOf2gChannel = 0, ucNumOf5gChannel = 0;
 	P_PARAM_GET_CHN_INFO prChnLoadInfo = NULL;
+	RF_CHANNEL_INFO_T *prChannelList = NULL,
+		auc2gChannelList[MAX_2G_BAND_CHN_NUM],
+		auc5gChannelList[MAX_5G_BAND_CHN_NUM];
 
 	ASSERT(prNetDev);
 	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
 
-	for (ucIdx = 0; ucIdx < prChnLoadInfo->ucAvailChnNum; ucIdx++) {
-		pcCommand[ucIdx] = prChnLoadInfo->rChnRankList[ucIdx].ucChannel;
-		i4BytesWritten++;
+	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
+			     MAX_2G_BAND_CHN_NUM, &ucNumOf2gChannel, auc2gChannelList);
+	rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
+			     MAX_5G_BAND_CHN_NUM, &ucNumOf5gChannel, auc5gChannelList);
+
+	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ucIdx++) {
+
+		if (prChnLoadInfo->rChnRankList[ucIdx].ucChannel > 14) {
+			prChannelList = auc5gChannelList;
+			ucChannelNum = ucNumOf5gChannel;
+		} else {
+			prChannelList = auc2gChannelList;
+			ucChannelNum = ucNumOf2gChannel;
+		}
+
+		for (ucIdx2 = 0; ucIdx2 < ucChannelNum; ucIdx2++) {
+			if (prChnLoadInfo->rChnRankList[ucIdx].ucChannel ==
+				prChannelList[ucIdx2].ucChannelNum) {
+				pcCommand[i4BytesWritten++] =
+					prChnLoadInfo->rChnRankList[ucIdx].ucChannel;
+				DBGLOG(SCN, TRACE, "ch %u, dirtyness %d\n",
+					prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
+					prChnLoadInfo->rChnRankList[ucIdx].u4Dirtyness);
+				break;
+			}
+		}
 	}
 
 	return i4BytesWritten;

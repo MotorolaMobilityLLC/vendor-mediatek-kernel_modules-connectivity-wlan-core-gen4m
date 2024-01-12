@@ -1929,7 +1929,6 @@ typedef struct _PARAM_GET_CHN_INFO {
 	PARAM_CHN_LOAD_INFO rEachChnLoad[MAX_CHN_NUM];
 	BOOLEAN fgDataReadyBit;
 	PARAM_CHN_RANK_INFO rChnRankList[MAX_CHN_NUM];
-	UINT_8 ucAvailChnNum;
 	UINT_8 aucReserved[3];
 } PARAM_GET_CHN_INFO, *P_PARAM_GET_CHN_INFO;
 
@@ -2717,8 +2716,12 @@ wlanoidQueryLteSafeChannel(IN P_ADAPTER_T prAdapter,
 			   IN PVOID pvQueryBuffer, IN UINT_32 u4QueryBufferLen, OUT PUINT_32 pu4QueryInfoLen);
 WLAN_STATUS
 wlanCalculateAllChannelDirtyness(IN P_ADAPTER_T prAdapter);
+VOID
+wlanInitChnLoadInfoChannelList(IN P_ADAPTER_T prAdapter);
 UINT_8
 wlanGetChannelIndex(IN UINT_8 channel);
+UINT_8
+wlanGetChannelNumFromIndex(IN UINT_8 ucIdx);
 VOID
 wlanSortChannel(IN P_ADAPTER_T prAdapter);
 #endif

@@ -793,12 +793,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	if (request->ie_len > 0)
 		rScanRequest.pucIE = (PUINT_8) (request->ie);
 
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
-		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
-#endif
-
-
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetBssidListScanAdv,
 			   &rScanRequest, sizeof(PARAM_SCAN_REQUEST_ADV_T), FALSE, FALSE, FALSE, &u4BufLen);
