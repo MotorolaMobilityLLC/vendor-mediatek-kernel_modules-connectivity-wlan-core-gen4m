@@ -201,6 +201,7 @@ enum ENUM_DBG_MODULE {
 	DBG_HIF_WMM_ENHANCE_IDX,/* 0x2C */
 	DBG_APS_IDX,		/* 0x2D *//* AP selection */
 	DBG_SA_IDX,		/* 0x2E *//* standalone log */
+	DBG_MET_IDX,		/* 0x2F *//* Connsys MET log */
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {

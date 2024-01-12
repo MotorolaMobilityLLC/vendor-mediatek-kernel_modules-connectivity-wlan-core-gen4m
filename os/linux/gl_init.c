@@ -55,6 +55,9 @@
 #if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
 #include "gl_fw_dev.h"
 #endif
+#if CFG_SUPPORT_MET_LOG
+#include "gl_met_log.h"
+#endif
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #include "conninfra.h"
@@ -7526,6 +7529,10 @@ static void wlanRemove(void)
 #if CFG_MET_TAG_SUPPORT
 	if (GL_MET_TAG_UNINIT() != 0)
 		DBGLOG(INIT, ERROR, "MET_TAG_UNINIT error!\n");
+#endif
+
+#if CFG_SUPPORT_MET_LOG && (CFG_SUPPORT_CONNAC3X == 1)
+	met_log_stop(prGlueInfo);
 #endif
 
 	/* 4 <4> wlanAdapterStop */
