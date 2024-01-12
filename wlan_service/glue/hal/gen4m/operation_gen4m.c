@@ -2616,6 +2616,9 @@ s_int32 mt_op_set_band_mode(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 dbdc_enb;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_int32 fw_band_mode;
+#endif
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -2629,11 +2632,11 @@ s_int32 mt_op_set_band_mode(
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 
-	band_state->band_mode =
+	fw_band_mode =
 		(band_state->band_mode & 0xffffff00) |	dbdc_enb;
 
 	ret = tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_DBDC_ENABLE, band_state->band_mode);
+		RF_AT_FUNCID_SET_DBDC_ENABLE, fw_band_mode);
 #else
 	ret = tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_SET_DBDC_ENABLE, dbdc_enb);
