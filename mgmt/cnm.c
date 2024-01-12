@@ -3452,11 +3452,11 @@ uint8_t cnmSapChannelSwitchReq(IN struct ADAPTER *prAdapter,
 
 	kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 
-	/* Update Beacon */
-	bssUpdateBeaconContent(prAdapter, ucBssIdx);
-
 	/* Send Action Frame */
 	rlmSendChannelSwitchFrame(prAdapter, ucBssIdx);
+
+	/* Update Beacon */
+	bssUpdateBeaconContent(prAdapter, ucBssIdx);
 
 	return 0;
 
