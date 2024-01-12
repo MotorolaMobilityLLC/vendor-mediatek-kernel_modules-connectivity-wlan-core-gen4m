@@ -99,6 +99,8 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #if (CFG_SUPPORT_PHY_ICS == 1)
 #define PHYICS_EMI_BASE_ADDR 0x78231C00
 #define PHYICS_EMI_SIZE (16 * 1024)
+#define WIFI_MCU_MEMORY_PART_1        1
+#define WIFI_MCU_MEMORY_PART_2        2
 #if (CFG_SUPPORT_PHY_ICS_V3 == 1)
 #define PHYICS_TOTAL_CNT (16 * 256) // 4096
 #define PHYICS_BUF_SIZE (16 * 1024) // 8192
@@ -106,8 +108,6 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #define PHYICS_TOTAL_CNT (8 * 256) // 2048
 #define PHYICS_BUF_SIZE (8 * 1024) // 8192
 #endif
-#define WIFI_MCU_MEMORY_PART_1        1
-#define WIFI_MCU_MEMORY_PART_2        2
 #endif
 
 
