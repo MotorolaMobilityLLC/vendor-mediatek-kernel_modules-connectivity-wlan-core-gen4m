@@ -222,6 +222,8 @@
 #define NIC_TX_AC_VI_REMAINING_TX_TIME	TX_DESC_TX_TIME_NO_LIMIT
 #define NIC_TX_MGMT_REMAINING_TX_TIME		2000
 
+#define NIC_TX_BMC_REMAINING_TX_TIME        2000	/* in unit of ms */
+
 #define NIC_TX_CRITICAL_DATA_TID                7
 /*802.1d Voice Traffic,use AC_VO */
 #define NIC_TX_PRIORITY_DATA_TID                6

@@ -1325,6 +1325,11 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		/* BMC pkt need limited rate according to coex report*/
+		if (prCurrentMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
+			nicTxSetPktLowestFixedRate(prAdapter,
+							prCurrentMsduInfo);
+
 		/* 4 <4> Enqueue the packet */
 		QUEUE_INSERT_TAIL(prTxQue,
 			(struct QUE_ENTRY *) prCurrentMsduInfo);
