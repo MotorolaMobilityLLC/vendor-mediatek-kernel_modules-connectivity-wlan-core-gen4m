@@ -1168,7 +1168,7 @@ int Set_Trigger_Sounding_Proc(struct net_device *prNetDev, uint8_t *prInBuf)
 	if (rv == 7) {
 		DBGLOG(RFTEST, ERROR,
 		       "Set_Trigger_Sounding_Proc prInBuf = %s, ucSuMu = %d, ucNumSta = %d, ucSndInterval = %d, ucWLan0 = %d, ucWLan1 = %d, ucWLan2:%d, ucWLan3:%d\n",
-		       ucSuMu, ucNumSta, ucSndInterval, ucWLan0, ucWLan1, ucWLan2, ucWLan3);
+		       prInBuf, ucSuMu, ucNumSta, ucSndInterval, ucWLan0, ucWLan1, ucWLan2, ucWLan3);
 		i4Status = TxBfSounding(prNetDev, ucSuMu, ucNumSta, ucSndInterval, ucWLan0, ucWLan1, ucWLan2, ucWLan3);
 	} else
 		return -EINVAL;
