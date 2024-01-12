@@ -8893,9 +8893,6 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL,
 			     0, ucBssIndex);
-#if !defined(LINUX)
-	prAdapter->fgIsRadioOff = TRUE;
-#endif
 
 #if (CFG_SUPPORT_SUPPLICANT_SME == 1)
 	prAdapter->fgSuppSmeLinkDownPend = TRUE;
