@@ -909,7 +909,7 @@ int8_t atoi(uint8_t ch);
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-#define _kalRequestFirmware request_firmware_direct
+#define _kalRequestFirmware request_firmware
 #else
 #define _kalRequestFirmware request_firmware
 #endif
