@@ -2184,7 +2184,7 @@ static u_int8_t cnmDbdcIsAGConcurrent(
 	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
 	u_int8_t fgAGConcurrent = FALSE;
 	enum ENUM_BAND eBssBand[BSSID_NUM] = {BAND_NULL};
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
 		log_dbg(CNM, INFO, "[DBDC] disable DBDC by power");
 		return FALSE;
@@ -4399,7 +4399,7 @@ struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter)
 	return NULL;
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief for customize
