@@ -5013,89 +5013,104 @@ p2pFuncParseBeaconVenderId(struct ADAPTER *prAdapter,
 		struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo,
 		uint8_t ucRoleIndex)
 {
-	do {
-		uint8_t ucOuiType;
-		uint16_t u2SubTypeVersion;
+	uint8_t ucOuiType;
+	uint16_t u2SubTypeVersion;
 
-		if (rsnParseCheckForWFAInfoElem(
-			prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
-			if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
-				&& (u2SubTypeVersion == VERSION_WPA)) {
-				if (!kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
-					ucRoleIndex))
-					kalP2PSetCipher(prAdapter->prGlueInfo,
-						IW_AUTH_CIPHER_TKIP,
-						ucRoleIndex);
-				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
-					DBGLOG(P2P, ERROR,
-						"WPA IE length is unexpected !!\n");
-					return;
-				}
-				kalMemCopy(
-					prP2pSpecificBssInfo
-						->aucWpaIeBuffer,
-					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2WpaIeLen =
-					IE_SIZE(pucIE);
-				DBGLOG(P2P, TRACE, "WPA IE in supplicant\n");
-			} else if (ucOuiType == VENDOR_OUI_TYPE_WPS) {
-				kalP2PUpdateWSC_IE(prAdapter->prGlueInfo,
-					0, pucIE, IE_SIZE(pucIE), ucRoleIndex);
-				DBGLOG(P2P, TRACE, "WPS IE in supplicant\n");
-			} else if (ucOuiType == VENDOR_OUI_TYPE_WMM) {
-				DBGLOG(P2P, TRACE, "WMM IE in supplicant\n");
+	if (rsnParseCheckForWFAInfoElem(
+		prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
+		if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
+			&& (u2SubTypeVersion == VERSION_WPA)) {
+			if (!kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
+				ucRoleIndex))
+				kalP2PSetCipher(prAdapter->prGlueInfo,
+					IW_AUTH_CIPHER_TKIP,
+					ucRoleIndex);
+			if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+				DBGLOG(P2P, ERROR,
+					"WPA IE length is unexpected !!\n");
+				return;
 			}
-			/* WMM here. */
-		} else if (p2pFuncParseCheckForP2PInfoElem(
-			prAdapter, pucIE, &ucOuiType)) {
-			/* TODO Store the whole P2P IE & generate later. */
-			/* Be aware that there may be one or more P2P IE. */
-			if (ucOuiType == VENDOR_OUI_TYPE_P2P) {
-				kalMemCopy(&prP2pSpecificBssInfo
-					->aucAttributesCache
-					[prP2pSpecificBssInfo->u2AttributeLen],
-					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2AttributeLen +=
-					IE_SIZE(pucIE);
-				DBGLOG(P2P, TRACE, "P2P IE in supplicant\n");
-			} else if (ucOuiType == VENDOR_OUI_TYPE_WFD) {
+			kalMemCopy(
+				prP2pSpecificBssInfo
+					->aucWpaIeBuffer,
+				pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2WpaIeLen =
+				IE_SIZE(pucIE);
+			DBGLOG(P2P, TRACE, "WPA IE in supplicant\n");
+		} else if (ucOuiType == VENDOR_OUI_TYPE_WPS) {
+			kalP2PUpdateWSC_IE(prAdapter->prGlueInfo,
+				0, pucIE, IE_SIZE(pucIE), ucRoleIndex);
+			DBGLOG(P2P, TRACE, "WPS IE in supplicant\n");
+		} else if (ucOuiType == VENDOR_OUI_TYPE_WMM) {
+			DBGLOG(P2P, TRACE, "WMM IE in supplicant\n");
+		}
+	} else if (p2pFuncParseCheckForP2PInfoElem(
+		prAdapter, pucIE, &ucOuiType)) {
+		if (ucOuiType == VENDOR_OUI_TYPE_P2P ||
+			ucOuiType == VENDOR_OUI_TYPE_WFD) {
+			uint32_t u4EmptyLen;
 
-				kalMemCopy(&prP2pSpecificBssInfo
-					->aucAttributesCache
-					[prP2pSpecificBssInfo->u2AttributeLen],
-					pucIE, IE_SIZE(pucIE));
+			DBGLOG(P2P, TRACE, "%s IE in supplicant\n",
+				ucOuiType == VENDOR_OUI_TYPE_P2P ?
+				"P2P" : "WFD");
 
-				prP2pSpecificBssInfo->u2AttributeLen +=
-					IE_SIZE(pucIE);
-			} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
-				if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
-					DBGLOG(P2P, ERROR,
-						"RSN IE length is unexpected !!\n");
-					return;
-				}
-				kalMemCopy(
-					prP2pSpecificBssInfo->aucOweIeBuffer,
-					pucIE, IE_SIZE(pucIE));
-				prP2pSpecificBssInfo->u2OweIeLen
-					= IE_SIZE(pucIE);
-				DBGLOG(P2P, INFO,
-					"[OWE] Trans IE in supplicant\n");
-			} else {
-				DBGLOG(P2P, TRACE,
-					"Unknown 50-6F-9A-%d IE.\n",
-					ucOuiType);
+			u4EmptyLen = sizeof(prP2pSpecificBssInfo
+				->aucAttributesCache) -
+				prP2pSpecificBssInfo->u2AttributeLen;
+			if (u4EmptyLen < IE_SIZE(pucIE)) {
+				DBGLOG(P2P, ERROR,
+					"Full, EmptyLen[%d] IE_SIZE[%d]\n",
+					u4EmptyLen, IE_SIZE(pucIE));
+				return;
 			}
-		} else {
-			kalMemCopy(&prP2pSpecificBssInfo->aucAttributesCache
+
+			kalMemCopy(&prP2pSpecificBssInfo
+				->aucAttributesCache
 				[prP2pSpecificBssInfo->u2AttributeLen],
 				pucIE, IE_SIZE(pucIE));
-
 			prP2pSpecificBssInfo->u2AttributeLen +=
 				IE_SIZE(pucIE);
+		} else if (ucOuiType == VENDOR_OUI_TYPE_OWE) {
+			if (IE_LEN(pucIE) > ELEM_MAX_LEN_WPA) {
+				DBGLOG(P2P, ERROR,
+					"RSN IE length is unexpected !!\n");
+				return;
+			}
+			kalMemCopy(
+				prP2pSpecificBssInfo->aucOweIeBuffer,
+				pucIE, IE_SIZE(pucIE));
+			prP2pSpecificBssInfo->u2OweIeLen
+				= IE_SIZE(pucIE);
+			DBGLOG(P2P, INFO,
+				"[OWE] Trans IE in supplicant\n");
+		} else {
 			DBGLOG(P2P, TRACE,
-				"Driver unprocessed Vender Specific IE\n");
+				"Unknown 50-6F-9A-%d IE.\n",
+				ucOuiType);
 		}
-	} while (0);
+	} else {
+		uint32_t u4EmptyLen;
+
+		DBGLOG(P2P, TRACE,
+			"Driver unprocessed Vender Specific IE\n");
+
+		u4EmptyLen = sizeof(prP2pSpecificBssInfo
+			->aucAttributesCache) -
+			prP2pSpecificBssInfo->u2AttributeLen;
+		if (u4EmptyLen < IE_SIZE(pucIE)) {
+			DBGLOG(P2P, ERROR,
+				"Full, EmptyLen[%d] IE_SIZE[%d]\n",
+				u4EmptyLen, IE_SIZE(pucIE));
+			return;
+		}
+
+		kalMemCopy(&prP2pSpecificBssInfo->aucAttributesCache
+			[prP2pSpecificBssInfo->u2AttributeLen],
+			pucIE, IE_SIZE(pucIE));
+
+		prP2pSpecificBssInfo->u2AttributeLen +=
+			IE_SIZE(pucIE);
+	}
 }
 
 struct BSS_DESC *
