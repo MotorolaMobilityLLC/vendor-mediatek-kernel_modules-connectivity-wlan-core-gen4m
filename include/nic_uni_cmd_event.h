@@ -2535,16 +2535,17 @@ struct UNI_CMD_RA_SET_FIXED_RATE {
 
 struct UNI_CMD_RA_SET_FIXED_RATE_V1 {
 	uint16_t u2WlanIdx;
-	uint16_t u2HeLtf;
+	uint8_t  u1PhyMode;
+	uint8_t  u1Stbc;
 	uint16_t u2ShortGi;
-	uint8_t u1PhyMode;
-	uint8_t u1Stbc;
-	uint8_t u1Bw;
-	uint8_t u1Ecc;
-	uint8_t u1Mcs;
-	uint8_t u1Nss;
-	uint8_t u1Spe;
-	uint8_t u1ShortPreamble;
+	uint8_t  u1Bw;
+	uint8_t  u1Ecc;
+	uint8_t  u1Mcs;
+	uint8_t  u1Nss;
+	uint16_t u2HeLtf;
+	uint8_t  u1Spe;
+	uint8_t  u1ShortPreamble;
+	uint16_t u2Reserve;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_RA_SET_AUTO_RATE {
