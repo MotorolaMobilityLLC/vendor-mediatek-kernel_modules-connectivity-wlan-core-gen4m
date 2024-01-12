@@ -15769,6 +15769,65 @@ wlanoidShowDmaschInfo(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+uint32_t
+wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen)
+{
+
+	char *pucSavedPtr = (int8_t *)pvSetBuffer;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4BssIndex = 0;
+	uint32_t u4Module = 0;
+	uint32_t u4Reason = 0;
+	struct CHIP_DBG_OPS *prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	DBGLOG(INIT, INFO, "AHDBG command is [%s]\n", pucSavedPtr);
+	rStatus = wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+
+
+	DBGLOG(INIT, INFO, "argc [%d]\n", i4Argc);
+
+	i4Ret = kalkStrtou32(
+		apcArgv[1], 0, &u4BssIndex);
+	DBGLOG(OID, INFO,
+		"parse u4BssIndex %u i4Ret=%d\n",
+		u4BssIndex, i4Ret);
+
+	i4Ret = kalkStrtou32(
+		apcArgv[2], 0, &u4Module);
+	DBGLOG(OID, INFO,
+		"parse u4Module %u i4Ret=%d\n",
+		u4Module, i4Ret);
+
+	i4Ret = kalkStrtou32(
+		apcArgv[3], 0, &u4Reason);
+	DBGLOG(OID, INFO,
+		"parse u4Reason %u i4Ret=%d\n",
+		u4Reason, i4Ret);
+
+	if (prDbgOps && prDbgOps->setFwDebug) {
+		/* trigger tx debug sop */
+		prDbgOps->setFwDebug(
+			prAdapter,
+			true,
+			0xffff,
+			(u4Module << DBG_PLE_INT_MODULE_SHIFT) |
+			(u4BssIndex << DBG_PLE_INT_BAND_BSS_SHIFT) |
+			(1 << DBG_PLE_INT_VER_SHIFT) |
+			(u4Reason)
+			);
+		DBGLOG(HAL, INFO, "Trigger Fw Debug SOP[%d][%d][%d]\n",
+		       u4Module, u4BssIndex, u4Reason);
+	}
+
+	return 0;
+}
+
+
 #if CFG_SUPPORT_LOWLATENCY_MODE
 /*----------------------------------------------------------------------------*/
 /*!

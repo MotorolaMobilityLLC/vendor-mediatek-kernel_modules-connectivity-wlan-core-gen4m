@@ -5133,6 +5133,10 @@ wlanoidShowDmaschInfo(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer, uint32_t u4SetBufferLen,
 		      uint32_t *pu4SetInfoLen);
 /* end Show Consys debug information*/
+uint32_t
+wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen);
 
 uint32_t
 wlanoidSetTxPowerByRateManual(struct ADAPTER *prAdapter,

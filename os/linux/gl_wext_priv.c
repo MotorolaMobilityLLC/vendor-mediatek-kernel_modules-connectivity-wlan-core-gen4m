@@ -3090,6 +3090,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_DBG_SHOW_PSE_INFO			"show-pse"
 #define CMD_DBG_SHOW_CSR_INFO			"show-csr"
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
+#define CMD_DBG_SHOW_AHDBG				"show-ahdbg"
 
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"
@@ -20851,6 +20852,12 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 				     strlen(CMD_DUMP_UAPSD))) {
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen,
+				 &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_DBG_SHOW_AHDBG,
+				strlen(CMD_DBG_SHOW_AHDBG)) == 0) {
+			kalIoctl(prGlueInfo,
+				 wlanoidShowAhdbgInfo,
+				 (void *) pcCommand, i4TotalLen,
 				 &i4BytesWritten);
 		} else
 			i4BytesWritten = priv_cmd_not_support(prNetDev,
