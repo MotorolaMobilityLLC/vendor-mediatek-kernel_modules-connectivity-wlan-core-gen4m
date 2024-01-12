@@ -75,6 +75,8 @@
 /* According to MAX len of Element ID: 1 byte*/
 #endif
 
+#define NAF_TX_RETRY_COUNT_LIMIT 5
+
 /****************************************************
  *                    Local part
  ****************************************************

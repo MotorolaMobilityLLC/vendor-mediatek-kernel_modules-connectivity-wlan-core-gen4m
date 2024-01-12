@@ -6108,6 +6108,8 @@ uint32_t nanDataEngineSendNAF(struct ADAPTER *prAdapter,
 		       prSelectStaRec->aucMacAddr[5]);
 	}
 
+	nicTxSetPktRetryLimit(prMsduInfo, NAF_TX_RETRY_COUNT_LIMIT);
+
 	/* 4 <6> Enqueue the frame to send this NAF frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
