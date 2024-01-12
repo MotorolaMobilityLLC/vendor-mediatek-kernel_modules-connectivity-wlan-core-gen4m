@@ -1155,7 +1155,8 @@ u_int8_t rsnPerformPolicySelection(
 		   GET_SELECTOR_TYPE(u4GroupCipher) == CIPHER_SUITE_WEP104) {
 		prBss->ucEncLevel = 1;
 	} else {
-		ASSERT(FALSE);
+		DBGLOG(RSN, WARN,
+		       "GroupCipher not in CCMP/TKIP/WEP40/WEP104\n");
 	}
 	prBss->u4RsnSelectedPairwiseCipher = u4PairwiseCipher;
 	prBss->u4RsnSelectedGroupCipher = u4GroupCipher;
