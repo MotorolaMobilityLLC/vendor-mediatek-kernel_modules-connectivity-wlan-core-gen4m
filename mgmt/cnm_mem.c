@@ -1717,9 +1717,10 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 		*(uint64_t *)(prStaRec->ucHePhyCapInfo));
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	log_dbg(SW4, INFO, "[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx]\n",
+	log_dbg(SW4, INFO, "[EhtMacCap][0x%04x],[EhtPhyCap][0x%016llx],[EhtPhyCapExt][0x%016llx]\n",
 		(*(uint16_t *)(prStaRec->ucEhtMacCapInfo)),
-		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)));
+		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)),
+		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfoExt)));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	log_dbg(SW4, INFO, "[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr][" MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
@@ -2270,6 +2271,8 @@ static void cnmStaRecCmdEhtContentFill(
 	memcpy(prCmdContent->ucEhtMacCapInfo, prStaRec->ucEhtMacCapInfo,
 		EHT_MAC_CAP_BYTE_NUM);
 	memcpy(prCmdContent->ucEhtPhyCapInfo, prStaRec->ucEhtPhyCapInfo,
+		EHT_PHY_CAP_BYTE_NUM);
+	memcpy(prCmdContent->ucEhtPhyCapInfoExt, prStaRec->ucEhtPhyCapInfoExt,
 		EHT_PHY_CAP_BYTE_NUM);
 	memcpy(prCmdContent->aucMcsMap20MHzSta, prStaRec->aucMcsMap20MHzSta,
 		sizeof(prCmdContent->aucMcsMap20MHzSta));
