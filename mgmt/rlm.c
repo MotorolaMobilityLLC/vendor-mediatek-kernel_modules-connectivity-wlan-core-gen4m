@@ -149,13 +149,6 @@ void rlmFsmEventInit(struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
 
-	/* Note: assume struct TIMER structures are reset to zero or stopped
-	 * before invoking this function.
-	 */
-
-	/* Initialize OBSS FSM */
-	rlmObssInit(prAdapter);
-
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 	rlmDomainCheckCountryPowerLimitTable(prAdapter);
 #endif

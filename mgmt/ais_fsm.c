@@ -5938,6 +5938,7 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DFS
 	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rCsaTimer);
 #endif
+	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rObssScanTimer);
 
 	nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
 
