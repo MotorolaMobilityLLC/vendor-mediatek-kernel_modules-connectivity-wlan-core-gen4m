@@ -664,7 +664,7 @@ static irqreturn_t mtk_sw_interrupt(int irq, void *dev_instance)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	if (prChipInfo->sw_interrupt_handler)
 		prChipInfo->sw_interrupt_handler(prGlueInfo->prAdapter);
-	kalSetRstEvent();
+	/* kalSetRstEvent(); */
 	return IRQ_HANDLED;
 }
 #endif
