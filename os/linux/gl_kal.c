@@ -5374,6 +5374,7 @@ int hif_thread(void *data)
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
 	bool fgEnInt;
+	u_int8_t fgIsDbgDump = FALSE;
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
@@ -5391,9 +5392,8 @@ int hif_thread(void *data)
 
 	while (TRUE) {
 
-		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
-			|| kalIsResetting()
-			) {
+		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
+		    (kalIsResetting() && !fgIsDbgDump)) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
 			break;
 		}
@@ -5416,6 +5416,11 @@ int hif_thread(void *data)
 		} while (ret != 0);
 
 		kalTraceBegin("hif_thread");
+
+		/* don't stop hif_thread when resetting dump debug log */
+		fgIsDbgDump = prGlueInfo->ulFlag &
+			(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO |
+			 GLUE_FLAG_BT_DUMP_VIA_WIFI);
 
 #if CFG_ENABLE_WAKE_LOCK
 		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,

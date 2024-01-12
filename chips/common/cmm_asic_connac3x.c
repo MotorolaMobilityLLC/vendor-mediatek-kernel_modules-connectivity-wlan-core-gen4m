@@ -2515,6 +2515,9 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glSetRstReason(RST_FW_ASSERT);
 
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		kalSetHifDbgEvent(prAdapter->prGlueInfo);
+
 		glResetUpdateFlag(TRUE);
 
 		if (dbg_ops && dbg_ops->dumpBusHangCr)
