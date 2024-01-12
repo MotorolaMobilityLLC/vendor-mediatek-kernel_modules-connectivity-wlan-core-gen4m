@@ -6850,7 +6850,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 			DBGLOG(REQ, WARN, "disassociate error:%x\n", rStatus);
 
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidUninitAisFsm,
-				NULL, 0, &u4SetInfoLen, ucBssIndex);
+				&ucAisIndex, 1, &u4SetInfoLen, ucBssIndex);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "uninit ais error:%x\n", rStatus);
