@@ -874,7 +874,7 @@ struct GLUE_INFO {
 	KAL_WAKE_LOCK_T *rRxWorkerLock;
 #endif
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_PWR_LMT_EMI
-	(KAL_WAKE_LOCK_T *)rTxPowerEmiWakeLock;
+	KAL_WAKE_LOCK_T *rTxPowerEmiWakeLock;
 #endif
 
 #if CFG_MET_PACKET_TRACE_SUPPORT

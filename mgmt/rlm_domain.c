@@ -12049,7 +12049,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 {
 	bool ret = FALSE;
 #if CFG_ENABLE_WAKE_LOCK
-	(KAL_WAKE_LOCK_T *)rTxWakeLock =
+	KAL_WAKE_LOCK_T * rTxWakeLock =
 		prAdapter->prGlueInfo->rTxPowerEmiWakeLock;
 #endif
 	static const char * const au1PwrLmtStatusAction[] = {
