@@ -15904,9 +15904,12 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO, "AHDBG command is [%s]\n", pucSavedPtr);
 	rStatus = wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
-
-
 	DBGLOG(INIT, INFO, "argc [%d]\n", i4Argc);
+
+	if (i4Argc != 4) {
+		DBGLOG(REQ, ERROR, "argc(%d) is error\n", i4Argc);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
 
 	i4Ret = kalkStrtou32(
 		apcArgv[1], 0, &u4BssIndex);
@@ -15926,6 +15929,8 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 		"parse u4Reason %u i4Ret=%d\n",
 		u4Reason, i4Ret);
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
 	if (prDbgOps && prDbgOps->setFwDebug) {
 		/* trigger tx debug sop */
 		prDbgOps->setFwDebug(
@@ -15941,7 +15946,9 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 		       u4Module, u4BssIndex, u4Reason);
 	}
 
-	return 0;
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 

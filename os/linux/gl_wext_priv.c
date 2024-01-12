@@ -3088,7 +3088,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_DBG_SHOW_PSE_INFO			"show-pse"
 #define CMD_DBG_SHOW_CSR_INFO			"show-csr"
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
-#define CMD_DBG_SHOW_AHDBG				"show-ahdbg"
+#define CMD_DBG_SHOW_AHDBG			"show-ahdbg"
 
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"
