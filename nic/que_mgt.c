@@ -6099,8 +6099,7 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			}
 		}
 		/* Parse AC parameters and write to HW CRs */
-		if ((prStaRec->fgIsQoS)
-			&& (prStaRec->eStaType == STA_TYPE_LEGACY_AP)) {
+		if (prStaRec->fgIsQoS) {
 			mqmParseEdcaParameters(prAdapter, prSwRfb, pucIEStart,
 				u2IELength, TRUE);
 #if (CFG_SUPPORT_802_11AX == 1)
