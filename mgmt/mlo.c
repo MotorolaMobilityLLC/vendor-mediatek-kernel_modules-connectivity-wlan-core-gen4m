@@ -1977,7 +1977,7 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 		LINK_INITIALIZE(&prMldBssInfo->rBssList);
 		prMldBssInfo->fgIsInUse = TRUE;
 		prMldBssInfo->ucGroupMldId = i;
-		prMldBssInfo->ucOmRemapIdx = i;
+		prMldBssInfo->ucOmRemapIdx = OM_REMAP_IDX_NONE;
 		prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
 
 		*pprMldBssInfo = prMldBssInfo;
