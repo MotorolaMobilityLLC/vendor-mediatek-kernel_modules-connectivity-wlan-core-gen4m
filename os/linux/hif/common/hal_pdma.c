@@ -88,7 +88,10 @@ u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
 	} else if (eType == RX_RING) {
 		return (eRxIdx == RX_RING_DATA0 ||
 			eRxIdx == RX_RING_DATA1 ||
-			eRxIdx == RX_RING_DATA2);
+			eRxIdx == RX_RING_DATA2 ||
+			eRxIdx == RX_RING_DATA3 ||
+			eRxIdx == RX_RING_DATA4 ||
+			eRxIdx == RX_RING_DATA5);
 	}
 	return FALSE;
 }
@@ -895,7 +898,13 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 
 	u2Port = halTxRingDataSelect(prAdapter, prMsduInfo);
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prTxRing = &prHifInfo->TxRing[u2Port];
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
+		prTxRing = &prHifInfo->MawdTxRing[u2Port];
+	else
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+		prTxRing = &prHifInfo->TxRing[u2Port];
 
 	while (TRUE) {
 		if ((prHifInfo->u4TxDataQLen[u2Port] <
@@ -3072,6 +3081,7 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 	uint16_t u2Port)
 {
+	struct ADAPTER *prAdapter;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4SwIdx, u4DmaIdx = 0, u4Diff = 0;
 	struct RTMP_TX_RING *prTxRing;
@@ -3083,8 +3093,14 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 
+	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prTxRing = &prHifInfo->TxRing[u2Port];
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableMawdTx))
+		prTxRing = &prHifInfo->MawdTxRing[u2Port];
+	else
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+		prTxRing = &prHifInfo->TxRing[u2Port];
 
 	if (prTxRing->u4UsedCnt == 0)
 		return;
@@ -3110,8 +3126,7 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 		"DMA done: port[%u] dma[%u] idx[%u] used[%u]\n", u2Port,
 		u4DmaIdx, u4SwIdx, prTxRing->u4UsedCnt);
 
-	GLUE_ADD_REF_CNT(u4Diff,
-			prGlueInfo->prAdapter->rHifStats.u4DataTxdoneCount);
+	GLUE_ADD_REF_CNT(u4Diff, prAdapter->rHifStats.u4DataTxdoneCount);
 
 	prTxRing->TxSwUsedIdx = u4SwIdx;
 
@@ -4139,6 +4154,11 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			}
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
 				halMawdReset(prGlueInfo);
+
+			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx)) {
+				halMawdAllocTxRing(prGlueInfo, FALSE);
+				halMawdInitTxRing(prGlueInfo);
+			}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 			/* only reset TXD & RXD */

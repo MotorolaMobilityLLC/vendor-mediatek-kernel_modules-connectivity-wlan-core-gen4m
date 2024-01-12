@@ -708,8 +708,18 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 			ext_offset = prBusInfo->tx_ring2_data_idx * 4;
 		if (index == TX_RING_WA_CMD)
 			ext_offset = prBusInfo->tx_ring_wa_cmd_idx * 4;
-	} else
-		ext_offset = index * 4;
+	} else {
+		if (index == TX_RING_DATA0)
+			ext_offset = prBusInfo->tx_ring0_data_idx * 4;
+		else if (index == TX_RING_DATA1)
+			ext_offset = prBusInfo->tx_ring1_data_idx * 4;
+		else if (index == TX_RING_DATA_PRIO)
+			ext_offset = prBusInfo->tx_ring2_data_idx * 4;
+		else if (index == TX_RING_DATA_ALTX)
+			ext_offset = prBusInfo->tx_ring3_data_idx * 4;
+		else
+			ext_offset = index * 4;
+	}
 
 	tx_ring->hw_desc_base_ext =
 		prBusInfo->host_tx_ring_ext_ctrl_base + ext_offset;
@@ -1435,6 +1445,30 @@ void fillConnac3xNicTxDescAppendWithSdo(
 		prMsduInfo->ucWlanIndex;
 }
 
+void fillConnac3xNicTxDescAppendWithSdoV2(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t *prTxDescBuffer)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
+
+	/* Fill TxD append */
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)prTxDescBuffer;
+	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags =
+		HIF_PKT_FLAGS_CT_INFO_APPLY_OVERRIDE;
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (prMsduInfo->fgMgmtUseDataQ)
+		prHwTxDescAppend->CR4_APPEND.u2PktFlags =
+			HIF_PKT_FLAGS_CT_INFO_APPLY_TXD;
+#endif
+	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
+		prMsduInfo->ucBssIndex;
+	prHwTxDescAppend->CR4_APPEND.ucWtblIndex =
+		prMsduInfo->ucWlanIndex;
+}
+
 void fillConnac3xTxDescAppendBySdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
@@ -1455,6 +1489,7 @@ void fillConnac3xTxDescAppendBySdo(
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
+uint32_t u4MawdPacketCnt;
 void fillConnac3xTxDescAppendByMawdSdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
@@ -1468,6 +1503,7 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_DMACB *pTxCell;
+	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
 	uint8_t *pucData;
 	struct BUS_INFO *prBusInfo;
@@ -1535,18 +1571,23 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	prTxRing = &prHifInfo->MawdTxRing[u2Port];
 	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
 
-	kalMemZero(pTxCell->AllocVa, u4TxDSize);
-
 	kalMemCopy(pTxCell->AllocVa, pucBuffer, u4TxDSize);
+
+	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) pTxCell->AllocVa;
+#if CFG_ENABLE_MAWD_MD_RING
+	HAL_MAC_CONNAC3X_TXD_SET_PACKET_SOURCE(prTxDesc, 1);
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		((uint8_t *)pTxCell->AllocVa + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
 	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
-	if (ucType)
+	if (ucType) {
 		prHwTxDescAppend->CR4_APPEND.u2PktFlags |=
+			HIF_PKT_FLAGS_CT_INFO_APPLY_OVERRIDE |
 			HIF_PKT_FLAGS_CT_INFO_STA_APPLY_OVERRIDE |
 			HIF_PKT_FLAGS_CT_INFO_MAWD_OFLD;
+	}
 
 	prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
 	prHwTxDescAppend->CR4_APPEND.ucWtblIndex = prMsduInfo->ucWlanIndex;
@@ -1559,6 +1600,11 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	prHwTxDescAppend->CR4_APPEND.au4BufPtr[1] = (rDmaAddr + ETH_HLEN);
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] =
 		prMsduInfo->u2FrameLength - ETH_HLEN;
+
+	DBGLOG(HAL, INFO, "Fill HIF TXD + payload[%d]\n", u4MawdPacketCnt++);
+	DBGLOG_MEM32(HAL, INFO, pTxCell->AllocVa,
+		     NIC_TX_DESC_AND_PADDING_LENGTH +
+		     prChipInfo->txd_append_size);
 }
 #endif
 
@@ -1650,8 +1696,9 @@ void asicConnac3xInitTxdHook(
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableSdo)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
-		prTxDescOps->fillNicAppend =
-			fillConnac3xNicTxDescAppendWithSdo;
+		if (prTxDescOps->fillNicSdoAppend)
+			prTxDescOps->fillNicAppend =
+				prTxDescOps->fillNicSdoAppend;
 		prTxDescOps->fillHifAppend =
 			fillConnac3xTxDescAppendBySdo;
 		prTxDescOps->fillTxByteCount =
@@ -1662,8 +1709,9 @@ void asicConnac3xInitTxdHook(
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx)) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
-		prTxDescOps->fillNicAppend =
-			fillConnac3xNicTxDescAppendWithSdo;
+		if (prTxDescOps->fillNicSdoAppend)
+			prTxDescOps->fillNicAppend =
+				prTxDescOps->fillNicSdoAppend;
 		prTxDescOps->fillHifAppend =
 			fillConnac3xTxDescAppendByMawdSdo;
 		prTxDescOps->fillTxByteCount =

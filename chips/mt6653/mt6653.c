@@ -122,6 +122,10 @@ static void mt6653ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
+#if (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
+static void mt6653EnableInterruptViaPcie(struct ADAPTER *prAdapter);
+static void mt6653DisableInterruptViaPcie(struct ADAPTER *prAdapter);
+#endif
 static void mt6653EnableInterrupt(struct ADAPTER *prAdapter);
 static void mt6653DisableInterrupt(struct ADAPTER *prAdapter);
 
@@ -294,10 +298,10 @@ struct PCIE_CHIP_CR_REMAPPING mt6653_bus2chip_cr_remapping = {
 };
 
 struct wfdma_group_info mt6653_wfmda_host_tx_group[] = {
-	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR},
-	{"P0T2:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_CTRL0_ADDR},
-	{"P0T3:AP DATA3", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_CTRL0_ADDR},
+	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
+	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
+	{"P0T2:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_CTRL0_ADDR, true},
+	{"P0T3:AP DATA3", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_CTRL0_ADDR, true},
 	{"P0T8:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_CTRL0_ADDR},
 	{"P0T9:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_CTRL0_ADDR},
 	{"P0T10:MD DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_CTRL0_ADDR},
@@ -308,11 +312,12 @@ struct wfdma_group_info mt6653_wfmda_host_tx_group[] = {
 };
 
 struct wfdma_group_info mt6653_wfmda_host_rx_group[] = {
-	{"P0R4:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R7:AP EVT/TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
-	{"P0R5:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
-	{"P0R8:AP ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR},
-	{"P0R6:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
+	{"P0R4:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR, true},
+	{"P0R7:AP EVT/TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR,
+	 true},
+	{"P0R5:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR, true},
+	{"P0R8:AP ICS", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR, true},
+	{"P0R6:AP DATA2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR, true},
 	{"P0R9:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR},
 	{"P0R10:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_CTRL0_ADDR},
 	{"P0R11:MD DATA2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_CTRL0_ADDR},
@@ -463,6 +468,12 @@ struct BUS_INFO mt6653_bus_info = {
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK |
+#if CFG_ENABLE_MAWD_MD_RING
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_11_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_12_MASK |
+#endif
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_8_MASK),
 
 	.host_tx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR,
@@ -484,6 +495,9 @@ struct BUS_INFO mt6653_bus_info = {
 	.mawd_rx_blk_ctrl0 = MAWD_AP_RX_BLK_CTRL0,
 	.mawd_rx_blk_ctrl1 = MAWD_AP_RX_BLK_CTRL1,
 	.mawd_rx_blk_ctrl2 = MAWD_AP_RX_BLK_CTRL2,
+	.mawd_md_rx_blk_ctrl0 = MAWD_MD_RX_BLK_CTRL0,
+	.mawd_md_rx_blk_ctrl1 = MAWD_MD_RX_BLK_CTRL1,
+	.mawd_md_rx_blk_ctrl2 = MAWD_MD_RX_BLK_CTRL2,
 	.mawd_ring_ctrl0 = MAWD_WFDMA_RING_MD_CTRL0,
 	.mawd_ring_ctrl1 = MAWD_WFDMA_RING_MD_CTRL1,
 	.mawd_ring_ctrl2 = MAWD_WFDMA_RING_MD_CTRL2,
@@ -512,10 +526,17 @@ struct BUS_INFO mt6653_bus_info = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
+#if CFG_ENABLE_MAWD_MD_RING
+	.tx_ring2_data_idx = 8,
+	.tx_ring3_data_idx = 9,
+	.rx_data_ring_num = 6,
+	.rx_evt_ring_num = 3,
+#else
 	.tx_ring2_data_idx = 2,
 	.tx_ring3_data_idx = 3,
 	.rx_data_ring_num = 3,
 	.rx_evt_ring_num = 2,
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 	.rx_data_ring_size = 3072,
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
@@ -634,6 +655,9 @@ struct TX_DESC_OPS_T mt6653_TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillConnac3xTxDescTxByteCount,
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	.fillNicSdoAppend = fillConnac3xNicTxDescAppendWithSdoV2,
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
 struct RX_DESC_OPS_T mt6653_RxDescOps = {0};
@@ -738,6 +762,36 @@ struct thermal_sensor_info mt6653_thermal_sensor_info[] = {
 };
 #endif
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+/* reset mawd idx to default value
+ * 0: md_rx_blk_ring_dma_idx	(default = 0)
+ * 1: ap_rx_blk_ring_dma_idx	(default = 0)
+ * 2: ind_cmd_q_magic		(default = 0)
+ * 3: ind_cmd_q_rdix		(default = 0)
+ * 4: ring0_hiftxd_adr_off	(default = 0)
+ * 5: hiftxd_q0_ridx		(default = 0)
+ * 6: ring1_hiftxd_adr_off	(default = 0)
+ * 7: hiftxd_q1_ridx		(default = 0)
+ * 8: ring2_hiftxd_adr_off	(default = 0)
+ * 9: hiftxd_q2_ridx		(default = 0)
+ * 10: err_rpt_dma_idx		(default = 0)
+ * 11: dmad_q0_widx		(default = 0)
+ * 12: dmad_q1_widx		(default = 0)
+ * 13: dmad_q2_widx		(default = 0)
+ * 14: dmad_q0_ridx		(default = 0)
+ * 15: dmad_q1_ridx		(default = 0)
+ * 16: dmad_q2_ridx		(default = 0)
+ * 17: md_rx_blk_ing_magic_cnt	(default = 0)
+ * 18: ap_rx_blk_ing_magic_cnt	(default = 0)
+ */
+uint32_t mt6653_mawd_idx_patch[] = {
+	0, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0
+};
+#endif
 
 struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.bus_info = &mt6653_bus_info,
@@ -764,6 +818,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.is_support_mawd = TRUE,
 	.is_support_sdo = TRUE,
 	.is_support_rro = TRUE,
+	.mawd_cr_backup_offset = 128,
+	.mawd_idx_patch = mt6653_mawd_idx_patch,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = FALSE,
 #endif /* _HIF_PCIE */
@@ -1072,6 +1128,23 @@ static uint8_t mt6653SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	case RX_RING_TXDONE0:
 		offset = 8;
 		break;
+#if CFG_ENABLE_MAWD_MD_RING
+	case RX_RING_DATA3:
+		offset = 9;
+		break;
+	case RX_RING_DATA4:
+		offset = 10;
+		break;
+	case RX_RING_DATA5:
+		offset = 11;
+		break;
+	case RX_RING_TXDONE1:
+		offset = 12;
+		break;
+	case RX_RING_TXDONE2:
+		offset = 13;
+		break;
+#endif
 	default:
 		return FALSE;
 	}
@@ -1109,6 +1182,38 @@ static bool mt6653WfdmaAllocRxRing(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
 		return false;
 	}
+#if CFG_ENABLE_MAWD_MD_RING
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_DATA3, prHifInfo->u4RxDataRingSize,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_DATA4, prHifInfo->u4RxDataRingSize,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_DATA5, prHifInfo->u4RxDataRingSize,
+			RXD_SIZE, CFG_RX_MAX_PKT_SIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[2] fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_TXDONE1, prHifInfo->u4RxEvtRingSize,
+			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo,
+			RX_RING_TXDONE2, prHifInfo->u4RxEvtRingSize,
+			RXD_SIZE, RX_BUFFER_AGGRESIZE, fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocRxRing[3] fail\n");
+		return false;
+	}
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 	return true;
 }
 
@@ -1174,6 +1279,15 @@ static void mt6653ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 		    (u4Sta &
 		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK))
 			halRroReadRxData(prAdapter);
+#if CFG_ENABLE_MAWD_MD_RING
+		if ((u4Sta &
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_9_MASK) ||
+		    (u4Sta &
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_10_MASK) ||
+		    (u4Sta &
+		     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_11_MASK))
+			halRroReadRxData(prAdapter);
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 	} else
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 #endif /* _HIF_PCIE || _HIF_AXI */
@@ -1260,7 +1374,7 @@ static void mt6653WfdmaManualPrefetch(
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 	u4WrVal += u4PrefetchBase;
 
-#if CFG_MTK_MDDP_SUPPORT
+#if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
@@ -1292,7 +1406,7 @@ static void mt6653WfdmaManualPrefetch(
 		u4WrVal += u4PrefetchBase;
 	}
 
-#if CFG_MTK_MDDP_SUPPORT
+#if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
@@ -1659,7 +1773,7 @@ static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	u4Value = 0x0000083C;
 #endif
 	HAL_MCR_WR(prAdapter,
-		WF_WFDMA_EXT_WRAP_CSR_WFDMA_MD_INT_LUMP_SEL,
+		WF_WFDMA_EXT_WRAP_CSR_WFDMA_MD_INT_LUMP_SEL_ADDR,
 		u4Value);
 #endif
 }
@@ -1830,6 +1944,23 @@ static void mt6653WfdmaRxRingExtCtrl(
 	case RX_RING_TXDONE0:
 		ext_offset = 8 * 4;
 		break;
+#if CFG_ENABLE_MAWD_MD_RING
+	case RX_RING_DATA3:
+		ext_offset = 9 * 4;
+		break;
+	case RX_RING_DATA4:
+		ext_offset = 10 * 4;
+		break;
+	case RX_RING_DATA5:
+		ext_offset = 11 * 4;
+		break;
+	case RX_RING_TXDONE1:
+		ext_offset = 12 * 4;
+		break;
+	case RX_RING_TXDONE2:
+		ext_offset = 13 * 4;
+		break;
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 	default:
 		DBGLOG(RX, ERROR, "Error index=%d\n", index);
 		return;

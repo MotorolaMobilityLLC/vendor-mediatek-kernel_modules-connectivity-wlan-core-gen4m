@@ -1251,6 +1251,10 @@ void fillConnac3xNicTxDescAppendWithSdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	uint8_t *prTxDescBuffer);
+void fillConnac3xNicTxDescAppendWithSdoV2(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t *prTxDescBuffer);
 void fillConnac3xTxDescAppendBySdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,

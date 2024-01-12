@@ -739,6 +739,9 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillConnac3xTxDescTxByteCount,
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	.fillNicSdoAppend = fillConnac3xNicTxDescAppendWithSdo,
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
 struct RX_DESC_OPS_T mt6639_RxDescOps = {0};
@@ -856,6 +859,36 @@ struct thermal_sensor_info mt6639_thermal_sensor_info[] = {
 };
 #endif
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+/* reset mawd idx to default value
+ * 0: md_rx_blk_ring_dma_idx	(default = 0)
+ * 1: ap_rx_blk_ring_dma_idx	(default = 0)
+ * 2: ind_cmd_q_magic		(default = 0)
+ * 3: ind_cmd_q_rdix		(default = 0)
+ * 4: ring0_hiftxd_adr_off	(default = ‘d32)
+ * 5: hiftxd_q0_ridx		(default = 0)
+ * 6: ring1_hiftxd_adr_off	(default = ‘d32)
+ * 7: hiftxd_q1_ridx		(default = 0)
+ * 8: ring2_hiftxd_adr_off	(default = ‘d32)
+ * 9: hiftxd_q2_ridx		(default = 0)
+ * 10: err_rpt_dma_idx		(default = 0)
+ * 11: dmad_q0_widx		(default = 0)
+ * 12: dmad_q1_widx		(default = 0)
+ * 13: dmad_q2_widx		(default = 0)
+ * 14: dmad_q0_ridx		(default = 0)
+ * 15: dmad_q1_ridx		(default = 0)
+ * 16: dmad_q2_ridx		(default = 0)
+ * 17: md_rx_blk_ing_magic_cnt	(default = 0)
+ * 18: ap_rx_blk_ing_magic_cnt	(default = 0)
+ */
+uint32_t mt6639_mawd_idx_patch[] = {
+	0, 0, 0, 0,
+	32, 0, 32, 0,
+	32, 0, 0, 0,
+	0, 0, 0, 0,
+	0, 0, 0
+};
+#endif
 
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
@@ -887,6 +920,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.is_support_mawd = TRUE,
 	.is_support_sdo = TRUE,
 	.is_support_rro = TRUE,
+	.is_en_fix_rro_amsdu_error = TRUE,
+	.mawd_cr_backup_offset = 88,
+	.mawd_idx_patch = mt6639_mawd_idx_patch,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = TRUE,
 #if CFG_MTK_WIFI_EN_SW_EMI_READ
