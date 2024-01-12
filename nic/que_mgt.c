@@ -9403,8 +9403,6 @@ void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
 	uint8_t *pPkt = NULL;
 	struct sk_buff *skb = NULL;
 	uint16_t u2EtherType;
-	uint8_t *pucEthBody;
-	struct GL_WPA_INFO *prWpaInfo;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
 		return;
@@ -9420,12 +9418,11 @@ void qmCheckRxEAPOLM3(IN struct ADAPTER *prAdapter,
 	/* get ethernet protocol */
 	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
 			| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
-	pucEthBody = &pPkt[ETH_HLEN];
 
-	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
 
 	if (u2EtherType == ETH_P_1X) {
+		uint8_t *pucEthBody = &pPkt[ETH_HLEN];
 		uint8_t *pucEapol = pucEthBody;
 		uint8_t ucEapolType = pucEapol[1];
 		uint16_t u2KeyInfo = 0;
