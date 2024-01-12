@@ -1654,6 +1654,10 @@ void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
 				IN struct CMD_INFO *prCmdInfo);
 
+uint32_t wlanGetThreadWakeUp(IN struct ADAPTER *prAdapter);
+
+uint32_t wlanGetTxdAppendSize(IN struct ADAPTER *prAdapter);
+
 #if CFG_SUPPORT_CSI
 u_int8_t wlanPushCSIData(IN struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSIData);
