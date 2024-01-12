@@ -217,6 +217,12 @@ uint32_t nanSchedGetDevCapabilityAttr(struct ADAPTER *prAdapter,
 				      uint8_t **ppucDevCapAttr,
 				      uint32_t *pu4DevCapAttrLength);
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+uint32_t nanSchedGetDevCapabilityExtAttr(struct ADAPTER *prAdapter,
+				      uint8_t **ppucDevCapExtAttr,
+				      uint32_t *pu4DevCapExtAttrLength);
+#endif
+
 uint32_t nanSchedGetUnalignedScheduleAttr(struct ADAPTER *prAdapter,
 					  uint8_t **ppucUnalignedScheduleAttr,
 					  uint32_t *pu4UnalignedScheduleLength);
@@ -299,7 +305,7 @@ uint32_t nanGetPeerPrimaryChnlBySlot(struct ADAPTER *prAdapter,
 uint32_t nanSchedConfigPhyParams(struct ADAPTER *prAdapter);
 uint32_t nanSchedCmdUpdateSchedVer(struct ADAPTER *prAdapter);
 uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
-		uint8_t ucChannel);
+		enum ENUM_BAND eBand);
 
 uint32_t
 nanSchedCmdUpdatePhySettigns(struct ADAPTER *prAdapter,
@@ -344,7 +350,7 @@ void nanSchedPeerCompleteNegoState(struct ADAPTER *prAdapter,
 uint32_t nanSchedNegoCustFawResetCmd(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoCustFawApplyCmd(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoCustFawConfigCmd(struct ADAPTER *prAdapter, uint8_t ucChnl,
-				      uint32_t u4SlotBitmap);
+	enum ENUM_BAND eBand, uint32_t u4SlotBitmap);
 
 void nanSchedReleaseUnusedCommitSlot(struct ADAPTER *prAdapter);
 enum ENUM_BAND

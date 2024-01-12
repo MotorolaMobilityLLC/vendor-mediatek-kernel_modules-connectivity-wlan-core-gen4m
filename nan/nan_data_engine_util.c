@@ -2755,6 +2755,66 @@ nanDataEngineDevCapAttrAppend(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_NAN_6G == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief            NAN Attribute Length Estimation - Device Capability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+uint16_t
+nanDataEngineDevCapExtAttrLength(struct ADAPTER *prAdapter,
+			      struct _NAN_NDL_INSTANCE_T *prNDL,
+			      struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+	uint8_t *pucDevCapExtAttr = NULL;
+	uint32_t u4DevCapExtAttrLength = 0;
+
+	if ((prNDL == NULL) && (prNDP == NULL))
+		return 0;
+
+	nanSchedGetDevCapabilityExtAttr(prAdapter, &pucDevCapExtAttr,
+				     &u4DevCapExtAttrLength);
+
+	return u4DevCapExtAttrLength;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief            NAN Attribute Length Generation - Device Capability
+ *
+ * \param[in]
+ *
+ * \return Status
+ */
+/*----------------------------------------------------------------------------*/
+void
+nanDataEngineDevCapExtAttrAppend(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo,
+			      struct _NAN_NDL_INSTANCE_T *prNDL,
+			      struct _NAN_NDP_INSTANCE_T *prNDP)
+{
+	uint8_t *pucDevCapExtAttr = NULL;
+	uint32_t u4DevCapExtAttrLength = 0;
+
+	if ((prNDL == NULL) && (prNDP == NULL))
+		return;
+
+	nanSchedGetDevCapabilityExtAttr(prAdapter, &pucDevCapExtAttr,
+				     &u4DevCapExtAttrLength);
+
+	if ((pucDevCapExtAttr != NULL) && (u4DevCapExtAttrLength != 0)) {
+		kalMemCopy(((uint8_t *)prMsduInfo->prPacket) +
+				   prMsduInfo->u2FrameLength,
+			   pucDevCapExtAttr, u4DevCapExtAttrLength);
+		prMsduInfo->u2FrameLength += u4DevCapExtAttrLength;
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief            NAN Attribute Length Estimation - NAN Availability
