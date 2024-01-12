@@ -1381,7 +1381,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_cancel_rtt_config
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_set_rtt_config_policy,
+		.maxattr = RTT_ATTRIBUTE_MAX
 #endif
 	},
 #endif /* CFG_SUPPORT_RTT */
