@@ -2525,7 +2525,7 @@ rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
 						rPowerLimitTableConfiguration,
 			      uint8_t ucPwrLimitNum)
 {
-	uint8_t i;
+	uint16_t i;
 	u_int8_t fgValid = TRUE;
 	int8_t *prPwrLimit;
 
@@ -2554,7 +2554,7 @@ rlmDomainCheckPowerLimitValid(struct ADAPTER *prAdapter,
 void rlmDomainCheckCountryPowerLimitTable(struct ADAPTER *prAdapter)
 {
 #define PwrLmtConf g_rRlmPowerLimitConfiguration
-	uint8_t i, j;
+	uint16_t i, j;
 	uint16_t u2CountryCodeTable, u2CountryCodeCheck;
 	u_int8_t fgChannelValid = FALSE;
 	u_int8_t fgPowerLimitValid = FALSE;
@@ -2715,7 +2715,7 @@ void rlmDomainBuildCmdByDefaultTable(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT
 				*prCmd,
 				uint16_t u2DefaultTableIndex)
 {
-	uint8_t i, k;
+	uint16_t i, k;
 	struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT *prPwrLimitSubBand;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
 
@@ -2859,7 +2859,7 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 			struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd)
 {
 #define PwrLmtConf g_rRlmPowerLimitConfiguration
-	uint8_t i, k;
+	uint16_t i, k;
 	uint16_t u2CountryCodeTable = COUNTRY_CODE_NULL;
 	struct CMD_CHANNEL_POWER_LIMIT *prCmdPwrLimit;
 	u_int8_t fgChannelValid;
