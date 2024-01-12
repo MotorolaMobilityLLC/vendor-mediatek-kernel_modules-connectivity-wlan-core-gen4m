@@ -6909,7 +6909,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"EhtAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"StaEHTBfee", FEATURE_ENABLED);
-	prWifiVar->ucPresetLinkId = 0xff;
+	prWifiVar->ucPresetLinkId = MLD_LINK_ID_NONE;
 	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"MldLinkMax", MLD_LINK_MAX);
 	prWifiVar->ucApMldAddrByLink = (uint8_t) wlanCfgGetInt32(
