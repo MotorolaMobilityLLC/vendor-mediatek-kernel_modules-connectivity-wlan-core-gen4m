@@ -1457,6 +1457,7 @@ struct UNI_CMD_WSYS_CONFIG {
 	*   UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL  | 0x2 | UNI_CMD_WSYS_CONFIG_FW_LOG_UI_CTRL_T
 	*   UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG | 0x3 | UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG_T
 	*   UNI_CMD_HOSTREPORT_TX_LATENCY_CONFIG| 0x4 | UNI_CMD_WSYS_CONFIG_HOSTREPORT_TX_LATENCY_T
+	*   UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL | 0x5 | UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL_T
 	*/
 }  __KAL_ATTRIB_PACKED__;
 
@@ -1467,6 +1468,7 @@ enum ENUM_UNI_CMD_WSYS_CONFIG_TAG {
 	UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_UI_CTRL = 2,
 	UNI_CMD_WSYS_CONFIG_TAG_FW_BASIC_CONFIG = 3,
 	UNI_CMD_WSYS_CONFIG_TAG_HOSTREPORT_TX_LATENCY_CONFIG = 4,
+	UNI_CMD_WSYS_CONFIG_TAG_FW_LOG_BUFFER_CTRL = 5,
 	UNI_CMD_WSYS_CONFIG_TAG_NUM
 };
 
@@ -1501,6 +1503,22 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint16_t u2TxChecksum;   /* bit0: IP, bit1: UDP, bit2: TCP */
 	uint8_t ucCtrlFlagAssertPath;
 	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* FW Log Buffer Control Setting (Tag5) */
+struct UNI_CMD_WSYS_CONFIG_FW_LOG_BUFFER_CTRL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4MCUAddr;
+	uint32_t u4WFAddr;
+	uint32_t u4BTAddr;
+	uint32_t u4GPSAddr;
+	/*
+	 * BIT[0]:Get Log buffer control block base address
+	 * BIT[1~4]: update MCU/WiFi/BT/GPS read pointer
+	 */
+	uint8_t ucType;
+	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_ROAMING {
@@ -4353,6 +4371,29 @@ struct UNI_EVENT_TXPOWER_RSP {
     uint8_t aucBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_WSYS_CONFIG {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_WSYS_CONFIG_TAG {
+	UNI_EVENT_FW_LOG_UI_INFO = 0,
+	UNI_EVENT_FW_LOG_BUFFER_CTRL = 1,
+	UNI_EVENT_WSYS_CONFIG_TAG_NUM
+};
+
+struct UNI_EVENT_FW_LOG_BUFFER_CTRL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucType;
+	uint8_t ucStatus;
+	uint8_t aucReserved[2];
+	uint32_t u4Address;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_BA_OFFLOAD {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -5169,6 +5210,11 @@ uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdNan(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdFwLogQueryBase(struct ADAPTER *ad,
+	uint32_t *addr);
+uint32_t nicUniCmdFwLogUpdateRead(struct ADAPTER *ad,
+	enum FW_LOG_CMD_CTRL_TYPE type,
+	uint32_t addr);
 
 /*******************************************************************************
  *                   Event
@@ -5228,6 +5274,8 @@ void nicUniEventTxPowerInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventEfuseControl(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
+	IN struct CMD_INFO *cmd, IN uint8_t *event);
 
 /*******************************************************************************
  *                   Unsolicited Event

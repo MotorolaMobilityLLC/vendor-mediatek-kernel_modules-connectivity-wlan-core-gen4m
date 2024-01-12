@@ -380,6 +380,7 @@ endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 #CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
+#CONFIG_MTK_WIFI_FW_LOG_CTRL=y
 endif
 
 ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
@@ -1098,6 +1099,10 @@ else ifeq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac3x.o \
               $(CHIPS_CMM)dbg_connac3x.o \
               $(CHIPS_CMM)dbg_wtbl_connac3x.o
+    ifeq ($(CONFIG_MTK_WIFI_FW_LOG_CTRL), y)
+        CHIPS_OBJS += $(CHIPS_CMM)fw_log_ctrl.o
+        ccflags-y += -DCFG_MTK_WIFI_FW_LOG_CTRL=1
+    endif
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v3.o \
             $(NIC_DIR)nic_rxd_v3.o
