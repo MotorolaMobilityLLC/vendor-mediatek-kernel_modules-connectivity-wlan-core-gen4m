@@ -1518,6 +1518,22 @@ wlanoidSetP2pSupplicantVersion(struct ADAPTER *prAdapter,
 }				/* wlanoidSetP2pSupplicantVersion */
 
 uint32_t
+wlanoidRequestP2pScan(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen)
+{
+	struct MSG_HDR *prMsgHdr = pvQueryBuffer;
+
+	if (!prMsgHdr)
+		return WLAN_STATUS_INVALID_DATA;
+
+	p2pFsmRunEventScanRequest(prAdapter, prMsgHdr);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
 wlanoidAbortP2pScan(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer,
 		uint32_t u4QueryBufferLen,

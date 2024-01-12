@@ -248,6 +248,12 @@ wlanoidSetP2pWPSmode(struct ADAPTER *prAdapter,
 #endif
 
 uint32_t
+wlanoidRequestP2pScan(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer,
+		uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen);
+
+uint32_t
 wlanoidAbortP2pScan(struct ADAPTER *prAdapter,
 		void *pvQueryBuffer,
 		uint32_t u4QueryBufferLen,
