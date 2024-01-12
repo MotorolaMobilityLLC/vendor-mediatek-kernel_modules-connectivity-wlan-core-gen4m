@@ -1188,6 +1188,8 @@ err_free_irq_vectors:
 #if (CFG_MTK_ANDROID_WMT == 0)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
+	pci_set_drvdata(pdev, NULL);
+	prChipInfo->CSRBaseAddress = NULL;
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
 #endif
@@ -1203,10 +1205,8 @@ out:
 
 static void mtk_pci_remove(struct pci_dev *pdev)
 {
-#if (CFG_MTK_ANDROID_WMT == 0)
 	struct mt66xx_hif_driver_data *prDriverData = pci_get_drvdata(pdev);
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
-#endif
 
 	ASSERT(pdev);
 
@@ -1219,6 +1219,7 @@ static void mtk_pci_remove(struct pci_dev *pdev)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
 	pci_set_drvdata(pdev, NULL);
+	prChipInfo->CSRBaseAddress = NULL;
 #if KERNEL_VERSION(4, 8, 0) <= LINUX_VERSION_CODE
 	pci_free_irq_vectors(pdev);
 #endif
