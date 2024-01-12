@@ -4270,16 +4270,14 @@ int mtk_cfg80211_vendor_p2p_listen_offload_start(
 
 	prMsg->rInfo.u4Count = nla_get_u32(tb
 		[QCA_WLAN_VENDOR_ATTR_P2P_LO_COUNT]);
-	if (!((prMsg->rInfo.u4Count >= 0) &&
-		(prMsg->rInfo.u4Count < UINT_MAX))) {
+	if (!(prMsg->rInfo.u4Count < UINT_MAX)) {
 		rStatus = -EINVAL;
 		goto exit;
 	}
 
 	prMsg->rInfo.u2DevLen = nla_len(tb
 		[QCA_WLAN_VENDOR_ATTR_P2P_LO_DEVICE_TYPES]);
-	if (!((prMsg->rInfo.u2DevLen >= 0) &&
-		(prMsg->rInfo.u2DevLen < MAX_UEVENT_LEN))) {
+	if (!(prMsg->rInfo.u2DevLen < MAX_UEVENT_LEN)) {
 		DBGLOG(REQ, ERROR, "Invalid u2DevLen");
 		rStatus = -EINVAL;
 		goto exit;
