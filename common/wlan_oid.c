@@ -6228,12 +6228,15 @@ wlanoidQueryMcrRead(IN struct ADAPTER *prAdapter,
 		    OUT uint32_t *pu4QueryInfoLen) {
 	struct PARAM_CUSTOM_MCR_RW_STRUCT *prMcrRdInfo;
 	struct CMD_ACCESS_REG rCmdAccessReg;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 
 	DEBUGFUNC("wlanoidQueryMcrRead");
 	DBGLOG(INIT, LOUD, "\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
+	prChipInfo = prAdapter->chip_info;
+	ASSERT(prChipInfo);
 	if (u4QueryBufferLen)
 		ASSERT(pvQueryBuffer);
 
@@ -6277,13 +6280,25 @@ wlanoidQueryMcrRead(IN struct ADAPTER *prAdapter,
 					   pvQueryBuffer,
 					   u4QueryBufferLen);
 	} else {
-		HAL_MCR_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2,
-				       31)),	/* address is in DWORD unit */
-			   &prMcrRdInfo->u4McrData);
+		if (prMcrRdInfo->u4McrOffset == 0 &&
+		    prChipInfo->asicGetChipID) {
+			prMcrRdInfo->u4McrData =
+				prChipInfo->asicGetChipID(prAdapter);
+			log_dbg(INIT, INFO,
+				"Get Chip ID [0x%08x] from FW\n",
+				prMcrRdInfo->u4McrData);
+		} else {
 
-		DBGLOG(INIT, TRACE,
-		       "MCR Read: Offset = %#08x, Data = %#08x\n",
-		       prMcrRdInfo->u4McrOffset, prMcrRdInfo->u4McrData);
+			HAL_MCR_RD(prAdapter,
+				/* address is in DWORD unit */
+				(prMcrRdInfo->u4McrOffset & BITS(2, 31)),
+				   &prMcrRdInfo->u4McrData);
+
+			DBGLOG(INIT, TRACE,
+			       "MCR Read: Offset = %#08x, Data = %#08x\n",
+			       prMcrRdInfo->u4McrOffset,
+			       prMcrRdInfo->u4McrData);
+		}
 		return WLAN_STATUS_SUCCESS;
 	}
 }				/* end of wlanoidQueryMcrRead() */
