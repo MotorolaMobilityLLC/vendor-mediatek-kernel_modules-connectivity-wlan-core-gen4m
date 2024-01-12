@@ -147,6 +147,7 @@ static struct pci_driver mtk_pci_driver = {
 };
 
 static BOOLEAN g_fgDriverProbed = FALSE;
+static UINT_32 g_u4DmaMask = 32;
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -156,6 +157,8 @@ static BOOLEAN g_fgDriverProbed = FALSE;
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
+static VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -233,7 +236,11 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		pfWlanRemove();
 		ret = -1;
 	} else {
+		struct mt66xx_chip_info *prChipInfo;
+
+		prChipInfo = ((struct mt66xx_hif_driver_data *)id->driver_data)->chip_info;
 		g_fgDriverProbed = TRUE;
+		g_u4DmaMask = prChipInfo->bus_info->u4DmaMask;
 	}
 out:
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
@@ -345,10 +352,6 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
-	halWpdmaAllocRing(prGlueInfo);
-
-	halWpdmaInitRing(prGlueInfo);
-
 	spin_lock_init(&prHif->rDynMapRegLock);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
@@ -390,7 +393,7 @@ BOOL glBusInit(PVOID pvData)
 
 	pdev = (struct pci_dev *)pvData;
 
-	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(32));
+	ret = pci_set_dma_mask(pdev, DMA_BIT_MASK(g_u4DmaMask));
 	if (ret != 0) {
 		DBGLOG(INIT, INFO, "set DMA mask failed!errno=%d\n", ret);
 		return FALSE;
@@ -653,6 +656,7 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 
 	spin_lock_irqsave(pRxRingLock, flags);
 
+	kalCheckAndResetRXReg(prGlueInfo, u2Port);
 	pRxCell = &prRxRing->Cell[prRxRing->RxSwReadIdx];
 
 	/* Point to Rx indexed rx ring descriptor */
@@ -670,8 +674,6 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 
 	prDmaBuf = &pRxCell->DmaBuf;
 
-	pci_unmap_single(pdev, prDmaBuf->AllocPa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
-
 	if (pRxD->LS0 == 0 || prRxRing->fgRxSegPkt) {
 		/* Rx segmented packet */
 
@@ -688,6 +690,8 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 		goto skip;
 	}
 
+	pci_unmap_single(pdev, prDmaBuf->AllocPa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
+
 	if (pRxD->SDL0 <= u4Len) {
 		pRxPacket = pRxCell->pPacket;
 		ASSERT(pRxPacket);
@@ -695,19 +699,26 @@ kalDevPortRead(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN UINT_32 u4Len,
 	} else
 		DBGLOG(HAL, WARN, "Skip Rx packet, SDL0[%u] > SwRfb max len[%u]\n", pRxD->SDL0, u4Len);
 
-skip:
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
 	prDmaBuf->AllocPa = pci_map_single(pdev, prDmaBuf->AllocVa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
+	if (pci_dma_mapping_error(pdev, prDmaBuf->AllocPa)) {
+		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+		spin_unlock_irqrestore(pRxRingLock, flags);
+		ASSERT(0);
+		return FALSE;
+	}
 
-	pRxD->SDP0 = prDmaBuf->AllocPa;
+	pRxD->SDP0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+	pRxD->SDP1 = ((UINT_64)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
+skip:
 	pRxD->SDL0 = prRxRing->u4BufSize;
 	pRxD->DDONE = 0;
 
+done:
 	prRxRing->RxCpuIdx = prRxRing->RxSwReadIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	INC_RING_INDEX(prRxRing->RxSwReadIdx, prRxRing->u4RingSize);
 
-done:
 	spin_unlock_irqrestore(pRxRingLock, flags);
 
 	return fgRet;
@@ -759,18 +770,27 @@ kalDevPortWrite(IN P_GLUE_INFO_T prGlueInfo,
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
+	kalCheckAndResetTXReg(prGlueInfo, u2Port);
 	SwIdx = prTxRing->TxCpuIdx;
 	pTxD = (TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
 
 	prTxRing->Cell[SwIdx].pPacket = NULL;
 	prTxRing->Cell[SwIdx].pBuffer = pucSrc;
 	prTxRing->Cell[SwIdx].PacketPa = pci_map_single(pdev, pucSrc, u4SrcLen, PCI_DMA_TODEVICE);
+	if (pci_dma_mapping_error(pdev, prTxRing->Cell[SwIdx].PacketPa)) {
+		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+		kalMemFree(pucSrc, PHY_MEM_TYPE, u4SrcLen);
+		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
+		ASSERT(0);
+		return FALSE;
+	}
 
 	pTxD->LastSec0 = 1;
 	pTxD->LastSec1 = 0;
 	pTxD->SDLen0 = u4SrcLen;
 	pTxD->SDLen1 = 0;
-	pTxD->SDPtr0 = prTxRing->Cell[SwIdx].PacketPa;
+	pTxD->SDPtr0 = prTxRing->Cell[SwIdx].PacketPa & DMA_LOWER_32BITS_MASK;
+	pTxD->SDPtr0Ext = ((UINT_64)prTxRing->Cell[SwIdx].PacketPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 	pTxD->SDPtr1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
@@ -838,14 +858,23 @@ BOOL kalDevWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN U
 
 	spin_lock_irqsave((spinlock_t *)prTxRingLock, flags);
 
+	kalCheckAndResetTXReg(prGlueInfo, TX_RING_CMD_IDX_2);
 	SwIdx = prTxRing->TxCpuIdx;
 	pTxD = (TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
 
 	prTxRing->Cell[SwIdx].pPacket = (PVOID)prCmdInfo;
 	prTxRing->Cell[SwIdx].pBuffer = pucSrc;
 	prTxRing->Cell[SwIdx].PacketPa = pci_map_single(pdev, pucSrc, u4TotalLen, PCI_DMA_TODEVICE);
+	if (pci_dma_mapping_error(pdev, prTxRing->Cell[SwIdx].PacketPa)) {
+		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+		kalMemFree(pucSrc, PHY_MEM_TYPE, u4TotalLen);
+		spin_unlock_irqrestore((spinlock_t *)prTxRingLock, flags);
+		ASSERT(0);
+		return FALSE;
+	}
 
-	pTxD->SDPtr0 = prTxRing->Cell[SwIdx].PacketPa;
+	pTxD->SDPtr0 = prTxRing->Cell[SwIdx].PacketPa & DMA_LOWER_32BITS_MASK;
+	pTxD->SDPtr0Ext = ((UINT_64)prTxRing->Cell[SwIdx].PacketPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 	pTxD->SDLen0 = u4TotalLen;
 	pTxD->SDPtr1 = 0;
 	pTxD->SDLen1 = 0;
@@ -916,13 +945,16 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 	if (pci_dma_mapping_error(pdev, prToken->rDmaAddr)) {
 		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
 		halReturnMsduToken(prGlueInfo->prAdapter, prToken->u4Token);
+		ASSERT(0);
 		return FALSE;
 	}
 
+	kalCheckAndResetTXReg(prGlueInfo, u2Port);
 	SwIdx = prTxRing->TxCpuIdx;
 	pTxD = (TXD_STRUCT *) prTxRing->Cell[SwIdx].AllocVa;
 
-	pTxD->SDPtr0 = prToken->rDmaAddr;
+	pTxD->SDPtr0 = prToken->rDmaAddr & DMA_LOWER_32BITS_MASK;
+	pTxD->SDPtr0Ext = ((UINT_64)prToken->rDmaAddr >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 	pTxD->SDLen0 = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 	if (prChipInfo->is_support_cr4)
 		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
@@ -1022,6 +1054,7 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 
 	spin_lock_irqsave(pRxRingLock, flags);
 
+	kalCheckAndResetRXReg(prGlueInfo, u2Port);
 	pRxCell = &prRxRing->Cell[prRxRing->RxSwReadIdx];
 
 	/* Point to Rx indexed rx ring descriptor */
@@ -1072,17 +1105,24 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
 	prDmaBuf->AllocPa = pci_map_single(pdev, prDmaBuf->AllocVa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
+	if (pci_dma_mapping_error(pdev, prDmaBuf->AllocPa)) {
+		DBGLOG(HAL, ERROR, "pci_map_single() error!\n");
+		spin_unlock_irqrestore(pRxRingLock, flags);
+		ASSERT(0);
+		return FALSE;
+	}
 
-	pRxD->SDP0 = prDmaBuf->AllocPa;
+	pRxD->SDP0 = prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
+	pRxD->SDP1 = ((UINT_64)prDmaBuf->AllocPa >> DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK;
 skip:
 	pRxD->SDL0 = prRxRing->u4BufSize;
 	pRxD->DDONE = 0;
 
+done:
 	prRxRing->RxCpuIdx = prRxRing->RxSwReadIdx;
 	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
 	INC_RING_INDEX(prRxRing->RxSwReadIdx, prRxRing->u4RingSize);
 
-done:
 	spin_unlock_irqrestore(pRxRingLock, flags);
 
 	return fgRet;
@@ -1097,6 +1137,112 @@ VOID kalPciUnmapToDev(IN P_GLUE_INFO_T prGlueInfo, IN dma_addr_t rDmaAddr, IN UI
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 	pci_unmap_single(pdev, rDmaAddr, u4Length, PCI_DMA_TODEVICE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Get current CONNSYS TX ring relative register's value, make sure
+*        the value matches our AP side's value (register may get reset in sleep mode)
+*
+* \param[in] prGlueInfo         Pointer to the GLUE_INFO_T structure.
+* \param[in] u2Port             TX RING INDEX
+*
+*/
+/*----------------------------------------------------------------------------*/
+static VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
+{
+	P_GL_HIF_INFO_T prHifInfo = NULL;
+	P_RTMP_TX_RING prTxRing = NULL;
+	P_BUS_INFO prBusInfo = NULL;
+	UINT_32 u4CpuIdx = 0, i = 0, offset = 0, phy_addr = 0;
+	UINT_32 phy_addr_ext = 0, ext_offset = 0;
+
+	ASSERT(prGlueInfo);
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prTxRing = &prHifInfo->TxRing[u2Port];
+
+	kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
+	DBGLOG(HAL, TRACE, "prTxRing->TxCpuIdx = %d, u4CpuIdx = %d\n", prTxRing->TxCpuIdx, u4CpuIdx);
+
+	/* FW slept and needs to reset */
+	if (prTxRing->TxCpuIdx != u4CpuIdx) {
+
+		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+		/* reset all TX Ring register */
+		for (i = 0; i < NUM_OF_TX_RING; i++) {
+			prTxRing = &prHifInfo->TxRing[i];
+			if (i == TX_RING_CMD_IDX_2)
+				offset = prBusInfo->tx_ring_cmd_idx * MT_RINGREG_DIFF;
+			else
+				offset = i * MT_RINGREG_DIFF;
+			phy_addr = (UINT_32)(prHifInfo->TxRing[i].Cell[0].AllocPa & DMA_LOWER_32BITS_MASK);
+			phy_addr_ext = (UINT_32)(((UINT_64)prHifInfo->TxRing[i].Cell[0].AllocPa >> DMA_BITS_OFFSET)
+						 & DMA_HIGHER_4BITS_MASK);
+			ext_offset = i * MT_RINGREG_EXT_DIFF;
+			prTxRing->TxSwUsedIdx = 0;
+			prTxRing->u4UsedCnt = 0;
+			prTxRing->TxCpuIdx = 0;
+			kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base, phy_addr);
+			kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base_ext, phy_addr_ext);
+			kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+			kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr, TX_RING_SIZE);
+
+			DBGLOG(HAL, TRACE, "-->TX_RING_%d[0x%x]: Base=0x%x, Cnt=%d!\n",
+				i, prHifInfo->TxRing[i].hw_desc_base, phy_addr, TX_RING_SIZE);
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Get current CONNSYS RX ring relative register's value, make sure
+*        the value matches our AP side's value (register may get reset in sleep mode)
+*
+* \param[in] prGlueInfo         Pointer to the GLUE_INFO_T structure.
+* \param[in] u2Port             RX RING INDEX
+*
+*/
+/*----------------------------------------------------------------------------*/
+static VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port)
+{
+	P_GL_HIF_INFO_T prHifInfo = NULL;
+	P_RTMP_RX_RING prRxRing = NULL;
+	P_BUS_INFO prBusInfo = NULL;
+	UINT_32 u4CpuIdx = 0, i = 0, offset = 0, phy_addr = 0;
+	UINT_32 phy_addr_ext = 0, ext_offset = 0;
+
+	ASSERT(prGlueInfo);
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prRxRing = &prHifInfo->RxRing[u2Port];
+
+	kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &u4CpuIdx);
+	DBGLOG(HAL, TRACE, "prRxRing->RxCpuIdx = %d, u4CpuIdx = %d\n", prRxRing->RxCpuIdx, u4CpuIdx);
+
+	/* FW slept and needs to reset */
+	if (prRxRing->RxCpuIdx != u4CpuIdx) {
+
+		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+		/* reset all TX Ring register */
+		/* Init RX Ring0 Base/Size/Index pointer CSR */
+		for (i = 0; i < NUM_OF_RX_RING; i++) {
+			prRxRing = &prHifInfo->RxRing[i];
+			offset = i * MT_RINGREG_DIFF;
+			phy_addr = (UINT_32)(prRxRing->Cell[0].AllocPa & DMA_LOWER_32BITS_MASK);
+			phy_addr_ext = (UINT_32)(((UINT_64)prRxRing->Cell[0].AllocPa >> DMA_BITS_OFFSET)
+						 & DMA_HIGHER_4BITS_MASK);
+			ext_offset = i * MT_RINGREG_EXT_DIFF;
+			prRxRing->hw_desc_base_ext = MT_RX_RING_BASE_EXT + ext_offset;
+			prRxRing->RxSwReadIdx = 0;
+			prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
+			kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base, phy_addr);
+			kalDevRegWrite(prGlueInfo, prRxRing->hw_desc_base_ext, phy_addr_ext);
+			kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
+			kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr, prRxRing->u4RingSize);
+
+			DBGLOG(HAL, INFO, "-->RX_RING%d[0x%x]: Base=0x%x, Cnt=%d\n",
+				i, prRxRing->hw_desc_base, phy_addr, prRxRing->u4RingSize);
+		}
+	}
 }
 
 VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)

@@ -428,6 +428,8 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 
 #define CONN_HIF_RST					(PCIE_HIF_BASE + 0x0100)
 
+#define WPDMA_FIFO_TEST_MOD				(PCIE_HIF_BASE + 0x0140)
+
 /* HIF Low Power Control Host Register */
 #define CFG_PCIE_LPCR_HOST				(PCIE_HIF_BASE + 0x01F0)
 
@@ -474,6 +476,12 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 
 /* RX Ring0 Control 3 */
 #define WPDMA_RX_RING0_CTRL3			(PCIE_HIF_BASE + 0x040C)
+
+/* TX RING more than 32bits extension */
+#define WPDMA_TX_RING0_BASE_PTR_EXT		(PCIE_HIF_BASE + 0x0500)
+
+/* RX RING more than 32bits extension */
+#define WPDMA_RX_RING0_BASE_PTR_EXT		(PCIE_HIF_BASE + 0x0580)
 
 #define MT_WPDMA_GLO_CFG_1              (PCIE_HIF_BASE + 0x0500)
 
@@ -606,7 +614,7 @@ typedef union _WPDMA_GLO_CFG_STRUCT {
 		UINT_32 pfet_arb_mi_depth:3;
 		UINT_32 reserved22:3;
 		UINT_32 force_tx_eof:1;
-		UINT_32 reserved26:1;
+		UINT_32 pdma_addr_ext_en:1;
 		UINT_32 omit_rx_info:1;
 		UINT_32 omit_tx_info:1;
 		UINT_32 byte_swap:1;
