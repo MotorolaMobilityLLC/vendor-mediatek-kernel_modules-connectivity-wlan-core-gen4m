@@ -117,14 +117,15 @@ void asicConnac3xCapInit(
 	uint32_t u4HostWpdamBase = 0;
 
 	ASSERT(prAdapter);
-	if (prAdapter->chip_info->is_support_wfdma1)
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_1_BASE;
-	else
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
+	u4HostWpdamBase = prChipInfo->u4HostWfdmaBaseAddr;
+	if (u4HostWpdamBase == 0) {
+		DBGLOG(HAL, ERROR, "HostWfdmaBaseAddr is not set\n");
+		return;
+	}
 
 	prChipInfo->u2HifTxdSize = 0;
 	prChipInfo->u2TxInitCmdPort = 0;
@@ -1161,6 +1162,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0, u4Addr = 0;
 	uint32_t u4HostWpdamBase = 0;
@@ -1173,12 +1175,13 @@ void asicConnac3xProcessSoftwareInterrupt(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
-
-	if (prAdapter->chip_info->is_support_wfdma1)
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_1_BASE;
-	else
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
+	u4HostWpdamBase = prChipInfo->u4HostWfdmaBaseAddr;
+	if (u4HostWpdamBase == 0) {
+		DBGLOG(HAL, ERROR, "HostWfdmaBaseAddr is not set\n");
+		return;
+	}
 
 	u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
 	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
@@ -1203,6 +1206,7 @@ void asicConnac3xSoftwareInterruptMcu(
 	struct ADAPTER *prAdapter, u_int32_t intrBitMask)
 {
 	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t u4McuWpdamBase = 0;
 
 	if (prAdapter == NULL || prAdapter->prGlueInfo == NULL) {
@@ -1211,10 +1215,13 @@ void asicConnac3xSoftwareInterruptMcu(
 	}
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	if (prAdapter->chip_info->is_support_wfdma1)
-		u4McuWpdamBase = CONNAC3X_MCU_WPDMA_1_BASE;
-	else
-		u4McuWpdamBase = CONNAC3X_MCU_WPDMA_0_BASE;
+	prChipInfo = prAdapter->chip_info;
+	u4McuWpdamBase = prChipInfo->u4McuWfdmaBaseAddr;
+	if (u4McuWpdamBase == 0) {
+		DBGLOG(HAL, ERROR, "McuWfdmaBaseAddr is not set\n");
+		return;
+	}
+
 	kalDevRegWrite(prGlueInfo,
 		CONNAC3X_WPDMA_HOST2MCU_SW_INT_SET(u4McuWpdamBase),
 		intrBitMask);
@@ -1225,6 +1232,7 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0, u4Addr = 0;
 	uint32_t u4HostWpdamBase = 0;
@@ -1237,12 +1245,13 @@ uint32_t asicConnac3xGetMdSoftwareInterruptStatus(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
-
-	if (prAdapter->chip_info->is_support_wfdma1)
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_1_BASE;
-	else
-		u4HostWpdamBase = CONNAC3X_HOST_WPDMA_0_BASE;
+	u4HostWpdamBase = prChipInfo->u4HostWfdmaBaseAddr;
+	if (u4HostWpdamBase == 0) {
+		DBGLOG(HAL, ERROR, "HostWfdmaBaseAddr is not set\n");
+		return 0;
+	}
 
 	u4Addr = CONNAC3X_WPDMA_MCU2MD_SW_INT_STA(u4HostWpdamBase);
 	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
@@ -1300,19 +1309,23 @@ void asicConnac3xWfdmaInitForUSB(
 
 	prBusInfo = prChipInfo->bus_info;
 
+	if (prChipInfo->u4HostWfdmaBaseAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
+	}
+	if (prChipInfo->u4DmaShdlBaseAddr == 0) {
+		DBGLOG(HAL, ERROR, "DmaShdlBaseAddr is not set\n");
+		return;
+	}
+
 	/* HAL_RMCR_RD(HIF_USB, prAdapter, 0x7c00e400, &u4WfdmaCr); */
 	/* HAL_MCR_WR(prAdapter, 0x7c00e400, 0xFF); */
 
 	HAL_RMCR_RD(HIF_USB, prAdapter, 0x7c021100, &u4WfdmaCr);
 	HAL_MCR_WR(prAdapter, 0x7c021100, 0x0);
 
-	if (prChipInfo->is_support_wfdma1) {
-		u4WfdmaAddr =
-		CONNAC3X_TX_RING_EXT_CTRL_BASE(CONNAC3X_HOST_WPDMA_1_BASE);
-	} else {
-		u4WfdmaAddr =
-		CONNAC3X_TX_RING_EXT_CTRL_BASE(CONNAC3X_HOST_WPDMA_0_BASE);
-	}
+	u4WfdmaAddr = CONNAC3X_TX_RING_EXT_CTRL_BASE(
+		prChipInfo->u4HostWfdmaBaseAddr);
 	/*
 	 * HOST_DMA1_WPDMA_TX_RING0_EXT_CTRL ~ HOST_DMA1_WPDMA_TX_RING4_EXT_CTRL
 	 */
@@ -1342,39 +1355,17 @@ void asicConnac3xWfdmaInitForUSB(
 	u4WfdmaCr |= 0x02c00000;
 	HAL_MCR_WR(prAdapter, u4WfdmaAddr + 0x3c, u4WfdmaCr);
 
-	if (prChipInfo->is_support_wfdma1) {
-		u4WfdmaAddr =
-			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_1_BASE);
-		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
-		u4WfdmaCr |=
-			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
-			 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO |
-			 CONNAC3X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl |
-			 CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN |
-			 CONNAC3X_WPDMA1_GLO_CFG_TX_DMA_EN);
-		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
-
-		/* Enable WFDMA0 RX for receiving data frame */
-		u4WfdmaAddr =
-			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
-		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
-		u4WfdmaCr |=
-			(CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN);
-		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
-	} else {
-		u4WfdmaAddr =
-			CONNAC3X_WPDMA_GLO_CFG(CONNAC3X_HOST_WPDMA_0_BASE);
-		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
-		u4WfdmaCr &= ~(CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO);
-		u4WfdmaCr |=
-			(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
-			 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO_PFET2 |
-			 CONNAC3X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl |
-			 CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN |
-			 CONNAC3X_WPDMA1_GLO_CFG_TX_DMA_EN);
-		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
-
-	}
+	u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG(
+		prChipInfo->u4HostWfdmaBaseAddr);
+	HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
+	u4WfdmaCr &= ~(CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO);
+	u4WfdmaCr |=
+		(CONNAC3X_WPDMA1_GLO_CFG_OMIT_TX_INFO |
+		 CONNAC3X_WPDMA1_GLO_CFG_OMIT_RX_INFO_PFET2 |
+		 CONNAC3X_WPDMA1_GLO_CFG_FW_DWLD_Bypass_dmashdl |
+		 CONNAC3X_WPDMA1_GLO_CFG_RX_DMA_EN |
+		 CONNAC3X_WPDMA1_GLO_CFG_TX_DMA_EN);
+	HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
 
 	prChipInfo->is_support_dma_shdl = wlanCfgGetUint32(prAdapter,
 				    "DmaShdlEnable",
@@ -1383,13 +1374,8 @@ void asicConnac3xWfdmaInitForUSB(
 		/*
 		 *	To disable 0x7C0252B0[6] DMASHDL
 		 */
-		if (prChipInfo->is_support_wfdma1) {
-			u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
-					CONNAC3X_HOST_WPDMA_1_BASE);
-		} else {
-			u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
-					CONNAC3X_HOST_WPDMA_0_BASE);
-		}
+		u4WfdmaAddr = CONNAC3X_WPDMA_GLO_CFG_EXT0(
+			prChipInfo->u4HostWfdmaBaseAddr);
 		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr &= ~CONNAC3X_WPDMA1_GLO_CFG_EXT0_TX_DMASHDL_EN;
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
@@ -1401,7 +1387,7 @@ void asicConnac3xWfdmaInitForUSB(
 		 *	1: Enable
 		 */
 		u4WfdmaAddr = CONNAC3X_HOST_DMASHDL_SW_CONTROL(
-					CONNAC3X_HOST_DMASHDL);
+			prChipInfo->u4DmaShdlBaseAddr);
 		HAL_RMCR_RD(HIF_USB, prAdapter, u4WfdmaAddr, &u4WfdmaCr);
 		u4WfdmaCr |= CONNAC3X_HIF_DMASHDL_BYPASS_EN;
 		HAL_MCR_WR(prAdapter, u4WfdmaAddr, u4WfdmaCr);
