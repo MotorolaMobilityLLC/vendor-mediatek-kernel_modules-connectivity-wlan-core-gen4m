@@ -1829,13 +1829,13 @@ struct OID_HANDLER_RECORD {
  * @u4TxFail: Number of TX failed count
  */
 struct TX_LATENCY_STATS {
-	uint32_t au4DriverLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4ConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4MacLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4AirLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4FailConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4DriverLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4ConnsysLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4MacLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4AirLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4FailConnsysLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 
-	uint64_t au8AccumulatedDelay[MAX_AVERAGE_TX_DELAY_TYPE][BSSID_NUM];
+	uint64_t au8AccumulatedDelay[MAX_AVERAGE_TX_DELAY_TYPE][MAX_BSSID_NUM];
 
 	uint32_t u4TxFail;
 };
@@ -1844,7 +1844,8 @@ struct TX_LATENCY_STATS {
  * A 2-dimentional array storing calculated TX avearge values
  */
 struct TX_LATENCY_AVERAGE {
-	uint32_t au4AverageTxDelay[MAX_AVERAGE_TX_DELAY_TYPE][BSSID_NUM + 1];
+	uint32_t au4AverageTxDelay
+			[MAX_AVERAGE_TX_DELAY_TYPE][MAX_BSSID_NUM + 1];
 };
 
 /**

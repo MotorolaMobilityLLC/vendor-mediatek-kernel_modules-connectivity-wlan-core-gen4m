@@ -1640,9 +1640,9 @@ static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 			continue;
 		}
 
-		if (prAdapter->ucLinkStatsBssNum == BSSID_NUM &&
+		if (prAdapter->ucLinkStatsBssNum != 1 &&
 		    sta_rec->ucBssIndex != bss_idx)
-			continue; /* Not a collecting one */
+			continue; /* collect per BSS, not a collecting one */
 
 		if (prWifiVar->fgLinkStatsDump)
 			DBGLOG(REQ, INFO, "Peer=%u type=%u", i, peer_info.type);
@@ -1734,12 +1734,7 @@ static void fill_iface_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 	struct BSS_INFO *prBssInfo;
 	uint32_t i;
 
-	if (prAdapter->ucLinkStatsBssNum == BSSID_NUM) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, bss_idx);
-
-		if (prBssInfo)
-			sum_ac_rx_mpdu(iface->ac, prBssInfo);
-	} else {
+	if (prAdapter->ucLinkStatsBssNum == 1) { /* legacy */
 		/* FW report only one record, all data are summed up into one */
 		for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -1748,6 +1743,11 @@ static void fill_iface_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 
 			sum_ac_rx_mpdu(iface->ac, prBssInfo);
 		}
+	} else { /* report per BSS stats */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, bss_idx);
+
+		if (prBssInfo)
+			sum_ac_rx_mpdu(iface->ac, prBssInfo);
 	}
 }
 
