@@ -282,7 +282,11 @@ struct FWDL_OPS_T soc2_1x1_fw_dl_ops = {
 #if !CFG_MTK_ANDROID_WMT
 	.downloadPatch = wlanDownloadPatch,
 #endif
+#if CFG_WLAN_LK_FWDL_SUPPORT
+	.downloadFirmware = wlanFwImageDownload,
+#else
 	.downloadFirmware = wlanConnacFormatDownload,
+#endif
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
