@@ -756,6 +756,11 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	uint8_t ucBssIndex, i;
 
+	if (!prAisFsmInfo) {
+		DBGLOG(AIS, ERROR, "prAisFsmInfo is NULL!\n");
+		return;
+	}
+
 	if (!wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex)) {
 		DBGLOG(AIS, INFO, "-> ais(%d) netdev null\n", ucAisIndex);
 		return;
@@ -1115,6 +1120,11 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 		return;
 
 	prAisFsmInfo = aisFsmGetInstance(prAdapter, ucAisIndex);
+	if (!prAisFsmInfo) {
+		DBGLOG(AIS, ERROR, "prAisFsmInfo is NULL!\n");
+		return;
+	}
+
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
 	u4Bmap = aisGetBssIndexBmap(prAisFsmInfo);
@@ -3899,7 +3909,7 @@ void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 #endif
 
 		/* Free STA-REC */
-		if (prStaRec != prAisBssInfo->prStaRecOfAP) {
+		if (prStaRec && prStaRec != prAisBssInfo->prStaRecOfAP) {
 			/* reset to idle to avoid re-entrance by
 			 * saaFsmRunEventTxDone if there's pending auth/assoc
 			 */
