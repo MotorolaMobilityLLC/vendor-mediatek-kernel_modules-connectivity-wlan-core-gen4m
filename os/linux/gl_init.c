@@ -4026,13 +4026,23 @@ static int32_t wlanOffAtReset(void)
 #endif
 	kalPerMonDestroy(prGlueInfo);
 
-	/* Stop works */
-	flush_work(&prGlueInfo->rTxMsduFreeWork);
+	/* complete possible pending oid, which may block wlanRemove some time
+	 * and then whole chip reset may failed
+	 */
+	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
+
+	flush_delayed_work(&workq);
+
+	flush_delayed_work(&sched_workq);
 
 	/* 4 <2> Mark HALT, notify main thread to stop, and clean up queued
 	 *	 requests
 	 */
 	set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
+
+	/* Stop works */
+	flush_work(&prGlueInfo->rTxMsduFreeWork);
+
 	wlanOffStopWlanThreads(prGlueInfo);
 
 /* wlanAdapterStop Section Start */
