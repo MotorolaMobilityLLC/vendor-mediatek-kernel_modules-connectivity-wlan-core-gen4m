@@ -111,7 +111,11 @@ extern const uint8_t *apucACI2Str[4];
 
 /* Parameters */
 /* p: Update queue lengths when p TX packets are enqueued */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define QM_INIT_TIME_TO_UPDATE_QUE_LEN  128
+#else
 #define QM_INIT_TIME_TO_UPDATE_QUE_LEN  256
+#endif
 /* s: Adjust the TC resource every s updates of queue lengths  */
 #define QM_INIT_TIME_TO_ADJUST_TC_RSC   2
 /* Factor for Que Len averaging */
@@ -125,6 +129,17 @@ extern const uint8_t *apucACI2Str[4];
 #define QM_MIN_RESERVED_TC4_RESOURCE    2
 #define QM_MIN_RESERVED_TC5_RESOURCE    0
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define QM_MIN_RESERVED_TC6_RESOURCE    1
+#define QM_MIN_RESERVED_TC7_RESOURCE    0
+#define QM_MIN_RESERVED_TC8_RESOURCE    0
+#define QM_MIN_RESERVED_TC9_RESOURCE    0
+#define QM_MIN_RESERVED_TC10_RESOURCE   1
+#define QM_MIN_RESERVED_TC11_RESOURCE   0
+#define QM_MIN_RESERVED_TC12_RESOURCE   0
+#define QM_MIN_RESERVED_TC13_RESOURCE   0
+#endif
+
 #define QM_GUARANTEED_TC0_RESOURCE      4
 #define QM_GUARANTEED_TC1_RESOURCE      4
 #define QM_GUARANTEED_TC2_RESOURCE      9
@@ -132,6 +147,17 @@ extern const uint8_t *apucACI2Str[4];
 /* Resource for TC4 is not adjustable */
 #define QM_GUARANTEED_TC4_RESOURCE      2
 #define QM_GUARANTEED_TC5_RESOURCE      4
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define QM_GUARANTEED_TC6_RESOURCE      4
+#define QM_GUARANTEED_TC7_RESOURCE      9
+#define QM_GUARANTEED_TC8_RESOURCE      11
+#define QM_GUARANTEED_TC9_RESOURCE      4
+#define QM_GUARANTEED_TC10_RESOURCE     4
+#define QM_GUARANTEED_TC11_RESOURCE     9
+#define QM_GUARANTEED_TC12_RESOURCE     11
+#define QM_GUARANTEED_TC13_RESOURCE     11
+#endif
 
 #define QM_EXTRA_RESERVED_RESOURCE_WHEN_BUSY    0
 
@@ -154,7 +180,13 @@ extern const uint8_t *apucACI2Str[4];
 /* Per-STA Queues: [0] AC0, [1] AC1, [2] AC2, [3] AC3 */
 /* Per-Type Queues: [0] BMCAST */
 #define NUM_OF_PER_STA_TX_QUEUES    4
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+/* Each wmm set has its own BCM_IDX tx queue */
+#define NUM_OF_PER_TYPE_TX_QUEUES   MAX_BSSID_NUM
+#else
 #define NUM_OF_PER_TYPE_TX_QUEUES   1
+#endif
+
 
 /* TX Queue Index */
 /* Per-Type */
@@ -450,10 +482,18 @@ struct QUE_MGT {	/* Queue Management Control Info */
 	/* The current resource used count
 	 * for a STA with respect to a TC index
 	 */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	uint32_t au4ResourceUsedCount[TC_NUM];
+#else
 	uint32_t au4ResourceUsedCount[NUM_OF_PER_STA_TX_QUEUES];
+#endif
 
 	/* The current serving STA with respect to a TC index */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	uint32_t au4HeadStaRecIndex[TC_NUM];
+#else
 	uint32_t au4HeadStaRecIndex[NUM_OF_PER_STA_TX_QUEUES];
+#endif
 
 	/* The current serving BssInfo */
 	uint32_t u4HeadBssInfoIndex;

@@ -229,6 +229,9 @@ enum ENUM_DBG_MODULE {
 #if (CFG_SUPPORT_ICS == 1)
 	DBG_ICS_IDX,
 #endif /* CFG_SUPPORT_ICS */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	DBG_HIF_WMM_ENHANCE_IDX,
+#endif
 	DBG_MODULE_NUM		/* Notice the XLOG check */
 };
 enum ENUM_DBG_ASSERT_CTRL_LEVEL {
@@ -826,6 +829,7 @@ enum WAKE_DATA_TYPE {
 #define log_mem8_dbg		DBGLOG_MEM8
 #define log_mem32_dbg		DBGLOG_MEM32
 #define log_tool_dbg		TOOL_PRINTLOG
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

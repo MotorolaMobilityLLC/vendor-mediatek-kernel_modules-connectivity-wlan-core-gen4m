@@ -4313,7 +4313,34 @@ uint8_t cnmWmmIndexDecision(
 	IN struct ADAPTER *prAdapter,
 	IN struct BSS_INFO *prBssInfo)
 {
-#if (CFG_HW_WMM_BY_BSS == 1)
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	u_int8_t ucWmmIdx;
+
+	if (!prAdapter || !prBssInfo) {
+		DBGLOG(CNM, ERROR, "Set WMM fail\n");
+		return 0;
+	}
+
+	ucWmmIdx = prBssInfo->ucBssIndex;
+
+	if (prAdapter->ucHwWmmEnBit & BIT(ucWmmIdx)
+		|| prBssInfo->fgIsWmmInited)
+		DBGLOG(CNM, WARN, "Duplicated WMM%d found\n",
+			ucWmmIdx);
+
+	prAdapter->ucHwWmmEnBit |= BIT(ucWmmIdx);
+	prBssInfo->fgIsWmmInited = TRUE;
+
+	if (ucWmmIdx > MAX_HW_WMM_INDEX) {
+		DBGLOG(CNM, ERROR, "Invalid WMM%d found, fallback to WMM%d\n",
+			ucWmmIdx,
+			ucWmmIdx % HW_WMM_NUM);
+		ucWmmIdx %= HW_WMM_NUM;
+	}
+
+	return ucWmmIdx;
+
+#elif (CFG_HW_WMM_BY_BSS == 1)
 	uint8_t ucWmmIndex;
 
 	for (ucWmmIndex = 0; ucWmmIndex < HW_WMM_NUM; ucWmmIndex++) {

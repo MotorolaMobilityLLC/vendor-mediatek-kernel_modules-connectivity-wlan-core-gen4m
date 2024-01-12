@@ -355,9 +355,22 @@ void nic_txd_v2_compose(
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+/* Note for SDIO resource ctrl
+* There are cases for TargetQ update
+* 1. ResV1 + TC <= TC4 : WmmSet may greater than 0, go to update
+* 2. ResV2 + TC <= TC4 : WmmSet always 0
+* 3. ResV2 + TC >	TC4 : TargetQ prepared in nicTxGetTxDestQIdxByTc()
+*/
+		if ((ucTarPort == PORT_INDEX_LMAC) &&
+			(prMsduInfo->ucTC <= TC4_INDEX))
+#else
 		if (ucTarPort == PORT_INDEX_LMAC)
+#endif
+		{
 			ucTarQueue +=
-				(ucWmmQueSet * WMM_AC_INDEX_NUM);
+			  (prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
+		}
 	}
 
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)

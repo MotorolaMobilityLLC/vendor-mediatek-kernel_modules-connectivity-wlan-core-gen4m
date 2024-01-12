@@ -1849,6 +1849,22 @@
 #define CFG_SUPPORT_HIDDEN_SW_AP	0
 #endif
 
+/*------------------------------------------------------------------------------
+* Driver supports TX resource ctrl for Per-BSS mode
+* Note1:
+* WMMs map to per-BSS idx statically such as AIS-WMM0 / P2P-WMM1 / SAP-WMM2.
+* Make sure your HW support more than 4-WMM queues before function enabled.
+* Otherwise, may need to modify WMM-descision based your request.
+*
+* Note2:
+* This feature is adapted with FW-TX-resource-config automatically.
+* Make sure your FW working with proper configurations as well.
+*------------------------------------------------------------------------------
+*/
+#ifndef CFG_TX_RSRC_WMM_ENHANCE
+#define CFG_TX_RSRC_WMM_ENHANCE  0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
