@@ -1490,7 +1490,7 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
-static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
+static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter, bool fgIsReadable)
 {
 #define	HANG_OTHER_LOG_NUM		2
 
@@ -1499,8 +1499,12 @@ static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
 	connac2x_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
 	connac2x_DumpCrRange(NULL, 0x180602f0, 4, "WF_CSR_DUMMY");
-	connac2x_DumpCrRange(NULL, 0x18052900, 16, "conninfra Sysram BT");
-	connac2x_DumpCrRange(NULL, 0x18053000, 16, "conninfra Sysram WF");
+	if (fgIsReadable) {
+		connac2x_DumpCrRange(NULL, 0x18052900, 16,
+				     "conninfra Sysram BT");
+		connac2x_DumpCrRange(NULL, 0x18053000, 16,
+				     "conninfra Sysram WF");
+	}
 }
 
 static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
@@ -1712,12 +1716,12 @@ void soc3_0_DumpWFDMACr(struct ADAPTER *prAdapter)
 
 } /* soc3_0_DumpWFDMAHostCr */
 
-static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
+static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter, bool fgIsReadable)
 {
 	soc3_0_DumpWfsyscpupcr(prAdapter);	/* first dump */
 	soc3_0_DumpPcLrLog(prAdapter);
 	soc3_0_DumpN10CoreReg(prAdapter);
-	soc3_0_DumpOtherCr(prAdapter);
+	soc3_0_DumpOtherCr(prAdapter, fgIsReadable);
 	soc3_0_DumpHwDebugFlag(prAdapter);
 	soc3_0_DumpSpecifiedWfTop(prAdapter);
 	soc3_0_DumpWFDMACr(prAdapter);
@@ -1726,7 +1730,7 @@ static void soc3_0_DumpHostCr(struct ADAPTER *prAdapter)
 void soc3_0_DumpBusHangCr(struct ADAPTER *prAdapter)
 {
 	conninfra_is_bus_hang();
-	soc3_0_DumpHostCr(prAdapter);
+	soc3_0_DumpHostCr(prAdapter, conninfra_reg_readable());
 }
 
 int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
@@ -1904,7 +1908,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 			(conninfra_hang_ret !=
 				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
 			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
-			soc3_0_DumpHostCr(prAdapter);
+			soc3_0_DumpHostCr(prAdapter, conninfra_read_ret);
 
 		if (conninfra_reset) {
 			g_IsWfsysBusHang = TRUE;
