@@ -738,7 +738,7 @@
 #define CFG_MAX_COMMON_IE_BUF_LEN         ((1500 * CFG_MAX_NUM_BSS_LIST) / 3)
 
 /*! Maximum size of Header buffer of each SCAN record */
-#define CFG_RAW_BUFFER_SIZE                     1024
+#define CFG_RAW_BUFFER_SIZE                     1160
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Power management
