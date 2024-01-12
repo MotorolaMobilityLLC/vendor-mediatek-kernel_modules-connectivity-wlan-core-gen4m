@@ -2686,7 +2686,9 @@ uint32_t nicCfgChipCapPhyCap(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucP2pGcHe &= prPhyCap->ucHe;
 	wlanCfgSetUint32(prAdapter, "P2pGcHE", prAdapter->rWifiVar.ucP2pGcHe);
 	if (prAdapter->rWifiVar.ucStaHe & BIT(0)) { /* (wifi.cfg & chip cap) */
-		fgEfuseCtrlAxOn = 1; /* default is 0 */
+		fgEfuseCtrlAxOn = 1; /* default is 1 */
+	} else {
+		fgEfuseCtrlAxOn = 0;
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)

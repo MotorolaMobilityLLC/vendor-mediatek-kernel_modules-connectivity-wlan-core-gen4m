@@ -672,17 +672,29 @@ static u_int8_t connac2x_wtbl_get_sgi_info(
 }
 
 static u_int8_t connac2x_wtbl_get_ldpc_info(
+	uint8_t ucTxMode,
 	struct fwtbl_lmac_struct *pWtbl)
 {
 	if (!pWtbl)
 		return FALSE;
 
-	if (pWtbl->trx_cap.wtbl_d2.field.he)
-		return pWtbl->trx_cap.wtbl_d4.field.ldpc_he;
-	else if (pWtbl->trx_cap.wtbl_d2.field.vht)
-		return pWtbl->trx_cap.wtbl_d4.field.ldpc_vht;
-	else
+	switch (ucTxMode) {
+	case ENUM_TX_MODE_MM:
+	case ENUM_TX_MODE_GF:
 		return pWtbl->trx_cap.wtbl_d4.field.ldpc_ht;
+	case ENUM_TX_MODE_VHT:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_vht;
+#if (CFG_SUPPORT_802_11AX == 1)
+	case ENUM_TX_MODE_HE_SU:
+	case ENUM_TX_MODE_HE_ER:
+	case ENUM_TX_MODE_HE_MU:
+		return pWtbl->trx_cap.wtbl_d4.field.ldpc_he;
+#endif
+	case ENUM_TX_MODE_CCK:
+	case ENUM_TX_MODE_OFDM:
+	default:
+		return FALSE;
+	}
 }
 
 static int32_t connac2x_wtbl_rate_to_string(
@@ -762,7 +774,9 @@ static int32_t connac2x_wtbl_rate_to_string(
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s, ",
-			HW_TX_RATE_BW[pWtbl->trx_cap.wtbl_d9.field.fcap]);
+			(pWtbl->trx_cap.wtbl_d9.field.fcap < 4) ?
+			HW_TX_RATE_BW[pWtbl->trx_cap.wtbl_d9.field.fcap] :
+			HW_TX_RATE_BW[4]);
 
 		if (txmode == TX_RATE_MODE_CCK)
 			i4BytesWritten += kalSnprintf(
@@ -784,9 +798,10 @@ static int32_t connac2x_wtbl_rate_to_string(
 					"%s, ", gi == 0 ? "SGI" :
 					(gi == 1 ? "MGI" : "LGI"));
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-		i4TotalLen - i4BytesWritten, "%s%s %s\n",
-		RATE_V2_HW_TX_MODE_STR[txmode], stbc ? "STBC" : " ",
-		connac2x_wtbl_get_ldpc_info(pWtbl) == 0 ? "BCC" : "LDPC");
+			i4TotalLen - i4BytesWritten, "%s, %s%s\n",
+			RATE_V2_HW_TX_MODE_STR[txmode], stbc ? "STBC, " : "",
+			connac2x_wtbl_get_ldpc_info(txmode, pWtbl) == 0 ?
+			"BCC" : "LDPC");
 	}
 
 	return i4BytesWritten;

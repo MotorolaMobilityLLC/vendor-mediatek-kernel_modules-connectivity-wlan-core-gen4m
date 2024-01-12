@@ -172,7 +172,12 @@ uint8_t aisCheckPowerMatchERCondition(IN struct ADAPTER *prAdapter,
 	int8_t icBeaconRSSI;
 
 	icBeaconRSSI = RCPI_TO_dBm(prBssDesc->ucRCPI);
-	wlanGetMiniTxPower(prAdapter, prBssDesc->eBand, PHY_MODE_OFDM, &txpwr);
+
+	if (prAdapter->prGlueInfo->fgNvramAvailable == FALSE)
+		txpwr = AP_TX_POWER;
+	else
+		wlanGetMiniTxPower(prAdapter, prBssDesc->eBand,
+				PHY_MODE_OFDM, &txpwr);
 
 	DBGLOG(AIS, INFO, "ER: STA Tx power:%x, AP Tx power:%x, Bcon RSSI:%x\n",
 		txpwr, AP_TX_POWER, icBeaconRSSI);

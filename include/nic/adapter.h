@@ -1067,6 +1067,8 @@ struct WIFI_VAR {
 
 #if CFG_SUPPORT_HE_ER
 	uint8_t u4ExtendedRange;
+	u_int8_t fgErTx;
+	u_int8_t fgErRx;
 #endif
 
 #if CFG_SUPPORT_SMART_GEAR

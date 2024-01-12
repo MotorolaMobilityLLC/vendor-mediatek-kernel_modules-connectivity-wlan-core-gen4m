@@ -8942,15 +8942,40 @@ int priv_driver_set_fixed_rate(IN struct net_device *prNetDev,
 		if (rFixedRate.u4Mode >= TX_RATE_MODE_HE_SU) {
 			if (i4Recv == 10) {
 				/* Give default value */
-				rFixedRate.u4HeLTF = HE_LTF_4X;
+				rFixedRate.u4HeLTF = HE_LTF_2X;
 				rFixedRate.u4HeErDCM = 0;
 				rFixedRate.u4HeEr106t = 0;
 			}
 			/* check HE-LTF and HE GI combinations */
-			rStatus = nicRateHeLtfCheckGi(&rFixedRate);
-
-			if (rStatus != WLAN_STATUS_SUCCESS)
+			if (WLAN_STATUS_SUCCESS !=
+				nicRateHeLtfCheckGi(&rFixedRate))
 				return -1;
+
+			/* check DCM limitation */
+			if (rFixedRate.u4HeErDCM) {
+				if ((rFixedRate.u4STBC) ||
+					(rFixedRate.u4VhtNss > 2))
+					return -1;
+
+				if ((rFixedRate.u4Mcs > 4) ||
+					(rFixedRate.u4Mcs == 2))
+					return -1;
+			}
+
+			/* check ER_SU limitation */
+			if (rFixedRate.u4Mode == TX_RATE_MODE_HE_ER) {
+				if ((rFixedRate.u4Bw > 0) ||
+					(rFixedRate.u4VhtNss > 1))
+					return -1;
+
+				if (rFixedRate.u4HeEr106t) {
+					if (rFixedRate.u4Mcs > 0)
+						return -1;
+				} else {
+					if (rFixedRate.u4Mcs > 2)
+						return -1;
+				}
+			}
 		}
 
 		rStatus = nicSetFixedRateData(&rFixedRate, &rSwCtrlInfo.u4Data);
