@@ -636,6 +636,12 @@ struct BSS_INFO {
 	struct LINK rPmkidCache;
 
 	uint8_t ucVhtChannelWidthBackup;
+
+#if CFG_SUPPORT_DFS
+	struct TIMER rCsaTimer;
+	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
+	uint8_t fgHasStopTx;
+#endif
 };
 
 /* Support AP Selection */
