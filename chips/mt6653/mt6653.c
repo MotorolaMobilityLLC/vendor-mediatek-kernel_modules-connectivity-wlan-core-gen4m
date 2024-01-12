@@ -2524,26 +2524,7 @@ static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_ADDR;
-	u4Val = prWifiVar->u4DlyIntTime <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_MAX_PTIME_SHFT |
-		prWifiVar->u4DlyIntCnt <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_MAX_PINT_SHFT |
-		prWifiVar->fgEnDlyInt <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_DLY_INT_EN_SHFT |
-		prWifiVar->u4DlyIntTime <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_MAX_PTIME_SHFT |
-		prWifiVar->u4DlyIntCnt <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_MAX_PINT_SHFT |
-		prWifiVar->fgEnDlyInt <<
-		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI1_DLY_INT_EN_SHFT;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-
-	DBGLOG(HAL, INFO, "prdc int: %uus, dly int[%u]: %uus, cnt=%u",
-	       prWifiVar->u4PrdcIntTime * 20,
-	       prWifiVar->fgEnDlyInt,
-	       prWifiVar->u4DlyIntTime * 20,
-	       prWifiVar->u4DlyIntCnt);
+	DBGLOG(HAL, INFO, "prdc int: %uus", prWifiVar->u4PrdcIntTime * 20);
 }
 
 static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)
