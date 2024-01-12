@@ -2010,44 +2010,47 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 static int wlanOpen(struct net_device *prDev)
 {
 /* fos_change begin */
-#if CFG_SUPPORT_EXCEPTION_STATISTICS | CFG_SUPPORT_WAKEUP_STATISTICS
+#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif /* fos_change end */
 	ASSERT(prDev);
 
 /* fos_change begin */
-#if CFG_SUPPORT_EXCEPTION_STATISTICS | CFG_SUPPORT_WAKEUP_STATISTICS
+#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 #endif /* fos_change begin */
 
-
 	netif_tx_start_all_queues(prDev);
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
-	/* Initialize arWakeupStatistic */
-	kalMemSet(prGlueInfo->prAdapter->arWakeupStatistic, 0,
-		  sizeof(prGlueInfo->prAdapter->arWakeupStatistic));
-	/* Initialize wake_event_count */
-	kalMemSet(prGlueInfo->prAdapter->wake_event_count, 0,
-		  sizeof(prGlueInfo->prAdapter->wake_event_count));
+	if (prGlueInfo->prAdapter) {
+		/* Initialize arWakeupStatistic */
+		kalMemSet(prGlueInfo->prAdapter->arWakeupStatistic, 0,
+			sizeof(prGlueInfo->prAdapter->arWakeupStatistic));
+		/* Initialize wake_event_count */
+		kalMemSet(prGlueInfo->prAdapter->wake_event_count, 0,
+			sizeof(prGlueInfo->prAdapter->wake_event_count));
+	}
 #endif
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
-	kalMemSet(prGlueInfo->prAdapter->beacon_timeout_count, 0,
+	if (prGlueInfo->prAdapter) {
+		kalMemSet(prGlueInfo->prAdapter->beacon_timeout_count, 0,
 			sizeof(prGlueInfo->prAdapter->beacon_timeout_count));
-	prGlueInfo->prAdapter->total_beacon_timeout_count = 0;
+		prGlueInfo->prAdapter->total_beacon_timeout_count = 0;
 
-	kalMemSet(prGlueInfo->prAdapter->tx_done_fail_count, 0,
+		kalMemSet(prGlueInfo->prAdapter->tx_done_fail_count, 0,
 			sizeof(prGlueInfo->prAdapter->tx_done_fail_count));
-	prGlueInfo->prAdapter->total_tx_done_fail_count = 0;
+		prGlueInfo->prAdapter->total_tx_done_fail_count = 0;
 
-	kalMemSet(prGlueInfo->prAdapter->deauth_rx_count, 0,
+		kalMemSet(prGlueInfo->prAdapter->deauth_rx_count, 0,
 			sizeof(prGlueInfo->prAdapter->deauth_rx_count));
-	prGlueInfo->prAdapter->total_deauth_rx_count = 0;
+		prGlueInfo->prAdapter->total_deauth_rx_count = 0;
 
-	prGlueInfo->prAdapter->total_scandone_timeout_count = 0;
-	prGlueInfo->prAdapter->total_mgmtTX_timeout_count = 0;
-	prGlueInfo->prAdapter->total_mgmtRX_timeout_count = 0;
+		prGlueInfo->prAdapter->total_scandone_timeout_count = 0;
+		prGlueInfo->prAdapter->total_mgmtTX_timeout_count = 0;
+		prGlueInfo->prAdapter->total_mgmtRX_timeout_count = 0;
+	}
 #endif /* fos_change end */
 
 	return 0;		/* success */
