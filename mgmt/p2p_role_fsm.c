@@ -926,14 +926,14 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *
 	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
 	if (prP2pStartAPMsg->u4BcnInterval) {
-		DBGLOG(P2P, TRACE, "Beacon interval updated to :%ld\n", prP2pStartAPMsg->u4BcnInterval);
+		DBGLOG(P2P, TRACE, "Beacon interval updated to :%u\n", prP2pStartAPMsg->u4BcnInterval);
 		prP2pBssInfo->u2BeaconInterval = (uint16_t) prP2pStartAPMsg->u4BcnInterval;
 	} else if (prP2pBssInfo->u2BeaconInterval == 0) {
 		prP2pBssInfo->u2BeaconInterval = DOT11_BEACON_PERIOD_DEFAULT;
 	}
 
 	if (prP2pStartAPMsg->u4DtimPeriod) {
-		DBGLOG(P2P, TRACE, "DTIM interval updated to :%ld\n", prP2pStartAPMsg->u4DtimPeriod);
+		DBGLOG(P2P, TRACE, "DTIM interval updated to :%u\n", prP2pStartAPMsg->u4DtimPeriod);
 		prP2pBssInfo->ucDTIMPeriod = (uint8_t) prP2pStartAPMsg->u4DtimPeriod;
 	} else if (prP2pBssInfo->ucDTIMPeriod == 0) {
 		prP2pBssInfo->ucDTIMPeriod = DOT11_DTIM_PERIOD_DEFAULT;
@@ -1275,7 +1275,7 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *p
 		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_DFS_CAC);
 	} else {
 		DBGLOG(P2P, ERROR,
-			"prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum %d shouldn't be 0\n");
+			"prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum shouldn't be 0\n");
 	}
 
 error:
@@ -1718,7 +1718,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_
 
 	ASSERT(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx);
 	if (!(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
-		DBGLOG(P2P, ERROR, "prStaRec->ucBssIndex % should < prAdapter->ucP2PDevBssIdx(%d)!\n",
+		DBGLOG(P2P, ERROR, "prStaRec->ucBssIndex %d should < prAdapter->ucP2PDevBssIdx(%d)!\n",
 			prStaRec->ucBssIndex, prAdapter->ucP2PDevBssIdx);
 		goto error;
 	}
