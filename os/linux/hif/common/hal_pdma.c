@@ -697,7 +697,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u4DrvOwnElapsed = KAL_GET_TIME_INTERVAL();
 
 	if (fgResult)
-		DBGLOG(INIT, INFO, DUMP_DRV_OWN_DONE, u4DrvOwnElapsed);
+		DBGLOG(INIT, TRACE, DUMP_DRV_OWN_DONE, u4DrvOwnElapsed);
 	else
 		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL, u4DrvOwnElapsed);
 
