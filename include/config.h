@@ -546,6 +546,8 @@
 #define MLD_GROUP_NONE			0xff
 #define OM_REMAP_IDX_NONE		0xff
 #define MLD_LINK_ID_NONE		0xff
+/* Reserve 0~31 for group mld index */
+#define MAT_OWN_MLD_ID_BASE		32
 
 /*------------------------------------------------------------------------------
  * Flags for workaround
