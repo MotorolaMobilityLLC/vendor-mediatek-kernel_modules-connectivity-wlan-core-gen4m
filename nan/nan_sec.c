@@ -657,6 +657,8 @@ nan_sec_wpa_eapol_key_mic(const u8 *key, size_t key_len, u32 cipher,
 	DBGLOG(NAN, INFO, "[%s] BUF_len:%d\n", __func__, len);
 	dumpMemory8((uint8_t *)buf, len);
 
+	DBGLOG(NAN, INFO, "[%s] cipher:%d\n", __func__, cipher);
+
 	if (cipher == NAN_CIPHER_SUITE_ID_NCS_SK_GCM_256) {
 		if (hmac_sha384(key, key_len, buf, len, hash)) {
 			DBGLOG(NAN, INFO, "[%s] ERROR! hmac_sha384() failed",
@@ -665,7 +667,7 @@ nan_sec_wpa_eapol_key_mic(const u8 *key, size_t key_len, u32 cipher,
 		}
 		os_memcpy(mic, hash, NCS_SK_256_MIC_LEN);
 
-		DBGLOG(NAN, INFO, "[%s] Result MIC:\n", __func__);
+		DBGLOG(NAN, INFO, "[%s] hmac_sha384() Result MIC:\n", __func__);
 		dumpMemory8(mic, NCS_SK_256_MIC_LEN);
 	} else {
 		/* NAN_CIPHER_SUITE_ID_NCS_SK_CCM_128 */
@@ -676,7 +678,7 @@ nan_sec_wpa_eapol_key_mic(const u8 *key, size_t key_len, u32 cipher,
 		}
 		os_memcpy(mic, hash, NCS_SK_128_MIC_LEN);
 
-		DBGLOG(NAN, INFO, "[%s] Result MIC:\n", __func__);
+		DBGLOG(NAN, INFO, "[%s] hmac_sha256() Result MIC:\n", __func__);
 		dumpMemory8(mic, NCS_SK_128_MIC_LEN);
 	}
 
