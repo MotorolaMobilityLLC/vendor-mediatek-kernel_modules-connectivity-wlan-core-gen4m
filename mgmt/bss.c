@@ -2578,40 +2578,105 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");
 }
 
-int8_t bssGetRxNss(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc)
+int8_t bssGetHtRxNss(struct BSS_DESC *prBssDesc)
 {
-	uint8_t  ucIeByte = 0;
-	int8_t   ucBssNss = 0;
-	uint8_t  *pucRxMcsBitMaskIe;
+	uint8_t nss = 0;
 	const uint8_t *pucIe;
+	uint8_t *mcs_mask;
 
-	if (!prAdapter || !prBssDesc) {
-		DBGLOG(BSS, INFO, "GetRxNss Param Error!\n");
-		return -EINVAL;
-	}
-
-	pucIe = kalFindIeMatchMask(
-		ELEM_ID_HT_CAP,
-		prBssDesc->pucIeBuf,
-		prBssDesc->u2IELength,
-		NULL, 0, 0, NULL);
-
+	pucIe = kalFindIeMatchMask(ELEM_ID_HT_CAP, prBssDesc->pucIeBuf,
+				   prBssDesc->u2IELength, NULL, 0, 0, NULL);
 	if (!pucIe)
-		return 1;
+		return 0;
+	mcs_mask = &((struct IE_HT_CAP *)pucIe)->rSupMcsSet.aucRxMcsBitmask[0];
+	/*HT_NSS_MAX = 4 */
+	while (mcs_mask[nss] && nss < 4)
+		nss++;
+	return nss;
+}
 
-	pucRxMcsBitMaskIe =
-		&((struct IE_HT_CAP *)pucIe)->
-		rSupMcsSet.aucRxMcsBitmask[0];
-	do {
-		ucIeByte = pucRxMcsBitMaskIe[ucBssNss];
-		if (ucIeByte)
-			ucBssNss++;
-		if (ucBssNss == 8)
-			return ucBssNss;
-	} while (ucIeByte != 0);
+int8_t bssGetVhtRxNss(struct BSS_DESC *prBssDesc)
+{
+	uint8_t nss = 0;
+	const uint8_t *pucIe;
+	uint16_t mcs_map;
 
-	return ucBssNss;
+	pucIe = kalFindIeMatchMask(ELEM_ID_VHT_CAP, prBssDesc->pucIeBuf,
+				   prBssDesc->u2IELength, NULL, 0, 0, NULL);
+	if (!pucIe)
+		return 0;
+	mcs_map = ((struct IE_VHT_CAP *)pucIe)->rVhtSupportedMcsSet.u2RxMcsMap;
+	/*VHT_NSS_MAX = 8 */
+	while (((mcs_map & BITS(0, 1)) != VHT_CAP_INFO_MCS_NOT_SUPPORTED) &&
+		(nss < 8)) {
+		nss++;
+		mcs_map >>= 2;
+	}
+	return nss;
+}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+int8_t bssGetHeRxNss(struct BSS_DESC *prBssDesc)
+{
+	uint8_t nss = 0;
+	const uint8_t *pucIe;
+	uint16_t mcs_map;
+
+	pucIe = kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_HE_CAP,
+			       prBssDesc->pucIeBuf, prBssDesc->u2IELength);
+	if (!pucIe)
+		return 0;
+	WLAN_GET_FIELD_16(&((struct _IE_HE_CAP_T *)pucIe)->aucVarInfo[0],
+			  &mcs_map)
+	/*VHT_NSS_MAX = 8 */
+	while (((mcs_map & BITS(0, 1)) != HE_CAP_INFO_MCS_NOT_SUPPORTED) &&
+		(nss < 8)) {
+		nss++;
+		mcs_map >>= 2;
+	}
+	return nss;
+}
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+int8_t bssGetEhtRxNss(struct BSS_DESC *prBssDesc)
+{
+	uint8_t nss = 0;
+	const uint8_t *pucIe;
+	uint8_t eht_mcs_mask;
+
+	pucIe = kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_EHT_CAPS,
+			       prBssDesc->pucIeBuf, prBssDesc->u2IELength);
+	if (!pucIe)
+		return 0;
+	eht_mcs_mask = ((struct IE_EHT_CAP *)pucIe)->aucVarInfo[0];
+	nss = eht_mcs_mask & BITS(0, 3);
+	return nss;
+}
+#endif
+
+int8_t bssGetRxNss(struct BSS_DESC *prBssDesc)
+{
+	uint8_t nss = 0;
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	nss = bssGetEhtRxNss(prBssDesc);
+	if (nss)
+		/* No need to check lower protocol? */
+		return nss;
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	nss = bssGetHeRxNss(prBssDesc);
+	if (nss)
+		return nss;
+#endif
+	nss = bssGetVhtRxNss(prBssDesc);
+	if (nss)
+		return nss;
+	nss = bssGetHtRxNss(prBssDesc);
+	if (nss)
+		return nss;
+	return 1;
 }
 
 
@@ -2726,7 +2791,7 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 
 		/*Match Rx NSS rule*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_NSS)) {
-			ucBssNss = bssGetRxNss(prAdapter, prBssDesc);
+			ucBssNss = bssGetRxNss(prBssDesc);
 			if (ucBssNss < 0)
 				DBGLOG(BSS, TRACE,
 					"IOTAP Nss=%d invalid", ucBssNss);
@@ -2737,6 +2802,18 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 
 		/*Match HT type rule*/
 		if (u2MatchFlag & BIT(WLAN_IOT_AP_FG_HT)) {
+#if (CFG_SUPPORT_802_11BE == 1)
+			if (prBssDesc->fgIsEHTPresent) {
+				if (prIotApRule->ucHtType != 7)
+					continue;
+			} else
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+			if (prBssDesc->fgIsHEPresent) {
+				if (prIotApRule->ucHtType != 6)
+					continue;
+			} else
+#endif
 			if (prBssDesc->fgIsVHTPresent) {
 				if (prIotApRule->ucHtType != 2)
 					continue;

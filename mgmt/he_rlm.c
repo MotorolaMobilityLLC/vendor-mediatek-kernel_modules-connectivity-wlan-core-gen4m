@@ -1041,11 +1041,11 @@ uint32_t heRlmFillNANHECapIE(
 
 			DBGLOG(RLM, INFO,
 				"bssGetRxNss: %d, soundingDim: %d\n",
-				bssGetRxNss(prAdapter, prBssDesc), soundingDim);
-			if ((bssGetRxNss(prAdapter, prBssDesc) ==
+				bssGetHeRxNss(prBssDesc), soundingDim);
+			if ((bssGetHeRxNss(prBssDesc) ==
 				wlanGetSupportNss(prAdapter,
 					prBssInfo->ucBssIndex))
-				&& (bssGetRxNss(prAdapter, prBssDesc) ==
+				&& (bssGetHeRxNss(prBssDesc) ==
 					soundingDim + 1)) {
 				fgBfEn = FALSE;
 				DBGLOG(SW4, ERROR,
