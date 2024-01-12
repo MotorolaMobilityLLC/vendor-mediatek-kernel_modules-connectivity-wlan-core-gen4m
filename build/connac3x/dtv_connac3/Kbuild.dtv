@@ -14,7 +14,7 @@ CFG_DIR                   := $(KO_CODE_PATH)/configs
 MTK_COMBO_CHIP            := MT6639
 WIFI_TARGET               := mt7927
 WLAN_CHIP_ID              := 6639
-ifneq ($(findstring owl,$(LOCAL_MODULE)),)
+ifneq ($(findstring mt7925,$(LOCAL_MODULE)),)
 MTK_COMBO_CHIP            := MT7925
 WIFI_TARGET               := mt7925
 WLAN_CHIP_ID              := 7925
