@@ -891,7 +891,9 @@ u_int8_t rsnPerformPolicySelection(
 				prAdapter, eAuthMode, ucBssIndex, prBss)) {
 			DBGLOG(RSN, INFO,
 				"Invalid 6g security mode: only OWE & SAE H2E is allowed\n");
+#if (CFG_WLAN_CONNAC3_DEV == 0)
 			return FALSE;
+#endif
 		}
 	}
 #endif
