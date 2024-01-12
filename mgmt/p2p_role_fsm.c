@@ -3031,7 +3031,7 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			prP2pLinkBssInfo->prStaRecOfAP = NULL;
 		}
 		/* 4 <1.3> Update BSS_INFO_T */
-		if (prAssocRspSwRfb) {
+		if (prAssocRspSwRfb || prAssocRspSwRfb->pvHeader) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (prStaRec == prSetupStaRec) {
 				p2pFuncUpdateBssInfoForJOIN(
@@ -3068,8 +3068,8 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 #endif
 
 		} else {
-			DBGLOG(P2P, INFO,
-				"prAssocRspSwRfb is NULL!\n");
+			DBGLOG(P2P, ERROR,
+				"prAssocRspSwRfb or prAssocRspSwRfb->pvHeader is NULL!\n");
 		}
 
 		/* 4 <1.4> Activate current AP's STA_RECORD_T

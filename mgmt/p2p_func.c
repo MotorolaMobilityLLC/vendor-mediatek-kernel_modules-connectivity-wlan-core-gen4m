@@ -3735,6 +3735,12 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 
 	/* P2P 3.2.8 */
 	*pu2StatusCode = STATUS_CODE_REQ_DECLINED;
+
+	if (!prSwRfb || !prSwRfb->pvHeader) {
+		DBGLOG(P2P, ERROR,
+			"prSwRfb or prSwRfb->pvHeader is NULL!\n");
+		return FALSE;
+	}
 	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
 
 	if ((prP2pBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) ||
@@ -8747,6 +8753,12 @@ void p2pFuncSetAclPolicy(
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"prBssInfo is NULL!\n");
+		return;
+	}
 
 	prCmdAclPolicy = (struct CMD_SET_ACL_POLICY *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
