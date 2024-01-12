@@ -111,7 +111,7 @@ u_int8_t g_IsWholeChipRst = FALSE;
 u_int8_t g_SubsysRstCnt;
 int g_SubsysRstTotalCnt;
 int g_WholeChipRstTotalCnt;
-
+bool g_IsTriggerTimeout = FALSE;
 u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
@@ -742,6 +742,7 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstCnt = 0;
 				glReset_timeinit(&rNowTs, &rLastTs);
 				fgIsTimeout = FALSE;
+				g_IsTriggerTimeout = FALSE;
 				g_WholeChipRstTotalCnt++;
 			} else {
 				g_SubsysRstCnt++;
@@ -756,6 +757,7 @@ int wlan_reset_thread_main(void *data)
 					rLastTs.tv_sec = rNowTs.tv_sec;
 					rLastTs.tv_usec = rNowTs.tv_usec;
 				}
+				g_IsTriggerTimeout = FALSE;
 			}
 			DBGLOG(INIT, INFO,
 			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
