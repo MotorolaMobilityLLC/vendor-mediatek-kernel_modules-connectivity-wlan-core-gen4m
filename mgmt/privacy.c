@@ -1356,6 +1356,31 @@ void secPrivacyDumpWTBL(struct ADAPTER *prAdapter)
 	}
 }
 
+uint8_t secCheckWTBLwlanIdxInUseByOther(struct ADAPTER *prAdapter,
+	uint8_t ucWlanIdx, uint8_t ucBssIndex)
+{
+	struct WLAN_TABLE *prWtbl;
+
+	prWtbl = prAdapter->rWifiVar.arWtbl;
+
+	if (prWtbl[ucWlanIdx].ucUsed) {
+		if (ucBssIndex == prWtbl[ucWlanIdx].ucBssIndex)
+			return FALSE;
+
+		DBGLOG(RSN, INFO,
+			"The Wlan index #%d is in use by other bss! BSSIdx=%d keyid=%d P=%d STA=%d Addr="
+			MACSTR "\n", ucWlanIdx,
+			prWtbl[ucWlanIdx].ucBssIndex,
+			prWtbl[ucWlanIdx].ucKeyId,
+			prWtbl[ucWlanIdx].ucPairwise,
+			prWtbl[ucWlanIdx].ucStaIndex,
+			MAC2STR(prWtbl[ucWlanIdx].aucMacAddr));
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Assin the wlan table with the join AP info
