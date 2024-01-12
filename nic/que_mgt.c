@@ -918,14 +918,12 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4StaRecIdx, IN uint32_t u4Tid)
 {
 	/* UINT_32 i; */
-	struct SW_RFB *prSwRfbListHead;
-	struct SW_RFB *prSwRfbListTail;
-	struct RX_BA_ENTRY *prReorderQueParm;
-	struct STA_RECORD *prStaRec;
+	struct SW_RFB *prSwRfbListHead = NULL;
+	struct SW_RFB *prSwRfbListTail = NULL;
+	struct RX_BA_ENTRY *prReorderQueParm = NULL;
+	struct STA_RECORD *prStaRec = NULL;
 
 	DBGLOG(QM, TRACE, "QM: Enter qmFlushStaRxQueues(%u)\n", u4StaRecIdx);
-
-	prSwRfbListHead = prSwRfbListTail = NULL;
 
 	prStaRec = &prAdapter->arStaRec[u4StaRecIdx];
 	ASSERT(prStaRec);
@@ -937,7 +935,9 @@ struct SW_RFB *qmFlushStaRxQueue(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* Obtain the RX BA Entry pointer */
-	prReorderQueParm = ((prStaRec->aprRxReorderParamRefTbl)[u4Tid]);
+	if (u4Tid < CFG_RX_MAX_BA_TID_NUM)
+		prReorderQueParm = ((prStaRec->aprRxReorderParamRefTbl)[u4Tid]);
+
 
 	/* Note: For each queued packet,
 	 * prCurrSwRfb->eDst equals RX_PKT_DESTINATION_HOST
