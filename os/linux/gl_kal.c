@@ -5581,6 +5581,10 @@ int main_thread(void *data)
 #endif
 		kalTraceBegin("main_thread");
 
+		if (test_and_clear_bit(GLUE_FLAG_DISABLE_PERF_BIT,
+			&prGlueInfo->ulFlag))
+			kalPerMonDisable(prGlueInfo);
+
 #if CFG_ENABLE_WIFI_DIRECT
 		/*run p2p multicast list work. */
 		if (test_and_clear_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT,
@@ -9548,6 +9552,24 @@ inline int32_t kalPerMonEnable(struct GLUE_INFO
 	return 0;
 }
 
+inline int32_t kalSetPerMonEnable(struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	clear_bit(GLUE_FLAG_DISABLE_PERF_BIT, &prGlueInfo->ulFlag);
+	kalPerMonEnable(prGlueInfo);
+	DBGLOG(SW4, LOUD, "exit %s\n", __func__);
+	return 0;
+}
+
+inline int32_t kalSetPerMonDisable(struct GLUE_INFO *prGlueInfo)
+{
+	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	set_bit(GLUE_FLAG_DISABLE_PERF_BIT, &prGlueInfo->ulFlag);
+	wake_up_interruptible(&prGlueInfo->waitq);
+	DBGLOG(SW4, LOUD, "exit %s\n", __func__);
+	return 0;
+}
+
 inline int32_t kalPerMonStart(struct GLUE_INFO
 			      *prGlueInfo)
 {
@@ -10899,13 +10921,13 @@ static int wlan_fb_notifier_callback(struct notifier_block
 
 	switch (eEvent) {
 	case WLAN_FB_EVENT_UNBLANK:
-		kalPerMonEnable(prGlueInfo);
+		kalSetPerMonEnable(prGlueInfo);
 		wlan_fb_power_down = FALSE;
 		break;
 	case WLAN_FB_EVENT_POWERDOWN:
 		wlan_fb_power_down = TRUE;
 		if (!wlan_perf_monitor_force_enable)
-			kalPerMonDisable(prGlueInfo);
+			kalSetPerMonDisable(prGlueInfo);
 		break;
 	default:
 		break;
