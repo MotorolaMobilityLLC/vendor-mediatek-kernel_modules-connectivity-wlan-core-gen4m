@@ -1796,6 +1796,11 @@ SKIP_START_RDD:
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+		if (prP2pConnReqInfo->eConnRequest ==
+			P2P_CONNECTION_TYPE_PURE_AP)
+			kalIdcGetRilInfo();
+#endif
 		if (prP2pChnlReqInfo->eBand == BAND_5G)
 			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 
