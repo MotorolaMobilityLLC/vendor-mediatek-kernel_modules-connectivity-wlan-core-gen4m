@@ -121,6 +121,10 @@
 #define CONNECTION_TDLS			(STA_TYPE_TDLS|NETWORK_INFRA)
 #define CONNECTION_WDS			(STA_TYPE_WDS|NETWORK_WDS)
 
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+#define CH_MAX_NUM                    128
+#endif
+
 /*
  * Definitions for extension CMD_ID
  */
@@ -2895,6 +2899,21 @@ union ICAP_BUS_FMT {
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+
+struct CHANNEL_TIMING_T {
+	uint32_t u4ActiveTime;
+	uint32_t u4BusyTime;
+	uint32_t u4TxTime;
+	uint16_t u2ChannelNum;
+	uint8_t  aucPadding[2];
+};
+
+struct EVENT_CHANNEL_TIMING_INFO {
+	struct CHANNEL_TIMING_T rChannelTiming[CH_MAX_NUM];
+};
+#endif
+
 struct CMD_SET_TXPWR_CTRL {
 	int8_t c2GLegacyStaPwrOffset;	/* Unit: 0.5dBm, default: 0 */
 	int8_t c2GHotspotPwrOffset;
@@ -4448,6 +4467,10 @@ void nicCmdEventGetSlpCntInfo(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicCmdEventLpKeepPwrCtrl(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+void nicEventChannelTime(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

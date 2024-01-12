@@ -214,6 +214,10 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	{EVENT_ID_POWER_METRICS, nicEventPowerMetricsStatGetInfo},
 #endif
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+	{EVENT_ID_CHANNEL_TIME, nicEventChannelTime}
+#endif
+
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

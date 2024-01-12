@@ -511,6 +511,10 @@ struct GLUE_INFO {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	uint32_t rRxRfbRetTask;
 #endif
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+	struct CHANNEL_TIMING_T  rChanTimeRecord[CH_MAX_NUM];
+	uint8_t u1NoiseLevel;
+#endif
 };
 
 #if 0  /* irq & time in Linux */

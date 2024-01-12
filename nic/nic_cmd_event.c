@@ -5915,6 +5915,22 @@ void nicEventWowWakeUpReason(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+void nicEventChannelTime(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_CHANNEL_TIMING_INFO *ChanTime;
+	struct GLUE_INFO *prGlueInfo;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	ChanTime = (struct EVENT_CHANNEL_TIMING_INFO *) (prEvent->aucBuffer);
+
+	kalMemCopy(prGlueInfo->rChanTimeRecord,
+				   ChanTime,
+				   sizeof(struct EVENT_CHANNEL_TIMING_INFO));
+}
+#endif
+
 #if CFG_SUPPORT_802_PP_DSCB
 void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent)

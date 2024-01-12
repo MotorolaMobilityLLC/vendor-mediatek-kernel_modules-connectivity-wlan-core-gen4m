@@ -358,6 +358,9 @@
 #define CMD_GET_POWER_LIMIT		"GET_POWER_LIMIT"
 #endif /*#if CFG_SUPPORT_PWR_LMT_EMI == 1*/
 #define CMD_SET_ATXOP_SHARING			"SETATXOP"
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+#define CMD_GET_SURVEY_DUMP		"survey_dump"
+#endif
 
 #define CMD_ADD_TS		"addts"
 #define CMD_DEL_TS		"delts"

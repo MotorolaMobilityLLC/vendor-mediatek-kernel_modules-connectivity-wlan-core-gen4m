@@ -778,6 +778,10 @@ int priv_driver_set_pd(struct net_device *prNetDev,
 int priv_driver_set_maxrfgain(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_ADVANCE_CONTROL */
+#if (CFG_SURVEY_DUMP_FULL_CHANNEL == 1)
+int priv_driver_get_survey_dump(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 int priv_driver_set_drv_ser(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_amsdu_num(struct net_device *prNetDev,
