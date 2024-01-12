@@ -1516,6 +1516,7 @@ void asicRxProcessRxvforMSP(
 	IN OUT struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3 *prGroup3;
+	uint32_t *prRxV = NULL;
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(RX, LOUD,
@@ -1526,30 +1527,12 @@ void asicRxProcessRxvforMSP(
 	prGroup3 =
 		(struct HW_MAC_RX_STS_GROUP_3 *)prRetSwRfb->prRxStatusGroup3;
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector0 =
-			HAL_RX_VECTOR_GET_RX_VECTOR(
-			prGroup3, 0);
-
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector1 =
-			HAL_RX_VECTOR_GET_RX_VECTOR(
-			prGroup3, 1);
-
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector2 =
-			HAL_RX_VECTOR_GET_RX_VECTOR(
-			prGroup3, 2);
-
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector3 =
-			HAL_RX_VECTOR_GET_RX_VECTOR(
-			prGroup3, 3);
-
-		prAdapter->arStaRec[
-			prRetSwRfb->ucStaRecIdx].u4RxVector4 =
-			HAL_RX_VECTOR_GET_RX_VECTOR(
-			prGroup3, 4);
+		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+		prRxV[0] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+		prRxV[1] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
+		prRxV[2] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 2);
+		prRxV[3] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 3);
+		prRxV[4] = HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 4);
 	}
 }
 #endif /* CFG_SUPPORT_MSP */

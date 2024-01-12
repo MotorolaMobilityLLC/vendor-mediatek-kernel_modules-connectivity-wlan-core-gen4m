@@ -4875,15 +4875,15 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 {
 	int32_t i4RSSI0 = 0, i4RSSI1 = 0, i4RSSI2 = 0, i4RSSI3 = 0;
 	int32_t i4BytesWritten = 0;
-	uint32_t u4RxVector3 = 0;
+	uint32_t u4RxV3 = 0;
 	uint8_t ucStaIdx;
 	struct CHIP_DBG_OPS *prChipDbg;
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 	    WLAN_STATUS_SUCCESS) {
-		u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
+		u4RxV3 = prAdapter->arStaRec[ucStaIdx].au4RxV[3];
 		DBGLOG(REQ, LOUD, "****** RX Vector3 = 0x%08x ******\n",
-		       u4RxVector3);
+		       u4RxV3);
 	} else {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -4902,15 +4902,15 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 		return i4BytesWritten;
 	}
 
-	i4RSSI0 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI0_MASK) >>
+	i4RSSI0 = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI0_MASK) >>
 			      RX_VT_RCPI0_OFFSET);
-	i4RSSI1 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI1_MASK) >>
+	i4RSSI1 = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI1_MASK) >>
 			      RX_VT_RCPI1_OFFSET);
 
 	if (prAdapter->rWifiVar.ucNSS > 2) {
-		i4RSSI2 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI2_MASK) >>
+		i4RSSI2 = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI2_MASK) >>
 				      RX_VT_RCPI2_OFFSET);
-		i4RSSI3 = RCPI_TO_dBm((u4RxVector3 & RX_VT_RCPI3_MASK) >>
+		i4RSSI3 = RCPI_TO_dBm((u4RxV3 & RX_VT_RCPI3_MASK) >>
 				      RX_VT_RCPI3_OFFSET);
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,

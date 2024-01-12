@@ -1981,8 +1981,9 @@ int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t groupid = 0, stbc = 0, nss = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	uint32_t au4RxV[2] = {0};
 	uint8_t ucWlanIdx, ucStaIdx;
+	uint32_t *prRxV = NULL;
 
 	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
 		(!pu4Sgi))
@@ -1998,10 +1999,11 @@ int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
-		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
-		if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
-			DBGLOG(SW4, WARN, "RxVector1 or RxVector2 is 0\n");
+		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+		au4RxV[0] = prRxV[0];
+		au4RxV[1] = prRxV[1];
+		if (au4RxV[0] == 0 || au4RxV[1] == 0) {
+			DBGLOG(SW4, WARN, "RxV1 or RxV2 is 0\n");
 			return -1;
 		}
 	} else {
@@ -2009,13 +2011,13 @@ int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		return -1;
 	}
 
-	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
-	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-	stbc = ((u4RxVector0 & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET);
-	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
-	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	sgi = u4RxVector0 & RX_VT_SHORT_GI;
-	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+	rate = (au4RxV[0] & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	nsts = (au4RxV[1] & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
+	stbc = (au4RxV[0] & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;
+	rxmode = (au4RxV[0] & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	frmode = (au4RxV[0] & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	sgi = au4RxV[0] & RX_VT_SHORT_GI;
+	groupid = (au4RxV[1] & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
 
 	if ((groupid == 0) || (groupid == 63))
 		nsts += 1;

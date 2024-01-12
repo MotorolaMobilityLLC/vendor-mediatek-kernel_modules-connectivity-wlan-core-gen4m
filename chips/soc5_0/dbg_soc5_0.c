@@ -1038,7 +1038,7 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
-	uint32_t u4RxVector0 = 0;
+	uint32_t u4RxV0 = 0;
 	uint8_t ucWlanIdx, ucStaIdx;
 
 	if ((!pu4Rate) || (!pu4Nss) || (!pu4RxMode) || (!pu4FrMode) ||
@@ -1055,9 +1055,9 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
-		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-		if (u4RxVector0 == 0) {
-			DBGLOG(SW4, WARN, "u4RxVector0 is 0\n");
+		u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
+		if (u4RxV0 == 0) {
+			DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
 			return -1;
 		}
 	} else {
@@ -1066,18 +1066,18 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 	}
 
 	/* P-RXV1 */
-	rate = (u4RxVector0 & SOC5_0_RX_VT_RX_RATE_MASK)
+	rate = (u4RxV0 & SOC5_0_RX_VT_RX_RATE_MASK)
 				>> SOC5_0_RX_VT_RX_RATE_OFFSET;
-	nsts = ((u4RxVector0 & SOC5_0_RX_VT_NSTS_MASK)
-				>> SOC5_0_RX_VT_NSTS_OFFSET);
+	nsts = (u4RxV0 & SOC5_0_RX_VT_NSTS_MASK)
+				>> SOC5_0_RX_VT_NSTS_OFFSET;
 	/* C-B-0 */
-	rxmode = (u4RxVector0 & SOC5_0_RX_VT_TXMODE_MASK)
+	rxmode = (u4RxV0 & SOC5_0_RX_VT_TXMODE_MASK)
 				>> SOC5_0_RX_VT_TXMODE_OFFSET;
-	frmode = (u4RxVector0 & SOC5_0_RX_VT_FR_MODE_MASK)
+	frmode = (u4RxV0 & SOC5_0_RX_VT_FR_MODE_MASK)
 				>> SOC5_0_RX_VT_FR_MODE_OFFSET;
-	sgi = (u4RxVector0 & SOC5_0_RX_VT_GI_MASK)
+	sgi = (u4RxV0 & SOC5_0_RX_VT_GI_MASK)
 				>> SOC5_0_RX_VT_GI_OFFSET;
-	stbc = (u4RxVector0 & SOC5_0_RX_VT_STBC_MASK)
+	stbc = (u4RxV0 & SOC5_0_RX_VT_STBC_MASK)
 				>> SOC5_0_RX_VT_STBC_OFFSET;
 
 	nsts += 1;
@@ -1099,7 +1099,7 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(SW4, TRACE,
 		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
-		   u4RxVector0, rxmode, rate, frmode, sgi, nss
+		   u4RxV0, rxmode, rate, frmode, sgi, nss
 	);
 
 	return 0;
@@ -1108,7 +1108,7 @@ int soc5_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 
 void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint32_t u4RxVector0)
+	IN struct SW_RFB *prSwRfb, IN uint32_t u4RxV0)
 {
 #if CFG_SUPPORT_LLS
 	static const uint8_t TX_MODE_2_LLS_MODE[] = {
@@ -1140,29 +1140,29 @@ void soc5_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
 		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",
-			RXV_GET_TXMODE(u4RxVector0),
-			RXV_GET_RX_NSTS(u4RxVector0),
-			RXV_GET_STBC(u4RxVector0),
-			RXV_GET_FR_MODE(u4RxVector0),
-			RXV_GET_RX_RATE(u4RxVector0));
+			RXV_GET_TXMODE(u4RxV0),
+			RXV_GET_RX_NSTS(u4RxV0),
+			RXV_GET_STBC(u4RxV0),
+			RXV_GET_FR_MODE(u4RxV0),
+			RXV_GET_RX_RATE(u4RxV0));
 
 	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
 		prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
 		return;
 
-	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(u4RxVector0)];
+	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(u4RxV0)];
 
 	if (rate.preamble == LLS_MODE_RESERVED)
 		return;
 
-	rate.bw = RXV_GET_FR_MODE(u4RxVector0);
-	rate.nss = RXV_GET_RX_NSTS(u4RxVector0);
+	rate.bw = RXV_GET_FR_MODE(u4RxV0);
+	rate.nss = RXV_GET_RX_NSTS(u4RxV0);
 	if (rate.preamble >= LLS_MODE_VHT) {
-		if (RXV_GET_STBC(u4RxVector0))
+		if (RXV_GET_STBC(u4RxV0))
 			rate.nss /= 2;
 	}
 
-	rate.rateMcsIdx = RXV_GET_RX_RATE(u4RxVector0);
+	rate.rateMcsIdx = RXV_GET_RX_RATE(u4RxV0);
 
 	if (rate.preamble == LLS_MODE_CCK)
 		rate.rateMcsIdx &= 0x3; /* 0: 1M; 1: 2M; 2: 5.5M; 3: 11M  */

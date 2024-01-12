@@ -1131,18 +1131,20 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 {
 	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, groupid, mu;
 	int32_t i4BytesWritten = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	uint32_t au4RxV[2] = {0};
 	uint8_t ucStaIdx;
 	struct CHIP_DBG_OPS *prChipDbg;
+	uint32_t *prRxV = NULL;
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 	    WLAN_STATUS_SUCCESS) {
-		u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-		u4RxVector1 = prAdapter->arStaRec[ucStaIdx].u4RxVector1;
+		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+		au4RxV[0] = prRxV[0];
+		au4RxV[1] = prRxV[1];
 		DBGLOG(REQ, LOUD, "****** RX Vector0 = 0x%08x ******\n",
-		       u4RxVector0);
+		       au4RxV[0]);
 		DBGLOG(REQ, LOUD, "****** RX Vector1 = 0x%08x ******\n",
-		       u4RxVector1);
+		       au4RxV[1]);
 	} else {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -1161,14 +1163,14 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 		return i4BytesWritten;
 	}
 
-	txmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
-	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
-	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-	stbc = (u4RxVector0 & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;
-	sgi = u4RxVector0 & RX_VT_SHORT_GI;
-	ldpc = u4RxVector0 & RX_VT_LDPC;
-	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+	txmode = (au4RxV[0] & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (au4RxV[0] & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (au4RxV[0] & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = (au4RxV[1] & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
+	stbc = (au4RxV[0] & RX_VT_STBC_MASK) >> RX_VT_STBC_OFFSET;
+	sgi = au4RxV[0] & RX_VT_SHORT_GI;
+	ldpc = au4RxV[0] & RX_VT_LDPC;
+	groupid = (au4RxV[1] & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
 
 	if (groupid && groupid != 63) {
 		mu = 1;
