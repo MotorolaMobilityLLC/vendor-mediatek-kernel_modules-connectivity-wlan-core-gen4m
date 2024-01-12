@@ -1402,7 +1402,7 @@ nanElemContainerAttrHandler(
 				prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 				if (IE_SIZE(pucIE) > sizeof(prNDL->aucIeHeCap))
 					DBGLOG(NAN, WARN,
-						"HE_CAP IE_LEN (%d) exceed MAX LEN(%d)!\n"
+						"HE_CAP IE_LEN (%d) exceed MAX LEN(%zu)!\n"
 						, IE_LEN(pucIE)
 						, sizeof(prNDL->aucIeHeCap));
 				else {

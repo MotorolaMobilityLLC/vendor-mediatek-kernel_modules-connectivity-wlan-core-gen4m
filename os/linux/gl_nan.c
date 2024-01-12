@@ -811,7 +811,7 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWdev->wiphy = prWiphy;
 
 	g_aprNanRoleWdev[eRole] = prWdev;
-	DBGLOG(NAN, INFO, "glNanCreateWirelessDevice (%x) %d\n",
+	DBGLOG(NAN, INFO, "glNanCreateWirelessDevice (%p) %d\n",
 	       g_aprNanRoleWdev[eRole]->wiphy, eRole);
 
 	return TRUE;
@@ -883,8 +883,10 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 			if (gprWdev[u4Idx] &&
 			    prNANInfo->prDevHandler ==
 				    gprWdev[u4Idx]->netdev) {
-				free_netdev(prNANInfo->prDevHandler);
-				prNANInfo->prDevHandler = NULL;
+				if (prNANInfo->prDevHandler != NULL) {
+					free_netdev(prNANInfo->prDevHandler);
+					prNANInfo->prDevHandler = NULL;
+				}
 			}
 		}
 	}

@@ -1474,6 +1474,11 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 				prNDP->pucAppInfo = cnmMemAlloc(prAdapter,
 					RAM_TYPE_BUF,
 					(uint32_t)prNDP->u2AppInfoLen);
+				if (prNDP->pucAppInfo == NULL) {
+					DBGLOG(NAN, ERROR,
+						"cnmMemAlloc AppInfo error\n");
+					return WLAN_STATUS_FAILURE;
+				}
 				kalMemCopy(prNDP->pucAppInfo,
 					prDataPathInfo->pucAppInfo,
 					prNDP->u2AppInfoLen);

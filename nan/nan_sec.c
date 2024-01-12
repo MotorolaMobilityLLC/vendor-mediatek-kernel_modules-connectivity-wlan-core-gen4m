@@ -343,7 +343,7 @@ nan_sec_wlanSetRemoveKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 #endif
 
 	if (u4KeyIndex >= 4) {
-		DBGLOG(RSN, INFO, "Remove bip key Index : 0x%08lx\n",
+		DBGLOG(RSN, INFO, "Remove bip key Index : 0x%08x\n",
 		       u4KeyIndex);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -459,7 +459,7 @@ nan_sec_wpas_setkey_glue(bool fgIsAp, u8 u1BssIdx, enum wpa_alg alg,
 	/* TODO_CJ: every NAN should be STA and currently no GTK */
 
 	DBGLOG(NAN, INFO,
-	       "[%s]Enter, fgIsAp:%d, u1BssIdx:%d, alg:%d, key_idx:%d, key_len:%d\n",
+	       "[%s]Enter, fgIsAp:%d, u1BssIdx:%d, alg:%d, key_idx:%d, key_len:%zu\n",
 	       __func__, fgIsAp, u1BssIdx, alg, key_idx,
 	       key_len); /* dump outside */
 
@@ -630,10 +630,10 @@ nan_sec_wpa_eapol_key_mic(const u8 *key, size_t key_len, u32 cipher,
 
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 
-	DBGLOG(NAN, INFO, "[%s] KCK len:%d\n", __func__, key_len);
+	DBGLOG(NAN, INFO, "[%s] KCK len:%zu\n", __func__, key_len);
 	dumpMemory8((uint8_t *)key, key_len);
 
-	DBGLOG(NAN, INFO, "[%s] BUF_len:%d\n", __func__, len);
+	DBGLOG(NAN, INFO, "[%s] BUF_len:%zu\n", __func__, len);
 	dumpMemory8((uint8_t *)buf, len);
 
 	if (cipher == NAN_CIPHER_SUITE_ID_NCS_SK_GCM_256) {
@@ -1118,7 +1118,7 @@ nan_sec_wpa_verify_key_mic(int akmp, struct wpa_ptk *PTK, u8 *data,
 
 	if (data_len < sizeof(*hdr) + sizeof(struct wpa_eapol_key)) {
 		DBGLOG(NAN, ERROR,
-		       "[%s] ERROR! size mis-match, data_len:%d, hdr+key:%d",
+		       "[%s] ERROR! size mis-match, data_len:%zu, hdr+key:%zu",
 		       __func__, data_len,
 		       sizeof(*hdr) + sizeof(struct wpa_eapol_key));
 		return -1;
@@ -1176,7 +1176,7 @@ nan_sec_wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr) {
 
 	if (len < sizeof(*prNanSecKdeHdr) + keyhdrlen) {
 		DBGLOG(NAN, INFO,
-		       "[%s] Quit1. len:%d, sizeof(*prNanSecKdeHdr):%d, keyhdrlen:%d\n",
+		       "[%s] Quit1. len:%lu, sizeof(*prNanSecKdeHdr):%zu, keyhdrlen:%zu\n",
 		       __func__, len, sizeof(*prNanSecKdeHdr), keyhdrlen);
 
 		return WLAN_STATUS_FAILURE;
@@ -1284,7 +1284,7 @@ nan_sec_wpa_sm_rx_eapol(struct wpa_sm *sm, const u8 *src_addr) {
 
 	if (key_data_len > plen - keyhdrlen) {
 		DBGLOG(NAN, INFO,
-		       "[%s] Quit2. key_data_len:%d, plen:%d, keyhdrlen:%d\n",
+		       "[%s] Quit2. key_data_len:%zu, plen:%zu, keyhdrlen:%zu\n",
 		       __func__, key_data_len, plen, keyhdrlen);
 		goto out;
 	}
@@ -1511,7 +1511,7 @@ nan_sec_wpa_receive(struct wpa_authenticator *wpa_auth, /* AP */
 	}
 	if (key_data_length > data_len - sizeof(*hdr) - keyhdrlen) {
 		DBGLOG(NAN, INFO,
-		       "[%s] Quit1. key_data_length:%d, data_len:%d, sizeof(*hdr):%d, keyhdrlen:%d\n",
+		       "[%s] Quit1. key_data_length:%d, data_len:%zu, sizeof(*hdr):%zu, keyhdrlen:%zu\n",
 		       __func__, key_data_length, data_len, sizeof(*hdr),
 		       sizeof(*hdr));
 		return WLAN_STATUS_FAILURE;
@@ -2424,7 +2424,7 @@ nanSecGetCsidAttr(uint32_t *pu4CsidAttrLen, uint8_t **ppu1CsidAttrBuf) {
 
 #if (ENABLE_SEC_UT_LOG == 1)
 	DBGLOG(NAN, INFO,
-	       "[%s] len_ATTR_LIST:%d, len_ATTR_HDR:%d, u4NumElem:%d, u4CipherListLen:%d, u4TotalLen:%d\n",
+	       "[%s] len_ATTR_LIST:%zu, len_ATTR_HDR:%zu, u4NumElem:%d, u4CipherListLen:%d, u4TotalLen:%d\n",
 	       __func__, sizeof(struct _NAN_SEC_CSID_ATTR_LIST),
 	       sizeof(struct _NAN_SEC_CSID_ATTR_HDR),
 	       (g_rNanSecCtx.rNanSecCipherList.u4NumElem), u4CipherListLen,
