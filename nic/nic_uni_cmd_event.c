@@ -266,6 +266,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_HW_ERR_REPORT == 1)
 	[UNI_EVENT_ID_HW_ERROR_REPORT] = nicUniEventHwErrReport,
 #endif
+	[UNI_EVENT_ID_UPDATE_LP] = nicUniEventUpdateLp,
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[UNI_EVENT_ID_POWER_METRICS] = nicUniEventPowerMetricsStatGetInfo,
 #endif
@@ -12057,4 +12058,44 @@ void nicUniEventFwDropSSN(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
+
+void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_UPDATE_LP);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_UPDATE_LP_TX_DELAY: {
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+			struct UNI_EVENT_UPDATE_LP_TX_DELAY_T *info =
+				(struct UNI_EVENT_UPDATE_LP_TX_DELAY_T *) tag;
+			struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+
+			DBGLOG(NIC, INFO,
+				"Set TxDelay, Scen[%d] TRx[%u,%u] Delay[%u] Pkt[%u]\n",
+				info->i4Scen, info->u4Tx, info->u4Rx,
+				info->ucDelay, info->u4PktCnt);
+
+			prWifiVar->u4TxDataDelayTimeout = info->ucDelay;
+			prWifiVar->u4TxDataDelayCnt = info->u4PktCnt;
+#else
+			DBGLOG(NIC, WARN, "not support Tx delay.\n");
+#endif
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
