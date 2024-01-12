@@ -165,12 +165,10 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	uint8_t *ucChTokenId);
 
 static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
 static void aisScanReqInit(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
 
 static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
@@ -2401,12 +2399,11 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 				return;
 			}
 
-			aisScanReqInit(prAdapter, ucBssIndex,
-				prScanReqMsg, prScanRequest);
+			aisScanReqInit(prAdapter, ucBssIndex, prScanReqMsg);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (prAisFsmInfo->ucMlProbeEnable &&
 			    !aisScanGenMlScanReq(prAdapter, ucBssIndex,
-					prScanReqMsg, prScanRequest))
+					prScanReqMsg))
 				goto send_msg;
 #endif
 
@@ -8551,8 +8548,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 }
 #if (CFG_SUPPORT_802_11BE == 1 && CFG_SUPPORT_802_11BE_MLO == 1)
 static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
@@ -8571,8 +8567,8 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 
 	/* Generate ML probe request IE */
 	kalMemZero(aucIe, sizeof(aucIe));
-	mldGenerateMlProbeReqIE(aucIe, &u4ScanIELen, 0);
-
+	u4ScanIELen = mldFillScanIE(prAdapter, prBssDesc,
+		aucIe, sizeof(aucIe), ucBssIndex);
 	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
@@ -8588,8 +8584,8 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	COPY_MAC_ADDR(prScanReqMsg->aucExtBssid[0], prBssDesc->aucBSSID);
 
 	/* No BssidMatchSsid, set to default value */
-	kalMemSet(prScanRequest->ucBssidMatchSsidInd, CFG_SCAN_OOB_MAX_NUM,
-				sizeof(prScanRequest->ucBssidMatchSsidInd));
+	kalMemSet(prScanReqMsg->ucBssidMatchSsidInd, CFG_SCAN_OOB_MAX_NUM,
+				sizeof(prScanReqMsg->ucBssidMatchSsidInd));
 
 	/* MaskExtend set to ENUM_SCN_ML_PROBE */
 	prScanReqMsg->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
@@ -8605,8 +8601,7 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 #endif
 
 static void aisScanReqInit(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
-	struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
+	uint8_t ucBssIndex, struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
