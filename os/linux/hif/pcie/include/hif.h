@@ -138,6 +138,14 @@ struct HIF_MEM_OPS {
 		       uint32_t u4Idx, uint32_t u4DumpLen);
 };
 
+enum pcie_suspend_state {
+	PCIE_STATE_PRE_SUSPEND_WAITING, /* Waiting for FW suspend flow status */
+	PCIE_STATE_PRE_SUSPEND_DONE,
+	PCIE_STATE_PRE_SUSPEND_FAIL,
+	PCIE_STATE_SUSPEND_ENTERING,
+	PCIE_STATE_SUSPEND
+};
+
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
@@ -185,6 +193,8 @@ struct GL_HIF_INFO {
 
 	uint32_t u4WakeupIntSta;
 	bool fgIsBackupIntSta;
+
+	enum pcie_suspend_state eSuspendtate;
 };
 
 struct BUS_INFO {
@@ -269,6 +279,8 @@ struct BUS_INFO {
 		bool fgResetHif);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
 		uint16_t u2Port, uint32_t u4MaxQuota);
+	void (*pdmaStop)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+	u_int8_t (*pdmaPollingIdle)(struct GLUE_INFO *prGlueInfo);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableSwInterrupt)(struct ADAPTER *prAdapter);
