@@ -12275,7 +12275,7 @@ wlanLoadDefaultCustomerSetting(IN struct ADAPTER *
 			g_rDefaulteSetting[i].aucKey,
 			g_rDefaulteSetting[i].aucValue,
 			g_rDefaulteSetting[i].u4Flag);
-		DBGLOG(INIT, INFO, "%s with %s\n",
+		DBGLOG(INIT, TRACE, "%s with %s\n",
 			g_rDefaulteSetting[i].aucKey,
 			g_rDefaulteSetting[i].aucValue);
 	}
