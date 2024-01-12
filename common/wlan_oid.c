@@ -7672,7 +7672,7 @@ wlanoidQueryEepromRead(IN struct ADAPTER *prAdapter,
 
 	kalMemZero(&rCmdAccessEeprom,
 		   sizeof(struct CMD_ACCESS_EEPROM));
-	rCmdAccessEeprom.u2Offset = prEepromRwInfo->ucEepromIndex;
+	rCmdAccessEeprom.u2Offset = prEepromRwInfo->info.rEeprom.ucEepromIndex;
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_ACCESS_EEPROM,
@@ -7730,8 +7730,8 @@ wlanoidSetEepromWrite(IN struct ADAPTER *prAdapter,
 
 	kalMemZero(&rCmdAccessEeprom,
 		   sizeof(struct CMD_ACCESS_EEPROM));
-	rCmdAccessEeprom.u2Offset = prEepromRwInfo->ucEepromIndex;
-	rCmdAccessEeprom.u2Data = prEepromRwInfo->u2EepromData;
+	rCmdAccessEeprom.u2Offset = prEepromRwInfo->info.rEeprom.ucEepromIndex;
+	rCmdAccessEeprom.u2Data = prEepromRwInfo->info.rEeprom.u2EepromData;
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_ACCESS_EEPROM,
@@ -11354,10 +11354,11 @@ uint32_t
 wlanoidQueryNvramRead(IN struct ADAPTER *prAdapter,
 		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen) {
-	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *prNvramRwInfo;
+	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *rNvRwInfo;
 	uint16_t u2Data;
 	u_int8_t fgStatus;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4Ofs = 0;
 
 	DEBUGFUNC("wlanoidQueryNvramRead");
 
@@ -11373,31 +11374,51 @@ wlanoidQueryNvramRead(IN struct ADAPTER *prAdapter,
 				      PARAM_CUSTOM_EEPROM_RW_STRUCT))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	prNvramRwInfo = (struct PARAM_CUSTOM_EEPROM_RW_STRUCT *)
+	rNvRwInfo = (struct PARAM_CUSTOM_EEPROM_RW_STRUCT *)
 			pvQueryBuffer;
 
-	if (prNvramRwInfo->ucEepromMethod ==
-	    PARAM_EEPROM_READ_METHOD_READ) {
+	if (rNvRwInfo->ucMethod ==
+			PARAM_EEPROM_READ_METHOD_READ) {
+		u4Ofs = rNvRwInfo->info.rEeprom.ucEepromIndex << 1;
 		fgStatus = kalCfgDataRead16(prAdapter->prGlueInfo,
-					    prNvramRwInfo->ucEepromIndex <<
-					    1,	/* change to byte offset */
+					    u4Ofs, /* change to byte offset */
+					    &u2Data);
+		if (fgStatus) {
+			rNvRwInfo->info.rEeprom.u2EepromData = u2Data;
+			DBGLOG(REQ, INFO,
+			       "NVRAM Read: index=%#X, data=%#02X\r\n",
+			       rNvRwInfo->info.rEeprom.ucEepromIndex,
+			       u2Data);
+		} else {
+			DBGLOG(REQ, ERROR, "NVRAM Read Failed: index=%#x.\r\n",
+			       rNvRwInfo->info.rEeprom.ucEepromIndex);
+			rStatus = WLAN_STATUS_FAILURE;
+		}
+	} else if (rNvRwInfo->ucMethod ==
+		   PARAM_EEPROM_READ_METHOD_GETSIZE) {
+		rNvRwInfo->info.rEeprom.u2EepromData =
+			MAX_CFG_FILE_WIFI_REC_SIZE;
+		DBGLOG(REQ, INFO, "EEPROM size =%d\r\n",
+		       rNvRwInfo->info.rEeprom.u2EepromData);
+	} else if (rNvRwInfo->ucMethod ==
+		   PARAM_EEPROM_READ_NVRAM) {
+		u4Ofs = rNvRwInfo->info.rNvram.u2NvIndex;
+		fgStatus = kalCfgDataRead16(prAdapter->prGlueInfo,
+					    u4Ofs,
 					    &u2Data);
 
 		if (fgStatus) {
-			prNvramRwInfo->u2EepromData = u2Data;
+			rNvRwInfo->info.rNvram.u2NvData = u2Data & 0x00FF;
 			DBGLOG(REQ, INFO,
-			       "NVRAM Read: index=%#X, data=%#02X\r\n",
-			       prNvramRwInfo->ucEepromIndex, u2Data);
+				   "index=%#X, data=%#02X\r\n",
+				   rNvRwInfo->info.rNvram.u2NvIndex,
+				   rNvRwInfo->info.rNvram.u2NvData);
 		} else {
 			DBGLOG(REQ, ERROR, "NVRAM Read Failed: index=%#x.\r\n",
-			       prNvramRwInfo->ucEepromIndex);
+				   rNvRwInfo->info.rNvram.u2NvIndex);
 			rStatus = WLAN_STATUS_FAILURE;
 		}
-	} else if (prNvramRwInfo->ucEepromMethod ==
-		   PARAM_EEPROM_READ_METHOD_GETSIZE) {
-		prNvramRwInfo->u2EepromData = MAX_CFG_FILE_WIFI_REC_SIZE;
-		DBGLOG(REQ, INFO, "EEPROM size =%d\r\n",
-		       prNvramRwInfo->u2EepromData);
+
 	}
 
 	*pu4QueryInfoLen = sizeof(struct
@@ -11426,8 +11447,8 @@ uint32_t
 wlanoidSetNvramWrite(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen) {
-	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *prNvramRwInfo;
-	u_int8_t fgStatus;
+	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *rNvRwInfo;
+	u_int8_t fgStatus = FALSE;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DEBUGFUNC("wlanoidSetNvramWrite");
@@ -11445,13 +11466,28 @@ wlanoidSetNvramWrite(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pvSetBuffer);
 
-	prNvramRwInfo = (struct PARAM_CUSTOM_EEPROM_RW_STRUCT *)
+	rNvRwInfo = (struct PARAM_CUSTOM_EEPROM_RW_STRUCT *)
 			pvSetBuffer;
 
-	fgStatus = kalCfgDataWrite16(prAdapter->prGlueInfo,
-				     prNvramRwInfo->ucEepromIndex <<
-				     1,	/* change to byte offset */
-				     prNvramRwInfo->u2EepromData);
+	if (rNvRwInfo->ucMethod == PARAM_EEPROM_WRITE_NVRAM)
+		fgStatus = kalCfgDataWrite8(prAdapter->prGlueInfo,
+			rNvRwInfo->info.rNvram.u2NvIndex,
+			rNvRwInfo->info.rNvram.u2NvData & 0x00FF);
+
+		DBGLOG(REQ, INFO, "status(%d),index=%#X, data=%#02X\n",
+			fgStatus,
+			rNvRwInfo->info.rNvram.u2NvIndex,
+			rNvRwInfo->info.rNvram.u2NvData);
+
+		/*update nvram to firmware*/
+		if (fgStatus == TRUE)
+			wlanLoadManufactureData(prAdapter,
+				kalGetConfiguration(prAdapter->prGlueInfo));
+	else
+		fgStatus = kalCfgDataWrite16(prAdapter->prGlueInfo,
+				     rNvRwInfo->info.rEeprom.ucEepromIndex <<
+				     1, /* change to byte offset */
+				     rNvRwInfo->info.rEeprom.u2EepromData);
 
 	if (fgStatus == FALSE) {
 		DBGLOG(REQ, ERROR, "NVRAM Write Failed.\r\n");
