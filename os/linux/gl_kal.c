@@ -1261,20 +1261,25 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 		netif_carrier_on(prDevHandler);
 
 		do {
+
+			uint8_t aucSsid[PARAM_MAX_LEN_SSID + 1] = {0};
+
 			/* print message on console */
 			SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
 			wlanQueryInformation(prGlueInfo->prAdapter,
 			     wlanoidQuerySsid, &ssid, sizeof(ssid), &bufLen);
 
-			ssid.aucSsid[(ssid.u4SsidLen >= PARAM_MAX_LEN_SSID) ?
-			    (PARAM_MAX_LEN_SSID - 1) : ssid.u4SsidLen] = '\0';
+			kalStrnCpy(aucSsid, ssid.aucSsid, sizeof(aucSsid));
+			aucSsid[sizeof(aucSsid) - 1] = '\0';
+
 			DBGLOG(INIT, INFO,
 				"[wifi] %s netif_carrier_on [ssid:%s " MACSTR
 				"], Mac:" MACSTR "\n",
-				prDevHandler->name, ssid.aucSsid,
+				prGlueInfo->prDevHandler->name, aucSsid,
 				MAC2STR(arBssid),
 				MAC2STR(
 				prGlueInfo->prAdapter->rWifiVar.aucMacAddress));
+
 		} while (0);
 
 		if (prGlueInfo->fgIsRegistered == TRUE) {
