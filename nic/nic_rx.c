@@ -279,6 +279,9 @@ static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
  *******************************************************************************
  */
 
+static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -1988,6 +1991,13 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 	ASSERT(prSwRfb);
 
 	nicRxFillRFB(prAdapter, prSwRfb);
+
+	if (!prSwRfb->pvHeader || !prSwRfb->pvPacket) {
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT);
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT);
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
 
 #if CFG_WIFI_SW_CIPHER_MISMATCH
 	prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;
@@ -3700,6 +3710,8 @@ void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	prChipDbg = prAdapter->chip_info->prDebugOps;
 	if (prChipDbg && prChipDbg->get_rx_link_stats)
 		prChipDbg->get_rx_link_stats(prAdapter, prRetSwRfb, pu4RxV);
+
+	updateLinkStatsMpduAc(prAdapter, prRetSwRfb);
 #endif
 }
 
