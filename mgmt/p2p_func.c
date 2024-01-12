@@ -1850,12 +1850,21 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 	case NL80211_DFS_JP:
 		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_JAP;
 		break;
-	default:
+	case NL80211_DFS_UNSET:
 		DBGLOG(P2P, ERROR,
 			"rlmDomainGetDfsRegion is NL80211_DFS_UNSET!\n");
 		break;
+	default:
+		prCmdRddOnOffCtrl->ucSetVal = rlmDomainGetDfsRegion();
+		DBGLOG(P2P, INFO,
+			"ucSetVal: %d\n", prCmdRddOnOffCtrl->ucSetVal);
+		break;
 	}
 #endif
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.u4CC2Region))
+		prCmdRddOnOffCtrl->ucSetVal =
+			regCountryDfsMapping(prAdapter);
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
