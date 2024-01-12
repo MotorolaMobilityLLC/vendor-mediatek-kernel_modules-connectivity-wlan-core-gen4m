@@ -200,8 +200,7 @@ static int coredump_add_cdev(struct coredump_ctx *ctx)
 		goto unregister_chrdev_region;
 	}
 
-	ctx->driver_class = class_create(THIS_MODULE,
-		COREDUMP_WIFI_INF_NAME);
+	ctx->driver_class = KAL_CLASS_CREATE(COREDUMP_WIFI_INF_NAME);
 	if (IS_ERR(ctx->driver_class)) {
 		DBGLOG(INIT, ERROR,
 			"class_create failed, ret: %d\n",

@@ -8153,7 +8153,8 @@ int mtk_cfg_change_beacon(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, info);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
 int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev,
 	unsigned int link_id)
 #else
@@ -8169,13 +8170,20 @@ int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
+
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
 #endif
-	return mtk_p2p_cfg80211_stop_ap(wiphy, dev);
+
+#if (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE) || \
+		(CFG_ADVANCED_80211_MLO == 1)
+	return mtk_p2p_cfg80211_stop_ap(wiphy, dev, link_id);
+#else
+	return mtk_p2p_cfg80211_stop_ap(wiphy, dev, 0);
+#endif
 }
 
 int mtk_cfg_set_wiphy_params(struct wiphy *wiphy,
@@ -8195,7 +8203,8 @@ int mtk_cfg_set_wiphy_params(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_set_wiphy_params(wiphy, changed);
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
 int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
 			     struct net_device *dev,
 			     unsigned int link_id,

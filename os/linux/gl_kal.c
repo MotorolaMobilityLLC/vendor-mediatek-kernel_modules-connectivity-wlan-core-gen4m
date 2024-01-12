@@ -11355,16 +11355,12 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	struct net_device *prDevHandler;
 	enum nl80211_channel_type rChannelType;
 	uint8_t band = 0;
-#if (CFG_ADVANCED_80211_MLO == 1)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct BSS_INFO *prBssInfo;
+	uint8_t linkIdx = 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 		ucBssIndex);
-#else
-	uint8_t linkIdx = 0;
-#endif
-#endif
+	linkIdx = prBssInfo->ucLinkIndex;
 
 	if (eBand > BAND_NULL && eBand < BAND_NUM)
 		band = aucBandTranslate[eBand];
@@ -11410,17 +11406,25 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(REQ, STATE, "DFS channel switch to %d\n", ucChannelNum);
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
-#if (CFG_ADVANCED_80211_MLO == 1)
+
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		linkIdx, 0);
+#elif (CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
-		prBssInfo->ucLinkIndex, 0);
+		linkIdx, 0);
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
 #endif
+#elif (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		linkIdx, 0);
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
+
 	/* Check SAP channel */
 	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
 }

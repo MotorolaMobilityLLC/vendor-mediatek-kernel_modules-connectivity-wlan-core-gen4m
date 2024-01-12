@@ -499,7 +499,8 @@ int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 		u64 cookie);
 
 int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy,
-		struct net_device *dev);
+		struct net_device *dev,
+		unsigned int link_id);
 
 int mtk_p2p_cfg80211_set_channel(struct wiphy *wiphy,
 		struct cfg80211_chan_def *chandef);

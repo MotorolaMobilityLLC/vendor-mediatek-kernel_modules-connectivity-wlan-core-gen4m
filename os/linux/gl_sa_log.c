@@ -382,8 +382,7 @@ int SalogInit(void)
 	if (result < 0)
 		goto free_dev;
 
-	gSaDev->driver_class = class_create(THIS_MODULE,
-		SA_DRIVER_NAME);
+	gSaDev->driver_class = KAL_CLASS_CREATE(SA_DRIVER_NAME);
 
 	if (KAL_IS_ERR(gSaDev->driver_class)) {
 		result = -ENOMEM;

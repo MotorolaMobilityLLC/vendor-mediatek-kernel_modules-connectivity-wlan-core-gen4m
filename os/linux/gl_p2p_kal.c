@@ -2727,13 +2727,12 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	struct cfg80211_chan_def chandef = {0};
 	struct ieee80211_channel *chan = NULL;
 	enum nl80211_channel_type rChannelType;
-#if (CFG_ADVANCED_80211_MLO == 1 && CFG_SUPPORT_802_11BE_MLO == 0)
 	uint8_t linkIdx = 0;
-#endif
 
 	if (!prAdapter || !prBssInfo)
 		return;
 
+	linkIdx = prBssInfo->ucLinkIndex;
 	role_idx = prBssInfo->u4PrivateData;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
 
@@ -2860,18 +2859,24 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		chandef.center_freq2,
 		chandef.chan->dfs_state);
 
-	/* Ch notify */
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prNetdevice, &chandef,
+		linkIdx, 0);
+#elif (CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
-		prBssInfo->ucLinkIndex, 0);
+		linkIdx, 0);
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
 		linkIdx, 0);
 #endif
+#elif (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prNetdevice, &chandef,
+		linkIdx, 0);
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &chandef);
 #endif
+
 	netif_carrier_on(prNetdevice);
 	netif_tx_start_all_queues(prNetdevice);
 }

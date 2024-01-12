@@ -1496,6 +1496,12 @@ do { \
 		spin_unlock_bh(&glue->rSpinLock[SPIN_LOCK_RX_DIRECT_REORDER]);\
 } while (0)
 
+#if KERNEL_VERSION(6, 4, 0) <= LINUX_VERSION_CODE
+#define KAL_CLASS_CREATE(__name)	class_create(__name)
+#else
+#define KAL_CLASS_CREATE(__name)	class_create(THIS_MODULE, __name)
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Macros of wiphy operations for using in Driver Layer                       */
 /*----------------------------------------------------------------------------*/

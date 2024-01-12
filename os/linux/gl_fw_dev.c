@@ -241,8 +241,7 @@ int FwLogDevInit(void)
 	if (result < 0)
 		goto free_dev;
 
-	gIndexDev->driver_class = class_create(THIS_MODULE,
-		FW_INDEX_LOG_DRIVER_NAME);
+	gIndexDev->driver_class = KAL_CLASS_CREATE(FW_INDEX_LOG_DRIVER_NAME);
 
 	if (KAL_IS_ERR(gIndexDev->driver_class)) {
 		result = -ENOMEM;

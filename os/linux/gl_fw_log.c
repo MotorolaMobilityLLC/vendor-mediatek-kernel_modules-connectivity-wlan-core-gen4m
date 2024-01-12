@@ -263,8 +263,7 @@ int fw_log_wifi_inf_init(void)
 		goto unregister_chrdev_region;
 	}
 
-	prInf->driver_class = class_create(THIS_MODULE,
-					   FW_LOG_WIFI_INF_NAME);
+	prInf->driver_class = KAL_CLASS_CREATE(FW_LOG_WIFI_INF_NAME);
 	if (IS_ERR(prInf->driver_class)) {
 		DBGLOG(INIT, ERROR,
 			"class_create failed, ret: %d\n",
