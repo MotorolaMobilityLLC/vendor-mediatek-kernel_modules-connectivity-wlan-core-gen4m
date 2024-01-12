@@ -109,7 +109,7 @@ static ssize_t ics_ring_read(
 		if (WLAN_RING_EMPTY(ring) ||
 			!WLAN_RING_READ_PREPARE(left_to_read,
 				&ring_seg, ring)) {
-			DBGLOG(ICS, INFO,
+			DBGLOG(ICS, TEMP,
 				"no data/taken by other reader?\n");
 			goto return_fn;
 		}
@@ -180,14 +180,14 @@ static void ics_ring_deinit(struct ics_ring *iRing)
 
 static int fw_log_ics_open(struct inode *inode, struct file *file)
 {
-	DBGLOG(ICS, INFO, "major %d minor %d (pid %d)\n",
+	DBGLOG(ICS, TEMP, "major %d minor %d (pid %d)\n",
 		imajor(inode), iminor(inode), current->pid);
 	return 0;
 }
 
 static int fw_log_ics_release(struct inode *inode, struct file *file)
 {
-	DBGLOG(ICS, INFO, "major %d minor %d (pid %d)\n",
+	DBGLOG(ICS, TEMP, "major %d minor %d (pid %d)\n",
 		imajor(inode), iminor(inode), current->pid);
 	return 0;
 }
