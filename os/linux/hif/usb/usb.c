@@ -674,7 +674,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_usb_driver.suspend = mtk_usb_suspend;
 	mtk_usb_driver.resume = mtk_usb_resume;
 	mtk_usb_driver.reset_resume = mtk_usb_reset_resume;
-	mtk_usb_driver.supports_autosuspend = 1;
 
 	ret = (usb_register(&mtk_usb_driver) == 0) ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 
