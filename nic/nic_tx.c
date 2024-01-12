@@ -2542,8 +2542,16 @@ void nicHifTxMsduDoneCb(struct ADAPTER *prAdapter,
 		KAL_SPIN_LOCK_DECLARATION();
 
 		/* Record native packet pointer for Tx done log */
-		WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
-				  &prMsduInfo->u4TxDoneTag);
+		if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
+			WLAN_GET_FIELD_32(&prMsduInfo->prPacket,
+					  &prMsduInfo->u4TxDoneTag);
+		} else if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT) {
+			DBGLOG(TX, INFO,
+				"Insert msdu WIDX:TXDWID:PID[%u:%u:%u]\n",
+				prMsduInfo->ucWlanIndex,
+				prMsduInfo->ucTxdWlanIdx,
+				prMsduInfo->ucPID);
+		}
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 		QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue), prMsduInfo);
@@ -2714,10 +2722,6 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
-#if !CFG_TX_CMD_SMART_SEQUENCE
-	KAL_SPIN_LOCK_DECLARATION();
-#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
-
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 	prTxDescOps = prAdapter->chip_info->prTxDescOps;
@@ -2755,19 +2759,8 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
 
 #if !CFG_TX_CMD_SMART_SEQUENCE
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-					prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			DBGLOG(TX, INFO,
-				"Insert msdu WIDX:TXDWID:PID[%u:%u:%u]\n",
-				prMsduInfo->ucWlanIndex,
-				prMsduInfo->ucTxdWlanIdx,
-				prMsduInfo->ucPID);
-		}
+		if (prMsduInfo->pfHifTxMsduDoneCb)
+			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
 #endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 
 		nicUpdateMgmtSubtypeCounter(prAdapter, prMsduInfo);
@@ -4280,37 +4273,23 @@ uint32_t nicTxMgmtDirectTxMsduMthread(struct ADAPTER *prAdapter)
 	struct QUE *prTempHifQueue;
 	KAL_SPIN_LOCK_DECLARATION();
 	struct MSDU_INFO *prMsduInfo;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 	bool fgSetHifTx = FALSE;
 
 	prTempHifQueue = &rTempHifQueue;
 	QUEUE_INITIALIZE(prTempHifQueue);
 
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-		SPIN_LOCK_TX_MGMT_DIRECT_Q);
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	QUEUE_MOVE_ALL(prTempHifQueue, prMgmtQueue);
-	KAL_RELEASE_SPIN_LOCK(prAdapter,
-		SPIN_LOCK_TX_MGMT_DIRECT_Q);
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MGMT_DIRECT_Q);
 
 	while (1) {
-		if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
-			QUEUE_REMOVE_HEAD(prTempHifQueue,
-				prQueueEntry, struct QUE_ENTRY *);
-					prMsduInfo =
-						(struct MSDU_INFO *)
-						prQueueEntry;
-					if (prMsduInfo == NULL) {
-						DBGLOG(TX, WARN,
-							"prMsduInfo is NULL\n");
-						break;
-					}
-		} else {
+		QUEUE_REMOVE_HEAD(prTempHifQueue, prMsduInfo,
+			struct MSDU_INFO *);
+		if (!prMsduInfo)
 			break;
-		}
 
 		if (!halTxIsDataBufEnough(prAdapter, prMsduInfo)) {
-			QUEUE_INSERT_HEAD(prTempHifQueue,
-				(struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_INSERT_HEAD(prTempHifQueue, prMsduInfo);
 			break;
 		}
 
@@ -4319,19 +4298,15 @@ uint32_t nicTxMgmtDirectTxMsduMthread(struct ADAPTER *prAdapter)
 		       prMsduInfo->u2FrameLength,
 		       prMsduInfo->ucPID);
 
+#if (CFG_TX_DIRECT_VIA_HIF_THREAD == 0)
+		/*
+		 * when CFG_TX_DIRECT_VIA_HIF_THREAD is enabled,
+		 * pfHifTxMsduDoneCb will be called in halWpdmaWriteMsdu,
+		 * we should not call it here.
+		 */
 		if (prMsduInfo->pfHifTxMsduDoneCb)
-			prMsduInfo->pfHifTxMsduDoneCb(prAdapter,
-					prMsduInfo);
-
-		if (prMsduInfo->pfTxDoneHandler) {
-			KAL_SPIN_LOCK_DECLARATION();
-			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				SPIN_LOCK_TXING_MGMT_LIST);
-			QUEUE_INSERT_TAIL(&prAdapter->rTxCtrl.rTxMgmtTxingQueue,
-				prMsduInfo);
-			KAL_RELEASE_SPIN_LOCK(prAdapter,
-					SPIN_LOCK_TXING_MGMT_LIST);
-		}
+			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD == 0 */
 
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 		HAL_WRITE_TX_DATA(prAdapter, prMsduInfo);
@@ -4342,11 +4317,9 @@ uint32_t nicTxMgmtDirectTxMsduMthread(struct ADAPTER *prAdapter)
 		HAL_KICK_TX_DATA(prAdapter);
 
 	if (QUEUE_IS_NOT_EMPTY(prTempHifQueue)) {
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-			SPIN_LOCK_TX_MGMT_DIRECT_Q);
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MGMT_DIRECT_Q);
 		QUEUE_CONCATENATE_QUEUES_HEAD(prMgmtQueue, prTempHifQueue);
-		KAL_RELEASE_SPIN_LOCK(prAdapter,
-			SPIN_LOCK_TX_MGMT_DIRECT_Q);
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_MGMT_DIRECT_Q);
 	}
 
 	return WLAN_STATUS_SUCCESS;

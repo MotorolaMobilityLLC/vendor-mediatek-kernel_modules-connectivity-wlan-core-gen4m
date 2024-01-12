@@ -227,6 +227,7 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 		prMsduInfo->fgIsPacketSkb = FALSE;
 	}
 
+	prMsduInfo->pfHifTxMsduDoneCb = nicHifTxMsduDoneCb;
 
 exit:
 	if (prMsduInfo == NULL) {
