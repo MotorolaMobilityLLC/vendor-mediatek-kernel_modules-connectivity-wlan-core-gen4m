@@ -2111,6 +2111,7 @@ struct ADAPTER {
 	enum ENUM_SYS_PCO_PHASE eSysPcoPhase;
 
 	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct DOMAIN_INFO_ENTRY rBlockedDomainInfo;
 
 	/* QM */
 	struct QUE_MGT rQM;

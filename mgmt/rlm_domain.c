@@ -1352,10 +1352,12 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
-	if (prAdapter->prDomainInfo)
-		return prAdapter->prDomainInfo;
-
 	prRegInfo = &prAdapter->prGlueInfo->rRegInfo;
+
+	if (prRegInfo->eRegChannelListMap == REG_CH_MAP_BLOCK_INDOOR)
+		return &prAdapter->rBlockedDomainInfo;
+	else if (prAdapter->prDomainInfo)
+		return prAdapter->prDomainInfo;
 
 	DBGLOG(RLM, TRACE, "eRegChannelListMap=%d, u2CountryCode=0x%04x\n",
 			   prRegInfo->eRegChannelListMap,

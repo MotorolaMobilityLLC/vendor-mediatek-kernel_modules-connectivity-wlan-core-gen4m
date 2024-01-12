@@ -2483,6 +2483,10 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			DBGLOG(P2P, INFO, "complete\n");
 
 		i4Rslt = 0;
+
+#if CFG_EXT_FEATURE
+		p2pExtStopAp(prGlueInfo);
+#endif
 	} while (FALSE);
 
 	return i4Rslt;
