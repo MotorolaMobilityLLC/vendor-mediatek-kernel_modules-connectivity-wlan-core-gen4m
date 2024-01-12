@@ -20,7 +20,7 @@ struct ADAPTER *g_prAdapter;
 
 void
 wpas_timeoutCb(struct ADAPTER *prAdapter, unsigned long u4TimerIdx) {
-	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%d\n", __func__,
+	wpa_printf(MSG_INFO, "[%s] Enter, u4TimerIdx:%lu\n", __func__,
 		   u4TimerIdx);
 	g_arWpasTimer[u4TimerIdx].rHandler(
 		g_arWpasTimer[u4TimerIdx].pvEloopData,
