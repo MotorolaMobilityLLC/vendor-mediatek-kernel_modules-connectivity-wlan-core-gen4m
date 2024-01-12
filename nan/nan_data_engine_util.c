@@ -4512,7 +4512,7 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 
 			if (prTargetNdpSA->fgSecurityRequired == FALSE)
 				nanSecResetTk(prNdpCxt->prNanStaRec);
-			else
+			else if (prAdapter->rWifiVar.fgNanUnrollInstallTk)
 				nanSecInstallTk(prTargetNdpSA,
 						prNdpCxt->prNanStaRec);
 		} else {
@@ -4855,7 +4855,7 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 
 			if (prTargetNdpSA->fgSecurityRequired == FALSE)
 				nanSecResetTk(prNdpCxt->prNanStaRec);
-			else
+			else if (prAdapter->rWifiVar.fgNanUnrollInstallTk)
 				nanSecInstallTk(prTargetNdpSA,
 						prNdpCxt->prNanStaRec);
 		} else {
