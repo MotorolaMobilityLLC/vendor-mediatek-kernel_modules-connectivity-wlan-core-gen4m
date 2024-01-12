@@ -2498,9 +2498,15 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 
 		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
-		if (ucAuthorized)
+		if (ucAuthorized) {
+#if KERNEL_VERSION(6, 2, 0) <= CFG80211_VERSION_CODE
+			cfg80211_port_authorized(netdev,
+				links[0].bssid, NULL, 0, GFP_KERNEL);
+#else
 			cfg80211_port_authorized(netdev,
 				links[0].bssid, GFP_KERNEL);
+#endif
+		}
 #endif /* KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE */
 #else /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
 		cfg80211_roamed_bss(
