@@ -2783,6 +2783,7 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 	}
 	cache = &prBssInfo->rPmkidCache;
 
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	if (prPmkid->fgFilsCacheIdSet)
 		entry = rsnSearchPmkidEntryEx(prAdapter, NULL,
 			&prPmkid->rSsid, prPmkid->arFilsCacheId,
@@ -2791,13 +2792,14 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 		entry = rsnSearchPmkidEntryEx(prAdapter, prPmkid->arBSSID,
 			NULL, NULL,
 			prPmkid->ucBssIdx);
+	if (entry)
+		LINK_REMOVE_KNOWN_ENTRY(cache, entry);
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
+
 	if (!entry) {
 		entry = kalMemAlloc(sizeof(struct PMKID_ENTRY), VIR_MEM_TYPE);
 		if (!entry)
 			return -ENOMEM;
-		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
-		LINK_INSERT_TAIL(cache,	&entry->rLinkEntry);
-		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	}
 
 	DBGLOG(RSN, INFO,
@@ -2816,6 +2818,9 @@ uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
 
 	kalMemCopy(&entry->rBssidInfo, prPmkid, sizeof(struct PARAM_PMKID));
 	entry->u2StatusCode = STATUS_CODE_SUCCESSFUL;
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
+	LINK_INSERT_TAIL(cache, &entry->rLinkEntry);
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	return WLAN_STATUS_SUCCESS;
 } /* rsnSetPmkid */
 
@@ -2847,6 +2852,7 @@ uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prPmkid->ucBssIdx);
 	cache = &prBssInfo->rPmkidCache;
+	GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 	if (prPmkid->fgFilsCacheIdSet)
 		entry = rsnSearchPmkidEntryEx(prAdapter, NULL,
 			&prPmkid->rSsid, prPmkid->arFilsCacheId,
@@ -2855,15 +2861,17 @@ uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
 		entry = rsnSearchPmkidEntryEx(prAdapter, prPmkid->arBSSID,
 			NULL, NULL,
 			prPmkid->ucBssIdx);
+	if (entry)
+		LINK_REMOVE_KNOWN_ENTRY(cache, entry);
+	GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
+
 	if (entry) {
 		if (kalMemCmp(prPmkid->arPMKID,
 			entry->rBssidInfo.arPMKID, IW_PMKID_LEN)) {
-			DBGLOG(RSN, WARN, "Del " MACSTR " pmkid but mismatch\n",
+			DBGLOG(RSN, WARN,
+				"Del " MACSTR " pmkid but mismatch\n",
 				MAC2STR(prPmkid->arBSSID));
 		}
-		GLUE_ACQUIRE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
-		LINK_REMOVE_KNOWN_ENTRY(cache, entry);
-		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo, SPIN_LOCK_PMKID);
 		kalMemFree(entry, VIR_MEM_TYPE, sizeof(struct PMKID_ENTRY));
 	}
 
