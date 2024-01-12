@@ -1064,6 +1064,7 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -1072,6 +1073,7 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 				      ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 		if (prConnectionStatus->ucMediaStatus ==
 		    MEDIA_STATE_DISCONNECTED) {	/* disconnected */
 			if (kalGetMediaStateIndicated(prGlueInfo,
@@ -1096,6 +1098,28 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 			   MEDIA_STATE_CONNECTED) {	/* connected */
 			struct PARAM_BSSID_EX *prCurrBssid =
 				aisGetCurrBssId(prAdapter, ucBssIndex);
+			uint8_t ucAuthorized = FALSE;
+
+			if (prAisBssInfo->ucReasonOfDisconnect ==
+			    DISCONNECT_REASON_CODE_ROAMING &&
+			    EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
+			    prCurrBssid->rSsid.u4SsidLen,
+			    prConnectionStatus->aucSsid,
+			    prConnectionStatus->ucSsidLen) &&
+			    EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
+			    prConnectionStatus->aucBssid)) {
+				struct BSS_DESC *prBssDesc;
+
+				prBssDesc = scanSearchBssDescByBssidAndSsid(
+					prAdapter, prCurrBssid->arMacAddress,
+					TRUE, &prCurrBssid->rSsid);
+					if (prBssDesc &&
+						prBssDesc->fgIsConnected) {
+						ucAuthorized = TRUE;
+						DBGLOG(TX, INFO,
+							"pre-authorized\n");
+				}
+			}
 
 			prAdapter->rWlanInfo.u4SysTime = kalGetTimeTick();
 
@@ -1141,8 +1165,8 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 				/* connected -> connected : roaming ? */
 				kalIndicateStatusAndComplete(prGlueInfo,
 					WLAN_STATUS_ROAM_OUT_FIND_BEST,
-					NULL,
-					0, ucBssIndex);
+					&ucAuthorized,
+					sizeof(ucAuthorized), ucBssIndex);
 			}
 		}
 		break;

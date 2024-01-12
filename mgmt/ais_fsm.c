@@ -1434,6 +1434,17 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 
 			/* reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
+			/* connection triggered by supplicant,
+			 * must indicate the connection status
+			 */
+			if (prAisBssInfo->ucReasonOfDisconnect
+				== DISCONNECT_REASON_CODE_ROAMING) {
+				aisIndicationOfMediaStateToHost(
+					prAdapter,
+					MEDIA_STATE_CONNECTED,
+					FALSE,
+					ucBssIndex);
+			}
 
 			return AIS_STATE_NORMAL_TR;
 		}
