@@ -164,7 +164,16 @@
 
 #define EFUSE_BLOCK_SIZE		16
 #define EEPROM_SIZE			1184
-#define MAX_EEPROM_BUFFER_SIZE		1450
+
+/* Based on EEPROM layout Bellwether */
+#define MAX_EEPROM_BUFFER_SIZE		0x1800  //From 1450 to 6K
+#define BUFFER_BIN_PAGE_SIZE		0x400
+
+#define BUFFER_BIN_TOTAL_PAGE_MASK	BITS(5, 7)
+#define BUFFER_BIN_TOTAL_PAGE_SHIFT	5
+#define BUFFER_BIN_PAGE_INDEX_MASK	BITS(2, 4)
+#define BUFFER_BIN_PAGE_INDEX_SHIFT	2
+
 #endif /* CFG_SUPPORT_BUFFER_MODE */
 
 #if CFG_SUPPORT_TX_BF
@@ -454,6 +463,12 @@ enum ENUM_TP_TEST_MODE {
 	ENUM_TP_TEST_MODE_SIGMA_AC_N_PMF,
 	ENUM_TP_TEST_MODE_SIGMA_WMM_PS,
 	ENUM_TP_TEST_MODE_NUM
+};
+
+enum ENUM_EEPROM_CONTENT_FORMAT {
+	CONTENT_FORMAT_BIN_CONTENT = 0,
+	CONTENT_FORMAT_WHOLE_CONTENT = 1,
+	CONTENT_FORMAT_MULTIPLE_SECTIONS = 2
 };
 
 /*--------------------------------------------------------------*/
@@ -777,7 +792,7 @@ struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T {
 	uint8_t ucSourceMode;
 	uint8_t ucContentFormat;
 	uint16_t u2Count;
-	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
+	uint8_t aBinContent[BUFFER_BIN_PAGE_SIZE]; //Align with fw buffer size
 };
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
