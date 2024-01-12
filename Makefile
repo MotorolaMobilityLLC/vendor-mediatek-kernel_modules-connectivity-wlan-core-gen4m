@@ -831,6 +831,12 @@ else
     ccflags-y += -DCFG_SUPPORT_HIDDEN_SW_AP=0
 endif
 
+ifeq ($(WLAN_CONNAC3_DEV), yes)
+    ccflags-y += -DCFG_WLAN_CONNAC3_DEV=1
+else
+    ccflags-y += -DCFG_WLAN_CONNAC3_DEV=0
+endif
+
 ifeq ($(MODULE_NAME),)
 MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
