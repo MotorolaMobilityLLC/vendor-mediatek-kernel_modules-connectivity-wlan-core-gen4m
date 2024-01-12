@@ -2935,7 +2935,7 @@ void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return;
 	}
 
-	if (!prBssDesc->fgQueriedCandidates) {
+	if (prBssDesc && !prBssDesc->fgQueriedCandidates) {
 		prBssDesc->fgQueriedCandidates = TRUE;
 
 		aisResetNeighborApList(prAdapter, ucBssIndex);
