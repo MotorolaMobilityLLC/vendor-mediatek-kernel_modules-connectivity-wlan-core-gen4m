@@ -425,7 +425,7 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 #endif
 	.chip_id = BELLWETHER_CHIP_ID,
 	.should_verify_chip_id = FALSE,
-	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,
+	.sw_sync0 = CONNAC3X_CONN_CFG_ON_CONN_ON_MISC_ADDR,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,

@@ -10,7 +10,8 @@ extern "C" {
 //typedef unsigned int FIELD;
 #define FIELD unsigned int
 
-#define CONN_INFRA_REMAPPING_OFFSET 0x64000000
+#define CONN_INFRA_REMAPPING_OFFSET	0x64000000
+#define CONN_INFRA_ON_REMAPPING_OFFSET	0x08000000
 
 // ---------------------------------------------------------------------------
 //  Register Manipulations
