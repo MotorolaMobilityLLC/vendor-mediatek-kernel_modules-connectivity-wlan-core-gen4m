@@ -1072,12 +1072,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			return -EFAULT;
 		}
 
-		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
+		for (u4DelayIdx = 0; u4DelayIdx < 50; u4DelayIdx++) {
 			if (g_deEvent == TRUE) {
 				g_deEvent = FALSE;
 				break;
 			}
-			msleep(1000);
+			msleep(100);
 		}
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANEnableRsp,
 				    (void *)&nanEnableRsp,
