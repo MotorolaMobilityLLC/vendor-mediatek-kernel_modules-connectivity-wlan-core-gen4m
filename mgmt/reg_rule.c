@@ -1,12 +1,12 @@
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 #include "precomp.h"
 
@@ -79,27 +79,28 @@ struct ieee80211_power_rule {
 };
 
 /**
-* enum reg_flags (the same as nl80211_reg_rule_flags) - regulatory rule flags
-*
-* @NL80211_RRF_NO_OFDM: OFDM modulation not allowed
-* @NL80211_RRF_NO_CCK: CCK modulation not allowed
-* @NL80211_RRF_NO_INDOOR: indoor operation not allowed
-* @NL80211_RRF_NO_OUTDOOR: outdoor operation not allowed
-* @NL80211_RRF_DFS: DFS support is required to be used
-* @NL80211_RRF_PTP_ONLY: this is only for Point To Point links
-* @NL80211_RRF_PTMP_ONLY: this is only for Point To Multi Point links
-* @NL80211_RRF_NO_IR: no mechanisms that initiate radiation are allowed,
-*      this includes probe requests or modes of operation that require
-*      beaconing.
-* @NL80211_RRF_AUTO_BW: maximum available bandwidth should be calculated
-*      base on contiguous rules and wider channels will be allowed to cross
-*      multiple contiguous/overlapping frequency ranges.
-* @NL80211_RRF_IR_CONCURRENT: See &NL80211_FREQUENCY_ATTR_IR_CONCURRENT
-* @NL80211_RRF_NO_HT40MINUS: channels can't be used in HT40- operation
-* @NL80211_RRF_NO_HT40PLUS: channels can't be used in HT40+ operation
-* @NL80211_RRF_NO_80MHZ: 80MHz operation not allowed
-* @NL80211_RRF_NO_160MHZ: 160MHz operation not allowed
-*/
+ * enum reg_flags (the same as nl80211_reg_rule_flags) - regulatory rule flags
+ *
+ * @NL80211_RRF_NO_OFDM: OFDM modulation not allowed
+ * @NL80211_RRF_NO_CCK: CCK modulation not allowed
+ * @NL80211_RRF_NO_INDOOR: indoor operation not allowed
+ * @NL80211_RRF_NO_OUTDOOR: outdoor operation not allowed
+ * @NL80211_RRF_DFS: DFS support is required to be used
+ * @NL80211_RRF_PTP_ONLY: this is only for Point To Point links
+ * @NL80211_RRF_PTMP_ONLY: this is only for Point To Multi Point links
+ * @NL80211_RRF_NO_IR: no mechanisms that initiate radiation are allowed,
+ *                     this includes probe requests or modes of operation that
+ *                     require beaconing.
+ * @NL80211_RRF_AUTO_BW: maximum available bandwidth should be calculated
+ *                       base on contiguous rules and wider channels will be
+ *                       allowed to cross multiple contiguous/overlapping
+ *                       frequency ranges.
+ * @NL80211_RRF_IR_CONCURRENT: See &NL80211_FREQUENCY_ATTR_IR_CONCURRENT
+ * @NL80211_RRF_NO_HT40MINUS: channels can't be used in HT40- operation
+ * @NL80211_RRF_NO_HT40PLUS: channels can't be used in HT40+ operation
+ * @NL80211_RRF_NO_80MHZ: 80MHz operation not allowed
+ * @NL80211_RRF_NO_160MHZ: 160MHz operation not allowed
+ */
 enum reg_flags {
 	NL80211_RRF_NO_OFDM             = 1<<0,
 	NL80211_RRF_NO_CCK              = 1<<1,
@@ -109,7 +110,7 @@ enum reg_flags {
 	NL80211_RRF_PTP_ONLY            = 1<<5,
 	NL80211_RRF_PTMP_ONLY           = 1<<6,
 	NL80211_RRF_NO_IR               = 1<<7,
-	NL80211_RRF_NO_IBSS           = 1<<8,
+	NL80211_RRF_NO_IBSS             = 1<<8,
 	NL80211_RRF_AUTO_BW             = 1<<11,
 	NL80211_RRF_IR_CONCURRENT       = 1<<12,
 	NL80211_RRF_NO_HT40MINUS        = 1<<13,
@@ -118,15 +119,16 @@ enum reg_flags {
 	NL80211_RRF_NO_160MHZ           = 1<<16,
 };
 
-#define NL80211_RRF_PASSIVE_SCAN        NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_IBSS             NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_IR               NL80211_RRF_NO_IR
-#define NL80211_RRF_NO_HT40             (NL80211_RRF_NO_HT40MINUS |\
-										NL80211_RRF_NO_HT40PLUS)
-#define NL80211_RRF_GO_CONCURRENT       NL80211_RRF_IR_CONCURRENT
+#define NL80211_RRF_PASSIVE_SCAN	NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IBSS		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_IR		NL80211_RRF_NO_IR
+#define NL80211_RRF_NO_HT40		(NL80211_RRF_NO_HT40MINUS | \
+					NL80211_RRF_NO_HT40PLUS)
+#define NL80211_RRF_GO_CONCURRENT	NL80211_RRF_IR_CONCURRENT
 
 /* For backport compatibility with older userspace */
-#define NL80211_RRF_NO_IR_ALL           (NL80211_RRF_NO_IR | __NL80211_RRF_NO_IBSS)
+#define NL80211_RRF_NO_IR_ALL           (NL80211_RRF_NO_IR | \
+					__NL80211_RRF_NO_IBSS)
 
 struct ieee80211_reg_rule {
 	struct ieee80211_freq_range freq_range;
@@ -135,8 +137,9 @@ struct ieee80211_reg_rule {
 	u32 dfs_cac_ms;
 };
 
-struct ieee80211_regdomain {
 #define MAX_NUMER_REG_RULES	6
+
+struct ieee80211_regdomain {
 	char alpha2[3];
 	u32 n_reg_rules;
 	enum nl80211_dfs_regions dfs_region;
@@ -173,14 +176,13 @@ struct ieee80211_regdomain {
 #endif
 
 /***************************************************
- * Hello ^++++^
  * Here to describe the regulatory rules of yours.
- **************************************************/
+ ***************************************************
+ */
 
 /*
  * Step1. Decclare struct ieee80211_regdomain
  */
-
 const struct ieee80211_regdomain regdom_us01 = {
 	.n_reg_rules = 6,
 	.reg_rules = {
@@ -231,7 +233,6 @@ const struct ieee80211_regdomain regdom_cz_nl = {
 /*
  * Step2. Decclare struct mtk_regdomain
  */
-
 const struct mtk_regdomain my_regdom_us01 = {
 	.country_code = "US01",
 	.prRegdRules = &regdom_us01
@@ -260,7 +261,6 @@ const struct mtk_regdomain my_regdom_cz = {
 /*
  * Step3. Register to table
  */
-
 const struct mtk_regdomain *g_prRegRuleTable[] = {
 	&my_regdom_us01,
 	&my_regdom_us,
