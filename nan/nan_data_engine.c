@@ -1387,7 +1387,7 @@ nanNdpAutoReplyDataRequest(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, ERROR, "[%s] prNDP error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
-<
+
 	if (!prNDL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
