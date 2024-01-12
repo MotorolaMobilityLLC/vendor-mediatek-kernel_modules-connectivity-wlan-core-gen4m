@@ -1202,7 +1202,9 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 	page = wifi_page_pool_alloc_page();
 #if CFG_SUPPORT_RETURN_WORK
 	if (!page) {
+#if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 		kalIncPagePoolPageNum();
+#endif
 		page = wifi_page_pool_alloc_page();
 	}
 #endif /* CFG_SUPPORT_RETURN_WOR */
