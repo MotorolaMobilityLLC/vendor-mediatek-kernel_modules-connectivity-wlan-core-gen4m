@@ -181,6 +181,11 @@ BUS_INFO connac_bus_info = {
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = CONNAC_UDMA_WLCFG_1,
+	.u4UdmaWlCfg_0 =
+		(UDMA_WLCFG_0_TX_EN(1) |
+		UDMA_WLCFG_0_RX_EN(1) |
+		UDMA_WLCFG_0_RX_MPSZ_PAD0(1) |
+		UDMA_WLCFG_0_1US_TIMER_EN(1)),
 #endif /* _HIF_USB */
 };
 

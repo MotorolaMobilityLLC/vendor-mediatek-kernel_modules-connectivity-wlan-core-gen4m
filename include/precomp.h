@@ -164,6 +164,7 @@
 #include "mt66xx_reg.h"
 
 #include "connac_reg.h"
+#include "connac_dmashdl.h"
 #include "cmm_asic_connac.h"
 
 #include "rlm.h"

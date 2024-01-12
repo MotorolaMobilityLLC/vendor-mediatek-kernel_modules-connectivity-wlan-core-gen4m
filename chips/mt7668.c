@@ -181,7 +181,7 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 	prChipInfo->u2TxFwDlPort = 0;
 	prChipInfo->fillHifTxDesc = NULL;
 	prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
-	prChipInfo->u2ExtraTxByteCount = 0;
+	prChipInfo->u4ExtraTxByteCount = 0;
 
 	switch (prGlueInfo->u4InfType) {
 #if defined(_HIF_PCIE)
@@ -214,6 +214,8 @@ BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
 	.u4UdmaWlCfg_1_Addr = UDMA_WLCFG_1,
+	.u4UdmaWlCfg_0 =
+	    (UDMA_WLCFG_0_TX_EN(1) | UDMA_WLCFG_0_RX_EN(1) | UDMA_WLCFG_0_RX_MPSZ_PAD0(1)),
 #endif /* _HIF_USB */
 };
 

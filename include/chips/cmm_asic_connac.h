@@ -78,7 +78,14 @@ VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduI
 			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+#if defined(_HIF_PCIE)
+/* DMS Scheduler Init */
+VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter);
+#endif /* _HIF_PCIE */
+
 #if defined(_HIF_USB)
+/* DMS Scheduler Init */
+VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter);
 VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen);
 #endif /* _HIF_USB */
 #endif /* _CMM_ASIC_CONNAC_H */
