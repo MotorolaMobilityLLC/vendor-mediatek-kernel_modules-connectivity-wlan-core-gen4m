@@ -2030,15 +2030,16 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		cfg80211_ch_switch_notify(
 			prGlueInfo->prP2PInfo[role_idx]->prDevHandler,
 			prGlueInfo->prP2PInfo[role_idx]->chandef);
-
-		if (prGlueInfo->prP2PInfo[role_idx]->chandef->chan) {
-			cnmMemFree(prGlueInfo->prAdapter,
-			    prGlueInfo->prP2PInfo[role_idx]->chandef->chan);
-			prGlueInfo->prP2PInfo[role_idx]->chandef->chan = NULL;
-		}
-		cnmMemFree(prGlueInfo->prAdapter,
-			prGlueInfo->prP2PInfo[role_idx]->chandef);
-		prGlueInfo->prP2PInfo[role_idx]->chandef = NULL;
+		/*
+		 *if (prGlueInfo->prP2PInfo[role_idx]->chandef->chan) {
+		 *	cnmMemFree(prGlueInfo->prAdapter,
+		 *	    prGlueInfo->prP2PInfo[role_idx]->chandef->chan);
+		 *	prGlueInfo->prP2PInfo[role_idx]->chandef->chan = NULL;
+		 *}
+		 *cnmMemFree(prGlueInfo->prAdapter,
+		 *	prGlueInfo->prP2PInfo[role_idx]->chandef);
+		 *prGlueInfo->prP2PInfo[role_idx]->chandef = NULL;
+		 */
 	}
 
 	/* Check DBDC status */
