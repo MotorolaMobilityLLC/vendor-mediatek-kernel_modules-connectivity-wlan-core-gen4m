@@ -961,7 +961,8 @@ aaaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 						p2pRoleFsmRunEventAAASuccess(
 							prAdapter,
 							prStaRec,
-							prBssInfo);
+							prBssInfo,
+							prMsduInfo);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_ENABLE_BT_OVER_WIFI

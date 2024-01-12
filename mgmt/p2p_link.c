@@ -886,12 +886,30 @@ uint32_t
 p2pRoleFsmRunEventAAASuccess(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
-	struct BSS_INFO *prP2pBssInfo)
+	struct BSS_INFO *prP2pBssInfo,
+	struct MSDU_INFO *prMsduInfo)
 {
-	return p2pRoleFsmRunEventAAASuccessImpl(
-		prAdapter,
-		prStaRec,
+	int32_t offset;
+	uint32_t status;
+
+	offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
+
+	if (offset != -1) {
+		prStaRec->pucAssocRespIe =
+			prMsduInfo->prPacket + offset;
+		prStaRec->u2AssocRespIeLen =
+			prMsduInfo->u2FrameLength - offset;
+	} else {
+		DBGLOG(P2P, ERROR, "Invalid packet format.");
+	}
+
+	status = p2pRoleFsmRunEventAAASuccessImpl(prAdapter, prStaRec,
 		prP2pBssInfo);
+
+	prStaRec->pucAssocRespIe = NULL;
+	prStaRec->u2AssocRespIeLen = 0;
+
+	return status;
 }
 
 void p2pRoleFsmRunEventAAATxFail(

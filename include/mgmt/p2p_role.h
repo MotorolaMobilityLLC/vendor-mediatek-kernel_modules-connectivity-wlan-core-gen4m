@@ -470,7 +470,8 @@ p2pRoleFsmRunEventAAAComplete(struct ADAPTER *prAdapter,
 uint32_t
 p2pRoleFsmRunEventAAASuccess(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec,
-		struct BSS_INFO *prP2pBssInfo);
+		struct BSS_INFO *prP2pBssInfo,
+		struct MSDU_INFO *prMsduInfo);
 
 void p2pRoleFsmRunEventAAATxFail(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec,
