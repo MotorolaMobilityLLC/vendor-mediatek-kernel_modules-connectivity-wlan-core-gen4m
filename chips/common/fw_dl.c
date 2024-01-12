@@ -1845,8 +1845,13 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 
 	HAL_ENABLE_FWDL(prAdapter, TRUE);
 
-	if (prFwDlOps->downloadPatch)
-		prFwDlOps->downloadPatch(prAdapter);
+	if (prFwDlOps->downloadPatch) {
+		rStatus = prFwDlOps->downloadPatch(prAdapter);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "Patch Download fail\n");
+			goto exit;
+		}
+	}
 
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	if (prFwDlOps->downloadZbPatch && prAdapter->fgIsNeedDlPatch == TRUE) {
@@ -1910,6 +1915,8 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		}
 #endif
 	}
+
+exit:
 	DBGLOG(INIT, TRACE, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
@@ -1922,7 +1929,7 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4FwSize = 0;
 	void *prFwBuffer = NULL;
-	uint32_t u4Status;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	uint8_t ucIsCompressed;
 #else
@@ -1947,10 +1954,8 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 
 #if (CFG_ROM_PATCH_NO_SEM_CTRL == 0)
 	if (wlanPatchIsDownloaded(prAdapter)) {
-		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
-					  prFwBuffer);
 		DBGLOG(INIT, INFO, "No need to download patch\n");
-		return WLAN_STATUS_SUCCESS;
+		goto exit;
 	}
 #endif
 
@@ -1966,12 +1971,12 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 			&fgIsDynamicMemMap);
 #endif
 
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			goto exit;
+
 /* Dynamic memory map::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-		if (u4Status == WLAN_STATUS_SUCCESS)
-			wlanPatchDynMemMapSendComplete(prAdapter);
-		else if (u4Status == WLAN_STATUS_NOT_ACCEPTED)
-			u4Status = WLAN_STATUS_SUCCESS; /* already download*/
+		u4Status = wlanPatchDynMemMapSendComplete(prAdapter);
 #else
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
 		/*
@@ -1987,13 +1992,14 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 #endif
 /* Dynamic memory map::End */
 
-		kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
-					  prFwBuffer);
-
 		prAdapter->rVerInfo.fgPatchIsDlByDrv = TRUE;
 	} while (0);
 
+exit:
 	DBGLOG(INIT, INFO, "Patch download end[%d].\n", u4Status);
+
+	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL,
+				  prFwBuffer);
 
 	return u4Status;
 }
