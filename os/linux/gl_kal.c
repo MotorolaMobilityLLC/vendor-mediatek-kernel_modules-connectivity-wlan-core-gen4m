@@ -9631,13 +9631,15 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	unsigned long currentTxBytes, currentRxBytes;
 	unsigned long currentTxPkts, currentRxPkts;
 	uint64_t throughput = 0, throughputInPPS = 0;
-	char *buf = NULL, *head1, *head2, *head3, *head4;
+	char *buf = NULL, *head1, *head2, *head3, *head4, *head5;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 	uint8_t fgIsValidNetDevice = FALSE;
 #if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
 	struct rtnl_link_stats64 rtnls;
 #endif
+
+	uint32_t ret = WLAN_STATUS_SUCCESS;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -9646,8 +9648,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 
 	if (!KAL_TEST_BIT(PERF_MON_INIT_BIT, perf->ulPerfMonFlag) ||
 	    !CHECK_FOR_TIMEOUT(now, last,
-			MSEC_TO_SYSTIME(perf->u4UpdatePeriod)))
-		return WLAN_STATUS_PENDING;
+			MSEC_TO_SYSTIME(perf->u4UpdatePeriod))) {
+		ret = WLAN_STATUS_PENDING;
+		goto done;
+	}
 
 	perf->rLastUpdateTime = now;
 
@@ -9656,7 +9660,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		/* overflow should not happen */
 		DBGLOG(SW4, WARN, "wrong period: now=%u, last=%u, period=%d\n",
 			now, last, period);
-		goto fail;
+		ret = WLAN_STATUS_FAILURE;
+		goto done;
 	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
@@ -9716,7 +9721,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 				"[%d]wrong bytes: tx[%lu][%lu][%ld], rx[%lu][%lu][%ld],\n",
 				i, currentTxBytes, lastTxBytes, txDiffBytes[i],
 				currentRxBytes, lastRxBytes, rxDiffBytes[i]);
-			goto fail;
+			ret = WLAN_STATUS_FAILURE;
+			goto done;
 		}
 
 		/* Divsion first to avoid overflow */
@@ -9744,20 +9750,22 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	 * 3. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
 	 *    [0, 18446744073709551615]
 	 * 4. [%lu:%lu:%lu:%lu] rx reordering que cnt
+	 * 5. [%u:...:%u] tx mgmt packets categorized by 16 typesubtype
 	 */
 	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
 	       (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
-	       (20 + 1) * MAX_BSSID_NUM;
-	pos = buf = kalMemAlloc(slen, VIR_MEM_TYPE);
+	       (20 + 1) * MAX_BSSID_NUM + 1 +
+	       (20 * MAX_NUM_OF_FC_SUBTYPES + MAX_NUM_OF_FC_SUBTYPES - 1) + 1;
+	pos = buf = kalMemZAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
-		return WLAN_STATUS_RESOURCES;
+		ret = WLAN_STATUS_RESOURCES;
+		goto done;
 	}
-	memset(buf, 0, slen);
 	end = buf + slen;
 	head1 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		pos += kalSnprintf(pos, end - pos, "[%lld:%lld:%lld:%lld]",
 			(long long) txDiffBytes[i],
 			(long long) txDiffPkts[i],
@@ -9766,7 +9774,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head2 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		pos += kalSnprintf(pos, end - pos, "[");
 		for (j = 0; j < CFG_MAX_TXQ_NUM - 1; ++j) {
 			pos += kalSnprintf(pos, end - pos, "%d:",
@@ -9777,7 +9785,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head3 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		ndev = wlanGetNetDev(glue, i);
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
@@ -9818,7 +9826,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 	pos++;
 	head4 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		if (i == MAX_BSSID_NUM - 1) {
 			pos += kalSnprintf(pos, end - pos, "%u",
 				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
@@ -9827,6 +9835,12 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
 		}
 	}
+	pos++;
+	head5 = pos;
+	for (i = 0; i < ARRAY_SIZE(prAdapter->au4MgmtSubtypeTxCnt); i++)
+		pos += kalSnprintf(pos, end - pos,
+				i == MAX_NUM_OF_FC_SUBTYPES-1 ? "%u":"%u:",
+				prAdapter->au4MgmtSubtypeTxCnt[i]);
 
 #if CFG_SUPPORT_CPU_STAT
 #define FORMAT_INT_8 \
@@ -9874,6 +9888,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	CPU_STAT_CNT_TEMPLATE \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
+	" MgmtSub[%s]" \
 	"\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
@@ -9947,7 +9962,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_IN_COUNT),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT)
+		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT),
+		head5
 		);
 #undef TEMP_LOG_TEMPLATE
 #undef LINK_QUALITY_MONITOR_TEMPLATE
@@ -10072,10 +10088,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		(unsigned long long) (perf->ulThroughput >> 20),
 		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)));
 
-	kalMemFree(buf, VIR_MEM_TYPE, slen);
-	return WLAN_STATUS_SUCCESS;
-fail:
-	return WLAN_STATUS_FAILURE;
+done:
+	if (buf)
+		kalMemFree(buf, VIR_MEM_TYPE, slen);
+	return ret;
 }
 
 #if CFG_SUPPORT_MCC_BOOST_CPU
