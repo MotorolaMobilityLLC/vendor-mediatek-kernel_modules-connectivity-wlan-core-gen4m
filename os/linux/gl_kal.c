@@ -754,6 +754,49 @@ PVOID kalPacketAlloc(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief Only handles driver own creating packet (coalescing buffer).
+*
+* \param prGlueInfo   Pointer of GLUE Data Structure
+* \param u4Size       Pointer of Packet Handle
+* \param ppucData     Status Code for OS upper layer
+*
+* \return NULL: Failed to allocate skb, Not NULL get skb
+*/
+/*----------------------------------------------------------------------------*/
+PVOID kalPacketAllocWithHeadroom(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Size, OUT PUINT_8 * ppucData)
+{
+	struct sk_buff *prSkb = dev_alloc_skb(u4Size);
+
+	if (!prSkb) {
+		DBGLOG(TX, WARN, "alloc skb failed\n");
+		return NULL;
+	}
+
+	/*
+	 * Reserve NIC_TX_HEAD_ROOM as this skb
+	 * is allocated by driver instead of kernel.
+	 */
+	skb_reserve(prSkb, NIC_TX_HEAD_ROOM);
+
+	*ppucData = (PUINT_8) (prSkb->data);
+
+	/* DBGLOG(TDLS, INFO, "kalPacketAllocWithHeadroom, skb head[0x%x] data[0x%x] tail[0x%x] end[0x%x]\n",
+	 *	prSkb->head, prSkb->data, prSkb->tail, prSkb->end);
+	 */
+
+	kalResetPacket(prGlueInfo, (P_NATIVE_PACKET) prSkb);
+#if DBG
+	{
+		PUINT_32 pu4Head = (PUINT_32) &prSkb->cb[0];
+		*pu4Head = (UINT_32) prSkb->head;
+		DBGLOG(RX, TRACE, "prSkb->head = %#lx, prSkb->cb = %#lx\n", (UINT_32) prSkb->head, *pu4Head);
+	}
+#endif
+	return (PVOID) prSkb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Process the received packet for indicating to OS.
 *
 * \param[in] prGlueInfo     Pointer to the Adapter structure.
@@ -1439,14 +1482,11 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	UINT_16 u2QueueIdx = 0;
 	struct sk_buff *prSkbNew = NULL;
 	struct sk_buff *prSkb = NULL;
-	struct mt66xx_chip_info *prChipInfo;
-	UINT_32 u4TxHeadRoomSize = 0;
+
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prOrgSkb);
 	ASSERT(prGlueInfo);
-
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
 		DBGLOG(INIT, INFO, "GLUE_FLAG_HALT skip tx\n");
@@ -1460,11 +1500,17 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	if (skb_headroom(prOrgSkb) < u4TxHeadRoomSize) {
-		prSkbNew = skb_realloc_headroom(prOrgSkb, u4TxHeadRoomSize);
+	if (skb_headroom(prOrgSkb) < NIC_TX_HEAD_ROOM) {
+		/*
+		 * Should not happen
+		 * kernel crash may happen as skb shared info
+		 * channged.
+		 * offer an change for lucky anyway
+		 */
+		prSkbNew = skb_realloc_headroom(prOrgSkb, NIC_TX_HEAD_ROOM);
 		ASSERT(prSkbNew);
-		prSkb = prSkbNew;
 		dev_kfree_skb(prOrgSkb);
+		prSkb = prSkbNew;
 	} else
 		prSkb = prOrgSkb;
 
@@ -1493,13 +1539,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 		return WLAN_STATUS_INVALID_PACKET;
 	}
 
-	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
-		GLUE_SPIN_LOCK_DECLARATION();
-
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-		QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
-	}
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
+	QUEUE_INSERT_TAIL(prTxQueue, prQueueEntry);
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_TX_QUE);
 
 	GLUE_INC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_INC_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]);
@@ -1508,7 +1550,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	    >= prGlueInfo->prAdapter->rWifiVar.u4NetifStopTh) {
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
-		DBGLOG(TX, TRACE,
+		DBGLOG(TX, INFO,
 		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%ld] PER-Q_CNT[%ld]\n",
 		       ucBssIndex, u2QueueIdx, prSkb->len,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
@@ -1526,9 +1568,6 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]));
 
-	if (HAL_IS_TX_DIRECT(prGlueInfo->prAdapter))
-		return nicTxDirectStartXmit(prSkb, prGlueInfo);
-
 	kalSetEvent(prGlueInfo);
 
 	return WLAN_STATUS_SUCCESS;
@@ -1536,7 +1575,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, P_GLUE_I
 
 WLAN_STATUS kalResetStats(IN struct net_device *prDev)
 {
-	DBGLOG(QM, INFO, "Reset NetDev[0x%p] statistics\n", prDev);
+	DBGLOG(QM, LOUD, "Reset NetDev[0x%p] statistics\n", prDev);
 
 	kalMemZero(kalGetStats(prDev), sizeof(struct net_device_stats));
 

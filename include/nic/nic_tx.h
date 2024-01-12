@@ -195,6 +195,10 @@
 
 #define NIC_TX_CRITICAL_DATA_TID                7
 
+#define HW_MAC_TX_DESC_APPEND_T_LENGTH          44
+#define NIC_TX_HEAD_ROOM                        (NIC_TX_DESC_LONG_FORMAT_LENGTH + NIC_TX_DESC_PADDING_LENGTH \
+						 + HW_MAC_TX_DESC_APPEND_T_LENGTH)
+
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */
 /*------------------------------------------------------------------------*/
