@@ -378,7 +378,11 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 				uint32_t u4CurrTick, u_int8_t fgTimeout)
 {
-	struct CHIP_DBG_OPS *prChipDbgOps = prAdapter->chip_info->prDebugOps;
+	struct mt66xx_chip_info *prChipInfo;
+	struct CHIP_DBG_OPS *prChipDbgOps;
+
+	prChipInfo = prAdapter->chip_info;
+	prChipDbgOps = prChipInfo->prDebugOps;
 
 	if ((prAdapter->u4OwnFailedCount == 0) ||
 	    CHECK_FOR_TIMEOUT(u4CurrTick, prAdapter->rLastOwnFailedLogTime,
@@ -406,6 +410,8 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 		    LP_OWN_BACK_FAILED_RESET_CNT) {
 			if (prChipDbgOps->showCsrInfo)
 				prChipDbgOps->showCsrInfo(prAdapter);
+			if (prChipInfo->dumpBusHangCr)
+				prChipInfo->dumpBusHangCr(prAdapter);
 #if CFG_CHIP_RESET_SUPPORT
 			/* Trigger RESET */
 			glSetRstReason(RST_DRV_OWN_FAIL);
