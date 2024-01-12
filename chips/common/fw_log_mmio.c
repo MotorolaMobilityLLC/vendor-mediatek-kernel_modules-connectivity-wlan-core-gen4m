@@ -215,7 +215,7 @@ static void fwLogCtrlSubHandler(struct ADAPTER *prAdapter,
 			u4Rp,
 			u4Size);
 
-		kalDevRegReadRange(prAdapter->prGlueInfo,
+		HAL_RMCR_RD_RANGE(prAdapter,
 			prSubCtrl->buf_base_addr + u4Rp,
 			prSubCtrl->buffer + u4Offset,
 			u4Size);
@@ -314,7 +314,7 @@ static void fwLogCtrlRefreshCommonHeader(struct ADAPTER *prAdapter,
 	struct FW_LOG_COMMON_HEADER rCommonHeader = {0};
 	uint8_t i = 0;
 
-	kalDevRegReadRange(prAdapter->prGlueInfo, prCtrl->base_addr,
+	HAL_RMCR_RD_RANGE(prAdapter, prCtrl->base_addr,
 			   &rCommonHeader,
 			   sizeof(rCommonHeader));
 
@@ -353,7 +353,7 @@ static void fwLogCtrlRefreshSubHeader(struct ADAPTER *prAdapter,
 {
 	struct FW_LOG_SUB_HEADER rSubHeader = {0};
 
-	kalDevRegReadRange(prAdapter->prGlueInfo, prSubCtrl->base_addr,
+	HAL_RMCR_RD_RANGE(prAdapter, prSubCtrl->base_addr,
 			   &rSubHeader,
 			   sizeof(rSubHeader));
 
@@ -383,7 +383,7 @@ static uint32_t fwLogCtrlInitSubCtrl(struct ADAPTER *prAdapter,
 
 	prSubCtrl->type = eType;
 
-	kalDevRegReadRange(prAdapter->prGlueInfo, prSubCtrl->base_addr,
+	HAL_RMCR_RD_RANGE(prAdapter, prSubCtrl->base_addr,
 			   &rSubHeader,
 			   sizeof(rSubHeader));
 

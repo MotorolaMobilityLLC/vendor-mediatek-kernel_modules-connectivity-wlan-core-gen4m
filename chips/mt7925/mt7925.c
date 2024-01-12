@@ -1302,9 +1302,9 @@ static void mt7925WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* packet based TX flow control */
-	kalDevRegRead(prGlueInfo,
-		      WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
-		      &u4Val);
+	HAL_MCR_RD(prAdapter,
+		   WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,
+		   &u4Val);
 	u4Val |= WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_CSR_TX_FCTRL_MODE_MASK;
 	kalDevRegWrite(prGlueInfo,
 		       WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT1_ADDR,

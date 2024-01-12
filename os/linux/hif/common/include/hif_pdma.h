@@ -306,6 +306,10 @@
 
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
 
+#if CFG_NEW_HIF_DEV_REG_IF
+#define HIF_DEV_REG_HISTORY_SIZE    100
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -355,38 +359,38 @@
 	memcpy_toio((void *)((_A)->CSRBaseAddress + (_D)), (void *) _S, _N); \
 }
 
-#define HAL_SET_RING_CIDX(_G, _R, _V) \
+#define HAL_SET_RING_CIDX(_A, _R, _V) \
 { \
-	kalDevRegWrite(_G, _R->hw_cidx_addr, _V << _R->hw_cidx_shift); \
+	HAL_MCR_WR(_A, _R->hw_cidx_addr, _V << _R->hw_cidx_shift);	\
 }
 
-#define HAL_GET_RING_CIDX(_G, _R, _V) \
+#define HAL_GET_RING_CIDX(_RSN, _A, _R, _V)	\
 do { \
-	kalDevRegRead(_G, _R->hw_cidx_addr, _V); \
+	HAL_RMCR_RD(_RSN, _A, _R->hw_cidx_addr, _V); \
 	*_V = (*_V & _R->hw_cidx_mask) >> _R->hw_cidx_shift; \
 } while (0)
 
 #if CFG_MTK_WIFI_WFDMA_WB
-#define HAL_GET_RING_DIDX(_G, _R, _V) \
+#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V)	\
 do { \
 	if (_R->fgEnEmiIdx) { \
 		*_V = *_R->pu2EmiIdx; \
 	} else { \
-		kalDevRegRead(_G, _R->hw_didx_addr, _V); \
+		HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
 		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
 	} \
 } while (0)
 #else
-#define HAL_GET_RING_DIDX(_G, _R, _V) \
+#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V) \
 do { \
-	kalDevRegRead(_G, _R->hw_didx_addr, _V); \
+	HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
 	*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
 } while (0)
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
-#define HAL_GET_RING_MCNT(_G, _R, _V) \
+#define HAL_GET_RING_MCNT(_RSN, _A, _R, _V) \
 do { \
-	kalDevRegRead(_G, _R->hw_cnt_addr, _V); \
+	HAL_RMCR_RD(_RSN, _A, _R->hw_cnt_addr, _V); \
 	*_V = (*_V & _R->hw_cnt_mask) >> _R->hw_cnt_shift; \
 } while (0)
 
@@ -970,6 +974,14 @@ struct WFDMA_EMI_RING_IDX_1 {
 };
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
+#if CFG_NEW_HIF_DEV_REG_IF
+struct HIF_DEV_REG_RECORD {
+	enum HIF_DEV_REG_REASON eReason;
+	uint32_t u4Reg;
+	uint32_t u4Mod;
+};
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1120,8 +1132,6 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		   uint32_t u4Num, bool fgDumpContent);
 int wf_ioremap_read(phys_addr_t addr, unsigned int *val);
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
-void halEnableSlpProt(struct GLUE_INFO *prGlueInfo);
-void halDisableSlpProt(struct GLUE_INFO *prGlueInfo);
 
 void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo);
 void halSwWfdmaUninit(struct GLUE_INFO *prGlueInfo);

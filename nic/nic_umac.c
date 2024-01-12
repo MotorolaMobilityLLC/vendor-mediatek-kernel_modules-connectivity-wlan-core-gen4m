@@ -187,7 +187,7 @@ uint16_t halUmacWrapRsvPgCnt(struct ADAPTER
 			g_arPlePgInfoAndReserveCrOffsetMap[ucPageGroupID].
 			u4PgInfoRegOffset;
 
-	HAL_MCR_RD(prAdapter, u4RegAddr, &u4Value);
+	HAL_RMCR_RD(UMAC_DBG, prAdapter, u4RegAddr, &u4Value);
 
 	return (uint16_t) (u4Value & BITS(0, 11));
 }
@@ -224,7 +224,7 @@ uint16_t halUmacWrapSrcPgCnt(struct ADAPTER
 			g_arPlePgInfoAndReserveCrOffsetMap[ucPageGroupID].
 			u4PgInfoRegOffset;
 
-	HAL_MCR_RD(prAdapter, u4RegAddr, &u4Value);
+	HAL_RMCR_RD(UMAC_DBG, prAdapter, u4RegAddr, &u4Value);
 
 	return (uint16_t) ((u4Value & BITS(16, 27)) >> 16);
 }
@@ -245,7 +245,7 @@ uint16_t halUmacPbufCtrlTotalPageNum(struct ADAPTER
 {
 	uint32_t u4Value = 0;
 
-	HAL_MCR_RD(prAdapter, UMAC_PBUF_CTRL(fgPsePleFlag),
+	HAL_RMCR_RD(UMAC_DBG, prAdapter, UMAC_PBUF_CTRL(fgPsePleFlag),
 		   &u4Value);
 
 	return (uint16_t) (u4Value &
@@ -268,7 +268,7 @@ uint16_t halUmacWrapFrePageCnt(struct ADAPTER
 {
 	uint32_t u4Value = 0;
 
-	HAL_MCR_RD(prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag),
+	HAL_RMCR_RD(UMAC_DBG, prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag),
 		   &u4Value);
 	return (u4Value & UMAC_FREEPG_CNT_FREEPAGE_CNT_MASK) >>
 		UMAC_FREEPG_CNT_FREEPAGE_CNT_OFFSET;
@@ -290,7 +290,7 @@ uint16_t halUmacWrapFfaCnt(struct ADAPTER *prAdapter,
 {
 	uint32_t u4Value = 0;
 
-	HAL_MCR_RD(prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag),
+	HAL_RMCR_RD(UMAC_DBG, prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag),
 		   &u4Value);
 	return (u4Value & UMAC_FREEPG_CNT_FFA_CNT_MASK) >>
 		UMAC_FREEPG_CNT_FFA_CNT_OFFSET;

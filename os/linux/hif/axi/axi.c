@@ -533,8 +533,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	prHif->pdev = (struct platform_device *)ulCookie;
 	prHif->prDmaDev = &prHif->pdev->dev;
 
-	prHif->CSRBaseAddress = CSRBaseAddress;
-
 	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_AXI;

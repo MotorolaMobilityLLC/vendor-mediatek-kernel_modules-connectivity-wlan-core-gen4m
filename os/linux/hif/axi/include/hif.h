@@ -125,9 +125,6 @@ struct GL_HIF_INFO {
 #endif
 	int32_t u4HifCnt;
 
-	/* AXI MMIO Base Address, all access will use */
-	void *CSRBaseAddress;
-
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
@@ -355,6 +352,10 @@ struct BUS_INFO {
 
 	u_int8_t fgUpdateWfdmaTh;
 	uint32_t u4WfdmaTh;
+
+#if CFG_NEW_HIF_DEV_REG_IF
+	uint32_t u4MmioReadReasonCnt[HIF_DEV_REG_MAX];
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 };
 
 /*******************************************************************************

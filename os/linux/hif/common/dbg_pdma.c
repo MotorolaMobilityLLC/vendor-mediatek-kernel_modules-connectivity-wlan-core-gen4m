@@ -436,9 +436,12 @@ uint32_t halDumpHifStatus(struct ADAPTER *prAdapter,
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		prTxRing = &prHifInfo->TxRing[u4Idx];
-		kalDevRegRead(prGlueInfo, prTxRing->hw_cnt_addr, &u4MaxCnt);
-		kalDevRegRead(prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
-		kalDevRegRead(prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prTxRing->hw_cnt_addr, &u4MaxCnt);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prTxRing->hw_cidx_addr, &u4CpuIdx);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prTxRing->hw_didx_addr, &u4DmaIdx);
 
 		u4MaxCnt &= MT_RING_CNT_MASK;
 		u4CpuIdx &= MT_RING_CIDX_MASK;
@@ -468,9 +471,12 @@ uint32_t halDumpHifStatus(struct ADAPTER *prAdapter,
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		prRxRing = &prHifInfo->RxRing[u4Idx];
 
-		kalDevRegRead(prGlueInfo, prRxRing->hw_cnt_addr, &u4MaxCnt);
-		kalDevRegRead(prGlueInfo, prRxRing->hw_cidx_addr, &u4CpuIdx);
-		kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr, &u4DmaIdx);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prRxRing->hw_cnt_addr, &u4MaxCnt);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prRxRing->hw_cidx_addr, &u4CpuIdx);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       prRxRing->hw_didx_addr, &u4DmaIdx);
 
 		u4MaxCnt &= MT_RING_CNT_MASK;
 		u4CpuIdx &= MT_RING_CIDX_MASK;
@@ -796,36 +802,37 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
 
 	/* PDMA HOST_INT */
-	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, WPDMA_INT_STA, &u4Value);
 	DBGLOG(HAL, INFO, "WPDMA HOST_INT:0x%08x = 0x%08x\n",
 		WPDMA_INT_STA, u4Value);
 
 	/* PDMA GLOBAL_CFG  */
-	HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, WPDMA_GLO_CFG, &u4Value);
 	DBGLOG(HAL, INFO, "WPDMA GLOBAL_CFG:0x%08x = 0x%08x\n",
 		WPDMA_GLO_CFG, u4Value);
 
-	HAL_MCR_RD(prAdapter, CONN_HIF_RST, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, CONN_HIF_RST, &u4Value);
 	DBGLOG(HAL, INFO, "WPDMA CONN_HIF_RST:0x%08x = 0x%08x\n",
 		CONN_HIF_RST, u4Value);
 
-	HAL_MCR_RD(prAdapter, MCU2HOST_SW_INT_STA, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MCU2HOST_SW_INT_STA, &u4Value);
 	DBGLOG(HAL, INFO, "WPDMA MCU2HOST_SW_INT_STA:0x%08x = 0x%08x\n",
 		MCU2HOST_SW_INT_STA, u4Value);
 
-	HAL_MCR_RD(prAdapter, MD_INT_STA, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_INT_STA, &u4Value);
 	DBGLOG(HAL, INFO, "MD_INT_STA:0x%08x = 0x%08x\n",
 	       MD_INT_STA, u4Value);
-	HAL_MCR_RD(prAdapter, MD_WPDMA_GLO_CFG, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_WPDMA_GLO_CFG, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_GLO_CFG:0x%08x = 0x%08x\n",
 	       MD_WPDMA_GLO_CFG, u4Value);
-	HAL_MCR_RD(prAdapter, MD_INT_ENA, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_INT_ENA, &u4Value);
 	DBGLOG(HAL, INFO, "MD_INT_ENA:0x%08x = 0x%08x\n",
 	       MD_INT_ENA, u4Value);
-	HAL_MCR_RD(prAdapter, MD_WPDMA_DLY_INIT_CFG, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       MD_WPDMA_DLY_INIT_CFG, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_DLY_INIT_CFG:0x%08x = 0x%08x\n",
 	       MD_WPDMA_DLY_INIT_CFG, u4Value);
-	HAL_MCR_RD(prAdapter, MD_WPDMA_MISC, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, MD_WPDMA_MISC, &u4Value);
 	DBGLOG(HAL, INFO, "MD_WPDMA_MISC:0x%08x = 0x%08x\n",
 	       MD_WPDMA_MISC, u4Value);
 
@@ -844,16 +851,21 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 			offset_ext = wfmda_tx_group[i].ring_idx *
 				MT_RINGREG_EXT_DIFF;
 
-			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL0 + offset,
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_TX_RING0_CTRL0 + offset,
 					&wfmda_tx_group[i].base);
-			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_BASE_PTR_EXT +
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_TX_RING0_BASE_PTR_EXT +
 					offset_ext,
 					&wfmda_tx_group[i].base_ext);
-			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL1 + offset,
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_TX_RING0_CTRL1 + offset,
 					&wfmda_tx_group[i].cnt);
-			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL2 + offset,
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_TX_RING0_CTRL2 + offset,
 					&wfmda_tx_group[i].cidx);
-			HAL_MCR_RD(prAdapter, WPDMA_TX_RING0_CTRL3 + offset,
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_TX_RING0_CTRL3 + offset,
 					&wfmda_tx_group[i].didx);
 
 			ret = kalSnprintf(buf, BUF_SIZE,
@@ -886,17 +898,22 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 			offset_ext = wfmda_rx_group[i].ring_idx *
 				MT_RINGREG_EXT_DIFF;
 
-			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL0 + offset,
-					&wfmda_rx_group[i].base);
-			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_BASE_PTR_EXT +
-				offset_ext,
-					&wfmda_rx_group[i].base_ext);
-			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL1 + offset,
-					&wfmda_rx_group[i].cnt);
-			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL2 + offset,
-					&wfmda_rx_group[i].cidx);
-			HAL_MCR_RD(prAdapter, WPDMA_RX_RING0_CTRL3 + offset,
-					&wfmda_rx_group[i].didx);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_RX_RING0_CTRL0 + offset,
+				       &wfmda_rx_group[i].base);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_RX_RING0_BASE_PTR_EXT +
+				       offset_ext,
+				       &wfmda_rx_group[i].base_ext);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_RX_RING0_CTRL1 + offset,
+				       &wfmda_rx_group[i].cnt);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_RX_RING0_CTRL2 + offset,
+				       &wfmda_rx_group[i].cidx);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       WPDMA_RX_RING0_CTRL3 + offset,
+				       &wfmda_rx_group[i].didx);
 
 			ret = kalSnprintf(buf, BUF_SIZE,
 				"%10s%10d  0x%08x  0x%016llx%10d%10d%10d",
@@ -962,10 +979,12 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	}
 
 	/* PDMA Busy Status */
-	HAL_MCR_RD(prAdapter, PDMA_DEBUG_BUSY_STATUS, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       PDMA_DEBUG_BUSY_STATUS, &u4Value);
 	DBGLOG(HAL, INFO, "PDMA busy status:0x%08x = 0x%08x\n",
 		PDMA_DEBUG_STATUS, u4Value);
-	HAL_MCR_RD(prAdapter, PDMA_DEBUG_HIF_BUSY_STATUS, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       PDMA_DEBUG_HIF_BUSY_STATUS, &u4Value);
 	DBGLOG(HAL, INFO, "CONN_HIF busy status:0x%08x = 0x%08x\n\n",
 		PDMA_DEBUG_HIF_BUSY_STATUS, u4Value);
 
@@ -977,7 +996,8 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 		for (i = 0; i < 24; i++) {
 			u4Value = 256 + i;
 			HAL_MCR_WR(prAdapter, PDMA_DEBUG_EN, u4Value);
-			HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       PDMA_DEBUG_STATUS, &u4Value);
 			pos += kalSnprintf(buf + pos, 40,
 				"Set:0x%02x, result=0x%08x%s",
 				i, u4Value, i == 23 ? "\n" : "; ");
@@ -988,17 +1008,20 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 
 	/* AXI Debug Flag */
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, PDMA_AXI_DEBUG_FLAG);
-	HAL_MCR_RD(prAdapter, CONN_HIF_DEBUG_STATUS, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       CONN_HIF_DEBUG_STATUS, &u4Value);
 	DBGLOG(HAL, INFO, "Set:0x%04x, pdma axi dbg:0x%08x",
 	       PDMA_AXI_DEBUG_FLAG, u4Value);
 
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, GALS_AXI_DEBUG_FLAG);
-	HAL_MCR_RD(prAdapter, CONN_HIF_DEBUG_STATUS, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       CONN_HIF_DEBUG_STATUS, &u4Value);
 	DBGLOG(HAL, INFO, "Set:0x%04x, gals axi dbg:0x%08x",
 	       GALS_AXI_DEBUG_FLAG, u4Value);
 
 	HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, MCU_AXI_DEBUG_FLAG);
-	HAL_MCR_RD(prAdapter, CONN_HIF_DEBUG_STATUS, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       CONN_HIF_DEBUG_STATUS, &u4Value);
 	DBGLOG(HAL, INFO, "Set:0x%04x, mcu axi dbg:0x%08x",
 	       MCU_AXI_DEBUG_FLAG, u4Value);
 
@@ -1011,7 +1034,8 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 		for (i = 0; i < 9; i++) {
 			u4Value = i << 16;
 			HAL_MCR_WR(prAdapter, AXI_DEBUG_DEBUG_EN, u4Value);
-			HAL_MCR_RD(prAdapter, PDMA_DEBUG_STATUS, &u4Value);
+			HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+				       PDMA_DEBUG_STATUS, &u4Value);
 			pos += kalSnprintf(buf + pos, 40,
 				"Set[19:16]:0x%02x, result = 0x%08x%s",
 				i, u4Value, i == 8 ? "\n" : "; ");
@@ -1034,86 +1058,101 @@ bool halShowHostCsrInfo(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO, "Host CSR Configuration Info:\n\n");
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_BASE, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_BASE, &u4Value);
 	DBGLOG(HAL, INFO, "Get 0x87654321: 0x%08x = 0x%08x\n",
 		HOST_CSR_BASE, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Driver own info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
 	fgIsDriverOwn = (u4Value & PCIE_LPCR_HOST_SET_OWN) == 0;
 
 	for (i = 0; i < 5; i++) {
-		HAL_MCR_RD(prAdapter, HOST_CSR_MCU_PORG_COUNT, &u4Value);
+		HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+			       HOST_CSR_MCU_PORG_COUNT, &u4Value);
 		DBGLOG(HAL, INFO,
 			"MCU programming Counter info (no sync): 0x%08x = 0x%08x\n",
 			HOST_CSR_MCU_PORG_COUNT, u4Value);
 	}
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_RGU, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_RGU, &u4Value);
 	DBGLOG(HAL, INFO, "RGU Info: 0x%08x = 0x%08x\n", HOST_CSR_RGU, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_HIF_BUSY_CORQ_WFSYS_ON, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_HIF_BUSY_CORQ_WFSYS_ON, &u4Value);
 	DBGLOG(HAL, INFO, "HIF_BUSY / CIRQ / WFSYS_ON info: 0x%08x = 0x%08x\n",
 		HOST_CSR_HIF_BUSY_CORQ_WFSYS_ON, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_PINMUX_MON_FLAG, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_PINMUX_MON_FLAG, &u4Value);
 	DBGLOG(HAL, INFO, "Pinmux/mon_flag info: 0x%08x = 0x%08x\n",
 		HOST_CSR_PINMUX_MON_FLAG, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_MCU_PWR_STAT, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_MCU_PWR_STAT, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[5] mcu_pwr_stat: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_PWR_STAT, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_FW_OWN_SET, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter, HOST_CSR_FW_OWN_SET, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[15] fw_own_stat: 0x%08x = 0x%08x\n",
 		HOST_CSR_FW_OWN_SET, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_MCU_SW_MAILBOX_0, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_MCU_SW_MAILBOX_0, &u4Value);
 	DBGLOG(HAL, INFO, "WF Mailbox[0]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_0, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_MCU_SW_MAILBOX_1, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_MCU_SW_MAILBOX_1, &u4Value);
 	DBGLOG(HAL, INFO, "MCU Mailbox[1]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_1, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_MCU_SW_MAILBOX_2, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_MCU_SW_MAILBOX_2, &u4Value);
 	DBGLOG(HAL, INFO, "BT Mailbox[2]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_2, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_MCU_SW_MAILBOX_3, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_MCU_SW_MAILBOX_3, &u4Value);
 	DBGLOG(HAL, INFO, "GPS Mailbox[3]: 0x%08x = 0x%08x\n",
 		HOST_CSR_MCU_SW_MAILBOX_3, u4Value);
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_CFG_ON, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_CONN_CFG_ON, &u4Value);
 	DBGLOG(HAL, INFO, "Conn_cfg_on info: 0x%08x = 0x%08x\n",
 		HOST_CSR_CONN_CFG_ON, u4Value);
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
-	HAL_MCR_RD(prAdapter, HOST_CSR_AP2CONN_AHB_HADDR, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_AP2CONN_AHB_HADDR, &u4Value);
 	DBGLOG(HAL, INFO, "HOST_CSR_AP2CONN_AHB_HADDR: 0x%08x = 0x%08x\n",
 		HOST_CSR_AP2CONN_AHB_HADDR, u4Value);
 #endif
 
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR,
-		   &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR,
+		       &u4Value);
 	DBGLOG(HAL, INFO,
 	       "CONN_HIF_ON_MD_LPCTL_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_LPCTL_ADDR, u4Value);
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR,
-		   &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR,
+		       &u4Value);
 	DBGLOG(HAL, INFO,
 	       "CONN_HIF_ON_MD_IRQ_STAT_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_IRQ_STAT_ADDR, u4Value);
-	HAL_MCR_RD(prAdapter, HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR,
-		   &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR,
+		       &u4Value);
 	DBGLOG(HAL, INFO,
 	       "CONN_HIF_ON_MD_IRQ_ENA_ADDR: 0x%08x = 0x%08x\n",
 	       HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR, u4Value);
 
 	HAL_MCR_WR(prAdapter, HOST_CSR_DRIVER_OWN_INFO, 0x00030000);
 	kalUdelay(1);
-	HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
+	HAL_RMCR_RD(HIF_CONNAC1_2, prAdapter,
+		       HOST_CSR_DRIVER_OWN_INFO, &u4Value);
 	DBGLOG(HAL, INFO, "Bit[17]/[16], Get HCLK info: 0x%08x = 0x%08x\n",
 		HOST_CSR_DRIVER_OWN_INFO, u4Value);
 

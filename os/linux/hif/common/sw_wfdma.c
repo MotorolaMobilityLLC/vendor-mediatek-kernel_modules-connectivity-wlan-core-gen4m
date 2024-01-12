@@ -83,9 +83,9 @@ void halSwWfdmaInit(struct GLUE_INFO *prGlueInfo)
 
 	/* update sw wfdma emi offset */
 	if (prSwWfdmaInfo->u4EmiOffsetAddr) {
-		kalDevRegRead(prGlueInfo,
-			      prSwWfdmaInfo->u4EmiOffsetAddr,
-			      &u4Value);
+		HAL_RMCR_RD(prGlueInfo->prAdapter,
+			   prSwWfdmaInfo->u4EmiOffsetAddr,
+			   &u4Value);
 		u4Value = (u4Value & prSwWfdmaInfo->u4EmiOffsetMask) |
 			prSwWfdmaInfo->u4EmiOffsetBase;
 		if (u4Value)

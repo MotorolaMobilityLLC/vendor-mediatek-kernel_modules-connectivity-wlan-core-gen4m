@@ -82,7 +82,7 @@ void dmashdl_dvt_item_6(
 			0x10);
 
 		/* enable WA CPU mode */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 			&value);
 		value = value |
@@ -199,7 +199,7 @@ void dmashdl_dvt_item_5(
 		0x10);
 
 	/* enable WA CPU mode */
-	kalDevRegRead(prGlueInfo,
+	HAL_MCR_RD(prAdapter,
 		WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 		&value);
 	value = value |
@@ -290,7 +290,7 @@ void dmashdl_dvt_item_4(
 			0xffe00000);
 
 		/* disable joint ASK RR */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
 			&value);
 		value = (value &
@@ -301,7 +301,7 @@ void dmashdl_dvt_item_4(
 
 		/* disable SRC_CNT_PRI_EN & */
 		/* pre-define each slot group strict order(enable as default) */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR,
 			&value);
 		value = (value &
@@ -317,7 +317,7 @@ WF_HIF_DMASHDL_TOP_PAGE_SETTING_GROUP_SEQUENCE_ORDER_TYPE_MASK;
 			0x10);
 
 		/* enable WA CPU mode */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 			&value);
 		value = value |
@@ -408,7 +408,7 @@ void dmashdl_dvt_item_3(
 			0xffe00000);
 
 		/* disable joint ASK RR */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_ADDR,
 			&value);
 		value = value &
@@ -418,7 +418,7 @@ void dmashdl_dvt_item_3(
 			value);
 
 /* disable SRC_CNT_PRI_EN & user program group sequence order type */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR,
 			&value);
 		value = value &
@@ -442,7 +442,7 @@ void dmashdl_dvt_item_3(
 			0x10);
 
 		/* enable WA CPU mode */
-		kalDevRegRead(prGlueInfo,
+		HAL_MCR_RD(prAdapter,
 			WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 			&value);
 		value = value |
@@ -536,7 +536,7 @@ void dmashdl_dvt_item_2(
 		0x10);
 
 	/* enable WA CPU mode */
-	kalDevRegRead(prGlueInfo,
+	HAL_MCR_RD(prAdapter,
 		WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 		&value);
 	value = value |
@@ -630,7 +630,7 @@ void dmashdl_dvt_item_1(
 		0x10);
 
 	/* enable WA CPU mode */
-	kalDevRegRead(prGlueInfo,
+	HAL_MCR_RD(prAdapter,
 		WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 		&value);
 	value = value |
@@ -738,7 +738,7 @@ void dmashdl_dvt_reset_default(
 		0x3f1000);
 
 	/* enable WA CPU mode */
-	kalDevRegRead(prGlueInfo,
+	HAL_MCR_RD(prAdapter,
 		WF_HIF_DMASHDL_TOP_CONTROL_SIGNAL_ADDR,
 		&value);
 	value = value |
@@ -771,12 +771,12 @@ int dmashdl_dvt_check_pass(
 	ucSubItemNo = DMASHDL_DVT_GET_SUBITEM(pAd);
 
 	/* get free page & FFA page */
-	kalDevRegRead(prGlueInfo, WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, &free);
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, &free);
 
 	/* fetch status of group0 ~ 15 to array */
 	for (i = 0; i < ARRAY_SIZE(status); i++) {
 		addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR + i*4;
-		kalDevRegRead(prGlueInfo, addr, &status[i]);
+		HAL_MCR_RD(prAdapter, addr, &status[i]);
 	}
 
 	/* check different CR for different DVT item */
@@ -1070,7 +1070,7 @@ int priv_driver_show_dmashdl_allcr(
 	for (addr = WF_HIF_DMASHDL_TOP_WACPU_REFILL_ADDR;
 			addr <= WF_HIF_DMASHDL_TOP_GROUP15_CONTROL_ADDR;
 			addr += 4) {
-		kalDevRegRead(prGlueInfo, addr, &value);
+		HAL_MCR_RD(prAdapter, addr, &value);
 		DBGLOG(REQ, INFO,
 			"[DMASHDL] Addr[0x%08X], value=0x%08X\n", addr, value);
 	}
@@ -1079,12 +1079,12 @@ int priv_driver_show_dmashdl_allcr(
 	for (addr = WF_HIF_DMASHDL_TOP_QUEUE_MAPPING0_ADDR;
 			addr <= WF_HIF_DMASHDL_TOP_QUEUE_MAPPING3_ADDR;
 			addr += 4) {
-		kalDevRegRead(prGlueInfo, addr, &value);
+		HAL_MCR_RD(prAdapter, addr, &value);
 		DBGLOG(REQ, INFO,
 			"[DMASHDL] Addr[0x%08X], value=0x%08X\n", addr, value);
 	}
 
-	kalDevRegRead(prGlueInfo, WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, &value);
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, &value);
 	DBGLOG(REQ, INFO,
 		"[DMASHDL] Status RD[0x%08X] value = 0x%08X\n",
 		WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR, value);
@@ -1092,7 +1092,7 @@ int priv_driver_show_dmashdl_allcr(
 	for (addr = WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR;
 			addr <= WF_HIF_DMASHDL_TOP_STATUS_RD_GP15_ADDR;
 			addr += 4) {
-		kalDevRegRead(prGlueInfo, addr, &value);
+		HAL_MCR_RD(prAdapter, addr, &value);
 		DBGLOG(REQ, INFO,
 			"[DMASHDL] Addr[0x%08X], value=0x%08X\n", addr, value);
 	}
@@ -1100,7 +1100,7 @@ int priv_driver_show_dmashdl_allcr(
 	for (addr = WF_HIF_DMASHDL_TOP_RD_GROUP_PKT_CNT0_ADDR;
 			addr <= WF_HIF_DMASHDL_TOP_RD_GROUP_PKT_CNT7_ADDR;
 			addr += 4) {
-		kalDevRegRead(prGlueInfo, addr, &value);
+		HAL_MCR_RD(prAdapter, addr, &value);
 		DBGLOG(REQ, INFO,
 			"[DMASHDL] Addr[0x%08X], value=0x%08X\n", addr, value);
 	}

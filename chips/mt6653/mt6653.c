@@ -165,10 +165,6 @@ static void mt6653WfdmaRxRingExtCtrl(
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
-#if CFG_SUPPORT_PCIE_ASPM
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
-#endif
-
 static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
@@ -605,9 +601,6 @@ struct BUS_INFO mt6653_bus_info = {
 	.configWfdmaRxRingTh = mt6653ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6653InitPcieInt,
-#if CFG_SUPPORT_PCIE_ASPM
-	.configPcieAspm = mt6653ConfigPcieAspm,
-#endif
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
 	.pcie_msi_info = {
@@ -843,6 +836,24 @@ uint32_t mt6653_mawd_idx_patch[] = {
 };
 #endif
 
+#if CFG_NEW_HIF_DEV_REG_IF
+enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
+	HIF_DEV_REG_HIF_DBG,
+	HIF_DEV_REG_HIF_EXTDBG,
+	HIF_DEV_REG_OFFLOAD_READ,
+	HIF_DEV_REG_OFFLOAD_HOST,
+	HIF_DEV_REG_OFFLOAD_DBG,
+	HIF_DEV_REG_ONOFF_READ,
+	HIF_DEV_REG_LPOWN_READ,
+	HIF_DEV_REG_SER_READ,
+	HIF_DEV_REG_PLAT_DBG,
+	HIF_DEV_REG_UMAC_DBG,
+	HIF_DEV_REG_WTBL_DBG,
+	HIF_DEV_REG_OID_DBG,
+	HIF_DEV_REG_UNDEFINE,
+};
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
+
 struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.bus_info = &mt6653_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -983,6 +994,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif
 	.u4MinTxLen = 2,
 	.wifiNappingCtrl = mt6653WiFiNappingCtrl,
+#if CFG_NEW_HIF_DEV_REG_IF
+	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
+	.prValidMmioReadReason = mt6653ValidMmioReadReason,
+	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt6653ValidMmioReadReason),
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6653 = {
@@ -1582,7 +1598,7 @@ static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 	u4WrValue = 0;
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 		u4Addr = MAWD_AP_INTERRUPT_SETTING0;
-		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
+		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4RegValue);
 		if (u4RegValue & BIT(0)) {
 			*pu4IntStatus |= WHISR_RX0_DONE_INT;
 			u4WrValue = u4RegValue & BIT(0);
@@ -1590,7 +1606,7 @@ static void mt6653ReadOffloadIntStatus(struct ADAPTER *prAdapter,
 		u4Addr = MAWD_AP_INTERRUPT_SETTING1;
 	} else {
 		u4Addr = WF_RRO_TOP_HOST_INT_STS_ADDR;
-		HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
+		HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4RegValue);
 		if (u4RegValue &
 		    WF_RRO_TOP_HOST_INT_STS_HOST_RRO_DONE_INT_MASK) {
 			*pu4IntStatus |= WHISR_RX0_DONE_INT;
@@ -1686,7 +1702,7 @@ static void mt6653ReadIntStatus(struct ADAPTER *prAdapter,
 	*pu4IntStatus = 0;
 
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR;
-	HAL_MCR_RD(prAdapter, u4Addr, &u4RegValue);
+	HAL_RMCR_RD(HIF_READ, prAdapter, u4Addr, &u4RegValue);
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 
@@ -2696,61 +2712,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
-	uint32_t value = 0;
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		PCIE_MAC_IREG_IMASK_HOST_0_ADDR,
-		&value);
-	value |= PCIE_MAC_IREG_IMASK_HOST_0_INT_REQUEST_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_0_P_ATR_EVT_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_0_A_ATR_EVT_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_0_DMA_ERR_EN_MASK |
-		PCIE_MAC_IREG_IMASK_HOST_0_DMA_END_EN_MASK;
-	HAL_MCR_WR(prGlueInfo->prAdapter,
-		PCIE_MAC_IREG_IMASK_HOST_0_ADDR,
-		value);
 }
-
-#if CFG_SUPPORT_PCIE_ASPM
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
-{
-	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t u4Val = 0;
-	if (fgEn) {
-		/* Restore original setting*/
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   prHifInfo->u4PcieLTR);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_0_ADDR,
-			   prHifInfo->u4PcieASPM);
-		DBGLOG(HAL, INFO, "Enable aspm L1.1/L1.2 0x%08x\n",
-			prHifInfo->u4PcieASPM);
-	} else {
-		/*
-		 *	Backup original setting then
-		 *	disable L1.1, L1.2 and set LTR to 0
-		 */
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR,
-			   &prHifInfo->u4PcieLTR);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_0_ADDR,
-			   &prHifInfo->u4PcieASPM);
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LTR_VALUES_ADDR, 0);
-
-		u4Val = prHifInfo->u4PcieASPM &
-			~PCIE_LOW_POWER_CTRL_DIS_L1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_1 |
-			PCIE_LOW_POWER_CTRL_DIS_L1_2;
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_0_ADDR,
-			   u4Val);
-		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
-	}
-}
-#endif
 
 static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
@@ -2798,7 +2760,7 @@ static uint32_t mt6653_ccif_get_interrupt_status(struct ADAPTER *ad)
 {
 	uint32_t u4Status = 0;
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(CCIF_READ, ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
 		&u4Status);
 	HAL_MCR_WR(ad,
@@ -2854,7 +2816,7 @@ static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	else
 		u4Addr = WF2AP_CONN_INFRA_ON_CCIF4_WF2AP_PCCIF_DUMMY1_ADDR;
 
-	HAL_MCR_RD(ad, u4Addr, &u4Value);
+	HAL_RMCR_RD(CCIF_READ, ad, u4Addr, &u4Value);
 
 	return u4Value;
 }
@@ -2885,7 +2847,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 		HAL_MCR_WR(ad,
 			   CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR,
 			   BIT(0));
-		HAL_MCR_RD(ad,
+		HAL_RMCR_RD(PLAT_DBG, ad,
 			   CONN_DBG_CTL_CONN_INFRA_BUS_CLK_DETECT_ADDR,
 			   &value);
 		if ((value & BIT(1)) && (value & BIT(3)))
@@ -2895,7 +2857,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 		kalMdelay(1);
 	}
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
 		   &value);
 	if (value != MT6653_CONNINFRA_VERSION_ID) {
@@ -2905,7 +2867,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 		return FALSE;
 	}
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
 		   &value);
 	if ((value & BITS(0, 9)) == 0x3FF)
@@ -2920,7 +2882,7 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 {
 	uint32_t value = 0;
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_BUS_CR_ADDR_CONN2SUBSYS_0_AHB_GALS_DBG_ADDR,
 		   &value);
 	if ((value & BIT(26)) != 0x0) {
@@ -2930,7 +2892,7 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 		return FALSE;
 	}
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(PLAT_DBG, ad,
 		   WF_TOP_CFG_IP_VERSION_ADDR,
 		   &value);
 	if (value != MT6653_WF_VERSION_ID) {
@@ -2940,14 +2902,14 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 		return FALSE;
 	}
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
 		   &value);
 	if ((value & BIT(0)) != 0x0) {
 		DBGLOG(HAL, WARN,
 			"WF mcusys bus hang irq status: 0x%08x\n",
 			value);
-		HAL_MCR_RD(ad,
+		HAL_RMCR_RD(PLAT_DBG, ad,
 			   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
 			   &value);
 		if (value == 0x100)
@@ -2971,7 +2933,7 @@ static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
 	 * do recovery flow
 	 */
 
-	HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+	HAL_RMCR_RD(UNDEFINE, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
@@ -2980,7 +2942,7 @@ static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	HAL_MCR_RD(ad, CBTOP_GPIO_MODE5_ADDR,
+	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE5_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
@@ -2990,7 +2952,7 @@ static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	HAL_MCR_RD(ad, CBTOP_GPIO_MODE6_ADDR,
+	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE6_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
@@ -3024,8 +2986,9 @@ static uint32_t mt6653_mcu_reinit(struct ADAPTER *ad)
 
 	/* Wait conninfra wakeup */
 	while (TRUE) {
-		HAL_MCR_RD(ad, CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
-			&u4Value);
+		HAL_RMCR_RD(UNDEFINE, ad,
+			       CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
+			       &u4Value);
 
 		if (u4Value == MT6653_CONNINFRA_VERSION_ID)
 			break;
@@ -3068,11 +3031,11 @@ static uint32_t mt6653_mcu_reinit(struct ADAPTER *ad)
 
 	kalMdelay(50);
 
-	HAL_MCR_RD(ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
+	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE5_ADDR, u4Value);
 
-	HAL_MCR_RD(ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
+	HAL_RMCR_RD(UNDEFINE, ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
 		CBTOP_GPIO_MODE6_ADDR, u4Value);
 
@@ -3093,7 +3056,7 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 
 	DBGLOG(INIT, INFO, "mt6653_mcu_reset..\n");
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(UNDEFINE, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		&u4Value);
 	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
@@ -3104,7 +3067,7 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 
 	kalMdelay(1);
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(UNDEFINE, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		&u4Value);
 	u4Value &= ~CB_INFRA_RGU_WF_SUBSYS_RST_WF_SUBSYS_RST_MASK;
@@ -3113,7 +3076,7 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		u4Value);
 
-	HAL_MCR_RD(ad,
+	HAL_RMCR_RD(UNDEFINE, ad,
 		CONN_SEMAPHORE_CONN_SEMA_OWN_BY_M0_STA_REP_1_ADDR,
 		&u4Value);
 	DBGLOG(INIT, INFO, "0x%08x=0x%08x.\n",
@@ -3171,7 +3134,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 			goto dump;
 		}
 
-		HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+		HAL_RMCR_RD(UNDEFINE, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
 			&u4Value);
 		if (u4Value == MCU_IDLE)
 			break;
@@ -3215,14 +3178,14 @@ dump:
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
 			   0x011f0000);
 		kalUdelay(1);
-		HAL_MCR_RD(ad,
+		HAL_RMCR_RD(UNDEFINE, ad,
 			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			   &u4Value);
 		DBGLOG(INIT, INFO,
 			"0x%08x=0x%08x\n",
 			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
 			u4Value);
-		HAL_MCR_RD(ad,
+		HAL_RMCR_RD(UNDEFINE, ad,
 			   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
 			   &u4Value);
 		DBGLOG(INIT, INFO,

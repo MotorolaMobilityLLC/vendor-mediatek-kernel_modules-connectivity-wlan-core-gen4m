@@ -1382,25 +1382,11 @@ void asicConnac3xDmashdlSetMinMaxQuota(
 	uint16_t u2MinQuota, uint16_t u2MaxQuota);
 void asicConnac3xDmashdlSetQueueMapping(
 	struct ADAPTER *prAdapter, uint8_t ucQueue, uint8_t ucGroup);
-void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter);
-void asicConnac3xDmashdlGetRefill(struct ADAPTER *prAdapter);
-void asicConnac3xDmashdlGetGroupControl(
-	struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
 void asicConnac3xDmashdlSetSlotArbiter(
 	struct ADAPTER *prAdapter, u_int8_t fgEnable, uint32_t u4DefVal);
 void asicConnac3xDmashdlSetUserDefinedPriority(
 	struct ADAPTER *prAdapter,
 	uint8_t ucPriority,
-	uint8_t ucGroup);
-uint32_t asicConnac3xDmashdlGetRsvCount(
-	struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
-uint32_t asicConnac3xDmashdlGetSrcCount(
-	struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
-void asicConnac3xDmashdlGetPKTCount(
-	struct ADAPTER *prAdapter,
 	uint8_t ucGroup);
 void asicConnac3xDmashdlSetOptionalControl(
 	struct ADAPTER *prAdapter,
@@ -1435,6 +1421,10 @@ uint16_t asicConnac3xUsbRxByteCount(
 	uint8_t *pRXD);
 #endif /* _HIF_USB */
 
+#if CFG_NEW_HIF_DEV_REG_IF
+u_int8_t connac3xIsValidMmioReadReason(
+	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason);
+#endif /* CFG_NEW_HIF_DEV_REG_IF */
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 #endif /* _CMM_ASIC_CONNAC3X_H */
 

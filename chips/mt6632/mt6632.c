@@ -179,9 +179,9 @@ void mt6632PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	union WPDMA_INT_MASK IntMask;
 
-	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
-	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_INT_MSK, &IntMask.word);
 
 	if (enable == TRUE) {
 		GloCfg.field.EnableTxDMA = 1;
