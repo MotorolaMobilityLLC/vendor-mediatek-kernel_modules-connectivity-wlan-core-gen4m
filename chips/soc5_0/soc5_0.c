@@ -383,6 +383,7 @@ struct BUS_INFO soc5_0_bus_info = {
 	.prDmashdlCfg = &rSOC5_0_DmashdlCfg,
 	.prPleTopCr = &rSoc5_0_PleTopCr,
 	.prPseTopCr = &rSoc5_0_PseTopCr,
+	.prPpTopCr = &rSoc5_0_PpTopCr,
 	.prPseGroup = rSoc5_0_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(rSoc5_0_pse_group),
 	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
@@ -3458,7 +3459,7 @@ static void soc5_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 
 	u4Cr = 0x18060204;
 	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
-	u4Index = (u4Value&BITS(17, 21)) >> 17;
+	u4Index = ((u4Value&BITS(17, 21)) >> 17) + 1;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
 
@@ -3494,7 +3495,7 @@ static void soc5_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 
 	u4Cr = 0x18060208;
 	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
-	u4Index = (u4Value&BITS(17, 21)) >> 17;
+	u4Index = ((u4Value&BITS(17, 21)) >> 17) + 1;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
 
@@ -3565,7 +3566,7 @@ static void soc5_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
-static void soc5_0_DumpDebguCtrlCr(struct ADAPTER *prAdapter)
+static void soc5_0_DumpDebugCtrlCr(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Val = 0, u4Addr = 0, u4Idx;
 
@@ -3851,7 +3852,7 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 		connac2x_DbgCrRead(prAdapter, 0x1806016c, &u4Value);
 		if (u4Value & BIT(0)) {
 			DBGLOG(HAL, ERROR, "0x1806_016C[0]=1'b1\n");
-			soc5_0_DumpDebguCtrlCr(prAdapter);
+			soc5_0_DumpDebugCtrlCr(prAdapter);
 			break;
 		}
 

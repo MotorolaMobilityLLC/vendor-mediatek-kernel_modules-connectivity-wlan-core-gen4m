@@ -311,6 +311,7 @@ struct BUS_INFO soc7_0_bus_info = {
 	.prDmashdlCfg = &rSOC7_0_DmashdlCfg,
 	.prPleTopCr = &rSoc7_0_PleTopCr,
 	.prPseTopCr = &rSoc7_0_PseTopCr,
+	.prPpTopCr = &rSoc7_0_PpTopCr,
 	.prPseGroup = rSoc7_0_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(rSoc7_0_pse_group),
 	.pdmaSetup = soc7_0asicConnac2xWpdmaConfig,
