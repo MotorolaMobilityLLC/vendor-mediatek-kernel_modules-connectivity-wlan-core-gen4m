@@ -3105,8 +3105,9 @@ struct UNI_CMD_MBMC_SETTING {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucMbmcEn;
+	uint8_t ucAAModeEn;
 	uint8_t ucRfBand;
-	uint8_t aucReserved[2];
+	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* Set DVT config Tag */
