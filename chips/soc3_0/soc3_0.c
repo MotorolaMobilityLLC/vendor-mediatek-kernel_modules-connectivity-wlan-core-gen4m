@@ -1873,7 +1873,7 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 	if (value & BIT(0))
 		fw_log_wifi_irq_handler();
 #endif
-	if (value & (BIT(1) | BIT(2))) {
+	if (value & BIT(1)) {
 		if (kalIsResetting()) {
 #if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
@@ -1891,6 +1891,17 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 			update_driver_reset_status(fgIsResetting);
 			kalSetRstEvent();
 		}
+	}
+	if (value & BIT(2)) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_FW;
+#endif
+		DBGLOG(HAL, ERROR,
+			"FW trigger whole chip reset.\n");
+		fgIsResetting = TRUE;
+		update_driver_reset_status(fgIsResetting);
+		g_IsWfsysBusHang = TRUE;
+		kalSetRstEvent();
 	}
 
 }
