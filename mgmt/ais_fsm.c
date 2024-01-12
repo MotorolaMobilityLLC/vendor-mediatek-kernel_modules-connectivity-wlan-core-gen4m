@@ -5424,6 +5424,10 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	 * Note: it shall be called before nicUpdateBss()
 	 */
 	rlmProcessAssocRsp(prAdapter, prAssocRspSwRfb, pucIE, u2IELength);
+	/* staRec phyTypeSet may be updated if it is different in beacon
+	 * and assoc resp. Therefore, should update bssInfo again.
+	 */
+	prAisBssInfo->ucPhyTypeSet = prStaRec->ucDesiredPhyTypeSet;
 
 	secPostUpdateAddr(prAdapter,
 		aisGetAisBssInfo(prAdapter, ucBssIndex));
