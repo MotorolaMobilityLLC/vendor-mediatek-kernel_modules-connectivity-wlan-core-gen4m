@@ -161,6 +161,10 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER
 void saaFsmRunEventAbort(struct ADAPTER *prAdapter,
 			 struct MSG_HDR *prMsgHdr);
 
+void saaFsmStateAbort(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec,
+			struct SW_RFB *prRetainedSwRfb);
+
 void saaChkDeauthfrmParamHandler(struct ADAPTER
 				 *prAdapter, struct SW_RFB *prSwRfb,
 				 struct STA_RECORD *prStaRec);

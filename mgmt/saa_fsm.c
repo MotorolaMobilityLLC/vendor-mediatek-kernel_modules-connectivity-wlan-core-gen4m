@@ -91,9 +91,15 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
 	uint32_t u4AuthAssocState;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	if (!prStaRec)
 		return;
+	else if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON)) {
+		DBGLOG(SAA, WARN, "saaFsmStateAbort, driver is not ready\n");
+		saaFsmStateAbort(prAdapter, prStaRec, prRetainedSwRfb);
+		return;
+	}
 
 	do {
 		u4AuthAssocState = prStaRec->eAuthAssocState;
@@ -1867,11 +1873,7 @@ void saaFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 	cnmMemFree(prAdapter, prMsgHdr);
 
-	/* Reset Send Auth/(Re)Assoc Frame Count */
-	prStaRec->ucTxAuthAssocRetryCount = 0;
-
-	/* Cancel JOIN relative Timer */
-	cnmTimerStopTimer(prAdapter, &prStaRec->rTxReqDoneOrRxRespTimer);
+	saaFsmStateAbort(prAdapter, prStaRec, (struct SW_RFB *) NULL);
 
 	if (prStaRec->eAuthAssocState != AA_STATE_IDLE) {
 		if (prStaRec->eAuthAssocState < AA_STATE_NUM) {
@@ -1888,6 +1890,30 @@ void saaFsmRunEventAbort(struct ADAPTER *prAdapter,
 	cnmStaRecFree(prAdapter, prStaRec);
 #endif
 }				/* end of saaFsmRunEventAbort() */
+
+void saaFsmStateAbort(struct ADAPTER *prAdapter,
+			struct STA_RECORD *prStaRec,
+			struct SW_RFB *prRetainedSwRfb)
+{
+	if (prStaRec) {
+		/* Free allocated TCM memory */
+		if (prStaRec->prChallengeText) {
+			cnmMemFree(prAdapter, prStaRec->prChallengeText);
+			prStaRec->prChallengeText =
+				(struct IE_CHALLENGE_TEXT *) NULL;
+		}
+
+		/* Reset Send Auth/(Re)Assoc Frame Count */
+		prStaRec->ucTxAuthAssocRetryCount = 0;
+
+		/* Cancel JOIN relative Timer */
+		cnmTimerStopTimer(prAdapter,
+				&prStaRec->rTxReqDoneOrRxRespTimer);
+	}
+
+	if (prRetainedSwRfb)
+		nicRxReturnRFB(prAdapter, prRetainedSwRfb);
+}
 
 void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 				    struct MSG_HDR *prMsgHdr)
