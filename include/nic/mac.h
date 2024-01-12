@@ -1021,7 +1021,7 @@
 
 /* 3 Management frame body components (II): Information Elements. */
 /* 7.3.2 Element IDs of information elements */
-#define ELEM_HDR_LEN                                2
+#define ELEM_HDR_LEN                                2U
 
 #define ELEM_ID_SSID \
 	0 /* SSID */
@@ -5159,6 +5159,7 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 #define IE_ID_EXT(fp)           (((struct IE_HDR *) fp)->aucInfo[0])
 #define IE_DATA(fp)             (((struct IE_HDR *) fp)->aucInfo[0])
 #define IE_SIZE(fp)             (ELEM_HDR_LEN + IE_LEN(fp))
+#define IE_SIZE_MAX             257 /* 257 = ELEM_HDR_LEN + IE Body Len */
 #define IE_TAIL(fp)             ((uint8_t *)fp + IE_SIZE(fp))
 
 #define SSID_IE(fp)             ((struct IE_SSID *) fp)

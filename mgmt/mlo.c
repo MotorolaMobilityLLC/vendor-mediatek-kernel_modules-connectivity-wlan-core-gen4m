@@ -2529,7 +2529,8 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
-		len = IE_SIZE(ies[i]);
+		len = kal_min_t(size_t, IE_SIZE(ies[i]), IE_SIZE_MAX);
+
 		if (pos + padding + len > end) {
 			DBGLOG(ML, WARN, "no rx packet space left\n");
 			break;
