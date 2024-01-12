@@ -794,7 +794,7 @@ void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 
 	if (in_interrupt())
 		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize,
-					GFP_ATOMIC);
+					GFP_ATOMIC | __GFP_NOWARN);
 	else
 		prSkb = __dev_alloc_skb(u4Size + u4TxHeadRoomSize,
 					GFP_KERNEL);
