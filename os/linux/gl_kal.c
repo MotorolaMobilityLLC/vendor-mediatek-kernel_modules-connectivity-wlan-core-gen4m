@@ -8188,6 +8188,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, uBssIndex);
 	if (!prAisFsmInfo) {
@@ -8203,7 +8204,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	ndev = prAdapter->prGlueInfo->prDevHandler;
+	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);
 	params.action = NL80211_EXTERNAL_AUTH_START;
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
 	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
