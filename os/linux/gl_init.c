@@ -1466,7 +1466,7 @@ static void wlanCreateWirelessDevice(void)
 	prWdev->iftype = NL80211_IFTYPE_STATION;
 	prWiphy->iface_combinations = p_mtk_iface_combinations_sta;
 	prWiphy->n_iface_combinations = mtk_iface_combinations_sta_num;
-	prWiphy->max_scan_ssids = 1;	/* FIXME: for combo scan */
+	prWiphy->max_scan_ssids = CFG_SCAN_SSID_MAX_NUM;
 	prWiphy->max_scan_ie_len = 512;
 	prWiphy->interface_modes = BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_ADHOC);
 	prWiphy->bands[IEEE80211_BAND_2GHZ] = &mtk_band_2ghz;
