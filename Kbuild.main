@@ -2208,13 +2208,6 @@ else
     ccflags-y += -DCFG_MTK_WIFI_ON_READ_BY_CFG_SPACE=0
 endif
 
-
-ifeq ($(CONFIG_TESTMODE_WMT_WIFI_ON_SUPPORT), y)
-ccflags-y += -DCFG_TESTMODE_WMT_WIFI_ON_SUPPORT=1
-else
-ccflags-y += -DCFG_TESTMODE_WMT_WIFI_ON_SUPPORT=0
-endif
-
 ifeq ($(CONFIG_SUPPORT_TESTMODE_FWDL), y)
 ccflags-y += -DCFG_TESTMODE_FWDL_SUPPORT=1
 else
