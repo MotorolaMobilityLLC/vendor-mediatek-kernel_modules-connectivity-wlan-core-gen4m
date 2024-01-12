@@ -221,8 +221,11 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
 {
-#define TURN_ON_EMI_BACKUP 1
-
+#ifdef MT6653
+	#define TURN_ON_EMI_BACKUP 0
+#else
+	#define TURN_ON_EMI_BACKUP 1
+#endif
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 #if CFG_MTK_ANDROID_EMI
