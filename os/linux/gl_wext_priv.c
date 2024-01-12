@@ -12582,6 +12582,7 @@ static int priv_driver_trigger_whole_chip_reset(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
+	glSetRstReason(RST_CMD_TRIGGER);
 	glSetRstReasonString(
 		"cmd test trigger whole chip reset");
 	if (prChipInfo->trigger_wholechiprst)
@@ -12609,6 +12610,7 @@ static int priv_driver_trigger_wfsys_reset(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
+	glSetRstReason(RST_CMD_TRIGGER);
 	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
 
 	return i4BytesWritten;
