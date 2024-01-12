@@ -3553,14 +3553,15 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 			fgIsLowestRate = TRUE;
 			fgIsHighPrioQ = TRUE;
 		}
-#endif
-#if CFG_SUPPORT_WIFI_SYSDVT && CFG_SUPPORT_TX_MGMT_USE_DATAQ
+
+#if CFG_SUPPORT_WIFI_SYSDVT
 		/* must be the last check action */
 		if (prAdapter->ucTxTestUP != TX_TEST_UP_UNDEF) {
 			fgIsLowestRate = FALSE;
 			fgIsHighPrioQ = FALSE;
 		}
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
+#endif
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
@@ -3572,12 +3573,13 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 			/* Set BSS/STA lowest basic rate */
 			prMsduInfo->ucRateMode = MSDU_RATE_MODE_LOWEST_RATE;
 
-#if CFG_SUPPORT_WIFI_SYSDVT && CFG_SUPPORT_TX_MGMT_USE_DATAQ
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+#if CFG_SUPPORT_WIFI_SYSDVT
 		if (fgIsHighPrioQ)
 			/* Set higher priority */
 			prMsduInfo->ucUserPriority = NIC_TX_CRITICAL_DATA_TID;
 #endif
-#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_802_11_MGMT))
 			prMsduInfo->u8Cookie = GLUE_GET_PKT_COOKIE(prPacket);
 #endif

@@ -3276,6 +3276,8 @@ struct UNI_CMD_MDVT_PARA {
 	uint16_t u2Length;
 	uint16_t u2ModuleId;
 	uint16_t u2CaseId;
+	uint8_t ucCapId;
+	uint8_t ucReserved[3];
 };
 
 __KAL_ATTRIB_PACKED_FRONT__

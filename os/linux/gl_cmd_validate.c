@@ -1536,7 +1536,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_MDVT,
 		.pfHandler = priv_driver_set_mdvt,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
 		.policy    = u32_policy,
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
 	},

@@ -1585,6 +1585,8 @@ struct CMD_ACCESS_REG {
 struct CMD_MDVT_CFG {
 	uint32_t u4ModuleId;
 	uint32_t u4CaseId;
+	uint8_t ucCapId;
+	uint8_t ucReserved[3];
 };
 
 #define COEX_CTRL_BUF_LEN 460

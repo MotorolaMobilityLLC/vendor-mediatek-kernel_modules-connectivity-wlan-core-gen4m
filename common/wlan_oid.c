@@ -16772,6 +16772,7 @@ wlanoidSetMdvt(struct ADAPTER *prAdapter,
 	prMdvtInfo = (struct PARAM_MDVT_STRUCT *)pvSetBuffer;
 	rCmdMdvtCfg.u4ModuleId = prMdvtInfo->u4ModuleId;
 	rCmdMdvtCfg.u4CaseId = prMdvtInfo->u4CaseId;
+	rCmdMdvtCfg.ucCapId = prMdvtInfo->ucCapId;
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_SET_MDVT,
