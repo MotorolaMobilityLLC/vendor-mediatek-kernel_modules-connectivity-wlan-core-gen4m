@@ -2316,4 +2316,8 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 
 int32_t kalGetFwFlavor(uint8_t *flavor);
 
+void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
 #endif /* _GL_KAL_H */

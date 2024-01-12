@@ -2022,6 +2022,122 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 }
 #endif
 
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
+int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
+				 const u8 *buf, size_t len,
+				 const u8 *dest, __be16 proto, bool unencrypted,
+				 int link_id, u64 *cookie)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct sk_buff *prSkb;
+	struct ethhdr *prEthHdr;
+	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+	struct MLD_STA_RECORD *prMldSta;
+#endif
+	uint32_t u4SkbSize, u4TxHeadRoomSize = 0;
+	uint16_t u2QueIdx;
+	uint8_t ucBssIndex;
+	int ret = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(dev);
+	ucBssIndex = prNetDevPrivate->ucBssIdx;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(REQ, ERROR, "Null Bss by idx(%u)\n", ucBssIndex);
+		ret = -EINVAL;
+		goto exit;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prGlueInfo->prAdapter, prBssInfo);
+	prMldSta = mldStarecGetByMldAddr(prGlueInfo->prAdapter, prMldBss,
+					 dest);
+	if (link_id != -1 && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+		u_int8_t fgFound = FALSE;
+
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			if (prTempBss->ucLinkIndex != link_id)
+				continue;
+
+			ucBssIndex = prTempBss->ucBssIndex;
+			fgFound = TRUE;
+			break;
+		}
+		if (fgFound == FALSE)
+			DBGLOG(REQ, WARN, "link not found(%d)\n", link_id);
+	}
+#endif
+
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
+	u4SkbSize = u4TxHeadRoomSize + sizeof(struct ethhdr) + len;
+	prSkb = dev_alloc_skb(u4SkbSize);
+	if (!prSkb) {
+		DBGLOG(REQ, ERROR, "Alloc skb failed, size=%u\n", u4SkbSize);
+		ret = -ENOMEM;
+		goto exit;
+	}
+
+	kalResetPacket(prGlueInfo, prSkb);
+	skb_reserve(prSkb, u4TxHeadRoomSize + sizeof(struct ethhdr));
+	skb_put_data(prSkb, buf, len);
+
+	prEthHdr = skb_push(prSkb, sizeof(struct ethhdr));
+	kalMemCopy(prEthHdr->h_dest, dest, ETH_ALEN);
+	if (link_id == -1)
+		COPY_MAC_ADDR(prEthHdr->h_source, dev->dev_addr);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	else if (prMldSta)
+		COPY_MAC_ADDR(prEthHdr->h_source, prMldBss->aucOwnMldAddr);
+	else
+		COPY_MAC_ADDR(prEthHdr->h_source, prBssInfo->aucOwnMacAddr);
+#endif
+	prEthHdr->h_proto = proto;
+
+	prSkb->dev = dev;
+	prSkb->protocol = proto;
+	u2QueIdx = wlanSelectQueue(dev, prSkb, NULL);
+	skb_set_queue_mapping(prSkb, u2QueIdx);
+
+	GLUE_SET_PKT_TX_COOKIE(prSkb, (uint32_t)prGlueInfo->u8Cookie++);
+	*cookie = (uint64_t)GLUE_GET_PKT_TX_COOKIE(prSkb);
+	GLUE_SET_PKT_CONTROL_PORT_TX(prSkb);
+
+	DBGLOG(REQ, INFO,
+		"%s: [%u] dest="MACSTR" src="MACSTR
+		" proto=0x%x unencrypted=%d link_id=%d cookie=0x%llx\n",
+		dev->name, ucBssIndex, MAC2STR(prEthHdr->h_dest),
+		MAC2STR(prEthHdr->h_source), proto, unencrypted,
+		link_id, *cookie);
+	DBGLOG_MEM8(REQ, LOUD, buf, len);
+
+	kalHardStartXmit(prSkb, dev, prGlueInfo, ucBssIndex);
+
+exit:
+	return ret;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to disconnect from

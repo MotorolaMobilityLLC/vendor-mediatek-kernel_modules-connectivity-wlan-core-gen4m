@@ -2719,5 +2719,9 @@ void kalRxWorkSchedule(struct GLUE_INFO *pr);
 void kalSetPcieGen(struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
 
+void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
 #endif /* _GL_KAL_H */
 

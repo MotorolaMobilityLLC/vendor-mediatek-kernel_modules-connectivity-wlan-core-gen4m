@@ -16551,3 +16551,54 @@ void kalSetPcieGen(struct ADAPTER *prAdapter)
 	}
 }
 #endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
+
+void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
+	struct mt66xx_chip_info *prChipInfo;
+	struct net_device *prNetDev;
+	struct wireless_dev *prWdev;
+	uint8_t *pucData = NULL;
+	uint64_t u8Cookie;
+	uint32_t u4TxHeadRoomSize = 0;
+	size_t u4Len;
+
+	if (!prAdapter || !prMsduInfo)
+		return;
+
+	prChipInfo = prAdapter->chip_info;
+	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
+	prNetDev = wlanGetNetDev(prAdapter->prGlueInfo,
+				 prMsduInfo->ucBssIndex);
+	if (!prNetDev) {
+		DBGLOG(TX, ERROR, "invalid bss idx(%u)\n",
+			prMsduInfo->ucBssIndex);
+		return;
+	}
+
+	prWdev = prNetDev->ieee80211_ptr;
+	if (!(wiphy_ext_feature_isset(prWdev->wiphy,
+		NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211_TX_STATUS)))
+		return;
+
+	kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+	if (!pucData) {
+		DBGLOG(TX, ERROR, "invalid skb data\n");
+		return;
+	}
+
+	u8Cookie = (uint64_t)GLUE_GET_PKT_TX_COOKIE(prMsduInfo->prPacket);
+	pucData += u4TxHeadRoomSize;
+	u4Len = kalQueryPacketLength(prMsduInfo->prPacket) - u4TxHeadRoomSize;
+
+	DBGLOG(TX, INFO, "%s: cookie=0x%llx len=%zu status=%d\n",
+		prNetDev->name, u8Cookie, u4Len, rTxDoneStatus);
+
+	cfg80211_control_port_tx_status(prWdev, u8Cookie, pucData, u4Len,
+		rTxDoneStatus == TX_RESULT_SUCCESS, GFP_ATOMIC);
+#endif
+}
