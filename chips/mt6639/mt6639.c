@@ -733,6 +733,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if (CFG_SUPPORT_DEBUG_SOP == 0)
 	.dumpBusHangCr = mt6639_DumpBusHangCr,
 	.dumpPcieStatus = mt6639DumpPcieDateFlowStatus,
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	.dumpPcieCr = mt6639_dumpPcieReg,
+#endif
 #endif
 #endif
 #if (CFG_SUPPORT_DEBUG_SOP == 1)

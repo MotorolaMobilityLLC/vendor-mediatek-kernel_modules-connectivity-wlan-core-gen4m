@@ -51,6 +51,10 @@
 #include "mt66xx_reg.h"
 #include "wlan_pinctrl.h"
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -665,6 +669,9 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 			if (vnd_id == 0) {
 				DBGLOG(HAL, WARN, "PCIE link down\n");
 				fgIsBusAccessFailed = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+				fgTriggerDebugSop = TRUE;
+#endif
 			} else {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
@@ -675,6 +682,9 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		pci_disable_device(pdev);
 		fgNeedReset = TRUE;
 		fgIsBusAccessFailed = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		fgTriggerDebugSop = TRUE;
+#endif
 	}
 
 exit:
@@ -1249,11 +1259,13 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	}
 
 	fgIsBusAccessFailed = FALSE;
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	fgTriggerDebugSop = FALSE;
+#endif
 #if CFG_MTK_WIFI_AER_RESET
 	g_AERRstTriggered = FALSE;
 	g_AERL05Rst = FALSE;
 #endif
-
 	pci_set_master(pdev);
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_MSI_SUPPORT)
@@ -2981,6 +2993,43 @@ int32_t glBusFuncOn(void)
 	}
 
 	if (g_fgDriverProbed == FALSE) {
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		struct mt66xx_chip_info *prChipInfo = NULL;
+		struct CHIP_DBG_OPS *prDbgOps = NULL;
+
+		glGetChipInfo((void **)&prChipInfo);
+		if (prChipInfo == NULL) {
+			DBGLOG(HAL, ERROR, "prChipInfo in NULL\n");
+			goto exit_dump;
+		}
+
+		prDbgOps = prChipInfo->prDebugOps;
+		if (prDbgOps == NULL) {
+			DBGLOG(HAL, ERROR, "prDebugOps in NULL\n");
+			goto exit_dump;
+		}
+
+		/* Notify BT to start */
+		ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
+			goto exit_dump;
+		}
+
+		if (prDbgOps->dumpPcieCr)
+			prDbgOps->dumpPcieCr();
+
+		/* Notify BT to end */
+		ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
+			goto exit_dump;
+		}
+
+exit_dump:
+#endif
 		pci_unregister_driver(&mtk_pci_driver);
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		mtk_pcie_remove_port(0);

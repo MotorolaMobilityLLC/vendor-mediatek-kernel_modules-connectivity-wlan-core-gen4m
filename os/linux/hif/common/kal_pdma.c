@@ -80,7 +80,12 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo,
 				struct list_head *prHead);
 static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
 				struct list_head *prHead);
-
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
+				uint32_t u4Register, uint32_t *pu4Value);
+static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
+				uint32_t u4Register, uint32_t u4Value);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -608,6 +613,246 @@ static u_int8_t kalIsHostReg(struct mt66xx_chip_info *prChipInfo,
 			  prChipInfo->u4HostCsrSize));
 }
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t *pu4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BusAddr = 0;
+	int ret = 0;
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		ASSERT(prAdapter);
+	}
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr) ||
+		IS_CONN_INFRA_MCU_ADDR(u4Register) ||
+		IS_CBTOP_PHY_ADDR(u4Register)) {
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Read success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, *pu4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Read fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+		return FALSE;
+	} else if (IS_CONN_INFRA_PHY_ADDR(u4Register) ||
+		IS_WFSYS_PHY_ADDR(u4Register) ||
+		IS_BGFSYS_PHY_ADDR(u4Register)) {
+
+		/* Mapping to FW view addr */
+		u4Register += CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET;
+
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Read success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, *pu4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Read fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+		return FALSE;
+	} else if (IS_CONN_MCU_CONFG_CFG_DBG1_ADDR(u4Register)) {
+		/* AP2WF fixed remap */
+		u4Register -= AP2WF_FIXED_REMAP_OFFSET;
+
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Read success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, *pu4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Read fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+		return FALSE;
+	} else if (IS_CONN_MCU_BUS_CR_ADDR(u4Register)) {
+		/* Dynamic remap */
+		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT,
+			AP2WF_DYNAMIC_REMAP_NO_1,
+			CONN_MCU_BUS_CR_BASE_ADDR);
+		u4Register &= BITS(0, 15);
+		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
+
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Read success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, *pu4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Read fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+		return FALSE;
+	} else if (IS_WF_MCUSYS_VDNR_ADDR(u4Register)) {
+		/* Dynamic remap */
+		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT,
+			AP2WF_DYNAMIC_REMAP_NO_1,
+			WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_START);
+		u4Register &= BITS(0, 15);
+		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
+
+		ret = connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, pu4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Read success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, *pu4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Read fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, *pu4Value);
+		return FALSE;
+	}
+	DBGLOG(HAL, ERROR,
+		"Invalid address: CR[0x%08x] value[0x%08x]\n",
+		u4Register, *pu4Value);
+
+	return FALSE;
+}
+
+static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t u4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t u4BusAddr = 0;
+	int ret = 0;
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		ASSERT(prAdapter);
+	}
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr) ||
+		IS_CONN_INFRA_MCU_ADDR(u4Register) ||
+		IS_CBTOP_PHY_ADDR(u4Register)) {
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Write success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, u4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Write fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, u4Value);
+		return FALSE;
+	} else if (IS_CONN_INFRA_PHY_ADDR(u4Register) ||
+		IS_WFSYS_PHY_ADDR(u4Register) ||
+		IS_BGFSYS_PHY_ADDR(u4Register)) {
+
+		/* Mapping to FW view addr */
+		u4Register += CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET;
+
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Write success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, u4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Write fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, u4Value);
+		return FALSE;
+	} else if (IS_CONN_MCU_CONFG_CFG_DBG1_ADDR(u4Register)) {
+		/* AP2WF fixed remap */
+		u4Register -= AP2WF_FIXED_REMAP_OFFSET;
+
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Write success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, u4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Write fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, u4Value);
+		return FALSE;
+	} else if (IS_CONN_MCU_BUS_CR_ADDR(u4Register)) {
+		/* Dynamic remap */
+		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT,
+			AP2WF_DYNAMIC_REMAP_NO_1,
+			CONN_MCU_BUS_CR_BASE_ADDR);
+		u4Register &= BITS(0, 15);
+		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
+
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Write success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, u4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Write fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, u4Value);
+		return FALSE;
+	} else if (IS_WF_MCUSYS_VDNR_ADDR(u4Register)) {
+		/* Dynamic remap */
+		connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT,
+			AP2WF_DYNAMIC_REMAP_NO_1,
+			WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_START);
+		u4Register &= BITS(0, 15);
+		u4Register |= AP2WF_DYNAMIC_REMAP_NO_1_BASE_ADDR;
+
+		ret = connv3_hif_dbg_write(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT, u4Register, u4Value);
+		if (ret == 0) {
+			DBGLOG(HAL, INFO,
+				"Write success: CR[0x%08x] value[0x%08x]\n",
+				u4Register, u4Value);
+			return TRUE;
+		}
+		DBGLOG(HAL, ERROR,
+			"Write fail: CR[0x%08x] value[0x%08x]\n",
+			u4Register, u4Value);
+		return FALSE;
+	}
+	DBGLOG(HAL, ERROR,
+		"Invalid address: CR[0x%08x] value[0x%08x]\n",
+		u4Register, u4Value);
+
+	return FALSE;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read a 32-bit device register
@@ -648,6 +893,12 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegReadViaBT(prGlueInfo,
+				u4Register, pu4Value);
+		}
+#endif
 		return FALSE;
 	}
 
@@ -734,6 +985,12 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegWriteViaBT(prGlueInfo,
+				u4Register, u4Value);
+		}
+#endif
 		return FALSE;
 	}
 
@@ -2105,6 +2362,13 @@ int32_t wf_reg_read_wrapper(void *priv,
 		goto exit;
 	}
 
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	HAL_MCR_RD(ad, addr, value);
 
 exit:
@@ -2128,6 +2392,13 @@ int32_t wf_reg_write_wrapper(void *priv,
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"HIF is not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -2160,6 +2431,13 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 		goto exit;
 	}
 
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	HAL_MCR_RD(ad, addr, &val);
 	val &= ~mask;
 	val |= value;
@@ -2176,17 +2454,17 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 	struct ADAPTER *prAdapter = NULL;
 	int32_t ret = 0;
 
-	/* Check PCIE status */
-
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		ret = -EFAULT;
 		goto exit;
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		ret = -EFAULT;
 		goto exit;
 	}
 
@@ -2197,7 +2475,21 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
 		goto exit;
 	}
 
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	halSetDriverOwn(prAdapter);
+	if (prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"Driver own fail.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
 			prAdapter->u4PwrCtrlBlockCnt);
 
@@ -2215,18 +2507,27 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		ret = -EFAULT;
 		goto exit;
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		ret = -EFAULT;
 		goto exit;
 	}
 
 	if (kalIsHalted()) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"Driver in halted state.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (fgIsBusAccessFailed && fgTriggerDebugSop) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
