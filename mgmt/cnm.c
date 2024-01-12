@@ -1879,7 +1879,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	if (ucMaxBandwidth > ucChannelBw)
 		ucMaxBandwidth = ucChannelBw;
 #endif
-	DBGLOG_LIMITED(CNM, INFO, "pCH=%d, BW=%d\n",
+	DBGLOG_LIMITED(CNM, TRACE, "pCH=%d, BW=%d\n",
 		prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
 
 	return ucMaxBandwidth;
@@ -4202,7 +4202,7 @@ u_int8_t cnmP2pIsActive(IN struct ADAPTER *prAdapter)
 	uint8_t ret;
 
 	ret = (cnmGetP2pBssInfo(prAdapter) != NULL);
-	DBGLOG(CNM, INFO, "P2p is %s\n", ret ? "ACTIVE" : "INACTIVE");
+	DBGLOG(CNM, TRACE, "P2p is %s\n", ret ? "ACTIVE" : "INACTIVE");
 	return ret;
 }
 
