@@ -548,6 +548,8 @@ void nic_txd_v3_compose(
 	if (prMsduInfo->ucStaRecIndex != STA_REC_INDEX_BMCAST)
 		HAL_MAC_CONNAC3X_TXD_SET_DA_SRC_SELECTION(prTxDesc);
 
+	HAL_MAC_CONNAC3X_TXD_SET_VALID_TXD_ARRIVAL_TIME(prTxDesc);
+
 	/** DW7 **/
 	HAL_MAC_CONNAC3X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
 
@@ -567,6 +569,12 @@ void nic_txd_v3_compose(
 	default:
 		break;
 	}
+
+	/* Fix dependent fields */
+#if CFG_WIFI_TX_FIXED_RATE_NO_VTA
+	if (HAL_MAC_CONNAC3X_TXD_IS_FIXED_RATE_ENABLE(prTxDesc))
+		HAL_MAC_CONNAC3X_TXD_UNSET_VALID_TXD_ARRIVAL_TIME(prTxDesc);
+#endif
 }
 
 void nic_txd_v3_set_pkt_fixed_rate_option(
