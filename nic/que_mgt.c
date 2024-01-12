@@ -1698,6 +1698,9 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				prStaRec->ucBssIndex);
 
+			if (!prBssInfo)
+				goto NEXT;
+
 			/* prCurrQueue = &prStaRec->aprTxQueue[ucTC]; */
 			prDequeuedPkt = NULL;
 			pucPsStaFreeQuota = NULL;
@@ -1743,7 +1746,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 
 			/* fgIsInPS */
 			/* Absent BSS handling */
-			if (prBssInfo && isNetAbsent(prAdapter, prBssInfo)) {
+			if (isNetAbsent(prAdapter, prBssInfo)) {
 				if (u4MaxForwardFrameCountLimit >
 					prBssInfo->ucBssFreeQuota)
 					u4MaxForwardFrameCountLimit =
@@ -1768,8 +1771,8 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				** packets
 				*/
 				if (QUEUE_IS_EMPTY(prCurrQueue) ||
-				    !wmmAcmCanDequeue(prAdapter, ucAc, 0,
-				    prBssInfo->ucBssIndex))
+				    !wmmAcmCanDequeue(prAdapter, ucAc,
+				    0, prBssInfo->ucBssIndex))
 					goto skip_dequeue;
 				fgAcmFlowCtrl = TRUE;
 			} else
@@ -1921,8 +1924,7 @@ skip_dequeue:
 					(*pucPsStaFreeQuota) = 0;
 			}
 
-			if (prBssInfo &&
-				isNetAbsent(prAdapter, prBssInfo)) {
+			if (isNetAbsent(prAdapter, prBssInfo)) {
 				if (prBssInfo->ucBssFreeQuota >=
 					u4CurStaForwardFrameCount)
 					prBssInfo->ucBssFreeQuota -=
@@ -1937,9 +1939,7 @@ skip_dequeue:
 			break;
 		}
 
-#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 NEXT:
-#endif
 		/* Prepare for next STA */
 		ucLoop++;
 		u4CurStaIndex++;
