@@ -6405,8 +6405,9 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 						rRmtChnlInfo) !=
 						CNM_CH_CONCURR_MCC)) {
 						fgFound = TRUE;
-						u4DefCrbNum--;
-						break;
+					if (u4AvailDbIdx == 0)
+					u4DefCrbNum--;
+					continue;
 					} else if (rLocalChnlInfo.rChannel
 						   .u4PrimaryChnl != 0) {
 						continue;
@@ -6425,8 +6426,9 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 						FALSE, NULL);
 
 						fgFound = TRUE;
-						u4DefCrbNum--;
-						break;
+					if (u4AvailDbIdx == 0)
+					u4DefCrbNum--;
+					continue;
 					}
 				}
 			}
