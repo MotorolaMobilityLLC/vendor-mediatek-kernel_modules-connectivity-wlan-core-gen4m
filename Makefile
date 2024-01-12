@@ -1474,10 +1474,12 @@ endif
 # ---------------------------------------------------
 MTK_WLAN_SERVICE_PATH  := wlan_service/
 
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 ifneq ($(findstring wlan_service,$(MTK_WLAN_SERVICE_PATH)),)
 MTK_WLAN_SERVICE=yes
 SERVICE_DIR  := $(MTK_WLAN_SERVICE_PATH)
 $(info SERVICE_DIR is [{$(MTK_WLAN_SERVICE_PATH)}])
+endif
 endif
 
 ifeq ($(MTK_WLAN_SERVICE), yes)
