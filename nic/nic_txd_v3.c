@@ -405,10 +405,10 @@ void nic_txd_v3_compose(
 			/* For cmd packet, ALTXQ(16) will send to q0,
 			 * due to hw just see bit 0:1, so if need send to CPU q1
 			 * and forward to ALTXQ, need set with ALTXQ(16) +
-			 * MCUQ1(1), FW have correpond change will revise Q
+			 * MCUQ1(0x1), FW have correpond change will revise Q
 			 * to ALTXQ(16).
 			 */
-			ucTarQueue |= MCU_Q1_INDEX;
+			ucTarQueue |= 0x1;
 	} else {
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
 
@@ -420,7 +420,7 @@ void nic_txd_v3_compose(
 		 */
 		else if (ucTarPort == PORT_INDEX_MCU &&
 		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
-			ucTarQueue = MCU_Q1_INDEX;
+			ucTarQueue = 0x1;
 	}
 
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
