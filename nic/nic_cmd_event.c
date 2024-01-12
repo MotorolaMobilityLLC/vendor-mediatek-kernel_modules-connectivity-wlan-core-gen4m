@@ -5177,6 +5177,7 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
 }
 
+#if CFG_SUPPORT_TDLS
 void nicEventTdls(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent)
 {
@@ -5184,6 +5185,7 @@ void nicEventTdls(IN struct ADAPTER *prAdapter,
 			  (uint8_t *)prEvent->aucBuffer,
 			  (uint32_t)(prEvent->u2PacketLength - 8));
 }
+#endif
 
 void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent)

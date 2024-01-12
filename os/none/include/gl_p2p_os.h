@@ -367,7 +367,7 @@ void p2PFreeMemSafe(struct GLUE_INFO *prGlueInfo,
 void p2pSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 void p2pResumeStatisticsTimer(struct GLUE_INFO *prGlueInfo,
-	struct net_device *prNetDev);
+	void *prNetDev);
 #endif
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo);
 void glP2pDestroyWirelessDevice(void);

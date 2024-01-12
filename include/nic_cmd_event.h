@@ -4416,8 +4416,10 @@ void nicEventCalAllDone(IN struct ADAPTER *prAdapter,
 
 void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
+#if CFG_SUPPORT_TDLS
 void nicEventTdls(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
+#endif
 void nicEventRssiMonitor(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 void nicEventDumpMem(IN struct ADAPTER *prAdapter,
@@ -4494,7 +4496,6 @@ void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
 
 void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
-
 #if (CFG_WOW_SUPPORT == 1)
 void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
