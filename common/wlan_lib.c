@@ -8137,6 +8137,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4CC2Region = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "CC2Region", FEATURE_ENABLED);
 
+	prWifiVar->u4ApChnlHoldTime = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ApChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
