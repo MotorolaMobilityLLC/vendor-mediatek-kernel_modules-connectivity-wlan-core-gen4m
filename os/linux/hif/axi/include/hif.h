@@ -202,7 +202,7 @@ struct GL_HIF_INFO {
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
-	u_int64_t rSerTimerData;
+	unsigned long rSerTimerData;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
 	uint32_t u4TxDataQLen;

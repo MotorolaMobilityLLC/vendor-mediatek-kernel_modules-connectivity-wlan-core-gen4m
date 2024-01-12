@@ -5544,10 +5544,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		case FAIL_BY_RESET:
 		case FAIL_MET_INIT_PROCFS:
 			kalMetRemoveProcfs();
+			/* fallthrough */
 		case PROC_INIT_FAIL:
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
 			wlanUnregisterInetAddrNotifier();
+			/* fallthrough */
 		case NET_REGISTER_FAIL:
 			set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
 #if CFG_SUPPORT_MULTITHREAD
