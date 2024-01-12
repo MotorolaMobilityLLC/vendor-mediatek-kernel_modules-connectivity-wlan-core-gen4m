@@ -1253,7 +1253,7 @@ kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo,
 
 			kalMemZero(&rStationInfo, sizeof(rStationInfo));
 
-#if KERNEL_VERSION(4, 4, 0) > CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 0, 0) > CFG80211_VERSION_CODE
 			rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
 #endif
 			rStationInfo.generation = ++prP2pGlueInfo->i4Generation;
