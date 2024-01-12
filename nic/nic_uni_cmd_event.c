@@ -3710,6 +3710,7 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 	uint8_t *pos;
 	uint32_t max_cmd_len = 0;
 	int i;
+	uint16_t widx = 0;
 
 	if (info->ucCID != CMD_ID_UPDATE_STA_RECORD ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -3727,8 +3728,8 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 	pos = entry->pucInfoBuffer;
 	uni_cmd = (struct UNI_CMD_STAREC *) pos;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
-	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		cmd->ucWlanIndex);
+	widx = (uint16_t) cmd->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
 	pos += sizeof(*uni_cmd);
 	for (i = 0; i < ARRAY_SIZE(arUpdateStaRecTable); i++)
 		pos += arUpdateStaRecTable[i].pfHandler(ad, pos, cmd);
@@ -4428,6 +4429,7 @@ uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 	     		       sizeof(struct UNI_CMD_STAREC_INSTALL_KEY3);
+	uint16_t widx = 0;
 
 	if (info->ucCID != CMD_ID_ADD_REMOVE_KEY ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -4442,8 +4444,8 @@ uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIdx;
-	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		cmd->ucWlanIndex);
+	widx = (uint16_t) cmd->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
 	tag = (struct UNI_CMD_STAREC_INSTALL_KEY3 *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_STAREC_TAG_INSTALL_KEY_V3;
 	tag->u2Length = sizeof(*tag);
@@ -4476,6 +4478,7 @@ uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 	     		       sizeof(struct UNI_CMD_STAREC_DEFAULT_KEY);
+	uint16_t widx = 0;
 
 	if (info->ucCID != CMD_ID_DEFAULT_KEY_ID ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
@@ -4489,8 +4492,8 @@ uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIdx;
-	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		cmd->ucWlanIndex);
+	widx = (uint16_t) cmd->ucWlanIndex;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
 	tag = (struct UNI_CMD_STAREC_DEFAULT_KEY *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_STAREC_TAG_INSTALL_DEFAULT_KEY;
 	tag->u2Length = sizeof(*tag);
