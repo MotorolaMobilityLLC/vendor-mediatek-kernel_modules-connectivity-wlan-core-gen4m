@@ -194,6 +194,11 @@ static int mtk_usb_bulk_out_msg(struct GL_HIF_INFO *prHifInfo, uint32_t len,
 ********************************************************************************
 */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data(void)
+{
+	return (struct mt66xx_hif_driver_data *) mtk_usb_ids[0].driver_info;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This function is a USB probe function
@@ -2019,7 +2024,7 @@ enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	return CMD_TX_RESULT_SUCCESS;
 }
 
-void glGetDev(void *ctx, struct device **dev)
+void glGetDev(void *ctx, void **dev)
 {
 	struct usb_interface *prUsbIntf = (struct usb_interface *) ctx;
 	struct usb_device *prUsbDev = interface_to_usbdev(prUsbIntf);
@@ -2030,6 +2035,17 @@ void glGetDev(void *ctx, struct device **dev)
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 {
 	*dev = &(prHif->udev->dev);
+}
+
+void glGetChipInfo(void **prChipInfo)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+
+	prDriverData = get_platform_driver_data();
+	if (!prDriverData)
+		return;
+
+	*prChipInfo = (void *)prDriverData->chip_info;
 }
 
 #if CFG_CHIP_RESET_SUPPORT

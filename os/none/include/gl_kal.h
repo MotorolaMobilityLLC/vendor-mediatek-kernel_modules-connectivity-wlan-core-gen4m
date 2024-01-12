@@ -1677,13 +1677,15 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT
 /* used only under os folder */
-#define kalRequestFirmware(_pucPath, _pucData, _u4Size, _pu4ReadSize, _dev) \
+#define kalRequestFirmware(_pucPath, _pucData, _pu4ReadSize, \
+		_ucIsZeroPadding, _dev) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 /* used only under os folder */
 int32_t kalRequestFirmware(const uint8_t *pucPath,
-			   uint8_t *pucData,
-			   uint32_t u4Size, uint32_t *pu4ReadSize,
+			   uint8_t **pucData,
+			   uint32_t *pu4ReadSize,
+			   uint8_t ucIsZeroPadding,
 			   void *dev);
 #endif
 /*----------------------------------------------------------------------------*/

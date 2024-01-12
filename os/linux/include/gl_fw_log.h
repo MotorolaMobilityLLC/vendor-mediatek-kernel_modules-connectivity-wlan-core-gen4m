@@ -8,15 +8,18 @@
 
 #define FW_LOG_WIFI_INF_NAME "fw_log_wifi"
 
-#define WIFI_FW_LOG_IOC_MAGIC		(0xfc)
-#define WIFI_FW_LOG_IOCTL_ON_OFF	_IOW(WIFI_FW_LOG_IOC_MAGIC, 0, int)
-#define WIFI_FW_LOG_IOCTL_SET_LEVEL	_IOW(WIFI_FW_LOG_IOC_MAGIC, 1, int)
+#define WIFI_FW_LOG_IOC_MAGIC         (0xfc)
+#define WIFI_FW_LOG_IOCTL_ON_OFF      _IOW(WIFI_FW_LOG_IOC_MAGIC, 0, int)
+#define WIFI_FW_LOG_IOCTL_SET_LEVEL   _IOW(WIFI_FW_LOG_IOC_MAGIC, 1, int)
+#define WIFI_FW_LOG_IOCTL_GET_VERSION _IOR(WIFI_FW_LOG_IOC_MAGIC, 2, char*)
 
 #define WIFI_FW_LOG_CMD_ON_OFF		0
 #define WIFI_FW_LOG_CMD_SET_LEVEL	1
 
 #define RING_BUFFER_SIZE_WF_MCU		0x20000
 #define RING_BUFFER_SIZE_WF_FW		0x20000
+
+#define MANIFEST_BUFFER_SIZE        256
 
 struct fw_log_wifi_interface {
 	struct cdev cdev;
@@ -26,6 +29,11 @@ struct fw_log_wifi_interface {
 	wait_queue_head_t wq;
 	struct semaphore ioctl_mtx;
 	void (*cb)(int, int);
+
+	/* for query fw version */
+	char ver_name[MANIFEST_BUFFER_SIZE];
+	int ver_length;
+	struct work_struct getFwVerQ;
 };
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH

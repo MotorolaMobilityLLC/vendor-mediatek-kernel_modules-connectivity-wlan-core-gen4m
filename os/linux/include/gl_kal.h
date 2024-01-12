@@ -1906,8 +1906,9 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
 /* file opetation                                                             */
 /*----------------------------------------------------------------------------*/
 int32_t kalRequestFirmware(const uint8_t *pucPath,
-			   uint8_t *pucData,
-			   uint32_t u4Size, uint32_t *pu4ReadSize,
+			   uint8_t **pucData,
+			   uint32_t *pu4ReadSize,
+			   uint8_t ucIsZeroPadding,
 			   struct device *dev);
 
 
@@ -2093,7 +2094,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 #endif
 int32_t kalSetCpuNumFreq(uint32_t u4CoreNum,
 			 uint32_t u4Freq);
-int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor);
+int32_t kalGetFwFlavor(uint8_t *flavor);
 int32_t kalGetFwFlavorByPlat(uint8_t *flavor);
 int32_t kalGetConnsysVerId(void);
 int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag);

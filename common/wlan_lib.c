@@ -12028,15 +12028,6 @@ uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf)
 }
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
-int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
-	const uint8_t *pcFileName, uint8_t *pucBuf,
-	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen)
-{
-	return kalRequestFirmware(pcFileName, pucBuf,
-			 u4MaxFileLen, pu4ReadFileLen,
-			kalGetGlueDevHdl(prAdapter->prGlueInfo));
-}
-
 void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
 {
 	struct QUE *prCmdQue;
