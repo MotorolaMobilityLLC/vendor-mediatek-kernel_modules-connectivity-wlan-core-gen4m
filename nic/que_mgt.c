@@ -3159,7 +3159,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						(uint8_t *)
 						prCurrSwRfb->pvHeader,
 						(prCurrSwRfb->
-						u2PacketLen > 64) ? 64 :
+						u2PacketLen > 32) ? 32 :
 						prCurrSwRfb->
 						u2PacketLen);
 				if (prAisBssInfo
