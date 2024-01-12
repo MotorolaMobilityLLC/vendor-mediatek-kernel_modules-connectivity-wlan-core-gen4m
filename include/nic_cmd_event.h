@@ -2808,6 +2808,18 @@ struct CMD_TDLS_PS_T {
 	uint8_t	aucReserved[3];
 };
 
+/** struct for power rate control command **/
+struct CMD_POWER_RATE_TXPOWER_CTRL_T {
+	uint8_t u1PowerCtrlFormatId;
+	uint8_t u1PhyMode;
+	uint8_t u1TxRate;
+	uint8_t u1BW;
+	uint8_t u1BandIdx;
+	int8_t  i1TxPower;
+	uint8_t u1Reserved[2];
+};
+
+
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 struct CMD_TX_POWER_SHOW_INFO_T {
 	uint8_t ucPowerCtrlFormatId;
