@@ -382,6 +382,10 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 		prCmdScanReq->ucScnFuncMask,
 		prCmdScanReq->aucRandomMac);
 
+	scanLogCacheFlushAll(&(prScanInfo->rScanLogCache),
+		LOG_SCAN_REQ_D2F, SCAN_LOG_MSG_MAX_LEN);
+	scanReqLog(prCmdScanReq);
+
 	wlanSendSetQueryCmd(prAdapter,
 		CMD_ID_SCAN_REQ_V2,
 		TRUE,
@@ -474,6 +478,10 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 			rCmdScanCancel.ucSeqNum = prScanParam->ucSeqNum;
 			rCmdScanCancel.ucIsExtChannel
 				= (uint8_t) prScanCancel->fgIsChannelExt;
+
+			scanlog_dbg(LOG_SCAN_ABORT_REQ_D2F, INFO, "Scan Abort#%u to Q: isExtCh=%u",
+				rCmdScanCancel.ucSeqNum,
+				rCmdScanCancel.ucIsExtChannel);
 
 			wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SCAN_CANCEL,
@@ -790,13 +798,16 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 #undef __LOCAL_VAR__
 
 	if (fgIsNewVersion) {
-		log_dbg(SCN, INFO, "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
+		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "scnEventScanDone Version%u!size of ScanDone%zu,ucCompleteChanCount[%u],ucCurrentState%u, u4ScanDurBcnCnt[%u],Seq[%u]\n",
 			prScanDone->ucScanDoneVersion,
 			sizeof(struct EVENT_SCAN_DONE),
 			prScanDone->ucCompleteChanCount,
 			prScanDone->ucCurrentState,
 			prScanDone->u4ScanDurBcnCnt,
 			prScanDone->ucSeqNum);
+
+		scanLogCacheFlushBSS(&(prScanInfo->rScanLogCache.rBSSListFW),
+			LOG_SCAN_DONE_F2D, SCAN_LOG_MSG_MAX_LEN);
 
 		if (prScanDone->ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {
 			log_dbg(SCN, INFO, "FW Scan timeout!generate ScanDone event at State%d complete chan count%d ucChannelListNum%d\n",
@@ -808,7 +819,7 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 			log_dbg(SCN, TRACE, " scnEventScanDone at FW_SCAN_STATE_SCAN_DONE state\n");
 		}
 	} else {
-		log_dbg(SCN, INFO, "Old scnEventScanDone Version\n");
+		scanlog_dbg(LOG_SCAN_DONE_F2D, INFO, "Old scnEventScanDone Version\n");
 	}
 
 	/* buffer empty channel information */
@@ -1035,7 +1046,7 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 
 	if (prScanInfo->fgSchedScanning == TRUE) {
 
-		log_dbg(SCN, INFO, "scnEventSchedScanDone seq %u\n",
+		scanlog_dbg(LOG_SCHED_SCAN_DONE_F2D, INFO, "scnEventSchedScanDone seq %u\n",
 			prSchedScanDone->ucSeqNum);
 
 		kalSchedScanResults(prAdapter->prGlueInfo);
@@ -1047,7 +1058,7 @@ void scnEventSchedScanDone(IN struct ADAPTER *prAdapter,
 			prScanInfo->fgSchedScanning = FALSE;
 		}
 	} else {
-		log_dbg(SCN, INFO, "Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n",
+		scanlog_dbg(LOG_SCHED_SCAN_DONE_F2D, INFO, "Unexpected SCHEDSCANDONE event: Seq = %u, Current State = %d\n",
 			prSchedScanDone->ucSeqNum, prScanInfo->eCurrentState);
 	}
 }
@@ -1277,8 +1288,13 @@ scnFsmSchedScanSetAction(IN struct ADAPTER *prAdapter,
 	/* 0:enable, 1:disable */
 	rCmdSchedScanAction.ucSchedScanAct = ucSchedScanAct;
 
-	log_dbg(SCN, INFO, "sched scan action = %d\n",
-		rCmdSchedScanAction.ucSchedScanAct);
+	if (ucSchedScanAct == SCHED_SCAN_ACT_ENABLE) {
+		scanlog_dbg(LOG_SCHED_SCAN_REQ_START_D2F, INFO, "sched scan action = %d\n",
+			rCmdSchedScanAction.ucSchedScanAct);
+	} else {
+		scanlog_dbg(LOG_SCHED_SCAN_REQ_STOP_D2F, INFO, "sched scan action = %d\n",
+			rCmdSchedScanAction.ucSchedScanAct);
+	}
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,
 			    CMD_ID_SET_SCHED_SCAN_ENABLE,
