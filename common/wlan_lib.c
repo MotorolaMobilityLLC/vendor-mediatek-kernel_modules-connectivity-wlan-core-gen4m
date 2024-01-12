@@ -7187,6 +7187,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"MoveWinOnMissingLast", !RX_REORDER_WAIT_FOR_LAST_FRAG);
 	INIT_UINT(prWifiVar->u2BaExtSize,
 		"BaExtSize", WLAN_RX_BA_EXT_SIZE);
+	INIT_UINT(prWifiVar->u4AisEHTNumber,
+		"AisEHTNumber", KAL_AIS_NUM);
 	if (prWifiVar->u2BaExtSize > WLAN_RX_BA_EXT_MAX_SIZE)
 		prWifiVar->u2BaExtSize = WLAN_RX_BA_EXT_MAX_SIZE;
 	INIT_UINT(prWifiVar->u4BaVerboseLogging, "BaVerboseLog", 0);
