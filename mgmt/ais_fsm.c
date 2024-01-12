@@ -3440,6 +3440,7 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 
 		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
 
+		aisRestoreAllLink(prAdapter, prAisFsmInfo);
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
 		SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
@@ -3459,8 +3460,6 @@ uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
 		eNextState = AIS_STATE_IDLE;
 	}
-
-	aisRestoreAllLink(prAdapter, prAisFsmInfo);
 
 	return eNextState;
 }
