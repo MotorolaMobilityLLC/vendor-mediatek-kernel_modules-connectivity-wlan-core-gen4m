@@ -200,14 +200,15 @@
 
 #define HIF_DEFAULT_BSS_FREE_CNT	64
 
+#define HIF_FLAG_SW_WFDMA_INT		BIT(0)
+#define HIF_FLAG_SW_WFDMA_INT_BIT	(0)
+
 #define SW_WFDMA_CMD_NUM		4
 #define SW_WFDMA_CMD_PKT_SIZE		1600
 #define SW_WFDMA_EMI_SIZE \
 	(SW_WFDMA_CMD_NUM * SW_WFDMA_CMD_PKT_SIZE + 8)
 #define SW_WFDMA_MAX_RETRY_COUNT	100
 #define SW_WFDMA_RETRY_TIME		10
-#define SW_WFDMA_FLAG_INT		BIT(0)
-#define SW_WFDMA_FLAG_INT_BIT		(0)
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -478,7 +479,6 @@ struct SW_WFDMA_INFO {
 	struct SW_WFDMA_OPS rOps;
 	struct SW_WFDMAD *prDmad;
 	struct SW_WFDMAD rBackup;
-	unsigned long ulIntFlag;
 	bool fgIsEnSwWfdma;
 	bool fgIsEnAfterFwdl;
 	void *pucIoremapAddr;
