@@ -179,10 +179,6 @@
 #define CFG_SUPPORT_CFG_FILE	1
 #endif
 
-/*!< 1(default): Enable 802.11d */
-#define CFG_SUPPORT_802_11D	1
-/* 0: Disable */
-
 /* Radio Reasource Measurement (802.11k) */
 #define CFG_SUPPORT_RRM		0
 
@@ -986,6 +982,17 @@
 #endif
 #define CFG_SUPPORT_MBO                         1
 #define CFG_SUPPORT_OCE				1
+
+
+/*!< 1(default): Enable 802.11d */
+/* 0: Disable */
+#ifndef CFG_SUPPORT_802_11D
+#define CFG_SUPPORT_802_11D		1
+#endif
+#if (CFG_SUPPORT_802_11K == 1)
+#undef CFG_SUPPORT_802_11D
+#define CFG_SUPPORT_802_11D                     1
+#endif
 
 #define CFG_SUPPORT_SUPPLICANT_SME              0
 
