@@ -268,20 +268,11 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 
 	/* Decide AIS PHY type set */
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
-		struct CONNECTION_SETTINGS *prConnSettings;
-		enum ENUM_WEP_STATUS eEncStatus;
+		uint32_t u4Cipher = prBssInfo->u4RsnSelectedPairwiseCipher;
 
-		prConnSettings =
-			aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
-
-		eEncStatus = prConnSettings->eEncStatus;
-
-		if (!(eEncStatus == ENUM_ENCRYPTION3_ENABLED ||
-		      eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT ||
-		      eEncStatus == ENUM_ENCRYPTION_DISABLED ||
-		      eEncStatus == ENUM_ENCRYPTION4_ENABLED ||
-		      eEncStatus == ENUM_ENCRYPTION4_KEY_ABSENT
-		     )) {
+		if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_TKIP ||
+		    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP40 ||
+		    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP104) {
 			DBGLOG(BSS, INFO,
 			       "Ignore the HT/VHT Bit for TKIP as pairwise cipher configed!\n");
 			prStaRec->ucPhyTypeSet &=
