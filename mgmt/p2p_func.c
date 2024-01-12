@@ -3709,13 +3709,9 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 		/* Leave the Action frame to p2p_supplicant. */
 		kalP2PIndicateRxMgmtFrame(prAdapter->prGlueInfo,
 			prSwRfb, fgIsDevInterface, ucRoleIdx);
-	} else {
-		DBGLOG(P2P, INFO,
-			"do not indicate action frame as filter closed\n");
 	}
 
 	return;
-
 }				/* p2pFuncValidateRxMgmtFrame */
 
 u_int8_t p2pFuncIsAPMode(IN struct P2P_CONNECTION_SETTINGS *prP2pConnSettings)
