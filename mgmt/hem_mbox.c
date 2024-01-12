@@ -115,7 +115,7 @@ static uint8_t *apucDebugMsg[] = {
 #if CFG_SUPPORT_WFD
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_WFD_CFG_UPDATE"),
 #endif
-	(uint8_t *) DISP_STRING("MID_MNY_P2P_ACTIVE_BSS"),
+	(uint8_t *) DISP_STRING("MID_MNY_P2P_UPDATE_DEV_BSS"),
 #endif
 
 #if CFG_SUPPORT_ADHOC
@@ -261,7 +261,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if CFG_SUPPORT_WFD
 	{MID_MNY_P2P_WFD_CFG_UPDATE, p2pFsmRunEventWfdSettingUpdate},
 #endif
-	{MID_MNY_P2P_ACTIVE_BSS, p2pDevFsmRunEventActiveDevBss},
+	{MID_MNY_P2P_UPDATE_DEV_BSS, p2pDevFsmRunEventUpdateDevBss},
 	{MID_MNY_P2P_GC_CSA, cnmOwnGcCsaHandler},
 #endif
 

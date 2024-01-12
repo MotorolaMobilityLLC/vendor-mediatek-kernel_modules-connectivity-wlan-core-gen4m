@@ -216,7 +216,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
-	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = NULL;
+	struct MSG_P2P_UPDATE_DEV_BSS *prMsgUpdateBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
 	u_int8_t fgDoRegister = FALSE;
@@ -329,12 +329,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			break;
 		}
 
-		prMsgActiveBss = (struct MSG_P2P_ACTIVE_DEV_BSS *) cnmMemAlloc(
+		prMsgUpdateBss = (struct MSG_P2P_UPDATE_DEV_BSS *) cnmMemAlloc(
 					prGlueInfo->prAdapter, RAM_TYPE_MSG,
-					sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
+					sizeof(struct MSG_P2P_UPDATE_DEV_BSS));
 
-		if (prMsgActiveBss == NULL) {
-			DBGLOG(P2P, ERROR, "can't alloc prMsgActiveBss\n");
+		if (prMsgUpdateBss == NULL) {
+			DBGLOG(P2P, ERROR, "can't alloc prMsgUpdateBss msg\n");
 			break;
 		}
 
@@ -504,9 +504,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			MSG_SEND_METHOD_BUF);
 
 		/* Send Msg to DevFsm and active P2P dev BSS */
-		prMsgActiveBss->rMsgHdr.eMsgId = MID_MNY_P2P_ACTIVE_BSS;
+		prMsgUpdateBss->rMsgHdr.eMsgId = MID_MNY_P2P_UPDATE_DEV_BSS;
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
-			(struct MSG_HDR *) prMsgActiveBss, MSG_SEND_METHOD_BUF);
+			(struct MSG_HDR *) prMsgUpdateBss, MSG_SEND_METHOD_BUF);
 		/* Success */
 		return prWdev;
 	} while (FALSE);
@@ -535,8 +535,8 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	if (prSwitchModeMsg != NULL)
 		cnmMemFree(prAdapter, prSwitchModeMsg);
 
-	if (prMsgActiveBss != NULL)
-		cnmMemFree(prAdapter, prMsgActiveBss);
+	if (prMsgUpdateBss != NULL)
+		cnmMemFree(prAdapter, prMsgUpdateBss);
 
 	return ERR_PTR(-ENOMEM);
 }				/* mtk_p2p_cfg80211_add_iface */
@@ -554,6 +554,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo =
 		(struct GL_P2P_DEV_INFO *) NULL;
 	struct net_device *UnregRoleHander = (struct net_device *)NULL;
+	struct MSG_P2P_UPDATE_DEV_BSS *prMsgUpdateBss = NULL;
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	uint32_t u4Idx = 0;
@@ -756,6 +757,19 @@ error:
 			&u4SetInfoLen, u4Idx);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+	}
+
+	prMsgUpdateBss = cnmMemAlloc(prGlueInfo->prAdapter,
+				     RAM_TYPE_MSG,
+				     sizeof(*prMsgUpdateBss));
+
+	if (prMsgUpdateBss != NULL) {
+		prMsgUpdateBss->rMsgHdr.eMsgId = MID_MNY_P2P_UPDATE_DEV_BSS;
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			    (struct MSG_HDR *) prMsgUpdateBss,
+			    MSG_SEND_METHOD_BUF);
+	} else {
+		DBGLOG(P2P, ERROR, "can't alloc prMsgUpdateBss msg\n");
 	}
 
 exit:
