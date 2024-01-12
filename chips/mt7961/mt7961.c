@@ -1550,7 +1550,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac2xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = mt7961Connac2xWfdmaInitForUSB,
-	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
+	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADDR,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
