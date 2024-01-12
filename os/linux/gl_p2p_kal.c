@@ -1870,6 +1870,24 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 
 }
 
+u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex)
+{
+	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
+	uint32_t i;
+
+	if (!prGlueInfo || !prGlueInfo->prP2PInfo[ucRoleIndex])
+		return FALSE;
+
+	for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
+		COPY_MAC_ADDR(
+			&(prGlueInfo->prP2PInfo[ucRoleIndex]
+			->aucblackMACList[i]), aucNullAddr);
+	}
+
+	return TRUE;
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief to compare the black list of Hotspot

@@ -1515,6 +1515,9 @@ void p2pRoleFsmRunEventStopAP(IN struct ADAPTER *prAdapter,
 	p2pFuncStopRdd(prAdapter, prP2pBssInfo->ucBssIndex);
 #endif
 
+	kalP2PResetBlackList(prAdapter->prGlueInfo,
+		prP2pStopApMsg->ucRoleIdx);
+
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_REQING_CHANNEL) {
 		p2pFuncStopGO(prAdapter, prP2pBssInfo);
 

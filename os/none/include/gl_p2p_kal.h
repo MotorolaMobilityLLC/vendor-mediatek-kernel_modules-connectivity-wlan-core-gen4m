@@ -416,6 +416,9 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN u_int8_t fgIsblock,
 		IN uint8_t ucRoleIndex);
 
+u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucRoleIndex);
+
 void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo,
 		IN uint32_t u4MaxClient,
 		IN uint8_t ucRoleIndex);
