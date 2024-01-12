@@ -180,34 +180,6 @@ struct ieee80211_regdomain {
  * Step1. Decclare struct ieee80211_regdomain
  */
 
-#if 0
-const struct ieee80211_regdomain regdom_ww = {
-	.n_reg_rules = 5,
-	.reg_rules = {
-	/* channels 1..11 */
-	REG_RULE_LIGHT(2412-10, 2462+10, 40, 0),
-	/* channels 12,13 */
-	REG_RULE_LIGHT(2467-10, 2472+10, 20, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 14 */
-	REG_RULE_LIGHT(2484-10, 2484+10, 20, (NL80211_RRF_NO_OFDM|NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 36..42 */
-	REG_RULE_LIGHT(5480-10, 5240+10, 40, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 36..42 */
-	REG_RULE_LIGHT(5745-10, 5825+10, 40, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS))}
-};
-#else
-const struct ieee80211_regdomain regdom_ww = {
-	.n_reg_rules = 3,
-	.reg_rules = {
-	/* channels 1..11 */
-	REG_RULE_LIGHT(2412-10, 2462+10, 40, 0),
-	/* channels 12,13 */
-	REG_RULE_LIGHT(2467-10, 2472+10, 20, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS)),
-	/* channel 149..165 */
-	REG_RULE_LIGHT(5745-10, 5825+10, 40, (NL80211_RRF_PASSIVE_SCAN|NL80211_RRF_NO_IBSS))}
-};
-#endif
-
 const struct ieee80211_regdomain regdom_us01 = {
 	.n_reg_rules = 6,
 	.reg_rules = {
@@ -230,11 +202,6 @@ const struct ieee80211_regdomain regdom_us01 = {
  * Step2. Decclare struct mtk_regdomain
  */
 
-const struct mtk_regdomain my_regdom_ww = {
-	.country_code = "00",
-	.prRegdRules = &regdom_ww
-};
-
 const struct mtk_regdomain my_regdom_us01 = {
 	.country_code = "US01",
 	.prRegdRules = &regdom_us01
@@ -251,7 +218,6 @@ const struct mtk_regdomain my_regdom_us = {
  */
 
 const struct mtk_regdomain *g_prRegRuleTable[] = {
-	&my_regdom_ww,
 	&my_regdom_us01,
 	&my_regdom_us,
 	NULL /* this NULL SHOULD be at the end of the array */
