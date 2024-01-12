@@ -1220,6 +1220,9 @@ struct MTK_WCN_WLAN_CB_INFO {
 
 #define DbgPrint(...)
 
+#define GLUE_SYMBOL_GET(fun_name)	__symbol_get(fun_name)
+#define GLUE_SYMBOL_PUT(fun_name)	__symbol_put(fun_name)
+
 #if KERNEL_VERSION(5, 7, 0) <= LINUX_VERSION_CODE
 #define GLUE_LOOKUP_FUN(fun_name)	NULL
 #else

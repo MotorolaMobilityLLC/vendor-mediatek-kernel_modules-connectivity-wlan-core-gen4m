@@ -1942,12 +1942,15 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 {
 	typedef void (*func_ptr) (unsigned int gpio, int init_value);
 	char *func_name = "mtk_gpio_set_value";
-	func_ptr pFunc = (func_ptr) kallsyms_lookup_name(func_name);
+	void *pvAddr = NULL;
 
-	if (!pFunc) {
+	pvAddr = GLUE_SYMBOL_GET(func_name);
+
+	if (!pvAddr) {
 		DBGLOG(HAL, WARN, "[SER][L0]%s: No Exported Func Found [%s]\n",
 				__func__, func_name);
 	} else {
+		func_ptr pFunc = (func_ptr) pvAddr;
 		DBGLOG(HAL, ERROR, "[SER][L0]%s: Invoke %s(%d,%d)\n", __func__,
 				func_name, WIFI_DONGLE_RESET_GPIO_PIN, 0);
 		pFunc(WIFI_DONGLE_RESET_GPIO_PIN, 0);
@@ -1955,6 +1958,7 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, ERROR, "[SER][L0]%s: Invoke %s(%d,%d)\n", __func__,
 				func_name, WIFI_DONGLE_RESET_GPIO_PIN, 1);
 		pFunc(WIFI_DONGLE_RESET_GPIO_PIN, 1);
+		GLUE_SYMBOL_PUT(func_name);
 	}
 }
 

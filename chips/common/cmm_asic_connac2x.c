@@ -2182,11 +2182,13 @@ u_int8_t conn2_rst_L0_notify_step2(void)
 		typedef void (*p_bt_fun_type) (void);
 		p_bt_fun_type bt_func;
 		char *bt_func_name = "WF_rst_L0_notify_BT_step2";
+		void *pvAddr = NULL;
 
-		bt_func = (p_bt_fun_type)(uintptr_t)
-				GLUE_LOOKUP_FUN(bt_func_name);
-		if (bt_func) {
+		pvAddr = GLUE_SYMBOL_GET(bt_func_name);
+		if (pvAddr) {
+			bt_func = (p_bt_fun_type) pvAddr;
 			bt_func();
+			GLUE_SYMBOL_PUT(bt_func_name);
 		} else {
 			DBGLOG(INIT, WARN, "[SER][L0] %s does not exist\n",
 							bt_func_name);
