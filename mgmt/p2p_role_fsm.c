@@ -75,6 +75,12 @@ void
 p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		IN enum ENUM_P2P_ROLE_STATE eNextState);
+static u_int8_t
+p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx);
+static void
+p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
+		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest);
 
 uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIdx)
@@ -3891,6 +3897,8 @@ void p2pRoleFsmRunEventAcs(IN struct ADAPTER *prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
 	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
 
+	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);
+
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
@@ -3945,8 +3953,10 @@ exit:
 		cnmMemFree(prAdapter, prMsgHdr);
 }
 
-u_int8_t p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
-		uint8_t ucRoleIdx) {
+static u_int8_t
+p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
+		uint8_t ucRoleIdx)
+{
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
 
@@ -3963,5 +3973,29 @@ u_int8_t p2pRoleFsmIsAcsProcessing(IN struct ADAPTER *prAdapter,
 		return FALSE;
 
 	return prAcsReqInfo->fgIsProcessing;
+}
+
+static void
+p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
+		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo = NULL;
+
+	if (!prAdapter || !prMsgAcsRequest)
+		return;
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prMsgAcsRequest->ucRoleIdx);
+	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
+
+	if (!p2pRoleFsmIsAcsProcessing(prAdapter, prMsgAcsRequest->ucRoleIdx))
+		return;
+
+	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_SCAN &&
+			prScanReqInfo->eScanReason == SCAN_REASON_ACS) {
+		DBGLOG(P2P, INFO, "Cancel current ACS scan.\n");
+		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
 }
 
