@@ -202,9 +202,9 @@ static const UINT_16 g_u2CountryGroup19[] = {
 
 static const UINT_16 g_u2CountryGroup20[] = {
 	COUNTRY_CODE_DF
-	    /* When country code is not found, this domain info will be used.
-	     * So mark all country codes to reduce search time. 20110908
-	     */
+	/* When country code is not found and no matched NVRAM setting,
+	 * the default group will be used.
+	 */
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -567,7 +567,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	  ,			/* CH_SET_UNII_LOW_36_48 */
 	  {118, BAND_5G, CHNL_SPAN_20, 52, 4, FALSE}
 	  ,			/* CH_SET_UNII_MID_52_64 */
-	  {121, BAND_5G, CHNL_SPAN_20, 100, 11, FALSE}
+	  {121, BAND_5G, CHNL_SPAN_20, 100, 11, TRUE}
 	  ,			/* CH_SET_UNII_WW_100_140 */
 	  {125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
 	  ,			/* CH_SET_UNII_UPPER_149_165 */
@@ -594,7 +594,7 @@ DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 	 }
 	,
 	{
-	 /* Note: The final one is for Europe union now.(Default group if no matched country code) */
+	 /* Note: Default group if no matched country code */
 	 (PUINT_16) g_u2CountryGroup20, sizeof(g_u2CountryGroup20) / 2,
 	 {
 	  {81, BAND_2G4, CHNL_SPAN_5, 1, 13, FALSE}
@@ -711,7 +711,7 @@ SUBBAND_CHANNEL_T g_rRlmSubBand[] = {
 /*----------------------------------------------------------------------------*/
 P_DOMAIN_INFO_ENTRY rlmDomainGetDomainInfo(P_ADAPTER_T prAdapter)
 {
-#define REG_DOMAIN_DEF_IDX          20	/* EU (Europe Union) */
+#define REG_DOMAIN_DEF_IDX             20 /* Default regulatory domain */
 #define REG_DOMAIN_GROUP_NUM \
 	(sizeof(arSupportedRegDomains) / sizeof(DOMAIN_INFO_ENTRY))
 
@@ -775,10 +775,13 @@ P_DOMAIN_INFO_ENTRY rlmDomainGetDomainInfo(P_ADAPTER_T prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief
+* \brief Retrieve the supported channel list of specified band
 *
-* \param[in/out] The input variable pointed by pucNumOfChannel is the max
-*                arrary size. The return value indciates meaning list size.
+* \param[in/out] eSpecificBand:   BAND_2G4, BAND_5G or BAND_NULL (both 2.4G and 5G)
+*                fgNoDfs:         whether to exculde DFS channels
+*                ucMaxChannelNum: max array size
+*                pucNumOfChannel: pointer to returned channel number
+*                paucChannelList: pointer to returned channel list array
 *
 * \return none
 */
@@ -831,7 +834,19 @@ rlmDomainGetChnlList_V2(P_ADAPTER_T prAdapter,
 #endif
 }
 
-
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Retrieve the supported channel list of specified band
+*
+* \param[in/out] eSpecificBand:   BAND_2G4, BAND_5G or BAND_NULL (both 2.4G and 5G)
+*                fgNoDfs:         whether to exculde DFS channels
+*                ucMaxChannelNum: max array size
+*                pucNumOfChannel: pointer to returned channel number
+*                paucChannelList: pointer to returned channel list array
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
 VOID
 rlmDomainGetChnlList(P_ADAPTER_T prAdapter,
 		     ENUM_BAND_T eSpecificBand, BOOLEAN fgNoDfs,
