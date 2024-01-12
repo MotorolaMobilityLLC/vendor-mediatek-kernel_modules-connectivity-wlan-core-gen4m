@@ -83,6 +83,12 @@
 #include "mddp.h"
 #endif
 
+#if CFG_SUPPORT_TPUT_FACTOR
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#include <linux/cpufreq.h>
+#endif
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -107,6 +113,17 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 #define BACKOFF_VOLT 3550
 #define RESTORE_VOLT 3750
+#endif
+
+#if CFG_SUPPORT_TPUT_FACTOR
+#define CPU_CNT 8
+/* current max CPU count */
+#define CPU_LOG_LEN 8
+/* the max string length of CPU frequency log ex: "3050000 " */
+#define PWR_MODE_LOG_HEAD_LEN 8
+/* the max string length of pwr mode header log ex: "PwrMode:" */
+#define PWR_MODE_LOG_LEN 8
+/* the max string length of pwr mode log ex: "2," */
 #endif
 
 static uint8_t aucBandTranslate[BAND_NUM] = {
@@ -217,6 +234,11 @@ static void kalRxGroTcCheck(struct GLUE_INFO *glue);
 static void kalNapiWakeup(void);
 #endif /* CFG_SUPPORT_RX_WORK */
 #endif /* CFG_SUPPORT_RX_NAPI */
+
+#if CFG_SUPPORT_TPUT_FACTOR
+void kalTputFactorUpdate(struct ADAPTER *prAdapter);
+#endif
+
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -6017,6 +6039,10 @@ int main_thread(void *data)
 		kalPerMonUpdate(prGlueInfo->prAdapter);
 
 		wlanDumpAllBssStatistics(prGlueInfo->prAdapter);
+		/* check tput factor */
+#if CFG_SUPPORT_TPUT_FACTOR
+		kalTputFactorUpdate(prGlueInfo->prAdapter);
+#endif
 
 #if CFG_RFB_TRACK
 		nicRxRfbTrackCheck(prGlueInfo->prAdapter);
@@ -9616,6 +9642,7 @@ void kalPerMonDump(struct GLUE_INFO *prGlueInfo)
 #endif
 
 #define PERF_UPDATE_PERIOD      1000 /* ms */
+#define BYTE_PER_MBIT (2^17)
 #if (CFG_SUPPORT_PERF_IND == 1)
 void kalPerfIndReset(struct ADAPTER *prAdapter)
 {
@@ -9628,7 +9655,11 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	struct CMD_PERF_IND *prCmdPerfReport;
 	uint8_t i;
 	uint32_t u4CurrentTp = 0;
-
+#if CFG_SUPPORT_TPUT_FACTOR
+	struct WLAN_TABLE *prWtbl = prAdapter->rWifiVar.arWtbl;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4WtblBitMap = 0;
+#endif
 	prCmdPerfReport = (struct CMD_PERF_IND *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 		sizeof(struct CMD_PERF_IND));
@@ -9677,7 +9708,18 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 			prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI0,
 			prCmdPerfReport->rUniCmdParm[i].ucCurRxRCPI1);
 		}
-
+#if CFG_SUPPORT_TPUT_FACTOR
+		if (u4CurrentTp >
+			(prWifiVar->u4TputFactorDumpThresh * BYTE_PER_MBIT)) {
+			for (i = 0; i < WTBL_SIZE; i++) {
+				if ((!prWtbl[i].ucUsed) ||
+					(!prWtbl[i].ucPairwise))
+					continue;
+				u4WtblBitMap |= BIT(i);
+			}
+		}
+		prCmdPerfReport->u4WtblBitMap = u4WtblBitMap;
+#endif
 		wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_PERF_IND,
 			TRUE,
@@ -10495,6 +10537,134 @@ done:
 		kalMemFree(buf, VIR_MEM_TYPE, slen);
 	return ret;
 }
+
+#if CFG_SUPPORT_TPUT_FACTOR
+void kalTputFactorUpdate(struct ADAPTER *prAdapter)
+{
+#define TPUT_LOG_TEMPLATE \
+		"wlanIdx=%d staIdx=%d BSSIdx=%d CH=%d " \
+		"BN=%d Wmmset=%d NetType=%u OwnMAC="MACSTR" " \
+		"PeerAddr="MACSTR "\n"
+
+#if CFG_SUPPORT_PERMON
+	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
+#endif
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct WLAN_TABLE *prWtbl = prAdapter->rWifiVar.arWtbl;
+	struct BSS_INFO *prBssInfo;
+	uint8_t i = 0;
+
+	struct cpufreq_policy *prCpuPolicy;
+	int i4cpu;
+
+	char *buf = NULL;
+	char *pos = NULL, *end = NULL;
+	uint32_t u4slen = 0;
+
+	static OS_SYSTIME lv1_last, lv2_last;
+	OS_SYSTIME now;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->fgTputFactorDump))
+		return;
+
+	if (kalGetTpMbps(prAdapter, PKT_PATH_ALL)
+			< prWifiVar->u4TputFactorDumpThresh)
+		return;
+
+#if CFG_SUPPORT_PERMON
+	now = perf->rLastUpdateTime;
+	/* dump Tput factor with PerfMon */
+	if (!CHECK_FOR_TIMEOUT(now, lv1_last,
+		MSEC_TO_SYSTIME(perf->u4UpdatePeriod)))
+		return;
+#else
+	GET_BOOT_SYSTIME(&now);
+	/* dump Tput factor every 500m */
+	if (!CHECK_FOR_TIMEOUT(now, lv1_last,
+		MSEC_TO_SYSTIME(prWifiVar->u4TputFactorDumpPeriodL1)))
+		return;
+#endif
+
+	lv1_last = now;
+
+	/* The length should include
+	 * 1. "%d " for each core frequency, %d range is
+	 *    [0, 3050000]
+	 * 2. "PCIe:%x,%x" for PCIe link speed
+	 * 2.1 "usb:%d"  for USB speed
+	 */
+	u4slen = CPU_CNT*CPU_LOG_LEN +
+	PWR_MODE_LOG_HEAD_LEN +
+	MAX_BSSID_NUM*PWR_MODE_LOG_LEN;
+
+	pos = buf = kalMemZAlloc(u4slen, VIR_MEM_TYPE);
+	if (pos == NULL) {
+		DBGLOG(SW4, INFO, "Can't allocate memory\n");
+		return;
+	}
+	end = buf + u4slen;
+
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	for_each_possible_cpu(i4cpu) {
+		prCpuPolicy = cpufreq_cpu_get(i4cpu);
+
+		if (!prCpuPolicy)
+			continue;
+
+		pos += kalSnprintf(pos, end-pos, "%d,", prCpuPolicy->cur);
+		cpufreq_cpu_put(prCpuPolicy);
+	}
+#endif
+	pos += kalSnprintf(pos, end-pos, "PwrMode:");
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (prBssInfo == NULL)
+			continue;
+		pos += kalSnprintf(pos, end-pos, "%d,", prBssInfo->ePwrMode);
+	}
+	DBGLOG(SW4, INFO,
+		"freq %s mask:hif %x, rx %x, main %x, ApFS=%d",
+		buf,
+		prAdapter->prGlueInfo->hif_thread->cpus_mask,
+		prAdapter->prGlueInfo->rx_thread->cpus_mask,
+		prAdapter->prGlueInfo->main_thread->cpus_mask,
+		prWifiVar->ucApForceSleep
+		);
+
+	kalMemFree(buf, VIR_MEM_TYPE, u4slen);
+
+	if (!CHECK_FOR_TIMEOUT(now, lv2_last,
+		MSEC_TO_SYSTIME(prWifiVar->u4TputFactorDumpPeriodL2)))
+		return;
+	lv2_last = now;
+	/*Iterate WTBL list to find inused tables
+	 *and dump Tput factor (see TPUT_LOG_TEMPLATE)
+	 */
+	for (i = 0; i < WTBL_SIZE; i++) {
+		if ((!prWtbl[i].ucUsed) || (!prWtbl[i].ucPairwise))
+			continue;
+
+		if (prWtbl[i].ucBssIndex >= MAX_BSSID_NUM)
+			continue;
+
+		prBssInfo = prAdapter->aprBssInfo[prWtbl[i].ucBssIndex];
+
+		if (prBssInfo == NULL)
+			continue;
+
+		DBGLOG(SW4, INFO, TPUT_LOG_TEMPLATE,
+			i,
+			prWtbl[i].ucStaIndex,
+			prWtbl[i].ucBssIndex,
+			prBssInfo->ucPrimaryChannel,
+			prBssInfo->eBand,
+			prBssInfo->ucWmmQueSet,
+			cnmGetBssNetworkType(prBssInfo),
+			MAC2STR(prBssInfo->aucOwnMacAddr),
+			MAC2STR(prWtbl[i].aucMacAddr));
+	}
+}
+#endif
 
 #if CFG_SUPPORT_MCC_BOOST_CPU
 void kalMccBoostCheck(struct ADAPTER *prAdapter, uint32_t u4TputLv)

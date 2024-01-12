@@ -1964,6 +1964,7 @@ struct CMD_PERF_IND {
 	uint8_t ucBssNum;
 	uint8_t  ucReserve[3];
 	struct CMD_PERF_IND_PARM rUniCmdParm[MAX_BSSID_NUM];
+	uint32_t u4WtblBitMap;
 	//uint32_t au4Reserve[62];
 };
 

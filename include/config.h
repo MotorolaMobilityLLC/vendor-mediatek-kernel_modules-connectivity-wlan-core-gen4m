@@ -2481,6 +2481,14 @@
 #define CFG_SUPPORT_PERMON 1
 #endif
 
+/*
+ * support Tput Factor or not
+ *
+ */
+#ifndef CFG_SUPPORT_TPUT_FACTOR
+#define CFG_SUPPORT_TPUT_FACTOR 0
+#endif
+
 /* Disable this option by default to make sigma tool compatible both
  * with legacy driver and new driver with QoS R2 support.
  * For projects intended to enable
