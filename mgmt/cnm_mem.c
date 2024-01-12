@@ -662,6 +662,9 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 					&prStaRec->arTxQueue[k]);
 				QUEUE_INITIALIZE(
 					&prStaRec->arPendingTxQueue[k]);
+				/* Default should be no-TX.
+				 * Switch when allow to TX.
+				 */
 				prStaRec->aprTargetQueue[k]
 					= &prStaRec->arPendingTxQueue[k];
 			}
