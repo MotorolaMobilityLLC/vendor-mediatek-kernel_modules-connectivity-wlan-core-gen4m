@@ -2176,6 +2176,15 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	{
+		.pcCmdStr  = CMD_SET_SMPS_PARAMS,
+		.pfHandler = priv_driver_set_smpsparams,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL
+	},
+#endif
 #if CFG_SUPPORT_802_11K
 	{
 		.pcCmdStr  = CMD_NEIGHBOR_REQ,

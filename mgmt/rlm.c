@@ -1133,6 +1133,26 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	if (prBssInfo->eBand == BAND_2G4 &&
+	    prAdapter->rWifiVar.ucHtSmps2g4 == 1) {
+		prHtCap->u2HtCapInfo &=
+			(~HT_CAP_INFO_SM_POWER_SAVE);
+		(prHtCap->u2HtCapInfo) |=
+			(1 << HT_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	} else if (prBssInfo->eBand == BAND_2G4 &&
+		   prAdapter->rWifiVar.ucHtSmps2g4 == 3) {
+		prHtCap->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
+	} else if (prBssInfo->eBand == BAND_5G &&
+		   prAdapter->rWifiVar.ucHtSmps5g == 1) {
+		prHtCap->u2HtCapInfo &=
+			(~HT_CAP_INFO_SM_POWER_SAVE);
+		(prHtCap->u2HtCapInfo) |=
+			(1 << HT_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	} else if (prBssInfo->eBand == BAND_5G &&
+		   prAdapter->rWifiVar.ucHtSmps5g == 3) {
+		prHtCap->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
+	}
+
 	prHtCap->ucAmpduParam = AMPDU_PARAM_DEFAULT_VAL;
 
 	prSupMcsSet = &prHtCap->rSupMcsSet;

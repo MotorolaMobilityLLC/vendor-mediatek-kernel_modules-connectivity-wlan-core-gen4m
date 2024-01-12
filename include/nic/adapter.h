@@ -814,6 +814,9 @@ struct WIFI_VAR {
 	uint8_t ucP2pGcHe;
 	uint8_t ucVcoreBoostEnable;
 #endif
+	uint8_t ucHtSmps2g4;
+	uint8_t ucHtSmps5g;
+	uint8_t ucHtSmps6g;
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucStaEht;
 	uint8_t ucApEht;

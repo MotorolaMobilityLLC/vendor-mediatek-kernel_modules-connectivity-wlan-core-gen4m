@@ -266,6 +266,7 @@
 #define CMD_GET_SR_IND			"GET_SR_IND"
 #define CMD_SET_PP_RX			"SET_PP_RX"
 #define CMD_SET_RxCtrlToMutiBss		"SET_RX_CTRL_TO_MUTI_BSS"
+#define CMD_SET_SMPS_PARAMS		"SET_SMPS_PARAMS"
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #ifdef UT_TEST_MODE
 #define CMD_RUN_UT			"UT"
