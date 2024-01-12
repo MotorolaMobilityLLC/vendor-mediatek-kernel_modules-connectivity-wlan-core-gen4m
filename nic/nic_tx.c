@@ -2313,13 +2313,10 @@ void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
 
 	prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
 			 prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
-	if (prMsduInfo) {
+	if (prMsduInfo)
 		nicFreePendingTxMsduInfo(prAdapter, prMsduInfo);
-	} else {
-		DBGLOG(TX, ERROR, "WIDX:PID[%u:%u] not in pending tx queue.\n",
-				prMsduInfo->ucWlanIndex,
-				prMsduInfo->ucPID);
-	}
+	else
+		DBGLOG(TX, ERROR, "Not in pending tx queue.\n");
 }
 
 /*----------------------------------------------------------------------------*/
