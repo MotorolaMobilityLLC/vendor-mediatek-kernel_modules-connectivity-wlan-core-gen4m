@@ -233,6 +233,7 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t ucHtOption = FEATURE_ENABLED;
 	uint8_t ucVhtOption = FEATURE_ENABLED;
+	struct BSS_INFO *prBssInfo;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
 #endif
@@ -242,6 +243,8 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 	prStaRec->ucVhtCapNumSoundingDimensions =
 	    prBssDesc->ucVhtCapNumSoundingDimensions;
 #endif
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
 
 	/* Decide AIS PHY type set */
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
@@ -286,6 +289,10 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucVhtOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+	else if (prBssInfo->eBand == BAND_2G4 &&
+		IS_FEATURE_DISABLED(prWifiVar->ucVhtIeIn2g)) {
+		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_VHT;
+	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
