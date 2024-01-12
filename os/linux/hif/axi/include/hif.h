@@ -343,7 +343,6 @@ struct MTK_WCN_WMT_WLAN_CB_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
 void glUnregisterBus(remove_card pfRemove);

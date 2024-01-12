@@ -230,8 +230,6 @@ void glResetUninit(void);
 
 void glSendResetRequest(void);
 
-u_int8_t kalIsResetting(void);
-
 u_int8_t glIsWmtCodeDump(void);
 
 u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
