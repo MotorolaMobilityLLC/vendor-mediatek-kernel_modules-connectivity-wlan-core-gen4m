@@ -4726,15 +4726,19 @@ void nicEventAddPkeyDone(IN struct ADAPTER *prAdapter,
 					prKeyDone->ucBSSIndex].aucBSSID);
 			if (!prStaRec) {
 				DBGLOG(RX, INFO,
-					"WEP, AddPKeyDone, ucBSSIndex %d, Addr %pM, StaRec is NULL\n",
-				  prKeyDone->ucBSSIndex,
-				  prAdapter->rWifiVar.arBssInfoPool[prKeyDone->
-				  ucBSSIndex].aucBSSID);
+					"WEP, AddPKeyDone, ucBSSIndex %d, Addr "
+					MACSTR ", StaRec is NULL\n",
+					prKeyDone->ucBSSIndex,
+					MAC2STR(prAdapter->rWifiVar
+					.arBssInfoPool[prKeyDone->
+					ucBSSIndex].aucBSSID));
 			}
 		} else {
 			DBGLOG(RX, INFO,
-			       "AddPKeyDone, ucBSSIndex %d, Addr %pM, StaRec is NULL\n",
-			       prKeyDone->ucBSSIndex, prKeyDone->aucStaAddr);
+			       "AddPKeyDone, ucBSSIndex %d, Addr "
+			       MACSTR ", StaRec is NULL\n",
+			       prKeyDone->ucBSSIndex,
+			       MAC2STR(prKeyDone->aucStaAddr));
 		}
 	}
 	if (prStaRec) {
