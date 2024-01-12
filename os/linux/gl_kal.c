@@ -127,6 +127,10 @@
 #include <aee.h>
 #endif
 
+extern void set_logtoomuch_enable(int value) __attribute__((weak));
+extern int get_logtoomuch_enable(void) __attribute__((weak));
+extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
