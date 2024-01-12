@@ -446,7 +446,7 @@ uint32_t asicConnac2xWfdmaHifRstAddrGet(
 		return CONNAC2X_WPDMA_HIF_RST(prBusInfo->host_dma1_base);
 }
 
-static void asicConnac2xWfdmaControl(
+void asicConnac2xWfdmaControl(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t ucDmaIdx,
 	u_int8_t enable)
