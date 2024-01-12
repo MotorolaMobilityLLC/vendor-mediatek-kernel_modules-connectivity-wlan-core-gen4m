@@ -303,6 +303,9 @@ void nic_txd_v2_compose(
 	u_int8_t ucEtherTypeOffsetInWord;
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucTarQueue;
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
+	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
+#endif
 
 	prTxDesc = (struct HW_MAC_CONNAC2X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -560,14 +563,17 @@ void nic_txd_v2_compose(
 	case MSDU_RATE_MODE_MANUAL_DESC:
 		HAL_MAC_TX_DESC_SET_DW(
 			prTxDesc, 6, 1, &prMsduInfo->u4FixedRateOption);
-#if CFG_SISO_SW_DEVELOP
+#if (CFG_SISO_SW_DEVELOP == 1 || CFG_SUPPORT_SPE_IDX_CONTROL == 1)
 		/* Update spatial extension index setting */
+		eWfPathFavor = wlanGetAntPathType(prAdapter, ENUM_WF_NON_FAVOR);
 		HAL_MAC_CONNAC2X_TXD_SET_SPE_IDX(
 			prTxDesc,
-			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex));
+			wlanGetSpeIdx(prAdapter, prBssInfo->ucBssIndex,
+				eWfPathFavor));
 #endif
-		/* Always follow WTBL set by firmware */
-		HAL_MAC_CONNAC2X_TXD_SET_SPE_IDX_SEL(prTxDesc, 1);
+		HAL_MAC_CONNAC2X_TXD_SET_SPE_IDX_SEL(prTxDesc,
+			ENUM_SPE_SEL_BY_TXD);
+		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
 		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 		break;
 
