@@ -1268,6 +1268,8 @@ struct mt66xx_chip_info {
 	void (*asicDumpSerDummyCR)(IN struct ADAPTER *prAdapter);
 	void (*asicWfdmaReInit)(IN struct ADAPTER *prAdapter);
 	void *pdev;
+	uint32_t group5_size;
+	void (*wlanCheckAsicCap)(IN struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {

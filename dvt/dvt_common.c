@@ -840,6 +840,39 @@ int priv_driver_rxv_test(
 		return i4BytesWritten;
 	}
 
+	if (u4Mode == TX_RATE_MODE_OFDM) {
+		switch (u4Mcs) {
+		case 0:
+			u4Mcs = 11;
+			break;
+		case 1:
+			u4Mcs = 15;
+			break;
+		case 2:
+			u4Mcs = 10;
+			break;
+		case 3:
+			u4Mcs = 14;
+			break;
+		case 4:
+			u4Mcs = 9;
+			break;
+		case 5:
+			u4Mcs = 13;
+			break;
+		case 6:
+			u4Mcs = 8;
+			break;
+		case 7:
+			u4Mcs = 12;
+			break;
+		default:
+			DBGLOG(RX, ERROR,
+				"[%s]OFDM mode but wrong MCS!\n", __func__);
+			break;
+		}
+	}
+
 	automation_dvt.rxv.rxv_test_result = TRUE;
 	automation_dvt.rxv.enable = u4Enable;
 	automation_dvt.rxv.rx_count = 0;
