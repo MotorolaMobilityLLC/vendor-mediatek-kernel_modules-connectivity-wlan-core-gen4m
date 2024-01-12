@@ -963,7 +963,8 @@ static struct ieee80211_rate mtk_rates[] = {
 	.mac_cap_info[3] =					\
 		IEEE80211_HE_MAC_CAP3_OMI_CONTROL,		\
 	.phy_cap_info[0] =					\
-		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G,    \
+		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G    \
+		| IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G,    \
 }
 
 #define WLAN_HE_CAP_160_ELEM_INFO					\
