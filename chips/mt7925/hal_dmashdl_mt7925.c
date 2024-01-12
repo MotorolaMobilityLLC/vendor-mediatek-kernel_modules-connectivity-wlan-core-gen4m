@@ -387,7 +387,9 @@ uint32_t mt7925dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 	u_int8_t fgIs5g = FALSE, fgIs6g = FALSE;
 #endif
 	enum ENUM_BAND eTargetBand = BAND_NULL;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
 
@@ -403,7 +405,11 @@ uint32_t mt7925dmashdlQuotaDecision(struct ADAPTER *prAdapter,
 #endif
 		    )
 			continue;
-
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (IS_MLD_BSSINFO_MULTI(prMldBssInfo))
+			return 0; /* don't care */
+#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (prBssInfo->eBand == BAND_6G)
 			fgIs6g = TRUE;
