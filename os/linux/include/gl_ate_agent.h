@@ -241,6 +241,8 @@ int Set_TxBfProfileTag_DesiredNr(struct net_device
 				 *prNetDev, uint8_t *prInBuf);
 int Set_TxBfProfileTagPartialBw(struct net_device *prNetDev,
 			    uint8_t *prInBuf);
+int Set_TxBfProfileTag_BandIdx(struct net_device *prNetDev,
+			    uint8_t *prInBuf);
 int Set_TxBfProfileTagRead(struct net_device *prNetDev,
 			   uint8_t *prInBuf);
 int Set_TxBfProfileTagWrite(struct net_device *prNetDev,
