@@ -1214,7 +1214,7 @@ struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
 	struct sk_buff *pkt = NULL;
 
 	page = wifi_page_pool_alloc_page();
-#if CFG_SUPPORT_RETURN_WORK
+#if (CFG_SUPPORT_RETURN_WORK && CFG_SUPPORT_DYNAMIC_PAGE_POOL)
 	if (!page) {
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 		kalIncPagePoolPageNum();

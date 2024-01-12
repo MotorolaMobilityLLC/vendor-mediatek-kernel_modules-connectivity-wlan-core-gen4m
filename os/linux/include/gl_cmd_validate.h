@@ -135,7 +135,6 @@
 #define CMD_THERMAL_PROTECT_INFO	"thermal_protect_info"
 #define CMD_THERMAL_PROTECT_DUTY_INFO	"thermal_protect_duty_info"
 #define CMD_THERMAL_PROTECT_STATE_ACT	"thermal_protect_state_act"
-#define CMD_SET_USE_CASE		"SET_USE_CASE"
 #define CMD_SET_BOOSTCPU		"BOOSTCPU"
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 #define CMD_POWER_METRICS		"SET_PWR_MET"
@@ -146,9 +145,6 @@
  */
 #define CMD_GET_MU_RX_PKTCNT		"hqa_get_murx_pktcnt"
 #define CMD_RUN_HQA			"hqa"
-#if BUILD_QA_DBG
-#define CMD_CALIBRATION			"cal"
-#endif
 #define CMD_SET_ADV_PWS			"SET_ADV_PWS"
 #define CMD_SET_MDTIM			"SET_MDTIM"
 #define CMD_SET_DBDC			"SET_DBDC"
@@ -281,7 +277,6 @@
 #define CMD_RUN_UT			"UT"
 #endif /* UT_TEST_MODE */
 #if CFG_SUPPORT_ADVANCE_CONTROL
-#define CMD_SET_NOISE			"SET_NOISE"
 #define CMD_GET_NOISE			"GET_NOISE"
 #define CMD_SET_POP			"SET_POP"
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
@@ -291,23 +286,6 @@
 #define CMD_SET_PD			"SET_PD"
 #define CMD_SET_MAX_RFGAIN		"SET_MAX_RFGAIN"
 #endif /* CFG_SUPPORT_ADVANCE_CONTROL */
-#if CFG_SUPPORT_WIFI_SYSDVT
-#define CMD_WIFI_SYSDVT			"DVT"
-#define CMD_SET_TXS_TEST		"TXS_TEST"
-#define CMD_SET_TXS_TEST_RESULT		"TXS_RESULT"
-#define CMD_SET_RXV_TEST		"RXV_TEST"
-#define CMD_SET_RXV_TEST_RESULT		"RXV_RESULT"
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-#define CMD_SET_CSO_TEST		"CSO_TEST"
-#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
-#define CMD_SET_TX_TEST			"TX_TEST"
-#define CMD_SET_TX_AC_TEST		"TX_AC_TEST"
-#define CMD_SET_SKIP_CH_CHECK		"SKIP_CH_CHECK"
-#if (CFG_SUPPORT_DMASHDL_SYSDVT)
-#define CMD_SET_DMASHDL_DUMP		"DMASHDL_DUMP_MEM"
-#define CMD_SET_DMASHDL_DVT_ITEM	"DMASHDL_DVT_ITEM"
-#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
-#endif /* CFG_SUPPORT_WIFI_SYSDVT */
 #if CFG_AP_80211KVR_INTERFACE
 #define CMD_ALLOWLIST_STA		"Allow_sta"
 #define CMD_BLOCKLIST_STA		"Block_sta"
@@ -336,15 +314,9 @@
 #if CFG_MTK_WIFI_SW_WFDMA
 #define CMD_SET_SW_WFDMA		"SET_SW_WFDMA"
 #endif /* CFG_MTK_WIFI_SW_WFDMA */
-#if CFG_SUPPORT_802_11K
-#define CMD_NEIGHBOR_REQ		"neighbor-request"
-#endif /* CFG_SUPPORT_802_11K */
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 #define CMD_EPCS_SEND			"SEND_EPCS"
 #endif /* CFG_SUPPORT_802_11BE_EPCS */
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-#define CMD_BTM_QUERY			"bss-transition-query"
-#endif /* CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT */
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 #define CMD_GET_SLEEP_INFO		"GET_SLEEP_INFO"
 #endif /* CFG_SUPPORT_DEBUG_SOP */
@@ -387,6 +359,24 @@
 #endif /*#if CFG_SUPPORT_PWR_LMT_EMI == 1*/
 #define CMD_SET_ATXOP_SHARING			"SETATXOP"
 
+#define CMD_ADD_TS		"addts"
+#define CMD_DEL_TS		"delts"
+#define CMD_DUMP_TS		"dumpts"
+#define CMD_RM_IT		"RM-IT"
+#define CMD_BTM_IT		"BTM-IT"
+#define CMD_BT_IT		"BT-IT"
+#define CMD_DUMP_UAPSD		"dumpuapsd"
+#define CMD_FW_EVENT		"FW-EVENT "
+#if CFG_SUPPORT_EASY_DEBUG
+#define CMD_FW_PARAM				"set_fw_param"
+#endif /* CFG_SUPPORT_EASY_DEBUG */
+/* Debug for consys */
+#define CMD_DBG_SHOW_TR_INFO			"show-tr"
+#define CMD_DBG_SHOW_PLE_INFO			"show-ple"
+#define CMD_DBG_SHOW_PSE_INFO			"show-pse"
+#define CMD_DBG_SHOW_CSR_INFO			"show-csr"
+#define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
+#define CMD_DBG_SHOW_AHDBG			"show-ahdbg"
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------
@@ -402,7 +392,6 @@
 #define CMD_REASSOC				"REASSOC"
 #endif
 #define CMD_SET_AX_BLOCKLIST                    "SET_AX_BLOCKLIST"
-#define CMD_RTT_GET_CAP				"RttGetCap"
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
 #define CMD_FORCE_STBC				"FORCE_STBC"
 #define CMD_FORCE_MRC				"FORCE_MRC"
