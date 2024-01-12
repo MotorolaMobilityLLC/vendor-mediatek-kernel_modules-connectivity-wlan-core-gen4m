@@ -1925,93 +1925,93 @@ static const struct wiphy_vendor_command
 
 static const struct nl80211_vendor_cmd_info
 	mtk_wlan_vendor_events[] = {
-	{
+	[GSCAN_EVENT_SIGNIFICANT_CHANGE_RESULTS] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_SIGNIFICANT_CHANGE_RESULTS
 	},
-	{
+	[GSCAN_EVENT_HOTLIST_RESULTS_FOUND] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_HOTLIST_RESULTS_FOUND
 	},
-	{
+	[GSCAN_EVENT_SCAN_RESULTS_AVAILABLE] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_SCAN_RESULTS_AVAILABLE
 	},
-	{
+	[GSCAN_EVENT_FULL_SCAN_RESULTS] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_FULL_SCAN_RESULTS
 	},
 #if CFG_SUPPORT_RTT
-	{
+	[RTT_EVENT_COMPLETE] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = RTT_EVENT_COMPLETE
 	},
 #endif
-	{
+	[GSCAN_EVENT_COMPLETE_SCAN] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_COMPLETE_SCAN
 	},
-	{
+	[GSCAN_EVENT_HOTLIST_RESULTS_LOST] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = GSCAN_EVENT_HOTLIST_RESULTS_LOST
 	},
-	{
+	[WIFI_EVENT_RSSI_MONITOR] {
 		.vendor_id = GOOGLE_OUI,
 		.subcmd = WIFI_EVENT_RSSI_MONITOR
 	},
 #if CFG_SUPPORT_DATA_STALL
-	{
+	[WIFI_EVENT_DRIVER_ERROR] {
 		.vendor_id = OUI_MTK,
 		.subcmd = WIFI_EVENT_DRIVER_ERROR
 	},
 #endif
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-	{
+	[WIFI_EVENT_ACS] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_ACS
 	},
 #endif
 
-	{
+	[WIFI_EVENT_GENERIC_RESPONSE] {
 		.vendor_id = OUI_MTK,
 		.subcmd = WIFI_EVENT_GENERIC_RESPONSE
 	},
 
 #if CFG_SUPPORT_BIGDATA_PIP
-	{
+	[WIFI_EVENT_BIGDATA_PIP] {
 		.vendor_id = OUI_MTK,
 		.subcmd = WIFI_EVENT_BIGDATA_PIP
 	},
 #endif
 
 #if CFG_SUPPORT_DBDC
-	{
+	[WIFI_EVENT_OP_MODE_CHANGE] {
 		.vendor_id = OUI_MTK,
 		.subcmd = MTK_NL80211_OP_MODE_CHANGE
 	},
 #endif
 
-	{
+	[WIFI_EVENT_DFS_OFFLOAD_CAC_STARTED] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_STARTED
 	},
 
-	{
+	[WIFI_EVENT_DFS_OFFLOAD_CAC_FINISHED] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_FINISHED
 	},
 
-	{
+	[WIFI_EVENT_DFS_OFFLOAD_CAC_ABORTED] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_ABORTED
 	},
 
-	{
+	[WIFI_EVENT_DFS_OFFLOAD_CAC_NOP_FINISHED] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_NOP_FINISHED
 	},
 
-	{
+	[WIFI_EVENT_DFS_OFFLOAD_RADAR_DETECTED] {
 		.vendor_id = OUI_QCA,
 		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
 	},
