@@ -624,6 +624,10 @@ struct EVENT_CHECK_REORDER_BUBBLE {
 	uint8_t ucTid;
 };
 
+/* Wi-Fi Multimedia Technical Specification
+ * with WMM-Power Save and WMM-Admission Control
+ * Version 1.2.0
+ */
 /* WMM-2.2.1 WMM Information Element */
 struct IE_WMM_INFO {
 	uint8_t ucId;		/* Element ID */
@@ -636,13 +640,31 @@ struct IE_WMM_INFO {
 	uint8_t ucDummy[3];	/* Dummy for pack */
 };
 
+/* WMM-2.2.2 Figure 9 AC Parameters Record Format
+ * 802.11 2020 Figure 9-295 - AC_BE, AC_BK, AC_VI, and AC_VO Parameter Record
+ * field format
+ */
+__KAL_ATTRIB_PACKED_FRONT__
 struct WMM_AC_PARAM {
+	/* WMM-2.2.2 Figure 10 ACI/AIFSN Field
+	 * 802.11 2020 Figure 9-296 - ACI/AIFSN field format
+	 * BITS(0, 3): AIFSN
+	 * BITS(4): ACM
+	 * BITS(5, 6): ACI
+	 * BITS(7): Reserved
+	 */
 	uint8_t ucAciAifsn;
+	/* WMM-2.2.2 Figure 11 ECWmin/ECWmax field
+	 * 802.11 2020 Figure 9-297 - ECWmin/ECWmax field format
+	 * BITS(0, 3): ECWmin
+	 * BITS(4, 7): ECWmax
+	 */
 	uint8_t ucEcw;
 	uint16_t u2TxopLimit;
-};
+} __KAL_ATTRIB_PACKED__;
 
-/* WMM-2.2.2 WMM Parameter Element */
+/* WMM-2.2.2 Figure 8 WMM Parameter Element */
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_WMM_PARAM {
 	uint8_t ucId;		/* Element ID */
 	uint8_t ucLength;	/* Length */
@@ -658,26 +680,8 @@ struct IE_WMM_PARAM {
 	uint8_t ucReserved;
 
 	/* AC Parameters */
-#if 1
 	struct WMM_AC_PARAM arAcParam[4];
-#else
-	uint8_t ucAciAifsn_BE;
-	uint8_t ucEcw_BE;
-	uint8_t aucTxopLimit_BE[2];
-
-	uint8_t ucAciAifsn_BG;
-	uint8_t ucEcw_BG;
-	uint8_t aucTxopLimit_BG[2];
-
-	uint8_t ucAciAifsn_VI;
-	uint8_t ucEcw_VI;
-	uint8_t aucTxopLimit_VI[2];
-
-	uint8_t ucAciAifsn_VO;
-	uint8_t ucEcw_VO;
-	uint8_t aucTxopLimit_VO[2];
-#endif
-};
+} __KAL_ATTRIB_PACKED__;
 
 struct IE_WMM_TSPEC {
 	uint8_t ucId;		/* Element ID */
@@ -702,6 +706,7 @@ struct IE_WMM_HDR {
 	uint8_t aucBody[1];	/* IE body */
 };
 
+__KAL_ATTRIB_PACKED_FRONT__
 struct AC_QUE_PARMS {
 	uint16_t u2CWmin;	/*!< CWmin */
 	uint16_t u2CWmax;	/*!< CWmax */
@@ -709,7 +714,33 @@ struct AC_QUE_PARMS {
 	uint16_t u2Aifsn;	/*!< AIFSN */
 	uint8_t ucGuradTime;	/*!< GuardTime for STOP/FLUSH. */
 	uint8_t ucIsACMSet;
-};
+} __KAL_ATTRIB_PACKED__;
+
+/* 802.11 2020 9.4.2.28 EDCA Parameter Set element
+ * Figure 9-293 - EDCA Parameter Set element format
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_EDCA_PARAM_SET {
+	uint8_t ucId;
+	uint8_t ucLength;
+	/* 802.11 2020 Figure 9-100 - QoS Info field format when sent by an AP
+	 * BITS(0, 3): EDCA Parameter Set Update Count
+	 * BITS(4): Q-Ack
+	 * BITS(5): Queue Request
+	 * BITS(6): TXOP Request
+	 * BITS(7): Reserved
+	 */
+	uint8_t ucQosInfo;
+	/* 802.11 2020 Figure 9-294 - Update EDCA Info field format
+	 * BITS(0): Override
+	 * BITS(1, 2): PS-Poll ACI
+	 * BITS(3, 4): RAW ACI
+	 * BITS(5, 6): STA Type
+	 * BITS(7): Reserved
+	 */
+	uint8_t ucUpdateEdcaInfo;
+	struct WMM_AC_PARAM arAcParam[4];
+} __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_802_11AX == 1)
 /* MU EDCA parameters for each AC */
@@ -1141,29 +1172,32 @@ u_int8_t mqmCompareMUEdcaParameters(
 	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam,
 	struct BSS_INFO *prBssInfo);
 
-u_int8_t
-mqmParseMUEdcaParams(
-	struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb,
-	const uint8_t *pucIE,
-	uint16_t u2IELength,
-	u_int8_t fgForceOverride);
+u_int8_t mqmParseMUEdcaParams(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
+	const uint8_t *pucIE, uint16_t u2IELength, u_int8_t fgForceOverride);
 #endif
 
-u_int8_t mqmParseEdcaParameters(struct ADAPTER *prAdapter,
+u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 		uint16_t u2IELength, u_int8_t fgForceOverride);
 
-u_int8_t mqmCompareEdcaParameters(struct IE_WMM_PARAM
-				  *prIeWmmParam, struct BSS_INFO *prBssInfo);
+u_int8_t mqmHandleWMMEdcaParams(struct BSS_INFO *prBssInfo,
+		const uint8_t *pucIE, u_int8_t fgForceOverride);
 
-void mqmFillAcQueParam(struct IE_WMM_PARAM *prIeWmmParam,
-		       uint32_t u4AcOffset,
-		       struct AC_QUE_PARMS *prAcQueParams);
+u_int8_t mqmHandle80211EdcaParamSet(struct BSS_INFO *prBssInfo,
+		const uint8_t *pucIE, u_int8_t fgForceOverride);
+
+u_int8_t mqmIsEdcaParamsChanged(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
+		struct WMM_AC_PARAM *arAcParam);
+
+void mqmUpdateEdcaParams(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
+		struct WMM_AC_PARAM *arAcParam);
+
+void mqmFillAcQueParam(struct WMM_AC_PARAM *prAcParam,
+		struct AC_QUE_PARMS *prAcQueParams);
 
 void mqmProcessScanResult(struct ADAPTER *prAdapter,
-			  struct BSS_DESC *prScanResult,
-			  struct STA_RECORD *prStaRec);
+			struct BSS_DESC *prScanResult,
+			struct STA_RECORD *prStaRec);
 
 uint32_t mqmFillWmmInfoIE(uint8_t *pucOutBuf,
 	u_int8_t fgSupportUAPSD, uint8_t ucBmpDeliveryAC,
