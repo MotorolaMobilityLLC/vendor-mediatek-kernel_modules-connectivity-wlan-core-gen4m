@@ -307,22 +307,9 @@ void nic_txd_v2_compose(
 	} else
 #endif
 	{
-		if (prBssInfo) {
+		if (prBssInfo)
 			ucWmmQueSet = prBssInfo->ucWmmQueSet;
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-			if (fgIsTemplate != TRUE &&
-				prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
-				&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
-				prMsduInfo->fgDrop = TRUE;
-				DBGLOG(RSN, ERROR,
-					"WmmQueSet mismatch[%u,%u,%u,%u]\n",
-					prMsduInfo->ucBssIndex,
-					prMsduInfo->ucStaRecIndex,
-					ucWmmQueSet,
-					prMsduInfo->ucWmmQueSet);
-			}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
-		} else
+		else
 			DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
 
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);

@@ -1305,55 +1305,6 @@ uint32_t nicTxMsduInfoList(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief In this function, we'll drop invalid MsduInfo and
- * dump some debug log
- *
- * @param prAdapter              Pointer to the Adapter structure.
- * @param prMsduInfo             Pointer of the invalid MsduInfo
- *
- */
-/*----------------------------------------------------------------------------*/
-void nicTxDropInvalidMsduInfo(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo)
-{
-	uint32_t u4PageCnt = 0;
-
-	/* Dump mem for debugging */
-	DBGLOG(TX, ERROR, "[B] Dump invalid prMsduInfo & StaRec.\n");
-	nicDumpMsduInfo(prMsduInfo);
-	cnmDumpStaRec(prAdapter, prMsduInfo->ucStaRecIndex);
-	DBGLOG(TX, ERROR, "[E] Dump invalid prMsduInfo & StaRec.\n");
-
-	TX_INC_CNT(&prAdapter->rTxCtrl, TX_INVALID_MSDUINFO_COUNT);
-	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
-		if (prMsduInfo->pfTxDoneHandler)
-			prMsduInfo->pfTxDoneHandler(prAdapter, prMsduInfo,
-		    TX_RESULT_DROPPED_IN_DRIVER);
-	}
-
-	/* Remove next link */
-	QUEUE_ENTRY_SET_NEXT(prMsduInfo, NULL);
-
-#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
-	if (prMsduInfo->ucTC == TC4_INDEX)
-		u4PageCnt = halTxGetCmdPageCount(prAdapter,
-		  prMsduInfo->u2FrameLength, TRUE);
-#else
-		u4PageCnt = halTxGetDataPageCount(prAdapter,
-		  prMsduInfo->u2FrameLength, TRUE);
-#endif
-
-	/* Release Tx resource */
-	nicTxReleaseResource_PSE(prAdapter, prMsduInfo->ucTC,
-		u4PageCnt, TRUE);
-	nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
-	nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
-
 #if CFG_SUPPORT_MULTITHREAD
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1393,14 +1344,6 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 		prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(prMsduInfo);
 
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-		/* Drop invalid MsduInfo */
-		if (unlikely(prMsduInfo->fgDrop)) {
-			nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
-			prMsduInfo = prNextMsduInfo;
-			continue;
-		}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
 		switch (prMsduInfo->ucTC) {
 		case TC0_INDEX:
@@ -1463,14 +1406,6 @@ uint32_t nicTxMsduInfoListMthread(struct ADAPTER
 		prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(prMsduInfo);
 
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-		/* Drop invalid MsduInfo */
-		if (unlikely(prMsduInfo->fgDrop)) {
-			nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
-			prMsduInfo = prNextMsduInfo;
-			continue;
-		}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
 		if (prMsduInfo->ucTC < TC_NUM) {
 			QUEUE_ENTRY_SET_NEXT(prMsduInfo, NULL);
@@ -2217,23 +2152,6 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
 #endif
 		nicTxFillDescByPktOption(prAdapter, prMsduInfo, prTxDesc);
-
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-		if (prBssInfo) {
-			if (unlikely(prMsduInfo->ucPacketType
-				== TX_PACKET_TYPE_DATA &&
-				prBssInfo->ucWmmQueSet !=
-				prMsduInfo->ucWmmQueSet)) {
-				prMsduInfo->fgDrop = TRUE;
-				DBGLOG(RSN, ERROR,
-					"WmmQueSet mismatch[%u,%u,%u,%u]\n",
-					prMsduInfo->ucBssIndex,
-					prMsduInfo->ucStaRecIndex,
-					ucWmmQueSet,
-					prMsduInfo->ucWmmQueSet);
-			}
-		}
-#endif
 	} else { /* Compose TXD by Msdu info */
 #if defined(_HIF_USB)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_DESC);
@@ -2845,13 +2763,6 @@ uint32_t nicTxMsduQueue(struct ADAPTER *prAdapter,
 
 #if !CFG_SUPPORT_MULTITHREAD
 		nicTxFillDataDesc(prAdapter, prMsduInfo);
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-		/* Drop invalid MsduInfo */
-		if (unlikely(prMsduInfo->fgDrop)) {
-			nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
-			continue;
-		}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 #endif
 
 		if (prMsduInfo->eSrc == TX_PACKET_OS) {
@@ -6170,13 +6081,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 					prMsduInfo);
 
 			nicTxFillDataDesc(prAdapter, prMsduInfo);
-#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-			/* Drop invalid MsduInfo */
-			if (unlikely(prMsduInfo->fgDrop)) {
-				nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
-				return WLAN_STATUS_FAILURE;
-			}
-#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 				prMsduInfo->ucStaRecIndex);
