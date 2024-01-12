@@ -395,7 +395,6 @@ void halDumpIntLog(IN struct ADAPTER *prAdapter);
 void halTagIntLog(IN struct ADAPTER *prAdapter, IN enum HIF_SDIO_INT_STS eTag);
 void halRecIntLog(IN struct ADAPTER *prAdapter, IN struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl);
 struct SDIO_INT_LOG_T *halGetIntLog(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx);
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info);
 
 /*******************************************************************************
 *                              F U N C T I O N S

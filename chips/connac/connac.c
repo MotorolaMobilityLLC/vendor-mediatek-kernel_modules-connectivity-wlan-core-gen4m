@@ -281,15 +281,18 @@ struct CHIP_DBG_OPS connac_debug_ops = {
 	.showPdmaInfo = halShowPdmaInfo,
 	.showPseInfo = halShowPseInfo,
 	.showPleInfo = halShowPleInfo,
+	.showTxdInfo = halShowTxdInfo,
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
 #else
 	.showPdmaInfo = NULL,
 	.showPseInfo = NULL,
 	.showPleInfo = NULL,
+	.showTxdInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 #endif
+	.showWtblInfo = NULL,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
 };

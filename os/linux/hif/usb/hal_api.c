@@ -1847,10 +1847,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 	}
 }
 
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
-{
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief Check if HIF state is READY for upper layer cfg80211

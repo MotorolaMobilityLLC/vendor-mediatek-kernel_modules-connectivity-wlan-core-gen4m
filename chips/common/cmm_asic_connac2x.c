@@ -303,7 +303,7 @@ void asicConnac2xWfdmaDummyCrRead(
 void asicConnac2xWfdmaDummyCrWrite(
 	struct ADAPTER *prAdapter)
 {
-	u_int32_t u4RegValue;
+	u_int32_t u4RegValue = 0;
 
 	HAL_MCR_RD(prAdapter,
 		CONNAC2X_WFDMA_DUMMY_CR,
@@ -322,7 +322,9 @@ void asicConnac2xWfdmaReInit(
 	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
 	if (fgResult) {
 		DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		halWpdmaInitRing(prAdapter->prGlueInfo);
+#endif /* _HIF_PCIE */
 		nicEnableInterrupt(prAdapter);
 		asicConnac2xWfdmaDummyCrWrite(prAdapter);
 	}
