@@ -507,6 +507,7 @@ mtk_cfg80211_set_default_key(struct wiphy *wiphy,
 	return i4Rst;
 }
 
+#if !CFG_REPORT_MAX_TX_RATE
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for getting tx rate from LLS
@@ -588,6 +589,7 @@ static uint32_t wlanGetTxRateFromLinkStats(
 #endif
 	return rStatus;
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -608,7 +610,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4TxRate = 0, u4TxBw = 0, u4RxRate = 0, u4RxBw = 0;
+	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
@@ -616,6 +618,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
+#if !CFG_REPORT_MAX_TX_RATE
+	uint32_t u4TxBw = 0;
+#endif
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -662,7 +667,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 
 
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+#if CFG_REPORT_MAX_TX_RATE
 	/*rewrite LinkSpeed with Max LinkSpeed*/
 	rStatus = kalIoctlByBssIdx(prGlueInfo,
 			       wlanoidQueryMaxLinkSpeed, &rLinkSpeed,
@@ -690,6 +695,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
 
+	/* change to unit of 100 kbps */
+	/*
+	 *  FW report in 500kbps because u2TxLinkSpeed is 16 bytes
+	 *  TODO:
+	 *    driver and fw should change u2TxLinkSpeed to u4
+	 *    because it will overflow in wifi7
+	 */
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
@@ -727,12 +739,14 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
-	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate, &u4TxBw,
-			ucBssIndex);
+#if !CFG_REPORT_MAX_TX_RATE
+	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
+			&u4TxBw, ucBssIndex);
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate;
 		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
 	}
+#endif
 
 	sinfo->txrate.legacy =
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex];
@@ -866,7 +880,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
 	} else {
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
+#if CFG_REPORT_MAX_TX_RATE
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryMaxLinkSpeed,
 				&u4Rate, sizeof(u4Rate), TRUE, FALSE, FALSE,
 				&u4BufLen,
