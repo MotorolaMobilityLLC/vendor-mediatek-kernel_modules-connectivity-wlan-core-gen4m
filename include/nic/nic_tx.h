@@ -834,7 +834,12 @@ struct MSDU_INFO {
 	/* TRUE: 802.1x frame - Non-Protected */
 	u_int8_t fgIs802_1x_NonProtected;
 	u_int8_t fgIs802_11;	/* TRUE: 802.11 header is present */
-	u_int8_t fgIs802_3;	/* TRUE: 802.3 frame */
+	/*
+	 * fgIs802_3:
+	 * TRUE: 802.3 frame (length following Source Address)
+	 * FALSE: Ethernet II Frame (Ethertype following SA)
+	 */
+	u_int8_t fgIs802_3;
 	u_int8_t fgIsVlanExists;	/* TRUE: VLAN tag is exists */
 
 	/* Special Option */
