@@ -517,6 +517,7 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint8_t *pucStartPtr;
 	uint32_t u4offset = 0, u4ChunkSize;
+	u_int8_t fgIsDynamicMemMap = FALSE;
 	/* 3a. parse file header for decision of
 	 * divided firmware download or not
 	 */
@@ -589,7 +590,7 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 	} else {
 		u4Status = wlanImageSectionDownloadStage(prAdapter,
 				pvFwImageMapFile, u4FwImageFileLength,
-				ucSectionNumber, eDlIdx);
+				ucSectionNumber, eDlIdx, &fgIsDynamicMemMap);
 		*pucIsCompressed = FALSE;
 	}
 	return u4Status;
@@ -599,7 +600,7 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 uint32_t wlanImageSectionDownloadStage(
 	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
 	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx, OUT u_int8_t *pfgIsDynamicMemMap)
 {
 	uint32_t u4SecIdx, u4Offset = 0;
 	uint32_t u4Addr, u4Len, u4DataMode = 0;
@@ -611,6 +612,7 @@ uint32_t wlanImageSectionDownloadStage(
 	struct PATCH_FORMAT_T *prPatchHeader;
 	struct FWDL_OPS_T *prFwDlOps;
 
+	*pfgIsDynamicMemMap = FALSE;
 	prFwDlOps = prChipInfo->fw_dl_ops;
 
 	/* 3a. parse file header for decision of
@@ -644,11 +646,14 @@ uint32_t wlanImageSectionDownloadStage(
 		else
 /* For dynamic memory map::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
+		{
 			u4Status = prFwDlOps->downloadByDynMemMap(
 						prAdapter, u4Addr, u4Len,
 						pvFwImageMapFile
 							+ u4Offset,
 							eDlIdx);
+			*pfgIsDynamicMemMap = TRUE;
+		}
 #else
 			u4Status = wlanDownloadSection(
 							prAdapter,
@@ -685,6 +690,7 @@ uint32_t wlanImageSectionDownloadStage(
 				/* Non-encrypted F/W region,
 				 * use dynamic memory mapping for download
 				 */
+				*pfgIsDynamicMemMap = TRUE;
 				u4Status = prFwDlOps->downloadByDynMemMap(
 					prAdapter,
 					u4Addr,
@@ -2143,6 +2149,8 @@ uint32_t wlanHarvardFormatDownload(IN struct ADAPTER
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	u_int8_t fgIsCompressed = FALSE;
 	struct INIT_CMD_WIFI_DECOMPRESSION_START rFwImageInFo;
+#else
+	u_int8_t fgIsDynamicMemMap = FALSE;
 #endif
 
 	if (eDlIdx == IMG_DL_IDX_N9_FW) {
@@ -2175,7 +2183,8 @@ uint32_t wlanHarvardFormatDownload(IN struct ADAPTER
 		rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, ucPDA);
 #else
 	rDlStatus = wlanImageSectionDownloadStage(prAdapter,
-			prFwBuffer, u4FwSize, ucTotSecNum, eDlIdx);
+			prFwBuffer, u4FwSize, ucTotSecNum, eDlIdx,
+			&fgIsDynamicMemMap);
 	if (eDlIdx == IMG_DL_IDX_CR4_FW)
 		prAdapter->fgIsCr4FwDownloaded = TRUE;
 	rCfgStatus = wlanConfigWifiFunc(prAdapter, FALSE, 0, ucPDA);
@@ -2200,6 +2209,7 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 	uint32_t rCfgStatus = 0;
 	uint8_t ucRegionNum;
 	uint8_t ucPDA;
+	u_int8_t fgIsDynamicMemMap = FALSE;
 
 	kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer,
 				&u4FwSize, eDlIdx);
@@ -2228,13 +2238,19 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
 
 	rDlStatus = wlanImageSectionDownloadStage(prAdapter,
-			prFwBuffer, u4FwSize, ucRegionNum, eDlIdx);
+			prFwBuffer, u4FwSize, ucRegionNum, eDlIdx,
+			&fgIsDynamicMemMap);
 
 	ram_entry = wlanDetectRamEntry(&prAdapter->rVerInfo);
 
 /* To support dynamic memory map for WiFi RAM code download::Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-	rCfgStatus = wlanRamCodeDynMemMapSendComplete(prAdapter,
+	if (fgIsDynamicMemMap)
+		rCfgStatus = wlanRamCodeDynMemMapSendComplete(prAdapter,
+					(ram_entry == 0) ? FALSE : TRUE,
+					ram_entry, ucPDA);
+	else
+		rCfgStatus = wlanConfigWifiFunc(prAdapter,
 					(ram_entry == 0) ? FALSE : TRUE,
 					ram_entry, ucPDA);
 #else
@@ -2339,6 +2355,8 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 	uint32_t u4Status;
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	uint8_t ucIsCompressed;
+#else
+	u_int8_t fgIsDynamicMemMap = FALSE;
 #endif
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
@@ -2376,7 +2394,8 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 			IMG_DL_IDX_PATCH, &ucIsCompressed, NULL);
 #else
 		u4Status = wlanImageSectionDownloadStage(
-			prAdapter, prFwBuffer, u4FwSize, 1, IMG_DL_IDX_PATCH);
+			prAdapter, prFwBuffer, u4FwSize, 1, IMG_DL_IDX_PATCH,
+			&fgIsDynamicMemMap);
 #endif
 
 /* Dynamic memory map::Begin */
