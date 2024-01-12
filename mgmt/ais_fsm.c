@@ -2118,6 +2118,9 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 
 		prAisFsmInfo->ucConnTrialCount++;
 		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
+#if CFG_SUPPORT_ROAMING
+		prAisFsmInfo->ucIsStaRoaming = TRUE;
+#endif
 
 		if (wnmSendBTMResponse(prAdapter,
 		    aisGetMainLinkBssDesc(prAisFsmInfo)->aucBSSID,
@@ -3495,8 +3498,45 @@ void aisFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* end of aisFsmRunEventJoinComplete() */
 
-void aisRestoreAllLink(struct ADAPTER *ad,
-	struct AIS_FSM_INFO *ais)
+void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
+	struct BSS_DESC *prBssDesc)
+{
+	uint8_t ucRfBw, ucRfCenterFreqSeg1, ucPrimaryChannel;
+	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
+	enum ENUM_CHNL_EXT eRfSco;
+
+	if (!prBssInfo || !prBssDesc)
+		return;
+
+	prBssInfo->u4RsnSelectedGroupCipher =
+		prBssDesc->u4RsnSelectedGroupCipher;
+	prBssInfo->u4RsnSelectedPairwiseCipher =
+		prBssDesc->u4RsnSelectedPairwiseCipher;
+	prBssInfo->u4RsnSelectedAKMSuite = prBssDesc->u4RsnSelectedAKMSuite;
+	prBssInfo->eBand = prBssDesc->eBand;
+	ucPrimaryChannel = prBssDesc->ucChannelNum;
+	eRfSco = prBssDesc->eSco;
+
+#if CFG_SUPPORT_DBDC
+	ucRfBw = cnmGetDbdcBwCapability(ad, prBssInfo->ucBssIndex);
+#else
+	ucRfBw = cnmGetBssMaxBw(ad, prBssInfo->ucBssIndex);
+#endif
+	ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+	if (ucRfBw > prBssDesc->eChannelWidth)
+		ucRfBw = prBssDesc->eChannelWidth;
+	eRfChannelWidth = ucRfBw;
+	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
+		eRfChannelWidth);
+
+	rlmReviseMaxBw(ad, prBssInfo->ucBssIndex, &eRfSco, &eRfChannelWidth,
+		&ucRfCenterFreqSeg1, &ucPrimaryChannel);
+
+	prBssInfo->ucVhtChannelWidth = eRfChannelWidth;
+	prBssInfo->eBssSCO = eRfSco;
+}
+
+void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 {
 	uint8_t i;
 
@@ -3504,6 +3544,7 @@ void aisRestoreAllLink(struct ADAPTER *ad,
 		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
 		struct STA_RECORD *prStaRec = aisGetLinkStaRec(ais, i);
 		struct PARAM_SSID rSsid;
+		struct BSS_DESC *prBssDesc = NULL;
 
 		if (!prAisBssInfo)
 			break;
@@ -3513,8 +3554,9 @@ void aisRestoreAllLink(struct ADAPTER *ad,
 			  rSsid.u4SsidLen,
 			  prAisBssInfo->aucSSID,
 			  prAisBssInfo->ucSSIDLen);
-		aisSetLinkBssDesc(ais, scanSearchBssDescByBssidAndSsid(ad,
-			prAisBssInfo->aucBSSID, TRUE, &rSsid), i);
+		prBssDesc = scanSearchBssDescByBssidAndSsid(ad,
+			prAisBssInfo->aucBSSID, TRUE, &rSsid);
+		aisSetLinkBssDesc(ais, prBssDesc, i);
 		aisSetLinkStaRec(ais, prAisBssInfo->prStaRecOfAP, i);
 
 		prAisBssInfo->eHwBandIdx = prAisBssInfo->prStaRecOfAP ?
@@ -3534,10 +3576,13 @@ void aisRestoreAllLink(struct ADAPTER *ad,
 			aisFreeBssInfo(ad, ais, i);
 
 		/* roaming but can't find connected bssdesc */
-		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
-		    !aisGetLinkBssDesc(ais, i))
-			DBGLOG(AIS, ERROR,
-			       "Can't retrieve target bss descriptor %d\n", i);
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+			if (!prBssDesc)
+				DBGLOG(AIS, ERROR,
+					"Can't find target BssDesc %d\n", i);
+			else
+				aisRestoreBssInfo(ad, prAisBssInfo, prBssDesc);
+		}
 	}
 }
 
@@ -3693,7 +3738,6 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 
 	fgTempReject = aisHandleTemporaryReject(prAdapter, prStaRec);
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
-
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
 
 	/* If AP reject STA temporarily when roaming, clear all link.
@@ -3719,8 +3763,11 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		if (prAisBssInfo->prStaRecOfAP)
 			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
 #if CFG_SUPPORT_ROAMING
-		roamingFsmNotifyEvent(prAdapter,
-				ucBssIndex, TRUE, prBssDesc);
+		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
+
+		/* Restore rlmFillSync or nicBssUpdate if needed */
+		roamingFsmDoRecover(prAdapter, ucBssIndex);
+		prAisFsmInfo->ucIsStaRoaming = FALSE;
 #endif
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
@@ -3826,6 +3873,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 			/* 1. Reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
+#if CFG_SUPPORT_ROAMING
+			prAisFsmInfo->ucIsStaRoaming = FALSE;
+#endif
 
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
@@ -4302,6 +4352,9 @@ void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif
 	aisRemoveDeauthBlacklist(prAdapter);
 	aisClearAllLink(prAisFsmInfo);
+#if CFG_SUPPORT_ROAMING
+	prAisFsmInfo->ucIsStaRoaming = FALSE;
+#endif
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
