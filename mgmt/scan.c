@@ -5030,7 +5030,7 @@ void scanParseHEOpIE(IN uint8_t *pucIE, IN struct BSS_DESC *prBssDesc,
 
 		rlmTransferHe6gOpInfor(prBssDesc->ucChannelNum,
 			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
-			&prBssDesc->eChannelWidth,
+			(uint8_t *)&prBssDesc->eChannelWidth,
 			&prBssDesc->ucCenterFreqS1,
 			&prBssDesc->ucCenterFreqS2,
 			&prBssDesc->eSco);
