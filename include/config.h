@@ -1018,7 +1018,9 @@
 
 #endif /* CFG_SUPPORT_ROAMING */
 
+#ifndef CFG_SUPPORT_MLR
 #define CFG_SUPPORT_MLR				1
+#endif
 
 #define CFG_SUPPORT_SWCR			1
 
