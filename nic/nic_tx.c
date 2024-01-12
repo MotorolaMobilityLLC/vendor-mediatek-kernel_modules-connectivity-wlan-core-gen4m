@@ -1258,6 +1258,7 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	UINT_8 ucEtherTypeOffsetInWord;
 	UINT_32 u4TxDescAndPaddingLength;
 	UINT_8 ucTarPort, ucTarQueue;
+	struct mt66xx_chip_info *prChipInfo;
 
 	prTxDesc = (P_HW_MAC_TX_DESC_T) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -1417,6 +1418,11 @@ nicTxComposeDesc(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
 	default:
 		break;
 	}
+
+	/* TH3, For MT7663 bring up. All 1T pkt be set to 2T */
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->workAround & BIT(WORKAROUND_MT7663_BRINGUP_20171205))
+		HAL_MAC_TX_DESC_SET_SPE_IDX(prTxDesc, 0x18);
 
 }
 
