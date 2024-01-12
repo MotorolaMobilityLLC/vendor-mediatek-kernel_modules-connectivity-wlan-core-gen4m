@@ -314,7 +314,8 @@ int wf_ioremap_read(size_t addr, unsigned int *val);
 
 int wf_ioremap_write(phys_addr_t addr, unsigned int val);
 int soc3_0_Trigger_fw_assert(void);
-int soc3_0_CheckBusHang(uint8_t ucWfResetEnable);
+int soc3_0_CheckBusHang(struct ADAPTER *prAdapter,
+	uint8_t ucWfResetEnable);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);
 int wlanConnacPccifoff(void);

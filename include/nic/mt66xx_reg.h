@@ -1372,7 +1372,8 @@ struct mt66xx_chip_info {
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
 	u_int8_t is_support_nvram_fragment;
-	int (*checkbushang)(uint8_t ucWfResetEnable);
+	int (*checkbushang)(struct ADAPTER *prAdapter,
+		uint8_t ucWfResetEnable);
 };
 
 struct mt66xx_hif_driver_data {

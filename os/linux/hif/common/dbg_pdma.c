@@ -194,7 +194,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	}
 
 	/* need to check Bus readable */
-	ret = prAdapter->chip_info->checkbushang(TRUE);
+	ret = prAdapter->chip_info->checkbushang(prAdapter, TRUE);
 	if (ret != 0) {
 		DBGLOG(HAL, ERROR, "return due to checkbushang fail %d\n", ret);
 		return;
