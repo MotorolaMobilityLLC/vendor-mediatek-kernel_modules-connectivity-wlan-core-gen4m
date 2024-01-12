@@ -8969,8 +8969,8 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 	uint32_t u4ATEMagicNum, u4ATEId, u4ATEData;
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct GLUE_INFO *prGlueInfo = NULL;
-#endif
 	struct hqa_frame_ctrl local_hqa;
+#endif
 
 	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 

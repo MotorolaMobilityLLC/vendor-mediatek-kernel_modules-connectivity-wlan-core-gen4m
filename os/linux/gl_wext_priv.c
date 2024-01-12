@@ -2938,7 +2938,6 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_MU_RX_PKTCNT	"hqa_get_murx_pktcnt"
 #define CMD_RUN_HQA	"hqa"
 
-
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START		"WOW_START"
 #define CMD_SET_WOW_ENABLE	"SET_WOW_ENABLE"
@@ -14195,7 +14194,7 @@ static int priv_driver_show_txd_info(
 	}
 	return i4BytesWritten;
 }
-
+#if (CONFIG_WLAN_SERVICE == 1)
 int8_t *RxstatisticsArray[] = {
 	"mac_rx_fcs_err_cnt         : 0x%08x\n",
 	"mac_rx_fcs_err_cnt         : 0x%08x\n",
@@ -14281,6 +14280,8 @@ int8_t *RxstatisticsArray[] = {
 	"per0                       : 0x%08x\n",
 	"per1                       : 0x%08x\n",
 };
+#endif
+
 static int priv_driver_run_hqa(
 	IN struct net_device *prNetDev,
 	IN char *pcCommand,
@@ -14289,10 +14290,13 @@ static int priv_driver_run_hqa(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 	int8_t *this_char = NULL;
+#if (CONFIG_WLAN_SERVICE == 1)
 	struct hqa_frame_ctrl local_hqa;
-	s_int32 ret = WLAN_STATUS_FAILURE;
-	u_int8 *dataptr = NULL;
-	int32_t i = 0, datalen = 0;
+	uint8_t *dataptr = NULL;
+	int32_t datalen = 0;
+	int32_t ret = WLAN_STATUS_FAILURE;
+#endif
+	int32_t i = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -14313,7 +14317,7 @@ static int priv_driver_run_hqa(
 	this_char += i;
 
 	DBGLOG(REQ, LOUD, "this_char is %s\n", this_char);
-
+#if (CONFIG_WLAN_SERVICE == 1)
 	if (this_char) {
 		local_hqa.type = 1;
 		local_hqa.hqa_frame_comm.hqa_frame_string = this_char;
@@ -14334,7 +14338,7 @@ static int priv_driver_run_hqa(
 	/*parsing ret 2 bytes*/
 	if ((dataptr) && (datalen)) {
 		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
-		"Return : 0x%04x\n", (s_int16)*dataptr);
+		"Return : 0x%04x\n", (int16_t)*dataptr);
 
 		datalen -= 2;
 		dataptr += 2;
@@ -14350,15 +14354,18 @@ static int priv_driver_run_hqa(
 			if (datalen == 4) {
 				i4BytesWritten +=
 				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
-				"ExtId : 0x%08x\n", (s_int32)*dataptr);
+				"ExtId : 0x%08x\n", (int32_t)*dataptr);
 			} else {
 				i4BytesWritten +=
 				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
-				RxstatisticsArray[i/4], (s_int32)*dataptr);
+				RxstatisticsArray[i/4], (int32_t)*dataptr);
 			}
 		}
 	}
-
+#else
+	DBGLOG(REQ, ERROR,
+	"wlan_service not support\n");
+#endif
 	return i4BytesWritten;
 
 }
