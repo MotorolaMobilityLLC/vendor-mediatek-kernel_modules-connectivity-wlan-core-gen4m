@@ -7,6 +7,7 @@
 #include "precomp.h"
 #include "nan/nan_sec.h"
 
+
 uint8_t
 nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
@@ -235,6 +236,9 @@ nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 		nicUpdateBss(prAdapter, prnanBssInfo->ucBssIndex);
 
 		cnmFreeBssInfo(prAdapter, prnanBssInfo);
+
+		g_ucNanWmmQueIdx = 0;
+
 	}
 } /* p2pDevFsmUninit */
 struct _NAN_SPECIFIC_BSS_INFO_T *
