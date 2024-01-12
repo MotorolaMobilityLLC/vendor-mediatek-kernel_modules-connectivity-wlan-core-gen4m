@@ -711,6 +711,8 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kal_completion_done(eComp) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kal_reinit_completion(eComp) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #define kal_completion uint32_t
 #define complete(eComp) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

@@ -541,6 +541,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
 	.u4SuspendVer = SUSPEND_V2,
+	.fgIsSupportWdtEp = TRUE,
 	.asicUsbResume = asicConnac3xUsbResume,
 	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
@@ -849,7 +850,19 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif /* _HIF_PCIE */
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
-
+#if CFG_CHIP_RESET_SUPPORT
+	.asicWfsysRst = mt6639HalCbInfraRguWfRst,
+	.asicPollWfsysSwInitDone = mt6639HalPollWfsysSwInitDone,
+#endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = TRUE,
+#elif defined(_HIF_USB)
+	.fgIsSupportL0p5Reset = FALSE,
+#elif defined(_HIF_SDIO)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = FALSE,
+#endif
 	.u4MinTxLen = 2,
 };
 

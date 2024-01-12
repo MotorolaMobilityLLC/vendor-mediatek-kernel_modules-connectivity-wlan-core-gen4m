@@ -1658,6 +1658,7 @@ ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7925/mt7925.o
 CHIPS_OBJS += $(CHIPS)mt7925/dbg_mt7925.o
 CHIPS_OBJS += $(CHIPS)mt7925/hal_dmashdl_mt7925.o
+CHIPS_OBJS += $(CHIPS)mt7925/hal_wfsys_reset_mt7925.o
 endif
 
 ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)
