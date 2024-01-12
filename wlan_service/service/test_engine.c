@@ -1658,7 +1658,7 @@ static s_int32 mt_engine_calc_symbol_by_bytes(
 					(ru_info->rate & ~BIT(4)));
 #else
 	ds = mt_engine_map_subcarriers(ru_info->ru_index >> 1,
-					(ru_info->rate & BIT(4)));
+					(ru_info->rate & BIT(5)));
 #endif
 
 	if (ds)
@@ -1668,7 +1668,7 @@ static s_int32 mt_engine_calc_symbol_by_bytes(
 						   (ru_info->rate & ~BIT(4)));
 #else
 		dss = mt_engine_map_subcarriers_short(ru_info->ru_index >> 1,
-						   (ru_info->rate & BIT(4)));
+						   (ru_info->rate & BIT(5)));
 #endif
 	else {
 		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_ERROR,
