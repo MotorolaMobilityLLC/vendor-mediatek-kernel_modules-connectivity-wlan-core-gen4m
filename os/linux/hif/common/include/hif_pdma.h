@@ -102,7 +102,17 @@
 #define TX_RING_SIZE				3072
 #endif
 #define TX_RING_DATA_SIZE			TX_RING_SIZE
+
+/*
+ * MT7925 (Owl) does not need to do Redownload.
+ * The FWDL binary size becomes larger, so the
+ * TX CMD RING size needs to be larger.
+ */
+#if defined(MT7925)
+#define TX_RING_CMD_SIZE			512
+#else
 #define TX_RING_CMD_SIZE			256
+#endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define RX_RING_SIZE				4095 /* Max Rx ring size */
@@ -125,7 +135,11 @@
 #elif defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_EHT160)
 #define TX_RING_SIZE				1024
 #define TX_RING_DATA_SIZE			1024
+#if defined(MT7925)
+#define TX_RING_CMD_SIZE			512
+#else
 #define TX_RING_CMD_SIZE			256
+#endif
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
@@ -137,7 +151,11 @@
 #elif defined(CONFIG_MTK_WIFI_HE80)
 #define TX_RING_SIZE				1024
 #define TX_RING_DATA_SIZE			1024
+#if defined(MT7925)
+#define TX_RING_CMD_SIZE			512
+#else
 #define TX_RING_CMD_SIZE			256
+#endif
 #define RX_RING_SIZE				1024 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				1024
@@ -149,7 +167,11 @@
 #elif defined(CONFIG_MTK_WIFI_VHT80)
 #define TX_RING_SIZE				512
 #define TX_RING_DATA_SIZE			512
+#if defined(MT7925)
+#define TX_RING_CMD_SIZE			512
+#else
 #define TX_RING_CMD_SIZE			256
+#endif
 #define RX_RING_SIZE				512 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				512
@@ -161,7 +183,11 @@
 #else
 #define TX_RING_SIZE				256
 #define TX_RING_DATA_SIZE			256
+#if defined(MT7925)
+#define TX_RING_CMD_SIZE			512
+#else
 #define TX_RING_CMD_SIZE			256
+#endif
 #define RX_RING_SIZE				256 /* Max Rx ring size */
 /* Data Rx ring */
 #define RX_RING0_SIZE				256
