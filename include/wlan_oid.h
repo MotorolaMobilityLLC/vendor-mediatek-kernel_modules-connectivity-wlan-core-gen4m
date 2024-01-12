@@ -571,7 +571,7 @@ struct PARAM_BSSID_EX {
 	enum ENUM_PARAM_OP_MODE eOpMode;
 	uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX];
 	uint32_t u4IELength;
-	uint8_t *aucIEs;
+	uint8_t *pucIE; /* point to associated IE saved in aucScanIEBuf */
 };
 
 struct PARAM_BSSID_LIST_EX {

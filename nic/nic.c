@@ -4606,7 +4606,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
+				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =
@@ -4663,7 +4663,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* zero */
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
+				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =
@@ -4718,7 +4718,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
+				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =

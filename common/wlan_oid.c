@@ -612,7 +612,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 			*prBssidEx = prScanResult[i];
 
 			/* assign ie buffer head*/
-			prBssidEx->aucIEs = (uint8_t *)(prBssidEx + 1);
+			prBssidEx->pucIE = (uint8_t *)(prBssidEx + 1);
 
 			/* For WHQL test, Rssi should be
 			 * in range -10 ~ -200 dBm
@@ -622,7 +622,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 
 			if (prScanResult[i].u4IELength > 0) {
 				/* copy IEs */
-				kalMemCopy(prBssidEx->aucIEs,
+				kalMemCopy(prBssidEx->pucIE,
 					   prWlanInfo->apucScanResultIEs[i],
 					   prScanResult[i].u4IELength);
 			}
