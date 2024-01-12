@@ -1321,6 +1321,7 @@ struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG {
 	uint16_t u2TxChecksum;   /* bit0: IP, bit1: UDP, bit2: TCP */
 	uint8_t ucCtrlFlagAssertPath;
 	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
 
 /* register access command (0x0D) */
 struct UNI_CMD_ACCESS_REG
