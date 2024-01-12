@@ -2657,7 +2657,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			netdev_priv(prDevHandler);
 		prNetDevPrivate->prGlueInfo = prGlueInfo;
 
-		prDevHandler->needed_headroom +=
+		prDevHandler->needed_headroom =
 			NIC_TX_DESC_AND_PADDING_LENGTH +
 			prChipInfo->txd_append_size;
 		prDevHandler->netdev_ops = &wlan_netdev_ops;
