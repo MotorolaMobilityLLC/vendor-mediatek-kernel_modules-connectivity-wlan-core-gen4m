@@ -1905,8 +1905,11 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 		/* 1. beacon_rx, special handling */
 		kalMemCopyFromIo(&link->beacon_rx, &src->iface[b].beacon_rx,
 			sizeof(uint32_t));
-		DBGLOG(REQ, INFO,
-			"Copy beacon_rx to ac of %zu bytes", sizeof(uint32_t));
+		if (prAdapter->rWifiVar.fgLinkStatsDump) {
+			DBGLOG(REQ, INFO,
+			       "Copy beacon_rx to ac of %zu bytes",
+			       sizeof(uint32_t));
+		}
 
 		/*  2. average_tsf_offset, ..., rssi_ack, before ac[] */
 		kalMemCopyFromIo(&link->average_tsf_offset,
@@ -1914,17 +1917,22 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 			offsetof(struct STATS_LLS_WIFI_IFACE_STAT, ac) -
 			offsetof(struct STATS_LLS_WIFI_IFACE_STAT,
 				average_tsf_offset));
-		DBGLOG(REQ, INFO,
-			"Copy average_tsf_offset to ac of %zu bytes",
-			offsetof(struct STATS_LLS_WIFI_IFACE_STAT, ac) -
-			offsetof(struct STATS_LLS_WIFI_IFACE_STAT,
-				average_tsf_offset));
+
+		if (prAdapter->rWifiVar.fgLinkStatsDump) {
+			DBGLOG(REQ, INFO,
+			       "Copy average_tsf_offset to ac of %zu bytes",
+			       offsetof(struct STATS_LLS_WIFI_IFACE_STAT, ac) -
+			       offsetof(struct STATS_LLS_WIFI_IFACE_STAT,
+			       average_tsf_offset));
+		}
 
 		/*  3. ac[] followed by num_peers */
 		kalMemCopyFromIo(&link->ac, &src->iface[b].ac,
 				sizeof(link->ac));
-		DBGLOG(REQ, INFO, "Copy ac of %zu bytes",
-			sizeof(link->ac));
+		if (prAdapter->rWifiVar.fgLinkStatsDump) {
+			DBGLOG(REQ, INFO, "Copy ac of %zu bytes",
+			       sizeof(link->ac));
+		}
 
 		fill_ml_link_ac_mpdu(prAdapter, b, link);
 		link->time_slicing_duty_cycle_precent =
