@@ -504,7 +504,7 @@ else
     ccflags-y += -DCFG_SUPPORT_CONNAC3X=0
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_BW=1
-    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=3
+    ccflags-y += -DCFG_DRIVER_INITIAL_RUNNING_MODE=5
 endif
 
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
