@@ -579,7 +579,8 @@ struct BSS_INFO {
 	uint16_t u2MaxIdlePeriod;
 	uint8_t ucIdleOptions;
 
-	OS_SYSTIME rRekeyTime;
+	OS_SYSTIME rRekeyCountResetTime;
+	uint16_t u2RekeyCount;
 
 #if CFG_SUPPORT_DFS
 	struct TIMER rCsaTimer;

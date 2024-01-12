@@ -13634,25 +13634,27 @@ wlanoidSetGtkRekeyData(struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (prBssInfo && IS_BSS_AIS(prBssInfo)) {
 		GET_CURRENT_SYSTIME(&rCurrent);
-		if (prBssInfo->rRekeyTime != 0 &&
-		    !CHECK_FOR_TIMEOUT(rCurrent,
-				prBssInfo->rRekeyTime,
-				SEC_TO_SYSTIME(MSEC_TO_SEC(500)))) {
+		if (prBssInfo->u2RekeyCount > REKEY_COUNT_LIMIT) {
 			DBGLOG(RSN, WARN,
-				"[%d] Disconnect due to rekey period %u < 500ms\n",
+				"[%d] Disconnect due to rekey %u times within %u ms.\n",
 				ucBssIndex,
-				rCurrent - prBssInfo->rRekeyTime);
+				prBssInfo->u2RekeyCount,
+				rCurrent - prBssInfo->rRekeyCountResetTime);
 			aisFsmStateAbort(prAdapter,
 					DISCONNECT_REASON_CODE_LOCALLY,
 					FALSE,
 					ucBssIndex);
-		} else {
-			/* update rekey time */
-			GET_CURRENT_SYSTIME(&prBssInfo->rRekeyTime);
-			DBGLOG(RSN, INFO,
-				"[%d] Update rekey time: %u\n",
-				ucBssIndex, prBssInfo->rRekeyTime);
+			return WLAN_STATUS_FAILURE;
 		}
+
+		if (CHECK_FOR_TIMEOUT(rCurrent,
+				prBssInfo->rRekeyCountResetTime,
+				SEC_TO_SYSTIME(
+					MSEC_TO_SEC(REKEY_COUNT_RESET_TIME)))) {
+			GET_CURRENT_SYSTIME(&prBssInfo->rRekeyCountResetTime);
+			prBssInfo->u2RekeyCount = 0;
+		}
+		prBssInfo->u2RekeyCount++;
 	}
 
 	return wlanSendSetQueryCmd(

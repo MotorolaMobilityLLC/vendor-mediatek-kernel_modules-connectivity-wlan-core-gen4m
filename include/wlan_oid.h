@@ -755,6 +755,9 @@ struct PARAM_CAPABILITY {
 #define NL80211_REPLAY_CTR_LEN          8
 #define NL80211_KEYRSC_LEN		8
 
+#define REKEY_COUNT_RESET_TIME		20000 /* msec */
+#define REKEY_COUNT_LIMIT		1000
+
 struct PARAM_GTK_REKEY_DATA {
 	uint8_t aucKek[NL80211_KEK_LEN];
 	uint8_t aucKck[NL80211_KCK_LEN];
