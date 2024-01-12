@@ -10456,6 +10456,13 @@ uint32_t wlanSetLowLatencyMode(
 
 		nicConfigPowerSaveProfile(prAdapter, rPowerMode.ucBssIdx,
 			rPowerMode.ePowerMode, FALSE, PS_CALLER_GPU);
+		#ifdef CFG_SUPPORT_SMART_GEAR
+		wlandioSetSGStatus(prAdapter,
+			fgEnMode, 0x00);
+		DBGLOG(OID, INFO,
+		       "[SG] SmartGear (%d) for gaming mode\n",
+		       fgEnMode);
+		#endif
 	}
 
 	return WLAN_STATUS_SUCCESS;
