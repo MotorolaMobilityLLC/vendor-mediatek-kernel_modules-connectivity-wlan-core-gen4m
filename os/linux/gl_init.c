@@ -1900,6 +1900,19 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA,
 #endif
 	},
+	/* Get Chip Capabilities From Wifi Driver */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_GET_CHIP_CAPABILITIES
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_get_chip_capabilities,
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = VENDOR_CMD_RAW_DATA,
+#endif
+	},
 };
 
 static const struct nl80211_vendor_cmd_info
