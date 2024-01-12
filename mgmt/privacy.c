@@ -1405,40 +1405,51 @@ void secPostUpdateAddr(struct ADAPTER *prAdapter,
 }
 
 /* return the type of Eapol frame. */
-enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
+uint8_t *secGetEthBody(uint8_t *pucPkt)
 {
 	uint8_t *pucEthBody = NULL;
 	uint8_t ucEapolType;
 	uint16_t u2EtherTypeLen;
 	uint8_t ucEthTypeLenOffset = ETHER_HEADER_LEN - ETHER_TYPE_LEN;
+
+	WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset],
+			    &u2EtherTypeLen);
+	if (u2EtherTypeLen == ETH_P_VLAN) {
+		ucEthTypeLenOffset += ETH_802_1Q_HEADER_LEN;
+		WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset],
+				    &u2EtherTypeLen);
+	}
+	if (u2EtherTypeLen != ETH_P_1X)
+		return NULL;
+	pucEthBody = &pucPkt[ucEthTypeLenOffset + ETHER_TYPE_LEN];
+	ucEapolType = pucEthBody[1];
+	if (ucEapolType != 3)	/* eapol key type */
+		return NULL;
+
+	return pucEthBody;
+}
+
+enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
+{
+	uint8_t *pucEthBody = NULL;
 	uint16_t u2KeyInfo = 0;
 
 	do {
 		ASSERT_BREAK(pucPkt != NULL);
-		WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset],
-				    &u2EtherTypeLen);
-		if (u2EtherTypeLen == ETH_P_VLAN) {
-			ucEthTypeLenOffset += ETH_802_1Q_HEADER_LEN;
-			WLAN_GET_FIELD_BE16(&pucPkt[ucEthTypeLenOffset],
-					    &u2EtherTypeLen);
-		}
-		if (u2EtherTypeLen != ETH_P_1X)
-			break;
-		pucEthBody = &pucPkt[ucEthTypeLenOffset + ETHER_TYPE_LEN];
-		ucEapolType = pucEthBody[1];
-		if (ucEapolType != 3)	/* eapol key type */
+		pucEthBody = secGetEthBody(pucPkt);
+		if (!pucEthBody)
 			break;
 		u2KeyInfo = *((uint16_t *) (&pucEthBody[5]));
-		switch (u2KeyInfo) {
-		case 0x8a00:
+
+		if ((u2KeyInfo & 0x1100) == 0x0000 ||
+			(u2KeyInfo & 0x0008) == 0x0000)
 			return EAPOL_KEY_1_OF_4;
-		case 0x0a01:
+		else if ((u2KeyInfo & 0xfff0) == 0x0100)
 			return EAPOL_KEY_2_OF_4;
-		case 0xca13:
+		else if ((u2KeyInfo & 0xfff0) == 0x13c0)
 			return EAPOL_KEY_3_OF_4;
-		case 0x0a03:
+		else if ((u2KeyInfo & 0xfff0) == 0x0300)
 			return EAPOL_KEY_4_OF_4;
-		}
 	} while (FALSE);
 
 	return EAPOL_KEY_NOT_KEY;
