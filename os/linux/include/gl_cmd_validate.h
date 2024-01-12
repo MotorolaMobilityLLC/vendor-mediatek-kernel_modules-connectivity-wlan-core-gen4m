@@ -80,6 +80,7 @@
 #define CMD_CCCR			"CCCR"
 #define CMD_SET_MCR			"SET_MCR"
 #define CMD_GET_MCR			"GET_MCR"
+#define CMD_PHY_CTRL			"PHY_CTRL"
 #define CMD_SUPPORT_NVRAM		"SUPPORT_NVRAM"
 #define CMD_SET_DRV_MCR			"SET_DRV_MCR"
 #define CMD_GET_DRV_MCR			"GET_DRV_MCR"

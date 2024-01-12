@@ -1031,6 +1031,11 @@ int priv_driver_show_txd_info(struct net_device *prNetDev,
 int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int priv_driver_phy_ctrl(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
+
 
 /*******************************************************************************
  *                              F U N C T I O N S

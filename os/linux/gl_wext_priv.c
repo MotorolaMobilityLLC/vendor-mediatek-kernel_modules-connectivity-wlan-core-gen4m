@@ -4774,6 +4774,62 @@ int priv_driver_set_fw_log(struct net_device *prNetDev,
 }
 #endif
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int priv_driver_phy_ctrl(struct net_device *prNetDev,
+			       char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0, u4Parse = 0;
+	uint8_t uParse = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret;
+	struct UNI_CMD_PHY_CTRL_LIST_DUMP *prPhyCtrlList;
+	struct UNI_CMD_PHY_LIST_DUMP_CR rDumpList;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc != 4)
+		return 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prPhyCtrlList = kalMemAlloc(
+		sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP),
+		VIR_MEM_TYPE);
+
+	if (!prPhyCtrlList)
+		return 0;
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &uParse);
+	prPhyCtrlList->ucAction = uParse;
+	u4Ret = kalkStrtou8(apcArgv[2], 0, &uParse);
+	rDumpList.u2Tag = (uint16_t)uParse;
+	u4Ret = kalkStrtou32(apcArgv[3], 0, &u4Parse);
+	rDumpList.u4Stamp = u4Parse;
+
+	memcpy(prPhyCtrlList->aucTlvBuffer, &rDumpList,
+		sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR));
+	DBGLOG(REQ, TRACE, "ucAction[%d]u2Tag[%d]u4Stamp[%d]\n",
+		prPhyCtrlList->ucAction,
+		rDumpList.u2Tag,
+		rDumpList.u4Stamp);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetPhyCtrl,
+				prPhyCtrlList,
+				sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP),
+				&u4BufLen);
+
+	kalMemFree(prPhyCtrlList, VIR_MEM_TYPE,
+			sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP));
+
+	return 1;
+
+}				/* priv_driver_get_phycr */
+#endif
+
 int priv_driver_get_mcr(struct net_device *prNetDev,
 			       char *pcCommand, int i4TotalLen)
 {
