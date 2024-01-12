@@ -8849,6 +8849,9 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	char *buf = NULL, *head1, *head2, *head3;
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
+	uint8_t fgIsValidNetDevice = FALSE;
+
+	GLUE_SPIN_LOCK_DECLARATION();
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 	if (glue->fgIsEnableMon)
@@ -8875,7 +8878,19 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
 		ndev = wlanGetNetDev(glue, i);
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+		fgIsValidNetDevice = FALSE;
+
 		if (IS_BSS_ALIVE(prAdapter, bss) && ndev) {
+			if (!IS_BSS_P2P(bss)) /* non-p2p */
+				fgIsValidNetDevice = TRUE;
+			else if (prAdapter->rP2PNetRegState ==
+					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
+				fgIsValidNetDevice = TRUE;
+		}
+
+		if (fgIsValidNetDevice) {
 			currentTxBytes = ndev->stats.tx_bytes;
 			currentRxBytes = ndev->stats.rx_bytes;
 			currentTxPkts = ndev->stats.tx_packets;
@@ -8886,6 +8901,8 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 			currentTxPkts = perf->ulLastTxPackets[i];
 			currentRxPkts = perf->ulLastRxPackets[i];
 		}
+		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+
 		lastTxBytes = perf->ulLastTxBytes[i];
 		lastRxBytes = perf->ulLastRxBytes[i];
 		perf->ulLastTxBytes[i] = currentTxBytes;
@@ -8962,7 +8979,20 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 	head3 = pos;
 	for (i = 0; i < BSS_DEFAULT_NUM; ++i) {
 		ndev = wlanGetNetDev(glue, i);
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+		fgIsValidNetDevice = FALSE;
+
 		if (ndev) {
+			if (!IS_BSS_P2P(bss)) /* non-p2p */
+				fgIsValidNetDevice = TRUE;
+			else if (prAdapter->rP2PNetRegState ==
+					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
+				fgIsValidNetDevice = TRUE;
+		}
+
+		if (fgIsValidNetDevice) {
 			pos += kalSnprintf(pos, end - pos,
 				"[%llu:%llu:%llu:%llu]",
 				(unsigned long long) ndev->stats.tx_dropped,
@@ -8972,6 +9002,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 				(unsigned long long)
 					atomic_long_read(&ndev->rx_dropped));
 		}
+		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 	}
 
 #define TEMP_LOG_TEMPLATE \
