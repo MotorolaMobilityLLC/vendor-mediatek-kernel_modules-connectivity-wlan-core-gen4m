@@ -6772,6 +6772,11 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	prAdapter->u4LastLinkQuality =
+		kalGetTimeTick() - SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY);
+#endif
+
 	prAisBssInfo = aisGetAisBssInfo(
 		prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
 

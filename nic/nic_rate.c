@@ -1133,7 +1133,7 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, groupid, mu;
 	int32_t i4BytesWritten = 0;
 	uint32_t au4RxV[2] = {0};
-	uint8_t ucStaIdx;
+	uint8_t ucStaIdx = 0;
 	struct CHIP_DBG_OPS *prChipDbg;
 	uint32_t *prRxV = NULL;
 
@@ -1147,6 +1147,14 @@ int32_t nicGetRxRateInfo(struct ADAPTER *prAdapter, IN char *pcCommand,
 		DBGLOG(REQ, LOUD, "****** RX Vector1 = 0x%08x ******\n",
 		       au4RxV[1]);
 	} else {
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s", "Last RX Rate", " = NOT SUPPORT");
+		return i4BytesWritten;
+	}
+
+	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx)
+		    != WLAN_STATUS_SUCCESS) {
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s", "Last RX Rate", " = NOT SUPPORT");
