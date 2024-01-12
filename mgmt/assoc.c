@@ -1172,10 +1172,17 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 		uint16_t u2IELength;
 		uint16_t u2Offset = 0;
 
-		u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
-		pucIE =
-		    (uint8_t *) ((uintptr_t)prSwRfb->pvHeader +
-				 prSwRfb->u2HeaderLen);
+		u2IELength = prSwRfb->u2PacketLen -
+		    (uint16_t) OFFSET_OF(struct WLAN_ASSOC_RSP_FRAME,
+					 aucInfoElem[0]);
+
+		pucIE = prAssocRspFrame->aucInfoElem;
+
+		if (pucIE != NULL && u2IELength > 0) {
+			DBGLOG_MEM8(SAA, TRACE, pucIE, u2IELength);
+		} else {
+			DBGLOG(SAA, ERROR, "Empty IE\n");
+		}
 
 		IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 			if (IE_ID(pucIE) == ELEM_ID_TIMEOUT_INTERVAL
@@ -1189,16 +1196,23 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 					DBGLOG(SAA, INFO,
 					       "AP rejected association temporarily;comeback duration %u TU (%u ms)\n",
 					       tu, TU_TO_MSEC(tu));
+					prStaRec->u4assocComeBackTime = tu;
 					if (tu >
 					    TX_ASSOCIATION_RETRY_TIMEOUT_TU) {
 						DBGLOG(SAA, INFO,
-						       "Update timer based on comeback duration\n");
+						       "Update timer based on comeback duration: %u TU\n",
+						       tu);
 						/* ieee80211_reschedule_timer(
 						 * wpa_s, ms);
 						 */
+					} else {
+						prStaRec->u4assocComeBackTime =
+						TX_ASSOCIATION_RETRY_TIMEOUT_TU;
+						DBGLOG(SAA, INFO,
+							"Update a minimal comeback duration: %u TU\n",
+					       TX_ASSOCIATION_RETRY_TIMEOUT_TU);
 					}
 				}
-				break;
 			}
 		}		/* end of IE_FOR_EACH */
 	}
