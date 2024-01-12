@@ -1080,6 +1080,8 @@
 	194	/*Wide Bandwidth Channel Switch */
 #define ELEM_ID_OP_MODE \
 	199	/* Operation Mode Notification */
+#define ELEM_ID_RSNX \
+	244
 #define ELEM_ID_RESERVED \
 	255	/* Reserved */
 
