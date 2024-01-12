@@ -39,8 +39,6 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define SOC5_0_FILE_NAME_TOTAL 8
-#define SOC5_0_FILE_NAME_MAX 64
 
 /*******************************************************************************
 *                                 M A C R O S
@@ -54,6 +52,9 @@
 static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
+static void soc5_0_ConstructRomName(struct GLUE_INFO *prGlueInfo,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint8_t **apucName, uint8_t *pucNameIdx);
 
 static uint8_t soc5_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
@@ -86,24 +87,19 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
 static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter);
 static u_int8_t soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
-static int wf_pwr_on_consys_mcu(void);
-static int wf_pwr_off_consys_mcu(void);
+static uint32_t soc5_0_SetupRomEmi(struct ADAPTER *prAdapter);
+static void soc5_0_SetupFwDateInfo(struct ADAPTER *prAdapter,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint8_t *pucDate);
+static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter);
+static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter);
+static uint32_t soc5_0_McuInit(struct ADAPTER *prAdapter);
+static void soc5_0_McuDeInit(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-static uint8_t *soc5_0_apucFwName[] = {
-	(uint8_t *) CFG_FW_FILENAME "_MT",
-	NULL
-};
-
-static uint8_t *soc5_0_apucCr4FwName[] = {
-	(uint8_t *) CFG_CR4_FW_FILENAME "_MT",
-	NULL
-};
-#endif
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -475,6 +471,10 @@ struct FWDL_OPS_T soc5_0_fw_dl_ops = {
 	.phyAction = NULL,
 #endif
 	.downloadEMI = wlanDownloadEMISection,
+	.mcu_init = soc5_0_McuInit,
+	.mcu_deinit = soc5_0_McuDeInit,
+	.constructRomName = soc5_0_ConstructRomName,
+	.setup_date_info = soc5_0_SetupFwDateInfo,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -584,13 +584,6 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
-	.wmmcupwron = wf_pwr_on_consys_mcu,
-	.wmmcupwroff = wf_pwr_off_consys_mcu,
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-	.pwrondownload = soc5_0_wlanPowerOnDownload,
-#else
-	.pwrondownload = NULL,
-#endif
 	.triggerfwassert = soc5_0_Trigger_fw_assert,
 	.coantVFE28En = wlanCoAntVFE28En,
 	.coantVFE28Dis = wlanCoAntVFE28Dis,
@@ -722,6 +715,34 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(INIT, ERROR,
 					"[%u] kalSnprintf failed, ret: %d\n",
 					__LINE__, ret);
+	}
+}
+
+static void soc5_0_ConstructRomName(struct GLUE_INFO *prGlueInfo,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	int ret = 0;
+	uint8_t aucFlavor[2] = {0};
+
+	kalGetFwFlavor(&aucFlavor[0]);
+
+	if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
+		/* construct the file name for MCU ROM EMI */
+		/* soc5_0_patch_wmmcu_1_1_hdr.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"soc5_0_ram_wmmcu_%u%s_%x_hdr.bin",
+			CFG_WIFI_IP_SET,
+			aucFlavor,
+			wlanGetEcoVersion(prGlueInfo->prAdapter));
+
+		if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
+			DBGLOG(INIT, ERROR,
+				"kalSnprintf failed, ret: %d\n",
+				ret);
+		else
+			(*pucNameIdx) += 1;
 	}
 }
 
@@ -1106,7 +1127,7 @@ int soc5_0_Trigger_fw_assert(void)
 	return ret;
 }
 
-static int wf_pwr_on_consys_mcu(void)
+static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter)
 {
 	int check;
 	int value = 0;
@@ -1391,9 +1412,7 @@ static int wf_pwr_on_consys_mcu(void)
 	wf_ioremap_write(DEBUG_CTRL_AO_CONN_INFRA_CTRL0, value);
 
 	/* Setup CONNSYS firmware in EMI */
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-	soc5_0_wlanPowerOnInit();
-#endif
+	soc5_0_SetupRomEmi(prAdapter);
 
 	/* De-assert WFSYS CPU SW reset 0x18000120[0] = 1'b1 */
 	wf_ioremap_read(WFSYS_CPU_SW_RST_B_ADDR, &value);
@@ -1433,7 +1452,7 @@ static int wf_pwr_on_consys_mcu(void)
 	return ret;
 }
 
-static int wf_pwr_off_consys_mcu(void)
+static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 {
 #define MAX_WAIT_COREDUMP_COUNT 10
 
@@ -1669,6 +1688,58 @@ static int wf_pwr_off_consys_mcu(void)
 	return ret;
 }
 
+static uint32_t soc5_0_McuInit(struct ADAPTER *prAdapter)
+{
+	u_int8_t result;
+	int ret = 0;
+
+	ret = wf_pwr_on_consys_mcu(prAdapter);
+	if (ret) {
+		DBGLOG(INIT, INFO,
+			"wf_pwr_on_consys_mcu failed, ret=%d\n",
+			ret);
+		soc5_0_DumpBusHangCr(prAdapter);
+		goto exit;
+	}
+
+	/* set FW own after power on consys mcu to
+	 * keep Driver/FW/HW state sync
+	 */
+	HAL_LP_OWN_RD(prAdapter, &result);
+	if (result) {
+		DBGLOG(INIT, INFO, "set fw own after mcu idle loop.\n");
+		HAL_LP_OWN_SET(prAdapter, &result);
+	}
+
+	if (prAdapter->chip_info->coantVFE28En)
+		prAdapter->chip_info->coantVFE28En(prAdapter);
+
+	if (prAdapter->chip_info->coexpccifon)
+		prAdapter->chip_info->coexpccifon();
+
+exit:
+	return ret == 0 ? WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
+}
+
+static void soc5_0_McuDeInit(struct ADAPTER *prAdapter)
+{
+	int ret = 0;
+
+	if (prAdapter->chip_info->coexpccifoff)
+		prAdapter->chip_info->coexpccifoff();
+
+	if (prAdapter->chip_info->coantVFE28Dis)
+		prAdapter->chip_info->coantVFE28Dis();
+
+	ret = wf_pwr_off_consys_mcu(prAdapter);
+	if (ret) {
+		DBGLOG(INIT, INFO,
+			"wf_pwr_off_consys_mcu failed, ret=%d\n",
+			ret);
+		soc5_0_DumpBusHangCr(prAdapter);
+	}
+}
+
 void wlanCoAntVFE28En(IN struct ADAPTER *prAdapter)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
@@ -1767,455 +1838,55 @@ int wlanConnacPccifoff(void)
 }
 #endif
 
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-void *
-soc5_0_kalFirmwareImageMapping(
-			IN struct GLUE_INFO *prGlueInfo,
-			OUT void **ppvMapFileBuf,
-			OUT uint32_t *pu4FileLength,
-			IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+static uint32_t soc5_0_SetupRomEmi(struct ADAPTER *prAdapter)
 {
-	uint8_t **apucNameTable = NULL;
-	uint8_t *apucName[SOC5_0_FILE_NAME_TOTAL +
-					  1]; /* extra +1, for the purpose of
-					       * detecting the end of the array
-					       */
-	uint8_t idx = 0, max_idx,
-		aucNameBody[SOC5_0_FILE_NAME_TOTAL][SOC5_0_FILE_NAME_MAX],
-		sub_idx = 0;
-	struct mt66xx_chip_info *prChipInfo =
-			prGlueInfo->prAdapter->chip_info;
-	uint8_t aucFlavor[2] = {0};
-
-	DEBUGFUNC("kalFirmwareImageMapping");
-
-	ASSERT(prGlueInfo);
-	ASSERT(ppvMapFileBuf);
-	ASSERT(pu4FileLength);
-
-	*ppvMapFileBuf = NULL;
-	*pu4FileLength = 0;
-	kalGetFwFlavor(&aucFlavor[0]);
-
-	do {
-		/* <0.0> Get FW name prefix table */
-		switch (eDlIdx) {
-		case IMG_DL_IDX_N9_FW:
-			apucNameTable = soc5_0_apucFwName;
-			break;
-
-		case IMG_DL_IDX_CR4_FW:
-			apucNameTable = soc5_0_apucCr4FwName;
-			break;
-
-		case IMG_DL_IDX_PATCH:
-			break;
-
-		case IMG_DL_IDX_MCU_ROM_EMI:
-			break;
-
-		case IMG_DL_IDX_WIFI_ROM_EMI:
-			break;
-
-		default:
-			ASSERT(0);
-			break;
-		}
-
-		/* <0.2> Construct FW name */
-		memset(apucName, 0, sizeof(apucName));
-
-		/* magic number 1: reservation for detection
-		 * of the end of the array
-		 */
-		max_idx = (sizeof(apucName) / sizeof(uint8_t *)) - 1;
-
-		idx = 0;
-		apucName[idx] = (uint8_t *)(aucNameBody + idx);
-
-		if (eDlIdx == IMG_DL_IDX_PATCH) {
-			/* construct the file name for patch */
-			/* soc5_0_patch_wmmcu_1_1_hdr.bin */
-			if (prChipInfo->fw_dl_ops->constructPatchName)
-				prChipInfo->fw_dl_ops->constructPatchName(
-					prGlueInfo, apucName, &idx);
-			else
-				kalSnprintf(apucName[idx], SOC5_0_FILE_NAME_MAX,
-					"soc5_0_patch_wmmcu_1_%x_hdr.bin",
-					wlanGetEcoVersion(
-						prGlueInfo->prAdapter));
-			idx += 1;
-		} else if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) {
-			/* construct the file name for MCU ROM EMI */
-			/* soc5_0_ram_wmmcu_1_1_hdr.bin */
-			kalSnprintf(apucName[idx], SOC5_0_FILE_NAME_MAX,
-				"soc5_0_ram_wmmcu_%u%s_%x_hdr.bin",
-				CFG_WIFI_IP_SET,
-				aucFlavor,
-				wlanGetEcoVersion(
-					prGlueInfo->prAdapter));
-
-			idx += 1;
-		} else if (eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI) {
-			/* construct the file name for WiFi ROM EMI */
-			/* soc5_0_ram_wifi_1_1_hdr.bin */
-			kalSnprintf(apucName[idx], SOC5_0_FILE_NAME_MAX,
-				"soc5_0_ram_wifi_%u%s_%x_hdr.bin",
-				CFG_WIFI_IP_SET,
-				aucFlavor,
-				wlanGetEcoVersion(
-					prGlueInfo->prAdapter));
-
-			idx += 1;
-		} else {
-			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
-				apucName[sub_idx] =
-					(uint8_t *)(aucNameBody + sub_idx);
-
-			if (prChipInfo->fw_dl_ops->constructFirmwarePrio)
-				prChipInfo->fw_dl_ops->constructFirmwarePrio(
-					prGlueInfo, apucNameTable, apucName,
-					&idx, max_idx);
-			else
-				kalConstructDefaultFirmwarePrio(
-					prGlueInfo, apucNameTable, apucName,
-					&idx, max_idx);
-		}
-
-		/* let the last pointer point to NULL
-		 * so that we can detect the end of the array in
-		 * kalFirmwareOpen().
-		 */
-		apucName[idx] = NULL;
-
-		apucNameTable = apucName;
-
-		/* <1> Open firmware */
-		if (kalFirmwareOpen(prGlueInfo,
-				    apucNameTable) != WLAN_STATUS_SUCCESS)
-			break;
-		{
-			uint32_t u4FwSize = 0;
-			void *prFwBuffer = NULL;
-			/* <2> Query firmare size */
-			kalFirmwareSize(prGlueInfo, &u4FwSize);
-			/* <3> Use vmalloc for allocating large memory trunk */
-			prFwBuffer = vmalloc(ALIGN_4(u4FwSize));
-			/* <4> Load image binary into buffer */
-			if (kalFirmwareLoad(prGlueInfo, prFwBuffer, 0,
-					    &u4FwSize) != WLAN_STATUS_SUCCESS) {
-				vfree(prFwBuffer);
-				kalFirmwareClose(prGlueInfo);
-				break;
-			}
-			/* <5> write back info */
-			*pu4FileLength = u4FwSize;
-			*ppvMapFileBuf = prFwBuffer;
-
-			return prFwBuffer;
-		}
-	} while (FALSE);
-
-	return NULL;
-}
-
-uint32_t soc5_0_wlanImageSectionDownloadStage(
-	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
-	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx)
-{
-	uint32_t u4SecIdx, u4Offset = 0;
-	uint32_t u4Addr, u4Len, u4DataMode = 0;
-	u_int8_t fgIsEMIDownload = FALSE;
-	u_int8_t fgIsNotDownload = FALSE;
-	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct PATCH_FORMAT_T *prPatchHeader;
-	struct ROM_EMI_HEADER *prRomEmiHeader;
-	struct FWDL_OPS_T *prFwDlOps;
-
-	prFwDlOps = prChipInfo->fw_dl_ops;
-
-	/* 3a. parse file header for decision of
-	 * divided firmware download or not
-	 */
-	if (eDlIdx == IMG_DL_IDX_PATCH) {
-		prPatchHeader = pvFwImageMapFile;
-		if (prPatchHeader->u4PatchVersion == PATCH_VERSION_MAGIC_NUM) {
-			u4Status = wlanGetPatchInfoAndDownloadV2(prAdapter,
-				pvFwImageMapFile,
-				u4FwImageFileLength,
-				eDlIdx,
-				u4DataMode);
-		} else {
-			wlanImageSectionGetPatchInfo(prAdapter,
-				pvFwImageMapFile,
-					     u4FwImageFileLength,
-					     &u4Offset, &u4Addr,
-					     &u4Len, &u4DataMode);
-			DBGLOG(INIT, INFO,
-		"FormatV1 DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
-		       u4Offset, u4Addr, u4Len, u4DataMode);
-/* For dynamic memory map::Begin */
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-			u4Status = prFwDlOps->downloadByDynMemMap(
-						prAdapter, u4Addr, u4Len,
-						pvFwImageMapFile
-							+ u4Offset,
-							eDlIdx);
-#else
-			u4Status = wlanDownloadSection(
-							prAdapter,
-							u4Addr,
-							u4Len,
-							u4DataMode,
-							pvFwImageMapFile
-								+ u4Offset,
-						       eDlIdx);
-#endif
-		}
-/* For dynamic memory map::End */
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		/* Set datecode to EMI */
-		prFwDlOps->downloadEMI(prAdapter,
-			WMMCU_ROM_PATCH_DATE_ADDR,
-			0,
-			prPatchHeader->aucBuildDate,
-			DATE_CODE_SIZE);
-#endif
-
-	} else if ((eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ||
-				(eDlIdx == IMG_DL_IDX_WIFI_ROM_EMI)) {
-		prRomEmiHeader = (struct ROM_EMI_HEADER *)pvFwImageMapFile;
-
-		DBGLOG(INIT, INFO,
-			"DL %s ROM EMI %s\n",
-			(eDlIdx == IMG_DL_IDX_MCU_ROM_EMI) ?
-				"MCU":"WiFi",
-			(char *)prRomEmiHeader->ucDateTime);
-
-		u4Addr = prRomEmiHeader->u4PatchAddr;
-
-		u4Len = u4FwImageFileLength - sizeof(struct ROM_EMI_HEADER);
-
-		u4Offset = sizeof(struct ROM_EMI_HEADER);
-
-		u4Status = prFwDlOps->downloadEMI(prAdapter,
-				u4Addr,
-				0,
-				pvFwImageMapFile + u4Offset,
-				u4Len);
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		/* Set datecode to EMI */
-		if (eDlIdx == IMG_DL_IDX_MCU_ROM_EMI)
-			prFwDlOps->downloadEMI(prAdapter,
-				WMMCU_MCU_ROM_EMI_DATE_ADDR,
-				0,
-				prRomEmiHeader->ucDateTime,
-				DATE_CODE_SIZE);
-		else
-			prFwDlOps->downloadEMI(prAdapter,
-				WMMCU_WIFI_ROM_EMI_DATE_ADDR,
-				0,
-				prRomEmiHeader->ucDateTime,
-				DATE_CODE_SIZE);
-#endif
-	} else {
-		for (u4SecIdx = 0; u4SecIdx < ucSectionNumber;
-		     u4SecIdx++, u4Offset += u4Len) {
-			prChipInfo->fw_dl_ops->getFwInfo(prAdapter, u4SecIdx,
-				eDlIdx, &u4Addr,
-				&u4Len, &u4DataMode, &fgIsEMIDownload,
-				&fgIsNotDownload);
-
-			DBGLOG(INIT, INFO,
-			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
-			       u4Offset, u4Addr, u4Len, u4DataMode);
-
-			if (fgIsNotDownload)
-				continue;
-			else if (fgIsEMIDownload)
-				u4Status = prFwDlOps->downloadEMI(prAdapter,
-					u4Addr,
-					0,
-					pvFwImageMapFile + u4Offset,
-					u4Len);
-/* For dynamic memory map:: Begin */
-#if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-			else if ((u4DataMode &
-				DOWNLOAD_CONFIG_ENCRYPTION_MODE) == 0) {
-				/* Non-encrypted F/W region,
-				 * use dynamic memory mapping for download
-				 */
-				u4Status = prFwDlOps->downloadByDynMemMap(
-					prAdapter,
-					u4Addr,
-					u4Len,
-					pvFwImageMapFile + u4Offset,
-					eDlIdx);
-			}
-#endif
-/* For dynamic memory map:: End */
-			else
-				u4Status = wlanDownloadSection(prAdapter,
-					u4Addr, u4Len,
-					u4DataMode,
-					pvFwImageMapFile + u4Offset, eDlIdx);
-
-			/* escape from loop if any pending error occurs */
-			if (u4Status == WLAN_STATUS_FAILURE)
-				break;
-		}
-	}
-
-	return u4Status;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Wlan power on download function. This function prepare the job
- *  during power on stage to download MCU ROM EMI
- *
- * \retval 0 Success
- * \retval negative value Failed
- */
-/*----------------------------------------------------------------------------*/
-uint32_t soc5_0_wlanPowerOnDownload(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucDownloadItem)
-{
-	uint32_t u4FwSize = 0;
 	void *prFwBuffer = NULL;
-	uint32_t u4Status;
+	uint32_t u4FwSize = 0;
+	u_int8_t fgIsDynamicMemMap;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
-	if (!prAdapter)
-		return WLAN_STATUS_FAILURE;
+	/* Download MCU ROM EMI*/
+	kalFirmwareImageMapping(prAdapter->prGlueInfo,
+		&prFwBuffer, &u4FwSize, IMG_DL_IDX_MCU_ROM_EMI);
 
-	DBGLOG_LIMITED(INIT, INFO,
-		"Power on download start(%d)\n", ucDownloadItem);
-
-	switch (ucDownloadItem) {
-	case ENUM_WLAN_POWER_ON_DOWNLOAD_EMI:
-		/* Download MCU ROM EMI*/
-		soc5_0_kalFirmwareImageMapping(prAdapter->prGlueInfo,
-			&prFwBuffer, &u4FwSize, IMG_DL_IDX_MCU_ROM_EMI);
-
-		if (prFwBuffer == NULL) {
-			DBGLOG(INIT, WARN, "FW[%u] load error!\n",
-			       IMG_DL_IDX_MCU_ROM_EMI);
-			return WLAN_STATUS_FAILURE;
-		}
-
-		u4Status = soc5_0_wlanImageSectionDownloadStage(
-			prAdapter, prFwBuffer, u4FwSize, 1,
-			IMG_DL_IDX_MCU_ROM_EMI);
-
-		kalFirmwareImageUnmapping(
-			prAdapter->prGlueInfo, NULL, prFwBuffer);
-
-		DBGLOG_LIMITED(INIT, INFO, "Power on download mcu ROM EMI %s\n",
-			(u4Status == WLAN_STATUS_SUCCESS) ? "pass" : "failed");
-
-		break;
-
-	default:
-		return WLAN_STATUS_NOT_SUPPORTED;
+	if (prFwBuffer == NULL) {
+		DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+		       IMG_DL_IDX_MCU_ROM_EMI);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
 	}
 
-	DBGLOG_LIMITED(INIT, INFO, "Power on download end[%d].\n", u4Status);
+	u4Status = wlanImageSectionDownloadStage(
+		prAdapter, prFwBuffer, u4FwSize, 1,
+		IMG_DL_IDX_MCU_ROM_EMI,
+		&fgIsDynamicMemMap);
+
+	kalFirmwareImageUnmapping(
+		prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+exit:
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, INFO, "u4Status = %u\n", u4Status);
 
 	return u4Status;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Wlan power on init function. This function do the job in the
- *  power on stage to download MCU ROM EMI
- *
- *  It is to simulate wlanProbe() with the minimum effort to complete
- *  ROM EMI + ROM patch download.
- *
- * \retval 0 Success
- * \retval negative value Failed
- */
-/*----------------------------------------------------------------------------*/
-int32_t soc5_0_wlanPowerOnInit(void)
+static void soc5_0_SetupFwDateInfo(struct ADAPTER *prAdapter,
+	enum ENUM_IMG_DL_IDX_T eDlIdx,
+	uint8_t *pucDate)
 {
-	void *pvData;
-	void *pvDriverData = (void *)&mt66xx_driver_data_soc5_0;
+	uint32_t u4Addr;
 
-	int32_t i4Status = 0;
-	enum ENUM_POWER_ON_INIT_FAIL_REASON {
-		NET_CREATE_FAIL = 0,
-		ROM_PATCH_DOWNLOAD_FAIL,
-		POWER_ON_INIT_DONE,
-		FAIL_REASON_NUM
-	} eFailReason;
-	struct wireless_dev *prWdev = NULL;
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct mt66xx_chip_info *prChipInfo;
-
-	DBGLOG(INIT, INFO, "wlanPowerOnInit::begin\n");
-
-	eFailReason = POWER_ON_INIT_DONE;
-
-	prChipInfo = ((struct mt66xx_hif_driver_data *)pvDriverData)
-				->chip_info;
-	pvData = (void *)prChipInfo->pdev;
-
-	if (fgSimplifyResetFlow) {
-		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-		prAdapter = prGlueInfo->prAdapter;
-
-		if (prChipInfo->pwrondownload) {
-			DBGLOG_LIMITED(INIT, INFO,
-				"[Wi-Fi PWR On] EMI download Start\n");
-
-			if (prChipInfo->pwrondownload(prAdapter,
-				ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) !=
-				WLAN_STATUS_SUCCESS)
-				i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
-
-			DBGLOG_LIMITED(INIT, INFO,
-				"[Wi-Fi PWR On] EMI download End\n");
-		}
-	} else {
-		prWdev = wlanNetCreate(pvData, pvDriverData);
-
-		if (prWdev == NULL) {
-			DBGLOG(INIT, ERROR,
-				"[Wi-Fi PWR On] No memory for dev and its private\n");
-
-			i4Status = -NET_CREATE_FAIL;
-		} else {
-			/* Set the ioaddr to HIF Info */
-			WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
-
-			prAdapter = prGlueInfo->prAdapter;
-
-			if (prChipInfo->pwrondownload) {
-				DBGLOG_LIMITED(INIT, INFO,
-					"[Wi-Fi PWR On] EMI download Start\n");
-
-				if (prChipInfo->pwrondownload(prAdapter,
-					ENUM_WLAN_POWER_ON_DOWNLOAD_EMI) !=
-					WLAN_STATUS_SUCCESS)
-					i4Status = -ROM_PATCH_DOWNLOAD_FAIL;
-
-				DBGLOG_LIMITED(INIT, INFO,
-					"[Wi-Fi PWR On] EMI download End\n");
-			}
-
-			wlanWakeLockUninit(prGlueInfo);
-		}
-
-		wlanNetDestroy(prWdev);
+	switch (eDlIdx) {
+	case IMG_DL_IDX_MCU_ROM_EMI:
+		u4Addr = WMMCU_MCU_ROM_EMI_DATE_ADDR;
+		break;
+	default:
+		return;
 	}
 
-	return i4Status;
+	emi_mem_write(prAdapter->chip_info, u4Addr, pucDate, DATE_CODE_SIZE);
 }
-#endif
 
 static void soc5_0_triggerInt(struct GLUE_INFO *prGlueInfo)
 {

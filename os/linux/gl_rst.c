@@ -1253,7 +1253,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
 				wifi_reset_start();
-				hifAxiRemove();
+				wlanFuncOffImpl();
 				complete(&g_RstOffComp);
 				break;
 
@@ -1278,7 +1278,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_WMTMSG_TYPE eMsgType,
 				fgIsResetting = TRUE;
 				fgSimplifyResetFlow = TRUE;
 				wifi_reset_start();
-				hifAxiRemove();
+				wlanFuncOff();
 				break;
 			default:
 				break;

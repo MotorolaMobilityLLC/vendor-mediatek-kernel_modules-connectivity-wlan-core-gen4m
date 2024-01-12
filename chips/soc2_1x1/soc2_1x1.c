@@ -22,6 +22,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+static uint32_t soc2_1x1_McuInit(struct ADAPTER *prAdapter);
+static void soc2_1x1_McuDeInit(struct ADAPTER *prAdapter);
+
 uint8_t *apucSoc2_1x1FwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_soc2_2",
 	NULL
@@ -285,6 +288,8 @@ struct FWDL_OPS_T soc2_1x1_fw_dl_ops = {
 	.getFwDlInfo = asicGetFwDlInfo,
 	.phyAction = NULL,
 	.downloadEMI = wlanDownloadEMISection,
+	.mcu_init = soc2_1x1_McuInit,
+	.mcu_deinit = soc2_1x1_McuDeInit,
 };
 
 struct TX_DESC_OPS_T soc2_1x1TxDescOps = {
@@ -403,5 +408,16 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_1x1 = {
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc2_1x1 = {
 	.chip_info = &mt66xx_chip_info_soc2_1x1,
 };
+
+static uint32_t soc2_1x1_McuInit(struct ADAPTER *prAdapter)
+{
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
+	return WLAN_STATUS_SUCCESS;
+}
+
+static void soc2_1x1_McuDeInit(struct ADAPTER *prAdapter)
+{
+	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
+}
 
 #endif /* SOC2_1X1 */

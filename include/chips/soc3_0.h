@@ -220,16 +220,6 @@ union soc3_0_WPDMA_INT_MASK {
 ********************************************************************************
 */
 
-struct ROM_EMI_HEADER {
-	uint8_t ucDateTime[16];
-	uint8_t ucPLat[4];
-	uint16_t u2HwVer;
-	uint16_t u2SwVer;
-	uint32_t u4PatchAddr;
-	uint32_t u4PatchType;
-	uint32_t u4CRC[4];
-};
-
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -293,42 +283,6 @@ void soc3_0EnableInterrupt(
 
 void soc3_0EnableInterrupt(
 	struct ADAPTER *prAdapter);
-extern void kalConstructDefaultFirmwarePrio(
-				struct GLUE_INFO	*prGlueInfo,
-				uint8_t **apucNameTable,
-				uint8_t **apucName,
-				uint8_t *pucNameIdx,
-				uint8_t ucMaxNameIdx);
-
-extern uint32_t kalFirmwareOpen(
-				IN struct GLUE_INFO *prGlueInfo,
-				IN uint8_t **apucNameTable);
-
-
-extern uint32_t kalFirmwareSize(
-				IN struct GLUE_INFO *prGlueInfo,
-				OUT uint32_t *pu4Size);
-
-extern uint32_t kalFirmwareLoad(
-			IN struct GLUE_INFO *prGlueInfo,
-			OUT void *prBuf, IN uint32_t u4Offset,
-			OUT uint32_t *pu4Size);
-
-extern uint32_t kalFirmwareClose(
-			IN struct GLUE_INFO *prGlueInfo);
-
-extern void wlanWakeLockInit(
-	struct GLUE_INFO *prGlueInfo);
-
-extern void wlanWakeLockUninit(
-	struct GLUE_INFO *prGlueInfo);
-
-extern struct wireless_dev *wlanNetCreate(
-		void *pvData,
-		void *pvDriverData);
-
-extern void wlanNetDestroy(
-	struct wireless_dev *prWdev);
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -353,31 +307,8 @@ void wlanCoAntVFE28Dis(void);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void);
 int wlanConnacPccifoff(void);
-extern void update_driver_reset_status(uint8_t fgIsResetting);
-extern int32_t get_wifi_process_status(void);
-extern int32_t get_wifi_powered_status(void);
-extern void update_pre_cal_status(uint8_t fgIsPreCal);
-extern int8_t get_pre_cal_status(void);
 #endif
 void soc3_0_DumpWfsysdebugflag(void);
-#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
-void soc3_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
-	uint8_t **apucNameTable, uint8_t **apucName,
-	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
-void *
-soc3_0_kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
-			OUT void **ppvMapFileBuf, OUT uint32_t *pu4FileLength,
-			IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-uint32_t soc3_0_wlanImageSectionDownloadStage(
-	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
-	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
-	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
-uint32_t soc3_0_wlanPowerOnDownload(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucDownloadItem);
-int32_t soc3_0_wlanPowerOnInit(
-	enum ENUM_WLAN_POWER_ON_DOWNLOAD eDownloadItem);
-#endif
 
 void soc3_0_icapRiseVcoreClockRate(void);
 void soc3_0_icapDownVcoreClockRate(void);

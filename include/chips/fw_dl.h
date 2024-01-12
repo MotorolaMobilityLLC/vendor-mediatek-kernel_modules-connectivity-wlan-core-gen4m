@@ -187,6 +187,9 @@ struct FWDL_OPS_T {
 		uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
 	void (*constructPatchName)(struct GLUE_INFO *prGlueInfo,
 		uint8_t **apucName, uint8_t *pucNameIdx);
+	void (*constructRomName)(struct GLUE_INFO *prGlueInfo,
+		enum ENUM_IMG_DL_IDX_T eDlIdx,
+		uint8_t **apucName, uint8_t *pucNameIdx);
 
 	uint32_t (*downloadPatch)(IN struct ADAPTER *prAdapter);
 	uint32_t (*downloadFirmware)(IN struct ADAPTER *prAdapter,
@@ -204,6 +207,7 @@ struct FWDL_OPS_T {
 		char *pcBuf, int i4TotalLen);
 	uint32_t (*phyAction)(IN struct ADAPTER *prAdapter);
 	uint32_t (*mcu_init)(struct ADAPTER *prAdapter);
+	void (*mcu_deinit)(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	void (*constructBtPatchName)(struct GLUE_INFO *prGlueInfo,
 		uint8_t **apucName, uint8_t *pucNameIdx);
@@ -226,6 +230,9 @@ struct FWDL_OPS_T {
 	void (*getFwVerInfo)(OUT uint8_t *pucManifestBuffer,
 		OUT uint32_t *pu4ManifestSize,
 		IN uint32_t u4BufferMaxSize);
+	void (*setup_date_info)(struct ADAPTER *prAdapter,
+		enum ENUM_IMG_DL_IDX_T eDlIdx,
+		uint8_t *date);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)
@@ -357,6 +364,16 @@ enum ENUM_WLAN_POWER_ON_DOWNLOAD {
 	ENUM_WLAN_POWER_ON_DOWNLOAD_EMI = 0,
 	ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH = 1,
 	ENUM_WLAN_POWER_ON_DOWNLOAD_WIFI_RAM_CODE = 2
+};
+
+struct ROM_EMI_HEADER {
+	uint8_t aucBuildDate[16];
+	uint32_t u4PLat;
+	uint16_t u2HwVer;
+	uint16_t u2SwVer;
+	uint32_t u4PatchAddr;
+	uint32_t u4PatchType;
+	uint32_t u4CRC[4];
 };
 
 /*******************************************************************************

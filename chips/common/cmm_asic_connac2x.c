@@ -2907,104 +2907,28 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 exit:
 	return ret;
 }
-
-int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
-{
-	int ret = 0;
-	uint32_t u4Value = 0;
-
-	if (!chip_info)
-		return -EINVAL;
-
-	if (!chip_info->wmmcupwron)
-		return -EOPNOTSUPP;
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	/* conninfra power on */
-	if (!kalIsWholeChipResetting() && !get_pre_cal_status()) {
-		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
-		if (ret == CONNINFRA_ERR_RST_ONGOING) {
-			DBGLOG(INIT, ERROR,
-				"Conninfra is doing whole chip reset.\n");
-			goto exit;
-		}
-		if (ret != 0) {
-			DBGLOG(INIT, ERROR,
-				"Conninfra pwr on fail.\n");
-			goto exit;
-		}
-	}
-#endif /* CFG_SUPPORT_CONNINFRA */
-
-	/* wf driver power on */
-	ret = chip_info->wmmcupwron();
-	if (ret) {
-		struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
-
-		if (debug_ops && debug_ops->dumpBusHangCr)
-			debug_ops->dumpBusHangCr(NULL);
-		goto exit;
-	}
-
-	/* set FW own after power on consys mcu to
-	 * keep Driver/FW/HW state sync
-	 */
-	kalDevRegRead(NULL, CONNAC2X_BN0_LPCTL_ADDR, &u4Value);
-	if ((u4Value & PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) !=
-	    PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) {
-		DBGLOG(INIT, INFO, "0x%08x = 0x%08x, Set FW Own\n",
-			CONNAC2X_BN0_LPCTL_ADDR,
-			u4Value);
-		kalDevRegWrite(NULL, CONNAC2X_BN0_LPCTL_ADDR,
-			PCIE_LPCR_HOST_SET_OWN);
-	}
-
-exit:
-	DBGLOG(INIT, INFO, "ret: %d\n", ret);
-
-	return ret;
-}
-
-int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info)
-{
-	int ret = 0;
-
-	if (!chip_info)
-		return -EINVAL;
-
-	if (!chip_info->wmmcupwroff)
-		return -EOPNOTSUPP;
-
-	/* wf driver power off */
-	ret = chip_info->wmmcupwroff();
-	if (ret != 0) {
-		struct CHIP_DBG_OPS *debug_ops = chip_info->prDebugOps;
-
-		if (debug_ops && debug_ops->dumpBusHangCr)
-			debug_ops->dumpBusHangCr(NULL);
-		goto exit;
-	}
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	/*
-	 * conninfra power off sequence
-	 * conninfra will do conninfra power off self during whole chip reset.
-	 */
-	if (!kalIsWholeChipResetting()) {
-		ret = conninfra_pwr_off(CONNDRV_TYPE_WIFI);
-		if (ret != 0) {
-			DBGLOG(INIT, ERROR,
-				"Conninfra pwr off fail.\n");
-			goto exit;
-		}
-	}
-#endif /* CFG_SUPPORT_CONNINFRA */
-
-exit:
-	DBGLOG(INIT, INFO, "ret: %d\n", ret);
-
-	return ret;
-}
 #endif /* _HIF_AXI */
+
+int connsys_power_on(void)
+{
+	int ret = 0;
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"Conninfra pwr on fail (%d).\n",
+			ret);
+#endif
+
+	return ret;
+}
+
+void connsys_power_off(void)
+{
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conninfra_pwr_off(CONNDRV_TYPE_WIFI);
+#endif
+}
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
