@@ -3742,8 +3742,6 @@ wlanoidSetPmkid(struct ADAPTER *prAdapter,
 {
 	struct PARAM_PMKID *prPmkid;
 
-	DBGLOG(REQ, INFO, "wlanoidSetPmkid\n");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 	ASSERT(pvSetBuffer);
