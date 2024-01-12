@@ -736,23 +736,20 @@ static uint8_t soc7_0SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT_IDX_1:
-		offset = 2 * MT_RINGREG_DIFF;
+		offset = 2;
 		break;
 	case RX_RING_DATA1_IDX_2:
-		offset = 1 * MT_RINGREG_DIFF;
+		offset = 1;
 		break;
 	case RX_RING_DATA_IDX_0:
 	case RX_RING_TXDONE0_IDX_3:
-		offset = u4SwRingIdx * MT_RINGREG_DIFF;
+		offset = u4SwRingIdx;
 		break;
 	default:
 		return FALSE;
 	}
 
-	prRxRing->hw_desc_base = prBusInfo->host_rx_ring_base + offset;
-	prRxRing->hw_cidx_addr = prBusInfo->host_rx_ring_cidx_addr + offset;
-	prRxRing->hw_didx_addr = prBusInfo->host_rx_ring_didx_addr + offset;
-	prRxRing->hw_cnt_addr = prBusInfo->host_rx_ring_cnt_addr + offset;
+	halSetRxRingHwAddr(prRxRing, prBusInfo, offset);
 
 	return TRUE;
 }

@@ -128,8 +128,8 @@ void asicConnac3xCapInit(
 	prChipInfo->u2RxSwPktEvent = CONNAC3X_RX_STATUS_PKT_TYPE_SW_EVENT;
 	prChipInfo->u2RxSwPktFrame = CONNAC3X_RX_STATUS_PKT_TYPE_SW_FRAME;
 	prChipInfo->u4ExtraTxByteCount = 0;
-	asicConnac3xInitTxdHook(prChipInfo->prTxDescOps);
-	asicConnac3xInitRxdHook(prChipInfo->prRxDescOps);
+	asicConnac3xInitTxdHook(prAdapter, prChipInfo->prTxDescOps);
+	asicConnac3xInitRxdHook(prAdapter, prChipInfo->prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
 	prChipInfo->asicRxProcessRxvforMSP = asicConnac3xRxProcessRxvforMSP;
 #endif /* CFG_SUPPORT_MSP == 1 */
@@ -892,7 +892,6 @@ void asicConnac3xProcessSoftwareInterrupt(
 	}
 }
 
-
 void asicConnac3xSoftwareInterruptMcu(
 	struct ADAPTER *prAdapter, u_int32_t intrBitMask)
 {
@@ -932,6 +931,170 @@ void asicConnac3xHifRst(
 }
 #endif /* _HIF_PCIE */
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+void fillConnac3xNicTxDescAppendWithSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t *prTxDescBuffer)
+{
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
+
+	/* Fill TxD append */
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)prTxDescBuffer;
+	kalMemZero(prHwTxDescAppend, prChipInfo->txd_append_size);
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
+	prHwTxDescAppend->CR4_APPEND.ucBssIndex =
+		prMsduInfo->ucBssIndex;
+	prHwTxDescAppend->CR4_APPEND.ucWtblIndex =
+		prMsduInfo->ucWlanIndex;
+}
+
+void fillConnac3xTxDescAppendBySdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u4MsduId,
+	phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer)
+{
+	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
+
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
+		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+
+	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
+	prHwTxDescAppend->CR4_APPEND.ucBufNum = 2;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = SDO_HIF_TXD_SIZE;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[1] = rDmaAddr + SDO_HIF_TXD_SIZE;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] = SDO_PARTIAL_PAYLOAD_SIZE;
+}
+
+void fillConnac3xTxDescAppendByMawdSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u4MsduId,
+	dma_addr_t rDmaAddr,
+	uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	struct RTMP_DMACB *pTxCell;
+	union HW_MAC_TX_DESC_APPEND *prHwTxDescAppend;
+	uint8_t *pucData;
+	struct BUS_INFO *prBusInfo;
+	union mawd_l2tbl rL2Tbl = {0};
+	uint16_t u2EtherTypeLen = 0, u2Port = TX_RING_DATA0_IDX_0;
+	uint8_t ucType = 0;
+	uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
+	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM * 2];
+	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
+	struct net_device *prDev = wlanGetNetDev(prAdapter->prGlueInfo, 0);
+	uint8_t ucIpVer, u4TxDSize;
+
+	kalGetIPv4Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv4Addr,
+			  &u4NumIPv4);
+	kalGetIPv6Address(prDev, CFG_PF_ARP_NS_MAX_NUM, pucIPv6Addr,
+			  &u4NumIPv6);
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	u2Port = halTxRingDataSelect(prAdapter, prMsduInfo);
+
+	u4TxDSize = NIC_TX_DESC_LONG_FORMAT_LENGTH +
+		prChipInfo->hif_txd_append_size;
+	pucData = pucBuffer + u4TxDSize;
+	ucIpVer = (pucData[ETH_HLEN] & IP_VERSION_MASK) >>
+		      IP_VERSION_OFFSET;
+	WLAN_GET_FIELD_BE16(&pucData[ETHER_HEADER_LEN - ETHER_TYPE_LEN],
+			    &u2EtherTypeLen);
+
+	DBGLOG(HAL, INFO, "EtherType [0x%08x]\n", u2EtherTypeLen);
+	if (ucIpVer == IP_VERSION_4) {
+		DBGLOG(HAL, INFO, "is IPV4[0x%08x]\n", u2EtherTypeLen);
+		ucType = 1;
+	}
+	if (ucIpVer == IP_VERSION_6) {
+		DBGLOG(HAL, INFO, "is IPV6[0x%08x]\n", u2EtherTypeLen);
+		ucType = 2;
+	}
+	if (ucType) {
+		if (ucType == 1) {
+			for (u4Idx = 0; u4Idx < 4; u4Idx++)
+				rL2Tbl.sram.key_ip[u4Idx] =
+					pucData[ETH_HLEN + 12 + u4Idx];
+		} else if (ucType == 2) {
+			for (u4Idx = 0; u4Idx < 16; u4Idx++)
+				rL2Tbl.sram.key_ip[u4Idx] =
+					pucData[ETH_HLEN + 8 + u4Idx];
+		}
+		for (u4Idx = 0; u4Idx < MAC_ADDR_LEN; u4Idx++) {
+			rL2Tbl.sram.d_mac[u4Idx] = pucData[u4Idx];
+			rL2Tbl.sram.s_mac[u4Idx] =
+				pucData[MAC_ADDR_LEN + u4Idx];
+		}
+		rL2Tbl.sram.wlan_id = prMsduInfo->ucWlanIndex;
+		rL2Tbl.sram.bss_id = prMsduInfo->ucBssIndex;
+		prHifInfo->u4MawdL2TblCnt = 2;
+		halMawdUpdateL2Tbl(prAdapter->prGlueInfo, rL2Tbl, ucType - 1);
+	}
+
+	prTxRing = &prHifInfo->MawdTxRing[u2Port];
+	pTxCell = &prTxRing->Cell[prTxRing->TxCpuIdx];
+
+	kalMemZero(pTxCell->AllocVa, u4TxDSize);
+
+	kalMemCopy(pTxCell->AllocVa, pucBuffer, u4TxDSize);
+
+	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
+		(pTxCell->AllocVa + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+
+	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
+	if (ucType)
+		prHwTxDescAppend->CR4_APPEND.u2PktFlags |= BIT(13) | BIT(15);
+
+	prHwTxDescAppend->CR4_APPEND.ucBssIndex = prMsduInfo->ucBssIndex;
+	prHwTxDescAppend->CR4_APPEND.ucWtblIndex = prMsduInfo->ucWlanIndex;
+
+	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
+	prHwTxDescAppend->CR4_APPEND.ucBufNum = 2;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
+	/* eth header */
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = ETH_HLEN;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[1] = (rDmaAddr + ETH_HLEN);
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] =
+		prMsduInfo->u2FrameLength - ETH_HLEN;
+}
+
+void fillConnac3xTxDescTxByteCountWithSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	void *prTxDesc)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4TxByteCount = NIC_TX_DESC_LONG_FORMAT_LENGTH;
+
+	prChipInfo = prAdapter->chip_info;
+	u4TxByteCount += prMsduInfo->u2FrameLength;
+
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA)
+		u4TxByteCount += prChipInfo->u4ExtraTxByteCount;
+
+	HAL_MAC_CONNAC3X_TXD_SET_HIF_VERSION(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc, 1);
+
+	/* Calculate Tx byte count */
+	HAL_MAC_CONNAC3X_TXD_SET_TX_BYTE_COUNT(
+		(struct HW_MAC_CONNAC3X_TX_DESC *)prTxDesc, u4TxByteCount);
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 void fillConnac3xTxDescTxByteCount(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
@@ -956,9 +1119,14 @@ void fillConnac3xTxDescTxByteCount(
 }
 
 void asicConnac3xInitTxdHook(
+	struct ADAPTER *prAdapter,
 	struct TX_DESC_OPS_T *prTxDescOps)
 {
+	struct mt66xx_chip_info *prChipInfo;
+
 	ASSERT(prTxDescOps);
+	prChipInfo = prAdapter->chip_info;
+
 	prTxDescOps->nic_txd_long_format_op = nic_txd_v3_long_format_op;
 	prTxDescOps->nic_txd_tid_op = nic_txd_v3_tid_op;
 	prTxDescOps->nic_txd_queue_idx_op = nic_txd_v3_queue_idx_op;
@@ -976,9 +1144,34 @@ void asicConnac3xInitTxdHook(
 		nic_txd_v3_set_pkt_fixed_rate_option;
 	prTxDescOps->nic_txd_set_hw_amsdu_template =
 		nic_txd_v3_set_hw_amsdu_template;
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_sdo) {
+		prChipInfo->txd_append_size =
+			prChipInfo->hif_txd_append_size;
+		prTxDescOps->fillNicAppend =
+			fillConnac3xNicTxDescAppendWithSdo;
+		prTxDescOps->fillHifAppend =
+			fillConnac3xTxDescAppendBySdo;
+		prTxDescOps->fillTxByteCount =
+			fillConnac3xTxDescTxByteCountWithSdo;
+	}
+
+	if (prChipInfo->is_support_mawd_tx) {
+		prChipInfo->txd_append_size =
+			prChipInfo->hif_txd_append_size;
+		prTxDescOps->fillNicAppend =
+			fillConnac3xNicTxDescAppendWithSdo;
+		prTxDescOps->fillHifAppend =
+			fillConnac3xTxDescAppendByMawdSdo;
+		prTxDescOps->fillTxByteCount =
+			fillConnac3xTxDescTxByteCountWithSdo;
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 void asicConnac3xInitRxdHook(
+	struct ADAPTER *prAdapter,
 	struct RX_DESC_OPS_T *prRxDescOps)
 {
 	ASSERT(prRxDescOps);
