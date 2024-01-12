@@ -9811,8 +9811,6 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 	prArpMonitorMsg->ucBssIndex = ucBssIndex;
 	prArpMonitorMsg->u2PacketLen = u2PacketLen;
 	kalMemCopy(&(prArpMonitorMsg->arData[0]), pucData, u2PacketLen);
-	mboxSendMsg(prAdapter, MBOX_ID_0,
-		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
 
 	DBGLOG(QM, LOUD,
 		"Send Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
@@ -9820,6 +9818,9 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 		prArpMonitorMsg->eType,
 		prArpMonitorMsg->ucBssIndex,
 		prArpMonitorMsg->u2PacketLen);
+
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
 }
 
 void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
