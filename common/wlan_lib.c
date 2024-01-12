@@ -9068,7 +9068,7 @@ uint32_t wlanCfgParse(IN struct ADAPTER *prAdapter,
 			break;
 
 		case STATE_TEXT:
-			if (i4Nargs < WLAN_CFG_ARGV_MAX) {
+			if (i4Nargs >= 0 && i4Nargs < WLAN_CFG_ARGV_MAX) {
 				ppcArgs[i4Nargs++] = state.text;
 				arcArgv_size[i4Nargs - 1] = state.textsize;
 				state.textsize = 0;
@@ -9708,19 +9708,22 @@ void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 				       prMsduInfo->ucStaRecIndex);
 
-	if (prStaRec) {
-		if (fgTxDrop)
-			prStaRec->arLinkStatistics[eAci].u4TxDropMsdu++;
-		else
-			prStaRec->arLinkStatistics[eAci].u4TxMsdu++;
-	} else {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+	if (eAci >= 0 && eAci < WMM_AC_INDEX_NUM) {
+		if (prStaRec) {
+			if (fgTxDrop)
+				prStaRec->arLinkStatistics[eAci].u4TxDropMsdu++;
+			else
+				prStaRec->arLinkStatistics[eAci].u4TxMsdu++;
+		} else {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 						  prMsduInfo->ucBssIndex);
 
-		if (fgTxDrop)
-			prBssInfo->arLinkStatistics[eAci].u4TxDropMsdu++;
-		else
-			prBssInfo->arLinkStatistics[eAci].u4TxMsdu++;
+			if (fgTxDrop)
+				prBssInfo->arLinkStatistics[eAci].
+					u4TxDropMsdu++;
+			else
+				prBssInfo->arLinkStatistics[eAci].u4TxMsdu++;
+		}
 	}
 
 	/* Trigger FW stats log every 20s */
@@ -9754,7 +9757,7 @@ void wlanUpdateRxStatistics(IN struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
 				       prSwRfb->ucStaRecIdx);
-	if (prStaRec)
+	if (prStaRec && eAci >= 0 && eAci < WMM_AC_INDEX_NUM)
 		prStaRec->arLinkStatistics[eAci].u4RxMsdu++;
 }
 
