@@ -10753,10 +10753,6 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldCheckStarecList(ad);
-#endif
 }
 
 static void nicUniEventPpStat(
