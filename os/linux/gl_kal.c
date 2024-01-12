@@ -9537,6 +9537,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	char *pos = NULL, *end = NULL;
 	uint32_t slen;
 	uint8_t fgIsValidNetDevice = FALSE;
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+	struct rtnl_link_stats64 rtnls;
+#endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -9684,6 +9687,15 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		}
 
 		if (fgIsValidNetDevice) {
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+			dev_get_stats(ndev, &rtnls);
+			pos += kalSnprintf(pos, end - pos,
+				"[%llu:%llu:%llu:%llu]",
+				(unsigned long long) ndev->stats.tx_dropped,
+				(unsigned long long) rtnls.tx_dropped,
+				(unsigned long long) ndev->stats.rx_dropped,
+				(unsigned long long) rtnls.rx_dropped);
+#else
 			pos += kalSnprintf(pos, end - pos,
 				"[%llu:%llu:%llu:%llu]",
 				(unsigned long long) ndev->stats.tx_dropped,
@@ -9692,6 +9704,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 				(unsigned long long) ndev->stats.rx_dropped,
 				(unsigned long long)
 					atomic_long_read(&ndev->rx_dropped));
+#endif
 		}
 		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
 	}
