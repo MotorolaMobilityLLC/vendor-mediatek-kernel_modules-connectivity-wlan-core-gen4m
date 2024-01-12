@@ -1775,11 +1775,11 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
-		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pRoleFsmInfo->ucBssIndex,
 			prP2pRoleFsmInfo->ucRoleIndex));
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 	}
 
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
