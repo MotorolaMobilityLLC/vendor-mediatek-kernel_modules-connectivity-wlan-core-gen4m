@@ -647,7 +647,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 
 #define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		wakeup_source_trash(_prWakeLock); \
 		_prWakeLock = NULL; \
 	} \
@@ -655,21 +655,21 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 #endif
 #define KAL_WAKE_LOCK(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		__pm_stay_awake(_prWakeLock); \
 	} \
 }
 
 #define KAL_WAKE_LOCK_TIMEOUT(_prAdapter, _prWakeLock, _u4Timeout) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		__pm_wakeup_event(_prWakeLock, JIFFIES_TO_MSEC(_u4Timeout)); \
 	} \
 }
 
 #define KAL_WAKE_UNLOCK(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		__pm_relax(_prWakeLock); \
 	} \
 }
@@ -693,28 +693,28 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 
 #define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		wake_lock_destroy(_prWakeLock); \
 	} \
 }
 
 #define KAL_WAKE_LOCK(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		wake_lock(_prWakeLock); \
 	} \
 }
 
 #define KAL_WAKE_LOCK_TIMEOUT(_prAdapter, _prWakeLock, _u4Timeout) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		wake_lock_timeout(_prWakeLock, _u4Timeout); \
 	} \
 }
 
 #define KAL_WAKE_UNLOCK(_prAdapter, _prWakeLock) \
 { \
-	if (!_prWakeLock) { \
+	if (_prWakeLock) { \
 		wake_unlock(_prWakeLock); \
 	} \
 }
