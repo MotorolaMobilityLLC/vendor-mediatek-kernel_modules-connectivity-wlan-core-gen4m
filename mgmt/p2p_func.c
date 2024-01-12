@@ -1977,7 +1977,7 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 					prP2pBssInfo->ucSSIDLen = 0;
 				}
 
-#if CFG_DUAL_P2PLIKE_INTERFACE
+#if KAL_P2P_NUM > 1
 				/*avoid ap1 Bss  have diff A2 & A3, */
 				/*ToDo :  fix for P2P case*/
 
