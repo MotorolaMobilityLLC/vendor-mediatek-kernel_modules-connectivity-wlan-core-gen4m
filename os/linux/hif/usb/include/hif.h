@@ -194,6 +194,7 @@ enum ENUM_USB_END_POINT {
 #define VND_REQ_FEATURE_SET             (0x91)
 #define FEATURE_SET_WVALUE_RESUME       (0x5)
 #define FEATURE_SET_WVALUE_SUSPEND      (0x6)
+#define VND_REQ_BUF_SIZE                (16)
 
 #define USB_TX_CMD_QUEUE_MASK           (BITS(2, 4))   /* For H2CDMA Tx CMD mapping */
 
@@ -309,6 +310,8 @@ struct GL_HIF_INFO {
 	struct BUF_CTRL rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
 
 	struct mutex vendor_req_sem;
+	void *vendor_req_buf;
+	u_int32_t vendor_req_buf_sz;
 	u_int8_t fgIntReadClear;
 	u_int8_t fgMbxReadClear;
 	u_int8_t fgEventEpDetected;
@@ -396,9 +399,10 @@ void glUdmaTxRxEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
 void glUdmaRxAggEnable(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 
-u_int8_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo, IN uint8_t uEndpointAddress, IN uint8_t RequestType,
-			    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index, IN void *TransferBuffer,
-			    IN uint32_t TransferBufferLength);
+int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t uEndpointAddress, IN uint8_t RequestType,
+	    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index,
+	    IN void *TransferBuffer, IN uint32_t TransferBufferLength);
 
 void glUsbEnqueueReq(struct GL_HIF_INFO *prHifInfo, struct list_head *prHead, struct USB_REQ *prUsbReq,
 		     spinlock_t *prLock, u_int8_t fgHead);
