@@ -1815,6 +1815,7 @@ struct ADAPTER {
 	struct OID_HANDLER_RECORD arPrevCompHdlrRec[OID_HDLR_REC_NUM];
 	uint32_t u4WaitRecIdx;
 	uint32_t u4CompRecIdx;
+	const char *fw_flavor;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

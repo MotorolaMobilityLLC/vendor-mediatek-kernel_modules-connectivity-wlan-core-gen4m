@@ -8174,10 +8174,20 @@ int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 	return 0;
 }
 
-int32_t __weak kalGetFwFlavor(uint8_t *flavor)
+int32_t __weak kalGetFwFlavorByPlat(uint8_t *flavor)
 {
 	DBGLOG(SW4, INFO, "NO firmware flavor build.\n");
 	return 0;
+}
+
+int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor)
+{
+	if (prAdapter && prAdapter->fw_flavor) {
+		*flavor = prAdapter->fw_flavor[0];
+		return 1;
+	}
+
+	return kalGetFwFlavorByPlat(flavor);
 }
 
 int32_t __weak kalGetConnsysVerId(void)
