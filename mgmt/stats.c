@@ -970,6 +970,7 @@ void
 statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct PARAM_GET_LINK_QUALITY_INFO rParam;
 	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
@@ -1009,6 +1010,7 @@ statsTxTlvBss0Hdlr(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(TX, TRACE, "Bss0 len=%u retry=%llu RtsFail=%llu AckFail=%llu\n",
 		u4TlvLen, prBssStat->u8Retry, prBssStat->u8RtsFail,
 		prBssStat->u8AckFail);
+#endif
 }
 
 void
@@ -1070,17 +1072,31 @@ void
 statsCgsB0IdleSlotHdlr(struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen)
 {
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
+#endif
 	struct STATS_TRX_TLV_T *prStatTlv = prTlvBuf;
 	uint64_t *pu8B0IdleSlot = (uint64_t *)(&prStatTlv->aucBuffer[0]);
 
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 	if (prLinkQualityInfo)
 		*pu8B0IdleSlot = prLinkQualityInfo->u8IdleSlotCount;
+#else
+	goto err;
+#endif
 	prStatTlv->u4Tag = STATS_CGS_TAG_B0_IDLE_SLOT;
 	prStatTlv->u4Len = u4TlvLen;
 	DBGLOG(TX, TRACE, "len=%u val=%llu\n", u4TlvLen, *pu8B0IdleSlot);
+
+#if !CFG_SUPPORT_LINK_QUALITY_MONITOR
+err:
+	*pu8B0IdleSlot = 0;
+	prStatTlv->u4Tag = STATS_CGS_TAG_B0_IDLE_SLOT;
+	prStatTlv->u4Len = 0;
+	DBGLOG(TX, TRACE, "len=%u val=%llu\n", u4TlvLen, *pu8B0IdleSlot);
+#endif
 }
 
 void
