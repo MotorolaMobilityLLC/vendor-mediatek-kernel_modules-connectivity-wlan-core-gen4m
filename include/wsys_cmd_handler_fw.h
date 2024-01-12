@@ -328,6 +328,8 @@ enum ENUM_CMD_ID {
 	CMD_ID_WTBL_INFO        = 0xCD, /* 0xcd (Query) */
 	CMD_ID_MIB_INFO     = 0xCE, /* 0xce (Query) */
 
+	CMD_ID_SET_TXBF_BACKOFF = 0xD1,
+
 	CMD_ID_SET_RDD_CH           = 0xE1,
 
 	CMD_ID_LAYER_0_EXT_MAGIC_NUM    = 0xED,
@@ -1896,6 +1898,26 @@ struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE {
 
 	/* DWORD_11 ~ - Tx power limit values*/
 	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE rChannelPowerLimit[0];
+};
+
+#define POWER_LIMIT_TXBF_BACKOFF_PARAM_NUM 6
+struct CMD_TXPWR_TXBF_CHANNEL_BACKOFF {
+	uint8_t ucCentralCh;
+	uint8_t aucPadding0[1];
+	int8_t acTxBfBackoff[POWER_LIMIT_TXBF_BACKOFF_PARAM_NUM];
+};
+
+#define CMD_POWER_LIMIT_TABLE_SUPPORT_CHANNEL_NUM 64
+struct CMD_TXPWR_TXBF_SET_BACKOFF {
+	uint8_t ucCmdVer;
+	uint8_t aucPadding0[1];
+	uint16_t u2CmdLen;
+	uint8_t ucNum;
+	uint8_t ucBssIdx;
+	uint8_t aucPadding1[2];
+	uint8_t aucPadding2[32];
+	struct CMD_TXPWR_TXBF_CHANNEL_BACKOFF
+		rChannelTxBfBackoff[CMD_POWER_LIMIT_TABLE_SUPPORT_CHANNEL_NUM];
 };
 
 /*  The DBDC band request from driver.
