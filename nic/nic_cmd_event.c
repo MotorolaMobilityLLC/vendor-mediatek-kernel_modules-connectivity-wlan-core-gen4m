@@ -4479,8 +4479,12 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
-		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
-			p2pRoleFsmRunEventBeaconTimeout(prAdapter, prBssInfo);
+		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+			if (nicBeaconTimeoutFilterPolicy(prAdapter,
+					prEventBssBeaconTimeout->ucBssIndex))
+				p2pRoleFsmRunEventBeaconTimeout(prAdapter,
+					prBssInfo);
+		}
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
 		else if (GET_BSS_INFO_BY_INDEX(prAdapter,
