@@ -1318,7 +1318,9 @@ struct mt66xx_chip_info {
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 	void (*showTaskStack)(IN struct task_struct *tsk,
 			      IN unsigned long *sp);
-	void (*asicRxProcessRxvforMSP)(IN struct ADAPTER *prAdapter,
+	void (*asicRxProcessRxvChkRst)(IN struct ADAPTER *prAdapter,
+		IN OUT struct SW_RFB *prRetSwRfb);
+	uint32_t (*asicRxProcessRxvforMSP)(IN struct ADAPTER *prAdapter,
 		IN OUT struct SW_RFB *prRetSwRfb);
 	uint8_t (*asicRxGetRcpiValueFromRxv)(
 		IN uint8_t ucRcpiMode,
