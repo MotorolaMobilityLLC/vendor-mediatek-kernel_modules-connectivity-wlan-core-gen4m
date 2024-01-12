@@ -483,6 +483,7 @@ struct SW_WFDMA_INFO {
 	bool fgIsEnSwWfdma;
 	bool fgIsEnAfterFwdl;
 	void *pucIoremapAddr;
+	uint32_t u4PortIdx;
 	uint32_t u4EmiOffsetAddr;
 	uint32_t u4EmiOffsetBase;
 	uint32_t u4EmiOffsetMask;
