@@ -6,6 +6,11 @@
 #include "precomp.h"
 #include "nan/nan_sec.h"
 
+void nanResetMemory(void)
+{
+	nanResetWpaSm();
+}
+
 uint8_t
 nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =

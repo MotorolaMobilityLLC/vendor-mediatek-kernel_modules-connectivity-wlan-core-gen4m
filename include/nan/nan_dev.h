@@ -20,6 +20,7 @@ enum ENUM_MODULE {
  *                              F U N C T I O N S
  *******************************************************************************
  */
+void nanResetMemory(void);
 
 uint8_t nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx);
 

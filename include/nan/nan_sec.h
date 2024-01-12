@@ -131,6 +131,8 @@ struct _NAN_NDP_INSTANCE_T;
  *               Export API Related
  ************************************************
  */
+void nanResetWpaSm(void);
+
 uint32_t nanSecGetCsidAttr(uint32_t *pu4CsidAttrLen,
 			   uint8_t **ppu1CsidAttrBuf);
 uint32_t nanSecGetNdpScidAttr(struct _NAN_NDP_INSTANCE_T *prNdp,
