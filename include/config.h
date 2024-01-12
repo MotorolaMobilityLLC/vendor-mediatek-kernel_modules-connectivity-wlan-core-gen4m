@@ -1055,6 +1055,12 @@
 
 #define WLAN_INCLUDE_PROC                   1
 
+#if CFG_TC10_FEATURE
+#define WLAN_INCLUDE_SYS                   1
+#else
+#define WLAN_INCLUDE_SYS                   0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Sniffer SUPPORT
  *------------------------------------------------------------------------------
