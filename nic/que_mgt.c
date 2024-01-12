@@ -6122,7 +6122,7 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
 #if CFG_SUPPORT_RXSMM_WHITELIST
-	uint8_t  fgRxsmmEnable;
+	uint8_t  fgRxsmmEnable = FALSE;
 #endif
 
 	DEBUGFUNC("mqmProcessAssocRsp");
@@ -6168,7 +6168,13 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RXSMM_WHITELIST
 				if (rlmParseCheckRxsmmOuiIE(prAdapter,
 					pucIE, &fgRxsmmEnable))
-					prStaRec->fgRxsmmEnable = fgRxsmmEnable;
+					prStaRec->fgRxsmmEnable =
+						(fgRxsmmEnable) ?
+						(fgRxsmmEnable) :
+						(prStaRec->fgRxsmmEnable);
+
+				DBGLOG(QM, INFO, "RxSMM: STAREC enable = %d\n",
+					prStaRec->fgRxsmmEnable);
 #endif
 
 				break;
