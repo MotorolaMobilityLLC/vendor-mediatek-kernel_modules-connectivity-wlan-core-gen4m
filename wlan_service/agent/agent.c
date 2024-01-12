@@ -7,6 +7,22 @@
 u_char *agnt_rstrtok;
 int8_t g_hqa_frame_ctrl;
 
+struct test_ru_info_host {
+	u_int32 ru_category;
+	u_int32 ru_allocation;
+	u_int32 aid;
+	u_int32 allocation;
+	u_int32 ru_index;
+	u_int32 rate;
+	u_int32 ldpc;
+	u_int32 nss;
+	u_int32 start_sp_st;
+	u_int32 mpdu_length;
+	s_int32 alpha;
+	u_int32 ru_mu_nss;
+};
+
+
 u_char *agent_trtok(u_char *s, const u_char *ct)
 {
 	u_char *sbegin, *send;
@@ -4155,6 +4171,189 @@ static s_int32 hqa_set_ru_info(
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static s_int32 hqa_set_ru_info_v2(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 resp_len = 2;
+	u_int32 band_idx = (u_int32)(serv_test->ctrl_band_idx);
+	u_int32 len = 0, seg_sta_cnt[4] = {0}, sta_seq = 0, value = 0;
+	u_int32 u4SegCount = 0;
+	u_char param_cnt = 0, segment_idx = 0, param_loop = 0;
+	u_int32 mpdu_length = 0;
+	u_char *data = hqa_frame->data;
+	struct test_ru_allocatoin *ru_allocation = NULL;
+	struct test_ru_info *ru_info = NULL;
+	u_int8 cnt1, cnt2;
+
+	len = hqa_frame->length;
+
+	/*band idx*/
+	get_param_and_shift_buf(TRUE,
+				   sizeof(u_int32),
+				   &data,
+				   (u_char *)&band_idx);
+
+	/*seg count*/
+	get_param_and_shift_buf(TRUE,
+				   sizeof(u_int32),
+				   &data,
+				   (u_char *)&u4SegCount);
+
+	/* param count */
+	param_cnt = sizeof(struct test_ru_info_host) / sizeof(u_int32);
+	mpdu_length = CONFIG_GET_PARAM(serv_test, tx_len, band_idx);
+	ru_allocation = CONFIG_GET_PADDR(serv_test, ru_alloc, band_idx);
+	ru_info = CONFIG_GET_PADDR(serv_test, ru_info_list[0], band_idx);
+	sys_ad_zero_mem(ru_info, sizeof(struct test_ru_info)*MAX_MULTI_TX_STA);
+	sys_ad_set_mem(ru_allocation, sizeof(*ru_allocation), 0xff);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		 ("\t\tBandidx:%d, SegCount:%d, Len:%d, ParamCount:%d\n",
+			band_idx, u4SegCount, len, param_cnt));
+
+	/* for maximum bw 80+80/160, 2 segments only */
+	for (cnt1 = 0; cnt1 < u4SegCount ; cnt1++) {
+		get_param_and_shift_buf(TRUE,
+				   sizeof(u_int32),
+				   &data, (u_char *)&seg_sta_cnt[cnt1]);
+
+		segment_idx = cnt1;
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		 ("%s: _segment(%d), sta_count:%d\n",
+		 __func__, cnt1, seg_sta_cnt[cnt1]));
+
+		for (cnt2 = 0; cnt2 < seg_sta_cnt[cnt1]; cnt2++) {
+			param_loop = param_cnt;
+
+			ru_info[sta_seq].valid = TRUE;
+			/* ru caterogy */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			/* ru allocation */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			hqa_translate_ru_allocation(value,
+					    &ru_info[sta_seq].allocation);
+
+			/* aid, STA_ID */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].aid = value;
+
+			/* RU index */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].ru_index = (value << 1) |
+				((segment_idx) & 0x01);
+
+			/* MCS */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].rate = value;
+
+			/* LDPC */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].ldpc = value;
+
+			/* nss */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].nss = value;
+
+			/* start spatial stream */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			ru_info[sta_seq].start_sp_st = value-1;
+
+
+			/* MPDU length */
+			get_param_and_shift_buf(TRUE,
+						   sizeof(u_int32),
+						   &data, (u_char *)&value);
+			param_loop--;
+			if (value > 24)
+				ru_info[sta_seq].mpdu_length = value;
+			else
+				ru_info[sta_seq].mpdu_length = mpdu_length;
+
+			/* alpha , power? */
+			if (param_loop) {
+				get_param_and_shift_buf(TRUE,
+					sizeof(u_int32),
+					&data, (u_char *)&value);
+				param_loop--;
+				ru_info[sta_seq].alpha = value;
+			}
+
+			/* MU NSS */
+			if (param_loop) {
+				get_param_and_shift_buf(TRUE,
+					sizeof(u_int32),
+					&data, (u_char *)&value);
+				param_loop--;
+				ru_info[sta_seq].ru_mu_nss = value;
+			}
+
+			/* handle ps160 */
+			if (cnt1 < 2)	/* segment0 , segment1 */
+				ru_info[sta_seq].ps160 = 0;
+			else	/* segment2 , segment3 */
+				ru_info[sta_seq].ps160 = 1;
+
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s: seg_idx[%d]alloc[0x%x]: ru_idx:%d\n",
+					__func__, segment_idx,
+					ru_info[sta_seq].allocation,
+					ru_info[sta_seq].ru_index >> 1));
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("\t\t\t\trate:%x, ldpc:%d\n",
+					ru_info[sta_seq].rate,
+					ru_info[sta_seq].ldpc));
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("\t\t\t\tnss:%d, mimo nss:%d\n",
+					ru_info[sta_seq].nss,
+					ru_info[sta_seq].ru_mu_nss));
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("\t\t\t\t start spatial stream:%d,\n",
+					ru_info[sta_seq].start_sp_st));
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("\t\t\t\tmpdu len=%d,alpha:%d,ps160:%d\n\n",
+					ru_info[sta_seq].mpdu_length,
+					ru_info[sta_seq].alpha,
+					ru_info[sta_seq].ps160));
+
+			/* Sta RU info, done */
+			sta_seq++;
+
+		}
+	}
+
+	update_hqa_frame(hqa_frame, resp_len, ret);
+
+	return ret;
+}
+#endif
 
 static struct hqa_cmd_entry CMD_SET5[] = {
 	/* cmd id start from 0x1500 */
