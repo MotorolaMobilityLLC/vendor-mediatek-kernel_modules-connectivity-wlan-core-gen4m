@@ -496,6 +496,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+	{
+		.pcCmdStr  = CMD_SET_HM_ALG_CTRL,
+		.pfHandler = priv_driver_set_hm_alg_ctrl,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 #endif
 	{
 		.pcCmdStr  = CMD_SET_BOOSTCPU,

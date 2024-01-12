@@ -102,6 +102,7 @@
 #define CMD_SET_AUTO_RATE		"AutoRate"
 #define CMD_SET_PP_CAP_CTRL		"PpCapCtrl"
 #define CMD_SET_PP_ALG_CTRL		"PpAlgCtrl"
+#define CMD_SET_HM_ALG_CTRL		"HmAlgCtrl"
 #define CMD_GET_VERSION			"VER"
 #define CMD_SET_TEST_MODE		"SET_TEST_MODE"
 #define CMD_SET_TEST_CMD		"SET_TEST_CMD"

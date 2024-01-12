@@ -251,6 +251,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x73, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
+	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3532,6 +3533,41 @@ struct UNI_CMD_PP_EN_CTRL_T {
 	uint8_t    u1PpMgmtEn;
 	uint16_t   u1PpBitMap;
 	uint8_t    u1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+/*HM command (Tag 0x??) */
+struct UNI_CMD_HM {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *
+	 *   TAG                            | ID   |
+	 *   -------------------------      | --   |
+	 */
+};
+/** @} */
+enum UNI_CMD_ID_HM_TAG {
+    /** SET **/
+	UNI_CMD_HM_TAG_ALG_CTRL = 0x0,
+	UNI_CMD_HM_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_HM_ALG_CTRL_T {
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+
+    /* tag specific part */
+	uint8_t u1HmManualModeEn;
+	uint8_t u1ForceObss;
+	uint8_t u1ForceBT;
+	uint8_t u1HmForcePlan;
+	uint8_t u1ObssTimePercntg;
+	uint8_t u1BTPercntg;
+	uint8_t u1Reserved[6];
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_SUPPORT_TX_BF
