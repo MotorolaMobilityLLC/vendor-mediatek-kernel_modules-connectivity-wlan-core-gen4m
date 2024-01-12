@@ -19,8 +19,8 @@
 
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
-#define WIFI_EMI_MEM_OFFSET    0x177000
-#define WIFI_EMI_MEM_SIZE      0xBD000
+#define WIFI_EMI_MEM_OFFSET    0x140000
+#define WIFI_EMI_MEM_SIZE      0x130000
 #endif
 
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
