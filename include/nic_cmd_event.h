@@ -792,6 +792,10 @@ enum ENUM_PF_OPCODE {
 	PF_OPCODE_NUM
 };
 
+enum ENUM_SCN_FUNC_MASK {
+	ENUM_SCN_RANDOM_MAC_EN = (1 << 0),
+};
+
 struct CMD_PACKET_FILTER_CAP {
 	uint8_t			ucCmd;
 	uint16_t			packet_cap_type;
@@ -2511,7 +2515,7 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t ucSSIDType;
 	uint8_t ucSSIDNum;
 	uint8_t ucNumProbeReq;
-	uint8_t aucPadding_0[1];
+	uint8_t ucScnFuncMask;
 	uint8_t auVersion[1];
 	struct PARAM_SSID arSSID[4];
 	uint16_t u2ProbeDelayTime;
@@ -3046,7 +3050,7 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t ucChannelType;
 	uint8_t ucChnlNum;
 	uint8_t ucMspEntryNum;
-	uint8_t aucPadding_2;
+	uint8_t ucScnFuncMask;
 	struct CHANNEL_INFO aucChannel[64];
 	uint16_t au2MspList[10];
 	uint8_t aucPadding_3[64];

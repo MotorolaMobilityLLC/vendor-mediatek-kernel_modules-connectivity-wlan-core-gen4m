@@ -6716,3 +6716,94 @@ void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)
 	if (prAdapter->rWifiVar.ucWow)
 		device_init_wakeup(prDev, TRUE);
 }
+
+u_int8_t kalIsOuiMask(IN uint8_t pucMacAddrMask[MAC_ADDR_LEN])
+{
+	return (pucMacAddrMask[0] == 0xFF &&
+		pucMacAddrMask[1] == 0xFF &&
+		pucMacAddrMask[2] == 0xFF);
+}
+
+u_int8_t kalIsValidMacAddr(IN const uint8_t *addr)
+{
+	return is_valid_ether_addr(addr);
+}
+
+#if (KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE)
+void kalParseRandomMac(
+	IN struct GLUE_INFO *prGlueInfo,
+	IN uint32_t u4flags, IN uint8_t *pucMacAddr, IN uint8_t *pucMacAddrMask,
+	IN uint8_t *pucBssid,
+	OUT uint8_t *pucRandomMac, OUT uint8_t *pucRandomMacMask)
+{
+	u_int8_t fgIsRandomMac = FALSE;
+	u_int8_t fgIsBssSet = FALSE;
+	uint8_t ucMacAddr[MAC_ADDR_LEN];
+	uint8_t ucMacAddrMask[MAC_ADDR_LEN];
+
+	ASSERT(pucMacAddr);
+	ASSERT(pucMacAddrMask);
+	ASSERT(pucRandomMac);
+
+	fgIsRandomMac =
+		(u4flags & NL80211_SCAN_FLAG_RANDOM_ADDR) ? TRUE : FALSE;
+	if (!fgIsRandomMac) {
+		eth_zero_addr(pucRandomMac);
+		if (pucRandomMacMask)
+			eth_zero_addr(pucRandomMacMask);
+		return;
+	}
+
+	kalMemCopy(ucMacAddr, pucMacAddr, MAC_ADDR_LEN);
+	kalMemCopy(ucMacAddrMask, pucMacAddrMask, MAC_ADDR_LEN);
+	if (!kalIsOuiMask(ucMacAddrMask) && prGlueInfo->fgIsScanOuiSet) {
+		kalMemCopy(ucMacAddr, prGlueInfo->ucScanOui, MAC_OUI_LEN);
+		kalMemSet(ucMacAddrMask, 0xFF, MAC_OUI_LEN);
+	}
+	if (pucBssid && kalIsValidMacAddr(pucBssid)) {
+		fgIsBssSet = TRUE;
+		kalMemCopy(pucRandomMac, pucBssid, MAC_ADDR_LEN);
+	} else {
+		get_random_mask_addr(pucRandomMac, ucMacAddr, ucMacAddrMask);
+	}
+	if (pucRandomMacMask)
+		kalMemCopy(pucRandomMacMask, ucMacAddrMask, MAC_ADDR_LEN);
+
+	log_dbg(SCN, INFO, "random mac=" MACSTR "(bss=%u), mac_addr=" MACSTR
+		", mac_addr_mask=%pM\n", MAC2STR(pucRandomMac), fgIsBssSet,
+		MAC2STR(ucMacAddr), ucMacAddrMask);
+}
+#endif
+
+void kalScanParseRandomMac(
+	IN struct GLUE_INFO *prGlueInfo,
+	IN struct cfg80211_scan_request *request,
+	OUT uint8_t *pucRandomMac)
+{
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+	uint8_t *pucBssid = NULL;
+
+#if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
+	pucBssid = request->bssid;
+#endif
+	kalParseRandomMac(prGlueInfo, request->flags, request->mac_addr,
+		request->mac_addr_mask, pucBssid, pucRandomMac, NULL);
+#else
+	if (pucRandomMac)
+		eth_zero_addr(pucRandomMac);
+#endif
+}
+
+void kalSchedScanParseRandomMac(
+	IN struct GLUE_INFO *prGlueInfo,
+	IN struct cfg80211_sched_scan_request *request,
+	OUT uint8_t *pucRandomMac, OUT uint8_t *pucRandomMacMask)
+{
+#if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
+	kalParseRandomMac(prGlueInfo, request->flags, request->mac_addr,
+		request->mac_addr_mask, NULL, pucRandomMac, pucRandomMacMask);
+#else
+	if (pucRandomMac)
+		eth_zero_addr(pucRandomMac);
+#endif
+}

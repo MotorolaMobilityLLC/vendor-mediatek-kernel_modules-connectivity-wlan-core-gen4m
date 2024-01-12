@@ -260,6 +260,7 @@ struct AIS_FSM_INFO {
 	enum ENUM_SCAN_TYPE eScanType;
 	uint32_t u4ScanChannelNum;
 	struct RF_CHANNEL_INFO arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
 
 	uint32_t u4ScanIELength;
 	uint8_t aucScanIEBuf[MAX_IE_LENGTH];
@@ -490,7 +491,7 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 		IN enum ENUM_SCAN_TYPE eScanType,
 		IN uint8_t *pucIe, IN uint32_t u4IeLength,
 		IN uint8_t u4ChannelNum,
-		IN struct RF_CHANNEL_INFO *prChannel);
+		IN struct RF_CHANNEL_INFO *prChannel, IN uint8_t *pucRandomMac);
 
 /*----------------------------------------------------------------------------*/
 /* Internal State Checking                                                    */

@@ -459,6 +459,9 @@ struct SCAN_PARAM {	/* Used by SCAN FSM */
 	uint8_t ucChannelListNum;
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
 
+	/* random mac */
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
+
 	/* Feedback information */
 	uint8_t ucSeqNum;
 
@@ -564,6 +567,7 @@ struct MSG_SCN_SCAN_REQ_V2 {
 	enum ENUM_SCAN_CHANNEL eScanChannel;
 	uint8_t ucChannelListNum;
 	struct RF_CHANNEL_INFO arChnlInfoList[MAXIMUM_OPERATION_CHANNEL_LIST];
+	uint8_t aucRandomMac[MAC_ADDR_LEN];	/* random mac */
 	uint16_t u2IELen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 };
