@@ -2166,9 +2166,8 @@ struct LINK_INFO {
 };
 
 uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
-	struct LINK_INFO *link, struct STA_RECORD *prStaRec)
+	struct LINK_INFO *link, uint8_t ucBssIndex)
 {
-	uint8_t ucBssIndex = prStaRec->ucBssIndex;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss = NULL;
@@ -2277,7 +2276,8 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 	link->bss = bss;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	link->link_id = prStaRec->ucLinkIndex;
+	link->link_id = prBssInfo->prStaRecOfAP ?
+		prBssInfo->prStaRecOfAP->ucLinkIndex : 0;
 #endif
 
 	return WLAN_STATUS_SUCCESS;
@@ -2289,7 +2289,6 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	uint32_t u4BufLen, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct LINK_INFO links[MLD_LINK_MAX] = {0};
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
@@ -2307,16 +2306,10 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-	prStaRec = prBssInfo->prStaRecOfAP;
-	if (!prStaRec) {
-		DBGLOG(INIT, INFO, "StaRec not exist !!\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
 #if ((CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
 	(CFG_SUPPORT_802_11BE_MLO == 1)
-	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prBssInfo->prStaRecOfAP);
 	if (prMldStaRec) {
 		struct STA_RECORD *sta;
 		uint8_t count = 0;
@@ -2329,7 +2322,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 			}
 
 			status = kalCollectLinkInfo(prAdapter,
-				&links[count], sta);
+				&links[count], sta->ucBssIndex);
 			if (status != WLAN_STATUS_SUCCESS)
 				return status;
 
@@ -2339,7 +2332,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	} else
 #endif
 	{
-		status = kalCollectLinkInfo(prAdapter, &links[0], prStaRec);
+		status = kalCollectLinkInfo(prAdapter, &links[0], ucBssIndex);
 		if (status != WLAN_STATUS_SUCCESS)
 			return status;
 		/* no need to update valid_links for non-mlo */
@@ -2372,7 +2365,7 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		} else
 #endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
 		{
-			rRoamInfo.ap_mld_addr = prStaRec->aucMacAddr;
+			rRoamInfo.ap_mld_addr = NULL;
 			rRoamInfo.valid_links = 0;
 			rRoamInfo.links[0].addr = links[0].addr;
 			rRoamInfo.links[0].bssid = links[0].bssid;
