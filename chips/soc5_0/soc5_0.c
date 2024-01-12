@@ -3724,6 +3724,10 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	connac2x_DbgCrRead(NULL, 0x10023000, &u4Val);
 	DBGLOG(INIT, INFO, "0x10023000=[%x]\n", u4Val);
 	connac2x_DumpCrRange(NULL, 0x10023408, 27, "Infra bus hang status");
+
+	/* MCIF_MD_STATUS_CR */
+	connac2x_DbgCrRead(NULL, 0x10003200, &u4Val);
+	DBGLOG(INIT, INFO, "MCIF_MD_STATUS 0x10003200=[%x]\n", u4Val);
 }
 
 /* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
