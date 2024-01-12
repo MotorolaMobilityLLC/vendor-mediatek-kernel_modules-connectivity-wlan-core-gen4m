@@ -2872,8 +2872,6 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 	KAL_SPIN_LOCK_DECLARATION();
 
 	prBusInfo = prAdapter->chip_info->bus_info;
-	if (!prBusInfo->updateTxRingMaxQuota)
-		return;
 
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
@@ -2887,8 +2885,14 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
 
 		if (fgRun) {
-			u4Ret = prBusInfo->updateTxRingMaxQuota(
-					prAdapter, u2PortIdx, u4Quota);
+			if (prBusInfo->updateTxRingMaxQuota) {
+				u4Ret = prBusInfo->updateTxRingMaxQuota(
+						prAdapter, u2PortIdx, u4Quota);
+			} else {
+				DBGLOG(HAL, INFO,
+				"updateTxRingMaxQuota not implemented\n");
+				u4Ret = WLAN_STATUS_NOT_ACCEPTED;
+			}
 		}
 
 		DBGLOG(HAL, INFO,
