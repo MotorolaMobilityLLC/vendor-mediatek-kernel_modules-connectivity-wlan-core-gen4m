@@ -2387,7 +2387,7 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define MAX_LEN_OF_MLIE					(255)
 #define MAX_LEN_OF_FRAGMENT				(255)
 
-#define MAX_NUM_MLD_LINKS				15
+#define MAX_NUM_MLO_LINKS				15
 
 /*802.11be D3.0 Figure 9-709c - MLD Parameters subfield format*/
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)

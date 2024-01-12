@@ -460,6 +460,7 @@ struct BSS_DESC {
 	struct AIS_BLACKLIST_ITEM *prBlack;
 	uint16_t u2Score;
 	uint32_t u4Tput;
+	uint8_t fgPicked;
 
 #if CFG_SUPPORT_802_11K
 	struct NEIGHBOR_AP *prNeighbor;

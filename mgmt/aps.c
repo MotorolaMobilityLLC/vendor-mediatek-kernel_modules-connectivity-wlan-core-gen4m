@@ -245,25 +245,19 @@ const uint16_t mpduLen[CW_320_2MHZ + 1] = {
 
 #define PERCENTAGE(_val, _base) (_val * 100 / _base)
 
-#if (CFG_MLO_LINK_PLAN_MODE == 0)
-const uint8_t aucLinkPlan[] = {
-	BIT(BAND_2G4),
-	BIT(BAND_5G)
+enum ENUM_BAND g_aeLinkPlan[][APS_LINK_MAX] = {
+	{BAND_2G4, BAND_NULL, BAND_NULL},
+	{BAND_5G, BAND_NULL, BAND_NULL},
+	{BAND_2G4, BAND_5G, BAND_NULL},
+	{BAND_2G4, BAND_5G, BAND_5G},
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	 | BIT(BAND_6G)
+	{BAND_6G, BAND_NULL, BAND_NULL},
+	{BAND_2G4, BAND_6G, BAND_NULL},
+	{BAND_2G4, BAND_5G, BAND_6G},
+	{BAND_2G4, BAND_5G, BAND_5G},
+	{BAND_2G4, BAND_6G, BAND_6G},
 #endif
 };
-#endif
-
-#if (CFG_MLO_LINK_PLAN_MODE == 1)
-const uint8_t aucLinkPlan[] = {
-	BIT(BAND_2G4),
-	BIT(BAND_5G),
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	BIT(BAND_6G)
-#endif
-};
-#endif
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -289,13 +283,23 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex);
 
+static uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx);
+
+static uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
+	uint8_t ucBssIndex);
+
+static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
+	uint8_t bidx);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
 
 struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
-	uint8_t *addr, uint8_t bidx, uint8_t is_mlo)
+	uint8_t *addr, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AP_COLLECTION *a = NULL;
@@ -303,8 +307,7 @@ struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
 	a = s->arApHash[AP_HASH(addr)];
 
 	while (a != NULL &&
-	       (UNEQUAL_MAC_ADDR(a->aucAddr, addr) ||
-	       a->fgIsMultiLink != is_mlo))
+	       UNEQUAL_MAC_ADDR(a->aucAddr, addr))
 		a = a->hnext;
 	return a;
 }
@@ -327,15 +330,13 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 	if (a == NULL)
 		return;
 
-	if (EQUAL_MAC_ADDR(a->aucAddr, ap->aucAddr) &&
-		a->fgIsMultiLink == ap->fgIsMultiLink) {
+	if (EQUAL_MAC_ADDR(a->aucAddr, ap->aucAddr)) {
 		s->arApHash[AP_HASH(ap->aucAddr)] = a->hnext;
 		return;
 	}
 
 	while (a->hnext != NULL &&
-	       (UNEQUAL_MAC_ADDR(a->hnext->aucAddr, ap->aucAddr) ||
-	       a->hnext->fgIsMultiLink != ap->fgIsMultiLink)) {
+	       UNEQUAL_MAC_ADDR(a->hnext->aucAddr, ap->aucAddr)) {
 		a = a->hnext;
 	}
 	if (a->hnext != NULL)
@@ -345,7 +346,8 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 			   " from hash table\n", MAC2STR(ap->aucAddr));
 }
 
-uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
+uint8_t apsCanFormMultiLink(struct ADAPTER *ad,
+	struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (!mldIsMultiLinkEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
@@ -360,12 +362,6 @@ uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 	if (!bss->rMlInfo.prBlock ||
 	    bss->rMlInfo.prBlock->ucCount < ad->rWifiVar.ucMldRetryCount)
 		return TRUE;
-
-	DBGLOG(APS, WARN,
-		"Mld[" MACSTR "] is in mld blocklist, retry count %d >= %d\n",
-		MAC2STR(bss->rMlInfo.aucMldAddr),
-		bss->rMlInfo.prBlock->ucCount,
-		ad->rWifiVar.ucMldRetryCount);
 #endif
 	return FALSE;
 }
@@ -373,27 +369,7 @@ uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 uint8_t apsBssDescToLink(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, struct BSS_DESC *bss, uint8_t bidx)
 {
-	uint8_t i = 0, j = 0;
-
-	for (i = 0; i < ap->ucLinkNum; i++) {
-		if (ap->aucMask[i] & BIT(bss->eBand))
-			return i;
-	}
-
-	if (i == ap->ucLinkNum && i < MAX_LINK_PLAN_NUM) {
-		for (j = 0; j < ARRAY_SIZE(aucLinkPlan); j++) {
-			if (aucLinkPlan[j] & BIT(bss->eBand))
-				break;
-		}
-
-		if (j < ARRAY_SIZE(aucLinkPlan)) {
-			ap->aucMask[i] = aucLinkPlan[j];
-			ap->ucLinkNum++;
-			return i;
-		}
-	}
-
-	return 0;
+	return bss->eBand;
 }
 
 uint32_t apsAddBssDescToList(struct ADAPTER *ad, struct AP_COLLECTION *ap,
@@ -402,7 +378,7 @@ uint32_t apsAddBssDescToList(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	uint8_t l = apsBssDescToLink(ad, ap, bss, bidx);
 
-	if (l >= MAX_LINK_PLAN_NUM)
+	if (l >= BAND_NUM)
 		return WLAN_STATUS_FAILURE;
 
 	LINK_ENTRY_INITIALIZE(&bss->rLinkEntryEss[aidx]);
@@ -428,16 +404,23 @@ struct AP_COLLECTION *apsAddAp(struct ADAPTER *ad,
 	}
 
 	COPY_MAC_ADDR(ap->aucAddr, bss->aucBSSID);
-	ap->fgIsMultiLink = apsCanFormMld(ad, bss, bidx);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (ap->fgIsMultiLink)
+	if (apsCanFormMultiLink(ad, bss, bidx))
 		COPY_MAC_ADDR(ap->aucAddr, bss->rMlInfo.aucMldAddr);
+
+	if (bss->rMlInfo.prBlock &&
+	    bss->rMlInfo.prBlock->ucCount >= ad->rWifiVar.ucMldRetryCount)
+		DBGLOG(APS, WARN, "Mld[" MACSTR
+			"] is in mld blocklist, retry count %d >= %d\n",
+			MAC2STR(bss->rMlInfo.aucMldAddr),
+			bss->rMlInfo.prBlock->ucCount,
+			ad->rWifiVar.ucMldRetryCount);
 #endif
 
-	DBGLOG(APS, TRACE, "Add APC[" MACSTR "][MLO=%d]\n",
-		MAC2STR(ap->aucAddr), ap->fgIsMultiLink);
+	DBGLOG(APS, TRACE, "Add APC[" MACSTR "]\n", MAC2STR(ap->aucAddr));
 
-	for (i = 0; i < MAX_LINK_PLAN_NUM; i++)
+	for (i = 0; i < BAND_NUM; i++)
 		LINK_INITIALIZE(&ap->arLinks[i]);
 
 	if (apsAddBssDescToList(ad, ap, bss, bidx)) {
@@ -457,19 +440,18 @@ struct AP_COLLECTION *apsGetAp(struct ADAPTER *ad,
 	struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (apsCanFormMld(ad, bss, bidx))
-		return apsHashGet(ad, bss->rMlInfo.aucMldAddr, bidx, TRUE);
+	if (apsCanFormMultiLink(ad, bss, bidx))
+		return apsHashGet(ad, bss->rMlInfo.aucMldAddr, bidx);
 #endif
 
-	return apsHashGet(ad, bss->aucBSSID, bidx, FALSE);
+	return apsHashGet(ad, bss->aucBSSID, bidx);
 }
 
 void apsRemoveAp(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	DBGLOG(APS, TRACE,
-		"Remove APC[" MACSTR "][MLO=%d] LinkNum=%d, TotalCount=%d\n",
-		MAC2STR(ap->aucAddr), ap->fgIsMultiLink,
-		ap->ucLinkNum, ap->ucTotalCount);
+		"Remove APC[" MACSTR "] LinkNum=%d, TotalCount=%d\n",
+		MAC2STR(ap->aucAddr), ap->ucLinkNum, ap->ucTotalCount);
 
 	apsHashDel(ad, ap, bidx);
 	kalMemFree(ap, VIR_MEM_TYPE, sizeof(*ap));
@@ -510,7 +492,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 		 */
 		if (u4CandidateApScore <=
 		    u4ConnectedApScore * (100 + delta) / 100) {
-			DBGLOG(APS, WARN, "BSS[" MACSTR
+			DBGLOG(APS, TRACE, "BSS[" MACSTR
 				"] (%d <= %d*%d%%) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
@@ -533,7 +515,7 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 	default:
 	{
 		if (u4CandidateApScore < u4ConnectedApScore) {
-			DBGLOG(APS, WARN, "BSS[" MACSTR
+			DBGLOG(APS, TRACE, "BSS[" MACSTR
 				"] (%d < %d) reason=%d\n",
 				MAC2STR(bss->aucBSSID),
 				u4CandidateApScore, u4ConnectedApScore,
@@ -653,7 +635,7 @@ uint8_t apsGetCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 	       aps->arCuInfo[u2CuOffset].ucTotalCount;
 }
 
-uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
+static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t bidx)
 {
 	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
@@ -791,9 +773,11 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 			ad, bss, bidx);
 #endif
 
+		/* sanity check */
 		if (!apsSanityCheckBssDesc(ad, bss, reason, bidx))
 			continue;
 
+		/* add bss to ap collection */
 		ap = apsGetAp(ad, bss, bidx);
 		if (ap) {
 			if (!apsAddBssDescToList(ad, ap, bss, bidx))
@@ -804,6 +788,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 				count++;
 		}
 
+		/* handle cu/esp */
 		if (bss->fgExistBssLoadIE)
 			apsRecordCuInfo(ad, bss, bidx);
 		if (!bss->fgExistEspIE)
@@ -1624,81 +1609,77 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
-uint8_t apsIntraUpdateCandi(struct ADAPTER *ad, struct AP_COLLECTION *ap,
-	uint8_t link_idx, uint16_t min_score, enum ENUM_ROAMING_REASON reason,
-	uint8_t search_blk, uint8_t bidx)
+#if (CFG_MLO_LINK_PLAN_MODE == 0)
+/* 2+5/6 */
+uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
+	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+	uint8_t ucBssIndex)
+{
+	uint16_t i;
+	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+#endif
+	};
+
+	/* select best link plan */
+	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
+		enum ENUM_BAND *link_plan = aeLinkPlan[i];
+
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+#else /* CFG_MLO_LINK_PLAN_MODE */
+/* 2+5+6 */
+uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
+	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+	uint8_t ucBssIndex)
+{
+	uint16_t i;
+	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_5G, BAND_6G},
+#endif
+	};
+
+	/* select best link plan */
+	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
+		enum ENUM_BAND *link_plan = aeLinkPlan[i];
+
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+#endif /* CFG_MLO_LINK_PLAN_MODE */
+
+struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
+	struct AP_COLLECTION *ap, enum ENUM_BAND eBand, uint16_t min_score,
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
-	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
-	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
-	struct LINK *link = &ap->arLinks[link_idx];
+	struct LINK *link = &ap->arLinks[eBand];
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	struct BSS_DESC *bss, *cand = NULL;
 	uint16_t score, goal_score = 0;
+	uint8_t search_blk = FALSE;
 
 try_again:
 	LINK_FOR_EACH_ENTRY(bss, link, rLinkEntryEss[aidx], struct BSS_DESC) {
-		if (!search_blk) {
-			/* calculate bss score to filter non-qualify bsses */
-			bss->u2Score = apsCalculateApScore(
-				ad, bss, reason, bidx);
-			bss->u4Tput = apsGetEstimatedTput(ad, bss, bidx);
-#if (CFG_SUPPORT_ROAMING_LOG == 1)
-			if (roamingFsmIsDiscovering(ad, bidx)) {
-				char log[32] = {0};
-
-				kalSprintf(log, "SCORE_CANDI[%d]", ap->u4Index);
-				roamingFsmLogSocre(ad, log, bidx, bss,
-					bss->u2Score, bss->u4Tput);
-			}
-#endif
-		}
+		if (bss->fgPicked)
+			continue;
 
 		if (!search_blk && link->u4NumElem > 1 && bss->prBlack)
 			continue;
 
-		/* pick by bssid first */
-		if (policy == CONNECT_BY_BSSID) {
-			if (EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
-				ap->fgIsMatchBssid = TRUE;
-				cand = bss;
-				bss->u2Score = BSS_MATCH_BSSID_SCORE;
-				break;
-			}
-		} else if (policy == CONNECT_BY_BSSID_HINT) {
-			uint8_t oce = FALSE;
-			uint8_t chnl = nicFreq2ChannelNum(
-					conn->u4FreqInMHz * 1000);
-
-#if CFG_SUPPORT_MBO
-			oce = ad->rWifiVar.u4SwTestMode ==
-				ENUM_SW_TEST_MODE_SIGMA_OCE;
-#endif
-			if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
-				conn->aucBSSIDHint) &&
-			    (chnl == 0 || chnl == bss->ucChannelNum)) {
-#if (CFG_SUPPORT_AVOID_DESENSE == 1)
-				if (IS_CHANNEL_IN_DESENSE_RANGE(
-					ad,
-					bss->ucChannelNum,
-					bss->eBand)) {
-					DBGLOG(APS, INFO,
-						"Do network selection even match bssid_hint\n");
-				} else
-#endif
-				{
-					ap->fgIsMatchBssidHint = TRUE;
-					cand = bss;
-					bss->u2Score =
-						BSS_MATCH_BSSID_HINT_SCORE;
-					break;
-				}
-			}
-		}
-
-		if (!apsIsBssQualify(ad,
-			bss, reason, min_score,
+		if (!apsIsBssQualify(ad, bss, reason, min_score,
 			bss->u2Score, bidx))
 			continue;
 
@@ -1717,8 +1698,7 @@ try_again:
 			goto try_again;
 		}
 
-		ap->aprTarget[link_idx] = cand;
-
+		cand->fgPicked = TRUE;
 		goto done;
 	}
 
@@ -1728,10 +1708,10 @@ try_again:
 		goto try_again;
 	}
 done:
-	return cand != NULL;
+	return cand;
 }
 
-uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
+static uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	uint8_t valid = TRUE;
@@ -1769,6 +1749,180 @@ uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	return valid;
 }
 
+void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
+	uint16_t min_score, enum ENUM_ROAMING_REASON reason, uint8_t bidx)
+{
+	struct mt66xx_chip_info *prChipInfo = ad->chip_info;
+	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
+	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
+	uint8_t aidx = AIS_INDEX(ad, bidx);
+	uint16_t highest_score = 0;
+	struct BSS_DESC *bss;
+	int i, j;
+
+	/* candi bss scoring */
+	for (i = BAND_2G4; i < BAND_NUM; i++) {
+		struct LINK *link = &ap->arLinks[i];
+
+		LINK_FOR_EACH_ENTRY(bss, link,
+			rLinkEntryEss[aidx], struct BSS_DESC) {
+
+			bss->u2Score =
+				apsCalculateApScore(ad, bss, reason, bidx);
+			bss->u4Tput =
+				apsGetEstimatedTput(ad, bss, bidx);
+
+#if (CFG_SUPPORT_ROAMING_LOG == 1)
+			if (roamingFsmIsDiscovering(ad, bidx)) {
+				char log[32] = {0};
+
+				kalSprintf(log, "SCORE_CANDI[%d]", ap->u4Index);
+				roamingFsmLogSocre(ad, log, bidx, bss,
+					bss->u2Score, bss->u4Tput);
+			}
+#endif
+
+			if (policy == CONNECT_BY_BSSID) {
+				if (EQUAL_MAC_ADDR(bss->aucBSSID,
+						   conn->aucBSSID))
+					bss->u2Score = BSS_MATCH_BSSID_SCORE;
+			} else if (policy == CONNECT_BY_BSSID_HINT) {
+				uint8_t oce = FALSE;
+				uint8_t chnl = nicFreq2ChannelNum(
+						conn->u4FreqInMHz * 1000);
+
+#if CFG_SUPPORT_MBO
+				oce = ad->rWifiVar.u4SwTestMode ==
+					ENUM_SW_TEST_MODE_SIGMA_OCE;
+#endif
+				if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
+					conn->aucBSSIDHint) &&
+				    (chnl == 0 || chnl == bss->ucChannelNum)) {
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+					if (IS_CHANNEL_IN_DESENSE_RANGE(
+						ad,
+						bss->ucChannelNum,
+						bss->eBand)) {
+						DBGLOG(APS, INFO,
+							"Do network selection even match bssid_hint\n");
+					} else
+#endif
+					{
+						bss->u2Score =
+						     BSS_MATCH_BSSID_HINT_SCORE;
+					}
+				}
+			}
+		}
+	}
+
+	/* select highest score link plan */
+	for (i = 0; i < ARRAY_SIZE(g_aeLinkPlan); i++) {
+		struct BSS_DESC *candi[APS_LINK_MAX] = {0};
+		uint8_t found = FALSE;
+		uint32_t akm = 0;
+		uint16_t best = 0, score = 0;
+		uint8_t allow;
+		enum ENUM_BAND *link_plan = g_aeLinkPlan[i];
+
+		/* reset picked flag */
+		for (j = BAND_2G4; j < BAND_NUM; j++) {
+			struct LINK *link = &ap->arLinks[j];
+
+			LINK_FOR_EACH_ENTRY(bss, link,
+				rLinkEntryEss[aidx], struct BSS_DESC)
+				bss->fgPicked = FALSE;
+		}
+
+		if (prChipInfo->apsLinkPlanDecision)
+			allow = prChipInfo->apsLinkPlanDecision(ad, ap,
+				link_plan, bidx);
+		else
+			allow = apsLinkPlanDecision(ad, ap,
+				link_plan, bidx);
+
+		if (!allow)
+			continue;
+
+		for (j = 0; j < APS_LINK_MAX; j++) {
+			if (link_plan[j] == BAND_NULL)
+				continue;
+
+			candi[j] = bss = apsIntraUpdateCandi(ad, ap,
+			       link_plan[j], min_score, reason, bidx);
+
+			if (!bss)
+				continue;
+
+			found = TRUE;
+
+			/* use akm of best ap as target akm */
+			if (best == 0 || bss->u2Score > best) {
+				best = bss->u2Score;
+				akm = bss->u4RsnSelectedAKMSuite;
+			}
+		}
+
+		if (!found)
+			continue;
+
+		/* use lower score to find links if already found one */
+		for (j = 0; j < APS_LINK_MAX; j++) {
+			if (link_plan[j] == BAND_NULL)
+				continue;
+
+			bss = candi[j];
+
+			if (!bss)
+				bss = apsIntraUpdateCandi(ad, ap,
+				       link_plan[j], 0, reason, bidx);
+
+			if (bss && bss->u4RsnSelectedAKMSuite != akm) {
+				DBGLOG(APS, INFO,
+				       "Remove target akm 0x%x!=0x%x\n",
+				       bss->u4RsnSelectedAKMSuite, akm);
+				candi[j] = NULL;
+			}
+
+			if (candi[j])
+				score += candi[j]->u2Score;
+		}
+
+		if (score > highest_score) {
+			highest_score = score;
+			kalMemCopy(ap->aprTarget, candi, sizeof(candi));
+		}
+	}
+
+	/* insertion sort by score */
+	for (i = 1; i < APS_LINK_MAX; i++) {
+		uint16_t score = 0;
+
+		bss = ap->aprTarget[i];
+		score = bss ? bss->u2Score : 0;
+
+		for (j = i - 1; j >= 0 && (ap->aprTarget[j] ?
+			ap->aprTarget[j]->u2Score : 0) < score; j--)
+			ap->aprTarget[j + 1] = ap->aprTarget[j];
+
+		ap->aprTarget[j + 1] = bss;
+	}
+
+	/* ensure no null target */
+	ap->ucLinkNum = 0;
+	for (i = 0; i < APS_LINK_MAX; i++) {
+		if (ap->aprTarget[i])
+			ap->ucLinkNum++;
+	}
+
+	/* trim ap */
+	if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
+		DBGLOG(APS, INFO, "trim links %d => %d",
+			ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
+		ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
+	}
+}
+
 struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
@@ -1778,10 +1932,10 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap, *current_ap = NULL;
 	struct BSS_DESC *bss;
-	uint16_t goal = 0, score = 0;
+	uint16_t min_score = 0;
 	int i, j, k;
 
-	/* minium requirement */
+	/* minimum requirement */
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		bss = aisGetLinkBssDesc(ais, i);
 
@@ -1791,12 +1945,10 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 		bss->u2Score = apsCalculateApScore(ad, bss, reason, bidx);
 		bss->u4Tput = apsGetEstimatedTput(ad, bss, bidx);
 
-		if (goal == 0 || bss->u2Score < goal)
-			goal = bss->u2Score;
-
 		DBGLOG(APS, INFO,
 			"CURR[" MACSTR "] score[%d] tput[%d]\n",
 			MAC2STR(bss->aucBSSID), bss->u2Score, bss->u4Tput);
+
 #if (CFG_SUPPORT_ROAMING_LOG == 1)
 		if (roamingFsmIsDiscovering(ad, bidx))
 			roamingFsmLogSocre(ad, "SCORE_CUR_AP", bidx,
@@ -1806,73 +1958,9 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
-		uint8_t found = FALSE;
-		uint32_t akm = 0;
-		uint16_t best = 0;
 
-		for (i = 0; i < ap->ucLinkNum; i++) {
-			found |= apsIntraUpdateCandi(ad, ap,
-				i, goal, reason, FALSE, bidx);
-			bss = ap->aprTarget[i];
-			score = bss ? bss->u2Score : 0;
-
-			/* use akm of best ap as target akm */
-			if (bss && (best == 0 || score > best)) {
-				best = score;
-				akm = bss->u4RsnSelectedAKMSuite;
-			}
-		}
-
-		if (!found) {
-			ap->ucLinkNum = 0;
-			continue;
-		}
-
-		for (i = 0; i < ap->ucLinkNum; i++) {
-			bss = ap->aprTarget[i];
-
-			/* use lower score to find links if already found one */
-			if (!bss)
-				apsIntraUpdateCandi(ad, ap,
-					i, 0, reason, TRUE, bidx);
-
-			/* check common akm */
-			bss = ap->aprTarget[i];
-			if (bss && bss->u4RsnSelectedAKMSuite != akm) {
-				DBGLOG(APS, INFO,
-					"Remove target akm 0x%x!=0x%x\n",
-					bss->u4RsnSelectedAKMSuite, akm);
-				ap->aprTarget[i] = NULL;
-			}
-		}
-
-		/* insertion sort by score */
-		for (i = 1; i < ap->ucLinkNum; i++) {
-			bss = ap->aprTarget[i];
-			score = bss ? bss->u2Score : 0;
-
-			for (j = i - 1; j >= 0 && (ap->aprTarget[j] ?
-				ap->aprTarget[j]->u2Score : 0) < score; j--)
-				ap->aprTarget[j + 1] = ap->aprTarget[j];
-
-			ap->aprTarget[j + 1] = bss;
-		}
-
-		/* ensure no null target */
-		ap->ucLinkNum = 0;
-		for (i = 0; i < MAX_LINK_PLAN_NUM; i++) {
-			if (ap->aprTarget[i])
-				ap->ucLinkNum++;
-		}
-
-#if (CFG_SUPPORT_802_11BE == 1)
-		/* trim ap */
-		if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
-			DBGLOG(APS, INFO, "trim links %d => %d",
-				ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
-			ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
-		}
-#endif
+		/* select best link plan */
+		apsIntraSelectLinkPlan(ad, ap, min_score, reason, bidx);
 
 		for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
 			struct BSS_DESC *cand = ap->aprTarget[i];
@@ -1887,6 +1975,12 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 
 			if (cand->fgIsConnected & bmap)
 				k++;
+
+			if (cand->u2Score == BSS_MATCH_BSSID_SCORE)
+				ap->fgIsMatchBssid = TRUE;
+
+			if (cand->u2Score == BSS_MATCH_BSSID_HINT_SCORE)
+				ap->fgIsMatchBssidHint = TRUE;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			mld_addr = cand->rMlInfo.aucMldAddr;
