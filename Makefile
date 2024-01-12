@@ -546,6 +546,7 @@ ifeq ($(WM_RAM),ce)
 else
     ccflags-y += -DCONFIG_WM_RAM_TYPE=0
     CONFIG_SUPPORT_SCAN_NO_AP_RECOVERY=y
+    CONFIG_SUPPORT_GET_LTE_SAFE_CHANNEL=y
     ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
         include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
     endif
@@ -872,6 +873,12 @@ ccflags-y += -DCFG_SUPPORT_CONNFEM=1
 ccflags-y += -I$(src)/../connfem/include
 else
 ccflags-y += -DCFG_SUPPORT_CONNFEM=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_GET_LTE_SAFE_CHANNEL), y)
+ccflags-y += -DCFG_SUPPORT_GET_LTE_SAFE_CHANNEL=1
+else
+ccflags-y += -DCFG_SUPPORT_GET_LTE_SAFE_CHANNEL=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)

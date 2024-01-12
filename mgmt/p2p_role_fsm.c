@@ -3467,7 +3467,6 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 					WLAN_STATUS_SUCCESS) {
 				/* do nothing & wait for FW event */
 			} else {
-				DBGLOG(P2P, WARN, "query safe chn fail.\n");
 				p2pFunProcessAcsReport(prAdapter,
 						prP2pRoleFsmInfo->ucRoleIndex,
 						NULL,
