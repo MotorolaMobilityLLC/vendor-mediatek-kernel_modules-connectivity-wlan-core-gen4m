@@ -2391,8 +2391,10 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 				prMsduInfo);
 		KAL_RELEASE_SPIN_LOCK(prAdapter,
 			SPIN_LOCK_TXING_MGMT_LIST);
-		DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
-			prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
+		DBGLOG(TX, INFO, "Insert msdu WIDX:TXDWID:PID[%u:%u:%u]\n",
+			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucTxdWlanIdx,
+			prMsduInfo->ucPID);
 	}
 #endif /* CFG_TX_CMD_SMART_SEQUENCE */
 }

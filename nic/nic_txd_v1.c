@@ -441,6 +441,9 @@ void nic_txd_v1_compose(
 				prMsduInfo->ucPacketType); /* 0/1: data/mgmt */
 		HAL_MAC_TX_DESC_SET_PID(prTxDesc, prMsduInfo->ucPID);
 		HAL_MAC_TX_DESC_SET_TXS_TO_MCU(prTxDesc);
+		/* Save for matching TXS */
+		prMsduInfo->ucTxdWlanIdx =
+			HAL_MAC_TX_DESC_GET_WLAN_INDEX(prTxDesc);
 	} else if (prAdapter->rWifiVar.ucDataTxDone == 2) {
 		/* Log mode: only TxS to FW, no event to driver */
 		HAL_MAC_TX_DESC_SET_PID(prTxDesc, NIC_TX_DESC_PID_RESERVED);

@@ -802,6 +802,7 @@ struct MSDU_INFO {
 	uint8_t ucStaRecIndex;	/* STA_REC index */
 	uint8_t ucBssIndex;	/* BSS_INFO_T index */
 	uint8_t ucWlanIndex;	/* Wlan entry index */
+	uint8_t ucTxdWlanIdx;  /* WlanIdx / MLD_ID in TXD for matching TXS */
 	uint8_t ucPacketFormat;  /* TXD.DW1[25:24] Packet Format */
 
 	u_int8_t fgIs802_1x;	/* TRUE: 802.1x frame */

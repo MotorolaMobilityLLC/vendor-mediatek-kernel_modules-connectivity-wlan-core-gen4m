@@ -295,8 +295,7 @@ void nic_txd_v2_compose(
 			((ETHER_HEADER_LEN - ETHER_TYPE_LEN)
 				+ prAdapter->chip_info->pse_header_length) >> 1;
 	}
-	HAL_MAC_CONNAC2X_TXD_SET_ETHER_TYPE_OFFSET(
-		prTxDesc,
+	HAL_MAC_CONNAC2X_TXD_SET_ETHER_TYPE_OFFSET(prTxDesc,
 		ucEtherTypeOffsetInWord);
 
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
@@ -382,9 +381,8 @@ void nic_txd_v2_compose(
 	       "Tx WlanIndex = %d eAuthMode = %d\n", prMsduInfo->ucWlanIndex,
 	       prAdapter->rWifiVar.rConnSettings.eAuthMode);
 #endif
-	HAL_MAC_CONNAC2X_TXD_SET_WLAN_INDEX(
-		prTxDesc, prMsduInfo->ucWlanIndex);
-
+	HAL_MAC_CONNAC2X_TXD_SET_WLAN_INDEX(prTxDesc,
+					prMsduInfo->ucWlanIndex);
 	HAL_MAC_CONNAC2X_TXD_SET_VTA(prTxDesc, 1);
 
 	/* Header format */
@@ -508,10 +506,14 @@ void nic_txd_v2_compose(
 		HAL_MAC_CONNAC2X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
 		HAL_MAC_CONNAC2X_TXD_UNSET_HW_AMSDU(prTxDesc);
+		/* Save for matching TXS */
+		prMsduInfo->ucTxdWlanIdx =
+			HAL_MAC_CONNAC2X_TXD_GET_WLAN_INDEX(prTxDesc);
 
 		DBGLOG(TX, TEMP,
-			"TXS MSDU: w/p/t/up=%u/%u/%u/%u\n",
+			"TXS MSDU: w/w'/p/t/up=%u/%u/%u/%u/%u\n",
 			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucTxdWlanIdx,
 			prMsduInfo->ucPID,
 			prMsduInfo->ucTC,
 			prMsduInfo->ucUserPriority);

@@ -979,9 +979,10 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
 		DBGLOG(TX, TEMP,
-			"Looking for w/p/t=%u/%u/%u; MSDU info: w/p/t/up/tp=%u/%u/%u/%u/%u\n",
+			"Looking for w/p/t=%u/%u/%u; MSDU info: w/w'/p/t/up/tp=%u/%u/%u/%u/%u/%u\n",
 			ucWlanIndex, ucPID, ucTID,
 			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucTxdWlanIdx,
 			prMsduInfo->ucPID,
 			prMsduInfo->ucTC,
 			prMsduInfo->ucUserPriority,
@@ -992,7 +993,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 			 * Find by a perfect match (widx, tid, pid).
 			 * or long-lived (widx, tid) matching.
 			 */
-			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
+			if (prMsduInfo->ucTxdWlanIdx == ucWlanIndex &&
 			    prMsduInfo->ucUserPriority == ucTID) {
 #if CFG_ENABLE_PKT_LIFETIME_PROFILE
 				struct PKT_PROFILE *prPktProfile;
@@ -1015,7 +1016,7 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 				       QUEUE_LENGTH(prTempQue));
 			}
 		} else {
-			if (prMsduInfo->ucWlanIndex == ucWlanIndex &&
+			if (prMsduInfo->ucTxdWlanIdx == ucWlanIndex &&
 			    prMsduInfo->ucPID == ucPID)
 				break;
 		}
@@ -1032,8 +1033,8 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(struct ADAPTER *prAdapter,
 
 	if (prMsduInfo) {
 		DBGLOG(TX, TRACE,
-		       "Get Msdu WIDX:PID:TID[%u:%u(%u):%u] SEQ[%u] from Pending Q(len=%u)\n",
-		       prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, ucPID,
+		       "Get Msdu TXDWIDX:PID:TID[%u:%u(%u):%u] SEQ[%u] from Pending Q(len=%u)\n",
+		       prMsduInfo->ucTxdWlanIdx, prMsduInfo->ucPID, ucPID,
 		       prMsduInfo->ucUserPriority, prMsduInfo->ucTxSeqNum,
 		       QUEUE_LENGTH(prTxingQue));
 	} else {

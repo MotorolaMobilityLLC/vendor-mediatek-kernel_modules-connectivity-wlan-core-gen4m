@@ -3000,8 +3000,11 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 					prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
-			DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
-				prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
+			DBGLOG(TX, INFO,
+				"Insert msdu WIDX:TXDWID:PID[%u:%u:%u]\n",
+				prMsduInfo->ucWlanIndex,
+				prMsduInfo->ucTxdWlanIdx,
+				prMsduInfo->ucPID);
 		}
 #endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 
@@ -4055,7 +4058,6 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	char *prTxResult = "UNDEFINED";
 	uint8_t ucBssIndex;
 	u_int8_t fgStop;
-	uint8_t ucWlanIdx;
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
@@ -4229,9 +4231,6 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 		 * To amend the possible MSDU leak, check timestamp to free
 		 * long-lived pending MSDU.
 		 */
-		/* In MLO, TXS for odd TID would return secondary MLD ID */
-		ucWlanIdx = getPrimaryWlanIdx(prAdapter, prTxDone->ucTid,
-				prTxDone->ucWlanIndex);
 		prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
 						     prTxDone->ucWlanIndex,
 						     prTxDone->ucPacketSeq,
