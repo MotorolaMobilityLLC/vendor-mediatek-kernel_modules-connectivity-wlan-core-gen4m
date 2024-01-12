@@ -9791,12 +9791,14 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	struct BSS_DESC *prBssDesc;
 #endif
 
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (IS_BSS_APGO(prBssInfo)) {
 		if (p2pFuncIsAPMode(
@@ -9814,9 +9816,8 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		}
 	}
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
-	else if (IS_BSS_AIS(prBssInfo)) {
-		prBssDesc = scanSearchBssDescByBssid(prAdapter,
-						     prBssInfo->aucBSSID);
+	else if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
 		if (prBssDesc != NULL &&
 		    bssGetIotApAction(prAdapter,
 				      prBssDesc) == WLAN_IOT_AP_DBDC_1SS) {
