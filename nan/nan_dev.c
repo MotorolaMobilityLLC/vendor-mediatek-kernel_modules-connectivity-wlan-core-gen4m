@@ -242,8 +242,8 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 } /* p2pDevFsmInit */
 
-void
-nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
+void nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx)
+{
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
@@ -289,7 +289,7 @@ nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 		cnmFreeBssInfo(prAdapter, prnanBssInfo);
 	}
-} /* p2pDevFsmUninit */
+}
 
 struct _NAN_SPECIFIC_BSS_INFO_T *
 nanGetSpecificBssInfo(

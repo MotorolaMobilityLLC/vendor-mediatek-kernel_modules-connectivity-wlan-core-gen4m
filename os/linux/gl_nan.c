@@ -639,7 +639,7 @@ mtk_nan_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 					(prMCAddrList + i * ETH_ALEN),
 					GET_ADDR(ha), ETH_ALEN);
 				DBGLOG(NAN, INFO,
-				       "SEt Multicast Address List "
+				       "Set Multicast Address List "
 				       MACSTR "\n",
 				       MAC2STR(GET_ADDR(ha)));
 				i++;
@@ -1166,9 +1166,9 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 		(struct NETDEV_PRIVATE_GLUE_INFO *)NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
-	struct TX_PACKET_INFO prTxPktInfo;
 	struct STA_RECORD *prStaRec;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo = NULL;
+	uint8_t aucMacDestAddr[MAC_ADDR_LEN];
 
 	if (!prSkb) {
 		DBGLOG(NAN, ERROR, "prSkb error!\n");
@@ -1197,22 +1197,21 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 		return NETDEV_TX_BUSY;
 	}
 
-	if (kalQoSFrameClassifierAndPacketInfo(
-			prGlueInfo, prSkb, &prTxPktInfo)) {
+	/* Get DA to determine BSS */
+	COPY_MAC_ADDR(aucMacDestAddr, prSkb->data);
 
-		if (IS_BMCAST_MAC_ADDR(prTxPktInfo.aucEthDestAddr)) {
-			ucBssIndex = prNANSpecInfo->ucBssIndex;
-			DBGLOG(NAN, LOUD,
-				"TX with DA = BMCAST, ucBssIndex=%d\n",
-				ucBssIndex);
-		} else {
-			prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
-				prTxPktInfo.aucEthDestAddr);
-			if (prStaRec != NULL) {
-				ucBssIndex = prStaRec->ucBssIndex;
-				DBGLOG(NAN, LOUD, "Starec bssIndex:%d\n",
-							ucBssIndex);
-			}
+	if (IS_BMCAST_MAC_ADDR(aucMacDestAddr)) {
+		ucBssIndex = prNANSpecInfo->ucBssIndex;
+		DBGLOG(NAN, LOUD,
+		       "TX with DA = BMCAST, ucBssIndex=%d\n",
+		       ucBssIndex);
+	} else {
+		prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
+					     aucMacDestAddr);
+		if (prStaRec) {
+			ucBssIndex = prStaRec->ucBssIndex;
+			DBGLOG(NAN, LOUD, "Starec bssIndex:%d\n",
+			       ucBssIndex);
 		}
 	}
 

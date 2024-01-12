@@ -30,6 +30,11 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+
+#ifndef CHAR_BIT
+#define CHAR_BIT 8
+#endif
+
 /* 6.1.1.2 Interpretation of priority parameter in MAC service primitives */
 /* Static convert the Priority Parameter/TID(User Priority/TS Identifier) to
  * Traffic Class
@@ -3903,13 +3908,17 @@ u_int8_t wlanQueryTestMode(struct ADAPTER *prAdapter)
 	return prAdapter->fgTestMode;
 }
 
-u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter,
-			    void *prPacket)
+u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
 {
 	uint32_t u4SysTime;
 	uint8_t ucMacHeaderLen;
 	struct TX_PACKET_INFO rTxPacketInfo;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	/* struct PACKET_PRIVATE_DATA*/
+	_Static_assert(ENUM_PKT_FLAG_NUM <=
+		       sizeof(rTxPacketInfo.u2Flag) * CHAR_BIT,
+		       "Too many entries defined in ENUM_PKT_FLAG");
 
 	ASSERT(prAdapter);
 	ASSERT(prPacket);

@@ -52,12 +52,6 @@
 #define UDP_PORT_MDNS				5353
 #define UDP_PORT_NTP				123
 
-#define ICMP_TYPE_OFFSET			0
-#define ICMP_CODE_OFFSET			1
-#define ICMP_CHECKSUM_OFFSET			2
-#define ICMP_IDENTIFIER_OFFSET			4
-#define ICMP_SEQ_NUM_OFFSET			6
-
 #define ETH_P_1X                                0x888E
 #define ETH_P_PRE_1X                            0x88C7
 #if CFG_SUPPORT_WAPI
@@ -76,7 +70,33 @@
 #define IP_VERSION_4                            4
 #define IP_VERSION_6                            6
 
+/* RFC 4443 */
+#define ICMP_TYPE_OFFSET			0
+#define ICMP_CODE_OFFSET			1
+#define ICMP_CHECKSUM_OFFSET			2
+#define ICMP_IDENTIFIER_OFFSET			4
+#define ICMP_SEQ_NUM_OFFSET			6
+
+/* RFC 792 */
+#define ICMPV4_TYPE_ECHO_REPLY			0
+#define ICMPV4_TYPE_UNREACHABLE			3
+#define ICMPV4_TYPE_SOURCE_QUENCH		4
+#define ICMPV4_TYPE_REDIRECT			5
+#define ICMPV4_TYPE_ECHO			8
+#define ICMPV4_TYPE_TIME_EXCEEDED		11
+#define ICMPV4_TYPE_PARAMETER_PROBLEM		12
+#define ICMPV4_TYPE_TIMESTAMP			13
+#define ICMPV4_TYPE_TIMESTAMP_REPLY		14
+#define ICMPV4_TYPE_INFORMATION_REQUEST		15
+#define ICMPV4_TYPE_INFORMATION_REPLY		16
+
+/* RFC 4861 */
+#define ICMPV6_NS_NA_RESERVED_OFFSET		4
+#define ICMPV6_NS_NA_TARGET_OFFSET		8
+#define ICMPV6_NS_NA_OPTION_OFFSET		24
+
 /* IPv4 Header definition */
+#define IPV4_HDR_VERSION_OFFSET                 0
 #define IPV4_HDR_TOS_OFFSET                     1
 #define IPV4_HDR_TOS_PREC_MASK                  BITS(5, 7)
 #define IPV4_HDR_TOS_PREC_OFFSET                5
@@ -90,7 +110,6 @@
 #define IPV4_HDR_IP_SRC_ADDR_OFFSET             12
 #define IPV4_HDR_IP_DST_ADDR_OFFSET             16
 
-#define IPV4_HDR_LEN                            20
 #define IPV4_ADDR_LEN                           4
 
 #define IPV6_HDR_PAYLOAD_LEN_OFFSET             4
@@ -113,6 +132,10 @@
 
 #define IPV6_ADDR_LEN                           16
 
+#define MAC_ADDR_STR_BUF_SIZE	(MAC_ADDR_LEN * 3)	/* 1 octet -> aa: */
+#define IPV4_ADDR_STR_BUF_SIZE	(IPV4_ADDR_LEN * 4)	/* 1 octet -> 255. */
+#define IPV6_ADDR_STR_BUF_SIZE	(IPV6_ADDR_LEN / 2 * 5) /* 2 octets -> aabb: */
+
 #define ICMPV6_TYPE_OFFSET                      0
 #define ICMPV6_FLAG_OFFSET                      4
 #define ICMPV6_TARGET_ADDR_OFFSET		8
@@ -123,6 +146,13 @@
 #define ICMPV6_FLAG_ROUTER_BIT                  BIT(7)
 #define ICMPV6_FLAG_SOLICITED_BIT               BIT(6)
 #define ICMPV6_FLAG_OVERWRITE_BIT               BIT(5)
+
+#define ICMPV6_TYPE_RESERVED                    0
+#define ICMPV6_TYPE_DESTINATIN_UNREACHABLE      1
+#define ICMPV6_TYPE_PACKET_TOO_LONG             2
+#define ICMPV6_TYPE_TIME_EXCEEDED               3
+#define ICMPV6_TYPE_PARAMETER_PROBLEM           4
+
 #define ICMPV6_TYPE_ECHO_REQUEST                0x80 /* 128 */
 #define ICMPV6_TYPE_ECHO_REPLY                  0x81 /* 129 */
 #define ICMPV6_TYPE_MULTICAST_LISTENER_QUERY    0x82 /* 130 */
@@ -132,6 +162,9 @@
 #define ICMPV6_TYPE_ROUTER_ADVERTISEMENT	0x86 /* 134 */
 #define ICMPV6_TYPE_NEIGHBOR_SOLICITATION       0x87 /* 135 */
 #define ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT      0x88 /* 136 */
+
+#define ICMPV6_OPTION_SOURCE_LINK_ADDR		1
+#define ICMPV6_OPTION_TARGET_LINK_ADDR		2
 
 #define TCP_HDR_FLAG_OFFSET                     13
 #define TCP_HDR_FLAG_FIN_BIT                    BIT(0)
@@ -201,6 +234,7 @@
 
 #define IPVH_VERSION_OFFSET                     4	/* For Little-Endian */
 #define IPVH_VERSION_MASK                       0xF0
+#define IPV4_HEADER_LENGTH_MASK                 0x0F
 #define IPTOS_PREC_OFFSET                       5
 #define IPTOS_PREC_MASK                         0xE0
 
@@ -2567,6 +2601,104 @@ struct ETH_FRAME {
 	uint8_t aucData[1];
 } __KAL_ATTRIB_PACKED__;
 
+/* RFC 826 */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ARP_HEADER {
+	uint16_t u2HwType;
+	uint16_t u2ProtocolType;
+	uint8_t ucHwLength;
+	uint8_t ucProtocolLength;
+	uint16_t u2OpCode;
+	uint8_t aucSenderMACaddr[MAC_ADDR_LEN];
+	uint8_t aucSenderIPaddr[IPV4_ADDR_LEN];
+	uint8_t aucTargetMACaddr[MAC_ADDR_LEN];
+	uint8_t aucTargetIPaddr[IPV4_ADDR_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IPV4_HEADER {
+	uint8_t ucVersionAndHeaderLength; /* 4-bit Version + 4-bit IHL in DW */
+	uint8_t ucTos;
+	uint16_t u2TotalLength;
+	uint16_t u2Identifier;
+	uint16_t u2FragmentOffset; /* 0, DF, MF + 13-bit Fragment offset */
+	uint8_t ucTtl;
+	uint8_t ucProtocol;
+	uint16_t u2Checksum;
+	uint8_t aucSourceAddr[IPV4_ADDR_LEN];
+	uint8_t aucDestinationAddr[IPV4_ADDR_LEN];
+	uint8_t aucL4[];
+} __KAL_ATTRIB_PACKED__;
+
+#define IPV4_HDR_LEN			(sizeof(struct IPV4_HEADER))
+
+#define GET_IP_VERSION(_pucIPHeader) \
+	((((uint8_t *)(_pucIPHeader))[0] & IPVH_VERSION_MASK) \
+	 >> IPVH_VERSION_OFFSET)
+
+/**
+ * Get IPv4 header length in bytes;
+ * if the length is invalid, return 0 with a warning log
+ */
+#define GET_IPV4_HEADER_SIZE(_pucIPv4) ({				       \
+	uint8_t ucIPv4HeaderLength;					       \
+									       \
+	ucIPv4HeaderLength =						       \
+		(((struct IPV4_HEADER *)(_pucIPv4))->ucVersionAndHeaderLength &\
+		 IPV4_HEADER_LENGTH_MASK) << 2;				       \
+	if (ucIPv4HeaderLength < IPV4_HDR_LEN) {			       \
+		DBGLOG_LIMITED(RX, WARN, "Unexpected IP header length %u\n",   \
+		       ucIPv4HeaderLength);				       \
+		ucIPv4HeaderLength = 0;					       \
+	}								       \
+	ucIPv4HeaderLength;						       \
+})
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IPV6_HEADER {
+	uint8_t ucVersionAndPriority; /* 4-bit Version + half 8-bit Priority */
+	uint8_t ucPriorityAndFlow[3]; /* half 8-bit Priority + 20-bit Flow */
+	uint16_t u2PayloadLength;
+	uint8_t ucNextHeader;
+	uint8_t ucHopLimit;
+	uint8_t aucSourceAddr[IPV6_ADDR_LEN];
+	uint8_t aucDestinationAddr[IPV6_ADDR_LEN];
+	uint8_t aucL4[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ICMPV6_HEADER {
+	uint8_t ucType;
+	uint8_t ucCode;
+	uint16_t u2Checksum;
+	uint8_t aucICMPv6Body[];
+} __KAL_ATTRIB_PACKED__;
+
+/* RFC 792, RFC 4443 4.1 4.2 */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ICMP_ECHO_HEADER {
+	uint8_t ucType;
+	uint8_t ucCode;
+	uint16_t u2Checksum;
+	uint16_t u2Identifier;
+	uint16_t u2SequenceNumber;
+	uint8_t aucData[];
+} __KAL_ATTRIB_PACKED__;
+
+#define GET_ICMP_TYPE(_pucIcmp) (((uint8_t *)(_pucIcmp))[0])
+#define GET_ICMP_CODE(_pucIcmp) (((uint8_t *)(_pucIcmp))[1])
+
+/* RFC 4861 4.3 4.4 */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ICMPV6_NSNA_HEADER {
+	uint8_t ucType;
+	uint8_t ucCode;
+	uint16_t u2Checksum;
+	uint32_t u4Reserved;
+	uint8_t aucTargetAddress[IPV6_ADDR_LEN];
+	uint8_t aucOption[];
+} __KAL_ATTRIB_PACKED__;
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UDP_HEADER {
 	uint16_t u2SrcPort;
@@ -2595,17 +2727,6 @@ struct DHCP_PROTOCOL {
 	uint32_t u4MagicCookie;
 	uint8_t aucDhcpOption[]; /* after fixed cookie opt */
 } __KAL_ATTRIB_PACKED__;
-
-enum DHCP_MESSAGE_TYPE {
-	DHCPDISCOVER = 1,
-	DHCPOFFER,
-	DHCPREQUEST,
-	DHCPDECLINE,
-	DHCPACK,
-	DHCPNAK,
-	DHCPRELEASE,
-	DHCPINFORM,
-};
 
 /* DHCP options from RFC 2132, only enumerate used ones */
 enum DHCP_OPTION {

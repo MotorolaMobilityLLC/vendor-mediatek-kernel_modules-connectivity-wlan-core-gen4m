@@ -459,7 +459,9 @@ enum ENUM_PKT_FLAG {
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 	ENUM_PKT_IP_FRAG,	/* fragmented IP packet */
 #endif
-	ENUM_PKT_IPV6_HOP_BY_HOP, /* RX only */
+#if CFG_SUPPORT_TX_MGMT_USE_DATAQ
+	ENUM_PKT_802_11_MGMT,
+#endif
 	ENUM_PKT_FLAG_NUM
 };
 

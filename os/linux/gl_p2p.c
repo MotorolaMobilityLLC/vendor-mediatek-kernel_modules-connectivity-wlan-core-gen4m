@@ -1705,7 +1705,7 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 		netif_addr_unlock_bh(prDev);
 
-		DBGLOG(P2P, TRACE, "SEt Multicast Address List\n");
+		DBGLOG(P2P, TRACE, "Set Multicast Address List\n");
 
 		if (i >= MAX_NUM_GROUP_ADDR)
 			return;

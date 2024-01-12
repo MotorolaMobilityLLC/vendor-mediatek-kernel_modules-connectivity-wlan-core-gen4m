@@ -4188,7 +4188,7 @@ kalIPv6FrameClassifier(struct GLUE_INFO *prGlueInfo,
 {
 	uint8_t ucIpv6Proto;
 	uint8_t *pucL3Hdr;
-	struct ADAPTER *prAdapter = NULL;
+	struct ADAPTER *prAdapter;
 	uint8_t ucSeqNo;
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -4219,7 +4219,7 @@ kalIPv6FrameClassifier(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 #endif /* Automation */
 	} else if (ucIpv6Proto == IPV6_PROTOCOL_ICMPV6) { /* ICMPV6 */
-		ucSeqNo = nicIncreaseTxSeqNum(prGlueInfo->prAdapter);
+		ucSeqNo = nicIncreaseTxSeqNum(prAdapter);
 		GLUE_SET_PKT_SEQ_NO(prPacket, ucSeqNo);
 		prTxPktInfo->u2Flag |= BIT(ENUM_PKT_ICMPV6);
 	}

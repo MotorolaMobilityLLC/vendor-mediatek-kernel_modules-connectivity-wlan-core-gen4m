@@ -1070,9 +1070,7 @@ unsigned char
 nanGetFeatureIsSigma(struct ADAPTER *prAdapter);
 
 struct _NAN_NDP_INSTANCE_T *
-nanDataUtilSearchNdpByNdpInstanceId(
-	struct ADAPTER *prAdapter,
-	uint32_t u4NdpInstanceId);
-
+nanDataUtilSearchNdpByNdpInstanceId(struct ADAPTER *prAdapter,
+				    uint32_t u4NdpInstanceId);
 #endif
 #endif

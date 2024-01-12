@@ -9857,8 +9857,8 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			 * | 53 |  1 | 1-8|
 			 * +----+----+----+
 			 */
-			if (prDhcp->aucDhcpOption[2 + i] != DHCPOFFER &&
-			    prDhcp->aucDhcpOption[2 + i] != DHCPACK) {
+			if (prDhcp->aucDhcpOption[2 + i] != DHCP_OFFER &&
+			    prDhcp->aucDhcpOption[2 + i] != DHCP_ACK) {
 				DBGLOG(INIT, WARN,
 					"wrong dhcp message type, type: %d\n",
 					prDhcp->aucDhcpOption[i + 6]);
@@ -9866,7 +9866,7 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 					qmArpMonitorResetGateway(ucBssIndex);
 
 				return;
-			} else if (prDhcp->aucDhcpOption[2 + i] == DHCPACK) {
+			} else if (prDhcp->aucDhcpOption[2 + i] == DHCP_ACK) {
 				/* Check if join timer is ticking, then release
 				 * channel privilege and stop join timer.
 				 */
