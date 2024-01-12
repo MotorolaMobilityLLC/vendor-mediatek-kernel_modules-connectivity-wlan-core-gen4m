@@ -3859,6 +3859,14 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	/* update Performance Indicator statistics*/
 	prGlueInfo->PerfIndCache.u4CurTxBytes[ucBssIndex] += u4SkbLen;
 #endif
+#if CFG_UPDATE_PACING_SHIFT_SUPPORT
+	DBGLOG(TX, LOUD, "prAdapter->rWifiVar.u4PacingShift = %d\n",
+		prAdapter->rWifiVar.u4PacingShift);
+
+	if (prAdapter->rWifiVar.u4PacingShift != 0)
+		sk_pacing_shift_update(prSkb->sk,
+				       prAdapter->rWifiVar.u4PacingShift);
+#endif
 
 	DBGLOG(TX, LOUD,
 	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",

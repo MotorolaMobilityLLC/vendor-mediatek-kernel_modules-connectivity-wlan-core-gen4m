@@ -1683,6 +1683,10 @@ struct WIFI_VAR {
 	uint32_t u4RecoveryMsiRxCnt;
 	uint32_t u4RecoveryMsiTime;
 
+#if CFG_UPDATE_PACING_SHIFT_SUPPORT
+	uint32_t u4PacingShift;
+#endif
+
 #if CFG_SUPPORT_TPUT_FACTOR
 	u_int8_t fgTputFactorDump;
 	/* throughput factor dump flag 0: disabled, 1:enabled */
