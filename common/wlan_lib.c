@@ -7449,18 +7449,6 @@ enum {
 
 #if CFG_SUPPORT_EASY_DEBUG
 
-int8_t atoi(uint8_t ch)
-{
-	if (ch >= 'a' && ch <= 'f')
-		return ch - 87;
-	else if (ch >= 'A' && ch <= 'F')
-		return ch - 55;
-	else if (ch >= '0' && ch <= '9')
-		return ch - 48;
-
-	return 0;
-}
-
 uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 			  uint8_t nargs, int8_t *buffer, uint8_t times)
 {
@@ -7474,7 +7462,7 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 	memset(&cmd_v1, 0, sizeof(struct CMD_FORMAT_V1));
 
 #if 0
-	cmd_v1.itemType = atoi(*args[ED_ITEMTYPE_SITE]);
+	cmd_v1.itemType = kalAtoi(*args[ED_ITEMTYPE_SITE]);
 #else
 	cmd_v1.itemType = ITEM_TYPE_DEC;
 #endif
@@ -7529,9 +7517,10 @@ uint32_t wlanCfgParseToFW(int8_t **args, int8_t *args_size,
 
 		for (j = args_size[ED_VALUE_SITE] - 1 - startOffset; j >= 0;
 		     j--) {
-			sum = sum * base + atoi(*data);
+			sum = sum * base + kalAtoi(*data);
 			DBGLOG(INIT, WARN, "size:%d data[%d]=%u, sum=%u\n",
-			       args_size[ED_VALUE_SITE], j, atoi(*data), sum);
+			       args_size[ED_VALUE_SITE], j,
+				   kalAtoi(*data), sum);
 
 			data++;
 		}

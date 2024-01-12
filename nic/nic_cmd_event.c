@@ -1411,7 +1411,7 @@ int32_t GetIQData(struct ADAPTER *prAdapter,
 			aucData[count] = '\0';
 
 			/* transfer data format (string to int) */
-			rv = kstrtoint(aucData, 0,
+			rv = kalStrtoint(aucData, 0,
 				       &prAdapter->rIcapInfo.au4IQData[i]);
 		}
 		*prDataLen = i * sizeof(uint32_t);
@@ -3537,15 +3537,15 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 		prReCalData->u.ucData[19] = '\0';
 		u4Idx = prReCalInfo->u4Count;
 
-		if (kstrtoul(&prReCalData->u.ucData[1], 16, &ulTmpData))
+		if (kalStrtoul(&prReCalData->u.ucData[1], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[1]\n");
 		else
 			prCalArray[u4Idx].u4CalId = (unsigned int)ulTmpData;
-		if (kstrtoul(&prReCalData->u.ucData[11], 16, &ulTmpData))
+		if (kalStrtoul(&prReCalData->u.ucData[11], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[11]\n");
 		else
 			prCalArray[u4Idx].u4CalAddr = (unsigned int)ulTmpData;
-		if (kstrtoul(&prReCalData->u.ucData[20], 16, &ulTmpData))
+		if (kalStrtoul(&prReCalData->u.ucData[20], 16, &ulTmpData))
 			DBGLOG(RFTEST, ERROR, "convert fail: ucData[20] %s\n",
 					       &prReCalData->u.ucData[20]);
 		else
