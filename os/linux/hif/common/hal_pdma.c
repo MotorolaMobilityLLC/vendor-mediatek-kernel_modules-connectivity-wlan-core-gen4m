@@ -2167,6 +2167,18 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+		DBGLOG(HAL, INFO, "Force recycle port %d DMA resource.\n",
+			u2Port);
+		halWpdmaProcessCmdDmaDone(prGlueInfo, u2Port);
+	}
+
+	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Port %d TX resource is NOT enough.\n",
+			u2Port);
+		return FALSE;
+	}
+
 	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen;
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	if (u4TotalLen > prChipInfo->cmd_max_pkt_size) {
