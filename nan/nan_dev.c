@@ -144,7 +144,14 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 
 		prnanBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prnanBssInfo->ucVhtChannelFrequencyS2 = 0;
-		if (prWifiVar->ucNanBandwidth >= MAX_BW_40MHZ) {
+
+		/* NAN En/Dis BW40 in Assoc IE */
+		if ((prnanBssInfo->eBand == BAND_5G
+				&& prWifiVar->ucNan5gBandwidth
+				>= MAX_BW_40MHZ) ||
+			(prnanBssInfo->eBand == BAND_2G4
+				&& prWifiVar->ucNan2gBandwidth
+				>= MAX_BW_40MHZ)) {
 			prnanBssInfo->eBssSCO = CHNL_EXT_SCA;
 			prnanBssInfo->ucHtOpInfo1 |=
 				HT_OP_INFO1_STA_CHNL_WIDTH;
@@ -679,7 +686,8 @@ nanDevSendEnableRequest(struct ADAPTER *prAdapter,
 			prAdapter->aprBssInfo[prNANSpecInfo->ucBssIndex];
 
 		if (!IS_BSS_ACTIVE(prnanBssInfo))
-			nicActivateNetwork(prAdapter, prnanBssInfo->ucBssIndex);
+			nicActivateNetworkEx(prAdapter,
+				prnanBssInfo->ucBssIndex, FALSE);
 
 		prnanBssInfo->eConnectionState = MEDIA_STATE_CONNECTED;
 
