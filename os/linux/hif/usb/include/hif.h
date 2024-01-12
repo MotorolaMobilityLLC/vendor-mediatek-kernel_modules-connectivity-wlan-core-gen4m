@@ -521,6 +521,8 @@ void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter);
 void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
 
+uint32_t halSerGetMcuEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgClear);
+
 void glGetDev(void *ctx, struct device **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
 
