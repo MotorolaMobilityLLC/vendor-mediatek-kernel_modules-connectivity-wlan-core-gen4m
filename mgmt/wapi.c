@@ -199,7 +199,7 @@ u_int8_t wapiParseWapiIE(IN struct WAPI_INFO_ELEM *prInfoElem,
 		return FALSE;
 	}
 
-	cp = (uint8_t *) &prInfoElem->u2AuthKeyMgtSuiteCount;
+	cp = (uint8_t *) &prInfoElem->u2AKMSuiteCount;
 	u4RemainWapiIeLen = (int32_t) prInfoElem->ucLength - 2;
 
 	do {
