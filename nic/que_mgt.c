@@ -8289,4 +8289,8 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 			ucBssIndex);
 	else
 		DBGLOG(QM, INFO, "No pending request\n");
+
+	/* 5. Check if need to set low latency after connected. */
+	wlanConnectedForLowLatency(prAdapter);
+
 }
