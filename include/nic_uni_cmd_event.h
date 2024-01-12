@@ -264,6 +264,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PERF_IND		= 0x44, /* Performance indicate*/
 	UNI_CMD_ID_FRM_IND_FROM_HOST 	= 0x45, /* Host connect indicate*/
 	UNI_CMD_ID_TESTMODE_CTRL	= 0x46, /* testmode RF  */
+	UNI_CMD_ID_ICS			= 0x49, /* ICS */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -2978,6 +2979,40 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 }__KAL_ATTRIB_PACKED__;
 /** @} */
 
+struct UNI_CMD_ICS {
+	/*fixed field*/
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                               | ID   | structure
+	*   -------------------    | ----| -------------
+	*   UNI_CMD_ICS_CTRL       | 0x0 | UNI_CMD_ICS_SNIFFER_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_ICS_TAG {
+	UNI_CMD_ICS_TAG_CTRL = 0x0,
+	UNI_CMD_ICS_TAG_MAX_NUM
+};
+
+struct UNI_CMD_ICS_SNIFFER {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	/* tag specific part */
+	uint8_t ucCmdVer;
+	uint8_t ucAction;
+	uint16_t u2CmdLen;
+	uint8_t ucModule;
+	uint8_t ucFilter;
+	uint8_t ucOperation;
+	uint8_t aucPadding0;
+	uint16_t ucCondition[7];
+	uint8_t aucPadding1[62];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -4503,6 +4538,8 @@ uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,
 uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************

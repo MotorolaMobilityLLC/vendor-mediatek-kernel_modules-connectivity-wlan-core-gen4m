@@ -165,6 +165,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_ADDBA_REJECT] = nicUniCmdSetRxAmpdu,
 	[CMD_ID_MAC_MCAST_ADDR] = nicUniCmdSetMultiAddr,
 	[CMD_ID_RSSI_MONITOR] = nicUniCmdSetRssiMonitor,
+	[CMD_ID_SET_ICS_SNIFFER] = nicUniCmdSetIcsSniffer,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -4536,6 +4537,42 @@ uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 
+}
+
+uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_ICS_SNIFFER_INFO *cmd;
+	struct UNI_CMD_ICS *uni_cmd;
+	struct UNI_CMD_ICS_SNIFFER *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_ICS) +
+		sizeof(struct UNI_CMD_ICS_SNIFFER);
+
+	if (info->ucCID != CMD_ID_SET_ICS_SNIFFER ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_ICS_SNIFFER_INFO *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_ICS,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_ICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_ICS_SNIFFER *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_ICS_TAG_CTRL;
+	tag->u2Length = sizeof(*tag);
+	tag->ucAction = cmd->ucAction;
+	tag->ucModule = cmd->ucModule;
+	tag->ucFilter = cmd->ucFilter;
+	tag->ucOperation = cmd->ucOperation;
+	kalMemCopy(&tag->ucCondition, cmd, sizeof(tag->ucCondition));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
