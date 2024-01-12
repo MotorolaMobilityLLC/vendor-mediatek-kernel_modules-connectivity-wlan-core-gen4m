@@ -260,6 +260,7 @@ void wlanWakeStaticsUninit(void)
 	if (gprWakeInfoStatics != NULL)
 		kalMemFree(gprWakeInfoStatics, PHY_MEM_TYPE,
 		WAKE_MAX_CMD_EVENT_NUM * sizeof(struct WAKE_INFO_T));
+	gprWakeInfoStatics = NULL;
 }
 
 uint32_t wlanWakeLogCmd(uint8_t ucCmdId)

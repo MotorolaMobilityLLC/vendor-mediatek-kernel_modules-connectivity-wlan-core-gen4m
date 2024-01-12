@@ -1170,10 +1170,16 @@ __priv_set_struct(struct net_device *prNetDev,
 	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 #endif
 
-	ASSERT(prNetDev);
 	/* ASSERT(prIwReqInfo); */
-	ASSERT(prIwReqData);
 	/* ASSERT(pcExtra); */
+	if (prNetDev == NULL) {
+		DBGLOG(REQ, ERROR, "prNetDev is NULL\n");
+		return -EINVAL;
+	}
+	if (prIwReqData == NULL) {
+		DBGLOG(REQ, ERROR, "prIwReqData is NULL\n");
+		return -EINVAL;
+	}
 
 	kalMemZero(&aucOidBuf[0], sizeof(aucOidBuf));
 
@@ -1187,9 +1193,12 @@ __priv_set_struct(struct net_device *prNetDev,
 
 	case PRIV_CUSTOM_BWCS_CMD:
 		u4CmdLen = prIwReqData->data.length * sizeof(uint32_t);
-		ASSERT(sizeof(struct PTA_IPC) >= u4CmdLen);
-		if (sizeof(struct PTA_IPC) < u4CmdLen)
+		if (sizeof(struct PTA_IPC) < u4CmdLen) {
+			DBGLOG(REQ, ERROR,
+			       "u4CmdLen: %d > sizeof(struct PTA_IPC): %d\n",
+			       u4CmdLen, sizeof(struct PTA_IPC));
 			return -EFAULT;
+		}
 #if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS && CFG_SUPPORT_BCM_BWCS_DEBUG
 		DBGLOG(REQ, INFO,
 		       "ucCmdLen = %d, size of struct PTA_IPC = %d, prIwReqData->data = 0x%x.\n",

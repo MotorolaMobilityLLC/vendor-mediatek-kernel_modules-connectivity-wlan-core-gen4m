@@ -3448,6 +3448,10 @@ wlanoidQueryEncryptionStatus(struct ADAPTER *prAdapter,
 		aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo =
 		aisGetAisBssInfo(prAdapter, ucBssIndex);
+	if (prConnSettings == NULL || prAisBssInfo == NULL) {
+		DBGLOG(REQ, ERROR, "prConnSettings or prAisBssInfo is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	*pu4QueryInfoLen = sizeof(enum ENUM_WEP_STATUS);
 
