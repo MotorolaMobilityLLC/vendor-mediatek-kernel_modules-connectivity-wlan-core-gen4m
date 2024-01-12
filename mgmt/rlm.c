@@ -985,7 +985,7 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 
-		pucBuffer += IE_SIZE(pucBuffer);
+		pucBuffer += 2;
 
 		WIDE_BW_IE(pucBuffer)->ucId = ELEM_ID_WIDE_BAND_CHANNEL_SWITCH;
 		WIDE_BW_IE(pucBuffer)->ucLength = 3;
@@ -996,7 +996,6 @@ void rlmGenerateCsaIE(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo)
 		WIDE_BW_IE(pucBuffer)->ucChannelS2 =
 			prAdapter->rWifiVar.ucNewChannelS2;
 
-		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 		break;
 	default:
 		break;
