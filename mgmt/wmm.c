@@ -1681,6 +1681,45 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	return FALSE;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief For TX direct, check whether can TX now, or pending until timeout
+ *
+ * \param[in] prAdapter
+ * \param[in] prBssInfo
+ * \param[in] prStaRec
+ * \param[in] ucAc: AC category
+ * \param[in] u2PktLen: packet length
+ *
+ * \return TRUE for TX, FALSE for pending
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t wmmAcmCanTx(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		uint8_t ucAc, uint16_t u2PktLen)
+{
+	if (!prAdapter || !prBssInfo || !prStaRec)
+		return TRUE;
+
+	if (unlikely(prStaRec->afgAcmRequired[ucAc])) {
+		uint32_t u4PktTxTime = 0;
+
+		DBGLOG(WMM, TRACE, "AC %d Pending Pkts %u\n",
+				ucAc, u2PktLen);
+
+		u4PktTxTime = wmmCalculatePktUsedTime(
+				prBssInfo, prStaRec,
+				u2PktLen - ETH_HLEN);
+		return wmmAcmCanDequeue(prAdapter, ucAc,
+					u4PktTxTime,
+					prBssInfo->ucBssIndex);
+	} else {
+		return TRUE;
+	}
+}
+
+
 static uint16_t wmmAcmTxTimePLCPCal(uint16_t u2Length, uint16_t u2Rate,
 				    uint8_t FlgIsGmode)
 {
@@ -1903,5 +1942,9 @@ static void wmmAcmDequeueTimeOut(struct ADAPTER *prAdapter,
 {
 	DBGLOG(WMM, INFO, "Timeout, trigger to do ACM dequeue\n");
 	kalSetEvent(prAdapter->prGlueInfo);
+
+	/* for TX direct, continue TX */
+	if (HAL_IS_TX_DIRECT(prAdapter))
+		nicTxDirectStartCheckQTimer(prAdapter);
 }
 #endif
