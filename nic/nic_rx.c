@@ -3860,11 +3860,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11W
 	case CATEGORY_SA_QUERY_ACTION: {
-		struct BSS_INFO *prBssInfo;
-
 		if (prSwRfb->prStaRec) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prSwRfb->prStaRec->ucBssIndex);
 			ASSERT(prBssInfo);
 			if ((prBssInfo->eNetworkType == NETWORK_TYPE_AIS) &&
 				aisGetAisSpecBssInfo(prAdapter,
@@ -3893,14 +3889,13 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 #endif
 
 	case CATEGORY_WNM_ACTION: {
-		if (prSwRfb->prStaRec &&
-		    GET_BSS_INFO_BY_INDEX(prAdapter,
-					  prSwRfb->prStaRec->ucBssIndex)
-				    ->eNetworkType == NETWORK_TYPE_AIS) {
+		if (prSwRfb->prStaRec && prBssInfo &&
+			prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
 			DBGLOG(RX, INFO, "WNM action frame: %d\n", __LINE__);
 			wnmWNMAction(prAdapter, prSwRfb);
 		} else
-			DBGLOG(RX, INFO, "WNM action frame: %d\n", __LINE__);
+			DBGLOG(RX, INFO,
+				"WNM action frame:%d, do nothing!\n", __LINE__);
 	}
 	break;
 

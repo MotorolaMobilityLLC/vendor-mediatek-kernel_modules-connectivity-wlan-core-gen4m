@@ -1180,6 +1180,7 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 	struct LINK *prBSSDescList;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	struct BSS_DESC *prBSSDescNext;
+	struct BSS_INFO *prBssInfo = NULL;
 	u_int8_t fgToRemove;
 
 	ASSERT(prAdapter);
@@ -1188,8 +1189,9 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (eBand == BAND_NULL) {
+	if (eBand == BAND_NULL || prBssInfo == NULL) {
 		/* no need to do anything, keep all scan result */
 		return;
 	}
@@ -1200,8 +1202,7 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 		fgToRemove = FALSE;
 
 		if (prBssDesc->eBand == eBand) {
-			switch (GET_BSS_INFO_BY_INDEX(
-				prAdapter, ucBssIndex)->eNetworkType) {
+			switch (prBssInfo->eNetworkType) {
 			case NETWORK_TYPE_AIS:
 				if ((prBssDesc->eBSSType
 				    == BSS_TYPE_INFRASTRUCTURE)

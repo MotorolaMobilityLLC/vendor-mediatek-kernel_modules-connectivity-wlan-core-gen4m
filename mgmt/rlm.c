@@ -5468,7 +5468,7 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 {
 	struct IE_HT_CAP *prHtCap;
 	struct SUP_MCS_SET_FIELD *prSupMcsSet;
-	unsigned char fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
+	unsigned char fg40mAllowed = FALSE;
 	uint8_t ucIdx;
 
 	if (!prAdapter) {
@@ -5480,6 +5480,7 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 		return 0;
 	}
 
+	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
 	prHtCap = (struct IE_HT_CAP *)pOutBuf;
 
 	/* Add HT capabilities IE */
