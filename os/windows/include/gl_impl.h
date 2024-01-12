@@ -140,6 +140,12 @@ void __KAL_INLINE__ kalGetPlatDev(void **dev)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+int32_t __KAL_INLINE__ kalGetFwFlavor(uint8_t *flavor)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/

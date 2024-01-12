@@ -2320,4 +2320,6 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 			 void *prBuf, uint32_t u4Offset,
 			 uint32_t *pu4Size);
 
+int32_t kalGetFwFlavor(uint8_t *flavor);
+
 #endif /* _GL_KAL_H */
