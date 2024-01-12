@@ -339,12 +339,35 @@ void asicConnac2xWfdmaReInit(
 	struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+
 	/*WFDMA re-init flow after chip deep sleep*/
 	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
 	if (fgResult) {
 		DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-		halWpdmaInitRing(prAdapter->prGlueInfo);
+	/* halWpdmaInitRing(prAdapter->prGlueInfo); */
+	{
+		struct GL_HIF_INFO *prHifInfo;
+		uint32_t u4Idx;
+
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+			prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
+			prHifInfo->TxRing[u4Idx].u4UsedCnt = 0;
+			prHifInfo->TxRing[u4Idx].TxCpuIdx = 0;
+		}
+
+		if (halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
+			WFDMA1_RX_RING_IDX_0)) {
+			prAdapter->u4NoMoreRfb |= BIT(WFDMA1_RX_RING_IDX_0);
+		}
+	}
+
+	/* Write sleep mode magic num to dummy reg */
+	if (prBusInfo->setDummyReg)
+		prBusInfo->setDummyReg(prAdapter->prGlueInfo);
+
 #endif /* _HIF_PCIE */
 		nicEnableInterrupt(prAdapter);
 		asicConnac2xWfdmaDummyCrWrite(prAdapter);
