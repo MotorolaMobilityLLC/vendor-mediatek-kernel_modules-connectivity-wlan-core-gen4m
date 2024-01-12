@@ -1636,7 +1636,6 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
 		/*DFS todo 20161220_DFS*/
-		netif_carrier_on(dev);
 		netif_tx_start_all_queues(dev);
 
 		chandef = &settings->chandef;
