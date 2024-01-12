@@ -743,8 +743,13 @@ enum ENUM_DBDC_BN {
 	ENUM_BAND_0,
 	ENUM_BAND_1,
 	ENUM_BAND_NUM,
+#ifndef CFG_SUPPORT_UNIFIED_COMMAND
 	ENUM_BAND_ALL,
-	ENUM_BAND_AUTO = ENUM_BAND_0,	/*Auto select by A/G band, Driver only*/
+	ENUM_BAND_AUTO,	/*Auto select by A/G band, Driver only*/
+#else
+	ENUM_BAND_ALL = 0xFE,
+	ENUM_BAND_AUTO = 0xFF,
+#endif
 };
 
 /* Provide supported channel list to other components in array format */
