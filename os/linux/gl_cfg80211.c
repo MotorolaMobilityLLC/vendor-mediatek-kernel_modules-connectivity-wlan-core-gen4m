@@ -2257,108 +2257,74 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy, IN void *data, IN int l
 
 	return fgIsValid;
 }
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-int mtk_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN struct wireless_dev *wdev, IN void *data, IN int len)
+
+static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_NL80211_DRIVER_TEST_MODE_PARAMS prParams = (P_NL80211_DRIVER_TEST_MODE_PARAMS) NULL;
-	INT_32 i4Status = -EINVAL;
+	P_NL80211_DRIVER_TEST_MODE_PARAMS prParams = NULL;
+	INT_32 i4Status;
 
 	ASSERT(wiphy);
-	ASSERT(wdev);
+	DBGLOG(INIT, INFO, "-->%s()\n", __func__);
 
-	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
-
-	if (data && len)
-		prParams = (P_NL80211_DRIVER_TEST_MODE_PARAMS) data;
-	else {
-		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd, data is NULL\n");
-		return i4Status;
+	if (!data || !len) {
+		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null data\n");
+		return -EINVAL;
 	}
+
+	if (!wiphy) {
+		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null wiphy\n");
+		return -EINVAL;
+	}
+
+	prGlueInfo = (P_GLUE_INFO_T)wiphy_priv(wiphy);
+	prParams = (P_NL80211_DRIVER_TEST_MODE_PARAMS)data;
 
 	/* Clear the version byte */
 	prParams->index = prParams->index & ~BITS(24, 31);
 
-	if (prParams) {
-		switch (prParams->index) {
-		case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
-			i4Status = mtk_cfg80211_testmode_sw_cmd(wiphy, data, len);
-			break;
-		case TESTMODE_CMD_ID_WAPI:	/* WAPI */
+	switch (prParams->index) {
+	case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
+		i4Status = mtk_cfg80211_testmode_sw_cmd(wiphy, data, len);
+		break;
+	case TESTMODE_CMD_ID_WAPI:	/* WAPI */
 #if CFG_SUPPORT_WAPI
-			i4Status = mtk_cfg80211_testmode_set_key_ext(wiphy, data, len);
+		i4Status = mtk_cfg80211_testmode_set_key_ext(wiphy, data, len);
 #endif
-			break;
-		case 0x10:
-			i4Status = mtk_cfg80211_testmode_get_sta_statistics(wiphy, data, len, prGlueInfo);
-			break;
+		break;
+	case 0x10:
+		i4Status = mtk_cfg80211_testmode_get_sta_statistics(wiphy, data, len, prGlueInfo);
+		break;
 
 #if CFG_SUPPORT_PASSPOINT
-		case TESTMODE_CMD_ID_HS20:
-			i4Status = mtk_cfg80211_testmode_hs20_cmd(wiphy, data, len);
-			break;
+	case TESTMODE_CMD_ID_HS20:
+		i4Status = mtk_cfg80211_testmode_hs20_cmd(wiphy, data, len);
+		break;
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-		default:
-			i4Status = -EINVAL;
-			break;
-		}
-		if (i4Status != 0)
-			DBGLOG(REQ, TRACE, "prParams->index=%d, status=%d\n", prParams->index, i4Status);
+	default:
+		i4Status = -EINVAL;
+		break;
 	}
+
+	if (i4Status != 0)
+		DBGLOG(REQ, TRACE, "prParams->index=%d, status=%d\n",
+		       prParams->index, i4Status);
+
 	return i4Status;
 }
-#else
-int mtk_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+
+#if KERNEL_VERSION(3, 12, 0) <= LINUX_VERSION_CODE
+int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, struct wireless_dev *wdev,
+			      void *data, int len)
 {
-	P_GLUE_INFO_T prGlueInfo = NULL;
-	P_NL80211_DRIVER_TEST_MODE_PARAMS prParams = (P_NL80211_DRIVER_TEST_MODE_PARAMS) NULL;
-	INT_32 i4Status = -EINVAL;
-
-	ASSERT(wiphy);
-
-	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
-
-#if 1
-	DBGLOG(INIT, INFO, "-->%s()\n", __func__);
-#endif
-
-	if (data && len)
-		prParams = (P_NL80211_DRIVER_TEST_MODE_PARAMS) data;
-	else {
-		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd, data is NULL\n");
-		return i4Status;
-	}
-
-	/* Clear the version byte */
-	prParams->index = prParams->index & ~BITS(24, 31);
-
-	if (prParams) {
-		switch (prParams->index) {
-		case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
-			i4Status = mtk_cfg80211_testmode_sw_cmd(wiphy, data, len);
-			break;
-		case TESTMODE_CMD_ID_WAPI:	/* WAPI */
-#if CFG_SUPPORT_WAPI
-			i4Status = mtk_cfg80211_testmode_set_key_ext(wiphy, data, len);
-#endif
-			break;
-		case 0x10:
-			i4Status = mtk_cfg80211_testmode_get_sta_statistics(wiphy, data, len, prGlueInfo);
-			break;
-
-#if CFG_SUPPORT_PASSPOINT
-		case TESTMODE_CMD_ID_HS20:
-			i4Status = mtk_cfg80211_testmode_hs20_cmd(wiphy, data, len);
-			break;
-#endif /* CFG_SUPPORT_PASSPOINT */
-
-		default:
-			i4Status = -EINVAL;
-			break;
-		}
-	}
-	return i4Status;
+	ASSERT(wdev);
+	return mtk_wlan_cfg_testmode_cmd(wiphy, data, len);
+}
+#else
+int mtk_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
+{
+	return mtk_wlan_cfg_testmode_cmd(wiphy, data, len);
 }
 #endif
 #endif

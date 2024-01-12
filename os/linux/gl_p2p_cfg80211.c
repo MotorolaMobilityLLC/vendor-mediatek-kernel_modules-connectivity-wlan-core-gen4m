@@ -2358,8 +2358,10 @@ mtk_p2p_cfg80211func_channel_format_switch(IN struct ieee80211_channel *channel,
 
 #ifdef CONFIG_NL80211_TESTMODE
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0)
-int mtk_p2p_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN struct wireless_dev *wdev, IN void *data, IN int len)
+#if KERNEL_VERSION(3, 12, 0) <= LINUX_VERSION_CODE
+int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy,
+				  struct wireless_dev *wdev, void *data,
+				  int len)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_NL80211_DRIVER_TEST_PARAMS prParams = (P_NL80211_DRIVER_TEST_PARAMS) NULL;
@@ -2451,7 +2453,7 @@ int mtk_p2p_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN struct wireless_dev
 
 }
 #else
-int mtk_p2p_cfg80211_testmode_cmd(IN struct wiphy *wiphy, IN void *data, IN int len)
+int mtk_p2p_cfg80211_testmode_cmd(struct wiphy *wiphy, void *data, int len)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_NL80211_DRIVER_TEST_PARAMS prParams = (P_NL80211_DRIVER_TEST_PARAMS) NULL;
