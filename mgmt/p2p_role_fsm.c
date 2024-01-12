@@ -1473,159 +1473,155 @@ VOID p2pRoleFsmRunEventConnectionAbort(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T 
 	P_MSG_P2P_CONNECTION_ABORT_T prDisconnMsg = (P_MSG_P2P_CONNECTION_ABORT_T) NULL;
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 
-	do {
 
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	prDisconnMsg = (P_MSG_P2P_CONNECTION_ABORT_T) prMsgHdr;
 
-		prDisconnMsg = (P_MSG_P2P_CONNECTION_ABORT_T) prMsgHdr;
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prDisconnMsg->ucRoleIdx);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prDisconnMsg->ucRoleIdx);
+	DBGLOG(P2P, TRACE, "p2pFsmRunEventConnectionAbort: Connection Abort.\n");
 
-		DBGLOG(P2P, TRACE, "p2pFsmRunEventConnectionAbort: Connection Abort.\n");
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+		       "p2pRoleFsmRunEventConnectionAbort: Corresponding P2P Role FSM empty: %d.\n",
+		       prDisconnMsg->ucRoleIdx);
+		goto error;
+	}
 
-		if (!prP2pRoleFsmInfo) {
-			DBGLOG(P2P, ERROR,
-			       "p2pRoleFsmRunEventConnectionAbort: Corresponding P2P Role FSM empty: %d.\n",
-			       prDisconnMsg->ucRoleIdx);
-			break;
-		}
+	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR,
+		       "prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex(%d)] is NULL!",
+		       prP2pRoleFsmInfo->ucBssIndex);
+		goto error;
+	}
 
-		if (!prP2pBssInfo)
-			break;
+	switch (prP2pBssInfo->eCurrentOPMode) {
+	case OP_MODE_INFRASTRUCTURE:
+		{
+			UINT_8 aucBCBSSID[] = BC_BSSID;
 
-		switch (prP2pBssInfo->eCurrentOPMode) {
-		case OP_MODE_INFRASTRUCTURE:
-			{
-				UINT_8 aucBCBSSID[] = BC_BSSID;
-
-				if (!prP2pBssInfo->prStaRecOfAP) {
-					DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
-					break;
-				}
-				if (UNEQUAL_MAC_ADDR(prP2pBssInfo->prStaRecOfAP->aucMacAddr, prDisconnMsg->aucTargetID)
-				    && UNEQUAL_MAC_ADDR(prDisconnMsg->aucTargetID, aucBCBSSID)) {
-					DBGLOG(P2P, TRACE,
-					       "Unequal MAC ADDR [" MACSTR ":" MACSTR "]\n",
-					       MAC2STR(prP2pBssInfo->prStaRecOfAP->aucMacAddr),
-					       MAC2STR(prDisconnMsg->aucTargetID));
-					break;
-				}
+			if (!prP2pBssInfo->prStaRecOfAP) {
+				DBGLOG(P2P, TRACE, "GO's StaRec is NULL\n");
+				break;
+			}
+			if (UNEQUAL_MAC_ADDR(prP2pBssInfo->prStaRecOfAP->aucMacAddr, prDisconnMsg->aucTargetID)
+			    && UNEQUAL_MAC_ADDR(prDisconnMsg->aucTargetID, aucBCBSSID)) {
+				DBGLOG(P2P, TRACE,
+				       "Unequal MAC ADDR [" MACSTR ":" MACSTR "]\n",
+				       MAC2STR(prP2pBssInfo->prStaRecOfAP->aucMacAddr),
+				       MAC2STR(prDisconnMsg->aucTargetID));
+				break;
+			}
 
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-						prP2pRoleFsmInfo->ucRoleIndex,
-						NULL, NULL, 0, 0,
-						WLAN_STATUS_MEDIA_DISCONNECT);
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex,
+					NULL, NULL, 0, 0,
+					WLAN_STATUS_MEDIA_DISCONNECT);
 #else
-				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-								 prP2pRoleFsmInfo->ucRoleIndex, NULL, NULL, 0, 0);
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+							 prP2pRoleFsmInfo->ucRoleIndex, NULL, NULL, 0, 0);
 #endif
 
-				prStaRec = prP2pBssInfo->prStaRecOfAP;
+			prStaRec = prP2pBssInfo->prStaRecOfAP;
 
-				/* Stop rejoin timer if it is started. */
-				/* TODO: If it has. */
+			/* Stop rejoin timer if it is started. */
+			/* TODO: If it has. */
 
-				p2pFuncDisconnect(prAdapter, prP2pBssInfo,
-						  prStaRec,
+			p2pFuncDisconnect(prAdapter, prP2pBssInfo,
+					  prStaRec,
+					  prDisconnMsg->fgSendDeauth, prDisconnMsg->u2ReasonCode);
+
+			cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
+
+			cnmTimerInitTimer(prAdapter,
+					  &(prStaRec->rDeauthTxDoneTimer),
+					  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout, (ULONG) prStaRec);
+
+			cnmTimerStartTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer),
+				P2P_DEAUTH_TIMEOUT_TIME_MS);
+
+			SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
+
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+		}
+		break;
+	case OP_MODE_ACCESS_POINT:
+		{
+			/* Search specific client device, and disconnect. */
+			/* 1. Send deauthentication frame. */
+			/* 2. Indication: Device disconnect. */
+			P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
+
+			DBGLOG(P2P, TRACE, "Disconnecting with Target ID: " MACSTR "\n",
+			       MAC2STR(prDisconnMsg->aucTargetID));
+
+			prCurrStaRec = bssGetClientByMac(prAdapter, prP2pBssInfo, prDisconnMsg->aucTargetID);
+
+			if (prCurrStaRec) {
+				DBGLOG(P2P, TRACE, "Disconnecting: " MACSTR "\n",
+				       MAC2STR(prCurrStaRec->aucMacAddr));
+
+				/* Glue layer indication. */
+				/* kalP2PGOStationUpdate(prAdapter->prGlueInfo, prCurrStaRec, FALSE); */
+
+				/* Send deauth & do indication. */
+				p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStaRec,
 						  prDisconnMsg->fgSendDeauth, prDisconnMsg->u2ReasonCode);
 
-				cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
+				cnmTimerStopTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer));
 
 				cnmTimerInitTimer(prAdapter,
-						  &(prStaRec->rDeauthTxDoneTimer),
-						  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout, (ULONG) prStaRec);
+						  &(prCurrStaRec->rDeauthTxDoneTimer),
+						  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
+						  (ULONG) prCurrStaRec);
 
-				cnmTimerStartTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer),
+				cnmTimerStartTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
-
-				SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
-
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 			}
-			break;
-		case OP_MODE_ACCESS_POINT:
-			{
-				/* Search specific client device, and disconnect. */
-				/* 1. Send deauthentication frame. */
-				/* 2. Indication: Device disconnect. */
-				P_STA_RECORD_T prCurrStaRec = (P_STA_RECORD_T) NULL;
+#if 0
+			LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
+				prCurrStaRec = LINK_ENTRY(prLinkEntry, STA_RECORD_T, rLinkEntry);
 
-				DBGLOG(P2P, TRACE, "Disconnecting with Target ID: " MACSTR "\n",
-				       MAC2STR(prDisconnMsg->aucTargetID));
+				ASSERT(prCurrStaRec);
 
-				prCurrStaRec = bssGetClientByMac(prAdapter, prP2pBssInfo, prDisconnMsg->aucTargetID);
+				if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prDisconnMsg->aucTargetID)) {
 
-				if (prCurrStaRec) {
-					DBGLOG(P2P, TRACE, "Disconnecting: " MACSTR "\n",
+					DBGLOG(P2P, TRACE,
+					       "Disconnecting: " MACSTR "\n",
 					       MAC2STR(prCurrStaRec->aucMacAddr));
+
+					/* Remove STA from client list. */
+					LINK_REMOVE_KNOWN_ENTRY(prStaRecOfClientList,
+								&prCurrStaRec->rLinkEntry);
 
 					/* Glue layer indication. */
 					/* kalP2PGOStationUpdate(prAdapter->prGlueInfo, prCurrStaRec, FALSE); */
 
 					/* Send deauth & do indication. */
-					p2pFuncDisconnect(prAdapter, prP2pBssInfo, prCurrStaRec,
-							  prDisconnMsg->fgSendDeauth, prDisconnMsg->u2ReasonCode);
+					p2pFuncDisconnect(prAdapter, prP2pBssInfo,
+							  prCurrStaRec,
+							  prDisconnMsg->fgSendDeauth,
+							  prDisconnMsg->u2ReasonCode);
 
-					cnmTimerStopTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer));
+					/* prTargetStaRec = prCurrStaRec; */
 
-					cnmTimerInitTimer(prAdapter,
-							  &(prCurrStaRec->rDeauthTxDoneTimer),
-							  (PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmDeauthTimeout,
-							  (ULONG) prCurrStaRec);
-
-					cnmTimerStartTimer(prAdapter, &(prCurrStaRec->rDeauthTxDoneTimer),
-						P2P_DEAUTH_TIMEOUT_TIME_MS);
+					break;
 				}
-#if 0
-				LINK_FOR_EACH(prLinkEntry, prStaRecOfClientList) {
-					prCurrStaRec = LINK_ENTRY(prLinkEntry, STA_RECORD_T, rLinkEntry);
-
-					ASSERT(prCurrStaRec);
-
-					if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prDisconnMsg->aucTargetID)) {
-
-						DBGLOG(P2P, TRACE,
-						       "Disconnecting: " MACSTR "\n",
-						       MAC2STR(prCurrStaRec->aucMacAddr));
-
-						/* Remove STA from client list. */
-						LINK_REMOVE_KNOWN_ENTRY(prStaRecOfClientList,
-									&prCurrStaRec->rLinkEntry);
-
-						/* Glue layer indication. */
-						/* kalP2PGOStationUpdate(prAdapter->prGlueInfo, prCurrStaRec, FALSE); */
-
-						/* Send deauth & do indication. */
-						p2pFuncDisconnect(prAdapter, prP2pBssInfo,
-								  prCurrStaRec,
-								  prDisconnMsg->fgSendDeauth,
-								  prDisconnMsg->u2ReasonCode);
-
-						/* prTargetStaRec = prCurrStaRec; */
-
-						break;
-					}
-				}
+			}
 #endif
 
-			}
-			break;
-		case OP_MODE_P2P_DEVICE:
-		default:
-			ASSERT(FALSE);
-			break;
 		}
+		break;
+	case OP_MODE_P2P_DEVICE:
+	default:
+		ASSERT(FALSE);
+		break;
+	}
 
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-
-	return;
-
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventConnectionAbort */
 
 /*----------------------------------------------------------------------------*/
@@ -1646,151 +1642,159 @@ VOID p2pRoleFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
+	prJoinCompMsg = (P_MSG_JOIN_COMP_T) prMsgHdr;
+	prStaRec = prJoinCompMsg->prStaRec;
+	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
 
-		prJoinCompMsg = (P_MSG_JOIN_COMP_T) prMsgHdr;
-		prStaRec = prJoinCompMsg->prStaRec;
-		prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
+	DBGLOG(P2P, TRACE, "P2P BSS %d, Join Complete\n", prStaRec->ucBssIndex);
 
-		DBGLOG(P2P, TRACE, "P2P BSS %d, Join Complete\n", prStaRec->ucBssIndex);
+	ASSERT(prStaRec)
+	if (!prStaRec) {
+		DBGLOG(P2P, ERROR, "prJoinCompMsg->prStaRec is NULL!\n");
+		goto error;
+	}
 
-		if (prStaRec == NULL) {
-			ASSERT(FALSE);
-			break;
-		} else if (prStaRec->ucBssIndex >= prAdapter->ucP2PDevBssIdx) {
-			ASSERT(FALSE);
-			break;
-		}
+	ASSERT(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx);
+	if (!(prStaRec->ucBssIndex < prAdapter->ucP2PDevBssIdx)) {
+		DBGLOG(P2P, ERROR, "prStaRec->ucBssIndex % should < prAdapter->ucP2PDevBssIdx(%d)!\n",
+			prStaRec->ucBssIndex, prAdapter->ucP2PDevBssIdx);
+		goto error;
+	}
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
-			if (prP2pBssInfo->u4PrivateData >= BSS_P2P_NUM)
-				break;
+	ASSERT(prP2pBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE);
+	if (prP2pBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) {
+		DBGLOG(P2P, ERROR, "prP2pBssInfo->eCurrentOPMode %d != OP_MODE_INFRASTRUCTURE(%d)!\n",
+			prP2pBssInfo->eCurrentOPMode, OP_MODE_INFRASTRUCTURE);
+		goto error;
+	}
 
-			prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	ASSERT(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM);
+	if (!(prP2pBssInfo->u4PrivateData < BSS_P2P_NUM)) {
+		DBGLOG(P2P, ERROR, "prP2pBssInfo->u4PrivateData %s should < BSS_P2P_NUM(%d)!\n",
+			prP2pBssInfo->u4PrivateData, BSS_P2P_NUM);
+		goto error;
+	}
 
-			prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
-			/* Check SEQ NUM */
-			if (prJoinCompMsg->ucSeqNum == prJoinInfo->ucSeqNumOfReqMsg) {
-				ASSERT(prStaRec == prJoinInfo->prTargetStaRec);
-				prJoinInfo->fgIsJoinComplete = TRUE;
+	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
-				if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
+	/* Check SEQ NUM */
+	if (prJoinCompMsg->ucSeqNum == prJoinInfo->ucSeqNumOfReqMsg) {
+		ASSERT(prStaRec == prJoinInfo->prTargetStaRec);
+		prJoinInfo->fgIsJoinComplete = TRUE;
 
-					/* 4 <1.1> Change FW's Media State immediately. */
-					p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_CONNECTED);
+		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
 
-					/* 4 <1.2> Deactivate previous AP's STA_RECORD_T in Driver if have. */
-					if ((prP2pBssInfo->prStaRecOfAP) && (prP2pBssInfo->prStaRecOfAP != prStaRec)) {
-						cnmStaRecChangeState(prAdapter,
-								     prP2pBssInfo->prStaRecOfAP, STA_STATE_1);
+			/* 4 <1.1> Change FW's Media State immediately. */
+			p2pChangeMediaState(prAdapter, prP2pBssInfo, PARAM_MEDIA_STATE_CONNECTED);
 
-						cnmStaRecFree(prAdapter, prP2pBssInfo->prStaRecOfAP);
+			/* 4 <1.2> Deactivate previous AP's STA_RECORD_T in Driver if have. */
+			if ((prP2pBssInfo->prStaRecOfAP) && (prP2pBssInfo->prStaRecOfAP != prStaRec)) {
+				cnmStaRecChangeState(prAdapter,
+						     prP2pBssInfo->prStaRecOfAP, STA_STATE_1);
 
-						prP2pBssInfo->prStaRecOfAP = NULL;
-					}
-					/* 4 <1.3> Update BSS_INFO_T */
-					p2pFuncUpdateBssInfoForJOIN(prAdapter,
-								    prJoinInfo->prTargetBssDesc,
-								    prStaRec, prP2pBssInfo, prAssocRspSwRfb);
+				cnmStaRecFree(prAdapter, prP2pBssInfo->prStaRecOfAP);
 
-					/* 4 <1.4> Activate current AP's STA_RECORD_T in Driver. */
-					cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
+				prP2pBssInfo->prStaRecOfAP = NULL;
+			}
+			/* 4 <1.3> Update BSS_INFO_T */
+			if (prAssocRspSwRfb) {
+				p2pFuncUpdateBssInfoForJOIN(prAdapter,
+							    prJoinInfo->prTargetBssDesc,
+							    prStaRec, prP2pBssInfo, prAssocRspSwRfb);
+			} else {
+				DBGLOG(P2P, INFO,
+					"prAssocRspSwRfb is NULL! Skip p2pFuncUpdateBssInfoForJOIN\n");
+			}
+
+			/* 4 <1.4> Activate current AP's STA_RECORD_T in Driver. */
+			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
 #if CFG_SUPPORT_P2P_RSSI_QUERY
-					/* <1.5> Update RSSI if necessary */
-					nicUpdateRSSI(prAdapter, prP2pBssInfo->ucBssIndex,
-						      (INT_8) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
+			/* <1.5> Update RSSI if necessary */
+			nicUpdateRSSI(prAdapter, prP2pBssInfo->ucBssIndex,
+				      (INT_8) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
 #endif
 
-					/* 4 <1.6> Indicate Connected Event to Host immediately. */
-					/* Require BSSID, Association ID, Beacon Interval.. from AIS_BSS_INFO_T */
-					/* p2pIndicationOfMediaStateToHost(prAdapter, PARAM_MEDIA_STATE_CONNECTED,
-					 * prStaRec->aucMacAddr);
-					 */
-					if (prJoinInfo->prTargetBssDesc)
-						scanReportBss2Cfg80211(prAdapter,
-								       OP_MODE_P2P_DEVICE, prJoinInfo->prTargetBssDesc);
+			/* 4 <1.6> Indicate Connected Event to Host immediately. */
+			/* Require BSSID, Association ID, Beacon Interval.. from AIS_BSS_INFO_T */
+			/* p2pIndicationOfMediaStateToHost(prAdapter, PARAM_MEDIA_STATE_CONNECTED,
+			 * prStaRec->aucMacAddr);
+			 */
+			if (prJoinInfo->prTargetBssDesc)
+				scanReportBss2Cfg80211(prAdapter,
+						       OP_MODE_P2P_DEVICE, prJoinInfo->prTargetBssDesc);
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-					kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-									prP2pRoleFsmInfo->ucRoleIndex,
-									&prP2pRoleFsmInfo->rConnReqInfo,
-									prJoinInfo->aucIEBuf,
-									prJoinInfo->u4BufLength,
-									prStaRec->u2StatusCode,
-									WLAN_STATUS_MEDIA_DISCONNECT);
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+							prP2pRoleFsmInfo->ucRoleIndex,
+							&prP2pRoleFsmInfo->rConnReqInfo,
+							prJoinInfo->aucIEBuf,
+							prJoinInfo->u4BufLength,
+							prStaRec->u2StatusCode,
+							WLAN_STATUS_MEDIA_DISCONNECT);
 #else
-					kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-									prP2pRoleFsmInfo->ucRoleIndex,
-									&prP2pRoleFsmInfo->rConnReqInfo,
-									prJoinInfo->aucIEBuf,
-									prJoinInfo->u4BufLength,
-									prStaRec->u2StatusCode);
+			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+							prP2pRoleFsmInfo->ucRoleIndex,
+							&prP2pRoleFsmInfo->rConnReqInfo,
+							prJoinInfo->aucIEBuf,
+							prJoinInfo->u4BufLength,
+							prStaRec->u2StatusCode);
 
 #endif
 
 
 
-				} else {
-					/* Join Fail */
-					/* 4 <2.1> Redo JOIN process with other Auth Type if possible */
-					if (p2pFuncRetryJOIN(prAdapter, prStaRec, prJoinInfo) == FALSE) {
-						P_BSS_DESC_T prBssDesc;
-
-						/* Increase Failure Count */
-						prStaRec->ucJoinFailureCount++;
-
-						prBssDesc = prJoinInfo->prTargetBssDesc;
-
-						ASSERT(prBssDesc);
-						ASSERT(prBssDesc->fgIsConnecting);
-
-						prBssDesc->fgIsConnecting = FALSE;
-
-#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
-						kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-								prP2pRoleFsmInfo->ucRoleIndex,
-								&prP2pRoleFsmInfo->rConnReqInfo,
-								prJoinInfo->aucIEBuf,
-								prJoinInfo->u4BufLength,
-								prStaRec->u2StatusCode,
-								WLAN_STATUS_MEDIA_DISCONNECT);
-#else
-						kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
-								prP2pRoleFsmInfo->ucRoleIndex,
-								&prP2pRoleFsmInfo->rConnReqInfo,
-								prJoinInfo->aucIEBuf,
-								prJoinInfo->u4BufLength,
-								prStaRec->u2StatusCode);
-#endif
-
-					}
-
-				}
-			}
-
-			if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
-				/* Return to IDLE state. */
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
-			}
 		} else {
-			ASSERT(FALSE);
-			break;
+			/* Join Fail */
+			/* 4 <2.1> Redo JOIN process with other Auth Type if possible */
+			if (p2pFuncRetryJOIN(prAdapter, prStaRec, prJoinInfo) == FALSE) {
+				P_BSS_DESC_T prBssDesc;
+
+				/* Increase Failure Count */
+				prStaRec->ucJoinFailureCount++;
+
+				prBssDesc = prJoinInfo->prTargetBssDesc;
+
+				ASSERT(prBssDesc);
+				ASSERT(prBssDesc->fgIsConnecting);
+
+				prBssDesc->fgIsConnecting = FALSE;
+
+#if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+						prP2pRoleFsmInfo->ucRoleIndex,
+						&prP2pRoleFsmInfo->rConnReqInfo,
+						prJoinInfo->aucIEBuf,
+						prJoinInfo->u4BufLength,
+						prStaRec->u2StatusCode,
+						WLAN_STATUS_MEDIA_DISCONNECT);
+#else
+				kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
+						prP2pRoleFsmInfo->ucRoleIndex,
+						&prP2pRoleFsmInfo->rConnReqInfo,
+						prJoinInfo->aucIEBuf,
+						prJoinInfo->u4BufLength,
+						prStaRec->u2StatusCode);
+#endif
+
+			}
+
 		}
+	}
 
-	} while (FALSE);
+	if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_GC_JOIN) {
+		/* Return to IDLE state. */
+		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+	}
 
+error:
 	if (prAssocRspSwRfb)
 		nicRxReturnRFB(prAdapter, prAssocRspSwRfb);
 
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-
-	return;
-
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventJoinComplete */
 
 VOID p2pRoleFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1802,78 +1806,76 @@ VOID p2pRoleFsmRunEventScanRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMs
 	P_P2P_SSID_STRUCT_T prP2pSsidStruct = (P_P2P_SSID_STRUCT_T) NULL;
 	P_BSS_INFO_T prP2pBssInfo = NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
+	prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prP2pScanReqMsg->ucBssIdx];
+	prP2pBssInfo = prAdapter->aprBssInfo[prP2pScanReqMsg->ucBssIdx];
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
-		if (prP2pRoleFsmInfo == NULL)
-			break;
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!");
+		goto error;
+	}
 
-		prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
-		prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
+	prP2pScanReqMsg = (P_MSG_P2P_SCAN_REQUEST_T) prMsgHdr;
+	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
 
-		DBGLOG(P2P, TRACE, "p2pDevFsmRunEventScanRequest\n");
+	DBGLOG(P2P, TRACE, "p2pDevFsmRunEventScanRequest\n");
 
-		/* Do we need to be in IDLE state? */
-		/* p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo); */
+	/* Do we need to be in IDLE state? */
+	/* p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo); */
 
-		ASSERT(prScanReqInfo->fgIsScanRequest == FALSE);
+	ASSERT(prScanReqInfo->fgIsScanRequest == FALSE);
 
-		prScanReqInfo->fgIsAbort = TRUE;
-		prScanReqInfo->eScanType = prP2pScanReqMsg->eScanType;
+	prScanReqInfo->fgIsAbort = TRUE;
+	prScanReqInfo->eScanType = prP2pScanReqMsg->eScanType;
 
-		if (prP2pScanReqMsg->u4NumChannel) {
-			prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
+	if (prP2pScanReqMsg->u4NumChannel) {
+		prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
 
-			/* Channel List */
-			prScanReqInfo->ucNumChannelList = prP2pScanReqMsg->u4NumChannel;
-			DBGLOG(P2P, TRACE, "Scan Request Channel List Number: %d\n", prScanReqInfo->ucNumChannelList);
-			if (prScanReqInfo->ucNumChannelList > MAXIMUM_OPERATION_CHANNEL_LIST) {
-				DBGLOG(P2P, TRACE,
-				       "Channel List Number Overloaded: %d, change to: %d\n",
-				       prScanReqInfo->ucNumChannelList, MAXIMUM_OPERATION_CHANNEL_LIST);
-				prScanReqInfo->ucNumChannelList = MAXIMUM_OPERATION_CHANNEL_LIST;
-			}
-
-			u4ChnlListSize = sizeof(RF_CHANNEL_INFO_T) * prScanReqInfo->ucNumChannelList;
-			kalMemCopy(prScanReqInfo->arScanChannelList,
-				   prP2pScanReqMsg->arChannelListInfo, u4ChnlListSize);
-		} else {
-			/* If channel number is ZERO.
-			 * It means do a FULL channel scan.
-			 */
-			prScanReqInfo->eChannelSet = SCAN_CHANNEL_FULL;
+		/* Channel List */
+		prScanReqInfo->ucNumChannelList = prP2pScanReqMsg->u4NumChannel;
+		DBGLOG(P2P, TRACE, "Scan Request Channel List Number: %d\n", prScanReqInfo->ucNumChannelList);
+		if (prScanReqInfo->ucNumChannelList > MAXIMUM_OPERATION_CHANNEL_LIST) {
+			DBGLOG(P2P, TRACE,
+			       "Channel List Number Overloaded: %d, change to: %d\n",
+			       prScanReqInfo->ucNumChannelList, MAXIMUM_OPERATION_CHANNEL_LIST);
+			prScanReqInfo->ucNumChannelList = MAXIMUM_OPERATION_CHANNEL_LIST;
 		}
 
-		/* SSID */
-		prP2pSsidStruct = prP2pScanReqMsg->prSSID;
-		for (prScanReqInfo->ucSsidNum = 0;
-		     prScanReqInfo->ucSsidNum < prP2pScanReqMsg->i4SsidNum; prScanReqInfo->ucSsidNum++) {
+		u4ChnlListSize = sizeof(RF_CHANNEL_INFO_T) * prScanReqInfo->ucNumChannelList;
+		kalMemCopy(prScanReqInfo->arScanChannelList,
+			   prP2pScanReqMsg->arChannelListInfo, u4ChnlListSize);
+	} else {
+		/* If channel number is ZERO.
+		 * It means do a FULL channel scan.
+		 */
+		prScanReqInfo->eChannelSet = SCAN_CHANNEL_FULL;
+	}
 
-			kalMemCopy(prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].aucSsid,
-				   prP2pSsidStruct->aucSsid, prP2pSsidStruct->ucSsidLen);
+	/* SSID */
+	prP2pSsidStruct = prP2pScanReqMsg->prSSID;
+	for (prScanReqInfo->ucSsidNum = 0;
+	     prScanReqInfo->ucSsidNum < prP2pScanReqMsg->i4SsidNum; prScanReqInfo->ucSsidNum++) {
 
-			prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].ucSsidLen = prP2pSsidStruct->ucSsidLen;
+		kalMemCopy(prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].aucSsid,
+			   prP2pSsidStruct->aucSsid, prP2pSsidStruct->ucSsidLen);
 
-			prP2pSsidStruct++;
-		}
+		prScanReqInfo->arSsidStruct[prScanReqInfo->ucSsidNum].ucSsidLen = prP2pSsidStruct->ucSsidLen;
 
-		/* IE Buffer */
-		kalMemCopy(prScanReqInfo->aucIEBuf, prP2pScanReqMsg->pucIEBuf, prP2pScanReqMsg->u4IELen);
+		prP2pSsidStruct++;
+	}
 
-		prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
+	/* IE Buffer */
+	kalMemCopy(prScanReqInfo->aucIEBuf, prP2pScanReqMsg->pucIEBuf, prP2pScanReqMsg->u4IELen);
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SCAN);
+	prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
 
-	} while (FALSE);
+	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SCAN);
 
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
 VOID
@@ -1889,93 +1891,96 @@ p2pRoleFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr, IN
 #if CFG_SUPPORT_DBDC
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL) && (prP2pRoleFsmInfo != NULL));
 
-		DBGLOG(P2P, TRACE, "P2P Role Scan Done Event\n");
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, TRACE, "prP2pRoleFsmInfo is NULL\n");
+		goto error;
+	}
 
-		prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
-		prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
+	DBGLOG(P2P, TRACE, "P2P Role Scan Done Event\n");
 
-		if (prScanDoneMsg->ucSeqNum != prScanReqInfo->ucSeqNumOfScnMsg) {
-			/* Scan Done message sequence number mismatch.
-			 * Ignore this event. (P2P FSM issue two scan events.)
-			 */
-			/* The scan request has been cancelled.
-			 * Ignore this message. It is possible.
-			 */
-			DBGLOG(P2P, TRACE,
-			       "P2P Role Scan Don SeqNum Received:%d <-> P2P Role Fsm SCAN Seq Issued:%d\n",
-			       prScanDoneMsg->ucSeqNum, prScanReqInfo->ucSeqNumOfScnMsg);
+	prScanReqInfo = &(prP2pRoleFsmInfo->rScanReqInfo);
+	prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
 
-			break;
-		}
+	if (prScanDoneMsg->ucSeqNum != prScanReqInfo->ucSeqNumOfScnMsg) {
+		/* Scan Done message sequence number mismatch.
+		 * Ignore this event. (P2P FSM issue two scan events.)
+		 */
+		/* The scan request has been cancelled.
+		 * Ignore this message. It is possible.
+		 */
+		DBGLOG(P2P, TRACE,
+		       "P2P Role Scan Don SeqNum Received:%d <-> P2P Role Fsm SCAN Seq Issued:%d\n",
+		       prScanDoneMsg->ucSeqNum, prScanReqInfo->ucSeqNumOfScnMsg);
 
-		switch (prP2pRoleFsmInfo->eCurrentState) {
-		case P2P_ROLE_STATE_SCAN:
-			prScanReqInfo->fgIsAbort = FALSE;
+		goto error;
+	}
 
-			if (prConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GC) {
+	switch (prP2pRoleFsmInfo->eCurrentState) {
+	case P2P_ROLE_STATE_SCAN:
+		prScanReqInfo->fgIsAbort = FALSE;
 
-				prP2pJoinInfo->prTargetBssDesc =
-					p2pFuncKeepOnConnection(prAdapter,
-								prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex],
-								prConnReqInfo,
-								&prP2pRoleFsmInfo->rChnlReqInfo,
-								&prP2pRoleFsmInfo->rScanReqInfo);
-				if ((prP2pJoinInfo->prTargetBssDesc) == NULL) {
-					eNextState = P2P_ROLE_STATE_SCAN;
-				} else {
-					prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
-					if (!prP2pBssInfo)
-						break;
-					prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
-					if (!prChnlReqInfo)
-						break;
-#if CFG_SUPPORT_DBDC
-					cnmDbdcEnableDecision(prAdapter,
-										prP2pRoleFsmInfo->ucBssIndex,
-										prChnlReqInfo->eBand);
-					cnmGetDbdcCapability(prAdapter,
-						prP2pRoleFsmInfo->ucBssIndex,
-						prChnlReqInfo->eBand,
-						prChnlReqInfo->ucReqChnlNum,
-						wlanGetSupportNss(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
-						&rDbdcCap);
+		if (prConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GC) {
 
-					DBGLOG(P2P, INFO,
-						"p2pRoleFsmRunEventScanDone: start GC at CH %u, NSS=%u.\n",
-						prChnlReqInfo->ucReqChnlNum,
-						rDbdcCap.ucNss);
-
-					prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
-					prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-					prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
-#endif
-					/* For GC join. */
-					eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
-				}
+			prP2pJoinInfo->prTargetBssDesc =
+				p2pFuncKeepOnConnection(prAdapter,
+							prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex],
+							prConnReqInfo,
+							&prP2pRoleFsmInfo->rChnlReqInfo,
+							&prP2pRoleFsmInfo->rScanReqInfo);
+			if ((prP2pJoinInfo->prTargetBssDesc) == NULL) {
+				eNextState = P2P_ROLE_STATE_SCAN;
 			} else {
-				eNextState = P2P_ROLE_STATE_IDLE;
+				prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+				if (!prP2pBssInfo)
+					break;
+				prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+				if (!prChnlReqInfo)
+					break;
+#if CFG_SUPPORT_DBDC
+				cnmDbdcEnableDecision(prAdapter,
+									prP2pRoleFsmInfo->ucBssIndex,
+									prChnlReqInfo->eBand);
+				cnmGetDbdcCapability(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex,
+					prChnlReqInfo->eBand,
+					prChnlReqInfo->ucReqChnlNum,
+					wlanGetSupportNss(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
+					&rDbdcCap);
+
+				DBGLOG(P2P, INFO,
+					"p2pRoleFsmRunEventScanDone: start GC at CH %u, NSS=%u.\n",
+					prChnlReqInfo->ucReqChnlNum,
+					rDbdcCap.ucNss);
+
+
+				prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
+				prP2pBssInfo->ucNss = rDbdcCap.ucNss;
+				prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
+
+#endif
+				/* For GC join. */
+				eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
 			}
-			break;
-		case P2P_ROLE_STATE_AP_CHNL_DETECTION:
-			eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
-			break;
-		default:
-			/* Unexpected channel scan done event without being chanceled. */
-			ASSERT(FALSE);
-			break;
+		} else {
+			eNextState = P2P_ROLE_STATE_IDLE;
 		}
+		break;
+	case P2P_ROLE_STATE_AP_CHNL_DETECTION:
+		eNextState = P2P_ROLE_STATE_REQING_CHANNEL;
+		break;
+	default:
+		/* Unexpected channel scan done event without being chanceled. */
+		ASSERT(FALSE);
+		break;
+	}
 
-		prScanReqInfo->fgIsScanRequest = FALSE;
+	prScanReqInfo->fgIsScanRequest = FALSE;
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
+	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
 
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 
 }				/* p2pRoleFsmRunEventScanDone */
 
@@ -1991,102 +1996,102 @@ p2pRoleFsmRunEventChnlGrant(IN P_ADAPTER_T prAdapter,
 #endif
 	UINT_8 ucTokenID = 0;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL) && (prP2pRoleFsmInfo != NULL));
 
-		DBGLOG(P2P, TRACE, "P2P Run Event Role Channel Grant\n");
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");
+		goto error;
+	}
 
-		prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
-		ucTokenID = prMsgChGrant->ucTokenID;
-		prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
+	DBGLOG(P2P, TRACE, "P2P Run Event Role Channel Grant\n");
 
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
-#endif
-		if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
-			DBGLOG(P2P, WARN,
-			       "P2P Role:%d Request Channel Interval:%d, Grant Interval:%d\n",
-			       prP2pRoleFsmInfo->ucRoleIndex, prChnlReqInfo->u4MaxInterval,
-			       prMsgChGrant->u4GrantInterval);
-			prChnlReqInfo->u4MaxInterval = prMsgChGrant->u4GrantInterval;
-		}
-
-		if (ucTokenID == prChnlReqInfo->ucSeqNumOfChReq) {
-			ENUM_P2P_ROLE_STATE_T eNextState = P2P_ROLE_STATE_NUM;
-
-			switch (prP2pRoleFsmInfo->eCurrentState) {
-			case P2P_ROLE_STATE_REQING_CHANNEL:
-				switch (prChnlReqInfo->eChnlReqType) {
-				case CH_REQ_TYPE_JOIN:
-					eNextState = P2P_ROLE_STATE_GC_JOIN;
-					break;
-				case CH_REQ_TYPE_GO_START_BSS:
-					eNextState = P2P_ROLE_STATE_IDLE;
-					break;
-				default:
-					DBGLOG(P2P, WARN,
-					       "p2pRoleFsmRunEventChnlGrant: Invalid Channel Request Type:%d\n",
-					       prChnlReqInfo->eChnlReqType);
-					ASSERT(FALSE);
-					break;
-				}
-
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
-				break;
+	prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
+	ucTokenID = prMsgChGrant->ucTokenID;
+	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-			case P2P_ROLE_STATE_DFS_CAC:
-				p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
-
-				if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
-					u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
-				else
-					u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
-
-				if (p2pFuncIsManualCac())
-					u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
-				else
-					p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
-
-				cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-					u4CacTimeMs);
-
-				p2pFuncRecordCacStartBootTime();
-
-				p2pFuncSetDfsState(DFS_STATE_CHECKING);
-
-				DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
-					u4CacTimeMs/1000);
-				break;
-			case P2P_ROLE_STATE_SWITCH_CHANNEL:
-				p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
-				break;
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgChGrant->ucBssIndex);
 #endif
+	if (prChnlReqInfo->u4MaxInterval != prMsgChGrant->u4GrantInterval) {
+		DBGLOG(P2P, WARN,
+		       "P2P Role:%d Request Channel Interval:%d, Grant Interval:%d\n",
+		       prP2pRoleFsmInfo->ucRoleIndex, prChnlReqInfo->u4MaxInterval,
+		       prMsgChGrant->u4GrantInterval);
+		prChnlReqInfo->u4MaxInterval = prMsgChGrant->u4GrantInterval;
+	}
+
+	if (ucTokenID == prChnlReqInfo->ucSeqNumOfChReq) {
+		ENUM_P2P_ROLE_STATE_T eNextState = P2P_ROLE_STATE_NUM;
+
+		switch (prP2pRoleFsmInfo->eCurrentState) {
+		case P2P_ROLE_STATE_REQING_CHANNEL:
+			switch (prChnlReqInfo->eChnlReqType) {
+			case CH_REQ_TYPE_JOIN:
+				eNextState = P2P_ROLE_STATE_GC_JOIN;
+				break;
+			case CH_REQ_TYPE_GO_START_BSS:
+				eNextState = P2P_ROLE_STATE_IDLE;
+				break;
 			default:
-				/* Channel is granted under unexpected state.
-				 * Driver should cancel channel privileagea before leaving the states.
-				 */
-				if (IS_BSS_ACTIVE(prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex])) {
-					DBGLOG(P2P, WARN,
-					       "p2pRoleFsmRunEventChnlGrant: Invalid CurrentState:%d\n",
-					       prP2pRoleFsmInfo->eCurrentState);
-					ASSERT(FALSE);
-				}
+				DBGLOG(P2P, WARN,
+				       "p2pRoleFsmRunEventChnlGrant: Invalid Channel Request Type:%d\n",
+				       prChnlReqInfo->eChnlReqType);
+				ASSERT(FALSE);
 				break;
 			}
-		} else {
-			/* Channel requsted, but released. */
-			ASSERT(!prChnlReqInfo->fgIsChannelRequested);
+
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, eNextState);
+			break;
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		case P2P_ROLE_STATE_DFS_CAC:
+			p2pFuncStartRdd(prAdapter, prMsgChGrant->ucBssIndex);
+
+			if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
+				u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
+			else
+				u4CacTimeMs = prP2pRoleFsmInfo->rChnlReqInfo.u4MaxInterval;
+
+			if (p2pFuncIsManualCac())
+				u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
+			else
+				p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
+
+			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
+				u4CacTimeMs);
+
+			p2pFuncRecordCacStartBootTime();
+
+			p2pFuncSetDfsState(DFS_STATE_CHECKING);
+
+			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventChnlGrant: CAC time = %ds\n",
+				u4CacTimeMs/1000);
+			break;
+		case P2P_ROLE_STATE_SWITCH_CHANNEL:
+			p2pFuncDfsSwitchCh(prAdapter, prP2pBssInfo, prP2pRoleFsmInfo->rChnlReqInfo);
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+			break;
+#endif
+		default:
+			/* Channel is granted under unexpected state.
+			 * Driver should cancel channel privileagea before leaving the states.
+			 */
+			if (IS_BSS_ACTIVE(prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex])) {
+				DBGLOG(P2P, WARN,
+				       "p2pRoleFsmRunEventChnlGrant: Invalid CurrentState:%d\n",
+				       prP2pRoleFsmInfo->eCurrentState);
+				ASSERT(FALSE);
+			}
+			break;
 		}
+	} else {
+		/* Channel requsted, but released. */
+		ASSERT(!prChnlReqInfo->fgIsChannelRequested);
+		if (prChnlReqInfo->fgIsChannelRequested)
+			DBGLOG(P2P, ERROR, "Channel was requested, but released!\n");
+	}
 
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
-
-	return;
-
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventChnlGrant */
 
 /* ////////////////////////////////////// */
