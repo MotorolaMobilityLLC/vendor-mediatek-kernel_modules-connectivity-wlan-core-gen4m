@@ -1368,6 +1368,7 @@ s_int32 mt_op_set_tx_content(
 {
 	struct serv_hdr_802_11 *phdr = NULL;
 	u_int32 func_data;
+	u_int16 fc_16;
 	u_int32 fc, dur, seq;
 	u_int32 gen_payload_rule = configs->fixed_payload;
 	u_int32 pay_load = configs->payload[0];
@@ -1379,7 +1380,8 @@ s_int32 mt_op_set_tx_content(
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
 	phdr = (struct serv_hdr_802_11 *)&configs->template_frame[0];
-	sys_ad_move_mem(&fc, &phdr->fc, sizeof(fc));
+	sys_ad_move_mem(&fc_16, &phdr->fc, sizeof(fc_16));
+	fc = (u_int32)fc_16;
 	dur = (u_int32)phdr->duration;
 	seq = (u_int32)phdr->sequence;
 
