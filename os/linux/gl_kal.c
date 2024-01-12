@@ -25,7 +25,9 @@
 #include "gl_kal.h"
 #include "gl_wext.h"
 #include "precomp.h"
+#if KERNEL_VERSION(5, 16, 0) > LINUX_VERSION_CODE
 #include <stdarg.h>
+#endif
 
 #if CFG_SUPPORT_AGPS_ASSIST
 #include <net/netlink.h>
