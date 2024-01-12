@@ -301,7 +301,11 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 			ucHeOption = prWifiVar->ucStaHe;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-		ucEhtOption = prWifiVar->ucStaEht;
+		if (AIS_INDEX(prAdapter, prStaRec->ucBssIndex) <
+			      prAdapter->rWifiVar.u4AisEHTNumber)
+			ucEhtOption = prWifiVar->ucStaEht;
+		else
+			ucEhtOption = FEATURE_DISABLED;
 #endif
 	}
 #if CFG_ENABLE_WIFI_DIRECT
