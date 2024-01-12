@@ -352,6 +352,19 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
+	/* Do not print oid timer to avoid log too much.
+	 * We can deduce existence of OID timer from cmd and event.
+	 */
+	if ((prTimer != NULL) && (&(prAdapter->rOidTimeoutTimer) != prTimer)
+		&& (wlan_fb_power_down == TRUE)) {
+		log_dbg(CNM, INFO,
+			"[WLAN-LP] Start timer %u ms -handler(%pf)\n",
+			u4TimeoutMs,
+			prTimer->pfMgmtTimeOutFunc);
+	}
+#endif
+
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
 
 	prRootTimer = &prAdapter->rRootTimer;
