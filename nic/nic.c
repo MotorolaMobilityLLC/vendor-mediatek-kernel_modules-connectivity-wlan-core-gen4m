@@ -879,8 +879,8 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	return prMsduInfo;
 }
 
-void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucBssIndex)
+void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucIndex, IN enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType)
 {
 	struct QUE *prTxingQue;
 	struct QUE rTempQue;
@@ -891,10 +891,16 @@ void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 	struct MSDU_INFO *prMsduInfoListTail = (struct MSDU_INFO *)
 					       NULL;
 	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
+	uint8_t ucRemoveByIndex = 255;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
+
+	if (ucFreeType >= ENUM_REMOVE_BY_MSDU_TPYE_NUM) {
+		DBGLOG(TX, WARN, "Wrong remove type: %d\n", ucFreeType);
+		return;
+	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
 
@@ -903,10 +909,21 @@ void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 
 	QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry,
 			  struct QUE_ENTRY *);
+
 	while (prQueueEntry) {
 		prMsduInfo = (struct MSDU_INFO *) prQueueEntry;
 
-		if (prMsduInfo->ucBssIndex == ucBssIndex) {
+		switch (ucFreeType) {
+		case MSDU_REMOVE_BY_WLAN_INDEX:
+			ucRemoveByIndex = prMsduInfo->ucWlanIndex;
+			break;
+		case MSDU_REMOVE_BY_BSS_INDEX:
+			ucRemoveByIndex = prMsduInfo->ucBssIndex;
+			break;
+		default:
+			break;
+		}
+		if (ucRemoveByIndex == ucIndex) {
 			DBGLOG(TX, TRACE,
 			       "%s: Get Msdu WIDX:PID[%u:%u] SEQ[%u] from Pending Q\n",
 			       __func__, prMsduInfo->ucWlanIndex,
@@ -939,10 +956,7 @@ void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER
 		nicTxFreeMsduInfoPacket(prAdapter, prMsduInfoListHead);
 		nicTxReturnMsduInfo(prAdapter, prMsduInfoListHead);
 	}
-
-	return;
-
-}				/* end of nicFreePendingTxMsduInfoByBssIdx() */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1451,7 +1465,8 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 	 * Move this action from "deactive" to "active" to avoid the KE issue.
 	 * Deactive remove pending msdu but HIF thread use it after deactive.
 	 */
-	nicFreePendingTxMsduInfoByBssIdx(prAdapter, ucBssIndex);
+	nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
+		MSDU_REMOVE_BY_BSS_INDEX);
 	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
 				       ucBssIndex);
 

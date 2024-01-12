@@ -305,8 +305,8 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
 			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingTxMsdu */
-		nicFreePendingTxMsduInfoByBssIdx(prAdapter,
-			prP2pBssInfo->ucBssIndex);
+		nicFreePendingTxMsduInfo(prAdapter,
+			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
@@ -1447,8 +1447,8 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 		wlanReleasePendingCMDbyBssIdx(prAdapter,
 			prP2pBssInfo->ucBssIndex);
 		/* Clear PendingTxMsdu */
-		nicFreePendingTxMsduInfoByBssIdx(prAdapter,
-			prP2pBssInfo->ucBssIndex);
+		nicFreePendingTxMsduInfo(prAdapter,
+			prP2pBssInfo->ucBssIndex, MSDU_REMOVE_BY_BSS_INDEX);
 
 		/* Deactivate BSS. */
 		UNSET_NET_ACTIVE(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
