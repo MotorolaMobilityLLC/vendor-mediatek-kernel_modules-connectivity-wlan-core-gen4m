@@ -5901,6 +5901,7 @@ wlanoidQueryDrvMcrRead(IN P_ADAPTER_T prAdapter,
 
 	prMcrRdInfo = (P_PARAM_CUSTOM_MCR_RW_STRUCT_T) pvQueryBuffer;
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	HAL_MCR_RD(prAdapter, (prMcrRdInfo->u4McrOffset & BITS(2, 31)), &prMcrRdInfo->u4McrData);
 
 	DBGLOG(INIT, TRACE, "DRV MCR Read: Offset = %#08lx, Data = %#08lx\n",
@@ -5948,6 +5949,7 @@ wlanoidSetDrvMcrWrite(IN P_ADAPTER_T prAdapter,
 
 	prMcrWrInfo = (P_PARAM_CUSTOM_MCR_RW_STRUCT_T) pvSetBuffer;
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	HAL_MCR_WR(prAdapter, (prMcrWrInfo->u4McrOffset & BITS(2, 31)), prMcrWrInfo->u4McrData);
 
 	DBGLOG(INIT, TRACE, "DRV MCR Write: Offset = %#08lx, Data = %#08lx\n",
