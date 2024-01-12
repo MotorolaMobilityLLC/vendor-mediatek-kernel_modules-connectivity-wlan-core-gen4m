@@ -10,6 +10,7 @@ ifeq ($(SEGMENT), SP)
         obj-m += build/connac3x/6985_6639/
     else ifeq ($(CONNAC_VER), 2_0)
         obj-m += build/connac2x/6897/
+        obj-m += build/connac2x/6893/
     endif
 else
     KO_CODE_PATH := $(if $(filter /%,$(src)),,$(srctree)/)$(src)
