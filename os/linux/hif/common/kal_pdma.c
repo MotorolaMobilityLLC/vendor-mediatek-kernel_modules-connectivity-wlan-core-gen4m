@@ -115,29 +115,42 @@ static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4Value;
 	uint32_t u4BusAddr;
+	u_int8_t fgCrReadDead = FALSE;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 #if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
 	if (*pu4Value == 0xdead0001) {
-		DBGLOG(HAL, ERROR, "Host bus hang timeout, CR[0x%08x]\n",
+		DBGLOG(HAL, ERROR, "CR read[0x%08x] = dead0001\n",
 				u4Register);
-		return true;
+		fgCrReadDead = TRUE;
 	}
 #endif
 
-	if (*pu4Value != HIF_DEADFEED_VALUE)
-		return false;
-
+	if (*pu4Value != HIF_DEADFEED_VALUE && !fgCrReadDead)
+		return FALSE;
 
 	if (!halChipToStaticMapBusAddr(prChipInfo, CONN_CFG_CHIP_ID_ADDR,
 				       &u4BusAddr)) {
 		DBGLOG(HAL, ERROR, "Not exist CR read[0x%08x]\n", u4Register);
-		return false;
+		return FALSE;
 	}
 
 	RTMP_IO_READ32(prChipInfo, u4BusAddr, &u4Value);
+
+#if (CFG_ENABLE_HOST_BUS_TIMEOUT == 1)
+	if (u4Value == 0xdead0001 && fgCrReadDead) {
+		DBGLOG(HAL, ERROR, "Host bus hang timeout, CR[0x%08x]\n",
+				u4Register);
+		return TRUE;
+	}
+#endif
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	if (prGlueInfo->prAdapter->fgIsFwOwn)
+		return FALSE;
+#endif
 
 	return u4Value == HIF_DEADFEED_VALUE;
 }
