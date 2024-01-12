@@ -671,7 +671,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			       &u4BufLen, ucBssIndex);
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
-	if (IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (rStatus == WLAN_STATUS_SUCCESS &&
+		IS_BSS_INDEX_VALID(ucBssIndex)) {
 		u4TxRate = rLinkSpeed.rLq[ucBssIndex].u2TxLinkSpeed;
 		u4RxRate = rLinkSpeed.rLq[ucBssIndex].u2RxLinkSpeed;
 		i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
@@ -989,111 +990,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	return 0;
 }
 #endif
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This routine is responsible for getting statistics for Link layer
- *        statistics
- *
- * @param
- *
- * @retval 0:       successful
- *         others:  failure
- */
-/*----------------------------------------------------------------------------*/
-int mtk_cfg80211_get_link_statistics(struct wiphy *wiphy,
-				     struct net_device *ndev, u8 *mac,
-				     struct station_info *sinfo)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus;
-	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen;
-	struct PARAM_LINK_SPEED_EX rLinkSpeed;
-	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
-	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
-	struct net_device_stats *prDevStats;
-	uint8_t ucBssIndex = 0;
-
-	WIPHY_PRIV(wiphy, prGlueInfo);
-	ASSERT(prGlueInfo);
-
-	ucBssIndex = wlanGetBssIdx(ndev);
-	if (!IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex))
-		return -EINVAL;
-
-	kalMemZero(arBssid, MAC_ADDR_LEN);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
-			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
-	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
-		return -EINVAL;
-
-	/* 1. check BSSID */
-	if (UNEQUAL_MAC_ADDR(arBssid, mac)) {
-		/* wrong MAC address */
-		DBGLOG(REQ, WARN,
-		       "incorrect BSSID: [" MACSTR
-		       "] currently connected BSSID["
-		       MACSTR "]\n",
-		       MAC2STR(mac), MAC2STR(arBssid));
-		return -ENOENT;
-	}
-
-	/* 2. fill RSSI */
-	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) !=
-	    MEDIA_STATE_CONNECTED) {
-		/* not connected */
-		DBGLOG(REQ, WARN, "not yet connected\n");
-	} else {
-		rStatus = kalIoctlByBssIdx
-			(prGlueInfo,
-			 wlanoidQueryRssi,
-			 &rLinkSpeed, sizeof(rLinkSpeed),
-			 &u4BufLen, ucBssIndex);
-
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
-	}
-
-	/* Get statistics from net_dev */
-	prDevStats = (struct net_device_stats *)kalGetStats(ndev);
-
-	/*3. get link layer statistics from Driver and FW */
-	if (prDevStats) {
-		/* 3.1 get per-STA link statistics */
-		kalMemZero(&rQueryStaStatistics,
-			   sizeof(rQueryStaStatistics));
-		COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr, arBssid);
-		rQueryStaStatistics.ucLlsReadClear =
-			FALSE;	/* dont clear for get BSS statistic */
-
-		rStatus = kalIoctl(prGlueInfo, wlanoidQueryStaStatistics,
-				   &rQueryStaStatistics,
-				   sizeof(rQueryStaStatistics), &u4BufLen);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, WARN,
-			       "unable to retrieve per-STA link statistics\n");
-
-		/*3.2 get per-BSS link statistics */
-		if (rStatus == WLAN_STATUS_SUCCESS) {
-			kalMemZero(&rQueryBssStatistics,
-				   sizeof(rQueryBssStatistics));
-			rQueryBssStatistics.ucBssIndex = ucBssIndex;
-
-			rStatus = kalIoctl(prGlueInfo,
-				wlanoidQueryBssStatistics,
-				&rQueryBssStatistics,
-				sizeof(rQueryBssStatistics),
-				&u4BufLen);
-		} else {
-			DBGLOG(REQ, WARN,
-			       "unable to retrieve per-BSS link statistics\n");
-		}
-
-	}
-
-	return 0;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to do a scan
