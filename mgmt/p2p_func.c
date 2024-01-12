@@ -1281,15 +1281,23 @@ VOID p2pFuncAcquireCh(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx, IN P_P2P_CHN
 VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 {
 	P_CMD_RDD_ON_OFF_CTRL_T prCmdRddOnOffCtrl;
+	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
 	UINT_8 ucCountryChar[2];
+	UINT_16 u2CountryCode;
+	UINT_8 ucReqChnlNum;
 
 	DEBUGFUNC("p2pFuncStartRdd()");
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL));
 
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+				prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
+
+		ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum;
+
 		prCmdRddOnOffCtrl = (P_CMD_RDD_ON_OFF_CTRL_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-					sizeof(P_CMD_RDD_ON_OFF_CTRL_T));
+					sizeof(*prCmdRddOnOffCtrl));
 
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
 
@@ -1297,8 +1305,17 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 		ucCountryChar[0] = (UINT_8) prAdapter->rWifiVar.rConnSettings.u2CountryCode;
 		ucCountryChar[1] = (UINT_8) (prAdapter->rWifiVar.rConnSettings.u2CountryCode >> 8);
-		prCmdRddOnOffCtrl->u2CountryCode = (((UINT_16) ucCountryChar[0]) << 8) | ((UINT_16) ucCountryChar[1]);
-		DBGLOG(P2P, INFO, "Country code =  %x\n", prCmdRddOnOffCtrl->u2CountryCode);
+		u2CountryCode = (((UINT_16) ucCountryChar[0]) << 8) | ((UINT_16) ucCountryChar[1]);
+		DBGLOG(P2P, INFO, "Country code =  %x\n", u2CountryCode);
+
+		if (u2CountryCode == COUNTRY_CODE_JP) {
+			if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
+				prCmdRddOnOffCtrl->ucRegDomain = REG_JP_53;
+			else if (ucReqChnlNum >= 100 && ucReqChnlNum <= 140)
+				prCmdRddOnOffCtrl->ucRegDomain = REG_JP_56;
+		} else {
+			prCmdRddOnOffCtrl->ucRegDomain = REG_DEFAULT;
+		}
 
 		if (prCmdRddOnOffCtrl->ucRddIdx)
 			prCmdRddOnOffCtrl->ucRddInSel = RDD_IN_SEL_1;
@@ -1370,6 +1387,18 @@ VOID p2pFuncDfsSwitchCh(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN 
 		cfg80211_ch_switch_notify(prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->prDevHandler,
 						prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
 		DBGLOG(P2P, INFO, "p2pFuncDfsSwitchCh: Update to OS Done\n");
+
+		if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan)
+			cnmMemFree(prGlueInfo->prAdapter,
+				prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan);
+
+		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef->chan = NULL;
+
+		if (prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef)
+			cnmMemFree(prGlueInfo->prAdapter,
+				prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef);
+
+		prGlueInfo->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]->chandef = NULL;
 
 	} while (FALSE);
 }				/* p2pFuncDfsSwitchCh */
