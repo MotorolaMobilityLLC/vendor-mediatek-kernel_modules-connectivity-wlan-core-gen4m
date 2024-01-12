@@ -1712,7 +1712,7 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
-	uint32_t u4Addr = 0, u4WrVal = 0, u4Val = 0;
+	uint32_t u4Addr = 0, u4WrVal = 0;
 
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
@@ -1750,16 +1750,6 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK;
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
-
-	HAL_MCR_RD(prGlueInfo->prAdapter,
-		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
-
-	DBGLOG(HAL, TRACE,
-	       "HOST_INT_ENA(0x%08x):0x%08x, En:%u, WrVal:0x%08x\n",
-	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
-	       u4Val,
-	       enable,
-	       u4WrVal);
 }
 
 #if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
