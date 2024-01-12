@@ -1943,6 +1943,12 @@ int mtk_cfg80211_set_power_mgmt(struct wiphy *wiphy,
 	if (!prGlueInfo)
 		return -EFAULT;
 
+	if (prGlueInfo->prAdapter->fgEnDbgPowerMode) {
+		DBGLOG(REQ, WARN,
+			"Force power mode enabled, ignore: %d\n", enabled);
+		return 0;
+	}
+
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
 		return -EINVAL;

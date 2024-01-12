@@ -4658,6 +4658,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 #endif /* WLAN_INCLUDE_PROC */
+#if WLAN_INCLUDE_SYS
+		i4Status = sysCreateFsEntry(prGlueInfo);
+		if (i4Status < 0) {
+			DBGLOG(INIT, ERROR, "wlanProbe: init sysfs failed\n");
+			eFailReason = PROC_INIT_FAIL;
+			break;
+		}
+#endif /* WLAN_INCLUDE_SYS */
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	kalMetInit(prGlueInfo);
@@ -4883,6 +4891,9 @@ static void wlanRemove(void)
 #if WLAN_INCLUDE_PROC
 	procRemoveProcfs();
 #endif /* WLAN_INCLUDE_PROC */
+#if WLAN_INCLUDE_SYS
+	sysRemoveSysfs();
+#endif /* WLAN_INCLUDE_SYS */
 
 	prAdapter = prGlueInfo->prAdapter;
 	kalPerMonDestroy(prGlueInfo);
@@ -5090,6 +5101,9 @@ static int initWlan(void)
 #if WLAN_INCLUDE_PROC
 	procInitFs();
 #endif
+#if WLAN_INCLUDE_SYS
+	sysInitFs();
+#endif
 
 	wlanCreateWirelessDevice();
 	if (gprWdev[0] == NULL)
@@ -5191,6 +5205,9 @@ static void exitWlan(void)
 
 #if WLAN_INCLUDE_PROC
 	procUninitProcFs();
+#endif
+#if WLAN_INCLUDE_SYS
+	sysUninitSysFs();
 #endif
 #if defined(UT_TEST_MODE) && defined(CFG_BUILD_X86_PLATFORM)
 	kfree((const void *)gConEmiPhyBase);
