@@ -2442,6 +2442,26 @@ struct BOOTP_PROTOCOL {
 	uint8_t aucOptions[0];
 } __KAL_ATTRIB_PACKED__;
 
+enum DHCP_MESSAGE_TYPE {
+	DHCPDISCOVER = 1,
+	DHCPOFFER,
+	DHCPREQUEST,
+	DHCPDECLINE,
+	DHCPACK,
+	DHCPNAK,
+	DHCPRELEASE,
+	DHCPINFORM,
+};
+
+/* DHCP options from RFC 2132, only enumerate used ones */
+enum DHCP_OPTION {
+	DHCP_OPTION_PAD = 0,
+	DHCP_OPTION_ROUTER = 3,
+	DHCP_OPTION_MESSAGE_TYPE = 53,
+	DHCP_OPTION_END = 255,
+};
+
+
 /* IEEE 802.11 WLAN Frame Structure */
 /* WLAN MAC Header (without Address 4 and QoS Control fields) */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4681,6 +4701,15 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 #define OCE_OUI_SUP_BSSID(fp)	((struct IE_OCE_SUPPRESSION_BSSID *) fp)
 #define OCE_IE_OUI_TYPE(fp)	(((struct IE_MBO_OCE *)(fp))->ucOuiType)
 #define OCE_IE_OUI(fp)		(((struct IE_MBO_OCE *)(fp))->aucOui)
+
+/* The macro to copy the IPv4 address */
+#define COPY_IP_ADDR(_pucDestAddr, _pucSrcAddr)    \
+	kalMemCopy(_pucDestAddr, _pucSrcAddr, IPV4_ADDR_LEN)
+
+/* The macro to check if the IP address is ALL ZERO */
+#define IS_NON_ZERO_IP_ADDR(_pucIpAddr) \
+	((_pucIpAddr)[0] || (_pucIpAddr)[1] || \
+	 (_pucIpAddr)[2] || (_pucIpAddr)[3])
 
 /* The macro to check if the MAC address is B/MCAST Address */
 #define IS_BMCAST_MAC_ADDR(_pucDestAddr)            \

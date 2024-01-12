@@ -3758,7 +3758,7 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucUdpHdr, *pucIcmp;
 	uint16_t u2SrcPort;
 	uint16_t u2DstPort;
-	struct BOOTP_PROTOCOL *prBootp;
+	struct BOOTP_PROTOCOL *prDhcp;
 	uint32_t u4DhcpMagicCode;
 	uint16_t u2IpId;
 #if CFG_SUPPORT_WIFI_SYSDVT
@@ -3822,12 +3822,12 @@ kalIPv4FrameClassifier(struct GLUE_INFO *prGlueInfo,
 		WLAN_GET_FIELD_BE16(&pucUdpHdr[UDP_HDR_DST_PORT_OFFSET],
 				    &u2DstPort);
 
-		/* BOOTP/DHCP protocol */
-		if ((u2DstPort == IP_PORT_BOOTP_SERVER) ||
-		    (u2DstPort == IP_PORT_BOOTP_CLIENT)) {
-			prBootp = (struct BOOTP_PROTOCOL *)
+		/* DHCP protocol */
+		if (u2DstPort == IP_PORT_BOOTP_SERVER ||
+		    u2DstPort == IP_PORT_BOOTP_CLIENT) {
+			prDhcp = (struct BOOTP_PROTOCOL *)
 							&pucUdpHdr[UDP_HDR_LEN];
-			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
+			WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[0],
 					    &u4DhcpMagicCode);
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
 				ucSeqNo = nicIncreaseTxSeqNum(

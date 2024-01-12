@@ -339,96 +339,92 @@ void statsParseUDPInfo(void *pvPacket, uint8_t *pucEthBody,
 {
 	/* the number of DHCP packets is seldom so we print log here */
 	uint8_t *pucUdp = &pucEthBody[20];
-	uint8_t *pucBootp = &pucUdp[UDP_HDR_LEN];
-	struct BOOTP_PROTOCOL *prBootp = NULL;
+	uint8_t *pucDhcp = &pucUdp[UDP_HDR_LEN];
+	struct BOOTP_PROTOCOL *prDhcp = NULL;
 	uint16_t u2UdpDstPort;
 	uint16_t u2UdpSrcPort;
 	uint32_t u4TransID;
 	uint32_t u4DhcpMagicCode;
-	char buf[50] = {0};
+	char *msg_type = " ";
+	uint32_t u4Opt = 0;
+	uint32_t u4Xid = 0;
 
-	prBootp = (struct BOOTP_PROTOCOL *) &pucUdp[UDP_HDR_LEN];
+	prDhcp = (struct BOOTP_PROTOCOL *)&pucUdp[UDP_HDR_LEN];
 	u2UdpDstPort = (pucUdp[2] << 8) | pucUdp[3];
 	u2UdpSrcPort = (pucUdp[0] << 8) | pucUdp[1];
 	if (u2UdpDstPort == UDP_PORT_DHCPS || u2UdpDstPort == UDP_PORT_DHCPC) {
-		WLAN_GET_FIELD_BE32(&prBootp->u4TransId, &u4TransID);
+		WLAN_GET_FIELD_BE32(&prDhcp->u4TransId, &u4TransID);
 		switch (eventType) {
 		case EVENT_RX:
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DHCP);
-			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
+			WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[0],
 					    &u4DhcpMagicCode);
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
-				uint32_t u4Opt;
-
-				WLAN_GET_FIELD_BE32(&prBootp->aucOptions[4],
+				WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[4],
 						    &u4Opt);
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					kalSnprintf(buf, 49, "DISCOVER");
+					msg_type = "DISCOVER";
 					break;
 				case 0x35010200:
-					kalSnprintf(buf, 49, "OFFER");
+					msg_type = "OFFER";
 					break;
 				case 0x35010300:
-					kalSnprintf(buf, 49, "REQUEST");
+					msg_type = "REQUEST";
 					break;
 				case 0x35010500:
-					kalSnprintf(buf, 49, "ACK");
+					msg_type = "ACK";
 					break;
 				case 0x35010600:
-					kalSnprintf(buf, 49, "NAK");
+					msg_type = "NAK";
 					break;
 				}
 			}
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> DHCP: Recv %s IPID 0x%02x, MsgType 0x%x, TransID 0x%04x\n",
-				buf, u2IpId, prBootp->aucOptions[6],
+				msg_type, u2IpId, prDhcp->aucOptions[6],
 				u4TransID);
 			break;
-		case EVENT_TX:
-		{
-			uint32_t u4Xid = 0;
-			uint32_t u4Opt = 0;
 
-			WLAN_GET_FIELD_BE32(&prBootp->aucOptions[0],
+		case EVENT_TX:
+			WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[0],
 					    &u4DhcpMagicCode);
 			if (u4DhcpMagicCode == DHCP_MAGIC_NUMBER) {
-				WLAN_GET_FIELD_BE32(&prBootp->u4TransId,
+				WLAN_GET_FIELD_BE32(&prDhcp->u4TransId,
 						    &u4Xid);
-				WLAN_GET_FIELD_BE32(&prBootp->aucOptions[4],
+				WLAN_GET_FIELD_BE32(&prDhcp->aucOptions[4],
 						    &u4Opt);
 
 				switch (u4Opt & 0xffffff00) {
 				case 0x35010100:
-					kalSnprintf(buf, 49, "client DISCOVER");
+					msg_type = "client DISCOVER";
 					break;
 				case 0x35010200:
-					kalSnprintf(buf, 49, "server OFFER");
+					msg_type = "server OFFER";
 					break;
 				case 0x35010300:
-					kalSnprintf(buf, 49, "client REQUEST");
+					msg_type = "client REQUEST";
 					break;
 				case 0x35010500:
-					kalSnprintf(buf, 49, "server ACK");
+					msg_type = "server ACK";
 					break;
 				case 0x35010600:
-					kalSnprintf(buf, 49, "server NAK");
+					msg_type = "server NAK";
 					break;
 				}
 			}
 
 			DBGLOG_LIMITED(TX, INFO,
-				"<TP> DHCP %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
-				buf, u4Xid, u4Opt, prBootp->aucOptions[6],
+				"<TX> DHCP %s, XID[0x%08x] OPT[0x%08x] TYPE[%u], SeqNo: %d\n",
+				msg_type, u4Xid, u4Opt, prDhcp->aucOptions[6],
 				GLUE_GET_PKT_SEQ_NO(pvPacket));
-		}
 			break;
 		}
 	} else if (u2UdpSrcPort == UDP_PORT_DNS ||
 			u2UdpDstPort == UDP_PORT_DNS) {
-		uint16_t u2TransId =
-			(pucBootp[0] << 8) | pucBootp[1];
+		uint16_t u2TransId = pucDhcp[0] << 8 | pucDhcp[1];
+
 		if (eventType == EVENT_RX) {
 			GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_DNS);
