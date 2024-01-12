@@ -1789,8 +1789,6 @@ void p2pRoleFsmRunEventRadarDet(IN struct ADAPTER *prAdapter,
 			5000);
 	}
 
-	p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
-
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventRadarDet*/

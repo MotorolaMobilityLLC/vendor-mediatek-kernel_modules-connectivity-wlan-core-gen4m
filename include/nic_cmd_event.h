@@ -1558,9 +1558,13 @@ struct CMD_BT_OVER_WIFI {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 enum ENUM_REG_DOMAIN {
-	REG_DEFAULT = 0,
-	REG_JP_53,
-	REG_JP_56
+	ENUM_RDM_CE = 0,
+	ENUM_RDM_FCC,
+	ENUM_RDM_JAP,
+	ENUM_RDM_JAP_W53,
+	ENUM_RDM_JAP_W56,
+	ENUM_RDM_CHN,
+	ENUM_RDM_REGION_NUM
 };
 
 struct CMD_RDD_ON_OFF_CTRL {
@@ -1878,7 +1882,7 @@ enum ENUM_DFS_CTRL {
 	RDD_START,
 	RDD_DET_MODE,
 	RDD_RADAR_EMULATE,
-	RDD_START_TXQ
+	RDD_START_TXQ = 20
 };
 #endif
 
@@ -2237,31 +2241,55 @@ struct CMD_DBDC_SETTING {
 struct LONG_PULSE_BUFFER {
 	uint32_t u4LongStartTime;
 	uint16_t u2LongPulseWidth;
+	int16_t i2LongPulsePower;
+	uint8_t u1MDRDYFlag; /* bit1: mdray_early_flag, bit0: mdrdy_late_flag */
+	uint8_t a1cReserve[3];
 };
 
 struct PERIODIC_PULSE_BUFFER {
 	uint32_t u4PeriodicStartTime;
 	uint16_t u2PeriodicPulseWidth;
 	int16_t i2PeriodicPulsePower;
+	uint8_t u1MDRDYFlag; /* bit1: mdray_early_flag, bit0: mdrdy_late_flag */
+	uint8_t a1cReserve[3];
+};
+
+struct WH_RDD_PULSE_CONTENT {
+	uint32_t u4HwStartTime;
+	uint16_t u2HwPulseWidth;
+	int16_t i2HwPulsePower;
+	uint8_t fgScPass;
+	uint8_t fgSwReset;
+	uint8_t u1MDRDYFlag; /* bit1: mdray_early_flag, bit0: mdrdy_late_flag */
+	uint8_t u1TxActive;	/* bit1: tx_early_flag, bit0: tx_late_flag */
 };
 
 struct EVENT_RDD_REPORT {
-	/*0: Only report radar detected;   1:  Add parameter reports*/
-	uint8_t ucRadarReportMode;
-	uint8_t ucRddIdx;
-	uint8_t ucLongDetected;
-	uint8_t ucPeriodicDetected;
-	uint8_t ucLPBNum;
-	uint8_t ucPPBNum;
-	uint8_t ucLPBPeriodValid;
-	uint8_t ucLPBWidthValid;
-	uint8_t ucPRICountM1;
-	uint8_t ucPRICountM1TH;
-	uint8_t ucPRICountM2;
-	uint8_t ucPRICountM2TH;
-	uint32_t u4PRI1stUs;
-	struct LONG_PULSE_BUFFER arLpbContent[32];
-	struct PERIODIC_PULSE_BUFFER arPpbContent[32];
+	uint8_t u1RddIdx;
+	uint8_t u1LongDetected;
+	uint8_t u1ConstantPRFDetected;
+	uint8_t u1StaggeredPRFDetected;
+	uint8_t u1RadarTypeIdx;
+	uint8_t u1PeriodicPulseNum;
+	uint8_t u1LongPulseNum;
+	uint8_t u1HwPulseNum;
+	uint8_t u1OutLPN;    /* Long Pulse Number */
+	uint8_t u1OutSPN;    /* Short Pulse Number */
+	uint8_t u1OutCRPN;
+	uint8_t u1OutCRPW;   /* Constant PRF Radar: Pulse Number */
+	uint8_t u1OutCRBN;   /* Constant PRF Radar: Burst Number */
+	uint8_t u1OutSTGPN;  /* Staggered PRF radar: Staggered pulse number */
+	uint8_t u1OutSTGPW;  /* Staggered PRF radar: maximum pulse width */
+	uint8_t u1Reserve;
+	uint32_t u4OutPRI_CONST;
+	uint32_t u4OutPRI_STG1;
+	uint32_t u4OutPRI_STG2;
+	uint32_t u4OutPRI_STG3;
+	uint32_t u4OutPRIStgDmin;
+	/* Staggered PRF radar: min PRI Difference between 1st and 2nd  */
+	struct LONG_PULSE_BUFFER arLongPulse[32];
+	struct PERIODIC_PULSE_BUFFER arPeriodicPulse[32];
+	struct WH_RDD_PULSE_CONTENT arContent[32];
 };
 #endif
 

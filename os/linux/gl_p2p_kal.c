@@ -1700,19 +1700,6 @@ void kalP2PRddDetectUpdate(IN struct GLUE_INFO *prGlueInfo,
 
 		netif_carrier_off(prNetdevice);
 		netif_tx_stop_all_queues(prNetdevice);
-
-		if (prGlueP2pInfo->chandef->chan)
-			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueP2pInfo->chandef->chan);
-
-		prGlueP2pInfo->chandef->chan = NULL;
-
-		if (prGlueP2pInfo->chandef)
-			cnmMemFree(prGlueInfo->prAdapter,
-				prGlueP2pInfo->chandef);
-
-		prGlueP2pInfo->chandef = NULL;
-
 	} while (FALSE);
 
 }				/* kalP2PRddDetectUpdate */

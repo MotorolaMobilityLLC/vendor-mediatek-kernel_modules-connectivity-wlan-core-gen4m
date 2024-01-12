@@ -1077,36 +1077,60 @@ void cnmRadarDetectEvent(IN struct ADAPTER *prAdapter,
 
 	p2pFuncRadarInfoInit();
 
-	g_rP2pRadarInfo.ucRadarReportMode =
-		prEventBody->ucRadarReportMode;
-	g_rP2pRadarInfo.ucRddIdx = prEventBody->ucRddIdx;
-	g_rP2pRadarInfo.ucLongDetected =
-		prEventBody->ucLongDetected;
-	g_rP2pRadarInfo.ucPeriodicDetected =
-		prEventBody->ucPeriodicDetected;
-	g_rP2pRadarInfo.ucLPBNum = prEventBody->ucLPBNum;
-	g_rP2pRadarInfo.ucPPBNum = prEventBody->ucPPBNum;
-	g_rP2pRadarInfo.ucLPBPeriodValid =
-		prEventBody->ucLPBPeriodValid;
-	g_rP2pRadarInfo.ucLPBWidthValid =
-		prEventBody->ucLPBWidthValid;
-	g_rP2pRadarInfo.ucPRICountM1 =
-		prEventBody->ucPRICountM1;
-	g_rP2pRadarInfo.ucPRICountM1TH =
-		prEventBody->ucPRICountM1TH;
-	g_rP2pRadarInfo.ucPRICountM2 =
-		prEventBody->ucPRICountM2;
-	g_rP2pRadarInfo.ucPRICountM2TH =
-		prEventBody->ucPRICountM2TH;
-	g_rP2pRadarInfo.u4PRI1stUs = prEventBody->u4PRI1stUs;
-	kalMemCopy(&g_rP2pRadarInfo.arLpbContent[0],
-		   &prEventBody->arLpbContent[0],
-		   prEventBody->ucLPBNum * sizeof(struct
+	g_rP2pRadarInfo.u1RddIdx =
+		prEventBody->u1RddIdx;
+	g_rP2pRadarInfo.u1LongDetected =
+		prEventBody->u1LongDetected;
+	g_rP2pRadarInfo.u1ConstantPRFDetected =
+		prEventBody->u1ConstantPRFDetected;
+	g_rP2pRadarInfo.u1StaggeredPRFDetected =
+		prEventBody->u1StaggeredPRFDetected;
+	g_rP2pRadarInfo.u1RadarTypeIdx =
+		prEventBody->u1RadarTypeIdx;
+	g_rP2pRadarInfo.u1PeriodicPulseNum =
+		prEventBody->u1PeriodicPulseNum;
+	g_rP2pRadarInfo.u1LongPulseNum =
+		prEventBody->u1LongPulseNum;
+	g_rP2pRadarInfo.u1HwPulseNum =
+		prEventBody->u1HwPulseNum;
+	g_rP2pRadarInfo.u1OutLPN =
+		prEventBody->u1OutLPN;
+	g_rP2pRadarInfo.u1OutSPN =
+		prEventBody->u1OutSPN;
+	g_rP2pRadarInfo.u1OutCRPN =
+		prEventBody->u1OutCRPN;
+	g_rP2pRadarInfo.u1OutCRPW =
+		prEventBody->u1OutCRPW;
+	g_rP2pRadarInfo.u1OutCRBN =
+		prEventBody->u1OutCRBN;
+	g_rP2pRadarInfo.u1OutSTGPN =
+		prEventBody->u1OutSTGPN;
+	g_rP2pRadarInfo.u1OutSTGPW =
+		prEventBody->u1OutSTGPW;
+	g_rP2pRadarInfo.u1Reserve =
+		prEventBody->u1Reserve;
+	g_rP2pRadarInfo.u4OutPRI_CONST =
+		prEventBody->u4OutPRI_CONST;
+	g_rP2pRadarInfo.u4OutPRI_STG1 =
+		prEventBody->u4OutPRI_STG1;
+	g_rP2pRadarInfo.u4OutPRI_STG2 =
+		prEventBody->u4OutPRI_STG2;
+	g_rP2pRadarInfo.u4OutPRI_STG3 =
+		prEventBody->u4OutPRI_STG3;
+	g_rP2pRadarInfo.u4OutPRIStgDmin =
+		prEventBody->u4OutPRIStgDmin;
+	kalMemCopy(&g_rP2pRadarInfo.arLongPulse[0],
+		   &prEventBody->arLongPulse[0],
+		   prEventBody->u1LongPulseNum * sizeof(struct
 				   LONG_PULSE_BUFFER));
-	kalMemCopy(&g_rP2pRadarInfo.arPpbContent[0],
-		   &prEventBody->arPpbContent[0],
-		   prEventBody->ucPPBNum * sizeof(struct
+	kalMemCopy(&g_rP2pRadarInfo.arPeriodicPulse[0],
+		   &prEventBody->arPeriodicPulse[0],
+		   prEventBody->u1PeriodicPulseNum * sizeof(struct
 				   PERIODIC_PULSE_BUFFER));
+	kalMemCopy(&g_rP2pRadarInfo.arContent[0],
+		   &prEventBody->arContent[0],
+		   prEventBody->u1HwPulseNum * sizeof(struct
+				   WH_RDD_PULSE_CONTENT));
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
