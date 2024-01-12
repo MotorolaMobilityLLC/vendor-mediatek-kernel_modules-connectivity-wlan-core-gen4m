@@ -17456,3 +17456,79 @@ wlanoidQueryOffloadInfo(IN struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_PKT_OFLD */
 
+#if (CFG_WIFI_ISO_DETECT == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief This routine is called to do Coex Isolation Detection.
+
+* \param[in] pvAdapter Pointer to the Adapter structure.
+* \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+*                                   the query.
+* \param[in] u4QueryBufLen The length of the query buffer.
+* \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+*                             bytes written into the query buffer. If the call
+*                             failed due to invalid length of the query buffer,
+*                            eturns the amount of storage needed.
+*
+* \retval WLAN_STATUS_SUCCESS* \retval WLAN_STATUS_INVALID_LENGTH
+*/
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidQueryCoexIso(IN struct ADAPTER *prAdapter,
+		    IN void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_COEX_HANDLER *prParaCoexHandler;
+	struct PARAM_COEX_ISO_DETECT *prParaCoexIsoDetect;
+	struct COEX_CMD_HANDLER rCoexCmdHandler;
+	struct COEX_CMD_ISO_DETECT rCoexCmdIsoDetect;
+
+	if ((!prAdapter) ||
+		(!pu4QueryInfoLen)) {
+		DBGLOG(REQ, ERROR, "%s null pointer\n",
+		__func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4QueryBufferLen) {
+		DBGLOG(REQ, ERROR, "%s invalid length\n",
+		__func__);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_COEX_HANDLER);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_COEX_HANDLER))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prParaCoexHandler =
+	(struct PARAM_COEX_HANDLER *) pvQueryBuffer;
+	prParaCoexIsoDetect =
+	(struct PARAM_COEX_ISO_DETECT *) &prParaCoexHandler->aucBuffer[0];
+
+	rCoexCmdIsoDetect.u4Channel = prParaCoexIsoDetect->u4Channel;
+	rCoexCmdIsoDetect.u4IsoPath = prParaCoexIsoDetect->u4IsoPath;
+	rCoexCmdIsoDetect.u4Isolation = prParaCoexIsoDetect->u4Isolation;
+
+	rCoexCmdHandler.u4SubCmd = prParaCoexHandler->u4SubCmd;
+
+	/* Copy Memory */
+	kalMemCopy(rCoexCmdHandler.aucBuffer,
+			&rCoexCmdIsoDetect,
+			sizeof(rCoexCmdIsoDetect));
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_COEX_CTRL,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventQueryCoexIso,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct COEX_CMD_HANDLER),
+				(unsigned char *) &rCoexCmdHandler,
+				pvQueryBuffer,
+				u4QueryBufferLen);
+
+}
+#endif
