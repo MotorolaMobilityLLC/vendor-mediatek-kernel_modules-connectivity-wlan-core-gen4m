@@ -76,6 +76,8 @@
 #define PACKED __packed
 
 extern struct NanDataPathInitiatorNDPE g_ndpReqNDPE;
+extern const struct nla_policy
+	mtk_wlan_vendor_ndp_policy[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1];
 
 enum mtk_wlan_ndp_sub_cmd {
 	MTK_WLAN_VENDOR_ATTR_NDP_INVALID = 0,

@@ -65,6 +65,10 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
+const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1] = {
+	[NL80211_ATTR_VENDOR_DATA] = NLA_POLICY_MIN_LEN(0),
+};
+
 /* Helper function to Write and Read TLV called in indication as well as */
 /*  request */
 u16
