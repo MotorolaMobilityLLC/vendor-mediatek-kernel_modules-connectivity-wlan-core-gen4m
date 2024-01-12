@@ -1225,8 +1225,20 @@ char *strtok_r(char *s, const char *delim, char **last);
 #else
 #define WLAN_TAG                        "[wlan]"
 #endif
+
+#if CFG_SUPPORT_SA_LOG
+#define kalPrint(_Fmt...) \
+	((get_wifi_standalone_log_mode() == 1) \
+	? kalPrintSALog(WLAN_TAG _Fmt) \
+	: pr_info(WLAN_TAG _Fmt))
+#define kalPrintLimited(_Fmt...) \
+	((get_wifi_standalone_log_mode() == 1) \
+	? kalPrintSALogLimited(WLAN_TAG _Fmt) \
+	: pr_info_ratelimited(WLAN_TAG _Fmt))
+#else
 #define kalPrint(_Fmt...)               pr_info(WLAN_TAG _Fmt)
 #define kalPrintLimited(_Fmt...)        pr_info_ratelimited(WLAN_TAG _Fmt)
+#endif
 
 #define kalBreakPoint() \
 do { \
