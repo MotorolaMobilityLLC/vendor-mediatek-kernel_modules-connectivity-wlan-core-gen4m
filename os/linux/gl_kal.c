@@ -1315,7 +1315,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			CFG80211_BSS_FTYPE_PRESP,
 			arBssid,
 			0, /* TSF */
-			WLAN_CAPABILITY_ESS,
+			prBssDesc->u2CapInfo,
 			prBssDesc->u2BeaconInterval, /* beacon interval */
 			prBssDesc->aucIEBuf, /* IE */
 			prBssDesc->u2IELength, /* IE Length */
@@ -1327,7 +1327,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 			prChannel,
 			arBssid,
 			0, /* TSF */
-			WLAN_CAPABILITY_ESS,
+			prBssDesc->u2CapInfo,
 			prBssDesc->u2BeaconInterval, /* beacon interval */
 			prBssDesc->aucIEBuf, /* IE */
 			prBssDesc->u2IELength, /* IE Length */
