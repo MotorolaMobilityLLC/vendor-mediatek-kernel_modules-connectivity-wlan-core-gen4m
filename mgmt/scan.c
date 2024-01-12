@@ -3984,6 +3984,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			scanlog_dbg(prefix, INFO, "%s\n", prlogBuf);
 		idx = 0;
 	}
+	kalMemFree(prlogBuf, VIR_MEM_TYPE, logBufLen);
 }
 
 void scanLogCacheFlushAll(struct SCAN_LOG_CACHE *prScanLogCache,
