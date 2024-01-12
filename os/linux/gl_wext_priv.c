@@ -9760,9 +9760,11 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4BufLen = 0;
 	int32_t i4BytesWritten = 0, i4Argc = 0, i4Recv0 = 0, i4Recv1 = 0;
-	uint32_t u4PpTimerIntv = 0, u4PpThrX2 = 0, u4PpThrX3 = 0;
-	uint32_t u4PpThrX4 = 0, u4PpThrX5 = 0, u4PpThrX6 = 0;
-	uint32_t u4PpThrX7 = 0, u4PpThrX8 = 0;
+	uint32_t u4PpTimerIntv = 0, u4PpThrX2Val = 0, u4PpThrX2Shf = 0;
+	uint32_t u4PpThrX3Val = 0, u4PpThrX3Shf = 0, u4PpThrX4Val = 0;
+	uint32_t u4PpThrX4Shf = 0, u4PpThrX5Val = 0, u4PpThrX5Shf = 0;
+	uint32_t u4PpThrX6Val = 0, u4PpThrX6Shf = 0, u4PpThrX7Val = 0;
+	uint32_t u4PpThrX7Shf = 0, u4PpThrX8Val = 0, u4PpThrX8Shf = 0;
 	uint8_t u1PpAction = 0, u1DbdcIdx = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int8_t *this_char = NULL;
@@ -9774,23 +9776,23 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, INFO, "\x1b[32m %s: command is %s\x1b[m\n"
-		, __func__, pcCommand);
-	DBGLOG(REQ, INFO, "\x1b[32m %s: argc is %d, apcArgv[0] = %s\x1b[m\n"
-		, __func__, i4Argc, *apcArgv);
+	DBGLOG(REQ, INFO, "\x1b[32m command is %s\x1b[m\n"
+		, pcCommand);
+	DBGLOG(REQ, INFO, "\x1b[32m argc is %d, apcArgv[0] = %s\x1b[m\n"
+		, i4Argc, *apcArgv);
 
 	this_char = kalStrStr(*apcArgv, "=");
 	if (!this_char)
 		return -1;
 
 	this_char++;
-	DBGLOG(REQ, INFO, "\x1b[32m %s: string = %s\x1b[m\n"
-		, __func__, this_char);
+	DBGLOG(REQ, INFO, "\x1b[32m string = %s\x1b[m\n"
+		, this_char);
 
 	i4Recv0 = sscanf(this_char, "%d:", &u1PpAction);
 	this_char += 2;
-	DBGLOG(REQ, INFO, "\x1b[32m %s: u1PpAction = %d, i4Recv0 = %d\x1b[m\n"
-		, __func__, u1PpAction, i4Recv0);
+	DBGLOG(REQ, INFO, "\x1b[32m u1PpAction = %d, i4Recv0 = %d\x1b[m\n"
+		, u1PpAction, i4Recv0);
 
 	if (i4Recv0 != 1)
 		goto error;
@@ -9804,59 +9806,89 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 			&u4PpTimerIntv);
 
 		rPpAlgCtrl.u4PpTimerIntv = u4PpTimerIntv;
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u1PpAction = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpTimerIntv = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpTimerIntv);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
-			, __func__, i4Recv1);
+		DBGLOG(REQ, INFO, "\x1b[32m u1PpAction = %d\x1b[m\n"
+			, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpTimerIntv = %d\x1b[m\n"
+			, rPpAlgCtrl.u4PpTimerIntv);
+		DBGLOG(REQ, INFO, "\x1b[32m i4Recv1 = %d\x1b[m\n"
+			, i4Recv1);
 
 		if (i4Recv1 != 1)
 			goto error;
 
 		break;
 	case UNI_CMD_PP_ALG_SET_THR:
-		i4Recv1 = sscanf(this_char, "%d:%d:%d:%d:%d:%d:%d:%d",
+		i4Recv1 = sscanf(this_char,
+			"%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d",
 			&u1DbdcIdx,
-			&u4PpThrX2,
-			&u4PpThrX3,
-			&u4PpThrX4,
-			&u4PpThrX5,
-			&u4PpThrX6,
-			&u4PpThrX7,
-			&u4PpThrX8);
+			&u4PpThrX2Val,
+			&u4PpThrX2Shf,
+			&u4PpThrX3Val,
+			&u4PpThrX3Shf,
+			&u4PpThrX4Val,
+			&u4PpThrX4Shf,
+			&u4PpThrX5Val,
+			&u4PpThrX5Shf,
+			&u4PpThrX6Val,
+			&u4PpThrX6Shf,
+			&u4PpThrX7Val,
+			&u4PpThrX7Shf,
+			&u4PpThrX8Val,
+			&u4PpThrX8Shf);
 
 		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
-		rPpAlgCtrl.u4PpThrX2 = u4PpThrX2;
-		rPpAlgCtrl.u4PpThrX3 = u4PpThrX3;
-		rPpAlgCtrl.u4PpThrX4 = u4PpThrX4;
-		rPpAlgCtrl.u4PpThrX5 = u4PpThrX5;
-		rPpAlgCtrl.u4PpThrX6 = u4PpThrX6;
-		rPpAlgCtrl.u4PpThrX7 = u4PpThrX7;
-		rPpAlgCtrl.u4PpThrX8 = u4PpThrX8;
+		rPpAlgCtrl.u4ThrX2_Value = u4PpThrX2Val;
+		rPpAlgCtrl.u4ThrX2_Shift = u4PpThrX2Shf;
+		rPpAlgCtrl.u4ThrX3_Value = u4PpThrX3Val;
+		rPpAlgCtrl.u4ThrX3_Shift = u4PpThrX3Shf;
+		rPpAlgCtrl.u4ThrX4_Value = u4PpThrX4Val;
+		rPpAlgCtrl.u4ThrX4_Shift = u4PpThrX4Shf;
+		rPpAlgCtrl.u4ThrX5_Value = u4PpThrX5Val;
+		rPpAlgCtrl.u4ThrX5_Shift = u4PpThrX5Shf;
+		rPpAlgCtrl.u4ThrX6_Value = u4PpThrX6Val;
+		rPpAlgCtrl.u4ThrX6_Shift = u4PpThrX6Shf;
+		rPpAlgCtrl.u4ThrX7_Value = u4PpThrX7Val;
+		rPpAlgCtrl.u4ThrX7_Shift = u4PpThrX7Shf;
+		rPpAlgCtrl.u4ThrX8_Value = u4PpThrX8Val;
+		rPpAlgCtrl.u4ThrX8_Shift = u4PpThrX8Shf;
 
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX2 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX2);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX3 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX3);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX4 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX4);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX5 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX5);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX6 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX6);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX7 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX7);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpThrX8 = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u4PpThrX8);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
-			, __func__, i4Recv1);
 
-		if (i4Recv1 != 8)
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
+			, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
+			, rPpAlgCtrl.u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX2_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX2_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX2_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX3_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX3_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX3_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX4_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX4_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX4_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX5_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX5_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX5_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX6_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX6_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX6_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX7_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX7_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX7_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Value = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX8_Value);
+		DBGLOG(REQ, INFO, "\x1b[32m u4ThrX8_Shift = %d\x1b[m\n"
+			, rPpAlgCtrl.u4ThrX8_Shift);
+		DBGLOG(REQ, INFO, "\x1b[32m i4Recv1 = %d\x1b[m\n"
+			, i4Recv1);
+
+		if (i4Recv1 != 15)
 			goto error;
 
 		break;
@@ -9866,12 +9898,12 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 			&u1DbdcIdx);
 		rPpAlgCtrl.u1DbdcIdx = u1DbdcIdx;
 
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u4PpAction = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1PpAction);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: u1DbdcIdx = %d\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1DbdcIdx);
-		DBGLOG(REQ, INFO, "\x1b[32m %s: i4Recv1 = %d\x1b[m\n"
-			, __func__, i4Recv1);
+		DBGLOG(REQ, INFO, "\x1b[32m u4PpAction = %d\x1b[m\n"
+			, rPpAlgCtrl.u1PpAction);
+		DBGLOG(REQ, INFO, "\x1b[32m u1DbdcIdx = %d\x1b[m\n"
+			, rPpAlgCtrl.u1DbdcIdx);
+		DBGLOG(REQ, INFO, "\x1b[32m i4Recv1 = %d\x1b[m\n"
+			, i4Recv1);
 
 		if (i4Recv1 != 1)
 			goto error;
@@ -9880,8 +9912,8 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 
 	default:
 		DBGLOG(REQ, ERROR,
-			"\x1b[31m %s: u4PpAction = %d is not supported !!\x1b[m\n"
-			, __func__, rPpAlgCtrl.u1PpAction);
+			"\x1b[31m u4PpAction = %d is not supported !!\x1b[m\n"
+			, rPpAlgCtrl.u1PpAction);
 		goto error;
 
 		break;
@@ -9906,8 +9938,8 @@ int priv_driver_set_pp_alg_ctrl(IN struct net_device *prNetDev,
 		return i4BytesWritten;
 
 error:
-DBGLOG(REQ, ERROR, "\x1b[31m %s: iwpriv wlanXX driver %s \x1b[m\n"
-	, __func__, pcCommand);
+DBGLOG(REQ, ERROR, "\x1b[31m iwpriv wlanXX driver %s \x1b[m\n"
+	, pcCommand);
 i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "Wrong param\n");
 
 	return i4BytesWritten;

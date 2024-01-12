@@ -2953,17 +2953,24 @@ struct UNI_CMD_PP_ALG_CTRL {
 	uint16_t  u2Length;
 
     /* tag specific part */
-	uint32_t   u4PpTimerIntv;
-	uint32_t   u4PpThrX2;
-	uint32_t   u4PpThrX3;
-	uint32_t   u4PpThrX4;
-	uint32_t   u4PpThrX5;
-	uint32_t   u4PpThrX6;
-	uint32_t   u4PpThrX7;
-	uint32_t   u4PpThrX8;
-	uint8_t    u1DbdcIdx;
-	uint8_t    u1PpAction;
-	uint8_t    u1Reserved[2];
+	uint32_t u4PpTimerIntv;
+	uint32_t u4ThrX2_Value;
+	uint32_t u4ThrX2_Shift;
+	uint32_t u4ThrX3_Value;
+	uint32_t u4ThrX3_Shift;
+	uint32_t u4ThrX4_Value;
+	uint32_t u4ThrX4_Shift;
+	uint32_t u4ThrX5_Value;
+	uint32_t u4ThrX5_Shift;
+	uint32_t u4ThrX6_Value;
+	uint32_t u4ThrX6_Shift;
+	uint32_t u4ThrX7_Value;
+	uint32_t u4ThrX7_Shift;
+	uint32_t u4ThrX8_Value;
+	uint32_t u4ThrX8_Shift;
+	uint8_t u1DbdcIdx;
+	uint8_t u1PpAction;
+	uint8_t u1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_PP_EN_CTRL_T {
@@ -3819,16 +3826,24 @@ struct UNI_EVENT_PP_ALG_CTRL {
 	uint16_t u2Length;
 
 	uint32_t u4PpTimerIntv;
-	uint32_t u4PpThrX2;
-	uint32_t u4PpThrX3;
-	uint32_t u4PpThrX4;
-	uint32_t u4PpThrX5;
-	uint32_t u4PpThrX6;
-	uint32_t u4PpThrX7;
-	uint32_t u4PpThrX8;
+	uint32_t u4ThrX2_Value;
+	uint32_t u4ThrX2_Shift;
+	uint32_t u4ThrX3_Value;
+	uint32_t u4ThrX3_Shift;
+	uint32_t u4ThrX4_Value;
+	uint32_t u4ThrX4_Shift;
+	uint32_t u4ThrX5_Value;
+	uint32_t u4ThrX5_Shift;
+	uint32_t u4ThrX6_Value;
+	uint32_t u4ThrX6_Shift;
+	uint32_t u4ThrX7_Value;
+	uint32_t u4ThrX7_Shift;
+	uint32_t u4ThrX8_Value;
+	uint32_t u4ThrX8_Shift;
 	uint32_t u4SwPpTime;
 	uint32_t u4HwPpTime;
 	uint32_t u4NoPpTime;
+	uint32_t u4AutoBwTime;
 	uint8_t  u1DbdcIdx;
 	uint8_t  u1Reserved[3];
 } __KAL_ATTRIB_PACKED__;
