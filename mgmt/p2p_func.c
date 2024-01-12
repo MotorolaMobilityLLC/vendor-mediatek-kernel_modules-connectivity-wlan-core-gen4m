@@ -116,11 +116,11 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 			rsnGenerateRSNXIE}	/* 244 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateOWEIE}
+	, {0, p2pCalculateP2PIELen, p2pGenerateP2PIE}
 	, {0, p2pCalculateWSCIELen, p2pGenerateWSCIE}
 #if CFG_SUPPORT_WFD
 	, {0, p2pCalculateWFDIELen, p2pGenerateWFDIE}
 #endif
-	, {0, p2pCalculateP2PIELen, p2pGenerateP2PIE}
 #if CFG_SUPPORT_CUSTOM_VENDOR_IE
 	, {0, p2pCalculateVendorIELen, p2pGenerateVendorIE}
 #endif
