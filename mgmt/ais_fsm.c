@@ -7206,6 +7206,47 @@ u_int8_t aisFsmClearRequest(struct ADAPTER *prAdapter,
 
 	return found;
 }
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Clear any pending request
+ *
+ * @param prAdapter
+ *        eReqType
+ *
+ * @return TRUE
+ *         FALSE
+ */
+/*----------------------------------------------------------------------------*/
+void aisFsmClearRequestForRrm(struct ADAPTER *prAdapter,
+			     uint8_t ucBssIndex)
+{
+
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct AIS_REQ_HDR *prPendingReqHdr, *prPendingReqHdrNext;
+	struct AIS_SCAN_REQ *prAisScanReq;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	/* traverse through pending request list */
+	LINK_FOR_EACH_ENTRY_SAFE(prPendingReqHdr,
+				 prPendingReqHdrNext,
+				 &(prAisFsmInfo->rPendingReqList), rLinkEntry,
+				 struct AIS_REQ_HDR) {
+		/* check for specified type */
+		if (prPendingReqHdr->eReqType == AIS_REQUEST_SCAN) {
+			prAisScanReq = (struct AIS_SCAN_REQ *)prPendingReqHdr;
+			if (prAisScanReq->rScanRequest.fgIsRrm) {
+
+				LINK_REMOVE_KNOWN_ENTRY(
+					&(prAisFsmInfo->rPendingReqList),
+					&(prPendingReqHdr->rLinkEntry));
+
+				cnmMemFree(prAdapter, prPendingReqHdr);
+				DBGLOG(AIS, INFO, "Remove rrm scan req!\n");
+			}
+		}
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

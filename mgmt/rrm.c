@@ -229,6 +229,8 @@ void rrmFreeMeasurementResources(struct ADAPTER *prAdapter,
 	prRmReq->rBcnRmParam.eState = RM_NO_REQUEST;
 	prRmReq->fgRmIsOngoing = FALSE;
 	LINK_INITIALIZE(&prRmRep->rReportLink);
+
+	aisFsmClearRequestForRrm(prAdapter, ucBssIndex);
 }
 
 /* purpose: check if Radio Measurement is done */
@@ -1657,6 +1659,11 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	u_int8_t validChannel = FALSE;
 	OS_SYSTIME rCurrent;
 	uint64_t u8Tsf = 0;
+
+	if (!bcnReq) {
+		DBGLOG(RRM, INFO, "bcnReq is NULL!\n");
+		return;
+	}
 
 	/* sanity check 1: bssid */
 	if (!EQUAL_MAC_ADDR(bcnReq->aucBssid, "\xff\xff\xff\xff\xff\xff") &&

@@ -843,6 +843,8 @@ u_int8_t aisFsmInsertRequestToHead(struct ADAPTER *prAdapter,
 u_int8_t aisFsmClearRequest(struct ADAPTER *prAdapter,
 			     enum ENUM_AIS_REQUEST_TYPE eReqType,
 			     uint8_t ucBssIndex);
+void aisFsmClearRequestForRrm(struct ADAPTER *prAdapter,
+			     uint8_t ucBssIndex);
 
 void aisFsmFlushRequest(struct ADAPTER *prAdapter,
 				uint8_t ucBssIndex);
