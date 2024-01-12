@@ -5997,15 +5997,106 @@ uint8_t txPwrIsAntTagNeedApply(
 	return 0;
 }
 
+uint32_t txPwrCheckPwrAntNum(
+	enum ENUM_POWER_ANT_TAG tag, uint8_t u1Num)
+{
+	if (u1Num >= POWER_LIMIT_ANT_CONFIG_NUM) {
+		DBGLOG(RLM, ERROR,
+			"PwrLimit ant element idx invalid,tag(%d)num(%d)\n",
+			tag, u1Num);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t txPwrApplyPwrAnt(
+	uint8_t u1Idx,
+	enum ENUM_POWER_ANT_TAG tag,
+	uint8_t u1BandNum,
+	uint8_t u1AntNum,
+	struct CMD_CHANNEL_POWER_LIMIT_ANT *prCmdPwrAnt,
+	struct TX_PWR_CTRL_ELEMENT *prCurElem)
+{
+	uint8_t u1BandIdx = 0, u1AntIdx = 0;
+
+	if (txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+		return u1Idx;
+
+	for (u1BandIdx = 0; u1BandIdx < u1BandNum; u1BandIdx++) {
+		for (u1AntIdx = 0; u1AntIdx < u1AntNum; u1AntIdx++) {
+			prCmdPwrAnt[u1Idx].cTagIdx = tag;
+			prCmdPwrAnt[u1Idx].cBandIdx = u1BandIdx;
+			prCmdPwrAnt[u1Idx].cAntIdx = u1AntIdx;
+
+			if (u1BandIdx == POWER_ANT_2G4_BAND) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt2G4[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_5G_BAND1) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt5GB1[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_5G_BAND2) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt5GB2[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_5G_BAND3) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt5GB3[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_5G_BAND4) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt5GB4[u1AntIdx];
+			}
+			u1Idx++;
+		}
+	}
+	return u1Idx;
+}
+
+uint32_t txPwrApplyPwrAnt6G(
+	uint8_t u1Idx,
+	enum ENUM_POWER_ANT_TAG tag,
+	uint8_t u1BandNum,
+	uint8_t u1AntNum,
+	struct CMD_CHANNEL_POWER_LIMIT_ANT *prCmdPwrAnt,
+	struct TX_PWR_CTRL_ELEMENT *prCurElem)
+{
+	uint8_t u1BandIdx = 0, u1AntIdx = 0;
+
+	if (txPwrCheckPwrAntNum(tag, u1Idx) != WLAN_STATUS_SUCCESS)
+		return u1Idx;
+
+	for (u1BandIdx = 0; u1BandIdx < u1BandNum; u1BandIdx++) {
+		for (u1AntIdx = 0; u1AntIdx < u1AntNum; u1AntIdx++) {
+			prCmdPwrAnt[u1Idx].cTagIdx = tag;
+			prCmdPwrAnt[u1Idx].cBandIdx = u1BandIdx;
+			prCmdPwrAnt[u1Idx].cAntIdx = u1AntIdx;
+
+			if (u1BandIdx == POWER_ANT_6G_BAND1) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt6GB1[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_6G_BAND2) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt6GB2[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_6G_BAND3) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt6GB3[u1AntIdx];
+			} else if (u1BandIdx == POWER_ANT_6G_BAND4) {
+				prCmdPwrAnt[u1Idx].cValue =
+				prCurElem->aiPwrAnt[tag].aiPwrAnt6GB4[u1AntIdx];
+			}
+			u1Idx++;
+		}
+	}
+	return u1Idx;
+}
+
 uint32_t txPwrApplyOneSettingPwrAnt(
 	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
-	struct TX_PWR_CTRL_ELEMENT *prCurElement) {
-
+	struct TX_PWR_CTRL_ELEMENT *prCurElement)
+{
 	struct CMD_CHANNEL_POWER_LIMIT_ANT *prCmdPwrAnt = NULL;
-	uint8_t i = 0, j = 0, k = 0;
+	uint8_t u1NextIdx = 0;
 	uint8_t fgAllTSet = 0, fg1TSet = 0, fg2TSet = 0;
 	uint8_t fgAllT6GSet = 0;
-	uint8_t tagIdx = 0;
 
 	enum ENUM_PWR_LIMIT_TYPE eType;
 
@@ -6033,259 +6124,37 @@ uint32_t txPwrApplyOneSettingPwrAnt(
 	prCmd->ucNum = 0;
 
 	if (fgAllTSet) {
-		tagIdx = POWER_ANT_ALL_T;
-		for (j = 0; j < POWER_ANT_BAND_NUM; j++) {
-			for (k = 0; k < POWER_ANT_NUM; k++) {
-				prCmdPwrAnt[i].cTagIdx = tagIdx;
-				prCmdPwrAnt[i].cBandIdx = j;
-				prCmdPwrAnt[i].cAntIdx = k;
-
-				if (j == POWER_ANT_2G4_BAND) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt2G4[k]) {
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T]
-							.aiPwrAnt2G4[k];
-					}
-				} else if (j == POWER_ANT_5G_BAND1) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt5GB1[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T]
-							.aiPwrAnt5GB1[k];
-				} else if (j == POWER_ANT_5G_BAND2) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt5GB2[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T]
-							.aiPwrAnt5GB2[k];
-				} else if (j == POWER_ANT_5G_BAND3) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt5GB3[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T]
-							.aiPwrAnt5GB3[k];
-				} else if (j == POWER_ANT_5G_BAND4) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T]
-						.aiPwrAnt5GB4[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T]
-							.aiPwrAnt5GB4[k];
-				}
-				i++;
-			}
-		}
+		u1NextIdx = txPwrApplyPwrAnt(
+			u1NextIdx, POWER_ANT_ALL_T,
+			POWER_ANT_BAND_NUM, POWER_ANT_NUM,
+			prCmdPwrAnt, prCurElement);
 	}
 
 	if (fg1TSet) {
-		tagIdx = POWER_ANT_MIMO_1T;
-		for (j = 0; j < POWER_ANT_BAND_NUM; j++) {
-			for (k = 0; k < POWER_ANT_NUM; k++) {
-				prCmdPwrAnt[i].cTagIdx = tagIdx;
-				prCmdPwrAnt[i].cBandIdx = j;
-				prCmdPwrAnt[i].cAntIdx = k;
-
-				if (j == POWER_ANT_2G4_BAND) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt2G4[k]) {
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt2G4[k];
-					}
-				} else if (j == POWER_ANT_5G_BAND1) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt5GB1[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt5GB1[k];
-				} else if (j == POWER_ANT_5G_BAND2) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt5GB2[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt5GB2[k];
-				} else if (j == POWER_ANT_5G_BAND3) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt5GB3[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt5GB3[k];
-				} else if (j == POWER_ANT_5G_BAND4) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_1T]
-						.aiPwrAnt5GB4[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_1T]
-							.aiPwrAnt5GB4[k];
-				}
-				i++;
-			}
-		}
+		u1NextIdx = txPwrApplyPwrAnt(
+			u1NextIdx, POWER_ANT_MIMO_1T,
+			POWER_ANT_BAND_NUM, POWER_ANT_NUM,
+			prCmdPwrAnt, prCurElement);
 	}
 
 	if (fg2TSet) {
-		tagIdx = POWER_ANT_MIMO_2T;
-		for (j = 0; j < POWER_ANT_BAND_NUM; j++) {
-			for (k = 0; k < POWER_ANT_NUM; k++) {
-				prCmdPwrAnt[i].cTagIdx = tagIdx;
-				prCmdPwrAnt[i].cBandIdx = j;
-				prCmdPwrAnt[i].cAntIdx = k;
-
-				if (j == POWER_ANT_2G4_BAND) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt2G4[k]) {
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt2G4[k];
-					}
-				} else if (j == POWER_ANT_5G_BAND1) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt5GB1[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt5GB1[k];
-				} else if (j == POWER_ANT_5G_BAND2) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt5GB2[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt5GB2[k];
-				} else if (j == POWER_ANT_5G_BAND3) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt5GB3[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt5GB3[k];
-				} else if (j == POWER_ANT_5G_BAND4) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_MIMO_2T]
-						.aiPwrAnt5GB4[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_MIMO_2T]
-							.aiPwrAnt5GB4[k];
-				}
-				i++;
-			}
-		}
+		u1NextIdx = txPwrApplyPwrAnt(
+			u1NextIdx, POWER_ANT_MIMO_2T,
+			POWER_ANT_BAND_NUM, POWER_ANT_NUM,
+			prCmdPwrAnt, prCurElement);
 	}
 
 	if (fgAllT6GSet) {
-		tagIdx = POWER_ANT_ALL_T_6G;
-		for (j = 0; j < POWER_ANT_6G_BAND_NUM; j++) {
-			for (k = 0; k < POWER_ANT_NUM; k++) {
-				prCmdPwrAnt[i].cTagIdx = tagIdx;
-				prCmdPwrAnt[i].cBandIdx = j;
-				prCmdPwrAnt[i].cAntIdx = k;
-
-				if (j == POWER_ANT_6G_BAND1) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T_6G]
-						.aiPwrAnt6GB1[k]) {
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T_6G]
-							.aiPwrAnt6GB1[k];
-					}
-				} else if (j == POWER_ANT_6G_BAND2) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T_6G]
-						.aiPwrAnt6GB2[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T_6G]
-							.aiPwrAnt6GB2[k];
-				} else if (j == POWER_ANT_6G_BAND3) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T_6G]
-						.aiPwrAnt6GB3[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T_6G]
-							.aiPwrAnt6GB3[k];
-				} else if (j == POWER_ANT_6G_BAND4) {
-					if (prCmdPwrAnt[i].cValue >
-						prCurElement->
-						aiPwrAnt[POWER_ANT_ALL_T_6G]
-						.aiPwrAnt6GB4[k])
-						prCmdPwrAnt[i].cValue =
-							prCurElement->
-							aiPwrAnt
-							[POWER_ANT_ALL_T_6G]
-							.aiPwrAnt6GB4[k];
-				}
-				i++;
-			}
-		}
+		u1NextIdx = txPwrApplyPwrAnt6G(
+			u1NextIdx, POWER_ANT_ALL_T_6G,
+			POWER_ANT_6G_BAND_NUM, POWER_ANT_NUM,
+			prCmdPwrAnt, prCurElement);
 	}
 
-	prCmd->ucNum = i;
+	prCmd->ucNum = u1NextIdx;
 	return 0;
 }
-#endif
+#endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG */
 uint32_t txPwrApplyOneSetting(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd,
 			      struct TX_PWR_CTRL_ELEMENT *prCurElement,
 			      uint8_t *bandedgeParam)
