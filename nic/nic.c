@@ -1850,10 +1850,14 @@ uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
 	uint8_t ucVhtBw;
 
 	if (eBand == BAND_2G4) {
-		eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
-		ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
-					      ucPrimaryChannel);
-		ucS1Channel = (ucPrimaryChannel + ucSecChannel) / 2;
+		if (ucBandwidth == MAX_BW_20MHZ) {
+			ucS1Channel = ucPrimaryChannel;
+		} else {
+			eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
+			ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
+						      ucPrimaryChannel);
+			ucS1Channel = (ucPrimaryChannel + ucSecChannel) / 2;
+		}
 	} else {
 		ucVhtBw = rlmGetVhtOpBwByBssOpBw(ucBandwidth);
 		ucS1Channel = nicGetS1(eBand, ucPrimaryChannel, ucVhtBw);

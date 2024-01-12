@@ -2649,7 +2649,7 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 		rChannelType = NL80211_CHAN_HT40MINUS;
 		break;
 	case CHNL_EXT_RES:
-		rChannelType = NL80211_CHAN_HT40MINUS;
+		rChannelType = NL80211_CHAN_HT20;
 		break;
 	case CHNL_EXT_SCN:
 	default:
