@@ -2290,10 +2290,20 @@ struct CMD_CHANNEL_POWER_LIMIT_ANT {
 
 #endif
 
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+struct CMD_CHANNEL_POWER_LIMIT_TX_PWR_ENV {
+	uint8_t fgPwrLmtEnable;
+	uint8_t ucBand;
+	uint8_t ucPriCh;
+	uint8_t ucPwrLmtNum;
+	int8_t aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+};
+#endif
+
 struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
     /* D-WORD 0 */
 	uint16_t u2CountryCode;
-	uint8_t ucCountryFlag; /*Not used in driver*/
+	uint8_t ucCategoryId;
 	uint8_t ucNum; /*Numbers of channel to set power limit*/
 
 	/* D-WORD 1 */
@@ -2331,6 +2341,9 @@ struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT {
 			rChPwrLimtEHT_6G[MAX_CMD_EHT_6G_SUPPORT_CHANNEL_NUM];
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #endif /* CFG_SUPPORT_WIFI_6G */
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+		struct CMD_CHANNEL_POWER_LIMIT_TX_PWR_ENV rTxPwrEnvPwrLmt;
+#endif
 	} u;
 
 };

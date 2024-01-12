@@ -8153,34 +8153,144 @@ void rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	DBGLOG(RLM, INFO, "OP change done for BSS[%d] IsSuccess[%d]\n",
 	       ucBssIndex, fgIsChangeSuccess);
 }
+#if CFG_SUPPORT_802_11K
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to update Regulatory TxPower limit if need.
+ *
+ * \param[in] prAdapter : Pointer of adapter
+ * \param[in] prBssDesc : Pointer ofBSS desription
+ * \param[in] eHwBand : RF Band
+ * \param[in] prCountryIE : Pointer of Country IE
+ * \param[in] ucPowerConstraint : TxPower constraint value from Power
+ *                                Constrait IE
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmRegTxPwrLimitUpdate(
+	struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand,
+	struct IE_COUNTRY *prCountryIE,
+	uint8_t ucPowerConstraint
+)
+{
+	uint8_t ucRemainLen = 0;
+	uint8_t ucChnlOfst = 0;
+	const uint8_t ucSubBandSize =
+		(uint8_t)sizeof(struct COUNTRY_INFO_SUBBAND_TRIPLET);
+	struct COUNTRY_INFO_SUBBAND_TRIPLET *prSubBand = NULL;
+	int8_t icNewPwrLimit = RLM_INVALID_POWER_LIMIT;
+	uint8_t ucStartCh = 0;
+	uint8_t ucEndCh = 0;
 
+	/* Sanity check for null pointer & IE content */
+	if (!prAdapter || !prBssDesc || !prCountryIE)
+		return WLAN_STATUS_INVALID_DATA;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Regulatory TxPower Limit only support on 2.4G/5G */
+	if (eHwBand == BAND_6G)
+		return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+
+	ucRemainLen = prCountryIE->ucLength - 3;
+	prSubBand = &prCountryIE->arCountryStr[0];
+	ucChnlOfst = (eHwBand == BAND_2G4) ? CHNL_SPAN_5 : CHNL_SPAN_20;
+
+	while (ucRemainLen >= ucSubBandSize) {
+		ucStartCh = prSubBand->ucFirstChnlNum;
+		ucEndCh = ucStartCh + (prSubBand->ucNumOfChnl - 1) * ucChnlOfst;
+		DBGLOG(RLM, TRACE,
+			"Country IE B[%d]ofst[%d]PriCh[%d]StartCh[%d]ChNum[%d]EndCh[%d]Lmt[%d]\n",
+			eHwBand,
+			ucChnlOfst,
+			prBssDesc->ucChannelNum,
+			ucStartCh,
+			prSubBand->ucNumOfChnl,
+			ucEndCh,
+			prSubBand->cMaxTxPwrLv);
+
+		if (ucStartCh < 201 &&
+			prBssDesc->ucChannelNum >= ucStartCh &&
+			prBssDesc->ucChannelNum <= ucEndCh) {
+			/* Found */
+			break;
+		}
+		ucRemainLen -= ucSubBandSize;
+		prSubBand++;
+	}
+
+	/* Found a right country band */
+	if (ucRemainLen >= ucSubBandSize) {
+		icNewPwrLimit = prSubBand->cMaxTxPwrLv - ucPowerConstraint;
+		/* Tx power changed Limit */
+		if (prBssDesc->cPowerLimit != icNewPwrLimit) {
+
+			DBGLOG(RLM, TRACE,
+			"Update Regulatory PwrLmt SSID:%s BSSID["MACSTR
+			"]Old PwrLmt[%d]New PwrLmt[%d]Constrant[%d]\n",
+			prBssDesc->aucSSID,
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->cPowerLimit,
+			icNewPwrLimit,
+			ucPowerConstraint);
+
+			prBssDesc->cPowerLimit = icNewPwrLimit;
+
+			/* Update TxPower limit to FW if BSS is connected */
+			if (prBssDesc->fgIsConnected) {
+				rlmSetMaxTxPwrLimit(prAdapter,
+				prBssDesc->cPowerLimit, 1);
+			}
+		}
+	} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
+		DBGLOG(RLM, LOUD,
+			"The channel[%d] of BSSID["MACSTR
+			"] SSID:%sdoesn't match with country IE, Pwrlmt[%d]\n",
+			prBssDesc->ucChannelNum,
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->aucSSID,
+			prBssDesc->cPowerLimit);
+
+		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
+		/* Disable TxPower limit */
+		rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_802_11K */
 void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter, int8_t cLimit,
 			 uint8_t ucEnable)
 {
 	struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT rTxPwrLimit;
+	int8_t icPwrLmt = 0;
 
 	kalMemZero(&rTxPwrLimit, sizeof(rTxPwrLimit));
 	rTxPwrLimit.ucCmdVer =  0x1;
 	rTxPwrLimit.ucPwrSetEnable =  ucEnable;
+
 	if (ucEnable) {
-		if (cLimit > RLM_MAX_TX_PWR) {
+		icPwrLmt = cLimit * 2; /* Convert to unit 0.5dBm */
+		if (icPwrLmt > MAX_TX_POWER) {
 			DBGLOG(RLM, INFO,
-			       "LM: Target MaxPwr %d Higher than Capability, reset to capability\n",
-			       cLimit);
-			cLimit = RLM_MAX_TX_PWR;
+				"LM: Target MaxPwr %d Higher than Capability, reset to capability\n"
+				, icPwrLmt);
+			icPwrLmt = MAX_TX_POWER;
 		}
-		if (cLimit < RLM_MIN_TX_PWR) {
+		if (icPwrLmt < MIN_TX_POWER) {
 			DBGLOG(RLM, INFO,
-			       "LM: Target MinPwr %d Lower than Capability, reset to capability\n",
-			       cLimit);
-			cLimit = RLM_MIN_TX_PWR;
+				"LM: Target MinPwr %d Lower than Capability, reset to capability\n"
+				, icPwrLmt);
+			icPwrLmt = MIN_TX_POWER;
 		}
+		rTxPwrLimit.cMaxTxPwr = icPwrLmt;
+		rTxPwrLimit.cMinTxPwr = MIN_TX_POWER;
 		DBGLOG(RLM, INFO,
-		       "LM: Set Max Tx Power Limit %d, Min Limit %d\n", cLimit,
-		       RLM_MIN_TX_PWR);
-		rTxPwrLimit.cMaxTxPwr =
-			cLimit * 2; /* unit of cMaxTxPwr is 0.5 dBm */
-		rTxPwrLimit.cMinTxPwr = RLM_MIN_TX_PWR * 2;
+			"LM: Set Max Tx Power Limit %d, Min Limit %d\n",
+			rTxPwrLimit.cMaxTxPwr,
+			rTxPwrLimit.cMinTxPwr);
 	} else
 		DBGLOG(RLM, TRACE, "LM: Disable Tx Power Limit\n");
 	wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT, TRUE,
@@ -9471,3 +9581,502 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 		sizeof(struct T_MULTI_AP_BEACON_METRICS_RESP));
 }
 #endif /* CFG_AP_80211K_SUPPORT */
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Init Transmit Power Envelope max TxPower limit to max TxPower
+ *
+ * \param[in] picMaxTxPwr : Pointer of max TxPower limit
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmTxPwrEnvMaxPwrInit(int8_t *picMaxTxPwr)
+{
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+
+	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+		eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
+		picMaxTxPwr[eBwType] = MAX_TX_POWER;
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get BW shift by channel BW
+ *
+ * \param[in] eChannelWidth : Channel BW
+ * \param[in] eSco : Channel extent parameter
+ * \param[in] pucShift : Pinter of shift
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_NOT_SUPPORTED
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t rlmTxPwrEnvGetBwShift(
+	enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	enum ENUM_CHNL_EXT eSco,
+	uint8_t *pucShift)
+{
+	if (pucShift == NULL)
+		return WLAN_STATUS_INVALID_DATA;
+
+	switch (eChannelWidth) {
+	case CW_20_40MHZ:
+		if (eSco == CHNL_EXT_SCA || eSco == CHNL_EXT_SCB) {
+			/* BW40 */
+			*pucShift = TX_PWR_ENV_BW_SHIFT_BW40;
+		} else {
+			/* BW20 */
+			*pucShift = TX_PWR_ENV_BW_SHIFT_BW20;
+		}
+		break;
+	case CW_80MHZ:
+		*pucShift = TX_PWR_ENV_BW_SHIFT_BW80;
+		break;
+	case CW_160MHZ:
+	case CW_80P80MHZ:
+		*pucShift = TX_PWR_ENV_BW_SHIFT_BW160;
+		break;
+	default:
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief 1. This func is use to get Transmit Power Envelope max TxPower PSD
+ *        2. Due to max TxPower PSD field in transmit Power Envelope is indicate
+ *           the Nth primary channel. It will need CenterCh /PriCh /BW info to
+ *           get the corresponding PSD TxPower limit
+ *           - Nth primary channel = abs(CenterCh - BW Shift - PriCh) / 4
+ *
+ * \param[in] eChannelWidth : Channel BW
+ * \param[in] eSco : Channel extent parameter
+ * \param[in] ucSize : Indicate the quantity to compare
+ * \param[in] ucCenterCh : Center channel
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] prTxPwrEnvIE : Pointer of Tranmit Power Envelope IE content
+ * \param[in] picMaxTxPwrPsd : Pointer of Max TxPower PSD
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t rlmTxPwrEnvGetMaxTxPwrPsd(
+	enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	enum ENUM_CHNL_EXT eSco,
+	uint8_t ucCenterCh,
+	uint8_t ucPriCh,
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE,
+	int8_t *picMaxTxPwrPsd)
+{
+	uint8_t ucPriChIdx = 0;
+	uint8_t ucBwShift = 0;
+	uint8_t ucTxPwrEnvCnt = 0;
+	uint8_t ucNumMaxTxPwr = 0;
+
+	if (!picMaxTxPwrPsd)
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (rlmTxPwrEnvGetBwShift(eChannelWidth, eSco, &ucBwShift)
+		!= WLAN_STATUS_SUCCESS) {
+		DBGLOG(RLM, ERROR,
+			"Get PSD BW shift fail,ChBw[%d]Sco[%d]\n",
+			eChannelWidth,
+			eSco);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	ucTxPwrEnvCnt =
+		TX_PWR_ENV_INFO_GET_TXPWR_COUNT(prTxPwrEnvIE->ucTxPwrInfo);
+
+	if (ucTxPwrEnvCnt == 0) {
+		*picMaxTxPwrPsd = prTxPwrEnvIE->aicMaxTxPwr[0];
+	} else {
+		/* Calculate Transmit Power Envelope max TxPower PSD index
+		 * for target primary channel :
+		 *     - abs(CenterCh - BwShift - PriCh) / 4
+		 * Example :
+		 *    - BW80  6G CenterCH=23 PriCH=21, idx = abs(23- 6-21)/4 = 1
+		 *    - BW160 6G CenterCH=79 PriCH=89, idx = abs(79-14-89)/4 = 6
+		 *    - BW80  5G CenterCH=58 PriCH=52, idx = abs(58- 6-52)/4 = 1
+		 */
+		if (ucCenterCh > (ucBwShift + ucPriCh))
+			ucPriChIdx = (ucCenterCh - (ucBwShift + ucPriCh)) / 4;
+		else
+			ucPriChIdx = ((ucBwShift + ucPriCh) - (ucCenterCh)) / 4;
+
+		/* In TxPwr PSD case , the value of Transmit Power Envelope
+		 * Info Count represent the number of Max TxPwr field by
+		 * following transfer func : (1 << (ucTxPwrEnvCount - 1))
+		 *  ie.
+		 *      |ucTxPwrEnvCount|Number of Max TxPwr field|
+		 *      |      0        |             0           |
+		 *      |      1        |             1           |
+		 *      |      2        |             2           |
+		 *      |      3        |             4           |
+		 *      |      4        |             8           |
+		 */
+		ucNumMaxTxPwr = (1 << (ucTxPwrEnvCnt - 1));
+
+		/* Sanity check for TxPwrEnv count */
+		if (ucNumMaxTxPwr >= TX_PWR_ENV_INFO_TXPWR_COUNT_MAX ||
+			ucPriChIdx >= ucNumMaxTxPwr) {
+			DBGLOG(RLM, ERROR,
+			"Get max TxPwr PSD idx fail,MaxNum[%d]PriCh_Idx[%d]\n",
+			ucPriChIdx,
+			ucNumMaxTxPwr);
+			return WLAN_STATUS_FAILURE;
+		}
+
+		*picMaxTxPwrPsd = prTxPwrEnvIE->aicMaxTxPwr[ucPriChIdx];
+	}
+	DBGLOG(RLM, TRACE,
+		"TPE PSD,BW[%d]Sco[%d]BwShif[%d]PriCh[%d]CenCh[%d]Idx[%d]Cnt[%d]PSD[%d]\n",
+		eChannelWidth,
+		eSco,
+		ucBwShift,
+		ucPriCh,
+		ucCenterCh,
+		ucPriChIdx,
+		ucTxPwrEnvCnt,
+		*picMaxTxPwrPsd);
+
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to get TxPower delta to transfer PSD(dBm/Hz) to
+ *        TxPower(dBm)
+ *
+ * \param[in] eBwType : Transmit Power Envelope max TxPower limt BW type
+ * \param[in] pucTxPwrDelta : Pointer of TxPower delta
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t rlmTxPwrEnvGetPwrDelta(
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType,
+	uint8_t *pucTxPwrDelta)
+{
+	switch (eBwType) {
+	case TX_PWR_ENV_MAX_TXPWR_BW20:
+		*pucTxPwrDelta = TX_PWR_ENV_PSD_TRANS_DBM_BW20;
+		break;
+	case TX_PWR_ENV_MAX_TXPWR_BW40:
+		*pucTxPwrDelta = TX_PWR_ENV_PSD_TRANS_DBM_BW40;
+		break;
+	case TX_PWR_ENV_MAX_TXPWR_BW80:
+		*pucTxPwrDelta = TX_PWR_ENV_PSD_TRANS_DBM_BW80;
+		break;
+	case TX_PWR_ENV_MAX_TXPWR_BW160:
+		*pucTxPwrDelta = TX_PWR_ENV_PSD_TRANS_DBM_BW160;
+		break;
+	default:
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+	return WLAN_STATUS_SUCCESS;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief 1. This func is use to get Transmit Power Envelope max TxPower PSD and
+ *        calculate TxPower limit dBm from PSD
+ *        2. Due to max TxPower PSD field in transmit Power Envelope is indicate
+ *           the Nth primary channel. It will need CenterCh /PriCh /BW info to
+ *           get the corresponding PSD TxPower limit
+ *           - Nth primary channel = abs(CenterCh - BW Shift - PriCh) / 4
+ *        3. The PSD to TxPower dBm transfer func is as below :
+ *           - TxPower(dBm) = PSD(dBm/Hz) + 10*log(BW)
+ *
+ * \param[in] eChannelWidth : Channel BW
+ * \param[in] eSco : Channel extent parameter
+ * \param[in] ucSize : Indicate the quantity to compare
+ * \param[in] ucCenterCh : Center channel
+ * \param[in] ucPriCh : Primary channel
+ * \param[in] prTxPwrEnvIE : Pointer of Tranmit Power Envelope IE content
+ * \param[in] picMaxTxPwr : Pointer of Max TxPower
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
+	enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	enum ENUM_CHNL_EXT eSco,
+	uint8_t ucCenterCh,
+	uint8_t ucPriCh,
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE,
+	int8_t *picMaxTxPwr)
+{
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+	int8_t icMaxTxPwrPsd = 0;
+	uint8_t ucTxPwrDelta = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (!prTxPwrEnvIE)
+		return WLAN_STATUS_INVALID_DATA;
+
+	/* 1. Get correct TxPower limit */
+	u4Status = rlmTxPwrEnvGetMaxTxPwrPsd(eChannelWidth,
+			eSco,
+			ucCenterCh,
+			ucPriCh,
+			prTxPwrEnvIE,
+			&icMaxTxPwrPsd);
+
+	/* 2. Convert TxPower limit PSD to BW Power limit
+	 *    - Max TxPwr(dBm) = PSD(dBm/Hz) + 10*log(BW)
+	 */
+	if (u4Status == WLAN_STATUS_SUCCESS) {
+		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
+			rlmTxPwrEnvGetPwrDelta(eBwType, &ucTxPwrDelta);
+			picMaxTxPwr[eBwType] = icMaxTxPwrPsd + ucTxPwrDelta;
+		}
+	}
+	return u4Status;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update new TxPower limit, the update criteria is only when the
+ *        TxPower limit  have been change
+ *        It will set a flag var(pfgIsChange) to record whether the TxPower
+ *        limit have been change
+ *
+ * \param[in] picTarget : Pointer of new TxPower limit
+ * \param[in] picCompare : Pointer of old TxPower limit
+ * \param[in] ucNum : Indicate the quantity to update
+ * \param[in] pfgIsChange : The flag to recored whether the TxPower limit have
+ *                          been change
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmTxPwrEnvMaxPwrUpdateArbi(
+	int8_t *picTarget,
+	int8_t *picCompare,
+	uint8_t ucNum,
+	uint8_t *pfgIsChange)
+{
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+
+	/* Sanity check for null pointer */
+	if (!picTarget || !picCompare || !pfgIsChange)
+		return;
+
+	/* Sanity check for quantity to update */
+	if (ucNum > TX_PWR_ENV_MAX_TXPWR_BW_NUM)
+		ucNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
+
+	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20; eBwType < ucNum; eBwType++) {
+		if (picTarget[eBwType] > picCompare[eBwType]) {
+			picTarget[eBwType] = picCompare[eBwType];
+			*pfgIsChange = TRUE;
+		}
+
+		/* Sanity check TxPower boundary */
+		if (picTarget[eBwType] > MAX_TX_POWER)
+			picTarget[eBwType] = MAX_TX_POWER;
+		else if (picTarget[eBwType] < MIN_TX_POWER)
+			picTarget[eBwType] = MIN_TX_POWER;
+	}
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use send Tranmit Power Envelope max TxPower limit to FW
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary Channel
+ * \param[in] picTxPwrEnvMaxPwr : Pointer to Tranmit Power Envelope max TxPower
+ *                                limit
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmTxPwrEnvMaxPwrSend(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucPwrLmtNum,
+	int8_t *picTxPwrEnvMaxPwr,
+	uint8_t fgPwrLmtEnable)
+{
+	struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT *prCmd = NULL;
+	struct CMD_CHANNEL_POWER_LIMIT_TX_PWR_ENV *prTxPwrEnvPwrLmt = NULL;
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+	uint32_t u4CmdSize = sizeof(struct CMD_SET_COUNTRY_CHANNEL_POWER_LIMIT);
+	uint32_t rStatus;
+
+	/* Sanity check for null pointer */
+	if (picTxPwrEnvMaxPwr == NULL)
+		return;
+
+	prCmd = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdSize);
+	if (!prCmd) {
+		DBGLOG(RLM, ERROR, "TxPwr Envelope: Alloc cmd buffer failed\n");
+		goto err;
+	}
+	kalMemZero(prCmd, u4CmdSize);
+
+	/* Fill in CMD content */
+	prCmd->ucCategoryId = POWER_LIMIT_TX_PWR_ENV_CTRL;
+	prTxPwrEnvPwrLmt = &prCmd->u.rTxPwrEnvPwrLmt;
+	prTxPwrEnvPwrLmt->fgPwrLmtEnable = fgPwrLmtEnable;
+	prTxPwrEnvPwrLmt->ucBand = (uint8_t)eBand;
+	prTxPwrEnvPwrLmt->ucPriCh = ucPriCh;
+	prTxPwrEnvPwrLmt->ucPwrLmtNum = ucPwrLmtNum;
+	for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < ucPwrLmtNum; eBwType++) {
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[eBwType]
+			= picTxPwrEnvMaxPwr[eBwType];
+	}
+
+	DBGLOG(RLM, INFO,
+		"TPE Send:En[%d]B[%d]PriCh[%d]Num[%d]PwrLmtBW20[%d]BW40[%d]BW80[%d]BW160[%d]\n",
+		prTxPwrEnvPwrLmt->fgPwrLmtEnable,
+		prTxPwrEnvPwrLmt->ucBand,
+		prTxPwrEnvPwrLmt->ucPriCh,
+		prTxPwrEnvPwrLmt->ucPwrLmtNum,
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW20],
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW40],
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW80],
+		prTxPwrEnvPwrLmt->aicMaxTxPwrLmt[TX_PWR_ENV_MAX_TXPWR_BW160]);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+		CMD_ID_SET_COUNTRY_POWER_LIMIT,	/* ucCID */
+		TRUE,	/* fgSetQuery */
+		FALSE,	/* fgNeedResp */
+		FALSE,	/* fgIsOid */
+		NULL,	/* pfCmdDoneHandler */
+		NULL,	/* pfCmdTimeoutHandler */
+		u4CmdSize, /* u4SetQueryInfoLen */
+		(uint8_t *) prCmd, /* pucInfoBuffer */
+		NULL,	/* pvSetQueryBuffer */
+		0	/* u4SetQueryBufferLen */
+		);
+
+	if (rStatus != WLAN_STATUS_PENDING)
+		DBGLOG(RLM, ERROR, "Send TxPwrEnv error 0x%08x\n", rStatus);
+	else
+		DBGLOG(RLM, INFO, "Send TxPwrEnv success 0x%08x\n", rStatus);
+err:
+	cnmMemFree(prAdapter, prCmd);
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to update TxPwr Envelope if need.
+ *        1. It will translate IE content if the content is represent as PSD
+ *        2. Update the TxPwr Envelope TxPower limit to BSS_DESC if the IE
+ *           content is smaller than the current exit setting.
+ *        3. If the TxPower limit have update, it will send cmd to FW to reset
+ *           TxPower limit
+ *
+ * \param[in] prAdapter : Pointer of adapter
+ * \param[in] prBssDesc : Pointer ofBSS desription
+ * \param[in] eHwBand : RF Band
+ * \param[in] prTxPwrEnvIE : Pointer of TxPwer Envelope IE
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmTxPwrEnvMaxPwrUpdate(
+	struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand,
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE)
+{
+	uint8_t ucTxPwrEnvIntrpt = 0;
+	uint8_t ucPwrLmtNum = 0;
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBwType;
+	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM] = {0};
+	uint8_t fgIsTxPwrEnvChange = FALSE;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	/* sanity check null pointer */
+	if (!prAdapter || !prBssDesc || !prTxPwrEnvIE) {
+		DBGLOG(RLM, WARN, "Update TxPwrEnv fail: null pointer\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	rlmTxPwrEnvMaxPwrInit(aicTxPwrEnvMaxTxPwr);
+
+	ucTxPwrEnvIntrpt
+		= TX_PWR_ENV_INFO_GET_TXPWR_INTRPT(prTxPwrEnvIE->ucTxPwrInfo);
+
+	if (ucTxPwrEnvIntrpt == TX_PWR_ENV_LOCAL_EIRP
+		|| ucTxPwrEnvIntrpt == TX_PWR_ENV_REG_CLIENT_EIRP) {
+
+		ucPwrLmtNum = TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
+					prTxPwrEnvIE->ucTxPwrInfo) + 1;
+
+		/* Direct copy Transmit Power Envelope content */
+		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < ucPwrLmtNum; eBwType++) {
+			aicTxPwrEnvMaxTxPwr[eBwType]
+				= prTxPwrEnvIE->aicMaxTxPwr[eBwType];
+		}
+
+	} else if (ucTxPwrEnvIntrpt == TX_PWR_ENV_LOCAL_EIRP_PSD
+		|| ucTxPwrEnvIntrpt == TX_PWR_ENV_REG_CLIENT_EIRP_PSD) {
+
+		/* Convert TxPower limit PSD to BW TxPower limit first
+		 * and store in the aicTxPwrEnvMaxTxPwr
+		 */
+		u4Status = rlmTxPwrEnvMaxTxPwrCalcByPsd(
+				prBssDesc->eChannelWidth,
+				prBssDesc->eSco,
+				prBssDesc->ucCenterFreqS1,
+				prBssDesc->ucChannelNum,
+				prTxPwrEnvIE,
+				aicTxPwrEnvMaxTxPwr);
+
+		ucPwrLmtNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
+
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(RLM, WARN,
+				"Update TxPwrEnv fail 0x%08x\n", u4Status);
+		}
+
+	} else {
+		DBGLOG(RLM, WARN, "TxPwrEnv Itrp[%d] not support\n",
+			ucTxPwrEnvIntrpt);
+		u4Status = WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	if (u4Status == WLAN_STATUS_SUCCESS) {
+		prBssDesc->fgIsTxPwrEnvPresent = TRUE;
+		/* Since there will receive the multiple Transmit Power Envelope
+		 * IE, different IE may content different size of TxPower Limit
+		 * number, we should set the biggest one.
+		 */
+		if (ucPwrLmtNum > prBssDesc->ucTxPwrEnvPwrLmtNum)
+			prBssDesc->ucTxPwrEnvPwrLmtNum = ucPwrLmtNum;
+
+		/* Set minimum TxPower limit */
+		rlmTxPwrEnvMaxPwrUpdateArbi(
+			prBssDesc->aicTxPwrEnvMaxTxPwr,
+			aicTxPwrEnvMaxTxPwr,
+			prBssDesc->ucTxPwrEnvPwrLmtNum,
+			&fgIsTxPwrEnvChange);
+	} else {
+		return u4Status;
+	}
+
+	if (prBssDesc->fgIsConnected && fgIsTxPwrEnvChange == TRUE) {
+		rlmTxPwrEnvMaxPwrSend(
+			prAdapter,
+			eHwBand,
+			prBssDesc->ucChannelNum,
+			prBssDesc->ucTxPwrEnvPwrLmtNum,
+			prBssDesc->aicTxPwrEnvMaxTxPwr,
+			TRUE);
+	}
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_TX_PWR_ENV */

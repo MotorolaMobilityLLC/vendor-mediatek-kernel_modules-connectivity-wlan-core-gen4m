@@ -2348,6 +2348,43 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define BCN_REQ_ELEM_SUBID_WIDE_BW_CH_SWITCH 163
 #endif /* CFG_AP_80211K_SUPPORT */
 
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+
+/* TxPower Envelope Max TxPower Info Subfield */
+#define TX_PWR_ENV_INFO_TXPWR_COUNT_MAX       8
+#define TX_PWR_ENV_INFO_TXPWR_COUNT_MASK      BITS(0, 2)
+#define TX_PWR_ENV_INFO_TXPWR_COUNT_OFFSET    0
+
+#define TX_PWR_ENV_INFO_TXPWR_INTRPT_MASK     BITS(3, 5)
+#define TX_PWR_ENV_INFO_TXPWR_INTRPT_OFFSET   3
+
+#define TX_PWR_ENV_INFO_TXPWR_CATEGORY_MASK   BITS(6, 7)
+#define TX_PWR_ENV_INFO_TXPWR_CATEGORY_OFFSET 6
+
+#define TX_PWR_ENV_INFO_GET_TXPWR_COUNT(_ucTxPwrInfo) \
+	((_ucTxPwrInfo & TX_PWR_ENV_INFO_TXPWR_COUNT_MASK) \
+	>> TX_PWR_ENV_INFO_TXPWR_COUNT_OFFSET)
+#define TX_PWR_ENV_INFO_GET_TXPWR_INTRPT(_ucTxPwrInfo) \
+	((_ucTxPwrInfo & TX_PWR_ENV_INFO_TXPWR_INTRPT_MASK) \
+	>> TX_PWR_ENV_INFO_TXPWR_INTRPT_OFFSET)
+#define TX_PWR_ENV_INFO_GET_TXPWR_CATEGORY(_ucTxPwrInfo) \
+	((_ucTxPwrInfo & TX_PWR_ENV_INFO_TXPWR_CATEGORY_MASK) \
+	>> TX_PWR_ENV_INFO_TXPWR_CATEGORY_OFFSET)
+
+enum TX_PWR_ENV_MAX_TXPWR_INTRPT_TYPE {
+	TX_PWR_ENV_LOCAL_EIRP = 0,
+	TX_PWR_ENV_LOCAL_EIRP_PSD = 1,
+	TX_PWR_ENV_REG_CLIENT_EIRP = 2,
+	TX_PWR_ENV_REG_CLIENT_EIRP_PSD = 3,
+};
+enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE {
+	TX_PWR_ENV_MAX_TXPWR_BW20 = 0,
+	TX_PWR_ENV_MAX_TXPWR_BW40 = 1,
+	TX_PWR_ENV_MAX_TXPWR_BW80 = 2,
+	TX_PWR_ENV_MAX_TXPWR_BW160 = 3,
+	TX_PWR_ENV_MAX_TXPWR_BW_NUM
+};
+#endif /* CFG_SUPPORT_TX_PWR_ENV */
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -3364,6 +3401,18 @@ struct IE_VHT_TPE {
 	uint8_t u8TxPowerInfo;
 	uint8_t u8TxPowerBw[4];
 } __KAL_ATTRIB_PACKED__;
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+struct IE_TX_PWR_ENV_FRAME {
+	uint8_t ucId; /* ELEM_ID_TX_PWR_ENVELOPE */
+	uint8_t ucLength; /* Variable */
+	uint8_t ucTxPwrInfo;   /* Bits[0:2] : Max TxPwr Count
+				* Bits[3:5] : Max TxPwr Interpret
+				* Bits[6:7] : Max TxPwr Category
+				*/
+	int8_t aicMaxTxPwr[TX_PWR_ENV_INFO_TXPWR_COUNT_MAX];
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 #if (CFG_SUPPORT_BTWT == 1)
 __KAL_ATTRIB_PACKED_FRONT__

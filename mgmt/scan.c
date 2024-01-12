@@ -2237,6 +2237,20 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	u_int8_t fgIsProbeResp = FALSE;
 	u_int8_t ucPowerConstraint = 0;
 	u_int8_t ucChnlNum = 0;
+	uint16_t u2CurrCountryCode = COUNTRY_CODE_NULL;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE
+		= (struct IE_TX_PWR_ENV_FRAME *) NULL;
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t fgIsHE6GPresent = FALSE;
+	uint8_t uc6GHeRegInfo = 0;
+	uint8_t fgPwrMode6GSupport = TRUE;
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeCurr = PWR_MODE_6G_LPI;
+	uint8_t fg6GPwrModeValid = FALSE;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+#endif
+
 	struct IE_COUNTRY *prCountryIE = NULL;
 	struct RX_DESC_OPS_T *prRxDescOps;
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -2255,6 +2269,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
+
+	ucChnlNum = prSwRfb->ucChnlNum;
+	nicRxdChNumTranslate(eHwBand, &ucChnlNum);
 
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
 	WLAN_GET_FIELD_64(&prWlanBeaconFrame->au4Timestamp[0], &u8Timestamp);
@@ -2354,6 +2371,45 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				ucIeHtChannelNum = ((struct IE_HT_OP *) pucIE)
 					->ucPrimaryChannel;
 			break;
+
+		case ELEM_ID_COUNTRY_INFO:
+		{
+			prCountryIE = (struct IE_COUNTRY *) pucIE;
+
+			u2CurrCountryCode =
+			(((uint16_t) prCountryIE->aucCountryStr[0]) << 8) |
+			((uint16_t) prCountryIE->aucCountryStr[1]);
+
+			break;
+		}
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		case ELEM_ID_RESERVED:
+		{
+			struct _6G_OPER_INFOR_T *pr6gOperInfor = NULL;
+			struct _IE_HE_OP_T *prHeOp = NULL;
+			uint32_t u4Offset = 0;
+
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
+				prHeOp = (struct _IE_HE_OP_T *) pucIE;
+				u4Offset = OFFSET_OF(struct _IE_HE_OP_T,
+						aucVarInfo[0]);
+				if ((eHwBand == BAND_6G) &&
+					HE_IS_6G_OP_INFOR_PRESENT(
+					prHeOp->ucHeOpParams)) {
+					fgIsHE6GPresent = TRUE;
+					pr6gOperInfor =
+						(struct _6G_OPER_INFOR_T *)
+						(pucIE + u4Offset);
+					uc6GHeRegInfo =
+						pr6gOperInfor->rControl
+						.bits.RegulatoryInfo;
+				} else {
+					fgIsHE6GPresent = FALSE;
+				}
+			}
+			break;
+		}
+#endif
 		default:
 			break;
 		}
@@ -2391,6 +2447,37 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		       ucIeDsChannelNum, ucIeHtChannelNum);
 		return NULL;
 	}
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	 if ((eHwBand == BAND_6G) && (u2CurrCountryCode != COUNTRY_CODE_NULL)) {
+		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(prAdapter,
+					u2CurrCountryCode,
+					prAdapter->rWifiVar.u2CountryCode,
+					fgIsHE6GPresent,
+					uc6GHeRegInfo);
+		fg6GPwrModeValid = TRUE;
+
+		if (e6GPwrModeCurr == PWR_MODE_6G_VLP) {
+			u4Status = rlmDomain6GPwrModeCountrySupportChk(
+					eHwBand,
+					ucChnlNum,
+					prAdapter->rWifiVar.u2CountryCode,
+					e6GPwrModeCurr,
+					&fgPwrMode6GSupport);
+
+			if (u4Status != WLAN_STATUS_SUCCESS
+				|| fgPwrMode6GSupport == FALSE){
+
+				DBGLOG(SCN, WARN,
+					"Skip scan, BSSID["MACSTR
+					"] SSID:%s non support 6G VLP,0x%08x",
+					MAC2STR(prWlanBeaconFrame->aucBSSID),
+					rSsid.aucSsid,
+					u4Status);
+				return NULL;
+			}
+		}
+	}
+#endif
 
 	/* 4 <1.2> Replace existing BSS_DESC structure or allocate a new one */
 	prBssDesc = scanSearchExistingBssDescWithSsid(
@@ -2399,9 +2486,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		(uint8_t *) prWlanBeaconFrame->aucBSSID,
 		(uint8_t *) prWlanBeaconFrame->aucSrcAddr,
 		fgIsValidSsid, fgIsValidSsid == TRUE ? &rSsid : NULL);
-
-	ucChnlNum = prSwRfb->ucChnlNum;
-	nicRxdChNumTranslate(eHwBand, &ucChnlNum);
 
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u),band=%d\n",
@@ -2637,6 +2721,15 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	 */
 	if (fgIsNewBssDesc) {
 		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+		prBssDesc->fgIsTxPwrEnvPresent = FALSE;
+		prBssDesc->ucTxPwrEnvPwrLmtNum = 0;
+		rlmTxPwrEnvMaxPwrInit(prBssDesc->aicTxPwrEnvMaxTxPwr);
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		/* Set default 6G Pwr mode LPI */
+		prBssDesc->e6GPwrMode = PWR_MODE_6G_LPI;
+#endif
 		DBGLOG(SCN, LOUD,
 			"LM: New reallocated BSSDesc [" MACSTR "]\n",
 			MAC2STR(prBssDesc->aucBSSID));
@@ -2743,10 +2836,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				prBssDesc->u2ATIMWindow
 					= IBSS_PARAM_IE(pucIE)->u2ATIMWindow;
 			}
-			break;
-
-		case ELEM_ID_COUNTRY_INFO:
-			prCountryIE = (struct IE_COUNTRY *) pucIE;
 			break;
 
 		case ELEM_ID_ERP_INFO:
@@ -3129,6 +3218,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			scanParsingRnrElement(prAdapter, prBssDesc, pucIE);
 			break;
 #endif
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+		case ELEM_ID_TX_PWR_ENVELOPE:
+			prTxPwrEnvIE = (struct IE_TX_PWR_ENV_FRAME *) pucIE;
+			break;
+#endif
 			/* no default */
 		}
 	}
@@ -3184,76 +3279,46 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		prBssDesc->ucCenterFreqS2 = 0;
 		prBssDesc->eSco = CHNL_EXT_SCN;
 	}
-#if CFG_SUPPORT_802_11K
-	if (prCountryIE && prCountryIE->ucLength ==
-			(sizeof(struct IE_COUNTRY) - 2)) {
-		uint8_t ucRemainLen = prCountryIE->ucLength - 3;
-		struct COUNTRY_INFO_SUBBAND_TRIPLET *prSubBand =
-			&prCountryIE->arCountryStr[0];
-		const uint8_t ucSubBandSize =
-			(uint8_t)sizeof(struct COUNTRY_INFO_SUBBAND_TRIPLET);
-		int8_t cNewPwrLimit = RLM_INVALID_POWER_LIMIT;
-
-		DBGLOG(SCN, LOUD,
-			   "LM: Country IE of BSSID[" MACSTR "] is present\n",
-			   MAC2STR(prBssDesc->aucBSSID));
-
-		/* Try to find a country subband base on our channel */
-		while (ucRemainLen >= ucSubBandSize) {
-			if (prSubBand->ucFirstChnlNum < 201 &&
-			    prBssDesc->ucChannelNum >=
-				    prSubBand->ucFirstChnlNum &&
-			    prBssDesc->ucChannelNum <=
-				    (prSubBand->ucFirstChnlNum +
-				     prSubBand->ucNumOfChnl - 1))
-				break;
-			ucRemainLen -= ucSubBandSize;
-			prSubBand++;
-		}
-		/* Found a right country band */
-		if (ucRemainLen >= ucSubBandSize) {
-			cNewPwrLimit =
-				prSubBand->cMaxTxPwrLv - ucPowerConstraint;
-			/* Limit Tx power changed */
-			if (prBssDesc->cPowerLimit != cNewPwrLimit) {
-				prBssDesc->cPowerLimit = cNewPwrLimit;
-				DBGLOG(SCN, TRACE,
-				       "LM: Old TxPwrLimit %d,New: CountryMax %d, Constraint %d\n",
-				       prBssDesc->cPowerLimit,
-				       prSubBand->cMaxTxPwrLv,
-				       ucPowerConstraint);
-				/* should tell firmware to restrict tx power if
-				** connected a BSS
-				*/
-				if (prBssDesc->fgIsConnected) {
-					if (prBssDesc->cPowerLimit !=
-					    RLM_INVALID_POWER_LIMIT)
-						rlmSetMaxTxPwrLimit(
-							prAdapter,
-							prBssDesc->cPowerLimit,
-							1);
-					else
-						rlmSetMaxTxPwrLimit(prAdapter,
-								    0, 0);
-				}
-			}
-		} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
-			DBGLOG(SCN, LOUD,
-				"LM: The channel of BSSID[" MACSTR
-				"] doesn't match with country IE, prBssDesc->cPowerLimit=%d\n",
-				MAC2STR(prBssDesc->aucBSSID),
-				prBssDesc->cPowerLimit);
-			prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
-			rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
-		}
-	} else if (prBssDesc->cPowerLimit != RLM_INVALID_POWER_LIMIT) {
-		DBGLOG(SCN, LOUD,
-			"LM: Country IE of BSSID[" MACSTR
-			"] isn't present, prBssDesc->cPowerLimit=%d\n",
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	if (prTxPwrEnvIE) {
+		DBGLOG(SCN, TRACE,
+			"TPE present,BSSID[" MACSTR "] SSID:%s\n",
 			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->cPowerLimit);
-		prBssDesc->cPowerLimit = RLM_INVALID_POWER_LIMIT;
-		rlmSetMaxTxPwrLimit(prAdapter, 0, 0);
+			prBssDesc->aucSSID);
+
+		DBGLOG_MEM8(SCN, TRACE, prTxPwrEnvIE, IE_SIZE(prTxPwrEnvIE));
+
+		rlmTxPwrEnvMaxPwrUpdate(
+			prAdapter,
+			prBssDesc,
+			eHwBand,
+			prTxPwrEnvIE);
+	}
+#endif
+
+#if CFG_SUPPORT_802_11K
+	 if (prCountryIE) {
+		DBGLOG(SCN, TRACE,
+			"Country IE present,BSSID[" MACSTR "] SSID:%s(%c%c)\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->aucSSID,
+			((u2CurrCountryCode & 0xff00) >> 8),
+			(u2CurrCountryCode & 0x00ff));
+		DBGLOG_MEM8(SCN, TRACE, prCountryIE, IE_SIZE(prCountryIE));
+		/* Update TxPower limit for Country IE & Power Constraint IE */
+		rlmRegTxPwrLimitUpdate(prAdapter,
+			prBssDesc,
+			eHwBand,
+			prCountryIE,
+			ucPowerConstraint);
+	}
+#endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	if (eHwBand == BAND_6G && fg6GPwrModeValid == TRUE) {
+		prBssDesc->e6GPwrMode = e6GPwrModeCurr;
+		if (prBssDesc->fgIsConnected)
+			rlmDomain6GPwrModeUpdate(prAdapter,
+			prBssDesc->e6GPwrMode);
 	}
 #endif
 

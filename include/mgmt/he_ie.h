@@ -388,6 +388,11 @@ enum ENUM_HTC_HE_OM_CH_WIDTH  {
 	CH_BW_160 = 3,
 };
 
+enum ENUM_HE_REG_INFO_TYPE {
+	HE_REG_INFO_LOW_POWER_INDOOR = 0,
+	HE_REG_INFO_STANDARD_POWER = 1,
+	HE_REG_INFO_NUM
+};
 /* 11ax_D3.0 9.3.1.9 BlockAck frame format */
 #define HE_BA_TYPE                                     BITS(1, 4)
 #define HE_BA_TYPE_SHFT                                1

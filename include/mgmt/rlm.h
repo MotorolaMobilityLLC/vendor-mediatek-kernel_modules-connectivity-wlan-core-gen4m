@@ -168,6 +168,20 @@ extern uint8_t  g_ucHtSMPSCapValue;
 #define VHT_CAP_INFO_EXT_NSS_BW_CAP				BIT(13)
 
 #endif
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+#define TX_PWR_ENV_BW_SHIFT_BW20          0
+#define TX_PWR_ENV_BW_SHIFT_BW40          2
+#define TX_PWR_ENV_BW_SHIFT_BW80          6
+#define TX_PWR_ENV_BW_SHIFT_BW160        14
+
+/* PSD to Power dBm transfer func : 10*log(BW) * 2 */
+#define TX_PWR_ENV_PSD_TRANS_DBM_BW20    26 /* 10*log( 20) * 2  = 26, 0.5dBm */
+#define TX_PWR_ENV_PSD_TRANS_DBM_BW40    32 /* 10*log( 40) * 2  = 32, 0.5dBm */
+#define TX_PWR_ENV_PSD_TRANS_DBM_BW80    38 /* 10*log( 80) * 2  = 38, 0.5dBm */
+#define TX_PWR_ENV_PSD_TRANS_DBM_BW160   44 /* 10*log(160) * 2  = 44, 0.5dBm */
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -572,6 +586,84 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 		struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 #endif /* CFG_AP_80211K_SUPPORT */
 
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Init Transmit Power Envelope max TxPower limit to max TxPower
+ *
+ * \param[in] picMaxTxPwr : Pointer of max TxPower limit
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmTxPwrEnvMaxPwrInit(int8_t *picMaxTxPwr);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use send Tranmit Power Envelope max TxPower limit to FW
+ *
+ * \param[in] prAdapter : Pointer to adapter
+ * \param[in] eBand : RF Band index
+ * \param[in] ucPriCh : Primary Channel
+ * \param[in] picTxPwrEnvMaxPwr : Pointer to Tranmit Power Envelope max TxPower
+ *                                limit
+ *
+ * \return value : void
+ */
+/*----------------------------------------------------------------------------*/
+void rlmTxPwrEnvMaxPwrSend(
+	struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPriCh,
+	uint8_t ucPwrLmtNum,
+	int8_t *picTxPwrEnvMaxPwr,
+	uint8_t fgPwrLmtEnable);
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to update TxPwr Envelope if need.
+ *        1. It will translate IE content if the content is represent as PSD
+ *        2. Update the TxPwr Envelope TxPower limit to BSS_DESC if the IE
+ *           content is smaller than the current exit setting.
+ *        3. If the TxPower limit have update, it will send cmd to FW to reset
+ *           TxPower limit
+ *
+ * \param[in] prAdapter : Pointer of adapter
+ * \param[in] prBssDesc : Pointer ofBSS desription
+ * \param[in] eHwBand : RF Band
+ * \param[in] prTxPwrEnvIE : Pointer of TxPwer Envelope IE
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmTxPwrEnvMaxPwrUpdate(
+	struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand,
+	struct IE_TX_PWR_ENV_FRAME *prTxPwrEnvIE);
+#endif /* CFG_SUPPORT_TX_PWR_ENV */
+
+#if CFG_SUPPORT_802_11K
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to update Regulatory TxPower limit if need.
+ *
+ * \param[in] prAdapter : Pointer of adapter
+ * \param[in] prBssDesc : Pointer ofBSS desription
+ * \param[in] eHwBand : RF Band
+ * \param[in] prCountryIE : Pointer of Country IE
+ * \param[in] ucPowerConstraint : TxPower constraint value from Power
+ *                                Constrait IE
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmRegTxPwrLimitUpdate(
+	struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc,
+	enum ENUM_BAND eHwBand,
+	struct IE_COUNTRY *prCountryIE,
+	uint8_t ucPowerConstraint);
+#endif /* CFG_SUPPORT_802_11K */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
