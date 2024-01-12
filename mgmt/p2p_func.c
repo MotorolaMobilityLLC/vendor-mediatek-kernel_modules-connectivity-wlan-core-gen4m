@@ -951,7 +951,12 @@ p2pFuncStartGO(IN P_ADAPTER_T prAdapter,
 
 		prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
-		prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[prBssInfo->ucBssIndex]->eDBDCBand;
+		/*
+		 * FIX ME: Mobile driver can't get correct band. There is only 5G in DFS channel,
+		 * which is on band_0. So it assigned to ENUM_BAND_0 as temp solution.
+		 * Remember to fix it when driver could get the correct band from firmware.
+		 */
+		prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
 
 		DBGLOG(P2P, INFO, "p2pFuncStartGO: Start TXQ - DFS ctrl: %.d\n", prCmdRddOnOffCtrl->ucDfsCtrl);
 
@@ -1368,7 +1373,12 @@ VOID p2pFuncStartRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START;
 
-	prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+	/*
+	 * FIX ME: Mobile driver can't get correct band. There is only 5G in DFS channel,
+	 * which is on band_0. So it assigned to ENUM_BAND_0 as temp solution.
+	 * Remember to fix it when driver could get the correct band from firmware.
+	 */
+	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
 
 	if (rlmDomainGetDfsRegion() == NL80211_DFS_JP) {
 		if (ucReqChnlNum >= 52 && ucReqChnlNum <= 64)
@@ -1415,7 +1425,12 @@ VOID p2pFuncStopRdd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_STOP;
 
-	prCmdRddOnOffCtrl->ucRddIdx = prAdapter->aprBssInfo[ucBssIdx]->eDBDCBand;
+	/*
+	 * FIX ME: Mobile driver can't get correct band. There is only 5G in DFS channel,
+	 * which is on band_0. So it assigned to ENUM_BAND_0 as temp solution.
+	 * Remember to fix it when driver could get the correct band from firmware.
+	 */
+	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;

@@ -2443,13 +2443,6 @@ VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEven
 	prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
 	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucHwBssIdNum; ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-
-		if (prBssInfo->eBand == BAND_2G4) {
-			if (fgDbdcEn)
-				prBssInfo->eDBDCBand = ENUM_BAND_1;
-			else
-				prBssInfo->eDBDCBand = ENUM_BAND_0;
-		}
 	}
 
 	DBDC_FSM_EVENT_HANDLER(prAdapter, DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE);

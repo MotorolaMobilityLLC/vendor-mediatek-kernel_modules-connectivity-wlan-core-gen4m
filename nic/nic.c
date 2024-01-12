@@ -1376,12 +1376,6 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
-	if ((prBssInfo->eDBDCBand != ENUM_BAND_0) && (prBssInfo->eDBDCBand != ENUM_BAND_1)) {
-		DBGLOG(BSS, ERROR, "Wrong eDBDCBand - [%u]\n", prBssInfo->eDBDCBand);
-		prBssInfo->eDBDCBand = ENUM_BAND_0; /* Work around : temp solution */
-		/*ASSERT(0);*/ /* FATAL ERROR */
-	}
-
 	kalMemZero(&rCmdSetBssInfo, sizeof(CMD_SET_BSS_INFO));
 
 	rCmdSetBssInfo.ucBssIndex = ucBssIndex;
@@ -1398,7 +1392,12 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	rCmdSetBssInfo.ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	rCmdSetBssInfo.u4PrivateData = prBssInfo->u4PrivateData;
 #if	CFG_SUPPORT_DBDC
-	rCmdSetBssInfo.ucDBDCBand = prBssInfo->eDBDCBand;
+	/*
+	 *To do: In fact, this is not used anymore and could be removed now.
+	 *But command structure change has driver and firmware dependency.
+	 *So currently using ENUM_BAND_AUTO is a temporary solution.
+	 */
+	rCmdSetBssInfo.ucDBDCBand = ENUM_BAND_AUTO;
 #endif
 	rCmdSetBssInfo.ucWmmSet = prBssInfo->ucWmmQueSet;
 	rCmdSetBssInfo.ucNss = prBssInfo->ucNss;
