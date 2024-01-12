@@ -575,6 +575,10 @@ else
 ccflags-y += -DCFG_SUPPORT_NAN=0
 endif
 
+ifeq ($(CFG_NL80211_TESTMODE), y)
+ccflags-y += -DCONFIG_NL80211_TESTMODE
+endif
+
 ifeq ($(MODULE_NAME),)
 	MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
