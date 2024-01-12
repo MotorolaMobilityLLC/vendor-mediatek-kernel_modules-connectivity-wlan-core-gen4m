@@ -2592,7 +2592,8 @@ void nicRxProcessPacketType(
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	case RX_PKT_TYPE_ICS:
 		if ((prAdapter->fgEnTmacICS
-			|| prAdapter->fgEnRmacICS) == TRUE)
+			|| prAdapter->fgEnRmacICS)
+				|| prAdapter->rWifiVar.fgDynamicIcs)
 			nicRxProcessIcsLog(prAdapter, prSwRfb);
 		RX_INC_CNT(prRxCtrl, RX_ICS_LOG_COUNT);
 		nicRxReturnRFB(prAdapter, prSwRfb);

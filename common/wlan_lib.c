@@ -8529,6 +8529,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prAdapter, "PagePoolMaxCnt", CFG_RX_MAX_PKT_NUM * 3);
 	kalSetupPagePoolPageMaxMinNum(prWifiVar->u4PagePoolMinCnt,
 				      prWifiVar->u4PagePoolMaxCnt);
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	prWifiVar->fgDynamicIcs = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "DynamicIcsEn", FEATURE_ENABLED);
+#endif
+
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 }
 
