@@ -7228,7 +7228,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->ucApChannel = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "ApChannel", 0);
-
+	prWifiVar->u2ApFreq = (uint16_t) wlanCfgGetUint32(
+					prAdapter, "ApFreq", 0);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	prWifiVar->fgDisable6GBand = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "Disable6GBand", 0);
