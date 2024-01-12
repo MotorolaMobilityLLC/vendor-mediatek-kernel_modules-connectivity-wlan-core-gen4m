@@ -2400,6 +2400,74 @@ rsnParseCheckForWFAInfoElem(struct ADAPTER *prAdapter,
 }				/* end of rsnParseCheckForWFAInfoElem() */
 
 #if CFG_SUPPORT_AAA
+static u_int8_t rsnParserCheckForPmkid(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	struct RSN_INFO *prRsnInfo)
+{
+	struct PMKID_ENTRY *entry;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+#endif
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapCheckPmkidInDriver) ||
+	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) ||
+	    prRsnInfo->u2PmkidCount <= 0)
+		return TRUE;
+
+	entry = rsnSearchPmkidEntry(prAdapter,
+		cnmStaRecAuthAddr(prAdapter, prStaRec),
+		prStaRec->ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!entry && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			entry = rsnSearchPmkidEntry(prAdapter,
+				cnmStaRecAuthAddr(prAdapter, prStaRec),
+				prTempBss->ucBssIndex);
+			if (entry)
+				break;
+		}
+	}
+#endif
+
+	DBGLOG(RSN, LOUD,
+		"Parse PMKID " PMKSTR " from " MACSTR "\n",
+		prRsnInfo->aucPmkid[0], prRsnInfo->aucPmkid[1],
+		prRsnInfo->aucPmkid[2], prRsnInfo->aucPmkid[3],
+		prRsnInfo->aucPmkid[4], prRsnInfo->aucPmkid[5],
+		prRsnInfo->aucPmkid[6], prRsnInfo->aucPmkid[7],
+		prRsnInfo->aucPmkid[8], prRsnInfo->aucPmkid[9],
+		prRsnInfo->aucPmkid[10], prRsnInfo->aucPmkid[11],
+		prRsnInfo->aucPmkid[12] + prRsnInfo->aucPmkid[13],
+		prRsnInfo->aucPmkid[14], prRsnInfo->aucPmkid[15],
+		MAC2STR(prStaRec->aucMacAddr));
+
+	if (!entry) {
+		DBGLOG(RSN, WARN,
+			"RSN with no PMKID, bss=%d, sta addr="MACSTR"\n",
+			prStaRec->ucBssIndex,
+			MAC2STR(prStaRec->aucMacAddr));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		DBGLOG(RSN, WARN,
+			"mlo=%d, sta mld addr=" MACSTR "\n",
+			mldIsMultiLinkFormed(prAdapter, prStaRec),
+			MAC2STR(prStaRec->aucMldAddr));
+#endif
+		return FALSE;
+	} else if (kalMemCmp(prRsnInfo->aucPmkid, entry->rBssidInfo.arPMKID,
+			     IW_PMKID_LEN) != 0) {
+		DBGLOG(RSN, WARN, "RSN with invalid PMKID\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Parse the given IE buffer and check if it is RSN IE with CCMP PSK
@@ -2468,73 +2536,10 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			return;
 		}
 
-		if (prAdapter->rWifiVar.fgSapCheckPmkidInDriver
-			&& rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)
-			&& rRsnIe.u2PmkidCount > 0) {
-			struct PMKID_ENTRY *entry;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			struct MLD_STA_RECORD *prMldSta;
-#endif
-
-			entry = rsnSearchPmkidEntry(prAdapter,
-				cnmStaRecAuthAddr(prAdapter, prStaRec),
-				prStaRec->ucBssIndex);
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			prMldSta = mldStarecGetByStarec(prAdapter,
-				prStaRec);
-			if (!entry && prMldSta &&
-			    IS_MLD_STAREC_MULTI(prMldSta)) {
-				struct STA_RECORD *prSta;
-
-				LINK_FOR_EACH_ENTRY(prSta,
-						    &prMldSta->rStarecList,
-						    rLinkEntryMld,
-						    struct STA_RECORD) {
-					entry = rsnSearchPmkidEntry(prAdapter,
-						prStaRec->aucMldAddr,
-						prSta->ucBssIndex);
-					if (entry)
-						break;
-				}
-			}
-#endif
-
-			DBGLOG(RSN, LOUD,
-				"Parse PMKID " PMKSTR " from " MACSTR "\n",
-				rRsnIe.aucPmkid[0], rRsnIe.aucPmkid[1],
-				rRsnIe.aucPmkid[2], rRsnIe.aucPmkid[3],
-				rRsnIe.aucPmkid[4], rRsnIe.aucPmkid[5],
-				rRsnIe.aucPmkid[6], rRsnIe.aucPmkid[7],
-				rRsnIe.aucPmkid[8], rRsnIe.aucPmkid[9],
-				rRsnIe.aucPmkid[10], rRsnIe.aucPmkid[11],
-				rRsnIe.aucPmkid[12] + rRsnIe.aucPmkid[13],
-				rRsnIe.aucPmkid[14], rRsnIe.aucPmkid[15],
-				MAC2STR(prStaRec->aucMacAddr));
-
-			if (!entry) {
-				DBGLOG(RSN, WARN,
-					"RSN with no PMKID, bss=%d, sta addr="
-					MACSTR "\n",
-					prStaRec->ucBssIndex,
-					MAC2STR(prStaRec->aucMacAddr));
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-				DBGLOG(RSN, WARN,
-					"mlo=%d, sta mld addr=" MACSTR "\n",
-					mldIsMultiLinkFormed(prAdapter,
-						prStaRec),
-					MAC2STR(prStaRec->aucMldAddr));
-#endif
-				*pu2StatusCode = STATUS_INVALID_PMKID;
-				return;
-			} else if (kalMemCmp(
-				rRsnIe.aucPmkid,
-				entry->rBssidInfo.arPMKID,
-				IW_PMKID_LEN) != 0) {
-				DBGLOG(RSN, WARN, "RSN with invalid PMKID\n");
-				*pu2StatusCode = STATUS_INVALID_PMKID;
-				return;
-			}
-
+		if (rsnParserCheckForPmkid(prAdapter, prBssInfo, prStaRec,
+					   &rRsnIe) == FALSE) {
+			*pu2StatusCode = STATUS_INVALID_PMKID;
+			return;
 		}
 
 		DBGLOG(RSN, TRACE, "RSN with CCMP-PSK\n");

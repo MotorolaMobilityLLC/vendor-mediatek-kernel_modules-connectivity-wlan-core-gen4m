@@ -7187,7 +7187,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_802_11BE == 1)
 	INIT_UINT(prWifiVar->ucStaEht, "StaEHT", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucApEht, "ApEHT", FEATURE_FORCE_ENABLED,
+	INIT_UINT(prWifiVar->ucApEht, "ApEHT", AP_EHT_DEFAULT_VALUE,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucP2pGoEht, "P2pGoEHT", FEATURE_FORCE_ENABLED,
 		  FEATURE_TO_CUSTOMER);

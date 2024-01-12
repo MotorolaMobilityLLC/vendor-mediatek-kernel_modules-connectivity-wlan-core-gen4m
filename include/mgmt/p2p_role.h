@@ -222,6 +222,20 @@ struct P2P_STATION_INFO {
 	/* TODO: Add more for requirement. */
 };
 
+struct MSG_P2P_ADD_MLD_LINK {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucRoleIdx;
+	uint8_t ucLinkIdx;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t aucLinkAddr[MAC_ADDR_LEN];
+};
+
+struct MSG_P2P_DEL_MLD_LINK {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint8_t ucRoleIdx;
+	uint8_t ucLinkIdx;
+};
+
 /* 3  --------------- WFA P2P Attributes Handler prototype --------------- */
 typedef uint32_t(*PFN_APPEND_ATTRI_FUNC) (struct ADAPTER *,
 		uint8_t, u_int8_t, uint16_t *, uint8_t *, uint16_t);
@@ -562,6 +576,13 @@ void p2pRoleFsmRunEventScanAbort(struct ADAPTER *prAdapter,
 
 #if (CFG_WOW_SUPPORT == 1)
 void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter);
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void p2pRoleFsmRunEventAddMldLink(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+void p2pRoleFsmRunEventDelMldLink(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
 #endif
 
 #endif

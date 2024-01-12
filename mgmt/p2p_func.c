@@ -1317,22 +1317,102 @@ struct MSDU_INFO *p2pFuncProcessP2pAssocResp(
 	return prMsduInfo;
 }
 
-uint32_t p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
-			    struct MSDU_INFO *prMgmtTxMsdu,
-			    u_int8_t fgNonCckRate)
+static void p2pFuncMgmtSearchStarec(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t aucAddr[],
+	struct BSS_INFO **pprBssInfo,
+	struct STA_RECORD **pprStaRec)
 {
-	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
-	/* P_MSDU_INFO_T prTxMsduInfo = (P_MSDU_INFO_T)NULL; */
-	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta = NULL;
 	struct MLD_BSS_INFO *prMldBss = NULL;
 #endif
+	struct STA_RECORD *prSta = NULL;
+	struct BSS_INFO *prBss = NULL;
+
+	prBss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBss) {
+		DBGLOG(P2P, ERROR,
+			"Null prBssInfo by idx(%u)\n",
+			ucBssIndex);
+		goto done;
+	}
+
+	/* no need to search for p2p dev */
+	if (prBss->ucBssIndex == prAdapter->ucP2PDevBssIdx)
+		goto done;
+
+	prSta = cnmGetStaRecByAddress(prAdapter, ucBssIndex, aucAddr);
+	if (prSta)
+		goto done;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBss);
+	prMldSta = mldStarecGetByMldAddr(prAdapter, prMldBss, aucAddr);
+
+	if (!prMldBss) {
+		DBGLOG(P2P, ERROR,
+			"Null mld bss by bss(%u)\n",
+			prBss->ucBssIndex);
+		goto done;
+	}
+
+	if (prMldSta) {
+		prSta = cnmGetStaRecByIndex(prAdapter,
+			secGetStaIdxByWlanIdx(prAdapter,
+				prMldSta->u2SetupWlanId));
+	} else {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			if (!cnmGetStaRecByAddress(prAdapter,
+						   prTempBss->ucBssIndex,
+						   aucAddr))
+				continue;
+
+			prSta = cnmGetStaRecByAddress(prAdapter,
+						      prTempBss->ucBssIndex,
+						      aucAddr);
+			break;
+		}
+	}
+
+	if (prSta) {
+		prBss = GET_BSS_INFO_BY_INDEX(prAdapter, prSta->ucBssIndex);
+		if (!prBss) {
+			DBGLOG(P2P, ERROR,
+				"Null prBssInfo by idx(%u)\n",
+				prSta->ucBssIndex);
+		}
+	}
+#endif
+
+
+done:
+	if (prBss)
+		*pprBssInfo = prBss;
+
+	if (prSta)
+		*pprStaRec = prSta;
+}
+
+uint32_t
+p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct MSDU_INFO *prMgmtTxMsdu,
+		u_int8_t fgNonCckRate)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	/* P_MSDU_INFO_T prTxMsduInfo = (P_MSDU_INFO_T)NULL; */
+	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 	uint8_t ucRetryLimit = 0;
 	uint32_t u4TxLifeTimeInMs = 0;
 	u_int8_t fgDrop = FALSE;
-	struct BSS_INFO *prBssInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	uint64_t u8GlCookie;
 	enum ENUM_P2P_CONNECT_STATE eConnState = P2P_CNN_NORMAL;
@@ -1358,42 +1438,13 @@ uint32_t p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		prWlanHdr = (struct WLAN_MAC_HEADER *)
 			((uintptr_t) prMgmtTxMsdu->prPacket +
 			MAC_TX_RESERVED_FIELD);
-		prStaRec = cnmGetStaRecByAddress(prAdapter,
-			ucBssIndex, prWlanHdr->aucAddr1);
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-			ucBssIndex);
-		if (!prBssInfo) {
-			DBGLOG(P2P, ERROR,
-				"Null prBssInfo by idx(%u)\n",
-				ucBssIndex);
-			fgDrop = TRUE;
+		p2pFuncMgmtSearchStarec(prAdapter, ucBssIndex,
+					prWlanHdr->aucAddr1,
+					&prBssInfo, &prStaRec);
+		if (!prBssInfo)
 			goto drop;
-		}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
-		prMldSta = mldStarecGetByMldAddr(prAdapter, prMldBss,
-			prWlanHdr->aucAddr1);
-
-		if (!prStaRec && prMldBss && prMldSta) {
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
-				secGetStaIdxByWlanIdx(prAdapter,
-					prMldSta->u2SetupWlanId));
-			if (prStaRec) {
-				ucBssIndex = prStaRec->ucBssIndex;
-				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					ucBssIndex);
-				if (!prBssInfo) {
-					DBGLOG(P2P, ERROR,
-						"Null prBssInfo by idx(%u)\n",
-						ucBssIndex);
-					fgDrop = TRUE;
-					goto drop;
-				}
-			}
-		}
-#endif
-
+		/* reassign bss idx again for mlo */
+		ucBssIndex = prBssInfo->ucBssIndex;
 		ucRetryLimit = prAdapter->rWifiVar.ucP2pMgmtTxRetryLimit;
 
 		switch (prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) {
@@ -4801,6 +4852,7 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 	prP2pSpecificBssInfo->u2RsnxIeLen = 0;
 	prP2pSpecificBssInfo->u2OweIeLen = 0;
 	prP2pSpecificBssInfo->u2TpeIeLen = 0;
+	prP2pSpecificBssInfo->fgMlIeExist = FALSE;
 	fgIsApMode = p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings
 		[prP2pBssInfo->u4PrivateData]);
@@ -5205,6 +5257,8 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 					IE_SIZE(pucIE), /* no need fragment */
 					aucBSSID,
 					MAC_FRAME_BEACON);
+
+				prP2pSpecificBssInfo->fgMlIeExist = TRUE;
 			}
 #endif
 #endif

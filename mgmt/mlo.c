@@ -4431,9 +4431,7 @@ uint8_t mldIsSingleLinkEnabled(
 	 * 2. EnableMlo 0 (disabled)
 	 */
 	if (IS_FEATURE_DISABLED(ucEhtOption) ||
-	    IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo) ||
-	   (fgIsApMode &&
-	    !IS_FEATURE_FORCE_ENABLED(prWifiVar->ucEnableMlo))) {
+	    IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo)) {
 		ret = FALSE;
 
 		DBGLOG(ML, TRACE,
@@ -4456,8 +4454,10 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *bss;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	u_int8_t fgIsApMode = FALSE;
 	uint8_t enable;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -4473,6 +4473,10 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	}
 
 	enable = IS_FEATURE_ENABLED(prWifiVar->ucEnableMlo);
+	fgIsApMode = p2pFuncIsAPMode(prWifiVar->prP2PConnSettings[
+		bss->u4PrivateData]);
+	prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
+		bss->u4PrivateData];
 
 	if (IS_BSS_APGO(bss)) {
 #ifdef MLD_SECURITY_RESTRICTIONS
@@ -4481,6 +4485,8 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		enable &= !!(bss->u2RsnSelectedCapInfo & ELEM_WPA_CAP_MFPC);
 #endif
 		enable &= !!(bss->ucPhyTypeSet & PHY_TYPE_BIT_EHT);
+		if (prP2pSpecBssInfo && fgIsApMode)
+			enable &= prP2pSpecBssInfo->fgMlIeExist;
 	} else if (prStaRec) {
 		enable &= !!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT);
 

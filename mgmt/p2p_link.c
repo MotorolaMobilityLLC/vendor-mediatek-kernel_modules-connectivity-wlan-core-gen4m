@@ -20,7 +20,8 @@ struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
 {
 	struct MLD_BSS_INFO *prMldbss = NULL;
 
-	if (mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode)) {
+	if (fgIsApMode == FALSE &&
+	    mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode)) {
 		if (gprP2pMldBssInfo == NULL) {
 			DBGLOG(INIT, TRACE, "\n");
 			gprP2pMldBssInfo = mldBssAlloc(prAdapter,

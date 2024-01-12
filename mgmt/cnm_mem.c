@@ -935,7 +935,7 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t *pucPeerMacAddr)
+	uint8_t ucBssIndex, const uint8_t *pucPeerMacAddr)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	uint16_t i;

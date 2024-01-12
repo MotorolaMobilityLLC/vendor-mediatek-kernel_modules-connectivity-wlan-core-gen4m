@@ -82,6 +82,8 @@ struct GL_P2P_INFO {
 	/* Todo : should move to the glueinfo or not*/
 	/*UINT_8 ucRoleInterfaceNum;*//* TH3 multiple P2P */
 
+	void *aprRoleHandler;
+
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	/*struct wireless_dev *prRoleWdev[KAL_P2P_NUM];*//* TH3 multiple P2P */
 
@@ -181,6 +183,8 @@ struct GL_P2P_INFO {
 
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 	u_int8_t fgChannelSwitchReq;
+
+	uint32_t u4LinkId;
 };
 
 struct GL_P2P_DEV_INFO {
