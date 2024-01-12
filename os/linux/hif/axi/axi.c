@@ -201,6 +201,8 @@ static void axiAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
 			   uint32_t u4Num);
+static void axiAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing);
 static bool axiAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			     uint32_t u4Num, uint32_t u4Idx);
 #else
@@ -438,6 +440,10 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 
 	prChipInfo->CSRBaseAddress = CSRBaseAddress;
 	prChipInfo->u4CsrOffset = (uint32_t)(g_u8CsrOffset & BITS(0, 31));
+
+	prChipInfo->HostCSRBaseAddress = CSRBaseAddress;
+	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
+	prChipInfo->u4HostCsrSize = g_u4CsrSize;
 
 	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
 	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
@@ -1214,6 +1220,22 @@ static void axiAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 	if (prDescRing->AllocVa == NULL)
 		DBGLOG(HAL, ERROR, "prDescRing->AllocVa is NULL\n");
 	else
+		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
+}
+
+static void axiAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing)
+{
+	struct HIF_MEM rMem;
+
+	if (!axiAllocRsvMem(prDescRing->AllocSize, &rMem)) {
+		DBGLOG(INIT, ERROR, "Ext Buf alloc fail\n");
+		return;
+	}
+
+	prDescRing->AllocVa = rMem.va;
+	prDescRing->AllocPa = rMem.pa;
+	if (prDescRing->AllocVa)
 		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
 

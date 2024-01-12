@@ -197,6 +197,7 @@ void nic_rxd_v3_fill_rfb(
 	struct SW_RFB *prSwRfb)
 {
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus;
 
 	uint32_t u4PktLen = 0;
@@ -207,6 +208,7 @@ void nic_rxd_v3_fill_rfb(
 	DEBUGFUNC("nicRxFillRFB");
 
 	prChipInfo = prAdapter->chip_info;
+	prWifiVar = &prAdapter->rWifiVar;
 	prRxStatus = prSwRfb->prRxStatus;
 
 	u4PktLen = (uint32_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_RX_BYTE_CNT(
@@ -318,6 +320,16 @@ void nic_rxd_v3_fill_rfb(
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldStarecLogRxData(prAdapter, prSwRfb->prStaRec, prSwRfb->ucHwBandIdx);
 #endif
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	if (prChipInfo->is_support_rro &&
+	    IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
+		prSwRfb->u4TcpUdpIpCksStatus =
+			HAL_MAC_CONNAC3X_RX_STATUS_GET_CLS_BITMAP(prRxStatus);
+	}
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 void nic_rxd_v3_parse_drop_pkt(struct SW_RFB *prSwRfb)

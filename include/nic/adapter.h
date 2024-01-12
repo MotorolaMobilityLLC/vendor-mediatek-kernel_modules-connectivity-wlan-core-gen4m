@@ -1226,6 +1226,12 @@ struct WIFI_VAR {
 #if CFG_MTK_FPGA_PLATFORM
 	uint32_t u4FpgaSpeedFactor;
 #endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	u_int8_t fgEnableMawd;
+	u_int8_t fgEnableMawdTx;
+	u_int8_t fgEnableSdo;
+	u_int8_t fgEnableRro;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 };
 
 /* cnm_timer module */

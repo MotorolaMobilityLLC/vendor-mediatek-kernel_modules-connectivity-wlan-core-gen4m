@@ -2710,7 +2710,7 @@ int _mtk_cfg80211_mgmt_tx_via_data_path(
 	uint8_t ucBssIndex = 0;
 
 	DBGLOG(P2P, INFO, "len[%d], cookie: 0x%llx.\n", len, u8GlCookie);
-	prSkb = kalPacketAlloc(prGlueInfo, len, &pucRecvBuff);
+	prSkb = kalPacketAlloc(prGlueInfo, len, TRUE, &pucRecvBuff);
 	if (prSkb) {
 		kalMemCopy(pucRecvBuff, buf, len);
 		skb_put(prSkb, len);

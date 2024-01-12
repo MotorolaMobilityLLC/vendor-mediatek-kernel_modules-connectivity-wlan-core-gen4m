@@ -115,6 +115,8 @@ struct HIF_MEM_OPS {
 	void (*allocRxDesc)(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
+	void (*allocExtBuf)(struct GL_HIF_INFO *prHifInfo,
+			    struct RTMP_DMABUF *prDescRing);
 	bool (*allocTxCmdBuf)(struct RTMP_DMABUF *prDmaBuf,
 			      uint32_t u4Num, uint32_t u4Idx);
 	void (*allocTxDataBuf)(struct MSDU_TOKEN_ENTRY *prToken,
@@ -148,6 +150,8 @@ struct HIF_MEM_OPS {
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 	void (*freeDesc)(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
+	void (*freeExtBuf)(struct GL_HIF_INFO *prHifInfo,
+			   struct RTMP_DMABUF *prDescRing);
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
@@ -194,6 +198,9 @@ struct GL_HIF_INFO {
 	u_int8_t fgMbxReadClear;
 
 	uint32_t u4IntStatus;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	uint32_t u4OffloadIntStatus;
+#endif
 	unsigned long ulIntFlag;
 
 	struct MSDU_TOKEN_INFO rTokenInfo;
