@@ -34,6 +34,11 @@
 #include "connv3.h"
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp_export.h"
+#include "mtk_ccci_common.h"
+#endif
+
 #define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
@@ -86,6 +91,9 @@ static void mt6655ProcessRxInterrupt(
 
 static void mt6655WfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
+
+static void mt6655EnableInterrupt(struct ADAPTER *prAdapter);
+static void mt6655DisableInterrupt(struct ADAPTER *prAdapter);
 
 static void mt6655ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
@@ -279,17 +287,59 @@ struct pse_group_info mt6655_pse_group[] = {
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6655_pcie_msi_layout[] = {
-	[0 ... 7] = {"conn_hif_host_int", mtk_pci_interrupt, NULL},
-	[8 ... 15] = {"conn_hif_host_int", NULL, NULL},
-	[16] = {"wm_conn2ap_wdt_irq", NULL, NULL},
-	[17] = {"wf_mcu_jtag_det_eint", NULL, NULL},
-	[18] = {"pmic_eint", NULL, NULL},
-	[19] = {"ccif_bgf2ap_sw_irq", NULL, NULL},
-	[20] = {"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
-		pcie_sw_int_thread_handler},
-	[21] = {"ccif_bgf2ap_irq_0", NULL, NULL},
-	[22] = {"ccif_bgf2ap_irq_1", NULL, NULL},
-	[23 ... 31] = {"reserved", NULL, NULL},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+	{"conn_hif_host_int", mtk_pci_interrupt, NULL, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"conn_hif_md_int", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+	{"conn_hif_host_int", NULL, NULL, 0},
+#endif
+	{"wm_conn2ap_wdt_irq", NULL, NULL, 0},
+	{"wf_mcu_jtag_det_eint", NULL, NULL, 0},
+	{"pmic_eint", NULL, NULL, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"ccif_bgf2ap_sw_irq", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"ccif_bgf2ap_sw_irq", NULL, NULL, 0},
+#endif
+	{"ccif_wf2ap_sw_irq", pcie_sw_int_top_handler,
+		pcie_sw_int_thread_handler, 0},
+#if CFG_MTK_MDDP_SUPPORT
+	{"ccif_bgf2ap_irq_0", mtk_md_dummy_pci_interrupt, NULL, 1},
+	{"ccif_bgf2ap_irq_1", mtk_md_dummy_pci_interrupt, NULL, 1},
+#else
+	{"ccif_bgf2ap_irq_0", NULL, NULL, 0},
+	{"ccif_bgf2ap_irq_1", NULL, NULL, 0},
+#endif
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
+	{"reserved", NULL, NULL, 0},
 };
 #endif
 
@@ -387,8 +437,8 @@ struct BUS_INFO mt6655_bus_info = {
 	.prPseGroup = mt6655_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6655_pse_group),
 	.pdmaSetup = mt6655WpdmaConfig,
-	.enableInterrupt = asicConnac3xEnablePlatformIRQ,
-	.disableInterrupt = asicConnac3xDisablePlatformIRQ,
+	.enableInterrupt = mt6655EnableInterrupt,
+	.disableInterrupt = mt6655DisableInterrupt,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6655InitPcieInt,
 	.pdmaStop = asicConnac3xWfdmaStop,
@@ -397,7 +447,6 @@ struct BUS_INFO mt6655_bus_info = {
 		.prMsiLayout = mt6655_pcie_msi_layout,
 		.u4MaxMsiNum = ARRAY_SIZE(mt6655_pcie_msi_layout),
 	},
-	.showDebugInfo = halPcieShowDebugInfo,
 #endif /* _HIF_PCIE */
 	.processTxInterrupt = mt6655ProcessTxInterrupt,
 	.processRxInterrupt = mt6655ProcessRxInterrupt,
@@ -1143,6 +1192,18 @@ static void mt6655ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	       u4Val,
 	       enable,
 	       u4WrVal);
+}
+
+static void mt6655EnableInterrupt(struct ADAPTER *prAdapter)
+{
+	asicConnac3xEnablePlatformIRQ(prAdapter);
+	mt6655ConfigIntMask(prAdapter->prGlueInfo, TRUE);
+}
+
+static void mt6655DisableInterrupt(struct ADAPTER *prAdapter)
+{
+	mt6655ConfigIntMask(prAdapter->prGlueInfo, FALSE);
+	asicConnac3xDisablePlatformIRQ(prAdapter);
 }
 
 static void mt6655WpdmaMsiConfig(struct ADAPTER *prAdapter)

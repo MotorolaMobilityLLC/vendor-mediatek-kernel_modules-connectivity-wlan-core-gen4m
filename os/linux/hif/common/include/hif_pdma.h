@@ -809,6 +809,7 @@ struct pcie_msi_layout {
 	uint8_t name[32];
 	irqreturn_t (*top_handler)(int irq, void *dev_instance);
 	irqreturn_t (*thread_handler)(int irq, void *dev_instance);
+	u_int8_t is_md_int;
 };
 
 struct pcie_msi_info {

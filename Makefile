@@ -410,7 +410,7 @@ CONFIG_MTK_WIFI_TRX_DIRECT=y
 CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
 ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(WLAN_CONNAC3_DEV), yes)
-        CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+        CONFIG_MTK_WIFI_PCIE_SUPPORT=y
     endif
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
@@ -427,7 +427,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifneq ($(CONFIG_PAGE_POOL),)
         CONFIG_RX_PAGE_POOL=y
     endif
-    CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    CONFIG_MTK_WIFI_PCIE_SUPPORT=y
     CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
     CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
     CONFIG_MTK_WIFI_FW_LOG_MMIO=y
@@ -466,7 +466,7 @@ else
     CONFIG_MTK_WIFI_NAN=n
 endif
 ifeq ($(MTK_ANDROID_WMT), y)
-    #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    #CONFIG_MTK_WIFI_PCIE_SUPPORT=y
     #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
 endif
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
@@ -917,8 +917,8 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
             ccflags-y += -DCFG_MTK_WIFI_PCIE_MSI_SUPPORT=1
         endif
     endif
-    ifeq ($(CONFIG_MTK_PCIE_PROBE_SUPPORT), y)
-        ccflags-y += -DCFG_MTK_PCIE_PROBE_SUPPORT
+    ifeq ($(CONFIG_MTK_WIFI_PCIE_SUPPORT), y)
+        ccflags-y += -DCFG_MTK_WIFI_PCIE_SUPPORT
     endif
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -D_HIF_USB=1
