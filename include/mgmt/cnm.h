@@ -80,6 +80,9 @@
 #define DBDC_5G_WMM_INDEX	0
 #define DBDC_2G_WMM_INDEX	1
 #endif
+#define HW_WMM_NUM		(prAdapter->ucHwBssIdNum)
+#define MAX_HW_WMM_INDEX	(HW_WMM_NUM - 1)
+#define DEFAULT_HW_WMM_INDEX	MAX_HW_WMM_INDEX
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -294,6 +297,13 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 #if CFG_SUPPORT_CHNL_CONFLICT_REVISE
 u_int8_t cnmAisDetectP2PChannel(struct ADAPTER *prAdapter,
 	enum ENUM_BAND *prBand, uint8_t *pucPrimaryChannel);
+#endif
+
+#if (CFG_HW_WMM_BY_BSS == 1)
+u_int8_t cnmWmmIndexDecision(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo);
+void cnmFreeWmmIndex(IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prBssInfo);
 #endif
 
 #if CFG_SUPPORT_DBDC
