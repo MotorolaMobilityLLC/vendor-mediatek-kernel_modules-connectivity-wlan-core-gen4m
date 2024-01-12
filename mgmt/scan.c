@@ -3454,6 +3454,19 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.rScanInfo.u4ScanUpdateIdx;
 	}
 
+	/* check if it is a probe response frame */
+	if (fgIsProbeResp)
+		prBssDesc->fgSeenProbeResp = TRUE;
+	/* end Support AP Selection */
+	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
+	if (fgIsProbeResp || fgIsValidSsid)
+		GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
+
+#if CFG_SUPPORT_802_11K
+	if (prBssDesc->fgIsConnected)
+		rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
+#endif
+
 #if (CFG_SUPPORT_WIFI_RNR == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* Both MLD IE and RNR IE exist, need to handle both */
@@ -3473,18 +3486,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	if (ucRnrIeExist)
 		scanParsingRnrElement(prAdapter, prBssDesc, NULL, aucRnrIe);
 #endif
-#endif
-	/* check if it is a probe response frame */
-	if (fgIsProbeResp)
-		prBssDesc->fgSeenProbeResp = TRUE;
-	/* end Support AP Selection */
-	/* 4 <7> Update BSS_DESC_T's Last Update TimeStamp. */
-	if (fgIsProbeResp || fgIsValidSsid)
-		GET_CURRENT_SYSTIME(&prBssDesc->rUpdateTime);
-
-#if CFG_SUPPORT_802_11K
-	if (prBssDesc->fgIsConnected)
-		rrmUpdateBssTimeTsf(prAdapter, prBssDesc);
 #endif
 
 	return prBssDesc;
