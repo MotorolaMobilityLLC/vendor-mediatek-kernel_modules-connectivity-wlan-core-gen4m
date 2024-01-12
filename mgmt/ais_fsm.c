@@ -4107,6 +4107,14 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	prBssDesc->ucJoinFailureCount++;
 	GET_CURRENT_SYSTIME(&prBssDesc->rJoinFailTime);
 
+	if (aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA3_OWE
+			&& prStaRec->u2StatusCode ==
+			STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED) {
+		DBGLOG(AIS, INFO,
+		       "OWE DH GROUP AP NOT SUPPORT, no need retry in driver.\n");
+		return AIS_STATE_JOIN_FAILURE;
+	}
+
 	if (prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD) {
 		aisAddBlocklist(prAdapter, prBssDesc);
 		DBGLOG(AIS, INFO,

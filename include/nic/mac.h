@@ -870,6 +870,9 @@
 #define STATUS_INVALID_MDE                          54
 /* Invalid FTE */
 #define STATUS_INVALID_FTE                          55
+/* not support DH group */
+#define STATUS_FINITE_CYCLIC_GROUP_NOT_SUPPORTED    77
+
 #define STATUS_FILS_AUTH_FAILURE		    112
 #define STATUS_UNKNOWN_AUTH_SERVER		    113
 /* Denied because the requesting STA is afflicated with a
