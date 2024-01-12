@@ -7027,10 +7027,17 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 	return 0;
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_add_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr,
+		    struct key_params *params)
+#else
 int mtk_cfg_add_key(struct wiphy *wiphy,
 		    struct net_device *ndev, u8 key_index,
 		    bool pairwise, const u8 *mac_addr,
 		    struct key_params *params)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -7054,10 +7061,17 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 				    mac_addr, params);
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_get_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr, void *cookie,
+		    void (*callback)(void *cookie, struct key_params *))
+#else
 int mtk_cfg_get_key(struct wiphy *wiphy,
 		    struct net_device *ndev, u8 key_index,
 		    bool pairwise, const u8 *mac_addr, void *cookie,
 		    void (*callback)(void *cookie, struct key_params *))
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -7080,9 +7094,15 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 				    pairwise, mac_addr, cookie, callback);
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_del_key(struct wiphy *wiphy,
+		    struct net_device *ndev, int link_id, u8 key_index,
+		    bool pairwise, const u8 *mac_addr)
+#else
 int mtk_cfg_del_key(struct wiphy *wiphy,
 		    struct net_device *ndev, u8 key_index,
 		    bool pairwise, const u8 *mac_addr)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -7105,9 +7125,15 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 				    pairwise, mac_addr);
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_default_key(struct wiphy *wiphy,
+			    struct net_device *ndev, int link_id,
+			    u8 key_index, bool unicast, bool multicast)
+#else
 int mtk_cfg_set_default_key(struct wiphy *wiphy,
 			    struct net_device *ndev,
 			    u8 key_index, bool unicast, bool multicast)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -7130,8 +7156,13 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 					    key_index, unicast, multicast);
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
+		struct net_device *ndev, int link_id, u8 key_index)
+#else
 int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 		struct net_device *ndev, u8 key_index)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
