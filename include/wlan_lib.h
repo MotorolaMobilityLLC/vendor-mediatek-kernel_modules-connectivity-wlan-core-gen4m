@@ -971,6 +971,16 @@ enum ENUM_TX_PROFILING_TAG {
 	TX_PROF_TAG_MAC_TX_DONE
 };
 
+#if (CFG_SUPPORT_SPE_IDX_CONTROL == 1)
+enum ENUM_WF_PATH_FAVOR_T {
+	ENUM_WF_NON_FAVOR = 0xff,
+	ENUM_WF_0_ONE_STREAM_PATH_FAVOR = 0,
+	ENUM_WF_1_ONE_STREAM_PATH_FAVOR = 1,
+	ENUM_WF_0_1_TWO_STREAM_PATH_FAVOR = 2,
+	ENUM_WF_0_1_DUP_STREAM_PATH_FAVOR = 3,
+};
+#endif
+
 struct PARAM_GET_CNM_T {
 	uint8_t	fgIsDbdcEnable;
 
@@ -1464,7 +1474,14 @@ void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter);
 extern int32_t mtk_wcn_wmt_wifi_fem_cfg_report(void *pvInfoBuf);
 #endif
 
-uint8_t wlanGetSpeIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
+#if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
+uint8_t wlanGetAntPathType(IN struct ADAPTER *prAdapter,
+			   IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor);
+#endif
+
+uint8_t wlanGetSpeIdx(IN struct ADAPTER *prAdapter,
+		      IN uint8_t ucBssIndex,
+		      IN enum ENUM_WF_PATH_FAVOR_T eWfPathFavor);
 
 uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
