@@ -2461,6 +2461,9 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 #endif /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
 	} else {
 		uint16_t u2JoinStatus;
+#if KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE
+		struct cfg80211_connect_resp_params params;
+#endif
 
 		if (eStatus == WLAN_STATUS_MEDIA_CONNECT) {
 			u2JoinStatus = WLAN_STATUS_SUCCESS;
@@ -2474,19 +2477,20 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 				u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
 		}
 
-#if ((CFG_ADVANCED_80211_MLO == 1) || \
-	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)) && \
-	(CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prMldStaRec) {
-			struct cfg80211_connect_resp_params params;
+#if KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE
+		kalMemSet(&params, 0, sizeof(params));
+		params.status = u2JoinStatus;
+		params.req_ie = prConnSettings->aucReqIe;
+		params.req_ie_len = prConnSettings->u4ReqIeLength;
+		params.resp_ie = prConnSettings->aucRspIe;
+		params.resp_ie_len = prConnSettings->u4RspIeLength;
+		params.timeout_reason = NL80211_TIMEOUT_UNSPECIFIED;
 
-			kalMemSet(&params, 0, sizeof(params));
-			params.status = u2JoinStatus;
-			params.req_ie = prConnSettings->aucReqIe;
-			params.req_ie_len = prConnSettings->u4ReqIeLength;
-			params.resp_ie = prConnSettings->aucRspIe;
-			params.resp_ie_len = prConnSettings->u4RspIeLength;
-			params.timeout_reason = NL80211_TIMEOUT_UNSPECIFIED;
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prMldStaRec) {
 			params.ap_mld_addr = prMldStaRec->aucPeerMldAddr;
 			params.valid_links = valid_links;
 			for (i = 0; i < MLD_LINK_MAX; i++) {
@@ -2504,29 +2508,43 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 				u2JoinStatus == WLAN_STATUS_SUCCESS ?
 				"Success" : "Failure",
 				MAC2STR(params.ap_mld_addr), u2JoinStatus);
-
-			cfg80211_connect_done(netdev, &params, GFP_KERNEL);
 		} else
 #endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
 		{
+			params.links[0].bssid = links[0].bssid;
+			params.links[0].bss = links[0].bss;
+
 			DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d",
 				u2JoinStatus == WLAN_STATUS_SUCCESS ?
 				"Success" : "Failure",
 				MAC2STR(links[0].bssid), u2JoinStatus);
-
-			cfg80211_connect_result(
-				netdev,
-				links[0].bssid,
-				prConnSettings->aucReqIe,
-				prConnSettings->u4ReqIeLength,
-				prConnSettings->aucRspIe,
-				prConnSettings->u4RspIeLength,
-				u2JoinStatus,
-				GFP_KERNEL);
-
-			if (links[0].bss)
-				cfg80211_put_bss(wlanGetWiphy(), links[0].bss);
 		}
+#else /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
+		params.bssid =	links[0].bssid;
+		params.bss = links[0].bss;
+#endif /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
+
+		cfg80211_connect_done(netdev, &params, GFP_KERNEL);
+
+#else /* KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE */
+		DBGLOG(INIT, INFO, "JOIN %s: AP "MACSTR" Status=%d",
+			u2JoinStatus == WLAN_STATUS_SUCCESS ?
+			"Success" : "Failure",
+			MAC2STR(links[0].bssid), u2JoinStatus);
+
+		cfg80211_connect_result(
+			netdev,
+			links[0].bssid,
+			prConnSettings->aucReqIe,
+			prConnSettings->u4ReqIeLength,
+			prConnSettings->aucRspIe,
+			prConnSettings->u4RspIeLength,
+			u2JoinStatus,
+			GFP_KERNEL);
+
+		if (links[0].bss)
+			cfg80211_put_bss(wlanGetWiphy(), links[0].bss);
+#endif /* KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE */
 	}
 
 	return WLAN_STATUS_SUCCESS;
