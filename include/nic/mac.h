@@ -1095,6 +1095,9 @@
 #define ELEM_EXT_ID_ESP	\
 	11 /* Estimated Service Parameters */
 
+#define ELEM_EXT_ID_MLD \
+	255	/* TEST: Multi-Link element */
+
 #define ELEM_EXT_ID_FILS_REQUEST_PARA \
 	2 /* FILS Request Parameters */
 
@@ -1966,6 +1969,33 @@ enum BEACON_REPORT_DETAIL {
 #define TBTT_INFO_BSS_PARAM_SAME_SSID               BIT(1)
 /* 9.4.2.260 Short SSID List element */
 #define ELEM_EXT_ID_SHORT_SSID_LIST                 58
+
+#define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
+#define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
+#define MLD_PARAM_LINK_ID_SHIFT				8
+#define MLD_PARAM_BSS_PARAM_CHANGE_COUNT_MASK		BITS(12, 19)
+#define MLD_PARAM_BSS_PARAM_CHANGE_COUNT_SHIFT		12
+
+/* 9.4.2.295b.2 Basic variant Multi-Link element */
+#define ML_CTRL_TYPE_MASK				BITS(0, 2)
+#define ML_CTRL_PRE_BMP_MASK				BITS(4, 15)
+#define ML_CTRL_PRE_BMP_SHIFT				4
+#define ML_CTRL_MLD_MAC_ADDR_PRESENT			BIT(0)
+#define ML_CTRL_LINK_ID_INFO_PRESENT			BIT(1)
+#define ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT		BIT(2)
+#define ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT		BIT(3)
+#define ML_CTRL_EML_CAPA_PRESENT			BIT(4)
+#define ML_CTRL_MLD_CAPA_PRESENT			BIT(5)
+
+/* Figure 9-788eo - STA Control field format */
+#define ML_STA_CTRL_LINK_ID_MASK			BITS(0, 3)
+#define ML_STA_CTRL_COMPLETE_PROFILE			BIT(4)
+#define ML_STA_CTRL_MAC_ADDR_PRESENT			BIT(5)
+#define ML_STA_CTRL_BCN_INTV_PRESENT			BIT(6)
+#define ML_STA_CTRL_DTIM_INFO_PRESENT			BIT(7)
+#define ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT		BIT(8)
+#define ML_STA_CTRL_NSTR_BMP_SIZE			BIT(9)
+#define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			9
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
