@@ -141,6 +141,7 @@ void cmdBufInitialize(IN struct ADAPTER *prAdapter)
 
 }				/* end of cmdBufInitialize() */
 
+#define CMD_DUMP_NUM_PER_LINE 5
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief dump CMD queue and print to trace, for debug use only
@@ -152,48 +153,31 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
 			int8_t *queName)
 {
 	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *)
-				     QUEUE_GET_HEAD(prQueue);
+			QUEUE_GET_HEAD(prQueue);
+	uint8_t i = 1, pos = 0;
+	char buf[500] = {0};
 
 	DBGLOG(NIC, INFO, "Dump CMD info for %s, Elem number:%u\n",
-	       queName, prQueue->u4NumElem);
+			queName, prQueue->u4NumElem);
+	kalMemZero(buf, sizeof(buf));
 	while (prCmdInfo) {
-		struct CMD_INFO *prCmdInfo1, *prCmdInfo2, *prCmdInfo3;
+		u_int8_t fgEndLine = i == prQueue->u4NumElem ||
+				i % CMD_DUMP_NUM_PER_LINE == 0;
 
-		prCmdInfo1 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *)prCmdInfo);
-		if (!prCmdInfo1) {
-			DBGLOG(NIC, INFO, "CID:%d SEQ:%d\n", prCmdInfo->ucCID,
-			       prCmdInfo->ucCmdSeqNum);
-			break;
+		pos += kalSnprintf(buf + pos, 30,
+				"CID:0x%02x,SEQ:%d,Type:%d%s",
+				prCmdInfo->ucCID,
+				prCmdInfo->ucCmdSeqNum,
+				prCmdInfo->eCmdType,
+				fgEndLine ? "\n" : "; ");
+		if (fgEndLine) {
+			DBGLOG(NIC, INFO, "%s", buf);
+			kalMemZero(buf, sizeof(buf));
+			pos = 0;
 		}
-		prCmdInfo2 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *)prCmdInfo1);
-		if (!prCmdInfo2) {
-			DBGLOG(NIC, INFO, "CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
-			       prCmdInfo->ucCID,
-			       prCmdInfo->ucCmdSeqNum, prCmdInfo1->ucCID,
-			       prCmdInfo1->ucCmdSeqNum);
-			break;
-		}
-		prCmdInfo3 = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *)prCmdInfo2);
-		if (!prCmdInfo3) {
-			DBGLOG(NIC, INFO,
-			       "CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
-			       prCmdInfo->ucCID,
-			       prCmdInfo->ucCmdSeqNum, prCmdInfo1->ucCID,
-			       prCmdInfo1->ucCmdSeqNum,
-			       prCmdInfo2->ucCID, prCmdInfo2->ucCmdSeqNum);
-			break;
-		}
-		DBGLOG(NIC, INFO,
-		       "CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d; CID:%d, SEQ:%d\n",
-		       prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum,
-		       prCmdInfo1->ucCID, prCmdInfo1->ucCmdSeqNum,
-		       prCmdInfo2->ucCID, prCmdInfo2->ucCmdSeqNum,
-		       prCmdInfo3->ucCID, prCmdInfo3->ucCmdSeqNum);
-		prCmdInfo = (struct CMD_INFO *)QUEUE_GET_NEXT_ENTRY((
-					struct QUE_ENTRY *)prCmdInfo3);
+		prCmdInfo = (struct CMD_INFO *) QUEUE_GET_NEXT_ENTRY((
+					struct QUE_ENTRY *) prCmdInfo);
+		i++;
 	}
 }
 
@@ -231,6 +215,7 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_RESOURCE);
 
 	if (prCmdInfo) {
+		kalMemZero(prCmdInfo, sizeof(struct CMD_INFO));
 		/* Setup initial value in CMD_INFO_T */
 		prCmdInfo->u2InfoBufLen = 0;
 		prCmdInfo->fgIsOid = FALSE;
