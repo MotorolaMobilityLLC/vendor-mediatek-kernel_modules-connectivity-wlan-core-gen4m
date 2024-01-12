@@ -1488,6 +1488,9 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 				 prMsduInfo->u2FrameLength);
 	/* Todo:: network id */
 	ucBssIndex = prMsduInfo->ucBssIndex;
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+
 	/* For FT, we reuse the RSN Element composed in userspace */
 	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
 		return;
