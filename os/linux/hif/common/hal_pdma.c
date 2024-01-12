@@ -1313,6 +1313,10 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 					 prAdapter->prGlueInfo->u8HifIntTime);
 		GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, sched_clock());
 
+		kalTraceEvent("Recv id=0x%04x sn=%d",
+			GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket),
+			GLUE_GET_PKT_SEQ_NO(prSwRfb->pvPacket));
+
 		prSwRfb->ucStaRecIdx =
 			secGetStaIdxByWlanIdx(
 				prAdapter,
@@ -2246,7 +2250,6 @@ void halWpdamFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
 		      bool fgSetEvent)
 {
-
 	DBGLOG(HAL, LOUD, "Tx Data: Msdu[0x%p], TokFree[%u] TxDone[%u]\n",
 		prMsduInfo, halGetMsduTokenFreeCnt(prGlueInfo->prAdapter),
 		(prMsduInfo->pfTxDoneHandler ? TRUE : FALSE));

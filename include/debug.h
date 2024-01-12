@@ -202,10 +202,11 @@ enum ENUM_DBG_MODULE {
 	DBG_ROAMING_IDX,	/* 0x1B *//* ROAMING */
 	DBG_TDLS_IDX,		/* 0x1C *//* TDLS *//* CFG_SUPPORT_TDLS */
 	DBG_PF_IDX,		/* 0x1D *//* PF */
-	DBG_OID_IDX,
-	DBG_NIC_IDX,
-	DBG_WNM_IDX,
-	DBG_WMM_IDX,
+	DBG_OID_IDX,		/* 0x1E *//* OID */
+	DBG_NIC_IDX,		/* 0x1F *//* NIC */
+	DBG_WNM_IDX,		/* 0x20 *//* WNM */
+	DBG_WMM_IDX,		/* 0x21 *//* WMM */
+	DBG_TRACE_IDX,		/* 0x22 *//* TRACE *//* don't add before */
 	DBG_TWT_REQUESTER_IDX,
 	DBG_TWT_PLANNER_IDX,
 	DBG_RRM_IDX,
