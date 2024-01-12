@@ -230,14 +230,17 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 
 exit:
 	if (prMsduInfo == NULL) {
-		log_dbg(MEM, WARN, "MgtDesc#=%u\n", prQueList->u4NumElem);
-
 #if CFG_DBG_MGT_BUF
-		log_dbg(MEM, WARN, "rMgtBufInfo: alloc#=%u, free#=%u, null#=%u\n",
+		DBGLOG_LIMITED(MEM, WARN,
+			"MgtDesc#=%u rMgtBufInfo: alloc#=%u, free#=%u, null#=%u\n",
+			prQueList->u4NumElem,
 			prAdapter->rMgtBufInfo.u4AllocCount,
 			prAdapter->rMgtBufInfo.u4FreeCount,
 			prAdapter->rMgtBufInfo.u4AllocNullCount);
-#endif
+#else /* CFG_DBG_MGT_BUF */
+		DBGLOG_LIMITED(MEM, WARN, "MgtDesc#=%u\n",
+			prQueList->u4NumElem);
+#endif /* CFG_DBG_MGT_BUF */
 	}
 
 	return prMsduInfo;
