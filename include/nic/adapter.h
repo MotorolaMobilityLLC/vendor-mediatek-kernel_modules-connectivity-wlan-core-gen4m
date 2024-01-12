@@ -1178,6 +1178,7 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 	u_int8_t fgBoostCpuEn;
 	u_int8_t fgBoostCpuByPPSEn;
+	u_int8_t fgBoostCpuPolicyEn;
 	uint32_t u4BoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4BoostLittleCpuTh;
@@ -1857,13 +1858,16 @@ struct PERF_MONITOR {
 	unsigned long ulTxTp[MAX_BSSID_NUM]; /* in Bps */
 	unsigned long ulRxTp[MAX_BSSID_NUM]; /* in Bps */
 	uint32_t u4UpdatePeriod; /* in ms */
+	uint32_t u4PrevPerfLevel;
 	uint32_t u4BoostPerfLevel;
 	uint32_t u4TarPerfLevel;
 	uint32_t u4CurrPerfLevel;
 	uint32_t u4UsedCnt;
 	unsigned long ulTotalTxSuccessCount;
 	unsigned long ulTotalTxFailCount;
+	unsigned long ulStableTput;
 	u_int8_t fgIdle; /* set as true when no tx/rx on last sec */
+	u_int8_t fgPolicyReady;
 	uint32_t u4TriggerCnt;
 	uint32_t u4RunCnt;
 };

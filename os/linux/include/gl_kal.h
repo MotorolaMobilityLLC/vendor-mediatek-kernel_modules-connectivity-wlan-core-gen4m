@@ -2278,6 +2278,8 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh);
+int32_t kalBoostCpuPolicy(struct ADAPTER *prAdapter);
+u_int8_t kalCheckBoostCpuMargin(struct ADAPTER *prAdapter);
 int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
 			 uint32_t u4CurrPerfLevel,
 			 uint32_t u4TarPerfLevel,

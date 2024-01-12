@@ -9806,11 +9806,13 @@ inline int32_t kalPerMonStart(struct GLUE_INFO
 			 prPerMonitor->ulPerfMonFlag))
 		return 0;
 
+	prPerMonitor->u4PrevPerfLevel = 0;
 	prPerMonitor->u4CurrPerfLevel = 0;
 	prPerMonitor->u4TarPerfLevel = 0;
 	prPerMonitor->u4BoostPerfLevel = 0;
 	prPerMonitor->u4UpdatePeriod =
 		prGlueInfo->prAdapter->rWifiVar.u4PerfMonUpdatePeriod;
+	prPerMonitor->fgPolicyReady = FALSE;
 	cnmTimerStartTimer(prGlueInfo->prAdapter,
 		&prPerMonitor->rPerfMonTimer, prPerMonitor->u4UpdatePeriod);
 	KAL_SET_BIT(PERF_MON_RUNNING_BIT,
@@ -9848,6 +9850,7 @@ inline int32_t kalPerMonStop(struct GLUE_INFO
 		KAL_CLR_BIT(PERF_MON_RUNNING_BIT,
 			    prPerMonitor->ulPerfMonFlag);
 
+		prPerMonitor->u4PrevPerfLevel = 0;
 		prPerMonitor->u4CurrPerfLevel = 0;
 		prPerMonitor->u4TarPerfLevel = 0;
 		prPerMonitor->u4BoostPerfLevel = 0;
@@ -10611,7 +10614,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			prGlueInfo->fgIsInSuspendMode, keep_alive);
 		kalPerMonStop(prGlueInfo);
 	} else {
-		uint32_t u4PrevTputLv, u4CurrTputLv;
+		uint32_t u4CurrTputLv;
 
 		if (prPerMonitor->u4UpdatePeriod < SEC_TO_MSEC(1)) {
 			u4CurrTputLv = max(
@@ -10622,7 +10625,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 				prPerMonitor->u4TarPerfLevel;
 		}
 
-		u4PrevTputLv = prPerMonitor->u4BoostPerfLevel;
+		prPerMonitor->u4PrevPerfLevel =
+			prPerMonitor->u4BoostPerfLevel;
 		prPerMonitor->u4BoostPerfLevel = u4CurrTputLv;
 
 #if CFG_SUPPORT_MCC_BOOST_CPU
@@ -10630,7 +10634,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
 		if (kalCheckTputLoad(prAdapter,
-			u4PrevTputLv,
+			prPerMonitor->u4PrevPerfLevel,
 			u4CurrTputLv,
 			GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 			GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt))) {
@@ -10640,7 +10644,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			(unsigned long) (maxTput >> 20),
 			(unsigned long) ((maxTput >> 10)
 					& BITS(0, 9)),
-			u4PrevTputLv,
+			prPerMonitor->u4PrevPerfLevel,
 			u4CurrTputLv,
 			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag,
@@ -10650,7 +10654,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			/* boost current level due to overloading */
 			kalBoostCpu(prAdapter, u4CurrTputLv,
 				u4CurrTputLv);
-		} else if (((u4CurrTputLv != u4PrevTputLv)
+		} else if ((((u4CurrTputLv != prPerMonitor->u4PrevPerfLevel)
+			&& !kalCheckBoostCpuMargin(prAdapter))
 #if CFG_SUPPORT_MCC_BOOST_CPU
 			|| kalIsMccStateChange(prAdapter)
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
@@ -10660,7 +10665,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			(unsigned long) (maxTput >> 20),
 			(unsigned long) ((maxTput >> 10)
 					& BITS(0, 9)),
-			u4PrevTputLv,
+			prPerMonitor->u4PrevPerfLevel,
 			u4CurrTputLv,
 			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
@@ -10674,6 +10679,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 			kalBoostCpu(prAdapter, u4CurrTputLv,
 				u4BoostCpuTh);
+		} else {
+			kalBoostCpuPolicy(prAdapter);
 		}
 
 /* switch pcie gen */
@@ -10685,7 +10692,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 		u4CoalescingIntTh =
 			prAdapter->rWifiVar.u4PerfMonTpCoalescingIntTh;
 
-		if ((u4CurrTputLv != u4PrevTputLv) &&
+		if ((u4CurrTputLv != prPerMonitor->u4PrevPerfLevel) &&
 			(u4CoalescingIntTh <
 			 PERF_MON_TP_MAX_THRESHOLD)) {
 
@@ -10888,6 +10895,16 @@ int32_t __weak kalBoostCpu(struct ADAPTER *prAdapter,
 {
 	DBGLOG(SW4, INFO, "enter kalBoostCpu\n");
 	return 0;
+}
+
+int32_t __weak kalBoostCpuPolicy(struct ADAPTER *prAdapter)
+{
+	return 0;
+}
+
+u_int8_t __weak kalCheckBoostCpuMargin(struct ADAPTER *prAdapter)
+{
+	return FALSE;
 }
 
 uint32_t __weak kalGetCpuBoostThreshold(void)
