@@ -390,6 +390,52 @@ void p2pFuncCancelScan(struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* p2pFuncCancelScan */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void p2pAllocMldStarec(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+{
+	uint8_t i;
+	struct MLD_BSS_INFO *prMldBssInfo = prP2pRoleFsmInfo->prP2pMldBssInfo;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+
+	if (!prMldBssInfo)
+		return;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
+		struct BSS_INFO *prBssInfo =
+			p2pGetLinkBssInfo(prAdapter, prP2pRoleFsmInfo, i);
+		struct BSS_DESC *prBssDesc =
+			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
+
+		if (!prBssInfo || !prStaRec || !prBssDesc)
+			continue;
+
+		if (!mldSingleLink(prAdapter, prStaRec, prBssInfo->ucBssIndex))
+			continue;
+
+		if (prMldStaRec == NULL) {
+			prMldStaRec = mldStarecAlloc(prAdapter, prMldBssInfo,
+				prBssDesc->rMlInfo.aucMldAddr,
+				prBssDesc->rMlInfo.fgMldType,
+				prBssDesc->rMlInfo.u2EmlCap,
+				prBssDesc->rMlInfo.u2MldCap);
+		}
+
+		if (prMldStaRec == NULL) {
+			DBGLOG(P2P, ERROR, "P2P%d can't alloc prMldStaRec\n",
+				prP2pRoleFsmInfo->ucRoleIndex);
+			return;
+		}
+
+		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		mldStarecRegister(prAdapter, prMldStaRec, prStaRec,
+			prBssDesc->rMlInfo.ucLinkIndex);
+	}
+}
+#endif
+
 void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		struct P2P_JOIN_INFO *prP2pJoinInfo)
@@ -451,23 +497,9 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucBssIndex, prBssDesc);
 
 		if (prStaRec == NULL) {
-			DBGLOG(P2P, TRACE, "Create station record fail\n");
+			DBGLOG(P2P, ERROR, "Create station record fail\n");
 			continue;
 		}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (mldSingleLink(prAdapter, prStaRec,
-				  prP2pBssInfo->ucBssIndex)) {
-			prP2pBssInfo->ucLinkIndex =
-				prBssDesc->rMlInfo.ucLinkIndex;
-			mldStarecRegister(prAdapter, prStaRec,
-				prBssDesc->rMlInfo.fgMldType,
-				prBssDesc->rMlInfo.aucMldAddr,
-				prBssDesc->rMlInfo.ucLinkIndex,
-				prBssDesc->rMlInfo.u2EmlCap,
-				prBssDesc->rMlInfo.u2MldCap);
-		}
-#endif
 
 		p2pSetLinkStaRec(prP2pRoleFsmInfo, prStaRec, i);
 		/* only setup link needs to do SAA */
@@ -532,6 +564,10 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 			continue;
 		}
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	p2pAllocMldStarec(prAdapter, prP2pRoleFsmInfo);
+#endif
 
 	do {
 		/* 4 <5> Overwrite Connection Setting

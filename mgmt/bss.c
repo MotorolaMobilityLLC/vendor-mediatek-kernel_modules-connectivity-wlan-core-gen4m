@@ -526,24 +526,24 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(struct ADAPTER *prAdapter,
 	/* 4 <1> Get a valid STA_RECORD_T */
 	prStaRec =
 	    cnmGetStaRecByAddress(prAdapter, ucBssIndex, prBssDesc->aucSrcAddr);
-	if (!prStaRec) {
-		prStaRec =
-		    cnmStaRecAlloc(prAdapter, eStaType, ucBssIndex,
-				   prBssDesc->aucSrcAddr);
-
-		if (!prStaRec) {
-			DBGLOG(BSS, WARN,
-			       "STA_REC entry is full, cannot acquire new entry for ["
-			       MACSTR "]!!\n", MAC2STR(prBssDesc->aucSrcAddr));
-			return NULL;
-		}
-
-		prStaRec->ucStaState = STA_STATE_1;
-		prStaRec->ucJoinFailureCount = 0;
-		/* TODO(Kevin): If this is an old entry,
-		 * we may also reset the ucJoinFailureCount to 0.
-		 */
+	if (prStaRec) {
+		DBGLOG(BSS, WARN,
+		       "STA_REC entry exist, cannot acquire new entry for ["
+		       MACSTR "]!!\n", MAC2STR(prBssDesc->aucSrcAddr));
+		return NULL;
 	}
+
+	prStaRec = cnmStaRecAlloc(prAdapter, eStaType, ucBssIndex,
+		prBssDesc->aucSrcAddr);
+	if (!prStaRec) {
+		DBGLOG(BSS, WARN,
+		       "STA_REC entry is full, cannot acquire new entry for ["
+		       MACSTR "]!!\n", MAC2STR(prBssDesc->aucSrcAddr));
+		return NULL;
+	}
+
+	prStaRec->ucStaState = STA_STATE_1;
+	prStaRec->ucJoinFailureCount = 0;
 
 	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
 	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;

@@ -772,7 +772,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldBssAlloc(prAdapter, &prMldBssInfo);
+	prMldBssInfo = mldBssAlloc(prAdapter);
 	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
 	prAisFsmInfo->ucMlProbeSendCount = 0;
 	prAisFsmInfo->ucMlProbeEnable = FALSE;
@@ -1158,6 +1158,57 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 	}
 } /* rsnCheckPmkidCache */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void aisAllocMldStarec(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo)
+{
+	uint8_t i;
+	struct MLD_BSS_INFO *prMldBssInfo = prAisFsmInfo->prMldBssInfo;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
+
+	if (!prMldBssInfo)
+		return;
+
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+	/* disable old clients before alloc new mld starec */
+	mldBssDisableAllClients(prAdapter, prMldBssInfo);
+#endif
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			aisGetLinkStaRec(prAisFsmInfo, i);
+		struct BSS_INFO *prBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+		struct BSS_DESC *prBssDesc =
+			aisGetLinkBssDesc(prAisFsmInfo, i);
+
+		if (!prBssInfo || !prStaRec || !prBssDesc)
+			continue;
+
+		if (!mldSingleLink(prAdapter, prStaRec, prBssInfo->ucBssIndex))
+			continue;
+
+		if (prMldStaRec == NULL) {
+			prMldStaRec = mldStarecAlloc(prAdapter, prMldBssInfo,
+				prBssDesc->rMlInfo.aucMldAddr,
+				prBssDesc->rMlInfo.fgMldType,
+				prBssDesc->rMlInfo.u2EmlCap,
+				prBssDesc->rMlInfo.u2MldCap);
+		}
+
+		if (prMldStaRec == NULL) {
+			DBGLOG(AIS, ERROR, "AIS%d can't alloc prMldStaRec\n",
+				prAisFsmInfo->ucAisIndex);
+			return;
+		}
+
+		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		mldStarecRegister(prAdapter, prMldStaRec, prStaRec,
+			prBssDesc->rMlInfo.ucLinkIndex);
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialization of JOIN STATE
@@ -1213,18 +1264,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			"aisFsmStateInit_JOIN failed because prStaRec is NULL, return.\n");
 		return;
 	}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
-		prAisBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
-		mldStarecRegister(prAdapter, prStaRec,
-			prBssDesc->rMlInfo.fgMldType,
-			prBssDesc->rMlInfo.aucMldAddr,
-			prBssDesc->rMlInfo.ucLinkIndex,
-			prBssDesc->rMlInfo.u2EmlCap,
-			prBssDesc->rMlInfo.u2MldCap);
-	}
-#endif
 
 	aisSetLinkStaRec(prAisFsmInfo, prStaRec, ucLinkIndex);
 
@@ -2854,6 +2893,10 @@ send_msg:
 						i);
 			}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			aisAllocMldStarec(prAdapter, prAisFsmInfo);
+#endif
+
 			break;
 		}
 		case AIS_STATE_JOIN_FAILURE:
@@ -2883,6 +2926,11 @@ send_msg:
 		case AIS_STATE_NORMAL_TR:
 			/* recycle unused bssinfo */
 			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
+			mldBssEnableAllClients(prAdapter,
+				prAisFsmInfo->prMldBssInfo);
+#endif
 
 			/* Don't do anything when rJoinTimeoutTimer
 			 * is still ticking

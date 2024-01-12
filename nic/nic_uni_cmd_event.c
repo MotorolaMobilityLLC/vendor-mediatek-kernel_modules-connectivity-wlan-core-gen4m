@@ -3952,7 +3952,7 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		sizeof(prMldStarec->u2EmlCap));
 
 	DBGLOG(INIT, INFO,
-		"[%d] bss=%d,nsep=%d,eml=0x%%04x,str[0x%x,0x%x,0x%x] mldType=%d\n",
+		"[%d] bss=%d,nsep=%d,eml=0x%04x,str[0x%x,0x%x,0x%x] mldType=%d\n",
 		prStaRec->ucIndex,
 		cmd->ucBssIndex,
 		tag->fgNSEP,

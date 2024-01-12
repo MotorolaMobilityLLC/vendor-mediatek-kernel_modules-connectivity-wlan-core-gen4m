@@ -269,7 +269,7 @@ const uint8_t aucLinkPlan[] = {
  */
 
 struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
-	uint8_t *addr, uint8_t bidx, uint8_t is_mld)
+	uint8_t *addr, uint8_t bidx, uint8_t is_mlo)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AP_COLLECTION *a = NULL;
@@ -278,7 +278,7 @@ struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
 
 	while (a != NULL &&
 	       (UNEQUAL_MAC_ADDR(a->aucAddr, addr) ||
-	       a->fgIsMld != is_mld))
+	       a->fgIsMultiLink != is_mlo))
 		a = a->hnext;
 	return a;
 }
@@ -302,14 +302,14 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 		return;
 
 	if (EQUAL_MAC_ADDR(a->aucAddr, ap->aucAddr) &&
-		a->fgIsMld == ap->fgIsMld) {
+		a->fgIsMultiLink == ap->fgIsMultiLink) {
 		s->arApHash[AP_HASH(ap->aucAddr)] = a->hnext;
 		return;
 	}
 
 	while (a->hnext != NULL &&
 	       (UNEQUAL_MAC_ADDR(a->hnext->aucAddr, ap->aucAddr) ||
-	       a->hnext->fgIsMld != ap->fgIsMld)) {
+	       a->hnext->fgIsMultiLink != ap->fgIsMultiLink)) {
 		a = a->hnext;
 	}
 	if (a->hnext != NULL)
@@ -399,14 +399,14 @@ struct AP_COLLECTION *apsAddAp(struct ADAPTER *ad,
 	}
 
 	COPY_MAC_ADDR(ap->aucAddr, bss->aucBSSID);
-	ap->fgIsMld = apsCanFormMld(ad, bss, bidx);
+	ap->fgIsMultiLink = apsCanFormMld(ad, bss, bidx);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (ap->fgIsMld)
+	if (ap->fgIsMultiLink)
 		COPY_MAC_ADDR(ap->aucAddr, bss->rMlInfo.aucMldAddr);
 #endif
 
-	DBGLOG(APS, TRACE, "Add AP[" MACSTR "][%s]\n",
-		MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY");
+	DBGLOG(APS, TRACE, "Add APC[" MACSTR "][MLO=%d]\n",
+		MAC2STR(ap->aucAddr), ap->fgIsMultiLink);
 
 	for (i = 0; i < MLD_LINK_MAX; i++)
 		LINK_INITIALIZE(&ap->arLinks[i]);
@@ -435,9 +435,10 @@ struct AP_COLLECTION *apsGetAp(struct ADAPTER *ad,
 
 void apsRemoveAp(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
-	DBGLOG(APS, TRACE, "Remove AP[" MACSTR "][%s] Total Bss: %d\n",
-		MAC2STR(ap->aucAddr), ap->fgIsMld ? "MLD" : "LEGACY",
-		ap->ucTotalCount);
+	DBGLOG(APS, TRACE,
+		"Remove APC[" MACSTR "][MLO=%d] LinkNum=%d, TotalCount=%d\n",
+		MAC2STR(ap->aucAddr), ap->fgIsMultiLink,
+		ap->ucLinkNum, ap->ucTotalCount);
 
 	apsHashDel(ad, ap, bidx);
 	kalMemFree(ap, VIR_MEM_TYPE, sizeof(*ap));
@@ -1290,12 +1291,12 @@ try_again:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (cand->rMlInfo.fgValid)
 			DBGLOG(APS, INFO,
-				"%s[" MACSTR "][link=%d] select BSS["
+				"APC[" MACSTR "][%d/%d] select BSS["
 				MACSTR " %s mld=" MACSTR
 				"] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
-				ap->fgIsMld ? "ML" : "SL",
 				MAC2STR(ap->aucAddr),
-				link_idx, MAC2STR(cand->aucBSSID),
+				link_idx, ap->ucLinkNum,
+				MAC2STR(cand->aucBSSID),
 				apucBandStr[cand->eBand],
 				MAC2STR(cand->rMlInfo.aucMldAddr), goal_score,
 				cand->fgIsConnected & bmap, policy,
@@ -1303,10 +1304,11 @@ try_again:
 		else
 #endif
 			DBGLOG(APS, INFO,
-				"%s[" MACSTR "][link=%d] select BSS[" MACSTR
+				"APC[" MACSTR "][%d/%d] select BSS[" MACSTR
 				" %s] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
-				ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
-				link_idx, MAC2STR(cand->aucBSSID),
+				MAC2STR(ap->aucAddr),
+				link_idx, ap->ucLinkNum,
+				MAC2STR(cand->aucBSSID),
 				apucBandStr[cand->eBand], goal_score,
 				cand->fgIsConnected & bmap, policy,
 				ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
@@ -1321,10 +1323,11 @@ try_again:
 	}
 
 	DBGLOG(APS, INFO,
-		"%s[" MACSTR
-		"][link=%d] select NONE policy[%d] bssid[%d] bssid_hint[%d]\n",
-		ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
-		link_idx, policy, ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
+		"APC[" MACSTR
+		"][%d/%d] select NONE policy[%d] bssid[%d] bssid_hint[%d]\n",
+		MAC2STR(ap->aucAddr),
+		link_idx, ap->ucLinkNum,
+		policy, ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
 done:
 	return cand != NULL;
 }
@@ -1383,7 +1386,17 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	goal = base * (100 + delta) / 100;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	DBGLOG(APS, INFO,
+		"GOAL SCORE=%d(MloEnabled=%d,StaMldLinkMax=%d,LinkAvailable=%d,PreferMldAddr=%d)\n",
+		goal,
+		mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, FALSE),
+		ad->rWifiVar.ucStaMldLinkMax,
+		aisSecondLinkAvailable(ad, bidx),
+		ad->rWifiVar.ucStaPreferMldAddr);
+#else
 	DBGLOG(APS, INFO, "GOAL SCORE=%d\n", goal);
+#endif
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
@@ -1414,7 +1427,8 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 			/* use lower score to find links if already found one */
 			if (!bss) {
-				DBGLOG(APS, INFO, "GOAL SCORE[link=%d]=0\n", i);
+				DBGLOG(APS, INFO, "GOAL SCORE[%d/%d]=0\n",
+					i, ap->ucLinkNum);
 				apsIntraUpdateTargetAp(ad, ap,
 					i, 0, reason, bidx);
 			}
@@ -1590,14 +1604,14 @@ int32_t apsCalculateTotalTput(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, enum ENUM_CONN_ROAM_REASON reason,
 	uint8_t bidx)
 {
-	uint8_t i, found = FALSE;
+	uint8_t i, num = 0;
 	uint32_t tput = 0;
 
 	for (i = 0; i < ap->ucLinkNum; i++) {
 		if (!ap->aprTarget[i])
 			continue;
 
-		found = TRUE;
+		num++;
 #if CFG_SUPPORT_ROAMING
 		if (reason == ROAMING_REASON_BTM) {
 			uint32_t pref = scanCalculateScoreByPreference(
@@ -1614,10 +1628,10 @@ int32_t apsCalculateTotalTput(struct ADAPTER *ad,
 		}
 	}
 
-	if (found) {
+	if (num) {
 		DBGLOG(APS, INFO,
-			"%s[" MACSTR "], Total(%d) EST: %d (Reason=%d)",
-			ap->fgIsMld ? "ML" : "SL", MAC2STR(ap->aucAddr),
+			"APC[" MACSTR "], Total(%d/%d) EST: %d (Reason=%d)",
+			MAC2STR(ap->aucAddr), num,
 			ap->ucLinkNum, tput, reason);
 		return tput;
 	}
@@ -1647,7 +1661,6 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 {
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
-	struct BSS_DESC *bss;
 	uint8_t i;
 
 	if (!set)
@@ -1664,44 +1677,42 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 		set->aprBssDesc[set->ucLinkNum++] = ap->aprTarget[i];
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* pick by bssid or bssid by upper layer */
 	for (i = 1; i < set->ucLinkNum; i++) {
+		uint8_t *found = NULL;
+		struct BSS_DESC *bss;
+
 		bss = set->aprBssDesc[i];
-		if ((policy == CONNECT_BY_BSSID &&
-		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) ||
-		    (policy == CONNECT_BY_BSSID_HINT &&
-		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSIDHint))) {
+		if (policy == CONNECT_BY_BSSID &&
+		     EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
-			break;
+			found = "bssid";
+		} else if (IS_FEATURE_ENABLED(ad->rWifiVar.ucStaPreferMldAddr)
+			   && EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			found = "mld_addr";
+		} else if (bss->rMlInfo.ucLinkIndex ==
+			   ad->rWifiVar.ucStaMldMainLinkIdx) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			found = "link_id";
+		} else if (policy == CONNECT_BY_BSSID_HINT &&
+			   EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSIDHint)) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			found = "bssid_hint";
 		}
-	}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (policy != CONNECT_BY_BSSID && ap->fgIsMld) {
-		for (i = 0; i < set->ucLinkNum; i++) {
-			bss = set->aprBssDesc[i];
-			DBGLOG(APS, INFO,
-				MACSTR " link_id=%d max_links=%d\n",
+		if (found != NULL) {
+			DBGLOG(APS, INFO, MACSTR
+				" link_id=%d max_links=%d Setup for %s\n",
 				MAC2STR(bss->aucBSSID),
 				bss->rMlInfo.ucLinkIndex,
-				bss->rMlInfo.ucMaxSimuLinks);
-
-			if (bss->rMlInfo.ucLinkIndex ==
-				ad->rWifiVar.ucStaMldMainLinkIdx) {
-				DBGLOG(APS, INFO, "\tSetup for link_id");
-				set->aprBssDesc[i] = set->aprBssDesc[0];
-				set->aprBssDesc[0] = bss;
-			}
-
-			/* link id is not assigned, prefer mld addr */
-			if (ad->rWifiVar.ucStaMldMainLinkIdx ==
-				MLD_LINK_ID_NONE &&
-			    EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
-				DBGLOG(APS, INFO, "\tSetup for mld_addr");
-				set->aprBssDesc[i] = set->aprBssDesc[0];
-				set->aprBssDesc[0] = bss;
-			}
+				bss->rMlInfo.ucMaxSimuLinks,
+				found);
+			goto done;
 		}
 	}
 #endif
