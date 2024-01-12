@@ -889,6 +889,55 @@ uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec)
 	return prStaRec->ucIndex + 1;
 }
 
+void p2pRxDeauthNoWtbl(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct SW_RFB *prSwRfb)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *bss =
+		(struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *fsm =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	if (!prAdapter || !prSwRfb)
+		return;
+	else if (!prStaRec) {
+		fsm = p2pGetDefaultRoleFsmInfo(prAdapter,
+			IFTYPE_P2P_CLIENT);
+
+		if (fsm && (p2pGetGCBssNum(fsm) > 1)) {
+			secHandleNoWtbl(prAdapter, prSwRfb);
+			prStaRec = prSwRfb->prStaRec;
+
+			if ((!prStaRec) ||
+				(!prStaRec->fgIsInUse) ||
+				!IS_BSS_INDEX_VALID(prStaRec->ucBssIndex)) {
+				/* Not to reply association response
+				 * with failure code due to lack of STA_REC
+				 */
+				DBGLOG(AAA, WARN,
+					"get sta fail, widx: %d, sta: %d\n",
+					prSwRfb->ucWlanIdx,
+					prSwRfb->ucStaRecIdx);
+				return;
+			}
+
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+				prStaRec->ucBssIndex);
+
+			if (bss &&
+				IS_BSS_GC(bss) &&
+				IS_BSS_ALIVE(prAdapter, bss))
+				p2pRoleFsmRunEventRxDeauthentication(
+					prAdapter,
+					prStaRec,
+					prSwRfb);
+		}
+	}
+#endif
+}
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet)
