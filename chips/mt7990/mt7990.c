@@ -380,6 +380,7 @@ struct CHIP_DBG_OPS mt7990_DebugOps = {
 	.showTxdInfo = connac3x_show_txd_Info,
 	.showWtblInfo = connac3x_show_wtbl_info,
 	.get_rssi_from_wtbl = connac3x_get_rssi_from_wtbl,
+	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = connac3x_show_dmashdl_info,
 	.showHifInfo = NULL,
