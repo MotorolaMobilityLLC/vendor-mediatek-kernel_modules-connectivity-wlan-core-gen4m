@@ -795,6 +795,10 @@
 #define CFG_P2P_DEFAULT_CLIENT_COUNT 0
 #endif
 
+#ifndef CFG_P2P_FORCE_ROC_CSA
+#define CFG_P2P_FORCE_ROC_CSA 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags for GTK rekey offload
  *------------------------------------------------------------------------------

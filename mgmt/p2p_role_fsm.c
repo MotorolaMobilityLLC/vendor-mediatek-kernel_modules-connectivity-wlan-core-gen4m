@@ -2156,6 +2156,7 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 			/* SAP: Skip channel request/abort for
 			 * STA+SAP/MCC concurrent cases.
 			 */
+#if !CFG_P2P_FORCE_ROC_CSA
 			if (prAisBssInfo &&
 				(prAisBssInfo->ucPrimaryChannel !=
 				prP2pBssInfo->ucPrimaryChannel) &&
@@ -2164,11 +2165,11 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 				p2pFuncDfsSwitchCh(prAdapter,
 					prP2pBssInfo,
 					prP2pRoleFsmInfo->rChnlReqInfo);
-			} else {
+			} else
+#endif
 				p2pRoleFsmStateTransition(prAdapter,
 					prP2pRoleFsmInfo,
 					P2P_ROLE_STATE_SWITCH_CHANNEL);
-			}
 		}
 	} else { /* GO */
 		DBGLOG(P2P, INFO, "GO CSA done: %s band\n",
