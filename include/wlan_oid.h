@@ -338,6 +338,9 @@
 #define LOW_LATENCY_MODE_CMD_V2          0x2
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+#define MAX_MLO_MGMT_SUPPORT_MLD_NUM		1
+#define MAX_MLO_MGMT_SUPPORT_AC_NUM		4
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -3539,6 +3542,54 @@ struct PARAM_CUSTOM_BTM_REQ_STRUCT {
 };
 #endif /* CFG_AP_80211V_SUPPORT */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct MLO_AGC_DISP_PARAM_TX {
+	uint8_t u1AgcStateTx;
+	uint8_t au1DispPolTx[MAX_MLO_MGMT_SUPPORT_AC_NUM];
+	uint8_t u1DispRatioTx;
+	uint8_t u1DispOrderTx;
+	uint16_t u2DispMgfTx;
+};
+
+struct MLO_AGC_DISP_PARAM_TRIG {
+	uint8_t u1AgcStateTrig;
+	uint8_t au1DispPolTrig[MAX_MLO_MGMT_SUPPORT_AC_NUM];
+	uint8_t u1DispRatioTrig;
+	uint8_t u1DispMuLenTrig;
+	uint16_t u2DispMgfTrig;
+	uint16_t u2DispAggLimitTrig;
+};
+
+struct MLO_OVLP_RPT_CNT {
+	uint16_t u2Corr0;
+	uint16_t u2Corr1;
+	uint16_t u2InCorr0;
+	uint16_t u2InCorr1;
+};
+
+struct MLD_RECORD_LINK {
+	u_int8_t fgActive;
+	uint8_t u1ParentMldRecIdx; /* Parent MLD Record Index */
+	uint8_t u1Band;
+	uint16_t u2WlanIdx;
+	struct MLO_AGC_DISP_PARAM_TX rAgcDispParamTx;
+	struct MLO_AGC_DISP_PARAM_TRIG rAgcDispParamTrig;
+	struct MLO_OVLP_RPT_CNT arOvlpRptCntTx[MAX_MLO_MGMT_SUPPORT_AC_NUM];
+	struct MLO_OVLP_RPT_CNT arOvlpRptCntTrig[MAX_MLO_MGMT_SUPPORT_AC_NUM];
+};
+
+/* UNI_CMD_MLD_REC(Tag=0x02) */
+struct PARAM_MLD_REC {
+	uint8_t u1MldRecState;
+	uint8_t u1MldRecIdx;
+	uint16_t u2MldIdx;
+	uint8_t u1StrBmp;
+	uint8_t u1EmlsrBmp;
+	uint8_t u1ActiveLinkBmp;
+	struct MLD_RECORD_LINK arMldRecLink[MLD_LINK_MAX];
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4080,6 +4131,21 @@ wlanoidSetAutoRate(IN struct ADAPTER *prAdapter,
 		      IN uint32_t u4SetBufferLen,
 		      OUT uint32_t *pu4SetInfoLen);
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidSetMloAgcTx(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidGetMldRec(IN struct ADAPTER *prAdapter,
+		    IN void *pvQueryBuffer,
+		    IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen);
+#endif
+#endif
 
 uint32_t
 wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,

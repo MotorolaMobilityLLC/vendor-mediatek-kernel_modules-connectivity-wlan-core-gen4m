@@ -464,6 +464,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_rx_rate_info = connac3x_show_rx_rate_info,
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	.show_mld_info = connac3x_show_mld_info,
+#endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
