@@ -1568,6 +1568,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			case RAM_CODE_DOWNLOAD_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 			case INIT_HIFINFO_FAIL:
+				halHifSwInfoUnInit(prAdapter->prGlueInfo);
 				nicRxUninitialize(prAdapter);
 				nicTxRelease(prAdapter, FALSE);
 				/* System Service Uninitialization */
