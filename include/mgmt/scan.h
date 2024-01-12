@@ -441,6 +441,8 @@ struct BSS_DESC {
 	u_int8_t fgExsitBssLoadIE;
 	u_int8_t fgMultiAnttenaAndSTBC;
 	uint32_t u4UpdateIdx;
+	uint8_t fgIotApActionValid;
+	uint8_t ucIotApAct;
 #if CFG_SUPPORT_RSN_SCORE
 	u_int8_t fgIsRSNSuitableBss;
 #endif

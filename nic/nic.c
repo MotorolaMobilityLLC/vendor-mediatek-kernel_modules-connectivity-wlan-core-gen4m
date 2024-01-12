@@ -1720,47 +1720,31 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(prBssInfo) &&
 	    (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) &&
 	    (prBssInfo->prStaRecOfAP != NULL)) {
+		struct BSS_DESC *prBssDesc;
+		struct AIS_FSM_INFO *prAisFsmInfo;
+
 		rCmdSetBssInfo.ucStaRecIdxOfAP =
 			prBssInfo->prStaRecOfAP->ucIndex;
-
 		cnmAisInfraConnectNotify(prAdapter);
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		if (prBssDesc != NULL)
+			rCmdSetBssInfo.ucIotApAct = prBssDesc->ucIotApAct;
 #if CFG_SUPPORT_SMART_GEAR
-		DBGLOG(SW4, INFO,
-				"[SG]cnmAisInfraConnectNotify,%d\n",
-				prBssInfo->eConnectionState);
+		DBGLOG(SW4, INFO, "[SG]cnmAisInfraConnectNotify,%d\n",
+		       prBssInfo->eConnectionState);
 		if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 			uint8_t ucSGEnable = TRUE, ucRetValNss = 0;
-			#if CFG_SUPPORT_IOT_AP_BLACKLIST
-			struct BSS_DESC *prBssDesc;
-			struct AIS_FSM_INFO *prAisFsmInfo;
-
-			prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
-							ucBssIndex);
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-							ucBssIndex);
-			ucRetValNss = wlanGetSupportNss(prAdapter,
-							ucBssIndex);
-			DBGLOG(SW4, INFO,
-					"[SG]SG Get NSS,%d\n", ucRetValNss);
-			if (IS_BSS_AIS(prBssInfo)) {
-				prBssDesc = prAisFsmInfo->prTargetBssDesc;
-				if (prBssDesc != NULL && bssGetIotApAction
-					(prAdapter, prBssDesc) ==
-					WLAN_IOT_AP_DIS_SG) {
-					DBGLOG(SW4, INFO,
-						"[SG]Hit SG blacklist, Invoke Event to disable SG\n");
-					ucSGEnable = FALSE;
-				}
-			/*Send Event  to Enable/Disable SG*/
-			/*Here is SG REAL TRIGGER POINT!*/
-				wlandioSetSGStatus(prAdapter,
-				ucSGEnable, 0xFF, ucRetValNss);
+			ucRetValNss = wlanGetSupportNss(prAdapter, ucBssIndex);
+			DBGLOG(SW4, INFO, "[SG]SG Get NSS,%d\n", ucRetValNss);
+			if (rCmdSetBssInfo.ucIotApAct == WLAN_IOT_AP_DIS_SG) {
+				DBGLOG(SW4, INFO,
+					"[SG]Hit SG blacklist, disable SG\n");
+				ucSGEnable = FALSE;
 			}
-			#else
-			/*Here is SG REAL TRIGGER POINT!!*/
+			/*Send Event  to Enable/Disable SG*/
 			wlandioSetSGStatus(prAdapter,
 			ucSGEnable, 0xFF, ucRetValNss);
-			#endif
 		}
 #endif
 	}
@@ -1803,11 +1787,12 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(BSS, INFO,
 	       "Update Bss[%u] ConnState[%u] OPmode[%u] BSSID[" MACSTR
-	       "] AuthMode[%u] EncStatus[%u]\n", ucBssIndex,
+	       "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n", ucBssIndex,
 	       prBssInfo->eConnectionState,
 	       prBssInfo->eCurrentOPMode, MAC2STR(prBssInfo->aucBSSID),
 	       rCmdSetBssInfo.ucAuthMode,
-	       rCmdSetBssInfo.ucEncStatus);
+	       rCmdSetBssInfo.ucEncStatus,
+	       rCmdSetBssInfo.ucIotApAct);
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_SET_BSS_INFO,
