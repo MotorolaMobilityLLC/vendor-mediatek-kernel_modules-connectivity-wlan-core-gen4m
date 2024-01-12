@@ -2172,149 +2172,6 @@ void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
 }
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
-{
-	struct BUS_INFO *prBusInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct SW_WFDMA_INFO *prSwWfdmaInfo;
-	uint32_t u4DmaNum = 1;
-
-	prChipInfo = prAdapter->chip_info;
-	prBusInfo = prChipInfo->bus_info;
-	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
-
-	if (prSwWfdmaInfo->rOps.dumpDebugLog)
-		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
-
-	if (prChipInfo->is_support_wfdma1)
-		u4DmaNum++;
-
-	connac3x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);
-	connac3x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);
-
-	if (prBusInfo->wfmda_wm_tx_group && prBusInfo->wfmda_wm_rx_group) {
-		connac3x_show_wfdma_info_by_type(
-			prAdapter, WFDMA_TYPE_WM, u4DmaNum);
-		connac3x_show_wfdma_dbg_flag_log(
-			prAdapter, WFDMA_TYPE_WM, u4DmaNum);
-	}
-
-	connac3x_show_wfdma_desc(prAdapter);
-
-	connac3xDumpPPDebugCr(prAdapter);
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (prChipInfo->is_support_mawd_tx)
-		connac3x_show_mawd_info(prAdapter);
-
-	if (prChipInfo->is_support_rro)
-		connac3x_show_rro_info(prAdapter);
-#endif
-}
-
-void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
-{
-	struct BUS_INFO *prBusInfo;
-	struct DMASHDL_CFG *prCfg;
-	uint32_t value = 0;
-	uint8_t idx;
-	uint32_t rsv_cnt = 0;
-	uint32_t src_cnt = 0;
-	uint32_t total_src_cnt = 0;
-	uint32_t total_rsv_cnt = 0;
-	uint32_t ffa_cnt = 0;
-	uint32_t free_pg_cnt = 0;
-	uint32_t ple_rpg_hif;
-	uint32_t ple_upg_hif;
-	uint8_t is_mismatch = FALSE;
-
-	DBGLOG(HAL, INFO, "DMASHDL info:\n");
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prCfg = prBusInfo->prDmashdlCfg;
-
-	asicConnac3xDmashdlGetRefill(prAdapter);
-	asicConnac3xDmashdlGetPktMaxPage(prAdapter);
-
-	HAL_MCR_RD(prAdapter, prCfg->rErrorFlagCtrl.u4Addr, &value);
-	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
-	       prCfg->rErrorFlagCtrl.u4Addr, value);
-
-	for (idx = 0; idx <= ENUM_DMASHDL_GROUP_14; idx++) {
-		if (prCfg->afgRefillEn[idx] == 0)
-			continue;
-		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
-		asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
-		rsv_cnt = asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
-		src_cnt = asicConnac3xDmashdlGetSrcCount(prAdapter, idx);
-		asicConnac3xDmashdlGetPKTCount(prAdapter, idx);
-		total_src_cnt += src_cnt;
-		total_rsv_cnt += rsv_cnt;
-	}
-
-	/* Dump Group 15 info */
-	idx = ENUM_DMASHDL_GROUP_15;
-	DBGLOG(HAL, INFO, "Group %d info:\n", idx);
-	asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
-	asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
-	asicConnac3xDmashdlGetSrcCount(prAdapter, idx);
-	asicConnac3xDmashdlGetPKTCount(prAdapter, idx);
-
-	HAL_MCR_RD(prAdapter, prCfg->rStatusRdFfaCnt.u4Addr, &value);
-	ffa_cnt = (value & prCfg->rStatusRdFfaCnt.u4Mask) >>
-		prCfg->rStatusRdFfaCnt.u4Shift;
-	free_pg_cnt = (value & prCfg->rStatusRdFreePageCnt.u4Mask) >>
-		prCfg->rStatusRdFreePageCnt.u4Shift;
-	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD(0x%08x): 0x%08x\n",
-		prCfg->rStatusRdFreePageCnt.u4Addr, value);
-	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
-		free_pg_cnt, ffa_cnt);
-
-	DBGLOG(HAL, INFO, "\nDMASHDL Counter Check:\n");
-	HAL_MCR_RD(prAdapter, prCfg->rHifPgInfoHifRsvCnt.u4Addr, &value);
-	ple_rpg_hif = (value & prCfg->rHifPgInfoHifRsvCnt.u4Mask) >>
-		  prCfg->rHifPgInfoHifRsvCnt.u4Shift;
-	ple_upg_hif = (value & prCfg->rHifPgInfoHifSrcCnt.u4Mask) >>
-		prCfg->rHifPgInfoHifSrcCnt.u4Shift;
-	DBGLOG(HAL, INFO,
-		"\tPLE:The used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
-		 ple_upg_hif, ple_rpg_hif);
-	DBGLOG(HAL, INFO,
-		"\tDMASHDL:The total used pages of group0~14=0x%03x\n",
-		total_src_cnt);
-
-	if (ple_upg_hif != total_src_cnt) {
-		DBGLOG(HAL, INFO,
-			"\tPLE used pages & total used pages mismatch!\n");
-		is_mismatch = TRUE;
-	}
-
-	DBGLOG(HAL, INFO,
-		"\tThe total reserved pages of group0~14=0x%03x\n",
-		total_rsv_cnt);
-	DBGLOG(HAL, INFO,
-		"\tThe total ffa pages of group0~14=0x%03x\n",
-		ffa_cnt);
-	DBGLOG(HAL, INFO,
-		"\tThe total free pages of group0~14=0x%03x\n",
-		free_pg_cnt);
-
-	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
-		DBGLOG(HAL, INFO,
-			"\tmismatch(total_rsv_cnt + ffa_cnt in DMASHDL)\n");
-		is_mismatch = TRUE;
-	}
-
-	if (free_pg_cnt != ple_rpg_hif) {
-		DBGLOG(HAL, INFO, "\tmismatch(reserved pages in PLE)\n");
-		is_mismatch = TRUE;
-	}
-
-
-	if (!is_mismatch)
-		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
-}
-
 void connac3x_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 {
 #define CPUPCR_LOG_NUM	5
@@ -2438,6 +2295,152 @@ void connac3x_DumpCrRange(
 	connac3x_dump_format_memory32(dummy, word_count, str);
 }
 #endif /* _HIF_PCIE || _HIF_AXI */
+
+void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
+{
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct BUS_INFO *prBusInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+	uint32_t u4DmaNum = 1;
+
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	if (prSwWfdmaInfo->rOps.dumpDebugLog)
+		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
+
+	if (prChipInfo->is_support_wfdma1)
+		u4DmaNum++;
+
+	connac3x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);
+	connac3x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);
+
+	if (prBusInfo->wfmda_wm_tx_group && prBusInfo->wfmda_wm_rx_group) {
+		connac3x_show_wfdma_info_by_type(
+			prAdapter, WFDMA_TYPE_WM, u4DmaNum);
+		connac3x_show_wfdma_dbg_flag_log(
+			prAdapter, WFDMA_TYPE_WM, u4DmaNum);
+	}
+
+	connac3x_show_wfdma_desc(prAdapter);
+
+	connac3xDumpPPDebugCr(prAdapter);
+#endif
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_mawd_tx)
+		connac3x_show_mawd_info(prAdapter);
+
+	if (prChipInfo->is_support_rro)
+		connac3x_show_rro_info(prAdapter);
+#endif
+}
+
+void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t value = 0;
+	uint8_t idx;
+	uint32_t rsv_cnt = 0;
+	uint32_t src_cnt = 0;
+	uint32_t total_src_cnt = 0;
+	uint32_t total_rsv_cnt = 0;
+	uint32_t ffa_cnt = 0;
+	uint32_t free_pg_cnt = 0;
+	uint32_t ple_rpg_hif;
+	uint32_t ple_upg_hif;
+	uint8_t is_mismatch = FALSE;
+
+	DBGLOG(HAL, INFO, "DMASHDL info:\n");
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	asicConnac3xDmashdlGetRefill(prAdapter);
+	asicConnac3xDmashdlGetPktMaxPage(prAdapter);
+
+	HAL_MCR_RD(prAdapter, prCfg->rErrorFlagCtrl.u4Addr, &value);
+	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
+	       prCfg->rErrorFlagCtrl.u4Addr, value);
+
+	for (idx = 0; idx <= ENUM_DMASHDL_GROUP_14; idx++) {
+		if (prCfg->afgRefillEn[idx] == 0)
+			continue;
+		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+		asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
+		rsv_cnt = asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
+		src_cnt = asicConnac3xDmashdlGetSrcCount(prAdapter, idx);
+		asicConnac3xDmashdlGetPKTCount(prAdapter, idx);
+		total_src_cnt += src_cnt;
+		total_rsv_cnt += rsv_cnt;
+	}
+
+	/* Dump Group 15 info */
+	idx = ENUM_DMASHDL_GROUP_15;
+	DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+	asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
+	asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
+	asicConnac3xDmashdlGetSrcCount(prAdapter, idx);
+	asicConnac3xDmashdlGetPKTCount(prAdapter, idx);
+
+	HAL_MCR_RD(prAdapter, prCfg->rStatusRdFfaCnt.u4Addr, &value);
+	ffa_cnt = (value & prCfg->rStatusRdFfaCnt.u4Mask) >>
+		prCfg->rStatusRdFfaCnt.u4Shift;
+	free_pg_cnt = (value & prCfg->rStatusRdFreePageCnt.u4Mask) >>
+		prCfg->rStatusRdFreePageCnt.u4Shift;
+	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD(0x%08x): 0x%08x\n",
+		prCfg->rStatusRdFreePageCnt.u4Addr, value);
+	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
+		free_pg_cnt, ffa_cnt);
+
+	DBGLOG(HAL, INFO, "\nDMASHDL Counter Check:\n");
+	HAL_MCR_RD(prAdapter, prCfg->rHifPgInfoHifRsvCnt.u4Addr, &value);
+	ple_rpg_hif = (value & prCfg->rHifPgInfoHifRsvCnt.u4Mask) >>
+		  prCfg->rHifPgInfoHifRsvCnt.u4Shift;
+	ple_upg_hif = (value & prCfg->rHifPgInfoHifSrcCnt.u4Mask) >>
+		prCfg->rHifPgInfoHifSrcCnt.u4Shift;
+	DBGLOG(HAL, INFO,
+		"\tPLE:The used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
+		 ple_upg_hif, ple_rpg_hif);
+	DBGLOG(HAL, INFO,
+		"\tDMASHDL:The total used pages of group0~14=0x%03x\n",
+		total_src_cnt);
+
+	if (ple_upg_hif != total_src_cnt) {
+		DBGLOG(HAL, INFO,
+			"\tPLE used pages & total used pages mismatch!\n");
+		is_mismatch = TRUE;
+	}
+
+	DBGLOG(HAL, INFO,
+		"\tThe total reserved pages of group0~14=0x%03x\n",
+		total_rsv_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total ffa pages of group0~14=0x%03x\n",
+		ffa_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total free pages of group0~14=0x%03x\n",
+		free_pg_cnt);
+
+	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
+		DBGLOG(HAL, INFO,
+			"\tmismatch(total_rsv_cnt + ffa_cnt in DMASHDL)\n");
+		is_mismatch = TRUE;
+	}
+
+	if (free_pg_cnt != ple_rpg_hif) {
+		DBGLOG(HAL, INFO, "\tmismatch(reserved pages in PLE)\n");
+		is_mismatch = TRUE;
+	}
+
+
+	if (!is_mismatch)
+		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
+}
+
 
 static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)
 {

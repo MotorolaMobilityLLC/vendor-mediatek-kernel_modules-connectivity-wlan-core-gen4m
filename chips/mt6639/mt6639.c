@@ -59,6 +59,7 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx);
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx);
 
@@ -93,6 +94,7 @@ static void mt6639WfdmaRxRingExtCtrl(
 #if defined(_HIF_PCIE)
 static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo);
 #endif
+#endif /*_HIF_PCIE || _HIF_AXI */
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -172,6 +174,7 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 };
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct pcie2ap_remap mt6639_pcie2ap_remap = {
 	.reg_base = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_ADDR,
 	.reg_mask = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_MASK,
@@ -231,6 +234,7 @@ struct pse_group_info mt6639_pse_group[] = {
 	{"MDP",  WF_PSE_TOP_PG_MDP_GROUP_ADDR,
 			WF_PSE_TOP_MDP_PG_INFO_ADDR},
 };
+#endif /*_HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_PCIE)
 struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
@@ -364,11 +368,26 @@ struct BUS_INFO mt6639_bus_info = {
 	.softwareInterruptMcu = asicConnac3xSoftwareInterruptMcu,
 	.hifRst = asicConnac3xHifRst,
 	.devReadIntStatus = mt6639ReadIntStatus,
-	.DmaShdlInit = mt6639DmashdlInit,
 	.setRxRingHwAddr = mt6639SetRxRingHwAddr,
 	.wfdmaAllocRxRing = mt6639WfdmaAllocRxRing,
 	.setupMcuEmiAddr = mt6639SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
+	.DmaShdlInit = mt6639DmashdlInit,
+#if defined(_HIF_USB)
+	.prDmashdlCfg = &rMt6639DmashdlCfg,
+	.u4UdmaWlCfg_0_Addr = CONNAC3X_UDMA_WLCFG_0,
+	.u4UdmaWlCfg_1_Addr = CONNAC3X_UDMA_WLCFG_1,
+	.u4UdmaWlCfg_0 =
+	    (CONNAC3X_UDMA_WLCFG_0_WL_TX_EN(1) |
+	     CONNAC3X_UDMA_WLCFG_0_WL_RX_EN(1) |
+	     CONNAC3X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
+	     CONNAC3X_UDMA_WLCFG_0_TICK_1US_EN(1)),
+	.u4UdmaTxQsel = CONNAC3X_UDMA_TX_QSEL,
+	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
+	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
+	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
+	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
+#endif
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -408,7 +427,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
 	.show_wfdma_dbg_probe_info = mt6639_show_wfdma_dbg_probe_info,
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.show_wfdma_wrapper_info = mt6639_show_wfdma_wrapper_info,
+#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -485,6 +506,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if IS_ENABLED(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
+#endif
+#if defined(_HIF_USB)
+	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
+	.asicUsbInit_ic_specific = NULL,
 #endif
 };
 
@@ -645,6 +670,7 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
 }
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static uint8_t mt6639SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
 {
@@ -1123,5 +1149,6 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
 		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
 }
+#endif /*_HIF_PCIE || _HIF_AXI */
 
 #endif  /* MT6639 */

@@ -166,6 +166,41 @@
 
 #endif /* _HIF_PCIE || _HIF_AXI */
 
+#if defined(_HIF_USB)
+#define CONNAC3X_UDMA_BASE        0x74000000
+#define CONNAC3X_UDMA_TX_QSEL     (CONNAC3X_UDMA_BASE + 0x08) /* 0008 */
+#define CONNAC3X_UDMA_RESET       (CONNAC3X_UDMA_BASE + 0x14) /* 0014 */
+#define CONNAC3X_UDMA_WLCFG_1     (CONNAC3X_UDMA_BASE + 0x0C) /* 000c */
+#define CONNAC3X_UDMA_WLCFG_0     (CONNAC3X_UDMA_BASE + 0x18) /* 0018 */
+
+#define CONNAC3X_UDMA_WLCFG_0_WL_TX_BUSY_MASK           (0x1 << 31)
+#define CONNAC3X_UDMA_WLCFG_0_WL_TX_EN(p)               (((p) & 0x1) << 23)
+#define CONNAC3X_UDMA_WLCFG_0_WL_RX_EN(p)               (((p) & 0x1) << 22)
+#define CONNAC3X_UDMA_WLCFG_0_TICK_1US_EN_MASK          (0x1 << 20)
+#define CONNAC3X_UDMA_WLCFG_0_TICK_1US_EN(p)            (((p) & 0x1) << 20)
+#define CONNAC3X_UDMA_WLCFG_0_WL_RX_FLUSH_MASK          (0x1 << 19)
+#define CONNAC3X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(p)        (((p) & 0x1) << 18)
+#define CONNAC3X_UDMA_WLCFG_0_WL_TX_TMOUT_FUNC_EN_MASK  (0x1 << 16)
+#define CONNAC3X_UDMA_WLCFG_1_WL_TX_TMOUT_LMT_MASK      (0xFFFFF << 8)
+#define CONNAC3X_UDMA_WLCFG_1_WL_TX_TMOUT_LMT(p)        (((p) & 0xFFFFF) << 8)
+
+#define CONNAC3X_UDMA_TX_TIMEOUT_LIMIT			(50000)
+
+#define CONNAC3X_WFDMA_HOST_CONFIG_ADDR                 0x7c027030
+/*
+ * 0: command packet forward to TX ring 17 (WMCPU)
+ * 1: forward to TX ring 20 (WACPU)
+ */
+#define CONNAC3X_WFDMA_HOST_CONFIG_USB_CMDPKT_DST_MASK  (0x1 << 7)
+#define CONNAC3X_WFDMA_HOST_CONFIG_USB_CMDPKT_DST(p)    (((p) & 0x1) << 7)
+#define CONNAC3X_USB_CMDPKT2WM	0
+#define CONNAC3X_USB_CMDPKT2WA	1
+
+#define CONNAC3X_WFDMA_HOST_CONFIG_USB_RXEVT_EP4_EN  (0x1 << 6)
+
+#define CONNAC3X_LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
+#endif /* _HIF_USB */
+
 #define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7C500000
 
 /*------------------------------------------------------------------------*/
@@ -1225,6 +1260,30 @@ void asicConnac3xDmashdlSetOptionalControl(
 	uint16_t u2HifGupActMap);
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter);
 uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter);
+
+#if defined(_HIF_USB)
+void asicConnac3xWfdmaInitForUSB(
+	struct ADAPTER *prAdapter,
+	struct mt66xx_chip_info *prChipInfo);
+uint8_t asicConnac3xUsbEventEpDetected(
+	struct ADAPTER *prAdapter);
+void asicConnac3xEnableUsbCmdTxRing(
+	struct ADAPTER *prAdapter,
+	u_int8_t ucDstRing);
+#if CFG_ENABLE_FW_DOWNLOAD
+void asicConnac3xEnableUsbFWDL(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable);
+#endif /* CFG_ENABLE_FW_DOWNLOAD */
+void asicConnac3xUdmaRxFlush(
+	struct ADAPTER *prAdapter,
+	u_int8_t bEnable);
+uint16_t asicConnac3xUsbRxByteCount(
+	struct ADAPTER *prAdapter,
+	struct BUS_INFO *prBusInfo,
+	uint8_t *pRXD);
+#endif /* _HIF_USB */
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 #endif /* _CMM_ASIC_CONNAC3X_H */
 

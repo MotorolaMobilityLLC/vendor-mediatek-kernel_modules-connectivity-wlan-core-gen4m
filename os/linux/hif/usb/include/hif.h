@@ -174,7 +174,11 @@ enum ENUM_USB_END_POINT {
 					      (CFG_RX_MAX_PKT_SIZE + 3 + LEN_USB_RX_PADDING_CSO) + 4)))
 
 #define LEN_USB_UDMA_TX_TERMINATOR      (4)	/*HW design spec */
+#ifdef CFG_USB_RX_PADDING_CSO_LEN
+#define LEN_USB_RX_PADDING_CSO          (CFG_USB_RX_PADDING_CSO_LEN)
+#else
 #define LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
+#endif
 
 #define USB_RX_EVENT_RFB_RSV_CNT        (0)
 #define USB_RX_DATA_RFB_RSV_CNT         (4)
