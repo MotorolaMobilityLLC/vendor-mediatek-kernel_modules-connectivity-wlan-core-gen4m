@@ -507,6 +507,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
