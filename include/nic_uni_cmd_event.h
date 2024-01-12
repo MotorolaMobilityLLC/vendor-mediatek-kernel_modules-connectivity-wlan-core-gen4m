@@ -7723,6 +7723,8 @@ struct UNI_EVENT_HW_DETECT_REPORT_PARAM {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	/* event body */
+	bool	 fgIsReportNode;
+	uint8_t  aucReserved[3];
 	uint8_t  aucStrBuffer[HW_DETECT_REPORT_STR_MAX_LEN];
 } __KAL_ATTRIB_PACKED__;
 
