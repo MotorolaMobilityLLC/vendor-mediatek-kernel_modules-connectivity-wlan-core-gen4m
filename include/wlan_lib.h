@@ -1706,8 +1706,6 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsduInfoListHead,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
-#endif /* _WLAN_LIB_H */
-
 
 u_int8_t wlanGetWlanIdxByAddress(IN struct ADAPTER *prAdapter,
 				 IN uint8_t *pucAddr, OUT uint8_t *pucIndex);

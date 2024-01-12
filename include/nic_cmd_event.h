@@ -151,24 +151,25 @@
 
 /* Network type */
 #define NETWORK_INFRA	BIT(16)
-#define NETWORK_P2P		BIT(17)
+#define NETWORK_P2P	BIT(17)
 #define NETWORK_IBSS	BIT(18)
 #define NETWORK_MESH	BIT(19)
-#define NETWORK_BOW		BIT(20)
-#define NETWORK_WDS		BIT(21)
+#define NETWORK_BOW	BIT(20)
+#define NETWORK_WDS	BIT(21)
 
 /* Station role */
-#define STA_TYPE_STA BIT(0)
-#define STA_TYPE_AP BIT(1)
-#define STA_TYPE_ADHOC BIT(2)
-#define STA_TYPE_TDLS BIT(3)
-#define STA_TYPE_WDS BIT(4)
+#define STA_TYPE_STA 	BIT(0)
+#define STA_TYPE_AP 	BIT(1)
+#define STA_TYPE_ADHOC 	BIT(2)
+#define STA_TYPE_TDLS 	BIT(3)
+#define STA_TYPE_WDS 	BIT(4)
 
 /* Connection type */
 #define CONNECTION_INFRA_STA		(STA_TYPE_STA|NETWORK_INFRA)
 #define CONNECTION_INFRA_AP		(STA_TYPE_AP|NETWORK_INFRA)
-#define CONNECTION_P2P_GC			(STA_TYPE_STA|NETWORK_P2P)
-#define CONNECTION_P2P_GO			(STA_TYPE_AP|NETWORK_P2P)
+#define CONNECTION_P2P_GC		(STA_TYPE_STA|NETWORK_P2P)
+#define CONNECTION_P2P_GO		(STA_TYPE_AP|NETWORK_P2P)
+#define CONNECTION_P2P_DEVICE		(NETWORK_P2P)
 #define CONNECTION_MESH_STA		(STA_TYPE_STA|NETWORK_MESH)
 #define CONNECTION_MESH_AP		(STA_TYPE_AP|NETWORK_MESH)
 #define CONNECTION_IBSS_ADHOC		(STA_TYPE_ADHOC|NETWORK_IBSS)
@@ -351,7 +352,8 @@ enum ENUM_EXT_CMD_ID {
 	EXT_CMD_ID_TWT_AGRT_UPDATE = 0x94,
 #endif
 	EXT_CMD_ID_SYSDVT_TEST = 0x99,
-	EXT_CMD_ID_CR4_DMASHDL_DVT = 0xAB
+	EXT_CMD_ID_CR4_DMASHDL_DVT = 0xAB,
+	EXT_CMD_ID_END
 };
 
 enum NDIS_802_11_WEP_STATUS {
@@ -1927,7 +1929,7 @@ struct CMD_BSS_ACTIVATE_CTRL {
 	uint8_t ucOwnMacAddrIndex;
 	uint8_t aucBssMacAddr[6];
 	uint8_t ucBMCWlanIndex;
-	uint8_t ucReserved;
+	uint8_t ucDbdcIdx;
 };
 
 enum ENUM_RTS_POLICY {
@@ -3307,6 +3309,9 @@ void nicCmdEventQueryMibInfo(IN struct ADAPTER *prAdapter,
 void nicCmdEventQueryNicCapabilityV2(IN struct ADAPTER
 				     *prAdapter, IN uint8_t *pucEventBuf);
 
+void nicParsingNicCapV2(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4Type, IN uint8_t *pucEventBuf);
+
 uint32_t nicCmdEventQueryNicTxResource(IN struct ADAPTER
 				       *prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicCmdEventQueryNicEfuseAddr(IN struct ADAPTER
@@ -3368,8 +3373,24 @@ void nicEventScanDone(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 void nicEventSchedScanDone(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
-void nicEventSleepyNotify(IN struct ADAPTER *prAdapter,
+void nicEventTxDone(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+void nicEventChPrivilege(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+void nicEventCnmOpModeChange(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent);
+void nicEventDbdcSwitchDone(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+void nicEventRxAddBa(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+void nicEventRxDelBa(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+void nicEventTxAddBa(IN struct ADAPTER *prAdapter,
+			IN struct WIFI_EVENT *prEvent);
+void nicEventSleepNotify(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
+void nicEventSleepNotifyImpl(struct ADAPTER *prAdapter,
+			struct EVENT_SLEEPY_INFO *);
 void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
 void nicEventStatistics(IN struct ADAPTER *prAdapter,
@@ -3380,6 +3401,8 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			   IN struct WIFI_EVENT *prEvent);
+void nicEventBeaconTimeoutImpl(IN struct ADAPTER *prAdapter,
+			   IN struct EVENT_BSS_BEACON_TIMEOUT *);
 void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent);
 void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
@@ -3415,10 +3438,14 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent);
 void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
+void nicEventIdcReport(IN struct ADAPTER *prAdapter,
+			       IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
 void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
+void nicEventUpdateCoexPhyrateImpl(IN struct ADAPTER *prAdapter,
+		IN struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate);
 uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
 				    *prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER

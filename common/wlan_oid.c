@@ -2206,153 +2206,6 @@ wlanoidSetPrivacyFilter(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This routine is called to reload the available default settings for
- *        the specified type field.
- *
- * \param[in] prAdapter Pointer to the Adapter structure.
- * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
- * \param[in] u4SetBufferLen The length of the set buffer.
- * \param[out] pu4SetInfoLen If the call is successful, returns the number of
- *                          bytes read from the set buffer. If the call failed
- *                          due to invalid length of the set buffer, returns
- *                          the amount of storage needed.
- *
- * \retval WLAN_STATUS_SUCCESS
- * \retval WLAN_STATUS_ADAPTER_NOT_READY
- * \retval WLAN_STATUS_INVALID_DATA
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanoidSetReloadDefaults(IN struct ADAPTER *prAdapter,
-			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-			 OUT uint32_t *pu4SetInfoLen)
-{
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	enum ENUM_PARAM_NETWORK_TYPE eNetworkType;
-	uint32_t u4Len;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
-
-	DEBUGFUNC("wlanoidSetReloadDefaults");
-
-	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
-
-	ASSERT(pu4SetInfoLen);
-
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
-
-	*pu4SetInfoLen = sizeof(enum ENUM_RELOAD_DEFAULTS);
-
-	/* if (IS_ARB_IN_RFTEST_STATE(prAdapter)) { */
-	/* return WLAN_STATUS_SUCCESS; */
-	/* } */
-
-	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(REQ, WARN,
-		       "Fail in set Reload default! (Adapter not ready). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	}
-
-	ASSERT(pvSetBuffer);
-	/* Verify the available reload options and reload the settings. */
-	switch (*(enum ENUM_RELOAD_DEFAULTS *) pvSetBuffer) {
-	case ENUM_RELOAD_WEP_KEYS:
-		/* Reload available default WEP keys from the permanent
-		 *  storage.
-		 */
-		prConnSettings->eAuthMode =
-			AUTH_MODE_OPEN;
-		/* ENUM_ENCRYPTION_DISABLED; */
-		prConnSettings->eEncStatus =
-			ENUM_ENCRYPTION1_KEY_ABSENT;
-		{
-			struct GLUE_INFO *prGlueInfo;
-			struct CMD_INFO *prCmdInfo;
-			struct CMD_802_11_KEY *prCmdKey;
-			uint8_t aucBCAddr[] = BC_MAC_ADDR;
-
-			prGlueInfo = prAdapter->prGlueInfo;
-			cmd_size = prChipInfo->u2CmdTxHdrSize
-				+ sizeof(struct CMD_802_11_KEY);
-			prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-			if (!prCmdInfo) {
-				DBGLOG(INIT, ERROR,
-					"Allocate CMD_INFO_T ==> FAILED.\n");
-				return WLAN_STATUS_FAILURE;
-			}
-
-			/* compose CMD_802_11_KEY cmd pkt */
-			prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-			prCmdInfo->u2InfoBufLen = cmd_size;
-			prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-			prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-			prCmdInfo->fgIsOid = TRUE;
-			prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-			prCmdInfo->fgSetQuery = TRUE;
-			prCmdInfo->fgNeedResp = FALSE;
-			prCmdInfo->u4SetInfoLen =
-						sizeof(struct PARAM_REMOVE_KEY);
-			prCmdInfo->pvInformationBuffer = pvSetBuffer;
-			prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-
-			/* Setup WIFI_CMD_T */
-			NIC_FILL_CMD_TX_HDR(prAdapter,
-				prCmdInfo->pucInfoBuffer,
-				prCmdInfo->u2InfoBufLen,
-				prCmdInfo->ucCID,
-				CMD_PACKET_TYPE_ID,
-				&prCmdInfo->ucCmdSeqNum,
-				prCmdInfo->fgSetQuery,
-				&prCmdKey, FALSE, 0, S2D_INDEX_CMD_H2N);
-
-			kalMemZero((uint8_t *) prCmdKey,
-				   sizeof(struct CMD_802_11_KEY));
-
-			prCmdKey->ucAddRemove = 0; /* Remove */
-			prCmdKey->ucKeyId =
-				0; /* (UINT_8)(prRemovedKey->u4KeyIndex &
-				    * 0x000000ff);
-				    */
-			kalMemCopy(prCmdKey->aucPeerAddr, aucBCAddr,
-				   MAC_ADDR_LEN);
-
-			ASSERT(prCmdKey->ucKeyId < MAX_KEY_NUM);
-
-			prCmdKey->ucKeyType = 0;
-
-			/* insert into prCmdQueue */
-			kalEnqueueCommand(prGlueInfo,
-					  (struct QUE_ENTRY *) prCmdInfo);
-
-			/* wakeup txServiceThread later */
-			GLUE_SET_EVENT(prGlueInfo);
-
-			return WLAN_STATUS_PENDING;
-		}
-
-		break;
-
-	default:
-		DBGLOG(REQ, TRACE, "Invalid reload option %d\n",
-		       *(enum ENUM_RELOAD_DEFAULTS *) pvSetBuffer);
-		rStatus = WLAN_STATUS_INVALID_DATA;
-	}
-
-	/* OID_802_11_RELOAD_DEFAULTS requiest to reset to auto mode */
-	eNetworkType = PARAM_NETWORK_TYPE_AUTOMODE;
-	wlanoidSetNetworkTypeInUse(prAdapter, &eNetworkType,
-				   sizeof(eNetworkType), &u4Len);
-
-	return rStatus;
-} /* wlanoidSetReloadDefaults */
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief This routine is called to set a WEP key to the driver.
  *
  * \param[in]  prAdapter Pointer to the Adapter structure.
@@ -2613,16 +2466,13 @@ uint32_t
 wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		 IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen)
 {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
 	struct PARAM_KEY *prNewKey;
-	struct CMD_802_11_KEY *prCmdKey;
+	struct CMD_802_11_KEY rCmdKey;
+	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
 	struct BSS_INFO *prBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgNoHandshakeSec = FALSE;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
@@ -2632,7 +2482,6 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	prChipInfo = prAdapter->chip_info;
 
 	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
@@ -2697,7 +2546,6 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	DBGLOG(RSN, TRACE, "Key RSC:\n");
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
-	prGlueInfo = prAdapter->prGlueInfo;
 	prAisSpecBssInfo =
 		aisGetAisSpecBssInfo(prAdapter, prNewKey->ucBssIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNewKey->ucBssIdx);
@@ -2752,39 +2600,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		nicRxClearFrag(prAdapter, prStaRec);
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 	}
-	cmd_size = prChipInfo->u2CmdTxHdrSize +	sizeof(struct CMD_802_11_KEY);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG_LIMITED(INIT, ERROR,
-			"Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
 
-	/* compose CMD_802_11_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-#if CFG_SUPPORT_REPLAY_DETECTION
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetAddKey;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutSetAddKey;
-#else
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-#endif
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = u4SetBufferLen;
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-	/* Setup WIFI_CMD_T */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery, &prCmdKey, FALSE, 0, S2D_INDEX_CMD_H2N);
 	kalMemZero(prCmdKey, sizeof(struct CMD_802_11_KEY));
 	prCmdKey->ucAddRemove = 1; /* Add */
 	prCmdKey->ucTxKey =
@@ -3149,11 +2965,26 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	}
 #endif
 	prAisSpecBssInfo->ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-	return WLAN_STATUS_PENDING;
+
+
+
+
+	return wlanSendSetQueryCmd(prAdapter,
+				  CMD_ID_ADD_REMOVE_KEY,
+				  TRUE,
+				  FALSE,
+				  TRUE,
+#if CFG_SUPPORT_REPLAY_DETECTION
+				  nicCmdEventSetAddKey,
+				  nicOidCmdTimeoutSetAddKey,
+#else
+				  nicCmdEventSetCommon,
+				  nicOidCmdTimeoutCommon,
+#endif
+				  sizeof(struct CMD_802_11_KEY),
+				  (uint8_t *)&rCmdKey,
+				  pvSetBuffer,
+				  u4SetBufferLen);
 } /* wlanoidSetAddKey */
 
 /*----------------------------------------------------------------------------*/
@@ -3188,26 +3019,21 @@ wlanoidSetRemoveKey(IN struct ADAPTER *prAdapter,
 uint32_t
 wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
-		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
+		    OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid)
+{
 	struct PARAM_REMOVE_KEY *prRemovedKey;
-	struct CMD_802_11_KEY *prCmdKey;
-	struct WLAN_TABLE *prWlanTable;
+	struct CMD_802_11_KEY rCmdKey;
 	struct STA_RECORD *prStaRec = NULL;
 	struct BSS_INFO *prBssInfo;
 	/*	UINT_8 i = 0;	*/
-	u_int8_t fgRemoveWepKey = FALSE;
+	uint8_t fgRemoveWepKey = FALSE;
 	uint32_t ucRemoveBCKeyAtIdx = WTBL_RESERVED_ENTRY;
 	uint32_t u4KeyIndex;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 
 	DEBUGFUNC("wlanSetRemoveKey");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
-	prChipInfo = prAdapter->chip_info;
 
 	*pu4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
 
@@ -3223,8 +3049,6 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 
 	ASSERT(pvSetBuffer);
 	prRemovedKey = (struct PARAM_REMOVE_KEY *) pvSetBuffer;
-
-	prGlueInfo = prAdapter->prGlueInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prRemovedKey->ucBssIdx);
 	ASSERT(prBssInfo);
@@ -3294,8 +3118,6 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 			return WLAN_STATUS_SUCCESS;
 	}
 
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_802_11_KEY);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	/* Dump PARAM_REMOVE_KEY content. */
 	DBGLOG(RSN, INFO, "PARAM_REMOVE_KEY: BSSID(" MACSTR
 		"), BSS_INDEX (%d), Length(0x%08x), Key Index(0x%08x, %d) ucRemoveBCKeyAtIdx = %d\n",
@@ -3304,66 +3126,38 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 		prRemovedKey->u4Length, prRemovedKey->u4KeyIndex, u4KeyIndex,
 		ucRemoveBCKeyAtIdx);
 
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	prWlanTable = prAdapter->rWifiVar.arWtbl;
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					  prRemovedKey->ucBssIdx);
 
 	/* compose CMD_802_11_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	/* prCmdInfo->ucBssIndex = prRemovedKey->ucBssIdx; */
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = fgIsOid;
-	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	/* prCmdInfo->fgDriverDomainMCR = FALSE; */
-	prCmdInfo->u4SetInfoLen = sizeof(struct PARAM_REMOVE_KEY);
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
+	kalMemZero((uint8_t *) &rCmdKey, sizeof(struct CMD_802_11_KEY));
 
-	/* Setup WIFI_CMD_T */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery, &prCmdKey, FALSE, 0, S2D_INDEX_CMD_H2N);
-
-	kalMemZero((uint8_t *) prCmdKey,
-		   sizeof(struct CMD_802_11_KEY));
-
-	prCmdKey->ucAddRemove = 0;	/* Remove */
-	prCmdKey->ucKeyId = (uint8_t) u4KeyIndex;
-	kalMemCopy(prCmdKey->aucPeerAddr,
+	rCmdKey.ucAddRemove = 0;	/* Remove */
+	rCmdKey.ucKeyId = (uint8_t) u4KeyIndex;
+	kalMemCopy(rCmdKey.aucPeerAddr,
 		   (uint8_t *) prRemovedKey->arBSSID, MAC_ADDR_LEN);
-	prCmdKey->ucBssIdx = prRemovedKey->ucBssIdx;
+	rCmdKey.ucBssIdx = prRemovedKey->ucBssIdx;
 
 	if (prStaRec) {
-		prCmdKey->ucKeyType = 1;
-		prCmdKey->ucWlanIndex = prStaRec->ucWlanIndex;
+		rCmdKey.ucKeyType = 1;
+		rCmdKey.ucWlanIndex = prStaRec->ucWlanIndex;
 		prStaRec->fgTransmitKeyExist = FALSE;
 	} else if (ucRemoveBCKeyAtIdx < WTBL_SIZE) {
-		prCmdKey->ucWlanIndex = ucRemoveBCKeyAtIdx;
+		rCmdKey.ucWlanIndex = ucRemoveBCKeyAtIdx;
 	} else {
 		ASSERT(FALSE);
 	}
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(
+			  prAdapter,
+			  CMD_ID_ADD_REMOVE_KEY,
+			  TRUE,
+			  FALSE,
+			  fgIsOid,
+			  nicCmdEventSetCommon,
+			  nicOidCmdTimeoutCommon,
+			  sizeof(struct CMD_802_11_KEY),
+			  (uint8_t *)&rCmdKey,
+			  pvSetBuffer,
+			  u4SetBufferLen);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3390,22 +3184,17 @@ uint32_t
 wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
 	struct PARAM_DEFAULT_KEY *prDefaultKey;
-	struct CMD_DEFAULT_KEY *prCmdDefaultKey;
+	struct CMD_DEFAULT_KEY rCmdDefaultKey;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgSetWepKey = FALSE;
 	uint8_t ucWlanIndex = WTBL_RESERVED_ENTRY;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 
 	DEBUGFUNC("wlanoidSetDefaultKey");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	prChipInfo = prAdapter->chip_info;
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(REQ, WARN,
@@ -3425,13 +3214,10 @@ wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
 	       prDefaultKey->ucKeyID, prDefaultKey->ucUnicast,
 	       prDefaultKey->ucMulticast);
 
-	/* prWlanTable = prAdapter->rWifiVar.arWtbl; */
-	prGlueInfo = prAdapter->prGlueInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prDefaultKey->ucBssIdx);
 
-	DBGLOG(RSN, INFO, "WlanIdx = %d\n",
-	       prBssInfo->wepkeyWlanIdx);
+	DBGLOG(RSN, INFO, "WlanIdx = %d\n", prBssInfo->wepkeyWlanIdx);
 
 	if (prDefaultKey->ucMulticast) {
 		ASSERT(prBssInfo);
@@ -3483,54 +3269,30 @@ wlanoidSetDefaultKey(IN struct ADAPTER *prAdapter,
 		ASSERT(FALSE);
 	}
 
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_DEFAULT_KEY);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
+	/* compose CMD_DEFAULT_KEY cmd pkt */
+	kalMemZero(&rCmdDefaultKey, sizeof(struct CMD_DEFAULT_KEY));
 
-	/* compose CMD_802_11_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_DEFAULT_KEY_ID;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = u4SetBufferLen;
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-
-	/* Setup WIFI_CMD_T */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&prCmdDefaultKey, FALSE, 0, S2D_INDEX_CMD_H2N);
-	kalMemZero(prCmdDefaultKey, sizeof(struct CMD_DEFAULT_KEY));
-
-	prCmdDefaultKey->ucBssIdx = prDefaultKey->ucBssIdx;
-	prCmdDefaultKey->ucKeyId = prDefaultKey->ucKeyID;
-	prCmdDefaultKey->ucWlanIndex = ucWlanIndex;
-	prCmdDefaultKey->ucMulticast = prDefaultKey->ucMulticast;
+	rCmdDefaultKey.ucBssIdx = prDefaultKey->ucBssIdx;
+	rCmdDefaultKey.ucKeyId = prDefaultKey->ucKeyID;
+	rCmdDefaultKey.ucWlanIndex = ucWlanIndex;
+	rCmdDefaultKey.ucMulticast = prDefaultKey->ucMulticast;
 
 	DBGLOG(RSN, INFO,
 	       "CMD_ID_DEFAULT_KEY_ID (%d) with wlan idx = %d\n",
 	       prDefaultKey->ucKeyID, ucWlanIndex);
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(
+		  prAdapter,
+		  CMD_ID_DEFAULT_KEY_ID,
+		  TRUE,
+		  FALSE,
+		  TRUE,
+		  nicCmdEventSetCommon,
+		  nicOidCmdTimeoutCommon,
+		  sizeof(struct CMD_DEFAULT_KEY),
+		  (uint8_t *)&rCmdDefaultKey,
+		  pvSetBuffer,
+		  u4SetBufferLen);
 }				/* wlanoidSetDefaultKey */
 
 /*----------------------------------------------------------------------------*/
@@ -4956,56 +4718,16 @@ wlanSendSetQueryExtCmd(
 	void *pvSetQueryBuffer,
 	uint32_t u4SetQueryBufferLen)
 {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	uint8_t *pucCmdBuf;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prChipInfo = prAdapter->chip_info;
-	cmd_size = prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen;
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-
-	DEBUGFUNC("wlanSendSetQueryCmd");
-
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
-			ucCID);
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
-	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
-	prCmdInfo->fgIsOid = fgIsOid;
-	prCmdInfo->ucCID = ucCID;
-	prCmdInfo->fgSetQuery = fgSetQuery;
-	prCmdInfo->fgNeedResp = fgNeedResp;
-	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
-	prCmdInfo->pvInformationBuffer = pvSetQueryBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetQueryBufferLen;
-
-	/* Setup WIFI_CMD_T (no payload) */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&pucCmdBuf, FALSE, ucExtCID, S2D_INDEX_CMD_H2N);
-	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
-		kalMemCopy(pucCmdBuf, pucInfoBuffer, u4SetQueryInfoLen);
-
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-	return WLAN_STATUS_PENDING;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return wlanSendSetQueryCmdHelper(
+#else
+	return wlanSendSetQueryCmdAdv(
+#endif
+		prAdapter, ucCID, ucExtCID, fgSetQuery,
+		fgNeedResp, fgIsOid, pfCmdDoneHandler,
+		pfCmdTimeoutHandler, u4SetQueryInfoLen,
+		pucInfoBuffer, pvSetQueryBuffer, u4SetQueryBufferLen,
+		CMD_SEND_METHOD_ENQUEUE);
 }
 
 #if CFG_SUPPORT_QA_TOOL
@@ -5595,6 +5317,61 @@ wlanoidStaRecBFUpdate(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prStaRecUpdateInfo);
 
 	return rWlanStatus;
+}
+
+uint32_t
+wlanoidStaRecBFRead(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint16_t wlan_id;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_BF *uni_cmd;
+	struct UNI_CMD_BF_STAREC_READ *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BF) +
+	     		       sizeof(struct UNI_CMD_BF_STAREC_READ);
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(uint16_t);
+	if (u4SetBufferLen < sizeof(uint16_t))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	wlan_id = *(uint16_t *) pvSetBuffer;
+	uni_cmd = (struct UNI_CMD_BF *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_BF_STAREC_READ *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BF_TAG_STA_REC_READ;
+	tag->u2Length = sizeof(*tag);
+	tag->u2WlanIdx = wlan_id;
+
+	DBGLOG(RFTEST, INFO, "Read StaRec WlanIdx=%d.\n", wlan_id);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_BF,
+			     FALSE,
+			     TRUE,
+			     TRUE,
+			     nicUniEventBFStaRec,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
 }
 
 uint32_t
@@ -7575,6 +7352,119 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 
 	return rWlanStatus;
 }				/* wlanoidSetSwCtrlWrite */
+
+uint32_t
+wlanoidSetFixRate(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_RA *uni_cmd;
+	struct UNI_CMD_RA_SET_FIXED_RATE *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RA) +
+			       sizeof(struct UNI_CMD_RA_SET_FIXED_RATE) +
+			       sizeof(struct UNI_CMD_RA_SET_FIXED_RATE_V1);
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_RA_SET_FIXED_RATE_V1);
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_RA_SET_FIXED_RATE_V1))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	uni_cmd = (struct UNI_CMD_RA *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_RA_SET_FIXED_RATE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RA_TAG_SET_FIXED_RATE;
+	tag->u2Length = sizeof(*tag) +
+			sizeof(struct UNI_CMD_RA_SET_FIXED_RATE_V1);
+	tag->u2Version = UNI_CMD_RA_FIXED_RATE_VER1;
+	kalMemCopy(tag->aucBuffer, pvSetBuffer,
+		sizeof(struct UNI_CMD_RA_SET_FIXED_RATE_V1));
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_RA,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t
+wlanoidSetAutoRate(IN struct ADAPTER *prAdapter,
+		      IN void *pvSetBuffer,
+		      IN uint32_t u4SetBufferLen,
+		      OUT uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_RA *uni_cmd;
+	struct UNI_CMD_RA_SET_AUTO_RATE *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RA) +
+			       sizeof(struct UNI_CMD_RA_SET_AUTO_RATE);
+	struct UNI_CMD_RA_SET_AUTO_RATE *para;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_RA_SET_AUTO_RATE);
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_RA_SET_AUTO_RATE))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	para = (struct UNI_CMD_RA_SET_AUTO_RATE *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_RA *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_RA_SET_AUTO_RATE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_RA_TAG_SET_AUTO_RATE;
+	tag->u2Length = sizeof(*tag);
+	tag->u2WlanIdx = para->u2WlanIdx;
+	tag->u1AutoRateEn = para->u1AutoRateEn;
+	tag->u1Mode = para->u1Mode;
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_RA,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
 
 #if (CFG_SUPPORT_ICS == 1)
 /*----------------------------------------------------------------------------*/
@@ -10211,48 +10101,13 @@ wlanoidRftestSetAutoTest(IN struct ADAPTER *prAdapter,
 /* RF test OID set handler */
 uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 			 uint32_t u4FuncIndex, uint32_t u4FuncData) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	struct CMD_TEST_CTRL *pCmdTestCtrl;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
+	struct CMD_TEST_CTRL rCmdTestCtrl;
 
 	ASSERT(prAdapter);
 
-	prChipInfo = prAdapter->chip_info;
-	prGlueInfo = prAdapter->prGlueInfo;
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_TEST_CTRL);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_TEST_CTRL;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = sizeof(struct CMD_TEST_CTRL);
-	prCmdInfo->pvInformationBuffer = NULL;
-	prCmdInfo->u4InformationBufferLength = 0;
-
-	/* Setup WIFI_CMD_T (payload = CMD_TEST_CTRL_T) */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&pCmdTestCtrl, FALSE, 0, S2D_INDEX_CMD_H2N);
-	pCmdTestCtrl->ucAction = 1;	/* Set ATInfo */
-	pCmdTestCtrl->u.rRfATInfo.u4FuncIndex = u4FuncIndex;
-	pCmdTestCtrl->u.rRfATInfo.u4FuncData = u4FuncData;
+	rCmdTestCtrl.ucAction = 1;	/* Set ATInfo */
+	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = u4FuncIndex;
+	rCmdTestCtrl.u.rRfATInfo.u4FuncData = u4FuncData;
 
 	if ((u4FuncIndex == RF_AT_FUNCID_COMMAND)
 	    && (u4FuncData == RF_AT_COMMAND_ICAP))
@@ -10263,14 +10118,16 @@ uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 	    && (u4FuncData == RF_AT_COMMAND_RESET_DUMP_NAME))
 		prAdapter->rIcapInfo.u2DumpIndex = 0;
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prAdapter->prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_TEST_CTRL,
+				   TRUE,
+				   FALSE,
+				   TRUE,
+				   nicCmdEventSetCommon,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_TEST_CTRL),
+				   (uint8_t *) &rCmdTestCtrl,
+				   NULL, 0);
 }
 
 uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
@@ -10500,17 +10357,10 @@ uint32_t
 rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		  uint32_t u4FuncIndex, uint32_t u4FuncData,
 		  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	struct CMD_TEST_CTRL *pCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl;
 	union EVENT_TEST_STATUS *prTestStatus;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 
 	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prChipInfo = prAdapter->chip_info;
 
 	if (u4FuncIndex == RF_AT_FUNCID_FW_INFO) {
 		/* driver implementation */
@@ -10546,48 +10396,20 @@ rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_TEST_CTRL);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
+	rCmdTestCtrl.ucAction = 2;	/* Get ATInfo */
+	rCmdTestCtrl.u.rRfATInfo.u4FuncIndex = u4FuncIndex;
+	rCmdTestCtrl.u.rRfATInfo.u4FuncData = u4FuncData;
 
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventQueryRfTestATInfo;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_TEST_CTRL;
-	prCmdInfo->fgSetQuery = FALSE;
-	prCmdInfo->fgNeedResp = TRUE;
-	prCmdInfo->u4SetInfoLen = sizeof(struct CMD_TEST_CTRL);
-	prCmdInfo->pvInformationBuffer = pvQueryBuffer;
-	prCmdInfo->u4InformationBufferLength = u4QueryBufferLen;
-
-	/* Setup WIFI_CMD_T (payload = CMD_TEST_CTRL_T) */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&pCmdTestCtrl, FALSE, 0, S2D_INDEX_CMD_H2N);
-	pCmdTestCtrl->ucAction = 2;	/* Get ATInfo */
-	pCmdTestCtrl->u.rRfATInfo.u4FuncIndex = u4FuncIndex;
-	pCmdTestCtrl->u.rRfATInfo.u4FuncData = u4FuncData;
-
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prAdapter->prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
-
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_TEST_CTRL,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventQueryRfTestATInfo,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_TEST_CTRL),
+				   (uint8_t *) &rCmdTestCtrl,
+				   pvQueryBuffer, u4QueryBufferLen);
 }
 
 uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter,
@@ -10629,25 +10451,28 @@ uint32_t rftestSetFrequency(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
+wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
-		    u_int8_t fgSetQuery,
-		    u_int8_t fgNeedResp,
-		    u_int8_t fgIsOid,
+		    uint8_t ucExtCID,
+		    uint8_t fgSetQuery,
+		    uint8_t fgNeedResp,
+		    uint8_t fgIsOid,
 		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
 		    uint32_t u4SetQueryInfoLen,
 		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
-		    IN uint32_t u4SetQueryBufferLen) {
+		    IN uint32_t u4SetQueryBufferLen,
+		    enum EUNM_CMD_SEND_METHOD eMethod) {
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
 	uint8_t *pucCmfBuf;
 	struct mt66xx_chip_info *prChipInfo;
 	uint16_t cmd_size;
+	uint32_t status = WLAN_STATUS_PENDING;
 
 	if (kalIsResetting()) {
 		DBGLOG(INIT, WARN, "Chip resetting, skip\n");
-		return WLAN_STATUS_FAILURE;
+		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -10659,7 +10484,7 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T FAILED ID[0x%x]\n",
 			ucCID);
-		return WLAN_STATUS_FAILURE;
+		return WLAN_STATUS_RESOURCES;
 	}
 
 	/* Setup common CMD Info Packet */
@@ -10683,17 +10508,32 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 		CMD_PACKET_TYPE_ID,
 		&prCmdInfo->ucCmdSeqNum,
 		prCmdInfo->fgSetQuery,
-		&pucCmfBuf, FALSE, 0, S2D_INDEX_CMD_H2N);
+		&pucCmfBuf, FALSE, ucExtCID, S2D_INDEX_CMD_H2N);
+	prCmdInfo->pucSetInfoBuffer = pucCmfBuf;
 	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
 		kalMemCopy(pucCmfBuf, pucInfoBuffer,
 			   u4SetQueryInfoLen);
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
 
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-	return WLAN_STATUS_PENDING;
+	switch (eMethod) {
+	case CMD_SEND_METHOD_ENQUEUE:
+		/* insert into prCmdQueue */
+		kalEnqueueCommand(prGlueInfo,
+				  (struct QUE_ENTRY *) prCmdInfo);
+
+		/* wakeup txServiceThread later */
+		GLUE_SET_EVENT(prGlueInfo);
+		break;
+	case CMD_SEND_METHOD_REQ_RESOURCE:
+		status = wlanSendCommand(prAdapter, prCmdInfo);
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		break;
+	case CMD_SEND_METHOD_TX:
+		status = nicTxCmd(prAdapter, prCmdInfo, TC4_INDEX);
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		break;
+	}
+
+	return status;
 }
 
 #if CFG_SUPPORT_WAPI
@@ -10920,15 +10760,11 @@ uint32_t
 wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 		  IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		  OUT uint32_t *pu4SetInfoLen) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
 	struct PARAM_WPI_KEY *prNewKey;
-	struct CMD_802_11_KEY *prCmdKey;
+	struct CMD_802_11_KEY rCmdKey;
 	uint8_t *pc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("wlanoidSetWapiKey");
@@ -10936,7 +10772,6 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	prChipInfo = prAdapter->chip_info;
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(REQ, WARN,
@@ -10956,8 +10791,7 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Todo:: WAPI AP mode !!!!! */
-	prBssInfo =
-		aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	prNewKey->ucKeyID = prNewKey->ucKeyID & BIT(0);
 
@@ -11003,83 +10837,51 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 
 	DBGLOG_MEM8(REQ, TRACE, (uint8_t *) prNewKey->aucPN, 16);
 
-	prGlueInfo = prAdapter->prGlueInfo;
+	kalMemZero(&rCmdKey, sizeof(struct CMD_802_11_KEY));
 
-	cmd_size = prChipInfo->u2CmdTxHdrSize + u4SetBufferLen;
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* compose CMD_ID_ADD_REMOVE_KEY cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_ADD_REMOVE_KEY;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = u4SetBufferLen;
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-
-	/* Setup WIFI_CMD_T */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery, &prCmdKey, FALSE, 0, S2D_INDEX_CMD_H2N);
-
-	kalMemZero(prCmdKey, sizeof(struct CMD_802_11_KEY));
-
-	prCmdKey->ucAddRemove = 1;	/* Add */
+	rCmdKey.ucAddRemove = 1;	/* Add */
 
 	if (prNewKey->eKeyType == ENUM_WPI_PAIRWISE_KEY) {
-		prCmdKey->ucTxKey = 1;
-		prCmdKey->ucKeyType = 1;
+		rCmdKey.ucTxKey = 1;
+		rCmdKey.ucKeyType = 1;
 	}
-	kalMemCopy(prCmdKey->aucPeerAddr,
+	kalMemCopy(rCmdKey.aucPeerAddr,
 		   (uint8_t *) prNewKey->aucAddrIndex, MAC_ADDR_LEN);
-	if ((prCmdKey->aucPeerAddr[0] & prCmdKey->aucPeerAddr[1] &
-	     prCmdKey->aucPeerAddr[2] &
-	     prCmdKey->aucPeerAddr[3] & prCmdKey->aucPeerAddr[4] &
-	     prCmdKey->aucPeerAddr[5]) == 0xFF) {
+	if ((rCmdKey.aucPeerAddr[0] & rCmdKey.aucPeerAddr[1] &
+	     rCmdKey.aucPeerAddr[2] &
+	     rCmdKey.aucPeerAddr[3] & rCmdKey.aucPeerAddr[4] &
+	     rCmdKey.aucPeerAddr[5]) == 0xFF) {
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 				prBssInfo->ucBssIndex, prBssInfo->aucBSSID);
 		ASSERT(prStaRec);	/* AIS RSN Group key, addr is BC addr */
-		kalMemCopy(prCmdKey->aucPeerAddr, prStaRec->aucMacAddr,
+		kalMemCopy(rCmdKey.aucPeerAddr, prStaRec->aucMacAddr,
 			   MAC_ADDR_LEN);
 	} else {
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
-				prBssInfo->ucBssIndex, prCmdKey->aucPeerAddr);
+				prBssInfo->ucBssIndex, rCmdKey.aucPeerAddr);
 	}
 
-	prCmdKey->ucBssIdx =
-		prBssInfo->ucBssIndex; /* AIS */
+	rCmdKey.ucBssIdx = prBssInfo->ucBssIndex; /* AIS */
 
-	prCmdKey->ucKeyId = prNewKey->ucKeyID;
+	rCmdKey.ucKeyId = prNewKey->ucKeyID;
 
-	prCmdKey->ucKeyLen = 32;
+	rCmdKey.ucKeyLen = 32;
 
-	prCmdKey->ucAlgorithmId = CIPHER_SUITE_WPI;
+	rCmdKey.ucAlgorithmId = CIPHER_SUITE_WPI;
 
-	kalMemCopy(prCmdKey->aucKeyMaterial,
+	kalMemCopy(rCmdKey.aucKeyMaterial,
 		   (uint8_t *) prNewKey->aucWPIEK, 16);
 
-	kalMemCopy(prCmdKey->aucKeyMaterial + 16,
+	kalMemCopy(rCmdKey.aucKeyMaterial + 16,
 		   (uint8_t *) prNewKey->aucWPICK, 16);
 
-	kalMemCopy(prCmdKey->aucKeyRsc, (uint8_t *) prNewKey->aucPN,
+	kalMemCopy(rCmdKey.aucKeyRsc, (uint8_t *) prNewKey->aucPN,
 		   16);
 
-	if (prCmdKey->ucTxKey) {
+	if (rCmdKey.ucTxKey) {
 		if (prStaRec) {
-			if (prCmdKey->ucKeyType) {	/* AIS RSN STA */
-				prCmdKey->ucWlanIndex = prStaRec->ucWlanIndex;
+			if (rCmdKey.ucKeyType) {	/* AIS RSN STA */
+				rCmdKey.ucWlanIndex = prStaRec->ucWlanIndex;
 				prStaRec->fgTransmitKeyExist =
 					TRUE;	/* wait for CMD Done ? */
 			} else {
@@ -11116,11 +10918,11 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 #endif
 	} else {
 		/* Including IBSS RSN Rx BC key ? */
-		if ((prCmdKey->aucPeerAddr[0] & prCmdKey->aucPeerAddr[1] &
-		     prCmdKey->aucPeerAddr[2] & prCmdKey->aucPeerAddr[3] &
-		     prCmdKey->aucPeerAddr[4] & prCmdKey->aucPeerAddr[5]) ==
+		if ((rCmdKey.aucPeerAddr[0] & rCmdKey.aucPeerAddr[1] &
+		     rCmdKey.aucPeerAddr[2] & rCmdKey.aucPeerAddr[3] &
+		     rCmdKey.aucPeerAddr[4] & rCmdKey.aucPeerAddr[5]) ==
 		    0xFF) {
-			prCmdKey->ucWlanIndex =
+			rCmdKey.ucWlanIndex =
 				WTBL_RESERVED_ENTRY; /* AIS WEP, should not have
 						      * this case!!
 						      */
@@ -11129,14 +10931,14 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 					 */
 				/* ASSERT(prStaRec->ucBMCWlanIndex < WTBL_SIZE)
 				 */
-				prCmdKey->ucWlanIndex =
+				rCmdKey.ucWlanIndex =
 					secPrivacySeekForBcEntry(prAdapter,
 							prStaRec->ucBssIndex,
 							prStaRec->aucMacAddr,
 							prStaRec->ucIndex,
-							prCmdKey->ucAlgorithmId,
-							prCmdKey->ucKeyId);
-				prStaRec->ucWlanIndex = prCmdKey->ucWlanIndex;
+							rCmdKey.ucAlgorithmId,
+							rCmdKey.ucKeyId);
+				prStaRec->ucWlanIndex = rCmdKey.ucWlanIndex;
 			} else {	/* Exist this case ? */
 				ASSERT(FALSE);
 				/* prCmdKey->ucWlanIndex = */
@@ -11150,14 +10952,18 @@ wlanoidSetWapiKey(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
+	return wlanSendSetQueryCmd(
+			  prAdapter,
+			  CMD_ID_ADD_REMOVE_KEY,
+			  TRUE,
+			  FALSE,
+			  TRUE,
+			  nicCmdEventQueryCfgRead,
+			  nicOidCmdTimeoutCommon,
+			  sizeof(struct CMD_802_11_KEY),
+			  (uint8_t *)&rCmdKey,
+			  pvSetBuffer,
+			  u4SetBufferLen);
 }				/* wlanoidSetAddKey */
 #endif
 
@@ -12915,18 +12721,11 @@ uint32_t
 wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
 		       IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		       OUT uint32_t *pu4SetInfoLen) {
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	uint8_t *pucCmdBuf;
-	struct mt66xx_chip_info *prChipInfo;
-	uint16_t cmd_size;
-
 	DBGLOG(REQ, INFO, "wlanoidSetGtkRekeyData\n");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	prChipInfo = prAdapter->chip_info;
 
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN,
@@ -12935,52 +12734,18 @@ wlanoidSetGtkRekeyData(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	*pu4SetInfoLen = u4SetBufferLen;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	cmd_size = prChipInfo->u2CmdTxHdrSize
-		+ sizeof(struct PARAM_GTK_REKEY_DATA);
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* compose PARAM_GTK_REKEY_DATA cmd pkt */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = cmd_size;
-	prCmdInfo->pfCmdDoneHandler = nicCmdEventSetCommon;
-	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
-	prCmdInfo->fgIsOid = TRUE;
-	prCmdInfo->ucCID = CMD_ID_SET_GTK_REKEY_DATA;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->u4SetInfoLen = u4SetBufferLen;
-	prCmdInfo->pvInformationBuffer = pvSetBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetBufferLen;
-
-	/* Setup WIFI_CMD_T */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery,
-		&pucCmdBuf, FALSE, 0, S2D_INDEX_CMD_H2N);
-
-	kalMemCopy(pucCmdBuf, (uint8_t *) pvSetBuffer,
-		   u4SetBufferLen);
-
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-
-	return WLAN_STATUS_PENDING;
-
+	return wlanSendSetQueryCmd(
+			  prAdapter,
+			  CMD_ID_SET_GTK_REKEY_DATA,
+			  TRUE,
+			  FALSE,
+			  TRUE,
+			  nicCmdEventSetCommon,
+			  nicOidCmdTimeoutCommon,
+			  u4SetBufferLen,
+			  pvSetBuffer,
+			  pvSetBuffer,
+			  u4SetBufferLen);
 }				/* wlanoidSetGtkRekeyData */
 
 #if CFG_SUPPORT_SCHED_SCAN

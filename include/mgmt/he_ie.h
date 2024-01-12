@@ -308,8 +308,10 @@
 #define HE_OP_PARAM2_6G_OP_INFOR_PRESENT_SHFT		1
 
 /* HE Operation element - BSS Color Information */
+#define HE_OP_BSSCOLOR_BSS_COLOR_MASK                   BITS(0, 5)
 #define HE_OP_BSSCOLOR_BSS_COLOR_SHFT                   0
 #define HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR_SHFT           6
+#define HE_OP_BSSCOLOR_BSS_COLOR_DISABLE                BIT(7)
 #define HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT           7
 
 /* Spatial Reuse Parameter Set element - SR Control field */

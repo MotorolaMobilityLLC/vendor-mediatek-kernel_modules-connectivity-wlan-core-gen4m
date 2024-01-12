@@ -104,92 +104,6 @@
  *                              F U N C T I O N S
  ******************************************************************************
  */
-/*---------------------------------------------------------------------------*/
-/*!
- * \brief command packet generation utility
- *
- * \param[in] prAdapter          Pointer to the Adapter structure.
- * \param[in] ucCID              Command ID
- * \param[in] fgSetQuery         Set or Query
- * \param[in] fgNeedResp         Need for response
- * \param[in] pfCmdDoneHandler   Function pointer when command is done
- * \param[in] u4SetQueryInfoLen  The length of the set/query buffer
- * \param[in] pucInfoBuffer      Pointer to set/query buffer
- *
- *
- * \retval WLAN_STATUS_PENDING
- * \retval WLAN_STATUS_FAILURE
- */
-/*---------------------------------------------------------------------------*/
-uint32_t
-wlanoidSendSetQueryP2PCmd(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucCID,
-		IN uint8_t ucBssIdx,
-		IN u_int8_t fgSetQuery,
-		IN u_int8_t fgNeedResp,
-		IN u_int8_t fgIsOid,
-		IN PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
-		IN PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
-		IN uint32_t u4SetQueryInfoLen,
-		IN uint8_t *pucInfoBuffer,
-		OUT void *pvSetQueryBuffer,
-		IN uint32_t u4SetQueryBufferLen)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct CMD_INFO *prCmdInfo;
-	uint8_t *pucCmdBuf;
-	struct mt66xx_chip_info *prChipInfo;
-
-	ASSERT(prAdapter);
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	ASSERT(prGlueInfo);
-	prChipInfo = prAdapter->chip_info;
-
-	DEBUGFUNC("wlanoidSendSetQueryP2PCmd");
-	DBGLOG(REQ, TRACE, "Command ID = 0x%08X\n", ucCID);
-
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-			(prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen));
-
-	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
-		return WLAN_STATUS_FAILURE;
-	}
-
-	/* Setup common CMD Info Packet */
-	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen =
-		(uint16_t) (prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen);
-	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
-	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
-	prCmdInfo->fgIsOid = fgIsOid;
-	prCmdInfo->ucCID = ucCID;
-	prCmdInfo->fgSetQuery = fgSetQuery;
-	prCmdInfo->fgNeedResp = fgNeedResp;
-	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
-	prCmdInfo->pvInformationBuffer = pvSetQueryBuffer;
-	prCmdInfo->u4InformationBufferLength = u4SetQueryBufferLen;
-
-	/* Setup WIFI_CMD_T (no payload) */
-	NIC_FILL_CMD_TX_HDR(prAdapter,
-		prCmdInfo->pucInfoBuffer,
-		prCmdInfo->u2InfoBufLen,
-		prCmdInfo->ucCID,
-		CMD_PACKET_TYPE_ID,
-		&prCmdInfo->ucCmdSeqNum,
-		prCmdInfo->fgSetQuery, &pucCmdBuf, FALSE, 0, S2D_INDEX_CMD_H2N);
-
-	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
-		kalMemCopy(pucCmdBuf,
-				pucInfoBuffer, u4SetQueryInfoLen);
-	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
-
-	/* wakeup txServiceThread later */
-	GLUE_SET_EVENT(prGlueInfo);
-	return WLAN_STATUS_PENDING;
-}
 
 /*---------------------------------------------------------------------------*/
 /*!
@@ -960,9 +874,8 @@ wlanoidSetP2PMulticastList(IN struct ADAPTER *prAdapter,
 	rCmdMacMcastAddr.ucBssIndex = prAdapter->ucP2PDevBssIdx;
 	kalMemCopy(rCmdMacMcastAddr.arAddress, pvSetBuffer, u4SetBufferLen);
 
-	return wlanoidSendSetQueryP2PCmd(prAdapter,
+	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_MAC_MCAST_ADDR,
-				prAdapter->ucP2PDevBssIdx,
 				/* TODO: */
 				/* This CMD response is no need
 				 * to complete the OID.
@@ -1371,9 +1284,8 @@ wlanoidSetNoaParam(IN struct ADAPTER *prAdapter,
 				pvSetBuffer,
 				u4SetBufferLen);
 #else
-	return wlanoidSendSetQueryP2PCmd(prAdapter,
+	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SET_NOA_PARAM,
-				prNoaParam->ucBssIdx,
 				TRUE,
 				FALSE,
 				TRUE,
@@ -1430,9 +1342,8 @@ wlanoidSetOppPsParam(IN struct ADAPTER *prAdapter,
 				pvSetBuffer,
 				u4SetBufferLen);
 #else
-	return wlanoidSendSetQueryP2PCmd(prAdapter,
+	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SET_OPPPS_PARAM,
-				prOppPsParam->ucBssIdx,
 				TRUE,
 				FALSE,
 				TRUE,
@@ -1519,9 +1430,8 @@ wlanoidSetUApsdParam(IN struct ADAPTER *prAdapter,
 				pvSetBuffer,
 				u4SetBufferLen);
 #else
-	return wlanoidSendSetQueryP2PCmd(prAdapter,
+	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SET_UAPSD_PARAM,
-				prBssInfo->ucBssIndex,
 				TRUE,
 				FALSE,
 				fgIsOid,

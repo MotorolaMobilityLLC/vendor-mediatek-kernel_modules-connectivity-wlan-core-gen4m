@@ -1459,6 +1459,14 @@ struct mt66xx_chip_info {
 	void (*asicFillCmdTxd)(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_CMD_INFO *prCmdInfo,
 		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint16_t u2UniCmdTxHdrSize;
+	void (*asicFillUniCmdTxd)(IN struct ADAPTER *prAdapter,
+		IN struct WIFI_UNI_CMD_INFO *prCmdInfo,
+		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
+#endif
+
 	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
