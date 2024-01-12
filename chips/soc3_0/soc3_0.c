@@ -2775,9 +2775,14 @@ void soc3_0_icapDownVcoreClockRate(void)
 	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 
-	/*restore to default value*/
-	pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
-					PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+	/*init*/
+	if (!pm_qos_request_active(&wifi_req))
+		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
+						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
+
+	/*restore to default Vcore*/
+	pm_qos_update_request(&wifi_req,
+		PM_QOS_VCORE_OPP_DEFAULT_VALUE);
 
 	/*disable VCore to normal setting*/
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
