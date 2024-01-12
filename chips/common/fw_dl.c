@@ -2295,9 +2295,9 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr)
 {
-	kalMemZero(&prVerInfo->aucReleaseManifest,
+	kalMemZero(prVerInfo->aucReleaseManifest,
 		   sizeof(prVerInfo->aucReleaseManifest));
-	kalMemCopy(&prVerInfo->aucReleaseManifest,
+	kalMemCopy(prVerInfo->aucReleaseManifest,
 		   pucStartPtr, prRelInfo->u2Len);
 	DBGLOG(INIT, INFO, "Release manifest: %s\n",
 	       prVerInfo->aucReleaseManifest);
@@ -2448,7 +2448,7 @@ uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		kalStrnLen(prVerInfo->aucReleaseManifest, u4BufferMaxSize);
 
 	kalMemCopy(pucManifestBuffer,
-		&prVerInfo->aucReleaseManifest,
+		prVerInfo->aucReleaseManifest,
 		*pu4ManifestSize);
 
 free_buf:
