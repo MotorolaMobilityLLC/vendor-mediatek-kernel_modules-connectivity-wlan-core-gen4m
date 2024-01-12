@@ -1426,6 +1426,8 @@ struct WIFI_VAR {
 	uint32_t u4PagePoolMinCnt;
 	uint32_t u4PagePoolMaxCnt;
 #endif
+
+	uint16_t u2ListenInterval;
 };
 
 /* cnm_timer module */

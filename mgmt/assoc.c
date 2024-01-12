@@ -449,6 +449,8 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 	uint16_t u2CapInfo;
 	uint16_t u2ListenInterval;
 
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
 	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
 
@@ -488,7 +490,11 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 	/* Calculate the listen interval for the maximum power mode. Currently,
 	 * we set it to the value 2 times DTIM period.
 	 */
-	if (prStaRec->ucDTIMPeriod) {
+	if (prWifiVar->u2ListenInterval != INVALID_LISTEN_INTERVAL) {
+		DBGLOG(SAA, TRACE, "Use listen interval: %d\n",
+			prWifiVar->u2ListenInterval);
+		u2ListenInterval = prWifiVar->u2ListenInterval;
+	} else if (prStaRec->ucDTIMPeriod) {
 		u2ListenInterval =
 		    prStaRec->ucDTIMPeriod *
 		    DEFAULT_LISTEN_INTERVAL_BY_DTIM_PERIOD;
