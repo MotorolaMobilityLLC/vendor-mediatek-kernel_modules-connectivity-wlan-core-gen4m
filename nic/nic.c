@@ -5325,21 +5325,24 @@ void nicSerTimerHandler(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-void nicSerInit(IN struct ADAPTER *prAdapter)
+void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 {
+	if (!bAtResetFlow) {
 #if defined(_HIF_USB)
-	/* check SER is supported or not */
-	if (prAdapter->rWifiVar.fgEnableSer == TRUE &&
-	    prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
-		cnmTimerInitTimer(prAdapter,
-			&rSerSyncTimer,
-			(PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
-			(unsigned long) NULL);
-		cnmTimerStartTimer(prAdapter,
-			&rSerSyncTimer,
-			WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
-	}
+		/* check SER is supported or not */
+		if (prAdapter->rWifiVar.fgEnableSer == TRUE &&
+		    prAdapter->chip_info->u4SerUsbMcuEventAddr != 0) {
+			cnmTimerInitTimer(prAdapter,
+					  &rSerSyncTimer,
+				     (PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
+					  (unsigned long) NULL);
+			cnmTimerStartTimer(prAdapter,
+					   &rSerSyncTimer,
+					   WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS);
+		}
 #endif
+	}
+
 	/* if ser is not enabled, disable this feature in FW */
 	if (prAdapter->rWifiVar.fgEnableSer == FALSE
 #if defined(_HIF_USB)

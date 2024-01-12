@@ -174,6 +174,16 @@ void kal_virt_uhw_wr(struct ADAPTER *ad, uint32_t u4Offset, uint32_t u4Value,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+void kal_virt_cancel_tx_rx(struct ADAPTER *ad)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kal_virt_toggle_wfsys_rst(struct ADAPTER *ad)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 /* the following functions are defined in include/nic/hal.h
  * need to be implemented directly in os/hif
  */

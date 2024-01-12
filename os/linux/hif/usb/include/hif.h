@@ -272,7 +272,9 @@ struct GL_HIF_INFO {
 	spinlock_t rTxCmdQLock;
 	spinlock_t rRxEventQLock;
 	spinlock_t rRxDataQLock;
+#if CFG_CHIP_RESET_SUPPORT
 	spinlock_t rRxWdtQLock;
+#endif
 	spinlock_t rStateLock;
 
 	void *prTxCmdReqHead;
@@ -280,7 +282,9 @@ struct GL_HIF_INFO {
 	void *arTxDataReqHead[USB_TC_NUM];
 	void *prRxEventReqHead;
 	void *prRxDataReqHead;
+#if CFG_CHIP_RESET_SUPPORT
 	void *prRxWdtReqHead;
+#endif
 	struct list_head rTxCmdFreeQ;
 	spinlock_t rTxCmdFreeQLock;
 	struct list_head rTxCmdSendingQ;
@@ -307,9 +311,11 @@ struct GL_HIF_INFO {
 	/*spinlock_t rRxDataCompleteQLock;*/
 	struct list_head rTxCmdCompleteQ;
 	struct list_head rTxDataCompleteQ;
+#if CFG_CHIP_RESET_SUPPORT
 	struct list_head rRxWdtFreeQ;
 	struct usb_anchor rRxWdtAnchor;
 	struct list_head rRxWdtCompleteQ;
+#endif
 
 	struct BUF_CTRL rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
 	struct BUF_CTRL rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
@@ -320,7 +326,9 @@ struct GL_HIF_INFO {
 #endif
 	struct BUF_CTRL rRxEventBufCtrl[USB_REQ_RX_EVENT_CNT];
 	struct BUF_CTRL rRxDataBufCtrl[USB_REQ_RX_DATA_CNT];
+#if CFG_CHIP_RESET_SUPPORT
 	struct BUF_CTRL rRxWdtBufCtrl[USB_REQ_RX_WDT_CNT];
+#endif
 
 	struct mutex vendor_req_sem;
 	void *vendor_req_buf;
@@ -344,6 +352,8 @@ struct BUS_INFO {
 	const uint32_t u4UdmaWlCfg_0_Addr;
 	const uint32_t u4UdmaWlCfg_1_Addr;
 	const uint32_t u4UdmaTxQsel;
+	const uint32_t u4UdmaConnInfraStatusSelAddr;
+	const uint32_t u4UdmaConnInfraStatusAddr;
 	const uint32_t u4device_vender_request_in;
 	const uint32_t u4device_vender_request_out;
 	const uint32_t u4usb_tx_cmd_queue_mask;
@@ -369,6 +379,8 @@ struct BUS_INFO {
 	void (*asicUdmaRxFlush)(IN struct ADAPTER *prAdapter, uint8_t bEnable);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
 		uint8_t ucWmmIndex, uint32_t u4MaxQuota);
+	u_int8_t (*asicUsbEpctlRstOpt)(struct ADAPTER *prAdapter,
+				       u_int8_t fgIsRstScopeIncludeToggleBit);
 };
 
 /* USB_REQ_T prPriv field for TxData */

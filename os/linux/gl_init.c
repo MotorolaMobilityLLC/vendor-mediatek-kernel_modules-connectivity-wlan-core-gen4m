@@ -4955,8 +4955,6 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	/* Trigger the action of switching Pwr state to drv_own */
 	prAdapter->fgIsFwOwn = TRUE;
 
-	nicpmWakeUpWiFi(prAdapter);
-
 	/* Load NVRAM content to REG_INFO_T */
 	glLoadNvram(prGlueInfo, *pprRegInfo);
 
@@ -4974,6 +4972,10 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	tasklet_init(&prGlueInfo->rTxCompleteTask,
 			halTxCompleteTasklet,
 			(unsigned long)prGlueInfo);
+
+#if CFG_CHIP_RESET_SUPPORT
+	INIT_WORK(&prGlueInfo->rWfsysResetWork, WfsysResetHdlr);
+#endif
 
 #if CFG_SUPPORT_NAN
 	prAdapter->fgIsNANfromHAL = TRUE;
@@ -5496,6 +5498,13 @@ static int32_t wlanOffAtReset(void)
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 
 	wlanOffStopWlanThreads(prGlueInfo);
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		if (prAdapter->fgTxDirectInited) {
+			del_timer_sync(&prAdapter->rTxDirectSkbTimer);
+			del_timer_sync(&prAdapter->rTxDirectHifTimer);
+		}
+	}
 
 	wlanAdapterStop(prAdapter, TRUE);
 
@@ -6210,6 +6219,9 @@ static void wlanRemove(void)
 	/* Stop works */
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 	cancel_delayed_work_sync(&prGlueInfo->rRxPktDeAggWork);
+#if CFG_CHIP_RESET_SUPPORT
+	cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+#endif
 
 	wlanOffStopWlanThreads(prGlueInfo);
 
@@ -6332,6 +6344,38 @@ static void wlanRemove(void)
 	mddpNotifyWifiOffEnd();
 #endif
 }				/* end of wlanRemove() */
+
+#if CFG_CHIP_RESET_SUPPORT
+void WfsysResetHdlr(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct mt66xx_hif_driver_data *prHifDrvData;
+
+	prGlueInfo = container_of(work, struct GLUE_INFO, rWfsysResetWork);
+	prAdapter = prGlueInfo->prAdapter;
+	prHifDrvData = container_of(&prAdapter->chip_info,
+				    struct mt66xx_hif_driver_data, chip_info);
+
+	DBGLOG(INIT, INFO, "WF L0.5 Reset triggered\n");
+
+	/* change SER FSM to SER_STOP_HOST_TX_RX */
+	nicSerStopTxRx(prAdapter);
+
+	HAL_CANCEL_TX_RX(prAdapter);
+
+	HAL_TOGGLE_WFSYS_RST(prAdapter);
+
+	wlanOffAtReset();
+
+	/* resume TX/RX */
+	nicSerStartTxRx(prAdapter);
+
+	wlanOnAtReset();
+
+	DBGLOG(INIT, INFO, "WF L0.5 Reset done\n");
+}
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*----------------------------------------------------------------------------*/
 /*!
