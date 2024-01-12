@@ -6103,6 +6103,8 @@ mtk_oid_uninit_ap_role(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	u4Idx = *(unsigned char *) pvSetBuffer;
 
 	DBGLOG(INIT, INFO, "ucRoleIdx = %d\n", u4Idx);
+	if (u4Idx >= KAL_P2P_NUM)
+		return WLAN_STATUS_FAILURE;
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prAdapter->rP2PNetRegState != ENUM_NET_REG_STATE_REGISTERED) {
