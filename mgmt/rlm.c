@@ -1577,6 +1577,40 @@ void rlmFillVhtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 #endif
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo =
+		prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	unsigned char *pucBuf =
+		(((unsigned char *) prMsduInfo->prPacket) +
+		prMsduInfo->u2FrameLength);
+
+	if (prBssInfo->aucCountryStr[0] == 0)
+		return;
+
+	COUNTRY_IE(pucBuf)->ucId = ELEM_ID_COUNTRY_INFO;
+	COUNTRY_IE(pucBuf)->ucLength = prBssInfo->ucCountryIELen;
+	COUNTRY_IE(pucBuf)->aucCountryStr[0] = prBssInfo->aucCountryStr[0];
+	COUNTRY_IE(pucBuf)->aucCountryStr[1] = prBssInfo->aucCountryStr[1];
+	COUNTRY_IE(pucBuf)->aucCountryStr[2] = prBssInfo->aucCountryStr[2];
+	kalMemCopy(COUNTRY_IE(pucBuf)->arCountryStr,
+		prBssInfo->aucSubbandTriplet,
+		prBssInfo->ucCountryIELen - 3);
+
+	prMsduInfo->u2FrameLength += IE_SIZE(pucBuf);
+}
+
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		      uint8_t ucAction, uint8_t ucRomRam)

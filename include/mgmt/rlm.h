@@ -400,6 +400,9 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER
 
 #endif
 
+void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
+			  struct MSDU_INFO *prMsduInfo);
+
 #if CFG_SUPPORT_DFS
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);
