@@ -2417,6 +2417,7 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	uint32_t u4Value = 0;
 	uint32_t u4WfdmaRstVal = 0;
 	uint32_t u4WfdmaClockVal = 0;
+	uint32_t u4WfIpVersion = 0;
 
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
@@ -2459,9 +2460,11 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
  * 3. Read WF IP version
 ` *  - Read 0x184B_0010 = 02040100
  */
+		u4WfIpVersion = kalGetWfIpVersion();
 		wf_ioremap_read(0x184B0010, &u4Value);
-		if (u4Value != 0x02040100) {
-			DBGLOG(HAL, ERROR, "0x184B_0100 != 02040100\n");
+		if (u4Value != u4WfIpVersion) {
+			DBGLOG(HAL, ERROR, "0x184B_0100 != 0x%x\n",
+						u4WfIpVersion);
 			break;
 		}
 /*
