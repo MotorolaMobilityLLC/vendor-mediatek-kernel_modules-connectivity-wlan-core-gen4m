@@ -3015,9 +3015,15 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
-			     IN struct MSDU_INFO *prMsduInfoListHead)
+	IN struct MSDU_INFO *prMsduInfoListHead)
 {
-	void *prNativePacket;
+	nicTxFreeMsduInfoPacketEx(prAdapter, prMsduInfoListHead, TRUE);
+}
+
+void nicTxFreeMsduInfoPacketEx(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead,
+	IN u_int8_t fgDrop)
+{
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead;
 	struct TX_CTRL *prTxCtrl;
 
@@ -3027,29 +3033,7 @@ void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
 	prTxCtrl = &prAdapter->rTxCtrl;
 
 	while (prMsduInfo) {
-		prNativePacket = prMsduInfo->prPacket;
-
-#if 1
-		nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
-#else
-		if (prMsduInfo->eSrc == TX_PACKET_OS) {
-			if (prNativePacket)
-				kalSendComplete(
-					prAdapter->prGlueInfo, prNativePacket,
-					WLAN_STATUS_FAILURE);
-			/*get per-AC Tx drop packets */
-			wlanUpdateTxStatistics(prAdapter, prMsduInfo, TRUE);
-		} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
-			if (prMsduInfo->pfTxDoneHandler)
-				prMsduInfo->pfTxDoneHandler(
-					prAdapter, prMsduInfo,
-					TX_RESULT_DROPPED_IN_DRIVER);
-			if (prNativePacket)
-				cnmMemFree(prAdapter, prNativePacket);
-		} else if (prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
-			GLUE_DEC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
-		}
-#endif
+		nicTxFreePacket(prAdapter, prMsduInfo, fgDrop);
 		prMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((
 					struct QUE_ENTRY *) prMsduInfo);
 	}
@@ -3073,6 +3057,8 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead,
 				  *prNextMsduInfo;
+	struct QUE rTempQue;
+	struct QUE *prTempQue = &rTempQue;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -3080,6 +3066,8 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 	ASSERT(prTxCtrl);
+
+	QUEUE_INITIALIZE(prTempQue);
 
 	while (prMsduInfo) {
 		prNextMsduInfo = (struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY((
@@ -3099,15 +3087,17 @@ void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 		/* Reset MSDU_INFO fields */
 		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-				      SPIN_LOCK_TX_MSDU_INFO_LIST);
-		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList,
+		QUEUE_INSERT_TAIL(prTempQue,
 				  (struct QUE_ENTRY *) prMsduInfo);
-		KAL_RELEASE_SPIN_LOCK(prAdapter,
-				      SPIN_LOCK_TX_MSDU_INFO_LIST);
 		prMsduInfo = prNextMsduInfo;
 	};
 
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+			      SPIN_LOCK_TX_MSDU_INFO_LIST);
+	QUEUE_CONCATENATE_QUEUES(&prTxCtrl->rFreeMsduInfoList,
+			prTempQue);
+	KAL_RELEASE_SPIN_LOCK(prAdapter,
+			      SPIN_LOCK_TX_MSDU_INFO_LIST);
 }
 
 #if CFG_SUPPORT_LIMITED_PKT_PID

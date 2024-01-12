@@ -1903,6 +1903,10 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter);
 void nicTxFreeMsduInfoPacket(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
 
+void nicTxFreeMsduInfoPacketEx(IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfoListHead,
+	IN u_int8_t fgDrop);
+
 void nicTxReturnMsduInfo(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfoListHead);
 
