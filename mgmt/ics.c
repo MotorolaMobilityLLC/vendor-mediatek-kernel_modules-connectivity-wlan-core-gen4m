@@ -5,6 +5,7 @@
  */
 #include "gl_os.h"
 #include "debug.h"
+#include "precomp.h"
 
 #if (CFG_SUPPORT_ICS == 1)
 #include <linux/init.h>
