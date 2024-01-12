@@ -203,8 +203,7 @@ uint64_t StatsEnvTimeGet(void);
 void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
 			struct MSDU_INFO *prMsduInfo);
 
-void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
-	void *pvPacket, void *prNetDev);
+void StatsEnvRxTime2Host(struct ADAPTER *prAdapter, void *pvPacket);
 
 void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
 

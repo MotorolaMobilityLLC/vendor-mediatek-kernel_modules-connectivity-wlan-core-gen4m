@@ -335,6 +335,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
+	prGlueInfo->u8HifIntTime = sched_clock();
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 

@@ -3711,6 +3711,8 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 #endif
 	pTxD->SDLen0 = NIC_TX_DESC_AND_PADDING_LENGTH +
 		prChipInfo->txd_append_size;
+
+	/* let HW see part of packet payload for offload */
 	if (prChipInfo->is_support_cr4)
 		pTxD->SDLen0 += HIF_TX_PAYLOAD_LENGTH;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)

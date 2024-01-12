@@ -131,8 +131,7 @@ void StatsEnvSetPktDelay(uint8_t ucTxOrRx, uint8_t ucIpProto,
 	}
 }
 
-void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
-	void *pvPacket, void *prNetDev)
+void StatsEnvRxTime2Host(struct ADAPTER *prAdapter, void *pvPacket)
 {
 	uint16_t u2EthType = 0;
 	uint8_t ucIpVersion = 0;
@@ -141,6 +140,7 @@ void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 	uint8_t *pucEth = NULL;
 	uint16_t u2UdpDstPort = 0;
 	uint16_t u2UdpSrcPort = 0;
+	uint64_t u8CurrTime = 0;
 	uint64_t u8IntTime = 0;
 	uint64_t u8RxTime = 0;
 	uint32_t u4Delay = 0;
@@ -152,9 +152,6 @@ void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 		| (pucEth[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEth += ETH_HLEN;
 	u2IPID = pucEth[4] << 8 | pucEth[5];
-
-	DBGLOG(RX, TEMP, "u2IpId=%d rx_packets=%u\n",
-		u2IPID, kalGetNetDevRxPacket(prNetDev));
 
 	if ((g_ucTxRxFlag & BIT(1)) == 0)
 		return;
@@ -172,12 +169,15 @@ void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 	if (ucIpVersion != IPVERSION)
 		return;
 	u2IPID = pucEth[4] << 8 | pucEth[5];
+	u8CurrTime = StatsEnvTimeGet();
 	u8IntTime = GLUE_RX_GET_PKT_INT_TIME(pvPacket);
-	u4Delay = ((uint32_t)(kalGetTimeTickNs() - u8IntTime))/NSEC_PER_USEC;
 	u8RxTime = GLUE_RX_GET_PKT_RX_TIME(pvPacket);
+	/* HIF may read the ring before interrupt come */
+	if (u8IntTime > u8RxTime)
+		u8IntTime = u8RxTime;
+	u4Delay = ((uint32_t)(u8CurrTime - u8IntTime))/NSEC_PER_USEC;
 	rCurrentTime = kalGetTimeTick();
 	rCurrentSec = SYSTIME_TO_SEC(rCurrentTime);
-
 
 	switch (ucIpProto) {
 	case IP_PRO_TCP:

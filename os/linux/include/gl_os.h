@@ -1121,30 +1121,42 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 #endif
 };
 
-struct PACKET_PRIVATE_DATA {
-	/* tx/rx both use cb */
-	struct QUE_ENTRY rQueEntry;  /* 16byte total:16 */
-
-	uint8_t ucBssIdx;	/* 1byte */
-	/* only rx use cb */
-	u_int8_t fgIsIndependentPkt; /* 1byte */
-	/* only tx use cb */
-	uint8_t ucTid;		/* 1byte */
-	uint8_t ucHeaderLen;	/* 1byte */
-	uint8_t ucProfilingFlag;	/* 1byte */
-	uint8_t ucSeqNo;		/* 1byte */
-	uint16_t u2Flag;		/* 2byte total:24 */
-
-	uint16_t u2IpId;		/* 2byte */
-	uint16_t u2FrameLen;	/* 2byte */
-	OS_SYSTIME rArrivalTime;/* 4byte total:32 */
-
-	uint64_t u8ArriveTime;	/* 8byte total:40 */
+struct PACKET_PRIVATE_COMMON_DATA {  /* total: 8byte */
+	uint8_t ucBssIdx;            /* 1byte */
+	uint8_t aucReserved[3];      /* 3byte */
+	uint16_t u2Flag;             /* 2byte */
+	uint16_t u2IpId;             /* 2byte */
 };
 
-struct PACKET_PRIVATE_RX_DATA {
-	uint64_t u8IntTime;	/* 8byte */
-	uint64_t u8RxTime;	/* 8byte */
+struct PACKET_PRIVATE_TX_DATA {      /* total: 24byte */
+	uint8_t ucTid;               /* 1byte */
+	uint8_t ucHeaderLen;         /* 1byte */
+	uint8_t ucProfilingFlag;     /* 1byte */ /* maybe unuse now */
+	uint8_t ucSeqNo;             /* 1byte */
+	uint16_t u2FrameLen;         /* 2byte */
+	uint8_t aucReserved[6];      /* 6byte */
+	OS_SYSTIME rArrivalTime;     /* 4byte */
+	uint64_t u8ArriveTime;       /* 8byte */
+};
+
+struct PACKET_PRIVATE_RX_DATA {      /* total: 24byte */
+	u_int8_t fgIsIndependentPkt; /* 1byte */
+	uint8_t aucReserved[7];      /* 7byte */
+	uint64_t u8IntTime;          /* 8byte */
+	uint64_t u8RxTime;           /* 8byte */
+};
+
+/*
+ * sizeof(cb): 48 bytes
+ * compile time size check in glPacketDataTypeCheck
+ */
+struct PACKET_PRIVATE_DATA {
+	struct QUE_ENTRY rQueEntry;                     /* 16byte */
+	struct PACKET_PRIVATE_COMMON_DATA rCommonData;  /*  8byte */
+	union {                                         /* 24byte */
+		struct PACKET_PRIVATE_TX_DATA rTxData;
+		struct PACKET_PRIVATE_RX_DATA rRxData;
+	};
 };
 
 struct CMD_CONNSYS_FW_LOG {
@@ -1241,6 +1253,15 @@ enum BOOTMODE {
 #define GLUE_GET_PKT_PRIVATE_DATA(_p) \
 	((struct PACKET_PRIVATE_DATA *)(&(((struct sk_buff *)(_p))->cb[0])))
 
+#define GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p) \
+	(&(GLUE_GET_PKT_PRIVATE_DATA(_p)->rCommonData))
+
+#define GLUE_GET_PKT_PRIVATE_RX_DATA(_p) \
+	(&(GLUE_GET_PKT_PRIVATE_DATA(_p)->rRxData))
+
+#define GLUE_GET_PKT_PRIVATE_TX_DATA(_p) \
+	(&(GLUE_GET_PKT_PRIVATE_DATA(_p)->rTxData))
+
 #define GLUE_GET_PKT_QUEUE_ENTRY(_p)    \
 	    (&(GLUE_GET_PKT_PRIVATE_DATA(_p)->rQueEntry))
 
@@ -1249,77 +1270,77 @@ enum BOOTMODE {
 	    - offsetof(struct sk_buff, cb[0])))
 
 #define GLUE_SET_PKT_TID(_p, _tid) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucTid = (uint8_t)(_tid))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucTid = (uint8_t)(_tid))
 
 #define GLUE_GET_PKT_TID(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucTid)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucTid)
 
 #define GLUE_SET_PKT_FLAG(_p, _flag) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2Flag |= BIT(_flag))
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->u2Flag |= BIT(_flag))
 
 #define GLUE_TEST_PKT_FLAG(_p, _flag) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2Flag & BIT(_flag))
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->u2Flag & BIT(_flag))
 
 #define GLUE_IS_PKT_FLAG_SET(_p) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2Flag)
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->u2Flag)
 
 #define GLUE_SET_PKT_BSS_IDX(_p, _ucBssIndex) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucBssIdx = (uint8_t)(_ucBssIndex))
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->ucBssIdx = \
+		(uint8_t)(_ucBssIndex))
 
 #define GLUE_GET_PKT_BSS_IDX(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucBssIdx)
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->ucBssIdx)
 
 #define GLUE_SET_PKT_HEADER_LEN(_p, _ucMacHeaderLen) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucHeaderLen = \
-	    (uint8_t)(_ucMacHeaderLen))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucHeaderLen = \
+		(uint8_t)(_ucMacHeaderLen))
 
 #define GLUE_GET_PKT_HEADER_LEN(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucHeaderLen)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucHeaderLen)
 
 #define GLUE_SET_PKT_FRAME_LEN(_p, _u2PayloadLen) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2FrameLen = (uint16_t)(_u2PayloadLen))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u2FrameLen = \
+		(uint16_t)(_u2PayloadLen))
 
 #define GLUE_GET_PKT_FRAME_LEN(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->u2FrameLen)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u2FrameLen)
 
 #define GLUE_SET_PKT_ARRIVAL_TIME(_p, _rSysTime) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->rArrivalTime = (OS_SYSTIME)(_rSysTime))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->rArrivalTime = \
+		(OS_SYSTIME)(_rSysTime))
 
 #define GLUE_GET_PKT_ARRIVAL_TIME(_p)    \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->rArrivalTime)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->rArrivalTime)
 
 #define GLUE_SET_PKT_IP_ID(_p, _u2IpId) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u2IpId = (uint16_t)(_u2IpId))
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->u2IpId = (uint16_t)(_u2IpId))
 
 #define GLUE_GET_PKT_IP_ID(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->u2IpId)
+	(GLUE_GET_PKT_PRIVATE_COMMON_DATA(_p)->u2IpId)
 
 #define GLUE_SET_PKT_SEQ_NO(_p, _ucSeqNo) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucSeqNo = (uint8_t)(_ucSeqNo))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucSeqNo = (uint8_t)(_ucSeqNo))
 
 #define GLUE_GET_PKT_SEQ_NO(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucSeqNo)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucSeqNo)
 
 #define GLUE_SET_PKT_FLAG_PROF_MET(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucProfilingFlag |= BIT(0))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucProfilingFlag |= BIT(0))
 
 #define GLUE_GET_PKT_IS_PROF_MET(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucProfilingFlag & BIT(0))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->ucProfilingFlag & BIT(0))
 
 #define GLUE_SET_PKT_XTIME(_p, _rSysTime) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u8ArriveTime = (uint64_t)(_rSysTime))
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u8ArriveTime = (uint64_t)(_rSysTime))
 
 #define GLUE_GET_PKT_XTIME(_p)    \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u8ArriveTime)
+	(GLUE_GET_PKT_PRIVATE_TX_DATA(_p)->u8ArriveTime)
 
 #define GLUE_GET_INDEPENDENT_PKT(_p)    \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt)
+	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->fgIsIndependentPkt)
 
 #define GLUE_SET_INDEPENDENT_PKT(_p, _fgIsIndePkt) \
-	(GLUE_GET_PKT_PRIVATE_DATA(_p)->fgIsIndependentPkt = _fgIsIndePkt)
-
-#define GLUE_GET_PKT_PRIVATE_RX_DATA(_p) \
-	((struct PACKET_PRIVATE_RX_DATA *)(&(((struct sk_buff *)(_p))->cb[24])))
+	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->fgIsIndependentPkt = _fgIsIndePkt)
 
 #define GLUE_RX_SET_PKT_INT_TIME(_p, _rTime) \
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u8IntTime = (uint64_t)(_rTime))

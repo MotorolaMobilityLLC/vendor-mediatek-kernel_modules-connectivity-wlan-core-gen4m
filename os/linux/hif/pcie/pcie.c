@@ -355,6 +355,11 @@ struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int msi_idx)
 		return NULL;
 	}
 
+	/* Only record int time for data */
+	if (msi_idx == -1 || msi_idx == PCIE_MSI_RX_DATA_BAND0 ||
+		msi_idx == PCIE_MSI_RX_DATA_BAND1)
+		prGlueInfo->u8HifIntTime = sched_clock();
+
 	prAdapter = prGlueInfo->prAdapter;
 	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
 	if (msi_idx >= 0 && msi_idx < PCIE_MSI_NUM)
