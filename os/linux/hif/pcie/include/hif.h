@@ -85,7 +85,7 @@
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
 #define AXI_TX_CMD_BUFF_SIZE              4096
 
-#define MCU_EMI_SIZE 2 * 64 * 1024
+#define MCU_EMI_SIZE (2 * 64 * 1024)
 
 #if CFG_SUPPORT_PCIE_ASPM
 #define ENABLE_ASPM_L1 2

@@ -148,6 +148,14 @@ extern unsigned long long gConEmiSize;
 #define FW_SECT_BINARY_TYPE_WF_PATCH			0x00000100
 #define FW_SECT_BINARY_TYPE_ZB_FW			0x00001000
 
+/*
+ * Max packet size for REDL.
+ * There are total 14 bits in TX DMAD's size field, and size needs to be 16 byte
+ * alignment, so max buffer size dmad can be carried is
+ * 0x3FFF & ~15u = 0x3FF0
+ */
+#define FWDL_REDL_MAX_PKT_SIZE			(0x3FFF & ~15u)
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
@@ -475,6 +483,11 @@ void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr);
 void fwDlGetReleaseManifest(struct ADAPTER *prAdapter,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr);
+
+#if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
+uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
+	uint32_t u4EmiOffset, uint32_t u4Size);
+#endif
 
 #endif
 
