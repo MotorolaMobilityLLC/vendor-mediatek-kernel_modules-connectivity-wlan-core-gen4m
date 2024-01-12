@@ -83,7 +83,8 @@
 
 #if CFG_SUPPORT_ROAMING
 #define IS_AIS_ROAMING(_adapter, _bss_idx) \
-	aisGetAisFsmInfo(_adapter, _bss_idx)->ucIsStaRoaming
+	(IS_BSS_INDEX_AIS(_adapter, _bss_idx) && \
+	aisGetAisFsmInfo(_adapter, _bss_idx)->ucIsStaRoaming)
 #endif
 
 #define AIS_BTM_DIS_IMMI_TIMEOUT	    10000 /* MSEC */

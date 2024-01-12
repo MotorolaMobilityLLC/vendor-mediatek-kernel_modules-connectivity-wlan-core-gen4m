@@ -4499,6 +4499,15 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					continue;
 				}
 
+#if CFG_SUPPORT_ROAMING
+				if (IS_AIS_ROAMING(prAdapter,
+					prBssInfo->ucBssIndex)) {
+					DBGLOG(RLM, INFO,
+						"Ignore rlm update when roaming\n");
+					continue;
+				}
+#endif
+
 				if (EQUAL_MAC_ADDR(
 					    prBssInfo->aucBSSID,
 					    ((struct WLAN_MAC_MGMT_HEADER
@@ -4560,17 +4569,7 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 			/* Appy new parameters if necessary */
 			if (fgNewParameter) {
-#if CFG_SUPPORT_ROAMING
-				if (IS_BSS_AIS(prBssInfo) &&
-					IS_AIS_ROAMING(prAdapter,
-						prBssInfo->ucBssIndex))
-					roamingFsmSetRecoverBitmap(prAdapter,
-						prBssInfo->ucBssIndex,
-						ROAMING_RECOVER_BSS_UPDATE);
-				else
-#endif
-					nicUpdateBss(prAdapter,
-						     prBssInfo->ucBssIndex);
+				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 				fgNewParameter = FALSE;
 			}
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -7798,7 +7797,7 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    u_int8_t fgIsSuccess)
 {
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
-	u_int8_t fgIsSwitchingP2pChnl = FALSE;
+	u_int8_t fgSkipRlmSync = FALSE;
 
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -7809,31 +7808,30 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 		if (IS_BSS_P2P(prBssInfo) && prBssInfo->fgIsSwitchingChnl) {
 			DBGLOG(RLM, INFO,
 				"Ignore rlm update when switch p2p channel\n");
-			fgIsSwitchingP2pChnl = TRUE;
+			fgSkipRlmSync = TRUE;
 		}
+
+#if CFG_SUPPORT_ROAMING
+		if (IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex)) {
+			DBGLOG(RLM, INFO,
+				"Ignore rlm update when roaming\n");
+			fgSkipRlmSync = TRUE;
+		}
+#endif
 
 		/* <1> Update own OP BW/Nss */
 		rlmChangeOwnOpInfo(prAdapter, prBssInfo);
 
 		/* <2> Update OP BW/Nss to FW */
-		if (!fgIsSwitchingP2pChnl) {
-#if CFG_SUPPORT_ROAMING
-			if (IS_BSS_AIS(prBssInfo) &&
-			    IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex))
-				roamingFsmSetRecoverBitmap(prAdapter,
-					prBssInfo->ucBssIndex,
-					ROAMING_RECOVER_RLM_SYNC);
-			else
-#endif
-				rlmSyncOperationParams(prAdapter, prBssInfo);
-		}
+		if (!fgSkipRlmSync)
+			rlmSyncOperationParams(prAdapter, prBssInfo);
 
 #if CFG_ENABLE_WIFI_DIRECT
 		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is
 		 * changed (AP mode)
 		 */
 		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
-			!fgIsSwitchingP2pChnl)
+			!fgSkipRlmSync)
 			bssUpdateBeaconContent(prAdapter,
 				prBssInfo->ucBssIndex);
 #endif

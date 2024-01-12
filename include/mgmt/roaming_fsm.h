@@ -157,7 +157,6 @@ struct ROAMING_INFO {
 #if (CFG_EXT_ROAMING == 1)
 	struct ROAMING_SCAN_CADENCE rScanCadence;
 #endif
-	uint8_t ucRecoverBitmap;
 
 	struct TIMER rTxReqDoneRxRespTimer;
 	struct BSS_DESC_SET *prRoamTarget;
