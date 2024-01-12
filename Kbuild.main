@@ -915,6 +915,12 @@ else
     ccflags-y += -DCFG_SUPPORT_REG_STAT_FROM_EMI=0
 endif
 
+ifeq ($(CONFIG_DYNAMIC_DMASHDL_MAX_QUOTA), y)
+        ccflags-y += -DCFG_DYNAMIC_DMASHDL_MAX_QUOTA=1
+else
+        ccflags-y += -DCFG_DYNAMIC_DMASHDL_MAX_QUOTA=0
+endif
+
 ifeq ($(CONFIG_UPDATE_STATIC_DBDC_QUOTA), y)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
         ccflags-y += -DCFG_UPDATE_STATIC_DBDC_QUOTA=1

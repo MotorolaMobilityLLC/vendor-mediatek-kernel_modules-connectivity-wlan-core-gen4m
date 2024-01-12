@@ -734,6 +734,9 @@ struct BUS_INFO mt6639_bus_info = {
 	/* for compiler need one entry */
 	.DmaShdlInit = NULL
 #endif
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	.updateTxRingMaxQuota = asicConnac3xUpdateDynamicDmashdlQuota,
+#endif
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -1190,7 +1193,13 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.rsvMemWiFiMisc = mt6639_wifi_misc_rsv_mem_info,
 #endif
-
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	.dmashdlQuotaDecision = asicConnac3xDynamicDmashdlQuotaDecision,
+	.eMloMaxQuotaHwBand = ENUM_BAND_1,
+	.u4DefaultMinQuota = 0x10,
+	.u4DefaultMaxQuota = 0x100,
+	.au4DmaMaxQuotaBand = {0x100, 0x7E0},
+#endif
 #if CFG_SUPPORT_CONNAC3X
 	/* Platform custom config for conninfra */
 	.rPlatcfgInfraSysram = {

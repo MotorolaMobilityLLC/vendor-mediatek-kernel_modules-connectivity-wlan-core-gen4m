@@ -1704,6 +1704,12 @@ struct mt66xx_chip_info {
 #if CFG_SUPPORT_CONNAC3X
 	struct platcfg_infra_sysram rPlatcfgInfraSysram;
 #endif
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	enum ENUM_MBMC_BN eMloMaxQuotaHwBand;
+	uint32_t u4DefaultMinQuota;
+	uint32_t u4DefaultMaxQuota;
+	uint32_t au4DmaMaxQuotaBand[ENUM_BAND_NUM];
+#endif
 };
 
 struct mt66xx_hif_driver_data {

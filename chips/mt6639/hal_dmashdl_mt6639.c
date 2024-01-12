@@ -302,6 +302,7 @@ uint16_t concurrentQuota[CONCURRENT_TYPE_NUM] = {
 void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx, u4DefVal;
+	uint32_t u4MaxQuota = 0;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Val = 0, u4Addr = 0;
@@ -317,10 +318,15 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 			prAdapter, idx,
 			rMt6639DmashdlCfg.afgRefillEn[idx]);
 
+		u4MaxQuota = rMt6639DmashdlCfg.au2MaxQuota[idx];
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+		u4MaxQuota = asicConnac3xDynamicDmashdlGetInUsedMaxQuota(
+			prAdapter, idx, u4MaxQuota);
+#endif
 		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter, idx,
 			rMt6639DmashdlCfg.au2MinQuota[idx],
-			rMt6639DmashdlCfg.au2MaxQuota[idx]);
+			u4MaxQuota);
 	}
 
 	for (idx = 0; idx < 32; idx++)
