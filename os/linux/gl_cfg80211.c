@@ -618,13 +618,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif
 	struct PARAM_GET_STA_STATISTICS *prGetStaStatistics;
 	uint32_t u4TotalError;
-	uint32_t u4FcsError;
+	uint32_t u4FcsError = 0;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
 	struct PARAM_LINK_BSS_INFO rLinkBss = {0};
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	uint32_t u4TxBw = 0;
 #endif
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBandIdx = 0;
+	struct MIB_INFO_STAT *prMibInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -645,7 +648,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -ENOENT;
 
 	ucBssIndex = rLinkBss.ucBssIndex;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return -EINVAL;
 
+	ucBandIdx = prBssInfo->eHwBandIdx;
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	prGetStaStatistics = &prAdapter->rQueryStaStatistics[ucBssIndex];
 	/* no need to COPY_MAC_ADDR here
@@ -657,7 +664,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, mac);
 #endif
 	prGetStaStatistics->ucReadClear = TRUE;
-
+	if (ucBandIdx < ENUM_BAND_NUM) {
+		prMibInfo = &prGetStaStatistics->rMibInfo[ucBandIdx];
+	}
 	/* 2. fill TX/RX rate */
 	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
@@ -829,7 +838,8 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
 			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
-			u4FcsError = prGetStaStatistics->rMibInfo[0].u4FcsError;
+			if (prMibInfo)
+				u4FcsError = prMibInfo->u4FcsError;
 			u4TotalError = prGetStaStatistics->u4TxFailCount +
 				       prGetStaStatistics->u4TxLifeTimeoutCount;
 			prGlueInfo->u4FcsErrorCache += u4FcsError;
