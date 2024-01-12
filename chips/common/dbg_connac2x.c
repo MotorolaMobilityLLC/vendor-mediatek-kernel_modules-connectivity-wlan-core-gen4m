@@ -2235,7 +2235,7 @@ int32_t connac2x_show_stat_info(
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, WARN, "unable to retrieve rssi\n");
 
-		if (IS_BSS_INDEX_VALID(ucBssIndex))
+		if (ucBssIndex < BSSID_NUM)
 			rRssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 #if CFG_SUPPORT_ADVANCE_CONTROL
