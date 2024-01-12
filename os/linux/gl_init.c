@@ -4335,6 +4335,10 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 			   "WLAN interrupt");
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rTimeoutWakeLock,
 			   "WLAN timeout");
+#if CFG_SUPPORT_RX_WORK
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rRxWorkerLock,
+			   "Rx Worker");
+#endif
 #endif
 }
 
@@ -4349,6 +4353,13 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 				 prGlueInfo->rTimeoutWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rTimeoutWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rTimeoutWakeLock);
+
+#if CFG_SUPPORT_RX_WORK
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prGlueInfo->rRxWorkerLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rRxWorkerLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rRxWorkerLock);
+#endif
 #endif
 }
 

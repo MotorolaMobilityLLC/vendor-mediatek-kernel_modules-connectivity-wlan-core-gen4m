@@ -4656,6 +4656,13 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+	if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+				  prGlueInfo->rRxWorkerLock))
+		KAL_WAKE_LOCK(prGlueInfo->prAdapter,
+				  prGlueInfo->rRxWorkerLock);
+#endif
+
 	/* do nothing if wifi is not ready */
 	if (prGlueInfo->fgRxTaskReady == FALSE) {
 		if (GLUE_GET_REF_CNT(
@@ -4713,6 +4720,12 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	}
 
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+	if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
+				 prGlueInfo->rRxWorkerLock))
+		KAL_WAKE_UNLOCK(prAdapter,
+				prGlueInfo->rRxWorkerLock);
+#endif
 }
 
 void halTxCompleteTasklet(unsigned long data)

@@ -850,6 +850,9 @@ struct GLUE_INFO {
 
 	KAL_WAKE_LOCK_T *rIntrWakeLock;
 	KAL_WAKE_LOCK_T *rTimeoutWakeLock;
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+	KAL_WAKE_LOCK_T *rRxWorkerLock;
+#endif
 
 #if CFG_MET_PACKET_TRACE_SUPPORT
 	u_int8_t fgMetProfilingEn;
