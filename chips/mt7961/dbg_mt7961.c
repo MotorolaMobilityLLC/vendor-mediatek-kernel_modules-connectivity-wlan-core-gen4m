@@ -1215,7 +1215,7 @@ u_int8_t sdio_show_mcu_debug_info(struct ADAPTER *prAdapter,
 	uint32_t u4Val = 0;
 	uint8_t i = 0;
 
-	bt_func = (p_bt_fun_type) kallsyms_lookup_name(bt_func_name);
+	bt_func = (p_bt_fun_type) GLUE_LOOKUP_FUN(bt_func_name);
 
 	if (!bt_func) {
 		DBGLOG(INIT, WARN, "%s does not exist\n", bt_func_name);
