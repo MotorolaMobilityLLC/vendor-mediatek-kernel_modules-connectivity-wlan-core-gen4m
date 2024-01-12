@@ -1302,15 +1302,7 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 	/* 6. set driver-land variable */
 	prAdapter->fgTestMode = FALSE;
 
-	/* 7. completion indication */
-	if (prCmdInfo->fgIsOid) {
-		/* Update Set Information Length */
-		kalOidComplete(prAdapter->prGlueInfo,
-			       prCmdInfo, prCmdInfo->u4SetInfoLen,
-			       WLAN_STATUS_SUCCESS);
-	}
-
-	/* 8. Indicate as disconnected */
+	/* 7. Indicate as disconnected */
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (!wlanGetAisNetDev(prAdapter->prGlueInfo, u4Idx))
 			continue;
@@ -1330,7 +1322,7 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 		}
 	}
 #if CFG_SUPPORT_NVRAM
-	/* 9. load manufacture data */
+	/* 8. load manufacture data */
 	if (kalIsConfigurationExist(prAdapter->prGlueInfo) == TRUE)
 		wlanLoadManufactureData(prAdapter,
 			kalGetConfiguration(prAdapter->prGlueInfo));
@@ -1339,8 +1331,16 @@ void nicCmdEventLeaveRfTest(struct ADAPTER *prAdapter,
 		       __func__);
 #endif
 
-	/* 10. Override network address */
+	/* 9. Override network address */
 	wlanUpdateNetworkAddress(prAdapter);
+
+	/* 10. completion indication */
+	if (prCmdInfo->fgIsOid) {
+		/* Update Set Information Length */
+		kalOidComplete(prAdapter->prGlueInfo,
+			       prCmdInfo, prCmdInfo->u4SetInfoLen,
+			       WLAN_STATUS_SUCCESS);
+	}
 
 }
 

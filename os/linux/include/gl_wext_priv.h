@@ -607,6 +607,8 @@ int priv_driver_get_uhw_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_test_mode(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_get_test_mode(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_test_cmd(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_test_result(struct net_device *prNetDev,

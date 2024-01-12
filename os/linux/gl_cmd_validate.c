@@ -642,6 +642,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(set_test_mdoe_policy)
 	},
 	{
+		.pcCmdStr  = CMD_GET_TEST_MODE,
+		.pfHandler = priv_driver_get_test_mode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
 		.pcCmdStr  = CMD_SET_TEST_CMD,
 		.pfHandler = priv_driver_set_test_cmd,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

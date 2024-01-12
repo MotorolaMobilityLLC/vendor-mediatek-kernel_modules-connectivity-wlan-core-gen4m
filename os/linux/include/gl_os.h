@@ -1634,6 +1634,12 @@ extern void register_set_p2p_mode_handler(
 	set_p2p_mode handler);
 #endif
 
+#if ((CFG_MTK_ANDROID_WMT) && (CFG_TESTMODE_WMT_WIFI_ON_SUPPORT))
+typedef uint8_t (*is_wifi_in_test_mode) (struct net_device *netdev);
+extern void register_is_wifi_in_test_mode_handler(
+	is_wifi_in_test_mode handler);
+#endif
+
 #if CFG_ENABLE_EARLY_SUSPEND
 extern int glRegisterEarlySuspend(struct early_suspend
 				  *prDesc,
