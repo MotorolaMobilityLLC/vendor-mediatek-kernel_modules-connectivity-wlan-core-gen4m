@@ -703,4 +703,9 @@ void nicDumpMsduInfo(struct MSDU_INFO *prMsduInfo);
 uint8_t nicGetActiveTspec(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicMgmtMAT_L2M(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
+#endif
+
 #endif /* _NIC_H */

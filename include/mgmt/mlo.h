@@ -360,7 +360,8 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss);
 
-struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter);
+struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter,
+	const uint8_t aucMldMacAddr[]);
 
 void mldBssFree(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);

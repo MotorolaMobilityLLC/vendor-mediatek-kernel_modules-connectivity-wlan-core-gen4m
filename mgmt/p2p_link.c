@@ -15,17 +15,20 @@
 struct MLD_BSS_INFO *gprP2pMldBssInfo;
 
 void p2pMldBssInit(struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	const uint8_t aucMldMacAddr[])
 {
 	if (p2pRoleFsmNeedMlo(prAdapter, prP2pRoleFsmInfo->ucRoleIndex)) {
 		if (gprP2pMldBssInfo == NULL) {
 			DBGLOG(INIT, TRACE, "\n");
-			gprP2pMldBssInfo = mldBssAlloc(prAdapter);
+			gprP2pMldBssInfo = mldBssAlloc(prAdapter,
+				aucMldMacAddr);
 		}
 
 		prP2pRoleFsmInfo->prP2pMldBssInfo = gprP2pMldBssInfo;
 	} else if (prP2pRoleFsmInfo->prP2pMldBssInfo == NULL) {
-		prP2pRoleFsmInfo->prP2pMldBssInfo = mldBssAlloc(prAdapter);
+		prP2pRoleFsmInfo->prP2pMldBssInfo = mldBssAlloc(prAdapter,
+			aucMldMacAddr);
 	}
 }
 

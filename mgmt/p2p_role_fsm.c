@@ -264,7 +264,8 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		p2pMldBssInit(prAdapter, prP2pRoleFsmInfo);
+		p2pMldBssInit(prAdapter, prP2pRoleFsmInfo,
+			      prP2pBssInfo->aucOwnMacAddr);
 		prMldBssInfo = prP2pRoleFsmInfo->prP2pMldBssInfo;
 		if (!prMldBssInfo) {
 			DBGLOG(P2P, ERROR,
