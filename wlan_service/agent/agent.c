@@ -4059,7 +4059,7 @@ static s_int32 hqa_set_ru_info(
 				   (u_char *)&seg_sta_cnt[1]);
 
 	if (seg_sta_cnt[1] >= SEG_STA_CNT)
-		seg_sta_cnt[1] = 1;
+		return SERV_STATUS_AGENT_INVALID_LEN;
 
 	if (seg_sta_cnt[0]+seg_sta_cnt[1] >= (2*SEG_STA_CNT))
 		return SERV_STATUS_AGENT_INVALID_LEN;
