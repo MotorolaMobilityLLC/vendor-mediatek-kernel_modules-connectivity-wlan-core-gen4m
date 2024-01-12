@@ -634,15 +634,15 @@ procCfgReadLabel:
 static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	size_t count, loff_t *data)
 {
-
-	/*      uint32_t u4DriverCmd, u4DriverValue;
-	 *uint8_t *temp = &g_aucProcBuf[0];
-	 */
 	uint32_t u4CopySize = sizeof(g_aucProcBuf)-8;
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t *pucTmp;
-	/* PARAM_CUSTOM_P2P_SET_STRUCT_T rSetP2P; */
 	uint32_t i = 0;
+
+	if (count <= 0) {
+		DBGLOG(INIT, ERROR, "wrong copy size\n");
+		return -EFAULT;
+	}
 
 	kalMemSet(g_aucProcBuf, 0, u4CopySize);
 	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
@@ -656,7 +656,7 @@ static ssize_t procCfgWrite(struct file *file, const char __user *buffer,
 	}
 	g_aucProcBuf[u4CopySize + 8] = '\0';
 
-	for (i = 8 ; i < u4CopySize+8; i++) {
+	for (i = 8 ; i < u4CopySize + 8; i++) {
 		if (!isalnum(g_aucProcBuf[i]) && /* alphanumeric */
 			g_aucProcBuf[i] != 0x20 && /* space */
 			g_aucProcBuf[i] != 0x0a && /* control char */
@@ -2716,6 +2716,11 @@ static ssize_t cfgWrite(struct file *filp, const char __user *buf,
 	uint32_t u4CopySize = sizeof(aucCfgBuf);
 	uint8_t token_num = 1;
 
+	if (count <= 0) {
+		DBGLOG(INIT, ERROR, "wrong copy size\n");
+		return -EFAULT;
+	}
+
 	kalMemSet(aucCfgBuf, 0, u4CopySize);
 	u4CopySize = (count < u4CopySize) ? count : (u4CopySize - 1);
 
@@ -2724,7 +2729,7 @@ static ssize_t cfgWrite(struct file *filp, const char __user *buf,
 		return -EFAULT;
 	}
 	aucCfgBuf[u4CopySize] = '\0';
-	for (; i < u4CopySize; i++) {
+	for (i = 0; i < u4CopySize; i++) {
 		if (aucCfgBuf[i] == ' ') {
 			token_num++;
 			break;
@@ -2733,13 +2738,15 @@ static ssize_t cfgWrite(struct file *filp, const char __user *buf,
 
 	if (token_num == 1) {
 		kalMemSet(aucCfgQueryKey, 0, sizeof(aucCfgQueryKey));
+		u4CopySize = (u4CopySize < sizeof(aucCfgQueryKey)) ?
+			u4CopySize : sizeof(aucCfgQueryKey);
+
 		/* remove the 0x0a */
 		memcpy(aucCfgQueryKey, aucCfgBuf, u4CopySize);
 		if (aucCfgQueryKey[u4CopySize - 1] == 0x0a)
 			aucCfgQueryKey[u4CopySize - 1] = '\0';
 	} else {
-		if (u4CopySize)
-			wlanFwCfgParse(gprGlueInfo->prAdapter, aucCfgBuf);
+		wlanFwCfgParse(gprGlueInfo->prAdapter, aucCfgBuf);
 	}
 
 	return count;
