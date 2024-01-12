@@ -84,12 +84,6 @@
 #include <tc1_partition.h>
 #endif
 
-#if CFG_SUPPORT_WAKEUP_REASON_DEBUG
-/* #include <pcm_def.h> */
-#ifndef CFG_BUILD_X86_PLATFORM
-#include <mtk_sleep.h>
-#endif
-#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
