@@ -215,6 +215,8 @@ void p2pSetMode(IN uint8_t ucAPMode)
 /*---------------------------------------------------------------------------*/
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
+	int idx = 0;
+
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(P2P, INFO, "p2p is not registered\n");
 		return FALSE;
@@ -224,6 +226,46 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
 
 	glUnregisterP2P(prGlueInfo, 0xff);
+
+	/* Release ap0 wdev.
+	 * ap0 wdev is created in wlanProbe. So we need to release it in
+	 * wlanRemove. Other wdevs shall be released in exitWlan.
+	 */
+	for (idx = 0 ; idx < KAL_P2P_NUM; idx++) {
+		if (gprP2pRoleWdev[idx] == NULL)
+			continue;
+#if CFG_ENABLE_UNIFY_WIPHY
+		if (gprP2pRoleWdev[idx] == gprWdev) {
+			/* This is AIS/AP Interface */
+			gprP2pRoleWdev[idx] = NULL;
+			continue;
+		}
+#endif
+		/* free gprP2pWdev in wlanDestroyAllWdev */
+		if (gprP2pRoleWdev[idx] == gprP2pWdev)
+			continue;
+
+		DBGLOG(INIT, INFO, "Unregister gprP2pRoleWdev[%d]\n", idx);
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
+		set_wiphy_dev(gprP2pRoleWdev[idx]->wiphy, NULL);
+		wiphy_unregister(gprP2pRoleWdev[idx]->wiphy);
+		wiphy_free(gprP2pRoleWdev[idx]->wiphy);
+#endif
+		kfree(gprP2pRoleWdev[idx]);
+		gprP2pRoleWdev[idx] = NULL;
+		break;
+	}
+#if (CFG_ENABLE_UNIFY_WIPHY == 0)
+	/* gprP2pWdev: base P2P dev
+	 * Becase the interface dev (ex: usb_device) would be free
+	 * after un-plug event. Should set the wiphy->dev->parent which
+	 * pointer to the interface dev to NULL. Otherwise, the corresponding
+	 * system operation (poweroff, suspend) might reference it.
+	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
+	 */
+	if (gprP2pWdev != NULL)
+		set_wiphy_dev(gprP2pWdev->wiphy, NULL);
+#endif
 
 	return TRUE;
 }
