@@ -1319,6 +1319,11 @@ void halTxDelayTimeout(unsigned long arg)
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo;
 
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
+		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip tx delay timeout\n");
+		return;
+	}
+
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
@@ -1490,6 +1495,7 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
+	struct MSDU_INFO *prMsduInfo;
 	uint32_t u4Idx;
 	unsigned long flags;
 
@@ -1532,6 +1538,10 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 			prTxDataReq = list_entry(
 				prCur, struct TX_DATA_REQ, list);
 			list_del(prCur);
+			prMsduInfo = prTxDataReq->prMsduInfo;
+			if (prMsduInfo)
+				halWpdmaFreeMsdu(prGlueInfo, prMsduInfo,
+						 FALSE, NULL);
 			prHifInfo->u4TxDataQLen[u4Idx]--;
 		}
 		spin_unlock_irqrestore(&prHifInfo->rTxDataQLock[u4Idx], flags);
@@ -3314,7 +3324,8 @@ void halWpdmaFreeMsduTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 	struct MSDU_INFO *prMsduInfo;
-	struct QUE *prTxMsduRetQue = &prGlueInfo->rTxMsduRetQueue;
+	struct QUE rTxMsduRetQue;
+	struct QUE *prTxMsduRetQue = &rTxMsduRetQue;
 
 	QUEUE_INITIALIZE(prTxMsduRetQue);
 
@@ -3323,7 +3334,7 @@ void halWpdmaFreeMsduTasklet(unsigned long data)
 			DBGLOG(RX, ERROR, "prMsduInfo null\n");
 			break;
 		}
-		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, FALSE);
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, FALSE, prTxMsduRetQue);
 	}
 
 	prMsduInfo = QUEUE_GET_HEAD(prTxMsduRetQue);
@@ -3337,30 +3348,40 @@ void halWpdmaFreeMsduTasklet(unsigned long data)
 
 void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		      struct MSDU_INFO *prMsduInfo,
-		      bool fgSetEvent)
+		      u_int8_t fgSetEvent,
+		      struct QUE *prTxMsduRetQue)
 {
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+
 	DBGLOG(HAL, LOUD, "Tx Data: Msdu[0x%p], TokFree[%u] TxDone[%u]\n",
-		prMsduInfo, halGetMsduTokenFreeCnt(prGlueInfo->prAdapter),
+		prMsduInfo, halGetMsduTokenFreeCnt(prAdapter),
 		(prMsduInfo->pfTxDoneHandler ? TRUE : FALSE));
 
-	nicTxReleaseResource_PSE(prGlueInfo->prAdapter, prMsduInfo->ucTC,
-		halTxGetCmdPageCount(prGlueInfo->prAdapter,
-		prMsduInfo->u2FrameLength, TRUE), TRUE);
+	nicTxReleaseResource_PSE(
+		prAdapter,
+		prMsduInfo->ucTC,
+		halTxGetCmdPageCount(
+			prAdapter, prMsduInfo->u2FrameLength, TRUE),
+		TRUE);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	if (!prMsduInfo->pfTxDoneHandler) {
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 		/* reduce locks */
-		QUEUE_INSERT_TAIL(&prGlueInfo->rTxMsduRetQueue, prMsduInfo);
-#else /* CFG_SUPPORT_TASKLET_FREE_MSDU */
-		nicTxFreePacket(prGlueInfo->prAdapter, prMsduInfo, FALSE);
-		nicTxReturnMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
+		if (prTxMsduRetQue) {
+			QUEUE_INSERT_TAIL(prTxMsduRetQue,
+					  (struct QUE_ENTRY *) prMsduInfo);
+		} else
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+		{
+			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
 	}
 #endif
 
-	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
-		fgSetEvent && wlanGetTxPendingFrameCount(prGlueInfo->prAdapter))
+	if (!HAL_IS_TX_DIRECT(prAdapter) &&
+		fgSetEvent && wlanGetTxPendingFrameCount(prAdapter))
 		kalSetEvent(prGlueInfo);
 }
 
@@ -3402,7 +3423,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 			list_del(prCurList);
 			prHifInfo->u4TxDataQLen[u2Port]--;
 		}
-		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
 
 		return false;
 	}
@@ -3460,12 +3481,11 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	if (prMsduInfo->pfTxDoneHandler == NULL &&
 		KAL_FIFO_IN(&prGlueInfo->rTxMsduRetFifo, prMsduInfo))
 		tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
-	else {
+	else
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
-		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
-#if CFG_SUPPORT_TASKLET_FREE_MSDU
+	{
+		halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
 	}
-#endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
 	return true;
 }
@@ -3577,7 +3597,7 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 			tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
 		else {
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
-			halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, true);
+			halWpdmaFreeMsdu(prGlueInfo, prMsduInfo, TRUE, NULL);
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 		}
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */

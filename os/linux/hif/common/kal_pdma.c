@@ -1436,9 +1436,17 @@ static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	/* force tx data */
+	if (prMsduInfo->pfTxDoneHandler)
+		KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
+			    prHifInfo->ulTxDataTimeout);
+#endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
+
 	u4Port = halTxRingDataSelect(prGlueInfo->prAdapter, prMsduInfo);
 	prTxReq = &prMsduInfo->rTxReq;
 	prTxReq->prMsduInfo = prMsduInfo;
+
 	KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port);
 	list_add_tail(&prTxReq->list, &prHifInfo->rTxDataQ[u4Port]);
 	prHifInfo->u4TxDataQLen[u4Port]++;
@@ -1483,18 +1491,25 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
-		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
+	if (prGlueInfo->prAdapter->fgEnLowLatencyMode ||
+		wlanWfdEnabled(prGlueInfo->prAdapter))
+		goto tx_data;
+
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    HIF_TX_DATA_DELAY_TIMEOUT_BIT,
-		    prHifInfo->ulTxDataTimeout) ||
-	    u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
-		fgIsTxData = TRUE;
+		    prHifInfo->ulTxDataTimeout))
+		goto tx_data;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
+		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
+	if (u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
+		goto tx_data;
 
 	if (!fgIsTxData) {
 		halStartTxDelayTimer(prGlueInfo->prAdapter);
 		return 0;
 	}
+tx_data:
 #endif
 
 	/* disable softirq to improve processing efficiency */
