@@ -1450,6 +1450,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
 				u4Cr, u4Value);
+			break;
 		}
 
 /*
@@ -1497,6 +1498,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
 				u4Cr, u4Value);
+			break;
 		}
 
 /*
@@ -1510,6 +1512,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
 				u4Cr, u4Value);
+			break;
 		}
 
 /*
@@ -1523,6 +1526,7 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
 				u4Cr, u4Value);
+			break;
 		}
 
 		DBGLOG(HAL, INFO,
