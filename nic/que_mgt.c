@@ -4952,6 +4952,11 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
+			if (unlikely(prReorderQueParm->fgHasBubble)) {
+				prReorderQueParm->fgHasBubble = FALSE;
+				cnmTimerStopTimer(prAdapter,
+					&prReorderQueParm->rReorderBubbleTimer);
+			}
 		}
 		/* SN > WinStart, break to update WinEnd */
 		else {
@@ -5096,6 +5101,11 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RX_AMSDU
 			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
+			if (unlikely(prReorderQueParm->fgHasBubble)) {
+				prReorderQueParm->fgHasBubble = FALSE;
+				cnmTimerStopTimer(prAdapter,
+					&prReorderQueParm->rReorderBubbleTimer);
+			}
 		}
 
 		/* SN < WinStart, so the head packet shall be
