@@ -174,6 +174,9 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 				&prnanBssInfo->ucOpRxNss,
 				&prnanBssInfo->ucOpTxNss);
 
+			SET_NET_ACTIVE(prAdapter,
+				prnanBssInfo->ucBssIndex);
+
 			prnanBssInfo->eConnectionState
 				= MEDIA_STATE_CONNECTED;
 
@@ -537,6 +540,7 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 	(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
+	uint8_t ucIdx;
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -580,6 +584,16 @@ nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 		"NAN req CH for N:%d,Tkn,%d\n",
 		prMsgChReq->ucBssIndex,
 		prMsgChReq->ucTokenID);
+
+	/** Set BSS to active */
+	for (ucIdx = 0; ucIdx < NAN_BSS_INDEX_NUM; ucIdx++) {
+		prNANSpecInfo = prAdapter
+			->rWifiVar.aprNanSpecificBssInfo[ucIdx];
+		prnanBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, prNANSpecInfo->ucBssIndex);
+
+		UNSET_NET_ACTIVE(prAdapter, prnanBssInfo->ucBssIndex);
+	}
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		(struct MSG_HDR *)prMsgChReq,
