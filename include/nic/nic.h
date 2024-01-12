@@ -292,12 +292,17 @@ uint32_t nicMediaJoinFailure(IN struct ADAPTER *prAdapter,
 			     IN uint8_t ucBssIndex, IN uint32_t rStatus);
 
 /* Utility function for channel number conversion */
-uint32_t nicChannelNum2Freq(IN uint32_t u4ChannelNum);
+uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand);
 
 uint32_t nicFreq2ChannelNum(IN uint32_t u4FreqInKHz);
 
 uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel,
 		    IN uint8_t ucBandwidth);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t nicGetHe6gS1(IN uint8_t ucPrimaryChannel,
+		    IN uint8_t ucBandwidth);
+#endif
 
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */
@@ -345,6 +350,10 @@ uint32_t nicRlmUpdateSRParams(IN struct ADAPTER *prAdapter,
 
 uint32_t nicSetAutoTxPower(IN struct ADAPTER *prAdapter,
 			   IN struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
+
+/* RXD relative */
+void nicRxdChNumTranslate(
+	IN enum ENUM_BAND eBand, IN uint8_t *pucHwChannelNum);
 
 /*----------------------------------------------------------------------------*/
 /* Calibration Control                                                        */

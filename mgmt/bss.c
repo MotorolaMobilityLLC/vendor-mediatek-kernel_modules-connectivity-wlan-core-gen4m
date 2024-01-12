@@ -1382,6 +1382,8 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 			get_ch_num,
 			prSwRfb->prRxStatus);
 
+		nicRxdChNumTranslate(eBand, &ucHwChannelNum);
+
 		if (prBssInfo->eBand != eBand)
 			continue;
 

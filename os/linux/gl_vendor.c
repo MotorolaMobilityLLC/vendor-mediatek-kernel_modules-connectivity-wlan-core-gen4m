@@ -260,7 +260,9 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy,
 	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
 		/* We need to report frequency list to HAL */
 		channels[j] =
-		    nicChannelNum2Freq(aucChannelList[i].ucChannelNum) / 1000;
+		    nicChannelNum2Freq(
+				aucChannelList[i].ucChannelNum,
+				aucChannelList[i].eBand) / 1000;
 		if (channels[j] == 0)
 			continue;
 		else if ((u2CountryCode == COUNTRY_CODE_TW) &&

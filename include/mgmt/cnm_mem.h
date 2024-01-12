@@ -389,6 +389,11 @@ struct STA_RECORD {
 	uint16_t u2HeTxMcsMapBW80P80;
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* HE 6 GHz Band Capabilities */
+	uint16_t u2He6gBandCapInfo;
+#endif
+
 	/*----------------------------------------------------------------------
 	 * 802.11ac  HT operation info when (prStaRec->ucPhyTypeSet &
 	 * PHY_TYPE_BIT_HT) is true. They have the same definition with fields

@@ -485,6 +485,10 @@ struct BSS_INFO {
 	uint8_t ucSRGObssPdMaxOffset;
 	uint64_t u8SRGBSSColorBitmap;
 	uint64_t u8SRGPartialBSSIDBitmap;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	u_int8_t fgIsHE6GPresent;
+	u_int8_t fgIsCoHostedBssPresent;
+#endif
 #endif
 
 #if (CFG_HW_WMM_BY_BSS == 1)
@@ -515,9 +519,13 @@ struct BSS_INFO {
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
 #endif
+
 #if (CFG_SUPPORT_802_11AX == 1)
-	uint8_t  ucHeOpParams[HE_OP_BYTE_NUM];
-	uint8_t  ucBssColorInfo;
+	uint8_t ucHeOpParams[HE_OP_BYTE_NUM];
+	uint8_t ucBssColorInfo;
+	uint8_t ucHeChannelWidth;
+	uint8_t ucHeChannelFrequencyS1;
+	uint8_t ucHeChannelFrequencyS2;
 	uint16_t u2HeBasicMcsSet;
 #endif
 

@@ -1908,6 +1908,21 @@ enum BEACON_REPORT_DETAIL {
 /* Nontransmitted BSSID Profile */
 #define NON_TX_BSSID_PROFILE                        0
 
+/* 9.4.2.170 Reduced Neighbor Report element */
+#define TBTT_INFO_HDR_FIELD_TYPE                    BITS(0, 1)
+#define TBTT_INFO_HDR_FILTERED_NIEGHBOR_AP          BIT(2)
+#define TBTT_INFO_HDR_COLOCATED_AP                  BIT(3)
+#define TBTT_INFO_HDR_COUNT                         BITS(4, 7)
+#define TBTT_INFO_HDR_COUNT_OFFSET                  4
+#define TBTT_INFO_HDR_LENGTH                        BITS(8, 15)
+#define TBTT_INFO_HDR_LENGTH_OFFSET                 8
+
+/*D5.0 9.4.2.248 HE Operation element */
+#define HE_OP_CHANNEL_WIDTH_20				0
+#define HE_OP_CHANNEL_WIDTH_40				1
+#define HE_OP_CHANNEL_WIDTH_80				2
+#define HE_OP_CHANNEL_WIDTH_80P80_160			3
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

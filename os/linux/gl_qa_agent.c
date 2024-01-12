@@ -1119,7 +1119,7 @@ static int32_t HQA_SetChannel(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO,
 	       "QA_AGENT HQA_SetChannel Channel = %d\n", i4SetChan);
 
-	i4SetFreq = nicChannelNum2Freq(i4SetChan);
+	i4SetFreq = nicChannelNum2Freq(i4SetChan, BAND_NULL);
 	i4Ret = MT_ATESetChannel(prNetDev, 0, i4SetFreq);
 
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
@@ -3409,7 +3409,7 @@ static int32_t HQA_DBDCContinuousTX(struct net_device
 
 	if (u4Control) {
 		MT_ATESetDBDCBandIndex(prNetDev, u4Band);
-		u4Freq = nicChannelNum2Freq(u4Central_Ch);
+		u4Freq = nicChannelNum2Freq(u4Central_Ch, u4Band);
 		MT_ATESetChannel(prNetDev, 0, u4Freq);
 		ucPriChOffset = _whPhyGetPrimChOffset(u4BW,
 						      u4Pri_Ch,
@@ -8543,12 +8543,12 @@ static int32_t hqa_set_channel_ext(struct net_device
 	} else if (u4Central_ch0 == 6 && u4Ch_band == 1) {
 		u4SetFreq = 1000 * 5032;
 	} else {
-		u4SetFreq = nicChannelNum2Freq(u4Central_ch0);
+		u4SetFreq = nicChannelNum2Freq(u4Central_ch0, BAND_NULL);
 	}
 	MT_ATESetChannel(prNetDev, 0, u4SetFreq);
 
 	if (u4Sys_bw == 6) {
-		u4SetFreq = nicChannelNum2Freq(u4Central_ch1);
+		u4SetFreq = nicChannelNum2Freq(u4Central_ch1, BAND_NULL);
 		MT_ATESetChannel(prNetDev, 1, u4SetFreq);
 	}
 

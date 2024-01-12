@@ -969,7 +969,10 @@ struct CMD_UPDATE_STA_RECORD {
 	uint16_t u2HeRxMcsMapBW80P80;
 	uint16_t u2HeTxMcsMapBW80P80;
 #endif
-	uint8_t  aucPadding4[32];
+	uint16_t u2He6gBandCapInfo;
+	uint8_t  aucPadding4[2];
+
+	uint8_t  aucPadding5[28];
 };
 
 struct CMD_REMOVE_STA_RECORD {

@@ -291,7 +291,8 @@ kalP2PIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 		IN int32_t i4SignalStrength);
 
 void
-kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+kalP2PIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+		IN struct GLUE_INFO *prGlueInfo,
 		IN struct SW_RFB *prSwRfb,
 		IN u_int8_t fgIsDevInterface,
 		IN uint8_t ucRoleIdx);

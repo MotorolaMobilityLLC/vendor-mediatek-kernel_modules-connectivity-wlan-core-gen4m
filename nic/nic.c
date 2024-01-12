@@ -1237,10 +1237,15 @@ uint32_t nicMediaJoinFailure(IN struct ADAPTER *prAdapter,
  * @retval - Frequency in unit of KHz, 0 for invalid channel number
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum)
+uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand)
 {
 	uint32_t u4ChannelInMHz;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		u4ChannelInMHz = 5950 + u4ChannelNum * 5;
+	else
+#endif
 	if (u4ChannelNum >= 1 && u4ChannelNum <= 13)
 		u4ChannelInMHz = 2412 + (u4ChannelNum - 1) * 5;
 	else if (u4ChannelNum == 14)
@@ -1476,6 +1481,69 @@ uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
 	return 0;
 
 }
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
+		    uint8_t ucBandwidth)
+{
+	if ((ucBandwidth == CW_80MHZ)
+	    || (ucBandwidth == CW_80P80MHZ)) {
+
+		if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 13)
+			return 7;
+		else if (ucPrimaryChannel >= 17 && ucPrimaryChannel <= 29)
+			return 23;
+		else if (ucPrimaryChannel >= 33 && ucPrimaryChannel <= 45)
+			return 39;
+		else if (ucPrimaryChannel >= 49 && ucPrimaryChannel <= 61)
+			return 55;
+		else if (ucPrimaryChannel >= 65 && ucPrimaryChannel <= 77)
+			return 71;
+		else if (ucPrimaryChannel >= 81 && ucPrimaryChannel <= 93)
+			return 87;
+		else if (ucPrimaryChannel >= 97 && ucPrimaryChannel <= 109)
+			return 103;
+		else if (ucPrimaryChannel >= 113 && ucPrimaryChannel <= 125)
+			return 119;
+		else if (ucPrimaryChannel >= 129 && ucPrimaryChannel <= 141)
+			return 135;
+		else if (ucPrimaryChannel >= 145 && ucPrimaryChannel <= 157)
+			return 151;
+		else if (ucPrimaryChannel >= 161 && ucPrimaryChannel <= 173)
+			return 167;
+		else if (ucPrimaryChannel >= 177 && ucPrimaryChannel <= 189)
+			return 183;
+		else if (ucPrimaryChannel >= 193 && ucPrimaryChannel <= 205)
+			return 199;
+		else if (ucPrimaryChannel >= 209 && ucPrimaryChannel <= 221)
+			return 215;
+		else if (ucPrimaryChannel >= 225 && ucPrimaryChannel <= 237)
+			return 231;
+		else if (ucPrimaryChannel >= 241 && ucPrimaryChannel <= 253)
+			return 249;
+	} else if (ucBandwidth == CW_160MHZ) {
+
+		if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 29)
+			return 15;
+		else if (ucPrimaryChannel >= 33 && ucPrimaryChannel <= 61)
+			return 47;
+		else if (ucPrimaryChannel >= 65 && ucPrimaryChannel <= 93)
+			return 79;
+		else if (ucPrimaryChannel >= 97 && ucPrimaryChannel <= 125)
+			return 111;
+		else if (ucPrimaryChannel >= 129 && ucPrimaryChannel <= 157)
+			return 143;
+		else if (ucPrimaryChannel >= 161 && ucPrimaryChannel <= 189)
+			return 175;
+		else if (ucPrimaryChannel >= 193 && ucPrimaryChannel <= 221)
+			return 207;
+	} else {
+
+		return 0;
+	}
+	return 0;
+}
+#endif
 
 /* firmware command wrapper */
 /* NETWORK (WIFISYS) */
@@ -1865,7 +1933,7 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 				HE_OP_BYTE_NUM);
 		rCmdSetBssInfo.ucBssColorInfo = prBssInfo->ucBssColorInfo;
 		rCmdSetBssInfo.u2HeBasicMcsSet =
-			CPU_TO_LE16(prBssInfo->u2HeBasicMcsSet);
+			prBssInfo->u2HeBasicMcsSet;
 	}
 #endif
 
@@ -5082,3 +5150,11 @@ void nicUpdateWakeupStatistics(IN struct ADAPTER *prAdapter,
 #endif /* fos_change end */
 
 
+void nicRxdChNumTranslate(
+	IN enum ENUM_BAND eBand, IN uint8_t *pucHwChannelNum)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if ((eBand == BAND_6G) && (pucHwChannelNum != NULL))
+		*pucHwChannelNum = (((*pucHwChannelNum-181) << 2) + 1);
+#endif
+}

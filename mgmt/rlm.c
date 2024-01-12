@@ -394,9 +394,11 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
-	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
-	     PHY_TYPE_SET_802_11N) &&
-	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)))
+	if (!prStaRec || RLM_NET_IS_11N(prBssInfo)
+#if (CFG_SUPPORT_802_11AX == 1)
+		|| RLM_NET_IS_11AX(prBssInfo)
+#endif
+		)
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_PASSPOINT
 	else if (prHS20Info->fgConnectHS20AP == TRUE)
@@ -2090,6 +2092,88 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 	}
 }
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+
+void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
+	IN uint8_t ucChannelWidth,
+	OUT enum ENUM_CHANNEL_WIDTH *peChannelWidth,
+	OUT uint8_t *pucCenterFreqS1,
+	OUT uint8_t *pucCenterFreqS2,
+	OUT enum ENUM_CHNL_EXT *peSco)
+{
+	if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_20)
+		*peChannelWidth = CW_20_40MHZ;
+	else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_40) {
+		*peChannelWidth = CW_20_40MHZ;
+		if ((ucChannelNum + 2) ==
+			*pucCenterFreqS1)
+			*peSco = CHNL_EXT_SCA;
+		else
+			*peSco = CHNL_EXT_SCB;
+	} else if (ucChannelWidth == HE_OP_CHANNEL_WIDTH_80)
+		*peChannelWidth = CW_80MHZ;
+	else if (
+		((*pucCenterFreqS1 - *pucCenterFreqS2) == 8) ||
+		((*pucCenterFreqS2 - *pucCenterFreqS1) == 8))
+		*peChannelWidth = CW_160MHZ;
+	else
+		*peChannelWidth = CW_80P80MHZ;
+
+	/*add IEEE BW160 patch*/
+	rlmModifyHE6GBwPara(pucCenterFreqS1,
+			   pucCenterFreqS2,
+			   (uint8_t *)peChannelWidth);
+}
+void rlmModifyHE6GBwPara(uint8_t *pucHe6gChannelFrequencyS1,
+			uint8_t *pucHe6gChannelFrequencyS2,
+			uint8_t *pucHe6gChannelWidth)
+{
+	uint8_t i = 0, ucTempS = 0;
+
+	if ((*pucHe6gChannelFrequencyS1 != 0) &&
+		(*pucHe6gChannelFrequencyS2 != 0)) {
+
+		uint8_t ucBW160Inteval = 8;
+
+		if (((*pucHe6gChannelFrequencyS2 - *pucHe6gChannelFrequencyS1)
+		== ucBW160Inteval) ||
+		((*pucHe6gChannelFrequencyS1 - *pucHe6gChannelFrequencyS2)
+		== ucBW160Inteval)) {
+			/*C160 case*/
+
+			/* NEW spec should set central ch of bw80 at S1,
+			 * set central ch of bw160 at S2
+			 */
+			for (i = 0; i < 2; i++) {
+
+				if (i == 0)
+					ucTempS = *pucHe6gChannelFrequencyS1;
+				else
+					ucTempS = *pucHe6gChannelFrequencyS2;
+
+				if ((ucTempS == 15) || (ucTempS == 47) ||
+					(ucTempS == 79) || (ucTempS == 111) ||
+					(ucTempS == 143) || (ucTempS == 175) ||
+					(ucTempS == 207))
+					break;
+			}
+
+			if (ucTempS == 0) {
+				DBGLOG(RLM, WARN,
+					   "@wifi 6g,please check BW160 setting, find central freq fail\n");
+				return;
+			}
+
+			*pucHe6gChannelFrequencyS1 = ucTempS;
+			*pucHe6gChannelFrequencyS2 = 0;
+			*pucHe6gChannelWidth = CW_160MHZ;
+		} else {
+			/*real 80P80 case*/
+		}
+	}
+}
+#endif
+
 static void rlmRevisePreferBandwidthNss(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex,
 					struct STA_RECORD *prStaRec)
@@ -2148,6 +2232,12 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucMaxBandwidth = MAX_BW_80MHZ;
 	uint8_t ucCurrentBandwidth = MAX_BW_20MHZ;
 	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  ucBssIndex);
+#endif
 
 	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
 
@@ -2182,7 +2272,11 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 			if (ucMaxBandwidth == MAX_BW_80MHZ) {
 				/* modify S1 for Bandwidth 160 downgrade 80 case
 				 */
-				if (ucCurrentBandwidth == MAX_BW_160MHZ) {
+				if (ucCurrentBandwidth == MAX_BW_160MHZ
+#if (CFG_SUPPORT_WIFI_6G == 1)
+					&& prBssInfo->eBand != BAND_6G
+#endif
+					) {
 					if ((*pucPrimaryCh >= 36) &&
 					    (*pucPrimaryCh <= 48))
 						*pucS1 = 42;
@@ -2300,6 +2394,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t ucInitVhtOpMode = 0;
 #endif
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct _IE_HE_6G_BAND_CAP_T *prHe6gBandCap = NULL;
+	u_int8_t IsfgHe6gBandCapChange = FALSE;
+#endif
+
 #if CFG_SUPPORT_DFS
 	u_int8_t fgHasWideBandIE = FALSE;
 	u_int8_t fgHasSCOIE = FALSE;
@@ -2315,6 +2414,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	struct IE_WIDE_BAND_CHANNEL *prWideBandChannelIE;
 #endif
 	uint8_t *pucDumpIE;
+	uint8_t fgDomainValid = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -2340,6 +2440,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	{
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_HT_CAP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11N(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_HT_CAP) - 2))
 				break;
@@ -2410,6 +2516,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_HT_OP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT OP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11N(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_HT_OP) - 2))
 				break;
@@ -2472,6 +2584,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_802_11AC
 		case ELEM_ID_VHT_CAP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore VHT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11AC(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_VHT_CAP) - 2))
 				break;
@@ -2532,6 +2650,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_VHT_OP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore VHT OP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11AC(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_VHT_OP) - 2))
 				break;
@@ -2784,30 +2908,103 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
-			if (fgEfuseCtrlAxOn == 1) {
+			if (fgEfuseCtrlAxOn != 1)
+				break;
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
-				heRlmRecHeCapInfo(prAdapter, prStaRec, pucIE);
-			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
+				heRlmRecHeCapInfo(prAdapter,
+					prStaRec, pucIE);
+			else if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP) {
 				heRlmRecHeOperation(prAdapter,
-							prBssInfo, pucIE);
-			}
-			break;
-#endif
+					prBssInfo, pucIE);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				{
+				uint32_t u4Offset = OFFSET_OF(
+					struct _IE_HE_OP_T,
+					aucVarInfo[0]);
+				struct _6G_OPER_INFOR_T *pr6gOperInfor = NULL;
 
+				if (prBssInfo->fgIsHE6GPresent) {
+					if (prBssInfo->fgIsCoHostedBssPresent)
+						u4Offset += sizeof(uint8_t);
+
+					pr6gOperInfor =
+						(struct _6G_OPER_INFOR_T *)
+						(((uint8_t *) pucIE)+
+								u4Offset);
+					ucPrimaryChannel =
+						pr6gOperInfor->
+						ucPrimaryChannel;
+
+					prBssInfo->ucHeChannelFrequencyS1 =
+						pr6gOperInfor->
+						ucChannelCenterFreqSeg0;
+
+					prBssInfo->ucHeChannelFrequencyS2 =
+						pr6gOperInfor->
+						ucChannelCenterFreqSeg1;
+
+					prBssInfo->eBssSCO = CHNL_EXT_SCN;
+
+					rlmTransferHe6gOpInfor(ucPrimaryChannel,
+						(uint8_t)pr6gOperInfor->
+						rControl.bits.ChannelWidth,
+						&prBssInfo->
+							ucHeChannelWidth,
+						&prBssInfo->
+							ucHeChannelFrequencyS1,
+						&prBssInfo->
+							ucHeChannelFrequencyS2,
+						&prBssInfo->eBssSCO);
+				}
+				}
+#endif /* CFG_SUPPORT_WIFI_6G */
+			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (IE_ID_EXT(pucIE) ==
+				ELEM_EXT_ID_HE_6G_BAND_CAP) {
+				if (!RLM_NET_IS_11AX(prBssInfo) ||
+					(prBssInfo->eBand != BAND_6G) ||
+					IE_LEN(pucIE) != (sizeof
+					(struct _IE_HE_6G_BAND_CAP_T)-2))
+					break;
+
+				prHe6gBandCap =
+					(struct _IE_HE_6G_BAND_CAP_T *)pucIE;
+
+				if ((prStaRec->u2He6gBandCapInfo &
+					HT_CAP_INFO_SM_POWER_SAVE) !=
+					(prHe6gBandCap->u2CapInfo &
+						HT_CAP_INFO_SM_POWER_SAVE))
+					/* Purpose : To detect SMPS change */
+					IsfgHe6gBandCapChange = TRUE;
+
+				prStaRec->u2He6gBandCapInfo =
+					prHe6gBandCap->u2CapInfo;
+			}
+#endif /* CFG_SUPPORT_WIFI_6G */
+			break;
+#endif /* CFG_SUPPORT_802_11AX */
 		default:
 			break;
 		} /* end of switch */
 	}	 /* end of IE_FOR_EACH */
 
-	if (IsfgHtCapChange && (prStaRec->ucStaState == STA_STATE_3))
-		cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+	if (prStaRec->ucStaState == STA_STATE_3) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (IsfgHe6gBandCapChange || IsfgHtCapChange)
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+#else
+		if (IsfgHtCapChange)
+			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+#endif
+	}
 
 	/* Some AP will have wrong channel number (255) when running time.
 	 * Check if correct channel number information. 20110501
 	 */
 	if ((prBssInfo->eBand == BAND_2G4 && ucPrimaryChannel > 14) ||
-	    (prBssInfo->eBand != BAND_2G4 &&
-	     (ucPrimaryChannel >= 200 || ucPrimaryChannel <= 14)))
+	    (prBssInfo->eBand == BAND_5G &&
+	     (ucPrimaryChannel >= 180 || ucPrimaryChannel <= 14)))
 		ucPrimaryChannel = 0;
 #if CFG_SUPPORT_802_11AC
 	/* Check whether the Operation Mode IE is exist or not.
@@ -2985,24 +3182,68 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	}
 #endif
 #endif
-	rlmReviseMaxBw(prAdapter, prBssInfo->ucBssIndex, &prBssInfo->eBssSCO,
-		       (enum ENUM_CHANNEL_WIDTH *)&prBssInfo->ucVhtChannelWidth,
-		       &prBssInfo->ucVhtChannelFrequencyS1,
-		       &prBssInfo->ucPrimaryChannel);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G)
+		rlmReviseMaxBw(prAdapter,
+				prBssInfo->ucBssIndex,
+				&prBssInfo->eBssSCO,
+				(enum ENUM_CHANNEL_WIDTH *)
+				&prBssInfo->ucHeChannelWidth,
+				&prBssInfo->ucHeChannelFrequencyS1,
+				&prBssInfo->ucPrimaryChannel);
+	else
+#endif
+		rlmReviseMaxBw(
+				prAdapter,
+				prBssInfo->ucBssIndex, &prBssInfo->eBssSCO,
+				(enum ENUM_CHANNEL_WIDTH *)
+				&prBssInfo->ucVhtChannelWidth,
+				&prBssInfo->ucVhtChannelFrequencyS1,
+				&prBssInfo->ucPrimaryChannel);
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
 
-	/* printk("Modify ChannelWidth (%d) and Extend
-	 * (%d)\n",prBssInfo->eBssSCO,
-	 * prBssInfo->ucVhtChannelWidth);
-	 */
-
-	if (!rlmDomainIsValidRfSetting(
-		    prAdapter, prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
-		    prBssInfo->eBssSCO, prBssInfo->ucVhtChannelWidth,
+	fgDomainValid =
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		(prBssInfo->eBand == BAND_6G) ?
+		rlmDomainIsValidRfSetting(
+		    prAdapter,
+		    prBssInfo->eBand,
+		    prBssInfo->ucPrimaryChannel,
+		    prBssInfo->eBssSCO,
+		    prBssInfo->ucHeChannelWidth,
+		    prBssInfo->ucHeChannelFrequencyS1,
+		    prBssInfo->ucHeChannelFrequencyS2) :
+#endif
+		rlmDomainIsValidRfSetting(
+		    prAdapter,
+		    prBssInfo->eBand,
+		    prBssInfo->ucPrimaryChannel,
+		    prBssInfo->eBssSCO,
+		    prBssInfo->ucVhtChannelWidth,
 		    prBssInfo->ucVhtChannelFrequencyS1,
-		    prBssInfo->ucVhtChannelFrequencyS2)) {
+		    prBssInfo->ucVhtChannelFrequencyS2);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G
+		&& fgDomainValid == FALSE) {
+		/*Dump IE Inforamtion */
+		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
+		DBGLOG(RLM, WARN, "IE Length = %d\n", u2IELength);
+		DBGLOG_MEM8(RLM, WARN, pucDumpIE, u2IELength);
+
+		/*Error Handling for Non-predicted IE - Fixed to set 20MHz */
+		prBssInfo->ucHeChannelWidth = CW_20_40MHZ;
+		prBssInfo->ucHeChannelFrequencyS1 = 0;
+		prBssInfo->ucHeChannelFrequencyS2 = 0;
+		prBssInfo->eBssSCO = CHNL_EXT_SCN;
+
+		/* Check SAP channel */
+		p2pFuncSwitchSapChannel(prAdapter);
+	} else
+#endif
+	if (fgDomainValid == FALSE) {
 		/*Dump IE Inforamtion */
 		DBGLOG(RLM, WARN, "rlmRecIeInfoForClient IE Information\n");
 		DBGLOG(RLM, WARN, "IE Length = %d\n", u2IELength);
@@ -3018,7 +3259,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prAdapter);
-
 	}
 #if CFG_SUPPORT_QUIET && 0
 	if (!fgHasQuietIE)
@@ -3188,6 +3428,12 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 	{
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_HT_CAP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore HT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11N(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_HT_CAP) - 2))
 				break;
@@ -3195,6 +3441,12 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 #if CFG_SUPPORT_802_11AC
 		case ELEM_ID_VHT_CAP:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prBssInfo->eBand == BAND_6G) {
+				DBGLOG(SCN, WARN, "Ignore VHT CAP IE at 6G\n");
+				break;
+			}
+#endif
 			if (!RLM_NET_IS_11AC(prBssInfo) ||
 			    IE_LEN(pucIE) != (sizeof(struct IE_VHT_CAP) - 2))
 				break;

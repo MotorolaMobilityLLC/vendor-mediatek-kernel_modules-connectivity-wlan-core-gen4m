@@ -1277,7 +1277,8 @@ kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 			IN uint8_t *pucFrameBuf, IN uint32_t u4FrameLen,
 			IN uint8_t ucBssIndex);
 
-void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
+void kalIndicateRxMgmtFrame(IN struct ADAPTER *prAdapter,
+				IN struct GLUE_INFO *prGlueInfo,
 			    IN struct SW_RFB *prSwRfb,
 			    IN uint8_t ucBssIndex);
 

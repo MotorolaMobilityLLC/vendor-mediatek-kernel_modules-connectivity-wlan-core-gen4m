@@ -2269,14 +2269,15 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 		uint32_t u4CenterFreq, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint8_t ucAdjacentChannel)
+		enum ENUM_CHNL_EXT eBssSCO, uint8_t ucAdjacentChannel,
+		enum ENUM_BAND eBand)
 {
 	uint32_t u4AdjacentFreq = 0;
 	uint32_t u4BandWidth = 20;
 	uint32_t u4StartFreq, u4EndFreq;
 	struct ieee80211_channel *chnl = NULL;
 
-	u4AdjacentFreq = nicChannelNum2Freq(ucAdjacentChannel) / 1000;
+	u4AdjacentFreq = nicChannelNum2Freq(ucAdjacentChannel, eBand) / 1000;
 
 	DBGLOG(INIT, TRACE,
 		"p2p: %p, center_freq: %d, bw: %d, sco: %d, ad_freq: %d",
@@ -2327,7 +2328,8 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 
 void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq)
+		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
+		enum ENUM_BAND eBand)
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
 	uint8_t i, j;
@@ -2359,7 +2361,8 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 					u4CenterFreq,
 					ucBandWidth,
 					eBssSCO,
-					aucChannelList[i].ucChannelNum)) {
+					aucChannelList[i].ucChannelNum,
+					eBand)) {
 				mtk_5ghz_channels[j].dfs_state
 					= NL80211_DFS_AVAILABLE;
 				mtk_5ghz_channels[j].flags &=

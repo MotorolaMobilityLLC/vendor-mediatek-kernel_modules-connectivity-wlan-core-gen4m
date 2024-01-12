@@ -836,16 +836,25 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains_Passive[] = {
 #if (CFG_SUPPORT_PWR_LIMIT_COUNTRY == 1)
 struct SUBBAND_CHANNEL g_rRlmSubBand[] = {
 
-	{BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0}
-	,			/* 2.4G */
-	{UNII1_LOWER_BOUND, UNII1_UPPER_BOUND, 2, 0}
-	,			/* ch36,38,40,..,48 */
-	{UNII2A_LOWER_BOUND, UNII2A_UPPER_BOUND, 2, 0}
-	,			/* ch52,54,56,..,64 */
-	{UNII2C_LOWER_BOUND, UNII2C_UPPER_BOUND, 2, 0}
-	,			/* ch100,102,104,...,144 */
-	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0}
-				/* ch149,151,153,....,165 */
+	{BAND_2G4_LOWER_BOUND, BAND_2G4_UPPER_BOUND, 1, 0} /* 2.4G */
+	,
+	{UNII1_LOWER_BOUND, UNII1_UPPER_BOUND, 2, 0} /* ch36,38,40,..,48 */
+	,
+	{UNII2A_LOWER_BOUND, UNII2A_UPPER_BOUND, 2, 0} /* ch52,54,56,..,64 */
+	,
+	{UNII2C_LOWER_BOUND, UNII2C_UPPER_BOUND, 2, 0} /* ch100,102,.,144 */
+	,
+	{UNII3_LOWER_BOUND, UNII3_UPPER_BOUND, 2, 0} /* ch149,151,....,165 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	,
+	{UNII5_LOWER_BOUND, UNII5_UPPER_BOUND, 2, 0}
+	,
+	{UNII6_LOWER_BOUND, UNII6_UPPER_BOUND, 2, 0}
+	,
+	{UNII7_LOWER_BOUND, UNII7_UPPER_BOUND, 2, 0}
+	,
+	{UNII8_LOWER_BOUND, UNII8_UPPER_BOUND, 2, 0}
+#endif
 };
 #endif
 /*******************************************************************************
@@ -1577,7 +1586,6 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 	if (regd_is_single_sku_en())
 		return rlmDomainIsLegalChannel_V2(prAdapter, eBand, ucChannel);
 
-
 	prDomainInfo = rlmDomainGetDomainInfo(prAdapter);
 	ASSERT(prDomainInfo);
 
@@ -1722,6 +1730,8 @@ u_int8_t rlmDomainCheckChannelEntryValid(struct ADAPTER *prAdapter,
 				    (ucCentralCh <= g_rRlmSubBand[i].ucEndCh))
 			ucTemp = (ucCentralCh - g_rRlmSubBand[i].ucStartCh) %
 				 g_rRlmSubBand[i].ucInterval;
+		if (ucTemp == 0)
+			break;
 	}
 
 	if (ucTemp == 0)
@@ -1877,7 +1887,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 				DBGLOG(RLM, WARN, "Rf: PriOffSet=%d, W=%d\n",
 				       u4PrimaryOffset, eChannelWidth);
 			}
-			if (ucPriChannel == 165) {
+			if (ucPriChannel == 165 && eBand == BAND_5G) {
 				fgValidBW = FALSE;
 				DBGLOG(RLM, WARN,
 				       "Rf: PriOffSet=%d, W=%d C=%d\n",
