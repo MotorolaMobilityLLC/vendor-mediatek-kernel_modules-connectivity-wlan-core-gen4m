@@ -662,6 +662,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
+#if defined(_HIF_USB)
+	.vdr_pwr_on = USB_VND_PWR_ON_ADDR,
+	.vdr_pwr_on_chk_bit = USB_VND_PWR_ON_ACK_BIT,
+	.is_need_check_vdr_pwr_on = FALSE,
+#endif
 	.patch_addr = MT6639_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,

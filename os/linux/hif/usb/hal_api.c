@@ -1529,28 +1529,70 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	u_int8_t fgResult = FALSE;
+	u_int8_t fgVdrPwrOnResult = FALSE;
 	uint8_t ucCount = 0;
+	uint32_t u4Value;
 
 	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");
 
-	/* Remove check, because just check fw is dl state or not,
-	*  but fw change to dl state is not only by wakeup cmd, and
-	*  fw new cal flow need driver to notice fw wifi driver is
-	*  insert, so it need issue this cmd always when wifi is
-	*  insert.
-	*/
-
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
 
-	while (!fgResult) {
+	HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
+
+	/* If check wifi already on before send power on vendor req,
+	*  the only case is BT help wifi dl patch, in this case need check
+	*  power on vendor req have already done or will result CMD fail
+	*  due to cal done will switch mcu state(if CMD send during switch
+	*  MCU state, CMD packet will be clear due to mcu will do MAC uninit).
+	*/
+	if (fgResult) {
+		/* Need clr vdr_pwr_on ack CR status first, due to FW
+		 * not clear this.
+		 */
+		HAL_MCR_WR(prAdapter, prChipInfo->vdr_pwr_on, 0);
+		HAL_MCR_RD(prAdapter, prChipInfo->vdr_pwr_on, &u4Value);
+
+		/* This polling mechanism in falcon need patch dl done, due
+		 * do FW add this mechanism in patch, after falcon will add
+		 * this in rom code.
+		 */
+		prChipInfo->is_need_check_vdr_pwr_on = TRUE;
+
+		/* Check vdr_pwr_on ack CR already be clear. */
+		while (u4Value != 0) {
+			kalMdelay(1);
+			HAL_MCR_RD(prAdapter, prChipInfo->vdr_pwr_on, &u4Value);
+			if (ucCount >= 5) {
+				DBGLOG(INIT, ERROR,
+					"Access vdr_pwr_on CR fail!!!\n");
+				prChipInfo->is_need_check_vdr_pwr_on = FALSE;
+
+				break;
+			}
+			ucCount++;
+		}
+		ucCount = 0;
+	}
+	if (!prChipInfo->is_need_check_vdr_pwr_on)
+		fgVdrPwrOnResult = TRUE;
+
+	while (1) {
 		HAL_WIFI_FUNC_POWER_ON(prAdapter);
 		kalMdelay(50);
 		HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
+		if (prChipInfo->is_need_check_vdr_pwr_on)
+			HAL_VDR_PWR_ON_READY_CHECK(prAdapter,
+				&fgVdrPwrOnResult);
+
+		if (fgResult && fgVdrPwrOnResult)
+			break;
 
 		ucCount++;
 
-		if (ucCount >= 5) {
+		if (ucCount >= 40) {
 			DBGLOG(INIT, WARN, "Power on failed!!!\n");
 			break;
 		}

@@ -1487,6 +1487,12 @@ struct mt66xx_chip_info {
 	const unsigned int sw_sync0;	/* sw_sync0 address */
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
+#if defined(_HIF_USB)
+	const unsigned int vdr_pwr_on; /* for USB polling pwr on vdr req done */
+	const unsigned int vdr_pwr_on_chk_bit; /* vdr req done check bit */
+	/* need polling pwr on vdr req done or not. */
+	u_int8_t is_need_check_vdr_pwr_on;
+#endif
 	const unsigned int patch_addr;	/* patch download start address */
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
