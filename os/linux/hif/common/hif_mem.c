@@ -80,12 +80,13 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 		return NULL;
 	}
 
-	pkt = build_skb(page_to_virt(page), PAGE_SIZE);
+	pkt = build_skb(page_to_virt(page), PAGE_SIZE); /* ptr to sk_buff */
 	if (!pkt) {
 		page_pool_recycle_direct(page->pp, page);
 		DBGLOG(HAL, ERROR, "allocate skb fail\n");
 		return NULL;
 	}
+	kmemleak_not_leak(pkt); /* Omit memleak check */
 	kalSkbMarkForRecycle(pkt);
 	*ppucData = (uint8_t *) (pkt->data);
 
